@@ -466,7 +466,7 @@ function computeLayout(eq, lk){
   const ctrlRails=[...new Set(allRailNames.filter(n=>railKind(n)==='ctrl'))];
 
   // géométrie verticale
-  const M=70, phaseGap=26, rowH=86, subGap=66, colGap=60;
+  const M=70, phaseGap=26, rowH=98, subGap=84, colGap=150;
   const srcW=sources.length?56:0;
   const railX0=M+(srcW?srcW+26:0);
   const phaseY0=M+46;
@@ -735,6 +735,7 @@ function detectCrossings(segs){
 /* ---------- 7. Rendu SVG ---------- */
 const f1=n=>(Math.round(n*10)/10);
 function esc(s){ return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function clip(s,n){ s=String(s); return s.length>n?s.slice(0,n-1)+'…':s; }
 
 function defs(){
   return `<defs>
@@ -831,12 +832,15 @@ function compSvg(c,sel){
   let s=`<g transform="translate(${f1(c.x)},${f1(c.y)})">`;
   if(sel) s+=`<rect class="selbox" x="-5" y="-5" width="${c.w+10}" height="${c.h+10}" rx="3"/>`;
   s+=c.proto.draw();
+  const des=c.o.designation?esc(clip(c.o.designation,22)):'';
   if(c.simple){
+    // boîte : repère au centre, désignation à droite (jamais dessous → pas de collision verticale)
     s+=`<text class="rep-in" x="${f1(c.w/2)}" y="${f1(c.h/2+4)}" text-anchor="middle">${esc(c.name)}</text>`;
-    if(c.o.designation) s+=`<text class="des" x="${f1(c.w/2)}" y="${f1(c.h+13)}" text-anchor="middle">${esc(c.o.designation.slice(0,24))}</text>`;
+    if(des) s+=`<text class="des" x="${c.w+8}" y="${f1(c.h/2+3)}">${des}</text>`;
   } else {
-    s+=`<text class="rep" x="${c.w+7}" y="11">${esc(c.name)}</text>`;
-    if(c.o.designation) s+=`<text class="des" x="${c.w+7}" y="22">${esc(c.o.designation.slice(0,24))}</text>`;
+    // symbole normé : repère + désignation empilés en haut à droite
+    s+=`<text class="rep" x="${c.w+8}" y="11">${esc(c.name)}</text>`;
+    if(des) s+=`<text class="des" x="${c.w+8}" y="22">${des}</text>`;
   }
   c.topLbl.forEach(t=>{ if(t.label) s+=`<text class="term" x="${f1(t.x-3)}" y="-3" text-anchor="end">${esc(t.label)}</text>`; });
   c.botLbl.forEach(t=>{ if(t.label) s+=`<text class="term" x="${f1(t.x-3)}" y="${c.h+9}" text-anchor="end">${esc(t.label)}</text>`; });
