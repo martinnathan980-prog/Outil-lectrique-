@@ -187,7 +187,15 @@ main{grid-area:main;position:relative;overflow:hidden;background:#e3e6ea}
   <div class="body">
     <div class="imode"><button class="seg on" id="mode-db">Table unique (base)</button><button class="seg" id="mode-two">Deux listes</button></div>
     <div id="pane-db">
-      <p class="help">Colle ta base de câblage : une ligne = une liaison. Colonnes (avec ou sans en-tête, séparées par <b>;</b> <b>,</b> ou tabulation) : <b>Équip.1 ; Borne ; PN ; Équip.2 ; Borne ; PN ; Câble ; Type ; Route ; Plan</b>. Les en-têtes sont reconnus automatiquement ; sinon cet ordre est supposé. Plusieurs plans → un sélecteur apparaît.</p>
+      <p class="help">Colle ta base de câblage ou <b>dépose un fichier</b> : une ligne = une liaison. Colonnes (avec ou sans en-tête, séparées par <b>;</b> <b>,</b> ou tabulation) : <b>Équip.1 ; Borne ; PN ; Équip.2 ; Borne ; PN ; Câble ; Type ; Route ; Plan</b>. Les en-têtes sont reconnus automatiquement ; sinon cet ordre est supposé. Plusieurs plans → un sélecteur apparaît.</p>
+      <div id="db-drop" class="dropzone">
+        <div class="dz-ico">⬇</div>
+        <div class="dz-main">Glisse un fichier <b>Excel</b> (.xlsx, .xls) ou <b>CSV</b> ici</div>
+        <div class="dz-sub">ou <button type="button" class="linklike" id="db-browse">choisis un fichier</button> — les colonnes sont reconnues automatiquement</div>
+        <input type="file" id="db-file" accept=".csv,.tsv,.txt,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden>
+      </div>
+      <div id="db-fileinfo" class="dz-info"></div>
+      <p class="hint" style="margin:10px 0 4px">…ou colle directement les données :</p>
       <textarea id="imp-db" placeholder="Equip1;Borne;PN;Equip2;Borne;PN;Cable;Type;Route;Plan&#10;Q1;2;2;XC1;1;1;W1;4G6;Goulotte;1&#10;XC1;1;1;KM1;1;1;W2;4G6;Goulotte;1"></textarea>
       <div style="margin-top:8px"><button class="ghost" id="db-sample">Remplir un exemple</button></div>
     </div>
@@ -227,6 +235,16 @@ main{grid-area:main;position:relative;overflow:hidden;background:#e3e6ea}
   .imode{display:flex;gap:6px;margin-bottom:10px}
   .imode .seg{flex:1;background:var(--chrome3);border:1px solid var(--line);color:var(--ink-dim)}
   .imode .seg.on{background:var(--accent-dim);border-color:var(--accent);color:#eaf3fc}
+  .dropzone{border:2px dashed var(--line);border-radius:10px;background:#f7f8fa;padding:18px 14px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+  .dropzone:hover{border-color:var(--accent-dim);background:#f0f5fb}
+  .dropzone.over{border-color:var(--accent);background:#e7f0fb}
+  .dropzone .dz-ico{font-size:22px;color:var(--accent-dim);line-height:1}
+  .dropzone .dz-main{margin-top:6px;font-size:12.5px;color:var(--ink)}
+  .dropzone .dz-sub{margin-top:3px;font-size:11px;color:var(--ink-faint)}
+  .linklike{background:none;border:0;color:var(--accent);padding:0;font:inherit;cursor:pointer;text-decoration:underline}
+  .linklike:hover{background:none;color:#0f4f96}
+  .dz-info{font-family:var(--mono);font-size:11px;margin-top:8px;min-height:14px}
+  .dz-info.ok{color:var(--ok)} .dz-info.err{color:var(--red)} .dz-info.load{color:var(--ink-dim)}
 </style>
 <script>
 "use strict";
@@ -957,6 +975,55 @@ function parseDB(){ const {links}=parseSchedule(document.getElementById('imp-db'
   syncTables(); syncPlans(); render(); fit(); closeModal();
 }
 
+/* ---------- Import de fichier : CSV (natif) + Excel (.xlsx/.xls via SheetJS) --- */
+const XLSX_SRC='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+let _xlsxP=null;
+function ensureXLSX(){ if(window.XLSX) return Promise.resolve();
+  if(!_xlsxP) _xlsxP=new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=XLSX_SRC;
+    s.onload=()=>res(); s.onerror=()=>rej(new Error('Chargement de la bibliothèque Excel impossible (connexion requise à la 1re utilisation).')); document.head.appendChild(s); });
+  return _xlsxP; }
+function dbInfo(msg,cls){ const el=document.getElementById('db-fileinfo'); if(!el)return; el.textContent=msg||''; el.className='dz-info'+(cls?(' '+cls):''); }
+function rowsToText(rows){ // tableau de tableaux -> texte tabulé, cellules vides gérées
+  return rows.map(r=>(Array.isArray(r)?r:[r]).map(c=>c==null?'':String(c)).join('\t')).join('\n'); }
+async function readImportFile(file){
+  if(!file) return;
+  const name=(file.name||'').toLowerCase();
+  const isExcel=/\.xlsx?$/.test(name) || /sheet|excel/.test(file.type||'');
+  try{
+    let text;
+    if(isExcel){
+      dbInfo('Lecture du fichier Excel…','load');
+      await ensureXLSX();
+      const buf=await file.arrayBuffer();
+      const wb=window.XLSX.read(buf,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=window.XLSX.utils.sheet_to_json(ws,{header:1,blankrows:false,defval:''});
+      text=rowsToText(rows);
+    } else {
+      dbInfo('Lecture du fichier…','load');
+      text=await file.text();
+    }
+    document.getElementById('imp-db').value=text;
+    const {links}=parseSchedule(text);
+    if(!links.length){ dbInfo('« '+file.name+' » lu, mais aucune liaison détectée — vérifie les colonnes.','err'); return; }
+    dbInfo('✓ « '+file.name+' » — '+links.length+' liaison(s) détectée(s).','ok');
+    parseDB(); // enchaîne : construit et dessine le schéma tout seul
+  }catch(err){ dbInfo('Erreur : '+(err&&err.message?err.message:err),'err'); }
+}
+function bindImportDrop(){
+  const dz=document.getElementById('db-drop'), input=document.getElementById('db-file'),
+        browse=document.getElementById('db-browse');
+  if(!dz||!input) return;
+  const open=()=>input.click();
+  dz.addEventListener('click',e=>{ if(e.target!==browse) open(); });
+  if(browse) browse.addEventListener('click',e=>{ e.stopPropagation(); open(); });
+  input.addEventListener('change',()=>{ if(input.files&&input.files[0]) readImportFile(input.files[0]); input.value=''; });
+  ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{ e.preventDefault(); e.stopPropagation(); dz.classList.add('over'); }));
+  ['dragleave','dragend'].forEach(ev=>dz.addEventListener(ev,e=>{ e.preventDefault(); e.stopPropagation(); dz.classList.remove('over'); }));
+  dz.addEventListener('drop',e=>{ e.preventDefault(); e.stopPropagation(); dz.classList.remove('over');
+    const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f) readImportFile(f); });
+}
+
 /* ---------- 8. Interactions : pan / zoom / drag / édition ---------- */
 const OVR=new Map();           // repère -> {x,y} centre imposé
 function applyView(){ const sc=document.getElementById('scene');
@@ -1236,7 +1303,8 @@ function init(){
   document.getElementById('imp-ok').onclick=()=>{ if(impMode==='db') parseDB(); else parseImport(); };
   document.getElementById('mode-db').onclick=()=>setImpMode('db');
   document.getElementById('mode-two').onclick=()=>setImpMode('two');
-  document.getElementById('db-sample').onclick=()=>{ document.getElementById('imp-db').value=DB_SAMPLE; };
+  document.getElementById('db-sample').onclick=()=>{ document.getElementById('imp-db').value=DB_SAMPLE; dbInfo(''); };
+  bindImportDrop();
   const ps=document.getElementById('planSel'); if(ps) ps.onchange=()=>{ state.plan=ps.value; render(); fit(); };
   document.getElementById('b-close').onclick=closeBornier;
   document.getElementById('bmodal').addEventListener('click',e=>{ if(e.target.id==='bmodal')closeBornier(); });
