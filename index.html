@@ -453,6 +453,11 @@ function computeLayout(eq, lk){
   for(const l of lk){ if(!isRail(l.from)&&!isRail(l.to)&&comps.has(l.from)&&comps.has(l.to)){
     adj.get(l.from).add(l.to); adj.get(l.to).add(l.from); } }
 
+  // estimation de largeur (avant placement) : sert à espacer les colonnes sans collision
+  const linkCnt=new Map();
+  lk.forEach(l=>{ [l.from,l.to].forEach(n=>{ if(comps.has(n)&&!isRail(n)) linkCnt.set(n,(linkCnt.get(n)||0)+1); }); });
+  const estW=n=>Math.max(52, Math.max(1,Math.ceil((linkCnt.get(n)||1)*0.6))*28+6);
+
   // colonnes = composantes connexes
   const colOf=new Map(); const columns=[]; let nc=0;
   for(const n of compNames){ if(colOf.has(n))continue; const id=nc++; const members=[]; const st=[n]; colOf.set(n,id);
@@ -464,6 +469,9 @@ function computeLayout(eq, lk){
 
   function railLinksOf(name){ return lk.filter(l=>(l.from===name&&isRail(l.to))||(l.to===name&&isRail(l.from))); }
   function touchesPhase(name){ return railLinksOf(name).some(l=>{const r=l.from===name?l.to:l.from; const k=railKind(r); return k==='phase'||k==='ctrl';}); }
+
+  // géométrie (constantes utilisées par le placement)
+  const M=70, phaseGap=26, rowH=98, subGap=84, colGap=150;
 
   // placement par colonne (niveau + slot)
   const place=[]; let maxLevelAll=0;
@@ -478,6 +486,8 @@ function computeLayout(eq, lk){
     mem.forEach(m=>{ const L=lvl.get(m); (byLvl.get(L)||byLvl.set(L,[]).get(L)).push(m); maxLvl=Math.max(maxLvl,L); });
     let width=1; byLvl.forEach(a=>width=Math.max(width,a.length));
     col.width=width; col.maxLvl=maxLvl; maxLevelAll=Math.max(maxLevelAll,maxLvl);
+    col.maxW=Math.max(...mem.map(estW));
+    col.subGap=Math.max(subGap, col.maxW+26);   // écart adaptatif : jamais deux boîtes qui se touchent
     byLvl.forEach((arr,L)=>arr.forEach((m,i)=>place.push({name:m,col,level:L,slot:i-(arr.length-1)/2})));
   }
 
@@ -490,7 +500,6 @@ function computeLayout(eq, lk){
   const ctrlRails=[...new Set(allRailNames.filter(n=>railKind(n)==='ctrl'))];
 
   // géométrie verticale
-  const M=70, phaseGap=26, rowH=98, subGap=84, colGap=150;
   const srcW=sources.length?56:0;
   const railX0=M+(srcW?srcW+26:0);
   const phaseY0=M+46;
@@ -501,15 +510,16 @@ function computeLayout(eq, lk){
   const neutralY=colTopY+maxLevelAll*rowH+72;
   const earthY=neutralY+26;
 
-  // x par colonne
+  // x par colonne (espacement adaptatif à la largeur des équipements)
   const orderedCols=columns.filter(c=>c.width>0).sort((a,b)=>a.id-b.id);
   let cur=railX0+50; const colX=new Map();
-  orderedCols.forEach(c=>{ const halfw=(c.width-1)*subGap/2; colX.set(c.id,cur+halfw); cur+=Math.max(0,(c.width-1)*subGap)+colGap+50; });
+  orderedCols.forEach(c=>{ const halfspan=(c.width-1)*c.subGap/2 + c.maxW/2;
+    colX.set(c.id,cur+halfspan); cur+=2*halfspan+colGap; });
   const railX1=Math.max(cur, railX0+220);
 
   // positions provisoires des comps
   const posY=new Map(), posX=new Map();
-  for(const pl of place){ posX.set(pl.name,colX.get(pl.col.id)+pl.slot*subGap); posY.set(pl.name,colTopY+pl.level*rowH); }
+  for(const pl of place){ posX.set(pl.name,colX.get(pl.col.id)+pl.slot*pl.col.subGap); posY.set(pl.name,colTopY+pl.level*rowH); }
   if(typeof OVR!=='undefined') for(const [n,o] of OVR){ if(posX.has(n)){ posX.set(n,o.x); posY.set(n,o.y); } }
 
   function yOf(name){
@@ -527,10 +537,11 @@ function computeLayout(eq, lk){
       if(rn&&!seen.has(rn)){ seen.add(rn); hit.push({name:rn,kind:railKind(rn),y:yOf(rn)}); } });
     const phases=hit.filter(r=>r.kind==='phase').sort((a,b)=>a.y-b.y);
     const others=hit.filter(r=>r.kind!=='phase');
-    const w=58, x=M;
+    const w=Math.max(58, others.length*27+16), x=M;
     const pys=phases.map(r=>r.y);
     const top=(pys.length?Math.min(...pys):phaseY0)-16;
-    const bot=(pys.length?Math.max(...pys):topRailBottom)+16;
+    // marge basse suffisante pour que les bornes du bas (N/PE…) ne touchent pas la dernière phase
+    const bot=(pys.length?Math.max(...pys):topRailBottom)+(others.length?34:16);
     const h=Math.max(48,bot-top), y=top;
     const termByRail=new Map();
     phases.forEach(r=> termByRail.set(r.name,{ax:x+w,ay:r.y}));
@@ -760,44 +771,53 @@ function clip(s,n){ s=String(s); return s.length>n?s.slice(0,n-1)+'…':s; }
 
 function defs(){
   return `<defs>
-   <pattern id="gfine" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M8 0H0V8" fill="none" stroke="#eef1f6" stroke-width="1"/></pattern>
-   <pattern id="gcoarse" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#e2e7ee" stroke-width="1"/></pattern>
+   <pattern id="gfine" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M10 0H0V10" fill="none" stroke="#f2f4f0" stroke-width="1"/></pattern>
+   <pattern id="gcoarse" width="50" height="50" patternUnits="userSpaceOnUse"><path d="M50 0H0V50" fill="none" stroke="#e9ece7" stroke-width="1"/></pattern>
+   <filter id="softsh" x="-30%" y="-30%" width="160%" height="180%">
+     <feDropShadow dx="0" dy="1.4" stdDeviation="1.6" flood-color="#31414f" flood-opacity=".16"/>
+   </filter>
    <style>
      text{font-family:ui-monospace,Menlo,Consolas,monospace}
-     .sym{fill:none;stroke:#1f2b36;stroke-width:1.05;stroke-linecap:round;stroke-linejoin:round}
-     .sym-thin{fill:none;stroke:#1f2b36;stroke-width:.75;stroke-linecap:round}
-     .w-int{fill:none;stroke:#26323f;stroke-width:1;stroke-linecap:round}
+     .sym{fill:none;stroke:#22303d;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+     .sym-thin{fill:none;stroke:#22303d;stroke-width:.8;stroke-linecap:round}
+     .w-int{fill:none;stroke:#26323f;stroke-width:1.1;stroke-linecap:round}
      .mech{stroke:#7b8794;stroke-width:.8;stroke-dasharray:2 2;fill:none}
-     .dot-fix{fill:#1f2b36;stroke:none}
-     .cab{fill:none;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
-     .jn{fill:#1c2a36;stroke:#fbfbf7;stroke-width:.6}
-     .sym-txt{fill:#1f2b36;font-weight:700;font-size:13px}
+     .dot-fix{fill:#22303d;stroke:none}
+     .cab{fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+     .bus{fill:none;stroke-width:2.4;stroke-linecap:round}
+     .jn{fill:#1c2a36;stroke:#fcfcf8;stroke-width:1}
+     .sym-txt{fill:#22303d;font-weight:700;font-size:13px}
      .sym-sub{fill:#56606b;font-size:8.5px;font-weight:700}
      .rep{fill:#15202b;font-weight:700;font-size:11.5px}
-     .rep-in{fill:#15202b;font-weight:700;font-size:10.5px}
+     .rep-in{fill:#182430;font-weight:700;font-size:11px;letter-spacing:.8px}
      .des{fill:#637085;font-size:8.6px}
      .term{fill:#8893a0;font-size:7.6px}
-     .borne{fill:#ffffff;stroke:#1f2b36;stroke-width:1.1}
-     .bnum{fill:#1f2b36;font-size:8.5px;font-weight:700}
-     .rname{fill:#46535f;font-weight:700;font-size:11px}
+     .body{fill:#ffffff;stroke:#26343f;stroke-width:1.4}
+     .borne{fill:#eef1f4;stroke:#26343f;stroke-width:1}
+     .bnum{fill:#182430;font-size:8px;font-weight:700}
+     .rpill{fill:#ffffff;stroke:#c9d1d9;stroke-width:.9}
+     .rname{fill:#3c4a56;font-weight:700;font-size:10px;letter-spacing:.6px}
      .ctag{fill:#5b6775;font-size:8px;font-weight:600}
-     .frame{fill:none;stroke:#aeb7c2;stroke-width:1.3}
-     .zline{stroke:#cfd6df;stroke-width:1}
-     .zone{fill:#94a0ac;font-size:9px;font-weight:600}
-     .cbox{fill:#ffffff;stroke:#aeb7c2;stroke-width:1}
-     .cdiv{stroke:#d3dae2;stroke-width:1}
-     .carth{fill:#9aa6b2;font-size:6px;font-weight:700;letter-spacing:.3px}
+     .frame{fill:none;stroke:#c4ccd4;stroke-width:1.1}
+     .frame2{fill:none;stroke:#dde3e9;stroke-width:.7}
+     .zline{stroke:#d7dde3;stroke-width:.9}
+     .zone{fill:#aab4bd;font-size:8.5px;font-weight:600;letter-spacing:.5px}
+     .cbox{fill:#ffffff;stroke:#b9c2cb;stroke-width:1}
+     .cdiv{stroke:#e2e7ec;stroke-width:1}
+     .carth{fill:#9aa6b2;font-size:5.6px;font-weight:700;letter-spacing:.6px}
      .cartx{fill:#2b3743;font-size:7.5px;font-weight:600}
-     .cartT{fill:#16212c;font-size:9px;font-weight:700}
+     .cartT{fill:#111c26;font-size:9.5px;font-weight:700;letter-spacing:.3px}
+     .cartA{fill:#8e99a4;font-size:6.5px;font-weight:700;letter-spacing:1.2px}
      .selbox{fill:none;stroke:#2f7bd6;stroke-width:1.3;stroke-dasharray:4 3}
    </style></defs>`;
 }
 
 function sheetSvg(bb,meta){
   const x=bb.x,y=bb.y,w=bb.w,h=bb.h, ix=x+16,iy=y+16,iw=w-32,ih=h-32;
-  let s=`<rect x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" fill="#fbfbf7"/>`;
-  s+=`<rect x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" fill="url(#gfine)"/>`;
-  s+=`<rect x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" fill="url(#gcoarse)"/>`;
+  let s=`<rect x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" fill="#fcfcf8"/>`;
+  s+=`<rect x="${f1(ix)}" y="${f1(iy)}" width="${f1(iw)}" height="${f1(ih)}" fill="url(#gfine)"/>`;
+  s+=`<rect x="${f1(ix)}" y="${f1(iy)}" width="${f1(iw)}" height="${f1(ih)}" fill="url(#gcoarse)"/>`;
+  s+=`<rect class="frame2" x="${f1(x+8)}" y="${f1(y+8)}" width="${f1(w-16)}" height="${f1(h-16)}"/>`;
   s+=`<rect class="frame" x="${f1(ix)}" y="${f1(iy)}" width="${f1(iw)}" height="${f1(ih)}"/>`;
   const ncol=Math.max(2,Math.round(iw/150)), nrow=Math.max(2,Math.round(ih/150));
   for(let i=1;i<ncol;i++){ const xx=ix+iw*i/ncol; s+=`<line class="zline" x1="${f1(xx)}" y1="${f1(iy)}" x2="${f1(xx)}" y2="${f1(iy-6)}"/><line class="zline" x1="${f1(xx)}" y1="${f1(iy+ih)}" x2="${f1(xx)}" y2="${f1(iy+ih+6)}"/>`; }
@@ -808,29 +828,37 @@ function sheetSvg(bb,meta){
   return s;
 }
 function cartoucheSvg(rx,by,meta){
-  const W=210,H=64, x=rx-W, y=by-H;
-  let s=`<rect class="cbox" x="${f1(x)}" y="${f1(y)}" width="${W}" height="${H}"/>`;
-  s+=`<line class="cdiv" x1="${x}" y1="${y+18}" x2="${x+W}" y2="${y+18}"/>`;
-  s+=`<line class="cdiv" x1="${x}" y1="${y+41}" x2="${x+W}" y2="${y+41}"/>`;
-  s+=`<line class="cdiv" x1="${x+140}" y1="${y+18}" x2="${x+140}" y2="${y+H}"/>`;
-  s+=`<line class="cdiv" x1="${x+70}" y1="${y+41}" x2="${x+70}" y2="${y+H}"/>`;
-  s+=`<text class="cartT" x="${x+7}" y="${y+12}">${esc(meta.title||'—')}</text>`;
-  const cell=(cx,cy,h,v)=>`<text class="carth" x="${cx}" y="${cy}">${h}</text><text class="cartx" x="${cx}" y="${cy+9}">${esc(v||'—')}</text>`;
-  s+=cell(x+7,y+27,'DESSINÉ',meta.author);
-  s+=cell(x+77,y+27,'DATE',meta.date);
-  s+=cell(x+7,y+49,'ÉCHELLE',meta.scale);
-  s+=cell(x+77,y+49,'INDICE',meta.rev);
-  s+=`<text class="carth" x="${x+146}" y="${y+27}">FOLIO</text><text class="cartT" x="${x+146}" y="${y+38}">${esc(meta.folio||'1')}</text>`;
-  s+=`<text class="carth" x="${x+146}" y="${y+49}">ATELIER</text><text class="cartx" x="${x+146}" y="${y+58}">Atelier Schéma</text>`;
+  const W=224,H=66, x=rx-W, y=by-H;
+  let s=`<g filter="url(#softsh)"><rect class="cbox" x="${f1(x)}" y="${f1(y)}" width="${W}" height="${H}"/></g>`;
+  s+=`<rect x="${f1(x)}" y="${f1(y)}" width="3.5" height="${H}" fill="#1668c2"/>`;
+  s+=`<line class="cdiv" x1="${x}" y1="${y+20}" x2="${x+W}" y2="${y+20}"/>`;
+  s+=`<line class="cdiv" x1="${x}" y1="${y+43}" x2="${x+W}" y2="${y+43}"/>`;
+  s+=`<line class="cdiv" x1="${x+152}" y1="${y+20}" x2="${x+152}" y2="${y+H}"/>`;
+  s+=`<line class="cdiv" x1="${x+80}" y1="${y+20}" x2="${x+80}" y2="${y+43}"/>`;
+  s+=`<line class="cdiv" x1="${x+80}" y1="${y+43}" x2="${x+80}" y2="${y+H}"/>`;
+  s+=`<text class="cartT" x="${x+11}" y="${y+13.5}">${esc(clip(meta.title||'—',34))}</text>`;
+  const cell=(cx,cy,h,v)=>`<text class="carth" x="${cx}" y="${cy}">${h}</text><text class="cartx" x="${cx}" y="${cy+10}">${esc(v||'—')}</text>`;
+  s+=cell(x+11,y+29,'DESSINÉ',meta.author);
+  s+=cell(x+87,y+29,'DATE',meta.date);
+  s+=cell(x+11,y+52,'ÉCHELLE',meta.scale);
+  s+=cell(x+87,y+52,'INDICE',meta.rev);
+  s+=`<text class="carth" x="${x+159}" y="${y+29}">FOLIO</text><text class="cartT" x="${x+159}" y="${y+39.5}">${esc(meta.folio||'1')}</text>`;
+  s+=`<text class="cartA" x="${x+159}" y="${y+59}">ATELIER·SCHÉMA</text>`;
   return s;
 }
 
 function railSvg(r){
   let s='';
-  if(r.kind==='terre'){ s+=`<line class="cab" x1="${f1(r.x0)}" y1="${f1(r.y)}" x2="${f1(r.x1)}" y2="${f1(r.y)}" stroke="${COL.green}"/>`;
-    s+=`<line class="cab" x1="${f1(r.x0)}" y1="${f1(r.y)}" x2="${f1(r.x1)}" y2="${f1(r.y)}" stroke="${COL.yellow}" stroke-dasharray="6 6"/>`; }
-  else { s+=`<line class="cab" x1="${f1(r.x0)}" y1="${f1(r.y)}" x2="${f1(r.x1)}" y2="${f1(r.y)}" stroke="${COL[r.color]||COL.misc}"/>`; }
-  s+=`<text class="rname" x="${f1(r.x1+9)}" y="${f1(r.y+4)}">${esc(r.name)}</text>`;
+  const col=r.kind==='terre'?COL.green:(COL[r.color]||COL.misc);
+  if(r.kind==='terre'){ s+=`<line class="bus" x1="${f1(r.x0)}" y1="${f1(r.y)}" x2="${f1(r.x1)}" y2="${f1(r.y)}" stroke="${COL.green}"/>`;
+    s+=`<line class="bus" x1="${f1(r.x0)}" y1="${f1(r.y)}" x2="${f1(r.x1)}" y2="${f1(r.y)}" stroke="${COL.yellow}" stroke-dasharray="7 7"/>`; }
+  else { s+=`<line class="bus" x1="${f1(r.x0)}" y1="${f1(r.y)}" x2="${f1(r.x1)}" y2="${f1(r.y)}" stroke="${col}"/>`; }
+  // étiquette en pastille au bout droit de la barre
+  const t=String(r.name), pw=Math.max(26,t.length*6.6+14), ph=15;
+  const px=r.x1+7, py=r.y-ph/2;
+  s+=`<rect class="rpill" x="${f1(px)}" y="${f1(py)}" width="${f1(pw)}" height="${ph}" rx="7.5"/>`;
+  s+=`<rect x="${f1(px+4)}" y="${f1(r.y-3)}" width="6" height="6" rx="1.5" fill="${col}"/>`;
+  s+=`<text class="rname" x="${f1(px+14)}" y="${f1(r.y+3.5)}">${esc(t)}</text>`;
   return s;
 }
 
@@ -851,11 +879,14 @@ function wireSvg(w,bridges){ const d=wirePath(w.pts,bridges);
 }
 
 const TCELL=13; // hauteur d'une cellule de borne
-function termCell(x,edgeY,side,label){ // cellule attenante au corps : le fil arrive sur le bord extérieur
+function termCell(x,edgeY,side,label){ // cellule de bornier attenante au corps, n° gravé dedans
   const t=label==null?'':String(label);
-  const cw=Math.max(15,t.length*6+7);
-  const ry=side==='top'?edgeY:(edgeY-TCELL);      // top : de 0 à TCELL ; bot : de h-TCELL à h
-  let s=`<rect class="borne" x="${f1(x-cw/2)}" y="${f1(ry)}" width="${f1(cw)}" height="${TCELL}" rx="2"/>`;
+  const cw=Math.max(22,t.length*6.2+9);
+  const ry=side==='top'?edgeY:(edgeY-TCELL);
+  let s=`<rect class="borne" x="${f1(x-cw/2)}" y="${f1(ry)}" width="${f1(cw)}" height="${TCELL}" rx="1.5"/>`;
+  // petit repère de serrage (trait central côté fil), comme sur un bornier réel
+  const wy=side==='top'?ry:(ry+TCELL);
+  s+=`<line x1="${f1(x)}" y1="${f1(wy)}" x2="${f1(x)}" y2="${f1(side==='top'?ry+3:ry+TCELL-3)}" class="sym-thin"/>`;
   if(t) s+=`<text class="bnum" x="${f1(x)}" y="${f1(ry+TCELL/2+3)}" text-anchor="middle">${esc(t)}</text>`;
   return s;
 }
@@ -863,21 +894,21 @@ function compSvg(c,sel){
   const tc=TCELL;
   let s=`<g transform="translate(${f1(c.x)},${f1(c.y)})">`;
   if(sel) s+=`<rect class="selbox" x="-5" y="-5" width="${c.w+10}" height="${c.h+10}" rx="3"/>`;
-  // corps entre les deux bandes de bornes
-  s+=`<rect class="sym" x="1" y="${tc}" width="${f1(c.w-2)}" height="${f1(c.h-2*tc)}" rx="3" fill="var(--sheet)"/>`;
+  // corps entre les deux bandes de bornes, ombre douce
+  s+=`<g filter="url(#softsh)"><rect class="body" x="1" y="${tc}" width="${f1(c.w-2)}" height="${f1(c.h-2*tc)}" rx="3.5"/></g>`;
   s+=`<text class="rep-in" x="${f1(c.w/2)}" y="${f1(c.h/2+4)}" text-anchor="middle">${esc(c.name)}</text>`;
   // bornes intégrées : haut = amont, bas = aval ; le fil touche le bord extérieur de la cellule
   c.topLbl.forEach(t=>{ s+=termCell(t.x,0,'top',t.label); });
   c.botLbl.forEach(t=>{ s+=termCell(t.x,c.h,'bot',t.label); });
   s+=`</g>`; return s;
 }
-function srcTerm(x,y,label,side){ const t=String(label||''); const tc=14, cw=Math.max(16,t.length*6+8);
+function srcTerm(x,y,label,side){ const t=String(label||''); const tc=13, cw=Math.max(22,t.length*6.2+9);
   const rx=side==='right'?(x-cw):(x-cw/2), ry=side==='right'?(y-tc/2):(y-tc);
-  return `<rect class="borne" x="${f1(rx)}" y="${f1(ry)}" width="${f1(cw)}" height="${tc}" rx="2"/><text class="bnum" x="${f1(rx+cw/2)}" y="${f1(ry+tc/2+3)}" text-anchor="middle">${esc(t)}</text>`; }
+  return `<rect class="borne" x="${f1(rx)}" y="${f1(ry)}" width="${f1(cw)}" height="${tc}" rx="1.5"/><text class="bnum" x="${f1(rx+cw/2)}" y="${f1(ry+tc/2+3)}" text-anchor="middle">${esc(t)}</text>`; }
 function sourceSvg(s){ const ly=v=>v-s.y;
   let g=`<g transform="translate(${f1(s.x)},${f1(s.y)})">`;
-  g+=`<rect class="sym" x="1" y="1" width="${f1(s.w-2)}" height="${f1(s.h-2)}" rx="3" fill="var(--sheet)"/>`;
-  g+=`<text class="rep-in" x="6" y="${f1(s.h/2+4)}" text-anchor="start">${esc(s.name)}</text>`;
+  g+=`<g filter="url(#softsh)"><rect class="body" x="1" y="1" width="${f1(s.w-2)}" height="${f1(s.h-2)}" rx="3.5"/></g>`;
+  g+=`<text class="rep-in" x="7" y="${f1(s.h/2+4)}" text-anchor="start">${esc(s.name)}</text>`;
   s.phases.forEach(r=>{ g+=srcTerm(s.w, ly(r.y), r.name, 'right'); });
   s.others.forEach(r=>{ const t=s.termByRail.get(r.name); g+=srcTerm(t.ax-s.x, s.h, r.name, 'bot'); });
   return g+`</g>`; }
@@ -892,7 +923,7 @@ function sceneInner(layout,routing){
   layout.rails.forEach(r=>body+=railSvg(r));
   // câbles : aucun nom sur le dessin — toutes les infos au clic
   routing.wires.forEach(w=>body+=wireSvg(w,routing.bridges));
-  routing.dots.forEach(d=>body+=`<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="3"/>`);
+  routing.dots.forEach(d=>body+=`<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="2.7"/>`);
   layout.srcs.forEach(s=>body+=sourceSvg(s));
   layout.comps.forEach(c=>body+=compSvg(c,state.sel===c.name));
   return body;
