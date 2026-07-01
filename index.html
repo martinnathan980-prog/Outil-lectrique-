@@ -413,11 +413,13 @@ const SYM={
      return `<line x1="${cx}" y1="0" x2="${cx}" y2="${cy-r}" class="w-int"/><circle cx="${cx}" cy="${cy}" r="${r}" class="sym" fill="var(--sheet)"/><text x="${cx}" y="${cy+4}" class="sym-txt" text-anchor="middle">A</text><line x1="${cx}" y1="${cy+r}" x2="${cx}" y2="${h}" class="w-int"/>`; }};},
   sensor:(t,b)=>{ const w=40,h=44,cx=w/2; return {w,h,topX:[cx],botX:[cx],draw(){
      return `<line x1="${cx}" y1="0" x2="${cx}" y2="9" class="w-int"/><path d="M ${cx} 9 L ${cx-11} 24 L ${cx+11} 24 Z" class="sym" fill="var(--sheet)"/><line x1="${cx}" y1="24" x2="${cx}" y2="${h}" class="w-int"/>`; }};},
-  box:(t,b)=>{ const poles=Math.max(1,t,b); const w=Math.max(48,(poles-1)*POLE+30),h=50;
-     const tx=spread(w,Math.max(1,t)),bx=spread(w,Math.max(1,b));
-     return {w,h,topX:tx,botX:bx,draw(){ let s=`<rect x="2" y="6" width="${w-4}" height="${h-12}" rx="2" class="sym" fill="var(--sheet)"/>`;
-       tx.forEach(x=>s+=`<line x1="${x}" y1="0" x2="${x}" y2="6" class="w-int"/>`);
-       bx.forEach(x=>s+=`<line x1="${x}" y1="${h-6}" x2="${x}" y2="${h}" class="w-int"/>`); return s; }};},
+  box:(t,b)=>{ const tN=Math.max(1,t), bN=Math.max(1,b); const poles=Math.max(tN,bN); const cellW=28;
+     const w=Math.max(52,poles*cellW+6),h=54;
+     const xs=n=>Array.from({length:n},(_,i)=>w/2+(i-(n-1)/2)*cellW);
+     const tx=xs(tN),bx=xs(bN);
+     return {w,h,topX:tx,botX:bx,draw(){ let s=`<rect x="2" y="8" width="${w-4}" height="${h-16}" rx="3" class="sym" fill="var(--sheet)"/>`;
+       tx.forEach(x=>s+=`<line x1="${x}" y1="0" x2="${x}" y2="8" class="w-int"/>`);
+       bx.forEach(x=>s+=`<line x1="${x}" y1="${h-8}" x2="${x}" y2="${h}" class="w-int"/>`); return s; }};},
   disconnect:(t,b)=>{ const poles=Math.max(1,t,b); const cellW=24, w=poles*cellW+6, h=56;
      const xs=Array.from({length:poles},(_,i)=>3+cellW/2+i*cellW);
      return {w,h,topX:xs,botX:xs,draw(){ let s=`<rect x="2" y="9" width="${w-4}" height="${h-18}" rx="3" class="sym" fill="var(--sheet)"/>`;
@@ -760,8 +762,8 @@ function defs(){
      .rep-in{fill:#15202b;font-weight:700;font-size:10.5px}
      .des{fill:#637085;font-size:8.6px}
      .term{fill:#8893a0;font-size:7.6px}
-     .bterm{fill:#1f2b36;stroke:#fbfbf7;stroke-width:.6}
-     .tnum{fill:#1f2b36;font-size:8.5px;font-weight:700}
+     .borne{fill:#ffffff;stroke:#1f2b36;stroke-width:1.1}
+     .bnum{fill:#1f2b36;font-size:8.5px;font-weight:700}
      .rname{fill:#46535f;font-weight:700;font-size:11px}
      .ctag{fill:#5b6775;font-size:8px;font-weight:600}
      .frame{fill:none;stroke:#aeb7c2;stroke-width:1.3}
@@ -834,9 +836,11 @@ function wireSvg(w,bridges){ const d=wirePath(w.pts,bridges);
   return `<path class="cab" d="${d}" stroke="${w.color}"/>`;
 }
 
-function termMark(x,y,side,label){ // bornier : petit rond de borne + numéro
-  let s=`<circle class="bterm" cx="${f1(x)}" cy="${f1(y)}" r="2.6"/>`;
-  if(label) s+=`<text class="tnum" x="${f1(x)}" y="${f1(side==='top'?y-5:y+11)}" text-anchor="middle">${esc(label)}</text>`;
+function termMark(x,y,label){ // vraie cellule de bornier : rectangle arrondi avec le n° dedans
+  const t=label==null?'':String(label);
+  const w=Math.max(14,t.length*6.2+7), h=14;
+  let s=`<rect class="borne" x="${f1(x-w/2)}" y="${f1(y-h/2)}" width="${f1(w)}" height="${h}" rx="3"/>`;
+  if(t) s+=`<text class="bnum" x="${f1(x)}" y="${f1(y+3)}" text-anchor="middle">${esc(t)}</text>`;
   return s;
 }
 function compSvg(c,sel){
@@ -845,9 +849,9 @@ function compSvg(c,sel){
   s+=c.proto.draw();
   // carré : repère au centre uniquement (le reste des infos au clic)
   s+=`<text class="rep-in" x="${f1(c.w/2)}" y="${f1(c.h/2+4)}" text-anchor="middle">${esc(c.name)}</text>`;
-  // borniers numérotés là où les câbles arrivent
-  c.topLbl.forEach(t=>{ s+=termMark(t.x,0,'top',t.label); });
-  c.botLbl.forEach(t=>{ s+=termMark(t.x,c.h,'bot',t.label); });
+  // borniers numérotés là où les câbles arrivent (haut = amont, bas = aval)
+  c.topLbl.forEach(t=>{ s+=termMark(t.x,0,t.label); });
+  c.botLbl.forEach(t=>{ s+=termMark(t.x,c.h,t.label); });
   s+=`</g>`; return s;
 }
 function sourceSvg(s){ let g=`<g transform="translate(${f1(s.x)},${f1(s.y)})">`+s.proto.draw();
