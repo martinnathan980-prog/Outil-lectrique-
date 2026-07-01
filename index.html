@@ -132,9 +132,9 @@ main{grid-area:main;position:relative;overflow:hidden;background:#e3e6ea}
       <div class="psec" id="sec-eq">
         <div class="phead" data-sec="sec-eq"><span class="chev">▾</span><h3>Équipements</h3><span class="count" id="cnt-eq">0</span></div>
         <div class="pbody">
-          <table class="grid" id="tbl-eq"><thead><tr><th>Repère</th><th>Désignation</th><th>Détaillé</th><th></th></tr></thead><tbody></tbody></table>
+          <table class="grid" id="tbl-eq"><thead><tr><th>Repère</th><th>Désignation</th><th></th></tr></thead><tbody></tbody></table>
           <button class="ghost addrow" id="add-eq">+ ligne</button>
-          <div class="hint" style="margin-top:6px">Détaillé = symbole normé IEC ; sinon boîte simple avec repère à l'intérieur.</div>
+          <div class="hint" style="margin-top:6px">Tous les équipements sont dessinés en carré avec bornes numérotées. Clique un carré ou un fil pour toutes les infos.</div>
         </div>
       </div>
       <div class="psec" id="sec-lk">
@@ -224,6 +224,7 @@ main{grid-area:main;position:relative;overflow:hidden;background:#e3e6ea}
   <option value="voyant"></option><option value="interrupteur"></option><option value="bouton"></option>
   <option value="transformateur"></option><option value="source"></option><option value="capteur"></option><option value="relais"></option>
 </datalist>
+<script src="xlsx.full.min.js"></script>
 <style>
   .bscroll{overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:8px;background:#fbfbf7;padding:10px}
   .bscroll svg{display:block;margin:0 auto}
@@ -235,6 +236,12 @@ main{grid-area:main;position:relative;overflow:hidden;background:#e3e6ea}
   .imode{display:flex;gap:6px;margin-bottom:10px}
   .imode .seg{flex:1;background:var(--chrome3);border:1px solid var(--line);color:var(--ink-dim)}
   .imode .seg.on{background:var(--accent-dim);border-color:var(--accent);color:#eaf3fc}
+  .infoline{display:flex;justify-content:space-between;gap:10px;padding:5px 2px;border-bottom:1px solid #262c34;font-family:var(--mono);font-size:11.5px}
+  .infoline .k{color:var(--ink-faint)} .infoline .v{color:var(--ink);text-align:right}
+  .btbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;margin-top:4px}
+  .btbl th{color:var(--ink-faint);font-weight:500;font-size:9px;text-transform:uppercase;text-align:left;padding:2px 5px;border-bottom:1px solid var(--line)}
+  .btbl td{padding:3px 5px;border-bottom:1px solid #23282f;color:var(--ink)}
+  .btbl .bn{color:var(--accent);font-weight:700}
   .dropzone{border:2px dashed var(--line);border-radius:10px;background:#f7f8fa;padding:18px 14px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
   .dropzone:hover{border-color:var(--accent-dim);background:#f0f5fb}
   .dropzone.over{border-color:var(--accent);background:#e7f0fb}
@@ -302,10 +309,6 @@ function symbolKeyFor(eq){ const ty=String(eq.type||'').trim().toLowerCase();
   if(ty&&TYPE2SYM[ty]) return TYPE2SYM[ty]; return inferType(eq.repere).s; }
 function roleFor(eq){ const ty=String(eq.type||'').trim().toLowerCase();
   if(ty){ for(const k in PREFIX) if(PREFIX[k].t===ty) return PREFIX[k].r; } return inferType(eq.repere).r; }
-function isDetailed(eq){
-  if(eq.detailed===true) return true; if(eq.detailed===false) return false;
-  const k=symbolKeyFor(eq); return k==='source'||k==='motor'||k==='contactor';
-}
 const SOH='';
 function pin(node,term){ return node+SOH+(term||''); }
 
@@ -440,7 +443,8 @@ function computeLayout(eq, lk){
 
   const comps=new Map();
   for(const n of compNames){ const e=byRep.get(n)||{repere:n,designation:'',type:''};
-    comps.set(n,{repere:n,designation:e.designation||'',type:e.type||'',sym:symbolKeyFor(e),role:roleFor(e),detailed:isDetailed(e)}); }
+    // tout est rendu en carré (boîte) avec bornes numérotées ; le rôle sert au placement
+    comps.set(n,{repere:n,designation:e.designation||'',type:e.type||'',sym:'box',role:roleFor(e)}); }
 
   // adjacence comp<->comp
   const adj=new Map([...compNames].map(n=>[n,new Set()]));
@@ -520,8 +524,9 @@ function computeLayout(eq, lk){
     srcList.push({name:s,o,x,y,w:proto.w,h:proto.h,proto}); posY.set(s,y+proto.h/2); posX.set(s,x+proto.w/2); });
 
   // registre de bornes par comp (gère bornes sans nom -> clés synthétiques)
-  const compTermReg=new Map(); // name -> {top:[{key,label}], bot:[...], nameToKey:Map, sideOf:Map}
-  function reg(name){ if(!compTermReg.has(name)) compTermReg.set(name,{top:[],bot:[],nameToKey:new Map(),sideOf:new Map(),cnt:0}); return compTermReg.get(name); }
+  // Registre par côté : une borne peut exister en haut ET en bas (bornier traversant).
+  const compTermReg=new Map(); // name -> {top:[{key,label}], bot:[...], topKey:Map, botKey:Map, cnt}
+  function reg(name){ if(!compTermReg.has(name)) compTermReg.set(name,{top:[],bot:[],topKey:new Map(),botKey:new Map(),cnt:0}); return compTermReg.get(name); }
   const endKey=new Map(); // (linkIdx+':'+end) -> {name,key}
   lk.forEach((l,li)=>{
     [['from','fromTerm','to','A'],['to','toTerm','from','B']].forEach(([a,at,b,tag])=>{
@@ -529,16 +534,10 @@ function computeLayout(eq, lk){
       const label=String(l[at]||''); const other=l[b];
       const R=reg(name);
       const ym=yOf(name), yo=yOf(other); const side=(yo!=null&&ym!=null&&yo<ym)?'top':'bot';
-      const isDisc=comps.get(name).sym==='disconnect';
+      const list=side==='top'?R.top:R.bot, km=side==='top'?R.topKey:R.botKey;
       let key;
-      if(isDisc){
-        if(label){ const dk=label+'|'+side;
-          if(R.nameToKey.has(dk)) key=R.nameToKey.get(dk);
-          else { key='d:'+label+':'+side; R.nameToKey.set(dk,key); (side==='top'?R.top:R.bot).push({key,label,bl:label}); } }
-        else { key='d:p'+(R.cnt++)+':'+side; (side==='top'?R.top:R.bot).push({key,label:'',bl:'·'}); }
-      } else if(label && R.nameToKey.has(label)){ key=R.nameToKey.get(label); }
-      else { key=label?('n:'+label):('p'+(R.cnt++)); if(label)R.nameToKey.set(label,key);
-        R.sideOf.set(key,side); (side==='top'?R.top:R.bot).push({key,label,bl:label}); }
+      if(label && km.has(label)){ key=km.get(label); }        // même borne, même côté → un seul point
+      else { key=(label?('n:'+label):('p'+(R.cnt++)))+':'+side; if(label)km.set(label,key); list.push({key,label,bl:label}); }
       endKey.set(li+':'+tag,{name,key});
     });
   });
@@ -547,26 +546,13 @@ function computeLayout(eq, lk){
   const compList=[]; const compByName=new Map();
   for(const n of compNames){ if(srcSet.has(n)||!posX.has(n))continue;
     const o=comps.get(n); const R=reg(n);
-    if(o.sym==='disconnect'){
-      const order=[]; const seen=new Set();
-      R.top.concat(R.bot).forEach(t=>{ if(!seen.has(t.bl)){seen.add(t.bl);order.push(t.bl);} });
-      if(!order.length) order.push('·');
-      const proto=o.detailed?SYM.disconnect(order.length,order.length):SYM.disconnect_simple(order.length,order.length); const w=proto.w,h=proto.h;
-      const X=posX.get(n)-w/2, Y=posY.get(n)-h/2; const byKey=new Map(); const topLbl=[];
-      const xOf=bl=>proto.topX[order.indexOf(bl)]??(w/2);
-      R.top.forEach(t=>byKey.set(t.key,{ax:X+xOf(t.bl),ay:Y,side:'top',label:t.label}));
-      R.bot.forEach(t=>byKey.set(t.key,{ax:X+xOf(t.bl),ay:Y+h,side:'bot',label:t.label}));
-      order.forEach(bl=>topLbl.push({x:xOf(bl),label:bl}));
-      const c={name:n,o,x:X,y:Y,w,h,proto,byKey,topLbl,botLbl:[],bornes:order,simple:!o.detailed}; compList.push(c); compByName.set(n,c); continue;
-    }
     const tN=Math.max(1,R.top.length), bN=Math.max(1,R.bot.length);
-    const vsym=o.detailed?o.sym:'box';
-    const proto=(SYM[vsym]||SYM.box)(tN,bN); const w=proto.w,h=proto.h;
+    const proto=SYM.box(tN,bN); const w=proto.w,h=proto.h;
     const X=posX.get(n)-w/2, Y=posY.get(n)-h/2;
     const byKey=new Map(); const topLbl=[],botLbl=[];
     R.top.forEach((t,i)=>{ const lx=proto.topX[i]??(w/2); byKey.set(t.key,{ax:X+lx,ay:Y,side:'top',label:t.label}); topLbl.push({x:lx,label:t.label}); });
     R.bot.forEach((t,i)=>{ const lx=proto.botX[i]??(w/2); byKey.set(t.key,{ax:X+lx,ay:Y+h,side:'bot',label:t.label}); botLbl.push({x:lx,label:t.label}); });
-    const c={name:n,o,x:X,y:Y,w,h,proto,byKey,topLbl,botLbl,simple:!o.detailed}; compList.push(c); compByName.set(n,c); }
+    const c={name:n,o,x:X,y:Y,w,h,proto,byKey,topLbl,botLbl}; compList.push(c); compByName.set(n,c); }
 
   // rails objets
   const rails=[];
@@ -774,6 +760,8 @@ function defs(){
      .rep-in{fill:#15202b;font-weight:700;font-size:10.5px}
      .des{fill:#637085;font-size:8.6px}
      .term{fill:#8893a0;font-size:7.6px}
+     .bterm{fill:#1f2b36;stroke:#fbfbf7;stroke-width:.6}
+     .tnum{fill:#1f2b36;font-size:8.5px;font-weight:700}
      .rname{fill:#46535f;font-weight:700;font-size:11px}
      .ctag{fill:#5b6775;font-size:8px;font-weight:600}
      .frame{fill:none;stroke:#aeb7c2;stroke-width:1.3}
@@ -846,27 +834,24 @@ function wireSvg(w,bridges){ const d=wirePath(w.pts,bridges);
   return `<path class="cab" d="${d}" stroke="${w.color}"/>`;
 }
 
+function termMark(x,y,side,label){ // bornier : petit rond de borne + numéro
+  let s=`<circle class="bterm" cx="${f1(x)}" cy="${f1(y)}" r="2.6"/>`;
+  if(label) s+=`<text class="tnum" x="${f1(x)}" y="${f1(side==='top'?y-5:y+11)}" text-anchor="middle">${esc(label)}</text>`;
+  return s;
+}
 function compSvg(c,sel){
   let s=`<g transform="translate(${f1(c.x)},${f1(c.y)})">`;
   if(sel) s+=`<rect class="selbox" x="-5" y="-5" width="${c.w+10}" height="${c.h+10}" rx="3"/>`;
   s+=c.proto.draw();
-  const des=c.o.designation?esc(clip(c.o.designation,22)):'';
-  if(c.simple){
-    // boîte : repère au centre, désignation à droite (jamais dessous → pas de collision verticale)
-    s+=`<text class="rep-in" x="${f1(c.w/2)}" y="${f1(c.h/2+4)}" text-anchor="middle">${esc(c.name)}</text>`;
-    if(des) s+=`<text class="des" x="${c.w+8}" y="${f1(c.h/2+3)}">${des}</text>`;
-  } else {
-    // symbole normé : repère + désignation empilés en haut à droite
-    s+=`<text class="rep" x="${c.w+8}" y="11">${esc(c.name)}</text>`;
-    if(des) s+=`<text class="des" x="${c.w+8}" y="22">${des}</text>`;
-  }
-  c.topLbl.forEach(t=>{ if(t.label) s+=`<text class="term" x="${f1(t.x-3)}" y="-3" text-anchor="end">${esc(t.label)}</text>`; });
-  c.botLbl.forEach(t=>{ if(t.label) s+=`<text class="term" x="${f1(t.x-3)}" y="${c.h+9}" text-anchor="end">${esc(t.label)}</text>`; });
+  // carré : repère au centre uniquement (le reste des infos au clic)
+  s+=`<text class="rep-in" x="${f1(c.w/2)}" y="${f1(c.h/2+4)}" text-anchor="middle">${esc(c.name)}</text>`;
+  // borniers numérotés là où les câbles arrivent
+  c.topLbl.forEach(t=>{ s+=termMark(t.x,0,'top',t.label); });
+  c.botLbl.forEach(t=>{ s+=termMark(t.x,c.h,'bot',t.label); });
   s+=`</g>`; return s;
 }
 function sourceSvg(s){ let g=`<g transform="translate(${f1(s.x)},${f1(s.y)})">`+s.proto.draw();
-  g+=`<text class="rep" x="${s.w/2}" y="${s.h+13}" text-anchor="middle">${esc(s.name)}</text>`;
-  if(s.o.designation) g+=`<text class="des" x="${s.w/2}" y="${s.h+24}" text-anchor="middle">${esc(s.o.designation.slice(0,22))}</text>`;
+  g+=`<text class="rep-in" x="${s.w/2}" y="${f1(s.h/2+4)}" text-anchor="middle">${esc(s.name)}</text>`;
   return g+`</g>`; }
 
 let LAST=null;
@@ -877,18 +862,8 @@ function cableTag(mx,my,vert,name,color){ const w=Math.max(20,name.length*6.4+10
 function sceneInner(layout,routing){
   let body=sheetSvg(layout.bbox,state.meta);
   layout.rails.forEach(r=>body+=railSvg(r));
+  // câbles : aucun nom sur le dessin — toutes les infos au clic
   routing.wires.forEach(w=>body+=wireSvg(w,routing.bridges));
-  const hasCables=routing.wires.some(w=>w.cable);
-  const tagged=new Set();
-  if(hasCables){
-    routing.wires.forEach(w=>{ if(!w.cable||tagged.has(w.cable))return; tagged.add(w.cable);
-      const sg=longestSeg(w.pts); if(sg&&sg.len>24) body+=cableTag(sg.mx,sg.my,sg.vert,w.cable,w.color); });
-  } else {
-    const internal=new Map(); let wn=0;
-    for(const [root,net] of layout.nets){ const hasRail=net.pins.some(p=>layout.isRail(p.split(SOH)[0])); if(!hasRail) internal.set(root,++wn); }
-    routing.wires.forEach(w=>{ const num=internal.get(w.net); if(num&&!tagged.has(w.net)){ tagged.add(w.net);
-      const sg=longestSeg(w.pts); if(sg&&sg.len>22) body+=numTag(sg.mx,sg.my,num); } });
-  }
   routing.dots.forEach(d=>body+=`<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="3"/>`);
   layout.srcs.forEach(s=>body+=sourceSvg(s));
   layout.comps.forEach(c=>body+=compSvg(c,state.sel===c.name));
@@ -907,7 +882,7 @@ function render(){
   const noFilter = !plansOf(state.lk).length || state.plan==='*' || !state.plan;
   if(noFilter) state.eq.forEach(e=>names.add(e.repere));
   const byR=new Map(state.eq.map(e=>[e.repere,e]));
-  const eq=[]; names.forEach(n=>{ if(RAIL_RE.test(String(n).trim())&&!byR.has(n))return; const m=byR.get(n); eq.push({repere:n,designation:(m&&m.designation)||'',type:(m&&m.type)||'',detailed:m?m.detailed:undefined}); });
+  const eq=[]; names.forEach(n=>{ if(RAIL_RE.test(String(n).trim())&&!byR.has(n))return; const m=byR.get(n); eq.push({repere:n,designation:(m&&m.designation)||'',type:(m&&m.type)||''}); });
   const layout=computeLayout(eq,lkF);
   const routing=routeAll(layout);
   LAST={layout,routing};
@@ -975,13 +950,9 @@ function parseDB(){ const {links}=parseSchedule(document.getElementById('imp-db'
   syncTables(); syncPlans(); render(); fit(); closeModal();
 }
 
-/* ---------- Import de fichier : CSV (natif) + Excel (.xlsx/.xls via SheetJS) --- */
-const XLSX_SRC='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
-let _xlsxP=null;
+/* ---------- Import de fichier : CSV (natif) + Excel (.xlsx/.xls via SheetJS local) --- */
 function ensureXLSX(){ if(window.XLSX) return Promise.resolve();
-  if(!_xlsxP) _xlsxP=new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=XLSX_SRC;
-    s.onload=()=>res(); s.onerror=()=>rej(new Error('Chargement de la bibliothèque Excel impossible (connexion requise à la 1re utilisation).')); document.head.appendChild(s); });
-  return _xlsxP; }
+  return Promise.reject(new Error('Bibliothèque Excel absente (xlsx.full.min.js). Garde ce fichier à côté d’index.html, ou importe un CSV.')); }
 function dbInfo(msg,cls){ const el=document.getElementById('db-fileinfo'); if(!el)return; el.textContent=msg||''; el.className='dz-info'+(cls?(' '+cls):''); }
 function rowsToText(rows){ // tableau de tableaux -> texte tabulé, cellules vides gérées
   return rows.map(r=>(Array.isArray(r)?r:[r]).map(c=>c==null?'':String(c)).join('\t')).join('\n'); }
@@ -1033,6 +1004,13 @@ function svgRect(){ return document.getElementById('svg').getBoundingClientRect(
 function screenToWorld(cx,cy){ const r=svgRect(); return {x:(cx-r.left-state.view.tx)/state.view.s,y:(cy-r.top-state.view.ty)/state.view.s}; }
 function hitComp(w){ if(!LAST)return null; const cs=LAST.layout.comps;
   for(let i=cs.length-1;i>=0;i--){ const c=cs[i]; if(w.x>=c.x-5&&w.x<=c.x+c.w+5&&w.y>=c.y-5&&w.y<=c.y+c.h+5) return c; } return null; }
+function segDist(px,py,ax,ay,bx,by){ const dx=bx-ax,dy=by-ay; const L2=dx*dx+dy*dy;
+  let t=L2?((px-ax)*dx+(py-ay)*dy)/L2:0; t=Math.max(0,Math.min(1,t));
+  const qx=ax+t*dx, qy=ay+t*dy; return Math.hypot(px-qx,py-qy); }
+function hitWire(w){ if(!LAST||!LAST.routing)return null; const tol=Math.max(4,6/state.view.s);
+  let best=null,bd=tol; for(const wire of LAST.routing.wires){ const p=wire.pts; if(!p)continue;
+    for(let i=0;i<p.length-1;i++){ const d=segDist(w.x,w.y,p[i].x,p[i].y,p[i+1].x,p[i+1].y); if(d<bd){bd=d;best=wire;} } }
+  return best; }
 function fit(){ if(!LAST){state.view={s:1,tx:40,ty:40};applyView();return;} const bb=LAST.layout.bbox, r=svgRect();
   const s=Math.min(r.width/bb.w,r.height/bb.h)*0.92; state.view.s=Math.max(.12,Math.min(6,s));
   state.view.tx=(r.width-bb.w*state.view.s)/2 - bb.x*state.view.s; state.view.ty=(r.height-bb.h*state.view.s)/2 - bb.y*state.view.s; applyView(); }
@@ -1069,8 +1047,9 @@ stage.addEventListener('pointermove',e=>{
 function endPointer(e){ try{stage.releasePointerCapture(e.pointerId);}catch(_){}
   const wasPinch=mode==='pinch'; pointers.delete(e.pointerId);
   if(wasPinch){ if(pointers.size<2){ mode=null; pinch=null; } return; }
-  if(mode==='drag'&&!moved){ const c=hitComp(screenToWorld(e.clientX,e.clientY)); if(c){ if(c.o.sym==='disconnect') openBornier(c); else openEditor(c,e.clientX,e.clientY); } }
-  if(mode==='pan'&&!moved){ state.sel=null; render(); }
+  if(mode==='drag'&&!moved){ const c=hitComp(screenToWorld(e.clientX,e.clientY)); if(c) openEditor(c,e.clientX,e.clientY); }
+  if(mode==='pan'&&!moved){ const wr=hitWire(screenToWorld(e.clientX,e.clientY));
+    if(wr){ openCable(wr,e.clientX,e.clientY); } else { state.sel=null; render(); } }
   mode=null; drag=null; pan=null;
 }
 stage.addEventListener('pointerup',endPointer);
@@ -1083,26 +1062,54 @@ stage.addEventListener('wheel',e=>{ e.preventDefault(); const r=svgRect(); const
 
 /* ---- éditeur d'équipement ---- */
 function closePop(){ const p=document.getElementById('pop'); p.style.display='none'; }
-function openEditor(c,sx,sy){
-  const p=document.getElementById('pop');
-  p.innerHTML=`<h5>Équipement</h5>
+function popAt(p,sx,sy,w){ p.style.width=(w||230)+'px'; p.style.display='block';
+  const pr=svgRect(); let L=sx-pr.left+12, T=sy-pr.top+12;
+  L=Math.min(L, pr.width-(w||230)-12); T=Math.min(T, pr.height-200);
+  p.style.left=Math.max(8,L)+'px'; p.style.top=Math.max(8,T)+'px'; }
+function connectionsOf(name){ const out=[];
+  state.lk.forEach(l=>{ if(l.from===name) out.push({borne:l.fromTerm||'·',dest:l.to,dt:l.toTerm||'',cable:l.cable||'',ctype:l.ctype||'',plan:l.plan||'',pn:l.pn1||'',nature:l.nature||''});
+    else if(l.to===name) out.push({borne:l.toTerm||'·',dest:l.from,dt:l.fromTerm||'',cable:l.cable||'',ctype:l.ctype||'',plan:l.plan||'',pn:l.pn2||'',nature:l.nature||''}); });
+  out.sort((a,b)=>{ const na=parseFloat(a.borne),nb=parseFloat(b.borne); if(!isNaN(na)&&!isNaN(nb))return na-nb; return String(a.borne).localeCompare(String(b.borne)); });
+  return out; }
+function openEditor(c,sx,sy){ state.sel=c.name; render();
+  const p=document.getElementById('pop'); const cn=connectionsOf(c.name);
+  const rows=cn.length?cn.map(x=>`<tr><td class="bn">${esc(x.borne)}</td><td>${esc(x.dest)}${x.dt?(':'+esc(x.dt)):''}</td><td>${esc(x.cable||'—')}${x.ctype?(' '+esc(x.ctype)):''}${x.plan?(' · pl.'+esc(x.plan)):''}</td></tr>`).join('')
+    : `<tr><td colspan="3" style="color:var(--ink-faint);text-align:center;padding:8px">Aucun raccordement</td></tr>`;
+  p.innerHTML=`<h5>Équipement — ${esc(c.name)}</h5>
     <div class="field"><label>Repère</label><input id="ed-rep" value="${esc(c.name)}"></div>
     <div class="field"><label>Désignation</label><input id="ed-des" value="${esc(c.o.designation||'')}"></div>
-    <div class="field"><label>Type (vide = auto)</label><input id="ed-typ" list="types" value="${esc(c.o.type||'')}" placeholder="${esc(inferType(c.name).t)}"></div>
-    <div class="field" style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="ed-det" ${c.o.detailed?'checked':''} style="width:auto"><label style="text-transform:none;font-size:11px">Symbole détaillé (normé)</label></div>
+    <div class="field"><label>Type</label><input id="ed-typ" list="types" value="${esc(c.o.type||'')}" placeholder="${esc(inferType(c.name).t)}"></div>
+    <div style="margin-top:8px;font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint)">Bornes & raccordements</div>
+    <div style="max-height:150px;overflow:auto"><table class="btbl"><thead><tr><th>Borne</th><th>Vers</th><th>Câble</th></tr></thead><tbody>${rows}</tbody></table></div>
     <div class="actions"><button class="primary" id="ed-ok">Enregistrer</button><button id="ed-del">Supprimer</button><button class="ghost" id="ed-close">Fermer</button></div>`;
-  p.style.display='block'; const pr=svgRect(); let L=sx-pr.left+12, T=sy-pr.top+12;
-  L=Math.min(L, pr.width-250); T=Math.min(T, pr.height-180); p.style.left=Math.max(8,L)+'px'; p.style.top=Math.max(8,T)+'px';
+  popAt(p,sx,sy,290);
   document.getElementById('ed-close').onclick=closePop;
   document.getElementById('ed-ok').onclick=()=>{ const nr=document.getElementById('ed-rep').value.trim()||c.name;
     const nd=document.getElementById('ed-des').value, nt=document.getElementById('ed-typ').value.trim();
-    const ndet=document.getElementById('ed-det').checked;
     if(nr!==c.name){ state.lk.forEach(l=>{ if(l.from===c.name)l.from=nr; if(l.to===c.name)l.to=nr; });
       if(OVR.has(c.name)){ OVR.set(nr,OVR.get(c.name)); OVR.delete(c.name); } }
     let e=state.eq.find(x=>x.repere===c.name||x.repere===nr); if(!e){ e={repere:nr,designation:'',type:''}; state.eq.push(e); }
-    e.repere=nr; e.designation=nd; e.type=nt; e.detailed=ndet; state.sel=nr; closePop(); syncTables(); render(); };
+    e.repere=nr; e.designation=nd; e.type=nt; state.sel=nr; closePop(); syncTables(); render(); };
   document.getElementById('ed-del').onclick=()=>{ state.lk=state.lk.filter(l=>l.from!==c.name&&l.to!==c.name);
     state.eq=state.eq.filter(x=>x.repere!==c.name); OVR.delete(c.name); state.sel=null; closePop(); syncTables(); render(); };
+}
+function openCable(wr,sx,sy){
+  const p=document.getElementById('pop');
+  const cores = wr.cable ? state.lk.filter(l=>l.cable===wr.cable) : null;
+  const line=(k,v)=>v?`<div class="infoline"><span class="k">${k}</span><span class="v">${esc(v)}</span></div>`:'';
+  const de=wr.from+(wr.fromTerm?(':'+wr.fromTerm):''), vers=wr.to+(wr.toTerm?(':'+wr.toTerm):'');
+  let body=`<h5>${wr.cable?('Câble — '+esc(wr.cable)):'Conducteur'}</h5>`;
+  body+=`<div style="border-left:4px solid ${wr.color};padding-left:8px;margin-bottom:6px">`;
+  body+=line('De',de)+line('Vers',vers)+line('Type / section',wr.ctype)+line('Route',wr.route)+line('Plan',wr.plan)
+       +line('Nature',wr.nature)+line('Potentiel dép.',wr.pn1)+line('Potentiel arr.',wr.pn2);
+  body+=`</div>`;
+  if(cores&&cores.length>1){ body+=`<div style="font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--ink-faint);margin-top:4px">Conducteurs du câble (${cores.length})</div>`;
+    body+=`<div style="max-height:130px;overflow:auto"><table class="btbl"><tbody>`+
+      cores.map(l=>`<tr><td>${esc(l.from)}${l.fromTerm?(':'+esc(l.fromTerm)):''}</td><td>→</td><td>${esc(l.to)}${l.toTerm?(':'+esc(l.toTerm)):''}</td><td class="bn">${esc(l.pn1||l.pn2||'')}</td></tr>`).join('')+
+      `</tbody></table></div>`; }
+  body+=`<div class="actions"><button class="ghost" id="cb-close">Fermer</button></div>`;
+  p.innerHTML=body; popAt(p,sx,sy,250);
+  document.getElementById('cb-close').onclick=closePop;
 }
 function openEditorByName(name){ const c=LAST&&LAST.layout.compByName.get(name); if(!c)return; const r=svgRect(); openEditor(c,r.left+r.width/2,r.top+110); }
 
@@ -1167,7 +1174,6 @@ function syncTables(){
   eb.innerHTML=state.eq.map((e,i)=>`<tr>
     <td><input data-k="eq" data-i="${i}" data-f="repere" value="${esc(e.repere)}"></td>
     <td><input data-k="eq" data-i="${i}" data-f="designation" value="${esc(e.designation||'')}"></td>
-    <td style="text-align:center"><input type="checkbox" data-k="eq" data-i="${i}" data-f="detailed" ${isDetailed(e)?'checked':''} style="width:auto"></td>
     <td class="rmrow" data-rm="eq" data-i="${i}">✕</td></tr>`).join('');
   const lb=document.querySelector('#tbl-lk tbody');
   lb.innerHTML=state.lk.map((l,i)=>`<tr>
@@ -1217,7 +1223,7 @@ function closeModal(){ document.getElementById('modal').style.display='none'; }
 const SAMPLE={
   eq:[
     {repere:'G1',designation:'Réseau 400V/N',type:''},
-    {repere:'Q1',designation:'Disjoncteur 2P 16A',type:'',detailed:true},
+    {repere:'Q1',designation:'Disjoncteur 2P 16A',type:''},
     {repere:'X1',designation:'Prise 2P+T 16A',type:''},
     {repere:'Q2',designation:'Disjoncteur 1P 10A',type:''},
     {repere:'S1',designation:'Interrupteur',type:''},
