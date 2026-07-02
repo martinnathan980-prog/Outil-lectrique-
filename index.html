@@ -323,18 +323,19 @@ function buildNets(lk){
   return {find,nets};
 }
 
-/* ---------- 5. Placement : équipements (corps + borniers de flanc) ---------- */
-const PRH=16, STRIPW=30, BODYW=104, BORNW=56, VGAP=28, HH=20, BPAD=6;
+/* ---------- 5. Placement v4 : borniers sécables + hauteur élastique ---------- */
+const PRH=16, STRIPW=30, BODYW=104, BORNW=56, VGAP=24, HH=20, BPAD=6;
+const FRAG='';
 function computeLayoutWith(eq, lk, peripheral){
   const byRep=new Map(eq.map(e=>[e.repere,e]));
   const isRail=n=>RAIL_RE.test(String(n).trim()) && !byRep.has(n);
 
-  const nodeNames=[]; const seenN=new Set();
-  const noteName=n=>{ if(n&&!seenN.has(n)){seenN.add(n);nodeNames.push(n);} };
+  const rawNames=[]; const seenN=new Set();
+  const noteName=n=>{ if(n&&!seenN.has(n)){seenN.add(n);rawNames.push(n);} };
   eq.forEach(e=>noteName(e.repere));
   lk.forEach(l=>{noteName(l.from);noteName(l.to);});
 
-  // --- broches : équipement = fusion par étiquette ; rail = une broche par fil (PN)
+  // --- broches par nom brut
   const pinsOf=new Map(); const endPin=new Map();
   const P0=n=>{ if(!pinsOf.has(n))pinsOf.set(n,{list:[],byLabel:new Map(),cnt:0}); return pinsOf.get(n); };
   lk.forEach((l,li)=>{
@@ -348,117 +349,117 @@ function computeLayoutWith(eq, lk, peripheral){
       endPin.set(li+':'+tag,{name,key});
     });
   });
-  for(const n of nodeNames){ const P=P0(n); if(isRail(n))continue;
-    P.list.sort((a,b)=>{ const na=parseFloat(a.label),nb=parseFloat(b.label);
-      const an=!isNaN(na),bn=!isNaN(nb);
-      if(an&&bn)return (na-nb)||String(a.label).localeCompare(String(b.label));
-      if(an)return -1; if(bn)return 1;
-      if(a.label&&b.label)return a.label.localeCompare(b.label);
-      return a.label?-1:(b.label?1:0); });
-  }
-
-  // --- graphe
-  const adj=new Map(nodeNames.map(n=>[n,new Map()]));
-  lk.forEach(l=>{ if(l.from===l.to)return;
-    adj.get(l.from).set(l.to,(adj.get(l.from).get(l.to)||0)+1);
-    adj.get(l.to).set(l.from,(adj.get(l.to).get(l.from)||0)+1); });
-  const degree=n=>{ let s=0; for(const w of adj.get(n).values())s+=w; return s; };
-  const isStrip=n=>{ if(isRail(n))return true; const e=byRep.get(n);
+  const isStripName=n=>{ if(isRail(n))return true; const e=byRep.get(n);
     const t=norm((e&&e.type)||''); if(/born|coupure|repart/.test(t))return true;
     return inferType(n).s==='disconnect'; };
 
-  // --- colonnes = niveaux BFS raffinés. Deux stratégies de graine essayées
-  //     (nœud le plus connecté / nœud périphérique via double BFS) : on garde
-  //     l'assignation au coût de câblage minimal après raffinement local.
+  // --- partenaires bruts par broche (pour découper les borniers par destination)
+  const rawPartners=new Map();
+  lk.forEach((l,li)=>{ const A=endPin.get(li+':A'),B=endPin.get(li+':B');
+    (rawPartners.get(A.name+SOH+A.key)||rawPartners.set(A.name+SOH+A.key,[]).get(A.name+SOH+A.key)).push(B);
+    (rawPartners.get(B.name+SOH+B.key)||rawPartners.set(B.name+SOH+B.key,[]).get(B.name+SOH+B.key)).push(A); });
+
+  // --- nœuds de mise en page : équipements entiers + fragments de borniers
+  //     (un bornier se coupe : un fragment par équipement desservi)
+  const nodes=new Map();
+  const nodeOfPin=new Map();
+  for(const n of rawNames){ const P=P0(n);
+    if(!isStripName(n)){ nodes.set(n,{id:n,name:n,strip:false,pins:P.list.slice()});
+      P.list.forEach(p=>nodeOfPin.set(n+SOH+p.key,n)); continue; }
+    const groups=new Map();
+    P.list.forEach(p=>{ const ps=rawPartners.get(n+SOH+p.key)||[];
+      const gk=ps.length?ps[0].name:'~';
+      (groups.get(gk)||groups.set(gk,[]).get(gk)).push(p); });
+    let gi=0;
+    for(const [gk,pins] of groups){ const id=n+FRAG+(gi++);
+      nodes.set(id,{id,name:n,strip:true,pins});
+      pins.forEach(p=>nodeOfPin.set(n+SOH+p.key,id)); }
+  }
+  const nodeIds=[...nodes.keys()];
+  const nid=(rawName,key)=>nodeOfPin.get(rawName+SOH+key)||rawName;
+
+  // --- partenaires au niveau nœud
+  const partners=new Map();
+  lk.forEach((l,li)=>{ const A=endPin.get(li+':A'),B=endPin.get(li+':B');
+    const ia=nid(A.name,A.key), ib=nid(B.name,B.key);
+    (partners.get(ia+SOH+A.key)||partners.set(ia+SOH+A.key,[]).get(ia+SOH+A.key)).push({id:ib,key:B.key});
+    (partners.get(ib+SOH+B.key)||partners.set(ib+SOH+B.key,[]).get(ib+SOH+B.key)).push({id:ia,key:A.key}); });
+
+  // --- graphe entre nœuds
+  const adj=new Map(nodeIds.map(n=>[n,new Map()]));
+  lk.forEach((l,li)=>{ const A=endPin.get(li+':A'),B=endPin.get(li+':B');
+    const ia=nid(A.name,A.key), ib=nid(B.name,B.key); if(ia===ib)return;
+    adj.get(ia).set(ib,(adj.get(ia).get(ib)||0)+1);
+    adj.get(ib).set(ia,(adj.get(ib).get(ia)||0)+1); });
+  const degree=n=>{ let s=0; for(const w of adj.get(n).values())s+=w; return s; };
+
+  // --- niveaux BFS (graine selon stratégie) + raffinement local
   const bfsFrom=(s,seen)=>{ const d=new Map([[s,0]]); const q=[s]; let far=s;
     while(q.length){ const c=q.shift();
       [...adj.get(c).keys()].forEach(k=>{ if(!d.has(k)&&!(seen&&seen.has(k))){
         d.set(k,d.get(c)+1); if(d.get(k)>d.get(far))far=k; q.push(k); } }); }
     return {d,far}; };
-  const seeds=[...nodeNames].sort((a,b)=>degree(b)-degree(a));
-  const buildLevels=peripheral=>{ const lv=new Map();
-    for(const s of seeds){ if(lv.has(s))continue;
-      let seed=s;
-      if(peripheral){ const {far}=bfsFrom(s,lv); seed=far; }
-      const {d}=bfsFrom(seed,lv);
-      for(const [k,v] of d) lv.set(k,v); }
-    const cost1=(n,ln)=>{ let sc=0; for(const [k,w] of adj.get(n)){ const dd=Math.abs(ln-lv.get(k));
-      sc+=w*(dd===1?0:(dd===0?2:1+dd)); } return sc; };
-    for(let pass=0;pass<3;pass++){ let moved=false;
-      for(const n of nodeNames){ const l0=lv.get(n); let best=l0, bc=cost1(n,l0);
-        for(const cand of [l0-1,l0+1]){ if(cand<0)continue;
-          const c=cost1(n,cand); if(c<bc-0.01){ bc=c; best=cand; } }
-        if(best!==l0){ lv.set(n,best); moved=true; } }
-      if(!moved)break; }
-    let total=0; nodeNames.forEach(n=>total+=cost1(n,lv.get(n)));
-    return {lv,total}; };
-  const level=buildLevels(peripheral).lv;
-  const used=[...new Set(nodeNames.map(n=>level.get(n)))].sort((a,b)=>a-b);
-  const remap=new Map(used.map((l,i)=>[l,i]));
-  nodeNames.forEach(n=>level.set(n,remap.get(level.get(n))));
-  const maxLvl=nodeNames.length?Math.max(...nodeNames.map(n=>level.get(n))):0;
+  const seeds=[...nodeIds].sort((a,b)=>degree(b)-degree(a));
+  const level=new Map();
+  for(const s of seeds){ if(level.has(s))continue;
+    let seed=s; if(peripheral){ const {far}=bfsFrom(s,level); seed=far; }
+    const {d}=bfsFrom(seed,level);
+    for(const [k,v] of d) level.set(k,v); }
+  const lvlCost=(n,ln)=>{ let sc=0; for(const [k,w] of adj.get(n)){ const dd=Math.abs(ln-level.get(k));
+    sc+=w*(dd===1?0:(dd===0?2:1+dd)); } return sc; };
+  for(let pass=0;pass<3;pass++){ let moved=false;
+    for(const n of nodeIds){ const l0=level.get(n); let best=l0, bc=lvlCost(n,l0);
+      for(const cand of [l0-1,l0+1]){ if(cand<0)continue;
+        const c=lvlCost(n,cand); if(c<bc-0.01){ bc=c; best=cand; } }
+      if(best!==l0){ level.set(n,best); moved=true; } }
+    if(!moved)break; }
+  const usedL=[...new Set(nodeIds.map(n=>level.get(n)))].sort((a,b)=>a-b);
+  const remapL=new Map(usedL.map((l,i)=>[l,i]));
+  nodeIds.forEach(n=>level.set(n,remapL.get(level.get(n))));
+  const maxLvl=nodeIds.length?Math.max(...nodeIds.map(n=>level.get(n))):0;
   const columns=Array.from({length:maxLvl+1},()=>[]);
-  nodeNames.forEach(n=>columns[level.get(n)].push(n));
+  nodeIds.forEach(n=>columns[level.get(n)].push(n));
   const colOf=new Map(); columns.forEach((c,i)=>c.forEach(n=>colOf.set(n,i)));
 
-  // --- partenaires par broche
-  const partners=new Map();
-  lk.forEach((l,li)=>{ const A=endPin.get(li+':A'),B=endPin.get(li+':B');
-    const ka=A.name+SOH+A.key, kb=B.name+SOH+B.key;
-    (partners.get(ka)||partners.set(ka,[]).get(ka)).push(B);
-    (partners.get(kb)||partners.set(kb,[]).get(kb)).push(A); });
-
-  // --- côté de chaque broche d'équipement (bornier de flanc gauche ou droit) ;
-  //     bornier autonome : broches traversantes (fils des deux côtés, même rangée)
+  // --- côté des broches d'équipement ; fragments = traversants
   const sideOf=new Map();
   const listsOf=new Map();
-  for(const n of nodeNames){ const P=P0(n);
-    if(isStrip(n)){ listsOf.set(n,{S:P.list.slice()}); continue; }
-    const L=[],R=[]; const cn=colOf.get(n)||0;
-    P.list.forEach(p=>{ const ps=partners.get(n+SOH+p.key)||[];
-      let r=0,lft=0; ps.forEach(q=>{ const cq=colOf.get(q.name)||0;
+  for(const id of nodeIds){ const N=nodes.get(id);
+    if(N.strip){ listsOf.set(id,{S:N.pins.slice()}); continue; }
+    const L=[],R=[]; const cn=colOf.get(id)||0;
+    N.pins.forEach(p=>{ const ps=partners.get(id+SOH+p.key)||[];
+      let r=0,lft=0; ps.forEach(q=>{ const cq=colOf.get(q.id)||0;
         if(cq>cn)r++; else if(cq<cn)lft++; else r++; });
-      const side=(r>=lft)?'R':'L'; sideOf.set(n+SOH+p.key,side);
+      const side=(r>=lft)?'R':'L'; sideOf.set(id+SOH+p.key,side);
       (side==='R'?R:L).push(p); });
-    listsOf.set(n,{L,R});
+    listsOf.set(id,{L,R});
   }
-  const listKeys=n=>listsOf.get(n).S?['S']:['L','R'];
-  const listArr=(n,lid)=>listsOf.get(n)[lid];
-  const listIdOfPin=(n,key)=>{ const ls=listsOf.get(n); if(ls.S)return 'S';
-    return sideOf.get(n+SOH+key)==='L'?'L':'R'; };
+  const listKeys=id=>listsOf.get(id).S?['S']:['L','R'];
+  const listArr=(id,lid)=>listsOf.get(id)[lid];
+  const listIdOfPin=(id,key)=>{ const ls=listsOf.get(id); if(ls.S)return 'S';
+    return sideOf.get(id+SOH+key)==='L'?'L':'R'; };
 
-  // --- dimensions : équipement = corps + borniers de flanc ; bornier = rectangle étroit
-  const dimsCache=new Map();
-  const dims=n=>{ let d=dimsCache.get(n); if(d)return d;
-    const ls=listsOf.get(n);
-    if(ls.S){ const p=Math.max(1,ls.S.length);
-      d={w:BORNW,h:HH+p*PRH+BPAD,kind:'strip',pinTopS:HH}; }
-    else { const nL=ls.L.length,nR=ls.R.length; const rows=Math.max(nL,nR,1);
-      const lw=nL?STRIPW:0, rw=nR?STRIPW:0;
-      const h=Math.max(72, rows*PRH+30);
-      d={w:lw+BODYW+rw,h,kind:'equip',lw,rw,
-         pinTopL:(h-nL*PRH)/2, pinTopR:(h-nR*PRH)/2}; }
-    dimsCache.set(n,d); return d; };
-  const blockH=n=>dims(n).h;
-  const pinTopOf=(n,lid)=>{ const d=dims(n); return lid==='S'?d.pinTopS:(lid==='L'?d.pinTopL:d.pinTopR); };
-  const colH=columns.map(c=>c.reduce((s,n)=>s+blockH(n)+VGAP,-VGAP));
-  const maxColH=Math.max(60,...colH);
+  // --- largeurs (hauteurs élastiques calculées plus bas)
+  const widthOf=id=>{ const ls=listsOf.get(id);
+    if(ls.S)return BORNW;
+    return (ls.L.length?STRIPW:0)+BODYW+(ls.R.length?STRIPW:0); };
+  const estH=id=>{ const ls=listsOf.get(id);
+    const rows=ls.S?Math.max(1,ls.S.length):Math.max(ls.L.length,ls.R.length,1);
+    return Math.max(ls.S?HH+rows*PRH+BPAD:64, rows*PRH+26); };
   const nCols=columns.length;
-  const colW=columns.map(c=>c.length?Math.max(...c.map(n=>dims(n).w)):92);
+  const colW=columns.map(c=>c.length?Math.max(...c.map(widthOf)):92);
 
-  // --- canal d'une extrémité : sortie droite -> canal col+1 (stub 'L'),
-  //     sortie gauche -> canal col (stub 'R')
-  const endSide=(name,key,otherName)=>{
-    if(!listsOf.get(name).S) return sideOf.get(name+SOH+key);
-    const cn=colOf.get(name)||0, co=colOf.get(otherName)||0;
-    return co<cn?'L':'R';
-  };
-  const chOfEnd=(name,side)=>{ const c=colOf.get(name)||0; return side==='R'?c+1:c; };
+  const endSide=(rawName,key,otherRaw,otherKey)=>{
+    const id=nid(rawName,key);
+    if(!listsOf.get(id).S) return sideOf.get(id+SOH+key);
+    const cn=colOf.get(id)||0, co=colOf.get(nid(otherRaw,otherKey))||0;
+    return co<cn?'L':'R'; };
+  const chOfEnd=(id,side)=>{ const c=colOf.get(id)||0; return side==='R'?c+1:c; };
 
   const chCount=new Array(nCols+1).fill(0);
   lk.forEach((l,li)=>{ const A=endPin.get(li+':A'),B=endPin.get(li+':B');
-    const sA=endSide(A.name,A.key,B.name), sB=endSide(B.name,B.key,A.name);
-    const cA=chOfEnd(A.name,sA), cB=chOfEnd(B.name,sB);
+    const sA=endSide(A.name,A.key,B.name,B.key), sB=endSide(B.name,B.key,A.name,A.key);
+    const cA=chOfEnd(nid(A.name,A.key),sA), cB=chOfEnd(nid(B.name,B.key),sB);
     if(cA===cB)chCount[cA]++; else { chCount[cA]++; chCount[cB]++; } });
   const chW=chCount.map(c=>Math.max(54, 28+c*9));
 
@@ -467,79 +468,112 @@ function computeLayoutWith(eq, lk, peripheral){
   for(let i=0;i<nCols;i++){ colX.push(cx); cx+=colW[i]+chW[i+1]; }
   const totalW=Math.max(cx, M+360);
 
-  const posXY=new Map();
+  // --- position initiale puis optimisation élastique
+  const nodeX=new Map();
+  columns.forEach((c,i)=>c.forEach(id=>nodeX.set(id,colX[i]+(colW[i]-widthOf(id))/2)));
+  const colH=columns.map(c=>c.reduce((s,id)=>s+estH(id)+VGAP,-VGAP));
+  const maxColH=Math.max(60,...colH);
+  const pinY=new Map();
+  const blockTop=new Map(), blockBot=new Map();
   columns.forEach((c,i)=>{ let y=topY+(maxColH-colH[i])/2;
-    c.forEach(n=>{ posXY.set(n,{x:colX[i]+(colW[i]-dims(n).w)/2,y}); y+=blockH(n)+VGAP; }); });
+    c.forEach(id=>{ blockTop.set(id,y);
+      listKeys(id).forEach(lid=>{ const L=listArr(id,lid);
+        L.forEach((p,j)=>pinY.set(id+SOH+p.key, y+16+j*PRH)); });
+      blockBot.set(id,y+estH(id)); y+=estH(id)+VGAP; }); });
 
-  // --- optimisation : ordre des broches (barycentre) + glissement vertical des blocs
-  const idxOf=new Map();
-  const reindex=n=>{ const m=new Map(); listKeys(n).forEach(lid=>listArr(n,lid).forEach((p,i)=>m.set(p.key,i))); idxOf.set(n,m); };
-  nodeNames.forEach(reindex);
-  const pinYof=(n,k)=>posXY.get(n).y+pinTopOf(n,listIdOfPin(n,k))+(idxOf.get(n).get(k)||0)*PRH+PRH/2;
-  const sortPins=()=>{ for(const n of nodeNames){
-    listKeys(n).forEach(lid=>{ const L=listArr(n,lid); if(L.length<2)return;
-      const sc=new Map(L.map(p=>{ const ps=partners.get(n+SOH+p.key)||[];
-        if(!ps.length)return [p.key,pinYof(n,p.key)];
-        let s=0; ps.forEach(q=>s+=pinYof(q.name,q.key)); return [p.key,s/ps.length]; }));
-      L.sort((a,b)=>sc.get(a.key)-sc.get(b.key)); });
-    reindex(n); } };
-  const alignBlocks=()=>{ columns.forEach((c,ci)=>{ let prevBot=-Infinity;
-    c.forEach(n=>{ const h=blockH(n); const des=[];
-      listKeys(n).forEach(lid=>listArr(n,lid).forEach((p,i)=>{
-        (partners.get(n+SOH+p.key)||[]).forEach(q=>{
-          if(colOf.get(q.name)!==ci) des.push(pinYof(q.name,q.key)-(pinTopOf(n,lid)+i*PRH+PRH/2)); }); }));
-      des.sort((a,b)=>a-b);
-      let y=des.length?des[Math.floor(des.length/2)]:posXY.get(n).y;
-      y=Math.max(y, prevBot+VGAP, topY-40);
-      posXY.get(n).y=y; prevBot=y+h; }); }); };
-  for(let round=0;round<4;round++){ sortPins(); alignBlocks(); }
-  sortPins();
-  // réparation des faisceaux : entre deux blocs, ordre parallèle des broches
+  const pinYof=(id,k)=>pinY.get(id+SOH+k);
+  const sortPins=()=>{ for(const id of nodeIds){
+    listKeys(id).forEach(lid=>{ const L=listArr(id,lid); if(L.length<2)return;
+      const sc=new Map(L.map(p=>{ const ps=partners.get(id+SOH+p.key)||[];
+        if(!ps.length)return [p.key,pinYof(id,p.key)];
+        let s=0; ps.forEach(q=>s+=pinYof(q.id,q.key)); return [p.key,s/ps.length]; }));
+      L.sort((a,b)=>sc.get(a.key)-sc.get(b.key)); }); } };
+
+  // pose élastique : chaque broche vise le y de son partenaire ; l'espacement des
+  // broches est libre (>= PRH) donc la hauteur du bloc s'étire à la demande.
+  const elastic=()=>{ columns.forEach((c)=>{ let cursor=-Infinity;
+    c.forEach(id=>{ const ls=listKeys(id);
+      const desired=lid=>listArr(id,lid).map(p=>{ const ps=partners.get(id+SOH+p.key)||[];
+        const ds=ps.map(q=>pinYof(q.id,q.key)); ds.sort((a,b)=>a-b);
+        return ds.length?ds[Math.floor(ds.length/2)]:null; });
+      const firstDes=[]; ls.forEach(lid=>{ const d=desired(lid); if(d.length&&d[0]!=null)firstDes.push(d[0]); });
+      const minTop=cursor+VGAP;
+      let top=firstDes.length?Math.min(...firstDes)-16:blockTop.get(id);
+      top=Math.max(top,minTop,topY-60);
+      if(isFinite(minTop)) top=Math.min(top,minTop+240);   // saut limité entre blocs
+      const GAPX=8*PRH;                                    // étirement limité entre broches
+      let bot=top+40;
+      ls.forEach(lid=>{ const L=listArr(id,lid); const des=desired(lid);
+        let prev=top+16-PRH;
+        L.forEach((p,j)=>{ let y=des[j]!=null?des[j]:prev+PRH;
+          y=Math.max(Math.min(y,prev+PRH+GAPX),prev+PRH);
+          pinY.set(id+SOH+p.key,y); prev=y; });
+        if(L.length)bot=Math.max(bot,prev+16);
+      });
+      if(!listsOf.get(id).S) bot=Math.max(bot,top+64);
+      blockTop.set(id,top); blockBot.set(id,bot); cursor=bot;
+    }); }); };
+  for(let round=0;round<4;round++){ sortPins(); elastic(); }
+  sortPins(); elastic();
+
+  // réparation des faisceaux (ordre parallèle) puis re-pose
   const bundles=new Map();
   lk.forEach((l,li)=>{ const A=endPin.get(li+':A'),B=endPin.get(li+':B');
-    if(A.name===B.name)return;
-    let a=A,b=B; const ca=colOf.get(A.name)??0,cb=colOf.get(B.name)??0;
-    if(ca>cb||(ca===cb&&A.name>B.name)){ a=B;b=A; }
-    const k=a.name+'|'+b.name+'|'+listIdOfPin(b.name,b.key);
+    const ia=nid(A.name,A.key), ib=nid(B.name,B.key); if(ia===ib)return;
+    let a={id:ia,key:A.key}, b={id:ib,key:B.key};
+    const ca=colOf.get(ia)??0,cb=colOf.get(ib)??0;
+    if(ca>cb||(ca===cb&&ia>ib)){ const t=a;a=b;b=t; }
+    const k=a.id+'|'+b.id+'|'+listIdOfPin(b.id,b.key);
     (bundles.get(k)||bundles.set(k,[]).get(k)).push({a,b}); });
   const locked=new Set();
   [...bundles.values()].filter(ws=>ws.length>1).sort((x,y)=>y.length-x.length).forEach(ws=>{
-    const bName=ws[0].b.name; const lid=listIdOfPin(bName,ws[0].b.key);
-    const L=listArr(bName,lid); const m=idxOf.get(bName);
+    const bId=ws[0].b.id; const lid=listIdOfPin(bId,ws[0].b.key);
+    const L=listArr(bId,lid);
+    const idxm=new Map(L.map((p,i)=>[p.key,i]));
     const byB=new Map();
-    ws.forEach(w=>{ const e=byB.get(w.b.key)||{s:0,c:0}; e.s+=pinYof(w.a.name,w.a.key); e.c++; byB.set(w.b.key,e); });
-    const bKeys=[...byB.keys()].filter(k=>!locked.has(bName+SOH+k));
+    ws.forEach(w=>{ const e=byB.get(w.b.key)||{s:0,c:0}; e.s+=pinYof(w.a.id,w.a.key); e.c++; byB.set(w.b.key,e); });
+    const bKeys=[...byB.keys()].filter(k=>!locked.has(bId+SOH+k));
     if(bKeys.length<2)return;
-    const slots=bKeys.map(k=>m.get(k)).sort((u,v)=>u-v);
+    const slots=bKeys.map(k=>idxm.get(k)).sort((u,v)=>u-v);
     const desired=[...bKeys].sort((k1,k2)=>(byB.get(k1).s/byB.get(k1).c)-(byB.get(k2).s/byB.get(k2).c));
-    const bySlot=new Map(); desired.forEach((k,i)=>{ bySlot.set(slots[i],k); locked.add(bName+SOH+k); });
-    const others=L.filter(p=>!byB.has(p.key)||!bKeys.includes(p.key));
+    const bySlot=new Map(); desired.forEach((k,i)=>{ bySlot.set(slots[i],k); locked.add(bId+SOH+k); });
+    const others=L.filter(p=>!bKeys.includes(p.key));
     const newL=new Array(L.length); let ri=0;
     for(let i2=0;i2<L.length;i2++){
       if(bySlot.has(i2)) newL[i2]=L.find(pp=>pp.key===bySlot.get(i2));
       else newL[i2]=others[ri++];
     }
-    listsOf.get(bName)[lid]=newL.filter(Boolean);
-    reindex(bName);
+    listsOf.get(bId)[lid]=newL.filter(Boolean);
   });
-  alignBlocks();
-  for(const [n,o] of OVR){ if(posXY.has(n)) posXY.set(n,{x:o.x-dims(n).w/2,y:o.y-blockH(n)/2}); }
+  elastic();
+
+  // déplacement manuel : translation du bloc entier
+  for(const [name,o] of OVR){
+    for(const id of nodeIds){ if(id!==name&&nodes.get(id).name!==name)continue;
+      const top=blockTop.get(id), bot=blockBot.get(id), h=bot-top;
+      const dy=(o.y-h/2)-top, dx=(o.x-widthOf(id)/2)-nodeX.get(id);
+      nodeX.set(id,nodeX.get(id)+dx);
+      blockTop.set(id,top+dy); blockBot.set(id,bot+dy);
+      listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>pinY.set(id+SOH+p.key,pinY.get(id+SOH+p.key)+dy)));
+      break; } }
 
   let yMin=Infinity,yMax=-Infinity;
-  nodeNames.forEach(n=>{ const p=posXY.get(n); yMin=Math.min(yMin,p.y); yMax=Math.max(yMax,p.y+blockH(n)); });
-  if(!isFinite(yMin)){ yMin=topY; yMax=topY+maxColH; }
+  nodeIds.forEach(id=>{ yMin=Math.min(yMin,blockTop.get(id)); yMax=Math.max(yMax,blockBot.get(id)); });
+  if(!isFinite(yMin)){ yMin=topY; yMax=topY+200; }
 
   // --- blocs concrets
   const compList=[],compByName=new Map();
-  for(const n of nodeNames){ const e=byRep.get(n)||{repere:n,designation:'',type:''};
-    const pos=posXY.get(n); const d=dims(n);
-    const byKey=new Map();
-    const c={name:n,o:{designation:e.designation||'',type:e.type||''},x:pos.x,y:pos.y,w:d.w,h:d.h,
-      kind:d.kind,lw:d.lw||0,rw:d.rw||0,rows:{},byKey,rail:isRail(n)};
-    listKeys(n).forEach(lid=>{ const top=pinTopOf(n,lid);
-      c.rows[lid]=listArr(n,lid).map((p,i)=>{ const py=pos.y+top+i*PRH+PRH/2;
-        byKey.set(p.key,{y:py}); return {label:p.label,y:py}; }); });
-    compList.push(c); compByName.set(n,c); }
+  for(const id of nodeIds){ const N=nodes.get(id);
+    const e=byRep.get(N.name)||{repere:N.name,designation:'',type:''};
+    const x=nodeX.get(id), top=blockTop.get(id), bot=blockBot.get(id);
+    const ls=listsOf.get(id); const w=widthOf(id);
+    const byKey=new Map(); const rows={};
+    listKeys(id).forEach(lid=>{ rows[lid]=listArr(id,lid).map(p=>{ const py=pinY.get(id+SOH+p.key);
+      byKey.set(p.key,{y:py}); return {label:p.label,y:py}; }); });
+    const c={name:N.name,id,o:{designation:e.designation||'',type:e.type||''},x,y:top,w,h:bot-top,
+      kind:ls.S?'strip':'equip',lw:ls.S?0:(ls.L.length?STRIPW:0),rw:ls.S?0:(ls.R.length?STRIPW:0),
+      rows,byKey,rail:isRail(N.name)};
+    compList.push(c); compByName.set(id,c); if(!compByName.has(N.name))compByName.set(N.name,c); }
 
   // --- nets + couleurs
   const {find,nets}=buildNets(lk);
@@ -550,13 +584,14 @@ function computeLayoutWith(eq, lk, peripheral){
     if(hasPE)return COL.green; if(hasN)return COL.blue; if(phase)return COL[phaseColorByName(phase)];
     if(ctrl)return COL.ctrl; return '#26323f'; }
 
-  // --- liaisons avec extrémités résolues (x, y, canal, stub)
+  // --- liaisons avec extrémités résolues
   const links=lk.map((l,li)=>{
     const A=endPin.get(li+':A'),B=endPin.get(li+':B');
-    const sA=endSide(A.name,A.key,B.name), sB=endSide(B.name,B.key,A.name);
-    const cA=compByName.get(A.name), cB=compByName.get(B.name);
-    const epA={x:sA==='R'?cA.x+cA.w:cA.x, y:cA.byKey.get(A.key).y, ch:chOfEnd(A.name,sA), stub:sA==='R'?'L':'R'};
-    const epB={x:sB==='R'?cB.x+cB.w:cB.x, y:cB.byKey.get(B.key).y, ch:chOfEnd(B.name,sB), stub:sB==='R'?'L':'R'};
+    const ia=nid(A.name,A.key), ib=nid(B.name,B.key);
+    const sA=endSide(A.name,A.key,B.name,B.key), sB=endSide(B.name,B.key,A.name,A.key);
+    const cA=compByName.get(ia), cB=compByName.get(ib);
+    const epA={x:sA==='R'?cA.x+cA.w:cA.x, y:cA.byKey.get(A.key).y, ch:chOfEnd(ia,sA), stub:sA==='R'?'L':'R'};
+    const epB={x:sB==='R'?cB.x+cB.w:cB.x, y:cB.byKey.get(B.key).y, ch:chOfEnd(ib,sB), stub:sB==='R'?'L':'R'};
     const root=find(pin(l.from,l.fromTerm));
     return {i:li,from:l.from,fromTerm:l.fromTerm,to:l.to,toTerm:l.toTerm,nature:l.nature||'',
       epA,epB,net:root,color:netColor(root),
@@ -715,6 +750,7 @@ function defs(){
      .borne{fill:#eef1f4;stroke:#26343f;stroke-width:1}
      .bnum{fill:#182430;font-size:8px;font-weight:700}
      .bstrip{fill:#f6f8fa;stroke:#26343f;stroke-width:1.2}
+     .bcell{fill:#ffffff;stroke:#8b98a5;stroke-width:.8}
      .rep-big{fill:#182430;font-weight:700;font-size:13px;letter-spacing:.8px}
      .bhead{fill:#e9eef3;stroke:none}
      .bheadline{stroke:#26343f;stroke-width:1}
@@ -788,11 +824,11 @@ function wireSvg(w,bridges){ const d=wirePath(w.pts,bridges);
   return `<path class="cab" d="${d}" stroke="${w.color}"/>`;
 }
 
-function stripSvg(x0,w,rows,pinTop){ // bornier : colonne de cellules avec n° dedans
-  let s=`<rect class="bstrip" x="${f1(x0)}" y="${f1(pinTop-2)}" width="${f1(w)}" height="${f1(rows.length*PRH+4)}" rx="2"/>`;
-  rows.forEach((p,i)=>{ const ly=pinTop+i*PRH;
-    if(i>0) s+=`<line class="pinsep" x1="${f1(x0+3)}" y1="${f1(ly)}" x2="${f1(x0+w-3)}" y2="${f1(ly)}"/>`;
-    s+=`<text class="pinlbl" x="${f1(x0+w/2)}" y="${f1(ly+PRH/2+3)}" text-anchor="middle">${esc(p.label||'·')}</text>`;
+function pinCells(x0,w,rows,baseY){ // cellules de broches aux y élastiques
+  let s='';
+  rows.forEach(p=>{ const ly=p.y-baseY;
+    s+=`<rect class="bcell" x="${f1(x0+1.5)}" y="${f1(ly-PRH/2+1)}" width="${f1(w-3)}" height="${PRH-2}" rx="2"/>`;
+    s+=`<text class="pinlbl" x="${f1(x0+w/2)}" y="${f1(ly+3)}" text-anchor="middle">${esc(p.label||'·')}</text>`;
   });
   return s;
 }
@@ -800,25 +836,24 @@ function compSvg(c,sel){
   let s=`<g transform="translate(${f1(c.x)},${f1(c.y)})">`;
   if(sel) s+=`<rect class="selbox" x="-5" y="-5" width="${c.w+10}" height="${c.h+10}" rx="3"/>`;
   if(c.kind==='strip'){
-    // bornier autonome : rectangle étroit, nom en tête, broches traversantes
+    // fragment de bornier : rectangle étroit, nom en tête, cellules traversantes
     s+=`<g filter="url(#softsh)"><rect class="body" x="0" y="0" width="${c.w}" height="${c.h}" rx="3"/></g>`;
     s+=`<path d="M 0 ${HH} v ${-(HH-3)} a 3 3 0 0 1 3 -3 h ${c.w-6} a 3 3 0 0 1 3 3 v ${HH-3} z" class="bhead"/>`;
     s+=`<line x1="0" y1="${HH}" x2="${c.w}" y2="${HH}" class="bheadline"/>`;
-    s+=`<text class="rep-in" x="${f1(c.w/2)}" y="${HH/2+4}" text-anchor="middle">${esc(c.name)}</text>`;
-    const rows=c.rows.S||[];
-    rows.forEach((p,i)=>{ const ly=HH+i*PRH;
-      if(i>0) s+=`<line class="pinsep" x1="4" y1="${ly}" x2="${c.w-4}" y2="${ly}"/>`;
-      s+=`<text class="pinlbl" x="${f1(c.w/2)}" y="${ly+PRH/2+3}" text-anchor="middle">${esc(p.label||'·')}</text>`;
-    });
+    s+=`<text class="rep-in" x="${f1(c.w/2)}" y="${HH/2+4}" text-anchor="middle">${esc(clip(c.name,7))}</text>`;
+    s+=pinCells(0,c.w,c.rows.S||[],c.y);
   } else {
-    // équipement : grand corps avec le repère au centre + borniers collés sur les flancs
+    // équipement : grand corps, nom centré, borniers de flanc aux y élastiques
     const bx=c.lw, bw=c.w-c.lw-c.rw;
     s+=`<g filter="url(#softsh)"><rect class="body" x="${f1(bx)}" y="0" width="${f1(bw)}" height="${c.h}" rx="3"/></g>`;
     s+=`<text class="rep-big" x="${f1(bx+bw/2)}" y="${f1(c.h/2+5)}" text-anchor="middle">${esc(clip(c.name,12))}</text>`;
     if(c.o.designation) s+=`<text class="des" x="${f1(bx+bw/2)}" y="${f1(c.h/2+18)}" text-anchor="middle">${esc(clip(c.o.designation,16))}</text>`;
     const rl=c.rows.L||[], rr=c.rows.R||[];
-    if(rl.length) s+=stripSvg(0, c.lw, rl, (c.h-rl.length*PRH)/2);
-    if(rr.length) s+=stripSvg(c.w-c.rw, c.rw, rr, (c.h-rr.length*PRH)/2);
+    const stripOutline=(x0,rows)=>{ if(!rows.length)return '';
+      const t=rows[0].y-c.y-PRH/2-2, b=rows[rows.length-1].y-c.y+PRH/2+2;
+      return `<rect class="bstrip" x="${f1(x0)}" y="${f1(t)}" width="${STRIPW}" height="${f1(b-t)}" rx="2"/>`; };
+    if(rl.length){ s+=stripOutline(0,rl)+pinCells(0,STRIPW,rl,c.y); }
+    if(rr.length){ s+=stripOutline(c.w-STRIPW,rr)+pinCells(c.w-STRIPW,STRIPW,rr,c.y); }
   }
   s+=`</g>`; return s;
 }
