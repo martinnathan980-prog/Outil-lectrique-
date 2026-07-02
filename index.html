@@ -368,26 +368,30 @@ function computeLayout(eq, lk){
     const t=norm((e&&e.type)||''); if(/born|coupure|repart/.test(t))return true;
     return inferType(n).s==='disconnect'; };
 
-  // --- colonnes : borniers sur les côtés, le reste au centre (ordre BFS)
-  const mids=nodeNames.filter(n=>!isBornier(n));
-  const outs=nodeNames.filter(isBornier);
-  const order=[]; const vis=new Set();
-  [...mids].sort((a,b)=>degree(b)-degree(a)).forEach(seed=>{
-    if(vis.has(seed))return; const q=[seed]; vis.add(seed);
-    while(q.length){ const c=q.shift(); order.push(c);
-      [...adj.get(c).keys()].filter(k=>!vis.has(k)&&!isBornier(k))
-        .sort((a,b)=>degree(b)-degree(a)).forEach(k=>{vis.add(k);q.push(k);}); } });
-  const nMidCols=order.length?Math.max(1,Math.min(4,Math.ceil(order.length/4))):0;
-  const midCols=Array.from({length:Math.max(1,nMidCols)},()=>[]);
-  if(order.length){ const per=Math.ceil(order.length/nMidCols);
-    order.forEach((n,i)=>midCols[Math.min(nMidCols-1,Math.floor(i/per))].push(n)); }
-  const leftOut=[],rightOut=[];
-  outs.forEach((n,i)=>((outs.length===1||i%2===0)?leftOut:rightOut).push(n));
-  const columns=[];
-  if(leftOut.length)columns.push(leftOut);
-  midCols.forEach(c=>{ if(c.length)columns.push(c); });
-  if(rightOut.length)columns.push(rightOut);
-  if(!columns.length)columns.push([]);
+  // --- colonnes = niveaux BFS (flux gauche -> droite) : tout fil relie ainsi
+  //     la même colonne ou deux colonnes adjacentes -> faisceaux parallèles,
+  //     fils courts, pas de rocade sauf exception.
+  const level=new Map();
+  const seeds=[...nodeNames].sort((a,b)=>degree(b)-degree(a));
+  for(const s of seeds){ if(level.has(s))continue; level.set(s,0); const q=[s];
+    while(q.length){ const c=q.shift();
+      [...adj.get(c).keys()].forEach(k=>{ if(!level.has(k)){ level.set(k,level.get(c)+1); q.push(k); } }); } }
+  // raffinement local : déplacer un bloc d'un niveau si ça réduit le coût
+  // (adjacent = idéal ; même colonne = boucle ; éloigné = rocade)
+  const lvlCost=(n,ln)=>{ let s=0; for(const [k,w] of adj.get(n)){ const d=Math.abs(ln-level.get(k));
+    s+=w*(d===1?0:(d===0?2:1+d)); } return s; };
+  for(let pass=0;pass<3;pass++){ let moved=false;
+    for(const n of nodeNames){ const l0=level.get(n); let best=l0, bc=lvlCost(n,l0);
+      for(const cand of [l0-1,l0+1]){ if(cand<0)continue;
+        const c=lvlCost(n,cand); if(c<bc-0.01){ bc=c; best=cand; } }
+      if(best!==l0){ level.set(n,best); moved=true; } }
+    if(!moved)break; }
+  const used=[...new Set(nodeNames.map(n=>level.get(n)))].sort((a,b)=>a-b);
+  const remap=new Map(used.map((l,i)=>[l,i]));
+  nodeNames.forEach(n=>level.set(n,remap.get(level.get(n))));
+  const maxLvl=nodeNames.length?Math.max(...nodeNames.map(n=>level.get(n))):0;
+  const columns=Array.from({length:maxLvl+1},()=>[]);
+  nodeNames.forEach(n=>columns[level.get(n)].push(n));
   const colOf=new Map(); columns.forEach((c,i)=>c.forEach(n=>colOf.set(n,i)));
 
   // --- ordre vertical dans chaque colonne : barycentre des voisins (3 passes)
@@ -402,11 +406,20 @@ function computeLayout(eq, lk){
     });
   }
 
-  // --- géométrie : largeur unique, hauteur selon le nombre de broches
-  const blockH=n=>HH+Math.max(1,P0(n).list.length)*PRH+BPAD;
+  // --- géométrie : équipement = bloc carré compact, bornier = rectangle étroit
+  const dimsCache=new Map();
+  const dims=n=>{ let d=dimsCache.get(n); if(d)return d;
+    const p=Math.max(1,P0(n).list.length);
+    const h0=HH+p*PRH+BPAD;
+    if(isBornier(n)) d={w:64,h:h0,pinTop:HH};
+    else { const w=Math.max(92,Math.min(150,h0)); const h=Math.max(h0,w);
+      d={w,h,pinTop:HH+Math.max(0,(h-HH-BPAD-p*PRH)/2)}; }
+    dimsCache.set(n,d); return d; };
+  const blockH=n=>dims(n).h;
   const colH=columns.map(c=>c.reduce((s,n)=>s+blockH(n)+VGAP,-VGAP));
   const maxColH=Math.max(60,...colH);
   const nCols=columns.length;
+  const colW=columns.map(c=>c.length?Math.max(...c.map(n=>dims(n).w)):92);
 
   // largeur de chaque goulotte (canal vertical) selon le trafic estimé
   const chCount=new Array(nCols+1).fill(0);
@@ -418,12 +431,12 @@ function computeLayout(eq, lk){
 
   const M=70, topY=M+120;
   const colX=[]; let cx=M+chW[0];
-  for(let i=0;i<nCols;i++){ colX.push(cx); cx+=BW+chW[i+1]; }
+  for(let i=0;i<nCols;i++){ colX.push(cx); cx+=colW[i]+chW[i+1]; }
   const totalW=Math.max(cx, M+360);
 
   const posXY=new Map();
   columns.forEach((c,i)=>{ let y=topY+(maxColH-colH[i])/2;
-    c.forEach(n=>{ posXY.set(n,{x:colX[i],y}); y+=blockH(n)+VGAP; }); });
+    c.forEach(n=>{ posXY.set(n,{x:colX[i]+(colW[i]-dims(n).w)/2,y}); y+=blockH(n)+VGAP; }); });
 
   // --- optimisation anti-croisement (l'ordre des broches n'est pas fixe) :
   //     1) réordonner les broches de chaque bloc vers le barycentre de leurs partenaires,
@@ -436,7 +449,7 @@ function computeLayout(eq, lk){
     (partners.get(kb)||partners.set(kb,[]).get(kb)).push(A); });
   const idxOf=new Map();
   nodeNames.forEach(n=>{ const m=new Map(); P0(n).list.forEach((p,i)=>m.set(p.key,i)); idxOf.set(n,m); });
-  const pinYof=(n,k)=>posXY.get(n).y+HH+(idxOf.get(n).get(k)||0)*PRH+PRH/2;
+  const pinYof=(n,k)=>posXY.get(n).y+dims(n).pinTop+(idxOf.get(n).get(k)||0)*PRH+PRH/2;
   const sortPins=()=>{ for(const n of nodeNames){ const P=P0(n); if(P.list.length<2)continue;
     const sc=new Map(P.list.map(p=>{ const ps=partners.get(n+SOH+p.key)||[];
       if(!ps.length)return [p.key,pinYof(n,p.key)];
@@ -446,14 +459,37 @@ function computeLayout(eq, lk){
   const alignBlocks=()=>{ columns.forEach((c,ci)=>{ let prevBot=-Infinity;
     c.forEach(n=>{ const h=blockH(n); const P=P0(n); const des=[];
       P.list.forEach((p,i)=>{ (partners.get(n+SOH+p.key)||[]).forEach(q=>{
-        if(colOf.get(q.name)!==ci) des.push(pinYof(q.name,q.key)-(HH+i*PRH+PRH/2)); }); });
+        if(colOf.get(q.name)!==ci) des.push(pinYof(q.name,q.key)-(dims(n).pinTop+i*PRH+PRH/2)); }); });
       des.sort((a,b)=>a-b);
       let y=des.length?des[Math.floor(des.length/2)]:posXY.get(n).y;
       y=Math.max(y, prevBot+VGAP, topY-40);
       posXY.get(n).y=y; prevBot=y+h; }); }); };
-  for(let round=0;round<2;round++){ sortPins(); alignBlocks(); }
+  for(let round=0;round<4;round++){ sortPins(); alignBlocks(); }
   sortPins();
-  for(const [n,o] of OVR){ if(posXY.has(n)) posXY.set(n,{x:o.x-BW/2,y:o.y-blockH(n)/2}); }
+  // réparation des faisceaux : entre deux blocs, l'ordre vertical des broches doit être
+  // le même des deux côtés, sinon le fil du haut traverse tout le paquet.
+  const bundles=new Map();
+  lk.forEach((l,li)=>{ const A=endPin.get(li+':A'),B=endPin.get(li+':B');
+    if(A.name===B.name)return;
+    let a=A,b=B; const ca=colOf.get(A.name)??0,cb=colOf.get(B.name)??0;
+    if(ca>cb||(ca===cb&&A.name>B.name)){ a=B;b=A; }
+    const k=a.name+'|'+b.name;
+    (bundles.get(k)||bundles.set(k,[]).get(k)).push({a,b}); });
+  const locked=new Set();
+  [...bundles.values()].filter(ws=>ws.length>1).sort((x,y)=>y.length-x.length).forEach(ws=>{
+    const bName=ws[0].b.name; const P=P0(bName); const m=idxOf.get(bName);
+    const byB=new Map();
+    ws.forEach(w=>{ const e=byB.get(w.b.key)||{s:0,c:0}; e.s+=pinYof(w.a.name,w.a.key); e.c++; byB.set(w.b.key,e); });
+    const bKeys=[...byB.keys()].filter(k=>!locked.has(bName+SOH+k));
+    if(bKeys.length<2)return;
+    const slots=bKeys.map(k=>m.get(k)).sort((u,v)=>u-v);
+    const desired=[...bKeys].sort((k1,k2)=>(byB.get(k1).s/byB.get(k1).c)-(byB.get(k2).s/byB.get(k2).c));
+    desired.forEach((k,i)=>{ m.set(k,slots[i]); locked.add(bName+SOH+k); });
+    P.list.sort((u,v)=>m.get(u.key)-m.get(v.key));
+    P.list.forEach((p,i)=>m.set(p.key,i));
+  });
+  alignBlocks();
+  for(const [n,o] of OVR){ if(posXY.has(n)) posXY.set(n,{x:o.x-dims(n).w/2,y:o.y-blockH(n)/2}); }
 
   // bornes verticales réelles après optimisation
   let yMin=Infinity,yMax=-Infinity;
@@ -463,12 +499,12 @@ function computeLayout(eq, lk){
   // --- blocs
   const compList=[],compByName=new Map();
   for(const n of nodeNames){ const e=byRep.get(n)||{repere:n,designation:'',type:''};
-    const P=P0(n); const pos=posXY.get(n); const h=blockH(n);
+    const P=P0(n); const pos=posXY.get(n); const d=dims(n);
     const byKey=new Map(); const pins=[];
-    P.list.forEach((p,i)=>{ const py=pos.y+HH+i*PRH+PRH/2;
+    P.list.forEach((p,i)=>{ const py=pos.y+d.pinTop+i*PRH+PRH/2;
       byKey.set(p.key,{y:py}); pins.push({label:p.label,y:py}); });
     const c={name:n,o:{designation:e.designation||'',type:e.type||'',sym:'box',role:'misc'},
-      x:pos.x,y:pos.y,w:BW,h,pins,byKey,rail:isRail(n)};
+      x:pos.x,y:pos.y,w:d.w,h:d.h,pinTop:d.pinTop,pins,byKey,rail:isRail(n),bornier:isBornier(n)};
     compList.push(c); compByName.set(n,c); }
 
   // --- nets + couleurs (convention conducteurs si potentiels L/N/PE présents)
@@ -496,60 +532,109 @@ function computeLayout(eq, lk){
   if(bbox.w/bbox.h<A3){ const nw=bbox.h*A3; bbox.x-=(nw-bbox.w)/2; bbox.w=nw; }
   else if(bbox.w/bbox.h>A3){ const nh=bbox.w/A3; bbox.y-=(nh-bbox.h)/2; bbox.h=nh; }
 
-  const geom={columns,colOf,colX,chW,nCols,yMin,yMax};
+  const geom={columns,colOf,colX,colW,chW,nCols,yMin,yMax};
   return {rails:[],comps:compList,srcs:[],links,bbox,isRail,nets,find,
     railByName:new Map(),compByName,geom};
 }
 
-/* ---------- 6. Routage en goulottes : canaux verticaux + rocades haut/bas ---------- */
+/* ---------- 6. Routage en goulottes : pistes ordonnées par contraintes anti-croisement ---------- */
 function routeAll(layout){
-  const g=layout.geom; const n=layout.links.length;
-  const wires=new Array(n);
-  if(!n) return {wires:[],bridges:[],dots:[]};
-  const chTracks=Array.from({length:g.nCols+1},()=>[]);
-  const hwTop=[], hwBot=[];
-  const chL=i=> i===0 ? (g.colX.length?g.colX[0]-g.chW[0]:70) : g.colX[i-1]+BW;
-  function alloc(tracks,lo,hi){ if(lo>hi){const t=lo;lo=hi;hi=t;}
-    for(let t=0;t<tracks.length;t++){ if(!tracks[t].some(([a,b])=>!(hi<a-7||lo>b+7))){ tracks[t].push([lo,hi]); return t; } }
-    tracks.push([[lo,hi]]); return tracks.length-1; }
+  const g=layout.geom; const N=layout.links.length;
+  const wires=new Array(N);
+  if(!N) return {wires:[],bridges:[],dots:[]};
+  const chL=i=> i===0 ? (g.colX.length?g.colX[0]-g.chW[0]:70) : g.colX[i-1]+g.colW[i-1];
   const pinPt=(name,key,side)=>{ const c=layout.compByName.get(name); const p=c.byKey.get(key);
     return {x: side==='L'? c.x : c.x+c.w, y:p.y}; };
+  function hwAlloc(tracks,lo,hi){ if(lo>hi){const t=lo;lo=hi;hi=t;}
+    for(let t=0;t<tracks.length;t++){ if(!tracks[t].some(([a,b])=>!(hi<a-7||lo>b+7))){ tracks[t].push([lo,hi]); return t; } }
+    tracks.push([[lo,hi]]); return tracks.length-1; }
+  const hwTop=[], hwBot=[]; const hwY=new Map();
 
-  // fils courts d'abord : ils prennent les pistes intérieures des goulottes
-  const order=layout.links.map((l,i)=>i).sort((a,b)=>{
-    const la=layout.links[a],lb=layout.links[b];
-    const ya=Math.abs(pinPt(la.aName,la.aKey,'R').y-pinPt(la.bName,la.bKey,'R').y);
-    const yb=Math.abs(pinPt(lb.aName,lb.aKey,'R').y-pinPt(lb.bName,lb.bKey,'R').y);
-    return ya-yb; });
-
-  for(const li of order){ const l=layout.links[li];
+  // normalisation des extrémités (colonne de gauche d'abord)
+  const norm=li=>{ const l=layout.links[li];
     let aN=l.aName,aK=l.aKey,bN=l.bName,bK=l.bKey;
     let c1=g.colOf.get(aN)??0, c2=g.colOf.get(bN)??0, swapped=false;
     if(c1>c2){ [aN,aK,bN,bK]=[bN,bK,aN,aK]; const t=c1;c1=c2;c2=t; swapped=true; }
-    let pts;
-    if(c1===c2){ // même colonne : aller-retour dans la goulotte de droite
-      const ch=Math.min(c1+1,g.nCols); const A=pinPt(aN,aK,'R'), B=pinPt(bN,bK,'R');
-      const t=alloc(chTracks[ch],A.y,B.y);
-      const tx=chL(ch)+14+t*9;
-      pts=[A,{x:tx,y:A.y},{x:tx,y:B.y},B];
-    } else if(c2-c1===1){ // colonnes adjacentes : une seule goulotte
-      const A=pinPt(aN,aK,'R'), B=pinPt(bN,bK,'L');
-      if(Math.abs(A.y-B.y)<0.75){ pts=[A,B]; } // broches en face : fil droit, zéro coude
-      else { const ch=c1+1; const t=alloc(chTracks[ch],A.y,B.y);
-        const tx=chL(ch)+14+t*9;
-        pts=[A,{x:tx,y:A.y},{x:tx,y:B.y},B]; }
-    } else { // colonnes éloignées : goulotte -> rocade haut/bas -> goulotte
-      const A=pinPt(aN,aK,'R'), B=pinPt(bN,bK,'L');
+    return {aN,aK,bN,bK,c1,c2,swapped}; };
+
+  // 1) jobs par goulotte
+  const chanJobs=Array.from({length:g.nCols+1},()=>[]);
+  for(let li=0;li<N;li++){ const l=layout.links[li]; const o=norm(li);
+    if(o.c1===o.c2){
+      const A=pinPt(o.aN,o.aK,'R'), B=pinPt(o.bN,o.bK,'R');
+      chanJobs[Math.min(o.c1+1,g.nCols)].push({li,kind:'loop',A,B});
+    } else if(o.c2-o.c1===1){
+      const A=pinPt(o.aN,o.aK,'R'), B=pinPt(o.bN,o.bK,'L');
+      if(Math.abs(A.y-B.y)<0.75){ wires[li]={...l,a:{ax:A.x,ay:A.y},b:{ax:B.x,ay:B.y},pts:[A,B]}; }
+      else chanJobs[o.c1+1].push({li,kind:'span',A,B});
+    } else {
+      const A=pinPt(o.aN,o.aK,'R'), B=pinPt(o.bN,o.bK,'L');
       const top=g.yMin, bot=g.yMax;
       const useTop=(A.y-top)+(B.y-top)<=(bot-A.y)+(bot-B.y);
-      const ch1=c1+1, ch2=c2;
-      const th=alloc(useTop?hwTop:hwBot, chL(ch1), chL(ch2)+g.chW[ch2]);
+      const th=hwAlloc(useTop?hwTop:hwBot, chL(o.c1+1), chL(o.c2)+g.chW[o.c2]);
       const hy=useTop?(top-30-th*9):(bot+30+th*9);
-      const t1=alloc(chTracks[ch1],A.y,hy); const tx1=chL(ch1)+14+t1*9;
-      const t2=alloc(chTracks[ch2],hy,B.y); const tx2=chL(ch2)+14+t2*9;
+      hwY.set(li,hy);
+      chanJobs[o.c1+1].push({li,kind:'hw1',A,hy});
+      chanJobs[o.c2].push({li,kind:'hw2',B,hy});
+    }
+  }
+
+  // 2) ordre des pistes de chaque goulotte : contraintes par paires puis tri topologique.
+  //    Règle : un stub qui sort du côté gauche impose t(autre) > t(soi) s'il tombe dans
+  //    la travée verticale de l'autre ; côté droit impose l'inverse.
+  const chOut=Array.from({length:g.nCols+1},()=>new Map());
+  for(let ch=0;ch<=g.nCols;ch++){
+    const jobs=chanJobs[ch]; if(!jobs.length)continue;
+    const specs=jobs.map(j=>{
+      if(j.kind==='loop') return {V:[Math.min(j.A.y,j.B.y),Math.max(j.A.y,j.B.y)],ep:[{y:j.A.y,s:'L'},{y:j.B.y,s:'L'}]};
+      if(j.kind==='span') return {V:[Math.min(j.A.y,j.B.y),Math.max(j.A.y,j.B.y)],ep:[{y:j.A.y,s:'L'},{y:j.B.y,s:'R'}]};
+      if(j.kind==='hw1')  return {V:[Math.min(j.A.y,j.hy),Math.max(j.A.y,j.hy)],ep:[{y:j.A.y,s:'L'},{y:j.hy,s:'R'}]};
+      return {V:[Math.min(j.B.y,j.hy),Math.max(j.B.y,j.hy)],ep:[{y:j.B.y,s:'R'},{y:j.hy,s:'L'}]};
+    });
+    const n=jobs.length;
+    const lt=Array.from({length:n},()=>new Set()); // lt[a] contient b : t_a < t_b requis
+    const inV=(y,V)=>y>V[0]+0.5&&y<V[1]-0.5;
+    for(let i=0;i<n;i++)for(let j=0;j<n;j++){ if(i===j)continue;
+      specs[j].ep.forEach(e=>{ if(inV(e.y,specs[i].V)){
+        if(e.s==='L') lt[j].add(i); else lt[i].add(j);
+      }});
+    }
+    for(let a=0;a<n;a++)for(const b of [...lt[a]]){ if(lt[b].has(a)){ lt[a].delete(b); lt[b].delete(a); } }
+    const indeg=new Array(n).fill(0);
+    for(let a=0;a<n;a++)for(const b of lt[a])indeg[b]++;
+    const done=new Array(n).fill(false); const orderT=[];
+    let ready=[]; for(let i=0;i<n;i++)if(!indeg[i])ready.push(i);
+    while(orderT.length<n){
+      if(!ready.length){ let best=-1,bi=1e9;
+        for(let i=0;i<n;i++)if(!done[i]&&indeg[i]<bi){bi=indeg[i];best=i;}
+        ready.push(best); }
+      ready.sort((x,y)=>specs[x].V[0]-specs[y].V[0]);
+      const u=ready.shift(); if(done[u])continue; done[u]=true; orderT.push(u);
+      for(const v of lt[u]){ if(!done[v]&&--indeg[v]===0)ready.push(v); }
+    }
+    const x0=chL(ch)+14;
+    orderT.forEach((jobIdx,rank)=>chOut[ch].set(jobs[jobIdx].li, x0+rank*9));
+  }
+
+  // 3) matérialiser les fils
+  for(let li=0;li<N;li++){ if(wires[li])continue; const l=layout.links[li]; const o=norm(li);
+    let pts;
+    if(o.c1===o.c2){
+      const ch=Math.min(o.c1+1,g.nCols);
+      const A=pinPt(o.aN,o.aK,'R'), B=pinPt(o.bN,o.bK,'R');
+      const tx=chOut[ch].get(li);
+      pts=[A,{x:tx,y:A.y},{x:tx,y:B.y},B];
+    } else if(o.c2-o.c1===1){
+      const A=pinPt(o.aN,o.aK,'R'), B=pinPt(o.bN,o.bK,'L');
+      const tx=chOut[o.c1+1].get(li);
+      pts=[A,{x:tx,y:A.y},{x:tx,y:B.y},B];
+    } else {
+      const A=pinPt(o.aN,o.aK,'R'), B=pinPt(o.bN,o.bK,'L');
+      const hy=hwY.get(li);
+      const tx1=chOut[o.c1+1].get(li), tx2=chOut[o.c2].get(li);
       pts=[A,{x:tx1,y:A.y},{x:tx1,y:hy},{x:tx2,y:hy},{x:tx2,y:B.y},B];
     }
-    if(swapped)pts.reverse();
+    if(o.swapped)pts.reverse();
     wires[li]={...l,a:{ax:pts[0].x,ay:pts[0].y},b:{ax:pts[pts.length-1].x,ay:pts[pts.length-1].y},pts};
   }
 
@@ -671,10 +756,12 @@ function compSvg(c,sel){
   s+=`<path d="M 0 ${HH} v ${-(HH-3)} a 3 3 0 0 1 3 -3 h ${c.w-6} a 3 3 0 0 1 3 3 v ${HH-3} z" class="bhead"/>`;
   s+=`<line x1="0" y1="${HH}" x2="${c.w}" y2="${HH}" class="bheadline"/>`;
   s+=`<text class="rep-in" x="${f1(c.w/2)}" y="${HH/2+4}" text-anchor="middle">${esc(c.name)}</text>`;
-  c.pins.forEach((p,i)=>{ const ly=HH+i*PRH;
-    if(i>0) s+=`<line class="pinsep" x1="5" y1="${ly}" x2="${c.w-5}" y2="${ly}"/>`;
+  const pt=c.pinTop!=null?c.pinTop:HH;
+  c.pins.forEach((p,i)=>{ const ly=pt+i*PRH;
+    if(i>0||pt>HH) s+=`<line class="pinsep" x1="5" y1="${ly}" x2="${c.w-5}" y2="${ly}"/>`;
     s+=`<text class="pinlbl" x="${f1(c.w/2)}" y="${ly+PRH/2+3}" text-anchor="middle">${esc(p.label||'·')}</text>`;
   });
+  if(c.pins.length) s+=`<line class="pinsep" x1="5" y1="${pt+c.pins.length*PRH}" x2="${c.w-5}" y2="${pt+c.pins.length*PRH}"/>`;
   s+=`</g>`; return s;
 }
 
