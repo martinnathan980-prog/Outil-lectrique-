@@ -424,7 +424,41 @@ function computeLayout(eq, lk){
   const posXY=new Map();
   columns.forEach((c,i)=>{ let y=topY+(maxColH-colH[i])/2;
     c.forEach(n=>{ posXY.set(n,{x:colX[i],y}); y+=blockH(n)+VGAP; }); });
+
+  // --- optimisation anti-croisement (l'ordre des broches n'est pas fixe) :
+  //     1) réordonner les broches de chaque bloc vers le barycentre de leurs partenaires,
+  //     2) glisser les blocs verticalement pour mettre les broches en face l'une de l'autre
+  //     (fils droits, minimum de coudes). Deux rondes de chaque, en alternance.
+  const partners=new Map();
+  lk.forEach((l,li)=>{ const A=endPin.get(li+':A'),B=endPin.get(li+':B');
+    const ka=A.name+SOH+A.key, kb=B.name+SOH+B.key;
+    (partners.get(ka)||partners.set(ka,[]).get(ka)).push(B);
+    (partners.get(kb)||partners.set(kb,[]).get(kb)).push(A); });
+  const idxOf=new Map();
+  nodeNames.forEach(n=>{ const m=new Map(); P0(n).list.forEach((p,i)=>m.set(p.key,i)); idxOf.set(n,m); });
+  const pinYof=(n,k)=>posXY.get(n).y+HH+(idxOf.get(n).get(k)||0)*PRH+PRH/2;
+  const sortPins=()=>{ for(const n of nodeNames){ const P=P0(n); if(P.list.length<2)continue;
+    const sc=new Map(P.list.map(p=>{ const ps=partners.get(n+SOH+p.key)||[];
+      if(!ps.length)return [p.key,pinYof(n,p.key)];
+      let s=0; ps.forEach(q=>s+=pinYof(q.name,q.key)); return [p.key,s/ps.length]; }));
+    P.list.sort((a,b)=>sc.get(a.key)-sc.get(b.key));
+    const m=idxOf.get(n); P.list.forEach((p,i)=>m.set(p.key,i)); } };
+  const alignBlocks=()=>{ columns.forEach((c,ci)=>{ let prevBot=-Infinity;
+    c.forEach(n=>{ const h=blockH(n); const P=P0(n); const des=[];
+      P.list.forEach((p,i)=>{ (partners.get(n+SOH+p.key)||[]).forEach(q=>{
+        if(colOf.get(q.name)!==ci) des.push(pinYof(q.name,q.key)-(HH+i*PRH+PRH/2)); }); });
+      des.sort((a,b)=>a-b);
+      let y=des.length?des[Math.floor(des.length/2)]:posXY.get(n).y;
+      y=Math.max(y, prevBot+VGAP, topY-40);
+      posXY.get(n).y=y; prevBot=y+h; }); }); };
+  for(let round=0;round<2;round++){ sortPins(); alignBlocks(); }
+  sortPins();
   for(const [n,o] of OVR){ if(posXY.has(n)) posXY.set(n,{x:o.x-BW/2,y:o.y-blockH(n)/2}); }
+
+  // bornes verticales réelles après optimisation
+  let yMin=Infinity,yMax=-Infinity;
+  nodeNames.forEach(n=>{ const p=posXY.get(n); yMin=Math.min(yMin,p.y); yMax=Math.max(yMax,p.y+blockH(n)); });
+  if(!isFinite(yMin)){ yMin=topY; yMax=topY+maxColH; }
 
   // --- blocs
   const compList=[],compByName=new Map();
@@ -456,13 +490,13 @@ function computeLayout(eq, lk){
 
   // --- cadre (format A3 conservé)
   const x0=M-50, x1=totalW+50;
-  const y0=topY-150, y1=topY+maxColH+150;
+  const y0=yMin-150, y1=yMax+150;
   let bbox={x:x0,y:y0,w:x1-x0,h:y1-y0};
   const A3=1.414;
   if(bbox.w/bbox.h<A3){ const nw=bbox.h*A3; bbox.x-=(nw-bbox.w)/2; bbox.w=nw; }
   else if(bbox.w/bbox.h>A3){ const nh=bbox.w/A3; bbox.y-=(nh-bbox.h)/2; bbox.h=nh; }
 
-  const geom={columns,colOf,colX,chW,nCols,topY,maxColH};
+  const geom={columns,colOf,colX,chW,nCols,yMin,yMax};
   return {rails:[],comps:compList,srcs:[],links,bbox,isRail,nets,find,
     railByName:new Map(),compByName,geom};
 }
@@ -500,12 +534,13 @@ function routeAll(layout){
       pts=[A,{x:tx,y:A.y},{x:tx,y:B.y},B];
     } else if(c2-c1===1){ // colonnes adjacentes : une seule goulotte
       const A=pinPt(aN,aK,'R'), B=pinPt(bN,bK,'L');
-      const ch=c1+1; const t=alloc(chTracks[ch],A.y,B.y);
-      const tx=chL(ch)+14+t*9;
-      pts=[A,{x:tx,y:A.y},{x:tx,y:B.y},B];
+      if(Math.abs(A.y-B.y)<0.75){ pts=[A,B]; } // broches en face : fil droit, zéro coude
+      else { const ch=c1+1; const t=alloc(chTracks[ch],A.y,B.y);
+        const tx=chL(ch)+14+t*9;
+        pts=[A,{x:tx,y:A.y},{x:tx,y:B.y},B]; }
     } else { // colonnes éloignées : goulotte -> rocade haut/bas -> goulotte
       const A=pinPt(aN,aK,'R'), B=pinPt(bN,bK,'L');
-      const top=g.topY, bot=g.topY+g.maxColH;
+      const top=g.yMin, bot=g.yMax;
       const useTop=(A.y-top)+(B.y-top)<=(bot-A.y)+(bot-B.y);
       const ch1=c1+1, ch2=c2;
       const th=alloc(useTop?hwTop:hwBot, chL(ch1), chL(ch2)+g.chW[ch2]);
