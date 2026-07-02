@@ -134,7 +134,7 @@ main{grid-area:main;position:relative;overflow:hidden;background:#e3e6ea}
         <div class="pbody">
           <table class="grid" id="tbl-eq"><thead><tr><th>Repère</th><th>Désignation</th><th></th></tr></thead><tbody></tbody></table>
           <button class="ghost addrow" id="add-eq">+ ligne</button>
-          <div class="hint" style="margin-top:6px">Tous les équipements sont dessinés en carré avec bornes numérotées. Clique un carré ou un fil pour toutes les infos.</div>
+          <div class="hint" style="margin-top:6px">Chaque équipement est un bloc : nom en tête, broches listées dedans, fils horizontaux. Clique un bloc ou un fil pour toutes les infos.</div>
         </div>
       </div>
       <div class="psec" id="sec-lk">
@@ -299,16 +299,6 @@ function inferType(repere){
   if(PREFIX[p[0]]) return PREFIX[p[0]];
   return {t:'élément',s:'box',r:'misc'};
 }
-const TYPE2SYM={disjoncteur:'breaker','disjoncteur moteur':'breaker',sectionneur:'isolator',fusible:'fuse',
-  contacteur:'contactor',relais:'coil',moteur:'motor',source:'source','réseau':'source',transformateur:'transfo',
-  prise:'socket',voyant:'lamp',lampe:'lamp','éclairage':'lamp',interrupteur:'switch_man',commutateur:'switch_man',
-  bouton:'pushbtn',capteur:'sensor','résistance':'resistor',inductance:'inductor',condensateur:'capacitor',
-  mesure:'meter','électrovanne':'coil',convertisseur:'box',variateur:'box',
-  'prise de coupure':'disconnect',bornier:'disconnect','bornier de coupure':'disconnect',coupure:'disconnect','bornier sécable':'disconnect'};
-function symbolKeyFor(eq){ const ty=String(eq.type||'').trim().toLowerCase();
-  if(ty&&TYPE2SYM[ty]) return TYPE2SYM[ty]; return inferType(eq.repere).s; }
-function roleFor(eq){ const ty=String(eq.type||'').trim().toLowerCase();
-  if(ty){ for(const k in PREFIX) if(PREFIX[k].t===ty) return PREFIX[k].r; } return inferType(eq.repere).r; }
 const SOH='';
 function pin(node,term){ return node+SOH+(term||''); }
 
@@ -333,435 +323,207 @@ function buildNets(lk){
   return {find,nets};
 }
 
-/* ---------- 4. Symboles IEC 60617 — chaque fabrique reçoit (topN, botN) ---- */
-const POLE=22, BODY_H=46;
-function bodyW(poles){ return Math.max(34,(poles-1)*POLE+26); }
-function spread(w,n){ n=Math.max(1,n); if(n===1)return [w/2];
-  const pitch=Math.min(POLE,(w-16)/(n-1)); const x0=w/2-pitch*(n-1)/2;
-  return Array.from({length:n},(_,i)=>x0+i*pitch); }
-function mechLink(xs,y){ const a=xs[0],b=xs[xs.length-1]; return `<line x1="${a}" y1="${y}" x2="${b}" y2="${y}" class="mech"/>`; }
-
-// glyphes de pôle (contact dessiné entre y0 et y1, lead inclus)
-function gBreaker(x,y0,y1){ const yc=(y0+y1)/2;
-  return `<line x1="${x}" y1="${y0}" x2="${x}" y2="${yc-9}" class="w-int"/><line x1="${x}" y1="${yc+9}" x2="${x}" y2="${y1}" class="w-int"/>`
-   +`<circle cx="${x}" cy="${yc+9}" r="1.6" class="dot-fix"/><line x1="${x}" y1="${yc+9}" x2="${x+9}" y2="${yc-9}" class="sym"/>`
-   +`<line x1="${x-3.5}" y1="${yc-12.5}" x2="${x+3.5}" y2="${yc-5.5}" class="sym"/><line x1="${x+3.5}" y1="${yc-12.5}" x2="${x-3.5}" y2="${yc-5.5}" class="sym"/>`; }
-function gIsolator(x,y0,y1){ const yc=(y0+y1)/2;
-  return `<line x1="${x}" y1="${y0}" x2="${x}" y2="${yc-9}" class="w-int"/><line x1="${x}" y1="${yc+9}" x2="${x}" y2="${y1}" class="w-int"/>`
-   +`<circle cx="${x}" cy="${yc+9}" r="1.6" class="dot-fix"/><line x1="${x}" y1="${yc+9}" x2="${x+9}" y2="${yc-9}" class="sym"/>`
-   +`<line x1="${x-5}" y1="${yc-9}" x2="${x+5}" y2="${yc-9}" class="sym"/>`; }
-function gContactor(x,y0,y1){ const yc=(y0+y1)/2;
-  return `<line x1="${x}" y1="${y0}" x2="${x}" y2="${yc-9}" class="w-int"/><line x1="${x}" y1="${yc+9}" x2="${x}" y2="${y1}" class="w-int"/>`
-   +`<circle cx="${x}" cy="${yc+9}" r="1.6" class="dot-fix"/><line x1="${x}" y1="${yc+9}" x2="${x+9}" y2="${yc-9}" class="sym"/>`
-   +`<path d="M ${x+1} ${yc-9} a 5 5 0 0 0 7 4.4" class="sym" fill="none"/>`; }
-function gFuse(x,y0,y1){ const yc=(y0+y1)/2;
-  return `<line x1="${x}" y1="${y0}" x2="${x}" y2="${yc-11}" class="w-int"/><line x1="${x}" y1="${yc+11}" x2="${x}" y2="${y1}" class="w-int"/>`
-   +`<rect x="${x-5}" y="${yc-11}" width="10" height="22" class="sym" fill="none"/><line x1="${x}" y1="${yc-11}" x2="${x}" y2="${yc+11}" class="sym-thin"/>`; }
-
-function inlineSym(tN,bN,glyph){
-  const poles=Math.max(1,tN,bN); const w=bodyW(poles), h=BODY_H;
-  const xs=spread(w,poles);
-  return {w,h,topX:xs.slice(0,Math.max(1,tN)),botX:xs.slice(0,Math.max(1,bN)),poles,
-    draw(){ let s=''; for(let i=0;i<poles;i++) s+=glyph(xs[i],0,h); if(poles>1) s+=mechLink(xs,h/2-9); return s; }};
-}
-const SYM={
-  breaker:(t,b)=>inlineSym(t,b,gBreaker),
-  isolator:(t,b)=>inlineSym(t,b,gIsolator),
-  contactor:(t,b)=>inlineSym(t,b,gContactor),
-  fuse:(t,b)=>inlineSym(t,b,gFuse),
-  switch_man:(t,b)=>{ const w=34,h=BODY_H,x=w/2,yc=h/2; return {w,h,topX:[x],botX:[x],draw(){
-     return `<line x1="${x}" y1="0" x2="${x}" y2="${yc-9}" class="w-int"/><line x1="${x}" y1="${yc+9}" x2="${x}" y2="${h}" class="w-int"/>`
-       +`<circle cx="${x}" cy="${yc+9}" r="1.6" class="dot-fix"/><line x1="${x}" y1="${yc+9}" x2="${x+9}" y2="${yc-9}" class="sym"/>`; }};},
-  pushbtn:(t,b)=>{ const w=34,h=BODY_H,x=w/2,yc=h/2; return {w,h,topX:[x],botX:[x],draw(){
-     return `<line x1="${x}" y1="0" x2="${x}" y2="${yc-9}" class="w-int"/><line x1="${x}" y1="${yc+9}" x2="${x}" y2="${h}" class="w-int"/>`
-       +`<line x1="${x}" y1="${yc+9}" x2="${x+9}" y2="${yc-9}" class="sym"/><line x1="${x+4.5}" y1="${yc}" x2="${x+12}" y2="${yc}" class="sym-thin"/>`
-       +`<line x1="${x+12}" y1="${yc-4}" x2="${x+12}" y2="${yc+4}" class="sym"/>`; }};},
-  coil:(t,b)=>{ const w=34,h=BODY_H,x=w/2; return {w,h,topX:[x],botX:[x],draw(){
-     return `<line x1="${x}" y1="0" x2="${x}" y2="13" class="w-int"/><rect x="${x-9}" y="13" width="18" height="20" class="sym" fill="none"/><line x1="${x}" y1="33" x2="${x}" y2="${h}" class="w-int"/>`; }};},
-  resistor:(t,b)=>{ const w=34,h=BODY_H,x=w/2; return {w,h,topX:[x],botX:[x],draw(){
-     return `<line x1="${x}" y1="0" x2="${x}" y2="13" class="w-int"/><rect x="${x-7}" y="13" width="14" height="20" class="sym" fill="none"/><line x1="${x}" y1="33" x2="${x}" y2="${h}" class="w-int"/>`; }};},
-  inductor:(t,b)=>{ const w=40,h=BODY_H,x=w/2; return {w,h,topX:[x],botX:[x],draw(){
-     return `<line x1="${x}" y1="0" x2="${x}" y2="12" class="w-int"/><path d="M ${x} 12 a4 4 0 1 1 0 8 a4 4 0 1 1 0 8 a4 4 0 1 1 0 8" class="sym" fill="none"/><line x1="${x}" y1="36" x2="${x}" y2="${h}" class="w-int"/>`; }};},
-  capacitor:(t,b)=>{ const w=34,h=BODY_H,x=w/2,yc=h/2; return {w,h,topX:[x],botX:[x],draw(){
-     return `<line x1="${x}" y1="0" x2="${x}" y2="${yc-4}" class="w-int"/><line x1="${x-9}" y1="${yc-4}" x2="${x+9}" y2="${yc-4}" class="sym"/><line x1="${x-9}" y1="${yc+4}" x2="${x+9}" y2="${yc+4}" class="sym"/><line x1="${x}" y1="${yc+4}" x2="${x}" y2="${h}" class="w-int"/>`; }};},
-  motor:(t,b)=>{ const ph=Math.max(1,t); const w=Math.max(46,(ph-1)*POLE+30),h=58,cx=w/2,cy=32,r=18;
-     const tx=spread(w,ph);
-     const angs= ph>=3?[-130,-90,-50] : ph===2?[-118,-62] : [-90];
-     const cpts=angs.map(a=>({x:cx+r*Math.cos(a*Math.PI/180), y:cy+r*Math.sin(a*Math.PI/180)}));
-     return {w,h,topX:tx,botX:[cx],draw(){ let s=''; const ymid=cy-r-6;
-       tx.forEach((x,i)=>{ const cp=cpts[i]||{x:cx,y:cy-r};
-         s+=`<line x1="${x}" y1="0" x2="${x}" y2="${ymid}" class="w-int"/>`;
-         s+=`<line x1="${x}" y1="${ymid}" x2="${cp.x.toFixed(1)}" y2="${cp.y.toFixed(1)}" class="w-int"/>`; });
-       s+=`<circle cx="${cx}" cy="${cy}" r="${r}" class="sym" fill="var(--sheet)"/>`;
-       s+=`<text x="${cx}" y="${cy-1}" class="sym-txt" text-anchor="middle">M</text>`;
-       s+=`<text x="${cx}" y="${cy+10}" class="sym-sub" text-anchor="middle">${ph>=3?'3~':'1~'}</text>`;
-       s+=`<line x1="${cx}" y1="${cy+r}" x2="${cx}" y2="${h}" class="w-int"/>`; return s; }};},
-  source:(t,b)=>{ const w=46,h=Math.max(54,(Math.max(1,b))*16+24),cx=w/2,cy=h/2,r=18;
-     return {w,h,topX:[],botX:[cx],draw(){ return `<circle cx="${cx}" cy="${cy}" r="${r}" class="sym" fill="var(--sheet)"/>`
-       +`<text x="${cx}" y="${cy+1}" class="sym-txt" text-anchor="middle">G</text>`
-       +`<path d="M ${cx-8} ${cy+7} q 4 -6 8 0 t 8 0" class="sym-thin" fill="none"/>`; }};},
-  transfo:(t,b)=>{ const w=46,h=60,cx=w/2; return {w,h,topX:[cx],botX:[cx],draw(){
-     return `<line x1="${cx}" y1="0" x2="${cx}" y2="14" class="w-int"/><circle cx="${cx}" cy="22" r="11" class="sym" fill="none"/><circle cx="${cx}" cy="38" r="11" class="sym" fill="none"/><line x1="${cx}" y1="49" x2="${cx}" y2="${h}" class="w-int"/>`; }};},
-  socket:(t,b)=>{ const w=46,h=50,cx=w/2,cy=22,r=13; const bx=spread(w,Math.max(1,b));
-     return {w,h,topX:[cx],botX:bx,draw(){ let s=`<line x1="${cx}" y1="0" x2="${cx}" y2="${cy-r}" class="w-int"/>`;
-       s+=`<path d="M ${cx-r} ${cy} a ${r} ${r} 0 0 1 ${2*r} 0 Z" class="sym" fill="var(--sheet)"/><line x1="${cx-r}" y1="${cy}" x2="${cx+r}" y2="${cy}" class="sym"/>`;
-       bx.forEach(x=>{ s+=`<line x1="${x}" y1="${cy+2}" x2="${x}" y2="${h}" class="w-int"/>`; }); return s; }};},
-  lamp:(t,b)=>{ const w=40,h=48,cx=w/2,cy=24,r=12; return {w,h,topX:[cx],botX:[cx],draw(){
-     const k=r*0.71; return `<line x1="${cx}" y1="0" x2="${cx}" y2="${cy-r}" class="w-int"/><circle cx="${cx}" cy="${cy}" r="${r}" class="sym" fill="var(--sheet)"/>`
-       +`<line x1="${cx-k}" y1="${cy-k}" x2="${cx+k}" y2="${cy+k}" class="sym"/><line x1="${cx+k}" y1="${cy-k}" x2="${cx-k}" y2="${cy+k}" class="sym"/><line x1="${cx}" y1="${cy+r}" x2="${cx}" y2="${h}" class="w-int"/>`; }};},
-  meter:(t,b)=>{ const w=40,h=46,cx=w/2,cy=23,r=12; return {w,h,topX:[cx],botX:[cx],draw(){
-     return `<line x1="${cx}" y1="0" x2="${cx}" y2="${cy-r}" class="w-int"/><circle cx="${cx}" cy="${cy}" r="${r}" class="sym" fill="var(--sheet)"/><text x="${cx}" y="${cy+4}" class="sym-txt" text-anchor="middle">A</text><line x1="${cx}" y1="${cy+r}" x2="${cx}" y2="${h}" class="w-int"/>`; }};},
-  sensor:(t,b)=>{ const w=40,h=44,cx=w/2; return {w,h,topX:[cx],botX:[cx],draw(){
-     return `<line x1="${cx}" y1="0" x2="${cx}" y2="9" class="w-int"/><path d="M ${cx} 9 L ${cx-11} 24 L ${cx+11} 24 Z" class="sym" fill="var(--sheet)"/><line x1="${cx}" y1="24" x2="${cx}" y2="${h}" class="w-int"/>`; }};},
-  box:(t,b)=>{ const tN=Math.max(1,t), bN=Math.max(1,b); const poles=Math.max(tN,bN); const cellW=28;
-     const w=Math.max(52,poles*cellW+6),h=54;
-     const xs=n=>Array.from({length:n},(_,i)=>w/2+(i-(n-1)/2)*cellW);
-     const tx=xs(tN),bx=xs(bN);
-     return {w,h,topX:tx,botX:bx,draw(){ let s=`<rect x="2" y="8" width="${w-4}" height="${h-16}" rx="3" class="sym" fill="var(--sheet)"/>`;
-       tx.forEach(x=>s+=`<line x1="${x}" y1="0" x2="${x}" y2="8" class="w-int"/>`);
-       bx.forEach(x=>s+=`<line x1="${x}" y1="${h-8}" x2="${x}" y2="${h}" class="w-int"/>`); return s; }};},
-  disconnect:(t,b)=>{ const poles=Math.max(1,t,b); const cellW=24, w=poles*cellW+6, h=56;
-     const xs=Array.from({length:poles},(_,i)=>3+cellW/2+i*cellW);
-     return {w,h,topX:xs,botX:xs,draw(){ let s=`<rect x="2" y="9" width="${w-4}" height="${h-18}" rx="3" class="sym" fill="var(--sheet)"/>`;
-       for(let i=1;i<poles;i++){ const sx=3+i*cellW; s+=`<line x1="${sx}" y1="9" x2="${sx}" y2="${h-9}" class="sym-thin"/>`; }
-       xs.forEach(x=>{ s+=`<line x1="${x}" y1="0" x2="${x}" y2="20" class="w-int"/><line x1="${x}" y1="36" x2="${x}" y2="${h}" class="w-int"/>`;
-         s+=`<circle cx="${x}" cy="20" r="1.8" class="dot-fix"/><circle cx="${x}" cy="36" r="1.8" class="dot-fix"/>`;
-         s+=`<line x1="${x}" y1="20" x2="${x+6}" y2="34" class="sym"/>`; }); return s; }};},
-  disconnect_simple:(t,b)=>{ const poles=Math.max(1,t,b); const cellW=24, w=poles*cellW+6, h=56;
-     const xs=Array.from({length:poles},(_,i)=>3+cellW/2+i*cellW);
-     return {w,h,topX:xs,botX:xs,draw(){ let s=`<rect x="2" y="9" width="${w-4}" height="${h-18}" rx="3" class="sym" fill="var(--sheet)"/>`;
-       xs.forEach(x=>{ s+=`<line x1="${x}" y1="0" x2="${x}" y2="${h}" class="w-int"/>`; }); return s; }};},
-};
-
-/* ---------- 5. Placement : schéma développé (barres + colonnes) ---------- */
+/* ---------- 5. Placement : schéma d'interconnexion (blocs à broches) ---------- */
+const BW=118, HH=20, PRH=16, BPAD=6, VGAP=26;
 function computeLayout(eq, lk){
   const byRep=new Map(eq.map(e=>[e.repere,e]));
-  const cited=new Set(); lk.forEach(l=>{cited.add(l.from);cited.add(l.to);});
   const isRail=n=>RAIL_RE.test(String(n).trim()) && !byRep.has(n);
 
-  const compNames=new Set();
-  eq.forEach(e=>{ if(!isRail(e.repere)) compNames.add(e.repere); });
-  cited.forEach(n=>{ if(!isRail(n)) compNames.add(n); });
+  const nodeNames=[]; const seenN=new Set();
+  const noteName=n=>{ if(n&&!seenN.has(n)){seenN.add(n);nodeNames.push(n);} };
+  eq.forEach(e=>noteName(e.repere));
+  lk.forEach(l=>{noteName(l.from);noteName(l.to);});
 
-  const comps=new Map();
-  for(const n of compNames){ const e=byRep.get(n)||{repere:n,designation:'',type:''};
-    // tout est rendu en carré (boîte) avec bornes numérotées ; le rôle sert au placement
-    comps.set(n,{repere:n,designation:e.designation||'',type:e.type||'',sym:'box',role:roleFor(e)}); }
-
-  // adjacence comp<->comp
-  const adj=new Map([...compNames].map(n=>[n,new Set()]));
-  for(const l of lk){ if(!isRail(l.from)&&!isRail(l.to)&&comps.has(l.from)&&comps.has(l.to)){
-    adj.get(l.from).add(l.to); adj.get(l.to).add(l.from); } }
-
-  // estimation de largeur (avant placement) : sert à espacer les colonnes sans collision
-  const linkCnt=new Map();
-  lk.forEach(l=>{ [l.from,l.to].forEach(n=>{ if(comps.has(n)&&!isRail(n)) linkCnt.set(n,(linkCnt.get(n)||0)+1); }); });
-  const estW=n=>Math.max(52, Math.max(1,Math.ceil((linkCnt.get(n)||1)*0.6))*28+6);
-
-  // colonnes = composantes connexes
-  const colOf=new Map(); const columns=[]; let nc=0;
-  for(const n of compNames){ if(colOf.has(n))continue; const id=nc++; const members=[]; const st=[n]; colOf.set(n,id);
-    while(st.length){ const c=st.pop(); members.push(c); for(const k of adj.get(c)) if(!colOf.has(k)){colOf.set(k,id);st.push(k);} }
-    columns.push({id,members}); }
-
-  const sources=[...compNames].filter(n=>comps.get(n).role==='source');
-  const srcSet=new Set(sources);
-
-  function railLinksOf(name){ return lk.filter(l=>(l.from===name&&isRail(l.to))||(l.to===name&&isRail(l.from))); }
-  function touchesPhase(name){ return railLinksOf(name).some(l=>{const r=l.from===name?l.to:l.from; const k=railKind(r); return k==='phase'||k==='ctrl';}); }
-
-  // géométrie (constantes utilisées par le placement)
-  const M=70, phaseGap=26, rowH=98, subGap=84, colGap=150;
-
-  // placement par colonne (niveau + slot)
-  const place=[]; let maxLevelAll=0;
-  for(const col of columns){
-    const mem=col.members.filter(m=>!srcSet.has(m));
-    if(!mem.length){ col.width=0; continue; }
-    let root=mem.find(touchesPhase) || mem.slice().sort((a,b)=>adj.get(b).size-adj.get(a).size)[0];
-    const lvl=new Map([[root,0]]); const q=[root];
-    while(q.length){ const c=q.shift(); for(const k of adj.get(c)) if(!lvl.has(k)&&mem.includes(k)){lvl.set(k,lvl.get(c)+1);q.push(k);} }
-    mem.forEach(m=>{ if(!lvl.has(m))lvl.set(m,0); });
-    const byLvl=new Map(); let maxLvl=0;
-    mem.forEach(m=>{ const L=lvl.get(m); (byLvl.get(L)||byLvl.set(L,[]).get(L)).push(m); maxLvl=Math.max(maxLvl,L); });
-    let width=1; byLvl.forEach(a=>width=Math.max(width,a.length));
-    col.width=width; col.maxLvl=maxLvl; maxLevelAll=Math.max(maxLevelAll,maxLvl);
-    col.maxW=Math.max(...mem.map(estW));
-    col.subGap=Math.max(subGap, col.maxW+26);   // écart adaptatif : jamais deux boîtes qui se touchent
-    byLvl.forEach((arr,L)=>arr.forEach((m,i)=>place.push({name:m,col,level:L,slot:i-(arr.length-1)/2})));
-  }
-
-  // rails utilisés
-  const phaseUsed=[...new Set(lk.flatMap(l=>[l.from,l.to]).filter(n=>isRail(n)&&railKind(n)==='phase'))].sort();
-  const allRailNames=[...cited].filter(isRail);
-  const phaseRailNames=phaseUsed.length?phaseUsed:allRailNames.filter(n=>railKind(n)==='phase');
-  const neutralRail=allRailNames.find(n=>railKind(n)==='neutre');
-  const earthRail=allRailNames.find(n=>railKind(n)==='terre');
-  const ctrlRails=[...new Set(allRailNames.filter(n=>railKind(n)==='ctrl'))];
-
-  // géométrie verticale
-  const srcW=sources.length?56:0;
-  const railX0=M+(srcW?srcW+26:0);
-  const phaseY0=M+46;
-  const phaseY={}; phaseRailNames.forEach((n,i)=>phaseY[n]=phaseY0+i*phaseGap);
-  const ctrlY={}; ctrlRails.forEach((n,i)=>ctrlY[n]=phaseY0+phaseRailNames.length*phaseGap+18+i*phaseGap);
-  const topRailBottom=phaseY0+(Math.max(1,phaseRailNames.length)-1)*phaseGap;
-  const colTopY=phaseY0+(phaseRailNames.length+ctrlRails.length)*phaseGap+58;
-  const neutralY=colTopY+maxLevelAll*rowH+72;
-  const earthY=neutralY+26;
-
-  // x par colonne (espacement adaptatif à la largeur des équipements)
-  const orderedCols=columns.filter(c=>c.width>0).sort((a,b)=>a.id-b.id);
-  let cur=railX0+50; const colX=new Map();
-  orderedCols.forEach(c=>{ const halfspan=(c.width-1)*c.subGap/2 + c.maxW/2;
-    colX.set(c.id,cur+halfspan); cur+=2*halfspan+colGap; });
-  const railX1=Math.max(cur, railX0+220);
-
-  // positions provisoires des comps
-  const posY=new Map(), posX=new Map();
-  for(const pl of place){ posX.set(pl.name,colX.get(pl.col.id)+pl.slot*pl.col.subGap); posY.set(pl.name,colTopY+pl.level*rowH); }
-  if(typeof OVR!=='undefined') for(const [n,o] of OVR){ if(posX.has(n)){ posX.set(n,o.x); posY.set(n,o.y); } }
-
-  function yOf(name){
-    if(isRail(name)){ const k=railKind(name);
-      if(k==='phase') return phaseY[name]??phaseY0;
-      if(k==='neutre') return neutralY; if(k==='terre') return earthY; if(k==='ctrl') return ctrlY[name]??colTopY; }
-    return posY.has(name)?posY.get(name):null;
-  }
-
-  // source : boîte compacte à gauche, une borne par rail (phases alignées à droite, N/PE en bas)
-  const srcList=[];
-  sources.forEach(s=>{ const o=comps.get(s);
-    const hit=[], seen=new Set();
-    lk.forEach(l=>{ let rn=null; if(l.from===s&&isRail(l.to))rn=l.to; else if(l.to===s&&isRail(l.from))rn=l.from;
-      if(rn&&!seen.has(rn)){ seen.add(rn); hit.push({name:rn,kind:railKind(rn),y:yOf(rn)}); } });
-    const phases=hit.filter(r=>r.kind==='phase').sort((a,b)=>a.y-b.y);
-    const others=hit.filter(r=>r.kind!=='phase');
-    const w=Math.max(58, others.length*27+16), x=M;
-    const pys=phases.map(r=>r.y);
-    const top=(pys.length?Math.min(...pys):phaseY0)-16;
-    // marge basse suffisante pour que les bornes du bas (N/PE…) ne touchent pas la dernière phase
-    const bot=(pys.length?Math.max(...pys):topRailBottom)+(others.length?34:16);
-    const h=Math.max(48,bot-top), y=top;
-    const termByRail=new Map();
-    phases.forEach(r=> termByRail.set(r.name,{ax:x+w,ay:r.y}));
-    const obx=others.map((r,i)=> x + w*(i+1)/(others.length+1));
-    others.forEach((r,i)=> termByRail.set(r.name,{ax:obx[i],ay:y+h}));
-    srcList.push({name:s,o,x,y,w,h,phases,others,termByRail}); posY.set(s,y+h/2); posX.set(s,x+w/2); });
-
-  // registre de bornes par comp (gère bornes sans nom -> clés synthétiques)
-  // Registre par côté : une borne peut exister en haut ET en bas (bornier traversant).
-  const compTermReg=new Map(); // name -> {top:[{key,label}], bot:[...], topKey:Map, botKey:Map, cnt}
-  function reg(name){ if(!compTermReg.has(name)) compTermReg.set(name,{top:[],bot:[],topKey:new Map(),botKey:new Map(),cnt:0}); return compTermReg.get(name); }
-  const endKey=new Map(); // (linkIdx+':'+end) -> {name,key}
+  // --- broches par bloc : équipement = 1 broche par borne (fusion des doublons),
+  //     rail/potentiel = 1 broche par fil (étiquetée par le potentiel PN si présent)
+  const pinsOf=new Map(); const endPin=new Map();
+  const P0=n=>{ if(!pinsOf.has(n))pinsOf.set(n,{list:[],byLabel:new Map(),cnt:0}); return pinsOf.get(n); };
   lk.forEach((l,li)=>{
-    [['from','fromTerm','to','A'],['to','toTerm','from','B']].forEach(([a,at,b,tag])=>{
-      const name=l[a]; if(srcSet.has(name)||!comps.has(name)||isRail(name)) return;
-      const label=String(l[at]||''); const other=l[b];
-      const R=reg(name);
-      const ym=yOf(name), yo=yOf(other); const side=(yo!=null&&ym!=null&&yo<ym)?'top':'bot';
-      const list=side==='top'?R.top:R.bot, km=side==='top'?R.topKey:R.botKey;
+    [['from','fromTerm','pn1','A'],['to','toTerm','pn2','B']].forEach(([a,at,apn,tag])=>{
+      const name=l[a]; const P=P0(name); const rail=isRail(name);
+      const label=rail?String(l[apn]||''):String(l[at]||'');
       let key;
-      if(label && km.has(label)){ key=km.get(label); }        // même borne, même côté → un seul point
-      else { key=(label?('n:'+label):('p'+(R.cnt++)))+':'+side; if(label)km.set(label,key); list.push({key,label,bl:label}); }
-      endKey.set(li+':'+tag,{name,key});
+      if(rail){ key='r'+(P.cnt++); P.list.push({key,label}); }
+      else if(label&&P.byLabel.has(label)) key=P.byLabel.get(label);
+      else { key=label?('n:'+label):('p'+(P.cnt++)); if(label)P.byLabel.set(label,key); P.list.push({key,label}); }
+      endPin.set(li+':'+tag,{name,key});
     });
   });
+  for(const n of nodeNames){ const P=P0(n); if(isRail(n))continue;
+    P.list.sort((a,b)=>{ const na=parseFloat(a.label),nb=parseFloat(b.label);
+      const an=!isNaN(na),bn=!isNaN(nb);
+      if(an&&bn)return (na-nb)||String(a.label).localeCompare(String(b.label));
+      if(an)return -1; if(bn)return 1;
+      if(a.label&&b.label)return a.label.localeCompare(b.label);
+      return a.label?-1:(b.label?1:0); });
+  }
 
-  // construire les comps placés
-  const compList=[]; const compByName=new Map();
-  for(const n of compNames){ if(srcSet.has(n)||!posX.has(n))continue;
-    const o=comps.get(n); const R=reg(n);
-    const tN=Math.max(1,R.top.length), bN=Math.max(1,R.bot.length);
-    const proto=SYM.box(tN,bN); const w=proto.w,h=proto.h;
-    const X=posX.get(n)-w/2, Y=posY.get(n)-h/2;
-    const byKey=new Map(); const topLbl=[],botLbl=[];
-    R.top.forEach((t,i)=>{ const lx=proto.topX[i]??(w/2); byKey.set(t.key,{ax:X+lx,ay:Y,side:'top',label:t.label}); topLbl.push({x:lx,label:t.label}); });
-    R.bot.forEach((t,i)=>{ const lx=proto.botX[i]??(w/2); byKey.set(t.key,{ax:X+lx,ay:Y+h,side:'bot',label:t.label}); botLbl.push({x:lx,label:t.label}); });
-    const c={name:n,o,x:X,y:Y,w,h,proto,byKey,topLbl,botLbl}; compList.push(c); compByName.set(n,c); }
+  // --- graphe pondéré
+  const adj=new Map(nodeNames.map(n=>[n,new Map()]));
+  lk.forEach(l=>{ if(l.from===l.to)return;
+    adj.get(l.from).set(l.to,(adj.get(l.from).get(l.to)||0)+1);
+    adj.get(l.to).set(l.from,(adj.get(l.to).get(l.from)||0)+1); });
+  const degree=n=>{ let s=0; for(const w of adj.get(n).values())s+=w; return s; };
+  const isBornier=n=>{ if(isRail(n))return true; const e=byRep.get(n);
+    const t=norm((e&&e.type)||''); if(/born|coupure|repart/.test(t))return true;
+    return inferType(n).s==='disconnect'; };
 
-  // rails objets
-  const rails=[];
-  phaseRailNames.forEach(n=>rails.push({name:n,kind:'phase',y:phaseY[n],x0:railX0,x1:railX1,color:phaseColorByName(n)}));
-  ctrlRails.forEach(n=>rails.push({name:n,kind:'ctrl',y:ctrlY[n],x0:railX0,x1:railX1,color:'ctrl'}));
-  if(neutralRail) rails.push({name:neutralRail,kind:'neutre',y:neutralY,x0:railX0,x1:railX1,color:'blue'});
-  if(earthRail) rails.push({name:earthRail,kind:'terre',y:earthY,x0:railX0,x1:railX1,color:'green'});
-  const railByName=new Map(rails.map(r=>[r.name,r]));
-  const srcByName=new Map(srcList.map(s=>[s.name,s]));
+  // --- colonnes : borniers sur les côtés, le reste au centre (ordre BFS)
+  const mids=nodeNames.filter(n=>!isBornier(n));
+  const outs=nodeNames.filter(isBornier);
+  const order=[]; const vis=new Set();
+  [...mids].sort((a,b)=>degree(b)-degree(a)).forEach(seed=>{
+    if(vis.has(seed))return; const q=[seed]; vis.add(seed);
+    while(q.length){ const c=q.shift(); order.push(c);
+      [...adj.get(c).keys()].filter(k=>!vis.has(k)&&!isBornier(k))
+        .sort((a,b)=>degree(b)-degree(a)).forEach(k=>{vis.add(k);q.push(k);}); } });
+  const nMidCols=order.length?Math.max(1,Math.min(4,Math.ceil(order.length/4))):0;
+  const midCols=Array.from({length:Math.max(1,nMidCols)},()=>[]);
+  if(order.length){ const per=Math.ceil(order.length/nMidCols);
+    order.forEach((n,i)=>midCols[Math.min(nMidCols-1,Math.floor(i/per))].push(n)); }
+  const leftOut=[],rightOut=[];
+  outs.forEach((n,i)=>((outs.length===1||i%2===0)?leftOut:rightOut).push(n));
+  const columns=[];
+  if(leftOut.length)columns.push(leftOut);
+  midCols.forEach(c=>{ if(c.length)columns.push(c); });
+  if(rightOut.length)columns.push(rightOut);
+  if(!columns.length)columns.push([]);
+  const colOf=new Map(); columns.forEach((c,i)=>c.forEach(n=>colOf.set(n,i)));
 
-  // nets + couleurs
+  // --- ordre vertical dans chaque colonne : barycentre des voisins (3 passes)
+  const idxIn=new Map(); columns.forEach(c=>c.forEach((n,i)=>idxIn.set(n,i)));
+  for(let sweep=0;sweep<3;sweep++){
+    columns.forEach(c=>{
+      const score=new Map(c.map(n=>{ let s=0,w=0;
+        for(const [k,wt] of adj.get(n)){ if(idxIn.has(k)){ s+=idxIn.get(k)*wt; w+=wt; } }
+        return [n, w? s/w : idxIn.get(n)]; }));
+      c.sort((a,b)=>score.get(a)-score.get(b));
+      c.forEach((n,i)=>idxIn.set(n,i));
+    });
+  }
+
+  // --- géométrie : largeur unique, hauteur selon le nombre de broches
+  const blockH=n=>HH+Math.max(1,P0(n).list.length)*PRH+BPAD;
+  const colH=columns.map(c=>c.reduce((s,n)=>s+blockH(n)+VGAP,-VGAP));
+  const maxColH=Math.max(60,...colH);
+  const nCols=columns.length;
+
+  // largeur de chaque goulotte (canal vertical) selon le trafic estimé
+  const chCount=new Array(nCols+1).fill(0);
+  lk.forEach(l=>{ const a=colOf.get(l.from),b=colOf.get(l.to); if(a==null||b==null)return;
+    if(a===b) chCount[Math.min(a+1,nCols)]++;
+    else { const lo=Math.min(a,b),hi=Math.max(a,b);
+      chCount[lo+1]++; if(hi-lo>1) chCount[hi]++; } });
+  const chW=chCount.map(c=>Math.max(54, 28+c*9));
+
+  const M=70, topY=M+120;
+  const colX=[]; let cx=M+chW[0];
+  for(let i=0;i<nCols;i++){ colX.push(cx); cx+=BW+chW[i+1]; }
+  const totalW=Math.max(cx, M+360);
+
+  const posXY=new Map();
+  columns.forEach((c,i)=>{ let y=topY+(maxColH-colH[i])/2;
+    c.forEach(n=>{ posXY.set(n,{x:colX[i],y}); y+=blockH(n)+VGAP; }); });
+  for(const [n,o] of OVR){ if(posXY.has(n)) posXY.set(n,{x:o.x-BW/2,y:o.y-blockH(n)/2}); }
+
+  // --- blocs
+  const compList=[],compByName=new Map();
+  for(const n of nodeNames){ const e=byRep.get(n)||{repere:n,designation:'',type:''};
+    const P=P0(n); const pos=posXY.get(n); const h=blockH(n);
+    const byKey=new Map(); const pins=[];
+    P.list.forEach((p,i)=>{ const py=pos.y+HH+i*PRH+PRH/2;
+      byKey.set(p.key,{y:py}); pins.push({label:p.label,y:py}); });
+    const c={name:n,o:{designation:e.designation||'',type:e.type||'',sym:'box',role:'misc'},
+      x:pos.x,y:pos.y,w:BW,h,pins,byKey,rail:isRail(n)};
+    compList.push(c); compByName.set(n,c); }
+
+  // --- nets + couleurs (convention conducteurs si potentiels L/N/PE présents)
   const {find,nets}=buildNets(lk);
-  function netColor(root){ const net=nets.get(root); if(!net)return COL.misc;
+  function netColor(root){ const net=nets.get(root); if(!net)return '#26323f';
     let phase=null,hasN=false,hasPE=false,ctrl=false;
     net.pins.forEach(p=>{ const node=p.split(SOH)[0]; if(isRail(node)){ const k=railKind(node);
-      if(k==='phase')phase=node; if(k==='neutre')hasN=true; if(k==='terre')hasPE=true; if(k==='ctrl')ctrl=true; } });
-    if(hasPE)return COL.green; if(hasN)return COL.blue; if(phase)return COL[phaseColorByName(phase)]; if(ctrl)return COL.ctrl; return COL.misc; }
+      if(k==='phase')phase=node; else if(k==='neutre')hasN=true; else if(k==='terre')hasPE=true; else ctrl=true; } });
+    if(hasPE)return COL.green; if(hasN)return COL.blue; if(phase)return COL[phaseColorByName(phase)];
+    if(ctrl)return COL.ctrl; return '#26323f'; }
 
-  // résoudre extrémité d'un end de liaison
-  function resolveComp(name,li,tag){
-    if(srcByName.has(name)){ const s=srcByName.get(name); return {ax:s.x+s.w,ay:s.y+s.h/2}; }
-    const ek=endKey.get(li+':'+tag); if(ek){ const c=compByName.get(ek.name); if(c){ const p=c.byKey.get(ek.key); if(p) return {ax:p.ax,ay:p.ay}; } }
-    const c=compByName.get(name); if(c) return {ax:c.x+c.w/2,ay:c.y}; return null;
-  }
-  function resolveSrc(srcName,railName){ const s=srcByName.get(srcName); const t=s&&s.termByRail.get(railName);
-    return t?{ax:t.ax,ay:t.ay}:{ax:s.x+s.w,ay:s.y+s.h/2}; }
-  const links=[];
-  lk.forEach((l,li)=>{
-    const aRail=isRail(l.from), bRail=isRail(l.to);
-    let A = srcByName.has(l.from)?resolveSrc(l.from,l.to):(aRail?null:resolveComp(l.from,li,'A'));
-    let B = srcByName.has(l.to)?resolveSrc(l.to,l.from):(bRail?null:resolveComp(l.to,li,'B'));
-    if(aRail){ const r=railByName.get(l.from); const ox=B?B.ax:(railX0+40); A=r?{ax:Math.min(Math.max(ox,r.x0+6),r.x1-6),ay:r.y}:{ax:railX0+40,ay:phaseY0}; }
-    if(bRail){ const r=railByName.get(l.to); const ox=A?A.ax:(railX0+40); B=r?{ax:Math.min(Math.max(ox,r.x0+6),r.x1-6),ay:r.y}:{ax:railX0+40,ay:phaseY0}; }
-    if(!A)A={ax:railX0+40,ay:phaseY0}; if(!B)B={ax:railX0+40,ay:phaseY0};
+  const links=lk.map((l,li)=>{
+    const A=endPin.get(li+':A'),B=endPin.get(li+':B');
     const root=find(pin(l.from,l.fromTerm));
-    links.push({i:li,from:l.from,fromTerm:l.fromTerm,to:l.to,toTerm:l.toTerm,nature:l.nature,a:A,b:B,net:root,color:netColor(root),
-      cable:l.cable||'',ctype:l.ctype||'',route:l.route||'',plan:l.plan||'',pn1:l.pn1||'',pn2:l.pn2||''});
+    return {i:li,from:l.from,fromTerm:l.fromTerm,to:l.to,toTerm:l.toTerm,nature:l.nature||'',
+      aName:A.name,aKey:A.key,bName:B.name,bKey:B.key,net:root,color:netColor(root),
+      cable:l.cable||'',ctype:l.ctype||'',route:l.route||'',plan:l.plan||'',pn1:l.pn1||'',pn2:l.pn2||''};
   });
 
-  // bbox
-  let minx=M,miny=M,maxx=railX1,maxy=Math.max(earthY,neutralY)+30;
-  compList.forEach(c=>{minx=Math.min(minx,c.x);maxx=Math.max(maxx,c.x+c.w);miny=Math.min(miny,c.y-12);maxy=Math.max(maxy,c.y+c.h+20);});
-  srcList.forEach(s=>{minx=Math.min(minx,s.x);miny=Math.min(miny,s.y);maxy=Math.max(maxy,s.y+s.h);});
-  const pad=130;
-  let bbox={x:minx-pad,y:miny-pad,w:(maxx-minx)+2*pad,h:(maxy-miny)+2*pad};
-  const A3_RATIO=1.414;
-  if(bbox.w/bbox.h < A3_RATIO){ const nw=bbox.h*A3_RATIO; bbox.x-=(nw-bbox.w)/2; bbox.w=nw; }
+  // --- cadre (format A3 conservé)
+  const x0=M-50, x1=totalW+50;
+  const y0=topY-150, y1=topY+maxColH+150;
+  let bbox={x:x0,y:y0,w:x1-x0,h:y1-y0};
+  const A3=1.414;
+  if(bbox.w/bbox.h<A3){ const nw=bbox.h*A3; bbox.x-=(nw-bbox.w)/2; bbox.w=nw; }
+  else if(bbox.w/bbox.h>A3){ const nh=bbox.w/A3; bbox.y-=(nh-bbox.h)/2; bbox.h=nh; }
 
-  return {rails,comps:compList,srcs:srcList,links,bbox,isRail,nets,find,railByName,compByName};
+  const geom={columns,colOf,colX,chW,nCols,topY,maxColH};
+  return {rails:[],comps:compList,srcs:[],links,bbox,isRail,nets,find,
+    railByName:new Map(),compByName,geom};
 }
 
-/* ---------- 6. Routage orthogonal A* (anti-chevauchement, ponts, pastilles) */
-class MinHeap{ constructor(){this.k=[];this.p=[];this.size=0;}
-  push(key,pr){ this.k.push(key);this.p.push(pr);this.size++; let i=this.size-1;
-    while(i>0){const par=(i-1)>>1; if(this.p[par]<=this.p[i])break; this._s(i,par); i=par;} }
-  pop(){ const top=this.k[0]; const last=this.size-1; this.k[0]=this.k[last];this.p[0]=this.p[last]; this.k.pop();this.p.pop();this.size--;
-    let i=0; while(true){let l=2*i+1,r=2*i+2,m=i; if(l<this.size&&this.p[l]<this.p[m])m=l; if(r<this.size&&this.p[r]<this.p[m])m=r; if(m===i)break; this._s(i,m); i=m;} return top; }
-  _s(a,b){const tk=this.k[a];this.k[a]=this.k[b];this.k[b]=tk; const tp=this.p[a];this.p[a]=this.p[b];this.p[b]=tp;} }
-
-function simplify(pts){ if(pts.length<3) return pts.slice();
-  const out=[pts[0]];
-  for(let i=1;i<pts.length-1;i++){ const a=out[out.length-1],b=pts[i],c=pts[i+1];
-    const abV=Math.abs(a.x-b.x)<.5, bcV=Math.abs(b.x-c.x)<.5;
-    if(abV&&bcV) continue;            // colinéaire vertical
-    const abH=Math.abs(a.y-b.y)<.5, bcH=Math.abs(b.y-c.y)<.5;
-    if(abH&&bcH) continue;            // colinéaire horizontal
-    out.push(b);
-  }
-  out.push(pts[pts.length-1]);
-  return out.filter((p,i)=>i===0||Math.hypot(p.x-out[i-1].x,p.y-out[i-1].y)>.4);
-}
-
+/* ---------- 6. Routage en goulottes : canaux verticaux + rocades haut/bas ---------- */
 function routeAll(layout){
-  const R=12, bb=layout.bbox;
-  const cols=Math.ceil(bb.w/R)+2, rows=Math.ceil(bb.h/R)+2, ox=bb.x, oy=bb.y;
-  const gx=x=>Math.round((x-ox)/R), gy=y=>Math.round((y-oy)/R), wx=c=>ox+c*R, wy=r=>oy+r*R;
-  const idx=(c,r)=>r*cols+c;
-  const N=cols*rows;
-  const blocked=new Uint8Array(N), usedH=new Uint16Array(N), usedV=new Uint16Array(N);
-  function blockBox(x,y,w,h,inset){ const x0=gx(x+inset),x1=gx(x+w-inset),y0=gy(y+inset),y1=gy(y+h-inset);
-    for(let r=y0;r<=y1;r++)for(let c=x0;c<=x1;c++) if(c>=0&&c<cols&&r>=0&&r<rows) blocked[idx(c,r)]=1; }
-  layout.comps.forEach(c=>blockBox(c.x,c.y,c.w,c.h,7));
-  layout.srcs.forEach(s=>blockBox(s.x,s.y,s.w,s.h,2));
-  const railRows=new Set(layout.rails.map(r=>gy(r.y)));
-  const TURN=7,OVERLAP=70,CROSS=2,RAILPEN=5;
+  const g=layout.geom; const n=layout.links.length;
+  const wires=new Array(n);
+  if(!n) return {wires:[],bridges:[],dots:[]};
+  const chTracks=Array.from({length:g.nCols+1},()=>[]);
+  const hwTop=[], hwBot=[];
+  const chL=i=> i===0 ? (g.colX.length?g.colX[0]-g.chW[0]:70) : g.colX[i-1]+BW;
+  function alloc(tracks,lo,hi){ if(lo>hi){const t=lo;lo=hi;hi=t;}
+    for(let t=0;t<tracks.length;t++){ if(!tracks[t].some(([a,b])=>!(hi<a-7||lo>b+7))){ tracks[t].push([lo,hi]); return t; } }
+    tracks.push([[lo,hi]]); return tracks.length-1; }
+  const pinPt=(name,key,side)=>{ const c=layout.compByName.get(name); const p=c.byKey.get(key);
+    return {x: side==='L'? c.x : c.x+c.w, y:p.y}; };
 
-  function stampVertical(x,y0,y1){
-    const c=gx(x); const r0=gy(Math.min(y0,y1)), r1=gy(Math.max(y0,y1));
-    for(let r=r0;r<=r1;r++){ if(c<0||c>=cols||r<0||r>=rows)continue; usedV[idx(c,r)]++; }
-  }
-
-  function astar(p0,p1){
-    let c0=Math.max(0,Math.min(cols-1,gx(p0.ax))), r0=Math.max(0,Math.min(rows-1,gy(p0.ay)));
-    let c1=Math.max(0,Math.min(cols-1,gx(p1.ax))), r1=Math.max(0,Math.min(rows-1,gy(p1.ay)));
-    blocked[idx(c0,r0)]=0; blocked[idx(c1,r1)]=0;
-    const start=idx(c0,r0), goal=idx(c1,r1);
-    if(start===goal) return [{x:p0.ax,y:p0.ay},{x:p1.ax,y:p1.ay}];
-    const dirs=[[0,-1],[0,1],[-1,0],[1,0]];
-    const g=new Float64Array(N).fill(Infinity), came=new Int32Array(N).fill(-1), din=new Int8Array(N).fill(-1);
-    const open=new MinHeap(); g[start]=0; din[start]=-1; open.push(start,Math.abs(c1-c0)+Math.abs(r1-r0));
-    let found=false;
-    while(open.size){ const cur=open.pop(); if(cur===goal){found=true;break;}
-      const cc=cur%cols, rr=(cur-cc)/cols;
-      for(let d=0;d<4;d++){ const nc=cc+dirs[d][0], nr=rr+dirs[d][1];
-        if(nc<0||nc>=cols||nr<0||nr>=rows)continue; const ni=idx(nc,nr);
-        if(blocked[ni]&&ni!==goal)continue;
-        let step=1; if(din[cur]!==-1&&din[cur]!==d) step+=TURN;
-        const horiz=d>=2;
-        if(horiz){ if(usedH[ni])step+=OVERLAP; if(usedV[ni])step+=CROSS; if(railRows.has(nr))step+=RAILPEN; }
-        else     { if(usedV[ni])step+=OVERLAP; if(usedH[ni])step+=CROSS; }
-        const ng=g[cur]+step;
-        if(ng<g[ni]){ g[ni]=ng; came[ni]=cur; din[ni]=d; open.push(ni,ng+Math.abs(c1-nc)+Math.abs(r1-nr)); } } }
-    if(!found) return elbow(p0,p1);
-    const path=[]; let cur=goal; while(cur!==-1){ const cc=cur%cols, rr=(cur-cc)/cols; path.push([cc,rr]); if(cur===start)break; cur=came[cur]; }
-    path.reverse();
-    for(let k=0;k<path.length-1;k++){ const a=path[k],b=path[k+1]; const hz=a[1]===b[1];
-      if(hz){ usedH[idx(b[0],b[1])]++; usedH[idx(a[0],a[1])]++; } else { usedV[idx(b[0],b[1])]++; usedV[idx(a[0],a[1])]++; } }
-    const grid=simplify(path.map(([c,r])=>({x:wx(c),y:wy(r)})));
-    return rectify(grid,p0,p1);
-  }
-  function elbow(p0,p1){ if(Math.abs(p0.ax-p1.ax)<1||Math.abs(p0.ay-p1.ay)<1) return [{x:p0.ax,y:p0.ay},{x:p1.ax,y:p1.ay}];
-    const my=(p0.ay+p1.ay)/2; return [{x:p0.ax,y:p0.ay},{x:p0.ax,y:my},{x:p1.ax,y:my},{x:p1.ax,y:p1.ay}]; }
-  function rectify(grid,p0,p1){ const n=grid.length;
-    if(n<2) return [{x:p0.ax,y:p0.ay},{x:p1.ax,y:p1.ay}];
-    const pts=grid.map(p=>({x:p.x,y:p.y}));
-    const firstV=Math.abs(grid[0].x-grid[1].x)<Math.abs(grid[0].y-grid[1].y);
-    pts[0]={x:p0.ax,y:p0.ay}; if(firstV)pts[1].x=p0.ax; else pts[1].y=p0.ay;
-    const lastV=Math.abs(grid[n-1].x-grid[n-2].x)<Math.abs(grid[n-1].y-grid[n-2].y);
-    pts[n-1]={x:p1.ax,y:p1.ay}; if(lastV)pts[n-2].x=p1.ax; else pts[n-2].y=p1.ay;
-    return simplify(pts); }
-
-  // ordre : du plus court au plus long (taps verticaux d'abord)
+  // fils courts d'abord : ils prennent les pistes intérieures des goulottes
   const order=layout.links.map((l,i)=>i).sort((a,b)=>{
     const la=layout.links[a],lb=layout.links[b];
-    return (Math.abs(la.a.ax-la.b.ax)+Math.abs(la.a.ay-la.b.ay))-(Math.abs(lb.a.ax-lb.b.ax)+Math.abs(lb.a.ay-lb.b.ay)); });
-  const routed=new Array(layout.links.length); const segs=[];
-  for(const i of order){ const l=layout.links[i];
-    const aIsRail=layout.isRail(l.from), bIsRail=layout.isRail(l.to);
-    const isDrop=aIsRail!==bIsRail; // exactement une extrémité sur un rail : descente directe
+    const ya=Math.abs(pinPt(la.aName,la.aKey,'R').y-pinPt(la.bName,la.bKey,'R').y);
+    const yb=Math.abs(pinPt(lb.aName,lb.aKey,'R').y-pinPt(lb.bName,lb.bKey,'R').y);
+    return ya-yb; });
+
+  for(const li of order){ const l=layout.links[li];
+    let aN=l.aName,aK=l.aKey,bN=l.bName,bK=l.bKey;
+    let c1=g.colOf.get(aN)??0, c2=g.colOf.get(bN)??0, swapped=false;
+    if(c1>c2){ [aN,aK,bN,bK]=[bN,bK,aN,aK]; const t=c1;c1=c2;c2=t; swapped=true; }
     let pts;
-    if(isDrop && Math.abs(l.a.ax-l.b.ax)<0.6){ pts=[{x:l.a.ax,y:l.a.ay},{x:l.b.ax,y:l.b.ay}]; stampVertical(l.a.ax,l.a.ay,l.b.ay); }
-    else pts=astar(l.a,l.b);
-    routed[i]={...l,pts};
-    for(let k=0;k<pts.length-1;k++){ const A=pts[k],B=pts[k+1];
-      segs.push({x1:A.x,y1:A.y,x2:B.x,y2:B.y,axis:Math.abs(A.y-B.y)<.5?'h':'v',net:l.net}); } }
-
-  // rails = segments de leur net (pour jonctions)
-  layout.rails.forEach(r=>{ const net=findRailNet(layout,r.name); segs.push({x1:r.x0,y1:r.y,x2:r.x1,y2:r.y,axis:'h',net,rail:true}); });
-
-  const {bridges,dots}=detectCrossings(segs);
-  return {wires:routed,bridges,dots};
-}
-function findRailNet(layout,name){ for(const [root,net] of layout.nets){ if(net.pins.some(p=>p.split(SOH)[0]===name)) return root; } return 'rail:'+name; }
-
-function detectCrossings(segs){
-  const key=(x,y)=>Math.round(x)+','+Math.round(y);
-  const H=segs.filter(s=>s.axis==='h'), V=segs.filter(s=>s.axis==='v');
-  const bridges=[];
-  for(const h of H){ const hy=h.y1, hx0=Math.min(h.x1,h.x2), hx1=Math.max(h.x1,h.x2);
-    for(const v of V){ const vx=v.x1, vy0=Math.min(v.y1,v.y2), vy1=Math.max(v.y1,v.y2);
-      if(vx>hx0+1.5&&vx<hx1-1.5&&hy>vy0+1.5&&hy<vy1-1.5 && h.net!==v.net) bridges.push({x:vx,y:hy}); } }
-  // pastilles : par net, point où >=3 directions de conducteurs se rejoignent
-  const byNet=new Map(); segs.forEach(s=>{ (byNet.get(s.net)||byNet.set(s.net,[]).get(s.net)).push(s); });
-  const dots=[]; const near=(a,b)=>Math.abs(a-b)<1.5;
-  for(const [net,list] of byNet){
-    const cand=new Map();
-    list.forEach(s=>{ [['x1','y1'],['x2','y2']].forEach(([px,py])=>{ const k=key(s[px],s[py]); if(!cand.has(k))cand.set(k,{x:s[px],y:s[py]}); }); });
-    for(const [k,P] of cand){ const dir=new Set();
-      for(const s of list){
-        const onP1=near(s.x1,P.x)&&near(s.y1,P.y), onP2=near(s.x2,P.x)&&near(s.y2,P.y);
-        if(onP1) dir.add(s.axis==='h'?(s.x2>s.x1?'R':'L'):(s.y2>s.y1?'D':'U'));
-        if(onP2) dir.add(s.axis==='h'?(s.x1>s.x2?'R':'L'):(s.y1>s.y2?'D':'U'));
-        if(!onP1&&!onP2){
-          if(s.axis==='h'&&near(s.y1,P.y)){ const x0=Math.min(s.x1,s.x2),x1=Math.max(s.x1,s.x2); if(P.x>x0+0.5&&P.x<x1-0.5){dir.add('L');dir.add('R');} }
-          if(s.axis==='v'&&near(s.x1,P.x)){ const y0=Math.min(s.y1,s.y2),y1=Math.max(s.y1,s.y2); if(P.y>y0+0.5&&P.y<y1-0.5){dir.add('U');dir.add('D');} }
-        }
-      }
-      if(dir.size>=3) dots.push({x:P.x,y:P.y});
+    if(c1===c2){ // même colonne : aller-retour dans la goulotte de droite
+      const ch=Math.min(c1+1,g.nCols); const A=pinPt(aN,aK,'R'), B=pinPt(bN,bK,'R');
+      const t=alloc(chTracks[ch],A.y,B.y);
+      const tx=chL(ch)+14+t*9;
+      pts=[A,{x:tx,y:A.y},{x:tx,y:B.y},B];
+    } else if(c2-c1===1){ // colonnes adjacentes : une seule goulotte
+      const A=pinPt(aN,aK,'R'), B=pinPt(bN,bK,'L');
+      const ch=c1+1; const t=alloc(chTracks[ch],A.y,B.y);
+      const tx=chL(ch)+14+t*9;
+      pts=[A,{x:tx,y:A.y},{x:tx,y:B.y},B];
+    } else { // colonnes éloignées : goulotte -> rocade haut/bas -> goulotte
+      const A=pinPt(aN,aK,'R'), B=pinPt(bN,bK,'L');
+      const top=g.topY, bot=g.topY+g.maxColH;
+      const useTop=(A.y-top)+(B.y-top)<=(bot-A.y)+(bot-B.y);
+      const ch1=c1+1, ch2=c2;
+      const th=alloc(useTop?hwTop:hwBot, chL(ch1), chL(ch2)+g.chW[ch2]);
+      const hy=useTop?(top-30-th*9):(bot+30+th*9);
+      const t1=alloc(chTracks[ch1],A.y,hy); const tx1=chL(ch1)+14+t1*9;
+      const t2=alloc(chTracks[ch2],hy,B.y); const tx2=chL(ch2)+14+t2*9;
+      pts=[A,{x:tx1,y:A.y},{x:tx1,y:hy},{x:tx2,y:hy},{x:tx2,y:B.y},B];
     }
+    if(swapped)pts.reverse();
+    wires[li]={...l,a:{ax:pts[0].x,ay:pts[0].y},b:{ax:pts[pts.length-1].x,ay:pts[pts.length-1].y},pts};
   }
-  const seen=new Set(); const dd=dots.filter(d=>{const k=key(d.x,d.y); if(seen.has(k))return false; seen.add(k); return true;});
-  const bk=new Set(bridges.map(b=>key(b.x,b.y)));
-  return {bridges,dots:dd.filter(d=>!bk.has(key(d.x,d.y)))};
+
+  // pastilles : plusieurs fils raccordés sur la même broche
+  const cnt=new Map();
+  wires.forEach(w=>{ [w.pts[0],w.pts[w.pts.length-1]].forEach(p=>{
+    const k=Math.round(p.x)+','+Math.round(p.y); cnt.set(k,(cnt.get(k)||0)+1); }); });
+  const dots=[]; for(const [k,c] of cnt){ if(c>1){ const [x,y]=k.split(',').map(Number); dots.push({x,y}); } }
+  return {wires,bridges:[],dots};
 }
 
 /* ---------- 7. Rendu SVG ---------- */
@@ -795,6 +557,10 @@ function defs(){
      .body{fill:#ffffff;stroke:#26343f;stroke-width:1.4}
      .borne{fill:#eef1f4;stroke:#26343f;stroke-width:1}
      .bnum{fill:#182430;font-size:8px;font-weight:700}
+     .bhead{fill:#e9eef3;stroke:none}
+     .bheadline{stroke:#26343f;stroke-width:1}
+     .pinsep{stroke:#e3e8ed;stroke-width:1}
+     .pinlbl{fill:#22303d;font-size:8.5px;font-weight:600}
      .rpill{fill:#ffffff;stroke:#c9d1d9;stroke-width:.9}
      .rname{fill:#3c4a56;font-weight:700;font-size:10px;letter-spacing:.6px}
      .ctag{fill:#5b6775;font-size:8px;font-weight:600}
@@ -847,21 +613,6 @@ function cartoucheSvg(rx,by,meta){
   return s;
 }
 
-function railSvg(r){
-  let s='';
-  const col=r.kind==='terre'?COL.green:(COL[r.color]||COL.misc);
-  if(r.kind==='terre'){ s+=`<line class="bus" x1="${f1(r.x0)}" y1="${f1(r.y)}" x2="${f1(r.x1)}" y2="${f1(r.y)}" stroke="${COL.green}"/>`;
-    s+=`<line class="bus" x1="${f1(r.x0)}" y1="${f1(r.y)}" x2="${f1(r.x1)}" y2="${f1(r.y)}" stroke="${COL.yellow}" stroke-dasharray="7 7"/>`; }
-  else { s+=`<line class="bus" x1="${f1(r.x0)}" y1="${f1(r.y)}" x2="${f1(r.x1)}" y2="${f1(r.y)}" stroke="${col}"/>`; }
-  // étiquette en pastille au bout droit de la barre
-  const t=String(r.name), pw=Math.max(26,t.length*6.6+14), ph=15;
-  const px=r.x1+7, py=r.y-ph/2;
-  s+=`<rect class="rpill" x="${f1(px)}" y="${f1(py)}" width="${f1(pw)}" height="${ph}" rx="7.5"/>`;
-  s+=`<rect x="${f1(px+4)}" y="${f1(r.y-3)}" width="6" height="6" rx="1.5" fill="${col}"/>`;
-  s+=`<text class="rname" x="${f1(px+14)}" y="${f1(r.y+3.5)}">${esc(t)}</text>`;
-  return s;
-}
-
 function wirePath(pts,bridges){
   let d='M '+f1(pts[0].x)+' '+f1(pts[0].y);
   for(let i=1;i<pts.length;i++){ const A=pts[i-1],B=pts[i]; const vert=Math.abs(A.x-B.x)<.5;
@@ -878,53 +629,26 @@ function wireSvg(w,bridges){ const d=wirePath(w.pts,bridges);
   return `<path class="cab" d="${d}" stroke="${w.color}"/>`;
 }
 
-const TCELL=13; // hauteur d'une cellule de borne
-function termCell(x,edgeY,side,label){ // cellule de bornier attenante au corps, n° gravé dedans
-  const t=label==null?'':String(label);
-  const cw=Math.max(22,t.length*6.2+9);
-  const ry=side==='top'?edgeY:(edgeY-TCELL);
-  let s=`<rect class="borne" x="${f1(x-cw/2)}" y="${f1(ry)}" width="${f1(cw)}" height="${TCELL}" rx="1.5"/>`;
-  // petit repère de serrage (trait central côté fil), comme sur un bornier réel
-  const wy=side==='top'?ry:(ry+TCELL);
-  s+=`<line x1="${f1(x)}" y1="${f1(wy)}" x2="${f1(x)}" y2="${f1(side==='top'?ry+3:ry+TCELL-3)}" class="sym-thin"/>`;
-  if(t) s+=`<text class="bnum" x="${f1(x)}" y="${f1(ry+TCELL/2+3)}" text-anchor="middle">${esc(t)}</text>`;
-  return s;
-}
 function compSvg(c,sel){
-  const tc=TCELL;
   let s=`<g transform="translate(${f1(c.x)},${f1(c.y)})">`;
   if(sel) s+=`<rect class="selbox" x="-5" y="-5" width="${c.w+10}" height="${c.h+10}" rx="3"/>`;
-  // corps entre les deux bandes de bornes, ombre douce
-  s+=`<g filter="url(#softsh)"><rect class="body" x="1" y="${tc}" width="${f1(c.w-2)}" height="${f1(c.h-2*tc)}" rx="3.5"/></g>`;
-  s+=`<text class="rep-in" x="${f1(c.w/2)}" y="${f1(c.h/2+4)}" text-anchor="middle">${esc(c.name)}</text>`;
-  // bornes intégrées : haut = amont, bas = aval ; le fil touche le bord extérieur de la cellule
-  c.topLbl.forEach(t=>{ s+=termCell(t.x,0,'top',t.label); });
-  c.botLbl.forEach(t=>{ s+=termCell(t.x,c.h,'bot',t.label); });
+  s+=`<g filter="url(#softsh)"><rect class="body" x="0" y="0" width="${c.w}" height="${c.h}" rx="3"/></g>`;
+  s+=`<path d="M 0 ${HH} v ${-(HH-3)} a 3 3 0 0 1 3 -3 h ${c.w-6} a 3 3 0 0 1 3 3 v ${HH-3} z" class="bhead"/>`;
+  s+=`<line x1="0" y1="${HH}" x2="${c.w}" y2="${HH}" class="bheadline"/>`;
+  s+=`<text class="rep-in" x="${f1(c.w/2)}" y="${HH/2+4}" text-anchor="middle">${esc(c.name)}</text>`;
+  c.pins.forEach((p,i)=>{ const ly=HH+i*PRH;
+    if(i>0) s+=`<line class="pinsep" x1="5" y1="${ly}" x2="${c.w-5}" y2="${ly}"/>`;
+    s+=`<text class="pinlbl" x="${f1(c.w/2)}" y="${ly+PRH/2+3}" text-anchor="middle">${esc(p.label||'·')}</text>`;
+  });
   s+=`</g>`; return s;
 }
-function srcTerm(x,y,label,side){ const t=String(label||''); const tc=13, cw=Math.max(22,t.length*6.2+9);
-  const rx=side==='right'?(x-cw):(x-cw/2), ry=side==='right'?(y-tc/2):(y-tc);
-  return `<rect class="borne" x="${f1(rx)}" y="${f1(ry)}" width="${f1(cw)}" height="${tc}" rx="1.5"/><text class="bnum" x="${f1(rx+cw/2)}" y="${f1(ry+tc/2+3)}" text-anchor="middle">${esc(t)}</text>`; }
-function sourceSvg(s){ const ly=v=>v-s.y;
-  let g=`<g transform="translate(${f1(s.x)},${f1(s.y)})">`;
-  g+=`<g filter="url(#softsh)"><rect class="body" x="1" y="1" width="${f1(s.w-2)}" height="${f1(s.h-2)}" rx="3.5"/></g>`;
-  g+=`<text class="rep-in" x="7" y="${f1(s.h/2+4)}" text-anchor="start">${esc(s.name)}</text>`;
-  s.phases.forEach(r=>{ g+=srcTerm(s.w, ly(r.y), r.name, 'right'); });
-  s.others.forEach(r=>{ const t=s.termByRail.get(r.name); g+=srcTerm(t.ax-s.x, s.h, r.name, 'bot'); });
-  return g+`</g>`; }
 
 let LAST=null;
-function longestSeg(pts){ let best=null,bl=-1; for(let i=0;i<pts.length-1;i++){const A=pts[i],B=pts[i+1];const L=Math.hypot(A.x-B.x,A.y-B.y); if(L>bl){bl=L;best={mx:(A.x+B.x)/2,my:(A.y+B.y)/2,len:L,vert:Math.abs(A.x-B.x)<.5};}} return best; }
-function numTag(mx,my,num){ return `<rect x="${f1(mx-9)}" y="${f1(my-7)}" width="18" height="12" rx="2" fill="#fbfbf7" opacity=".92"/><text class="ctag" x="${f1(mx)}" y="${f1(my+2)}" text-anchor="middle">${num}</text>`; }
-function cableTag(mx,my,vert,name,color){ const w=Math.max(20,name.length*6.4+10),h=13; const x=mx-(vert?(w+7):w/2), y=my-h/2;
-  return `<g><rect x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${h}" rx="2.5" fill="#fbfbf7" stroke="#cfd6df" stroke-width=".8"/><rect x="${f1(x)}" y="${f1(y)}" width="3" height="${h}" rx="1.5" fill="${color}"/><text class="ctag" x="${f1(x+w/2+1.5)}" y="${f1(my+2)}" text-anchor="middle">${esc(name)}</text></g>`; }
 function sceneInner(layout,routing){
   let body=sheetSvg(layout.bbox,state.meta);
-  layout.rails.forEach(r=>body+=railSvg(r));
   // câbles : aucun nom sur le dessin — toutes les infos au clic
   routing.wires.forEach(w=>body+=wireSvg(w,routing.bridges));
   routing.dots.forEach(d=>body+=`<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="2.7"/>`);
-  layout.srcs.forEach(s=>body+=sourceSvg(s));
   layout.comps.forEach(c=>body+=compSvg(c,state.sel===c.name));
   return body;
 }
@@ -958,11 +682,11 @@ function norm(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[
 function colCat(cell){ const n=norm(cell); if(!n)return null;
   if(/\bplan\b|folio|feuille|^sheet$|planche|^page$|^schema$/.test(n)) return 'plan';
   if(/route|cheminement|chemin|tray|parcours|trajet|passage/.test(n)) return 'route';
-  if((/type|section/.test(n))&&!/equip/.test(n)) return 'ctype';
+  if(/^t\s*\/?\s*g$|gauge|((type|section)(?!.*equip))/.test(n)&&!/equip/.test(n)) return 'ctype';
   if(/cable/.test(n)) return 'cable';
-  if(/equip|^de$|from|depart|source|origine|vers|^to$|arrivee|destination|^rep$|repere/.test(n)&&!/cable/.test(n)) return 'eq';
-  if(/borne|term|broche/.test(n)) return 'term';
-  if(/\bpn\b|pin|^fil|potentiel|^pot$|wire/.test(n)) return 'pn';
+  if(/equip|device|^dev\d?$|^de$|from|depart|source|origine|vers|^to$|arrivee|destination|^rep$|repere/.test(n)&&!/cable/.test(n)) return 'eq';
+  if(/borne|term|broche|pin(?!\d*$)|^pin\d?$/.test(n)&&!/^pn/.test(n)) return 'term';
+  if(/^pn\d?$|potentiel|^pot$|^fil|wire/.test(n)) return 'pn';
   return null;
 }
 function detectCols(cells){ const eqs=[],terms=[],pns=[]; const map={};
