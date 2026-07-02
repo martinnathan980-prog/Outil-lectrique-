@@ -323,9 +323,9 @@ function buildNets(lk){
   return {find,nets};
 }
 
-/* ---------- 5. Placement : schéma d'interconnexion (blocs à broches) ---------- */
-const BW=118, HH=20, PRH=16, BPAD=6, VGAP=26;
-function computeLayout(eq, lk){
+/* ---------- 5. Placement : équipements (corps + borniers de flanc) ---------- */
+const PRH=16, STRIPW=30, BODYW=104, BORNW=56, VGAP=28, HH=20, BPAD=6;
+function computeLayoutWith(eq, lk, peripheral){
   const byRep=new Map(eq.map(e=>[e.repere,e]));
   const isRail=n=>RAIL_RE.test(String(n).trim()) && !byRep.has(n);
 
@@ -334,8 +334,7 @@ function computeLayout(eq, lk){
   eq.forEach(e=>noteName(e.repere));
   lk.forEach(l=>{noteName(l.from);noteName(l.to);});
 
-  // --- broches par bloc : équipement = 1 broche par borne (fusion des doublons),
-  //     rail/potentiel = 1 broche par fil (étiquetée par le potentiel PN si présent)
+  // --- broches : équipement = fusion par étiquette ; rail = une broche par fil (PN)
   const pinsOf=new Map(); const endPin=new Map();
   const P0=n=>{ if(!pinsOf.has(n))pinsOf.set(n,{list:[],byLabel:new Map(),cnt:0}); return pinsOf.get(n); };
   lk.forEach((l,li)=>{
@@ -358,34 +357,42 @@ function computeLayout(eq, lk){
       return a.label?-1:(b.label?1:0); });
   }
 
-  // --- graphe pondéré
+  // --- graphe
   const adj=new Map(nodeNames.map(n=>[n,new Map()]));
   lk.forEach(l=>{ if(l.from===l.to)return;
     adj.get(l.from).set(l.to,(adj.get(l.from).get(l.to)||0)+1);
     adj.get(l.to).set(l.from,(adj.get(l.to).get(l.from)||0)+1); });
   const degree=n=>{ let s=0; for(const w of adj.get(n).values())s+=w; return s; };
-  const isBornier=n=>{ if(isRail(n))return true; const e=byRep.get(n);
+  const isStrip=n=>{ if(isRail(n))return true; const e=byRep.get(n);
     const t=norm((e&&e.type)||''); if(/born|coupure|repart/.test(t))return true;
     return inferType(n).s==='disconnect'; };
 
-  // --- colonnes = niveaux BFS (flux gauche -> droite) : tout fil relie ainsi
-  //     la même colonne ou deux colonnes adjacentes -> faisceaux parallèles,
-  //     fils courts, pas de rocade sauf exception.
-  const level=new Map();
-  const seeds=[...nodeNames].sort((a,b)=>degree(b)-degree(a));
-  for(const s of seeds){ if(level.has(s))continue; level.set(s,0); const q=[s];
+  // --- colonnes = niveaux BFS raffinés. Deux stratégies de graine essayées
+  //     (nœud le plus connecté / nœud périphérique via double BFS) : on garde
+  //     l'assignation au coût de câblage minimal après raffinement local.
+  const bfsFrom=(s,seen)=>{ const d=new Map([[s,0]]); const q=[s]; let far=s;
     while(q.length){ const c=q.shift();
-      [...adj.get(c).keys()].forEach(k=>{ if(!level.has(k)){ level.set(k,level.get(c)+1); q.push(k); } }); } }
-  // raffinement local : déplacer un bloc d'un niveau si ça réduit le coût
-  // (adjacent = idéal ; même colonne = boucle ; éloigné = rocade)
-  const lvlCost=(n,ln)=>{ let s=0; for(const [k,w] of adj.get(n)){ const d=Math.abs(ln-level.get(k));
-    s+=w*(d===1?0:(d===0?2:1+d)); } return s; };
-  for(let pass=0;pass<3;pass++){ let moved=false;
-    for(const n of nodeNames){ const l0=level.get(n); let best=l0, bc=lvlCost(n,l0);
-      for(const cand of [l0-1,l0+1]){ if(cand<0)continue;
-        const c=lvlCost(n,cand); if(c<bc-0.01){ bc=c; best=cand; } }
-      if(best!==l0){ level.set(n,best); moved=true; } }
-    if(!moved)break; }
+      [...adj.get(c).keys()].forEach(k=>{ if(!d.has(k)&&!(seen&&seen.has(k))){
+        d.set(k,d.get(c)+1); if(d.get(k)>d.get(far))far=k; q.push(k); } }); }
+    return {d,far}; };
+  const seeds=[...nodeNames].sort((a,b)=>degree(b)-degree(a));
+  const buildLevels=peripheral=>{ const lv=new Map();
+    for(const s of seeds){ if(lv.has(s))continue;
+      let seed=s;
+      if(peripheral){ const {far}=bfsFrom(s,lv); seed=far; }
+      const {d}=bfsFrom(seed,lv);
+      for(const [k,v] of d) lv.set(k,v); }
+    const cost1=(n,ln)=>{ let sc=0; for(const [k,w] of adj.get(n)){ const dd=Math.abs(ln-lv.get(k));
+      sc+=w*(dd===1?0:(dd===0?2:1+dd)); } return sc; };
+    for(let pass=0;pass<3;pass++){ let moved=false;
+      for(const n of nodeNames){ const l0=lv.get(n); let best=l0, bc=cost1(n,l0);
+        for(const cand of [l0-1,l0+1]){ if(cand<0)continue;
+          const c=cost1(n,cand); if(c<bc-0.01){ bc=c; best=cand; } }
+        if(best!==l0){ lv.set(n,best); moved=true; } }
+      if(!moved)break; }
+    let total=0; nodeNames.forEach(n=>total+=cost1(n,lv.get(n)));
+    return {lv,total}; };
+  const level=buildLevels(peripheral).lv;
   const used=[...new Set(nodeNames.map(n=>level.get(n)))].sort((a,b)=>a-b);
   const remap=new Map(used.map((l,i)=>[l,i]));
   nodeNames.forEach(n=>level.set(n,remap.get(level.get(n))));
@@ -394,39 +401,65 @@ function computeLayout(eq, lk){
   nodeNames.forEach(n=>columns[level.get(n)].push(n));
   const colOf=new Map(); columns.forEach((c,i)=>c.forEach(n=>colOf.set(n,i)));
 
-  // --- ordre vertical dans chaque colonne : barycentre des voisins (3 passes)
-  const idxIn=new Map(); columns.forEach(c=>c.forEach((n,i)=>idxIn.set(n,i)));
-  for(let sweep=0;sweep<3;sweep++){
-    columns.forEach(c=>{
-      const score=new Map(c.map(n=>{ let s=0,w=0;
-        for(const [k,wt] of adj.get(n)){ if(idxIn.has(k)){ s+=idxIn.get(k)*wt; w+=wt; } }
-        return [n, w? s/w : idxIn.get(n)]; }));
-      c.sort((a,b)=>score.get(a)-score.get(b));
-      c.forEach((n,i)=>idxIn.set(n,i));
-    });
-  }
+  // --- partenaires par broche
+  const partners=new Map();
+  lk.forEach((l,li)=>{ const A=endPin.get(li+':A'),B=endPin.get(li+':B');
+    const ka=A.name+SOH+A.key, kb=B.name+SOH+B.key;
+    (partners.get(ka)||partners.set(ka,[]).get(ka)).push(B);
+    (partners.get(kb)||partners.set(kb,[]).get(kb)).push(A); });
 
-  // --- géométrie : équipement = bloc carré compact, bornier = rectangle étroit
+  // --- côté de chaque broche d'équipement (bornier de flanc gauche ou droit) ;
+  //     bornier autonome : broches traversantes (fils des deux côtés, même rangée)
+  const sideOf=new Map();
+  const listsOf=new Map();
+  for(const n of nodeNames){ const P=P0(n);
+    if(isStrip(n)){ listsOf.set(n,{S:P.list.slice()}); continue; }
+    const L=[],R=[]; const cn=colOf.get(n)||0;
+    P.list.forEach(p=>{ const ps=partners.get(n+SOH+p.key)||[];
+      let r=0,lft=0; ps.forEach(q=>{ const cq=colOf.get(q.name)||0;
+        if(cq>cn)r++; else if(cq<cn)lft++; else r++; });
+      const side=(r>=lft)?'R':'L'; sideOf.set(n+SOH+p.key,side);
+      (side==='R'?R:L).push(p); });
+    listsOf.set(n,{L,R});
+  }
+  const listKeys=n=>listsOf.get(n).S?['S']:['L','R'];
+  const listArr=(n,lid)=>listsOf.get(n)[lid];
+  const listIdOfPin=(n,key)=>{ const ls=listsOf.get(n); if(ls.S)return 'S';
+    return sideOf.get(n+SOH+key)==='L'?'L':'R'; };
+
+  // --- dimensions : équipement = corps + borniers de flanc ; bornier = rectangle étroit
   const dimsCache=new Map();
   const dims=n=>{ let d=dimsCache.get(n); if(d)return d;
-    const p=Math.max(1,P0(n).list.length);
-    const h0=HH+p*PRH+BPAD;
-    if(isBornier(n)) d={w:64,h:h0,pinTop:HH};
-    else { const w=Math.max(92,Math.min(150,h0)); const h=Math.max(h0,w);
-      d={w,h,pinTop:HH+Math.max(0,(h-HH-BPAD-p*PRH)/2)}; }
+    const ls=listsOf.get(n);
+    if(ls.S){ const p=Math.max(1,ls.S.length);
+      d={w:BORNW,h:HH+p*PRH+BPAD,kind:'strip',pinTopS:HH}; }
+    else { const nL=ls.L.length,nR=ls.R.length; const rows=Math.max(nL,nR,1);
+      const lw=nL?STRIPW:0, rw=nR?STRIPW:0;
+      const h=Math.max(72, rows*PRH+30);
+      d={w:lw+BODYW+rw,h,kind:'equip',lw,rw,
+         pinTopL:(h-nL*PRH)/2, pinTopR:(h-nR*PRH)/2}; }
     dimsCache.set(n,d); return d; };
   const blockH=n=>dims(n).h;
+  const pinTopOf=(n,lid)=>{ const d=dims(n); return lid==='S'?d.pinTopS:(lid==='L'?d.pinTopL:d.pinTopR); };
   const colH=columns.map(c=>c.reduce((s,n)=>s+blockH(n)+VGAP,-VGAP));
   const maxColH=Math.max(60,...colH);
   const nCols=columns.length;
   const colW=columns.map(c=>c.length?Math.max(...c.map(n=>dims(n).w)):92);
 
-  // largeur de chaque goulotte (canal vertical) selon le trafic estimé
+  // --- canal d'une extrémité : sortie droite -> canal col+1 (stub 'L'),
+  //     sortie gauche -> canal col (stub 'R')
+  const endSide=(name,key,otherName)=>{
+    if(!listsOf.get(name).S) return sideOf.get(name+SOH+key);
+    const cn=colOf.get(name)||0, co=colOf.get(otherName)||0;
+    return co<cn?'L':'R';
+  };
+  const chOfEnd=(name,side)=>{ const c=colOf.get(name)||0; return side==='R'?c+1:c; };
+
   const chCount=new Array(nCols+1).fill(0);
-  lk.forEach(l=>{ const a=colOf.get(l.from),b=colOf.get(l.to); if(a==null||b==null)return;
-    if(a===b) chCount[Math.min(a+1,nCols)]++;
-    else { const lo=Math.min(a,b),hi=Math.max(a,b);
-      chCount[lo+1]++; if(hi-lo>1) chCount[hi]++; } });
+  lk.forEach((l,li)=>{ const A=endPin.get(li+':A'),B=endPin.get(li+':B');
+    const sA=endSide(A.name,A.key,B.name), sB=endSide(B.name,B.key,A.name);
+    const cA=chOfEnd(A.name,sA), cB=chOfEnd(B.name,sB);
+    if(cA===cB)chCount[cA]++; else { chCount[cA]++; chCount[cB]++; } });
   const chW=chCount.map(c=>Math.max(54, 28+c*9));
 
   const M=70, topY=M+120;
@@ -438,76 +471,77 @@ function computeLayout(eq, lk){
   columns.forEach((c,i)=>{ let y=topY+(maxColH-colH[i])/2;
     c.forEach(n=>{ posXY.set(n,{x:colX[i]+(colW[i]-dims(n).w)/2,y}); y+=blockH(n)+VGAP; }); });
 
-  // --- optimisation anti-croisement (l'ordre des broches n'est pas fixe) :
-  //     1) réordonner les broches de chaque bloc vers le barycentre de leurs partenaires,
-  //     2) glisser les blocs verticalement pour mettre les broches en face l'une de l'autre
-  //     (fils droits, minimum de coudes). Deux rondes de chaque, en alternance.
-  const partners=new Map();
-  lk.forEach((l,li)=>{ const A=endPin.get(li+':A'),B=endPin.get(li+':B');
-    const ka=A.name+SOH+A.key, kb=B.name+SOH+B.key;
-    (partners.get(ka)||partners.set(ka,[]).get(ka)).push(B);
-    (partners.get(kb)||partners.set(kb,[]).get(kb)).push(A); });
+  // --- optimisation : ordre des broches (barycentre) + glissement vertical des blocs
   const idxOf=new Map();
-  nodeNames.forEach(n=>{ const m=new Map(); P0(n).list.forEach((p,i)=>m.set(p.key,i)); idxOf.set(n,m); });
-  const pinYof=(n,k)=>posXY.get(n).y+dims(n).pinTop+(idxOf.get(n).get(k)||0)*PRH+PRH/2;
-  const sortPins=()=>{ for(const n of nodeNames){ const P=P0(n); if(P.list.length<2)continue;
-    const sc=new Map(P.list.map(p=>{ const ps=partners.get(n+SOH+p.key)||[];
-      if(!ps.length)return [p.key,pinYof(n,p.key)];
-      let s=0; ps.forEach(q=>s+=pinYof(q.name,q.key)); return [p.key,s/ps.length]; }));
-    P.list.sort((a,b)=>sc.get(a.key)-sc.get(b.key));
-    const m=idxOf.get(n); P.list.forEach((p,i)=>m.set(p.key,i)); } };
+  const reindex=n=>{ const m=new Map(); listKeys(n).forEach(lid=>listArr(n,lid).forEach((p,i)=>m.set(p.key,i))); idxOf.set(n,m); };
+  nodeNames.forEach(reindex);
+  const pinYof=(n,k)=>posXY.get(n).y+pinTopOf(n,listIdOfPin(n,k))+(idxOf.get(n).get(k)||0)*PRH+PRH/2;
+  const sortPins=()=>{ for(const n of nodeNames){
+    listKeys(n).forEach(lid=>{ const L=listArr(n,lid); if(L.length<2)return;
+      const sc=new Map(L.map(p=>{ const ps=partners.get(n+SOH+p.key)||[];
+        if(!ps.length)return [p.key,pinYof(n,p.key)];
+        let s=0; ps.forEach(q=>s+=pinYof(q.name,q.key)); return [p.key,s/ps.length]; }));
+      L.sort((a,b)=>sc.get(a.key)-sc.get(b.key)); });
+    reindex(n); } };
   const alignBlocks=()=>{ columns.forEach((c,ci)=>{ let prevBot=-Infinity;
-    c.forEach(n=>{ const h=blockH(n); const P=P0(n); const des=[];
-      P.list.forEach((p,i)=>{ (partners.get(n+SOH+p.key)||[]).forEach(q=>{
-        if(colOf.get(q.name)!==ci) des.push(pinYof(q.name,q.key)-(dims(n).pinTop+i*PRH+PRH/2)); }); });
+    c.forEach(n=>{ const h=blockH(n); const des=[];
+      listKeys(n).forEach(lid=>listArr(n,lid).forEach((p,i)=>{
+        (partners.get(n+SOH+p.key)||[]).forEach(q=>{
+          if(colOf.get(q.name)!==ci) des.push(pinYof(q.name,q.key)-(pinTopOf(n,lid)+i*PRH+PRH/2)); }); }));
       des.sort((a,b)=>a-b);
       let y=des.length?des[Math.floor(des.length/2)]:posXY.get(n).y;
       y=Math.max(y, prevBot+VGAP, topY-40);
       posXY.get(n).y=y; prevBot=y+h; }); }); };
   for(let round=0;round<4;round++){ sortPins(); alignBlocks(); }
   sortPins();
-  // réparation des faisceaux : entre deux blocs, l'ordre vertical des broches doit être
-  // le même des deux côtés, sinon le fil du haut traverse tout le paquet.
+  // réparation des faisceaux : entre deux blocs, ordre parallèle des broches
   const bundles=new Map();
   lk.forEach((l,li)=>{ const A=endPin.get(li+':A'),B=endPin.get(li+':B');
     if(A.name===B.name)return;
     let a=A,b=B; const ca=colOf.get(A.name)??0,cb=colOf.get(B.name)??0;
     if(ca>cb||(ca===cb&&A.name>B.name)){ a=B;b=A; }
-    const k=a.name+'|'+b.name;
+    const k=a.name+'|'+b.name+'|'+listIdOfPin(b.name,b.key);
     (bundles.get(k)||bundles.set(k,[]).get(k)).push({a,b}); });
   const locked=new Set();
   [...bundles.values()].filter(ws=>ws.length>1).sort((x,y)=>y.length-x.length).forEach(ws=>{
-    const bName=ws[0].b.name; const P=P0(bName); const m=idxOf.get(bName);
+    const bName=ws[0].b.name; const lid=listIdOfPin(bName,ws[0].b.key);
+    const L=listArr(bName,lid); const m=idxOf.get(bName);
     const byB=new Map();
     ws.forEach(w=>{ const e=byB.get(w.b.key)||{s:0,c:0}; e.s+=pinYof(w.a.name,w.a.key); e.c++; byB.set(w.b.key,e); });
     const bKeys=[...byB.keys()].filter(k=>!locked.has(bName+SOH+k));
     if(bKeys.length<2)return;
     const slots=bKeys.map(k=>m.get(k)).sort((u,v)=>u-v);
     const desired=[...bKeys].sort((k1,k2)=>(byB.get(k1).s/byB.get(k1).c)-(byB.get(k2).s/byB.get(k2).c));
-    desired.forEach((k,i)=>{ m.set(k,slots[i]); locked.add(bName+SOH+k); });
-    P.list.sort((u,v)=>m.get(u.key)-m.get(v.key));
-    P.list.forEach((p,i)=>m.set(p.key,i));
+    const bySlot=new Map(); desired.forEach((k,i)=>{ bySlot.set(slots[i],k); locked.add(bName+SOH+k); });
+    const others=L.filter(p=>!byB.has(p.key)||!bKeys.includes(p.key));
+    const newL=new Array(L.length); let ri=0;
+    for(let i2=0;i2<L.length;i2++){
+      if(bySlot.has(i2)) newL[i2]=L.find(pp=>pp.key===bySlot.get(i2));
+      else newL[i2]=others[ri++];
+    }
+    listsOf.get(bName)[lid]=newL.filter(Boolean);
+    reindex(bName);
   });
   alignBlocks();
   for(const [n,o] of OVR){ if(posXY.has(n)) posXY.set(n,{x:o.x-dims(n).w/2,y:o.y-blockH(n)/2}); }
 
-  // bornes verticales réelles après optimisation
   let yMin=Infinity,yMax=-Infinity;
   nodeNames.forEach(n=>{ const p=posXY.get(n); yMin=Math.min(yMin,p.y); yMax=Math.max(yMax,p.y+blockH(n)); });
   if(!isFinite(yMin)){ yMin=topY; yMax=topY+maxColH; }
 
-  // --- blocs
+  // --- blocs concrets
   const compList=[],compByName=new Map();
   for(const n of nodeNames){ const e=byRep.get(n)||{repere:n,designation:'',type:''};
-    const P=P0(n); const pos=posXY.get(n); const d=dims(n);
-    const byKey=new Map(); const pins=[];
-    P.list.forEach((p,i)=>{ const py=pos.y+d.pinTop+i*PRH+PRH/2;
-      byKey.set(p.key,{y:py}); pins.push({label:p.label,y:py}); });
-    const c={name:n,o:{designation:e.designation||'',type:e.type||'',sym:'box',role:'misc'},
-      x:pos.x,y:pos.y,w:d.w,h:d.h,pinTop:d.pinTop,pins,byKey,rail:isRail(n),bornier:isBornier(n)};
+    const pos=posXY.get(n); const d=dims(n);
+    const byKey=new Map();
+    const c={name:n,o:{designation:e.designation||'',type:e.type||''},x:pos.x,y:pos.y,w:d.w,h:d.h,
+      kind:d.kind,lw:d.lw||0,rw:d.rw||0,rows:{},byKey,rail:isRail(n)};
+    listKeys(n).forEach(lid=>{ const top=pinTopOf(n,lid);
+      c.rows[lid]=listArr(n,lid).map((p,i)=>{ const py=pos.y+top+i*PRH+PRH/2;
+        byKey.set(p.key,{y:py}); return {label:p.label,y:py}; }); });
     compList.push(c); compByName.set(n,c); }
 
-  // --- nets + couleurs (convention conducteurs si potentiels L/N/PE présents)
+  // --- nets + couleurs
   const {find,nets}=buildNets(lk);
   function netColor(root){ const net=nets.get(root); if(!net)return '#26323f';
     let phase=null,hasN=false,hasPE=false,ctrl=false;
@@ -516,15 +550,19 @@ function computeLayout(eq, lk){
     if(hasPE)return COL.green; if(hasN)return COL.blue; if(phase)return COL[phaseColorByName(phase)];
     if(ctrl)return COL.ctrl; return '#26323f'; }
 
+  // --- liaisons avec extrémités résolues (x, y, canal, stub)
   const links=lk.map((l,li)=>{
     const A=endPin.get(li+':A'),B=endPin.get(li+':B');
+    const sA=endSide(A.name,A.key,B.name), sB=endSide(B.name,B.key,A.name);
+    const cA=compByName.get(A.name), cB=compByName.get(B.name);
+    const epA={x:sA==='R'?cA.x+cA.w:cA.x, y:cA.byKey.get(A.key).y, ch:chOfEnd(A.name,sA), stub:sA==='R'?'L':'R'};
+    const epB={x:sB==='R'?cB.x+cB.w:cB.x, y:cB.byKey.get(B.key).y, ch:chOfEnd(B.name,sB), stub:sB==='R'?'L':'R'};
     const root=find(pin(l.from,l.fromTerm));
     return {i:li,from:l.from,fromTerm:l.fromTerm,to:l.to,toTerm:l.toTerm,nature:l.nature||'',
-      aName:A.name,aKey:A.key,bName:B.name,bKey:B.key,net:root,color:netColor(root),
+      epA,epB,net:root,color:netColor(root),
       cable:l.cable||'',ctype:l.ctype||'',route:l.route||'',plan:l.plan||'',pn1:l.pn1||'',pn2:l.pn2||''};
   });
 
-  // --- cadre (format A3 conservé)
   const x0=M-50, x1=totalW+50;
   const y0=yMin-150, y1=yMax+150;
   let bbox={x:x0,y:y0,w:x1-x0,h:y1-y0};
@@ -537,67 +575,71 @@ function computeLayout(eq, lk){
     railByName:new Map(),compByName,geom};
 }
 
-/* ---------- 6. Routage en goulottes : pistes ordonnées par contraintes anti-croisement ---------- */
+function countCrossings(wires){
+  const segs=[]; wires.forEach((w,wi)=>{ for(let i=0;i<w.pts.length-1;i++)
+    segs.push({x1:w.pts[i].x,y1:w.pts[i].y,x2:w.pts[i+1].x,y2:w.pts[i+1].y,wi}); });
+  let c=0;
+  for(let i=0;i<segs.length;i++)for(let j=i+1;j<segs.length;j++){
+    const a=segs[i],b=segs[j]; if(a.wi===b.wi)continue;
+    const ah=Math.abs(a.y1-a.y2)<.01, bh=Math.abs(b.y1-b.y2)<.01;
+    if(ah===bh)continue;
+    const h=ah?a:b, v=ah?b:a;
+    const hx0=Math.min(h.x1,h.x2)+1,hx1=Math.max(h.x1,h.x2)-1;
+    const vy0=Math.min(v.y1,v.y2)+1,vy1=Math.max(v.y1,v.y2)-1;
+    if(v.x1>hx0&&v.x1<hx1&&h.y1>vy0&&h.y1<vy1)c++;
+  }
+  return c;
+}
+function computeLayout(eq, lk){
+  // deux stratégies de graine essayées ; on garde celle qui croise le moins en vrai
+  const la=computeLayoutWith(eq,lk,false), lb=computeLayoutWith(eq,lk,true);
+  const ra=routeAll(la), rb=routeAll(lb);
+  if(countCrossings(rb.wires)<countCrossings(ra.wires)){ lb._routing=rb; return lb; }
+  la._routing=ra; return la;
+}
+
+/* ---------- 6. Routage : goulottes à pistes ordonnées par contraintes ---------- */
 function routeAll(layout){
   const g=layout.geom; const N=layout.links.length;
   const wires=new Array(N);
   if(!N) return {wires:[],bridges:[],dots:[]};
   const chL=i=> i===0 ? (g.colX.length?g.colX[0]-g.chW[0]:70) : g.colX[i-1]+g.colW[i-1];
-  const pinPt=(name,key,side)=>{ const c=layout.compByName.get(name); const p=c.byKey.get(key);
-    return {x: side==='L'? c.x : c.x+c.w, y:p.y}; };
   function hwAlloc(tracks,lo,hi){ if(lo>hi){const t=lo;lo=hi;hi=t;}
     for(let t=0;t<tracks.length;t++){ if(!tracks[t].some(([a,b])=>!(hi<a-7||lo>b+7))){ tracks[t].push([lo,hi]); return t; } }
     tracks.push([[lo,hi]]); return tracks.length-1; }
   const hwTop=[], hwBot=[]; const hwY=new Map();
 
-  // normalisation des extrémités (colonne de gauche d'abord)
-  const norm=li=>{ const l=layout.links[li];
-    let aN=l.aName,aK=l.aKey,bN=l.bName,bK=l.bKey;
-    let c1=g.colOf.get(aN)??0, c2=g.colOf.get(bN)??0, swapped=false;
-    if(c1>c2){ [aN,aK,bN,bK]=[bN,bK,aN,aK]; const t=c1;c1=c2;c2=t; swapped=true; }
-    return {aN,aK,bN,bK,c1,c2,swapped}; };
-
   // 1) jobs par goulotte
   const chanJobs=Array.from({length:g.nCols+1},()=>[]);
-  for(let li=0;li<N;li++){ const l=layout.links[li]; const o=norm(li);
-    if(o.c1===o.c2){
-      const A=pinPt(o.aN,o.aK,'R'), B=pinPt(o.bN,o.bK,'R');
-      chanJobs[Math.min(o.c1+1,g.nCols)].push({li,kind:'loop',A,B});
-    } else if(o.c2-o.c1===1){
-      const A=pinPt(o.aN,o.aK,'R'), B=pinPt(o.bN,o.bK,'L');
-      if(Math.abs(A.y-B.y)<0.75){ wires[li]={...l,a:{ax:A.x,ay:A.y},b:{ax:B.x,ay:B.y},pts:[A,B]}; }
-      else chanJobs[o.c1+1].push({li,kind:'span',A,B});
+  for(let li=0;li<N;li++){ const l=layout.links[li];
+    let A=l.epA, B=l.epB;
+    if(A.ch>B.ch){ const t=A;A=B;B=t; }
+    if(A.ch===B.ch){
+      if(A.stub!==B.stub && Math.abs(A.y-B.y)<0.75){
+        wires[li]={...l,a:{ax:l.epA.x,ay:l.epA.y},b:{ax:l.epB.x,ay:l.epB.y},pts:[{x:l.epA.x,y:l.epA.y},{x:l.epB.x,y:l.epB.y}]};
+      } else chanJobs[A.ch].push({li,part:0,eps:[{y:A.y,s:A.stub},{y:B.y,s:B.stub}]});
     } else {
-      const A=pinPt(o.aN,o.aK,'R'), B=pinPt(o.bN,o.bK,'L');
       const top=g.yMin, bot=g.yMax;
       const useTop=(A.y-top)+(B.y-top)<=(bot-A.y)+(bot-B.y);
-      const th=hwAlloc(useTop?hwTop:hwBot, chL(o.c1+1), chL(o.c2)+g.chW[o.c2]);
+      const th=hwAlloc(useTop?hwTop:hwBot, chL(A.ch), chL(B.ch)+g.chW[B.ch]);
       const hy=useTop?(top-30-th*9):(bot+30+th*9);
       hwY.set(li,hy);
-      chanJobs[o.c1+1].push({li,kind:'hw1',A,hy});
-      chanJobs[o.c2].push({li,kind:'hw2',B,hy});
+      chanJobs[A.ch].push({li,part:1,eps:[{y:A.y,s:A.stub},{y:hy,s:'R'}]});
+      chanJobs[B.ch].push({li,part:2,eps:[{y:hy,s:'L'},{y:B.y,s:B.stub}]});
     }
   }
 
-  // 2) ordre des pistes de chaque goulotte : contraintes par paires puis tri topologique.
-  //    Règle : un stub qui sort du côté gauche impose t(autre) > t(soi) s'il tombe dans
-  //    la travée verticale de l'autre ; côté droit impose l'inverse.
+  // 2) ordre des pistes par contraintes anti-croisement (tri topologique)
   const chOut=Array.from({length:g.nCols+1},()=>new Map());
   for(let ch=0;ch<=g.nCols;ch++){
     const jobs=chanJobs[ch]; if(!jobs.length)continue;
-    const specs=jobs.map(j=>{
-      if(j.kind==='loop') return {V:[Math.min(j.A.y,j.B.y),Math.max(j.A.y,j.B.y)],ep:[{y:j.A.y,s:'L'},{y:j.B.y,s:'L'}]};
-      if(j.kind==='span') return {V:[Math.min(j.A.y,j.B.y),Math.max(j.A.y,j.B.y)],ep:[{y:j.A.y,s:'L'},{y:j.B.y,s:'R'}]};
-      if(j.kind==='hw1')  return {V:[Math.min(j.A.y,j.hy),Math.max(j.A.y,j.hy)],ep:[{y:j.A.y,s:'L'},{y:j.hy,s:'R'}]};
-      return {V:[Math.min(j.B.y,j.hy),Math.max(j.B.y,j.hy)],ep:[{y:j.B.y,s:'R'},{y:j.hy,s:'L'}]};
-    });
+    const specs=jobs.map(j=>({V:[Math.min(j.eps[0].y,j.eps[1].y),Math.max(j.eps[0].y,j.eps[1].y)],ep:j.eps}));
     const n=jobs.length;
-    const lt=Array.from({length:n},()=>new Set()); // lt[a] contient b : t_a < t_b requis
+    const lt=Array.from({length:n},()=>new Set());
     const inV=(y,V)=>y>V[0]+0.5&&y<V[1]-0.5;
     for(let i=0;i<n;i++)for(let j=0;j<n;j++){ if(i===j)continue;
       specs[j].ep.forEach(e=>{ if(inV(e.y,specs[i].V)){
-        if(e.s==='L') lt[j].add(i); else lt[i].add(j);
-      }});
+        if(e.s==='L') lt[j].add(i); else lt[i].add(j); }});
     }
     for(let a=0;a<n;a++)for(const b of [...lt[a]]){ if(lt[b].has(a)){ lt[a].delete(b); lt[b].delete(a); } }
     const indeg=new Array(n).fill(0);
@@ -613,32 +655,27 @@ function routeAll(layout){
       for(const v of lt[u]){ if(!done[v]&&--indeg[v]===0)ready.push(v); }
     }
     const x0=chL(ch)+14;
-    orderT.forEach((jobIdx,rank)=>chOut[ch].set(jobs[jobIdx].li, x0+rank*9));
+    orderT.forEach((jobIdx,rank)=>{ const j=jobs[jobIdx];
+      chOut[ch].set(j.li+':'+j.part, x0+rank*9); });
   }
 
-  // 3) matérialiser les fils
-  for(let li=0;li<N;li++){ if(wires[li])continue; const l=layout.links[li]; const o=norm(li);
+  // 3) matérialiser
+  for(let li=0;li<N;li++){ if(wires[li])continue; const l=layout.links[li];
+    let A=l.epA, B=l.epB, swapped=false;
+    if(A.ch>B.ch){ const t=A;A=B;B=t; swapped=true; }
     let pts;
-    if(o.c1===o.c2){
-      const ch=Math.min(o.c1+1,g.nCols);
-      const A=pinPt(o.aN,o.aK,'R'), B=pinPt(o.bN,o.bK,'R');
-      const tx=chOut[ch].get(li);
-      pts=[A,{x:tx,y:A.y},{x:tx,y:B.y},B];
-    } else if(o.c2-o.c1===1){
-      const A=pinPt(o.aN,o.aK,'R'), B=pinPt(o.bN,o.bK,'L');
-      const tx=chOut[o.c1+1].get(li);
-      pts=[A,{x:tx,y:A.y},{x:tx,y:B.y},B];
+    if(A.ch===B.ch){
+      const tx=chOut[A.ch].get(li+':0');
+      pts=[{x:A.x,y:A.y},{x:tx,y:A.y},{x:tx,y:B.y},{x:B.x,y:B.y}];
     } else {
-      const A=pinPt(o.aN,o.aK,'R'), B=pinPt(o.bN,o.bK,'L');
       const hy=hwY.get(li);
-      const tx1=chOut[o.c1+1].get(li), tx2=chOut[o.c2].get(li);
-      pts=[A,{x:tx1,y:A.y},{x:tx1,y:hy},{x:tx2,y:hy},{x:tx2,y:B.y},B];
+      const tx1=chOut[A.ch].get(li+':1'), tx2=chOut[B.ch].get(li+':2');
+      pts=[{x:A.x,y:A.y},{x:tx1,y:A.y},{x:tx1,y:hy},{x:tx2,y:hy},{x:tx2,y:B.y},{x:B.x,y:B.y}];
     }
-    if(o.swapped)pts.reverse();
+    if(swapped)pts.reverse();
     wires[li]={...l,a:{ax:pts[0].x,ay:pts[0].y},b:{ax:pts[pts.length-1].x,ay:pts[pts.length-1].y},pts};
   }
 
-  // pastilles : plusieurs fils raccordés sur la même broche
   const cnt=new Map();
   wires.forEach(w=>{ [w.pts[0],w.pts[w.pts.length-1]].forEach(p=>{
     const k=Math.round(p.x)+','+Math.round(p.y); cnt.set(k,(cnt.get(k)||0)+1); }); });
@@ -677,6 +714,8 @@ function defs(){
      .body{fill:#ffffff;stroke:#26343f;stroke-width:1.4}
      .borne{fill:#eef1f4;stroke:#26343f;stroke-width:1}
      .bnum{fill:#182430;font-size:8px;font-weight:700}
+     .bstrip{fill:#f6f8fa;stroke:#26343f;stroke-width:1.2}
+     .rep-big{fill:#182430;font-weight:700;font-size:13px;letter-spacing:.8px}
      .bhead{fill:#e9eef3;stroke:none}
      .bheadline{stroke:#26343f;stroke-width:1}
      .pinsep{stroke:#e3e8ed;stroke-width:1}
@@ -749,19 +788,38 @@ function wireSvg(w,bridges){ const d=wirePath(w.pts,bridges);
   return `<path class="cab" d="${d}" stroke="${w.color}"/>`;
 }
 
+function stripSvg(x0,w,rows,pinTop){ // bornier : colonne de cellules avec n° dedans
+  let s=`<rect class="bstrip" x="${f1(x0)}" y="${f1(pinTop-2)}" width="${f1(w)}" height="${f1(rows.length*PRH+4)}" rx="2"/>`;
+  rows.forEach((p,i)=>{ const ly=pinTop+i*PRH;
+    if(i>0) s+=`<line class="pinsep" x1="${f1(x0+3)}" y1="${f1(ly)}" x2="${f1(x0+w-3)}" y2="${f1(ly)}"/>`;
+    s+=`<text class="pinlbl" x="${f1(x0+w/2)}" y="${f1(ly+PRH/2+3)}" text-anchor="middle">${esc(p.label||'·')}</text>`;
+  });
+  return s;
+}
 function compSvg(c,sel){
   let s=`<g transform="translate(${f1(c.x)},${f1(c.y)})">`;
   if(sel) s+=`<rect class="selbox" x="-5" y="-5" width="${c.w+10}" height="${c.h+10}" rx="3"/>`;
-  s+=`<g filter="url(#softsh)"><rect class="body" x="0" y="0" width="${c.w}" height="${c.h}" rx="3"/></g>`;
-  s+=`<path d="M 0 ${HH} v ${-(HH-3)} a 3 3 0 0 1 3 -3 h ${c.w-6} a 3 3 0 0 1 3 3 v ${HH-3} z" class="bhead"/>`;
-  s+=`<line x1="0" y1="${HH}" x2="${c.w}" y2="${HH}" class="bheadline"/>`;
-  s+=`<text class="rep-in" x="${f1(c.w/2)}" y="${HH/2+4}" text-anchor="middle">${esc(c.name)}</text>`;
-  const pt=c.pinTop!=null?c.pinTop:HH;
-  c.pins.forEach((p,i)=>{ const ly=pt+i*PRH;
-    if(i>0||pt>HH) s+=`<line class="pinsep" x1="5" y1="${ly}" x2="${c.w-5}" y2="${ly}"/>`;
-    s+=`<text class="pinlbl" x="${f1(c.w/2)}" y="${ly+PRH/2+3}" text-anchor="middle">${esc(p.label||'·')}</text>`;
-  });
-  if(c.pins.length) s+=`<line class="pinsep" x1="5" y1="${pt+c.pins.length*PRH}" x2="${c.w-5}" y2="${pt+c.pins.length*PRH}"/>`;
+  if(c.kind==='strip'){
+    // bornier autonome : rectangle étroit, nom en tête, broches traversantes
+    s+=`<g filter="url(#softsh)"><rect class="body" x="0" y="0" width="${c.w}" height="${c.h}" rx="3"/></g>`;
+    s+=`<path d="M 0 ${HH} v ${-(HH-3)} a 3 3 0 0 1 3 -3 h ${c.w-6} a 3 3 0 0 1 3 3 v ${HH-3} z" class="bhead"/>`;
+    s+=`<line x1="0" y1="${HH}" x2="${c.w}" y2="${HH}" class="bheadline"/>`;
+    s+=`<text class="rep-in" x="${f1(c.w/2)}" y="${HH/2+4}" text-anchor="middle">${esc(c.name)}</text>`;
+    const rows=c.rows.S||[];
+    rows.forEach((p,i)=>{ const ly=HH+i*PRH;
+      if(i>0) s+=`<line class="pinsep" x1="4" y1="${ly}" x2="${c.w-4}" y2="${ly}"/>`;
+      s+=`<text class="pinlbl" x="${f1(c.w/2)}" y="${ly+PRH/2+3}" text-anchor="middle">${esc(p.label||'·')}</text>`;
+    });
+  } else {
+    // équipement : grand corps avec le repère au centre + borniers collés sur les flancs
+    const bx=c.lw, bw=c.w-c.lw-c.rw;
+    s+=`<g filter="url(#softsh)"><rect class="body" x="${f1(bx)}" y="0" width="${f1(bw)}" height="${c.h}" rx="3"/></g>`;
+    s+=`<text class="rep-big" x="${f1(bx+bw/2)}" y="${f1(c.h/2+5)}" text-anchor="middle">${esc(clip(c.name,12))}</text>`;
+    if(c.o.designation) s+=`<text class="des" x="${f1(bx+bw/2)}" y="${f1(c.h/2+18)}" text-anchor="middle">${esc(clip(c.o.designation,16))}</text>`;
+    const rl=c.rows.L||[], rr=c.rows.R||[];
+    if(rl.length) s+=stripSvg(0, c.lw, rl, (c.h-rl.length*PRH)/2);
+    if(rr.length) s+=stripSvg(c.w-c.rw, c.rw, rr, (c.h-rr.length*PRH)/2);
+  }
   s+=`</g>`; return s;
 }
 
@@ -789,7 +847,7 @@ function render(){
   const byR=new Map(state.eq.map(e=>[e.repere,e]));
   const eq=[]; names.forEach(n=>{ if(RAIL_RE.test(String(n).trim())&&!byR.has(n))return; const m=byR.get(n); eq.push({repere:n,designation:(m&&m.designation)||'',type:(m&&m.type)||''}); });
   const layout=computeLayout(eq,lkF);
-  const routing=routeAll(layout);
+  const routing=layout._routing||routeAll(layout);
   LAST={layout,routing};
   paint(layout,routing);
   updateZoom();
