@@ -568,6 +568,33 @@ function computeLayoutWith(eq, lk, peripheral){
   });
   elastic();
 
+  // micro-alignement final : translation fine de chaque bloc (candidats = résidus
+  // de ses fils) pour maximiser les fils parfaitement droits, sans chevaucher
+  // ses voisins de colonne.
+  const polish=()=>{ for(let pass=0;pass<4;pass++){ let changed=false;
+    columns.forEach(c=>{ c.forEach((id,k)=>{
+      const res=[];
+      listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>{
+        (partners.get(id+SOH+p.key)||[]).forEach(q=>{ if(colOf.get(q.id)!==colOf.get(id))
+          res.push(pinYof(q.id,q.key)-pinYof(id,p.key)); }); }));
+      if(!res.length)return;
+      const h=blockBot.get(id)-blockTop.get(id);
+      const low = k>0 ? blockBot.get(c[k-1])+10 : -Infinity;
+      const high = (k<c.length-1 ? blockTop.get(c[k+1])-10 : Infinity)-h;
+      let best=0, bestN=res.filter(r=>Math.abs(r)<0.6).length;
+      [...new Set(res.map(r=>Math.round(r*2)/2))].forEach(s=>{
+        if(s===0||Math.abs(s)>3*PRH)return;
+        const t=blockTop.get(id)+s; if(t<low-0.01||t>high+0.01)return;
+        const n=res.filter(r=>Math.abs(r-s)<0.6).length;
+        if(n>bestN||(n===bestN&&n>0&&Math.abs(s)<Math.abs(best)&&best!==0)){ best=s; bestN=n; } });
+      if(best!==0){
+        blockTop.set(id,blockTop.get(id)+best); blockBot.set(id,blockBot.get(id)+best);
+        listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>pinY.set(id+SOH+p.key,pinYof(id,p.key)+best)));
+        changed=true; }
+    }); });
+    if(!changed)break; } };
+  polish();
+
   // déplacement manuel : translation du bloc entier
   for(const [name,o] of OVR){
     for(const id of nodeIds){ if(id!==name&&nodes.get(id).name!==name)continue;
