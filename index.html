@@ -498,28 +498,32 @@ function computeLayoutWith(eq, lk, peripheral){
       return [id, des.length?des[Math.floor(des.length/2)]:blockTop.get(id)]; }));
     c.sort((a,b)=>key.get(a)-key.get(b)); }); };
 
-  // pose élastique : chaque broche vise le y de son partenaire ; l'espacement des
-  // broches est libre (>= PRH) donc la hauteur du bloc s'étire à la demande.
-  const elastic=()=>{ columns.forEach((c)=>{ let cursor=-Infinity;
-    c.forEach(id=>{ const ls=listKeys(id);
-      const desired=lid=>listArr(id,lid).map(p=>{ const ps=partners.get(id+SOH+p.key)||[];
+  // pose hybride : un équipement ne s'étire QUE pour s'aligner sur un autre
+  // équipement (jamais pour suivre un fragment de bornier : c'est le fragment,
+  // libre et compact, qui vient se coller en face). Broches sinon à pas fixe.
+  const elastic=()=>{ const GAPX=4*PRH; columns.forEach(c=>{ let cursor=-Infinity;
+    c.forEach(id=>{ const ls=listKeys(id); const isS=!!listsOf.get(id).S;
+      const eqDes=lid=>listArr(id,lid).map(p=>{
+        const ps=(partners.get(id+SOH+p.key)||[]).filter(q=>q.id!==id&&(isS||!listsOf.get(q.id).S));
         const ds=ps.map(q=>pinYof(q.id,q.key)); ds.sort((a,b)=>a-b);
         return ds.length?ds[Math.floor(ds.length/2)]:null; });
-      const firstDes=[]; ls.forEach(lid=>{ const d=desired(lid); if(d.length&&d[0]!=null)firstDes.push(d[0]); });
-      const minTop=cursor+VGAP;
-      let top=firstDes.length?Math.min(...firstDes)-16:blockTop.get(id);
-      top=Math.max(top,minTop,topY-60);
-      if(isFinite(minTop)) top=Math.min(top,minTop+220);   // saut limité entre blocs
-      const GAPX=4*PRH;     // écart max entre broches : de quoi caser le bloc d'en face
+      const offs=[];
+      ls.forEach(lid=>{ eqDes(lid).forEach((d,j)=>{ if(d!=null)offs.push(d-(16+j*PRH)); }); });
+      if(!offs.length){ ls.forEach(lid=>{ listArr(id,lid).forEach((p,j)=>{
+        (partners.get(id+SOH+p.key)||[]).forEach(q=>{ if(q.id!==id)offs.push(pinYof(q.id,q.key)-(16+j*PRH)); }); }); }); }
+      offs.sort((a,b)=>a-b);
+      const pad=isS?36:VGAP;
+      let top=offs.length?offs[Math.floor(offs.length/2)]:blockTop.get(id);
+      top=Math.max(top,cursor+pad,topY-60);
       let bot=top+40;
-      ls.forEach(lid=>{ const L=listArr(id,lid); const des=desired(lid);
+      ls.forEach(lid=>{ const L=listArr(id,lid); const des=isS?null:eqDes(lid);
         let prev=top+16-PRH;
-        L.forEach((p,j)=>{ let y=des[j]!=null?des[j]:prev+PRH;
-          y=Math.max(Math.min(y,prev+PRH+GAPX),prev+PRH);
+        L.forEach((p,j)=>{ let y=prev+PRH;
+          if(des&&des[j]!=null) y=Math.max(Math.min(des[j],prev+PRH+GAPX),prev+PRH);
           pinY.set(id+SOH+p.key,y); prev=y; });
-        if(L.length)bot=Math.max(bot,prev+16);
+        if(L.length)bot=Math.max(bot,prev+(isS?12:24));
       });
-      if(!listsOf.get(id).S) bot=Math.max(bot,top+64);
+      if(!isS) bot=Math.max(bot,top+64);
       blockTop.set(id,top); blockBot.set(id,bot); cursor=bot;
     }); }); };
   for(let round=0;round<4;round++){ sortPins(); colSort(); elastic(); }
@@ -839,7 +843,7 @@ function pinCells(x0,w,rows,baseY){ // cellules de broches jointives aux y élas
   let s='';
   rows.forEach(p=>{ const ly=p.y-baseY;
     s+=`<rect class="bcell" x="${f1(x0)}" y="${f1(ly-PRH/2)}" width="${f1(w)}" height="${PRH}"/>`;
-    s+=`<text class="pinlbl" x="${f1(x0+w/2)}" y="${f1(ly+3)}" text-anchor="middle">${esc(p.label||'·')}</text>`;
+    if(p.label) s+=`<text class="pinlbl" x="${f1(x0+w/2)}" y="${f1(ly+3)}" text-anchor="middle">${esc(p.label)}</text>`;
   });
   return s;
 }
