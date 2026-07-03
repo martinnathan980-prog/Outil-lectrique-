@@ -324,7 +324,7 @@ function buildNets(lk){
 }
 
 /* ---------- 5. Placement v4 : borniers sécables + hauteur élastique ---------- */
-const PRH=16, STRIPW=30, BODYW=104, BORNW=46, VGAP=24, HH=20, BPAD=6;
+const PRH=14, STRIPW=24, BODYW=104, BORNW=40, VGAP=22, HH=20, BPAD=6, HHS=15;
 const FRAG='';
 function computeLayoutWith(eq, lk, peripheral){
   const byRep=new Map(eq.map(e=>[e.repere,e]));
@@ -498,33 +498,41 @@ function computeLayoutWith(eq, lk, peripheral){
       return [id, des.length?des[Math.floor(des.length/2)]:blockTop.get(id)]; }));
     c.sort((a,b)=>key.get(a)-key.get(b)); }); };
 
-  // pose hybride : un équipement ne s'étire QUE pour s'aligner sur un autre
-  // équipement (jamais pour suivre un fragment de bornier : c'est le fragment,
-  // libre et compact, qui vient se coller en face). Broches sinon à pas fixe.
+  // pose : les écarts entre broches sont déduits des écarts des partenaires
+  // ("pile en face" par construction, bornés) ; un équipement ne s'étire que
+  // vers un autre équipement ; chaque liste de broches est CENTRÉE dans le
+  // corps ; les fragments restent compacts et se translatent en bloc.
   const elastic=()=>{ const GAPX=4*PRH; columns.forEach(c=>{ let cursor=-Infinity;
     c.forEach(id=>{ const ls=listKeys(id); const isS=!!listsOf.get(id).S;
-      const eqDes=lid=>listArr(id,lid).map(p=>{
+      const desOf=lid=>listArr(id,lid).map(p=>{
         const ps=(partners.get(id+SOH+p.key)||[]).filter(q=>q.id!==id&&(isS||!listsOf.get(q.id).S));
         const ds=ps.map(q=>pinYof(q.id,q.key)); ds.sort((a,b)=>a-b);
         return ds.length?ds[Math.floor(ds.length/2)]:null; });
+      // écarts relatifs par liste (pas fixe, élargi si les cibles l'exigent)
+      const relOf=(lid,des)=>{ const L=listArr(id,lid); const rel=[]; let r=0;
+        L.forEach((p,j)=>{ if(j>0){ let step=PRH;
+            if(!isS&&des[j]!=null&&des[j-1]!=null)
+              step=Math.max(PRH,Math.min(des[j]-des[j-1],PRH+GAPX));
+            r+=step; } rel.push(r); });
+        return rel; };
+      const desL={}, relL={}; let maxSpan=0;
+      ls.forEach(lid=>{ desL[lid]=desOf(lid); relL[lid]=relOf(lid,desL[lid]);
+        const L=listArr(id,lid); if(L.length)maxSpan=Math.max(maxSpan,relL[lid][L.length-1]); });
+      const h=isS? (HHS+Math.max(1,listArr(id,'S').length)*PRH+5)
+                 : Math.max(64, maxSpan+2*22);
+      const baseL={}; ls.forEach(lid=>{ const L=listArr(id,lid);
+        const span=L.length?relL[lid][L.length-1]:0;
+        baseL[lid]=isS? (HHS+PRH/2) : ((h-span)/2); });   // liste centrée dans le corps
+      // translation du bloc : broches en face de leurs partenaires (médiane)
       const offs=[];
-      ls.forEach(lid=>{ eqDes(lid).forEach((d,j)=>{ if(d!=null)offs.push(d-(16+j*PRH)); }); });
+      ls.forEach(lid=>{ desL[lid].forEach((d,j)=>{ if(d!=null)offs.push(d-(baseL[lid]+relL[lid][j])); }); });
       if(!offs.length){ ls.forEach(lid=>{ listArr(id,lid).forEach((p,j)=>{
-        (partners.get(id+SOH+p.key)||[]).forEach(q=>{ if(q.id!==id)offs.push(pinYof(q.id,q.key)-(16+j*PRH)); }); }); }); }
+        (partners.get(id+SOH+p.key)||[]).forEach(q=>{ if(q.id!==id)offs.push(pinYof(q.id,q.key)-(baseL[lid]+relL[lid][j])); }); }); }); }
       offs.sort((a,b)=>a-b);
-      const pad=isS?36:VGAP;
       let top=offs.length?offs[Math.floor(offs.length/2)]:blockTop.get(id);
-      top=Math.max(top,cursor+pad,topY-60);
-      let bot=top+40;
-      ls.forEach(lid=>{ const L=listArr(id,lid); const des=isS?null:eqDes(lid);
-        let prev=top+16-PRH;
-        L.forEach((p,j)=>{ let y=prev+PRH;
-          if(des&&des[j]!=null) y=Math.max(Math.min(des[j],prev+PRH+GAPX),prev+PRH);
-          pinY.set(id+SOH+p.key,y); prev=y; });
-        if(L.length)bot=Math.max(bot,prev+(isS?12:24));
-      });
-      if(!isS) bot=Math.max(bot,top+64);
-      blockTop.set(id,top); blockBot.set(id,bot); cursor=bot;
+      top=Math.max(top,cursor+(isS?14:VGAP),topY-60);
+      ls.forEach(lid=>{ listArr(id,lid).forEach((p,j)=>pinY.set(id+SOH+p.key,top+baseL[lid]+relL[lid][j])); });
+      blockTop.set(id,top); blockBot.set(id,top+h); cursor=top+h;
     }); }); };
   for(let round=0;round<4;round++){ sortPins(); colSort(); elastic(); }
   sortPins(); elastic();
@@ -762,15 +770,15 @@ function defs(){
      .body{fill:#ffffff;stroke:#26343f;stroke-width:1.4}
      .borne{fill:#eef1f4;stroke:#26343f;stroke-width:1}
      .bnum{fill:#182430;font-size:8px;font-weight:700}
-     .bstrip{fill:#f6f8fa;stroke:#26343f;stroke-width:1.2}
-     .bcell{fill:#ffffff;stroke:#93a0ad;stroke-width:.9}
-     .btag{fill:#ffffff;stroke:#26343f;stroke-width:1}
-     .btagt{fill:#182430;font-size:8.5px;font-weight:700;letter-spacing:.4px}
+     .bstrip{fill:#f6f8fa;stroke:#3a4854;stroke-width:1}
+     .bcell{fill:#ffffff;stroke:#aeb9c3;stroke-width:.7}
+     .bshead{fill:#e6ebf0;stroke:none}
+     .bsname{fill:#182430;font-size:7.5px;font-weight:700;letter-spacing:.3px}
      .rep-big{fill:#182430;font-weight:700;font-size:13px;letter-spacing:.8px}
      .bhead{fill:#e9eef3;stroke:none}
      .bheadline{stroke:#26343f;stroke-width:1}
      .pinsep{stroke:#e3e8ed;stroke-width:1}
-     .pinlbl{fill:#22303d;font-size:8.5px;font-weight:600}
+     .pinlbl{fill:#22303d;font-size:7.8px;font-weight:600}
      .rpill{fill:#ffffff;stroke:#c9d1d9;stroke-width:.9}
      .rname{fill:#3c4a56;font-weight:700;font-size:10px;letter-spacing:.6px}
      .ctag{fill:#5b6775;font-size:8px;font-weight:600}
@@ -839,39 +847,35 @@ function wireSvg(w,bridges){ const d=wirePath(w.pts,bridges);
   return `<path class="cab" d="${d}" stroke="${w.color}"/>`;
 }
 
-function pinCells(x0,w,rows,baseY){ // cellules de broches jointives aux y élastiques
+function pinCells(x0,w,rows,baseY){ // cellules fines et jointives
   let s='';
   rows.forEach(p=>{ const ly=p.y-baseY;
     s+=`<rect class="bcell" x="${f1(x0)}" y="${f1(ly-PRH/2)}" width="${f1(w)}" height="${PRH}"/>`;
-    if(p.label) s+=`<text class="pinlbl" x="${f1(x0+w/2)}" y="${f1(ly+3)}" text-anchor="middle">${esc(p.label)}</text>`;
+    if(p.label) s+=`<text class="pinlbl" x="${f1(x0+w/2)}" y="${f1(ly+2.8)}" text-anchor="middle">${esc(p.label)}</text>`;
   });
   return s;
-}
-function stripOutline(x0,w,rows,baseY){ if(!rows.length)return '';
-  const t=rows[0].y-baseY-PRH/2-3, b=rows[rows.length-1].y-baseY+PRH/2+3;
-  return `<g filter="url(#softsh)"><rect class="bstrip" x="${f1(x0)}" y="${f1(t)}" width="${f1(w)}" height="${f1(b-t)}" rx="3"/></g>`;
-}
-function stripTag(cx,yTop,name){ const t=clip(name,9); const w=Math.max(26,t.length*6.6+10);
-  return `<rect class="btag" x="${f1(cx-w/2)}" y="${f1(yTop-17)}" width="${f1(w)}" height="14" rx="7"/>`
-    +`<text class="btagt" x="${f1(cx)}" y="${f1(yTop-6.5)}" text-anchor="middle">${esc(t)}</text>`;
 }
 function compSvg(c,sel){
   let s=`<g transform="translate(${f1(c.x)},${f1(c.y)})">`;
   if(sel) s+=`<rect class="selbox" x="-5" y="-5" width="${c.w+10}" height="${c.h+10}" rx="3"/>`;
   if(c.kind==='strip'){
-    // fragment de bornier : pastille-nom au-dessus, colonne de cellules jointives
-    const rows=c.rows.S||[];
-    s+=stripOutline(0,c.w,rows,c.y)+pinCells(2,c.w-4,rows,c.y);
-    if(rows.length) s+=stripTag(c.w/2, rows[0].y-c.y-PRH/2-3, c.name);
+    // fragment de bornier : fin, nom intégré en cellule d'en-tête
+    s+=`<g filter="url(#softsh)"><rect class="bstrip" x="0" y="0" width="${c.w}" height="${c.h}" rx="2.5"/></g>`;
+    s+=`<rect class="bshead" x="0" y="0" width="${c.w}" height="${HHS}" rx="2.5"/>`;
+    s+=`<text class="bsname" x="${f1(c.w/2)}" y="${HHS/2+3}" text-anchor="middle">${esc(clip(c.name,7))}</text>`;
+    s+=pinCells(1.5,c.w-3,c.rows.S||[],c.y);
   } else {
-    // équipement : corps compact, nom centré, borniers de flanc élastiques
+    // équipement : corps compact, nom centré, borniers de flanc fins et centrés
     const bx=c.lw, bw=c.w-c.lw-c.rw;
     s+=`<g filter="url(#softsh)"><rect class="body" x="${f1(bx)}" y="0" width="${f1(bw)}" height="${c.h}" rx="3"/></g>`;
-    s+=`<text class="rep-big" x="${f1(bx+bw/2)}" y="${f1(c.h/2+5)}" text-anchor="middle">${esc(clip(c.name,12))}</text>`;
-    if(c.o.designation) s+=`<text class="des" x="${f1(bx+bw/2)}" y="${f1(c.h/2+18)}" text-anchor="middle">${esc(clip(c.o.designation,16))}</text>`;
+    s+=`<text class="rep-big" x="${f1(bx+bw/2)}" y="${f1(c.h/2+4.5)}" text-anchor="middle">${esc(clip(c.name,12))}</text>`;
+    if(c.o.designation) s+=`<text class="des" x="${f1(bx+bw/2)}" y="${f1(c.h/2+17)}" text-anchor="middle">${esc(clip(c.o.designation,16))}</text>`;
     const rl=c.rows.L||[], rr=c.rows.R||[];
-    if(rl.length){ s+=stripOutline(0,STRIPW,rl,c.y)+pinCells(2,STRIPW-4,rl,c.y); }
-    if(rr.length){ s+=stripOutline(c.w-STRIPW,STRIPW,rr,c.y)+pinCells(c.w-STRIPW+2,STRIPW-4,rr,c.y); }
+    const outline=(x0,rows)=>{ if(!rows.length)return '';
+      const t=rows[0].y-c.y-PRH/2-2, b=rows[rows.length-1].y-c.y+PRH/2+2;
+      return `<rect class="bstrip" x="${f1(x0)}" y="${f1(t)}" width="${STRIPW}" height="${f1(b-t)}" rx="2.5"/>`; };
+    if(rl.length){ s+=outline(0,rl)+pinCells(1.5,STRIPW-3,rl,c.y); }
+    if(rr.length){ s+=outline(c.w-STRIPW,rr)+pinCells(c.w-STRIPW+1.5,STRIPW-3,rr,c.y); }
   }
   s+=`</g>`; return s;
 }
