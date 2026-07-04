@@ -469,8 +469,10 @@ function computeLayoutWith(eq, lk, peripheral){
   const totalW=Math.max(cx, M+360);
 
   // --- position initiale puis optimisation élastique
+  // alignement au fer à gauche : tous les blocs d'une colonne partagent le
+  // même bord gauche -> colonnes visuellement droites malgré les largeurs mixtes
   const nodeX=new Map();
-  columns.forEach((c,i)=>c.forEach(id=>nodeX.set(id,colX[i]+(colW[i]-widthOf(id))/2)));
+  columns.forEach((c,i)=>c.forEach(id=>nodeX.set(id,colX[i])));
   const colH=columns.map(c=>c.reduce((s,id)=>s+estH(id)+VGAP,-VGAP));
   const maxColH=Math.max(60,...colH);
   const pinY=new Map();
