@@ -493,11 +493,13 @@ function computeLayoutWith(eq, lk, peripheral){
 
   // ordre vertical des blocs dans chaque colonne : barycentre des partenaires
   const colSort=()=>{ columns.forEach(c=>{ if(c.length<2)return;
-    const key=new Map(c.map(id=>{ const des=[];
+    const key=new Map(c.map(id=>{ const isS=!!listsOf.get(id).S; const des=[],desAll=[];
       listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>{
-        (partners.get(id+SOH+p.key)||[]).forEach(q=>{ if(q.id!==id)des.push(pinYof(q.id,q.key)); }); }));
-      des.sort((a,b)=>a-b);
-      return [id, des.length?des[Math.floor(des.length/2)]:blockTop.get(id)]; }));
+        (partners.get(id+SOH+p.key)||[]).forEach(q=>{ if(q.id===id)return;
+          const y=pinYof(q.id,q.key); desAll.push(y);
+          if(isS||!listsOf.get(q.id).S) des.push(y); }); }));
+      const use=des.length?des:desAll; use.sort((a,b)=>a-b);
+      return [id, use.length?use[Math.floor(use.length/2)]:blockTop.get(id)]; }));
     c.sort((a,b)=>key.get(a)-key.get(b)); }); };
 
   // pose : les écarts entre broches sont déduits des écarts des partenaires
@@ -506,8 +508,14 @@ function computeLayoutWith(eq, lk, peripheral){
   // corps ; les fragments restent compacts et se translatent en bloc.
   const elastic=()=>{ const GAPX=4*PRH; columns.forEach(c=>{ let cursor=-Infinity;
     c.forEach(id=>{ const ls=listKeys(id); const isS=!!listsOf.get(id).S;
+      // repli : un bloc sans aucun partenaire équipement s'aligne sur ses borniers
+      let hasEq=false; ls.forEach(lid=>listArr(id,lid).forEach(p=>{
+        (partners.get(id+SOH+p.key)||[]).forEach(q=>{ if(q.id!==id&&!listsOf.get(q.id).S)hasEq=true; }); }));
       const desOf=lid=>listArr(id,lid).map(p=>{
-        const ps=(partners.get(id+SOH+p.key)||[]).filter(q=>q.id!==id&&(isS||!listsOf.get(q.id).S));
+        let ps=(partners.get(id+SOH+p.key)||[]).filter(q=>q.id!==id&&(isS||!hasEq||!listsOf.get(q.id).S));
+        // préférence aux partenaires des colonnes déjà posées (données fraîches)
+        const lf=ps.filter(q=>(colOf.get(q.id)??0)<(colOf.get(id)??0));
+        if(lf.length)ps=lf;
         const ds=ps.map(q=>pinYof(q.id,q.key)); ds.sort((a,b)=>a-b);
         return ds.length?ds[Math.floor(ds.length/2)]:null; });
       // écarts relatifs par liste (pas fixe, élargi si les cibles l'exigent)
@@ -568,17 +576,20 @@ function computeLayoutWith(eq, lk, peripheral){
     }
     listsOf.get(bId)[lid]=newL.filter(Boolean);
   });
-  elastic();
 
   // micro-alignement final : translation fine de chaque bloc (candidats = résidus
   // de ses fils) pour maximiser les fils parfaitement droits, sans chevaucher
   // ses voisins de colonne.
   const polish=()=>{ for(let pass=0;pass<4;pass++){ let changed=false;
     columns.forEach(c=>{ c.forEach((id,k)=>{
-      const res=[];
+      const isS=!!listsOf.get(id).S;
+      const res=[], resAll=[];
       listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>{
-        (partners.get(id+SOH+p.key)||[]).forEach(q=>{ if(colOf.get(q.id)!==colOf.get(id))
-          res.push(pinYof(q.id,q.key)-pinYof(id,p.key)); }); }));
+        (partners.get(id+SOH+p.key)||[]).forEach(q=>{ if(colOf.get(q.id)===colOf.get(id))return;
+          const r=pinYof(q.id,q.key)-pinYof(id,p.key);
+          resAll.push(r);
+          if(isS||!listsOf.get(q.id).S) res.push(r); }); }));
+      if(!res.length) res.push(...resAll);
       if(!res.length)return;
       const h=blockBot.get(id)-blockTop.get(id);
       const low = k>0 ? blockBot.get(c[k-1])+10 : -Infinity;
@@ -595,7 +606,81 @@ function computeLayoutWith(eq, lk, peripheral){
         changed=true; }
     }); });
     if(!changed)break; } };
-  polish();
+  // le tri de colonne peut osciller entre deux ordres : on note chaque tour
+  // (nombre de liaisons parfaitement en face) et on garde le meilleur.
+  const scoreNow=()=>{ let n=0; lk.forEach((l,li)=>{ const A=endPin.get(li+':A'),B=endPin.get(li+':B');
+    const ia=nid(A.name,A.key), ib=nid(B.name,B.key); if(ia===ib)return;
+    if(Math.abs(pinYof(ia,A.key)-pinYof(ib,B.key))<0.6)
+      n+=(!listsOf.get(ia).S&&!listsOf.get(ib).S)?3:1; }); return n; };
+  let bestScore=-1, bestSnap=null;
+  for(let r2=0;r2<4;r2++){ colSort(); elastic(); polish();
+    const sc=scoreNow();
+    if(sc>bestScore){ bestScore=sc;
+      bestSnap={p:new Map(pinY), t:new Map(blockTop), b:new Map(blockBot)}; } }
+  if(bestSnap){
+    pinY.clear(); bestSnap.p.forEach((v,k)=>pinY.set(k,v));
+    blockTop.clear(); bestSnap.t.forEach((v,k)=>blockTop.set(k,v));
+    blockBot.clear(); bestSnap.b.forEach((v,k)=>blockBot.set(k,v)); }
+
+  // recherche locale : essais d'échanges de blocs adjacents dans chaque
+  // colonne (repose complète) ; on ne garde que si le score s'améliore.
+  const nBlocks=columns.reduce((n,c)=>n+c.length,0);
+  if(nBlocks<=60){
+    const snap=()=>({p:new Map(pinY),t:new Map(blockTop),b:new Map(blockBot),o:columns.map(c=>c.slice())});
+    const restoreSnap=st=>{ pinY.clear(); st.p.forEach((v,k)=>pinY.set(k,v));
+      blockTop.clear(); st.t.forEach((v,k)=>blockTop.set(k,v));
+      blockBot.clear(); st.b.forEach((v,k)=>blockBot.set(k,v));
+      st.o.forEach((c,i)=>columns[i]=c); };
+    let cur=scoreNow();
+    for(let pass=0;pass<2;pass++){ let improved=false;
+      for(let ci=0;ci<columns.length;ci++){ const c=columns[ci];
+        for(let i=0;i+1<c.length;i++){
+          const st=snap();
+          const t=c[i]; c[i]=c[i+1]; c[i+1]=t;
+          elastic(); polish();
+          const sc=scoreNow();
+          if(sc>cur){ cur=sc; improved=true; }
+          else restoreSnap(st);
+        } }
+      if(!improved)break; } }
+
+  // sauvetage : un bloc dont AUCUN fil n'est en face est re-translaté, sans
+  // limite de distance, vers sa cible médiane si un trou libre de sa colonne
+  // peut l'accueillir.
+  columns.forEach(c=>{ c.forEach(id=>{
+    const isS=!!listsOf.get(id).S;
+    const res=[], resAll=[];
+    listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>{
+      (partners.get(id+SOH+p.key)||[]).forEach(q=>{ if(q.id===id||colOf.get(q.id)===colOf.get(id))return;
+        const r=pinYof(q.id,q.key)-pinYof(id,p.key);
+        resAll.push(r); if(isS||!listsOf.get(q.id).S)res.push(r); }); }));
+    const R=res.length?res:resAll; if(!R.length)return;
+    if(R.some(r=>Math.abs(r)<0.6))return;
+    const h=blockBot.get(id)-blockTop.get(id);
+    const others=c.filter(o=>o!==id);
+    const fits=t=>others.every(o=>t+h+10<=blockTop.get(o)||t>=blockBot.get(o)+10);
+    let best=0,bestN=0;
+    [...new Set(R.map(r=>Math.round(r*2)/2))].forEach(sft=>{ if(!sft)return;
+      const t=blockTop.get(id)+sft; if(!fits(t))return;
+      const n=R.filter(r=>Math.abs(r-sft)<0.6).length;
+      if(n>bestN){best=sft;bestN=n;} });
+    if(best){ blockTop.set(id,blockTop.get(id)+best); blockBot.set(id,blockBot.get(id)+best);
+      listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>pinY.set(id+SOH+p.key,pinYof(id,p.key)+best))); }
+  }); });
+
+  // compactage vertical : les bandes horizontales entièrement vides sont
+  // réduites (tout le monde remonte d'autant : les fils droits le restent).
+  { const ids=columns.flat();
+    const iv=ids.map(id=>[blockTop.get(id),blockBot.get(id)]).sort((a,b)=>a[0]-b[0]);
+    const merged=[]; iv.forEach(([a,b])=>{ const m=merged[merged.length-1];
+      if(m&&a<=m[1]+VGAP)m[1]=Math.max(m[1],b); else merged.push([a,b]); });
+    let shift=0; const moves=[];
+    for(let i=1;i<merged.length;i++){ const gap=merged[i][0]-merged[i-1][1];
+      if(gap>3*VGAP) moves.push([merged[i][0], gap-3*VGAP]); }
+    if(moves.length) ids.forEach(id=>{ const t=blockTop.get(id);
+      let d=0; moves.forEach(([y,g])=>{ if(t>=y-0.01)d+=g; });
+      if(d){ blockTop.set(id,t-d); blockBot.set(id,blockBot.get(id)-d);
+        listKeys(id).forEach(lid=>listArr(id,lid).forEach(pp=>pinY.set(id+SOH+pp.key,pinYof(id,pp.key)-d))); } }); }
 
   // déplacement manuel : translation du bloc entier
   for(const [name,o] of OVR){
