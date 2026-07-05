@@ -668,6 +668,110 @@ function computeLayoutWith(eq, lk, peripheral){
       listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>pinY.set(id+SOH+p.key,pinYof(id,p.key)+best))); }
   }); });
 
+  // === résolution exacte (« carte blanche ») : chaque liaison acceptée
+  // reçoit UNE ordonnée partagée par toutes ses broches ; équipements ET
+  // borniers s'étirent exactement autant que nécessaire pour que tout soit
+  // pile en face. Plus-long-chemin sur le graphe de contraintes (ordre des
+  // broches >= PRH, non-chevauchement des blocs d'une colonne) ; une liaison
+  // qui rendrait le graphe cyclique reste pliée (le routeur s'en charge).
+  // On itère : après une résolution, les borniers se re-trient selon la
+  // position résolue de leurs partenaires (« les fragments suivent »).
+  {
+    const ids=columns.flat();
+    const PKEY=(id,key)=>id+SOH+key;
+    const mTop=new Map(), mBot=new Map(), isStrip=new Map();
+    ids.forEach(id=>{ const isS=!!listsOf.get(id).S; isStrip.set(id,isS);
+      if(isS){ mTop.set(id,HHS+PRH/2); mBot.set(id,PRH/2+5); }
+      else { let L=1; listKeys(id).forEach(lid=>L=Math.max(L,listArr(id,lid).length));
+        const m=Math.max(22,(64-(L-1)*PRH)/2); mTop.set(id,m); mBot.set(id,m); } });
+
+    const solveOnce=colBlocks=>{
+      const par=new Map(), tags=new Map();
+      ids.forEach(id=>listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>{
+        const k=PKEY(id,p.key); par.set(k,k); tags.set(k,new Map([[id+'|'+lid,1]])); })));
+      const find=x=>{ let r=x; while(par.get(r)!==r)r=par.get(r);
+        let c=x; while(par.get(c)!==c){ const n=par.get(c); par.set(c,r); c=n; } return r; };
+      const buildEdges=f=>{ const E=[];
+        ids.forEach(id=>listKeys(id).forEach(lid=>{ const L=listArr(id,lid);
+          for(let j=1;j<L.length;j++) E.push([f(PKEY(id,L[j-1].key)),f(PKEY(id,L[j].key)),PRH]); }));
+        colBlocks.forEach(c=>{ for(let i=1;i<c.length;i++){ const P=c[i-1],N=c[i];
+          const gap=(isStrip.get(P)&&isStrip.get(N))?14:VGAP;
+          const w=mBot.get(P)+gap+mTop.get(N);
+          const lasts=[],firsts=[];
+          listKeys(P).forEach(lid=>{ const L=listArr(P,lid); if(L.length)lasts.push(f(PKEY(P,L[L.length-1].key))); });
+          listKeys(N).forEach(lid=>{ const L=listArr(N,lid); if(L.length)firsts.push(f(PKEY(N,L[0].key))); });
+          lasts.forEach(a=>firsts.forEach(b=>E.push([a,b,w]))); } });
+        return E; };
+      const acyclic=E=>{ if(E.some(([a,b])=>a===b))return false;
+        const indeg=new Map(), adj=new Map(), nodes=new Set();
+        E.forEach(([a,b])=>{ nodes.add(a); nodes.add(b);
+          (adj.get(a)||adj.set(a,[]).get(a)).push(b);
+          indeg.set(b,(indeg.get(b)||0)+1); });
+        const q=[...nodes].filter(n=>!(indeg.get(n)||0)); let seen=0;
+        while(q.length){ const n=q.pop(); seen++;
+          (adj.get(n)||[]).forEach(m=>{ const d=indeg.get(m)-1; indeg.set(m,d); if(!d)q.push(m); }); }
+        return seen===nodes.size; };
+      // liaisons candidates : colonnes adjacentes d'abord, éq-éq d'abord
+      const cand=[];
+      lk.forEach((l,li)=>{ const A=endPin.get(li+':A'),B=endPin.get(li+':B');
+        const ia=nid(A.name,A.key), ib=nid(B.name,B.key); if(ia===ib)return;
+        const ca=colOf.get(ia)??0, cb=colOf.get(ib)??0; const d=Math.abs(ca-cb);
+        if(d===0)return;
+        if(!par.has(PKEY(ia,A.key))||!par.has(PKEY(ib,B.key)))return;
+        const kind=(isStrip.get(ia)?1:0)+(isStrip.get(ib)?1:0);
+        cand.push({a:PKEY(ia,A.key), b:PKEY(ib,B.key), pr:(d>1?10:0)+kind, w3:kind===0?3:1}); });
+      cand.sort((x,y)=>x.pr-y.pr);
+      let acc=0;
+      cand.forEach(wc=>{ const ra=find(wc.a), rb=find(wc.b);
+        if(ra===rb){ acc+=wc.w3; return; }
+        const ta=tags.get(ra), tb=tags.get(rb);
+        for(const k of tb.keys()) if(ta.has(k)) return;   // 2 broches d'une même liste
+        const f=x=>{ const r=find(x); return r===rb?ra:r; };
+        if(!acyclic(buildEdges(f))) return;
+        par.set(rb,ra); acc+=wc.w3;
+        tb.forEach((v,k)=>ta.set(k,(ta.get(k)||0)+v)); tags.delete(rb); });
+      // plus-long-chemin -> ordonnée de chaque net
+      const E=buildEdges(find);
+      const indeg=new Map(), adj=new Map(), nodes=new Set();
+      ids.forEach(id=>listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>nodes.add(find(PKEY(id,p.key))))));
+      E.forEach(([a,b,w])=>{
+        (adj.get(a)||adj.set(a,[]).get(a)).push([b,w]);
+        indeg.set(b,(indeg.get(b)||0)+1); });
+      const Y=new Map(); const q=[...nodes].filter(n=>!(indeg.get(n)||0));
+      q.forEach(n=>Y.set(n,0)); let qi=0;
+      while(qi<q.length){ const n=q[qi++];
+        (adj.get(n)||[]).forEach(([m,w])=>{ Y.set(m,Math.max(Y.get(m)||0,(Y.get(n)||0)+w));
+          const d=indeg.get(m)-1; indeg.set(m,d); if(!d)q.push(m); }); }
+      const py=new Map();
+      ids.forEach(id=>listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>{
+        const k=PKEY(id,p.key); py.set(k,topY+(Y.get(find(k))||0)); })));
+      return {acc, py};
+    };
+
+    let colBlocks=columns.map(c=>[...c].sort((a,b)=>blockTop.get(a)-blockTop.get(b)));
+    let best=solveOnce(colBlocks);
+    for(let it=0;it<2;it++){
+      const py=best.py;
+      const keyOf=id=>{
+        if(!isStrip.get(id)){ let lo=Infinity;
+          listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>lo=Math.min(lo,py.get(PKEY(id,p.key)))));
+          return isFinite(lo)?lo:0; }
+        const ds=[];
+        listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>{
+          (partners.get(id+SOH+p.key)||[]).forEach(q=>{ if(q.id!==id&&py.has(PKEY(q.id,q.key)))ds.push(py.get(PKEY(q.id,q.key))); }); }));
+        ds.sort((a,b)=>a-b); return ds.length?ds[ds.length>>1]:0; };
+      const nb=colBlocks.map(c=>[...c].sort((a,b)=>keyOf(a)-keyOf(b)));
+      const r=solveOnce(nb);
+      if(r.acc>best.acc){ best=r; colBlocks=nb; } else break;
+    }
+    ids.forEach(id=>{ let lo=Infinity,hi=-Infinity;
+      listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>{
+        const y=best.py.get(PKEY(id,p.key));
+        pinY.set(PKEY(id,p.key),y); lo=Math.min(lo,y); hi=Math.max(hi,y); }));
+      if(!isFinite(lo)){ lo=topY; hi=topY; }
+      blockTop.set(id,lo-mTop.get(id)); blockBot.set(id,hi+mBot.get(id)); });
+  }
+
   // compactage vertical : les bandes horizontales entièrement vides sont
   // réduites (tout le monde remonte d'autant : les fils droits le restent).
   { const ids=columns.flat();
