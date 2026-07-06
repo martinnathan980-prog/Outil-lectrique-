@@ -742,6 +742,28 @@ function computeLayoutWith(eq, lk, peripheral){
       while(qi<q.length){ const n=q[qi++];
         (adj.get(n)||[]).forEach(([m,w])=>{ Y.set(m,Math.max(Y.get(m)||0,(Y.get(n)||0)+w));
           const d=indeg.get(m)-1; indeg.set(m,d); if(!d)q.push(m); }); }
+      // détente : le plus-long-chemin plaque tout vers le haut ; un net qui
+      // est le sommet d'un bloc (et le bas d'aucun) est redescendu au plus
+      // près de ses successeurs — le bloc rétrécit, rien ne se plie.
+      const netBlocks=new Map();
+      ids.forEach(id=>listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>{
+        const r=find(PKEY(id,p.key));
+        const st=netBlocks.get(r)||netBlocks.set(r,new Set()).get(r); st.add(id); })));
+      for(let dp=0;dp<2;dp++)
+        for(let i=q.length-1;i>=0;i--){ const n=q[i];
+          const oe=adj.get(n); if(!oe||!oe.length)continue;
+          let mx=Infinity; oe.forEach(([m,w])=>mx=Math.min(mx,(Y.get(m)||0)-w));
+          const y0=Y.get(n)||0; if(mx<=y0+0.5)continue;
+          let tops=0,bots=0;
+          (netBlocks.get(n)||[]).forEach(id=>{
+            let lo=Infinity,hi=-Infinity,loN=0;
+            listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>{
+              const yy=Y.get(find(PKEY(id,p.key)))||0;
+              if(yy<lo-0.01){lo=yy;loN=1;} else if(yy<lo+0.01)loN++;
+              if(yy>hi)hi=yy; }));
+            if(Math.abs(y0-lo)<0.01&&loN===1)tops++;
+            if(Math.abs(y0-hi)<0.01)bots++; });
+          if(tops>=1&&bots===0) Y.set(n,mx); }
       const py=new Map();
       ids.forEach(id=>listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>{
         const k=PKEY(id,p.key); py.set(k,topY+(Y.get(find(k))||0)); })));
@@ -763,6 +785,43 @@ function computeLayoutWith(eq, lk, peripheral){
       const nb=colBlocks.map(c=>[...c].sort((a,b)=>keyOf(a)-keyOf(b)));
       const r=solveOnce(nb);
       if(r.acc>best.acc){ best=r; colBlocks=nb; } else break;
+    }
+    // dégonflage : un bloc étiré « pour rien » (grand trou interne parce
+    // qu'une broche est accrochée à l'extrémité opposée du partenaire) est
+    // réduit en déplaçant la broche partenaire à la position idéale de sa
+    // liste ; on re-résout et on garde si la hauteur totale diminue sans
+    // perdre une seule liaison droite.
+    const sumH=st=>{ let h=0; ids.forEach(id=>{ let lo=Infinity,hi=-Infinity;
+      listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>{ const y=st.py.get(PKEY(id,p.key));
+        lo=Math.min(lo,y); hi=Math.max(hi,y); }));
+      if(isFinite(lo)) h+=hi-lo; }); return h; };
+    for(let rp=0;rp<3;rp++){
+      const py=best.py; const saved=new Map(); let movedAny=false;
+      ids.forEach(id=>listKeys(id).forEach(lid=>{
+        const L=listArr(id,lid); if(L.length<2)return;
+        const ys=L.map(p=>py.get(PKEY(id,p.key)));
+        let bj=-1,bg=0; for(let j=0;j+1<L.length;j++){ const g=ys[j+1]-ys[j]; if(g>bg){bg=g;bj=j;} }
+        if(bg<=3*PRH)return;
+        const topSide=(bj+1)<=L.length/2;
+        const grp=topSide? L.slice(0,bj+1) : L.slice(bj+1);
+        if(grp.length>L.length/2)return;
+        const target=topSide? ys[bj+1] : ys[bj];
+        grp.forEach(p=>{
+          (partners.get(id+SOH+p.key)||[]).forEach(q=>{ if(q.id===id)return;
+            const lid2=listIdOfPin(q.id,q.key); const L2=(listsOf.get(q.id)||{})[lid2]; if(!L2||L2.length<2)return;
+            const qi=L2.findIndex(pp=>pp.key===q.key); if(qi<0)return;
+            const ys2=L2.map(pp=>py.get(PKEY(q.id,pp.key)));
+            let ni=0; while(ni<L2.length&&ys2[ni]<target)ni++;
+            if(ni===qi||ni===qi+1)return;
+            if(!saved.has(L2))saved.set(L2,L2.slice());
+            const item=L2.splice(qi,1)[0];
+            L2.splice(qi<ni?ni-1:ni,0,item);
+            movedAny=true; });
+        }); }));
+      if(!movedAny)break;
+      const r=solveOnce(colBlocks);
+      if(r.acc>=best.acc&&sumH(r)<sumH(best)){ best=r; }
+      else { saved.forEach((copy,arr)=>{ arr.length=0; copy.forEach(x=>arr.push(x)); }); break; }
     }
     ids.forEach(id=>{ let lo=Infinity,hi=-Infinity;
       listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>{
