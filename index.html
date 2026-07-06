@@ -129,6 +129,20 @@ main{grid-area:main;position:relative;overflow:hidden;background:#e3e6ea}
   </header>
   <aside>
     <div class="panel">
+      <div class="psec" id="sec-xp">
+        <div class="phead" data-sec="sec-xp"><span class="chev">▾</span><h3>Exploration</h3></div>
+        <div class="pbody">
+          <div style="display:flex;gap:6px">
+            <input id="xp-find" list="xp-names" placeholder="Repère… (ex : KM1)">
+            <button class="primary" id="xp-go">Explorer</button>
+          </div>
+          <datalist id="xp-names"></datalist>
+          <div id="xp-chips" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px"></div>
+          <div id="xp-stat" class="hint" style="margin-top:6px"></div>
+          <div style="margin-top:6px"><button class="ghost" id="xp-all" style="display:none">Tout afficher</button></div>
+          <div class="hint" style="margin-top:6px">Choisis un équipement : seul lui et ses liaisons sont dessinés. Clique un bloc voisin (badge +) pour le déplier à son tour ; ✕ sur un jeton pour replier.</div>
+        </div>
+      </div>
       <div class="psec" id="sec-eq">
         <div class="phead" data-sec="sec-eq"><span class="chev">▾</span><h3>Équipements</h3><span class="count" id="cnt-eq">0</span></div>
         <div class="pbody">
@@ -252,6 +266,9 @@ main{grid-area:main;position:relative;overflow:hidden;background:#e3e6ea}
   .linklike:hover{background:none;color:#0f4f96}
   .dz-info{font-family:var(--mono);font-size:11px;margin-top:8px;min-height:14px}
   .dz-info.ok{color:var(--ok)} .dz-info.err{color:var(--red)} .dz-info.load{color:var(--ink-dim)}
+  .xchip{display:inline-flex;align-items:center;gap:5px;background:var(--accent-dim);color:#eaf3fc;border-radius:12px;padding:2px 7px 2px 10px;font-family:var(--mono);font-size:11px}
+  .xchip button{background:none;border:0;color:#eaf3fc;cursor:pointer;font-size:13px;padding:0;line-height:1}
+  #xp-find{flex:1;min-width:0;background:transparent;border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit;font-size:12px;color:var(--ink)}
 </style>
 <script>
 "use strict";
@@ -307,6 +324,7 @@ const state={
   eq:[], lk:[],
   meta:{title:'Installation — armoire TGBT',folio:'1 / 1',author:'',rev:'A',date:new Date().toISOString().slice(0,10),scale:'—'},
   view:{s:1,tx:0,ty:0}, sel:null, plan:'*',
+  xroots:null, forceFull:false,
 };
 
 /* ---------- 3. Nets (union-find sur les bornes) ---------- */
@@ -1059,6 +1077,9 @@ function defs(){
      .rep-big{fill:#182430;font-weight:700;font-size:13px;letter-spacing:.8px}
      .bhead{fill:#e9eef3;stroke:none}
      .bheadline{stroke:#26343f;stroke-width:1}
+     .rootbox{fill:none;stroke:#1668c2;stroke-width:1.5;stroke-dasharray:5 3}
+     .plusb circle{fill:#1668c2;opacity:.9}
+     .plusb text{fill:#ffffff;font:700 10px ui-monospace,monospace}
      .pinsep{stroke:#e3e8ed;stroke-width:1}
      .pinlbl{fill:#22303d;font-size:7.8px;font-weight:600}
      .rpill{fill:#ffffff;stroke:#c9d1d9;stroke-width:.9}
@@ -1140,6 +1161,9 @@ function pinCells(x0,w,rows,baseY){ // cellules fines et jointives
 function compSvg(c,sel){
   let s=`<g transform="translate(${f1(c.x)},${f1(c.y)})">`;
   if(sel) s+=`<rect class="selbox" x="-5" y="-5" width="${c.w+10}" height="${c.h+10}" rx="3"/>`;
+  const xr=state.xroots&&state.xroots.size;
+  if(xr&&state.xroots.has(c.name)) s+=`<rect class="rootbox" x="-3.5" y="-3.5" width="${c.w+7}" height="${c.h+7}" rx="4"/>`;
+  else if(xr) s+=`<g class="plusb"><circle cx="${f1(c.w)}" cy="0" r="7"/><text x="${f1(c.w)}" y="3" text-anchor="middle">+</text></g>`;
   if(c.kind==='strip'){
     // fragment de bornier : fin, nom intégré en cellule d'en-tête
     s+=`<g filter="url(#softsh)"><rect class="bstrip" x="0" y="0" width="${c.w}" height="${c.h}" rx="2.5"/></g>`;
@@ -1176,12 +1200,30 @@ function paint(layout,routing){
 }
 function render(){
   const notice=document.getElementById('notice');
-  if(!state.lk.length){ notice.style.display='block'; document.getElementById('svg').innerHTML=''; LAST=null; if(typeof syncPlans==='function')syncPlans(); return; }
+  const NOTICE0='<div class="big">Aucune topologie</div>déclare les équipements et les liaisons, puis « Régénérer »';
+  if(!state.lk.length){ notice.style.display='block'; notice.innerHTML=NOTICE0;
+    document.getElementById('svg').innerHTML=''; LAST=null;
+    if(typeof syncPlans==='function')syncPlans(); if(typeof syncExplore==='function')syncExplore(); return; }
   notice.style.display='none';
   if(typeof syncPlans==='function')syncPlans();
-  const lkF=linksForPlan(state.lk,state.plan);
+  const exploring=!!(state.xroots&&state.xroots.size);
+  let lkF=linksForPlan(state.lk,state.plan);
+  if(exploring) lkF=lkF.filter(l=>state.xroots.has(l.from)||state.xroots.has(l.to));
+  if(!exploring && lkF.length>800 && !state.forceFull){
+    notice.style.display='block';
+    notice.innerHTML='<div class="big">Base volumineuse</div>'+lkF.length+' liaisons — choisis un équipement dans « Exploration » (panneau de gauche),<br>ou <button class="ghost" id="nt-force" style="margin-top:8px">tout afficher quand même</button>';
+    document.getElementById('svg').innerHTML=''; LAST=null;
+    document.getElementById('nt-force').onclick=()=>{ state.forceFull=true; render(); fit(); };
+    if(typeof syncExplore==='function')syncExplore(); return;
+  }
+  if(exploring && !lkF.length){
+    notice.style.display='block';
+    notice.innerHTML='<div class="big">Aucune liaison</div>la sélection explorée n\'a aucune liaison sur ce plan';
+    document.getElementById('svg').innerHTML=''; LAST=null;
+    if(typeof syncExplore==='function')syncExplore(); return;
+  }
   const names=new Set(); lkF.forEach(l=>{names.add(l.from);names.add(l.to);});
-  const noFilter = !plansOf(state.lk).length || state.plan==='*' || !state.plan;
+  const noFilter = (!plansOf(state.lk).length || state.plan==='*' || !state.plan) && !exploring;
   if(noFilter) state.eq.forEach(e=>names.add(e.repere));
   const byR=new Map(state.eq.map(e=>[e.repere,e]));
   const eq=[]; names.forEach(n=>{ if(RAIL_RE.test(String(n).trim())&&!byR.has(n))return; const m=byR.get(n); eq.push({repere:n,designation:(m&&m.designation)||'',type:(m&&m.type)||''}); });
@@ -1190,6 +1232,7 @@ function render(){
   LAST={layout,routing};
   paint(layout,routing);
   updateZoom();
+  if(typeof syncExplore==='function')syncExplore();
 }
 function deriveEq(lk){ const seen=new Map();
   lk.forEach(l=>{ [l.from,l.to].forEach(n=>{ if(!RAIL_RE.test(String(n).trim())&&!seen.has(n)) seen.set(n,{repere:n,designation:'',type:''}); }); });
@@ -1246,7 +1289,8 @@ function syncCables(){ const box=document.getElementById('cb-list'); if(!box)ret
   if(!cables.length){ box.innerHTML='<div class="hint">Importe une base (table unique) avec des câbles — ils apparaîtront ici, classés par repère.</div>'; return; }
   box.innerHTML=cables.map(([name,o])=>`<div class="cbrow"><span class="cbname">${esc(name)}</span><span class="cbmeta">${esc(o.type||'—')}${o.cores>1?(' · '+o.cores+' cond.'):''}${o.plan?(' · pl.'+esc(o.plan)):''}${o.route?(' · '+esc(o.route)):''}</span></div>`).join('');
 }
-function parseDB(){ const {links}=parseSchedule(document.getElementById('imp-db').value);
+function parseDB(){ state.xroots=null; state.forceFull=false;
+  const {links}=parseSchedule(document.getElementById('imp-db').value);
   if(!links.length){ alert('Aucune liaison détectée. Vérifie le séparateur ( ; , ou tabulation ) et l’ordre des colonnes.'); return; }
   state.eq=[]; state.lk=links; OVR.clear(); state.sel=null; state.plan='*';
   syncTables(); syncPlans(); render(); fit(); closeModal();
@@ -1349,7 +1393,9 @@ stage.addEventListener('pointermove',e=>{
 function endPointer(e){ try{stage.releasePointerCapture(e.pointerId);}catch(_){}
   const wasPinch=mode==='pinch'; pointers.delete(e.pointerId);
   if(wasPinch){ if(pointers.size<2){ mode=null; pinch=null; } return; }
-  if(mode==='drag'&&!moved){ const c=hitComp(screenToWorld(e.clientX,e.clientY)); if(c) openEditor(c,e.clientX,e.clientY); }
+  if(mode==='drag'&&!moved){ const c=hitComp(screenToWorld(e.clientX,e.clientY));
+    if(c){ if(state.xroots&&state.xroots.size&&!state.xroots.has(c.name)) exploreAdd(c.name);
+      else openEditor(c,e.clientX,e.clientY); } }
   if(mode==='pan'&&!moved){ const wr=hitWire(screenToWorld(e.clientX,e.clientY));
     if(wr){ openCable(wr,e.clientX,e.clientY); } else { state.sel=null; render(); } }
   mode=null; drag=null; pan=null;
@@ -1383,7 +1429,7 @@ function openEditor(c,sx,sy){ state.sel=c.name; render();
     <div class="field"><label>Type</label><input id="ed-typ" list="types" value="${esc(c.o.type||'')}" placeholder="${esc(inferType(c.name).t)}"></div>
     <div style="margin-top:8px;font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint)">Bornes & raccordements</div>
     <div style="max-height:150px;overflow:auto"><table class="btbl"><thead><tr><th>Borne</th><th>Vers</th><th>Câble</th></tr></thead><tbody>${rows}</tbody></table></div>
-    <div class="actions"><button class="primary" id="ed-ok">Enregistrer</button><button id="ed-del">Supprimer</button><button class="ghost" id="ed-close">Fermer</button></div>`;
+    <div class="actions"><button class="primary" id="ed-ok">Enregistrer</button><button id="ed-xp">${state.xroots&&state.xroots.size?(state.xroots.has(c.name)?'Replier':'Déplier'):'Explorer'}</button><button id="ed-del">Supprimer</button><button class="ghost" id="ed-close">Fermer</button></div>`;
   popAt(p,sx,sy,290);
   document.getElementById('ed-close').onclick=closePop;
   document.getElementById('ed-ok').onclick=()=>{ const nr=document.getElementById('ed-rep').value.trim()||c.name;
@@ -1394,6 +1440,10 @@ function openEditor(c,sx,sy){ state.sel=c.name; render();
     e.repere=nr; e.designation=nd; e.type=nt; state.sel=nr; closePop(); syncTables(); render(); };
   document.getElementById('ed-del').onclick=()=>{ state.lk=state.lk.filter(l=>l.from!==c.name&&l.to!==c.name);
     state.eq=state.eq.filter(x=>x.repere!==c.name); OVR.delete(c.name); state.sel=null; closePop(); syncTables(); render(); };
+  document.getElementById('ed-xp').onclick=()=>{ closePop();
+    if(!(state.xroots&&state.xroots.size)) exploreStart(c.name);
+    else if(state.xroots.has(c.name)) exploreRemove(c.name);
+    else exploreAdd(c.name); };
 }
 function openCable(wr,sx,sy){
   const p=document.getElementById('pop');
@@ -1414,6 +1464,28 @@ function openCable(wr,sx,sy){
   document.getElementById('cb-close').onclick=closePop;
 }
 function openEditorByName(name){ const c=LAST&&LAST.layout.compByName.get(name); if(!c)return; const r=svgRect(); openEditor(c,r.left+r.width/2,r.top+110); }
+
+/* ---- mode exploration : dépliage des liaisons de proche en proche ---- */
+function allDeviceNames(){ const s=new Set(); state.lk.forEach(l=>{ if(l.from)s.add(l.from); if(l.to)s.add(l.to); }); return s; }
+function exploreStart(name){ name=String(name||'').trim(); if(!name)return;
+  const ns=allDeviceNames();
+  if(!ns.has(name)){ const st=document.getElementById('xp-stat'); if(st)st.textContent='Repère introuvable : '+name; return; }
+  state.xroots=new Set([name]); state.sel=name; render(); fit(); }
+function exploreAdd(name){ if(!state.xroots)state.xroots=new Set(); state.xroots.add(name); state.sel=name; render(); fit(); }
+function exploreRemove(name){ if(!state.xroots)return; state.xroots.delete(name);
+  if(!state.xroots.size){ state.xroots=null; state.sel=null; } render(); fit(); }
+function exploreStop(){ state.xroots=null; state.sel=null; render(); fit(); }
+function syncExplore(){ const dl=document.getElementById('xp-names'); if(!dl)return;
+  const names=[...allDeviceNames()].sort();
+  dl.innerHTML=names.slice(0,4000).map(n=>`<option value="${esc(n)}">`).join('');
+  const chips=document.getElementById('xp-chips'), stat=document.getElementById('xp-stat'), all=document.getElementById('xp-all');
+  const on=state.xroots&&state.xroots.size;
+  chips.innerHTML=on?[...state.xroots].map(n=>`<span class="xchip">${esc(n)}<button data-x="${esc(n)}" title="replier">×</button></span>`).join(''):'';
+  chips.querySelectorAll('button[data-x]').forEach(bt=>{ bt.onclick=()=>exploreRemove(bt.dataset.x); });
+  all.style.display=on?'':'none';
+  if(on) stat.textContent=state.xroots.size+' équipement(s) déplié(s) — '+(LAST?LAST.routing.wires.length:0)+' liaisons affichées';
+  else stat.textContent=state.lk.length?('Base : '+names.length+' repères, '+state.lk.length+' liaisons'):'';
+}
 
 /* ---- vue détaillée d'une prise de coupure (bornier sécable) ---- */
 function buildBornier(name){
@@ -1472,19 +1544,21 @@ function closeBornier(){ const m=document.getElementById('bmodal'); if(m)m.style
 
 /* ---------- 9. Panneau, import, export, init ---------- */
 function syncTables(){
+  const CAPR=300;
+  const more=(n,c)=>n>CAPR?`<tr><td colspan="${c}" style="color:var(--ink-faint);text-align:center;padding:6px">… ${n-CAPR} autres lignes</td></tr>`:'';
   const eb=document.querySelector('#tbl-eq tbody');
-  eb.innerHTML=state.eq.map((e,i)=>`<tr>
+  eb.innerHTML=state.eq.slice(0,CAPR).map((e,i)=>`<tr>
     <td><input data-k="eq" data-i="${i}" data-f="repere" value="${esc(e.repere)}"></td>
     <td><input data-k="eq" data-i="${i}" data-f="designation" value="${esc(e.designation||'')}"></td>
-    <td class="rmrow" data-rm="eq" data-i="${i}">✕</td></tr>`).join('');
+    <td class="rmrow" data-rm="eq" data-i="${i}">✕</td></tr>`).join('')+more(state.eq.length,3);
   const lb=document.querySelector('#tbl-lk tbody');
-  lb.innerHTML=state.lk.map((l,i)=>`<tr>
+  lb.innerHTML=state.lk.slice(0,CAPR).map((l,i)=>`<tr>
     <td><input data-k="lk" data-i="${i}" data-f="from" value="${esc(l.from)}"></td>
     <td><input data-k="lk" data-i="${i}" data-f="fromTerm" value="${esc(l.fromTerm||'')}"></td>
     <td><input data-k="lk" data-i="${i}" data-f="to" value="${esc(l.to)}"></td>
     <td><input data-k="lk" data-i="${i}" data-f="toTerm" value="${esc(l.toTerm||'')}"></td>
     <td><input data-k="lk" data-i="${i}" data-f="nature" value="${esc(l.nature||'')}"></td>
-    <td class="rmrow" data-rm="lk" data-i="${i}">✕</td></tr>`).join('');
+    <td class="rmrow" data-rm="lk" data-i="${i}">✕</td></tr>`).join('')+more(state.lk.length,6);
   document.getElementById('cnt-eq').textContent=state.eq.length;
   document.getElementById('cnt-lk').textContent=state.lk.length;
   if(typeof syncCables==='function')syncCables();
@@ -1500,6 +1574,10 @@ function bindPanel(){
       const arr=c.dataset.rm==='eq'?state.eq:state.lk; arr.splice(+c.dataset.i,1); syncTables(); render(); }); });
   document.getElementById('add-eq').onclick=()=>{ state.eq.push({repere:'',designation:'',type:''}); syncTables(); };
   document.getElementById('add-lk').onclick=()=>{ state.lk.push({from:'',fromTerm:'',to:'',toTerm:'',nature:''}); syncTables(); };
+  document.getElementById('xp-go').onclick=()=>exploreStart(document.getElementById('xp-find').value);
+  document.getElementById('xp-find').addEventListener('keydown',e=>{ if(e.key==='Enter')exploreStart(e.target.value); });
+  document.getElementById('xp-find').addEventListener('change',e=>{ const v=e.target.value.trim(); if(v&&allDeviceNames().has(v))exploreStart(v); });
+  document.getElementById('xp-all').onclick=exploreStop;
   // cartouche
   [['m-title','title'],['m-folio','folio'],['m-author','author'],['m-rev','rev'],['m-date','date'],['m-scale','scale']].forEach(([id,k])=>{
     const el=document.getElementById(id); el.value=state.meta[k]||'';
@@ -1516,7 +1594,7 @@ function parseImport(){
     if(looksHeader(c[0])&&!eq.length&&!/\d/.test(c[0]))return; if(!c[0])return; eq.push({repere:c[0],designation:c[1]||'',type:c[2]||''}); });
   const lk=[]; ltxt.split(/\r?\n/).forEach(line=>{ if(!line.trim())return; const c=splitLine(line).map(s=>s.trim());
     if(looksHeader(c[0])&&!lk.length)return; if(!c[0]||!c[2])return; lk.push({from:c[0],fromTerm:c[1]||'',to:c[2],toTerm:c[3]||'',nature:c[4]||''}); });
-  if(lk.length){ state.eq=eq; state.lk=lk; OVR.clear(); state.sel=null; syncTables(); render(); fit(); closeModal(); }
+  if(lk.length){ state.eq=eq; state.lk=lk; OVR.clear(); state.sel=null; state.xroots=null; state.forceFull=false; syncTables(); render(); fit(); closeModal(); }
   else alert('Aucune liaison valide détectée. Format : de ; borne ; vers ; borne ; nature');
 }
 function openModal(){ document.getElementById('modal').style.display='flex'; }
@@ -1564,9 +1642,9 @@ const SAMPLE={
     {from:'M1',fromTerm:'PE',to:'PE',toTerm:'',nature:'terre'},
   ]
 };
-function loadSample(){ state.eq=SAMPLE.eq.map(o=>({...o})); state.lk=SAMPLE.lk.map(o=>({...o})); OVR.clear(); state.sel=null;
+function loadSample(){ state.eq=SAMPLE.eq.map(o=>({...o})); state.lk=SAMPLE.lk.map(o=>({...o})); OVR.clear(); state.sel=null; state.xroots=null; state.forceFull=false;
   state.meta.title='Installation — armoire TGBT'; syncTables(); render(); fit(); }
-function clearAll(){ if(!confirm('Effacer tous les équipements et liaisons ?'))return; state.eq=[]; state.lk=[]; OVR.clear(); state.sel=null; syncTables(); render(); }
+function clearAll(){ if(!confirm('Effacer tous les équipements et liaisons ?'))return; state.eq=[]; state.lk=[]; OVR.clear(); state.sel=null; state.xroots=null; state.forceFull=false; syncTables(); render(); }
 
 const DB_SAMPLE=`Equip1;Borne;PN;Equip2;Borne;PN;Cable;Type;Route;Plan
 L1;;;Q1;1;;;;;1
