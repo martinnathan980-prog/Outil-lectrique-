@@ -163,6 +163,19 @@ main{grid-area:main;position:relative;overflow:hidden;background:#e3e6ea}
         <div class="phead" data-sec="sec-cb"><span class="chev">▾</span><h3>Câbles</h3><span class="count" id="cnt-cb">0</span></div>
         <div class="pbody"><div id="cb-list"></div></div>
       </div>
+      <div class="psec collapsed" id="sec-nm">
+        <div class="phead" data-sec="sec-nm"><span class="chev">▾</span><h3>Normes (PN)</h3><span class="count" id="cnt-nm">0</span></div>
+        <div class="pbody">
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="ghost" id="nm-imp">Importer catalogue</button>
+            <button class="ghost" id="nm-skel">Squelette CSV</button>
+            <button class="ghost" id="nm-clear">Vider</button>
+            <input type="file" id="nm-file" accept=".csv,.tsv,.txt,.xlsx,.xls" hidden>
+          </div>
+          <div id="nm-stat" class="hint" style="margin-top:6px"></div>
+          <div class="hint" style="margin-top:6px">1 ligne par norme : <b>Norme ; Désignation ; Bornes ; Cavité max ; …</b> — colonnes libres, les en-têtes sont conservés tels quels. Le catalogue est <b>mémorisé dans le navigateur</b> et croisé avec la colonne PN de la base : les infos apparaissent au clic sur un fil ou un équipement, avec contrôle du nombre de bornes câblées. « Squelette CSV » exporte la liste des PN de la base, prête à remplir.</div>
+        </div>
+      </div>
       <div class="psec collapsed" id="sec-ct">
         <div class="phead" data-sec="sec-ct"><span class="chev">▾</span><h3>Cartouche</h3></div>
         <div class="pbody"><div class="cart-grid">
@@ -1421,6 +1434,13 @@ function connectionsOf(name){ const out=[];
   return out; }
 function openEditor(c,sx,sy){ state.sel=c.name; render();
   const p=document.getElementById('pop'); const cn=connectionsOf(c.name);
+  let nrm=''; { const seen=new Set();
+    cn.map(x=>x.pn).filter(Boolean).forEach(pn=>{ const r=normFind(pn); if(!r)return;
+      const kk=normCode(r[0]); if(seen.has(kk))return; seen.add(kk);
+      nrm+=normLines(pn);
+      const mx=normMaxBornes(r);
+      if(mx!=null){ const used=new Set(cn.map(x=>x.borne)).size;
+        nrm+=`<div class="infoline"><span class="k">Contrôle bornes</span><span class="v" style="color:${used>mx?'var(--red)':'var(--ok)'}">${used} câblée(s) / ${mx} max ${used>mx?'⚠':'✓'}</span></div>`; } }); }
   const rows=cn.length?cn.map(x=>`<tr><td class="bn">${esc(x.borne)}</td><td>${esc(x.dest)}${x.dt?(':'+esc(x.dt)):''}</td><td>${esc(x.cable||'—')}${x.ctype?(' '+esc(x.ctype)):''}${x.plan?(' · pl.'+esc(x.plan)):''}</td></tr>`).join('')
     : `<tr><td colspan="3" style="color:var(--ink-faint);text-align:center;padding:8px">Aucun raccordement</td></tr>`;
   p.innerHTML=`<h5>Équipement — ${esc(c.name)}</h5>
@@ -1429,6 +1449,7 @@ function openEditor(c,sx,sy){ state.sel=c.name; render();
     <div class="field"><label>Type</label><input id="ed-typ" list="types" value="${esc(c.o.type||'')}" placeholder="${esc(inferType(c.name).t)}"></div>
     <div style="margin-top:8px;font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint)">Bornes & raccordements</div>
     <div style="max-height:150px;overflow:auto"><table class="btbl"><thead><tr><th>Borne</th><th>Vers</th><th>Câble</th></tr></thead><tbody>${rows}</tbody></table></div>
+    ${nrm}
     <div class="actions"><button class="primary" id="ed-ok">Enregistrer</button><button id="ed-xp">${state.xroots&&state.xroots.size?(state.xroots.has(c.name)?'Replier':'Déplier'):'Explorer'}</button><button id="ed-del">Supprimer</button><button class="ghost" id="ed-close">Fermer</button></div>`;
   popAt(p,sx,sy,290);
   document.getElementById('ed-close').onclick=closePop;
@@ -1455,6 +1476,8 @@ function openCable(wr,sx,sy){
   body+=line('De',de)+line('Vers',vers)+line('Type / section',wr.ctype)+line('Route',wr.route)+line('Plan',wr.plan)
        +line('Nature',wr.nature)+line('Potentiel dép.',wr.pn1)+line('Potentiel arr.',wr.pn2);
   body+=`</div>`;
+  if(wr.pn1) body+=normLines(wr.pn1);
+  if(wr.pn2&&normCode(wr.pn2)!==normCode(wr.pn1)) body+=normLines(wr.pn2);
   if(cores&&cores.length>1){ body+=`<div style="font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--ink-faint);margin-top:4px">Conducteurs du câble (${cores.length})</div>`;
     body+=`<div style="max-height:130px;overflow:auto"><table class="btbl"><tbody>`+
       cores.map(l=>`<tr><td>${esc(l.from)}${l.fromTerm?(':'+esc(l.fromTerm)):''}</td><td>→</td><td>${esc(l.to)}${l.toTerm?(':'+esc(l.toTerm)):''}</td><td class="bn">${esc(l.pn1||l.pn2||'')}</td></tr>`).join('')+
@@ -1486,6 +1509,50 @@ function syncExplore(){ const dl=document.getElementById('xp-names'); if(!dl)ret
   if(on) stat.textContent=state.xroots.size+' équipement(s) déplié(s) — '+(LAST?LAST.routing.wires.length:0)+' liaisons affichées';
   else stat.textContent=state.lk.length?('Base : '+names.length+' repères, '+state.lk.length+' liaisons'):'';
 }
+
+/* ---- catalogue de normes (croisé avec la colonne PN) ---- */
+let NORMS={headers:[],rows:[]}, NORMIDX=new Map();
+const normCode=s=>String(s||'').toUpperCase().replace(/[\s.\-\/]/g,'');
+function normsRebuild(){ NORMIDX=new Map(); NORMS.rows.forEach(r=>{ const k=normCode(r[0]); if(k&&!NORMIDX.has(k))NORMIDX.set(k,r); }); }
+function normFind(pn){ const k=normCode(pn); if(!k)return null;
+  if(NORMIDX.has(k))return NORMIDX.get(k);
+  let best=null,bl=0;
+  NORMIDX.forEach((r,c)=>{ if(c.length>=4&&(k.startsWith(c)||c.startsWith(k))&&c.length>bl){ best=r; bl=c.length; } });
+  return best; }
+function normsSave(){ try{ localStorage.setItem('atelier.normes.v1',JSON.stringify(NORMS)); }catch(_){} }
+function normsLoad(){ try{ const j=localStorage.getItem('atelier.normes.v1'); const o=j&&JSON.parse(j);
+  if(o&&o.headers&&o.rows)NORMS=o; }catch(_){} normsRebuild(); }
+function parseNorms(text){ const lines=text.split(/\r?\n/).filter(l=>l.trim()); if(!lines.length)return null;
+  const first=splitLine(lines[0]).map(x=>x.trim());
+  const hdr=/norm|ref|^pn$|design|born|cavit|section|info|type/i.test(first.join(' '));
+  const headers=hdr?first:first.map((x,i)=>i?('Info '+i):'Norme');
+  const rows=[];
+  for(let i=hdr?1:0;i<lines.length;i++){ const c=splitLine(lines[i]).map(x=>x.trim()); if(c[0])rows.push(c); }
+  return {headers,rows}; }
+async function readNormFile(file){ if(!file)return; const name=(file.name||'').toLowerCase();
+  try{ let text;
+    if(/\.xlsx?$/.test(name)){ await ensureXLSX(); const buf=await file.arrayBuffer();
+      const wb=window.XLSX.read(buf,{type:'array'}); const ws=wb.Sheets[wb.SheetNames[0]];
+      text=rowsToText(window.XLSX.utils.sheet_to_json(ws,{header:1,blankrows:false,defval:''})); }
+    else text=await file.text();
+    const pr=parseNorms(text); if(!pr||!pr.rows.length){ syncNorms('aucune ligne reconnue'); return; }
+    NORMS=pr; normsRebuild(); normsSave(); syncNorms('« '+file.name+' » importé');
+  }catch(err){ syncNorms('erreur : '+((err&&err.message)||err)); } }
+function pnValues(){ const st=new Set(); state.lk.forEach(l=>{ if(l.pn1)st.add(l.pn1); if(l.pn2)st.add(l.pn2); }); return [...st].sort(); }
+function normSkeleton(){ const pns=pnValues();
+  const txt='Norme;Désignation;Bornes;Cavité max;Section;Info\n'+pns.map(x=>x+';;;;;').join('\n');
+  const aEl=document.createElement('a'); aEl.href=URL.createObjectURL(new Blob([txt],{type:'text/csv;charset=utf-8'}));
+  aEl.download='catalogue_normes.csv'; aEl.click(); setTimeout(()=>URL.revokeObjectURL(aEl.href),5000); }
+function syncNorms(msg){ const st=document.getElementById('nm-stat'), cnt=document.getElementById('cnt-nm'); if(!st)return;
+  const pns=pnValues(); const hit=pns.filter(x=>normFind(x)).length;
+  if(cnt)cnt.textContent=NORMS.rows.length;
+  st.textContent=(NORMS.rows.length?(NORMS.rows.length+' norme(s) en mémoire — '):'')+
+    (pns.length?(hit+'/'+pns.length+' PN de la base reconnus'):'aucun PN dans la base')+(msg?(' · '+msg):''); }
+function normLines(pn){ const r=normFind(pn); if(!r)return '';
+  let out=`<div style="font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--ink-faint);margin-top:6px">Norme ${esc(pn)}${normCode(r[0])!==normCode(pn)?(' → '+esc(r[0])):''}</div>`;
+  NORMS.headers.forEach((h,i)=>{ if(i&&r[i])out+=`<div class="infoline"><span class="k">${esc(h)}</span><span class="v">${esc(r[i])}</span></div>`; });
+  return out; }
+function normMaxBornes(r){ let mx=null; NORMS.headers.forEach((h,i)=>{ if(/born|cavit|voie|contact|pin/i.test(h)){ const v=parseInt(r[i]); if(!isNaN(v))mx=(mx==null?v:Math.min(mx,v)); } }); return mx; }
 
 /* ---- vue détaillée d'une prise de coupure (bornier sécable) ---- */
 function buildBornier(name){
@@ -1563,6 +1630,7 @@ function syncTables(){
   document.getElementById('cnt-lk').textContent=state.lk.length;
   if(typeof syncCables==='function')syncCables();
   if(typeof syncPlans==='function')syncPlans();
+  if(typeof syncNorms==='function')syncNorms();
 }
 function onCellInput(e){ const t=e.target; if(!t.dataset.k)return; const arr=t.dataset.k==='eq'?state.eq:state.lk;
   const row=arr[+t.dataset.i]; if(row) row[t.dataset.f]=t.type==='checkbox'?t.checked:t.value; }
@@ -1691,6 +1759,13 @@ function init(){
   document.getElementById('mode-two').onclick=()=>setImpMode('two');
   document.getElementById('db-sample').onclick=()=>{ document.getElementById('imp-db').value=DB_SAMPLE; dbInfo(''); };
   bindImportDrop();
+  normsLoad(); syncNorms();
+  { const nf=document.getElementById('nm-file');
+    document.getElementById('nm-imp').onclick=()=>nf.click();
+    nf.addEventListener('change',()=>{ if(nf.files&&nf.files[0])readNormFile(nf.files[0]); nf.value=''; });
+    document.getElementById('nm-skel').onclick=normSkeleton;
+    document.getElementById('nm-clear').onclick=()=>{ if(!confirm('Vider le catalogue de normes ?'))return;
+      NORMS={headers:[],rows:[]}; normsRebuild(); normsSave(); syncNorms('vidé'); }; }
   const ps=document.getElementById('planSel'); if(ps) ps.onchange=()=>{ state.plan=ps.value; render(); fit(); };
   document.getElementById('b-close').onclick=closeBornier;
   document.getElementById('bmodal').addEventListener('click',e=>{ if(e.target.id==='bmodal')closeBornier(); });
