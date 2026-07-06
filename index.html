@@ -269,7 +269,7 @@ const PREFIX = {
   M:{t:'moteur',s:'motor',r:'load'},
   G:{t:'source',s:'source',r:'source'},
   TC:{t:'transformateur',s:'transfo',r:'misc'}, T:{t:'transformateur',s:'transfo',r:'misc'},
-  XS:{t:'prise',s:'socket',r:'load'}, X:{t:'prise',s:'socket',r:'load'},
+  XS:{t:'prise',s:'socket',r:'load'}, X:{t:'bornier',s:'disconnect',r:'misc'},
   EL:{t:'éclairage',s:'lamp',r:'load'}, E:{t:'éclairage',s:'lamp',r:'load'}, H:{t:'voyant',s:'lamp',r:'load'},
   SB:{t:'bouton',s:'pushbtn',r:'switch'}, SA:{t:'commutateur',s:'switch_man',r:'switch'}, S:{t:'interrupteur',s:'switch_man',r:'switch'},
   B:{t:'capteur',s:'sensor',r:'misc'},
@@ -350,7 +350,8 @@ function computeLayoutWith(eq, lk, peripheral){
     });
   });
   const isStripName=n=>{ if(isRail(n))return true; const e=byRep.get(n);
-    const t=norm((e&&e.type)||''); if(/born|coupure|repart/.test(t))return true;
+    const t=norm((e&&(e.type||e.designation))||'');
+    if(t) return /born|coupure|repart/.test(t);   // le type explicite gagne
     return inferType(n).s==='disconnect'; };
 
   // --- partenaires bruts par broche (pour découper les borniers par destination)
@@ -363,12 +364,16 @@ function computeLayoutWith(eq, lk, peripheral){
   //     (un bornier se coupe : un fragment par équipement desservi)
   const nodes=new Map();
   const nodeOfPin=new Map();
+  // degré par nom : un bornier traversant se coupe près de l'équipement le
+  // plus LOCAL (plus petit fan-out), pas près de la grosse source
+  const degN=new Map();
+  lk.forEach(l=>{ degN.set(l.from,(degN.get(l.from)||0)+1); degN.set(l.to,(degN.get(l.to)||0)+1); });
   for(const n of rawNames){ const P=P0(n);
     if(!isStripName(n)){ nodes.set(n,{id:n,name:n,strip:false,pins:P.list.slice()});
       P.list.forEach(p=>nodeOfPin.set(n+SOH+p.key,n)); continue; }
     const groups=new Map();
     P.list.forEach(p=>{ const ps=rawPartners.get(n+SOH+p.key)||[];
-      const gk=ps.length?ps[0].name:'~';
+      const gk=ps.length?ps.reduce((b,q)=>((degN.get(q.name)||0)<(degN.get(b.name)||0)?q:b),ps[0]).name:'~';
       (groups.get(gk)||groups.set(gk,[]).get(gk)).push(p); });
     let gi=0;
     for(const [gk,pins] of groups){ const id=n+FRAG+(gi++);
