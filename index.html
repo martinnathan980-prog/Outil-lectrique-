@@ -824,21 +824,27 @@ function computeLayoutWith(eq, lk, peripheral){
 
     const ordKey=id=>{ const h=ORDH.get(nodes.get(id).name); return h!=null?h:blockTop.get(id); };
     let colBlocks=columns.map(c=>[...c].sort((a,b)=>ordKey(a)-ordKey(b)));
-    let best=solveOnce(colBlocks);
-    for(let it=0;it<2;it++){
-      const py=best.py;
-      const keyOf=id=>{
-        if(!isStrip.get(id)){ let lo=Infinity;
-          listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>lo=Math.min(lo,py.get(PKEY(id,p.key)))));
-          return isFinite(lo)?lo:0; }
-        const ds=[];
-        listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>{
-          (partners.get(id+SOH+p.key)||[]).forEach(q=>{ if(q.id!==id&&py.has(PKEY(q.id,q.key)))ds.push(py.get(PKEY(q.id,q.key))); }); }));
-        ds.sort((a,b)=>a-b); return ds.length?ds[ds.length>>1]:0; };
-      const nb=colBlocks.map(c=>[...c].sort((a,b)=>keyOf(a)-keyOf(b)));
-      const r=solveOnce(nb);
-      if(r.acc>best.acc){ best=r; colBlocks=nb; } else break;
+    let best=solveOnce(colBlocks), bestBlocks=colBlocks;
+    // balayage type Sugiyama : chaque bloc se replace au barycentre de ses
+    // partenaires (médiane et moyenne alternées) ; on garde l'ordre qui rend
+    // le plus de fils droits (maximise les fusions acceptées).
+    const baryKey=(py,mean)=>id=>{ const ds=[];
+      listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>{
+        (partners.get(id+SOH+p.key)||[]).forEach(q=>{ if(q.id!==id&&py.has(PKEY(q.id,q.key)))ds.push(py.get(PKEY(q.id,q.key))); }); }));
+      if(!ds.length)return blockTop.get(id);
+      if(mean)return ds.reduce((a,b)=>a+b,0)/ds.length;
+      ds.sort((a,b)=>a-b); return ds[ds.length>>1]; };
+    const nBlk=columns.reduce((n,c)=>n+c.length,0);
+    const MAXIT=nBlk>120?6:12;
+    let lastPy=best.py, cur=colBlocks, stall=0;
+    for(let it=0;it<MAXIT&&stall<3;it++){
+      const key=baryKey(lastPy, it%2===1);
+      const nb=cur.map(c=>{ const k=new Map(c.map(id=>[id,key(id)]));
+        return [...c].sort((a,b)=>k.get(a)-k.get(b)); });
+      const r=solveOnce(nb); lastPy=r.py; cur=nb;
+      if(r.acc>best.acc+0.01){ best=r; bestBlocks=nb; stall=0; } else stall++;
     }
+    colBlocks=bestBlocks;
     // dégonflage : un bloc étiré « pour rien » (grand trou interne parce
     // qu'une broche est accrochée à l'extrémité opposée du partenaire) est
     // réduit en déplaçant la broche partenaire à la position idéale de sa
