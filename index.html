@@ -717,9 +717,14 @@ function computeLayoutWith(eq, lk, peripheral){
   {
     const ids=columns.flat();
     const PKEY=(id,key)=>id+SOH+key;
+    // étiquette de potentiel : fragment de rail à 1 broche — pastille libre qui
+    // se colle en face de la borne partenaire, sans contrainte d'empilement
+    const isTagId=id=>{ const ls=listsOf.get(id);
+      return !!ls.S && ls.S.length===1 && isRail(nodes.get(id).name); };
     const mTop=new Map(), mBot=new Map(), isStrip=new Map();
     ids.forEach(id=>{ const isS=!!listsOf.get(id).S; isStrip.set(id,isS);
-      if(isS){ mTop.set(id,HHS+PRH/2); mBot.set(id,PRH/2+5); }
+      if(isS&&isTagId(id)){ mTop.set(id,7); mBot.set(id,7); }
+      else if(isS){ mTop.set(id,HHS+PRH/2); mBot.set(id,PRH/2+5); }
       else { let L=1; listKeys(id).forEach(lid=>L=Math.max(L,listArr(id,lid).length));
         const m=Math.max(22,(64-(L-1)*PRH)/2); mTop.set(id,m); mBot.set(id,m); } });
 
@@ -732,7 +737,7 @@ function computeLayoutWith(eq, lk, peripheral){
       const buildEdges=f=>{ const E=[];
         ids.forEach(id=>listKeys(id).forEach(lid=>{ const L=listArr(id,lid);
           for(let j=1;j<L.length;j++) E.push([f(PKEY(id,L[j-1].key)),f(PKEY(id,L[j].key)),PRH]); }));
-        colBlocks.forEach(c=>{ for(let i=1;i<c.length;i++){ const P=c[i-1],N=c[i];
+        colBlocks.map(c=>c.filter(id=>!isTagId(id))).forEach(c=>{ for(let i=1;i<c.length;i++){ const P=c[i-1],N=c[i];
           const gap=(isStrip.get(P)&&isStrip.get(N))?14:VGAP;
           const w=mBot.get(P)+gap+mTop.get(N);
           const lasts=[],firsts=[];
@@ -789,18 +794,24 @@ function computeLayoutWith(eq, lk, peripheral){
         const st=netBlocks.get(r)||netBlocks.set(r,new Set()).get(r); st.add(id); })));
       for(let dp=0;dp<2;dp++)
         for(let i=q.length-1;i>=0;i--){ const n=q[i];
-          const oe=adj.get(n); if(!oe||!oe.length)continue;
-          let mx=Infinity; oe.forEach(([m,w])=>mx=Math.min(mx,(Y.get(m)||0)-w));
-          const y0=Y.get(n)||0; if(mx<=y0+0.5)continue;
-          let tops=0,bots=0;
+          const oe=adj.get(n);
+          let mx=Infinity; if(oe&&oe.length) oe.forEach(([m,w])=>mx=Math.min(mx,(Y.get(m)||0)-w));
+          const y0=Y.get(n)||0;
+          let tops=0,bots=0,tgt=Infinity;
           (netBlocks.get(n)||[]).forEach(id=>{
-            let lo=Infinity,hi=-Infinity,loN=0;
+            if(isTagId(id))return;   // les pastilles suivent : coût nul
+            let lo=Infinity,lo2=Infinity,hi=-Infinity,loN=0;
             listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>{
               const yy=Y.get(find(PKEY(id,p.key)))||0;
-              if(yy<lo-0.01){lo=yy;loN=1;} else if(yy<lo+0.01)loN++;
+              if(yy<lo-0.01){lo2=lo;lo=yy;loN=1;}
+              else if(yy<lo+0.01)loN++;
+              else if(yy<lo2)lo2=yy;
               if(yy>hi)hi=yy; }));
-            if(Math.abs(y0-lo)<0.01&&loN===1)tops++;
+            if(Math.abs(y0-lo)<0.01&&loN===1){ tops++; if(isFinite(lo2))tgt=Math.min(tgt,lo2-PRH); }
             if(Math.abs(y0-hi)<0.01)bots++; });
+          // net sans successeur : viser juste au-dessus de la broche suivante
+          if(!(oe&&oe.length)) mx=isFinite(tgt)?tgt:y0;
+          if(mx<=y0+0.5)continue;
           if(tops>=1&&bots===0) Y.set(n,mx); }
       const py=new Map();
       ids.forEach(id=>listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>{
@@ -808,7 +819,8 @@ function computeLayoutWith(eq, lk, peripheral){
       return {acc, py};
     };
 
-    let colBlocks=columns.map(c=>[...c].sort((a,b)=>blockTop.get(a)-blockTop.get(b)));
+    const ordKey=id=>{ const h=ORDH.get(nodes.get(id).name); return h!=null?h:blockTop.get(id); };
+    let colBlocks=columns.map(c=>[...c].sort((a,b)=>ordKey(a)-ordKey(b)));
     let best=solveOnce(colBlocks);
     for(let it=0;it<2;it++){
       const py=best.py;
@@ -867,6 +879,12 @@ function computeLayoutWith(eq, lk, peripheral){
         pinY.set(PKEY(id,p.key),y); lo=Math.min(lo,y); hi=Math.max(hi,y); }));
       if(!isFinite(lo)){ lo=topY; hi=topY; }
       blockTop.set(id,lo-mTop.get(id)); blockBot.set(id,hi+mBot.get(id)); });
+    // pastilles de potentiel : pile en face de leur borne partenaire
+    ids.forEach(id=>{ if(!isTagId(id))return;
+      const pp=listArr(id,'S')[0]; if(!pp)return;
+      const qs=(partners.get(id+SOH+pp.key)||[]).filter(q=>q.id!==id);
+      const y=qs.length?pinYof(qs[0].id,qs[0].key):pinYof(id,pp.key);
+      pinY.set(id+SOH+pp.key,y); blockTop.set(id,y-7); blockBot.set(id,y+7); });
   }
 
   // compactage vertical : les bandes horizontales entièrement vides sont
@@ -895,7 +913,9 @@ function computeLayoutWith(eq, lk, peripheral){
 
   // aucun chevauchement, JAMAIS : si deux blocs se recouvrent (blocs épinglés
   // à la souris, dépliage stabilisé…), le bloc non épinglé glisse sous l'autre.
-  { const ids2=columns.flat();
+  const isTagB=id=>{ const ls=listsOf.get(id);
+    return !!ls.S && ls.S.length===1 && isRail(nodes.get(id).name); };
+  { const ids2=columns.flat().filter(id=>!isTagB(id));
     const pinned=new Set();
     for(const [nm] of OVR) ids2.forEach(id=>{ if(id===nm||nodes.get(id).name===nm)pinned.add(id); });
     const shiftBlock=(v,dy)=>{ blockTop.set(v,blockTop.get(v)+dy); blockBot.set(v,blockBot.get(v)+dy);
@@ -914,6 +934,21 @@ function computeLayoutWith(eq, lk, peripheral){
         moved=true; }
       if(!moved)break; } }
 
+  // pastilles : si l'emplacement de colonne est occupé, la pastille vient se
+  // coller au flanc de son partenaire, dans la goulotte (fil ultra-court)
+  { const all=columns.flat();
+    all.forEach(id=>{ if(!isTagB(id))return;
+      const t=blockTop.get(id), bb=blockBot.get(id), x=nodeX.get(id), w=widthOf(id);
+      const clash=all.some(o=>o!==id&&!isTagB(o)&&
+        x<nodeX.get(o)+widthOf(o)+2&&nodeX.get(o)<x+w+2&&t<blockBot.get(o)+2&&blockTop.get(o)<bb+2);
+      if(!clash)return;
+      const pp=listArr(id,'S')[0]; if(!pp)return;
+      const qs=(partners.get(id+SOH+pp.key)||[]).filter(q=>q.id!==id); if(!qs.length)return;
+      const q=qs[0]; const qx=nodeX.get(q.id), qw=widthOf(q.id);
+      const myCol=colOf.get(id)??0, qCol=colOf.get(q.id)??0;
+      nodeX.set(id, myCol>=qCol ? qx+qw+6 : qx-w-6); });
+  }
+
   let yMin=Infinity,yMax=-Infinity;
   nodeIds.forEach(id=>{ yMin=Math.min(yMin,blockTop.get(id)); yMax=Math.max(yMax,blockBot.get(id)); });
   if(!isFinite(yMin)){ yMin=topY; yMax=topY+200; }
@@ -928,8 +963,9 @@ function computeLayoutWith(eq, lk, peripheral){
     listKeys(id).forEach(lid=>{ rows[lid]=listArr(id,lid).map(p=>{ const py=pinY.get(id+SOH+p.key);
       byKey.set(p.key,{y:py}); return {label:p.label,y:py}; }); });
     const vc=!ls.S&&isVCName(N.name);
+    const tag=!!ls.S&&ls.S.length===1&&isRail(N.name);
     const c={name:N.name,id,o:{designation:e.designation||'',type:e.type||''},x,y:top,w,h:bot-top,
-      kind:ls.S?'strip':'equip',vc,
+      kind:tag?'tag':(ls.S?'strip':'equip'),vc,
       lw:(ls.S||vc)?0:(ls.L.length?STRIPW:0),rw:(ls.S||vc)?0:(ls.R.length?STRIPW:0),
       rows,byKey,rail:isRail(N.name)};
     compList.push(c); compByName.set(id,c); if(!compByName.has(N.name))compByName.set(N.name,c); }
@@ -1247,7 +1283,11 @@ function compSvg(c,sel){
   const xr=state.xroots&&state.xroots.size;
   if(xr&&state.xroots.has(c.name)) s+=`<rect class="rootbox" x="-3.5" y="-3.5" width="${c.w+7}" height="${c.h+7}" rx="4"/>`;
   else if(xr) s+=`<g class="plusb"><circle cx="${f1(c.w)}" cy="0" r="7"/><text x="${f1(c.w)}" y="3" text-anchor="middle">+</text></g>`;
-  if(c.kind==='strip'){
+  if(c.kind==='tag'){
+    // étiquette de potentiel : petite pastille en face de la borne desservie
+    s+=`<rect class="rpill" x="0" y="${f1(c.h/2-6)}" width="${c.w}" height="12" rx="6"/>`;
+    s+=`<text class="rname" style="font-size:7.5px" x="${f1(c.w/2)}" y="${f1(c.h/2+2.7)}" text-anchor="middle">${esc(clip(c.name,7))}</text>`;
+  } else if(c.kind==='strip'){
     // fragment de bornier : fin, nom intégré en cellule d'en-tête
     s+=`<g filter="url(#softsh)"><rect class="bstrip" x="0" y="0" width="${c.w}" height="${c.h}" rx="2.5"/></g>`;
     s+=`<rect class="bshead" x="0" y="0" width="${c.w}" height="${HHS}" rx="2.5"/>`;
@@ -1389,7 +1429,7 @@ function syncCables(){ const box=document.getElementById('cb-list'); if(!box)ret
   if(!cables.length){ box.innerHTML='<div class="hint">Importe une base (table unique) avec des câbles — ils apparaîtront ici, classés par repère.</div>'; return; }
   box.innerHTML=cables.map(([name,o])=>`<div class="cbrow"><span class="cbname">${esc(name)}</span><span class="cbmeta">${esc(o.type||'—')}${o.cores>1?(' · '+o.cores+' cond.'):''}${o.plan?(' · pl.'+esc(o.plan)):''}${o.route?(' · '+esc(o.route)):''}</span></div>`).join('');
 }
-function parseDB(){ state.xroots=null; state.forceFull=false;
+function parseDB(){ state.xroots=null; state.forceFull=false; ORDH.clear();
   const {links}=parseSchedule(document.getElementById('imp-db').value);
   if(!links.length){ alert('Aucune liaison détectée. Vérifie le séparateur ( ; , ou tabulation ) et l’ordre des colonnes.'); return; }
   state.eq=[]; state.lk=links; OVR.clear(); state.sel=null; state.plan='*';
@@ -1442,7 +1482,8 @@ function bindImportDrop(){
 }
 
 /* ---------- 8. Interactions : pan / zoom / drag / édition ---------- */
-const OVR=new Map();           // repère -> {x,y} centre imposé
+const OVR=new Map();           // repère -> {x,y} centre imposé (aperçu pendant le glisser)
+const ORDH=new Map();          // repère -> y souhaité (indice d'ordre après un glisser)
 function applyView(){ const sc=document.getElementById('scene');
   if(sc) sc.setAttribute('transform',`translate(${state.view.tx},${state.view.ty}) scale(${state.view.s})`); updateZoom(); }
 function updateZoom(){ const z=document.getElementById('zlbl'); if(z) z.textContent=Math.round(state.view.s*100)+' %'; }
@@ -1510,7 +1551,13 @@ function endPointer(e){ try{stage.releasePointerCapture(e.pointerId);}catch(_){}
   if(mode==='drag'&&!moved){ const c=hitComp(screenToWorld(e.clientX,e.clientY));
     if(c){ if(state.xroots&&state.xroots.size&&!state.xroots.has(c.name)) exploreAdd(c.name);
       else openEditor(c,e.clientX,e.clientY); } }
-  else if(mode==='drag'&&moved&&drag) resolveCollision(drag.name);
+  else if(mode==='drag'&&moved&&drag){
+    // fin de glisser : l'emplacement devient un indice d'ordre, puis TOUT est
+    // recalculé pour rester parfait (fils droits, aucun chevauchement)
+    const o=OVR.get(drag.name);
+    if(o) ORDH.set(drag.name,o.y);
+    OVR.delete(drag.name);
+    render(); }
   if(mode==='pan'&&!moved){ const wr=hitWire(screenToWorld(e.clientX,e.clientY));
     if(wr){ openCable(wr,e.clientX,e.clientY); } else { state.sel=null; render(); } }
   mode=null; drag=null; pan=null;
@@ -1602,7 +1649,16 @@ function xpPinShown(){ if(!LAST)return;
     OVR.set(c.name,{x:c.x+c.w/2,y:c.y,top:true}); XPPIN.add(c.name); } }); }
 function xpUnpin(){ XPPIN.forEach(n=>OVR.delete(n)); XPPIN.clear(); }
 function exploreAdd(name){ if(!state.xroots)state.xroots=new Set();
-  state.xroots.add(name); state.sel=name; render(); fit(); }
+  // ancrage : le bloc cliqué reste au même endroit à l'écran (on ne se perd pas)
+  let anchor=null;
+  if(LAST){ const c0=LAST.layout.comps.find(c=>c.name===name);
+    if(c0) anchor={sx:state.view.tx+(c0.x+c0.w/2)*state.view.s,
+                   sy:state.view.ty+(c0.y+c0.h/2)*state.view.s}; }
+  state.xroots.add(name); state.sel=name; render();
+  const c1=LAST&&LAST.layout.comps.find(c=>c.name===name);
+  if(anchor&&c1){ state.view.tx=anchor.sx-(c1.x+c1.w/2)*state.view.s;
+    state.view.ty=anchor.sy-(c1.y+c1.h/2)*state.view.s; applyView(); }
+  else fit(); }
 function exploreRemove(name){ if(!state.xroots)return; state.xroots.delete(name);
   if(!state.xroots.size){ state.xroots=null; state.sel=null; xpUnpin(); render(); fit(); return; }
   render(); }
@@ -1771,7 +1827,7 @@ function parseImport(){
     if(looksHeader(c[0])&&!eq.length&&!/\d/.test(c[0]))return; if(!c[0])return; eq.push({repere:c[0],designation:c[1]||'',type:c[2]||''}); });
   const lk=[]; ltxt.split(/\r?\n/).forEach(line=>{ if(!line.trim())return; const c=splitLine(line).map(s=>s.trim());
     if(looksHeader(c[0])&&!lk.length)return; if(!c[0]||!c[2])return; lk.push({from:c[0],fromTerm:c[1]||'',to:c[2],toTerm:c[3]||'',nature:c[4]||''}); });
-  if(lk.length){ state.eq=eq; state.lk=lk; OVR.clear(); state.sel=null; state.xroots=null; state.forceFull=false; syncTables(); render(); fit(); closeModal(); }
+  if(lk.length){ state.eq=eq; state.lk=lk; OVR.clear(); ORDH.clear(); state.sel=null; state.xroots=null; state.forceFull=false; syncTables(); render(); fit(); closeModal(); }
   else alert('Aucune liaison valide détectée. Format : de ; borne ; vers ; borne ; nature');
 }
 function openModal(){ document.getElementById('modal').style.display='flex'; }
@@ -1819,9 +1875,9 @@ const SAMPLE={
     {from:'M1',fromTerm:'PE',to:'PE',toTerm:'',nature:'terre'},
   ]
 };
-function loadSample(){ state.eq=SAMPLE.eq.map(o=>({...o})); state.lk=SAMPLE.lk.map(o=>({...o})); OVR.clear(); state.sel=null; state.xroots=null; state.forceFull=false;
+function loadSample(){ state.eq=SAMPLE.eq.map(o=>({...o})); state.lk=SAMPLE.lk.map(o=>({...o})); OVR.clear(); ORDH.clear(); state.sel=null; state.xroots=null; state.forceFull=false;
   state.meta.title='Installation — armoire TGBT'; syncTables(); render(); fit(); }
-function clearAll(){ if(!confirm('Effacer tous les équipements et liaisons ?'))return; state.eq=[]; state.lk=[]; OVR.clear(); state.sel=null; state.xroots=null; state.forceFull=false; syncTables(); render(); }
+function clearAll(){ if(!confirm('Effacer tous les équipements et liaisons ?'))return; state.eq=[]; state.lk=[]; OVR.clear(); ORDH.clear(); state.sel=null; state.xroots=null; state.forceFull=false; syncTables(); render(); }
 
 const DB_SAMPLE=`Equip1;Borne;PN;Equip2;Borne;PN;Cable;Type;Route;Plan
 L1;;;Q1;1;;;;;1
