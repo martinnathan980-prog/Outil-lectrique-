@@ -479,6 +479,7 @@ function computeLayoutWith(eq, lk, peripheral){
   // --- largeurs (hauteurs élastiques calculées plus bas)
   const widthOf=id=>{ const ls=listsOf.get(id);
     if(ls.S)return BORNW;
+    if(isVCName(nodes.get(id).name))return 58;   // prise de coupure : corps fin
     return (ls.L.length?STRIPW:0)+BODYW+(ls.R.length?STRIPW:0); };
   const estH=id=>{ const ls=listsOf.get(id);
     const rows=ls.S?Math.max(1,ls.S.length):Math.max(ls.L.length,ls.R.length,1);
@@ -886,11 +887,32 @@ function computeLayoutWith(eq, lk, peripheral){
   for(const [name,o] of OVR){
     for(const id of nodeIds){ if(id!==name&&nodes.get(id).name!==name)continue;
       const top=blockTop.get(id), bot=blockBot.get(id), h=bot-top;
-      const dy=(o.y-h/2)-top, dx=(o.x-widthOf(id)/2)-nodeX.get(id);
+      const dy=(o.top?o.y:(o.y-h/2))-top, dx=(o.x-widthOf(id)/2)-nodeX.get(id);
       nodeX.set(id,nodeX.get(id)+dx);
       blockTop.set(id,top+dy); blockBot.set(id,bot+dy);
       listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>pinY.set(id+SOH+p.key,pinY.get(id+SOH+p.key)+dy)));
       break; } }
+
+  // aucun chevauchement, JAMAIS : si deux blocs se recouvrent (blocs épinglés
+  // à la souris, dépliage stabilisé…), le bloc non épinglé glisse sous l'autre.
+  { const ids2=columns.flat();
+    const pinned=new Set();
+    for(const [nm] of OVR) ids2.forEach(id=>{ if(id===nm||nodes.get(id).name===nm)pinned.add(id); });
+    const shiftBlock=(v,dy)=>{ blockTop.set(v,blockTop.get(v)+dy); blockBot.set(v,blockBot.get(v)+dy);
+      listKeys(v).forEach(lid=>listArr(v,lid).forEach(pp=>pinY.set(v+SOH+pp.key,pinYof(v,pp.key)+dy))); };
+    for(let pass=0;pass<8;pass++){ let moved=false;
+      for(let i=0;i<ids2.length;i++)for(let j=0;j<ids2.length;j++){ if(i===j)continue;
+        const u=ids2[i], v=ids2[j];
+        const ax=nodeX.get(u), aw=widthOf(u), at=blockTop.get(u), ab=blockBot.get(u);
+        const bx2=nodeX.get(v), bw2=widthOf(v), bt=blockTop.get(v), bb2=blockBot.get(v);
+        if(!(ax<bx2+bw2+6&&bx2<ax+aw+6&&at<bb2+6&&bt<ab+6))continue;
+        let victim=v, otherBot=ab;
+        if(pinned.has(v)&&!pinned.has(u)){ victim=u; otherBot=bb2; }
+        else if(pinned.has(v)&&pinned.has(u)){
+          if(bt>=at){ victim=v; otherBot=ab; } else { victim=u; otherBot=bb2; } }
+        shiftBlock(victim,(otherBot+10)-blockTop.get(victim));
+        moved=true; }
+      if(!moved)break; } }
 
   let yMin=Infinity,yMax=-Infinity;
   nodeIds.forEach(id=>{ yMin=Math.min(yMin,blockTop.get(id)); yMax=Math.max(yMax,blockBot.get(id)); });
@@ -905,8 +927,10 @@ function computeLayoutWith(eq, lk, peripheral){
     const byKey=new Map(); const rows={};
     listKeys(id).forEach(lid=>{ rows[lid]=listArr(id,lid).map(p=>{ const py=pinY.get(id+SOH+p.key);
       byKey.set(p.key,{y:py}); return {label:p.label,y:py}; }); });
+    const vc=!ls.S&&isVCName(N.name);
     const c={name:N.name,id,o:{designation:e.designation||'',type:e.type||''},x,y:top,w,h:bot-top,
-      kind:ls.S?'strip':'equip',lw:ls.S?0:(ls.L.length?STRIPW:0),rw:ls.S?0:(ls.R.length?STRIPW:0),
+      kind:ls.S?'strip':'equip',vc,
+      lw:(ls.S||vc)?0:(ls.L.length?STRIPW:0),rw:(ls.S||vc)?0:(ls.R.length?STRIPW:0),
       rows,byKey,rail:isRail(N.name)};
     compList.push(c); compByName.set(id,c); if(!compByName.has(N.name))compByName.set(N.name,c); }
 
@@ -1023,6 +1047,9 @@ function routeAll(layout){
     } else if(B.ch-A.ch>=2&&A.stub==='R'&&corridorFree(A.x+2,chL(B.ch)+g.chW[B.ch]-2,A.y)){
       // couloir direct jusqu'à la goulotte d'arrivée, puis descente locale
       chanJobs[B.ch].push({li,part:3,eps:[{y:A.y,s:'L'},{y:B.y,s:B.stub}]});
+    } else if(B.ch-A.ch>=2&&B.stub==='L'&&corridorFree(chL(A.ch)+2,B.x-2,B.y)){
+      // coude dans la goulotte de départ puis couloir direct vers l'arrivée
+      chanJobs[A.ch].push({li,part:4,eps:[{y:A.y,s:A.stub},{y:B.y,s:'R'}]});
     } else {
       const top=g.yMin, bot=g.yMax;
       const useTop=(A.y-top)+(B.y-top)<=(bot-A.y)+(bot-B.y);
@@ -1074,6 +1101,9 @@ function routeAll(layout){
       pts=[{x:A.x,y:A.y},{x:tx,y:A.y},{x:tx,y:B.y},{x:B.x,y:B.y}];
     } else if(chOut[B.ch].has(li+':3')){
       const tx=chOut[B.ch].get(li+':3');
+      pts=[{x:A.x,y:A.y},{x:tx,y:A.y},{x:tx,y:B.y},{x:B.x,y:B.y}];
+    } else if(chOut[A.ch].has(li+':4')){
+      const tx=chOut[A.ch].get(li+':4');
       pts=[{x:A.x,y:A.y},{x:tx,y:A.y},{x:tx,y:B.y},{x:B.x,y:B.y}];
     } else {
       const hy=hwY.get(li);
@@ -1226,24 +1256,31 @@ function compSvg(c,sel){
   } else {
     // équipement : corps compact, nom centré, borniers de flanc fins et centrés
     const bx=c.lw, bw=c.w-c.lw-c.rw;
-    if(isVCName(c.name)){
-      // prise de coupure : corps effilé (pointe chanfreinée en tête) et
-      // double trait à l'autre extrémité, comme sur les planches réelles
-      const k=Math.min(13,bw*0.28);
-      const d=`M ${f1(bx+k)} 0 L ${f1(bx+bw-k)} 0 L ${f1(bx+bw)} ${f1(k)} L ${f1(bx+bw)} ${f1(c.h)} L ${f1(bx)} ${f1(c.h)} L ${f1(bx)} ${f1(k)} Z`;
+    const rl=c.rows.L||[], rr=c.rows.R||[];
+    if(c.vc){
+      // prise de coupure : corps FIN à pointe chanfreinée, petite barre le
+      // long du flanc, bornes écrites À L'INTÉRIEUR, repère à l'extérieur
+      const k=Math.min(11,bw*0.3);
+      const d=`M ${f1(bx)} ${f1(k)} L ${f1(bx+k)} 0 L ${f1(bx+bw-k)} 0 L ${f1(bx+bw)} ${f1(k)} L ${f1(bx+bw)} ${f1(c.h)} L ${f1(bx)} ${f1(c.h)} Z`;
       s+=`<g filter="url(#softsh)"><path class="body" d="${d}"/></g>`;
-      s+=`<line class="sym-thin" x1="${f1(bx+2.5)}" y1="${f1(c.h-5.5)}" x2="${f1(bx+bw-2.5)}" y2="${f1(c.h-5.5)}"/>`;
+      s+=`<line class="sym-thin" x1="${f1(bx+4)}" y1="${f1(k+3)}" x2="${f1(bx+4)}" y2="${f1(c.h-3)}"/>`;
+      rl.forEach(pp=>{ const ly=pp.y-c.y;
+        s+=`<line class="sym-thin" x1="${f1(bx)}" y1="${f1(ly)}" x2="${f1(bx+3)}" y2="${f1(ly)}"/>`;
+        if(pp.label)s+=`<text class="pinlbl" x="${f1(bx+9)}" y="${f1(ly+2.8)}">${esc(pp.label)}</text>`; });
+      rr.forEach(pp=>{ const ly=pp.y-c.y;
+        s+=`<line class="sym-thin" x1="${f1(bx+bw-3)}" y1="${f1(ly)}" x2="${f1(bx+bw)}" y2="${f1(ly)}"/>`;
+        if(pp.label)s+=`<text class="pinlbl" x="${f1(bx+bw-9)}" y="${f1(ly+2.8)}" text-anchor="end">${esc(pp.label)}</text>`; });
+      s+=`<text class="rep" x="${f1(bx+bw/2)}" y="${f1(c.h+13)}" text-anchor="middle">${esc(clip(c.name,14))}</text>`;
     } else {
       s+=`<g filter="url(#softsh)"><rect class="body" x="${f1(bx)}" y="0" width="${f1(bw)}" height="${c.h}" rx="3"/></g>`;
+      s+=`<text class="rep-big" x="${f1(bx+bw/2)}" y="${f1(c.h/2+4.5)}" text-anchor="middle">${esc(clip(c.name,12))}</text>`;
+      if(c.o.designation) s+=`<text class="des" x="${f1(bx+bw/2)}" y="${f1(c.h/2+17)}" text-anchor="middle">${esc(clip(c.o.designation,16))}</text>`;
+      const outline=(x0,rows)=>{ if(!rows.length)return '';
+        const t=rows[0].y-c.y-PRH/2-2, b=rows[rows.length-1].y-c.y+PRH/2+2;
+        return `<rect class="bstrip" x="${f1(x0)}" y="${f1(t)}" width="${STRIPW}" height="${f1(b-t)}" rx="2.5"/>`; };
+      if(rl.length){ s+=outline(0,rl)+pinCells(1.5,STRIPW-3,rl,c.y); }
+      if(rr.length){ s+=outline(c.w-STRIPW,rr)+pinCells(c.w-STRIPW+1.5,STRIPW-3,rr,c.y); }
     }
-    s+=`<text class="rep-big" x="${f1(bx+bw/2)}" y="${f1(c.h/2+4.5)}" text-anchor="middle">${esc(clip(c.name,12))}</text>`;
-    if(c.o.designation) s+=`<text class="des" x="${f1(bx+bw/2)}" y="${f1(c.h/2+17)}" text-anchor="middle">${esc(clip(c.o.designation,16))}</text>`;
-    const rl=c.rows.L||[], rr=c.rows.R||[];
-    const outline=(x0,rows)=>{ if(!rows.length)return '';
-      const t=rows[0].y-c.y-PRH/2-2, b=rows[rows.length-1].y-c.y+PRH/2+2;
-      return `<rect class="bstrip" x="${f1(x0)}" y="${f1(t)}" width="${STRIPW}" height="${f1(b-t)}" rx="2.5"/>`; };
-    if(rl.length){ s+=outline(0,rl)+pinCells(1.5,STRIPW-3,rl,c.y); }
-    if(rr.length){ s+=outline(c.w-STRIPW,rr)+pinCells(c.w-STRIPW+1.5,STRIPW-3,rr,c.y); }
   }
   s+=`</g>`; return s;
 }
@@ -1558,11 +1595,19 @@ function allDeviceNames(){ const s=new Set(); state.lk.forEach(l=>{ if(l.from)s.
 function exploreStart(name){ name=String(name||'').trim(); if(!name)return;
   const ns=allDeviceNames();
   if(!ns.has(name)){ const st=document.getElementById('xp-stat'); if(st)st.textContent='Repère introuvable : '+name; return; }
-  state.xroots=new Set([name]); state.sel=name; render(); fit(); }
-function exploreAdd(name){ if(!state.xroots)state.xroots=new Set(); state.xroots.add(name); state.sel=name; render(); fit(); }
+  xpUnpin(); state.xroots=new Set([name]); state.sel=name; render(); fit(); }
+const XPPIN=new Set();   // blocs épinglés automatiquement par l'exploration
+function xpPinShown(){ if(!LAST)return;
+  LAST.layout.comps.forEach(c=>{ if(c.kind!=='strip'&&!OVR.has(c.name)){
+    OVR.set(c.name,{x:c.x+c.w/2,y:c.y,top:true}); XPPIN.add(c.name); } }); }
+function xpUnpin(){ XPPIN.forEach(n=>OVR.delete(n)); XPPIN.clear(); }
+function exploreAdd(name){ if(!state.xroots)state.xroots=new Set();
+  if(state.xroots.size) xpPinShown();          // les blocs déjà affichés ne bougent plus
+  state.xroots.add(name); state.sel=name; render(); }
 function exploreRemove(name){ if(!state.xroots)return; state.xroots.delete(name);
-  if(!state.xroots.size){ state.xroots=null; state.sel=null; } render(); fit(); }
-function exploreStop(){ state.xroots=null; state.sel=null; render(); fit(); }
+  if(!state.xroots.size){ state.xroots=null; state.sel=null; xpUnpin(); render(); fit(); return; }
+  render(); }
+function exploreStop(){ state.xroots=null; state.sel=null; xpUnpin(); render(); fit(); }
 function syncExplore(){ const dl=document.getElementById('xp-names'); if(!dl)return;
   const names=[...allDeviceNames()].sort();
   dl.innerHTML=names.slice(0,4000).map(n=>`<option value="${esc(n)}">`).join('');
