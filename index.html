@@ -310,6 +310,7 @@ const PREFIX = {
   P:{t:'mesure',s:'meter',r:'misc'}, Y:{t:'électrovanne',s:'coil',r:'misc'},
 };
 const RAIL_RE = /^(L1|L2|L3|L|N|PE|PEN|GND|0V|\+|-|VCC|VDD|\+?\d{1,3}V)$/i;
+const isVCName = n => /(^|\s|\d)VC(\s|$)/i.test(String(n||'').trim());   // prises de coupure
 function railKind(name){
   const n=String(name||'').trim().toUpperCase();
   if(n==='PE'||n==='PEN') return 'terre';
@@ -971,22 +972,57 @@ function computeLayout(eq, lk){
 function routeAll(layout){
   const g=layout.geom; const N=layout.links.length;
   const wires=new Array(N);
-  if(!N) return {wires:[],bridges:[],dots:[]};
+  if(!N) return {wires:[],bridges:[],dots:[],barrettes:[]};
   const chL=i=> i===0 ? (g.colX.length?g.colX[0]-g.chW[0]:70) : g.colX[i-1]+g.colW[i-1];
   function hwAlloc(tracks,lo,hi){ if(lo>hi){const t=lo;lo=hi;hi=t;}
     for(let t=0;t<tracks.length;t++){ if(!tracks[t].some(([a,b])=>!(hi<a-7||lo>b+7))){ tracks[t].push([lo,hi]); return t; } }
     tracks.push([[lo,hi]]); return tracks.length-1; }
   const hwTop=[], hwBot=[]; const hwY=new Map();
 
+  // 0) barrettes : quand n>=2 fils partent d'une même borne du même côté, ils
+  //    se répartissent le long d'un trait pointillé vertical (barrette) au ras
+  //    de la borne, chacun à l'ordonnée de son partenaire (bornée).
+  const epAdj=new Map(); const barrettes=[];
+  { const groups=new Map();
+    layout.links.forEach((l,li)=>{ [['A',l.epA,l.epB],['B',l.epB,l.epA]].forEach(([tag,ep,other])=>{
+      const k=Math.round(ep.x)+','+Math.round(ep.y)+','+ep.stub;
+      (groups.get(k)||groups.set(k,[]).get(k)).push({li,tag,ep,other}); }); });
+    groups.forEach(arr=>{ if(arr.length<2)return;
+      const py=arr[0].ep.y, px=arr[0].ep.x;
+      // bornes de délordement : rester dans le bloc propriétaire
+      const own=layout.comps.find(c=>py>=c.y-1&&py<=c.y+c.h+1&&(Math.abs(px-c.x)<2||Math.abs(px-(c.x+c.w))<2));
+      const lo=own?Math.max(py-3*PRH,own.y+4):py-3*PRH;
+      const hi=own?Math.min(py+3*PRH,own.y+own.h-4):py+3*PRH;
+      arr.sort((u,v)=>u.other.y-v.other.y);
+      const ys=arr.map(u=>Math.max(lo,Math.min(hi,u.other.y)));
+      for(let i=1;i<ys.length;i++) if(ys[i]<ys[i-1]+5) ys[i]=ys[i-1]+5;
+      for(let i=ys.length-2;i>=0;i--) if(ys[i]>ys[i+1]-5) ys[i]=ys[i+1]-5;
+      arr.forEach((u,i)=>epAdj.set(u.li+':'+u.tag,{...u.ep,y:ys[i]}));
+      barrettes.push({x:px,y1:Math.min(py,ys[0])-4,y2:Math.max(py,ys[ys.length-1])+4}); });
+  }
+  const EA=li=>epAdj.get(li+':A')||layout.links[li].epA;
+  const EB=li=>epAdj.get(li+':B')||layout.links[li].epB;
+  // couloir horizontal libre de tout bloc ?
+  const corridorFree=(xa,xb,y)=>{ if(xa>xb){const t=xa;xa=xb;xb=t;}
+    return !layout.comps.some(c=> xb>c.x+1 && xa<c.x+c.w-1 && y>c.y-4 && y<c.y+c.h+4); };
+
   // 1) jobs par goulotte
   const chanJobs=Array.from({length:g.nCols+1},()=>[]);
   for(let li=0;li<N;li++){ const l=layout.links[li];
-    let A=l.epA, B=l.epB;
+    let A=EA(li), B=EB(li);
     if(A.ch>B.ch){ const t=A;A=B;B=t; }
     if(A.ch===B.ch){
       if(A.stub!==B.stub && Math.abs(A.y-B.y)<0.75){
-        wires[li]={...l,a:{ax:l.epA.x,ay:l.epA.y},b:{ax:l.epB.x,ay:l.epB.y},pts:[{x:l.epA.x,y:l.epA.y},{x:l.epB.x,y:l.epB.y}]};
+        const P=EA(li),Q=EB(li);
+        wires[li]={...l,a:{ax:P.x,ay:P.y},b:{ax:Q.x,ay:Q.y},pts:[{x:P.x,y:P.y},{x:Q.x,y:Q.y}]};
       } else chanJobs[A.ch].push({li,part:0,eps:[{y:A.y,s:A.stub},{y:B.y,s:B.stub}]});
+    } else if(B.ch-A.ch>=2&&A.stub==='R'&&B.stub==='L'&&Math.abs(A.y-B.y)<0.75&&corridorFree(A.x+2,B.x-2,A.y)){
+      // couloir direct : tout droit à travers les colonnes intermédiaires
+      wires[li]={...l,a:{ax:A.x,ay:A.y},b:{ax:B.x,ay:B.y},pts:[{x:A.x,y:A.y},{x:B.x,y:B.y}]};
+      if(l.epA.ch>l.epB.ch) wires[li].pts.reverse();
+    } else if(B.ch-A.ch>=2&&A.stub==='R'&&corridorFree(A.x+2,chL(B.ch)+g.chW[B.ch]-2,A.y)){
+      // couloir direct jusqu'à la goulotte d'arrivée, puis descente locale
+      chanJobs[B.ch].push({li,part:3,eps:[{y:A.y,s:'L'},{y:B.y,s:B.stub}]});
     } else {
       const top=g.yMin, bot=g.yMax;
       const useTop=(A.y-top)+(B.y-top)<=(bot-A.y)+(bot-B.y);
@@ -1030,11 +1066,14 @@ function routeAll(layout){
 
   // 3) matérialiser
   for(let li=0;li<N;li++){ if(wires[li])continue; const l=layout.links[li];
-    let A=l.epA, B=l.epB, swapped=false;
+    let A=EA(li), B=EB(li), swapped=false;
     if(A.ch>B.ch){ const t=A;A=B;B=t; swapped=true; }
     let pts;
     if(A.ch===B.ch){
       const tx=chOut[A.ch].get(li+':0');
+      pts=[{x:A.x,y:A.y},{x:tx,y:A.y},{x:tx,y:B.y},{x:B.x,y:B.y}];
+    } else if(chOut[B.ch].has(li+':3')){
+      const tx=chOut[B.ch].get(li+':3');
       pts=[{x:A.x,y:A.y},{x:tx,y:A.y},{x:tx,y:B.y},{x:B.x,y:B.y}];
     } else {
       const hy=hwY.get(li);
@@ -1049,7 +1088,7 @@ function routeAll(layout){
   wires.forEach(w=>{ [w.pts[0],w.pts[w.pts.length-1]].forEach(p=>{
     const k=Math.round(p.x)+','+Math.round(p.y); cnt.set(k,(cnt.get(k)||0)+1); }); });
   const dots=[]; for(const [k,c] of cnt){ if(c>1){ const [x,y]=k.split(',').map(Number); dots.push({x,y}); } }
-  return {wires,bridges:[],dots};
+  return {wires,bridges:[],dots,barrettes};
 }
 
 /* ---------- 7. Rendu SVG ---------- */
@@ -1090,6 +1129,7 @@ function defs(){
      .rep-big{fill:#182430;font-weight:700;font-size:13px;letter-spacing:.8px}
      .bhead{fill:#e9eef3;stroke:none}
      .bheadline{stroke:#26343f;stroke-width:1}
+     .barrette{stroke:#26323f;stroke-width:1.8;stroke-dasharray:3 2.5;stroke-linecap:butt}
      .rootbox{fill:none;stroke:#1668c2;stroke-width:1.5;stroke-dasharray:5 3}
      .plusb circle{fill:#1668c2;opacity:.9}
      .plusb text{fill:#ffffff;font:700 10px ui-monospace,monospace}
@@ -1186,7 +1226,16 @@ function compSvg(c,sel){
   } else {
     // équipement : corps compact, nom centré, borniers de flanc fins et centrés
     const bx=c.lw, bw=c.w-c.lw-c.rw;
-    s+=`<g filter="url(#softsh)"><rect class="body" x="${f1(bx)}" y="0" width="${f1(bw)}" height="${c.h}" rx="3"/></g>`;
+    if(isVCName(c.name)){
+      // prise de coupure : corps effilé (pointe chanfreinée en tête) et
+      // double trait à l'autre extrémité, comme sur les planches réelles
+      const k=Math.min(13,bw*0.28);
+      const d=`M ${f1(bx+k)} 0 L ${f1(bx+bw-k)} 0 L ${f1(bx+bw)} ${f1(k)} L ${f1(bx+bw)} ${f1(c.h)} L ${f1(bx)} ${f1(c.h)} L ${f1(bx)} ${f1(k)} Z`;
+      s+=`<g filter="url(#softsh)"><path class="body" d="${d}"/></g>`;
+      s+=`<line class="sym-thin" x1="${f1(bx+2.5)}" y1="${f1(c.h-5.5)}" x2="${f1(bx+bw-2.5)}" y2="${f1(c.h-5.5)}"/>`;
+    } else {
+      s+=`<g filter="url(#softsh)"><rect class="body" x="${f1(bx)}" y="0" width="${f1(bw)}" height="${c.h}" rx="3"/></g>`;
+    }
     s+=`<text class="rep-big" x="${f1(bx+bw/2)}" y="${f1(c.h/2+4.5)}" text-anchor="middle">${esc(clip(c.name,12))}</text>`;
     if(c.o.designation) s+=`<text class="des" x="${f1(bx+bw/2)}" y="${f1(c.h/2+17)}" text-anchor="middle">${esc(clip(c.o.designation,16))}</text>`;
     const rl=c.rows.L||[], rr=c.rows.R||[];
@@ -1204,6 +1253,7 @@ function sceneInner(layout,routing){
   let body=sheetSvg(layout.bbox,state.meta);
   // câbles : aucun nom sur le dessin — toutes les infos au clic
   routing.wires.forEach(w=>body+=wireSvg(w,routing.bridges));
+  (routing.barrettes||[]).forEach(bar=>body+=`<line class="barrette" x1="${f1(bar.x)}" y1="${f1(bar.y1)}" x2="${f1(bar.x)}" y2="${f1(bar.y2)}"/>`);
   routing.dots.forEach(d=>body+=`<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="2.7"/>`);
   layout.comps.forEach(c=>body+=compSvg(c,state.sel===c.name));
   return body;
@@ -1375,6 +1425,20 @@ function fit(){ if(!LAST){state.view={s:1,tx:40,ty:40};applyView();return;} cons
   state.view.tx=(r.width-bb.w*state.view.s)/2 - bb.x*state.view.s; state.view.ty=(r.height-bb.h*state.view.s)/2 - bb.y*state.view.s; applyView(); }
 
 let rafPending=false;
+// anti-collision : au lâcher, si le bloc chevauche un autre, il glisse vers
+// l'emplacement libre le plus proche (recherche en spirale sur grille).
+function resolveCollision(name){ if(!LAST)return;
+  const cs=LAST.layout.comps; const me=cs.find(c=>c.name===name||c.id===name); if(!me)return;
+  const PAD=8;
+  const clash=(x,y)=>cs.some(o=>o!==me && x<o.x+o.w+PAD && o.x<x+me.w+PAD && y<o.y+o.h+PAD && o.y<y+me.h+PAD);
+  if(!clash(me.x,me.y))return;
+  const STEP=20;
+  for(let r=1;r<=60;r++){
+    const cand=[[0,r],[0,-r],[r,0],[-r,0],[r,r],[r,-r],[-r,r],[-r,-r]];
+    for(const [dx,dy] of cand){
+      const nx=me.x+dx*STEP, ny=me.y+dy*STEP;
+      if(!clash(nx,ny)){ OVR.set(name,{x:nx+me.w/2,y:ny+me.h/2}); render(); return; } } }
+}
 function reroute(){ if(rafPending)return; rafPending=true; requestAnimationFrame(()=>{ rafPending=false; render(); }); }
 
 const stage=document.getElementById('stage');
@@ -1409,6 +1473,7 @@ function endPointer(e){ try{stage.releasePointerCapture(e.pointerId);}catch(_){}
   if(mode==='drag'&&!moved){ const c=hitComp(screenToWorld(e.clientX,e.clientY));
     if(c){ if(state.xroots&&state.xroots.size&&!state.xroots.has(c.name)) exploreAdd(c.name);
       else openEditor(c,e.clientX,e.clientY); } }
+  else if(mode==='drag'&&moved&&drag) resolveCollision(drag.name);
   if(mode==='pan'&&!moved){ const wr=hitWire(screenToWorld(e.clientX,e.clientY));
     if(wr){ openCable(wr,e.clientX,e.clientY); } else { state.sel=null; render(); } }
   mode=null; drag=null; pan=null;
