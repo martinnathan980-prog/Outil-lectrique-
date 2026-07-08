@@ -848,14 +848,29 @@ function computeLayoutWith(eq, lk, peripheral){
     // partenaires ; on garde l'ordre qui rend le plus de fils droits. Temps non
     // contraint -> beaucoup de passes + quelques redémarrages aléatoires.
     const MAXIT=nBlk>600?10:(nBlk>120?16:24);
-    let py=best.py, cur=colBlocks, st=0;
+    // DÉCALAGE DES BORNES : les bornes n'ont pas d'ordre fixe -> on réordonne
+    // les broches de chaque bloc pour les mettre face à leurs partenaires
+    // (idée : « décaler les bornes sur les borniers » pour des fils droits).
+    const reorderPins=(py)=>{ nodeIds.forEach(id=>{ if(isLocked(id)||!isStrip.get(id))return;
+      listKeys(id).forEach(lid=>{ const L=listArr(id,lid); if(L.length<2)return;
+        const sc=new Map(L.map(p=>{ const ps=(partners.get(id+SOH+p.key)||[]).filter(q=>q.id!==id);
+          let s=0,c=0; ps.forEach(q=>{ const y=py.get(PKEY(q.id,q.key)); if(y!=null){s+=y;c++;} });
+          return [p.key, c?s/c:(py.get(PKEY(id,p.key))||0)]; }));
+        L.sort((a,b)=>sc.get(a.key)-sc.get(b.key)); }); }); };
+    const snapOrder=()=>new Map(nodeIds.map(id=>{ const ls=listsOf.get(id);
+      return [id,{L:ls.L?ls.L.slice():null,R:ls.R?ls.R.slice():null,S:ls.S?ls.S.slice():null}]; }));
+    const restoreOrder=(snap)=>snap.forEach((o,id)=>{ const ls=listsOf.get(id);
+      if(o.L)ls.L=o.L; if(o.R)ls.R=o.R; if(o.S)ls.S=o.S; });
+    let py=best.py, cur=colBlocks, st=0, bestOrder=snapOrder();
     for(let it=0;it<MAXIT&&st<5;it++){
+      reorderPins(py);                       // décale les bornes des borniers face aux partenaires
       const key=baryKey(py, it%2===1);
       const nb=cur.map(c=>{ const k=new Map(c.map(id=>[id,key(id)]));
         return [...c].sort((a,b)=>k.get(a)-k.get(b)); });
       const r=solveOnce(nb); py=r.py; cur=nb;
-      if(r.acc>best.acc+0.01){ best=r; bestBlocks=nb; st=0; } else st++;
+      if(r.acc>best.acc+0.01){ best=r; bestBlocks=nb; bestOrder=snapOrder(); st=0; } else st++;
     }
+    restoreOrder(bestOrder);
     colBlocks=bestBlocks;
     // dégonflage : un bloc étiré « pour rien » (grand trou interne parce
     // qu'une broche est accrochée à l'extrémité opposée du partenaire) est
