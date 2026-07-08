@@ -765,7 +765,7 @@ function computeLayoutWith(eq, lk, peripheral){
         if(d===0)return;
         if(!par.has(PKEY(ia,A.key))||!par.has(PKEY(ib,B.key)))return;
         const kind=(isStrip.get(ia)?1:0)+(isStrip.get(ib)?1:0);
-        cand.push({a:PKEY(ia,A.key), b:PKEY(ib,B.key), pr:(d>1?10:0)+kind, w3:kind===0?3:1}); });
+        cand.push({a:PKEY(ia,A.key), b:PKEY(ib,B.key), pr:(d>1?10:0)+kind, w3:kind===0?1.06:1}); });
       cand.sort((x,y)=>x.pr-y.pr);
       let acc=0;
       cand.forEach(wc=>{ const ra=find(wc.a), rb=find(wc.b);
@@ -838,14 +838,18 @@ function computeLayoutWith(eq, lk, peripheral){
       if(mean)return ds.reduce((a,b)=>a+b,0)/ds.length;
       ds.sort((a,b)=>a-b); return ds[ds.length>>1]; };
     const nBlk=columns.reduce((n,c)=>n+c.length,0);
-    const MAXIT=nBlk>600?2:(nBlk>120?6:12);
-    let lastPy=best.py, cur=colBlocks, stall=0;
-    for(let it=0;it<MAXIT&&stall<3;it++){
-      const key=baryKey(lastPy, it%2===1);
+    const isLocked=id=>ORDH.get(nodes.get(id).name)!=null;   // exploration : bloc figé
+    // balayage barycentre : chaque bloc se replace au barycentre de ses
+    // partenaires ; on garde l'ordre qui rend le plus de fils droits. Temps non
+    // contraint -> beaucoup de passes + quelques redémarrages aléatoires.
+    const MAXIT=nBlk>600?10:(nBlk>120?16:24);
+    let py=best.py, cur=colBlocks, st=0;
+    for(let it=0;it<MAXIT&&st<5;it++){
+      const key=baryKey(py, it%2===1);
       const nb=cur.map(c=>{ const k=new Map(c.map(id=>[id,key(id)]));
         return [...c].sort((a,b)=>k.get(a)-k.get(b)); });
-      const r=solveOnce(nb); lastPy=r.py; cur=nb;
-      if(r.acc>best.acc+0.01){ best=r; bestBlocks=nb; stall=0; } else stall++;
+      const r=solveOnce(nb); py=r.py; cur=nb;
+      if(r.acc>best.acc+0.01){ best=r; bestBlocks=nb; st=0; } else st++;
     }
     colBlocks=bestBlocks;
     // dégonflage : un bloc étiré « pour rien » (grand trou interne parce
