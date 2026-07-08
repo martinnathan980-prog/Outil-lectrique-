@@ -940,6 +940,40 @@ function computeLayoutWith(eq, lk, peripheral){
         pinY.set(PKEY(id,p.key),y); lo=Math.min(lo,y); hi=Math.max(hi,y); }));
       if(!isFinite(lo)){ lo=topY; hi=topY; }
       blockTop.set(id,lo-mTop.get(id)); blockBot.set(id,hi+mBot.get(id)); });
+    // alignement des flancs : un équipement dont un flanc ne dessert que des
+    // FEUILLES (blocs qui ne se connectent qu'à lui) fait glisser ces feuilles
+    // pour aligner ses deux flancs -> le bloc se compacte, fils toujours droits.
+    { const neighAll=id=>{ const set=new Set();
+        listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>{
+          (partners.get(id+SOH+p.key)||[]).forEach(q=>{ if(q.id!==id && !isTagId(q.id))set.add(q.id); }); }));
+        return set; };
+      const shiftNode=(id,dy)=>{ listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>pinY.set(id+SOH+p.key,pinYof(id,p.key)+dy)));
+        blockTop.set(id,blockTop.get(id)+dy); blockBot.set(id,blockBot.get(id)+dy); };
+      const recompute=B=>{ let lo=Infinity,hi=-Infinity;
+        listKeys(B).forEach(lid=>listArr(B,lid).forEach(p=>{ const y=pinYof(B,p.key); lo=Math.min(lo,y); hi=Math.max(hi,y); }));
+        if(isFinite(lo)){ blockTop.set(B,lo-mTop.get(B)); blockBot.set(B,hi+mBot.get(B)); } };
+      const overlapAfter=(idsShift,dy)=>{ const others=columns.flat().filter(o=>!idsShift.includes(o)&&!isTagId(o));
+        return idsShift.some(id=>{ const x=nodeX.get(id),w=widthOf(id),t=blockTop.get(id)+dy,b=blockBot.get(id)+dy;
+          return others.some(o=>{ const ox=nodeX.get(o),ow=widthOf(o); return x<ox+ow+6&&ox<x+w+6&&t<blockBot.get(o)+10&&blockTop.get(o)<b+10; }); }); };
+      columns.flat().forEach(B=>{ if(isStrip.get(B)||isTagId(B))return;
+        const ls=listsOf.get(B); if(!ls.L||!ls.R||!ls.L.length||!ls.R.length)return;
+        const cen=arr=>arr.reduce((sm,p)=>sm+pinYof(B,p.key),0)/arr.length;
+        let d=cen(ls.L)-cen(ls.R); if(Math.abs(d)<12)return;
+        const partsOf=flank=>{ const set=new Set(); ls[flank].forEach(p=>(partners.get(B+SOH+p.key)||[]).forEach(q=>{ if(q.id!==B&&!isTagId(q.id))set.add(q.id); })); return [...set]; };
+        const leavesOf=flank=>{ const ps=partsOf(flank); if(!ps.length)return null;
+          for(const q of ps){ const nb=neighAll(q); if(nb.size!==1||!nb.has(B))return null; } return ps; };
+        // R haut / L bas (d>0) : descendre le flanc R si ses partenaires sont feuilles
+        let flank=null, dy=0;
+        const rl=leavesOf('R'), ll=leavesOf('L');
+        if(rl){ flank='R'; dy=d; }        // aligner R sur L
+        else if(ll){ flank='L'; dy=-d; }  // aligner L sur R
+        if(!flank||Math.abs(dy)<12)return;
+        const leaves=(flank==='R'?rl:ll);
+        if(overlapAfter(leaves,dy))return;
+        ls[flank].forEach(p=>pinY.set(B+SOH+p.key,pinYof(B,p.key)+dy));
+        leaves.forEach(q=>shiftNode(q,dy));
+        recompute(B); }); }
+
     // pastilles de potentiel : pile en face de leur borne partenaire
     ids.forEach(id=>{ if(!isTagId(id))return;
       const pp=listArr(id,'S')[0]; if(!pp)return;
