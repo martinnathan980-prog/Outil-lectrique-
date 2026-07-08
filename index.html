@@ -1039,7 +1039,10 @@ function countCrossings(wires){
 let EXPLORING=false;  // en exploration : goulottes à largeur fixe (colonnes stables)
 let SEED_HINT=null;   // repère qui amorce le BFS (exploration), sans figer le reste
 function computeLayout(eq, lk){
-  // deux stratégies de graine essayées ; on garde celle qui croise le moins en vrai
+  // en exploration : graine ANCRÉE sur le 1er bloc exploré -> les blocs déjà
+  // affichés gardent leur distance à l'ancre, donc leur colonne (même zone).
+  if(SEED_HINT){ const la=computeLayoutWith(eq,lk,false); la._routing=routeAll(la); return la; }
+  // sinon : deux stratégies de graine, on garde celle qui croise le moins
   const la=computeLayoutWith(eq,lk,false), lb=computeLayoutWith(eq,lk,true);
   const ra=routeAll(la), rb=routeAll(lb);
   if(countCrossings(rb.wires)<countCrossings(ra.wires)){ lb._routing=rb; return lb; }
@@ -1371,6 +1374,7 @@ function render(){
   if(typeof syncPlans==='function')syncPlans();
   const exploring=!!(state.xroots&&state.xroots.size);
   EXPLORING=exploring;
+  SEED_HINT = exploring ? state.xroots.values().next().value : null;
   let lkF=linksForPlan(state.lk,state.plan);
   if(exploring) lkF=lkF.filter(l=>state.xroots.has(l.from)||state.xroots.has(l.to));
   if(!exploring && lkF.length>800 && !state.forceFull){
