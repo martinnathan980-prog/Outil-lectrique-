@@ -1467,9 +1467,16 @@ function compSvg(c,sel){
       s+=`<g filter="url(#softsh)"><rect class="body" x="${f1(bx)}" y="0" width="${f1(bw)}" height="${c.h}" rx="3"/></g>`;
       s+=`<text class="rep-big" x="${f1(bx+bw/2)}" y="${f1(c.h/2+4.5)}" text-anchor="middle">${esc(clip(c.name,12))}</text>`;
       if(c.o.designation) s+=`<text class="des" x="${f1(bx+bw/2)}" y="${f1(c.h/2+17)}" text-anchor="middle">${esc(clip(c.o.designation,16))}</text>`;
+      // liseré de flanc : coupé en segments par groupe de bornes (ne traverse
+      // pas les grands vides -> les blocs étirés restent lisibles)
       const outline=(x0,rows)=>{ if(!rows.length)return '';
-        const t=rows[0].y-c.y-PRH/2-2, b=rows[rows.length-1].y-c.y+PRH/2+2;
-        return `<rect class="bstrip" x="${f1(x0)}" y="${f1(t)}" width="${STRIPW}" height="${f1(b-t)}" rx="2.5"/>`; };
+        let out=''; let g0=0;
+        for(let i=1;i<=rows.length;i++){
+          if(i===rows.length || rows[i].y-rows[i-1].y > 2.2*PRH){
+            const t=rows[g0].y-c.y-PRH/2-2, b=rows[i-1].y-c.y+PRH/2+2;
+            out+=`<rect class="bstrip" x="${f1(x0)}" y="${f1(t)}" width="${STRIPW}" height="${f1(b-t)}" rx="2.5"/>`;
+            g0=i; } }
+        return out; };
       if(rl.length){ s+=outline(0,rl)+pinCells(1.5,STRIPW-3,rl,c.y); }
       if(rr.length){ s+=outline(c.w-STRIPW,rr)+pinCells(c.w-STRIPW+1.5,STRIPW-3,rr,c.y); }
     }
