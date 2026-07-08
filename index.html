@@ -997,22 +997,28 @@ function computeLayoutWith(eq, lk, peripheral){
     // quelques fils concernés font alors un coude court, plutôt que d'imposer
     // un bloc géant et un fil droit illisible de plusieurs milliers de pixels.
     // Un vrai concentrateur (beaucoup de broches réparties) garde sa hauteur.
-    { const MAXSPACE=90, FLOOR=1400;   // budget/broche (px) ; plancher absolu
+    // On vise le VRAI défaut : un gros TROU vide à l'intérieur d'un bloc (deux
+    // paquets de broches éloignés, milieu vide). On referme chaque trou qui
+    // dépasse GAPCAP en glissant le côté qui a le MOINS de broches (le moins de
+    // fils cassés) ; le fil concerné fait un coude court. Un bloc DENSE (broches
+    // rapprochées, ex. automate) ou COMPACT (petit) n'a aucun gros trou -> il
+    // n'est jamais touché : les 100 % fils droits sont préservés.
+    { const MAXSPACE=130;   // budget de hauteur par broche (px)
       ids.forEach(id=>{ if(isStrip.get(id)||isTagId(id))return;
         const keys=[]; listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>keys.push(id+SOH+p.key)));
-        if(keys.length<2)return;
+        if(keys.length<3)return;
         const allowed=(keys.length-1)*MAXSPACE;
-        // on ne touche QUE les blocs manifestement démesurés : au-delà de leur
-        // budget de broches ET au-delà d'un plancher absolu (les blocs modérés
-        // gardent exactement leur disposition -> aucune régression).
-        { const ys0=keys.map(k=>pinY.get(k)); const sp0=Math.max(...ys0)-Math.min(...ys0);
-          if(sp0<=allowed||sp0<=FLOOR)return; }
+        // garde-fou : un bloc DENSE ou COMPACT (broches qui remplissent sa
+        // hauteur, ex. automate 20 voies, ou petit relais) reste dans son
+        // budget -> on n'y touche pas, ses fils droits sont sacrés. Seuls les
+        // blocs à gros trou vide (peu de broches, grande hauteur) passent.
+        { const ys0=keys.map(k=>pinY.get(k)); if(Math.max(...ys0)-Math.min(...ys0)<=allowed)return; }
         let guard=0;
-        while(guard++<60){
+        while(guard++<80){
           const arr=keys.map(k=>({k,y:pinY.get(k)})).sort((a,b)=>a.y-b.y);
           const span=arr[arr.length-1].y-arr[0].y; if(span<=allowed)break;
           let bi=-1,bg=PRH; for(let i=1;i<arr.length;i++){ const g=arr[i].y-arr[i-1].y; if(g>bg){bg=g;bi=i;} }
-          if(bi<0)break;
+          if(bi<0)break;                              // plus aucun trou à fermer
           const reduce=Math.min(span-allowed, bg-PRH); if(reduce<=0.5)break;
           const above=arr.slice(0,bi), below=arr.slice(bi);
           const move=above.length<=below.length ? {set:new Set(above.map(a=>a.k)),d:reduce}
