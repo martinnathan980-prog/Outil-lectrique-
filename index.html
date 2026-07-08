@@ -502,7 +502,7 @@ function computeLayoutWith(eq, lk, peripheral){
     const sA=endSide(A.name,A.key,B.name,B.key), sB=endSide(B.name,B.key,A.name,A.key);
     const cA=chOfEnd(nid(A.name,A.key),sA), cB=chOfEnd(nid(B.name,B.key),sB);
     if(cA===cB)chCount[cA]++; else { chCount[cA]++; chCount[cB]++; } });
-  const chW=chCount.map(c=>Math.max(54, 28+c*9));
+  const chW=chCount.map(c=>EXPLORING?96:Math.max(54, 28+c*9));
 
   const M=70, topY=M+120;
   const colX=[]; let cx=M+chW[0];
@@ -828,7 +828,10 @@ function computeLayoutWith(eq, lk, peripheral){
     // balayage type Sugiyama : chaque bloc se replace au barycentre de ses
     // partenaires (médiane et moyenne alternées) ; on garde l'ordre qui rend
     // le plus de fils droits (maximise les fusions acceptées).
-    const baryKey=(py,mean)=>id=>{ const ds=[];
+    const baryKey=(py,mean)=>id=>{
+      const lock=ORDH.get(nodes.get(id).name);
+      if(lock!=null) return lock;
+      const ds=[];
       listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>{
         (partners.get(id+SOH+p.key)||[]).forEach(q=>{ if(q.id!==id&&py.has(PKEY(q.id,q.key)))ds.push(py.get(PKEY(q.id,q.key))); }); }));
       if(!ds.length)return blockTop.get(id);
@@ -977,7 +980,7 @@ function computeLayoutWith(eq, lk, peripheral){
       byKey.set(p.key,{y:py}); return {label:p.label,y:py}; }); });
     const vc=!ls.S&&isVCName(N.name);
     const tag=!!ls.S&&ls.S.length===1&&isRail(N.name);
-    const c={name:N.name,id,o:{designation:e.designation||'',type:e.type||''},x,y:top,w,h:bot-top,
+    const c={name:N.name,id,o:{designation:e.designation||'',type:e.type||''},x,y:top,w,h:bot-top,col:colOf.get(id),
       kind:tag?'tag':(ls.S?'strip':'equip'),vc,
       lw:(ls.S||vc)?0:(ls.L.length?STRIPW:0),rw:(ls.S||vc)?0:(ls.R.length?STRIPW:0),
       rows,byKey,rail:isRail(N.name)};
@@ -1033,6 +1036,7 @@ function countCrossings(wires){
   }
   return c;
 }
+let EXPLORING=false;  // en exploration : goulottes à largeur fixe (colonnes stables)
 let SEED_HINT=null;   // repère qui amorce le BFS (exploration), sans figer le reste
 function computeLayout(eq, lk){
   // deux stratégies de graine essayées ; on garde celle qui croise le moins en vrai
@@ -1366,6 +1370,7 @@ function render(){
   notice.style.display='none';
   if(typeof syncPlans==='function')syncPlans();
   const exploring=!!(state.xroots&&state.xroots.size);
+  EXPLORING=exploring;
   let lkF=linksForPlan(state.lk,state.plan);
   if(exploring) lkF=lkF.filter(l=>state.xroots.has(l.from)||state.xroots.has(l.to));
   if(!exploring && lkF.length>800 && !state.forceFull){
@@ -1659,19 +1664,22 @@ function allDeviceNames(){ const s=new Set(); state.lk.forEach(l=>{ if(l.from)s.
 function exploreStart(name){ name=String(name||'').trim(); if(!name)return;
   const ns=allDeviceNames();
   if(!ns.has(name)){ const st=document.getElementById('xp-stat'); if(st)st.textContent='Repère introuvable : '+name; return; }
-  xpUnpin(); state.xroots=new Set([name]); state.sel=name; render(); fit(); }
+  xpUnpin(); ORDH.clear(); state.xroots=new Set([name]); state.sel=name; render(); fit(); }
 const XPPIN=new Set();   // blocs épinglés automatiquement par l'exploration
 function xpPinShown(){ if(!LAST)return;
   LAST.layout.comps.forEach(c=>{ if(c.kind!=='strip'&&!OVR.has(c.name)){
     OVR.set(c.name,{x:c.x+c.w/2,y:c.y,top:true}); XPPIN.add(c.name); } }); }
-function xpUnpin(){ XPPIN.forEach(n=>{ OVR.delete(n); ORDH.delete(n); }); XPPIN.clear(); }
+function xpUnpin(){ XPPIN.forEach(n=>{ OVR.delete(n); ORDH.delete(n); }); XPPIN.clear(); ORDH.clear(); }
 function exploreAdd(name){ if(!state.xroots)state.xroots=new Set();
-  // recalcul COMPLET (le plus propre : fils droits, placement optimal) ; on
-  // ancre seulement la VUE sur le bloc cliqué pour ne pas perdre le fil.
+  // les blocs DEJA affiches gardent leur ordre vertical (verrou) : ils ne
+  // bougent pas ; seul le nouveau bloc s'insere, aligne sur ses voisins. Le
+  // solveur garde les fils le plus droits possible. On ancre aussi la vue.
   let anchor=null;
   if(LAST){ const c0=LAST.layout.comps.find(c=>c.name===name);
     if(c0) anchor={sx:state.view.tx+(c0.x+c0.w/2)*state.view.s,
-                   sy:state.view.ty+(c0.y+c0.h/2)*state.view.s}; }
+                   sy:state.view.ty+(c0.y+c0.h/2)*state.view.s};
+    LAST.layout.comps.forEach(c=>{ if(c.kind!=='strip'&&c.kind!=='tag')
+      ORDH.set(c.name,c.y); }); }
   state.xroots.add(name); state.sel=name; render();
   const c1=LAST&&LAST.layout.comps.find(c=>c.name===name);
   if(anchor&&c1){ state.view.tx=anchor.sx-(c1.x+c1.w/2)*state.view.s;
