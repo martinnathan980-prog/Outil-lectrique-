@@ -430,6 +430,26 @@ function computeLayoutWith(eq, lk, peripheral){
     adj.get(ib).set(ia,(adj.get(ib).get(ia)||0)+1); });
   const degree=n=>{ let s=0; for(const w of adj.get(n).values())s+=w; return s; };
 
+  // --- communautés (regroupement) : propagation d'étiquettes. Les nœuds qui
+  //     dialoguent surtout entre eux reçoivent la même étiquette -> placés
+  //     ensemble en bande. Activé seulement en mode regroupement.
+  const commBand=new Map();
+  if(typeof USE_CLUSTER!=='undefined' && USE_CLUSTER){
+    const comm=new Map(nodeIds.map(n=>[n,n]));
+    for(let pass=0;pass<10;pass++){ let changed=false;
+      for(const n of nodeIds){ const cnt=new Map();
+        for(const [m,w] of adj.get(n)){ const c=comm.get(m); cnt.set(c,(cnt.get(c)||0)+w); }
+        if(!cnt.size)continue; let best=comm.get(n),bw=-1;
+        for(const [c,w] of cnt){ if(w>bw||(w===bw&&String(c)<String(best))){ bw=w; best=c; } }
+        if(best!==comm.get(n)){ comm.set(n,best); changed=true; } }
+      if(!changed)break; }
+    // ordre des bandes : par degré total décroissant de la communauté
+    const cw=new Map(); nodeIds.forEach(n=>{ const c=comm.get(n); cw.set(c,(cw.get(c)||0)+degree(n)); });
+    const ord=[...cw.keys()].sort((a,b)=>cw.get(b)-cw.get(a));
+    const rank=new Map(ord.map((c,i)=>[c,i]));
+    nodeIds.forEach(n=>commBand.set(n,rank.get(comm.get(n))||0));
+  }
+
   // --- niveaux BFS (graine selon stratégie) + raffinement local
   const bfsFrom=(s,seen)=>{ const d=new Map([[s,0]]); const q=[s]; let far=s;
     while(q.length){ const c=q.shift();
@@ -840,9 +860,13 @@ function computeLayoutWith(eq, lk, peripheral){
       const ds=[];
       listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>{
         (partners.get(id+SOH+p.key)||[]).forEach(q=>{ if(q.id!==id&&py.has(PKEY(q.id,q.key)))ds.push(py.get(PKEY(q.id,q.key))); }); }));
-      if(!ds.length)return blockTop.get(id);
-      if(mean)return ds.reduce((a,b)=>a+b,0)/ds.length;
-      ds.sort((a,b)=>a-b); return ds[ds.length>>1]; };
+      let bar; if(!ds.length)bar=blockTop.get(id);
+      else if(mean)bar=ds.reduce((a,b)=>a+b,0)/ds.length;
+      else { ds.sort((a,b)=>a-b); bar=ds[ds.length>>1]; }
+      // regroupement : la bande de communauté domine (nœuds d'un même groupe
+      // restent ensemble), le barycentre ordonne à l'intérieur de la bande.
+      const b=commBand.get(id);
+      return b!=null ? b*1e7 + bar : bar; };
     const nBlk=columns.reduce((n,c)=>n+c.length,0);
     const isLocked=id=>ORDH.get(nodes.get(id).name)!=null;   // exploration : bloc figé
     // balayage barycentre : chaque bloc se replace au barycentre de ses
@@ -1064,6 +1088,7 @@ function countCrossings(wires){
 let EXPLORING=false;  // en exploration : goulottes à largeur fixe (colonnes stables)
 let CHW_FIX=null;     // largeurs de goulotte imposées (2e passe de resserrage)
 let SEED_HINT=null;   // repère qui amorce le BFS (exploration), sans figer le reste
+let USE_CLUSTER=false; // regroupement par communautés (maillages)
 function countStraight(wires){ return wires.filter(w=>w.pts.length===2).length; }
 // mesure la largeur de goulotte réellement occupée par les pistes (segments
 // verticaux) de chaque colonne, pour resserrer les colonnes à la 2e passe.
@@ -1085,13 +1110,20 @@ function computeLayout(eq, lk){
   // fils droits (départage : le moins de croisements).
   const nB=eq.length;
   const opts=[false,true]; if(nB<=400){ opts.push(1,2,3); } if(nB<=120){ opts.push(4,5); }
+  const clusterOpts=['C0','C1'];   // regroupement par communautés (2 graines)
   // score : priorité forte aux fils droits, croisements en départage (1 fil
   // droit vaut ~40 croisements -> on ne sacrifie jamais un fil droit pour du
   // propre, mais à droiture ~égale on prend le moins de croisements).
-  let best=null,bScore=-1e18,bOpt=false;
-  for(const o of opts){ const L=computeLayoutWith(eq,lk,o); const R=routeAll(L);
-    const score=countStraight(R.wires) - countCrossings(R.wires)/120;
-    if(score>bScore){ best=L; best._routing=R; bScore=score; bOpt=o; } }
+  let best=null,bScore=-1e18,bOpt=false,bClus=false;
+  const tryOpt=(o)=>{ const clus=typeof o==='string'&&o[0]==='C';
+    USE_CLUSTER=clus; const seed=clus?(o==='C1'):(o);
+    const L=computeLayoutWith(eq,lk,seed); const R=routeAll(L); USE_CLUSTER=false;
+    // regroupement : on valorise fortement le PEU de croisements (lisibilité
+    // des maillages), tout en gardant les fils droits en tête.
+    const score=countStraight(R.wires) - countCrossings(R.wires)/(clus?45:120);
+    if(score>bScore){ best=L; best._routing=R; bScore=score; bOpt=seed; bClus=clus; } };
+  opts.forEach(tryOpt);
+  clusterOpts.forEach(tryOpt);
   // 2e passe : resserrer les goulottes à la largeur réellement occupée par les
   // pistes -> colonnes plus proches, fils plus courts, schéma plus lisible.
   const contentW=L=>{ let mx=0; L.comps.forEach(c=>mx=Math.max(mx,c.x+c.w)); return mx; };
@@ -1100,7 +1132,7 @@ function computeLayout(eq, lk){
       const x0=Math.min(a.x,b.x),x1=Math.max(a.x,b.x),y0=Math.min(a.y,b.y),y1=Math.max(a.y,b.y);
       for(const c of cs){ if(x1>c.x+2&&x0<c.x+c.w-2&&y1>c.y+2&&y0<c.y+c.h-2){n++;break;} } } }); return n; };
   try{ const fix=tightenChannels(best);
-    if(fix){ CHW_FIX=fix; const L2=computeLayoutWith(eq,lk,bOpt); const R2=routeAll(L2); CHW_FIX=null;
+    if(fix){ CHW_FIX=fix; USE_CLUSTER=bClus; const L2=computeLayoutWith(eq,lk,bOpt); const R2=routeAll(L2); CHW_FIX=null; USE_CLUSTER=false;
       L2._routing=R2;
       if(countStraight(R2.wires)>=countStraight(best._routing.wires)-1 && contentW(L2)<contentW(best)*0.97
          && inBloc(L2)<=inBloc(best)){ best=L2; } }
