@@ -1573,12 +1573,10 @@ function endPointer(e){ try{stage.releasePointerCapture(e.pointerId);}catch(_){}
     if(c){ if(state.xroots&&state.xroots.size&&!state.xroots.has(c.name)) exploreAdd(c.name);
       else openEditor(c,e.clientX,e.clientY); } }
   else if(mode==='drag'&&moved&&drag){
-    // fin de glisser : l'emplacement devient un indice d'ordre, puis TOUT est
-    // recalculé pour rester parfait (fils droits, aucun chevauchement)
-    const o=OVR.get(drag.name);
-    if(o) ORDH.set(drag.name,o.y);
-    OVR.delete(drag.name);
-    render(); }
+    // le bloc reste là où on l'a lâché (placement manuel) et sa position sert
+    // aussi d'indice d'ordre ; tout le reste se recalcule pour rester droit
+    const o=OVR.get(drag.name); if(o) ORDH.set(drag.name,o.y);
+    resolveCollision(drag.name); render(); }
   if(mode==='pan'&&!moved){ const wr=hitWire(screenToWorld(e.clientX,e.clientY));
     if(wr){ openCable(wr,e.clientX,e.clientY); } else { state.sel=null; render(); } }
   mode=null; drag=null; pan=null;
