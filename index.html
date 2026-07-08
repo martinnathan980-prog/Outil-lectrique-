@@ -506,7 +506,8 @@ function computeLayoutWith(eq, lk, peripheral){
     const sA=endSide(A.name,A.key,B.name,B.key), sB=endSide(B.name,B.key,A.name,A.key);
     const cA=chOfEnd(nid(A.name,A.key),sA), cB=chOfEnd(nid(B.name,B.key),sB);
     if(cA===cB)chCount[cA]++; else { chCount[cA]++; chCount[cB]++; } });
-  const chW=chCount.map(c=>EXPLORING?96:Math.max(54, 28+c*9));
+  const chW=(typeof CHW_FIX!=='undefined'&&CHW_FIX)?chCount.map((c,i)=>CHW_FIX[i]!=null?CHW_FIX[i]:(EXPLORING?96:Math.max(54,28+c*9)))
+                                                       :chCount.map(c=>EXPLORING?96:Math.max(54, 28+c*9));
 
   const M=70, topY=M+120;
   const colX=[]; let cx=M+chW[0];
@@ -1061,8 +1062,21 @@ function countCrossings(wires){
   return c;
 }
 let EXPLORING=false;  // en exploration : goulottes à largeur fixe (colonnes stables)
+let CHW_FIX=null;     // largeurs de goulotte imposées (2e passe de resserrage)
 let SEED_HINT=null;   // repère qui amorce le BFS (exploration), sans figer le reste
 function countStraight(wires){ return wires.filter(w=>w.pts.length===2).length; }
+// mesure la largeur de goulotte réellement occupée par les pistes (segments
+// verticaux) de chaque colonne, pour resserrer les colonnes à la 2e passe.
+function tightenChannels(L){ const g=L.geom; if(!g||!g.colX.length)return null;
+  const chL=i=> i===0 ? (g.colX[0]-g.chW[0]) : g.colX[i-1]+g.colW[i-1];
+  const maxOff=new Array(g.nCols+1).fill(0);
+  L._routing.wires.forEach(w=>{ for(let i=0;i<w.pts.length-1;i++){ const a=w.pts[i],b=w.pts[i+1];
+    if(Math.abs(a.x-b.x)>0.5)continue;                 // segment vertical = piste
+    const x=a.x;
+    for(let ch=0;ch<=g.nCols;ch++){ const x0=chL(ch); if(x>=x0-2 && x<=x0+g.chW[ch]+2){
+      maxOff[ch]=Math.max(maxOff[ch], x-x0); break; } } } });
+  return maxOff.map((o,i)=>Math.max(54, Math.min(g.chW[i], o+26)));
+}
 function computeLayout(eq, lk){
   // en exploration : graine ANCRÉE sur le 1er bloc exploré (mêmes repères)
   if(SEED_HINT){ const la=computeLayoutWith(eq,lk,false); la._routing=routeAll(la); return la; }
@@ -1074,10 +1088,23 @@ function computeLayout(eq, lk){
   // score : priorité forte aux fils droits, croisements en départage (1 fil
   // droit vaut ~40 croisements -> on ne sacrifie jamais un fil droit pour du
   // propre, mais à droiture ~égale on prend le moins de croisements).
-  let best=null,bScore=-1e18;
+  let best=null,bScore=-1e18,bOpt=false;
   for(const o of opts){ const L=computeLayoutWith(eq,lk,o); const R=routeAll(L);
     const score=countStraight(R.wires) - countCrossings(R.wires)/120;
-    if(score>bScore){ best=L; best._routing=R; bScore=score; } }
+    if(score>bScore){ best=L; best._routing=R; bScore=score; bOpt=o; } }
+  // 2e passe : resserrer les goulottes à la largeur réellement occupée par les
+  // pistes -> colonnes plus proches, fils plus courts, schéma plus lisible.
+  const contentW=L=>{ let mx=0; L.comps.forEach(c=>mx=Math.max(mx,c.x+c.w)); return mx; };
+  const inBloc=L=>{ let n=0; const cs=L.comps;
+    L._routing.wires.forEach(w=>{ for(let i=0;i<w.pts.length-1;i++){ const a=w.pts[i],b=w.pts[i+1];
+      const x0=Math.min(a.x,b.x),x1=Math.max(a.x,b.x),y0=Math.min(a.y,b.y),y1=Math.max(a.y,b.y);
+      for(const c of cs){ if(x1>c.x+2&&x0<c.x+c.w-2&&y1>c.y+2&&y0<c.y+c.h-2){n++;break;} } } }); return n; };
+  try{ const fix=tightenChannels(best);
+    if(fix){ CHW_FIX=fix; const L2=computeLayoutWith(eq,lk,bOpt); const R2=routeAll(L2); CHW_FIX=null;
+      L2._routing=R2;
+      if(countStraight(R2.wires)>=countStraight(best._routing.wires)-1 && contentW(L2)<contentW(best)*0.97
+         && inBloc(L2)<=inBloc(best)){ best=L2; } }
+  }catch(_){ CHW_FIX=null; }
   return best;
 }
 
