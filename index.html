@@ -838,7 +838,7 @@ function computeLayoutWith(eq, lk, peripheral){
       if(mean)return ds.reduce((a,b)=>a+b,0)/ds.length;
       ds.sort((a,b)=>a-b); return ds[ds.length>>1]; };
     const nBlk=columns.reduce((n,c)=>n+c.length,0);
-    const MAXIT=nBlk>120?6:12;
+    const MAXIT=nBlk>600?2:(nBlk>120?6:12);
     let lastPy=best.py, cur=colBlocks, stall=0;
     for(let it=0;it<MAXIT&&stall<3;it++){
       const key=baryKey(lastPy, it%2===1);
