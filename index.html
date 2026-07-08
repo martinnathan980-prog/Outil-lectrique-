@@ -437,12 +437,16 @@ function computeLayoutWith(eq, lk, peripheral){
         d.set(k,d.get(c)+1); if(d.get(k)>d.get(far))far=k; q.push(k); } }); }
     return {d,far}; };
   const seeds=[...nodeIds].sort((a,b)=>degree(b)-degree(a));
+  // décalage de graine : essayer plusieurs points de départ (variété d'ordonnancements)
+  const seedShift=(typeof peripheral==='number')?peripheral:0;
+  const peri=(peripheral===true);
+  if(seedShift>0&&seeds.length>seedShift){ const head=seeds.splice(0,seedShift); seeds.push(...head); }
   if(typeof SEED_HINT==='string'&&SEED_HINT){
     const hid=nodeIds.find(id=>id===SEED_HINT||nodes.get(id).name===SEED_HINT);
     if(hid){ const i=seeds.indexOf(hid); if(i>0){ seeds.splice(i,1); seeds.unshift(hid); } } }
   const level=new Map();
   for(const s of seeds){ if(level.has(s))continue;
-    let seed=s; if(peripheral){ const {far}=bfsFrom(s,level); seed=far; }
+    let seed=s; if(peri){ const {far}=bfsFrom(s,level); seed=far; }
     const {d}=bfsFrom(seed,level);
     for(const [k,v] of d) level.set(k,v); }
   const lvlCost=(n,ln)=>{ let sc=0; for(const [k,w] of adj.get(n)){ const dd=Math.abs(ln-level.get(k));
@@ -765,7 +769,8 @@ function computeLayoutWith(eq, lk, peripheral){
         if(d===0)return;
         if(!par.has(PKEY(ia,A.key))||!par.has(PKEY(ib,B.key)))return;
         const kind=(isStrip.get(ia)?1:0)+(isStrip.get(ib)?1:0);
-        cand.push({a:PKEY(ia,A.key), b:PKEY(ib,B.key), pr:(d>1?10:0)+kind, w3:kind===0?1.06:1}); });
+        const wd=(d===1?1:0.25)*(kind===0?1.06:1);
+        cand.push({a:PKEY(ia,A.key), b:PKEY(ib,B.key), pr:(d>1?10:0)+kind, w3:wd}); });
       cand.sort((x,y)=>x.pr-y.pr);
       let acc=0;
       cand.forEach(wc=>{ const ra=find(wc.a), rb=find(wc.b);
@@ -1042,15 +1047,23 @@ function countCrossings(wires){
 }
 let EXPLORING=false;  // en exploration : goulottes à largeur fixe (colonnes stables)
 let SEED_HINT=null;   // repère qui amorce le BFS (exploration), sans figer le reste
+function countStraight(wires){ return wires.filter(w=>w.pts.length===2).length; }
 function computeLayout(eq, lk){
-  // en exploration : graine ANCRÉE sur le 1er bloc exploré -> les blocs déjà
-  // affichés gardent leur distance à l'ancre, donc leur colonne (même zone).
+  // en exploration : graine ANCRÉE sur le 1er bloc exploré (mêmes repères)
   if(SEED_HINT){ const la=computeLayoutWith(eq,lk,false); la._routing=routeAll(la); return la; }
-  // sinon : deux stratégies de graine, on garde celle qui croise le moins
-  const la=computeLayoutWith(eq,lk,false), lb=computeLayoutWith(eq,lk,true);
-  const ra=routeAll(la), rb=routeAll(lb);
-  if(countCrossings(rb.wires)<countCrossings(ra.wires)){ lb._routing=rb; return lb; }
-  la._routing=ra; return la;
+  // sinon (temps non contraint, priorité fils droits) : on essaie plusieurs
+  // graines, on rend chacune POUR DE VRAI, et on garde celle qui a le PLUS de
+  // fils droits (départage : le moins de croisements).
+  const nB=eq.length;
+  const opts=[false,true]; if(nB<=400){ opts.push(1,2,3); } if(nB<=120){ opts.push(4,5); }
+  // score : priorité forte aux fils droits, croisements en départage (1 fil
+  // droit vaut ~40 croisements -> on ne sacrifie jamais un fil droit pour du
+  // propre, mais à droiture ~égale on prend le moins de croisements).
+  let best=null,bScore=-1e18;
+  for(const o of opts){ const L=computeLayoutWith(eq,lk,o); const R=routeAll(L);
+    const score=countStraight(R.wires) - countCrossings(R.wires)/120;
+    if(score>bScore){ best=L; best._routing=R; bScore=score; } }
+  return best;
 }
 
 /* ---------- 6. Routage : goulottes à pistes ordonnées par contraintes ---------- */
