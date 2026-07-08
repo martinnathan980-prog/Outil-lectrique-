@@ -460,8 +460,8 @@ function computeLayoutWith(eq, lk, peripheral){
   const usedL=[...new Set(nodeIds.map(n=>level.get(n)))].sort((a,b)=>a-b);
   const remapL=new Map(usedL.map((l,i)=>[l,i]));
   nodeIds.forEach(n=>level.set(n,remapL.get(level.get(n))));
-  const maxLvl=nodeIds.length?Math.max(...nodeIds.map(n=>level.get(n))):0;
-  const columns=Array.from({length:maxLvl+1},()=>[]);
+  const maxLvlF=nodeIds.length?Math.max(...nodeIds.map(n=>level.get(n))):0;
+  const columns=Array.from({length:maxLvlF+1},()=>[]);
   nodeIds.forEach(n=>columns[level.get(n)].push(n));
   const colOf=new Map(); columns.forEach((c,i)=>c.forEach(n=>colOf.set(n,i)));
 
@@ -1087,16 +1087,32 @@ function routeAll(layout){
       (groups.get(k)||groups.set(k,[]).get(k)).push({li,tag,ep,other}); }); });
     groups.forEach(arr=>{ if(arr.length<2)return;
       const py=arr[0].ep.y, px=arr[0].ep.x;
-      // bornes de délordement : rester dans le bloc propriétaire
       const own=layout.comps.find(c=>py>=c.y-1&&py<=c.y+c.h+1&&(Math.abs(px-c.x)<2||Math.abs(px-(c.x+c.w))<2));
-      const lo=own?Math.max(py-3*PRH,own.y+4):py-3*PRH;
-      const hi=own?Math.min(py+3*PRH,own.y+own.h-4):py+3*PRH;
+      // pin de DISTRIBUTION (>=3 fils du même côté) : jeu de barres qui s'étend
+      // au-delà du bloc pour que chaque fil soit une descente parfaitement droite.
+      const bus = arr.length>=4;
+      const span = bus ? 22*arr.length : 3*PRH;
+      let lo, hi;
+      if(bus && own){
+        // le jeu de barres s'étend dans la goulotte mais s'arrête avant tout
+        // autre bloc situé dans la même bande verticale (jamais dans un bloc).
+        let up=own.y-span, dn=own.y+own.h+span;
+        layout.comps.forEach(c=>{ if(c===own)return;
+          if(px>c.x-6 && px<c.x+c.w+6){
+            if(c.y+c.h<=own.y && c.y+c.h+6>up) up=c.y+c.h+6;
+            if(c.y>=own.y+own.h && c.y-6<dn) dn=c.y-6; } });
+        lo=up; hi=dn;
+      } else {
+        lo = own ? Math.max(py-span, own.y+4) : py-span;
+        hi = own ? Math.min(py+span, own.y+own.h-4) : py+span;
+      }
       arr.sort((u,v)=>u.other.y-v.other.y);
       const ys=arr.map(u=>Math.max(lo,Math.min(hi,u.other.y)));
-      for(let i=1;i<ys.length;i++) if(ys[i]<ys[i-1]+5) ys[i]=ys[i-1]+5;
-      for(let i=ys.length-2;i>=0;i--) if(ys[i]>ys[i+1]-5) ys[i]=ys[i+1]-5;
+      const gap = bus ? 9 : 5;
+      for(let i=1;i<ys.length;i++) if(ys[i]<ys[i-1]+gap) ys[i]=ys[i-1]+gap;
+      for(let i=ys.length-2;i>=0;i--) if(ys[i]>ys[i+1]-gap) ys[i]=ys[i+1]-gap;
       arr.forEach((u,i)=>epAdj.set(u.li+':'+u.tag,{...u.ep,y:ys[i]}));
-      barrettes.push({x:px,y1:Math.min(py,ys[0])-4,y2:Math.max(py,ys[ys.length-1])+4}); });
+      barrettes.push({x:px,y1:Math.min(py,ys[0])-4,y2:Math.max(py,ys[ys.length-1])+4,bus}); });
   }
   const EA=li=>epAdj.get(li+':A')||layout.links[li].epA;
   const EB=li=>epAdj.get(li+':B')||layout.links[li].epB;
@@ -1239,6 +1255,7 @@ function defs(){
      .bhead{fill:#e9eef3;stroke:none}
      .bheadline{stroke:#26343f;stroke-width:1}
      .barrette{stroke:#26323f;stroke-width:1.8;stroke-dasharray:3 2.5;stroke-linecap:butt}
+     .busbar{stroke:#26323f;stroke-width:3;stroke-linecap:round}
      .rootbox{fill:none;stroke:#1668c2;stroke-width:1.5;stroke-dasharray:5 3}
      .plusb circle{fill:#1668c2;opacity:.9}
      .plusb text{fill:#ffffff;font:700 10px ui-monospace,monospace}
@@ -1373,7 +1390,7 @@ function sceneInner(layout,routing){
   let body=sheetSvg(layout.bbox,state.meta);
   // câbles : aucun nom sur le dessin — toutes les infos au clic
   routing.wires.forEach(w=>body+=wireSvg(w,routing.bridges));
-  (routing.barrettes||[]).forEach(bar=>body+=`<line class="barrette" x1="${f1(bar.x)}" y1="${f1(bar.y1)}" x2="${f1(bar.x)}" y2="${f1(bar.y2)}"/>`);
+  (routing.barrettes||[]).forEach(bar=>body+=`<line class="${bar.bus?'busbar':'barrette'}" x1="${f1(bar.x)}" y1="${f1(bar.y1)}" x2="${f1(bar.x)}" y2="${f1(bar.y2)}"/>`);
   routing.dots.forEach(d=>body+=`<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="2.7"/>`);
   layout.comps.forEach(c=>body+=compSvg(c,state.sel===c.name));
   return body;
