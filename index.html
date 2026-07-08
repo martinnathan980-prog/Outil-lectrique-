@@ -435,7 +435,22 @@ function computeLayoutWith(eq, lk, peripheral){
   //     ensemble en bande. Activé seulement en mode regroupement.
   const commBand=new Map();
   if(typeof USE_CLUSTER!=='undefined' && USE_CLUSTER){
-    const comm=new Map(nodeIds.map(n=>[n,n]));
+    // amorçage optionnel sur la Route déclarée : chaque nœud vote pour la route
+    // dominante de ses liaisons -> les équipements d'un même cheminement/zone
+    // démarrent dans la même communauté (les rocades inter-zones ne les fusionnent
+    // plus). La propagation affine ensuite. N'est retenu que si ça rend mieux.
+    const nodeRoute=new Map();
+    if(typeof ROUTE_SEED!=='undefined' && ROUTE_SEED){
+      const votes=new Map();
+      lk.forEach((l,li)=>{ const r=(l.route||'').trim(); if(!r)return;
+        const A=endPin.get(li+':A'),B=endPin.get(li+':B');
+        [nid(A.name,A.key),nid(B.name,B.key)].forEach(x=>{
+          let mm=votes.get(x); if(!mm){ mm=new Map(); votes.set(x,mm); }
+          mm.set(r,(mm.get(r)||0)+1); }); });
+      for(const [n,mm] of votes){ let br=null,bc=-1;
+        for(const [r,c] of mm){ if(c>bc){ bc=c; br=r; } } if(br)nodeRoute.set(n,'R#'+br); }
+    }
+    const comm=new Map(nodeIds.map(n=>[n, nodeRoute.get(n)||n]));
     for(let pass=0;pass<10;pass++){ let changed=false;
       for(const n of nodeIds){ const cnt=new Map();
         for(const [m,w] of adj.get(n)){ const c=comm.get(m); cnt.set(c,(cnt.get(c)||0)+w); }
@@ -1123,6 +1138,7 @@ let EXPLORING=false;  // en exploration : goulottes à largeur fixe (colonnes st
 let CHW_FIX=null;     // largeurs de goulotte imposées (2e passe de resserrage)
 let SEED_HINT=null;   // repère qui amorce le BFS (exploration), sans figer le reste
 let USE_CLUSTER=false; // regroupement par communautés (maillages)
+let ROUTE_SEED=false;  // amorcer les communautés sur la colonne Route/cheminement
 function countStraight(wires){ return wires.filter(w=>w.pts.length===2).length; }
 // mesure la largeur de goulotte réellement occupée par les pistes (segments
 // verticaux) de chaque colonne, pour resserrer les colonnes à la 2e passe.
@@ -1144,18 +1160,23 @@ function computeLayout(eq, lk){
   // fils droits (départage : le moins de croisements).
   const nB=eq.length;
   const opts=[false,true]; if(nB<=400){ opts.push(1,2,3); } if(nB<=120){ opts.push(4,5); }
-  const clusterOpts=['C0','C1'];   // regroupement par communautés (2 graines)
+  // regroupement par communautés : 2 graines topologiques (C0,C1) + 2 graines
+  // amorcées sur la Route déclarée (CR0,CR1) si des routes sont présentes.
+  const hasRoute=lk.some(l=>l.route&&String(l.route).trim());
+  const clusterOpts=hasRoute?['C0','C1','CR0','CR1']:['C0','C1'];
   // score : priorité forte aux fils droits, croisements en départage (1 fil
   // droit vaut ~40 croisements -> on ne sacrifie jamais un fil droit pour du
   // propre, mais à droiture ~égale on prend le moins de croisements).
-  let best=null,bScore=-1e18,bOpt=false,bClus=false;
+  let best=null,bScore=-1e18,bOpt=false,bClus=false,bRoute=false;
   const tryOpt=(o)=>{ const clus=typeof o==='string'&&o[0]==='C';
-    USE_CLUSTER=clus; const seed=clus?(o==='C1'):(o);
-    const L=computeLayoutWith(eq,lk,seed); const R=routeAll(L); USE_CLUSTER=false;
+    const rSeed=typeof o==='string'&&o.slice(0,2)==='CR';
+    USE_CLUSTER=clus; ROUTE_SEED=rSeed;
+    const seed=clus?(o==='C1'||o==='CR1'):(o);
+    const L=computeLayoutWith(eq,lk,seed); const R=routeAll(L); USE_CLUSTER=false; ROUTE_SEED=false;
     // regroupement : on valorise fortement le PEU de croisements (lisibilité
     // des maillages), tout en gardant les fils droits en tête.
     const score=countStraight(R.wires) - countCrossings(R.wires)/(clus?45:120);
-    if(score>bScore){ best=L; best._routing=R; bScore=score; bOpt=seed; bClus=clus; } };
+    if(score>bScore){ best=L; best._routing=R; bScore=score; bOpt=seed; bClus=clus; bRoute=rSeed; } };
   opts.forEach(tryOpt);
   clusterOpts.forEach(tryOpt);
   // 2e passe : resserrer les goulottes à la largeur réellement occupée par les
@@ -1166,7 +1187,7 @@ function computeLayout(eq, lk){
       const x0=Math.min(a.x,b.x),x1=Math.max(a.x,b.x),y0=Math.min(a.y,b.y),y1=Math.max(a.y,b.y);
       for(const c of cs){ if(x1>c.x+2&&x0<c.x+c.w-2&&y1>c.y+2&&y0<c.y+c.h-2){n++;break;} } } }); return n; };
   try{ const fix=tightenChannels(best);
-    if(fix){ CHW_FIX=fix; USE_CLUSTER=bClus; const L2=computeLayoutWith(eq,lk,bOpt); const R2=routeAll(L2); CHW_FIX=null; USE_CLUSTER=false;
+    if(fix){ CHW_FIX=fix; USE_CLUSTER=bClus; ROUTE_SEED=bRoute; const L2=computeLayoutWith(eq,lk,bOpt); const R2=routeAll(L2); CHW_FIX=null; USE_CLUSTER=false; ROUTE_SEED=false;
       L2._routing=R2;
       if(countStraight(R2.wires)>=countStraight(best._routing.wires)-1 && contentW(L2)<contentW(best)*0.97
          && inBloc(L2)<=inBloc(best)){ best=L2; } }
