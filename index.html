@@ -989,6 +989,40 @@ function computeLayoutWith(eq, lk, peripheral){
         leaves.forEach(q=>shiftNode(q,dy));
         recompute(B); }); }
 
+    // --- droiture BORNÉE (lisibilité) ---
+    // Un équipement (hors bornier — le bornier a le droit de s'étaler pour
+    // distribuer) dont la hauteur dépasse largement son "budget" de broches
+    // est resserré : on referme ses plus grands trous internes en glissant le
+    // côté qui a le MOINS de broches (donc le moins de fils cassés). Les
+    // quelques fils concernés font alors un coude court, plutôt que d'imposer
+    // un bloc géant et un fil droit illisible de plusieurs milliers de pixels.
+    // Un vrai concentrateur (beaucoup de broches réparties) garde sa hauteur.
+    { const MAXSPACE=90, FLOOR=1400;   // budget/broche (px) ; plancher absolu
+      ids.forEach(id=>{ if(isStrip.get(id)||isTagId(id))return;
+        const keys=[]; listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>keys.push(id+SOH+p.key)));
+        if(keys.length<2)return;
+        const allowed=(keys.length-1)*MAXSPACE;
+        // on ne touche QUE les blocs manifestement démesurés : au-delà de leur
+        // budget de broches ET au-delà d'un plancher absolu (les blocs modérés
+        // gardent exactement leur disposition -> aucune régression).
+        { const ys0=keys.map(k=>pinY.get(k)); const sp0=Math.max(...ys0)-Math.min(...ys0);
+          if(sp0<=allowed||sp0<=FLOOR)return; }
+        let guard=0;
+        while(guard++<60){
+          const arr=keys.map(k=>({k,y:pinY.get(k)})).sort((a,b)=>a.y-b.y);
+          const span=arr[arr.length-1].y-arr[0].y; if(span<=allowed)break;
+          let bi=-1,bg=PRH; for(let i=1;i<arr.length;i++){ const g=arr[i].y-arr[i-1].y; if(g>bg){bg=g;bi=i;} }
+          if(bi<0)break;
+          const reduce=Math.min(span-allowed, bg-PRH); if(reduce<=0.5)break;
+          const above=arr.slice(0,bi), below=arr.slice(bi);
+          const move=above.length<=below.length ? {set:new Set(above.map(a=>a.k)),d:reduce}
+                                                 : {set:new Set(below.map(a=>a.k)),d:-reduce};
+          keys.forEach(k=>{ if(move.set.has(k))pinY.set(k,pinY.get(k)+move.d); });
+        }
+        let lo=Infinity,hi=-Infinity; keys.forEach(k=>{ const y=pinY.get(k); lo=Math.min(lo,y); hi=Math.max(hi,y); });
+        blockTop.set(id,lo-mTop.get(id)); blockBot.set(id,hi+mBot.get(id)); });
+    }
+
     // pastilles de potentiel : pile en face de leur borne partenaire
     ids.forEach(id=>{ if(!isTagId(id))return;
       const pp=listArr(id,'S')[0]; if(!pp)return;
