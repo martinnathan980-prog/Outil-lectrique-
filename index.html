@@ -1033,9 +1033,8 @@ function countCrossings(wires){
   }
   return c;
 }
-let SEED_HINT=null;   // repère qui ancre le placement (exploration)
+let SEED_HINT=null;   // repère qui amorce le BFS (exploration), sans figer le reste
 function computeLayout(eq, lk){
-  if(SEED_HINT){ const la=computeLayoutWith(eq,lk,false); la._routing=routeAll(la); return la; }
   // deux stratégies de graine essayées ; on garde celle qui croise le moins en vrai
   const la=computeLayoutWith(eq,lk,false), lb=computeLayoutWith(eq,lk,true);
   const ra=routeAll(la), rb=routeAll(lb);
@@ -1367,7 +1366,6 @@ function render(){
   notice.style.display='none';
   if(typeof syncPlans==='function')syncPlans();
   const exploring=!!(state.xroots&&state.xroots.size);
-  SEED_HINT=exploring?state.xroots.values().next().value:null;
   let lkF=linksForPlan(state.lk,state.plan);
   if(exploring) lkF=lkF.filter(l=>state.xroots.has(l.from)||state.xroots.has(l.to));
   if(!exploring && lkF.length>800 && !state.forceFull){
@@ -1668,15 +1666,12 @@ function xpPinShown(){ if(!LAST)return;
     OVR.set(c.name,{x:c.x+c.w/2,y:c.y,top:true}); XPPIN.add(c.name); } }); }
 function xpUnpin(){ XPPIN.forEach(n=>{ OVR.delete(n); ORDH.delete(n); }); XPPIN.clear(); }
 function exploreAdd(name){ if(!state.xroots)state.xroots=new Set();
-  // ancrage : le bloc cliqué reste au même endroit à l'écran (on ne se perd pas)
+  // recalcul COMPLET (le plus propre : fils droits, placement optimal) ; on
+  // ancre seulement la VUE sur le bloc cliqué pour ne pas perdre le fil.
   let anchor=null;
   if(LAST){ const c0=LAST.layout.comps.find(c=>c.name===name);
     if(c0) anchor={sx:state.view.tx+(c0.x+c0.w/2)*state.view.s,
-                   sy:state.view.ty+(c0.y+c0.h/2)*state.view.s};
-    // la logique du plan est préservée : l'ordre vertical actuel des
-    // équipements sert d'indice au nouveau calcul
-    LAST.layout.comps.forEach(c=>{ if(c.kind!=='strip'&&c.kind!=='tag'&&!ORDH.has(c.name)){
-      ORDH.set(c.name,c.y); XPPIN.add(c.name); } }); }
+                   sy:state.view.ty+(c0.y+c0.h/2)*state.view.s}; }
   state.xroots.add(name); state.sel=name; render();
   const c1=LAST&&LAST.layout.comps.find(c=>c.name===name);
   if(anchor&&c1){ state.view.tx=anchor.sx-(c1.x+c1.w/2)*state.view.s;
