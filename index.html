@@ -1095,7 +1095,7 @@ function routeAll(layout){
   // 0) barrettes : quand n>=2 fils partent d'une même borne du même côté, ils
   //    se répartissent le long d'un trait pointillé vertical (barrette) au ras
   //    de la borne, chacun à l'ordonnée de son partenaire (bornée).
-  const epAdj=new Map(); const barrettes=[];
+  const epAdj=new Map(); const barrettes=[]; const busDots=[];
   { const groups=new Map();
     layout.links.forEach((l,li)=>{ [['A',l.epA,l.epB],['B',l.epB,l.epA]].forEach(([tag,ep,other])=>{
       const k=Math.round(ep.x)+','+Math.round(ep.y)+','+ep.stub;
@@ -1103,31 +1103,23 @@ function routeAll(layout){
     groups.forEach(arr=>{ if(arr.length<2)return;
       const py=arr[0].ep.y, px=arr[0].ep.x;
       const own=layout.comps.find(c=>py>=c.y-1&&py<=c.y+c.h+1&&(Math.abs(px-c.x)<2||Math.abs(px-(c.x+c.w))<2));
-      // pin de DISTRIBUTION (>=3 fils du même côté) : jeu de barres qui s'étend
-      // au-delà du bloc pour que chaque fil soit une descente parfaitement droite.
       const bus = arr.length>=4;
-      const span = bus ? 22*arr.length : 3*PRH;
-      let lo, hi;
-      if(bus && own){
-        // le jeu de barres s'étend dans la goulotte mais s'arrête avant tout
-        // autre bloc situé dans la même bande verticale (jamais dans un bloc).
-        let up=own.y-span, dn=own.y+own.h+span;
-        layout.comps.forEach(c=>{ if(c===own)return;
-          if(px>c.x-6 && px<c.x+c.w+6){
-            if(c.y+c.h<=own.y && c.y+c.h+6>up) up=c.y+c.h+6;
-            if(c.y>=own.y+own.h && c.y-6<dn) dn=c.y-6; } });
-        lo=up; hi=dn;
-      } else {
-        lo = own ? Math.max(py-span, own.y+4) : py-span;
-        hi = own ? Math.min(py+span, own.y+own.h-4) : py+span;
-      }
       arr.sort((u,v)=>u.other.y-v.other.y);
+      // la barre s'étend pour atteindre TOUS ses partenaires (chaque fil droit),
+      // mais s'arrête avant tout autre bloc de la même bande verticale.
+      let lo=Math.min(py, arr[0].other.y), hi=Math.max(py, arr[arr.length-1].other.y);
+      layout.comps.forEach(c=>{ if(c===own)return;
+        if(px>c.x-6 && px<c.x+c.w+6){
+          if(c.y+c.h<=py && c.y+c.h+8>lo) lo=c.y+c.h+8;
+          if(c.y>=py && c.y-8<hi) hi=c.y-8; } });
+      // chaque fil se raccorde à la hauteur de son partenaire (=> fil droit),
+      // borné à la barre ; on n'écarte QUE si deux raccords se chevauchent.
       const ys=arr.map(u=>Math.max(lo,Math.min(hi,u.other.y)));
-      const gap = bus ? 9 : 5;
-      for(let i=1;i<ys.length;i++) if(ys[i]<ys[i-1]+gap) ys[i]=ys[i-1]+gap;
-      for(let i=ys.length-2;i>=0;i--) if(ys[i]>ys[i+1]-gap) ys[i]=ys[i+1]-gap;
-      arr.forEach((u,i)=>epAdj.set(u.li+':'+u.tag,{...u.ep,y:ys[i]}));
-      barrettes.push({x:px,y1:Math.min(py,ys[0])-4,y2:Math.max(py,ys[ys.length-1])+4,bus}); });
+      for(let i=1;i<ys.length;i++) if(ys[i]<ys[i-1]+5) ys[i]=ys[i-1]+5;
+      for(let i=ys.length-2;i>=0;i--) if(ys[i]>ys[i+1]-5) ys[i]=ys[i+1]-5;
+      arr.forEach((u,i)=>{ epAdj.set(u.li+':'+u.tag,{...u.ep,y:ys[i]});
+        busDots.push({x:px,y:ys[i]}); });
+      barrettes.push({x:px,y1:Math.min(py,ys[0])-3,y2:Math.max(py,ys[ys.length-1])+3,bus}); });
   }
   const EA=li=>epAdj.get(li+':A')||layout.links[li].epA;
   const EB=li=>epAdj.get(li+':B')||layout.links[li].epB;
@@ -1228,7 +1220,7 @@ function routeAll(layout){
   wires.forEach(w=>{ [w.pts[0],w.pts[w.pts.length-1]].forEach(p=>{
     const k=Math.round(p.x)+','+Math.round(p.y); cnt.set(k,(cnt.get(k)||0)+1); }); });
   const dots=[]; for(const [k,c] of cnt){ if(c>1){ const [x,y]=k.split(',').map(Number); dots.push({x,y}); } }
-  return {wires,bridges:[],dots,barrettes};
+  return {wires,bridges:[],dots,barrettes,busDots};
 }
 
 /* ---------- 7. Rendu SVG ---------- */
@@ -1406,6 +1398,7 @@ function sceneInner(layout,routing){
   // câbles : aucun nom sur le dessin — toutes les infos au clic
   routing.wires.forEach(w=>body+=wireSvg(w,routing.bridges));
   (routing.barrettes||[]).forEach(bar=>body+=`<line class="${bar.bus?'busbar':'barrette'}" x1="${f1(bar.x)}" y1="${f1(bar.y1)}" x2="${f1(bar.x)}" y2="${f1(bar.y2)}"/>`);
+  (routing.busDots||[]).forEach(d=>body+=`<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="2.4"/>`);
   routing.dots.forEach(d=>body+=`<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="2.7"/>`);
   layout.comps.forEach(c=>body+=compSvg(c,state.sel===c.name));
   return body;
