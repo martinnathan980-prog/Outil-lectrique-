@@ -402,8 +402,14 @@ function computeLayoutWith(eq, lk, peripheral){
   // plus LOCAL (plus petit fan-out), pas près de la grosse source
   const degN=new Map();
   lk.forEach(l=>{ degN.set(l.from,(degN.get(l.from)||0)+1); degN.set(l.to,(degN.get(l.to)||0)+1); });
+  const exploringNow=(typeof EXPLORING!=='undefined'&&EXPLORING);
   for(const n of rawNames){ const P=P0(n);
     if(!isStripName(n)){ nodes.set(n,{id:n,name:n,strip:false,pins:P.list.slice()});
+      P.list.forEach(p=>nodeOfPin.set(n+SOH+p.key,n)); continue; }
+    // en EXPLORATION : le bornier reste ENTIER (un seul bloc cohérent) au lieu
+    // d'être éclaté en un fragment par départ -> on comprend d'un coup d'œil
+    // que c'est un seul bornier et tout ce qui s'y raccorde.
+    if(exploringNow){ nodes.set(n,{id:n,name:n,strip:true,pins:P.list.slice()});
       P.list.forEach(p=>nodeOfPin.set(n+SOH+p.key,n)); continue; }
     const groups=new Map();
     P.list.forEach(p=>{ const ps=rawPartners.get(n+SOH+p.key)||[];
