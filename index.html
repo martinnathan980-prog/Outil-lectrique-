@@ -1020,7 +1020,7 @@ function computeLayoutWith(eq, lk, peripheral){
     // fils cassés) ; le fil concerné fait un coude court. Un bloc DENSE (broches
     // rapprochées, ex. automate) ou COMPACT (petit) n'a aucun gros trou -> il
     // n'est jamais touché : les 100 % fils droits sont préservés.
-    { const MAXSPACE=130;   // budget de hauteur par broche (px)
+    { const MAXSPACE=(typeof EXPLORING!=='undefined'&&EXPLORING)?50:130;   // budget/broche (px) — plus serré en exploration (blocs compacts)
       ids.forEach(id=>{ if(isStrip.get(id)||isTagId(id))return;
         const keys=[]; listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>keys.push(id+SOH+p.key)));
         if(keys.length<3)return;
