@@ -402,7 +402,10 @@ function computeLayoutWith(eq, lk, peripheral){
   // plus LOCAL (plus petit fan-out), pas près de la grosse source
   const degN=new Map();
   lk.forEach(l=>{ degN.set(l.from,(degN.get(l.from)||0)+1); degN.set(l.to,(degN.get(l.to)||0)+1); });
-  const exploringNow=(typeof EXPLORING!=='undefined'&&EXPLORING);
+  // bornier ENTIER en exploration focalisée (peu de blocs) ; au-delà, on
+  // re-fragmente : sinon un gros bornier déployé tire des faisceaux de fils
+  // très longs vers tous les départs et ça redevient un plat de nouilles.
+  const exploringNow=(typeof EXPLORING!=='undefined'&&EXPLORING) && rawNames.length<=20;
   for(const n of rawNames){ const P=P0(n);
     if(!isStripName(n)){ nodes.set(n,{id:n,name:n,strip:false,pins:P.list.slice()});
       P.list.forEach(p=>nodeOfPin.set(n+SOH+p.key,n)); continue; }
@@ -549,8 +552,10 @@ function computeLayoutWith(eq, lk, peripheral){
     const sA=endSide(A.name,A.key,B.name,B.key), sB=endSide(B.name,B.key,A.name,A.key);
     const cA=chOfEnd(nid(A.name,A.key),sA), cB=chOfEnd(nid(B.name,B.key),sB);
     if(cA===cB)chCount[cA]++; else { chCount[cA]++; chCount[cB]++; } });
-  const chW=(typeof CHW_FIX!=='undefined'&&CHW_FIX)?chCount.map((c,i)=>CHW_FIX[i]!=null?CHW_FIX[i]:(EXPLORING?96:Math.max(54,28+c*9)))
-                                                       :chCount.map(c=>EXPLORING?96:Math.max(54, 28+c*9));
+  // en exploration : largeur de goulotte = plancher stable (96) MAIS élargie si
+  // beaucoup de pistes s'y croisent, sinon les pistes débordent dans les blocs.
+  const chW=(typeof CHW_FIX!=='undefined'&&CHW_FIX)?chCount.map((c,i)=>CHW_FIX[i]!=null?CHW_FIX[i]:(EXPLORING?Math.max(96,28+c*9):Math.max(54,28+c*9)))
+                                                       :chCount.map(c=>EXPLORING?Math.max(96,28+c*9):Math.max(54, 28+c*9));
 
   const M=70, topY=M+120;
   const colX=[]; let cx=M+chW[0];
@@ -1201,8 +1206,21 @@ function tightenChannels(L){ const g=L.geom; if(!g||!g.colX.length)return null;
   return maxOff.map((o,i)=>Math.max(54, Math.min(g.chW[i], o+26)));
 }
 function computeLayout(eq, lk){
-  // en exploration : graine ANCRÉE sur le 1er bloc exploré (mêmes repères)
-  if(SEED_HINT){ const la=computeLayoutWith(eq,lk,false); la._routing=routeAll(la); return la; }
+  const inBlocOf=L=>{ let n=0; const cs=L.comps;
+    L._routing.wires.forEach(w=>{ for(let i=0;i<w.pts.length-1;i++){ const a=w.pts[i],b=w.pts[i+1];
+      const x0=Math.min(a.x,b.x),x1=Math.max(a.x,b.x),y0=Math.min(a.y,b.y),y1=Math.max(a.y,b.y);
+      for(const c of cs){ if(x1>c.x+2&&x0<c.x+c.w-2&&y1>c.y+2&&y0<c.y+c.h-2){n++;break;} } } }); return n; };
+  // en exploration : graine ANCRÉE sur le 1er bloc exploré (repère stable), mais
+  // on essaie plusieurs ordonnancements et on garde le PLUS LISIBLE : fils droits
+  // d'abord, puis le moins de croisements, et surtout aucun fil dans un bloc.
+  if(SEED_HINT){
+    const opts=[false,true,1,2];
+    let best=null,bScore=-1e18;
+    opts.forEach(o=>{ const L=computeLayoutWith(eq,lk,o); L._routing=routeAll(L);
+      const sc=countStraight(L._routing.wires)*8 - countCrossings(L._routing.wires) - inBlocOf(L)*30;
+      if(sc>bScore){ bScore=sc; best=L; } });
+    return best;
+  }
   // sinon (temps non contraint, priorité fils droits) : on essaie plusieurs
   // graines, on rend chacune POUR DE VRAI, et on garde celle qui a le PLUS de
   // fils droits (départage : le moins de croisements).
