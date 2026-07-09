@@ -1909,7 +1909,9 @@ function endPointer(e){ try{stage.releasePointerCapture(e.pointerId);}catch(_){}
   const wasPinch=mode==='pinch'; pointers.delete(e.pointerId);
   if(wasPinch){ if(pointers.size<2){ mode=null; pinch=null; } return; }
   if(mode==='drag'&&!moved){ const c=hitComp(screenToWorld(e.clientX,e.clientY));
-    if(c){ if(state.xroots&&state.xroots.size&&!state.xroots.has(c.name)) exploreAdd(c.name);
+    if(c){
+      if(isRenvoiName(c.name)){ const t=c.name.replace(/^▷F/,''); if(state.folioMode){ state.plan=t; state.sel=null; closePop(); syncPlans(); render(); fit(); } return; }
+      if(state.xroots&&state.xroots.size&&!state.xroots.has(c.name)) exploreAdd(c.name);
       else openEditor(c,e.clientX,e.clientY); } }
   else if(mode==='drag'&&moved&&drag){
     // le bloc reste là où on l'a lâché (placement manuel) et sa position sert
@@ -1934,9 +1936,24 @@ function popAt(p,sx,sy,w){ p.style.width=(w||230)+'px'; p.style.display='block';
   const pr=svgRect(); let L=sx-pr.left+12, T=sy-pr.top+12;
   L=Math.min(L, pr.width-(w||230)-12); T=Math.min(T, pr.height-200);
   p.style.left=Math.max(8,L)+'px'; p.style.top=Math.max(8,T)+'px'; }
+function isRenvoiName(n){ return /^▷F/.test(String(n||'')); }
 function connectionsOf(name){ const out=[];
-  state.lk.forEach(l=>{ if(l.from===name) out.push({borne:l.fromTerm||'·',dest:l.to,dt:l.toTerm||'',cable:l.cable||'',ctype:l.ctype||'',plan:l.plan||'',pn:l.pn1||'',nature:l.nature||''});
-    else if(l.to===name) out.push({borne:l.toTerm||'·',dest:l.from,dt:l.fromTerm||'',cable:l.cable||'',ctype:l.ctype||'',plan:l.plan||'',pn:l.pn2||'',nature:l.nature||''}); });
+  // en mode folios, on lit la base D'ORIGINE : un clic montre TOUTES les vraies
+  // liaisons de l'équipement (pas les demi-liens de renvoi du folio courant),
+  // avec le folio où se trouve chaque partenaire.
+  const fm = state.folioMode && state.folioBackup;
+  const src = fm ? state.folioBackup : state.lk;
+  let blkFolio=null;
+  if(fm){ blkFolio=new Map();
+    state.lk.forEach(l=>{ if(!l.plan)return;
+      [l.from,l.to].forEach(n=>{ if(!n||isRenvoiName(n))return;
+        let s=blkFolio.get(n); if(!s){ s=new Set(); blkFolio.set(n,s); } s.add(l.plan); }); }); }
+  const folioLabel=n=>{ if(!blkFolio)return ''; const s=blkFolio.get(n); if(!s||!s.size)return '';
+    const a=[...s].sort((x,y)=>parseFloat(x)-parseFloat(y));
+    return a.length===1?('folio '+a[0]) : a.length<=3?('folios '+a.join(',')) : ('folios '+a[0]+'…'+a[a.length-1]); };
+  src.forEach(l=>{ if(isRenvoiName(l.from)||isRenvoiName(l.to))return;
+    if(l.from===name) out.push({borne:l.fromTerm||'·',dest:l.to,dt:l.toTerm||'',cable:l.cable||'',ctype:l.ctype||'',plan:l.plan||'',pn:l.pn1||'',nature:l.nature||'',folio:folioLabel(l.to)});
+    else if(l.to===name) out.push({borne:l.toTerm||'·',dest:l.from,dt:l.fromTerm||'',cable:l.cable||'',ctype:l.ctype||'',plan:l.plan||'',pn:l.pn2||'',nature:l.nature||'',folio:folioLabel(l.from)}); });
   out.sort((a,b)=>{ const na=parseFloat(a.borne),nb=parseFloat(b.borne); if(!isNaN(na)&&!isNaN(nb))return na-nb; return String(a.borne).localeCompare(String(b.borne)); });
   return out; }
 function openEditor(c,sx,sy){ state.sel=c.name; render();
@@ -1948,13 +1965,16 @@ function openEditor(c,sx,sy){ state.sel=c.name; render();
       const mx=normMaxBornes(r);
       if(mx!=null){ const used=new Set(cn.map(x=>x.borne)).size;
         nrm+=`<div class="infoline"><span class="k">Contrôle bornes</span><span class="v" style="color:${used>mx?'var(--red)':'var(--ok)'}">${used} câblée(s) / ${mx} max ${used>mx?'⚠':'✓'}</span></div>`; } }); }
-  const rows=cn.length?cn.map(x=>`<tr><td class="bn">${esc(x.borne)}</td><td>${esc(x.dest)}${x.dt?(':'+esc(x.dt)):''}</td><td>${esc(x.cable||'—')}${x.ctype?(' '+esc(x.ctype)):''}${x.plan?(' · pl.'+esc(x.plan)):''}</td></tr>`).join('')
+  const meta=x=>{ const bits=[]; if(x.cable)bits.push(esc(x.cable)+(x.ctype?(' '+esc(x.ctype)):'')); else if(x.ctype)bits.push(esc(x.ctype));
+    if(x.folio)bits.push('<b style="color:var(--accent)">'+esc(x.folio)+'</b>'); else if(x.plan)bits.push('pl.'+esc(x.plan));
+    return bits.join(' · ')||'—'; };
+  const rows=cn.length?cn.map(x=>`<tr><td class="bn">${esc(x.borne)}</td><td>${esc(x.dest)}${x.dt?(':'+esc(x.dt)):''}</td><td>${meta(x)}</td></tr>`).join('')
     : `<tr><td colspan="3" style="color:var(--ink-faint);text-align:center;padding:8px">Aucun raccordement</td></tr>`;
   p.innerHTML=`<h5>Équipement — ${esc(c.name)}</h5>
     <div class="field"><label>Repère</label><input id="ed-rep" value="${esc(c.name)}"></div>
     <div class="field"><label>Désignation</label><input id="ed-des" value="${esc(c.o.designation||'')}"></div>
     <div class="field"><label>Type</label><input id="ed-typ" list="types" value="${esc(c.o.type||'')}" placeholder="${esc(inferType(c.name).t)}"></div>
-    <div style="margin-top:8px;font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint)">Bornes & raccordements</div>
+    <div style="margin-top:8px;font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint)">Bornes & raccordements <span style="color:var(--accent-dim)">(${cn.length})</span></div>
     <div style="max-height:150px;overflow:auto"><table class="btbl"><thead><tr><th>Borne</th><th>Vers</th><th>Câble</th></tr></thead><tbody>${rows}</tbody></table></div>
     ${nrm}
     <div class="actions"><button class="primary" id="ed-ok">Enregistrer</button><button id="ed-xp">${state.xroots&&state.xroots.size?(state.xroots.has(c.name)?'Replier':'Déplier'):'Explorer'}</button><button id="ed-del">Supprimer</button><button class="ghost" id="ed-close">Fermer</button></div>`;
@@ -1962,11 +1982,13 @@ function openEditor(c,sx,sy){ state.sel=c.name; render();
   document.getElementById('ed-close').onclick=closePop;
   document.getElementById('ed-ok').onclick=()=>{ const nr=document.getElementById('ed-rep').value.trim()||c.name;
     const nd=document.getElementById('ed-des').value, nt=document.getElementById('ed-typ').value.trim();
-    if(nr!==c.name){ state.lk.forEach(l=>{ if(l.from===c.name)l.from=nr; if(l.to===c.name)l.to=nr; });
+    if(nr!==c.name){ const ren=arr=>arr.forEach(l=>{ if(l.from===c.name)l.from=nr; if(l.to===c.name)l.to=nr; });
+      ren(state.lk); if(state.folioBackup)ren(state.folioBackup);
       if(OVR.has(c.name)){ OVR.set(nr,OVR.get(c.name)); OVR.delete(c.name); } }
     let e=state.eq.find(x=>x.repere===c.name||x.repere===nr); if(!e){ e={repere:nr,designation:'',type:''}; state.eq.push(e); }
     e.repere=nr; e.designation=nd; e.type=nt; state.sel=nr; closePop(); syncTables(); render(); };
   document.getElementById('ed-del').onclick=()=>{ state.lk=state.lk.filter(l=>l.from!==c.name&&l.to!==c.name);
+    if(state.folioBackup)state.folioBackup=state.folioBackup.filter(l=>l.from!==c.name&&l.to!==c.name);
     state.eq=state.eq.filter(x=>x.repere!==c.name); OVR.delete(c.name); state.sel=null; closePop(); syncTables(); render(); };
   document.getElementById('ed-xp').onclick=()=>{ closePop();
     if(!(state.xroots&&state.xroots.size)) exploreStart(c.name);
