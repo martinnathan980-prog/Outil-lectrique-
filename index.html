@@ -403,17 +403,20 @@ function computeLayoutWith(eq, lk, peripheral){
   // plus LOCAL (plus petit fan-out), pas près de la grosse source
   const degN=new Map();
   lk.forEach(l=>{ degN.set(l.from,(degN.get(l.from)||0)+1); degN.set(l.to,(degN.get(l.to)||0)+1); });
-  // bornier ENTIER en exploration focalisée (peu de blocs) ; au-delà, on
-  // re-fragmente : sinon un gros bornier déployé tire des faisceaux de fils
-  // très longs vers tous les départs et ça redevient un plat de nouilles.
-  const exploringNow=(typeof EXPLORING!=='undefined'&&EXPLORING) && rawNames.length<=20;
+  // bornier ENTIER en exploration : soit c'est le bornier CLIQUÉ (racine) — on
+  // le veut cohérent, quel que soit le nombre de voisins — soit l'exploration
+  // est petite (≤20 blocs). Au-delà, les borniers NON-racines se re-fragmentent
+  // (sinon un gros bornier voisin tire des faisceaux de fils très longs partout).
+  const isExp=(typeof EXPLORING!=='undefined'&&EXPLORING);
+  const primRoot=(typeof SEED_HINT!=='undefined')?SEED_HINT:null;
+  const wholeStrip=n=> isExp && (rawNames.length<=20 || n===primRoot);
   for(const n of rawNames){ const P=P0(n);
     if(!isStripName(n)){ nodes.set(n,{id:n,name:n,strip:false,pins:P.list.slice()});
       P.list.forEach(p=>nodeOfPin.set(n+SOH+p.key,n)); continue; }
     // en EXPLORATION : le bornier reste ENTIER (un seul bloc cohérent) au lieu
     // d'être éclaté en un fragment par départ -> on comprend d'un coup d'œil
     // que c'est un seul bornier et tout ce qui s'y raccorde.
-    if(exploringNow){ nodes.set(n,{id:n,name:n,strip:true,pins:P.list.slice()});
+    if(wholeStrip(n)){ nodes.set(n,{id:n,name:n,strip:true,pins:P.list.slice()});
       P.list.forEach(p=>nodeOfPin.set(n+SOH+p.key,n)); continue; }
     const groups=new Map();
     P.list.forEach(p=>{ const ps=rawPartners.get(n+SOH+p.key)||[];
@@ -1212,7 +1215,7 @@ function countCrossings(wires){
 }
 let EXPLORING=false;  // en exploration : goulottes à largeur fixe (colonnes stables)
 let CHW_FIX=null;     // largeurs de goulotte imposées (2e passe de resserrage)
-let SEED_HINT=null;   // repère qui amorce le BFS (exploration), sans figer le reste
+let SEED_HINT=null;   // repère qui amorce le BFS (exploration) = bornier cliqué gardé ENTIER
 let USE_CLUSTER=false; // regroupement par communautés (maillages)
 let ROUTE_SEED=false;  // amorcer les communautés sur la colonne Route/cheminement
 function countStraight(wires){ return wires.filter(w=>w.pts.length===2).length; }
