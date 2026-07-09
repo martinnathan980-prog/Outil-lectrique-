@@ -123,6 +123,7 @@ main{grid-area:main;position:relative;overflow:hidden;background:#e3e6ea}
       <button class="primary" id="btnGen">Régénérer</button>
       <button id="btnImport">Importer</button>
       <select id="planSel" class="plan-sel" title="Plan affiché" style="display:none"></select>
+      <button class="ghost" id="btnFolios" title="Découper automatiquement le schéma en folios A3 lisibles">Auto-folios</button>
       <div class="sep"></div>
       <button class="ghost" id="btnClear">Effacer</button>
     </div>
@@ -339,6 +340,7 @@ const state={
   meta:{title:'Installation — armoire TGBT',folio:'1 / 1',author:'',rev:'A',date:new Date().toISOString().slice(0,10),scale:'—'},
   view:{s:1,tx:0,ty:0}, sel:null, plan:'*',
   xroots:null, forceFull:false,
+  folioMode:false, folioCount:0, folioBackup:null,
 };
 
 /* ---------- 3. Nets (union-find sur les bornes) ---------- */
@@ -1581,7 +1583,10 @@ function compSvg(c,sel){
 
 let LAST=null;
 function sceneInner(layout,routing){
-  let body=sheetSvg(layout.bbox,state.meta);
+  let meta=state.meta;
+  if(state.folioMode && state.plan && state.plan!=='*')
+    meta={...state.meta, folio: state.plan+' / '+(state.folioCount||'?')};
+  let body=sheetSvg(layout.bbox,meta);
   // câbles : aucun nom sur le dessin — toutes les infos au clic
   routing.wires.forEach(w=>body+=wireSvg(w,routing.bridges));
   ((routing.barrettes&&routing.barrettes.stubs)||[]).forEach(st=>body+=`<line class="w-int" x1="${f1(st.x0)}" y1="${f1(st.y)}" x2="${f1(st.x1)}" y2="${f1(st.y)}"/>`);
@@ -1675,10 +1680,90 @@ function parseSchedule(text){
 }
 function plansOf(lk){ return [...new Set(lk.map(l=>l.plan).filter(Boolean))].sort((a,b)=>{const na=parseFloat(a),nb=parseFloat(b);if(!isNaN(na)&&!isNaN(nb))return na-nb;return String(a).localeCompare(String(b));}); }
 function linksForPlan(lk,plan){ if(!plan||plan==='*')return lk; return lk.filter(l=>!l.plan||l.plan===plan); }
+
+/* ---------- Auto-folios : découpe intelligente en pages ----------
+   Un gros schéma (« rouleau » trop haut) est coupé en folios A3 lisibles.
+   Principe :
+   - les blocs PARTAGÉS (rails +24V/0V/PE, borniers, prises de coupure) sont
+     répliqués sur chaque folio qu'ils touchent (fragment local) ;
+   - les blocs LOCAUX (Q, KM, moteurs, capteurs…) sont regroupés par
+     départ (composante connexe) et par zone (Route), puis empaquetés par
+     budget jusqu'à remplir une page ;
+   - un fil qui saute d'un folio à l'autre est coupé et remplacé par un
+     RENVOI : « ▷ Fn » avec, en étiquette, l'équipement + borne d'arrivée.
+   On écrit le résultat dans la colonne plan -> le sélecteur de folios existant
+   prend le relais, et chaque folio repasse par le moteur (100 % fils droits). */
+function autoFolios(lk, eq, budget){
+  budget = budget || 16;
+  const byRep=new Map((eq||[]).map(e=>[e.repere,e]));
+  const isRailN=n=>RAIL_RE.test(String(n).trim()) && !byRep.has(n);
+  const blocks=new Set(); lk.forEach(l=>{ if(l.from)blocks.add(l.from); if(l.to)blocks.add(l.to); });
+  // degré = nombre de blocs DISTINCTS connectés (fan-out). Un distributeur
+  // (bornier, prise, automate) a un grand fan-out -> c'est un HUB, à répliquer
+  // sur chaque folio. Un appareil de départ (Q,KM,M…) a un petit fan-out.
+  const nbrs=new Map([...blocks].map(n=>[n,new Set()]));
+  lk.forEach(l=>{ if(!l.from||!l.to||l.from===l.to)return;
+    if(nbrs.has(l.from))nbrs.get(l.from).add(l.to); if(nbrs.has(l.to))nbrs.get(l.to).add(l.from); });
+  const HUBDEG=6;
+  const isShared=n=>{ if(isRailN(n))return true; const e=byRep.get(n);
+    const t=norm((e&&(e.type||e.designation))||''); if(t&&/born|coupure|repart/.test(t))return true;
+    if(inferType(n).s==='disconnect')return true;
+    return (nbrs.get(n)||new Set()).size>=HUBDEG; };
+  const shared=new Set([...blocks].filter(isShared));
+  const local=[...blocks].filter(n=>!shared.has(n));
+  if(local.length<=budget) return {links:lk.map(l=>({...l})), nFolios:1, applied:false};
+  // route dominante de chaque bloc local
+  const routeOf=new Map(); { const votes=new Map();
+    lk.forEach(l=>{ const r=(l.route||'').trim(); if(!r)return;
+      [l.from,l.to].forEach(n=>{ if(!n||shared.has(n))return; let m=votes.get(n); if(!m){m=new Map();votes.set(n,m);} m.set(r,(m.get(r)||0)+1); }); });
+    votes.forEach((m,n)=>{ let br='',bc=-1; m.forEach((c,r)=>{ if(c>bc){bc=c;br=r;} }); routeOf.set(n,br); }); }
+  // composantes connexes (départs) via liens local-local, sans franchir les
+  // routes. Les liens de CHAÎNE (mêmes noms à numéro consécutif : KM1-KM2…,
+  // inter-verrouillages) sont coupables -> exclus, pour que chaque départ soit
+  // une composante à part (sinon toute une armoire = un seul bloc insécable).
+  const splitNm=s=>{ const m=/^(.*?)(\d+)$/.exec(s||''); return m?{p:m[1],n:+m[2]}:{p:s,n:null}; };
+  const isChainLink=l=>{ const A=splitNm(l.from),B=splitNm(l.to);
+    return A.n!=null&&B.n!=null&&A.p&&A.p===B.p&&Math.abs(A.n-B.n)<=2; };
+  const adj=new Map(local.map(n=>[n,new Set()]));
+  lk.forEach(l=>{ if(!l.from||!l.to||l.from===l.to)return;
+    if(shared.has(l.from)||shared.has(l.to))return;
+    if(isChainLink(l))return;
+    if(adj.has(l.from)&&adj.has(l.to)){ adj.get(l.from).add(l.to); adj.get(l.to).add(l.from); } });
+  const compId=new Map(); let ci=0;
+  for(const s of local){ if(compId.has(s))continue; const id=ci++; compId.set(s,id); const q=[s];
+    while(q.length){ const c=q.shift();
+      adj.get(c).forEach(k=>{ if(!compId.has(k)&&(routeOf.get(k)||'')===(routeOf.get(c)||'')){ compId.set(k,id); q.push(k); } }); } }
+  const comps=new Map(); compId.forEach((id,n)=>{ let e=comps.get(id); if(!e){e={route:routeOf.get(n)||'',nodes:[]};comps.set(id,e);} e.nodes.push(n); });
+  // empaquetage par route puis par budget (une composante n'est jamais coupée)
+  const order=[...comps.values()].sort((a,b)=> a.route<b.route?-1:(a.route>b.route?1:b.nodes.length-a.nodes.length));
+  const folioOf=new Map(); let folio=0, count=1e9, curRoute='\0';
+  for(const c of order){
+    if(c.route!==curRoute || count+c.nodes.length>budget){ folio++; count=0; curRoute=c.route; }
+    c.nodes.forEach(n=>folioOf.set(n,folio)); count+=c.nodes.length; }
+  const nFolios=folio; if(nFolios<=1) return {links:lk.map(l=>({...l})), nFolios:1, applied:false};
+  const F=n=>String(n);
+  // réécriture des liens
+  const out=[];
+  lk.forEach(l=>{
+    const fS=shared.has(l.from), tS=shared.has(l.to);
+    if(fS&&tS){ out.push({...l, plan:F(folioOf.get(l.from)||folioOf.get(l.to)||1)}); return; }
+    if(fS||tS){ const anchor=fS?l.to:l.from; out.push({...l, plan:F(folioOf.get(anchor)||1)}); return; }
+    const ff=folioOf.get(l.from), ft=folioOf.get(l.to);
+    if(ff===ft){ out.push({...l, plan:F(ff)}); return; }
+    // renvoi : deux demi-liens vers des jetons « ▷ F# »
+    out.push({from:l.from, fromTerm:l.fromTerm, to:'▷F'+ft, toTerm:(l.to+(l.toTerm?(' '+l.toTerm):'')),
+      cable:l.cable, ctype:l.ctype, route:l.route, plan:F(ff), pn1:l.pn1, pn2:l.pn2, renvoi:ft});
+    out.push({from:'▷F'+ff, fromTerm:(l.from+(l.fromTerm?(' '+l.fromTerm):'')), to:l.to, toTerm:l.toTerm,
+      cable:l.cable, ctype:l.ctype, route:l.route, plan:F(ft), pn1:l.pn1, pn2:l.pn2, renvoi:ff});
+  });
+  return {links:out, nFolios, applied:true};
+}
 function syncPlans(){ const sel=document.getElementById('planSel'); if(!sel)return; const plans=plansOf(state.lk);
   if(plans.length<2){ sel.style.display='none'; if(!plans.includes(state.plan)) state.plan='*'; return; }
   if(!state.plan || (state.plan!=='*' && !plans.includes(state.plan))) state.plan=plans[0];
-  sel.style.display=''; sel.innerHTML='<option value="*">Tous les plans</option>'+plans.map(p=>`<option value="${esc(p)}">Plan ${esc(p)}</option>`).join(''); sel.value=state.plan;
+  const word=state.folioMode?'Folio':'Plan';
+  const allLbl=state.folioMode?'Tous les folios':'Tous les plans';
+  sel.style.display=''; sel.innerHTML=`<option value="*">${allLbl}</option>`+plans.map(p=>`<option value="${esc(p)}">${word} ${esc(p)}</option>`).join(''); sel.value=state.plan;
 }
 function syncCables(){ const box=document.getElementById('cb-list'); if(!box)return;
   const map=new Map();
@@ -1691,6 +1776,8 @@ function parseDB(){ state.xroots=null; state.forceFull=false; ORDH.clear();
   const {links}=parseSchedule(document.getElementById('imp-db').value);
   if(!links.length){ alert('Aucune liaison détectée. Vérifie le séparateur ( ; , ou tabulation ) et l’ordre des colonnes.'); return; }
   state.eq=[]; state.lk=links; OVR.clear(); state.sel=null; state.plan='*';
+  state.folioMode=false; state.folioCount=0; state.folioBackup=null;
+  const bf=document.getElementById('btnFolios'); if(bf)bf.textContent='Auto-folios';
   syncTables(); syncPlans(); render(); fit(); closeModal();
 }
 
@@ -2192,6 +2279,22 @@ function init(){
     document.getElementById('nm-clear').onclick=()=>{ if(!confirm('Vider le catalogue de normes ?'))return;
       NORMS={headers:[],rows:[]}; normsRebuild(); normsSave(); syncNorms('vidé'); }; }
   const ps=document.getElementById('planSel'); if(ps) ps.onchange=()=>{ state.plan=ps.value; render(); fit(); };
+  const bf=document.getElementById('btnFolios');
+  const syncFolioBtn=()=>{ if(bf) bf.textContent=state.folioMode?'◻ Rouleau':'Auto-folios'; };
+  if(bf) bf.onclick=()=>{
+    if(state.folioMode){   // revenir au schéma d'un seul tenant
+      if(state.folioBackup) state.lk=state.folioBackup;
+      state.folioBackup=null; state.folioMode=false; state.folioCount=0; state.plan='*';
+      syncTables(); syncPlans(); syncFolioBtn(); render(); fit(); return;
+    }
+    const eq = state.eq&&state.eq.length ? state.eq : deriveEq(state.lk);
+    const R=autoFolios(state.lk, eq, 16);
+    if(!R.applied){ alert('Schéma déjà assez compact : pas besoin de le découper.'); return; }
+    state.folioBackup=state.lk; state.lk=R.links; state.folioMode=true; state.folioCount=R.nFolios;
+    state.xroots=null; state.forceFull=true; state.plan='1';
+    syncTables(); syncPlans(); syncFolioBtn(); render(); fit();
+  };
+  syncFolioBtn();
   document.getElementById('b-close').onclick=closeBornier;
   document.getElementById('bmodal').addEventListener('click',e=>{ if(e.target.id==='bmodal')closeBornier(); });
   document.getElementById('modal').addEventListener('click',e=>{ if(e.target.id==='modal')closeModal(); });
