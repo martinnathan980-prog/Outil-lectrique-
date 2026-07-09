@@ -1742,12 +1742,27 @@ function autoFolios(lk, eq, budget){
     c.nodes.forEach(n=>folioOf.set(n,folio)); count+=c.nodes.length; }
   const nFolios=folio; if(nFolios<=1) return {links:lk.map(l=>({...l})), nFolios:1, applied:false};
   const F=n=>String(n);
+  // folio « maison » d'un bloc partagé = folio majoritaire de ses voisins
+  // LOCAUX (les départs qu'il dessert). Sert à ne PAS entasser tous les
+  // automates/borniers sur le folio 1 : chaque hub se rattache à ses départs.
+  const homeF=n=>{ if(folioOf.has(n))return folioOf.get(n);
+    const cnt=new Map(); (nbrs.get(n)||[]).forEach(k=>{ const f=folioOf.get(k); if(f)cnt.set(f,(cnt.get(f)||0)+1); });
+    let bf=0,bc=0; cnt.forEach((c,f)=>{ if(c>bc){bc=c;bf=f;} }); return bf; };
+  const sharedHome=new Map(); shared.forEach(n=>sharedHome.set(n,homeF(n)));
   // réécriture des liens
   const out=[];
   lk.forEach(l=>{
     const fS=shared.has(l.from), tS=shared.has(l.to);
-    if(fS&&tS){ out.push({...l, plan:F(folioOf.get(l.from)||folioOf.get(l.to)||1)}); return; }
-    if(fS||tS){ const anchor=fS?l.to:l.from; out.push({...l, plan:F(folioOf.get(anchor)||1)}); return; }
+    if(fS&&tS){ const hf=sharedHome.get(l.from), ht=sharedHome.get(l.to);
+      if(hf&&ht&&hf!==ht){                       // deux hubs sur folios ≠ -> renvoi
+        out.push({from:l.from, fromTerm:l.fromTerm, to:'▷F'+ht, toTerm:(l.to+(l.toTerm?(' '+l.toTerm):'')),
+          cable:l.cable, ctype:l.ctype, route:l.route, plan:F(hf), pn1:l.pn1, pn2:l.pn2, renvoi:ht});
+        out.push({from:'▷F'+hf, fromTerm:(l.from+(l.fromTerm?(' '+l.fromTerm):'')), to:l.to, toTerm:l.toTerm,
+          cable:l.cable, ctype:l.ctype, route:l.route, plan:F(ht), pn1:l.pn1, pn2:l.pn2, renvoi:hf});
+      } else out.push({...l, plan:F(hf||ht||1)});
+      return; }
+    if(fS||tS){ const local=fS?l.to:l.from; const hub=fS?l.from:l.to;
+      out.push({...l, plan:F(folioOf.get(local)||sharedHome.get(hub)||1)}); return; }
     const ff=folioOf.get(l.from), ft=folioOf.get(l.to);
     if(ff===ft){ out.push({...l, plan:F(ff)}); return; }
     // renvoi : deux demi-liens vers des jetons « ▷ F# »
