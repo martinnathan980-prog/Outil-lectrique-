@@ -1177,16 +1177,29 @@ function computeLayoutWith(eq, lk, peripheral){
       const lid=listIdOfPin(id,key);
       for(const p of listArr(id,lid)){ if(p.key===key)continue;
         if(Math.abs(pinYof(id,p.key)-y)<PRH-0.5)return false; } return true; };
+    // corridor libre : un fil horizontal à l'ordonnée y entre les flancs des
+    // deux blocs ne traverse aucun autre bloc -> il peut être droit même en
+    // sautant plusieurs colonnes.
+    const corridorClear=(ia,ib,y)=>{ const xa=nodeX.get(ia),xb=nodeX.get(ib);
+      if(xa==null||xb==null)return false;
+      const seg = xa<xb ? [xa+widthOf(ia), xb] : [xb+widthOf(ib), xa];
+      if(seg[1]-seg[0]<4)return true;
+      return !allB.some(o=>{ if(o===ia||o===ib)return false;
+        const ox=nodeX.get(o),ow=widthOf(o);
+        if(!(seg[1]>ox+2&&seg[0]<ox+ow-2))return false;
+        return y>blockTop.get(o)+2&&y<blockBot.get(o)-2; }); };
     const detente=()=>{ let moved=false;
       lk.forEach((l,li)=>{ const A=endPin.get(li+':A'),B=endPin.get(li+':B');
         const ia=nid(A.name,A.key), ib=nid(B.name,B.key); if(ia===ib)return;
-        if(Math.abs((colOf.get(ia)??0)-(colOf.get(ib)??0))!==1)return; // seulement colonnes ADJACENTES (un fil multi-colonnes « droit » traverserait les blocs intermédiaires)
+        const dc=Math.abs((colOf.get(ia)??0)-(colOf.get(ib)??0));
+        if(dc===0)return;                                    // même colonne : un face-à-face n'aide pas
         if(isTagB(ia)||isTagB(ib))return;                    // pastilles traitées à part
         const ya=pinYof(ia,A.key), yb=pinYof(ib,B.key);
         if(Math.abs(ya-yb)<0.6)return;                       // déjà en face
         const solo=(id,key)=>((partners.get(id+SOH+key)||[]).length===1);
-        if(solo(ia,A.key)&&canPlace(ia,A.key,yb)){ pinY.set(ia+SOH+A.key,yb); moved=true; }
-        else if(solo(ib,B.key)&&canPlace(ib,B.key,ya)){ pinY.set(ib+SOH+B.key,ya); moved=true; } });
+        const ok=(y)=>dc===1||corridorClear(ia,ib,y);        // multi-colonnes : corridor requis
+        if(solo(ia,A.key)&&canPlace(ia,A.key,yb)&&ok(yb)){ pinY.set(ia+SOH+A.key,yb); moved=true; }
+        else if(solo(ib,B.key)&&canPlace(ib,B.key,ya)&&ok(ya)){ pinY.set(ib+SOH+B.key,ya); moved=true; } });
       return moved; };
     const clashAt=(L,nt,nb2)=>{ const x=nodeX.get(L),w=widthOf(L);
       return allB.some(o=>{ if(o===L||isTagB(o))return false; const ox=nodeX.get(o),ow=widthOf(o);
@@ -1244,6 +1257,32 @@ function computeLayoutWith(eq, lk, peripheral){
             order.forEach((f,i)=>pinY.set(id+SOH+f.key,slots[i]));
             any=true; }); }); });
       return any; };
+    // rétreint : une broche EXTRÊME (tout en haut ou tout en bas du bloc) dont
+    // le fil est plié de toute façon n'a aucune raison d'écarter le bloc ; on
+    // la ramène à PRH de sa voisine, la hauteur fond, les broches à fil droit
+    // ne bougent jamais. (Les borniers gardent leur étalement : ils distribuent.)
+    const shrink=()=>{ let any=false;
+      allB.forEach(id=>{ if(isTagB(id)||listsOf.get(id).S)return;
+        const mT=(()=>{ let mn=Infinity; listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>mn=Math.min(mn,pinYof(id,p.key)))); return isFinite(mn)?mn-blockTop.get(id):0; })();
+        const mB=(()=>{ let mx=-Infinity; listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>mx=Math.max(mx,pinYof(id,p.key)))); return isFinite(mx)?blockBot.get(id)-mx:0; })();
+        for(let guard=0;guard<40;guard++){
+          const items=[]; listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>{
+            const k=id+SOH+p.key, y=pinYof(id,p.key);
+            const ps=(partners.get(k)||[]).filter(q=>q.id!==id&&!isTagB(q.id));
+            const straight=ps.length>0&&ps.every(q=>Math.abs(pinYof(q.id,q.key)-y)<0.6);
+            items.push({k,y,straight}); }));
+          if(items.length<2)break;
+          items.sort((a,b)=>a.y-b.y);
+          let did=false;
+          const top=items[0], nxt=items[1];
+          if(!top.straight && nxt.y-top.y>PRH+0.5){ pinY.set(top.k,nxt.y-PRH); did=true; }
+          else { const bot=items[items.length-1], prv=items[items.length-2];
+            if(!bot.straight && bot.y-prv.y>PRH+0.5){ pinY.set(bot.k,prv.y+PRH); did=true; } }
+          if(!did)break; any=true;
+        }
+        let lo=Infinity,hi=-Infinity; listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>{ const y=pinYof(id,p.key); lo=Math.min(lo,y); hi=Math.max(hi,y); }));
+        if(isFinite(lo)){ blockTop.set(id,lo-mT); blockBot.set(id,hi+mB); } });
+      return any; };
     const alignTags=()=>{ allB.forEach(id=>{ if(!isTagB(id))return;
       const pp=listArr(id,'S')[0]; if(!pp)return;
       const qs=(partners.get(id+SOH+pp.key)||[]).filter(q=>q.id!==id); if(!qs.length)return;
@@ -1274,6 +1313,9 @@ function computeLayoutWith(eq, lk, peripheral){
             shiftBlk(p.dev,dy); shiftBlk(p.fr,dy); }); });
       }); }
     for(let round=0;round<4;round++){ const a=detente(); const b=nudge(); const c=permute(); alignTags(); if(!a&&!b&&!c)break; }
+    // le rétreint ne passe qu'APRÈS convergence : il ne touche que les broches
+    // définitivement pliées, sans perturber les choix de la boucle.
+    shrink(); detente(); permute(); alignTags();
     // les pastilles glissées ont pu suivre leur borne : rafraîchir la zone que
     // le routeur doit éviter (sinon les pistes traversent la pastille déplacée)
     slidPills.forEach(sp=>{ if(sp.id!=null){ sp.y1=blockTop.get(sp.id); sp.y2=blockBot.get(sp.id); } });
