@@ -1152,7 +1152,7 @@ function computeLayoutWith(eq, lk, peripheral){
       const q=qs[0]; const qx=nodeX.get(q.id), qw=widthOf(q.id);
       const clash=all.some(o=>o!==id&&!isTagB(o)&&
         x<nodeX.get(o)+widthOf(o)+2&&nodeX.get(o)<x+w+2&&t<blockBot.get(o)+2&&blockTop.get(o)<bb+2);
-      const far=Math.min(Math.abs(x-(qx+qw)), Math.abs(qx-(x+w)))>350;
+      const far=Math.min(Math.abs(x-(qx+qw)), Math.abs(qx-(x+w)))>120;
       if(!clash&&!far)return;
       const myCol=colOf.get(id)??0, qCol=colOf.get(q.id)??0;
       const right=myCol>=qCol;
@@ -1249,6 +1249,30 @@ function computeLayoutWith(eq, lk, peripheral){
       const qs=(partners.get(id+SOH+pp.key)||[]).filter(q=>q.id!==id); if(!qs.length)return;
       const y=pinYof(qs[0].id,qs[0].key);
       pinY.set(id+SOH+pp.key,y); blockTop.set(id,y-7); blockBot.set(id,y+7); }); };
+    // ordre NATUREL des paires libres : une paire = un appareil dont l'unique
+    // voisin est un fragment de bornier dédié (Q7—XB2/67, CAP3—XB1/83…).
+    // Ces paires n'ont aucune contrainte entre elles -> on les permute pour
+    // que les noms se lisent en ordre naturel (Q1, Q10, Q13…), à hauteurs
+    // égales (pure permutation d'emplacements, l'occupation ne change pas).
+    { const neighEq=id=>{ const st=new Set();
+        listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>(partners.get(id+SOH+p.key)||[]).forEach(q=>{ if(q.id!==id&&!isTagB(q.id))st.add(q.id); }))); return st; };
+      columns.forEach(col=>{
+        const pairs=[];
+        col.forEach(id=>{ if(listsOf.get(id).S||isTagB(id))return;
+          const nb=neighEq(id); if(nb.size!==1)return; const fr=[...nb][0];
+          if(!listsOf.get(fr).S||isTagB(fr))return;
+          const fn=neighEq(fr); if(fn.size!==1||[...fn][0]!==id)return;
+          pairs.push({dev:id, fr}); });
+        if(pairs.length<2)return;
+        const topOf=p=>Math.min(blockTop.get(p.dev),blockTop.get(p.fr));
+        const hOf=p=>Math.round(Math.max(blockBot.get(p.dev),blockBot.get(p.fr))-topOf(p));
+        const byH=new Map(); pairs.forEach(p=>{ const h=hOf(p); if(!byH.has(h))byH.set(h,[]); byH.get(h).push(p); });
+        byH.forEach(group=>{ if(group.length<2)return;
+          const tops=group.map(topOf).sort((a,b)=>a-b);
+          const order=group.slice().sort((a,b)=>String(nodes.get(a.dev).name).localeCompare(String(nodes.get(b.dev).name),undefined,{numeric:true}));
+          order.forEach((p,i)=>{ const dy=tops[i]-topOf(p); if(Math.abs(dy)<0.5)return;
+            shiftBlk(p.dev,dy); shiftBlk(p.fr,dy); }); });
+      }); }
     for(let round=0;round<4;round++){ const a=detente(); const b=nudge(); const c=permute(); alignTags(); if(!a&&!b&&!c)break; }
     // les pastilles glissées ont pu suivre leur borne : rafraîchir la zone que
     // le routeur doit éviter (sinon les pistes traversent la pastille déplacée)
