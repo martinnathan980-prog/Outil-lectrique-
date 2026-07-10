@@ -1022,7 +1022,7 @@ function computeLayoutWith(eq, lk, peripheral){
     { const MAXSPACE=(typeof EXPLORING!=='undefined'&&EXPLORING)?50:130;   // budget/broche (px) — plus serré en exploration (blocs compacts)
       ids.forEach(id=>{ if(isStrip.get(id)||isTagId(id))return;
         const keys=[]; listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>keys.push(id+SOH+p.key)));
-        if(keys.length<3)return;
+        if(keys.length<2)return;   // 2 broches aussi : un disjoncteur étiré n'a aucune excuse
         const allowed=(keys.length-1)*MAXSPACE;
         // garde-fou : un bloc DENSE ou COMPACT (broches qui remplissent sa
         // hauteur, ex. automate 20 voies, ou petit relais) reste dans son
@@ -1139,19 +1139,21 @@ function computeLayoutWith(eq, lk, peripheral){
         moved=true; }
       if(!moved)break; } }
 
-  // pastilles : si l'emplacement de colonne est occupé, la pastille vient se
-  // coller au flanc de son partenaire, dans la goulotte (fil ultra-court) ;
-  // les pistes de la goulotte les éviteront (voir routage)
+  // pastilles : si l'emplacement de colonne est occupé, OU si le fil serait
+  // très long (pastille à plusieurs colonnes de sa borne -> trait qui traverse
+  // le vide), la pastille vient se coller au flanc de son partenaire, dans la
+  // goulotte (fil ultra-court) ; les pistes de la goulotte les éviteront.
   const slidPills=[];
   { const all=columns.flat();
     all.forEach(id=>{ if(!isTagB(id))return;
       const t=blockTop.get(id), bb=blockBot.get(id), x=nodeX.get(id), w=widthOf(id);
-      const clash=all.some(o=>o!==id&&!isTagB(o)&&
-        x<nodeX.get(o)+widthOf(o)+2&&nodeX.get(o)<x+w+2&&t<blockBot.get(o)+2&&blockTop.get(o)<bb+2);
-      if(!clash)return;
       const pp=listArr(id,'S')[0]; if(!pp)return;
       const qs=(partners.get(id+SOH+pp.key)||[]).filter(q=>q.id!==id); if(!qs.length)return;
       const q=qs[0]; const qx=nodeX.get(q.id), qw=widthOf(q.id);
+      const clash=all.some(o=>o!==id&&!isTagB(o)&&
+        x<nodeX.get(o)+widthOf(o)+2&&nodeX.get(o)<x+w+2&&t<blockBot.get(o)+2&&blockTop.get(o)<bb+2);
+      const far=Math.min(Math.abs(x-(qx+qw)), Math.abs(qx-(x+w)))>350;
+      if(!clash&&!far)return;
       const myCol=colOf.get(id)??0, qCol=colOf.get(q.id)??0;
       const right=myCol>=qCol;
       nodeX.set(id, right ? qx+qw+6 : qx-w-6);
