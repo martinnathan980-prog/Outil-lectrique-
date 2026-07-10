@@ -1157,33 +1157,77 @@ function computeLayoutWith(eq, lk, peripheral){
       const myCol=colOf.get(id)??0, qCol=colOf.get(q.id)??0;
       const right=myCol>=qCol;
       nodeX.set(id, right ? qx+qw+6 : qx-w-6);
-      slidPills.push({ch:right?qCol+1:qCol, y1:t, y2:bb}); });
+      slidPills.push({id, ch:right?qCol+1:qCol, y1:t, y2:bb}); });
   }
 
-  // --- détente finale PAR BROCHE (« chaque borne est indépendante ») ---
-  // Pour chaque liaison encore pliée entre colonnes différentes, on glisse UNE
-  // des deux bornes (celle qui ne porte que ce fil) à l'ordonnée exacte de sa
-  // partenaire — sans bouger le bloc — si sa liste a la place : cible dans le
-  // corps du bloc et à ≥ PRH de toute autre borne (l'ordre peut changer, une
-  // borne est libre). Le fil devient droit ; rien d'autre ne bouge.
-  { const inBody=(id,y)=>{ const isS=!!listsOf.get(id).S;
+  // --- aller-retour final BORNES ↔ ÉQUIPEMENTS ---
+  // (1) détente par borne : chaque borne encore pliée (qui ne porte que ce
+  //     fil) glisse pile en face de sa partenaire, sans bouger le bloc ;
+  // (2) translation d'équipement : un bloc glisse vers l'ordonnée qui met le
+  //     PLUS de ses fils pile en face (jamais moins qu'avant, jamais de
+  //     chevauchement) — bouger le bloc débloque des bornes, et inversement ;
+  // (3) les pastilles de potentiel se recollent en face de leur borne.
+  // On itère jusqu'à stabilité.
+  { const allB=columns.flat();
+    const pinned=new Set(); for(const [nm] of OVR) allB.forEach(id=>{ if(id===nm||nodes.get(id).name===nm)pinned.add(id); });
+    const inBody=(id,y)=>{ const isS=!!listsOf.get(id).S;
       const top=blockTop.get(id)+(isS?HHS+PRH/2:16), bot=blockBot.get(id)-(isS?PRH/2+3:10);
       return y>=top-0.5 && y<=bot+0.5; };
     const canPlace=(id,key,y)=>{ if(!inBody(id,y))return false;
       const lid=listIdOfPin(id,key);
       for(const p of listArr(id,lid)){ if(p.key===key)continue;
         if(Math.abs(pinYof(id,p.key)-y)<PRH-0.5)return false; } return true; };
-    for(let pass=0;pass<2;pass++){ let moved=false;
+    const detente=()=>{ let moved=false;
       lk.forEach((l,li)=>{ const A=endPin.get(li+':A'),B=endPin.get(li+':B');
         const ia=nid(A.name,A.key), ib=nid(B.name,B.key); if(ia===ib)return;
-        if((colOf.get(ia)??0)===(colOf.get(ib)??0))return;   // même colonne : un face-à-face n'aide pas
-        if(isTagB(ia)||isTagB(ib))return;                    // pastilles déjà traitées
+        if(Math.abs((colOf.get(ia)??0)-(colOf.get(ib)??0))!==1)return; // seulement colonnes ADJACENTES (un fil multi-colonnes « droit » traverserait les blocs intermédiaires)
+        if(isTagB(ia)||isTagB(ib))return;                    // pastilles traitées à part
         const ya=pinYof(ia,A.key), yb=pinYof(ib,B.key);
         if(Math.abs(ya-yb)<0.6)return;                       // déjà en face
         const solo=(id,key)=>((partners.get(id+SOH+key)||[]).length===1);
         if(solo(ia,A.key)&&canPlace(ia,A.key,yb)){ pinY.set(ia+SOH+A.key,yb); moved=true; }
         else if(solo(ib,B.key)&&canPlace(ib,B.key,ya)){ pinY.set(ib+SOH+B.key,ya); moved=true; } });
-      if(!moved)break; }
+      return moved; };
+    const clashAt=(L,nt,nb2)=>{ const x=nodeX.get(L),w=widthOf(L);
+      return allB.some(o=>{ if(o===L||isTagB(o))return false; const ox=nodeX.get(o),ow=widthOf(o);
+        return x<ox+ow+6&&ox<x+w+6&&nt<blockBot.get(o)+8&&blockTop.get(o)<nb2+8; }); };
+    const shiftBlk=(id,dy)=>{ listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>pinY.set(id+SOH+p.key,pinYof(id,p.key)+dy)));
+      blockTop.set(id,blockTop.get(id)+dy); blockBot.set(id,blockBot.get(id)+dy); };
+    const nudge=()=>{ let any=false;
+      // fils actuellement droits : un bloc déplacé ne doit PAS atterrir dessus
+      const straights=[];
+      lk.forEach((l,li)=>{ const A=endPin.get(li+':A'),B=endPin.get(li+':B');
+        const ia=nid(A.name,A.key), ib=nid(B.name,B.key); if(ia===ib)return;
+        const ya=pinYof(ia,A.key), yb=pinYof(ib,B.key); if(Math.abs(ya-yb)>=0.6)return;
+        const xa=nodeX.get(ia), xb=nodeX.get(ib); if(xa==null||xb==null)return;
+        const seg=xa<xb?[xa+widthOf(ia),xb]:[xb+widthOf(ib),xa];
+        straights.push({y:ya,x0:seg[0],x1:seg[1],ia,ib}); });
+      const wireClash=(id,nt,nb2)=>{ const x=nodeX.get(id),w=widthOf(id);
+        return straights.some(sg=>sg.ia!==id&&sg.ib!==id&&sg.y>nt+2&&sg.y<nb2-2&&sg.x1>x+2&&sg.x0<x+w-2); };
+      allB.forEach(id=>{ if(isTagB(id)||pinned.has(id))return;
+        const rs=[];
+        listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>{
+          (partners.get(id+SOH+p.key)||[]).forEach(q=>{ if(q.id===id||isTagB(q.id))return;
+            if(Math.abs((colOf.get(q.id)??0)-(colOf.get(id)??0))!==1)return;
+            rs.push(pinYof(q.id,q.key)-pinYof(id,p.key)); }); }));
+        if(!rs.length)return;
+        const cur=rs.filter(r=>Math.abs(r)<0.6).length;
+        let best=0,bg=0;
+        [...new Set(rs.map(r=>Math.round(r*2)/2))].forEach(s=>{ if(Math.abs(s)<0.6)return;
+          const n=rs.filter(r=>Math.abs(r-s)<0.6).length;
+          if(n-cur>bg && !clashAt(id,blockTop.get(id)+s,blockBot.get(id)+s)
+             && !wireClash(id,blockTop.get(id)+s,blockBot.get(id)+s)){ bg=n-cur; best=s; } });
+        if(best){ shiftBlk(id,best); any=true; } });
+      return any; };
+    const alignTags=()=>{ allB.forEach(id=>{ if(!isTagB(id))return;
+      const pp=listArr(id,'S')[0]; if(!pp)return;
+      const qs=(partners.get(id+SOH+pp.key)||[]).filter(q=>q.id!==id); if(!qs.length)return;
+      const y=pinYof(qs[0].id,qs[0].key);
+      pinY.set(id+SOH+pp.key,y); blockTop.set(id,y-7); blockBot.set(id,y+7); }); };
+    for(let round=0;round<4;round++){ const a=detente(); const b=nudge(); alignTags(); if(!a&&!b)break; }
+    // les pastilles glissées ont pu suivre leur borne : rafraîchir la zone que
+    // le routeur doit éviter (sinon les pistes traversent la pastille déplacée)
+    slidPills.forEach(sp=>{ if(sp.id!=null){ sp.y1=blockTop.get(sp.id); sp.y2=blockBot.get(sp.id); } });
     // re-trier chaque liste par Y (le liseré et les cellules suivent l'ordre visuel)
     nodeIds.forEach(id=>listKeys(id).forEach(lid=>listArr(id,lid).sort((a,b)=>pinYof(id,a.key)-pinYof(id,b.key))));
   }
