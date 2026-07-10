@@ -1160,6 +1160,34 @@ function computeLayoutWith(eq, lk, peripheral){
       slidPills.push({ch:right?qCol+1:qCol, y1:t, y2:bb}); });
   }
 
+  // --- détente finale PAR BROCHE (« chaque borne est indépendante ») ---
+  // Pour chaque liaison encore pliée entre colonnes différentes, on glisse UNE
+  // des deux bornes (celle qui ne porte que ce fil) à l'ordonnée exacte de sa
+  // partenaire — sans bouger le bloc — si sa liste a la place : cible dans le
+  // corps du bloc et à ≥ PRH de toute autre borne (l'ordre peut changer, une
+  // borne est libre). Le fil devient droit ; rien d'autre ne bouge.
+  { const inBody=(id,y)=>{ const isS=!!listsOf.get(id).S;
+      const top=blockTop.get(id)+(isS?HHS+PRH/2:16), bot=blockBot.get(id)-(isS?PRH/2+3:10);
+      return y>=top-0.5 && y<=bot+0.5; };
+    const canPlace=(id,key,y)=>{ if(!inBody(id,y))return false;
+      const lid=listIdOfPin(id,key);
+      for(const p of listArr(id,lid)){ if(p.key===key)continue;
+        if(Math.abs(pinYof(id,p.key)-y)<PRH-0.5)return false; } return true; };
+    for(let pass=0;pass<2;pass++){ let moved=false;
+      lk.forEach((l,li)=>{ const A=endPin.get(li+':A'),B=endPin.get(li+':B');
+        const ia=nid(A.name,A.key), ib=nid(B.name,B.key); if(ia===ib)return;
+        if((colOf.get(ia)??0)===(colOf.get(ib)??0))return;   // même colonne : un face-à-face n'aide pas
+        if(isTagB(ia)||isTagB(ib))return;                    // pastilles déjà traitées
+        const ya=pinYof(ia,A.key), yb=pinYof(ib,B.key);
+        if(Math.abs(ya-yb)<0.6)return;                       // déjà en face
+        const solo=(id,key)=>((partners.get(id+SOH+key)||[]).length===1);
+        if(solo(ia,A.key)&&canPlace(ia,A.key,yb)){ pinY.set(ia+SOH+A.key,yb); moved=true; }
+        else if(solo(ib,B.key)&&canPlace(ib,B.key,ya)){ pinY.set(ib+SOH+B.key,ya); moved=true; } });
+      if(!moved)break; }
+    // re-trier chaque liste par Y (le liseré et les cellules suivent l'ordre visuel)
+    nodeIds.forEach(id=>listKeys(id).forEach(lid=>listArr(id,lid).sort((a,b)=>pinYof(id,a.key)-pinYof(id,b.key))));
+  }
+
   let yMin=Infinity,yMax=-Infinity;
   nodeIds.forEach(id=>{ yMin=Math.min(yMin,blockTop.get(id)); yMax=Math.max(yMax,blockBot.get(id)); });
   if(!isFinite(yMin)){ yMin=topY; yMax=topY+200; }
