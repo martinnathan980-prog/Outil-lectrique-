@@ -1219,12 +1219,37 @@ function computeLayoutWith(eq, lk, peripheral){
              && !wireClash(id,blockTop.get(id)+s,blockBot.get(id)+s)){ bg=n-cur; best=s; } });
         if(best){ shiftBlk(id,best); any=true; } });
       return any; };
+    // dé-croisement : sur chaque flanc, les bornes PLIÉES (1 fil, pas en face)
+    // échangent leurs ordonnées pour suivre l'ordre vertical de leurs
+    // partenaires -> les fils d'une même goulotte ne se croisent plus entre
+    // eux. Les fils droits ne sont jamais touchés ; les emplacements sont les
+    // mêmes (permutation), donc aucun risque d'espacement ni de chevauchement.
+    const permute=()=>{ let any=false;
+      allB.forEach(id=>{ if(isTagB(id))return;
+        listKeys(id).forEach(lid=>{ const L=listArr(id,lid);
+          const groups={L:[],R:[]};
+          L.forEach(p=>{ const ps=partners.get(id+SOH+p.key)||[];
+            if(ps.length!==1)return; const q=ps[0]; if(q.id===id||isTagB(q.id))return;
+            const dc=(colOf.get(q.id)??0)-(colOf.get(id)??0);
+            if(Math.abs(dc)!==1)return;               // le fil vit dans UNE goulotte
+            const my=pinYof(id,p.key), tgt=pinYof(q.id,q.key);
+            if(Math.abs(my-tgt)<0.6)return;           // déjà droit : intouchable
+            groups[dc>0?'R':'L'].push({key:p.key,y:my,tgt}); });
+          ['L','R'].forEach(g=>{ const free=groups[g]; if(free.length<2)return;
+            const slots=free.map(f=>f.y).sort((a,b)=>a-b);
+            const order=free.slice().sort((a,b)=>a.tgt-b.tgt);
+            let changed=false;
+            order.forEach((f,i)=>{ if(Math.abs(f.y-slots[i])>0.5)changed=true; });
+            if(!changed)return;
+            order.forEach((f,i)=>pinY.set(id+SOH+f.key,slots[i]));
+            any=true; }); }); });
+      return any; };
     const alignTags=()=>{ allB.forEach(id=>{ if(!isTagB(id))return;
       const pp=listArr(id,'S')[0]; if(!pp)return;
       const qs=(partners.get(id+SOH+pp.key)||[]).filter(q=>q.id!==id); if(!qs.length)return;
       const y=pinYof(qs[0].id,qs[0].key);
       pinY.set(id+SOH+pp.key,y); blockTop.set(id,y-7); blockBot.set(id,y+7); }); };
-    for(let round=0;round<4;round++){ const a=detente(); const b=nudge(); alignTags(); if(!a&&!b)break; }
+    for(let round=0;round<4;round++){ const a=detente(); const b=nudge(); const c=permute(); alignTags(); if(!a&&!b&&!c)break; }
     // les pastilles glissées ont pu suivre leur borne : rafraîchir la zone que
     // le routeur doit éviter (sinon les pistes traversent la pastille déplacée)
     slidPills.forEach(sp=>{ if(sp.id!=null){ sp.y1=blockTop.get(sp.id); sp.y2=blockBot.get(sp.id); } });
