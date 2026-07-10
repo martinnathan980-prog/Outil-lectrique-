@@ -1160,6 +1160,7 @@ function computeLayoutWith(eq, lk, peripheral){
       slidPills.push({id, ch:right?qCol+1:qCol, y1:t, y2:bb}); });
   }
 
+  const growTop=new Map();   // croissance « à tout prix » : delta purement cosmétique, exclu du verrou d'ordre
   // --- aller-retour final BORNES ↔ ÉQUIPEMENTS ---
   // (1) détente par borne : chaque borne encore pliée (qui ne porte que ce
   //     fil) glisse pile en face de sa partenaire, sans bouger le bloc ;
@@ -1188,6 +1189,36 @@ function computeLayoutWith(eq, lk, peripheral){
         const ox=nodeX.get(o),ow=widthOf(o);
         if(!(seg[1]>ox+2&&seg[0]<ox+ow-2))return false;
         return y>blockTop.get(o)+2&&y<blockBot.get(o)-2; }); };
+    // FILS DROITS À TOUT PRIX : si la cible est hors du corps, le bloc a le
+    // droit de GRANDIR pour attraper le fil droit — à condition de ne
+    // chevaucher personne et de n'avaler le fil droit de personne (plafond
+    // anti-bloc-géant : 900px).
+    const clashAtD=(L,nt,nb2)=>{ const x=nodeX.get(L),w=widthOf(L);
+      return allB.some(o=>{ if(o===L||isTagB(o))return false; const ox=nodeX.get(o),ow=widthOf(o);
+        return x<ox+ow+6&&ox<x+w+6&&nt<blockBot.get(o)+8&&blockTop.get(o)<nb2+8; }); };
+    const growClash=(L,nt,nb2)=>{ const x=nodeX.get(L),w=widthOf(L); let hit=false;
+      lk.forEach((l,li)=>{ if(hit)return; const A=endPin.get(li+':A'),B=endPin.get(li+':B');
+        const ja=nid(A.name,A.key), jb=nid(B.name,B.key); if(ja===L||jb===L||ja===jb)return;
+        const ya2=pinYof(ja,A.key), yb2=pinYof(jb,B.key); if(Math.abs(ya2-yb2)>=0.6)return;
+        const xa=nodeX.get(ja), xb=nodeX.get(jb); if(xa==null||xb==null)return;
+        const seg=xa<xb?[xa+widthOf(ja),xb]:[xb+widthOf(jb),xa];
+        if(seg[1]>x+2&&seg[0]<x+w-2&&ya2>nt+2&&ya2<nb2-2)hit=true; });
+      return hit; };
+    const spacingOK=(id,key,y)=>{ const lid=listIdOfPin(id,key);
+      for(const p of listArr(id,lid)){ if(p.key===key)continue;
+        if(Math.abs(pinYof(id,p.key)-y)<PRH-0.5)return false; } return true; };
+    const tryPlace=(id,key,y)=>{
+      if(!spacingOK(id,key,y))return false;
+      if(inBody(id,y)){ pinY.set(id+SOH+key,y); return true; }
+      if(listsOf.get(id).S)return false;                 // borniers : pas d'extension sauvage
+      if(typeof EXPLORING!=='undefined'&&EXPLORING)return false; // exploration : les rendus s'enchaînent (verrou d'ordre) -> la croissance contaminerait les clics suivants
+      if(allB.length>400)return false;                   // garde-fou perf
+      const nt=Math.min(blockTop.get(id), y-16), nb2=Math.max(blockBot.get(id), y+10);
+      if(nb2-nt>900)return false;
+      if((nb2-nt)-(blockBot.get(id)-blockTop.get(id))>260)return false;  // croissance modérée par prise
+      if(clashAtD(id,nt,nb2)||growClash(id,nt,nb2))return false;
+      if(nt<blockTop.get(id)) growTop.set(id,(growTop.get(id)||0)+(blockTop.get(id)-nt));
+      pinY.set(id+SOH+key,y); blockTop.set(id,nt); blockBot.set(id,nb2); return true; };
     const detente=()=>{ let moved=false;
       lk.forEach((l,li)=>{ const A=endPin.get(li+':A'),B=endPin.get(li+':B');
         const ia=nid(A.name,A.key), ib=nid(B.name,B.key); if(ia===ib)return;
@@ -1196,10 +1227,22 @@ function computeLayoutWith(eq, lk, peripheral){
         if(isTagB(ia)||isTagB(ib))return;                    // pastilles traitées à part
         const ya=pinYof(ia,A.key), yb=pinYof(ib,B.key);
         if(Math.abs(ya-yb)<0.6)return;                       // déjà en face
-        const solo=(id,key)=>((partners.get(id+SOH+key)||[]).length===1);
+        // borne mobile : un seul fil, OU plusieurs fils dont les partenaires
+        // sont tous à la même hauteur (les suivre tous d'un coup)
+        const mobile=(id,key)=>{ const raw=(partners.get(id+SOH+key)||[]);
+          if(typeof EXPLORING!=='undefined'&&EXPLORING)return raw.length===1; // exploration : sémantique historique stricte
+          const ps=raw.filter(q=>q.id!==id);
+          if(ps.length===1)return true;
+          if(!ps.length)return false;
+          const y0=pinYof(ps[0].id,ps[0].key);
+          return ps.every(q=>Math.abs(pinYof(q.id,q.key)-y0)<0.6); };
         const ok=(y)=>dc===1||corridorClear(ia,ib,y);        // multi-colonnes : corridor requis
-        if(solo(ia,A.key)&&canPlace(ia,A.key,yb)&&ok(yb)){ pinY.set(ia+SOH+A.key,yb); moved=true; }
-        else if(solo(ib,B.key)&&canPlace(ib,B.key,ya)&&ok(ya)){ pinY.set(ib+SOH+B.key,ya); moved=true; } });
+        // schéma complet : placement avec croissance ; exploration : chemin historique exact
+        const noGrow=(typeof EXPLORING!=='undefined'&&EXPLORING);
+        const place=(id,key,y)=> !noGrow ? (ok(y)&&tryPlace(id,key,y))
+          : (canPlace(id,key,y)&&ok(y)&&(pinY.set(id+SOH+key,y),true));
+        if(mobile(ia,A.key)&&place(ia,A.key,yb)){ moved=true; }
+        else if(mobile(ib,B.key)&&place(ib,B.key,ya)){ moved=true; } });
       return moved; };
     const clashAt=(L,nt,nb2)=>{ const x=nodeX.get(L),w=widthOf(L);
       return allB.some(o=>{ if(o===L||isTagB(o))return false; const ox=nodeX.get(o),ow=widthOf(o);
@@ -1338,7 +1381,7 @@ function computeLayoutWith(eq, lk, peripheral){
       byKey.set(p.key,{y:py}); return {label:p.label,y:py}; }); });
     const vc=!ls.S&&isVCName(N.name);
     const tag=!!ls.S&&ls.S.length===1&&isRail(N.name);
-    const c={name:N.name,id,o:{designation:e.designation||'',type:e.type||''},x,y:top,w,h:bot-top,col:colOf.get(id),
+    const c={name:N.name,id,o:{designation:e.designation||'',type:e.type||''},x,y:top,gy:top+(growTop.get(id)||0),w,h:bot-top,col:colOf.get(id),
       kind:tag?'tag':(ls.S?'strip':'equip'),vc,
       lw:(ls.S||vc)?0:(ls.L.length?STRIPW:0),rw:(ls.S||vc)?0:(ls.R.length?STRIPW:0),
       rows,byKey,rail:isRail(N.name)};
@@ -2270,7 +2313,7 @@ function exploreAdd(name){ if(!state.xroots)state.xroots=new Set();
     if(c0) anchor={sx:state.view.tx+(c0.x+c0.w/2)*state.view.s,
                    sy:state.view.ty+(c0.y+c0.h/2)*state.view.s};
     LAST.layout.comps.forEach(c=>{ if(c.kind!=='strip'&&c.kind!=='tag')
-      ORDH.set(c.name,c.y); }); }
+      ORDH.set(c.name,c.gy!=null?c.gy:c.y); }); }
   state.xroots.add(name); state.sel=name; render();
   const c1=LAST&&LAST.layout.comps.find(c=>c.name===name);
   if(anchor&&c1){ state.view.tx=anchor.sx-(c1.x+c1.w/2)*state.view.s;
