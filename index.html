@@ -1019,10 +1019,13 @@ function computeLayoutWith(eq, lk, peripheral){
     // fils cassés) ; le fil concerné fait un coude court. Un bloc DENSE (broches
     // rapprochées, ex. automate) ou COMPACT (petit) n'a aucun gros trou -> il
     // n'est jamais touché : les 100 % fils droits sont préservés.
-    { const MAXSPACE=(typeof EXPLORING!=='undefined'&&EXPLORING)?50:130;   // budget/broche (px) — plus serré en exploration (blocs compacts)
+    { const MAXSPACE0=(typeof EXPLORING!=='undefined'&&EXPLORING)?50:130;   // budget/broche (px) — plus serré en exploration (blocs compacts)
       ids.forEach(id=>{ if(isStrip.get(id)||isTagId(id))return;
         const keys=[]; listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>keys.push(id+SOH+p.key)));
         if(keys.length<2)return;   // 2 broches aussi : un disjoncteur étiré n'a aucune excuse
+        // gros hub (>=16 broches) : budget resserré (100) — un automate n'a pas
+        // besoin de 130px par voie pour rester lisible ; les petits blocs gardent 130.
+        const MAXSPACE=(!((typeof EXPLORING!=='undefined')&&EXPLORING)&&keys.length>=16)?100:MAXSPACE0;
         const allowed=(keys.length-1)*MAXSPACE;
         // garde-fou : un bloc DENSE ou COMPACT (broches qui remplissent sa
         // hauteur, ex. automate 20 voies, ou petit relais) reste dans son
@@ -1305,7 +1308,7 @@ function computeLayoutWith(eq, lk, peripheral){
     // la ramène à PRH de sa voisine, la hauteur fond, les broches à fil droit
     // ne bougent jamais. (Les borniers gardent leur étalement : ils distribuent.)
     const shrink=()=>{ let any=false;
-      allB.forEach(id=>{ if(isTagB(id)||listsOf.get(id).S)return;
+      allB.forEach(id=>{ if(isTagB(id))return;
         const mT=(()=>{ let mn=Infinity; listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>mn=Math.min(mn,pinYof(id,p.key)))); return isFinite(mn)?mn-blockTop.get(id):0; })();
         const mB=(()=>{ let mx=-Infinity; listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>mx=Math.max(mx,pinYof(id,p.key)))); return isFinite(mx)?blockBot.get(id)-mx:0; })();
         for(let guard=0;guard<40;guard++){
@@ -1588,6 +1591,7 @@ function routeAll(layout){
 
   // 1) jobs par goulotte
   const chanJobs=Array.from({length:g.nCols+1},()=>[]);
+  const midUsed=[];   // couloirs intermédiaires déjà occupés (anti-superposition)
   for(let li=0;li<N;li++){ const l=layout.links[li];
     let A=EA(li), B=EB(li);
     if(A.ch>B.ch){ const t=A;A=B;B=t; }
@@ -1607,13 +1611,31 @@ function routeAll(layout){
       // coude dans la goulotte de départ puis couloir direct vers l'arrivée
       chanJobs[A.ch].push({li,part:4,eps:[{y:A.y,s:A.stub},{y:B.y,s:'R'}]});
     } else {
-      const top=g.yMin, bot=g.yMax;
-      const useTop=(A.y-top)+(B.y-top)<=(bot-A.y)+(bot-B.y);
-      const th=hwAlloc(useTop?hwTop:hwBot, chL(A.ch), chL(B.ch)+g.chW[B.ch]);
-      const hy=useTop?(top-30-th*9):(bot+30+th*9);
-      hwY.set(li,hy);
-      chanJobs[A.ch].push({li,part:1,eps:[{y:A.y,s:A.stub},{y:hy,s:'R'}]});
-      chanJobs[B.ch].push({li,part:2,eps:[{y:hy,s:'L'},{y:B.y,s:B.stub}]});
+      // couloir INTERMÉDIAIRE d'abord : une bande horizontale LIBRE à une
+      // hauteur entre les deux bornes -> petit Z local. Le grand détour
+      // par-dessus tout le schéma ne sert plus que de dernier recours.
+      const xa=chL(A.ch)+2, xb=chL(B.ch)+g.chW[B.ch]-2;
+      const lo=Math.min(A.y,B.y), hi=Math.max(A.y,B.y);
+      let mid=null;
+      if(hi-lo>18){
+        const cand=[]; for(let t=1;t<=24;t++) cand.push(lo+(hi-lo)*t/25);
+        cand.sort((u,v)=>Math.abs(u-(lo+hi)/2)-Math.abs(v-(lo+hi)/2));
+        for(const y of cand){ if(!corridorFree(xa,xb,y))continue;
+          if(midUsed.some(m=>Math.abs(m.y-y)<8 && xb>m.xa-7 && xa<m.xb+7))continue;
+          mid=y; break; } }
+      if(mid!=null){ midUsed.push({y:mid,xa,xb});
+        hwY.set(li,mid);
+        chanJobs[A.ch].push({li,part:1,eps:[{y:A.y,s:A.stub},{y:mid,s:'R'}]});
+        chanJobs[B.ch].push({li,part:2,eps:[{y:mid,s:'L'},{y:B.y,s:B.stub}]});
+      } else {
+        const top=g.yMin, bot=g.yMax;
+        const useTop=(A.y-top)+(B.y-top)<=(bot-A.y)+(bot-B.y);
+        const th=hwAlloc(useTop?hwTop:hwBot, chL(A.ch), chL(B.ch)+g.chW[B.ch]);
+        const hy=useTop?(top-30-th*9):(bot+30+th*9);
+        hwY.set(li,hy);
+        chanJobs[A.ch].push({li,part:1,eps:[{y:A.y,s:A.stub},{y:hy,s:'R'}]});
+        chanJobs[B.ch].push({li,part:2,eps:[{y:hy,s:'L'},{y:B.y,s:B.stub}]});
+      }
     }
   }
 
