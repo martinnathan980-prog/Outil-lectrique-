@@ -139,7 +139,7 @@ main{grid-area:main;position:relative;overflow:hidden;background:#e3e6ea}
           <datalist id="xp-names"></datalist>
           <div id="xp-chips" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px"></div>
           <div id="xp-stat" class="hint" style="margin-top:6px"></div>
-          <div style="margin-top:6px"><button class="ghost" id="xp-all" style="display:none">Tout afficher</button></div>
+          <div style="margin-top:6px;display:flex;gap:6px"><button class="ghost" id="xp-opt" style="display:none" title="Replacer la sélection courante au mieux (fils droits maximum) — les blocs peuvent bouger">✨ Optimiser</button><button class="ghost" id="xp-all" style="display:none">Tout afficher</button></div>
           <div class="hint" style="margin-top:6px">Choisis un équipement : seul lui et ses liaisons sont dessinés. Clique un bloc voisin (badge +) pour le déplier à son tour ; ✕ sur un jeton pour replier.</div>
         </div>
       </div>
@@ -1211,7 +1211,7 @@ function computeLayoutWith(eq, lk, peripheral){
       if(!spacingOK(id,key,y))return false;
       if(inBody(id,y)){ pinY.set(id+SOH+key,y); return true; }
       if(listsOf.get(id).S)return false;                 // borniers : pas d'extension sauvage
-      if(typeof EXPLORING!=='undefined'&&EXPLORING)return false; // exploration : les rendus s'enchaînent (verrou d'ordre) -> la croissance contaminerait les clics suivants
+      if(typeof EXPLORING!=='undefined'&&EXPLORING&&!OPT_ONCE)return false; // exploration : les rendus s'enchaînent (verrou d'ordre) -> la croissance contaminerait les clics suivants ; « Optimiser » lève le verrou sur demande
       if(allB.length>400)return false;                   // garde-fou perf
       const nt=Math.min(blockTop.get(id), y-16), nb2=Math.max(blockBot.get(id), y+10);
       if(nb2-nt>900)return false;
@@ -1230,7 +1230,7 @@ function computeLayoutWith(eq, lk, peripheral){
         // borne mobile : un seul fil, OU plusieurs fils dont les partenaires
         // sont tous à la même hauteur (les suivre tous d'un coup)
         const mobile=(id,key)=>{ const raw=(partners.get(id+SOH+key)||[]);
-          if(typeof EXPLORING!=='undefined'&&EXPLORING)return raw.length===1; // exploration : sémantique historique stricte
+          if(typeof EXPLORING!=='undefined'&&EXPLORING&&!OPT_ONCE)return raw.length===1; // exploration : sémantique historique stricte
           const ps=raw.filter(q=>q.id!==id);
           if(ps.length===1)return true;
           if(!ps.length)return false;
@@ -1238,7 +1238,7 @@ function computeLayoutWith(eq, lk, peripheral){
           return ps.every(q=>Math.abs(pinYof(q.id,q.key)-y0)<0.6); };
         const ok=(y)=>dc===1||corridorClear(ia,ib,y);        // multi-colonnes : corridor requis
         // schéma complet : placement avec croissance ; exploration : chemin historique exact
-        const noGrow=(typeof EXPLORING!=='undefined'&&EXPLORING);
+        const noGrow=(typeof EXPLORING!=='undefined'&&EXPLORING&&!OPT_ONCE);
         const place=(id,key,y)=> !noGrow ? (ok(y)&&tryPlace(id,key,y))
           : (canPlace(id,key,y)&&ok(y)&&(pinY.set(id+SOH+key,y),true));
         if(mobile(ia,A.key)&&place(ia,A.key,yb)){ moved=true; }
@@ -1440,6 +1440,7 @@ function countCrossings(wires){
 let EXPLORING=false;  // en exploration : goulottes à largeur fixe (colonnes stables)
 let CHW_FIX=null;     // largeurs de goulotte imposées (2e passe de resserrage)
 let SEED_HINT=null;   // repère qui amorce le BFS (exploration) = bornier cliqué gardé ENTIER
+let OPT_ONCE=false;   // « Optimiser » : un rendu d'exploration SANS verrou, croissance permise
 let USE_CLUSTER=false; // regroupement par communautés (maillages)
 let ROUTE_SEED=false;  // amorcer les communautés sur la colonne Route/cheminement
 function countStraight(wires){ return wires.filter(w=>w.pts.length===2).length; }
@@ -2323,11 +2324,18 @@ function exploreRemove(name){ if(!state.xroots)return; state.xroots.delete(name)
   if(!state.xroots.size){ state.xroots=null; state.sel=null; xpUnpin(); render(); fit(); return; }
   render(); }
 function exploreStop(){ state.xroots=null; state.sel=null; xpUnpin(); render(); fit(); }
+function exploreOptimize(){ if(!(state.xroots&&state.xroots.size))return;
+  // replacement optimal de la sélection courante : on lève le verrou d'ordre
+  // pour UN rendu (les repères peuvent bouger) et on autorise la croissance.
+  ORDH.clear(); OPT_ONCE=true;
+  try{ render(); } finally { OPT_ONCE=false; }
+  fit(); }
 function syncExplore(){ const dl=document.getElementById('xp-names'); if(!dl)return;
   const names=[...allDeviceNames()].sort();
   dl.innerHTML=names.slice(0,4000).map(n=>`<option value="${esc(n)}">`).join('');
   const chips=document.getElementById('xp-chips'), stat=document.getElementById('xp-stat'), all=document.getElementById('xp-all');
   const on=state.xroots&&state.xroots.size;
+  const ob=document.getElementById('xp-opt'); if(ob){ ob.style.display=on?'':'none'; ob.onclick=exploreOptimize; }
   chips.innerHTML=on?[...state.xroots].map(n=>`<span class="xchip">${esc(n)}<button data-x="${esc(n)}" title="replier">×</button></span>`).join(''):'';
   chips.querySelectorAll('button[data-x]').forEach(bt=>{ bt.onclick=()=>exploreRemove(bt.dataset.x); });
   all.style.display=on?'':'none';
