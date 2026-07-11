@@ -1471,10 +1471,21 @@ function computeLayout(eq, lk){
     // temps non contraint en exploration : on tente plusieurs ordonnancements
     // (graine + décalages + périphérique) et on garde le mieux ALIGNÉ.
     const opts=[false,true,1,2];
-    let best=null,bScore=-1e18;
+    let best=null,bScore=-1e18,bOptX=false;
+    const scoreOf=(L)=>countStraight(L._routing.wires)*8 - countCrossings(L._routing.wires) - inBlocOf(L)*30;
     opts.forEach(o=>{ const L=computeLayoutWith(eq,lk,o); L._routing=routeAll(L);
-      const sc=countStraight(L._routing.wires)*8 - countCrossings(L._routing.wires) - inBlocOf(L)*30;
-      if(sc>bScore){ bScore=sc; best=L; } });
+      const sc=scoreOf(L);
+      if(sc>bScore){ bScore=sc; best=L; bOptX=o; } });
+    // 2e passe : RESSERRER les goulottes à la largeur réellement occupée par
+    // les pistes (comme en mode complet) -> fini les boulevards vides entre
+    // colonnes ; l'ordre vertical (repères) ne change pas. Gardé seulement si
+    // le dessin reste aussi droit et devient réellement plus étroit.
+    try{ const fix=tightenChannels(best);
+      if(fix){ CHW_FIX=fix; const L2=computeLayoutWith(eq,lk,bOptX); const R2=routeAll(L2); CHW_FIX=null;
+        L2._routing=R2;
+        const cw=L=>{ let mx=0; L.comps.forEach(c=>mx=Math.max(mx,c.x+c.w)); return mx; };
+        if(scoreOf(L2)>=bScore-1 && cw(L2)<cw(best)*0.97) best=L2; }
+    }catch(_){ CHW_FIX=null; }
     return best;
   }
   // sinon (temps non contraint, priorité fils droits) : on essaie plusieurs
