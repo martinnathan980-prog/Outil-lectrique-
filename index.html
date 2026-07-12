@@ -1368,14 +1368,21 @@ function computeLayoutWith(eq, lk, peripheral){
       if(typeof EXPLORING!=='undefined'&&EXPLORING&&!OPT_ONCE)return false;
       const leafOf=id=>{ const st=new Set();
         listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>(partners.get(id+SOH+p.key)||[]).forEach(q=>{ if(q.id!==id&&!isTagB(q.id))st.add(q.id); }))); return st; };
+      const reBound=new Set();
       allB.forEach(H=>{ if(isTagB(H))return;
         let moved=false;
-        for(let g=0; g<30; g++){
+        for(let g=0; g<60; g++){
           const items=[]; listKeys(H).forEach(lid=>listArr(H,lid).forEach(p=>items.push({k:p.key,y:pinYof(H,p.key)})));
           if(items.length<3)break;
           items.sort((a,b)=>a.y-b.y);
-          let bi=-1,bg=3*PRH; for(let i=1;i<items.length;i++){ const gp=items[i].y-items[i-1].y; if(gp>bg){bg=gp;bi=i;} }
-          if(bi<0)break;
+          // tous les trous internes, du plus grand au plus petit : si le plus
+          // grand ne peut pas se refermer (ancres lointaines), les suivants
+          // gardent leur chance.
+          const gaps=[]; for(let i=1;i<items.length;i++){ const gp=items[i].y-items[i-1].y; if(gp>3*PRH)gaps.push({i,gp}); }
+          if(!gaps.length)break;
+          gaps.sort((a,b)=>b.gp-a.gp);
+          let did=false;
+          for(const G of gaps){ const bi=G.i, bg=G.gp;
           const above=items.slice(0,bi), below=items.slice(bi);
           const trySide=(side,dy)=>{
             // partenaires du paquet : tous FEUILLES de H, entièrement dans le paquet
@@ -1405,17 +1412,88 @@ function computeLayoutWith(eq, lk, peripheral){
             for(const P of parts){ listKeys(P).forEach(lid=>listArr(P,lid).forEach(p=>pinY.set(P+SOH+p.key,pinYof(P,p.key)+d)));
               blockTop.set(P,blockTop.get(P)+d); blockBot.set(P,blockBot.get(P)+d); }
             return true; };
+          // mode GLISSEMENT DE BROCHES : quand le bloc partenaire ne peut pas
+          // bouger (il a des broches des deux côtés du trou), on glisse
+          // seulement les broches partenaires DANS leur bloc (bornes
+          // indépendantes). Aucun bloc ne bouge -> aucune collision possible ;
+          // les deux bouts glissent ensemble -> les fils restent droits.
+          const pinsAll=id=>{ const a=[]; listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>a.push(p.key))); return a; };
+          const trySidePins=(side,dy)=>{
+            if(!COND_PINS)return false;
+            const packKeys=new Set(side.map(it=>it.k));
+            const mv=[]; const mvSet=new Set(); let ok=true;
+            side.forEach(it=>{ (partners.get(H+SOH+it.k)||[]).forEach(q=>{
+              if(!ok)return; if(isTagB(q.id))return;
+              if(q.id===H){ if(!packKeys.has(q.key))ok=false; return; }
+              const pk=q.id+SOH+q.key; if(mvSet.has(pk))return;
+              // toutes les liaisons de cette broche partenaire doivent viser le
+              // paquet (sinon un autre fil se plierait)
+              const rr=partners.get(pk)||[];
+              for(const r of rr){ if(!(r.id===H&&packKeys.has(r.key))){ ok=false; return; } }
+              mvSet.add(pk); mv.push({id:q.id,key:q.key}); }); });
+            if(!ok||!mv.length)return false;
+            const sign=dy>0?1:-1;
+            const affected=[...new Set(mv.map(m=>m.id))];
+            // fils droits existants (avec leurs broches, pour exclure ceux qui bougent)
+            let SGS=null; const sgs=()=>{ if(SGS)return SGS; SGS=[];
+              lk.forEach((l,li)=>{ const A=endPin.get(li+':A'),B=endPin.get(li+':B');
+                const ia=nid(A.name,A.key), ib=nid(B.name,B.key); if(ia===ib)return;
+                const ya=pinYof(ia,A.key), yb=pinYof(ib,B.key); if(Math.abs(ya-yb)>=0.6)return;
+                const xa=nodeX.get(ia), xb=nodeX.get(ib); if(xa==null||xb==null)return;
+                const seg=xa<xb?[xa+widthOf(ia),xb]:[xb+widthOf(ib),xa];
+                SGS.push({y:ya,x0:seg[0],x1:seg[1],ia,ib,ka:A.key,kb:B.key}); });
+              return SGS; };
+            const movingSg=sg=> (sg.ia===H&&packKeys.has(sg.ka))||(sg.ib===H&&packKeys.has(sg.kb))
+              ||mvSet.has(sg.ia+SOH+sg.ka)||mvSet.has(sg.ib+SOH+sg.kb);
+            let newBounds=null;
+            const fits=(mag)=>{ const d=sign*mag; newBounds=new Map();
+              for(const m of mv){ const y=pinYof(m.id,m.key)+d;
+                // le fil déplacé doit rester DROIT à sa nouvelle hauteur
+                if(!corridorClear(H,m.id,y))return false;
+                for(const k2 of pinsAll(m.id)){ if(mvSet.has(m.id+SOH+k2))continue;
+                  if(Math.abs(pinYof(m.id,k2)-y)<PRH-0.5)return false; } }
+              // bornes des blocs partenaires : elles suivent leurs broches.
+              // Rétrécir est toujours permis ; s'étendre exige la place libre.
+              for(const id of affected){ let lo=Infinity,hi=-Infinity;
+                pinsAll(id).forEach(k2=>{ const y=pinYof(id,k2)+(mvSet.has(id+SOH+k2)?d:0); lo=Math.min(lo,y); hi=Math.max(hi,y); });
+                const L=listsOf.get(id); const isS=!!(L&&L.S);
+                const nt=lo-(isS?HHS+PRH/2:22), nb=hi+(isS?PRH/2+5:22);
+                if(nt<blockTop.get(id)-0.5||nb>blockBot.get(id)+0.5){
+                  const x=nodeX.get(id),w=widthOf(id);
+                  const cl=allB.some(o=>{ if(o===id||isTagB(o))return false;
+                    const ox=nodeX.get(o),ow=widthOf(o);
+                    return x<ox+ow+6&&ox<x+w+6&&nt<blockBot.get(o)+8&&blockTop.get(o)<nb+8; });
+                  if(cl)return false;
+                  // l'extension ne doit recouvrir aucun fil droit existant
+                  const zt1=nt,zb1=blockTop.get(id), zt2=blockBot.get(id),zb2=nb;
+                  if(sgs().some(sg=>{ if(movingSg(sg))return false; if(sg.ia===id||sg.ib===id)return false;
+                    if(!(sg.x1>x+2&&sg.x0<x+w-2))return false;
+                    return (sg.y>zt1+2&&sg.y<zb1-2)||(sg.y>zt2+2&&sg.y<zb2-2); }))return false; }
+                newBounds.set(id,{nt,nb}); }
+              return true; };
+            let mag=Math.abs(dy);
+            while(mag>=2*PRH&&!fits(mag)) mag=Math.floor(mag/2);
+            if(mag<2*PRH)return false;
+            const d=sign*mag;
+            side.forEach(it=>pinY.set(H+SOH+it.k,pinYof(H,it.k)+d));
+            mv.forEach(m=>pinY.set(m.id+SOH+m.key,pinYof(m.id,m.key)+d));
+            newBounds.forEach((b,id)=>{ blockTop.set(id,b.nt); blockBot.set(id,b.nb); });
+            return true; };
           const reduce=bg-PRH;
-          let did=false;
-          if(above.length<=below.length){ did=trySide(above,reduce)||trySide(below,-reduce); }
-          else { did=trySide(below,-reduce)||trySide(above,reduce); }
+          if(above.length<=below.length){ did=trySide(above,reduce)||trySide(below,-reduce)||trySidePins(above,reduce)||trySidePins(below,-reduce); }
+          else { did=trySide(below,-reduce)||trySide(above,reduce)||trySidePins(below,-reduce)||trySidePins(above,reduce); }
+          if(did)break;
+          }
           if(!did)break; any=true; moved=true;
         }
-        // bornes du bloc H recalées UNIQUEMENT s'il a été condensé
-        if(!moved)return;
-        let lo=Infinity,hi=-Infinity; listKeys(H).forEach(lid=>listArr(H,lid).forEach(p=>{ const y=pinYof(H,p.key); lo=Math.min(lo,y); hi=Math.max(hi,y); }));
-        if(isFinite(lo)){ const isS=!!listsOf.get(H).S;
-          blockTop.set(H,lo-(isS?HHS+PRH/2:22)); blockBot.set(H,hi+(isS?PRH/2+5:22)); } });
+        if(moved)reBound.add(H); });
+      // bornes recalées UNIQUEMENT pour les blocs condensés (elles ne peuvent
+      // que rétrécir : les broches déplacées restent dans les bornes d'origine)
+      reBound.forEach(B=>{ if(isTagB(B))return;
+        let lo=Infinity,hi=-Infinity; listKeys(B).forEach(lid=>listArr(B,lid).forEach(p=>{ const y=pinYof(B,p.key); lo=Math.min(lo,y); hi=Math.max(hi,y); }));
+        if(isFinite(lo)){ const isS=!!listsOf.get(B).S;
+          blockTop.set(B,Math.max(blockTop.get(B),lo-(isS?HHS+PRH/2:22)));
+          blockBot.set(B,Math.min(blockBot.get(B),hi+(isS?PRH/2+5:22))); } });
       return any; };
     for(let round=0;round<4;round++){ const a=detente(); const b=nudge(); const c=permute(); alignTags(); if(!a&&!b&&!c)break; }
     // le rétreint ne passe qu'APRÈS convergence : il ne touche que les broches
@@ -1504,6 +1582,7 @@ let CHW_FIX=null;     // largeurs de goulotte imposées (2e passe de resserrage)
 let SEED_HINT=null;   // repère qui amorce le BFS (exploration) = bornier cliqué gardé ENTIER
 let OPT_ONCE=false;   // « Optimiser » : un rendu d'exploration SANS verrou, croissance permise
 let USE_CLUSTER=false; // regroupement par communautés (maillages)
+let COND_PINS=false;   // condensation par glissement de broches (essayée en 3e passe, gardée si meilleure)
 let ROUTE_SEED=false;  // amorcer les communautés sur la colonne Route/cheminement
 function countStraight(wires){ return wires.filter(w=>w.pts.length===2).length; }
 // mesure la largeur de goulotte réellement occupée par les pistes (segments
@@ -1539,12 +1618,19 @@ function computeLayout(eq, lk){
     // les pistes (comme en mode complet) -> fini les boulevards vides entre
     // colonnes ; l'ordre vertical (repères) ne change pas. Gardé seulement si
     // le dessin reste aussi droit et devient réellement plus étroit.
+    let bFix=null;
     try{ const fix=tightenChannels(best);
       if(fix){ CHW_FIX=fix; const L2=computeLayoutWith(eq,lk,bOptX); const R2=routeAll(L2); CHW_FIX=null;
         L2._routing=R2;
         const cw=L=>{ let mx=0; L.comps.forEach(c=>mx=Math.max(mx,c.x+c.w)); return mx; };
-        if(scoreOf(L2)>=bScore-1 && cw(L2)<cw(best)*0.97) best=L2; }
+        if(scoreOf(L2)>=bScore-1 && cw(L2)<cw(best)*0.97){ best=L2; bFix=fix; bScore=scoreOf(L2); } }
     }catch(_){ CHW_FIX=null; }
+    // 3e passe (Optimiser uniquement : la condensation est inactive pendant les
+    // clics d'exploration) : glissement de broches -> gardé si le score monte.
+    try{ COND_PINS=true; CHW_FIX=bFix; const L3=computeLayoutWith(eq,lk,bOptX); const R3=routeAll(L3);
+      COND_PINS=false; CHW_FIX=null; L3._routing=R3;
+      if(scoreOf(L3)>bScore) best=L3;
+    }catch(_){ COND_PINS=false; CHW_FIX=null; }
     return best;
   }
   // sinon (temps non contraint, priorité fils droits) : on essaie plusieurs
@@ -1578,12 +1664,24 @@ function computeLayout(eq, lk){
     L._routing.wires.forEach(w=>{ for(let i=0;i<w.pts.length-1;i++){ const a=w.pts[i],b=w.pts[i+1];
       const x0=Math.min(a.x,b.x),x1=Math.max(a.x,b.x),y0=Math.min(a.y,b.y),y1=Math.max(a.y,b.y);
       for(const c of cs){ if(x1>c.x+2&&x0<c.x+c.w-2&&y1>c.y+2&&y0<c.y+c.h-2){n++;break;} } } }); return n; };
+  let bFix=null;
   try{ const fix=tightenChannels(best);
     if(fix){ CHW_FIX=fix; USE_CLUSTER=bClus; ROUTE_SEED=bRoute; const L2=computeLayoutWith(eq,lk,bOpt); const R2=routeAll(L2); CHW_FIX=null; USE_CLUSTER=false; ROUTE_SEED=false;
       L2._routing=R2;
       if(countStraight(R2.wires)>=countStraight(best._routing.wires)-1 && contentW(L2)<contentW(best)*0.97
-         && inBloc(L2)<=inBloc(best)){ best=L2; } }
+         && inBloc(L2)<=inBloc(best)){ best=L2; bFix=fix; } }
   }catch(_){ CHW_FIX=null; }
+  // 3e passe : condensation par glissement de broches (referme les grands blocs
+  // creux). Gardée SEULEMENT si aucun fil droit n'est perdu et pas plus de
+  // croisements ni de fils dans des blocs -> « on prend le meilleur ».
+  try{ COND_PINS=true; CHW_FIX=bFix; USE_CLUSTER=bClus; ROUTE_SEED=bRoute;
+    const L3=computeLayoutWith(eq,lk,bOpt); const R3=routeAll(L3);
+    COND_PINS=false; CHW_FIX=null; USE_CLUSTER=false; ROUTE_SEED=false;
+    L3._routing=R3;
+    const s3=countStraight(R3.wires), s0=countStraight(best._routing.wires);
+    const c3=countCrossings(R3.wires), c0=countCrossings(best._routing.wires);
+    if(inBloc(L3)<=inBloc(best) && (s3>s0 || (s3===s0 && c3<=c0))) best=L3;
+  }catch(_){ COND_PINS=false; CHW_FIX=null; USE_CLUSTER=false; ROUTE_SEED=false; }
   return best;
 }
 
