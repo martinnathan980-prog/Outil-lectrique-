@@ -1358,10 +1358,69 @@ function computeLayoutWith(eq, lk, peripheral){
           order.forEach((p,i)=>{ const dy=tops[i]-topOf(p); if(Math.abs(dy)<0.5)return;
             shiftBlk(p.dev,dy); shiftBlk(p.fr,dy); }); });
       }); }
+    // CONDENSATION RIGIDE : un hub (automate…) dont un trou interne sépare
+    // deux paquets de broches se referme en déplaçant le paquet le plus léger
+    // AVEC ses partenaires-feuilles (fragments de bornier dédiés…) d'un seul
+    // tenant -> les fils restent droits PAR CONSTRUCTION, le bloc géant fond.
+    const condense=()=>{ let any=false;
+      // comme la croissance : jamais en exploration (stabilité des clics),
+      // seulement en schéma complet ou via le bouton Optimiser.
+      if(typeof EXPLORING!=='undefined'&&EXPLORING&&!OPT_ONCE)return false;
+      const leafOf=id=>{ const st=new Set();
+        listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>(partners.get(id+SOH+p.key)||[]).forEach(q=>{ if(q.id!==id&&!isTagB(q.id))st.add(q.id); }))); return st; };
+      allB.forEach(H=>{ if(isTagB(H))return;
+        let moved=false;
+        for(let g=0; g<30; g++){
+          const items=[]; listKeys(H).forEach(lid=>listArr(H,lid).forEach(p=>items.push({k:p.key,y:pinYof(H,p.key)})));
+          if(items.length<3)break;
+          items.sort((a,b)=>a.y-b.y);
+          let bi=-1,bg=3*PRH; for(let i=1;i<items.length;i++){ const gp=items[i].y-items[i-1].y; if(gp>bg){bg=gp;bi=i;} }
+          if(bi<0)break;
+          const above=items.slice(0,bi), below=items.slice(bi);
+          const trySide=(side,dy)=>{
+            // partenaires du paquet : tous FEUILLES de H, entièrement dans le paquet
+            const parts=new Set(); let ok=true;
+            side.forEach(it=>{ (partners.get(H+SOH+it.k)||[]).forEach(q=>{ if(q.id===H)return; if(isTagB(q.id))return; parts.add(q.id); }); });
+            if(!parts.size)return false;
+            for(const P of parts){ const nb=leafOf(P); if(nb.size!==1||!nb.has(H)){ ok=false; break; }
+              // toutes les broches de P doivent viser des broches du paquet (pas l'autre côté)
+              const sideKeys=new Set(side.map(it=>it.k)); let allIn=true;
+              listKeys(P).forEach(lid=>listArr(P,lid).forEach(p=>{ (partners.get(P+SOH+p.key)||[]).forEach(q=>{ if(q.id===H&&!sideKeys.has(q.key))allIn=false; }); }));
+              if(!allIn){ ok=false; break; } }
+            if(!ok)return false;
+            // fermeture PARTIELLE : on glisse le paquet aussi loin que la place
+            // le permet (jusqu'au contact), plutôt que tout-ou-rien.
+            const sign=dy>0?1:-1; let mag=Math.abs(dy);
+            for(const P of parts){ const x=nodeX.get(P),w=widthOf(P);
+              allB.forEach(o=>{ if(o===P||o===H||parts.has(o)||isTagB(o))return;
+                const ox=nodeX.get(o),ow=widthOf(o);
+                if(!(x<ox+ow+6&&ox<x+w+6))return;
+                if(sign>0){ if(blockTop.get(o)>=blockBot.get(P)-1) mag=Math.min(mag,blockTop.get(o)-8-blockBot.get(P)); }
+                else { if(blockBot.get(o)<=blockTop.get(P)+1) mag=Math.min(mag,blockTop.get(P)-(blockBot.get(o)+8)); } }); }
+            if(mag<2*PRH)return false;
+            const d=sign*mag;
+            // espacement des broches de H après fermeture (le paquet garde son ordre)
+            // (le trou reste >= PRH : pas de collision avec l'autre paquet)
+            side.forEach(it=>pinY.set(H+SOH+it.k,pinYof(H,it.k)+d));
+            for(const P of parts){ listKeys(P).forEach(lid=>listArr(P,lid).forEach(p=>pinY.set(P+SOH+p.key,pinYof(P,p.key)+d)));
+              blockTop.set(P,blockTop.get(P)+d); blockBot.set(P,blockBot.get(P)+d); }
+            return true; };
+          const reduce=bg-PRH;
+          let did=false;
+          if(above.length<=below.length){ did=trySide(above,reduce)||trySide(below,-reduce); }
+          else { did=trySide(below,-reduce)||trySide(above,reduce); }
+          if(!did)break; any=true; moved=true;
+        }
+        // bornes du bloc H recalées UNIQUEMENT s'il a été condensé
+        if(!moved)return;
+        let lo=Infinity,hi=-Infinity; listKeys(H).forEach(lid=>listArr(H,lid).forEach(p=>{ const y=pinYof(H,p.key); lo=Math.min(lo,y); hi=Math.max(hi,y); }));
+        if(isFinite(lo)){ const isS=!!listsOf.get(H).S;
+          blockTop.set(H,lo-(isS?HHS+PRH/2:22)); blockBot.set(H,hi+(isS?PRH/2+5:22)); } });
+      return any; };
     for(let round=0;round<4;round++){ const a=detente(); const b=nudge(); const c=permute(); alignTags(); if(!a&&!b&&!c)break; }
     // le rétreint ne passe qu'APRÈS convergence : il ne touche que les broches
     // définitivement pliées, sans perturber les choix de la boucle.
-    shrink(); detente(); permute(); alignTags();
+    condense(); shrink(); detente(); permute(); alignTags();
     // les pastilles glissées ont pu suivre leur borne : rafraîchir la zone que
     // le routeur doit éviter (sinon les pistes traversent la pastille déplacée)
     slidPills.forEach(sp=>{ if(sp.id!=null){ sp.y1=blockTop.get(sp.id); sp.y2=blockBot.get(sp.id); } });
