@@ -535,7 +535,12 @@ function computeLayoutWith(eq, lk, peripheral){
   // puisque les voies ne partagent aucun fil. Jamais pendant les clics
   // d'exploration (les repères doivent rester où ils sont).
   {
-    const PAGEFILL=(!isExp)||(typeof OPT_ONCE!=='undefined'&&OPT_ONCE&&typeof OPT_MODE!=='undefined'&&OPT_MODE==='max');
+    // schéma complet et « Droits max » : toujours. « Optimiser » équilibré :
+    // seulement comme CANDIDAT (PF_OPT) — mesuré : selon le schéma, les voies
+    // aident (queue de rangées feuilles) ou se battent avec le verrou d'ordre ;
+    // le concours tranche au score, sous le plafond de surface.
+    const PAGEFILL=(!isExp)||(typeof OPT_ONCE!=='undefined'&&OPT_ONCE&&
+      ((typeof OPT_MODE!=='undefined'&&OPT_MODE==='max')||(typeof PF_OPT!=='undefined'&&PF_OPT)));
     if(PAGEFILL){
       const compId=new Map(); let nc=0;
       for(const n of nodeIds){ if(compId.has(n))continue; const q=[n]; compId.set(n,nc);
@@ -1383,7 +1388,15 @@ function computeLayoutWith(eq, lk, peripheral){
     const alignTags=()=>{ allB.forEach(id=>{ if(!isTagB(id))return;
       const pp=listArr(id,'S')[0]; if(!pp)return;
       const qs=(partners.get(id+SOH+pp.key)||[]).filter(q=>q.id!==id); if(!qs.length)return;
-      const y=pinYof(qs[0].id,qs[0].key);
+      let y=pinYof(qs[0].id,qs[0].key);
+      // la pastille ne doit pas MORDRE un bloc voisin de sa colonne : si la
+      // hauteur collée intersecte un bloc, petit décalage (<=20px) pour sortir.
+      const x=nodeX.get(id),w=widthOf(id);
+      for(const o of allB){ if(o===id||o===qs[0].id||isTagB(o))continue;
+        const ox=nodeX.get(o),ow=widthOf(o);
+        if(!(x<ox+ow+2&&ox<x+w+2))continue;
+        const t=blockTop.get(o)-9, b=blockBot.get(o)+9;
+        if(y>t&&y<b){ const up=y-t, dn=b-y; if(Math.min(up,dn)<=20) y=(up<=dn)?t:b; } }
       pinY.set(id+SOH+pp.key,y); blockTop.set(id,y-7); blockBot.set(id,y+7); }); };
     // ordre NATUREL des paires libres : une paire = un appareil dont l'unique
     // voisin est un fragment de bornier dédié (Q7—XB2/67, CAP3—XB1/83…).
@@ -1675,6 +1688,7 @@ let OPT_MODE='max';   // 'bal' = équilibré (plafond de surface), 'max' = droit
 let OPT_AREA_CAP=0;   // plafond de surface du mode équilibré (1.35x le dessin courant)
 let OPT_NOGROW=false; // candidat « compact » : croissance des blocs coupée pendant ce rendu
 let SPLIT_COIL=false; // candidat « éclaté » : bobine / pôles / contacts aux. dessinés séparément
+let PF_OPT=false;     // candidat « voies » du mode équilibré (remplissage de page)
 let USE_CLUSTER=false; // regroupement par communautés (maillages)
 let COND_PINS=false;   // condensation par glissement de broches (essayée en 3e passe, gardée si meilleure)
 let ROUTE_SEED=false;  // amorcer les communautés sur la colonne Route/cheminement
@@ -1716,34 +1730,37 @@ function computeLayout(eq, lk){
     // « Droits max » essaie aussi chaque graine avec ÉCLATEMENT MÉTIER des
     // appareils à bobine (bobine / pôles / contacts auxiliaires séparés).
     const spModes=(OPT_ONCE&&OPT_MODE==='max')?[false,true]:[false];
+    // équilibré : les VOIES (remplissage de page) sont aussi un candidat
+    const pfModes=balanced?[false,true]:[false];
     const cands=[];
-    spModes.forEach(sp=>{ SPLIT_COIL=sp; ngModes.forEach(ng=>{ OPT_NOGROW=ng;
-      opts.forEach(o=>{ const L=computeLayoutWith(eq,lk,o); L._routing=routeAll(L);
-        cands.push({L,o,ng,sp,sc:scoreOf(L),ar:areaOf(L)}); }); }); });
-    OPT_NOGROW=false; SPLIT_COIL=false;
-    let bSp=false;
+    pfModes.forEach(pf=>{ PF_OPT=pf;
+      spModes.forEach(sp=>{ SPLIT_COIL=sp; ngModes.forEach(ng=>{ OPT_NOGROW=ng;
+        opts.forEach(o=>{ const L=computeLayoutWith(eq,lk,o); L._routing=routeAll(L);
+          cands.push({L,o,ng,sp,pf,sc:scoreOf(L),ar:areaOf(L)}); }); }); }); });
+    OPT_NOGROW=false; SPLIT_COIL=false; PF_OPT=false;
+    let bSp=false,bPf=false;
     let pool=cands;
     if(balanced){ const ok=cands.filter(c=>c.ar<=OPT_AREA_CAP);
       pool=ok.length?ok:[cands.reduce((m,c)=>c.ar<m.ar?c:m,cands[0])]; }
-    pool.forEach(c=>{ if(c.sc>bScore){ bScore=c.sc; best=c.L; bOptX=c.o; bNg=c.ng; bSp=c.sp; } });
+    pool.forEach(c=>{ if(c.sc>bScore){ bScore=c.sc; best=c.L; bOptX=c.o; bNg=c.ng; bSp=c.sp; bPf=c.pf; } });
     // 2e passe : RESSERRER les goulottes à la largeur réellement occupée par
     // les pistes (comme en mode complet) -> fini les boulevards vides entre
     // colonnes ; l'ordre vertical (repères) ne change pas. Gardé seulement si
     // le dessin reste aussi droit et devient réellement plus étroit.
     let bFix=null;
     try{ const fix=tightenChannels(best);
-      if(fix){ CHW_FIX=fix; OPT_NOGROW=bNg; SPLIT_COIL=bSp; const L2=computeLayoutWith(eq,lk,bOptX); const R2=routeAll(L2); CHW_FIX=null; OPT_NOGROW=false; SPLIT_COIL=false;
+      if(fix){ CHW_FIX=fix; OPT_NOGROW=bNg; SPLIT_COIL=bSp; PF_OPT=bPf; const L2=computeLayoutWith(eq,lk,bOptX); const R2=routeAll(L2); CHW_FIX=null; OPT_NOGROW=false; SPLIT_COIL=false; PF_OPT=false;
         L2._routing=R2;
         const cw=L=>{ let mx=0; L.comps.forEach(c=>mx=Math.max(mx,c.x+c.w)); return mx; };
         if(scoreOf(L2)>=bScore-1 && cw(L2)<cw(best)*0.97){ best=L2; bFix=fix; bScore=scoreOf(L2); } }
-    }catch(_){ CHW_FIX=null; OPT_NOGROW=false; SPLIT_COIL=false; }
+    }catch(_){ CHW_FIX=null; OPT_NOGROW=false; SPLIT_COIL=false; PF_OPT=false; }
     // 3e passe (Optimiser uniquement : la condensation est inactive pendant les
     // clics d'exploration) : glissement de broches -> gardé si le score monte
     // (et, en mode équilibré, si la surface reste sous le plafond).
-    if(OPT_ONCE) try{ COND_PINS=true; CHW_FIX=bFix; OPT_NOGROW=bNg; SPLIT_COIL=bSp; const L3=computeLayoutWith(eq,lk,bOptX); const R3=routeAll(L3);
-      COND_PINS=false; CHW_FIX=null; OPT_NOGROW=false; SPLIT_COIL=false; L3._routing=R3;
+    if(OPT_ONCE) try{ COND_PINS=true; CHW_FIX=bFix; OPT_NOGROW=bNg; SPLIT_COIL=bSp; PF_OPT=bPf; const L3=computeLayoutWith(eq,lk,bOptX); const R3=routeAll(L3);
+      COND_PINS=false; CHW_FIX=null; OPT_NOGROW=false; SPLIT_COIL=false; PF_OPT=false; L3._routing=R3;
       if(scoreOf(L3)>bScore && (!balanced||areaOf(L3)<=OPT_AREA_CAP)){ best=L3; bScore=scoreOf(L3); }
-    }catch(_){ COND_PINS=false; CHW_FIX=null; OPT_NOGROW=false; SPLIT_COIL=false; }
+    }catch(_){ COND_PINS=false; CHW_FIX=null; OPT_NOGROW=false; SPLIT_COIL=false; PF_OPT=false; }
     return best;
   }
   // sinon (temps non contraint, priorité fils droits) : on essaie plusieurs
