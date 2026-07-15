@@ -410,7 +410,27 @@ function computeLayoutWith(eq, lk, peripheral){
   const primRoot=(typeof SEED_HINT!=='undefined')?SEED_HINT:null;
   const wholeStrip=n=> isExp && (rawNames.length<=20 || n===primRoot);
   for(const n of rawNames){ const P=P0(n);
-    if(!isStripName(n)){ nodes.set(n,{id:n,name:n,strip:false,pins:P.list.slice()});
+    if(!isStripName(n)){
+      // ÉCLATEMENT MÉTIER (schéma complet et « Droits max ») : un appareil à
+      // bobine ne se dessine pas en un bloc géant qui enjambe des rangées.
+      // Comme sur un vrai folio : bobine (A1/A2), pôles de puissance (1..6) et
+      // chaque contact auxiliaire (13/14, 53/54…) sont des éléments séparés,
+      // tous étiquetés au même repère.
+      const lbl=p=>String(p.label||p.key).replace(/^n:/,'').toUpperCase();
+      const kfun=s=>{ if(/^A\d$/.test(s))return 'b';
+        if(/^[1-6]$/.test(s))return 'p';
+        const m=/^(\d)[1-8]$/.exec(s); if(m)return 'x'+m[1];
+        return 'b'; };
+      const splitOK=(typeof SPLIT_COIL!=='undefined'&&SPLIT_COIL);
+      if(splitOK && P.list.length>=4 && P.list.some(p=>/^A\d$/.test(lbl(p)))){
+        const gm=new Map();
+        P.list.forEach(p=>{ const g=kfun(lbl(p)); (gm.get(g)||gm.set(g,[]).get(g)).push(p); });
+        if(gm.size>=2){ let gi=0;
+          for(const [g,pins] of gm){ const id=n+FRAG+'e'+(gi++);
+            nodes.set(id,{id,name:n,strip:false,pins});
+            pins.forEach(p=>nodeOfPin.set(n+SOH+p.key,id)); }
+          continue; } }
+      nodes.set(n,{id:n,name:n,strip:false,pins:P.list.slice()});
       P.list.forEach(p=>nodeOfPin.set(n+SOH+p.key,n)); continue; }
     // en EXPLORATION : le bornier reste ENTIER (un seul bloc cohérent) au lieu
     // d'être éclaté en un fragment par départ -> on comprend d'un coup d'œil
@@ -1367,10 +1387,16 @@ function computeLayoutWith(eq, lk, peripheral){
       // comme la croissance : jamais en exploration (stabilité des clics),
       // seulement en schéma complet ou via le bouton Optimiser.
       if(typeof EXPLORING!=='undefined'&&EXPLORING&&!OPT_ONCE)return false;
-      const leafOf=id=>{ const st=new Set();
-        listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>(partners.get(id+SOH+p.key)||[]).forEach(q=>{ if(q.id!==id&&!isTagB(q.id))st.add(q.id); }))); return st; };
       const reBound=new Set();
       allB.forEach(H=>{ if(isTagB(H))return;
+        // grappe-feuille : composante connexe d'un partenaire, H exclu. Si elle
+        // ne touche H que par le paquet, elle se déplace RIGIDEMENT avec lui
+        // (rangée satellite entière : Q+F+KM voisins de bout de chaîne…).
+        const compOf=(P)=>{ const seen=new Set([P]); const st=[P];
+          while(st.length){ const u=st.pop(); if(seen.size>40)return null;
+            listKeys(u).forEach(lid=>listArr(u,lid).forEach(p=>(partners.get(u+SOH+p.key)||[]).forEach(q=>{
+              if(q.id===H||isTagB(q.id)||seen.has(q.id))return; seen.add(q.id); st.push(q.id); }))); }
+          return seen; };
         let moved=false;
         for(let g=0; g<60; g++){
           const items=[]; listKeys(H).forEach(lid=>listArr(H,lid).forEach(p=>items.push({k:p.key,y:pinYof(H,p.key)})));
@@ -1386,15 +1412,22 @@ function computeLayoutWith(eq, lk, peripheral){
           for(const G of gaps){ const bi=G.i, bg=G.gp;
           const above=items.slice(0,bi), below=items.slice(bi);
           const trySide=(side,dy)=>{
-            // partenaires du paquet : tous FEUILLES de H, entièrement dans le paquet
+            // partenaires du paquet : leurs GRAPPES entières, qui ne doivent
+            // toucher H que par le paquet (sinon un fil se plierait)
+            const sideKeys=new Set(side.map(it=>it.k));
             const parts=new Set(); let ok=true;
-            side.forEach(it=>{ (partners.get(H+SOH+it.k)||[]).forEach(q=>{ if(q.id===H)return; if(isTagB(q.id))return; parts.add(q.id); }); });
-            if(!parts.size)return false;
-            for(const P of parts){ const nb=leafOf(P); if(nb.size!==1||!nb.has(H)){ ok=false; break; }
-              // toutes les broches de P doivent viser des broches du paquet (pas l'autre côté)
-              const sideKeys=new Set(side.map(it=>it.k)); let allIn=true;
-              listKeys(P).forEach(lid=>listArr(P,lid).forEach(p=>{ (partners.get(P+SOH+p.key)||[]).forEach(q=>{ if(q.id===H&&!sideKeys.has(q.key))allIn=false; }); }));
-              if(!allIn){ ok=false; break; } }
+            side.forEach(it=>{ (partners.get(H+SOH+it.k)||[]).forEach(q=>{ if(!ok)return;
+              if(q.id===H){ if(!sideKeys.has(q.key))ok=false; return; }
+              if(isTagB(q.id))return; if(parts.has(q.id))return;
+              const comp=compOf(q.id); if(!comp){ ok=false; return; }
+              comp.forEach(m=>parts.add(m)); }); });
+            const DBG=(typeof window!=='undefined'&&window.__dbgH===H)?(m=>(window.__why=window.__why||[]).push(m)):null;
+            if(DBG)DBG('side='+side.map(x=>x.k).join('|')+' dy='+Math.round(dy)+' ok='+ok+' parts='+parts.size);
+            if(!ok||!parts.size)return false;
+            for(const m of parts){ let bad=false;
+              listKeys(m).forEach(lid=>listArr(m,lid).forEach(p=>(partners.get(m+SOH+p.key)||[]).forEach(q=>{
+                if(q.id===H&&!sideKeys.has(q.key))bad=true; })));
+              if(bad){ ok=false; if(DBG)DBG('touche '+m); break; } }
             if(!ok)return false;
             // fermeture PARTIELLE : on glisse le paquet aussi loin que la place
             // le permet (jusqu'au contact), plutôt que tout-ou-rien.
@@ -1405,6 +1438,7 @@ function computeLayoutWith(eq, lk, peripheral){
                 if(!(x<ox+ow+6&&ox<x+w+6))return;
                 if(sign>0){ if(blockTop.get(o)>=blockBot.get(P)-1) mag=Math.min(mag,blockTop.get(o)-8-blockBot.get(P)); }
                 else { if(blockBot.get(o)<=blockTop.get(P)+1) mag=Math.min(mag,blockTop.get(P)-(blockBot.get(o)+8)); } }); }
+            if(DBG)DBG('mag='+Math.round(mag)+'/'+Math.round(Math.abs(dy)));
             if(mag<2*PRH)return false;
             const d=sign*mag;
             // espacement des broches de H après fermeture (le paquet garde son ordre)
@@ -1610,6 +1644,7 @@ let OPT_ONCE=false;   // « Optimiser » : un rendu d'exploration SANS verrou, c
 let OPT_MODE='max';   // 'bal' = équilibré (plafond de surface), 'max' = droits à tout prix
 let OPT_AREA_CAP=0;   // plafond de surface du mode équilibré (1.35x le dessin courant)
 let OPT_NOGROW=false; // candidat « compact » : croissance des blocs coupée pendant ce rendu
+let SPLIT_COIL=false; // candidat « éclaté » : bobine / pôles / contacts aux. dessinés séparément
 let USE_CLUSTER=false; // regroupement par communautés (maillages)
 let COND_PINS=false;   // condensation par glissement de broches (essayée en 3e passe, gardée si meilleure)
 let ROUTE_SEED=false;  // amorcer les communautés sur la colonne Route/cheminement
@@ -1648,33 +1683,37 @@ function computeLayout(eq, lk){
     // (~1.35x le dessin courant). « Droits max » : aucun plafond.
     const balanced=OPT_ONCE && OPT_MODE==='bal' && OPT_AREA_CAP>0;
     const ngModes=balanced?[false,true]:[false];
+    // « Droits max » essaie aussi chaque graine avec ÉCLATEMENT MÉTIER des
+    // appareils à bobine (bobine / pôles / contacts auxiliaires séparés).
+    const spModes=(OPT_ONCE&&OPT_MODE==='max')?[false,true]:[false];
     const cands=[];
-    ngModes.forEach(ng=>{ OPT_NOGROW=ng;
+    spModes.forEach(sp=>{ SPLIT_COIL=sp; ngModes.forEach(ng=>{ OPT_NOGROW=ng;
       opts.forEach(o=>{ const L=computeLayoutWith(eq,lk,o); L._routing=routeAll(L);
-        cands.push({L,o,ng,sc:scoreOf(L),ar:areaOf(L)}); }); });
-    OPT_NOGROW=false;
+        cands.push({L,o,ng,sp,sc:scoreOf(L),ar:areaOf(L)}); }); }); });
+    OPT_NOGROW=false; SPLIT_COIL=false;
+    let bSp=false;
     let pool=cands;
     if(balanced){ const ok=cands.filter(c=>c.ar<=OPT_AREA_CAP);
       pool=ok.length?ok:[cands.reduce((m,c)=>c.ar<m.ar?c:m,cands[0])]; }
-    pool.forEach(c=>{ if(c.sc>bScore){ bScore=c.sc; best=c.L; bOptX=c.o; bNg=c.ng; } });
+    pool.forEach(c=>{ if(c.sc>bScore){ bScore=c.sc; best=c.L; bOptX=c.o; bNg=c.ng; bSp=c.sp; } });
     // 2e passe : RESSERRER les goulottes à la largeur réellement occupée par
     // les pistes (comme en mode complet) -> fini les boulevards vides entre
     // colonnes ; l'ordre vertical (repères) ne change pas. Gardé seulement si
     // le dessin reste aussi droit et devient réellement plus étroit.
     let bFix=null;
     try{ const fix=tightenChannels(best);
-      if(fix){ CHW_FIX=fix; OPT_NOGROW=bNg; const L2=computeLayoutWith(eq,lk,bOptX); const R2=routeAll(L2); CHW_FIX=null; OPT_NOGROW=false;
+      if(fix){ CHW_FIX=fix; OPT_NOGROW=bNg; SPLIT_COIL=bSp; const L2=computeLayoutWith(eq,lk,bOptX); const R2=routeAll(L2); CHW_FIX=null; OPT_NOGROW=false; SPLIT_COIL=false;
         L2._routing=R2;
         const cw=L=>{ let mx=0; L.comps.forEach(c=>mx=Math.max(mx,c.x+c.w)); return mx; };
         if(scoreOf(L2)>=bScore-1 && cw(L2)<cw(best)*0.97){ best=L2; bFix=fix; bScore=scoreOf(L2); } }
-    }catch(_){ CHW_FIX=null; OPT_NOGROW=false; }
+    }catch(_){ CHW_FIX=null; OPT_NOGROW=false; SPLIT_COIL=false; }
     // 3e passe (Optimiser uniquement : la condensation est inactive pendant les
     // clics d'exploration) : glissement de broches -> gardé si le score monte
     // (et, en mode équilibré, si la surface reste sous le plafond).
-    if(OPT_ONCE) try{ COND_PINS=true; CHW_FIX=bFix; OPT_NOGROW=bNg; const L3=computeLayoutWith(eq,lk,bOptX); const R3=routeAll(L3);
-      COND_PINS=false; CHW_FIX=null; OPT_NOGROW=false; L3._routing=R3;
-      if(scoreOf(L3)>bScore && (!balanced||areaOf(L3)<=OPT_AREA_CAP)) best=L3;
-    }catch(_){ COND_PINS=false; CHW_FIX=null; OPT_NOGROW=false; }
+    if(OPT_ONCE) try{ COND_PINS=true; CHW_FIX=bFix; OPT_NOGROW=bNg; SPLIT_COIL=bSp; const L3=computeLayoutWith(eq,lk,bOptX); const R3=routeAll(L3);
+      COND_PINS=false; CHW_FIX=null; OPT_NOGROW=false; SPLIT_COIL=false; L3._routing=R3;
+      if(scoreOf(L3)>bScore && (!balanced||areaOf(L3)<=OPT_AREA_CAP)){ best=L3; bScore=scoreOf(L3); }
+    }catch(_){ COND_PINS=false; CHW_FIX=null; OPT_NOGROW=false; SPLIT_COIL=false; }
     return best;
   }
   // sinon (temps non contraint, priorité fils droits) : on essaie plusieurs
@@ -1689,7 +1728,7 @@ function computeLayout(eq, lk){
   // score : priorité forte aux fils droits, croisements en départage (1 fil
   // droit vaut ~40 croisements -> on ne sacrifie jamais un fil droit pour du
   // propre, mais à droiture ~égale on prend le moins de croisements).
-  let best=null,bScore=-1e18,bOpt=false,bClus=false,bRoute=false;
+  let best=null,bScore=-1e18,bOpt=false,bClus=false,bRoute=false,bSplit=false;
   const tryOpt=(o)=>{ const clus=typeof o==='string'&&o[0]==='C';
     const rSeed=typeof o==='string'&&o.slice(0,2)==='CR';
     USE_CLUSTER=clus; ROUTE_SEED=rSeed;
@@ -1698,9 +1737,14 @@ function computeLayout(eq, lk){
     // regroupement : on valorise fortement le PEU de croisements (lisibilité
     // des maillages), tout en gardant les fils droits en tête.
     const score=countStraight(R.wires) - countCrossings(R.wires)/(clus?45:120);
-    if(score>bScore){ best=L; best._routing=R; bScore=score; bOpt=seed; bClus=clus; bRoute=rSeed; } };
+    if(score>bScore){ best=L; best._routing=R; bScore=score; bOpt=seed; bClus=clus; bRoute=rSeed; bSplit=SPLIT_COIL; } };
   opts.forEach(tryOpt);
   clusterOpts.forEach(tryOpt);
+  // mêmes graines avec ÉCLATEMENT MÉTIER des appareils à bobine (bobine /
+  // pôles / contacts auxiliaires séparés) : gardé si le score y gagne
+  // strictement (à égalité, le dessin monolithique plus compact l'emporte).
+  SPLIT_COIL=true;
+  try{ opts.forEach(tryOpt); clusterOpts.forEach(tryOpt); } finally { SPLIT_COIL=false; }
   // 2e passe : resserrer les goulottes à la largeur réellement occupée par les
   // pistes -> colonnes plus proches, fils plus courts, schéma plus lisible.
   const contentW=L=>{ let mx=0; L.comps.forEach(c=>mx=Math.max(mx,c.x+c.w)); return mx; };
@@ -1710,22 +1754,22 @@ function computeLayout(eq, lk){
       for(const c of cs){ if(x1>c.x+2&&x0<c.x+c.w-2&&y1>c.y+2&&y0<c.y+c.h-2){n++;break;} } } }); return n; };
   let bFix=null;
   try{ const fix=tightenChannels(best);
-    if(fix){ CHW_FIX=fix; USE_CLUSTER=bClus; ROUTE_SEED=bRoute; const L2=computeLayoutWith(eq,lk,bOpt); const R2=routeAll(L2); CHW_FIX=null; USE_CLUSTER=false; ROUTE_SEED=false;
+    if(fix){ CHW_FIX=fix; USE_CLUSTER=bClus; ROUTE_SEED=bRoute; SPLIT_COIL=bSplit; const L2=computeLayoutWith(eq,lk,bOpt); const R2=routeAll(L2); CHW_FIX=null; USE_CLUSTER=false; ROUTE_SEED=false; SPLIT_COIL=false;
       L2._routing=R2;
       if(countStraight(R2.wires)>=countStraight(best._routing.wires)-1 && contentW(L2)<contentW(best)*0.97
          && inBloc(L2)<=inBloc(best)){ best=L2; bFix=fix; } }
-  }catch(_){ CHW_FIX=null; }
+  }catch(_){ CHW_FIX=null; SPLIT_COIL=false; }
   // 3e passe : condensation par glissement de broches (referme les grands blocs
   // creux). Gardée SEULEMENT si aucun fil droit n'est perdu et pas plus de
   // croisements ni de fils dans des blocs -> « on prend le meilleur ».
-  try{ COND_PINS=true; CHW_FIX=bFix; USE_CLUSTER=bClus; ROUTE_SEED=bRoute;
+  try{ COND_PINS=true; CHW_FIX=bFix; USE_CLUSTER=bClus; ROUTE_SEED=bRoute; SPLIT_COIL=bSplit;
     const L3=computeLayoutWith(eq,lk,bOpt); const R3=routeAll(L3);
-    COND_PINS=false; CHW_FIX=null; USE_CLUSTER=false; ROUTE_SEED=false;
+    COND_PINS=false; CHW_FIX=null; USE_CLUSTER=false; ROUTE_SEED=false; SPLIT_COIL=false;
     L3._routing=R3;
     const s3=countStraight(R3.wires), s0=countStraight(best._routing.wires);
     const c3=countCrossings(R3.wires), c0=countCrossings(best._routing.wires);
     if(inBloc(L3)<=inBloc(best) && (s3>s0 || (s3===s0 && c3<=c0))) best=L3;
-  }catch(_){ COND_PINS=false; CHW_FIX=null; USE_CLUSTER=false; ROUTE_SEED=false; }
+  }catch(_){ COND_PINS=false; CHW_FIX=null; USE_CLUSTER=false; ROUTE_SEED=false; SPLIT_COIL=false; }
   return best;
 }
 
