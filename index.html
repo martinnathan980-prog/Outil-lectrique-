@@ -1504,6 +1504,29 @@ function computeLayoutWith(eq, lk, peripheral){
     slidPills.forEach(sp=>{ if(sp.id!=null){ sp.y1=blockTop.get(sp.id); sp.y2=blockBot.get(sp.id); } });
     // re-trier chaque liste par Y (le liseré et les cellules suivent l'ordre visuel)
     nodeIds.forEach(id=>listKeys(id).forEach(lid=>listArr(id,lid).sort((a,b)=>pinYof(id,a.key)-pinYof(id,b.key))));
+    // TASSEMENT VERTICAL : toute bande horizontale vide sur TOUTE la largeur se
+    // referme à un petit interstice. Chaque bande occupée glisse d'un seul
+    // tenant -> l'ordre vertical est intact, un fil droit reste droit (ses deux
+    // blocs partagent la bande de son ordonnée), rien ne peut se chevaucher.
+    {
+      const GAPMIN=44;
+      const evs=[];
+      nodeIds.forEach(id=>evs.push({t:blockTop.get(id),b:blockBot.get(id)}));
+      slidPills.forEach(sp=>evs.push({t:sp.y1,b:sp.y2}));
+      evs.sort((a,b)=>a.t-b.t);
+      const occ=[]; evs.forEach(e=>{ const L=occ[occ.length-1];
+        if(L&&e.t<=L.b+GAPMIN) L.b=Math.max(L.b,e.b); else occ.push({t:e.t,b:e.b}); });
+      const moves=[]; let cum=0;
+      for(let i=1;i<occ.length;i++){ const gap=occ[i].t-occ[i-1].b;
+        if(gap>GAPMIN){ cum+=gap-GAPMIN; moves.push({from:occ[i].t,dy:cum}); } }
+      if(moves.length){
+        const dyOf=y=>{ let d=0; for(const m of moves){ if(y>=m.from-0.1)d=m.dy; else break; } return d; };
+        nodeIds.forEach(id=>{ const d=dyOf(blockTop.get(id)); if(!d)return;
+          blockTop.set(id,blockTop.get(id)-d); blockBot.set(id,blockBot.get(id)-d);
+          listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>pinY.set(id+SOH+p.key,pinYof(id,p.key)-d))); });
+        slidPills.forEach(sp=>{ const d=dyOf(sp.y1); if(d){ sp.y1-=d; sp.y2-=d; } });
+      }
+    }
   }
 
   let yMin=Infinity,yMax=-Infinity;
