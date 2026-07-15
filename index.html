@@ -529,6 +529,36 @@ function computeLayoutWith(eq, lk, peripheral){
   const usedL=[...new Set(nodeIds.map(n=>level.get(n)))].sort((a,b)=>a-b);
   const remapL=new Map(usedL.map((l,i)=>[l,i]));
   nodeIds.forEach(n=>level.set(n,remapL.get(level.get(n))));
+  // REMPLISSAGE DE PAGE : les composantes INDÉPENDANTES (aucun fil entre
+  // elles) se rangent côte à côte en plusieurs voies au lieu de s'empiler en
+  // un long ruban -> la page se remplit, et aucun croisement ne peut naître
+  // puisque les voies ne partagent aucun fil. Jamais pendant les clics
+  // d'exploration (les repères doivent rester où ils sont).
+  {
+    const PAGEFILL=(!isExp)||(typeof OPT_ONCE!=='undefined'&&OPT_ONCE&&typeof OPT_MODE!=='undefined'&&OPT_MODE==='max');
+    if(PAGEFILL){
+      const compId=new Map(); let nc=0;
+      for(const n of nodeIds){ if(compId.has(n))continue; const q=[n]; compId.set(n,nc);
+        while(q.length){ const u=q.pop(); for(const k of adj.get(u).keys()) if(!compId.has(k)){ compId.set(k,nc); q.push(k); } } nc++; }
+      if(nc>1){
+        const comps=Array.from({length:nc},()=>({ids:[],h:0,span:0}));
+        nodeIds.forEach(n=>{ const c=comps[compId.get(n)]; c.ids.push(n);
+          c.h+=nodes.get(n).pins.length*PRH+60; c.span=Math.max(c.span,level.get(n)); });
+        const totH=comps.reduce((s,c)=>s+c.h,0);
+        const laneW=(Math.max(...comps.map(c=>c.span))+1)*260;
+        let K=Math.max(1,Math.round(Math.sqrt(1.414*totH/laneW)));
+        K=Math.min(K,8,nc);
+        if(K>1){
+          comps.sort((a,b)=>b.h-a.h);
+          const lanes=Array.from({length:K},()=>({h:0,span:0,comps:[]}));
+          comps.forEach(c=>{ const ln=lanes.reduce((m,l)=>l.h<m.h?l:m,lanes[0]);
+            ln.comps.push(c); ln.h+=c.h; ln.span=Math.max(ln.span,c.span); });
+          let off=0; lanes.forEach(ln=>{ if(!ln.comps.length)return; ln.off=off; off+=ln.span+1;
+            ln.comps.forEach(c=>c.ids.forEach(n=>level.set(n,level.get(n)+ln.off))); });
+        }
+      }
+    }
+  }
   const maxLvlF=nodeIds.length?Math.max(...nodeIds.map(n=>level.get(n))):0;
   const columns=Array.from({length:maxLvlF+1},()=>[]);
   nodeIds.forEach(n=>columns[level.get(n)].push(n));
