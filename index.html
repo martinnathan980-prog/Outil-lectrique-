@@ -2320,13 +2320,24 @@ function colCat(cell){ const n=norm(cell); if(!n)return null;
   if(/^pn\d?$|potentiel|^pot$|^fil|wire/.test(n)) return 'pn';
   return null;
 }
-function detectCols(cells){ const eqs=[],terms=[],pns=[]; const map={};
+function detectCols(cells){ const eqs=[],pinish=[]; const map={};
   cells.forEach((c,i)=>{ const k=colCat(c);
-    if(k==='eq')eqs.push(i); else if(k==='term')terms.push(i); else if(k==='pn')pns.push(i);
+    if(k==='eq')eqs.push(i);
+    else if(k==='term'||k==='pn')pinish.push({i,k});   // borne OU potentiel : rattachés au device par position
     else if(k&&map[k]==null)map[k]=i; });
   if(eqs[0]!=null)map.eq1=eqs[0]; if(eqs[1]!=null)map.eq2=eqs[1];
-  if(terms[0]!=null)map.t1=terms[0]; if(terms[1]!=null)map.t2=terms[1];
-  if(pns[0]!=null)map.pn1=pns[0]; if(pns[1]!=null)map.pn2=pns[1];
+  // RATTACHEMENT PAR ADJACENCE : une borne appartient au device qui la précède.
+  // Dans le segment de chaque device, la 1re colonne borne/pin est le TERMINAL,
+  // la 2e le POTENTIEL. Robuste aux en-têtes où « PN1 » désigne en fait le n° de
+  // broche du 1er device (et « Pin2 » celui du 2e), pas un potentiel de fil.
+  const seg=i=> (map.eq2!=null&&i>map.eq2)?2 : (map.eq1!=null&&i>=map.eq1)?1 : 0;
+  const s1=pinish.filter(p=>seg(p.i)===1), s2=pinish.filter(p=>seg(p.i)===2);
+  if(s1[0])map.t1=s1[0].i; if(s1[1])map.pn1=s1[1].i;
+  if(s2[0])map.t2=s2[0].i; if(s2[1])map.pn2=s2[1].i;
+  // repli : en-tête sans device apparié -> ancien classement global par catégorie
+  if(map.t1==null&&map.t2==null){ const terms=pinish.filter(p=>p.k==='term'),pns=pinish.filter(p=>p.k==='pn');
+    if(terms[0])map.t1=terms[0].i; if(terms[1])map.t2=terms[1].i;
+    if(pns[0])map.pn1=pns[0].i; if(pns[1])map.pn2=pns[1].i; }
   return map;
 }
 function looksLikeHeader(cells){ const j=cells.map(norm).join(' ');
