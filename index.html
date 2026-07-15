@@ -1577,7 +1577,9 @@ function computeLayoutWith(eq, lk, peripheral){
   const x0=M-50, x1=totalW+50;
   const y0=yMin-150, y1=yMax+150;
   let bbox={x:x0,y:y0,w:x1-x0,h:y1-y0};
-  const A3=1.414;
+  // cadre au format A3, mais dans le SENS du contenu : un dessin nettement
+  // portrait reçoit un cadre portrait (fini les marges vides géantes).
+  const A3=(bbox.w/bbox.h<1)?(1/1.414):1.414;
   if(bbox.w/bbox.h<A3){ const nw=bbox.h*A3; bbox.x-=(nw-bbox.w)/2; bbox.w=nw; }
   else if(bbox.w/bbox.h>A3){ const nh=bbox.w/A3; bbox.y-=(nh-bbox.h)/2; bbox.h=nh; }
 
