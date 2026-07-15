@@ -362,12 +362,30 @@ const PRH=14, STRIPW=24, BODYW=104, BORNW=40, VGAP=22, HH=20, BPAD=6, HHS=15;
 const FRAG='';
 function computeLayoutWith(eq, lk, peripheral){
   const byRep=new Map(eq.map(e=>[e.repere,e]));
-  const isRail=n=>RAIL_RE.test(String(n).trim()) && !byRep.has(n);
 
   const rawNames=[]; const seenN=new Set();
   const noteName=n=>{ if(n&&!seenN.has(n)){seenN.add(n);rawNames.push(n);} };
   eq.forEach(e=>noteName(e.repere));
   lk.forEach(l=>{noteName(l.from);noteName(l.to);});
+
+  // mode ANONYMISÉ : aucun type/route/câble et tous les repères numériques.
+  // Sans indices métier, on infère la structure par la TOPOLOGIE. Faux dès
+  // qu'un nom porte une lettre -> n'affecte jamais un fichier normal.
+  const anonMode = rawNames.every(n=>!/[a-z]/i.test(String(n)))
+    && !lk.some(l=>(l.route||'').trim()||(l.ctype||'').trim()||(l.cable||'').trim()
+        ||norm((byRep.get(l.from)&&byRep.get(l.from).type)||'')||norm((byRep.get(l.to)&&byRep.get(l.to).type)||''));
+  const nbSetR=new Map();
+  lk.forEach(l=>{ if(l.from===l.to)return;
+    (nbSetR.get(l.from)||nbSetR.set(l.from,new Set()).get(l.from)).add(l.to);
+    (nbSetR.get(l.to)||nbSetR.set(l.to,new Set()).get(l.to)).add(l.from); });
+  // RAIL implicite (0V/+24V/PE anonymisé) : très gros degré vers des appareils
+  // NON feuilles = potentiel commun. Dessiné en pastilles à chaque point (jamais
+  // un bloc géant que tout traverse). Un automate a peu de voisins DISTINCTS
+  // (il passe par des borniers) -> jamais pris ici.
+  const topoRail=n=>{ if(!anonMode)return false; const s=nbSetR.get(n); if(!s||s.size<12)return false;
+    let leaves=0; s.forEach(m=>{ if((nbSetR.get(m)||new Set()).size<=3)leaves++; });
+    return leaves < s.size*0.4; };
+  const isRail=n=>(RAIL_RE.test(String(n).trim()) && !byRep.has(n)) || topoRail(n);
 
   // --- broches par nom brut
   const pinsOf=new Map(); const endPin=new Map();
@@ -383,21 +401,10 @@ function computeLayoutWith(eq, lk, peripheral){
       endPin.set(li+':'+tag,{name,key});
     });
   });
-  // mode ANONYMISÉ : aucun type/route/câble et tous les repères numériques.
-  // Le relevé a perdu ses indices métier -> on infère la structure par la
-  // TOPOLOGIE (un point de distribution se reconnaît à son fan-out vers des
-  // feuilles). Faux dès qu'un nom porte une lettre -> n'affecte jamais un
-  // fichier normal (KM5, XB1, 0V…).
-  const anonMode = rawNames.every(n=>!/[a-z]/i.test(String(n)))
-    && !lk.some(l=>(l.route||'').trim()||(l.ctype||'').trim()||(l.cable||'').trim()
-        ||norm((byRep.get(l.from)&&byRep.get(l.from).type)||'')||norm((byRep.get(l.to)&&byRep.get(l.to).type)||''));
-  const nbSetR=new Map();
-  lk.forEach(l=>{ if(l.from===l.to)return;
-    (nbSetR.get(l.from)||nbSetR.set(l.from,new Set()).get(l.from)).add(l.to);
-    (nbSetR.get(l.to)||nbSetR.set(l.to,new Set()).get(l.to)).add(l.from); });
+  // BORNIER implicite : gros fan-out majoritairement vers des feuilles.
   const topoStrip=n=>{ if(!anonMode)return false; const s=nbSetR.get(n); if(!s||s.size<10)return false;
     let leaves=0; s.forEach(m=>{ if((nbSetR.get(m)||new Set()).size<=3)leaves++; });
-    return leaves>=s.size*0.6; };   // gros fan-out majoritairement vers des feuilles = bornier
+    return leaves>=s.size*0.6; };
   const isStripName=n=>{ if(isRail(n))return true; const e=byRep.get(n);
     const t=norm((e&&(e.type||e.designation))||'');
     if(t) return /born|coupure|repart/.test(t);   // le type explicite gagne
