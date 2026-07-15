@@ -383,10 +383,26 @@ function computeLayoutWith(eq, lk, peripheral){
       endPin.set(li+':'+tag,{name,key});
     });
   });
+  // mode ANONYMISÉ : aucun type/route/câble et tous les repères numériques.
+  // Le relevé a perdu ses indices métier -> on infère la structure par la
+  // TOPOLOGIE (un point de distribution se reconnaît à son fan-out vers des
+  // feuilles). Faux dès qu'un nom porte une lettre -> n'affecte jamais un
+  // fichier normal (KM5, XB1, 0V…).
+  const anonMode = rawNames.every(n=>!/[a-z]/i.test(String(n)))
+    && !lk.some(l=>(l.route||'').trim()||(l.ctype||'').trim()||(l.cable||'').trim()
+        ||norm((byRep.get(l.from)&&byRep.get(l.from).type)||'')||norm((byRep.get(l.to)&&byRep.get(l.to).type)||''));
+  const nbSetR=new Map();
+  lk.forEach(l=>{ if(l.from===l.to)return;
+    (nbSetR.get(l.from)||nbSetR.set(l.from,new Set()).get(l.from)).add(l.to);
+    (nbSetR.get(l.to)||nbSetR.set(l.to,new Set()).get(l.to)).add(l.from); });
+  const topoStrip=n=>{ if(!anonMode)return false; const s=nbSetR.get(n); if(!s||s.size<10)return false;
+    let leaves=0; s.forEach(m=>{ if((nbSetR.get(m)||new Set()).size<=3)leaves++; });
+    return leaves>=s.size*0.6; };   // gros fan-out majoritairement vers des feuilles = bornier
   const isStripName=n=>{ if(isRail(n))return true; const e=byRep.get(n);
     const t=norm((e&&(e.type||e.designation))||'');
     if(t) return /born|coupure|repart/.test(t);   // le type explicite gagne
-    return inferType(n).s==='disconnect'; };
+    if(inferType(n).s==='disconnect')return true;
+    return topoStrip(n); };
 
   // --- partenaires bruts par broche (pour découper les borniers par destination)
   const rawPartners=new Map();
