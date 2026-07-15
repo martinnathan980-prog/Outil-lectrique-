@@ -1802,6 +1802,62 @@ function routeAll(layout){
   // 1) jobs par goulotte
   const chanJobs=Array.from({length:g.nCols+1},()=>[]);
   const midUsed=[];   // couloirs intermédiaires déjà occupés (anti-superposition)
+  // MARGES LATÉRALES : une longue verticale en pleine goulotte croise tous les
+  // fils droits des rangées qu'elle enjambe. Si le détour est raisonnable et
+  // les couloirs horizontaux libres, on la route par la marge extérieure où
+  // elle ne croise RIEN (pistes empilées comme les autoroutes haut/bas).
+  let mgR=-1e18, mgL=1e18;
+  layout.comps.forEach(c=>{ mgR=Math.max(mgR,c.x+c.w); mgL=Math.min(mgL,c.x); });
+  const swR=[], swL=[];
+  // fils DROITS traversant la goulotte ch entre lo et hi (coût de la verticale)
+  const crossEst=(ch,lo,hi)=>{ let n=0; const xa=chL(ch), xb=xa+g.chW[ch];
+    for(let k=0;k<N;k++){ const l=layout.links[k]; const P=l.epA,Q=l.epB;
+      if(Math.abs(P.y-Q.y)>0.75)continue; const y=P.y; if(y<=lo+1||y>=hi-1)continue;
+      if(Math.max(P.x,Q.x)>xb-1&&Math.min(P.x,Q.x)<xa+1)n++; } return n; };
+  const mgRoute=new Map();
+  // couloir de sortie : une ordonnée PROCHE de la borne où la traversée
+  // horizontale jusqu'à la marge est libre (petit crochet local autorisé)
+  const findExit=(P,s,mx,avoidY)=>{
+    const x0 = s==='R' ? chL(P.ch)+2 : mx;
+    const x1 = s==='R' ? mx : chL(P.ch)+g.chW[P.ch]-2;
+    for(let d=0; d<=400; d+=16) for(const sg of (d?[1,-1]:[1])){ const y=P.y+sg*d;
+      if(avoidY!=null&&Math.abs(y-avoidY)<8)continue;
+      if(!corridorFree(x0,x1,y))continue;
+      if(midUsed.some(m=>Math.abs(m.y-y)<8 && x1>m.xa-7 && x0<m.xb+7))continue;
+      return y; }
+    return null; };
+  const tryMargin=(li,A,B)=>{
+    // jamais pendant les clics d'exploration : le routage nourrit le score des
+    // graines, qui nourrit le verrou d'ordre -> les clics divergeraient.
+    if(typeof EXPLORING!=='undefined'&&EXPLORING&&!OPT_ONCE)return false;
+    const span=Math.abs(A.y-B.y); if(span<300)return false;
+    const lo=Math.min(A.y,B.y), hi=Math.max(A.y,B.y);
+    const ce=crossEst(A.ch,lo,hi);
+    if(ce<3)return false;   // la goulotte ne coûte presque rien : rester local
+    const dR=mgR-Math.max(A.x,B.x), dL=Math.min(A.x,B.x)-mgL;
+    for(const s of (dR<=dL?['R','L']:['L','R'])){
+      const base = s==='R'? mgR+26 : mgL-26;
+      const det = s==='R' ? (base-A.x)+(base-B.x) : (A.x-base)+(B.x-base);
+      // plus la verticale coûterait de croisements, plus le détour peut être
+      // long : un fil calme dans la marge vaut mieux que 8 fils tranchés.
+      if(det>Math.max(2.2*span,300*ce))continue;
+      const yA2=findExit(A,s,base,null); if(yA2==null)continue;
+      const yB2=findExit(B,s,base,yA2); if(yB2==null)continue;
+      // les crochets locaux doivent coûter NETTEMENT moins que la traversée
+      const ceLoc=crossEst(A.ch,Math.min(A.y,yA2),Math.max(A.y,yA2))
+                 +crossEst(B.ch,Math.min(B.y,yB2),Math.max(B.y,yB2));
+      if(ceLoc>ce-3)continue;
+      const t=hwAlloc(s==='R'?swR:swL, Math.min(yA2,yB2), Math.max(yA2,yB2));
+      const mx = s==='R' ? base+t*10 : base-t*10;
+      const xa=s==='R'?chL(A.ch)+2:mx, xb=s==='R'?mx:chL(A.ch)+g.chW[A.ch]-2;
+      midUsed.push({y:yA2,xa,xb});
+      const xa2=s==='R'?chL(B.ch)+2:mx, xb2=s==='R'?mx:chL(B.ch)+g.chW[B.ch]-2;
+      midUsed.push({y:yB2,xa:xa2,xb:xb2});
+      mgRoute.set(li,{mx,yA2,yB2});
+      chanJobs[A.ch].push({li,part:1,eps:[{y:A.y,s:A.stub},{y:yA2,s}]});
+      chanJobs[B.ch].push({li,part:2,eps:[{y:yB2,s},{y:B.y,s:B.stub}]});
+      return true; }
+    return false; };
   for(let li=0;li<N;li++){ const l=layout.links[li];
     let A=EA(li), B=EB(li);
     if(A.ch>B.ch){ const t=A;A=B;B=t; }
@@ -1809,7 +1865,8 @@ function routeAll(layout){
       if(A.stub!==B.stub && Math.abs(A.y-B.y)<0.75){
         const P=EA(li),Q=EB(li);
         wires[li]={...l,a:{ax:P.x,ay:P.y},b:{ax:Q.x,ay:Q.y},pts:[{x:P.x,y:P.y},{x:Q.x,y:Q.y}]};
-      } else chanJobs[A.ch].push({li,part:0,eps:[{y:A.y,s:A.stub},{y:B.y,s:B.stub}]});
+      } else if(tryMargin(li,A,B)){ /* routé par la marge : ne croise rien */ }
+      else chanJobs[A.ch].push({li,part:0,eps:[{y:A.y,s:A.stub},{y:B.y,s:B.stub}]});
     } else if(B.ch-A.ch>=1&&A.stub==='R'&&B.stub==='L'&&Math.abs(A.y-B.y)<0.75&&corridorFree(A.x+2,B.x-2,A.y)){
       // couloir direct : tout droit à travers les colonnes intermédiaires
       wires[li]={...l,a:{ax:A.x,ay:A.y},b:{ax:B.x,ay:B.y},pts:[{x:A.x,y:A.y},{x:B.x,y:B.y}]};
@@ -1837,6 +1894,7 @@ function routeAll(layout){
         hwY.set(li,mid);
         chanJobs[A.ch].push({li,part:1,eps:[{y:A.y,s:A.stub},{y:mid,s:'R'}]});
         chanJobs[B.ch].push({li,part:2,eps:[{y:mid,s:'L'},{y:B.y,s:B.stub}]});
+      } else if(tryMargin(li,A,B)){ /* routé par la marge : ne croise rien */
       } else {
         const top=g.yMin, bot=g.yMax;
         const useTop=(A.y-top)+(B.y-top)<=(bot-A.y)+(bot-B.y);
@@ -1889,7 +1947,13 @@ function routeAll(layout){
     let A=EA(li), B=EB(li), swapped=false;
     if(A.ch>B.ch){ const t=A;A=B;B=t; swapped=true; }
     let pts;
-    if(A.ch===B.ch){
+    if(mgRoute.has(li)){
+      const R=mgRoute.get(li);
+      const tx1=chOut[A.ch].get(li+':1'), tx2=chOut[B.ch].get(li+':2');
+      pts=[{x:A.x,y:A.y},{x:tx1,y:A.y},{x:tx1,y:R.yA2},{x:R.mx,y:R.yA2},
+           {x:R.mx,y:R.yB2},{x:tx2,y:R.yB2},{x:tx2,y:B.y},{x:B.x,y:B.y}]
+        .filter((p,i,a)=>!i||Math.abs(p.x-a[i-1].x)>0.01||Math.abs(p.y-a[i-1].y)>0.01);
+    } else if(A.ch===B.ch){
       const tx=chOut[A.ch].get(li+':0');
       pts=[{x:A.x,y:A.y},{x:tx,y:A.y},{x:tx,y:B.y},{x:B.x,y:B.y}];
     } else if(chOut[B.ch].has(li+':3')){
