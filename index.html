@@ -139,7 +139,7 @@ main{grid-area:main;position:relative;overflow:hidden;background:#e3e6ea}
           <datalist id="xp-names"></datalist>
           <div id="xp-chips" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px"></div>
           <div id="xp-stat" class="hint" style="margin-top:6px"></div>
-          <div style="margin-top:6px;display:flex;gap:6px"><button class="ghost" id="xp-opt" style="display:none" title="Replacer la sélection courante au mieux (fils droits maximum) — les blocs peuvent bouger">✨ Optimiser</button><button class="ghost" id="xp-all" style="display:none">Tout afficher</button></div>
+          <div style="margin-top:6px;display:flex;gap:6px"><button class="ghost" id="xp-opt" style="display:none" title="Replacer la sélection au mieux en GARDANT un dessin compact (la surface ne peut pas grossir de plus de ~35%)">✨ Optimiser</button><button class="ghost" id="xp-optmax" style="display:none" title="Fils droits maximum, à tout prix — le dessin peut beaucoup s'agrandir">📐 Droits max</button><button class="ghost" id="xp-all" style="display:none">Tout afficher</button></div>
           <div class="hint" style="margin-top:6px">Choisis un équipement : seul lui et ses liaisons sont dessinés. Clique un bloc voisin (badge +) pour le déplier à son tour ; ✕ sur un jeton pour replier.</div>
         </div>
       </div>
@@ -1215,6 +1215,7 @@ function computeLayoutWith(eq, lk, peripheral){
       if(inBody(id,y)){ pinY.set(id+SOH+key,y); return true; }
       if(listsOf.get(id).S)return false;                 // borniers : pas d'extension sauvage
       if(typeof EXPLORING!=='undefined'&&EXPLORING&&!OPT_ONCE)return false; // exploration : les rendus s'enchaînent (verrou d'ordre) -> la croissance contaminerait les clics suivants ; « Optimiser » lève le verrou sur demande
+      if(typeof OPT_NOGROW!=='undefined'&&OPT_NOGROW)return false; // candidat « compact » du mode équilibré
       if(allB.length>400)return false;                   // garde-fou perf
       const nt=Math.min(blockTop.get(id), y-16), nb2=Math.max(blockBot.get(id), y+10);
       if(nb2-nt>900)return false;
@@ -1241,7 +1242,7 @@ function computeLayoutWith(eq, lk, peripheral){
           return ps.every(q=>Math.abs(pinYof(q.id,q.key)-y0)<0.6); };
         const ok=(y)=>dc===1||corridorClear(ia,ib,y);        // multi-colonnes : corridor requis
         // schéma complet : placement avec croissance ; exploration : chemin historique exact
-        const noGrow=(typeof EXPLORING!=='undefined'&&EXPLORING&&!OPT_ONCE);
+        const noGrow=(typeof EXPLORING!=='undefined'&&EXPLORING&&!OPT_ONCE)||(typeof OPT_NOGROW!=='undefined'&&OPT_NOGROW);
         const place=(id,key,y)=> !noGrow ? (ok(y)&&tryPlace(id,key,y))
           : (canPlace(id,key,y)&&ok(y)&&(pinY.set(id+SOH+key,y),true));
         if(mobile(ia,A.key)&&place(ia,A.key,yb)){ moved=true; }
@@ -1604,6 +1605,9 @@ let EXPLORING=false;  // en exploration : goulottes à largeur fixe (colonnes st
 let CHW_FIX=null;     // largeurs de goulotte imposées (2e passe de resserrage)
 let SEED_HINT=null;   // repère qui amorce le BFS (exploration) = bornier cliqué gardé ENTIER
 let OPT_ONCE=false;   // « Optimiser » : un rendu d'exploration SANS verrou, croissance permise
+let OPT_MODE='max';   // 'bal' = équilibré (plafond de surface), 'max' = droits à tout prix
+let OPT_AREA_CAP=0;   // plafond de surface du mode équilibré (1.35x le dessin courant)
+let OPT_NOGROW=false; // candidat « compact » : croissance des blocs coupée pendant ce rendu
 let USE_CLUSTER=false; // regroupement par communautés (maillages)
 let COND_PINS=false;   // condensation par glissement de broches (essayée en 3e passe, gardée si meilleure)
 let ROUTE_SEED=false;  // amorcer les communautés sur la colonne Route/cheminement
@@ -1632,28 +1636,43 @@ function computeLayout(eq, lk){
     // temps non contraint en exploration : on tente plusieurs ordonnancements
     // (graine + décalages + périphérique) et on garde le mieux ALIGNÉ.
     const opts=[false,true,1,2];
-    let best=null,bScore=-1e18,bOptX=false;
+    let best=null,bScore=-1e18,bOptX=false,bNg=false;
     const scoreOf=(L)=>countStraight(L._routing.wires)*8 - countCrossings(L._routing.wires) - inBlocOf(L)*30;
-    opts.forEach(o=>{ const L=computeLayoutWith(eq,lk,o); L._routing=routeAll(L);
-      const sc=scoreOf(L);
-      if(sc>bScore){ bScore=sc; best=L; bOptX=o; } });
+    const areaOf=(L)=>{ let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;
+      L.comps.forEach(c=>{ x0=Math.min(x0,c.x); y0=Math.min(y0,c.y); x1=Math.max(x1,c.x+c.w); y1=Math.max(y1,c.y+c.h); });
+      return Math.max(1,(x1-x0)*(y1-y0)); };
+    // « Optimiser » équilibré : on essaie aussi des candidats SANS croissance,
+    // et on n'accepte un candidat que si sa surface reste sous le plafond
+    // (~1.35x le dessin courant). « Droits max » : aucun plafond.
+    const balanced=OPT_ONCE && OPT_MODE==='bal' && OPT_AREA_CAP>0;
+    const ngModes=balanced?[false,true]:[false];
+    const cands=[];
+    ngModes.forEach(ng=>{ OPT_NOGROW=ng;
+      opts.forEach(o=>{ const L=computeLayoutWith(eq,lk,o); L._routing=routeAll(L);
+        cands.push({L,o,ng,sc:scoreOf(L),ar:areaOf(L)}); }); });
+    OPT_NOGROW=false;
+    let pool=cands;
+    if(balanced){ const ok=cands.filter(c=>c.ar<=OPT_AREA_CAP);
+      pool=ok.length?ok:[cands.reduce((m,c)=>c.ar<m.ar?c:m,cands[0])]; }
+    pool.forEach(c=>{ if(c.sc>bScore){ bScore=c.sc; best=c.L; bOptX=c.o; bNg=c.ng; } });
     // 2e passe : RESSERRER les goulottes à la largeur réellement occupée par
     // les pistes (comme en mode complet) -> fini les boulevards vides entre
     // colonnes ; l'ordre vertical (repères) ne change pas. Gardé seulement si
     // le dessin reste aussi droit et devient réellement plus étroit.
     let bFix=null;
     try{ const fix=tightenChannels(best);
-      if(fix){ CHW_FIX=fix; const L2=computeLayoutWith(eq,lk,bOptX); const R2=routeAll(L2); CHW_FIX=null;
+      if(fix){ CHW_FIX=fix; OPT_NOGROW=bNg; const L2=computeLayoutWith(eq,lk,bOptX); const R2=routeAll(L2); CHW_FIX=null; OPT_NOGROW=false;
         L2._routing=R2;
         const cw=L=>{ let mx=0; L.comps.forEach(c=>mx=Math.max(mx,c.x+c.w)); return mx; };
         if(scoreOf(L2)>=bScore-1 && cw(L2)<cw(best)*0.97){ best=L2; bFix=fix; bScore=scoreOf(L2); } }
-    }catch(_){ CHW_FIX=null; }
+    }catch(_){ CHW_FIX=null; OPT_NOGROW=false; }
     // 3e passe (Optimiser uniquement : la condensation est inactive pendant les
-    // clics d'exploration) : glissement de broches -> gardé si le score monte.
-    try{ COND_PINS=true; CHW_FIX=bFix; const L3=computeLayoutWith(eq,lk,bOptX); const R3=routeAll(L3);
-      COND_PINS=false; CHW_FIX=null; L3._routing=R3;
-      if(scoreOf(L3)>bScore) best=L3;
-    }catch(_){ COND_PINS=false; CHW_FIX=null; }
+    // clics d'exploration) : glissement de broches -> gardé si le score monte
+    // (et, en mode équilibré, si la surface reste sous le plafond).
+    if(OPT_ONCE) try{ COND_PINS=true; CHW_FIX=bFix; OPT_NOGROW=bNg; const L3=computeLayoutWith(eq,lk,bOptX); const R3=routeAll(L3);
+      COND_PINS=false; CHW_FIX=null; OPT_NOGROW=false; L3._routing=R3;
+      if(scoreOf(L3)>bScore && (!balanced||areaOf(L3)<=OPT_AREA_CAP)) best=L3;
+    }catch(_){ COND_PINS=false; CHW_FIX=null; OPT_NOGROW=false; }
     return best;
   }
   // sinon (temps non contraint, priorité fils droits) : on essaie plusieurs
@@ -2537,18 +2556,27 @@ function exploreRemove(name){ if(!state.xroots)return; state.xroots.delete(name)
   if(!state.xroots.size){ state.xroots=null; state.sel=null; xpUnpin(); render(); fit(); return; }
   render(); }
 function exploreStop(){ state.xroots=null; state.sel=null; xpUnpin(); render(); fit(); }
-function exploreOptimize(){ if(!(state.xroots&&state.xroots.size))return;
+function exploreOptimize(mode){ if(!(state.xroots&&state.xroots.size))return;
   // replacement optimal de la sélection courante : on lève le verrou d'ordre
   // pour UN rendu (les repères peuvent bouger) et on autorise la croissance.
-  ORDH.clear(); OPT_ONCE=true;
-  try{ render(); } finally { OPT_ONCE=false; }
+  // ✨ Optimiser (équilibré) : le dessin ne peut pas grossir de plus de ~35%.
+  // 📐 Droits max : fils droits à tout prix, quelle que soit la taille.
+  OPT_MODE=(mode==='max')?'max':'bal'; OPT_AREA_CAP=0;
+  if(OPT_MODE==='bal'&&typeof LAST!=='undefined'&&LAST&&LAST.layout&&LAST.layout.bbox){
+    const b=LAST.layout.bbox; OPT_AREA_CAP=Math.max(1,b.w*b.h)*1.35; }
+  // équilibré : le verrou d'ordre RESTE (les repères gardent leur place, le
+  // dessin reste compact) ; seul « Droits max » relâche tout.
+  if(OPT_MODE==='max') ORDH.clear();
+  OPT_ONCE=true;
+  try{ render(); } finally { OPT_ONCE=false; OPT_MODE='max'; OPT_AREA_CAP=0; }
   fit(); }
 function syncExplore(){ const dl=document.getElementById('xp-names'); if(!dl)return;
   const names=[...allDeviceNames()].sort();
   dl.innerHTML=names.slice(0,4000).map(n=>`<option value="${esc(n)}">`).join('');
   const chips=document.getElementById('xp-chips'), stat=document.getElementById('xp-stat'), all=document.getElementById('xp-all');
   const on=state.xroots&&state.xroots.size;
-  const ob=document.getElementById('xp-opt'); if(ob){ ob.style.display=on?'':'none'; ob.onclick=exploreOptimize; }
+  const ob=document.getElementById('xp-opt'); if(ob){ ob.style.display=on?'':'none'; ob.onclick=()=>exploreOptimize('bal'); }
+  const om=document.getElementById('xp-optmax'); if(om){ om.style.display=on?'':'none'; om.onclick=()=>exploreOptimize('max'); }
   chips.innerHTML=on?[...state.xroots].map(n=>`<span class="xchip">${esc(n)}<button data-x="${esc(n)}" title="replier">×</button></span>`).join(''):'';
   chips.querySelectorAll('button[data-x]').forEach(bt=>{ bt.onclick=()=>exploreRemove(bt.dataset.x); });
   all.style.display=on?'':'none';
