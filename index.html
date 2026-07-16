@@ -1729,6 +1729,11 @@ function tightenChannels(L){ const g=L.geom; if(!g||!g.colX.length)return null;
   return maxOff.map((o,i)=>Math.max(54, Math.min(g.chW[i], o+26)));
 }
 function computeLayout(eq, lk){
+  // GARDE-FOU : les drapeaux de candidat (regroupement, éclatement, condensation,
+  // voies, croissance coupée, largeurs figées) sont gérés par paires set/reset
+  // dans les concours ci-dessous ; on les remet à zéro À L'ENTRÉE pour qu'un
+  // rendu précédent interrompu (exception) ne puisse jamais contaminer celui-ci.
+  USE_CLUSTER=false; ROUTE_SEED=false; SPLIT_COIL=false; COND_PINS=false; PF_OPT=false; OPT_NOGROW=false; CHW_FIX=null;
   const inBlocOf=L=>{ let n=0; const cs=L.comps;
     L._routing.wires.forEach(w=>{ for(let i=0;i<w.pts.length-1;i++){ const a=w.pts[i],b=w.pts[i+1];
       const x0=Math.min(a.x,b.x),x1=Math.max(a.x,b.x),y0=Math.min(a.y,b.y),y1=Math.max(a.y,b.y);
