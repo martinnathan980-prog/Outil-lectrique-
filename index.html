@@ -1795,11 +1795,16 @@ function computeLayout(eq, lk){
   // graines, on rend chacune POUR DE VRAI, et on garde celle qui a le PLUS de
   // fils droits (départage : le moins de croisements).
   const nB=eq.length;
-  const opts=[false,true]; if(nB<=400){ opts.push(1,2,3); } if(nB<=120){ opts.push(4,5); }
+  // TRÈS GROS SCHÉMA : chaque rendu coûte cher ; on allège le concours de graines
+  // (les variantes redondantes ne gagnent quasiment jamais à cette échelle) pour
+  // que « tout afficher » reste utilisable. Gate à >600 blocs -> n'affecte aucun
+  // cas de la batterie de test (le plus gros = 500).
+  const HUGE=nB>600;
+  const opts= HUGE ? [false] : (()=>{ const o=[false,true]; if(nB<=400){ o.push(1,2,3); } if(nB<=120){ o.push(4,5); } return o; })();
   // regroupement par communautés : 2 graines topologiques (C0,C1) + 2 graines
   // amorcées sur la Route déclarée (CR0,CR1) si des routes sont présentes.
   const hasRoute=lk.some(l=>l.route&&String(l.route).trim());
-  const clusterOpts=hasRoute?['C0','C1','CR0','CR1']:['C0','C1'];
+  const clusterOpts= HUGE ? ['C0'] : (hasRoute?['C0','C1','CR0','CR1']:['C0','C1']);
   // score : priorité forte aux fils droits, croisements en départage (1 fil
   // droit vaut ~40 croisements -> on ne sacrifie jamais un fil droit pour du
   // propre, mais à droiture ~égale on prend le moins de croisements).
@@ -1818,8 +1823,10 @@ function computeLayout(eq, lk){
   // mêmes graines avec ÉCLATEMENT MÉTIER des appareils à bobine (bobine /
   // pôles / contacts auxiliaires séparés) : gardé si le score y gagne
   // strictement (à égalité, le dessin monolithique plus compact l'emporte).
-  SPLIT_COIL=true;
-  try{ opts.forEach(tryOpt); clusterOpts.forEach(tryOpt); } finally { SPLIT_COIL=false; }
+  // l'éclatement métier double le nombre de rendus : on le saute pour les très
+  // gros schémas (il ne gagne quasiment jamais à cette échelle, surtout anonyme).
+  if(!HUGE){ SPLIT_COIL=true;
+    try{ opts.forEach(tryOpt); clusterOpts.forEach(tryOpt); } finally { SPLIT_COIL=false; } }
   // 2e passe : resserrer les goulottes à la largeur réellement occupée par les
   // pistes -> colonnes plus proches, fils plus courts, schéma plus lisible.
   const contentW=L=>{ let mx=0; L.comps.forEach(c=>mx=Math.max(mx,c.x+c.w)); return mx; };
@@ -1837,7 +1844,8 @@ function computeLayout(eq, lk){
   // 3e passe : condensation par glissement de broches (referme les grands blocs
   // creux). Gardée SEULEMENT si aucun fil droit n'est perdu et pas plus de
   // croisements ni de fils dans des blocs -> « on prend le meilleur ».
-  try{ COND_PINS=true; CHW_FIX=bFix; USE_CLUSTER=bClus; ROUTE_SEED=bRoute; SPLIT_COIL=bSplit;
+  // (sautée sur les très gros schémas : un rendu de plus, gain marginal.)
+  if(!HUGE) try{ COND_PINS=true; CHW_FIX=bFix; USE_CLUSTER=bClus; ROUTE_SEED=bRoute; SPLIT_COIL=bSplit;
     const L3=computeLayoutWith(eq,lk,bOpt); const R3=routeAll(L3);
     COND_PINS=false; CHW_FIX=null; USE_CLUSTER=false; ROUTE_SEED=false; SPLIT_COIL=false;
     L3._routing=R3;
