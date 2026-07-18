@@ -14624,7 +14624,9 @@ function computeLayoutWith(eq, lk, peripheral){
   const widthOf=id=>{ const ls=listsOf.get(id);
     if(ls.S)return BORNW;
     if(isVCName(nodes.get(id).name))return 44;   // prise de coupure : corps très fin
-    return (ls.L.length?STRIPW:0)+BODYW+(ls.R.length?STRIPW:0); };
+    // SILHOUETTE UNIFORME : tous les équipements ont la même largeur (seule la
+    // hauteur varie) — flanc absent = corps plus large, même gabarit extérieur.
+    return STRIPW+BODYW+STRIPW; };
   const estH=id=>{ const ls=listsOf.get(id);
     const rows=ls.S?Math.max(1,ls.S.length):Math.max(ls.L.length,ls.R.length,1);
     return Math.max(ls.S?HH+rows*PRH+BPAD:64, rows*PRH+26); };
@@ -15931,7 +15933,16 @@ function routeAll(layout){
       kept.forEach(k=>{ epAdj.set(k.u.li+':'+k.u.tag,{...k.u.ep,x:bx,y:k.y});
         busDots.push({x:bx,y:k.y}); });
       busStubs.push({x0:px,x1:bx,y:py});
-      barrettes.push({x:bx,y1:Math.min(py,kept[0].y)-3,y2:Math.max(py,kept[kept.length-1].y)+3,bus}); });
+      // BORNES DE LA BARRETTE : borne source (au niveau du connecteur) + pour
+      // chaque piquage la destination « repère·borne » et le SENS (sortie si le
+      // relevé part d'ici, arrivée sinon) -> lisible directement sur la barre.
+      const l0=layout.links[kept[0].u.li];
+      const src=(kept[0].u.tag==='A')?(l0.fromTerm||''):(l0.toTerm||'');
+      const taps=kept.map(k=>{ const l=layout.links[k.u.li]; const out=(k.u.tag==='A');
+        const dn=out?l.to:l.from, dt=out?(l.toTerm||''):(l.fromTerm||'');
+        return {y:k.y, dir:(k.u.other.x>=bx?1:-1), out, txt:String(dn)+(dt?('·'+dt):'')}; });
+      barrettes.push({x:bx,y1:Math.min(py,kept[0].y)-3,y2:Math.max(py,kept[kept.length-1].y)+3,bus,
+        src,py,sdir:(bx>=px?1:-1),taps}); });
     barrettes.stubs=busStubs;
   }
   const EA=li=>epAdj.get(li+':A')||layout.links[li].epA;
@@ -16116,7 +16127,18 @@ function routeAll(layout){
   wires.forEach(w=>{ [w.pts[0],w.pts[w.pts.length-1]].forEach(p=>{
     const k=Math.round(p.x)+','+Math.round(p.y); cnt.set(k,(cnt.get(k)||0)+1); }); });
   const dots=[]; for(const [k,c] of cnt){ if(c>1){ const [x,y]=k.split(',').map(Number); dots.push({x,y}); } }
-  return {wires,bridges:[],dots,barrettes,busDots};
+  // PONTS : à chaque croisement fil vertical × fil horizontal, le vertical
+  // enjambe l'horizontal d'un petit arc (dessiné par wirePath). On liste ici
+  // tous les points de croisement (verticaux triés pour balayage rapide).
+  const bridges=[];
+  { const Hs=[],Vs=[];
+    wires.forEach(w=>{ if(!w||!w.pts)return; for(let i=0;i<w.pts.length-1;i++){ const a=w.pts[i],b=w.pts[i+1];
+      if(Math.abs(a.y-b.y)<.5&&Math.abs(a.x-b.x)>=.5) Hs.push({y:a.y,x0:Math.min(a.x,b.x),x1:Math.max(a.x,b.x)});
+      else if(Math.abs(a.x-b.x)<.5&&Math.abs(a.y-b.y)>=.5) Vs.push({x:a.x,y0:Math.min(a.y,b.y),y1:Math.max(a.y,b.y)}); } });
+    if(Hs.length&&Vs.length&&Hs.length*Vs.length<=6000000){
+      for(const v of Vs) for(const h of Hs){
+        if(h.y>v.y0+3&&h.y<v.y1-3&&v.x>h.x0+3&&v.x<h.x1-3) bridges.push({x:v.x,y:h.y}); } } }
+  return {wires,bridges,dots,barrettes,busDots};
 }
 
 /* ---------- 7. Rendu SVG ---------- */
@@ -16147,6 +16169,8 @@ function defs(){
      .rep-in{fill:#182430;font-weight:700;font-size:11px;letter-spacing:.8px}
      .des{fill:#637085;font-size:8.6px}
      .term{fill:#8893a0;font-size:7.6px}
+     .bartxt{fill:#95a0ad;font-size:6.6px}
+     .barsrc{fill:#5b6672;font-weight:700;font-size:7px}
      .body{fill:#ffffff;stroke:#26343f;stroke-width:1.4}
      .borne{fill:#eef1f4;stroke:#26343f;stroke-width:1}
      .bnum{fill:#182430;font-size:8px;font-weight:700}
@@ -16304,7 +16328,11 @@ function sceneInner(layout,routing){
   // câbles : aucun nom sur le dessin — toutes les infos au clic
   routing.wires.forEach(w=>body+=wireSvg(w,routing.bridges));
   ((routing.barrettes&&routing.barrettes.stubs)||[]).forEach(st=>body+=`<line class="w-int" x1="${f1(st.x0)}" y1="${f1(st.y)}" x2="${f1(st.x1)}" y2="${f1(st.y)}"/>`);
-  (routing.barrettes||[]).forEach(bar=>body+=`<line class="${bar.bus?'busbar':'barrette'}" x1="${f1(bar.x)}" y1="${f1(bar.y1)}" x2="${f1(bar.x)}" y2="${f1(bar.y2)}"/>`);
+  (routing.barrettes||[]).forEach(bar=>{ body+=`<line class="${bar.bus?'busbar':'barrette'}" x1="${f1(bar.x)}" y1="${f1(bar.y1)}" x2="${f1(bar.x)}" y2="${f1(bar.y2)}"/>`;
+    // borne source au raccord + destination et sens sur chaque piquage
+    if(bar.src) body+=`<text class="bartxt barsrc" x="${f1(bar.x-(bar.sdir||1)*3)}" y="${f1((bar.py!=null?bar.py:bar.y1)-3)}" text-anchor="${(bar.sdir||1)>0?'end':'start'}">${esc(clip(bar.src,8))}</text>`;
+    (bar.taps||[]).forEach(t=>{ const a=t.dir>0?'start':'end';
+      body+=`<text class="bartxt" x="${f1(bar.x+t.dir*7)}" y="${f1(t.y-3)}" text-anchor="${a}">${t.out?'▸':'◂'} ${esc(clip(t.txt,12))}</text>`; }); });
   (routing.busDots||[]).forEach(d=>body+=`<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="2.4"/>`);
   routing.dots.forEach(d=>body+=`<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="2.7"/>`);
   layout.comps.forEach(c=>body+=compSvg(c,state.sel===c.name));
