@@ -15644,6 +15644,83 @@ function computeLayoutWith(eq, lk, peripheral){
     }
   }
 
+  // RANGEMENT DES ÎLOTS : les composantes indépendantes (aucun fil entre elles)
+  // se rangent en ÉTAGÈRES serrées autour de l'îlot ANCRÉ (repères explorés,
+  // blocs épinglés, ou le plus grand groupe), au format de la page (racine de
+  // 2). Translation pure de chaque îlot : ses fils internes restent identiques
+  // (donc droits), et aucun fil ne relie deux îlots -> aucun croisement ni
+  // chevauchement ne peut naître.
+  {
+    const allPins=id=>{ const a=[]; listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>a.push(p.key))); return a; };
+    const par=new Map(); nodeIds.forEach(n=>par.set(n,n));
+    const find=k=>{ while(par.get(k)!==k){ par.set(k,par.get(par.get(k))); k=par.get(k); } return k; };
+    nodeIds.forEach(id=>allPins(id).forEach(k=>{ (partners.get(id+SOH+k)||[]).forEach(q=>{
+      if(par.has(q.id)){ const a=find(id),b=find(q.id); if(a!==b)par.set(a,b); } }); }));
+    const grp=new Map(); nodeIds.forEach(n=>{ const r=find(n); if(!grp.has(r))grp.set(r,[]); grp.get(r).push(n); });
+    const bnd=g=>{ let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;
+      g.forEach(n=>{ const x=nodeX.get(n),w=widthOf(n);
+        x0=Math.min(x0,x); x1=Math.max(x1,x+w);
+        y0=Math.min(y0,blockTop.get(n)); y1=Math.max(y1,blockBot.get(n)); });
+      return {x0,y0,w:x1-x0,h:y1-y0}; };
+    // JAMAIS pendant un arrangement à la souris (blocs épinglés) : comme pour le
+    // tassement, les positions choisies par l'utilisateur sont sacrées. Sinon,
+    // le plus GRAND îlot sert d'ancre et les autres s'organisent autour.
+    const items=[],locked=[];
+    if(!(typeof OVR!=='undefined'&&OVR.size)){
+      grp.forEach(g=>items.push(g));
+      if(items.length){ let bi=0;
+        items.forEach((g,i)=>{ if(g.length>items[bi].length)bi=i; });
+        locked.push(items.splice(bi,1)[0]); }
+    }
+    if(items.length>=3){
+      // resserrage interne des paires : le fragment (bornier / pastille) vient
+      // se coller à son appareil -> son fil droit raccourcit, la cellule est
+      // compacte. L'ordre gauche/droite et les ordonnées ne changent pas.
+      items.forEach(g=>{ if(g.length<2||g.length>3)return;
+        const devs=g.filter(n=>!nodes.get(n).strip), frs=g.filter(n=>nodes.get(n).strip);
+        if(devs.length!==1||!frs.length)return;
+        const d=devs[0]; const dx0=nodeX.get(d), dw=widthOf(d);
+        let ro=dx0+dw+30, lo=dx0-30;
+        frs.slice().sort((a,b)=>nodeX.get(a)-nodeX.get(b)).forEach(f=>{ const fw=widthOf(f);
+          if(nodeX.get(f)>=dx0+dw){ nodeX.set(f,ro); ro+=fw+26; }
+          else { lo-=fw; nodeX.set(f,lo); lo-=26; } });
+      });
+      const PAD=16;
+      const keyOf=g=>{ let m=1e15; g.forEach(n=>{ const N=nodes.get(n); if(N.strip)return;
+        const v=parseFloat(N.name); if(!isNaN(v))m=Math.min(m,v); }); return m; };
+      const rects=items.map(g=>{ const b=bnd(g); return {g,b,w:b.w+2*PAD,h:b.h+2*PAD,k:keyOf(g)}; });
+      // les grands d'abord (étagères stables), puis lecture par repère croissant
+      rects.sort((a,b)=>(b.h-a.h)||(a.k-b.k));
+      let MB=null; locked.forEach(g=>{ const b=bnd(g); MB=MB?{x0:Math.min(MB.x0,b.x0),y0:Math.min(MB.y0,b.y0),
+        x1:Math.max(MB.x1,b.x0+b.w),y1:Math.max(MB.y1,b.y0+b.h)}:{x0:b.x0,y0:b.y0,x1:b.x0+b.w,y1:b.y0+b.h}; });
+      // deux dispositions : étagères VERTICALES à droite de l'ancre, étagères
+      // HORIZONTALES en dessous ; on garde la page la plus proche du format A3.
+      const packR=(capH)=>{ const pos=[]; const x0=MB.x1+50; let x=x0,y=MB.y0,cw=0,ybot=MB.y0,xr=x0;
+        rects.forEach(r=>{ if(y>MB.y0&&y+r.h>MB.y0+capH){ x+=cw; cw=0; y=MB.y0; }
+          pos.push({r,x,y}); cw=Math.max(cw,r.w); ybot=Math.max(ybot,y+r.h); xr=Math.max(xr,x+r.w); y+=r.h; });
+        return {pos,W:xr-MB.x0,H:Math.max(MB.y1,ybot)-MB.y0}; };
+      const packB=(capW)=>{ const pos=[]; const y0=MB.y1+50; let x=MB.x0,y=y0,rh=0,xr=MB.x1,ybot=y0;
+        rects.forEach(r=>{ if(x>MB.x0&&x+r.w>MB.x0+capW){ y+=rh; rh=0; x=MB.x0; }
+          pos.push({r,x,y}); rh=Math.max(rh,r.h); xr=Math.max(xr,x+r.w); ybot=Math.max(ybot,y+r.h); x+=r.w; });
+        return {pos,W:xr-MB.x0,H:ybot-MB.y0}; };
+      // plusieurs gabarits d'étagère candidats -> on garde la page la plus
+      // proche du format A3 (le contenu de chaque îlot, lui, ne change jamais)
+      const mh=Math.max(MB.y1-MB.y0,500), mw=Math.max(MB.x1-MB.x0,700);
+      const cands=[];
+      [1,1.4,1.9,2.6].forEach(f=>cands.push(packR(mh*f)));
+      [1,1.5,2.1].forEach(f=>cands.push(packB(mw*f)));
+      const cost=c=>Math.abs(Math.log((Math.max(c.W,60)/Math.max(c.H,60))/1.414));
+      const P=cands.reduce((m,c)=>cost(c)<cost(m)?c:m,cands[0]);
+      P.pos.forEach(({r,x,y})=>{ const dx=(x+PAD)-r.b.x0, dy=(y+PAD)-r.b.y0;
+        if(!dx&&!dy)return;
+        r.g.forEach(n=>{ nodeX.set(n,nodeX.get(n)+dx);
+          blockTop.set(n,blockTop.get(n)+dy); blockBot.set(n,blockBot.get(n)+dy);
+          allPins(n).forEach(k=>pinY.set(n+SOH+k,pinY.get(n+SOH+k)+dy)); });
+        slidPills.forEach(sp=>{ if(sp.id!=null&&r.g.includes(sp.id)){ sp.y1+=dy; sp.y2+=dy; } });
+      });
+    }
+  }
+
   let yMin=Infinity,yMax=-Infinity;
   nodeIds.forEach(id=>{ yMin=Math.min(yMin,blockTop.get(id)); yMax=Math.max(yMax,blockBot.get(id)); });
   if(!isFinite(yMin)){ yMin=topY; yMax=topY+200; }
@@ -15688,7 +15765,10 @@ function computeLayoutWith(eq, lk, peripheral){
       cable:l.cable||'',ctype:l.ctype||'',route:l.route||'',plan:l.plan||'',pn1:l.pn1||'',pn2:l.pn2||''};
   });
 
-  const x0=M-50, x1=totalW+50;
+  // largeur réelle : après le rangement des îlots, des blocs peuvent vivre
+  // au-delà des colonnes d'origine -> le cadre suit les positions réelles
+  let xR=totalW; nodeIds.forEach(id=>{ xR=Math.max(xR,nodeX.get(id)+widthOf(id)+30); });
+  const x0=M-50, x1=xR+50;
   const y0=yMin-150, y1=yMax+150;
   let bbox={x:x0,y:y0,w:x1-x0,h:y1-y0};
   // cadre au format A3, mais dans le SENS du contenu : un dessin nettement
