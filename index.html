@@ -15877,11 +15877,13 @@ function computeLayout(eq, lk){
         if(scoreOf(L2)>=bScore-1 && cw(L2)<cw(best)*0.97){ best=L2; bFix=fix; bScore=scoreOf(L2); } }
     }catch(_){ CHW_FIX=null; OPT_NOGROW=false; SPLIT_COIL=false; PF_OPT=false; }
     // 3e passe (Optimiser uniquement : la condensation est inactive pendant les
-    // clics d'exploration) : glissement de broches -> gardé si le score monte
-    // (et, en mode équilibré, si la surface reste sous le plafond).
+    // clics d'exploration) : glissement de broches -> gardé si le score monte,
+    // OU à score égal si le dessin devient réellement plus petit (blocs creux
+    // refermés sans rien perdre). En mode équilibré : plafond de surface.
     if(OPT_ONCE) try{ COND_PINS=true; CHW_FIX=bFix; OPT_NOGROW=bNg; SPLIT_COIL=bSp; PF_OPT=bPf; const L3=computeLayoutWith(eq,lk,bOptX); const R3=routeAll(L3);
       COND_PINS=false; CHW_FIX=null; OPT_NOGROW=false; SPLIT_COIL=false; PF_OPT=false; L3._routing=R3;
-      if(scoreOf(L3)>bScore && (!balanced||areaOf(L3)<=OPT_AREA_CAP)){ best=L3; bScore=scoreOf(L3); }
+      const s3=scoreOf(L3), a3=areaOf(L3);
+      if((s3>bScore || (s3===bScore && a3<areaOf(best)*0.97)) && (!balanced||a3<=OPT_AREA_CAP)){ best=L3; bScore=s3; }
     }catch(_){ COND_PINS=false; CHW_FIX=null; OPT_NOGROW=false; SPLIT_COIL=false; PF_OPT=false; }
     return best;
   }
