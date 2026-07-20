@@ -16233,7 +16233,7 @@ function defs(){
    <pattern id="gfine" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M10 0H0V10" fill="none" stroke="#f2f4f0" stroke-width="1"/></pattern>
    <pattern id="gcoarse" width="50" height="50" patternUnits="userSpaceOnUse"><path d="M50 0H0V50" fill="none" stroke="#e9ece7" stroke-width="1"/></pattern>
    <filter id="softsh" x="-30%" y="-30%" width="160%" height="180%">
-     <feDropShadow dx="0" dy="1.4" stdDeviation="1.6" flood-color="#31414f" flood-opacity=".16"/>
+     <feDropShadow dx="0" dy="1" stdDeviation="1.25" flood-color="#31414f" flood-opacity=".11"/>
    </filter>
    <style>
      text{font-family:ui-monospace,Menlo,Consolas,monospace}
@@ -16253,14 +16253,15 @@ function defs(){
      .term{fill:#8893a0;font-size:7.6px}
      .bartxt{fill:#95a0ad;font-size:6.6px}
      .barsrc{fill:#5b6672;font-weight:700;font-size:7px}
-     .body{fill:#ffffff;stroke:#26343f;stroke-width:1.4}
-     .borne{fill:#eef1f4;stroke:#26343f;stroke-width:1}
-     .bnum{fill:#182430;font-size:8px;font-weight:700}
-     .bstrip{fill:#f6f8fa;stroke:#3a4854;stroke-width:1}
-     .bcell{fill:#ffffff;stroke:#aeb9c3;stroke-width:.7}
-     .bshead{fill:#e6ebf0;stroke:none}
-     .bsname{fill:#182430;font-size:7.5px;font-weight:700;letter-spacing:.3px}
-     .rep-big{fill:#182430;font-weight:700;font-size:13px;letter-spacing:.8px}
+     .body{fill:#ffffff;stroke:#2b3947;stroke-width:1.25}
+     .borne{fill:#eef1f4;stroke:#2b3947;stroke-width:1}
+     .bnum{fill:#1c2733;font-size:8px;font-weight:700}
+     .bstrip{fill:#f7f9fb;stroke:#67757f;stroke-width:.9}
+     .bcell{fill:#ffffff;stroke:#d2dae1;stroke-width:.7}
+     .bshead{fill:#eef2f6;stroke:none}
+     .bsname{fill:#1c2733;font-size:7.5px;font-weight:700;letter-spacing:.3px}
+     .plug{fill:#2b3947;stroke:#fcfcf8;stroke-width:.85}
+     .rep-big{fill:#1c2733;font-weight:700;font-size:13px;letter-spacing:.8px}
      .bhead{fill:#e9eef3;stroke:none}
      .bheadline{stroke:#26343f;stroke-width:1}
      .barrette{stroke:#26323f;stroke-width:2.4;stroke-linecap:round}
@@ -16269,9 +16270,9 @@ function defs(){
      .plusb circle{fill:#1668c2;opacity:.9}
      .plusb text{fill:#ffffff;font:700 10px ui-monospace,monospace}
      .pinsep{stroke:#e3e8ed;stroke-width:1}
-     .pinlbl{fill:#22303d;font-size:7.8px;font-weight:600}
-     .rpill{fill:#ffffff;stroke:#c9d1d9;stroke-width:.9}
-     .rname{fill:#3c4a56;font-weight:700;font-size:10px;letter-spacing:.6px}
+     .pinlbl{fill:#2b3947;font-size:7.8px;font-weight:600}
+     .rpill{fill:#ffffff;stroke:#d2dae1;stroke-width:.9}
+     .rname{fill:#3a4652;font-weight:700;font-size:10px;letter-spacing:.6px}
      .ctag{fill:#5b6775;font-size:8px;font-weight:600}
      .frame{fill:none;stroke:#c4ccd4;stroke-width:1.1}
      .frame2{fill:none;stroke:#dde3e9;stroke-width:.7}
@@ -16289,7 +16290,7 @@ function defs(){
      .comp{transition:opacity .12s}
      /* MODE FOCUS : au survol d'un bloc ou au clic sur un fil, tout le reste
         s'estompe et le net (ou les fils du bloc) ressort net et épais. */
-     .focus .cab,.focus .w-int,.focus .barrette,.focus .busbar,.focus .jn,.focus .bartxt,.focus .barsrc{opacity:.10}
+     .focus .cab,.focus .w-int,.focus .barrette,.focus .busbar,.focus .jn,.focus .plug,.focus .bartxt,.focus .barsrc{opacity:.10}
      .focus .comp{opacity:.28}
      .focus .cab.hl{opacity:1;stroke-width:2.9}
      .focus .comp.hl{opacity:1}
@@ -16354,7 +16355,7 @@ function wireSvg(w,bridges){ const d=wirePath(w.pts,bridges);
 function pinCells(x0,w,rows,baseY){ // cellules fines et jointives
   let s='';
   rows.forEach(p=>{ const ly=p.y-baseY;
-    s+=`<rect class="bcell" x="${f1(x0)}" y="${f1(ly-PRH/2)}" width="${f1(w)}" height="${PRH}"/>`;
+    s+=`<rect class="bcell" x="${f1(x0)}" y="${f1(ly-PRH/2)}" width="${f1(w)}" height="${PRH}" rx="1.6"/>`;
     if(p.label) s+=`<text class="pinlbl" x="${f1(x0+w/2)}" y="${f1(ly+2.8)}" text-anchor="middle">${esc(p.label)}</text>`;
   });
   return s;
@@ -16394,7 +16395,7 @@ function compSvg(c,sel){
         if(pp.label)s+=`<text class="pinlbl" x="${f1(bx+bw-9)}" y="${f1(ly+2.8)}" text-anchor="end">${esc(pp.label)}</text>`; });
       s+=`<text class="rep" x="${f1(bx+bw/2)}" y="${f1(c.h+13)}" text-anchor="middle">${esc(clip(c.name,14))}</text>`;
     } else {
-      s+=`<g filter="url(#softsh)"><rect class="body" x="${f1(bx)}" y="0" width="${f1(bw)}" height="${c.h}" rx="3"/></g>`;
+      s+=`<g filter="url(#softsh)"><rect class="body" x="${f1(bx)}" y="0" width="${f1(bw)}" height="${c.h}" rx="5"/></g>`;
       s+=`<text class="rep-big" x="${f1(bx+bw/2)}" y="${f1(c.h/2+4.5)}" text-anchor="middle">${esc(clip(c.name,12))}</text>`;
       if(c.o.designation) s+=`<text class="des" x="${f1(bx+bw/2)}" y="${f1(c.h/2+17)}" text-anchor="middle">${esc(clip(c.o.designation,16))}</text>`;
       // liseré de flanc : coupé en segments par groupe de bornes (ne traverse
@@ -16431,6 +16432,11 @@ function sceneInner(layout,routing){
   (routing.busDots||[]).forEach(d=>body+=`<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="2.4"/>`);
   routing.dots.forEach(d=>body+=`<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="2.7"/>`);
   layout.comps.forEach(c=>body+=compSvg(c,state.sel===c.name));
+  // pastilles de raccordement : un petit point d'encre là où chaque fil se
+  // branche sur une borne -> le fil est « connecté », pas juste posé au bord.
+  routing.wires.forEach(w=>{ if(!w.pts||w.pts.length<2)return;
+    const a=w.pts[0], z=w.pts[w.pts.length-1];
+    body+=`<circle class="plug" cx="${f1(a.x)}" cy="${f1(a.y)}" r="1.5"/><circle class="plug" cx="${f1(z.x)}" cy="${f1(z.y)}" r="1.5"/>`; });
   return body;
 }
 function paint(layout,routing){
