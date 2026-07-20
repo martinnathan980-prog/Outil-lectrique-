@@ -16258,6 +16258,7 @@ function defs(){
      .bnum{fill:#1c2733;font-size:8px;font-weight:700}
      .bstrip{fill:#f7f9fb;stroke:#67757f;stroke-width:.9}
      .bcell{fill:#ffffff;stroke:#d2dae1;stroke-width:.7}
+     .bdiv{stroke:#dbe2e9;stroke-width:.7;stroke-linecap:round}
      .bshead{fill:#eef2f6;stroke:none}
      .bsname{fill:#1c2733;font-size:7.5px;font-weight:700;letter-spacing:.3px}
      .plug{fill:#2b3947;stroke:#fcfcf8;stroke-width:.85}
@@ -16352,12 +16353,15 @@ function wireSvg(w,bridges){ const d=wirePath(w.pts,bridges);
   return `<path class="cab" ${a} d="${d}" stroke="${w.color}"/>`;
 }
 
-function pinCells(x0,w,rows,baseY){ // cellules fines et jointives
+function pinCells(x0,w,rows,baseY){ // bornes d'une barrette : conteneur unique
+  // (dessiné par l'appelant) + fines séparations entre bornes contiguës, numéro
+  // centré. Fini le double contour : lecture pure, façon vraie barrette.
   let s='';
-  rows.forEach(p=>{ const ly=p.y-baseY;
-    s+=`<rect class="bcell" x="${f1(x0)}" y="${f1(ly-PRH/2)}" width="${f1(w)}" height="${PRH}" rx="1.6"/>`;
+  for(let i=0;i<rows.length;i++){ const p=rows[i]; const ly=p.y-baseY;
+    if(i>0 && (p.y-rows[i-1].y) < 1.8*PRH){ const my=(p.y+rows[i-1].y)/2-baseY;
+      s+=`<line class="bdiv" x1="${f1(x0+1.5)}" y1="${f1(my)}" x2="${f1(x0+w-1.5)}" y2="${f1(my)}"/>`; }
     if(p.label) s+=`<text class="pinlbl" x="${f1(x0+w/2)}" y="${f1(ly+2.8)}" text-anchor="middle">${esc(p.label)}</text>`;
-  });
+  }
   return s;
 }
 function compSvg(c,sel){
