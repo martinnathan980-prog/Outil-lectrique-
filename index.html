@@ -15662,15 +15662,26 @@ function computeLayoutWith(eq, lk, peripheral){
         x0=Math.min(x0,x); x1=Math.max(x1,x+w);
         y0=Math.min(y0,blockTop.get(n)); y1=Math.max(y1,blockBot.get(n)); });
       return {x0,y0,w:x1-x0,h:y1-y0}; };
-    // JAMAIS pendant un arrangement à la souris (blocs épinglés) : comme pour le
-    // tassement, les positions choisies par l'utilisateur sont sacrées. Sinon,
-    // le plus GRAND îlot sert d'ancre et les autres s'organisent autour.
+    // ROUTAGE-SÛR : on ne déplace un îlot que si TOUS ses fils internes sont des
+    // droites horizontales (les deux bornes à la même ordonnée). Une translation
+    // conserve alors la droite parfaitement. Un îlot qui contient un fil coudé
+    // dépend des canaux de colonnes pour le router ; le bouger placerait la
+    // piste verticale d'après des colonnes périmées -> traversée de bloc. Ces
+    // îlots-là restent à leur place (routage intact) et servent d'ancrage.
+    const hsafe=g=>{ const S=new Set(g);
+      for(const id of g){ for(const k of allPins(id)){ const py=pinY.get(id+SOH+k);
+        for(const q of (partners.get(id+SOH+k)||[])){ if(!S.has(q.id))continue;
+          const qy=pinY.get(q.id+SOH+q.key);
+          if(py==null||qy==null||Math.abs(py-qy)>1.5)return false; } } }
+      return true; };
+    // JAMAIS pendant un arrangement à la souris (blocs épinglés) : les positions
+    // choisies par l'utilisateur sont sacrées. Sinon, le plus GRAND îlot ancre
+    // toujours ; les autres ne bougent QUE s'ils sont routage-sûrs.
     const items=[],locked=[];
     if(!(typeof OVR!=='undefined'&&OVR.size)){
-      grp.forEach(g=>items.push(g));
-      if(items.length){ let bi=0;
-        items.forEach((g,i)=>{ if(g.length>items[bi].length)bi=i; });
-        locked.push(items.splice(bi,1)[0]); }
+      const all=[...grp.values()]; let bi=0;
+      all.forEach((g,i)=>{ if(g.length>all[bi].length)bi=i; });
+      all.forEach((g,i)=>{ if(i===bi||!hsafe(g)) locked.push(g); else items.push(g); });
     }
     if(items.length>=3){
       // resserrage interne des paires : le fragment (bornier / pastille) vient
