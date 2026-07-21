@@ -15704,22 +15704,20 @@ function computeLayoutWith(eq, lk, peripheral){
       rects.sort((a,b)=>(b.h-a.h)||(a.k-b.k));
       let MB=null; locked.forEach(g=>{ const b=bnd(g); MB=MB?{x0:Math.min(MB.x0,b.x0),y0:Math.min(MB.y0,b.y0),
         x1:Math.max(MB.x1,b.x0+b.w),y1:Math.max(MB.y1,b.y0+b.h)}:{x0:b.x0,y0:b.y0,x1:b.x0+b.w,y1:b.y0+b.h}; });
-      // deux dispositions : étagères VERTICALES à droite de l'ancre, étagères
-      // HORIZONTALES en dessous ; on garde la page la plus proche du format A3.
+      // étagères VERTICALES à DROITE de tout le contenu principal, JAMAIS en
+      // dessous : les autoroutes de routage (descentes verticales dans les
+      // colonnes principales, à gauche) et les marges basses restent dégagées,
+      // donc aucun fil de l'ancre ne peut traverser un satellite. Les routes par
+      // la marge droite passent au-delà des satellites (corridorFree les évite).
       const packR=(capH)=>{ const pos=[]; const x0=MB.x1+50; let x=x0,y=MB.y0,cw=0,ybot=MB.y0,xr=x0;
         rects.forEach(r=>{ if(y>MB.y0&&y+r.h>MB.y0+capH){ x+=cw; cw=0; y=MB.y0; }
           pos.push({r,x,y}); cw=Math.max(cw,r.w); ybot=Math.max(ybot,y+r.h); xr=Math.max(xr,x+r.w); y+=r.h; });
         return {pos,W:xr-MB.x0,H:Math.max(MB.y1,ybot)-MB.y0}; };
-      const packB=(capW)=>{ const pos=[]; const y0=MB.y1+50; let x=MB.x0,y=y0,rh=0,xr=MB.x1,ybot=y0;
-        rects.forEach(r=>{ if(x>MB.x0&&x+r.w>MB.x0+capW){ y+=rh; rh=0; x=MB.x0; }
-          pos.push({r,x,y}); rh=Math.max(rh,r.h); xr=Math.max(xr,x+r.w); ybot=Math.max(ybot,y+r.h); x+=r.w; });
-        return {pos,W:xr-MB.x0,H:ybot-MB.y0}; };
-      // plusieurs gabarits d'étagère candidats -> on garde la page la plus
+      // plusieurs hauteurs de colonne candidates -> on garde la page la plus
       // proche du format A3 (le contenu de chaque îlot, lui, ne change jamais)
-      const mh=Math.max(MB.y1-MB.y0,500), mw=Math.max(MB.x1-MB.x0,700);
+      const mh=Math.max(MB.y1-MB.y0,500);
       const cands=[];
-      [1,1.4,1.9,2.6].forEach(f=>cands.push(packR(mh*f)));
-      [1,1.5,2.1].forEach(f=>cands.push(packB(mw*f)));
+      [0.8,1,1.3,1.7,2.2,2.9].forEach(f=>cands.push(packR(mh*f)));
       const cost=c=>Math.abs(Math.log((Math.max(c.W,60)/Math.max(c.H,60))/1.414));
       const P=cands.reduce((m,c)=>cost(c)<cost(m)?c:m,cands[0]);
       P.pos.forEach(({r,x,y})=>{ const dx=(x+PAD)-r.b.x0, dy=(y+PAD)-r.b.y0;
