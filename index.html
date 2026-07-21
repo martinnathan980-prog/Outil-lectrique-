@@ -67,7 +67,7 @@ main{grid-area:main;position:relative;overflow:hidden;background:#e3e6ea}
 #svg{width:100%;height:100%;display:block;background:radial-gradient(circle at 30% 20%, #eef0f3 0%, #dfe2e7 70%)}
 .hud{position:absolute;left:12px;bottom:12px;display:flex;gap:6px;align-items:center;background:rgba(255,255,255,.88);border:1px solid var(--line);border-radius:7px;padding:5px 7px}
 .hud .z{font-family:var(--mono);font-size:11px;color:var(--ink-dim);min-width:46px;text-align:center}
-.legend{position:absolute;right:12px;top:12px;background:rgba(255,255,255,.88);border:1px solid var(--line);border-radius:7px;padding:8px 10px;font-size:10.5px}
+.legend{position:absolute;right:12px;top:12px;background:rgba(255,255,255,.82);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);border:1px solid rgba(203,211,219,.7);border-radius:10px;padding:9px 12px;font-size:10.5px;box-shadow:0 3px 14px rgba(40,54,68,.09)}
 .legend h4{margin:0 0 6px;font-size:9.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-faint)}
 .legend .lr{display:flex;align-items:center;gap:7px;margin:3px 0;color:var(--ink-dim)}
 .legend .sw{width:18px;height:0;border-top:2.5px solid;border-radius:2px}
@@ -16230,8 +16230,8 @@ function clip(s,n){ s=String(s); return s.length>n?s.slice(0,n-1)+'…':s; }
 
 function defs(){
   return `<defs>
-   <pattern id="gfine" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M10 0H0V10" fill="none" stroke="#f2f4f0" stroke-width="1"/></pattern>
-   <pattern id="gcoarse" width="50" height="50" patternUnits="userSpaceOnUse"><path d="M50 0H0V50" fill="none" stroke="#e9ece7" stroke-width="1"/></pattern>
+   <pattern id="gfine" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M10 0H0V10" fill="none" stroke="#f4f6f2" stroke-width="1"/></pattern>
+   <pattern id="gcoarse" width="50" height="50" patternUnits="userSpaceOnUse"><path d="M50 0H0V50" fill="none" stroke="#edefea" stroke-width="1"/></pattern>
    <filter id="softsh" x="-30%" y="-30%" width="160%" height="180%">
      <feDropShadow dx="0" dy="1" stdDeviation="1.25" flood-color="#31414f" flood-opacity=".11"/>
    </filter>
@@ -16242,14 +16242,15 @@ function defs(){
      .w-int{fill:none;stroke:#26323f;stroke-width:1.1;stroke-linecap:round}
      .mech{stroke:#7b8794;stroke-width:.8;stroke-dasharray:2 2;fill:none}
      .dot-fix{fill:#22303d;stroke:none}
-     .cab{fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
-     .bus{fill:none;stroke-width:2.4;stroke-linecap:round}
+     .cab{fill:none;stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round}
+     .bus{fill:none;stroke-width:2.3;stroke-linecap:round}
      .jn{fill:#1c2a36;stroke:#fcfcf8;stroke-width:1}
+     .screw{fill:#ffffff;stroke:#8a97a3;stroke-width:.8}
      .sym-txt{fill:#22303d;font-weight:700;font-size:13px}
      .sym-sub{fill:#56606b;font-size:8.5px;font-weight:700}
      .rep{fill:#15202b;font-weight:700;font-size:11.5px}
      .rep-in{fill:#182430;font-weight:700;font-size:11px;letter-spacing:.8px}
-     .des{fill:#637085;font-size:8.6px}
+     .des{fill:#8592a0;font-size:8.4px;letter-spacing:.2px}
      .term{fill:#8893a0;font-size:7.6px}
      .bartxt{fill:#95a0ad;font-size:6.6px}
      .barsrc{fill:#5b6672;font-weight:700;font-size:7px}
@@ -16261,8 +16262,8 @@ function defs(){
      .bdiv{stroke:#dbe2e9;stroke-width:.7;stroke-linecap:round}
      .bshead{fill:#eef2f6;stroke:none}
      .bsname{fill:#1c2733;font-size:7.5px;font-weight:700;letter-spacing:.3px}
-     .plug{fill:#2b3947;stroke:#fcfcf8;stroke-width:.85}
-     .rep-big{fill:#1c2733;font-weight:700;font-size:13px;letter-spacing:.8px}
+     .plug{fill:#2b3947;stroke:#fcfcf8;stroke-width:.7}
+     .rep-big{fill:#182430;font-weight:700;font-size:13.5px;letter-spacing:.6px}
      .bhead{fill:#e9eef3;stroke:none}
      .bheadline{stroke:#26343f;stroke-width:1}
      .barrette{stroke:#26323f;stroke-width:2.4;stroke-linecap:round}
@@ -16275,10 +16276,10 @@ function defs(){
      .rpill{fill:#ffffff;stroke:#d2dae1;stroke-width:.9}
      .rname{fill:#3a4652;font-weight:700;font-size:10px;letter-spacing:.6px}
      .ctag{fill:#5b6775;font-size:8px;font-weight:600}
-     .frame{fill:none;stroke:#c4ccd4;stroke-width:1.1}
-     .frame2{fill:none;stroke:#dde3e9;stroke-width:.7}
-     .zline{stroke:#d7dde3;stroke-width:.9}
-     .zone{fill:#aab4bd;font-size:8.5px;font-weight:600;letter-spacing:.5px}
+     .frame{fill:none;stroke:#cbd3db;stroke-width:1}
+     .frame2{fill:none;stroke:#e2e7ec;stroke-width:.7}
+     .zline{stroke:#dbe1e7;stroke-width:.9}
+     .zone{fill:#b3bcc5;font-size:8.5px;font-weight:600;letter-spacing:.5px}
      .cbox{fill:#ffffff;stroke:#b9c2cb;stroke-width:1}
      .cdiv{stroke:#e2e7ec;stroke-width:1}
      .carth{fill:#9aa6b2;font-size:5.6px;font-weight:700;letter-spacing:.6px}
@@ -16364,6 +16365,10 @@ function pinCells(x0,w,rows,baseY){ // bornes d'une barrette : conteneur unique
   }
   return s;
 }
+// point de serrage d'une borne : petite tête de vis au bord de raccordement
+// (présente sur TOUTES les bornes ; le fil, quand il y en a un, y dépose sa
+// pastille d'encre par-dessus -> borne câblée = vis serrée).
+function screw(x,y){ return `<circle class="screw" cx="${f1(x)}" cy="${f1(y)}" r="1.7"/>`; }
 function compSvg(c,sel){
   let s=`<g class="comp" data-name="${escA(c.name)}" transform="translate(${f1(c.x)},${f1(c.y)})">`;
   if(sel) s+=`<rect class="selbox" x="-5" y="-5" width="${c.w+10}" height="${c.h+10}" rx="3"/>`;
@@ -16380,6 +16385,8 @@ function compSvg(c,sel){
     s+=`<rect class="bshead" x="0" y="0" width="${c.w}" height="${HHS}" rx="2.5"/>`;
     s+=`<text class="bsname" x="${f1(c.w/2)}" y="${HHS/2+3}" text-anchor="middle">${esc(clip(c.name,7))}</text>`;
     s+=pinCells(1.5,c.w-3,c.rows.S||[],c.y);
+    // borne traversante : une vis de chaque côté (entrée / sortie)
+    (c.rows.S||[]).forEach(p=>{ const y=p.y-c.y; s+=screw(0,y)+screw(c.w,y); });
   } else {
     // équipement : corps compact, nom centré, borniers de flanc fins et centrés
     const bx=c.lw, bw=c.w-c.lw-c.rw;
@@ -16412,8 +16419,8 @@ function compSvg(c,sel){
             out+=`<rect class="bstrip" x="${f1(x0)}" y="${f1(t)}" width="${STRIPW}" height="${f1(b-t)}" rx="2.5"/>`;
             g0=i; } }
         return out; };
-      if(rl.length){ s+=outline(0,rl)+pinCells(1.5,STRIPW-3,rl,c.y); }
-      if(rr.length){ s+=outline(c.w-STRIPW,rr)+pinCells(c.w-STRIPW+1.5,STRIPW-3,rr,c.y); }
+      if(rl.length){ s+=outline(0,rl)+pinCells(1.5,STRIPW-3,rl,c.y); rl.forEach(p=>s+=screw(0,p.y-c.y)); }
+      if(rr.length){ s+=outline(c.w-STRIPW,rr)+pinCells(c.w-STRIPW+1.5,STRIPW-3,rr,c.y); rr.forEach(p=>s+=screw(c.w,p.y-c.y)); }
     }
   }
   s+=`</g>`; return s;
@@ -16433,14 +16440,14 @@ function sceneInner(layout,routing){
     if(bar.src) body+=`<text class="bartxt barsrc" x="${f1(bar.x-(bar.sdir||1)*3)}" y="${f1((bar.py!=null?bar.py:bar.y1)-3)}" text-anchor="${(bar.sdir||1)>0?'end':'start'}">${esc(clip(bar.src,8))}</text>`;
     (bar.taps||[]).forEach(t=>{ const a=t.dir>0?'start':'end';
       body+=`<text class="bartxt" x="${f1(bar.x+t.dir*7)}" y="${f1(t.y-3)}" text-anchor="${a}">${t.out?'▸':'◂'} ${esc(clip(t.txt,12))}</text>`; }); });
-  (routing.busDots||[]).forEach(d=>body+=`<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="2.4"/>`);
-  routing.dots.forEach(d=>body+=`<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="2.7"/>`);
+  (routing.busDots||[]).forEach(d=>body+=`<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="2.2"/>`);
+  routing.dots.forEach(d=>body+=`<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="2.4"/>`);
   layout.comps.forEach(c=>body+=compSvg(c,state.sel===c.name));
   // pastilles de raccordement : un petit point d'encre là où chaque fil se
   // branche sur une borne -> le fil est « connecté », pas juste posé au bord.
   routing.wires.forEach(w=>{ if(!w.pts||w.pts.length<2)return;
     const a=w.pts[0], z=w.pts[w.pts.length-1];
-    body+=`<circle class="plug" cx="${f1(a.x)}" cy="${f1(a.y)}" r="1.5"/><circle class="plug" cx="${f1(z.x)}" cy="${f1(z.y)}" r="1.5"/>`; });
+    body+=`<circle class="plug" cx="${f1(a.x)}" cy="${f1(a.y)}" r="1.35"/><circle class="plug" cx="${f1(z.x)}" cy="${f1(z.y)}" r="1.35"/>`; });
   return body;
 }
 function paint(layout,routing){
