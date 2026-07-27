@@ -14409,9 +14409,46 @@ function buildNets(lk){
 /* ---------- 4. Placement : colonnes, hauteur élastique, condensation ---------- */
 const PRH=14, STRIPW=24, BODYW=104, BORNW=40, VGAP=22, HH=20, BPAD=6, HHS=15;
 const FRAG='';
+/* LE MOTEUR DE PLACEMENT. C'est la fonction la plus longue du fichier, et
+   c'est normal : elle exécute UNE chaîne de calcul, du haut vers le bas, où
+   chaque étape s'appuie sur l'état laissé par la précédente. On ne la lit pas
+   d'un bloc — on va directement à l'étape qui nous intéresse.
+
+   Entrées : eq (les équipements), lk (les liaisons), peripheral (la « graine »,
+   c'est-à-dire par quel bout commencer — le concours de graines en essaie
+   plusieurs et garde le meilleur dessin). Les options de rendu arrivent par
+   les drapeaux globaux, posés uniquement par layoutTry().
+
+   LES 10 ÉTAPES, DANS L'ORDRE D'EXÉCUTION :
+     1. Lecture des noms, détection des borniers et des rails (+ mode anonyme)
+     2. Construction du graphe : nœuds, fragments de bornier, communautés,
+        niveaux BFS -> chaque nœud reçoit un numéro de colonne
+     3. remplirPage()     : range les composantes isolées en voies parallèles
+     4. Géométrie des colonnes : côté des broches (gauche/droite), largeurs
+     5. Placement élastique : LE cœur. Position initiale puis longue boucle
+        d'amélioration (barycentre, permutations, décalage des bornes) dont le
+        seul but est de rendre un MAXIMUM de fils parfaitement droits.
+        Aides internes : elastic(), polish(), colSort(), reorderPins()...
+     6. Aller-retour bornes <-> équipements, puis détente / nudge / permute /
+        condense / shrink : referme les blocs creux sans perdre un fil droit
+     7. tasserVertical()  : referme les bandes horizontales vides
+     8. rangerIlots()     : range les composantes indépendantes en étagères
+     9. Construction des blocs concrets (position, taille, cellules de bornes)
+    10. Résolution des liaisons (extrémités, couleurs) + cadre de la page
+
+   ÉTAT PARTAGÉ, à connaître avant de toucher quoi que ce soit :
+     nodeX      : abscisse de chaque nœud            (Map id -> x)
+     blockTop / blockBot : bornes verticales du bloc (Map id -> y)
+     pinY       : ordonnée de chaque broche          (Map id+SOH+clé -> y)
+     level / columns : colonne de chaque nœud
+     listsOf    : broches réparties en L (gauche) / R (droite) / S (bornier)
+     slidPills  : pastilles de potentiel déplacées, à ne pas faire traverser
+   Les étapes 5 à 8 ne font que MODIFIER ces structures ; l'étape 9 les lit
+   pour fabriquer le dessin final. */
 function computeLayoutWith(eq, lk, peripheral){
   const byRep=new Map(eq.map(e=>[e.repere,e]));
 
+  /* ===== ÉTAPE 1 — LECTURE DES NOMS : borniers, rails, mode anonyme ========= */
   const rawNames=[]; const seenN=new Set();
   const noteName=n=>{ if(n&&!seenN.has(n)){seenN.add(n);rawNames.push(n);} };
   eq.forEach(e=>noteName(e.repere));
@@ -14466,6 +14503,7 @@ function computeLayoutWith(eq, lk, peripheral){
     (rawPartners.get(A.name+SOH+A.key)||rawPartners.set(A.name+SOH+A.key,[]).get(A.name+SOH+A.key)).push(B);
     (rawPartners.get(B.name+SOH+B.key)||rawPartners.set(B.name+SOH+B.key,[]).get(B.name+SOH+B.key)).push(A); });
 
+  /* ===== ÉTAPE 2 — GRAPHE : nœuds, communautés, colonnes ===================== */
   // --- nœuds de mise en page : équipements entiers + fragments de borniers
   //     (un bornier se coupe : un fragment par équipement desservi)
   const nodes=new Map();
@@ -14644,6 +14682,7 @@ function computeLayoutWith(eq, lk, peripheral){
   nodeIds.forEach(n=>columns[level.get(n)].push(n));
   const colOf=new Map(); columns.forEach((c,i)=>c.forEach(n=>colOf.set(n,i)));
 
+  /* ===== ÉTAPE 4 — GÉOMÉTRIE DES COLONNES : côtés, largeurs ================= */
   // --- côté des broches d'équipement ; fragments = traversants
   const sideOf=new Map();
   const listsOf=new Map();
@@ -14697,6 +14736,9 @@ function computeLayoutWith(eq, lk, peripheral){
   for(let i=0;i<nCols;i++){ colX.push(cx); cx+=colW[i]+chW[i+1]; }
   const totalW=Math.max(cx, M+360);
 
+  /* ===== ÉTAPE 5 — PLACEMENT ÉLASTIQUE : le cœur, maximiser les fils droits =
+     Position initiale, puis longue boucle d'amélioration. Priorité absolue :
+     un fil dont les deux bornes sont à la même ordonnée est un fil DROIT. */
   // --- position initiale puis optimisation élastique
   // alignement au fer à gauche : tous les blocs d'une colonne partagent le
   // même bord gauche -> colonnes visuellement droites malgré les largeurs mixtes
@@ -15296,6 +15338,7 @@ function computeLayoutWith(eq, lk, peripheral){
   }
 
   const growTop=new Map();   // croissance « à tout prix » : delta purement cosmétique, exclu du verrou d'ordre
+  /* ===== ÉTAPE 6 — AJUSTEMENTS FINS : aller-retour, détente, condensation ==== */
   // --- aller-retour final BORNES ↔ ÉQUIPEMENTS ---
   // (1) détente par borne : chaque borne encore pliée (qui ne porte que ce
   //     fil) glisse pile en face de sa partenaire, sans bouger le bloc ;
@@ -15783,6 +15826,7 @@ function computeLayoutWith(eq, lk, peripheral){
   nodeIds.forEach(id=>{ yMin=Math.min(yMin,blockTop.get(id)); yMax=Math.max(yMax,blockBot.get(id)); });
   if(!isFinite(yMin)){ yMin=topY; yMax=topY+200; }
 
+  /* ===== ÉTAPE 9 — CONSTRUCTION DES BLOCS CONCRETS ========================== */
   // --- blocs concrets
   const compList=[],compByName=new Map();
   for(const id of nodeIds){ const N=nodes.get(id);
@@ -15800,6 +15844,7 @@ function computeLayoutWith(eq, lk, peripheral){
       rows,byKey,rail:isRail(N.name)};
     compList.push(c); compByName.set(id,c); if(!compByName.has(N.name))compByName.set(N.name,c); }
 
+  /* ===== ÉTAPE 10 — LIAISONS, COULEURS, CADRE DE PAGE ======================= */
   // --- nets + couleurs
   const {find,nets}=buildNets(lk);
   function netColor(root){ const net=nets.get(root); if(!net)return '#26323f';
