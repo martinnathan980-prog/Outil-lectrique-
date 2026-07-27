@@ -15935,10 +15935,7 @@ function computeLayout(eq, lk){
   // 2e passe : resserrer les goulottes à la largeur réellement occupée par les
   // pistes -> colonnes plus proches, fils plus courts, schéma plus lisible.
   const contentW=L=>{ let mx=0; L.comps.forEach(c=>mx=Math.max(mx,c.x+c.w)); return mx; };
-  const inBloc=L=>{ let n=0; const cs=L.comps;
-    L._routing.wires.forEach(w=>{ for(let i=0;i<w.pts.length-1;i++){ const a=w.pts[i],b=w.pts[i+1];
-      const x0=Math.min(a.x,b.x),x1=Math.max(a.x,b.x),y0=Math.min(a.y,b.y),y1=Math.max(a.y,b.y);
-      for(const c of cs){ if(x1>c.x+2&&x0<c.x+c.w-2&&y1>c.y+2&&y0<c.y+c.h-2){n++;break;} } } }); return n; };
+  const inBloc=inBlocOf;   // même mesure que la branche exploration (une seule définition)
   let bFix=null;
   try{ const fix=tightenChannels(best);
     if(fix){ CHW_FIX=fix; USE_CLUSTER=bClus; ROUTE_SEED=bRoute; SPLIT_COIL=bSplit; const L2=computeLayoutWith(eq,lk,bOpt); const R2=routeAll(L2); CHW_FIX=null; USE_CLUSTER=false; ROUTE_SEED=false; SPLIT_COIL=false;
@@ -16738,21 +16735,6 @@ function fit(){ if(!LAST){state.view={s:1,tx:40,ty:40};applyView();return;} cons
   state.view.tx=(r.width-bb.w*state.view.s)/2 - bb.x*state.view.s; state.view.ty=(r.height-bb.h*state.view.s)/2 - bb.y*state.view.s; applyView(); }
 
 let rafPending=false;
-// anti-collision : au lâcher, si le bloc chevauche un autre, il glisse vers
-// l'emplacement libre le plus proche (recherche en spirale sur grille).
-function resolveCollision(name){ if(!LAST)return;
-  const cs=LAST.layout.comps; const me=cs.find(c=>c.name===name||c.id===name); if(!me)return;
-  const PAD=8;
-  const clash=(x,y)=>cs.some(o=>o!==me && x<o.x+o.w+PAD && o.x<x+me.w+PAD && y<o.y+o.h+PAD && o.y<y+me.h+PAD);
-  if(!clash(me.x,me.y))return;
-  const STEP=20;
-  for(let r=1;r<=60;r++){
-    const cand=[[0,r],[0,-r],[r,0],[-r,0],[r,r],[r,-r],[-r,r],[-r,-r]];
-    for(const [dx,dy] of cand){
-      const nx=me.x+dx*STEP, ny=me.y+dy*STEP;
-      if(!clash(nx,ny)){ OVR.set(name,{x:nx+me.w/2,y:ny+me.h/2}); render(); return; } } }
-}
-function reroute(){ if(rafPending)return; rafPending=true; requestAnimationFrame(()=>{ rafPending=false; render(); }); }
 /* ---- drag GELÉ : translation directe d'un bloc dans la géométrie affichée,
    re-routage des fils seulement — le placement des autres blocs est intouchable */
 function freezeDragInit(c){ if(!LAST)return null;
@@ -16908,9 +16890,11 @@ function openEditor(c,sx,sy){ state.sel=c.name; render();
     <div style="margin-top:8px;font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint)">Bornes & raccordements <span style="color:var(--accent-dim)">(${cn.length})</span></div>
     <div style="max-height:150px;overflow:auto"><table class="btbl"><thead><tr><th>Borne</th><th>Vers</th><th>Câble</th></tr></thead><tbody>${rows}</tbody></table></div>
     ${nrm}
-    <div class="actions"><button class="primary" id="ed-ok">Enregistrer</button><button id="ed-xp">${state.xroots&&state.xroots.size?(state.xroots.has(c.name)?'Replier':'Déplier'):'Explorer'}</button><button id="ed-del">Supprimer</button><button class="ghost" id="ed-close">Fermer</button></div>`;
+    <div class="actions"><button class="primary" id="ed-ok">Enregistrer</button><button id="ed-xp">${state.xroots&&state.xroots.size?(state.xroots.has(c.name)?'Replier':'Déplier'):'Explorer'}</button>${c.vc?'<button id="ed-brn">Vue bornier</button>':''}<button id="ed-del">Supprimer</button><button class="ghost" id="ed-close">Fermer</button></div>`;
   popAt(p,sx,sy,290);
   document.getElementById('ed-close').onclick=closePop;
+  // prise de coupure : accès à la vue détaillée (bornes ▲ amont / ▼ aval, pont sécable)
+  { const bb=document.getElementById('ed-brn'); if(bb) bb.onclick=()=>{ closePop(); openBornier(c); }; }
   document.getElementById('ed-ok').onclick=()=>{ const nr=document.getElementById('ed-rep').value.trim()||c.name;
     const nd=document.getElementById('ed-des').value, nt=document.getElementById('ed-typ').value.trim();
     if(nr!==c.name){ const ren=arr=>arr.forEach(l=>{ if(l.from===c.name)l.from=nr; if(l.to===c.name)l.to=nr; });
@@ -16957,9 +16941,6 @@ function exploreStart(name){ name=String(name||'').trim(); if(!name)return;
   xpUnpin(); OVR.clear(); ORDH.clear(); state.xroots=new Set([name]); state.sel=name;
   exploreOptimize('max'); }   // équerre automatique dès le premier dépliage
 const XPPIN=new Set();   // blocs épinglés automatiquement par l'exploration
-function xpPinShown(){ if(!LAST)return;
-  LAST.layout.comps.forEach(c=>{ if(c.kind!=='strip'&&!OVR.has(c.name)){
-    OVR.set(c.name,{x:c.x+c.w/2,y:c.y,top:true}); XPPIN.add(c.name); } }); }
 function xpUnpin(){ XPPIN.forEach(n=>{ OVR.delete(n); ORDH.delete(n); }); XPPIN.clear(); ORDH.clear(); }
 function exploreAdd(name){ if(!state.xroots)state.xroots=new Set();
   // ÉQUERRE AUTOMATIQUE : chaque dépliage relance le placement optimal
