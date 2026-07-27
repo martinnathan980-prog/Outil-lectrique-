@@ -14601,12 +14601,14 @@ function computeLayoutWith(eq, lk, peripheral){
   const usedL=[...new Set(nodeIds.map(n=>level.get(n)))].sort((a,b)=>a-b);
   const remapL=new Map(usedL.map((l,i)=>[l,i]));
   nodeIds.forEach(n=>level.set(n,remapL.get(level.get(n))));
-  // REMPLISSAGE DE PAGE : les composantes INDÉPENDANTES (aucun fil entre
-  // elles) se rangent côte à côte en plusieurs voies au lieu de s'empiler en
-  // un long ruban -> la page se remplit, et aucun croisement ne peut naître
-  // puisque les voies ne partagent aucun fil. Jamais pendant les clics
-  // d'exploration (les repères doivent rester où ils sont).
-  {
+  /* ÉTAPE 3 — REMPLISSAGE DE PAGE (voies).
+     Les composantes INDÉPENDANTES (aucun fil entre elles) se rangent côte à
+     côte en plusieurs voies au lieu de s'empiler en un long ruban -> la page
+     se remplit, et aucun croisement ne peut naître puisque les voies ne
+     partagent aucun fil. Jamais pendant les clics d'exploration (les repères
+     doivent rester où ils sont).
+     Décale les niveaux de colonne : lit et modifie `level`. */
+  const remplirPage=()=>{
     // schéma complet et « Droits max » : toujours. « Optimiser » équilibré :
     // seulement comme CANDIDAT (PF_OPT) — mesuré : selon le schéma, les voies
     // aident (queue de rangées feuilles) ou se battent avec le verrou d'ordre ;
@@ -14635,7 +14637,8 @@ function computeLayoutWith(eq, lk, peripheral){
         }
       }
     }
-  }
+  };
+  remplirPage();
   const maxLvlF=nodeIds.length?Math.max(...nodeIds.map(n=>level.get(n))):0;
   const columns=Array.from({length:maxLvlF+1},()=>[]);
   nodeIds.forEach(n=>columns[level.get(n)].push(n));
@@ -15656,13 +15659,16 @@ function computeLayoutWith(eq, lk, peripheral){
     slidPills.forEach(sp=>{ if(sp.id!=null){ sp.y1=blockTop.get(sp.id); sp.y2=blockBot.get(sp.id); } });
     // re-trier chaque liste par Y (le liseré et les cellules suivent l'ordre visuel)
     nodeIds.forEach(id=>listKeys(id).forEach(lid=>listArr(id,lid).sort((a,b)=>pinYof(id,a.key)-pinYof(id,b.key))));
-    // TASSEMENT VERTICAL : toute bande horizontale vide sur TOUTE la largeur se
-    // referme à un petit interstice. Chaque bande occupée glisse d'un seul
-    // tenant -> l'ordre vertical est intact, un fil droit reste droit (ses deux
-    // blocs partagent la bande de son ordonnée), rien ne peut se chevaucher.
-    // JAMAIS pendant un arrangement à la souris (blocs épinglés) : les
-    // positions choisies par l'utilisateur sont sacrées.
-    if(!(typeof OVR!=='undefined'&&OVR.size)){
+    /* ÉTAPE 7 — TASSEMENT VERTICAL.
+       Toute bande horizontale vide sur TOUTE la largeur se referme à un petit
+       interstice. Chaque bande occupée glisse d'un seul tenant -> l'ordre
+       vertical est intact, un fil droit reste droit (ses deux blocs partagent
+       la bande de son ordonnée), rien ne peut se chevaucher.
+       JAMAIS pendant un arrangement à la souris (blocs épinglés) : les
+       positions choisies par l'utilisateur sont sacrées.
+       Lit et modifie : blockTop, blockBot, pinY, slidPills. */
+    const tasserVertical=()=>{
+      if(typeof OVR!=='undefined'&&OVR.size) return;
       const GAPMIN=44;
       const evs=[];
       nodeIds.forEach(id=>evs.push({t:blockTop.get(id),b:blockBot.get(id)}));
@@ -15680,16 +15686,19 @@ function computeLayoutWith(eq, lk, peripheral){
           listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>pinY.set(id+SOH+p.key,pinYof(id,p.key)-d))); });
         slidPills.forEach(sp=>{ const d=dyOf(sp.y1); if(d){ sp.y1-=d; sp.y2-=d; } });
       }
-    }
+    };
+    tasserVertical();
   }
 
-  // RANGEMENT DES ÎLOTS : les composantes indépendantes (aucun fil entre elles)
-  // se rangent en ÉTAGÈRES serrées autour de l'îlot ANCRÉ (repères explorés,
-  // blocs épinglés, ou le plus grand groupe), au format de la page (racine de
-  // 2). Translation pure de chaque îlot : ses fils internes restent identiques
-  // (donc droits), et aucun fil ne relie deux îlots -> aucun croisement ni
-  // chevauchement ne peut naître.
-  {
+  /* ÉTAPE 8 — RANGEMENT DES ÎLOTS.
+     Les composantes indépendantes (aucun fil entre elles) se rangent en
+     ÉTAGÈRES serrées à droite de l'îlot ANCRÉ (repères explorés, blocs
+     épinglés, ou le plus grand groupe), au format de la page (racine de 2).
+     Chaque îlot est déplacé d'un seul tenant : ses fils internes restent
+     identiques (donc droits), et aucun fil ne relie deux îlots -> ni
+     croisement ni chevauchement ne peut naître de ce rangement.
+     Lit et modifie : nodeX, blockTop, blockBot, pinY, slidPills. */
+  function rangerIlots(){
     const allPins=id=>{ const a=[]; listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>a.push(p.key))); return a; };
     const par=new Map(); nodeIds.forEach(n=>par.set(n,n));
     const find=k=>{ while(par.get(k)!==k){ par.set(k,par.get(par.get(k))); k=par.get(k); } return k; };
@@ -15768,6 +15777,7 @@ function computeLayoutWith(eq, lk, peripheral){
       });
     }
   }
+  rangerIlots();
 
   let yMin=Infinity,yMax=-Infinity;
   nodeIds.forEach(id=>{ yMin=Math.min(yMin,blockTop.get(id)); yMax=Math.max(yMax,blockBot.get(id)); });
