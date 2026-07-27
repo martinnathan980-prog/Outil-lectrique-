@@ -14518,7 +14518,13 @@ function computeLayoutWith(eq, lk, peripheral){
   // (sinon un gros bornier voisin tire des faisceaux de fils très longs partout).
   const isExp=(typeof EXPLORING!=='undefined'&&EXPLORING);
   const primRoot=(typeof SEED_HINT!=='undefined')?SEED_HINT:null;
-  const wholeStrip=n=> isExp && (rawNames.length<=20 || n===primRoot);
+  // Un bornier que l'utilisateur a DÉPLIÉ lui-même reste ENTIER : c'est par lui
+  // que passent les liaisons entre appareils, il doit donc se voir en un seul
+  // bloc. Éclaté, chacun de ses départs se retrouvait isolé avec son propre
+  // bout de bornier, et la connectivité réelle devenait invisible (on voyait
+  // des dizaines d'appareils « à une seule ligne » sans lien apparent).
+  const xr=(typeof state!=='undefined'&&state.xroots)?state.xroots:null;
+  const wholeStrip=n=> isExp && (rawNames.length<=20 || n===primRoot || !!(xr&&xr.has(n)));
   for(const n of rawNames){ const P=P0(n);
     if(!isStripName(n)){
       // ÉCLATEMENT MÉTIER (schéma complet et « Droits max ») : un appareil à
