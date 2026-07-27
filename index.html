@@ -14297,7 +14297,46 @@ Device;PN1;Description;Cable T/G;Cable Tag;Route;Device_2;Pin2;PN2;Description;F
 "use strict";
 /* ===========================================================================
    ATELIER SCHÉMA — générateur automatique de schémas électriques développés.
-   Un seul fichier, zéro dépendance. Logique pure séparée du rendu DOM.
+   Un seul fichier, hors ligne, sans dépendance (sauf SheetJS local pour Excel).
+
+   ── COMMENT ÇA MARCHE, EN UNE MINUTE ──────────────────────────────────────
+   Entrée  : une table de câblage (une ligne = un fil : appareil A, borne A,
+             appareil B, borne B, + câble/route/potentiel éventuels).
+   Sortie  : un schéma SVG où chaque appareil est un bloc, chaque fil un trait.
+
+   La chaîne complète :
+     table  →  netlist  →  PLACEMENT  →  ROUTAGE  →  SVG
+   1. netlist   : les bornes reliées sont regroupées en « nets » (union-find).
+   2. placement : les blocs sont rangés en colonnes (niveaux BFS), puis les
+                  ordonnées sont ajustées pour rendre un MAXIMUM de fils
+                  parfaitement droits — c'est la priorité absolue du dessin.
+   3. routage   : les fils non droits passent par des « goulottes » verticales
+                  entre colonnes, avec des pistes ordonnées anti-croisement.
+   4. rendu     : SVG pur, plus l'interaction (zoom, survol, déplacement).
+
+   Deux modes d'affichage :
+     • EXPLORATION : on part d'un repère et on déplie ses voisins un par un.
+       Chaque dépliage relance un placement optimal (« l'équerre »).
+     • COMPLET     : tout le schéma d'un coup (concours de graines, plus lent).
+
+   ── INVARIANTS À NE JAMAIS CASSER ─────────────────────────────────────────
+   • Aucun fil ne traverse un bloc étranger.
+   • Aucun bloc n'en chevauche un autre.
+   • Un bloc déplacé à la souris ne bouge JAMAIS ses voisins (drag gelé).
+   Ces trois points sont vérifiés par la batterie de tests à chaque changement.
+
+   ── SOMMAIRE ──────────────────────────────────────────────────────────────
+    1. Référentiel : repères → type/symbole/rôle, couleurs
+    2. État de l'application
+    3. Nets (union-find sur les bornes)
+    4. Placement : colonnes, hauteur élastique, condensation
+    5. Routage : goulottes à pistes ordonnées par contraintes
+    6. Rendu SVG
+    7. Base de données : table unique → netlist
+    8. Auto-folios : découpe intelligente en pages
+    9. Import de fichier : CSV natif + Excel
+   10. Interactions : pan / zoom / drag / édition
+   11. Panneau latéral, export, démarrage
    =========================================================================== */
 
 /* ---------- 1. Référentiel : repères → type/symbole/rôle, couleurs ---------- */
@@ -14367,7 +14406,7 @@ function buildNets(lk){
   return {find,nets};
 }
 
-/* ---------- 5. Placement v4 : borniers sécables + hauteur élastique ---------- */
+/* ---------- 4. Placement : colonnes, hauteur élastique, condensation ---------- */
 const PRH=14, STRIPW=24, BODYW=104, BORNW=40, VGAP=22, HH=20, BPAD=6, HHS=15;
 const FRAG='';
 function computeLayoutWith(eq, lk, peripheral){
@@ -15831,6 +15870,55 @@ function tightenChannels(L){ const g=L.geom; if(!g||!g.colX.length)return null;
       maxOff[ch]=Math.max(maxOff[ch], x-x0); break; } } } });
   return maxOff.map((o,i)=>Math.max(54, Math.min(g.chW[i], o+26)));
 }
+
+/* AUTO-CONTRÔLE — à taper dans la console du navigateur : auditSchema()
+   Vérifie sur le dessin actuellement affiché les trois invariants qui ne
+   doivent JAMAIS être violés, et donne les indicateurs de qualité.
+   À utiliser après chaque nouvelle fonctionnalité : si `ok` passe à false,
+   c'est que la modification a cassé quelque chose de fondamental.
+     filsDansBloc : segments traversant un bloc ÉTRANGER          → doit être 0
+     blocsChevauches : paires de blocs qui se recouvrent          → doit être 0
+     droits / fils : proportion de fils parfaitement droits       → à maximiser
+   Un fil qui longe son PROPRE bloc pour rejoindre une de ses bornes est
+   normal : il n'est pas compté. Fonction en lecture seule, elle ne modifie
+   rien et n'est jamais appelée par le reste du programme. */
+function auditSchema(){
+  if(!LAST||!LAST.routing) return {ok:false, motif:"aucun schéma affiché"};
+  const blocs=LAST.layout.comps.filter(c=>c.kind!=='tag');
+  const fils=LAST.routing.wires;
+  let filsDansBloc=0; const coupables=[];
+  fils.forEach(w=>{
+    const siens=new Set([String(w.from),String(w.to)]);
+    for(let i=0;i<w.pts.length-1;i++){
+      const a=w.pts[i], b=w.pts[i+1];
+      const xa=Math.min(a.x,b.x), xb=Math.max(a.x,b.x);
+      const ya=Math.min(a.y,b.y), yb=Math.max(a.y,b.y);
+      const horizontal=Math.abs(a.y-b.y)<0.01;
+      blocs.forEach(c=>{
+        if(siens.has(String(c.name))) return;          // son propre bloc : normal
+        const dedans = horizontal
+          ? (a.y>c.y+1 && a.y<c.y+c.h-1 && xa<c.x+c.w-2 && xb>c.x+2)
+          : (a.x>c.x+1 && a.x<c.x+c.w-1 && ya<c.y+c.h-2 && yb>c.y+2);
+        if(dedans){ filsDansBloc++;
+          if(coupables.length<5) coupables.push(w.from+':'+w.fromTerm+'→'+w.to+':'+w.toTerm+' traverse '+c.name); }
+      });
+    }
+  });
+  let blocsChevauches=0;
+  for(let i=0;i<blocs.length;i++) for(let j=i+1;j<blocs.length;j++){
+    const a=blocs[i], b=blocs[j];
+    if(a.x<b.x+b.w-1 && b.x<a.x+a.w-1 && a.y<b.y+b.h-1 && b.y<a.y+a.h-1) blocsChevauches++;
+  }
+  const droits=fils.filter(w=>w.pts.length===2).length;
+  return {
+    ok: filsDansBloc===0 && blocsChevauches===0,
+    fils: fils.length, droits, tauxDroits: fils.length?+(droits/fils.length).toFixed(3):1,
+    croisements: countCrossings(fils), ponts: (LAST.routing.bridges||[]).length,
+    filsDansBloc, blocsChevauches, blocs: blocs.length,
+    details: coupables
+  };
+}
+
 /* Un ESSAI de mise en page = une graine + un jeu d'options (« candidats »).
    Les options voyagent par drapeaux globaux, lus tout au fond de
    computeLayoutWith ; les poser et les retirer à la main à chaque essai était
@@ -15869,10 +15957,14 @@ function computeLayout(eq, lk){
   // mais on repart d'un état neutre à l'entrée au cas où du code extérieur en
   // aurait laissé un actif.
   USE_CLUSTER=false; ROUTE_SEED=false; SPLIT_COIL=false; COND_PINS=false; PF_OPT=false; OPT_NOGROW=false; CHW_FIX=null;
+  // --- mesures de qualité d'un essai, partagées par les deux modes ---
+  // nombre de segments de fil qui traversent un bloc (doit rester à 0)
   const inBlocOf=L=>{ let n=0; const cs=L.comps;
     L._routing.wires.forEach(w=>{ for(let i=0;i<w.pts.length-1;i++){ const a=w.pts[i],b=w.pts[i+1];
       const x0=Math.min(a.x,b.x),x1=Math.max(a.x,b.x),y0=Math.min(a.y,b.y),y1=Math.max(a.y,b.y);
       for(const c of cs){ if(x1>c.x+2&&x0<c.x+c.w-2&&y1>c.y+2&&y0<c.y+c.h-2){n++;break;} } } }); return n; };
+  // largeur réellement occupée par le dessin (bord droit du bloc le plus à droite)
+  const contentW=L=>{ let mx=0; L.comps.forEach(c=>mx=Math.max(mx,c.x+c.w)); return mx; };
   // en exploration : graine ANCRÉE sur le 1er bloc exploré (repère stable), mais
   // on essaie plusieurs ordonnancements et on garde le PLUS LISIBLE : fils droits
   // d'abord, puis le moins de croisements, et surtout aucun fil dans un bloc.
@@ -15911,8 +16003,7 @@ function computeLayout(eq, lk){
     let bFix=null;
     try{ const fix=tightenChannels(best);
       if(fix){ const L2=layoutTry(eq,lk,bOptX,{chw:fix,nogrow:bNg,split:bSp,lanes:bPf});
-        const cw=L=>{ let mx=0; L.comps.forEach(c=>mx=Math.max(mx,c.x+c.w)); return mx; };
-        if(scoreOf(L2)>=bScore-1 && cw(L2)<cw(best)*0.97){ best=L2; bFix=fix; bScore=scoreOf(L2); } }
+        if(scoreOf(L2)>=bScore-1 && contentW(L2)<contentW(best)*0.97){ best=L2; bFix=fix; bScore=scoreOf(L2); } }
     }catch(_){ }
     // 3e passe (Optimiser uniquement : la condensation est inactive pendant les
     // clics d'exploration) : glissement de broches -> gardé si le score monte,
@@ -15963,8 +16054,7 @@ function computeLayout(eq, lk){
   if(!HUGE){ opts.forEach(o=>tryOpt(o,true)); clusterOpts.forEach(o=>tryOpt(o,true)); }
   // 2e passe : resserrer les goulottes à la largeur réellement occupée par les
   // pistes -> colonnes plus proches, fils plus courts, schéma plus lisible.
-  const contentW=L=>{ let mx=0; L.comps.forEach(c=>mx=Math.max(mx,c.x+c.w)); return mx; };
-  const inBloc=inBlocOf;   // même mesure que la branche exploration (une seule définition)
+  const inBloc=inBlocOf;   // alias local : même mesure, nom historique de ce bloc
   let bFix=null;
   try{ const fix=tightenChannels(best);
     if(fix){ const L2=layoutTry(eq,lk,bOpt,{chw:fix,cluster:bClus,routeSeed:bRoute,split:bSplit});
@@ -15984,7 +16074,7 @@ function computeLayout(eq, lk){
   return best;
 }
 
-/* ---------- 6. Routage : goulottes à pistes ordonnées par contraintes ---------- */
+/* ---------- 5. Routage : goulottes à pistes ordonnées par contraintes ---------- */
 function routeAll(layout){
   const g=layout.geom; const N=layout.links.length;
   const wires=new Array(N);
@@ -16255,7 +16345,7 @@ function routeAll(layout){
   return {wires,bridges,dots,barrettes,busDots};
 }
 
-/* ---------- 7. Rendu SVG ---------- */
+/* ---------- 6. Rendu SVG ---------- */
 const f1=n=>(Math.round(n*10)/10);
 function esc(s){ return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 function clip(s,n){ s=String(s); return s.length>n?s.slice(0,n-1)+'…':s; }
@@ -16529,7 +16619,7 @@ function deriveEq(lk){ const seen=new Map();
   return [...seen.values()];
 }
 
-/* ---------- Base de données : table unique -> netlist ---------- */
+/* ---------- 7. Base de données : table unique -> netlist ---------- */
 function norm(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim(); }
 function colCat(cell){ const n=norm(cell); if(!n)return null;
   if(/\bplan\b|folio|feuille|^sheet$|planche|^page$|^schema$/.test(n)) return 'plan';
@@ -16579,7 +16669,7 @@ function parseSchedule(text){
 function plansOf(lk){ return [...new Set(lk.map(l=>l.plan).filter(Boolean))].sort((a,b)=>{const na=parseFloat(a),nb=parseFloat(b);if(!isNaN(na)&&!isNaN(nb))return na-nb;return String(a).localeCompare(String(b));}); }
 function linksForPlan(lk,plan){ if(!plan||plan==='*')return lk; return lk.filter(l=>!l.plan||l.plan===plan); }
 
-/* ---------- Auto-folios : découpe intelligente en pages ----------
+/* ---------- 8. Auto-folios : découpe intelligente en pages ----------
    Un gros schéma (« rouleau » trop haut) est coupé en folios A3 lisibles.
    Principe :
    - les blocs PARTAGÉS (rails +24V/0V/PE, borniers, prises de coupure) sont
@@ -16694,7 +16784,7 @@ function parseDB(){ state.xroots=null; state.forceFull=false; ORDH.clear();
   syncTables(); syncPlans(); render(); fit(); closeModal();
 }
 
-/* ---------- Import de fichier : CSV (natif) + Excel (.xlsx/.xls via SheetJS local) --- */
+/* ---------- 9. Import de fichier : CSV (natif) + Excel via SheetJS local ---------- */
 function ensureXLSX(){ if(window.XLSX) return Promise.resolve();
   return Promise.reject(new Error('Bibliothèque Excel absente (xlsx.full.min.js). Garde ce fichier à côté d’index.html, ou importe un CSV.')); }
 function dbInfo(msg,cls){ const el=document.getElementById('db-fileinfo'); if(!el)return; el.textContent=msg||''; el.className='dz-info'+(cls?(' '+cls):''); }
@@ -16739,7 +16829,7 @@ function bindImportDrop(){
     const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f) readImportFile(f); });
 }
 
-/* ---------- 8. Interactions : pan / zoom / drag / édition ---------- */
+/* ---------- 10. Interactions : pan / zoom / drag / édition ---------- */
 const OVR=new Map();           // repère -> {x,y} centre imposé (aperçu pendant le glisser)
 const ORDH=new Map();          // repère -> y souhaité (indice d'ordre après un glisser)
 function applyView(){ const sc=document.getElementById('scene');
@@ -17111,7 +17201,7 @@ function openBornier(c){ state.sel=c.name; render();
 }
 function closeBornier(){ const m=document.getElementById('bmodal'); if(m)m.style.display='none'; }
 
-/* ---------- 9. Panneau, import, export, init ---------- */
+/* ---------- 11. Panneau latéral, export, démarrage ---------- */
 function syncTables(){
   const CAPR=300;
   const more=(n,c)=>n>CAPR?`<tr><td colspan="${c}" style="color:var(--ink-faint);text-align:center;padding:6px">… ${n-CAPR} autres lignes</td></tr>`:'';
