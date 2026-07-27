@@ -15831,11 +15831,43 @@ function tightenChannels(L){ const g=L.geom; if(!g||!g.colX.length)return null;
       maxOff[ch]=Math.max(maxOff[ch], x-x0); break; } } } });
   return maxOff.map((o,i)=>Math.max(54, Math.min(g.chW[i], o+26)));
 }
+/* Un ESSAI de mise en page = une graine + un jeu d'options (« candidats »).
+   Les options voyagent par drapeaux globaux, lus tout au fond de
+   computeLayoutWith ; les poser et les retirer à la main à chaque essai était
+   la source d'erreur nº1 (un rendu interrompu laissait un drapeau actif et
+   faussait le rendu suivant).
+   layoutTry est le SEUL endroit du fichier qui touche à ces drapeaux : il les
+   restaure dans un `finally`, donc une fuite est structurellement impossible,
+   même si un rendu lève une exception en plein milieu.
+   Options : chw (largeurs de goulotte imposées), nogrow (croissance coupée),
+   split (éclatement bobine/pôles/contacts), lanes (voies de remplissage),
+   cluster (regroupement par communautés), routeSeed (graine sur la Route
+   déclarée), condense (condensation par glissement de broches).
+   Renvoie la mise en page, son routage déjà calculé dans `_routing`. */
+function layoutTry(eq, lk, seed, opt){
+  const F = opt || {};
+  const save = {CHW_FIX, OPT_NOGROW, SPLIT_COIL, PF_OPT, USE_CLUSTER, COND_PINS, ROUTE_SEED};
+  try{
+    CHW_FIX     = F.chw !== undefined ? F.chw : null;
+    OPT_NOGROW  = !!F.nogrow;
+    SPLIT_COIL  = !!F.split;
+    PF_OPT      = !!F.lanes;
+    USE_CLUSTER = !!F.cluster;
+    COND_PINS   = !!F.condense;
+    ROUTE_SEED  = !!F.routeSeed;
+    const L = computeLayoutWith(eq, lk, seed);
+    L._routing = routeAll(L);
+    return L;
+  } finally {
+    CHW_FIX=save.CHW_FIX; OPT_NOGROW=save.OPT_NOGROW; SPLIT_COIL=save.SPLIT_COIL;
+    PF_OPT=save.PF_OPT; USE_CLUSTER=save.USE_CLUSTER; COND_PINS=save.COND_PINS;
+    ROUTE_SEED=save.ROUTE_SEED;
+  }
+}
 function computeLayout(eq, lk){
-  // GARDE-FOU : les drapeaux de candidat (regroupement, éclatement, condensation,
-  // voies, croissance coupée, largeurs figées) sont gérés par paires set/reset
-  // dans les concours ci-dessous ; on les remet à zéro À L'ENTRÉE pour qu'un
-  // rendu précédent interrompu (exception) ne puisse jamais contaminer celui-ci.
+  // Ceinture ET bretelles : layoutTry garantit déjà qu'aucun drapeau ne fuit,
+  // mais on repart d'un état neutre à l'entrée au cas où du code extérieur en
+  // aurait laissé un actif.
   USE_CLUSTER=false; ROUTE_SEED=false; SPLIT_COIL=false; COND_PINS=false; PF_OPT=false; OPT_NOGROW=false; CHW_FIX=null;
   const inBlocOf=L=>{ let n=0; const cs=L.comps;
     L._routing.wires.forEach(w=>{ for(let i=0;i<w.pts.length-1;i++){ const a=w.pts[i],b=w.pts[i+1];
@@ -15864,11 +15896,9 @@ function computeLayout(eq, lk){
     // équilibré : les VOIES (remplissage de page) sont aussi un candidat
     const pfModes=balanced?[false,true]:[false];
     const cands=[];
-    pfModes.forEach(pf=>{ PF_OPT=pf;
-      spModes.forEach(sp=>{ SPLIT_COIL=sp; ngModes.forEach(ng=>{ OPT_NOGROW=ng;
-        opts.forEach(o=>{ const L=computeLayoutWith(eq,lk,o); L._routing=routeAll(L);
-          cands.push({L,o,ng,sp,pf,sc:scoreOf(L),ar:areaOf(L)}); }); }); }); });
-    OPT_NOGROW=false; SPLIT_COIL=false; PF_OPT=false;
+    pfModes.forEach(pf=> spModes.forEach(sp=> ngModes.forEach(ng=>
+      opts.forEach(o=>{ const L=layoutTry(eq,lk,o,{lanes:pf,split:sp,nogrow:ng});
+        cands.push({L,o,ng,sp,pf,sc:scoreOf(L),ar:areaOf(L)}); }) )));
     let bSp=false,bPf=false;
     let pool=cands;
     if(balanced){ const ok=cands.filter(c=>c.ar<=OPT_AREA_CAP);
@@ -15880,20 +15910,19 @@ function computeLayout(eq, lk){
     // le dessin reste aussi droit et devient réellement plus étroit.
     let bFix=null;
     try{ const fix=tightenChannels(best);
-      if(fix){ CHW_FIX=fix; OPT_NOGROW=bNg; SPLIT_COIL=bSp; PF_OPT=bPf; const L2=computeLayoutWith(eq,lk,bOptX); const R2=routeAll(L2); CHW_FIX=null; OPT_NOGROW=false; SPLIT_COIL=false; PF_OPT=false;
-        L2._routing=R2;
+      if(fix){ const L2=layoutTry(eq,lk,bOptX,{chw:fix,nogrow:bNg,split:bSp,lanes:bPf});
         const cw=L=>{ let mx=0; L.comps.forEach(c=>mx=Math.max(mx,c.x+c.w)); return mx; };
         if(scoreOf(L2)>=bScore-1 && cw(L2)<cw(best)*0.97){ best=L2; bFix=fix; bScore=scoreOf(L2); } }
-    }catch(_){ CHW_FIX=null; OPT_NOGROW=false; SPLIT_COIL=false; PF_OPT=false; }
+    }catch(_){ }
     // 3e passe (Optimiser uniquement : la condensation est inactive pendant les
     // clics d'exploration) : glissement de broches -> gardé si le score monte,
     // OU à score égal si le dessin devient réellement plus petit (blocs creux
     // refermés sans rien perdre). En mode équilibré : plafond de surface.
-    if(OPT_ONCE) try{ COND_PINS=true; CHW_FIX=bFix; OPT_NOGROW=bNg; SPLIT_COIL=bSp; PF_OPT=bPf; const L3=computeLayoutWith(eq,lk,bOptX); const R3=routeAll(L3);
-      COND_PINS=false; CHW_FIX=null; OPT_NOGROW=false; SPLIT_COIL=false; PF_OPT=false; L3._routing=R3;
+    if(OPT_ONCE) try{
+      const L3=layoutTry(eq,lk,bOptX,{condense:true,chw:bFix,nogrow:bNg,split:bSp,lanes:bPf});
       const s3=scoreOf(L3), a3=areaOf(L3);
       if((s3>bScore || (s3===bScore && a3<areaOf(best)*0.97)) && (!balanced||a3<=OPT_AREA_CAP)){ best=L3; bScore=s3; }
-    }catch(_){ COND_PINS=false; CHW_FIX=null; OPT_NOGROW=false; SPLIT_COIL=false; PF_OPT=false; }
+    }catch(_){ }
     return best;
   }
   // sinon (temps non contraint, priorité fils droits) : on essaie plusieurs
@@ -15914,47 +15943,44 @@ function computeLayout(eq, lk){
   // droit vaut ~40 croisements -> on ne sacrifie jamais un fil droit pour du
   // propre, mais à droiture ~égale on prend le moins de croisements).
   let best=null,bScore=-1e18,bOpt=false,bClus=false,bRoute=false,bSplit=false;
-  const tryOpt=(o)=>{ const clus=typeof o==='string'&&o[0]==='C';
+  // `o` encode la graine : false/true/1..5 = décalages, 'C0'/'C1' = regroupement
+  // par communautés, 'CR0'/'CR1' = idem mais amorcé sur la Route déclarée.
+  const tryOpt=(o,split)=>{ const clus=typeof o==='string'&&o[0]==='C';
     const rSeed=typeof o==='string'&&o.slice(0,2)==='CR';
-    USE_CLUSTER=clus; ROUTE_SEED=rSeed;
     const seed=clus?(o==='C1'||o==='CR1'):(o);
-    const L=computeLayoutWith(eq,lk,seed); const R=routeAll(L); USE_CLUSTER=false; ROUTE_SEED=false;
+    const L=layoutTry(eq,lk,seed,{cluster:clus,routeSeed:rSeed,split:!!split});
     // regroupement : on valorise fortement le PEU de croisements (lisibilité
     // des maillages), tout en gardant les fils droits en tête.
-    const score=countStraight(R.wires) - countCrossings(R.wires)/(clus?45:120);
-    if(score>bScore){ best=L; best._routing=R; bScore=score; bOpt=seed; bClus=clus; bRoute=rSeed; bSplit=SPLIT_COIL; } };
-  opts.forEach(tryOpt);
-  clusterOpts.forEach(tryOpt);
+    const score=countStraight(L._routing.wires) - countCrossings(L._routing.wires)/(clus?45:120);
+    if(score>bScore){ best=L; bScore=score; bOpt=seed; bClus=clus; bRoute=rSeed; bSplit=!!split; } };
+  opts.forEach(o=>tryOpt(o,false));
+  clusterOpts.forEach(o=>tryOpt(o,false));
   // mêmes graines avec ÉCLATEMENT MÉTIER des appareils à bobine (bobine /
   // pôles / contacts auxiliaires séparés) : gardé si le score y gagne
   // strictement (à égalité, le dessin monolithique plus compact l'emporte).
   // l'éclatement métier double le nombre de rendus : on le saute pour les très
   // gros schémas (il ne gagne quasiment jamais à cette échelle, surtout anonyme).
-  if(!HUGE){ SPLIT_COIL=true;
-    try{ opts.forEach(tryOpt); clusterOpts.forEach(tryOpt); } finally { SPLIT_COIL=false; } }
+  if(!HUGE){ opts.forEach(o=>tryOpt(o,true)); clusterOpts.forEach(o=>tryOpt(o,true)); }
   // 2e passe : resserrer les goulottes à la largeur réellement occupée par les
   // pistes -> colonnes plus proches, fils plus courts, schéma plus lisible.
   const contentW=L=>{ let mx=0; L.comps.forEach(c=>mx=Math.max(mx,c.x+c.w)); return mx; };
   const inBloc=inBlocOf;   // même mesure que la branche exploration (une seule définition)
   let bFix=null;
   try{ const fix=tightenChannels(best);
-    if(fix){ CHW_FIX=fix; USE_CLUSTER=bClus; ROUTE_SEED=bRoute; SPLIT_COIL=bSplit; const L2=computeLayoutWith(eq,lk,bOpt); const R2=routeAll(L2); CHW_FIX=null; USE_CLUSTER=false; ROUTE_SEED=false; SPLIT_COIL=false;
-      L2._routing=R2;
-      if(countStraight(R2.wires)>=countStraight(best._routing.wires)-1 && contentW(L2)<contentW(best)*0.97
+    if(fix){ const L2=layoutTry(eq,lk,bOpt,{chw:fix,cluster:bClus,routeSeed:bRoute,split:bSplit});
+      if(countStraight(L2._routing.wires)>=countStraight(best._routing.wires)-1 && contentW(L2)<contentW(best)*0.97
          && inBloc(L2)<=inBloc(best)){ best=L2; bFix=fix; } }
-  }catch(_){ CHW_FIX=null; SPLIT_COIL=false; }
+  }catch(_){ }
   // 3e passe : condensation par glissement de broches (referme les grands blocs
   // creux). Gardée SEULEMENT si aucun fil droit n'est perdu et pas plus de
   // croisements ni de fils dans des blocs -> « on prend le meilleur ».
   // (sautée sur les très gros schémas : un rendu de plus, gain marginal.)
-  if(!HUGE) try{ COND_PINS=true; CHW_FIX=bFix; USE_CLUSTER=bClus; ROUTE_SEED=bRoute; SPLIT_COIL=bSplit;
-    const L3=computeLayoutWith(eq,lk,bOpt); const R3=routeAll(L3);
-    COND_PINS=false; CHW_FIX=null; USE_CLUSTER=false; ROUTE_SEED=false; SPLIT_COIL=false;
-    L3._routing=R3;
-    const s3=countStraight(R3.wires), s0=countStraight(best._routing.wires);
-    const c3=countCrossings(R3.wires), c0=countCrossings(best._routing.wires);
+  if(!HUGE) try{
+    const L3=layoutTry(eq,lk,bOpt,{condense:true,chw:bFix,cluster:bClus,routeSeed:bRoute,split:bSplit});
+    const s3=countStraight(L3._routing.wires), s0=countStraight(best._routing.wires);
+    const c3=countCrossings(L3._routing.wires), c0=countCrossings(best._routing.wires);
     if(inBloc(L3)<=inBloc(best) && (s3>s0 || (s3===s0 && c3<=c0))) best=L3;
-  }catch(_){ COND_PINS=false; CHW_FIX=null; USE_CLUSTER=false; ROUTE_SEED=false; SPLIT_COIL=false; }
+  }catch(_){ }
   return best;
 }
 
