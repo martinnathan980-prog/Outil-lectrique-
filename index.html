@@ -15840,7 +15840,13 @@ function computeLayoutWith(eq, lk, peripheral){
     const tag=!!ls.S&&ls.S.length===1&&isRail(N.name);
     const c={name:N.name,id,o:{designation:e.designation||'',type:e.type||''},x,y:top,gy:top+(growTop.get(id)||0),w,h:bot-top,col:colOf.get(id),
       kind:tag?'tag':(ls.S?'strip':'equip'),vc,
-      lw:(ls.S||vc)?0:(ls.L.length?STRIPW:0),rw:(ls.S||vc)?0:(ls.R.length?STRIPW:0),
+      // CORPS STRICTEMENT IDENTIQUE : les deux emplacements de flanc sont
+      // TOUJOURS réservés, qu'il y ait des bornes de ce côté ou non. Le corps
+      // fait donc exactement BODYW pour tous les équipements, et le gabarit
+      // extérieur reste 152. (Avant : un flanc absent élargissait le corps de
+      // 104 à 128 -> deux équipements n'avaient pas la même tête.)
+      // Le liseré et les cellules ne sont dessinés que s'il y a des bornes.
+      lw:(ls.S||vc)?0:STRIPW, rw:(ls.S||vc)?0:STRIPW,
       rows,byKey,rail:isRail(N.name)};
     compList.push(c); compByName.set(id,c); if(!compByName.has(N.name))compByName.set(N.name,c); }
 
@@ -16447,8 +16453,9 @@ function defs(){
      .body{fill:#ffffff;stroke:#2b3947;stroke-width:1.25}
      .borne{fill:#eef1f4;stroke:#2b3947;stroke-width:1}
      .bnum{fill:#1c2733;font-size:8px;font-weight:700}
-     .bstrip{fill:#f7f9fb;stroke:#67757f;stroke-width:.9}
+     .bstrip{fill:#eef2f6;stroke:#4a5763;stroke-width:1.15}
      .bcell{fill:#ffffff;stroke:#d2dae1;stroke-width:.7}
+     .bsq{fill:#ffffff;stroke:#7d8b98;stroke-width:1}
      .bdiv{stroke:#dbe2e9;stroke-width:.7;stroke-linecap:round}
      .bshead{fill:#eef2f6;stroke:none}
      .bsname{fill:#1c2733;font-size:7.5px;font-weight:700;letter-spacing:.3px}
@@ -16544,15 +16551,19 @@ function wireSvg(w,bridges){ const d=wirePath(w.pts,bridges);
   return `<path class="cab" ${a} d="${d}" stroke="${w.color}"/>`;
 }
 
-function pinCells(x0,w,rows,baseY){ // bornes d'une barrette : conteneur unique
-  // (dessiné par l'appelant) + fines séparations entre bornes contiguës, numéro
-  // centré. Fini le double contour : lecture pure, façon vraie barrette.
+/* UNE BORNE = UN CARRÉ AVEC SON NUMÉRO DEDANS.
+   Même langage visuel partout : sur le flanc d'un équipement comme dans un
+   bornier, une borne se lit comme une case carrée numérotée. Le boîtier qui
+   les entoure (dessiné par l'appelant) joue le rôle du corps de la barrette. */
+const BSQ=16;                                   // côté du carré de borne
+function pinCells(x0,w,rows,baseY){
   let s='';
-  for(let i=0;i<rows.length;i++){ const p=rows[i]; const ly=p.y-baseY;
-    if(i>0 && (p.y-rows[i-1].y) < 1.8*PRH){ const my=(p.y+rows[i-1].y)/2-baseY;
-      s+=`<line class="bdiv" x1="${f1(x0+1.5)}" y1="${f1(my)}" x2="${f1(x0+w-1.5)}" y2="${f1(my)}"/>`; }
+  const side=Math.min(BSQ, w-2);
+  const cx=x0+(w-side)/2;                       // carré centré dans le boîtier
+  rows.forEach(p=>{ const ly=p.y-baseY;
+    s+=`<rect class="bsq" x="${f1(cx)}" y="${f1(ly-side/2)}" width="${f1(side)}" height="${f1(side)}" rx="1.8"/>`;
     if(p.label) s+=`<text class="pinlbl" x="${f1(x0+w/2)}" y="${f1(ly+2.8)}" text-anchor="middle">${esc(p.label)}</text>`;
-  }
+  });
   return s;
 }
 // point de serrage d'une borne : petite tête de vis au bord de raccordement
