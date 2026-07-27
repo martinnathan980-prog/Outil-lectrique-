@@ -14683,6 +14683,30 @@ function computeLayoutWith(eq, lk, peripheral){
     }
   };
   remplirPage();
+
+  /* ÉTAPE 3bis — ÉTALEMENT DES DÉPARTS D'UN BORNIER (candidat SPREAD_LEAF).
+     Un bornier entier qui dessert 16 départs les empile tous dans la colonne
+     suivante. Or chaque départ doit être à l'ordonnée de sa borne pour que son
+     fil soit droit : la hauteur du dessin devient donc 16 x la hauteur d'un
+     bloc, et la page se transforme en ruban étroit et interminable.
+     Remède : renvoyer une partie des départs de l'AUTRE CÔTÉ du bornier. Les
+     deux côtés se remplissent en parallèle, le pas vertical des bornes peut
+     se resserrer d'autant, et TOUS les fils restent droits (chaque départ est
+     toujours en face de sa borne, simplement à gauche au lieu d'à droite).
+     On ne déplace que des FEUILLES (blocs n'ayant que ce seul voisin) : elles
+     n'ont aucune autre attache, donc rien d'autre ne peut être dégradé.
+     C'est un CANDIDAT : le concours de graines ne le retient que s'il gagne. */
+  if(typeof SPREAD_LEAF!=='undefined' && SPREAD_LEAF){
+    nodeIds.forEach(h=>{
+      const N=nodes.get(h); if(!N||!N.strip) return;
+      const lh=level.get(h);
+      const feuilles=[...adj.get(h).keys()].filter(k=>adj.get(k).size===1 && level.get(k)===lh+1);
+      if(feuilles.length<8) return;                 // en dessous, ça ne vaut pas le détour
+      feuilles.forEach((k,i)=>{ if(i%2===1) level.set(k, lh-1); });
+    });
+    const mn=Math.min(...nodeIds.map(n=>level.get(n)));
+    if(mn<0) nodeIds.forEach(n=>level.set(n, level.get(n)-mn));
+  }
   const maxLvlF=nodeIds.length?Math.max(...nodeIds.map(n=>level.get(n))):0;
   const columns=Array.from({length:maxLvlF+1},()=>[]);
   nodeIds.forEach(n=>columns[level.get(n)].push(n));
@@ -15924,6 +15948,7 @@ let PF_OPT=false;     // candidat « voies » du mode équilibré (remplissage d
 let USE_CLUSTER=false; // regroupement par communautés (maillages)
 let COND_PINS=false;   // condensation par glissement de broches (essayée en 3e passe, gardée si meilleure)
 let ROUTE_SEED=false;  // amorcer les communautés sur la colonne Route/cheminement
+let SPREAD_LEAF=false; // candidat « étalement » : les départs d'un gros bornier se répartissent des deux côtés
 function countStraight(wires){ return wires.filter(w=>w.pts.length===2).length; }
 // mesure la largeur de goulotte réellement occupée par les pistes (segments
 // verticaux) de chaque colonne, pour resserrer les colonnes à la 2e passe.
@@ -16014,7 +16039,7 @@ function auditSchema(){
    Renvoie la mise en page, son routage déjà calculé dans `_routing`. */
 function layoutTry(eq, lk, seed, opt){
   const F = opt || {};
-  const save = {CHW_FIX, OPT_NOGROW, SPLIT_COIL, PF_OPT, USE_CLUSTER, COND_PINS, ROUTE_SEED};
+  const save = {CHW_FIX, OPT_NOGROW, SPLIT_COIL, PF_OPT, USE_CLUSTER, COND_PINS, ROUTE_SEED, SPREAD_LEAF};
   try{
     CHW_FIX     = F.chw !== undefined ? F.chw : null;
     OPT_NOGROW  = !!F.nogrow;
@@ -16023,20 +16048,21 @@ function layoutTry(eq, lk, seed, opt){
     USE_CLUSTER = !!F.cluster;
     COND_PINS   = !!F.condense;
     ROUTE_SEED  = !!F.routeSeed;
+    SPREAD_LEAF = !!F.spread;
     const L = computeLayoutWith(eq, lk, seed);
     L._routing = routeAll(L);
     return L;
   } finally {
     CHW_FIX=save.CHW_FIX; OPT_NOGROW=save.OPT_NOGROW; SPLIT_COIL=save.SPLIT_COIL;
     PF_OPT=save.PF_OPT; USE_CLUSTER=save.USE_CLUSTER; COND_PINS=save.COND_PINS;
-    ROUTE_SEED=save.ROUTE_SEED;
+    ROUTE_SEED=save.ROUTE_SEED; SPREAD_LEAF=save.SPREAD_LEAF;
   }
 }
 function computeLayout(eq, lk){
   // Ceinture ET bretelles : layoutTry garantit déjà qu'aucun drapeau ne fuit,
   // mais on repart d'un état neutre à l'entrée au cas où du code extérieur en
   // aurait laissé un actif.
-  USE_CLUSTER=false; ROUTE_SEED=false; SPLIT_COIL=false; COND_PINS=false; PF_OPT=false; OPT_NOGROW=false; CHW_FIX=null;
+  USE_CLUSTER=false; ROUTE_SEED=false; SPLIT_COIL=false; COND_PINS=false; PF_OPT=false; OPT_NOGROW=false; CHW_FIX=null; SPREAD_LEAF=false;
   // --- mesures de qualité d'un essai, partagées par les deux modes ---
   // nombre de segments de fil qui traversent un bloc (doit rester à 0)
   const inBlocOf=L=>{ let n=0; const cs=L.comps;
@@ -16053,7 +16079,21 @@ function computeLayout(eq, lk){
     // (graine + décalages + périphérique) et on garde le mieux ALIGNÉ.
     const opts=[false,true,1,2];
     let best=null,bScore=-1e18,bOptX=false,bNg=false;
-    const scoreOf=(L)=>countStraight(L._routing.wires)*8 - countCrossings(L._routing.wires) - inBlocOf(L)*30;
+    /* Proportion de la page : 0 = format A3 parfait, 1 = déjà très déséquilibré.
+       Un dessin 7 fois plus haut que large est illisible même s'il est
+       parfaitement droit : on le pénalise. Mais SEULEMENT à partir du moment
+       où le déséquilibre devient visible (seuil 0.6), et de façon quadratique
+       -> une page normale n'est pas touchée du tout, un ruban est lourdement
+       sanctionné. Un fil droit vaut 8 points : le ruban doit coûter plus cher
+       que les quelques fils droits qu'il fait gagner, sans quoi le moteur
+       préfèrera toujours l'empilement interminable. */
+    const shapeOf=(L)=>{ let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;
+      L.comps.forEach(c=>{ x0=Math.min(x0,c.x); y0=Math.min(y0,c.y); x1=Math.max(x1,c.x+c.w); y1=Math.max(y1,c.y+c.h); });
+      const w=Math.max(1,x1-x0), h=Math.max(1,y1-y0);
+      return Math.abs(Math.log((w/h)/1.414)); };
+    const rubanMalus=(L)=>{ const d=Math.max(0, shapeOf(L)-0.6); return 25*d*d; };
+    const scoreOf=(L)=>countStraight(L._routing.wires)*8 - countCrossings(L._routing.wires)
+                       - inBlocOf(L)*30 - rubanMalus(L);
     const areaOf=(L)=>{ let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;
       L.comps.forEach(c=>{ x0=Math.min(x0,c.x); y0=Math.min(y0,c.y); x1=Math.max(x1,c.x+c.w); y1=Math.max(y1,c.y+c.h); });
       return Math.max(1,(x1-x0)*(y1-y0)); };
@@ -16067,22 +16107,29 @@ function computeLayout(eq, lk){
     const spModes=(OPT_ONCE&&OPT_MODE==='max')?[false,true]:[false];
     // équilibré : les VOIES (remplissage de page) sont aussi un candidat
     const pfModes=balanced?[false,true]:[false];
+    // ÉTALEMENT des départs d'un gros bornier des deux côtés : toujours essayé
+    // en exploration, car c'est lui qui évite les rubans interminables.
+    const spreadModes=[false,true];
     const cands=[];
-    pfModes.forEach(pf=> spModes.forEach(sp=> ngModes.forEach(ng=>
-      opts.forEach(o=>{ const L=layoutTry(eq,lk,o,{lanes:pf,split:sp,nogrow:ng});
-        cands.push({L,o,ng,sp,pf,sc:scoreOf(L),ar:areaOf(L)}); }) )));
-    let bSp=false,bPf=false;
+    spreadModes.forEach(spr=> pfModes.forEach(pf=> spModes.forEach(sp=> ngModes.forEach(ng=>
+      opts.forEach(o=>{ const L=layoutTry(eq,lk,o,{lanes:pf,split:sp,nogrow:ng,spread:spr});
+        cands.push({L,o,ng,sp,pf,spr,sc:scoreOf(L),ar:areaOf(L),sh:shapeOf(L)}); }) ))));
+    let bSp=false,bPf=false,bSpr=false;
     let pool=cands;
     if(balanced){ const ok=cands.filter(c=>c.ar<=OPT_AREA_CAP);
       pool=ok.length?ok:[cands.reduce((m,c)=>c.ar<m.ar?c:m,cands[0])]; }
-    pool.forEach(c=>{ if(c.sc>bScore){ bScore=c.sc; best=c.L; bOptX=c.o; bNg=c.ng; bSp=c.sp; bPf=c.pf; } });
+    // À DROITURE ÉGALE (score identique), on prend le dessin le MIEUX
+    // PROPORTIONNÉ : c'est ce qui départage un ruban interminable d'une page
+    // bien remplie, sans jamais sacrifier un seul fil droit.
+    pool.forEach(c=>{ if(c.sc>bScore || (c.sc===bScore && best && c.sh<shapeOf(best)-0.02)){
+      bScore=c.sc; best=c.L; bOptX=c.o; bNg=c.ng; bSp=c.sp; bPf=c.pf; bSpr=c.spr; } });
     // 2e passe : RESSERRER les goulottes à la largeur réellement occupée par
     // les pistes (comme en mode complet) -> fini les boulevards vides entre
     // colonnes ; l'ordre vertical (repères) ne change pas. Gardé seulement si
     // le dessin reste aussi droit et devient réellement plus étroit.
     let bFix=null;
     try{ const fix=tightenChannels(best);
-      if(fix){ const L2=layoutTry(eq,lk,bOptX,{chw:fix,nogrow:bNg,split:bSp,lanes:bPf});
+      if(fix){ const L2=layoutTry(eq,lk,bOptX,{chw:fix,nogrow:bNg,split:bSp,lanes:bPf,spread:bSpr});
         if(scoreOf(L2)>=bScore-1 && contentW(L2)<contentW(best)*0.97){ best=L2; bFix=fix; bScore=scoreOf(L2); } }
     }catch(_){ }
     // 3e passe (Optimiser uniquement : la condensation est inactive pendant les
@@ -16090,7 +16137,7 @@ function computeLayout(eq, lk){
     // OU à score égal si le dessin devient réellement plus petit (blocs creux
     // refermés sans rien perdre). En mode équilibré : plafond de surface.
     if(OPT_ONCE) try{
-      const L3=layoutTry(eq,lk,bOptX,{condense:true,chw:bFix,nogrow:bNg,split:bSp,lanes:bPf});
+      const L3=layoutTry(eq,lk,bOptX,{condense:true,chw:bFix,nogrow:bNg,split:bSp,lanes:bPf,spread:bSpr});
       const s3=scoreOf(L3), a3=areaOf(L3);
       if((s3>bScore || (s3===bScore && a3<areaOf(best)*0.97)) && (!balanced||a3<=OPT_AREA_CAP)){ best=L3; bScore=s3; }
     }catch(_){ }
