@@ -15927,13 +15927,20 @@ function tightenChannels(L){ const g=L.geom; if(!g||!g.colX.length)return null;
 }
 
 /* AUTO-CONTRÔLE — à taper dans la console du navigateur : auditSchema()
-   Vérifie sur le dessin actuellement affiché les trois invariants qui ne
-   doivent JAMAIS être violés, et donne les indicateurs de qualité.
-   À utiliser après chaque nouvelle fonctionnalité : si `ok` passe à false,
-   c'est que la modification a cassé quelque chose de fondamental.
+   Vérifie sur le dessin actuellement affiché les invariants qui ne doivent
+   JAMAIS être violés PAR LE MOTEUR, et donne les indicateurs de qualité.
      filsDansBloc : segments traversant un bloc ÉTRANGER          → doit être 0
      blocsChevauches : paires de blocs qui se recouvrent          → doit être 0
      droits / fils : proportion de fils parfaitement droits       → à maximiser
+
+   ATTENTION à bien lire `arrangeManuel` avant de s'alarmer :
+   dès qu'on déplace un bloc à la souris, on a le droit de le poser N'IMPORTE
+   OÙ, y compris sur un voisin — c'est voulu (liberté totale d'arrangement).
+   Dans ce cas ok=false est NORMAL : ce n'est pas le moteur qui a fauté, c'est
+   le placement manuel. Le dépliage suivant relance l'équerre et tout redevient
+   propre. Pour juger le moteur, faire l'audit sur un dessin non retouché
+   (arrangeManuel = 0).
+
    Un fil qui longe son PROPRE bloc pour rejoindre une de ses bornes est
    normal : il n'est pas compté. Fonction en lecture seule, elle ne modifie
    rien et n'est jamais appelée par le reste du programme. */
@@ -15965,8 +15972,14 @@ function auditSchema(){
     if(a.x<b.x+b.w-1 && b.x<a.x+a.w-1 && a.y<b.y+b.h-1 && b.y<a.y+a.h-1) blocsChevauches++;
   }
   const droits=fils.filter(w=>w.pts.length===2).length;
+  const arrangeManuel=(typeof OVR!=='undefined')?OVR.size:0;
+  const sain = filsDansBloc===0 && blocsChevauches===0;
   return {
-    ok: filsDansBloc===0 && blocsChevauches===0,
+    ok: sain,
+    verdict: sain ? 'moteur sain'
+           : (arrangeManuel ? 'défauts dus au placement manuel — le prochain dépliage remet tout d’aplomb'
+                            : 'ANOMALIE DU MOTEUR : à corriger'),
+    arrangeManuel,
     fils: fils.length, droits, tauxDroits: fils.length?+(droits/fils.length).toFixed(3):1,
     croisements: countCrossings(fils), ponts: (LAST.routing.bridges||[]).length,
     filsDansBloc, blocsChevauches, blocs: blocs.length,
