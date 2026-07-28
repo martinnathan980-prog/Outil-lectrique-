@@ -16539,6 +16539,9 @@ function defs(){
      .borne{fill:#eef1f4;stroke:#2b3947;stroke-width:1}
      .bnum{fill:#1c2733;font-size:8px;font-weight:700}
      .bstrip{fill:#eef2f6;stroke:#4a5763;stroke-width:1.15}
+     .brail{stroke:#aab4be;stroke-width:2.6;stroke-linecap:round}
+     .btag{fill:#eef2f6;stroke:#aab4be;stroke-width:.9}
+     .bstub{stroke:#2b3947;stroke-width:1.1;stroke-linecap:round}
      .bcell{fill:#ffffff;stroke:#d2dae1;stroke-width:.7}
      .bsq{fill:#ffffff;stroke:#7d8b98;stroke-width:1}
      .bdiv{stroke:#dbe2e9;stroke-width:.7;stroke-linecap:round}
@@ -16666,13 +16669,19 @@ function compSvg(c,sel){
     s+=`<rect class="rpill" x="0" y="${f1(c.h/2-6)}" width="${c.w}" height="12" rx="6"/>`;
     s+=`<text class="rname" style="font-size:7.5px" x="${f1(c.w/2)}" y="${f1(c.h/2+2.7)}" text-anchor="middle">${esc(clip(c.name,7))}</text>`;
   } else if(c.kind==='strip'){
-    // fragment de bornier : fin, nom intégré en cellule d'en-tête
-    s+=`<g filter="url(#softsh)"><rect class="bstrip" x="0" y="0" width="${c.w}" height="${c.h}" rx="2.5"/></g>`;
-    s+=`<rect class="bshead" x="0" y="0" width="${c.w}" height="${HHS}" rx="2.5"/>`;
-    s+=`<text class="bsname" x="${f1(c.w/2)}" y="${HHS/2+3}" text-anchor="middle">${esc(clip(c.name,7))}</text>`;
-    s+=pinCells(1.5,c.w-3,c.rows.S||[],c.y);
+    /* BORNIER = UN RAIL, PAS UNE DALLE.
+       Une grande boîte grise pleine hauteur donnait ces « barres grises » peu
+       lisibles dès que les bornes étaient espacées. On dessine maintenant ce
+       qu'est réellement un bornier : un rail vertical fin sur lequel les
+       bornes sont clipsées, avec le repère sur une petite étiquette en tête.
+       Le vide entre deux bornes éloignées ne montre plus que le rail. */
+    const rows=c.rows.S||[];
+    s+=`<line class="brail" x1="${f1(c.w/2)}" y1="${f1(HHS-3)}" x2="${f1(c.w/2)}" y2="${f1(c.h)}"/>`;
+    s+=`<rect class="btag" x="${f1(c.w/2-16)}" y="0" width="32" height="${HHS-4}" rx="2.5"/>`;
+    s+=`<text class="bsname" x="${f1(c.w/2)}" y="${HHS/2+1}" text-anchor="middle">${esc(clip(c.name,7))}</text>`;
+    s+=pinCells(1.5,c.w-3,rows,c.y);
     // borne traversante : une vis de chaque côté (entrée / sortie)
-    (c.rows.S||[]).forEach(p=>{ const y=p.y-c.y; s+=screw(0,y)+screw(c.w,y); });
+    rows.forEach(p=>{ const y=p.y-c.y; s+=screw(0,y)+screw(c.w,y); });
   } else {
     // équipement : corps compact, nom centré, borniers de flanc fins et centrés
     const bx=c.lw, bw=c.w-c.lw-c.rw;
@@ -16695,18 +16704,16 @@ function compSvg(c,sel){
       s+=`<g filter="url(#softsh)"><rect class="body" x="${f1(bx)}" y="0" width="${f1(bw)}" height="${c.h}" rx="5"/></g>`;
       s+=`<text class="rep-big" x="${f1(bx+bw/2)}" y="${f1(c.h/2+4.5)}" text-anchor="middle">${esc(clip(c.name,12))}</text>`;
       if(c.o.designation) s+=`<text class="des" x="${f1(bx+bw/2)}" y="${f1(c.h/2+17)}" text-anchor="middle">${esc(clip(c.o.designation,16))}</text>`;
-      // liseré de flanc : coupé en segments par groupe de bornes (ne traverse
-      // pas les grands vides -> les blocs étirés restent lisibles)
-      const outline=(x0,rows)=>{ if(!rows.length)return '';
-        let out=''; let g0=0;
-        for(let i=1;i<=rows.length;i++){
-          if(i===rows.length || rows[i].y-rows[i-1].y > 2.2*PRH){
-            const t=rows[g0].y-c.y-PRH/2-2, b=rows[i-1].y-c.y+PRH/2+2;
-            out+=`<rect class="bstrip" x="${f1(x0)}" y="${f1(t)}" width="${STRIPW}" height="${f1(b-t)}" rx="2.5"/>`;
-            g0=i; } }
-        return out; };
-      if(rl.length){ s+=outline(0,rl)+pinCells(1.5,STRIPW-3,rl,c.y); rl.forEach(p=>s+=screw(0,p.y-c.y)); }
-      if(rr.length){ s+=outline(c.w-STRIPW,rr)+pinCells(c.w-STRIPW+1.5,STRIPW-3,rr,c.y); rr.forEach(p=>s+=screw(c.w,p.y-c.y)); }
+      /* BORNES DE FLANC : plus de caisson gris le long de l'appareil.
+         Chaque borne est simplement une case carrée numérotée, reliée au corps
+         par un court tenon — comme une borne vissée sur l'appareil. Le flanc
+         d'un équipement à une seule borne ne montre donc plus qu'une case, et
+         non une barre grise sur toute sa hauteur. */
+      const tenon=(x1,x2,y)=>`<line class="bstub" x1="${f1(x1)}" y1="${f1(y)}" x2="${f1(x2)}" y2="${f1(y)}"/>`;
+      if(rl.length){ s+=pinCells(1.5,STRIPW-3,rl,c.y);
+        rl.forEach(p=>{ const y=p.y-c.y; s+=tenon(STRIPW-4,bx,y)+screw(0,y); }); }
+      if(rr.length){ s+=pinCells(c.w-STRIPW+1.5,STRIPW-3,rr,c.y);
+        rr.forEach(p=>{ const y=p.y-c.y; s+=tenon(bx+bw,c.w-STRIPW+4,y)+screw(c.w,y); }); }
     }
   }
   s+=`</g>`; return s;
