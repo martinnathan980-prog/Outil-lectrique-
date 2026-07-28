@@ -16545,14 +16545,14 @@ function defs(){
      .sym-sub{fill:#56606b;font-size:8.5px;font-weight:700}
      .rep{fill:#15202b;font-weight:700;font-size:11.5px}
      .rep-in{fill:#182430;font-weight:700;font-size:11px;letter-spacing:.8px}
-     .des{fill:#8592a0;font-size:8.4px;letter-spacing:.2px}
+     .des{fill:#94a0ad;font-size:7.6px;letter-spacing:.7px;text-transform:uppercase}
      .term{fill:#8893a0;font-size:7.6px}
      .bartxt{fill:#95a0ad;font-size:6.6px}
      .barsrc{fill:#5b6672;font-weight:700;font-size:7px}
-     .body{fill:#ffffff;stroke:#2b3947;stroke-width:1.25}
+     .body{fill:#ffffff;stroke:#2b3947;stroke-width:1.2}
      .borne{fill:#eef1f4;stroke:#2b3947;stroke-width:1}
      .bnum{fill:#1c2733;font-size:8px;font-weight:700}
-     .bstrip{fill:#eef2f6;stroke:#4a5763;stroke-width:1.15}
+     .bstrip{fill:#ffffff;stroke:#2b3947;stroke-width:1.1}
      .brail{stroke:#aab4be;stroke-width:2.6;stroke-linecap:round}
      .btag{fill:#eef2f6;stroke:#aab4be;stroke-width:.9}
      .bstub{stroke:#2b3947;stroke-width:1.1;stroke-linecap:round}
@@ -16560,9 +16560,9 @@ function defs(){
      .bsq{fill:#ffffff;stroke:#7d8b98;stroke-width:1}
      .bdiv{stroke:#dbe2e9;stroke-width:.7;stroke-linecap:round}
      .bshead{fill:#eef2f6;stroke:none}
-     .bsname{fill:#1c2733;font-size:7.5px;font-weight:700;letter-spacing:.3px}
+     .bsname{fill:#2b3947;font-size:8.4px;font-weight:700;letter-spacing:.4px}
      .plug{fill:#2b3947;stroke:#fcfcf8;stroke-width:.7}
-     .rep-big{fill:#182430;font-weight:700;font-size:13.5px;letter-spacing:.6px}
+     .rep-big{fill:#141f2a;font-weight:700;font-size:14px;letter-spacing:.4px}
      .bhead{fill:#e9eef3;stroke:none}
      .bheadline{stroke:#26343f;stroke-width:1}
      .barrette{stroke:#26323f;stroke-width:2.4;stroke-linecap:round}
@@ -16571,7 +16571,7 @@ function defs(){
      .plusb circle{fill:#1668c2;opacity:.9}
      .plusb text{fill:#ffffff;font:700 10px ui-monospace,monospace}
      .pinsep{stroke:#e3e8ed;stroke-width:1}
-     .pinlbl{fill:#2b3947;font-size:7.8px;font-weight:600}
+     .pinlbl{fill:#22303d;font-size:8px;font-weight:650}
      .rpill{fill:#ffffff;stroke:#d2dae1;stroke-width:.9}
      .rname{fill:#3a4652;font-weight:700;font-size:10px;letter-spacing:.6px}
      .ctag{fill:#5b6775;font-size:8px;font-weight:600}
@@ -16683,19 +16683,25 @@ function compSvg(c,sel){
     s+=`<rect class="rpill" x="0" y="${f1(c.h/2-6)}" width="${c.w}" height="12" rx="6"/>`;
     s+=`<text class="rname" style="font-size:7.5px" x="${f1(c.w/2)}" y="${f1(c.h/2+2.7)}" text-anchor="middle">${esc(clip(c.name,7))}</text>`;
   } else if(c.kind==='strip'){
-    /* BORNIER = UN RAIL, PAS UNE DALLE.
-       Une grande boîte grise pleine hauteur donnait ces « barres grises » peu
-       lisibles dès que les bornes étaient espacées. On dessine maintenant ce
-       qu'est réellement un bornier : un rail vertical fin sur lequel les
-       bornes sont clipsées, avec le repère sur une petite étiquette en tête.
-       Le vide entre deux bornes éloignées ne montre plus que le rail. */
+    /* BORNIER = UNE BOÎTE QUI CONTIENT SES BORNES.
+       Le repère est écrit AU-DESSUS de la boîte, les numéros de borne sont
+       écrits DEDANS, et les fils sortent des flancs — exactement la convention
+       de schéma attendue.
+       La boîte se coupe en plusieurs morceaux quand deux bornes sont très
+       écartées : sinon un bornier étiré sur toute la hauteur de la page
+       redonnerait la grande barre vide qu'on a supprimée. */
     const rows=c.rows.S||[];
-    s+=`<line class="brail" x1="${f1(c.w/2)}" y1="${f1(HHS-3)}" x2="${f1(c.w/2)}" y2="${f1(c.h)}"/>`;
-    s+=`<rect class="btag" x="${f1(c.w/2-16)}" y="0" width="32" height="${HHS-4}" rx="2.5"/>`;
-    s+=`<text class="bsname" x="${f1(c.w/2)}" y="${HHS/2+1}" text-anchor="middle">${esc(clip(c.name,7))}</text>`;
-    s+=pinCells(1.5,c.w-3,rows,c.y);
-    // borne traversante : une vis de chaque côté (entrée / sortie)
-    rows.forEach(p=>{ const y=p.y-c.y; s+=screw(0,y)+screw(c.w,y); });
+    let g0=0;
+    for(let i=1;i<=rows.length;i++){
+      if(i===rows.length || rows[i].y-rows[i-1].y > 2.2*PRH){
+        const t=rows[g0].y-c.y-PRH/2-3, bas=rows[i-1].y-c.y+PRH/2+3;
+        s+=`<rect class="bstrip" x="0" y="${f1(t)}" width="${f1(c.w)}" height="${f1(bas-t)}" rx="1.5"/>`;
+        g0=i; } }
+    rows.forEach(p=>{ if(p.label)
+      s+=`<text class="pinlbl" x="${f1(c.w/2)}" y="${f1(p.y-c.y+2.8)}" text-anchor="middle">${esc(p.label)}</text>`; });
+    // repère au-dessus de la première borne
+    const yTop=rows.length ? rows[0].y-c.y-PRH/2-6 : -4;
+    s+=`<text class="bsname" x="${f1(c.w/2)}" y="${f1(yTop)}" text-anchor="middle">${esc(clip(c.name,8))}</text>`;
   } else {
     // équipement : corps compact, nom centré, borniers de flanc fins et centrés
     const bx=c.lw, bw=c.w-c.lw-c.rw;
@@ -17200,7 +17206,14 @@ function openEditor(c,sx,sy){ state.sel=c.name; render();
     const nd=document.getElementById('ed-des').value, nt=document.getElementById('ed-typ').value.trim();
     if(nr!==c.name){ const ren=arr=>arr.forEach(l=>{ if(l.from===c.name)l.from=nr; if(l.to===c.name)l.to=nr; });
       ren(state.lk); if(state.folioBackup)ren(state.folioBackup);
-      if(OVR.has(c.name)){ OVR.set(nr,OVR.get(c.name)); OVR.delete(c.name); } }
+      if(OVR.has(c.name)){ OVR.set(nr,OVR.get(c.name)); OVR.delete(c.name); }
+      // Le repère est aussi une CLÉ ailleurs : liste des blocs dépliés et verrou
+      // d'ordre. Sans ça, renommer un équipement qu'on explore laissait
+      // l'ancien nom dans la liste — l'exploration ne trouvait plus rien et le
+      // schéma disparaissait purement et simplement.
+      if(state.xroots&&state.xroots.has(c.name)){ state.xroots.delete(c.name); state.xroots.add(nr); }
+      if(typeof ORDH!=='undefined'&&ORDH.has(c.name)){ ORDH.set(nr,ORDH.get(c.name)); ORDH.delete(c.name); }
+      if(typeof XPPIN!=='undefined'&&XPPIN.has(c.name)){ XPPIN.delete(c.name); XPPIN.add(nr); } }
     let e=state.eq.find(x=>x.repere===c.name||x.repere===nr); if(!e){ e={repere:nr,designation:'',type:''}; state.eq.push(e); }
     e.repere=nr; e.designation=nd; e.type=nt; state.sel=nr; closePop(); syncTables(); render(); };
   document.getElementById('ed-del').onclick=()=>{ state.lk=state.lk.filter(l=>l.from!==c.name&&l.to!==c.name);
