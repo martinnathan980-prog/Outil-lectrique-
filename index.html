@@ -16222,7 +16222,13 @@ function computeLayout(eq, lk){
   if(SEED_HINT){
     // temps non contraint en exploration : on tente plusieurs ordonnancements
     // (graine + décalages + périphérique) et on garde le mieux ALIGNÉ.
-    const opts=[false,true,1,2];
+    /* GRAINES DU CONCOURS. Chaque graine est un dessin COMPLET (placement +
+       routage) : à 220 blocs, quatre graines fois deux étalements font huit
+       rendus lourds, et le clic de dépliage passait à une minute. Mesuré au
+       banc de stress sur 1692 : 52 s à 69 blocs, 149 s à 131, 618 s à 221.
+       Au-delà d'un gros folio on se contente donc des deux graines de base ;
+       en dessous, rien ne change. */
+    const opts=(lk.length>220)?[false,true]:[false,true,1,2];
     let best=null,bScore=-1e18,bOptX=false,bNg=false;
     /* Proportion de la page : 0 = format A3 parfait, 1 = déjà très déséquilibré.
        Un dessin 7 fois plus haut que large est illisible même s'il est
