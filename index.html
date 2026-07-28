@@ -16362,7 +16362,13 @@ function routeAll(layout){
     const span=Math.abs(A.y-B.y); if(span<300)return false;
     const lo=Math.min(A.y,B.y), hi=Math.max(A.y,B.y);
     const ce=crossEst(A.ch,lo,hi);
-    if(ce<3)return false;   // la goulotte ne coûte presque rien : rester local
+    // Le grand détour par la marge n'est justifié que s'il évite BEAUCOUP de
+    // croisements. Ce seuil était à 3 du temps où un croisement se dessinait
+    // comme un simple chevauchement de traits. Depuis, chaque croisement est
+    // franchi par un petit pont en arc, parfaitement lisible : payer un fil qui
+    // fait le tour de la page pour en économiser trois n'a plus de sens — le
+    // détour se voit beaucoup plus que les ponts qu'il évite.
+    if(ce<8)return false;   // en dessous : rester local, quitte à poser des ponts
     const dR=mgR-Math.max(A.x,B.x), dL=Math.min(A.x,B.x)-mgL;
     for(const s of (dR<=dL?['R','L']:['L','R'])){
       const base = s==='R'? mgR+26 : mgL-26;
