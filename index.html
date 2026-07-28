@@ -16553,8 +16553,8 @@ function defs(){
      .rep-in{fill:#182430;font-weight:700;font-size:11px;letter-spacing:.8px}
      .des{fill:#94a0ad;font-size:7.6px;letter-spacing:.7px;text-transform:uppercase}
      .term{fill:#8893a0;font-size:7.6px}
-     .bartxt{fill:#95a0ad;font-size:6.6px}
-     .barsrc{fill:#5b6672;font-weight:700;font-size:7px}
+     .bartxt{fill:#b3bcc5;font-size:5.8px}
+     .barsrc{fill:#8894a1;font-weight:700;font-size:6.4px}
      .body{fill:#ffffff;stroke:#2b3947;stroke-width:1.2}
      .borne{fill:#eef1f4;stroke:#2b3947;stroke-width:1}
      .bnum{fill:#1c2733;font-size:8px;font-weight:700}
@@ -16563,7 +16563,8 @@ function defs(){
      .btag{fill:#eef2f6;stroke:#aab4be;stroke-width:.9}
      .bstub{stroke:#2b3947;stroke-width:1.1;stroke-linecap:round}
      .bcell{fill:#ffffff;stroke:#d2dae1;stroke-width:.7}
-     .bsq{fill:#ffffff;stroke:#7d8b98;stroke-width:1}
+     .bsq{fill:#ffffff;stroke:#2b3947;stroke-width:1.1}
+     .braccord{fill:#ffffff;stroke:#2b3947;stroke-width:1}
      .bdiv{stroke:#dbe2e9;stroke-width:.7;stroke-linecap:round}
      .bshead{fill:#eef2f6;stroke:none}
      .bsname{fill:#2b3947;font-size:8.4px;font-weight:700;letter-spacing:.4px}
@@ -16571,8 +16572,8 @@ function defs(){
      .rep-big{fill:#141f2a;font-weight:700;font-size:14px;letter-spacing:.4px}
      .bhead{fill:#e9eef3;stroke:none}
      .bheadline{stroke:#26343f;stroke-width:1}
-     .barrette{stroke:#26323f;stroke-width:2.4;stroke-linecap:round}
-     .busbar{stroke:#26323f;stroke-width:3.4;stroke-linecap:round}
+     .barrette{stroke:#2b3947;stroke-width:2.2;stroke-linecap:round}
+     .busbar{stroke:#2b3947;stroke-width:3.2;stroke-linecap:round}
      .rootbox{fill:none;stroke:#1668c2;stroke-width:1.5;stroke-dasharray:5 3}
      .plusb circle{fill:#1668c2;opacity:.9}
      .plusb text{fill:#ffffff;font:700 10px ui-monospace,monospace}
@@ -16664,6 +16665,7 @@ function wireSvg(w,bridges){ const d=wirePath(w.pts,bridges);
    bornier, une borne se lit comme une case carrée numérotée. Le boîtier qui
    les entoure (dessiné par l'appelant) joue le rôle du corps de la barrette. */
 const BSQ=16;                                   // côté du carré de borne
+const RACC=5;                                   // petit rectangle de raccordement qui se colle sur l'équipement
 function pinCells(x0,w,rows,baseY){
   let s='';
   const side=Math.min(BSQ, w-2);
@@ -16703,6 +16705,12 @@ function compSvg(c,sel){
         const t=rows[g0].y-c.y-PRH/2-3, bas=rows[i-1].y-c.y+PRH/2+3;
         s+=`<rect class="bstrip" x="0" y="${f1(t)}" width="${f1(c.w)}" height="${f1(bas-t)}" rx="1.5"/>`;
         g0=i; } }
+    // LE PETIT RECTANGLE DE RACCORDEMENT, de chaque côté de la boîte : c'est
+    // lui qui vient se coller sur l'équipement d'en face. Chaque borne en a un,
+    // à son ordonnée, et le fil s'y branche.
+    rows.forEach(p=>{ const y=p.y-c.y;
+      s+=`<rect class="braccord" x="${f1(-RACC)}" y="${f1(y-BSQ/2+2)}" width="${RACC}" height="${f1(BSQ-4)}"/>`;
+      s+=`<rect class="braccord" x="${f1(c.w)}" y="${f1(y-BSQ/2+2)}" width="${RACC}" height="${f1(BSQ-4)}"/>`; });
     rows.forEach(p=>{ if(p.label)
       s+=`<text class="pinlbl" x="${f1(c.w/2)}" y="${f1(p.y-c.y+2.8)}" text-anchor="middle">${esc(p.label)}</text>`; });
     // repère au-dessus de la première borne
@@ -16730,16 +16738,18 @@ function compSvg(c,sel){
       s+=`<g filter="url(#softsh)"><rect class="body" x="${f1(bx)}" y="0" width="${f1(bw)}" height="${c.h}" rx="5"/></g>`;
       s+=`<text class="rep-big" x="${f1(bx+bw/2)}" y="${f1(c.h/2+4.5)}" text-anchor="middle">${esc(clip(c.name,12))}</text>`;
       if(c.o.designation) s+=`<text class="des" x="${f1(bx+bw/2)}" y="${f1(c.h/2+17)}" text-anchor="middle">${esc(clip(c.o.designation,16))}</text>`;
-      /* BORNES DE FLANC : plus de caisson gris le long de l'appareil.
-         Chaque borne est simplement une case carrée numérotée, reliée au corps
-         par un court tenon — comme une borne vissée sur l'appareil. Le flanc
-         d'un équipement à une seule borne ne montre donc plus qu'une case, et
-         non une barre grise sur toute sa hauteur. */
-      const tenon=(x1,x2,y)=>`<line class="bstub" x1="${f1(x1)}" y1="${f1(y)}" x2="${f1(x2)}" y2="${f1(y)}"/>`;
-      if(rl.length){ s+=pinCells(1.5,STRIPW-3,rl,c.y);
-        rl.forEach(p=>{ const y=p.y-c.y; s+=tenon(STRIPW-4,bx,y)+screw(0,y); }); }
-      if(rr.length){ s+=pinCells(c.w-STRIPW+1.5,STRIPW-3,rr,c.y);
-        rr.forEach(p=>{ const y=p.y-c.y; s+=tenon(bx+bw,c.w-STRIPW+4,y)+screw(c.w,y); }); }
+      /* BORNE DE FLANC : un rectangle PLAQUÉ CONTRE le corps, sans jeu.
+         C'est la lecture de la photo de référence : la borne n'est pas une
+         pastille qui flotte à côté de l'appareil reliée par un trait, c'est un
+         petit rectangle collé sur son côté, avec le numéro dedans. Il va donc
+         du bord extérieur du bloc jusqu'au corps, sans intervalle. */
+      const borneFlanc=(x0,rows)=>{ let out='';
+        rows.forEach(p=>{ const y=p.y-c.y;
+          out+=`<rect class="bsq" x="${f1(x0)}" y="${f1(y-BSQ/2)}" width="${STRIPW}" height="${BSQ}" rx="1.2"/>`;
+          if(p.label) out+=`<text class="pinlbl" x="${f1(x0+STRIPW/2)}" y="${f1(y+2.9)}" text-anchor="middle">${esc(p.label)}</text>`; });
+        return out; };
+      if(rl.length) s+=borneFlanc(0,rl);
+      if(rr.length) s+=borneFlanc(c.w-STRIPW,rr);
     }
   }
   s+=`</g>`; return s;
