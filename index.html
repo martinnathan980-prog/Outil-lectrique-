@@ -15917,7 +15917,13 @@ function computeLayoutWith(eq, lk, peripheral){
        plus rien à étaler : 443 px de blanc de chaque côté, définitivement.) */
     const cible=(contW/Math.max(1,contH)>1.414)?1.414:(1/1.414);
     const hVoulue=contW/cible;
-    const surplus=Math.min(hVoulue-contH, contH*0.5);          // plafond : +50 %
+    /* Plafond à +50 %. Il n'a pas besoin d'être dégressif avec la taille du
+       dessin : les gros schémas sont justement ceux qui partent en ruban
+       vertical, et un ruban est DÉJÀ plus haut que sa page — le surplus y est
+       négatif, l'étalement ne s'y déclenche jamais. (Vérifié : plafond fixe et
+       plafond dégressif donnent des chiffres identiques au croisement près sur
+       668, 6, 2541, 765 et 182.) */
+    const surplus=Math.min(hVoulue-contH, contH*0.5);
     if(contW>0 && contH>0 && surplus>20){
       // bandes occupées, fusionnées -> ce qui reste entre elles est libre
       const iv=nodeIds.map(id=>[blockTop.get(id),blockBot.get(id)]).sort((a,b)=>a[0]-b[0]);
