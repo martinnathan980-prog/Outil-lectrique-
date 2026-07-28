@@ -17266,6 +17266,11 @@ function exploreOptimize(mode){ if(!(state.xroots&&state.xroots.size))return;
   // équilibré : le verrou d'ordre RESTE (les repères gardent leur place, le
   // dessin reste compact) ; seul « Droits max » relâche tout.
   if(OPT_MODE==='max') ORDH.clear();
+  // ON REPART D'UNE PAGE PROPRE : les blocs qu'on a déplacés à la souris sont
+  // relâchés. Sans ça, « Optimiser » laissait en place un bloc posé à la main
+  // — donc gardait le chevauchement qu'on lui demandait justement de corriger.
+  // Le bouton doit tenir sa promesse : remettre TOUT le dessin d'aplomb.
+  xpUnpin(); OVR.clear();
   OPT_ONCE=true;
   try{ render(); } finally { OPT_ONCE=false; OPT_MODE='max'; OPT_AREA_CAP=0; }
   // re-verrouiller l'ordre obtenu : les rendus SUIVANTS (déplacement à la
