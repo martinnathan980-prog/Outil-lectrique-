@@ -14407,7 +14407,7 @@ function buildNets(lk){
 }
 
 /* ---------- 4. Placement : colonnes, hauteur élastique, condensation ---------- */
-const PRH=14, STRIPW=24, BODYW=104, BORNW=40, VGAP=22, HH=20, BPAD=6, HHS=15;
+const PRH=14, STRIPW=20, BODYW=104, BORNW=40, VGAP=22, HH=20, BPAD=6, HHS=15;
 const FRAG='';
 /* LE MOTEUR DE PLACEMENT. C'est la fonction la plus longue du fichier, et
    c'est normal : elle exécute UNE chaîne de calcul, du haut vers le bas, où
@@ -16444,19 +16444,12 @@ function routeAll(layout){
       kept.forEach(k=>{ epAdj.set(k.u.li+':'+k.u.tag,{...k.u.ep,x:bx,y:k.y});
         busDots.push({x:bx,y:k.y}); });
       busStubs.push({x0:px,x1:bx,y:py});
-      // BORNES DE LA BARRETTE : borne source (au niveau du connecteur) + pour
-      // chaque piquage la destination « repère·borne » et le SENS (sortie si le
-      // relevé part d'ici, arrivée sinon) -> lisible directement sur la barre.
-      const l0=layout.links[kept[0].u.li];
-      const src=(kept[0].u.tag==='A')?(l0.fromTerm||''):(l0.toTerm||'');
-      // qui ALIMENTE la barrette : la borne seule ne suffisait pas à le dire,
-      // on écrit « repère·borne » (le repère porte l'information utile).
-      const srcName=(kept[0].u.tag==='A')?String(l0.from):String(l0.to);
-      const taps=kept.map(k=>{ const l=layout.links[k.u.li]; const out=(k.u.tag==='A');
-        const dn=out?l.to:l.from, dt=out?(l.toTerm||''):(l.fromTerm||'');
-        return {y:k.y, dir:(k.u.other.x>=bx?1:-1), out, txt:String(dn)+(dt?('·'+dt):'')}; });
-      barrettes.push({x:bx,y1:Math.min(py,kept[0].y)-3,y2:Math.max(py,kept[kept.length-1].y)+3,bus,
-        src,srcName,py,sdir:(bx>=px?1:-1),taps}); });
+      /* `py` est l'ordonnée de la BORNE QUI ALIMENTE : c'est tout ce dont le
+         dessin a besoin pour poser le carré d'origine sur la bonne borne. Les
+         repères de la source et de chaque destination étaient calculés ici et
+         écrits le long de la barre ; ils répétaient ce que les blocs reliés
+         disent déjà et encombraient la zone où l'on suit les fils. */
+      barrettes.push({x:bx,y1:Math.min(py,kept[0].y)-3,y2:Math.max(py,kept[kept.length-1].y)+3,bus,py}); });
     barrettes.stubs=busStubs;
   }
   const EA=li=>epAdj.get(li+':A')||layout.links[li].epA;
@@ -16689,8 +16682,6 @@ function defs(){
         piquage. A 5.8px et en gris tres clair elles etaient illisibles au zoom
         de lecture courant (60-70 %) — donc inutiles. Remontees au seuil de
         lisibilite tout en restant nettement plus discretes que les reperes. */
-     .bartxt{fill:#7d8894;font-size:7px}
-     .barsrc{fill:#1a2530;font-weight:700;font-size:7.4px}
      /* le corps de l'appareil porte le trait le plus epais du dessin :
         sur la photo de reference, le "gros carre" se detache nettement de
         la boite de bornes qui lui est plaquee dessus. */
@@ -16710,14 +16701,14 @@ function defs(){
         Les deux se lisaient pareil — une barre noire. Le tirete les separe au
         premier coup d'oeil, sans avoir a suivre le trace. Le peigne
         d'alimentation garde le meme langage mais en plus epais. */
-     .barrette{stroke:#2b3947;stroke-width:1.9;stroke-linecap:butt;stroke-dasharray:4 2.6}
+     .barrette{stroke:#2b3947;stroke-width:1.15;stroke-linecap:butt;stroke-dasharray:3.4 2.4}
      .barfeed{fill:#1a2530;stroke:#fcfcf8;stroke-width:1}
-     .barlabbg{fill:#fcfcf8;stroke:#c9d2da;stroke-width:.7}
-     .busbar{stroke:#2b3947;stroke-width:2.6;stroke-linecap:butt;stroke-dasharray:5.5 3}
+     .barfeedline{stroke:#2b3947;stroke-width:1.35;stroke-linecap:butt}
+     .busbar{stroke:#2b3947;stroke-width:1.5;stroke-linecap:butt;stroke-dasharray:4.5 2.6}
      .rootmark{fill:none;stroke:#1668c2;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
      .plusb circle{fill:#1668c2;opacity:.9}
      .plusb text{fill:#ffffff;font:700 10px ui-monospace,monospace}
-     .pinlbl{fill:#22303d;font-size:8px;font-weight:650}
+     .pinlbl{fill:#22303d;font-size:8px;font-weight:520;letter-spacing:.2px}
      .rpill{fill:#ffffff;stroke:#d2dae1;stroke-width:.9}
      .rname{fill:#3a4652;font-weight:700;font-size:10px;letter-spacing:.6px}
      .ctag{fill:#5b6775;font-size:8px;font-weight:600}
@@ -16737,7 +16728,7 @@ function defs(){
      .comp{transition:opacity .12s}
      /* MODE FOCUS : au survol d'un bloc ou au clic sur un fil, tout le reste
         s'estompe et le net (ou les fils du bloc) ressort net et épais. */
-     .focus .cab,.focus .w-int,.focus .barrette,.focus .busbar,.focus .jn,.focus .plug,.focus .bartxt,.focus .barsrc{opacity:.10}
+     .focus .cab,.focus .w-int,.focus .barrette,.focus .busbar,.focus .barfeedline,.focus .jn,.focus .plug,.focus .barfeed{opacity:.10}
      .focus .comp{opacity:.28}
      .focus .cab.hl{opacity:1;stroke-width:2.9}
      .focus .comp.hl{opacity:1}
@@ -16821,7 +16812,7 @@ function wireSvg(w,bridges){ const d=wirePath(w.pts,bridges);
       numéro — donc perpendiculaire, donc droit.
    Proportions de la photo, ramenées au pas de borne p : bande ≈ 0,32 p
    d'épaisseur et débordant de ≈ 0,25 p ; boîte ≈ 0,85 p de profondeur. */
-const BAND=5;      // épaisseur de la bande de raccordement plaquée sur le corps
+const BAND=4;      // épaisseur de la bande de raccordement plaquée sur le corps
 const BOXPAD=3;    // marge de la boîte au-delà de la première/dernière borne
 const BANDPAD=4;   // de combien la bande dépasse la boîte, en haut et en bas
 
@@ -16838,10 +16829,13 @@ function pinGroups(rows){
      xBody : abscisse du bord du corps sur lequel on se plaque
      dir   : +1 la boîte s'étend vers la droite, -1 vers la gauche
      depth : profondeur totale occupée (bande comprise)
+     hCorps: hauteur du corps — la boîte ne la dépassera jamais (null = libre)
+     bande : false pour un bornier AUTONOME, qui n'est accolé à aucun appareil
    Renvoie aussi le HAUT de la première boîte et son axe, pour que l'appelant
    y pose le repère du bornier. */
-function borneBox(xBody,dir,depth,rows,baseY,sideOfGroup){
+function borneBox(xBody,dir,depth,rows,baseY,sideOfGroup,hCorps,bande){
   let out=''; let top=null, cxLast=null;
+  const avecBande = bande!==false;
   pinGroups(rows).forEach(g=>{
     /* CÔTÉ DE LA BANDE. Elle représente le raccordement sur l'appareil : la
        poser systématiquement à gauche laissait croire qu'un appareil s'y
@@ -16850,11 +16844,17 @@ function borneBox(xBody,dir,depth,rows,baseY,sideOfGroup){
        elles offraient donc une bande côté vide. La bande suit maintenant les
        fils, et le côté sans fil se referme proprement. */
     if(sideOfGroup){ const d=sideOfGroup(g); if(d){ dir=d>0?-1:1; xBody=d>0?depth:0; } }
-    const t=g[0].y-baseY-PRH/2-BOXPAD, b=g[g.length-1].y-baseY+PRH/2+BOXPAD;
+    let t=g[0].y-baseY-PRH/2-BOXPAD, b=g[g.length-1].y-baseY+PRH/2+BOXPAD;
+    /* LA BOÎTE NE DÉBORDE JAMAIS DE SON APPAREIL. Le gabarit du corps laisse
+       13 px au-delà de la première et de la dernière borne, la boîte en prend
+       10 et la bande 14 : la bande dépassait donc du corps d'un pixel, et ça
+       se voyait — un bornier plus grand que l'appareil qui le porte. */
+    if(hCorps!=null){ const m=avecBande?BANDPAD:0;
+      t=Math.max(t, m); b=Math.min(b, hCorps-m); if(b<=t) return; }
     const xb = dir>0 ? xBody : xBody-BAND;                 // bande, contre le corps
-    out+=`<rect class="braccord" x="${f1(xb)}" y="${f1(t-BANDPAD)}" width="${BAND}" height="${f1(b-t+2*BANDPAD)}"/>`;
-    const xo = dir>0 ? xBody+BAND : xBody-depth;           // boîte, à côté de la bande
-    const bw = depth-BAND;
+    if(avecBande) out+=`<rect class="braccord" x="${f1(xb)}" y="${f1(t-BANDPAD)}" width="${BAND}" height="${f1(b-t+2*BANDPAD)}"/>`;
+    const xo = dir>0 ? xBody+(avecBande?BAND:0) : xBody-depth;   // boîte, à côté de la bande
+    const bw = depth-(avecBande?BAND:0);
     out+=`<rect class="bstrip" x="${f1(xo)}" y="${f1(t)}" width="${f1(bw)}" height="${f1(b-t)}"/>`;
     /* Le numéro doit TENIR dans la boîte : un repère de borne à 3 ou 4 chiffres
        débordait sur le trait. On rétrécit la police juste ce qu'il faut plutôt
@@ -16898,11 +16898,13 @@ function compSvg(c,sel){
        colonne précédente. Les départs sortent à droite, au niveau de leur
        numéro. Cf. le schéma de référence en tête de borneBox(). */
     const rows=c.rows.S||[];
-    // un paquet dont TOUTES les bornes partent du même côté reçoit sa bande
-    // de ce côté-là ; sinon (arrivées ET départs) elle reste en amont, à gauche.
-    const sideOfGroup=g=>{ let n=0; for(const p of g){ if(!p.dir) return 0; n+=p.dir; }
-      return n===g.length ? 1 : (n===-g.length ? -1 : 0); };
-    const bb=borneBox(0,+1,c.w,rows,c.y,sideOfGroup);
+    /* UN BORNIER EST UN OBJET COMPLET, PAS UN MORCEAU D'APPAREIL.
+       Il était dessiné comme les bornes d'un appareil — bande de raccordement
+       plaquée sur un corps + boîte — sauf qu'ici il n'y a pas de corps : la
+       bande pointait vers le vide et le bornier se lisait comme un appareil
+       amputé. Un bornier autonome n'a donc que sa boîte de bornes ; la bande
+       reste réservée aux bornes portées par un appareil, où elle a un sens. */
+    const bb=borneBox(0,+1,c.w,rows,c.y,null,null,false);
     s+=bb.svg;
     // Repère écrit UNE SEULE FOIS, sous la dernière boîte, comme sur la photo.
     // Quand le bornier a été coupé en morceaux, chacun dit lequel il est :
@@ -16944,8 +16946,8 @@ function compSvg(c,sel){
          sur le corps, puis boîte unique avec les numéros dedans. Même dessin
          que pour un bornier séparé : un lecteur n'a qu'un seul langage à
          apprendre, qu'il regarde l'appareil ou son bornier. */
-      if(rl.length) s+=borneBox(bx,       -1, c.lw, rl, c.y).svg;
-      if(rr.length) s+=borneBox(bx+bw,    +1, c.rw, rr, c.y).svg;
+      if(rl.length) s+=borneBox(bx,    -1, c.lw, rl, c.y, null, c.h, true).svg;
+      if(rr.length) s+=borneBox(bx+bw, +1, c.rw, rr, c.y, null, c.h, true).svg;
     }
   }
   s+=`</g>`; return s;
@@ -16959,37 +16961,22 @@ function sceneInner(layout,routing){
   let body=sheetSvg(layout.bbox,meta);
   // câbles : aucun nom sur le dessin — toutes les infos au clic
   routing.wires.forEach(w=>body+=wireSvg(w,routing.bridges));
-  ((routing.barrettes&&routing.barrettes.stubs)||[]).forEach(st=>body+=`<line class="w-int" x1="${f1(st.x0)}" y1="${f1(st.y)}" x2="${f1(st.x1)}" y2="${f1(st.y)}"/>`);
-  /* Une étiquette de barrette qui tombe sur un bloc est perdue : les blocs sont
-     dessinés par-dessus, il n'en restait qu'un chiffre orphelin dépassant du
-     bord. Plutôt qu'un texte tronqué, on n'écrit rien. */
-  const libre=(x0,y0,x1,y1)=>!layout.comps.some(c=>x1>c.x-1&&x0<c.x+c.w+1&&y1>c.y-1&&y0<c.y+c.h+1);
-  (routing.barrettes||[]).forEach(bar=>{ body+=`<line class="${bar.bus?'busbar':'barrette'}" x1="${f1(bar.x)}" y1="${f1(bar.y1)}" x2="${f1(bar.x)}" y2="${f1(bar.y2)}"/>`;
-    /* QUI ALIMENTE LA BARRETTE. Une barre nue ne disait rien : on la voyait
-       sans savoir d'où elle partait. Son origine porte donc un CARRÉ plein —
-       forme réservée, les piquages étant de simples points ronds — et une
-       étiquette posée sur un fond opaque, « repère·borne », qui se lit même
-       par-dessus le quadrillage. C'est la borne sur laquelle tout le monde
-       vient se brancher. */
-    if(bar.py!=null){
-      const lab=(bar.srcName?bar.srcName+'·':'')+(bar.src||'');
-      body+=`<rect class="barfeed" x="${f1(bar.x-3.4)}" y="${f1(bar.py-3.4)}" width="6.8" height="6.8"/>`;
-      /* L'étiquette part du CÔTÉ DES PIQUAGES, jamais vers la borne source :
-         de ce côté-là il y a le bloc, qui est dessiné après les barrettes et
-         la recouvrait entièrement. */
-      if(lab){ const sd=(bar.sdir||1), w=lab.length*4.1+6, x=bar.x+sd*8;
-        // le premier piquage est souvent à la hauteur même de la source : on
-        // monte alors d'un cran pour ne pas écrire par-dessus son étiquette.
-        const collision=(bar.taps||[]).some(t=>Math.abs(t.y-bar.py)<8);
-        const yl=bar.py-(collision?21:9.6);
-        const x0=sd>0?x:x-w;
-        if(libre(x0,yl,x0+w,yl+11)){
-          body+=`<rect class="barlabbg" x="${f1(x0)}" y="${f1(yl)}" width="${f1(w)}" height="11" rx="2"/>`;
-          body+=`<text class="barsrc" x="${f1(sd>0?x+3:x-3)}" y="${f1(yl+8)}" text-anchor="${sd>0?'start':'end'}">${esc(clip(lab,16))}</text>`; } } }
-    (bar.taps||[]).forEach(t=>{ const a=t.dir>0?'start':'end';
-      const txt=clip(t.txt,12), w=(txt.length+2)*3.9, xa=bar.x+t.dir*7;
-      if(!libre(t.dir>0?xa:xa-w, t.y-10, t.dir>0?xa+w:xa, t.y-1)) return;
-      body+=`<text class="bartxt" x="${f1(xa)}" y="${f1(t.y-3)}" text-anchor="${a}">${t.out?'▸':'◂'} ${esc(txt)}</text>`; }); });
+  ((routing.barrettes&&routing.barrettes.stubs)||[]).forEach(st=>body+=`<line class="barfeedline" x1="${f1(st.x0)}" y1="${f1(st.y)}" x2="${f1(st.x1)}" y2="${f1(st.y)}"/>`);
+  /* LA BARRETTE SE LIT SANS UN SEUL MOT.
+     Elle portait le repère de sa borne source et, à chaque piquage, celui de sa
+     destination. Deux choses n'allaient pas : ces repères sont DÉJÀ écrits sur
+     les blocs que la barrette relie — le dessin se répétait —, et ils
+     encombraient la seule zone où le lecteur suit les fils. Tout le texte est
+     donc retiré. Ne reste que la géométrie, qui dit la même chose :
+       · un CARRÉ plein, posé exactement sur la borne d'où part l'alimentation
+         (forme réservée : rien d'autre dans le dessin n'est un carré plein) ;
+       · le raccord de cette borne à la barre, tracé en trait PLEIN comme un
+         conducteur — c'est par là qu'arrive le courant ;
+       · les piquages, de simples points ronds sur une barre en tirets.
+     On voit donc d'un coup d'œil d'où ça vient et où ça va. */
+  (routing.barrettes||[]).forEach(bar=>{
+    body+=`<line class="${bar.bus?'busbar':'barrette'}" x1="${f1(bar.x)}" y1="${f1(bar.y1)}" x2="${f1(bar.x)}" y2="${f1(bar.y2)}"/>`;
+    if(bar.py!=null) body+=`<rect class="barfeed" x="${f1(bar.x-3.2)}" y="${f1(bar.py-3.2)}" width="6.4" height="6.4"/>`; });
   (routing.busDots||[]).forEach(d=>body+=`<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="2.2"/>`);
   routing.dots.forEach(d=>body+=`<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="2.4"/>`);
   layout.comps.forEach(c=>body+=compSvg(c,state.sel===c.name));
