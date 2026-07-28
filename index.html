@@ -15021,12 +15021,14 @@ function computeLayoutWith(eq, lk, peripheral){
       else if(isS){ mTop.set(id,HHS+PRH/2); mBot.set(id,PRH/2+5); }
       else { let L=1; listKeys(id).forEach(lid=>L=Math.max(L,listArr(id,lid).length));
         /* Marge de corps autour des bornes. Elle valait 22 px au minimum, pour
-           un gabarit de 64 : un appareil à UNE borne l'affichait donc avec
-           22 px de blanc au-dessus et 22 en dessous, et la borne avait l'air
-           posée dans le vide. Ramenée à 13 px pour un gabarit de 46, ce qui
-           laisse la place du repère (14 px) et de sa désignation (12,5 px de
-           descente) sans laisser le corps bâiller. */
-        const m=Math.max(13,(46-(L-1)*PRH)/2); mTop.set(id,m); mBot.set(id,m); } });
+           un gabarit de 64 : un appareil à UNE borne l'affichait avec 22 px de
+           blanc de part et d'autre, et la borne avait l'air posée dans le vide.
+           13 px supprimaient le vide mais collaient l'appareil à sa boîte de
+           bornes, à un cheveu près — on ne voyait plus lequel portait l'autre.
+           18 px laissent la bande de raccordement (qui déborde de 14 px de la
+           borne extrême) respirer d'au moins 4 px sous le bord du corps, et
+           bien davantage sur un appareil à une seule borne. */
+        const m=Math.max(18,(46-(L-1)*PRH)/2); mTop.set(id,m); mBot.set(id,m); } });
 
     const solveOnce=colBlocks=>{
       const par=new Map(), tags=new Map();
@@ -16426,8 +16428,12 @@ function routeAll(layout){
       // la barre s'étend pour atteindre TOUS ses partenaires (chaque fil droit),
       // en s'arrêtant avant tout autre bloc de la même bande verticale.
       let lo=Math.min(py, arr[0].other.y), hi=Math.max(py, arr[arr.length-1].other.y);
-      // décalage dans la goulotte, borné à l'espace libre (jamais dans un bloc)
-      let off=10;
+      /* Décalage de la barre dans la goulotte, borné à l'espace libre (jamais
+         dans un bloc). Il était de 10 px : la barre longeait le flanc de
+         l'appareil, on ne distinguait plus la barrette de sa boîte de bornes.
+         20 px l'en détachent nettement — et le borneur ci-dessous la ramène
+         quand même au plus près dès que la place manque. */
+      let off=20;
       layout.comps.forEach(c=>{ if(c===own)return;
         if(c.y+c.h>lo-6 && c.y<hi+6){
           if(dir>0 && c.x>=px) off=Math.max(2,Math.min(off,c.x-px-6));
@@ -16667,8 +16673,8 @@ function clip(s,n){ s=String(s); return s.length>n?s.slice(0,n-1)+'…':s; }
 
 function defs(){
   return `<defs>
-   <pattern id="gfine" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M10 0H0V10" fill="none" stroke="#f4f6f2" stroke-width="1"/></pattern>
-   <pattern id="gcoarse" width="50" height="50" patternUnits="userSpaceOnUse"><path d="M50 0H0V50" fill="none" stroke="#edefea" stroke-width="1"/></pattern>
+   <pattern id="gfine" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M10 0H0V10" fill="none" stroke="#f2f4f6" stroke-width="1"/></pattern>
+   <pattern id="gcoarse" width="50" height="50" patternUnits="userSpaceOnUse"><path d="M50 0H0V50" fill="none" stroke="#e6eaee" stroke-width="1"/></pattern>
    <filter id="softsh" x="-30%" y="-30%" width="160%" height="180%">
      <feDropShadow dx="0" dy="1" stdDeviation="1.25" flood-color="#31414f" flood-opacity=".11"/>
    </filter>
@@ -16680,10 +16686,10 @@ function defs(){
      .mech{stroke:#7b8794;stroke-width:.8;stroke-dasharray:2 2;fill:none}
      .dot-fix{fill:#22303d;stroke:none}
      .cab{fill:none;stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round}
-     .jn{fill:#1c2a36;stroke:#fcfcf8;stroke-width:1}
+     .jn{fill:#1c2a36;stroke:#ffffff;stroke-width:1}
      .screw{fill:#ffffff;stroke:#8a97a3;stroke-width:.8}
      .rep{fill:#15202b;font-weight:700;font-size:11.5px}
-     .des{fill:#94a0ad;font-size:7.6px;letter-spacing:.7px;text-transform:uppercase}
+     .des{fill:#8b98a5;font-size:6.8px;font-weight:400;letter-spacing:1.1px;text-transform:uppercase}
      /* etiquettes de barrette : elles disent sur quelle borne part chaque
         piquage. A 5.8px et en gris tres clair elles etaient illisibles au zoom
         de lecture courant (60-70 %) — donc inutiles. Remontees au seuil de
@@ -16694,11 +16700,12 @@ function defs(){
      .body{fill:#ffffff;stroke:#2b3947;stroke-width:1.7}
      .bnum{fill:#1c2733;font-size:8px;font-weight:700}
      .bstrip{fill:#ffffff;stroke:#2b3947;stroke-width:1}
+     .bframe{fill:none;stroke:#8d9aa7;stroke-width:.75;stroke-dasharray:2.6 2.2}
      .bcell{fill:#ffffff;stroke:#d2dae1;stroke-width:.7}
      .braccord{fill:#ffffff;stroke:#2b3947;stroke-width:1}
      .bsname{fill:#2b3947;font-size:8.4px;font-weight:700;letter-spacing:.4px}
-     .plug{fill:#2b3947;stroke:#fcfcf8;stroke-width:.7}
-     .rep-big{fill:#141f2a;font-weight:700;font-size:14px;letter-spacing:.4px}
+     .plug{fill:#2b3947;stroke:#ffffff;stroke-width:.7}
+     .rep-big{fill:#101a24;font-weight:500;font-size:13px;letter-spacing:1.1px}
      /* Une barrette n'est pas un cable : c'est un pont pose entre bornes.
         Le tirete la distingue au premier coup d'oeil d'un conducteur, sans
         avoir a la suivre. Le peigne d'alimentation (busbar), lui, reste plein
@@ -16708,7 +16715,7 @@ function defs(){
         premier coup d'oeil, sans avoir a suivre le trace. Le peigne
         d'alimentation garde le meme langage mais en plus epais. */
      .barrette{stroke:#2b3947;stroke-width:1.15;stroke-linecap:butt;stroke-dasharray:3.4 2.4}
-     .barfeed{fill:#1a2530;stroke:#fcfcf8;stroke-width:1}
+     .barfeed{fill:#1a2530;stroke:#ffffff;stroke-width:1}
      .barfeedline{stroke:#2b3947;stroke-width:1.35;stroke-linecap:butt}
      .busbar{stroke:#2b3947;stroke-width:1.5;stroke-linecap:butt;stroke-dasharray:4.5 2.6}
      .rootmark{fill:none;stroke:#1668c2;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
@@ -16743,7 +16750,7 @@ function defs(){
 
 function sheetSvg(bb,meta){
   const x=bb.x,y=bb.y,w=bb.w,h=bb.h, ix=x+16,iy=y+16,iw=w-32,ih=h-32;
-  let s=`<rect x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" fill="#fcfcf8"/>`;
+  let s=`<rect x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" fill="#ffffff"/>`;
   s+=`<rect x="${f1(ix)}" y="${f1(iy)}" width="${f1(iw)}" height="${f1(ih)}" fill="url(#gfine)"/>`;
   s+=`<rect x="${f1(ix)}" y="${f1(iy)}" width="${f1(iw)}" height="${f1(ih)}" fill="url(#gcoarse)"/>`;
   s+=`<rect class="frame2" x="${f1(x+8)}" y="${f1(y+8)}" width="${f1(w-16)}" height="${f1(h-16)}"/>`;
@@ -16861,6 +16868,13 @@ function borneBox(xBody,dir,depth,rows,baseY,sideOfGroup,hCorps,bande){
     if(avecBande) out+=`<rect class="braccord" x="${f1(xb)}" y="${f1(t-BANDPAD)}" width="${BAND}" height="${f1(b-t+2*BANDPAD)}"/>`;
     const xo = dir>0 ? xBody+(avecBande?BAND:0) : xBody-depth;   // boîte, à côté de la bande
     const bw = depth-(avecBande?BAND:0);
+    /* SIGNATURE DU BORNIER. Sans bande de raccordement, un bornier autonome
+       n'était plus qu'un rectangle blanc rempli de chiffres : on hésitait sur
+       ce que c'était. Un liseré pointillé fin l'entoure donc — la convention
+       du groupement sur un schéma —, ce qui le distingue au premier regard
+       d'un appareil (trait plein épais) comme d'une boîte de bornes portée
+       par un appareil (trait plein fin plaqué contre un corps). */
+    if(!avecBande) out+=`<rect class="bframe" x="${f1(xo-3)}" y="${f1(t-3)}" width="${f1(bw+6)}" height="${f1(b-t+6)}"/>`;
     out+=`<rect class="bstrip" x="${f1(xo)}" y="${f1(t)}" width="${f1(bw)}" height="${f1(b-t)}"/>`;
     /* Le numéro doit TENIR dans la boîte : un repère de borne à 3 ou 4 chiffres
        débordait sur le trait. On rétrécit la police juste ce qu'il faut plutôt
@@ -16919,7 +16933,9 @@ function compSvg(c,sel){
       const nom=clip(c.name,8)+(c.seg?' · '+c.seg.i+'/'+c.seg.K:'');
       // AU-DESSUS de la boîte — et au-dessus de la marque « déplié » quand
       // elle est là, sinon le repère s'écrit à cheval sur son pointillé.
-      const dy=(xr&&state.xroots.has(c.name))?14:5;
+      // au-dessus du liseré pointillé, et au-dessus des crochets « déplié »
+      // quand ils sont là — sinon le repère s'écrit à cheval sur leur trait.
+      const dy=(xr&&state.xroots.has(c.name))?21:8;
       s+=`<text class="bsname" x="${f1(bb.cx)}" y="${f1(bb.top-dy)}" text-anchor="middle">${esc(nom)}</text>`; }
   } else {
     // équipement : corps compact, nom centré, borniers de flanc fins et centrés
@@ -16940,7 +16956,7 @@ function compSvg(c,sel){
         if(pp.label)s+=`<text class="pinlbl" x="${f1(bx+bw-9)}" y="${f1(ly+2.8)}" text-anchor="end">${esc(pp.label)}</text>`; });
       s+=`<text class="rep" x="${f1(bx+bw/2)}" y="${f1(c.h+13)}" text-anchor="middle">${esc(clip(c.name,14))}</text>`;
     } else {
-      s+=`<g filter="url(#softsh)"><rect class="body" x="${f1(bx)}" y="0" width="${f1(bw)}" height="${c.h}" rx="2"/></g>`;
+      s+=`<g filter="url(#softsh)"><rect class="body" x="${f1(bx)}" y="0" width="${f1(bw)}" height="${c.h}"/></g>`;
       /* Le repère se lit EN TÊTE du corps dès que celui-ci est haut : centré
          verticalement dans un appareil de 400 px, il flottait au milieu d'un
          grand vide, loin de ses bornes. Sur un corps court, le centre reste le
@@ -16990,7 +17006,7 @@ function sceneInner(layout,routing){
   // branche sur une borne -> le fil est « connecté », pas juste posé au bord.
   routing.wires.forEach(w=>{ if(!w.pts||w.pts.length<2)return;
     const a=w.pts[0], z=w.pts[w.pts.length-1];
-    body+=`<circle class="plug" cx="${f1(a.x)}" cy="${f1(a.y)}" r="1.35"/><circle class="plug" cx="${f1(z.x)}" cy="${f1(z.y)}" r="1.35"/>`; });
+    body+=`<circle class="plug" cx="${f1(a.x)}" cy="${f1(a.y)}" r="1.8"/><circle class="plug" cx="${f1(z.x)}" cy="${f1(z.y)}" r="1.8"/>`; });
   return body;
 }
 function paint(layout,routing){
