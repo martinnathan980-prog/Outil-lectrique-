@@ -16118,11 +16118,13 @@ function computeLayout(eq, lk){
       return Math.abs(Math.log((w/h)/1.414)); };
     /* Calibrage : un fil droit vaut 8 points. Le malus quadratique fait qu'une
        page bien proportionnée ne paie presque rien (forme 0.2 -> 0.5 point),
-       tandis qu'un vrai ruban (7 fois plus haut que large) en coûte 64, soit
-       huit fils droits. Le réglage est volontairement PRUDENT : le moteur
-       redresse franchement les rubans, mais ne sacrifie pas la droiture ni la
-       propreté pour grappiller quelques pourcents de proportion. */
-    const rubanMalus=(L)=>{ const d=shapeOf(L); return 12*d*d; };
+       tandis qu'un vrai ruban (7 fois plus haut que large) en coûte 107, soit
+       treize fils droits. Réglé à 20 sur MESURE : une campagne de 30
+       explorations du fichier réel donne 86% de fils droits et 5 rubans, contre
+       84% et 12 rubans à un réglage plus timide. Juger sur un seul cas est
+       trompeur - à 12, le cas de référence était plus propre, mais l'ensemble
+       était moins bon. */
+    const rubanMalus=(L)=>{ const d=shapeOf(L); return 20*d*d; };
     const scoreOf=(L)=>countStraight(L._routing.wires)*8 - countCrossings(L._routing.wires)
                        - inBlocOf(L)*30 - rubanMalus(L);
     const areaOf=(L)=>{ let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;
