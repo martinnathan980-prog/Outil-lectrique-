@@ -14729,6 +14729,7 @@ function computeLayoutWith(eq, lk, peripheral){
     const mn=Math.min(...nodeIds.map(n=>level.get(n)));
     if(mn<0) nodeIds.forEach(n=>level.set(n, level.get(n)-mn));
   }
+
   const maxLvlF=nodeIds.length?Math.max(...nodeIds.map(n=>level.get(n))):0;
   const columns=Array.from({length:maxLvlF+1},()=>[]);
   nodeIds.forEach(n=>columns[level.get(n)].push(n));
@@ -16137,24 +16138,35 @@ function computeLayout(eq, lk){
     const spModes=(OPT_ONCE&&OPT_MODE==='max')?[false,true]:[false];
     // équilibré : les VOIES (remplissage de page) sont aussi un candidat
     const pfModes=balanced?[false,true]:[false];
-    // ÉTALEMENT des départs d'un gros bornier des deux côtés : toujours essayé
-    // en exploration, car c'est lui qui évite les rubans interminables.
+    // ÉTALEMENT des départs d'un gros bornier des deux côtés : essayé à chaque
+    // fois (peu coûteux, et c'est le remède qui marche le mieux contre le ruban)
     const spreadModes=[false,true];
-    // découpe d'un gros bornier en rails : l'autre remède au ruban
-    const railModes=[false,true];
-    const cands=[];
-    railModes.forEach(rl=> spreadModes.forEach(spr=> pfModes.forEach(pf=> spModes.forEach(sp=> ngModes.forEach(ng=>
-      opts.forEach(o=>{ const L=layoutTry(eq,lk,o,{lanes:pf,split:sp,nogrow:ng,spread:spr,rails:rl});
-        cands.push({L,o,ng,sp,pf,spr,rl,sc:scoreOf(L),ar:areaOf(L),sh:shapeOf(L)}); }) )))));
+    /* CONCOURS EN DEUX TEMPS — pour rester RAPIDE au clic.
+       Découper le bornier en rails double encore le nombre de rendus. L'essayer
+       systématiquement rendait un dépliage interminable (mesuré : 373 s sur une
+       grosse exploration, contre 1 à 2 s avant).
+       On joue donc le concours normal d'abord — étalement compris — et on ne
+       paie les rails QUE si le gagnant est réellement un ruban. Une page déjà
+       bien proportionnée ne coûte donc rien de plus qu'avant. */
     let bSp=false,bPf=false,bSpr=false,bRl=false;
-    let pool=cands;
-    if(balanced){ const ok=cands.filter(c=>c.ar<=OPT_AREA_CAP);
-      pool=ok.length?ok:[cands.reduce((m,c)=>c.ar<m.ar?c:m,cands[0])]; }
-    // À DROITURE ÉGALE (score identique), on prend le dessin le MIEUX
-    // PROPORTIONNÉ : c'est ce qui départage un ruban interminable d'une page
-    // bien remplie, sans jamais sacrifier un seul fil droit.
-    pool.forEach(c=>{ if(c.sc>bScore || (c.sc===bScore && best && c.sh<shapeOf(best)-0.02)){
-      bScore=c.sc; best=c.L; bOptX=c.o; bNg=c.ng; bSp=c.sp; bPf=c.pf; bSpr=c.spr; bRl=c.rl; } });
+    const jouer=(dims)=>{
+      const cands=[];
+      dims.rail.forEach(rl=> spreadModes.forEach(spr=>
+        pfModes.forEach(pf=> spModes.forEach(sp=> ngModes.forEach(ng=>
+          opts.forEach(o=>{ const L=layoutTry(eq,lk,o,{lanes:pf,split:sp,nogrow:ng,spread:spr,rails:rl});
+            cands.push({L,o,ng,sp,pf,spr,rl,sc:scoreOf(L),ar:areaOf(L),sh:shapeOf(L)}); }) )))));
+      let pool=cands;
+      if(balanced){ const ok=cands.filter(c=>c.ar<=OPT_AREA_CAP);
+        pool=ok.length?ok:[cands.reduce((m,c)=>c.ar<m.ar?c:m,cands[0])]; }
+      // À DROITURE ÉGALE (score identique), on prend le dessin le MIEUX
+      // PROPORTIONNÉ : ce qui départage un ruban d'une page bien remplie sans
+      // sacrifier un seul fil droit.
+      pool.forEach(c=>{ if(c.sc>bScore || (c.sc===bScore && best && c.sh<shapeOf(best)-0.02)){
+        bScore=c.sc; best=c.L; bOptX=c.o; bNg=c.ng; bSp=c.sp; bPf=c.pf; bSpr=c.spr; bRl=c.rl; } });
+    };
+    jouer({rail:[false]});
+    // ruban avéré : on rejoue en autorisant le découpage du bornier en rails
+    if(best && shapeOf(best)>0.8) jouer({rail:[true]});
     // 2e passe : RESSERRER les goulottes à la largeur réellement occupée par
     // les pistes (comme en mode complet) -> fini les boulevards vides entre
     // colonnes ; l'ordre vertical (repères) ne change pas. Gardé seulement si
