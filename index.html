@@ -14551,7 +14551,29 @@ function computeLayoutWith(eq, lk, peripheral){
     // en EXPLORATION : le bornier reste ENTIER (un seul bloc cohérent) au lieu
     // d'être éclaté en un fragment par départ -> on comprend d'un coup d'œil
     // que c'est un seul bornier et tout ce qui s'y raccorde.
-    if(wholeStrip(n)){ nodes.set(n,{id:n,name:n,strip:true,pins:P.list.slice()});
+    if(wholeStrip(n)){
+      /* BORNIER EN PLUSIEURS RAILS (candidat SEG_STRIP).
+         Un bornier de 20 bornes gardé en un seul bloc oblige ses 20 départs à
+         s'aligner verticalement : le dessin devient un ruban interminable.
+         Dans une vraie armoire, un tel bornier n'est pas un rail unique de 2 m
+         de haut — c'est plusieurs rails côte à côte. On le découpe donc en
+         segments de bornes CONSÉCUTIVES (la numérotation reste lisible), qui
+         portent tous le même repère. Chaque segment emmène ses propres départs
+         et se place ailleurs sur la page : la hauteur est divisée d'autant,
+         sans qu'aucun fil ne cesse d'être droit. C'est un CANDIDAT : le
+         concours ne le retient que s'il améliore vraiment le dessin. */
+      const segMax=(typeof SEG_STRIP!=='undefined'&&SEG_STRIP)?8:Infinity;
+      if(P.list.length>segMax){
+        const K=Math.ceil(P.list.length/segMax);
+        const par=Math.ceil(P.list.length/K);
+        for(let i=0;i<K;i++){ const pins=P.list.slice(i*par,(i+1)*par);
+          if(!pins.length)continue;
+          const id=n+FRAG+'R'+i;
+          nodes.set(id,{id,name:n,strip:true,pins});
+          pins.forEach(p=>nodeOfPin.set(n+SOH+p.key,id)); }
+        continue;
+      }
+      nodes.set(n,{id:n,name:n,strip:true,pins:P.list.slice()});
       P.list.forEach(p=>nodeOfPin.set(n+SOH+p.key,n)); continue; }
     const groups=new Map();
     P.list.forEach(p=>{ const ps=rawPartners.get(n+SOH+p.key)||[];
@@ -15949,6 +15971,7 @@ let USE_CLUSTER=false; // regroupement par communautés (maillages)
 let COND_PINS=false;   // condensation par glissement de broches (essayée en 3e passe, gardée si meilleure)
 let ROUTE_SEED=false;  // amorcer les communautés sur la colonne Route/cheminement
 let SPREAD_LEAF=false; // candidat « étalement » : les départs d'un gros bornier se répartissent des deux côtés
+let SEG_STRIP=false;   // candidat « rails » : un gros bornier est découpé en segments de bornes consécutives
 function countStraight(wires){ return wires.filter(w=>w.pts.length===2).length; }
 // mesure la largeur de goulotte réellement occupée par les pistes (segments
 // verticaux) de chaque colonne, pour resserrer les colonnes à la 2e passe.
@@ -16039,7 +16062,7 @@ function auditSchema(){
    Renvoie la mise en page, son routage déjà calculé dans `_routing`. */
 function layoutTry(eq, lk, seed, opt){
   const F = opt || {};
-  const save = {CHW_FIX, OPT_NOGROW, SPLIT_COIL, PF_OPT, USE_CLUSTER, COND_PINS, ROUTE_SEED, SPREAD_LEAF};
+  const save = {CHW_FIX, OPT_NOGROW, SPLIT_COIL, PF_OPT, USE_CLUSTER, COND_PINS, ROUTE_SEED, SPREAD_LEAF, SEG_STRIP};
   try{
     CHW_FIX     = F.chw !== undefined ? F.chw : null;
     OPT_NOGROW  = !!F.nogrow;
@@ -16049,20 +16072,21 @@ function layoutTry(eq, lk, seed, opt){
     COND_PINS   = !!F.condense;
     ROUTE_SEED  = !!F.routeSeed;
     SPREAD_LEAF = !!F.spread;
+    SEG_STRIP   = !!F.rails;
     const L = computeLayoutWith(eq, lk, seed);
     L._routing = routeAll(L);
     return L;
   } finally {
     CHW_FIX=save.CHW_FIX; OPT_NOGROW=save.OPT_NOGROW; SPLIT_COIL=save.SPLIT_COIL;
     PF_OPT=save.PF_OPT; USE_CLUSTER=save.USE_CLUSTER; COND_PINS=save.COND_PINS;
-    ROUTE_SEED=save.ROUTE_SEED; SPREAD_LEAF=save.SPREAD_LEAF;
+    ROUTE_SEED=save.ROUTE_SEED; SPREAD_LEAF=save.SPREAD_LEAF; SEG_STRIP=save.SEG_STRIP;
   }
 }
 function computeLayout(eq, lk){
   // Ceinture ET bretelles : layoutTry garantit déjà qu'aucun drapeau ne fuit,
   // mais on repart d'un état neutre à l'entrée au cas où du code extérieur en
   // aurait laissé un actif.
-  USE_CLUSTER=false; ROUTE_SEED=false; SPLIT_COIL=false; COND_PINS=false; PF_OPT=false; OPT_NOGROW=false; CHW_FIX=null; SPREAD_LEAF=false;
+  USE_CLUSTER=false; ROUTE_SEED=false; SPLIT_COIL=false; COND_PINS=false; PF_OPT=false; OPT_NOGROW=false; CHW_FIX=null; SPREAD_LEAF=false; SEG_STRIP=false;
   // --- mesures de qualité d'un essai, partagées par les deux modes ---
   // nombre de segments de fil qui traversent un bloc (doit rester à 0)
   const inBlocOf=L=>{ let n=0; const cs=L.comps;
@@ -16091,7 +16115,13 @@ function computeLayout(eq, lk){
       L.comps.forEach(c=>{ x0=Math.min(x0,c.x); y0=Math.min(y0,c.y); x1=Math.max(x1,c.x+c.w); y1=Math.max(y1,c.y+c.h); });
       const w=Math.max(1,x1-x0), h=Math.max(1,y1-y0);
       return Math.abs(Math.log((w/h)/1.414)); };
-    const rubanMalus=(L)=>{ const d=Math.max(0, shapeOf(L)-0.6); return 25*d*d; };
+    /* Calibrage : un fil droit vaut 8 points. Le malus quadratique fait qu'une
+       page bien proportionnée ne paie presque rien (forme 0.2 -> 0.5 point),
+       tandis qu'un vrai ruban (7 fois plus haut que large) en coûte 64, soit
+       huit fils droits. Le réglage est volontairement PRUDENT : le moteur
+       redresse franchement les rubans, mais ne sacrifie pas la droiture ni la
+       propreté pour grappiller quelques pourcents de proportion. */
+    const rubanMalus=(L)=>{ const d=shapeOf(L); return 12*d*d; };
     const scoreOf=(L)=>countStraight(L._routing.wires)*8 - countCrossings(L._routing.wires)
                        - inBlocOf(L)*30 - rubanMalus(L);
     const areaOf=(L)=>{ let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;
@@ -16110,11 +16140,13 @@ function computeLayout(eq, lk){
     // ÉTALEMENT des départs d'un gros bornier des deux côtés : toujours essayé
     // en exploration, car c'est lui qui évite les rubans interminables.
     const spreadModes=[false,true];
+    // découpe d'un gros bornier en rails : l'autre remède au ruban
+    const railModes=[false,true];
     const cands=[];
-    spreadModes.forEach(spr=> pfModes.forEach(pf=> spModes.forEach(sp=> ngModes.forEach(ng=>
-      opts.forEach(o=>{ const L=layoutTry(eq,lk,o,{lanes:pf,split:sp,nogrow:ng,spread:spr});
-        cands.push({L,o,ng,sp,pf,spr,sc:scoreOf(L),ar:areaOf(L),sh:shapeOf(L)}); }) ))));
-    let bSp=false,bPf=false,bSpr=false;
+    railModes.forEach(rl=> spreadModes.forEach(spr=> pfModes.forEach(pf=> spModes.forEach(sp=> ngModes.forEach(ng=>
+      opts.forEach(o=>{ const L=layoutTry(eq,lk,o,{lanes:pf,split:sp,nogrow:ng,spread:spr,rails:rl});
+        cands.push({L,o,ng,sp,pf,spr,rl,sc:scoreOf(L),ar:areaOf(L),sh:shapeOf(L)}); }) )))));
+    let bSp=false,bPf=false,bSpr=false,bRl=false;
     let pool=cands;
     if(balanced){ const ok=cands.filter(c=>c.ar<=OPT_AREA_CAP);
       pool=ok.length?ok:[cands.reduce((m,c)=>c.ar<m.ar?c:m,cands[0])]; }
@@ -16122,14 +16154,14 @@ function computeLayout(eq, lk){
     // PROPORTIONNÉ : c'est ce qui départage un ruban interminable d'une page
     // bien remplie, sans jamais sacrifier un seul fil droit.
     pool.forEach(c=>{ if(c.sc>bScore || (c.sc===bScore && best && c.sh<shapeOf(best)-0.02)){
-      bScore=c.sc; best=c.L; bOptX=c.o; bNg=c.ng; bSp=c.sp; bPf=c.pf; bSpr=c.spr; } });
+      bScore=c.sc; best=c.L; bOptX=c.o; bNg=c.ng; bSp=c.sp; bPf=c.pf; bSpr=c.spr; bRl=c.rl; } });
     // 2e passe : RESSERRER les goulottes à la largeur réellement occupée par
     // les pistes (comme en mode complet) -> fini les boulevards vides entre
     // colonnes ; l'ordre vertical (repères) ne change pas. Gardé seulement si
     // le dessin reste aussi droit et devient réellement plus étroit.
     let bFix=null;
     try{ const fix=tightenChannels(best);
-      if(fix){ const L2=layoutTry(eq,lk,bOptX,{chw:fix,nogrow:bNg,split:bSp,lanes:bPf,spread:bSpr});
+      if(fix){ const L2=layoutTry(eq,lk,bOptX,{chw:fix,nogrow:bNg,split:bSp,lanes:bPf,spread:bSpr,rails:bRl});
         if(scoreOf(L2)>=bScore-1 && contentW(L2)<contentW(best)*0.97){ best=L2; bFix=fix; bScore=scoreOf(L2); } }
     }catch(_){ }
     // 3e passe (Optimiser uniquement : la condensation est inactive pendant les
@@ -16137,7 +16169,7 @@ function computeLayout(eq, lk){
     // OU à score égal si le dessin devient réellement plus petit (blocs creux
     // refermés sans rien perdre). En mode équilibré : plafond de surface.
     if(OPT_ONCE) try{
-      const L3=layoutTry(eq,lk,bOptX,{condense:true,chw:bFix,nogrow:bNg,split:bSp,lanes:bPf,spread:bSpr});
+      const L3=layoutTry(eq,lk,bOptX,{condense:true,chw:bFix,nogrow:bNg,split:bSp,lanes:bPf,spread:bSpr,rails:bRl});
       const s3=scoreOf(L3), a3=areaOf(L3);
       if((s3>bScore || (s3===bScore && a3<areaOf(best)*0.97)) && (!balanced||a3<=OPT_AREA_CAP)){ best=L3; bScore=s3; }
     }catch(_){ }
