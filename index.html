@@ -14764,9 +14764,14 @@ function computeLayoutWith(eq, lk, peripheral){
     // SILHOUETTE UNIFORME : tous les équipements ont la même largeur (seule la
     // hauteur varie) — flanc absent = corps plus large, même gabarit extérieur.
     return STRIPW+BODYW+STRIPW; };
+  /* Hauteur d'un bloc. Le plancher d'un appareil était de 64 px quel que soit
+     son nombre de bornes : un appareil à UNE borne offrait donc 22 px de vide
+     au-dessus et 22 px en dessous d'elle, et la borne avait l'air de flotter
+     au milieu de rien. 46 px suffisent à écrire le repère et sa désignation
+     (14 px + 12,5 px de descente), et le dessin y gagne en densité. */
   const estH=id=>{ const ls=listsOf.get(id);
     const rows=ls.S?Math.max(1,ls.S.length):Math.max(ls.L.length,ls.R.length,1);
-    return Math.max(ls.S?HH+rows*PRH+BPAD:64, rows*PRH+26); };
+    return Math.max(ls.S?HH+rows*PRH+BPAD:46, rows*PRH+26); };
   const nCols=columns.length;
   const colW=columns.map(c=>c.length?Math.max(...c.map(widthOf)):92);
 
@@ -15015,7 +15020,13 @@ function computeLayoutWith(eq, lk, peripheral){
       if(isS&&isTagId(id)){ mTop.set(id,7); mBot.set(id,7); }
       else if(isS){ mTop.set(id,HHS+PRH/2); mBot.set(id,PRH/2+5); }
       else { let L=1; listKeys(id).forEach(lid=>L=Math.max(L,listArr(id,lid).length));
-        const m=Math.max(22,(64-(L-1)*PRH)/2); mTop.set(id,m); mBot.set(id,m); } });
+        /* Marge de corps autour des bornes. Elle valait 22 px au minimum, pour
+           un gabarit de 64 : un appareil à UNE borne l'affichait donc avec
+           22 px de blanc au-dessus et 22 en dessous, et la borne avait l'air
+           posée dans le vide. Ramenée à 13 px pour un gabarit de 46, ce qui
+           laisse la place du repère (14 px) et de sa désignation (12,5 px de
+           descente) sans laisser le corps bâiller. */
+        const m=Math.max(13,(46-(L-1)*PRH)/2); mTop.set(id,m); mBot.set(id,m); } });
 
     const solveOnce=colBlocks=>{
       const par=new Map(), tags=new Map();
@@ -15917,13 +15928,17 @@ function computeLayoutWith(eq, lk, peripheral){
        plus rien à étaler : 443 px de blanc de chaque côté, définitivement.) */
     const cible=(contW/Math.max(1,contH)>1.414)?1.414:(1/1.414);
     const hVoulue=contW/cible;
-    /* Plafond à +50 %. Il n'a pas besoin d'être dégressif avec la taille du
-       dessin : les gros schémas sont justement ceux qui partent en ruban
-       vertical, et un ruban est DÉJÀ plus haut que sa page — le surplus y est
-       négatif, l'étalement ne s'y déclenche jamais. (Vérifié : plafond fixe et
-       plafond dégressif donnent des chiffres identiques au croisement près sur
-       668, 6, 2541, 765 et 182.) */
-    const surplus=Math.min(hVoulue-contH, contH*0.5);
+    /* Plafond réglé SUR MESURE à +65 %. L'étalement ne casse aucun fil droit
+       par construction, mais il change la forme du dessin, donc le malus de
+       proportion, donc le candidat que le concours retient : le plafond est
+       bel et bien un réglage, pas une simple sécurité. Relevé sur le gros
+       schéma 377 : à +50 % -> 97 % de fils droits et 59 % de page utilisée ;
+       à +65 % -> 97 % et 65 % ; à +80 % -> 95 % et 72 %. On prend donc 65,
+       le dernier cran qui ne coûte pas un seul fil droit.
+       Pas besoin de le rendre dégressif avec la taille : les gros dessins sont
+       justement ceux qui partent en ruban vertical, et un ruban est DÉJÀ plus
+       haut que sa page — le surplus y est négatif, rien ne se déclenche. */
+    const surplus=Math.min(hVoulue-contH, contH*0.65);
     if(contW>0 && contH>0 && surplus>20){
       // bandes occupées, fusionnées -> ce qui reste entre elles est libre
       const iv=nodeIds.map(id=>[blockTop.get(id),blockBot.get(id)]).sort((a,b)=>a[0]-b[0]);
@@ -16230,12 +16245,26 @@ function computeLayout(eq, lk){
     // et on n'accepte un candidat que si sa surface reste sous le plafond
     // (~1.35x le dessin courant). « Droits max » : aucun plafond.
     const balanced=OPT_ONCE && OPT_MODE==='bal' && OPT_AREA_CAP>0;
-    const ngModes=balanced?[false,true]:[false];
-    // « Droits max » essaie aussi chaque graine avec ÉCLATEMENT MÉTIER des
+    /* « Droits max » doit essayer AU MOINS tout ce qu'essaie « Optimiser ».
+       Les axes « sans croissance » et « voies » n'étaient testés qu'en mode
+       équilibré : « Droits max » explorait donc deux fois moins de candidats
+       que « Optimiser » et pouvait rendre un dessin franchement moins droit —
+       mesuré sur une exploration de 16 blocs : Optimiser 17 fils droits sur
+       17, Droits max 14 sur 17. Un bouton qui promet le maximum de fils
+       droits ne peut pas faire moins bien que son voisin. Les deux modes
+       balaient donc les mêmes axes ; ce qui les distingue reste le plafond de
+       surface (équilibré seulement) et l'éclatement métier (max seulement).
+       Le balayage large est réservé aux dessins de taille de travail : au-delà,
+       les deux modes rendaient de toute façon EXACTEMENT le même résultat
+       (mesuré sur 62, 70, 88 et 89 blocs : mêmes fils droits, mêmes
+       croisements) et doubler les candidats n'y achetait que de l'attente —
+       « Droits max » passait de 38 à 76 s au clic. */
+    const wide=OPT_ONCE && lk.length<=90;
+    const ngModes=wide?[false,true]:[false];
+    const pfModes=wide?[false,true]:[false];
+    // « Droits max » essaie en plus chaque graine avec ÉCLATEMENT MÉTIER des
     // appareils à bobine (bobine / pôles / contacts auxiliaires séparés).
     const spModes=(OPT_ONCE&&OPT_MODE==='max')?[false,true]:[false];
-    // équilibré : les VOIES (remplissage de page) sont aussi un candidat
-    const pfModes=balanced?[false,true]:[false];
     // ÉTALEMENT des départs d'un gros bornier des deux côtés : essayé à chaque
     // fois (peu coûteux, et c'est le remède qui marche le mieux contre le ruban)
     const spreadModes=[false,true];
@@ -16411,11 +16440,14 @@ function routeAll(layout){
       // relevé part d'ici, arrivée sinon) -> lisible directement sur la barre.
       const l0=layout.links[kept[0].u.li];
       const src=(kept[0].u.tag==='A')?(l0.fromTerm||''):(l0.toTerm||'');
+      // qui ALIMENTE la barrette : la borne seule ne suffisait pas à le dire,
+      // on écrit « repère·borne » (le repère porte l'information utile).
+      const srcName=(kept[0].u.tag==='A')?String(l0.from):String(l0.to);
       const taps=kept.map(k=>{ const l=layout.links[k.u.li]; const out=(k.u.tag==='A');
         const dn=out?l.to:l.from, dt=out?(l.toTerm||''):(l.fromTerm||'');
         return {y:k.y, dir:(k.u.other.x>=bx?1:-1), out, txt:String(dn)+(dt?('·'+dt):'')}; });
       barrettes.push({x:bx,y1:Math.min(py,kept[0].y)-3,y2:Math.max(py,kept[kept.length-1].y)+3,bus,
-        src,py,sdir:(bx>=px?1:-1),taps}); });
+        src,srcName,py,sdir:(bx>=px?1:-1),taps}); });
     barrettes.stubs=busStubs;
   }
   const EA=li=>epAdj.get(li+':A')||layout.links[li].epA;
@@ -16661,9 +16693,14 @@ function defs(){
      .bsname{fill:#2b3947;font-size:8.4px;font-weight:700;letter-spacing:.4px}
      .plug{fill:#2b3947;stroke:#fcfcf8;stroke-width:.7}
      .rep-big{fill:#141f2a;font-weight:700;font-size:14px;letter-spacing:.4px}
-     .barrette{stroke:#2b3947;stroke-width:2.2;stroke-linecap:round}
+     /* Une barrette n'est pas un cable : c'est un pont pose entre bornes.
+        Le tirete la distingue au premier coup d'oeil d'un conducteur, sans
+        avoir a la suivre. Le peigne d'alimentation (busbar), lui, reste plein
+        et epais : c'est bien du cuivre continu. */
+     .barrette{stroke:#2b3947;stroke-width:2.2;stroke-linecap:butt;stroke-dasharray:6 3.5}
+     .barfeed{fill:#2b3947;stroke:#fcfcf8;stroke-width:.9}
      .busbar{stroke:#2b3947;stroke-width:3.2;stroke-linecap:round}
-     .rootbox{fill:none;stroke:#6ba3e0;stroke-width:1;stroke-dasharray:3 4}
+     .rootmark{fill:none;stroke:#1668c2;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
      .plusb circle{fill:#1668c2;opacity:.9}
      .plusb text{fill:#ffffff;font:700 10px ui-monospace,monospace}
      .pinlbl{fill:#22303d;font-size:8px;font-weight:650}
@@ -16680,7 +16717,7 @@ function defs(){
      .cartx{fill:#2b3743;font-size:7.5px;font-weight:600}
      .cartT{fill:#111c26;font-size:9.5px;font-weight:700;letter-spacing:.3px}
      .cartA{fill:#8e99a4;font-size:6.5px;font-weight:700;letter-spacing:1.2px}
-     .selbox{fill:none;stroke:#2f7bd6;stroke-width:1.3;stroke-dasharray:4 3}
+     .selbox{fill:none;stroke:#2f7bd6;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
      .comp{cursor:pointer}
      .cab{transition:opacity .12s,stroke-width .12s}
      .comp{transition:opacity .12s}
@@ -16787,10 +16824,10 @@ function pinGroups(rows){
      xBody : abscisse du bord du corps sur lequel on se plaque
      dir   : +1 la boîte s'étend vers la droite, -1 vers la gauche
      depth : profondeur totale occupée (bande comprise)
-   Renvoie aussi, via `out.last`, le bas de la dernière boîte — l'appelant y
-   écrit le repère. */
+   Renvoie aussi le HAUT de la première boîte et son axe, pour que l'appelant
+   y pose le repère du bornier. */
 function borneBox(xBody,dir,depth,rows,baseY){
-  let out=''; let bottom=null, cxLast=null;
+  let out=''; let top=null, cxLast=null;
   pinGroups(rows).forEach(g=>{
     const t=g[0].y-baseY-PRH/2-BOXPAD, b=g[g.length-1].y-baseY+PRH/2+BOXPAD;
     const xb = dir>0 ? xBody : xBody-BAND;                 // bande, contre le corps
@@ -16804,21 +16841,31 @@ function borneBox(xBody,dir,depth,rows,baseY){
     g.forEach(p=>{ if(!p.label)return;
       const fs=Math.max(5.4, Math.min(8, (bw-3)/(0.62*String(p.label).length)));
       out+=`<text class="pinlbl" style="font-size:${f1(fs)}px" x="${f1(xo+bw/2)}" y="${f1(p.y-baseY+fs*0.36)}" text-anchor="middle">${esc(p.label)}</text>`; });
-    bottom=b; cxLast=xo+bw/2;
+    if(top==null){ top=t; cxLast=xo+bw/2; }
   });
-  return {svg:out, bottom, cx:cxLast};
+  return {svg:out, top, cx:cxLast};
 }
 // point de serrage d'une borne : petite tête de vis au bord de raccordement
 // (présente sur TOUTES les bornes ; le fil, quand il y en a un, y dépose sa
 // pastille d'encre par-dessus -> borne câblée = vis serrée).
 function screw(x,y){ return `<circle class="screw" cx="${f1(x)}" cy="${f1(y)}" r="1.7"/>`; }
+/* CROCHETS D'ANGLE — on ne dessine que les quatre coins d'un cadre.
+   Les cadres pleins (sélection, bloc déplié) traçaient deux longues verticales
+   sur toute la hauteur du bloc ; le long d'un bornier de 1300 px posé contre un
+   peigne d'alimentation, ça donnait deux traits parallèles à la barre, aussi
+   longs qu'elle, qu'on confondait avec du câblage. */
+function corners(cls,m,w,h){
+  const X=-m, Y=-m, W=w+2*m, H=h+2*m, k=Math.max(6,Math.min(16,h/4));
+  return `<path class="${cls}" d="M${f1(X)} ${f1(Y+k)} L${f1(X)} ${f1(Y)} L${f1(X+k)} ${f1(Y)}`
+    +` M${f1(X+W-k)} ${f1(Y)} L${f1(X+W)} ${f1(Y)} L${f1(X+W)} ${f1(Y+k)}`
+    +` M${f1(X+W)} ${f1(Y+H-k)} L${f1(X+W)} ${f1(Y+H)} L${f1(X+W-k)} ${f1(Y+H)}`
+    +` M${f1(X+k)} ${f1(Y+H)} L${f1(X)} ${f1(Y+H)} L${f1(X)} ${f1(Y+H-k)}"/>`;
+}
 function compSvg(c,sel){
   let s=`<g class="comp" data-name="${escA(c.name)}" transform="translate(${f1(c.x)},${f1(c.y)})">`;
-  if(sel) s+=`<rect class="selbox" x="-5" y="-5" width="${c.w+10}" height="${c.h+10}" rx="3"/>`;
+  if(sel) s+=corners('selbox',5,c.w,c.h);
   const xr=state.xroots&&state.xroots.size;
-  // marque « déplié » : elle doit se voir sans venir mordre sur les bornes ni
-  // sur les fils qui en partent -> on la dégage franchement du gabarit.
-  if(xr&&state.xroots.has(c.name)) s+=`<rect class="rootbox" x="-9" y="-9" width="${c.w+18}" height="${c.h+18}" rx="5"/>`;
+  if(xr&&state.xroots.has(c.name)) s+=corners('rootmark',9,c.w,c.h);
   else if(xr) s+=`<g class="plusb"><circle cx="${f1(c.w)}" cy="0" r="7"/><text x="${f1(c.w)}" y="3" text-anchor="middle">+</text></g>`;
   if(c.kind==='tag'){
     // étiquette de potentiel : petite pastille en face de la borne desservie
@@ -16835,12 +16882,12 @@ function compSvg(c,sel){
     // Repère écrit UNE SEULE FOIS, sous la dernière boîte, comme sur la photo.
     // Quand le bornier a été coupé en morceaux, chacun dit lequel il est :
     // « 2541 · 2/3 » — sans ça, trois morceaux se lisent comme trois borniers.
-    if(bb.bottom!=null){
+    if(bb.top!=null){
       const nom=clip(c.name,8)+(c.seg?' · '+c.seg.i+'/'+c.seg.K:'');
-      // sous le bloc — et sous la marque « déplié » quand elle est là, sinon
-      // le repère s'écrit à cheval sur son trait pointillé.
-      const dy=(xr&&state.xroots.has(c.name))?19:9;
-      s+=`<text class="bsname" x="${f1(bb.cx)}" y="${f1(bb.bottom+dy)}" text-anchor="middle">${esc(nom)}</text>`; }
+      // AU-DESSUS de la boîte — et au-dessus de la marque « déplié » quand
+      // elle est là, sinon le repère s'écrit à cheval sur son pointillé.
+      const dy=(xr&&state.xroots.has(c.name))?14:5;
+      s+=`<text class="bsname" x="${f1(bb.cx)}" y="${f1(bb.top-dy)}" text-anchor="middle">${esc(nom)}</text>`; }
   } else {
     // équipement : corps compact, nom centré, borniers de flanc fins et centrés
     const bx=c.lw, bw=c.w-c.lw-c.rw;
@@ -16889,8 +16936,12 @@ function sceneInner(layout,routing){
   routing.wires.forEach(w=>body+=wireSvg(w,routing.bridges));
   ((routing.barrettes&&routing.barrettes.stubs)||[]).forEach(st=>body+=`<line class="w-int" x1="${f1(st.x0)}" y1="${f1(st.y)}" x2="${f1(st.x1)}" y2="${f1(st.y)}"/>`);
   (routing.barrettes||[]).forEach(bar=>{ body+=`<line class="${bar.bus?'busbar':'barrette'}" x1="${f1(bar.x)}" y1="${f1(bar.y1)}" x2="${f1(bar.x)}" y2="${f1(bar.y2)}"/>`;
-    // borne source au raccord + destination et sens sur chaque piquage
-    if(bar.src) body+=`<text class="bartxt barsrc" x="${f1(bar.x-(bar.sdir||1)*3)}" y="${f1((bar.py!=null?bar.py:bar.y1)-3)}" text-anchor="${(bar.sdir||1)>0?'end':'start'}">${esc(clip(bar.src,8))}</text>`;
+    /* QUI ALIMENTE LA BARRETTE : un gros point au raccordement, plus le repère
+       et la borne d'où part l'alimentation. QUI VA DESSUS : chaque piquage
+       porte sa destination et une flèche de sens. Sans ça, on voyait bien une
+       barre mais on ne savait ni d'où elle venait ni où elle allait. */
+    if(bar.py!=null) body+=`<circle class="barfeed" cx="${f1(bar.x)}" cy="${f1(bar.py)}" r="3.1"/>`;
+    if(bar.src) body+=`<text class="bartxt barsrc" x="${f1(bar.x-(bar.sdir||1)*6)}" y="${f1((bar.py!=null?bar.py:bar.y1)-4)}" text-anchor="${(bar.sdir||1)>0?'end':'start'}">${esc(clip((bar.srcName?bar.srcName+'·':'')+bar.src,14))}</text>`;
     (bar.taps||[]).forEach(t=>{ const a=t.dir>0?'start':'end';
       body+=`<text class="bartxt" x="${f1(bar.x+t.dir*7)}" y="${f1(t.y-3)}" text-anchor="${a}">${t.out?'▸':'◂'} ${esc(clip(t.txt,12))}</text>`; }); });
   (routing.busDots||[]).forEach(d=>body+=`<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="2.2"/>`);
