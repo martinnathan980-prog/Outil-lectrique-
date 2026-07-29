@@ -15168,7 +15168,17 @@ function computeLayoutWith(eq, lk, peripheral){
     // DÉCALAGE DES BORNES : les bornes n'ont pas d'ordre fixe -> on réordonne
     // les broches de chaque bloc pour les mettre face à leurs partenaires
     // (idée : « décaler les bornes sur les borniers » pour des fils droits).
-    const reorderPins=(py)=>{ nodeIds.forEach(id=>{ if(isLocked(id)||!isStrip.get(id))return;
+    /* DÉCALAGE DES BORNES — étendu aux APPAREILS (candidat PIN_SWAP).
+       Il ne s'appliquait qu'aux borniers. Or le même nœud se produit sur un
+       appareil : deux de ses bornes câblées « en croix » vers deux voisins,
+       et deux fils qui se coupent alors qu'il suffirait de les échanger pour
+       que tout soit droit — sans rien changer au schéma électrique, puisque
+       c'est le numéro de borne qui suit le fil, pas l'inverse.
+       Sous drapeau, donc jugé par le concours : sur un matériel dont les
+       bornes ont un ordre physique imposé, le placement d'origine gagne. */
+    const reorderPins=(py)=>{ nodeIds.forEach(id=>{
+      if(isLocked(id)) return;
+      if(!isStrip.get(id) && !(typeof PIN_SWAP!=='undefined' && PIN_SWAP)) return;
       listKeys(id).forEach(lid=>{ const L=listArr(id,lid); if(L.length<2)return;
         const sc=new Map(L.map(p=>{ const ps=(partners.get(id+SOH+p.key)||[]).filter(q=>q.id!==id);
           let s=0,c=0; ps.forEach(q=>{ const y=py.get(PKEY(q.id,q.key)); if(y!=null){s+=y;c++;} });
@@ -15188,6 +15198,19 @@ function computeLayoutWith(eq, lk, peripheral){
       if(r.acc>best.acc+0.01){ best=r; bestBlocks=nb; bestOrder=snapOrder(); st=0; } else st++;
     }
     restoreOrder(bestOrder);
+    /* Le tri des bornes calculé pendant le balayage était systématiquement
+       ANNULÉ : on ne gardait un ordre que s'il ajoutait des fils droits, or
+       échanger deux bornes croisées n'en ajoute aucun — ça dénoue deux fils
+       qui se coupaient, ce que ce solveur ne mesure pas. Sous drapeau, on
+       applique donc le tri une dernière fois sur la meilleure pose et on
+       re-résout : le dessin obtenu part au concours, qui lui compte les
+       croisements et tranchera. On ne le garde que si aucune liaison droite
+       n'est perdue au passage. */
+    if(typeof PIN_SWAP!=='undefined' && PIN_SWAP){
+      reorderPins(best.py);
+      const r2=solveOnce(bestBlocks);
+      if(r2 && r2.acc>=best.acc-0.01) best=r2; else restoreOrder(bestOrder);
+    }
     colBlocks=bestBlocks;
     // dégonflage : un bloc étiré « pour rien » (grand trou interne parce
     // qu'une broche est accrochée à l'extrémité opposée du partenaire) est
@@ -16211,6 +16234,7 @@ let ROUTE_SEED=false;  // amorcer les communautés sur la colonne Route/cheminem
 let SPREAD_LEAF=false; // candidat « étalement » : les départs d'un gros bornier se répartissent des deux côtés
 let SEG_STRIP=false;   // candidat « rails » : un gros bornier est découpé en segments de bornes consécutives
 let TAP_GROUP=false;   // candidat « voisinage » : les appareils piqués sur une MÊME borne se rassemblent
+let PIN_SWAP=false;    // candidat « bornes croisées » : on échange deux bornes d'un appareil pour dénouer deux fils
 function countStraight(wires){ return wires.filter(w=>w.pts.length===2).length; }
 // mesure la largeur de goulotte réellement occupée par les pistes (segments
 // verticaux) de chaque colonne, pour resserrer les colonnes à la 2e passe.
@@ -16301,7 +16325,7 @@ function auditSchema(){
    Renvoie la mise en page, son routage déjà calculé dans `_routing`. */
 function layoutTry(eq, lk, seed, opt){
   const F = opt || {};
-  const save = {CHW_FIX, OPT_NOGROW, SPLIT_COIL, PF_OPT, USE_CLUSTER, COND_PINS, ROUTE_SEED, SPREAD_LEAF, SEG_STRIP, TAP_GROUP};
+  const save = {CHW_FIX, OPT_NOGROW, SPLIT_COIL, PF_OPT, USE_CLUSTER, COND_PINS, ROUTE_SEED, SPREAD_LEAF, SEG_STRIP, TAP_GROUP, PIN_SWAP};
   try{
     CHW_FIX     = F.chw !== undefined ? F.chw : null;
     OPT_NOGROW  = !!F.nogrow;
@@ -16313,6 +16337,7 @@ function layoutTry(eq, lk, seed, opt){
     SPREAD_LEAF = !!F.spread;
     SEG_STRIP   = !!F.rails;
     TAP_GROUP   = !!F.tapgrp;
+    PIN_SWAP    = !!F.pinswap;
     const L = computeLayoutWith(eq, lk, seed);
     L._routing = routeAll(L);
     return L;
@@ -16320,14 +16345,14 @@ function layoutTry(eq, lk, seed, opt){
     CHW_FIX=save.CHW_FIX; OPT_NOGROW=save.OPT_NOGROW; SPLIT_COIL=save.SPLIT_COIL;
     PF_OPT=save.PF_OPT; USE_CLUSTER=save.USE_CLUSTER; COND_PINS=save.COND_PINS;
     ROUTE_SEED=save.ROUTE_SEED; SPREAD_LEAF=save.SPREAD_LEAF; SEG_STRIP=save.SEG_STRIP;
-    TAP_GROUP=save.TAP_GROUP;
+    TAP_GROUP=save.TAP_GROUP; PIN_SWAP=save.PIN_SWAP;
   }
 }
 function computeLayout(eq, lk){
   // Ceinture ET bretelles : layoutTry garantit déjà qu'aucun drapeau ne fuit,
   // mais on repart d'un état neutre à l'entrée au cas où du code extérieur en
   // aurait laissé un actif.
-  USE_CLUSTER=false; ROUTE_SEED=false; SPLIT_COIL=false; COND_PINS=false; PF_OPT=false; OPT_NOGROW=false; CHW_FIX=null; SPREAD_LEAF=false; SEG_STRIP=false; TAP_GROUP=false;
+  USE_CLUSTER=false; ROUTE_SEED=false; SPLIT_COIL=false; COND_PINS=false; PF_OPT=false; OPT_NOGROW=false; CHW_FIX=null; SPREAD_LEAF=false; SEG_STRIP=false; TAP_GROUP=false; PIN_SWAP=false;
   // --- mesures de qualité d'un essai, partagées par les deux modes ---
   // nombre de segments de fil qui traversent un bloc (doit rester à 0)
   const inBlocOf=L=>{ let n=0; const cs=L.comps;
@@ -16427,13 +16452,13 @@ function computeLayout(eq, lk){
        On joue donc le concours normal d'abord — étalement compris — et on ne
        paie les rails QUE si le gagnant est réellement un ruban. Une page déjà
        bien proportionnée ne coûte donc rien de plus qu'avant. */
-    let bSp=false,bPf=false,bSpr=false,bRl=false,bTg=false;
+    let bSp=false,bPf=false,bSpr=false,bRl=false,bTg=false,bSw=false;
     const jouer=(dims)=>{
       const cands=[];
-      dims.rail.forEach(rl=> spreadModes.forEach(spr=> dims.tap.forEach(tg=>
+      dims.rail.forEach(rl=> spreadModes.forEach(spr=> dims.tap.forEach(tg=> dims.swap.forEach(sw=>
         pfModes.forEach(pf=> spModes.forEach(sp=> ngModes.forEach(ng=>
-          opts.forEach(o=>{ const L=layoutTry(eq,lk,o,{lanes:pf,split:sp,nogrow:ng,spread:spr,rails:rl,tapgrp:tg});
-            cands.push({L,o,ng,sp,pf,spr,rl,tg,sc:scoreOf(L),ar:areaOf(L),sh:shapeOf(L)}); }) ))))));
+          opts.forEach(o=>{ const L=layoutTry(eq,lk,o,{lanes:pf,split:sp,nogrow:ng,spread:spr,rails:rl,tapgrp:tg,pinswap:sw});
+            cands.push({L,o,ng,sp,pf,spr,rl,tg,sw,sc:scoreOf(L),ar:areaOf(L),sh:shapeOf(L)}); }) )))))));
       let pool=cands;
       if(balanced){ const ok=cands.filter(c=>c.ar<=OPT_AREA_CAP);
         pool=ok.length?ok:[cands.reduce((m,c)=>c.ar<m.ar?c:m,cands[0])]; }
@@ -16441,11 +16466,11 @@ function computeLayout(eq, lk){
       // PROPORTIONNÉ : ce qui départage un ruban d'une page bien remplie sans
       // sacrifier un seul fil droit.
       pool.forEach(c=>{ if(c.sc>bScore || (c.sc===bScore && best && c.sh<shapeOf(best)-0.02)){
-        bScore=c.sc; best=c.L; bOptX=c.o; bNg=c.ng; bSp=c.sp; bPf=c.pf; bSpr=c.spr; bRl=c.rl; bTg=c.tg; } });
+        bScore=c.sc; best=c.L; bOptX=c.o; bNg=c.ng; bSp=c.sp; bPf=c.pf; bSpr=c.spr; bRl=c.rl; bTg=c.tg; bSw=c.sw; } });
     };
-    jouer({rail:[false],tap:[false]});
+    jouer({rail:[false],tap:[false],swap:[false]});
     // ruban avéré : on rejoue en autorisant le découpage du bornier en rails
-    if(best && shapeOf(best)>0.8) jouer({rail:[true],tap:[false]});
+    if(best && shapeOf(best)>0.8) jouer({rail:[true],tap:[false],swap:[false]});
     /* PEIGNE ÉTIRÉ : on ne paie le rendu supplémentaire que si une barrette
        part vraiment trop loin chercher un appareil isolé. Essayer le
        regroupement à chaque fois doublait le nombre de candidats et faisait
@@ -16461,14 +16486,20 @@ function computeLayout(eq, lk){
        comme 377 doublait son temps de rendu et le dépliage expirait. */
     const filsPlies=(L)=>L._routing.wires.some(w=>w.pts&&w.pts.length>2);
     if(best && (barLong(best)>260 || (best.comps.length<=45 && filsPlies(best))))
-      jouer({rail:[bRl],tap:[true]});
+      jouer({rail:[bRl],tap:[true],swap:[bSw]});
+    /* BORNES CROISÉES : deux fils qui se coupent alors qu'échanger deux bornes
+       du même appareil les remettrait droits. On ne paie ce rendu de plus que
+       s'il reste vraiment un croisement à dénouer, et sur un folio de travail
+       — au-delà d'une trentaine de blocs le concours est déjà long. */
+    if(best && best.comps.length<=30 && countCrossings(best._routing.wires)>0)
+      jouer({rail:[bRl],tap:[bTg],swap:[true]});
     // 2e passe : RESSERRER les goulottes à la largeur réellement occupée par
     // les pistes (comme en mode complet) -> fini les boulevards vides entre
     // colonnes ; l'ordre vertical (repères) ne change pas. Gardé seulement si
     // le dessin reste aussi droit et devient réellement plus étroit.
     let bFix=null;
     try{ const fix=tightenChannels(best);
-      if(fix){ const L2=layoutTry(eq,lk,bOptX,{chw:fix,nogrow:bNg,split:bSp,lanes:bPf,spread:bSpr,rails:bRl,tapgrp:bTg});
+      if(fix){ const L2=layoutTry(eq,lk,bOptX,{chw:fix,nogrow:bNg,split:bSp,lanes:bPf,spread:bSpr,rails:bRl,tapgrp:bTg,pinswap:bSw});
         if(scoreOf(L2)>=bScore-1 && contentW(L2)<contentW(best)*0.97){ best=L2; bFix=fix; bScore=scoreOf(L2); } }
     }catch(_){ }
     // 3e passe (Optimiser uniquement : la condensation est inactive pendant les
@@ -16476,7 +16507,7 @@ function computeLayout(eq, lk){
     // OU à score égal si le dessin devient réellement plus petit (blocs creux
     // refermés sans rien perdre). En mode équilibré : plafond de surface.
     if(OPT_ONCE) try{
-      const L3=layoutTry(eq,lk,bOptX,{condense:true,chw:bFix,nogrow:bNg,split:bSp,lanes:bPf,spread:bSpr,rails:bRl,tapgrp:bTg});
+      const L3=layoutTry(eq,lk,bOptX,{condense:true,chw:bFix,nogrow:bNg,split:bSp,lanes:bPf,spread:bSpr,rails:bRl,tapgrp:bTg,pinswap:bSw});
       const s3=scoreOf(L3), a3=areaOf(L3);
       if((s3>bScore || (s3===bScore && a3<areaOf(best)*0.97)) && (!balanced||a3<=OPT_AREA_CAP)){ best=L3; bScore=s3; }
     }catch(_){ }
