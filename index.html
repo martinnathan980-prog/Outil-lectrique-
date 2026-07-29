@@ -16746,11 +16746,12 @@ function defs(){
      /* Le bornier se signe par un aplat TRES pale et un lisere pointille fin :
         assez pour dire « ceci est un bornier », trop leger pour peser sur la
         page. Le cadre bleu et les crochets, eux, chargeaient trop. */
-     .bframe{fill:#eff4f8;stroke:#9aa9b6;stroke-width:.7;stroke-dasharray:2.2 2}
+     .bhead rect{fill:#44566a;stroke:#44566a;stroke-width:1}
+     .bhead text{fill:#ffffff;font-size:6.6px;font-weight:600;letter-spacing:.7px}
+     .comp.xr .bhead rect{fill:#2a72c4;stroke:#2a72c4}   /* bornier deplie */
      .bcell{fill:#ffffff;stroke:#d2dae1;stroke-width:.7}
      .braccord{fill:#ffffff;stroke:#2b3947;stroke-width:1}
      .bsname{fill:#55636f;font-size:7.4px;font-weight:600;letter-spacing:1px}
-     .plug{fill:#2b3947;stroke:#ffffff;stroke-width:.7}
      .rep-big{fill:#0d151d;font-weight:450;font-size:11.5px;letter-spacing:1.6px}
      /* Une barrette n'est pas un cable : c'est un pont pose entre bornes.
         Le tirete la distingue au premier coup d'oeil d'un conducteur, sans
@@ -16790,7 +16791,7 @@ function defs(){
      .comp{transition:opacity .12s}
      /* MODE FOCUS : au survol d'un bloc ou au clic sur un fil, tout le reste
         s'estompe et le net (ou les fils du bloc) ressort net et épais. */
-     .focus .cab,.focus .w-int,.focus .barrette,.focus .busbar,.focus .barfeedline,.focus .jn,.focus .plug,.focus .barfeed{opacity:.10}
+     .focus .cab,.focus .w-int,.focus .barrette,.focus .busbar,.focus .barfeedline,.focus .jn,.focus .barfeed{opacity:.10}
      .focus .comp{opacity:.28}
      .focus .cab.hl{opacity:1;stroke-width:2.9}
      .focus .comp.hl{opacity:1}
@@ -16877,6 +16878,7 @@ function wireSvg(w,bridges){ const d=wirePath(w.pts,bridges);
 const BAND=4;      // épaisseur de la bande de raccordement plaquée sur le corps
 const BOXPAD=3;    // marge de la boîte au-delà de la première/dernière borne
 const BANDPAD=4;   // de combien la bande dépasse la boîte, en haut et en bas
+const HDR=10.5;    // hauteur du bandeau de repère d'un bornier
 
 /* Découpe une colonne de bornes en paquets de bornes VOISINES : deux bornes
    très écartées (fils partant vers des zones éloignées) appartiennent à deux
@@ -16893,9 +16895,9 @@ function pinGroups(rows){
      depth : profondeur totale occupée (bande comprise)
      hCorps: hauteur du corps — la boîte ne la dépassera jamais (null = libre)
      bande : false pour un bornier AUTONOME, qui n'est accolé à aucun appareil
-   Renvoie aussi le HAUT de la première boîte et son axe, pour que l'appelant
-   y pose le repère du bornier. */
-function borneBox(xBody,dir,depth,rows,baseY,sideOfGroup,hCorps,bande){
+     libLabel : repère à inscrire dans l'en-tête du bornier (null = pas d'en-tête)
+   Renvoie aussi le HAUT de la première boîte et son axe. */
+function borneBox(xBody,dir,depth,rows,baseY,sideOfGroup,hCorps,bande,libLabel){
   let out=''; let top=null, cxLast=null;
   const avecBande = bande!==false;
   pinGroups(rows).forEach(g=>{
@@ -16917,13 +16919,20 @@ function borneBox(xBody,dir,depth,rows,baseY,sideOfGroup,hCorps,bande){
     if(avecBande) out+=`<rect class="braccord" x="${f1(xb)}" y="${f1(t-BANDPAD)}" width="${BAND}" height="${f1(b-t+2*BANDPAD)}"/>`;
     const xo = dir>0 ? xBody+(avecBande?BAND:0) : xBody-depth;   // boîte, à côté de la bande
     const bw = depth-(avecBande?BAND:0);
-    /* SIGNATURE DU BORNIER. Sans bande de raccordement, un bornier autonome
-       n'était plus qu'un rectangle blanc rempli de chiffres : on hésitait sur
-       ce que c'était. Un liseré pointillé fin l'entoure donc — la convention
-       du groupement sur un schéma —, ce qui le distingue au premier regard
-       d'un appareil (trait plein épais) comme d'une boîte de bornes portée
-       par un appareil (trait plein fin plaqué contre un corps). */
-    if(!avecBande) out+=`<rect class="bframe" x="${f1(xo-3)}" y="${f1(t-3)}" width="${f1(bw+6)}" height="${f1(b-t+6)}"/>`;
+    /* SIGNATURE DU BORNIER : UN EN-TÊTE PLEIN.
+       Deux essais avant celui-ci. Le cadre bleu, puis les crochets d'angle :
+       trop lourds, ils encadraient chaque bornier en permanence. Puis l'aplat
+       gris très pâle bordé de pointillés : trop discret, on ne le voyait pas
+       et on ne savait toujours pas ce qu'on regardait.
+       Un bandeau plein coiffe donc chaque paquet de bornes, avec le repère
+       écrit en réserve dedans. Ça se voit sans effort, ça ne s'ajoute pas au
+       dessin (le repère y était déjà, il change juste de place), et surtout
+       c'est LE MÊME sur tous les borniers : le langage devient homogène.
+       Un appareil, lui, n'en porte pas — il a son propre corps et son propre
+       repère, donc aucune confusion possible. */
+    if(!avecBande && libLabel!=null)
+      out+=`<g class="bhead"><rect x="${f1(xo)}" y="${f1(t-HDR)}" width="${f1(bw)}" height="${f1(HDR)}"/>`
+        +`<text x="${f1(xo+bw/2)}" y="${f1(t-HDR+7.6)}" text-anchor="middle">${esc(clip(libLabel,10))}</text></g>`;
     out+=`<rect class="bstrip" x="${f1(xo)}" y="${f1(t)}" width="${f1(bw)}" height="${f1(b-t)}"/>`;
     /* Le numéro doit TENIR dans la boîte : un repère de borne à 3 ou 4 chiffres
        débordait sur le trait. On rétrécit la police juste ce qu'il faut plutôt
@@ -16953,10 +16962,10 @@ function corners(cls,m,w,h){
     +` M${f1(X+k)} ${f1(Y+H)} L${f1(X)} ${f1(Y+H)} L${f1(X)} ${f1(Y+H-k)}"/>`;
 }
 function compSvg(c,sel){
-  let s=`<g class="comp" data-name="${escA(c.name)}" transform="translate(${f1(c.x)},${f1(c.y)})">`;
-  if(sel) s+=corners('selbox',5,c.w,c.h);
   const xr=state.xroots&&state.xroots.size;
   const estRacine=!!(xr&&state.xroots.has(c.name));
+  let s=`<g class="comp${estRacine?' xr':''}" data-name="${escA(c.name)}" transform="translate(${f1(c.x)},${f1(c.y)})">`;
+  if(sel) s+=corners('selbox',5,c.w,c.h);
   if(!estRacine&&xr) s+=`<g class="plusb"><circle cx="${f1(c.w)}" cy="0" r="7"/><text x="${f1(c.w)}" y="3" text-anchor="middle">+</text></g>`;
   if(c.kind==='tag'){
     // étiquette de potentiel : petite pastille en face de la borne desservie
@@ -16974,16 +16983,11 @@ function compSvg(c,sel){
        bande pointait vers le vide et le bornier se lisait comme un appareil
        amputé. Un bornier autonome n'a donc que sa boîte de bornes ; la bande
        reste réservée aux bornes portées par un appareil, où elle a un sens. */
-    const bb=borneBox(0,+1,c.w,rows,c.y,null,null,false);
-    s+=bb.svg;
-    // Repère écrit UNE SEULE FOIS, sous la dernière boîte, comme sur la photo.
-    // Quand le bornier a été coupé en morceaux, chacun dit lequel il est :
-    // « 2541 · 2/3 » — sans ça, trois morceaux se lisent comme trois borniers.
-    if(bb.top!=null){
-      const nom=clip(c.name,8)+(c.seg?' · '+c.seg.i+'/'+c.seg.K:'');
-      // AU-DESSUS de la boîte — et au-dessus de la marque « déplié » quand
-      // elle est là, sinon le repère s'écrit à cheval sur son pointillé.
-      s+=`<text class="bsname${estRacine?' rep-x':''}" x="${f1(bb.cx)}" y="${f1(bb.top-8)}" text-anchor="middle">${esc(nom)}</text>`; }
+    // Le repère part dans l'en-tête. Un bornier coupé en morceaux dit lequel
+    // il est — « 2541·2/3 » — sinon trois morceaux se lisent comme trois
+    // borniers différents.
+    const nom=clip(c.name,7)+(c.seg?'·'+c.seg.i+'/'+c.seg.K:'');
+    s+=borneBox(0,+1,c.w,rows,c.y,null,null,false,nom).svg;
   } else {
     // équipement : corps compact, nom centré, borniers de flanc fins et centrés
     const bx=c.lw, bw=c.w-c.lw-c.rw;
@@ -17060,11 +17064,12 @@ function sceneInner(layout,routing){
   (routing.busDots||[]).forEach(d=>body+=`<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="2.2"/>`);
   routing.dots.forEach(d=>body+=`<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="2.4"/>`);
   layout.comps.forEach(c=>body+=compSvg(c,state.sel===c.name));
-  // pastilles de raccordement : un petit point d'encre là où chaque fil se
-  // branche sur une borne -> le fil est « connecté », pas juste posé au bord.
-  routing.wires.forEach(w=>{ if(!w.pts||w.pts.length<2)return;
-    const a=w.pts[0], z=w.pts[w.pts.length-1];
-    body+=`<circle class="plug" cx="${f1(a.x)}" cy="${f1(a.y)}" r="1.8"/><circle class="plug" cx="${f1(z.x)}" cy="${f1(z.y)}" r="1.8"/>`; });
+  /* PAS DE PASTILLE AU BOUT D'UN FIL. Chaque extrémité portait un point
+     d'encre pour dire « connecté ». Sur une borne, ça n'apprend rien — un fil
+     qui touche une borne y est raccordé, c'est tout — et ça piquetait le
+     dessin de centaines de points. Le seul point qui porte une information est
+     celui du PIQUAGE SUR UNE BARRETTE : là, le fil ne s'arrête pas sur une
+     borne mais se branche en cours de route, et ça, il faut le voir. */
   return body;
 }
 function paint(layout,routing){
