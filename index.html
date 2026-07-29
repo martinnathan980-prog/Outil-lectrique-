@@ -15923,17 +15923,23 @@ function computeLayoutWith(eq, lk, peripheral){
     const sansFilDroit=id=>pinsDe(id).every(k=>{ const y=pinY.get(id+SOH+k);
       return (partners.get(id+SOH+k)||[]).every(q=>q.id===id||Math.abs(pinY.get(q.id+SOH+q.key)-y)>0.6); });
     grp.forEach(set=>{
-      if(set.size<3) return;
+      if(set.size<2) return;
       const parCol=new Map();
       set.forEach(id=>{ const c=colOf.get(id)??0; (parCol.get(c)||parCol.set(c,[]).get(c)).push(id); });
       parCol.forEach(list=>{
-        if(list.length<3) return;
+        if(list.length<2) return;
         const mil=id=>(blockTop.get(id)+blockBot.get(id))/2;
-        const ys=list.map(mil).sort((a,b)=>a-b);
+        /* CIBLE : les appareils ANCRÉS, pas la médiane du groupe.
+           Viser la médiane de tous ne marchait qu'à partir de trois membres :
+           à deux, la médiane tombe sur l'un des deux et le calcul s'annulait
+           tout seul. Or c'est le cas le plus fréquent — une borne qui alimente
+           deux appareils, un en face d'elle et l'autre obligé de remonter en
+           longeant le dessin. On vise donc ceux qui ont déjà un fil droit :
+           ils ne bougeront pas, autant aller les rejoindre. */
+        const ancres=list.filter(id=>!sansFilDroit(id));
+        const ref=ancres.length?ancres:list;
+        const ys=ref.map(mil).sort((a,b)=>a-b);
         const med=ys[ys.length>>1];
-        // étendue du gros du groupe, isolé exclu
-        const proches=list.filter(id=>Math.abs(mil(id)-med)<=140);
-        if(proches.length<list.length-0 && proches.length<3) return;
         list.forEach(id=>{
           if(Math.abs(mil(id)-med)<=140) return;             // déjà dans le groupe
           if(!sansFilDroit(id)) return;                      // verrou 1
@@ -16417,7 +16423,15 @@ function computeLayout(eq, lk){
        expirer le dépliage sur un gros folio ; il ne sert que là où il y a
        quelque chose à réparer. */
     const barLong=(L)=>{ let m=0; ((L._routing.barrettes)||[]).forEach(b2=>m=Math.max(m,Math.abs(b2.y2-b2.y1))); return m; };
-    if(best && barLong(best)>260) jouer({rail:[bRl],tap:[true]});
+    /* Deux motifs le justifient : une barrette partie trop loin chercher un
+       appareil isolé, ou — cas le plus courant — une borne qui alimente
+       plusieurs appareils dont un seul est en face d'elle, l'autre devant
+       remonter en longeant tout le dessin. Sur un folio de travail on essaie
+       systématiquement, c'est un rendu de plus et il est rapide ; sur un gros,
+       seulement quand une barrette s'étire vraiment. */
+    const filsPlies=(L)=>L._routing.wires.some(w=>w.pts&&w.pts.length>2);
+    if(best && (barLong(best)>260 || (lk.length<=90 && filsPlies(best))))
+      jouer({rail:[bRl],tap:[true]});
     // 2e passe : RESSERRER les goulottes à la largeur réellement occupée par
     // les pistes (comme en mode complet) -> fini les boulevards vides entre
     // colonnes ; l'ordre vertical (repères) ne change pas. Gardé seulement si
