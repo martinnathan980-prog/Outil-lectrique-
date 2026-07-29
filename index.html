@@ -16732,6 +16732,7 @@ function defs(){
      .screw{fill:#ffffff;stroke:#8a97a3;stroke-width:.8}
      .rep{fill:#15202b;font-weight:700;font-size:11.5px}
      .des{fill:#7e8b98;font-size:7px;font-weight:400;font-style:italic;letter-spacing:.5px}
+     .des-vide{fill:#c3ccd4}          /* place reservee au repere electrique */
      /* etiquettes de barrette : elles disent sur quelle borne part chaque
         piquage. A 5.8px et en gris tres clair elles etaient illisibles au zoom
         de lecture courant (60-70 %) — donc inutiles. Remontees au seuil de
@@ -16742,10 +16743,13 @@ function defs(){
      .body{fill:#ffffff;stroke:#2b3947;stroke-width:1.7}
      .bnum{fill:#1c2733;font-size:8px;font-weight:700}
      .bstrip{fill:#ffffff;stroke:#2b3947;stroke-width:1}
-     .bframe{fill:none;stroke:#8d9aa7;stroke-width:.75;stroke-dasharray:2.6 2.2}
+     /* Le bornier se signe par un aplat TRES pale et un lisere pointille fin :
+        assez pour dire « ceci est un bornier », trop leger pour peser sur la
+        page. Le cadre bleu et les crochets, eux, chargeaient trop. */
+     .bframe{fill:#eff4f8;stroke:#9aa9b6;stroke-width:.7;stroke-dasharray:2.2 2}
      .bcell{fill:#ffffff;stroke:#d2dae1;stroke-width:.7}
      .braccord{fill:#ffffff;stroke:#2b3947;stroke-width:1}
-     .bsname{fill:#2b3947;font-size:8.4px;font-weight:700;letter-spacing:.4px}
+     .bsname{fill:#55636f;font-size:7.4px;font-weight:600;letter-spacing:1px}
      .plug{fill:#2b3947;stroke:#ffffff;stroke-width:.7}
      .rep-big{fill:#0d151d;font-weight:450;font-size:11.5px;letter-spacing:1.6px}
      /* Une barrette n'est pas un cable : c'est un pont pose entre bornes.
@@ -16756,11 +16760,14 @@ function defs(){
         Les deux se lisaient pareil — une barre noire. Le tirete les separe au
         premier coup d'oeil, sans avoir a suivre le trace. Le peigne
         d'alimentation garde le meme langage mais en plus epais. */
-     .barrette{stroke:#39485a;stroke-width:.8;stroke-linecap:butt;stroke-dasharray:2.4 2}
-     .barfeed{fill:#1a2530;stroke:#ffffff;stroke-width:1}
-     .barfeedline{stroke:#2b3947;stroke-width:1.35;stroke-linecap:butt}
-     .busbar{stroke:#2b3947;stroke-width:1.05;stroke-linecap:butt;stroke-dasharray:3.2 2.2}
-     .rep-x{fill:#1668c2}
+     /* Une barrette n'est pas un conducteur : elle a donc sa propre couleur.
+        Un bleu-vert sobre, assez sature pour se detacher du noir des fils sans
+        crier, et different du bleu des reperes deplies. */
+     .barrette{stroke:#17706b;stroke-width:.8;stroke-linecap:butt;stroke-dasharray:1.8 1.6}
+     .barfeed{fill:#17706b;stroke:#ffffff;stroke-width:1}
+     .barfeedline{stroke:#17706b;stroke-width:1.35;stroke-linecap:butt}
+     .busbar{stroke:#17706b;stroke-width:1.1;stroke-linecap:butt;stroke-dasharray:2.6 1.8}
+     .rep-x{fill:#2a72c4}
      .plusb circle{fill:#1668c2;opacity:.9}
      .plusb text{fill:#ffffff;font:700 10px ui-monospace,monospace}
      .pinlbl{fill:#22303d;font-size:8px;font-weight:520;letter-spacing:.2px}
@@ -17007,7 +17014,13 @@ function compSvg(c,sel){
          le tout remonte en tête pour ne pas flotter au milieu du vide. */
       const yRep = c.h>90 ? 21 : c.h/2-1.5;
       s+=`<text class="rep-big${estRacine?' rep-x':''}" x="${f1(bx+bw/2)}" y="${f1(yRep)}" text-anchor="middle">${esc(clip(c.name,12))}</text>`;
-      if(c.o.designation) s+=`<text class="des" x="${f1(bx+bw/2)}" y="${f1(yRep+10)}" text-anchor="middle">${esc(clip(c.o.designation,16))}</text>`;
+      /* SECONDE LIGNE : le repère électrique de l'appareil. Tant que la base ne
+         le fournit pas, on réserve visiblement sa place plutôt que de laisser
+         un blanc — on voit ainsi tout de suite où il viendra se poser, et le
+         bloc a déjà sa tête définitive. Dès que la colonne sera renseignée,
+         c'est la désignation saisie qui s'affichera à cet endroit exact. */
+      const rep2=c.o.designation||'repère électrique';
+      s+=`<text class="des${c.o.designation?'':' des-vide'}" x="${f1(bx+bw/2)}" y="${f1(yRep+10)}" text-anchor="middle">${esc(clip(rep2,18))}</text>`;
       /* BORNES DE FLANC : exactement la géométrie de la photo — bande plaquée
          sur le corps, puis boîte unique avec les numéros dedans. Même dessin
          que pour un bornier séparé : un lecteur n'a qu'un seul langage à
