@@ -15932,9 +15932,17 @@ function computeLayoutWith(eq, lk, peripheral){
       (partners.get(id+SOH+k)||[]).forEach(q=>{ if(q.id===id)return;
         const cle=q.id+SOH+q.key;
         (grp.get(cle)||grp.set(cle,new Set()).get(cle)).add(id); }); }));
-    // un bloc dont tous les fils sont pliés n'a aucune droiture à perdre
-    const sansFilDroit=id=>pinsDe(id).every(k=>{ const y=pinY.get(id+SOH+k);
-      return (partners.get(id+SOH+k)||[]).every(q=>q.id===id||Math.abs(pinY.get(q.id+SOH+q.key)-y)>0.6); });
+    /* Un bloc dont tous les fils sont pliés n'a aucune droiture à perdre.
+       Réponse MÉMOÏSÉE : abaisser le seuil de groupe à deux membres a multiplié
+       le nombre de groupes examinés, et recalculer ce test à chaque fois
+       faisait exploser le temps de rendu — le dépliage d'un folio moyen
+       expirait au bout de 30 s. Le test ne dépend que du bloc, on le calcule
+       donc une seule fois par bloc. */
+    const memoSFD=new Map();
+    const sansFilDroit=id=>{ let v=memoSFD.get(id); if(v!==undefined) return v;
+      v=pinsDe(id).every(k=>{ const y=pinY.get(id+SOH+k);
+        return (partners.get(id+SOH+k)||[]).every(q=>q.id===id||Math.abs(pinY.get(q.id+SOH+q.key)-y)>0.6); });
+      memoSFD.set(id,v); return v; };
     grp.forEach(set=>{
       if(set.size<2) return;
       const parCol=new Map();
@@ -16340,7 +16348,15 @@ function computeLayout(eq, lk){
        banc de stress sur 1692 : 52 s à 69 blocs, 149 s à 131, 618 s à 221.
        Au-delà d'un gros folio on se contente donc des deux graines de base ;
        en dessous, rien ne change. */
-    const opts=(lk.length>220)?[false,true]:[false,true,1,2];
+    /* TAILLE DU DESSIN, pas taille de la base. Ces seuils regardaient
+       lk.length — or en exploration `lk` est la base ENTIÈRE (14 006 liaisons
+       sur le fichier réel), le filtrage se faisant plus bas. Tous les tests
+       étaient donc figés du mauvais côté : les petits folios se voyaient
+       privés de deux graines de concours, et « Droits max » n'avait jamais son
+       balayage large. On se règle sur le nombre de blocs du dessin PRÉCÉDENT,
+       qui est la meilleure estimation disponible avant de dessiner. */
+    const vue=(typeof LAST!=='undefined'&&LAST&&LAST.layout)?LAST.layout.comps.length:0;
+    const opts=(vue>90)?[false,true]:[false,true,1,2];
     let best=null,bScore=-1e18,bOptX=false,bNg=false;
     /* Proportion de la page : 0 = format A3 parfait, 1 = déjà très déséquilibré.
        Un dessin 7 fois plus haut que large est illisible même s'il est
@@ -16394,7 +16410,7 @@ function computeLayout(eq, lk){
        (mesuré sur 62, 70, 88 et 89 blocs : mêmes fils droits, mêmes
        croisements) et doubler les candidats n'y achetait que de l'attente —
        « Droits max » passait de 38 à 76 s au clic. */
-    const wide=OPT_ONCE && lk.length<=90;
+    const wide=OPT_ONCE && vue<=60;
     const ngModes=wide?[false,true]:[false];
     const pfModes=wide?[false,true]:[false];
     // « Droits max » essaie en plus chaque graine avec ÉCLATEMENT MÉTIER des
@@ -16440,10 +16456,11 @@ function computeLayout(eq, lk){
        appareil isolé, ou — cas le plus courant — une borne qui alimente
        plusieurs appareils dont un seul est en face d'elle, l'autre devant
        remonter en longeant tout le dessin. Sur un folio de travail on essaie
-       systématiquement, c'est un rendu de plus et il est rapide ; sur un gros,
-       seulement quand une barrette s'étire vraiment. */
+       systématiquement ; au-delà, seulement quand une barrette s'étire
+       vraiment. Le seuil est à 45 liaisons et pas 90 : à 90, un folio moyen
+       comme 377 doublait son temps de rendu et le dépliage expirait. */
     const filsPlies=(L)=>L._routing.wires.some(w=>w.pts&&w.pts.length>2);
-    if(best && (barLong(best)>260 || (lk.length<=90 && filsPlies(best))))
+    if(best && (barLong(best)>260 || (best.comps.length<=45 && filsPlies(best))))
       jouer({rail:[bRl],tap:[true]});
     // 2e passe : RESSERRER les goulottes à la largeur réellement occupée par
     // les pistes (comme en mode complet) -> fini les boulevards vides entre
