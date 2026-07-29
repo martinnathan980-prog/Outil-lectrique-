@@ -16739,11 +16739,30 @@ function routeAll(layout){
          plus d'où elle venait : une barre pointillée seule au milieu du vide,
          avec des piquages, et rien qui la relie visiblement à son appareil.
          On garde 14 px de dégagement pour ne pas la coller aux bornes, et on
-         ne s'éloigne au-delà que si ça évite réellement des croisements. */
+         ne s'éloigne au-delà que si ça évite réellement des croisements.
+
+         DES VOIES, PAS UN PAQUET. Le balayage avançait de 4 px et ne regardait
+         que les fils coupés : toutes les barres d'un même bornier trouvaient
+         le même optimum et se retrouvaient à 9 px les unes des autres, sur la
+         même hauteur. Mesuré sur le folio 198 : SIX barres sur l'abscisse 564
+         et trois autres à 564 / 573 / 582 se recouvrant sur 136 px — on ne
+         lisait plus qu'un faisceau de pointillés. Le balayage avance donc
+         maintenant de voie en voie (20 px, la largeur qu'il faut pour que deux
+         traits pointillés se lisent séparément) et refuse lourdement une voie
+         déjà prise par une barre voisine — voisine en hauteur AUSSI quand
+         elles sont bout à bout : deux barres alignées à 8 px l'une de
+         l'autre se lisent comme une seule, en plus long. */
+      const VOIE=20, PROX=26;
+      const genant=(x)=>{ let n=0;
+        barrettes.forEach(B=>{ if(Math.abs(B.x-x)>=VOIE-2)return;
+          if(Math.max(B.y1,lo)-Math.min(B.y2,hi) > PROX)return;   // franchement ailleurs
+          n++; });
+        return n; };
       let bx=px+dir*Math.min(14,offMax), bn=Infinity;
-      for(let o=Math.min(14,offMax); o<=offMax; o+=4){
-        const x=px+dir*o, n=coupe(x);
-        if(n<bn || (n===bn && o<Math.abs(bx-px))){ bn=n; bx=x; } }
+      const pas=(offMax>=14+VOIE)?VOIE:4;
+      for(let o=Math.min(14,offMax); o<=offMax; o+=pas){
+        const x=px+dir*o, n=coupe(x)+120*genant(x)+o*0.01;
+        if(n<bn){ bn=n; bx=x; } }
       layout.comps.forEach(c=>{ if(c===own)return;
         if(bx>c.x-6 && bx<c.x+c.w+6){
           if(c.y+c.h<=py && c.y+c.h+8>lo) lo=c.y+c.h+8;
@@ -16758,34 +16777,51 @@ function routeAll(layout){
         if(!clearTo(u.other.x,ys[i],bx,own))return;
         kept.push({u,y:ys[i]}); });
       if(kept.length<2)return;
+      /* Le carré marque la borne QUI ALIMENTE. Quand un des fils de cette
+         borne repart à sa propre hauteur, on lui posait EN PLUS une pastille
+         de piquage au même endroit : un rond dessiné par-dessus un carré, qui
+         se lit comme un troisième symbole et brouille la seule distinction qui
+         compte — qui alimente, qui se pique. Le carré suffit. */
+      const dots=[];
       kept.forEach(k=>{ epAdj.set(k.u.li+':'+k.u.tag,{...k.u.ep,x:bx,y:k.y});
-        busDots.push({x:bx,y:k.y}); });
-      busStubs.push({x0:px,x1:bx,y:py});
+        if(Math.abs(k.y-py)<1.2) return;
+        const d={x:bx,y:k.y}; busDots.push(d); dots.push(d); });
+      const stub={x0:px,x1:bx,y:py}; busStubs.push(stub);
       /* `py` est l'ordonnée de la BORNE QUI ALIMENTE : c'est tout ce dont le
          dessin a besoin pour poser le carré d'origine sur la bonne borne. Les
          repères de la source et de chaque destination étaient calculés ici et
          écrits le long de la barre ; ils répétaient ce que les blocs reliés
          disent déjà et encombraient la zone où l'on suit les fils. */
-      barrettes.push({x:bx,y1:Math.min(py,kept[0].y)-3,y2:Math.max(py,kept[kept.length-1].y)+3,bus,py,kept}); });
+      barrettes.push({x:bx,y1:Math.min(py,kept[0].y)-3,y2:Math.max(py,kept[kept.length-1].y)+3,
+                      bus,py,kept,dots,stub,dir,px}); });
     /* DEUX BARRETTES NE SE SUPERPOSENT PLUS. Chacune est posée au plus près de
        sa borne ; quand deux appareils voisins alimentent chacun la leur, elles
        tombaient à la MÊME abscisse et sur des hauteurs qui se recouvrent — on
        voyait alors une seule barre, et impossible de dire qui allait sur
        laquelle. On écarte donc celles qui se chevauchent, de proche en proche,
        en emmenant leurs piquages avec elles pour ne pas casser un seul fil. */
+    const VOIE=20, PROX=26;
+    // déplacement EXACT d'une barre : elle emmène ses propres piquages et son
+    // trait d'alimentation. L'ancienne version les retrouvait par leurs
+    // coordonnées — deux barres à la même abscisse et elle en emmenait trop.
+    const bouge=(A,nx)=>{ A.x=nx;
+      (A.kept||[]).forEach(kp=>{ const e=epAdj.get(kp.u.li+':'+kp.u.tag); if(e) e.x=nx; });
+      A.dots.forEach(d=>d.x=nx); if(A.stub) A.stub.x1=nx; };
+    /* Le nombre de déplacements est BORNÉ : une barre écartée d'une voisine
+       peut en heurter une autre et revenir sur la première. Sans plafond, la
+       reprise `k=-1` boucle indéfiniment et le rendu ne rend jamais la main. */
     for(let i=0;i<barrettes.length;i++){
+      let coups=0;
       for(let k=0;k<i;k++){
         const A=barrettes[i], B=barrettes[k];
-        if(Math.abs(A.x-B.x)>=7) continue;
-        if(Math.max(A.y1,B.y1) > Math.min(A.y2,B.y2)) continue;   // pas de recouvrement
-        const dir=(A.x>=B.x)?1:-1, dx=dir*9;
+        if(Math.abs(A.x-B.x)>=VOIE-2) continue;
+        if(Math.max(A.y1,B.y1) - Math.min(A.y2,B.y2) > PROX) continue;  // franchement ailleurs
+        const sg=(Math.abs(A.x-B.x)<0.5)?(A.dir||1):(A.x>B.x?1:-1), nx=B.x+sg*VOIE;
         // on ne bouge que si le nouvel emplacement reste libre de tout bloc
-        const libre=!layout.comps.some(c=>A.x+dx>c.x-4 && A.x+dx<c.x+c.w+4 && A.y2>c.y-4 && A.y1<c.y+c.h+4);
+        const libre=!layout.comps.some(c=>nx>c.x-4 && nx<c.x+c.w+4 && A.y2>c.y-4 && A.y1<c.y+c.h+4);
         if(!libre) continue;
-        A.x+=dx;
-        (A.kept||[]).forEach(kp=>{ const e=epAdj.get(kp.u.li+':'+kp.u.tag); if(e) e.x=A.x; });
-        busDots.forEach(d=>{ if(Math.abs(d.x-(A.x-dx))<0.5 && d.y>=A.y1-1 && d.y<=A.y2+1) d.x=A.x; });
-        busStubs.forEach(st=>{ if(Math.abs(st.x1-(A.x-dx))<0.5 && st.y>=A.y1-1 && st.y<=A.y2+1) st.x1=A.x; });
+        bouge(A,nx);
+        if(++coups>=8) break;
         k=-1;   // sa nouvelle place peut heurter une autre : on revérifie
       }
     }
@@ -16940,11 +16976,24 @@ function routeAll(layout){
     }
     const x0=chL(ch)+14;
     const pv=(g.pills||[]).filter(pl=>pl.ch===ch);
+    const xMax=chL(ch)+g.chW[ch]-6;
     orderT.forEach((jobIdx,rank)=>{ const j=jobs[jobIdx];
       let x=x0+rank*9;
-      if(pv.length){ const V=specs[jobIdx].V;
+      const V=specs[jobIdx].V;
+      if(pv.length){
         if(pv.some(pl=>!(V[1]<pl.y1-2||V[0]>pl.y2+2))){
-          const nx=x+44; if(nx<chL(ch)+g.chW[ch]-6) x=nx; } }
+          const nx=x+44; if(nx<xMax) x=nx; } }
+      /* UNE PISTE DE FIL NE SE POSE PAS SUR UNE BARRETTE. Les deux partaient
+         du même bord de goulotte avec le même pas de 9 px : un fil finissait
+         régulièrement à l'abscisse exacte d'une barre et se confondait avec
+         elle sur toute leur longueur commune. Mesuré sur le folio 198 : le fil
+         198->266 descendait sur x=564, pile sur la barre alimentée par la
+         borne 220 — un trait plein par-dessus un pointillé, illisible. La
+         piste glisse donc jusqu'à sortir de la barre. */
+      for(let guard=0; guard<10; guard++){
+        const hit=barrettes.find(b=>Math.abs(b.x-x)<8 && !(V[1]<b.y1-2||V[0]>b.y2+2));
+        if(!hit) break;
+        const nx=hit.x+9; if(nx>=xMax) break; x=nx; }
       chOut[ch].set(j.li+':'+j.part, x); });
   }
 
@@ -16985,25 +17034,27 @@ function routeAll(layout){
   // PONTS : à chaque croisement fil vertical × fil horizontal, le vertical
   // enjambe l'horizontal d'un petit arc (dessiné par wirePath). On liste ici
   // tous les points de croisement (verticaux triés pour balayage rapide).
-  const bridges=[];
+  const bridges=[], hbridges=[];
   { const Hs=[],Vs=[];
     wires.forEach(w=>{ if(!w||!w.pts)return; for(let i=0;i<w.pts.length-1;i++){ const a=w.pts[i],b=w.pts[i+1];
       if(Math.abs(a.y-b.y)<.5&&Math.abs(a.x-b.x)>=.5) Hs.push({y:a.y,x0:Math.min(a.x,b.x),x1:Math.max(a.x,b.x)});
       else if(Math.abs(a.x-b.x)<.5&&Math.abs(a.y-b.y)>=.5) Vs.push({x:a.x,y0:Math.min(a.y,b.y),y1:Math.max(a.y,b.y)}); } });
-    /* UNE BARRETTE EST UNE VERTICALE COMME UNE AUTRE. Elle était absente de ce
-       calcul : une barre qui descendait chercher ses destinataires traversait
-       de plein fouet les fils des appareils qu'elle longeait, sans rien pour
-       dire qu'elle passait par-dessus. Elle enjambe désormais comme un fil.
-       Les fils qui SE RACCORDENT à la barre s'y arrêtent — leur extrémité est
-       sur la barre, donc la condition de croisement les exclut d'elle-même. */
-    barrettes.forEach(b=>Vs.push({x:b.x,y0:Math.min(b.y1,b.y2),y1:Math.max(b.y1,b.y2)}));
     if(Hs.length&&Vs.length&&Hs.length*Vs.length<=6000000){
       for(const v of Vs) for(const h of Hs){
-        if(h.y>v.y0+3&&h.y<v.y1-3&&v.x>h.x0+3&&v.x<h.x1-3) bridges.push({x:v.x,y:h.y}); } } }
+        if(h.y>v.y0+3&&h.y<v.y1-3&&v.x>h.x0+3&&v.x<h.x1-3) bridges.push({x:v.x,y:h.y}); } }
+    /* CROISEMENT FIL x BARRETTE : c'est le FIL qui saute. La barre enjambait
+       elle-même, et ses arcs de 4 px sur un trait pointillé de 1,15 px se
+       lisaient comme des coudes — sur le folio 198 on comptait six crochets
+       sur trois barres voisines et le tout formait une bouillie. Une barre est
+       un repère : elle reste droite, et ce sont les fils qui la franchissent
+       qui portent l'arc. Les fils qui S'Y RACCORDENT s'y arrêtent — leur
+       extrémité est sur la barre, la condition de croisement les exclut. */
+    barrettes.forEach(b=>{ const y0=Math.min(b.y1,b.y2), y1=Math.max(b.y1,b.y2);
+      for(const h of Hs){ if(h.y>y0+3&&h.y<y1-3&&b.x>h.x0+3&&b.x<h.x1-3) hbridges.push({x:b.x,y:h.y}); } }); }
   // les liaisons bouclées sur elles-mêmes n'ont produit aucun fil : on retire
   // les trous pour que tout le reste (compteurs, audit, survol) voie une liste
   // dense et que le nombre de fils annoncé soit le nombre de fils dessinés.
-  return {wires:wires.filter(Boolean),bridges,dots,barrettes,busDots};
+  return {wires:wires.filter(Boolean),bridges,hbridges,dots,barrettes,busDots};
 }
 
 /* ---------- 6. Rendu SVG ---------- */
@@ -17132,19 +17183,29 @@ function cartoucheSvg(rx,by,meta){
   return s;
 }
 
-function wirePath(pts,bridges){
+/* Les sauts VERTICAUX (`bridges`) sont posés sur le fil vertical qui enjambe
+   un fil horizontal. Les sauts HORIZONTAUX (`hbridges`) servent au cas
+   inverse : quand un fil traverse une BARRETTE, c'est le fil qui saute, pas
+   la barre. Une barre est un repère de lecture — elle doit rester un trait
+   pointillé parfaitement droit, sinon ses micro-crochets se lisent comme des
+   coudes et on ne sait plus si elle continue ou si elle bifurque. */
+function wirePath(pts,bridges,hbridges){
   let d='M '+f1(pts[0].x)+' '+f1(pts[0].y);
   for(let i=1;i<pts.length;i++){ const A=pts[i-1],B=pts[i]; const vert=Math.abs(A.x-B.x)<.5;
     if(vert&&bridges.length){ const x=B.x, dir=B.y>A.y?1:-1;
       const hits=bridges.filter(br=>Math.abs(br.x-x)<2&&br.y>Math.min(A.y,B.y)+3&&br.y<Math.max(A.y,B.y)-3).sort((a,b)=>dir*(a.y-b.y));
       for(const hbr of hits){ d+=' L '+f1(x)+' '+f1(hbr.y-dir*4)+' A 4 4 0 0 '+(dir>0?1:0)+' '+f1(x)+' '+f1(hbr.y+dir*4); }
       d+=' L '+f1(B.x)+' '+f1(B.y);
+    } else if(!vert&&hbridges&&hbridges.length){ const y=B.y, dir=B.x>A.x?1:-1;
+      const hits=hbridges.filter(br=>Math.abs(br.y-y)<2&&br.x>Math.min(A.x,B.x)+3&&br.x<Math.max(A.x,B.x)-3).sort((a,b)=>dir*(a.x-b.x));
+      for(const vbr of hits){ d+=' L '+f1(vbr.x-dir*4)+' '+f1(y)+' A 4 4 0 0 '+(dir>0?0:1)+' '+f1(vbr.x+dir*4)+' '+f1(y); }
+      d+=' L '+f1(B.x)+' '+f1(B.y);
     } else d+=' L '+f1(B.x)+' '+f1(B.y);
   }
   return d;
 }
 function escA(s){ return esc(s).replace(/"/g,'&quot;'); }
-function wireSvg(w,bridges){ const d=wirePath(w.pts,bridges);
+function wireSvg(w,bridges,hbridges){ const d=wirePath(w.pts,bridges,hbridges);
   // attributs de repérage : net (surbrillance de tout le potentiel), extrémités
   // (illumination des fils d'un équipement au survol)
   const a=`data-net="${escA(w.net)}" data-a="${escA(w.from)}" data-b="${escA(w.to)}"`;
@@ -17353,7 +17414,7 @@ function sceneInner(layout,routing){
     meta={...state.meta, folio: state.plan+' / '+(state.folioCount||'?')};
   let body=sheetSvg(layout.bbox,meta);
   // câbles : aucun nom sur le dessin — toutes les infos au clic
-  routing.wires.forEach(w=>body+=wireSvg(w,routing.bridges));
+  routing.wires.forEach(w=>body+=wireSvg(w,routing.bridges,routing.hbridges));
   ((routing.barrettes&&routing.barrettes.stubs)||[]).forEach(st=>body+=`<line class="barfeedline" x1="${f1(st.x0)}" y1="${f1(st.y)}" x2="${f1(st.x1)}" y2="${f1(st.y)}"/>`);
   /* LA BARRETTE SE LIT SANS UN SEUL MOT.
      Elle portait le repère de sa borne source et, à chaque piquage, celui de sa
@@ -17369,7 +17430,7 @@ function sceneInner(layout,routing){
      On voit donc d'un coup d'œil d'où ça vient et où ça va. */
   (routing.barrettes||[]).forEach(bar=>{
     // tracée comme un fil vertical : elle enjambe donc les fils qu'elle croise
-    body+=`<path class="${bar.bus?'busbar':'barrette'}" fill="none" d="${wirePath([{x:bar.x,y:bar.y1},{x:bar.x,y:bar.y2}],routing.bridges)}"/>`;
+    body+=`<line class="${bar.bus?'busbar':'barrette'}" x1="${f1(bar.x)}" y1="${f1(bar.y1)}" x2="${f1(bar.x)}" y2="${f1(bar.y2)}"/>`;
     if(bar.py!=null) body+=`<rect class="barfeed" x="${f1(bar.x-3.2)}" y="${f1(bar.py-3.2)}" width="6.4" height="6.4"/>`; });
   /* LE PIQUAGE N'EST PAS UNE JONCTION DE FIL. Les deux se dessinaient avec la
      MEME pastille noire : on voyait de gros ronds sur une barre en pointillé
