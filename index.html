@@ -17018,11 +17018,11 @@ function defs(){
      /* Une barrette n'est pas un conducteur : elle a donc sa propre couleur.
         Un bleu-vert sobre, assez sature pour se detacher du noir des fils sans
         crier, et different du bleu des reperes deplies. */
-     .barrette{stroke:#17706b;stroke-width:.8;stroke-linecap:butt;stroke-dasharray:1.8 1.6}
+     .barrette{stroke:#17706b;stroke-width:1.15;stroke-linecap:butt;stroke-dasharray:2.8 2}
      .barfeed{fill:#17706b;stroke:#ffffff;stroke-width:1}
      .barfeedline{stroke:#17706b;stroke-width:1.5;stroke-linecap:butt}
      .busdot{fill:#17706b;stroke:#ffffff;stroke-width:.8}
-     .busbar{stroke:#17706b;stroke-width:1.1;stroke-linecap:butt;stroke-dasharray:2.6 1.8}
+     .busbar{stroke:#17706b;stroke-width:1.4;stroke-linecap:butt;stroke-dasharray:3.4 2.2}
      .plusb circle{fill:#1668c2;opacity:.9}
      .plusb text{fill:#ffffff;font:700 10px ui-monospace,monospace}
      .pinlbl{fill:#22303d;font-size:8px;font-weight:520;letter-spacing:.2px}
@@ -17278,6 +17278,11 @@ function compSvg(c,sel){
          le tout remonte en tête pour ne pas flotter au milieu du vide. */
       const yRep = c.h>90 ? 21 : c.h/2-1.5;
       s+=`<text class="rep-big" x="${f1(bx+bw/2)}" y="${f1(yRep)}" text-anchor="middle">${esc(clip(c.name,12))}</text>`;
+      /* Sur un appareil très haut — un carrefour dont les bornes s'étalent sur
+         toute la page — le repère écrit en tête est hors de vue dès qu'on
+         regarde le bas du corps : on ne sait plus de quel matériel on lit les
+         bornes. Il est donc rappelé en pied, en plus discret. */
+      if(c.h>380) s+=`<text class="bsname" x="${f1(bx+bw/2)}" y="${f1(c.h-9)}" text-anchor="middle">${esc(clip(c.name,12))}</text>`;
       /* SECONDE LIGNE : le repère électrique de l'appareil. Tant que la base ne
          le fournit pas, on réserve visiblement sa place plutôt que de laisser
          un blanc — on voit ainsi tout de suite où il viendra se poser, et le
