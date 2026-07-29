@@ -14759,7 +14759,12 @@ function computeLayoutWith(eq, lk, peripheral){
 
   // --- largeurs (hauteurs élastiques calculées plus bas)
   const widthOf=id=>{ const ls=listsOf.get(id);
-    if(ls.S)return BORNW;
+    /* UN BORNIER EST UN MATÉRIEL COMME UN AUTRE. Il n'occupait que la largeur
+       d'une colonne de bornes (40 px) : dessiné sans corps, il flottait au
+       milieu de la page comme un paquet de chiffres. Il prend donc le même
+       gabarit que les appareils — corps central portant son repère, bornes sur
+       les flancs. Seules les étiquettes de potentiel gardent leur pastille. */
+    if(ls.S) return (ls.S.length===1 && isRail(nodes.get(id).name)) ? BORNW : (STRIPW+BODYW+STRIPW);
     if(isVCName(nodes.get(id).name))return 44;   // prise de coupure : corps très fin
     // SILHOUETTE UNIFORME : tous les équipements ont la même largeur (seule la
     // hauteur varie) — flanc absent = corps plus large, même gabarit extérieur.
@@ -16077,7 +16082,7 @@ function computeLayoutWith(eq, lk, peripheral){
       // extérieur reste 152. (Avant : un flanc absent élargissait le corps de
       // 104 à 128 -> deux équipements n'avaient pas la même tête.)
       // Le liseré et les cellules ne sont dessinés que s'il y a des bornes.
-      lw:(ls.S||vc)?0:STRIPW, rw:(ls.S||vc)?0:STRIPW,
+      lw:(tag||vc)?0:STRIPW, rw:(tag||vc)?0:STRIPW,
       rows,byKey,rail:isRail(N.name)};
     compList.push(c); compByName.set(id,c); if(!compByName.has(N.name))compByName.set(N.name,c); }
 
@@ -17055,22 +17060,26 @@ function compSvg(c,sel){
     s+=`<rect class="rpill" x="0" y="${f1(c.h/2-6)}" width="${c.w}" height="12" rx="6"/>`;
     s+=`<text class="rname" style="font-size:7.5px" x="${f1(c.w/2)}" y="${f1(c.h/2+2.7)}" text-anchor="middle">${esc(clip(c.name,7))}</text>`;
   } else if(c.kind==='strip'){
-    /* BORNIER : la bande de raccordement regarde vers l'AMONT, c'est-à-dire
-       vers la gauche — l'appareil qui alimente le bornier est toujours dans la
-       colonne précédente. Les départs sortent à droite, au niveau de leur
-       numéro. Cf. le schéma de référence en tête de borneBox(). */
+    /* LE BORNIER EST UN MATÉRIEL, DESSINÉ COMME TEL.
+       Il n'était qu'une colonne de bornes posée au milieu de la page : sans
+       corps ni repère à l'intérieur, on ne savait pas si on regardait un
+       matériel ou un paquet de chiffres égaré. Il reçoit donc exactement la
+       même silhouette qu'un appareil — corps central portant son repère, boîte
+       de bornes plaquée sur le flanc — et le schéma n'a plus qu'une seule
+       forme de bloc à lire.
+       Une borne va du côté d'où viennent ses fils ; celle qui est traversante
+       (amont d'un côté, aval de l'autre) se montre des deux côtés, comme une
+       vraie borne de passage. */
     const rows=c.rows.S||[];
-    /* UN BORNIER EST UN OBJET COMPLET, PAS UN MORCEAU D'APPAREIL.
-       Il était dessiné comme les bornes d'un appareil — bande de raccordement
-       plaquée sur un corps + boîte — sauf qu'ici il n'y a pas de corps : la
-       bande pointait vers le vide et le bornier se lisait comme un appareil
-       amputé. Un bornier autonome n'a donc que sa boîte de bornes ; la bande
-       reste réservée aux bornes portées par un appareil, où elle a un sens. */
-    // Le repère part dans l'en-tête. Un bornier coupé en morceaux dit lequel
-    // il est — « 2541·2/3 » — sinon trois morceaux se lisent comme trois
-    // borniers différents.
+    const bx=c.lw, bw=c.w-c.lw-c.rw;
+    s+=`<g filter="url(#softsh)"><rect class="body" x="${f1(bx)}" y="0" width="${f1(bw)}" height="${c.h}"/></g>`;
     const nom=clip(c.name,7)+(c.seg?'·'+c.seg.i+'/'+c.seg.K:'');
-    s+=borneBox(0,+1,c.w,rows,c.y,null,null,false,nom).svg;
+    const yRep = c.h>90 ? 21 : c.h/2-1.5;
+    s+=`<text class="rep-big${estRacine?' rep-x':''}" x="${f1(bx+bw/2)}" y="${f1(yRep)}" text-anchor="middle">${esc(nom)}</text>`;
+    s+=`<text class="des des-vide" x="${f1(bx+bw/2)}" y="${f1(yRep+10)}" text-anchor="middle">bornier</text>`;
+    const gauche=rows.filter(p=>(p.dir||0)<=0), droite=rows.filter(p=>(p.dir||0)>=0);
+    if(gauche.length) s+=borneBox(bx,    -1, c.lw, gauche, c.y, null, c.h, true).svg;
+    if(droite.length) s+=borneBox(bx+bw, +1, c.rw, droite, c.y, null, c.h, true).svg;
   } else {
     // équipement : corps compact, nom centré, borniers de flanc fins et centrés
     const bx=c.lw, bw=c.w-c.lw-c.rw;
