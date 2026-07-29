@@ -16669,7 +16669,29 @@ function routeAll(layout){
          repères de la source et de chaque destination étaient calculés ici et
          écrits le long de la barre ; ils répétaient ce que les blocs reliés
          disent déjà et encombraient la zone où l'on suit les fils. */
-      barrettes.push({x:bx,y1:Math.min(py,kept[0].y)-3,y2:Math.max(py,kept[kept.length-1].y)+3,bus,py}); });
+      barrettes.push({x:bx,y1:Math.min(py,kept[0].y)-3,y2:Math.max(py,kept[kept.length-1].y)+3,bus,py,kept}); });
+    /* DEUX BARRETTES NE SE SUPERPOSENT PLUS. Chacune est posée au plus près de
+       sa borne ; quand deux appareils voisins alimentent chacun la leur, elles
+       tombaient à la MÊME abscisse et sur des hauteurs qui se recouvrent — on
+       voyait alors une seule barre, et impossible de dire qui allait sur
+       laquelle. On écarte donc celles qui se chevauchent, de proche en proche,
+       en emmenant leurs piquages avec elles pour ne pas casser un seul fil. */
+    for(let i=0;i<barrettes.length;i++){
+      for(let k=0;k<i;k++){
+        const A=barrettes[i], B=barrettes[k];
+        if(Math.abs(A.x-B.x)>=7) continue;
+        if(Math.max(A.y1,B.y1) > Math.min(A.y2,B.y2)) continue;   // pas de recouvrement
+        const dir=(A.x>=B.x)?1:-1, dx=dir*9;
+        // on ne bouge que si le nouvel emplacement reste libre de tout bloc
+        const libre=!layout.comps.some(c=>A.x+dx>c.x-4 && A.x+dx<c.x+c.w+4 && A.y2>c.y-4 && A.y1<c.y+c.h+4);
+        if(!libre) continue;
+        A.x+=dx;
+        (A.kept||[]).forEach(kp=>{ const e=epAdj.get(kp.u.li+':'+kp.u.tag); if(e) e.x=A.x; });
+        busDots.forEach(d=>{ if(Math.abs(d.x-(A.x-dx))<0.5 && d.y>=A.y1-1 && d.y<=A.y2+1) d.x=A.x; });
+        busStubs.forEach(st=>{ if(Math.abs(st.x1-(A.x-dx))<0.5 && st.y>=A.y1-1 && st.y<=A.y2+1) st.x1=A.x; });
+        k=-1;   // sa nouvelle place peut heurter une autre : on revérifie
+      }
+    }
     barrettes.stubs=busStubs;
   }
   const EA=li=>epAdj.get(li+':A')||layout.links[li].epA;
@@ -17108,8 +17130,12 @@ function borneBox(xBody,dir,depth,rows,baseY,sideOfGroup,hCorps,bande,libLabel){
        c'est LE MÊME sur tous les borniers : le langage devient homogène.
        Un appareil, lui, n'en porte pas — il a son propre corps et son propre
        repère, donc aucune confusion possible. */
-    if(!avecBande && libLabel!=null)
-      out+=`<text class="bsname" x="${f1(xo)}" y="${f1(t-4)}">${esc(clip(libLabel,12))}</text>`;
+    /* Le repère est rappelé AU-DESSUS DE CHAQUE PAQUET de bornes. Sur un
+       bornier haut de 1 200 px, le nom écrit une seule fois dans le corps est
+       hors de vue dès qu'on regarde le bas de la page : on ne sait plus sur
+       quel bornier on se raccorde. */
+    if(libLabel!=null)
+      out+=`<text class="bsname" x="${f1(xo+bw/2)}" y="${f1(t-4)}" text-anchor="middle">${esc(clip(libLabel,12))}</text>`;
     out+=`<rect class="bstrip${avecBande?'':' bstrip-x'}" x="${f1(xo)}" y="${f1(t)}" width="${f1(bw)}" height="${f1(b-t)}"/>`;
     /* Le numéro doit TENIR dans la boîte : un repère de borne à 3 ou 4 chiffres
        débordait sur le trait. On rétrécit la police juste ce qu'il faut plutôt
@@ -17167,8 +17193,8 @@ function compSvg(c,sel){
     s+=`<text class="rep-big" x="${f1(bx+bw/2)}" y="${f1(yRep)}" text-anchor="middle">${esc(nom)}</text>`;
     s+=`<text class="des des-vide" x="${f1(bx+bw/2)}" y="${f1(yRep+10)}" text-anchor="middle">bornier</text>`;
     const gauche=rows.filter(p=>(p.dir||0)<=0), droite=rows.filter(p=>(p.dir||0)>=0);
-    if(gauche.length) s+=borneBox(bx,    -1, c.lw, gauche, c.y, null, c.h, true).svg;
-    if(droite.length) s+=borneBox(bx+bw, +1, c.rw, droite, c.y, null, c.h, true).svg;
+    if(gauche.length) s+=borneBox(bx,    -1, c.lw, gauche, c.y, null, c.h, true, nom).svg;
+    if(droite.length) s+=borneBox(bx+bw, +1, c.rw, droite, c.y, null, c.h, true, nom).svg;
   } else {
     // équipement : corps compact, nom centré, borniers de flanc fins et centrés
     const bx=c.lw, bw=c.w-c.lw-c.rw;
