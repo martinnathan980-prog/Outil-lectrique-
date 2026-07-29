@@ -15891,6 +15891,71 @@ function computeLayoutWith(eq, lk, peripheral){
   }
   rangerIlots();
 
+  /* ===== ÉTAPE 8bis — VOISINAGE DES PIQUAGES (candidat) ====================
+     Plusieurs appareils raccordés sur UNE MÊME borne forment un peigne : le
+     dessin les relie par une barrette. Le placement, lui, ne voit que le
+     graphe — chacun n'a qu'un partenaire, le bornier — et n'a donc aucune
+     raison de les mettre côte à côte. Relevé sur l'exploration 2541 : cinq
+     appareils piqués sur la même borne, dont un posé à 380 px au-dessus des
+     quatre autres ; la barrette devait s'étirer sur 590 px pour aller le
+     chercher, en traversant tout ce qui se trouvait sur son chemin.
+
+     On rapproche donc l'isolé de son groupe — mais sous trois verrous, parce
+     que ce qui embellit ce cas-ci pourrait défigurer le suivant :
+       1. le bloc déplacé ne doit avoir AUCUN fil droit (rien à perdre) ;
+       2. il doit exister un créneau libre où il ne touche personne ;
+       3. c'est un CANDIDAT : le concours ne le retient que s'il améliore
+          réellement le dessin — sinon le placement d'origine est conservé. */
+  if(typeof TAP_GROUP!=='undefined' && TAP_GROUP){
+    const pinsDe=id=>{ const a=[]; listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>a.push(p.key))); return a; };
+    // groupes : tous les blocs raccordés à une même borne d'un même bloc
+    const grp=new Map();
+    nodeIds.forEach(id=>pinsDe(id).forEach(k=>{
+      (partners.get(id+SOH+k)||[]).forEach(q=>{ if(q.id===id)return;
+        const cle=q.id+SOH+q.key;
+        (grp.get(cle)||grp.set(cle,new Set()).get(cle)).add(id); }); }));
+    // un bloc dont tous les fils sont pliés n'a aucune droiture à perdre
+    const sansFilDroit=id=>pinsDe(id).every(k=>{ const y=pinY.get(id+SOH+k);
+      return (partners.get(id+SOH+k)||[]).every(q=>q.id===id||Math.abs(pinY.get(q.id+SOH+q.key)-y)>0.6); });
+    grp.forEach(set=>{
+      if(set.size<3) return;
+      const parCol=new Map();
+      set.forEach(id=>{ const c=colOf.get(id)??0; (parCol.get(c)||parCol.set(c,[]).get(c)).push(id); });
+      parCol.forEach(list=>{
+        if(list.length<3) return;
+        const mil=id=>(blockTop.get(id)+blockBot.get(id))/2;
+        const ys=list.map(mil).sort((a,b)=>a-b);
+        const med=ys[ys.length>>1];
+        // étendue du gros du groupe, isolé exclu
+        const proches=list.filter(id=>Math.abs(mil(id)-med)<=140);
+        if(proches.length<list.length-0 && proches.length<3) return;
+        list.forEach(id=>{
+          if(Math.abs(mil(id)-med)<=140) return;             // déjà dans le groupe
+          if(!sansFilDroit(id)) return;                      // verrou 1
+          const h=blockBot.get(id)-blockTop.get(id);
+          const x=nodeX.get(id), w=widthOf(id);
+          const voisins=nodeIds.filter(o=>o!==id && nodeX.get(o)<x+w+6 && x<nodeX.get(o)+widthOf(o)+6)
+            .map(o=>[blockTop.get(o),blockBot.get(o)]).sort((a,b)=>a[0]-b[0]);
+          // créneaux libres entre voisins, on garde celui dont le centre est
+          // le plus près de la médiane du groupe
+          let best=null, bd=Infinity;
+          for(let i=0;i<=voisins.length;i++){
+            const lo=i===0?-1e9:voisins[i-1][1]+10;
+            const hi=i===voisins.length?1e9:voisins[i][0]-10;
+            if(hi-lo<h) continue;                            // verrou 2
+            const t=Math.max(lo,Math.min(hi-h, med-h/2));
+            const d=Math.abs(t+h/2-med);
+            if(d<bd){ bd=d; best=t; } }
+          if(best==null || bd>=Math.abs(mil(id)-med)-4) return;
+          const dy=best-blockTop.get(id);
+          blockTop.set(id,blockTop.get(id)+dy); blockBot.set(id,blockBot.get(id)+dy);
+          pinsDe(id).forEach(k=>pinY.set(id+SOH+k,pinY.get(id+SOH+k)+dy));
+          slidPills.forEach(sp=>{ if(sp.id===id){ sp.y1+=dy; sp.y2+=dy; } });
+        });
+      });
+    });
+  }
+
   let yMin=Infinity,yMax=-Infinity;
   nodeIds.forEach(id=>{ yMin=Math.min(yMin,blockTop.get(id)); yMax=Math.max(yMax,blockBot.get(id)); });
   if(!isFinite(yMin)){ yMin=topY; yMax=topY+200; }
@@ -16113,6 +16178,7 @@ let COND_PINS=false;   // condensation par glissement de broches (essayée en 3e
 let ROUTE_SEED=false;  // amorcer les communautés sur la colonne Route/cheminement
 let SPREAD_LEAF=false; // candidat « étalement » : les départs d'un gros bornier se répartissent des deux côtés
 let SEG_STRIP=false;   // candidat « rails » : un gros bornier est découpé en segments de bornes consécutives
+let TAP_GROUP=false;   // candidat « voisinage » : les appareils piqués sur une MÊME borne se rassemblent
 function countStraight(wires){ return wires.filter(w=>w.pts.length===2).length; }
 // mesure la largeur de goulotte réellement occupée par les pistes (segments
 // verticaux) de chaque colonne, pour resserrer les colonnes à la 2e passe.
@@ -16203,7 +16269,7 @@ function auditSchema(){
    Renvoie la mise en page, son routage déjà calculé dans `_routing`. */
 function layoutTry(eq, lk, seed, opt){
   const F = opt || {};
-  const save = {CHW_FIX, OPT_NOGROW, SPLIT_COIL, PF_OPT, USE_CLUSTER, COND_PINS, ROUTE_SEED, SPREAD_LEAF, SEG_STRIP};
+  const save = {CHW_FIX, OPT_NOGROW, SPLIT_COIL, PF_OPT, USE_CLUSTER, COND_PINS, ROUTE_SEED, SPREAD_LEAF, SEG_STRIP, TAP_GROUP};
   try{
     CHW_FIX     = F.chw !== undefined ? F.chw : null;
     OPT_NOGROW  = !!F.nogrow;
@@ -16214,6 +16280,7 @@ function layoutTry(eq, lk, seed, opt){
     ROUTE_SEED  = !!F.routeSeed;
     SPREAD_LEAF = !!F.spread;
     SEG_STRIP   = !!F.rails;
+    TAP_GROUP   = !!F.tapgrp;
     const L = computeLayoutWith(eq, lk, seed);
     L._routing = routeAll(L);
     return L;
@@ -16221,13 +16288,14 @@ function layoutTry(eq, lk, seed, opt){
     CHW_FIX=save.CHW_FIX; OPT_NOGROW=save.OPT_NOGROW; SPLIT_COIL=save.SPLIT_COIL;
     PF_OPT=save.PF_OPT; USE_CLUSTER=save.USE_CLUSTER; COND_PINS=save.COND_PINS;
     ROUTE_SEED=save.ROUTE_SEED; SPREAD_LEAF=save.SPREAD_LEAF; SEG_STRIP=save.SEG_STRIP;
+    TAP_GROUP=save.TAP_GROUP;
   }
 }
 function computeLayout(eq, lk){
   // Ceinture ET bretelles : layoutTry garantit déjà qu'aucun drapeau ne fuit,
   // mais on repart d'un état neutre à l'entrée au cas où du code extérieur en
   // aurait laissé un actif.
-  USE_CLUSTER=false; ROUTE_SEED=false; SPLIT_COIL=false; COND_PINS=false; PF_OPT=false; OPT_NOGROW=false; CHW_FIX=null; SPREAD_LEAF=false; SEG_STRIP=false;
+  USE_CLUSTER=false; ROUTE_SEED=false; SPLIT_COIL=false; COND_PINS=false; PF_OPT=false; OPT_NOGROW=false; CHW_FIX=null; SPREAD_LEAF=false; SEG_STRIP=false; TAP_GROUP=false;
   // --- mesures de qualité d'un essai, partagées par les deux modes ---
   // nombre de segments de fil qui traversent un bloc (doit rester à 0)
   const inBlocOf=L=>{ let n=0; const cs=L.comps;
@@ -16271,8 +16339,16 @@ function computeLayout(eq, lk){
        trompeur - à 12, le cas de référence était plus propre, mais l'ensemble
        était moins bon. */
     const rubanMalus=(L)=>{ const d=shapeOf(L); return 20*d*d; };
+    /* Longueur cumulée des barrettes, en « fils droits équivalents ».
+       Le score ne regardait que les fils : une barrette étirée sur 590 px
+       pour aller chercher un appareil isolé ne lui coûtait rien, alors qu'elle
+       balafre la page et traverse tout sur son passage. 300 px de barrette
+       valent maintenant un fil droit — assez pour départager deux dessins
+       également droits, trop peu pour sacrifier une seule liaison droite. */
+    const barMalus=(L)=>{ const bs=(L._routing.barrettes)||[];
+      let l=0; bs.forEach(b=>l+=Math.abs(b.y2-b.y1)); return l/300*8; };
     const scoreOf=(L)=>countStraight(L._routing.wires)*8 - countCrossings(L._routing.wires)
-                       - inBlocOf(L)*30 - rubanMalus(L);
+                       - inBlocOf(L)*30 - rubanMalus(L) - barMalus(L);
     const areaOf=(L)=>{ let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;
       L.comps.forEach(c=>{ x0=Math.min(x0,c.x); y0=Math.min(y0,c.y); x1=Math.max(x1,c.x+c.w); y1=Math.max(y1,c.y+c.h); });
       return Math.max(1,(x1-x0)*(y1-y0)); };
@@ -16303,6 +16379,7 @@ function computeLayout(eq, lk){
     // ÉTALEMENT des départs d'un gros bornier des deux côtés : essayé à chaque
     // fois (peu coûteux, et c'est le remède qui marche le mieux contre le ruban)
     const spreadModes=[false,true];
+
     /* CONCOURS EN DEUX TEMPS — pour rester RAPIDE au clic.
        Découper le bornier en rails double encore le nombre de rendus. L'essayer
        systématiquement rendait un dépliage interminable (mesuré : 373 s sur une
@@ -16310,13 +16387,13 @@ function computeLayout(eq, lk){
        On joue donc le concours normal d'abord — étalement compris — et on ne
        paie les rails QUE si le gagnant est réellement un ruban. Une page déjà
        bien proportionnée ne coûte donc rien de plus qu'avant. */
-    let bSp=false,bPf=false,bSpr=false,bRl=false;
+    let bSp=false,bPf=false,bSpr=false,bRl=false,bTg=false;
     const jouer=(dims)=>{
       const cands=[];
-      dims.rail.forEach(rl=> spreadModes.forEach(spr=>
+      dims.rail.forEach(rl=> spreadModes.forEach(spr=> dims.tap.forEach(tg=>
         pfModes.forEach(pf=> spModes.forEach(sp=> ngModes.forEach(ng=>
-          opts.forEach(o=>{ const L=layoutTry(eq,lk,o,{lanes:pf,split:sp,nogrow:ng,spread:spr,rails:rl});
-            cands.push({L,o,ng,sp,pf,spr,rl,sc:scoreOf(L),ar:areaOf(L),sh:shapeOf(L)}); }) )))));
+          opts.forEach(o=>{ const L=layoutTry(eq,lk,o,{lanes:pf,split:sp,nogrow:ng,spread:spr,rails:rl,tapgrp:tg});
+            cands.push({L,o,ng,sp,pf,spr,rl,tg,sc:scoreOf(L),ar:areaOf(L),sh:shapeOf(L)}); }) ))))));
       let pool=cands;
       if(balanced){ const ok=cands.filter(c=>c.ar<=OPT_AREA_CAP);
         pool=ok.length?ok:[cands.reduce((m,c)=>c.ar<m.ar?c:m,cands[0])]; }
@@ -16324,18 +16401,25 @@ function computeLayout(eq, lk){
       // PROPORTIONNÉ : ce qui départage un ruban d'une page bien remplie sans
       // sacrifier un seul fil droit.
       pool.forEach(c=>{ if(c.sc>bScore || (c.sc===bScore && best && c.sh<shapeOf(best)-0.02)){
-        bScore=c.sc; best=c.L; bOptX=c.o; bNg=c.ng; bSp=c.sp; bPf=c.pf; bSpr=c.spr; bRl=c.rl; } });
+        bScore=c.sc; best=c.L; bOptX=c.o; bNg=c.ng; bSp=c.sp; bPf=c.pf; bSpr=c.spr; bRl=c.rl; bTg=c.tg; } });
     };
-    jouer({rail:[false]});
+    jouer({rail:[false],tap:[false]});
     // ruban avéré : on rejoue en autorisant le découpage du bornier en rails
-    if(best && shapeOf(best)>0.8) jouer({rail:[true]});
+    if(best && shapeOf(best)>0.8) jouer({rail:[true],tap:[false]});
+    /* PEIGNE ÉTIRÉ : on ne paie le rendu supplémentaire que si une barrette
+       part vraiment trop loin chercher un appareil isolé. Essayer le
+       regroupement à chaque fois doublait le nombre de candidats et faisait
+       expirer le dépliage sur un gros folio ; il ne sert que là où il y a
+       quelque chose à réparer. */
+    const barLong=(L)=>{ let m=0; ((L._routing.barrettes)||[]).forEach(b2=>m=Math.max(m,Math.abs(b2.y2-b2.y1))); return m; };
+    if(best && barLong(best)>260) jouer({rail:[bRl],tap:[true]});
     // 2e passe : RESSERRER les goulottes à la largeur réellement occupée par
     // les pistes (comme en mode complet) -> fini les boulevards vides entre
     // colonnes ; l'ordre vertical (repères) ne change pas. Gardé seulement si
     // le dessin reste aussi droit et devient réellement plus étroit.
     let bFix=null;
     try{ const fix=tightenChannels(best);
-      if(fix){ const L2=layoutTry(eq,lk,bOptX,{chw:fix,nogrow:bNg,split:bSp,lanes:bPf,spread:bSpr,rails:bRl});
+      if(fix){ const L2=layoutTry(eq,lk,bOptX,{chw:fix,nogrow:bNg,split:bSp,lanes:bPf,spread:bSpr,rails:bRl,tapgrp:bTg});
         if(scoreOf(L2)>=bScore-1 && contentW(L2)<contentW(best)*0.97){ best=L2; bFix=fix; bScore=scoreOf(L2); } }
     }catch(_){ }
     // 3e passe (Optimiser uniquement : la condensation est inactive pendant les
@@ -16343,7 +16427,7 @@ function computeLayout(eq, lk){
     // OU à score égal si le dessin devient réellement plus petit (blocs creux
     // refermés sans rien perdre). En mode équilibré : plafond de surface.
     if(OPT_ONCE) try{
-      const L3=layoutTry(eq,lk,bOptX,{condense:true,chw:bFix,nogrow:bNg,split:bSp,lanes:bPf,spread:bSpr,rails:bRl});
+      const L3=layoutTry(eq,lk,bOptX,{condense:true,chw:bFix,nogrow:bNg,split:bSp,lanes:bPf,spread:bSpr,rails:bRl,tapgrp:bTg});
       const s3=scoreOf(L3), a3=areaOf(L3);
       if((s3>bScore || (s3===bScore && a3<areaOf(best)*0.97)) && (!balanced||a3<=OPT_AREA_CAP)){ best=L3; bScore=s3; }
     }catch(_){ }
@@ -16746,12 +16830,13 @@ function defs(){
      /* Le bornier se signe par un aplat TRES pale et un lisere pointille fin :
         assez pour dire « ceci est un bornier », trop leger pour peser sur la
         page. Le cadre bleu et les crochets, eux, chargeaient trop. */
-     .bhead rect{fill:#44566a;stroke:#44566a;stroke-width:1}
-     .bhead text{fill:#ffffff;font-size:6.6px;font-weight:600;letter-spacing:.7px}
-     .comp.xr .bhead rect{fill:#2a72c4;stroke:#2a72c4}   /* bornier deplie */
+     /* Un bornier autonome porte le MEME trait epais qu'un appareil : c'est un
+        materiel a part entiere, pas un accessoire. Une boite de bornes plaquee
+        sur un appareil garde le trait fin — elle appartient a l'appareil. */
+     .bstrip-x{stroke-width:1.7}
      .bcell{fill:#ffffff;stroke:#d2dae1;stroke-width:.7}
      .braccord{fill:#ffffff;stroke:#2b3947;stroke-width:1}
-     .bsname{fill:#55636f;font-size:7.4px;font-weight:600;letter-spacing:1px}
+     .bsname{fill:#3c4a57;font-size:7px;font-weight:600;letter-spacing:.9px}
      .rep-big{fill:#0d151d;font-weight:450;font-size:11.5px;letter-spacing:1.6px}
      /* Une barrette n'est pas un cable : c'est un pont pose entre bornes.
         Le tirete la distingue au premier coup d'oeil d'un conducteur, sans
@@ -16878,7 +16963,6 @@ function wireSvg(w,bridges){ const d=wirePath(w.pts,bridges);
 const BAND=4;      // épaisseur de la bande de raccordement plaquée sur le corps
 const BOXPAD=3;    // marge de la boîte au-delà de la première/dernière borne
 const BANDPAD=4;   // de combien la bande dépasse la boîte, en haut et en bas
-const HDR=10.5;    // hauteur du bandeau de repère d'un bornier
 
 /* Découpe une colonne de bornes en paquets de bornes VOISINES : deux bornes
    très écartées (fils partant vers des zones éloignées) appartiennent à deux
@@ -16931,9 +17015,8 @@ function borneBox(xBody,dir,depth,rows,baseY,sideOfGroup,hCorps,bande,libLabel){
        Un appareil, lui, n'en porte pas — il a son propre corps et son propre
        repère, donc aucune confusion possible. */
     if(!avecBande && libLabel!=null)
-      out+=`<g class="bhead"><rect x="${f1(xo)}" y="${f1(t-HDR)}" width="${f1(bw)}" height="${f1(HDR)}"/>`
-        +`<text x="${f1(xo+bw/2)}" y="${f1(t-HDR+7.6)}" text-anchor="middle">${esc(clip(libLabel,10))}</text></g>`;
-    out+=`<rect class="bstrip" x="${f1(xo)}" y="${f1(t)}" width="${f1(bw)}" height="${f1(b-t)}"/>`;
+      out+=`<text class="bsname" x="${f1(xo)}" y="${f1(t-4)}">${esc(clip(libLabel,12))}</text>`;
+    out+=`<rect class="bstrip${avecBande?'':' bstrip-x'}" x="${f1(xo)}" y="${f1(t)}" width="${f1(bw)}" height="${f1(b-t)}"/>`;
     /* Le numéro doit TENIR dans la boîte : un repère de borne à 3 ou 4 chiffres
        débordait sur le trait. On rétrécit la police juste ce qu'il faut plutôt
        que d'élargir la boîte, qui est un gabarit commun à tous les appareils. */
