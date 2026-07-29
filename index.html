@@ -16643,10 +16643,17 @@ function routeAll(layout){
           const x0=Math.min(a.x,b2.x), x1=Math.max(a.x,b2.x);
           if(x>x0+1 && x<x1-1) n++; });
         return n; };
-      let bx=px+dir*Math.min(20,offMax), bn=Infinity;
-      for(let o=Math.min(10,offMax); o<=offMax; o+=4){
+      /* À NOMBRE DE CROISEMENTS ÉGAL, ON RESTE PRÈS DE LA BORNE SOURCE.
+         La règle inverse — s'éloigner le plus possible — détachait bien la
+         barre de la boîte de bornes, mais la posait si loin qu'on ne voyait
+         plus d'où elle venait : une barre pointillée seule au milieu du vide,
+         avec des piquages, et rien qui la relie visiblement à son appareil.
+         On garde 14 px de dégagement pour ne pas la coller aux bornes, et on
+         ne s'éloigne au-delà que si ça évite réellement des croisements. */
+      let bx=px+dir*Math.min(14,offMax), bn=Infinity;
+      for(let o=Math.min(14,offMax); o<=offMax; o+=4){
         const x=px+dir*o, n=coupe(x);
-        if(n<bn || (n===bn && o>Math.abs(bx-px))){ bn=n; bx=x; } }
+        if(n<bn || (n===bn && o<Math.abs(bx-px))){ bn=n; bx=x; } }
       layout.comps.forEach(c=>{ if(c===own)return;
         if(bx>c.x-6 && bx<c.x+c.w+6){
           if(c.y+c.h<=py && c.y+c.h+8>lo) lo=c.y+c.h+8;
@@ -16968,7 +16975,8 @@ function defs(){
         crier, et different du bleu des reperes deplies. */
      .barrette{stroke:#17706b;stroke-width:.8;stroke-linecap:butt;stroke-dasharray:1.8 1.6}
      .barfeed{fill:#17706b;stroke:#ffffff;stroke-width:1}
-     .barfeedline{stroke:#17706b;stroke-width:1.35;stroke-linecap:butt}
+     .barfeedline{stroke:#17706b;stroke-width:1.5;stroke-linecap:butt}
+     .busdot{fill:#17706b;stroke:#ffffff;stroke-width:.8}
      .busbar{stroke:#17706b;stroke-width:1.1;stroke-linecap:butt;stroke-dasharray:2.6 1.8}
      .plusb circle{fill:#1668c2;opacity:.9}
      .plusb text{fill:#ffffff;font:700 10px ui-monospace,monospace}
@@ -16992,7 +17000,7 @@ function defs(){
      .comp{transition:opacity .12s}
      /* MODE FOCUS : au survol d'un bloc ou au clic sur un fil, tout le reste
         s'estompe et le net (ou les fils du bloc) ressort net et épais. */
-     .focus .cab,.focus .w-int,.focus .barrette,.focus .busbar,.focus .barfeedline,.focus .jn,.focus .barfeed{opacity:.10}
+     .focus .cab,.focus .w-int,.focus .barrette,.focus .busbar,.focus .barfeedline,.focus .jn,.focus .busdot,.focus .barfeed{opacity:.10}
      .focus .comp{opacity:.28}
      .focus .cab.hl{opacity:1;stroke-width:2.9}
      .focus .comp.hl{opacity:1}
@@ -17268,7 +17276,14 @@ function sceneInner(layout,routing){
     // tracée comme un fil vertical : elle enjambe donc les fils qu'elle croise
     body+=`<path class="${bar.bus?'busbar':'barrette'}" fill="none" d="${wirePath([{x:bar.x,y:bar.y1},{x:bar.x,y:bar.y2}],routing.bridges)}"/>`;
     if(bar.py!=null) body+=`<rect class="barfeed" x="${f1(bar.x-3.2)}" y="${f1(bar.py-3.2)}" width="6.4" height="6.4"/>`; });
-  (routing.busDots||[]).forEach(d=>body+=`<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="2.2"/>`);
+  /* LE PIQUAGE N'EST PAS UNE JONCTION DE FIL. Les deux se dessinaient avec la
+     MEME pastille noire : on voyait de gros ronds sur une barre en pointillé
+     sans comprendre qu'ils lui appartenaient, ni d'où venait le courant. Le
+     piquage prend donc la couleur de la barrette et une taille plus modeste.
+     Tout ce qui est bleu-vert appartient à la barrette — la barre, son carré
+     d'origine, son raccord d'alimentation et ses piquages — et rien d'autre
+     dans le dessin n'a cette couleur. */
+  (routing.busDots||[]).forEach(d=>body+=`<circle class="busdot" cx="${f1(d.x)}" cy="${f1(d.y)}" r="1.9"/>`);
   routing.dots.forEach(d=>body+=`<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="2.4"/>`);
   layout.comps.forEach(c=>body+=compSvg(c,state.sel===c.name));
   /* PAS DE PASTILLE AU BOUT D'UN FIL. Chaque extrémité portait un point
