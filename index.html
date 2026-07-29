@@ -16155,7 +16155,16 @@ function computeLayoutWith(eq, lk, peripheral){
     const epA={x:sA==='R'?cA.x+cA.w:cA.x, y:cA.byKey.get(A.key).y, ch:chOfEnd(ia,sA), stub:sA==='R'?'L':'R'};
     const epB={x:sB==='R'?cB.x+cB.w:cB.x, y:cB.byKey.get(B.key).y, ch:chOfEnd(ib,sB), stub:sB==='R'?'L':'R'};
     const root=find(pin(l.from,l.fromTerm));
-    return {i:li,from:l.from,fromTerm:l.fromTerm,to:l.to,toTerm:l.toTerm,nature:l.nature||'',
+    /* BOUCLE SUR SOI : une liaison dont les DEUX extrémités sont la même borne
+       du même appareil. Ça existe dans la base — saisie en double, reprise de
+       fichier — et ça ne veut rien dire électriquement. Le moteur la traçait
+       quand même : un fil qui sortait de la borne, partait à droite et
+       revenait par le même chemin. Sur le repère 2, sept de ces boucles
+       donnaient sept traits de longueur croissante s'arrêtant dans le vide,
+       en plein milieu du folio. On ne les dessine plus ; elles restent dans la
+       base et l'audit les compte, pour qu'on sache qu'elles sont là. */
+    const boucle = String(l.from)===String(l.to) && String(l.fromTerm)===String(l.toTerm);
+    return {i:li,from:l.from,fromTerm:l.fromTerm,to:l.to,toTerm:l.toTerm,nature:l.nature||'',boucle,
       epA,epB,net:root,color:netColor(root),
       cable:l.cable||'',ctype:l.ctype||'',route:l.route||'',plan:l.plan||'',pn1:l.pn1||'',pn2:l.pn2||''};
   });
@@ -16735,6 +16744,8 @@ function routeAll(layout){
       return true; }
     return false; };
   for(let li=0;li<N;li++){ const l=layout.links[li];
+    // une borne raccordée à elle-même ne se dessine pas (cf. links, « boucle »)
+    if(l.boucle) continue;
     let A=EA(li), B=EB(li);
     if(A.ch>B.ch){ const t=A;A=B;B=t; }
     if(A.ch===B.ch){
@@ -16820,6 +16831,7 @@ function routeAll(layout){
 
   // 3) matérialiser
   for(let li=0;li<N;li++){ if(wires[li])continue; const l=layout.links[li];
+    if(l.boucle) continue;          // borne raccordée à elle-même : rien à tracer
     let A=EA(li), B=EB(li), swapped=false;
     if(A.ch>B.ch){ const t=A;A=B;B=t; swapped=true; }
     let pts;
@@ -16869,7 +16881,10 @@ function routeAll(layout){
     if(Hs.length&&Vs.length&&Hs.length*Vs.length<=6000000){
       for(const v of Vs) for(const h of Hs){
         if(h.y>v.y0+3&&h.y<v.y1-3&&v.x>h.x0+3&&v.x<h.x1-3) bridges.push({x:v.x,y:h.y}); } } }
-  return {wires,bridges,dots,barrettes,busDots};
+  // les liaisons bouclées sur elles-mêmes n'ont produit aucun fil : on retire
+  // les trous pour que tout le reste (compteurs, audit, survol) voie une liste
+  // dense et que le nombre de fils annoncé soit le nombre de fils dessinés.
+  return {wires:wires.filter(Boolean),bridges,dots,barrettes,busDots};
 }
 
 /* ---------- 6. Rendu SVG ---------- */
