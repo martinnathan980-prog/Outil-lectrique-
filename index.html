@@ -88,6 +88,24 @@ main{grid-area:main;position:relative;overflow:hidden;background:#e3e6ea}
 .imp-col textarea{width:100%;height:120px;background:#f7f8fa;border:1px solid var(--line);border-radius:6px;color:var(--ink);font-family:var(--mono);font-size:11px;padding:8px;outline:none;resize:vertical}
 .imp-col textarea:focus{border-color:var(--accent-dim)}
 .modal .foot{display:flex;justify-content:flex-end;gap:8px;padding:0 16px 16px}
+.modal.wide{width:min(1000px,96vw)}
+/* ---- rapport de reconnaissance de la base de retest ---- */
+.rrep{display:flex;flex-direction:column;gap:18px;font-size:12px;line-height:1.55}
+.rrep h4{margin:0 0 6px;font-size:10px;letter-spacing:1.1px;text-transform:uppercase;color:var(--accent-dim);
+         font-weight:650;border-bottom:1px solid var(--line);padding-bottom:4px}
+.rrep .rnote{color:var(--ink-dim);font-size:11.5px;margin:0 0 8px}
+.rrep table{width:100%;border-collapse:collapse;font-size:11.5px}
+.rrep th{text-align:left;font-weight:600;color:var(--ink-faint);font-size:9.5px;letter-spacing:.6px;
+         text-transform:uppercase;padding:3px 8px 3px 0;border-bottom:1px solid var(--line);white-space:nowrap}
+.rrep td{padding:3px 8px 3px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.rrep td.n{font-family:var(--mono);text-align:right;white-space:nowrap}
+.rrep code{font-family:var(--mono);font-size:11px;background:#eef1f5;border:1px solid var(--line);
+           border-radius:3px;padding:0 3px}
+.rrep .verdict{font-weight:650}
+.rrep .v-ok{color:#17706b}
+.rrep .v-no{color:#a8452c}
+.rrep .v-hm{color:#8a6d1f}
+.rrep .ex{font-family:var(--mono);font-size:10.5px;color:var(--ink-dim);word-break:break-all}
 .hint{color:var(--ink-faint);font-size:10.5px}
 ::-webkit-scrollbar{width:11px;height:11px}
 ::-webkit-scrollbar-thumb{background:#c7ccd3;border-radius:6px;border:3px solid var(--chrome2)}
@@ -14153,6 +14171,19 @@ Device;PN1;Description;Cable T/G;Cable Tag;Route;Device_2;Pin2;PN2;Description;F
           <div class="hint" style="margin-top:6px">Choisis un équipement : seul lui et ses liaisons sont dessinés. Clique un bloc voisin (badge +) pour le déplier à son tour ; ✕ sur un jeton pour replier.</div>
         </div>
       </div>
+      <div class="psec collapsed" id="sec-rb">
+        <div class="phead" data-sec="sec-rb"><span class="chev">▾</span><h3>Base de référence</h3><span class="count" id="cnt-rb">—</span></div>
+        <div class="pbody">
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="ghost" id="rb-browse">Charger la base</button>
+            <button class="ghost" id="rb-report" style="display:none">Voir le rapport</button>
+            <button class="ghost" id="rb-forget" style="display:none">Oublier</button>
+            <input type="file" id="rb-file" accept=".xlsm,.xlsx,.xls,.csv,.tsv,.txt" hidden>
+          </div>
+          <div id="rb-stat" class="hint" style="margin-top:6px">Aucune base chargée.</div>
+          <div class="hint" style="margin-top:6px">Le gros fichier de <b>retest</b> — feuille <b>Retest</b>, en-têtes en ligne 4. Il est lu <b>ici, dans ton navigateur</b> : rien ne part sur le réseau, rien n'est enregistré, tout disparaît quand tu fermes l'onglet. Le rapport dit ce que la base contient <i>vraiment</i> : codes de type, barrettes <b>VT</b>, prises de coupure <b>VC</b>, shunts, cohérence des part numbers.</div>
+        </div>
+      </div>
       <div class="psec" id="sec-eq">
         <div class="phead" data-sec="sec-eq"><span class="chev">▾</span><h3>Équipements</h3><span class="count" id="cnt-eq">0</span></div>
         <div class="pbody">
@@ -14253,6 +14284,11 @@ Device;PN1;Description;Cable T/G;Cable Tag;Route;Device_2;Pin2;PN2;Description;F
     <p class="help" id="bhelp"></p>
   </div>
   <div class="foot"><button id="b-edit">Modifier l’équipement</button><button class="primary" id="b-close">Fermer</button></div>
+</div></div>
+<div class="modal-bg" id="rmodal"><div class="modal wide">
+  <h2>Reconnaissance de la base de retest</h2>
+  <div class="body"><div id="rb-body" class="rrep"></div></div>
+  <div class="foot"><button id="rb-copy">Copier le rapport</button><button class="primary" id="rb-close">Fermer</button></div>
 </div></div>
 <datalist id="types">
   <option value="disjoncteur"></option><option value="sectionneur"></option><option value="contacteur"></option>
@@ -17693,6 +17729,393 @@ async function readImportFile(file){
     parseDB(); // enchaîne : construit et dessine le schéma tout seul
   }catch(err){ dbInfo('Erreur : '+(err&&err.message?err.message:err),'err'); }
 }
+
+/* ===========================================================================
+   BASE DE REFERENCE — « retest global »
+   ---------------------------------------------------------------------------
+   PHASE 2 DE L'OUTIL. Le dessin part d'un contrat qui ne declare que les
+   equipements qui comptent. Or une liaison ne va pas toujours d'un appareil a
+   l'autre en direct : elle traverse des pieces que le contrat n'ecrit pas —
+   des BARRETTES (repere contenant « VT »), qui shuntent plusieurs fils sur
+   une borne, et des PRISES DE COUPURE (« VC »), qui font changer de route.
+   Ces pieces existent dans le fichier de retest, parce que les autres
+   contrats les ont ecrites. On va donc les y chercher.
+
+   PREMIERE ETAPE, ET C'EST CELLE-CI : ne rien deviner. Avant d'ecrire le
+   moindre rapprochement, on lit la base et on lui fait dire ce qu'elle
+   contient vraiment — la grammaire des reperes, la facon dont un shunt est
+   ecrit, si un meme equipement porte toujours le meme part number, si deux
+   variantes d'un repere coexistent dans un contrat. Chacune de ces questions
+   decide d'une regle du moteur ; les mesurer coute une lecture et evite de
+   batir sur une intuition.
+
+   RIEN NE SORT. Le fichier est lu par le navigateur, en memoire, et n'est ni
+   envoye ni enregistre : fermer l'onglet l'oublie. C'est la meme regle que
+   pour le reste de l'outil.                                                */
+
+const RB = { rows:null, col:null, head:-1, file:'', sheet:'', txt:'' };
+
+// nom de colonne -> cle interne. Les en-tetes du fichier sont colles
+// (« Device1 », pas « Device 1 ») mais on normalise pour ne pas en dependre.
+const RB_NORM = t => String(t==null?'':t).toLowerCase().replace(/[^a-z0-9]/g,'');
+const RB_COLS = [
+  ['harness',  ['harness','faisceau']],
+  ['device1',  ['device1']],
+  ['pin1',     ['pin1']],
+  ['pn1',      ['pn1','partnumber1']],
+  ['desc1',    ['description1','desc1']],
+  ['cabletg',  ['cabletg','cabletypegauge']],
+  ['cabletag', ['cabletag']],
+  ['route',    ['route','cheminement']],
+  ['device2',  ['device2']],
+  ['pin2',     ['pin2']],
+  ['pn2',      ['pn2','partnumber2']],
+  ['desc2',    ['description2','desc2']],
+  ['fwd',      ['fwd','plan']],
+  ['length',   ['cablelength','cablelengthmm','cablelengthinmm','length','longueur']],
+  ['appareil', ['appareil','aircraft','contrat']],
+  ['retest',   ['dateretest','retestdate','datederetest','retest']]
+];
+
+/* Ou sont les en-tetes ? Sur le fichier de retest ils sont en ligne 4, avec
+   une date et un memo en rouge au-dessus. On ne l'ecrit pas en dur : on prend
+   la ligne des trente premieres qui reconnait le plus de colonnes, a condition
+   d'y trouver au moins Device1 et Device2. Un fichier reorganise demain
+   continuera de marcher. */
+function rbFindHeader(rows){
+  let best=-1, bestN=0, bestCol=null;
+  const lim=Math.min(rows.length, 30);
+  for(let r=0;r<lim;r++){
+    const row=rows[r]||[]; const col={}; let n=0;
+    for(let c=0;c<row.length;c++){
+      const k=RB_NORM(row[c]); if(!k) continue;
+      for(const pair of RB_COLS){
+        const key=pair[0], alias=pair[1];
+        if(col[key]!=null) continue;
+        if(alias.indexOf(k)>=0){ col[key]=c; n++; break; }
+      }
+    }
+    if(col.device1!=null && col.device2!=null && n>bestN){ best=r; bestN=n; bestCol=col; }
+  }
+  return {head:best, col:bestCol, found:bestN};
+}
+
+// decoupage CSV minimal mais correct : separateur devine, guillemets geres
+function rbSplitCSV(text){
+  const TAB=String.fromCharCode(9), CR=String.fromCharCode(13);
+  const head=text.slice(0, 4000);
+  const cnt=ch=>(head.split(ch).length-1);
+  const cands=[[TAB,cnt(TAB)],[';',cnt(';')],[',',cnt(',')]].sort((a,b)=>b[1]-a[1]);
+  const sep=cands[0][0];
+  const out=[]; let row=[], cur='', q=false;
+  for(let i=0;i<text.length;i++){ const ch=text[i];
+    if(q){ if(ch==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=ch; continue; }
+    if(ch==='"'){ q=true; continue; }
+    if(ch===sep){ row.push(cur); cur=''; continue; }
+    if(ch==='\n'){ row.push(cur); out.push(row); row=[]; cur=''; continue; }
+    if(ch===CR) continue;
+    cur+=ch;
+  }
+  if(cur!=='' || row.length){ row.push(cur); out.push(row); }
+  return out;
+}
+
+/* Decomposition d'un repere : <chiffres><code de type><reste>.
+   Exemples releves dans la base : 100SP2 -> 100 / SP / 2 ; 101VT -> 101 / VT.
+   Le code de type est ce qui dit la NATURE de l'equipement — VT une barrette,
+   VC une prise de coupure — donc c'est lui qu'on isole. Le reste (« 2 ») est
+   l'indice qui distingue deux exemplaires voisins, et c'est precisement ce
+   qui fait qu'un meme equipement s'ecrit 101AB dans un contrat et 101AB1
+   dans un autre. */
+function rbParseRep(d){
+  const m=/^([0-9]*)\s*([A-Za-z]+)([0-9A-Za-z\-_.]*)$/.exec(d);
+  if(!m) return null;
+  return {num:m[1], code:m[2].toUpperCase(), tail:m[3], racine:(m[1]+m[2].toUpperCase())};
+}
+
+function rbTop(map, k){
+  return Array.from(map.entries()).sort((a,b)=>b[1]-a[1]).slice(0,k);
+}
+function rbPct(a,b){ return b?(Math.round(1000*a/b)/10+' %'):'—'; }
+function rbNum(n){ return Number(n).toLocaleString('fr-FR'); }
+
+/* -- L'ANALYSE -------------------------------------------------------------
+   Un seul balayage pour les comptages, puis des passes sur les ENSEMBLES
+   distincts (devices, barrettes...) qui sont mille fois plus petits que le
+   nombre de lignes. Les mesures relationnelles couteuses — « le sens inverse
+   existe-t-il ? » — se font sur un echantillon REGULIER (une ligne sur k, pas
+   les k premieres, pour ne pas se limiter au premier contrat du fichier), et
+   le rapport dit toujours sur combien de lignes il a mesure. */
+function rbAnalyse(){
+  const rows=RB.rows, col=RB.col, h=RB.head;
+  const gi=(r,k)=>{ const i=col[k]; if(i==null)return ''; const v=r[i]; return v==null?'':String(v).trim(); };
+  const S=[];
+  const N=rows.length-h-1;
+
+  const dnorm=d=>d.toUpperCase().replace(/\s+/g,'');
+  const vide={}, devInfo=new Map(), harn=new Map(), app=new Map(), routeC=new Map(), cabtg=new Map();
+  let nLignes=0, shunt=0, shuntVT=0, pinNum=0, pinTxt=0, pinVide=0, d2SansPin=0, d2Tiret=0, sale=0;
+  const KEYS=RB_COLS.map(x=>x[0]); KEYS.forEach(k=>{ vide[k]=0; });
+
+  /* UN REPERE SE COMPARE NORMALISE. Ecrit « 101ab » dans une ligne et
+     « 101AB » dans une autre, c'est le MEME equipement mal saisi — pas deux
+     variantes. Sans cette normalisation, le controle des variantes prenait la
+     casse pour une difference reelle et declenchait a tort l'interdiction de
+     rapprocher (mesure : sur un jeu d'essai, 2 « coexistences » annoncees
+     dont une n'etait qu'une minuscule). Le nombre de lignes mal saisies est
+     compte a part, plus bas. */
+  const note=(dev,pn,ap)=>{ if(!dev)return;
+    let o=devInfo.get(dev); if(!o){ o={n:0,pn:new Map(),app:new Set(),lignesPN:0}; devInfo.set(dev,o); }
+    o.n++; if(pn){ o.pn.set(pn,(o.pn.get(pn)||0)+1); o.lignesPN++; }
+    if(ap && o.app.size<40) o.app.add(ap); };
+
+  for(let r=h+1;r<rows.length;r++){
+    const row=rows[r]; if(!row) continue;
+    const d1b=gi(row,'device1'), d2b=gi(row,'device2');
+    if(!d1b && !d2b) continue;
+    const d1=dnorm(d1b), d2=dnorm(d2b);
+    nLignes++;
+    for(let q=0;q<KEYS.length;q++){ if(!gi(row,KEYS[q])) vide[KEYS[q]]++; }
+    const ap=gi(row,'appareil'), hn=gi(row,'harness');
+    if(hn) harn.set(hn,(harn.get(hn)||0)+1);
+    if(ap) app.set(ap,(app.get(ap)||0)+1);
+    const rt=gi(row,'route'); if(rt) routeC.set(rt,(routeC.get(rt)||0)+1);
+    const ct=gi(row,'cabletg'); if(ct) cabtg.set(ct,(cabtg.get(ct)||0)+1);
+    note(d1, gi(row,'pn1'), ap); note(d2, gi(row,'pn2'), ap);
+    if(d1 && d1===d2){ shunt++; if(/VT/i.test(d1)) shuntVT++; }
+    const p1=gi(row,'pin1'), p2=gi(row,'pin2');
+    if(!p1)pinVide++; else if(/^[0-9]+$/.test(p1))pinNum++; else pinTxt++;
+    if(!p2)pinVide++; else if(/^[0-9]+$/.test(p2))pinNum++; else pinTxt++;
+    if(d2 && !p2){ d2SansPin++; if(/^[0-9]+\s*-\s*[0-9]+$/.test(d2)) d2Tiret++; }
+    if(d1b!==d1 || d2b!==d2) sale++;
+  }
+
+  S.push({t:'Volumes', note:'Ce que le fichier contient réellement, une fois les lignes vides écartées.', l:[
+    ['Lignes de données', rbNum(nLignes), 'sur '+rbNum(N)+' lignes sous l’en-tête'],
+    ['Feuille lue', RB.sheet||'—', 'en-têtes trouvés en ligne '+(h+1)],
+    ['Contrats (Appareil)', app.size, rbTop(app,6).map(x=>x[0]+' ('+x[1]+')').join('   ')],
+    ['Faisceaux (Harness)', harn.size, rbTop(harn,6).map(x=>x[0]+' ('+x[1]+')').join('   ')],
+    ['Équipements distincts', devInfo.size, '']
+  ]});
+
+  const codes=new Map(); let horsForme=0; const exHors=[]; const rep=new Map();
+  devInfo.forEach((o,d)=>{ const q=rbParseRep(d); rep.set(d,q);
+    if(!q){ horsForme++; if(exHors.length<8) exHors.push(d); return; }
+    codes.set(q.code,(codes.get(q.code)||0)+1); });
+  const vt=Array.from(devInfo.keys()).filter(d=>/VT/i.test(d));
+  const vc=Array.from(devInfo.keys()).filter(d=>/VC/i.test(d));
+  S.push({t:'Grammaire des repères', note:'Un repère se lit &lt;chiffres&gt;&lt;code de type&gt;&lt;indice&gt; : 100SP2 = 100 / SP / 2. Le code de type dit la nature de l’équipement.', l:[
+    ['Codes de type trouvés', codes.size, rbTop(codes,20).map(x=>x[0]+' ×'+x[1]).join('   ')],
+    ['Repères hors de cette forme', horsForme, exHors.length?('ex. '+exHors.join('  ')):'aucun'],
+    ['Barrettes (contient VT)', vt.length, vt.slice(0,8).join('  ')],
+    ['Prises de coupure (VC)', vc.length, vc.slice(0,8).join('  ')]
+  ]});
+
+  const vtSet=new Set(vt);
+  let vtLignes=0; const vtFan=[];
+  devInfo.forEach((o,d)=>{ if(!vtSet.has(d))return; vtLignes+=o.n; vtFan.push(o.n); });
+  vtFan.sort((a,b)=>a-b);
+  const med=vtFan.length?vtFan[Math.floor(vtFan.length/2)]:0;
+  S.push({t:'Comment s’écrit un shunt', note:'Un shunt relie deux bornes de la MÊME barrette. S’il est écrit comme une ligne à part, Device1 et Device2 y sont identiques.', l:[
+    ['Lignes où Device1 = Device2', rbNum(shunt), shunt?'le shunt EST une ligne à part entière':'le shunt n’est PAS une ligne'],
+    ['…dont sur une barrette VT', rbNum(shuntVT), ''],
+    ['Lignes touchant une barrette', rbNum(vtLignes), ''],
+    ['Lignes par barrette (médiane)', med, vtFan.length?('de '+vtFan[0]+' à '+vtFan[vtFan.length-1]):'']
+  ], v: shunt ? ['v-ok','Le shunt est matérialisé par une ligne : on saura le reproduire tel quel.']
+              : ['v-no','Aucune ligne n’a le même device des deux côtés — le shunt est donc IMPLICITE (plusieurs lignes partageant une borne de la barrette). À confirmer avec toi.']});
+
+  let vcMulti=0, vcMono=0; const vcEx=[];
+  {
+    const vcS=new Set(vc), rtOf=new Map();
+    for(let r=h+1;r<rows.length;r++){ const row=rows[r]; if(!row)continue;
+      const rt=gi(row,'route'); if(!rt)continue;
+      const dd=[dnorm(gi(row,'device1')),dnorm(gi(row,'device2'))];
+      for(let q=0;q<2;q++){ const d=dd[q]; if(!vcS.has(d))continue;
+        let st=rtOf.get(d); if(!st){st=new Set();rtOf.set(d,st);} if(st.size<8) st.add(rt); } }
+    rtOf.forEach((st,d)=>{ if(st.size>1){ vcMulti++; if(vcEx.length<5) vcEx.push(d+' : '+Array.from(st).join(' / ')); } else vcMono++; });
+  }
+  S.push({t:'Prise de coupure et changement de route', note:'Une prise de coupure sert à passer d’une route à une autre. Si c’est vrai dans les données, ses lignes doivent porter des routes différentes.', l:[
+    ['VC avec plusieurs routes', vcMulti, vcEx.join('   ')],
+    ['VC avec une seule route', vcMono, ''],
+    ['Valeurs de Route distinctes', routeC.size, rbTop(routeC,14).map(x=>x[0]+' ×'+x[1]).join('   ')]
+  ], v: vcMulti>vcMono ? ['v-ok','La route change bien de part et d’autre d’une VC : on pourra détecter les prises de coupure PAR le changement de route, et inversement retrouver les routes grâce à elles.']
+                       : ['v-hm','La majorité des VC ne portent qu’une route : le changement de route ne suffira pas à les repérer. On s’en tiendra au code dans le nom.']});
+
+  /* Compter les DEVICES ambigus est trompeur : dix devices douteux vus trois
+     fois chacun ne pesent pas comme un seul vu cinquante mille fois. On donne
+     donc aussi la part des LIGNES concernees, et c'est elle qui rend le
+     verdict. */
+  let pn0=0, pn1c=0, pnN=0, ligUnique=0, ligMulti=0; const pnEx=[];
+  devInfo.forEach((o,d)=>{ const k=o.pn.size;
+    if(!k){ pn0++; return; }
+    if(k===1){ pn1c++; ligUnique+=o.lignesPN; return; }
+    pnN++; ligMulti+=o.lignesPN;
+    if(pnEx.length<6) pnEx.push(d+' → '+Array.from(o.pn.keys()).slice(0,3).join(' | ')); });
+  const pnTot=pn1c+pnN, ligTot=ligUnique+ligMulti;
+  S.push({t:'Un équipement porte-t-il toujours le même part number ?', note:'C’est la question qui décide de tout : si oui, une simple table « device → PN » remplit ton contrat sans ambiguïté.', l:[
+    ['Devices à un seul PN', rbNum(pn1c), rbPct(pn1c,pnTot)+' de ceux qui en ont un'],
+    ['Devices à plusieurs PN', rbNum(pnN), pnEx.join('   ')],
+    ['Devices sans aucun PN', rbNum(pn0), ''],
+    ['Lignes touchées par un device ambigu', rbNum(ligMulti), rbPct(ligMulti,ligTot)+' des lignes qui portent un PN']
+  ], v: pnN===0 ? ['v-ok','Aucune ambiguïté : le PN se déduit du device, point.']
+     : (ligMulti<=ligTot*0.02 ? ['v-ok',rbPct(ligMulti,ligTot)+' des lignes seulement sont concernées : la table « device → PN » suffit, avec une règle d’arbitrage pour la poignée de cas restants.']
+     : (ligMulti<=ligTot*0.10 ? ['v-hm',rbPct(ligMulti,ligTot)+' des lignes sont concernées. La table « device → PN » marche, mais il faut trancher ces cas — par fréquence, par date de retest, ou en te les remontant.']
+                              : ['v-no',rbPct(ligMulti,ligTot)+' des lignes sont concernées : trop pour se fier au seul device, il faudra passer par la liaison complète.']))});
+
+  const parRacine=new Map();
+  rep.forEach((q,d)=>{ if(!q)return; let a=parRacine.get(q.racine); if(!a){a=[];parRacine.set(q.racine,a);} a.push(d); });
+  let grp=0, grpMemePN=0, grpPNdiff=0, coexist=0; const coEx=[], pnDiffEx=[];
+  parRacine.forEach((ds,rac)=>{
+    if(ds.length<2) return; grp++;
+    const pns=new Set(); ds.forEach(d=>devInfo.get(d).pn.forEach((_,k)=>pns.add(k)));
+    if(pns.size<=1) grpMemePN++; else { grpPNdiff++; if(pnDiffEx.length<5) pnDiffEx.push(ds.slice(0,3).join(' / ')+' → '+Array.from(pns).slice(0,3).join(' | ')); }
+    let trouve=false;
+    for(let i=0;i<ds.length && !trouve;i++) for(let j=i+1;j<ds.length && !trouve;j++){
+      const A=devInfo.get(ds[i]).app, B=devInfo.get(ds[j]).app;
+      let ok=false; A.forEach(x=>{ if(B.has(x))ok=true; });
+      if(ok){ coexist++; trouve=true; if(coEx.length<5) coEx.push(ds[i]+' et '+ds[j]); }
+    }
+  });
+  S.push({t:'Variantes de repère — 101AB face à 101AB1', note:'Un même équipement peut prendre un indice d’un contrat à l’autre. Reste à savoir si on a le droit de les confondre.', l:[
+    ['Racines à plusieurs variantes', grp, ''],
+    ['…dont même PN pour toutes', grpMemePN, rbPct(grpMemePN,grp)],
+    ['…dont PN différents', grpPNdiff, pnDiffEx.join('   ')],
+    ['Variantes COEXISTANT dans un contrat', coexist, coEx.join('   ')]
+  ], v: coexist===0
+     ? ['v-ok','Aucune variante ne coexiste avec une autre dans le même contrat : on peut donc traiter 101AB1 comme une écriture de 101AB sans risque de confondre deux équipements distincts.']
+     : ['v-no',coexist+' racine(s) ont deux variantes DANS LE MÊME contrat : ce sont deux équipements différents. Interdiction de normaliser à l’aveugle — le garde-fou est obligatoire.']});
+
+  let ech=0, mDeux=0, mUn=0;
+  {
+    const pas=Math.max(1, Math.ceil(nLignes/200000));
+    const set=new Set(); const arr=[]; let c=0;
+    for(let r=h+1;r<rows.length;r++){ const row=rows[r]; if(!row)continue;
+      const d1=dnorm(gi(row,'device1')), d2=dnorm(gi(row,'device2')); if(!d1&&!d2)continue;
+      if((c++)%pas) continue;
+      const p1=gi(row,'pin1'), p2=gi(row,'pin2');
+      set.add(d1+''+p1+''+d2+''+p2);
+      arr.push([d1,p1,d2,p2]); }
+    ech=arr.length;
+    for(let i=0;i<arr.length;i++){ const a=arr[i];
+      if(set.has(a[2]+''+a[3]+''+a[0]+''+a[1])) mDeux++; else mUn++; }
+  }
+  S.push({t:'Le sens de la liaison', note:'Si la base écrivait chaque fil dans les deux sens, on trouverait systématiquement la ligne miroir. Mesuré sur '+rbNum(ech)+' lignes.', l:[
+    ['Liaisons présentes dans les deux sens', rbNum(mDeux), rbPct(mDeux,ech)],
+    ['Liaisons écrites une seule fois', rbNum(mUn), rbPct(mUn,ech)]
+  ], v: mDeux<ech*0.02
+     ? ['v-ok','La base écrit chaque fil UNE fois, dans un sens. Il faudra donc chercher les deux sens à la main — sinon on rate la moitié des correspondances.']
+     : ['v-hm','Une partie des liaisons apparaît dans les deux sens : attention aux doublons quand on comptera les candidats.']});
+
+  S.push({t:'Taux de remplissage', note:'Ce sur quoi on pourra compter dans la base — et ce qui y manque aussi.', l:
+    RB_COLS.filter(x=>col[x[0]]!=null).map(x=>[x[0], rbPct(nLignes-vide[x[0]],nLignes), rbNum(nLignes-vide[x[0]])+' ligne(s) renseignée(s)'])
+  });
+  S.push({t:'Formes rencontrées', note:'De quoi calibrer les comparaisons sans supposer un format.', l:[
+    ['Bornes purement numériques', rbNum(pinNum), ''],
+    ['Bornes avec des lettres', rbNum(pinTxt), ''],
+    ['Bornes vides', rbNum(pinVide), ''],
+    ['Device2 sans borne', rbNum(d2SansPin), d2Tiret?(rbNum(d2Tiret)+' ressemblent à un numéro de fil, du type 100-200'):''],
+    ['Types de câble distincts', cabtg.size, rbTop(cabtg,12).map(x=>x[0]+' ×'+x[1]).join('   ')],
+    ['Repères en minuscules', rbNum(sale), sale?'à normaliser avant comparaison':'données propres']
+  ]});
+
+  return S;
+}
+
+function rbRender(S){
+  const e2=t=>String(t==null?'':t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  let html='', txt='RECONNAISSANCE DE LA BASE DE RETEST\n'+RB.file+' — feuille '+RB.sheet+'\n';
+  S.forEach(sec=>{
+    html+='<section><h4>'+e2(sec.t)+'</h4>';
+    if(sec.note) html+='<p class="rnote">'+sec.note+'</p>';
+    html+='<table><tbody>';
+    txt+='\n== '+sec.t+' ==\n';
+    sec.l.forEach(li=>{
+      html+='<tr><td>'+e2(li[0])+'</td><td class="n">'+e2(li[1])+'</td><td class="ex">'+e2(li[2]||'')+'</td></tr>';
+      txt+='  '+li[0]+' : '+li[1]+(li[2]?('   ['+li[2]+']'):'')+'\n';
+    });
+    html+='</tbody></table>';
+    if(sec.v){ html+='<p class="verdict '+sec.v[0]+'" style="margin:8px 0 0">'+e2(sec.v[1])+'</p>';
+               txt+='  >> '+sec.v[1]+'\n'; }
+    html+='</section>';
+  });
+  RB.txt=txt;
+  document.getElementById('rb-body').innerHTML=html;
+}
+
+function rbStat(msg){ const el=document.getElementById('rb-stat'); if(el) el.textContent=msg||''; }
+
+async function rbLoad(file){
+  if(!file) return;
+  const name=(file.name||'').toLowerCase();
+  const isXl=/\.xls[xmb]?$/.test(name) || /sheet|excel/.test(file.type||'');
+  try{
+    rbStat('Lecture de « '+file.name+' »…');
+    await new Promise(r=>setTimeout(r,20));
+    let rows, sheet='';
+    if(isXl){
+      await ensureXLSX();
+      const buf=await file.arrayBuffer();
+      /* DEUX PASSAGES, POUR NE PAS AVALER LE CLASSEUR ENTIER. Le retest global
+         porte plusieurs feuilles (Retest, Calcul masse, tris...) et ne lire que
+         celle qui nous interesse divise d'autant la memoire et le temps. Le
+         premier passage ne decompresse que la liste des noms. */
+      let names=[];
+      try{ names=(window.XLSX.read(buf,{type:'array',bookSheets:true}).SheetNames)||[]; }catch(_){ }
+      sheet = names.filter(n=>/retest/i.test(n))[0] || names[0] || '';
+      const opt={type:'array',raw:true,cellFormula:false,cellHTML:false,cellNF:false,cellStyles:false,cellDates:false};
+      if(sheet) opt.sheets=sheet;
+      const wb=window.XLSX.read(buf,opt);
+      const ws=wb.Sheets[sheet]||wb.Sheets[wb.SheetNames[0]];
+      if(!ws) throw new Error('feuille introuvable dans le classeur');
+      if(!sheet) sheet=wb.SheetNames[0];
+      /* blankrows:true — INDISPENSABLE. En sautant les lignes vides, la
+         numerotation glissait : le rapport annoncait « en-tetes ligne 3 »
+         pour des en-tetes qui sont en ligne 4 dans Excel, et l'utilisateur
+         allait verifier au mauvais endroit. Les lignes vides sont ignorees
+         plus loin, a l'analyse. */
+      rows=window.XLSX.utils.sheet_to_json(ws,{header:1,blankrows:true,defval:'',raw:true});
+    } else {
+      rows=rbSplitCSV(await file.text()); sheet='(CSV)';
+    }
+    const f=rbFindHeader(rows);
+    if(f.head<0) throw new Error('en-têtes introuvables : il faut au moins les colonnes Device1 et Device2 (cherchées dans les 30 premières lignes)');
+    RB.rows=rows; RB.col=f.col; RB.head=f.head; RB.file=file.name; RB.sheet=sheet;
+    rbStat('Analyse de '+rbNum(rows.length-f.head-1)+' lignes…');
+    await new Promise(r=>setTimeout(r,20));
+    rbRender(rbAnalyse());
+    document.getElementById('cnt-rb').textContent=rbNum(rows.length-f.head-1);
+    rbStat('✓ « '+file.name+' » — feuille '+sheet+', '+f.found+' colonnes reconnues, en-têtes ligne '+(f.head+1)+'.');
+    document.getElementById('rb-report').style.display='';
+    document.getElementById('rb-forget').style.display='';
+    rbOpenReport();
+  }catch(err){
+    RB.rows=null;
+    rbStat('Erreur : '+(err&&err.message?err.message:err));
+  }
+}
+function rbOpenReport(){ if(!RB.rows) return; document.getElementById('rmodal').style.display='flex'; }
+function rbCloseReport(){ const m=document.getElementById('rmodal'); if(m)m.style.display='none'; }
+function rbForget(){ RB.rows=null; RB.col=null; RB.txt='';
+  document.getElementById('rb-body').innerHTML='';
+  document.getElementById('cnt-rb').textContent='—';
+  document.getElementById('rb-report').style.display='none';
+  document.getElementById('rb-forget').style.display='none';
+  rbStat('Base oubliée. Rien n’a été conservé.'); }
+function bindRefBase(){
+  const inp=document.getElementById('rb-file');
+  const b=document.getElementById('rb-browse'); if(b) b.onclick=()=>inp.click();
+  if(inp) inp.onchange=()=>{ const f=inp.files&&inp.files[0]; inp.value=''; rbLoad(f); };
+  const r=document.getElementById('rb-report'); if(r) r.onclick=rbOpenReport;
+  const g=document.getElementById('rb-forget'); if(g) g.onclick=rbForget;
+  const c=document.getElementById('rb-close'); if(c) c.onclick=rbCloseReport;
+  const cp=document.getElementById('rb-copy');
+  if(cp) cp.onclick=async()=>{ try{ await navigator.clipboard.writeText(RB.txt||'');
+      cp.textContent='Copié ✓'; setTimeout(()=>{cp.textContent='Copier le rapport';},1500);
+    }catch(_){ cp.textContent='Copie refusée'; } };
+  const m=document.getElementById('rmodal');
+  if(m) m.addEventListener('click',e=>{ if(e.target.id==='rmodal') rbCloseReport(); });
+}
+
 function bindImportDrop(){
   const dz=document.getElementById('db-drop'), input=document.getElementById('db-file'),
         browse=document.getElementById('db-browse');
@@ -18138,6 +18561,7 @@ function bindPanel(){
     el.addEventListener('input',()=>{ state.meta[k]=el.value; }); el.addEventListener('change',()=>render()); });
   // sections repliables
   document.querySelectorAll('.phead').forEach(h=>h.addEventListener('click',()=>document.getElementById(h.dataset.sec).classList.toggle('collapsed')));
+  bindRefBase();
 }
 
 function splitLine(line){ if(line.includes('\t'))return line.split('\t'); if(line.includes(';'))return line.split(';'); return line.split(','); }
@@ -18288,7 +18712,7 @@ function init(){
   document.getElementById('zin').onclick=()=>{ state.view.s=Math.min(6,state.view.s*1.2); applyView(); };
   document.getElementById('zout').onclick=()=>{ state.view.s=Math.max(.12,state.view.s/1.2); applyView(); };
   document.getElementById('zfit').onclick=fit;
-  window.addEventListener('keydown',e=>{ if(e.key==='Escape'){closePop();closeModal();closeDrawer();closeBornier();} });
+  window.addEventListener('keydown',e=>{ if(e.key==='Escape'){closePop();closeModal();closeDrawer();closeBornier();rbCloseReport();} });
   let rT; window.addEventListener('resize',()=>{ clearTimeout(rT); rT=setTimeout(()=>{ if(window.innerWidth<=760) fit(); },160); });
   window.addEventListener('orientationchange',()=>setTimeout(fit,300));
   if(!loadEmbedded()) loadSample();
