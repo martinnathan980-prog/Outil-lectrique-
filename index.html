@@ -17857,8 +17857,17 @@ function rbAnalyse(){
   const N=rows.length-h-1;
 
   const dnorm=d=>d.toUpperCase().replace(/\s+/g,'');
+  /* LE PART NUMBER PORTE SA REVISION DANS SON TEXTE. Releve sur la vraie
+     base : un meme equipement affiche « *704A46220028 », « *704A46220028
+     version 1 » et « *704A46220028 version 4 ». Ce sont trois revisions du
+     MEME article, pas trois articles. En les comptant comme distincts, la
+     mesure annoncait 92,7 % de bouts de liaison ambigus — un chiffre qui
+     condamnait la table « device -> PN » alors qu'il ne mesurait qu'une
+     convention d'ecriture. On mesure donc les deux. */
+  const pnorm=v=>v.toUpperCase().replace(/\s+/g,' ').replace(/\s*VERSION\s*\d+\s*$/,'').trim();
   const vide={}, devInfo=new Map(), harn=new Map(), app=new Map(), routeC=new Map(), cabtg=new Map();
-  let nLignes=0, shunt=0, shuntVT=0, pinNum=0, pinTxt=0, pinVide=0, d2SansPin=0, d2Tiret=0, sale=0;
+  let nLignes=0, shunt=0, shuntVT=0, pinNum=0, pinTxt=0, pinVide=0, d2SansPin=0, d2Tiret=0;
+  let sale=0, saleCasse=0, saleEsp=0;
   const KEYS=RB_COLS.map(x=>x[0]); KEYS.forEach(k=>{ vide[k]=0; });
 
   /* UN REPERE SE COMPARE NORMALISE. Ecrit « 101ab » dans une ligne et
@@ -17869,8 +17878,9 @@ function rbAnalyse(){
      dont une n'etait qu'une minuscule). Le nombre de lignes mal saisies est
      compte a part, plus bas. */
   const note=(dev,pn,ap)=>{ if(!dev)return;
-    let o=devInfo.get(dev); if(!o){ o={n:0,pn:new Map(),app:new Set(),lignesPN:0}; devInfo.set(dev,o); }
-    o.n++; if(pn){ o.pn.set(pn,(o.pn.get(pn)||0)+1); o.lignesPN++; }
+    let o=devInfo.get(dev); if(!o){ o={n:0,pn:new Map(),pnb:new Map(),app:new Set(),lignesPN:0}; devInfo.set(dev,o); }
+    o.n++; if(pn){ o.pn.set(pn,(o.pn.get(pn)||0)+1);
+      const b=pnorm(pn); o.pnb.set(b,(o.pnb.get(b)||0)+1); o.lignesPN++; }
     if(ap && o.app.size<40) o.app.add(ap); };
 
   for(let r=h+1;r<rows.length;r++){
@@ -17891,7 +17901,9 @@ function rbAnalyse(){
     if(!p1)pinVide++; else if(/^[0-9]+$/.test(p1))pinNum++; else pinTxt++;
     if(!p2)pinVide++; else if(/^[0-9]+$/.test(p2))pinNum++; else pinTxt++;
     if(d2 && !p2){ d2SansPin++; if(/^[0-9]+\s*-\s*[0-9]+$/.test(d2)) d2Tiret++; }
-    if(d1b!==d1 || d2b!==d2) sale++;
+    if(d1b!==d1 || d2b!==d2){ sale++;
+      if(d1b.toUpperCase()!==d1b || d2b.toUpperCase()!==d2b) saleCasse++;
+      if(/\s/.test(d1b) || /\s/.test(d2b)) saleEsp++; }
   }
 
   S.push({t:'Volumes', note:'Ce que le fichier contient réellement, une fois les lignes vides écartées.', l:[
@@ -17902,18 +17914,45 @@ function rbAnalyse(){
     ['Équipements distincts', devInfo.size, '']
   ]});
 
+  /* FAMILLES DE CONTRATS. Sur la vraie base les appareils s'appellent
+     « IRO AD », « IRO AE », « IRO AF » : un meme programme decline en versions.
+     Une correspondance venue de la meme famille vaut probablement mieux qu'une
+     venue d'un programme etranger — encore faut-il savoir si ces familles
+     existent, et lesquelles. */
+  const fam=new Map();
+  app.forEach((n,a)=>{ const f=String(a).split(/[\s\-_]/)[0];
+    let o=fam.get(f); if(!o){o={n:0,membres:new Set()};fam.set(f,o);} o.n+=n; o.membres.add(a); });
+  const famMulti=Array.from(fam.entries()).filter(x=>x[1].membres.size>1).sort((a,b)=>b[1].n-a[1].n);
+  S.push({t:'Familles de contrats', note:'Un programme décliné en versions — IRO AD, IRO AE, IRO AF — forme une famille. Une correspondance venue de la même famille est probablement plus sûre.', l:[
+    ['Familles (premier mot du nom)', fam.size, ''],
+    ['…à plusieurs contrats', famMulti.length, famMulti.slice(0,8).map(x=>x[0]+' ('+x[1].membres.size+')').join('   ')],
+    ['Contrats seuls dans leur famille', fam.size-famMulti.length, '']
+  ], v: famMulti.length
+     ? ['v-ok','Les familles existent : on pourra préférer une correspondance venue du même programme, et te signaler quand elle vient d’ailleurs.']
+     : ['v-hm','Aucune famille détectée sur le premier mot du nom : dis-moi comment tes contrats se regroupent.']});
+
   const codes=new Map(); let horsForme=0; const exHors=[]; const rep=new Map();
   devInfo.forEach((o,d)=>{ const q=rbParseRep(d); rep.set(d,q);
     if(!q){ horsForme++; if(exHors.length<8) exHors.push(d); return; }
     codes.set(q.code,(codes.get(q.code)||0)+1); });
   const vt=Array.from(devInfo.keys()).filter(d=>/VT/i.test(d));
   const vc=Array.from(devInfo.keys()).filter(d=>/VC/i.test(d));
+  /* « contient VC » attrape aussi VCA, VCB, VCD, VCC, VCFA... On separe donc
+     le code EXACTEMENT egal a VC des codes qui commencent par VC : rien ne dit
+     que ce sont les memes objets, et les confondre serait decider a la place
+     du metier. */
+  const codesVC=Array.from(codes.keys()).filter(c=>c.indexOf('VC')===0&&c!=='VC').sort();
+  const codesVT=Array.from(codes.keys()).filter(c=>c.indexOf('VT')===0&&c!=='VT').sort();
   S.push({t:'Grammaire des repères', note:'Un repère se lit &lt;chiffres&gt;&lt;code de type&gt;&lt;indice&gt; : 100SP2 = 100 / SP / 2. Le code de type dit la nature de l’équipement.', l:[
     ['Codes de type trouvés', codes.size, rbTop(codes,20).map(x=>x[0]+' ×'+x[1]).join('   ')],
     ['Repères hors de cette forme', horsForme, exHors.length?('ex. '+exHors.join('  ')):'aucun'],
-    ['Barrettes (contient VT)', vt.length, vt.slice(0,8).join('  ')],
-    ['Prises de coupure (VC)', vc.length, vc.slice(0,8).join('  ')]
-  ]});
+    ['Barrettes — code exactement VT', codes.get('VT')||0, vt.slice(0,6).join('  ')],
+    ['Autres codes commençant par VT', codesVT.length, codesVT.map(c=>c+' ×'+codes.get(c)).join('   ')||'aucun'],
+    ['Prises de coupure — code exactement VC', codes.get('VC')||0, vc.slice(0,6).join('  ')],
+    ['Autres codes commençant par VC', codesVC.length, codesVC.map(c=>c+' ×'+codes.get(c)).join('   ')||'aucun']
+  ], v: codesVC.length
+     ? ['v-hm','Il existe '+codesVC.length+' code(s) commençant par VC sans être VC. Dis-moi si ce sont aussi des prises de coupure : je ne le décide pas à ta place.']
+     : ['v-ok','Aucun code voisin : VC et VT sont sans ambiguïté.']});
 
   const vtSet=new Set(vt);
   let vtLignes=0; const vtFan=[];
@@ -17923,6 +17962,7 @@ function rbAnalyse(){
   S.push({t:'Comment s’écrit un shunt', note:'Un shunt relie deux bornes de la MÊME barrette. S’il est écrit comme une ligne à part, Device1 et Device2 y sont identiques.', l:[
     ['Lignes où Device1 = Device2', rbNum(shunt), shunt?'le shunt EST une ligne à part entière':'le shunt n’est PAS une ligne'],
     ['…dont sur une barrette VT', rbNum(shuntVT), ''],
+    ['…dont sur autre chose qu’une barrette', rbNum(shunt-shuntVT), (shunt-shuntVT)?'à identifier : épissures ? liaisons internes ?':''],
     ['Lignes touchant une barrette', rbNum(vtLignes), ''],
     ['Lignes par barrette (médiane)', med, vtFan.length?('de '+vtFan[0]+' à '+vtFan[vtFan.length-1]):'']
   ], v: shunt ? ['v-ok','Le shunt est matérialisé par une ligne : on saura le reproduire tel quel.']
@@ -17950,21 +17990,27 @@ function rbAnalyse(){
      donc aussi la part des LIGNES concernees, et c'est elle qui rend le
      verdict. */
   let pn0=0, pn1c=0, pnN=0, ligUnique=0, ligMulti=0; const pnEx=[];
-  devInfo.forEach((o,d)=>{ const k=o.pn.size;
+  let bn1=0, bnN=0, bLigUnique=0, bLigMulti=0; const bEx=[];
+  devInfo.forEach((o,d)=>{ const k=o.pn.size, kb=o.pnb.size;
     if(!k){ pn0++; return; }
-    if(k===1){ pn1c++; ligUnique+=o.lignesPN; return; }
-    pnN++; ligMulti+=o.lignesPN;
-    if(pnEx.length<6) pnEx.push(d+' → '+Array.from(o.pn.keys()).slice(0,3).join(' | ')); });
-  const pnTot=pn1c+pnN, ligTot=ligUnique+ligMulti;
-  S.push({t:'Un équipement porte-t-il toujours le même part number ?', note:'C’est la question qui décide de tout : si oui, une simple table « device → PN » remplit ton contrat sans ambiguïté.', l:[
+    if(k===1){ pn1c++; ligUnique+=o.lignesPN; }
+    else { pnN++; ligMulti+=o.lignesPN;
+      if(pnEx.length<5) pnEx.push(d+' → '+Array.from(o.pn.keys()).slice(0,3).join(' | ')); }
+    if(kb===1){ bn1++; bLigUnique+=o.lignesPN; }
+    else { bnN++; bLigMulti+=o.lignesPN;
+      if(bEx.length<5) bEx.push(d+' → '+Array.from(o.pnb.keys()).slice(0,3).join(' | ')); } });
+  const pnTot=pn1c+pnN, ligTot=ligUnique+ligMulti, bLigTot=bLigUnique+bLigMulti;
+  S.push({t:'Un équipement porte-t-il toujours le même part number ?', note:'La question qui décide de tout. Mesurée deux fois : en prenant le PN au pied de la lettre, puis en ignorant la mention « version N », qui n’est qu’une révision du même article.', l:[
     ['Devices à un seul PN', rbNum(pn1c), rbPct(pn1c,pnTot)+' de ceux qui en ont un'],
     ['Devices à plusieurs PN', rbNum(pnN), pnEx.join('   ')],
     ['Devices sans aucun PN', rbNum(pn0), ''],
-    ['Lignes touchées par un device ambigu', rbNum(ligMulti), rbPct(ligMulti,ligTot)+' des lignes qui portent un PN']
-  ], v: pnN===0 ? ['v-ok','Aucune ambiguïté : le PN se déduit du device, point.']
-     : (ligMulti<=ligTot*0.02 ? ['v-ok',rbPct(ligMulti,ligTot)+' des lignes seulement sont concernées : la table « device → PN » suffit, avec une règle d’arbitrage pour la poignée de cas restants.']
-     : (ligMulti<=ligTot*0.10 ? ['v-hm',rbPct(ligMulti,ligTot)+' des lignes sont concernées. La table « device → PN » marche, mais il faut trancher ces cas — par fréquence, par date de retest, ou en te les remontant.']
-                              : ['v-no',rbPct(ligMulti,ligTot)+' des lignes sont concernées : trop pour se fier au seul device, il faudra passer par la liaison complète.']))});
+    ['Bouts de liaison ambigus — texte brut', rbNum(ligMulti), rbPct(ligMulti,ligTot)+' de ceux qui portent un PN'],
+    ['Bouts de liaison ambigus — révision ignorée', rbNum(bLigMulti), rbPct(bLigMulti,bLigTot)+' : la vraie ambiguïté'],
+    ['…devices encore ambigus', rbNum(bnN), bEx.join('   ')]
+  ], v: bnN===0 ? ['v-ok','Une fois la révision ignorée, aucune ambiguïté : le PN se déduit du device.']
+     : (bLigMulti<=bLigTot*0.05 ? ['v-ok','L’essentiel de l’ambiguïté n’était qu’une histoire de révision. Il reste '+rbPct(bLigMulti,bLigTot)+' de vrais cas : la table « device → PN » tient, avec un arbitrage pour ceux-là.']
+     : (bLigMulti<=bLigTot*0.20 ? ['v-hm','La révision expliquait une partie du bruit ; il reste '+rbPct(bLigMulti,bLigTot)+' de vraie ambiguïté. La table « device → PN » marche mais doit être arbitrée.']
+                                : ['v-no','Même en ignorant la révision, '+rbPct(bLigMulti,bLigTot)+' des bouts de liaison restent ambigus : il faudra passer par la liaison complète.']))});
 
   const parRacine=new Map();
   rep.forEach((q,d)=>{ if(!q)return; let a=parRacine.get(q.racine); if(!a){a=[];parRacine.set(q.racine,a);} a.push(d); });
@@ -17989,26 +18035,35 @@ function rbAnalyse(){
      ? ['v-ok','Aucune variante ne coexiste avec une autre dans le même contrat : on peut donc traiter 101AB1 comme une écriture de 101AB sans risque de confondre deux équipements distincts.']
      : ['v-no',coexist+' racine(s) ont deux variantes DANS LE MÊME contrat : ce sont deux équipements différents. Interdiction de normaliser à l’aveugle — le garde-fou est obligatoire.']});
 
+  /* L'ENSEMBLE DE RECHERCHE DOIT ETRE COMPLET, MEME SI ON NE SONDE QU'UN
+     ECHANTILLON. La premiere version construisait l'index sur une ligne sur
+     trois : pour qu'un aller-retour soit vu, il fallait que les DEUX lignes
+     tombent dans l'echantillon — une chance sur trois. La mesure sous-estimait
+     donc lourdement (58,9 % annonces sur la vraie base, pour un taux reel bien
+     plus eleve). On indexe maintenant TOUTES les lignes et on ne tire au sort
+     que les sondages. */
   let ech=0, mDeux=0, mUn=0;
   {
-    const pas=Math.max(1, Math.ceil(nLignes/200000));
-    const set=new Set(); const arr=[]; let c=0;
+    const SEP=String.fromCharCode(1);
+    const set=new Set();
+    for(let r=h+1;r<rows.length;r++){ const row=rows[r]; if(!row)continue;
+      const d1=dnorm(gi(row,'device1')), d2=dnorm(gi(row,'device2')); if(!d1&&!d2)continue;
+      set.add(d1+SEP+gi(row,'pin1')+SEP+d2+SEP+gi(row,'pin2')); }
+    const pas=Math.max(1, Math.ceil(nLignes/120000)); let c=0;
     for(let r=h+1;r<rows.length;r++){ const row=rows[r]; if(!row)continue;
       const d1=dnorm(gi(row,'device1')), d2=dnorm(gi(row,'device2')); if(!d1&&!d2)continue;
       if((c++)%pas) continue;
-      const p1=gi(row,'pin1'), p2=gi(row,'pin2');
-      set.add(d1+''+p1+''+d2+''+p2);
-      arr.push([d1,p1,d2,p2]); }
-    ech=arr.length;
-    for(let i=0;i<arr.length;i++){ const a=arr[i];
-      if(set.has(a[2]+''+a[3]+''+a[0]+''+a[1])) mDeux++; else mUn++; }
+      ech++;
+      if(set.has(d2+SEP+gi(row,'pin2')+SEP+d1+SEP+gi(row,'pin1'))) mDeux++; else mUn++; }
   }
-  S.push({t:'Le sens de la liaison', note:'Si la base écrivait chaque fil dans les deux sens, on trouverait systématiquement la ligne miroir. Mesuré sur '+rbNum(ech)+' lignes.', l:[
+  S.push({t:'Le sens de la liaison', note:'Si la base écrivait chaque fil dans les deux sens, on trouverait systématiquement la ligne miroir. L’index couvre toutes les lignes ; '+rbNum(ech)+' d’entre elles ont été sondées.', l:[
     ['Liaisons présentes dans les deux sens', rbNum(mDeux), rbPct(mDeux,ech)],
     ['Liaisons écrites une seule fois', rbNum(mUn), rbPct(mUn,ech)]
-  ], v: mDeux<ech*0.02
+  ], v: mDeux<ech*0.05
      ? ['v-ok','La base écrit chaque fil UNE fois, dans un sens. Il faudra donc chercher les deux sens à la main — sinon on rate la moitié des correspondances.']
-     : ['v-hm','Une partie des liaisons apparaît dans les deux sens : attention aux doublons quand on comptera les candidats.']});
+     : (mDeux>ech*0.9
+        ? ['v-ok','La base écrit systématiquement chaque fil dans les deux sens. Chercher dans un seul sens suffit — et il faudra dédoublonner les candidats.']
+        : ['v-hm','Une partie seulement des liaisons apparaît dans les deux sens : il faut chercher dans les DEUX sens, puis dédoublonner.'])});
 
   S.push({t:'Taux de remplissage', note:'Ce sur quoi on pourra compter dans la base — et ce qui y manque aussi.', l:
     RB_COLS.filter(x=>col[x[0]]!=null).map(x=>[x[0], rbPct(nLignes-vide[x[0]],nLignes), rbNum(nLignes-vide[x[0]])+' ligne(s) renseignée(s)'])
@@ -18019,7 +18074,9 @@ function rbAnalyse(){
     ['Bornes vides', rbNum(pinVide), ''],
     ['Device2 sans borne', rbNum(d2SansPin), d2Tiret?(rbNum(d2Tiret)+' ressemblent à un numéro de fil, du type 100-200'):''],
     ['Types de câble distincts', cabtg.size, rbTop(cabtg,12).map(x=>x[0]+' ×'+x[1]).join('   ')],
-    ['Repères en minuscules', rbNum(sale), sale?'à normaliser avant comparaison':'données propres']
+    ['Lignes à repère mal écrit', rbNum(sale), sale?'normalisées avant toute comparaison':'données propres'],
+    ['…dont une minuscule', rbNum(saleCasse), ''],
+    ['…dont un espace parasite', rbNum(saleEsp), '']
   ]});
 
   return S;
