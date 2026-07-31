@@ -17868,6 +17868,7 @@ function rbAnalyse(){
   const vide={}, devInfo=new Map(), harn=new Map(), app=new Map(), routeC=new Map(), cabtg=new Map();
   let nLignes=0, shunt=0, shuntVT=0, pinNum=0, pinTxt=0, pinVide=0, d2SansPin=0, d2Tiret=0;
   let sale=0, saleCasse=0, saleEsp=0;
+  const pinVals=new Map();   // vocabulaire des bornes non numeriques
   const KEYS=RB_COLS.map(x=>x[0]); KEYS.forEach(k=>{ vide[k]=0; });
 
   /* UN REPERE SE COMPARE NORMALISE. Ecrit « 101ab » dans une ligne et
@@ -17898,8 +17899,10 @@ function rbAnalyse(){
     note(d1, gi(row,'pn1'), ap); note(d2, gi(row,'pn2'), ap);
     if(d1 && d1===d2){ shunt++; if(/VT/i.test(d1)) shuntVT++; }
     const p1=gi(row,'pin1'), p2=gi(row,'pin2');
-    if(!p1)pinVide++; else if(/^[0-9]+$/.test(p1))pinNum++; else pinTxt++;
-    if(!p2)pinVide++; else if(/^[0-9]+$/.test(p2))pinNum++; else pinTxt++;
+    if(!p1)pinVide++; else if(/^[0-9]+$/.test(p1))pinNum++; else { pinTxt++;
+      if(pinVals.size<8000) pinVals.set(p1.toUpperCase(),(pinVals.get(p1.toUpperCase())||0)+1); }
+    if(!p2)pinVide++; else if(/^[0-9]+$/.test(p2))pinNum++; else { pinTxt++;
+      if(pinVals.size<8000) pinVals.set(p2.toUpperCase(),(pinVals.get(p2.toUpperCase())||0)+1); }
     if(d2 && !p2){ d2SansPin++; if(/^[0-9]+\s*-\s*[0-9]+$/.test(d2)) d2Tiret++; }
     if(d1b!==d1 || d2b!==d2){ sale++;
       if(d1b.toUpperCase()!==d1b || d2b.toUpperCase()!==d2b) saleCasse++;
@@ -17935,8 +17938,13 @@ function rbAnalyse(){
   devInfo.forEach((o,d)=>{ const q=rbParseRep(d); rep.set(d,q);
     if(!q){ horsForme++; if(exHors.length<8) exHors.push(d); return; }
     codes.set(q.code,(codes.get(q.code)||0)+1); });
-  const vt=Array.from(devInfo.keys()).filter(d=>/VT/i.test(d));
-  const vc=Array.from(devInfo.keys()).filter(d=>/VC/i.test(d));
+  /* On teste le CODE DE TYPE, pas le repere entier : « 100AVC2 » contiendrait
+     VC sans etre une prise de coupure. Les codes VCA, VCB, VCC... sont bien des
+     prises de coupure (confirme par le metier), donc on prend tout ce qui
+     COMMENCE par VC — et rien d'autre. */
+  const codeDe=d=>{ const q=rep.get(d); return q?q.code:''; };
+  const vt=Array.from(devInfo.keys()).filter(d=>codeDe(d).indexOf('VT')===0);
+  const vc=Array.from(devInfo.keys()).filter(d=>codeDe(d).indexOf('VC')===0);
   /* « contient VC » attrape aussi VCA, VCB, VCD, VCC, VCFA... On separe donc
      le code EXACTEMENT egal a VC des codes qui commencent par VC : rien ne dit
      que ce sont les memes objets, et les confondre serait decider a la place
@@ -17950,9 +17958,8 @@ function rbAnalyse(){
     ['Autres codes commençant par VT', codesVT.length, codesVT.map(c=>c+' ×'+codes.get(c)).join('   ')||'aucun'],
     ['Prises de coupure — code exactement VC', codes.get('VC')||0, vc.slice(0,6).join('  ')],
     ['Autres codes commençant par VC', codesVC.length, codesVC.map(c=>c+' ×'+codes.get(c)).join('   ')||'aucun']
-  ], v: codesVC.length
-     ? ['v-hm','Il existe '+codesVC.length+' code(s) commençant par VC sans être VC. Dis-moi si ce sont aussi des prises de coupure : je ne le décide pas à ta place.']
-     : ['v-ok','Aucun code voisin : VC et VT sont sans ambiguïté.']});
+  ], v: ['v-ok','Les codes VCA, VCB, VCC… sont eux aussi des prises de coupure : '
+     +rbNum(vc.length)+' au total, contre '+rbNum(vt.length)+' barrettes. On les reconnaît au code de type, pas au repère entier.']});
 
   const vtSet=new Set(vt);
   let vtLignes=0; const vtFan=[];
@@ -18068,6 +18075,67 @@ function rbAnalyse(){
   S.push({t:'Taux de remplissage', note:'Ce sur quoi on pourra compter dans la base — et ce qui y manque aussi.', l:
     RB_COLS.filter(x=>col[x[0]]!=null).map(x=>[x[0], rbPct(nLignes-vide[x[0]],nLignes), rbNum(nLignes-vide[x[0]])+' ligne(s) renseignée(s)'])
   });
+  /* REPRISE DE BLINDAGE. Le metier signale qu'une borne vide ou marquee
+     « CNT » n'est pas une donnee manquante : c'est une reprise de blindage,
+     qui se traite autrement qu'un fil ordinaire. On sort donc le vocabulaire
+     des bornes non numeriques, pour voir ce qui existe vraiment et ne pas
+     jeter ces lignes en croyant qu'elles sont incompletes. */
+  {
+    const topPin=rbTop(pinVals,24);
+    const cnt=(pinVals.get('CNT')||0);
+    S.push({t:'Bornes particulières et reprises de blindage', note:'Une borne vide ou marquée CNT n’est pas une donnée manquante : c’est une reprise de blindage. Voici tout le vocabulaire des bornes qui ne sont pas de simples nombres.', l:[
+      ['Bornes vides', rbNum(pinVide), 'reprise de blindage probable'],
+      ['Bornes « CNT »', rbNum(cnt), cnt?'reprise de blindage déclarée':'aucune'],
+      ['Autres valeurs distinctes', pinVals.size, topPin.map(x=>x[0]+' ×'+x[1]).join('   ')]
+    ], v: ['v-hm','Ces bouts de liaison seront traités à part : ni remplis, ni comptés comme manquants. Dis-moi si d’autres valeurs de cette liste sont aussi des blindages.']});
+  }
+
+  /* PROFIL DES PRINCIPAUX CODES DE TYPE. « G » est le code le plus repandu de
+     toute la base et personne ne sait dire ce qu'il designe. Plutot que de
+     deviner, on montre ce que ces equipements FONT : combien de lignes, quel
+     part number revient, sur quelles bornes. Un objet se reconnait a son
+     usage. */
+  {
+    const prof=new Map();
+    devInfo.forEach((o,d)=>{ const c=codeDe(d); if(!c)return;
+      let z=prof.get(c); if(!z){ z={dev:0,lig:0,pn:new Map()}; prof.set(c,z); }
+      z.dev++; z.lig+=o.n;
+      o.pnb.forEach((n,k)=>z.pn.set(k,(z.pn.get(k)||0)+n)); });
+    const top=Array.from(prof.entries()).sort((a,b)=>b[1].lig-a[1].lig).slice(0,12);
+    S.push({t:'Profil des principaux codes de type', note:'Ce que ces équipements font réellement dans la base : un objet se reconnaît à son usage, pas à son nom.', l:
+      top.map(x=>{ const c=x[0], z=x[1];
+        const pn=rbTop(z.pn,2).map(y=>y[0]).join('  ');
+        return [c, rbNum(z.lig)+' lignes', z.dev+' équipements · '+(Math.round(10*z.lig/z.dev)/10)+' lignes chacun · PN fréquent : '+(pn||'aucun')]; })
+    });
+  }
+
+  /* LES PART NUMBERS « VERSION N ». Le metier ne sait pas d'ou vient cette
+     mention. Avant de decider qu'on peut l'ignorer, on regarde si la forme
+     nue existe AUSSI, et si les deux se cotoient dans un meme contrat : deux
+     revisions du meme article se cotoient, deux articles distincts non. */
+  {
+    const nues=new Set(), avec=new Map(); let nAvec=0;
+    devInfo.forEach((o,d)=>o.pn.forEach((n,k)=>{
+      const m=/^(.*?)\s*version\s*(\d+)\s*$/i.exec(k);
+      if(m){ nAvec+=n; avec.set(m[1].toUpperCase(),(avec.get(m[1].toUpperCase())||0)+n); }
+      else nues.add(k.toUpperCase()); }));
+    let aussiNue=0; avec.forEach((n,b)=>{ if(nues.has(b)) aussiNue++; });
+    let cotoie=0; const cotEx=[];
+    devInfo.forEach((o,d)=>{ if(o.pn.size<2)return;
+      const bases=new Set(); let versionne=false;
+      o.pn.forEach((n,k)=>{ const m=/^(.*?)\s*version\s*\d+\s*$/i.exec(k);
+        if(m){versionne=true; bases.add(m[1].toUpperCase());} else bases.add(k.toUpperCase()); });
+      if(versionne && bases.size===1){ cotoie++;
+        if(cotEx.length<4) cotEx.push(d+' : '+Array.from(o.pn.keys()).slice(0,3).join(' | ')); } });
+    S.push({t:'D’où sort la mention « version N » ?', note:'Personne ne sait ce qu’elle désigne. Avant de décider qu’on peut l’ignorer, on regarde comment elle se comporte.', l:[
+      ['Bouts de liaison avec « version N »', rbNum(nAvec), ''],
+      ['Formes nues distinctes portant aussi une version', rbNum(aussiNue), 'sur '+rbNum(avec.size)+' formes versionnées'],
+      ['Équipements portant la forme nue ET ses versions', rbNum(cotoie), cotEx.join('   ')]
+    ], v: cotoie>0
+      ? ['v-hm','Un même équipement porte à la fois la forme nue et ses versions : ce sont donc des états successifs du même article, pas des articles différents. On peut les rapprocher — mais on recopiera toujours le texte EXACT de la ligne source, jamais une forme reconstruite.']
+      : ['v-hm','La forme nue et les versions ne se côtoient jamais sur un même équipement : prudence, ce ne sont peut-être pas des révisions. On ne les confondra que pour CHERCHER, jamais pour recopier.']});
+  }
+
   S.push({t:'Formes rencontrées', note:'De quoi calibrer les comparaisons sans supposer un format.', l:[
     ['Bornes purement numériques', rbNum(pinNum), ''],
     ['Bornes avec des lettres', rbNum(pinTxt), ''],
