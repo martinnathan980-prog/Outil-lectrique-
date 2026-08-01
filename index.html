@@ -14176,12 +14176,13 @@ Device;PN1;Description;Cable T/G;Cable Tag;Route;Device_2;Pin2;PN2;Description;F
         <div class="pbody">
           <div style="display:flex;gap:6px;flex-wrap:wrap">
             <button class="ghost" id="rb-browse">Charger la base</button>
+            <button class="ghost" id="rb-demo">Contrat d’essai</button>
             <button class="ghost" id="rb-report" style="display:none">Voir le rapport</button>
             <button class="ghost" id="rb-forget" style="display:none">Oublier</button>
             <input type="file" id="rb-file" accept=".xlsm,.xlsx,.xls,.csv,.tsv,.txt" hidden>
           </div>
           <div id="rb-stat" class="hint" style="margin-top:6px">Aucune base chargée.</div>
-          <div class="hint" style="margin-top:6px">Le gros fichier de <b>retest</b> — feuille <b>Retest</b>, en-têtes en ligne 4. Il est lu <b>ici, dans ton navigateur</b> : rien ne part sur le réseau, rien n'est enregistré, tout disparaît quand tu fermes l'onglet. Le rapport dit ce que la base contient <i>vraiment</i> : codes de type, barrettes <b>VT</b>, prises de coupure <b>VC</b>, shunts, cohérence des part numbers.</div>
+          <div class="hint" style="margin-top:6px">Le gros fichier de <b>retest</b> — feuille <b>Retest</b>, en-têtes en ligne 4. Il est lu <b>ici, dans ton navigateur</b> : rien ne part sur le réseau, rien n'est enregistré, tout disparaît quand tu fermes l'onglet. Le rapport dit ce que la base contient <i>vraiment</i> : codes de type, barrettes <b>VT</b>, prises de coupure <b>VC</b>, shunts, cohérence des part numbers.<br><br><b>Contrat d’essai</b> : un faux contrat construit comme un vrai — mêmes repères, mêmes manques — pour essayer la chaîne sans toucher à ton fichier. Il contient deux endroits où une barrette est obligatoire, deux masses, et une reprise de blindage.</div>
         </div>
       </div>
       <div class="psec" id="sec-eq">
@@ -18136,38 +18137,25 @@ function rbAnalyse(){
       : ['v-hm','La forme nue et les versions ne se côtoient jamais sur un même équipement : prudence, ce ne sont peut-être pas des révisions. On ne les confondra que pour CHERCHER, jamais pour recopier.']});
   }
 
-  /* LOCALISATION. Le nombre en tete d'un repere n'est pas un compteur : c'est
-     la ZONE ou l'equipement se trouve. C'est ce qui explique que 408VC1A et
-     408VC2A coexistent — deux prises de coupure de la meme zone 408 — alors
-     qu'on aurait pu les prendre pour deux ecritures du meme objet.
-     On ne se contente pas de l'affirmer, on le MET A L'EPREUVE : si le nombre
-     est bien une zone, deux equipements relies par un fil doivent partager la
-     leur beaucoup plus souvent que le hasard ne le voudrait. Le rapport donne
-     ce taux. */
+  /* LE NOMBRE EN TETE D'UN REPERE NE VEUT RIEN DIRE.
+     J'avais suppose qu'il designait la zone ou l'equipement se trouve — ca
+     expliquait si bien que 408VC1A et 408VC2A coexistent. Le metier a
+     dementi : ce nombre est arbitraire. La vraie localisation vit dans un
+     AUTRE fichier, qui viendra plus tard.
+     On garde quand meme le comptage, parce qu'il sert a autre chose : il dit
+     combien de « racines » distinctes existent, donc a quel point deux
+     repares voisins peuvent etre confondus. Mais on ne l'appelle plus une
+     zone et on n'en tire aucune conclusion de proximite. */
   {
-    const zones=new Map(); let sansZone=0;
-    rep.forEach((q,d)=>{ if(!q||!q.num){ sansZone++; return; }
-      let z=zones.get(q.num); if(!z){ z={dev:0,lig:0}; zones.set(q.num,z); }
-      z.dev++; z.lig+=(devInfo.get(d)||{n:0}).n; });
-    const zoneDe=d=>{ const q=rep.get(d); return q?q.num:''; };
-    let meme=0, autre=0, indef=0;
-    const pas=Math.max(1, Math.ceil(nLignes/150000)); let c=0;
-    for(let r=h+1;r<rows.length;r++){ const row=rows[r]; if(!row)continue;
-      const d1=dnorm(gi(row,'device1')), d2=dnorm(gi(row,'device2')); if(!d1||!d2)continue;
-      if((c++)%pas) continue;
-      const z1=zoneDe(d1), z2=zoneDe(d2);
-      if(!z1||!z2){ indef++; continue; }
-      if(z1===z2) meme++; else autre++; }
-    const tot=meme+autre;
-    const top=Array.from(zones.entries()).sort((a,b)=>b[1].lig-a[1].lig).slice(0,12);
-    S.push({t:'Localisation — la zone est dans le repère', note:'Le nombre en tête d’un repère désigne la zone où l’équipement se trouve : 408VC1A et 408VC2A sont deux prises de coupure de la zone 408. Mis à l’épreuve ci-dessous.', l:[
-      ['Zones distinctes', zones.size, top.map(x=>x[0]+' ('+x[1].dev+' éq.)').join('   ')],
-      ['Équipements sans zone', rbNum(sansZone), sansZone?'repère commençant par une lettre':'aucun'],
-      ['Liaisons DANS une même zone', rbNum(meme), rbPct(meme,tot)],
-      ['Liaisons entre deux zones', rbNum(autre), rbPct(autre,tot)]
-    ], v: meme>tot*0.35
-      ? ['v-ok','Le nombre se comporte bien comme une zone : '+rbPct(meme,tot)+' des liaisons restent chez elles, très au-dessus de ce que donnerait un simple compteur réparti au hasard sur '+zones.size+' valeurs. On pourra donc préférer une correspondance de la même zone, et signaler quand elle vient d’ailleurs.']
-      : ['v-hm','Seulement '+rbPct(meme,tot)+' des liaisons restent dans une même zone. Soit les zones sont très petites, soit le nombre en tête ne désigne pas une localisation — dis-moi ce qu’il représente.']});
+    const prefs=new Map(); let sansPref=0;
+    rep.forEach((q,d)=>{ if(!q||!q.num){ sansPref++; return; }
+      prefs.set(q.num,(prefs.get(q.num)||0)+1); });
+    S.push({t:'Le nombre en tête d’un repère', note:'Ce n’est PAS une localisation — le métier l’a confirmé, ce nombre est arbitraire. La vraie zone viendra d’un fichier séparé. On le compte seulement pour savoir combien de repères se ressemblent.', l:[
+      ['Préfixes distincts', prefs.size, ''],
+      ['Repères sans préfixe', rbNum(sansPref), sansPref?'commencent par une lettre':'aucun'],
+      ['Préfixes portant plusieurs équipements', Array.from(prefs.values()).filter(n=>n>1).length,
+        'autant de familles de repères voisins']
+    ], v:['v-hm','Aucune conclusion de proximité n’est tirée de ce nombre. La localisation sera chargée à part, dans le volet « Zones ».']});
   }
 
   S.push({t:'Formes rencontrées', note:'De quoi calibrer les comparaisons sans supposer un format.', l:[
@@ -18267,6 +18255,7 @@ function rbForget(){ RB.rows=null; RB.col=null; RB.txt='';
 function bindRefBase(){
   const inp=document.getElementById('rb-file');
   const b=document.getElementById('rb-browse'); if(b) b.onclick=()=>inp.click();
+  const dm=document.getElementById('rb-demo'); if(dm) dm.onclick=()=>{ contratEssai(); fit(); };
   if(inp) inp.onchange=()=>{ const f=inp.files&&inp.files[0]; inp.value=''; rbLoad(f); };
   const r=document.getElementById('rb-report'); if(r) r.onclick=rbOpenReport;
   const g=document.getElementById('rb-forget'); if(g) g.onclick=rbForget;
@@ -18277,6 +18266,125 @@ function bindRefBase(){
     }catch(_){ cp.textContent='Copie refusée'; } };
   const m=document.getElementById('rmodal');
   if(m) m.addEventListener('click',e=>{ if(e.target.id==='rmodal') rbCloseReport(); });
+}
+
+/* ===========================================================================
+   ZONES — OU SE TROUVE L'EQUIPEMENT
+   ---------------------------------------------------------------------------
+   La localisation ne se lit NI dans le repere (le nombre en tete est
+   arbitraire) NI dans le fichier de retest : elle vit dans un fichier a part
+   que le metier fournira. On monte donc la structure maintenant, avec un
+   decoupage provisoire de l'appareil, et le jour ou le vrai fichier arrive il
+   suffit de le deposer : deux colonnes, un repere et une zone, et tout ce qui
+   s'appuie dessus se met a jour sans qu'on retouche le moteur.
+
+   A quoi ca sert : deux equipements de la meme zone sont physiquement voisins.
+   Une barrette proposee depuis la meme zone vaut donc mieux qu'une venue de
+   l'autre bout de l'appareil, meme a configuration egale.                   */
+const ZONES = {
+  map:new Map(),          // repere normalise -> code de zone
+  src:'',                 // d'ou vient la table
+  // Decoupage PROVISOIRE, a remplacer par le vrai fichier. Les codes sont
+  // volontairement neutres : c'est la STRUCTURE qui compte, pas ces valeurs.
+  provisoire:[
+    {z:'Z1',  nom:'Nez — avionique avant'},
+    {z:'Z2',  nom:'Poste de pilotage'},
+    {z:'Z3',  nom:'Console centrale'},
+    {z:'Z4',  nom:'Cabine'},
+    {z:'Z5',  nom:'Soute'},
+    {z:'Z6',  nom:'Toit — boîte de transmission'},
+    {z:'Z7',  nom:'Moteur 1'},
+    {z:'Z8',  nom:'Moteur 2'},
+    {z:'Z9',  nom:'Poutre de queue'},
+    {z:'Z10', nom:'Empennage — rotor arrière'},
+    {z:'Z11', nom:'Train d’atterrissage'},
+    {z:'Z12', nom:'Extérieur — feux et antennes'}
+  ],
+  nomDe(z){ const o=this.provisoire.filter(x=>x.z===z)[0]; return o?o.nom:z; },
+  de(dev){ return this.map.get(String(dev||'').toUpperCase().replace(/\s+/g,''))||''; },
+  memeZone(a,b){ const za=this.de(a), zb=this.de(b); return !!za && za===zb; },
+  charger(rows){
+    // deux colonnes suffisent : un repere, une zone. On devine lesquelles.
+    this.map.clear();
+    let iRep=-1, iZone=-1;
+    for(let r=0;r<Math.min(rows.length,20) && iRep<0;r++){
+      (rows[r]||[]).forEach((c,k)=>{ const t=String(c==null?'':c).toLowerCase().replace(/[^a-z]/g,'');
+        if(iRep<0 && /device|repere|equipement/.test(t)) iRep=k;
+        if(iZone<0 && /zone|localisation|location|position/.test(t)) iZone=k; });
+      if(iRep>=0 && iZone>=0){ rows=rows.slice(r+1); break; }
+    }
+    if(iRep<0||iZone<0){ iRep=0; iZone=1; }   // sans en-tete : les deux premières
+    rows.forEach(row=>{ if(!row)return;
+      const d=String(row[iRep]==null?'':row[iRep]).toUpperCase().replace(/\s+/g,'');
+      const z=String(row[iZone]==null?'':row[iZone]).trim();
+      if(d&&z) this.map.set(d,z); });
+    return this.map.size;
+  }
+};
+
+/* ===========================================================================
+   CONTRAT D'ESSAI
+   ---------------------------------------------------------------------------
+   Un faux contrat, mais construit exactement comme un vrai : la grammaire des
+   reperes du retest (<chiffres><code de type><indice>), les mêmes codes (SP,
+   AB, CD, GH, VN, RC, G pour les masses), et surtout LES MEMES MANQUES —
+   part numbers vides, route vide, aucune barrette declaree.
+
+   A quoi il sert : essayer la chaine complete sans toucher au vrai fichier.
+   On y a mis, volontairement, tous les motifs qui font travailler le moteur :
+
+     - TROIS liaisons partant de la MEME borne : physiquement impossible sans
+       shunt, donc une barrette est obligatoire a cet endroit. C'est le motif
+       que l'outil doit reperer tout seul.
+     - un deuxieme point de shunt, plus petit (deux departs), pour verifier
+       qu'il les traite pareil.
+     - deux equipements dont le repere ne differe que par l'indice (340AB1 et
+       340AB2) : ils ne doivent JAMAIS etre confondus.
+     - des masses (code G) sans part number : elles ne doivent pas etre
+       comptees comme des trous a boucher.
+     - une reprise de blindage (borne CNT) : ni remplie, ni signalee manquante.
+     - une chaine longue, pour que le dessin ait de quoi s'etaler.            */
+function contratEssai(){
+  const L=[];
+  const li=(d1,p1,d2,p2,cab,typ)=>L.push([d1,p1,'',d2,p2,'',cab||'',typ||'',''].join(';'));
+
+  // -- coeur : un calculateur qui distribue vers trois equipements ----------
+  //    les trois partent de la borne 12 : il FAUDRA une barrette ici
+  li('210SP1','12','115CD','3','W-101','DR24');
+  li('210SP1','12','118CD','3','W-102','DR24');
+  li('210SP1','12','409GH2','7','W-103','DR24');
+
+  // -- un second shunt, plus modeste : deux departs sur la borne 4 ----------
+  li('340AB1','4','512VN','1','W-110','DR22');
+  li('340AB1','4','512VN','2','W-111','DR22');
+
+  // -- l'indice qui ne doit pas etre confondu ------------------------------
+  li('340AB1','1','210SP1','3','W-120','DR24');
+  li('340AB2','1','210SP1','4','W-121','DR24');
+
+  // -- une chaine, pour donner de la profondeur au dessin -------------------
+  li('115CD','8','601RC','2','W-130','BN24');
+  li('601RC','5','733LE','1','W-131','BN24');
+  li('733LE','4','409GH2','2','W-132','BN24');
+  li('118CD','8','512VN','5','W-133','DR22');
+  li('409GH2','9','845VG','3','W-134','MLB24');
+  li('845VG','1','601RC','7','W-135','MLB24');
+
+  // -- les masses : code G, jamais de part number --------------------------
+  li('210SP1','20','904G','','W-140','DR20');
+  li('340AB1','20','904G','','W-141','DR20');
+  li('115CD','20','907G','','W-142','DR20');
+  li('118CD','20','907G','','W-143','DR20');
+
+  // -- une reprise de blindage : borne CNT, ce n'est pas un trou -----------
+  li('601RC','11','733LE','CNT','W-150','MLC24');
+
+  const txt='Equip1;Borne;PN;Equip2;Borne;PN;Cable;Type;Route;Plan\n'+L.join('\n');
+  document.getElementById('imp-db').value=txt;
+  parseDB();
+  const st=document.getElementById('rb-stat');
+  if(st) st.textContent='Contrat d’essai chargé : 20 liaisons, 2 points à shunter, 2 masses, 1 blindage.';
+  return {liaisons:L.length, txt};
 }
 
 function bindImportDrop(){
