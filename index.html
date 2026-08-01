@@ -18136,6 +18136,40 @@ function rbAnalyse(){
       : ['v-hm','La forme nue et les versions ne se côtoient jamais sur un même équipement : prudence, ce ne sont peut-être pas des révisions. On ne les confondra que pour CHERCHER, jamais pour recopier.']});
   }
 
+  /* LOCALISATION. Le nombre en tete d'un repere n'est pas un compteur : c'est
+     la ZONE ou l'equipement se trouve. C'est ce qui explique que 408VC1A et
+     408VC2A coexistent — deux prises de coupure de la meme zone 408 — alors
+     qu'on aurait pu les prendre pour deux ecritures du meme objet.
+     On ne se contente pas de l'affirmer, on le MET A L'EPREUVE : si le nombre
+     est bien une zone, deux equipements relies par un fil doivent partager la
+     leur beaucoup plus souvent que le hasard ne le voudrait. Le rapport donne
+     ce taux. */
+  {
+    const zones=new Map(); let sansZone=0;
+    rep.forEach((q,d)=>{ if(!q||!q.num){ sansZone++; return; }
+      let z=zones.get(q.num); if(!z){ z={dev:0,lig:0}; zones.set(q.num,z); }
+      z.dev++; z.lig+=(devInfo.get(d)||{n:0}).n; });
+    const zoneDe=d=>{ const q=rep.get(d); return q?q.num:''; };
+    let meme=0, autre=0, indef=0;
+    const pas=Math.max(1, Math.ceil(nLignes/150000)); let c=0;
+    for(let r=h+1;r<rows.length;r++){ const row=rows[r]; if(!row)continue;
+      const d1=dnorm(gi(row,'device1')), d2=dnorm(gi(row,'device2')); if(!d1||!d2)continue;
+      if((c++)%pas) continue;
+      const z1=zoneDe(d1), z2=zoneDe(d2);
+      if(!z1||!z2){ indef++; continue; }
+      if(z1===z2) meme++; else autre++; }
+    const tot=meme+autre;
+    const top=Array.from(zones.entries()).sort((a,b)=>b[1].lig-a[1].lig).slice(0,12);
+    S.push({t:'Localisation — la zone est dans le repère', note:'Le nombre en tête d’un repère désigne la zone où l’équipement se trouve : 408VC1A et 408VC2A sont deux prises de coupure de la zone 408. Mis à l’épreuve ci-dessous.', l:[
+      ['Zones distinctes', zones.size, top.map(x=>x[0]+' ('+x[1].dev+' éq.)').join('   ')],
+      ['Équipements sans zone', rbNum(sansZone), sansZone?'repère commençant par une lettre':'aucun'],
+      ['Liaisons DANS une même zone', rbNum(meme), rbPct(meme,tot)],
+      ['Liaisons entre deux zones', rbNum(autre), rbPct(autre,tot)]
+    ], v: meme>tot*0.35
+      ? ['v-ok','Le nombre se comporte bien comme une zone : '+rbPct(meme,tot)+' des liaisons restent chez elles, très au-dessus de ce que donnerait un simple compteur réparti au hasard sur '+zones.size+' valeurs. On pourra donc préférer une correspondance de la même zone, et signaler quand elle vient d’ailleurs.']
+      : ['v-hm','Seulement '+rbPct(meme,tot)+' des liaisons restent dans une même zone. Soit les zones sont très petites, soit le nombre en tête ne désigne pas une localisation — dis-moi ce qu’il représente.']});
+  }
+
   S.push({t:'Formes rencontrées', note:'De quoi calibrer les comparaisons sans supposer un format.', l:[
     ['Bornes purement numériques', rbNum(pinNum), ''],
     ['Bornes avec des lettres', rbNum(pinTxt), ''],
