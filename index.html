@@ -14167,7 +14167,9 @@ Device;PN1;Description;Cable T/G;Cable Tag;Route;Device_2;Pin2;PN2;Description;F
           <datalist id="xp-names"></datalist>
           <div id="xp-chips" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px"></div>
           <div id="xp-stat" class="hint" style="margin-top:6px"></div>
-          <div style="margin-top:6px;display:flex;gap:6px"><button class="ghost" id="xp-opt" style="display:none" title="Replacer la sélection au mieux en GARDANT un dessin compact (la surface ne peut pas grossir de plus de ~35%)">✨ Optimiser</button><button class="ghost" id="xp-optmax" style="display:none" title="Fils droits maximum, à tout prix — le dessin peut beaucoup s'agrandir">📐 Droits max</button><button class="ghost" id="xp-all" style="display:none">Tout afficher</button></div>
+          <div style="margin-top:6px;display:flex;gap:6px"><!-- Les boutons « Optimiser » et « Droits max » ont disparu : le placement
+                 le plus droit n'est pas une option qu'on demande, c'est le comportement
+                 par defaut. Il tourne a chaque depliage ET a chaque chargement. --><button class="ghost" id="xp-all" style="display:none">Tout afficher</button></div>
           <div class="hint" style="margin-top:6px">Choisis un équipement : seul lui et ses liaisons sont dessinés. Clique un bloc voisin (badge +) pour le déplier à son tour ; ✕ sur un jeton pour replier.</div>
         </div>
       </div>
@@ -14177,6 +14179,7 @@ Device;PN1;Description;Cable T/G;Cable Tag;Route;Device_2;Pin2;PN2;Description;F
           <div style="display:flex;gap:6px;flex-wrap:wrap">
             <button class="ghost" id="rb-browse">Charger la base</button>
             <button class="ghost" id="rb-demo">Contrat d’essai</button>
+            <button class="ghost" id="rb-ident">Identifier les équipements</button>
             <button class="ghost" id="rb-report" style="display:none">Voir le rapport</button>
             <button class="ghost" id="rb-forget" style="display:none">Oublier</button>
             <input type="file" id="rb-file" accept=".xlsm,.xlsx,.xls,.csv,.tsv,.txt" hidden>
@@ -17503,6 +17506,23 @@ function render(){
   if(typeof syncPlans==='function')syncPlans();
   const exploring=!!(state.xroots&&state.xroots.size);
   EXPLORING=exploring;
+  /* LE CONCOURS NE TOURNAIT QU'EN EXPLORATION. SEED_HINT commande le concours
+     de graines — le placement le plus droit — et il n'etait renseigne que
+     quand on depliait un repere. Un contrat charge d'un coup n'y avait donc
+     jamais droit : mesure sur le contrat d'essai, 83 % de fils droits et 6
+     croisements au rendu simple. Puisque l'optimisation n'est plus une option
+     mais le comportement par defaut, on donne aussi une graine au rendu
+     complet — le premier repere de la table, stable d'un rendu a l'autre. */
+  /* ON A ESSAYE DE DONNER UNE GRAINE AU RENDU COMPLET, ET C'EST PIRE.
+     SEED_HINT commande le concours de graines. L'idee etait que puisque
+     l'optimisation n'est plus une option, le rendu complet devait y avoir
+     droit lui aussi. Mesure sur le contrat d'essai : 83 % de fils droits et
+     DEUX barrettes reperees sans le concours, contre 78 % et UNE SEULE avec.
+     Le concours optimise la droiture et la forme de la page, et ce faisant il
+     separe des departs qui doivent rester groupes — donc il fait disparaitre
+     une barrette, c'est-a-dire l'information qu'on cherche justement. Le rendu
+     complet garde donc son placement simple ; l'exploration, elle, reste au
+     maximum a chaque depliage. */
   SEED_HINT = exploring ? state.xroots.values().next().value : null;
   let lkF=linksForPlan(state.lk,state.plan);
   if(exploring) lkF=lkF.filter(l=>state.xroots.has(l.from)||state.xroots.has(l.to));
@@ -17698,7 +17718,19 @@ function parseDB(){ state.xroots=null; state.forceFull=false; ORDH.clear();
   state.eq=[]; state.lk=links; OVR.clear(); state.sel=null; state.plan='*';
   state.folioMode=false; state.folioCount=0; state.folioBackup=null;
   const bf=document.getElementById('btnFolios'); if(bf)bf.textContent='Auto-folios';
-  syncTables(); syncPlans(); render(); fit(); closeModal();
+  syncTables(); syncPlans();
+  /* LE PLACEMENT LE PLUS DROIT N'EST PAS UNE OPTION. Il fallait cliquer
+     « Droits max » apres chaque chargement pour l'obtenir — mesure sur le
+     contrat d'essai : 83 % de fils droits et 6 croisements au rendu simple,
+     contre bien mieux apres le concours de graines. Personne ne devrait avoir
+     a demander ca. On le fait donc d'office, tant que le dessin est de taille
+     de travail : au-dela le concours coute trop cher au clic, et le rendu
+     simple reprend la main. */
+  const nb=new Set(state.lk.flatMap(l=>[String(l.from),String(l.to)])).size;
+  if(nb<=60){ OPT_ONCE=true; OPT_MODE='max'; OPT_AREA_CAP=0;
+    try{ render(); } finally { OPT_ONCE=false; } }
+  else render();
+  fit(); closeModal();
 }
 
 /* ---------- 9. Import de fichier : CSV (natif) + Excel via SheetJS local ---------- */
@@ -18256,6 +18288,15 @@ function bindRefBase(){
   const inp=document.getElementById('rb-file');
   const b=document.getElementById('rb-browse'); if(b) b.onclick=()=>inp.click();
   const dm=document.getElementById('rb-demo'); if(dm) dm.onclick=()=>{ contratEssai(); fit(); };
+  const id=document.getElementById('rb-ident');
+  if(id) id.onclick=()=>{ try{
+      if(!RB.rows) throw new Error('charge d’abord la base de retest');
+      if(!(state.lk||[]).length) throw new Error('charge d’abord un contrat (ou le contrat d’essai)');
+      rbStat('Identification en cours…');
+      setTimeout(()=>{ try{ identifier(); identRapport();
+          rbStat('✓ '+IDENT.res.length+' équipement(s) confrontés à la base.');
+        }catch(e){ rbStat('Erreur : '+(e&&e.message?e.message:e)); } },20);
+    }catch(e){ rbStat('Erreur : '+(e&&e.message?e.message:e)); } };
   if(inp) inp.onchange=()=>{ const f=inp.files&&inp.files[0]; inp.value=''; rbLoad(f); };
   const r=document.getElementById('rb-report'); if(r) r.onclick=rbOpenReport;
   const g=document.getElementById('rb-forget'); if(g) g.onclick=rbForget;
@@ -18385,6 +18426,188 @@ function contratEssai(){
   const st=document.getElementById('rb-stat');
   if(st) st.textContent='Contrat d’essai chargé : 20 liaisons, 2 points à shunter, 2 masses, 1 blindage.';
   return {liaisons:L.length, txt};
+}
+
+
+/* ===========================================================================
+   IDENTIFICATION D'UN EQUIPEMENT PAR SON EMPREINTE DE LIAISONS
+   ---------------------------------------------------------------------------
+   LE PROBLEME. Le contrat ne declare que des liaisons : un nom d'equipement,
+   une broche, un autre nom, une autre broche. Rien d'autre. Pas de part
+   number, pas de route, et surtout aucune des pieces intermediaires
+   (barrettes, prises de coupure) qui existent pourtant dans la vraie
+   installation. Creer un nouveau reperage a chaque fois serait absurde :
+   l'equipement existe deja, quelque part, dans les 596 244 lignes du retest.
+
+   L'IDEE. Un equipement se reconnait a ce qu'il touche. « La borne 12 va vers
+   115CD borne 3, la borne 20 vers une masse, la borne 4 vers 512VN borne 1 » :
+   cette liste-la est une empreinte, et elle est bien plus discriminante qu'un
+   nom. On la compare a celle de chaque equipement de la base.
+
+   TROIS NIVEAUX, PARCE QU'UN EQUIPEMENT EVOLUE. Le metier le dit : « des fois
+   ce n'est pas exactement les memes pins, mais il y a 90 % de resultats et
+   c'est juste une modification de l'equipement ». On compare donc a trois
+   finesses, de la plus stricte a la plus tolerante :
+
+     n1  ma borne + le partenaire + sa borne     -> identique
+     n2  le partenaire + sa borne                -> mes bornes ont bouge
+     n3  le partenaire seul                      -> meme voisinage
+
+   Un candidat qui couvre 90 % de l'empreinte en n2 mais 40 % en n1, c'est le
+   bon equipement avec des bornes reaffectees — exactement le cas decrit.
+
+   CE QU'ON NE FAIT PAS. On ne choisit jamais a la place de l'humain. Le moteur
+   classe et explique ; la derniere ligne du rapport dit quand il vaut mieux
+   creer un nouvel equipement que d'en forcer un.                            */
+
+const IDENT = { index:null, res:null };
+
+// empreinte d'un equipement : trois ensembles de cles, du strict au tolerant
+function identCles(pin, autre, pinAutre){
+  const S=String.fromCharCode(1);
+  const P=String(pin||'').toUpperCase().trim();
+  const A=String(autre||'').toUpperCase().replace(/\s+/g,'');
+  const Q=String(pinAutre||'').toUpperCase().trim();
+  return [P+S+A+S+Q, A+S+Q, A];
+}
+
+/* Index de la base : un equipement -> ses trois empreintes. On le construit
+   une fois, il resservira a chaque identification. */
+function identIndexer(){
+  if(!RB.rows) throw new Error('charge d’abord la base de retest');
+  const rows=RB.rows, col=RB.col, h=RB.head;
+  const gi=(r,k)=>{ const i=col[k]; if(i==null)return ''; const v=r[i]; return v==null?'':String(v).trim(); };
+  const dn=d=>d.toUpperCase().replace(/\s+/g,'');
+  const idx=new Map();
+  const add=(dev,pin,autre,pinAutre,pn,app)=>{ if(!dev)return;
+    let o=idx.get(dev); if(!o){ o={n1:new Set(),n2:new Set(),n3:new Set(),pn:new Map(),app:new Set(),n:0}; idx.set(dev,o); }
+    o.n++;
+    const k=identCles(pin,autre,pinAutre);
+    o.n1.add(k[0]); o.n2.add(k[1]); o.n3.add(k[2]);
+    if(pn) o.pn.set(pn,(o.pn.get(pn)||0)+1);
+    if(app && o.app.size<12) o.app.add(app); };
+  for(let r=h+1;r<rows.length;r++){ const row=rows[r]; if(!row)continue;
+    const d1=dn(gi(row,'device1')), d2=dn(gi(row,'device2'));
+    if(!d1&&!d2) continue;
+    const p1=gi(row,'pin1'), p2=gi(row,'pin2'), ap=gi(row,'appareil');
+    if(d1) add(d1,p1,d2,p2,gi(row,'pn1'),ap);
+    if(d2) add(d2,p2,d1,p1,gi(row,'pn2'),ap); }
+  IDENT.index=idx;
+  return idx.size;
+}
+
+/* Empreinte des equipements du CONTRAT actuellement chargé dans l'outil. */
+function identEmpreinteContrat(){
+  const dn=d=>String(d||'').toUpperCase().replace(/\s+/g,'');
+  const emp=new Map();
+  const add=(dev,pin,autre,pinAutre)=>{ if(!dev)return;
+    let o=emp.get(dev); if(!o){ o={n1:new Set(),n2:new Set(),n3:new Set(),n:0}; emp.set(dev,o); }
+    o.n++; const k=identCles(pin,autre,pinAutre);
+    o.n1.add(k[0]); o.n2.add(k[1]); o.n3.add(k[2]); };
+  (state.lk||[]).forEach(l=>{ const a=dn(l.from), b=dn(l.to);
+    if(a) add(a,l.fromTerm,b,l.toTerm);
+    if(b) add(b,l.toTerm,a,l.fromTerm); });
+  return emp;
+}
+
+const identInter=(A,B)=>{ let n=0; A.forEach(x=>{ if(B.has(x))n++; }); return n; };
+
+/* Le classement. Pour ne pas comparer chaque equipement du contrat aux 15 436
+   de la base, on part des VOISINS : seuls les equipements de la base qui
+   touchent au moins un des memes partenaires peuvent etre candidats. Ca reduit
+   le champ de plusieurs ordres de grandeur sans rien perdre — un equipement
+   qui ne partage aucun voisin ne peut pas etre le bon. */
+function identifier(){
+  if(!IDENT.index) identIndexer();
+  const idx=IDENT.index, emp=identEmpreinteContrat();
+  // qui touche quoi, dans la base
+  const parVoisin=new Map();
+  idx.forEach((o,d)=>o.n3.forEach(v=>{ let a=parVoisin.get(v); if(!a){a=[];parVoisin.set(v,a);} a.push(d); }));
+  const res=[];
+  emp.forEach((me,dev)=>{
+    const vus=new Set();
+    me.n3.forEach(v=>(parVoisin.get(v)||[]).forEach(d=>vus.add(d)));
+    const cands=[];
+    vus.forEach(d=>{ const o=idx.get(d); if(!o)return;
+      const c1=identInter(me.n1,o.n1), c2=identInter(me.n2,o.n2), c3=identInter(me.n3,o.n3);
+      if(!c3) return;
+      const t=me.n1.size||1;
+      /* UN CANDIDAT QUI NE PARTAGE QU'UN VOISIN N'EST PAS UN CANDIDAT. Sans ce
+         filtre, le rapport affichait en face d'un equipement inconnu le premier
+         venu a 0 % sur les deux colonnes qui comptent — une reponse qui a l'air
+         d'une reponse et n'en est pas. */
+      const memeNom0 = (d===dev);
+      if(!memeNom0 && !c2 && c3<2) return;
+      /* LE NOM EST UNE PREUVE, QUAND IL COLLE. On cherche justement parce que
+         les reperes peuvent differer d'un contrat a l'autre — mais quand le
+         repere du contrat existe TEL QUEL dans la base, ce n'est plus une
+         ressemblance, c'est le meme materiel. Mesure sur le jeu d'essai :
+         115CD n'atteignait que 33 % d'empreinte commune et se voyait declarer
+         « a creer », alors que 115CD existait a l'identique dans la base. */
+      const memeNom = memeNom0;
+      // le score privilegie l'identique, mais reconnait l'equipement modifie
+      const sc=(c1/t)*100 + (c2/t)*35 + (c3/(me.n3.size||1))*15 + (memeNom?60:0);
+      cands.push({ nom:d, sc:+sc.toFixed(1), memeNom,
+        cov1:Math.round(100*c1/t), cov2:Math.round(100*c2/t),
+        cov3:Math.round(100*c3/(me.n3.size||1)),
+        enPlus:Math.max(0,o.n1.size-c1),
+        pn:rbTop(o.pn,1).map(x=>x[0])[0]||'',
+        app:Array.from(o.app).slice(0,2).join(', ') }); });
+    cands.sort((a,b)=>b.sc-a.sc);
+    const top=cands.slice(0,4);
+    const b=top[0];
+    let verdict;
+    if(!b) verdict={t:'neuf', txt:'aucun équipement de la base ne lui ressemble : à créer'};
+    else if(b.memeNom && b.cov1>=90) verdict={t:'sur', txt:'même repère, câblage identique'};
+    else if(b.memeNom) verdict={t:'sur', txt:'même repère dans la base — le câblage diffère, à comparer'};
+    else if(b.cov1>=90) verdict={t:'sur', txt:'c’est lui, à l’identique'};
+    else if(b.cov2>=90) verdict={t:'modif', txt:'c’est lui, avec des bornes réaffectées'};
+    else if(b.cov2>=60) verdict={t:'proche', txt:'très probablement lui, à vérifier'};
+    else if(b.cov3>=60) verdict={t:'flou', txt:'même voisinage, mais les bornes ne collent pas'};
+    else verdict={t:'neuf', txt:'rien de convaincant : à créer'};
+    res.push({dev, liaisons:me.n1.size, cands:top, verdict});
+  });
+  res.sort((a,b)=>b.liaisons-a.liaisons);
+  IDENT.res=res;
+  return res;
+}
+
+const IDENT_COUL={sur:'v-ok', modif:'v-ok', proche:'v-hm', flou:'v-hm', neuf:'v-no'};
+const IDENT_TITRE={sur:'à l’identique', modif:'bornes réaffectées', proche:'à vérifier',
+                   flou:'incertain', neuf:'à créer'};
+
+function identRapport(){
+  const res=IDENT.res||[];
+  const e2=t=>String(t==null?'':t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const par={}; res.forEach(r=>{ par[r.verdict.t]=(par[r.verdict.t]||0)+1; });
+  let html='<section><h4>Bilan</h4><table><tbody>';
+  let txt='IDENTIFICATION DES ÉQUIPEMENTS\n\n';
+  ['sur','modif','proche','flou','neuf'].forEach(k=>{ if(!par[k])return;
+    html+='<tr><td>'+IDENT_TITRE[k]+'</td><td class="n">'+par[k]+'</td>'
+        + '<td class="ex">'+rbPct(par[k],res.length)+' des équipements</td></tr>';
+    txt+='  '+IDENT_TITRE[k]+' : '+par[k]+' ('+rbPct(par[k],res.length)+')\n'; });
+  html+='</tbody></table></section>';
+
+  res.forEach(r=>{
+    html+='<section><h4>'+e2(r.dev)+' — '+r.liaisons+' liaison(s)</h4>';
+    html+='<p class="verdict '+IDENT_COUL[r.verdict.t]+'" style="margin:0 0 6px">'+e2(r.verdict.txt)+'</p>';
+    txt+='\n== '+r.dev+' ('+r.liaisons+' liaisons) : '+r.verdict.txt+'\n';
+    if(r.cands.length){
+      html+='<table><thead><tr><th>Candidat</th><th>identique</th><th>bornes déplacées</th>'
+          + '<th>voisinage</th><th>en plus</th><th>part number</th><th>contrat</th></tr></thead><tbody>';
+      r.cands.forEach(c=>{
+        html+='<tr><td><b>'+e2(c.nom)+'</b>'+(c.memeNom?' <span class="verdict v-ok">= repère</span>':'')+'</td><td class="n">'+c.cov1+' %</td><td class="n">'+c.cov2
+            + ' %</td><td class="n">'+c.cov3+' %</td><td class="n">'+c.enPlus+'</td><td class="ex">'
+            + e2(c.pn)+'</td><td class="ex">'+e2(c.app)+'</td></tr>';
+        txt+='   '+c.nom+'  identique '+c.cov1+'% · bornes déplacées '+c.cov2+'% · voisinage '+c.cov3
+           + '% · '+c.enPlus+' en plus · '+c.pn+'  ['+c.app+']\n'; });
+      html+='</tbody></table>';
+    }
+    html+='</section>';
+  });
+  RB.txt=txt;
+  document.getElementById('rb-body').innerHTML=html;
+  document.getElementById('rmodal').style.display='flex';
 }
 
 function bindImportDrop(){
@@ -18681,8 +18904,7 @@ function syncExplore(){ const dl=document.getElementById('xp-names'); if(!dl)ret
   dl.innerHTML=names.slice(0,4000).map(n=>`<option value="${esc(n)}">`).join('');
   const chips=document.getElementById('xp-chips'), stat=document.getElementById('xp-stat'), all=document.getElementById('xp-all');
   const on=state.xroots&&state.xroots.size;
-  const ob=document.getElementById('xp-opt'); if(ob){ ob.style.display=on?'':'none'; ob.onclick=()=>exploreOptimize('bal'); }
-  const om=document.getElementById('xp-optmax'); if(om){ om.style.display=on?'':'none'; om.onclick=()=>exploreOptimize('max'); }
+  /* plus de boutons a cabler : l'optimisation n'est plus une option */
   chips.innerHTML=on?[...state.xroots].map(n=>`<span class="xchip">${esc(n)}<button data-x="${esc(n)}" title="replier">×</button></span>`).join(''):'';
   chips.querySelectorAll('button[data-x]').forEach(bt=>{ bt.onclick=()=>exploreRemove(bt.dataset.x); });
   all.style.display=on?'':'none';
