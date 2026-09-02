@@ -14181,6 +14181,8 @@ Device;PN1;Description;Cable T/G;Cable Tag;Route;Device_2;Pin2;PN2;Description;F
             <button class="ghost" id="rb-demo">Contrat d’essai</button>
             <button class="ghost" id="rb-ident">Identifier les équipements</button>
             <button class="ghost" id="rb-manq">Ce qui manque</button>
+            <button class="ghost" id="rb-proche">D’où partir ?</button>
+            <button class="ghost" id="rb-zex">Zones d’exemple</button>
             <button class="ghost" id="rb-report" style="display:none">Voir le rapport</button>
             <button class="ghost" id="rb-forget" style="display:none">Oublier</button>
             <input type="file" id="rb-file" accept=".xlsm,.xlsx,.xls,.csv,.tsv,.txt" hidden>
@@ -18289,6 +18291,20 @@ function bindRefBase(){
   const inp=document.getElementById('rb-file');
   const b=document.getElementById('rb-browse'); if(b) b.onclick=()=>inp.click();
   const dm=document.getElementById('rb-demo'); if(dm) dm.onclick=()=>{ contratEssai(); fit(); };
+  const pr=document.getElementById('rb-proche');
+  if(pr) pr.onclick=()=>{ try{
+      if(!RB.rows) throw new Error('charge d’abord la base de retest');
+      if(!(state.lk||[]).length) throw new Error('charge d’abord un contrat');
+      rbStat('Comparaison aux contrats de la base…');
+      setTimeout(()=>{ try{ prochesRapport(); rbStat('✓ contrats classés.'); }
+        catch(e){ rbStat('Erreur : '+(e&&e.message?e.message:e)); } },20);
+    }catch(e){ rbStat('Erreur : '+(e&&e.message?e.message:e)); } };
+  const zx=document.getElementById('rb-zex');
+  if(zx) zx.onclick=()=>{ try{
+      if(!(state.lk||[]).length) throw new Error('charge d’abord un contrat');
+      const r=zonesExemple();
+      rbStat('✓ zones d’exemple posées sur '+r.devices+' équipements ('+r.zones+' zones). Ce n’est PAS la vraie localisation.');
+    }catch(e){ rbStat('Erreur : '+(e&&e.message?e.message:e)); } };
   const mq=document.getElementById('rb-manq');
   if(mq) mq.onclick=()=>{ try{
       if(!(state.lk||[]).length) throw new Error('charge d’abord un contrat');
@@ -18760,6 +18776,212 @@ function manquantsRapport(){
   RB.txt=txt;
   document.getElementById('rb-body').innerHTML=html;
   document.getElementById('rmodal').style.display='flex';
+}
+
+
+/* ===========================================================================
+   DE QUEL CONTRAT PARTIR ?
+   ---------------------------------------------------------------------------
+   LA QUESTION ETAIT MAL POSEE. Jusqu'ici on demandait, equipement par
+   equipement : « qui lui ressemble dans la base ? ». Chaque reponse pouvait
+   venir d'un contrat different — 39 sont disponibles — et on reconstruisait un
+   assemblage qui n'a jamais existe nulle part. Un contrat n'est pas un sac de
+   pieces : c'est une architecture coherente, ou les barrettes, les prises de
+   coupure et les routes se repondent.
+
+   LA BONNE QUESTION est celle du metier : de quel contrat le mien est-il une
+   VARIANTE ? On la tranche par la mesure — pour chacun des contrats de la
+   base, quelle part de MES liaisons y existe deja ? Celui qui en couvre le
+   plus est le point de depart, et on peut dire pourquoi.
+
+   CE QUE CA DEBLOQUE. Une fois le contrat de reference choisi, ce qui me
+   manque n'est plus une devinette : c'est LA DIFFERENCE entre lui et moi. Les
+   liaisons qu'il a et que je n'ai pas, entre des equipements que je possede,
+   passent presque toujours par une piece intermediaire — une barrette, une
+   prise de coupure. C'est exactement ce qu'il faut ajouter, avec son repere,
+   son part number et sa route, tels qu'ils sont ecrits la-bas.               */
+
+const PROCHE = { parContrat:null, res:null, choisi:null };
+
+const pkey=(a,pa,b,pb)=>{ const S=String.fromCharCode(1);
+  const A=String(a||'').toUpperCase().replace(/\s+/g,''), B=String(b||'').toUpperCase().replace(/\s+/g,'');
+  const P=String(pa||'').toUpperCase().trim(), Q=String(pb||'').toUpperCase().trim();
+  // une liaison n'a pas de sens : on range toujours le meme bout en premier
+  return (A<B||(A===B&&P<=Q)) ? A+S+P+S+B+S+Q : B+S+Q+S+A+S+P; };
+
+/* Decoupage de la base par contrat. On garde, pour chacun : ses liaisons, ses
+   equipements, et les lignes brutes — il faudra pouvoir citer la ligne source
+   quand on proposera d'en recopier une. */
+function procheIndexer(){
+  if(!RB.rows) throw new Error('charge d’abord la base de retest');
+  const rows=RB.rows, col=RB.col, h=RB.head;
+  const gi=(r,k)=>{ const i=col[k]; if(i==null)return ''; const v=r[i]; return v==null?'':String(v).trim(); };
+  const dn=d=>d.toUpperCase().replace(/\s+/g,'');
+  const M=new Map();
+  for(let r=h+1;r<rows.length;r++){ const row=rows[r]; if(!row)continue;
+    const d1=dn(gi(row,'device1')), d2=dn(gi(row,'device2'));
+    if(!d1&&!d2) continue;
+    const ap=gi(row,'appareil')||'(sans contrat)';
+    let o=M.get(ap); if(!o){ o={liaisons:new Map(), devices:new Set(), n:0}; M.set(ap,o); }
+    o.n++;
+    if(d1)o.devices.add(d1); if(d2)o.devices.add(d2);
+    if(d1&&d2) o.liaisons.set(pkey(d1,gi(row,'pin1'),d2,gi(row,'pin2')), r);
+  }
+  PROCHE.parContrat=M;
+  return M.size;
+}
+
+// mon contrat, tel qu'il est charge dans l'outil
+function monContrat(){
+  const dn=d=>String(d||'').toUpperCase().replace(/\s+/g,'');
+  const L=new Set(), D=new Set();
+  (state.lk||[]).forEach(l=>{ const a=dn(l.from), b=dn(l.to); if(!a||!b)return;
+    D.add(a); D.add(b); L.add(pkey(a,l.fromTerm,b,l.toTerm)); });
+  return {liaisons:L, devices:D};
+}
+
+/* Le classement. Deux mesures, volontairement separees : la couverture des
+   LIAISONS (le cablage est-il le meme ?) et celle des EQUIPEMENTS (parle-t-on
+   du meme materiel ?). Un contrat peut avoir tous mes equipements et un
+   cablage different — c'est une information, pas un detail, et les melanger
+   dans un score unique la ferait disparaitre. */
+function contratsProches(){
+  if(!PROCHE.parContrat) procheIndexer();
+  const moi=monContrat(), res=[];
+  PROCHE.parContrat.forEach((o,ap)=>{
+    let cl=0, cd=0;
+    moi.liaisons.forEach(k=>{ if(o.liaisons.has(k))cl++; });
+    moi.devices.forEach(d=>{ if(o.devices.has(d))cd++; });
+    if(!cd) return;
+    res.push({ contrat:ap, lignes:o.n,
+      liaisonsCommunes:cl, tauxLiaisons:Math.round(100*cl/Math.max(1,moi.liaisons.size)),
+      devicesCommuns:cd,  tauxDevices:Math.round(100*cd/Math.max(1,moi.devices.size)),
+      sesLiaisons:o.liaisons.size });
+  });
+  res.sort((a,b)=>b.tauxLiaisons-a.tauxLiaisons||b.tauxDevices-a.tauxDevices);
+  PROCHE.res={moi,res};
+  return res;
+}
+
+/* La difference avec un contrat donne. Ce qu'IL a et que je n'ai pas, entre
+   des equipements que je possede — ce sont mes manques. On distingue les
+   liaisons qui passent par une piece intermediaire (VT, VC) de celles qui
+   relient directement deux equipements que j'ai deja : les premieres sont ce
+   qu'il faut AJOUTER, les secondes ce qu'il faut peut-etre corriger. */
+function differentiel(ap){
+  if(!PROCHE.parContrat) procheIndexer();
+  const o=PROCHE.parContrat.get(ap); if(!o) return null;
+  const moi=monContrat();
+  const rows=RB.rows, col=RB.col;
+  const gi=(r,k)=>{ const i=col[k]; if(i==null)return ''; const v=r[i]; return v==null?'':String(v).trim(); };
+  const dn=d=>String(d||'').toUpperCase().replace(/\s+/g,'');
+  const estPiece=d=>{ const q=rbParseRep(d); return !!q && (q.code.indexOf('VT')===0||q.code.indexOf('VC')===0); };
+  const viaPiece=[], entreConnus=[], sesPieces=new Map();
+  o.liaisons.forEach((r,k)=>{
+    if(moi.liaisons.has(k)) return;                       // deja chez moi
+    const row=rows[r]; if(!row) return;
+    const d1=dn(gi(row,'device1')), d2=dn(gi(row,'device2'));
+    const p1=estPiece(d1), p2=estPiece(d2);
+    const item={ de:d1, pinDe:gi(row,'pin1'), vers:d2, pinVers:gi(row,'pin2'),
+      pn1:gi(row,'pn1'), pn2:gi(row,'pn2'), route:gi(row,'route'),
+      cable:gi(row,'cabletg'), ligne:r+1 };
+    if(p1||p2){
+      // une piece intermediaire : n'est retenue que si elle me touche
+      const autre=p1?d2:d1, piece=p1?d1:d2;
+      if(!moi.devices.has(autre)) return;
+      viaPiece.push(item);
+      let z=sesPieces.get(piece); if(!z){ z={nom:piece, pn:(p1?item.pn1:item.pn2), vers:[], route:item.route}; sesPieces.set(piece,z); }
+      z.vers.push(autre+'·'+(p1?item.pinVers:item.pinDe));
+    } else if(moi.devices.has(d1)&&moi.devices.has(d2)) entreConnus.push(item);
+  });
+  // ce que j'ai et qu'il n'a pas
+  const enPlus=[]; moi.liaisons.forEach(k=>{ if(!o.liaisons.has(k)) enPlus.push(k); });
+  return { contrat:ap, pieces:Array.from(sesPieces.values()).sort((a,b)=>b.vers.length-a.vers.length),
+           viaPiece, entreConnus, enPlus:enPlus.length, sesLignes:o.n };
+}
+
+function prochesRapport(){
+  const res=contratsProches();
+  const e2=t=>String(t==null?'':t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const moi=PROCHE.res.moi;
+  let html='', txt='DE QUEL CONTRAT PARTIR ?\n\n';
+  html+='<section><h4>Mon contrat</h4><table><tbody>'
+      + '<tr><td>Équipements</td><td class="n">'+moi.devices.size+'</td><td class="ex"></td></tr>'
+      + '<tr><td>Liaisons</td><td class="n">'+moi.liaisons.size+'</td><td class="ex"></td></tr>'
+      + '<tr><td>Contrats confrontés</td><td class="n">'+res.length+'</td><td class="ex">sur '+PROCHE.parContrat.size+' dans la base</td></tr>'
+      + '</tbody></table></section>';
+  txt+='mes équipements : '+moi.devices.size+' | mes liaisons : '+moi.liaisons.size+'\n\n';
+
+  if(!res.length){
+    html+='<section><p class="verdict v-no">Aucun contrat de la base ne partage un seul équipement avec le tien. Soit les repères ne suivent pas la même convention, soit c’est un appareil vraiment nouveau.</p></section>';
+  } else {
+    html+='<section><h4>Classement</h4><p class="rnote">Deux mesures séparées à dessein : le <b>câblage</b> commun, et le <b>matériel</b> commun. Un contrat peut avoir tous mes équipements et un câblage différent — c’est une information.</p>'
+        + '<table><thead><tr><th>Contrat</th><th>câblage commun</th><th>matériel commun</th><th>ses liaisons</th></tr></thead><tbody>';
+    res.slice(0,10).forEach((x,i)=>{
+      html+='<tr><td>'+(i===0?'<b>'+e2(x.contrat)+'</b>':e2(x.contrat))+'</td>'
+          + '<td class="n">'+x.tauxLiaisons+' % <span class="ex">('+x.liaisonsCommunes+')</span></td>'
+          + '<td class="n">'+x.tauxDevices+' % <span class="ex">('+x.devicesCommuns+')</span></td>'
+          + '<td class="n">'+rbNum(x.sesLiaisons)+'</td></tr>';
+      txt+='  '+x.contrat+' : câblage '+x.tauxLiaisons+'% ('+x.liaisonsCommunes+') · matériel '+x.tauxDevices+'%\n'; });
+    html+='</tbody></table>';
+    const b=res[0];
+    const v = b.tauxLiaisons>=70 ? ['v-ok','Ton contrat est très probablement une variante de <b>'+e2(b.contrat)+'</b> : '+b.tauxLiaisons+' % de ton câblage y existe déjà. C’est de lui qu’il faut partir.']
+            : b.tauxLiaisons>=30 ? ['v-hm','<b>'+e2(b.contrat)+'</b> est le plus proche ('+b.tauxLiaisons+' % du câblage), mais c’est loin d’être une copie. À prendre comme référence, pas comme modèle.']
+            : b.tauxDevices>=50 ? ['v-hm','Aucun contrat ne partage vraiment ton câblage, mais <b>'+e2(b.contrat)+'</b> a '+b.tauxDevices+' % de ton matériel. Même équipements, architecture différente.']
+            : ['v-no','Rien de proche : ton contrat est une architecture nouvelle. On construira à partir des pièces, une par une.'];
+    html+='<p class="verdict '+v[0]+'" style="margin:8px 0 0">'+v[1]+'</p></section>';
+    txt+='\n>> '+v[1].replace(/<[^>]+>/g,'')+'\n';
+
+    // ---- le differentiel avec le meilleur -------------------------------
+    const d=differentiel(b.contrat);
+    PROCHE.choisi=b.contrat;
+    if(d){
+      html+='<section><h4>Ce que '+e2(b.contrat)+' a et que tu n’as pas</h4>'
+          + '<p class="rnote">Ses liaisons absentes de ton contrat, entre des équipements que tu possèdes. Celles qui passent par une barrette ou une prise de coupure sont exactement ce qu’il te manque.</p>'
+          + '<table><tbody>'
+          + '<tr><td>Pièces intermédiaires à reprendre</td><td class="n">'+d.pieces.length+'</td><td class="ex">barrettes et prises de coupure</td></tr>'
+          + '<tr><td>Liaisons passant par elles</td><td class="n">'+d.viaPiece.length+'</td><td class="ex"></td></tr>'
+          + '<tr><td>Liaisons directes en écart</td><td class="n">'+d.entreConnus.length+'</td><td class="ex">à vérifier : oubli, ou vraie différence</td></tr>'
+          + '<tr><td>Liaisons à toi qu’il n’a pas</td><td class="n">'+d.enPlus+'</td><td class="ex">ce qui est propre à ton contrat</td></tr>'
+          + '</tbody></table></section>';
+      txt+='\npièces à reprendre : '+d.pieces.length+' | liaisons via pièce : '+d.viaPiece.length
+         + ' | écarts directs : '+d.entreConnus.length+' | propre à moi : '+d.enPlus+'\n';
+      d.pieces.slice(0,25).forEach(z=>{
+        html+='<section><h4>'+e2(z.nom)+'</h4><table><tbody>'
+            + '<tr><td>Part number</td><td class="ex">'+e2(z.pn||'—')+'</td></tr>'
+            + '<tr><td>Route</td><td class="ex">'+e2(z.route||'—')+'</td></tr>'
+            + '<tr><td>Se raccorde à</td><td class="ex">'+e2(z.vers.join('   '))+'</td></tr>'
+            + '</tbody></table></section>';
+        txt+='  '+z.nom+'  PN '+(z.pn||'-')+'  route '+(z.route||'-')+'  -> '+z.vers.join(' ')+'\n'; });
+    }
+  }
+  RB.txt=txt;
+  document.getElementById('rb-body').innerHTML=html;
+  document.getElementById('rmodal').style.display='flex';
+}
+
+/* ---- Fichier de localisation : un EXEMPLE, en attendant le vrai ----------
+   Le metier ne l'a pas encore. Plutot que d'attendre, on en fabrique un qui a
+   la bonne forme : un repere, une zone. Il permet de faire tourner les trois
+   regles de coupure pour de vrai, et il montre exactement ce qu'on attend —
+   le jour ou le vrai arrive, il se depose a la place sans rien changer.      */
+function zonesExemple(){
+  const dn=d=>String(d||'').toUpperCase().replace(/\s+/g,'');
+  const devs=new Set(); (state.lk||[]).forEach(l=>{ devs.add(dn(l.from)); devs.add(dn(l.to)); });
+  const Z=ZONES.provisoire.map(z=>z.z);
+  const rows=[['Device','Zone']];
+  let i=0; devs.forEach(d=>{ if(!d)return; rows.push([d, Z[(i++)%Z.length]]); });
+  ZONES.charger(rows.map(r=>r.slice()));
+  ZONES.src='exemple';
+  return {devices:ZONES.map.size, zones:Z.length, rows};
+}
+function zonesModele(){
+  // squelette a remplir : la liste de MES equipements, une colonne zone vide
+  const dn=d=>String(d||'').toUpperCase().replace(/\s+/g,'');
+  const devs=new Set(); (state.lk||[]).forEach(l=>{ devs.add(dn(l.from)); devs.add(dn(l.to)); });
+  const lignes=['Device;Zone;Cote;Dedans;X_mm'];
+  Array.from(devs).filter(Boolean).sort().forEach(d=>lignes.push(d+';;;;'));
+  return lignes.join('\n');
 }
 
 function bindImportDrop(){

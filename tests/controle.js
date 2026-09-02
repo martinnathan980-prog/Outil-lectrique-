@@ -1,0 +1,177 @@
+/* ===========================================================================
+   CONTRÔLE COMPLET DE L'OUTIL — à lancer avant tout déploiement.
+   ---------------------------------------------------------------------------
+       node tests/controle.js
+   (sous Linux avec Playwright et Chromium ; voir tests/LISEZMOI.md)
+
+   POURQUOI CE FICHIER EST DANS LE DÉPÔT. La batterie de contrôle vivait dans
+   un dossier temporaire. Il a été vidé pendant une pause du projet, et le
+   filet de sécurité a disparu avec : plus moyen de vérifier qu'un changement
+   ne cassait rien. Versionnée, elle survit, elle se relit, et n'importe qui
+   peut la lancer.
+
+   CE QU'ELLE VÉRIFIE, dans l'ordre où ça compte :
+     1. le fichier se charge seul, bibliothèque Excel comprise ;
+     2. le DESSIN reste sain sur la base embarquée — c'est l'invariant le plus
+        important : aucun fil ne traverse un bloc, aucun bloc n'en chevauche
+        un autre ;
+     3. le contrat d'essai se dessine et ses barrettes sont repérées ;
+     4. les trois règles de prise de coupure répondent, et ne répondent PAS
+        quand la localisation manque ;
+     5. l'identification par empreinte reconnaît un équipement modifié ;
+     6. le classement des contrats désigne le bon point de départ et lit les
+        pièces manquantes dans le différentiel.
+
+   Chaque contrôle affiche OK ou ÉCHEC avec la mesure. Le code de sortie vaut
+   1 si un seul contrôle échoue, pour qu'un enchaînement automatique s'arrête.
+   ========================================================================= */
+const { chromium } = require('playwright');
+const path = require('path');
+
+const FICHIER = 'file://' + path.resolve(__dirname, '..', 'index.html');
+let echecs = 0, total = 0;
+
+function ok(nom, cond, mesure) {
+  total++;
+  if (!cond) echecs++;
+  console.log('  ' + (cond ? 'OK    ' : 'ÉCHEC ') + nom + (mesure ? '   — ' + mesure : ''));
+}
+function titre(t) { console.log('\n' + t); }
+
+(async () => {
+  const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
+  const page = await nav.newPage({ viewport: { width: 1500, height: 980 } });
+  page.setDefaultTimeout(180000);
+  const erreurs = [];
+  page.on('pageerror', e => erreurs.push(e.message));
+
+  await page.goto(FICHIER);
+  await page.waitForTimeout(1200);
+
+  // ---- 1. chargement --------------------------------------------------
+  titre('1. CHARGEMENT');
+  const base = await page.evaluate(() => ({
+    xlsx: typeof XLSX !== 'undefined' && !!XLSX.utils,
+    manquantes: ['contratEssai', 'identifier', 'identIndexer', 'manquants', 'coupuresEntre',
+      'rbLoad', 'rbAnalyse', 'contratsProches', 'differentiel', 'zonesExemple']
+      .filter(f => typeof window[f] !== 'function'),
+    zones: ZONES.provisoire.length, cadre: ZONES.CADRE
+  }));
+  ok('bibliothèque Excel intégrée', base.xlsx);
+  ok('toutes les fonctions présentes', base.manquantes.length === 0,
+    base.manquantes.length ? 'manquent : ' + base.manquantes.join(', ') : base.zones + ' zones, cadre ' + base.cadre + ' mm');
+
+  // ---- 2. le dessin, sur la base embarquée ----------------------------
+  titre('2. DESSIN — invariants sur la base embarquée');
+  for (const rep of ['2541', '3563', '1692', '198', '426']) {
+    const r = await page.evaluate(n => {
+      exploreStart(n); const a = auditSchema();
+      return { b: a.blocs, d: Math.round(a.tauxDroits * 100), c: a.croisements,
+               ib: a.filsDansBloc, ch: a.blocsChevauches };
+    }, rep);
+    ok('repère ' + rep, r.ib === 0 && r.ch === 0 && r.d >= 90,
+      r.b + ' blocs · ' + r.d + ' % droits · ' + r.c + ' croisements · filsDansBloc=' + r.ib + ' chevauch=' + r.ch);
+  }
+
+  // ---- 3. le contrat d'essai ------------------------------------------
+  titre('3. CONTRAT D’ESSAI');
+  const essai = await page.evaluate(() => {
+    contratEssai(); fit(); const a = auditSchema();
+    return { b: a.blocs, f: a.fils, d: Math.round(a.tauxDroits * 100),
+             ib: a.filsDansBloc, ch: a.blocsChevauches,
+             barrettes: (LAST.routing.barrettes || []).length };
+  });
+  ok('se dessine sans défaut', essai.ib === 0 && essai.ch === 0,
+    essai.b + ' blocs · ' + essai.f + ' fils · ' + essai.d + ' % droits');
+  ok('les deux barrettes sont repérées', essai.barrettes === 2, essai.barrettes + ' trouvée(s)');
+
+  // ---- 4. les trois règles de coupure ---------------------------------
+  titre('4. PRISES DE COUPURE — les trois règles');
+  const coup = await page.evaluate(() => {
+    const avant = manquants();                    // sans localisation
+    ZONES.charger([['Device', 'Zone'],
+      ['210SP1', 'Z2'],   // poste gauche, x=2500
+      ['115CD', 'Z5'],    // cabine DROITE  -> règle côté
+      ['409GH2', 'Z10'],  // poutre, x=12000 -> règle cadre 10000
+      ['512VN', 'Z12'],   // EXTÉRIEUR       -> règle peau
+      ['340AB1', 'Z2']]);
+    const apres = manquants();
+    return { avantCoup: avant.coupures.length, avantSansPos: avant.sansPosition,
+      regles: apres.coupures.map(c => c.de + '>' + c.vers + ':' + c.regles.map(x => x.regle).join('+')) };
+  });
+  ok('sans localisation, aucune coupure inventée', coup.avantCoup === 0,
+    coup.avantSansPos + ' liaisons signalées sans position');
+  ok('règle « côté »', coup.regles.some(x => /côté/.test(x)), coup.regles.filter(x => /côté/.test(x))[0] || '—');
+  ok('règle « peau »', coup.regles.some(x => /peau/.test(x)), coup.regles.filter(x => /peau/.test(x))[0] || '—');
+  ok('règle « cadre 10000 »', coup.regles.some(x => /cadre/.test(x)), coup.regles.filter(x => /cadre/.test(x))[0] || '—');
+
+  // ---- 5 et 6. identification et choix du contrat de départ -----------
+  titre('5. IDENTIFICATION ET CHOIX DU CONTRAT');
+  const gros = await page.evaluate(async () => {
+    const EN = ['Harness', 'Device1', 'Pin1', 'PN1', 'Description1', 'Cable T/G', 'Cable Tag', 'Route',
+      'Device2', 'Pin2', 'PN2', 'Description2', 'FWD', 'Cable Length (mm)', 'Appareil', 'Date retest'];
+    const aoa = [[''], ['x'], [], EN];
+    const add = (ap, d1, p1, pn1, d2, p2, pn2, rt) =>
+      aoa.push(['H', d1, p1, pn1 || '', '', 'DR24', 't', rt || '1M', d2, p2, pn2 || '', '', 'SPE', '1200', ap, '']);
+    // IRO AE : le même câblage que le contrat d'essai, barrettes en place
+    add('IRO AE', '210SP1', '12', '*70', '667VT21', '1', 'ASNE0500-04');
+    add('IRO AE', '667VT21', '1', 'ASNE0500-04', '667VT21', '2', 'ASNE0500-04');
+    add('IRO AE', '667VT21', '2', 'ASNE0500-04', '115CD', '3', 'ABS0864-12');
+    add('IRO AE', '667VT21', '3', 'ASNE0500-04', '118CD', '3', 'ABS0864-12');
+    add('IRO AE', '667VT21', '4', 'ASNE0500-04', '409GH2', '7', 'NSA937802-05');
+    add('IRO AE', '340AB1', '4', 'EN2997', '512VN', '1', 'E0644G9S');
+    add('IRO AE', '340AB1', '4', 'EN2997', '512VN', '2', 'E0644G9S');
+    add('IRO AE', '340AB1', '1', 'EN2997', '210SP1', '3', '*70');
+    add('IRO AE', '340AB2', '1', 'EN2997', '210SP1', '4', '*70');
+    add('IRO AE', '115CD', '8', 'ABS0864-12', '408VC1A', '1', 'EN3646', '1M');
+    add('IRO AE', '408VC1A', '2', 'EN3646', '601RC', '2', 'E0836', '2M');
+    add('IRO AE', '601RC', '5', 'E0836', '733LE', '1', 'E0644');
+    add('IRO AE', '733LE', '4', 'E0644', '409GH2', '2', 'NSA937802-05');
+    add('IRO AE', '118CD', '8', 'ABS0864-12', '512VN', '5', 'E0644G9S');
+    add('IRO AE', '409GH2', '9', 'NSA937802-05', '845VG', '3', 'E0656');
+    add('IRO AE', '845VG', '1', 'E0656', '601RC', '7', 'E0836');
+    // IRO AD : même matériel, câblage différent
+    add('IRO AD', '210SP1', '5', '*70', '115CD', '9', 'ABS0864-12');
+    add('IRO AD', '340AB1', '7', 'EN2997', '512VN', '8', 'E0644G9S');
+    // JCG AA : sans rapport
+    for (let i = 0; i < 20; i++) add('JCG AA', '77ZZ' + i, '1', 'B', '88YY' + i, '2', 'C');
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), 'Retest');
+    await rbLoad(new File([XLSX.write(wb, { bookType: 'xlsx', type: 'array' })], 'r.xlsm'));
+    document.getElementById('rmodal').style.display = 'none';
+
+    contratEssai();
+    const ident = identifier();
+    const un = ident.filter(x => x.dev === '340AB1')[0];
+    const cls = contratsProches();
+    const dif = differentiel(cls[0].contrat);
+    return {
+      lignesLues: RB.rows.length - RB.head - 1,
+      identifie340: un ? { v: un.verdict.t, top: (un.cands[0] || {}).nom, c2: (un.cands[0] || {}).cov2 } : null,
+      meilleur: cls[0] ? cls[0].contrat : null,
+      tauxCablage: cls[0] ? cls[0].tauxLiaisons : 0,
+      second: cls[1] ? cls[1].contrat + ' ' + cls[1].tauxLiaisons + '%' : '—',
+      pieces: dif ? dif.pieces.map(z => z.nom) : []
+    };
+  });
+  ok('la base d’essai est lue', gros.lignesLues > 30, gros.lignesLues + ' lignes');
+  ok('340AB1 reconnu malgré ses bornes déplacées',
+    !!gros.identifie340 && gros.identifie340.top === '340AB1',
+    gros.identifie340 ? gros.identifie340.top + ' · bornes déplacées ' + gros.identifie340.c2 + ' %' : '—');
+  ok('le bon contrat de départ est désigné', gros.meilleur === 'IRO AE',
+    gros.meilleur + ' à ' + gros.tauxCablage + ' % de câblage commun (second : ' + gros.second + ')');
+  ok('la barrette manquante est lue dans le différentiel',
+    gros.pieces.indexOf('667VT21') >= 0, gros.pieces.join(', ') || 'aucune');
+  ok('la prise de coupure manquante aussi',
+    gros.pieces.indexOf('408VC1A') >= 0, gros.pieces.join(', ') || 'aucune');
+
+  // ---- bilan ----------------------------------------------------------
+  titre('BILAN');
+  ok('aucune erreur console', erreurs.length === 0, erreurs.length ? erreurs.slice(0, 3).join(' | ') : 'aucune');
+  console.log('\n  ' + (total - echecs) + ' / ' + total + ' contrôles passés'
+    + (echecs ? '  —  ' + echecs + ' ÉCHEC(S)' : '  —  tout est vert'));
+
+  await nav.close();
+  process.exit(echecs ? 1 : 0);
+})();
