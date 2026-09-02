@@ -14182,6 +14182,7 @@ Device;PN1;Description;Cable T/G;Cable Tag;Route;Device_2;Pin2;PN2;Description;F
             <button class="ghost" id="rb-ident">Identifier les équipements</button>
             <button class="ghost" id="rb-manq">Ce qui manque</button>
             <button class="ghost" id="rb-proche">D’où partir ?</button>
+            <button class="ghost" id="rb-appl">Compléter le contrat</button>
             <button class="ghost" id="rb-zex">Zones d’exemple</button>
             <button class="ghost" id="rb-report" style="display:none">Voir le rapport</button>
             <button class="ghost" id="rb-forget" style="display:none">Oublier</button>
@@ -18291,6 +18292,18 @@ function bindRefBase(){
   const inp=document.getElementById('rb-file');
   const b=document.getElementById('rb-browse'); if(b) b.onclick=()=>inp.click();
   const dm=document.getElementById('rb-demo'); if(dm) dm.onclick=()=>{ contratEssai(); fit(); };
+  const ap=document.getElementById('rb-appl');
+  if(ap) ap.onclick=()=>{ try{
+      if(!RB.rows) throw new Error('charge d’abord la base de retest');
+      if(!(state.lk||[]).length) throw new Error('charge d’abord un contrat');
+      rbStat('Recherche du contrat de référence…');
+      setTimeout(()=>{ try{
+        const cls=contratsProches();
+        if(!cls.length) throw new Error('aucun contrat de la base ne partage un équipement avec le tien');
+        planRapport(cls[0].contrat);
+        rbStat('✓ proposition établie d’après ' + cls[0].contrat + '.');
+      }catch(e){ rbStat('Erreur : '+(e&&e.message?e.message:e)); } },20);
+    }catch(e){ rbStat('Erreur : '+(e&&e.message?e.message:e)); } };
   const pr=document.getElementById('rb-proche');
   if(pr) pr.onclick=()=>{ try{
       if(!RB.rows) throw new Error('charge d’abord la base de retest');
@@ -18982,6 +18995,187 @@ function zonesModele(){
   const lignes=['Device;Zone;Cote;Dedans;X_mm'];
   Array.from(devs).filter(Boolean).sort().forEach(d=>lignes.push(d+';;;;'));
   return lignes.join('\n');
+}
+
+
+/* ===========================================================================
+   ÉCRIRE LES PIÈCES MANQUANTES DANS LE CONTRAT
+   ---------------------------------------------------------------------------
+   Jusqu'ici le différentiel DISAIT ce qui manque. Ici il l'écrit : une liaison
+   directe A -> B devient A -> barrette + barrette -> B, avec les shunts, et le
+   dessin la reprend aussitôt.
+
+   ON NE RECONSTRUIT PAS, ON RECOPIE. Les lignes de la pièce existent déjà dans
+   le contrat de référence, avec ses vraies bornes, son part number et sa
+   route. On les copie telles quelles plutôt que d'inventer une numérotation :
+   une borne reconstruite serait une borne fausse, et personne ne pourrait dire
+   d'où elle vient. Chaque ligne créée garde donc sa provenance — contrat et
+   numéro de ligne — pour qu'on puisse toujours répondre à « pourquoi ça ? ».
+
+   CE QU'ON RETIRE. Une liaison à moi n'est supprimée que si la référence
+   raccorde SES DEUX BOUTS à la pièce : c'est alors la même liaison, en
+   passant par le milieu. Dans le doute, on garde — un fil en trop se voit,
+   un fil disparu ne se voit pas.
+
+   POURQUOI PAS TOUT AUTOMATIQUE. Sur du câblage aéronautique, une
+   modification silencieuse est dangereuse. Mais valider cinquante pièces une
+   par une est intenable. D'où ce compromis : tout est proposé coché, on
+   décoche ce qu'on refuse, on applique d'un coup — et « Annuler » remet
+   exactement l'état d'avant.                                                 */
+
+const APPLI = { avant:null, dernier:null };
+
+/* Les lignes de la base qui concernent une pièce, prêtes à être copiées. */
+function lignesDeLaPiece(ap, piece){
+  const o=PROCHE.parContrat.get(ap); if(!o) return [];
+  const rows=RB.rows, col=RB.col;
+  const gi=(r,k)=>{ const i=col[k]; if(i==null)return ''; const v=r[i]; return v==null?'':String(v).trim(); };
+  const dn=d=>String(d||'').toUpperCase().replace(/\s+/g,'');
+  const moi=monContrat();
+  const out=[];
+  o.liaisons.forEach((r)=>{
+    const row=rows[r]; if(!row) return;
+    const d1=dn(gi(row,'device1')), d2=dn(gi(row,'device2'));
+    if(d1!==piece && d2!==piece) return;
+    const autre = (d1===piece)?d2:d1;
+    // on ne recopie que ce qui touche la pièce elle-même (shunt) ou un
+    // équipement que le contrat possède déjà : le reste appartient à l'autre
+    // appareil et n'a rien à faire ici.
+    if(autre!==piece && !moi.devices.has(autre)) return;
+    out.push({ from:d1, fromTerm:gi(row,'pin1'), to:d2, toTerm:gi(row,'pin2'),
+      nature:'', cable:gi(row,'cabletag'), ctype:gi(row,'cabletg'),
+      route:gi(row,'route'), plan:'', pn1:gi(row,'pn1'), pn2:gi(row,'pn2'),
+      src:ap+' ligne '+(r+1) });
+  });
+  return out;
+}
+
+/* Mes liaisons rendues caduques par une pièce : celles dont les DEUX bouts
+   sont raccordés à cette pièce dans la référence. */
+function caduquesPar(ap, piece, lignes){
+  const dn=d=>String(d||'').toUpperCase().replace(/\s+/g,'');
+  const S=String.fromCharCode(1);
+  const surLaPiece=new Set();       // « équipement<SEP>borne » vus au bout de la pièce
+  lignes.forEach(l=>{ const a=dn(l.from), b=dn(l.to);
+    if(a===piece && b!==piece) surLaPiece.add(b+S+String(l.toTerm||'').toUpperCase().trim());
+    if(b===piece && a!==piece) surLaPiece.add(a+S+String(l.fromTerm||'').toUpperCase().trim()); });
+  const out=[];
+  (state.lk||[]).forEach((l,i)=>{
+    const a=dn(l.from)+S+String(l.fromTerm||'').toUpperCase().trim();
+    const b=dn(l.to)+S+String(l.toTerm||'').toUpperCase().trim();
+    if(surLaPiece.has(a) && surLaPiece.has(b)) out.push(i);
+  });
+  return out;
+}
+
+/* Le plan d'action, avant toute écriture : ce qu'on ajouterait, ce qu'on
+   retirerait, pièce par pièce. Rien n'est modifié ici — c'est ce plan qu'on
+   affiche et qu'on laisse trier. */
+function planPieces(ap){
+  const d=differentiel(ap); if(!d) return null;
+  return d.pieces.map(z=>{
+    const lignes=lignesDeLaPiece(ap, z.nom);
+    const caduques=caduquesPar(ap, z.nom, lignes);
+    const shunts=lignes.filter(l=>String(l.from).toUpperCase()===String(l.to).toUpperCase()).length;
+    return { piece:z.nom, pn:z.pn, route:z.route, ajoute:lignes, retire:caduques,
+             shunts, vers:z.vers, retenu:true };
+  }).filter(x=>x.ajoute.length);
+}
+
+/* L'écriture. Un instantané d'abord — « Annuler » doit rendre l'état EXACT
+   d'avant, pas un état reconstruit. */
+function appliquerPieces(plan){
+  /* Un plan vide ou absent n'est pas une erreur : c'est le cas normal quand le
+     contrat a deja toutes ses pieces. On rend un bilan a zero plutot que de
+     lever — sans quoi le simple fait de demander « complete » sur un contrat
+     complet cassait l'outil. */
+  if(!plan || !plan.length) return {pieces:0, ajoutees:0, retirees:0};
+  APPLI.avant = (state.lk||[]).map(l=>({...l}));
+  const retirer=new Set();
+  const ajouter=[];
+  plan.forEach(x=>{ if(!x.retenu) return;
+    x.retire.forEach(i=>retirer.add(i));
+    x.ajoute.forEach(l=>ajouter.push({...l})); });
+  const garde=(state.lk||[]).filter((l,i)=>!retirer.has(i));
+  state.lk = garde.concat(ajouter);
+  APPLI.dernier = { pieces:plan.filter(x=>x.retenu).length,
+                    ajoutees:ajouter.length, retirees:retirer.size };
+  state.xroots=null; OVR.clear(); ORDH.clear(); state.sel=null;
+  syncTables(); syncPlans(); render(); fit();
+  return APPLI.dernier;
+}
+function annulerPieces(){
+  if(!APPLI.avant) return false;
+  state.lk = APPLI.avant.map(l=>({...l}));
+  APPLI.avant=null; APPLI.dernier=null;
+  state.xroots=null; OVR.clear(); ORDH.clear(); state.sel=null;
+  syncTables(); syncPlans(); render(); fit();
+  return true;
+}
+
+/* ---- l'écran de validation ---------------------------------------------- */
+let PLAN_COURANT=null;
+
+function planRapport(ap){
+  PLAN_COURANT = planPieces(ap);
+  const e2=t=>String(t==null?'':t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  let html='', txt='PIÈCES À AJOUTER — d’après '+ap+'\n\n';
+  if(!PLAN_COURANT || !PLAN_COURANT.length){
+    html='<section><p class="verdict v-ok">Rien à ajouter : ton contrat a déjà toutes les pièces intermédiaires de '+e2(ap)+'.</p></section>';
+    document.getElementById('rb-body').innerHTML=html;
+    document.getElementById('rmodal').style.display='flex';
+    return;
+  }
+  const nAj=PLAN_COURANT.reduce((s,x)=>s+x.ajoute.length,0);
+  const nRe=new Set(); PLAN_COURANT.forEach(x=>x.retire.forEach(i=>nRe.add(i)));
+  html+='<section><h4>Ce qui va être écrit</h4>'
+      + '<p class="rnote">Tout est coché. Décoche ce que tu refuses, puis applique. Les lignes sont <b>recopiées</b> de '+e2(ap)+' — bornes, part number et route d’origine — jamais reconstruites.</p>'
+      + '<table><tbody>'
+      + '<tr><td>Pièces proposées</td><td class="n">'+PLAN_COURANT.length+'</td><td class="ex">barrettes et prises de coupure</td></tr>'
+      + '<tr><td>Liaisons ajoutées</td><td class="n">'+nAj+'</td><td class="ex"></td></tr>'
+      + '<tr><td>Liaisons directes remplacées</td><td class="n">'+nRe.size+'</td><td class="ex">leurs deux bouts passent désormais par la pièce</td></tr>'
+      + '</tbody></table>'
+      + '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">'
+      + '<button class="primary" id="pl-go">Appliquer les pièces retenues</button>'
+      + '<button class="ghost" id="pl-undo">Annuler la dernière application</button></div>'
+      + '<div id="pl-stat" class="rnote" style="margin-top:8px"></div></section>';
+  txt+=PLAN_COURANT.length+' pièces · '+nAj+' liaisons ajoutées · '+nRe.size+' remplacées\n';
+
+  PLAN_COURANT.forEach((x,i)=>{
+    html+='<section><h4><label style="cursor:pointer;display:flex;gap:.5rem;align-items:center">'
+        + '<input type="checkbox" class="pl-ck" data-i="'+i+'" checked> '+e2(x.piece)+'</label></h4>'
+        + '<table><tbody>'
+        + '<tr><td>Part number</td><td class="ex">'+e2(x.pn||'—')+'</td></tr>'
+        + '<tr><td>Route</td><td class="ex">'+e2(x.route||'—')+'</td></tr>'
+        + '<tr><td>Se raccorde à</td><td class="ex">'+e2(x.vers.join('   '))+'</td></tr>'
+        + '<tr><td>Lignes ajoutées</td><td class="n">'+x.ajoute.length+'</td></tr>'
+        + '<tr><td>…dont shunts</td><td class="n">'+x.shunts+'</td></tr>'
+        + '<tr><td>Liaisons remplacées</td><td class="n">'+x.retire.length+'</td></tr>'
+        + '</tbody></table>'
+        + '<table style="margin-top:6px"><thead><tr><th>de</th><th>b.</th><th>vers</th><th>b.</th><th>route</th><th>provenance</th></tr></thead><tbody>';
+    x.ajoute.slice(0,12).forEach(l=>{
+      html+='<tr><td>'+e2(l.from)+'</td><td class="n">'+e2(l.fromTerm)+'</td><td>'+e2(l.to)+'</td>'
+          + '<td class="n">'+e2(l.toTerm)+'</td><td class="ex">'+e2(l.route)+'</td><td class="ex">'+e2(l.src)+'</td></tr>';
+      txt+='  '+l.from+'·'+l.fromTerm+' -> '+l.to+'·'+l.toTerm+'   ['+l.src+']\n'; });
+    if(x.ajoute.length>12) html+='<tr><td class="ex" colspan="6">… et '+(x.ajoute.length-12)+' autres</td></tr>';
+    html+='</tbody></table></section>';
+  });
+
+  RB.txt=txt;
+  const body=document.getElementById('rb-body');
+  body.innerHTML=html;
+  document.getElementById('rmodal').style.display='flex';
+  body.querySelectorAll('.pl-ck').forEach(ck=>ck.onchange=()=>{
+    PLAN_COURANT[+ck.dataset.i].retenu=ck.checked; });
+  const st=document.getElementById('pl-stat');
+  document.getElementById('pl-go').onclick=()=>{
+    const r=appliquerPieces(PLAN_COURANT);
+    st.textContent='✓ '+r.pieces+' pièce(s) écrite(s) : '+r.ajoutees+' liaison(s) ajoutée(s), '
+                  +r.retirees+' remplacée(s). Le schéma est redessiné.';
+  };
+  document.getElementById('pl-undo').onclick=()=>{
+    st.textContent = annulerPieces() ? '↩ état précédent rétabli.' : 'rien à annuler.';
+  };
 }
 
 function bindImportDrop(){

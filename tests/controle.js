@@ -166,6 +166,46 @@ function titre(t) { console.log('\n' + t); }
   ok('la prise de coupure manquante aussi',
     gros.pieces.indexOf('408VC1A') >= 0, gros.pieces.join(', ') || 'aucune');
 
+  // ---- 6. écrire les pièces dans le contrat, et savoir revenir --------
+  titre('6. COMPLÉTER LE CONTRAT');
+  const ecr = await page.evaluate(() => {
+    const empreinte = () => (state.lk || []).map(l =>
+      [l.from, l.fromTerm, l.to, l.toTerm].join('|')).sort().join('\n');
+    const avant = empreinte(), nAvant = state.lk.length;
+    const ref = contratsProches()[0].contrat;
+    const plan = planPieces(ref);
+    const r = appliquerPieces(plan);
+    const apresN = state.lk.length;
+    const a = auditSchema();
+    // les pièces sont-elles réellement dans le dessin ?
+    const noms = new Set((LAST.layout.comps || []).map(c => String(c.name).toUpperCase()));
+    const posees = plan.map(x => x.piece).filter(n2 => noms.has(n2));
+    // chaque ligne créée porte-t-elle sa provenance ?
+    const sansSrc = state.lk.filter(l => l.src === undefined).length;
+    const avecSrc = state.lk.filter(l => l.src).length;
+    annulerPieces();
+    return { nAvant, apresN, ajoutees: r.ajoutees, retirees: r.retirees, pieces: r.pieces,
+      posees, avecSrc, sansSrc,
+      identique: empreinte() === avant, nApresAnnul: state.lk.length,
+      dessin: { ib: a.filsDansBloc, ch: a.blocsChevauches, b: a.blocs } };
+  });
+  ok('des pièces sont écrites', ecr.ajoutees > 0,
+    ecr.pieces + ' pièce(s) · +' + ecr.ajoutees + ' liaisons · −' + ecr.retirees + ' remplacées ('
+    + ecr.nAvant + ' → ' + ecr.apresN + ')');
+  ok('les pièces apparaissent dans le dessin', ecr.posees.length > 0,
+    ecr.posees.join(', ') || 'aucune · ' + ecr.dessin.b + ' blocs');
+  ok('le dessin reste sain après écriture', ecr.dessin.ib === 0 && ecr.dessin.ch === 0,
+    'filsDansBloc=' + ecr.dessin.ib + ' chevauch=' + ecr.dessin.ch);
+  ok('chaque ligne créée porte sa provenance', ecr.sansSrc === ecr.nAvant - ecr.retirees,
+    ecr.avecSrc + ' ligne(s) tracée(s)');
+  const vide = await page.evaluate(() => {
+    try { const r = appliquerPieces(null); return { ok: true, n: r.ajoutees }; }
+    catch (e) { return { ok: false, msg: String(e && e.message || e) }; }
+  });
+  ok('un plan vide ne casse rien', vide.ok, vide.ok ? 'bilan à zéro' : vide.msg);
+  ok('« Annuler » rend l’état EXACT d’avant', ecr.identique,
+    ecr.nApresAnnul + ' liaisons, empreinte ' + (ecr.identique ? 'identique' : 'DIFFÉRENTE'));
+
   // ---- bilan ----------------------------------------------------------
   titre('BILAN');
   ok('aucune erreur console', erreurs.length === 0, erreurs.length ? erreurs.slice(0, 3).join(' | ') : 'aucune');
