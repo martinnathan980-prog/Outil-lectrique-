@@ -5,187 +5,261 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Atelier Schéma — générateur automatique</title>
 <style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   L'ENVELOPPE DE L'OUTIL — refaite entièrement.
+
+   Ce qui n'allait pas, et qui tenait en une phrase : l'écran montrait TOUT,
+   TOUT LE TEMPS. Cinq sections dépliables empilées dans une colonne, chacune
+   avec ses boutons, ses tableaux et ses trois lignes d'explication ; on
+   faisait défiler un mur pour trouver le geste suivant, et la seule chose qui
+   compte — le dessin — était reléguée dans ce qui restait de la fenêtre.
+
+   Le principe de cette version tient aussi en une phrase : UNE CHOSE À LA
+   FOIS. Le panneau ne présente jamais qu'une seule vue, choisie par trois
+   onglets, et cette vue ne contient que ce qu'on fait maintenant. Le reste
+   n'est pas caché par pudeur : il est simplement ailleurs, et on sait où.
+
+   Le reste du travail est du soin : une échelle d'espacements et une seule
+   (4/8/12/16/24), une seule graisse de trait pour les séparations, un seul
+   accent, des transitions courtes et jamais décoratives, et un fond d'atelier
+   qui recule pour que la feuille blanche avance.
+   ═══════════════════════════════════════════════════════════════════════ */
 :root{
-  --chrome:#eef0f3; --chrome2:#ffffff; --chrome3:#e7eaef; --line:#d8dce2;
-  --ink:#1f2b36; --ink-dim:#4b5563; --ink-faint:#8a93a0;
-  --accent:#1668c2; --accent-dim:#1668c2; --warn:#b9791f; --ok:#1f8a4c;
-  --sheet:#fbfbf7; --sheet-line:#dfe3ea; --sheet-line2:#eef1f5; --sheet-ink:#1f2b36;
-  --brown:#7a4a2a; --black:#1b1f24; --grey:#6b7480; --blue:#1668c2; --green:#1f8a4c; --yellow:#e8c93a; --red:#c0392b;
+  /* Les neutres tirent très légèrement vers le bleu de l'accent : un gris
+     parfaitement neutre a l'air d'un gris par défaut, pas d'un gris choisi. */
+  --chrome:#e8eaee;        /* fond d'atelier, derrière la feuille           */
+  --chrome2:#ffffff;       /* surfaces : panneau, barre, fenêtres           */
+  --chrome3:#f1f3f6;       /* surface en retrait : champ, bouton au repos   */
+  --line:#dfe3e9;          /* séparation                                    */
+  --line2:#edf0f4;         /* séparation ténue, à l'intérieur d'un groupe   */
+  --ink:#16202b;           /* texte principal                               */
+  --ink-dim:#5b6874;       /* texte secondaire                              */
+  --ink-faint:#8d97a3;     /* texte tertiaire, unités, compteurs            */
+  --accent:#125f8f;        /* un seul accent, profond et calme              */
+  --accent-dim:#125f8f;
+  --accent-soft:#e9f1f7;
+  --warn:#96620a; --ok:#1a7f4b; --red:#b03a34;
+  --sheet:#ffffff; --sheet-line:#dfe3ea; --sheet-line2:#eef1f5; --sheet-ink:#16202b;
+  --brown:#7a4a2a; --black:#1b1f24; --grey:#6b7480; --blue:#125f8f;
+  --green:#1a7f4b; --yellow:#e8c93a; --red2:#b03a34;
   --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
   --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:7px;                 /* rayon unique                                  */
+  --t:.14s cubic-bezier(.3,.7,.4,1);
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
-body{font-family:var(--sans);background:var(--chrome);color:var(--ink);font-size:13px;overflow:hidden}
-button,input,select{font-family:inherit;font-size:inherit;color:inherit}
-button{background:var(--chrome3);border:1px solid var(--line);color:var(--ink);padding:5px 10px;border-radius:4px;cursor:pointer;letter-spacing:.2px}
-button:hover{background:#dde1e7;border-color:#c3c9d1}
-button:active{transform:translateY(1px)}
-button.primary{background:var(--accent-dim);border-color:#1156a3;color:#fff}
-button.primary:hover{background:#125aa0}
-button.ghost{background:transparent;border-color:transparent;color:var(--ink-dim);padding:4px 7px}
-button.ghost:hover{color:var(--ink);background:var(--chrome3)}
-.sep{width:1px;height:22px;background:var(--line);margin:0 2px}
+body{font-family:var(--sans);background:var(--chrome);color:var(--ink);
+  font-size:13px;line-height:1.45;overflow:hidden;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 
-#app{display:grid;grid-template-columns:340px 1fr;grid-template-rows:46px 1fr;height:100%;grid-template-areas:"top top" "side main"}
-header{grid-area:top;display:flex;align-items:center;gap:14px;padding:0 14px;background:var(--chrome2);border-bottom:1px solid var(--line)}
-.brand{display:flex;align-items:baseline;gap:9px;user-select:none}
-.brand b{font-weight:650;letter-spacing:.3px}
-.brand .tag{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);border:1px solid var(--line);padding:1px 6px;border-radius:3px}
+/* ─── Boutons ────────────────────────────────────────────────────────────
+   Trois niveaux, pas plus : l'action principale, l'action normale, et le
+   discret. On avait « primary », « ghost », « mini », « seg », « linklike »,
+   « addrow », plus des boutons sans classe — six apparences pour trois
+   intentions. */
+button{background:var(--chrome3);border:1px solid var(--line);color:var(--ink);
+  padding:6px 11px;border-radius:var(--r);cursor:pointer;font-size:12.5px;
+  transition:background var(--t),border-color var(--t),color var(--t);
+  white-space:nowrap}
+button:hover{background:#e6eaef;border-color:#cdd4dc}
+button:active{background:#dde2e9}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button:disabled{opacity:.45;cursor:default;background:var(--chrome3);border-color:var(--line)}
+.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
+.primary:hover{background:#0f527c;border-color:#0f527c}
+.primary:active{background:#0d4669}
+.ghost{background:transparent;border-color:transparent;color:var(--ink-dim)}
+.ghost:hover{background:var(--chrome3);border-color:transparent;color:var(--ink)}
+.mini{padding:4px 8px;font-size:11.5px}
+.linklike{background:none;border:0;color:var(--accent);padding:0;font:inherit;
+  cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.linklike:hover{background:none;color:#0d4669}
+
+input,select,textarea{background:var(--chrome2);border:1px solid var(--line);
+  border-radius:var(--r);padding:6px 9px;font-size:12.5px;color:var(--ink);
+  transition:border-color var(--t),box-shadow var(--t);width:100%}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-soft)}
+::placeholder{color:var(--ink-faint)}
+
+/* ─── La grille de l'application ─────────────────────────────────────── */
+#app{height:100%;display:grid;grid-template-columns:288px 1fr;
+  grid-template-rows:52px 1fr;grid-template-areas:"top top" "side main"}
+
+/* ─── La barre du haut ───────────────────────────────────────────────── */
+header{grid-area:top;display:flex;align-items:center;gap:14px;padding:0 16px;
+  background:var(--chrome2);border-bottom:1px solid var(--line);z-index:20}
+.brand{display:flex;align-items:baseline;gap:9px;font-weight:600;letter-spacing:-.1px}
+.brand b{font-weight:600;font-size:14px}
+.ctx{display:flex;align-items:center;gap:7px;color:var(--ink-faint);
+  font-family:var(--mono);font-size:11.5px;padding-left:14px;
+  border-left:1px solid var(--line);min-width:0}
+.ctx b{color:var(--ink-dim);font-weight:600}
 .spacer{flex:1}
-.tools{display:flex;gap:6px;align-items:center}
+.tools{display:flex;align-items:center;gap:6px}
+header .sep{width:1px;height:20px;background:var(--line);margin:0 4px}
 
-aside{grid-area:side;background:var(--chrome2);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
-.panel{display:flex;flex-direction:column;min-height:0;overflow:auto}
-.psec{border-bottom:1px solid var(--line)}
-.phead{display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;user-select:none}
-.phead h3{margin:0;font-size:11px;font-weight:650;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-dim)}
-.phead .count{font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-left:auto}
-.phead .chev{color:var(--ink-faint);transition:transform .15s}
-.psec.collapsed .pbody{display:none}
-.psec.collapsed .chev{transform:rotate(-90deg)}
-.pbody{padding:2px 10px 12px}
+/* Le pas-à-pas de folio : « ‹ Folio 2 / 4 › », écrit en toutes lettres.
+   Le choix du folio vivait dans un <select> de 12 px collé aux boutons
+   d'export, réglé par défaut sur « Tous les plans » — c'est-à-dire tout sur
+   une feuille, exactement ce qu'on cherche à éviter. */
+.folionav{display:none;align-items:center;gap:2px;background:var(--chrome3);
+  border:1px solid var(--line);border-radius:var(--r);padding:2px}
+.folionav.on{display:flex}
+.folionav button{background:transparent;border:0;padding:3px 8px;color:var(--ink-dim);
+  font-size:14px;line-height:1;border-radius:5px}
+.folionav button:hover:not(:disabled){background:#e2e7ed;color:var(--ink)}
+.folionav .lbl{font-family:var(--mono);font-size:11.5px;padding:0 6px;
+  color:var(--ink);min-width:84px;text-align:center;user-select:none}
+.plan-sel{display:none}
 
-table.grid{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11.5px}
-table.grid th{text-align:left;color:var(--ink-faint);font-weight:500;font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;padding:3px 4px;border-bottom:1px solid var(--line)}
-table.grid td{padding:0;border-bottom:1px solid #262c34}
-table.grid input{width:100%;background:transparent;border:0;padding:5px 5px;color:var(--ink);outline:none}
-table.grid input:focus{background:#eef4fb;box-shadow:inset 0 0 0 1px var(--accent-dim)}
-table.grid tr:hover td{background:#f2f4f7}
-.rmrow{color:var(--ink-faint);cursor:pointer;text-align:center;width:20px}
+/* ─── Le panneau : des onglets, pas une pile ─────────────────────────── */
+aside{grid-area:side;background:var(--chrome2);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;min-height:0;z-index:15}
+.railtabs{display:flex;gap:2px;padding:8px 8px 0;border-bottom:1px solid var(--line)}
+.railtabs button{flex:1;background:transparent;border:0;border-radius:6px 6px 0 0;
+  padding:8px 4px 9px;font-size:12px;color:var(--ink-faint);font-weight:500;
+  border-bottom:2px solid transparent;margin-bottom:-1px}
+.railtabs button:hover{background:var(--chrome3);color:var(--ink-dim)}
+.railtabs button.on{color:var(--accent);border-bottom-color:var(--accent);background:transparent}
+.railtabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.railbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.vue{display:none;padding:16px}
+.vue.on{display:block;animation:entre .18s ease}
+@keyframes entre{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+
+/* Un groupe dans une vue : un titre discret, puis le contenu. Remplace les
+   en-têtes dépliables, qui demandaient un clic pour voir ce qu'il y avait
+   dedans — donc qui obligeaient à ouvrir pour savoir s'il fallait ouvrir. */
+.grp{margin-bottom:22px}
+.grp:last-child{margin-bottom:4px}
+.grp>h3{margin:0 0 9px;font-size:10.5px;font-weight:600;letter-spacing:.7px;
+  text-transform:uppercase;color:var(--ink-faint);display:flex;align-items:center;gap:8px}
+.grp>h3 .count{margin-left:auto;font-family:var(--mono);font-size:10.5px;
+  letter-spacing:0;text-transform:none;color:var(--ink-faint)}
+.subhead{margin:18px 0 8px;font-size:10.5px;font-weight:600;letter-spacing:.7px;
+  text-transform:uppercase;color:var(--ink-faint);display:flex;align-items:center;gap:8px;
+  padding-top:14px;border-top:1px solid var(--line2)}
+.subhead .count{margin-left:auto;font-family:var(--mono);font-size:10.5px;
+  letter-spacing:0;text-transform:none}
+.brow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+/* Le style « ghost » est sans bordure : juste ce qu'il faut dans la barre du
+   haut, illisible dans une rangée où « Identifier les équipements » et « Ce
+   qui manque » passaient pour du texte. Dans le panneau, un bouton se voit. */
+.brow .ghost,.bc-row .ghost{border-color:var(--line);background:var(--chrome3);color:var(--ink-dim)}
+.brow .ghost:hover,.bc-row .ghost:hover{background:#e6eaef;border-color:#cdd4dc;color:var(--ink)}
+.brow input{flex:1;min-width:0}
+.hint{color:var(--ink-faint);font-size:11px;line-height:1.55;margin-top:9px}
+.hint b{color:var(--ink-dim);font-weight:600}
+
+/* Les étapes numérotées de « Compléter » */
+.etape{display:flex;align-items:center;gap:10px;margin-top:8px}
+.etape .n{flex:0 0 20px;height:20px;border-radius:50%;background:var(--chrome3);
+  border:1px solid var(--line);color:var(--ink-faint);font:600 10px var(--mono);
+  display:flex;align-items:center;justify-content:center;transition:all var(--t)}
+.etape.faite .n{background:var(--accent);border-color:var(--accent);color:#fff}
+.etape button{flex:1;text-align:left;justify-content:flex-start}
+
+/* La liste du matériel */
+#mt-find{margin-top:2px}
+#mt-liste{margin-top:10px;max-height:min(46vh,420px);overflow-y:auto;
+  margin-left:-6px;margin-right:-6px}
+.mtrow{display:flex;align-items:baseline;gap:9px;padding:6px;border-radius:6px;
+  cursor:pointer;transition:background var(--t)}
+.mtrow:hover{background:var(--chrome3)}
+.mtrow+.mtrow{box-shadow:inset 0 1px 0 var(--line2)}
+.mtn{font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--ink)}
+.mtd{font-size:11px;color:var(--ink-faint);flex:1;min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.mtc{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);flex:0 0 auto}
+#mt-details{margin-top:14px;border-top:1px solid var(--line2);padding-top:10px}
+#mt-details summary{cursor:pointer;font-size:11.5px;color:var(--ink-dim);
+  padding:3px 0;user-select:none;list-style:none}
+#mt-details summary::-webkit-details-marker{display:none}
+#mt-details summary::before{content:'▸ ';color:var(--ink-faint)}
+#mt-details[open] summary::before{content:'▾ '}
+#mt-details summary:hover{color:var(--accent)}
+
+/* Tables de saisie */
+table.grid{width:100%;border-collapse:collapse;margin-top:8px}
+table.grid th{font-size:9.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;
+  color:var(--ink-faint);text-align:left;padding:0 4px 5px}
+table.grid td{padding:0;border-bottom:1px solid var(--line2)}
+table.grid input{border:0;border-radius:0;background:transparent;padding:5px 4px;
+  font-family:var(--mono);font-size:11.5px}
+table.grid input:focus{box-shadow:none;background:var(--accent-soft);border-radius:4px}
+.rmrow{width:22px;text-align:center;color:var(--ink-faint);cursor:pointer;
+  font-size:12px;user-select:none;transition:color var(--t)}
 .rmrow:hover{color:var(--red)}
 .addrow{margin-top:8px}
-/* Les briques du panneau refait : une rangée de boutons, un sous-titre à
-   l'intérieur d'une section, une étape numérotée, un bouton secondaire. */
-.brow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.brow input{flex:1;min-width:0}
-/* Dans le panneau, un bouton doit RESSEMBLER a un bouton. Le style « ghost »
-   est sans bordure : parfait pour la barre du haut, illisible dans une liste
-   ou « Exemple », « Redessiner » et « Vider » passaient pour du texte. */
-.brow .ghost,.etape .ghost{border:1px solid var(--line);background:var(--chrome2)}
-.brow .ghost:hover,.etape .ghost:hover{background:var(--chrome3);border-color:#c3c9d1}
-.brow .mini{padding:3px 7px;font-size:11px}
-.subhead{margin:14px 0 6px;display:flex;align-items:center;gap:8px;font-size:10px;font-weight:650;
-  letter-spacing:.8px;text-transform:uppercase;color:var(--ink-faint);
-  border-top:1px solid var(--line);padding-top:10px}
-.subhead .count{font-family:var(--mono);font-size:10px;margin-left:auto;text-transform:none;letter-spacing:0}
-/* UNE SUITE D'ÉTAPES NUMÉROTÉES, PAS SEPT BOUTONS EN VRAC. On avait sept
-   boutons côte à côte, tous de même poids, sans dire lequel venait d'abord —
-   « Identifier », « Ce qui manque », « D'où partir ? », « Compléter »… On
-   essayait au hasard et ça répondait « charge d'abord la base ». Les trois
-   gestes qui comptent sont maintenant numérotés, dans l'ordre. */
-.etape{display:flex;align-items:center;gap:9px;margin-top:7px}
-.etape .n{flex:0 0 18px;height:18px;border-radius:50%;background:var(--chrome3);border:1px solid var(--line);
-  color:var(--ink-dim);font:600 10px var(--mono);display:flex;align-items:center;justify-content:center}
-.etape button{flex:1;text-align:left}
-/* La liste du matériel : une ligne cliquable par repère. */
-.mtrow{display:flex;align-items:baseline;gap:8px;padding:5px 6px;border-bottom:1px solid var(--line);
-  cursor:pointer;border-radius:4px}
-.mtrow:hover{background:var(--chrome3)}
-.mtn{font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--ink)}
-.mtd{font-size:10.5px;color:var(--ink-faint);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mtc{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--ink-faint);flex:0 0 auto}
-#mt-liste{max-height:340px;overflow:auto;margin-top:6px}
-#mt-details summary{cursor:pointer;font-size:11px;color:var(--ink-dim);padding:6px 0;user-select:none}
-#mt-details summary:hover{color:var(--accent)}
-#mt-find{background:var(--chrome2);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit;font-size:12px}
+.cart-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px 10px}
+.field label{display:block;font-size:9.5px;font-weight:600;letter-spacing:.6px;
+  text-transform:uppercase;color:var(--ink-faint);margin-bottom:3px}
 
-.field{display:flex;flex-direction:column;gap:3px;margin:6px 0}
-.field label{font-size:10px;color:var(--ink-faint);letter-spacing:.4px;text-transform:uppercase}
-.field input{background:#f7f8fa;border:1px solid var(--line);border-radius:4px;padding:5px 8px;color:var(--ink);outline:none;font-family:var(--mono);font-size:11.5px}
-.field input:focus{border-color:var(--accent-dim)}
-.cart-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px}
+/* Le banc d'essai */
+.bc-row{display:flex;gap:6px;margin-bottom:9px}
+.bc-step{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;
+  cursor:pointer;font-size:11.5px;transition:background var(--t)}
+.bc-step:hover{background:var(--chrome3)}
+.bc-step .dot{width:7px;height:7px;border-radius:50%;background:var(--line);flex:0 0 auto;
+  transition:background var(--t)}
+.bc-step.ok .dot{background:var(--ok)} .bc-step.ko .dot{background:var(--red)}
+.bc-step.run .dot{background:var(--accent);animation:pulse .9s infinite}
+@keyframes pulse{50%{opacity:.35}}
+.bc-step .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bc-step .ms{font-family:var(--mono);font-size:10px;color:var(--ink-faint);flex:0 0 auto}
+.bc-bilan,#bc-bilan{margin-top:9px;font-family:var(--mono);font-size:11px;color:var(--ink-dim)}
 
-main{grid-area:main;position:relative;overflow:hidden;background:#e3e6ea}
-#stage{position:absolute;inset:0;touch-action:none}
-#svg{width:100%;height:100%;display:block;background:radial-gradient(circle at 30% 20%, #eef0f3 0%, #dfe2e7 70%)}
-.hud{position:absolute;left:12px;bottom:12px;display:flex;gap:6px;align-items:center;background:rgba(255,255,255,.88);border:1px solid var(--line);border-radius:7px;padding:5px 7px}
-.hud .z{font-family:var(--mono);font-size:11px;color:var(--ink-dim);min-width:46px;text-align:center}
-.legend{position:absolute;right:12px;top:12px;background:rgba(255,255,255,.82);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);border:1px solid rgba(203,211,219,.7);border-radius:10px;padding:9px 12px;font-size:10.5px;box-shadow:0 3px 14px rgba(40,54,68,.09)}
-.legend h4{margin:0 0 6px;font-size:9.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-faint)}
-.legend .lr{display:flex;align-items:center;gap:7px;margin:3px 0;color:var(--ink-dim)}
-.legend .sw{width:18px;height:0;border-top:2.5px solid;border-radius:2px}
-.notice{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;color:var(--ink-faint);pointer-events:none}
-.notice .big{font-size:15px;color:var(--ink-dim);margin-bottom:6px}
+/* ─── La scène ───────────────────────────────────────────────────────── */
+main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
+#stage{position:absolute;inset:0;overflow:hidden;touch-action:none;cursor:grab}
+#stage:active{cursor:grabbing}
+#svg{width:100%;height:100%;display:block}
+.notice{position:absolute;inset:0;display:none;flex-direction:column;
+  align-items:center;justify-content:center;gap:6px;text-align:center;
+  color:var(--ink-faint);font-size:12.5px;padding:24px;pointer-events:none}
+.notice .big{font-size:17px;font-weight:600;color:var(--ink-dim);letter-spacing:-.2px}
+.notice button{pointer-events:auto}
 
-#pop{position:absolute;z-index:30;background:var(--chrome2);border:1px solid var(--line);border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,.5);padding:11px;width:230px;display:none}
-#pop h5{margin:0 0 8px;font-size:11px;letter-spacing:.5px;color:var(--ink-dim);text-transform:uppercase}
-#pop .field{margin:5px 0}
-#pop .actions{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
+/* La commande de zoom : posée sur la scène, discrète, à portée du pouce. */
+.hud{position:absolute;left:14px;bottom:14px;display:flex;align-items:center;gap:2px;
+  background:rgba(255,255,255,.92);backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);border:1px solid var(--line);
+  border-radius:9px;padding:3px;box-shadow:0 1px 3px rgba(22,32,43,.07)}
+.hud button{background:transparent;border:0;padding:4px 9px;color:var(--ink-dim);border-radius:6px}
+.hud button:hover{background:var(--chrome3);color:var(--ink)}
+.hud .z{font-family:var(--mono);font-size:11px;color:var(--ink-dim);
+  min-width:46px;text-align:center;user-select:none}
+.hud .sep{width:1px;height:16px;background:var(--line);margin:0 3px}
 
-.modal-bg{position:fixed;inset:0;background:rgba(8,10,13,.6);z-index:50;display:none;align-items:center;justify-content:center}
-.modal{background:var(--chrome2);border:1px solid var(--line);border-radius:10px;width:min(640px,92vw);max-height:86vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.6)}
-.modal h2{margin:0;padding:14px 16px 4px;font-size:15px}
-.modal .body{padding:6px 16px 16px}
-.modal p.help{color:var(--ink-dim);font-size:12px;line-height:1.5;margin:4px 0 12px}
-.imp-col h4{margin:10px 0 4px;font-size:11px;letter-spacing:.5px;color:var(--ink-dim);text-transform:uppercase}
-.imp-col textarea{width:100%;height:120px;background:#f7f8fa;border:1px solid var(--line);border-radius:6px;color:var(--ink);font-family:var(--mono);font-size:11px;padding:8px;outline:none;resize:vertical}
-.imp-col textarea:focus{border-color:var(--accent-dim)}
-.modal .foot{display:flex;justify-content:flex-end;gap:8px;padding:0 16px 16px}
-.modal.wide{width:min(1000px,96vw)}
-/* ---- banc d'essai : on regarde le schéma changer, on ne lit pas un rapport ---- */
-.bc-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
-.bc-step{display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:5px;
-  border:1px solid var(--line);margin-bottom:4px;cursor:pointer;user-select:none;
-  background:var(--chrome2);transition:background .12s}
-.bc-step:hover{background:#eef2f7}
-.bc-step .dot{width:9px;height:9px;border-radius:50%;background:#c9d0d8;flex:0 0 auto;transition:background .2s}
-.bc-step.run .dot{background:#e2a03f;animation:bcp .8s ease-in-out infinite}
-.bc-step.ok  .dot{background:#17706b}
-.bc-step.ko  .dot{background:#a8452c}
-@keyframes bcp{0%,100%{opacity:1}50%{opacity:.25}}
-@media (prefers-reduced-motion:reduce){.bc-step.run .dot{animation:none}}
-.bc-step .nm{font-size:11.5px;flex:1 1 auto}
-.bc-step .ms{font-family:var(--mono);font-size:10px;color:var(--ink-faint);text-align:right;max-width:52%}
-.bc-step.ok .ms{color:#17706b}
-.bc-step.ko .ms{color:#a8452c}
-.bc-bilan{font-family:var(--mono);font-size:11px;margin-top:8px;padding:6px 8px;border-radius:5px}
-.bc-bilan.ok{background:#e4efee;color:#17706b}
-.bc-bilan.ko{background:#f7e9e5;color:#a8452c}
-/* ---- rapport de reconnaissance de la base de retest ---- */
-.rrep{display:flex;flex-direction:column;gap:18px;font-size:12px;line-height:1.55}
-.rrep h4{margin:0 0 6px;font-size:10px;letter-spacing:1.1px;text-transform:uppercase;color:var(--accent-dim);
-         font-weight:650;border-bottom:1px solid var(--line);padding-bottom:4px}
-.rrep .rnote{color:var(--ink-dim);font-size:11.5px;margin:0 0 8px}
-.rrep table{width:100%;border-collapse:collapse;font-size:11.5px}
-.rrep th{text-align:left;font-weight:600;color:var(--ink-faint);font-size:9.5px;letter-spacing:.6px;
-         text-transform:uppercase;padding:3px 8px 3px 0;border-bottom:1px solid var(--line);white-space:nowrap}
-.rrep td{padding:3px 8px 3px 0;border-bottom:1px solid var(--line);vertical-align:top}
-.rrep td.n{font-family:var(--mono);text-align:right;white-space:nowrap}
-.rrep code{font-family:var(--mono);font-size:11px;background:#eef1f5;border:1px solid var(--line);
-           border-radius:3px;padding:0 3px}
-.rrep .verdict{font-weight:650}
-.rrep .v-ok{color:#17706b}
-.rrep .v-no{color:#a8452c}
-.rrep .v-hm{color:#8a6d1f}
-.rrep .ex{font-family:var(--mono);font-size:10.5px;color:var(--ink-dim);word-break:break-all}
-.hint{color:var(--ink-faint);font-size:10.5px;margin-top:8px;line-height:1.5}
-::-webkit-scrollbar{width:11px;height:11px}
-::-webkit-scrollbar-thumb{background:#c7ccd3;border-radius:6px;border:3px solid var(--chrome2)}
-.menu-btn{display:none}
-.drawer-bg{display:none}
-@media (max-width:760px){
-  #app{grid-template-columns:1fr;grid-template-areas:"top" "main"}
-  .menu-btn{display:inline-flex;align-items:center;justify-content:center;font-size:18px;padding:3px 9px}
-  header{gap:8px;padding:0 8px}
-  .brand b{font-size:13px}
-  .brand .tag{display:none}
-  .spacer{display:none}
-  .tools{flex:1;justify-content:flex-start;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-  .tools::-webkit-scrollbar{display:none}
-  header button{padding:5px 8px;font-size:12px;flex:0 0 auto}
-  aside{position:fixed;grid-area:auto;top:46px;left:0;bottom:0;width:min(86vw,330px);z-index:40;transform:translateX(-100%);transition:transform .22s ease;box-shadow:8px 0 30px rgba(0,0,0,.45)}
-  aside.open{transform:translateX(0)}
-  .drawer-bg{display:block;position:fixed;inset:46px 0 0 0;background:rgba(8,10,13,.45);z-index:35;opacity:0;pointer-events:none;transition:opacity .2s}
-  .drawer-bg.show{opacity:1;pointer-events:auto}
-  .legend{font-size:9px;padding:6px 7px;top:8px;right:8px}
-  .legend .sw{width:14px}
-  .hud{left:8px;bottom:8px}
-}
-/* IMPRESSION. Sans règle @media print, Ctrl+P sortait la fenêtre telle
-   quelle : le panneau de gauche, la barre d'outils, et du folio seulement le
-   morceau visible à l'écran. On imprime donc le folio ENTIER, seul sur la
-   feuille, depuis le même dessin que l'export SVG. */
+/* ─── Fenêtres ───────────────────────────────────────────────────────── */
+.modal-bg{position:fixed;inset:0;background:rgba(18,26,35,.42);
+  backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
+  display:none;align-items:center;justify-content:center;z-index:60;padding:24px}
+.modal{background:var(--chrome2);border-radius:12px;width:min(720px,100%);
+  max-height:88vh;display:flex;flex-direction:column;
+  box-shadow:0 18px 50px rgba(18,26,35,.22),0 0 0 1px var(--line);
+  animation:monte .18s cubic-bezier(.3,.7,.4,1)}
+@keyframes monte{from{opacity:0;transform:translateY(8px) scale(.99)}to{opacity:1;transform:none}}
+.modal.wide{width:min(1000px,100%)}
+.modal h2{margin:0;padding:16px 20px;font-size:14px;font-weight:600;
+  border-bottom:1px solid var(--line)}
+.modal .body{padding:18px 20px;overflow:auto;flex:1;min-height:0}
+.modal .foot{display:flex;justify-content:flex-end;gap:8px;padding:13px 20px;
+  border-top:1px solid var(--line);background:var(--chrome3);border-radius:0 0 12px 12px}
+.modal .help{margin:0 0 12px;color:var(--ink-dim);font-size:11.5px;line-height:1.6}
+.modal textarea{min-height:130px;font-family:var(--mono);font-size:11.5px;resize:vertical}
+.imp-col{margin-bottom:14px}
+.imp-col h4{margin:0 0 6px;font-size:10.5px;font-weight:600;letter-spacing:.6px;
+  text-transform:uppercase;color:var(--ink-faint)}
+
+/* La fiche qui s'ouvre au clic sur un bloc ou un fil */
+#pop{position:absolute;display:none;z-index:40;background:var(--chrome2);
+  border:1px solid var(--line);border-radius:10px;padding:13px;
+  box-shadow:0 10px 32px rgba(18,26,35,.16);max-width:320px}
+
+/* ─── Impression ─────────────────────────────────────────────────────── */
 #printroot{display:none}
 @media print{
   html,body{height:auto;overflow:visible;background:#fff}
@@ -194,6 +268,34 @@ main{grid-area:main;position:relative;overflow:hidden;background:#e3e6ea}
   #printroot svg{width:100%;height:auto;max-width:100%}
   @page{margin:8mm}
 }
+
+/* ─── Écrans étroits ─────────────────────────────────────────────────── */
+.menu-btn{display:none}
+.drawer-bg{display:none}
+@media (max-width:860px){
+  #app{grid-template-columns:1fr;grid-template-areas:"top" "main"}
+  .menu-btn{display:inline-flex;align-items:center;justify-content:center;
+    font-size:16px;padding:5px 9px}
+  .ctx{display:none}
+  header{gap:8px;padding:0 10px}
+  aside{position:fixed;top:52px;left:0;bottom:0;width:min(88vw,320px);z-index:40;
+    transform:translateX(-100%);transition:transform .22s cubic-bezier(.3,.7,.4,1);
+    box-shadow:14px 0 40px rgba(18,26,35,.16)}
+  aside.open{transform:none}
+  .drawer-bg{display:block;position:fixed;inset:52px 0 0 0;background:rgba(18,26,35,.32);
+    z-index:35;opacity:0;pointer-events:none;transition:opacity .2s}
+  .drawer-bg.show{opacity:1;pointer-events:auto}
+  .hud{left:10px;bottom:10px}
+  .modal-bg{padding:10px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+/* Barres de défilement discrètes */
+*::-webkit-scrollbar{width:10px;height:10px}
+*::-webkit-scrollbar-thumb{background:#d3d9e0;border-radius:6px;border:3px solid var(--chrome2)}
+*::-webkit-scrollbar-thumb:hover{background:#c2cad3}
+*::-webkit-scrollbar-track{background:transparent}
 </style>
 </head>
 <body>
@@ -206,78 +308,109 @@ main{grid-area:main;position:relative;overflow:hidden;background:#e3e6ea}
 <div id="app">
   <header>
     <button class="ghost menu-btn" id="btnMenu" aria-label="Panneau">☰</button>
-    <div class="brand"><b>Atelier Schéma</b><span class="tag">netlist → schéma développé</span></div>
+    <div class="brand"><b>Atelier Schéma</b></div>
+    <div class="ctx" id="ctx"><span id="ctx-txt">—</span></div>
     <div class="spacer"></div>
+    <!-- LE CHOIX DU FOLIO EN TOUTES LETTRES. Il vivait dans un <select> de
+         12 px collé aux boutons d'export, réglé par défaut sur « Tous les
+         plans » — c'est-à-dire tout sur une seule feuille, exactement ce
+         qu'on cherche à éviter. Ici c'est un pas-à-pas : on avance d'un folio
+         au suivant sans jamais ouvrir de menu. Le <select> reste, caché : il
+         porte l'état, et tout le reste du code continue de le lire. -->
+    <div class="folionav" id="folionav">
+      <button id="fo-prev" aria-label="Folio précédent">‹</button>
+      <span class="lbl" id="fo-lbl">Folio 1 / 1</span>
+      <button id="fo-next" aria-label="Folio suivant">›</button>
+    </div>
+    <select id="planSel" class="plan-sel" title="Folio affiché" style="display:none"></select>
+    <div class="sep"></div>
     <div class="tools">
-      <!-- L'EN-TETE NE GARDE QUE CE QU'ON FAIT DU FOLIO AFFICHE. « Regenerer »
-           n'avait aucun sens — le dessin se refait tout seul ; « Importer » et
-           « Effacer » agissent sur le contrat, ils sont donc dans la section 1
-           avec lui. -->
-      <select id="planSel" class="plan-sel" title="Folio affiché" style="display:none"></select>
-      <button id="btnSvg" title="Enregistrer le folio affiché en SVG (vectoriel, imprimable à toute échelle)">SVG</button>
-      <button id="btnPng" title="Enregistrer le folio affiché en image PNG">PNG</button>
+      <button class="ghost" id="btnSvg" title="Enregistrer le folio affiché en SVG (vectoriel, imprimable à toute échelle)">SVG</button>
+      <button class="ghost" id="btnPng" title="Enregistrer le folio affiché en image PNG">PNG</button>
       <button class="ghost" id="btnPrint" title="Imprimer le folio affiché">Imprimer</button>
     </div>
   </header>
-  <aside>
-    <!-- ═══ LE PANNEAU SUIT L'ORDRE DU TRAVAIL, PAS CELUI DU CODE ═══════════
-         Il s'ouvrait sur « Exploration » — un mot qui ne dit pas ce qu'on
-         fait — puis sur un BANC DE TESTS de développeur, puis sur sept
-         boutons de base de données, puis sur une table d'équipements appelés
-         « 1, 2, 3 ». Huit sections, dont on ne savait ni par laquelle
-         commencer ni à quoi elles servaient.
-         Il y en a cinq, dans l'ordre réel : ce que je dessine, ce que je
-         regarde, ce qui manque, le détail, et — tout en bas, replié — les
-         outils de contrôle. Les deux premières sont ouvertes, les trois
-         autres repliées : au démarrage, on voit exactement les deux choses
-         dont on a besoin. ═══════════════════════════════════════════════ -->
-    <div class="panel">
 
-      <!-- ① CE QUE JE DESSINE ------------------------------------------- -->
-      <div class="psec" id="sec-lk">
-        <div class="phead" data-sec="sec-lk"><span class="chev">▾</span><h3>1 · Mon contrat</h3><span class="count" id="cnt-lk">0</span></div>
-        <div class="pbody">
+  <!-- ═══ UNE CHOSE À LA FOIS ═══════════════════════════════════════════════
+       Le panneau empilait cinq sections dépliables : on faisait défiler un mur
+       pour trouver le geste suivant, et il fallait ouvrir une section pour
+       savoir s'il fallait l'ouvrir. Trois onglets, trois vues, une seule
+       affichée. « Matériel » est ce qu'on regarde tout le temps ; « Compléter »
+       est une opération qu'on lance de temps en temps ; « Réglages » est ce
+       qu'on touche une fois par affaire. ═══════════════════════════════════ -->
+  <aside>
+    <nav class="railtabs" id="railtabs">
+      <button data-vue="v-mat" class="on">Matériel</button>
+      <button data-vue="v-piece">Compléter</button>
+      <button data-vue="v-regl">Réglages</button>
+    </nav>
+    <div class="railbody">
+
+      <!-- ── VUE 1 : CE QUE JE REGARDE ─────────────────────────────────── -->
+      <section class="vue on" id="v-mat">
+        <div class="grp">
           <div class="brow">
-            <button class="primary" id="lk-import">Coller mes liaisons</button>
-            <button class="ghost" id="lk-file">Ouvrir un fichier</button>
+            <button class="primary" id="lk-file">Ouvrir un fichier</button>
+            <button id="lk-import">Coller</button>
+            <button class="mini" id="lk-demo" title="Charger le contrat d’exemple">Exemple</button>
             <input type="file" id="lk-fichier" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
           </div>
-          <div class="brow" style="margin-top:6px">
-            <button class="ghost mini" id="lk-demo">Exemple</button>
-            <button class="ghost mini" id="lk-clear">Vider</button>
-          </div>
-          <!-- ON NE LISTE PLUS LES FILS, ON LISTE LE MATÉRIEL. Voir le
-               commentaire de listeMateriel() : 400 fils ne tiennent pas dans un
-               panneau, 60 équipements si. -->
-          <input id="mt-find" placeholder="Chercher un repère ou un n° de fil…" style="width:100%;margin-top:10px">
+        </div>
+
+        <div class="grp">
+          <h3>Équipements <span class="count" id="cnt-eq">0</span></h3>
+          <input id="mt-find" placeholder="Chercher un repère ou un n° de fil…">
           <div id="mt-liste"></div>
           <div id="mt-rien" class="hint" style="display:none">Rien qui corresponde.</div>
-          <details id="mt-details" style="margin-top:10px">
-            <summary>Corriger les liaisons une par une</summary>
-            <table class="grid" id="tbl-lk"><thead><tr><th>De</th><th>B.</th><th>Vers</th><th>B.</th><th>Nature</th><th></th></tr></thead><tbody></tbody></table>
-            <button class="ghost addrow" id="add-lk">+ ligne</button>
-            <div class="hint">La recherche ci-dessus filtre aussi cette table.</div>
-          </details>
-        </div>
-      </div>
-
-      <!-- ② CE QUE JE REGARDE ------------------------------------------- -->
-      <div class="psec" id="sec-xp">
-        <div class="phead" data-sec="sec-xp"><span class="chev">▾</span><h3>2 · Le folio</h3></div>
-        <div class="pbody">
-          <div class="brow">
-            <input id="xp-find" list="xp-names" placeholder="Ne voir qu’un repère…">
-            <button class="primary" id="xp-go">Voir</button>
-          </div>
+          <div class="hint">Clique un repère : lui seul et ses liaisons sont dessinés. Un badge <b>+</b> sur un voisin le déplie à son tour.</div>
+          <button class="ghost mini" id="xp-all" style="display:none;margin-top:8px">Revoir tout le folio</button>
+          <input id="xp-find" list="xp-names" type="hidden">
           <datalist id="xp-names"></datalist>
           <div id="xp-chips" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px"></div>
-          <div id="xp-stat" class="hint" style="margin-top:6px"></div>
-          <div class="brow" style="margin-top:6px">
-            <button class="ghost" id="xp-all" style="display:none">Revoir tout le folio</button>
-            <button class="ghost" id="btnFolios">Découper en folios</button>
+          <div id="xp-stat" class="hint"></div>
+          <button id="xp-go" hidden></button>
+        </div>
+
+        <details id="mt-details">
+          <summary>Corriger les liaisons une par une <span id="cnt-lk" class="count"></span></summary>
+          <table class="grid" id="tbl-lk"><thead><tr><th>De</th><th>B.</th><th>Vers</th><th>B.</th><th>Nature</th><th></th></tr></thead><tbody></tbody></table>
+          <div class="brow" style="margin-top:8px">
+            <button class="ghost mini addrow" id="add-lk">+ liaison</button>
+            <button class="ghost mini" id="btnFolios">Découper en folios</button>
+            <button class="ghost mini" id="lk-clear">Tout vider</button>
           </div>
-          <div class="hint">Un contrat entier tient rarement sur une page. Choisis un repère : lui seul et ses liaisons sont dessinés. Un badge <b>+</b> sur un voisin le déplie à son tour.</div>
-          <div class="subhead">Cartouche</div>
+          <div class="hint">La recherche ci-dessus filtre aussi cette table.</div>
+        </details>
+      </section>
+
+      <!-- ── VUE 2 : RETROUVER CE QUI MANQUE ───────────────────────────── -->
+      <section class="vue" id="v-piece">
+        <div class="grp">
+          <h3>Les pièces absentes du contrat</h3>
+          <p class="hint" style="margin-top:0">Un contrat ne déclare que ses liaisons. Les <b>barrettes</b> et les <b>prises de coupure</b> qui se trouvent entre les deux n’y sont pas. On va les chercher dans un contrat déjà testé qui ressemble au tien.</p>
+          <div class="etape" id="et-1"><span class="n">1</span><button id="rb-browse">Charger une base de retest</button></div>
+          <div class="etape" id="et-2"><span class="n">2</span><button id="rb-proche">De quel contrat partir&nbsp;?</button></div>
+          <div class="etape" id="et-3"><span class="n">3</span><button id="rb-appl">Compléter mon contrat</button></div>
+          <div id="rb-stat" class="hint">Aucune base chargée.</div>
+          <input type="file" id="rb-file" accept=".xlsm,.xlsx,.xls,.csv,.tsv,.txt" hidden>
+          <div class="hint">Le fichier est lu <b>ici, dans ton navigateur</b> : rien ne part sur le réseau, rien n’est enregistré, tout disparaît quand tu fermes l’onglet.</div>
+        </div>
+        <div class="grp">
+          <h3>Vérifications <span class="count" id="cnt-rb">—</span></h3>
+          <div class="brow">
+            <button class="ghost mini" id="rb-ident">Identifier les équipements</button>
+            <button class="ghost mini" id="rb-manq">Ce qui manque</button>
+            <button class="ghost mini" id="rb-zex">Zones d’exemple</button>
+            <button class="ghost mini" id="rb-report" style="display:none">Rapport</button>
+            <button class="ghost mini" id="rb-forget" style="display:none">Oublier la base</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── VUE 3 : CE QU'ON RÈGLE UNE FOIS ───────────────────────────── -->
+      <section class="vue" id="v-regl">
+        <div class="grp">
+          <h3>Cartouche</h3>
           <div class="cart-grid">
             <div class="field"><label>Titre</label><input id="m-title"></div>
             <div class="field"><label>Folio</label><input id="m-folio"></div>
@@ -287,77 +420,49 @@ main{grid-area:main;position:relative;overflow:hidden;background:#e3e6ea}
             <div class="field"><label>Échelle</label><input id="m-scale"></div>
           </div>
         </div>
-      </div>
-
-      <!-- ③ CE QUI MANQUE ------------------------------------------------ -->
-      <div class="psec collapsed" id="sec-rb">
-        <div class="phead" data-sec="sec-rb"><span class="chev">▾</span><h3>3 · Retrouver les pièces manquantes</h3><span class="count" id="cnt-rb">—</span></div>
-        <div class="pbody">
-          <div class="hint" style="margin-top:0">Un contrat ne déclare que ses liaisons. Les <b>barrettes</b> et les <b>prises de coupure</b> qui se trouvent entre les deux n’y sont pas. On va les chercher dans un contrat déjà testé qui ressemble au tien.</div>
-          <div class="etape"><span class="n">1</span><button class="ghost" id="rb-browse">Charger une base de retest</button></div>
-          <div class="etape"><span class="n">2</span><button class="ghost" id="rb-proche">De quel contrat partir&nbsp;?</button></div>
-          <div class="etape"><span class="n">3</span><button class="ghost" id="rb-appl">Compléter mon contrat</button></div>
-          <div id="rb-stat" class="hint" style="margin-top:8px">Aucune base chargée.</div>
-          <div class="brow" style="margin-top:8px">
-            <button class="ghost mini" id="rb-ident">Identifier les équipements</button>
-            <button class="ghost mini" id="rb-manq">Ce qui manque</button>
-            <button class="ghost mini" id="rb-zex">Zones d’exemple</button>
-            <button class="ghost mini" id="rb-report" style="display:none">Rapport</button>
-            <button class="ghost mini" id="rb-forget" style="display:none">Oublier</button>
-          </div>
-          <input type="file" id="rb-file" accept=".xlsm,.xlsx,.xls,.csv,.tsv,.txt" hidden>
-          <div class="hint">Le fichier est lu <b>ici, dans ton navigateur</b> : rien ne part sur le réseau, rien n’est enregistré, tout disparaît quand tu fermes l’onglet.</div>
-        </div>
-      </div>
-
-      <!-- ④ LE DÉTAIL ---------------------------------------------------- -->
-      <div class="psec collapsed" id="sec-eq">
-        <div class="phead" data-sec="sec-eq"><span class="chev">▾</span><h3>4 · Détail du matériel</h3><span class="count" id="cnt-eq">0</span></div>
-        <div class="pbody">
+        <div class="grp">
+          <h3>Désignations</h3>
           <table class="grid" id="tbl-eq"><thead><tr><th>Repère</th><th>Désignation</th><th></th></tr></thead><tbody></tbody></table>
-          <button class="ghost addrow" id="add-eq">+ ligne</button>
-          <div class="subhead">Câbles <span class="count" id="cnt-cb">0</span></div>
+          <button class="ghost mini addrow" id="add-eq">+ ligne</button>
+          <div class="hint">Le nom écrit sous le repère sur le dessin.</div>
+        </div>
+        <div class="grp">
+          <h3>Câbles <span class="count" id="cnt-cb">0</span></h3>
           <div id="cb-list"></div>
-          <div class="subhead">Catalogue de normes <span class="count" id="cnt-nm">0</span></div>
+        </div>
+        <div class="grp">
+          <h3>Catalogue de normes <span class="count" id="cnt-nm">0</span></h3>
           <div class="brow">
             <button class="ghost mini" id="nm-imp">Importer</button>
             <button class="ghost mini" id="nm-skel">Squelette CSV</button>
             <button class="ghost mini" id="nm-clear">Vider</button>
             <input type="file" id="nm-file" accept=".csv,.tsv,.txt,.xlsx,.xls" hidden>
           </div>
-          <div id="nm-stat" class="hint" style="margin-top:6px"></div>
+          <div id="nm-stat" class="hint"></div>
           <div class="hint">Une ligne par norme de connecteur. C’est par là qu’arriveront le nombre de broches, la section des câbles et les raccords associés.</div>
         </div>
-      </div>
-
-      <!-- ⑤ LES OUTILS DE CONTRÔLE, HORS DU CHEMIN ----------------------- -->
-      <div class="psec collapsed" id="sec-bc">
-        <div class="phead" data-sec="sec-bc"><span class="chev">▾</span><h3>Vérifier l’outil</h3><span class="count" id="cnt-bc">—</span></div>
-        <div class="pbody">
-          <div class="brow">
-            <button class="ghost" id="bc-all">▶ Tout enchaîner</button>
+        <div class="grp">
+          <h3>Vérifier l’outil <span class="count" id="cnt-bc">—</span></h3>
+          <div class="bc-row">
+            <button class="ghost mini" id="bc-all">▶ Tout enchaîner</button>
             <button class="ghost mini" id="bc-reset">Remettre à zéro</button>
           </div>
           <div id="bc-steps"></div>
           <div id="bc-bilan"></div>
           <div class="hint">Chaque étape <b>modifie le dessin sous tes yeux</b> et s’allume : vert si elle tient, rouge sinon. C’est le contrôle de l’outil lui-même, pas de ton contrat.</div>
         </div>
-      </div>
+      </section>
 
     </div>
   </aside>
+
   <main>
     <div id="stage"><svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg></div>
-    <!-- LA LEGENDE DES CONDUCTEURS EST PARTIE. Elle listait six couleurs de
-         phases sur un schema d'avion ou aucune ne sert : elle occupait le coin
-         du dessin pour n'expliquer rien de ce qu'on regardait. Le jour ou une
-         couleur portera vraiment une information, la legende reviendra — avec
-         les seules entrees reellement employees. -->
     <div class="hud">
-      <button class="ghost" id="zout">−</button><div class="z" id="zlbl">100 %</div><button class="ghost" id="zin">+</button>
-      <div class="sep"></div><button class="ghost" id="zfit">Ajuster</button>
+      <button id="zout" aria-label="Dézoomer">−</button><div class="z" id="zlbl">100 %</div><button id="zin" aria-label="Zoomer">+</button>
+      <div class="sep"></div><button id="zfit">Ajuster</button>
     </div>
-    <div class="notice" id="notice"><div class="big">Aucun contrat</div>ouvre un fichier ou colle tes liaisons dans « 1 · Mon contrat »</div>
+    <div class="notice" id="notice"><div class="big">Aucun contrat</div>ouvre un fichier ou colle tes liaisons</div>
   </main>
 </div>
 <div class="drawer-bg" id="drawerBg"></div>
@@ -2495,9 +2600,23 @@ function computeLayoutWith(eq, lk, peripheral){
      Le sens était déduit du ratio marges comprises ; comme les marges ne sont
      pas les mêmes en x et en y, un dessin franchement portrait (968 x 1080)
      basculait en page paysage. On regarde le dessin, la page prend son sens. */
+  /* ON NE GONFLE PLUS LA FEUILLE SANS LIMITE POUR ATTEINDRE LE FORMAT A3.
+     Le ratio était imposé exactement : un folio dont le contenu mesure
+     3000 x 600 recevait une feuille de 3000 x 2122, soit SEPTANTE POUR CENT de
+     blanc — le dessin se retrouvait en bandeau au milieu d'une page vide, et
+     « Ajuster » le rendait minuscule parce qu'il ajustait la FEUILLE, pas le
+     dessin. Mesuré sur le banc : des densités de 24 à 59 %.
+     Une planche n'a aucune obligation d'être au format A3 ; elle a l'obligation
+     d'être lisible. On tend donc vers le A3 sans jamais ajouter plus d'un tiers
+     de vide dans la direction qui manque. Un dessin déjà proche du format y
+     arrive exactement ; un dessin franchement allongé garde ses proportions. */
   const A3=(cw0/Math.max(1,ch0)<1)?(1/1.414):1.414;
-  if(bbox.w/bbox.h<A3){ const nw=bbox.h*A3; bbox.x-=(nw-bbox.w)/2; bbox.w=nw; }
-  else if(bbox.w/bbox.h>A3){ const nh=bbox.w/A3; bbox.y-=(nh-bbox.h)/2; bbox.h=nh; }
+  const GONFLE_MAX=1.35;
+  const r0=bbox.w/bbox.h;
+  if(r0<A3){ const nw=Math.min(bbox.h*A3, bbox.w*GONFLE_MAX);
+    if(nw>bbox.w){ bbox.x-=(nw-bbox.w)/2; bbox.w=nw; } }
+  else if(r0>A3){ const nh=Math.min(bbox.w/A3, bbox.h*GONFLE_MAX);
+    if(nh>bbox.h){ bbox.y-=(nh-bbox.h)/2; bbox.h=nh; } }
 
   const geom={columns,colOf,colX,colW,chW,nCols,yMin,yMax,pills:slidPills};
   return {rails:[],comps:compList,srcs:[],links,bbox,isRail,nets,find,
@@ -3413,7 +3532,10 @@ function sheetSvg(bb,meta){
   const x=bb.x,y=bb.y,w=bb.w,h=bb.h, ix=x+16,iy=y+16,iw=w-32,ih=h-32;
   let s=`<rect x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" fill="#ffffff"/>`;
   s+=`<rect x="${f1(ix)}" y="${f1(iy)}" width="${f1(iw)}" height="${f1(ih)}" fill="url(#gfine)"/>`;
-  s+=`<rect class="frame2" x="${f1(x+8)}" y="${f1(y+8)}" width="${f1(w-16)}" height="${f1(h-16)}"/>`;
+  /* LE SECOND CADRE EST PARTI. La feuille portait deux rectangles concentriques
+     à 8 unités l'un de l'autre : le cadre de la planche, et un filet pâle
+     juste dedans. Le filet n'ajoutait aucune information — il redoublait le
+     trait voisin et donnait au dessin un air de faire-part. */
   s+=`<rect class="frame" x="${f1(ix)}" y="${f1(iy)}" width="${f1(iw)}" height="${f1(ih)}"/>`;
   const ncol=Math.max(2,Math.round(iw/150)), nrow=Math.max(2,Math.round(ih/150));
   for(let i=1;i<ncol;i++){ const xx=ix+iw*i/ncol; s+=`<line class="zline" x1="${f1(xx)}" y1="${f1(iy)}" x2="${f1(xx)}" y2="${f1(iy-6)}"/><line class="zline" x1="${f1(xx)}" y1="${f1(iy+ih)}" x2="${f1(xx)}" y2="${f1(iy+ih+6)}"/>`; }
@@ -4140,12 +4262,72 @@ function autoFolios(lk, eq, budget){
   });
   return {links:out, nFolios, applied:true};
 }
+/* Bascule de vue. Exposée : le code peut envoyer l'utilisateur au bon endroit
+   — par exemple sur « Compléter » quand il vient d'y lancer une étape. */
+/* L'ÉTAPE FRANCHIE S'ALLUME. Les trois boutons restaient identiques du début
+   à la fin : on ne savait jamais si la base était chargée, si le contrat de
+   référence avait été choisi, si l'écriture avait eu lieu. Trois pastilles
+   qui se remplissent, c'est tout ce qu'il faut pour le dire. */
+function syncEtapes(){
+  const m=(id,fait)=>{ const e=document.getElementById(id); if(e) e.classList.toggle('faite',!!fait); };
+  m('et-1', !!(typeof RB!=='undefined' && RB.rows));
+  m('et-2', !!(typeof PROCHE!=='undefined' && PROCHE.choisi));
+  m('et-3', !!(typeof APPLI!=='undefined' && (APPLI.ajouts||APPLI.retires)));
+}
+
+function montrerVue(id){
+  if(id==='v-piece' && typeof syncEtapes==='function') syncEtapes();
+  document.querySelectorAll('#railtabs button').forEach(b=>b.classList.toggle('on', b.dataset.vue===id));
+  document.querySelectorAll('.vue').forEach(v=>v.classList.toggle('on', v.id===id));
+  const rb=document.querySelector('.railbody'); if(rb) rb.scrollTop=0;
+}
+
+/* LA BARRE DU HAUT DIT CE QU'ON REGARDE. Elle ne portait que le nom du
+   logiciel : on ne savait ni combien de liaisons étaient chargées, ni combien
+   d'équipements, ni si on regardait un folio ou tout le contrat. */
+function syncContexte(){
+  const el=document.getElementById('ctx-txt'); if(!el) return;
+  const n=(state.lk||[]).length;
+  if(!n){ el.textContent='aucun contrat'; return; }
+  const eq=(typeof allDeviceNames==='function') ? allDeviceNames().size : 0;
+  el.innerHTML='<b>'+n+'</b> liaison'+(n>1?'s':'')+' · <b>'+eq+'</b> repère'+(eq>1?'s':'')
+    + (state.folioMode ? (' · <b>'+state.folioCount+'</b> folios') : '');
+}
+
+/* Le pas-à-pas de folio : « ‹ Folio 2 / 4 › ». Le <select> reste la source de
+   vérité — tout le reste du code le lit — mais on ne le montre plus. */
+function syncFolioNav(){
+  const nav=document.getElementById('folionav'), lbl=document.getElementById('fo-lbl');
+  const sel=document.getElementById('planSel');
+  if(!nav||!sel||!lbl) return;
+  const opts=[...sel.options].filter(o=>o.value!=='*');
+  if(opts.length<2){ nav.classList.remove('on'); return; }
+  nav.classList.add('on');
+  const i=opts.findIndex(o=>o.value===state.plan);
+  const mot=state.folioMode?'Folio':'Plan';
+  lbl.textContent = i<0 ? ('Tous les '+mot.toLowerCase()+'s')
+                        : (mot+' '+opts[i].value+' / '+opts.length);
+  document.getElementById('fo-prev').disabled = i<=0;
+  document.getElementById('fo-next').disabled = i<0 || i>=opts.length-1;
+}
+function allerAuFolio(pas){
+  const sel=document.getElementById('planSel'); if(!sel) return;
+  const opts=[...sel.options].filter(o=>o.value!=='*');
+  let i=opts.findIndex(o=>o.value===state.plan);
+  if(i<0) i = pas>0 ? -1 : opts.length;
+  i+=pas; if(i<0||i>=opts.length) return;
+  state.plan=opts[i].value; sel.value=state.plan;
+  render(); fit(); syncFolioNav();
+}
+
 function syncPlans(){ const sel=document.getElementById('planSel'); if(!sel)return; const plans=plansOf(state.lk);
-  if(plans.length<2){ sel.style.display='none'; if(!plans.includes(state.plan)) state.plan='*'; return; }
+  if(plans.length<2){ sel.innerHTML=''; if(!plans.includes(state.plan)) state.plan='*';
+    syncFolioNav(); syncContexte(); return; }
   if(!state.plan || (state.plan!=='*' && !plans.includes(state.plan))) state.plan=plans[0];
   const word=state.folioMode?'Folio':'Plan';
   const allLbl=state.folioMode?'Tous les folios':'Tous les plans';
-  sel.style.display=''; sel.innerHTML=`<option value="*">${allLbl}</option>`+plans.map(p=>`<option value="${esc(p)}">${word} ${esc(p)}</option>`).join(''); sel.value=state.plan;
+  sel.innerHTML=`<option value="*">${allLbl}</option>`+plans.map(p=>`<option value="${esc(p)}">${word} ${esc(p)}</option>`).join(''); sel.value=state.plan;
+  syncFolioNav(); syncContexte();
 }
 function syncCables(){ const box=document.getElementById('cb-list'); if(!box)return;
   const map=new Map();
@@ -4815,6 +4997,7 @@ async function rbLoad(file){
     rbRender(rbAnalyse());
     document.getElementById('cnt-rb').textContent=rbNum(rows.length-f.head-1);
     rbStat('✓ « '+file.name+' » — feuille '+sheet+', '+f.found+' colonnes reconnues, en-têtes ligne '+(f.head+1)+'.');
+    if(typeof syncEtapes==='function') syncEtapes();
     document.getElementById('rb-report').style.display='';
     document.getElementById('rb-forget').style.display='';
     rbOpenReport();
@@ -4840,6 +5023,7 @@ function rbInvalider(){
 function rbOpenReport(){ if(!RB.rows) return; document.getElementById('rmodal').style.display='flex'; }
 function rbCloseReport(){ const m=document.getElementById('rmodal'); if(m)m.style.display='none'; }
 function rbForget(){ RB.rows=null; RB.col=null; RB.txt=''; rbInvalider();
+  if(typeof syncEtapes==='function') syncEtapes();
   document.getElementById('rb-body').innerHTML='';
   document.getElementById('cnt-rb').textContent='—';
   document.getElementById('rb-report').style.display='none';
@@ -4865,7 +5049,7 @@ function bindRefBase(){
       if(!RB.rows) throw new Error('charge d’abord la base de retest');
       if(!(state.lk||[]).length) throw new Error('charge d’abord un contrat');
       rbStat('Comparaison aux contrats de la base…');
-      setTimeout(()=>{ try{ prochesRapport(); rbStat('✓ contrats classés.'); }
+      setTimeout(()=>{ try{ prochesRapport(); rbStat('✓ contrats classés.'); syncEtapes(); }
         catch(e){ rbStat('Erreur : '+(e&&e.message?e.message:e)); } },20);
     }catch(e){ rbStat('Erreur : '+(e&&e.message?e.message:e)); } };
   const zx=document.getElementById('rb-zex');
@@ -5701,6 +5885,7 @@ function appliquerPieces(plan){
                     ajoutees:ajouter.length, retirees:retirer.size };
   state.xroots=null; OVR.clear(); ORDH.clear(); state.sel=null;
   syncTables(); syncPlans(); render(); fit();
+  if(typeof syncEtapes==='function') syncEtapes();
   return APPLI.dernier;
 }
 function annulerPieces(){
@@ -6272,7 +6457,10 @@ function syncExplore(){ const dl=document.getElementById('xp-names'); if(!dl)ret
   chips.querySelectorAll('button[data-x]').forEach(bt=>{ bt.onclick=()=>exploreRemove(bt.dataset.x); });
   all.style.display=on?'':'none';
   if(on) stat.textContent=state.xroots.size+' équipement(s) déplié(s) — '+(LAST?LAST.routing.wires.length:0)+' liaisons affichées';
-  else stat.textContent=state.lk.length?('Base : '+names.length+' repères, '+state.lk.length+' liaisons'):'';
+  /* La ligne disait « Base : 12 repères, 18 liaisons » — exactement ce que la
+     barre du haut affiche en permanence. On ne répète pas une information à
+     deux endroits : au repos, elle ne dit rien. */
+  else stat.textContent='';
 }
 
 /* ---- catalogue de normes (croisé avec la colonne PN) ---- */
@@ -6453,6 +6641,7 @@ function syncTables(){
     state.eq.length || (typeof allDeviceNames==='function' ? allDeviceNames().size : 0);
   document.getElementById('cnt-lk').textContent=state.lk.length;
   listeMateriel();
+  if(typeof syncContexte==='function')syncContexte();
   if(typeof syncCables==='function')syncCables();
   if(typeof syncPlans==='function')syncPlans();
   if(typeof syncNorms==='function')syncNorms();
@@ -6478,7 +6667,13 @@ function bindPanel(){
     const el=document.getElementById(id); el.value=state.meta[k]||'';
     el.addEventListener('input',()=>{ state.meta[k]=el.value; }); el.addEventListener('change',()=>render()); });
   // sections repliables
-  document.querySelectorAll('.phead').forEach(h=>h.addEventListener('click',()=>document.getElementById(h.dataset.sec).classList.toggle('collapsed')));
+  /* LES ONGLETS. Une seule vue est montée à la fois : on ne fait plus défiler
+     un mur de sections pour trouver le geste suivant, et on n'a plus besoin
+     d'ouvrir une section pour savoir s'il fallait l'ouvrir. */
+  { const tabs=document.getElementById('railtabs');
+    if(tabs) tabs.addEventListener('click',e=>{
+      const b=e.target.closest('button[data-vue]'); if(!b) return;
+      montrerVue(b.dataset.vue); }); }
   bindRefBase();
   bindBanc();
 }
@@ -6631,7 +6826,10 @@ function init(){
     document.getElementById('nm-skel').onclick=normSkeleton;
     document.getElementById('nm-clear').onclick=()=>{ if(!confirm('Vider le catalogue de normes ?'))return;
       NORMS={headers:[],rows:[]}; normsRebuild(); normsSave(); syncNorms('vidé'); }; }
-  const ps=document.getElementById('planSel'); if(ps) ps.onchange=()=>{ state.plan=ps.value; render(); fit(); };
+  const ps=document.getElementById('planSel'); if(ps) ps.onchange=()=>{ state.plan=ps.value; render(); fit(); syncFolioNav(); };
+  { const pv=document.getElementById('fo-prev'), nx=document.getElementById('fo-next');
+    if(pv) pv.onclick=()=>allerAuFolio(-1);
+    if(nx) nx.onclick=()=>allerAuFolio(+1); }
   const bf=document.getElementById('btnFolios');
   const syncFolioBtn=()=>{ if(bf) bf.textContent=state.folioMode?'◻ Tout d’un tenant':'Découper en folios'; };
   if(bf) bf.onclick=()=>{
