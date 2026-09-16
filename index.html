@@ -148,6 +148,18 @@ main{grid-area:main;position:relative;overflow:hidden;background:#e3e6ea}
   .legend .sw{width:14px}
   .hud{left:8px;bottom:8px}
 }
+/* IMPRESSION. Sans règle @media print, Ctrl+P sortait la fenêtre telle
+   quelle : le panneau de gauche, la barre d'outils, et du folio seulement le
+   morceau visible à l'écran. On imprime donc le folio ENTIER, seul sur la
+   feuille, depuis le même dessin que l'export SVG. */
+#printroot{display:none}
+@media print{
+  html,body{height:auto;overflow:visible;background:#fff}
+  #app,#modal,#bmodal,#rmodal,#pop,#drawerBg{display:none!important}
+  #printroot{display:block}
+  #printroot svg{width:100%;height:auto;max-width:100%}
+  @page{margin:8mm}
+}
 </style>
 </head>
 <body>
@@ -14171,6 +14183,10 @@ Device;PN1;Description;Cable T/G;Cable Tag;Route;Device_2;Pin2;PN2;Description;F
       <button id="btnImport">Importer</button>
       <select id="planSel" class="plan-sel" title="Plan affiché" style="display:none"></select>
       <div class="sep"></div>
+      <button id="btnSvg" title="Enregistrer le folio affiché en SVG (vectoriel, imprimable à toute échelle)">SVG</button>
+      <button id="btnPng" title="Enregistrer le folio affiché en image PNG">PNG</button>
+      <button class="ghost" id="btnPrint" title="Imprimer le folio affiché">Imprimer</button>
+      <div class="sep"></div>
       <button class="ghost" id="btnClear">Effacer</button>
     </div>
   </header>
@@ -14523,6 +14539,17 @@ const FRAG='';
    Les étapes 5 à 8 ne font que MODIFIER ces structures ; l'étape 9 les lit
    pour fabriquer le dessin final. */
 function computeLayoutWith(eq, lk, peripheral){
+  /* UNE LIAISON SANS ÉQUIPEMENT À UN BOUT N'EST PAS UNE LIAISON.
+     Le bouton « + » de la table crée une ligne vide, et on la remplit de
+     gauche à droite : entre-temps, un seul des deux repères est renseigné.
+     Ce demi-fil traversait tout le moteur — le nom vide était écarté de
+     rawNames (falsy) mais gardé dans endPin, si bien qu'au moment de bâtir
+     le graphe on demandait les voisins d'un nœud qui n'existait pas :
+     `adj.get(undefined).set(...)`. Résultat, écran BLANC dès qu'on
+     commençait à saisir une liaison à la main. On écarte donc ces demi-fils
+     du DESSIN sans les retirer de la table : la saisie en cours reste là,
+     le schéma continue de s'afficher. */
+  lk = (lk||[]).filter(l=>l && String(l.from||'').trim() && String(l.to||'').trim());
   const byRep=new Map(eq.map(e=>[e.repere,e]));
 
   /* ===== ÉTAPE 1 — LECTURE DES NOMS : borniers, rails, mode anonyme ========= */
@@ -17136,7 +17163,19 @@ function routeAll(layout){
 
 /* ---------- 6. Rendu SVG ---------- */
 const f1=n=>(Math.round(n*10)/10);
-function esc(s){ return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+/* XML N'ACCEPTE AUCUN CARACTÈRE DE CONTRÔLE, ET LE DESSIN EN CONTENAIT.
+   Les clés internes collent le repère à la borne avec U+0001 (SOH) ; cette
+   clé finissait telle quelle dans l'attribut data-net de chaque fil. Le
+   navigateur, lui, l'avale sans broncher — mais le SVG ainsi produit n'est
+   pas un document XML valide : enregistré ou recopié, il est refusé par
+   Illustrator, Inkscape, un visualiseur, ou simplement par DOMParser. Le
+   défaut ne se voyait donc jamais à l'écran, seulement le jour où l'on veut
+   sortir le dessin de la page. On remplace ces caractères par une écriture
+   imprimable et réversible ; highlightNet applique la même pour retrouver
+   son fil. */
+const xmlSafe = s => String(s).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g,
+  c=>'\\u'+c.charCodeAt(0).toString(16).padStart(4,'0'));
+function esc(s){ return xmlSafe(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 function clip(s,n){ s=String(s); return s.length>n?s.slice(0,n-1)+'…':s; }
 
 function defs(){
@@ -17531,7 +17570,81 @@ function paint(layout,routing){
   hlHover=null;   // le rendu est reconstruit : la surbrillance repart de zéro
   document.getElementById('svg').innerHTML=defs()+`<g id="scene" transform="translate(${state.view.tx},${state.view.ty}) scale(${state.view.s})">`+sceneInner(layout,routing)+`</g>`;
 }
+
+/* ---------- SORTIR LE DESSIN DE L'ÉCRAN ----------------------------------
+   L'outil savait tout faire sauf rendre le folio. Pour le montrer à
+   quelqu'un, il fallait photographier l'écran — donc un seul écran à la fois,
+   de travers, illisible aux bornes. Trois sorties, toutes hors ligne :
+   · SVG — vectoriel, s'ouvre partout, se zoome sans perdre un trait ;
+   · PNG — pour coller dans un courriel ou un compte rendu ;
+   · Imprimer — le folio entier sur la feuille, pas la fenêtre.
+   Les trois partent du MÊME dessin que l'écran, cadré sur le folio complet et
+   non sur ce que la fenêtre laisse voir. */
+function svgAutonome(){
+  if(!LAST||!LAST.routing) return null;
+  const bb=LAST.layout.bbox, M=24;
+  const W=Math.ceil(bb.w+2*M), H=Math.ceil(bb.h+2*M);
+  const x0=f1(bb.x-M), y0=f1(bb.y-M);
+  const txt='<?xml version="1.0" encoding="UTF-8"?>\n'
+    +`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="${x0} ${y0} ${W} ${H}">`
+    +`<rect x="${x0}" y="${y0}" width="${W}" height="${H}" fill="#fbfbf7"/>`
+    +defs()+sceneInner(LAST.layout,LAST.routing)+'</svg>';
+  return {w:W, h:H, txt};
+}
+function nomFolio(){
+  const p=(state.plan&&state.plan!=='*')?('-folio-'+String(state.plan).replace(/[^\w.-]+/g,'_')):'';
+  return 'atelier-schema'+p;
+}
+function telecharger(blob, nom){
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=nom;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+}
+function exportSVG(){
+  const S=svgAutonome(); if(!S) return alert('Aucun dessin à enregistrer.');
+  telecharger(new Blob([S.txt],{type:'image/svg+xml;charset=utf-8'}), nomFolio()+'.svg');
+}
+function exportPNG(){
+  const S=svgAutonome(); if(!S) return alert('Aucun dessin à enregistrer.');
+  /* On vise ~2 px de sortie par unité de dessin : les repères de bornes
+     restent lisibles une fois imprimé. Plafonné pour ne pas demander au
+     navigateur une image que sa mémoire refuse. */
+  const k=Math.max(1, Math.min(3, 12e6/Math.max(1,S.w*S.h)));
+  const img=new Image();
+  img.onload=()=>{
+    const cv=document.createElement('canvas');
+    cv.width=Math.round(S.w*k); cv.height=Math.round(S.h*k);
+    const g=cv.getContext('2d');
+    g.fillStyle='#fbfbf7'; g.fillRect(0,0,cv.width,cv.height);
+    g.drawImage(img,0,0,cv.width,cv.height);
+    cv.toBlob(b=>{ if(b) telecharger(b, nomFolio()+'.png');
+      else alert('Le navigateur n’a pas pu produire l’image.'); },'image/png');
+  };
+  img.onerror=()=>alert('Le navigateur n’a pas pu convertir le dessin en image. Le SVG, lui, fonctionne.');
+  img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(S.txt);
+}
+function imprimerFolio(){
+  const S=svgAutonome(); if(!S) return alert('Aucun dessin à imprimer.');
+  let root=document.getElementById('printroot');
+  if(!root){ root=document.createElement('div'); root.id='printroot'; document.body.appendChild(root); }
+  root.innerHTML=S.txt.replace(/^<\?xml[^>]*\?>\s*/,'');
+  window.print();
+}
 function render(){
+  /* HYGIÈNE DES NOMS, AVANT TOUT LE RESTE. Un export Excel traîne des espaces
+     en fin de cellule : « 210SP1 » et « 210SP1 » (avec une espace) se
+     dessinaient en DEUX blocs distincts, reliés à rien l'un l'autre. Le côté
+     données normalisait déjà (majuscules, espaces ôtées) ; le dessin, non.
+     On rogne donc les quatre champs qui font l'identité d'un bout de fil,
+     dans state.lk lui-même, pour que la table, l'éditeur et le dessin parlent
+     toujours du même repère. */
+  (state.lk||[]).forEach(l=>{ if(!l)return;
+    ['from','to','fromTerm','toTerm'].forEach(k=>{
+      if(typeof l[k]==='string' && l[k]!==l[k].trim()) l[k]=l[k].trim(); }); });
+  // la table des équipements aussi : un repère déclaré avec une espace en trop
+  // s'ajoutait comme un bloc de plus, vide et sans le moindre fil.
+  (state.eq||[]).forEach(e=>{ if(e && typeof e.repere==='string' && e.repere!==e.repere.trim())
+    e.repere=e.repere.trim(); });
   const notice=document.getElementById('notice');
   const NOTICE0='<div class="big">Aucune topologie</div>déclare les équipements et les liaisons, puis « Régénérer »';
   if(!state.lk.length){ notice.style.display='block'; notice.innerHTML=NOTICE0;
@@ -18298,6 +18411,7 @@ async function rbLoad(file){
     const f=rbFindHeader(rows);
     if(f.head<0) throw new Error('en-têtes introuvables : il faut au moins les colonnes Device1 et Device2 (cherchées dans les 30 premières lignes)');
     RB.rows=rows; RB.col=f.col; RB.head=f.head; RB.file=file.name; RB.sheet=sheet;
+    rbInvalider();
     rbStat('Analyse de '+rbNum(rows.length-f.head-1)+' lignes…');
     await new Promise(r=>setTimeout(r,20));
     rbRender(rbAnalyse());
@@ -18307,13 +18421,27 @@ async function rbLoad(file){
     document.getElementById('rb-forget').style.display='';
     rbOpenReport();
   }catch(err){
-    RB.rows=null;
+    RB.rows=null; rbInvalider();
     rbStat('Erreur : '+(err&&err.message?err.message:err));
   }
 }
+
+/* LES INDEX SONT DES PHOTOS DE LA BASE, PAS DES VUES. procheIndexer() et
+   identIndexer() construisent des tables où chaque liaison est rangée par son
+   NUMÉRO DE LIGNE dans RB.rows. Ils n'étaient bâtis qu'une fois
+   (`if(!PROCHE.parContrat) …`) et jamais jetés : en chargeant une seconde
+   base — une version corrigée du même fichier, par exemple — l'outil
+   continuait de répondre avec l'ancienne, et les numéros de ligne pointaient
+   désormais dans le vide. Aucune erreur à l'écran : juste de mauvaises
+   réponses, ce qui est pire. Toute base qui bouge efface donc ses index. */
+function rbInvalider(){
+  PROCHE.parContrat=null; PROCHE.res=null; PROCHE.choisi=null;
+  IDENT.index=null; IDENT.res=null;
+  PLAN_COURANT=null;
+}
 function rbOpenReport(){ if(!RB.rows) return; document.getElementById('rmodal').style.display='flex'; }
 function rbCloseReport(){ const m=document.getElementById('rmodal'); if(m)m.style.display='none'; }
-function rbForget(){ RB.rows=null; RB.col=null; RB.txt='';
+function rbForget(){ RB.rows=null; RB.col=null; RB.txt=''; rbInvalider();
   document.getElementById('rb-body').innerHTML='';
   document.getElementById('cnt-rb').textContent='—';
   document.getElementById('rb-report').style.display='none';
@@ -18856,6 +18984,15 @@ const pkey=(a,pa,b,pb)=>{ const S=String.fromCharCode(1);
 /* Decoupage de la base par contrat. On garde, pour chacun : ses liaisons, ses
    equipements, et les lignes brutes — il faudra pouvoir citer la ligne source
    quand on proposera d'en recopier une. */
+/* Une PIECE INTERMEDIAIRE, c'est ce que le contrat ne declare pas et qu'on
+   vient chercher dans la base : une barrette (VT) ou une prise de coupure
+   (VC). Le test vivait au fond de differentiel() ; le classement en a besoin
+   lui aussi, donc il remonte ici. */
+function estPieceInter(d){
+  const q=rbParseRep(d);
+  return !!q && (q.code.indexOf('VT')===0 || q.code.indexOf('VC')===0);
+}
+
 function procheIndexer(){
   if(!RB.rows) throw new Error('charge d’abord la base de retest');
   const rows=RB.rows, col=RB.col, h=RB.head;
@@ -18866,10 +19003,18 @@ function procheIndexer(){
     const d1=dn(gi(row,'device1')), d2=dn(gi(row,'device2'));
     if(!d1&&!d2) continue;
     const ap=gi(row,'appareil')||'(sans contrat)';
-    let o=M.get(ap); if(!o){ o={liaisons:new Map(), devices:new Set(), n:0}; M.set(ap,o); }
+    let o=M.get(ap); if(!o){ o={liaisons:new Map(), devices:new Set(), pieces:new Map(), n:0}; M.set(ap,o); }
     o.n++;
     if(d1)o.devices.add(d1); if(d2)o.devices.add(d2);
     if(d1&&d2) o.liaisons.set(pkey(d1,gi(row,'pin1'),d2,gi(row,'pin2')), r);
+    /* Les pieces intermediaires du contrat, avec ce qu'elles touchent. On les
+       releve ici, en un seul balayage de la base, pour que le classement
+       puisse dire ce qu'un contrat APPORTE — pas seulement ce qu'il a en
+       commun avec moi. */
+    if(d1&&d2){
+      if(estPieceInter(d1)) (o.pieces.get(d1)||o.pieces.set(d1,new Set()).get(d1)).add(d2);
+      if(estPieceInter(d2)) (o.pieces.get(d2)||o.pieces.set(d2,new Set()).get(d2)).add(d1);
+    }
   }
   PROCHE.parContrat=M;
   return M.size;
@@ -18897,12 +19042,27 @@ function contratsProches(){
     moi.liaisons.forEach(k=>{ if(o.liaisons.has(k))cl++; });
     moi.devices.forEach(d=>{ if(o.devices.has(d))cd++; });
     if(!cd) return;
+    /* TROISIEME MESURE : ce que ce contrat m'APPORTE. Les deux premieres
+       disent la ressemblance, et la ressemblance seule menait a une reponse
+       absurde — un contrat identique au mien sortait premier avec 100 %, puis
+       « 0 piece a ajouter », sans qu'on comprenne pourquoi. Un contrat ne sert
+       a quelque chose que s'il porte des barrettes ou des prises de coupure
+       que je n'ai pas, accrochees a des equipements que j'ai. On compte donc
+       ces pieces, et un contrat qui n'en apporte aucune passe derriere, quelle
+       que soit sa ressemblance. Les deux axes d'origine restent affiches tels
+       quels : cette mesure les complete, elle ne les melange pas. */
+    let apporte=0; const quoi=[];
+    o.pieces.forEach((vois,nom)=>{
+      if(moi.devices.has(nom)) return;                       // je l'ai deja
+      let touche=false; vois.forEach(v=>{ if(moi.devices.has(v))touche=true; });
+      if(touche){ apporte++; if(quoi.length<6)quoi.push(nom); } });
     res.push({ contrat:ap, lignes:o.n,
       liaisonsCommunes:cl, tauxLiaisons:Math.round(100*cl/Math.max(1,moi.liaisons.size)),
       devicesCommuns:cd,  tauxDevices:Math.round(100*cd/Math.max(1,moi.devices.size)),
-      sesLiaisons:o.liaisons.size });
+      sesLiaisons:o.liaisons.size, piecesApportees:apporte, exemples:quoi });
   });
-  res.sort((a,b)=>b.tauxLiaisons-a.tauxLiaisons||b.tauxDevices-a.tauxDevices);
+  res.sort((a,b)=>(b.piecesApportees>0)-(a.piecesApportees>0)
+                ||b.tauxLiaisons-a.tauxLiaisons||b.tauxDevices-a.tauxDevices);
   PROCHE.res={moi,res};
   return res;
 }
@@ -18919,7 +19079,7 @@ function differentiel(ap){
   const rows=RB.rows, col=RB.col;
   const gi=(r,k)=>{ const i=col[k]; if(i==null)return ''; const v=r[i]; return v==null?'':String(v).trim(); };
   const dn=d=>String(d||'').toUpperCase().replace(/\s+/g,'');
-  const estPiece=d=>{ const q=rbParseRep(d); return !!q && (q.code.indexOf('VT')===0||q.code.indexOf('VC')===0); };
+  const estPiece=estPieceInter;
   const viaPiece=[], entreConnus=[], sesPieces=new Map();
   o.liaisons.forEach((r,k)=>{
     if(moi.liaisons.has(k)) return;                       // deja chez moi
@@ -18959,17 +19119,19 @@ function prochesRapport(){
   if(!res.length){
     html+='<section><p class="verdict v-no">Aucun contrat de la base ne partage un seul équipement avec le tien. Soit les repères ne suivent pas la même convention, soit c’est un appareil vraiment nouveau.</p></section>';
   } else {
-    html+='<section><h4>Classement</h4><p class="rnote">Deux mesures séparées à dessein : le <b>câblage</b> commun, et le <b>matériel</b> commun. Un contrat peut avoir tous mes équipements et un câblage différent — c’est une information.</p>'
-        + '<table><thead><tr><th>Contrat</th><th>câblage commun</th><th>matériel commun</th><th>ses liaisons</th></tr></thead><tbody>';
+    html+='<section><h4>Classement</h4><p class="rnote">Trois mesures séparées à dessein : le <b>câblage</b> commun, le <b>matériel</b> commun, et surtout ce que le contrat <b>apporte</b> — les barrettes et prises de coupure qu’il a et que tu n’as pas. Un contrat identique au tien ressemble beaucoup et n’apprend rien : il passe donc derrière.</p>'
+        + '<table><thead><tr><th>Contrat</th><th>apporte</th><th>câblage commun</th><th>matériel commun</th><th>ses liaisons</th></tr></thead><tbody>';
     res.slice(0,10).forEach((x,i)=>{
       html+='<tr><td>'+(i===0?'<b>'+e2(x.contrat)+'</b>':e2(x.contrat))+'</td>'
+          + '<td class="n">'+(x.piecesApportees||'—')+(x.exemples&&x.exemples.length?' <span class="ex">'+e2(x.exemples.slice(0,3).join(' '))+'</span>':'')+'</td>'
           + '<td class="n">'+x.tauxLiaisons+' % <span class="ex">('+x.liaisonsCommunes+')</span></td>'
           + '<td class="n">'+x.tauxDevices+' % <span class="ex">('+x.devicesCommuns+')</span></td>'
           + '<td class="n">'+rbNum(x.sesLiaisons)+'</td></tr>';
-      txt+='  '+x.contrat+' : câblage '+x.tauxLiaisons+'% ('+x.liaisonsCommunes+') · matériel '+x.tauxDevices+'%\n'; });
+      txt+='  '+x.contrat+' : apporte '+x.piecesApportees+' pièce(s) · câblage '+x.tauxLiaisons+'% ('+x.liaisonsCommunes+') · matériel '+x.tauxDevices+'%\n'; });
     html+='</tbody></table>';
     const b=res[0];
-    const v = b.tauxLiaisons>=70 ? ['v-ok','Ton contrat est très probablement une variante de <b>'+e2(b.contrat)+'</b> : '+b.tauxLiaisons+' % de ton câblage y existe déjà. C’est de lui qu’il faut partir.']
+    const v = !b.piecesApportees ? ['v-hm','<b>'+e2(b.contrat)+'</b> est le plus proche ('+b.tauxLiaisons+' % du câblage) mais il n’apporte <b>aucune</b> barrette ni prise de coupure que tu n’aies déjà. Aucun contrat de cette base n’a de pièce à te prêter : soit ton contrat est déjà complet, soit les pièces sont ailleurs.']
+            : b.tauxLiaisons>=70 ? ['v-ok','Ton contrat est très probablement une variante de <b>'+e2(b.contrat)+'</b> : '+b.tauxLiaisons+' % de ton câblage y existe déjà, et il porte '+b.piecesApportees+' pièce(s) que tu n’as pas. C’est de lui qu’il faut partir.']
             : b.tauxLiaisons>=30 ? ['v-hm','<b>'+e2(b.contrat)+'</b> est le plus proche ('+b.tauxLiaisons+' % du câblage), mais c’est loin d’être une copie. À prendre comme référence, pas comme modèle.']
             : b.tauxDevices>=50 ? ['v-hm','Aucun contrat ne partage vraiment ton câblage, mais <b>'+e2(b.contrat)+'</b> a '+b.tauxDevices+' % de ton matériel. Même équipements, architecture différente.']
             : ['v-no','Rien de proche : ton contrat est une architecture nouvelle. On construira à partir des pièces, une par une.'];
@@ -19054,7 +19216,7 @@ function zonesModele(){
    décoche ce qu'on refuse, on applique d'un coup — et « Annuler » remet
    exactement l'état d'avant.                                                 */
 
-const APPLI = { avant:null, dernier:null };
+const APPLI = { ajouts:null, retires:null, dernier:null };
 
 /* Les lignes de la base qui concernent une pièce, prêtes à être copiées. */
 function lignesDeLaPiece(ap, piece){
@@ -19121,12 +19283,19 @@ function appliquerPieces(plan){
      lever — sans quoi le simple fait de demander « complete » sur un contrat
      complet cassait l'outil. */
   if(!plan || !plan.length) return {pieces:0, ajoutees:0, retirees:0};
-  APPLI.avant = (state.lk||[]).map(l=>({...l}));
   const retirer=new Set();
   const ajouter=[];
   plan.forEach(x=>{ if(!x.retenu) return;
     x.retire.forEach(i=>retirer.add(i));
     x.ajoute.forEach(l=>ajouter.push({...l})); });
+  /* ANNULER NE DOIT DÉFAIRE QUE CETTE ÉCRITURE-LÀ. On mémorisait l'état
+     ENTIER d'avant et on le remettait tel quel : tout ce qu'on avait corrigé
+     à la main entre-temps disparaissait sans un mot. On garde donc les seuls
+     deux éléments nécessaires — les lignes RETIRÉES avec leur place exacte,
+     et les OBJETS effectivement insérés (reconnus à l'identité, pas au
+     contenu, donc retrouvés même après édition). */
+  APPLI.retires = [...retirer].sort((a,b)=>a-b).map(i=>({i, l:{...(state.lk[i]||{})}}));
+  APPLI.ajouts  = ajouter;
   const garde=(state.lk||[]).filter((l,i)=>!retirer.has(i));
   state.lk = garde.concat(ajouter);
   APPLI.dernier = { pieces:plan.filter(x=>x.retenu).length,
@@ -19136,9 +19305,12 @@ function appliquerPieces(plan){
   return APPLI.dernier;
 }
 function annulerPieces(){
-  if(!APPLI.avant) return false;
-  state.lk = APPLI.avant.map(l=>({...l}));
-  APPLI.avant=null; APPLI.dernier=null;
+  if(!APPLI.ajouts && !APPLI.retires) return false;
+  const nes=new Set(APPLI.ajouts||[]);
+  const arr=(state.lk||[]).filter(l=>!nes.has(l));   // on ôte ce QU'ON a posé
+  (APPLI.retires||[]).forEach(o=>arr.splice(Math.min(o.i,arr.length),0,{...o.l}));
+  state.lk = arr;                                     // et on remet le reste en place
+  APPLI.ajouts=null; APPLI.retires=null; APPLI.dernier=null;
   state.xroots=null; OVR.clear(); ORDH.clear(); state.sel=null;
   syncTables(); syncPlans(); render(); fit();
   return true;
@@ -19316,10 +19488,42 @@ function bancEtapes(){ return [
         m:poses.join(', ')+' · +'+r.ajoutees+' fils' }; } },
 
   { nom:'Annuler et retrouver l’état exact', voir:true, run:async()=>{
-      const emp=()=>(state.lk||[]).map(l=>[l.from,l.fromTerm,l.to,l.toTerm].join('|')).sort().join('\n');
-      const avant=APPLI.avant?APPLI.avant.map(l=>[l.from,l.fromTerm,l.to,l.toTerm].join('|')).sort().join('\n'):null;
+      const sig=a=>a.map(l=>[l.from,l.fromTerm,l.to,l.toTerm].join('|')).sort().join('\n');
+      if(!APPLI.ajouts && !APPLI.retires) return { ok:false, m:'rien à annuler' };
+      const nes=new Set(APPLI.ajouts||[]);
+      const attendu=sig((state.lk||[]).filter(l=>!nes.has(l))
+                        .concat((APPLI.retires||[]).map(o=>o.l)));
       annulerPieces(); fit();
-      return { ok:avant!==null && emp()===avant, m:(state.lk||[]).length+' liaisons rétablies' }; } }
+      return { ok:sig(state.lk||[])===attendu, m:(state.lk||[]).length+' liaisons rétablies' }; } },
+
+  /* Le piège qu'on n'avait pas vu : on complète le contrat, puis on corrige
+     une liaison à la main, puis on annule. L'annulation remettait l'état
+     entier d'avant — la correction manuelle partait avec, sans un mot.
+     Cette étape la refait à chaque fois. */
+  { nom:'Annuler épargne une correction manuelle', voir:true, run:async()=>{
+      await rbLoad(baseExemple()); rbCloseReport();
+      contratEssai(); zonesExemple();
+      appliquerPieces(planPieces(contratsProches()[0].contrat));
+      state.lk.push({from:'ESSAI-MAIN',fromTerm:'1',to:'210SP1',toTerm:'9',
+        nature:'',cable:'',ctype:'',route:'',plan:'',pn1:'',pn2:''});
+      const n=state.lk.length;
+      annulerPieces(); render(); fit();
+      const survit=(state.lk||[]).some(l=>l.from==='ESSAI-MAIN');
+      state.lk=(state.lk||[]).filter(l=>l.from!=='ESSAI-MAIN'); render(); fit();
+      return { ok:survit, m:survit?('la correction manuelle survit ('+n+' → '+(state.lk.length+1)+')')
+                                  :'LA CORRECTION MANUELLE A ÉTÉ PERDUE' }; } },
+
+  /* Une ligne à moitié saisie ne doit pas effacer le dessin. Le bouton « + »
+     de la table en crée une à chaque clic. */
+  { nom:'Une liaison à moitié saisie ne casse rien', run:async()=>{
+      contratEssai(); const n0=(LAST&&LAST.layout.comps.length)||0;
+      state.lk.push({from:'',fromTerm:'',to:'',toTerm:'',nature:''});
+      state.lk.push({from:'',fromTerm:'1',to:'210SP1',toTerm:'9',nature:''});
+      render(); fit();
+      const vivant=!!LAST && LAST.layout.comps.length>=n0;
+      state.lk=(state.lk||[]).filter(l=>String(l.from||'').trim()&&String(l.to||'').trim());
+      render(); fit();
+      return { ok:vivant, m:vivant?('dessin intact, '+n0+' blocs'):'ÉCRAN BLANC' }; } }
 ]; }
 
 function bancRendu(){
@@ -19507,11 +19711,11 @@ function clearHL(){ const sc=document.getElementById('scene'); if(!sc)return;
 function highlightNet(net){ const sc=document.getElementById('scene'); if(!sc||net==null)return;
   clearHL(); sc.classList.add('focus');
   const names=new Set();
-  sc.querySelectorAll('.cab').forEach(p=>{ if(p.dataset.net===String(net)){ p.classList.add('hl');
+  sc.querySelectorAll('.cab').forEach(p=>{ if(p.dataset.net===xmlSafe(net)){ p.classList.add('hl');
     if(p.dataset.a)names.add(p.dataset.a); if(p.dataset.b)names.add(p.dataset.b); } });
   sc.querySelectorAll('.comp').forEach(g=>{ if(names.has(g.dataset.name))g.classList.add('hl'); }); }
 function highlightDevice(name){ const sc=document.getElementById('scene'); if(!sc)return;
-  clearHL(); sc.classList.add('focus');
+  clearHL(); sc.classList.add('focus'); name=xmlSafe(name);
   const others=new Set();
   sc.querySelectorAll('.cab').forEach(p=>{ const a=p.dataset.a,b=p.dataset.b;
     if(a===name||b===name){ p.classList.add('hl'); others.add(a); others.add(b); } });
@@ -19929,6 +20133,9 @@ function init(){
   const bg=document.getElementById('drawerBg'); if(bg) bg.onclick=closeDrawer;
   document.getElementById('btnGen').onclick=()=>{ render(); fit(); closeDrawer(); };
   document.getElementById('btnClear').onclick=clearAll;
+  { const s=document.getElementById('btnSvg'); if(s) s.onclick=exportSVG;
+    const g=document.getElementById('btnPng'); if(g) g.onclick=exportPNG;
+    const i=document.getElementById('btnPrint'); if(i) i.onclick=imprimerFolio; }
   document.getElementById('btnImport').onclick=()=>{ closeDrawer(); openModal(); };
   document.getElementById('imp-cancel').onclick=closeModal;
   document.getElementById('imp-ok').onclick=()=>{ if(impMode==='db') parseDB(); else parseImport(); };

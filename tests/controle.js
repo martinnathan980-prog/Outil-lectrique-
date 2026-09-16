@@ -206,6 +206,100 @@ function titre(t) { console.log('\n' + t); }
   ok('« Annuler » rend l’état EXACT d’avant', ecr.identique,
     ecr.nApresAnnul + ' liaisons, empreinte ' + (ecr.identique ? 'identique' : 'DIFFÉRENTE'));
 
+  /* ---- 7. LES PIÈGES TROUVÉS À LA CHASSE AUX BOGUES ------------------
+     Six défauts que rien ne signalait : l'outil ne se plaignait pas, il
+     répondait mal, ou pas du tout. Chacun a maintenant son contrôle, pour
+     qu'aucun ne puisse revenir sans qu'on le voie. */
+  titre('7. LES PIÈGES DÉJÀ TOMBÉS');
+
+  const pieges = await page.evaluate(async () => {
+    const r = {};
+    const L = (f, ft, t, tt) => ({ from: f, fromTerm: ft, to: t, toTerm: tt,
+      nature: '', cable: '', ctype: '', route: '', plan: '', pn1: '', pn2: '' });
+
+    // (a) une liaison à moitié saisie effaçait tout le dessin
+    contratEssai(); const n0 = LAST.layout.comps.length;
+    state.lk.push(L('', '', '', ''));          // le bouton « + » de la table
+    state.lk.push(L('', '1', '210SP1', '9'));  // un seul bout renseigné
+    try { render(); r.demiFil = !!LAST && LAST.layout.comps.length >= n0; }
+    catch (e) { r.demiFil = false; r.demiFilMsg = String(e.message).slice(0, 90); }
+
+    // (b) « 210SP1 » et « 210SP1 » (avec une espace) faisaient deux blocs
+    state.lk = [L(' 210SP1 ', '1', 'BORNE', '2'), L('210SP1', '3', 'BORNE', '4')];
+    state.eq = deriveEq(state.lk); render();
+    // on compte les REPÈRES distincts, pas les blocs : un bornier se dessine
+    // légitimement en plusieurs fragments portant le même nom.
+    r.espaces = new Set(LAST.layout.comps.filter(c => c.kind !== 'tag')
+      .map(c => String(c.name))).size;
+
+    // (c) le SVG portait U+0001 : illisible par tout lecteur XML
+    contratEssai();
+    const S = svgAutonome();
+    r.svgOk = !!S;
+    if (S) {
+      const doc = new DOMParser().parseFromString(S.txt, 'image/svg+xml');
+      r.svgXml = !doc.querySelector('parsererror');
+      r.svgCtrl = /[\x00-\x08\x0B\x0C\x0E-\x1F]/.test(S.txt);
+      r.svgFils = (S.txt.match(/class="cab"/g) || []).length;
+    }
+
+    // (d) « Annuler » emportait les corrections faites à la main
+    await rbLoad(baseExemple()); rbCloseReport();
+    contratEssai(); zonesExemple();
+    appliquerPieces(planPieces(contratsProches()[0].contrat));
+    state.lk.push(L('CTRL-MAIN', '1', '210SP1', '9'));
+    annulerPieces();
+    r.mainSurvit = (state.lk || []).some(l => l.from === 'CTRL-MAIN');
+    state.lk = (state.lk || []).filter(l => l.from !== 'CTRL-MAIN');
+
+    // (e) charger une 2e base laissait l'outil répondre d'après la 1re
+    const EN = ['Harness','Device1','Pin1','PN1','Description1','Cable T/G','Cable Tag','Route',
+      'Device2','Pin2','PN2','Description2','FWD','Cable Length (mm)','Appareil','Date retest'];
+    const aoa = [[''], ['x'], [], EN,
+      ['H','AAA','1','','','','','1M','BBB','2','','','SPE','1200','BASE2','']];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), 'Retest');
+    await rbLoad(new File([XLSX.write(wb, { bookType: 'xlsx', type: 'array' })], 'b2.xlsm'));
+    rbCloseReport();
+    r.contrats2 = Array.from(PROCHE.parContrat ? PROCHE.parContrat.keys() : []);
+    contratEssai();
+    r.vieuxContrat = contratsProches().some(x => x.contrat === 'IRO AE');
+
+    // (f) un contrat identique au mien sortait premier et n'apprenait rien
+    await rbLoad(baseExemple()); rbCloseReport();
+    contratEssai();
+    const moi = state.lk.map(l => ['H', l.from, l.fromTerm, '', '', '', '', '1M',
+      l.to, l.toTerm, '', '', 'SPE', '1200', 'MON-JUMEAU', '']);
+    const wb2 = XLSX.utils.book_new();
+    const src = [[''], ['x'], [], EN];
+    // on recopie la base d'exemple puis on y ajoute mon propre contrat
+    for (let i = RB.head + 1; i < RB.rows.length; i++) if (RB.rows[i]) src.push(RB.rows[i]);
+    XLSX.utils.book_append_sheet(wb2, XLSX.utils.aoa_to_sheet(src.concat(moi)), 'Retest');
+    await rbLoad(new File([XLSX.write(wb2, { bookType: 'xlsx', type: 'array' })], 'jum.xlsm'));
+    rbCloseReport();
+    contratEssai();
+    const cls = contratsProches();
+    r.premier = cls[0] ? cls[0].contrat : '—';
+    r.apport = cls[0] ? cls[0].piecesApportees : 0;
+    r.jumeauApport = (cls.find(x => x.contrat === 'MON-JUMEAU') || {}).piecesApportees;
+    return r;
+  });
+
+  ok('une liaison à moitié saisie ne vide pas l’écran', pieges.demiFil,
+    pieges.demiFil ? 'le dessin tient' : (pieges.demiFilMsg || 'ÉCRAN BLANC'));
+  ok('les espaces parasites ne dédoublent plus un repère', pieges.espaces === 2,
+    pieges.espaces + ' bloc(s) pour 2 repères');
+  ok('le SVG exporté est un XML valide', pieges.svgOk && pieges.svgXml && !pieges.svgCtrl,
+    pieges.svgOk ? (pieges.svgFils + ' fils · caractère de contrôle : '
+      + (pieges.svgCtrl ? 'OUI' : 'aucun')) : 'pas de SVG produit');
+  ok('« Annuler » épargne une correction manuelle', pieges.mainSurvit,
+    pieges.mainSurvit ? 'la correction survit' : 'CORRECTION PERDUE');
+  ok('changer de base jette l’ancien index', !pieges.vieuxContrat,
+    'contrats vus après rechargement : ' + pieges.contrats2.join(', '));
+  ok('un contrat jumeau ne prend pas la tête', pieges.premier !== 'MON-JUMEAU',
+    pieges.premier + ' apporte ' + pieges.apport + ' pièce(s) · le jumeau en apporte '
+    + (pieges.jumeauApport == null ? '—' : pieges.jumeauApport));
+
   // ---- bilan ----------------------------------------------------------
   titre('BILAN');
   ok('aucune erreur console', erreurs.length === 0, erreurs.length ? erreurs.slice(0, 3).join(' | ') : 'aucune');
