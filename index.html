@@ -253,7 +253,10 @@ main{grid-area:main;position:relative;overflow:hidden;background:#e3e6ea}
           <datalist id="xp-names"></datalist>
           <div id="xp-chips" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px"></div>
           <div id="xp-stat" class="hint" style="margin-top:6px"></div>
-          <button class="ghost" id="xp-all" style="display:none;margin-top:6px">Revoir tout le folio</button>
+          <div class="brow" style="margin-top:6px">
+            <button class="ghost" id="xp-all" style="display:none">Revoir tout le folio</button>
+            <button class="ghost" id="btnFolios">Découper en folios</button>
+          </div>
           <div class="hint">Un contrat entier tient rarement sur une page. Choisis un repère : lui seul et ses liaisons sont dessinés. Un badge <b>+</b> sur un voisin le déplie à son tour.</div>
           <div class="subhead">Cartouche</div>
           <div class="cart-grid">
@@ -3837,6 +3840,54 @@ function linksForPlan(lk,plan){ if(!plan||plan==='*')return lk; return lk.filter
      RENVOI : « ▷ Fn » avec, en étiquette, l'équipement + borne d'arrivée.
    On écrit le résultat dans la colonne plan -> le sélecteur de folios existant
    prend le relais, et chaque folio repasse par le moteur (100 % fils droits). */
+/* ─── LE DÉCOUPAGE EN FOLIOS N'AVAIT AUCUN BOUTON ───────────────────────────
+   autoFolios() existe depuis longtemps, sait répartir un contrat en plusieurs
+   folios en répliquant les borniers et en posant des renvois — et RIEN dans la
+   page ne l'appelait : `document.getElementById('btnFolios')` cherchait un
+   bouton qui n'a jamais été écrit dans le HTML. Du code mort, pendant que
+   l'outil sortait des rubans.
+
+   MESURE. Un carrefour de 41 blocs se dessinait en 342 × 2698, soit un format
+   0,13:1 — vingt fois plus haut que large, sur aucune feuille du monde.
+   Découpé : trois folios en 0,32:1, 0,32:1 et 0,66:1, et toujours 100 % de
+   fils droits. Le découpage ne coûte donc RIEN en droiture et rend le dessin
+   imprimable. C'était disponible et inutilisé.
+
+   ON NE LE MET PAS DERRIÈRE UN BOUTON À DÉCOUVRIR. Un dessin qui ne tient pas
+   sur une feuille est une anomalie, pas un choix de l'utilisateur : il se
+   découpe tout seul, et on le dit. Le retour au schéma d'un seul tenant reste
+   à un clic. */
+function decouperEnFolios(budget){
+  const eq = state.eq&&state.eq.length ? state.eq : deriveEq(state.lk);
+  const R = autoFolios(state.lk, eq, budget||16);
+  if(!R.applied) return false;
+  state.folioBackup=state.lk; state.lk=R.links;
+  state.folioMode=true; state.folioCount=R.nFolios;
+  state.xroots=null; state.forceFull=true; state.plan='1';
+  syncTables(); syncPlans(); if(window.syncFolioBtn)window.syncFolioBtn(); render(); fit();
+  return R.nFolios;
+}
+function derouler(){
+  if(!state.folioMode) return false;
+  if(state.folioBackup) state.lk=state.folioBackup;
+  state.folioBackup=null; state.folioMode=false; state.folioCount=0; state.plan='*';
+  syncTables(); syncPlans(); if(window.syncFolioBtn)window.syncFolioBtn(); render(); fit();
+  return true;
+}
+
+/* Est-ce que ce qui est dessiné tient sur une feuille ? On mesure l'emprise
+   RÉELLE des blocs — pas la feuille, qui est calée sur un format A quoi qu'on
+   dessine dessus. Au-delà de 2,5 pour 1 dans un sens ou dans l'autre, ce n'est
+   plus une planche, c'est un rouleau. */
+function formatDuDessin(){
+  if(!LAST) return null;
+  const C=LAST.layout.comps.filter(c=>c.kind!=='tag'); if(!C.length) return null;
+  const x0=Math.min(...C.map(c=>c.x)), x1=Math.max(...C.map(c=>c.x+c.w));
+  const y0=Math.min(...C.map(c=>c.y)), y1=Math.max(...C.map(c=>c.y+c.h));
+  const w=Math.max(1,x1-x0), h=Math.max(1,y1-y0);
+  return { larg:w, haut:h, ratio:w/h, tientSurUnePage: (w/h)<=2.5 && (w/h)>=0.4 };
+}
+
 function autoFolios(lk, eq, budget){
   budget = budget || 16;
   const byRep=new Map((eq||[]).map(e=>[e.repere,e]));
@@ -3936,7 +3987,7 @@ function parseDB(){ state.xroots=null; state.forceFull=false; ORDH.clear();
   if(!links.length){ alert('Aucune liaison détectée. Vérifie le séparateur ( ; , ou tabulation ) et l’ordre des colonnes.'); return; }
   state.eq=[]; state.lk=links; OVR.clear(); state.sel=null; state.plan='*';
   state.folioMode=false; state.folioCount=0; state.folioBackup=null;
-  const bf=document.getElementById('btnFolios'); if(bf)bf.textContent='Auto-folios';
+  const bf=document.getElementById('btnFolios'); if(bf)bf.textContent='Découper en folios';
   syncTables(); syncPlans();
   /* LE PLACEMENT LE PLUS DROIT N'EST PAS UNE OPTION. Il fallait cliquer
      « Droits max » apres chaque chargement pour l'obtenir — mesure sur le
@@ -3949,7 +4000,50 @@ function parseDB(){ state.xroots=null; state.forceFull=false; ORDH.clear();
   if(nb<=60){ OPT_ONCE=true; OPT_MODE='max'; OPT_AREA_CAP=0;
     try{ render(); } finally { OPT_ONCE=false; } }
   else render();
-  fit(); closeModal();
+  fit(); ajusterFolios(); closeModal();
+}
+
+/* UN DESSIN QUI NE TIENT PAS SUR UNE FEUILLE SE DÉCOUPE TOUT SEUL.
+   Le moteur atteint 98,6 % de fils droits en ÉTIRANT la page aussi loin qu'il
+   le faut : un carrefour de 41 blocs sortait en 342 × 2698, une chaîne de 20
+   en 3906 × 114. Parfaitement droit, parfaitement inutilisable. Ce n'est pas
+   un choix que l'utilisateur doit faire dans un menu — c'est une anomalie que
+   l'outil doit corriger et annoncer. On mesure donc après chaque chargement,
+   et on découpe si la planche est devenue un rouleau. Un clic pour revenir
+   d'un seul tenant. */
+function ajusterFolios(){
+  if(state.folioMode) return 0;
+  const f=formatDuDessin();
+  if(!f || f.tientSurUnePage) return 0;
+  /* ON CHERCHE LE DÉCOUPAGE, ON NE L'IMPOSE PAS. Un budget fixe de 16 blocs
+     par folio ramenait le carrefour de 0,13:1 à 0,32:1 — mieux, mais toujours
+     trois fois plus haut que large. Le bon nombre de blocs par folio dépend de
+     la forme du câblage, pas d'une constante : on essaie donc plusieurs
+     budgets, du plus généreux au plus serré, et on garde le PREMIER qui rentre
+     vraiment sur une feuille. Si aucun n'y arrive — une chaîne de vingt
+     équipements reste une chaîne, quoi qu'on découpe — on garde le meilleur
+     format obtenu plutôt que de laisser le rouleau. */
+  const source=state.lk;
+  let meilleur=null;
+  for(const budget of [16,12,9,6]){
+    if(state.folioMode) derouler();
+    state.lk=source;
+    const n=decouperEnFolios(budget);
+    if(!n) break;                                  // trop petit pour être découpé
+    const g=formatDuDessin(); if(!g) break;
+    const ecart=Math.abs(Math.log(g.ratio/1.41));   // distance au format d'une feuille
+    if(!meilleur || ecart<meilleur.ecart) meilleur={budget,n,ecart,g};
+    if(g.tientSurUnePage) break;
+  }
+  if(!meilleur){ derouler(); return 0; }
+  if(!formatDuDessin() || Math.abs(Math.log(formatDuDessin().ratio/1.41))>meilleur.ecart+1e-9){
+    derouler(); state.lk=source; decouperEnFolios(meilleur.budget);
+  }
+  const el=document.getElementById('xp-stat');
+  if(el) el.textContent='Le schéma faisait '+Math.round(f.larg)+' × '+Math.round(f.haut)
+    +', il ne tenait sur aucune feuille. Découpé en '+meilleur.n+' folios de '
+    +meilleur.budget+' blocs.';
+  return meilleur.n;
 }
 
 /* ---------- 9. Import de fichier : CSV (natif) + Excel via SheetJS local ---------- */
@@ -6311,21 +6405,13 @@ function init(){
       NORMS={headers:[],rows:[]}; normsRebuild(); normsSave(); syncNorms('vidé'); }; }
   const ps=document.getElementById('planSel'); if(ps) ps.onchange=()=>{ state.plan=ps.value; render(); fit(); };
   const bf=document.getElementById('btnFolios');
-  const syncFolioBtn=()=>{ if(bf) bf.textContent=state.folioMode?'◻ Rouleau':'Auto-folios'; };
+  const syncFolioBtn=()=>{ if(bf) bf.textContent=state.folioMode?'◻ Tout d’un tenant':'Découper en folios'; };
   if(bf) bf.onclick=()=>{
-    if(state.folioMode){   // revenir au schéma d'un seul tenant
-      if(state.folioBackup) state.lk=state.folioBackup;
-      state.folioBackup=null; state.folioMode=false; state.folioCount=0; state.plan='*';
-      syncTables(); syncPlans(); syncFolioBtn(); render(); fit(); return;
-    }
-    const eq = state.eq&&state.eq.length ? state.eq : deriveEq(state.lk);
-    const R=autoFolios(state.lk, eq, 16);
-    if(!R.applied){ alert('Schéma déjà assez compact : pas besoin de le découper.'); return; }
-    state.folioBackup=state.lk; state.lk=R.links; state.folioMode=true; state.folioCount=R.nFolios;
-    state.xroots=null; state.forceFull=true; state.plan='1';
-    syncTables(); syncPlans(); syncFolioBtn(); render(); fit();
+    if(state.folioMode){ derouler(); return; }
+    if(!decouperEnFolios(16)) alert('Ce schéma tient déjà sur une page : pas besoin de le découper.');
   };
   syncFolioBtn();
+  window.syncFolioBtn=syncFolioBtn;
   document.getElementById('b-close').onclick=closeBornier;
   document.getElementById('bmodal').addEventListener('click',e=>{ if(e.target.id==='bmodal')closeBornier(); });
   document.getElementById('modal').addEventListener('click',e=>{ if(e.target.id==='modal')closeModal(); });
@@ -6346,7 +6432,7 @@ function init(){
      deux masses, une reprise de blindage. Le premier regard montre ce que
      l'outil FAIT. */
   try{ contratEssai(); }catch(_){ loadSample(); }
-  fit();
+  fit(); ajusterFolios();
   requestAnimationFrame(fit);
 }
 init();
