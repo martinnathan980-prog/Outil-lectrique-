@@ -61,16 +61,50 @@ function titre(t) { console.log('\n' + t); }
   ok('toutes les fonctions présentes', base.manquantes.length === 0,
     base.manquantes.length ? 'manquent : ' + base.manquantes.join(', ') : base.zones + ' zones, cadre ' + base.cadre + ' mm');
 
-  // ---- 2. le dessin, sur la base embarquée ----------------------------
-  titre('2. DESSIN — invariants sur la base embarquée');
-  for (const rep of ['2541', '3563', '1692', '198', '426']) {
-    const r = await page.evaluate(n => {
-      exploreStart(n); const a = auditSchema();
-      return { b: a.blocs, d: Math.round(a.tauxDroits * 100), c: a.croisements,
+  /* ---- 2. le dessin, sur les FORMES qui font mal ----------------------
+     Ces cinq contrôles exploraient cinq repères de la base anonymisée
+     embarquée. Cette base a quitté le fichier — 14 006 liaisons pour un
+     accueil incompréhensible — et les contrôles se sont mis à mesurer
+     l'exemple par défaut, cinq fois de suite, sans rien vérifier du tout.
+     Ce qui comptait n'était pas ces repères-là mais les FORMES qu'ils
+     présentaient : l'escalier d'un gros bornier, le carrefour à fort
+     fan-out, le maillage, la chaîne. Elles sont construites ici, en dur, en
+     quelques lignes — même couverture, sans le mégaoctet. */
+  titre('2. DESSIN — les formes qui font mal');
+  const formes = [
+    ['escalier — bornier de 24 bornes vers 24 appareils', 95,
+      () => { const a = []; for (let i = 0; i < 24; i++) a.push(['BORN1', String(i + 1), 'E' + i, '1']); return a; }],
+    ['carrefour — un calculateur, 30 départs', 90,
+      () => { const a = []; for (let i = 0; i < 30; i++) a.push(['CALC1', String(i + 1), 'D' + i, '1']); return a; }],
+    /* Un maillage COMPLET — chacun relié à tous — ne peut pas se dessiner
+       droit : 21 fils entre 7 blocs alignés, la géométrie l'interdit, et
+       aucun faisceau réel n'a cette forme. On ne lui demande donc pas de
+       droiture (mesuré : 29 %), seulement de ne jamais violer les deux
+       invariants sacrés — aucun fil à travers un bloc étranger, aucun
+       chevauchement. C'est le cas qui vérifie que le moteur tient quand la
+       topologie devient absurde. */
+    ['maillage — 7 équipements tous reliés', 20,
+      () => { const a = []; for (let i = 0; i < 7; i++) for (let j = i + 1; j < 7; j++) a.push(['M' + i, String(j), 'M' + j, String(i)]); return a; }],
+    ['chaîne — 30 équipements en série', 90,
+      () => { const a = []; for (let i = 0; i < 30; i++) a.push(['N' + i, '2', 'N' + (i + 1), '1']); return a; }],
+    ['peigne — 3 départs sur la même borne (barrette)', 90,
+      () => [['SRC', '12', 'A1', '3'], ['SRC', '12', 'A2', '3'], ['SRC', '12', 'A3', '3'],
+             ['A1', '8', 'B1', '2'], ['A2', '8', 'B2', '2']]]
+  ];
+  for (const [nom, seuil, gen] of formes) {
+    const r = await page.evaluate(lignes => {
+      state.lk = lignes.map(l => ({ from: l[0], fromTerm: l[1], to: l[2], toTerm: l[3],
+        nature: '', cable: '', ctype: '', route: '', plan: '', pn1: '', pn2: '' }));
+      state.eq = deriveEq(state.lk);
+      OVR.clear(); ORDH.clear(); state.sel = null; state.xroots = null; state.forceFull = true;
+      render();
+      const a = auditSchema();
+      return { b: a.blocs, f: a.fils, d: Math.round(a.tauxDroits * 100), c: a.croisements,
                ib: a.filsDansBloc, ch: a.blocsChevauches };
-    }, rep);
-    ok('repère ' + rep, r.ib === 0 && r.ch === 0 && r.d >= 90,
-      r.b + ' blocs · ' + r.d + ' % droits · ' + r.c + ' croisements · filsDansBloc=' + r.ib + ' chevauch=' + r.ch);
+    }, gen());
+    ok(nom, r.ib === 0 && r.ch === 0 && r.d >= seuil,
+      r.b + ' blocs · ' + r.f + ' fils · ' + r.d + ' % droits (seuil ' + seuil + ') · '
+      + r.c + ' croisements · filsDansBloc=' + r.ib + ' chevauch=' + r.ch);
   }
 
   // ---- 3. le contrat d'essai ------------------------------------------
