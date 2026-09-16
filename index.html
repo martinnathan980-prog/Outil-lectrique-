@@ -17595,7 +17595,21 @@ function nomFolio(){
   const p=(state.plan&&state.plan!=='*')?('-folio-'+String(state.plan).replace(/[^\w.-]+/g,'_')):'';
   return 'atelier-schema'+p;
 }
-function telecharger(blob, nom){
+async function telecharger(blob, nom){
+  /* DEUX FAÇONS D'ENREGISTRER, SELON L'ENDROIT OÙ LA PAGE TOURNE.
+     Ouverte depuis le disque — l'usage normal —, un lien <a download> suffit
+     et rien ne sort du navigateur. Ouverte depuis une page hébergée (le lien
+     de démonstration), ce geste est réservé : la page doit demander, et le
+     lecteur accepte ou refuse. On essaie donc d'abord cette voie QUAND elle
+     existe. Le fichier local, lui, ne la voit jamais : window.claude n'y est
+     pas défini, et l'outil reste entièrement hors ligne. */
+  try{
+    const c=window.claude;
+    if(c && typeof c.use==='function'){
+      const dl=await c.use('downloads');
+      if(dl && typeof dl.save==='function'){ await dl.save({filename:nom, data:blob}); return; }
+    }
+  }catch(_){ return; }   // refus du lecteur : on n'insiste pas
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=nom;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(a.href),5000);
