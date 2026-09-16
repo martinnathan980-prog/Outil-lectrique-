@@ -96,6 +96,9 @@ header{grid-area:top;display:flex;align-items:center;gap:14px;padding:0 16px;
   font-family:var(--mono);font-size:11.5px;padding-left:14px;
   border-left:1px solid var(--line);min-width:0}
 .ctx b{color:var(--ink-dim);font-weight:600}
+.sauve{color:var(--ink-faint);opacity:.8}
+.sauve::before{content:'· '}
+.undo{font-size:15px;line-height:1;padding:4px 9px}
 .spacer{flex:1}
 .tools{display:flex;align-items:center;gap:6px}
 header .sep{width:1px;height:20px;background:var(--line);margin:0 4px}
@@ -309,7 +312,8 @@ main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
   <header>
     <button class="ghost menu-btn" id="btnMenu" aria-label="Panneau">☰</button>
     <div class="brand"><b>Atelier Schéma</b></div>
-    <div class="ctx" id="ctx"><span id="ctx-txt">—</span></div>
+    <div class="ctx" id="ctx"><span id="ctx-txt">—</span><span id="ctx-sauve" class="sauve"></span></div>
+    <button class="ghost undo" id="btnUndo" style="display:none" aria-label="Annuler">↶</button>
     <div class="spacer"></div>
     <!-- LE CHOIX DU FOLIO EN TOUTES LETTRES. Il vivait dans un <select> de
          12 px collé aux boutons d'export, réglé par défaut sur « Tous les
@@ -4275,6 +4279,81 @@ function syncEtapes(){
   m('et-3', !!(typeof APPLI!=='undefined' && (APPLI.ajouts||APPLI.retires)));
 }
 
+/* ═══ CE QU'ON A FAIT NE DOIT PAS PARTIR AVEC L'ONGLET ══════════════════════
+   Deux trous, et ce sont les deux mêmes : rien n'était conservé, rien n'était
+   réversible. On corrigeait vingt liaisons à la main, on fermait l'onglet par
+   mégarde, et la matinée était perdue — l'outil rouvrait sur son contrat
+   d'exemple comme si de rien n'était. Et le « × » en bout de ligne supprimait
+   une liaison au premier clic, sans confirmation et sans retour possible.
+   Un outil qui perd le travail n'est pas un outil, c'est une démonstration.
+
+   L'HISTORIQUE. Une pile d'états du contrat, empilée AVANT chaque geste qui
+   modifie quelque chose. Ctrl+Z, ou le bouton ↶ de la barre du haut, qui
+   n'apparaît que s'il y a quelque chose à défaire et qui dit QUOI.
+   Ce n'est pas la même chose qu'« Annuler » de la section Compléter : celui-là
+   est chirurgical, il retire les pièces posées en épargnant les corrections
+   faites entre-temps. Les deux coexistent, chacun dans son rôle.
+
+   L'ENREGISTREMENT. Dans le navigateur, à chaque changement, rien sur le
+   réseau. Le contrat se retrouve à la réouverture, avec l'heure à laquelle il
+   a été gardé. Si le navigateur refuse d'écrire — navigation privée, stockage
+   bloqué — l'outil continue de marcher, simplement il ne promet rien : c'est
+   pour ça que l'heure est affichée. Une promesse d'enregistrement qu'on ne
+   peut pas vérifier ne vaut rien. */
+const HIST={pile:[], max:40};
+function histPush(quoi){
+  HIST.pile.push({quoi, lk:(state.lk||[]).map(l=>({...l})), eq:(state.eq||[]).map(e=>({...e}))});
+  if(HIST.pile.length>HIST.max) HIST.pile.shift();
+  syncHist();
+}
+function histAnnuler(){
+  const p=HIST.pile.pop(); if(!p) return null;
+  state.lk=p.lk; state.eq=p.eq;
+  OVR.clear(); ORDH.clear(); state.sel=null; state.xroots=null;
+  syncTables(); syncPlans(); render(); fit(); syncHist(); sauverContrat();
+  return p.quoi;
+}
+function syncHist(){
+  const b=document.getElementById('btnUndo'); if(!b) return;
+  const n=HIST.pile.length;
+  b.style.display = n ? '' : 'none';
+  if(n) b.title='Annuler : '+HIST.pile[n-1].quoi+'  (Ctrl+Z)';
+}
+
+const CLE_CONTRAT='atelier.contrat.v1';
+let sauveT=null;
+function sauverContrat(){
+  clearTimeout(sauveT);
+  sauveT=setTimeout(()=>{
+    try{
+      localStorage.setItem(CLE_CONTRAT, JSON.stringify({
+        lk:state.lk, eq:state.eq, meta:state.meta, plan:state.plan,
+        folioMode:state.folioMode, folioCount:state.folioCount, t:Date.now() }));
+      majHeureSauve(Date.now());
+    }catch(_){ majHeureSauve(null); }
+  },400);
+}
+function majHeureSauve(t){
+  const el=document.getElementById('ctx-sauve'); if(!el) return;
+  if(!t){ el.textContent='non enregistré'; el.title='Le navigateur refuse d’enregistrer (navigation privée ?)'; return; }
+  const d=new Date(t);
+  el.textContent='enregistré '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  el.title='Gardé dans ce navigateur. Rien n’est parti sur le réseau.';
+}
+function relireContrat(){
+  try{
+    const j=localStorage.getItem(CLE_CONTRAT); if(!j) return false;
+    const o=JSON.parse(j); if(!o||!o.lk||!o.lk.length) return false;
+    state.lk=o.lk; state.eq=o.eq||[]; state.plan=o.plan||'*';
+    if(o.meta) Object.assign(state.meta,o.meta);
+    state.folioMode=!!o.folioMode; state.folioCount=o.folioCount||0; state.folioBackup=null;
+    OVR.clear(); ORDH.clear(); state.sel=null; state.xroots=null; state.forceFull=true;
+    syncTables(); syncPlans(); render(); fit();
+    majHeureSauve(o.t||Date.now());
+    return true;
+  }catch(_){ return false; }
+}
+
 function montrerVue(id){
   if(id==='v-piece' && typeof syncEtapes==='function') syncEtapes();
   document.querySelectorAll('#railtabs button').forEach(b=>b.classList.toggle('on', b.dataset.vue===id));
@@ -4354,7 +4433,7 @@ function parseDB(){ state.xroots=null; state.forceFull=false; ORDH.clear();
   if(nb<=60){ OPT_ONCE=true; OPT_MODE='max'; OPT_AREA_CAP=0;
     try{ render(); } finally { OPT_ONCE=false; } }
   else render();
-  fit(); ajusterFolios(); closeModal();
+  fit(); ajusterFolios(); closeModal(); sauverContrat();
 }
 
 /* UN DESSIN QUI NE TIENT PAS SUR UNE FEUILLE SE DÉCOUPE TOUT SEUL.
@@ -5886,6 +5965,7 @@ function appliquerPieces(plan){
   state.xroots=null; OVR.clear(); ORDH.clear(); state.sel=null;
   syncTables(); syncPlans(); render(); fit();
   if(typeof syncEtapes==='function') syncEtapes();
+  if(typeof sauverContrat==='function') sauverContrat();
   return APPLI.dernier;
 }
 function annulerPieces(){
@@ -6651,13 +6731,16 @@ function onCellInput(e){ const t=e.target; if(!t.dataset.k)return; const arr=t.d
 function bindPanel(){
   ['tbl-eq','tbl-lk'].forEach(id=>{ const el=document.getElementById(id);
     el.addEventListener('input',onCellInput);
-    el.addEventListener('change',()=>render());
+    el.addEventListener('change',()=>{ render(); sauverContrat(); });
     el.addEventListener('click',e=>{ const c=e.target.closest('[data-rm]'); if(!c)return;
-      const arr=c.dataset.rm==='eq'?state.eq:state.lk; arr.splice(+c.dataset.i,1); syncTables(); render(); }); });
+      const arr=c.dataset.rm==='eq'?state.eq:state.lk;
+      const quoi=(c.dataset.rm==='eq'?'suppression d’un équipement':'suppression d’une liaison');
+      histPush(quoi); arr.splice(+c.dataset.i,1); syncTables(); render(); sauverContrat(); }); });
   { const f=document.getElementById('mt-find');
     if(f) f.addEventListener('input',()=>{ MT_FILTRE=f.value.trim(); syncTables(); }); }
   document.getElementById('add-eq').onclick=()=>{ state.eq.push({repere:'',designation:'',type:''}); syncTables(); };
-  document.getElementById('add-lk').onclick=()=>{ state.lk.push({from:'',fromTerm:'',to:'',toTerm:'',nature:''}); syncTables(); };
+  document.getElementById('add-lk').onclick=()=>{ histPush('ajout d’une liaison');
+    state.lk.push({from:'',fromTerm:'',to:'',toTerm:'',nature:''}); syncTables(); sauverContrat(); };
   document.getElementById('xp-go').onclick=()=>exploreStart(document.getElementById('xp-find').value);
   document.getElementById('xp-find').addEventListener('keydown',e=>{ if(e.key==='Enter')exploreStart(e.target.value); });
   document.getElementById('xp-find').addEventListener('change',e=>{ const v=e.target.value.trim(); if(v&&allDeviceNames().has(v))exploreStart(v); });
@@ -6759,7 +6842,7 @@ async function chargerContrat(file){
 
 function loadSample(){ state.eq=SAMPLE.eq.map(o=>({...o})); state.lk=SAMPLE.lk.map(o=>({...o})); OVR.clear(); ORDH.clear(); state.sel=null; state.xroots=null; state.forceFull=false;
   state.meta.title='Installation — armoire TGBT'; syncTables(); render(); fit(); }
-function clearAll(){ if(!confirm('Effacer tous les équipements et liaisons ?'))return; state.eq=[]; state.lk=[]; OVR.clear(); ORDH.clear(); state.sel=null; state.xroots=null; state.forceFull=false; syncTables(); render(); }
+function clearAll(){ if(!confirm('Effacer tous les équipements et liaisons ?'))return; histPush('tout vider'); state.eq=[]; state.lk=[]; OVR.clear(); ORDH.clear(); state.sel=null; state.xroots=null; state.forceFull=false; syncTables(); render(); sauverContrat(); }
 
 const DB_SAMPLE=`Equip1;Borne;PN;Equip2;Borne;PN;Cable;Type;Route;Plan
 L1;;;Q1;1;;;;;1
@@ -6844,7 +6927,12 @@ function init(){
   document.getElementById('zin').onclick=()=>{ state.view.s=Math.min(6,state.view.s*1.2); applyView(); };
   document.getElementById('zout').onclick=()=>{ state.view.s=Math.max(.12,state.view.s/1.2); applyView(); };
   document.getElementById('zfit').onclick=fit;
-  window.addEventListener('keydown',e=>{ if(e.key==='Escape'){closePop();closeModal();closeDrawer();closeBornier();rbCloseReport();} });
+  { const u=document.getElementById('btnUndo');
+    if(u) u.onclick=()=>{ const q=histAnnuler(); if(q&&typeof rbStat==='function') rbStat('Annulé : '+q+'.'); }; }
+  window.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){closePop();closeModal();closeDrawer();closeBornier();rbCloseReport();}
+    if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='z' && !/^(INPUT|TEXTAREA)$/.test((e.target.tagName||''))){
+      e.preventDefault(); histAnnuler(); } });
   let rT; window.addEventListener('resize',()=>{ clearTimeout(rT); rT=setTimeout(()=>{ if(window.innerWidth<=760) fit(); },160); });
   window.addEventListener('orientationchange',()=>setTimeout(fit,300));
   /* ON OUVRE SUR UN FOLIO DESSINE.
@@ -6857,8 +6945,9 @@ function init(){
      une vingtaine de liaisons, deux endroits ou une barrette est obligatoire,
      deux masses, une reprise de blindage. Le premier regard montre ce que
      l'outil FAIT. */
-  try{ contratEssai(); }catch(_){ loadSample(); }
-  fit(); ajusterFolios();
+  /* ON RETROUVE SON CONTRAT. À défaut, l'exemple — jamais un écran vide. */
+  if(!relireContrat()){ try{ contratEssai(); }catch(_){ loadSample(); } fit(); ajusterFolios(); }
+  syncHist();
   requestAnimationFrame(fit);
 }
 init();

@@ -3,8 +3,17 @@
 ## Lancer
 
 ```
-node tests/controle.js
+node tests/controle.js        les invariants et les pièges déjà tombés
+node tests/memoire.js         le travail survit-il à la fermeture de l'onglet
+node tests/banc-placement.js  combien de fils sortent droits, et sur quelle feuille
 ```
+
+Les trois sont indépendants. `controle.js` et `memoire.js` rendent 1 en cas
+d'échec, pour qu'un enchaînement s'arrête ; `banc-placement.js` est une
+MESURE et non un contrôle — il ne juge pas, il chiffre, et il ne rend 1 que
+si un invariant sacré est violé. C'est lui qu'on relance avant et après tout
+changement du moteur de placement, avec `--json` pour comparer deux
+versions.
 
 Il faut Playwright et un Chromium. Sur la machine de développement :
 
