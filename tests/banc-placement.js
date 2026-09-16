@@ -90,6 +90,20 @@ const CAS = [
   ['boucle — 10 équipements en anneau', () => {
     const a = []; for (let i = 0; i < 10; i++) a.push(['C' + i, '2', 'C' + ((i + 1) % 10), '1']); return a; }],
 
+  /* Les cas ci-dessus nomment leurs borniers « BORN1 », que l'outil ne
+     reconnaît PAS comme un bornier : ils mesuraient donc le placement d'un
+     équipement ordinaire à 24 bornes, pas celui d'une réglette. Les deux qui
+     suivent portent de vrais repères — VT pour une barrette, XC pour un
+     bornier de répartition — et exercent le chemin qui compte. */
+  ['réglette VT — 20 bornes vers 20 appareils', () => {
+    const a = []; for (let i = 0; i < 20; i++) a.push(['667VT21', String(i + 1), 'E' + i, '1']); return a; }],
+
+  ['réglette VT traversante — amont et aval', () => {
+    const a = [];
+    for (let i = 0; i < 14; i++) { a.push(['SRC' + (i % 3), String(i + 1), '667VT21', String(i + 1)]);
+      a.push(['667VT21', String(i + 1), 'E' + i, '1']); }
+    return a; }],
+
   ['contrat d’essai — le cas réel de référence', null]   // null = contratEssai()
 ];
 

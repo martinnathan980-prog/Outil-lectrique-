@@ -78,6 +78,17 @@ table.grid tr:hover td{background:#f2f4f7}
 .etape .n{flex:0 0 18px;height:18px;border-radius:50%;background:var(--chrome3);border:1px solid var(--line);
   color:var(--ink-dim);font:600 10px var(--mono);display:flex;align-items:center;justify-content:center}
 .etape button{flex:1;text-align:left}
+/* La liste du matériel : une ligne cliquable par repère. */
+.mtrow{display:flex;align-items:baseline;gap:8px;padding:5px 6px;border-bottom:1px solid var(--line);
+  cursor:pointer;border-radius:4px}
+.mtrow:hover{background:var(--chrome3)}
+.mtn{font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--ink)}
+.mtd{font-size:10.5px;color:var(--ink-faint);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mtc{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--ink-faint);flex:0 0 auto}
+#mt-liste{max-height:340px;overflow:auto;margin-top:6px}
+#mt-details summary{cursor:pointer;font-size:11px;color:var(--ink-dim);padding:6px 0;user-select:none}
+#mt-details summary:hover{color:var(--accent)}
+#mt-find{background:var(--chrome2);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit;font-size:12px}
 
 .field{display:flex;flex-direction:column;gap:3px;margin:6px 0}
 .field label{font-size:10px;color:var(--ink-faint);letter-spacing:.4px;text-transform:uppercase}
@@ -232,13 +243,21 @@ main{grid-area:main;position:relative;overflow:hidden;background:#e3e6ea}
             <input type="file" id="lk-fichier" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
           </div>
           <div class="brow" style="margin-top:6px">
-            <button class="ghost" id="lk-demo">Exemple</button>
-            <button class="ghost" id="lk-redraw">Redessiner</button>
-            <button class="ghost" id="lk-clear">Vider</button>
+            <button class="ghost mini" id="lk-demo">Exemple</button>
+            <button class="ghost mini" id="lk-clear">Vider</button>
           </div>
-          <table class="grid" id="tbl-lk"><thead><tr><th>De</th><th>B.</th><th>Vers</th><th>B.</th><th>Nature</th><th></th></tr></thead><tbody></tbody></table>
-          <button class="ghost addrow" id="add-lk">+ ligne</button>
-          <div class="hint">Une ligne = un fil : équipement, borne, équipement, borne. C’est tout ce dont le dessin a besoin.</div>
+          <!-- ON NE LISTE PLUS LES FILS, ON LISTE LE MATÉRIEL. Voir le
+               commentaire de listeMateriel() : 400 fils ne tiennent pas dans un
+               panneau, 60 équipements si. -->
+          <input id="mt-find" placeholder="Chercher un repère ou un n° de fil…" style="width:100%;margin-top:10px">
+          <div id="mt-liste"></div>
+          <div id="mt-rien" class="hint" style="display:none">Rien qui corresponde.</div>
+          <details id="mt-details" style="margin-top:10px">
+            <summary>Corriger les liaisons une par une</summary>
+            <table class="grid" id="tbl-lk"><thead><tr><th>De</th><th>B.</th><th>Vers</th><th>B.</th><th>Nature</th><th></th></tr></thead><tbody></tbody></table>
+            <button class="ghost addrow" id="add-lk">+ ligne</button>
+            <div class="hint">La recherche ci-dessus filtre aussi cette table.</div>
+          </details>
         </div>
       </div>
 
@@ -338,7 +357,7 @@ main{grid-area:main;position:relative;overflow:hidden;background:#e3e6ea}
       <button class="ghost" id="zout">−</button><div class="z" id="zlbl">100 %</div><button class="ghost" id="zin">+</button>
       <div class="sep"></div><button class="ghost" id="zfit">Ajuster</button>
     </div>
-    <div class="notice" id="notice"><div class="big">Aucune topologie</div>déclare les équipements et les liaisons, puis « Régénérer »</div>
+    <div class="notice" id="notice"><div class="big">Aucun contrat</div>ouvre un fichier ou colle tes liaisons dans « 1 · Mon contrat »</div>
   </main>
 </div>
 <div class="drawer-bg" id="drawerBg"></div>
@@ -490,8 +509,11 @@ const PREFIX = {
   P:{t:'mesure',s:'meter',r:'misc'}, Y:{t:'électrovanne',s:'coil',r:'misc'},
 };
 const RAIL_RE = /^(L1|L2|L3|L|N|PE|PEN|GND|0V|\+|-|VCC|VDD|\+?\d{1,3}V)$/i;
-// prise de coupure / barrette : forme spéciale dès que le repère contient VC ou VT
-const isVCName = n => { const s=String(n||''); return /VC/i.test(s) && !/VCC|VDD/i.test(s) || /VT/i.test(s); };
+/* isVCName cherchait « VC » ou « VT » N'IMPORTE OÙ dans le nom : un
+   équipement nommé « AVCOM1 » passait pour une prise de coupure. Il s'appuie
+   maintenant sur la grammaire du repère, et ne sert plus qu'à savoir si la
+   pièce a une forme propre — le dessin, lui, distingue les deux. */
+const isVCName = n => estBarrette(n) || estCoupure(n);
 function railKind(name){
   const n=String(name||'').trim().toUpperCase();
   if(n==='PE'||n==='PEN') return 'terre';
@@ -503,7 +525,39 @@ function phaseColorByName(n){ n=String(n||'').toUpperCase();
   if(n==='L2') return 'black'; if(n==='L3') return 'grey'; return 'brown'; }
 const COL={brown:'#7a4a2a',black:'#1b1f24',grey:'#6b7480',blue:'#1668c2',green:'#1f8a4c',yellow:'#e8c93a',red:'#c0392b',ctrl:'#c0392b',misc:'#33414d'};
 
+/* ═══ LE REPÈRE AÉRONAUTIQUE PORTE SON CODE AU MILIEU ═══════════════════════
+   inferType ne lisait que les LETTRES DE TÊTE, et la table PREFIX qu'il
+   consulte est une convention d'armoire industrielle française — QF
+   disjoncteur, KM contacteur, M moteur, XS prise. Or un repère d'aéronef
+   s'écrit <numéro><CODE><suffixe> : 667VT21, 408VC1A, 210SP1, 904G. Le nom
+   commence par des CHIFFRES, donc l'expression `/^([A-Z]+)/` ne trouvait
+   jamais rien et TOUS les équipements retombaient sur {t:'élément', s:'box'}.
+
+   Conséquence, visible sur chaque planche : un calculateur, un connecteur et
+   une masse recevaient exactement le même rectangle blanc. La forme ne
+   portait plus aucune information — ce qui est précisément ce qu'un schéma
+   est censé faire. Et la détection de bornier, elle aussi, ne se déclenchait
+   jamais : le moteur éclatait des réglettes qu'il n'avait pas reconnues.
+
+   On lit donc le repère avec la MÊME grammaire que le côté données
+   (rbParseRep) : un numéro facultatif, un code en lettres, un suffixe. Trois
+   codes sont connus avec certitude, ce sont les seuls qu'on traite —
+   VT barrette, VC prise de coupure, G masse. Tout le reste est un
+   équipement, et on ne lui invente pas une nature qu'on ignore.
+   La table PREFIX reste en second recours pour un repère à lettres de tête,
+   afin de ne rien casser d'un schéma d'armoire. */
+const CODES_AERO = {
+  VT:{t:'barrette',        s:'strip',      r:'misc'},
+  VC:{t:'prise de coupure',s:'disconnect', r:'misc'},
+  G :{t:'masse',           s:'earth',      r:'earth'}
+};
+function codeDuRepere(repere){
+  const m=/^([0-9]*)\s*([A-Za-z]+)([0-9A-Za-z\-_.]*)$/.exec(String(repere||'').trim());
+  return m ? {num:m[1], code:m[2].toUpperCase(), tail:m[3]} : null;
+}
 function inferType(repere){
+  const q=codeDuRepere(repere);
+  if(q && q.num && CODES_AERO[q.code]) return CODES_AERO[q.code];
   const m=String(repere||'').trim().toUpperCase().match(/^([A-Z]+)/);
   if(!m) return {t:'élément',s:'box',r:'misc'};
   const p=m[1];
@@ -511,6 +565,12 @@ function inferType(repere){
   if(PREFIX[p[0]]) return PREFIX[p[0]];
   return {t:'élément',s:'box',r:'misc'};
 }
+/* Les trois questions qu'on pose vraiment au repère. isVCName les confondait
+   en une seule : une barrette SHUNTE, une prise de coupure COUPE, et les deux
+   recevaient le même dessin. */
+const estBarrette = n => { const q=codeDuRepere(n); return !!(q && q.num && q.code==='VT'); };
+const estCoupure  = n => { const q=codeDuRepere(n); return !!(q && q.num && q.code==='VC'); };
+const estMasse    = n => { const q=codeDuRepere(n); return !!(q && q.num && q.code==='G'); };
 const SOH='';
 function pin(node,term){ return node+SOH+(term||''); }
 
@@ -666,7 +726,25 @@ function computeLayoutWith(eq, lk, peripheral){
   // bout de bornier, et la connectivité réelle devenait invisible (on voyait
   // des dizaines d'appareils « à une seule ligne » sans lien apparent).
   const xr=(typeof state!=='undefined'&&state.xroots)?state.xroots:null;
-  const wholeStrip=n=> isExp && (rawNames.length<=20 || n===primRoot || !!(xr&&xr.has(n)));
+  /* ── LE BORNIER RESTAIT ENTIER SEULEMENT EN EXPLORATION ──────────────────
+     wholeStrip commandait par `isExp` : hors exploration — c'est-a-dire dans
+     le cas NOMINAL du metier, un contrat charge et dessine d'un coup — chaque
+     bornier etait eclate en un fragment par destination. Mesure sur les memes
+     donnees, mode complet contre mode exploration :
+         12 appareils / 1 bornier   17 blocs, 79 % droits   contre 13 blocs, 89 %
+         24 appareils / 2 borniers  45 blocs, 80 %          contre 34 blocs, 96 %
+         40 appareils / 3 borniers  84 blocs, 80 %, 18 col. contre 70 blocs, 92 %
+     Et ce n'est pas tout : six des sept candidats du concours (spread,
+     sidefree, pinswap, tapgrp, rails, split) rendaient un dessin IDENTIQUE AU
+     PIXEL en mode complet, parce qu'ils ont tous besoin d'un bornier entier ou
+     d'une liste d'au moins quatre bornes que les fragments n'ont jamais. Toute
+     l'intelligence « bornier » n'existait qu'en exploration, et le mode qu'on
+     utilise vraiment recevait la moins bonne des deux versions.
+     Le bornier reste donc entier des que le dessin est de taille de travail,
+     exploration ou non ; le candidat SEG_STRIP reste la pour le recouper en
+     rails si la page devient un ruban. */
+  const wholeStrip=n=> rawNames.length<=60
+    || (isExp && (n===primRoot || !!(xr&&xr.has(n))));
   for(const n of rawNames){ const P=P0(n);
     if(!isStripName(n)){
       // ÉCLATEMENT MÉTIER (schéma complet et « Droits max ») : un appareil à
@@ -953,6 +1031,12 @@ function computeLayoutWith(eq, lk, peripheral){
        gabarit que les appareils — corps central portant son repère, bornes sur
        les flancs. Seules les étiquettes de potentiel gardent leur pastille. */
     if(ls.S) return (ls.S.length===1 && isRail(nodes.get(id).name)) ? BORNW : (STRIPW+BODYW+STRIPW);
+    /* UNE MASSE N'EST PAS UN APPAREIL. Elle recevait le gabarit commun —
+       144 de large — et se dessinait en rectangle blanc vide de 144 × 233 sur
+       le folio d'essai : le plus gros objet de la planche ne portait aucune
+       information. Le symbole normalisé (CEI 60617-02 S00200) tient dans 10
+       unités de large. */
+    if(estMasse(nodes.get(id).name)) return 26;
     if(isVCName(nodes.get(id).name))return 44;   // prise de coupure : corps très fin
     // SILHOUETTE UNIFORME : tous les équipements ont la même largeur (seule la
     // hauteur varie) — flanc absent = corps plus large, même gabarit extérieur.
@@ -3240,8 +3324,9 @@ function defs(){
      .mech{stroke:#98a4b0;stroke-width:.7;stroke-dasharray:2 2;fill:none}
      .dot-fix{fill:#1b2430;stroke:none}
      .cab{fill:none;stroke-width:.95;stroke-linecap:round;stroke-linejoin:round}
-     .jn{fill:#1b2430;stroke:#ffffff;stroke-width:.8}
+     .jn{fill:#1b2430;stroke:none}
      .screw{fill:#ffffff;stroke:#ccd4db;stroke-width:.55}
+     .earth{fill:none;stroke:#1b2430;stroke-width:.9;stroke-linecap:butt}
      .rep{fill:#111b25;font-weight:500;font-size:10px;letter-spacing:1.15px}
      .des{fill:#8a96a2;font-size:6.8px;font-weight:400;letter-spacing:.4px}
      /* etiquettes de barrette : elles disent sur quelle borne part chaque
@@ -3335,8 +3420,11 @@ function sheetSvg(bb,meta){
 }
 function cartoucheSvg(rx,by,meta){
   const W=224,H=66, x=rx-W, y=by-H;
+  /* LA BARRE BLEUE DU CARTOUCHE EST PARTIE. C'était le SEUL aplat de couleur
+     de la planche, et il contredisait mot pour mot la règle d'encre unique
+     écrite trois cents lignes plus haut. Un cartouche de plan n'est jamais
+     colorié. */
   let s=`<rect class="cbox" x="${f1(x)}" y="${f1(y)}" width="${W}" height="${H}"/>`;
-  s+=`<rect x="${f1(x)}" y="${f1(y)}" width="3.5" height="${H}" fill="#1668c2"/>`;
   s+=`<line class="cdiv" x1="${x}" y1="${y+20}" x2="${x+W}" y2="${y+20}"/>`;
   s+=`<line class="cdiv" x1="${x}" y1="${y+43}" x2="${x+W}" y2="${y+43}"/>`;
   s+=`<line class="cdiv" x1="${x+152}" y1="${y+20}" x2="${x+152}" y2="${y+H}"/>`;
@@ -3349,7 +3437,11 @@ function cartoucheSvg(rx,by,meta){
   s+=cell(x+11,y+52,'ÉCHELLE',meta.scale);
   s+=cell(x+87,y+52,'INDICE',meta.rev);
   s+=`<text class="carth" x="${x+159}" y="${y+29}">FOLIO</text><text class="cartT" x="${x+159}" y="${y+39.5}">${esc(meta.folio||'1')}</text>`;
-  s+=`<text class="cartA" x="${x+159}" y="${y+59}">ATELIER·SCHÉMA</text>`;
+  /* « ATELIER·SCHÉMA » DÉPASSAIT DU CARTOUCHE. Ancré à gauche en x+159, il
+     mesure 71,6 unités dans une boîte large de 224 : il finissait 6,6 unités
+     au-delà du bord, et son dernier A était coupé par le trait du cadre.
+     Ancré à droite, il ne peut plus déborder quelle que soit sa largeur. */
+  s+=`<text class="cartA" x="${x+W-9}" y="${y+59}" text-anchor="end">ATELIER·SCHÉMA</text>`;
   return s;
 }
 
@@ -3359,19 +3451,23 @@ function cartoucheSvg(rx,by,meta){
    la barre. Une barre est un repère de lecture — elle doit rester un trait
    pointillé parfaitement droit, sinon ses micro-crochets se lisent comme des
    coudes et on ne sait plus si elle continue ou si elle bifurque. */
-function wirePath(pts,bridges,hbridges){
+/* ─── LE SAUT DE MOUTON N'EXISTE PAS SUR UN SCHÉMA ─────────────────────────
+   Chaque enjambement posait un demi-cercle de rayon 4, avec le même trait que
+   le fil et des bouts arrondis. Le pas de broche vaut 14 : deux sauts voisins
+   se touchaient donc et formaient une ONDE CONTINUE. Entre 409GH2, 601RC,
+   733LE et 845VG il y en avait quatre sur quarante unités — ça se lisait
+   comme une bobine, pas comme des fils qui se croisent.
+   Or la CEI 60617 ne connaît pas le saut : un croisement SANS connexion se
+   dessine croisé, point final ; c'est la CONNEXION qui se marque, par un
+   disque plein. Le saut ajoutait donc un signe là où l'absence de signe était
+   déjà l'information. On le retire, et les points de jonction — qui, eux,
+   disent quelque chose — redeviennent le seul repère à chercher.
+   Les paramètres `bridges` et `hbridges` restent acceptés : le routeur les
+   calcule encore et d'autres appels les passent. Ils sont simplement ignorés
+   au tracé. */
+function wirePath(pts){
   let d='M '+f1(pts[0].x)+' '+f1(pts[0].y);
-  for(let i=1;i<pts.length;i++){ const A=pts[i-1],B=pts[i]; const vert=Math.abs(A.x-B.x)<.5;
-    if(vert&&bridges.length){ const x=B.x, dir=B.y>A.y?1:-1;
-      const hits=bridges.filter(br=>Math.abs(br.x-x)<2&&br.y>Math.min(A.y,B.y)+3&&br.y<Math.max(A.y,B.y)-3).sort((a,b)=>dir*(a.y-b.y));
-      for(const hbr of hits){ d+=' L '+f1(x)+' '+f1(hbr.y-dir*4)+' A 4 4 0 0 '+(dir>0?1:0)+' '+f1(x)+' '+f1(hbr.y+dir*4); }
-      d+=' L '+f1(B.x)+' '+f1(B.y);
-    } else if(!vert&&hbridges&&hbridges.length){ const y=B.y, dir=B.x>A.x?1:-1;
-      const hits=hbridges.filter(br=>Math.abs(br.y-y)<2&&br.x>Math.min(A.x,B.x)+3&&br.x<Math.max(A.x,B.x)-3).sort((a,b)=>dir*(a.x-b.x));
-      for(const vbr of hits){ d+=' L '+f1(vbr.x-dir*4)+' '+f1(y)+' A 4 4 0 0 '+(dir>0?0:1)+' '+f1(vbr.x+dir*4)+' '+f1(y); }
-      d+=' L '+f1(B.x)+' '+f1(B.y);
-    } else d+=' L '+f1(B.x)+' '+f1(B.y);
-  }
+  for(let i=1;i<pts.length;i++) d+=' L '+f1(pts[i].x)+' '+f1(pts[i].y);
   return d;
 }
 function escA(s){ return esc(s).replace(/"/g,'&quot;'); }
@@ -3529,6 +3625,31 @@ function compSvg(c,sel){
     const gauche=rows.filter(p=>(p.dir||0)<=0), droite=rows.filter(p=>(p.dir||0)>=0);
     if(gauche.length) s+=borneBox(bx,    -1, c.lw, gauche, c.y, null, c.h, true, nom).svg;
     if(droite.length) s+=borneBox(bx+bw, +1, c.rw, droite, c.y, null, c.h, true, nom).svg;
+  } else if(estMasse(c.name)){
+    /* LA MASSE SE DESSINE, ELLE NE SE MET PAS EN BOÎTE.
+       Trois barres décroissantes — 10, 6 et 3 de long, espacées de 2,5 — et
+       le repère en dessous : c'est le symbole de la CEI 60617-02 (S00200),
+       celui que tout le monde lit sans légende. Les fils arrivent tous sur la
+       barre du haut, à gauche comme à droite, et le bloc ne fait plus que 26
+       unités de large contre 144. */
+    const rl=c.rows.L||[], rr=c.rows.R||[];
+    const cx=c.w/2;
+    const ys=[...rl,...rr].map(p2=>p2.y-c.y);
+    const yh=ys.length?Math.min(...ys):c.h/2;   // hauteur de la barre principale
+    const yb=ys.length?Math.max(...ys):c.h/2;
+    // le collecteur : un trait vertical qui relie les arrivées à la barre
+    if(yb>yh) s+=`<line class="earth" x1="${f1(cx)}" y1="${f1(yh)}" x2="${f1(cx)}" y2="${f1(yb)}"/>`;
+    rl.forEach(p2=>{ const ly=p2.y-c.y;
+      s+=`<line class="earth" x1="0" y1="${f1(ly)}" x2="${f1(cx)}" y2="${f1(ly)}"/>`;
+      if(ly>yh) s+=`<circle class="jn" cx="${f1(cx)}" cy="${f1(ly)}" r="1.4"/>`; });
+    rr.forEach(p2=>{ const ly=p2.y-c.y;
+      s+=`<line class="earth" x1="${f1(cx)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`;
+      if(ly>yh) s+=`<circle class="jn" cx="${f1(cx)}" cy="${f1(ly)}" r="1.4"/>`; });
+    const y0=yb+4;
+    s+=`<line class="earth" x1="${f1(cx-5)}" y1="${f1(y0)}"   x2="${f1(cx+5)}" y2="${f1(y0)}"/>`;
+    s+=`<line class="earth" x1="${f1(cx-3)}" y1="${f1(y0+2.5)}" x2="${f1(cx+3)}" y2="${f1(y0+2.5)}" stroke-width=".7"/>`;
+    s+=`<line class="earth" x1="${f1(cx-1.5)}" y1="${f1(y0+5)}" x2="${f1(cx+1.5)}" y2="${f1(y0+5)}" stroke-width=".7"/>`;
+    s+=`<text class="rep" x="${f1(cx)}" y="${f1(y0+15)}" text-anchor="middle">${esc(clip(c.name,10))}</text>`;
   } else {
     // équipement : corps compact, nom centré, borniers de flanc fins et centrés
     const bx=c.lw, bw=c.w-c.lw-c.rw;
@@ -3720,7 +3841,7 @@ function render(){
   (state.eq||[]).forEach(e=>{ if(e && typeof e.repere==='string' && e.repere!==e.repere.trim())
     e.repere=e.repere.trim(); });
   const notice=document.getElementById('notice');
-  const NOTICE0='<div class="big">Aucune topologie</div>déclare les équipements et les liaisons, puis « Régénérer »';
+  const NOTICE0='<div class="big">Aucun contrat</div>ouvre un fichier ou colle tes liaisons dans « 1 · Mon contrat »';
   if(!state.lk.length){ notice.style.display='block'; notice.innerHTML=NOTICE0;
     document.getElementById('svg').innerHTML=''; LAST=null;
     if(typeof syncPlans==='function')syncPlans(); if(typeof syncExplore==='function')syncExplore(); return; }
@@ -6203,6 +6324,53 @@ function openBornier(c){ state.sel=c.name; render();
 function closeBornier(){ const m=document.getElementById('bmodal'); if(m)m.style.display='none'; }
 
 /* ---------- 11. Panneau latéral, export, démarrage ---------- */
+
+/* ═══ LE PANNEAU LISTE LE MATÉRIEL, PAS LES FILS ═══════════════════════════
+   La section « Mon contrat » affichait une ligne par FIL. Sur le contrat
+   d'exemple ça fait 18 lignes, déjà trop ; sur un vrai contrat de 400
+   liaisons ça faisait un panneau de 8 208 pixels de haut dans une fenêtre de
+   854 — huit écrans de tableau à faire défiler avant d'atteindre la section
+   suivante. Et au-delà de 300 lignes la table était simplement TRONQUÉE :
+   la liaison n° 340 n'était ni visible ni modifiable.
+
+   Or on ne cherche presque jamais un fil : on cherche un ÉQUIPEMENT, et on
+   regarde ses fils. 400 liaisons, c'est une soixantaine d'équipements — ça
+   tient à l'écran. La liste donne le repère, sa désignation quand elle
+   existe, et son nombre de fils ; un clic dessus n'affiche que lui et ses
+   liaisons sur le dessin.
+
+   La table fil par fil n'a pas disparu pour autant — on doit pouvoir
+   corriger une ligne à la main — elle est repliée sous « Corriger les
+   liaisons une par une », et la recherche la filtre : la liaison n° 340
+   redevient atteignable, ce que la troncature interdisait. */
+let MT_FILTRE='';
+function listeMateriel(){
+  const box=document.getElementById('mt-liste'); if(!box) return;
+  const cnt=new Map(), des=new Map();
+  (state.eq||[]).forEach(e=>{ if(e.repere) des.set(e.repere, e.designation||''); });
+  (state.lk||[]).forEach(l=>{ [l.from,l.to].forEach(n=>{ n=String(n||'').trim();
+    if(n) cnt.set(n,(cnt.get(n)||0)+1); }); });
+  const f=MT_FILTRE.toLowerCase();
+  // la recherche accepte un repère OU un numéro de fil : taper « W-130 »
+  // remonte les deux équipements que ce fil relie.
+  const parFil=new Set();
+  if(f) (state.lk||[]).forEach(l=>{ if(String(l.cable||'').toLowerCase().includes(f))
+    { if(l.from)parFil.add(String(l.from).trim()); if(l.to)parFil.add(String(l.to).trim()); } });
+  const noms=[...cnt.keys()].filter(n=>!f || n.toLowerCase().includes(f) || parFil.has(n))
+    .sort((a,b)=>cnt.get(b)-cnt.get(a) || a.localeCompare(b));
+  document.getElementById('mt-rien').style.display = (cnt.size && !noms.length) ? '' : 'none';
+  box.innerHTML = noms.slice(0,400).map(n=>{
+    const d=des.get(n)||'';
+    return '<div class="mtrow" data-n="'+escA(n)+'">'
+      + '<span class="mtn">'+esc(n)+'</span>'
+      + (d?'<span class="mtd">'+esc(clip(d,22))+'</span>':'')
+      + '<span class="mtc">'+cnt.get(n)+' fil'+(cnt.get(n)>1?'s':'')+'</span></div>';
+  }).join('');
+  box.querySelectorAll('.mtrow').forEach(el=>{
+    el.onclick=()=>{ exploreStart(el.dataset.n); fit(); };
+  });
+}
+
 function syncTables(){
   const CAPR=300;
   const more=(n,c)=>n>CAPR?`<tr><td colspan="${c}" style="color:var(--ink-faint);text-align:center;padding:6px">… ${n-CAPR} autres lignes</td></tr>`:'';
@@ -6212,13 +6380,19 @@ function syncTables(){
     <td><input data-k="eq" data-i="${i}" data-f="designation" value="${esc(e.designation||'')}"></td>
     <td class="rmrow" data-rm="eq" data-i="${i}">✕</td></tr>`).join('')+more(state.eq.length,3);
   const lb=document.querySelector('#tbl-lk tbody');
-  lb.innerHTML=state.lk.slice(0,CAPR).map((l,i)=>`<tr>
+  /* On garde l'INDICE d'origine avec chaque ligne : filtrée, la table doit
+     continuer de modifier la bonne liaison de state.lk. */
+  const fl=MT_FILTRE.toLowerCase();
+  const vues=state.lk.map((l,i)=>[l,i]).filter(([l])=>!fl
+    || String(l.from||'').toLowerCase().includes(fl) || String(l.to||'').toLowerCase().includes(fl)
+    || String(l.cable||'').toLowerCase().includes(fl));
+  lb.innerHTML=vues.slice(0,CAPR).map(([l,i])=>`<tr>
     <td><input data-k="lk" data-i="${i}" data-f="from" value="${esc(l.from)}"></td>
     <td><input data-k="lk" data-i="${i}" data-f="fromTerm" value="${esc(l.fromTerm||'')}"></td>
     <td><input data-k="lk" data-i="${i}" data-f="to" value="${esc(l.to)}"></td>
     <td><input data-k="lk" data-i="${i}" data-f="toTerm" value="${esc(l.toTerm||'')}"></td>
     <td><input data-k="lk" data-i="${i}" data-f="nature" value="${esc(l.nature||'')}"></td>
-    <td class="rmrow" data-rm="lk" data-i="${i}">✕</td></tr>`).join('')+more(state.lk.length,6);
+    <td class="rmrow" data-rm="lk" data-i="${i}">✕</td></tr>`).join('')+more(vues.length,6);
   /* LE COMPTEUR DISAIT « 0 » DEVANT DOUZE BLOCS DESSINÉS. Il comptait les
      lignes de la table des équipements, or un contrat importé n'en remplit
      aucune : le matériel se déduit des liaisons. On compte donc les repères
@@ -6227,6 +6401,7 @@ function syncTables(){
   document.getElementById('cnt-eq').textContent =
     state.eq.length || (typeof allDeviceNames==='function' ? allDeviceNames().size : 0);
   document.getElementById('cnt-lk').textContent=state.lk.length;
+  listeMateriel();
   if(typeof syncCables==='function')syncCables();
   if(typeof syncPlans==='function')syncPlans();
   if(typeof syncNorms==='function')syncNorms();
@@ -6239,6 +6414,8 @@ function bindPanel(){
     el.addEventListener('change',()=>render());
     el.addEventListener('click',e=>{ const c=e.target.closest('[data-rm]'); if(!c)return;
       const arr=c.dataset.rm==='eq'?state.eq:state.lk; arr.splice(+c.dataset.i,1); syncTables(); render(); }); });
+  { const f=document.getElementById('mt-find');
+    if(f) f.addEventListener('input',()=>{ MT_FILTRE=f.value.trim(); syncTables(); }); }
   document.getElementById('add-eq').onclick=()=>{ state.eq.push({repere:'',designation:'',type:''}); syncTables(); };
   document.getElementById('add-lk').onclick=()=>{ state.lk.push({from:'',fromTerm:'',to:'',toTerm:'',nature:''}); syncTables(); };
   document.getElementById('xp-go').onclick=()=>exploreStart(document.getElementById('xp-find').value);
