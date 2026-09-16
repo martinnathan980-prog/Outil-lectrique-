@@ -3338,14 +3338,14 @@ function defs(){
         la boite de bornes qui lui est plaquee dessus. */
      .body{fill:#ffffff;stroke:#1b2430;stroke-width:1}
      .bnum{fill:#2b3743;font-size:7.5px;font-weight:600;letter-spacing:.2px}
-     .bstrip{fill:#ffffff;stroke:#46535f;stroke-width:.8}
+     .bstrip{fill:#ffffff;stroke:#1b2430;stroke-width:.7}
      /* Le bornier se signe par un aplat TRES pale et un lisere pointille fin :
         assez pour dire « ceci est un bornier », trop leger pour peser sur la
         page. Le cadre bleu et les crochets, eux, chargeaient trop. */
      /* Un bornier autonome porte le MEME trait epais qu'un appareil : c'est un
         materiel a part entiere, pas un accessoire. Une boite de bornes plaquee
         sur un appareil garde le trait fin — elle appartient a l'appareil. */
-     .bstrip-x{stroke:#1b2430;stroke-width:1}
+     .bstrip-x{stroke:#1b2430;stroke-width:.85}
      .bcell{fill:#ffffff;stroke:#c8d1d9;stroke-width:.6}
      .braccord{fill:#ffffff;stroke:#8794a0;stroke-width:.65}
      .bsname{fill:#7a8794;font-size:6.5px;font-weight:600;letter-spacing:.9px}
@@ -3387,6 +3387,11 @@ function defs(){
      .zone{fill:#b9c2cb;font-size:8px;font-weight:600;letter-spacing:.5px}
      .cbox{fill:#ffffff;stroke:#c2ccd5;stroke-width:.8}
      .cdiv{stroke:#e6ebef;stroke-width:.8}
+     /* Séparation de cellules d'une réglette. On avait réutilisé .cdiv, le
+        filet du cartouche, quasi invisible sur fond blanc : les cellules ne
+        se voyaient pas et la réglette redevenait un rectangle. Même encre que
+        le reste, simplement atténuée. */
+     .bdiv{stroke:#1b2430;stroke-width:.5;opacity:.45}
      .carth{fill:#9aa6b2;font-size:5.6px;font-weight:700;letter-spacing:.6px}
      .cartx{fill:#2b3743;font-size:7.5px;font-weight:600}
      .cartT{fill:#111c26;font-size:9.5px;font-weight:700;letter-spacing:.3px}
@@ -3546,10 +3551,21 @@ function borneBox(xBody,dir,depth,rows,baseY,sideOfGroup,hCorps,bande,libLabel){
        se voyait — un bornier plus grand que l'appareil qui le porte. */
     if(hCorps!=null){ const m=avecBande?BANDPAD:0;
       t=Math.max(t, m); b=Math.min(b, hCorps-m); if(b<=t) return; }
-    const xb = dir>0 ? xBody : xBody-BAND;                 // bande, contre le corps
-    if(avecBande) out+=`<rect class="braccord" x="${f1(xb)}" y="${f1(t-BANDPAD)}" width="${BAND}" height="${f1(b-t+2*BANDPAD)}"/>`;
-    const xo = dir>0 ? xBody+(avecBande?BAND:0) : xBody-depth;   // boîte, à côté de la bande
-    const bw = depth-(avecBande?BAND:0);
+    /* ─── QUATRE TRAITS ET TROIS GRIS EN VINGT UNITÉS ─────────────────────
+       Du corps vers l'extérieur on comptait, sur vingt unités de large : le
+       trait du corps, puis la BANDE de raccordement dans un troisième gris et
+       débordant en haut et en bas, puis le trait gauche de la boîte, puis son
+       trait droit. Quatre verticales parallèles, trois encres différentes. Les
+       petites oreilles de la bande ne se lisaient pas comme une plaque : elles
+       se lisaient comme un DÉCALAGE D'IMPRESSION.
+       La boîte de bornes reste — c'est elle qu'on veut, et elle est juste :
+       une boîte unique, les numéros alignés dedans, le fil qui part du bord
+       extérieur. C'est la bande intermédiaire qui part. Le raccordement sur le
+       corps est désormais dit par le seul trait qui le dise vraiment : celui
+       de la boîte, plaqué contre le corps, sans jeu. On passe de quatre traits
+       à deux, et de trois gris à un. */
+    const xo = dir>0 ? xBody : xBody-depth;
+    const bw = depth;
     /* SIGNATURE DU BORNIER : UN EN-TÊTE PLEIN.
        Deux essais avant celui-ci. Le cadre bleu, puis les crochets d'angle :
        trop lourds, ils encadraient chaque bornier en permanence. Puis l'aplat
@@ -3568,11 +3584,16 @@ function borneBox(xBody,dir,depth,rows,baseY,sideOfGroup,hCorps,bande,libLabel){
     if(libLabel!=null)
       out+=`<text class="bsname" x="${f1(xo+bw/2)}" y="${f1(t-4)}" text-anchor="middle">${esc(clip(libLabel,12))}</text>`;
     out+=`<rect class="bstrip${avecBande?'':' bstrip-x'}" x="${f1(xo)}" y="${f1(t)}" width="${f1(bw)}" height="${f1(b-t)}"/>`;
-    /* Le numéro doit TENIR dans la boîte : un repère de borne à 3 ou 4 chiffres
-       débordait sur le trait. On rétrécit la police juste ce qu'il faut plutôt
-       que d'élargir la boîte, qui est un gabarit commun à tous les appareils. */
+    /* LA TAILLE ÉTAIT CALCULÉE PAR ÉTIQUETTE, DONC ELLE CHANGEAIT D'UNE BORNE
+       À L'AUTRE DANS LA MÊME BOÎTE. Sur 733LE on lisait « 1 » à 8 px et
+       « CNT » à 7 px l'un au-dessus de l'autre : une marche d'escalier au
+       milieu d'une colonne de chiffres, c'est exactement ce qu'une colonne de
+       chiffres ne doit pas avoir. La taille est donc FIXE pour tout le paquet,
+       calculée sur l'étiquette la plus longue qu'il contient. Toutes les
+       bornes d'une même boîte s'écrivent pareil. */
+    const lmax=Math.max(1,...g.filter(p=>p.label).map(p=>String(p.label).length));
+    const fs=Math.max(5.4, Math.min(7.5, (bw-4)/(0.62*lmax)));
     g.forEach(p=>{ if(!p.label)return;
-      const fs=Math.max(5.4, Math.min(8, (bw-3)/(0.62*String(p.label).length)));
       out+=`<text class="pinlbl" style="font-size:${f1(fs)}px" x="${f1(xo+bw/2)}" y="${f1(p.y-baseY+fs*0.36)}" text-anchor="middle">${esc(p.label)}</text>`; });
     if(top==null){ top=t; cxLast=xo+bw/2; }
   });
@@ -3655,19 +3676,49 @@ function compSvg(c,sel){
     const bx=c.lw, bw=c.w-c.lw-c.rw;
     const rl=c.rows.L||[], rr=c.rows.R||[];
     if(c.vc){
-      // prise de coupure : corps FIN à pointe chanfreinée, petite barre le
-      // long du flanc, bornes écrites À L'INTÉRIEUR, repère à l'extérieur
-      const k=Math.min(11,bw*0.3);
-      const d=`M ${f1(bx)} ${f1(k)} L ${f1(bx+k)} 0 L ${f1(bx+bw-k)} 0 L ${f1(bx+bw)} ${f1(k)} L ${f1(bx+bw)} ${f1(c.h)} L ${f1(bx)} ${f1(c.h)} Z`;
-      s+=`<path class="body" d="${d}"/>`;
-      s+=`<line class="sym-thin" x1="${f1(bx+4)}" y1="${f1(k+3)}" x2="${f1(bx+4)}" y2="${f1(c.h-3)}"/>`;
-      rl.forEach(pp=>{ const ly=pp.y-c.y;
-        s+=`<line class="sym-thin" x1="${f1(bx)}" y1="${f1(ly)}" x2="${f1(bx+3)}" y2="${f1(ly)}"/>`;
-        if(pp.label)s+=`<text class="pinlbl" x="${f1(bx+9)}" y="${f1(ly+2.8)}">${esc(pp.label)}</text>`; });
-      rr.forEach(pp=>{ const ly=pp.y-c.y;
-        s+=`<line class="sym-thin" x1="${f1(bx+bw-3)}" y1="${f1(ly)}" x2="${f1(bx+bw)}" y2="${f1(ly)}"/>`;
-        if(pp.label)s+=`<text class="pinlbl" x="${f1(bx+bw-9)}" y="${f1(ly+2.8)}" text-anchor="end">${esc(pp.label)}</text>`; });
-      s+=`<text class="rep" x="${f1(bx+bw/2)}" y="${f1(c.h+13)}" text-anchor="middle">${esc(clip(c.name,14))}</text>`;
+      /* ═══ UNE BARRETTE ET UNE PRISE DE COUPURE FONT L'INVERSE L'UNE DE
+         L'AUTRE, ET ELLES AVAIENT LE MÊME DESSIN ═══════════════════════════
+         Les deux recevaient le même tube à sommet chanfreiné, plus une petite
+         barre verticale le long du flanc qui ne rejoignait rien et se lisait
+         comme une rayure. Une barrette SHUNTE — elle réunit des bornes ; une
+         prise de coupure COUPE — elle sépare deux moitiés. Donner la même
+         silhouette aux deux n'est pas un défaut de style, c'est une faute de
+         fond : le lecteur ne peut pas savoir ce qu'il regarde.
+         Chacune a maintenant sa forme, et chacune porte son idée. */
+      const mid=bx+bw/2;
+      if(estCoupure(c.name)){
+        /* PRISE DE COUPURE. Deux demi-corps séparés par un JEU : c'est le
+           blanc entre les deux qui EST le symbole (CEI 60617-03), c'est là
+           qu'on coupe. À gauche la fiche — un triangle plein qui pointe vers
+           la coupure ; à droite l'embase — un arc ouvert qui l'attend. */
+        s+=`<rect class="body" x="${f1(bx)}" y="0" width="${f1(mid-2.2-bx)}" height="${c.h}"/>`;
+        s+=`<rect class="body" x="${f1(mid+2.2)}" y="0" width="${f1(bx+bw-mid-2.2)}" height="${c.h}"/>`;
+        rl.forEach(pp=>{ const ly=pp.y-c.y;
+          s+=`<path class="dot-fix" d="M ${f1(mid-6)} ${f1(ly-2.2)} L ${f1(mid-2.4)} ${f1(ly)} L ${f1(mid-6)} ${f1(ly+2.2)} Z"/>`;
+          s+=`<line class="sym-thin" x1="${f1(bx)}" y1="${f1(ly)}" x2="${f1(mid-6)}" y2="${f1(ly)}"/>`;
+          if(pp.label)s+=`<text class="pinlbl" x="${f1(bx+3)}" y="${f1(ly-3.4)}">${esc(pp.label)}</text>`; });
+        rr.forEach(pp=>{ const ly=pp.y-c.y;
+          s+=`<path class="sym" d="M ${f1(mid+5.4)} ${f1(ly-2.6)} A 2.6 2.6 0 0 0 ${f1(mid+5.4)} ${f1(ly+2.6)}"/>`;
+          s+=`<line class="sym-thin" x1="${f1(mid+5.4)}" y1="${f1(ly)}" x2="${f1(bx+bw)}" y2="${f1(ly)}"/>`;
+          if(pp.label)s+=`<text class="pinlbl" x="${f1(bx+bw-3)}" y="${f1(ly-3.4)}" text-anchor="end">${esc(pp.label)}</text>`; });
+      } else {
+        /* BARRETTE. Une réglette : un corps unique découpé en CELLULES, une
+           par borne, numéro dedans. C'est la forme qu'on voit sur le matériel
+           et sur toutes les planches — et elle dit d'elle-même que les bornes
+           sont voisines et shuntables, ce que le tube chanfreiné ne disait
+           pas. */
+        s+=`<rect class="body" x="${f1(bx)}" y="0" width="${f1(bw)}" height="${c.h}"/>`;
+        const tous=[...rl,...rr].map(pp=>pp.y-c.y).sort((u,v)=>u-v);
+        for(let i=1;i<tous.length;i++){ const ym=(tous[i-1]+tous[i])/2;
+          s+=`<line class="bdiv" x1="${f1(bx)}" y1="${f1(ym)}" x2="${f1(bx+bw)}" y2="${f1(ym)}"/>`; }
+        rl.forEach(pp=>{ const ly=pp.y-c.y;
+          s+=`<line class="sym-thin" x1="${f1(bx)}" y1="${f1(ly)}" x2="${f1(bx+4)}" y2="${f1(ly)}"/>`;
+          if(pp.label)s+=`<text class="pinlbl" x="${f1(bx+7)}" y="${f1(ly+2.6)}">${esc(pp.label)}</text>`; });
+        rr.forEach(pp=>{ const ly=pp.y-c.y;
+          s+=`<line class="sym-thin" x1="${f1(bx+bw-4)}" y1="${f1(ly)}" x2="${f1(bx+bw)}" y2="${f1(ly)}"/>`;
+          if(pp.label)s+=`<text class="pinlbl" x="${f1(bx+bw-7)}" y="${f1(ly+2.6)}" text-anchor="end">${esc(pp.label)}</text>`; });
+      }
+      s+=`<text class="rep" x="${f1(mid)}" y="${f1(c.h+13)}" text-anchor="middle">${esc(clip(c.name,14))}</text>`;
     } else {
       s+=`<rect class="body" x="${f1(bx)}" y="0" width="${f1(bw)}" height="${c.h}"/>`;
       /* Le repère se lit EN TÊTE du corps dès que celui-ci est haut : centré
