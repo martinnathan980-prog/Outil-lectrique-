@@ -1087,8 +1087,22 @@ function computeLayoutWith(eq, lk, peripheral){
        unités de large. */
     if(estMasse(nodes.get(id).name)) return 26;
     if(isVCName(nodes.get(id).name))return 44;   // prise de coupure : corps très fin
-    // SILHOUETTE UNIFORME : tous les équipements ont la même largeur (seule la
-    // hauteur varie) — flanc absent = corps plus large, même gabarit extérieur.
+    /* ON A ESSAYÉ DE FAIRE SUIVRE LA LARGEUR AU NOM, ET C'EST PIRE.
+       Tous les équipements reçoivent 144 de large — 104 de corps plus deux
+       flancs de 20 — qu'ils portent quatre bornes ou vingt, et un petit
+       appareil se retrouve donc dans une boîte un peu vide. L'idée était de
+       calculer la place qu'il faut au repère (« 667VT21 » fait 52 unités) et
+       de borner entre 84 et 144.
+       MESURE. Sur les treize topologies synthétiques, la surface baisse de 11
+       à 13 % : c'est mieux. Mais sur le CONTRAT D'ESSAI — le seul cas réel du
+       banc — la densité tombe de 29,4 % à 23,5 % et le format passe de 1,41
+       (exactement une feuille) à 1,03. Des blocs plus étroits laissent au
+       moteur plus de place en largeur, et il s'en sert pour étaler en
+       HAUTEUR : la page gagne en blocs serrés et perd en page.
+       On garde donc le gabarit constant, qui est aussi ce que l'utilisateur a
+       demandé explicitement — « on a la même largeur, c'est bien ». Le vide
+       dans un petit bloc n'est pas le vrai problème ; le vrai problème serait
+       de le régler en cassant la régularité de la planche. */
     return STRIPW+BODYW+STRIPW; };
   /* Hauteur d'un bloc. Le plancher d'un appareil était de 64 px quel que soit
      son nombre de bornes : un appareil à UNE borne offrait donc 22 px de vide
