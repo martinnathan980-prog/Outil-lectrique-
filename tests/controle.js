@@ -16,8 +16,6 @@
         important : aucun fil ne traverse un bloc, aucun bloc n'en chevauche
         un autre ;
      3. le contrat d'essai se dessine et ses barrettes sont repérées ;
-     4. les trois règles de prise de coupure répondent, et ne répondent PAS
-        quand la localisation manque ;
      5. l'identification par empreinte reconnaît un équipement modifié ;
      6. le classement des contrats désigne le bon point de départ et lit les
         pièces manquantes dans le différentiel.
@@ -52,14 +50,13 @@ function titre(t) { console.log('\n' + t); }
   titre('1. CHARGEMENT');
   const base = await page.evaluate(() => ({
     xlsx: typeof XLSX !== 'undefined' && !!XLSX.utils,
-    manquantes: ['contratEssai', 'identifier', 'identIndexer', 'manquants', 'coupuresEntre',
-      'rbLoad', 'rbAnalyse', 'contratsProches', 'differentiel', 'zonesExemple']
-      .filter(f => typeof window[f] !== 'function'),
-    zones: ZONES.provisoire.length, cadre: ZONES.CADRE
+    manquantes: ['contratEssai', 'identifier', 'identIndexer', 'baseExemple',
+      'rbLoad', 'rbAnalyse', 'contratsProches', 'differentiel', 'planPieces']
+      .filter(f => typeof window[f] !== 'function')
   }));
   ok('bibliothèque Excel intégrée', base.xlsx);
   ok('toutes les fonctions présentes', base.manquantes.length === 0,
-    base.manquantes.length ? 'manquent : ' + base.manquantes.join(', ') : base.zones + ' zones, cadre ' + base.cadre + ' mm');
+    base.manquantes.length ? 'manquent : ' + base.manquantes.join(', ') : 'toutes là');
 
   /* ---- 2. le dessin, sur les FORMES qui font mal ----------------------
      Ces cinq contrôles exploraient cinq repères de la base anonymisée
@@ -119,25 +116,13 @@ function titre(t) { console.log('\n' + t); }
     essai.b + ' blocs · ' + essai.f + ' fils · ' + essai.d + ' % droits');
   ok('les deux barrettes sont repérées', essai.barrettes === 2, essai.barrettes + ' trouvée(s)');
 
-  // ---- 4. les trois règles de coupure ---------------------------------
-  titre('4. PRISES DE COUPURE — les trois règles');
-  const coup = await page.evaluate(() => {
-    const avant = manquants();                    // sans localisation
-    ZONES.charger([['Device', 'Zone'],
-      ['210SP1', 'Z2'],   // poste gauche, x=2500
-      ['115CD', 'Z5'],    // cabine DROITE  -> règle côté
-      ['409GH2', 'Z10'],  // poutre, x=12000 -> règle cadre 10000
-      ['512VN', 'Z12'],   // EXTÉRIEUR       -> règle peau
-      ['340AB1', 'Z2']]);
-    const apres = manquants();
-    return { avantCoup: avant.coupures.length, avantSansPos: avant.sansPosition,
-      regles: apres.coupures.map(c => c.de + '>' + c.vers + ':' + c.regles.map(x => x.regle).join('+')) };
-  });
-  ok('sans localisation, aucune coupure inventée', coup.avantCoup === 0,
-    coup.avantSansPos + ' liaisons signalées sans position');
-  ok('règle « côté »', coup.regles.some(x => /côté/.test(x)), coup.regles.filter(x => /côté/.test(x))[0] || '—');
-  ok('règle « peau »', coup.regles.some(x => /peau/.test(x)), coup.regles.filter(x => /peau/.test(x))[0] || '—');
-  ok('règle « cadre 10000 »', coup.regles.some(x => /cadre/.test(x)), coup.regles.filter(x => /cadre/.test(x))[0] || '—');
+  /* ---- 4. LES TROIS RÈGLES DE COUPURE ONT QUITTÉ L'OUTIL ---------------
+     Elles vérifiaient que les règles côté / peau / cadre répondent sur des
+     zones d'EXEMPLE inventées. C'est précisément ce qui ne prouve rien : tant
+     que la localisation réelle des équipements n'existe pas, une règle qui
+     « marche » sur des zones fausses produit des coupures fausses. Le code
+     attend dans a-venir/regles-de-coupure.js avec la liste de ce qu'il faut
+     pour le ranimer ; ces contrôles reviendront avec lui. */
 
   // ---- 5 et 6. identification et choix du contrat de départ -----------
   titre('5. IDENTIFICATION ET CHOIX DU CONTRAT');
@@ -279,7 +264,7 @@ function titre(t) { console.log('\n' + t); }
 
     // (d) « Annuler » emportait les corrections faites à la main
     await rbLoad(baseExemple()); rbCloseReport();
-    contratEssai(); zonesExemple();
+    contratEssai();
     appliquerPieces(planPieces(contratsProches()[0].contrat));
     state.lk.push(L('CTRL-MAIN', '1', '210SP1', '9'));
     annulerPieces();
