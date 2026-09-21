@@ -2765,14 +2765,36 @@ function computeLayout(eq, lk){
   let best=null,bScore=-1e18,bOpt=false,bClus=false,bRoute=false,bSplit=false;
   // `o` encode la graine : false/true/1..5 = décalages, 'C0'/'C1' = regroupement
   // par communautés, 'CR0'/'CR1' = idem mais amorcé sur la Route déclarée.
+  let bPeignes=Infinity;          // longueur cumulée des peignes du meilleur
   const tryOpt=(o,split)=>{ const clus=typeof o==='string'&&o[0]==='C';
     const rSeed=typeof o==='string'&&o.slice(0,2)==='CR';
     const seed=clus?(o==='C1'||o==='CR1'):(o);
     const L=layoutTry(eq,lk,seed,{cluster:clus,routeSeed:rSeed,split:!!split});
     // regroupement : on valorise fortement le PEU de croisements (lisibilité
     // des maillages), tout en gardant les fils droits en tête.
+    /* LA LONGUEUR DES PEIGNES DÉPARTAGE, ELLE NE SACRIFIE RIEN.
+       Quand plusieurs fils partent de la MÊME borne, le routeur pose une barre
+       verticale qui va de la borne d'alimentation jusqu'au plus lointain de
+       ses piquages. Sur le contrat d'essai elle traversait un tiers de la
+       planche — non parce qu'elle est mal dessinée, mais parce que les trois
+       destinations de la borne 12 se retrouvaient aux quatre coins de la page.
+       Le score ne regardait que les fils droits et les croisements : deux
+       placements également droits lui étaient indifférents, y compris celui
+       qui étire une barre sur 300 unités.
+
+       PREMIÈRE VERSION, ET ELLE ÉTAIT FAUSSE : un malus de 300 unités par fil
+       droit, glissé dans le score. Mesure immédiate sur le contrat d'essai —
+       15 fils droits sur 18 et 6 croisements deviennent 14 sur 18 et 7. La
+       pénalité avait acheté des peignes plus courts au prix d'un fil droit,
+       c'est-à-dire exactement ce que le commentaire prétendait éviter.
+       Un critère secondaire qui peut renverser le critère principal n'est pas
+       secondaire. Il n'entre donc plus dans le score : il DÉPARTAGE, et
+       seulement à score strictement égal. Il ne peut structurellement plus
+       coûter un seul fil droit. */
+    const peignes=(L._routing.barrettes||[]).reduce((t,b2)=>t+Math.abs(b2.y2-b2.y1),0);
     const score=countStraight(L._routing.wires) - countCrossings(L._routing.wires)/(clus?45:120);
-    if(score>bScore){ best=L; bScore=score; bOpt=seed; bClus=clus; bRoute=rSeed; bSplit=!!split; } };
+    if(score>bScore || (score===bScore && best && peignes<bPeignes)){
+      best=L; bScore=score; bPeignes=peignes; bOpt=seed; bClus=clus; bRoute=rSeed; bSplit=!!split; } };
   opts.forEach(o=>tryOpt(o,false));
   clusterOpts.forEach(o=>tryOpt(o,false));
   // mêmes graines avec ÉCLATEMENT MÉTIER des appareils à bobine (bobine /
