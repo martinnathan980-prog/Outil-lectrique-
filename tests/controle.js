@@ -295,6 +295,21 @@ function titre(t) { console.log('\n' + t); }
     try { render(); r.demiFil = !!LAST && LAST.layout.comps.length >= n0; }
     catch (e) { r.demiFil = false; r.demiFilMsg = String(e.message).slice(0, 90); }
 
+    /* (a bis) LE PAS-À-PAS DE FOLIO ÉTAIT INACCESSIBLE DEPUIS SON ÉTAT DE
+       DÉPART. Le menu déroulant des plans est caché : les deux flèches sont
+       LE seul chemin vers un folio. Or sur « tous les plans » — l'écran
+       d'arrivée — elles étaient toutes deux grisées. Un contrat à plusieurs
+       plans n'avait donc aucun folio atteignable, et aucun test ne le voyait :
+       ils appelaient tous `allerAuFolio()` directement, qui, lui, marchait. */
+    state.lk = [L('A1', '1', 'A2', '2'), L('B1', '1', 'B2', '2'), L('C1', '1', 'C2', '2')];
+    state.lk[0].plan = 'P1'; state.lk[1].plan = 'P2'; state.lk[2].plan = 'P3';
+    state.eq = deriveEq(state.lk); state.plan = '*';
+    syncPlans(); render(); syncFolioNav();
+    r.folioDepart = document.getElementById('fo-lbl').textContent;
+    r.folioBloque = document.getElementById('fo-prev').disabled
+                 && document.getElementById('fo-next').disabled;
+    allerAuFolio(1); r.folioApres = document.getElementById('fo-lbl').textContent;
+
     // (b) « 210SP1 » et « 210SP1 » (avec une espace) faisaient deux blocs
     state.lk = [L(' 210SP1 ', '1', 'BORNE', '2'), L('210SP1', '3', 'BORNE', '4')];
     state.eq = deriveEq(state.lk); render();
@@ -358,6 +373,9 @@ function titre(t) { console.log('\n' + t); }
 
   ok('une liaison à moitié saisie ne vide pas l’écran', pieges.demiFil,
     pieges.demiFil ? 'le dessin tient' : (pieges.demiFilMsg || 'ÉCRAN BLANC'));
+  ok('un folio reste atteignable depuis « tous les plans »', !pieges.folioBloque,
+    pieges.folioBloque ? 'LES DEUX FLÈCHES SONT GRISÉES : aucun folio accessible'
+                       : ('« ' + pieges.folioDepart + ' » → « ' + pieges.folioApres + ' »'));
   ok('les espaces parasites ne dédoublent plus un repère', pieges.espaces === 2,
     pieges.espaces + ' bloc(s) pour 2 repères');
   ok('le SVG exporté est un XML valide', pieges.svgOk && pieges.svgXml && !pieges.svgCtrl,

@@ -6,46 +6,51 @@
 <title>Atelier Schéma — générateur automatique</title>
 <style>
 /* ═══════════════════════════════════════════════════════════════════════════
-   L'ENVELOPPE DE L'OUTIL — refaite entièrement.
+   DIRECTION « ATELIER » — la précision industrielle.
 
-   Ce qui n'allait pas, et qui tenait en une phrase : l'écran montrait TOUT,
-   TOUT LE TEMPS. Cinq sections dépliables empilées dans une colonne, chacune
-   avec ses boutons, ses tableaux et ses trois lignes d'explication ; on
-   faisait défiler un mur pour trouver le geste suivant, et la seule chose qui
-   compte — le dessin — était reléguée dans ce qui restait de la fenêtre.
+   Rien ici ne cherche à plaire. L'écran est une planche : un fond de carton
+   gris chaud sur lequel on a posé une feuille blanche, et sur la gauche une
+   colonne d'instrument. Tout ce qui est DONNÉE est en chasse fixe ; tout ce
+   qui est LANGAGE est en linéale. La hiérarchie se fait à la graisse, à la
+   capitale et au filet — jamais à la couleur. Un seul accent, l'oxyde, et on
+   ne le sort que pour dire « c'est ici ».
 
-   Le principe de cette version tient aussi en une phrase : UNE CHOSE À LA
-   FOIS. Le panneau ne présente jamais qu'une seule vue, choisie par trois
-   onglets, et cette vue ne contient que ce qu'on fait maintenant. Le reste
-   n'est pas caché par pudeur : il est simplement ailleurs, et on sait où.
-
-   Le reste du travail est du soin : une échelle d'espacements et une seule
-   (4/8/12/16/24), une seule graisse de trait pour les séparations, un seul
-   accent, des transitions courtes et jamais décoratives, et un fond d'atelier
-   qui recule pour que la feuille blanche avance.
+   Le module est de 4 px. Un seul filet, 1 px. Un seul rayon, 2 px. Aucune
+   ombre qui ne corresponde pas à une vraie élévation (fenêtre, tiroir,
+   fiche). Aucun dégradé. La beauté vient de l'alignement.
    ═══════════════════════════════════════════════════════════════════════ */
 :root{
-  /* Les neutres tirent très légèrement vers le bleu de l'accent : un gris
-     parfaitement neutre a l'air d'un gris par défaut, pas d'un gris choisi. */
-  --chrome:#e8eaee;        /* fond d'atelier, derrière la feuille           */
-  --chrome2:#ffffff;       /* surfaces : panneau, barre, fenêtres           */
-  --chrome3:#f1f3f6;       /* surface en retrait : champ, bouton au repos   */
-  --line:#dfe3e9;          /* séparation                                    */
-  --line2:#edf0f4;         /* séparation ténue, à l'intérieur d'un groupe   */
-  --ink:#16202b;           /* texte principal                               */
-  --ink-dim:#5b6874;       /* texte secondaire                              */
-  --ink-faint:#8d97a3;     /* texte tertiaire, unités, compteurs            */
-  --accent:#125f8f;        /* un seul accent, profond et calme              */
-  --accent-dim:#125f8f;
-  --accent-soft:#e9f1f7;
-  --warn:#96620a; --ok:#1a7f4b; --red:#b03a34;
+  /* ── chrome : le carton, le papier, l'encre, le filet ── */
+  --chrome:#d2cec2;        /* planche d'atelier, derrière la feuille         */
+  --chrome2:#fbfaf6;       /* papier : panneau, barre, fenêtres              */
+  --chrome3:#efede6;       /* surface en retrait : champ, bouton au repos    */
+  --chrome4:#e5e2d8;       /* enfoncé / survol de surface en retrait         */
+  /* LE FILET ET L'ENCRE FAIBLE ONT ÉTÉ REMONTÉS, MESURE À L'APPUI.
+     Première version : filet #bfbaac, soit 1,86:1 sur le papier du panneau —
+     joli sur une capture, mais sous une verrière ou sur une dalle mal réglée
+     la structure du panneau disparaît et il ne reste que du texte flottant.
+     Le filet STRUCTUREL (bord de panneau, crémaillère d'onglets, barre haute)
+     passe donc à 3,19:1, le seuil des éléments non textuels ; le filet
+     INTÉRIEUR d'un groupe reste ténu, c'est lui qui donne la finesse.
+     Même correction sur l'encre faible : #86867f donnait 3,51:1 pour du texte
+     de 10 px en capitales — en dessous du seuil de lisibilité. 4,71:1. */
+  --line:#948c7b;          /* filet structurel — 3,19:1 sur le papier        */
+  --line2:#ded9cd;         /* filet ténu, à l'intérieur d'un groupe          */
+  --ink:#17181a;           /* encre                                          */
+  --ink-dim:#55565a;       /* encre affaiblie                                */
+  --ink-faint:#717169;     /* étiquettes, unités, compteurs — 4,71:1         */
+  --accent:#9c3a14;        /* oxyde — un seul accent, employé au compte-goutte */
+  --accent-dim:#9c3a14;
+  --accent-soft:#f3e7e0;
+  --warn:#8a5c07; --ok:#2b6a3f; --red:#a3291f;
+  /* ── ces valeurs appartiennent au dessin, pas à l'enveloppe : intactes ── */
   --sheet:#ffffff; --sheet-line:#dfe3ea; --sheet-line2:#eef1f5; --sheet-ink:#16202b;
   --brown:#7a4a2a; --black:#1b1f24; --grey:#6b7480; --blue:#125f8f;
   --green:#1a7f4b; --yellow:#e8c93a; --red2:#b03a34;
-  --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  --mono:ui-monospace,Menlo,Consolas,"SF Mono","DejaVu Sans Mono",monospace;
   --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --r:7px;                 /* rayon unique                                  */
-  --t:.14s cubic-bezier(.3,.7,.4,1);
+  --r:2px;                 /* rayon unique, presque nul                      */
+  --t:.1s linear;          /* transitions courtes, jamais décoratives        */
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
@@ -53,202 +58,254 @@ body{font-family:var(--sans);background:var(--chrome);color:var(--ink);
   font-size:13px;line-height:1.45;overflow:hidden;-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 
-/* ─── Boutons ────────────────────────────────────────────────────────────
-   Trois niveaux, pas plus : l'action principale, l'action normale, et le
-   discret. On avait « primary », « ghost », « mini », « seg », « linklike »,
-   « addrow », plus des boutons sans classe — six apparences pour trois
-   intentions. */
+/* ─── L'ÉTIQUETTE ────────────────────────────────────────────────────────
+   Une seule forme pour tout ce qui nomme : chasse fixe, capitale, 10 px,
+   interlettrage ouvert. En-tête de groupe, en-tête de colonne, libellé de
+   champ — même objet, donc même dessin. */
+.grp>h3,.subhead,.field label,table.grid th,.btbl th,.rrep h4,#pop h5,.railtabs button,
+.mthead span{
+  font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--ink-faint)}
+
+/* ─── Boutons : trois niveaux, pas un de plus ─────────────────────────── */
 button{background:var(--chrome3);border:1px solid var(--line);color:var(--ink);
-  padding:6px 11px;border-radius:var(--r);cursor:pointer;font-size:12.5px;
-  transition:background var(--t),border-color var(--t),color var(--t);
-  white-space:nowrap}
-button:hover{background:#e6eaef;border-color:#cdd4dc}
-button:active{background:#dde2e9}
-button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-button:disabled{opacity:.45;cursor:default;background:var(--chrome3);border-color:var(--line)}
-.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
-.primary:hover{background:#0f527c;border-color:#0f527c}
-.primary:active{background:#0d4669}
+  padding:5px 10px;border-radius:var(--r);cursor:pointer;font-size:12px;
+  transition:background var(--t),border-color var(--t),color var(--t);white-space:nowrap}
+button:hover{background:var(--chrome4);border-color:#b2ad9f}
+button:active{background:#dcd8cd}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:1px;z-index:1;position:relative}
+button:disabled{opacity:.38;cursor:default;background:var(--chrome3);border-color:var(--line)}
+.primary{background:var(--accent);border-color:var(--accent);color:#fdf6f2;font-weight:500}
+.primary:hover{background:#87310f;border-color:#87310f}
+.primary:active{background:#73290c}
+.primary:focus-visible{outline-color:var(--ink)}
 .ghost{background:transparent;border-color:transparent;color:var(--ink-dim)}
 .ghost:hover{background:var(--chrome3);border-color:transparent;color:var(--ink)}
-.mini{padding:4px 8px;font-size:11.5px}
+.mini{padding:3px 8px;font-size:11px}
 .linklike{background:none;border:0;color:var(--accent);padding:0;font:inherit;
   cursor:pointer;text-decoration:underline;text-underline-offset:2px}
-.linklike:hover{background:none;color:#0d4669}
+.linklike:hover{background:none;color:#73290c}
 
 input,select,textarea{background:var(--chrome2);border:1px solid var(--line);
-  border-radius:var(--r);padding:6px 9px;font-size:12.5px;color:var(--ink);
+  border-radius:var(--r);padding:5px 8px;font-size:12px;color:var(--ink);
   transition:border-color var(--t),box-shadow var(--t);width:100%}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
-  box-shadow:0 0 0 3px var(--accent-soft)}
+  box-shadow:inset 0 0 0 1px var(--accent)}
 ::placeholder{color:var(--ink-faint)}
+input[type=checkbox]{width:auto;accent-color:var(--accent)}
 
-/* ─── La grille de l'application ─────────────────────────────────────── */
-#app{height:100%;display:grid;grid-template-columns:288px 1fr;
-  grid-template-rows:52px 1fr;grid-template-areas:"top top" "side main"}
+/* ─── La planche ─────────────────────────────────────────────────────── */
+#app{height:100%;display:grid;grid-template-columns:300px 1fr;
+  grid-template-rows:44px 1fr;grid-template-areas:"top top" "side main"}
 
-/* ─── La barre du haut ───────────────────────────────────────────────── */
-header{grid-area:top;display:flex;align-items:center;gap:14px;padding:0 16px;
+/* ─── Le bandeau ──────────────────────────────────────────────────────
+   Dense, bas, en chasse fixe : c'est la ligne d'état d'un instrument, pas la
+   barre de marque d'un site. Le repère du produit est écrit comme un numéro
+   de planche — capitale, interlettré, avec la barre d'oxyde qui le tient. */
+header{grid-area:top;display:flex;align-items:stretch;gap:0;
   background:var(--chrome2);border-bottom:1px solid var(--line);z-index:20}
-.brand{display:flex;align-items:baseline;gap:9px;font-weight:600;letter-spacing:-.1px}
-.brand b{font-weight:600;font-size:14px}
-.ctx{display:flex;align-items:center;gap:7px;color:var(--ink-faint);
-  font-family:var(--mono);font-size:11.5px;padding-left:14px;
-  border-left:1px solid var(--line);min-width:0}
-.ctx b{color:var(--ink-dim);font-weight:600}
-.sauve{color:var(--ink-faint);opacity:.8}
+.brand{display:flex;align-items:center;gap:8px;padding:0 14px;flex:0 0 auto;
+  border-right:1px solid var(--line);font-family:var(--mono);font-size:11px;
+  font-weight:600;letter-spacing:.11em;text-transform:uppercase;color:var(--ink)}
+.brand::before{content:'';width:3px;height:14px;background:var(--accent);flex:0 0 3px}
+.brand b{font-weight:600;font-size:inherit;letter-spacing:inherit}
+.ctx{display:flex;align-items:center;gap:6px;color:var(--ink-faint);
+  font-family:var(--mono);font-size:11px;padding:0 14px;min-width:0;
+  border-right:1px solid var(--line);white-space:nowrap;overflow:hidden}
+.ctx b{color:var(--ink);font-weight:600}
+.sauve{color:var(--ink-faint);opacity:.85}
 .sauve::before{content:'· '}
-.undo{font-size:15px;line-height:1;padding:4px 9px}
+.undo{font-size:14px;line-height:1;padding:0 10px;border-radius:0;align-self:stretch;
+  border:0;border-right:1px solid var(--line);background:transparent;color:var(--ink-dim)}
+.undo:hover{background:var(--chrome3);border-right-color:var(--line)}
 .spacer{flex:1}
-.tools{display:flex;align-items:center;gap:6px}
-header .sep{width:1px;height:20px;background:var(--line);margin:0 4px}
+.tools{display:flex;align-items:stretch}
+.tools button{border:0;border-left:1px solid var(--line);border-radius:0;
+  background:transparent;color:var(--ink-dim);padding:0 13px;font-size:11px;
+  font-family:var(--mono);letter-spacing:.07em;text-transform:uppercase}
+.tools button:hover{background:var(--chrome3);color:var(--ink);border-left-color:var(--line)}
+.tools button:focus-visible{outline-offset:-2px}
+header .sep{display:none}
 
-/* Le pas-à-pas de folio : « ‹ Folio 2 / 4 › », écrit en toutes lettres.
-   Le choix du folio vivait dans un <select> de 12 px collé aux boutons
-   d'export, réglé par défaut sur « Tous les plans » — c'est-à-dire tout sur
-   une feuille, exactement ce qu'on cherche à éviter. */
-.folionav{display:none;align-items:center;gap:2px;background:var(--chrome3);
-  border:1px solid var(--line);border-radius:var(--r);padding:2px}
+/* Le pas-à-pas de folio — un compteur de planche, lu comme sur le cartouche. */
+.folionav{display:none;align-items:stretch;border-left:1px solid var(--line)}
 .folionav.on{display:flex}
-.folionav button{background:transparent;border:0;padding:3px 8px;color:var(--ink-dim);
-  font-size:14px;line-height:1;border-radius:5px}
-.folionav button:hover:not(:disabled){background:#e2e7ed;color:var(--ink)}
-.folionav .lbl{font-family:var(--mono);font-size:11.5px;padding:0 6px;
-  color:var(--ink);min-width:84px;text-align:center;user-select:none}
+.folionav button{background:transparent;border:0;padding:0 10px;color:var(--ink-dim);
+  font-size:13px;line-height:1;border-radius:0}
+.folionav button:hover:not(:disabled){background:var(--chrome3);color:var(--ink)}
+.folionav button:disabled{opacity:.3}
+.folionav .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.06em;white-space:nowrap;
+  display:flex;align-items:center;justify-content:center;padding:0 4px;
+  color:var(--ink);min-width:92px;text-align:center;user-select:none;
+  border-left:1px solid var(--line2);border-right:1px solid var(--line2)}
 .plan-sel{display:none}
 
-/* ─── Le panneau : des onglets, pas une pile ─────────────────────────── */
+/* ─── La colonne d'instrument ─────────────────────────────────────────── */
 aside{grid-area:side;background:var(--chrome2);border-right:1px solid var(--line);
   display:flex;flex-direction:column;min-height:0;z-index:15}
-.railtabs{display:flex;gap:2px;padding:8px 8px 0;border-bottom:1px solid var(--line)}
-.railtabs button{flex:1;background:transparent;border:0;border-radius:6px 6px 0 0;
-  padding:8px 4px 9px;font-size:12px;color:var(--ink-faint);font-weight:500;
-  border-bottom:2px solid transparent;margin-bottom:-1px}
-.railtabs button:hover{background:var(--chrome3);color:var(--ink-dim)}
-.railtabs button.on{color:var(--accent);border-bottom-color:var(--accent);background:transparent}
+.railtabs{display:flex;background:var(--chrome3);border-bottom:1px solid var(--line);flex:0 0 auto}
+.railtabs button{flex:1;background:transparent;border:0;border-right:1px solid var(--line);
+  border-radius:0;padding:9px 2px 8px;color:var(--ink-faint);
+  box-shadow:inset 0 -2px 0 transparent;transition:color var(--t),background var(--t),box-shadow var(--t)}
+.railtabs button:last-child{border-right:0}
+.railtabs button:hover{background:var(--chrome4);color:var(--ink-dim)}
+.railtabs button.on{color:var(--ink);background:var(--chrome2);
+  box-shadow:inset 0 -2px 0 var(--accent)}
 .railtabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .railbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
-.vue{display:none;padding:16px}
-.vue.on{display:block;animation:entre .18s ease}
-@keyframes entre{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+.vue{display:none;padding:16px 16px 24px}
+.vue.on{display:block}
 
-/* Un groupe dans une vue : un titre discret, puis le contenu. Remplace les
-   en-têtes dépliables, qui demandaient un clic pour voir ce qu'il y avait
-   dedans — donc qui obligeaient à ouvrir pour savoir s'il fallait ouvrir. */
-.grp{margin-bottom:22px}
-.grp:last-child{margin-bottom:4px}
-.grp>h3{margin:0 0 9px;font-size:10.5px;font-weight:600;letter-spacing:.7px;
-  text-transform:uppercase;color:var(--ink-faint);display:flex;align-items:center;gap:8px}
-.grp>h3 .count{margin-left:auto;font-family:var(--mono);font-size:10.5px;
-  letter-spacing:0;text-transform:none;color:var(--ink-faint)}
-.subhead{margin:18px 0 8px;font-size:10.5px;font-weight:600;letter-spacing:.7px;
-  text-transform:uppercase;color:var(--ink-faint);display:flex;align-items:center;gap:8px;
-  padding-top:14px;border-top:1px solid var(--line2)}
-.subhead .count{margin-left:auto;font-family:var(--mono);font-size:10.5px;
-  letter-spacing:0;text-transform:none}
-.brow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-/* Le style « ghost » est sans bordure : juste ce qu'il faut dans la barre du
-   haut, illisible dans une rangée où « Identifier les équipements » et « Ce
-   qui manque » passaient pour du texte. Dans le panneau, un bouton se voit. */
+/* Un groupe : l'étiquette, le filet qui court jusqu'au bord, le compte.
+   C'est le titre de rubrique d'une planche technique, rien d'autre. */
+.grp{margin-bottom:24px}
+.grp:last-child{margin-bottom:0}
+.grp>h3{margin:0 0 8px;display:flex;align-items:center;gap:8px;line-height:1}
+.grp>h3::after{content:'';flex:1;height:1px;background:var(--line);order:0}
+.grp>h3 .count,.subhead .count{order:1;font-family:var(--mono);font-size:10px;
+  letter-spacing:0;text-transform:none;color:var(--ink);font-weight:600;
+  font-variant-numeric:tabular-nums}
+.subhead{margin:20px 0 8px;display:flex;align-items:center;gap:8px;line-height:1;
+  padding-top:0;border-top:0}
+.subhead::after{content:'';flex:1;height:1px;background:var(--line);order:0}
+.brow{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
 .brow .ghost,.bc-row .ghost{border-color:var(--line);background:var(--chrome3);color:var(--ink-dim)}
-.brow .ghost:hover,.bc-row .ghost:hover{background:#e6eaef;border-color:#cdd4dc;color:var(--ink)}
+.brow .ghost:hover,.bc-row .ghost:hover{background:var(--chrome4);border-color:#b2ad9f;color:var(--ink)}
 .brow input{flex:1;min-width:0}
-.hint{color:var(--ink-faint);font-size:11px;line-height:1.55;margin-top:9px}
-.hint b{color:var(--ink-dim);font-weight:600}
+.hint{color:var(--ink-dim);font-size:11.5px;line-height:1.5;margin-top:8px}
+.hint b{color:var(--ink);font-weight:600}
 
-/* Les étapes numérotées de « Compléter » */
-.etape{display:flex;align-items:center;gap:10px;margin-top:8px}
-.etape .n{flex:0 0 20px;height:20px;border-radius:50%;background:var(--chrome3);
-  border:1px solid var(--line);color:var(--ink-faint);font:600 10px var(--mono);
-  display:flex;align-items:center;justify-content:center;transition:all var(--t)}
-.etape.faite .n{background:var(--accent);border-color:var(--accent);color:#fff}
-.etape button{flex:1;text-align:left;justify-content:flex-start}
+/* Les étapes numérotées : un cartouche carré, comme un repère de nomenclature. */
+.etape{display:flex;align-items:stretch;gap:0;margin-top:4px;border:1px solid var(--line);
+  border-radius:var(--r);background:var(--chrome3);transition:border-color var(--t)}
+.etape:hover{border-color:#b2ad9f}
+.etape .n{flex:0 0 26px;display:flex;align-items:center;justify-content:center;
+  background:var(--chrome4);border-right:1px solid var(--line);color:var(--ink-faint);
+  font:600 10px/1 var(--mono);transition:background var(--t),color var(--t)}
+.etape.faite .n{background:var(--accent);border-right-color:var(--accent);color:#fdf6f2}
+.etape button{flex:1;text-align:left;justify-content:flex-start;border:0;border-radius:0;
+  background:transparent;padding:7px 10px}
+.etape button:hover{background:var(--chrome4)}
+.etape button:focus-visible{outline-offset:-2px}
 
-/* La liste du matériel */
-#mt-find{margin-top:2px}
-#mt-liste{margin-top:10px;max-height:min(46vh,420px);overflow-y:auto;
-  margin-left:-6px;margin-right:-6px}
-.mtrow{display:flex;align-items:baseline;gap:9px;padding:6px;border-radius:6px;
-  cursor:pointer;transition:background var(--t)}
+/* La liste du matériel — une nomenclature : repère, désignation, quantité. */
+#mt-find{margin-top:0}
+.mthead{display:flex;align-items:baseline;gap:8px;margin-top:12px;padding:0 6px 3px;
+  border-bottom:1px solid var(--line)}
+.grp:has(#mt-liste:empty) .mthead,
+.grp:has(#mt-liste:empty) .hint-liste{display:none}
+.mthead span:last-child{margin-left:auto}
+#mt-liste{max-height:min(46vh,420px);overflow-y:auto;border-bottom:1px solid var(--line)}
+.mtrow{display:flex;align-items:baseline;gap:8px;padding:5px 6px;cursor:pointer;
+  border-bottom:1px solid var(--line2);transition:background var(--t)}
 .mtrow:hover{background:var(--chrome3)}
-.mtrow+.mtrow{box-shadow:inset 0 1px 0 var(--line2)}
-.mtn{font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--ink)}
-.mtd{font-size:11px;color:var(--ink-faint);flex:1;min-width:0;overflow:hidden;
+.mtn{font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--ink);
+  letter-spacing:.02em}
+.mtd{font-size:11px;color:var(--ink-dim);flex:1;min-width:0;overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap}
-.mtc{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);flex:0 0 auto}
-#mt-details{margin-top:14px;border-top:1px solid var(--line2);padding-top:10px}
-#mt-details summary{cursor:pointer;font-size:11.5px;color:var(--ink-dim);
-  padding:3px 0;user-select:none;list-style:none}
+.mtc{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);
+  flex:0 0 auto;font-variant-numeric:tabular-nums}
+#mt-details{margin-top:20px;border-top:1px solid var(--line);padding-top:10px}
+#mt-details summary{cursor:pointer;font-family:var(--mono);font-size:10px;font-weight:600;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint);
+  padding:2px 0;user-select:none;list-style:none;transition:color var(--t)}
 #mt-details summary::-webkit-details-marker{display:none}
-#mt-details summary::before{content:'▸ ';color:var(--ink-faint)}
-#mt-details[open] summary::before{content:'▾ '}
+#mt-details summary::before{content:'+ ';color:var(--ink-faint)}
+#mt-details[open] summary::before{content:'− '}
 #mt-details summary:hover{color:var(--accent)}
+#mt-details summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#mt-details .count{font-family:var(--mono);letter-spacing:0;color:var(--ink);font-weight:600}
 
-/* Tables de saisie */
+/* Tables de saisie : une grille, des filets, des chiffres alignés. */
 table.grid{width:100%;border-collapse:collapse;margin-top:8px}
-table.grid th{font-size:9.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;
-  color:var(--ink-faint);text-align:left;padding:0 4px 5px}
+table.grid th{text-align:left;padding:0 4px 4px;border-bottom:1px solid var(--line)}
 table.grid td{padding:0;border-bottom:1px solid var(--line2)}
-table.grid input{border:0;border-radius:0;background:transparent;padding:5px 4px;
-  font-family:var(--mono);font-size:11.5px}
-table.grid input:focus{box-shadow:none;background:var(--accent-soft);border-radius:4px}
-.rmrow{width:22px;text-align:center;color:var(--ink-faint);cursor:pointer;
-  font-size:12px;user-select:none;transition:color var(--t)}
+table.grid input{border:0;border-radius:0;background:transparent;padding:4px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.02em}
+table.grid input:focus{box-shadow:inset 0 0 0 1px var(--accent);background:var(--chrome2)}
+.rmrow{width:20px;text-align:center;color:var(--ink-faint);cursor:pointer;
+  font-size:11px;user-select:none;transition:color var(--t)}
 .rmrow:hover{color:var(--red)}
-.addrow{margin-top:8px}
-.cart-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px 10px}
-.field label{display:block;font-size:9.5px;font-weight:600;letter-spacing:.6px;
-  text-transform:uppercase;color:var(--ink-faint);margin-bottom:3px}
+.addrow{margin-top:8px;border-color:var(--line);background:var(--chrome3);color:var(--ink-dim)}
+.addrow:hover{background:var(--chrome4);border-color:#aaa598;color:var(--ink)}
+.cart-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
+.cart-grid .wide{grid-column:1/-1}
+.field label{display:block;margin-bottom:3px}
+.field input{font-family:var(--mono);font-size:11px}
 
-/* Le banc d'essai */
-  cursor:pointer;font-size:11.5px;transition:background var(--t)}
-  transition:background var(--t)}
-@keyframes pulse{50%{opacity:.35}}
+/* Les câbles : une ligne de nomenclature, pas une carte. */
+.cbrow{display:flex;align-items:baseline;gap:8px;padding:4px 6px;
+  border-bottom:1px solid var(--line2)}
+.cbname{font-family:var(--mono);font-size:11.5px;color:var(--ink);font-weight:600;
+  flex:0 0 auto;letter-spacing:.02em}
+.cbmeta{font-family:var(--mono);font-size:10px;color:var(--ink-faint);
+  margin-left:auto;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#cb-list{border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  max-height:min(38vh,320px);overflow-y:auto}
+#cb-list .hint{border-top:0;margin-top:8px}
 
-/* ─── La scène ───────────────────────────────────────────────────────── */
+/* ─── La feuille et son fond ─────────────────────────────────────────── */
 main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
 #stage{position:absolute;inset:0;overflow:hidden;touch-action:none;cursor:grab}
 #stage:active{cursor:grabbing}
 #svg{width:100%;height:100%;display:block}
-.notice{position:absolute;inset:0;display:none;flex-direction:column;
-  align-items:center;justify-content:center;gap:6px;text-align:center;
-  color:var(--ink-faint);font-size:12.5px;padding:24px;pointer-events:none}
-.notice .big{font-size:17px;font-weight:600;color:var(--ink-dim);letter-spacing:-.2px}
-.notice button{pointer-events:auto}
+.notice{position:absolute;inset:0;display:none;text-align:center;
+  color:var(--ink-faint);font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+  text-transform:uppercase;line-height:1.7;padding:24px;pointer-events:none}
+.notice::before{content:'';display:block;height:calc(50% - 44px)}
+.notice .big{font-family:var(--sans);font-size:15px;font-weight:600;color:var(--ink-dim);
+  letter-spacing:0;text-transform:none;margin-bottom:4px}
+.notice button{pointer-events:auto;border-color:var(--line);background:var(--chrome2);
+  color:var(--ink-dim);font-family:var(--sans);letter-spacing:0;text-transform:none}
+.notice button:hover{background:var(--chrome3);border-color:#aaa598;color:var(--ink)}
 
-/* La commande de zoom : posée sur la scène, discrète, à portée du pouce. */
-.hud{position:absolute;left:14px;bottom:14px;display:flex;align-items:center;gap:2px;
-  background:rgba(255,255,255,.92);backdrop-filter:blur(8px);
-  -webkit-backdrop-filter:blur(8px);border:1px solid var(--line);
-  border-radius:9px;padding:3px;box-shadow:0 1px 3px rgba(22,32,43,.07)}
-.hud button{background:transparent;border:0;padding:4px 9px;color:var(--ink-dim);border-radius:6px}
+/* La commande de zoom : un boîtier posé sur la planche. Pas de verre, pas de
+   flou, pas d'ombre — une plaque avec un filet. */
+.hud{position:absolute;left:16px;bottom:16px;display:flex;align-items:stretch;
+  background:var(--chrome2);border:1px solid var(--line);border-radius:var(--r)}
+.hud button{background:transparent;border:0;border-radius:0;padding:4px 10px;
+  color:var(--ink-dim);font-size:12px}
+.hud button:last-child{font-family:var(--mono);font-size:10px;letter-spacing:.08em;
+  text-transform:uppercase;padding:4px 10px}
 .hud button:hover{background:var(--chrome3);color:var(--ink)}
-.hud .z{font-family:var(--mono);font-size:11px;color:var(--ink-dim);
-  min-width:46px;text-align:center;user-select:none}
-.hud .sep{width:1px;height:16px;background:var(--line);margin:0 3px}
+.hud button:focus-visible{outline-offset:-2px}
+.hud .z{font-family:var(--mono);font-size:11px;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;
+  min-width:52px;text-align:center;user-select:none;font-variant-numeric:tabular-nums;
+  border-left:1px solid var(--line2);border-right:1px solid var(--line2)}
+.hud .sep{width:1px;background:var(--line);margin:0}
 
 /* ─── Fenêtres ───────────────────────────────────────────────────────── */
-.modal-bg{position:fixed;inset:0;background:rgba(18,26,35,.42);
-  backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
+.modal-bg{position:fixed;inset:0;background:rgba(23,24,26,.44);
   display:none;align-items:center;justify-content:center;z-index:60;padding:24px}
-.modal{background:var(--chrome2);border-radius:12px;width:min(720px,100%);
-  max-height:88vh;display:flex;flex-direction:column;
-  box-shadow:0 18px 50px rgba(18,26,35,.22),0 0 0 1px var(--line);
-  animation:monte .18s cubic-bezier(.3,.7,.4,1)}
-@keyframes monte{from{opacity:0;transform:translateY(8px) scale(.99)}to{opacity:1;transform:none}}
+.modal{background:var(--chrome2);border:1px solid var(--line);border-radius:var(--r);
+  width:min(720px,100%);max-height:88vh;display:flex;flex-direction:column;
+  box-shadow:0 20px 48px rgba(23,24,26,.24)}
 .modal.wide{width:min(1000px,100%)}
-.modal h2{margin:0;padding:16px 20px;font-size:14px;font-weight:600;
-  border-bottom:1px solid var(--line)}
-.modal .body{padding:18px 20px;overflow:auto;flex:1;min-height:0}
-.modal .foot{display:flex;justify-content:flex-end;gap:8px;padding:13px 20px;
-  border-top:1px solid var(--line);background:var(--chrome3);border-radius:0 0 12px 12px}
-.modal .help{margin:0 0 12px;color:var(--ink-dim);font-size:11.5px;line-height:1.6}
-.modal textarea{min-height:130px;font-family:var(--mono);font-size:11.5px;resize:vertical}
+.modal h2{margin:0;padding:11px 16px;font-family:var(--mono);font-size:11px;
+  font-weight:600;letter-spacing:.11em;text-transform:uppercase;color:var(--ink);
+  border-bottom:1px solid var(--line);background:var(--chrome3)}
+.modal .body{padding:16px;overflow:auto;flex:1;min-height:0}
+.modal .foot{display:flex;justify-content:flex-end;gap:6px;padding:10px 16px;
+  border-top:1px solid var(--line);background:var(--chrome3)}
+.modal .help{margin:0 0 12px;color:var(--ink-dim);font-size:11.5px;line-height:1.55}
+.modal .help b{color:var(--ink);font-weight:600}
+.modal textarea{min-height:130px;font-family:var(--mono);font-size:11px;resize:vertical}
 
-/* La fiche qui s'ouvre au clic sur un bloc ou un fil */
+/* La fiche qui s'ouvre au clic sur un bloc ou un fil : une étiquette volante. */
 #pop{position:absolute;display:none;z-index:40;background:var(--chrome2);
-  border:1px solid var(--line);border-radius:10px;padding:13px;
-  box-shadow:0 10px 32px rgba(18,26,35,.16);max-width:320px}
+  border:1px solid var(--line);border-radius:var(--r);padding:0;
+  box-shadow:0 12px 32px rgba(23,24,26,.2);max-width:320px}
+#pop h5{margin:0;padding:8px 12px;background:var(--chrome3);
+  border-bottom:1px solid var(--line);color:var(--ink)}
+#pop>*:not(h5):not(.actions){margin-left:12px;margin-right:12px}
+#pop .field{margin-top:8px}
+#pop .actions{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:10px 12px;
+  margin-top:12px;border-top:1px solid var(--line);background:var(--chrome3)}
+#pop .actions button{font-size:11px;padding:5px 8px;width:100%}
+#pop .actions .ghost{border-color:var(--line);background:var(--chrome2)}
+#pop .actions .ghost:hover{background:var(--chrome4);color:var(--ink)}
+.actions{display:flex;flex-wrap:wrap;gap:4px}
 
 /* ─── Impression ─────────────────────────────────────────────────────── */
 #printroot{display:none}
@@ -266,26 +323,45 @@ main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
 @media (max-width:860px){
   #app{grid-template-columns:1fr;grid-template-areas:"top" "main"}
   .menu-btn{display:inline-flex;align-items:center;justify-content:center;
-    font-size:16px;padding:5px 9px}
+    font-size:14px;padding:0 12px;border:0;border-right:1px solid var(--line);
+    border-radius:0;background:transparent;color:var(--ink-dim);align-self:stretch}
+  .menu-btn:hover{background:var(--chrome3);border-right-color:var(--line)}
   .ctx{display:none}
-  header{gap:8px;padding:0 10px}
-  aside{position:fixed;top:52px;left:0;bottom:0;width:min(88vw,320px);z-index:40;
-    transform:translateX(-100%);transition:transform .22s cubic-bezier(.3,.7,.4,1);
-    box-shadow:14px 0 40px rgba(18,26,35,.16)}
+  .brand{padding:0 10px;font-size:10px;letter-spacing:.09em}
+  .tools button{padding:0 9px}
+  .folionav .lbl{min-width:74px;font-size:10px}
+  aside{position:fixed;top:44px;left:0;bottom:0;width:min(88vw,320px);z-index:40;
+    transform:translateX(-100%);transition:transform .16s linear;
+    box-shadow:8px 0 28px rgba(23,24,26,.2)}
   aside.open{transform:none}
-  .drawer-bg{display:block;position:fixed;inset:52px 0 0 0;background:rgba(18,26,35,.32);
-    z-index:35;opacity:0;pointer-events:none;transition:opacity .2s}
+  .drawer-bg{display:block;position:fixed;inset:44px 0 0 0;background:rgba(23,24,26,.34);
+    z-index:35;opacity:0;pointer-events:none;transition:opacity .16s linear}
   .drawer-bg.show{opacity:1;pointer-events:auto}
   .hud{left:10px;bottom:10px}
-  .modal-bg{padding:10px}
+  .modal-bg{padding:8px}
+  .modal h2{padding:10px 12px}
+  .modal .body{padding:12px}
+  .modal .foot{padding:9px 12px}
+  .cart-grid{grid-template-columns:1fr 1fr}
+}
+@media (max-width:640px){
+  .folionav.on{position:fixed;right:10px;bottom:10px;z-index:30;
+    background:var(--chrome2);border:1px solid var(--line);border-radius:var(--r)}
+  .folionav button{padding:4px 10px}
+  .folionav .lbl{min-width:0;padding:0 8px;border-color:var(--line2)}
+}
+@media (max-width:440px){
+  .brand{border-right:0}
+  .tools button{padding:0 8px;font-size:10px}
+  .vue{padding:12px 12px 20px}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
-/* Barres de défilement discrètes */
-*::-webkit-scrollbar{width:10px;height:10px}
-*::-webkit-scrollbar-thumb{background:#d3d9e0;border-radius:6px;border:3px solid var(--chrome2)}
-*::-webkit-scrollbar-thumb:hover{background:#c2cad3}
+/* Barres de défilement : un rail, pas une pastille. */
+*::-webkit-scrollbar{width:11px;height:11px}
+*::-webkit-scrollbar-thumb{background:#c2beb1;border-radius:0;border:4px solid var(--chrome2)}
+*::-webkit-scrollbar-thumb:hover{background:#aba695}
 *::-webkit-scrollbar-track{background:transparent}
 </style>
 </head>
@@ -297,18 +373,19 @@ main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
      incomprehensible. Le contrat d'exemple, lui, tient en vingt liaisons et
      montre tout ce que l'outil sait faire. -->
 <div id="app">
+  <!-- ═══ LE BANDEAU ════════════════════════════════════════════════════════
+       Une ligne d'état d'instrument : le repère du produit tenu par une barre
+       d'oxyde, l'état du contrat en chasse fixe, le compteur de planche, et
+       les sorties en cellules séparées par un filet. Rien ne flotte : chaque
+       chose est dans une case, et les cases se touchent. ═══════════════════ -->
   <header>
-    <button class="ghost menu-btn" id="btnMenu" aria-label="Panneau">☰</button>
+    <button class="ghost menu-btn" id="btnMenu" aria-label="Ouvrir le panneau">☰</button>
     <div class="brand"><b>Atelier Schéma</b></div>
     <div class="ctx" id="ctx"><span id="ctx-txt">—</span><span id="ctx-sauve" class="sauve"></span></div>
-    <button class="ghost undo" id="btnUndo" style="display:none" aria-label="Annuler">↶</button>
+    <button class="ghost undo" id="btnUndo" style="display:none" aria-label="Annuler la dernière action" title="Annuler">↶</button>
     <div class="spacer"></div>
-    <!-- LE CHOIX DU FOLIO EN TOUTES LETTRES. Il vivait dans un <select> de
-         12 px collé aux boutons d'export, réglé par défaut sur « Tous les
-         plans » — c'est-à-dire tout sur une seule feuille, exactement ce
-         qu'on cherche à éviter. Ici c'est un pas-à-pas : on avance d'un folio
-         au suivant sans jamais ouvrir de menu. Le <select> reste, caché : il
-         porte l'état, et tout le reste du code continue de le lire. -->
+    <!-- Le pas-à-pas de folio. Le <select> reste, caché : il porte l'état et
+         tout le reste du code continue de le lire. -->
     <div class="folionav" id="folionav">
       <button id="fo-prev" aria-label="Folio précédent">‹</button>
       <span class="lbl" id="fo-lbl">Folio 1 / 1</span>
@@ -323,14 +400,11 @@ main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
     </div>
   </header>
 
-  <!-- ═══ UNE CHOSE À LA FOIS ═══════════════════════════════════════════════
-       Le panneau empilait cinq sections dépliables : on faisait défiler un mur
-       pour trouver le geste suivant, et il fallait ouvrir une section pour
-       savoir s'il fallait l'ouvrir. Trois onglets, trois vues, une seule
-       affichée. « Matériel » est ce qu'on regarde tout le temps ; « Compléter »
-       est une opération qu'on lance de temps en temps ; « Réglages » est ce
-       qu'on touche une fois par affaire. ═══════════════════════════════════ -->
-  <aside>
+  <!-- ═══ LA COLONNE D'INSTRUMENT ═══════════════════════════════════════════
+       Trois index, une seule vue à la fois. « Matériel » est ce qu'on regarde
+       tout le temps ; « Compléter » est une opération qu'on lance de temps en
+       temps ; « Réglages » est ce qu'on touche une fois par affaire. ═══════ -->
+  <aside aria-label="Panneau de travail">
     <nav class="railtabs" id="railtabs">
       <button data-vue="v-mat" class="on">Matériel</button>
       <button data-vue="v-piece">Compléter</button>
@@ -338,9 +412,10 @@ main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
     </nav>
     <div class="railbody">
 
-      <!-- ── VUE 1 : CE QUE JE REGARDE ─────────────────────────────────── -->
+      <!-- ── INDEX 1 : CE QUE JE REGARDE ───────────────────────────────── -->
       <section class="vue on" id="v-mat">
         <div class="grp">
+          <h3>Contrat de câblage</h3>
           <div class="brow">
             <button class="primary" id="lk-file">Ouvrir un fichier</button>
             <button id="lk-import">Coller</button>
@@ -351,15 +426,16 @@ main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
 
         <div class="grp">
           <h3>Équipements <span class="count" id="cnt-eq">0</span></h3>
-          <input id="mt-find" placeholder="Chercher un repère ou un n° de fil…">
+          <input id="mt-find" placeholder="Repère ou n° de fil…" aria-label="Chercher un repère ou un numéro de fil">
+          <div class="mthead"><span>Repère</span><span>Fils</span></div>
           <div id="mt-liste"></div>
           <div id="mt-rien" class="hint" style="display:none">Rien qui corresponde.</div>
-          <div class="hint">Clique un repère : le dessin s’y rend et le met en évidence.</div>
+          <div class="hint hint-liste">Clique un repère : le dessin s’y rend et le met en évidence.</div>
           <div id="xp-stat" class="hint"></div>
         </div>
 
         <details id="mt-details">
-          <summary>Corriger les liaisons une par une <span id="cnt-lk" class="count"></span></summary>
+          <summary>Corriger les liaisons <span id="cnt-lk" class="count"></span></summary>
           <table class="grid" id="tbl-lk"><thead><tr><th>De</th><th>B.</th><th>Vers</th><th>B.</th><th>Nature</th><th></th></tr></thead><tbody></tbody></table>
           <div class="brow" style="margin-top:8px">
             <button class="ghost mini addrow" id="add-lk">+ liaison</button>
@@ -370,10 +446,10 @@ main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
         </details>
       </section>
 
-      <!-- ── VUE 2 : RETROUVER CE QUI MANQUE ───────────────────────────── -->
+      <!-- ── INDEX 2 : RETROUVER CE QUI MANQUE ─────────────────────────── -->
       <section class="vue" id="v-piece">
         <div class="grp">
-          <h3>Les pièces absentes du contrat</h3>
+          <h3>Pièces absentes du contrat</h3>
           <p class="hint" style="margin-top:0">Un contrat ne déclare que ses liaisons. Les <b>barrettes</b> et les <b>prises de coupure</b> qui se trouvent entre les deux n’y sont pas. On va les chercher dans un contrat déjà testé qui ressemble au tien.</p>
           <div class="etape" id="et-1"><span class="n">1</span><button id="rb-browse">Charger une base de retest</button></div>
           <div class="etape" id="et-2"><span class="n">2</span><button id="rb-proche">De quel contrat partir&nbsp;?</button></div>
@@ -392,17 +468,17 @@ main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
         </div>
       </section>
 
-      <!-- ── VUE 3 : CE QU'ON RÈGLE UNE FOIS ───────────────────────────── -->
+      <!-- ── INDEX 3 : CE QU'ON RÈGLE UNE FOIS ─────────────────────────── -->
       <section class="vue" id="v-regl">
         <div class="grp">
           <h3>Cartouche</h3>
           <div class="cart-grid">
-            <div class="field"><label>Titre</label><input id="m-title"></div>
-            <div class="field"><label>Folio</label><input id="m-folio"></div>
-            <div class="field"><label>Dessiné</label><input id="m-author"></div>
-            <div class="field"><label>Indice</label><input id="m-rev"></div>
-            <div class="field"><label>Date</label><input id="m-date"></div>
-            <div class="field"><label>Échelle</label><input id="m-scale"></div>
+            <div class="field wide"><label for="m-title">Titre</label><input id="m-title"></div>
+            <div class="field"><label for="m-folio">Folio</label><input id="m-folio"></div>
+            <div class="field"><label for="m-rev">Indice</label><input id="m-rev"></div>
+            <div class="field"><label for="m-date">Date</label><input id="m-date"></div>
+            <div class="field"><label for="m-scale">Échelle</label><input id="m-scale"></div>
+            <div class="field wide"><label for="m-author">Dessiné</label><input id="m-author"></div>
           </div>
         </div>
         <div class="grp">
@@ -437,7 +513,7 @@ main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
       <button id="zout" aria-label="Dézoomer">−</button><div class="z" id="zlbl">100 %</div><button id="zin" aria-label="Zoomer">+</button>
       <div class="sep"></div><button id="zfit">Ajuster</button>
     </div>
-    <div class="notice" id="notice"><div class="big">Aucun contrat</div>ouvre un fichier ou colle tes liaisons</div>
+    <div class="notice" id="notice"><div class="big">Aucun contrat chargé</div>Ouvre un fichier ou colle tes liaisons</div>
   </main>
 </div>
 <div class="drawer-bg" id="drawerBg"></div>
@@ -446,9 +522,10 @@ main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
   <h2>Importer</h2>
   <div class="body">
     <div id="pane-db">
-      <p class="help">Colle ta base de câblage ou <b>dépose un fichier</b> : une ligne = une liaison. Colonnes (avec ou sans en-tête, séparées par <b>;</b> <b>,</b> ou tabulation) : <b>Équip.1 ; Borne ; PN ; Équip.2 ; Borne ; PN ; Câble ; Type ; Route ; Plan</b>. Les en-têtes sont reconnus automatiquement ; sinon cet ordre est supposé. Plusieurs plans → un sélecteur apparaît.</p>
+      <p class="help">Une ligne = une liaison. Séparateur <b>;</b> <b>,</b> ou tabulation. Les en-têtes sont reconnus automatiquement ; à défaut, c'est l'ordre ci-dessous qui est supposé. Plusieurs valeurs dans la colonne <b>Plan</b> font apparaître le pas-à-pas de folio dans le bandeau.</p>
+      <p class="colspec">Équip.1 · Borne · PN · Équip.2 · Borne · PN · Câble · Type · Route · Plan</p>
       <div id="db-drop" class="dropzone">
-        <div class="dz-ico">⬇</div>
+        <div class="dz-ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="square"><path d="M11 3v11M6.5 10 11 14.5 15.5 10"/><path d="M3.5 18h15"/></svg></div>
         <div class="dz-main">Glisse un fichier <b>Excel</b> (.xlsx, .xls) ou <b>CSV</b> ici</div>
         <div class="dz-sub">ou <button type="button" class="linklike" id="db-browse">choisis un fichier</button> — les colonnes sont reconnues automatiquement</div>
         <input type="file" id="db-file" accept=".csv,.tsv,.txt,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden>
@@ -477,31 +554,104 @@ main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
      code de l'outil : il fait 861 Ko de charabia minifie et il n'a rien a
      faire au milieu de code qu'on relit. -->
 <style>
-  .bscroll{overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:8px;background:#fbfbf7;padding:10px}
-  .bscroll svg{display:block;margin:0 auto}
-  .bempty{color:var(--ink-dim);padding:18px;text-align:center;margin:0}
-  .plan-sel{background:var(--chrome3);border:1px solid var(--line);color:var(--ink);border-radius:4px;padding:4px 6px;font-family:var(--mono);font-size:11.5px;max-width:150px}
-  .cbrow{display:flex;flex-direction:column;gap:1px;padding:6px 4px;border-bottom:1px solid #262c34}
-  .cbname{font-family:var(--mono);font-size:11.5px;color:var(--ink);font-weight:600}
-  .cbmeta{font-family:var(--mono);font-size:10px;color:var(--ink-faint)}
-  .infoline{display:flex;justify-content:space-between;gap:10px;padding:5px 2px;border-bottom:1px solid #262c34;font-family:var(--mono);font-size:11.5px}
-  .infoline .k{color:var(--ink-faint)} .infoline .v{color:var(--ink);text-align:right}
-  .btbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;margin-top:4px}
-  .btbl th{color:var(--ink-faint);font-weight:500;font-size:9px;text-transform:uppercase;text-align:left;padding:2px 5px;border-bottom:1px solid var(--line)}
-  .btbl td{padding:3px 5px;border-bottom:1px solid #23282f;color:var(--ink)}
-  .btbl .bn{color:var(--accent);font-weight:700}
-  .dropzone{border:2px dashed var(--line);border-radius:10px;background:#f7f8fa;padding:18px 14px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
-  .dropzone:hover{border-color:var(--accent-dim);background:#f0f5fb}
-  .dropzone.over{border-color:var(--accent);background:#e7f0fb}
-  .dropzone .dz-ico{font-size:22px;color:var(--accent-dim);line-height:1}
-  .dropzone .dz-main{margin-top:6px;font-size:12.5px;color:var(--ink)}
-  .dropzone .dz-sub{margin-top:3px;font-size:11px;color:var(--ink-faint)}
-  .linklike{background:none;border:0;color:var(--accent);padding:0;font:inherit;cursor:pointer;text-decoration:underline}
-  .linklike:hover{background:none;color:#0f4f96}
-  .dz-info{font-family:var(--mono);font-size:11px;margin-top:8px;min-height:14px}
-  .dz-info.ok{color:var(--ok)} .dz-info.err{color:var(--red)} .dz-info.load{color:var(--ink-dim)}
-  .xchip{display:inline-flex;align-items:center;gap:5px;background:var(--accent-dim);color:#eaf3fc;border-radius:12px;padding:2px 7px 2px 10px;font-family:var(--mono);font-size:11px}
-  .xchip button{background:none;border:0;color:#eaf3fc;cursor:pointer;font-size:13px;padding:0;line-height:1}
+/* ═══ Suite de l'enveloppe : fenêtres, rapports, listes, zone de dépôt ═════
+   Ce bloc portait encore des filets de thème sombre (#262c34) sur fond clair :
+   des traits noirs au milieu du papier. Ils sont repassés au filet unique. */
+
+/* ── La vue bornier, dans sa fenêtre ── */
+.bscroll{overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);
+  border-radius:var(--r);background:#fff;padding:12px}
+.bscroll svg{display:block;margin:0 auto}
+.bempty{color:var(--ink-dim);padding:20px;text-align:center;margin:0;
+  font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+
+/* ── Lignes d'information : clé à gauche, valeur alignée à droite ── */
+.infoline{display:flex;justify-content:space-between;gap:12px;padding:4px 0;
+  border-bottom:1px solid var(--line2);font-family:var(--mono);font-size:11px}
+.infoline .k{color:var(--ink-faint);letter-spacing:.04em}
+.infoline .v{color:var(--ink);text-align:right;font-variant-numeric:tabular-nums}
+
+/* ── Petite table de données (bornes, conducteurs) ── */
+.btbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;margin-top:4px}
+.btbl th{text-align:left;padding:2px 6px 3px;border-bottom:1px solid var(--line)}
+.btbl td{padding:3px 6px;border-bottom:1px solid var(--line2);color:var(--ink);
+  font-variant-numeric:tabular-nums}
+.btbl tr:last-child td{border-bottom:0}
+.btbl .bn{color:var(--accent);font-weight:700}
+
+/* ── Le rapport de reconnaissance ─────────────────────────────────────
+   C'est le seul endroit de l'outil où l'on LIT longtemps. Donc : des
+   sections séparées par un filet, des chiffres en colonne alignée à droite,
+   un commentaire en gris, et un verdict tenu par une barre de 2 px. */
+.rrep{font-size:12px;line-height:1.5}
+.rrep section{padding:0 0 16px;margin-bottom:16px;border-bottom:1px solid var(--line)}
+.rrep section:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
+.rrep h4{margin:0 0 8px;display:flex;align-items:center;gap:8px;line-height:1;color:var(--ink)}
+.rrep h4::after{content:'';flex:1;height:1px;background:var(--line)}
+.rrep h4 label{text-transform:none;letter-spacing:0;font-family:var(--mono);
+  font-size:11.5px;color:var(--ink)}
+.rrep table{width:100%;border-collapse:collapse;font-size:11.5px}
+.rrep th{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink-faint);text-align:left;
+  padding:2px 6px 4px;border-bottom:1px solid var(--line);white-space:nowrap}
+.rrep td{padding:3px 6px;border-bottom:1px solid var(--line2);vertical-align:top}
+.rrep tr:last-child td{border-bottom:0}
+.rrep td:first-child{color:var(--ink)}
+.rrep td.n{font-family:var(--mono);text-align:right;white-space:nowrap;
+  color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums;width:1%}
+.rrep td.ex{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);line-height:1.45}
+.rnote{margin:0 0 8px;color:var(--ink-dim);font-size:11.5px;line-height:1.55}
+.rnote b{color:var(--ink);font-weight:600}
+
+/* Le verdict : barre à gauche, texte d'encre. La couleur ne porte QUE le
+   statut — trois valeurs, jamais davantage. */
+.verdict{font-size:11.5px;line-height:1.5;color:var(--ink);
+  border-left:2px solid var(--line);padding:2px 0 2px 9px;margin:8px 0 0}
+.verdict.v-ok{border-left-color:var(--ok)}
+.verdict.v-hm{border-left-color:var(--warn)}
+.verdict.v-no{border-left-color:var(--red)}
+.verdict::before{font-family:var(--mono);font-size:9.5px;font-weight:600;
+  letter-spacing:.09em;text-transform:uppercase;display:block;margin-bottom:2px}
+.verdict.v-ok::before{content:'Acquis';color:var(--ok)}
+.verdict.v-hm::before{content:'À trancher';color:var(--warn)}
+.verdict.v-no::before{content:'Bloquant';color:var(--red)}
+/* En ligne dans un tableau, le verdict redevient une simple étiquette. */
+td .verdict{display:inline;border-left:0;padding:0;margin:0;font-family:var(--mono);
+  font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+td .verdict::before{display:none}
+td .verdict.v-ok{color:var(--ok)}
+
+/* ── La zone de dépôt ── */
+.dropzone{border:1px dashed var(--line);border-radius:var(--r);background:var(--chrome3);
+  padding:20px 16px;text-align:center;cursor:pointer;
+  transition:border-color var(--t),background var(--t)}
+.dropzone:hover{border-color:var(--accent);background:var(--chrome4)}
+.dropzone.over{border-color:var(--accent);background:var(--accent-soft)}
+.dropzone .dz-ico{font-family:var(--mono);font-size:16px;color:var(--accent);line-height:1}
+.dropzone .dz-main{margin-top:8px;font-size:12px;color:var(--ink)}
+.dropzone .dz-main b{font-weight:600}
+.dropzone .dz-sub{margin-top:4px;font-size:11px;color:var(--ink-dim)}
+.dz-info{font-family:var(--mono);font-size:10.5px;margin-top:8px;min-height:14px;
+  letter-spacing:.03em;color:var(--ink-faint)}
+.dz-info.ok{color:var(--ok)} .dz-info.err{color:var(--red)} .dz-info.load{color:var(--ink-dim)}
+
+/* ── Le jeton d'état (fichier chargé) ── */
+.colspec{margin:0 0 14px;padding:7px 9px;background:var(--chrome3);
+  border:1px solid var(--line);border-left:2px solid var(--accent);border-radius:var(--r);
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;color:var(--ink);
+  line-height:1.65;word-break:break-word}
+
+.xchip{display:inline-flex;align-items:center;gap:6px;background:var(--chrome3);
+  border:1px solid var(--line);border-left:2px solid var(--accent);color:var(--ink);
+  border-radius:var(--r);padding:2px 6px 2px 8px;font-family:var(--mono);font-size:10.5px}
+.xchip button{background:none;border:0;color:var(--ink-faint);cursor:pointer;
+  font-size:12px;padding:0 2px;line-height:1}
+.xchip button:hover{background:none;color:var(--red)}
+
+/* Le sélecteur de plan reste dans le DOM pour porter l'état ; il ne s'affiche
+   plus, le pas-à-pas du bandeau le remplace. */
+.plan-sel{background:var(--chrome3);border:1px solid var(--line);color:var(--ink);
+  border-radius:var(--r);padding:4px 6px;font-family:var(--mono);font-size:11px;max-width:150px}
 </style>
 <script>
 "use strict";
@@ -4418,8 +4568,16 @@ function syncFolioNav(){
   const mot=state.folioMode?'Folio':'Plan';
   lbl.textContent = i<0 ? ('Tous les '+mot.toLowerCase()+'s')
                         : (mot+' '+opts[i].value+' / '+opts.length);
-  document.getElementById('fo-prev').disabled = i<=0;
-  document.getElementById('fo-next').disabled = i<0 || i>=opts.length-1;
+  /* LE PAS-À-PAS ÉTAIT INACCESSIBLE DEPUIS SON ÉTAT DE DÉPART.
+     Sur « Tous les plans » — l'état dans lequel on arrive — `i` vaut -1, et
+     les deux flèches se grisaient : `i<=0` pour la précédente, `i<0` pour la
+     suivante. Le menu déroulant étant caché, le pas-à-pas était le seul
+     chemin vers un folio : aucun folio n'était donc atteignable. Or
+     `allerAuFolio` savait très bien partir de -1 (il entre par le premier ou
+     par le dernier selon le sens) ; seule la condition de grisé barrait la
+     route. Depuis « tous », les deux flèches sont donc actives. */
+  document.getElementById('fo-prev').disabled = i===0;
+  document.getElementById('fo-next').disabled = i>=0 && i>=opts.length-1;
 }
 function allerAuFolio(pas){
   const sel=document.getElementById('planSel'); if(!sel) return;
