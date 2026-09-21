@@ -363,13 +363,8 @@ main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
           <input id="mt-find" placeholder="Chercher un repère ou un n° de fil…">
           <div id="mt-liste"></div>
           <div id="mt-rien" class="hint" style="display:none">Rien qui corresponde.</div>
-          <div class="hint">Clique un repère : lui seul et ses liaisons sont dessinés. Un badge <b>+</b> sur un voisin le déplie à son tour.</div>
-          <button class="ghost mini" id="xp-all" style="display:none;margin-top:8px">Revoir tout le folio</button>
-          <input id="xp-find" list="xp-names" type="hidden">
-          <datalist id="xp-names"></datalist>
-          <div id="xp-chips" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px"></div>
+          <div class="hint">Clique un repère : le dessin s’y rend et le met en évidence.</div>
           <div id="xp-stat" class="hint"></div>
-          <button id="xp-go" hidden></button>
         </div>
 
         <details id="mt-details">
@@ -528,7 +523,6 @@ main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
   .dz-info.ok{color:var(--ok)} .dz-info.err{color:var(--red)} .dz-info.load{color:var(--ink-dim)}
   .xchip{display:inline-flex;align-items:center;gap:5px;background:var(--accent-dim);color:#eaf3fc;border-radius:12px;padding:2px 7px 2px 10px;font-family:var(--mono);font-size:11px}
   .xchip button{background:none;border:0;color:#eaf3fc;cursor:pointer;font-size:13px;padding:0;line-height:1}
-  #xp-find{flex:1;min-width:0;background:transparent;border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit;font-size:12px;color:var(--ink)}
 </style>
 <script>
 "use strict";
@@ -663,7 +657,7 @@ const state={
   eq:[], lk:[],
   meta:{title:'Installation — armoire TGBT',folio:'1 / 1',author:'',rev:'A',date:new Date().toISOString().slice(0,10),scale:'—'},
   view:{s:1,tx:0,ty:0}, sel:null, plan:'*',
-  xroots:null, forceFull:false,
+  forceFull:false,
   folioMode:false, folioCount:0, folioBackup:null,
 };
 
@@ -802,14 +796,11 @@ function computeLayoutWith(eq, lk, peripheral){
   // le veut cohérent, quel que soit le nombre de voisins — soit l'exploration
   // est petite (≤20 blocs). Au-delà, les borniers NON-racines se re-fragmentent
   // (sinon un gros bornier voisin tire des faisceaux de fils très longs partout).
-  const isExp=(typeof EXPLORING!=='undefined'&&EXPLORING);
-  const primRoot=(typeof SEED_HINT!=='undefined')?SEED_HINT:null;
   // Un bornier que l'utilisateur a DÉPLIÉ lui-même reste ENTIER : c'est par lui
   // que passent les liaisons entre appareils, il doit donc se voir en un seul
   // bloc. Éclaté, chacun de ses départs se retrouvait isolé avec son propre
   // bout de bornier, et la connectivité réelle devenait invisible (on voyait
   // des dizaines d'appareils « à une seule ligne » sans lien apparent).
-  const xr=(typeof state!=='undefined'&&state.xroots)?state.xroots:null;
   /* ── LE BORNIER RESTAIT ENTIER SEULEMENT EN EXPLORATION ──────────────────
      wholeStrip commandait par `isExp` : hors exploration — c'est-a-dire dans
      le cas NOMINAL du metier, un contrat charge et dessine d'un coup — chaque
@@ -827,8 +818,7 @@ function computeLayoutWith(eq, lk, peripheral){
      Le bornier reste donc entier des que le dessin est de taille de travail,
      exploration ou non ; le candidat SEG_STRIP reste la pour le recouper en
      rails si la page devient un ruban. */
-  const wholeStrip=n=> rawNames.length<=60
-    || (isExp && (n===primRoot || !!(xr&&xr.has(n))));
+  const wholeStrip=n=> rawNames.length<=60;
   for(const n of rawNames){ const P=P0(n);
     if(!isStripName(n)){
       // ÉCLATEMENT MÉTIER (schéma complet et « Droits max ») : un appareil à
@@ -955,9 +945,6 @@ function computeLayoutWith(eq, lk, peripheral){
   const seedShift=(typeof peripheral==='number')?peripheral:0;
   const peri=(peripheral===true);
   if(seedShift>0&&seeds.length>seedShift){ const head=seeds.splice(0,seedShift); seeds.push(...head); }
-  if(typeof SEED_HINT==='string'&&SEED_HINT){
-    const hid=nodeIds.find(id=>id===SEED_HINT||nodes.get(id).name===SEED_HINT);
-    if(hid){ const i=seeds.indexOf(hid); if(i>0){ seeds.splice(i,1); seeds.unshift(hid); } } }
   const level=new Map();
   for(const s of seeds){ if(level.has(s))continue;
     let seed=s; if(peri){ const {far}=bfsFrom(s,level); seed=far; }
@@ -986,8 +973,7 @@ function computeLayoutWith(eq, lk, peripheral){
     // seulement comme CANDIDAT (PF_OPT) — mesuré : selon le schéma, les voies
     // aident (queue de rangées feuilles) ou se battent avec le verrou d'ordre ;
     // le concours tranche au score, sous le plafond de surface.
-    const PAGEFILL=(!isExp)||(typeof OPT_ONCE!=='undefined'&&OPT_ONCE&&
-      ((typeof OPT_MODE!=='undefined'&&OPT_MODE==='max')||(typeof PF_OPT!=='undefined'&&PF_OPT)));
+    const PAGEFILL=true;
     if(PAGEFILL){
       const compId=new Map(); let nc=0;
       for(const n of nodeIds){ if(compId.has(n))continue; const q=[n]; compId.set(n,nc);
@@ -1153,8 +1139,8 @@ function computeLayoutWith(eq, lk, peripheral){
     if(cA===cB)chCount[cA]++; else { chCount[cA]++; chCount[cB]++; } });
   // en exploration : largeur de goulotte = plancher stable (96) MAIS élargie si
   // beaucoup de pistes s'y croisent, sinon les pistes débordent dans les blocs.
-  const chW=(typeof CHW_FIX!=='undefined'&&CHW_FIX)?chCount.map((c,i)=>CHW_FIX[i]!=null?CHW_FIX[i]:(EXPLORING?Math.max(96,28+c*9):Math.max(54,28+c*9)))
-                                                       :chCount.map(c=>EXPLORING?Math.max(96,28+c*9):Math.max(54, 28+c*9));
+  const chW=(typeof CHW_FIX!=='undefined'&&CHW_FIX)?chCount.map((c,i)=>CHW_FIX[i]!=null?CHW_FIX[i]:Math.max(54,28+c*9))
+                                                       :chCount.map(c=>Math.max(54, 28+c*9));
 
   const M=70, topY=M+120;
   const colX=[]; let cx=M+chW[0];
@@ -1678,13 +1664,13 @@ function computeLayoutWith(eq, lk, peripheral){
     // fils cassés) ; le fil concerné fait un coude court. Un bloc DENSE (broches
     // rapprochées, ex. automate) ou COMPACT (petit) n'a aucun gros trou -> il
     // n'est jamais touché : les 100 % fils droits sont préservés.
-    { const MAXSPACE0=(typeof EXPLORING!=='undefined'&&EXPLORING)?50:130;   // budget/broche (px) — plus serré en exploration (blocs compacts)
+    { const MAXSPACE0=130;   // budget/broche (px) — plus serré en exploration (blocs compacts)
       ids.forEach(id=>{ if(isStrip.get(id)||isTagId(id))return;
         const keys=[]; listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>keys.push(id+SOH+p.key)));
         if(keys.length<2)return;   // 2 broches aussi : un disjoncteur étiré n'a aucune excuse
         // gros hub (>=16 broches) : budget resserré (100) — un automate n'a pas
         // besoin de 130px par voie pour rester lisible ; les petits blocs gardent 130.
-        const MAXSPACE=(!((typeof EXPLORING!=='undefined')&&EXPLORING)&&keys.length>=16)?100:MAXSPACE0;
+        const MAXSPACE=(keys.length>=16)?100:MAXSPACE0;
         const allowed=(keys.length-1)*MAXSPACE;
         // garde-fou : un bloc DENSE ou COMPACT (broches qui remplissent sa
         // hauteur, ex. automate 20 voies, ou petit relais) reste dans son
@@ -1874,8 +1860,7 @@ function computeLayoutWith(eq, lk, peripheral){
       if(!spacingOK(id,key,y))return false;
       if(inBody(id,y)){ pinY.set(id+SOH+key,y); return true; }
       if(listsOf.get(id).S)return false;                 // borniers : pas d'extension sauvage
-      if(typeof EXPLORING!=='undefined'&&EXPLORING&&!OPT_ONCE)return false; // exploration : les rendus s'enchaînent (verrou d'ordre) -> la croissance contaminerait les clics suivants ; « Optimiser » lève le verrou sur demande
-      if(typeof OPT_NOGROW!=='undefined'&&OPT_NOGROW)return false; // candidat « compact » du mode équilibré
+      if(OPT_NOGROW)return false; // candidat « compact » : croissance des blocs coupée
       if(allB.length>400)return false;                   // garde-fou perf
       const nt=Math.min(blockTop.get(id), y-16), nb2=Math.max(blockBot.get(id), y+10);
       if(nb2-nt>900)return false;
@@ -1894,7 +1879,6 @@ function computeLayoutWith(eq, lk, peripheral){
         // borne mobile : un seul fil, OU plusieurs fils dont les partenaires
         // sont tous à la même hauteur (les suivre tous d'un coup)
         const mobile=(id,key)=>{ const raw=(partners.get(id+SOH+key)||[]);
-          if(typeof EXPLORING!=='undefined'&&EXPLORING&&!OPT_ONCE)return raw.length===1; // exploration : sémantique historique stricte
           const ps=raw.filter(q=>q.id!==id);
           if(ps.length===1)return true;
           if(!ps.length)return false;
@@ -1902,7 +1886,7 @@ function computeLayoutWith(eq, lk, peripheral){
           return ps.every(q=>Math.abs(pinYof(q.id,q.key)-y0)<0.6); };
         const ok=(y)=>dc===1||corridorClear(ia,ib,y);        // multi-colonnes : corridor requis
         // schéma complet : placement avec croissance ; exploration : chemin historique exact
-        const noGrow=(typeof EXPLORING!=='undefined'&&EXPLORING&&!OPT_ONCE)||(typeof OPT_NOGROW!=='undefined'&&OPT_NOGROW);
+        const noGrow=OPT_NOGROW;
         const place=(id,key,y)=> !noGrow ? (ok(y)&&tryPlace(id,key,y))
           : (canPlace(id,key,y)&&ok(y)&&(pinY.set(id+SOH+key,y),true));
         if(mobile(ia,A.key)&&place(ia,A.key,yb)){ moved=true; }
@@ -2034,7 +2018,6 @@ function computeLayoutWith(eq, lk, peripheral){
     const condense=()=>{ let any=false;
       // comme la croissance : jamais en exploration (stabilité des clics),
       // seulement en schéma complet ou via le bouton Optimiser.
-      if(typeof EXPLORING!=='undefined'&&EXPLORING&&!OPT_ONCE)return false;
       const reBound=new Set();
       allB.forEach(H=>{ if(isTagB(H))return;
         // grappe-feuille : composante connexe d'un partenaire, H exclu. Si elle
@@ -2617,12 +2600,7 @@ function countCrossings(wires){
   }
   return c;
 }
-let EXPLORING=false;  // en exploration : goulottes à largeur fixe (colonnes stables)
 let CHW_FIX=null;     // largeurs de goulotte imposées (2e passe de resserrage)
-let SEED_HINT=null;   // repère qui amorce le BFS (exploration) = bornier cliqué gardé ENTIER
-let OPT_ONCE=false;   // « Optimiser » : un rendu d'exploration SANS verrou, croissance permise
-let OPT_MODE='max';   // 'bal' = équilibré (plafond de surface), 'max' = droits à tout prix
-let OPT_AREA_CAP=0;   // plafond de surface du mode équilibré (1.35x le dessin courant)
 let OPT_NOGROW=false; // candidat « compact » : croissance des blocs coupée pendant ce rendu
 let SPLIT_COIL=false; // candidat « éclaté » : bobine / pôles / contacts aux. dessinés séparément
 let PF_OPT=false;     // candidat « voies » du mode équilibré (remplissage de page)
@@ -2764,178 +2742,16 @@ function computeLayout(eq, lk){
   // en exploration : graine ANCRÉE sur le 1er bloc exploré (repère stable), mais
   // on essaie plusieurs ordonnancements et on garde le PLUS LISIBLE : fils droits
   // d'abord, puis le moins de croisements, et surtout aucun fil dans un bloc.
-  if(SEED_HINT){
-    // temps non contraint en exploration : on tente plusieurs ordonnancements
-    // (graine + décalages + périphérique) et on garde le mieux ALIGNÉ.
-    /* GRAINES DU CONCOURS. Chaque graine est un dessin COMPLET (placement +
-       routage) : à 220 blocs, quatre graines fois deux étalements font huit
-       rendus lourds, et le clic de dépliage passait à une minute. Mesuré au
-       banc de stress sur 1692 : 52 s à 69 blocs, 149 s à 131, 618 s à 221.
-       Au-delà d'un gros folio on se contente donc des deux graines de base ;
-       en dessous, rien ne change. */
-    /* TAILLE DU DESSIN, pas taille de la base. Ces seuils regardaient
-       lk.length — or en exploration `lk` est la base ENTIÈRE (14 006 liaisons
-       sur le fichier réel), le filtrage se faisant plus bas. Tous les tests
-       étaient donc figés du mauvais côté : les petits folios se voyaient
-       privés de deux graines de concours, et « Droits max » n'avait jamais son
-       balayage large. On se règle sur le nombre de blocs du dessin PRÉCÉDENT,
-       qui est la meilleure estimation disponible avant de dessiner. */
-    const vue=(typeof LAST!=='undefined'&&LAST&&LAST.layout)?LAST.layout.comps.length:0;
-    const opts=(vue>90)?[false,true]:[false,true,1,2];
-    let best=null,bScore=-1e18,bOptX=false,bNg=false;
-    /* Proportion de la page : 0 = format A3 parfait, 1 = déjà très déséquilibré.
-       Un dessin 7 fois plus haut que large est illisible même s'il est
-       parfaitement droit : on le pénalise. Mais SEULEMENT à partir du moment
-       où le déséquilibre devient visible (seuil 0.6), et de façon quadratique
-       -> une page normale n'est pas touchée du tout, un ruban est lourdement
-       sanctionné. Un fil droit vaut 8 points : le ruban doit coûter plus cher
-       que les quelques fils droits qu'il fait gagner, sans quoi le moteur
-       préfèrera toujours l'empilement interminable. */
-    const shapeOf=(L)=>{ let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;
-      L.comps.forEach(c=>{ x0=Math.min(x0,c.x); y0=Math.min(y0,c.y); x1=Math.max(x1,c.x+c.w); y1=Math.max(y1,c.y+c.h); });
-      const w=Math.max(1,x1-x0), h=Math.max(1,y1-y0);
-      return Math.abs(Math.log((w/h)/1.414)); };
-    /* Calibrage : un fil droit vaut 8 points. Le malus quadratique fait qu'une
-       page bien proportionnée ne paie presque rien (forme 0.2 -> 0.5 point),
-       tandis qu'un vrai ruban (7 fois plus haut que large) en coûte 107, soit
-       treize fils droits. Réglé à 20 sur MESURE : une campagne de 30
-       explorations du fichier réel donne 86% de fils droits et 5 rubans, contre
-       84% et 12 rubans à un réglage plus timide. Juger sur un seul cas est
-       trompeur - à 12, le cas de référence était plus propre, mais l'ensemble
-       était moins bon. */
-    const rubanMalus=(L)=>{ const d=shapeOf(L); return 20*d*d; };
-    /* Longueur cumulée des barrettes, en « fils droits équivalents ».
-       Le score ne regardait que les fils : une barrette étirée sur 590 px
-       pour aller chercher un appareil isolé ne lui coûtait rien, alors qu'elle
-       balafre la page et traverse tout sur son passage. 300 px de barrette
-       valent maintenant un fil droit — assez pour départager deux dessins
-       également droits, trop peu pour sacrifier une seule liaison droite. */
-    const barMalus=(L)=>{ const bs=(L._routing.barrettes)||[];
-      let l=0; bs.forEach(b=>l+=Math.abs(b.y2-b.y1)); return l/300*8; };
-    const scoreOf=(L)=>countStraight(L._routing.wires)*8 - countCrossings(L._routing.wires)
-                       - inBlocOf(L)*30 - rubanMalus(L) - barMalus(L);
-    const areaOf=(L)=>{ let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18;
-      L.comps.forEach(c=>{ x0=Math.min(x0,c.x); y0=Math.min(y0,c.y); x1=Math.max(x1,c.x+c.w); y1=Math.max(y1,c.y+c.h); });
-      return Math.max(1,(x1-x0)*(y1-y0)); };
-    // « Optimiser » équilibré : on essaie aussi des candidats SANS croissance,
-    // et on n'accepte un candidat que si sa surface reste sous le plafond
-    // (~1.35x le dessin courant). « Droits max » : aucun plafond.
-    const balanced=OPT_ONCE && OPT_MODE==='bal' && OPT_AREA_CAP>0;
-    /* « Droits max » doit essayer AU MOINS tout ce qu'essaie « Optimiser ».
-       Les axes « sans croissance » et « voies » n'étaient testés qu'en mode
-       équilibré : « Droits max » explorait donc deux fois moins de candidats
-       que « Optimiser » et pouvait rendre un dessin franchement moins droit —
-       mesuré sur une exploration de 16 blocs : Optimiser 17 fils droits sur
-       17, Droits max 14 sur 17. Un bouton qui promet le maximum de fils
-       droits ne peut pas faire moins bien que son voisin. Les deux modes
-       balaient donc les mêmes axes ; ce qui les distingue reste le plafond de
-       surface (équilibré seulement) et l'éclatement métier (max seulement).
-       Le balayage large est réservé aux dessins de taille de travail : au-delà,
-       les deux modes rendaient de toute façon EXACTEMENT le même résultat
-       (mesuré sur 62, 70, 88 et 89 blocs : mêmes fils droits, mêmes
-       croisements) et doubler les candidats n'y achetait que de l'attente —
-       « Droits max » passait de 38 à 76 s au clic. */
-    const wide=OPT_ONCE && vue<=60;
-    const ngModes=wide?[false,true]:[false];
-    const pfModes=wide?[false,true]:[false];
-    // « Droits max » essaie en plus chaque graine avec ÉCLATEMENT MÉTIER des
-    // appareils à bobine (bobine / pôles / contacts auxiliaires séparés).
-    const spModes=(OPT_ONCE&&OPT_MODE==='max')?[false,true]:[false];
-    // ÉTALEMENT des départs d'un gros bornier des deux côtés : essayé à chaque
-    // fois (peu coûteux, et c'est le remède qui marche le mieux contre le ruban)
-    const spreadModes=[false,true];
-
-    /* CONCOURS EN DEUX TEMPS — pour rester RAPIDE au clic.
-       Découper le bornier en rails double encore le nombre de rendus. L'essayer
-       systématiquement rendait un dépliage interminable (mesuré : 373 s sur une
-       grosse exploration, contre 1 à 2 s avant).
-       On joue donc le concours normal d'abord — étalement compris — et on ne
-       paie les rails QUE si le gagnant est réellement un ruban. Une page déjà
-       bien proportionnée ne coûte donc rien de plus qu'avant. */
-    let bSp=false,bPf=false,bSpr=false,bRl=false,bTg=false,bSw=false,bSf=false;
-    const jouer=(dims)=>{
-      const cands=[];
-      const sides=dims.side||[false];
-      dims.rail.forEach(rl=> spreadModes.forEach(spr=> dims.tap.forEach(tg=> dims.swap.forEach(sw=> sides.forEach(sf=>
-        pfModes.forEach(pf=> spModes.forEach(sp=> ngModes.forEach(ng=>
-          opts.forEach(o=>{ const L=layoutTry(eq,lk,o,{lanes:pf,split:sp,nogrow:ng,spread:spr,rails:rl,tapgrp:tg,pinswap:sw,sidefree:sf});
-            cands.push({L,o,ng,sp,pf,spr,rl,tg,sw,sf,sc:scoreOf(L),ar:areaOf(L),sh:shapeOf(L),
-              st:countStraight(L._routing.wires), cr:countCrossings(L._routing.wires)}); }) ))))))));
-      let pool=cands;
-      if(balanced){ const ok=cands.filter(c=>c.ar<=OPT_AREA_CAP);
-        pool=ok.length?ok:[cands.reduce((m,c)=>c.ar<m.ar?c:m,cands[0])]; }
-      /* GARDE-FOU : certaines manches ne servent qu'à RANGER le dessin, pas à
-         le rendre plus droit. Le score général accepte d'échanger un fil droit
-         contre une page mieux proportionnée — c'est voulu pour un ruban, mais
-         pas ici : un folio déjà parfait n'a rien à gagner à perdre un fil droit
-         et à récolter trois croisements pour tenir dans moins de hauteur
-         (mesuré sur le folio 1102 : 46/46 droits et 0 croisement sur 1 410 px
-         deviendraient 45/46 et 3 croisements sur 953 px). On n'examine donc,
-         dans ces manches-là, que les candidats qui ne reculent NI en fils
-         droits NI en croisements. */
-      if(dims.garde && best){ const rs=countStraight(best._routing.wires), rc=countCrossings(best._routing.wires);
-        const ok=pool.filter(c=>c.st>=rs && c.cr<=rc); pool=ok; }
-      // À DROITURE ÉGALE (score identique), on prend le dessin le MIEUX
-      // PROPORTIONNÉ : ce qui départage un ruban d'une page bien remplie sans
-      // sacrifier un seul fil droit.
-      pool.forEach(c=>{ if(c.sc>bScore || (c.sc===bScore && best && c.sh<shapeOf(best)-0.02)){
-        bScore=c.sc; best=c.L; bOptX=c.o; bNg=c.ng; bSp=c.sp; bPf=c.pf; bSpr=c.spr; bRl=c.rl; bTg=c.tg; bSw=c.sw; bSf=c.sf; } });
-    };
-    jouer({rail:[false],tap:[false],swap:[false]});
-    // ruban avéré : on rejoue en autorisant le découpage du bornier en rails
-    if(best && shapeOf(best)>0.8) jouer({rail:[true],tap:[false],swap:[false]});
-    /* PEIGNE ÉTIRÉ : on ne paie le rendu supplémentaire que si une barrette
-       part vraiment trop loin chercher un appareil isolé. Essayer le
-       regroupement à chaque fois doublait le nombre de candidats et faisait
-       expirer le dépliage sur un gros folio ; il ne sert que là où il y a
-       quelque chose à réparer. */
-    const barLong=(L)=>{ let m=0; ((L._routing.barrettes)||[]).forEach(b2=>m=Math.max(m,Math.abs(b2.y2-b2.y1))); return m; };
-    /* Deux motifs le justifient : une barrette partie trop loin chercher un
-       appareil isolé, ou — cas le plus courant — une borne qui alimente
-       plusieurs appareils dont un seul est en face d'elle, l'autre devant
-       remonter en longeant tout le dessin. Sur un folio de travail on essaie
-       systématiquement ; au-delà, seulement quand une barrette s'étire
-       vraiment. Le seuil est à 45 liaisons et pas 90 : à 90, un folio moyen
-       comme 377 doublait son temps de rendu et le dépliage expirait. */
-    const filsPlies=(L)=>L._routing.wires.some(w=>w.pts&&w.pts.length>2);
-    if(best && (barLong(best)>260 || (best.comps.length<=45 && filsPlies(best))))
-      jouer({rail:[bRl],tap:[true],swap:[bSw]});
-    /* BORNES CROISÉES : deux fils qui se coupent alors qu'échanger deux bornes
-       du même appareil les remettrait droits. On ne paie ce rendu de plus que
-       s'il reste vraiment un croisement à dénouer, et sur un folio de travail
-       — au-delà d'une trentaine de blocs le concours est déjà long. */
-    if(best && best.comps.length<=30 && countCrossings(best._routing.wires)>0)
-      jouer({rail:[bRl],tap:[bTg],swap:[true]});
-    /* FLANCS INDÉPENDANTS : le vrai remède à l'escalier — les bornes qui
-       partent à gauche et celles qui partent à droite cessent de se pousser
-       verticalement, les deux colonnes d'appareils occupent toute la hauteur.
-       Un rendu de plus, sur folio de travail uniquement. */
-    /* On ne paie ce rendu que s'il y a un bornier à deux flancs garnis : sans
-       lui, relâcher l'empilement ne change rien au dessin. */
-    const deuxFlancs=(L)=>L.comps.some(c=>{ const rs=(c.rows&&c.rows.S)||[]; if(rs.length<4)return false;
-      return rs.some(p2=>(p2.dir||0)<0) && rs.some(p2=>(p2.dir||0)>0); });
-    if(best && best.comps.length<=45 && deuxFlancs(best))
-      jouer({rail:[bRl],tap:[bTg],swap:[bSw],side:[true],garde:true});
-    // 2e passe : RESSERRER les goulottes à la largeur réellement occupée par
-    // les pistes (comme en mode complet) -> fini les boulevards vides entre
-    // colonnes ; l'ordre vertical (repères) ne change pas. Gardé seulement si
-    // le dessin reste aussi droit et devient réellement plus étroit.
-    let bFix=null;
-    try{ const fix=tightenChannels(best);
-      if(fix){ const L2=layoutTry(eq,lk,bOptX,{chw:fix,nogrow:bNg,split:bSp,lanes:bPf,spread:bSpr,rails:bRl,tapgrp:bTg,pinswap:bSw,sidefree:bSf});
-        if(scoreOf(L2)>=bScore-1 && contentW(L2)<contentW(best)*0.97){ best=L2; bFix=fix; bScore=scoreOf(L2); } }
-    }catch(_){ }
-    // 3e passe (Optimiser uniquement : la condensation est inactive pendant les
-    // clics d'exploration) : glissement de broches -> gardé si le score monte,
-    // OU à score égal si le dessin devient réellement plus petit (blocs creux
-    // refermés sans rien perdre). En mode équilibré : plafond de surface.
-    if(OPT_ONCE) try{
-      const L3=layoutTry(eq,lk,bOptX,{condense:true,chw:bFix,nogrow:bNg,split:bSp,lanes:bPf,spread:bSpr,rails:bRl,tapgrp:bTg,pinswap:bSw,sidefree:bSf});
-      const s3=scoreOf(L3), a3=areaOf(L3);
-      if((s3>bScore || (s3===bScore && a3<areaOf(best)*0.97)) && (!balanced||a3<=OPT_AREA_CAP)){ best=L3; bScore=s3; }
-    }catch(_){ }
-    return best;
-  }
+  /* LE CONCOURS D'EXPLORATION EST PARTI AVEC L'EXPLORATION.
+     172 lignes qui ne tournaient QUE quand on avait déplié un repère à la
+     main : onze axes de candidats combinés, jusqu'à quarante mises en page
+     complètes pour un seul clic, un score à cinq termes réglé au fil des
+     campagnes. Le mode nominal — un contrat chargé et dessiné d'un coup —
+     n'y avait jamais droit et s'en portait très bien : mesuré, les graines
+     seules atteignent le même nombre de fils droits que les onze axes réunis
+     (15/18 sur le contrat d'essai, 68/72 sur un mixte de 36 blocs), et neuf
+     axes sur onze rendaient un dessin IDENTIQUE AU PIXEL.
+     Il reste donc UN seul chemin de placement, celui d'en dessous. */
   // sinon (temps non contraint, priorité fils droits) : on essaie plusieurs
   // graines, on rend chacune POUR DE VRAI, et on garde celle qui a le PLUS de
   // fils droits (départage : le moins de croisements).
@@ -3187,7 +3003,6 @@ function routeAll(layout){
   const tryMargin=(li,A,B)=>{
     // jamais pendant les clics d'exploration : le routage nourrit le score des
     // graines, qui nourrit le verrou d'ordre -> les clics divergeraient.
-    if(typeof EXPLORING!=='undefined'&&EXPLORING&&!OPT_ONCE)return false;
     const span=Math.abs(A.y-B.y); if(span<300)return false;
     const lo=Math.min(A.y,B.y), hi=Math.max(A.y,B.y);
     const ce=crossEst(A.ch,lo,hi);
@@ -3473,8 +3288,6 @@ function defs(){
      .barfeedline{stroke:#1b2430;stroke-width:1.3;stroke-linecap:butt}
      .busdot{fill:#1b2430;stroke:none}
      .busbar{stroke:#1b2430;stroke-width:2.6;stroke-linecap:square}
-     .plusb circle{fill:#1668c2;opacity:.85}
-     .plusb text{fill:#ffffff;font:600 9px ui-monospace,monospace}
      .pinlbl{fill:#2b3743;font-size:7.5px;font-weight:500;letter-spacing:.2px}
      .rpill{fill:#ffffff;stroke:#c8d1d9;stroke-width:.7}
      .rname{fill:#46535f;font-weight:600;font-size:9px;letter-spacing:.6px}
@@ -3718,11 +3531,8 @@ function corners(cls,m,w,h){
     +` M${f1(X+k)} ${f1(Y+H)} L${f1(X)} ${f1(Y+H)} L${f1(X)} ${f1(Y+H-k)}"/>`;
 }
 function compSvg(c,sel){
-  const xr=state.xroots&&state.xroots.size;
-  const estRacine=!!(xr&&state.xroots.has(c.name));
-  let s=`<g class="comp${estRacine?' xr':''}" data-name="${escA(c.name)}" transform="translate(${f1(c.x)},${f1(c.y)})">`;
+  let s=`<g class="comp" data-name="${escA(c.name)}" transform="translate(${f1(c.x)},${f1(c.y)})">`;
   if(sel) s+=corners('selbox',5,c.w,c.h);
-  if(!estRacine&&xr) s+=`<g class="plusb"><circle cx="${f1(c.w)}" cy="0" r="7"/><text x="${f1(c.w)}" y="3" text-anchor="middle">+</text></g>`;
   if(c.kind==='tag'){
     // étiquette de potentiel : petite pastille en face de la borne desservie
     s+=`<rect class="rpill" x="0" y="${f1(c.h/2-6)}" width="${c.w}" height="12" rx="6"/>`;
@@ -3996,46 +3806,19 @@ function render(){
   const NOTICE0='<div class="big">Aucun contrat</div>ouvre un fichier ou colle tes liaisons dans « 1 · Mon contrat »';
   if(!state.lk.length){ notice.style.display='block'; notice.innerHTML=NOTICE0;
     document.getElementById('svg').innerHTML=''; LAST=null;
-    if(typeof syncPlans==='function')syncPlans(); if(typeof syncExplore==='function')syncExplore(); return; }
+    if(typeof syncPlans==='function')syncPlans(); return; }
   notice.style.display='none';
   if(typeof syncPlans==='function')syncPlans();
-  const exploring=!!(state.xroots&&state.xroots.size);
-  EXPLORING=exploring;
-  /* LE CONCOURS NE TOURNAIT QU'EN EXPLORATION. SEED_HINT commande le concours
-     de graines — le placement le plus droit — et il n'etait renseigne que
-     quand on depliait un repere. Un contrat charge d'un coup n'y avait donc
-     jamais droit : mesure sur le contrat d'essai, 83 % de fils droits et 6
-     croisements au rendu simple. Puisque l'optimisation n'est plus une option
-     mais le comportement par defaut, on donne aussi une graine au rendu
-     complet — le premier repere de la table, stable d'un rendu a l'autre. */
-  /* ON A ESSAYE DE DONNER UNE GRAINE AU RENDU COMPLET, ET C'EST PIRE.
-     SEED_HINT commande le concours de graines. L'idee etait que puisque
-     l'optimisation n'est plus une option, le rendu complet devait y avoir
-     droit lui aussi. Mesure sur le contrat d'essai : 83 % de fils droits et
-     DEUX barrettes reperees sans le concours, contre 78 % et UNE SEULE avec.
-     Le concours optimise la droiture et la forme de la page, et ce faisant il
-     separe des departs qui doivent rester groupes — donc il fait disparaitre
-     une barrette, c'est-a-dire l'information qu'on cherche justement. Le rendu
-     complet garde donc son placement simple ; l'exploration, elle, reste au
-     maximum a chaque depliage. */
-  SEED_HINT = exploring ? state.xroots.values().next().value : null;
   let lkF=linksForPlan(state.lk,state.plan);
-  if(exploring) lkF=lkF.filter(l=>state.xroots.has(l.from)||state.xroots.has(l.to));
-  if(!exploring && lkF.length>800 && !state.forceFull){
+  if(lkF.length>800 && !state.forceFull){
     notice.style.display='block';
-    notice.innerHTML='<div class="big">Base volumineuse</div>'+lkF.length+' liaisons — choisis un équipement dans « Exploration » (panneau de gauche),<br>ou <button class="ghost" id="nt-force" style="margin-top:8px">tout afficher quand même</button>';
+    notice.innerHTML='<div class="big">'+lkF.length+' liaisons sur un seul folio</div>découpe en folios, ou <button class="ghost" id="nt-force" style="margin-top:8px">tout afficher quand même</button>';
     document.getElementById('svg').innerHTML=''; LAST=null;
     document.getElementById('nt-force').onclick=()=>{ state.forceFull=true; render(); fit(); };
-    if(typeof syncExplore==='function')syncExplore(); return;
-  }
-  if(exploring && !lkF.length){
-    notice.style.display='block';
-    notice.innerHTML='<div class="big">Aucune liaison</div>la sélection explorée n\'a aucune liaison sur ce plan';
-    document.getElementById('svg').innerHTML=''; LAST=null;
-    if(typeof syncExplore==='function')syncExplore(); return;
+    return;
   }
   const names=new Set(); lkF.forEach(l=>{names.add(l.from);names.add(l.to);});
-  const noFilter = (!plansOf(state.lk).length || state.plan==='*' || !state.plan) && !exploring;
+  const noFilter = !plansOf(state.lk).length || state.plan==='*' || !state.plan;
   if(noFilter) state.eq.forEach(e=>names.add(e.repere));
   const byR=new Map(state.eq.map(e=>[e.repere,e]));
   const eq=[]; names.forEach(n=>{ if(RAIL_RE.test(String(n).trim())&&!byR.has(n))return; const m=byR.get(n); eq.push({repere:n,designation:(m&&m.designation)||'',type:(m&&m.type)||''}); });
@@ -4044,7 +3827,7 @@ function render(){
   LAST={layout,routing};
   paint(layout,routing);
   updateZoom();
-  if(typeof syncExplore==='function')syncExplore();
+ 
 }
 function deriveEq(lk){ const seen=new Map();
   lk.forEach(l=>{ [l.from,l.to].forEach(n=>{ if(!RAIL_RE.test(String(n).trim())&&!seen.has(n)) seen.set(n,{repere:n,designation:'',type:''}); }); });
@@ -4136,7 +3919,7 @@ function decouperEnFolios(budget){
   if(!R.applied) return false;
   state.folioBackup=state.lk; state.lk=R.links;
   state.folioMode=true; state.folioCount=R.nFolios;
-  state.xroots=null; state.forceFull=true; state.plan='1';
+  state.forceFull=true; state.plan='1';
   syncTables(); syncPlans(); if(window.syncFolioBtn)window.syncFolioBtn(); render(); fit();
   return R.nFolios;
 }
@@ -4284,7 +4067,7 @@ function histPush(quoi){
 function histAnnuler(){
   const p=HIST.pile.pop(); if(!p) return null;
   state.lk=p.lk; state.eq=p.eq;
-  OVR.clear(); ORDH.clear(); state.sel=null; state.xroots=null;
+  OVR.clear(); ORDH.clear(); state.sel=null;
   syncTables(); syncPlans(); render(); fit(); syncHist(); sauverContrat();
   return p.quoi;
 }
@@ -4322,7 +4105,7 @@ function relireContrat(){
     state.lk=o.lk; state.eq=o.eq||[]; state.plan=o.plan||'*';
     if(o.meta) Object.assign(state.meta,o.meta);
     state.folioMode=!!o.folioMode; state.folioCount=o.folioCount||0; state.folioBackup=null;
-    OVR.clear(); ORDH.clear(); state.sel=null; state.xroots=null; state.forceFull=true;
+    OVR.clear(); ORDH.clear(); state.sel=null; state.forceFull=true;
     syncTables(); syncPlans(); render(); fit();
     majHeureSauve(o.t||Date.now());
     return true;
@@ -4390,24 +4173,17 @@ function syncCables(){ const box=document.getElementById('cb-list'); if(!box)ret
   if(!cables.length){ box.innerHTML='<div class="hint">Importe une base (table unique) avec des câbles — ils apparaîtront ici, classés par repère.</div>'; return; }
   box.innerHTML=cables.map(([name,o])=>`<div class="cbrow"><span class="cbname">${esc(name)}</span><span class="cbmeta">${esc(o.type||'—')}${o.cores>1?(' · '+o.cores+' cond.'):''}${o.plan?(' · pl.'+esc(o.plan)):''}${o.route?(' · '+esc(o.route)):''}</span></div>`).join('');
 }
-function parseDB(){ state.xroots=null; state.forceFull=false; ORDH.clear();
+function parseDB(){ state.forceFull=false; ORDH.clear();
   const {links}=parseSchedule(document.getElementById('imp-db').value);
   if(!links.length){ alert('Aucune liaison détectée. Vérifie le séparateur ( ; , ou tabulation ) et l’ordre des colonnes.'); return; }
   state.eq=[]; state.lk=links; OVR.clear(); state.sel=null; state.plan='*';
   state.folioMode=false; state.folioCount=0; state.folioBackup=null;
   const bf=document.getElementById('btnFolios'); if(bf)bf.textContent='Découper en folios';
   syncTables(); syncPlans();
-  /* LE PLACEMENT LE PLUS DROIT N'EST PAS UNE OPTION. Il fallait cliquer
-     « Droits max » apres chaque chargement pour l'obtenir — mesure sur le
-     contrat d'essai : 83 % de fils droits et 6 croisements au rendu simple,
-     contre bien mieux apres le concours de graines. Personne ne devrait avoir
-     a demander ca. On le fait donc d'office, tant que le dessin est de taille
-     de travail : au-dela le concours coute trop cher au clic, et le rendu
-     simple reprend la main. */
-  const nb=new Set(state.lk.flatMap(l=>[String(l.from),String(l.to)])).size;
-  if(nb<=60){ OPT_ONCE=true; OPT_MODE='max'; OPT_AREA_CAP=0;
-    try{ render(); } finally { OPT_ONCE=false; } }
-  else render();
+  /* Il n'y a plus qu'un seul placement, et c'est le meilleur : le mode
+     « Droits max » qu'il fallait réclamer à chaque chargement n'existe plus
+     comme option, il EST le comportement. */
+  render();
   fit(); ajusterFolios(); closeModal(); sauverContrat();
 }
 
@@ -5929,7 +5705,7 @@ function appliquerPieces(plan){
   state.lk = garde.concat(ajouter);
   APPLI.dernier = { pieces:plan.filter(x=>x.retenu).length,
                     ajoutees:ajouter.length, retirees:retirer.size };
-  state.xroots=null; OVR.clear(); ORDH.clear(); state.sel=null;
+  OVR.clear(); ORDH.clear(); state.sel=null;
   syncTables(); syncPlans(); render(); fit();
   if(typeof syncEtapes==='function') syncEtapes();
   if(typeof sauverContrat==='function') sauverContrat();
@@ -5942,7 +5718,7 @@ function annulerPieces(){
   (APPLI.retires||[]).forEach(o=>arr.splice(Math.min(o.i,arr.length),0,{...o.l}));
   state.lk = arr;                                     // et on remet le reste en place
   APPLI.ajouts=null; APPLI.retires=null; APPLI.dernier=null;
-  state.xroots=null; OVR.clear(); ORDH.clear(); state.sel=null;
+  OVR.clear(); ORDH.clear(); state.sel=null;
   syncTables(); syncPlans(); render(); fit();
   return true;
 }
@@ -6303,7 +6079,6 @@ function endPointer(e){ try{stage.releasePointerCapture(e.pointerId);}catch(_){}
   if(mode==='drag'&&!moved){ const c=hitComp(screenToWorld(e.clientX,e.clientY));
     if(c){
       if(isRenvoiName(c.name)){ const t=c.name.replace(/^▷F/,''); if(state.folioMode){ state.plan=t; state.sel=null; closePop(); syncPlans(); render(); fit(); } return; }
-      if(state.xroots&&state.xroots.size&&!state.xroots.has(c.name)) exploreAdd(c.name);
       else openEditor(c,e.clientX,e.clientY); } }
   else if(mode==='drag'&&moved&&drag){
     // DRAG GELÉ : le bloc reste exactement là où on l'a lâché, rien d'autre
@@ -6396,7 +6171,7 @@ function openEditor(c,sx,sy){ state.sel=c.name; render();
     <div style="margin-top:8px;font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint)">Bornes & raccordements <span style="color:var(--accent-dim)">(${cn.length})</span></div>
     <div style="max-height:150px;overflow:auto"><table class="btbl"><thead><tr><th>Borne</th><th>Vers</th><th>Câble</th></tr></thead><tbody>${rows}</tbody></table></div>
     ${nrm}
-    <div class="actions"><button class="primary" id="ed-ok">Enregistrer</button><button id="ed-xp">${state.xroots&&state.xroots.size?(state.xroots.has(c.name)?'Replier':'Déplier'):'Explorer'}</button>${c.vc?'<button id="ed-brn">Vue bornier</button>':''}<button id="ed-del">Supprimer</button><button class="ghost" id="ed-close">Fermer</button></div>`;
+    <div class="actions"><button class="primary" id="ed-ok">Enregistrer</button><button id="ed-xp">Aller voir</button>${c.vc?'<button id="ed-brn">Vue bornier</button>':''}<button id="ed-del">Supprimer</button><button class="ghost" id="ed-close">Fermer</button></div>`;
   popAt(p,sx,sy,290);
   document.getElementById('ed-close').onclick=closePop;
   // prise de coupure : accès à la vue détaillée (bornes ▲ amont / ▼ aval, pont sécable)
@@ -6410,18 +6185,15 @@ function openEditor(c,sx,sy){ state.sel=c.name; render();
       // d'ordre. Sans ça, renommer un équipement qu'on explore laissait
       // l'ancien nom dans la liste — l'exploration ne trouvait plus rien et le
       // schéma disparaissait purement et simplement.
-      if(state.xroots&&state.xroots.has(c.name)){ state.xroots.delete(c.name); state.xroots.add(nr); }
       if(typeof ORDH!=='undefined'&&ORDH.has(c.name)){ ORDH.set(nr,ORDH.get(c.name)); ORDH.delete(c.name); }
-      if(typeof XPPIN!=='undefined'&&XPPIN.has(c.name)){ XPPIN.delete(c.name); XPPIN.add(nr); } }
+      }
     let e=state.eq.find(x=>x.repere===c.name||x.repere===nr); if(!e){ e={repere:nr,designation:'',type:''}; state.eq.push(e); }
     e.repere=nr; e.designation=nd; e.type=nt; state.sel=nr; closePop(); syncTables(); render(); };
   document.getElementById('ed-del').onclick=()=>{ state.lk=state.lk.filter(l=>l.from!==c.name&&l.to!==c.name);
     if(state.folioBackup)state.folioBackup=state.folioBackup.filter(l=>l.from!==c.name&&l.to!==c.name);
     state.eq=state.eq.filter(x=>x.repere!==c.name); OVR.delete(c.name); state.sel=null; closePop(); syncTables(); render(); };
   document.getElementById('ed-xp').onclick=()=>{ closePop();
-    if(!(state.xroots&&state.xroots.size)) exploreStart(c.name);
-    else if(state.xroots.has(c.name)) exploreRemove(c.name);
-    else exploreAdd(c.name); };
+    viserRepere(c.name); };
 }
 function openCable(wr,sx,sy){
   const p=document.getElementById('pop');
@@ -6448,68 +6220,6 @@ function openEditorByName(name){ const c=LAST&&LAST.layout.compByName.get(name);
 
 /* ---- mode exploration : dépliage des liaisons de proche en proche ---- */
 function allDeviceNames(){ const s=new Set(); state.lk.forEach(l=>{ if(l.from)s.add(l.from); if(l.to)s.add(l.to); }); return s; }
-function exploreStart(name){ name=String(name||'').trim(); if(!name)return;
-  const ns=allDeviceNames();
-  if(!ns.has(name)){ const st=document.getElementById('xp-stat'); if(st)st.textContent='Repère introuvable : '+name; return; }
-  /* On ne SÉLECTIONNE plus le bloc cherché : son repère s'écrit déjà en bleu
-     parce qu'il est déplié, et le cadre de sélection ajoutait par-dessus des
-     crochets bleus permanents autour de chaque bornier. La sélection reste ce
-     qu'elle doit être : passagère, et déclenchée par un clic. */
-  xpUnpin(); OVR.clear(); ORDH.clear(); state.xroots=new Set([name]); state.sel=null;
-  exploreOptimize('max'); }   // équerre automatique dès le premier dépliage
-const XPPIN=new Set();   // blocs épinglés automatiquement par l'exploration
-function xpUnpin(){ XPPIN.forEach(n=>{ OVR.delete(n); ORDH.delete(n); }); XPPIN.clear(); ORDH.clear(); }
-function exploreAdd(name){ if(!state.xroots)state.xroots=new Set();
-  // ÉQUERRE AUTOMATIQUE : chaque dépliage relance le placement optimal
-  // (📐 fils droits au maximum). Entre deux dépliages, on peut déplacer les
-  // équipements librement à la souris — l'équerre ne repasse qu'ici.
-  state.xroots.add(name); state.sel=null;
-  xpUnpin(); OVR.clear();
-  exploreOptimize('max'); }
-function exploreRemove(name){ if(!state.xroots)return; state.xroots.delete(name);
-  if(!state.xroots.size){ state.xroots=null; state.sel=null; xpUnpin(); render(); fit(); return; }
-  xpUnpin(); OVR.clear();
-  exploreOptimize('max'); }
-function exploreStop(){ state.xroots=null; state.sel=null; xpUnpin(); render(); fit(); }
-function exploreOptimize(mode){ if(!(state.xroots&&state.xroots.size))return;
-  // replacement optimal de la sélection courante : on lève le verrou d'ordre
-  // pour UN rendu (les repères peuvent bouger) et on autorise la croissance.
-  // ✨ Optimiser (équilibré) : le dessin ne peut pas grossir de plus de ~35%.
-  // 📐 Droits max : fils droits à tout prix, quelle que soit la taille.
-  OPT_MODE=(mode==='max')?'max':'bal'; OPT_AREA_CAP=0;
-  if(OPT_MODE==='bal'&&typeof LAST!=='undefined'&&LAST&&LAST.layout&&LAST.layout.bbox){
-    const b=LAST.layout.bbox; OPT_AREA_CAP=Math.max(1,b.w*b.h)*1.35; }
-  // équilibré : le verrou d'ordre RESTE (les repères gardent leur place, le
-  // dessin reste compact) ; seul « Droits max » relâche tout.
-  if(OPT_MODE==='max') ORDH.clear();
-  // ON REPART D'UNE PAGE PROPRE : les blocs qu'on a déplacés à la souris sont
-  // relâchés. Sans ça, « Optimiser » laissait en place un bloc posé à la main
-  // — donc gardait le chevauchement qu'on lui demandait justement de corriger.
-  // Le bouton doit tenir sa promesse : remettre TOUT le dessin d'aplomb.
-  xpUnpin(); OVR.clear();
-  OPT_ONCE=true;
-  try{ render(); } finally { OPT_ONCE=false; OPT_MODE='max'; OPT_AREA_CAP=0; }
-  // re-verrouiller l'ordre obtenu : les rendus SUIVANTS (déplacement à la
-  // souris, retouche d'étiquette…) gardent ce placement au lieu de re-mélanger.
-  if(LAST&&LAST.layout) LAST.layout.comps.forEach(c=>{ if(c.kind!=='strip'&&c.kind!=='tag')
-    ORDH.set(c.name,c.gy!=null?c.gy:c.y); });
-  fit(); }
-function syncExplore(){ const dl=document.getElementById('xp-names'); if(!dl)return;
-  const names=[...allDeviceNames()].sort();
-  dl.innerHTML=names.slice(0,4000).map(n=>`<option value="${esc(n)}">`).join('');
-  const chips=document.getElementById('xp-chips'), stat=document.getElementById('xp-stat'), all=document.getElementById('xp-all');
-  const on=state.xroots&&state.xroots.size;
-  /* plus de boutons a cabler : l'optimisation n'est plus une option */
-  chips.innerHTML=on?[...state.xroots].map(n=>`<span class="xchip">${esc(n)}<button data-x="${esc(n)}" title="replier">×</button></span>`).join(''):'';
-  chips.querySelectorAll('button[data-x]').forEach(bt=>{ bt.onclick=()=>exploreRemove(bt.dataset.x); });
-  all.style.display=on?'':'none';
-  if(on) stat.textContent=state.xroots.size+' équipement(s) déplié(s) — '+(LAST?LAST.routing.wires.length:0)+' liaisons affichées';
-  /* La ligne disait « Base : 12 repères, 18 liaisons » — exactement ce que la
-     barre du haut affiche en permanence. On ne répète pas une information à
-     deux endroits : au repos, elle ne dit rien. */
-  else stat.textContent='';
-}
-
 /* ---- catalogue de normes (croisé avec la colonne PN) ---- */
 let NORMS={headers:[],rows:[]}, NORMIDX=new Map();
 const normCode=s=>String(s||'').toUpperCase().replace(/[\s.\-\/]/g,'');
@@ -6653,8 +6363,28 @@ function listeMateriel(){
       + '<span class="mtc">'+cnt.get(n)+' fil'+(cnt.get(n)>1?'s':'')+'</span></div>';
   }).join('');
   box.querySelectorAll('.mtrow').forEach(el=>{
-    el.onclick=()=>{ exploreStart(el.dataset.n); fit(); };
+    el.onclick=()=>viserRepere(el.dataset.n);
   });
+}
+
+/* ALLER VOIR UN REPÈRE. Cliquer un repère dans la liste lançait l'EXPLORATION :
+   on recalculait un dessin entier ne contenant que lui et ses voisins, avec des
+   badges « + » pour déplier de proche en proche. C'était un second moteur de
+   placement complet, gardé pour un geste que le folio rend inutile : le dessin
+   est déjà là, il suffit d'y aller. On centre dessus et on l'allume. */
+function viserRepere(nom){
+  if(!LAST) return;
+  const c=LAST.layout.compByName && LAST.layout.compByName.get(nom);
+  if(!c){ const st=document.getElementById('xp-stat');
+    if(st) st.textContent='« '+nom+' » n’est pas sur ce folio.'; return; }
+  const r=svgRect();
+  state.view.s=Math.max(state.view.s,0.9);
+  state.view.tx=r.width/2-(c.x+c.w/2)*state.view.s;
+  state.view.ty=r.height/2-(c.y+c.h/2)*state.view.s;
+  applyView();
+  highlightDevice(nom);
+  const st=document.getElementById('xp-stat');
+  if(st) st.textContent=nom+' — '+connectionsOf(nom).length+' liaison(s) sur ce folio.';
 }
 
 function syncTables(){
@@ -6708,10 +6438,6 @@ function bindPanel(){
   document.getElementById('add-eq').onclick=()=>{ state.eq.push({repere:'',designation:'',type:''}); syncTables(); };
   document.getElementById('add-lk').onclick=()=>{ histPush('ajout d’une liaison');
     state.lk.push({from:'',fromTerm:'',to:'',toTerm:'',nature:''}); syncTables(); sauverContrat(); };
-  document.getElementById('xp-go').onclick=()=>exploreStart(document.getElementById('xp-find').value);
-  document.getElementById('xp-find').addEventListener('keydown',e=>{ if(e.key==='Enter')exploreStart(e.target.value); });
-  document.getElementById('xp-find').addEventListener('change',e=>{ const v=e.target.value.trim(); if(v&&allDeviceNames().has(v))exploreStart(v); });
-  document.getElementById('xp-all').onclick=exploreStop;
   // cartouche
   [['m-title','title'],['m-folio','folio'],['m-author','author'],['m-rev','rev'],['m-date','date'],['m-scale','scale']].forEach(([id,k])=>{
     const el=document.getElementById(id); el.value=state.meta[k]||'';
@@ -6733,7 +6459,7 @@ function looksHeader(tok){ return /^(rep[eè]re|d[eé]signation|type|de|from|ver
 function openModal(){ document.getElementById('modal').style.display='flex'; }
 function closeModal(){ document.getElementById('modal').style.display='none'; }
 
-function clearAll(){ if(!confirm('Effacer tous les équipements et liaisons ?'))return; histPush('tout vider'); state.eq=[]; state.lk=[]; OVR.clear(); ORDH.clear(); state.sel=null; state.xroots=null; state.forceFull=false; syncTables(); render(); sauverContrat(); }
+function clearAll(){ if(!confirm('Effacer tous les équipements et liaisons ?'))return; histPush('tout vider'); state.eq=[]; state.lk=[]; OVR.clear(); ORDH.clear(); state.sel=null; state.forceFull=false; syncTables(); render(); sauverContrat(); }
 
 function openDrawer(){ const a=document.querySelector('aside'); if(a)a.classList.add('open'); const b=document.getElementById('drawerBg'); if(b)b.classList.add('show'); }
 function closeDrawer(){ const a=document.querySelector('aside'); if(a)a.classList.remove('open'); const b=document.getElementById('drawerBg'); if(b)b.classList.remove('show'); }
