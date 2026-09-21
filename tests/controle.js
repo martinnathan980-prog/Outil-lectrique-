@@ -116,6 +116,41 @@ function titre(t) { console.log('\n' + t); }
     essai.b + ' blocs · ' + essai.f + ' fils · ' + essai.d + ' % droits');
   ok('les deux barrettes sont repérées', essai.barrettes === 2, essai.barrettes + ' trouvée(s)');
 
+  /* LE NUMÉRO DE FIL. C'est l'information numéro un d'un câbleur : ce qu'il
+     lit sur l'étiquette du conducteur qu'il a en main. Elle n'était écrite
+     nulle part sur le dessin. Deux choses à vérifier, et la seconde compte
+     autant que la première : qu'ils soient POSÉS, et qu'aucun ne soit barré
+     par un fil vertical ni collé à un voisin — une planche où les étiquettes
+     se marchent dessus est pire qu'une planche sans étiquettes. */
+  const nums = await page.evaluate(() => {
+    contratEssai();
+    const W = LAST.routing.wires;
+    const avecNom = W.filter(w => String(w.cable || '').trim()).length;
+    const el = Array.from(document.querySelectorAll('#svg .filnum'));
+    // boîtes des étiquettes, en coordonnées du dessin
+    const boites = el.map(t => { const x = +t.getAttribute('x'), y = +t.getAttribute('y');
+      const l = t.textContent.length * 0.60 * 6;
+      return { x0: x - l / 2, x1: x + l / 2, y0: y - 5.6, y1: y }; });
+    let chevauche = 0;
+    for (let i = 0; i < boites.length; i++) for (let j = i + 1; j < boites.length; j++) {
+      const a = boites[i], b = boites[j];
+      if (a.x1 > b.x0 && a.x0 < b.x1 && a.y1 > b.y0 && a.y0 < b.y1) chevauche++;
+    }
+    // fils verticaux qui traverseraient une étiquette
+    const vert = [];
+    W.forEach(w => { for (let i = 0; i < w.pts.length - 1; i++) {
+      const a = w.pts[i], b = w.pts[i + 1];
+      if (Math.abs(a.x - b.x) < 0.6 && Math.abs(a.y - b.y) > 1)
+        vert.push({ x: a.x, y0: Math.min(a.y, b.y), y1: Math.max(a.y, b.y) }); } });
+    let barres = 0;
+    boites.forEach(b => { if (vert.some(v => v.x > b.x0 && v.x < b.x1 && v.y1 > b.y0 && v.y0 < b.y1)) barres++; });
+    return { avecNom, poses: el.length, chevauche, barres };
+  });
+  ok('les numéros de fil sont écrits sur le dessin', nums.poses >= nums.avecNom * 0.9,
+    nums.poses + ' / ' + nums.avecNom + ' fils étiquetés');
+  ok('aucune étiquette n’en chevauche une autre', nums.chevauche === 0, nums.chevauche + ' chevauchement(s)');
+  ok('aucune étiquette n’est barrée par un fil', nums.barres === 0, nums.barres + ' barrée(s)');
+
   /* ---- 4. LES TROIS RÈGLES DE COUPURE ONT QUITTÉ L'OUTIL ---------------
      Elles vérifiaient que les règles côté / peau / cadre répondent sur des
      zones d'EXEMPLE inventées. C'est précisément ce qui ne prouve rien : tant

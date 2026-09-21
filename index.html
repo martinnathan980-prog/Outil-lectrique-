@@ -3268,6 +3268,10 @@ function defs(){
      .busdot{fill:#1b2430;stroke:none}
      .busbar{stroke:#1b2430;stroke-width:2.6;stroke-linecap:square}
      .pinlbl{fill:#2b3743;font-size:7.5px;font-weight:500;letter-spacing:.2px}
+     /* Le numéro de fil : posé sur le trait, plus léger que les repères de
+        borne — on le cherche quand on en a besoin, il ne doit pas concurrencer
+        les repères d'équipement dans la lecture d'ensemble. */
+     .filnum{fill:#55636f;font-size:6px;font-weight:500;letter-spacing:.1px}
      .rpill{fill:#ffffff;stroke:#c8d1d9;stroke-width:.7}
      .rname{fill:#46535f;font-weight:600;font-size:9px;letter-spacing:.6px}
      .ctag{fill:#6b7784;font-size:7.5px;font-weight:600}
@@ -3369,6 +3373,86 @@ function wirePath(pts){
   return d;
 }
 function escA(s){ return esc(s).replace(/"/g,'&quot;'); }
+/* ═══ LE NUMÉRO DE FIL SE LIT SUR LE FIL ═══════════════════════════════════
+   Le dessin ne le portait NULLE PART. Il fallait cliquer un fil pour le
+   connaître — or pour un câbleur c'est l'information numéro un : c'est ce
+   qu'il lit sur l'étiquette du conducteur qu'il a en main, et c'est par là
+   qu'il retrouve sa ligne dans le contrat. Un schéma de câblage sans numéros
+   de fil n'est pas exploitable en atelier, si droits que soient ses traits.
+
+   OÙ L'ÉCRIRE. Au-dessus du plus long segment HORIZONTAL du fil, en son
+   milieu : c'est là qu'il y a de la place, c'est là que l'œil suit le trait.
+   Jamais sur un segment vertical, où le texte devrait tourner.
+
+   QUAND NE PAS L'ÉCRIRE. Trois cas, et c'est la partie qui compte : si le
+   segment est trop court pour le contenir sans toucher ses deux extrémités ;
+   si l'étiquette en chevaucherait une autre déjà posée ; ou s'il n'y a pas de
+   numéro. Mieux vaut un fil sans étiquette qu'une planche où les étiquettes
+   se marchent dessus — c'est précisément ce qui rend illisibles la plupart
+   des schémas générés. On pose donc les plus longs segments d'abord : ceux
+   qui ont le plus de place gagnent, les autres se taisent. */
+function reperesDeFil(wires){
+  const H=5.6;                       // hauteur de l'étiquette, pour le chevauchement
+  const CAR=0.60;                    // chasse du mono, en em
+  const poses=[];                    // boîtes déjà occupées
+  /* ON NE TESTAIT QUE LES ÉTIQUETTES ENTRE ELLES. Résultat, quatre numéros se
+     retrouvaient BARRÉS par un fil vertical qui passait juste là : le trait
+     traversait le texte de part en part. Une étiquette doit aussi éviter les
+     fils — pas tous, seulement les VERTICAUX, puisqu'elle est posée au-dessus
+     d'un segment horizontal et qu'un horizontal voisin serait déjà écarté par
+     la règle précédente. */
+  const verticaux=[];
+  wires.forEach(w=>{ for(let i=0;i<w.pts.length-1;i++){
+    const a=w.pts[i],b=w.pts[i+1];
+    if(Math.abs(a.x-b.x)<0.6 && Math.abs(a.y-b.y)>1)
+      verticaux.push({x:a.x, y0:Math.min(a.y,b.y), y1:Math.max(a.y,b.y)}); } });
+  const libre=(x0,y0,x1,y1)=>
+    !poses.some(b=>x1>b.x0-2&&x0<b.x1+2&&y1>b.y0-1.5&&y0<b.y1+1.5)
+    && !verticaux.some(v=>v.x>x0-1.5&&v.x<x1+1.5&&v.y1>y0&&v.y0<y1);
+  // candidats : un par fil, sur son plus long segment horizontal
+  const cands=[];
+  wires.forEach(w=>{
+    const nom=String(w.cable||'').trim(); if(!nom) return;
+    let bL=0,bx0=0,bx1=0,by=0;
+    for(let i=0;i<w.pts.length-1;i++){
+      const a=w.pts[i],b=w.pts[i+1];
+      if(Math.abs(a.y-b.y)>0.6) continue;           // segment vertical : jamais
+      const L=Math.abs(b.x-a.x);
+      if(L>bL){ bL=L; bx0=Math.min(a.x,b.x); bx1=Math.max(a.x,b.x); by=a.y; }
+    }
+    if(bL>0) cands.push({nom, L:bL, x0:bx0, x1:bx1, y:by});
+  });
+  cands.sort((a,b)=>b.L-a.L);        // les plus longs segments choisissent en premier
+  let out='';
+  cands.forEach(c=>{
+    const fs=6;
+    const larg=c.nom.length*CAR*fs;
+    if(larg+10>c.L) return;          // pas la place sans toucher les deux bouts
+    /* ON DÉCALE PLUTÔT QUE DE RENONCER. Première version : si le milieu du
+       segment était pris — par une autre étiquette ou par un fil vertical —
+       le numéro disparaissait. Quatre fils sur dix-huit se retrouvaient
+       muets, alors qu'il restait de la place vingt unités plus loin sur le
+       même trait. On balaie donc le segment depuis son milieu, de part et
+       d'autre, et on prend le premier emplacement libre. Le milieu reste
+       préféré : c'est là qu'on cherche l'étiquette d'un fil. */
+    const mid=(c.x0+c.x1)/2;
+    const marge=5;                   // on ne colle jamais l'étiquette à une borne
+    const dmax=Math.max(0,(c.L-larg)/2-marge);
+    let pose=null;
+    for(let d=0; d<=dmax+0.01 && !pose; d+=Math.max(3,larg/3)){
+      for(const cx of (d===0?[mid]:[mid-d,mid+d])){
+        const x0=cx-larg/2, x1=cx+larg/2, y1=c.y-2.2, y0=y1-H;
+        if(x0<c.x0+marge || x1>c.x1-marge) continue;
+        if(libre(x0,y0,x1,y1)){ pose={cx,x0,y0,x1,y1}; break; }
+      }
+    }
+    if(!pose) return;
+    poses.push({x0:pose.x0,y0:pose.y0,x1:pose.x1,y1:pose.y1});
+    out+=`<text class="filnum" x="${f1(pose.cx)}" y="${f1(pose.y1)}" text-anchor="middle">${esc(c.nom)}</text>`;
+  });
+  return out;
+}
+
 function wireSvg(w,bridges,hbridges){ const d=wirePath(w.pts,bridges,hbridges);
   // attributs de repérage : net (surbrillance de tout le potentiel), extrémités
   // (illumination des fils d'un équipement au survol)
@@ -3651,8 +3735,8 @@ function sceneInner(layout,routing){
   if(state.folioMode && state.plan && state.plan!=='*')
     meta={...state.meta, folio: state.plan+' / '+(state.folioCount||'?')};
   let body=sheetSvg(layout.bbox,meta);
-  // câbles : aucun nom sur le dessin — toutes les infos au clic
   routing.wires.forEach(w=>body+=wireSvg(w,routing.bridges,routing.hbridges));
+  body+=reperesDeFil(routing.wires);
   ((routing.barrettes&&routing.barrettes.stubs)||[]).forEach(st=>body+=`<line class="barfeedline" x1="${f1(st.x0)}" y1="${f1(st.y)}" x2="${f1(st.x1)}" y2="${f1(st.y)}"/>`);
   /* LA BARRETTE SE LIT SANS UN SEUL MOT.
      Elle portait le repère de sa borne source et, à chaque piquage, celui de sa
