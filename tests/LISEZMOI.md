@@ -6,6 +6,7 @@
 node tests/controle.js        les invariants et les pièges déjà tombés
 node tests/memoire.js         le travail survit-il à la fermeture de l'onglet
 node tests/banc-placement.js  combien de fils sortent droits, et sur quelle feuille
+node tests/format-retest.js   les seize colonnes sont lues par leur nom
 ```
 
 Les trois sont indépendants. `controle.js` et `memoire.js` rendent 1 en cas

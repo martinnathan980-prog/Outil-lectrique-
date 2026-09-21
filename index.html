@@ -3847,8 +3847,76 @@ function detectCols(cells){ const eqs=[],pinish=[]; const map={};
 }
 function looksLikeHeader(cells){ const j=cells.map(norm).join(' ');
   return /equip|borne|cable|plan|pin|\bpn\b|term|folio|vers|depart|broche/.test(j) && !/^[+-]?[a-z]?\d/i.test((cells[0]||'').trim()); }
+/* ═══ LE FORMAT RETEST SE LIT EXACTEMENT, IL NE SE DEVINE PAS ══════════════
+   Le contrat arrivait par le même chemin que n'importe quel tableau : une
+   batterie d'expressions régulières sur les en-têtes — « goulotte », « tray »,
+   « folio », « potentiel », « broche » — puis un rattachement des bornes au
+   device « par adjacence », avec un repli si rien ne s'apparie. Cent lignes
+   de devinettes, écrites quand on ne savait pas d'où viendraient les fichiers.
+
+   On le sait maintenant : c'est TOUJOURS le retest, seize colonnes nommées.
+   Elles sont déjà décrites, exactement, dans RB_COLS — la table qui sert à
+   lire la base de référence. On s'en sert donc aussi pour le contrat, et on
+   lit les colonnes par leur nom :
+       Device1 · Pin1 · PN1        →  l'équipement de départ et sa borne
+       Device2 · Pin2 · PN2        →  celui d'arrivée
+       Cable Tag                   →  le numéro de fil
+       Cable T/G                   →  son type et sa section
+       Route                       →  le cheminement
+       FWD                         →  le plan, donc le folio
+   Aucune ambiguïté, aucun repli, et les en-têtes peuvent être en ligne 4 sous
+   une date et un mémo, comme dans le vrai fichier.
+
+   Les devinettes restent DERRIÈRE, pour un tableau qui ne serait pas du
+   retest — un export bricolé, un collage à la main. Elles ne sont plus le
+   chemin principal, elles sont le rattrapage. */
+function lireEnteteRetest(lines){
+  const lim=Math.min(lines.length,30);
+  let best=-1,bestN=0,bestCol=null;
+  for(let r=0;r<lim;r++){
+    const row=splitLine(lines[r]).map(x=>String(x).trim());
+    const col={}; let n=0;
+    for(let c=0;c<row.length;c++){
+      const k=RB_NORM(row[c]); if(!k) continue;
+      for(const pair of RB_COLS){
+        if(col[pair[0]]!=null) continue;
+        if(pair[1].indexOf(k)>=0){ col[pair[0]]=c; n++; break; }
+      }
+    }
+    // il faut les quatre colonnes qui font une liaison, sinon ce n'est pas
+    // un retest et on laisse la main aux devinettes.
+    if(col.device1!=null&&col.device2!=null&&col.pin1!=null&&col.pin2!=null&&n>bestN){
+      best=r; bestN=n; bestCol=col; }
+  }
+  return bestN? {head:best, col:bestCol, found:bestN} : null;
+}
+
 function parseSchedule(text){
-  const lines=text.split(/\r?\n/).filter(l=>l.trim()); if(!lines.length) return {links:[],used:[]};
+  /* DEUX DÉCOUPAGES, ET C'EST VOULU. `brutes` garde les lignes vides : c'est
+     le seul moyen d'annoncer « en-têtes ligne 4 » et que l'utilisateur les
+     trouve ligne 4 dans Excel — le fichier de retest porte une date et un
+     mémo au-dessus, séparés par une ligne blanche. `lines`, sans les vides,
+     sert au chemin de rattrapage qui n'a pas de numéros à annoncer. */
+  const brutes=text.split(/\r?\n/);
+  const lines=brutes.filter(l=>l.trim()); if(!lines.length) return {links:[],used:[]};
+
+  const rt=lireEnteteRetest(brutes);
+  if(rt){
+    const c=rt.col;
+    const g=(row,i)=>(i!=null&&row[i]!=null)?String(row[i]).trim():'';
+    const links=[];
+    for(let r=rt.head+1;r<brutes.length;r++){
+      if(!brutes[r].trim()) continue;
+      const row=splitLine(brutes[r]).map(x=>String(x).trim());
+      const e1=g(row,c.device1), e2=g(row,c.device2);
+      if(!e1||!e2) continue;
+      links.push({from:e1, fromTerm:g(row,c.pin1), to:e2, toTerm:g(row,c.pin2), nature:'',
+        cable:g(row,c.cabletag), ctype:g(row,c.cabletg), route:g(row,c.route),
+        plan:g(row,c.fwd), pn1:g(row,c.pn1), pn2:g(row,c.pn2)});
+    }
+    return {links, used:Object.keys(c), format:'retest', entete:rt.head+1, colonnes:rt.found};
+  }
+
   let map=null, start=0; const first=splitLine(lines[0]).map(s=>s.trim());
   if(looksLikeHeader(first)){ map=detectCols(first); start=1; }
   if(!map || map.eq1==null || map.eq2==null) map={eq1:0,t1:1,pn1:2,eq2:3,t2:4,pn2:5,cable:6,ctype:7,route:8,plan:9};
@@ -3858,7 +3926,7 @@ function parseSchedule(text){
     const e1=g(c,map.eq1), e2=g(c,map.eq2); if(!e1||!e2)continue;
     links.push({from:e1,fromTerm:g(c,map.t1),to:e2,toTerm:g(c,map.t2),nature:'',
       cable:g(c,map.cable),ctype:g(c,map.ctype),route:g(c,map.route),plan:g(c,map.plan),pn1:g(c,map.pn1),pn2:g(c,map.pn2)}); }
-  return {links,used:Object.keys(map).filter(k=>map[k]!=null)};
+  return {links,used:Object.keys(map).filter(k=>map[k]!=null),format:'libre'};
 }
 function plansOf(lk){ return [...new Set(lk.map(l=>l.plan).filter(Boolean))].sort((a,b)=>{const na=parseFloat(a),nb=parseFloat(b);if(!isNaN(na)&&!isNaN(nb))return na-nb;return String(a).localeCompare(String(b));}); }
 function linksForPlan(lk,plan){ if(!plan||plan==='*')return lk; return lk.filter(l=>!l.plan||l.plan===plan); }
