@@ -1015,6 +1015,24 @@ function computeLayoutWith(eq, lk, peripheral){
     if(mn<0) nodeIds.forEach(n=>level.set(n, level.get(n)-mn));
   }
 
+  /* ÉTAPE 3ter — SERPENTIN : replier un dessin en ruban (candidat SERPENTIN).
+     Une chaîne de vingt équipements en série fait vingt colonnes : 3 906 x 114,
+     soit un ruban à 34:1. Tous ses fils sont droits et il ne tient sur AUCUNE
+     feuille — on ne le lit qu'en défilant, ce qui n'est pas lire un schéma.
+     On replie donc la suite des colonnes en RANGÉES, en boustrophédon : une
+     rangée se lit vers la droite, la suivante vers la gauche. Le fil de report
+     d'une rangée à l'autre retombe ainsi en face de son voisin, au lieu de
+     traverser toute la page pour revenir à gauche. Seuls ces fils de report se
+     plient — un par rangée — tout le reste du dessin garde ses fils droits.
+     C'est un CANDIDAT DE SECOURS : le concours ne l'essaie que si la meilleure
+     mise en page ne tient sur aucune feuille (voir `computeLayout`). */
+  const rowOf=new Map(nodeIds.map(n=>[n,0]));
+  if(SERPENTIN>0){
+    nodeIds.forEach(n=>{ const l=level.get(n), r=Math.floor(l/SERPENTIN), k=l%SERPENTIN;
+      rowOf.set(n,r);
+      level.set(n, (r%2===0)? k : (SERPENTIN-1-k)); });
+  }
+
   const maxLvlF=nodeIds.length?Math.max(...nodeIds.map(n=>level.get(n))):0;
   const columns=Array.from({length:maxLvlF+1},()=>[]);
   nodeIds.forEach(n=>columns[level.get(n)].push(n));
@@ -1152,11 +1170,26 @@ function computeLayoutWith(eq, lk, peripheral){
   const maxColH=Math.max(60,...colH);
   const pinY=new Map();
   const blockTop=new Map(), blockBot=new Map();
-  columns.forEach((c,i)=>{ let y=topY+(maxColH-colH[i])/2;
-    c.forEach(id=>{ blockTop.set(id,y);
+  /* Serpentin : chaque rangée démarre dans sa propre bande, sinon le premier
+     placement les empile toutes en haut et tout l'ordonnancement qui suit part
+     d'un tas. `bandeY` donne l'ordonnée de départ de la rangée r ; sans
+     serpentin il n'y a qu'une bande et on retrouve exactement l'ancien calcul. */
+  const RANGGAP=130;
+  const nRang=SERPENTIN>0 ? 1+Math.max(0,...nodeIds.map(n=>rowOf.get(n))) : 1;
+  const bandeY=[];
+  { const hR=new Array(nRang).fill(0);
+    columns.forEach(c=>{ const s=new Array(nRang).fill(-VGAP);
+      c.forEach(id=>{ s[rowOf.get(id)]+=estH(id)+VGAP; });
+      for(let r=0;r<nRang;r++) hR[r]=Math.max(hR[r],Math.max(0,s[r])); });
+    let y=topY; for(let r=0;r<nRang;r++){ bandeY.push(y); y+=hR[r]+RANGGAP; } }
+  columns.forEach((c,i)=>{
+    if(SERPENTIN>0) c.sort((a,b)=>rowOf.get(a)-rowOf.get(b));
+    const cur=bandeY.slice();
+    if(SERPENTIN<=0) cur[0]=topY+(maxColH-colH[i])/2;
+    c.forEach(id=>{ const r=rowOf.get(id)||0; const y=cur[r]; blockTop.set(id,y);
       listKeys(id).forEach(lid=>{ const L=listArr(id,lid);
         L.forEach((p,j)=>pinY.set(id+SOH+p.key, y+16+j*PRH)); });
-      blockBot.set(id,y+estH(id)); y+=estH(id)+VGAP; }); });
+      blockBot.set(id,y+estH(id)); cur[r]=y+estH(id)+VGAP; }); });
 
   const pinYof=(id,k)=>pinY.get(id+SOH+k);
   const sortPins=()=>{ for(const id of nodeIds){
@@ -1175,7 +1208,8 @@ function computeLayoutWith(eq, lk, peripheral){
           if(isS||!listsOf.get(q.id).S) des.push(y); }); }));
       const use=des.length?des:desAll; use.sort((a,b)=>a-b);
       return [id, use.length?use[Math.floor(use.length/2)]:blockTop.get(id)]; }));
-    c.sort((a,b)=>key.get(a)-key.get(b)); }); };
+    // la rangée du serpentin prime : une colonne se lit rangée par rangée
+    c.sort((a,b)=>(rowOf.get(a)-rowOf.get(b))||(key.get(a)-key.get(b))); }); };
 
   // pose : les écarts entre broches sont déduits des écarts des partenaires
   // ("pile en face" par construction, bornés) ; un équipement ne s'étire que
@@ -1229,7 +1263,7 @@ function computeLayoutWith(eq, lk, peripheral){
         (partners.get(id+SOH+p.key)||[]).forEach(q=>{ if(q.id!==id)offs.push(pinYof(q.id,q.key)-(baseL[lid]+relL[lid][j])); }); }); }); }
       offs.sort((a,b)=>a-b);
       let top=offs.length?offs[Math.floor(offs.length/2)]:blockTop.get(id);
-      top=Math.max(top,cursor+(isS?14:VGAP),topY-60);
+      top=Math.max(top,cursor+(isS?14:VGAP),(bandeY[rowOf.get(id)||0]??topY)-60);
       ls.forEach(lid=>{ listArr(id,lid).forEach((p,j)=>pinY.set(id+SOH+p.key,top+baseL[lid]+relL[lid][j])); });
       blockTop.set(id,top); blockBot.set(id,top+h); cursor=top+h;
     }); }); };
@@ -1324,6 +1358,7 @@ function computeLayoutWith(eq, lk, peripheral){
     for(let pass=0;pass<2;pass++){ let improved=false;
       for(let ci=0;ci<columns.length;ci++){ const c=columns[ci];
         for(let i=0;i+1<c.length;i++){
+          if(rowOf.get(c[i])!==rowOf.get(c[i+1])) continue;   // jamais entre deux rangées
           const st=snap();
           const t=c[i]; c[i]=c[i+1]; c[i+1]=t;
           elastic(); polish();
@@ -1481,7 +1516,11 @@ function computeLayoutWith(eq, lk, peripheral){
       return {acc, py};
     };
 
-    const ordKey=id=>{ const h=ORDH.get(nodes.get(id).name); return h!=null?h:blockTop.get(id); };
+    // RANG : la rangée du serpentin domine toute autre clé d'ordre, sinon les
+    // rangées s'entrelacent dans une colonne et le tassement final n'a plus de
+    // bloc contigu à translater.
+    const RANG=id=>(rowOf.get(id)||0)*1e9;
+    const ordKey=id=>{ const h=ORDH.get(nodes.get(id).name); return RANG(id)+(h!=null?h:blockTop.get(id)); };
     let colBlocks=columns.map(c=>[...c].sort((a,b)=>ordKey(a)-ordKey(b)));
     let best=solveOnce(colBlocks), bestBlocks=colBlocks;
     // balayage type Sugiyama : chaque bloc se replace au barycentre de ses
@@ -1489,7 +1528,7 @@ function computeLayoutWith(eq, lk, peripheral){
     // le plus de fils droits (maximise les fusions acceptées).
     const baryKey=(py,mean)=>id=>{
       const lock=ORDH.get(nodes.get(id).name);
-      if(lock!=null) return lock;
+      if(lock!=null) return RANG(id)+lock;
       const ds=[];
       listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>{
         (partners.get(id+SOH+p.key)||[]).forEach(q=>{ if(q.id!==id&&py.has(PKEY(q.id,q.key)))ds.push(py.get(PKEY(q.id,q.key))); }); }));
@@ -1499,7 +1538,7 @@ function computeLayoutWith(eq, lk, peripheral){
       // regroupement : la bande de communauté domine (nœuds d'un même groupe
       // restent ensemble), le barycentre ordonne à l'intérieur de la bande.
       const b=commBand.get(id);
-      return b!=null ? b*1e7 + bar : bar; };
+      return RANG(id) + (b!=null ? b*1e7 + bar : bar); };
     const nBlk=columns.reduce((n,c)=>n+c.length,0);
     const isLocked=id=>ORDH.get(nodes.get(id).name)!=null;   // exploration : bloc figé
     // balayage barycentre : chaque bloc se replace au barycentre de ses
@@ -2362,6 +2401,29 @@ function computeLayoutWith(eq, lk, peripheral){
     });
   }
 
+  /* SERPENTIN — TASSEMENT DES RANGÉES.
+     Le solveur d'ordonnées place tout depuis le haut de la page sans rien
+     savoir des rangées : elles se retrouvaient à flotter les unes dans les
+     autres. On les remet l'une sous l'autre par une translation RIGIDE — une
+     rangée entière glisse d'un bloc. Rigide veut dire qu'aucun écart ne change
+     À L'INTÉRIEUR d'une rangée : pas un seul fil droit n'est perdu au
+     tassement, seuls les fils de report d'une rangée à l'autre s'allongent. */
+  if(SERPENTIN>0 && nRang>1){
+    const parRangee=Array.from({length:nRang},()=>[]);
+    nodeIds.forEach(n=>parRangee[rowOf.get(n)||0].push(n));
+    let y=topY;
+    parRangee.forEach(grp=>{ if(!grp.length)return;
+      let lo=Infinity,hi=-Infinity;
+      grp.forEach(id=>{ lo=Math.min(lo,blockTop.get(id)); hi=Math.max(hi,blockBot.get(id)); });
+      if(!isFinite(lo))return;
+      const dy=y-lo;
+      if(dy){ grp.forEach(id=>{
+        blockTop.set(id,blockTop.get(id)+dy); blockBot.set(id,blockBot.get(id)+dy);
+        listKeys(id).forEach(lid=>listArr(id,lid).forEach(p=>pinY.set(id+SOH+p.key,pinY.get(id+SOH+p.key)+dy))); }); }
+      y+=(hi-lo)+RANGGAP; });
+    slidPills.forEach(sp=>{ if(sp.id!=null){ sp.y1=blockTop.get(sp.id); sp.y2=blockBot.get(sp.id); } });
+  }
+
   let yMin=Infinity,yMax=-Infinity;
   nodeIds.forEach(id=>{ yMin=Math.min(yMin,blockTop.get(id)); yMax=Math.max(yMax,blockBot.get(id)); });
   if(!isFinite(yMin)){ yMin=topY; yMax=topY+200; }
@@ -2573,7 +2635,7 @@ function computeLayoutWith(eq, lk, peripheral){
   else if(r0>A3){ const nh=Math.min(bbox.w/A3, bbox.h*GONFLE_MAX);
     if(nh>bbox.h){ bbox.y-=(nh-bbox.h)/2; bbox.h=nh; } }
 
-  const geom={columns,colOf,colX,colW,chW,nCols,yMin,yMax,pills:slidPills};
+  const geom={columns,colOf,colX,colW,chW,nCols,yMin,yMax,pills:slidPills,serp:SERPENTIN>0?nRang:0};
   return {rails:[],comps:compList,srcs:[],links,bbox,isRail,nets,find,
     railByName:new Map(),compByName,geom};
 }
@@ -2605,6 +2667,7 @@ let SEG_STRIP=false;   // candidat « rails » : un gros bornier est découpé e
 let TAP_GROUP=false;   // candidat « voisinage » : les appareils piqués sur une MÊME borne se rassemblent
 let PIN_SWAP=false;    // candidat « bornes croisées » : on échange deux bornes d'un appareil pour dénouer deux fils
 let SIDE_FREE=false;   // candidat « flancs indépendants » : les deux faces d'un bornier s'empilent séparément
+let SERPENTIN=0;       // candidat de secours « serpentin » : replie les colonnes en rangées de N (0 = jamais)
 function countStraight(wires){ return wires.filter(w=>w.pts.length===2).length; }
 // mesure la largeur de goulotte réellement occupée par les pistes (segments
 // verticaux) de chaque colonne, pour resserrer les colonnes à la 2e passe.
@@ -2695,7 +2758,7 @@ function auditSchema(){
    Renvoie la mise en page, son routage déjà calculé dans `_routing`. */
 function layoutTry(eq, lk, seed, opt){
   const F = opt || {};
-  const save = {CHW_FIX, OPT_NOGROW, SPLIT_COIL, PF_OPT, USE_CLUSTER, COND_PINS, ROUTE_SEED, SPREAD_LEAF, SEG_STRIP, TAP_GROUP, PIN_SWAP, SIDE_FREE};
+  const save = {CHW_FIX, OPT_NOGROW, SPLIT_COIL, PF_OPT, USE_CLUSTER, COND_PINS, ROUTE_SEED, SPREAD_LEAF, SEG_STRIP, TAP_GROUP, PIN_SWAP, SIDE_FREE, SERPENTIN};
   try{
     CHW_FIX     = F.chw !== undefined ? F.chw : null;
     OPT_NOGROW  = !!F.nogrow;
@@ -2709,6 +2772,7 @@ function layoutTry(eq, lk, seed, opt){
     TAP_GROUP   = !!F.tapgrp;
     PIN_SWAP    = !!F.pinswap;
     SIDE_FREE   = !!F.sidefree;
+    SERPENTIN   = F.serp|0;
     const L = computeLayoutWith(eq, lk, seed);
     L._routing = routeAll(L);
     return L;
@@ -2717,13 +2781,14 @@ function layoutTry(eq, lk, seed, opt){
     PF_OPT=save.PF_OPT; USE_CLUSTER=save.USE_CLUSTER; COND_PINS=save.COND_PINS;
     ROUTE_SEED=save.ROUTE_SEED; SPREAD_LEAF=save.SPREAD_LEAF; SEG_STRIP=save.SEG_STRIP;
     TAP_GROUP=save.TAP_GROUP; PIN_SWAP=save.PIN_SWAP; SIDE_FREE=save.SIDE_FREE;
+    SERPENTIN=save.SERPENTIN;
   }
 }
 function computeLayout(eq, lk){
   // Ceinture ET bretelles : layoutTry garantit déjà qu'aucun drapeau ne fuit,
   // mais on repart d'un état neutre à l'entrée au cas où du code extérieur en
   // aurait laissé un actif.
-  USE_CLUSTER=false; ROUTE_SEED=false; SPLIT_COIL=false; COND_PINS=false; PF_OPT=false; OPT_NOGROW=false; CHW_FIX=null; SPREAD_LEAF=false; SEG_STRIP=false; TAP_GROUP=false; PIN_SWAP=false; SIDE_FREE=false;
+  USE_CLUSTER=false; ROUTE_SEED=false; SPLIT_COIL=false; COND_PINS=false; PF_OPT=false; OPT_NOGROW=false; CHW_FIX=null; SPREAD_LEAF=false; SEG_STRIP=false; TAP_GROUP=false; PIN_SWAP=false; SIDE_FREE=false; SERPENTIN=0;
   // --- mesures de qualité d'un essai, partagées par les deux modes ---
   // nombre de segments de fil qui traversent un bloc (doit rester à 0)
   const inBlocOf=L=>{ let n=0; const cs=L.comps;
@@ -2821,6 +2886,48 @@ function computeLayout(eq, lk){
     const s3=countStraight(L3._routing.wires), s0=countStraight(best._routing.wires);
     const c3=countCrossings(L3._routing.wires), c0=countCrossings(best._routing.wires);
     if(inBloc(L3)<=inBloc(best) && (s3>s0 || (s3===s0 && c3<=c0))) best=L3;
+  }catch(_){ }
+  /* 4e passe — SECOURS « SERPENTIN » : replier un dessin en ruban.
+     Une chaîne de vingt équipements en série sortait à 3 906 x 114, soit 34:1,
+     avec 100 % de fils droits. Le score du concours le trouvait parfait ; il
+     n'entre sur aucune feuille. On ne peut pas le lire, on peut seulement le
+     faire défiler — et un schéma qu'on fait défiler n'est plus un schéma.
+     Le concours ne peut pas juger ça lui-même : son score compte les fils
+     droits, et TOUT repli en coûte au moins un. C'est donc une passe de
+     SECOURS, déclenchée seulement quand le dessin est vraiment un ruban
+     (plus de 2,2 fois plus large que haut), et acceptée seulement si elle
+     rapproche nettement le format du papier sans plier plus d'un fil par
+     report de rangée. Un dessin qui tient déjà sur une feuille n'y passe
+     jamais : le contrat réel de référence est à 1,41, il n'est pas concerné. */
+  try{
+    const emprise=L=>{ let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+      L.comps.forEach(c=>{ x0=Math.min(x0,c.x); x1=Math.max(x1,c.x+c.w);
+        y0=Math.min(y0,c.y); y1=Math.max(y1,c.y+c.h); });
+      return {w:Math.max(1,x1-x0), h:Math.max(1,y1-y0)}; };
+    const A3=1.414;
+    const ecart=L=>{ const e=emprise(L), r=e.w/e.h; return r>A3? r/A3 : A3/r; };
+    const e0=emprise(best), r0=e0.w/e0.h;
+    const nc=(best.geom&&best.geom.nCols)||0;
+    if(r0>2.2 && nc>=4){
+      // nombre de rangées visé : après repli en R rangées le dessin fait à peu
+      // près (W/R) de large sur (R x H) de haut, donc R = racine(rapport/A3).
+      const R0=Math.max(2,Math.min(6,Math.round(Math.sqrt(r0/A3))));
+      const s0=countStraight(best._routing.wires);
+      // densité : surface des blocs rapportée à leur emprise. À format égal, le
+      // repli qui laisse le moins de blanc est le plus lisible.
+      const densite=L=>{ const e=emprise(L); let a=0; L.comps.forEach(c=>a+=c.w*c.h); return a/(e.w*e.h); };
+      let d0=ecart(best), q0=0, vus=new Set();
+      [R0,R0+1,R0+2,R0-1].filter(k=>k>=2).forEach(k=>{
+        const W=Math.ceil(nc/k); if(W<2||vus.has(W))return; vus.add(W);
+        let L=null;
+        try{ L=layoutTry(eq,lk,bOpt,{chw:bFix,cluster:bClus,routeSeed:bRoute,split:bSplit,serp:W}); }catch(_){ return; }
+        if(!L||inBloc(L)>0) return;                       // invariant sacré
+        if(countStraight(L._routing.wires) < s0-k) return; // au plus un pli par report
+        const d=ecart(L), q=densite(L);
+        // on ne replie que si le format gagne NETTEMENT ; entre deux replis
+        // de format comparable (à 10 % près), le plus dense l'emporte.
+        if(d<d0*0.9 || (best.geom&&best.geom.serp&&d<d0*1.1&&q>q0)){ best=L; d0=Math.min(d0,d); q0=q; } });
+    }
   }catch(_){ }
   return best;
 }

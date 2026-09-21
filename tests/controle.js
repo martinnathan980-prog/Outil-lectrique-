@@ -82,13 +82,22 @@ function titre(t) { console.log('\n' + t); }
        topologie devient absurde. */
     ['maillage — 7 équipements tous reliés', 20,
       () => { const a = []; for (let i = 0; i < 7; i++) for (let j = i + 1; j < 7; j++) a.push(['M' + i, String(j), 'M' + j, String(i)]); return a; }],
-    ['chaîne — 30 équipements en série', 90,
-      () => { const a = []; for (let i = 0; i < 30; i++) a.push(['N' + i, '2', 'N' + (i + 1), '1']); return a; }],
+    /* LA CHAÎNE : LE SEUIL DE DROITURE SEUL SE TROMPAIT DE CRITÈRE.
+       Trente équipements en série font trente colonnes. Dessinés d'affilée,
+       leurs trente fils sortent tous droits — 100 %, seuil largement tenu —
+       pour une planche de 5 800 x 114, soit un ruban à 50:1 qui ne tient sur
+       aucune feuille et qu'on ne peut que faire DÉFILER. Le contrôle validait
+       donc un dessin illisible, et aurait refusé tout repli qui le rend
+       lisible. Le moteur replie maintenant ce cas en rangées (serpentin) : un
+       fil par report se plie, 25 sur 30 restent droits, et le format passe de
+       50:1 à 0,9:1. On mesure donc les DEUX : la droiture ET le format. */
+    ['chaîne — 30 équipements en série', 80,
+      () => { const a = []; for (let i = 0; i < 30; i++) a.push(['N' + i, '2', 'N' + (i + 1), '1']); return a; }, 3],
     ['peigne — 3 départs sur la même borne (barrette)', 90,
       () => [['SRC', '12', 'A1', '3'], ['SRC', '12', 'A2', '3'], ['SRC', '12', 'A3', '3'],
              ['A1', '8', 'B1', '2'], ['A2', '8', 'B2', '2']]]
   ];
-  for (const [nom, seuil, gen] of formes) {
+  for (const [nom, seuil, gen, fmax] of formes) {
     const r = await page.evaluate(lignes => {
       state.lk = lignes.map(l => ({ from: l[0], fromTerm: l[1], to: l[2], toTerm: l[3],
         nature: '', cable: '', ctype: '', route: '', plan: '', pn1: '', pn2: '' }));
@@ -96,12 +105,20 @@ function titre(t) { console.log('\n' + t); }
       OVR.clear(); ORDH.clear(); state.sel = null; state.xroots = null; state.forceFull = true;
       render();
       const a = auditSchema();
+      // format de l'EMPRISE DES BLOCS (pas de la feuille, qui est toujours au
+      // format A) : un dessin à 50:1 ne tient sur aucune page.
+      let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+      LAST.layout.comps.forEach(c => { x0 = Math.min(x0, c.x); x1 = Math.max(x1, c.x + c.w);
+        y0 = Math.min(y0, c.y); y1 = Math.max(y1, c.y + c.h); });
+      const w = Math.max(1, x1 - x0), h = Math.max(1, y1 - y0);
       return { b: a.blocs, f: a.fils, d: Math.round(a.tauxDroits * 100), c: a.croisements,
-               ib: a.filsDansBloc, ch: a.blocsChevauches };
+               ib: a.filsDansBloc, ch: a.blocsChevauches,
+               fmt: Math.round(100 * Math.max(w / h, h / w)) / 100 };
     }, gen());
-    ok(nom, r.ib === 0 && r.ch === 0 && r.d >= seuil,
+    ok(nom, r.ib === 0 && r.ch === 0 && r.d >= seuil && (!fmax || r.fmt <= fmax),
       r.b + ' blocs · ' + r.f + ' fils · ' + r.d + ' % droits (seuil ' + seuil + ') · '
-      + r.c + ' croisements · filsDansBloc=' + r.ib + ' chevauch=' + r.ch);
+      + r.c + ' croisements · filsDansBloc=' + r.ib + ' chevauch=' + r.ch
+      + (fmax ? (' · format ' + r.fmt + ':1 (max ' + fmax + ')') : ''));
   }
 
   // ---- 3. le contrat d'essai ------------------------------------------
