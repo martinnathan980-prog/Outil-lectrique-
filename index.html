@@ -253,9 +253,6 @@ main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
   border-top:1px solid var(--line);background:var(--chrome3);border-radius:0 0 12px 12px}
 .modal .help{margin:0 0 12px;color:var(--ink-dim);font-size:11.5px;line-height:1.6}
 .modal textarea{min-height:130px;font-family:var(--mono);font-size:11.5px;resize:vertical}
-.imp-col{margin-bottom:14px}
-.imp-col h4{margin:0 0 6px;font-size:10.5px;font-weight:600;letter-spacing:.6px;
-  text-transform:uppercase;color:var(--ink-faint)}
 
 /* La fiche qui s'ouvre au clic sur un bloc ou un fil */
 #pop{position:absolute;display:none;z-index:40;background:var(--chrome2);
@@ -474,7 +471,6 @@ main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
 <div class="modal-bg" id="modal"><div class="modal">
   <h2>Importer</h2>
   <div class="body">
-    <div class="imode"><button class="seg on" id="mode-db">Table unique (base)</button><button class="seg" id="mode-two">Deux listes</button></div>
     <div id="pane-db">
       <p class="help">Colle ta base de câblage ou <b>dépose un fichier</b> : une ligne = une liaison. Colonnes (avec ou sans en-tête, séparées par <b>;</b> <b>,</b> ou tabulation) : <b>Équip.1 ; Borne ; PN ; Équip.2 ; Borne ; PN ; Câble ; Type ; Route ; Plan</b>. Les en-têtes sont reconnus automatiquement ; sinon cet ordre est supposé. Plusieurs plans → un sélecteur apparaît.</p>
       <div id="db-drop" class="dropzone">
@@ -486,14 +482,6 @@ main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
       <div id="db-fileinfo" class="dz-info"></div>
       <p class="hint" style="margin:10px 0 4px">…ou colle directement les données :</p>
       <textarea id="imp-db" placeholder="Equip1;Borne;PN;Equip2;Borne;PN;Cable;Type;Route;Plan&#10;Q1;2;2;XC1;1;1;W1;4G6;Goulotte;1&#10;XC1;1;1;KM1;1;1;W2;4G6;Goulotte;1"></textarea>
-      <div style="margin-top:8px"><button class="ghost" id="db-sample">Remplir un exemple</button></div>
-    </div>
-    <div id="pane-two" style="display:none">
-      <p class="help">Colle deux blocs (CSV, ou cellules Excel = tabulation). En-têtes éventuels ignorés.</p>
-      <div class="imp-col"><h4>Équipements — repère, désignation, type</h4>
-        <textarea id="imp-eq" placeholder="Q1 ; Disjoncteur 2P 16A ; disjoncteur&#10;M1 ; Moteur pompe ; moteur"></textarea></div>
-      <div class="imp-col"><h4>Liaisons — de, borne, vers, borne, nature</h4>
-        <textarea id="imp-lk" placeholder="L1 ; ; Q1 ; 1 ; phase&#10;Q1 ; 2 ; X1 ; L ; phase&#10;X1 ; N ; N ; ; neutre"></textarea></div>
     </div>
   </div>
   <div class="foot"><button id="imp-cancel">Annuler</button><button class="primary" id="imp-ok">Charger</button></div>
@@ -511,13 +499,6 @@ main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
   <div class="body"><div id="rb-body" class="rrep"></div></div>
   <div class="foot"><button id="rb-copy">Copier le rapport</button><button class="primary" id="rb-close">Fermer</button></div>
 </div></div>
-<datalist id="types">
-  <option value="disjoncteur"></option><option value="sectionneur"></option><option value="contacteur"></option>
-  <option value="fusible"></option><option value="moteur"></option><option value="prise"></option>
-  <option value="prise de coupure"></option><option value="bornier"></option><option value="éclairage"></option>
-  <option value="voyant"></option><option value="interrupteur"></option><option value="bouton"></option>
-  <option value="transformateur"></option><option value="source"></option><option value="capteur"></option><option value="relais"></option>
-</datalist>
 <!-- Le lecteur de fichiers Excel est TOUT EN BAS de ce fichier, apres le
      code de l'outil : il fait 861 Ko de charabia minifie et il n'a rien a
      faire au milieu de code qu'on relit. -->
@@ -529,9 +510,6 @@ main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
   .cbrow{display:flex;flex-direction:column;gap:1px;padding:6px 4px;border-bottom:1px solid #262c34}
   .cbname{font-family:var(--mono);font-size:11.5px;color:var(--ink);font-weight:600}
   .cbmeta{font-family:var(--mono);font-size:10px;color:var(--ink-faint)}
-  .imode{display:flex;gap:6px;margin-bottom:10px}
-  .imode .seg{flex:1;background:var(--chrome3);border:1px solid var(--line);color:var(--ink-dim)}
-  .imode .seg.on{background:var(--accent-dim);border-color:var(--accent);color:#eaf3fc}
   .infoline{display:flex;justify-content:space-between;gap:10px;padding:5px 2px;border-bottom:1px solid #262c34;font-family:var(--mono);font-size:11.5px}
   .infoline .k{color:var(--ink-faint)} .infoline .v{color:var(--ink);text-align:right}
   .btbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;margin-top:4px}
@@ -630,9 +608,6 @@ function railKind(name){
   if(n==='L1'||n==='L2'||n==='L3'||n==='L') return 'phase';
   return 'ctrl';
 }
-function phaseColorByName(n){ n=String(n||'').toUpperCase();
-  if(n==='L2') return 'black'; if(n==='L3') return 'grey'; return 'brown'; }
-const COL={brown:'#7a4a2a',black:'#1b1f24',grey:'#6b7480',blue:'#1668c2',green:'#1f8a4c',yellow:'#e8c93a',red:'#c0392b',ctrl:'#c0392b',misc:'#33414d'};
 
 /* ═══ LE REPÈRE AÉRONAUTIQUE PORTE SON CODE AU MILIEU ═══════════════════════
    inferType ne lisait que les LETTRES DE TÊTE, et la table PREFIX qu'il
@@ -2539,12 +2514,12 @@ function computeLayoutWith(eq, lk, peripheral){
   /* ===== ÉTAPE 10 — LIAISONS, COULEURS, CADRE DE PAGE ======================= */
   // --- nets + couleurs
   const {find,nets}=buildNets(lk);
-  function netColor(root){ const net=nets.get(root); if(!net)return '#26323f';
-    let phase=null,hasN=false,hasPE=false,ctrl=false;
-    net.pins.forEach(p=>{ const node=p.split(SOH)[0]; if(isRail(node)){ const k=railKind(node);
-      if(k==='phase')phase=node; else if(k==='neutre')hasN=true; else if(k==='terre')hasPE=true; else ctrl=true; } });
-    if(hasPE)return COL.green; if(hasN)return COL.blue; if(phase)return COL[phaseColorByName(phase)];
-    if(ctrl)return COL.ctrl; return '#26323f'; }
+  /* UNE SEULE ENCRE. netColor teintait chaque fil selon la phase de son
+     potentiel — brun L1, noir L2, gris L3, bleu N, vert PE, rouge commande :
+     la convention NF C 15-100 d'une armoire basse tension. Sur un faisceau
+     d'aéronef aucune de ces phases n'existe ; la fonction rendait toujours son
+     gris par défaut, après avoir parcouru le net pour rien. */
+  const netColor=()=>'#26323f';
 
   // --- liaisons avec extrémités résolues
   const links=lk.map((l,li)=>{
@@ -3606,7 +3581,7 @@ function wireSvg(w,bridges,hbridges){ const d=wirePath(w.pts,bridges,hbridges);
   // attributs de repérage : net (surbrillance de tout le potentiel), extrémités
   // (illumination des fils d'un équipement au survol)
   const a=`data-net="${escA(w.net)}" data-a="${escA(w.from)}" data-b="${escA(w.to)}"`;
-  if(w.color===COL.green) return `<path class="cab" ${a} d="${d}" stroke="${COL.green}"/><path class="cab" ${a} d="${d}" stroke="${COL.yellow}" stroke-dasharray="6 6"/>`;
+  // (le fil de terre vert-jaune rayé d'une armoire n'existe pas sur un faisceau)
   return `<path class="cab" ${a} d="${d}" stroke="${w.color}"/>`;
 }
 
@@ -5843,14 +5818,6 @@ function zonesExemple(){
   ZONES.src='exemple';
   return {devices:ZONES.map.size, zones:Z.length, rows};
 }
-function zonesModele(){
-  // squelette a remplir : la liste de MES equipements, une colonne zone vide
-  const dn=d=>String(d||'').toUpperCase().replace(/\s+/g,'');
-  const devs=new Set(); (state.lk||[]).forEach(l=>{ devs.add(dn(l.from)); devs.add(dn(l.to)); });
-  const lignes=['Device;Zone;Cote;Dedans;X_mm'];
-  Array.from(devs).filter(Boolean).sort().forEach(d=>lignes.push(d+';;;;'));
-  return lignes.join('\n');
-}
 
 
 /* ===========================================================================
@@ -6425,7 +6392,7 @@ function openEditor(c,sx,sy){ state.sel=c.name; render();
   p.innerHTML=`<h5>Équipement — ${esc(c.name)}</h5>
     <div class="field"><label>Repère</label><input id="ed-rep" value="${esc(c.name)}"></div>
     <div class="field"><label>Désignation</label><input id="ed-des" value="${esc(c.o.designation||'')}"></div>
-    <div class="field"><label>Type</label><input id="ed-typ" list="types" value="${esc(c.o.type||'')}" placeholder="${esc(inferType(c.name).t)}"></div>
+    <div class="field"><label>Type</label><input id="ed-typ" value="${esc(c.o.type||'')}" placeholder="${esc(inferType(c.name).t)}"></div>
     <div style="margin-top:8px;font-size:10px;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-faint)">Bornes & raccordements <span style="color:var(--accent-dim)">(${cn.length})</span></div>
     <div style="max-height:150px;overflow:auto"><table class="btbl"><thead><tr><th>Borne</th><th>Vers</th><th>Câble</th></tr></thead><tbody>${rows}</tbody></table></div>
     ${nrm}
@@ -6763,116 +6730,10 @@ function bindPanel(){
 
 function splitLine(line){ if(line.includes('\t'))return line.split('\t'); if(line.includes(';'))return line.split(';'); return line.split(','); }
 function looksHeader(tok){ return /^(rep[eè]re|d[eé]signation|type|de|from|vers|to|nature|borne|equip)/i.test((tok||'').trim()); }
-function parseImport(){
-  const etxt=document.getElementById('imp-eq').value, ltxt=document.getElementById('imp-lk').value;
-  const eq=[]; etxt.split(/\r?\n/).forEach(line=>{ if(!line.trim())return; const c=splitLine(line).map(s=>s.trim());
-    if(looksHeader(c[0])&&!eq.length&&!/\d/.test(c[0]))return; if(!c[0])return; eq.push({repere:c[0],designation:c[1]||'',type:c[2]||''}); });
-  const lk=[]; ltxt.split(/\r?\n/).forEach(line=>{ if(!line.trim())return; const c=splitLine(line).map(s=>s.trim());
-    if(looksHeader(c[0])&&!lk.length)return; if(!c[0]||!c[2])return; lk.push({from:c[0],fromTerm:c[1]||'',to:c[2],toTerm:c[3]||'',nature:c[4]||''}); });
-  if(lk.length){ state.eq=eq; state.lk=lk; OVR.clear(); ORDH.clear(); state.sel=null; state.xroots=null; state.forceFull=false; syncTables(); render(); fit(); closeModal(); }
-  else alert('Aucune liaison valide détectée. Format : de ; borne ; vers ; borne ; nature');
-}
 function openModal(){ document.getElementById('modal').style.display='flex'; }
 function closeModal(){ document.getElementById('modal').style.display='none'; }
 
-const SAMPLE={
-  eq:[
-    {repere:'G1',designation:'Réseau 400V/N',type:''},
-    {repere:'Q1',designation:'Disjoncteur 2P 16A',type:''},
-    {repere:'X1',designation:'Prise 2P+T 16A',type:''},
-    {repere:'Q2',designation:'Disjoncteur 1P 10A',type:''},
-    {repere:'S1',designation:'Interrupteur',type:''},
-    {repere:'E1',designation:'Éclairage',type:''},
-    {repere:'Q3',designation:'Disjoncteur 3P 25A',type:''},
-    {repere:'KM1',designation:'Contacteur',type:''},
-    {repere:'M1',designation:'Moteur pompe 3~',type:''},
-    {repere:'XC1',designation:'Prise de coupure 3P',type:'prise de coupure'},
-  ],
-  lk:[
-    {from:'G1',fromTerm:'L1',to:'L1',toTerm:'',nature:'phase'},
-    {from:'G1',fromTerm:'L2',to:'L2',toTerm:'',nature:'phase'},
-    {from:'G1',fromTerm:'L3',to:'L3',toTerm:'',nature:'phase'},
-    {from:'G1',fromTerm:'N',to:'N',toTerm:'',nature:'neutre'},
-    {from:'G1',fromTerm:'PE',to:'PE',toTerm:'',nature:'terre'},
-    {from:'L1',fromTerm:'',to:'Q1',toTerm:'1',nature:'phase'},
-    {from:'Q1',fromTerm:'2',to:'X1',toTerm:'L',nature:'phase'},
-    {from:'X1',fromTerm:'N',to:'N',toTerm:'',nature:'neutre'},
-    {from:'X1',fromTerm:'PE',to:'PE',toTerm:'',nature:'terre'},
-    {from:'L1',fromTerm:'',to:'Q2',toTerm:'1',nature:'phase'},
-    {from:'Q2',fromTerm:'2',to:'S1',toTerm:'1',nature:'phase'},
-    {from:'S1',fromTerm:'2',to:'E1',toTerm:'1',nature:'phase'},
-    {from:'E1',fromTerm:'2',to:'N',toTerm:'',nature:'neutre'},
-    {from:'L1',fromTerm:'',to:'Q3',toTerm:'1',nature:'phase'},
-    {from:'L2',fromTerm:'',to:'Q3',toTerm:'3',nature:'phase'},
-    {from:'L3',fromTerm:'',to:'Q3',toTerm:'5',nature:'phase'},
-    {from:'Q3',fromTerm:'2',to:'XC1',toTerm:'1',nature:'phase'},
-    {from:'Q3',fromTerm:'4',to:'XC1',toTerm:'2',nature:'phase'},
-    {from:'Q3',fromTerm:'6',to:'XC1',toTerm:'3',nature:'phase'},
-    {from:'XC1',fromTerm:'1',to:'KM1',toTerm:'1',nature:'phase'},
-    {from:'XC1',fromTerm:'2',to:'KM1',toTerm:'3',nature:'phase'},
-    {from:'XC1',fromTerm:'3',to:'KM1',toTerm:'5',nature:'phase'},
-    {from:'KM1',fromTerm:'2',to:'M1',toTerm:'U',nature:'phase'},
-    {from:'KM1',fromTerm:'4',to:'M1',toTerm:'V',nature:'phase'},
-    {from:'KM1',fromTerm:'6',to:'M1',toTerm:'W',nature:'phase'},
-    {from:'M1',fromTerm:'PE',to:'PE',toTerm:'',nature:'terre'},
-  ]
-};
-/* OUVRIR SON CONTRAT DIRECTEMENT. Pour charger ses liaisons il fallait
-   ouvrir le classeur ailleurs, tout selectionner, copier, revenir dans
-   l'outil, coller dans une zone de texte, puis valider. Cinq gestes hors de
-   l'outil pour la premiere chose qu'on veut faire. Le fichier se lit ici,
-   comme la base de reference — et comme elle, il ne quitte jamais le
-   navigateur. */
-async function chargerContrat(file){
-  if(!file) return;
-  try{
-    let txt;
-    if(/\.xls[xmb]?$/i.test(file.name)){
-      await ensureXLSX();
-      const wb=window.XLSX.read(await file.arrayBuffer(),{type:'array'});
-      const ws=wb.Sheets[wb.SheetNames[0]];
-      if(!ws) throw new Error('classeur vide');
-      txt=rowsToText(window.XLSX.utils.sheet_to_json(ws,{header:1,blankrows:false,defval:''}));
-    } else txt=await file.text();
-    document.getElementById('imp-db').value=txt;
-    parseDB(); fit();
-    if(!state.lk.length) alert('Aucune liaison reconnue dans « '+file.name+' ». Il faut au moins deux colonnes d\u2019equipement et leurs bornes.');
-  }catch(e){ alert('Fichier illisible : '+(e&&e.message?e.message:e)); }
-}
-
-function loadSample(){ state.eq=SAMPLE.eq.map(o=>({...o})); state.lk=SAMPLE.lk.map(o=>({...o})); OVR.clear(); ORDH.clear(); state.sel=null; state.xroots=null; state.forceFull=false;
-  state.meta.title='Installation — armoire TGBT'; syncTables(); render(); fit(); }
 function clearAll(){ if(!confirm('Effacer tous les équipements et liaisons ?'))return; histPush('tout vider'); state.eq=[]; state.lk=[]; OVR.clear(); ORDH.clear(); state.sel=null; state.xroots=null; state.forceFull=false; syncTables(); render(); sauverContrat(); }
-
-const DB_SAMPLE=`Equip1;Borne;PN;Equip2;Borne;PN;Cable;Type;Route;Plan
-L1;;;Q1;1;;;;;1
-L2;;;Q1;3;;;;;1
-L3;;;Q1;5;;;;;1
-Q1;2;201;XC1;1;201;W1;4G6;Goulotte princ.;1
-Q1;4;202;XC1;2;202;W1;4G6;Goulotte princ.;1
-Q1;6;203;XC1;3;203;W1;4G6;Goulotte princ.;1
-XC1;1;201;KM1;1;201;W2;4G6;Goulotte princ.;1
-XC1;2;202;KM1;3;202;W2;4G6;Goulotte princ.;1
-XC1;3;203;KM1;5;203;W2;4G6;Goulotte princ.;1
-KM1;2;U1;M1;U;U1;W3;4G10;Chemin moteur;1
-KM1;4;V1;M1;V;V1;W3;4G10;Chemin moteur;1
-KM1;6;W1;M1;W;W1;W3;4G10;Chemin moteur;1
-M1;PE;;PE;;;W3;4G10;Chemin moteur;1
-+24V;;;SB1;1;;;;;2
-SB1;2;24;KA1;A1;24;W20;2x1.5;Goulotte cmd;2
-KA1;A2;;0V;;;;;;2
-+24V;;;KA1;13;;;;;2
-KA1;14;25;KM1;A1;25;W21;2x1.5;Goulotte cmd;2
-KM1;A2;;0V;;;;;;2
-+24V;;;KA1;23;;;;;2
-KA1;24;26;H1;X1;26;W22;2x1.5;Goulotte cmd;2
-H1;X2;;0V;;;;;;2`;
-let impMode='db';
-function setImpMode(m){ impMode=m;
-  document.getElementById('pane-db').style.display=m==='db'?'':'none';
-  document.getElementById('pane-two').style.display=m==='two'?'':'none';
-  document.getElementById('mode-db').classList.toggle('on',m==='db');
-  document.getElementById('mode-two').classList.toggle('on',m==='two'); }
 
 function openDrawer(){ const a=document.querySelector('aside'); if(a)a.classList.add('open'); const b=document.getElementById('drawerBg'); if(b)b.classList.add('show'); }
 function closeDrawer(){ const a=document.querySelector('aside'); if(a)a.classList.remove('open'); const b=document.getElementById('drawerBg'); if(b)b.classList.remove('show'); }
@@ -6897,10 +6758,7 @@ function init(){
     const g=document.getElementById('btnPng'); if(g) g.onclick=exportPNG;
     const i=document.getElementById('btnPrint'); if(i) i.onclick=imprimerFolio; }
   document.getElementById('imp-cancel').onclick=closeModal;
-  document.getElementById('imp-ok').onclick=()=>{ if(impMode==='db') parseDB(); else parseImport(); };
-  document.getElementById('mode-db').onclick=()=>setImpMode('db');
-  document.getElementById('mode-two').onclick=()=>setImpMode('two');
-  document.getElementById('db-sample').onclick=()=>{ document.getElementById('imp-db').value=DB_SAMPLE; dbInfo(''); };
+  document.getElementById('imp-ok').onclick=parseDB;
   bindImportDrop();
   normsLoad(); syncNorms();
   { const nf=document.getElementById('nm-file');
@@ -6946,7 +6804,7 @@ function init(){
      deux masses, une reprise de blindage. Le premier regard montre ce que
      l'outil FAIT. */
   /* ON RETROUVE SON CONTRAT. À défaut, l'exemple — jamais un écran vide. */
-  if(!relireContrat()){ try{ contratEssai(); }catch(_){ loadSample(); } fit(); ajusterFolios(); }
+  if(!relireContrat()){ contratEssai(); fit(); ajusterFolios(); }
   syncHist();
   requestAnimationFrame(fit);
 }
