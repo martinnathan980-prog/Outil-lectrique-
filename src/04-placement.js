@@ -28,6 +28,11 @@ function placer(G, options) {
   const graine = opt.graine || 0;                 // 0 = plus fort degré, 'loin' = point le plus éloigné, n = décalage
   const SERP = opt.serpentin | 0;                 // largeur de rangée (0 = pas de repli)
   const mediane = a => { a = a.slice().sort((x, y) => x - y); return a[a.length >> 1]; };
+  /* Un SHUNT — deux bornes d'un même bornier pontées — n'est pas un fil :
+     il ne prend ni goulotte ni ordonnée, le dessin le trace dans la réglette. */
+  const shunts = new Set();
+  lk.forEach((l, li) => { const A = bouts.get(li + ':A'), B = bouts.get(li + ':B');
+    if (A.cle !== B.cle && nid(A.nom, A.cle) === nid(B.nom, B.cle) && estBornier(A.nom)) shunts.add(li); });
 
   /* ===== 1. NIVEAUX : chaque nœud reçoit sa colonne ======================= */
   const niveau = new Map();
@@ -50,6 +55,18 @@ function placer(G, options) {
         for (const c of [l0 - 1, l0 + 1]) { if (c < 0) continue; const cc = cout(n, c); if (cc < bc - 0.01) { bc = cc; best = c; } }
         if (best !== l0) { niveau.set(n, best); bouge = true; } }
       if (!bouge) break; }
+    // une feuille (tous ses voisins dans une même colonne) coûte autant des
+    // deux côtés : sur demande, elle va du côté le moins chargé — les colonnes
+    // s'équilibrent, mais le flanc opposé du hub peut se charger de fils pliés ;
+    // c'est au concours de trancher, pas à cette règle
+    const charge = new Map(); const hauteur = n => noeuds.get(n).broches.length * PRH + 60;
+    ids.forEach(n => charge.set(niveau.get(n), (charge.get(niveau.get(n)) || 0) + hauteur(n)));
+    if (opt.equilibrer) ids.slice().sort((a, b) => hauteur(b) - hauteur(a)).forEach(n => {
+      const voisins = [...adj.get(n).keys()]; const autour = [...new Set(voisins.map(k => niveau.get(k)))]; if (autour.length !== 1) return;
+      if (voisins.length === 1 && adj.get(voisins[0]).size === 1) return;      // un îlot de deux blocs n'a pas de côté
+      const l0 = niveau.get(n), l1 = 2 * autour[0] - l0; if (Math.abs(l1 - l0) !== 2) return;
+      if ((charge.get(l1) || 0) + hauteur(n) >= (charge.get(l0) || 0)) return;
+      niveau.set(n, l1); charge.set(l0, charge.get(l0) - hauteur(n)); charge.set(l1, (charge.get(l1) || 0) + hauteur(n)); });
     const usuels = [...new Set(ids.map(n => niveau.get(n)))].sort((a, b) => a - b);
     const remap = new Map(usuels.map((l, i) => [l, i]));
     ids.forEach(n => niveau.set(n, remap.get(niveau.get(n))));
@@ -110,7 +127,7 @@ function placer(G, options) {
     return (colonneDe.get(nid(autreNom, autreCle)) || 0) < (colonneDe.get(id) || 0) ? 'L' : 'R'; };
   const goulotteDuBout = (id, flanc) => (colonneDe.get(id) || 0) + (flanc === 'R' ? 1 : 0);
   const chCount = new Array(nCols + 1).fill(0);
-  lk.forEach((l, li) => { const A = bouts.get(li + ':A'), B = bouts.get(li + ':B');
+  lk.forEach((l, li) => { if (shunts.has(li)) return; const A = bouts.get(li + ':A'), B = bouts.get(li + ':B');
     const cA = goulotteDuBout(nid(A.nom, A.cle), flancDuBout(A.nom, A.cle, B.nom, B.cle));
     const cB = goulotteDuBout(nid(B.nom, B.cle), flancDuBout(B.nom, B.cle, A.nom, A.cle));
     chCount[cA]++; if (cA !== cB) chCount[cB]++; });
@@ -121,7 +138,10 @@ function placer(G, options) {
   const largeurTotale = Math.max(cx, MARGE + 360);
 
   /* ===== 5. POSITION INITIALE, PUIS ORDONNANCEMENT ÉLASTIQUE ============= */
-  const xDe = new Map(); colonnes.forEach((c, i) => c.forEach(id => xDe.set(id, colX[i])));
+  // un bloc plus étroit que sa colonne (une masse) se range du côté de ses fils
+  const xDe = new Map(); colonnes.forEach((c, i) => c.forEach(id => { const w = largeurDe(id); let g = 0, d = 0;
+    if (w < colW[i]) chaqueBroche(id, p => (partenaires.get(id + SEP + p.cle) || []).forEach(q => { const cq = colonneDe.get(q.id) ?? 0; if (cq > i) d++; else if (cq < i) g++; }));
+    xDe.set(id, (d && !g) ? colX[i] + colW[i] - w : colX[i]); }));
   const yBroche = new Map(), hautDe = new Map(), basDe = new Map();
   const yB = (id, k) => yBroche.get(id + SEP + k);
   const glisser = (id, dy) => { chaqueBroche(id, p => yBroche.set(id + SEP + p.cle, yB(id, p.cle) + dy));
@@ -139,8 +159,14 @@ function placer(G, options) {
         clesListes(id).forEach(lid => liste(id, lid).forEach((p, j) => yBroche.set(id + SEP + p.cle, y + 16 + j * PRH)));
         basDe.set(id, y + hauteurEstimee(id)); cur[r] = y + hauteurEstimee(id) + VGAP; }); }); }
 
+  // les partenaires d'une borne, ceux de ses bornes pontées compris : deux
+  // bornes d'un shunt reçoivent le même barycentre et restent voisines
+  const partenairesExternes = (id, cle) => { const vus = new Set([cle]), pile = [cle], out = [];
+    while (pile.length) { const c = pile.pop(); (partenaires.get(id + SEP + c) || []).forEach(q => {
+      if (q.id !== id) out.push(q); else if (!vus.has(q.cle)) { vus.add(q.cle); pile.push(q.cle); } }); }
+    return out; };
   const trierBroches = () => { for (const id of ids) clesListes(id).forEach(lid => { const L = liste(id, lid); if (L.length < 2) return;
-    const sc = new Map(L.map(p => { const ps = partenaires.get(id + SEP + p.cle) || [];
+    const sc = new Map(L.map(p => { const ps = partenairesExternes(id, p.cle);
       if (!ps.length) return [p.cle, yB(id, p.cle)]; let s = 0; ps.forEach(q => s += yB(q.id, q.cle)); return [p.cle, s / ps.length]; }));
     L.sort((a, b) => sc.get(a.cle) - sc.get(b.cle)); }); };
   const trierColonnes = () => colonnes.forEach(c => { if (c.length < 2) return;
@@ -329,7 +355,7 @@ function placer(G, options) {
     // les bornes d'une réglette n'ont pas d'ordre imposé : elles se mettent face à leurs partenaires
     const reordonner = py => ids.forEach(id => { if (!estS.get(id)) return;
       clesListes(id).forEach(lid => { const L = liste(id, lid); if (L.length < 2) return;
-        const sc = new Map(L.map(p => { const ps = (partenaires.get(id + SEP + p.cle) || []).filter(q => q.id !== id);
+        const sc = new Map(L.map(p => { const ps = partenairesExternes(id, p.cle);
           let s = 0, c = 0; ps.forEach(q => { const y = py.get(PK(q.id, q.cle)); if (y != null) { s += y; c++; } });
           return [p.cle, c ? s / c : (py.get(PK(id, p.cle)) || 0)]; }));
         L.sort((a, b) => sc.get(a.cle) - sc.get(b.cle)); }); });
@@ -614,7 +640,7 @@ function placer(G, options) {
     ids.forEach(id => clesListes(id).forEach(lid => liste(id, lid).sort((a, b) => yB(id, a.cle) - yB(id, b.cle))));
   }
 
-  /* ===== 9. TASSEMENT, ÎLOTS, RANGÉES, FORMAT DE PAGE ==================== */
+  /* ===== 9. TASSEMENT, ÎLOTS, RANGÉES ==================================== */
   // toute bande vide sur toute la largeur se referme à un petit interstice
   { const GAPMIN = 44; const evs = ids.map(id => ({ t: hautDe.get(id), b: basDe.get(id) })).concat(pastilles.map(sp => ({ t: sp.y1, b: sp.y2 }))).sort((a, b) => a.t - b.t);
     const occ = []; evs.forEach(e => { const L = occ[occ.length - 1]; if (L && e.t <= L.b + GAPMIN) L.b = Math.max(L.b, e.b); else occ.push({ t: e.t, b: e.b }); });
@@ -643,7 +669,8 @@ function placer(G, options) {
       const rects = items.map(g => { const b = cadre(g); return { g, b, w: b.w + 2 * PAD, h: b.h + 2 * PAD, k: cleDe(g) }; });
       rects.sort((a, b) => (b.h - a.h) || (a.k - b.k));
       let MB = null; fixes.forEach(g => { const b = cadre(g); MB = MB ? { x0: Math.min(MB.x0, b.x0), y0: Math.min(MB.y0, b.y0), x1: Math.max(MB.x1, b.x0 + b.w), y1: Math.max(MB.y1, b.y0 + b.h) } : { x0: b.x0, y0: b.y0, x1: b.x0 + b.w, y1: b.y0 + b.h }; });
-      const ranger = capH => { const pos = []; const x0 = MB.x1 + 50; let x = x0, y = MB.y0, cw = 0, ybot = MB.y0, xr = x0;
+      // la première étagère se remplit sous l'îlot principal, les suivantes à sa droite
+      const ranger = capH => { const pos = []; let x = MB.x0, y = MB.y1, cw = MB.x1 - MB.x0 + 34, ybot = MB.y1, xr = MB.x1;
         rects.forEach(r => { if (y > MB.y0 && y + r.h > MB.y0 + capH) { x += cw; cw = 0; y = MB.y0; } pos.push({ r, x, y }); cw = Math.max(cw, r.w); ybot = Math.max(ybot, y + r.h); xr = Math.max(xr, x + r.w); y += r.h; });
         return { pos, W: xr - MB.x0, H: Math.max(MB.y1, ybot) - MB.y0 }; };
       const mh = Math.max(MB.y1 - MB.y0, 500); const cands = [0.8, 1, 1.3, 1.7, 2.2, 2.9].map(f => ranger(mh * f));
@@ -661,24 +688,6 @@ function placer(G, options) {
   let yMin = Infinity, yMax = -Infinity;
   ids.forEach(id => { yMin = Math.min(yMin, hautDe.get(id)); yMax = Math.max(yMax, basDe.get(id)); });
   if (!isFinite(yMin)) { yMin = HAUT_PAGE; yMax = HAUT_PAGE + 200; }
-  // format de page : on étale en hauteur, dans les bandes libres seulement (les
-  // fils droits le restent), plafonné pour ne pas distendre un dessin compact
-  { const cxs = ids.map(id => xDe.get(id)), cxe = ids.map(id => xDe.get(id) + largeurDe(id));
-    const contW = cxs.length ? Math.max(...cxe) - Math.min(...cxs) : 0, contH = yMax - yMin;
-    const cible = (contW / Math.max(1, contH) > 1.414) ? 1.414 : (1 / 1.414);
-    const surplus = Math.min(contW / cible - contH, contH * 0.65);
-    if (contW > 0 && contH > 0 && surplus > 20) {
-      const iv = ids.map(id => [hautDe.get(id), basDe.get(id)]).sort((a, b) => a[0] - b[0]); const libres = []; let fin = iv.length ? iv[0][1] : yMin;
-      for (let i = 1; i < iv.length; i++) { if (iv[i][0] > fin + 2) libres.push({ y: fin, ep: iv[i][0] - fin }); fin = Math.max(fin, iv[i][1]); }
-      if (libres.reduce((s, b) => s + b.ep, 0) > 10) {
-        const CAP = 140; let reste = surplus, actives = libres.slice(); libres.forEach(b => b.dy = 0);
-        for (let tour = 0; tour < 5 && reste > 1 && actives.length; tour++) { const part = reste / actives.length; let pris = 0; const suite = [];
-          actives.forEach(b => { const d = Math.max(0, Math.min(part, CAP - b.dy)); b.dy += d; pris += d; if (b.dy < CAP - 0.5) suite.push(b); }); reste -= pris; actives = suite; if (pris < 0.5) break; }
-        let cum = 0; libres.forEach(b => { cum += b.dy; b.cum = cum; });
-        const decal = y => { let d = 0; for (const b of libres) { if (y > b.y + b.ep / 2) d = b.cum; else break; } return d; };
-        ids.forEach(id => { const d = decal((hautDe.get(id) + basDe.get(id)) / 2); if (d) glisser(id, d); });
-        pastilles.forEach(sp => { const d = decal((sp.y1 + sp.y2) / 2); sp.y1 += d; sp.y2 += d; });
-        yMax += cum; } } }
 
   /* ===== 10. LES BLOCS ET LES LIAISONS, PRÊTS À DESSINER ================= */
   const comps = [], compDe = new Map();
@@ -693,7 +702,7 @@ function placer(G, options) {
     comps.push(c); compDe.set(id, c); if (!compDe.has(N.nom)) compDe.set(N.nom, c); }
   const links = lk.map((l, li) => { const A = bouts.get(li + ':A'), B = bouts.get(li + ':B'); const ia = nid(A.nom, A.cle), ib = nid(B.nom, B.cle);
     const sA = flancDuBout(A.nom, A.cle, B.nom, B.cle), sB = flancDuBout(B.nom, B.cle, A.nom, A.cle); const cA = compDe.get(ia), cB = compDe.get(ib);
-    return { i: li, ...l, boucle: l.de === l.vers && l.borneDe === l.borneVers,
+    return { i: li, ...l, boucle: l.de === l.vers && l.borneDe === l.borneVers, shunt: shunts.has(li),
       epA: { x: sA === 'R' ? cA.x + cA.w : cA.x, y: cA.parCle.get(A.cle).y, ch: goulotteDuBout(ia, sA), stub: sA === 'R' ? 'L' : 'R' },
       epB: { x: sB === 'R' ? cB.x + cB.w : cB.x, y: cB.parCle.get(B.cle).y, ch: goulotteDuBout(ib, sB), stub: sB === 'R' ? 'L' : 'R' } }; });
   // le cadre se cale sur les blocs dessinés, marges proportionnées, réserve pour le cartouche
@@ -738,36 +747,40 @@ function meilleurPlacement(liaisons) {
       const x0 = Math.min(a.x, b.x), x1 = Math.max(a.x, b.x), y0 = Math.min(a.y, b.y), y1 = Math.max(a.y, b.y);
       for (const c of L.comps) { if (x1 > c.x + 2 && x0 < c.x + c.w - 2 && y1 > c.y + 2 && y0 < c.y + c.h - 2) { n++; break; } } } }); return n; };
   const essayer = o => { const L = placer(G, o); L.routage = router(L); return L; };
-  let best = null, bScore = -1e18, bGraine = 0, bPeignes = Infinity;
-  graines.forEach(g => { const L = essayer({ graine: g });
-    const peignes = L.routage.barrettes.reduce((t, b) => t + Math.abs(b.y2 - b.y1), 0);
-    const score = compterDroits(L.routage.fils) - compterCroisements(L.routage.fils) / 120;
-    if (score > bScore || (score === bScore && best && peignes < bPeignes)) { best = L; bScore = score; bPeignes = peignes; bGraine = g; } });
+  const emprise = L => { let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+    L.comps.forEach(c => { x0 = Math.min(x0, c.x); x1 = Math.max(x1, c.x + c.w); y0 = Math.min(y0, c.y); y1 = Math.max(y1, c.y + c.h); });
+    return { w: Math.max(1, x1 - x0), h: Math.max(1, y1 - y0) }; };
+  const A3 = 1.414, ecart = L => { const e = emprise(L), r = e.w / e.h; return r > A3 ? r / A3 : A3 / r; };
+  // chaque graine, feuilles à droite puis équilibrées : la droiture décide,
+  // puis les croisements, puis la longueur des barrettes, puis le format
+  let best = null, bScore = -1e18, bOpt = {}, bPeignes = Infinity, bEcart = Infinity;
+  const candidats = []; graines.forEach(g => { candidats.push({ graine: g }); if (nB <= 120) candidats.push({ graine: g, equilibrer: true }); });
+  candidats.forEach(o => { const L = essayer(o);
+    const peignes = L.routage.barrettes.reduce((t, b) => t + Math.abs(b.y2 - b.y1), 0), ec = ecart(L);
+    const score = compterDroits(L.routage.fils) - compterCroisements(L.routage.fils, L.routage.barrettes) / 120;
+    if (score > bScore || (score === bScore && (peignes < bPeignes || (peignes === bPeignes && ec < bEcart - 0.01)))) {
+      best = L; bScore = score; bPeignes = peignes; bEcart = ec; bOpt = o; } });
   // resserrage : les goulottes reprennent la largeur que les pistes occupent
   // vraiment ; gardé si le dessin rétrécit d'au moins 3 % sans perdre plus d'un fil droit
   const largeur = L => Math.max(...L.comps.map(c => c.x + c.w));
   let bGoulottes = null;
   { const fix = goulottesOccupees(best);
-    if (fix) { const L2 = essayer({ graine: bGraine, goulottes: fix });
+    if (fix) { const L2 = essayer({ ...bOpt, goulottes: fix });
       if (compterDroits(L2.routage.fils) >= compterDroits(best.routage.fils) - 1 && largeur(L2) < largeur(best) * 0.97 && filsDansBloc(L2) <= filsDansBloc(best)) { best = L2; bGoulottes = fix; } } }
   // condensation par glissement de broches : gardée si aucun fil droit n'est
   // perdu et pas plus de croisements — elle rend les blocs compacts
-  { const L3 = essayer({ graine: bGraine, goulottes: bGoulottes, condenser: true });
+  { const L3 = essayer({ ...bOpt, goulottes: bGoulottes, condenser: true });
     const s3 = compterDroits(L3.routage.fils), s0 = compterDroits(best.routage.fils);
-    const c3 = compterCroisements(L3.routage.fils), c0 = compterCroisements(best.routage.fils);
+    const c3 = compterCroisements(L3.routage.fils, L3.routage.barrettes), c0 = compterCroisements(best.routage.fils, best.routage.barrettes);
     if (filsDansBloc(L3) <= filsDansBloc(best) && (s3 > s0 || (s3 === s0 && c3 <= c0))) best = L3; }
   // secours : serpentin
-  const emprise = L => { let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
-    L.comps.forEach(c => { x0 = Math.min(x0, c.x); x1 = Math.max(x1, c.x + c.w); y0 = Math.min(y0, c.y); y1 = Math.max(y1, c.y + c.h); });
-    return { w: Math.max(1, x1 - x0), h: Math.max(1, y1 - y0) }; };
-  const A3 = 1.414, ecart = L => { const e = emprise(L), r = e.w / e.h; return r > A3 ? r / A3 : A3 / r; };
   const e0 = emprise(best), r0 = e0.w / e0.h, nc = best.geom.nCols;
   if (r0 > 2.2 && nc >= 4) {
     const R0 = Math.max(2, Math.min(6, Math.round(Math.sqrt(r0 / A3)))); const s0 = compterDroits(best.routage.fils);
     const densite = L => { const e = emprise(L); let a = 0; L.comps.forEach(c => a += c.w * c.h); return a / (e.w * e.h); };
     let d0 = ecart(best), q0 = 0; const vus = new Set();
     [R0, R0 + 1, R0 + 2, R0 - 1].filter(k => k >= 2).forEach(k => { const W = Math.ceil(nc / k); if (W < 2 || vus.has(W)) return; vus.add(W);
-      let L = null; try { L = essayer({ graine: bGraine, goulottes: bGoulottes, serpentin: W }); } catch (e) { return; }
+      let L = null; try { L = essayer({ ...bOpt, goulottes: bGoulottes, serpentin: W }); } catch (e) { return; }
       if (!L || filsDansBloc(L) > 0) return;
       if (compterDroits(L.routage.fils) < s0 - k) return;
       const d = ecart(L), q = densite(L);

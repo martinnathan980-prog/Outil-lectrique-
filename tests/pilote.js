@@ -42,7 +42,8 @@ function mesurerDansLaPage() {
     y0 = Math.min(y0, c.y); y1 = Math.max(y1, c.y + c.h); aire += c.w * c.h; });
   const w = Math.max(1, x1 - x0), h = Math.max(1, y1 - y0);
   let tracee = 0, vol = 0;
-  fils.forEach(f => { for (let i = 0; i < f.pts.length - 1; i++) tracee += Math.abs(f.pts[i + 1].x - f.pts[i].x) + Math.abs(f.pts[i + 1].y - f.pts[i].y);
+  fils.forEach(f => { if (!f.pts.length) return;       // un shunt n'a pas de tracé
+    for (let i = 0; i < f.pts.length - 1; i++) tracee += Math.abs(f.pts[i + 1].x - f.pts[i].x) + Math.abs(f.pts[i + 1].y - f.pts[i].y);
     const p = f.pts[0], q = f.pts[f.pts.length - 1]; vol += Math.hypot(q.x - p.x, q.y - p.y); });
   return { blocs: a.blocs, fils: a.fils, droits: a.droits, taux: a.tauxDroits, croisements: a.croisements,
            filsDansBloc: a.filsDansBloc, chevauches: a.blocsChevauches,
