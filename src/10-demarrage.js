@@ -10,7 +10,7 @@ const atelier = {
   /* charge des liaisons et dessine, sans découper en folios : c'est le
      dessin ENTIER que les bancs mesurent */
   charger(liaisons) { app.contrat.liaisons = liaisons.map(liaison); app.source = null; app.nFolios = 0; app.plan = '*'; app.choisi = null;
-    redessiner(); return app.dessin; },
+    fermerFiche(); redessiner(); return app.dessin; },
   essai() { return atelier.charger(contratEssai()); },
   lire(texte) { const r = lireTexte(texte); atelier.charger(r.liaisons); return r; },
   dessin() { return app.dessin; },
@@ -20,9 +20,8 @@ const atelier = {
 
 function demarrer() {
   lierPanneau(); lierPlanche();
-  if (typeof lierRetest === 'function') lierRetest();
   // on retrouve son contrat ; à défaut l'exemple — jamais un écran vide
-  if (!relire()) { remplirCartouche(); chargerContrat(contratEssai(), 'contrat d’exemple'); app.hist = []; synchroniserHistorique(); }
-  requestAnimationFrame(ajuster);
+  if (!relire()) { chargerContrat(contratEssai(), 'contrat d’exemple', 'Contrat d’exemple'); app.hist = []; synchroniserHistorique(); }
+  requestAnimationFrame(() => ajuster());
 }
 demarrer();

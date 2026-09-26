@@ -1,434 +1,278 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   DIRECTION « ATELIER » — la précision industrielle.
+   DIRECTION « TABLE LUMINEUSE »
 
-   Rien ici ne cherche à plaire. L'écran est une planche : un fond de carton
-   gris chaud sur lequel on a posé une feuille blanche, et sur la gauche une
-   colonne d'instrument. Tout ce qui est DONNÉE est en chasse fixe ; tout ce
-   qui est LANGAGE est en linéale. La hiérarchie se fait à la graisse, à la
-   capitale et au filet — jamais à la couleur. Un seul accent, l'oxyde, et on
-   ne le sort que pour dire « c'est ici ».
-
-   Le module est de 4 px. Un seul filet, 1 px. Un seul rayon, 2 px. Aucune
-   ombre qui ne corresponde pas à une vraie élévation (fenêtre, tiroir,
-   fiche). Aucun dégradé. La beauté vient de l'alignement.
+   Le plan est l'écran. Rien ne l'encadre : la feuille blanche est posée sur
+   une table bleu nuit et occupe tout — les commandes flottent dessus, en
+   deux coins et une réglette de folios en bas, comme sur une carte.
+   Les instruments sont sombres (verre fumé) ; les documents sont blancs :
+   la feuille, la fiche d'un équipement, la table des liaisons.
+   Un seul accent, le cuivre — celui du fil — pour l'action principale et
+   pour ce qui est choisi. Le langage est en linéale système ; toute DONNÉE
+   (repère, borne, n° de fil) est en chasse fixe. Le rayon est plein pour ce
+   qui se presse (pilules), 16 px pour ce qui se lit (cartes). Module 4 px.
+   Aucune image, aucune police extérieure. Sur téléphone, le plan reste seul ;
+   ce qui se lit monte en tiroir depuis le bas.
    ═══════════════════════════════════════════════════════════════════════ */
 :root{
-  /* ── chrome : le carton, le papier, l'encre, le filet ── */
-  --chrome:#d2cec2;        /* planche d'atelier, derrière la feuille         */
-  --chrome2:#fbfaf6;       /* papier : panneau, barre, fenêtres              */
-  --chrome3:#efede6;       /* surface en retrait : champ, bouton au repos    */
-  --chrome4:#e5e2d8;       /* enfoncé / survol de surface en retrait         */
-  /* LE FILET ET L'ENCRE FAIBLE ONT ÉTÉ REMONTÉS, MESURE À L'APPUI.
-     Première version : filet #bfbaac, soit 1,86:1 sur le papier du panneau —
-     joli sur une capture, mais sous une verrière ou sur une dalle mal réglée
-     la structure du panneau disparaît et il ne reste que du texte flottant.
-     Le filet STRUCTUREL (bord de panneau, crémaillère d'onglets, barre haute)
-     passe donc à 3,19:1, le seuil des éléments non textuels ; le filet
-     INTÉRIEUR d'un groupe reste ténu, c'est lui qui donne la finesse.
-     Même correction sur l'encre faible : #86867f donnait 3,51:1 pour du texte
-     de 10 px en capitales — en dessous du seuil de lisibilité. 4,71:1. */
-  --line:#948c7b;          /* filet structurel — 3,19:1 sur le papier        */
-  --line2:#ded9cd;         /* filet ténu, à l'intérieur d'un groupe          */
-  --ink:#17181a;           /* encre                                          */
-  --ink-dim:#55565a;       /* encre affaiblie                                */
-  --ink-faint:#717169;     /* étiquettes, unités, compteurs — 4,71:1         */
-  --accent:#9c3a14;        /* oxyde — un seul accent, employé au compte-goutte */
-  --accent-dim:#9c3a14;
-  --accent-soft:#f3e7e0;
-  --warn:#8a5c07; --ok:#2b6a3f; --red:#a3291f;
-  /* ── ces valeurs appartiennent au dessin, pas à l'enveloppe : intactes ── */
-  --sheet:#ffffff; --sheet-line:#dfe3ea; --sheet-line2:#eef1f5; --sheet-ink:#16202b;
-  --brown:#7a4a2a; --black:#1b1f24; --grey:#6b7480; --blue:#125f8f;
-  --green:#1a7f4b; --yellow:#e8c93a; --red2:#b03a34;
-  --mono:ui-monospace,Menlo,Consolas,"SF Mono","DejaVu Sans Mono",monospace;
-  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --r:2px;                 /* rayon unique, presque nul                      */
-  --t:.1s linear;          /* transitions courtes, jamais décoratives        */
+  /* palette : six valeurs, le reste en est tiré */
+  --nuit:#0f1620;            /* la table                                     */
+  --craie:#eef2f6;           /* texte sur la table                           */
+  --papier:#ffffff;          /* les documents                                */
+  --encre:#18212c;           /* texte sur papier                             */
+  --cuivre:#b5541c;          /* l'accent — 4,8:1 sur papier                  */
+  --danger:#b3261e;          /* supprimer, erreur — 5,9:1 sur papier         */
+  /* tirées de la palette */
+  --verre:rgba(21,29,39,.93);/* instrument : verre fumé sur la table         */
+  --verre-plein:#161e29;     /* le même, sans transparence                   */
+  --craie-2:#a9b4c0;         /* texte secondaire sur verre — 7:1             */
+  --trait-verre:rgba(255,255,255,.09);
+  --papier-2:#f2f4f7;        /* surface en retrait sur papier                */
+  --papier-3:#e6eaef;        /* survol de la surface en retrait              */
+  --encre-2:#5b6875;         /* texte secondaire sur papier — 5,7:1          */
+  --filet:#dfe4e9;           /* filet sur papier                             */
+  --cuivre-2:#9e4816;        /* cuivre pressé                                */
+  --cuivre-clair:#f0a36f;    /* cuivre sur la table (focus, badge) — 8,4:1   */
+  --cuivre-pale:#fbeee4;     /* fond cuivré très pâle sur papier             */
+  /* typographie : une échelle de sept corps, ratio ≈ 1,2 */
+  --t0:11px; --t1:12px; --t2:13.5px; --t3:15px; --t4:17px; --t5:22px; --t6:28px;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","DejaVu Sans Mono",monospace;
+  /* élévations : une par étage */
+  --ombre-1:0 4px 18px rgba(0,0,0,.35);
+  --ombre-2:0 18px 50px rgba(0,0,0,.45);
+  --ombre-3:0 30px 90px rgba(0,0,0,.55);
+  --rapide:.14s ease; --moyen:.24s ease;
 }
 *{box-sizing:border-box}
-html,body{height:100%;margin:0}
-body{font-family:var(--sans);background:var(--chrome);color:var(--ink);
-  font-size:13px;line-height:1.45;overflow:hidden;-webkit-font-smoothing:antialiased}
-button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+html,body{height:100%;margin:0;overflow:hidden}
+body{font:var(--t2)/1.45 var(--sans);background:var(--nuit);color:var(--craie);
+  -webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+[hidden]{display:none!important}
+button,input,textarea{font:inherit;color:inherit;margin:0}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--cuivre-clair);outline-offset:2px}
+#fiche :focus-visible,.vide-carte :focus-visible{outline-color:var(--cuivre)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.mono{font-family:var(--mono)}
+svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
-/* ─── L'ÉTIQUETTE ────────────────────────────────────────────────────────
-   Une seule forme pour tout ce qui nomme : chasse fixe, capitale, 10 px,
-   interlettrage ouvert. En-tête de groupe, en-tête de colonne, libellé de
-   champ — même objet, donc même dessin. */
-.grp>h3,.subhead,.field label,table.grid th,.btbl th,.rrep h4,#pop h5,.railtabs button,.mthead span{
-  font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.09em;
-  text-transform:uppercase;color:var(--ink-faint)}
+/* ─── LA TABLE ET LA FEUILLE ────────────────────────────────────────────── */
+#planche{position:fixed;inset:0;overflow:hidden;touch-action:none;cursor:grab;
+  background:radial-gradient(ellipse 70% 60% at 50% 42%,#1a2431 0%,var(--nuit) 100%)}
+#planche.tient{cursor:grabbing}
+#svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+#ombre{position:absolute;left:0;top:0;pointer-events:none;display:none;
+  box-shadow:0 0 0 1px rgba(255,255,255,.07),0 40px 100px rgba(0,0,0,.7),0 2px 8px rgba(0,0,0,.6)}
+/* la feuille dessinée par le moteur ; on ne touche qu'à son conteneur */
+#svg .comp{cursor:pointer}
+#svg .cab{cursor:pointer}
 
-/* ─── Boutons : trois niveaux, pas un de plus ─────────────────────────── */
-button{background:var(--chrome3);border:1px solid var(--line);color:var(--ink);
-  padding:5px 10px;border-radius:var(--r);cursor:pointer;font-size:12px;
-  transition:background var(--t),border-color var(--t),color var(--t);white-space:nowrap}
-button:hover{background:var(--chrome4);border-color:#b2ad9f}
-button:active{background:#dcd8cd}
-button:focus-visible{outline:2px solid var(--accent);outline-offset:1px;z-index:1;position:relative}
-button:disabled{opacity:.38;cursor:default;background:var(--chrome3);border-color:var(--line)}
-.primary{background:var(--accent);border-color:var(--accent);color:#fdf6f2;font-weight:500}
-.primary:hover{background:#87310f;border-color:#87310f}
-.primary:active{background:#73290c}
-.primary:focus-visible{outline-color:var(--ink)}
-.ghost{background:transparent;border-color:transparent;color:var(--ink-dim)}
-.ghost:hover{background:var(--chrome3);border-color:transparent;color:var(--ink)}
-.mini{padding:3px 8px;font-size:11px}
-.linklike{background:none;border:0;color:var(--accent);padding:0;font:inherit;
-  cursor:pointer;text-decoration:underline;text-underline-offset:2px}
-.linklike:hover{background:none;color:#73290c}
-input,select,textarea{background:var(--chrome2);border:1px solid var(--line);
-  border-radius:var(--r);padding:5px 8px;font-size:12px;color:var(--ink);
-  transition:border-color var(--t),box-shadow var(--t);width:100%}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
-  box-shadow:inset 0 0 0 1px var(--accent)}
-::placeholder{color:var(--ink-faint)}
-input[type=checkbox]{width:auto;accent-color:var(--accent)}
+/* ─── LES INSTRUMENTS : verre fumé ──────────────────────────────────────── */
+.verre{background:var(--verre);-webkit-backdrop-filter:blur(16px) saturate(1.3);backdrop-filter:blur(16px) saturate(1.3);
+  border:1px solid var(--trait-verre);box-shadow:var(--ombre-1);color:var(--craie)}
+.rond{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;border:none;background:none;color:inherit;padding:0;transition:background var(--rapide)}
+.rond:hover{background:rgba(255,255,255,.1)}
+.btn{height:40px;padding:0 16px;border-radius:20px;border:none;display:inline-flex;align-items:center;gap:8px;
+  font-weight:600;white-space:nowrap;transition:background var(--rapide),transform var(--rapide)}
+.btn:active{transform:translateY(1px)}
+.btn.cuivre{background:var(--cuivre);color:#fff}
+.btn.cuivre:hover{background:var(--cuivre-2)}
+.btn.papier{background:var(--papier-2);color:var(--encre)}
+.btn.papier:hover{background:var(--papier-3)}
+.btn.lien{background:none;color:var(--encre-2);padding:0 8px;font-weight:500}
+.btn.lien:hover{color:var(--encre);background:var(--papier-2)}
+.btn.lien.danger{color:var(--danger)}
+.btn.lien.danger:hover{background:#fbeae8;color:var(--danger)}
+.btn.verre{color:var(--craie)}
+.btn.verre:hover{background:rgba(35,45,58,.92)}
 
-/* ─── La planche ─────────────────────────────────────────────────────── */
-#app{height:100%;display:grid;grid-template-columns:300px 1fr;
-  grid-template-rows:44px 1fr;grid-template-areas:"top top" "side main"}
+/* ─── LE HAUT : dossier, ouvrir, annuler · recherche, menu ──────────────── */
+#haut{position:fixed;top:12px;left:12px;right:12px;display:flex;align-items:center;gap:8px;z-index:20;pointer-events:none}
+#haut>*{pointer-events:auto}
+.marque{height:40px;padding:0 14px 0 12px;border-radius:20px;display:flex;align-items:center;gap:9px;font-weight:600;letter-spacing:.005em;white-space:nowrap;flex:none}
+.marque svg{width:18px;height:18px;flex:none}
+.dossier{height:40px;padding:0 14px;border-radius:20px;display:flex;align-items:center;gap:10px;min-width:0;max-width:38vw;cursor:pointer;transition:background var(--rapide)}
+.dossier:hover{background:rgba(35,45,58,.95)}
+#ctx-nom{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#ctx-txt{color:var(--craie-2);white-space:nowrap;font-size:var(--t1)}
+.sauve{color:var(--craie-2);font-size:var(--t0);white-space:nowrap;display:flex;align-items:center;gap:6px}
+.sauve:not(:empty)::before{content:"";width:6px;height:6px;border-radius:50%;background:#5fb87a}
+.sauve.ko::before{background:var(--cuivre-clair)}
+.espace{flex:1}
+.recherche{position:relative;height:40px;width:300px;border-radius:20px;display:flex;align-items:center;padding:0 8px 0 14px;gap:8px;transition:width var(--moyen)}
+.recherche:focus-within{width:360px}
+.recherche svg.ico{color:var(--craie-2)}
+.recherche input{flex:1;min-width:0;background:none;border:none;outline:none;color:var(--craie);font-family:var(--mono);font-size:var(--t2);height:100%}
+.recherche input::placeholder{color:var(--craie-2);font-family:var(--sans)}
+.recherche input::-webkit-search-cancel-button{-webkit-appearance:none}
+.recherche .raccourci{color:var(--craie-2);font-size:var(--t0);border:1px solid var(--trait-verre);border-radius:6px;padding:1px 6px;font-family:var(--mono)}
+.q-liste{position:absolute;top:46px;left:0;right:0;border-radius:16px;padding:6px;max-height:min(60vh,420px);overflow:auto;z-index:30}
+.q-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;width:100%;background:none;border:none;text-align:left;color:var(--craie)}
+.q-item.on,.q-item:hover{background:rgba(255,255,255,.1)}
+.q-item .nom{font-family:var(--mono);font-weight:600;white-space:nowrap}
+.q-item .des{color:var(--craie-2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--t1)}
+.q-item .cpt{color:var(--craie-2);font-size:var(--t0);white-space:nowrap}
+.q-item .genre{font-size:var(--t0);color:var(--cuivre-clair);text-transform:uppercase;letter-spacing:.06em;font-weight:600;min-width:52px}
+.q-rien{padding:10px 12px;color:var(--craie-2)}
+#menuBoite{position:relative}
+.menu{position:absolute;top:46px;right:0;width:260px;border-radius:16px;padding:6px;z-index:30}
+.menu button{display:flex;width:100%;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;background:none;border:none;text-align:left;color:var(--craie);font-weight:500}
+.menu button:hover{background:rgba(255,255,255,.1)}
+.menu button.danger{color:#ff9c8f}
+.menu hr{border:none;border-top:1px solid var(--trait-verre);margin:6px 6px}
+.menu .raccourci{margin-left:auto;color:var(--craie-2);font-size:var(--t0);font-family:var(--mono)}
 
-/* ─── Le bandeau ──────────────────────────────────────────────────────
-   Dense, bas, en chasse fixe : c'est la ligne d'état d'un instrument, pas la
-   barre de marque d'un site. Le repère du produit est écrit comme un numéro
-   de planche — capitale, interlettré, avec la barre d'oxyde qui le tient. */
-header{grid-area:top;display:flex;align-items:stretch;gap:0;
-  background:var(--chrome2);border-bottom:1px solid var(--line);z-index:20}
-.brand{display:flex;align-items:center;gap:8px;padding:0 14px;flex:0 0 auto;
-  border-right:1px solid var(--line);font-family:var(--mono);font-size:11px;
-  font-weight:600;letter-spacing:.11em;text-transform:uppercase;color:var(--ink)}
-.brand::before{content:'';width:3px;height:14px;background:var(--accent);flex:0 0 3px}
-.brand b{font-weight:600;font-size:inherit;letter-spacing:inherit}
-.ctx{display:flex;align-items:center;gap:6px;color:var(--ink-faint);
-  font-family:var(--mono);font-size:11px;padding:0 14px;min-width:0;
-  border-right:1px solid var(--line);white-space:nowrap;overflow:hidden}
-.ctx b{color:var(--ink);font-weight:600}
-.sauve{color:var(--ink-faint);opacity:.85}
-.sauve::before{content:'· '}
-.undo{font-size:14px;line-height:1;padding:0 10px;border-radius:0;align-self:stretch;
-  border:0;border-right:1px solid var(--line);background:transparent;color:var(--ink-dim)}
-.undo:hover{background:var(--chrome3);border-right-color:var(--line)}
-.spacer{flex:1}
-.tools{display:flex;align-items:stretch}
-.tools button{border:0;border-left:1px solid var(--line);border-radius:0;
-  background:transparent;color:var(--ink-dim);padding:0 13px;font-size:11px;
-  font-family:var(--mono);letter-spacing:.07em;text-transform:uppercase}
-.tools button:hover{background:var(--chrome3);color:var(--ink);border-left-color:var(--line)}
-.tools button:focus-visible{outline-offset:-2px}
-header .sep{display:none}
+/* ─── LE BAS : les folios, le zoom ──────────────────────────────────────── */
+#folios{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;align-items:center;gap:2px;height:44px;padding:0 6px;border-radius:22px;z-index:20;max-width:calc(100vw - 24px)}
+#fo-prev,#fo-next{width:32px;height:32px;border-radius:50%;background:none;border:none;color:var(--craie);display:grid;place-items:center;padding:0}
+#fo-prev:hover:not(:disabled),#fo-next:hover:not(:disabled){background:rgba(255,255,255,.1)}
+#fo-prev:disabled,#fo-next:disabled{opacity:.3;cursor:default}
+.fo-strip{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;max-width:min(60vw,720px);padding:2px}
+.fo-strip::-webkit-scrollbar{display:none}
+.chip{height:32px;min-width:32px;padding:0 11px;border-radius:16px;border:none;background:none;color:var(--craie);font-family:var(--mono);font-weight:600;font-size:var(--t2);transition:background var(--rapide)}
+.chip:hover{background:rgba(255,255,255,.1)}
+.chip.on{background:var(--papier);color:var(--encre)}
+.fo-lbl{color:var(--craie-2);font-size:var(--t0);padding:0 10px 0 8px;white-space:nowrap;font-family:var(--mono)}
+#hud{position:fixed;right:12px;bottom:14px;display:flex;align-items:center;height:44px;padding:0 6px;border-radius:22px;z-index:20;gap:2px}
+#hud button{height:32px;min-width:32px;border:none;background:none;color:var(--craie);border-radius:16px;display:grid;place-items:center;padding:0}
+#hud button:hover{background:rgba(255,255,255,.1)}
+#zlbl{font-family:var(--mono);font-size:var(--t1);min-width:58px;color:var(--craie-2)}
+#zlbl:hover{color:var(--craie)}
 
-/* Le pas-à-pas de folio — un compteur de planche, lu comme sur le cartouche. */
-.folionav{display:none;align-items:stretch;border-left:1px solid var(--line)}
-.folionav.on{display:flex}
-.folionav button{background:transparent;border:0;padding:0 10px;color:var(--ink-dim);
-  font-size:13px;line-height:1;border-radius:0}
-.folionav button:hover:not(:disabled){background:var(--chrome3);color:var(--ink)}
-.folionav button:disabled{opacity:.3}
-.folionav .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.06em;white-space:nowrap;
-  display:flex;align-items:center;justify-content:center;padding:0 4px;
-  color:var(--ink);min-width:92px;text-align:center;user-select:none;
-  border-left:1px solid var(--line2);border-right:1px solid var(--line2)}
+/* ─── LA FICHE : un seul document, à droite ─────────────────────────────── */
+#fiche{position:fixed;top:64px;right:12px;bottom:70px;width:400px;max-width:calc(100vw - 24px);background:var(--papier);color:var(--encre);
+  border-radius:18px;box-shadow:var(--ombre-2);z-index:25;display:flex;flex-direction:column;overflow:hidden}
+#fiche.large{width:600px}
+#fiche.entre{animation:fiche-entre var(--moyen)}
+@keyframes fiche-entre{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+.fiche-corps{overflow:auto;padding:18px 20px 12px;flex:1;overscroll-behavior:contain}
+.fiche-tete{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}
+.min0{min-width:0;flex:1}
+.sur{font-size:var(--t0);text-transform:uppercase;letter-spacing:.09em;color:var(--encre-2);font-weight:700}
+.titre{font-family:var(--mono);font-size:var(--t5);font-weight:700;line-height:1.2;margin:2px 0 0;color:var(--encre);letter-spacing:.01em}
+input.titre{border:none;background:none;padding:0 2px;margin-left:-2px;width:100%;border-bottom:1.5px dashed var(--filet);border-radius:0;transition:border-color var(--rapide)}
+input.titre:hover{border-bottom-color:#b7c1cb}
+input.titre:focus{outline:none}
+input.titre:focus{border-bottom-color:var(--cuivre)}
+input.titre::placeholder{color:var(--encre-2)}
+.fermer{background:var(--papier-2);color:var(--encre-2);width:36px;height:36px;flex:none}
+.fermer:hover{background:var(--papier-3);color:var(--encre)}
+.champ{display:block;margin:10px 0 0}
+.champ>span{display:block;font-size:var(--t0);color:var(--encre-2);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:4px}
+.champ input,.champ textarea{width:100%;height:38px;border:1px solid var(--filet);border-radius:10px;padding:0 10px;background:var(--papier);color:var(--encre);font-family:var(--mono);transition:border-color var(--rapide)}
+.champ input:hover{border-color:#c9d1d9}
+.champ input:focus,.champ textarea:focus{border-color:var(--cuivre);outline:none;box-shadow:0 0 0 3px var(--cuivre-pale)}
+.champ input::placeholder,.champ textarea::placeholder{color:var(--encre-2);font-family:var(--sans)}
+.champ textarea{height:180px;padding:10px;resize:vertical;font-size:var(--t1);line-height:1.5}
+.champ.sans input{font-family:var(--sans)}
+.grille{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.grille.bornes{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
+.info{display:flex;gap:10px;align-items:baseline;margin:12px 0 0;font-size:var(--t1);color:var(--encre-2)}
+.info b{color:var(--encre);font-weight:600}
+.sous-titre{display:flex;align-items:center;gap:8px;margin:20px 0 6px;font-size:var(--t0);text-transform:uppercase;letter-spacing:.09em;color:var(--encre-2);font-weight:700}
+.compte{background:var(--papier-2);border-radius:10px;padding:1px 8px;font-family:var(--mono);color:var(--encre)}
+.racc{list-style:none;margin:0;padding:0}
+.racc li{display:flex;align-items:center;gap:8px;padding:8px 8px;border-radius:10px;cursor:pointer;transition:background var(--rapide)}
+.racc li+li{border-top:1px solid var(--filet)}
+.racc li:hover{background:var(--papier-2)}
+.racc li:focus-visible{outline-offset:-2px}
+.racc .borne{font-family:var(--mono);font-weight:700;min-width:36px;text-align:right}
+.racc .fleche{color:#a3adb8}
+.racc .dest{font-family:var(--mono);background:none;border:none;padding:2px 4px;border-radius:6px;color:var(--encre);font-weight:600;text-decoration:underline dotted #a3adb8;text-underline-offset:3px;white-space:nowrap}
+.racc .dest:hover{color:var(--cuivre);text-decoration-color:var(--cuivre)}
+.racc .b{color:var(--encre-2);font-weight:400}
+.racc .meta{margin-left:auto;font-size:var(--t1);color:var(--encre-2);white-space:nowrap;font-family:var(--mono)}
+.racc .f{font-size:var(--t0);color:var(--cuivre-2);font-weight:700;background:var(--cuivre-pale);border-radius:6px;padding:1px 6px;white-space:nowrap}
+.racc .rien{color:var(--encre-2);cursor:default;padding:12px 8px}
+.fiche-pied{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 20px;border-top:1px solid var(--filet);background:var(--papier)}
+.fiche-pied .espace{flex:1}
+.aller{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;font-size:var(--t1);color:var(--encre-2);align-items:center}
+.aller button{font-family:var(--mono);background:var(--papier-2);border:none;border-radius:8px;padding:4px 9px;color:var(--encre);font-weight:600}
+.aller button:hover{background:var(--cuivre-pale);color:var(--cuivre)}
+.note{font-size:var(--t1);color:var(--encre-2);margin:8px 0 0;line-height:1.5}
+.note b{color:var(--encre)}
+.filtre{display:flex;align-items:center;gap:8px;height:38px;border:1px solid var(--filet);border-radius:10px;padding:0 10px;margin:12px 0 10px}
+.filtre input{flex:1;min-width:0;border:none;background:none;outline:none;font-family:var(--mono)}
+.filtre svg.ico{color:var(--encre-2);width:16px;height:16px}
+table.tab{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:var(--t1)}
+.tab th{text-align:left;font-size:var(--t0);color:var(--encre-2);font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:6px 6px;border-bottom:1px solid var(--filet);font-family:var(--sans)}
+.tab td{padding:2px 1px;border-bottom:1px solid var(--filet)}
+.tab td.n{width:56px}
+.tab input{width:100%;height:32px;border:1px solid transparent;border-radius:7px;padding:0 6px;background:none;font-family:var(--mono);transition:border-color var(--rapide)}
+.tab input:hover{border-color:var(--filet)}
+.tab input:focus{border-color:var(--cuivre);outline:none;background:var(--papier)}
+.tab .x{width:30px;text-align:center}
+.tab .x button{width:26px;height:26px;border:none;background:none;border-radius:50%;color:var(--encre-2)}
+.tab .x button:hover{background:#fbeae8;color:var(--danger)}
+.tab .reste td{color:var(--encre-2);padding:8px 6px}
 
-/* ─── La colonne d'instrument ─────────────────────────────────────────── */
-aside{grid-area:side;background:var(--chrome2);border-right:1px solid var(--line);
-  display:flex;flex-direction:column;min-height:0;z-index:15}
-.railtabs{display:flex;background:var(--chrome3);border-bottom:1px solid var(--line);flex:0 0 auto}
-.railtabs button{flex:1;background:transparent;border:0;border-right:1px solid var(--line);
-  border-radius:0;padding:9px 2px 8px;color:var(--ink-faint);
-  box-shadow:inset 0 -2px 0 transparent;transition:color var(--t),background var(--t),box-shadow var(--t)}
-.railtabs button:last-child{border-right:0}
-.railtabs button:hover{background:var(--chrome4);color:var(--ink-dim)}
-.railtabs button.on{color:var(--ink);background:var(--chrome2);
-  box-shadow:inset 0 -2px 0 var(--accent)}
-.railtabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-.railbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
-.vue{display:none;padding:16px 16px 24px}
-.vue.on{display:block}
+/* ─── L'ACCUEIL : rien de chargé ───────────────────────────────────────── */
+.vide{position:absolute;inset:0;display:grid;place-items:center;padding:16px;z-index:5}
+.vide-carte{background:var(--papier);color:var(--encre);border-radius:22px;padding:36px 36px 30px;max-width:540px;text-align:center;box-shadow:var(--ombre-3)}
+.vide-carte .pictos{display:flex;justify-content:center;color:var(--cuivre)}
+.vide-carte h1{font-size:var(--t6);font-weight:700;margin:16px 0 8px;letter-spacing:-.01em;line-height:1.15}
+.vide-carte p{color:var(--encre-2);margin:0 0 22px;font-size:var(--t3)}
+.vide-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.depot{position:fixed;inset:10px;z-index:40;display:none;place-items:center;background:rgba(15,22,32,.72);border:3px dashed var(--cuivre-clair);border-radius:24px;color:var(--craie);font-size:var(--t5);font-weight:600;pointer-events:none}
+body.depot-actif .depot{display:grid}
 
-/* Un groupe : l'étiquette, le filet qui court jusqu'au bord, le compte.
-   C'est le titre de rubrique d'une planche technique, rien d'autre. */
-.grp{margin-bottom:24px}
-.grp:last-child{margin-bottom:0}
-.grp>h3{margin:0 0 8px;display:flex;align-items:center;gap:8px;line-height:1}
-.grp>h3::after{content:'';flex:1;height:1px;background:var(--line);order:0}
-.grp>h3 .count,.subhead .count{order:1;font-family:var(--mono);font-size:10px;
-  letter-spacing:0;text-transform:none;color:var(--ink);font-weight:600;
-  font-variant-numeric:tabular-nums}
-.subhead{margin:20px 0 8px;display:flex;align-items:center;gap:8px;line-height:1;
-  padding-top:0;border-top:0}
-.subhead::after{content:'';flex:1;height:1px;background:var(--line);order:0}
-.brow{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
-.brow .ghost{border-color:var(--line);background:var(--chrome3);color:var(--ink-dim)}
-.brow .ghost:hover{background:var(--chrome4);border-color:#b2ad9f;color:var(--ink)}
-.brow input{flex:1;min-width:0}
-.hint{color:var(--ink-dim);font-size:11.5px;line-height:1.5;margin-top:8px}
-.hint b{color:var(--ink);font-weight:600}
+/* ─── LE MOT QUI PASSE ─────────────────────────────────────────────────── */
+#toast{position:fixed;left:50%;top:64px;transform:translateX(-50%);padding:10px 16px;border-radius:14px;z-index:35;max-width:min(92vw,520px);
+  font-weight:500;opacity:0;pointer-events:none;transition:opacity var(--moyen),transform var(--moyen)}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(4px)}
+#toast.erreur{border-color:rgba(240,163,111,.5)}
 
-/* Les étapes numérotées : un cartouche carré, comme un repère de nomenclature. */
-.etape{display:flex;align-items:stretch;gap:0;margin-top:4px;border:1px solid var(--line);
-  border-radius:var(--r);background:var(--chrome3);transition:border-color var(--t)}
-.etape:hover{border-color:#b2ad9f}
-.etape .n{flex:0 0 26px;display:flex;align-items:center;justify-content:center;
-  background:var(--chrome4);border-right:1px solid var(--line);color:var(--ink-faint);
-  font:600 10px/1 var(--mono);transition:background var(--t),color var(--t)}
-.etape.faite .n{background:var(--accent);border-right-color:var(--accent);color:#fdf6f2}
-.etape button{flex:1;text-align:left;justify-content:flex-start;border:0;border-radius:0;
-  background:transparent;padding:7px 10px}
-.etape button:hover{background:var(--chrome4)}
-.etape button:focus-visible{outline-offset:-2px}
+/* ─── ÉCRAN MOYEN : le dossier cède la place à la recherche ─────────────── */
+@media (max-width:1180px){
+  #ctx-txt{display:none}
+  .recherche{width:240px}
+  .recherche:focus-within{width:300px}
+}
 
-/* La liste du matériel — une nomenclature : repère, désignation, quantité. */
-#mt-find{margin-top:0}
-.mthead{display:flex;align-items:baseline;gap:8px;margin-top:12px;padding:0 6px 3px;
-  border-bottom:1px solid var(--line)}
-.grp:has(#mt-liste:empty) .mthead,.grp:has(#mt-liste:empty) .hint-liste{display:none}
-.mthead span:last-child{margin-left:auto}
-#mt-liste{max-height:min(46vh,420px);overflow-y:auto;border-bottom:1px solid var(--line)}
-.mtrow{display:flex;align-items:baseline;gap:8px;padding:5px 6px;cursor:pointer;
-  border-bottom:1px solid var(--line2);transition:background var(--t)}
-.mtrow:hover{background:var(--chrome3)}
-.mtn{font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--ink);
-  letter-spacing:.02em}
-.mtd{font-size:11px;color:var(--ink-dim);flex:1;min-width:0;overflow:hidden;
-  text-overflow:ellipsis;white-space:nowrap}
-.mtc{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);
-  flex:0 0 auto;font-variant-numeric:tabular-nums}
-#mt-details{margin-top:20px;border-top:1px solid var(--line);padding-top:10px}
-#mt-details summary{cursor:pointer;font-family:var(--mono);font-size:10px;font-weight:600;
-  letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint);
-  padding:2px 0;user-select:none;list-style:none;transition:color var(--t)}
-#mt-details summary::-webkit-details-marker{display:none}
-#mt-details summary::before{content:'+ ';color:var(--ink-faint)}
-#mt-details[open] summary::before{content:'− '}
-#mt-details summary:hover{color:var(--accent)}
-#mt-details summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-#mt-details .count{font-family:var(--mono);letter-spacing:0;color:var(--ink);font-weight:600}
+/* ─── TÉLÉPHONE ─────────────────────────────────────────────────────────── */
+@media (max-width:700px){
+  #haut{top:8px;left:8px;right:8px;gap:6px}
+  .marque{display:none}
+  .dossier{flex:1;max-width:none;padding:0 12px}
+  #ctx-txt,.sauve{display:none}
+  #btnOuvrir{padding:0;width:40px;justify-content:center}
+  #btnOuvrir span{display:none}
+  .recherche{width:40px;padding:0;justify-content:center}
+  .recherche input,.recherche .raccourci{display:none}
+  .recherche svg.ico{color:var(--craie)}
+  #haut.cherche .recherche{position:absolute;left:0;right:0;width:auto;padding:0 8px 0 14px;justify-content:flex-start}
+  #haut.cherche .recherche input{display:block}
+  #haut.cherche>:not(.recherche){visibility:hidden}
+  #folios{bottom:10px;max-width:calc(100vw - 16px)}
+  .fo-strip{max-width:calc(100vw - 150px)}
+  #hud{right:8px;bottom:64px;height:40px;padding:0 4px}
+  #hud #zin,#hud #zout,#hud #zlbl{display:none}
+  #fiche{top:auto;left:0;right:0;bottom:0;width:auto;max-width:none;max-height:72vh;border-radius:20px 20px 0 0}
+  #fiche.large{width:auto}
+  #fiche.entre{animation:fiche-monte var(--moyen)}
+  @keyframes fiche-monte{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+  .fiche-corps{padding:14px 16px 10px}
+  .tab{font-size:var(--t0)}
+  .tab input{padding:0 4px;height:30px}
+  .tab td.n{width:40px}
+  .tab th{padding:6px 4px}
+  .fiche-pied{padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
+  .vide-carte{padding:28px 22px 24px}
+  .vide-carte h1{font-size:var(--t5)}
+  .menu{width:min(260px,calc(100vw - 16px))}
+  #toast{top:56px}
+}
 
-/* Tables de saisie : une grille, des filets, des chiffres alignés. */
-table.grid{width:100%;border-collapse:collapse;margin-top:8px}
-table.grid th{text-align:left;padding:0 4px 4px;border-bottom:1px solid var(--line)}
-table.grid td{padding:0;border-bottom:1px solid var(--line2)}
-table.grid input{border:0;border-radius:0;background:transparent;padding:4px;
-  font-family:var(--mono);font-size:11px;letter-spacing:.02em}
-table.grid input:focus{box-shadow:inset 0 0 0 1px var(--accent);background:var(--chrome2)}
-.rmrow{width:20px;text-align:center;color:var(--ink-faint);cursor:pointer;
-  font-size:11px;user-select:none;transition:color var(--t)}
-.rmrow:hover{color:var(--red)}
-.addrow{margin-top:8px;border-color:var(--line);background:var(--chrome3);color:var(--ink-dim)}
-.addrow:hover{background:var(--chrome4);border-color:#aaa598;color:var(--ink)}
-.cart-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
-.cart-grid .wide{grid-column:1/-1}
-.field label{display:block;margin-bottom:3px}
-.field input{font-family:var(--mono);font-size:11px}
-
-/* Les câbles : une ligne de nomenclature, pas une carte. */
-
-/* ─── La feuille et son fond ─────────────────────────────────────────── */
-main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
-#stage{position:absolute;inset:0;overflow:hidden;touch-action:none;cursor:grab}
-#stage:active{cursor:grabbing}
-#svg{width:100%;height:100%;display:block}
-.notice{position:absolute;inset:0;display:none;text-align:center;
-  color:var(--ink-faint);font-family:var(--mono);font-size:11px;letter-spacing:.06em;
-  text-transform:uppercase;line-height:1.7;padding:24px;pointer-events:none}
-.notice::before{content:'';display:block;height:calc(50% - 44px)}
-.notice .big{font-family:var(--sans);font-size:15px;font-weight:600;color:var(--ink-dim);
-  letter-spacing:0;text-transform:none;margin-bottom:4px}
-.notice button{pointer-events:auto;border-color:var(--line);background:var(--chrome2);
-  color:var(--ink-dim);font-family:var(--sans);letter-spacing:0;text-transform:none}
-.notice button:hover{background:var(--chrome3);border-color:#aaa598;color:var(--ink)}
-
-/* La commande de zoom : un boîtier posé sur la planche. Pas de verre, pas de
-   flou, pas d'ombre — une plaque avec un filet. */
-.hud{position:absolute;left:16px;bottom:16px;display:flex;align-items:stretch;
-  background:var(--chrome2);border:1px solid var(--line);border-radius:var(--r)}
-.hud button{background:transparent;border:0;border-radius:0;padding:4px 10px;
-  color:var(--ink-dim);font-size:12px}
-.hud button:last-child{font-family:var(--mono);font-size:10px;letter-spacing:.08em;
-  text-transform:uppercase;padding:4px 10px}
-.hud button:hover{background:var(--chrome3);color:var(--ink)}
-.hud button:focus-visible{outline-offset:-2px}
-.hud .z{font-family:var(--mono);font-size:11px;color:var(--ink);
-  display:flex;align-items:center;justify-content:center;
-  min-width:52px;text-align:center;user-select:none;font-variant-numeric:tabular-nums;
-  border-left:1px solid var(--line2);border-right:1px solid var(--line2)}
-.hud .sep{width:1px;background:var(--line);margin:0}
-
-/* ─── Fenêtres ───────────────────────────────────────────────────────── */
-.modal-bg{position:fixed;inset:0;background:rgba(23,24,26,.44);
-  display:none;align-items:center;justify-content:center;z-index:60;padding:24px}
-.modal{background:var(--chrome2);border:1px solid var(--line);border-radius:var(--r);
-  width:min(720px,100%);max-height:88vh;display:flex;flex-direction:column;
-  box-shadow:0 20px 48px rgba(23,24,26,.24)}
-.modal.wide{width:min(1000px,100%)}
-.modal h2{margin:0;padding:11px 16px;font-family:var(--mono);font-size:11px;
-  font-weight:600;letter-spacing:.11em;text-transform:uppercase;color:var(--ink);
-  border-bottom:1px solid var(--line);background:var(--chrome3)}
-.modal .body{padding:16px;overflow:auto;flex:1;min-height:0}
-.modal .foot{display:flex;justify-content:flex-end;gap:6px;padding:10px 16px;
-  border-top:1px solid var(--line);background:var(--chrome3)}
-.modal textarea{min-height:130px;font-family:var(--mono);font-size:11px;resize:vertical}
-
-/* La fiche qui s'ouvre au clic sur un bloc ou un fil : une étiquette volante. */
-#pop{position:absolute;display:none;z-index:40;background:var(--chrome2);
-  border:1px solid var(--line);border-radius:var(--r);padding:0;
-  box-shadow:0 12px 32px rgba(23,24,26,.2);max-width:320px}
-#pop h5{margin:0;padding:8px 12px;background:var(--chrome3);
-  border-bottom:1px solid var(--line);color:var(--ink)}
-#pop>*:not(h5):not(.actions){margin-left:12px;margin-right:12px}
-#pop .field{margin-top:8px}
-#pop .actions{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:10px 12px;
-  margin-top:12px;border-top:1px solid var(--line);background:var(--chrome3)}
-#pop .actions button{font-size:11px;padding:5px 8px;width:100%}
-#pop .actions .ghost{border-color:var(--line);background:var(--chrome2)}
-#pop .actions .ghost:hover{background:var(--chrome4);color:var(--ink)}
-.actions{display:flex;flex-wrap:wrap;gap:4px}
-
-/* ─── Impression ─────────────────────────────────────────────────────── */
+/* ─── IMPRESSION : la planche, rien d'autre ─────────────────────────────── */
 #printroot{display:none}
 @media print{
-html,body{height:auto;overflow:visible;background:#fff}
-#app,#modal,#rmodal,#pop,#drawerBg{display:none!important}
-#printroot{display:block}
-#printroot svg{width:100%;height:auto;max-width:100%}
-  @page{margin:8mm}
+  body{background:#fff;overflow:visible}
+  #app{display:none!important}
+  #printroot{display:block}
+  #printroot svg{width:100%;height:auto}
 }
 
-/* ─── Écrans étroits ─────────────────────────────────────────────────── */
-.menu-btn{display:none}
-.drawer-bg{display:none}
-@media (max-width:860px){
-#app{grid-template-columns:1fr;grid-template-areas:"top" "main"}
-.menu-btn{display:inline-flex;align-items:center;justify-content:center;
-    font-size:14px;padding:0 12px;border:0;border-right:1px solid var(--line);
-    border-radius:0;background:transparent;color:var(--ink-dim);align-self:stretch}
-.menu-btn:hover{background:var(--chrome3);border-right-color:var(--line)}
-.ctx{display:none}
-.brand{padding:0 10px;font-size:10px;letter-spacing:.09em}
-.tools button{padding:0 9px}
-.folionav .lbl{min-width:74px;font-size:10px}
-aside{position:fixed;top:44px;left:0;bottom:0;width:min(88vw,320px);z-index:40;
-    transform:translateX(-100%);transition:transform .16s linear;
-    box-shadow:8px 0 28px rgba(23,24,26,.2)}
-aside.open{transform:none}
-.drawer-bg{display:block;position:fixed;inset:44px 0 0 0;background:rgba(23,24,26,.34);
-    z-index:35;opacity:0;pointer-events:none;transition:opacity .16s linear}
-.drawer-bg.show{opacity:1;pointer-events:auto}
-.hud{left:10px;bottom:10px}
-.modal-bg{padding:8px}
-.modal h2{padding:10px 12px}
-.modal .body{padding:12px}
-.modal .foot{padding:9px 12px}
-.cart-grid{grid-template-columns:1fr 1fr}
-}
-@media (max-width:640px){
-.folionav.on{position:fixed;right:10px;bottom:10px;z-index:30;
-    background:var(--chrome2);border:1px solid var(--line);border-radius:var(--r)}
-.folionav button{padding:4px 10px}
-.folionav .lbl{min-width:0;padding:0 8px;border-color:var(--line2)}
-}
-@media (max-width:440px){
-.brand{border-right:0}
-.tools button{padding:0 8px;font-size:10px}
-.vue{padding:12px 12px 20px}
-}
+/* ─── MOUVEMENT RÉDUIT ──────────────────────────────────────────────────── */
 @media (prefers-reduced-motion:reduce){
-*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+  *,*::before,*::after{transition:none!important;animation:none!important}
 }
-/* Barres de défilement : un rail, pas une pastille. */
-*::-webkit-scrollbar{width:11px;height:11px}
-*::-webkit-scrollbar-thumb{background:#c2beb1;border-radius:0;border:4px solid var(--chrome2)}
-*::-webkit-scrollbar-thumb:hover{background:#aba695}
-*::-webkit-scrollbar-track{background:transparent}
-
-/* ---- fenêtres et fiches ---- */
-/* ═══ Suite de l'enveloppe : fenêtres, rapports, listes, zone de dépôt ═════
- Ce bloc portait encore des filets de thème sombre (#262c34) sur fond clair :
- des traits noirs au milieu du papier. Ils sont repassés au filet unique. */
-
-/* ── La vue bornier, dans sa fenêtre ── */
-
-/* ── Lignes d'information : clé à gauche, valeur alignée à droite ── */
-.infoline{display:flex;justify-content:space-between;gap:12px;padding:4px 0;
-border-bottom:1px solid var(--line2);font-family:var(--mono);font-size:11px}
-.infoline .k{color:var(--ink-faint);letter-spacing:.04em}
-.infoline .v{color:var(--ink);text-align:right;font-variant-numeric:tabular-nums}
-
-/* ── Petite table de données (bornes, conducteurs) ── */
-.btbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;margin-top:4px}
-.btbl th{text-align:left;padding:2px 6px 3px;border-bottom:1px solid var(--line)}
-.btbl td{padding:3px 6px;border-bottom:1px solid var(--line2);color:var(--ink);
-font-variant-numeric:tabular-nums}
-.btbl tr:last-child td{border-bottom:0}
-.btbl .bn{color:var(--accent);font-weight:700}
-
-/* ── Le rapport de reconnaissance ─────────────────────────────────────
- C'est le seul endroit de l'outil où l'on LIT longtemps. Donc : des
- sections séparées par un filet, des chiffres en colonne alignée à droite,
- un commentaire en gris, et un verdict tenu par une barre de 2 px. */
-.rrep{font-size:12px;line-height:1.5}
-.rrep section{padding:0 0 16px;margin-bottom:16px;border-bottom:1px solid var(--line)}
-.rrep section:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
-.rrep h4{margin:0 0 8px;display:flex;align-items:center;gap:8px;line-height:1;color:var(--ink)}
-.rrep h4::after{content:'';flex:1;height:1px;background:var(--line)}
-.rrep h4 label{text-transform:none;letter-spacing:0;font-family:var(--mono);
-font-size:11.5px;color:var(--ink)}
-.rrep table{width:100%;border-collapse:collapse;font-size:11.5px}
-.rrep th{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.08em;
-text-transform:uppercase;color:var(--ink-faint);text-align:left;
-padding:2px 6px 4px;border-bottom:1px solid var(--line);white-space:nowrap}
-.rrep td{padding:3px 6px;border-bottom:1px solid var(--line2);vertical-align:top}
-.rrep tr:last-child td{border-bottom:0}
-.rrep td:first-child{color:var(--ink)}
-.rrep td.n{font-family:var(--mono);text-align:right;white-space:nowrap;
-color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums;width:1%}
-.rrep td.ex{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);line-height:1.45}
-.rnote{margin:0 0 8px;color:var(--ink-dim);font-size:11.5px;line-height:1.55}
-.rnote b{color:var(--ink);font-weight:600}
-
-/* Le verdict : barre à gauche, texte d'encre. La couleur ne porte QUE le
- statut — trois valeurs, jamais davantage. */
-.verdict{font-size:11.5px;line-height:1.5;color:var(--ink);
-border-left:2px solid var(--line);padding:2px 0 2px 9px;margin:8px 0 0}
-.verdict.v-ok{border-left-color:var(--ok)}
-.verdict.v-hm{border-left-color:var(--warn)}
-.verdict.v-no{border-left-color:var(--red)}
-.verdict::before{font-family:var(--mono);font-size:9.5px;font-weight:600;
-letter-spacing:.09em;text-transform:uppercase;display:block;margin-bottom:2px}
-.verdict.v-ok::before{content:'Acquis';color:var(--ok)}
-.verdict.v-hm::before{content:'À trancher';color:var(--warn)}
-.verdict.v-no::before{content:'Bloquant';color:var(--red)}
-/* En ligne dans un tableau, le verdict redevient une simple étiquette. */
-td .verdict{display:inline;border-left:0;padding:0;margin:0;font-family:var(--mono);
-font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
-td .verdict::before{display:none}
-td .verdict.v-ok{color:var(--ok)}
-
-/* ── La zone de dépôt ── */
-.dropzone{border:1px dashed var(--line);border-radius:var(--r);background:var(--chrome3);
-padding:20px 16px;text-align:center;cursor:pointer;
-transition:border-color var(--t),background var(--t)}
-.dropzone:hover{border-color:var(--accent);background:var(--chrome4)}
-.dropzone.over{border-color:var(--accent);background:var(--accent-soft)}
-.dropzone .dz-ico{font-family:var(--mono);font-size:16px;color:var(--accent);line-height:1}
-.dropzone .dz-main{margin-top:8px;font-size:12px;color:var(--ink)}
-.dropzone .dz-main b{font-weight:600}
-.dropzone .dz-sub{margin-top:4px;font-size:11px;color:var(--ink-dim)}
-.dz-info{font-family:var(--mono);font-size:10.5px;margin-top:8px;min-height:14px;
-letter-spacing:.03em;color:var(--ink-faint)}
-.dz-info.ok{color:var(--ok)}.dz-info.err{color:var(--red)}.dz-info.load{color:var(--ink-dim)}
-
-/* ── Le jeton d'état (fichier chargé) ── */
-.colspec{margin:0 0 14px;padding:7px 9px;background:var(--chrome3);
-border:1px solid var(--line);border-left:2px solid var(--accent);border-radius:var(--r);
-font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;color:var(--ink);
-line-height:1.65;word-break:break-word}
-
-/* Le sélecteur de plan reste dans le DOM pour porter l'état ; il ne s'affiche
- plus, le pas-à-pas du bandeau le remplace. */
-/* ---- ajouts de la refonte ---- */
-#stage.over{outline:2px dashed var(--accent);outline-offset:-6px}
-.btbl-wrap{max-height:150px;overflow:auto}
-td.vide{color:var(--ink-faint);text-align:center;padding:8px;font-size:11px}
-#pop .subhead{margin:10px 12px 6px}

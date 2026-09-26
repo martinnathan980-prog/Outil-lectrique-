@@ -1,134 +1,86 @@
 <div id="app">
-  <header>
-    <button class="ghost menu-btn" id="btnMenu" aria-label="Ouvrir le panneau">☰</button>
-    <div class="brand"><b>Atelier Schéma</b></div>
-    <div class="ctx" id="ctx"><span id="ctx-txt">—</span><span id="ctx-sauve" class="sauve"></span></div>
-    <button class="ghost undo" id="btnUndo" style="display:none" aria-label="Annuler la dernière action" title="Annuler">↶</button>
-    <div class="spacer"></div>
-    <div class="folionav" id="folionav">
-      <button id="fo-prev" aria-label="Folio précédent">‹</button>
-      <span class="lbl" id="fo-lbl">Folio 1 / 1</span>
-      <button id="fo-next" aria-label="Folio suivant">›</button>
+  <main id="planche" aria-label="Le plan">
+    <div id="ombre" aria-hidden="true"></div>
+    <svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div id="vide" class="vide" hidden>
+      <div class="vide-carte">
+        <div class="pictos" aria-hidden="true">
+          <svg width="64" height="44" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="8" width="18" height="28" rx="2"/><rect x="44" y="8" width="18" height="28" rx="2"/>
+            <path d="M20 16h8v12h16M20 28h4"/><circle cx="20" cy="16" r="2" fill="currentColor" stroke="none"/><circle cx="44" cy="28" r="2" fill="currentColor" stroke="none"/>
+          </svg>
+        </div>
+        <h1>Vos plans électriques, à partir de la base</h1>
+        <p>Déposez un fichier Excel ou CSV n’importe où sur cette table : chaque liaison devient un fil, chaque repère un équipement, folio par folio.</p>
+        <div class="vide-actions">
+          <button class="btn cuivre" id="vd-ouvrir">Choisir un fichier</button>
+          <button class="btn papier" id="vd-coller">Coller des liaisons</button>
+          <button class="btn lien" id="vd-exemple">Voir l’exemple</button>
+        </div>
+      </div>
     </div>
-    <div class="tools">
-      <button class="ghost" id="btnSvg" title="Enregistrer le folio affiché en SVG (vectoriel, imprimable à toute échelle)">SVG</button>
-      <button class="ghost" id="btnPng" title="Enregistrer le folio affiché en image PNG">PNG</button>
-      <button class="ghost" id="btnPrint" title="Imprimer le folio affiché">Imprimer</button>
+    <div id="depot" class="depot" aria-hidden="true"><div>Déposez le fichier</div></div>
+  </main>
+
+  <header id="haut">
+    <div class="marque verre" aria-label="Atelier Schéma">
+      <svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="3.5" cy="9" r="2.5" fill="#b5541c"/><path d="M6 9h6" stroke="#eef2f6" stroke-width="1.8" stroke-linecap="round"/><circle cx="14.5" cy="9" r="2.5" fill="#b5541c"/></svg>
+      Atelier Schéma
+    </div>
+    <button class="dossier verre" id="dossier" title="Toutes les liaisons du contrat"><span id="ctx-nom">—</span><span id="ctx-txt"></span><span id="ctx-sauve" class="sauve"></span></button>
+    <button class="btn cuivre" id="btnOuvrir" title="Ouvrir un fichier Excel ou CSV">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span>Ouvrir</span>
+    </button>
+    <button class="rond verre" id="btnUndo" hidden aria-label="Annuler la dernière action" title="Annuler (Ctrl+Z)">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>
+    </button>
+    <div class="espace"></div>
+    <div class="recherche verre" id="recherche">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Repère ou n° de fil" aria-label="Chercher un repère ou un numéro de fil" autocomplete="off" spellcheck="false">
+      <span class="raccourci" aria-hidden="true">/</span>
+      <div id="q-liste" class="q-liste verre" role="listbox" hidden></div>
+    </div>
+    <div id="menuBoite">
+      <button class="rond verre" id="btnMenu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="19" cy="12" r="1.4" fill="currentColor"/></svg>
+      </button>
+      <div id="menu" class="menu verre" hidden role="menu">
+        <button role="menuitem" data-act="ouvrir">Ouvrir un fichier…</button>
+        <button role="menuitem" data-act="coller">Coller des liaisons…</button>
+        <button role="menuitem" data-act="exemple">Charger l’exemple</button>
+        <hr>
+        <button role="menuitem" data-act="table">Toutes les liaisons</button>
+        <button role="menuitem" data-act="cartouche">Cartouche</button>
+        <hr>
+        <button role="menuitem" data-act="svg">Enregistrer le folio en SVG</button>
+        <button role="menuitem" data-act="png">Enregistrer le folio en PNG</button>
+        <button role="menuitem" data-act="imprimer">Imprimer <span class="raccourci">Ctrl+P</span></button>
+        <hr>
+        <button role="menuitem" data-act="vider" class="danger">Tout effacer</button>
+      </div>
     </div>
   </header>
 
-  <aside aria-label="Panneau de travail">
-    <nav class="railtabs" id="railtabs">
-      <button data-vue="v-mat" class="on">Matériel</button>
-      <button data-vue="v-piece">Compléter</button>
-      <button data-vue="v-regl">Réglages</button>
-    </nav>
-    <div class="railbody">
+  <nav id="folios" class="verre" aria-label="Folios" hidden>
+    <button id="fo-prev" aria-label="Folio précédent"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
+    <div id="fo-strip" class="fo-strip"></div>
+    <span id="fo-lbl" class="fo-lbl">1 / 1</span>
+    <button id="fo-next" aria-label="Folio suivant"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
+  </nav>
 
-      <section class="vue on" id="v-mat">
-        <div class="grp">
-          <h3>Contrat de câblage</h3>
-          <div class="brow">
-            <button class="primary" id="lk-file">Ouvrir un fichier</button>
-            <button id="lk-import">Coller</button>
-            <button class="mini" id="lk-demo" title="Charger le contrat d’exemple">Exemple</button>
-            <input type="file" id="lk-fichier" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
-          </div>
-        </div>
-        <div class="grp">
-          <h3>Équipements <span class="count" id="cnt-eq">0</span></h3>
-          <input id="mt-find" placeholder="Repère ou n° de fil…" aria-label="Chercher un repère ou un numéro de fil">
-          <div class="mthead"><span>Repère</span><span>Fils</span></div>
-          <div id="mt-liste"></div>
-          <div id="mt-rien" class="hint" style="display:none">Rien qui corresponde.</div>
-          <div class="hint hint-liste">Clique un repère : le dessin s’y rend et le met en évidence.</div>
-          <div id="xp-stat" class="hint"></div>
-        </div>
-        <details id="mt-details">
-          <summary>Corriger les liaisons <span id="cnt-lk" class="count"></span></summary>
-          <table class="grid" id="tbl-lk"><thead><tr><th>De</th><th>B.</th><th>Vers</th><th>B.</th><th>Fil</th><th></th></tr></thead><tbody></tbody></table>
-          <div class="brow" style="margin-top:8px">
-            <button class="ghost mini addrow" id="add-lk">+ liaison</button>
-            <button class="ghost mini" id="btnFolios">Découper en folios</button>
-            <button class="ghost mini" id="lk-clear">Tout vider</button>
-          </div>
-          <div class="hint">La recherche ci-dessus filtre aussi cette table.</div>
-        </details>
-      </section>
-
-      <section class="vue" id="v-piece">
-        <div class="grp">
-          <h3>Pièces absentes du contrat</h3>
-          <p class="hint" style="margin-top:0">Un contrat ne déclare que ses liaisons. Les <b>barrettes</b> et les <b>prises de coupure</b> qui se trouvent entre les deux n’y sont pas. On va les chercher dans un contrat déjà testé qui ressemble au tien.</p>
-          <div class="etape" id="et-1"><span class="n">1</span><button id="rb-browse">Charger une base de retest</button></div>
-          <div class="etape" id="et-2"><span class="n">2</span><button id="rb-proche">De quel contrat partir&nbsp;?</button></div>
-          <div class="etape" id="et-3"><span class="n">3</span><button id="rb-appl">Compléter mon contrat</button></div>
-          <div id="rb-stat" class="hint">Aucune base chargée.</div>
-          <input type="file" id="rb-file" accept=".xlsm,.xlsx,.xls,.csv,.tsv,.txt" hidden>
-          <div class="hint">Le fichier est lu <b>ici, dans ton navigateur</b> : rien ne part sur le réseau, rien n’est enregistré, tout disparaît quand tu fermes l’onglet.</div>
-        </div>
-        <div class="grp">
-          <h3>Vérifications <span class="count" id="cnt-rb">—</span></h3>
-          <div class="brow">
-            <button class="ghost mini" id="rb-ident">Identifier les équipements</button>
-            <button class="ghost mini" id="rb-report" style="display:none">Rapport</button>
-            <button class="ghost mini" id="rb-forget" style="display:none">Oublier la base</button>
-          </div>
-        </div>
-      </section>
-
-      <section class="vue" id="v-regl">
-        <div class="grp">
-          <h3>Cartouche</h3>
-          <div class="cart-grid">
-            <div class="field wide"><label for="m-title">Titre</label><input id="m-title"></div>
-            <div class="field"><label for="m-rev">Indice</label><input id="m-rev"></div>
-            <div class="field"><label for="m-date">Date</label><input id="m-date"></div>
-            <div class="field"><label for="m-scale">Échelle</label><input id="m-scale"></div>
-            <div class="field"><label for="m-author">Dessiné</label><input id="m-author"></div>
-          </div>
-          <div class="hint">Le numéro de folio s’écrit tout seul.</div>
-        </div>
-        <div class="grp">
-          <h3>Désignations</h3>
-          <table class="grid" id="tbl-eq"><thead><tr><th>Repère</th><th>Désignation</th><th></th></tr></thead><tbody></tbody></table>
-          <button class="ghost mini addrow" id="add-eq">+ désignation</button>
-          <div class="hint">Le nom écrit sous le repère sur le dessin.</div>
-        </div>
-      </section>
-
-    </div>
-  </aside>
-
-  <main>
-    <div id="stage"><svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg></div>
-    <div class="hud">
-      <button id="zout" aria-label="Dézoomer">−</button><div class="z" id="zlbl">100 %</div><button id="zin" aria-label="Zoomer">+</button>
-      <div class="sep"></div><button id="zfit">Ajuster</button>
-    </div>
-    <div class="notice" id="notice"><div class="big">Aucun contrat chargé</div>Ouvre un fichier, dépose-le sur la planche, ou colle tes liaisons</div>
-  </main>
-</div>
-<div class="drawer-bg" id="drawerBg"></div>
-<div id="pop"></div>
-<div class="modal-bg" id="modal"><div class="modal">
-  <h2>Charger un contrat</h2>
-  <div class="body">
-    <div id="db-drop" class="dropzone">
-      <div class="dz-ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="square"><path d="M11 3v11M6.5 10 11 14.5 15.5 10"/><path d="M3.5 18h15"/></svg></div>
-      <div class="dz-main">Glisse un fichier <b>Excel</b> (.xlsx, .xlsm) ou <b>CSV</b> ici</div>
-      <div class="dz-sub">ou <button type="button" class="linklike" id="db-browse">choisis un fichier</button> — le format retest est lu par le nom de ses colonnes</div>
-      <input type="file" id="db-file" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
-    </div>
-    <div id="db-fileinfo" class="dz-info"></div>
-    <p class="hint" style="margin:12px 0 4px">…ou colle directement les lignes : une liaison par ligne, colonnes séparées par <b>;</b> <b>,</b> ou tabulation.</p>
-    <p class="colspec">Équip.1 · Borne · PN · Équip.2 · Borne · PN · Fil · Type · Route · Plan</p>
-    <textarea id="imp-db" placeholder="210SP1;12;;115CD;3;;W-101;DR24;;"></textarea>
+  <div id="hud" class="verre">
+    <button id="zout" aria-label="Dézoomer"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button>
+    <button id="zlbl" title="Ajuster le plan à l’écran (0)">100 %</button>
+    <button id="zin" aria-label="Zoomer"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg></button>
+    <button id="zfit" aria-label="Ajuster à l’écran" title="Ajuster à l’écran (0)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
   </div>
-  <div class="foot"><button id="imp-cancel">Annuler</button><button class="primary" id="imp-ok">Charger</button></div>
-</div></div>
-<div class="modal-bg" id="rmodal"><div class="modal wide">
-  <h2>Reconnaissance de la base de retest</h2>
-  <div class="body"><div id="rb-body" class="rrep"></div></div>
-  <div class="foot"><button id="rb-copy">Copier le rapport</button><button class="primary" id="rb-close">Fermer</button></div>
-</div></div>
+
+  <aside id="fiche" hidden aria-label="Fiche">
+    <div class="fiche-corps" id="fiche-corps"></div>
+    <div class="fiche-pied" id="fiche-pied" hidden></div>
+  </aside>
+  <div id="toast" class="verre" role="status" aria-live="polite"></div>
+  <input type="file" id="fichier" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
+</div>
+<div id="printroot"></div>
