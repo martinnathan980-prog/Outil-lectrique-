@@ -773,7 +773,7 @@ function meilleurPlacement(liaisons) {
   const candidats = []; graines.forEach(g => { candidats.push({ graine: g }); if (nB <= 120) candidats.push({ graine: g, equilibrer: true }); });
   candidats.forEach(o => { const L = essayer(o);
     const peignes = L.routage.barrettes.reduce((t, b) => t + Math.abs(b.y2 - b.y1), 0), ec = ecart(L);
-    const score = compterDroits(L.routage.fils) - compterCroisements(L.routage.fils) / 120;
+    const score = compterDroits(L.routage.fils) - compterCroisements(L.routage.fils, L.routage.barrettes) / 120;
     if (score > bScore || (score === bScore && (peignes < bPeignes || (peignes === bPeignes && ec < bEcart - 0.01)))) {
       best = L; bScore = score; bPeignes = peignes; bEcart = ec; bOpt = o; } });
   // resserrage : les goulottes reprennent la largeur que les pistes occupent
@@ -787,7 +787,7 @@ function meilleurPlacement(liaisons) {
   // perdu et pas plus de croisements — elle rend les blocs compacts
   { const L3 = essayer({ ...bOpt, goulottes: bGoulottes, condenser: true });
     const s3 = compterDroits(L3.routage.fils), s0 = compterDroits(best.routage.fils);
-    const c3 = compterCroisements(L3.routage.fils), c0 = compterCroisements(best.routage.fils);
+    const c3 = compterCroisements(L3.routage.fils, L3.routage.barrettes), c0 = compterCroisements(best.routage.fils, best.routage.barrettes);
     if (filsDansBloc(L3) <= filsDansBloc(best) && (s3 > s0 || (s3 === s0 && c3 <= c0))) best = L3; }
   // secours : serpentin
   const e0 = emprise(best), r0 = e0.w / e0.h, nc = best.geom.nCols;

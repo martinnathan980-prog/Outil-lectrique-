@@ -255,11 +255,14 @@ function router(layout) {
 }
 
 /* ---- mesures partagées par le concours de placement et les contrôles ----
-   Un shunt n'est ni droit ni plié : il ne compte pas. */
+   Un shunt n'est ni droit ni plié : il ne compte pas. Une barrette qui
+   tranche un fil est un croisement comme un autre, l'œil ne fait pas la
+   différence. */
 const compterDroits = fils => fils.filter(w => w.pts.length === 2).length;
-function compterCroisements(fils) {
+function compterCroisements(fils, barrettes) {
   const segs = []; fils.forEach((w, wi) => { for (let i = 0; i < w.pts.length - 1; i++)
     segs.push({ x1: w.pts[i].x, y1: w.pts[i].y, x2: w.pts[i + 1].x, y2: w.pts[i + 1].y, wi }); });
+  (barrettes || []).forEach((b, bi) => segs.push({ x1: b.x, y1: b.y1, x2: b.x, y2: b.y2, wi: 'barrette' + bi }));
   let c = 0;
   for (let i = 0; i < segs.length; i++) for (let j = i + 1; j < segs.length; j++) {
     const a = segs[i], b = segs[j]; if (a.wi === b.wi) continue;
@@ -290,5 +293,5 @@ function auditer(dessin) {
   const droits = compterDroits(fils);
   return { ok: filsDansBloc === 0 && blocsChevauches === 0, fils: fils.length, droits,
            tauxDroits: fils.length ? +(droits / fils.length).toFixed(3) : 1,
-           croisements: compterCroisements(fils), filsDansBloc, blocsChevauches, blocs: blocs.length, details: coupables };
+           croisements: compterCroisements(fils, dessin.barrettes), filsDansBloc, blocsChevauches, blocs: blocs.length, details: coupables };
 }

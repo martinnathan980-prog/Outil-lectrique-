@@ -845,9 +845,8 @@ const FRAG = '\u0002';       // sépare un repère du numéro de son fragment
    chaque point de raccordement se dessine en pastille près de sa borne. */
 const estRail = nom => RAIL_RE.test(String(nom || '').trim());
 /* Ce qui se place en RÉGLETTE (une pile de bornes, un fil de chaque côté) :
-   les rails et les prises de coupure. Une barrette VT garde le gabarit d'un
-   équipement — mesuré, c'est ainsi que ses vingt départs sortent droits. */
-const enReglette = nom => estRail(nom) || estCoupure(nom);
+   les rails, les prises de coupure et les barrettes. */
+const enReglette = nom => estRail(nom) || estBornier(nom);
 
 function construireGraphe(liaisons) {
   const lk = liaisons.filter(liaisonComplete);
@@ -1693,7 +1692,7 @@ function meilleurPlacement(liaisons) {
   const candidats = []; graines.forEach(g => { candidats.push({ graine: g }); if (nB <= 120) candidats.push({ graine: g, equilibrer: true }); });
   candidats.forEach(o => { const L = essayer(o);
     const peignes = L.routage.barrettes.reduce((t, b) => t + Math.abs(b.y2 - b.y1), 0), ec = ecart(L);
-    const score = compterDroits(L.routage.fils) - compterCroisements(L.routage.fils) / 120;
+    const score = compterDroits(L.routage.fils) - compterCroisements(L.routage.fils, L.routage.barrettes) / 120;
     if (score > bScore || (score === bScore && (peignes < bPeignes || (peignes === bPeignes && ec < bEcart - 0.01)))) {
       best = L; bScore = score; bPeignes = peignes; bEcart = ec; bOpt = o; } });
   // resserrage : les goulottes reprennent la largeur que les pistes occupent
@@ -1707,7 +1706,7 @@ function meilleurPlacement(liaisons) {
   // perdu et pas plus de croisements — elle rend les blocs compacts
   { const L3 = essayer({ ...bOpt, goulottes: bGoulottes, condenser: true });
     const s3 = compterDroits(L3.routage.fils), s0 = compterDroits(best.routage.fils);
-    const c3 = compterCroisements(L3.routage.fils), c0 = compterCroisements(best.routage.fils);
+    const c3 = compterCroisements(L3.routage.fils, L3.routage.barrettes), c0 = compterCroisements(best.routage.fils, best.routage.barrettes);
     if (filsDansBloc(L3) <= filsDansBloc(best) && (s3 > s0 || (s3 === s0 && c3 <= c0))) best = L3; }
   // secours : serpentin
   const e0 = emprise(best), r0 = e0.w / e0.h, nc = best.geom.nCols;
@@ -1982,11 +1981,14 @@ function router(layout) {
 }
 
 /* ---- mesures partagées par le concours de placement et les contrôles ----
-   Un shunt n'est ni droit ni plié : il ne compte pas. */
+   Un shunt n'est ni droit ni plié : il ne compte pas. Une barrette qui
+   tranche un fil est un croisement comme un autre, l'œil ne fait pas la
+   différence. */
 const compterDroits = fils => fils.filter(w => w.pts.length === 2).length;
-function compterCroisements(fils) {
+function compterCroisements(fils, barrettes) {
   const segs = []; fils.forEach((w, wi) => { for (let i = 0; i < w.pts.length - 1; i++)
     segs.push({ x1: w.pts[i].x, y1: w.pts[i].y, x2: w.pts[i + 1].x, y2: w.pts[i + 1].y, wi }); });
+  (barrettes || []).forEach((b, bi) => segs.push({ x1: b.x, y1: b.y1, x2: b.x, y2: b.y2, wi: 'barrette' + bi }));
   let c = 0;
   for (let i = 0; i < segs.length; i++) for (let j = i + 1; j < segs.length; j++) {
     const a = segs[i], b = segs[j]; if (a.wi === b.wi) continue;
@@ -2017,7 +2019,7 @@ function auditer(dessin) {
   const droits = compterDroits(fils);
   return { ok: filsDansBloc === 0 && blocsChevauches === 0, fils: fils.length, droits,
            tauxDroits: fils.length ? +(droits / fils.length).toFixed(3) : 1,
-           croisements: compterCroisements(fils), filsDansBloc, blocsChevauches, blocs: blocs.length, details: coupables };
+           croisements: compterCroisements(fils, dessin.barrettes), filsDansBloc, blocsChevauches, blocs: blocs.length, details: coupables };
 }
 
 /* ───────── 06-dessin.js ───────── */
