@@ -1551,14 +1551,24 @@ function jugeDePlacement() {
     L.routage.fils.forEach(w => { for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1];
       const x0 = Math.min(a.x, b.x), x1 = Math.max(a.x, b.x), y0 = Math.min(a.y, b.y), y1 = Math.max(a.y, b.y);
       for (const c of L.comps) { if (x1 > c.x + 2 && x0 < c.x + c.w - 2 && y1 > c.y + 2 && y0 < c.y + c.h - 2) { n++; break; } } } }); return n; };
-  const juger = L => { if (!L.jugement) { const e = emprise(L), r = e.w / e.h; L.jugement = {
+  /* l'encombrement : ce qui limite l'échelle d'impression sur une feuille au
+     format A, posée dans le sens qui l'arrange (paysage ou portrait) ; à
+     encombrement égal, la plus petite emprise a le moins de vide */
+  // les goulottes sont taillées pour tous leurs fils, mais les fils droits ne
+  // prennent pas de piste : on juge la largeur qu'aura le dessin resserré
+  const largeurResserree = (L, e) => { const g = L.geom, occ = goulottesOccupees(L); if (!occ) return e.w;
+    let d = 0; for (let i = 1; i < g.nCols; i++) d += Math.max(0, g.chW[i] - occ[i]); return e.w - d; };
+  const juger = L => { if (!L.jugement) { const e = emprise(L); e.w = largeurResserree(L, e); const r = e.w / e.h; L.jugement = {
       sain: filsDansBloc(L) === 0, tient: r <= 2.2 && r >= 0.45, droits: compterDroits(L.routage.fils),
-      croisements: compterCroisements(L.routage.fils, L.routage.barrettes), ec: r > A3 ? r / A3 : A3 / r,
-      peignes: L.routage.barrettes.reduce((t, b) => t + Math.abs(b.y2 - b.y1), 0), largeur: e.w }; } return L.jugement; };
+      croisements: compterCroisements(L.routage.fils, L.routage.barrettes),
+      encombrement: Math.min(Math.max(e.w / A3, e.h), Math.max(e.w, e.h / A3)), surface: e.w * e.h,
+      peignes: L.routage.barrettes.reduce((t, b) => t + Math.abs(b.y2 - b.y1), 0) }; } return L.jugement; };
   const bat = (L, ref) => { if (!ref) return true; const a = juger(L), b = juger(ref);
     if (a.sain !== b.sain) return a.sain; if (a.tient !== b.tient) return a.tient;
     if (a.droits !== b.droits) return a.droits > b.droits; if (a.croisements !== b.croisements) return a.croisements < b.croisements;
-    if (Math.abs(a.ec - b.ec) > 0.01) return a.ec < b.ec; return a.peignes < b.peignes; };
+    if (Math.abs(a.encombrement - b.encombrement) > 0.01 * b.encombrement) return a.encombrement < b.encombrement;
+    if (Math.abs(a.surface - b.surface) > 0.01 * b.surface) return a.surface < b.surface;
+    return a.peignes < b.peignes; };
   return { juger, bat, emprise };
 }
 
@@ -1584,15 +1594,14 @@ function meilleurPlacement(liaisons) {
   if (nB <= 120 && G.ids.some(n => G.feuillesDe(n).length >= PROFONDEUR)) candidats.slice().forEach(o => candidats.push({ ...o, profondeur: PROFONDEUR }));
   candidats.forEach(o => { const L = essayer(o); if (bat(L, best)) { best = L; bOpt = o; } });
   // resserrage : les goulottes reprennent la largeur que les pistes occupent
-  // vraiment ; gardé si le dessin rétrécit d'au moins 3 % sans rien perdre
+  // vraiment (le jugement l'anticipait) ; gardé s'il ne perd rien
+  const nePerdRien = (L, ref) => { const a = juger(L), b = juger(ref); return a.sain && a.droits >= b.droits && a.croisements <= b.croisements; };
   let bGoulottes = null;
   { const fix = goulottesOccupees(best);
-    if (fix) { const L2 = essayer({ ...bOpt, goulottes: fix }); const a = juger(L2), b = juger(best);
-      if (a.sain && a.droits >= b.droits && a.croisements <= b.croisements && a.largeur < b.largeur * 0.97) { best = L2; bGoulottes = fix; } } }
+    if (fix) { const L2 = essayer({ ...bOpt, goulottes: fix }); if (nePerdRien(L2, best)) { best = L2; bGoulottes = fix; } } }
   // condensation par glissement de broches : gardée si aucun fil droit n'est
   // perdu et pas plus de croisements — elle rend les blocs compacts
-  { const L3 = essayer({ ...bOpt, goulottes: bGoulottes, condenser: true }); const a = juger(L3), b = juger(best);
-    if (a.sain && a.droits >= b.droits && a.croisements <= b.croisements) best = L3; }
+  { const L3 = essayer({ ...bOpt, goulottes: bGoulottes, condenser: true }); if (nePerdRien(L3, best)) best = L3; }
   // secours : serpentin
   const e0 = emprise(best), r0 = e0.w / e0.h, nc = best.geom.nCols;
   if (r0 > 2.2 && nc >= 4) {
