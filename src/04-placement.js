@@ -62,7 +62,8 @@ function placer(G, options) {
     const charge = new Map(); const hauteur = n => noeuds.get(n).broches.length * PRH + 60;
     ids.forEach(n => charge.set(niveau.get(n), (charge.get(niveau.get(n)) || 0) + hauteur(n)));
     if (opt.equilibrer) ids.slice().sort((a, b) => hauteur(b) - hauteur(a)).forEach(n => {
-      const autour = [...new Set([...adj.get(n).keys()].map(k => niveau.get(k)))]; if (autour.length !== 1) return;
+      const voisins = [...adj.get(n).keys()]; const autour = [...new Set(voisins.map(k => niveau.get(k)))]; if (autour.length !== 1) return;
+      if (voisins.length === 1 && adj.get(voisins[0]).size === 1) return;      // un îlot de deux blocs n'a pas de côté
       const l0 = niveau.get(n), l1 = 2 * autour[0] - l0; if (Math.abs(l1 - l0) !== 2) return;
       if ((charge.get(l1) || 0) + hauteur(n) >= (charge.get(l0) || 0)) return;
       niveau.set(n, l1); charge.set(l0, charge.get(l0) - hauteur(n)); charge.set(l1, (charge.get(l1) || 0) + hauteur(n)); });
@@ -668,7 +669,8 @@ function placer(G, options) {
       const rects = items.map(g => { const b = cadre(g); return { g, b, w: b.w + 2 * PAD, h: b.h + 2 * PAD, k: cleDe(g) }; });
       rects.sort((a, b) => (b.h - a.h) || (a.k - b.k));
       let MB = null; fixes.forEach(g => { const b = cadre(g); MB = MB ? { x0: Math.min(MB.x0, b.x0), y0: Math.min(MB.y0, b.y0), x1: Math.max(MB.x1, b.x0 + b.w), y1: Math.max(MB.y1, b.y0 + b.h) } : { x0: b.x0, y0: b.y0, x1: b.x0 + b.w, y1: b.y0 + b.h }; });
-      const ranger = capH => { const pos = []; const x0 = MB.x1 + 50; let x = x0, y = MB.y0, cw = 0, ybot = MB.y0, xr = x0;
+      // la première étagère se remplit sous l'îlot principal, les suivantes à sa droite
+      const ranger = capH => { const pos = []; let x = MB.x0, y = MB.y1, cw = MB.x1 - MB.x0 + 34, ybot = MB.y1, xr = MB.x1;
         rects.forEach(r => { if (y > MB.y0 && y + r.h > MB.y0 + capH) { x += cw; cw = 0; y = MB.y0; } pos.push({ r, x, y }); cw = Math.max(cw, r.w); ybot = Math.max(ybot, y + r.h); xr = Math.max(xr, x + r.w); y += r.h; });
         return { pos, W: xr - MB.x0, H: Math.max(MB.y1, ybot) - MB.y0 }; };
       const mh = Math.max(MB.y1 - MB.y0, 500); const cands = [0.8, 1, 1.3, 1.7, 2.2, 2.9].map(f => ranger(mh * f));
