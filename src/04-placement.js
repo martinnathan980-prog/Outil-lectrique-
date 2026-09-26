@@ -28,6 +28,11 @@ function placer(G, options) {
   const graine = opt.graine || 0;                 // 0 = plus fort degré, 'loin' = point le plus éloigné, n = décalage
   const SERP = opt.serpentin | 0;                 // largeur de rangée (0 = pas de repli)
   const mediane = a => { a = a.slice().sort((x, y) => x - y); return a[a.length >> 1]; };
+  /* Un SHUNT — deux bornes d'un même bornier pontées — n'est pas un fil :
+     il ne prend ni goulotte ni ordonnée, le dessin le trace dans la réglette. */
+  const shunts = new Set();
+  lk.forEach((l, li) => { const A = bouts.get(li + ':A'), B = bouts.get(li + ':B');
+    if (A.cle !== B.cle && nid(A.nom, A.cle) === nid(B.nom, B.cle) && estBornier(A.nom)) shunts.add(li); });
 
   /* ===== 1. NIVEAUX : chaque nœud reçoit sa colonne ======================= */
   const niveau = new Map();
@@ -110,7 +115,7 @@ function placer(G, options) {
     return (colonneDe.get(nid(autreNom, autreCle)) || 0) < (colonneDe.get(id) || 0) ? 'L' : 'R'; };
   const goulotteDuBout = (id, flanc) => (colonneDe.get(id) || 0) + (flanc === 'R' ? 1 : 0);
   const chCount = new Array(nCols + 1).fill(0);
-  lk.forEach((l, li) => { const A = bouts.get(li + ':A'), B = bouts.get(li + ':B');
+  lk.forEach((l, li) => { if (shunts.has(li)) return; const A = bouts.get(li + ':A'), B = bouts.get(li + ':B');
     const cA = goulotteDuBout(nid(A.nom, A.cle), flancDuBout(A.nom, A.cle, B.nom, B.cle));
     const cB = goulotteDuBout(nid(B.nom, B.cle), flancDuBout(B.nom, B.cle, A.nom, A.cle));
     chCount[cA]++; if (cA !== cB) chCount[cB]++; });
@@ -142,8 +147,14 @@ function placer(G, options) {
         clesListes(id).forEach(lid => liste(id, lid).forEach((p, j) => yBroche.set(id + SEP + p.cle, y + 16 + j * PRH)));
         basDe.set(id, y + hauteurEstimee(id)); cur[r] = y + hauteurEstimee(id) + VGAP; }); }); }
 
+  // les partenaires d'une borne, ceux de ses bornes pontées compris : deux
+  // bornes d'un shunt reçoivent le même barycentre et restent voisines
+  const partenairesExternes = (id, cle) => { const vus = new Set([cle]), pile = [cle], out = [];
+    while (pile.length) { const c = pile.pop(); (partenaires.get(id + SEP + c) || []).forEach(q => {
+      if (q.id !== id) out.push(q); else if (!vus.has(q.cle)) { vus.add(q.cle); pile.push(q.cle); } }); }
+    return out; };
   const trierBroches = () => { for (const id of ids) clesListes(id).forEach(lid => { const L = liste(id, lid); if (L.length < 2) return;
-    const sc = new Map(L.map(p => { const ps = partenaires.get(id + SEP + p.cle) || [];
+    const sc = new Map(L.map(p => { const ps = partenairesExternes(id, p.cle);
       if (!ps.length) return [p.cle, yB(id, p.cle)]; let s = 0; ps.forEach(q => s += yB(q.id, q.cle)); return [p.cle, s / ps.length]; }));
     L.sort((a, b) => sc.get(a.cle) - sc.get(b.cle)); }); };
   const trierColonnes = () => colonnes.forEach(c => { if (c.length < 2) return;
@@ -332,7 +343,7 @@ function placer(G, options) {
     // les bornes d'une réglette n'ont pas d'ordre imposé : elles se mettent face à leurs partenaires
     const reordonner = py => ids.forEach(id => { if (!estS.get(id)) return;
       clesListes(id).forEach(lid => { const L = liste(id, lid); if (L.length < 2) return;
-        const sc = new Map(L.map(p => { const ps = (partenaires.get(id + SEP + p.cle) || []).filter(q => q.id !== id);
+        const sc = new Map(L.map(p => { const ps = partenairesExternes(id, p.cle);
           let s = 0, c = 0; ps.forEach(q => { const y = py.get(PK(q.id, q.cle)); if (y != null) { s += y; c++; } });
           return [p.cle, c ? s / c : (py.get(PK(id, p.cle)) || 0)]; }));
         L.sort((a, b) => sc.get(a.cle) - sc.get(b.cle)); }); });
@@ -696,7 +707,7 @@ function placer(G, options) {
     comps.push(c); compDe.set(id, c); if (!compDe.has(N.nom)) compDe.set(N.nom, c); }
   const links = lk.map((l, li) => { const A = bouts.get(li + ':A'), B = bouts.get(li + ':B'); const ia = nid(A.nom, A.cle), ib = nid(B.nom, B.cle);
     const sA = flancDuBout(A.nom, A.cle, B.nom, B.cle), sB = flancDuBout(B.nom, B.cle, A.nom, A.cle); const cA = compDe.get(ia), cB = compDe.get(ib);
-    return { i: li, ...l, boucle: l.de === l.vers && l.borneDe === l.borneVers,
+    return { i: li, ...l, boucle: l.de === l.vers && l.borneDe === l.borneVers, shunt: shunts.has(li),
       epA: { x: sA === 'R' ? cA.x + cA.w : cA.x, y: cA.parCle.get(A.cle).y, ch: goulotteDuBout(ia, sA), stub: sA === 'R' ? 'L' : 'R' },
       epB: { x: sB === 'R' ? cB.x + cB.w : cB.x, y: cB.parCle.get(B.cle).y, ch: goulotteDuBout(ib, sB), stub: sB === 'R' ? 'L' : 'R' } }; });
   // le cadre se cale sur les blocs dessinés, marges proportionnées, réserve pour le cartouche

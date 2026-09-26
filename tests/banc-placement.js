@@ -106,6 +106,16 @@ const CAS = [
       a.push(['667VT21', String(i + 1), 'E' + i, '1']); }
     return a; }],
 
+  /* Le contrat IRO AE de la base de retest : une barrette VT dont deux bornes
+     sont pontées (un shunt, qui ne se trace pas) et une prise de coupure. */
+  ['barrette shuntée et prise de coupure — IRO AE', () => [
+    ['210SP1', '12', '667VT21', '1'], ['667VT21', '1', '667VT21', '2'], ['667VT21', '2', '115CD', '3'],
+    ['667VT21', '3', '118CD', '3'], ['667VT21', '4', '409GH2', '7'], ['340AB1', '4', '512VN', '1'],
+    ['340AB1', '4', '512VN', '2'], ['340AB1', '1', '210SP1', '3'], ['340AB2', '1', '210SP1', '4'],
+    ['115CD', '8', '408VC1A', '1'], ['408VC1A', '2', '601RC', '2'], ['601RC', '5', '733LE', '1'],
+    ['733LE', '4', '409GH2', '2'], ['118CD', '8', '512VN', '5'], ['409GH2', '9', '845VG', '3'],
+    ['845VG', '1', '601RC', '7'], ['210SP1', '5', '115CD', '9'], ['340AB1', '7', '512VN', '8']]],
+
   ['contrat d’essai — le cas réel de référence', null]   // null = contratEssai()
 ];
 

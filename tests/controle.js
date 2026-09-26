@@ -70,7 +70,7 @@ function titre(t) { console.log('\n' + t); }
   /* Le numéro de fil est l'information numéro un d'un câbleur : il doit être
      écrit, et jamais barré par un fil ni collé à un voisin. */
   const nums = await page.evaluate(() => { atelier.essai(); peindre(); const W = app.dessin.fils;
-    const avecNom = W.filter(w => String(w.cable || '').trim()).length;
+    const avecNom = W.filter(w => !w.shunt && String(w.cable || '').trim()).length;   // un shunt n'a pas de segment où écrire
     const el = Array.from(document.querySelectorAll('#svg .filnum'));
     const boites = el.map(t => { const x = +t.getAttribute('x'), y = +t.getAttribute('y'); const l = t.textContent.length * 0.60 * 6; return { x0: x - l / 2, x1: x + l / 2, y0: y - 5.6, y1: y }; });
     let chevauche = 0; for (let i = 0; i < boites.length; i++) for (let j = i + 1; j < boites.length; j++) { const a = boites[i], b = boites[j]; if (a.x1 > b.x0 && a.x0 < b.x1 && a.y1 > b.y0 && a.y0 < b.y1) chevauche++; }

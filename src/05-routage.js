@@ -25,7 +25,7 @@ function router(layout) {
   // ---- 0) barrettes ------------------------------------------------------
   const boutAjuste = new Map(); const barrettes = []; const piquages = [];
   { const groupes = new Map();
-    layout.links.forEach((l, li) => { [['A', l.epA, l.epB], ['B', l.epB, l.epA]].forEach(([tag, ep, autre]) => {
+    layout.links.forEach((l, li) => { if (l.shunt) return; [['A', l.epA, l.epB], ['B', l.epB, l.epA]].forEach(([tag, ep, autre]) => {
       const k = Math.round(ep.x) + ',' + Math.round(ep.y) + ',' + ep.stub;
       (groupes.get(k) || groupes.set(k, []).get(k)).push({ li, tag, ep, autre }); }); });
     const raccords = [];
@@ -146,6 +146,8 @@ function router(layout) {
     return false; };
   for (let li = 0; li < N; li++) { const l = layout.links[li];
     if (l.boucle) continue;                     // une borne reliée à elle-même ne se dessine pas
+    // un shunt ne se trace pas : le dessin le pose en pont dans la réglette
+    if (l.shunt) { fils[li] = { ...l, pts: [] }; continue; }
     let A = EA(li), B = EB(li);
     if (A.ch > B.ch) { const t = A; A = B; B = t; }
     if (A.ch === B.ch) {
@@ -246,13 +248,14 @@ function router(layout) {
 
   // jonctions : deux fils qui aboutissent au même point
   const cnt = new Map();
-  fils.forEach(w => { if (!w) return; [w.pts[0], w.pts[w.pts.length - 1]].forEach(p => {
+  fils.forEach(w => { if (!w || w.shunt) return; [w.pts[0], w.pts[w.pts.length - 1]].forEach(p => {
     const k = Math.round(p.x) + ',' + Math.round(p.y); cnt.set(k, (cnt.get(k) || 0) + 1); }); });
   const points = []; for (const [k, c] of cnt) { if (c > 1) { const [x, y] = k.split(',').map(Number); points.push({ x, y }); } }
   return { fils: fils.filter(Boolean), points, barrettes, piquages };
 }
 
-/* ---- mesures partagées par le concours de placement et les contrôles ---- */
+/* ---- mesures partagées par le concours de placement et les contrôles ----
+   Un shunt n'est ni droit ni plié : il ne compte pas. */
 const compterDroits = fils => fils.filter(w => w.pts.length === 2).length;
 function compterCroisements(fils) {
   const segs = []; fils.forEach((w, wi) => { for (let i = 0; i < w.pts.length - 1; i++)
@@ -271,7 +274,7 @@ function compterCroisements(fils) {
 /* Les deux invariants sacrés : aucun fil à travers un bloc étranger, aucun
    chevauchement. Un dessin qui les viole est FAUX, quel que soit son score. */
 function auditer(dessin) {
-  const blocs = dessin.comps.filter(c => c.kind !== 'tag'), fils = dessin.fils;
+  const blocs = dessin.comps.filter(c => c.kind !== 'tag'), fils = dessin.fils.filter(w => !w.shunt);
   let filsDansBloc = 0; const coupables = [];
   fils.forEach(w => { const siens = new Set([String(w.de), String(w.vers)]);
     for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1];

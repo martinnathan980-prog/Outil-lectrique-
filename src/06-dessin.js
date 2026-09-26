@@ -94,6 +94,7 @@ function cartoucheSvg(rx, by, c, folio) {
 
 /* ---- les fils --------------------------------------------------------- */
 function filSvg(w) {
+  if (!w.pts.length) return '';           // un shunt n'a pas de tracé : la réglette le porte
   let d = 'M ' + f1(w.pts[0].x) + ' ' + f1(w.pts[0].y);
   for (let i = 1; i < w.pts.length; i++) d += ' L ' + f1(w.pts[i].x) + ' ' + f1(w.pts[i].y);
   return `<path class="cab" data-i="${w.i}" data-a="${escA(w.de)}" data-b="${escA(w.vers)}" d="${d}"/>`;
