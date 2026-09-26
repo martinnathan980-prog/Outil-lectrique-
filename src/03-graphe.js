@@ -55,8 +55,11 @@ function construireGraphe(liaisons) {
   // --- nœuds
   const noeuds = new Map(); const noeudDeBroche = new Map();
   const entier = noms.length <= 60;
+  /* Une masse est un potentiel, pas un appareil : son symbole est petit et se
+     répète au pied de chaque équipement qu'elle sert, le fil reste court. */
+  const fragmente = n => estMasse(n) || (enReglette(n) && !entier);
   for (const n of noms) { const P = B0(n);
-    if (!enReglette(n) || entier) {
+    if (!fragmente(n)) {
       noeuds.set(n, { id: n, nom: n, reglette: enReglette(n), broches: P.liste.slice() });
       P.liste.forEach(p => noeudDeBroche.set(n + SEP + p.cle, n)); continue; }
     // un gros bornier se coupe près de l'équipement le plus LOCAL (plus petit
@@ -67,7 +70,7 @@ function construireGraphe(liaisons) {
       (groupes.get(g) || groupes.set(g, []).get(g)).push(p); });
     let gi = 0;
     for (const [, pins] of groupes) { const id = n + FRAG + (gi++);
-      noeuds.set(id, { id, nom: n, reglette: true, broches: pins });
+      noeuds.set(id, { id, nom: n, reglette: enReglette(n), broches: pins });
       pins.forEach(p => noeudDeBroche.set(n + SEP + p.cle, id)); }
   }
   const ids = [...noeuds.keys()];
