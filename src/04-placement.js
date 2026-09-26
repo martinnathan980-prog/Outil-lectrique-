@@ -121,7 +121,10 @@ function placer(G, options) {
   const largeurTotale = Math.max(cx, MARGE + 360);
 
   /* ===== 5. POSITION INITIALE, PUIS ORDONNANCEMENT ÉLASTIQUE ============= */
-  const xDe = new Map(); colonnes.forEach((c, i) => c.forEach(id => xDe.set(id, colX[i])));
+  // un bloc plus étroit que sa colonne (une masse) se range du côté de ses fils
+  const xDe = new Map(); colonnes.forEach((c, i) => c.forEach(id => { const w = largeurDe(id); let g = 0, d = 0;
+    if (w < colW[i]) chaqueBroche(id, p => (partenaires.get(id + SEP + p.cle) || []).forEach(q => { const cq = colonneDe.get(q.id) ?? 0; if (cq > i) d++; else if (cq < i) g++; }));
+    xDe.set(id, (d && !g) ? colX[i] + colW[i] - w : colX[i]); }));
   const yBroche = new Map(), hautDe = new Map(), basDe = new Map();
   const yB = (id, k) => yBroche.get(id + SEP + k);
   const glisser = (id, dy) => { chaqueBroche(id, p => yBroche.set(id + SEP + p.cle, yB(id, p.cle) + dy));
