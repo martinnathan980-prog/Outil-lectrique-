@@ -18,9 +18,8 @@ const FRAG = '\u0002';       // sépare un repère du numéro de son fragment
    chaque point de raccordement se dessine en pastille près de sa borne. */
 const estRail = nom => RAIL_RE.test(String(nom || '').trim());
 /* Ce qui se place en RÉGLETTE (une pile de bornes, un fil de chaque côté) :
-   les rails et les prises de coupure. Une barrette VT garde le gabarit d'un
-   équipement — mesuré, c'est ainsi que ses vingt départs sortent droits. */
-const enReglette = nom => estRail(nom) || estCoupure(nom);
+   les rails, les prises de coupure et les barrettes. */
+const enReglette = nom => estRail(nom) || estBornier(nom);
 
 function construireGraphe(liaisons) {
   const lk = liaisons.filter(liaisonComplete);
