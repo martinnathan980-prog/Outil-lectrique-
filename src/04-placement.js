@@ -23,7 +23,7 @@ const MARGE = 70, HAUT_PAGE = MARGE + 120;
 const RANGEE_GAP = 130;
 
 function placer(G, options) {
-  const { liaisons: lk, ids, noeuds, bouts, nid, partenaires, adj, degreDe } = G;
+  const { liaisons: lk, ids, noeuds, bouts, nid, partenaires, adj, degreDe, feuillesDe } = G;
   const opt = options || {};
   const graine = opt.graine || 0;                 // 0 = plus fort degré, 'loin' = point le plus éloigné, n = décalage
   const SERP = opt.serpentin | 0;                 // largeur de rangée (0 = pas de repli)
@@ -85,7 +85,14 @@ function placer(G, options) {
       const l0 = niveau.get(n), l1 = 2 * autour[0] - l0; if (Math.abs(l1 - l0) !== 2) return;
       if ((charge.get(l1) || 0) + hauteur(n) >= (charge.get(l0) || 0)) return;
       if (barrettesSi(n, l1) > barrettesSi(n, l0)) return;                  // pas au prix d'une barrette
-      niveau.set(n, l1); charge.set(l0, charge.get(l0) - hauteur(n)); charge.set(l1, (charge.get(l1) || 0) + hauteur(n)); }); }
+      niveau.set(n, l1); charge.set(l0, charge.get(l0) - hauteur(n)); charge.set(l1, (charge.get(l1) || 0) + hauteur(n)); });
+    /* PROFONDEUR : un hub qui a beaucoup de feuilles d'un même côté les range
+       sur deux colonnes, une feuille sur deux plus loin ; leur fil passe droit
+       entre deux feuilles de la première colonne (le solveur y veille) et la
+       colonne fait moitié moins haut */
+    if (opt.profondeur) ids.forEach(H => [-1, 1].forEach(s => {
+      const feuilles = feuillesDe(H).filter(id => niveau.get(id) === niveau.get(H) + s);
+      if (feuilles.length >= opt.profondeur) feuilles.forEach((id, i) => { if (i % 2) niveau.set(id, niveau.get(H) + 2 * s); }); })); }
   { const usuels = [...new Set(ids.map(n => niveau.get(n)))].sort((a, b) => a - b);
     const remap = new Map(usuels.map((l, i) => [l, i]));
     ids.forEach(n => niveau.set(n, remap.get(niveau.get(n)))); }
@@ -852,6 +859,9 @@ function meilleurPlacement(liaisons) {
   // chaque graine, feuilles à droite puis équilibrées
   let best = null, bOpt = {};
   const candidats = []; graines.forEach(g => { candidats.push({ graine: g }); if (nB <= 120) candidats.push({ graine: g, equilibrer: true }); });
+  // un hub à huit feuilles ou plus : on essaie aussi ses feuilles sur deux colonnes
+  const PROFONDEUR = 8;
+  if (nB <= 120 && G.ids.some(n => G.feuillesDe(n).length >= PROFONDEUR)) candidats.slice().forEach(o => candidats.push({ ...o, profondeur: PROFONDEUR }));
   candidats.forEach(o => { const L = essayer(o); if (bat(L, best)) { best = L; bOpt = o; } });
   // resserrage : les goulottes reprennent la largeur que les pistes occupent
   // vraiment ; gardé si le dessin rétrécit d'au moins 3 % sans rien perdre
