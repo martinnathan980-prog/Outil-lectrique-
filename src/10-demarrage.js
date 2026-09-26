@@ -20,8 +20,11 @@ const atelier = {
 
 function demarrer() {
   lierPanneau(); lierPlanche();
+  const baseOuverte = relireBase();
   // on retrouve son contrat ; à défaut l'exemple — jamais un écran vide
   if (!relire()) { chargerContrat(contratEssai(), 'contrat d’exemple', 'Contrat d’exemple'); app.hist = []; synchroniserHistorique(); }
+  // la base se montre à côté du plan : c'est elle qu'on corrige
+  if (baseOuverte) ouvrirBase();
   requestAnimationFrame(() => ajuster());
 }
 demarrer();
