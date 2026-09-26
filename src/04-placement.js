@@ -55,6 +55,17 @@ function placer(G, options) {
         for (const c of [l0 - 1, l0 + 1]) { if (c < 0) continue; const cc = cout(n, c); if (cc < bc - 0.01) { bc = cc; best = c; } }
         if (best !== l0) { niveau.set(n, best); bouge = true; } }
       if (!bouge) break; }
+    // une feuille (tous ses voisins dans une même colonne) coûte autant des
+    // deux côtés : sur demande, elle va du côté le moins chargé — les colonnes
+    // s'équilibrent, mais le flanc opposé du hub peut se charger de fils pliés ;
+    // c'est au concours de trancher, pas à cette règle
+    const charge = new Map(); const hauteur = n => noeuds.get(n).broches.length * PRH + 60;
+    ids.forEach(n => charge.set(niveau.get(n), (charge.get(niveau.get(n)) || 0) + hauteur(n)));
+    if (opt.equilibrer) ids.slice().sort((a, b) => hauteur(b) - hauteur(a)).forEach(n => {
+      const autour = [...new Set([...adj.get(n).keys()].map(k => niveau.get(k)))]; if (autour.length !== 1) return;
+      const l0 = niveau.get(n), l1 = 2 * autour[0] - l0; if (Math.abs(l1 - l0) !== 2) return;
+      if ((charge.get(l1) || 0) + hauteur(n) >= (charge.get(l0) || 0)) return;
+      niveau.set(n, l1); charge.set(l0, charge.get(l0) - hauteur(n)); charge.set(l1, (charge.get(l1) || 0) + hauteur(n)); });
     const usuels = [...new Set(ids.map(n => niveau.get(n)))].sort((a, b) => a - b);
     const remap = new Map(usuels.map((l, i) => [l, i]));
     ids.forEach(n => niveau.set(n, remap.get(niveau.get(n))));
@@ -752,36 +763,40 @@ function meilleurPlacement(liaisons) {
       const x0 = Math.min(a.x, b.x), x1 = Math.max(a.x, b.x), y0 = Math.min(a.y, b.y), y1 = Math.max(a.y, b.y);
       for (const c of L.comps) { if (x1 > c.x + 2 && x0 < c.x + c.w - 2 && y1 > c.y + 2 && y0 < c.y + c.h - 2) { n++; break; } } } }); return n; };
   const essayer = o => { const L = placer(G, o); L.routage = router(L); return L; };
-  let best = null, bScore = -1e18, bGraine = 0, bPeignes = Infinity;
-  graines.forEach(g => { const L = essayer({ graine: g });
-    const peignes = L.routage.barrettes.reduce((t, b) => t + Math.abs(b.y2 - b.y1), 0);
+  const emprise = L => { let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+    L.comps.forEach(c => { x0 = Math.min(x0, c.x); x1 = Math.max(x1, c.x + c.w); y0 = Math.min(y0, c.y); y1 = Math.max(y1, c.y + c.h); });
+    return { w: Math.max(1, x1 - x0), h: Math.max(1, y1 - y0) }; };
+  const A3 = 1.414, ecart = L => { const e = emprise(L), r = e.w / e.h; return r > A3 ? r / A3 : A3 / r; };
+  // chaque graine, feuilles à droite puis équilibrées : la droiture décide,
+  // puis les croisements, puis la longueur des barrettes, puis le format
+  let best = null, bScore = -1e18, bOpt = {}, bPeignes = Infinity, bEcart = Infinity;
+  const candidats = []; graines.forEach(g => { candidats.push({ graine: g }); if (nB <= 120) candidats.push({ graine: g, equilibrer: true }); });
+  candidats.forEach(o => { const L = essayer(o);
+    const peignes = L.routage.barrettes.reduce((t, b) => t + Math.abs(b.y2 - b.y1), 0), ec = ecart(L);
     const score = compterDroits(L.routage.fils) - compterCroisements(L.routage.fils) / 120;
-    if (score > bScore || (score === bScore && best && peignes < bPeignes)) { best = L; bScore = score; bPeignes = peignes; bGraine = g; } });
+    if (score > bScore || (score === bScore && (peignes < bPeignes || (peignes === bPeignes && ec < bEcart - 0.01)))) {
+      best = L; bScore = score; bPeignes = peignes; bEcart = ec; bOpt = o; } });
   // resserrage : les goulottes reprennent la largeur que les pistes occupent
   // vraiment ; gardé si le dessin rétrécit d'au moins 3 % sans perdre plus d'un fil droit
   const largeur = L => Math.max(...L.comps.map(c => c.x + c.w));
   let bGoulottes = null;
   { const fix = goulottesOccupees(best);
-    if (fix) { const L2 = essayer({ graine: bGraine, goulottes: fix });
+    if (fix) { const L2 = essayer({ ...bOpt, goulottes: fix });
       if (compterDroits(L2.routage.fils) >= compterDroits(best.routage.fils) - 1 && largeur(L2) < largeur(best) * 0.97 && filsDansBloc(L2) <= filsDansBloc(best)) { best = L2; bGoulottes = fix; } } }
   // condensation par glissement de broches : gardée si aucun fil droit n'est
   // perdu et pas plus de croisements — elle rend les blocs compacts
-  { const L3 = essayer({ graine: bGraine, goulottes: bGoulottes, condenser: true });
+  { const L3 = essayer({ ...bOpt, goulottes: bGoulottes, condenser: true });
     const s3 = compterDroits(L3.routage.fils), s0 = compterDroits(best.routage.fils);
     const c3 = compterCroisements(L3.routage.fils), c0 = compterCroisements(best.routage.fils);
     if (filsDansBloc(L3) <= filsDansBloc(best) && (s3 > s0 || (s3 === s0 && c3 <= c0))) best = L3; }
   // secours : serpentin
-  const emprise = L => { let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
-    L.comps.forEach(c => { x0 = Math.min(x0, c.x); x1 = Math.max(x1, c.x + c.w); y0 = Math.min(y0, c.y); y1 = Math.max(y1, c.y + c.h); });
-    return { w: Math.max(1, x1 - x0), h: Math.max(1, y1 - y0) }; };
-  const A3 = 1.414, ecart = L => { const e = emprise(L), r = e.w / e.h; return r > A3 ? r / A3 : A3 / r; };
   const e0 = emprise(best), r0 = e0.w / e0.h, nc = best.geom.nCols;
   if (r0 > 2.2 && nc >= 4) {
     const R0 = Math.max(2, Math.min(6, Math.round(Math.sqrt(r0 / A3)))); const s0 = compterDroits(best.routage.fils);
     const densite = L => { const e = emprise(L); let a = 0; L.comps.forEach(c => a += c.w * c.h); return a / (e.w * e.h); };
     let d0 = ecart(best), q0 = 0; const vus = new Set();
     [R0, R0 + 1, R0 + 2, R0 - 1].filter(k => k >= 2).forEach(k => { const W = Math.ceil(nc / k); if (W < 2 || vus.has(W)) return; vus.add(W);
-      let L = null; try { L = essayer({ graine: bGraine, goulottes: bGoulottes, serpentin: W }); } catch (e) { return; }
+      let L = null; try { L = essayer({ ...bOpt, goulottes: bGoulottes, serpentin: W }); } catch (e) { return; }
       if (!L || filsDansBloc(L) > 0) return;
       if (compterDroits(L.routage.fils) < s0 - k) return;
       const d = ecart(L), q = densite(L);
