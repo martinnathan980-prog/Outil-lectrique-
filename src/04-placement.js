@@ -62,9 +62,12 @@ function placer(G, options) {
       noeuds.get(n).broches.forEach(p => { compte(n, p.cle);
         (partenaires.get(n + SEP + p.cle) || []).forEach(q => { if (q.id !== n) compte(q.id, q.cle); }); });
       return b; };
-    // raffinement local : un nœud se rapproche de ses voisins si ça coûte moins
+    // raffinement local : un nœud se rapproche de ses voisins si ça coûte
+    // moins ; un fil entre deux blocs d'une même colonne est plié à coup sûr
+    // et descend une goulotte chargée — il coûte plus qu'un fil qui enjambe
+    // une colonne, qui peut passer droit
     const cout = (n, ln) => { let sc = 0; for (const [k, w] of adj.get(n)) { const dd = Math.abs(ln - niveau.get(k));
-      sc += w * (dd === 1 ? 0 : (dd === 0 ? 2 : 1 + dd)); } return sc + barrettesSi(n, ln); };
+      sc += w * (dd === 1 ? 0 : (dd === 0 ? 3 : dd)); } return sc + barrettesSi(n, ln); };
     for (let passe = 0; passe < 3; passe++) { let bouge = false;
       for (const n of ids) { const l0 = niveau.get(n); let best = l0, bc = cout(n, l0);
         for (const c of [l0 - 1, l0 + 1]) { const cc = cout(n, c); if (cc < bc - 0.01) { bc = cc; best = c; } }
