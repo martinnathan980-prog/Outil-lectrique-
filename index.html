@@ -1151,10 +1151,17 @@ function placer(G, options) {
     const RANG = id => (rangeeDe.get(id) || 0) * 1e9;     // la rangée du serpentin prime tout
     let colBlocs = colonnes.map(c => [...c].sort((a, b) => (RANG(a) + hautDe.get(a)) - (RANG(b) + hautDe.get(b))));
     let best = resoudre(colBlocs), bestBlocs = colBlocs;
-    const cleBary = (py, moyenne) => id => { const ds = [];
-      chaqueBroche(id, p => (partenaires.get(id + SEP + p.cle) || []).forEach(q => { if (q.id !== id && py.has(PK(q.id, q.cle))) ds.push(py.get(PK(q.id, q.cle))); }));
+    /* un partenaire dans une AUTRE rangée du serpentin compte en miroir : les
+       fils de retour d'un repli s'emboîtent alors au lieu de se croiser — de
+       deux bras qui descendent ensemble, celui du haut doit arriver en bas */
+    const bandes = py => { const b = new Map(); ids.forEach(id => { const r = rangeeDe.get(id) || 0; const e = b.get(r) || b.set(r, { lo: Infinity, hi: -Infinity }).get(r);
+      chaqueBroche(id, p => { const y = py.get(PK(id, p.cle)); if (y != null) { e.lo = Math.min(e.lo, y); e.hi = Math.max(e.hi, y); } }); }); return b; };
+    const cleBary = (py, moyenne) => { const B = bandes(py); return id => { const ds = []; const r = rangeeDe.get(id) || 0;
+      chaqueBroche(id, p => (partenaires.get(id + SEP + p.cle) || []).forEach(q => { if (q.id === id || !py.has(PK(q.id, q.cle))) return;
+        const y = py.get(PK(q.id, q.cle)), rq = rangeeDe.get(q.id) || 0; const b = B.get(rq);
+        ds.push(rq === r ? y : b.lo + b.hi - y); }));
       let bar; if (!ds.length) bar = hautDe.get(id); else if (moyenne) bar = ds.reduce((a, b) => a + b, 0) / ds.length; else bar = mediane(ds);
-      return RANG(id) + bar; };
+      return RANG(id) + bar; }; };
     const MAXIT = ids.length > 600 ? 10 : (ids.length > 120 ? 16 : 24);
     // les bornes d'une réglette n'ont pas d'ordre imposé : elles se mettent face à leurs partenaires
     const reordonner = py => ids.forEach(id => { if (!estS.get(id)) return;
