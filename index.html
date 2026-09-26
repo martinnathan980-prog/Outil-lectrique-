@@ -6,577 +6,366 @@
 <title>Atelier Schéma</title>
 <style>
 /* ═══════════════════════════════════════════════════════════════════════════
-   DIRECTION « ATELIER » — la précision industrielle.
+   DIRECTION « TABLE LUMINEUSE »
 
-   Rien ici ne cherche à plaire. L'écran est une planche : un fond de carton
-   gris chaud sur lequel on a posé une feuille blanche, et sur la gauche une
-   colonne d'instrument. Tout ce qui est DONNÉE est en chasse fixe ; tout ce
-   qui est LANGAGE est en linéale. La hiérarchie se fait à la graisse, à la
-   capitale et au filet — jamais à la couleur. Un seul accent, l'oxyde, et on
-   ne le sort que pour dire « c'est ici ».
-
-   Le module est de 4 px. Un seul filet, 1 px. Un seul rayon, 2 px. Aucune
-   ombre qui ne corresponde pas à une vraie élévation (fenêtre, tiroir,
-   fiche). Aucun dégradé. La beauté vient de l'alignement.
+   Le plan est l'écran. Rien ne l'encadre : la feuille blanche est posée sur
+   une table bleu nuit et occupe tout — les commandes flottent dessus, en
+   deux coins et une réglette de folios en bas, comme sur une carte.
+   Les instruments sont sombres (verre fumé) ; les documents sont blancs :
+   la feuille, la fiche d'un équipement, la table des liaisons.
+   Un seul accent, le cuivre — celui du fil — pour l'action principale et
+   pour ce qui est choisi. Le langage est en linéale système ; toute DONNÉE
+   (repère, borne, n° de fil) est en chasse fixe. Le rayon est plein pour ce
+   qui se presse (pilules), 16 px pour ce qui se lit (cartes). Module 4 px.
+   Aucune image, aucune police extérieure. Sur téléphone, le plan reste seul ;
+   ce qui se lit monte en tiroir depuis le bas.
    ═══════════════════════════════════════════════════════════════════════ */
 :root{
-  /* ── chrome : le carton, le papier, l'encre, le filet ── */
-  --chrome:#d2cec2;        /* planche d'atelier, derrière la feuille         */
-  --chrome2:#fbfaf6;       /* papier : panneau, barre, fenêtres              */
-  --chrome3:#efede6;       /* surface en retrait : champ, bouton au repos    */
-  --chrome4:#e5e2d8;       /* enfoncé / survol de surface en retrait         */
-  /* LE FILET ET L'ENCRE FAIBLE ONT ÉTÉ REMONTÉS, MESURE À L'APPUI.
-     Première version : filet #bfbaac, soit 1,86:1 sur le papier du panneau —
-     joli sur une capture, mais sous une verrière ou sur une dalle mal réglée
-     la structure du panneau disparaît et il ne reste que du texte flottant.
-     Le filet STRUCTUREL (bord de panneau, crémaillère d'onglets, barre haute)
-     passe donc à 3,19:1, le seuil des éléments non textuels ; le filet
-     INTÉRIEUR d'un groupe reste ténu, c'est lui qui donne la finesse.
-     Même correction sur l'encre faible : #86867f donnait 3,51:1 pour du texte
-     de 10 px en capitales — en dessous du seuil de lisibilité. 4,71:1. */
-  --line:#948c7b;          /* filet structurel — 3,19:1 sur le papier        */
-  --line2:#ded9cd;         /* filet ténu, à l'intérieur d'un groupe          */
-  --ink:#17181a;           /* encre                                          */
-  --ink-dim:#55565a;       /* encre affaiblie                                */
-  --ink-faint:#717169;     /* étiquettes, unités, compteurs — 4,71:1         */
-  --accent:#9c3a14;        /* oxyde — un seul accent, employé au compte-goutte */
-  --accent-dim:#9c3a14;
-  --accent-soft:#f3e7e0;
-  --warn:#8a5c07; --ok:#2b6a3f; --red:#a3291f;
-  /* ── ces valeurs appartiennent au dessin, pas à l'enveloppe : intactes ── */
-  --sheet:#ffffff; --sheet-line:#dfe3ea; --sheet-line2:#eef1f5; --sheet-ink:#16202b;
-  --brown:#7a4a2a; --black:#1b1f24; --grey:#6b7480; --blue:#125f8f;
-  --green:#1a7f4b; --yellow:#e8c93a; --red2:#b03a34;
-  --mono:ui-monospace,Menlo,Consolas,"SF Mono","DejaVu Sans Mono",monospace;
-  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --r:2px;                 /* rayon unique, presque nul                      */
-  --t:.1s linear;          /* transitions courtes, jamais décoratives        */
+  /* palette : six valeurs, le reste en est tiré */
+  --nuit:#0f1620;            /* la table                                     */
+  --craie:#eef2f6;           /* texte sur la table                           */
+  --papier:#ffffff;          /* les documents                                */
+  --encre:#18212c;           /* texte sur papier                             */
+  --cuivre:#b5541c;          /* l'accent — 4,8:1 sur papier                  */
+  --danger:#b3261e;          /* supprimer, erreur — 5,9:1 sur papier         */
+  /* tirées de la palette */
+  --verre:rgba(21,29,39,.93);/* instrument : verre fumé sur la table         */
+  --verre-plein:#161e29;     /* le même, sans transparence                   */
+  --craie-2:#a9b4c0;         /* texte secondaire sur verre — 7:1             */
+  --trait-verre:rgba(255,255,255,.09);
+  --papier-2:#f2f4f7;        /* surface en retrait sur papier                */
+  --papier-3:#e6eaef;        /* survol de la surface en retrait              */
+  --encre-2:#5b6875;         /* texte secondaire sur papier — 5,7:1          */
+  --filet:#dfe4e9;           /* filet sur papier                             */
+  --cuivre-2:#9e4816;        /* cuivre pressé                                */
+  --cuivre-clair:#f0a36f;    /* cuivre sur la table (focus, badge) — 8,4:1   */
+  --cuivre-pale:#fbeee4;     /* fond cuivré très pâle sur papier             */
+  /* typographie : une échelle de sept corps, ratio ≈ 1,2 */
+  --t0:11px; --t1:12px; --t2:13.5px; --t3:15px; --t4:17px; --t5:22px; --t6:28px;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","DejaVu Sans Mono",monospace;
+  /* élévations : une par étage */
+  --ombre-1:0 4px 18px rgba(0,0,0,.35);
+  --ombre-2:0 18px 50px rgba(0,0,0,.45);
+  --ombre-3:0 30px 90px rgba(0,0,0,.55);
+  --rapide:.14s ease; --moyen:.24s ease;
 }
 *{box-sizing:border-box}
-html,body{height:100%;margin:0}
-body{font-family:var(--sans);background:var(--chrome);color:var(--ink);
-  font-size:13px;line-height:1.45;overflow:hidden;-webkit-font-smoothing:antialiased}
-button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+html,body{height:100%;margin:0;overflow:hidden}
+body{font:var(--t2)/1.45 var(--sans);background:var(--nuit);color:var(--craie);
+  -webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+[hidden]{display:none!important}
+button,input,textarea{font:inherit;color:inherit;margin:0}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--cuivre-clair);outline-offset:2px}
+#fiche :focus-visible,.vide-carte :focus-visible{outline-color:var(--cuivre)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.mono{font-family:var(--mono)}
+svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
-/* ─── L'ÉTIQUETTE ────────────────────────────────────────────────────────
-   Une seule forme pour tout ce qui nomme : chasse fixe, capitale, 10 px,
-   interlettrage ouvert. En-tête de groupe, en-tête de colonne, libellé de
-   champ — même objet, donc même dessin. */
-.grp>h3,.subhead,.field label,table.grid th,.btbl th,.rrep h4,#pop h5,.railtabs button,.mthead span{
-  font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.09em;
-  text-transform:uppercase;color:var(--ink-faint)}
+/* ─── LA TABLE ET LA FEUILLE ────────────────────────────────────────────── */
+#planche{position:fixed;inset:0;overflow:hidden;touch-action:none;cursor:grab;
+  background:radial-gradient(ellipse 70% 60% at 50% 42%,#1a2431 0%,var(--nuit) 100%)}
+#planche.tient{cursor:grabbing}
+#svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+#ombre{position:absolute;left:0;top:0;pointer-events:none;display:none;
+  box-shadow:0 0 0 1px rgba(255,255,255,.07),0 40px 100px rgba(0,0,0,.7),0 2px 8px rgba(0,0,0,.6)}
+/* la feuille dessinée par le moteur ; on ne touche qu'à son conteneur */
+#svg .comp{cursor:pointer}
+#svg .cab{cursor:pointer}
 
-/* ─── Boutons : trois niveaux, pas un de plus ─────────────────────────── */
-button{background:var(--chrome3);border:1px solid var(--line);color:var(--ink);
-  padding:5px 10px;border-radius:var(--r);cursor:pointer;font-size:12px;
-  transition:background var(--t),border-color var(--t),color var(--t);white-space:nowrap}
-button:hover{background:var(--chrome4);border-color:#b2ad9f}
-button:active{background:#dcd8cd}
-button:focus-visible{outline:2px solid var(--accent);outline-offset:1px;z-index:1;position:relative}
-button:disabled{opacity:.38;cursor:default;background:var(--chrome3);border-color:var(--line)}
-.primary{background:var(--accent);border-color:var(--accent);color:#fdf6f2;font-weight:500}
-.primary:hover{background:#87310f;border-color:#87310f}
-.primary:active{background:#73290c}
-.primary:focus-visible{outline-color:var(--ink)}
-.ghost{background:transparent;border-color:transparent;color:var(--ink-dim)}
-.ghost:hover{background:var(--chrome3);border-color:transparent;color:var(--ink)}
-.mini{padding:3px 8px;font-size:11px}
-.linklike{background:none;border:0;color:var(--accent);padding:0;font:inherit;
-  cursor:pointer;text-decoration:underline;text-underline-offset:2px}
-.linklike:hover{background:none;color:#73290c}
-input,select,textarea{background:var(--chrome2);border:1px solid var(--line);
-  border-radius:var(--r);padding:5px 8px;font-size:12px;color:var(--ink);
-  transition:border-color var(--t),box-shadow var(--t);width:100%}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
-  box-shadow:inset 0 0 0 1px var(--accent)}
-::placeholder{color:var(--ink-faint)}
-input[type=checkbox]{width:auto;accent-color:var(--accent)}
+/* ─── LES INSTRUMENTS : verre fumé ──────────────────────────────────────── */
+.verre{background:var(--verre);-webkit-backdrop-filter:blur(16px) saturate(1.3);backdrop-filter:blur(16px) saturate(1.3);
+  border:1px solid var(--trait-verre);box-shadow:var(--ombre-1);color:var(--craie)}
+.rond{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;border:none;background:none;color:inherit;padding:0;transition:background var(--rapide)}
+.rond:hover{background:rgba(255,255,255,.1)}
+.btn{height:40px;padding:0 16px;border-radius:20px;border:none;display:inline-flex;align-items:center;gap:8px;
+  font-weight:600;white-space:nowrap;transition:background var(--rapide),transform var(--rapide)}
+.btn:active{transform:translateY(1px)}
+.btn.cuivre{background:var(--cuivre);color:#fff}
+.btn.cuivre:hover{background:var(--cuivre-2)}
+.btn.papier{background:var(--papier-2);color:var(--encre)}
+.btn.papier:hover{background:var(--papier-3)}
+.btn.lien{background:none;color:var(--encre-2);padding:0 8px;font-weight:500}
+.btn.lien:hover{color:var(--encre);background:var(--papier-2)}
+.btn.lien.danger{color:var(--danger)}
+.btn.lien.danger:hover{background:#fbeae8;color:var(--danger)}
+.btn.verre{color:var(--craie)}
+.btn.verre:hover{background:rgba(35,45,58,.92)}
 
-/* ─── La planche ─────────────────────────────────────────────────────── */
-#app{height:100%;display:grid;grid-template-columns:300px 1fr;
-  grid-template-rows:44px 1fr;grid-template-areas:"top top" "side main"}
+/* ─── LE HAUT : dossier, ouvrir, annuler · recherche, menu ──────────────── */
+#haut{position:fixed;top:12px;left:12px;right:12px;display:flex;align-items:center;gap:8px;z-index:20;pointer-events:none}
+#haut>*{pointer-events:auto}
+.marque{height:40px;padding:0 14px 0 12px;border-radius:20px;display:flex;align-items:center;gap:9px;font-weight:600;letter-spacing:.005em;white-space:nowrap;flex:none}
+.marque svg{width:18px;height:18px;flex:none}
+.dossier{height:40px;padding:0 14px;border-radius:20px;display:flex;align-items:center;gap:10px;min-width:0;max-width:38vw}
+#ctx-nom{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#ctx-txt{color:var(--craie-2);white-space:nowrap;font-size:var(--t1)}
+.sauve{color:var(--craie-2);font-size:var(--t0);white-space:nowrap;display:flex;align-items:center;gap:6px}
+.sauve:not(:empty)::before{content:"";width:6px;height:6px;border-radius:50%;background:#5fb87a}
+.sauve.ko::before{background:var(--cuivre-clair)}
+.espace{flex:1}
+.recherche{position:relative;height:40px;width:300px;border-radius:20px;display:flex;align-items:center;padding:0 8px 0 14px;gap:8px;transition:width var(--moyen)}
+.recherche:focus-within{width:360px}
+.recherche svg.ico{color:var(--craie-2)}
+.recherche input{flex:1;min-width:0;background:none;border:none;outline:none;color:var(--craie);font-family:var(--mono);font-size:var(--t2);height:100%}
+.recherche input::placeholder{color:var(--craie-2);font-family:var(--sans)}
+.recherche input::-webkit-search-cancel-button{-webkit-appearance:none}
+.recherche .raccourci{color:var(--craie-2);font-size:var(--t0);border:1px solid var(--trait-verre);border-radius:6px;padding:1px 6px;font-family:var(--mono)}
+.q-liste{position:absolute;top:46px;left:0;right:0;border-radius:16px;padding:6px;max-height:min(60vh,420px);overflow:auto;z-index:30}
+.q-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;width:100%;background:none;border:none;text-align:left;color:var(--craie)}
+.q-item.on,.q-item:hover{background:rgba(255,255,255,.1)}
+.q-item .nom{font-family:var(--mono);font-weight:600;white-space:nowrap}
+.q-item .des{color:var(--craie-2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--t1)}
+.q-item .cpt{color:var(--craie-2);font-size:var(--t0);white-space:nowrap}
+.q-item .genre{font-size:var(--t0);color:var(--cuivre-clair);text-transform:uppercase;letter-spacing:.06em;font-weight:600;min-width:34px}
+.q-rien{padding:10px 12px;color:var(--craie-2)}
+#menuBoite{position:relative}
+.menu{position:absolute;top:46px;right:0;width:260px;border-radius:16px;padding:6px;z-index:30}
+.menu button{display:flex;width:100%;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;background:none;border:none;text-align:left;color:var(--craie);font-weight:500}
+.menu button:hover{background:rgba(255,255,255,.1)}
+.menu button.danger{color:#ff9c8f}
+.menu hr{border:none;border-top:1px solid var(--trait-verre);margin:6px 6px}
+.menu .raccourci{margin-left:auto;color:var(--craie-2);font-size:var(--t0);font-family:var(--mono)}
 
-/* ─── Le bandeau ──────────────────────────────────────────────────────
-   Dense, bas, en chasse fixe : c'est la ligne d'état d'un instrument, pas la
-   barre de marque d'un site. Le repère du produit est écrit comme un numéro
-   de planche — capitale, interlettré, avec la barre d'oxyde qui le tient. */
-header{grid-area:top;display:flex;align-items:stretch;gap:0;
-  background:var(--chrome2);border-bottom:1px solid var(--line);z-index:20}
-.brand{display:flex;align-items:center;gap:8px;padding:0 14px;flex:0 0 auto;
-  border-right:1px solid var(--line);font-family:var(--mono);font-size:11px;
-  font-weight:600;letter-spacing:.11em;text-transform:uppercase;color:var(--ink)}
-.brand::before{content:'';width:3px;height:14px;background:var(--accent);flex:0 0 3px}
-.brand b{font-weight:600;font-size:inherit;letter-spacing:inherit}
-.ctx{display:flex;align-items:center;gap:6px;color:var(--ink-faint);
-  font-family:var(--mono);font-size:11px;padding:0 14px;min-width:0;
-  border-right:1px solid var(--line);white-space:nowrap;overflow:hidden}
-.ctx b{color:var(--ink);font-weight:600}
-.sauve{color:var(--ink-faint);opacity:.85}
-.sauve::before{content:'· '}
-.undo{font-size:14px;line-height:1;padding:0 10px;border-radius:0;align-self:stretch;
-  border:0;border-right:1px solid var(--line);background:transparent;color:var(--ink-dim)}
-.undo:hover{background:var(--chrome3);border-right-color:var(--line)}
-.spacer{flex:1}
-.tools{display:flex;align-items:stretch}
-.tools button{border:0;border-left:1px solid var(--line);border-radius:0;
-  background:transparent;color:var(--ink-dim);padding:0 13px;font-size:11px;
-  font-family:var(--mono);letter-spacing:.07em;text-transform:uppercase}
-.tools button:hover{background:var(--chrome3);color:var(--ink);border-left-color:var(--line)}
-.tools button:focus-visible{outline-offset:-2px}
-header .sep{display:none}
+/* ─── LE BAS : les folios, le zoom ──────────────────────────────────────── */
+#folios{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;align-items:center;gap:2px;height:44px;padding:0 6px;border-radius:22px;z-index:20;max-width:calc(100vw - 24px)}
+#fo-prev,#fo-next{width:32px;height:32px;border-radius:50%;background:none;border:none;color:var(--craie);display:grid;place-items:center;padding:0}
+#fo-prev:hover:not(:disabled),#fo-next:hover:not(:disabled){background:rgba(255,255,255,.1)}
+#fo-prev:disabled,#fo-next:disabled{opacity:.3;cursor:default}
+.fo-strip{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;max-width:min(60vw,720px);padding:2px}
+.fo-strip::-webkit-scrollbar{display:none}
+.chip{height:32px;min-width:32px;padding:0 11px;border-radius:16px;border:none;background:none;color:var(--craie);font-family:var(--mono);font-weight:600;font-size:var(--t2);transition:background var(--rapide)}
+.chip:hover{background:rgba(255,255,255,.1)}
+.chip.on{background:var(--papier);color:var(--encre)}
+.fo-lbl{color:var(--craie-2);font-size:var(--t0);padding:0 10px 0 8px;white-space:nowrap;font-family:var(--mono)}
+#hud{position:fixed;right:12px;bottom:14px;display:flex;align-items:center;height:44px;padding:0 6px;border-radius:22px;z-index:20;gap:2px}
+#hud button{height:32px;min-width:32px;border:none;background:none;color:var(--craie);border-radius:16px;display:grid;place-items:center;padding:0}
+#hud button:hover{background:rgba(255,255,255,.1)}
+#zlbl{font-family:var(--mono);font-size:var(--t1);min-width:58px;color:var(--craie-2)}
+#zlbl:hover{color:var(--craie)}
 
-/* Le pas-à-pas de folio — un compteur de planche, lu comme sur le cartouche. */
-.folionav{display:none;align-items:stretch;border-left:1px solid var(--line)}
-.folionav.on{display:flex}
-.folionav button{background:transparent;border:0;padding:0 10px;color:var(--ink-dim);
-  font-size:13px;line-height:1;border-radius:0}
-.folionav button:hover:not(:disabled){background:var(--chrome3);color:var(--ink)}
-.folionav button:disabled{opacity:.3}
-.folionav .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.06em;white-space:nowrap;
-  display:flex;align-items:center;justify-content:center;padding:0 4px;
-  color:var(--ink);min-width:92px;text-align:center;user-select:none;
-  border-left:1px solid var(--line2);border-right:1px solid var(--line2)}
+/* ─── LA FICHE : un seul document, à droite ─────────────────────────────── */
+#fiche{position:fixed;top:64px;right:12px;bottom:70px;width:400px;max-width:calc(100vw - 24px);background:var(--papier);color:var(--encre);
+  border-radius:18px;box-shadow:var(--ombre-2);z-index:25;display:flex;flex-direction:column;overflow:hidden}
+#fiche.large{width:600px}
+#fiche.entre{animation:fiche-entre var(--moyen)}
+@keyframes fiche-entre{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+.fiche-corps{overflow:auto;padding:18px 20px 12px;flex:1;overscroll-behavior:contain}
+.fiche-tete{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}
+.min0{min-width:0;flex:1}
+.sur{font-size:var(--t0);text-transform:uppercase;letter-spacing:.09em;color:var(--encre-2);font-weight:700}
+.titre{font-family:var(--mono);font-size:var(--t5);font-weight:700;line-height:1.2;margin:2px 0 0;color:var(--encre);letter-spacing:.01em}
+input.titre{border:none;background:none;padding:0 2px;margin-left:-2px;width:100%;border-bottom:1.5px dashed transparent;border-radius:0;transition:border-color var(--rapide)}
+input.titre:hover,input.titre:focus{border-bottom-color:var(--filet);outline:none}
+input.titre:focus{border-bottom-color:var(--cuivre)}
+input.titre::placeholder{color:var(--filet)}
+.fermer{background:var(--papier-2);color:var(--encre-2);width:36px;height:36px;flex:none}
+.fermer:hover{background:var(--papier-3);color:var(--encre)}
+.champ{display:block;margin:10px 0 0}
+.champ>span{display:block;font-size:var(--t0);color:var(--encre-2);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:4px}
+.champ input,.champ textarea{width:100%;height:38px;border:1px solid var(--filet);border-radius:10px;padding:0 10px;background:var(--papier);color:var(--encre);font-family:var(--mono);transition:border-color var(--rapide)}
+.champ input:hover{border-color:#c9d1d9}
+.champ input:focus,.champ textarea:focus{border-color:var(--cuivre);outline:none;box-shadow:0 0 0 3px var(--cuivre-pale)}
+.champ input::placeholder,.champ textarea::placeholder{color:#a3adb8;font-family:var(--sans)}
+.champ textarea{height:180px;padding:10px;resize:vertical;font-size:var(--t1);line-height:1.5}
+.champ.sans input{font-family:var(--sans)}
+.grille{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.grille.bornes{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
+.info{display:flex;gap:10px;align-items:baseline;margin:12px 0 0;font-size:var(--t1);color:var(--encre-2)}
+.info b{color:var(--encre);font-weight:600}
+.sous-titre{display:flex;align-items:center;gap:8px;margin:20px 0 6px;font-size:var(--t0);text-transform:uppercase;letter-spacing:.09em;color:var(--encre-2);font-weight:700}
+.compte{background:var(--papier-2);border-radius:10px;padding:1px 8px;font-family:var(--mono);color:var(--encre)}
+.racc{list-style:none;margin:0;padding:0}
+.racc li{display:flex;align-items:center;gap:8px;padding:8px 8px;border-radius:10px;cursor:pointer;transition:background var(--rapide)}
+.racc li+li{border-top:1px solid var(--filet)}
+.racc li:hover{background:var(--papier-2)}
+.racc li:focus-visible{outline-offset:-2px}
+.racc .borne{font-family:var(--mono);font-weight:700;min-width:36px;text-align:right}
+.racc .fleche{color:#a3adb8}
+.racc .dest{font-family:var(--mono);background:none;border:none;padding:2px 4px;border-radius:6px;color:var(--encre);font-weight:600;text-decoration:underline dotted #a3adb8;text-underline-offset:3px;white-space:nowrap}
+.racc .dest:hover{color:var(--cuivre);text-decoration-color:var(--cuivre)}
+.racc .b{color:var(--encre-2);font-weight:400}
+.racc .meta{margin-left:auto;font-size:var(--t1);color:var(--encre-2);white-space:nowrap;font-family:var(--mono)}
+.racc .f{font-size:var(--t0);color:var(--cuivre);font-weight:700;background:var(--cuivre-pale);border-radius:6px;padding:1px 6px;white-space:nowrap}
+.racc .rien{color:var(--encre-2);cursor:default;padding:12px 8px}
+.fiche-pied{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 20px;border-top:1px solid var(--filet);background:var(--papier)}
+.fiche-pied .espace{flex:1}
+.aller{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;font-size:var(--t1);color:var(--encre-2);align-items:center}
+.aller button{font-family:var(--mono);background:var(--papier-2);border:none;border-radius:8px;padding:4px 9px;color:var(--encre);font-weight:600}
+.aller button:hover{background:var(--cuivre-pale);color:var(--cuivre)}
+.note{font-size:var(--t1);color:var(--encre-2);margin:8px 0 0;line-height:1.5}
+.note b{color:var(--encre)}
+.filtre{display:flex;align-items:center;gap:8px;height:38px;border:1px solid var(--filet);border-radius:10px;padding:0 10px;margin:12px 0 10px}
+.filtre input{flex:1;min-width:0;border:none;background:none;outline:none;font-family:var(--mono)}
+.filtre svg.ico{color:var(--encre-2);width:16px;height:16px}
+table.tab{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:var(--t1)}
+.tab th{text-align:left;font-size:var(--t0);color:var(--encre-2);font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:6px 6px;border-bottom:1px solid var(--filet);font-family:var(--sans)}
+.tab td{padding:2px 1px;border-bottom:1px solid var(--filet)}
+.tab td.n{width:56px}
+.tab input{width:100%;height:32px;border:1px solid transparent;border-radius:7px;padding:0 6px;background:none;font-family:var(--mono);transition:border-color var(--rapide)}
+.tab input:hover{border-color:var(--filet)}
+.tab input:focus{border-color:var(--cuivre);outline:none;background:var(--papier)}
+.tab .x{width:30px;text-align:center}
+.tab .x button{width:26px;height:26px;border:none;background:none;border-radius:50%;color:var(--encre-2)}
+.tab .x button:hover{background:#fbeae8;color:var(--danger)}
+.tab .reste td{color:var(--encre-2);padding:8px 6px}
 
-/* ─── La colonne d'instrument ─────────────────────────────────────────── */
-aside{grid-area:side;background:var(--chrome2);border-right:1px solid var(--line);
-  display:flex;flex-direction:column;min-height:0;z-index:15}
-.railtabs{display:flex;background:var(--chrome3);border-bottom:1px solid var(--line);flex:0 0 auto}
-.railtabs button{flex:1;background:transparent;border:0;border-right:1px solid var(--line);
-  border-radius:0;padding:9px 2px 8px;color:var(--ink-faint);
-  box-shadow:inset 0 -2px 0 transparent;transition:color var(--t),background var(--t),box-shadow var(--t)}
-.railtabs button:last-child{border-right:0}
-.railtabs button:hover{background:var(--chrome4);color:var(--ink-dim)}
-.railtabs button.on{color:var(--ink);background:var(--chrome2);
-  box-shadow:inset 0 -2px 0 var(--accent)}
-.railtabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-.railbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
-.vue{display:none;padding:16px 16px 24px}
-.vue.on{display:block}
+/* ─── L'ACCUEIL : rien de chargé ───────────────────────────────────────── */
+.vide{position:absolute;inset:0;display:grid;place-items:center;padding:16px;z-index:5}
+.vide-carte{background:var(--papier);color:var(--encre);border-radius:22px;padding:36px 36px 30px;max-width:540px;text-align:center;box-shadow:var(--ombre-3)}
+.vide-carte .pictos{display:flex;justify-content:center;color:var(--cuivre)}
+.vide-carte h1{font-size:var(--t6);font-weight:700;margin:16px 0 8px;letter-spacing:-.01em;line-height:1.15}
+.vide-carte p{color:var(--encre-2);margin:0 0 22px;font-size:var(--t3)}
+.vide-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.depot{position:fixed;inset:10px;z-index:40;display:none;place-items:center;background:rgba(15,22,32,.72);border:3px dashed var(--cuivre-clair);border-radius:24px;color:var(--craie);font-size:var(--t5);font-weight:600;pointer-events:none}
+body.depot-actif .depot{display:grid}
 
-/* Un groupe : l'étiquette, le filet qui court jusqu'au bord, le compte.
-   C'est le titre de rubrique d'une planche technique, rien d'autre. */
-.grp{margin-bottom:24px}
-.grp:last-child{margin-bottom:0}
-.grp>h3{margin:0 0 8px;display:flex;align-items:center;gap:8px;line-height:1}
-.grp>h3::after{content:'';flex:1;height:1px;background:var(--line);order:0}
-.grp>h3 .count,.subhead .count{order:1;font-family:var(--mono);font-size:10px;
-  letter-spacing:0;text-transform:none;color:var(--ink);font-weight:600;
-  font-variant-numeric:tabular-nums}
-.subhead{margin:20px 0 8px;display:flex;align-items:center;gap:8px;line-height:1;
-  padding-top:0;border-top:0}
-.subhead::after{content:'';flex:1;height:1px;background:var(--line);order:0}
-.brow{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
-.brow .ghost{border-color:var(--line);background:var(--chrome3);color:var(--ink-dim)}
-.brow .ghost:hover{background:var(--chrome4);border-color:#b2ad9f;color:var(--ink)}
-.brow input{flex:1;min-width:0}
-.hint{color:var(--ink-dim);font-size:11.5px;line-height:1.5;margin-top:8px}
-.hint b{color:var(--ink);font-weight:600}
+/* ─── LE MOT QUI PASSE ─────────────────────────────────────────────────── */
+#toast{position:fixed;left:50%;top:64px;transform:translateX(-50%);padding:10px 16px;border-radius:14px;z-index:35;max-width:min(92vw,520px);
+  font-weight:500;opacity:0;pointer-events:none;transition:opacity var(--moyen),transform var(--moyen)}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(4px)}
+#toast.erreur{border-color:rgba(240,163,111,.5)}
 
-/* Les étapes numérotées : un cartouche carré, comme un repère de nomenclature. */
-.etape{display:flex;align-items:stretch;gap:0;margin-top:4px;border:1px solid var(--line);
-  border-radius:var(--r);background:var(--chrome3);transition:border-color var(--t)}
-.etape:hover{border-color:#b2ad9f}
-.etape .n{flex:0 0 26px;display:flex;align-items:center;justify-content:center;
-  background:var(--chrome4);border-right:1px solid var(--line);color:var(--ink-faint);
-  font:600 10px/1 var(--mono);transition:background var(--t),color var(--t)}
-.etape.faite .n{background:var(--accent);border-right-color:var(--accent);color:#fdf6f2}
-.etape button{flex:1;text-align:left;justify-content:flex-start;border:0;border-radius:0;
-  background:transparent;padding:7px 10px}
-.etape button:hover{background:var(--chrome4)}
-.etape button:focus-visible{outline-offset:-2px}
+/* ─── ÉCRAN MOYEN : le dossier cède la place à la recherche ─────────────── */
+@media (max-width:1180px){
+  #ctx-txt{display:none}
+  .recherche{width:240px}
+  .recherche:focus-within{width:300px}
+}
 
-/* La liste du matériel — une nomenclature : repère, désignation, quantité. */
-#mt-find{margin-top:0}
-.mthead{display:flex;align-items:baseline;gap:8px;margin-top:12px;padding:0 6px 3px;
-  border-bottom:1px solid var(--line)}
-.grp:has(#mt-liste:empty) .mthead,.grp:has(#mt-liste:empty) .hint-liste{display:none}
-.mthead span:last-child{margin-left:auto}
-#mt-liste{max-height:min(46vh,420px);overflow-y:auto;border-bottom:1px solid var(--line)}
-.mtrow{display:flex;align-items:baseline;gap:8px;padding:5px 6px;cursor:pointer;
-  border-bottom:1px solid var(--line2);transition:background var(--t)}
-.mtrow:hover{background:var(--chrome3)}
-.mtn{font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--ink);
-  letter-spacing:.02em}
-.mtd{font-size:11px;color:var(--ink-dim);flex:1;min-width:0;overflow:hidden;
-  text-overflow:ellipsis;white-space:nowrap}
-.mtc{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);
-  flex:0 0 auto;font-variant-numeric:tabular-nums}
-#mt-details{margin-top:20px;border-top:1px solid var(--line);padding-top:10px}
-#mt-details summary{cursor:pointer;font-family:var(--mono);font-size:10px;font-weight:600;
-  letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint);
-  padding:2px 0;user-select:none;list-style:none;transition:color var(--t)}
-#mt-details summary::-webkit-details-marker{display:none}
-#mt-details summary::before{content:'+ ';color:var(--ink-faint)}
-#mt-details[open] summary::before{content:'− '}
-#mt-details summary:hover{color:var(--accent)}
-#mt-details summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-#mt-details .count{font-family:var(--mono);letter-spacing:0;color:var(--ink);font-weight:600}
+/* ─── TÉLÉPHONE ─────────────────────────────────────────────────────────── */
+@media (max-width:700px){
+  #haut{top:8px;left:8px;right:8px;gap:6px}
+  .marque{display:none}
+  .dossier{flex:1;max-width:none;padding:0 12px}
+  #ctx-txt,.sauve{display:none}
+  #btnOuvrir{padding:0;width:40px;justify-content:center}
+  #btnOuvrir span{display:none}
+  .recherche{width:40px;padding:0;justify-content:center}
+  .recherche input,.recherche .raccourci{display:none}
+  .recherche svg.ico{color:var(--craie)}
+  #haut.cherche .recherche{position:absolute;left:0;right:0;width:auto;padding:0 8px 0 14px;justify-content:flex-start}
+  #haut.cherche .recherche input{display:block}
+  #haut.cherche>:not(.recherche){visibility:hidden}
+  #folios{bottom:10px;max-width:calc(100vw - 16px)}
+  .fo-strip{max-width:calc(100vw - 150px)}
+  #hud{display:none}
+  #fiche{top:auto;left:0;right:0;bottom:0;width:auto;max-width:none;max-height:72vh;border-radius:20px 20px 0 0}
+  #fiche.large{width:auto}
+  #fiche.entre{animation:fiche-monte var(--moyen)}
+  @keyframes fiche-monte{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+  .fiche-corps{padding:14px 16px 10px}
+  .fiche-pied{padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
+  .vide-carte{padding:28px 22px 24px}
+  .vide-carte h1{font-size:var(--t5)}
+  .menu{width:min(260px,calc(100vw - 16px))}
+  #toast{top:56px}
+}
 
-/* Tables de saisie : une grille, des filets, des chiffres alignés. */
-table.grid{width:100%;border-collapse:collapse;margin-top:8px}
-table.grid th{text-align:left;padding:0 4px 4px;border-bottom:1px solid var(--line)}
-table.grid td{padding:0;border-bottom:1px solid var(--line2)}
-table.grid input{border:0;border-radius:0;background:transparent;padding:4px;
-  font-family:var(--mono);font-size:11px;letter-spacing:.02em}
-table.grid input:focus{box-shadow:inset 0 0 0 1px var(--accent);background:var(--chrome2)}
-.rmrow{width:20px;text-align:center;color:var(--ink-faint);cursor:pointer;
-  font-size:11px;user-select:none;transition:color var(--t)}
-.rmrow:hover{color:var(--red)}
-.addrow{margin-top:8px;border-color:var(--line);background:var(--chrome3);color:var(--ink-dim)}
-.addrow:hover{background:var(--chrome4);border-color:#aaa598;color:var(--ink)}
-.cart-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
-.cart-grid .wide{grid-column:1/-1}
-.field label{display:block;margin-bottom:3px}
-.field input{font-family:var(--mono);font-size:11px}
-
-/* Les câbles : une ligne de nomenclature, pas une carte. */
-
-/* ─── La feuille et son fond ─────────────────────────────────────────── */
-main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
-#stage{position:absolute;inset:0;overflow:hidden;touch-action:none;cursor:grab}
-#stage:active{cursor:grabbing}
-#svg{width:100%;height:100%;display:block}
-.notice{position:absolute;inset:0;display:none;text-align:center;
-  color:var(--ink-faint);font-family:var(--mono);font-size:11px;letter-spacing:.06em;
-  text-transform:uppercase;line-height:1.7;padding:24px;pointer-events:none}
-.notice::before{content:'';display:block;height:calc(50% - 44px)}
-.notice .big{font-family:var(--sans);font-size:15px;font-weight:600;color:var(--ink-dim);
-  letter-spacing:0;text-transform:none;margin-bottom:4px}
-.notice button{pointer-events:auto;border-color:var(--line);background:var(--chrome2);
-  color:var(--ink-dim);font-family:var(--sans);letter-spacing:0;text-transform:none}
-.notice button:hover{background:var(--chrome3);border-color:#aaa598;color:var(--ink)}
-
-/* La commande de zoom : un boîtier posé sur la planche. Pas de verre, pas de
-   flou, pas d'ombre — une plaque avec un filet. */
-.hud{position:absolute;left:16px;bottom:16px;display:flex;align-items:stretch;
-  background:var(--chrome2);border:1px solid var(--line);border-radius:var(--r)}
-.hud button{background:transparent;border:0;border-radius:0;padding:4px 10px;
-  color:var(--ink-dim);font-size:12px}
-.hud button:last-child{font-family:var(--mono);font-size:10px;letter-spacing:.08em;
-  text-transform:uppercase;padding:4px 10px}
-.hud button:hover{background:var(--chrome3);color:var(--ink)}
-.hud button:focus-visible{outline-offset:-2px}
-.hud .z{font-family:var(--mono);font-size:11px;color:var(--ink);
-  display:flex;align-items:center;justify-content:center;
-  min-width:52px;text-align:center;user-select:none;font-variant-numeric:tabular-nums;
-  border-left:1px solid var(--line2);border-right:1px solid var(--line2)}
-.hud .sep{width:1px;background:var(--line);margin:0}
-
-/* ─── Fenêtres ───────────────────────────────────────────────────────── */
-.modal-bg{position:fixed;inset:0;background:rgba(23,24,26,.44);
-  display:none;align-items:center;justify-content:center;z-index:60;padding:24px}
-.modal{background:var(--chrome2);border:1px solid var(--line);border-radius:var(--r);
-  width:min(720px,100%);max-height:88vh;display:flex;flex-direction:column;
-  box-shadow:0 20px 48px rgba(23,24,26,.24)}
-.modal.wide{width:min(1000px,100%)}
-.modal h2{margin:0;padding:11px 16px;font-family:var(--mono);font-size:11px;
-  font-weight:600;letter-spacing:.11em;text-transform:uppercase;color:var(--ink);
-  border-bottom:1px solid var(--line);background:var(--chrome3)}
-.modal .body{padding:16px;overflow:auto;flex:1;min-height:0}
-.modal .foot{display:flex;justify-content:flex-end;gap:6px;padding:10px 16px;
-  border-top:1px solid var(--line);background:var(--chrome3)}
-.modal textarea{min-height:130px;font-family:var(--mono);font-size:11px;resize:vertical}
-
-/* La fiche qui s'ouvre au clic sur un bloc ou un fil : une étiquette volante. */
-#pop{position:absolute;display:none;z-index:40;background:var(--chrome2);
-  border:1px solid var(--line);border-radius:var(--r);padding:0;
-  box-shadow:0 12px 32px rgba(23,24,26,.2);max-width:320px}
-#pop h5{margin:0;padding:8px 12px;background:var(--chrome3);
-  border-bottom:1px solid var(--line);color:var(--ink)}
-#pop>*:not(h5):not(.actions){margin-left:12px;margin-right:12px}
-#pop .field{margin-top:8px}
-#pop .actions{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:10px 12px;
-  margin-top:12px;border-top:1px solid var(--line);background:var(--chrome3)}
-#pop .actions button{font-size:11px;padding:5px 8px;width:100%}
-#pop .actions .ghost{border-color:var(--line);background:var(--chrome2)}
-#pop .actions .ghost:hover{background:var(--chrome4);color:var(--ink)}
-.actions{display:flex;flex-wrap:wrap;gap:4px}
-
-/* ─── Impression ─────────────────────────────────────────────────────── */
+/* ─── IMPRESSION : la planche, rien d'autre ─────────────────────────────── */
 #printroot{display:none}
 @media print{
-html,body{height:auto;overflow:visible;background:#fff}
-#app,#modal,#rmodal,#pop,#drawerBg{display:none!important}
-#printroot{display:block}
-#printroot svg{width:100%;height:auto;max-width:100%}
-  @page{margin:8mm}
+  body{background:#fff;overflow:visible}
+  #app{display:none!important}
+  #printroot{display:block}
+  #printroot svg{width:100%;height:auto}
 }
 
-/* ─── Écrans étroits ─────────────────────────────────────────────────── */
-.menu-btn{display:none}
-.drawer-bg{display:none}
-@media (max-width:860px){
-#app{grid-template-columns:1fr;grid-template-areas:"top" "main"}
-.menu-btn{display:inline-flex;align-items:center;justify-content:center;
-    font-size:14px;padding:0 12px;border:0;border-right:1px solid var(--line);
-    border-radius:0;background:transparent;color:var(--ink-dim);align-self:stretch}
-.menu-btn:hover{background:var(--chrome3);border-right-color:var(--line)}
-.ctx{display:none}
-.brand{padding:0 10px;font-size:10px;letter-spacing:.09em}
-.tools button{padding:0 9px}
-.folionav .lbl{min-width:74px;font-size:10px}
-aside{position:fixed;top:44px;left:0;bottom:0;width:min(88vw,320px);z-index:40;
-    transform:translateX(-100%);transition:transform .16s linear;
-    box-shadow:8px 0 28px rgba(23,24,26,.2)}
-aside.open{transform:none}
-.drawer-bg{display:block;position:fixed;inset:44px 0 0 0;background:rgba(23,24,26,.34);
-    z-index:35;opacity:0;pointer-events:none;transition:opacity .16s linear}
-.drawer-bg.show{opacity:1;pointer-events:auto}
-.hud{left:10px;bottom:10px}
-.modal-bg{padding:8px}
-.modal h2{padding:10px 12px}
-.modal .body{padding:12px}
-.modal .foot{padding:9px 12px}
-.cart-grid{grid-template-columns:1fr 1fr}
-}
-@media (max-width:640px){
-.folionav.on{position:fixed;right:10px;bottom:10px;z-index:30;
-    background:var(--chrome2);border:1px solid var(--line);border-radius:var(--r)}
-.folionav button{padding:4px 10px}
-.folionav .lbl{min-width:0;padding:0 8px;border-color:var(--line2)}
-}
-@media (max-width:440px){
-.brand{border-right:0}
-.tools button{padding:0 8px;font-size:10px}
-.vue{padding:12px 12px 20px}
-}
+/* ─── MOUVEMENT RÉDUIT ──────────────────────────────────────────────────── */
 @media (prefers-reduced-motion:reduce){
-*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+  *,*::before,*::after{transition:none!important;animation:none!important}
 }
-/* Barres de défilement : un rail, pas une pastille. */
-*::-webkit-scrollbar{width:11px;height:11px}
-*::-webkit-scrollbar-thumb{background:#c2beb1;border-radius:0;border:4px solid var(--chrome2)}
-*::-webkit-scrollbar-thumb:hover{background:#aba695}
-*::-webkit-scrollbar-track{background:transparent}
-
-/* ---- fenêtres et fiches ---- */
-/* ═══ Suite de l'enveloppe : fenêtres, rapports, listes, zone de dépôt ═════
- Ce bloc portait encore des filets de thème sombre (#262c34) sur fond clair :
- des traits noirs au milieu du papier. Ils sont repassés au filet unique. */
-
-/* ── La vue bornier, dans sa fenêtre ── */
-
-/* ── Lignes d'information : clé à gauche, valeur alignée à droite ── */
-.infoline{display:flex;justify-content:space-between;gap:12px;padding:4px 0;
-border-bottom:1px solid var(--line2);font-family:var(--mono);font-size:11px}
-.infoline .k{color:var(--ink-faint);letter-spacing:.04em}
-.infoline .v{color:var(--ink);text-align:right;font-variant-numeric:tabular-nums}
-
-/* ── Petite table de données (bornes, conducteurs) ── */
-.btbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;margin-top:4px}
-.btbl th{text-align:left;padding:2px 6px 3px;border-bottom:1px solid var(--line)}
-.btbl td{padding:3px 6px;border-bottom:1px solid var(--line2);color:var(--ink);
-font-variant-numeric:tabular-nums}
-.btbl tr:last-child td{border-bottom:0}
-.btbl .bn{color:var(--accent);font-weight:700}
-
-/* ── Le rapport de reconnaissance ─────────────────────────────────────
- C'est le seul endroit de l'outil où l'on LIT longtemps. Donc : des
- sections séparées par un filet, des chiffres en colonne alignée à droite,
- un commentaire en gris, et un verdict tenu par une barre de 2 px. */
-.rrep{font-size:12px;line-height:1.5}
-.rrep section{padding:0 0 16px;margin-bottom:16px;border-bottom:1px solid var(--line)}
-.rrep section:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
-.rrep h4{margin:0 0 8px;display:flex;align-items:center;gap:8px;line-height:1;color:var(--ink)}
-.rrep h4::after{content:'';flex:1;height:1px;background:var(--line)}
-.rrep h4 label{text-transform:none;letter-spacing:0;font-family:var(--mono);
-font-size:11.5px;color:var(--ink)}
-.rrep table{width:100%;border-collapse:collapse;font-size:11.5px}
-.rrep th{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.08em;
-text-transform:uppercase;color:var(--ink-faint);text-align:left;
-padding:2px 6px 4px;border-bottom:1px solid var(--line);white-space:nowrap}
-.rrep td{padding:3px 6px;border-bottom:1px solid var(--line2);vertical-align:top}
-.rrep tr:last-child td{border-bottom:0}
-.rrep td:first-child{color:var(--ink)}
-.rrep td.n{font-family:var(--mono);text-align:right;white-space:nowrap;
-color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums;width:1%}
-.rrep td.ex{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);line-height:1.45}
-.rnote{margin:0 0 8px;color:var(--ink-dim);font-size:11.5px;line-height:1.55}
-.rnote b{color:var(--ink);font-weight:600}
-
-/* Le verdict : barre à gauche, texte d'encre. La couleur ne porte QUE le
- statut — trois valeurs, jamais davantage. */
-.verdict{font-size:11.5px;line-height:1.5;color:var(--ink);
-border-left:2px solid var(--line);padding:2px 0 2px 9px;margin:8px 0 0}
-.verdict.v-ok{border-left-color:var(--ok)}
-.verdict.v-hm{border-left-color:var(--warn)}
-.verdict.v-no{border-left-color:var(--red)}
-.verdict::before{font-family:var(--mono);font-size:9.5px;font-weight:600;
-letter-spacing:.09em;text-transform:uppercase;display:block;margin-bottom:2px}
-.verdict.v-ok::before{content:'Acquis';color:var(--ok)}
-.verdict.v-hm::before{content:'À trancher';color:var(--warn)}
-.verdict.v-no::before{content:'Bloquant';color:var(--red)}
-/* En ligne dans un tableau, le verdict redevient une simple étiquette. */
-td .verdict{display:inline;border-left:0;padding:0;margin:0;font-family:var(--mono);
-font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
-td .verdict::before{display:none}
-td .verdict.v-ok{color:var(--ok)}
-
-/* ── La zone de dépôt ── */
-.dropzone{border:1px dashed var(--line);border-radius:var(--r);background:var(--chrome3);
-padding:20px 16px;text-align:center;cursor:pointer;
-transition:border-color var(--t),background var(--t)}
-.dropzone:hover{border-color:var(--accent);background:var(--chrome4)}
-.dropzone.over{border-color:var(--accent);background:var(--accent-soft)}
-.dropzone .dz-ico{font-family:var(--mono);font-size:16px;color:var(--accent);line-height:1}
-.dropzone .dz-main{margin-top:8px;font-size:12px;color:var(--ink)}
-.dropzone .dz-main b{font-weight:600}
-.dropzone .dz-sub{margin-top:4px;font-size:11px;color:var(--ink-dim)}
-.dz-info{font-family:var(--mono);font-size:10.5px;margin-top:8px;min-height:14px;
-letter-spacing:.03em;color:var(--ink-faint)}
-.dz-info.ok{color:var(--ok)}.dz-info.err{color:var(--red)}.dz-info.load{color:var(--ink-dim)}
-
-/* ── Le jeton d'état (fichier chargé) ── */
-.colspec{margin:0 0 14px;padding:7px 9px;background:var(--chrome3);
-border:1px solid var(--line);border-left:2px solid var(--accent);border-radius:var(--r);
-font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;color:var(--ink);
-line-height:1.65;word-break:break-word}
-
-/* Le sélecteur de plan reste dans le DOM pour porter l'état ; il ne s'affiche
- plus, le pas-à-pas du bandeau le remplace. */
-/* ---- ajouts de la refonte ---- */
-#stage.over{outline:2px dashed var(--accent);outline-offset:-6px}
-.btbl-wrap{max-height:150px;overflow:auto}
-td.vide{color:var(--ink-faint);text-align:center;padding:8px;font-size:11px}
-#pop .subhead{margin:10px 12px 6px}
 
 </style>
 </head>
 <body>
 <div id="app">
-  <header>
-    <button class="ghost menu-btn" id="btnMenu" aria-label="Ouvrir le panneau">☰</button>
-    <div class="brand"><b>Atelier Schéma</b></div>
-    <div class="ctx" id="ctx"><span id="ctx-txt">—</span><span id="ctx-sauve" class="sauve"></span></div>
-    <button class="ghost undo" id="btnUndo" style="display:none" aria-label="Annuler la dernière action" title="Annuler">↶</button>
-    <div class="spacer"></div>
-    <div class="folionav" id="folionav">
-      <button id="fo-prev" aria-label="Folio précédent">‹</button>
-      <span class="lbl" id="fo-lbl">Folio 1 / 1</span>
-      <button id="fo-next" aria-label="Folio suivant">›</button>
+  <main id="planche" aria-label="Le plan">
+    <div id="ombre" aria-hidden="true"></div>
+    <svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div id="vide" class="vide" hidden>
+      <div class="vide-carte">
+        <div class="pictos" aria-hidden="true">
+          <svg width="64" height="44" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="8" width="18" height="28" rx="2"/><rect x="44" y="8" width="18" height="28" rx="2"/>
+            <path d="M20 16h8v12h16M20 28h4"/><circle cx="20" cy="16" r="2" fill="currentColor" stroke="none"/><circle cx="44" cy="28" r="2" fill="currentColor" stroke="none"/>
+          </svg>
+        </div>
+        <h1>Vos plans électriques, à partir de la base</h1>
+        <p>Déposez un fichier Excel ou CSV n’importe où sur cette table : chaque liaison devient un fil, chaque repère un équipement, folio par folio.</p>
+        <div class="vide-actions">
+          <button class="btn cuivre" id="vd-ouvrir">Choisir un fichier</button>
+          <button class="btn papier" id="vd-coller">Coller des liaisons</button>
+          <button class="btn lien" id="vd-exemple">Voir l’exemple</button>
+        </div>
+      </div>
     </div>
-    <div class="tools">
-      <button class="ghost" id="btnSvg" title="Enregistrer le folio affiché en SVG (vectoriel, imprimable à toute échelle)">SVG</button>
-      <button class="ghost" id="btnPng" title="Enregistrer le folio affiché en image PNG">PNG</button>
-      <button class="ghost" id="btnPrint" title="Imprimer le folio affiché">Imprimer</button>
+    <div id="depot" class="depot" aria-hidden="true"><div>Déposez le fichier</div></div>
+  </main>
+
+  <header id="haut">
+    <div class="marque verre" aria-label="Atelier Schéma">
+      <svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="3.5" cy="9" r="2.5" fill="#b5541c"/><path d="M6 9h6" stroke="#eef2f6" stroke-width="1.8" stroke-linecap="round"/><circle cx="14.5" cy="9" r="2.5" fill="#b5541c"/></svg>
+      Atelier Schéma
+    </div>
+    <div class="dossier verre" id="dossier"><span id="ctx-nom">—</span><span id="ctx-txt"></span><span id="ctx-sauve" class="sauve"></span></div>
+    <button class="btn cuivre" id="btnOuvrir" title="Ouvrir un fichier Excel ou CSV">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span>Ouvrir</span>
+    </button>
+    <button class="rond verre" id="btnUndo" hidden aria-label="Annuler la dernière action" title="Annuler (Ctrl+Z)">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>
+    </button>
+    <div class="espace"></div>
+    <div class="recherche verre" id="recherche">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Repère ou n° de fil" aria-label="Chercher un repère ou un numéro de fil" autocomplete="off" spellcheck="false">
+      <span class="raccourci" aria-hidden="true">/</span>
+      <div id="q-liste" class="q-liste verre" role="listbox" hidden></div>
+    </div>
+    <div id="menuBoite">
+      <button class="rond verre" id="btnMenu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="19" cy="12" r="1.4" fill="currentColor"/></svg>
+      </button>
+      <div id="menu" class="menu verre" hidden role="menu">
+        <button role="menuitem" data-act="ouvrir">Ouvrir un fichier…</button>
+        <button role="menuitem" data-act="coller">Coller des liaisons…</button>
+        <button role="menuitem" data-act="exemple">Charger l’exemple</button>
+        <hr>
+        <button role="menuitem" data-act="table">Toutes les liaisons</button>
+        <button role="menuitem" data-act="cartouche">Cartouche</button>
+        <hr>
+        <button role="menuitem" data-act="svg">Enregistrer le folio en SVG</button>
+        <button role="menuitem" data-act="png">Enregistrer le folio en PNG</button>
+        <button role="menuitem" data-act="imprimer">Imprimer <span class="raccourci">Ctrl+P</span></button>
+        <hr>
+        <button role="menuitem" data-act="vider" class="danger">Tout effacer</button>
+      </div>
     </div>
   </header>
 
-  <aside aria-label="Panneau de travail">
-    <nav class="railtabs" id="railtabs">
-      <button data-vue="v-mat" class="on">Matériel</button>
-      <button data-vue="v-piece">Compléter</button>
-      <button data-vue="v-regl">Réglages</button>
-    </nav>
-    <div class="railbody">
+  <nav id="folios" class="verre" aria-label="Folios" hidden>
+    <button id="fo-prev" aria-label="Folio précédent"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
+    <div id="fo-strip" class="fo-strip"></div>
+    <span id="fo-lbl" class="fo-lbl">1 / 1</span>
+    <button id="fo-next" aria-label="Folio suivant"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
+  </nav>
 
-      <section class="vue on" id="v-mat">
-        <div class="grp">
-          <h3>Contrat de câblage</h3>
-          <div class="brow">
-            <button class="primary" id="lk-file">Ouvrir un fichier</button>
-            <button id="lk-import">Coller</button>
-            <button class="mini" id="lk-demo" title="Charger le contrat d’exemple">Exemple</button>
-            <input type="file" id="lk-fichier" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
-          </div>
-        </div>
-        <div class="grp">
-          <h3>Équipements <span class="count" id="cnt-eq">0</span></h3>
-          <input id="mt-find" placeholder="Repère ou n° de fil…" aria-label="Chercher un repère ou un numéro de fil">
-          <div class="mthead"><span>Repère</span><span>Fils</span></div>
-          <div id="mt-liste"></div>
-          <div id="mt-rien" class="hint" style="display:none">Rien qui corresponde.</div>
-          <div class="hint hint-liste">Clique un repère : le dessin s’y rend et le met en évidence.</div>
-          <div id="xp-stat" class="hint"></div>
-        </div>
-        <details id="mt-details">
-          <summary>Corriger les liaisons <span id="cnt-lk" class="count"></span></summary>
-          <table class="grid" id="tbl-lk"><thead><tr><th>De</th><th>B.</th><th>Vers</th><th>B.</th><th>Fil</th><th></th></tr></thead><tbody></tbody></table>
-          <div class="brow" style="margin-top:8px">
-            <button class="ghost mini addrow" id="add-lk">+ liaison</button>
-            <button class="ghost mini" id="btnFolios">Découper en folios</button>
-            <button class="ghost mini" id="lk-clear">Tout vider</button>
-          </div>
-          <div class="hint">La recherche ci-dessus filtre aussi cette table.</div>
-        </details>
-      </section>
-
-      <section class="vue" id="v-piece">
-        <div class="grp">
-          <h3>Pièces absentes du contrat</h3>
-          <p class="hint" style="margin-top:0">Un contrat ne déclare que ses liaisons. Les <b>barrettes</b> et les <b>prises de coupure</b> qui se trouvent entre les deux n’y sont pas. On va les chercher dans un contrat déjà testé qui ressemble au tien.</p>
-          <div class="etape" id="et-1"><span class="n">1</span><button id="rb-browse">Charger une base de retest</button></div>
-          <div class="etape" id="et-2"><span class="n">2</span><button id="rb-proche">De quel contrat partir&nbsp;?</button></div>
-          <div class="etape" id="et-3"><span class="n">3</span><button id="rb-appl">Compléter mon contrat</button></div>
-          <div id="rb-stat" class="hint">Aucune base chargée.</div>
-          <input type="file" id="rb-file" accept=".xlsm,.xlsx,.xls,.csv,.tsv,.txt" hidden>
-          <div class="hint">Le fichier est lu <b>ici, dans ton navigateur</b> : rien ne part sur le réseau, rien n’est enregistré, tout disparaît quand tu fermes l’onglet.</div>
-        </div>
-        <div class="grp">
-          <h3>Vérifications <span class="count" id="cnt-rb">—</span></h3>
-          <div class="brow">
-            <button class="ghost mini" id="rb-ident">Identifier les équipements</button>
-            <button class="ghost mini" id="rb-report" style="display:none">Rapport</button>
-            <button class="ghost mini" id="rb-forget" style="display:none">Oublier la base</button>
-          </div>
-        </div>
-      </section>
-
-      <section class="vue" id="v-regl">
-        <div class="grp">
-          <h3>Cartouche</h3>
-          <div class="cart-grid">
-            <div class="field wide"><label for="m-title">Titre</label><input id="m-title"></div>
-            <div class="field"><label for="m-rev">Indice</label><input id="m-rev"></div>
-            <div class="field"><label for="m-date">Date</label><input id="m-date"></div>
-            <div class="field"><label for="m-scale">Échelle</label><input id="m-scale"></div>
-            <div class="field"><label for="m-author">Dessiné</label><input id="m-author"></div>
-          </div>
-          <div class="hint">Le numéro de folio s’écrit tout seul.</div>
-        </div>
-        <div class="grp">
-          <h3>Désignations</h3>
-          <table class="grid" id="tbl-eq"><thead><tr><th>Repère</th><th>Désignation</th><th></th></tr></thead><tbody></tbody></table>
-          <button class="ghost mini addrow" id="add-eq">+ désignation</button>
-          <div class="hint">Le nom écrit sous le repère sur le dessin.</div>
-        </div>
-      </section>
-
-    </div>
-  </aside>
-
-  <main>
-    <div id="stage"><svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg></div>
-    <div class="hud">
-      <button id="zout" aria-label="Dézoomer">−</button><div class="z" id="zlbl">100 %</div><button id="zin" aria-label="Zoomer">+</button>
-      <div class="sep"></div><button id="zfit">Ajuster</button>
-    </div>
-    <div class="notice" id="notice"><div class="big">Aucun contrat chargé</div>Ouvre un fichier, dépose-le sur la planche, ou colle tes liaisons</div>
-  </main>
-</div>
-<div class="drawer-bg" id="drawerBg"></div>
-<div id="pop"></div>
-<div class="modal-bg" id="modal"><div class="modal">
-  <h2>Charger un contrat</h2>
-  <div class="body">
-    <div id="db-drop" class="dropzone">
-      <div class="dz-ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="square"><path d="M11 3v11M6.5 10 11 14.5 15.5 10"/><path d="M3.5 18h15"/></svg></div>
-      <div class="dz-main">Glisse un fichier <b>Excel</b> (.xlsx, .xlsm) ou <b>CSV</b> ici</div>
-      <div class="dz-sub">ou <button type="button" class="linklike" id="db-browse">choisis un fichier</button> — le format retest est lu par le nom de ses colonnes</div>
-      <input type="file" id="db-file" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
-    </div>
-    <div id="db-fileinfo" class="dz-info"></div>
-    <p class="hint" style="margin:12px 0 4px">…ou colle directement les lignes : une liaison par ligne, colonnes séparées par <b>;</b> <b>,</b> ou tabulation.</p>
-    <p class="colspec">Équip.1 · Borne · PN · Équip.2 · Borne · PN · Fil · Type · Route · Plan</p>
-    <textarea id="imp-db" placeholder="210SP1;12;;115CD;3;;W-101;DR24;;"></textarea>
+  <div id="hud" class="verre">
+    <button id="zout" aria-label="Dézoomer"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button>
+    <button id="zlbl" title="Ajuster le plan à l’écran (0)">100 %</button>
+    <button id="zin" aria-label="Zoomer"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg></button>
+    <button id="zfit" aria-label="Ajuster à l’écran" title="Ajuster à l’écran (0)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
   </div>
-  <div class="foot"><button id="imp-cancel">Annuler</button><button class="primary" id="imp-ok">Charger</button></div>
-</div></div>
-<div class="modal-bg" id="rmodal"><div class="modal wide">
-  <h2>Reconnaissance de la base de retest</h2>
-  <div class="body"><div id="rb-body" class="rrep"></div></div>
-  <div class="foot"><button id="rb-copy">Copier le rapport</button><button class="primary" id="rb-close">Fermer</button></div>
-</div></div>
+
+  <aside id="fiche" hidden aria-label="Fiche">
+    <div class="fiche-corps" id="fiche-corps"></div>
+    <div class="fiche-pied" id="fiche-pied" hidden></div>
+  </aside>
+  <div id="toast" class="verre" role="status" aria-live="polite"></div>
+  <input type="file" id="fichier" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
+</div>
+<div id="printroot"></div>
 
 <script>
 "use strict";
@@ -2321,22 +2110,29 @@ function formatDuDessin(dessin) {
 /* ───────── 08-interface.js ───────── */
 /* ===========================================================================
    08 — L'INTERFACE
-   Une chose à la fois. Le panneau montre une seule vue — Matériel, Compléter,
-   Réglages — et la planche montre le folio. Tout ce que l'écran affiche se
-   déduit de `app` par `synchroniser()` ; aucun état ne vit dans le DOM.
+   Le plan est l'écran. Tout ce qui s'affiche se déduit de `app` par
+   `synchroniser()` ; aucun état ne vit dans le DOM.
 
    app.contrat      le contrat tel qu'il est édité (liaisons, désignations, cartouche)
    app.source       les liaisons d'origine quand le contrat est découpé en folios
-   app.plan         '*' = tout, sinon le plan / folio affiché
-   app.dessin       le dessin du plan affiché (placement + routage)
+                    tout seul ; `verite()` rend toujours ce qu'on édite
+   app.plan         '*' = tout d'un tenant, sinon le folio affiché
+   app.dessin       le dessin du folio affiché (placement + routage)
+   La fiche est le seul document : un équipement, un fil, la table des
+   liaisons, le cartouche, un collage — jamais deux à la fois.
    =========================================================================== */
 
 const app = {
-  contrat: nouveauContrat(), source: null, nFolios: 0, plan: '*',
-  vue: { s: 1, tx: 0, ty: 0 }, choisi: null, dessin: null, filtre: '', hist: []
+  contrat: nouveauContrat(), source: null, nFolios: 0, budget: 16, plan: '*', nom: '',
+  vue: { s: 1, tx: 0, ty: 0 }, choisi: null, dessin: null, hist: [], fiche: null
 };
 const $ = id => document.getElementById(id);
 const CLE_CONTRAT = 'atelier.contrat.v2';
+const ZMIN = 0.06, ZMAX = 8;
+const verite = () => app.source || app.contrat.liaisons;
+const plans = () => plansDe(app.contrat.liaisons);
+const mouvementReduit = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const telephone = () => window.innerWidth <= 700;
 
 /* ---- le dessin ---------------------------------------------------------- */
 function liaisonsDuPlan() { const L = app.contrat.liaisons.filter(liaisonComplete);
@@ -2348,53 +2144,75 @@ function calculer() {
                      fils: P.routage.fils, points: P.routage.points, barrettes: P.routage.barrettes, piquages: P.routage.piquages } : null;
   return app.dessin;
 }
-function folioCourant() { const plans = plansDe(app.contrat.liaisons);
-  return (app.plan !== '*' && plans.length > 1) ? (app.plan + ' / ' + plans.length) : '1 / 1'; }
+function folioCourant() { const P = plans();
+  return (app.plan !== '*' && P.length > 1) ? (app.plan + ' / ' + P.length) : '1 / 1'; }
 function peindre() {
-  const svg = $('svg'), notice = $('notice');
-  if (!app.dessin) { svg.innerHTML = ''; notice.style.display = 'flex'; return; }
-  notice.style.display = 'none';
+  const svg = $('svg');
+  $('vide').hidden = app.contrat.liaisons.length > 0;
+  if (!app.dessin) { svg.innerHTML = ''; appliquerVue(); return; }
   const designation = n => app.contrat.designations.get(n) || '';
   svg.innerHTML = styleDessin() + `<g id="scene" transform="translate(${app.vue.tx},${app.vue.ty}) scale(${app.vue.s})">`
     + sceneSvg(app.dessin, app.contrat.cartouche, folioCourant(), designation, app.choisi) + '</g>';
+  appliquerVue();
 }
-function redessiner() { calculer(); peindre(); synchroniser(); }
+function redessiner() { calculer(); peindre(); synchroniser(); rallumer(); }
 
-/* ---- la vue : zoom, cadrage ------------------------------------------- */
-const cadreSvg = () => $('svg').getBoundingClientRect();
-function appliquerVue() { const sc = $('scene'); if (sc) sc.setAttribute('transform', `translate(${app.vue.tx},${app.vue.ty}) scale(${app.vue.s})`);
-  $('zlbl').textContent = Math.round(app.vue.s * 100) + ' %'; }
-function ajuster() {
-  if (!app.dessin) { app.vue = { s: 1, tx: 40, ty: 40 }; appliquerVue(); return; }
-  const bb = app.dessin.bbox, r = cadreSvg();
-  app.vue.s = Math.max(.12, Math.min(6, Math.min(r.width / bb.w, r.height / bb.h) * 0.92));
-  app.vue.tx = (r.width - bb.w * app.vue.s) / 2 - bb.x * app.vue.s;
-  app.vue.ty = (r.height - bb.h * app.vue.s) / 2 - bb.y * app.vue.s; appliquerVue();
+/* ---- la vue : zoom, cadrage, l'ombre sous la feuille ------------------- */
+const cadre = () => $('planche').getBoundingClientRect();
+function appliquerVue() {
+  const sc = $('scene'); if (sc) sc.setAttribute('transform', `translate(${app.vue.tx},${app.vue.ty}) scale(${app.vue.s})`);
+  $('zlbl').textContent = Math.round(app.vue.s * 100) + ' %';
+  const o = $('ombre');
+  if (!app.dessin) { o.style.display = 'none'; return; }
+  const bb = app.dessin.bbox, s = app.vue.s;
+  o.style.display = 'block'; o.style.transform = `translate(${app.vue.tx + bb.x * s}px,${app.vue.ty + bb.y * s}px)`;
+  o.style.width = bb.w * s + 'px'; o.style.height = bb.h * s + 'px';
 }
-function zoomer(k, mx, my) { const r = cadreSvg(); if (mx == null) { mx = r.width / 2; my = r.height / 2; }
+/* Le vide que laissent les instruments : la feuille se cadre dedans. */
+function marges() { const tel = telephone(), fiche = $('fiche').hidden ? null : $('fiche');
+  return { haut: tel ? 60 : 68, bas: (tel && fiche) ? fiche.offsetHeight + 12 : (tel ? 64 : 72),
+           gauche: tel ? 12 : 28, droite: (tel ? 12 : 28) + ((fiche && !tel) ? fiche.offsetWidth + 24 : 0) }; }
+let anim = null;
+function animerVue(cible, doux) {
+  if (anim) { cancelAnimationFrame(anim); anim = null; }
+  if (!doux || mouvementReduit()) { app.vue = cible; appliquerVue(); return; }
+  const de = { ...app.vue }, t0 = performance.now(), D = 260;
+  const pas = t => { const k = Math.min(1, (t - t0) / D), e = 1 - Math.pow(1 - k, 3);
+    app.vue = { s: de.s + (cible.s - de.s) * e, tx: de.tx + (cible.tx - de.tx) * e, ty: de.ty + (cible.ty - de.ty) * e };
+    appliquerVue(); anim = k < 1 ? requestAnimationFrame(pas) : null; };
+  anim = requestAnimationFrame(pas);
+}
+function ajuster(doux) {
+  if (!app.dessin) { app.vue = { s: 1, tx: 40, ty: 40 }; appliquerVue(); return; }
+  const bb = app.dessin.bbox, r = cadre(), m = marges();
+  const W = Math.max(80, r.width - m.gauche - m.droite), H = Math.max(80, r.height - m.haut - m.bas);
+  const s = Math.max(ZMIN, Math.min(ZMAX, Math.min(W / bb.w, H / bb.h)));
+  animerVue({ s, tx: m.gauche + (W - bb.w * s) / 2 - bb.x * s, ty: m.haut + (H - bb.h * s) / 2 - bb.y * s }, doux);
+}
+function zoomer(k, mx, my) { const r = cadre(); if (mx == null) { mx = r.width / 2; my = r.height / 2; }
   const wx = (mx - app.vue.tx) / app.vue.s, wy = (my - app.vue.ty) / app.vue.s;
-  const ns = Math.max(.12, Math.min(6, app.vue.s * k));
-  app.vue.tx = mx - wx * ns; app.vue.ty = my - wy * ns; app.vue.s = ns; appliquerVue(); }
-const versMonde = (cx, cy) => { const r = cadreSvg(); return { x: (cx - r.left - app.vue.tx) / app.vue.s, y: (cy - r.top - app.vue.ty) / app.vue.s }; };
+  const ns = Math.max(ZMIN, Math.min(ZMAX, app.vue.s * k));
+  app.vue = { s: ns, tx: mx - wx * ns, ty: my - wy * ns }; appliquerVue(); }
+const versMonde = (cx, cy) => { const r = cadre(); return { x: (cx - r.left - app.vue.tx) / app.vue.s, y: (cy - r.top - app.vue.ty) / app.vue.s }; };
 function blocSous(w) { if (!app.dessin) return null; const cs = app.dessin.comps;
   for (let i = cs.length - 1; i >= 0; i--) { const c = cs[i]; if (w.x >= c.x - 5 && w.x <= c.x + c.w + 5 && w.y >= c.y - 5 && w.y <= c.y + c.h + 5) return c; } return null; }
-function filSous(w) { if (!app.dessin) return null; const tol = Math.max(4, 6 / app.vue.s); let best = null, bd = tol;
+function filSous(w) { if (!app.dessin) return null; const tol = Math.max(4, 7 / app.vue.s); let best = null, bd = tol;
   const d = (px, py, a, b) => { const dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy; let t = L2 ? ((px - a.x) * dx + (py - a.y) * dy) / L2 : 0; t = Math.max(0, Math.min(1, t)); return Math.hypot(px - (a.x + t * dx), py - (a.y + t * dy)); };
   for (const f of app.dessin.fils) for (let i = 0; i < f.pts.length - 1; i++) { const dd = d(w.x, w.y, f.pts[i], f.pts[i + 1]); if (dd < bd) { bd = dd; best = f; } }
   return best; }
-/* Aller voir un repère : on centre dessus et on l'allume. */
-function viser(nom) { if (!app.dessin) return;
-  const c = app.dessin.compDe.get(nom); const st = $('xp-stat');
-  if (!c) { st.textContent = '« ' + nom + ' » n’est pas sur ce folio.'; return; }
-  const r = cadreSvg(); app.vue.s = Math.max(app.vue.s, 0.9);
-  app.vue.tx = r.width / 2 - (c.x + c.w / 2) * app.vue.s; app.vue.ty = r.height / 2 - (c.y + c.h / 2) * app.vue.s;
-  appliquerVue(); allumerBloc(nom);
-  st.textContent = nom + ' — ' + raccordementsDe(nom).length + ' liaison(s) sur ce folio.'; }
+/* Aller voir quelque chose : on le met au centre du vide, lisible. */
+function centrerSur(x, y, w, h) { const r = cadre(), m = marges();
+  const s = Math.max(app.vue.s, Math.min(1.1, Math.min((r.width - m.gauche - m.droite) / (w + 80), (r.height - m.haut - m.bas) / (h + 80))));
+  const cx = m.gauche + (r.width - m.gauche - m.droite) / 2, cy = m.haut + (r.height - m.haut - m.bas) / 2;
+  animerVue({ s, tx: cx - (x + w / 2) * s, ty: cy - (y + h / 2) * s }, true); }
+function viser(nom) { const c = app.dessin && app.dessin.compDe.get(nom); if (!c) return false;
+  centrerSur(c.x, c.y, c.w, c.h); return true; }
+function viserFil(f) { const xs = f.pts.map(p => p.x), ys = f.pts.map(p => p.y);
+  const x0 = Math.min(...xs), y0 = Math.min(...ys); centrerSur(x0, y0, Math.max(...xs) - x0, Math.max(...ys) - y0); }
 
 /* ---- la surbrillance : des classes sur le rendu, jamais un recalcul ---- */
-let survole = null;
 function eteindre() { const sc = $('scene'); if (!sc) return;
-  if (sc.classList.contains('focus')) { sc.classList.remove('focus'); sc.querySelectorAll('.hl').forEach(el => el.classList.remove('hl')); } survole = null; }
+  if (sc.classList.contains('focus')) { sc.classList.remove('focus'); sc.querySelectorAll('.hl').forEach(el => el.classList.remove('hl')); } }
 function allumerBloc(nom) { const sc = $('scene'); if (!sc) return; eteindre(); sc.classList.add('focus'); nom = xmlSur(nom);
   const autres = new Set();
   sc.querySelectorAll('.cab').forEach(p => { const a = p.dataset.a, b = p.dataset.b; if (a === nom || b === nom) { p.classList.add('hl'); autres.add(a); autres.add(b); } });
@@ -2402,133 +2220,245 @@ function allumerBloc(nom) { const sc = $('scene'); if (!sc) return; eteindre(); 
 function allumerFil(f) { const sc = $('scene'); if (!sc) return; eteindre(); sc.classList.add('focus');
   sc.querySelectorAll('.cab').forEach(p => { if (+p.dataset.i === f.i) p.classList.add('hl'); });
   sc.querySelectorAll('.comp').forEach(g => { if (g.dataset.name === xmlSur(f.de) || g.dataset.name === xmlSur(f.vers)) g.classList.add('hl'); }); }
+/* Ce qui est choisi reste allumé après un survol ou un redessin. */
+function rallumer() { const f = app.fiche;
+  if (f && f.mode === 'equip' && app.dessin && app.dessin.compDe.has(f.nom)) allumerBloc(f.nom);
+  else if (f && f.mode === 'fil' && app.dessin) { const w = filDe(f.l); if (w) allumerFil(w); else eteindre(); }
+  else eteindre(); }
+function filDe(l) { if (!app.dessin) return null; const L = liaisonsDuPlan();
+  return app.dessin.fils.find(w => L[w.i] === l || sourceDe(L[w.i]) === l) || null; }
 
 /* ---- la planche : pan, pinch, molette, clic, survol -------------------- */
 function lierPlanche() {
-  const stage = $('stage'); const pointeurs = new Map(); let mode = null, pan = null, pinch = null, bouge = false, origine = null;
+  const stage = $('planche'); const pointeurs = new Map(); let mode = null, pan = null, pinch = null, bouge = false, origine = null, survole = null;
   const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
-  const debutPinch = () => { mode = 'pinch'; pan = null; const r = cadreSvg(); const p = [...pointeurs.values()];
+  const debutPinch = () => { mode = 'pinch'; pan = null; const r = cadre(); const p = [...pointeurs.values()];
     const mx = (p[0].x + p[1].x) / 2 - r.left, my = (p[0].y + p[1].y) / 2 - r.top;
     pinch = { d: dist(p[0], p[1]), wx: (mx - app.vue.tx) / app.vue.s, wy: (my - app.vue.ty) / app.vue.s, s0: app.vue.s }; };
-  const suitPinch = () => { const r = cadreSvg(); const p = [...pointeurs.values()]; if (p.length < 2) return;
-    const ns = Math.max(.12, Math.min(6, pinch.s0 * dist(p[0], p[1]) / pinch.d));
+  const suitPinch = () => { const r = cadre(); const p = [...pointeurs.values()]; if (p.length < 2) return;
+    const ns = Math.max(ZMIN, Math.min(ZMAX, pinch.s0 * dist(p[0], p[1]) / pinch.d));
     const mx = (p[0].x + p[1].x) / 2 - r.left, my = (p[0].y + p[1].y) / 2 - r.top;
-    app.vue.s = ns; app.vue.tx = mx - pinch.wx * ns; app.vue.ty = my - pinch.wy * ns; appliquerVue(); };
-  stage.addEventListener('pointerdown', e => { fermerFiche(); try { stage.setPointerCapture(e.pointerId); } catch (_) { }
+    app.vue = { s: ns, tx: mx - pinch.wx * ns, ty: my - pinch.wy * ns }; appliquerVue(); };
+  stage.addEventListener('pointerdown', e => { if (e.button && e.button !== 0) return; fermerMenu(); fermerRecherche();
+    try { stage.setPointerCapture(e.pointerId); } catch (_) { }
     pointeurs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointeurs.size >= 2) { debutPinch(); return; }
     bouge = false; origine = [e.clientX, e.clientY]; mode = 'pan'; pan = { tx: app.vue.tx, ty: app.vue.ty, x: e.clientX, y: e.clientY }; });
   stage.addEventListener('pointermove', e => { if (pointeurs.has(e.pointerId)) pointeurs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (mode === 'pinch') { suitPinch(); return; } if (!mode) return;
-    if (origine && (Math.abs(e.clientX - origine[0]) > 3 || Math.abs(e.clientY - origine[1]) > 3)) bouge = true;
+    if (origine && (Math.abs(e.clientX - origine[0]) > 3 || Math.abs(e.clientY - origine[1]) > 3)) { bouge = true; stage.classList.add('tient'); }
     if (mode === 'pan') { app.vue.tx = pan.tx + (e.clientX - pan.x); app.vue.ty = pan.ty + (e.clientY - pan.y); appliquerVue(); } });
-  const fin = e => { try { stage.releasePointerCapture(e.pointerId); } catch (_) { }
+  const fin = e => { try { stage.releasePointerCapture(e.pointerId); } catch (_) { } stage.classList.remove('tient');
     const etaitPinch = mode === 'pinch'; pointeurs.delete(e.pointerId);
     if (etaitPinch) { if (pointeurs.size < 2) { mode = null; pinch = null; } return; }
-    if (mode === 'pan' && !bouge) { const w = versMonde(e.clientX, e.clientY); const c = blocSous(w);
-      if (c) { if (estRenvoi(c.name)) { const t = c.name.replace(RENVOI, ''); if (app.nFolios) allerAuPlan(t); }
-               else ouvrirFiche(c, e.clientX, e.clientY); }
-      else { const f = filSous(w); if (f) ouvrirFicheFil(f, e.clientX, e.clientY); else if (app.choisi) { app.choisi = null; peindre(); } } }
+    if (mode === 'pan' && !bouge) cliquer(versMonde(e.clientX, e.clientY));
     mode = null; pan = null; };
   stage.addEventListener('pointerup', fin); stage.addEventListener('pointercancel', fin);
-  stage.addEventListener('mousemove', e => { if (mode || pointeurs.size || $('pop').style.display === 'block') return;
+  stage.addEventListener('mousemove', e => { if (mode || pointeurs.size) return;
     const c = blocSous(versMonde(e.clientX, e.clientY)); const nm = c ? c.name : null;
-    if (nm !== survole) { if (nm) { allumerBloc(nm); survole = nm; } else eteindre(); } });
-  stage.addEventListener('mouseleave', () => { if (!mode) eteindre(); });
-  stage.addEventListener('wheel', e => { e.preventDefault(); const r = cadreSvg(); zoomer(Math.exp(-e.deltaY * 0.0014), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
-  // déposer un fichier n'importe où sur la planche
-  ['dragenter', 'dragover'].forEach(ev => stage.addEventListener(ev, e => { e.preventDefault(); stage.classList.add('over'); }));
-  ['dragleave', 'dragend'].forEach(ev => stage.addEventListener(ev, e => { e.preventDefault(); stage.classList.remove('over'); }));
-  stage.addEventListener('drop', e => { e.preventDefault(); stage.classList.remove('over'); const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) ouvrirFichier(f); });
+    if (nm !== survole) { survole = nm; if (nm) allumerBloc(nm); else rallumer(); } });
+  stage.addEventListener('mouseleave', () => { if (!mode) { survole = null; rallumer(); } });
+  stage.addEventListener('wheel', e => { e.preventDefault(); const r = cadre(); zoomer(Math.exp(-e.deltaY * 0.0014), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+  stage.addEventListener('dblclick', e => { const r = cadre(); zoomer(1.6, e.clientX - r.left, e.clientY - r.top); });
 }
+/* Un clic sur la planche : un bloc, un renvoi, un fil, ou le vide. */
+function cliquer(w) { const c = blocSous(w);
+  if (c) { if (estRenvoi(c.name)) { const t = c.name.replace(RENVOI, ''); if (plans().includes(t)) allerAuPlan(t); return; }
+    if (c.rail) return; choisirBloc(c); return; }
+  const f = filSous(w); if (f) choisirFil(f); else if (app.fiche) fermerFiche(); }
+function choisirBloc(c) { app.choisi = c.name; peindre(); ficheEquipement(c.name); allumerBloc(c.name); }
+function choisirFil(f) { const l = liaisonsDuPlan()[f.i]; if (!l) return;
+  if (app.choisi) { app.choisi = null; peindre(); } ficheFil(sourceDe(l) || l); allumerFil(f); }
 
-/* ---- les fiches --------------------------------------------------------- */
-function raccordementsDe(nom) { const src = app.source || app.contrat.liaisons; const out = [];
-  src.forEach(l => { if (estRenvoi(l.de) || estRenvoi(l.vers)) return;
-    if (l.de === nom) out.push({ borne: l.borneDe || '·', dest: l.vers, dt: l.borneVers, cable: l.cable, type: l.type, plan: l.plan, pn: l.pnDe });
-    else if (l.vers === nom) out.push({ borne: l.borneVers || '·', dest: l.de, dt: l.borneDe, cable: l.cable, type: l.type, plan: l.plan, pn: l.pnVers }); });
-  return out.sort((a, b) => { const na = parseFloat(a.borne), nb = parseFloat(b.borne); return (!isNaN(na) && !isNaN(nb)) ? na - nb : String(a.borne).localeCompare(String(b.borne)); }); }
-function poserFiche(sx, sy, w) { const p = $('pop'); p.style.width = w + 'px'; p.style.display = 'block'; const pr = cadreSvg();
-  let L = sx - pr.left + 12, T = sy - pr.top + 12; L = Math.min(L, pr.width - w - 12); T = Math.min(T, pr.height - 220);
-  p.style.left = Math.max(8, L) + 'px'; p.style.top = Math.max(8, T) + 'px'; }
-function fermerFiche() { $('pop').style.display = 'none'; eteindre(); }
-function ouvrirFiche(c, sx, sy) { app.choisi = c.name; peindre();
-  const cn = raccordementsDe(c.name), p = $('pop');
-  const meta = x => [x.cable ? esc(x.cable) + (x.type ? ' ' + esc(x.type) : '') : (x.type ? esc(x.type) : ''), x.plan ? 'pl. ' + esc(x.plan) : ''].filter(Boolean).join(' · ') || '—';
-  const lignes = cn.length ? cn.map(x => `<tr><td class="bn">${esc(x.borne)}</td><td>${esc(x.dest)}${x.dt ? ':' + esc(x.dt) : ''}</td><td>${meta(x)}</td></tr>`).join('')
-    : '<tr><td colspan="3" class="vide">Aucun raccordement</td></tr>';
-  const pn = [...new Set(cn.map(x => x.pn).filter(Boolean))];
-  p.innerHTML = `<h5>${esc(CODES[(lireRepere(c.name) || {}).code] ? CODES[lireRepere(c.name).code].nom : 'Équipement')} — ${esc(c.name)}</h5>
-    <div class="field"><label>Repère</label><input id="ed-rep" value="${escA(c.name)}"></div>
-    <div class="field"><label>Désignation</label><input id="ed-des" value="${escA(app.contrat.designations.get(c.name) || '')}"></div>
-    ${pn.length ? `<div class="infoline"><span class="k">Connecteur</span><span class="v">${esc(pn.join(' · '))}</span></div>` : ''}
-    <div class="subhead">Bornes et raccordements <span class="count">${cn.length}</span></div>
-    <div class="btbl-wrap"><table class="btbl"><thead><tr><th>Borne</th><th>Vers</th><th>Fil</th></tr></thead><tbody>${lignes}</tbody></table></div>
-    <div class="actions"><button class="primary" id="ed-ok">Enregistrer</button><button id="ed-del">Supprimer</button><button class="ghost" id="ed-close">Fermer</button></div>`;
-  poserFiche(sx, sy, 290);
-  $('ed-close').onclick = fermerFiche;
-  $('ed-ok').onclick = () => { const nr = $('ed-rep').value.trim() || c.name, nd = $('ed-des').value.trim();
-    histPush('modification de ' + c.name);
-    if (nr !== c.name) { const ren = arr => arr.forEach(l => { if (l.de === c.name) l.de = nr; if (l.vers === c.name) l.vers = nr; });
-      ren(app.contrat.liaisons); if (app.source) ren(app.source); app.contrat.designations.delete(c.name); }
-    if (nd) app.contrat.designations.set(nr, nd); else app.contrat.designations.delete(nr);
-    app.choisi = nr; fermerFiche(); redessiner(); sauver(); };
-  $('ed-del').onclick = () => { histPush('suppression de ' + c.name);
-    const garder = l => l.de !== c.name && l.vers !== c.name;
-    app.contrat.liaisons = app.contrat.liaisons.filter(garder); if (app.source) app.source = app.source.filter(garder);
-    app.contrat.designations.delete(c.name); app.choisi = null; fermerFiche(); redessiner(); sauver(); };
-}
-function ouvrirFicheFil(f, sx, sy) { const p = $('pop');
-  const ligne = (k, v) => v ? `<div class="infoline"><span class="k">${k}</span><span class="v">${esc(v)}</span></div>` : '';
-  p.innerHTML = `<h5>${f.cable ? 'Fil — ' + esc(f.cable) : 'Fil'}</h5>`
-    + ligne('De', f.de + (f.borneDe ? ':' + f.borneDe : '')) + ligne('Vers', f.vers + (f.borneVers ? ':' + f.borneVers : ''))
-    + ligne('Type / section', f.type) + ligne('Route', f.route) + ligne('Plan', f.plan) + ligne('Connecteur dép.', f.pnDe) + ligne('Connecteur arr.', f.pnVers)
-    + '<div class="actions"><button class="ghost" id="cb-close">Fermer</button></div>';
-  poserFiche(sx, sy, 250); $('cb-close').onclick = fermerFiche; allumerFil(f); }
+/* ---- les folios : y aller, les montrer --------------------------------- */
+function allerAuPlan(plan) { if (plan === app.plan) return; app.plan = plan; app.choisi = null; fermerFiche(); redessiner(); ajuster(); }
+function allerAuFolio(pas) { const P = plans(); let i = P.indexOf(app.plan);
+  if (i < 0) i = pas > 0 ? -1 : P.length; i += pas; if (i < 0 || i >= P.length) return; allerAuPlan(P[i]); }
+function plansDuRepere(nom) { return [...new Set(app.contrat.liaisons.filter(l => l.de === nom || l.vers === nom).map(l => l.plan).filter(Boolean))]; }
+function plansDuFil(cable) { return [...new Set(app.contrat.liaisons.filter(l => l.cable === cable).map(l => l.plan).filter(Boolean))]; }
+function synchroniserFolios() { const P = plans(), nav = $('folios'), strip = $('fo-strip');
+  nav.hidden = P.length < 2;
+  if (app.plan !== '*' && !P.includes(app.plan)) app.plan = P.length > 1 ? P[0] : '*';
+  const i = P.indexOf(app.plan);
+  strip.innerHTML = P.length < 2 ? '' : P.map(p => `<button class="chip${p === app.plan ? ' on' : ''}" data-plan="${escA(p)}" aria-label="Folio ${escA(p)}"${p === app.plan ? ' aria-current="page"' : ''}>${esc(p)}</button>`).join('');
+  $('fo-lbl').textContent = i < 0 ? (P.length > 1 ? 'tout' : '1 / 1') : (i + 1) + ' / ' + P.length;
+  $('fo-prev').disabled = i === 0; $('fo-next').disabled = i >= 0 && i >= P.length - 1;
+  const on = strip.querySelector('.chip.on'); if (on && on.scrollIntoView) { try { on.scrollIntoView({ block: 'nearest', inline: 'center' }); } catch (_) { } } }
 
-/* ---- le panneau --------------------------------------------------------- */
-function montrerVue(id) { document.querySelectorAll('#railtabs button').forEach(b => b.classList.toggle('on', b.dataset.vue === id));
-  document.querySelectorAll('.vue').forEach(v => v.classList.toggle('on', v.id === id));
-  const rb = document.querySelector('.railbody'); if (rb) rb.scrollTop = 0;
-  if (id === 'v-piece' && typeof synchroniserRetest === 'function') synchroniserRetest(); }
-function listeMateriel() { const box = $('mt-liste'); const L = app.contrat.liaisons; const cnt = new Map();
+/* ---- aller à un repère ou à un fil, même sur un autre folio ------------ */
+function aller(cible) { const P = plans(); const nom = cible.nom;
+  const ou = cible.type === 'fil' ? plansDuFil(nom) : plansDuRepere(nom);
+  if (P.length > 1 && app.plan !== '*' && ou.length && !ou.includes(app.plan)) allerAuPlan(ou[0]);
+  if (cible.type === 'fil') { const f = app.dessin && app.dessin.fils.find(w => w.cable === nom); if (!f) { dire('« ' + nom + ' » n’est pas dessiné.'); return; }
+    choisirFil(f); viserFil(f); return; }
+  const c = app.dessin && app.dessin.compDe.get(nom); if (!c) { dire('« ' + nom + ' » n’est sur aucun folio.'); return; }
+  choisirBloc(c); viser(nom); }
+
+/* ---- la recherche ------------------------------------------------------- */
+function candidats(q) { q = q.trim().toLowerCase(); if (!q) return [];
+  const L = verite(), cnt = new Map(), D = app.contrat.designations;
   L.forEach(l => [l.de, l.vers].forEach(n => { if (n && !estRenvoi(n)) cnt.set(n, (cnt.get(n) || 0) + 1); }));
-  const f = app.filtre.toLowerCase(); const parFil = new Set();
-  if (f) L.forEach(l => { if (String(l.cable).toLowerCase().includes(f)) { parFil.add(l.de); parFil.add(l.vers); } });
-  const noms = [...cnt.keys()].filter(n => !f || n.toLowerCase().includes(f) || parFil.has(n)).sort((a, b) => cnt.get(b) - cnt.get(a) || a.localeCompare(b));
-  $('mt-rien').style.display = (cnt.size && !noms.length) ? '' : 'none';
-  box.innerHTML = noms.slice(0, 400).map(n => { const d = app.contrat.designations.get(n) || '';
-    return `<div class="mtrow" data-n="${escA(n)}"><span class="mtn">${esc(n)}</span>${d ? `<span class="mtd">${esc(clip(d, 22))}</span>` : ''}<span class="mtc">${cnt.get(n)} fil${cnt.get(n) > 1 ? 's' : ''}</span></div>`; }).join('');
-  box.querySelectorAll('.mtrow').forEach(el => { el.onclick = () => viser(el.dataset.n); });
-  $('cnt-eq').textContent = cnt.size; }
-function tableLiaisons() { const CAP = 300; const f = app.filtre.toLowerCase();
-  const vues = app.contrat.liaisons.map((l, i) => [l, i]).filter(([l]) => !f || l.de.toLowerCase().includes(f) || l.vers.toLowerCase().includes(f) || l.cable.toLowerCase().includes(f));
-  const cell = (i, k, v) => `<td><input data-i="${i}" data-f="${k}" value="${escA(v)}"></td>`;
-  $('tbl-lk').querySelector('tbody').innerHTML = vues.slice(0, CAP).map(([l, i]) => `<tr>${cell(i, 'de', l.de)}${cell(i, 'borneDe', l.borneDe)}${cell(i, 'vers', l.vers)}${cell(i, 'borneVers', l.borneVers)}${cell(i, 'cable', l.cable)}<td class="rmrow" data-i="${i}" title="Supprimer">✕</td></tr>`).join('')
-    + (vues.length > CAP ? `<tr><td colspan="6" class="vide">… ${vues.length - CAP} autres lignes</td></tr>` : '');
-  $('cnt-lk').textContent = app.contrat.liaisons.length; }
-function tableDesignations() { const rows = [...app.contrat.designations.entries()];
-  $('tbl-eq').querySelector('tbody').innerHTML = rows.map(([r, d]) => `<tr><td><input data-rep="${escA(r)}" data-f="repere" value="${escA(r)}"></td><td><input data-rep="${escA(r)}" data-f="designation" value="${escA(d)}"></td><td class="rmrow" data-rep="${escA(r)}" title="Supprimer">✕</td></tr>`).join(''); }
-function synchroniserContexte() { const n = app.contrat.liaisons.length; const el = $('ctx-txt');
-  if (!n) { el.textContent = 'aucun contrat'; return; }
-  el.innerHTML = `<b>${n}</b> liaison${n > 1 ? 's' : ''} · <b>${reperesDe(app.contrat.liaisons).filter(r => !estRenvoi(r)).length}</b> repères` + (app.nFolios ? ` · <b>${app.nFolios}</b> folios` : ''); }
-function synchroniserFolios() { const plans = plansDe(app.contrat.liaisons); const nav = $('folionav');
-  if (plans.length < 2) { nav.classList.remove('on'); if (app.plan !== '*' && !plans.includes(app.plan)) app.plan = '*'; }
-  else { nav.classList.add('on'); const i = plans.indexOf(app.plan); const mot = app.nFolios ? 'Folio' : 'Plan';
-    $('fo-lbl').textContent = i < 0 ? 'Tous les ' + mot.toLowerCase() + 's' : mot + ' ' + plans[i] + ' / ' + plans.length;
-    $('fo-prev').disabled = i === 0; $('fo-next').disabled = i >= 0 && i >= plans.length - 1; }
-  $('btnFolios').textContent = app.nFolios ? 'Tout d’un tenant' : 'Découper en folios'; }
-function synchroniserHistorique() { const b = $('btnUndo'); b.style.display = app.hist.length ? '' : 'none';
-  if (app.hist.length) b.title = 'Annuler : ' + app.hist[app.hist.length - 1].quoi + ' (Ctrl+Z)'; }
-function synchroniser() { listeMateriel(); tableLiaisons(); tableDesignations(); synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); }
-function allerAuPlan(plan) { app.plan = plan; app.choisi = null; fermerFiche(); redessiner(); ajuster(); }
-function allerAuFolio(pas) { const plans = plansDe(app.contrat.liaisons); let i = plans.indexOf(app.plan);
-  if (i < 0) i = pas > 0 ? -1 : plans.length; i += pas; if (i < 0 || i >= plans.length) return; allerAuPlan(plans[i]); }
+  const rang = n => n.toLowerCase().startsWith(q) ? 0 : (n.toLowerCase().includes(q) ? 1 : 2);
+  const rep = [...cnt.keys()].filter(n => rang(n) < 2 || (D.get(n) || '').toLowerCase().includes(q))
+    .sort((a, b) => rang(a) - rang(b) || cnt.get(b) - cnt.get(a) || a.localeCompare(b)).slice(0, 7)
+    .map(n => ({ type: 'repere', nom: n, des: D.get(n) || '', n: cnt.get(n) }));
+  const fils = [], vus = new Set();
+  L.forEach(l => { const c = l.cable; if (c && !vus.has(c) && c.toLowerCase().includes(q)) { vus.add(c); fils.push({ type: 'fil', nom: c, des: l.de + ' → ' + l.vers }); } });
+  return rep.concat(fils.sort((a, b) => rang(a.nom) - rang(b.nom)).slice(0, 5)); }
+let qSel = 0, qCands = [];
+function montrerCandidats() { const box = $('q-liste'), q = $('q').value; qCands = candidats(q);
+  if (!q.trim()) { box.hidden = true; return; } box.hidden = false; qSel = Math.min(qSel, Math.max(0, qCands.length - 1));
+  box.innerHTML = qCands.length ? qCands.map((c, i) => `<button class="q-item${i === qSel ? ' on' : ''}" role="option" data-i="${i}" aria-selected="${i === qSel}">
+      <span class="genre">${c.type === 'fil' ? 'fil' : 'rep.'}</span><span class="nom">${esc(c.nom)}</span><span class="des">${esc(c.des)}</span>${c.n ? `<span class="cpt">${c.n} fil${c.n > 1 ? 's' : ''}</span>` : ''}</button>`).join('')
+    : '<div class="q-rien">Rien qui corresponde.</div>'; }
+function fermerRecherche() { $('q-liste').hidden = true; $('haut').classList.remove('cherche'); }
+function lierRecherche() { const q = $('q'), box = $('q-liste');
+  q.addEventListener('input', () => { qSel = 0; montrerCandidats(); });
+  q.addEventListener('focus', () => { $('haut').classList.add('cherche'); if (q.value.trim()) montrerCandidats(); });
+  q.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); qSel = Math.min(qSel + 1, qCands.length - 1); montrerCandidats(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); qSel = Math.max(qSel - 1, 0); montrerCandidats(); }
+    else if (e.key === 'Enter') { e.preventDefault(); const c = qCands[qSel]; if (c) { aller(c); fermerRecherche(); q.blur(); } }
+    else if (e.key === 'Escape') { q.value = ''; fermerRecherche(); q.blur(); } });
+  box.addEventListener('pointerdown', e => e.preventDefault());   // le champ garde le focus
+  box.addEventListener('click', e => { const b = e.target.closest('.q-item'); if (!b) return; const c = qCands[+b.dataset.i]; if (c) { aller(c); fermerRecherche(); q.blur(); } });
+  q.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== q) fermerRecherche(); }, 120));
+  // sur téléphone le champ est replié : on l'ouvre d'abord, puis on lui donne le focus
+  $('recherche').addEventListener('click', e => { if (e.target.closest('.q-liste')) return; $('haut').classList.add('cherche'); q.focus(); }); }
 
-/* ---- les folios : découper, dérouler, ajuster tout seul ---------------- */
-function decouper(budget) { const src = app.source || app.contrat.liaisons; const R = decouperEnFolios(src, budget);
+/* ---- la fiche ----------------------------------------------------------- */
+function ouvrirFiche(mode, corps, pied, large) { const f = $('fiche');
+  f.classList.toggle('large', !!large); $('fiche-corps').innerHTML = corps; const p = $('fiche-pied'); p.innerHTML = pied || ''; p.hidden = !pied;
+  const nouveau = f.hidden || !app.fiche || app.fiche.mode !== mode.mode;
+  f.hidden = false; if (nouveau) { f.classList.remove('entre'); void f.offsetWidth; f.classList.add('entre'); }
+  app.fiche = mode; $('fiche-corps').scrollTop = 0;
+  $('fi-fermer').onclick = fermerFiche; }
+function fermerFiche() { const f = $('fiche'); if (f.hidden && !app.fiche) return; f.hidden = true; app.fiche = null;
+  if (app.choisi) { app.choisi = null; peindre(); } eteindre(); }
+const tete = (sur, titre, editable) => `<div class="fiche-tete"><div class="min0"><div class="sur">${esc(sur)}</div>${editable
+  ? `<input class="titre" id="${editable}" value="${escA(titre)}" aria-label="${escA(sur)}" spellcheck="false" placeholder="—">` : `<h2 class="titre">${esc(titre)}</h2>`}</div>
+  <button class="rond fermer" id="fi-fermer" aria-label="Fermer la fiche"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`;
+const champ = (id, lib, val, opt) => `<label class="champ${opt && opt.sans ? ' sans' : ''}"><span>${lib}</span><input id="${id}" value="${escA(val || '')}"${opt && opt.ph ? ` placeholder="${escA(opt.ph)}"` : ''} spellcheck="false"></label>`;
+const natureDe = nom => { const q = lireRepere(nom); return (q && q.num && CODES[q.code]) ? CODES[q.code].nom : 'équipement'; };
+
+function raccordementsDe(nom) { const out = [];
+  verite().forEach((l, i) => { if (estRenvoi(l.de) || estRenvoi(l.vers)) return;
+    if (l.de === nom) out.push({ i, l, borne: l.borneDe || '·', dest: l.vers, dt: l.borneVers, pn: l.pnDe });
+    else if (l.vers === nom) out.push({ i, l, borne: l.borneVers || '·', dest: l.de, dt: l.borneDe, pn: l.pnVers }); });
+  return out.sort((a, b) => { const na = parseFloat(a.borne), nb = parseFloat(b.borne); return (!isNaN(na) && !isNaN(nb)) ? na - nb : String(a.borne).localeCompare(String(b.borne)); }); }
+function ficheEquipement(nom) {
+  const cn = raccordementsDe(nom), pn = [...new Set(cn.map(x => x.pn).filter(Boolean))], multi = plans().length > 1;
+  const ailleurs = d => { if (!multi || app.plan === '*') return ''; const ou = plansDuRepere(d); return (ou.length && !ou.includes(app.plan)) ? `<span class="f" title="Sur le folio ${escA(ou[0])}">f. ${esc(ou[0])}</span>` : ''; };
+  const lignes = cn.map(x => `<li tabindex="0" role="button" data-i="${x.i}" title="Voir ce fil"><span class="borne">${esc(x.borne)}</span><span class="fleche">→</span>
+      <button class="dest" data-aller="${escA(x.dest)}" title="Aller à ${escA(x.dest)}">${esc(x.dest)}${x.dt ? `<span class="b">:${esc(x.dt)}</span>` : ''}</button>
+      ${ailleurs(x.dest)}<span class="meta">${esc([x.l.cable, x.l.type].filter(Boolean).join(' · '))}</span></li>`).join('');
+  const corps = tete(natureDe(nom), nom, 'ed-rep')
+    + champ('ed-des', 'Désignation', app.contrat.designations.get(nom), { ph: 'Ce que c’est, écrit sous le repère', sans: true })
+    + (pn.length ? `<div class="info"><span>Connecteur</span><b class="mono">${esc(pn.join(' · '))}</b></div>` : '')
+    + `<div class="sous-titre">Raccordements <span class="compte">${cn.length}</span></div><ul class="racc" id="racc">${lignes || '<li class="rien">Aucun raccordement.</li>'}</ul>`;
+  const pied = `<button class="btn cuivre" id="ed-ok" hidden>Enregistrer</button><button class="btn papier" id="ed-add">+ Liaison</button><span class="espace"></span><button class="btn lien danger" id="ed-del">Supprimer</button>`;
+  ouvrirFiche({ mode: 'equip', nom }, corps, pied);
+  const rep = $('ed-rep'), des = $('ed-des'), ok = $('ed-ok');
+  const modifie = () => { ok.hidden = rep.value.trim() === nom && des.value.trim() === (app.contrat.designations.get(nom) || ''); };
+  [rep, des].forEach(el => { el.addEventListener('input', modifie); el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); ok.click(); } }); });
+  ok.onclick = () => { const nr = rep.value.trim() || nom, nd = des.value.trim(); if (ok.hidden) return;
+    histPush('modification de ' + nom); if (nr !== nom) renommer(nom, nr); designer(nr, nd); app.choisi = nr; apresEdition(); ficheEquipement(nr); rallumer(); dire('Enregistré.'); };
+  $('ed-add').onclick = () => ficheFil(liaison({ de: nom }), true);
+  $('ed-del').onclick = () => { if (!confirm('Supprimer « ' + nom + ' » et ses ' + cn.length + ' liaison(s) ?')) return;
+    histPush('suppression de ' + nom); supprimerEquipement(nom); apresEdition(); dire(nom + ' supprimé.'); };
+  $('racc').addEventListener('click', e => { const a = e.target.closest('.dest'); if (a) { aller({ type: 'repere', nom: a.dataset.aller }); return; }
+    const li = e.target.closest('li[data-i]'); if (li) { const l = verite()[+li.dataset.i]; if (l) { ficheFil(l); const w = filDe(l); if (w) { allumerFil(w); viserFil(w); } } } });
+  $('racc').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('li[data-i]')) e.target.click(); });
+}
+function ficheFil(l, neuve) {
+  const corps = tete(neuve ? 'Nouvelle liaison' : 'Fil', l.cable || (neuve ? '' : '—'), 'fl-cable')
+    + `<div class="grille bornes">${champ('fl-de', 'De', l.de, { ph: 'repère' })}${champ('fl-bde', 'Borne', l.borneDe)}</div>`
+    + `<div class="grille bornes">${champ('fl-vers', 'Vers', l.vers, { ph: 'repère' })}${champ('fl-bvers', 'Borne', l.borneVers)}</div>`
+    + `<div class="grille">${champ('fl-type', 'Type / section', l.type)}${champ('fl-route', 'Route', l.route)}</div>`
+    + `<div class="grille">${champ('fl-pnde', 'Connecteur départ', l.pnDe)}${champ('fl-pnvers', 'Connecteur arrivée', l.pnVers)}</div>`
+    + (!app.nFolios && plans().length ? champ('fl-plan', 'Folio', l.plan) : '')
+    + (neuve ? '' : `<div class="aller">Aller à ${[l.de, l.vers].filter(n => n && !estRenvoi(n)).map(n => `<button data-aller="${escA(n)}">${esc(n)}</button>`).join('')}</div>`);
+  const pied = `<button class="btn cuivre" id="fl-ok">${neuve ? 'Ajouter' : 'Enregistrer'}</button><span class="espace"></span>${neuve ? '' : '<button class="btn lien danger" id="fl-del">Supprimer</button>'}`;
+  ouvrirFiche({ mode: neuve ? 'neuve' : 'fil', l }, corps, pied);
+  const v = id => ($(id) ? $(id).value.trim() : '');
+  const lire = () => ({ cable: v('fl-cable'), de: v('fl-de'), borneDe: v('fl-bde'), vers: v('fl-vers'), borneVers: v('fl-bvers'), type: v('fl-type'), route: v('fl-route'), pnDe: v('fl-pnde'), pnVers: v('fl-pnvers'), plan: $('fl-plan') ? v('fl-plan') : l.plan });
+  $('fl-ok').onclick = () => { const ch = lire();
+    if (neuve) { if (!ch.de || !ch.vers) { dire('Il faut un repère à chaque bout.', true); return; }
+      if (!ch.plan && !app.nFolios && app.plan !== '*') ch.plan = app.plan;
+      histPush('ajout d’une liaison'); const n = liaison(ch); verite().push(n); apresEdition(); ficheFil(n); rallumer(); dire('Liaison ajoutée.'); return; }
+    histPush('modification d’une liaison'); Object.assign(l, ch); apresEdition(); ficheFil(l); rallumer(); dire('Enregistré.'); };
+  $('fiche-corps').querySelectorAll('input').forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('fl-ok').click(); } }));
+  if (!neuve) { $('fl-del').onclick = () => { histPush('suppression d’une liaison'); const V = verite(), i = V.indexOf(l); if (i >= 0) V.splice(i, 1); fermerFiche(); apresEdition(); dire('Liaison supprimée.'); };
+    $('fiche-corps').querySelectorAll('.aller button').forEach(b => b.onclick = () => aller({ type: 'repere', nom: b.dataset.aller })); }
+  if (neuve) $('fl-vers').focus();
+}
+function ficheTable(filtre) { const V = verite(), CAP = 300, f = (filtre || '').toLowerCase();
+  const vues = V.map((l, i) => [l, i]).filter(([l]) => !f || [l.de, l.vers, l.cable].some(x => x.toLowerCase().includes(f)));
+  const cell = (i, k, v, cls) => `<td${cls ? ` class="${cls}"` : ''}><input data-i="${i}" data-f="${k}" value="${escA(v)}" aria-label="${k}" spellcheck="false"></td>`;
+  const lignes = vues.slice(0, CAP).map(([l, i]) => `<tr>${cell(i, 'de', l.de)}${cell(i, 'borneDe', l.borneDe, 'n')}${cell(i, 'vers', l.vers)}${cell(i, 'borneVers', l.borneVers, 'n')}${cell(i, 'cable', l.cable)}<td class="x"><button data-x="${i}" aria-label="Supprimer la liaison">×</button></td></tr>`).join('')
+    + (vues.length > CAP ? `<tr class="reste"><td colspan="6">… et ${vues.length - CAP} autres — affine le filtre.</td></tr>` : '');
+  const corps = tete('Contrat', 'Toutes les liaisons')
+    + `<div class="filtre"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="tb-filtre" value="${escA(filtre || '')}" placeholder="Filtrer par repère ou n° de fil" aria-label="Filtrer"></div>`
+    + `<table class="tab" id="tb"><thead><tr><th>De</th><th>B.</th><th>Vers</th><th>B.</th><th>Fil</th><th></th></tr></thead><tbody>${lignes || '<tr class="reste"><td colspan="6">Aucune liaison.</td></tr>'}</tbody></table>`;
+  const pied = `<button class="btn papier" id="tb-add">+ Liaison</button><span class="espace"></span><span class="note">${V.length} liaison${V.length > 1 ? 's' : ''}</span>`;
+  ouvrirFiche({ mode: 'table' }, corps, pied, true);
+  const fi = $('tb-filtre'); let fT; fi.addEventListener('input', () => { clearTimeout(fT); fT = setTimeout(() => { const pos = fi.selectionStart; ficheTable(fi.value); $('tb-filtre').focus(); $('tb-filtre').setSelectionRange(pos, pos); }, 200); });
+  if (filtre !== undefined) { fi.focus(); }
+  const t = $('tb');
+  t.addEventListener('focusin', e => { if (e.target.dataset.i != null) e.target.dataset.avant = e.target.value; });
+  t.addEventListener('change', e => { const i = e.target.dataset.i; if (i == null) return; const l = V[+i]; if (!l) return;
+    histPush('modification d’une liaison'); l[e.target.dataset.f] = e.target.value.trim(); apresEdition(); });
+  t.addEventListener('click', e => { const b = e.target.closest('button[data-x]'); if (!b) return;
+    histPush('suppression d’une liaison'); V.splice(+b.dataset.x, 1); apresEdition(); ficheTable(fi.value); });
+  $('tb-add').onclick = () => ficheFil(liaison({}), true);
+}
+const CHAMPS_CARTOUCHE = [['ca-titre', 'titre', 'Titre'], ['ca-auteur', 'auteur', 'Dessiné par'], ['ca-indice', 'indice', 'Indice'], ['ca-date', 'date', 'Date'], ['ca-echelle', 'echelle', 'Échelle']];
+function ficheCartouche() { const c = app.contrat.cartouche;
+  const corps = tete('Sur chaque folio', 'Cartouche') + champ('ca-titre', 'Titre', c.titre, { sans: true }) + champ('ca-auteur', 'Dessiné par', c.auteur, { sans: true })
+    + `<div class="grille">${champ('ca-indice', 'Indice', c.indice)}${champ('ca-date', 'Date', c.date)}</div>` + champ('ca-echelle', 'Échelle', c.echelle)
+    + '<p class="note">Le numéro de folio s’écrit tout seul. Ce cartouche part avec chaque planche enregistrée ou imprimée.</p>';
+  ouvrirFiche({ mode: 'cartouche' }, corps, '');
+  CHAMPS_CARTOUCHE.forEach(([id, k]) => { $(id).addEventListener('input', e => { c[k] = e.target.value; }); $(id).addEventListener('change', () => { peindre(); rallumer(); sauver(); }); });
+}
+function ficheColler() {
+  const corps = tete('Charger', 'Coller des liaisons')
+    + '<p class="note">Une liaison par ligne, colonnes séparées par <b>;</b> <b>,</b> ou une tabulation. Un export du retest est reconnu à ses en-têtes ; sinon l’ordre attendu est :</p>'
+    + '<p class="note mono">Équip.1 · Borne · PN · Équip.2 · Borne · PN · Fil · Type · Route · Folio</p>'
+    + '<label class="champ"><span>Lignes</span><textarea id="co-txt" placeholder="210SP1;12;;115CD;3;;W-101;DR24;;" spellcheck="false"></textarea></label>';
+  const pied = '<button class="btn cuivre" id="co-ok">Charger</button><span class="espace"></span><button class="btn lien" id="co-fichier">…ou choisir un fichier</button>';
+  ouvrirFiche({ mode: 'coller' }, corps, pied);
+  $('co-ok').onclick = () => { const r = lireTexte($('co-txt').value);
+    if (!r.liaisons.length) { dire('Aucune liaison reconnue : vérifie le séparateur et l’ordre des colonnes.', true); return; }
+    chargerContrat(r.liaisons, 'collage de ' + r.liaisons.length + ' liaisons', 'Collage'); dire(r.liaisons.length + ' liaisons chargées.'); };
+  $('co-fichier').onclick = () => $('fichier').click();
+  $('co-txt').focus();
+}
+/* Après une correction, la fiche se remet au niveau de ce qu'elle montre. */
+function rafraichirFiche() { const f = app.fiche; if (!f) return;
+  if (f.mode === 'equip') { if (verite().some(l => l.de === f.nom || l.vers === f.nom)) ficheEquipement(f.nom); else fermerFiche(); }
+  else if (f.mode === 'table') ficheTable($('tb-filtre') ? $('tb-filtre').value : ''); }
+
+/* ---- corriger : toujours la vérité, puis on refait les folios ----------- */
+function sourceDe(l) { if (!app.source || app.source.includes(l)) return l;
+  const bout = (n, b) => { if (!estRenvoi(n)) return [n, b]; const k = b.indexOf(' '); return k < 0 ? [b, ''] : [b.slice(0, k), b.slice(k + 1)]; };
+  const [de, bDe] = bout(l.de, l.borneDe), [vers, bVers] = bout(l.vers, l.borneVers);
+  return app.source.find(s => s.de === de && s.borneDe === bDe && s.vers === vers && s.borneVers === bVers && s.cable === l.cable) || null; }
+function renommer(ancien, nouveau) { verite().forEach(l => { if (l.de === ancien) l.de = nouveau; if (l.vers === ancien) l.vers = nouveau; });
+  const d = app.contrat.designations.get(ancien); app.contrat.designations.delete(ancien); if (d) app.contrat.designations.set(nouveau, d); }
+function designer(nom, d) { if (d) app.contrat.designations.set(nom, d); else app.contrat.designations.delete(nom); }
+function supprimerEquipement(nom) { const g = l => l.de !== nom && l.vers !== nom;
+  if (app.source) app.source = app.source.filter(g); app.contrat.liaisons = app.contrat.liaisons.filter(g);
+  app.contrat.designations.delete(nom); app.choisi = null; fermerFiche(); }
+function refaireFolios() { const src = app.source, plan = app.plan; app.contrat.liaisons = src; app.source = null; app.nFolios = 0;
+  const R = decouperEnFolios(src, app.budget);
+  if (R.applique) { app.source = src; app.contrat.liaisons = R.liaisons; app.nFolios = R.nFolios; app.plan = plansDe(R.liaisons).includes(plan) ? plan : '1'; }
+  else app.plan = '*'; }
+function apresEdition() { if (app.nFolios) refaireFolios(); redessiner(); rafraichirFiche(); sauver(); }
+
+/* ---- les folios automatiques : découper, dérouler, ajuster tout seul --- */
+function decouper(budget) { const src = verite(); const R = decouperEnFolios(src, budget);
   if (!R.applique) return 0;
-  app.source = src; app.contrat.liaisons = R.liaisons; app.nFolios = R.nFolios; app.plan = '1'; redessiner(); ajuster(); return R.nFolios; }
+  app.source = src; app.contrat.liaisons = R.liaisons; app.nFolios = R.nFolios; app.budget = budget; app.plan = '1'; redessiner(); ajuster(); return R.nFolios; }
 function derouler() { if (!app.nFolios) return; app.contrat.liaisons = app.source; app.source = null; app.nFolios = 0; app.plan = '*'; redessiner(); ajuster(); }
 /* Un dessin qui ne tient pas sur une feuille se découpe tout seul : on essaie
    plusieurs budgets, du plus généreux au plus serré, et on garde le premier
@@ -2545,115 +2475,110 @@ function ajusterFolios() { if (app.nFolios) return 0;
   if (!meilleur) { derouler(); return 0; }
   const g = formatDuDessin(app.dessin);
   if (!g || Math.abs(Math.log(g.ratio / 1.41)) > meilleur.ecart + 1e-9) { derouler(); app.contrat.liaisons = src; decouper(meilleur.budget); }
-  $('xp-stat').textContent = 'Le schéma faisait ' + Math.round(f.larg) + ' × ' + Math.round(f.haut) + ', il ne tenait sur aucune feuille. Découpé en ' + meilleur.n + ' folios.';
+  dire('Trop grand pour une feuille : découpé en ' + meilleur.n + ' folios.');
   return meilleur.n; }
 
 /* ---- historique et enregistrement ------------------------------------- */
 function histPush(quoi) { app.hist.push({ quoi, liaisons: app.contrat.liaisons.map(l => ({ ...l })), source: app.source ? app.source.map(l => ({ ...l })) : null,
-  nFolios: app.nFolios, plan: app.plan, designations: new Map(app.contrat.designations) });
+  nFolios: app.nFolios, budget: app.budget, plan: app.plan, nom: app.nom, designations: new Map(app.contrat.designations) });
   if (app.hist.length > 40) app.hist.shift(); synchroniserHistorique(); }
 function annuler() { const p = app.hist.pop(); if (!p) return null;
-  app.contrat.liaisons = p.liaisons; app.source = p.source; app.nFolios = p.nFolios; app.plan = p.plan; app.contrat.designations = p.designations; app.choisi = null;
-  redessiner(); ajuster(); sauver(); return p.quoi; }
+  app.contrat.liaisons = p.liaisons; app.source = p.source; app.nFolios = p.nFolios; app.budget = p.budget || 16; app.plan = p.plan; app.nom = p.nom || ''; app.contrat.designations = p.designations; app.choisi = null;
+  fermerFiche(); redessiner(); ajuster(true); sauver(); return p.quoi; }
 let sauveT = null;
 function sauver() { clearTimeout(sauveT); sauveT = setTimeout(() => { try {
-    localStorage.setItem(CLE_CONTRAT, JSON.stringify({ liaisons: app.contrat.liaisons, source: app.source, nFolios: app.nFolios, plan: app.plan,
+    localStorage.setItem(CLE_CONTRAT, JSON.stringify({ liaisons: app.contrat.liaisons, source: app.source, nFolios: app.nFolios, budget: app.budget, plan: app.plan, nom: app.nom,
       designations: [...app.contrat.designations], cartouche: app.contrat.cartouche, t: Date.now() }));
     heureSauve(Date.now()); } catch (_) { heureSauve(null); } }, 400); }
 function heureSauve(t) { const el = $('ctx-sauve');
-  if (!t) { el.textContent = 'non enregistré'; el.title = 'Le navigateur refuse d’enregistrer (navigation privée ?)'; return; }
-  const d = new Date(t); el.textContent = 'enregistré ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  if (!t) { el.textContent = 'non enregistré'; el.classList.add('ko'); el.title = 'Le navigateur refuse d’enregistrer (navigation privée ?). Le travail tient tant que l’onglet est ouvert.'; return; }
+  const d = new Date(t); el.textContent = 'enregistré ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); el.classList.remove('ko');
   el.title = 'Gardé dans ce navigateur. Rien n’est parti sur le réseau.'; }
 function relire() { try { const j = localStorage.getItem(CLE_CONTRAT); if (!j) return false; const o = JSON.parse(j);
     if (!o || !o.liaisons || !o.liaisons.length) return false;
-    app.contrat.liaisons = o.liaisons.map(liaison); app.source = o.source ? o.source.map(liaison) : null; app.nFolios = o.nFolios || 0; app.plan = o.plan || '*';
+    app.contrat.liaisons = o.liaisons.map(liaison); app.source = o.source ? o.source.map(liaison) : null; app.nFolios = o.nFolios || 0; app.budget = o.budget || 16; app.plan = o.plan || '*'; app.nom = o.nom || '';
     app.contrat.designations = new Map(o.designations || []); if (o.cartouche) Object.assign(app.contrat.cartouche, o.cartouche);
-    remplirCartouche(); redessiner(); ajuster(); heureSauve(o.t || Date.now()); return true; } catch (_) { return false; } }
+    const P = plans(); if (app.plan === '*' && P.length > 1) app.plan = P[0];
+    redessiner(); ajuster(); heureSauve(o.t || Date.now()); return true; } catch (_) { return false; } }
 
 /* ---- charger un contrat ----------------------------------------------- */
-function chargerContrat(liaisons, quoi) { histPush(quoi || 'chargement d’un contrat');
-  app.contrat.liaisons = liaisons.map(liaison); app.source = null; app.nFolios = 0; app.plan = '*'; app.choisi = null; app.filtre = ''; $('mt-find').value = '';
-  redessiner(); ajuster(); ajusterFolios(); sauver(); fermerModale(); fermerTiroir(); }
-function infoImport(msg, cls) { const el = $('db-fileinfo'); el.textContent = msg || ''; el.className = 'dz-info' + (cls ? ' ' + cls : ''); }
+function chargerContrat(liaisons, quoi, nom) { histPush(quoi || 'chargement d’un contrat');
+  app.contrat.liaisons = liaisons.map(liaison); app.source = null; app.nFolios = 0; app.choisi = null; app.nom = nom || app.nom;
+  const P = plans(); app.plan = P.length > 1 ? P[0] : '*';
+  fermerFiche(); fermerMenu(); $('q').value = '';
+  redessiner(); ajuster(); if (P.length <= 1) ajusterFolios(); sauver(); }
 async function ouvrirFichier(fichier) { if (!fichier) return;
-  try { infoImport('Lecture de « ' + fichier.name + ' »…', 'load'); const r = await lireFichier(fichier);
-    if (!r.liaisons.length) { infoImport('« ' + fichier.name + ' » lu, mais aucune liaison reconnue — vérifie les colonnes.', 'err'); ouvrirModale(); return; }
-    infoImport('« ' + fichier.name + ' » — ' + r.liaisons.length + ' liaisons' + (r.format === 'retest' ? ', format retest (en-têtes ligne ' + r.entete + ')' : '') + '.', 'ok');
-    chargerContrat(r.liaisons, 'ouverture de ' + fichier.name);
-  } catch (e) { infoImport('Erreur : ' + (e && e.message || e), 'err'); ouvrirModale(); } }
-function collerTexte() { const r = lireTexte($('imp-db').value);
-  if (!r.liaisons.length) { infoImport('Aucune liaison reconnue. Vérifie le séparateur ( ; , ou tabulation ) et l’ordre des colonnes.', 'err'); return; }
-  chargerContrat(r.liaisons, 'collage de ' + r.liaisons.length + ' liaisons'); }
-function ouvrirModale() { $('modal').style.display = 'flex'; }
-function fermerModale() { $('modal').style.display = 'none'; }
-function ouvrirTiroir() { document.querySelector('aside').classList.add('open'); $('drawerBg').classList.add('show'); }
-function fermerTiroir() { document.querySelector('aside').classList.remove('open'); $('drawerBg').classList.remove('show'); }
+  try { dire('Lecture de « ' + fichier.name + ' »…'); const r = await lireFichier(fichier);
+    if (!r.liaisons.length) { dire('« ' + fichier.name + ' » est lu, mais aucune liaison n’est reconnue — vérifie les colonnes.', true); return; }
+    chargerContrat(r.liaisons, 'ouverture de ' + fichier.name, fichier.name);
+    dire(r.liaisons.length + ' liaisons' + (r.format === 'retest' ? ' — format retest, en-têtes ligne ' + r.entete : '') + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + '.');
+  } catch (e) { dire('Erreur : ' + (e && e.message || e), true); } }
+function lierDepot() { let n = 0;
+  window.addEventListener('dragenter', e => { e.preventDefault(); n++; document.body.classList.add('depot-actif'); });
+  window.addEventListener('dragover', e => { e.preventDefault(); });
+  window.addEventListener('dragleave', e => { e.preventDefault(); if (--n <= 0) { n = 0; document.body.classList.remove('depot-actif'); } });
+  window.addEventListener('drop', e => { e.preventDefault(); n = 0; document.body.classList.remove('depot-actif');
+    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) ouvrirFichier(f); }); }
 
 /* ---- sortir le dessin : SVG, PNG, impression -------------------------- */
-function nomFolio() { return 'atelier-schema' + (app.plan !== '*' ? '-folio-' + String(app.plan).replace(/[^\w.-]+/g, '_') : ''); }
-async function telecharger(blob, nom) {
-  try { const c = window.claude; if (c && typeof c.use === 'function') { const dl = await c.use('downloads'); if (dl && typeof dl.save === 'function') { await dl.save({ filename: nom, data: blob }); return; } } } catch (_) { return; }
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nom; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); }
+function nomFolio() { const base = (app.nom || 'atelier-schema').replace(/\.[^.]+$/, '').replace(/[^\w.-]+/g, '_');
+  return base + (app.plan !== '*' ? '-folio-' + String(app.plan).replace(/[^\w.-]+/g, '_') : ''); }
+function telecharger(blob, nom) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nom;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); }
 function svgDuFolio() { return app.dessin ? svgAutonome(app.dessin, app.contrat.cartouche, folioCourant(), n => app.contrat.designations.get(n) || '') : null; }
-function exporterSVG() { const S = svgDuFolio(); if (!S) return; telecharger(new Blob([S.txt], { type: 'image/svg+xml;charset=utf-8' }), nomFolio() + '.svg'); }
+function exporterSVG() { const S = svgDuFolio(); if (!S) return; telecharger(new Blob([S.txt], { type: 'image/svg+xml;charset=utf-8' }), nomFolio() + '.svg'); dire('Folio enregistré en SVG.'); }
 function exporterPNG() { const S = svgDuFolio(); if (!S) return;
   const k = Math.max(1, Math.min(3, 12e6 / Math.max(1, S.w * S.h))); const img = new Image();
   img.onload = () => { const cv = document.createElement('canvas'); cv.width = Math.round(S.w * k); cv.height = Math.round(S.h * k);
     const g = cv.getContext('2d'); g.fillStyle = '#fbfbf7'; g.fillRect(0, 0, cv.width, cv.height); g.drawImage(img, 0, 0, cv.width, cv.height);
-    cv.toBlob(b => { if (b) telecharger(b, nomFolio() + '.png'); }, 'image/png'); };
+    cv.toBlob(b => { if (b) { telecharger(b, nomFolio() + '.png'); dire('Folio enregistré en PNG.'); } }, 'image/png'); };
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(S.txt); }
 function imprimer() { const S = svgDuFolio(); if (!S) return;
-  let root = $('printroot'); if (!root) { root = document.createElement('div'); root.id = 'printroot'; document.body.appendChild(root); }
-  root.innerHTML = S.txt.replace(/^<\?xml[^>]*\?>\s*/, ''); window.print(); }
+  $('printroot').innerHTML = S.txt.replace(/^<\?xml[^>]*\?>\s*/, ''); window.print(); }
 
-/* ---- le cartouche ------------------------------------------------------ */
-const CHAMPS_CARTOUCHE = [['m-title', 'titre'], ['m-author', 'auteur'], ['m-rev', 'indice'], ['m-date', 'date'], ['m-scale', 'echelle']];
-function remplirCartouche() { CHAMPS_CARTOUCHE.forEach(([id, k]) => { $(id).value = app.contrat.cartouche[k] || ''; }); }
+/* ---- ce que le haut affiche ------------------------------------------- */
+function synchroniserContexte() { const n = app.contrat.liaisons.length;
+  $('ctx-nom').textContent = n ? (app.nom || 'Sans nom') : 'Aucun contrat';
+  const P = plans();
+  $('ctx-txt').textContent = n ? `${n} liaison${n > 1 ? 's' : ''} · ${reperesDe(verite()).filter(r => !estRenvoi(r)).length} repères` + (P.length > 1 ? ` · ${P.length} folios` : '') : ''; }
+function synchroniserHistorique() { const b = $('btnUndo'); b.hidden = !app.hist.length;
+  if (app.hist.length) b.title = 'Annuler : ' + app.hist[app.hist.length - 1].quoi + ' (Ctrl+Z)'; }
+function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); }
+let toastT = null;
+function dire(msg, erreur) { const t = $('toast'); t.textContent = msg; t.classList.toggle('erreur', !!erreur); t.classList.add('on');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), erreur ? 6000 : 2800); }
+function ouvrirMenu() { $('menu').hidden = false; $('btnMenu').setAttribute('aria-expanded', 'true'); const b = $('menu').querySelector('button'); if (b) b.focus(); }
+function fermerMenu() { $('menu').hidden = true; $('btnMenu').setAttribute('aria-expanded', 'false'); }
 
 /* ---- tout relier -------------------------------------------------------- */
 function lierPanneau() {
   const o = (id, fn) => { const e = $(id); if (e) e.onclick = fn; };
-  $('railtabs').addEventListener('click', e => { const b = e.target.closest('button[data-vue]'); if (b) montrerVue(b.dataset.vue); });
-  o('btnMenu', () => document.querySelector('aside').classList.contains('open') ? fermerTiroir() : ouvrirTiroir());
-  o('drawerBg', fermerTiroir);
-  o('lk-file', () => $('lk-fichier').click());
-  $('lk-fichier').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) ouvrirFichier(f); e.target.value = ''; });
-  o('lk-import', () => { fermerTiroir(); ouvrirModale(); });
-  o('lk-demo', () => chargerContrat(contratEssai(), 'contrat d’exemple'));
-  o('imp-cancel', fermerModale); o('imp-ok', collerTexte);
-  $('modal').addEventListener('click', e => { if (e.target.id === 'modal') fermerModale(); });
-  { const dz = $('db-drop'), input = $('db-file');
-    dz.addEventListener('click', e => { if (e.target.id !== 'db-browse') input.click(); });
-    o('db-browse', e => { e.stopPropagation(); input.click(); });
-    input.addEventListener('change', () => { if (input.files && input.files[0]) ouvrirFichier(input.files[0]); input.value = ''; });
-    ['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); dz.classList.add('over'); }));
-    ['dragleave', 'dragend'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); dz.classList.remove('over'); }));
-    dz.addEventListener('drop', e => { e.preventDefault(); e.stopPropagation(); dz.classList.remove('over'); const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) ouvrirFichier(f); }); }
-  $('mt-find').addEventListener('input', e => { app.filtre = e.target.value.trim(); listeMateriel(); tableLiaisons(); });
-  // la table des liaisons : chaque cellule modifie la liaison qu'elle montre
-  { const t = $('tbl-lk');
-    t.addEventListener('input', e => { const i = e.target.dataset.i; if (i == null) return; app.contrat.liaisons[+i][e.target.dataset.f] = e.target.value.trim(); });
-    t.addEventListener('change', () => { redessiner(); sauver(); });
-    t.addEventListener('click', e => { const c = e.target.closest('.rmrow'); if (!c) return; histPush('suppression d’une liaison'); app.contrat.liaisons.splice(+c.dataset.i, 1); redessiner(); sauver(); }); }
-  o('add-lk', () => { histPush('ajout d’une liaison'); app.contrat.liaisons.push(liaison({})); tableLiaisons(); $('cnt-lk').textContent = app.contrat.liaisons.length; sauver(); });
-  o('lk-clear', () => { if (!confirm('Effacer tout le contrat ?')) return; histPush('tout vider'); app.contrat.liaisons = []; app.source = null; app.nFolios = 0; app.plan = '*'; redessiner(); ajuster(); sauver(); });
-  o('btnFolios', () => { histPush(app.nFolios ? 'retour d’un seul tenant' : 'découpage en folios'); if (app.nFolios) derouler(); else if (!decouper(16)) $('xp-stat').textContent = 'Ce schéma tient déjà sur une page : pas besoin de le découper.'; sauver(); });
-  { const t = $('tbl-eq');
-    t.addEventListener('change', e => { const r = e.target.dataset.rep; if (r == null) return; const f = e.target.dataset.f;
-      if (f === 'designation') app.contrat.designations.set(r, e.target.value.trim());
-      else { const d = app.contrat.designations.get(r); app.contrat.designations.delete(r); if (e.target.value.trim()) app.contrat.designations.set(e.target.value.trim(), d); }
-      redessiner(); sauver(); });
-    t.addEventListener('click', e => { const c = e.target.closest('.rmrow'); if (!c) return; app.contrat.designations.delete(c.dataset.rep); redessiner(); sauver(); }); }
-  o('add-eq', () => { const r = prompt('Repère à désigner :'); if (!r) return; app.contrat.designations.set(r.trim(), ''); tableDesignations(); });
-  CHAMPS_CARTOUCHE.forEach(([id, k]) => { $(id).addEventListener('input', e => { app.contrat.cartouche[k] = e.target.value; }); $(id).addEventListener('change', () => { peindre(); sauver(); }); });
+  const choisirFichier = () => $('fichier').click();
+  $('fichier').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) ouvrirFichier(f); e.target.value = ''; });
+  o('btnOuvrir', choisirFichier); o('vd-ouvrir', choisirFichier); o('vd-coller', ficheColler); o('vd-exemple', () => chargerContrat(contratEssai(), 'contrat d’exemple', 'Contrat d’exemple'));
+  o('btnMenu', e => { e.stopPropagation(); $('menu').hidden ? ouvrirMenu() : fermerMenu(); });
+  const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple: () => chargerContrat(contratEssai(), 'contrat d’exemple', 'Contrat d’exemple'),
+    table: () => ficheTable(''), cartouche: ficheCartouche, svg: exporterSVG, png: exporterPNG, imprimer,
+    vider: () => { if (!confirm('Effacer tout le contrat ?')) return; histPush('tout effacer'); app.contrat.liaisons = []; app.source = null; app.nFolios = 0; app.plan = '*'; app.nom = ''; fermerFiche(); redessiner(); ajuster(); sauver(); } };
+  $('menu').addEventListener('click', e => { const b = e.target.closest('button[data-act]'); if (!b) return; fermerMenu(); actions[b.dataset.act](); });
+  document.addEventListener('click', e => { if (!e.target.closest('#menuBoite')) fermerMenu(); });
+  o('btnUndo', () => { const q = annuler(); if (q) dire('Annulé : ' + q + '.'); });
   o('fo-prev', () => allerAuFolio(-1)); o('fo-next', () => allerAuFolio(+1));
-  o('btnSvg', exporterSVG); o('btnPng', exporterPNG); o('btnPrint', imprimer);
-  o('zin', () => zoomer(1.2)); o('zout', () => zoomer(1 / 1.2)); o('zfit', ajuster);
-  o('btnUndo', () => annuler());
-  window.addEventListener('keydown', e => { if (e.key === 'Escape') { fermerFiche(); fermerModale(); fermerTiroir(); }
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !/^(INPUT|TEXTAREA)$/.test(e.target.tagName || '')) { e.preventDefault(); annuler(); } });
-  let rT; window.addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(() => { if (window.innerWidth <= 860) ajuster(); }, 160); });
-  window.addEventListener('orientationchange', () => setTimeout(ajuster, 300));
+  $('fo-strip').addEventListener('click', e => { const c = e.target.closest('.chip'); if (c) allerAuPlan(c.dataset.plan); });
+  o('zin', () => zoomer(1.25)); o('zout', () => zoomer(1 / 1.25)); o('zfit', () => ajuster(true)); o('zlbl', () => ajuster(true));
+  lierRecherche(); lierDepot();
+  window.addEventListener('keydown', e => {
+    const dansChamp = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '');
+    if (e.key === 'Escape') { if (!$('menu').hidden) { fermerMenu(); $('btnMenu').focus(); } else if (!$('q-liste').hidden || $('haut').classList.contains('cherche')) { fermerRecherche(); $('q').blur(); } else fermerFiche(); return; }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !dansChamp) { e.preventDefault(); const q = annuler(); if (q) dire('Annulé : ' + q + '.'); return; }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') { e.preventDefault(); imprimer(); return; }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'o') { e.preventDefault(); choisirFichier(); return; }
+    if (dansChamp || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === '/' || e.key === 'f') { e.preventDefault(); $('q').focus(); $('q').select(); }
+    else if (e.key === 'ArrowLeft') allerAuFolio(-1); else if (e.key === 'ArrowRight') allerAuFolio(+1);
+    else if (e.key === '+' || e.key === '=') zoomer(1.25); else if (e.key === '-') zoomer(1 / 1.25); else if (e.key === '0') ajuster(true); });
+  let rT; window.addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(() => { if (telephone()) ajuster(); else appliquerVue(); }, 160); });
+  window.addEventListener('orientationchange', () => setTimeout(() => ajuster(), 300));
 }
 
 /* ───────── 09-retest.js ───────── */
@@ -2999,7 +2924,7 @@ const atelier = {
   /* charge des liaisons et dessine, sans découper en folios : c'est le
      dessin ENTIER que les bancs mesurent */
   charger(liaisons) { app.contrat.liaisons = liaisons.map(liaison); app.source = null; app.nFolios = 0; app.plan = '*'; app.choisi = null;
-    redessiner(); return app.dessin; },
+    fermerFiche(); redessiner(); return app.dessin; },
   essai() { return atelier.charger(contratEssai()); },
   lire(texte) { const r = lireTexte(texte); atelier.charger(r.liaisons); return r; },
   dessin() { return app.dessin; },
@@ -3009,10 +2934,9 @@ const atelier = {
 
 function demarrer() {
   lierPanneau(); lierPlanche();
-  if (typeof lierRetest === 'function') lierRetest();
   // on retrouve son contrat ; à défaut l'exemple — jamais un écran vide
-  if (!relire()) { remplirCartouche(); chargerContrat(contratEssai(), 'contrat d’exemple'); app.hist = []; synchroniserHistorique(); }
-  requestAnimationFrame(ajuster);
+  if (!relire()) { chargerContrat(contratEssai(), 'contrat d’exemple', 'Contrat d’exemple'); app.hist = []; synchroniserHistorique(); }
+  requestAnimationFrame(() => ajuster());
 }
 demarrer();
 
