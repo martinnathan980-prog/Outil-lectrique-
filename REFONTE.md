@@ -59,7 +59,8 @@ placement, sept graines, le serpentin en secours.** Rien d'autre.
   prise VC en deux demi-corps, repères de fil qui glissent le long du segment ;
 - la base de retest : empreinte, contrats proches, différentiel, écriture / annulation ;
 - le banc de placement et les contrôles : **ce sont eux qui jugent la refonte**.
-  Cible de parité : 96,1 % · 8 croisements · 0 violation · contrat 83 % / 6.
+  Cible de parité : 96,1 % · 8 croisements · 0 violation · contrat 83 % / 6
+  (chiffres de la parité ; ceux d'aujourd'hui sont dans `tests/LISEZMOI.md`).
 
 ## 4. Ce qu'on rebâtit, et comment
 
@@ -73,9 +74,10 @@ src/
   05-routage.js     goulottes, pistes, peignes
   06-dessin.js      feuille, cartouche, symboles, fils, repères de fil
   07-folios.js      découpe en folios
-  08-interface.js   panneau, liste, éditeur, zoom, export, historique, persistance
-  09-retest.js      base de retest : identification, proches, différentiel, pièces
+  08-interface.js   planche, fiches, recherche, folios, historique, persistance
   10-demarrage.js
+  page.html, style.css
+a-venir/09-retest.js  base de retest : identification, proches, différentiel, pièces
 lib/xlsx.min.js     SheetJS, inchangé
 construire.js       concatène src/ + lib/ → index.html   (node, zéro dépendance)
 tests/              banc-placement (l'arbitre), controle, memoire, format-retest
@@ -120,12 +122,27 @@ Fait, mesuré, en place :
   la section 2, qui ne mesurait que la droiture : elles agissent sur la
   densité et sur la compacité des blocs. Vérifié bloc par bloc sur le contrat
   d'essai : les douze blocs sortent aux mêmes coordonnées qu'avant.
-- **Dessin, folios, interface** : `06-dessin`, `07-folios`, `08-interface`.
-- **Base de retest** : `09-retest`, avec ses contrôles.
-- **Contrôles** réécrits sur l'API `atelier` : 31 + 5 + 13, banc, 23 contrôles
-  de fumée de l'interface, 14 limites de la base de retest.
+- **Deuxième départ du placement** (après la parité) : une masse par
+  équipement desservi, un shunt de réglette porté en pont et non routé, la
+  barrette VT en réglette, les feuilles d'un bloc réparties des deux côtés,
+  plus d'étirement pour remplir la feuille. Banc à métrique durcie (une
+  barrette qui tranche un fil est un croisement) : 96,0 %, 14 croisements,
+  3 cas hors feuille au lieu de 7, surface totale 6060 → 5130 ; contrat
+  d'essai 83,3 % / 6 → 88,9 % / 2, densité 29,4 → 37,8 %.
+- **Langage du dessin** (`06-dessin`) : prise de coupure en deux colonnes de
+  cellules numérotées des deux côtés, fiche dans embase ; réglette à cellules
+  d'un pas, shunt en pont ; masse CEI sous un collecteur ponctué.
+- **Le site, reparti de zéro** (`page.html`, `style.css`, `08-interface`) :
+  le plan est l'écran, posé sur une table sombre ; commandes flottantes en
+  deux coins, réglette de folios en bas ; une seule fiche à la fois
+  (équipement, fil, table, cartouche, collage), en tiroir bas sur téléphone ;
+  recherche par repère ou numéro de fil qui change de folio ; le cuivre du
+  fil pour seul accent ; aucune police ni image extérieure.
+- **Base de retest** : mise de côté dans `a-venir/09-retest.js` avec ses
+  contrôles (`tests/retest.js` se passe si elle n'est pas dans la page).
+- **Contrôles** sur l'API `atelier` : 17 + 5 + 13, banc de 15 topologies.
 
-Le compte : **6 685 lignes en un fichier → 2 300 lignes en dix modules**, dont
+Le compte : **6 685 lignes en un fichier → 2 600 lignes en neuf modules**, dont
 moins d'un cinquième de commentaires, tous au présent.
 
 Ce qui attend tes tables (le modèle les prévoit, le code ne les invente pas) :

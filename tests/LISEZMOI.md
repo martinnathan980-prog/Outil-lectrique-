@@ -28,10 +28,11 @@ verbes (charger, essai, mesurer) sur l'API `atelier` de `src/10-demarrage.js`.
 ## Le contrat de la refonte
 
 Avant de toucher au moteur, on relance le banc ; après, on le relance. Les
-chiffres de référence sur les quatorze topologies :
+chiffres de référence sur les quinze topologies (une barrette qui tranche
+un fil compte comme un croisement) :
 
-    96,1 % de fils droits · 8 croisements · 0 violation
-    contrat d'essai : 83,3 %, 6 croisements, format 1,41
+    96,0 % de fils droits · 14 croisements · 0 violation · 3 cas hors feuille
+    contrat d'essai : 88,9 %, 2 croisements, densité 37,8 %, format 1,80
 
 Un changement qui fait baisser le premier chiffre doit dire pourquoi, dans son
 message de commit, mesure à l'appui.
