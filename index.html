@@ -1057,19 +1057,32 @@ function placer(G, options) {
       (partenaires.get(k) || []).forEach(q => { if (q.id === id) return; const s = Math.sign((colonneDe.get(q.id) ?? 0) - (colonneDe.get(id) ?? 0));
         (cote.get(s) || cote.set(s, new Set()).get(s)).add(q.id); });
       cote.forEach((blocs, s) => { if (blocs.size >= 2) parBarrette.add(k + '|' + s); }); }));
-    const resoudre = colBlocs => {
+    const derniersDe = id => { const out = []; clesListes(id).forEach(lid => { const L = liste(id, lid); if (L.length) out.push(PK(id, L[L.length - 1].cle)); }); return out; };
+    const premiersDe = id => { const out = []; clesListes(id).forEach(lid => { const L = liste(id, lid); if (L.length) out.push(PK(id, L[0].cle)); }); return out; };
+    /* `guide` : les ordonnées du tour précédent, pour deviner entre quels blocs
+       d'une colonne enjambée un fil doit passer */
+    const resoudre = (colBlocs, guide) => {
       const par = new Map(), etiq = new Map();
       ids.forEach(id => chaqueBroche(id, (p, lid) => { const k = PK(id, p.cle); par.set(k, k); etiq.set(k, new Map([[id + '|' + lid, 1]])); }));
       const find = x => { let r = x; while (par.get(r) !== r) r = par.get(r); let c = x; while (par.get(c) !== c) { const n = par.get(c); par.set(c, r); c = n; } return r; };
+      const traversees = [];      // fils qui enjambent une colonne : le net passe entre deux blocs de celle-ci
       const aretes = f => { const E = [];
         ids.forEach(id => clesListes(id).forEach(lid => { const L = liste(id, lid); for (let j = 1; j < L.length; j++) E.push([f(PK(id, L[j - 1].cle)), f(PK(id, L[j].cle)), PRH]); }));
         colBlocs.map(c => c.filter(id => !estPastille(id))).forEach(c => { for (let i = 1; i < c.length; i++) { const P = c[i - 1], N = c[i];
           const w = mBas.get(P) + ((estS.get(P) && estS.get(N)) ? 14 : VGAP) + mHaut.get(N);
-          const derniers = [], premiers = [];
-          clesListes(P).forEach(lid => { const L = liste(P, lid); if (L.length) derniers.push(f(PK(P, L[L.length - 1].cle))); });
-          clesListes(N).forEach(lid => { const L = liste(N, lid); if (L.length) premiers.push(f(PK(N, L[0].cle))); });
-          derniers.forEach(a => premiers.forEach(b => E.push([a, b, w]))); } });
+          derniersDe(P).forEach(a => premiersDe(N).forEach(b => E.push([f(a), f(b), w]))); } });
+        traversees.forEach(t => { if (t.dessus) derniersDe(t.dessus).forEach(a => E.push([f(a), f(t.net), mBas.get(t.dessus) + 6]));
+          if (t.dessous) premiersDe(t.dessous).forEach(b => E.push([f(t.net), f(b), mHaut.get(t.dessous) + 6])); });
         return E; };
+      const estimY = k => (guide && guide.get(k)) ?? yBroche.get(k);
+      const couloir = (c, y) => { let dessus = null, dessous = null;
+        for (const id of colBlocs[c]) { if (estPastille(id)) continue; let lo = Infinity, hi = -Infinity;
+          chaqueBroche(id, p => { const v = estimY(PK(id, p.cle)); lo = Math.min(lo, v); hi = Math.max(hi, v); });
+          if (hi <= y) { if (!dessus || hi > dessus.hi) dessus = { id, hi }; }
+          else if (lo >= y) { if (!dessous || lo < dessous.lo) dessous = { id, lo }; }
+          else if (y - lo < hi - y) { if (!dessous || lo < dessous.lo) dessous = { id, lo }; }     // le fil passe au-dessus du bloc qui le gêne
+          else if (!dessus || hi > dessus.hi) dessus = { id, hi }; }
+        return { dessus: dessus && dessus.id, dessous: dessous && dessous.id }; };
       const acyclique = E => { if (E.some(([a, b]) => a === b)) return false;
         const indeg = new Map(), ad = new Map(), ns = new Set();
         E.forEach(([a, b]) => { ns.add(a); ns.add(b); (ad.get(a) || ad.set(a, []).get(a)).push(b); indeg.set(b, (indeg.get(b) || 0) + 1); });
@@ -1084,7 +1097,8 @@ function placer(G, options) {
         if (!par.has(PK(ia, A.cle)) || !par.has(PK(ib, B.cle))) return;
         if (parBarrette.has(PK(ia, A.cle) + '|' + s) || parBarrette.has(PK(ib, B.cle) + '|' + (-s))) return;
         const genre = (estS.get(ia) ? 1 : 0) + (estS.get(ib) ? 1 : 0);
-        cand.push({ a: PK(ia, A.cle), b: PK(ib, B.cle), pr: (d > 1 ? 10 : 0) + genre, w: (d === 1 ? 1 : 0.25) * (genre === 0 ? 1.06 : 1) }); });
+        cand.push({ a: PK(ia, A.cle), b: PK(ib, B.cle), d, milieu: d === 2 ? ((colonneDe.get(ia) ?? 0) + (colonneDe.get(ib) ?? 0)) / 2 : -1,
+          pr: (d > 1 ? 10 : 0) + genre, w: (d === 1 ? 1 : 0.25) * (genre === 0 ? 1.06 : 1) }); });
       cand.sort((x, y) => x.pr - y.pr);
       let acc = 0;
       cand.forEach(wc => { const ra = find(wc.a), rb = find(wc.b);
@@ -1092,7 +1106,10 @@ function placer(G, options) {
         const ta = etiq.get(ra), tb = etiq.get(rb);
         for (const k of tb.keys()) if (ta.has(k)) return;              // deux broches d'une même liste
         const f = x => { const r = find(x); return r === rb ? ra : r; };
-        if (!acyclique(aretes(f))) return;
+        let t = null;
+        if (wc.milieu >= 0) { const { dessus, dessous } = couloir(wc.milieu, (estimY(wc.a) + estimY(wc.b)) / 2);
+          if (dessus || dessous) { t = { net: wc.a, dessus, dessous }; traversees.push(t); } }
+        if (!acyclique(aretes(f))) { if (t) traversees.pop(); return; }
         par.set(rb, ra); acc += wc.w; tb.forEach((v, k) => ta.set(k, (ta.get(k) || 0) + v)); etiq.delete(rb); });
       const E = aretes(find); const indeg = new Map(), ad = new Map(), ns = new Set();
       ids.forEach(id => chaqueBroche(id, p => ns.add(find(PK(id, p.cle)))));
@@ -1140,7 +1157,7 @@ function placer(G, options) {
     for (let it = 0; it < MAXIT && stagne < 5; it++) { reordonner(py);
       const cle = cleBary(py, it % 2 === 1);
       const nb = cur.map(c => { const k = new Map(c.map(id => [id, cle(id)])); return [...c].sort((a, b) => k.get(a) - k.get(b)); });
-      const r = resoudre(nb); py = r.py; cur = nb;
+      const r = resoudre(nb, py); py = r.py; cur = nb;
       if (r.acc > best.acc + 0.01) { best = r; bestBlocs = nb; bestOrdre = photoOrdre(); stagne = 0; } else stagne++; }
     revenirOrdre(bestOrdre); colBlocs = bestBlocs;
     // dégonflage : un bloc étiré pour rien (broche accrochée à l'extrémité opposée
@@ -1163,7 +1180,7 @@ function placer(G, options) {
           if (!sauve.has(L2)) sauve.set(L2, L2.slice());
           const item = L2.splice(qi, 1)[0]; L2.splice(qi < ni ? ni - 1 : ni, 0, item); bouge = true; })); }));
       if (!bouge) break;
-      const r = resoudre(colBlocs);
+      const r = resoudre(colBlocs, best.py);
       if (r.acc >= best.acc && sommeH(r) < sommeH(best)) best = r;
       else { sauve.forEach((copie, arr) => { arr.length = 0; copie.forEach(x => arr.push(x)); }); break; } }
     ids.forEach(id => { let lo = Infinity, hi = -Infinity;
@@ -1730,12 +1747,16 @@ function router(layout) {
         const P = EA(li), Q = EB(li);
         fils[li] = { ...l, pts: [{ x: P.x, y: P.y }, { x: Q.x, y: Q.y }] };
       } else if (!parLaMarge(li, A, B)) travaux[A.ch].push({ li, part: 0, eps: [{ y: A.y, s: A.stub }, { y: B.y, s: B.stub }] });
-    } else if (A.stub === 'R' && B.stub === 'L' && Math.abs(A.y - B.y) < 0.75 && couloirLibre(A.x + 2, B.x - 2, A.y)) {
+    /* `stub` dit de quel côté de sa goulotte un bout se trouve : 'L' pour une
+       borne du flanc droit (la goulotte est à sa droite), 'R' pour une borne
+       du flanc gauche. Un fil qui enjambe une colonne part donc d'un bout 'L'
+       et arrive sur un bout 'R'. */
+    } else if (A.stub === 'L' && B.stub === 'R' && Math.abs(A.y - B.y) < 0.75 && couloirLibre(A.x + 2, B.x - 2, A.y)) {
       fils[li] = { ...l, pts: [{ x: A.x, y: A.y }, { x: B.x, y: B.y }] };       // tout droit
       if (l.epA.ch > l.epB.ch) fils[li].pts.reverse();
-    } else if (A.stub === 'R' && couloirLibre(A.x + 2, goulotteX(B.ch) + g.chW[B.ch] - 2, A.y)) {
+    } else if (A.stub === 'L' && couloirLibre(A.x + 2, goulotteX(B.ch) + g.chW[B.ch] - 2, A.y)) {
       travaux[B.ch].push({ li, part: 3, eps: [{ y: A.y, s: 'L' }, { y: B.y, s: B.stub }] });   // droit puis descente à l'arrivée
-    } else if (B.stub === 'L' && couloirLibre(goulotteX(A.ch) + 2, B.x - 2, B.y)) {
+    } else if (B.stub === 'R' && couloirLibre(goulotteX(A.ch) + 2, B.x - 2, B.y)) {
       travaux[A.ch].push({ li, part: 4, eps: [{ y: A.y, s: A.stub }, { y: B.y, s: 'R' }] });   // coude au départ puis droit
     } else {
       // un couloir intermédiaire libre entre les deux bornes : petit Z local ;
