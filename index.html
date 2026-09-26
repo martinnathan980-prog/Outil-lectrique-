@@ -1044,6 +1044,16 @@ function placer(G, options) {
       else { let L = 1; clesListes(id).forEach(lid => L = Math.max(L, liste(id, lid).length));
         const m = Math.max(18, (46 - (L - 1) * PRH) / 2); mHaut.set(id, m); mBas.set(id, m); } });
     const PK = (id, cle) => id + SEP + cle;
+    /* une borne reliée à plusieurs BLOCS du même côté les sert par une
+       BARRETTE : le routeur rend ces fils droits quelle que soit leur hauteur,
+       le solveur n'a donc pas à les aligner — la borne reste libre, le bloc
+       reste compact. Plusieurs fils vers un même bloc gardent leur net : c'est
+       lui qui tient le bloc partenaire en face. */
+    const parBarrette = new Set();
+    ids.forEach(id => chaqueBroche(id, p => { const k = PK(id, p.cle); const cote = new Map();
+      (partenaires.get(k) || []).forEach(q => { if (q.id === id) return; const s = Math.sign((colonneDe.get(q.id) ?? 0) - (colonneDe.get(id) ?? 0));
+        (cote.get(s) || cote.set(s, new Set()).get(s)).add(q.id); });
+      cote.forEach((blocs, s) => { if (blocs.size >= 2) parBarrette.add(k + '|' + s); }); }));
     const resoudre = colBlocs => {
       const par = new Map(), etiq = new Map();
       ids.forEach(id => chaqueBroche(id, (p, lid) => { const k = PK(id, p.cle); par.set(k, k); etiq.set(k, new Map([[id + '|' + lid, 1]])); }));
@@ -1069,6 +1079,7 @@ function placer(G, options) {
         const s = Math.sign((colonneDe.get(ib) ?? 0) - (colonneDe.get(ia) ?? 0)); if (s === 0) return;
         const d = Math.abs((colonneDe.get(ia) ?? 0) - (colonneDe.get(ib) ?? 0));
         if (!par.has(PK(ia, A.cle)) || !par.has(PK(ib, B.cle))) return;
+        if (parBarrette.has(PK(ia, A.cle) + '|' + s) || parBarrette.has(PK(ib, B.cle) + '|' + (-s))) return;
         const genre = (estS.get(ia) ? 1 : 0) + (estS.get(ib) ? 1 : 0);
         cand.push({ a: PK(ia, A.cle), b: PK(ib, B.cle), pr: (d > 1 ? 10 : 0) + genre, w: (d === 1 ? 1 : 0.25) * (genre === 0 ? 1.06 : 1) }); });
       cand.sort((x, y) => x.pr - y.pr);
