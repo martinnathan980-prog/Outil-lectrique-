@@ -67,7 +67,7 @@ function placer(G, options) {
       sc += w * (dd === 1 ? 0 : (dd === 0 ? 2 : 1 + dd)); } return sc + barrettesSi(n, ln); };
     for (let passe = 0; passe < 3; passe++) { let bouge = false;
       for (const n of ids) { const l0 = niveau.get(n); let best = l0, bc = cout(n, l0);
-        for (const c of [l0 - 1, l0 + 1]) { if (c < 0) continue; const cc = cout(n, c); if (cc < bc - 0.01) { bc = cc; best = c; } }
+        for (const c of [l0 - 1, l0 + 1]) { const cc = cout(n, c); if (cc < bc - 0.01) { bc = cc; best = c; } }
         if (best !== l0) { niveau.set(n, best); bouge = true; } }
       if (!bouge) break; }
     // une feuille (tous ses voisins dans une même colonne) coûte autant des
@@ -795,13 +795,14 @@ function meilleurPlacement(liaisons) {
     return { w: Math.max(1, x1 - x0), h: Math.max(1, y1 - y0) }; };
   const A3 = 1.414, ecart = L => { const e = emprise(L), r = e.w / e.h; return r > A3 ? r / A3 : A3 / r; };
   // chaque graine, feuilles à droite puis équilibrées : la droiture décide,
-  // puis les croisements, puis la longueur des barrettes, puis le format
+  // puis les croisements, puis le format (tenir sur la feuille), puis la
+  // longueur des barrettes
   let best = null, bScore = -1e18, bOpt = {}, bPeignes = Infinity, bEcart = Infinity;
   const candidats = []; graines.forEach(g => { candidats.push({ graine: g }); if (nB <= 120) candidats.push({ graine: g, equilibrer: true }); });
   candidats.forEach(o => { const L = essayer(o);
     const peignes = L.routage.barrettes.reduce((t, b) => t + Math.abs(b.y2 - b.y1), 0), ec = ecart(L);
     const score = compterDroits(L.routage.fils) - compterCroisements(L.routage.fils, L.routage.barrettes) / 120;
-    if (score > bScore || (score === bScore && (peignes < bPeignes || (peignes === bPeignes && ec < bEcart - 0.01)))) {
+    if (score > bScore || (score === bScore && (ec < bEcart - 0.01 || (Math.abs(ec - bEcart) <= 0.01 && peignes < bPeignes)))) {
       best = L; bScore = score; bPeignes = peignes; bEcart = ec; bOpt = o; } });
   // resserrage : les goulottes reprennent la largeur que les pistes occupent
   // vraiment ; gardé si le dessin rétrécit d'au moins 3 % sans perdre plus d'un fil droit
