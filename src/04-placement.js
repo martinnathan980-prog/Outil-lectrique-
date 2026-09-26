@@ -41,7 +41,10 @@ function placer(G, options) {
         [...adj.get(c).keys()].forEach(k => { if (!d.has(k) && !(vus && vus.has(k))) {
           d.set(k, d.get(c) + 1); if (d.get(k) > d.get(loin)) loin = k; q.push(k); } }); }
       return { d, loin }; };
-    const graines = [...ids].sort((a, b) => degreDe(b) - degreDe(a));
+    // une masse n'est jamais graine : c'est l'équipement qui fixe la colonne
+    // de départ, sa masse se range à côté de lui, toujours du même côté
+    const potentiel = n => estMasse(noeuds.get(n).nom) ? 1 : 0;
+    const graines = [...ids].sort((a, b) => (potentiel(a) - potentiel(b)) || (degreDe(b) - degreDe(a)));
     const decalage = typeof graine === 'number' ? graine : 0;
     if (decalage > 0 && graines.length > decalage) { const tete = graines.splice(0, decalage); graines.push(...tete); }
     for (const s of graines) { if (niveau.has(s)) continue;
