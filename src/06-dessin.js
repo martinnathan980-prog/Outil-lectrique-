@@ -130,7 +130,9 @@ function piquagesSvg(barrettes, piquages, verticaux) {
   tracesDePiquage(barrettes).forEach(pts => { s += `<path class="cab" d="${cheminAvecPonts(pts, verticaux)}"/>`; });
   barrettes.forEach(b => { const haut = b.y1 + 3 < b.py - 0.6, bas = b.y2 - 3 > b.py + 0.6, droit = b.gardes.some(k => Math.abs(k.y - b.py) < 1.2);
     if (1 + haut + bas + droit >= 3) s += `<circle class="jn" cx="${f1(b.x)}" cy="${f1(b.py)}" r="1.7"/>`; });
-  piquages.forEach(d => { s += `<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="1.7"/>`; });
+  // au bout de la verticale, le fil tourne : c'est un coin, pas une jonction
+  const coin = d => barrettes.some(b => Math.abs(b.x - d.x) < 0.5 && (Math.abs(d.y - b.y1 - 3) < 0.6 || Math.abs(d.y - b.y2 + 3) < 0.6));
+  piquages.forEach(d => { if (!coin(d)) s += `<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="1.7"/>`; });
   return s;
 }
 /* Le numéro de fil, au-dessus du plus long segment horizontal, en son milieu
