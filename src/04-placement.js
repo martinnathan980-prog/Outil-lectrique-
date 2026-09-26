@@ -82,11 +82,10 @@ function placer(G, options) {
       const l0 = niveau.get(n), l1 = 2 * autour[0] - l0; if (Math.abs(l1 - l0) !== 2) return;
       if ((charge.get(l1) || 0) + hauteur(n) >= (charge.get(l0) || 0)) return;
       if (barrettesSi(n, l1) > barrettesSi(n, l0)) return;                  // pas au prix d'une barrette
-      niveau.set(n, l1); charge.set(l0, charge.get(l0) - hauteur(n)); charge.set(l1, (charge.get(l1) || 0) + hauteur(n)); });
-    const usuels = [...new Set(ids.map(n => niveau.get(n)))].sort((a, b) => a - b);
+      niveau.set(n, l1); charge.set(l0, charge.get(l0) - hauteur(n)); charge.set(l1, (charge.get(l1) || 0) + hauteur(n)); }); }
+  { const usuels = [...new Set(ids.map(n => niveau.get(n)))].sort((a, b) => a - b);
     const remap = new Map(usuels.map((l, i) => [l, i]));
-    ids.forEach(n => niveau.set(n, remap.get(niveau.get(n))));
-  }
+    ids.forEach(n => niveau.set(n, remap.get(niveau.get(n)))); }
 
   /* ===== 2. VOIES : les composantes indépendantes côte à côte ============ */
   const comp = new Map(); let nc = 0;
@@ -131,16 +130,20 @@ function placer(G, options) {
 
   /* ===== 4. GÉOMÉTRIE DES COLONNES : flancs, largeurs, goulottes ========= */
   const flancDe = new Map(), listes = new Map();
+  const colDe = id => colonneDe.get(id) || 0;
   for (const id of ids) { const N = noeuds.get(id);
     if (N.reglette) { listes.set(id, { S: N.broches.slice() }); continue; }
-    const L = [], R = []; const cn = colonneDe.get(id) || 0;
+    const L = [], R = []; const cn = colDe(id);
     /* une borne qui parle des deux côtés se DÉDOUBLE : elle figure sur les deux
        flancs, à la même hauteur, et chaque fil sort du côté de son partenaire
-       — sinon l'un des deux contournait le bloc par une barrette */
-    N.broches.forEach(p => { let d = 0, g = 0;
-      (partenaires.get(id + SEP + p.cle) || []).forEach(q => { if (q.id === id) return; const cq = colonneDe.get(q.id) || 0; if (cq < cn) g++; else d++; });
-      const f = (d && g) ? 'LR' : ((d >= g) ? 'R' : 'L'); flancDe.set(id + SEP + p.cle, f);
-      if (f !== 'R') L.push(p); if (f !== 'L') R.push(p); });
+       — sinon l'un des deux contournait le bloc par une barrette. Une borne
+       dont le seul partenaire est dans la même colonne sort du côté de la
+       borne partenaire, à droite par défaut. */
+    N.broches.forEach(p => { let d = 0, g = 0, meme = null;
+      (partenaires.get(id + SEP + p.cle) || []).forEach(q => { if (q.id === id) return; const cq = colDe(q.id); if (cq < cn) g++; else if (cq > cn) d++; else meme = q; });
+      let f; if (!d && !g && meme) f = flancDe.get(meme.id + SEP + meme.cle) === 'L' ? 'L' : 'R';
+      else f = (d && g) ? 'LR' : ((d >= g) ? 'R' : 'L');
+      flancDe.set(id + SEP + p.cle, f); if (f !== 'R') L.push(p); if (f !== 'L') R.push(p); });
     listes.set(id, { L, R }); }
   const clesListes = id => listes.get(id).S ? ['S'] : ['L', 'R'];
   const liste = (id, lid) => listes.get(id)[lid];
@@ -157,9 +160,10 @@ function placer(G, options) {
     return Math.max(ls.S ? HH + rangs * PRH + BPAD : 46, rangs * PRH + 26); };
   const nCols = colonnes.length;
   const colW = colonnes.map(c => c.length ? Math.max(...c.map(largeurDe)) : 92);
-  const flancDuBout = (nom, cle, autreNom, autreCle) => { const id = nid(nom, cle);
-    if (!listes.get(id).S && !dedoublee(id, cle)) return flancDe.get(id + SEP + cle);
-    return (colonneDe.get(nid(autreNom, autreCle)) || 0) < (colonneDe.get(id) || 0) ? 'L' : 'R'; };
+  const flancDuBout = (nom, cle, autreNom, autreCle) => { const id = nid(nom, cle), autre = nid(autreNom, autreCle);
+    const f = flancDe.get(id + SEP + cle); if (f === 'L' || f === 'R') return f;      // une borne d'un seul flanc
+    if (colDe(autre) !== colDe(id)) return colDe(autre) < colDe(id) ? 'L' : 'R';    // réglette ou borne dédoublée : face au partenaire
+    const fq = flancDe.get(autre + SEP + autreCle); return (fq === 'L' || fq === 'R') ? fq : 'L'; };   // même colonne : la même goulotte
   const goulotteDuBout = (id, flanc) => (colonneDe.get(id) || 0) + (flanc === 'R' ? 1 : 0);
   const chCount = new Array(nCols + 1).fill(0);
   lk.forEach((l, li) => { if (shunts.has(li)) return; const A = bouts.get(li + ':A'), B = bouts.get(li + ':B');
@@ -347,7 +351,8 @@ function placer(G, options) {
       const cand = [];
       lk.forEach((l, li) => { const A = bouts.get(li + ':A'), B = bouts.get(li + ':B');
         const ia = nid(A.nom, A.cle), ib = nid(B.nom, B.cle); if (ia === ib) return;
-        const d = Math.abs((colonneDe.get(ia) ?? 0) - (colonneDe.get(ib) ?? 0)); if (d === 0) return;
+        const s = Math.sign((colonneDe.get(ib) ?? 0) - (colonneDe.get(ia) ?? 0)); if (s === 0) return;
+        const d = Math.abs((colonneDe.get(ia) ?? 0) - (colonneDe.get(ib) ?? 0));
         if (!par.has(PK(ia, A.cle)) || !par.has(PK(ib, B.cle))) return;
         const genre = (estS.get(ia) ? 1 : 0) + (estS.get(ib) ? 1 : 0);
         cand.push({ a: PK(ia, A.cle), b: PK(ib, B.cle), pr: (d > 1 ? 10 : 0) + genre, w: (d === 1 ? 1 : 0.25) * (genre === 0 ? 1.06 : 1) }); });
@@ -683,6 +688,7 @@ function placer(G, options) {
     ids.forEach(id => clesListes(id).forEach(lid => liste(id, lid).sort((a, b) => yB(id, a.cle) - yB(id, b.cle))));
   }
 
+
   /* ===== 9. TASSEMENT, ÎLOTS, RANGÉES ==================================== */
   // toute bande vide sur toute la largeur se referme à un petit interstice
   { const GAPMIN = 44; const evs = ids.map(id => ({ t: hautDe.get(id), b: basDe.get(id) })).concat(pastilles.map(sp => ({ t: sp.y1, b: sp.y2 }))).sort((a, b) => a.t - b.t);
@@ -773,62 +779,67 @@ function goulottesOccupees(L) {
 }
 
 /* ===========================================================================
-   LE CONCOURS : sept graines, routées pour de vrai, la plus droite gagne.
-   Mesuré : les graines seules rendent exactement ce que rendaient vingt-deux
-   candidats — regroupement, éclatement, resserrage, condensation n'ont jamais
-   changé un pixel. Puis le SECOURS : un dessin en ruban (plus de 2,2 fois plus
-   large que haut) se replie en rangées, si ça rapproche nettement le format
-   du papier sans plier plus d'un fil par report.
+   LE JUGEMENT, partagé par toutes les étapes du concours. Un dessin qui met
+   un fil dans un bloc ne gagne jamais ; un dessin qui tient sur une feuille
+   bat un dessin qui n'y tient pas ; ensuite la droiture décide, puis les
+   croisements, puis le format, puis la longueur des barrettes.
+   =========================================================================== */
+const A3 = 1.414;
+function jugeDePlacement() {
+  const emprise = L => { let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+    L.comps.forEach(c => { x0 = Math.min(x0, c.x); x1 = Math.max(x1, c.x + c.w); y0 = Math.min(y0, c.y); y1 = Math.max(y1, c.y + c.h); });
+    return { w: Math.max(1, x1 - x0), h: Math.max(1, y1 - y0) }; };
+  const filsDansBloc = L => { let n = 0;
+    L.routage.fils.forEach(w => { for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1];
+      const x0 = Math.min(a.x, b.x), x1 = Math.max(a.x, b.x), y0 = Math.min(a.y, b.y), y1 = Math.max(a.y, b.y);
+      for (const c of L.comps) { if (x1 > c.x + 2 && x0 < c.x + c.w - 2 && y1 > c.y + 2 && y0 < c.y + c.h - 2) { n++; break; } } } }); return n; };
+  const juger = L => { if (!L.jugement) { const e = emprise(L), r = e.w / e.h; L.jugement = {
+      sain: filsDansBloc(L) === 0, tient: r <= 2.2 && r >= 0.45, droits: compterDroits(L.routage.fils),
+      croisements: compterCroisements(L.routage.fils, L.routage.barrettes), ec: r > A3 ? r / A3 : A3 / r,
+      peignes: L.routage.barrettes.reduce((t, b) => t + Math.abs(b.y2 - b.y1), 0), largeur: e.w }; } return L.jugement; };
+  const bat = (L, ref) => { if (!ref) return true; const a = juger(L), b = juger(ref);
+    if (a.sain !== b.sain) return a.sain; if (a.tient !== b.tient) return a.tient;
+    if (a.droits !== b.droits) return a.droits > b.droits; if (a.croisements !== b.croisements) return a.croisements < b.croisements;
+    if (Math.abs(a.ec - b.ec) > 0.01) return a.ec < b.ec; return a.peignes < b.peignes; };
+  return { juger, bat, emprise };
+}
+
+/* ===========================================================================
+   LE CONCOURS : sept graines, routées pour de vrai, la meilleure au jugement
+   gagne ; puis les goulottes se resserrent et les blocs se condensent si ça
+   ne perd rien.
+   Enfin le SECOURS : un dessin en ruban (plus de 2,2 fois plus large que
+   haut) se replie en rangées, sans plier plus d'un fil par report.
    =========================================================================== */
 function meilleurPlacement(liaisons) {
   const G = construireGraphe(liaisons);
   if (!G.ids.length) return null;
   const nB = G.ids.length;
   const graines = nB > 600 ? [0] : (nB <= 120 ? [0, 'loin', 1, 2, 3, 4, 5] : (nB <= 400 ? [0, 'loin', 1, 2, 3] : [0, 'loin']));
-  const filsDansBloc = L => { let n = 0;
-    L.routage.fils.forEach(w => { for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1];
-      const x0 = Math.min(a.x, b.x), x1 = Math.max(a.x, b.x), y0 = Math.min(a.y, b.y), y1 = Math.max(a.y, b.y);
-      for (const c of L.comps) { if (x1 > c.x + 2 && x0 < c.x + c.w - 2 && y1 > c.y + 2 && y0 < c.y + c.h - 2) { n++; break; } } } }); return n; };
   const essayer = o => { const L = placer(G, o); L.routage = router(L); return L; };
-  const emprise = L => { let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
-    L.comps.forEach(c => { x0 = Math.min(x0, c.x); x1 = Math.max(x1, c.x + c.w); y0 = Math.min(y0, c.y); y1 = Math.max(y1, c.y + c.h); });
-    return { w: Math.max(1, x1 - x0), h: Math.max(1, y1 - y0) }; };
-  const A3 = 1.414, ecart = L => { const e = emprise(L), r = e.w / e.h; return r > A3 ? r / A3 : A3 / r; };
-  // chaque graine, feuilles à droite puis équilibrées : la droiture décide,
-  // puis les croisements, puis le format (tenir sur la feuille), puis la
-  // longueur des barrettes
-  let best = null, bScore = -1e18, bOpt = {}, bPeignes = Infinity, bEcart = Infinity;
+  const { juger, bat, emprise } = jugeDePlacement();
+  // chaque graine, feuilles à droite puis équilibrées
+  let best = null, bOpt = {};
   const candidats = []; graines.forEach(g => { candidats.push({ graine: g }); if (nB <= 120) candidats.push({ graine: g, equilibrer: true }); });
-  candidats.forEach(o => { const L = essayer(o);
-    const peignes = L.routage.barrettes.reduce((t, b) => t + Math.abs(b.y2 - b.y1), 0), ec = ecart(L);
-    const score = compterDroits(L.routage.fils) - compterCroisements(L.routage.fils, L.routage.barrettes) / 120;
-    if (score > bScore || (score === bScore && (ec < bEcart - 0.01 || (Math.abs(ec - bEcart) <= 0.01 && peignes < bPeignes)))) {
-      best = L; bScore = score; bPeignes = peignes; bEcart = ec; bOpt = o; } });
+  candidats.forEach(o => { const L = essayer(o); if (bat(L, best)) { best = L; bOpt = o; } });
   // resserrage : les goulottes reprennent la largeur que les pistes occupent
-  // vraiment ; gardé si le dessin rétrécit d'au moins 3 % sans perdre plus d'un fil droit
-  const largeur = L => Math.max(...L.comps.map(c => c.x + c.w));
+  // vraiment ; gardé si le dessin rétrécit d'au moins 3 % sans rien perdre
   let bGoulottes = null;
   { const fix = goulottesOccupees(best);
-    if (fix) { const L2 = essayer({ ...bOpt, goulottes: fix });
-      if (compterDroits(L2.routage.fils) >= compterDroits(best.routage.fils) - 1 && largeur(L2) < largeur(best) * 0.97 && filsDansBloc(L2) <= filsDansBloc(best)) { best = L2; bGoulottes = fix; } } }
+    if (fix) { const L2 = essayer({ ...bOpt, goulottes: fix }); const a = juger(L2), b = juger(best);
+      if (a.sain && a.droits >= b.droits && a.croisements <= b.croisements && a.largeur < b.largeur * 0.97) { best = L2; bGoulottes = fix; } } }
   // condensation par glissement de broches : gardée si aucun fil droit n'est
   // perdu et pas plus de croisements — elle rend les blocs compacts
-  { const L3 = essayer({ ...bOpt, goulottes: bGoulottes, condenser: true });
-    const s3 = compterDroits(L3.routage.fils), s0 = compterDroits(best.routage.fils);
-    const c3 = compterCroisements(L3.routage.fils, L3.routage.barrettes), c0 = compterCroisements(best.routage.fils, best.routage.barrettes);
-    if (filsDansBloc(L3) <= filsDansBloc(best) && (s3 > s0 || (s3 === s0 && c3 <= c0))) best = L3; }
+  { const L3 = essayer({ ...bOpt, goulottes: bGoulottes, condenser: true }); const a = juger(L3), b = juger(best);
+    if (a.sain && a.droits >= b.droits && a.croisements <= b.croisements) best = L3; }
   // secours : serpentin
   const e0 = emprise(best), r0 = e0.w / e0.h, nc = best.geom.nCols;
   if (r0 > 2.2 && nc >= 4) {
-    const R0 = Math.max(2, Math.min(6, Math.round(Math.sqrt(r0 / A3)))); const s0 = compterDroits(best.routage.fils);
-    const densite = L => { const e = emprise(L); let a = 0; L.comps.forEach(c => a += c.w * c.h); return a / (e.w * e.h); };
-    let d0 = ecart(best), q0 = 0; const vus = new Set();
+    const R0 = Math.max(2, Math.min(6, Math.round(Math.sqrt(r0 / A3)))); const s0 = juger(best).droits;
+    const vus = new Set();
     [R0, R0 + 1, R0 + 2, R0 - 1].filter(k => k >= 2).forEach(k => { const W = Math.ceil(nc / k); if (W < 2 || vus.has(W)) return; vus.add(W);
       let L = null; try { L = essayer({ ...bOpt, goulottes: bGoulottes, serpentin: W }); } catch (e) { return; }
-      if (!L || filsDansBloc(L) > 0) return;
-      if (compterDroits(L.routage.fils) < s0 - k) return;
-      const d = ecart(L), q = densite(L);
-      if (d < d0 * 0.9 || (best.geom.rangees && d < d0 * 1.1 && q > q0)) { best = L; d0 = Math.min(d0, d); q0 = q; } });
+      if (L && juger(L).droits >= s0 - k && bat(L, best)) best = L; });
   }
   return best;
 }
