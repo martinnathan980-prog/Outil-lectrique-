@@ -6,9 +6,10 @@
    la même hauteur. C'est la priorité absolue, tout le reste est du confort.
 
    `placer` fait UNE mise en page pour une graine donnée. `meilleurPlacement`
-   en essaie sept, route chacune pour de vrai, et garde celle qui a le plus de
-   fils droits (croisements en départage) ; puis, si le dessin est un ruban,
-   le replie en rangées (serpentin).
+   en essaie sept (équilibrées ou non, feuilles sur une ou deux colonnes),
+   route chacune pour de vrai, et garde celle qui gagne au jugement (tient
+   sur la feuille, fils droits, croisements, encombrement) ; puis, si le
+   dessin est un ruban, le replie en rangées (serpentin).
 
    Géométrie partagée par les étapes, pour un nœud `id` et une broche `cle` :
      xDe(id)                 abscisse du bloc
