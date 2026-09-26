@@ -639,7 +639,7 @@ function placer(G, options) {
     ids.forEach(id => clesListes(id).forEach(lid => liste(id, lid).sort((a, b) => yB(id, a.cle) - yB(id, b.cle))));
   }
 
-  /* ===== 9. TASSEMENT, ÎLOTS, RANGÉES, FORMAT DE PAGE ==================== */
+  /* ===== 9. TASSEMENT, ÎLOTS, RANGÉES ==================================== */
   // toute bande vide sur toute la largeur se referme à un petit interstice
   { const GAPMIN = 44; const evs = ids.map(id => ({ t: hautDe.get(id), b: basDe.get(id) })).concat(pastilles.map(sp => ({ t: sp.y1, b: sp.y2 }))).sort((a, b) => a.t - b.t);
     const occ = []; evs.forEach(e => { const L = occ[occ.length - 1]; if (L && e.t <= L.b + GAPMIN) L.b = Math.max(L.b, e.b); else occ.push({ t: e.t, b: e.b }); });
@@ -686,24 +686,6 @@ function placer(G, options) {
   let yMin = Infinity, yMax = -Infinity;
   ids.forEach(id => { yMin = Math.min(yMin, hautDe.get(id)); yMax = Math.max(yMax, basDe.get(id)); });
   if (!isFinite(yMin)) { yMin = HAUT_PAGE; yMax = HAUT_PAGE + 200; }
-  // format de page : un dessin plus large que le papier s'étale en hauteur,
-  // dans les bandes libres seulement (les fils droits le restent), plafonné
-  // pour ne pas le distendre ; un dessin carré ou portrait reste tel quel
-  { const cxs = ids.map(id => xDe.get(id)), cxe = ids.map(id => xDe.get(id) + largeurDe(id));
-    const contW = cxs.length ? Math.max(...cxe) - Math.min(...cxs) : 0, contH = yMax - yMin;
-    const surplus = Math.min(contW / 1.414 - contH, contH * 0.65);
-    if (contW > 0 && contH > 0 && surplus > 20) {
-      const iv = ids.map(id => [hautDe.get(id), basDe.get(id)]).sort((a, b) => a[0] - b[0]); const libres = []; let fin = iv.length ? iv[0][1] : yMin;
-      for (let i = 1; i < iv.length; i++) { if (iv[i][0] > fin + 2) libres.push({ y: fin, ep: iv[i][0] - fin }); fin = Math.max(fin, iv[i][1]); }
-      if (libres.reduce((s, b) => s + b.ep, 0) > 10) {
-        const CAP = 140; let reste = surplus, actives = libres.slice(); libres.forEach(b => b.dy = 0);
-        for (let tour = 0; tour < 5 && reste > 1 && actives.length; tour++) { const part = reste / actives.length; let pris = 0; const suite = [];
-          actives.forEach(b => { const d = Math.max(0, Math.min(part, CAP - b.dy)); b.dy += d; pris += d; if (b.dy < CAP - 0.5) suite.push(b); }); reste -= pris; actives = suite; if (pris < 0.5) break; }
-        let cum = 0; libres.forEach(b => { cum += b.dy; b.cum = cum; });
-        const decal = y => { let d = 0; for (const b of libres) { if (y > b.y + b.ep / 2) d = b.cum; else break; } return d; };
-        ids.forEach(id => { const d = decal((hautDe.get(id) + basDe.get(id)) / 2); if (d) glisser(id, d); });
-        pastilles.forEach(sp => { const d = decal((sp.y1 + sp.y2) / 2); sp.y1 += d; sp.y2 += d; });
-        yMax += cum; } } }
 
   /* ===== 10. LES BLOCS ET LES LIAISONS, PRÊTS À DESSINER ================= */
   const comps = [], compDe = new Map();
