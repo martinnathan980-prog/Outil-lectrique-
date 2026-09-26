@@ -2,46 +2,52 @@
    DIRECTION « TABLE LUMINEUSE »
 
    Le plan est l'écran. Rien ne l'encadre : la feuille blanche est posée sur
-   une table bleu nuit et occupe tout — les commandes flottent dessus, en
-   deux coins et une réglette de folios en bas, comme sur une carte.
+   une table d'ardoise bleutée et occupe tout — les commandes flottent dessus,
+   en deux coins et une réglette de folios en bas, comme sur une carte.
    Les instruments sont sombres (verre fumé) ; les documents sont blancs :
-   la feuille, la fiche d'un équipement, la table des liaisons.
-   Un seul accent, le cuivre — celui du fil — pour l'action principale et
-   pour ce qui est choisi. Le langage est en linéale système ; toute DONNÉE
-   (repère, borne, n° de fil) est en chasse fixe. Le rayon est plein pour ce
-   qui se presse (pilules), 16 px pour ce qui se lit (cartes). Module 4 px.
+   la feuille, la base des liaisons à côté d'elle, la fiche du cartouche.
+   Un seul accent, le cuivre — celui du fil — pour ce qui est choisi et pour
+   la seule action qui compte sur l'accueil. Ce qu'on fait tout le temps
+   (aller d'un folio à l'autre, chercher, corriger la base, annuler, cadrer)
+   est sous la main ; ce qu'on fait une fois (ouvrir, exporter, effacer) est
+   dans le menu. Le langage est en linéale système ; toute DONNÉE (repère,
+   borne, n° de fil) est en chasse fixe. Le rayon est plein pour ce qui se
+   presse (pilules), 16 px pour ce qui se lit (cartes). Module 4 px.
    Aucune image, aucune police extérieure. Sur téléphone, le plan reste seul ;
    ce qui se lit monte en tiroir depuis le bas.
    ═══════════════════════════════════════════════════════════════════════ */
 :root{
   /* palette : six valeurs, le reste en est tiré */
-  --nuit:#0f1620;            /* la table                                     */
+  --nuit:#2e3846;            /* la table — 10,5:1 sous la craie              */
+  --nuit-2:#3d4857;          /* son centre, éclairé                          */
   --craie:#eef2f6;           /* texte sur la table                           */
   --papier:#ffffff;          /* les documents                                */
   --encre:#18212c;           /* texte sur papier                             */
-  --cuivre:#b5541c;          /* l'accent — 4,8:1 sur papier                  */
-  --danger:#b3261e;          /* supprimer, erreur — 5,9:1 sur papier         */
+  --cuivre:#b5541c;          /* l'accent — 4,9:1 sur papier                  */
+  --danger:#b3261e;          /* supprimer, erreur — 6,5:1 sur papier         */
   /* tirées de la palette */
-  --verre:rgba(21,29,39,.93);/* instrument : verre fumé sur la table         */
-  --verre-plein:#161e29;     /* le même, sans transparence                   */
-  --craie-2:#a9b4c0;         /* texte secondaire sur verre — 7:1             */
-  --trait-verre:rgba(255,255,255,.09);
+  --verre:rgba(28,36,47,.9); /* instrument : verre fumé, plus sombre que la table */
+  --verre-plein:#1e2631;     /* le même, sans transparence                   */
+  --craie-2:#b3bdc8;         /* texte secondaire sur verre — 8:1             */
+  --trait-verre:rgba(255,255,255,.1);
   --papier-2:#f2f4f7;        /* surface en retrait sur papier                */
   --papier-3:#e6eaef;        /* survol de la surface en retrait              */
   --encre-2:#5b6875;         /* texte secondaire sur papier — 5,7:1          */
   --filet:#dfe4e9;           /* filet sur papier                             */
-  --cuivre-2:#9e4816;        /* cuivre pressé                                */
-  --cuivre-clair:#f0a36f;    /* cuivre sur la table (focus, badge) — 8,4:1   */
-  --cuivre-pale:#fbeee4;     /* fond cuivré très pâle sur papier             */
+  --cuivre-2:#9e4816;        /* cuivre pressé — 5,4:1 sur cuivre pâle        */
+  --cuivre-clair:#f0a36f;    /* cuivre sur la table (focus, badge) — 7,4:1   */
+  --cuivre-pale:#fbeee4;     /* fond cuivré très pâle : la ligne choisie     */
   /* typographie : une échelle de sept corps, ratio ≈ 1,2 */
   --t0:11px; --t1:12px; --t2:13.5px; --t3:15px; --t4:17px; --t5:22px; --t6:28px;
   --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","DejaVu Sans Mono",monospace;
   /* élévations : une par étage */
-  --ombre-1:0 4px 18px rgba(0,0,0,.35);
-  --ombre-2:0 18px 50px rgba(0,0,0,.45);
-  --ombre-3:0 30px 90px rgba(0,0,0,.55);
+  --ombre-1:0 4px 18px rgba(0,0,0,.28);
+  --ombre-2:0 18px 50px rgba(0,0,0,.35);
+  --ombre-3:0 30px 90px rgba(0,0,0,.45);
   --rapide:.14s ease; --moyen:.24s ease;
+  --base-l:min(620px,44vw);  /* largeur de la base à droite ; se règle à la poignée */
+  --base-h:46vh;             /* hauteur de la base en tiroir, sur téléphone   */
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;overflow:hidden}
@@ -51,18 +57,20 @@ body{font:var(--t2)/1.45 var(--sans);background:var(--nuit);color:var(--craie);
 button,input,textarea{font:inherit;color:inherit;margin:0}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--cuivre-clair);outline-offset:2px}
-#fiche :focus-visible,.vide-carte :focus-visible{outline-color:var(--cuivre)}
+#fiche :focus-visible,#base :focus-visible,.vide-carte :focus-visible{outline-color:var(--cuivre)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .mono{font-family:var(--mono)}
+.min0{min-width:0;flex:1}
+.espace{flex:1}
 svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
 /* ─── LA TABLE ET LA FEUILLE ────────────────────────────────────────────── */
 #planche{position:fixed;inset:0;overflow:hidden;touch-action:none;cursor:grab;
-  background:radial-gradient(ellipse 70% 60% at 50% 42%,#1a2431 0%,var(--nuit) 100%)}
+  background:radial-gradient(ellipse 70% 60% at 50% 42%,var(--nuit-2) 0%,var(--nuit) 100%)}
 #planche.tient{cursor:grabbing}
 #svg{position:absolute;inset:0;width:100%;height:100%;display:block}
 #ombre{position:absolute;left:0;top:0;pointer-events:none;display:none;
-  box-shadow:0 0 0 1px rgba(255,255,255,.07),0 40px 100px rgba(0,0,0,.7),0 2px 8px rgba(0,0,0,.6)}
+  box-shadow:0 0 0 1px rgba(255,255,255,.08),0 40px 100px rgba(0,0,0,.5),0 2px 8px rgba(0,0,0,.4)}
 /* la feuille dessinée par le moteur ; on ne touche qu'à son conteneur */
 #svg .comp{cursor:pointer}
 #svg .cab{cursor:pointer}
@@ -84,21 +92,22 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;st
 .btn.lien.danger{color:var(--danger)}
 .btn.lien.danger:hover{background:#fbeae8;color:var(--danger)}
 .btn.verre{color:var(--craie)}
-.btn.verre:hover{background:rgba(35,45,58,.92)}
+.btn.verre:hover{background:rgba(44,54,68,.92)}
+/* une bascule : pressée, elle devient un document, blanc sur la table */
+.bascule[aria-pressed="true"]{background:var(--papier);color:var(--encre);border-color:var(--papier)}
+.bascule[aria-pressed="true"]:hover{background:var(--papier-2)}
 
-/* ─── LE HAUT : dossier, ouvrir, annuler · recherche, menu ──────────────── */
+/* ─── LE HAUT : dossier, annuler · recherche, base, menu ────────────────── */
 #haut{position:fixed;top:12px;left:12px;right:12px;display:flex;align-items:center;gap:8px;z-index:20;pointer-events:none}
 #haut>*{pointer-events:auto}
 .marque{height:40px;padding:0 14px 0 12px;border-radius:20px;display:flex;align-items:center;gap:9px;font-weight:600;letter-spacing:.005em;white-space:nowrap;flex:none}
 .marque svg{width:18px;height:18px;flex:none}
-.dossier{height:40px;padding:0 14px;border-radius:20px;display:flex;align-items:center;gap:10px;min-width:0;max-width:38vw;cursor:pointer;transition:background var(--rapide)}
-.dossier:hover{background:rgba(35,45,58,.95)}
+.dossier{height:40px;padding:0 14px;border-radius:20px;display:flex;align-items:center;gap:10px;min-width:0;max-width:38vw}
 #ctx-nom{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #ctx-txt{color:var(--craie-2);white-space:nowrap;font-size:var(--t1)}
 .sauve{color:var(--craie-2);font-size:var(--t0);white-space:nowrap;display:flex;align-items:center;gap:6px}
-.sauve:not(:empty)::before{content:"";width:6px;height:6px;border-radius:50%;background:#5fb87a}
+.sauve:not(:empty)::before{content:"";width:6px;height:6px;border-radius:50%;background:#6cc487}
 .sauve.ko::before{background:var(--cuivre-clair)}
-.espace{flex:1}
 .recherche{position:relative;height:40px;width:300px;border-radius:20px;display:flex;align-items:center;padding:0 8px 0 14px;gap:8px;transition:width var(--moyen)}
 .recherche:focus-within{width:360px}
 .recherche svg.ico{color:var(--craie-2)}
@@ -133,30 +142,89 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;st
 .chip:hover{background:rgba(255,255,255,.1)}
 .chip.on{background:var(--papier);color:var(--encre)}
 .fo-lbl{color:var(--craie-2);font-size:var(--t0);padding:0 10px 0 8px;white-space:nowrap;font-family:var(--mono)}
-#hud{position:fixed;right:12px;bottom:14px;display:flex;align-items:center;height:44px;padding:0 6px;border-radius:22px;z-index:20;gap:2px}
+#hud{position:fixed;right:12px;bottom:14px;display:flex;align-items:center;height:44px;padding:0 6px;border-radius:22px;z-index:20;gap:2px;transition:right var(--moyen)}
 #hud button{height:32px;min-width:32px;border:none;background:none;color:var(--craie);border-radius:16px;display:grid;place-items:center;padding:0}
 #hud button:hover{background:rgba(255,255,255,.1)}
 #zlbl{font-family:var(--mono);font-size:var(--t1);min-width:58px;color:var(--craie-2)}
 #zlbl:hover{color:var(--craie)}
+/* quand la base est ouverte, le zoom se range à sa gauche et les folios se recentrent sur le plan */
+body.base-ouverte #hud{right:calc(var(--base-l) + 24px)}
+body.base-ouverte #folios{left:calc((100vw - var(--base-l) - 24px) / 2)}
 
-/* ─── LA FICHE : un seul document, à droite ─────────────────────────────── */
-#fiche{position:fixed;top:64px;right:12px;bottom:70px;width:400px;max-width:calc(100vw - 24px);background:var(--papier);color:var(--encre);
+/* ─── LES DOCUMENTS : blancs, à droite ──────────────────────────────────── */
+#base,#fiche{position:fixed;top:64px;right:12px;bottom:70px;max-width:calc(100vw - 24px);background:var(--papier);color:var(--encre);
   border-radius:18px;box-shadow:var(--ombre-2);z-index:25;display:flex;flex-direction:column;overflow:hidden}
-#fiche.large{width:600px}
-#fiche.entre{animation:fiche-entre var(--moyen)}
-@keyframes fiche-entre{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
-.fiche-corps{overflow:auto;padding:18px 20px 12px;flex:1;overscroll-behavior:contain}
-.fiche-tete{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}
-.min0{min-width:0;flex:1}
+#fiche{width:400px}
+#base{width:var(--base-l);min-width:340px;bottom:12px}
+.entre{animation:doc-entre var(--moyen)}
+@keyframes doc-entre{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
 .sur{font-size:var(--t0);text-transform:uppercase;letter-spacing:.09em;color:var(--encre-2);font-weight:700}
-.titre{font-family:var(--mono);font-size:var(--t5);font-weight:700;line-height:1.2;margin:2px 0 0;color:var(--encre);letter-spacing:.01em}
-input.titre{border:none;background:none;padding:0 2px;margin-left:-2px;width:100%;border-bottom:1.5px dashed var(--filet);border-radius:0;transition:border-color var(--rapide)}
-input.titre:hover{border-bottom-color:#b7c1cb}
-input.titre:focus{outline:none}
-input.titre:focus{border-bottom-color:var(--cuivre)}
-input.titre::placeholder{color:var(--encre-2)}
 .fermer{background:var(--papier-2);color:var(--encre-2);width:36px;height:36px;flex:none}
 .fermer:hover{background:var(--papier-3);color:var(--encre)}
+
+/* ─── LA BASE : la table des liaisons, corrigée en direct ───────────────── */
+.poignee{position:absolute;left:0;top:0;bottom:0;width:10px;cursor:col-resize;z-index:2}
+.poignee::after{content:"";position:absolute;left:3px;top:50%;width:4px;height:36px;margin-top:-18px;border-radius:2px;background:var(--filet);transition:background var(--rapide)}
+.poignee:hover::after,#base.redim .poignee::after{background:var(--cuivre)}
+#base.redim{user-select:none}
+.ba-tete{display:flex;align-items:center;gap:10px;padding:16px 16px 0 22px}
+.ba-titre{font-size:var(--t4);font-weight:700;letter-spacing:-.005em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ba-titre b{font-family:var(--mono)}
+#ba-add{height:36px;padding:0 14px}
+.filtre{display:flex;align-items:center;gap:8px;height:38px;border:1px solid var(--filet);border-radius:10px;padding:0 6px 0 10px;margin:12px 16px 8px 22px;transition:border-color var(--rapide)}
+.filtre:focus-within{border-color:var(--cuivre);box-shadow:0 0 0 3px var(--cuivre-pale)}
+.filtre input{flex:1;min-width:0;border:none;background:none;outline:none;font-family:var(--mono)}
+.filtre input::placeholder{font-family:var(--sans);color:var(--encre-2)}
+.filtre svg.ico{color:var(--encre-2);width:16px;height:16px}
+.filtre .vider{width:26px;height:26px;border:none;background:none;border-radius:50%;color:var(--encre-2);font-size:var(--t4);line-height:1}
+.filtre .vider:hover{background:var(--papier-2);color:var(--encre)}
+/* l'équipement choisi : son repère, sa désignation, au-dessus de ses fils */
+.equip{margin:4px 16px 8px 22px;padding:10px 12px 12px;border-radius:12px;background:var(--cuivre-pale);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center}
+.equip>*{grid-column:1}
+.equip .sur{color:var(--cuivre-2)}
+.equip input{border:none;background:none;padding:0 2px;margin-left:-2px;width:100%;border-bottom:1.5px dashed rgba(181,84,28,.35);border-radius:0;color:var(--encre);transition:border-color var(--rapide)}
+.equip input:hover{border-bottom-color:var(--cuivre)}
+.equip input:focus{outline:none;border-bottom-color:var(--cuivre)}
+.equip input::placeholder{color:var(--encre-2)}
+.equip .rep{font-family:var(--mono);font-size:var(--t5);font-weight:700;line-height:1.25;letter-spacing:.01em}
+.equip .des{font-size:var(--t2);margin-top:4px}
+.equip .actions{grid-column:2;grid-row:1/4;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.equip .actions .btn{height:30px;padding:0 8px;font-size:var(--t1)}
+.ba-corps{flex:1;overflow:auto;overscroll-behavior:contain;padding:0 8px 8px 12px}
+/* la table prend la largeur de ses colonnes ; trop large, elle défile — jamais elle n'écrase une valeur */
+table.tab{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;font-family:var(--mono);font-size:var(--t1);table-layout:auto}
+.tab th{position:sticky;top:0;z-index:1;background:var(--papier);text-align:left;font-size:var(--t0);color:var(--encre-2);font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:8px 6px 6px;border-bottom:1px solid var(--filet);font-family:var(--sans);white-space:nowrap;cursor:pointer;user-select:none}
+.tab th:hover{color:var(--encre)}
+.tab th.tri{color:var(--cuivre-2)}
+.tab th .sens{font-size:9px;margin-left:3px}
+.tab td{padding:1px;border-bottom:1px solid var(--filet);white-space:nowrap}
+.tab tr:hover td{background:var(--papier-2)}
+.tab tr.on td{background:var(--cuivre-pale)}
+.tab td.g{width:34px;padding:0}
+.tab td.g button{width:100%;height:30px;border:none;background:none;color:#7b8794;font-size:var(--t0);text-align:right;padding:0 6px;border-radius:6px;font-family:var(--mono)}
+.tab td.g button:hover{color:var(--cuivre);background:var(--cuivre-pale)}
+.tab tr.on td.g button{color:var(--cuivre-2)}
+.tab tr.hors td.g button{color:#a3adb8}
+.tab td.rep input{width:96px}
+.tab td.n input{width:52px}
+.tab td.fil input{width:88px}
+.tab td.type input{width:72px}
+.tab td.pn input{width:104px}
+.tab td.route input{width:76px}
+.tab input{width:100%;height:30px;border:1px solid transparent;border-radius:7px;padding:0 6px;background:none;font-family:var(--mono);font-size:var(--t1);color:var(--encre);transition:border-color var(--rapide)}
+.tab input:hover{border-color:#c9d1d9}
+.tab input:focus{border-color:var(--cuivre);outline:none;background:var(--papier);box-shadow:0 0 0 3px var(--cuivre-pale)}
+.tab .f{display:inline-block;font-size:var(--t0);color:var(--cuivre-2);font-weight:700;background:var(--cuivre-pale);border-radius:6px;padding:1px 6px;border:none;font-family:var(--mono);margin:0 2px}
+button.f:hover{background:var(--cuivre);color:#fff}
+.tab .x{width:30px;text-align:center}
+.tab .x button{width:26px;height:26px;border:none;background:none;border-radius:50%;color:var(--encre-2);font-size:var(--t3);line-height:1}
+.tab .x button:hover{background:#fbeae8;color:var(--danger)}
+.tab .reste td{color:var(--encre-2);padding:12px 8px;white-space:normal;font-family:var(--sans)}
+
+/* ─── LA FICHE : cartouche, collage ─────────────────────────────────────── */
+.fiche-corps{overflow:auto;padding:18px 20px 12px;flex:1;overscroll-behavior:contain}
+.fiche-tete{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}
+.titre{font-family:var(--mono);font-size:var(--t5);font-weight:700;line-height:1.2;margin:2px 0 0;color:var(--encre);letter-spacing:.01em}
 .champ{display:block;margin:10px 0 0}
 .champ>span{display:block;font-size:var(--t0);color:var(--encre-2);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:4px}
 .champ input,.champ textarea{width:100%;height:38px;border:1px solid var(--filet);border-radius:10px;padding:0 10px;background:var(--papier);color:var(--encre);font-family:var(--mono);transition:border-color var(--rapide)}
@@ -166,45 +234,9 @@ input.titre::placeholder{color:var(--encre-2)}
 .champ textarea{height:180px;padding:10px;resize:vertical;font-size:var(--t1);line-height:1.5}
 .champ.sans input{font-family:var(--sans)}
 .grille{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
-.grille.bornes{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
-.info{display:flex;gap:10px;align-items:baseline;margin:12px 0 0;font-size:var(--t1);color:var(--encre-2)}
-.info b{color:var(--encre);font-weight:600}
-.sous-titre{display:flex;align-items:center;gap:8px;margin:20px 0 6px;font-size:var(--t0);text-transform:uppercase;letter-spacing:.09em;color:var(--encre-2);font-weight:700}
-.compte{background:var(--papier-2);border-radius:10px;padding:1px 8px;font-family:var(--mono);color:var(--encre)}
-.racc{list-style:none;margin:0;padding:0}
-.racc li{display:flex;align-items:center;gap:8px;padding:8px 8px;border-radius:10px;cursor:pointer;transition:background var(--rapide)}
-.racc li+li{border-top:1px solid var(--filet)}
-.racc li:hover{background:var(--papier-2)}
-.racc li:focus-visible{outline-offset:-2px}
-.racc .borne{font-family:var(--mono);font-weight:700;min-width:36px;text-align:right}
-.racc .fleche{color:#a3adb8}
-.racc .dest{font-family:var(--mono);background:none;border:none;padding:2px 4px;border-radius:6px;color:var(--encre);font-weight:600;text-decoration:underline dotted #a3adb8;text-underline-offset:3px;white-space:nowrap}
-.racc .dest:hover{color:var(--cuivre);text-decoration-color:var(--cuivre)}
-.racc .b{color:var(--encre-2);font-weight:400}
-.racc .meta{margin-left:auto;font-size:var(--t1);color:var(--encre-2);white-space:nowrap;font-family:var(--mono)}
-.racc .f{font-size:var(--t0);color:var(--cuivre-2);font-weight:700;background:var(--cuivre-pale);border-radius:6px;padding:1px 6px;white-space:nowrap}
-.racc .rien{color:var(--encre-2);cursor:default;padding:12px 8px}
 .fiche-pied{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 20px;border-top:1px solid var(--filet);background:var(--papier)}
-.fiche-pied .espace{flex:1}
-.aller{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;font-size:var(--t1);color:var(--encre-2);align-items:center}
-.aller button{font-family:var(--mono);background:var(--papier-2);border:none;border-radius:8px;padding:4px 9px;color:var(--encre);font-weight:600}
-.aller button:hover{background:var(--cuivre-pale);color:var(--cuivre)}
 .note{font-size:var(--t1);color:var(--encre-2);margin:8px 0 0;line-height:1.5}
 .note b{color:var(--encre)}
-.filtre{display:flex;align-items:center;gap:8px;height:38px;border:1px solid var(--filet);border-radius:10px;padding:0 10px;margin:12px 0 10px}
-.filtre input{flex:1;min-width:0;border:none;background:none;outline:none;font-family:var(--mono)}
-.filtre svg.ico{color:var(--encre-2);width:16px;height:16px}
-table.tab{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:var(--t1)}
-.tab th{text-align:left;font-size:var(--t0);color:var(--encre-2);font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:6px 6px;border-bottom:1px solid var(--filet);font-family:var(--sans)}
-.tab td{padding:2px 1px;border-bottom:1px solid var(--filet)}
-.tab td.n{width:56px}
-.tab input{width:100%;height:32px;border:1px solid transparent;border-radius:7px;padding:0 6px;background:none;font-family:var(--mono);transition:border-color var(--rapide)}
-.tab input:hover{border-color:var(--filet)}
-.tab input:focus{border-color:var(--cuivre);outline:none;background:var(--papier)}
-.tab .x{width:30px;text-align:center}
-.tab .x button{width:26px;height:26px;border:none;background:none;border-radius:50%;color:var(--encre-2)}
-.tab .x button:hover{background:#fbeae8;color:var(--danger)}
-.tab .reste td{color:var(--encre-2);padding:8px 6px}
 
 /* ─── L'ACCUEIL : rien de chargé ───────────────────────────────────────── */
 .vide{position:absolute;inset:0;display:grid;place-items:center;padding:16px;z-index:5}
@@ -213,7 +245,7 @@ table.tab{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:
 .vide-carte h1{font-size:var(--t6);font-weight:700;margin:16px 0 8px;letter-spacing:-.01em;line-height:1.15}
 .vide-carte p{color:var(--encre-2);margin:0 0 22px;font-size:var(--t3)}
 .vide-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
-.depot{position:fixed;inset:10px;z-index:40;display:none;place-items:center;background:rgba(15,22,32,.72);border:3px dashed var(--cuivre-clair);border-radius:24px;color:var(--craie);font-size:var(--t5);font-weight:600;pointer-events:none}
+.depot{position:fixed;inset:10px;z-index:40;display:none;place-items:center;background:rgba(46,56,70,.8);border:3px dashed var(--cuivre-clair);border-radius:24px;color:var(--craie);font-size:var(--t5);font-weight:600;pointer-events:none}
 body.depot-actif .depot{display:grid}
 
 /* ─── LE MOT QUI PASSE ─────────────────────────────────────────────────── */
@@ -225,8 +257,10 @@ body.depot-actif .depot{display:grid}
 /* ─── ÉCRAN MOYEN : le dossier cède la place à la recherche ─────────────── */
 @media (max-width:1180px){
   #ctx-txt{display:none}
-  .recherche{width:240px}
-  .recherche:focus-within{width:300px}
+  .recherche{width:220px}
+  .recherche:focus-within{width:280px}
+  #btnBase{padding:0;width:40px;justify-content:center}
+  #btnBase span{display:none}
 }
 
 /* ─── TÉLÉPHONE ─────────────────────────────────────────────────────────── */
@@ -235,8 +269,6 @@ body.depot-actif .depot{display:grid}
   .marque{display:none}
   .dossier{flex:1;max-width:none;padding:0 12px}
   #ctx-txt,.sauve{display:none}
-  #btnOuvrir{padding:0;width:40px;justify-content:center}
-  #btnOuvrir span{display:none}
   .recherche{width:40px;padding:0;justify-content:center}
   .recherche input,.recherche .raccourci{display:none}
   .recherche svg.ico{color:var(--craie)}
@@ -247,15 +279,26 @@ body.depot-actif .depot{display:grid}
   .fo-strip{max-width:calc(100vw - 150px)}
   #hud{right:8px;bottom:64px;height:40px;padding:0 4px}
   #hud #zin,#hud #zout,#hud #zlbl{display:none}
-  #fiche{top:auto;left:0;right:0;bottom:0;width:auto;max-width:none;max-height:72vh;border-radius:20px 20px 0 0}
-  #fiche.large{width:auto}
-  #fiche.entre{animation:fiche-monte var(--moyen)}
-  @keyframes fiche-monte{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
-  .fiche-corps{padding:14px 16px 10px}
+  /* les documents montent en tiroir ; la base garde la hauteur qu'on lui donne */
+  #base,#fiche{top:auto;left:0;right:0;bottom:0;width:auto;min-width:0;max-width:none;border-radius:20px 20px 0 0}
+  #fiche{max-height:72vh}
+  #base{height:var(--base-h);max-height:85vh;min-height:160px}
+  body.base-ouverte #hud{right:8px;bottom:calc(var(--base-h) + 8px)}
+  body.base-ouverte #folios{left:50%;bottom:calc(var(--base-h) + 8px)}
+  .entre{animation:doc-monte var(--moyen)}
+  @keyframes doc-monte{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+  .poignee{left:0;right:0;top:0;bottom:auto;height:18px;width:auto;cursor:row-resize}
+  .poignee::after{left:50%;top:6px;width:40px;height:4px;margin:0 0 0 -20px}
+  .ba-tete{padding:18px 12px 0 16px}
+  .filtre{margin:10px 12px 6px 16px}
+  .equip{margin:2px 12px 6px 16px}
+  .ba-corps{padding:0 4px 8px 8px}
   .tab{font-size:var(--t0)}
-  .tab input{padding:0 4px;height:30px}
-  .tab td.n{width:40px}
+  .tab input{padding:0 4px;height:28px}
+  .tab td.n input{width:44px}
+  .tab td.rep input{width:80px}
   .tab th{padding:6px 4px}
+  .fiche-corps{padding:14px 16px 10px}
   .fiche-pied{padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
   .vide-carte{padding:28px 22px 24px}
   .vide-carte h1{font-size:var(--t5)}

@@ -22,15 +22,14 @@
     <div id="depot" class="depot" aria-hidden="true"><div>Déposez le fichier</div></div>
   </main>
 
+  <!-- Le haut : ce qu'on fait tout le temps. Ouvrir un fichier se fait une
+       fois — c'est dans le menu, par dépôt, ou par Ctrl+O. -->
   <header id="haut">
     <div class="marque verre" aria-label="Atelier Schéma">
       <svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="3.5" cy="9" r="2.5" fill="#b5541c"/><path d="M6 9h6" stroke="#eef2f6" stroke-width="1.8" stroke-linecap="round"/><circle cx="14.5" cy="9" r="2.5" fill="#b5541c"/></svg>
       Atelier Schéma
     </div>
-    <button class="dossier verre" id="dossier" title="Toutes les liaisons du contrat"><span id="ctx-nom">—</span><span id="ctx-txt"></span><span id="ctx-sauve" class="sauve"></span></button>
-    <button class="btn cuivre" id="btnOuvrir" title="Ouvrir un fichier Excel ou CSV">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span>Ouvrir</span>
-    </button>
+    <div class="dossier verre" id="dossier"><span id="ctx-nom">—</span><span id="ctx-txt"></span><span id="ctx-sauve" class="sauve"></span></div>
     <button class="rond verre" id="btnUndo" hidden aria-label="Annuler la dernière action" title="Annuler (Ctrl+Z)">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>
     </button>
@@ -41,16 +40,18 @@
       <span class="raccourci" aria-hidden="true">/</span>
       <div id="q-liste" class="q-liste verre" role="listbox" hidden></div>
     </div>
+    <button class="btn verre bascule" id="btnBase" aria-pressed="false" title="Voir la base de données à côté du plan (B)">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M3 14h18M9 5v14"/></svg><span>Base</span>
+    </button>
     <div id="menuBoite">
       <button class="rond verre" id="btnMenu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="19" cy="12" r="1.4" fill="currentColor"/></svg>
       </button>
       <div id="menu" class="menu verre" hidden role="menu">
-        <button role="menuitem" data-act="ouvrir">Ouvrir un fichier…</button>
+        <button role="menuitem" data-act="ouvrir">Ouvrir un fichier… <span class="raccourci">Ctrl+O</span></button>
         <button role="menuitem" data-act="coller">Coller des liaisons…</button>
         <button role="menuitem" data-act="exemple">Charger l’exemple</button>
         <hr>
-        <button role="menuitem" data-act="table">Toutes les liaisons</button>
         <button role="menuitem" data-act="cartouche">Cartouche</button>
         <hr>
         <button role="menuitem" data-act="svg">Enregistrer le folio en SVG</button>
@@ -75,6 +76,24 @@
     <button id="zin" aria-label="Zoomer"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg></button>
     <button id="zfit" aria-label="Ajuster à l’écran" title="Ajuster à l’écran (0)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
   </div>
+
+  <!-- La base : la table des liaisons, à côté du plan. On la corrige ici ;
+       le plan suit. -->
+  <aside id="base" hidden aria-label="Base de données">
+    <div class="poignee" id="ba-poignee" title="Redimensionner" aria-hidden="true"></div>
+    <div class="ba-tete">
+      <div class="min0"><div class="sur">Base</div><div class="ba-titre" id="ba-titre">—</div></div>
+      <button class="btn papier" id="ba-add" title="Ajouter une liaison">+ Liaison</button>
+      <button class="rond fermer" id="ba-fermer" aria-label="Cacher la base"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <div class="filtre">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+      <input id="ba-filtre" placeholder="Filtrer par repère, fil, type, folio…" aria-label="Filtrer la base" autocomplete="off" spellcheck="false">
+      <button class="vider" id="ba-vider" hidden aria-label="Effacer le filtre">×</button>
+    </div>
+    <div id="ba-equip" class="equip" hidden></div>
+    <div class="ba-corps" id="ba-corps"><table class="tab" id="ba-tab"><thead id="ba-thead"></thead><tbody id="ba-tbody"></tbody></table></div>
+  </aside>
 
   <aside id="fiche" hidden aria-label="Fiche">
     <div class="fiche-corps" id="fiche-corps"></div>

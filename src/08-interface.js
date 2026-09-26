@@ -8,17 +8,23 @@
                     tout seul ; `verite()` rend toujours ce qu'on édite
    app.plan         '*' = tout d'un tenant, sinon le folio affiché
    app.dessin       le dessin du folio affiché (placement + routage)
-   La fiche est le seul document : un équipement, un fil, la table des
-   liaisons, le cartouche, un collage — jamais deux à la fois.
+   app.base         la base à côté du plan : ouverte ou non, son filtre, son tri
+   app.cible        ce qui est choisi : un bloc { type:'bloc', nom } ou un fil
+                    { type:'fil', l } — allumé sur le plan, marqué dans la base
+   app.actif        la liaison dont on écrit une cellule : son fil s'allume
+   La base est LE document : on la corrige, le plan suit. Une fiche ne sert
+   plus qu'au cartouche et au collage — jamais deux documents à la fois.
    =========================================================================== */
 'use strict';
 
 const app = {
   contrat: nouveauContrat(), source: null, nFolios: 0, budget: 16, plan: '*', nom: '',
-  vue: { s: 1, tx: 0, ty: 0 }, choisi: null, dessin: null, hist: [], fiche: null
+  vue: { s: 1, tx: 0, ty: 0 }, choisi: null, cible: null, actif: null, dessin: null, hist: [], fiche: null,
+  base: { ouvert: false, filtre: '', tri: null, largeur: 0, hauteur: 0, sale: true, defiler: false, enSaisie: false }
 };
 const $ = id => document.getElementById(id);
 const CLE_CONTRAT = 'atelier.contrat.v2';
+const CLE_BASE = 'atelier.base.v1';
 const ZMIN = 0.06, ZMAX = 8;
 const verite = () => app.source || app.contrat.liaisons;
 const plans = () => plansDe(app.contrat.liaisons);
@@ -59,10 +65,11 @@ function appliquerVue() {
   o.style.display = 'block'; o.style.transform = `translate(${app.vue.tx + bb.x * s}px,${app.vue.ty + bb.y * s}px)`;
   o.style.width = bb.w * s + 'px'; o.style.height = bb.h * s + 'px';
 }
-/* Le vide que laissent les instruments : la feuille se cadre dedans. */
-function marges() { const tel = telephone(), fiche = $('fiche').hidden ? null : $('fiche');
-  return { haut: tel ? 60 : 68, bas: (tel && fiche) ? fiche.offsetHeight + 12 : (tel ? 64 : 72),
-           gauche: tel ? 12 : 28, droite: (tel ? 12 : 28) + ((fiche && !tel) ? fiche.offsetWidth + 24 : 0) }; }
+/* Le vide que laissent les instruments et le document ouvert : la feuille se cadre dedans. */
+function marges() { const tel = telephone();
+  const doc = !$('base').hidden ? $('base') : (!$('fiche').hidden ? $('fiche') : null);
+  return { haut: tel ? 60 : 68, bas: (tel && doc) ? doc.offsetHeight + 12 : (tel ? 64 : 72),
+           gauche: tel ? 12 : 28, droite: (tel ? 12 : 28) + ((doc && !tel) ? doc.offsetWidth + 24 : 0) }; }
 let anim = null;
 function animerVue(cible, doux) {
   if (anim) { cancelAnimationFrame(anim); anim = null; }
@@ -111,11 +118,14 @@ function allumerBloc(nom) { const sc = $('scene'); if (!sc) return; eteindre(); 
 function allumerFil(f) { const sc = $('scene'); if (!sc) return; eteindre(); sc.classList.add('focus');
   sc.querySelectorAll('.cab').forEach(p => { if (+p.dataset.i === f.i) p.classList.add('hl'); });
   sc.querySelectorAll('.comp').forEach(g => { if (g.dataset.name === xmlSur(f.de) || g.dataset.name === xmlSur(f.vers)) g.classList.add('hl'); }); }
-/* Ce qui est choisi reste allumé après un survol ou un redessin. */
-function rallumer() { const f = app.fiche;
-  if (f && f.mode === 'equip' && app.dessin && app.dessin.compDe.has(f.nom)) allumerBloc(f.nom);
-  else if (f && f.mode === 'fil' && app.dessin) { const w = filDe(f.l); if (w) allumerFil(w); else eteindre(); }
-  else eteindre(); }
+/* Ce qui est choisi reste allumé après un survol ou un redessin ; la ligne
+   qu'on écrit passe devant. */
+function rallumer() { const c = app.cible, w = app.actif && filDe(app.actif);
+  if (w) allumerFil(w);
+  else if (c && c.type === 'bloc' && app.dessin && app.dessin.compDe.has(c.nom)) allumerBloc(c.nom);
+  else if (c && c.type === 'fil' && app.dessin) { const w = filDe(c.l); if (w) allumerFil(w); else eteindre(); }
+  else eteindre();
+  marquerLignes(); }
 function filDe(l) { if (!app.dessin) return null; const L = liaisonsDuPlan();
   return app.dessin.fils.find(w => L[w.i] === l || sourceDe(L[w.i]) === l) || null; }
 
@@ -156,10 +166,21 @@ function lierPlanche() {
 function cliquer(w) { const c = blocSous(w);
   if (c) { if (estRenvoi(c.name)) { const t = c.name.replace(RENVOI, ''); if (plans().includes(t)) allerAuPlan(t); return; }
     if (c.rail) return; choisirBloc(c); return; }
-  const f = filSous(w); if (f) choisirFil(f); else if (app.fiche) fermerFiche(); }
-function choisirBloc(c) { app.choisi = c.name; peindre(); ficheEquipement(c.name); allumerBloc(c.name); }
-function choisirFil(f) { const l = liaisonsDuPlan()[f.i]; if (!l) return;
-  if (app.choisi) { app.choisi = null; peindre(); } ficheFil(sourceDe(l) || l); allumerFil(f); }
+  const f = filSous(w); if (f) choisirFil(f); else deselectionner(); }
+/* Choisir un bloc : la base se filtre sur lui — c'est sa fiche. */
+function choisirBloc(c) { app.choisi = c.name; app.cible = { type: 'bloc', nom: c.name }; app.base.filtre = c.name; app.base.defiler = true;
+  peindre(); ouvrirBase(); rendreBase(); allumerBloc(c.name); }
+/* Choisir un fil : sa ligne se marque et vient sous les yeux. */
+function choisirFil(f) { const l = liaisonsDuPlan()[f.i]; if (!l) return; const src = sourceDe(l) || l;
+  if (app.choisi) { app.choisi = null; peindre(); }
+  app.cible = { type: 'fil', l: src }; app.base.defiler = true;
+  if (!lignesVisibles().some(([x]) => x === src)) app.base.filtre = '';
+  ouvrirBase(); rendreBase(); allumerFil(f); }
+function deselectionner() { const c = app.cible;
+  if (c) { app.cible = null; if (app.choisi) { app.choisi = null; peindre(); }
+    if (c.type === 'bloc' && app.base.filtre === c.nom) app.base.filtre = '';
+    rendreBase(); eteindre(); }
+  if (app.fiche) fermerFiche(); }
 
 /* ---- les folios : y aller, les montrer --------------------------------- */
 function allerAuPlan(plan) { if (plan === app.plan) return; app.plan = plan; app.choisi = null; fermerFiche(); redessiner(); ajuster(); }
@@ -211,7 +232,7 @@ function lierRecherche() { const q = $('q'), box = $('q-liste');
     else if (e.key === 'ArrowUp') { e.preventDefault(); qSel = Math.max(qSel - 1, 0); montrerCandidats(); }
     else if (e.key === 'Enter') { e.preventDefault(); const c = qCands[qSel]; if (c) trouve(c); }
     else if (e.key === 'Escape') { q.value = ''; fermerRecherche(); q.blur(); } });
-  // trouvé : le champ se vide, le résultat est dans la fiche
+  // trouvé : le champ se vide, le résultat est sur le plan et dans la base
   const trouve = c => { q.value = ''; fermerRecherche(); q.blur(); aller(c); };
   box.addEventListener('pointerdown', e => e.preventDefault());   // le champ garde le focus
   box.addEventListener('click', e => { const b = e.target.closest('.q-item'); if (!b) return; const c = qCands[+b.dataset.i]; if (c) trouve(c); });
@@ -219,93 +240,159 @@ function lierRecherche() { const q = $('q'), box = $('q-liste');
   // sur téléphone le champ est replié : on l'ouvre d'abord, puis on lui donne le focus
   $('recherche').addEventListener('click', e => { if (e.target.closest('.q-liste')) return; $('haut').classList.add('cherche'); q.focus(); }); }
 
-/* ---- la fiche ----------------------------------------------------------- */
-function ouvrirFiche(mode, corps, pied, large) { const f = $('fiche');
-  f.classList.toggle('large', !!large); $('fiche-corps').innerHTML = corps; const p = $('fiche-pied'); p.innerHTML = pied || ''; p.hidden = !pied;
+/* ---- la base : la table des liaisons, corrigée en direct --------------- */
+const COLONNES_BASE = [
+  { k: 'de', lib: 'De', cls: 'rep' }, { k: 'borneDe', lib: 'B.', cls: 'n' },
+  { k: 'vers', lib: 'Vers', cls: 'rep' }, { k: 'borneVers', lib: 'B.', cls: 'n' },
+  { k: 'cable', lib: 'Fil', cls: 'fil' }, { k: 'type', lib: 'Type', cls: 'type', option: true }, { k: 'plan', lib: 'Folio', cls: 'n' },
+  { k: 'pnDe', lib: 'Conn. dép.', cls: 'pn', option: true }, { k: 'pnVers', lib: 'Conn. arr.', cls: 'pn', option: true }, { k: 'route', lib: 'Route', cls: 'route', option: true }];
+const CAP_LIGNES = 400;
+/* La colonne Folio : se corrige quand le folio vient du fichier ; se lit
+   seulement quand l'outil a découpé lui-même ; absente s'il n'y a qu'une feuille. */
+const modeFolio = () => app.nFolios ? 'auto' : (plans().length ? 'fichier' : 'aucun');
+/* Une colonne du retest que le contrat n'utilise pas ne prend pas de place. */
+function colonnes() { const V = verite(), mf = modeFolio();
+  return COLONNES_BASE.filter(c => c.k === 'plan' ? mf !== 'aucun' : (!c.option || V.some(l => l[c.k]))); }
+const cleDe = l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable].join('\u0001');
+/* Quand l'outil a découpé, chaque liaison d'origine vit sur un ou deux folios. */
+function foliosParSource() { const m = new Map(); if (!app.nFolios) return m;
+  app.contrat.liaisons.forEach(d => { const s = sourceDe(d); if (!s) return; const k = cleDe(s); const t = m.get(k) || m.set(k, []).get(k); if (!t.includes(d.plan)) t.push(d.plan); });
+  return m; }
+function lignesVisibles() { const V = verite(), f = app.base.filtre.trim().toLowerCase(), C = colonnes();
+  let L = V.map((l, i) => [l, i]); if (f) L = L.filter(([l]) => C.some(c => String(l[c.k]).toLowerCase().includes(f)));
+  const tri = app.base.tri; if (!tri) return L;
+  const cmp = (a, b) => { const x = a[0][tri.k], y = b[0][tri.k], nx = parseFloat(x), ny = parseFloat(y);
+    return (!isNaN(nx) && !isNaN(ny) && String(nx) === x && String(ny) === y) ? nx - ny : String(x).localeCompare(String(y), 'fr', { numeric: true }); };
+  return L.sort((a, b) => tri.sens * cmp(a, b) || a[1] - b[1]); }
+function ligneChoisie(l) { const c = app.cible; if (!c) return false;
+  return c.type === 'fil' ? c.l === l : (l.de === c.nom || l.vers === c.nom); }
+function rendreLigne(l, i, folios) { const c = app.cible, mode = modeFolio();
+  const surCeFolio = app.plan === '*' || (mode === 'auto' ? (folios.get(cleDe(l)) || []).includes(app.plan) : l.plan === app.plan);
+  const cell = col => { if (col.k === 'plan' && mode === 'auto') return `<td class="n">${(folios.get(cleDe(l)) || []).map(p => `<button class="f" data-plan="${escA(p)}" title="Aller au folio ${escA(p)}">${esc(p)}</button>`).join('')}</td>`;
+    return `<td${col.cls ? ` class="${col.cls}"` : ''}><input data-i="${i}" data-f="${col.k}" value="${escA(l[col.k])}" aria-label="${col.lib}, ligne ${i + 1}" spellcheck="false" autocomplete="off"></td>`; };
+  return `<tr data-i="${i}" class="${ligneChoisie(l) ? 'on' : ''}${surCeFolio && liaisonComplete(l) ? '' : ' hors'}"><td class="g"><button data-voir="${i}" title="${surCeFolio ? 'Voir ce fil sur le plan' : 'Ce fil n’est pas sur ce folio'}">${i + 1}</button></td>`
+    + colonnes().map(cell).join('') + `<td class="x"><button data-x="${i}" aria-label="Supprimer la ligne ${i + 1}">×</button></td></tr>`; }
+/* Tout le panneau se déduit de `app` ; le tableau n'est pas refait tant
+   qu'on y écrit (voir rafraichirBase). */
+function rendreBase() { const b = app.base; b.sale = false; if ($('base').hidden) { b.sale = true; return; }
+  const V = verite(), vues = lignesVisibles(), folios = foliosParSource(), tri = b.tri;
+  $('ba-titre').innerHTML = vues.length === V.length ? `<b>${V.length}</b> liaison${V.length > 1 ? 's' : ''}` : `<b>${vues.length}</b> sur ${V.length}`;
+  const fi = $('ba-filtre'); if (fi.value !== b.filtre) fi.value = b.filtre; $('ba-vider').hidden = !b.filtre;
+  $('ba-thead').innerHTML = '<tr><th title="Numéro de ligne">#</th>' + colonnes().map(c => `<th data-k="${c.k}" class="${tri && tri.k === c.k ? 'tri' : ''}" title="Trier par ${escA(c.lib)}">${c.lib}${tri && tri.k === c.k ? `<span class="sens">${tri.sens > 0 ? '▲' : '▼'}</span>` : ''}</th>`).join('') + '<th></th>';
+  $('ba-tbody').innerHTML = vues.slice(0, CAP_LIGNES).map(([l, i]) => rendreLigne(l, i, folios)).join('')
+    + (vues.length > CAP_LIGNES ? `<tr class="reste"><td colspan="${colonnes().length + 2}">… et ${vues.length - CAP_LIGNES} autres lignes — affine le filtre.</td></tr>` : '')
+    + (!vues.length ? `<tr class="reste"><td colspan="${colonnes().length + 2}">${V.length ? 'Rien qui corresponde au filtre.' : 'Aucune liaison. Ajoute une ligne, ou dépose un fichier.'}</td></tr>` : '');
+  rendreEquip();
+  if (b.defiler) { b.defiler = false; const tr = $('ba-tbody').querySelector('tr.on'); if (tr && tr.scrollIntoView) { try { tr.scrollIntoView({ block: 'center' }); } catch (_) { } } } }
+/* Le rendu attend qu'on ait fini d'écrire dans une cellule : refaire le
+   tableau sous les doigts casserait la saisie et la tabulation. On s'en
+   remet à `enSaisie` (focusin / focusout) et non à document.activeElement :
+   pendant le `change` que déclenche Tab, le navigateur l'a déjà vidé. */
+function rafraichirBase() { if (app.base.enSaisie) { app.base.sale = true; return; } rendreBase(); }
+function marquerLignes() { if ($('base').hidden) return;
+  $('ba-tbody').querySelectorAll('tr[data-i]').forEach(tr => { const l = verite()[+tr.dataset.i]; tr.classList.toggle('on', !!l && ligneChoisie(l)); }); }
+const natureDe = nom => { const q = lireRepere(nom); return (q && q.num && CODES[q.code]) ? CODES[q.code].nom : 'équipement'; };
+/* L'équipement choisi : son repère et sa désignation, au-dessus de ses fils. */
+function rendreEquip() { const box = $('ba-equip'), c = app.cible; box.hidden = !(c && c.type === 'bloc'); if (box.hidden) return;
+  const nom = c.nom, n = verite().filter(l => l.de === nom || l.vers === nom).length, pn = [...new Set(verite().flatMap(l => l.de === nom ? [l.pnDe] : (l.vers === nom ? [l.pnVers] : [])).filter(Boolean))];
+  box.innerHTML = `<div class="sur">${esc(natureDe(nom))} · ${n} fil${n > 1 ? 's' : ''}${pn.length ? ' · ' + esc(pn.join(' · ')) : ''}</div>
+    <div class="actions"><button class="btn lien danger" id="eq-del" title="Supprimer l’équipement et ses fils">Supprimer</button></div>
+    <input class="rep" id="eq-rep" value="${escA(nom)}" aria-label="Repère" title="Renommer : chaque fil suit" spellcheck="false">
+    <input class="des" id="eq-des" value="${escA(app.contrat.designations.get(nom) || '')}" placeholder="Désignation, écrite sous le repère" aria-label="Désignation" spellcheck="false">`;
+  $('eq-rep').addEventListener('change', e => { const nr = e.target.value.trim(); if (!nr || nr === nom) { e.target.value = nom; return; }
+    histPush('renommage de ' + nom); renommer(nom, nr); app.choisi = nr; app.cible = { type: 'bloc', nom: nr }; app.base.filtre = nr; apresEdition(); });
+  $('eq-des').addEventListener('change', e => { histPush('désignation de ' + nom); designer(nom, e.target.value.trim()); apresEdition(); });
+  $('eq-del').onclick = () => { if (!confirm('Supprimer « ' + nom + ' » et ses ' + n + ' liaison(s) ?')) return;
+    histPush('suppression de ' + nom); supprimerEquipement(nom); app.base.filtre = ''; apresEdition(); dire(nom + ' supprimé.'); };
+  box.querySelectorAll('input').forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } })); }
+
+/* Une cellule corrigée : la vérité change, le plan suit, le fil s'allume.
+   Un bloc choisi le reste : on corrige ses fils sans quitter sa fiche. */
+function appliquerCellule(inp) { const l = verite()[+inp.dataset.i], k = inp.dataset.f; if (!l || !k) return;
+  const v = inp.value.trim(); if (l[k] === v) return;
+  if (!inp.dataset.hist) { histPush('modification d’une liaison'); inp.dataset.hist = '1'; }   // une seule entrée d'historique par saisie
+  l[k] = v; app.actif = l; if (!(app.cible && app.cible.type === 'bloc')) app.cible = { type: 'fil', l }; apresEdition(); }
+/* Entrer dans une cellule : sa ligne devient ce qu'on regarde. */
+function entrerCellule(inp) { delete inp.dataset.hist; app.base.enSaisie = true;
+  const l = verite()[+inp.dataset.i]; if (!l) return; app.actif = l;
+  if (!(app.cible && app.cible.type === 'bloc')) app.cible = { type: 'fil', l }; rallumer(); }
+function quitterTable() { app.base.enSaisie = false; app.actif = null; if (app.base.sale) rendreBase(); rallumer(); }
+function ajouterLiaison(de) { histPush('ajout d’une liaison');
+  const n = liaison({ de: de || '', plan: (modeFolio() === 'fichier' && app.plan !== '*') ? app.plan : '' }); verite().push(n);
+  const i = verite().length - 1, sousBloc = de && app.cible && app.cible.type === 'bloc' && app.cible.nom === de;
+  if (!sousBloc) { app.cible = { type: 'fil', l: n }; app.base.filtre = ''; }
+  app.base.tri = null; apresEdition(); rendreBase();
+  const tr = $('ba-tbody').querySelector(`tr[data-i="${i}"]`); const inp = tr && tr.querySelector(`input[data-f="${de ? 'vers' : 'de'}"]`);
+  if (inp) { inp.focus(); try { tr.scrollIntoView({ block: 'nearest' }); } catch (_) { } } }
+function supprimerLiaison(i) { const V = verite(), l = V[i]; if (!l) return; histPush('suppression d’une liaison'); V.splice(i, 1);
+  if (app.cible && app.cible.type === 'fil' && app.cible.l === l) app.cible = null; apresEdition(); rendreBase(); }
+/* Voir un fil depuis sa ligne : on change de folio s'il le faut, on le cadre. */
+function voirLiaison(i) { const l = verite()[i]; if (!l) return;
+  if (app.choisi) { app.choisi = null; peindre(); } app.cible = { type: 'fil', l };
+  const ou = modeFolio() === 'auto' ? (foliosParSource().get(cleDe(l)) || []) : (l.plan ? [l.plan] : []);
+  if (app.plan !== '*' && ou.length && !ou.includes(app.plan)) allerAuPlan(ou[0]);
+  const w = filDe(l); if (w) { allumerFil(w); viserFil(w); } marquerLignes(); }
+function lierBase() { const t = $('ba-tab'), corps = $('ba-tbody'), fi = $('ba-filtre'); let sT, fT;
+  fi.addEventListener('input', () => { clearTimeout(fT); fT = setTimeout(() => { app.base.filtre = fi.value;
+    const c = app.cible; if (c && c.type === 'bloc' && fi.value.trim() !== c.nom) { app.cible = null; app.choisi = null; peindre(); }
+    rendreBase(); rallumer(); }, 150); });
+  fi.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); if (fi.value) { fi.value = ''; fi.dispatchEvent(new Event('input')); } else fi.blur(); } });
+  $('ba-vider').onclick = () => { fi.value = ''; fi.dispatchEvent(new Event('input')); fi.focus(); };
+  $('ba-add').onclick = () => ajouterLiaison(app.cible && app.cible.type === 'bloc' ? app.cible.nom : '');
+  $('ba-fermer').onclick = fermerBase;
+  $('ba-thead').addEventListener('click', e => { const th = e.target.closest('th[data-k]'); if (!th) return; const k = th.dataset.k, tri = app.base.tri;
+    app.base.tri = !tri || tri.k !== k ? { k, sens: 1 } : (tri.sens > 0 ? { k, sens: -1 } : null); rendreBase(); });
+  t.addEventListener('focusin', e => { if (e.target.dataset.f != null) entrerCellule(e.target); });
+  t.addEventListener('input', e => { const inp = e.target; if (inp.dataset.f == null) return; clearTimeout(sT); sT = setTimeout(() => appliquerCellule(inp), 350); });
+  t.addEventListener('change', e => { const inp = e.target; if (inp.dataset.f == null) return; clearTimeout(sT); appliquerCellule(inp); });
+  // le focus part : si c'est hors de la table (on le sait un instant plus tard), la saisie est finie
+  t.addEventListener('focusout', () => setTimeout(() => { if (!t.contains(document.activeElement)) quitterTable(); }, 0));
+  t.addEventListener('keydown', e => { const inp = e.target; if (inp.dataset.f == null) return;
+    if (e.key === 'Escape') { e.stopPropagation(); inp.blur(); }
+    else if (e.key === 'Enter') { e.preventDefault(); const tr = inp.closest('tr'), suiv = tr && tr.nextElementSibling; const n = suiv && suiv.querySelector(`input[data-f="${inp.dataset.f}"]`); if (n) n.focus(); else inp.blur(); } });
+  corps.addEventListener('mouseover', e => { const tr = e.target.closest('tr[data-i]'); if (!tr) return; const w = filDe(verite()[+tr.dataset.i]); if (w) allumerFil(w); });
+  corps.addEventListener('mouseleave', () => rallumer());
+  corps.addEventListener('click', e => { const v = e.target.closest('button[data-voir]'), x = e.target.closest('button[data-x]'), f = e.target.closest('button[data-plan]');
+    if (v) voirLiaison(+v.dataset.voir); else if (x) supprimerLiaison(+x.dataset.x); else if (f) allerAuPlan(f.dataset.plan); });
+  lierPoignee(); }
+/* La poignée : la base se règle en largeur (à droite) ou en hauteur (en tiroir). */
+function lierPoignee() { const p = $('ba-poignee'), b = $('base'); let actif = false;
+  p.addEventListener('pointerdown', e => { actif = true; b.classList.add('redim'); try { p.setPointerCapture(e.pointerId); } catch (_) { } e.preventDefault(); });
+  p.addEventListener('pointermove', e => { if (!actif) return;
+    if (telephone()) { app.base.hauteur = Math.round(Math.max(160, Math.min(window.innerHeight * 0.85, window.innerHeight - e.clientY))); }
+    else { app.base.largeur = Math.round(Math.max(340, Math.min(window.innerWidth * 0.7, window.innerWidth - 12 - e.clientX))); }
+    appliquerTailleBase(); });
+  const fin = () => { if (!actif) return; actif = false; b.classList.remove('redim'); memoriserBase(); ajuster(true); };
+  p.addEventListener('pointerup', fin); p.addEventListener('pointercancel', fin); }
+function appliquerTailleBase() { const r = document.documentElement.style;
+  if (app.base.largeur) r.setProperty('--base-l', app.base.largeur + 'px'); if (app.base.hauteur) r.setProperty('--base-h', app.base.hauteur + 'px'); }
+function ouvrirBase() { if (app.base.ouvert) return; app.base.ouvert = true; fermerFiche();
+  const b = $('base'); b.hidden = false; b.classList.remove('entre'); void b.offsetWidth; b.classList.add('entre');
+  document.body.classList.add('base-ouverte'); $('btnBase').setAttribute('aria-pressed', 'true');
+  rendreBase(); memoriserBase(); ajuster(true); }
+function fermerBase() { if (!app.base.ouvert) return; app.base.ouvert = false;
+  $('base').hidden = true; document.body.classList.remove('base-ouverte'); $('btnBase').setAttribute('aria-pressed', 'false');
+  if (app.cible) { app.cible = null; if (app.choisi) { app.choisi = null; peindre(); } eteindre(); }
+  memoriserBase(); ajuster(true); }
+function basculerBase() { if (app.base.ouvert) fermerBase(); else if (app.contrat.liaisons.length || verite().length) ouvrirBase(); else dire('Rien à montrer : dépose d’abord un fichier.'); }
+/* Ouverte ou non, sa taille : une commodité de ce navigateur, rien de plus. */
+function memoriserBase() { try { localStorage.setItem(CLE_BASE, JSON.stringify({ ouvert: app.base.ouvert, largeur: app.base.largeur, hauteur: app.base.hauteur })); } catch (_) { } }
+function relireBase() { let o = null; try { o = JSON.parse(localStorage.getItem(CLE_BASE) || 'null'); } catch (_) { }
+  if (o) { app.base.largeur = o.largeur || 0; app.base.hauteur = o.hauteur || 0; } appliquerTailleBase();
+  return o ? !!o.ouvert : !telephone(); }   // au premier lancement, la base est là sur un grand écran
+
+/* ---- la fiche : cartouche, collage — les documents rares ---------------- */
+function ouvrirFiche(mode, corps, pied) { const f = $('fiche'); fermerBase();
+  $('fiche-corps').innerHTML = corps; const p = $('fiche-pied'); p.innerHTML = pied || ''; p.hidden = !pied;
   const nouveau = f.hidden || !app.fiche || app.fiche.mode !== mode.mode;
   f.hidden = false; if (nouveau) { f.classList.remove('entre'); void f.offsetWidth; f.classList.add('entre'); }
   app.fiche = mode; $('fiche-corps').scrollTop = 0;
-  $('fi-fermer').onclick = fermerFiche; }
-function fermerFiche() { const f = $('fiche'); if (f.hidden && !app.fiche) return; f.hidden = true; app.fiche = null;
-  if (app.choisi) { app.choisi = null; peindre(); } eteindre(); }
-const tete = (sur, titre, editable) => `<div class="fiche-tete"><div class="min0"><div class="sur">${esc(sur)}</div>${editable
-  ? `<input class="titre" id="${editable}" value="${escA(titre)}" aria-label="${escA(sur)}" title="Se modifie ici" spellcheck="false" placeholder="—">` : `<h2 class="titre">${esc(titre)}</h2>`}</div>
+  $('fi-fermer').onclick = () => fermerFiche(true); if (nouveau) ajuster(true); }
+/* `recadrer` : quand on ferme la fiche pour elle-même, le plan reprend la place. */
+function fermerFiche(recadrer) { const f = $('fiche'); if (f.hidden && !app.fiche) return; f.hidden = true; app.fiche = null; if (recadrer) ajuster(true); }
+const tete = (sur, titre) => `<div class="fiche-tete"><div class="min0"><div class="sur">${esc(sur)}</div><h2 class="titre">${esc(titre)}</h2></div>
   <button class="rond fermer" id="fi-fermer" aria-label="Fermer la fiche"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`;
 const champ = (id, lib, val, opt) => `<label class="champ${opt && opt.sans ? ' sans' : ''}"><span>${lib}</span><input id="${id}" value="${escA(val || '')}"${opt && opt.ph ? ` placeholder="${escA(opt.ph)}"` : ''} spellcheck="false"></label>`;
-const natureDe = nom => { const q = lireRepere(nom); return (q && q.num && CODES[q.code]) ? CODES[q.code].nom : 'équipement'; };
-
-function raccordementsDe(nom) { const out = [];
-  verite().forEach((l, i) => { if (estRenvoi(l.de) || estRenvoi(l.vers)) return;
-    if (l.de === nom) out.push({ i, l, borne: l.borneDe || '·', dest: l.vers, dt: l.borneVers, pn: l.pnDe });
-    else if (l.vers === nom) out.push({ i, l, borne: l.borneVers || '·', dest: l.de, dt: l.borneDe, pn: l.pnVers }); });
-  return out.sort((a, b) => { const na = parseFloat(a.borne), nb = parseFloat(b.borne); return (!isNaN(na) && !isNaN(nb)) ? na - nb : String(a.borne).localeCompare(String(b.borne)); }); }
-function ficheEquipement(nom) {
-  const cn = raccordementsDe(nom), pn = [...new Set(cn.map(x => x.pn).filter(Boolean))], multi = plans().length > 1;
-  const ailleurs = d => { if (!multi || app.plan === '*') return ''; const ou = plansDuRepere(d); return (ou.length && !ou.includes(app.plan)) ? `<span class="f" title="Sur le folio ${escA(ou[0])}">f. ${esc(ou[0])}</span>` : ''; };
-  const lignes = cn.map(x => `<li tabindex="0" role="button" data-i="${x.i}" title="Voir ce fil"><span class="borne">${esc(x.borne)}</span><span class="fleche">→</span>
-      <button class="dest" data-aller="${escA(x.dest)}" title="Aller à ${escA(x.dest)}">${esc(x.dest)}${x.dt ? `<span class="b">:${esc(x.dt)}</span>` : ''}</button>
-      ${ailleurs(x.dest)}<span class="meta">${esc([x.l.cable, x.l.type].filter(Boolean).join(' · '))}</span></li>`).join('');
-  const corps = tete(natureDe(nom), nom, 'ed-rep')
-    + champ('ed-des', 'Désignation', app.contrat.designations.get(nom), { ph: 'Ce que c’est, écrit sous le repère', sans: true })
-    + (pn.length ? `<div class="info"><span>Connecteur</span><b class="mono">${esc(pn.join(' · '))}</b></div>` : '')
-    + `<div class="sous-titre">Raccordements <span class="compte">${cn.length}</span></div><ul class="racc" id="racc">${lignes || '<li class="rien">Aucun raccordement.</li>'}</ul>`;
-  const pied = `<button class="btn cuivre" id="ed-ok" hidden>Enregistrer</button><button class="btn papier" id="ed-add">+ Liaison</button><span class="espace"></span><button class="btn lien danger" id="ed-del">Supprimer</button>`;
-  ouvrirFiche({ mode: 'equip', nom }, corps, pied);
-  const rep = $('ed-rep'), des = $('ed-des'), ok = $('ed-ok');
-  const modifie = () => { ok.hidden = rep.value.trim() === nom && des.value.trim() === (app.contrat.designations.get(nom) || ''); };
-  [rep, des].forEach(el => { el.addEventListener('input', modifie); el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); ok.click(); } }); });
-  ok.onclick = () => { const nr = rep.value.trim() || nom, nd = des.value.trim(); if (ok.hidden) return;
-    histPush('modification de ' + nom); if (nr !== nom) renommer(nom, nr); designer(nr, nd); app.choisi = nr; apresEdition(); ficheEquipement(nr); rallumer(); dire('Enregistré.'); };
-  $('ed-add').onclick = () => ficheFil(liaison({ de: nom }), true);
-  $('ed-del').onclick = () => { if (!confirm('Supprimer « ' + nom + ' » et ses ' + cn.length + ' liaison(s) ?')) return;
-    histPush('suppression de ' + nom); supprimerEquipement(nom); apresEdition(); dire(nom + ' supprimé.'); };
-  $('racc').addEventListener('click', e => { const a = e.target.closest('.dest'); if (a) { aller({ type: 'repere', nom: a.dataset.aller }); return; }
-    const li = e.target.closest('li[data-i]'); if (li) { const l = verite()[+li.dataset.i]; if (l) { ficheFil(l); const w = filDe(l); if (w) { allumerFil(w); viserFil(w); } } } });
-  $('racc').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('li[data-i]')) e.target.click(); });
-}
-function ficheFil(l, neuve) {
-  const corps = tete(neuve ? 'Nouvelle liaison' : 'Fil', l.cable || (neuve ? '' : '—'), 'fl-cable')
-    + `<div class="grille bornes">${champ('fl-de', 'De', l.de, { ph: 'repère' })}${champ('fl-bde', 'Borne', l.borneDe)}</div>`
-    + `<div class="grille bornes">${champ('fl-vers', 'Vers', l.vers, { ph: 'repère' })}${champ('fl-bvers', 'Borne', l.borneVers)}</div>`
-    + `<div class="grille">${champ('fl-type', 'Type / section', l.type)}${champ('fl-route', 'Route', l.route)}</div>`
-    + `<div class="grille">${champ('fl-pnde', 'Connecteur départ', l.pnDe)}${champ('fl-pnvers', 'Connecteur arrivée', l.pnVers)}</div>`
-    + (!app.nFolios && plans().length ? champ('fl-plan', 'Folio', l.plan) : '')
-    + (neuve ? '' : `<div class="aller">Aller à ${[l.de, l.vers].filter(n => n && !estRenvoi(n)).map(n => `<button data-aller="${escA(n)}">${esc(n)}</button>`).join('')}</div>`);
-  const pied = `<button class="btn cuivre" id="fl-ok">${neuve ? 'Ajouter' : 'Enregistrer'}</button><span class="espace"></span>${neuve ? '' : '<button class="btn lien danger" id="fl-del">Supprimer</button>'}`;
-  ouvrirFiche({ mode: neuve ? 'neuve' : 'fil', l }, corps, pied);
-  const v = id => ($(id) ? $(id).value.trim() : '');
-  const lire = () => ({ cable: v('fl-cable'), de: v('fl-de'), borneDe: v('fl-bde'), vers: v('fl-vers'), borneVers: v('fl-bvers'), type: v('fl-type'), route: v('fl-route'), pnDe: v('fl-pnde'), pnVers: v('fl-pnvers'), plan: $('fl-plan') ? v('fl-plan') : l.plan });
-  $('fl-ok').onclick = () => { const ch = lire();
-    if (neuve) { if (!ch.de || !ch.vers) { dire('Il faut un repère à chaque bout.', true); return; }
-      if (!ch.plan && !app.nFolios && app.plan !== '*') ch.plan = app.plan;
-      histPush('ajout d’une liaison'); const n = liaison(ch); verite().push(n); apresEdition(); ficheFil(n); rallumer(); dire('Liaison ajoutée.'); return; }
-    histPush('modification d’une liaison'); Object.assign(l, ch); apresEdition(); ficheFil(l); rallumer(); dire('Enregistré.'); };
-  $('fiche-corps').querySelectorAll('input').forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('fl-ok').click(); } }));
-  if (!neuve) { $('fl-del').onclick = () => { histPush('suppression d’une liaison'); const V = verite(), i = V.indexOf(l); if (i >= 0) V.splice(i, 1); fermerFiche(); apresEdition(); dire('Liaison supprimée.'); };
-    $('fiche-corps').querySelectorAll('.aller button').forEach(b => b.onclick = () => aller({ type: 'repere', nom: b.dataset.aller })); }
-  if (neuve) $('fl-vers').focus();
-}
-function ficheTable(filtre) { const V = verite(), CAP = 300, f = (filtre || '').toLowerCase();
-  const folio = !app.nFolios && plans().length > 0;   // le folio vient du fichier : il se corrige ; découpé tout seul, il ne se montre pas
-  const vues = V.map((l, i) => [l, i]).filter(([l]) => !f || [l.de, l.vers, l.cable].some(x => x.toLowerCase().includes(f)));
-  const cell = (i, k, v, cls) => `<td${cls ? ` class="${cls}"` : ''}><input data-i="${i}" data-f="${k}" value="${escA(v)}" aria-label="${k}" spellcheck="false"></td>`;
-  const lignes = vues.slice(0, CAP).map(([l, i]) => `<tr>${cell(i, 'de', l.de)}${cell(i, 'borneDe', l.borneDe, 'n')}${cell(i, 'vers', l.vers)}${cell(i, 'borneVers', l.borneVers, 'n')}${cell(i, 'cable', l.cable)}${folio ? cell(i, 'plan', l.plan, 'n') : ''}<td class="x"><button data-x="${i}" aria-label="Supprimer la liaison">×</button></td></tr>`).join('')
-    + (vues.length > CAP ? `<tr class="reste"><td colspan="7">… et ${vues.length - CAP} autres — affine le filtre.</td></tr>` : '');
-  const corps = tete('Contrat', 'Toutes les liaisons')
-    + `<div class="filtre"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="tb-filtre" value="${escA(filtre || '')}" placeholder="Filtrer par repère ou n° de fil" aria-label="Filtrer"></div>`
-    + `<table class="tab" id="tb"><thead><tr><th>De</th><th>B.</th><th>Vers</th><th>B.</th><th>Fil</th>${folio ? '<th>Folio</th>' : ''}<th></th></tr></thead><tbody>${lignes || '<tr class="reste"><td colspan="7">Aucune liaison.</td></tr>'}</tbody></table>`;
-  const pied = `<button class="btn papier" id="tb-add">+ Liaison</button><span class="espace"></span><span class="note">${V.length} liaison${V.length > 1 ? 's' : ''}</span>`;
-  ouvrirFiche({ mode: 'table' }, corps, pied, true);
-  const fi = $('tb-filtre'); let fT; fi.addEventListener('input', () => { clearTimeout(fT); fT = setTimeout(() => { const pos = fi.selectionStart; ficheTable(fi.value); $('tb-filtre').focus(); $('tb-filtre').setSelectionRange(pos, pos); }, 200); });
-  if (filtre !== undefined) { fi.focus(); }
-  const t = $('tb');
-  t.addEventListener('focusin', e => { if (e.target.dataset.i != null) e.target.dataset.avant = e.target.value; });
-  t.addEventListener('change', e => { const i = e.target.dataset.i; if (i == null) return; const l = V[+i]; if (!l) return;
-    histPush('modification d’une liaison'); l[e.target.dataset.f] = e.target.value.trim(); apresEdition(); });
-  t.addEventListener('click', e => { const b = e.target.closest('button[data-x]'); if (!b) return;
-    histPush('suppression d’une liaison'); V.splice(+b.dataset.x, 1); apresEdition(); ficheTable(fi.value); });
-  $('tb-add').onclick = () => ficheFil(liaison({}), true);
-}
 const CHAMPS_CARTOUCHE = [['ca-titre', 'titre', 'Titre'], ['ca-auteur', 'auteur', 'Dessiné par'], ['ca-indice', 'indice', 'Indice'], ['ca-date', 'date', 'Date'], ['ca-echelle', 'echelle', 'Échelle']];
 function ficheCartouche() { const c = app.contrat.cartouche;
   const corps = tete('Sur chaque folio', 'Cartouche') + champ('ca-titre', 'Titre', c.titre, { sans: true }) + champ('ca-auteur', 'Dessiné par', c.auteur, { sans: true })
@@ -327,10 +414,6 @@ function ficheColler() {
   $('co-fichier').onclick = () => $('fichier').click();
   $('co-txt').focus();
 }
-/* Après une correction, la fiche se remet au niveau de ce qu'elle montre. */
-function rafraichirFiche() { const f = app.fiche; if (!f) return;
-  if (f.mode === 'equip') { if (verite().some(l => l.de === f.nom || l.vers === f.nom)) ficheEquipement(f.nom); else fermerFiche(); }
-  else if (f.mode === 'table') ficheTable($('tb-filtre') ? $('tb-filtre').value : ''); }
 
 /* ---- corriger : toujours la vérité, puis on refait les folios ----------- */
 function sourceDe(l) { if (!app.source || app.source.includes(l)) return l;
@@ -342,12 +425,13 @@ function renommer(ancien, nouveau) { verite().forEach(l => { if (l.de === ancien
 function designer(nom, d) { if (d) app.contrat.designations.set(nom, d); else app.contrat.designations.delete(nom); }
 function supprimerEquipement(nom) { const g = l => l.de !== nom && l.vers !== nom;
   if (app.source) app.source = app.source.filter(g); app.contrat.liaisons = app.contrat.liaisons.filter(g);
-  app.contrat.designations.delete(nom); app.choisi = null; fermerFiche(); }
+  app.contrat.designations.delete(nom); app.choisi = null; app.cible = null; }
 function refaireFolios() { const src = app.source, plan = app.plan; app.contrat.liaisons = src; app.source = null; app.nFolios = 0;
   const R = decouperEnFolios(src, app.budget);
   if (R.applique) { app.source = src; app.contrat.liaisons = R.liaisons; app.nFolios = R.nFolios; app.plan = plansDe(R.liaisons).includes(plan) ? plan : '1'; }
   else app.plan = '*'; }
-function apresEdition() { if (app.nFolios) refaireFolios(); redessiner(); rafraichirFiche(); sauver(); }
+/* Après chaque correction : les folios, le plan, la base, l'enregistrement. */
+function apresEdition() { if (app.nFolios) refaireFolios(); redessiner(); sauver(); }
 
 /* ---- les folios automatiques : découper, dérouler, ajuster tout seul --- */
 function decouper(budget) { const src = verite(); const R = decouperEnFolios(src, budget);
@@ -377,8 +461,10 @@ function histPush(quoi) { app.hist.push({ quoi, liaisons: app.contrat.liaisons.m
   nFolios: app.nFolios, budget: app.budget, plan: app.plan, nom: app.nom, designations: new Map(app.contrat.designations) });
   if (app.hist.length > 40) app.hist.shift(); synchroniserHistorique(); }
 function annuler() { const p = app.hist.pop(); if (!p) return null;
-  app.contrat.liaisons = p.liaisons; app.source = p.source; app.nFolios = p.nFolios; app.budget = p.budget || 16; app.plan = p.plan; app.nom = p.nom || ''; app.contrat.designations = p.designations; app.choisi = null;
-  fermerFiche(); redessiner(); ajuster(true); sauver(); return p.quoi; }
+  app.contrat.liaisons = p.liaisons; app.source = p.source; app.nFolios = p.nFolios; app.budget = p.budget || 16; app.plan = p.plan; app.nom = p.nom || ''; app.contrat.designations = p.designations;
+  app.choisi = null; app.cible = null; app.actif = null; app.base.enSaisie = false; fermerFiche();
+  if (document.activeElement && $('ba-tab').contains(document.activeElement)) document.activeElement.blur();
+  redessiner(); ajuster(true); sauver(); return p.quoi; }
 let sauveT = null;
 function sauver() { clearTimeout(sauveT); sauveT = setTimeout(() => { try {
     localStorage.setItem(CLE_CONTRAT, JSON.stringify({ liaisons: app.contrat.liaisons, source: app.source, nFolios: app.nFolios, budget: app.budget, plan: app.plan, nom: app.nom,
@@ -397,7 +483,9 @@ function relire() { try { const j = localStorage.getItem(CLE_CONTRAT); if (!j) r
 
 /* ---- charger un contrat ----------------------------------------------- */
 function chargerContrat(liaisons, quoi, nom) { histPush(quoi || 'chargement d’un contrat');
-  app.contrat.liaisons = liaisons.map(liaison); app.source = null; app.nFolios = 0; app.choisi = null; app.nom = nom || app.nom;
+  app.contrat.liaisons = liaisons.map(liaison); app.source = null; app.nFolios = 0; app.choisi = null; app.cible = null; app.actif = null; app.nom = nom || app.nom;
+  app.base.filtre = ''; app.base.tri = null; app.base.enSaisie = false;
+  if (document.activeElement && $('ba-tab').contains(document.activeElement)) document.activeElement.blur();
   const P = plans(); app.plan = P.length > 1 ? P[0] : '*';
   fermerFiche(); fermerMenu(); $('q').value = '';
   redessiner(); ajuster(); if (P.length <= 1) ajusterFolios(); sauver(); }
@@ -437,7 +525,7 @@ function synchroniserContexte() { const n = app.contrat.liaisons.length;
   $('ctx-txt').textContent = n ? `${n} liaison${n > 1 ? 's' : ''} · ${reperesDe(verite()).filter(r => !estRenvoi(r)).length} repères` + (P.length > 1 ? ` · ${P.length} folios` : '') : ''; }
 function synchroniserHistorique() { const b = $('btnUndo'); b.hidden = !app.hist.length;
   if (app.hist.length) b.title = 'Annuler : ' + app.hist[app.hist.length - 1].quoi + ' (Ctrl+Z)'; }
-function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); }
+function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); rafraichirBase(); }
 let toastT = null;
 function dire(msg, erreur) { const t = $('toast'); t.textContent = msg; t.classList.toggle('erreur', !!erreur); t.classList.add('on');
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), erreur ? 6000 : 2800); }
@@ -448,28 +536,31 @@ function fermerMenu() { $('menu').hidden = true; $('btnMenu').setAttribute('aria
 function lierPanneau() {
   const o = (id, fn) => { const e = $(id); if (e) e.onclick = fn; };
   const choisirFichier = () => $('fichier').click();
+  const exemple = () => chargerContrat(contratEssai(), 'contrat d’exemple', 'Contrat d’exemple');
   $('fichier').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) ouvrirFichier(f); e.target.value = ''; });
-  o('btnOuvrir', choisirFichier); o('vd-ouvrir', choisirFichier); o('vd-coller', ficheColler); o('vd-exemple', () => chargerContrat(contratEssai(), 'contrat d’exemple', 'Contrat d’exemple'));
-  o('dossier', () => { if (app.fiche && app.fiche.mode === 'table') fermerFiche(); else if (app.contrat.liaisons.length) ficheTable(''); });
+  o('vd-ouvrir', choisirFichier); o('vd-coller', ficheColler); o('vd-exemple', exemple);
+  o('btnBase', basculerBase);
   o('btnMenu', e => { e.stopPropagation(); $('menu').hidden ? ouvrirMenu() : fermerMenu(); });
-  const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple: () => chargerContrat(contratEssai(), 'contrat d’exemple', 'Contrat d’exemple'),
-    table: () => ficheTable(''), cartouche: ficheCartouche, svg: exporterSVG, png: exporterPNG, imprimer,
-    vider: () => { if (!confirm('Effacer tout le contrat ?')) return; histPush('tout effacer'); app.contrat.liaisons = []; app.source = null; app.nFolios = 0; app.plan = '*'; app.nom = ''; fermerFiche(); redessiner(); ajuster(); sauver(); } };
+  const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple, cartouche: ficheCartouche, svg: exporterSVG, png: exporterPNG, imprimer,
+    vider: () => { if (!confirm('Effacer tout le contrat ?')) return; histPush('tout effacer'); app.contrat.liaisons = []; app.source = null; app.nFolios = 0; app.plan = '*'; app.nom = ''; app.cible = null; app.choisi = null;
+      fermerFiche(); fermerBase(); redessiner(); ajuster(); sauver(); } };
   $('menu').addEventListener('click', e => { const b = e.target.closest('button[data-act]'); if (!b) return; fermerMenu(); actions[b.dataset.act](); });
   document.addEventListener('click', e => { if (!e.target.closest('#menuBoite')) fermerMenu(); });
   o('btnUndo', () => { const q = annuler(); if (q) dire('Annulé : ' + q + '.'); });
   o('fo-prev', () => allerAuFolio(-1)); o('fo-next', () => allerAuFolio(+1));
   $('fo-strip').addEventListener('click', e => { const c = e.target.closest('.chip'); if (c) allerAuPlan(c.dataset.plan); });
   o('zin', () => zoomer(1.25)); o('zout', () => zoomer(1 / 1.25)); o('zfit', () => ajuster(true)); o('zlbl', () => ajuster(true));
-  lierRecherche(); lierDepot();
+  lierRecherche(); lierDepot(); lierBase();
   window.addEventListener('keydown', e => {
     const dansChamp = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '');
-    if (e.key === 'Escape') { if (!$('menu').hidden) { fermerMenu(); $('btnMenu').focus(); } else if (!$('q-liste').hidden || $('haut').classList.contains('cherche')) { fermerRecherche(); $('q').blur(); } else fermerFiche(); return; }
+    if (e.key === 'Escape') { if (!$('menu').hidden) { fermerMenu(); $('btnMenu').focus(); } else if (!$('q-liste').hidden || $('haut').classList.contains('cherche')) { fermerRecherche(); $('q').blur(); }
+      else if (app.fiche) fermerFiche(true); else if (app.cible) deselectionner(); else fermerBase(); return; }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !dansChamp) { e.preventDefault(); const q = annuler(); if (q) dire('Annulé : ' + q + '.'); return; }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') { e.preventDefault(); imprimer(); return; }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'o') { e.preventDefault(); choisirFichier(); return; }
     if (dansChamp || e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.key === '/' || e.key === 'f') { e.preventDefault(); $('q').focus(); $('q').select(); }
+    else if (e.key === 'b') basculerBase();
     else if (e.key === 'ArrowLeft') allerAuFolio(-1); else if (e.key === 'ArrowRight') allerAuFolio(+1);
     else if (e.key === '+' || e.key === '=') zoomer(1.25); else if (e.key === '-') zoomer(1 / 1.25); else if (e.key === '0') ajuster(true); });
   let rT; window.addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(() => { if (telephone()) ajuster(); else appliquerVue(); }, 160); });
