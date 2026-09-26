@@ -1,0 +1,6 @@
+/* provisoire : le squelette, le temps de mesurer le moteur */
+:root{--sheet:#ffffff;--sheet-line:#dfe3ea;--sheet-line2:#eef1f5;--sheet-ink:#16202b}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:ui-sans-serif,system-ui,sans-serif;background:#d2cec2}
+#stage{position:absolute;inset:0;overflow:hidden}
+#svg{width:100%;height:100%;display:block}

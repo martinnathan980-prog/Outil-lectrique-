@@ -3,6 +3,7 @@
    ---------------------------------------------------------------------------
        node tests/banc-placement.js            mesure l'état courant
        node tests/banc-placement.js --json     sortie machine, pour comparer
+       node tests/banc-placement.js --fichier=ancien/index.html   un autre fichier
 
    POURQUOI CE FICHIER EXISTE. On discutait du placement sans jamais le
    mesurer : « c'est mieux », « c'est pire », à l'œil, sur un dessin à la
@@ -38,8 +39,9 @@
    ========================================================================= */
 const { chromium } = require('playwright');
 const path = require('path');
+const { fichierDemande, chargerDansLaPage, essaiDansLaPage, mesurerDansLaPage } = require('./pilote');
 
-const FICHIER = 'file://' + path.resolve(__dirname, '..', 'index.html');
+const FICHIER = fichierDemande();
 const JSON_OUT = process.argv.includes('--json');
 
 /* ---- les douze topologies -------------------------------------------------
@@ -118,44 +120,13 @@ const CAS = [
 
   const res = [];
   for (const [nom, gen] of CAS) {
-    const m = await page.evaluate(lignes => {
-      const t0 = performance.now();
-      if (lignes) {
-        state.lk = lignes.map(l => ({ from: l[0], fromTerm: l[1], to: l[2], toTerm: l[3],
-          nature: '', cable: '', ctype: '', route: '', plan: '', pn1: '', pn2: '' }));
-        state.eq = deriveEq(state.lk);
-        OVR.clear(); ORDH.clear(); state.sel = null; state.xroots = null; state.forceFull = true;
-        render();
-      } else { contratEssai(); }
-      const ms = Math.round(performance.now() - t0);
-      const a = auditSchema();
-      const W = LAST.routing.wires;
-      /* ALLONGEMENT : longueur réellement tracée ÷ distance à vol d'oiseau.
-         Un fil droit vaut 1.00 ; un fil qui fait trois coudes pour contourner
-         un bloc coûte cher et se voit ici, alors que le taux de fils droits,
-         lui, le compte simplement comme « pas droit ». Les deux ensemble
-         disent si le dessin est tendu ou s'il serpente. */
-      let tracee = 0, vol = 0;
-      W.forEach(w => {
-        for (let i = 0; i < w.pts.length - 1; i++)
-          tracee += Math.hypot(w.pts[i + 1].x - w.pts[i].x, w.pts[i + 1].y - w.pts[i].y);
-        const A = w.pts[0], B = w.pts[w.pts.length - 1];
-        vol += Math.hypot(B.x - A.x, B.y - A.y);
-      });
-      /* L'EMPRISE : ce que les blocs occupent, feuille et cartouche exclus. */
-      const C = LAST.layout.comps.filter(c => c.kind !== 'tag');
-      const x0 = Math.min(...C.map(c => c.x)), x1 = Math.max(...C.map(c => c.x + c.w));
-      const y0 = Math.min(...C.map(c => c.y)), y1 = Math.max(...C.map(c => c.y + c.h));
-      const eW = Math.max(1, x1 - x0), eH = Math.max(1, y1 - y0);
-      const aireBlocs = C.reduce((s2, c) => s2 + c.w * c.h, 0);
-      const bb = LAST.layout.bbox;
-      return { blocs: a.blocs, fils: a.fils, larg: eW, haut: eH,
-        droits: W.length ? countStraight(W) / W.length : 1,
-        crois: countCrossings(W),
-        surface: (eW * eH) / 1000, format: eW / eH, densite: aireBlocs / (eW * eH),
-        allong: vol > 0 ? tracee / vol : 1,
-        ib: a.filsDansBloc, ch: a.blocsChevauches, ms };
-    }, gen ? gen() : null);
+    const t0 = Date.now();
+    if (gen) await page.evaluate(chargerDansLaPage, gen()); else await page.evaluate(essaiDansLaPage);
+    const ms = Date.now() - t0;
+    const r = await page.evaluate(mesurerDansLaPage);
+    const m = { blocs: r.blocs, fils: r.fils, larg: r.w, haut: r.h, droits: r.taux, crois: r.croisements,
+      surface: (r.w * r.h) / 1000, format: r.format, densite: r.densite, allong: r.allongement,
+      ib: r.filsDansBloc, ch: r.chevauches, ms };
     res.push({ nom, ...m });
   }
 
