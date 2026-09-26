@@ -921,7 +921,7 @@ function placer(G, options) {
   const partenairesQuiComptent = (id, cle) => { const ps = partenairesExternes(id, cle);
     const rigides = ps.filter(q => noeuds.get(q.id).broches.length > 1); return rigides.length ? rigides : ps; };
   const trierBroches = () => { for (const id of ids) clesListes(id).forEach(lid => { const L = liste(id, lid); if (L.length < 2) return;
-    const sc = new Map(L.map(p => { const ps = partenairesExternes(id, p.cle);
+    const sc = new Map(L.map(p => { const ps = partenairesQuiComptent(id, p.cle);
       if (!ps.length) return [p.cle, yB(id, p.cle)]; let s = 0; ps.forEach(q => s += yB(q.id, q.cle)); return [p.cle, s / ps.length]; }));
     L.sort((a, b) => sc.get(a.cle) - sc.get(b.cle)); }); };
   const trierColonnes = () => colonnes.forEach(c => { if (c.length < 2) return;
@@ -1111,7 +1111,7 @@ function placer(G, options) {
     // les bornes d'une réglette n'ont pas d'ordre imposé : elles se mettent face à leurs partenaires
     const reordonner = py => ids.forEach(id => { if (!estS.get(id)) return;
       clesListes(id).forEach(lid => { const L = liste(id, lid); if (L.length < 2) return;
-        const sc = new Map(L.map(p => { const ps = partenairesExternes(id, p.cle);
+        const sc = new Map(L.map(p => { const ps = partenairesQuiComptent(id, p.cle);
           let s = 0, c = 0; ps.forEach(q => { const y = py.get(PK(q.id, q.cle)); if (y != null) { s += y; c++; } });
           return [p.cle, c ? s / c : (py.get(PK(id, p.cle)) || 0)]; }));
         L.sort((a, b) => sc.get(a.cle) - sc.get(b.cle)); }); });
