@@ -1810,9 +1810,9 @@ function auditer(dessin) {
    barrettes, et un symbole par nature de matériel.
 
    UNE SEULE ENCRE. Ce qui distingue une pièce d'une autre, c'est l'épaisseur
-   et la forme du trait, jamais sa couleur : 1,8 la barrette, 1,0 le corps
-   d'un matériel, 0,95 un fil, 0,7 une boîte de bornes, 0,5 une cellule.
-   Ça s'imprime en noir et blanc.
+   et la forme du trait, jamais sa couleur : 1,0 le corps d'un matériel,
+   0,95 un fil (et tout ce qui en est : piquage, pont de shunt), 0,7 une
+   réglette, 0,55 une cellule. Ça s'imprime en noir et blanc.
    =========================================================================== */
 
 const f1 = n => Math.round(n * 10) / 10;
@@ -1841,11 +1841,8 @@ function styleDessin() {
      .bsname{fill:#7a8794;font-size:6.5px;font-weight:600;letter-spacing:.9px}
      .pinlbl{fill:#2b3743;font-size:7.5px;font-weight:500;letter-spacing:.2px}
      .filnum{fill:#55636f;font-size:6px;font-weight:500;letter-spacing:.1px}
-     .barrette{stroke:#1b2430;stroke-width:1.5;stroke-linecap:square}
-     .busbar{stroke:#1b2430;stroke-width:2.6;stroke-linecap:square}
-     .barfeed,.busdot{fill:#1b2430;stroke:none}
-     .barfeedline{stroke:#1b2430;stroke-width:1.3;stroke-linecap:butt}
-     .lead{stroke:#1b2430;stroke-width:.95;stroke-linecap:butt}
+     .lead{stroke:#26323f;stroke-width:.95;stroke-linecap:butt}
+     .borne{fill:#ffffff;stroke:#1b2430;stroke-width:.8}
      .pont{stroke:#1b2430;stroke-width:2.2;stroke-linecap:round}
      .rpill{fill:#ffffff;stroke:#c8d1d9;stroke-width:.7}
      .rname{fill:#46535f;font-weight:600;font-size:7.5px;letter-spacing:.6px}
@@ -1860,7 +1857,7 @@ function styleDessin() {
      .cartA{fill:#8e99a4;font-size:6.5px;font-weight:700;letter-spacing:1.2px}
      .selbox{fill:none;stroke:#9c3a14;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
      .comp{cursor:pointer;transition:opacity .12s}
-     .focus .cab,.focus .barrette,.focus .busbar,.focus .barfeedline,.focus .jn,.focus .busdot,.focus .barfeed{opacity:.10}
+     .focus .cab,.focus .jn{opacity:.10}
      .focus .comp{opacity:.28}
      .focus .cab.hl{opacity:1;stroke-width:2.9}
      .focus .comp.hl{opacity:1}
@@ -1898,11 +1895,47 @@ function cartoucheSvg(rx, by, c, folio) {
 }
 
 /* ---- les fils --------------------------------------------------------- */
-function filSvg(w) {
+/* Un croisement se lit d'un coup d'œil quand le fil horizontal ENJAMBE le
+   vertical : un petit pont, toujours au-dessus. Deux fils qui se touchent en
+   bout (piquage, jonction) ne se croisent pas : le test est strict. Des
+   verticaux trop serrés sont enjambés d'un seul pont. */
+const R_PONT = 2.8;
+function verticauxDe(traces) { const v = [];
+  traces.forEach(pts => { for (let i = 0; i < pts.length - 1; i++) { const a = pts[i], b = pts[i + 1];
+    if (Math.abs(a.x - b.x) < 0.6 && Math.abs(a.y - b.y) > 1) v.push({ x: a.x, y0: Math.min(a.y, b.y) + 0.6, y1: Math.max(a.y, b.y) - 0.6 }); } });
+  return v; }
+function cheminAvecPonts(pts, verticaux) {
+  let d = 'M ' + f1(pts[0].x) + ' ' + f1(pts[0].y);
+  for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], b = pts[i];
+    if (Math.abs(a.y - b.y) < 0.6 && Math.abs(b.x - a.x) > 2 * R_PONT + 2) {
+      const s = b.x > a.x ? 1 : -1, y = a.y, xa = Math.min(a.x, b.x) + R_PONT + 1, xb = Math.max(a.x, b.x) - R_PONT - 1;
+      const xs = verticaux.filter(v => v.x > xa && v.x < xb && y > v.y0 && y < v.y1).map(v => v.x).sort((u, w) => s * (u - w));
+      let g = null; const groupes = [];
+      xs.forEach(x => { if (g && Math.abs(x - g[g.length - 1]) < 2 * R_PONT + 0.5) g.push(x); else groupes.push(g = [x]); });
+      groupes.forEach(gr => { const x0 = gr[0] - s * R_PONT, x1 = gr[gr.length - 1] + s * R_PONT, rx = Math.abs(x1 - x0) / 2;
+        d += ` L ${f1(x0)} ${f1(y)} A ${f1(rx)} ${R_PONT} 0 0 ${s > 0 ? 1 : 0} ${f1(x1)} ${f1(y)}`; }); }
+    d += ' L ' + f1(b.x) + ' ' + f1(b.y); }
+  return d; }
+function filSvg(w, verticaux) {
   if (!w.pts.length) return '';           // un shunt n'a pas de tracé : la réglette le porte
-  let d = 'M ' + f1(w.pts[0].x) + ' ' + f1(w.pts[0].y);
-  for (let i = 1; i < w.pts.length; i++) d += ' L ' + f1(w.pts[i].x) + ' ' + f1(w.pts[i].y);
-  return `<path class="cab" data-i="${w.i}" data-a="${escA(w.de)}" data-b="${escA(w.vers)}" d="${d}"/>`;
+  return `<path class="cab" data-i="${w.i}" data-a="${escA(w.de)}" data-b="${escA(w.vers)}" d="${cheminAvecPonts(w.pts, verticaux)}"/>`;
+}
+/* Un piquage — plusieurs fils sur une même borne — se dessine comme du fil :
+   le fil sort de la borne, rejoint une verticale d'où partent les autres, et
+   chaque départ est marqué d'un point de jonction. Rien de plus épais que le
+   fil : c'est du fil. */
+function tracesDePiquage(barrettes) {
+  const traces = [];
+  (barrettes.raccords || []).forEach(r => traces.push([{ x: r.x0, y: r.y }, { x: r.x1, y: r.y }]));
+  barrettes.forEach(b => traces.push([{ x: b.x, y: b.y1 + 3 }, { x: b.x, y: b.y2 - 3 }]));
+  return traces; }
+function piquagesSvg(barrettes, piquages, verticaux) {
+  let s = '';
+  tracesDePiquage(barrettes).forEach(pts => { s += `<path class="cab" d="${cheminAvecPonts(pts, verticaux)}"/>`; });
+  barrettes.forEach(b => { const haut = b.y1 + 3 < b.py - 0.6, bas = b.y2 - 3 > b.py + 0.6, droit = b.gardes.some(k => Math.abs(k.y - b.py) < 1.2);
+    if (1 + haut + bas + droit >= 3) s += `<circle class="jn" cx="${f1(b.x)}" cy="${f1(b.py)}" r="1.7"/>`; });
+  piquages.forEach(d => { s += `<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="1.7"/>`; });
+  return s;
 }
 /* Le numéro de fil, au-dessus du plus long segment horizontal, en son milieu
    — ou décalé le long du segment si le milieu est pris. Jamais sur un
@@ -1914,7 +1947,7 @@ function reperesDeFil(fils) {
   fils.forEach(w => { for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1];
     if (Math.abs(a.x - b.x) < 0.6 && Math.abs(a.y - b.y) > 1) verticaux.push({ x: a.x, y0: Math.min(a.y, b.y), y1: Math.max(a.y, b.y) }); } });
   const libre = (x0, y0, x1, y1) => !poses.some(b => x1 > b.x0 - 2 && x0 < b.x1 + 2 && y1 > b.y0 - 1.5 && y0 < b.y1 + 1.5)
-    && !verticaux.some(v => v.x > x0 - 1.5 && v.x < x1 + 1.5 && v.y1 > y0 && v.y0 < y1);
+    && !verticaux.some(v => v.x > x0 - R_PONT - 1 && v.x < x1 + R_PONT + 1 && v.y1 > y0 && v.y0 < y1);
   const cands = [];
   fils.forEach(w => { const nom = String(w.cable || '').trim(); if (!nom) return;
     let bL = 0, bx0 = 0, bx1 = 0, by = 0;
@@ -1936,41 +1969,22 @@ function reperesDeFil(fils) {
     out += `<text class="filnum" x="${f1(pose.cx)}" y="${f1(pose.y1)}" text-anchor="middle">${esc(c.nom)}</text>`; });
   return out;
 }
-/* Barrette : une barre pleine et épaisse (du cuivre continu), un carré plein
-   sur la borne qui alimente, un raccord en trait plein, des piquages carrés. */
-function barrettesSvg(barrettes, piquages) {
-  let s = '';
-  (barrettes.raccords || []).forEach(r => { s += `<line class="barfeedline" x1="${f1(r.x0)}" y1="${f1(r.y)}" x2="${f1(r.x1)}" y2="${f1(r.y)}"/>`; });
-  barrettes.forEach(b => { s += `<line class="${b.bus ? 'busbar' : 'barrette'}" x1="${f1(b.x)}" y1="${f1(b.y1)}" x2="${f1(b.x)}" y2="${f1(b.y2)}"/>`;
-    if (b.py != null) s += `<rect class="barfeed" x="${f1(b.x - 2.2)}" y="${f1(b.py - 2.2)}" width="4.4" height="4.4"/>`; });
-  piquages.forEach(d => { s += `<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="1.7"/>`; });
-  return s;
-}
-
 /* ---- les blocs -------------------------------------------------------- */
-const BOXPAD = 3, BANDPAD = 1.5;
-/* Une colonne de bornes se découpe en paquets de bornes voisines : deux
-   bornes très écartées font deux boîtes, sinon la boîte s'étire en barre vide. */
-function paquets(rangs) { const g = []; let s = 0;
-  for (let i = 1; i <= rangs.length; i++) if (i === rangs.length || rangs[i].y - rangs[i - 1].y > 2.2 * PRH) { g.push(rangs.slice(s, i)); s = i; }
-  return g; }
-/* La boîte de bornes, plaquée sur le corps : une boîte unique, les numéros
-   alignés dedans, le fil part du bord extérieur à la hauteur de son numéro. */
-function boiteDeBornes(xCorps, dir, prof, rangs, baseY, hCorps, nom) {
+/* Les bornes d'un équipement : le fil entre par le flanc et continue jusqu'au
+   corps, où une petite borne ronde marque le contact ; le numéro s'écrit DANS
+   le corps, contre le bord, comme sur un plan de câblage. Pas de boîte. */
+function bornesSvg(xCorps, dir, prof, rangs, baseY) {
   let out = '';
-  paquets(rangs).forEach(g => {
-    let t = g[0].y - baseY - PRH / 2 - BOXPAD, b = g[g.length - 1].y - baseY + PRH / 2 + BOXPAD;
-    if (hCorps != null) { t = Math.max(t, BANDPAD); b = Math.min(b, hCorps - BANDPAD); if (b <= t) return; }
-    const xo = dir > 0 ? xCorps : xCorps - prof, bw = prof;
-    if (nom != null) out += `<text class="bsname" x="${f1(xo + bw / 2)}" y="${f1(t - 4)}" text-anchor="middle">${esc(clip(nom, 12))}</text>`;
-    out += `<rect class="bstrip" x="${f1(xo)}" y="${f1(t)}" width="${f1(bw)}" height="${f1(b - t)}"/>`;
-    // taille fixe pour tout le paquet : une colonne de chiffres s'écrit d'un seul corps
-    const lmax = Math.max(1, ...g.filter(p => p.etiq).map(p => String(p.etiq).length));
-    const fs = Math.max(5.4, Math.min(7.5, (bw - 4) / (0.62 * lmax)));
-    g.forEach(p => { if (!p.etiq) return;
-      out += `<text class="pinlbl" style="font-size:${f1(fs)}px" x="${f1(xo + bw / 2)}" y="${f1(p.y - baseY + fs * 0.36)}" text-anchor="middle">${esc(p.etiq)}</text>`; }); });
+  rangs.forEach(p => { const y = p.y - baseY, xo = xCorps + dir * prof;
+    out += `<line class="lead" x1="${f1(xo)}" y1="${f1(y)}" x2="${f1(xCorps)}" y2="${f1(y)}"/><circle class="borne" cx="${f1(xCorps)}" cy="${f1(y)}" r="1.5"/>`;
+    if (p.etiq) out += `<text class="pinlbl" x="${f1(xCorps - dir * 4)}" y="${f1(y + 2.6)}" text-anchor="${dir > 0 ? 'end' : 'start'}">${esc(clip(String(p.etiq), 5))}</text>`; });
   return out;
 }
+/* Le repère tient entre les numéros de borne des deux flancs : la taille
+   s'adapte au nom, jamais l'inverse. */
+function repereSvg(cls, x, y, nom, bw, marge) {
+  const fs = Math.max(7, Math.min(10.5, (bw - 2 * marge) / (0.66 * nom.length)));
+  return `<text class="${cls}" style="font-size:${f1(fs)}px" x="${f1(x)}" y="${f1(y)}" text-anchor="middle">${esc(nom)}</text>`; }
 function coins(cls, m, w, h) { const X = -m, Y = -m, W = w + 2 * m, H = h + 2 * m, k = Math.max(6, Math.min(16, h / 4));
   return `<path class="${cls}" d="M${f1(X)} ${f1(Y + k)} L${f1(X)} ${f1(Y)} L${f1(X + k)} ${f1(Y)} M${f1(X + W - k)} ${f1(Y)} L${f1(X + W)} ${f1(Y)} L${f1(X + W)} ${f1(Y + k)} M${f1(X + W)} ${f1(Y + H - k)} L${f1(X + W)} ${f1(Y + H)} L${f1(X + W - k)} ${f1(Y + H)} M${f1(X + k)} ${f1(Y + H)} L${f1(X)} ${f1(Y + H)} L${f1(X)} ${f1(Y + H - k)}"/>`; }
 
@@ -1993,8 +2007,7 @@ function blocSvg(c, designation, choisi) {
        un fil de liaison le mène au contact. */
     const G = 12, xg0 = bx, xg1 = mid - G / 2, xd0 = mid + G / 2, xd1 = bx + bw;
     s += `<rect class="bstrip" x="${f1(xg0)}" y="0" width="${f1(xg1 - xg0)}" height="${c.h}"/><rect class="bstrip" x="${f1(xd0)}" y="0" width="${f1(xd1 - xd0)}" height="${c.h}"/>`;
-    rs.forEach(p => { const ly = p.y - c.y, t = ly - PRH / 2 + 1, h = PRH - 2;
-      s += `<rect class="bcell" x="${f1(xg0)}" y="${f1(t)}" width="${f1(xg1 - xg0)}" height="${f1(h)}"/><rect class="bcell" x="${f1(xd0)}" y="${f1(t)}" width="${f1(xd1 - xd0)}" height="${f1(h)}"/>`;
+    rs.forEach(p => { const ly = p.y - c.y;
       if (p.etiq) s += `<text class="pinlbl" x="${f1((xg0 + xg1) / 2)}" y="${f1(ly + 2.7)}" text-anchor="middle">${esc(p.etiq)}</text><text class="pinlbl" x="${f1((xd0 + xd1) / 2)}" y="${f1(ly + 2.7)}" text-anchor="middle">${esc(p.etiq)}</text>`;
       // la fiche (triangle plein) pointe vers l'embase (demi-cercle ouvert vers elle)
       s += `<path class="dot-fix" d="M ${f1(xg1)} ${f1(ly - 2.8)} L ${f1(mid - 0.5)} ${f1(ly)} L ${f1(xg1)} ${f1(ly + 2.8)} Z"/>`;
@@ -2010,7 +2023,7 @@ function blocSvg(c, designation, choisi) {
        cellules, comme le peigne de cuivre qu'on pose sur le matériel. */
     const rangs = c.kind === 'strip' ? rs : [...rl, ...rr].sort((u, v) => u.y - v.y);
     s += `<rect class="bstrip" x="${f1(bx)}" y="0" width="${f1(bw)}" height="${c.h}"/>`;
-    rangs.forEach(p => { const ly = p.y - c.y, t = ly - PRH / 2 + 1, h = PRH - 2;
+    rangs.forEach(p => { const ly = p.y - c.y, t = ly - PRH / 2, h = PRH;
       s += `<rect class="bcell" x="${f1(bx)}" y="${f1(t)}" width="${f1(bw)}" height="${f1(h)}"/>`;
       if (p.etiq) s += `<text class="pinlbl" x="${f1(mid)}" y="${f1(ly + 2.7)}" text-anchor="middle">${esc(p.etiq)}</text>`;
       const d = p.dir || 0;
@@ -2032,13 +2045,13 @@ function blocSvg(c, designation, choisi) {
     s += `<line class="earth" x1="${f1(cx - 6)}" y1="${f1(y0)}" x2="${f1(cx + 6)}" y2="${f1(y0)}"/><line class="earth" x1="${f1(cx - 4)}" y1="${f1(y0 + 3)}" x2="${f1(cx + 4)}" y2="${f1(y0 + 3)}"/><line class="earth" x1="${f1(cx - 2)}" y1="${f1(y0 + 6)}" x2="${f1(cx + 2)}" y2="${f1(y0 + 6)}"/>`;
     s += `<text class="rep" x="${f1(cx)}" y="${f1(y0 + 17)}" text-anchor="middle">${esc(clip(c.name, 10))}</text>`;
   } else {
-    // équipement : corps, repère en tête (rappelé en pied s'il est très haut), boîtes de bornes sur les flancs
+    // équipement : corps, repère en tête (rappelé en pied s'il est très haut), bornes sur les flancs
     s += `<rect class="body" x="${f1(bx)}" y="0" width="${f1(bw)}" height="${c.h}"/>`;
-    s += `<text class="rep-big" x="${f1(mid)}" y="${f1(yRep)}" text-anchor="middle">${esc(clip(c.name, 12))}</text>`;
+    s += repereSvg('rep-big', mid, yRep, clip(c.name, 14), bw, 16);
     if (c.h > 380) s += `<text class="bsname" x="${f1(mid)}" y="${f1(c.h - 9)}" text-anchor="middle">${esc(clip(c.name, 12))}</text>`;
     if (designation) s += `<text class="des" x="${f1(mid)}" y="${f1(yRep + 10)}" text-anchor="middle">${esc(clip(designation, 18))}</text>`;
-    if (rl.length) s += boiteDeBornes(bx, -1, c.lw, rl, c.y, c.h, null);
-    if (rr.length) s += boiteDeBornes(bx + bw, +1, c.rw, rr, c.y, c.h, null);
+    if (rl.length) s += bornesSvg(bx, -1, c.lw, rl, c.y);
+    if (rr.length) s += bornesSvg(bx + bw, +1, c.rw, rr, c.y);
   }
   return s + '</g>';
 }
@@ -2046,11 +2059,13 @@ function blocSvg(c, designation, choisi) {
 /* ---- la scène entière ------------------------------------------------- */
 function sceneSvg(dessin, cartouche, folio, designationDe, choisi) {
   let s = feuilleSvg(dessin.bbox, cartouche, folio);
-  dessin.fils.forEach(w => { if (!w.shunt) s += filSvg(w); });
+  const fils = dessin.fils.filter(w => !w.shunt);
+  const verticaux = verticauxDe([...fils.map(w => w.pts), ...tracesDePiquage(dessin.barrettes)]);
+  fils.forEach(w => { s += filSvg(w, verticaux); });
   const shunts = new Map();
   dessin.fils.forEach(w => { if (!w.shunt) return; const ys = [w.epA.y, w.epB.y].sort((u, v) => u - v); (shunts.get(w.de) || shunts.set(w.de, []).get(w.de)).push(ys); });
   s += reperesDeFil(dessin.fils);
-  s += barrettesSvg(dessin.barrettes, dessin.piquages);
+  s += piquagesSvg(dessin.barrettes, dessin.piquages, verticaux);
   dessin.points.forEach(d => s += `<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="1.9"/>`);
   dessin.comps.forEach(c => { c.shunts = shunts.get(c.name) || []; s += blocSvg(c, designationDe ? designationDe(c.name) : '', choisi === c.name); });
   return s;
