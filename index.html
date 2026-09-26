@@ -98,7 +98,8 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;st
 #haut>*{pointer-events:auto}
 .marque{height:40px;padding:0 14px 0 12px;border-radius:20px;display:flex;align-items:center;gap:9px;font-weight:600;letter-spacing:.005em;white-space:nowrap;flex:none}
 .marque svg{width:18px;height:18px;flex:none}
-.dossier{height:40px;padding:0 14px;border-radius:20px;display:flex;align-items:center;gap:10px;min-width:0;max-width:38vw}
+.dossier{height:40px;padding:0 14px;border-radius:20px;display:flex;align-items:center;gap:10px;min-width:0;max-width:38vw;cursor:pointer;transition:background var(--rapide)}
+.dossier:hover{background:rgba(35,45,58,.95)}
 #ctx-nom{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #ctx-txt{color:var(--craie-2);white-space:nowrap;font-size:var(--t1)}
 .sauve{color:var(--craie-2);font-size:var(--t0);white-space:nowrap;display:flex;align-items:center;gap:6px}
@@ -156,8 +157,9 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;st
 .min0{min-width:0;flex:1}
 .sur{font-size:var(--t0);text-transform:uppercase;letter-spacing:.09em;color:var(--encre-2);font-weight:700}
 .titre{font-family:var(--mono);font-size:var(--t5);font-weight:700;line-height:1.2;margin:2px 0 0;color:var(--encre);letter-spacing:.01em}
-input.titre{border:none;background:none;padding:0 2px;margin-left:-2px;width:100%;border-bottom:1.5px dashed transparent;border-radius:0;transition:border-color var(--rapide)}
-input.titre:hover,input.titre:focus{border-bottom-color:var(--filet);outline:none}
+input.titre{border:none;background:none;padding:0 2px;margin-left:-2px;width:100%;border-bottom:1.5px dashed var(--filet);border-radius:0;transition:border-color var(--rapide)}
+input.titre:hover{border-bottom-color:#b7c1cb}
+input.titre:focus{outline:none}
 input.titre:focus{border-bottom-color:var(--cuivre)}
 input.titre::placeholder{color:var(--filet)}
 .fermer{background:var(--papier-2);color:var(--encre-2);width:36px;height:36px;flex:none}
@@ -250,7 +252,8 @@ body.depot-actif .depot{display:grid}
   #haut.cherche>:not(.recherche){visibility:hidden}
   #folios{bottom:10px;max-width:calc(100vw - 16px)}
   .fo-strip{max-width:calc(100vw - 150px)}
-  #hud{display:none}
+  #hud{right:8px;bottom:64px;height:40px;padding:0 4px}
+  #hud #zin,#hud #zout,#hud #zlbl{display:none}
   #fiche{top:auto;left:0;right:0;bottom:0;width:auto;max-width:none;max-height:72vh;border-radius:20px 20px 0 0}
   #fiche.large{width:auto}
   #fiche.entre{animation:fiche-monte var(--moyen)}
@@ -309,7 +312,7 @@ body.depot-actif .depot{display:grid}
       <svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="3.5" cy="9" r="2.5" fill="#b5541c"/><path d="M6 9h6" stroke="#eef2f6" stroke-width="1.8" stroke-linecap="round"/><circle cx="14.5" cy="9" r="2.5" fill="#b5541c"/></svg>
       Atelier Schéma
     </div>
-    <div class="dossier verre" id="dossier"><span id="ctx-nom">—</span><span id="ctx-txt"></span><span id="ctx-sauve" class="sauve"></span></div>
+    <button class="dossier verre" id="dossier" title="Toutes les liaisons du contrat"><span id="ctx-nom">—</span><span id="ctx-txt"></span><span id="ctx-sauve" class="sauve"></span></button>
     <button class="btn cuivre" id="btnOuvrir" title="Ouvrir un fichier Excel ou CSV">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span>Ouvrir</span>
     </button>
@@ -2318,10 +2321,12 @@ function lierRecherche() { const q = $('q'), box = $('q-liste');
   q.addEventListener('keydown', e => {
     if (e.key === 'ArrowDown') { e.preventDefault(); qSel = Math.min(qSel + 1, qCands.length - 1); montrerCandidats(); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); qSel = Math.max(qSel - 1, 0); montrerCandidats(); }
-    else if (e.key === 'Enter') { e.preventDefault(); const c = qCands[qSel]; if (c) { aller(c); fermerRecherche(); q.blur(); } }
+    else if (e.key === 'Enter') { e.preventDefault(); const c = qCands[qSel]; if (c) trouve(c); }
     else if (e.key === 'Escape') { q.value = ''; fermerRecherche(); q.blur(); } });
+  // trouvé : le champ se vide, le résultat est dans la fiche
+  const trouve = c => { q.value = ''; fermerRecherche(); q.blur(); aller(c); };
   box.addEventListener('pointerdown', e => e.preventDefault());   // le champ garde le focus
-  box.addEventListener('click', e => { const b = e.target.closest('.q-item'); if (!b) return; const c = qCands[+b.dataset.i]; if (c) { aller(c); fermerRecherche(); q.blur(); } });
+  box.addEventListener('click', e => { const b = e.target.closest('.q-item'); if (!b) return; const c = qCands[+b.dataset.i]; if (c) trouve(c); });
   q.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== q) fermerRecherche(); }, 120));
   // sur téléphone le champ est replié : on l'ouvre d'abord, puis on lui donne le focus
   $('recherche').addEventListener('click', e => { if (e.target.closest('.q-liste')) return; $('haut').classList.add('cherche'); q.focus(); }); }
@@ -2336,7 +2341,7 @@ function ouvrirFiche(mode, corps, pied, large) { const f = $('fiche');
 function fermerFiche() { const f = $('fiche'); if (f.hidden && !app.fiche) return; f.hidden = true; app.fiche = null;
   if (app.choisi) { app.choisi = null; peindre(); } eteindre(); }
 const tete = (sur, titre, editable) => `<div class="fiche-tete"><div class="min0"><div class="sur">${esc(sur)}</div>${editable
-  ? `<input class="titre" id="${editable}" value="${escA(titre)}" aria-label="${escA(sur)}" spellcheck="false" placeholder="—">` : `<h2 class="titre">${esc(titre)}</h2>`}</div>
+  ? `<input class="titre" id="${editable}" value="${escA(titre)}" aria-label="${escA(sur)}" title="Se modifie ici" spellcheck="false" placeholder="—">` : `<h2 class="titre">${esc(titre)}</h2>`}</div>
   <button class="rond fermer" id="fi-fermer" aria-label="Fermer la fiche"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`;
 const champ = (id, lib, val, opt) => `<label class="champ${opt && opt.sans ? ' sans' : ''}"><span>${lib}</span><input id="${id}" value="${escA(val || '')}"${opt && opt.ph ? ` placeholder="${escA(opt.ph)}"` : ''} spellcheck="false"></label>`;
 const natureDe = nom => { const q = lireRepere(nom); return (q && q.num && CODES[q.code]) ? CODES[q.code].nom : 'équipement'; };
@@ -2508,7 +2513,7 @@ function chargerContrat(liaisons, quoi, nom) { histPush(quoi || 'chargement d’
   fermerFiche(); fermerMenu(); $('q').value = '';
   redessiner(); ajuster(); if (P.length <= 1) ajusterFolios(); sauver(); }
 async function ouvrirFichier(fichier) { if (!fichier) return;
-  try { dire('Lecture de « ' + fichier.name + ' »…'); const r = await lireFichier(fichier);
+  try { dire('Lecture de « ' + fichier.name + ' », puis dessin…'); const r = await lireFichier(fichier);
     if (!r.liaisons.length) { dire('« ' + fichier.name + ' » est lu, mais aucune liaison n’est reconnue — vérifie les colonnes.', true); return; }
     chargerContrat(r.liaisons, 'ouverture de ' + fichier.name, fichier.name);
     dire(r.liaisons.length + ' liaisons' + (r.format === 'retest' ? ' — format retest, en-têtes ligne ' + r.entete : '') + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + '.');
@@ -2556,6 +2561,7 @@ function lierPanneau() {
   const choisirFichier = () => $('fichier').click();
   $('fichier').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) ouvrirFichier(f); e.target.value = ''; });
   o('btnOuvrir', choisirFichier); o('vd-ouvrir', choisirFichier); o('vd-coller', ficheColler); o('vd-exemple', () => chargerContrat(contratEssai(), 'contrat d’exemple', 'Contrat d’exemple'));
+  o('dossier', () => { if (app.fiche && app.fiche.mode === 'table') fermerFiche(); else if (app.contrat.liaisons.length) ficheTable(''); });
   o('btnMenu', e => { e.stopPropagation(); $('menu').hidden ? ouvrirMenu() : fermerMenu(); });
   const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple: () => chargerContrat(contratEssai(), 'contrat d’exemple', 'Contrat d’exemple'),
     table: () => ficheTable(''), cartouche: ficheCartouche, svg: exporterSVG, png: exporterPNG, imprimer,

@@ -209,10 +209,12 @@ function lierRecherche() { const q = $('q'), box = $('q-liste');
   q.addEventListener('keydown', e => {
     if (e.key === 'ArrowDown') { e.preventDefault(); qSel = Math.min(qSel + 1, qCands.length - 1); montrerCandidats(); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); qSel = Math.max(qSel - 1, 0); montrerCandidats(); }
-    else if (e.key === 'Enter') { e.preventDefault(); const c = qCands[qSel]; if (c) { aller(c); fermerRecherche(); q.blur(); } }
+    else if (e.key === 'Enter') { e.preventDefault(); const c = qCands[qSel]; if (c) trouve(c); }
     else if (e.key === 'Escape') { q.value = ''; fermerRecherche(); q.blur(); } });
+  // trouvé : le champ se vide, le résultat est dans la fiche
+  const trouve = c => { q.value = ''; fermerRecherche(); q.blur(); aller(c); };
   box.addEventListener('pointerdown', e => e.preventDefault());   // le champ garde le focus
-  box.addEventListener('click', e => { const b = e.target.closest('.q-item'); if (!b) return; const c = qCands[+b.dataset.i]; if (c) { aller(c); fermerRecherche(); q.blur(); } });
+  box.addEventListener('click', e => { const b = e.target.closest('.q-item'); if (!b) return; const c = qCands[+b.dataset.i]; if (c) trouve(c); });
   q.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== q) fermerRecherche(); }, 120));
   // sur téléphone le champ est replié : on l'ouvre d'abord, puis on lui donne le focus
   $('recherche').addEventListener('click', e => { if (e.target.closest('.q-liste')) return; $('haut').classList.add('cherche'); q.focus(); }); }
@@ -227,7 +229,7 @@ function ouvrirFiche(mode, corps, pied, large) { const f = $('fiche');
 function fermerFiche() { const f = $('fiche'); if (f.hidden && !app.fiche) return; f.hidden = true; app.fiche = null;
   if (app.choisi) { app.choisi = null; peindre(); } eteindre(); }
 const tete = (sur, titre, editable) => `<div class="fiche-tete"><div class="min0"><div class="sur">${esc(sur)}</div>${editable
-  ? `<input class="titre" id="${editable}" value="${escA(titre)}" aria-label="${escA(sur)}" spellcheck="false" placeholder="—">` : `<h2 class="titre">${esc(titre)}</h2>`}</div>
+  ? `<input class="titre" id="${editable}" value="${escA(titre)}" aria-label="${escA(sur)}" title="Se modifie ici" spellcheck="false" placeholder="—">` : `<h2 class="titre">${esc(titre)}</h2>`}</div>
   <button class="rond fermer" id="fi-fermer" aria-label="Fermer la fiche"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`;
 const champ = (id, lib, val, opt) => `<label class="champ${opt && opt.sans ? ' sans' : ''}"><span>${lib}</span><input id="${id}" value="${escA(val || '')}"${opt && opt.ph ? ` placeholder="${escA(opt.ph)}"` : ''} spellcheck="false"></label>`;
 const natureDe = nom => { const q = lireRepere(nom); return (q && q.num && CODES[q.code]) ? CODES[q.code].nom : 'équipement'; };
@@ -399,7 +401,7 @@ function chargerContrat(liaisons, quoi, nom) { histPush(quoi || 'chargement d’
   fermerFiche(); fermerMenu(); $('q').value = '';
   redessiner(); ajuster(); if (P.length <= 1) ajusterFolios(); sauver(); }
 async function ouvrirFichier(fichier) { if (!fichier) return;
-  try { dire('Lecture de « ' + fichier.name + ' »…'); const r = await lireFichier(fichier);
+  try { dire('Lecture de « ' + fichier.name + ' », puis dessin…'); const r = await lireFichier(fichier);
     if (!r.liaisons.length) { dire('« ' + fichier.name + ' » est lu, mais aucune liaison n’est reconnue — vérifie les colonnes.', true); return; }
     chargerContrat(r.liaisons, 'ouverture de ' + fichier.name, fichier.name);
     dire(r.liaisons.length + ' liaisons' + (r.format === 'retest' ? ' — format retest, en-têtes ligne ' + r.entete : '') + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + '.');
@@ -447,6 +449,7 @@ function lierPanneau() {
   const choisirFichier = () => $('fichier').click();
   $('fichier').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) ouvrirFichier(f); e.target.value = ''; });
   o('btnOuvrir', choisirFichier); o('vd-ouvrir', choisirFichier); o('vd-coller', ficheColler); o('vd-exemple', () => chargerContrat(contratEssai(), 'contrat d’exemple', 'Contrat d’exemple'));
+  o('dossier', () => { if (app.fiche && app.fiche.mode === 'table') fermerFiche(); else if (app.contrat.liaisons.length) ficheTable(''); });
   o('btnMenu', e => { e.stopPropagation(); $('menu').hidden ? ouvrirMenu() : fermerMenu(); });
   const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple: () => chargerContrat(contratEssai(), 'contrat d’exemple', 'Contrat d’exemple'),
     table: () => ficheTable(''), cartouche: ficheCartouche, svg: exporterSVG, png: exporterPNG, imprimer,

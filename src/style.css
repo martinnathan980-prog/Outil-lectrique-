@@ -91,7 +91,8 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;st
 #haut>*{pointer-events:auto}
 .marque{height:40px;padding:0 14px 0 12px;border-radius:20px;display:flex;align-items:center;gap:9px;font-weight:600;letter-spacing:.005em;white-space:nowrap;flex:none}
 .marque svg{width:18px;height:18px;flex:none}
-.dossier{height:40px;padding:0 14px;border-radius:20px;display:flex;align-items:center;gap:10px;min-width:0;max-width:38vw}
+.dossier{height:40px;padding:0 14px;border-radius:20px;display:flex;align-items:center;gap:10px;min-width:0;max-width:38vw;cursor:pointer;transition:background var(--rapide)}
+.dossier:hover{background:rgba(35,45,58,.95)}
 #ctx-nom{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #ctx-txt{color:var(--craie-2);white-space:nowrap;font-size:var(--t1)}
 .sauve{color:var(--craie-2);font-size:var(--t0);white-space:nowrap;display:flex;align-items:center;gap:6px}
@@ -149,8 +150,9 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;st
 .min0{min-width:0;flex:1}
 .sur{font-size:var(--t0);text-transform:uppercase;letter-spacing:.09em;color:var(--encre-2);font-weight:700}
 .titre{font-family:var(--mono);font-size:var(--t5);font-weight:700;line-height:1.2;margin:2px 0 0;color:var(--encre);letter-spacing:.01em}
-input.titre{border:none;background:none;padding:0 2px;margin-left:-2px;width:100%;border-bottom:1.5px dashed transparent;border-radius:0;transition:border-color var(--rapide)}
-input.titre:hover,input.titre:focus{border-bottom-color:var(--filet);outline:none}
+input.titre{border:none;background:none;padding:0 2px;margin-left:-2px;width:100%;border-bottom:1.5px dashed var(--filet);border-radius:0;transition:border-color var(--rapide)}
+input.titre:hover{border-bottom-color:#b7c1cb}
+input.titre:focus{outline:none}
 input.titre:focus{border-bottom-color:var(--cuivre)}
 input.titre::placeholder{color:var(--filet)}
 .fermer{background:var(--papier-2);color:var(--encre-2);width:36px;height:36px;flex:none}
@@ -243,7 +245,8 @@ body.depot-actif .depot{display:grid}
   #haut.cherche>:not(.recherche){visibility:hidden}
   #folios{bottom:10px;max-width:calc(100vw - 16px)}
   .fo-strip{max-width:calc(100vw - 150px)}
-  #hud{display:none}
+  #hud{right:8px;bottom:64px;height:40px;padding:0 4px}
+  #hud #zin,#hud #zout,#hud #zlbl{display:none}
   #fiche{top:auto;left:0;right:0;bottom:0;width:auto;max-width:none;max-height:72vh;border-radius:20px 20px 0 0}
   #fiche.large{width:auto}
   #fiche.entre{animation:fiche-monte var(--moyen)}
