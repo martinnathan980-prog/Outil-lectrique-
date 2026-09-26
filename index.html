@@ -62,8 +62,7 @@ button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit
    Une seule forme pour tout ce qui nomme : chasse fixe, capitale, 10 px,
    interlettrage ouvert. En-tête de groupe, en-tête de colonne, libellé de
    champ — même objet, donc même dessin. */
-.grp>h3,.subhead,.field label,table.grid th,.btbl th,.rrep h4,#pop h5,.railtabs button,
-.mthead span{
+.grp>h3,.subhead,.field label,table.grid th,.btbl th,.rrep h4,#pop h5,.railtabs button,.mthead span{
   font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.09em;
   text-transform:uppercase;color:var(--ink-faint)}
 
@@ -85,7 +84,6 @@ button:disabled{opacity:.38;cursor:default;background:var(--chrome3);border-colo
 .linklike{background:none;border:0;color:var(--accent);padding:0;font:inherit;
   cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .linklike:hover{background:none;color:#73290c}
-
 input,select,textarea{background:var(--chrome2);border:1px solid var(--line);
   border-radius:var(--r);padding:5px 8px;font-size:12px;color:var(--ink);
   transition:border-color var(--t),box-shadow var(--t);width:100%}
@@ -138,7 +136,6 @@ header .sep{display:none}
   display:flex;align-items:center;justify-content:center;padding:0 4px;
   color:var(--ink);min-width:92px;text-align:center;user-select:none;
   border-left:1px solid var(--line2);border-right:1px solid var(--line2)}
-.plan-sel{display:none}
 
 /* ─── La colonne d'instrument ─────────────────────────────────────────── */
 aside{grid-area:side;background:var(--chrome2);border-right:1px solid var(--line);
@@ -169,8 +166,8 @@ aside{grid-area:side;background:var(--chrome2);border-right:1px solid var(--line
   padding-top:0;border-top:0}
 .subhead::after{content:'';flex:1;height:1px;background:var(--line);order:0}
 .brow{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
-.brow .ghost,.bc-row .ghost{border-color:var(--line);background:var(--chrome3);color:var(--ink-dim)}
-.brow .ghost:hover,.bc-row .ghost:hover{background:var(--chrome4);border-color:#b2ad9f;color:var(--ink)}
+.brow .ghost{border-color:var(--line);background:var(--chrome3);color:var(--ink-dim)}
+.brow .ghost:hover{background:var(--chrome4);border-color:#b2ad9f;color:var(--ink)}
 .brow input{flex:1;min-width:0}
 .hint{color:var(--ink-dim);font-size:11.5px;line-height:1.5;margin-top:8px}
 .hint b{color:var(--ink);font-weight:600}
@@ -192,8 +189,7 @@ aside{grid-area:side;background:var(--chrome2);border-right:1px solid var(--line
 #mt-find{margin-top:0}
 .mthead{display:flex;align-items:baseline;gap:8px;margin-top:12px;padding:0 6px 3px;
   border-bottom:1px solid var(--line)}
-.grp:has(#mt-liste:empty) .mthead,
-.grp:has(#mt-liste:empty) .hint-liste{display:none}
+.grp:has(#mt-liste:empty) .mthead,.grp:has(#mt-liste:empty) .hint-liste{display:none}
 .mthead span:last-child{margin-left:auto}
 #mt-liste{max-height:min(46vh,420px);overflow-y:auto;border-bottom:1px solid var(--line)}
 .mtrow{display:flex;align-items:baseline;gap:8px;padding:5px 6px;cursor:pointer;
@@ -234,15 +230,6 @@ table.grid input:focus{box-shadow:inset 0 0 0 1px var(--accent);background:var(-
 .field input{font-family:var(--mono);font-size:11px}
 
 /* Les câbles : une ligne de nomenclature, pas une carte. */
-.cbrow{display:flex;align-items:baseline;gap:8px;padding:4px 6px;
-  border-bottom:1px solid var(--line2)}
-.cbname{font-family:var(--mono);font-size:11.5px;color:var(--ink);font-weight:600;
-  flex:0 0 auto;letter-spacing:.02em}
-.cbmeta{font-family:var(--mono);font-size:10px;color:var(--ink-faint);
-  margin-left:auto;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#cb-list{border-top:1px solid var(--line);border-bottom:1px solid var(--line);
-  max-height:min(38vh,320px);overflow-y:auto}
-#cb-list .hint{border-top:0;margin-top:8px}
 
 /* ─── La feuille et son fond ─────────────────────────────────────────── */
 main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
@@ -288,8 +275,6 @@ main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
 .modal .body{padding:16px;overflow:auto;flex:1;min-height:0}
 .modal .foot{display:flex;justify-content:flex-end;gap:6px;padding:10px 16px;
   border-top:1px solid var(--line);background:var(--chrome3)}
-.modal .help{margin:0 0 12px;color:var(--ink-dim);font-size:11.5px;line-height:1.55}
-.modal .help b{color:var(--ink);font-weight:600}
 .modal textarea{min-height:130px;font-family:var(--mono);font-size:11px;resize:vertical}
 
 /* La fiche qui s'ouvre au clic sur un bloc ou un fil : une étiquette volante. */
@@ -310,10 +295,10 @@ main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
 /* ─── Impression ─────────────────────────────────────────────────────── */
 #printroot{display:none}
 @media print{
-  html,body{height:auto;overflow:visible;background:#fff}
-  #app,#modal,#bmodal,#rmodal,#pop,#drawerBg{display:none!important}
-  #printroot{display:block}
-  #printroot svg{width:100%;height:auto;max-width:100%}
+html,body{height:auto;overflow:visible;background:#fff}
+#app,#modal,#rmodal,#pop,#drawerBg{display:none!important}
+#printroot{display:block}
+#printroot svg{width:100%;height:auto;max-width:100%}
   @page{margin:8mm}
 }
 
@@ -321,42 +306,42 @@ main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
 .menu-btn{display:none}
 .drawer-bg{display:none}
 @media (max-width:860px){
-  #app{grid-template-columns:1fr;grid-template-areas:"top" "main"}
-  .menu-btn{display:inline-flex;align-items:center;justify-content:center;
+#app{grid-template-columns:1fr;grid-template-areas:"top" "main"}
+.menu-btn{display:inline-flex;align-items:center;justify-content:center;
     font-size:14px;padding:0 12px;border:0;border-right:1px solid var(--line);
     border-radius:0;background:transparent;color:var(--ink-dim);align-self:stretch}
-  .menu-btn:hover{background:var(--chrome3);border-right-color:var(--line)}
-  .ctx{display:none}
-  .brand{padding:0 10px;font-size:10px;letter-spacing:.09em}
-  .tools button{padding:0 9px}
-  .folionav .lbl{min-width:74px;font-size:10px}
-  aside{position:fixed;top:44px;left:0;bottom:0;width:min(88vw,320px);z-index:40;
+.menu-btn:hover{background:var(--chrome3);border-right-color:var(--line)}
+.ctx{display:none}
+.brand{padding:0 10px;font-size:10px;letter-spacing:.09em}
+.tools button{padding:0 9px}
+.folionav .lbl{min-width:74px;font-size:10px}
+aside{position:fixed;top:44px;left:0;bottom:0;width:min(88vw,320px);z-index:40;
     transform:translateX(-100%);transition:transform .16s linear;
     box-shadow:8px 0 28px rgba(23,24,26,.2)}
-  aside.open{transform:none}
-  .drawer-bg{display:block;position:fixed;inset:44px 0 0 0;background:rgba(23,24,26,.34);
+aside.open{transform:none}
+.drawer-bg{display:block;position:fixed;inset:44px 0 0 0;background:rgba(23,24,26,.34);
     z-index:35;opacity:0;pointer-events:none;transition:opacity .16s linear}
-  .drawer-bg.show{opacity:1;pointer-events:auto}
-  .hud{left:10px;bottom:10px}
-  .modal-bg{padding:8px}
-  .modal h2{padding:10px 12px}
-  .modal .body{padding:12px}
-  .modal .foot{padding:9px 12px}
-  .cart-grid{grid-template-columns:1fr 1fr}
+.drawer-bg.show{opacity:1;pointer-events:auto}
+.hud{left:10px;bottom:10px}
+.modal-bg{padding:8px}
+.modal h2{padding:10px 12px}
+.modal .body{padding:12px}
+.modal .foot{padding:9px 12px}
+.cart-grid{grid-template-columns:1fr 1fr}
 }
 @media (max-width:640px){
-  .folionav.on{position:fixed;right:10px;bottom:10px;z-index:30;
+.folionav.on{position:fixed;right:10px;bottom:10px;z-index:30;
     background:var(--chrome2);border:1px solid var(--line);border-radius:var(--r)}
-  .folionav button{padding:4px 10px}
-  .folionav .lbl{min-width:0;padding:0 8px;border-color:var(--line2)}
+.folionav button{padding:4px 10px}
+.folionav .lbl{min-width:0;padding:0 8px;border-color:var(--line2)}
 }
 @media (max-width:440px){
-  .brand{border-right:0}
-  .tools button{padding:0 8px;font-size:10px}
-  .vue{padding:12px 12px 20px}
+.brand{border-right:0}
+.tools button{padding:0 8px;font-size:10px}
+.vue{padding:12px 12px 20px}
 }
 @media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
 /* Barres de défilement : un rail, pas une pastille. */
 *::-webkit-scrollbar{width:11px;height:11px}
@@ -370,11 +355,6 @@ main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
  des traits noirs au milieu du papier. Ils sont repassés au filet unique. */
 
 /* ── La vue bornier, dans sa fenêtre ── */
-.bscroll{overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);
-border-radius:var(--r);background:#fff;padding:12px}
-.bscroll svg{display:block;margin:0 auto}
-.bempty{color:var(--ink-dim);padding:20px;text-align:center;margin:0;
-font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
 
 /* ── Lignes d'information : clé à gauche, valeur alignée à droite ── */
 .infoline{display:flex;justify-content:space-between;gap:12px;padding:4px 0;
@@ -444,7 +424,7 @@ transition:border-color var(--t),background var(--t)}
 .dropzone .dz-sub{margin-top:4px;font-size:11px;color:var(--ink-dim)}
 .dz-info{font-family:var(--mono);font-size:10.5px;margin-top:8px;min-height:14px;
 letter-spacing:.03em;color:var(--ink-faint)}
-.dz-info.ok{color:var(--ok)} .dz-info.err{color:var(--red)} .dz-info.load{color:var(--ink-dim)}
+.dz-info.ok{color:var(--ok)}.dz-info.err{color:var(--red)}.dz-info.load{color:var(--ink-dim)}
 
 /* ── Le jeton d'état (fichier chargé) ── */
 .colspec{margin:0 0 14px;padding:7px 9px;background:var(--chrome3);
@@ -452,17 +432,8 @@ border:1px solid var(--line);border-left:2px solid var(--accent);border-radius:v
 font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;color:var(--ink);
 line-height:1.65;word-break:break-word}
 
-.xchip{display:inline-flex;align-items:center;gap:6px;background:var(--chrome3);
-border:1px solid var(--line);border-left:2px solid var(--accent);color:var(--ink);
-border-radius:var(--r);padding:2px 6px 2px 8px;font-family:var(--mono);font-size:10.5px}
-.xchip button{background:none;border:0;color:var(--ink-faint);cursor:pointer;
-font-size:12px;padding:0 2px;line-height:1}
-.xchip button:hover{background:none;color:var(--red)}
-
 /* Le sélecteur de plan reste dans le DOM pour porter l'état ; il ne s'affiche
  plus, le pas-à-pas du bandeau le remplace. */
-.plan-sel{background:var(--chrome3);border:1px solid var(--line);color:var(--ink);
-border-radius:var(--r);padding:4px 6px;font-family:var(--mono);font-size:11px;max-width:150px}
 /* ---- ajouts de la refonte ---- */
 #stage.over{outline:2px dashed var(--accent);outline-offset:-6px}
 .btbl-wrap{max-height:150px;overflow:auto}
@@ -1415,7 +1386,7 @@ function placer(G, options) {
       lk.forEach((l, li) => { const A = bouts.get(li + ':A'), B = bouts.get(li + ':B'); const ia = nid(A.nom, A.cle), ib = nid(B.nom, B.cle); if (ia === ib) return;
         const ya = yB(ia, A.cle), yb = yB(ib, B.cle); if (Math.abs(ya - yb) >= 0.6) return;
         const xa = xDe.get(ia), xb = xDe.get(ib); if (xa == null || xb == null) return;
-        const seg = xa < xb ? [xa + largeurDe(ia), xb] : [xb + largeurDe(ib), xa]; S.push({ y: ya, x0: seg[0], x1: seg[1], ia, ib }); });
+        const seg = xa < xb ? [xa + largeurDe(ia), xb] : [xb + largeurDe(ib), xa]; S.push({ y: ya, x0: seg[0], x1: seg[1], ia, ib, ka: A.cle, kb: B.cle }); });
       return S; };
     const avaleUnDroit = (L, nt, nb) => { const x = xDe.get(L), w = largeurDe(L);
       return filsDroits().some(sg => sg.ia !== L && sg.ib !== L && sg.x1 > x + 2 && sg.x0 < x + w - 2 && sg.y > nt + 2 && sg.y < nb - 2); };
@@ -1512,8 +1483,43 @@ function placer(G, options) {
                   else { if (basDe.get(o) <= hautDe.get(P) + 1) mag = Math.min(mag, hautDe.get(P) - (basDe.get(o) + 8)); } }); }
               if (mag < 2 * PRH) return false; const d = signe * mag;
               cote.forEach(it => yBroche.set(H + SEP + it.k, yB(H, it.k) + d)); parts.forEach(P => glisser(P, d)); return true; };
+            /* glissement de broches : quand le bloc partenaire ne peut pas bouger, on
+               ne glisse que ses broches concernées dans leur bloc — aucun bloc ne bouge,
+               les deux bouts glissent ensemble, les fils restent droits. Candidat
+               (opt.condenser) : mesuré, il ne change pas la droiture mais rend les
+               blocs compacts — un équipement n'a plus à grandir pour attraper un fil
+               qu'une masse peut aller chercher. */
+            const essaiBroches = (cote, dy) => { if (!opt.condenser) return false;
+              const clesH = new Set(cote.map(it => it.k)); const mv = [], mvSet = new Set(); let ok = true;
+              cote.forEach(it => (partenaires.get(H + SEP + it.k) || []).forEach(q => { if (!ok || estPastille(q.id)) return;
+                if (q.id === H) { if (!clesH.has(q.cle)) ok = false; return; }
+                const pk = q.id + SEP + q.cle; if (mvSet.has(pk)) return;
+                for (const r of (partenaires.get(pk) || [])) { if (!(r.id === H && clesH.has(r.cle))) { ok = false; return; } }
+                mvSet.add(pk); mv.push({ id: q.id, cle: q.cle }); }));
+              if (!ok || !mv.length) return false;
+              const signe = dy > 0 ? 1 : -1, touches = [...new Set(mv.map(m => m.id))];
+              let SGS = null; const sgs = () => SGS || (SGS = filsDroits());
+              const enMouvement = sg => (sg.ia === H && clesH.has(sg.ka)) || (sg.ib === H && clesH.has(sg.kb)) || mvSet.has(sg.ia + SEP + sg.ka) || mvSet.has(sg.ib + SEP + sg.kb);
+              let bornes = null;
+              const tient = mag => { const d = signe * mag; bornes = new Map();
+                for (const m of mv) { const y = yB(m.id, m.cle) + d; if (!couloirLibre(H, m.id, y)) return false;
+                  for (const p of noeuds.get(m.id).broches) { if (mvSet.has(m.id + SEP + p.cle)) continue; if (Math.abs(yB(m.id, p.cle) - y) < PRH - 0.5) return false; } }
+                for (const id of touches) { let lo = Infinity, hi = -Infinity;
+                  noeuds.get(id).broches.forEach(p => { const y = yB(id, p.cle) + (mvSet.has(id + SEP + p.cle) ? d : 0); lo = Math.min(lo, y); hi = Math.max(hi, y); });
+                  const isS = !!listes.get(id).S, nt = lo - (isS ? HHS + PRH / 2 : 22), nb = hi + (isS ? PRH / 2 + 5 : 22);
+                  if (nt < hautDe.get(id) - 0.5 || nb > basDe.get(id) + 0.5) { if (heurte(id, nt, nb)) return false;
+                    const x = xDe.get(id), w = largeurDe(id), zt1 = nt, zb1 = hautDe.get(id), zt2 = basDe.get(id), zb2 = nb;
+                    if (sgs().some(sg => !enMouvement(sg) && sg.ia !== id && sg.ib !== id && sg.x1 > x + 2 && sg.x0 < x + w - 2 && ((sg.y > zt1 + 2 && sg.y < zb1 - 2) || (sg.y > zt2 + 2 && sg.y < zb2 - 2)))) return false; }
+                  bornes.set(id, { nt, nb }); }
+                return true; };
+              let mag = Math.abs(dy); while (mag >= 2 * PRH && !tient(mag)) mag = Math.floor(mag / 2);
+              if (mag < 2 * PRH) return false; const d = signe * mag;
+              cote.forEach(it => yBroche.set(H + SEP + it.k, yB(H, it.k) + d)); mv.forEach(m => yBroche.set(m.id + SEP + m.cle, yB(m.id, m.cle) + d));
+              bornes.forEach((b2, id) => { hautDe.set(id, b2.nt); basDe.set(id, b2.nb); }); return true; };
             const reduit = T.gp - PRH;
-            fait = dessus.length <= dessous.length ? (essai(dessus, reduit) || essai(dessous, -reduit)) : (essai(dessous, -reduit) || essai(dessus, reduit));
+            fait = dessus.length <= dessous.length
+              ? (essai(dessus, reduit) || essai(dessous, -reduit) || essaiBroches(dessus, reduit) || essaiBroches(dessous, -reduit))
+              : (essai(dessous, -reduit) || essai(dessus, reduit) || essaiBroches(dessous, -reduit) || essaiBroches(dessus, reduit));
             if (fait) break; }
           if (!fait) break; bouge = true; }
         if (bouge) rebord.add(H); });
@@ -1661,6 +1667,12 @@ function meilleurPlacement(liaisons) {
   { const fix = goulottesOccupees(best);
     if (fix) { const L2 = essayer({ graine: bGraine, goulottes: fix });
       if (compterDroits(L2.routage.fils) >= compterDroits(best.routage.fils) - 1 && largeur(L2) < largeur(best) * 0.97 && filsDansBloc(L2) <= filsDansBloc(best)) { best = L2; bGoulottes = fix; } } }
+  // condensation par glissement de broches : gardée si aucun fil droit n'est
+  // perdu et pas plus de croisements — elle rend les blocs compacts
+  { const L3 = essayer({ graine: bGraine, goulottes: bGoulottes, condenser: true });
+    const s3 = compterDroits(L3.routage.fils), s0 = compterDroits(best.routage.fils);
+    const c3 = compterCroisements(L3.routage.fils), c0 = compterCroisements(best.routage.fils);
+    if (filsDansBloc(L3) <= filsDansBloc(best) && (s3 > s0 || (s3 === s0 && c3 <= c0))) best = L3; }
   // secours : serpentin
   const emprise = L => { let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
     L.comps.forEach(c => { x0 = Math.min(x0, c.x); x1 = Math.max(x1, c.x + c.w); y0 = Math.min(y0, c.y); y1 = Math.max(y1, c.y + c.h); });

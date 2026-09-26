@@ -3,52 +3,55 @@
 ## Lancer
 
 ```
-node tests/controle.js        les invariants et les pièges déjà tombés
-node tests/memoire.js         le travail survit-il à la fermeture de l'onglet
-node tests/banc-placement.js  combien de fils sortent droits, et sur quelle feuille
-node tests/format-retest.js   les seize colonnes sont lues par leur nom
+node tests/controle.js         les invariants, le contrat d'essai, la base de retest, les pièges déjà tombés
+node tests/memoire.js          le travail survit-il à la fermeture de l'onglet
+node tests/format-retest.js    les seize colonnes sont lues par leur nom
+node tests/banc-placement.js   combien de fils sortent droits, et sur quelle feuille
 ```
 
-Les trois sont indépendants. `controle.js` et `memoire.js` rendent 1 en cas
-d'échec, pour qu'un enchaînement s'arrête ; `banc-placement.js` est une
-MESURE et non un contrôle — il ne juge pas, il chiffre, et il ne rend 1 que
-si un invariant sacré est violé. C'est lui qu'on relance avant et après tout
-changement du moteur de placement, avec `--json` pour comparer deux
-versions.
+Tous acceptent `--fichier=chemin` pour mesurer un autre fichier que
+`index.html` (c'est ainsi qu'on a tenu la parité avec l'ancien moteur pendant
+la refonte). `controle.js` et `memoire.js` rendent 1 en cas d'échec, pour
+qu'un enchaînement s'arrête ; `banc-placement.js` est une MESURE et non un
+contrôle — il chiffre, avec `--json` pour comparer deux versions — et ne rend
+1 que si un invariant sacré est violé.
 
-Il faut Playwright et un Chromium. Sur la machine de développement :
+Il faut Playwright et un Chromium :
 
 ```
-NODE_PATH=/opt/node22/lib/node_modules /opt/node22/bin/node tests/controle.js
+NODE_PATH=/opt/node22/lib/node_modules node tests/controle.js
 ```
 
-Le script sort avec le code **1** si un seul contrôle échoue — de quoi
-l'enchaîner à un déploiement sans y penser.
+`tests/pilote.js` est le seul endroit qui sait parler à la page : trois
+verbes (charger, essai, mesurer) sur l'API `atelier` de `src/10-demarrage.js`.
 
-## Ce qu'il vérifie
+## Le contrat de la refonte
+
+Avant de toucher au moteur, on relance le banc ; après, on le relance. Les
+chiffres de référence sur les quatorze topologies :
+
+    96,1 % de fils droits · 8 croisements · 0 violation
+    contrat d'essai : 83,3 %, 6 croisements, format 1,41
+
+Un changement qui fait baisser le premier chiffre doit dire pourquoi, dans son
+message de commit, mesure à l'appui.
+
+## Ce que `controle.js` vérifie
 
 | # | Contrôle | Pourquoi c'est là |
 |---|---|---|
-| 1 | Le fichier se charge seul, bibliothèque Excel comprise | `index.html` doit marcher **sans aucun fichier à côté**. Ça a déjà cassé une fois. |
-| 2 | Le dessin reste sain sur la base embarquée | L'invariant le plus important : **aucun fil ne traverse un bloc**, **aucun bloc n'en chevauche un autre**. Le reste est du confort ; ça, c'est faux ou juste. |
-| 3 | Le contrat d'essai se dessine, ses deux barrettes sont repérées | La détection des barrettes est ce sur quoi tout le rapprochement s'appuie. |
-| 4 | Les trois règles de prise de coupure | Et surtout : **sans fichier de localisation, aucune coupure n'est inventée**. |
-| 5 | Identification par empreinte, choix du contrat de départ | Qu'un équipement aux bornes déplacées soit reconnu, et que le différentiel fasse remonter les pièces manquantes. |
+| 1 | Le fichier se charge seul, bibliothèque Excel comprise | `index.html` doit marcher **sans aucun fichier à côté**. |
+| 2 | Le dessin reste sain sur les formes qui font mal | **Aucun fil ne traverse un bloc, aucun bloc n'en chevauche un autre.** La chaîne doit en plus tenir sur une feuille. |
+| 3 | Le contrat d'essai : barrettes repérées, numéros de fil écrits sans se marcher dessus | Le numéro de fil est l'information numéro un d'un câbleur. |
+| 5 | Identification par empreinte, choix du contrat de départ, différentiel | Qu'un équipement aux bornes déplacées soit reconnu, que le bon contrat sorte premier, que les pièces manquantes remontent. |
+| 6 | Écriture des pièces, provenance, annulation exacte | On recopie, on ne reconstruit pas ; « Annuler » rend l'état d'avant. |
+| 7 | Les pièges déjà tombés | Chaque défaut trouvé un jour a son contrôle, pour ne pas revenir. |
 
 ## Ce qu'il ne vérifie pas
 
-- **L'esthétique.** Le nombre de fils droits est affiché mais ne fait pas
-  échouer le contrôle, sauf s'il tombe sous 90 % : la beauté se juge à l'œil,
-  sur des captures.
-- **Les gros volumes.** La vraie base fait 596 244 lignes ; le contrôle
-  travaille sur des jeux d'essai de quelques dizaines de lignes, pour rester
-  rapide. Un changement qui touche à la lecture du `.xlsm` doit être essayé à
-  la main sur le vrai fichier.
-- **Le fichier de localisation.** Il n'existe pas encore. Les zones utilisées
-  ici sont provisoires ; les règles sont vérifiées, pas les valeurs.
-
-## Si un contrôle échoue
-
-Le message donne la mesure à côté du nom. Un `filsDansBloc` ou un
-`chevauch` non nul est un défaut de moteur, jamais un réglage : c'est à
-corriger avant tout le reste.
+- **L'esthétique.** Elle se juge à l'œil, sur des captures.
+- **Les gros volumes.** La vraie base fait des centaines de milliers de
+  lignes ; les contrôles travaillent sur quelques dizaines. Un changement à
+  la lecture Excel s'essaie à la main sur le vrai fichier.
+- **Le fichier de localisation.** Il n'existe pas encore ; les règles de
+  coupure attendent dans `a-venir/`.

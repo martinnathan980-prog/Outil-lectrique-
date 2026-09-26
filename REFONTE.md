@@ -106,3 +106,29 @@ Chaque liaison porte un `pnDe` / `pnVers` (le part number du connecteur) et un
 `cable` : c'est par là qu'arriveront les normes de connecteur, le nombre de
 modules, la section, l'intensité, la chute en ligne et le calibre. Le modèle
 les attend ; les tables viendront de toi.
+
+## 5. Où on en est
+
+Fait, mesuré, en place :
+
+- **Fondation** : `src/01-modele`, `02-lecture`, `construire.js`, `lib/xlsx.min.js`.
+- **Moteur** : `03-graphe`, `04-placement`, `05-routage` — parité EXACTE au banc
+  avec l'ancien moteur (mêmes surfaces, mêmes formats, 96,1 %, 8 croisements,
+  contrat 83,3 %/6) en 2,5 fois moins de temps. Sept graines, resserrage des
+  goulottes, condensation par glissement de broches, serpentin. Aucun drapeau.
+  Deux de ces trois passes avaient été jugées « sans effet » par l'ablation de
+  la section 2, qui ne mesurait que la droiture : elles agissent sur la
+  densité et sur la compacité des blocs. Vérifié bloc par bloc sur le contrat
+  d'essai : les douze blocs sortent aux mêmes coordonnées qu'avant.
+- **Dessin, folios, interface** : `06-dessin`, `07-folios`, `08-interface`.
+- **Base de retest** : `09-retest`, avec ses contrôles.
+- **Contrôles** réécrits sur l'API `atelier` : 31 + 5 + 13, banc, 23 contrôles
+  de fumée de l'interface, 14 limites de la base de retest.
+
+Le compte : **6 685 lignes en un fichier → 2 300 lignes en dix modules**, dont
+moins d'un cinquième de commentaires, tous au présent.
+
+Ce qui attend tes tables (le modèle les prévoit, le code ne les invente pas) :
+normes de connecteur (`pnDe` / `pnVers`), sections et intensités, calibres,
+bibles de barrettes et de prises de coupure, fichier de localisation pour les
+règles de coupure (`a-venir/regles-de-coupure.js`).

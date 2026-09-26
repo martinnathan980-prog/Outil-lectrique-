@@ -469,7 +469,7 @@ function placer(G, options) {
       lk.forEach((l, li) => { const A = bouts.get(li + ':A'), B = bouts.get(li + ':B'); const ia = nid(A.nom, A.cle), ib = nid(B.nom, B.cle); if (ia === ib) return;
         const ya = yB(ia, A.cle), yb = yB(ib, B.cle); if (Math.abs(ya - yb) >= 0.6) return;
         const xa = xDe.get(ia), xb = xDe.get(ib); if (xa == null || xb == null) return;
-        const seg = xa < xb ? [xa + largeurDe(ia), xb] : [xb + largeurDe(ib), xa]; S.push({ y: ya, x0: seg[0], x1: seg[1], ia, ib }); });
+        const seg = xa < xb ? [xa + largeurDe(ia), xb] : [xb + largeurDe(ib), xa]; S.push({ y: ya, x0: seg[0], x1: seg[1], ia, ib, ka: A.cle, kb: B.cle }); });
       return S; };
     const avaleUnDroit = (L, nt, nb) => { const x = xDe.get(L), w = largeurDe(L);
       return filsDroits().some(sg => sg.ia !== L && sg.ib !== L && sg.x1 > x + 2 && sg.x0 < x + w - 2 && sg.y > nt + 2 && sg.y < nb - 2); };
@@ -566,8 +566,43 @@ function placer(G, options) {
                   else { if (basDe.get(o) <= hautDe.get(P) + 1) mag = Math.min(mag, hautDe.get(P) - (basDe.get(o) + 8)); } }); }
               if (mag < 2 * PRH) return false; const d = signe * mag;
               cote.forEach(it => yBroche.set(H + SEP + it.k, yB(H, it.k) + d)); parts.forEach(P => glisser(P, d)); return true; };
+            /* glissement de broches : quand le bloc partenaire ne peut pas bouger, on
+               ne glisse que ses broches concernées dans leur bloc — aucun bloc ne bouge,
+               les deux bouts glissent ensemble, les fils restent droits. Candidat
+               (opt.condenser) : mesuré, il ne change pas la droiture mais rend les
+               blocs compacts — un équipement n'a plus à grandir pour attraper un fil
+               qu'une masse peut aller chercher. */
+            const essaiBroches = (cote, dy) => { if (!opt.condenser) return false;
+              const clesH = new Set(cote.map(it => it.k)); const mv = [], mvSet = new Set(); let ok = true;
+              cote.forEach(it => (partenaires.get(H + SEP + it.k) || []).forEach(q => { if (!ok || estPastille(q.id)) return;
+                if (q.id === H) { if (!clesH.has(q.cle)) ok = false; return; }
+                const pk = q.id + SEP + q.cle; if (mvSet.has(pk)) return;
+                for (const r of (partenaires.get(pk) || [])) { if (!(r.id === H && clesH.has(r.cle))) { ok = false; return; } }
+                mvSet.add(pk); mv.push({ id: q.id, cle: q.cle }); }));
+              if (!ok || !mv.length) return false;
+              const signe = dy > 0 ? 1 : -1, touches = [...new Set(mv.map(m => m.id))];
+              let SGS = null; const sgs = () => SGS || (SGS = filsDroits());
+              const enMouvement = sg => (sg.ia === H && clesH.has(sg.ka)) || (sg.ib === H && clesH.has(sg.kb)) || mvSet.has(sg.ia + SEP + sg.ka) || mvSet.has(sg.ib + SEP + sg.kb);
+              let bornes = null;
+              const tient = mag => { const d = signe * mag; bornes = new Map();
+                for (const m of mv) { const y = yB(m.id, m.cle) + d; if (!couloirLibre(H, m.id, y)) return false;
+                  for (const p of noeuds.get(m.id).broches) { if (mvSet.has(m.id + SEP + p.cle)) continue; if (Math.abs(yB(m.id, p.cle) - y) < PRH - 0.5) return false; } }
+                for (const id of touches) { let lo = Infinity, hi = -Infinity;
+                  noeuds.get(id).broches.forEach(p => { const y = yB(id, p.cle) + (mvSet.has(id + SEP + p.cle) ? d : 0); lo = Math.min(lo, y); hi = Math.max(hi, y); });
+                  const isS = !!listes.get(id).S, nt = lo - (isS ? HHS + PRH / 2 : 22), nb = hi + (isS ? PRH / 2 + 5 : 22);
+                  if (nt < hautDe.get(id) - 0.5 || nb > basDe.get(id) + 0.5) { if (heurte(id, nt, nb)) return false;
+                    const x = xDe.get(id), w = largeurDe(id), zt1 = nt, zb1 = hautDe.get(id), zt2 = basDe.get(id), zb2 = nb;
+                    if (sgs().some(sg => !enMouvement(sg) && sg.ia !== id && sg.ib !== id && sg.x1 > x + 2 && sg.x0 < x + w - 2 && ((sg.y > zt1 + 2 && sg.y < zb1 - 2) || (sg.y > zt2 + 2 && sg.y < zb2 - 2)))) return false; }
+                  bornes.set(id, { nt, nb }); }
+                return true; };
+              let mag = Math.abs(dy); while (mag >= 2 * PRH && !tient(mag)) mag = Math.floor(mag / 2);
+              if (mag < 2 * PRH) return false; const d = signe * mag;
+              cote.forEach(it => yBroche.set(H + SEP + it.k, yB(H, it.k) + d)); mv.forEach(m => yBroche.set(m.id + SEP + m.cle, yB(m.id, m.cle) + d));
+              bornes.forEach((b2, id) => { hautDe.set(id, b2.nt); basDe.set(id, b2.nb); }); return true; };
             const reduit = T.gp - PRH;
-            fait = dessus.length <= dessous.length ? (essai(dessus, reduit) || essai(dessous, -reduit)) : (essai(dessous, -reduit) || essai(dessus, reduit));
+            fait = dessus.length <= dessous.length
+              ? (essai(dessus, reduit) || essai(dessous, -reduit) || essaiBroches(dessus, reduit) || essaiBroches(dessous, -reduit))
+              : (essai(dessous, -reduit) || essai(dessus, reduit) || essaiBroches(dessous, -reduit) || essaiBroches(dessus, reduit));
             if (fait) break; }
           if (!fait) break; bouge = true; }
         if (bouge) rebord.add(H); });
@@ -715,6 +750,12 @@ function meilleurPlacement(liaisons) {
   { const fix = goulottesOccupees(best);
     if (fix) { const L2 = essayer({ graine: bGraine, goulottes: fix });
       if (compterDroits(L2.routage.fils) >= compterDroits(best.routage.fils) - 1 && largeur(L2) < largeur(best) * 0.97 && filsDansBloc(L2) <= filsDansBloc(best)) { best = L2; bGoulottes = fix; } } }
+  // condensation par glissement de broches : gardée si aucun fil droit n'est
+  // perdu et pas plus de croisements — elle rend les blocs compacts
+  { const L3 = essayer({ graine: bGraine, goulottes: bGoulottes, condenser: true });
+    const s3 = compterDroits(L3.routage.fils), s0 = compterDroits(best.routage.fils);
+    const c3 = compterCroisements(L3.routage.fils), c0 = compterCroisements(best.routage.fils);
+    if (filsDansBloc(L3) <= filsDansBloc(best) && (s3 > s0 || (s3 === s0 && c3 <= c0))) best = L3; }
   // secours : serpentin
   const emprise = L => { let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
     L.comps.forEach(c => { x0 = Math.min(x0, c.x); x1 = Math.max(x1, c.x + c.w); y0 = Math.min(y0, c.y); y1 = Math.max(y1, c.y + c.h); });
