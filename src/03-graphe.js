@@ -86,6 +86,11 @@ function construireGraphe(liaisons) {
     adj.get(ia).set(ib, (adj.get(ia).get(ib) || 0) + 1);
     adj.get(ib).set(ia, (adj.get(ib).get(ia) || 0) + 1); });
   const degreDe = n => { let s = 0; for (const w of adj.get(n).values()) s += w; return s; };
+  // les FEUILLES d'un nœud : ses voisins à une seule borne qui ne parlent qu'à lui, dans l'ordre de ses bornes
+  const feuillesDe = n => { const vues = new Set(), out = [];
+    noeuds.get(n).broches.forEach(p => (partenaires.get(n + SEP + p.cle) || []).forEach(q => { if (vues.has(q.id)) return; vues.add(q.id);
+      if (q.id !== n && noeuds.get(q.id).broches.length === 1 && adj.get(q.id).size === 1) out.push(q.id); }));
+    return out; };
 
-  return { liaisons: lk, noms, noeuds, ids, bouts, nid, partenaires, adj, degreDe };
+  return { liaisons: lk, noms, noeuds, ids, bouts, nid, partenaires, adj, degreDe, feuillesDe };
 }

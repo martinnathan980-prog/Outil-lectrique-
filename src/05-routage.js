@@ -155,12 +155,16 @@ function router(layout) {
         const P = EA(li), Q = EB(li);
         fils[li] = { ...l, pts: [{ x: P.x, y: P.y }, { x: Q.x, y: Q.y }] };
       } else if (!parLaMarge(li, A, B)) travaux[A.ch].push({ li, part: 0, eps: [{ y: A.y, s: A.stub }, { y: B.y, s: B.stub }] });
-    } else if (A.stub === 'R' && B.stub === 'L' && Math.abs(A.y - B.y) < 0.75 && couloirLibre(A.x + 2, B.x - 2, A.y)) {
+    /* `stub` dit de quel côté de sa goulotte un bout se trouve : 'L' pour une
+       borne du flanc droit (la goulotte est à sa droite), 'R' pour une borne
+       du flanc gauche. Un fil qui enjambe une colonne part donc d'un bout 'L'
+       et arrive sur un bout 'R'. */
+    } else if (A.stub === 'L' && B.stub === 'R' && Math.abs(A.y - B.y) < 0.75 && couloirLibre(A.x + 2, B.x - 2, A.y)) {
       fils[li] = { ...l, pts: [{ x: A.x, y: A.y }, { x: B.x, y: B.y }] };       // tout droit
       if (l.epA.ch > l.epB.ch) fils[li].pts.reverse();
-    } else if (A.stub === 'R' && couloirLibre(A.x + 2, goulotteX(B.ch) + g.chW[B.ch] - 2, A.y)) {
+    } else if (A.stub === 'L' && couloirLibre(A.x + 2, goulotteX(B.ch) + g.chW[B.ch] - 2, A.y)) {
       travaux[B.ch].push({ li, part: 3, eps: [{ y: A.y, s: 'L' }, { y: B.y, s: B.stub }] });   // droit puis descente à l'arrivée
-    } else if (B.stub === 'L' && couloirLibre(goulotteX(A.ch) + 2, B.x - 2, B.y)) {
+    } else if (B.stub === 'R' && couloirLibre(goulotteX(A.ch) + 2, B.x - 2, B.y)) {
       travaux[A.ch].push({ li, part: 4, eps: [{ y: A.y, s: A.stub }, { y: B.y, s: 'R' }] });   // coude au départ puis droit
     } else {
       // un couloir intermédiaire libre entre les deux bornes : petit Z local ;

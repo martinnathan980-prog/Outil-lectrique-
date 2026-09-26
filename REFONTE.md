@@ -129,6 +129,16 @@ Fait, mesuré, en place :
   barrette qui tranche un fil est un croisement) : 96,0 %, 14 croisements,
   3 cas hors feuille au lieu de 7, surface totale 6060 → 5130 ; contrat
   d'essai 83,3 % / 6 → 88,9 % / 2, densité 29,4 → 37,8 %.
+- **Troisième départ du placement** : un seul juge pour tout le concours
+  (sain, tient sur la feuille, fils droits, croisements, encombrement sur
+  la feuille, emprise, barrettes) ; une borne qui parle des deux côtés se
+  dédouble sur les deux flancs ; les fils servis par une barrette sortent du
+  solveur d'ordonnées ; un fil qui enjambe une colonne passe entre deux
+  blocs (contraintes de couloir) et le routeur le trace droit ; les feuilles
+  d'un hub se rangent sur deux colonnes quand elles sont nombreuses ; le
+  serpentin replie chaque composante sur ses rangées et emboîte ses fils de
+  retour. Banc : 96,7 %, 4 croisements, 0 cas hors feuille, surface totale
+  5287 ; contrat d'essai 18 fils droits sur 18, 3 croisements, format 1,85.
 - **Langage du dessin** (`06-dessin`) : prise de coupure en deux colonnes de
   cellules numérotées des deux côtés, fiche dans embase ; réglette à cellules
   d'un pas, shunt en pont ; masse CEI sous un collecteur ponctué.

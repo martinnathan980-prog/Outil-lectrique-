@@ -31,8 +31,8 @@ Avant de toucher au moteur, on relance le banc ; après, on le relance. Les
 chiffres de référence sur les quinze topologies (une barrette qui tranche
 un fil compte comme un croisement) :
 
-    96,0 % de fils droits · 14 croisements · 0 violation · 3 cas hors feuille
-    contrat d'essai : 88,9 %, 2 croisements, densité 37,8 %, format 1,80
+    96,7 % de fils droits · 4 croisements · 0 violation · 0 cas hors feuille
+    contrat d'essai : 100 %, 3 croisements, densité 33,5 %, format 1,85
 
 Un changement qui fait baisser le premier chiffre doit dire pourquoi, dans son
 message de commit, mesure à l'appui.
