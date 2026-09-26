@@ -133,11 +133,17 @@ Fait, mesuré, en place :
   cellules numérotées des deux côtés, fiche dans embase ; réglette à cellules
   d'un pas, shunt en pont ; masse CEI sous un collecteur ponctué.
 - **Le site, reparti de zéro** (`page.html`, `style.css`, `08-interface`) :
-  le plan est l'écran, posé sur une table sombre ; commandes flottantes en
-  deux coins, réglette de folios en bas ; une seule fiche à la fois
-  (équipement, fil, table, cartouche, collage), en tiroir bas sur téléphone ;
-  recherche par repère ou numéro de fil qui change de folio ; le cuivre du
-  fil pour seul accent ; aucune police ni image extérieure.
+  le plan est l'écran, posé sur une table ; commandes flottantes en deux
+  coins, réglette de folios en bas ; recherche par repère ou numéro de fil
+  qui change de folio ; le cuivre du fil pour seul accent ; aucune police ni
+  image extérieure. **La base à côté du plan** : un panneau (droite, ou
+  tiroir bas sur téléphone) montre les liaisons, éditables cellule par
+  cellule, et c'est la base qui redessine le plan ; cliquer un bloc la filtre
+  sur lui, survoler une ligne allume le fil. Ouvrir est dans le menu (et
+  Ctrl+O, et le dépôt) : on ne le fait qu'une fois.
+- **Le dessin parle fil** : un croisement se lit par un pont sur le fil
+  horizontal ; un piquage est du fil avec des points de jonction ; les bornes
+  d'un équipement sont dans le corps, une petite borne ronde au contact.
 - **Base de retest** : mise de côté dans `a-venir/09-retest.js` avec ses
   contrôles (`tests/retest.js` se passe si elle n'est pas dans la page).
 - **Contrôles** sur l'API `atelier` : 17 + 5 + 13, banc de 15 topologies.
