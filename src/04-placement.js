@@ -76,10 +76,10 @@ function placer(G, options) {
   }
 
   /* ===== 2. VOIES : les composantes indépendantes côte à côte ============ */
-  { const comp = new Map(); let nc = 0;
-    for (const n of ids) { if (comp.has(n)) continue; const q = [n]; comp.set(n, nc);
-      while (q.length) { const u = q.pop(); for (const k of adj.get(u).keys()) if (!comp.has(k)) { comp.set(k, nc); q.push(k); } } nc++; }
-    if (nc > 1) {
+  const comp = new Map(); let nc = 0;
+  for (const n of ids) { if (comp.has(n)) continue; const q = [n]; comp.set(n, nc);
+    while (q.length) { const u = q.pop(); for (const k of adj.get(u).keys()) if (!comp.has(k)) { comp.set(k, nc); q.push(k); } } nc++; }
+  { if (nc > 1) {
       const comps = Array.from({ length: nc }, () => ({ ids: [], h: 0, span: 0 }));
       ids.forEach(n => { const c = comps[comp.get(n)]; c.ids.push(n);
         c.h += noeuds.get(n).broches.length * PRH + 60; c.span = Math.max(c.span, niveau.get(n)); });
@@ -93,8 +93,22 @@ function placer(G, options) {
 
   /* ===== 3. SERPENTIN : replier les colonnes en rangées, en boustrophédon = */
   const rangeeDe = new Map(ids.map(n => [n, 0]));
-  if (SERP > 0) ids.forEach(n => { const l = niveau.get(n), r = Math.floor(l / SERP), k = l % SERP;
-    rangeeDe.set(n, r); niveau.set(n, (r % 2 === 0) ? k : (SERP - 1 - k)); });
+  const compDeRangee = new Map();                 // rangée -> composante qui l'occupe seule
+  // entre deux rangées d'une même composante passent des fils : large ; entre
+  // deux composantes il ne passe rien : serré
+  const ecartRangees = r => (compDeRangee.has(r) && compDeRangee.has(r + 1) && compDeRangee.get(r) !== compDeRangee.get(r + 1)) ? 2 * VGAP : RANGEE_GAP;
+  if (SERP > 0) {
+    // chaque composante trop longue se replie sur SES rangées : deux chaînes
+    // repliées ensemble mêlaient leurs rangées et leurs fils de retour se croisaient
+    const etendue = new Map();
+    ids.forEach(n => { const c = comp.get(n), l = niveau.get(n); const e = etendue.get(c) || etendue.set(c, { lo: l, hi: l }).get(c); e.lo = Math.min(e.lo, l); e.hi = Math.max(e.hi, l); });
+    const longues = [...etendue.entries()].filter(([, e]) => e.hi - e.lo + 1 > SERP).sort((a, b) => a[1].lo - b[1].lo);
+    const base = new Map(); let r0 = 0;
+    longues.forEach(([c, e]) => { base.set(c, { r: r0, lo: e.lo }); const n = Math.ceil((e.hi - e.lo + 1) / SERP);
+      for (let r = r0; r < r0 + n; r++) compDeRangee.set(r, c); r0 += n; });
+    ids.forEach(n => { const b = base.get(comp.get(n)); const l = b ? niveau.get(n) - b.lo : niveau.get(n);
+      const r = (b ? b.r : r0) + Math.floor(l / SERP), k = l % SERP;
+      rangeeDe.set(n, r); niveau.set(n, (r % 2 === 0) ? k : (SERP - 1 - k)); }); }
   const nRang = SERP > 0 ? 1 + Math.max(0, ...ids.map(n => rangeeDe.get(n))) : 1;
 
   const nMax = ids.length ? Math.max(...ids.map(n => niveau.get(n))) : 0;
@@ -155,7 +169,7 @@ function placer(G, options) {
     const hR = new Array(nRang).fill(0);
     colonnes.forEach(c => { const s = new Array(nRang).fill(-VGAP); c.forEach(id => { s[rangeeDe.get(id)] += hauteurEstimee(id) + VGAP; });
       for (let r = 0; r < nRang; r++) hR[r] = Math.max(hR[r], Math.max(0, s[r])); });
-    let y = HAUT_PAGE; for (let r = 0; r < nRang; r++) { bandeY.push(y); y += hR[r] + RANGEE_GAP; }
+    let y = HAUT_PAGE; for (let r = 0; r < nRang; r++) { bandeY.push(y); y += hR[r] + ecartRangees(r); }
     colonnes.forEach((c, i) => { if (SERP > 0) c.sort((a, b) => rangeeDe.get(a) - rangeeDe.get(b));
       const cur = bandeY.slice(); if (SERP <= 0) cur[0] = HAUT_PAGE + (maxColH - colH[i]) / 2;
       c.forEach(id => { const r = rangeeDe.get(id) || 0; const y = cur[r]; hautDe.set(id, y);
@@ -685,8 +699,8 @@ function placer(G, options) {
   // serpentin : les rangées se remettent l'une sous l'autre par translation RIGIDE
   if (SERP > 0 && nRang > 1) { const parRangee = Array.from({ length: nRang }, () => []); ids.forEach(n => parRangee[rangeeDe.get(n) || 0].push(n));
     let y = HAUT_PAGE;
-    parRangee.forEach(grp => { if (!grp.length) return; let lo = Infinity, hi = -Infinity; grp.forEach(id => { lo = Math.min(lo, hautDe.get(id)); hi = Math.max(hi, basDe.get(id)); });
-      if (!isFinite(lo)) return; const dy = y - lo; if (dy) grp.forEach(id => glisser(id, dy)); y += (hi - lo) + RANGEE_GAP; });
+    parRangee.forEach((grp, r) => { if (!grp.length) return; let lo = Infinity, hi = -Infinity; grp.forEach(id => { lo = Math.min(lo, hautDe.get(id)); hi = Math.max(hi, basDe.get(id)); });
+      if (!isFinite(lo)) return; const dy = y - lo; if (dy) grp.forEach(id => glisser(id, dy)); y += (hi - lo) + ecartRangees(r); });
     pastilles.forEach(sp => { sp.y1 = hautDe.get(sp.id); sp.y2 = basDe.get(sp.id); }); }
   let yMin = Infinity, yMax = -Infinity;
   ids.forEach(id => { yMin = Math.min(yMin, hautDe.get(id)); yMax = Math.max(yMax, basDe.get(id)); });
