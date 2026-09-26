@@ -200,7 +200,7 @@ let qSel = 0, qCands = [];
 function montrerCandidats() { const box = $('q-liste'), q = $('q').value; qCands = candidats(q);
   if (!q.trim()) { box.hidden = true; return; } box.hidden = false; qSel = Math.min(qSel, Math.max(0, qCands.length - 1));
   box.innerHTML = qCands.length ? qCands.map((c, i) => `<button class="q-item${i === qSel ? ' on' : ''}" role="option" data-i="${i}" aria-selected="${i === qSel}">
-      <span class="genre">${c.type === 'fil' ? 'fil' : 'rep.'}</span><span class="nom">${esc(c.nom)}</span><span class="des">${esc(c.des)}</span>${c.n ? `<span class="cpt">${c.n} fil${c.n > 1 ? 's' : ''}</span>` : ''}</button>`).join('')
+      <span class="genre">${c.type === 'fil' ? 'fil' : 'repère'}</span><span class="nom">${esc(c.nom)}</span><span class="des">${esc(c.des)}</span>${c.n ? `<span class="cpt">${c.n} fil${c.n > 1 ? 's' : ''}</span>` : ''}</button>`).join('')
     : '<div class="q-rien">Rien qui corresponde.</div>'; }
 function fermerRecherche() { $('q-liste').hidden = true; $('haut').classList.remove('cherche'); }
 function lierRecherche() { const q = $('q'), box = $('q-liste');
@@ -286,13 +286,14 @@ function ficheFil(l, neuve) {
   if (neuve) $('fl-vers').focus();
 }
 function ficheTable(filtre) { const V = verite(), CAP = 300, f = (filtre || '').toLowerCase();
+  const folio = !app.nFolios && plans().length > 0;   // le folio vient du fichier : il se corrige ; découpé tout seul, il ne se montre pas
   const vues = V.map((l, i) => [l, i]).filter(([l]) => !f || [l.de, l.vers, l.cable].some(x => x.toLowerCase().includes(f)));
   const cell = (i, k, v, cls) => `<td${cls ? ` class="${cls}"` : ''}><input data-i="${i}" data-f="${k}" value="${escA(v)}" aria-label="${k}" spellcheck="false"></td>`;
-  const lignes = vues.slice(0, CAP).map(([l, i]) => `<tr>${cell(i, 'de', l.de)}${cell(i, 'borneDe', l.borneDe, 'n')}${cell(i, 'vers', l.vers)}${cell(i, 'borneVers', l.borneVers, 'n')}${cell(i, 'cable', l.cable)}<td class="x"><button data-x="${i}" aria-label="Supprimer la liaison">×</button></td></tr>`).join('')
-    + (vues.length > CAP ? `<tr class="reste"><td colspan="6">… et ${vues.length - CAP} autres — affine le filtre.</td></tr>` : '');
+  const lignes = vues.slice(0, CAP).map(([l, i]) => `<tr>${cell(i, 'de', l.de)}${cell(i, 'borneDe', l.borneDe, 'n')}${cell(i, 'vers', l.vers)}${cell(i, 'borneVers', l.borneVers, 'n')}${cell(i, 'cable', l.cable)}${folio ? cell(i, 'plan', l.plan, 'n') : ''}<td class="x"><button data-x="${i}" aria-label="Supprimer la liaison">×</button></td></tr>`).join('')
+    + (vues.length > CAP ? `<tr class="reste"><td colspan="7">… et ${vues.length - CAP} autres — affine le filtre.</td></tr>` : '');
   const corps = tete('Contrat', 'Toutes les liaisons')
     + `<div class="filtre"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="tb-filtre" value="${escA(filtre || '')}" placeholder="Filtrer par repère ou n° de fil" aria-label="Filtrer"></div>`
-    + `<table class="tab" id="tb"><thead><tr><th>De</th><th>B.</th><th>Vers</th><th>B.</th><th>Fil</th><th></th></tr></thead><tbody>${lignes || '<tr class="reste"><td colspan="6">Aucune liaison.</td></tr>'}</tbody></table>`;
+    + `<table class="tab" id="tb"><thead><tr><th>De</th><th>B.</th><th>Vers</th><th>B.</th><th>Fil</th>${folio ? '<th>Folio</th>' : ''}<th></th></tr></thead><tbody>${lignes || '<tr class="reste"><td colspan="7">Aucune liaison.</td></tr>'}</tbody></table>`;
   const pied = `<button class="btn papier" id="tb-add">+ Liaison</button><span class="espace"></span><span class="note">${V.length} liaison${V.length > 1 ? 's' : ''}</span>`;
   ouvrirFiche({ mode: 'table' }, corps, pied, true);
   const fi = $('tb-filtre'); let fT; fi.addEventListener('input', () => { clearTimeout(fT); fT = setTimeout(() => { const pos = fi.selectionStart; ficheTable(fi.value); $('tb-filtre').focus(); $('tb-filtre').setSelectionRange(pos, pos); }, 200); });

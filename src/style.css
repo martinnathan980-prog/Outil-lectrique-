@@ -112,7 +112,7 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;st
 .q-item .nom{font-family:var(--mono);font-weight:600;white-space:nowrap}
 .q-item .des{color:var(--craie-2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--t1)}
 .q-item .cpt{color:var(--craie-2);font-size:var(--t0);white-space:nowrap}
-.q-item .genre{font-size:var(--t0);color:var(--cuivre-clair);text-transform:uppercase;letter-spacing:.06em;font-weight:600;min-width:34px}
+.q-item .genre{font-size:var(--t0);color:var(--cuivre-clair);text-transform:uppercase;letter-spacing:.06em;font-weight:600;min-width:52px}
 .q-rien{padding:10px 12px;color:var(--craie-2)}
 #menuBoite{position:relative}
 .menu{position:absolute;top:46px;right:0;width:260px;border-radius:16px;padding:6px;z-index:30}
@@ -252,6 +252,10 @@ body.depot-actif .depot{display:grid}
   #fiche.entre{animation:fiche-monte var(--moyen)}
   @keyframes fiche-monte{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
   .fiche-corps{padding:14px 16px 10px}
+  .tab{font-size:var(--t0)}
+  .tab input{padding:0 4px;height:30px}
+  .tab td.n{width:40px}
+  .tab th{padding:6px 4px}
   .fiche-pied{padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
   .vide-carte{padding:28px 22px 24px}
   .vide-carte h1{font-size:var(--t5)}
