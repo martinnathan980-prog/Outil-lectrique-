@@ -1578,12 +1578,12 @@ function placer(G, options) {
   let yMin = Infinity, yMax = -Infinity;
   ids.forEach(id => { yMin = Math.min(yMin, hautDe.get(id)); yMax = Math.max(yMax, basDe.get(id)); });
   if (!isFinite(yMin)) { yMin = HAUT_PAGE; yMax = HAUT_PAGE + 200; }
-  // format de page : on étale en hauteur, dans les bandes libres seulement (les
-  // fils droits le restent), plafonné pour ne pas distendre un dessin compact
+  // format de page : un dessin plus large que le papier s'étale en hauteur,
+  // dans les bandes libres seulement (les fils droits le restent), plafonné
+  // pour ne pas le distendre ; un dessin carré ou portrait reste tel quel
   { const cxs = ids.map(id => xDe.get(id)), cxe = ids.map(id => xDe.get(id) + largeurDe(id));
     const contW = cxs.length ? Math.max(...cxe) - Math.min(...cxs) : 0, contH = yMax - yMin;
-    const cible = (contW / Math.max(1, contH) > 1.414) ? 1.414 : (1 / 1.414);
-    const surplus = Math.min(contW / cible - contH, contH * 0.65);
+    const surplus = Math.min(contW / 1.414 - contH, contH * 0.65);
     if (contW > 0 && contH > 0 && surplus > 20) {
       const iv = ids.map(id => [hautDe.get(id), basDe.get(id)]).sort((a, b) => a[0] - b[0]); const libres = []; let fin = iv.length ? iv[0][1] : yMin;
       for (let i = 1; i < iv.length; i++) { if (iv[i][0] > fin + 2) libres.push({ y: fin, ep: iv[i][0] - fin }); fin = Math.max(fin, iv[i][1]); }
