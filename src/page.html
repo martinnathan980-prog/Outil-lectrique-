@@ -1,3 +1,134 @@
 <div id="app">
-  <main><div id="stage"><svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg></div></main>
+  <header>
+    <button class="ghost menu-btn" id="btnMenu" aria-label="Ouvrir le panneau">☰</button>
+    <div class="brand"><b>Atelier Schéma</b></div>
+    <div class="ctx" id="ctx"><span id="ctx-txt">—</span><span id="ctx-sauve" class="sauve"></span></div>
+    <button class="ghost undo" id="btnUndo" style="display:none" aria-label="Annuler la dernière action" title="Annuler">↶</button>
+    <div class="spacer"></div>
+    <div class="folionav" id="folionav">
+      <button id="fo-prev" aria-label="Folio précédent">‹</button>
+      <span class="lbl" id="fo-lbl">Folio 1 / 1</span>
+      <button id="fo-next" aria-label="Folio suivant">›</button>
+    </div>
+    <div class="tools">
+      <button class="ghost" id="btnSvg" title="Enregistrer le folio affiché en SVG (vectoriel, imprimable à toute échelle)">SVG</button>
+      <button class="ghost" id="btnPng" title="Enregistrer le folio affiché en image PNG">PNG</button>
+      <button class="ghost" id="btnPrint" title="Imprimer le folio affiché">Imprimer</button>
+    </div>
+  </header>
+
+  <aside aria-label="Panneau de travail">
+    <nav class="railtabs" id="railtabs">
+      <button data-vue="v-mat" class="on">Matériel</button>
+      <button data-vue="v-piece">Compléter</button>
+      <button data-vue="v-regl">Réglages</button>
+    </nav>
+    <div class="railbody">
+
+      <section class="vue on" id="v-mat">
+        <div class="grp">
+          <h3>Contrat de câblage</h3>
+          <div class="brow">
+            <button class="primary" id="lk-file">Ouvrir un fichier</button>
+            <button id="lk-import">Coller</button>
+            <button class="mini" id="lk-demo" title="Charger le contrat d’exemple">Exemple</button>
+            <input type="file" id="lk-fichier" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
+          </div>
+        </div>
+        <div class="grp">
+          <h3>Équipements <span class="count" id="cnt-eq">0</span></h3>
+          <input id="mt-find" placeholder="Repère ou n° de fil…" aria-label="Chercher un repère ou un numéro de fil">
+          <div class="mthead"><span>Repère</span><span>Fils</span></div>
+          <div id="mt-liste"></div>
+          <div id="mt-rien" class="hint" style="display:none">Rien qui corresponde.</div>
+          <div class="hint hint-liste">Clique un repère : le dessin s’y rend et le met en évidence.</div>
+          <div id="xp-stat" class="hint"></div>
+        </div>
+        <details id="mt-details">
+          <summary>Corriger les liaisons <span id="cnt-lk" class="count"></span></summary>
+          <table class="grid" id="tbl-lk"><thead><tr><th>De</th><th>B.</th><th>Vers</th><th>B.</th><th>Fil</th><th></th></tr></thead><tbody></tbody></table>
+          <div class="brow" style="margin-top:8px">
+            <button class="ghost mini addrow" id="add-lk">+ liaison</button>
+            <button class="ghost mini" id="btnFolios">Découper en folios</button>
+            <button class="ghost mini" id="lk-clear">Tout vider</button>
+          </div>
+          <div class="hint">La recherche ci-dessus filtre aussi cette table.</div>
+        </details>
+      </section>
+
+      <section class="vue" id="v-piece">
+        <div class="grp">
+          <h3>Pièces absentes du contrat</h3>
+          <p class="hint" style="margin-top:0">Un contrat ne déclare que ses liaisons. Les <b>barrettes</b> et les <b>prises de coupure</b> qui se trouvent entre les deux n’y sont pas. On va les chercher dans un contrat déjà testé qui ressemble au tien.</p>
+          <div class="etape" id="et-1"><span class="n">1</span><button id="rb-browse">Charger une base de retest</button></div>
+          <div class="etape" id="et-2"><span class="n">2</span><button id="rb-proche">De quel contrat partir&nbsp;?</button></div>
+          <div class="etape" id="et-3"><span class="n">3</span><button id="rb-appl">Compléter mon contrat</button></div>
+          <div id="rb-stat" class="hint">Aucune base chargée.</div>
+          <input type="file" id="rb-file" accept=".xlsm,.xlsx,.xls,.csv,.tsv,.txt" hidden>
+          <div class="hint">Le fichier est lu <b>ici, dans ton navigateur</b> : rien ne part sur le réseau, rien n’est enregistré, tout disparaît quand tu fermes l’onglet.</div>
+        </div>
+        <div class="grp">
+          <h3>Vérifications <span class="count" id="cnt-rb">—</span></h3>
+          <div class="brow">
+            <button class="ghost mini" id="rb-ident">Identifier les équipements</button>
+            <button class="ghost mini" id="rb-report" style="display:none">Rapport</button>
+            <button class="ghost mini" id="rb-forget" style="display:none">Oublier la base</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="vue" id="v-regl">
+        <div class="grp">
+          <h3>Cartouche</h3>
+          <div class="cart-grid">
+            <div class="field wide"><label for="m-title">Titre</label><input id="m-title"></div>
+            <div class="field"><label for="m-rev">Indice</label><input id="m-rev"></div>
+            <div class="field"><label for="m-date">Date</label><input id="m-date"></div>
+            <div class="field"><label for="m-scale">Échelle</label><input id="m-scale"></div>
+            <div class="field"><label for="m-author">Dessiné</label><input id="m-author"></div>
+          </div>
+          <div class="hint">Le numéro de folio s’écrit tout seul.</div>
+        </div>
+        <div class="grp">
+          <h3>Désignations</h3>
+          <table class="grid" id="tbl-eq"><thead><tr><th>Repère</th><th>Désignation</th><th></th></tr></thead><tbody></tbody></table>
+          <button class="ghost mini addrow" id="add-eq">+ désignation</button>
+          <div class="hint">Le nom écrit sous le repère sur le dessin.</div>
+        </div>
+      </section>
+
+    </div>
+  </aside>
+
+  <main>
+    <div id="stage"><svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div class="hud">
+      <button id="zout" aria-label="Dézoomer">−</button><div class="z" id="zlbl">100 %</div><button id="zin" aria-label="Zoomer">+</button>
+      <div class="sep"></div><button id="zfit">Ajuster</button>
+    </div>
+    <div class="notice" id="notice"><div class="big">Aucun contrat chargé</div>Ouvre un fichier, dépose-le sur la planche, ou colle tes liaisons</div>
+  </main>
 </div>
+<div class="drawer-bg" id="drawerBg"></div>
+<div id="pop"></div>
+<div class="modal-bg" id="modal"><div class="modal">
+  <h2>Charger un contrat</h2>
+  <div class="body">
+    <div id="db-drop" class="dropzone">
+      <div class="dz-ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="square"><path d="M11 3v11M6.5 10 11 14.5 15.5 10"/><path d="M3.5 18h15"/></svg></div>
+      <div class="dz-main">Glisse un fichier <b>Excel</b> (.xlsx, .xlsm) ou <b>CSV</b> ici</div>
+      <div class="dz-sub">ou <button type="button" class="linklike" id="db-browse">choisis un fichier</button> — le format retest est lu par le nom de ses colonnes</div>
+      <input type="file" id="db-file" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
+    </div>
+    <div id="db-fileinfo" class="dz-info"></div>
+    <p class="hint" style="margin:12px 0 4px">…ou colle directement les lignes : une liaison par ligne, colonnes séparées par <b>;</b> <b>,</b> ou tabulation.</p>
+    <p class="colspec">Équip.1 · Borne · PN · Équip.2 · Borne · PN · Fil · Type · Route · Plan</p>
+    <textarea id="imp-db" placeholder="210SP1;12;;115CD;3;;W-101;DR24;;"></textarea>
+  </div>
+  <div class="foot"><button id="imp-cancel">Annuler</button><button class="primary" id="imp-ok">Charger</button></div>
+</div></div>
+<div class="modal-bg" id="rmodal"><div class="modal wide">
+  <h2>Reconnaissance de la base de retest</h2>
+  <div class="body"><div id="rb-body" class="rrep"></div></div>
+  <div class="foot"><button id="rb-copy">Copier le rapport</button><button class="primary" id="rb-close">Fermer</button></div>
+</div></div>

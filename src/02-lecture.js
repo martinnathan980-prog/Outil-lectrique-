@@ -44,7 +44,9 @@ const cellules = ligne => decouperLigne(ligne).map(x => String(x).trim());
 function trouverEnteteRetest(lignes) {
   let meilleure = null;
   for (let r = 0; r < Math.min(lignes.length, 30); r++) {
-    const row = cellules(lignes[r]); const col = {}; let n = 0;
+    // une ligne est un texte à découper, ou déjà un tableau de cellules (Excel)
+    const row = Array.isArray(lignes[r]) ? lignes[r].map(x => String(x == null ? '' : x).trim()) : cellules(lignes[r] || '');
+    const col = {}; let n = 0;
     row.forEach((cell, c) => { const k = NORM(cell); if (!k) return;
       for (const [nom, alias] of COLONNES) {
         if (col[nom] == null && alias.includes(k)) { col[nom] = c; n++; break; } } });

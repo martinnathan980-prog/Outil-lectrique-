@@ -1,6 +1,463 @@
-/* provisoire : le squelette, le temps de mesurer le moteur */
-:root{--sheet:#ffffff;--sheet-line:#dfe3ea;--sheet-line2:#eef1f5;--sheet-ink:#16202b}
+/* ═══════════════════════════════════════════════════════════════════════════
+   DIRECTION « ATELIER » — la précision industrielle.
+
+   Rien ici ne cherche à plaire. L'écran est une planche : un fond de carton
+   gris chaud sur lequel on a posé une feuille blanche, et sur la gauche une
+   colonne d'instrument. Tout ce qui est DONNÉE est en chasse fixe ; tout ce
+   qui est LANGAGE est en linéale. La hiérarchie se fait à la graisse, à la
+   capitale et au filet — jamais à la couleur. Un seul accent, l'oxyde, et on
+   ne le sort que pour dire « c'est ici ».
+
+   Le module est de 4 px. Un seul filet, 1 px. Un seul rayon, 2 px. Aucune
+   ombre qui ne corresponde pas à une vraie élévation (fenêtre, tiroir,
+   fiche). Aucun dégradé. La beauté vient de l'alignement.
+   ═══════════════════════════════════════════════════════════════════════ */
+:root{
+  /* ── chrome : le carton, le papier, l'encre, le filet ── */
+  --chrome:#d2cec2;        /* planche d'atelier, derrière la feuille         */
+  --chrome2:#fbfaf6;       /* papier : panneau, barre, fenêtres              */
+  --chrome3:#efede6;       /* surface en retrait : champ, bouton au repos    */
+  --chrome4:#e5e2d8;       /* enfoncé / survol de surface en retrait         */
+  /* LE FILET ET L'ENCRE FAIBLE ONT ÉTÉ REMONTÉS, MESURE À L'APPUI.
+     Première version : filet #bfbaac, soit 1,86:1 sur le papier du panneau —
+     joli sur une capture, mais sous une verrière ou sur une dalle mal réglée
+     la structure du panneau disparaît et il ne reste que du texte flottant.
+     Le filet STRUCTUREL (bord de panneau, crémaillère d'onglets, barre haute)
+     passe donc à 3,19:1, le seuil des éléments non textuels ; le filet
+     INTÉRIEUR d'un groupe reste ténu, c'est lui qui donne la finesse.
+     Même correction sur l'encre faible : #86867f donnait 3,51:1 pour du texte
+     de 10 px en capitales — en dessous du seuil de lisibilité. 4,71:1. */
+  --line:#948c7b;          /* filet structurel — 3,19:1 sur le papier        */
+  --line2:#ded9cd;         /* filet ténu, à l'intérieur d'un groupe          */
+  --ink:#17181a;           /* encre                                          */
+  --ink-dim:#55565a;       /* encre affaiblie                                */
+  --ink-faint:#717169;     /* étiquettes, unités, compteurs — 4,71:1         */
+  --accent:#9c3a14;        /* oxyde — un seul accent, employé au compte-goutte */
+  --accent-dim:#9c3a14;
+  --accent-soft:#f3e7e0;
+  --warn:#8a5c07; --ok:#2b6a3f; --red:#a3291f;
+  /* ── ces valeurs appartiennent au dessin, pas à l'enveloppe : intactes ── */
+  --sheet:#ffffff; --sheet-line:#dfe3ea; --sheet-line2:#eef1f5; --sheet-ink:#16202b;
+  --brown:#7a4a2a; --black:#1b1f24; --grey:#6b7480; --blue:#125f8f;
+  --green:#1a7f4b; --yellow:#e8c93a; --red2:#b03a34;
+  --mono:ui-monospace,Menlo,Consolas,"SF Mono","DejaVu Sans Mono",monospace;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:2px;                 /* rayon unique, presque nul                      */
+  --t:.1s linear;          /* transitions courtes, jamais décoratives        */
+}
 *{box-sizing:border-box}
-html,body{height:100%;margin:0;font-family:ui-sans-serif,system-ui,sans-serif;background:#d2cec2}
-#stage{position:absolute;inset:0;overflow:hidden}
+html,body{height:100%;margin:0}
+body{font-family:var(--sans);background:var(--chrome);color:var(--ink);
+  font-size:13px;line-height:1.45;overflow:hidden;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+
+/* ─── L'ÉTIQUETTE ────────────────────────────────────────────────────────
+   Une seule forme pour tout ce qui nomme : chasse fixe, capitale, 10 px,
+   interlettrage ouvert. En-tête de groupe, en-tête de colonne, libellé de
+   champ — même objet, donc même dessin. */
+.grp>h3,.subhead,.field label,table.grid th,.btbl th,.rrep h4,#pop h5,.railtabs button,
+.mthead span{
+  font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--ink-faint)}
+
+/* ─── Boutons : trois niveaux, pas un de plus ─────────────────────────── */
+button{background:var(--chrome3);border:1px solid var(--line);color:var(--ink);
+  padding:5px 10px;border-radius:var(--r);cursor:pointer;font-size:12px;
+  transition:background var(--t),border-color var(--t),color var(--t);white-space:nowrap}
+button:hover{background:var(--chrome4);border-color:#b2ad9f}
+button:active{background:#dcd8cd}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:1px;z-index:1;position:relative}
+button:disabled{opacity:.38;cursor:default;background:var(--chrome3);border-color:var(--line)}
+.primary{background:var(--accent);border-color:var(--accent);color:#fdf6f2;font-weight:500}
+.primary:hover{background:#87310f;border-color:#87310f}
+.primary:active{background:#73290c}
+.primary:focus-visible{outline-color:var(--ink)}
+.ghost{background:transparent;border-color:transparent;color:var(--ink-dim)}
+.ghost:hover{background:var(--chrome3);border-color:transparent;color:var(--ink)}
+.mini{padding:3px 8px;font-size:11px}
+.linklike{background:none;border:0;color:var(--accent);padding:0;font:inherit;
+  cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.linklike:hover{background:none;color:#73290c}
+
+input,select,textarea{background:var(--chrome2);border:1px solid var(--line);
+  border-radius:var(--r);padding:5px 8px;font-size:12px;color:var(--ink);
+  transition:border-color var(--t),box-shadow var(--t);width:100%}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
+  box-shadow:inset 0 0 0 1px var(--accent)}
+::placeholder{color:var(--ink-faint)}
+input[type=checkbox]{width:auto;accent-color:var(--accent)}
+
+/* ─── La planche ─────────────────────────────────────────────────────── */
+#app{height:100%;display:grid;grid-template-columns:300px 1fr;
+  grid-template-rows:44px 1fr;grid-template-areas:"top top" "side main"}
+
+/* ─── Le bandeau ──────────────────────────────────────────────────────
+   Dense, bas, en chasse fixe : c'est la ligne d'état d'un instrument, pas la
+   barre de marque d'un site. Le repère du produit est écrit comme un numéro
+   de planche — capitale, interlettré, avec la barre d'oxyde qui le tient. */
+header{grid-area:top;display:flex;align-items:stretch;gap:0;
+  background:var(--chrome2);border-bottom:1px solid var(--line);z-index:20}
+.brand{display:flex;align-items:center;gap:8px;padding:0 14px;flex:0 0 auto;
+  border-right:1px solid var(--line);font-family:var(--mono);font-size:11px;
+  font-weight:600;letter-spacing:.11em;text-transform:uppercase;color:var(--ink)}
+.brand::before{content:'';width:3px;height:14px;background:var(--accent);flex:0 0 3px}
+.brand b{font-weight:600;font-size:inherit;letter-spacing:inherit}
+.ctx{display:flex;align-items:center;gap:6px;color:var(--ink-faint);
+  font-family:var(--mono);font-size:11px;padding:0 14px;min-width:0;
+  border-right:1px solid var(--line);white-space:nowrap;overflow:hidden}
+.ctx b{color:var(--ink);font-weight:600}
+.sauve{color:var(--ink-faint);opacity:.85}
+.sauve::before{content:'· '}
+.undo{font-size:14px;line-height:1;padding:0 10px;border-radius:0;align-self:stretch;
+  border:0;border-right:1px solid var(--line);background:transparent;color:var(--ink-dim)}
+.undo:hover{background:var(--chrome3);border-right-color:var(--line)}
+.spacer{flex:1}
+.tools{display:flex;align-items:stretch}
+.tools button{border:0;border-left:1px solid var(--line);border-radius:0;
+  background:transparent;color:var(--ink-dim);padding:0 13px;font-size:11px;
+  font-family:var(--mono);letter-spacing:.07em;text-transform:uppercase}
+.tools button:hover{background:var(--chrome3);color:var(--ink);border-left-color:var(--line)}
+.tools button:focus-visible{outline-offset:-2px}
+header .sep{display:none}
+
+/* Le pas-à-pas de folio — un compteur de planche, lu comme sur le cartouche. */
+.folionav{display:none;align-items:stretch;border-left:1px solid var(--line)}
+.folionav.on{display:flex}
+.folionav button{background:transparent;border:0;padding:0 10px;color:var(--ink-dim);
+  font-size:13px;line-height:1;border-radius:0}
+.folionav button:hover:not(:disabled){background:var(--chrome3);color:var(--ink)}
+.folionav button:disabled{opacity:.3}
+.folionav .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.06em;white-space:nowrap;
+  display:flex;align-items:center;justify-content:center;padding:0 4px;
+  color:var(--ink);min-width:92px;text-align:center;user-select:none;
+  border-left:1px solid var(--line2);border-right:1px solid var(--line2)}
+.plan-sel{display:none}
+
+/* ─── La colonne d'instrument ─────────────────────────────────────────── */
+aside{grid-area:side;background:var(--chrome2);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;min-height:0;z-index:15}
+.railtabs{display:flex;background:var(--chrome3);border-bottom:1px solid var(--line);flex:0 0 auto}
+.railtabs button{flex:1;background:transparent;border:0;border-right:1px solid var(--line);
+  border-radius:0;padding:9px 2px 8px;color:var(--ink-faint);
+  box-shadow:inset 0 -2px 0 transparent;transition:color var(--t),background var(--t),box-shadow var(--t)}
+.railtabs button:last-child{border-right:0}
+.railtabs button:hover{background:var(--chrome4);color:var(--ink-dim)}
+.railtabs button.on{color:var(--ink);background:var(--chrome2);
+  box-shadow:inset 0 -2px 0 var(--accent)}
+.railtabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.railbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.vue{display:none;padding:16px 16px 24px}
+.vue.on{display:block}
+
+/* Un groupe : l'étiquette, le filet qui court jusqu'au bord, le compte.
+   C'est le titre de rubrique d'une planche technique, rien d'autre. */
+.grp{margin-bottom:24px}
+.grp:last-child{margin-bottom:0}
+.grp>h3{margin:0 0 8px;display:flex;align-items:center;gap:8px;line-height:1}
+.grp>h3::after{content:'';flex:1;height:1px;background:var(--line);order:0}
+.grp>h3 .count,.subhead .count{order:1;font-family:var(--mono);font-size:10px;
+  letter-spacing:0;text-transform:none;color:var(--ink);font-weight:600;
+  font-variant-numeric:tabular-nums}
+.subhead{margin:20px 0 8px;display:flex;align-items:center;gap:8px;line-height:1;
+  padding-top:0;border-top:0}
+.subhead::after{content:'';flex:1;height:1px;background:var(--line);order:0}
+.brow{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.brow .ghost,.bc-row .ghost{border-color:var(--line);background:var(--chrome3);color:var(--ink-dim)}
+.brow .ghost:hover,.bc-row .ghost:hover{background:var(--chrome4);border-color:#b2ad9f;color:var(--ink)}
+.brow input{flex:1;min-width:0}
+.hint{color:var(--ink-dim);font-size:11.5px;line-height:1.5;margin-top:8px}
+.hint b{color:var(--ink);font-weight:600}
+
+/* Les étapes numérotées : un cartouche carré, comme un repère de nomenclature. */
+.etape{display:flex;align-items:stretch;gap:0;margin-top:4px;border:1px solid var(--line);
+  border-radius:var(--r);background:var(--chrome3);transition:border-color var(--t)}
+.etape:hover{border-color:#b2ad9f}
+.etape .n{flex:0 0 26px;display:flex;align-items:center;justify-content:center;
+  background:var(--chrome4);border-right:1px solid var(--line);color:var(--ink-faint);
+  font:600 10px/1 var(--mono);transition:background var(--t),color var(--t)}
+.etape.faite .n{background:var(--accent);border-right-color:var(--accent);color:#fdf6f2}
+.etape button{flex:1;text-align:left;justify-content:flex-start;border:0;border-radius:0;
+  background:transparent;padding:7px 10px}
+.etape button:hover{background:var(--chrome4)}
+.etape button:focus-visible{outline-offset:-2px}
+
+/* La liste du matériel — une nomenclature : repère, désignation, quantité. */
+#mt-find{margin-top:0}
+.mthead{display:flex;align-items:baseline;gap:8px;margin-top:12px;padding:0 6px 3px;
+  border-bottom:1px solid var(--line)}
+.grp:has(#mt-liste:empty) .mthead,
+.grp:has(#mt-liste:empty) .hint-liste{display:none}
+.mthead span:last-child{margin-left:auto}
+#mt-liste{max-height:min(46vh,420px);overflow-y:auto;border-bottom:1px solid var(--line)}
+.mtrow{display:flex;align-items:baseline;gap:8px;padding:5px 6px;cursor:pointer;
+  border-bottom:1px solid var(--line2);transition:background var(--t)}
+.mtrow:hover{background:var(--chrome3)}
+.mtn{font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--ink);
+  letter-spacing:.02em}
+.mtd{font-size:11px;color:var(--ink-dim);flex:1;min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.mtc{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);
+  flex:0 0 auto;font-variant-numeric:tabular-nums}
+#mt-details{margin-top:20px;border-top:1px solid var(--line);padding-top:10px}
+#mt-details summary{cursor:pointer;font-family:var(--mono);font-size:10px;font-weight:600;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint);
+  padding:2px 0;user-select:none;list-style:none;transition:color var(--t)}
+#mt-details summary::-webkit-details-marker{display:none}
+#mt-details summary::before{content:'+ ';color:var(--ink-faint)}
+#mt-details[open] summary::before{content:'− '}
+#mt-details summary:hover{color:var(--accent)}
+#mt-details summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#mt-details .count{font-family:var(--mono);letter-spacing:0;color:var(--ink);font-weight:600}
+
+/* Tables de saisie : une grille, des filets, des chiffres alignés. */
+table.grid{width:100%;border-collapse:collapse;margin-top:8px}
+table.grid th{text-align:left;padding:0 4px 4px;border-bottom:1px solid var(--line)}
+table.grid td{padding:0;border-bottom:1px solid var(--line2)}
+table.grid input{border:0;border-radius:0;background:transparent;padding:4px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.02em}
+table.grid input:focus{box-shadow:inset 0 0 0 1px var(--accent);background:var(--chrome2)}
+.rmrow{width:20px;text-align:center;color:var(--ink-faint);cursor:pointer;
+  font-size:11px;user-select:none;transition:color var(--t)}
+.rmrow:hover{color:var(--red)}
+.addrow{margin-top:8px;border-color:var(--line);background:var(--chrome3);color:var(--ink-dim)}
+.addrow:hover{background:var(--chrome4);border-color:#aaa598;color:var(--ink)}
+.cart-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px}
+.cart-grid .wide{grid-column:1/-1}
+.field label{display:block;margin-bottom:3px}
+.field input{font-family:var(--mono);font-size:11px}
+
+/* Les câbles : une ligne de nomenclature, pas une carte. */
+.cbrow{display:flex;align-items:baseline;gap:8px;padding:4px 6px;
+  border-bottom:1px solid var(--line2)}
+.cbname{font-family:var(--mono);font-size:11.5px;color:var(--ink);font-weight:600;
+  flex:0 0 auto;letter-spacing:.02em}
+.cbmeta{font-family:var(--mono);font-size:10px;color:var(--ink-faint);
+  margin-left:auto;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#cb-list{border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  max-height:min(38vh,320px);overflow-y:auto}
+#cb-list .hint{border-top:0;margin-top:8px}
+
+/* ─── La feuille et son fond ─────────────────────────────────────────── */
+main{grid-area:main;position:relative;overflow:hidden;background:var(--chrome)}
+#stage{position:absolute;inset:0;overflow:hidden;touch-action:none;cursor:grab}
+#stage:active{cursor:grabbing}
 #svg{width:100%;height:100%;display:block}
+.notice{position:absolute;inset:0;display:none;text-align:center;
+  color:var(--ink-faint);font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+  text-transform:uppercase;line-height:1.7;padding:24px;pointer-events:none}
+.notice::before{content:'';display:block;height:calc(50% - 44px)}
+.notice .big{font-family:var(--sans);font-size:15px;font-weight:600;color:var(--ink-dim);
+  letter-spacing:0;text-transform:none;margin-bottom:4px}
+.notice button{pointer-events:auto;border-color:var(--line);background:var(--chrome2);
+  color:var(--ink-dim);font-family:var(--sans);letter-spacing:0;text-transform:none}
+.notice button:hover{background:var(--chrome3);border-color:#aaa598;color:var(--ink)}
+
+/* La commande de zoom : un boîtier posé sur la planche. Pas de verre, pas de
+   flou, pas d'ombre — une plaque avec un filet. */
+.hud{position:absolute;left:16px;bottom:16px;display:flex;align-items:stretch;
+  background:var(--chrome2);border:1px solid var(--line);border-radius:var(--r)}
+.hud button{background:transparent;border:0;border-radius:0;padding:4px 10px;
+  color:var(--ink-dim);font-size:12px}
+.hud button:last-child{font-family:var(--mono);font-size:10px;letter-spacing:.08em;
+  text-transform:uppercase;padding:4px 10px}
+.hud button:hover{background:var(--chrome3);color:var(--ink)}
+.hud button:focus-visible{outline-offset:-2px}
+.hud .z{font-family:var(--mono);font-size:11px;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;
+  min-width:52px;text-align:center;user-select:none;font-variant-numeric:tabular-nums;
+  border-left:1px solid var(--line2);border-right:1px solid var(--line2)}
+.hud .sep{width:1px;background:var(--line);margin:0}
+
+/* ─── Fenêtres ───────────────────────────────────────────────────────── */
+.modal-bg{position:fixed;inset:0;background:rgba(23,24,26,.44);
+  display:none;align-items:center;justify-content:center;z-index:60;padding:24px}
+.modal{background:var(--chrome2);border:1px solid var(--line);border-radius:var(--r);
+  width:min(720px,100%);max-height:88vh;display:flex;flex-direction:column;
+  box-shadow:0 20px 48px rgba(23,24,26,.24)}
+.modal.wide{width:min(1000px,100%)}
+.modal h2{margin:0;padding:11px 16px;font-family:var(--mono);font-size:11px;
+  font-weight:600;letter-spacing:.11em;text-transform:uppercase;color:var(--ink);
+  border-bottom:1px solid var(--line);background:var(--chrome3)}
+.modal .body{padding:16px;overflow:auto;flex:1;min-height:0}
+.modal .foot{display:flex;justify-content:flex-end;gap:6px;padding:10px 16px;
+  border-top:1px solid var(--line);background:var(--chrome3)}
+.modal .help{margin:0 0 12px;color:var(--ink-dim);font-size:11.5px;line-height:1.55}
+.modal .help b{color:var(--ink);font-weight:600}
+.modal textarea{min-height:130px;font-family:var(--mono);font-size:11px;resize:vertical}
+
+/* La fiche qui s'ouvre au clic sur un bloc ou un fil : une étiquette volante. */
+#pop{position:absolute;display:none;z-index:40;background:var(--chrome2);
+  border:1px solid var(--line);border-radius:var(--r);padding:0;
+  box-shadow:0 12px 32px rgba(23,24,26,.2);max-width:320px}
+#pop h5{margin:0;padding:8px 12px;background:var(--chrome3);
+  border-bottom:1px solid var(--line);color:var(--ink)}
+#pop>*:not(h5):not(.actions){margin-left:12px;margin-right:12px}
+#pop .field{margin-top:8px}
+#pop .actions{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:10px 12px;
+  margin-top:12px;border-top:1px solid var(--line);background:var(--chrome3)}
+#pop .actions button{font-size:11px;padding:5px 8px;width:100%}
+#pop .actions .ghost{border-color:var(--line);background:var(--chrome2)}
+#pop .actions .ghost:hover{background:var(--chrome4);color:var(--ink)}
+.actions{display:flex;flex-wrap:wrap;gap:4px}
+
+/* ─── Impression ─────────────────────────────────────────────────────── */
+#printroot{display:none}
+@media print{
+  html,body{height:auto;overflow:visible;background:#fff}
+  #app,#modal,#bmodal,#rmodal,#pop,#drawerBg{display:none!important}
+  #printroot{display:block}
+  #printroot svg{width:100%;height:auto;max-width:100%}
+  @page{margin:8mm}
+}
+
+/* ─── Écrans étroits ─────────────────────────────────────────────────── */
+.menu-btn{display:none}
+.drawer-bg{display:none}
+@media (max-width:860px){
+  #app{grid-template-columns:1fr;grid-template-areas:"top" "main"}
+  .menu-btn{display:inline-flex;align-items:center;justify-content:center;
+    font-size:14px;padding:0 12px;border:0;border-right:1px solid var(--line);
+    border-radius:0;background:transparent;color:var(--ink-dim);align-self:stretch}
+  .menu-btn:hover{background:var(--chrome3);border-right-color:var(--line)}
+  .ctx{display:none}
+  .brand{padding:0 10px;font-size:10px;letter-spacing:.09em}
+  .tools button{padding:0 9px}
+  .folionav .lbl{min-width:74px;font-size:10px}
+  aside{position:fixed;top:44px;left:0;bottom:0;width:min(88vw,320px);z-index:40;
+    transform:translateX(-100%);transition:transform .16s linear;
+    box-shadow:8px 0 28px rgba(23,24,26,.2)}
+  aside.open{transform:none}
+  .drawer-bg{display:block;position:fixed;inset:44px 0 0 0;background:rgba(23,24,26,.34);
+    z-index:35;opacity:0;pointer-events:none;transition:opacity .16s linear}
+  .drawer-bg.show{opacity:1;pointer-events:auto}
+  .hud{left:10px;bottom:10px}
+  .modal-bg{padding:8px}
+  .modal h2{padding:10px 12px}
+  .modal .body{padding:12px}
+  .modal .foot{padding:9px 12px}
+  .cart-grid{grid-template-columns:1fr 1fr}
+}
+@media (max-width:640px){
+  .folionav.on{position:fixed;right:10px;bottom:10px;z-index:30;
+    background:var(--chrome2);border:1px solid var(--line);border-radius:var(--r)}
+  .folionav button{padding:4px 10px}
+  .folionav .lbl{min-width:0;padding:0 8px;border-color:var(--line2)}
+}
+@media (max-width:440px){
+  .brand{border-right:0}
+  .tools button{padding:0 8px;font-size:10px}
+  .vue{padding:12px 12px 20px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+/* Barres de défilement : un rail, pas une pastille. */
+*::-webkit-scrollbar{width:11px;height:11px}
+*::-webkit-scrollbar-thumb{background:#c2beb1;border-radius:0;border:4px solid var(--chrome2)}
+*::-webkit-scrollbar-thumb:hover{background:#aba695}
+*::-webkit-scrollbar-track{background:transparent}
+
+/* ---- fenêtres et fiches ---- */
+/* ═══ Suite de l'enveloppe : fenêtres, rapports, listes, zone de dépôt ═════
+ Ce bloc portait encore des filets de thème sombre (#262c34) sur fond clair :
+ des traits noirs au milieu du papier. Ils sont repassés au filet unique. */
+
+/* ── La vue bornier, dans sa fenêtre ── */
+.bscroll{overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);
+border-radius:var(--r);background:#fff;padding:12px}
+.bscroll svg{display:block;margin:0 auto}
+.bempty{color:var(--ink-dim);padding:20px;text-align:center;margin:0;
+font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+
+/* ── Lignes d'information : clé à gauche, valeur alignée à droite ── */
+.infoline{display:flex;justify-content:space-between;gap:12px;padding:4px 0;
+border-bottom:1px solid var(--line2);font-family:var(--mono);font-size:11px}
+.infoline .k{color:var(--ink-faint);letter-spacing:.04em}
+.infoline .v{color:var(--ink);text-align:right;font-variant-numeric:tabular-nums}
+
+/* ── Petite table de données (bornes, conducteurs) ── */
+.btbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;margin-top:4px}
+.btbl th{text-align:left;padding:2px 6px 3px;border-bottom:1px solid var(--line)}
+.btbl td{padding:3px 6px;border-bottom:1px solid var(--line2);color:var(--ink);
+font-variant-numeric:tabular-nums}
+.btbl tr:last-child td{border-bottom:0}
+.btbl .bn{color:var(--accent);font-weight:700}
+
+/* ── Le rapport de reconnaissance ─────────────────────────────────────
+ C'est le seul endroit de l'outil où l'on LIT longtemps. Donc : des
+ sections séparées par un filet, des chiffres en colonne alignée à droite,
+ un commentaire en gris, et un verdict tenu par une barre de 2 px. */
+.rrep{font-size:12px;line-height:1.5}
+.rrep section{padding:0 0 16px;margin-bottom:16px;border-bottom:1px solid var(--line)}
+.rrep section:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
+.rrep h4{margin:0 0 8px;display:flex;align-items:center;gap:8px;line-height:1;color:var(--ink)}
+.rrep h4::after{content:'';flex:1;height:1px;background:var(--line)}
+.rrep h4 label{text-transform:none;letter-spacing:0;font-family:var(--mono);
+font-size:11.5px;color:var(--ink)}
+.rrep table{width:100%;border-collapse:collapse;font-size:11.5px}
+.rrep th{font-family:var(--mono);font-size:9.5px;font-weight:600;letter-spacing:.08em;
+text-transform:uppercase;color:var(--ink-faint);text-align:left;
+padding:2px 6px 4px;border-bottom:1px solid var(--line);white-space:nowrap}
+.rrep td{padding:3px 6px;border-bottom:1px solid var(--line2);vertical-align:top}
+.rrep tr:last-child td{border-bottom:0}
+.rrep td:first-child{color:var(--ink)}
+.rrep td.n{font-family:var(--mono);text-align:right;white-space:nowrap;
+color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums;width:1%}
+.rrep td.ex{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);line-height:1.45}
+.rnote{margin:0 0 8px;color:var(--ink-dim);font-size:11.5px;line-height:1.55}
+.rnote b{color:var(--ink);font-weight:600}
+
+/* Le verdict : barre à gauche, texte d'encre. La couleur ne porte QUE le
+ statut — trois valeurs, jamais davantage. */
+.verdict{font-size:11.5px;line-height:1.5;color:var(--ink);
+border-left:2px solid var(--line);padding:2px 0 2px 9px;margin:8px 0 0}
+.verdict.v-ok{border-left-color:var(--ok)}
+.verdict.v-hm{border-left-color:var(--warn)}
+.verdict.v-no{border-left-color:var(--red)}
+.verdict::before{font-family:var(--mono);font-size:9.5px;font-weight:600;
+letter-spacing:.09em;text-transform:uppercase;display:block;margin-bottom:2px}
+.verdict.v-ok::before{content:'Acquis';color:var(--ok)}
+.verdict.v-hm::before{content:'À trancher';color:var(--warn)}
+.verdict.v-no::before{content:'Bloquant';color:var(--red)}
+/* En ligne dans un tableau, le verdict redevient une simple étiquette. */
+td .verdict{display:inline;border-left:0;padding:0;margin:0;font-family:var(--mono);
+font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+td .verdict::before{display:none}
+td .verdict.v-ok{color:var(--ok)}
+
+/* ── La zone de dépôt ── */
+.dropzone{border:1px dashed var(--line);border-radius:var(--r);background:var(--chrome3);
+padding:20px 16px;text-align:center;cursor:pointer;
+transition:border-color var(--t),background var(--t)}
+.dropzone:hover{border-color:var(--accent);background:var(--chrome4)}
+.dropzone.over{border-color:var(--accent);background:var(--accent-soft)}
+.dropzone .dz-ico{font-family:var(--mono);font-size:16px;color:var(--accent);line-height:1}
+.dropzone .dz-main{margin-top:8px;font-size:12px;color:var(--ink)}
+.dropzone .dz-main b{font-weight:600}
+.dropzone .dz-sub{margin-top:4px;font-size:11px;color:var(--ink-dim)}
+.dz-info{font-family:var(--mono);font-size:10.5px;margin-top:8px;min-height:14px;
+letter-spacing:.03em;color:var(--ink-faint)}
+.dz-info.ok{color:var(--ok)} .dz-info.err{color:var(--red)} .dz-info.load{color:var(--ink-dim)}
+
+/* ── Le jeton d'état (fichier chargé) ── */
+.colspec{margin:0 0 14px;padding:7px 9px;background:var(--chrome3);
+border:1px solid var(--line);border-left:2px solid var(--accent);border-radius:var(--r);
+font-family:var(--mono);font-size:10.5px;letter-spacing:.03em;color:var(--ink);
+line-height:1.65;word-break:break-word}
+
+.xchip{display:inline-flex;align-items:center;gap:6px;background:var(--chrome3);
+border:1px solid var(--line);border-left:2px solid var(--accent);color:var(--ink);
+border-radius:var(--r);padding:2px 6px 2px 8px;font-family:var(--mono);font-size:10.5px}
+.xchip button{background:none;border:0;color:var(--ink-faint);cursor:pointer;
+font-size:12px;padding:0 2px;line-height:1}
+.xchip button:hover{background:none;color:var(--red)}
+
+/* Le sélecteur de plan reste dans le DOM pour porter l'état ; il ne s'affiche
+ plus, le pas-à-pas du bandeau le remplace. */
+.plan-sel{background:var(--chrome3);border:1px solid var(--line);color:var(--ink);
+border-radius:var(--r);padding:4px 6px;font-family:var(--mono);font-size:11px;max-width:150px}
+/* ---- ajouts de la refonte ---- */
+#stage.over{outline:2px dashed var(--accent);outline-offset:-6px}
+.btbl-wrap{max-height:150px;overflow:auto}
+td.vide{color:var(--ink-faint);text-align:center;padding:8px;font-size:11px}
+#pop .subhead{margin:10px 12px 6px}
