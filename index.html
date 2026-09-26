@@ -765,9 +765,21 @@ function placer(G, options) {
     for (const s of graines) { if (niveau.has(s)) continue;
       let depart = s; if (graine === 'loin') depart = bfs(s, niveau).loin;
       for (const [k, v] of bfs(depart, niveau).d) niveau.set(k, v); }
+    /* une borne reliée à deux blocs distincts posés du MÊME côté a besoin
+       d'une barrette dans la goulotte, qui tranche les fils qu'elle enjambe ;
+       posés de part et d'autre, ses deux fils sortent chacun de leur côté */
+    const barrettesSi = (n, ln) => { let b = 0; const vues = new Set();
+      const lv = id => (id === n ? ln : niveau.get(id));
+      const compte = (id, cle) => { const k = id + SEP + cle; if (vues.has(k)) return; vues.add(k);
+        const blocs = new Set(), cotes = new Set();
+        (partenaires.get(k) || []).forEach(q => { if (q.id === id) return; blocs.add(q.id); cotes.add(Math.sign(lv(q.id) - lv(id))); });
+        if (blocs.size >= 2 && cotes.size === 1) b++; };
+      noeuds.get(n).broches.forEach(p => { compte(n, p.cle);
+        (partenaires.get(n + SEP + p.cle) || []).forEach(q => { if (q.id !== n) compte(q.id, q.cle); }); });
+      return b; };
     // raffinement local : un nœud se rapproche de ses voisins si ça coûte moins
     const cout = (n, ln) => { let sc = 0; for (const [k, w] of adj.get(n)) { const dd = Math.abs(ln - niveau.get(k));
-      sc += w * (dd === 1 ? 0 : (dd === 0 ? 2 : 1 + dd)); } return sc; };
+      sc += w * (dd === 1 ? 0 : (dd === 0 ? 2 : 1 + dd)); } return sc + barrettesSi(n, ln); };
     for (let passe = 0; passe < 3; passe++) { let bouge = false;
       for (const n of ids) { const l0 = niveau.get(n); let best = l0, bc = cout(n, l0);
         for (const c of [l0 - 1, l0 + 1]) { if (c < 0) continue; const cc = cout(n, c); if (cc < bc - 0.01) { bc = cc; best = c; } }
@@ -784,6 +796,7 @@ function placer(G, options) {
       if (voisins.length === 1 && adj.get(voisins[0]).size === 1) return;      // un îlot de deux blocs n'a pas de côté
       const l0 = niveau.get(n), l1 = 2 * autour[0] - l0; if (Math.abs(l1 - l0) !== 2) return;
       if ((charge.get(l1) || 0) + hauteur(n) >= (charge.get(l0) || 0)) return;
+      if (barrettesSi(n, l1) > barrettesSi(n, l0)) return;                  // pas au prix d'une barrette
       niveau.set(n, l1); charge.set(l0, charge.get(l0) - hauteur(n)); charge.set(l1, (charge.get(l1) || 0) + hauteur(n)); });
     const usuels = [...new Set(ids.map(n => niveau.get(n)))].sort((a, b) => a - b);
     const remap = new Map(usuels.map((l, i) => [l, i]));
@@ -836,12 +849,17 @@ function placer(G, options) {
   for (const id of ids) { const N = noeuds.get(id);
     if (N.reglette) { listes.set(id, { S: N.broches.slice() }); continue; }
     const L = [], R = []; const cn = colonneDe.get(id) || 0;
+    /* une borne qui parle des deux côtés se DÉDOUBLE : elle figure sur les deux
+       flancs, à la même hauteur, et chaque fil sort du côté de son partenaire
+       — sinon l'un des deux contournait le bloc par une barrette */
     N.broches.forEach(p => { let d = 0, g = 0;
-      (partenaires.get(id + SEP + p.cle) || []).forEach(q => { const cq = colonneDe.get(q.id) || 0; if (cq < cn) g++; else d++; });
-      const f = (d >= g) ? 'R' : 'L'; flancDe.set(id + SEP + p.cle, f); (f === 'R' ? R : L).push(p); });
+      (partenaires.get(id + SEP + p.cle) || []).forEach(q => { if (q.id === id) return; const cq = colonneDe.get(q.id) || 0; if (cq < cn) g++; else d++; });
+      const f = (d && g) ? 'LR' : ((d >= g) ? 'R' : 'L'); flancDe.set(id + SEP + p.cle, f);
+      if (f !== 'R') L.push(p); if (f !== 'L') R.push(p); });
     listes.set(id, { L, R }); }
   const clesListes = id => listes.get(id).S ? ['S'] : ['L', 'R'];
   const liste = (id, lid) => listes.get(id)[lid];
+  const dedoublee = (id, cle) => flancDe.get(id + SEP + cle) === 'LR';
   const listeDeBroche = (id, cle) => listes.get(id).S ? 'S' : (flancDe.get(id + SEP + cle) === 'L' ? 'L' : 'R');
   const chaqueBroche = (id, f) => clesListes(id).forEach(lid => liste(id, lid).forEach(p => f(p, lid)));
   const estPastille = id => { const ls = listes.get(id); return !!ls.S && ls.S.length === 1 && estRail(noeuds.get(id).nom); };
@@ -855,7 +873,7 @@ function placer(G, options) {
   const nCols = colonnes.length;
   const colW = colonnes.map(c => c.length ? Math.max(...c.map(largeurDe)) : 92);
   const flancDuBout = (nom, cle, autreNom, autreCle) => { const id = nid(nom, cle);
-    if (!listes.get(id).S) return flancDe.get(id + SEP + cle);
+    if (!listes.get(id).S && !dedoublee(id, cle)) return flancDe.get(id + SEP + cle);
     return (colonneDe.get(nid(autreNom, autreCle)) || 0) < (colonneDe.get(id) || 0) ? 'L' : 'R'; };
   const goulotteDuBout = (id, flanc) => (colonneDe.get(id) || 0) + (flanc === 'R' ? 1 : 0);
   const chCount = new Array(nCols + 1).fill(0);
@@ -897,6 +915,11 @@ function placer(G, options) {
     while (pile.length) { const c = pile.pop(); (partenaires.get(id + SEP + c) || []).forEach(q => {
       if (q.id !== id) out.push(q); else if (!vus.has(q.cle)) { vus.add(q.cle); pile.push(q.cle); } }); }
     return out; };
+  /* l'ordre des bornes suit d'abord les partenaires RIGIDES (un bloc à
+     plusieurs bornes, dont l'ordre s'impose) ; un bloc à une seule borne peut
+     toujours venir se mettre en face, il ne dicte rien */
+  const partenairesQuiComptent = (id, cle) => { const ps = partenairesExternes(id, cle);
+    const rigides = ps.filter(q => noeuds.get(q.id).broches.length > 1); return rigides.length ? rigides : ps; };
   const trierBroches = () => { for (const id of ids) clesListes(id).forEach(lid => { const L = liste(id, lid); if (L.length < 2) return;
     const sc = new Map(L.map(p => { const ps = partenairesExternes(id, p.cle);
       if (!ps.length) return [p.cle, yB(id, p.cle)]; let s = 0; ps.forEach(q => s += yB(q.id, q.cle)); return [p.cle, s / ps.length]; }));
@@ -943,6 +966,7 @@ function placer(G, options) {
       let a = { id: ia, cle: A.cle }, b = { id: ib, cle: B.cle };
       const ca = colonneDe.get(ia) ?? 0, cb = colonneDe.get(ib) ?? 0;
       if (ca > cb || (ca === cb && ia > ib)) { const t = a; a = b; b = t; }
+      if (dedoublee(b.id, b.cle)) return;     // une borne des deux flancs garde le même rang sur chacun
       const k = a.id + '|' + b.id + '|' + listeDeBroche(b.id, b.cle);
       (faisceaux.get(k) || faisceaux.set(k, []).get(k)).push({ a, b }); });
     const verrou = new Set();
@@ -1112,7 +1136,7 @@ function placer(G, options) {
         const enHaut = (bj + 1) <= L.length / 2; const grp = enHaut ? L.slice(0, bj + 1) : L.slice(bj + 1);
         if (grp.length > L.length / 2) return;
         const cible = enHaut ? ys[bj + 1] : ys[bj];
-        grp.forEach(p => (partenaires.get(id + SEP + p.cle) || []).forEach(q => { if (q.id === id) return;
+        grp.forEach(p => (partenaires.get(id + SEP + p.cle) || []).forEach(q => { if (q.id === id || dedoublee(q.id, q.cle)) return;
           const L2 = listes.get(q.id)[listeDeBroche(q.id, q.cle)]; if (!L2 || L2.length < 2) return;
           const qi = L2.findIndex(pp => pp.cle === q.cle); if (qi < 0) return;
           const ys2 = L2.map(pp => py2.get(PK(q.id, pp.cle))); let ni = 0; while (ni < L2.length && ys2[ni] < cible) ni++;
@@ -1231,7 +1255,9 @@ function placer(G, options) {
       return S; };
     const avaleUnDroit = (L, nt, nb) => { const x = xDe.get(L), w = largeurDe(L);
       return filsDroits().some(sg => sg.ia !== L && sg.ib !== L && sg.x1 > x + 2 && sg.x0 < x + w - 2 && sg.y > nt + 2 && sg.y < nb - 2); };
-    const espaceOK = (id, cle, y) => { for (const p of liste(id, listeDeBroche(id, cle))) { if (p.cle !== cle && Math.abs(yB(id, p.cle) - y) < PRH - 0.5) return false; } return true; };
+    const espaceOK = (id, cle, y) => { let ok = true;
+      chaqueBroche(id, (p, lid) => { if (ok && p.cle !== cle && (listes.get(id).S || dedoublee(id, cle) || lid === listeDeBroche(id, cle)) && Math.abs(yB(id, p.cle) - y) < PRH - 0.5) ok = false; });
+      return ok; };
     // un fil droit à tout prix : le bloc a le droit de grandir pour l'attraper,
     // sans chevaucher personne ni avaler le fil droit de personne
     const poser = (id, cle, y) => { if (!espaceOK(id, cle, y)) return false;
