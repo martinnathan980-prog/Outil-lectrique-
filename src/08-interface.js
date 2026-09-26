@@ -180,7 +180,7 @@ function deselectionner() { const c = app.cible;
   if (c) { app.cible = null; if (app.choisi) { app.choisi = null; peindre(); }
     if (c.type === 'bloc' && app.base.filtre === c.nom) app.base.filtre = '';
     rendreBase(); eteindre(); }
-  if (app.fiche) fermerFiche(); }
+  if (app.fiche) fermerFiche(true); }
 
 /* ---- les folios : y aller, les montrer --------------------------------- */
 function allerAuPlan(plan) { if (plan === app.plan) return; app.plan = plan; app.choisi = null; fermerFiche(); redessiner(); ajuster(); }
@@ -254,9 +254,10 @@ const modeFolio = () => app.nFolios ? 'auto' : (plans().length ? 'fichier' : 'au
 function colonnes() { const V = verite(), mf = modeFolio();
   return COLONNES_BASE.filter(c => c.k === 'plan' ? mf !== 'aucun' : (!c.option || V.some(l => l[c.k]))); }
 const cleDe = l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable].join('\u0001');
-/* Quand l'outil a découpé, chaque liaison d'origine vit sur un ou deux folios. */
+/* Quand l'outil a découpé, chaque liaison d'origine vit sur un ou deux
+   folios : on retrouve la sienne par sa clé, sans parcourir la source. */
 function foliosParSource() { const m = new Map(); if (!app.nFolios) return m;
-  app.contrat.liaisons.forEach(d => { const s = sourceDe(d); if (!s) return; const k = cleDe(s); const t = m.get(k) || m.set(k, []).get(k); if (!t.includes(d.plan)) t.push(d.plan); });
+  app.contrat.liaisons.forEach(d => { const k = cleSource(d); const t = m.get(k) || m.set(k, []).get(k); if (!t.includes(d.plan)) t.push(d.plan); });
   return m; }
 function lignesVisibles() { const V = verite(), f = app.base.filtre.trim().toLowerCase(), C = colonnes();
   let L = V.map((l, i) => [l, i]); if (f) L = L.filter(([l]) => C.some(c => String(l[c.k]).toLowerCase().includes(f)));
@@ -416,10 +417,11 @@ function ficheColler() {
 }
 
 /* ---- corriger : toujours la vérité, puis on refait les folios ----------- */
+/* Une demi-liaison de renvoi porte le vrai bout dans sa borne : « 733LE 4 ». */
+const boutSource = (n, b) => { if (!estRenvoi(n)) return [n, b]; const k = b.indexOf(' '); return k < 0 ? [b, ''] : [b.slice(0, k), b.slice(k + 1)]; };
+function cleSource(l) { const [de, bDe] = boutSource(l.de, l.borneDe), [vers, bVers] = boutSource(l.vers, l.borneVers); return [de, bDe, vers, bVers, l.cable].join('\u0001'); }
 function sourceDe(l) { if (!app.source || app.source.includes(l)) return l;
-  const bout = (n, b) => { if (!estRenvoi(n)) return [n, b]; const k = b.indexOf(' '); return k < 0 ? [b, ''] : [b.slice(0, k), b.slice(k + 1)]; };
-  const [de, bDe] = bout(l.de, l.borneDe), [vers, bVers] = bout(l.vers, l.borneVers);
-  return app.source.find(s => s.de === de && s.borneDe === bDe && s.vers === vers && s.borneVers === bVers && s.cable === l.cable) || null; }
+  const k = cleSource(l); return app.source.find(s => cleDe(s) === k) || null; }
 function renommer(ancien, nouveau) { verite().forEach(l => { if (l.de === ancien) l.de = nouveau; if (l.vers === ancien) l.vers = nouveau; });
   const d = app.contrat.designations.get(ancien); app.contrat.designations.delete(ancien); if (d) app.contrat.designations.set(nouveau, d); }
 function designer(nom, d) { if (d) app.contrat.designations.set(nom, d); else app.contrat.designations.delete(nom); }
@@ -554,6 +556,7 @@ function lierPanneau() {
   window.addEventListener('keydown', e => {
     const dansChamp = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '');
     if (e.key === 'Escape') { if (!$('menu').hidden) { fermerMenu(); $('btnMenu').focus(); } else if (!$('q-liste').hidden || $('haut').classList.contains('cherche')) { fermerRecherche(); $('q').blur(); }
+      else if (dansChamp) e.target.blur();   // dans un champ, Échap ne fait que le quitter
       else if (app.fiche) fermerFiche(true); else if (app.cible) deselectionner(); else fermerBase(); return; }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !dansChamp) { e.preventDefault(); const q = annuler(); if (q) dire('Annulé : ' + q + '.'); return; }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') { e.preventDefault(); imprimer(); return; }

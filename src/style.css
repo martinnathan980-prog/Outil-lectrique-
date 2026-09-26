@@ -217,7 +217,10 @@ table.tab{width:max-content;min-width:100%;border-collapse:separate;border-spaci
 .tab .f{display:inline-block;font-size:var(--t0);color:var(--cuivre-2);font-weight:700;background:var(--cuivre-pale);border-radius:6px;padding:1px 6px;border:none;font-family:var(--mono);margin:0 2px}
 button.f:hover{background:var(--cuivre);color:#fff}
 .tab .x{width:30px;text-align:center}
-.tab .x button{width:26px;height:26px;border:none;background:none;border-radius:50%;color:var(--encre-2);font-size:var(--t3);line-height:1}
+/* supprimer se découvre au survol de la ligne ; au doigt, il reste visible */
+.tab .x button{width:26px;height:26px;border:none;background:none;border-radius:50%;color:var(--encre-2);font-size:var(--t3);line-height:1;opacity:0;transition:opacity var(--rapide)}
+.tab tr:hover .x button,.tab tr:focus-within .x button,.tab .x button:focus-visible{opacity:1}
+@media (hover:none){.tab .x button{opacity:1}}
 .tab .x button:hover{background:#fbeae8;color:var(--danger)}
 .tab .reste td{color:var(--encre-2);padding:12px 8px;white-space:normal;font-family:var(--sans)}
 
