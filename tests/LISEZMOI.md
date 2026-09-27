@@ -29,11 +29,16 @@ verbes (charger, essai, mesurer) sur l'API `atelier` de `src/10-demarrage.js`.
 ## Le contrat de la refonte
 
 Avant de toucher au moteur, on relance le banc ; après, on le relance. Les
-chiffres de référence sur les quinze topologies (une barrette qui tranche
-un fil compte comme un croisement) :
+chiffres de référence sur les dix-huit topologies (quinze historiques et
+les trois folios de l'exemple ; une barrette qui tranche un fil compte
+comme un croisement), depuis que borniers et connecteurs sont rigides —
+bornes dans l'ordre, au pas, corps compacts :
 
-    96,7 % de fils droits · 4 croisements · 0 violation · 0 cas hors feuille
-    contrat d'essai : 100 %, 3 croisements, densité 33,5 %, format 1,85
+    73,7 % de fils droits · 122 croisements · 0 violation · 0 cas hors feuille
+    contrat d'essai : 94,4 %, 2 croisements ; folio 3 de l'exemple : 46,4 %, 80
+
+Avant la rigidité, les quinze historiques donnaient 96,7 % et 4
+croisements : c'est le prix, mesuré, d'objets qui ressemblent au matériel.
 
 Un changement qui fait baisser le premier chiffre doit dire pourquoi, dans son
 message de commit, mesure à l'appui.

@@ -9,6 +9,19 @@
    =========================================================================== */
 'use strict';
 
+/* Un tracé ne repasse pas sur ses pas : les points doublés et les
+   allers-retours sur une même ligne (a → b → c avec b au-delà de a et c)
+   disparaissent, le segment reste. */
+function simplifier(pts) {
+  const out = [];
+  pts.forEach(q => { const a = out[out.length - 2], b = out[out.length - 1];
+    if (b && Math.abs(b.x - q.x) < 0.3 && Math.abs(b.y - q.y) < 0.3) return;
+    if (a && b) { const horiz = Math.abs(a.y - b.y) < 0.3 && Math.abs(b.y - q.y) < 0.3, vert = Math.abs(a.x - b.x) < 0.3 && Math.abs(b.x - q.x) < 0.3;
+      if (horiz && (b.x - a.x) * (q.x - b.x) < 0) { out.pop(); if (Math.abs(a.x - q.x) < 0.3) return; }
+      else if (vert && (b.y - a.y) * (q.y - b.y) < 0) { out.pop(); if (Math.abs(a.y - q.y) < 0.3) return; } }
+    out.push(q); });
+  return out;
+}
 function router(layout) {
   const g = layout.geom, N = layout.links.length;
   const fils = new Array(N);
@@ -255,6 +268,7 @@ function router(layout) {
   fils.forEach(w => { if (!w || w.shunt) return; [w.pts[0], w.pts[w.pts.length - 1]].forEach(p => {
     const k = Math.round(p.x) + ',' + Math.round(p.y); cnt.set(k, (cnt.get(k) || 0) + 1); }); });
   const points = []; for (const [k, c] of cnt) { if (c > 1) { const [x, y] = k.split(',').map(Number); points.push({ x, y }); } }
+  fils.forEach(w => { if (w) w.pts = simplifier(w.pts); });
   return { fils: fils.filter(Boolean), points, barrettes, piquages };
 }
 

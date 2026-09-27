@@ -145,10 +145,8 @@ function piquagesSvg(barrettes, piquages, verticaux) {
    vertical, jamais sur une autre étiquette, jamais barré par un fil vertical.
    Mieux vaut un fil muet qu'une planche où les étiquettes se marchent dessus :
    les plus longs segments choisissent en premier. */
-function reperesDeFil(fils) {
-  const H = 5.6, CAR = 0.60, fs = 6, poses = [], verticaux = [];
-  fils.forEach(w => { for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1];
-    if (Math.abs(a.x - b.x) < 0.6 && Math.abs(a.y - b.y) > 1) verticaux.push({ x: a.x, y0: Math.min(a.y, b.y), y1: Math.max(a.y, b.y) }); } });
+function reperesDeFil(fils, verticaux) {
+  const H = 5.6, CAR = 0.60, fs = 6, poses = [];
   const libre = (x0, y0, x1, y1) => !poses.some(b => x1 > b.x0 - 2 && x0 < b.x1 + 2 && y1 > b.y0 - 1.5 && y0 < b.y1 + 1.5)
     && !verticaux.some(v => v.x > x0 - R_PONT - 1 && v.x < x1 + R_PONT + 1 && v.y1 > y0 && v.y0 < y1);
   const cands = [];
@@ -303,7 +301,7 @@ function sceneSvg(dessin, cartouche, folio, designationDe, choisi) {
   fils.forEach(w => { s += filSvg(w, verticaux); });
   const shunts = new Map();
   dessin.fils.forEach(w => { if (!w.shunt) return; const ys = [w.epA.y, w.epB.y].sort((u, v) => u - v); (shunts.get(w.de) || shunts.set(w.de, []).get(w.de)).push(ys); });
-  s += reperesDeFil(dessin.fils);
+  s += reperesDeFil(dessin.fils, verticaux);
   s += piquagesSvg(dessin.barrettes, dessin.piquages, verticaux);
   dessin.points.forEach(d => s += `<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="1.9"/>`);
   dessin.comps.forEach(c => { c.shunts = shunts.get(c.name) || []; c.connecteurs = c.kind === 'equip' ? connecteurParBorne(c.name, dessin.fils) : null; s += blocSvg(c, designationDe ? designationDe(c.name) : '', choisi === c.name); });
