@@ -52,7 +52,7 @@ function folioCourant() { const P = plans();
    prise de coupure, le part number que le fichier porte. */
 function designationDe(n) { const d = app.contrat.designations.get(n); if (d) return d;
   if (estBarrette(n)) return barretteInfos(n, verite(), app.bible).reference;
-  if (estCoupure(n)) return besoinsDeBarrette(n, verite()).pn;
+  if (estCoupure(n)) return coupureInfos(n, verite(), app.bible).reference;
   return ''; }
 const CLE_BIBLE = 'atelier.bible.v1';
 function relireBible() { try { const o = JSON.parse(localStorage.getItem(CLE_BIBLE) || 'null'); if (o && o.entrees && o.entrees.length) { app.bible = o.entrees.map(entreeBible).filter(Boolean); app.bibleNom = o.nom || ''; return true; } } catch (_) { }
@@ -609,6 +609,12 @@ function nomFolio() { const base = (app.nom || 'atelier-schema').replace(/\.[^.]
 function telecharger(blob, nom) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nom;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); }
 function svgDuFolio() { return app.dessin ? svgAutonome(app.dessin, app.contrat.cartouche, folioCourant(), designationDe) : null; }
+/* Le suivi : tout ce que le contrat pose (barrettes, prises, connecteurs),
+   en CSV, pour le garder d'un contrat à l'autre. */
+function exporterSuivi() { const L = suiviDuContrat(verite(), app.bible, app.nom || 'contrat', n => app.contrat.designations.get(n) || '');
+  if (!L.length) { dire('Rien à suivre : ni barrette, ni prise, ni connecteur dans ce contrat.'); return; }
+  telecharger(new Blob(['\ufeff' + csvDuSuivi(L)], { type: 'text/csv;charset=utf-8' }), (app.nom || 'contrat').replace(/\.[^.]+$/, '') + ' — suivi.csv');
+  dire(pluriel(L.length, 'ligne') + ' de suivi enregistrée' + (L.length > 1 ? 's' : '') + '.'); }
 function exporterSVG() { const S = svgDuFolio(); if (!S) return; telecharger(new Blob([S.txt], { type: 'image/svg+xml;charset=utf-8' }), nomFolio() + '.svg'); dire('Folio enregistré en SVG.'); }
 function exporterPNG() { const S = svgDuFolio(); if (!S) return;
   const k = Math.max(1, Math.min(3, 12e6 / Math.max(1, S.w * S.h))); const img = new Image();
@@ -651,7 +657,7 @@ function lierPanneau() {
   o('btnBase', basculerBase); o('btnCherche', () => { if (rechercheOuverte()) fermerRecherche(); else ouvrirRecherche(); });
   o('btnLiaison', nouvelleLiaison); o('btnBible', basculerBible); o('btnOuvrir', choisirFichier);
   o('btnMenu', e => { e.stopPropagation(); $('menu').hidden ? ouvrirMenu() : fermerMenu(); });
-  const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple, cartouche: ficheCartouche, bible: ficheBible, svg: exporterSVG, png: exporterPNG, imprimer,
+  const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple, cartouche: ficheCartouche, bible: ficheBible, suivi: exporterSuivi, svg: exporterSVG, png: exporterPNG, imprimer,
     vider: () => { if (!confirm('Effacer tout le contrat ?')) return; histPush('tout effacer'); app.contrat.liaisons = []; app.source = null; app.nFolios = 0; app.plan = '*'; app.nom = ''; app.cible = null; app.choisi = null;
       fermerFiche(); fermerBase(); redessiner(); ajuster(); sauver(); } };
   $('menu').addEventListener('click', e => { const b = e.target.closest('button[data-act]'); if (!b) return; fermerMenu(); actions[b.dataset.act](); });

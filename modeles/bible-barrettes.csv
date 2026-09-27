@@ -1,10 +1,15 @@
-Référence;Famille;Nature;Bornes;Jauge min;Jauge max;Intensité;Blindage;Note
-ASNE0500-02;ASNE0500;jonction;2;26;20;7,5;non;exemple — remplace par ta bible
-ASNE0500-04;ASNE0500;jonction;4;26;20;7,5;non;exemple
-ASNE0500-08;ASNE0500;jonction;8;26;20;7,5;non;exemple
-ASNE0500-12;ASNE0500;jonction;12;26;20;7,5;non;exemple
-ASNE0500-20;ASNE0500;jonction;20;26;20;7,5;non;exemple
-ASNE0501-04;ASNE0501;jonction;4;22;16;23;non;exemple — grosses sections
-ASNE0501-08;ASNE0501;jonction;8;22;16;23;non;exemple — grosses sections
-ASNE0502-04;ASNE0502;blindage;4;26;20;7,5;oui;exemple — reprise de blindage
-ASNE0502-08;ASNE0502;blindage;8;26;20;7,5;oui;exemple — reprise de blindage
+Référence;Famille;Nature;Bornes;Jauge min;Jauge max;Intensité;Blindage;Note;Mobile
+ASNE0500-02;ASNE0500;jonction;2;26;20;7,5;non;exemple — remplace par ta bible;
+ASNE0500-04;ASNE0500;jonction;4;26;20;7,5;non;exemple;
+ASNE0500-08;ASNE0500;jonction;8;26;20;7,5;non;exemple;
+ASNE0500-12;ASNE0500;jonction;12;26;20;7,5;non;exemple;
+ASNE0500-20;ASNE0500;jonction;20;26;20;7,5;non;exemple;
+ASNE0501-04;ASNE0501;jonction;4;22;16;23;non;exemple — grosses sections;
+ASNE0501-08;ASNE0501;jonction;8;22;16;23;non;exemple — grosses sections;
+ASNE0502-04;ASNE0502;blindage;4;26;20;7,5;oui;exemple — reprise de blindage;
+ASNE0502-08;ASNE0502;blindage;8;26;20;7,5;oui;exemple — reprise de blindage;
+EN3646A6083AAN;EN3646;coupure;3;26;20;7,5;non;exemple — prise de coupure 3 contacts;
+EN3646A6088AAN;EN3646;coupure;8;26;20;7,5;non;exemple — prise de coupure 8 contacts;
+
+EN2997Y1A08P;EN2997;connecteur;8;26;20;7,5;non;exemple — embase 8 contacts, sa partie mobile à côté;EN2997Y2A08S
+ABS0864-12;ABS0864;connecteur;12;26;20;7,5;non;exemple — embase 12 contacts;ABS0865-12

@@ -1,18 +1,28 @@
 /* ===========================================================================
-   09 — LES BARRETTES ET LES CONNECTEURS
-   Deux savoirs que le contrat ne porte qu'à moitié :
+   09 — LA BIBLE : BARRETTES, PRISES DE COUPURE, CONNECTEURS, ET LE SUIVI
+   Ce que le contrat ne porte qu'à moitié :
 
-   LA BIBLE DES BARRETTES — la liste des références normalisées (NSA, ASNE,
-   ABS…) avec ce qu'elles acceptent : nombre de bornes, jauges de fil,
-   intensité, blindage. Elle vient d'un fichier Excel ou CSV de l'atelier ;
-   la bible d'exemple embarquée ne sert qu'à montrer le mécanisme.
-   Avec la bible, chaque barrette du contrat reçoit la référence la plus
-   logique pour ce qu'elle porte : assez de bornes, la jauge des fils qui
-   y arrivent, le blindage s'il y en a, et la famille déjà employée.
+   LA BIBLE — une seule table, venue d'un Excel ou d'un CSV de l'atelier :
+   les références normalisées (NSA, ASNE, ABS, EN…) avec ce qu'elles
+   acceptent. Sa colonne NATURE dit de quoi il s'agit : « jonction » ou
+   « blindage » (barrettes), « coupure » (prises de coupure), « connecteur »
+   (l'embase d'un équipement, avec sa PARTIE MOBILE — la fiche qu'on pose
+   sur le faisceau). La bible d'exemple embarquée ne sert qu'à montrer le
+   mécanisme ; elle n'a aucune valeur normative.
+
+   LE CHOIX — chaque barrette et chaque prise de coupure du contrat reçoit la
+   référence la plus logique pour ce qu'elle porte : assez de bornes, la
+   jauge des fils qui y arrivent, le blindage s'il y en a, la famille déjà
+   employée. Chaque connecteur d'équipement dit la partie mobile à poser.
 
    LES CONNECTEURS — les bornes d'un équipement appartiennent à des
-   connecteurs (A, B, C…). Le retest les dit de deux façons : la lettre en
-   tête de la borne (A12, B03) ou le part number du connecteur (PN1 / PN2).
+   connecteurs (A, B, C…) : la lettre en tête de la borne (A12, B03), sinon
+   le part number du connecteur (PN1 / PN2), qui reçoit alors une lettre.
+
+   LE SUIVI — pour un contrat, la liste de tout ce qu'on pose : chaque
+   barrette, prise et connecteur avec sa référence, ses bornes, ses fils,
+   ses routes, ses folios. C'est ce qui s'exporte et se garde d'un contrat
+   à l'autre.
    =========================================================================== */
 'use strict';
 
@@ -28,6 +38,7 @@ const COLONNES_BIBLE = [
   ['jaugeMax',   ['jaugemax', 'awgmax', 'jaugegrosse', 'gaugemax', 'maxawg']],
   ['intensite',  ['intensite', 'intensitemax', 'courant', 'current', 'amperes', 'a']],
   ['blindage',   ['blindage', 'blinde', 'shield', 'shielded', 'masse']],
+  ['mobile',     ['mobile', 'partiemobile', 'fiche', 'contrepartie', 'mating', 'plug', 'pnmobile']],
   ['note',       ['note', 'notes', 'observation', 'observations', 'remarque', 'commentaire']]
 ];
 /* Une entrée normalisée. Les jauges AWG comptent à l'envers : 26 est plus
@@ -40,13 +51,13 @@ function entreeBible(o) {
   return { reference: ref, famille: String(o.famille || ref.replace(/[-\s].*$/, '')).trim(),
            nature: String(o.nature || 'jonction').trim().toLowerCase(), bornes: n(o.bornes),
            jaugeMin: jauges.length ? Math.max(...jauges) : null, jaugeMax: jauges.length ? Math.min(...jauges) : null,
-           intensite: n(o.intensite), blindage: oui(o.blindage), note: String(o.note || '').trim() };
+           intensite: n(o.intensite), blindage: oui(o.blindage), mobile: String(o.mobile || '').trim(), note: String(o.note || '').trim() };
 }
 /* La bible d'exemple : des références PLAUSIBLES, pas des normes lues. Elle
    montre le mécanisme en attendant la bible de l'atelier. */
 function bibleExemple() {
-  const E = (reference, famille, nature, bornes, jaugeMin, jaugeMax, intensite, blindage, note) =>
-    ({ reference, famille, nature, bornes, jaugeMin, jaugeMax, intensite, blindage, note });
+  const E = (reference, famille, nature, bornes, jaugeMin, jaugeMax, intensite, blindage, note, mobile) =>
+    ({ reference, famille, nature, bornes, jaugeMin, jaugeMax, intensite, blindage, note, mobile });
   return [
     E('ASNE0500-02', 'ASNE0500', 'jonction', 2,  26, 20, 7.5, false, 'exemple'),
     E('ASNE0500-04', 'ASNE0500', 'jonction', 4,  26, 20, 7.5, false, 'exemple'),
@@ -56,7 +67,11 @@ function bibleExemple() {
     E('ASNE0501-04', 'ASNE0501', 'jonction', 4,  22, 16, 23,  false, 'exemple · grosses sections'),
     E('ASNE0501-08', 'ASNE0501', 'jonction', 8,  22, 16, 23,  false, 'exemple · grosses sections'),
     E('ASNE0502-04', 'ASNE0502', 'blindage', 4,  26, 20, 7.5, true,  'exemple · reprise de blindage'),
-    E('ASNE0502-08', 'ASNE0502', 'blindage', 8,  26, 20, 7.5, true,  'exemple · reprise de blindage')
+    E('ASNE0502-08', 'ASNE0502', 'blindage', 8,  26, 20, 7.5, true,  'exemple · reprise de blindage'),
+    E('EN3646A6083AAN', 'EN3646', 'coupure', 3, 26, 20, 7.5, false, 'exemple · prise de coupure 3 contacts'),
+    E('EN3646A6088AAN', 'EN3646', 'coupure', 8, 26, 20, 7.5, false, 'exemple · prise de coupure 8 contacts'),
+    E('EN2997Y1A08P', 'EN2997', 'connecteur', 8, 26, 20, 7.5, false, 'exemple · embase 8 contacts', 'EN2997Y2A08S'),
+    E('ABS0864-12', 'ABS0864', 'connecteur', 12, 26, 20, 7.5, false, 'exemple · embase 12 contacts', 'ABS0865-12')
   ].map(entreeBible);
 }
 /* Lire une bible : un tableau dont la première ligne reconnue nomme les
@@ -101,40 +116,45 @@ function besoinsDeBarrette(repere, liaisons) {
            fils, shunts, jaugeFine: jauges.length ? Math.max(...jauges) : null, jaugeGrosse: jauges.length ? Math.min(...jauges) : null,
            blindes, pn };
 }
-/* Le choix : parmi les entrées qui conviennent, la famille déjà employée
-   d'abord, puis la plus petite qui a assez de bornes, puis la plus courante
-   en intensité. Chaque raison est dite pour qu'on puisse la contester. */
-function choisirBarrette(besoins, bible) {
+/* Le choix : parmi les entrées de la bonne nature qui conviennent, la
+   famille déjà employée d'abord, puis la plus petite qui a assez de bornes,
+   puis la plus courante en intensité. Chaque raison est dite pour qu'on
+   puisse la contester. */
+function choisirReference(besoins, bible, natures) {
   const raisons = [];
   const nBornes = Math.max(besoins.nBornes, besoins.borneMax || 0);
-  const nature = besoins.blindes ? 'blindage' : 'jonction';
-  let cands = bible.filter(e => e.bornes != null && e.bornes >= nBornes);
+  let cands = bible.filter(e => natures.includes(e.nature) && e.bornes != null && e.bornes >= nBornes);
   raisons.push(`${nBornes} borne${nBornes > 1 ? 's' : ''} à loger`);
   if (besoins.jaugeFine != null) {
     const ok = cands.filter(e => (e.jaugeMin == null || e.jaugeMin >= besoins.jaugeFine) && (e.jaugeMax == null || e.jaugeMax <= besoins.jaugeGrosse));
     if (ok.length) cands = ok;
     raisons.push(besoins.jaugeFine === besoins.jaugeGrosse ? `fils de jauge ${besoins.jaugeFine}` : `fils de jauge ${besoins.jaugeFine} à ${besoins.jaugeGrosse}`);
   }
-  if (besoins.blindes) { const ok = cands.filter(e => e.blindage || e.nature === 'blindage'); if (ok.length) cands = ok;
+  if (besoins.blindes && natures.includes('blindage')) { const ok = cands.filter(e => e.blindage || e.nature === 'blindage'); if (ok.length) cands = ok;
     raisons.push(`${besoins.blindes} fil${besoins.blindes > 1 ? 's' : ''} blindé${besoins.blindes > 1 ? 's' : ''}`); }
-  else { const ok = cands.filter(e => e.nature !== 'blindage'); if (ok.length) cands = ok; }
+  else if (natures.includes('blindage')) { const ok = cands.filter(e => e.nature !== 'blindage'); if (ok.length) cands = ok; }
   const famille = besoins.pn ? (bible.find(e => e.reference === besoins.pn) || {}).famille || besoins.pn.replace(/[-\s].*$/, '') : '';
   if (famille) { const ok = cands.filter(e => e.famille === famille); if (ok.length) { cands = ok; raisons.push(`famille ${famille} déjà employée`); } }
   cands = cands.slice().sort((a, b) => (a.bornes - b.bornes) || ((a.intensite || 0) - (b.intensite || 0)) || a.reference.localeCompare(b.reference));
   const choix = cands[0] || null;
   if (choix && choix.bornes > nBornes) raisons.push(`${choix.bornes - nBornes} borne${choix.bornes - nBornes > 1 ? 's' : ''} libre${choix.bornes - nBornes > 1 ? 's' : ''}`);
   if (!choix) raisons.push('aucune référence de la bible ne convient');
-  return { choix, nature, raisons, candidats: cands.slice(0, 6) };
+  return { choix, nature: natures[0], raisons, candidats: cands.slice(0, 6), enPlus: Math.max(0, cands.length - 6) };
 }
-/* Tout ce qu'on sait d'une barrette du contrat : ses besoins, la référence
-   choisie, le pourquoi, et la référence que le fichier portait déjà. */
-function barretteInfos(repere, liaisons, bible) {
+const choisirBarrette = (besoins, bible) => ({ ...choisirReference(besoins, bible, ['jonction', 'blindage']), nature: besoins.blindes ? 'blindage' : 'jonction' });
+const choisirCoupure  = (besoins, bible) => choisirReference(besoins, bible, ['coupure']);
+/* Tout ce qu'on sait d'une barrette (ou d'une prise) du contrat : ses
+   besoins, la référence choisie, le pourquoi, et celle que le fichier
+   portait déjà. */
+function infosDe(repere, liaisons, bible, choisir) {
   const besoins = besoinsDeBarrette(repere, liaisons);
-  const choix = choisirBarrette(besoins, bible || []);
+  const choix = choisir(besoins, bible || []);
   const deja = (bible || []).find(e => e.reference === besoins.pn) || null;
   return { ...besoins, ...choix, deja, reference: choix.choix ? choix.choix.reference : (besoins.pn || ''),
            changee: !!(besoins.pn && choix.choix && choix.choix.reference !== besoins.pn) };
 }
+const barretteInfos = (repere, liaisons, bible) => infosDe(repere, liaisons, bible, choisirBarrette);
+const coupureInfos  = (repere, liaisons, bible) => infosDe(repere, liaisons, bible, choisirCoupure);
 
 /* ---- les connecteurs d'un équipement ------------------------------------- */
 /* Une borne « A12 » est la borne 12 du connecteur A ; sinon le connecteur
@@ -164,4 +184,44 @@ function connecteursDe(repere, liaisons) {
 /* La même chose, borne par borne : ce que le dessin lit. */
 function connecteurParBorne(repere, liaisons) {
   const m = new Map(); connecteursDe(repere, liaisons).forEach(g => g.bornes.forEach(b => m.set(String(b), g))); return m;
+}
+/* Ce qu'on pose sur chaque connecteur d'un équipement : l'embase est celle
+   de l'équipement (le part number du fichier) ; la bible dit sa partie
+   mobile — la fiche qu'on câble — et son nombre de contacts. */
+function connecteursInfos(repere, liaisons, bible) {
+  return connecteursDe(repere, liaisons).map(c => { const e = (bible || []).find(x => x.reference === c.pn && x.nature === 'connecteur') || null;
+    return { ...c, embase: e, mobile: e ? e.mobile : '', contacts: e ? e.bornes : null, libres: e && e.bornes != null ? Math.max(0, e.bornes - c.bornes.length) : null }; });
+}
+
+/* ---- le suivi ------------------------------------------------------------ */
+/* Une ligne par chose posée : barrette, prise de coupure, connecteur — avec
+   la référence retenue (celle de la bible, ou celle qu'on a choisie à la
+   main, sinon celle du fichier), ses bornes, ses fils, ses routes, ses
+   folios. `retenue(repere)` rend la référence choisie à la main, s'il y en
+   a une. */
+function suiviDuContrat(liaisons, bible, contrat, retenue) {
+  const lignes = [], main = retenue || (() => '');
+  const filsDe = (r, borne) => liaisons.filter(l => (l.de === r && (!borne || l.borneDe === borne)) || (l.vers === r && (!borne || l.borneVers === borne)));
+  const champs = (fils) => ({ fils: [...new Set(fils.map(l => l.cable).filter(Boolean))], routes: [...new Set(fils.map(l => l.route).filter(Boolean))], plans: [...new Set(fils.map(l => l.plan).filter(Boolean))] });
+  reperesDe(liaisons).forEach(r => {
+    if (estBarrette(r) || estCoupure(r)) {
+      const I = (estBarrette(r) ? barretteInfos : coupureInfos)(r, liaisons, bible);
+      lignes.push({ contrat, repere: r, nature: estBarrette(r) ? (I.blindes ? 'barrette de blindage' : 'barrette') : 'prise de coupure',
+                    reference: main(r) || I.reference, fichier: I.pn, bornes: I.bornes.slice().sort(triBornes), nBornes: I.nBornes, shunts: I.shunts,
+                    jauge: I.jaugeFine == null ? '' : (I.jaugeFine === I.jaugeGrosse ? String(I.jaugeFine) : I.jaugeFine + '-' + I.jaugeGrosse), ...champs(filsDe(r)) });
+    } else if (!estMasse(r)) {
+      connecteursInfos(r, liaisons, bible).forEach(c => { const fils = liaisons.filter(l => (l.de === r && c.bornes.includes(l.borneDe)) || (l.vers === r && c.bornes.includes(l.borneVers)));
+        lignes.push({ contrat, repere: r + ' ' + c.nom, nature: 'connecteur', reference: c.mobile || '', fichier: c.pn, bornes: c.bornes.slice().sort(triBornes), nBornes: c.bornes.length, shunts: 0,
+                      jauge: '', ...champs(fils) }); }); } });
+  return lignes;
+}
+/* L'ordre naturel des bornes : 1, 2, 10 ; A1, A2, B1. */
+function triBornes(a, b) { const na = parseFloat(a), nb = parseFloat(b);
+  if (!isNaN(na) && !isNaN(nb) && String(na) === String(a) && String(nb) === String(b)) return na - nb;
+  return String(a).localeCompare(String(b), 'fr', { numeric: true }); }
+const COLONNES_SUIVI = [['contrat', 'Contrat'], ['repere', 'Repère'], ['nature', 'Nature'], ['reference', 'Référence retenue'], ['fichier', 'Référence du fichier'],
+  ['nBornes', 'Bornes utilisées'], ['bornes', 'Bornes'], ['shunts', 'Shunts'], ['jauge', 'Jauge'], ['fils', 'Fils'], ['routes', 'Routes'], ['plans', 'Folios']];
+function csvDuSuivi(lignes) {
+  const cell = v => { const t = Array.isArray(v) ? v.join(' ') : String(v == null ? '' : v); return /[;"\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+  return [COLONNES_SUIVI.map(c => c[1]).join(';'), ...lignes.map(l => COLONNES_SUIVI.map(c => cell(l[c[0]])).join(';'))].join('\n');
 }
