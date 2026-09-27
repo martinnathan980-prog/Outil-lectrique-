@@ -2609,6 +2609,10 @@ function blocSvg(c, designation, choisi) {
     if (designation) s += `<text class="des" x="${f1(mid)}" y="${f1(yRep + 10)}" text-anchor="middle">${esc(clip(designation, 18))}</text>`;
     if (rl.length) s += bornesSvg(bx, -1, c.lw, rl, c.y, connDe);
     if (rr.length) s += bornesSvg(bx + bw, +1, c.rw, rr, c.y, connDe);
+    // un shunt entre deux bornes d'un équipement : un pont dans le cadre du connecteur, côté flanc
+    (c.shunts || []).forEach(([y1, y2]) => { const aDroite = rr.some(p => Math.abs(p.y - y1) < 0.6) && !rl.some(p => Math.abs(p.y - y1) < 0.6);
+      const xs = aDroite ? bx + bw - 5.5 : bx + 5.5;
+      s += `<line class="pont" x1="${f1(xs)}" y1="${f1(y1 - c.y)}" x2="${f1(xs)}" y2="${f1(y2 - c.y)}"/><circle class="jn" cx="${f1(xs)}" cy="${f1(y1 - c.y)}" r="1.5"/><circle class="jn" cx="${f1(xs)}" cy="${f1(y2 - c.y)}" r="1.5"/>`; });
   }
   return s + '</g>';
 }
