@@ -32,11 +32,14 @@ function placer(G, options) {
   const graine = opt.graine || 0;                 // 0 = plus fort degré, 'loin' = point le plus éloigné, n = décalage
   const SERP = opt.serpentin | 0;                 // largeur de rangée (0 = pas de repli)
   const mediane = a => { a = a.slice().sort((x, y) => x - y); return a[a.length >> 1]; };
-  /* Un SHUNT — deux bornes d'un même bornier pontées — n'est pas un fil :
-     il ne prend ni goulotte ni ordonnée, le dessin le trace dans la réglette. */
+  /* Un SHUNT — deux bornes d'un même bloc pontées, bornier ou équipement —
+     n'est pas un fil : il ne prend ni goulotte ni ordonnée, le dessin le
+     trace en pont dans la réglette ou dans le cadre du connecteur. Les deux
+     bornes restent voisines quand elles sont du même connecteur : c'est
+     l'ordre naturel qui les y tient. */
   const shunts = new Set();
   lk.forEach((l, li) => { const A = bouts.get(li + ':A'), B = bouts.get(li + ':B');
-    if (A.cle !== B.cle && nid(A.nom, A.cle) === nid(B.nom, B.cle) && estBornier(A.nom)) shunts.add(li); });
+    if (A.cle !== B.cle && nid(A.nom, A.cle) === nid(B.nom, B.cle)) shunts.add(li); });
   // les partenaires d'une borne, ceux de ses bornes pontées compris : deux
   // bornes d'un shunt sont un seul point électrique
   const partenairesExternes = (id, cle) => { const vus = new Set([cle]), pile = [cle], out = [];
