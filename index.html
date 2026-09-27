@@ -543,6 +543,40 @@ function contratEssai() {
   li('601RC',  '11', '733LE',  'CNT', 'W-150', 'MLC24');
   return L;
 }
+/* Le contrat d'exemple, celui qu'on voit en ouvrant l'outil : le contrat
+   d'essai, plus ce que le retest porte en vrai — les part numbers des
+   connecteurs, une barrette qui distribue avec son shunt, une prise de
+   coupure sur un fil blindé, des bornes qui disent leur connecteur (A12). */
+function contratExemple() {
+  const PN = { '210SP1': '*704A46220028', '340AB1': 'EN2997Y1A08P', '340AB2': 'EN2997Y1A08P', '115CD': 'ABS0864-12', '118CD': 'ABS0864-12',
+               '409GH2': 'NSA937802-05', '512VN': 'E0644G9S', '601RC': 'E0836IS35-22SA', '733LE': 'E0644D9S', '845VG': 'E0656A01N1S0',
+               '667VT21': 'ASNE0500-04', '408VC1A': 'EN3646A6083AAN' };
+  const L = [];
+  const li = (de, bDe, vers, bVers, cable, type) =>
+    L.push(liaison({ de, borneDe: bDe, pnDe: PN[de] || '', vers, borneVers: bVers, pnVers: PN[vers] || '', cable, type }));
+  li('210SP1', 'B12', '667VT21', '1',  'W-101', 'DR24');
+  li('667VT21', '1', '667VT21', '2',   'W-102', 'DR24');
+  li('667VT21', '2', '115CD',  '3',    'W-103', 'DR24');
+  li('667VT21', '3', '118CD',  '3',    'W-104', 'DR24');
+  li('667VT21', '4', '409GH2', '7',    'W-105', 'DR24');
+  li('340AB1', '4',  '512VN',  '1',    'W-110', 'DR22');
+  li('340AB1', '4',  '512VN',  '2',    'W-111', 'DR22');
+  li('340AB1', '1',  '210SP1', 'A3',   'W-120', 'DR24');
+  li('340AB2', '1',  '210SP1', 'A4',   'W-121', 'DR24');
+  li('115CD',  '8',  '408VC1A', '1',   'W-130', 'MLB24');
+  li('408VC1A', '1', '601RC',  '2',    'W-131', 'MLB24');
+  li('601RC',  '5',  '733LE',  '1',    'W-132', 'BN24');
+  li('733LE',  '4',  '409GH2', '2',    'W-133', 'BN24');
+  li('118CD',  '8',  '512VN',  '5',    'W-134', 'DR22');
+  li('409GH2', '9',  '845VG',  '3',    'W-135', 'MLB24');
+  li('845VG',  '1',  '601RC',  '7',    'W-136', 'MLB24');
+  li('210SP1', 'B20', '904G',  '',     'W-140', 'DR20');
+  li('340AB1', '20', '904G',   '',     'W-141', 'DR20');
+  li('115CD',  '20', '907G',   '',     'W-142', 'DR20');
+  li('118CD',  '20', '907G',   '',     'W-143', 'DR20');
+  li('601RC',  '11', '733LE',  'CNT',  'W-150', 'MLC24');
+  return L;
+}
 
 /* ───────── 02-lecture.js ───────── */
 /* ===========================================================================
@@ -2030,6 +2064,8 @@ function styleDessin() {
      .filnum{fill:#55636f;font-size:6px;font-weight:500;letter-spacing:.1px}
      .lead{stroke:#26323f;stroke-width:.95;stroke-linecap:butt}
      .borne{fill:#ffffff;stroke:#1b2430;stroke-width:.8}
+     .conn{fill:none;stroke:#8a96a2;stroke-width:.5}
+     .connlbl{fill:#6b7885;font-size:5.2px;font-weight:600;letter-spacing:.5px}
      .pont{stroke:#1b2430;stroke-width:2.2;stroke-linecap:round}
      .rpill{fill:#ffffff;stroke:#c8d1d9;stroke-width:.7}
      .rname{fill:#46535f;font-weight:600;font-size:7.5px;letter-spacing:.6px}
@@ -2169,6 +2205,28 @@ function bornesSvg(xCorps, dir, prof, rangs, baseY) {
     if (p.etiq) out += `<text class="pinlbl" x="${f1(xCorps - dir * 4)}" y="${f1(y + 2.6)}" text-anchor="${dir > 0 ? 'end' : 'start'}">${esc(clip(String(p.etiq), 5))}</text>`; });
   return out;
 }
+/* Les connecteurs : les bornes d'un même connecteur (A, B… ou un part
+   number) s'encadrent dans le corps, contre le flanc, avec leur nom en tête.
+   Un connecteur dont les bornes ne se suivent pas a plusieurs cadres du même
+   nom : le placement ordonne les bornes par leurs partenaires, pas par
+   connecteur, et c'est la droiture des fils qui l'emporte. */
+const CONN_W = 30;
+function connecteursSvg(xCorps, dir, rangs, baseY, hCorps, connecteurDe) {
+  const runs = []; let cur = null;
+  rangs.forEach(p => { const c = connecteurDe(p.etiq); const nom = c ? c.nom : '';
+    if (cur && cur.nom === nom) { cur.y1 = p.y - baseY; return; }
+    cur = { nom, y0: p.y - baseY, y1: p.y - baseY }; runs.push(cur); });
+  if (!runs.some(r => r.nom)) return '';
+  const x0 = dir > 0 ? xCorps - CONN_W - 1.5 : xCorps + 1.5;
+  let out = '';
+  runs.forEach(r => { if (!r.nom) return;
+    const t = Math.max(1.5, r.y0 - PRH / 2 - 7.5), b = Math.min(hCorps - 1.5, r.y1 + PRH / 2 + 1);
+    out += `<rect class="conn" x="${f1(x0)}" y="${f1(t)}" width="${CONN_W}" height="${f1(b - t)}" rx="1.5"/>`;
+    // une lettre s'écrit en grand ; un part number se serre pour tenir dans le cadre
+    const nom = clip(r.nom, 10), fs = Math.max(3.6, Math.min(5.2, (CONN_W - 3) / (0.64 * nom.length)));
+    out += `<text class="connlbl" style="font-size:${f1(fs)}px" x="${f1(x0 + CONN_W / 2)}" y="${f1(t + 5.6)}" text-anchor="middle">${esc(nom)}</text>`; });
+  return out;
+}
 /* Le repère tient entre les numéros de borne des deux flancs : la taille
    s'adapte au nom, jamais l'inverse. */
 function repereSvg(cls, x, y, nom, bw, marge) {
@@ -2204,6 +2262,7 @@ function blocSvg(c, designation, choisi) {
       if ((p.dir || 0) <= 0) s += `<line class="lead" x1="0" y1="${f1(ly)}" x2="${f1(xg0)}" y2="${f1(ly)}"/>`;
       if ((p.dir || 0) >= 0) s += `<line class="lead" x1="${f1(xd1)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
     s += `<text class="rep" x="${f1(mid)}" y="${f1(c.h + 12)}" text-anchor="middle">${esc(clip(c.name, 14))}</text>`;
+    if (designation) s += `<text class="des" x="${f1(mid)}" y="${f1(c.h + 21)}" text-anchor="middle">${esc(clip(designation, 18))}</text>`;
   } else if (c.kind === 'strip' || estBarrette(c.name)) {
     /* RÉGLETTE (barrette ou bornier) : une rangée de modules identiques. Chaque
        borne est une cellule de la hauteur d'un pas, centrée sur son ordonnée ;
@@ -2221,6 +2280,7 @@ function blocSvg(c, designation, choisi) {
     (c.shunts || []).forEach(([y1, y2]) => { const xs = bx + bw - 5;
       s += `<line class="pont" x1="${f1(xs)}" y1="${f1(y1 - c.y)}" x2="${f1(xs)}" y2="${f1(y2 - c.y)}"/><circle class="jn" cx="${f1(xs)}" cy="${f1(y1 - c.y)}" r="1.7"/><circle class="jn" cx="${f1(xs)}" cy="${f1(y2 - c.y)}" r="1.7"/>`; });
     s += `<text class="rep" x="${f1(mid)}" y="${f1(c.h + 12)}" text-anchor="middle">${esc(clip(c.name, 14))}</text>`;
+    if (designation) s += `<text class="des" x="${f1(mid)}" y="${f1(c.h + 21)}" text-anchor="middle">${esc(clip(designation, 18))}</text>`;
   } else if (estMasse(c.name)) {
     /* MASSE : les fils rejoignent un collecteur vertical, marqués d'un point
        de jonction, et le collecteur descend sur le symbole CEI 60617-02 —
@@ -2236,7 +2296,10 @@ function blocSvg(c, designation, choisi) {
   } else {
     // équipement : corps, repère en tête (rappelé en pied s'il est très haut), bornes sur les flancs
     s += `<rect class="body" x="${f1(bx)}" y="0" width="${f1(bw)}" height="${c.h}"/>`;
-    s += repereSvg('rep-big', mid, yRep, clip(c.name, 14), bw, 16);
+    const connDe = etiq => connecteurDeBorne(etiq, (c.pns && c.pns.get(String(etiq))) || '');
+    const cg = rl.length ? connecteursSvg(bx, -1, rl, c.y, c.h, connDe) : '', cd = rr.length ? connecteursSvg(bx + bw, +1, rr, c.y, c.h, connDe) : '';
+    s += cg + cd;
+    s += repereSvg('rep-big', mid, yRep, clip(c.name, 14), bw, (cg && cd) ? CONN_W + 5 : (cg || cd) ? (CONN_W + 5 + 16) / 2 : 16);
     if (c.h > 380) s += `<text class="bsname" x="${f1(mid)}" y="${f1(c.h - 9)}" text-anchor="middle">${esc(clip(c.name, 12))}</text>`;
     if (designation) s += `<text class="des" x="${f1(mid)}" y="${f1(yRep + 10)}" text-anchor="middle">${esc(clip(designation, 18))}</text>`;
     if (rl.length) s += bornesSvg(bx, -1, c.lw, rl, c.y);
@@ -2251,12 +2314,15 @@ function sceneSvg(dessin, cartouche, folio, designationDe, choisi) {
   const fils = dessin.fils.filter(w => !w.shunt);
   const verticaux = verticauxDe([...fils.map(w => w.pts), ...tracesDePiquage(dessin.barrettes)]);
   fils.forEach(w => { s += filSvg(w, verticaux); });
-  const shunts = new Map();
+  const shunts = new Map(), pns = new Map();
   dessin.fils.forEach(w => { if (!w.shunt) return; const ys = [w.epA.y, w.epB.y].sort((u, v) => u - v); (shunts.get(w.de) || shunts.set(w.de, []).get(w.de)).push(ys); });
+  // le part number du connecteur de chaque borne, pour encadrer les connecteurs
+  dessin.fils.forEach(w => { [[w.de, w.borneDe, w.pnDe], [w.vers, w.borneVers, w.pnVers]].forEach(([n, b, pn]) => {
+    if (!pn || !b) return; const m = pns.get(n) || pns.set(n, new Map()).get(n); if (!m.has(String(b))) m.set(String(b), pn); }); });
   s += reperesDeFil(dessin.fils);
   s += piquagesSvg(dessin.barrettes, dessin.piquages, verticaux);
   dessin.points.forEach(d => s += `<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="1.9"/>`);
-  dessin.comps.forEach(c => { c.shunts = shunts.get(c.name) || []; s += blocSvg(c, designationDe ? designationDe(c.name) : '', choisi === c.name); });
+  dessin.comps.forEach(c => { c.shunts = shunts.get(c.name) || []; c.pns = pns.get(c.name) || null; s += blocSvg(c, designationDe ? designationDe(c.name) : '', choisi === c.name); });
   return s;
 }
 /* Le même dessin, en document SVG autonome : pour enregistrer, imprimer, coller. */
@@ -2390,13 +2456,25 @@ function calculer() {
 }
 function folioCourant() { const P = plans();
   return (app.plan !== '*' && P.length > 1) ? (app.plan + ' / ' + P.length) : '1 / 1'; }
+/* Ce qui s'écrit sous le repère : la désignation si on en a donné une ;
+   sinon, pour une barrette, la référence choisie dans la bible, et pour une
+   prise de coupure, le part number que le fichier porte. */
+function designationDe(n) { const d = app.contrat.designations.get(n); if (d) return d;
+  if (estBarrette(n)) return barretteInfos(n, verite(), app.bible).reference;
+  if (estCoupure(n)) return besoinsDeBarrette(n, verite()).pn;
+  return ''; }
+const CLE_BIBLE = 'atelier.bible.v1';
+function relireBible() { try { const o = JSON.parse(localStorage.getItem(CLE_BIBLE) || 'null'); if (o && o.entrees && o.entrees.length) { app.bible = o.entrees.map(entreeBible).filter(Boolean); app.bibleNom = o.nom || ''; return true; } } catch (_) { }
+  app.bible = bibleExemple(); app.bibleNom = ''; return false; }
+function adopterBible(entrees, nom) { app.bible = entrees; app.bibleNom = nom || '';
+  try { localStorage.setItem(CLE_BIBLE, JSON.stringify({ entrees, nom: app.bibleNom, t: Date.now() })); } catch (_) { }
+  peindre(); }
 function peindre() {
   const svg = $('svg');
   $('vide').hidden = app.contrat.liaisons.length > 0;
   if (!app.dessin) { svg.innerHTML = ''; appliquerVue(); return; }
-  const designation = n => app.contrat.designations.get(n) || '';
   svg.innerHTML = styleDessin() + `<g id="scene" transform="translate(${app.vue.tx},${app.vue.ty}) scale(${app.vue.s})">`
-    + sceneSvg(app.dessin, app.contrat.cartouche, folioCourant(), designation, app.choisi) + '</g>';
+    + sceneSvg(app.dessin, app.contrat.cartouche, folioCourant(), designationDe, app.choisi) + '</g>';
   appliquerVue();
 }
 function redessiner() { calculer(); peindre(); synchroniser(); rallumer(); }
@@ -2856,7 +2934,7 @@ function nomFolio() { const base = (app.nom || 'atelier-schema').replace(/\.[^.]
   return base + (app.plan !== '*' ? '-folio-' + String(app.plan).replace(/[^\w.-]+/g, '_') : ''); }
 function telecharger(blob, nom) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nom;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); }
-function svgDuFolio() { return app.dessin ? svgAutonome(app.dessin, app.contrat.cartouche, folioCourant(), n => app.contrat.designations.get(n) || '') : null; }
+function svgDuFolio() { return app.dessin ? svgAutonome(app.dessin, app.contrat.cartouche, folioCourant(), designationDe) : null; }
 function exporterSVG() { const S = svgDuFolio(); if (!S) return; telecharger(new Blob([S.txt], { type: 'image/svg+xml;charset=utf-8' }), nomFolio() + '.svg'); dire('Folio enregistré en SVG.'); }
 function exporterPNG() { const S = svgDuFolio(); if (!S) return;
   const k = Math.max(1, Math.min(3, 12e6 / Math.max(1, S.w * S.h))); const img = new Image();
@@ -2885,7 +2963,7 @@ function fermerMenu() { $('menu').hidden = true; $('btnMenu').setAttribute('aria
 function lierPanneau() {
   const o = (id, fn) => { const e = $(id); if (e) e.onclick = fn; };
   const choisirFichier = () => $('fichier').click();
-  const exemple = () => chargerContrat(contratEssai(), 'contrat d’exemple', 'Contrat d’exemple');
+  const exemple = () => chargerContrat(contratExemple(), 'contrat d’exemple', 'Contrat d’exemple');
   $('fichier').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) ouvrirFichier(f); e.target.value = ''; });
   o('vd-ouvrir', choisirFichier); o('vd-coller', ficheColler); o('vd-exemple', exemple);
   o('btnBase', basculerBase);
@@ -2917,6 +2995,163 @@ function lierPanneau() {
   window.addEventListener('orientationchange', () => setTimeout(() => ajuster(), 300));
 }
 
+/* ───────── 09-barrettes.js ───────── */
+/* ===========================================================================
+   09 — LES BARRETTES ET LES CONNECTEURS
+   Deux savoirs que le contrat ne porte qu'à moitié :
+
+   LA BIBLE DES BARRETTES — la liste des références normalisées (NSA, ASNE,
+   ABS…) avec ce qu'elles acceptent : nombre de bornes, jauges de fil,
+   intensité, blindage. Elle vient d'un fichier Excel ou CSV de l'atelier ;
+   la bible d'exemple embarquée ne sert qu'à montrer le mécanisme.
+   Avec la bible, chaque barrette du contrat reçoit la référence la plus
+   logique pour ce qu'elle porte : assez de bornes, la jauge des fils qui
+   y arrivent, le blindage s'il y en a, et la famille déjà employée.
+
+   LES CONNECTEURS — les bornes d'un équipement appartiennent à des
+   connecteurs (A, B, C…). Le retest les dit de deux façons : la lettre en
+   tête de la borne (A12, B03) ou le part number du connecteur (PN1 / PN2).
+   =========================================================================== */
+
+/* ---- la bible ------------------------------------------------------------ */
+/* Les en-têtes d'atelier ont des accents : « Référence », « Intensité ». */
+const NORMA = t => NORM(String(t == null ? '' : t).normalize('NFD'));
+const COLONNES_BIBLE = [
+  ['reference',  ['reference', 'ref', 'partnumber', 'pn', 'norme', 'designation']],
+  ['famille',    ['famille', 'family', 'serie', 'series', 'type']],
+  ['nature',     ['nature', 'fonction', 'usage', 'kind']],
+  ['bornes',     ['bornes', 'modules', 'nbbornes', 'nombredebornes', 'voies', 'ways', 'contacts', 'positions']],
+  ['jaugeMin',   ['jaugemin', 'awgmin', 'jaugefine', 'gaugemin', 'minawg']],
+  ['jaugeMax',   ['jaugemax', 'awgmax', 'jaugegrosse', 'gaugemax', 'maxawg']],
+  ['intensite',  ['intensite', 'intensitemax', 'courant', 'current', 'amperes', 'a']],
+  ['blindage',   ['blindage', 'blinde', 'shield', 'shielded', 'masse']],
+  ['note',       ['note', 'notes', 'observation', 'observations', 'remarque', 'commentaire']]
+];
+/* Une entrée normalisée. Les jauges AWG comptent à l'envers : 26 est plus
+   fin que 20 ; « min » est la plus fine acceptée, « max » la plus grosse. */
+function entreeBible(o) {
+  const n = v => { const x = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isNaN(x) ? null : x; };
+  const oui = v => /^(oui|o|yes|y|x|1|true|vrai)$/i.test(String(v == null ? '' : v).trim());
+  const ref = String(o.reference || '').trim(); if (!ref) return null;
+  const jauges = [n(o.jaugeMin), n(o.jaugeMax)].filter(x => x != null);
+  return { reference: ref, famille: String(o.famille || ref.replace(/[-\s].*$/, '')).trim(),
+           nature: String(o.nature || 'jonction').trim().toLowerCase(), bornes: n(o.bornes),
+           jaugeMin: jauges.length ? Math.max(...jauges) : null, jaugeMax: jauges.length ? Math.min(...jauges) : null,
+           intensite: n(o.intensite), blindage: oui(o.blindage), note: String(o.note || '').trim() };
+}
+/* La bible d'exemple : des références PLAUSIBLES, pas des normes lues. Elle
+   montre le mécanisme en attendant la bible de l'atelier. */
+function bibleExemple() {
+  const E = (reference, famille, nature, bornes, jaugeMin, jaugeMax, intensite, blindage, note) =>
+    ({ reference, famille, nature, bornes, jaugeMin, jaugeMax, intensite, blindage, note });
+  return [
+    E('ASNE0500-02', 'ASNE0500', 'jonction', 2,  26, 20, 7.5, false, 'exemple'),
+    E('ASNE0500-04', 'ASNE0500', 'jonction', 4,  26, 20, 7.5, false, 'exemple'),
+    E('ASNE0500-08', 'ASNE0500', 'jonction', 8,  26, 20, 7.5, false, 'exemple'),
+    E('ASNE0500-12', 'ASNE0500', 'jonction', 12, 26, 20, 7.5, false, 'exemple'),
+    E('ASNE0500-20', 'ASNE0500', 'jonction', 20, 26, 20, 7.5, false, 'exemple'),
+    E('ASNE0501-04', 'ASNE0501', 'jonction', 4,  22, 16, 23,  false, 'exemple · grosses sections'),
+    E('ASNE0501-08', 'ASNE0501', 'jonction', 8,  22, 16, 23,  false, 'exemple · grosses sections'),
+    E('ASNE0502-04', 'ASNE0502', 'blindage', 4,  26, 20, 7.5, true,  'exemple · reprise de blindage'),
+    E('ASNE0502-08', 'ASNE0502', 'blindage', 8,  26, 20, 7.5, true,  'exemple · reprise de blindage')
+  ].map(entreeBible);
+}
+/* Lire une bible : un tableau dont la première ligne reconnue nomme les
+   colonnes (au moins « référence » et « bornes »). Rend { entrees, entete }. */
+function lireBible(texte) {
+  const lignes = String(texte || '').split(/\r?\n/);
+  let entete = null;
+  for (let r = 0; r < Math.min(lignes.length, 30) && !entete; r++) {
+    const row = cellules(lignes[r] || ''); const col = {}; let n = 0;
+    row.forEach((cell, c) => { const k = NORMA(cell); if (!k) return;
+      for (const [nom, alias] of COLONNES_BIBLE) if (col[nom] == null && alias.includes(k)) { col[nom] = c; n++; break; } });
+    if (col.reference != null && col.bornes != null) entete = { ligne: r, col, trouvees: n };
+  }
+  if (!entete) return { entrees: [], entete: null };
+  const entrees = [];
+  for (let r = entete.ligne + 1; r < lignes.length; r++) { if (!lignes[r].trim()) continue;
+    const row = cellules(lignes[r]); const o = {};
+    Object.entries(entete.col).forEach(([nom, c]) => { o[nom] = row[c] == null ? '' : row[c]; });
+    const e = entreeBible(o); if (e) entrees.push(e); }
+  return { entrees, entete: entete.ligne + 1 };
+}
+async function lireBibleFichier(fichier) { return lireBible(await texteDuFichier(fichier)); }
+
+/* ---- ce que porte une barrette du contrat -------------------------------- */
+/* Le type de câble du retest dit la jauge en queue : DR24, MLB22, BN20 → 24,
+   22, 20. Le blindage se devine au code : ML… (multiconducteur blindé). C'est
+   une première lecture, à corriger avec la table de l'atelier. */
+function jaugeDuType(type) { const m = /(\d{1,2})\s*$/.exec(String(type || '').trim()); return m ? parseInt(m[1], 10) : null; }
+function blindeDuType(type) { return /^(ML|BL|SH|SC)/i.test(String(type || '').trim()); }
+function besoinsDeBarrette(repere, liaisons) {
+  const bornes = new Set(), jauges = [], pns = new Map(); let blindes = 0, shunts = 0, fils = 0;
+  liaisons.forEach(l => { const ici = [];
+    if (l.de === repere) ici.push([l.borneDe, l.pnDe]);
+    if (l.vers === repere) ici.push([l.borneVers, l.pnVers]);
+    if (!ici.length) return;
+    if (l.de === repere && l.vers === repere) { shunts++; }
+    else { fils++; const g = jaugeDuType(l.type); if (g != null) jauges.push(g); if (blindeDuType(l.type)) blindes++; }
+    ici.forEach(([b, pn]) => { if (b) bornes.add(b); if (pn) pns.set(pn, (pns.get(pn) || 0) + 1); }); });
+  const numeros = [...bornes].map(b => parseInt(b, 10)).filter(x => !isNaN(x));
+  const pn = [...pns.entries()].sort((a, b) => b[1] - a[1]).map(e => e[0])[0] || '';
+  return { repere, bornes: [...bornes], nBornes: bornes.size, borneMax: numeros.length ? Math.max(...numeros) : bornes.size,
+           fils, shunts, jaugeFine: jauges.length ? Math.max(...jauges) : null, jaugeGrosse: jauges.length ? Math.min(...jauges) : null,
+           blindes, pn };
+}
+/* Le choix : parmi les entrées qui conviennent, la famille déjà employée
+   d'abord, puis la plus petite qui a assez de bornes, puis la plus courante
+   en intensité. Chaque raison est dite pour qu'on puisse la contester. */
+function choisirBarrette(besoins, bible) {
+  const raisons = [];
+  const nBornes = Math.max(besoins.nBornes, besoins.borneMax || 0);
+  const nature = besoins.blindes ? 'blindage' : 'jonction';
+  let cands = bible.filter(e => e.bornes != null && e.bornes >= nBornes);
+  raisons.push(`${nBornes} borne${nBornes > 1 ? 's' : ''} à loger`);
+  if (besoins.jaugeFine != null) {
+    const ok = cands.filter(e => (e.jaugeMin == null || e.jaugeMin >= besoins.jaugeFine) && (e.jaugeMax == null || e.jaugeMax <= besoins.jaugeGrosse));
+    if (ok.length) cands = ok;
+    raisons.push(besoins.jaugeFine === besoins.jaugeGrosse ? `fils de jauge ${besoins.jaugeFine}` : `fils de jauge ${besoins.jaugeFine} à ${besoins.jaugeGrosse}`);
+  }
+  if (besoins.blindes) { const ok = cands.filter(e => e.blindage || e.nature === 'blindage'); if (ok.length) cands = ok;
+    raisons.push(`${besoins.blindes} fil${besoins.blindes > 1 ? 's' : ''} blindé${besoins.blindes > 1 ? 's' : ''}`); }
+  else { const ok = cands.filter(e => e.nature !== 'blindage'); if (ok.length) cands = ok; }
+  const famille = besoins.pn ? (bible.find(e => e.reference === besoins.pn) || {}).famille || besoins.pn.replace(/[-\s].*$/, '') : '';
+  if (famille) { const ok = cands.filter(e => e.famille === famille); if (ok.length) { cands = ok; raisons.push(`famille ${famille} déjà employée`); } }
+  cands = cands.slice().sort((a, b) => (a.bornes - b.bornes) || ((a.intensite || 0) - (b.intensite || 0)) || a.reference.localeCompare(b.reference));
+  const choix = cands[0] || null;
+  if (choix && choix.bornes > nBornes) raisons.push(`${choix.bornes - nBornes} borne${choix.bornes - nBornes > 1 ? 's' : ''} libre${choix.bornes - nBornes > 1 ? 's' : ''}`);
+  if (!choix) raisons.push('aucune référence de la bible ne convient');
+  return { choix, nature, raisons, candidats: cands.slice(0, 6) };
+}
+/* Tout ce qu'on sait d'une barrette du contrat : ses besoins, la référence
+   choisie, le pourquoi, et la référence que le fichier portait déjà. */
+function barretteInfos(repere, liaisons, bible) {
+  const besoins = besoinsDeBarrette(repere, liaisons);
+  const choix = choisirBarrette(besoins, bible || []);
+  const deja = (bible || []).find(e => e.reference === besoins.pn) || null;
+  return { ...besoins, ...choix, deja, reference: choix.choix ? choix.choix.reference : (besoins.pn || ''),
+           changee: !!(besoins.pn && choix.choix && choix.choix.reference !== besoins.pn) };
+}
+
+/* ---- les connecteurs d'un équipement ------------------------------------- */
+/* Une borne « A12 » est la borne 12 du connecteur A ; sinon le connecteur
+   est le part number (PN) porté par la liaison. Rend, pour un repère, la
+   liste [{ nom, pn, bornes:[…] }] dans l'ordre des noms. */
+const LETTRE_CONNECTEUR = /^([A-Z]{1,2})[-./ ]?(\d{1,3}[A-Z]?)$/i;
+function connecteurDeBorne(borne, pn) {
+  const m = LETTRE_CONNECTEUR.exec(String(borne || '').trim());
+  if (m) return { nom: m[1].toUpperCase(), pn: pn || '' };
+  return pn ? { nom: pn, pn } : null;
+}
+function connecteursDe(repere, liaisons) {
+  const groupes = new Map();
+  liaisons.forEach(l => { [[l.de, l.borneDe, l.pnDe], [l.vers, l.borneVers, l.pnVers]].forEach(([r, b, pn]) => {
+    if (r !== repere || !b) return; const c = connecteurDeBorne(b, pn); const cle = c ? c.nom : '';
+    const g = groupes.get(cle) || groupes.set(cle, { nom: cle, pn: c ? c.pn : '', bornes: new Set() }).get(cle);
+    g.bornes.add(b); if (!g.pn && c && c.pn) g.pn = c.pn; }); });
+  return [...groupes.values()].sort((a, b) => a.nom.localeCompare(b.nom)).map(g => ({ ...g, bornes: [...g.bornes] }));
+}
+
 /* ───────── 10-demarrage.js ───────── */
 /* ===========================================================================
    10 — DÉMARRAGE, ET L'API DE CONTRÔLE
@@ -2938,10 +3173,10 @@ const atelier = {
 };
 
 function demarrer() {
-  lierPanneau(); lierPlanche();
+  relireBible(); lierPanneau(); lierPlanche();
   const baseOuverte = relireBase();
   // on retrouve son contrat ; à défaut l'exemple — jamais un écran vide
-  if (!relire()) { chargerContrat(contratEssai(), 'contrat d’exemple', 'Contrat d’exemple'); app.hist = []; synchroniserHistorique(); }
+  if (!relire()) { chargerContrat(contratExemple(), 'contrat d’exemple', 'Contrat d’exemple'); app.hist = []; synchroniserHistorique(); }
   // la base se montre à côté du plan : c'est elle qu'on corrige
   if (baseOuverte) ouvrirBase();
   requestAnimationFrame(() => ajuster());

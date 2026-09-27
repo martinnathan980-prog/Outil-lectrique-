@@ -100,3 +100,37 @@ function contratEssai() {
   li('601RC',  '11', '733LE',  'CNT', 'W-150', 'MLC24');
   return L;
 }
+/* Le contrat d'exemple, celui qu'on voit en ouvrant l'outil : le contrat
+   d'essai, plus ce que le retest porte en vrai — les part numbers des
+   connecteurs, une barrette qui distribue avec son shunt, une prise de
+   coupure sur un fil blindé, des bornes qui disent leur connecteur (A12). */
+function contratExemple() {
+  const PN = { '210SP1': '*704A46220028', '340AB1': 'EN2997Y1A08P', '340AB2': 'EN2997Y1A08P', '115CD': 'ABS0864-12', '118CD': 'ABS0864-12',
+               '409GH2': 'NSA937802-05', '512VN': 'E0644G9S', '601RC': 'E0836IS35-22SA', '733LE': 'E0644D9S', '845VG': 'E0656A01N1S0',
+               '667VT21': 'ASNE0500-04', '408VC1A': 'EN3646A6083AAN' };
+  const L = [];
+  const li = (de, bDe, vers, bVers, cable, type) =>
+    L.push(liaison({ de, borneDe: bDe, pnDe: PN[de] || '', vers, borneVers: bVers, pnVers: PN[vers] || '', cable, type }));
+  li('210SP1', 'B12', '667VT21', '1',  'W-101', 'DR24');
+  li('667VT21', '1', '667VT21', '2',   'W-102', 'DR24');
+  li('667VT21', '2', '115CD',  '3',    'W-103', 'DR24');
+  li('667VT21', '3', '118CD',  '3',    'W-104', 'DR24');
+  li('667VT21', '4', '409GH2', '7',    'W-105', 'DR24');
+  li('340AB1', '4',  '512VN',  '1',    'W-110', 'DR22');
+  li('340AB1', '4',  '512VN',  '2',    'W-111', 'DR22');
+  li('340AB1', '1',  '210SP1', 'A3',   'W-120', 'DR24');
+  li('340AB2', '1',  '210SP1', 'A4',   'W-121', 'DR24');
+  li('115CD',  '8',  '408VC1A', '1',   'W-130', 'MLB24');
+  li('408VC1A', '1', '601RC',  '2',    'W-131', 'MLB24');
+  li('601RC',  '5',  '733LE',  '1',    'W-132', 'BN24');
+  li('733LE',  '4',  '409GH2', '2',    'W-133', 'BN24');
+  li('118CD',  '8',  '512VN',  '5',    'W-134', 'DR22');
+  li('409GH2', '9',  '845VG',  '3',    'W-135', 'MLB24');
+  li('845VG',  '1',  '601RC',  '7',    'W-136', 'MLB24');
+  li('210SP1', 'B20', '904G',  '',     'W-140', 'DR20');
+  li('340AB1', '20', '904G',   '',     'W-141', 'DR20');
+  li('115CD',  '20', '907G',   '',     'W-142', 'DR20');
+  li('118CD',  '20', '907G',   '',     'W-143', 'DR20');
+  li('601RC',  '11', '733LE',  'CNT',  'W-150', 'MLC24');
+  return L;
+}

@@ -43,13 +43,25 @@ function calculer() {
 }
 function folioCourant() { const P = plans();
   return (app.plan !== '*' && P.length > 1) ? (app.plan + ' / ' + P.length) : '1 / 1'; }
+/* Ce qui s'écrit sous le repère : la désignation si on en a donné une ;
+   sinon, pour une barrette, la référence choisie dans la bible, et pour une
+   prise de coupure, le part number que le fichier porte. */
+function designationDe(n) { const d = app.contrat.designations.get(n); if (d) return d;
+  if (estBarrette(n)) return barretteInfos(n, verite(), app.bible).reference;
+  if (estCoupure(n)) return besoinsDeBarrette(n, verite()).pn;
+  return ''; }
+const CLE_BIBLE = 'atelier.bible.v1';
+function relireBible() { try { const o = JSON.parse(localStorage.getItem(CLE_BIBLE) || 'null'); if (o && o.entrees && o.entrees.length) { app.bible = o.entrees.map(entreeBible).filter(Boolean); app.bibleNom = o.nom || ''; return true; } } catch (_) { }
+  app.bible = bibleExemple(); app.bibleNom = ''; return false; }
+function adopterBible(entrees, nom) { app.bible = entrees; app.bibleNom = nom || '';
+  try { localStorage.setItem(CLE_BIBLE, JSON.stringify({ entrees, nom: app.bibleNom, t: Date.now() })); } catch (_) { }
+  peindre(); }
 function peindre() {
   const svg = $('svg');
   $('vide').hidden = app.contrat.liaisons.length > 0;
   if (!app.dessin) { svg.innerHTML = ''; appliquerVue(); return; }
-  const designation = n => app.contrat.designations.get(n) || '';
   svg.innerHTML = styleDessin() + `<g id="scene" transform="translate(${app.vue.tx},${app.vue.ty}) scale(${app.vue.s})">`
-    + sceneSvg(app.dessin, app.contrat.cartouche, folioCourant(), designation, app.choisi) + '</g>';
+    + sceneSvg(app.dessin, app.contrat.cartouche, folioCourant(), designationDe, app.choisi) + '</g>';
   appliquerVue();
 }
 function redessiner() { calculer(); peindre(); synchroniser(); rallumer(); }
@@ -509,7 +521,7 @@ function nomFolio() { const base = (app.nom || 'atelier-schema').replace(/\.[^.]
   return base + (app.plan !== '*' ? '-folio-' + String(app.plan).replace(/[^\w.-]+/g, '_') : ''); }
 function telecharger(blob, nom) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nom;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); }
-function svgDuFolio() { return app.dessin ? svgAutonome(app.dessin, app.contrat.cartouche, folioCourant(), n => app.contrat.designations.get(n) || '') : null; }
+function svgDuFolio() { return app.dessin ? svgAutonome(app.dessin, app.contrat.cartouche, folioCourant(), designationDe) : null; }
 function exporterSVG() { const S = svgDuFolio(); if (!S) return; telecharger(new Blob([S.txt], { type: 'image/svg+xml;charset=utf-8' }), nomFolio() + '.svg'); dire('Folio enregistré en SVG.'); }
 function exporterPNG() { const S = svgDuFolio(); if (!S) return;
   const k = Math.max(1, Math.min(3, 12e6 / Math.max(1, S.w * S.h))); const img = new Image();
@@ -538,7 +550,7 @@ function fermerMenu() { $('menu').hidden = true; $('btnMenu').setAttribute('aria
 function lierPanneau() {
   const o = (id, fn) => { const e = $(id); if (e) e.onclick = fn; };
   const choisirFichier = () => $('fichier').click();
-  const exemple = () => chargerContrat(contratEssai(), 'contrat d’exemple', 'Contrat d’exemple');
+  const exemple = () => chargerContrat(contratExemple(), 'contrat d’exemple', 'Contrat d’exemple');
   $('fichier').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) ouvrirFichier(f); e.target.value = ''; });
   o('vd-ouvrir', choisirFichier); o('vd-coller', ficheColler); o('vd-exemple', exemple);
   o('btnBase', basculerBase);

@@ -39,6 +39,8 @@ function styleDessin() {
      .filnum{fill:#55636f;font-size:6px;font-weight:500;letter-spacing:.1px}
      .lead{stroke:#26323f;stroke-width:.95;stroke-linecap:butt}
      .borne{fill:#ffffff;stroke:#1b2430;stroke-width:.8}
+     .conn{fill:none;stroke:#8a96a2;stroke-width:.5}
+     .connlbl{fill:#6b7885;font-size:5.2px;font-weight:600;letter-spacing:.5px}
      .pont{stroke:#1b2430;stroke-width:2.2;stroke-linecap:round}
      .rpill{fill:#ffffff;stroke:#c8d1d9;stroke-width:.7}
      .rname{fill:#46535f;font-weight:600;font-size:7.5px;letter-spacing:.6px}
@@ -178,6 +180,28 @@ function bornesSvg(xCorps, dir, prof, rangs, baseY) {
     if (p.etiq) out += `<text class="pinlbl" x="${f1(xCorps - dir * 4)}" y="${f1(y + 2.6)}" text-anchor="${dir > 0 ? 'end' : 'start'}">${esc(clip(String(p.etiq), 5))}</text>`; });
   return out;
 }
+/* Les connecteurs : les bornes d'un même connecteur (A, B… ou un part
+   number) s'encadrent dans le corps, contre le flanc, avec leur nom en tête.
+   Un connecteur dont les bornes ne se suivent pas a plusieurs cadres du même
+   nom : le placement ordonne les bornes par leurs partenaires, pas par
+   connecteur, et c'est la droiture des fils qui l'emporte. */
+const CONN_W = 30;
+function connecteursSvg(xCorps, dir, rangs, baseY, hCorps, connecteurDe) {
+  const runs = []; let cur = null;
+  rangs.forEach(p => { const c = connecteurDe(p.etiq); const nom = c ? c.nom : '';
+    if (cur && cur.nom === nom) { cur.y1 = p.y - baseY; return; }
+    cur = { nom, y0: p.y - baseY, y1: p.y - baseY }; runs.push(cur); });
+  if (!runs.some(r => r.nom)) return '';
+  const x0 = dir > 0 ? xCorps - CONN_W - 1.5 : xCorps + 1.5;
+  let out = '';
+  runs.forEach(r => { if (!r.nom) return;
+    const t = Math.max(1.5, r.y0 - PRH / 2 - 7.5), b = Math.min(hCorps - 1.5, r.y1 + PRH / 2 + 1);
+    out += `<rect class="conn" x="${f1(x0)}" y="${f1(t)}" width="${CONN_W}" height="${f1(b - t)}" rx="1.5"/>`;
+    // une lettre s'écrit en grand ; un part number se serre pour tenir dans le cadre
+    const nom = clip(r.nom, 10), fs = Math.max(3.6, Math.min(5.2, (CONN_W - 3) / (0.64 * nom.length)));
+    out += `<text class="connlbl" style="font-size:${f1(fs)}px" x="${f1(x0 + CONN_W / 2)}" y="${f1(t + 5.6)}" text-anchor="middle">${esc(nom)}</text>`; });
+  return out;
+}
 /* Le repère tient entre les numéros de borne des deux flancs : la taille
    s'adapte au nom, jamais l'inverse. */
 function repereSvg(cls, x, y, nom, bw, marge) {
@@ -213,6 +237,7 @@ function blocSvg(c, designation, choisi) {
       if ((p.dir || 0) <= 0) s += `<line class="lead" x1="0" y1="${f1(ly)}" x2="${f1(xg0)}" y2="${f1(ly)}"/>`;
       if ((p.dir || 0) >= 0) s += `<line class="lead" x1="${f1(xd1)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
     s += `<text class="rep" x="${f1(mid)}" y="${f1(c.h + 12)}" text-anchor="middle">${esc(clip(c.name, 14))}</text>`;
+    if (designation) s += `<text class="des" x="${f1(mid)}" y="${f1(c.h + 21)}" text-anchor="middle">${esc(clip(designation, 18))}</text>`;
   } else if (c.kind === 'strip' || estBarrette(c.name)) {
     /* RÉGLETTE (barrette ou bornier) : une rangée de modules identiques. Chaque
        borne est une cellule de la hauteur d'un pas, centrée sur son ordonnée ;
@@ -230,6 +255,7 @@ function blocSvg(c, designation, choisi) {
     (c.shunts || []).forEach(([y1, y2]) => { const xs = bx + bw - 5;
       s += `<line class="pont" x1="${f1(xs)}" y1="${f1(y1 - c.y)}" x2="${f1(xs)}" y2="${f1(y2 - c.y)}"/><circle class="jn" cx="${f1(xs)}" cy="${f1(y1 - c.y)}" r="1.7"/><circle class="jn" cx="${f1(xs)}" cy="${f1(y2 - c.y)}" r="1.7"/>`; });
     s += `<text class="rep" x="${f1(mid)}" y="${f1(c.h + 12)}" text-anchor="middle">${esc(clip(c.name, 14))}</text>`;
+    if (designation) s += `<text class="des" x="${f1(mid)}" y="${f1(c.h + 21)}" text-anchor="middle">${esc(clip(designation, 18))}</text>`;
   } else if (estMasse(c.name)) {
     /* MASSE : les fils rejoignent un collecteur vertical, marqués d'un point
        de jonction, et le collecteur descend sur le symbole CEI 60617-02 —
@@ -245,7 +271,10 @@ function blocSvg(c, designation, choisi) {
   } else {
     // équipement : corps, repère en tête (rappelé en pied s'il est très haut), bornes sur les flancs
     s += `<rect class="body" x="${f1(bx)}" y="0" width="${f1(bw)}" height="${c.h}"/>`;
-    s += repereSvg('rep-big', mid, yRep, clip(c.name, 14), bw, 16);
+    const connDe = etiq => connecteurDeBorne(etiq, (c.pns && c.pns.get(String(etiq))) || '');
+    const cg = rl.length ? connecteursSvg(bx, -1, rl, c.y, c.h, connDe) : '', cd = rr.length ? connecteursSvg(bx + bw, +1, rr, c.y, c.h, connDe) : '';
+    s += cg + cd;
+    s += repereSvg('rep-big', mid, yRep, clip(c.name, 14), bw, (cg && cd) ? CONN_W + 5 : (cg || cd) ? (CONN_W + 5 + 16) / 2 : 16);
     if (c.h > 380) s += `<text class="bsname" x="${f1(mid)}" y="${f1(c.h - 9)}" text-anchor="middle">${esc(clip(c.name, 12))}</text>`;
     if (designation) s += `<text class="des" x="${f1(mid)}" y="${f1(yRep + 10)}" text-anchor="middle">${esc(clip(designation, 18))}</text>`;
     if (rl.length) s += bornesSvg(bx, -1, c.lw, rl, c.y);
@@ -260,12 +289,15 @@ function sceneSvg(dessin, cartouche, folio, designationDe, choisi) {
   const fils = dessin.fils.filter(w => !w.shunt);
   const verticaux = verticauxDe([...fils.map(w => w.pts), ...tracesDePiquage(dessin.barrettes)]);
   fils.forEach(w => { s += filSvg(w, verticaux); });
-  const shunts = new Map();
+  const shunts = new Map(), pns = new Map();
   dessin.fils.forEach(w => { if (!w.shunt) return; const ys = [w.epA.y, w.epB.y].sort((u, v) => u - v); (shunts.get(w.de) || shunts.set(w.de, []).get(w.de)).push(ys); });
+  // le part number du connecteur de chaque borne, pour encadrer les connecteurs
+  dessin.fils.forEach(w => { [[w.de, w.borneDe, w.pnDe], [w.vers, w.borneVers, w.pnVers]].forEach(([n, b, pn]) => {
+    if (!pn || !b) return; const m = pns.get(n) || pns.set(n, new Map()).get(n); if (!m.has(String(b))) m.set(String(b), pn); }); });
   s += reperesDeFil(dessin.fils);
   s += piquagesSvg(dessin.barrettes, dessin.piquages, verticaux);
   dessin.points.forEach(d => s += `<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="1.9"/>`);
-  dessin.comps.forEach(c => { c.shunts = shunts.get(c.name) || []; s += blocSvg(c, designationDe ? designationDe(c.name) : '', choisi === c.name); });
+  dessin.comps.forEach(c => { c.shunts = shunts.get(c.name) || []; c.pns = pns.get(c.name) || null; s += blocSvg(c, designationDe ? designationDe(c.name) : '', choisi === c.name); });
   return s;
 }
 /* Le même dessin, en document SVG autonome : pour enregistrer, imprimer, coller. */
