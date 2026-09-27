@@ -158,10 +158,15 @@ function placer(G, options) {
        flancs, à la même hauteur, et chaque fil sort du côté de son partenaire
        — sinon l'un des deux contournait le bloc par une barrette. Une borne
        dont le seul partenaire est dans la même colonne sort du côté de la
-       borne partenaire, à droite par défaut. */
+       borne partenaire, à droite par défaut ; si ce partenaire est une
+       réglette, elle sort du côté OPPOSÉ à ce que la réglette distribue :
+       le fil monte la goulotte d'amont, sans trancher les départs d'aval. */
+    const amontDe = r => { let g = 0, d = 0; const cr = colDe(r);
+      noeuds.get(r).broches.forEach(p => (partenaires.get(r + SEP + p.cle) || []).forEach(q => { if (q.id === r) return; const cq = colDe(q.id); if (cq < cr) g++; else if (cq > cr) d++; }));
+      return d > g ? 'L' : (g > d ? 'R' : null); };
     N.broches.forEach(p => { let d = 0, g = 0, meme = null;
       (partenaires.get(id + SEP + p.cle) || []).forEach(q => { if (q.id === id) return; const cq = colDe(q.id); if (cq < cn) g++; else if (cq > cn) d++; else meme = q; });
-      let f; if (!d && !g && meme) f = flancDe.get(meme.id + SEP + meme.cle) === 'L' ? 'L' : 'R';
+      let f; if (!d && !g && meme) f = noeuds.get(meme.id).reglette ? (amontDe(meme.id) || 'R') : (flancDe.get(meme.id + SEP + meme.cle) === 'L' ? 'L' : 'R');
       else f = (d && g) ? 'LR' : ((d >= g) ? 'R' : 'L');
       flancDe.set(id + SEP + p.cle, f); if (f !== 'R') L.push(p); if (f !== 'L') R.push(p); });
     listes.set(id, { L, R }); }
