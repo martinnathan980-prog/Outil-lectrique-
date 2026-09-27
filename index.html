@@ -1185,19 +1185,24 @@ function placer(G, options) {
   const listeDeBroche = (id, cle) => listes.get(id).S ? 'S' : (flancDe.get(id + SEP + cle) === 'L' ? 'L' : 'R');
   const chaqueBroche = (id, f) => clesListes(id).forEach(lid => liste(id, lid).forEach(p => f(p, lid)));
   const estPastille = id => { const ls = listes.get(id); return !!ls.S && ls.S.length === 1 && estRail(noeuds.get(id).nom); };
-  /* Un BORNIER (barrette, prise de coupure) est un objet RIGIDE : ses bornes se
-     suivent dans l'ordre naturel, au pas PRH, quoi que fassent leurs
-     partenaires. Ce sont les équipements d'en face qui bougent pour mettre
-     leurs fils droits, jamais les bornes. */
-  const rigide = id => !!listes.get(id).S && estBornier(noeuds.get(id).nom);
-  ids.forEach(id => { if (rigide(id)) listes.get(id).S.sort((a, b) => ordreNaturel(a.etiq, b.etiq)); });
+  /* Un BORNIER garde l'ORDRE NATUREL de ses bornes (1, 2, 3…), quoi que
+     fassent leurs partenaires : ce sont les équipements d'en face qui bougent.
+     Une PRISE DE COUPURE est de plus AU PAS : ses contacts se suivent à PRH,
+     d'un bloc. Une BARRETTE, dessinée en ligne pointillée, s'allonge autant
+     qu'il faut : chaque borne vient en face de son partenaire. */
+  const ordreFixe = id => !!listes.get(id).S && estBornier(noeuds.get(id).nom);
+  const auPas = id => !!listes.get(id).S && estCoupure(noeuds.get(id).nom);
+  ids.forEach(id => { if (ordreFixe(id)) listes.get(id).S.sort((a, b) => ordreNaturel(a.etiq, b.etiq)); });
   // marges d'une réglette : au-dessus de sa première borne, sous la dernière
-  const margesReglette = id => estPastille(id) ? [7, 7] : (rigide(id) ? [PRH / 2 + 5, PRH / 2 + 5] : [HHS + PRH / 2, PRH / 2 + 5]);
-  /* Un CONNECTEUR est rigide de la même façon : sur un flanc, les bornes d'un
-     même connecteur (A1, A2, A3…) se suivent dans l'ordre naturel au pas PRH,
-     et c'est le connecteur entier qui glisse. Une borne sans connecteur reste
-     libre. `runs` : id|flanc|cle -> le GROUPE { id, lid, nom, cles } d'une
-     borne qui n'est pas seule ; absent, la borne est libre. */
+  const margesReglette = id => estPastille(id) ? [7, 7] : (ordreFixe(id) ? [PRH / 2 + 5, PRH / 2 + 5] : [HHS + PRH / 2, PRH / 2 + 5]);
+  /* Un CONNECTEUR d'équipement est CONTIGU et AU PAS : sur un flanc, les
+     bornes d'un même connecteur (A1, A2, A3…) se suivent à PRH et c'est le
+     connecteur entier qui glisse. Mais leur ORDRE est LIBRE : on le choisit
+     (trierRuns) pour que les fils sortent sans se croiser. Une borne sans
+     connecteur reste libre. `runs` : id|flanc|cle -> le GROUPE
+     { id, lid, nom, cles } d'une borne qui n'est pas seule ; absent, la borne
+     est libre. `opt.ordres` impose l'ordre d'un groupe (id|flanc|nom -> cles) :
+     c'est ainsi qu'un ordre trouvé au routage réel se rejoue au solveur. */
   const runs = new Map();
   { const connecteurs = new Map();
     const connecteurDe = (id, etiq) => { const nom = noeuds.get(id).nom;
@@ -1205,20 +1210,44 @@ function placer(G, options) {
       const c = connecteurs.get(nom).get(String(etiq)); return c ? c.nom : null; };
     ids.forEach(id => clesListes(id).forEach(lid => { const L = liste(id, lid); if (L.length < 2) return;
       const parNom = new Map();
-      L.forEach(p => { const nom = listes.get(id).S ? (rigide(id) ? '' : null) : connecteurDe(id, p.etiq); if (nom == null) return;
+      L.forEach(p => { const nom = listes.get(id).S ? (auPas(id) ? '' : null) : connecteurDe(id, p.etiq); if (nom == null) return;
         (parNom.get(nom) || parNom.set(nom, []).get(nom)).push(p); });
       parNom.forEach((ps, nom) => { if (ps.length < 2) return; ps.sort((a, b) => ordreNaturel(a.etiq, b.etiq));
-        const r = { id, lid, nom, cles: ps.map(p => p.cle) }; ps.forEach(p => runs.set(id + '|' + lid + '|' + p.cle, r)); }); })); }
+        const r = { id, lid, nom, cles: ps.map(p => p.cle), impose: false };
+        const voulu = opt.ordres && opt.ordres.get(id + '|' + lid + '|' + nom);
+        if (voulu && voulu.length === r.cles.length && voulu.every(c => r.cles.includes(c))) { r.cles = voulu.slice(); r.impose = true; }
+        ps.forEach(p => runs.set(id + '|' + lid + '|' + p.cle, r)); }); })); }
   const runDe = (id, lid, cle) => runs.get(id + '|' + lid + '|' + cle) || null;
-  const libre = (id, cle) => clesListes(id).every(lid => !runDe(id, lid, cle));
+  const lesRuns = () => [...new Set(runs.values())];
+  // une borne LIBRE bouge seule dans sa liste : ni d'un groupe, ni d'un bornier
+  const libre = (id, cle) => !ordreFixe(id) && clesListes(id).every(lid => !runDe(id, lid, cle));
+  /* L'ordre des bornes d'un connecteur suit l'ordre VERTICAL de leurs
+     partenaires : les fils sortent alors du bloc sans se croiser entre eux.
+     À égalité, l'ordre naturel. Une borne dont le seul partenaire est une
+     pastille (une masse, qui vient se coller où elle est) garde son rang
+     courant : la pastille suivra. Deux bornes pontées ont les mêmes
+     partenaires (partenairesExternes) et restent donc voisines. */
+  const rangDe = (id, cle, yDe) => { const ps = partenairesExternes(id, cle).filter(q => !estPastille(q.id));
+    const ys = ps.map(q => yDe(q.id + SEP + q.cle)).filter(y => y != null);
+    return ys.length ? mediane(ys) : yDe(id + SEP + cle); };
+  const trierRuns = yDe => lesRuns().forEach(r => { if (auPas(r.id) || r.impose) return;
+    const etiq = new Map(noeuds.get(r.id).broches.map(p => [p.cle, p.etiq]));
+    const k = new Map(r.cles.map(c => [c, rangDe(r.id, c, yDe)]));
+    r.cles.sort((a, b) => (k.get(a) - k.get(b)) || ordreNaturel(etiq.get(a), etiq.get(b))); });
+  // dans chaque liste, les bornes d'un groupe se suivent dans l'ordre du groupe, à la place du groupe
+  const rangerGroupes = () => ids.forEach(id => clesListes(id).forEach(lid => { const L = liste(id, lid); if (L.length < 2) return;
+    const pos = new Map(L.map((p, i) => [p.cle, i]));
+    const K = new Map(L.map(p => { const r = runDe(id, lid, p.cle); if (!r) return [p.cle, [pos.get(p.cle), 0]];
+      return [p.cle, [Math.min(...r.cles.map(c => pos.get(c))), r.cles.indexOf(p.cle)]]; }));
+    L.sort((a, b) => { const x = K.get(a.cle), y = K.get(b.cle); return (x[0] - y[0]) || (x[1] - y[1]); }); }));
   // les bornes qui glissent avec celle-ci : ses groupes, de flanc en flanc
   const membres = (id, cle) => { const vus = new Set([cle]), pile = [cle];
     while (pile.length) { const c = pile.pop(); clesListes(id).forEach(lid => { const r = runDe(id, lid, c); if (r) r.cles.forEach(k => { if (!vus.has(k)) { vus.add(k); pile.push(k); } }); }); }
     return [...vus]; };
-  /* un bornier est plus étroit qu'un équipement : une barrette est une rangée
-     de cellules numérotées, une prise de coupure sa partie mobile et sa
-     partie fixe ; les deux flancs gardent STRIPW */
-  const corpsDe = id => { const nom = noeuds.get(id).nom; return estBarrette(nom) ? 44 : (estCoupure(nom) ? 64 : BODYW); };
+  /* un bornier est plus étroit qu'un équipement : une barrette est une ligne
+     pointillée, le numéro de borne s'écrit sur le fil ; une prise de coupure
+     est deux rectangles fins ; les deux flancs gardent STRIPW */
+  const corpsDe = id => { const nom = noeuds.get(id).nom; return estBarrette(nom) ? 24 : (estCoupure(nom) ? 30 : BODYW); };
   const largeurDe = id => { const ls = listes.get(id);
     if (ls.S) return estPastille(id) ? BORNW : (STRIPW + corpsDe(id) + STRIPW);
     if (estMasse(noeuds.get(id).nom)) return 26;      // le symbole de masse tient en 10 unités
@@ -1271,7 +1300,7 @@ function placer(G, options) {
      toujours venir se mettre en face, il ne dicte rien */
   const partenairesQuiComptent = (id, cle) => { const ps = partenairesExternes(id, cle);
     const rigides = ps.filter(q => noeuds.get(q.id).broches.length > 1); return rigides.length ? rigides : ps; };
-  const trierBroches = () => { for (const id of ids) clesListes(id).forEach(lid => { const L = liste(id, lid); if (L.length < 2 || rigide(id)) return;
+  const trierBroches = () => { trierRuns(k => yBroche.get(k)); for (const id of ids) clesListes(id).forEach(lid => { const L = liste(id, lid); if (L.length < 2 || ordreFixe(id)) return;
     const sc = new Map(L.map(p => { const ps = partenairesQuiComptent(id, p.cle);
       if (!ps.length) return [p.cle, yB(id, p.cle)]; let s = 0; ps.forEach(q => s += yB(q.id, q.cle)); return [p.cle, s / ps.length]; }));
     // un groupe rigide se trie d'un bloc, au barycentre de ses bornes, et garde son ordre naturel dedans
@@ -1326,7 +1355,7 @@ function placer(G, options) {
       (faisceaux.get(k) || faisceaux.set(k, []).get(k)).push({ a, b }); });
     const verrou = new Set();
     [...faisceaux.values()].filter(ws => ws.length > 1).sort((x, y) => y.length - x.length).forEach(ws => {
-      const bId = ws[0].b.id; if (rigide(bId)) return; const lid = listeDeBroche(bId, ws[0].b.cle); const L = liste(bId, lid);
+      const bId = ws[0].b.id; if (ordreFixe(bId)) return; const lid = listeDeBroche(bId, ws[0].b.cle); const L = liste(bId, lid);
       const idx = new Map(L.map((p, i) => [p.cle, i])); const parB = new Map();
       ws.forEach(w => { const e = parB.get(w.b.cle) || { s: 0, c: 0 }; e.s += yB(w.a.id, w.a.cle); e.c++; parB.set(w.b.cle, e); });
       const cles = [...parB.keys()].filter(k => !verrou.has(bId + SEP + k) && libre(bId, k)); if (cles.length < 2) return;
@@ -1535,15 +1564,18 @@ function placer(G, options) {
       return RANG(id) + bar; }; };
     const MAXIT = ids.length > 600 ? 10 : (ids.length > 120 ? 16 : 24);
     // les bornes d'un rail n'ont pas d'ordre imposé : elles se mettent face à
-    // leurs partenaires ; celles d'un bornier gardent leur ordre naturel
-    const reordonner = py => ids.forEach(id => { if (!estS.get(id) || rigide(id)) return;
+    // leurs partenaires ; celles d'un bornier gardent leur ordre naturel ;
+    // celles d'un connecteur se rangent dans l'ordre des partenaires (trierRuns)
+    const reordonner = py => { trierRuns(k => py.get(k)); rangerGroupes(); ids.forEach(id => { if (!estS.get(id) || ordreFixe(id)) return;
       clesListes(id).forEach(lid => { const L = liste(id, lid); if (L.length < 2) return;
         const sc = new Map(L.map(p => { const ps = partenairesQuiComptent(id, p.cle);
           let s = 0, c = 0; ps.forEach(q => { const y = py.get(PK(q.id, q.cle)); if (y != null) { s += y; c++; } });
           return [p.cle, c ? s / c : (py.get(PK(id, p.cle)) || 0)]; }));
-        L.sort((a, b) => sc.get(a.cle) - sc.get(b.cle)); }); });
-    const photoOrdre = () => new Map(ids.map(id => { const ls = listes.get(id); return [id, { L: ls.L ? ls.L.slice() : null, R: ls.R ? ls.R.slice() : null, S: ls.S ? ls.S.slice() : null }]; }));
-    const revenirOrdre = snap => snap.forEach((o, id) => { const ls = listes.get(id); if (o.L) ls.L = o.L; if (o.R) ls.R = o.R; if (o.S) ls.S = o.S; });
+        L.sort((a, b) => sc.get(a.cle) - sc.get(b.cle)); }); }); };
+    const photoOrdre = () => ({ listes: new Map(ids.map(id => { const ls = listes.get(id); return [id, { L: ls.L ? ls.L.slice() : null, R: ls.R ? ls.R.slice() : null, S: ls.S ? ls.S.slice() : null }]; })),
+      runs: lesRuns().map(r => [r, r.cles.slice()]) });
+    const revenirOrdre = snap => { snap.listes.forEach((o, id) => { const ls = listes.get(id); if (o.L) ls.L = o.L; if (o.R) ls.R = o.R; if (o.S) ls.S = o.S; });
+      snap.runs.forEach(([r, cles]) => { r.cles = cles.slice(); }); };
     let py = best.py, cur = colBlocs, stagne = 0, bestOrdre = photoOrdre();
     for (let it = 0; it < MAXIT && stagne < 5; it++) { reordonner(py);
       const cle = cleBary(py, it % 2 === 1);
@@ -1693,9 +1725,12 @@ function placer(G, options) {
     // d'un groupe rigide emmène tout son groupe, d'un bloc. Le corps reste
     // l'enveloppe des bornes plus ses marges : il suit le groupe, il ne garde
     // pas la place que le groupe a quittée.
-    const poser = (id, cle, y) => { if (rigide(id)) return false;
+    const poser = (id, cle, y) => { if (auPas(id)) return false;
       const grp = membres(id, cle), ens = new Set(grp), dy = y - yB(id, cle);
       if (grp.some(c => !espaceOK(id, c, yB(id, c) + dy, ens))) return false;
+      // une borne de barrette bouge seule, mais jamais par-dessus une voisine
+      if (ordreFixe(id)) { const S = liste(id, 'S'), i = S.findIndex(p => p.cle === cle);
+        if ((i > 0 && y < yB(id, S[i - 1].cle) + PRH - 0.5) || (i < S.length - 1 && y > yB(id, S[i + 1].cle) - PRH + 0.5)) return false; }
       let lo = Infinity, hi = -Infinity; chaqueBroche(id, p => { const v = yB(id, p.cle) + (ens.has(p.cle) ? dy : 0); lo = Math.min(lo, v); hi = Math.max(hi, v); });
       const nt = lo - mHaut.get(id), nb = hi + mBas.get(id);
       if (nt < hautDe.get(id) - 0.5 || nb > basDe.get(id) + 0.5) {
@@ -1726,7 +1761,7 @@ function placer(G, options) {
     // dé-croisement : sur chaque flanc, les bornes LIBRES pliées échangent leurs
     // places pour suivre l'ordre vertical de leurs partenaires
     const permuter = () => { let any = false;
-      tous.forEach(id => { if (estPastille(id) || rigide(id)) return;
+      tous.forEach(id => { if (estPastille(id) || ordreFixe(id)) return;
         clesListes(id).forEach(lid => { const L = liste(id, lid); const grp = { L: [], R: [] };
           L.forEach(p => { if (!libre(id, p.cle)) return; const ps = partenaires.get(id + SEP + p.cle) || []; if (ps.length !== 1) return; const q = ps[0]; if (q.id === id || estPastille(q.id)) return;
             const dc = (colonneDe.get(q.id) ?? 0) - (colonneDe.get(id) ?? 0); if (Math.abs(dc) !== 1) return;
@@ -1738,7 +1773,7 @@ function placer(G, options) {
       return any; };
     // rétreint : une broche extrême dont le fil est plié de toute façon se
     // rapproche — avec son groupe rigide, si aucun de ses fils n'est droit
-    const retreindre = () => { tous.forEach(id => { if (estPastille(id) || rigide(id)) return;
+    const retreindre = () => { tous.forEach(id => { if (estPastille(id) || auPas(id)) return;
       for (let garde = 0; garde < 40; garde++) { const items = [];
         chaqueBroche(id, p => { const k = p.cle, y = yB(id, p.cle); const ps = (partenaires.get(id + SEP + k) || []).filter(q => q.id !== id && !estPastille(q.id));
           items.push({ k, y, droit: ps.length > 0 && ps.every(q => Math.abs(yB(q.id, q.cle) - y) < 0.6) }); });
