@@ -2108,6 +2108,15 @@ function goulottesOccupees(L) {
    croisements, puis le format, puis la longueur des barrettes.
    =========================================================================== */
 const A3 = 1.414;
+/* Les fils MUETS : ceux dont le dessin ne peut pas écrire le numéro (segment
+   trop court, ou barré par un vertical). C'est le dessin qui sait poser une
+   étiquette : on lui demande, quand il est là. */
+function compterMuets(R) {
+  if (typeof reperesDeFil !== 'function') return 0;
+  const fils = R.fils.filter(w => !w.shunt && String(w.cable || '').trim()); if (!fils.length) return 0;
+  const verticaux = verticauxDe([...fils.map(w => w.pts), ...tracesDePiquage(R.barrettes)]);
+  return fils.length - (reperesDeFil(fils, verticaux).match(/<text /g) || []).length;
+}
 function jugeDePlacement() {
   const emprise = L => { let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
     L.comps.forEach(c => { x0 = Math.min(x0, c.x); x1 = Math.max(x1, c.x + c.w); y0 = Math.min(y0, c.y); y1 = Math.max(y1, c.y + c.h); });
@@ -2121,17 +2130,18 @@ function jugeDePlacement() {
   const largeurResserree = (L, e) => { const g = L.geom, occ = goulottesOccupees(L); if (!occ) return e.w;
     let d = 0; for (let i = 1; i < g.nCols; i++) d += Math.max(0, g.chW[i] - occ[i]); return e.w - d; };
   const juger = L => { if (!L.jugement) { const e = emprise(L); e.w = largeurResserree(L, e); const r = e.w / e.h; L.jugement = {
-      sain: filsDansBloc(L) === 0, tient: r <= 2.2 && r >= 0.45, droits: compterDroits(L.routage.fils),
+      sain: filsDansBloc(L) === 0, tient: r <= 2.2 && r >= 0.45, muets: compterMuets(L.routage), droits: compterDroits(L.routage.fils),
       croisements: compterCroisements(L.routage.fils, L.routage.barrettes),
       encombrement: Math.min(Math.max(e.w / A3, e.h), Math.max(e.w, e.h / A3)), surface: e.w * e.h,
       peignes: L.routage.barrettes.reduce((t, b) => t + Math.abs(b.y2 - b.y1), 0) }; } return L.jugement; };
-  /* un fil droit vaut un croisement évité : depuis que les réglettes et les
-     connecteurs sont compacts, un fil droit de plus s'achète souvent en
-     désordonnant une colonne, et l'œil voit d'abord les croisements */
+  /* le numéro de fil d'abord (c'est l'information numéro un d'un câbleur :
+     un fil trop court pour le porter est un défaut), puis la droiture, puis
+     les croisements : un fil droit se lit d'un coup d'œil, un croisement se
+     lit par un pont */
   const bat = (L, ref) => { if (!ref) return true; const a = juger(L), b = juger(ref);
     if (a.sain !== b.sain) return a.sain; if (a.tient !== b.tient) return a.tient;
-    const na = a.droits - a.croisements, nb = b.droits - b.croisements;
-    if (na !== nb) return na > nb; if (a.croisements !== b.croisements) return a.croisements < b.croisements;
+    if (a.muets !== b.muets) return a.muets < b.muets;
+    if (a.droits !== b.droits) return a.droits > b.droits; if (a.croisements !== b.croisements) return a.croisements < b.croisements;
     if (Math.abs(a.encombrement - b.encombrement) > 0.01 * b.encombrement) return a.encombrement < b.encombrement;
     if (Math.abs(a.surface - b.surface) > 0.01 * b.surface) return a.surface < b.surface;
     return a.peignes < b.peignes; };
@@ -2161,7 +2171,7 @@ function meilleurPlacement(liaisons) {
   candidats.forEach(o => { const L = essayer(o); if (bat(L, best)) { best = L; bOpt = o; } });
   // resserrage : les goulottes reprennent la largeur que les pistes occupent
   // vraiment (le jugement l'anticipait) ; gardé s'il ne perd rien
-  const nePerdRien = (L, ref) => { const a = juger(L), b = juger(ref); return a.sain && a.droits >= b.droits && a.croisements <= b.croisements; };
+  const nePerdRien = (L, ref) => { const a = juger(L), b = juger(ref); return a.sain && a.muets <= b.muets && a.droits >= b.droits && a.croisements <= b.croisements; };
   let bGoulottes = null;
   { const fix = goulottesOccupees(best);
     if (fix) { const L2 = essayer({ ...bOpt, goulottes: fix }); if (nePerdRien(L2, best)) { best = L2; bGoulottes = fix; } } }
@@ -2169,14 +2179,18 @@ function meilleurPlacement(liaisons) {
   // perdu et pas plus de croisements — elle rend les blocs compacts
   bOpt = { ...bOpt, goulottes: bGoulottes };
   { const L3 = essayer({ ...bOpt, condenser: true }); if (nePerdRien(L3, best)) { best = L3; bOpt.condenser = true; } }
-  // secours : serpentin
+  /* secours : serpentin. Un dessin qui ne tient pas sur la feuille ne gagne
+     jamais : on essaie alors toutes les largeurs de rangée d'un petit
+     dessin ; un dessin qui tient ne se replie que sans plier plus d'un fil
+     par report */
   const e0 = emprise(best), r0 = e0.w / e0.h, nc = best.geom.nCols;
   if (r0 > 2.2 && nc >= 4) {
     const R0 = Math.max(2, Math.min(6, Math.round(Math.sqrt(r0 / A3)))); const s0 = juger(best).droits;
-    const vus = new Set();
-    [R0, R0 + 1, R0 + 2, R0 - 1].filter(k => k >= 2).forEach(k => { const W = Math.ceil(nc / k); if (W < 2 || vus.has(W)) return; vus.add(W);
+    const Ws = nc <= 8 ? Array.from({ length: nc - 2 }, (_, i) => i + 2)
+      : [...new Set([R0, R0 + 1, R0 + 2, R0 - 1].filter(k => k >= 2).map(k => Math.ceil(nc / k)))].filter(W => W >= 2);
+    Ws.forEach(W => { const k = Math.ceil(nc / W);
       let L = null; try { L = essayer({ ...bOpt, serpentin: W }); } catch (e) { return; }
-      if (L && juger(L).droits >= s0 - k && bat(L, best)) { best = L; bOpt.serpentin = W; } });
+      if (L && (!juger(best).tient || juger(L).droits >= s0 - k) && bat(L, best)) { best = L; bOpt.serpentin = W; } });
   }
   /* affinage au routage réel, sur le vainqueur : les gestes locaux que
      l'estimation ne voit pas ; puis l'ordre des connecteurs qu'il a trouvé se
