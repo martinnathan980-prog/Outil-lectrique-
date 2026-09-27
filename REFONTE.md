@@ -154,14 +154,25 @@ Fait, mesuré, en place :
 - **Le dessin parle fil** : un croisement se lit par un pont sur le fil
   horizontal ; un piquage est du fil avec des points de jonction ; les bornes
   d'un équipement sont dans le corps, une petite borne ronde au contact.
+- **Les connecteurs et la bible des barrettes** (`09-barrettes`) : une borne
+  « A12 » est la borne 12 du connecteur A, sinon le connecteur est le part
+  number porté par le retest ; le dessin encadre les bornes d'un même
+  connecteur dans le corps. Une barrette reçoit la référence la plus logique
+  d'une bible (bornes à loger, jauge des fils lue dans le type, blindage,
+  famille déjà employée) et l'écrit sous son repère. La bible se lit dans un
+  Excel ou un CSV de l'atelier par le nom des colonnes (Référence, Bornes,
+  puis Famille, Nature, Jauge min, Jauge max, Intensité, Blindage, Note) ;
+  celle embarquée n'est qu'un exemple, sans valeur normative.
 - **Base de retest** : mise de côté dans `a-venir/09-retest.js` avec ses
   contrôles (`tests/retest.js` se passe si elle n'est pas dans la page).
-- **Contrôles** sur l'API `atelier` : 17 + 5 + 13, banc de 15 topologies.
+- **Contrôles** sur l'API `atelier` : 17 + 5 + 13, banc de 15 topologies, 21 sans navigateur pour la bible et les connecteurs.
 
 Le compte : **6 685 lignes en un fichier → 2 600 lignes en neuf modules**, dont
 moins d'un cinquième de commentaires, tous au présent.
 
 Ce qui attend tes tables (le modèle les prévoit, le code ne les invente pas) :
-normes de connecteur (`pnDe` / `pnVers`), sections et intensités, calibres,
-bibles de barrettes et de prises de coupure, fichier de localisation pour les
-règles de coupure (`a-venir/regles-de-coupure.js`).
+la vraie bible des barrettes (l'outil sait la lire, il ne la connaît pas),
+la table des types de câble (jauge, conducteurs, blindage — aujourd'hui lue
+dans le code du type : DR24 → 24, ML… → blindé), les normes de connecteur,
+sections et intensités, calibres, fichier de localisation pour les règles de
+coupure (`a-venir/regles-de-coupure.js`).
