@@ -664,9 +664,7 @@ function placer(G, options) {
     pastilles.push({ id, ch: droite ? (colonneDe.get(q.id) ?? 0) + 1 : (colonneDe.get(q.id) ?? 0), y1: t, y2: bb }); });
 
   /* ===== 8. ALLER-RETOUR BORNES ↔ ÉQUIPEMENTS ============================ */
-  { const dansCorps = (id, y) => { const isS = !!listes.get(id).S;
-      return y >= hautDe.get(id) + (isS ? mHaut.get(id) : 16) - 0.5 && y <= basDe.get(id) - (isS ? mBas.get(id) - 2 : 10) + 0.5; };
-    const couloirLibre = (ia, ib, y) => { const xa = xDe.get(ia), xb = xDe.get(ib); if (xa == null || xb == null) return false;
+  { const couloirLibre = (ia, ib, y) => { const xa = xDe.get(ia), xb = xDe.get(ib); if (xa == null || xb == null) return false;
       const seg = xa < xb ? [xa + largeurDe(ia), xb] : [xb + largeurDe(ib), xa]; if (seg[1] - seg[0] < 4) return true;
       return !tous.some(o => { if (o === ia || o === ib) return false; const ox = xDe.get(o), ow = largeurDe(o);
         return seg[1] > ox + 2 && seg[0] < ox + ow - 2 && y > hautDe.get(o) + 2 && y < basDe.get(o) - 2; }); };
@@ -683,18 +681,19 @@ function placer(G, options) {
       return ok; };
     // un fil droit à tout prix : le bloc a le droit de grandir pour l'attraper,
     // sans chevaucher personne ni avaler le fil droit de personne. Une borne
-    // d'un groupe rigide emmène tout son groupe, d'un bloc.
+    // d'un groupe rigide emmène tout son groupe, d'un bloc. Le corps reste
+    // l'enveloppe des bornes plus ses marges : il suit le groupe, il ne garde
+    // pas la place que le groupe a quittée.
     const poser = (id, cle, y) => { if (rigide(id)) return false;
       const grp = membres(id, cle), ens = new Set(grp), dy = y - yB(id, cle);
       if (grp.some(c => !espaceOK(id, c, yB(id, c) + dy, ens))) return false;
-      const applique = () => grp.forEach(c => yBroche.set(id + SEP + c, yB(id, c) + dy));
-      if (grp.every(c => dansCorps(id, yB(id, c) + dy))) { applique(); return true; }
-      if (listes.get(id).S || tous.length > 400) return false;
-      let lo = Infinity, hi = -Infinity; grp.forEach(c => { const v = yB(id, c) + dy; lo = Math.min(lo, v); hi = Math.max(hi, v); });
-      const nt = Math.min(hautDe.get(id), lo - 16), nb = Math.max(basDe.get(id), hi + 10);
-      if (nb - nt > 900 || (nb - nt) - (basDe.get(id) - hautDe.get(id)) > 260) return false;
-      if (heurte(id, nt, nb) || avaleUnDroit(id, nt, nb)) return false;
-      applique(); hautDe.set(id, nt); basDe.set(id, nb); return true; };
+      let lo = Infinity, hi = -Infinity; chaqueBroche(id, p => { const v = yB(id, p.cle) + (ens.has(p.cle) ? dy : 0); lo = Math.min(lo, v); hi = Math.max(hi, v); });
+      const nt = lo - mHaut.get(id), nb = hi + mBas.get(id);
+      if (nt < hautDe.get(id) - 0.5 || nb > basDe.get(id) + 0.5) {
+        if (listes.get(id).S || tous.length > 400) return false;
+        if (nb - nt > 900 || (nb - nt) - (basDe.get(id) - hautDe.get(id)) > 260) return false;
+        if (heurte(id, nt, nb) || avaleUnDroit(id, nt, nb)) return false; }
+      grp.forEach(c => yBroche.set(id + SEP + c, yB(id, c) + dy)); hautDe.set(id, nt); basDe.set(id, nb); return true; };
     const detente = () => { let bouge = false;
       lk.forEach((l, li) => { const A = bouts.get(li + ':A'), B = bouts.get(li + ':B'); const ia = nid(A.nom, A.cle), ib = nid(B.nom, B.cle); if (ia === ib) return;
         const dc = Math.abs((colonneDe.get(ia) ?? 0) - (colonneDe.get(ib) ?? 0)); if (dc === 0 || estPastille(ia) || estPastille(ib)) return;
@@ -731,8 +730,6 @@ function placer(G, options) {
     // rétreint : une broche extrême dont le fil est plié de toute façon se
     // rapproche — avec son groupe rigide, si aucun de ses fils n'est droit
     const retreindre = () => { tous.forEach(id => { if (estPastille(id) || rigide(id)) return;
-      let mT = Infinity, mB = -Infinity; chaqueBroche(id, p => { const y = yB(id, p.cle); mT = Math.min(mT, y); mB = Math.max(mB, y); });
-      mT = isFinite(mT) ? mT - hautDe.get(id) : 0; mB = isFinite(mB) ? basDe.get(id) - mB : 0;
       for (let garde = 0; garde < 40; garde++) { const items = [];
         chaqueBroche(id, p => { const k = p.cle, y = yB(id, p.cle); const ps = (partenaires.get(id + SEP + k) || []).filter(q => q.id !== id && !estPastille(q.id));
           items.push({ k, y, droit: ps.length > 0 && ps.every(q => Math.abs(yB(q.id, q.cle) - y) < 0.6) }); });
@@ -746,8 +743,7 @@ function placer(G, options) {
           dedans.forEach(it => yBroche.set(id + SEP + it.k, it.y + signe * d)); return true; };
         fait = bout(items[0], 1) || bout(items[items.length - 1], -1);
         if (!fait) break; }
-      let lo = Infinity, hi = -Infinity; chaqueBroche(id, p => { const y = yB(id, p.cle); lo = Math.min(lo, y); hi = Math.max(hi, y); });
-      if (isFinite(lo)) { hautDe.set(id, lo - mT); basDe.set(id, hi + mB); } }); };
+      recalerBords(id); }); };
     // paires libres (un appareil + son bornier dédié) dans l'ordre naturel des repères
     colonnes.forEach(col => { const paires = [];
       col.forEach(id => { if (listes.get(id).S || estPastille(id)) return; const nb = voisinsDe(id); if (nb.size !== 1) return; const fr = [...nb][0];
@@ -829,6 +825,8 @@ function placer(G, options) {
         if (isFinite(lo)) { const isS = !!listes.get(B).S; hautDe.set(B, Math.max(hautDe.get(B), lo - (isS ? mHaut.get(B) : 22))); basDe.set(B, Math.min(basDe.get(B), hi + (isS ? mBas.get(B) : 22))); } }); };
     for (let tour = 0; tour < 4; tour++) { const a = detente(); const b = pousser(); const c = permuter(); recollerPastilles(); if (!a && !b && !c) break; }
     condenser(); retreindre(); detente(); permuter(); recollerPastilles();
+    // un corps fait l'empan de ses bornes plus ses marges, et pas plus
+    tous.forEach(id => { if (!estPastille(id)) recalerBords(id); });
     pastilles.forEach(sp => { sp.y1 = hautDe.get(sp.id); sp.y2 = basDe.get(sp.id); });
     ids.forEach(id => clesListes(id).forEach(lid => liste(id, lid).sort((a, b) => yB(id, a.cle) - yB(id, b.cle))));
   }
