@@ -1042,6 +1042,12 @@ function placer(G, options) {
   const shunts = new Set();
   lk.forEach((l, li) => { const A = bouts.get(li + ':A'), B = bouts.get(li + ':B');
     if (A.cle !== B.cle && nid(A.nom, A.cle) === nid(B.nom, B.cle) && estBornier(A.nom)) shunts.add(li); });
+  // les partenaires d'une borne, ceux de ses bornes pontées compris : deux
+  // bornes d'un shunt sont un seul point électrique
+  const partenairesExternes = (id, cle) => { const vus = new Set([cle]), pile = [cle], out = [];
+    while (pile.length) { const c = pile.pop(); (partenaires.get(id + SEP + c) || []).forEach(q => {
+      if (q.id !== id) out.push(q); else if (!vus.has(q.cle)) { vus.add(q.cle); pile.push(q.cle); } }); }
+    return out; };
 
   /* ===== 1. NIVEAUX : chaque nœud reçoit sa colonne ======================= */
   const niveau = new Map();
@@ -1247,12 +1253,6 @@ function placer(G, options) {
         clesListes(id).forEach(lid => liste(id, lid).forEach((p, j) => yBroche.set(id + SEP + p.cle, y + 16 + j * PRH)));
         basDe.set(id, y + hauteurEstimee(id)); cur[r] = y + hauteurEstimee(id) + VGAP; }); }); }
 
-  // les partenaires d'une borne, ceux de ses bornes pontées compris : deux
-  // bornes d'un shunt reçoivent le même barycentre et restent voisines
-  const partenairesExternes = (id, cle) => { const vus = new Set([cle]), pile = [cle], out = [];
-    while (pile.length) { const c = pile.pop(); (partenaires.get(id + SEP + c) || []).forEach(q => {
-      if (q.id !== id) out.push(q); else if (!vus.has(q.cle)) { vus.add(q.cle); pile.push(q.cle); } }); }
-    return out; };
   /* l'ordre des bornes suit d'abord les partenaires RIGIDES (un bloc à
      plusieurs bornes, dont l'ordre s'impose) ; un bloc à une seule borne peut
      toujours venir se mettre en face, il ne dicte rien */
@@ -1342,20 +1342,33 @@ function placer(G, options) {
   const scoreDroits = () => { let n = 0; lk.forEach((l, li) => { const A = bouts.get(li + ':A'), B = bouts.get(li + ':B');
     const ia = nid(A.nom, A.cle), ib = nid(B.nom, B.cle); if (ia === ib) return;
     if (Math.abs(yB(ia, A.cle) - yB(ib, B.cle)) < 0.6) n += (!listes.get(ia).S && !listes.get(ib).S) ? 3 : 1; }); return n; };
+  /* Les INVERSIONS d'une goulotte : deux fils entre deux colonnes voisines
+     dont l'ordre des bouts n'est pas le même à gauche et à droite se croisent,
+     quoi que fasse le routeur. Un fil droit gagné en désordonnant une colonne
+     se paie en croisements : le score les compte. */
+  const inversions = () => { const par = new Map();
+    lk.forEach((l, li) => { const A = bouts.get(li + ':A'), B = bouts.get(li + ':B'); const ia = nid(A.nom, A.cle), ib = nid(B.nom, B.cle);
+      const ca = colonneDe.get(ia) ?? 0, cb = colonneDe.get(ib) ?? 0; if (Math.abs(ca - cb) !== 1) return;
+      const g = ca < cb ? { ch: cb, l: yB(ia, A.cle), r: yB(ib, B.cle) } : { ch: ca, l: yB(ib, B.cle), r: yB(ia, A.cle) };
+      (par.get(g.ch) || par.set(g.ch, []).get(g.ch)).push(g); });
+    let n = 0; par.forEach(fs => { for (let i = 0; i < fs.length; i++) for (let j = i + 1; j < fs.length; j++) {
+      const dl = fs[i].l - fs[j].l, dr = fs[i].r - fs[j].r; if (Math.abs(dl) > 0.6 && Math.abs(dr) > 0.6 && (dl > 0) !== (dr > 0)) n++; } });
+    return n; };
+  const score = () => scoreDroits() - inversions();
   const photo = () => ({ p: new Map(yBroche), t: new Map(hautDe), b: new Map(basDe), o: colonnes.map(c => c.slice()) });
   const revenir = st => { yBroche.clear(); st.p.forEach((v, k) => yBroche.set(k, v)); hautDe.clear(); st.t.forEach((v, k) => hautDe.set(k, v));
     basDe.clear(); st.b.forEach((v, k) => basDe.set(k, v)); st.o.forEach((c, i) => colonnes[i] = c); };
-  { let bestScore = -1, bestSnap = null;
-    for (let r = 0; r < 4; r++) { trierColonnes(); elastique(); polir(); const sc = scoreDroits();
+  { let bestScore = -Infinity, bestSnap = null;
+    for (let r = 0; r < 4; r++) { trierColonnes(); elastique(); polir(); const sc = score();
       if (sc > bestScore) { bestScore = sc; bestSnap = photo(); } }
     if (bestSnap) revenir(bestSnap); }
   // recherche locale : échanges de voisins de colonne, gardés s'ils gagnent
-  if (ids.length <= 60) { let cur = scoreDroits();
+  if (ids.length <= 60) { let cur = score();
     for (let passe = 0; passe < 2; passe++) { let mieux = false;
       for (const c of colonnes) for (let i = 0; i + 1 < c.length; i++) {
         if (rangeeDe.get(c[i]) !== rangeeDe.get(c[i + 1])) continue;
         const st = photo(); const t = c[i]; c[i] = c[i + 1]; c[i + 1] = t;
-        elastique(); polir(); const sc = scoreDroits();
+        elastique(); polir(); const sc = score();
         if (sc > cur) { cur = sc; mieux = true; } else revenir(st); }
       if (!mieux) break; } }
   // sauvetage : un bloc sans aucun fil en face rejoint sa cible si un trou l'accueille
@@ -1868,12 +1881,18 @@ function placer(G, options) {
 
   /* ===== 10. LES BLOCS ET LES LIAISONS, PRÊTS À DESSINER ================= */
   const comps = [], compDe = new Map();
+  // de quel côté chaque borne reçoit ses fils : ce que le routeur tracera
+  const cotesDe = new Map();
+  lk.forEach((l, li) => { if (shunts.has(li)) return; const A = bouts.get(li + ':A'), B = bouts.get(li + ':B');
+    if (A.nom === B.nom && A.cle === B.cle) return;
+    [[A, B], [B, A]].forEach(([u, v]) => { const k = nid(u.nom, u.cle) + SEP + u.cle;
+      (cotesDe.get(k) || cotesDe.set(k, new Set()).get(k)).add(flancDuBout(u.nom, u.cle, v.nom, v.cle)); }); });
   for (const id of ids) { const N = noeuds.get(id); const x = xDe.get(id), haut = hautDe.get(id), bas = basDe.get(id); const ls = listes.get(id);
     const parCle = new Map(); const rangs = {};
     clesListes(id).forEach(lid => { rangs[lid] = liste(id, lid).map(p => { const py = yBroche.get(id + SEP + p.cle); parCle.set(p.cle, { y: py });
-      let g = 0, d = 0; (partenaires.get(id + SEP + p.cle) || []).forEach(q => { if (q.id === id) return; const dc = (colonneDe.get(q.id) ?? 0) - (colonneDe.get(id) ?? 0); if (dc < 0) g++; else if (dc > 0) d++; });
+      const c = cotesDe.get(id + SEP + p.cle) || new Set();
       // une prise de coupure a un fil de chaque côté de chaque contact, par nature
-      return { etiq: p.etiq, y: py, dir: estCoupure(N.nom) ? 0 : ((d && !g) ? 1 : ((g && !d) ? -1 : 0)) }; }); });
+      return { etiq: p.etiq, y: py, dir: (estCoupure(N.nom) || (c.has('L') && c.has('R'))) ? 0 : (c.has('R') ? 1 : (c.has('L') ? -1 : 0)) }; }); });
     const tag = estPastille(id);
     const c = { name: N.nom, id, x, y: haut, w: largeurDe(id), h: bas - haut, col: colonneDe.get(id),
       kind: tag ? 'tag' : (ls.S ? 'strip' : 'equip'), lw: tag ? 0 : STRIPW, rw: tag ? 0 : STRIPW, rangs, parCle, rail: estRail(N.nom) };
@@ -1934,9 +1953,13 @@ function jugeDePlacement() {
       croisements: compterCroisements(L.routage.fils, L.routage.barrettes),
       encombrement: Math.min(Math.max(e.w / A3, e.h), Math.max(e.w, e.h / A3)), surface: e.w * e.h,
       peignes: L.routage.barrettes.reduce((t, b) => t + Math.abs(b.y2 - b.y1), 0) }; } return L.jugement; };
+  /* un fil droit vaut un croisement évité : depuis que les réglettes et les
+     connecteurs sont compacts, un fil droit de plus s'achète souvent en
+     désordonnant une colonne, et l'œil voit d'abord les croisements */
   const bat = (L, ref) => { if (!ref) return true; const a = juger(L), b = juger(ref);
     if (a.sain !== b.sain) return a.sain; if (a.tient !== b.tient) return a.tient;
-    if (a.droits !== b.droits) return a.droits > b.droits; if (a.croisements !== b.croisements) return a.croisements < b.croisements;
+    const na = a.droits - a.croisements, nb = b.droits - b.croisements;
+    if (na !== nb) return na > nb; if (a.croisements !== b.croisements) return a.croisements < b.croisements;
     if (Math.abs(a.encombrement - b.encombrement) > 0.01 * b.encombrement) return a.encombrement < b.encombrement;
     if (Math.abs(a.surface - b.surface) > 0.01 * b.surface) return a.surface < b.surface;
     return a.peignes < b.peignes; };
