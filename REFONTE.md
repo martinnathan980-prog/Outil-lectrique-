@@ -156,18 +156,25 @@ Fait, mesuré, en place :
 - **Le dessin parle fil** : un croisement se lit par un pont sur le fil
   horizontal ; un piquage est du fil avec des points de jonction ; les bornes
   d'un équipement sont dans le corps, une petite borne ronde au contact.
-- **Les connecteurs et la bible des barrettes** (`09-barrettes`) : une borne
-  « A12 » est la borne 12 du connecteur A, sinon le connecteur est le part
-  number porté par le retest ; le dessin encadre les bornes d'un même
-  connecteur dans le corps. Une barrette reçoit la référence la plus logique
-  d'une bible (bornes à loger, jauge des fils lue dans le type, blindage,
-  famille déjà employée) et l'écrit sous son repère. La bible se lit dans un
+- **La bible et le suivi** (`09-barrettes`) : une seule table, lue dans un
   Excel ou un CSV de l'atelier par le nom des colonnes (Référence, Bornes,
-  puis Famille, Nature, Jauge min, Jauge max, Intensité, Blindage, Note) ;
-  celle embarquée n'est qu'un exemple, sans valeur normative.
+  puis Famille, Nature, Jauge min, Jauge max, Intensité, Blindage, Mobile,
+  Note) ; la Nature dit barrette (jonction, blindage), prise de coupure ou
+  connecteur (l'embase, avec sa partie mobile). Une barrette et une prise
+  reçoivent la référence la plus logique (bornes à loger, jauge des fils lue
+  dans le type, blindage, famille déjà employée) et l'écrivent sous leur
+  repère ; un connecteur d'équipement dit la partie mobile à poser. Le suivi
+  du contrat liste tout ce qu'on pose et s'exporte en CSV. La bible embarquée
+  n'est qu'un exemple, sans valeur normative.
+- **Les connecteurs** : une borne « A12 » est la borne 12 du connecteur A,
+  sinon le connecteur est le part number porté par le retest et reçoit une
+  lettre ; le dessin encadre les bornes d'un même connecteur dans le corps,
+  sa lettre en pastille. La prise de coupure se dessine en partie fixe (haute
+  et fine) dans laquelle entre la partie mobile (plus large, moins haute).
+- **L'exemple en trois folios** : facile, moyen, très chargé (66 liaisons).
 - **Base de retest** : mise de côté dans `a-venir/09-retest.js` avec ses
   contrôles (`tests/retest.js` se passe si elle n'est pas dans la page).
-- **Contrôles** sur l'API `atelier` : 17 + 5 + 13, banc de 15 topologies, 21 sans navigateur pour la bible et les connecteurs.
+- **Contrôles** sur l'API `atelier` : 17 + 5 + 13, banc de 15 topologies, 34 sans navigateur pour la bible, les connecteurs et le suivi.
 
 Le compte : **6 685 lignes en un fichier → 2 600 lignes en neuf modules**, dont
 moins d'un cinquième de commentaires, tous au présent.
