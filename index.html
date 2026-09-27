@@ -1028,6 +1028,9 @@ function construireGraphe(liaisons) {
 const PRH = 14, STRIPW = 20, BODYW = 104, BORNW = 40, VGAP = 22, HH = 20, BPAD = 6, HHS = 15;
 const MARGE = 70, HAUT_PAGE = MARGE + 120;
 const RANGEE_GAP = 130;
+/* L'ordre naturel des bornes : numérique quand la borne est un nombre, sinon
+   alphanumérique (1, 2, 10 ; A1, A2, B1). C'est l'ordre du matériel. */
+const ordreNaturel = (a, b) => String(a ?? '').localeCompare(String(b ?? ''), undefined, { numeric: true, sensitivity: 'base' });
 
 function placer(G, options) {
   const { liaisons: lk, ids, noeuds, bouts, nid, partenaires, adj, degreDe, feuillesDe } = G;
@@ -1040,6 +1043,12 @@ function placer(G, options) {
   const shunts = new Set();
   lk.forEach((l, li) => { const A = bouts.get(li + ':A'), B = bouts.get(li + ':B');
     if (A.cle !== B.cle && nid(A.nom, A.cle) === nid(B.nom, B.cle) && estBornier(A.nom)) shunts.add(li); });
+  // les partenaires d'une borne, ceux de ses bornes pontées compris : deux
+  // bornes d'un shunt sont un seul point électrique
+  const partenairesExternes = (id, cle) => { const vus = new Set([cle]), pile = [cle], out = [];
+    while (pile.length) { const c = pile.pop(); (partenaires.get(id + SEP + c) || []).forEach(q => {
+      if (q.id !== id) out.push(q); else if (!vus.has(q.cle)) { vus.add(q.cle); pile.push(q.cle); } }); }
+    return out; };
 
   /* ===== 1. NIVEAUX : chaque nœud reçoit sa colonne ======================= */
   const niveau = new Map();
@@ -1155,10 +1164,15 @@ function placer(G, options) {
        flancs, à la même hauteur, et chaque fil sort du côté de son partenaire
        — sinon l'un des deux contournait le bloc par une barrette. Une borne
        dont le seul partenaire est dans la même colonne sort du côté de la
-       borne partenaire, à droite par défaut. */
+       borne partenaire, à droite par défaut ; si ce partenaire est une
+       réglette, elle sort du côté OPPOSÉ à ce que la réglette distribue :
+       le fil monte la goulotte d'amont, sans trancher les départs d'aval. */
+    const amontDe = r => { let g = 0, d = 0; const cr = colDe(r);
+      noeuds.get(r).broches.forEach(p => (partenaires.get(r + SEP + p.cle) || []).forEach(q => { if (q.id === r) return; const cq = colDe(q.id); if (cq < cr) g++; else if (cq > cr) d++; }));
+      return d > g ? 'L' : (g > d ? 'R' : null); };
     N.broches.forEach(p => { let d = 0, g = 0, meme = null;
       (partenaires.get(id + SEP + p.cle) || []).forEach(q => { if (q.id === id) return; const cq = colDe(q.id); if (cq < cn) g++; else if (cq > cn) d++; else meme = q; });
-      let f; if (!d && !g && meme) f = flancDe.get(meme.id + SEP + meme.cle) === 'L' ? 'L' : 'R';
+      let f; if (!d && !g && meme) f = noeuds.get(meme.id).reglette ? (amontDe(meme.id) || 'R') : (flancDe.get(meme.id + SEP + meme.cle) === 'L' ? 'L' : 'R');
       else f = (d && g) ? 'LR' : ((d >= g) ? 'R' : 'L');
       flancDe.set(id + SEP + p.cle, f); if (f !== 'R') L.push(p); if (f !== 'L') R.push(p); });
     listes.set(id, { L, R }); }
@@ -1168,8 +1182,42 @@ function placer(G, options) {
   const listeDeBroche = (id, cle) => listes.get(id).S ? 'S' : (flancDe.get(id + SEP + cle) === 'L' ? 'L' : 'R');
   const chaqueBroche = (id, f) => clesListes(id).forEach(lid => liste(id, lid).forEach(p => f(p, lid)));
   const estPastille = id => { const ls = listes.get(id); return !!ls.S && ls.S.length === 1 && estRail(noeuds.get(id).nom); };
+  /* Un BORNIER (barrette, prise de coupure) est un objet RIGIDE : ses bornes se
+     suivent dans l'ordre naturel, au pas PRH, quoi que fassent leurs
+     partenaires. Ce sont les équipements d'en face qui bougent pour mettre
+     leurs fils droits, jamais les bornes. */
+  const rigide = id => !!listes.get(id).S && estBornier(noeuds.get(id).nom);
+  ids.forEach(id => { if (rigide(id)) listes.get(id).S.sort((a, b) => ordreNaturel(a.etiq, b.etiq)); });
+  // marges d'une réglette : au-dessus de sa première borne, sous la dernière
+  const margesReglette = id => estPastille(id) ? [7, 7] : (rigide(id) ? [PRH / 2 + 5, PRH / 2 + 5] : [HHS + PRH / 2, PRH / 2 + 5]);
+  /* Un CONNECTEUR est rigide de la même façon : sur un flanc, les bornes d'un
+     même connecteur (A1, A2, A3…) se suivent dans l'ordre naturel au pas PRH,
+     et c'est le connecteur entier qui glisse. Une borne sans connecteur reste
+     libre. `runs` : id|flanc|cle -> le GROUPE { id, lid, nom, cles } d'une
+     borne qui n'est pas seule ; absent, la borne est libre. */
+  const runs = new Map();
+  { const connecteurs = new Map();
+    const connecteurDe = (id, etiq) => { const nom = noeuds.get(id).nom;
+      if (!connecteurs.has(nom)) connecteurs.set(nom, connecteurParBorne(nom, lk));
+      const c = connecteurs.get(nom).get(String(etiq)); return c ? c.nom : null; };
+    ids.forEach(id => clesListes(id).forEach(lid => { const L = liste(id, lid); if (L.length < 2) return;
+      const parNom = new Map();
+      L.forEach(p => { const nom = listes.get(id).S ? (rigide(id) ? '' : null) : connecteurDe(id, p.etiq); if (nom == null) return;
+        (parNom.get(nom) || parNom.set(nom, []).get(nom)).push(p); });
+      parNom.forEach((ps, nom) => { if (ps.length < 2) return; ps.sort((a, b) => ordreNaturel(a.etiq, b.etiq));
+        const r = { id, lid, nom, cles: ps.map(p => p.cle) }; ps.forEach(p => runs.set(id + '|' + lid + '|' + p.cle, r)); }); })); }
+  const runDe = (id, lid, cle) => runs.get(id + '|' + lid + '|' + cle) || null;
+  const libre = (id, cle) => clesListes(id).every(lid => !runDe(id, lid, cle));
+  // les bornes qui glissent avec celle-ci : ses groupes, de flanc en flanc
+  const membres = (id, cle) => { const vus = new Set([cle]), pile = [cle];
+    while (pile.length) { const c = pile.pop(); clesListes(id).forEach(lid => { const r = runDe(id, lid, c); if (r) r.cles.forEach(k => { if (!vus.has(k)) { vus.add(k); pile.push(k); } }); }); }
+    return [...vus]; };
+  /* un bornier est plus étroit qu'un équipement : une barrette est une rangée
+     de cellules numérotées, une prise de coupure sa partie mobile et sa
+     partie fixe ; les deux flancs gardent STRIPW */
+  const corpsDe = id => { const nom = noeuds.get(id).nom; return estBarrette(nom) ? 44 : (estCoupure(nom) ? 64 : BODYW); };
   const largeurDe = id => { const ls = listes.get(id);
-    if (ls.S) return estPastille(id) ? BORNW : (STRIPW + BODYW + STRIPW);
+    if (ls.S) return estPastille(id) ? BORNW : (STRIPW + corpsDe(id) + STRIPW);
     if (estMasse(noeuds.get(id).nom)) return 26;      // le symbole de masse tient en 10 unités
     return STRIPW + BODYW + STRIPW; };
   const hauteurEstimee = id => { const ls = listes.get(id);
@@ -1215,21 +1263,18 @@ function placer(G, options) {
         clesListes(id).forEach(lid => liste(id, lid).forEach((p, j) => yBroche.set(id + SEP + p.cle, y + 16 + j * PRH)));
         basDe.set(id, y + hauteurEstimee(id)); cur[r] = y + hauteurEstimee(id) + VGAP; }); }); }
 
-  // les partenaires d'une borne, ceux de ses bornes pontées compris : deux
-  // bornes d'un shunt reçoivent le même barycentre et restent voisines
-  const partenairesExternes = (id, cle) => { const vus = new Set([cle]), pile = [cle], out = [];
-    while (pile.length) { const c = pile.pop(); (partenaires.get(id + SEP + c) || []).forEach(q => {
-      if (q.id !== id) out.push(q); else if (!vus.has(q.cle)) { vus.add(q.cle); pile.push(q.cle); } }); }
-    return out; };
   /* l'ordre des bornes suit d'abord les partenaires RIGIDES (un bloc à
      plusieurs bornes, dont l'ordre s'impose) ; un bloc à une seule borne peut
      toujours venir se mettre en face, il ne dicte rien */
   const partenairesQuiComptent = (id, cle) => { const ps = partenairesExternes(id, cle);
     const rigides = ps.filter(q => noeuds.get(q.id).broches.length > 1); return rigides.length ? rigides : ps; };
-  const trierBroches = () => { for (const id of ids) clesListes(id).forEach(lid => { const L = liste(id, lid); if (L.length < 2) return;
+  const trierBroches = () => { for (const id of ids) clesListes(id).forEach(lid => { const L = liste(id, lid); if (L.length < 2 || rigide(id)) return;
     const sc = new Map(L.map(p => { const ps = partenairesQuiComptent(id, p.cle);
       if (!ps.length) return [p.cle, yB(id, p.cle)]; let s = 0; ps.forEach(q => s += yB(q.id, q.cle)); return [p.cle, s / ps.length]; }));
-    L.sort((a, b) => sc.get(a.cle) - sc.get(b.cle)); }); };
+    // un groupe rigide se trie d'un bloc, au barycentre de ses bornes, et garde son ordre naturel dedans
+    const K = new Map(L.map(p => { const r = runDe(id, lid, p.cle); if (!r) return [p.cle, [sc.get(p.cle), '', 0]];
+      let s = 0; r.cles.forEach(c => s += sc.get(c)); return [p.cle, [s / r.cles.length, r.nom, r.cles.indexOf(p.cle)]]; }));
+    L.sort((a, b) => { const x = K.get(a.cle), y = K.get(b.cle); return (x[0] - y[0]) || (x[1] < y[1] ? -1 : x[1] > y[1] ? 1 : 0) || (x[2] - y[2]); }); }); };
   const trierColonnes = () => colonnes.forEach(c => { if (c.length < 2) return;
     const cle = new Map(c.map(id => { const isS = !!listes.get(id).S; const des = [], tous = [];
       chaqueBroche(id, p => (partenaires.get(id + SEP + p.cle) || []).forEach(q => { if (q.id === id) return;
@@ -1246,15 +1291,16 @@ function placer(G, options) {
         const lf = ps.filter(q => (colonneDe.get(q.id) ?? 0) < (colonneDe.get(id) ?? 0)); if (lf.length) ps = lf;
         return ps.length ? mediane(ps.map(q => yB(q.id, q.cle))) : null; });
       const relDe = (lid, des) => { const L = liste(id, lid); const rel = []; let r = 0;
-        L.forEach((p, j) => { if (j > 0) { let pas = PRH;
-          if (!isS && des[j] != null && des[j - 1] != null) pas = Math.max(PRH, Math.min(des[j] - des[j - 1], PRH + GAPX));
+        L.forEach((p, j) => { if (j > 0) { let pas = PRH; const rp = runDe(id, lid, L[j - 1].cle);
+          if (!isS && !(rp && rp === runDe(id, lid, p.cle)) && des[j] != null && des[j - 1] != null) pas = Math.max(PRH, Math.min(des[j] - des[j - 1], PRH + GAPX));
           r += pas; } rel.push(r); });
         return rel; };
       const desL = {}, relL = {}; let maxSpan = 0;
       const spanDe = lid => { const r = relL[lid]; return r && r.length ? Math.max(...r) : 0; };
       ls.forEach(lid => { desL[lid] = desDe(lid); relL[lid] = relDe(lid, desL[lid]); maxSpan = Math.max(maxSpan, spanDe(lid)); });
-      const h = isS ? (HHS + maxSpan + PRH + 5) : Math.max(64, maxSpan + 2 * 22);
-      const baseL = {}; ls.forEach(lid => { baseL[lid] = isS ? (HHS + PRH / 2) : ((h - spanDe(lid)) / 2); });
+      const [mh, mb] = isS ? margesReglette(id) : [22, 22];
+      const h = isS ? (mh + maxSpan + mb) : Math.max(64, maxSpan + 2 * 22);
+      const baseL = {}; ls.forEach(lid => { baseL[lid] = isS ? mh : ((h - spanDe(lid)) / 2); });
       const offs = [];
       ls.forEach(lid => desL[lid].forEach((d, j) => { if (d != null) offs.push(d - (baseL[lid] + relL[lid][j])); }));
       if (!offs.length) ls.forEach(lid => liste(id, lid).forEach((p, j) => (partenaires.get(id + SEP + p.cle) || []).forEach(q => { if (q.id !== id) offs.push(yB(q.id, q.cle) - (baseL[lid] + relL[lid][j])); })));
@@ -1277,10 +1323,10 @@ function placer(G, options) {
       (faisceaux.get(k) || faisceaux.set(k, []).get(k)).push({ a, b }); });
     const verrou = new Set();
     [...faisceaux.values()].filter(ws => ws.length > 1).sort((x, y) => y.length - x.length).forEach(ws => {
-      const bId = ws[0].b.id; const lid = listeDeBroche(bId, ws[0].b.cle); const L = liste(bId, lid);
+      const bId = ws[0].b.id; if (rigide(bId)) return; const lid = listeDeBroche(bId, ws[0].b.cle); const L = liste(bId, lid);
       const idx = new Map(L.map((p, i) => [p.cle, i])); const parB = new Map();
       ws.forEach(w => { const e = parB.get(w.b.cle) || { s: 0, c: 0 }; e.s += yB(w.a.id, w.a.cle); e.c++; parB.set(w.b.cle, e); });
-      const cles = [...parB.keys()].filter(k => !verrou.has(bId + SEP + k)); if (cles.length < 2) return;
+      const cles = [...parB.keys()].filter(k => !verrou.has(bId + SEP + k) && libre(bId, k)); if (cles.length < 2) return;
       const places = cles.map(k => idx.get(k)).sort((u, v) => u - v);
       const voulu = [...cles].sort((k1, k2) => (parB.get(k1).s / parB.get(k1).c) - (parB.get(k2).s / parB.get(k2).c));
       const parPlace = new Map(); voulu.forEach((k, i) => { parPlace.set(places[i], k); verrou.add(bId + SEP + k); });
@@ -1306,20 +1352,33 @@ function placer(G, options) {
   const scoreDroits = () => { let n = 0; lk.forEach((l, li) => { const A = bouts.get(li + ':A'), B = bouts.get(li + ':B');
     const ia = nid(A.nom, A.cle), ib = nid(B.nom, B.cle); if (ia === ib) return;
     if (Math.abs(yB(ia, A.cle) - yB(ib, B.cle)) < 0.6) n += (!listes.get(ia).S && !listes.get(ib).S) ? 3 : 1; }); return n; };
+  /* Les INVERSIONS d'une goulotte : deux fils entre deux colonnes voisines
+     dont l'ordre des bouts n'est pas le même à gauche et à droite se croisent,
+     quoi que fasse le routeur. Un fil droit gagné en désordonnant une colonne
+     se paie en croisements : le score les compte. */
+  const inversions = () => { const par = new Map();
+    lk.forEach((l, li) => { const A = bouts.get(li + ':A'), B = bouts.get(li + ':B'); const ia = nid(A.nom, A.cle), ib = nid(B.nom, B.cle);
+      const ca = colonneDe.get(ia) ?? 0, cb = colonneDe.get(ib) ?? 0; if (Math.abs(ca - cb) !== 1) return;
+      const g = ca < cb ? { ch: cb, l: yB(ia, A.cle), r: yB(ib, B.cle) } : { ch: ca, l: yB(ib, B.cle), r: yB(ia, A.cle) };
+      (par.get(g.ch) || par.set(g.ch, []).get(g.ch)).push(g); });
+    let n = 0; par.forEach(fs => { for (let i = 0; i < fs.length; i++) for (let j = i + 1; j < fs.length; j++) {
+      const dl = fs[i].l - fs[j].l, dr = fs[i].r - fs[j].r; if (Math.abs(dl) > 0.6 && Math.abs(dr) > 0.6 && (dl > 0) !== (dr > 0)) n++; } });
+    return n; };
+  const score = () => scoreDroits() - inversions();
   const photo = () => ({ p: new Map(yBroche), t: new Map(hautDe), b: new Map(basDe), o: colonnes.map(c => c.slice()) });
   const revenir = st => { yBroche.clear(); st.p.forEach((v, k) => yBroche.set(k, v)); hautDe.clear(); st.t.forEach((v, k) => hautDe.set(k, v));
     basDe.clear(); st.b.forEach((v, k) => basDe.set(k, v)); st.o.forEach((c, i) => colonnes[i] = c); };
-  { let bestScore = -1, bestSnap = null;
-    for (let r = 0; r < 4; r++) { trierColonnes(); elastique(); polir(); const sc = scoreDroits();
+  { let bestScore = -Infinity, bestSnap = null;
+    for (let r = 0; r < 4; r++) { trierColonnes(); elastique(); polir(); const sc = score();
       if (sc > bestScore) { bestScore = sc; bestSnap = photo(); } }
     if (bestSnap) revenir(bestSnap); }
   // recherche locale : échanges de voisins de colonne, gardés s'ils gagnent
-  if (ids.length <= 60) { let cur = scoreDroits();
+  if (ids.length <= 60) { let cur = score();
     for (let passe = 0; passe < 2; passe++) { let mieux = false;
       for (const c of colonnes) for (let i = 0; i + 1 < c.length; i++) {
         if (rangeeDe.get(c[i]) !== rangeeDe.get(c[i + 1])) continue;
         const st = photo(); const t = c[i]; c[i] = c[i + 1]; c[i + 1] = t;
-        elastique(); polir(); const sc = scoreDroits();
+        elastique(); polir(); const sc = score();
         if (sc > cur) { cur = sc; mieux = true; } else revenir(st); }
       if (!mieux) break; } }
   // sauvetage : un bloc sans aucun fil en face rejoint sa cible si un trou l'accueille
@@ -1341,8 +1400,7 @@ function placer(G, options) {
      reste pliée, le routeur s'en charge. ======================================= */
   const mHaut = new Map(), mBas = new Map(), estS = new Map();
   { ids.forEach(id => { const isS = !!listes.get(id).S; estS.set(id, isS);
-      if (isS && estPastille(id)) { mHaut.set(id, 7); mBas.set(id, 7); }
-      else if (isS) { mHaut.set(id, HHS + PRH / 2); mBas.set(id, PRH / 2 + 5); }
+      if (isS) { const [mh, mb] = margesReglette(id); mHaut.set(id, mh); mBas.set(id, mb); }
       else { let L = 1; clesListes(id).forEach(lid => L = Math.max(L, liste(id, lid).length));
         const m = Math.max(18, (46 - (L - 1) * PRH) / 2); mHaut.set(id, m); mBas.set(id, m); } });
     const PK = (id, cle) => id + SEP + cle;
@@ -1359,19 +1417,36 @@ function placer(G, options) {
     const derniersDe = id => { const out = []; clesListes(id).forEach(lid => { const L = liste(id, lid); if (L.length) out.push(PK(id, L[L.length - 1].cle)); }); return out; };
     const premiersDe = id => { const out = []; clesListes(id).forEach(lid => { const L = liste(id, lid); if (L.length) out.push(PK(id, L[0].cle)); }); return out; };
     /* `guide` : les ordonnées du tour précédent, pour deviner entre quels blocs
-       d'une colonne enjambée un fil doit passer */
+       d'une colonne enjambée un fil doit passer.
+       Un NET est un ensemble de broches à une ordonnée commune — à un DÉCALAGE
+       près : les bornes d'un groupe rigide (bornier, connecteur) forment un
+       net dès le départ, chacune à k × PRH de la racine ; l'union-find porte
+       ces décalages, et un fil accepté vers une borne du groupe fixe alors la
+       broche partenaire exactement en face de cette borne. */
     const resoudre = (colBlocs, guide) => {
-      const par = new Map(), etiq = new Map();
-      ids.forEach(id => chaqueBroche(id, (p, lid) => { const k = PK(id, p.cle); par.set(k, k); etiq.set(k, new Map([[id + '|' + lid, 1]])); }));
-      const find = x => { let r = x; while (par.get(r) !== r) r = par.get(r); let c = x; while (par.get(c) !== c) { const n = par.get(c); par.set(c, r); c = n; } return r; };
+      const par = new Map(), dec = new Map(), etiq = new Map(), decales = new Set();
+      ids.forEach(id => chaqueBroche(id, (p, lid) => { const k = PK(id, p.cle); par.set(k, k); dec.set(k, 0); etiq.set(k, new Map([[id + '|' + lid, 1]])); }));
+      // compression de chemin : chaque maillon reçoit son décalage cumulé jusqu'à la racine
+      const find = x => { let r = x; while (par.get(r) !== r) r = par.get(r);
+        const chaine = []; for (let c = x; c !== r; c = par.get(c)) chaine.push(c);
+        let cum = 0; for (let i = chaine.length - 1; i >= 0; i--) { cum += dec.get(chaine[i]); par.set(chaine[i], r); dec.set(chaine[i], cum); }
+        return r; };
+      const pos = x => { const r = find(x); return [r, x === r ? 0 : dec.get(x)]; };
+      const fondre = (rb, ra, d) => { par.set(rb, ra); dec.set(rb, d); if (decales.has(rb)) decales.add(ra);
+        const ta = etiq.get(ra); etiq.get(rb).forEach((v, k) => ta.set(k, (ta.get(k) || 0) + v)); etiq.delete(rb); };
+      new Set(runs.values()).forEach(r => { const k0 = PK(r.id, r.cles[0]);
+        r.cles.forEach((c, j) => { if (!j) return; const [ra, oa] = pos(k0), [rb, ob] = pos(PK(r.id, c));
+          if (ra === rb) return;                        // déjà lié par l'autre flanc
+          fondre(rb, ra, oa + j * PRH - ob); decales.add(ra); }); });
       const traversees = [];      // fils qui enjambent une colonne : le net passe entre deux blocs de celle-ci
       const aretes = f => { const E = [];
-        ids.forEach(id => clesListes(id).forEach(lid => { const L = liste(id, lid); for (let j = 1; j < L.length; j++) E.push([f(PK(id, L[j - 1].cle)), f(PK(id, L[j].cle)), PRH]); }));
+        const arete = (a, b, w) => { const [ra, oa] = f(a), [rb, ob] = f(b); E.push([ra, rb, w + oa - ob]); };
+        ids.forEach(id => clesListes(id).forEach(lid => { const L = liste(id, lid); for (let j = 1; j < L.length; j++) arete(PK(id, L[j - 1].cle), PK(id, L[j].cle), PRH); }));
         colBlocs.map(c => c.filter(id => !estPastille(id))).forEach(c => { for (let i = 1; i < c.length; i++) { const P = c[i - 1], N = c[i];
           const w = mBas.get(P) + ((estS.get(P) && estS.get(N)) ? 14 : VGAP) + mHaut.get(N);
-          derniersDe(P).forEach(a => premiersDe(N).forEach(b => E.push([f(a), f(b), w]))); } });
-        traversees.forEach(t => { if (t.dessus) derniersDe(t.dessus).forEach(a => E.push([f(a), f(t.net), mBas.get(t.dessus) + 6]));
-          if (t.dessous) premiersDe(t.dessous).forEach(b => E.push([f(t.net), f(b), mHaut.get(t.dessous) + 6])); });
+          derniersDe(P).forEach(a => premiersDe(N).forEach(b => arete(a, b, w))); } });
+        traversees.forEach(t => { if (t.dessus) derniersDe(t.dessus).forEach(a => arete(a, t.net, mBas.get(t.dessus) + 6));
+          if (t.dessous) premiersDe(t.dessous).forEach(b => arete(t.net, b, mHaut.get(t.dessous) + 6)); });
         return E; };
       const estimY = k => (guide && guide.get(k)) ?? yBroche.get(k);
       const couloir = (c, y) => { let dessus = null, dessous = null;
@@ -1382,9 +1457,11 @@ function placer(G, options) {
           else if (y - lo < hi - y) { if (!dessous || lo < dessous.lo) dessous = { id, lo }; }     // le fil passe au-dessus du bloc qui le gêne
           else if (!dessus || hi > dessus.hi) dessus = { id, hi }; }
         return { dessus: dessus && dessus.id, dessous: dessous && dessous.id }; };
-      const acyclique = E => { if (E.some(([a, b]) => a === b)) return false;
-        const indeg = new Map(), ad = new Map(), ns = new Set();
-        E.forEach(([a, b]) => { ns.add(a); ns.add(b); (ad.get(a) || ad.set(a, []).get(a)).push(b); indeg.set(b, (indeg.get(b) || 0) + 1); });
+      /* une contrainte d'un net sur lui-même est vide si son poids est nul ou
+         négatif (deux bornes d'un bornier, dans leur ordre), impossible sinon */
+      const acyclique = E => { const indeg = new Map(), ad = new Map(), ns = new Set();
+        for (const [a, b, w] of E) { if (a === b) { if (w > 0.01) return false; continue; }
+          ns.add(a); ns.add(b); (ad.get(a) || ad.set(a, []).get(a)).push(b); indeg.set(b, (indeg.get(b) || 0) + 1); }
         const q = [...ns].filter(n => !(indeg.get(n) || 0)); let vus = 0;
         while (q.length) { const n = q.pop(); vus++; (ad.get(n) || []).forEach(m => { const d = indeg.get(m) - 1; indeg.set(m, d); if (!d) q.push(m); }); }
         return vus === ns.size; };
@@ -1400,31 +1477,35 @@ function placer(G, options) {
           pr: (d > 1 ? 10 : 0) + genre, w: (d === 1 ? 1 : 0.25) * (genre === 0 ? 1.06 : 1) }); });
       cand.sort((x, y) => x.pr - y.pr);
       let acc = 0;
-      cand.forEach(wc => { const ra = find(wc.a), rb = find(wc.b);
-        if (ra === rb) { acc += wc.w; return; }
-        const ta = etiq.get(ra), tb = etiq.get(rb);
-        for (const k of tb.keys()) if (ta.has(k)) return;              // deux broches d'une même liste
-        const f = x => { const r = find(x); return r === rb ? ra : r; };
+      cand.forEach(wc => { const [ra, oa] = pos(wc.a), [rb, ob] = pos(wc.b);
+        if (ra === rb) { if (Math.abs(oa - ob) < 0.01) acc += wc.w; return; }
+        // deux broches d'une même liste ne partagent pas une ordonnée — sauf à
+        // des décalages différents, ce que le test d'acyclicité tranche seul
+        if (!decales.has(ra) && !decales.has(rb)) { const ta = etiq.get(ra), tb = etiq.get(rb); for (const k of tb.keys()) if (ta.has(k)) return; }
+        const d = oa - ob;                     // Y(rb) = Y(ra) + d met les deux bouts à la même hauteur
+        const f = x => { const [r, o] = pos(x); return r === rb ? [ra, o + d] : [r, o]; };
         let t = null;
         if (wc.milieu >= 0) { const { dessus, dessous } = couloir(wc.milieu, (estimY(wc.a) + estimY(wc.b)) / 2);
           if (dessus || dessous) { t = { net: wc.a, dessus, dessous }; traversees.push(t); } }
         if (!acyclique(aretes(f))) { if (t) traversees.pop(); return; }
-        par.set(rb, ra); acc += wc.w; tb.forEach((v, k) => ta.set(k, (ta.get(k) || 0) + v)); etiq.delete(rb); });
-      const E = aretes(find); const indeg = new Map(), ad = new Map(), ns = new Set();
+        fondre(rb, ra, d); acc += wc.w; });
+      const E = aretes(pos); const indeg = new Map(), ad = new Map(), ns = new Set();
       ids.forEach(id => chaqueBroche(id, p => ns.add(find(PK(id, p.cle)))));
-      E.forEach(([a, b, w]) => { (ad.get(a) || ad.set(a, []).get(a)).push([b, w]); indeg.set(b, (indeg.get(b) || 0) + 1); });
+      E.forEach(([a, b, w]) => { if (a === b) return; (ad.get(a) || ad.set(a, []).get(a)).push([b, w]); indeg.set(b, (indeg.get(b) || 0) + 1); });
       const Y = new Map(); const q = [...ns].filter(n => !(indeg.get(n) || 0)); q.forEach(n => Y.set(n, 0)); let qi = 0;
       while (qi < q.length) { const n = q[qi++]; (ad.get(n) || []).forEach(([m, w]) => { Y.set(m, Math.max(Y.get(m) || 0, (Y.get(n) || 0) + w));
         const d = indeg.get(m) - 1; indeg.set(m, d); if (!d) q.push(m); }); }
-      // détente : un net qui est le sommet d'un bloc (et le bas d'aucun) redescend au plus près
+      const yDe = k => { const [r, o] = pos(k); return (Y.get(r) || 0) + o; };
+      // détente : un net qui est le sommet d'un bloc (et le bas d'aucun) redescend
+      // au plus près ; un net à décalages (un bornier) est déjà au plus serré
       const netBlocs = new Map();
       ids.forEach(id => chaqueBroche(id, p => { const r = find(PK(id, p.cle)); (netBlocs.get(r) || netBlocs.set(r, new Set()).get(r)).add(id); }));
-      for (let dp = 0; dp < 2; dp++) for (let i = q.length - 1; i >= 0; i--) { const n = q[i]; const oe = ad.get(n);
+      for (let dp = 0; dp < 2; dp++) for (let i = q.length - 1; i >= 0; i--) { const n = q[i]; if (decales.has(n)) continue; const oe = ad.get(n);
         let mx = Infinity; if (oe && oe.length) oe.forEach(([m, w]) => mx = Math.min(mx, (Y.get(m) || 0) - w));
         const y0 = Y.get(n) || 0; let hauts = 0, bas = 0, tgt = Infinity;
         (netBlocs.get(n) || []).forEach(id => { if (estPastille(id)) return;
           let lo = Infinity, lo2 = Infinity, hi = -Infinity, loN = 0;
-          chaqueBroche(id, p => { const yy = Y.get(find(PK(id, p.cle))) || 0;
+          chaqueBroche(id, p => { const yy = yDe(PK(id, p.cle));
             if (yy < lo - 0.01) { lo2 = lo; lo = yy; loN = 1; } else if (yy < lo + 0.01) loN++; else if (yy < lo2) lo2 = yy;
             if (yy > hi) hi = yy; });
           if (Math.abs(y0 - lo) < 0.01 && loN === 1) { hauts++; if (isFinite(lo2)) tgt = Math.min(tgt, lo2 - PRH); }
@@ -1432,7 +1513,7 @@ function placer(G, options) {
         if (!(oe && oe.length)) mx = isFinite(tgt) ? tgt : y0;
         if (mx <= y0 + 0.5) continue;
         if (hauts >= 1 && bas === 0) Y.set(n, mx); }
-      const py = new Map(); ids.forEach(id => chaqueBroche(id, p => { const k = PK(id, p.cle); py.set(k, HAUT_PAGE + (Y.get(find(k)) || 0)); }));
+      const py = new Map(); ids.forEach(id => chaqueBroche(id, p => { const k = PK(id, p.cle); py.set(k, HAUT_PAGE + yDe(k)); }));
       return { acc, py }; };
 
     const RANG = id => (rangeeDe.get(id) || 0) * 1e9;     // la rangée du serpentin prime tout
@@ -1450,8 +1531,9 @@ function placer(G, options) {
       let bar; if (!ds.length) bar = hautDe.get(id); else if (moyenne) bar = ds.reduce((a, b) => a + b, 0) / ds.length; else bar = mediane(ds);
       return RANG(id) + bar; }; };
     const MAXIT = ids.length > 600 ? 10 : (ids.length > 120 ? 16 : 24);
-    // les bornes d'une réglette n'ont pas d'ordre imposé : elles se mettent face à leurs partenaires
-    const reordonner = py => ids.forEach(id => { if (!estS.get(id)) return;
+    // les bornes d'un rail n'ont pas d'ordre imposé : elles se mettent face à
+    // leurs partenaires ; celles d'un bornier gardent leur ordre naturel
+    const reordonner = py => ids.forEach(id => { if (!estS.get(id) || rigide(id)) return;
       clesListes(id).forEach(lid => { const L = liste(id, lid); if (L.length < 2) return;
         const sc = new Map(L.map(p => { const ps = partenairesQuiComptent(id, p.cle);
           let s = 0, c = 0; ps.forEach(q => { const y = py.get(PK(q.id, q.cle)); if (y != null) { s += y; c++; } });
@@ -1478,11 +1560,13 @@ function placer(G, options) {
         const enHaut = (bj + 1) <= L.length / 2; const grp = enHaut ? L.slice(0, bj + 1) : L.slice(bj + 1);
         if (grp.length > L.length / 2) return;
         const cible = enHaut ? ys[bj + 1] : ys[bj];
-        grp.forEach(p => (partenaires.get(id + SEP + p.cle) || []).forEach(q => { if (q.id === id || dedoublee(q.id, q.cle)) return;
-          const L2 = listes.get(q.id)[listeDeBroche(q.id, q.cle)]; if (!L2 || L2.length < 2) return;
+        grp.forEach(p => (partenaires.get(id + SEP + p.cle) || []).forEach(q => { if (q.id === id || dedoublee(q.id, q.cle) || !libre(q.id, q.cle)) return;
+          const lid2 = listeDeBroche(q.id, q.cle); const L2 = listes.get(q.id)[lid2]; if (!L2 || L2.length < 2) return;
           const qi = L2.findIndex(pp => pp.cle === q.cle); if (qi < 0) return;
           const ys2 = L2.map(pp => py2.get(PK(q.id, pp.cle))); let ni = 0; while (ni < L2.length && ys2[ni] < cible) ni++;
           if (ni === qi || ni === qi + 1) return;
+          // jamais au milieu d'un groupe rigide
+          if (ni > 0 && ni < L2.length && runDe(q.id, lid2, L2[ni - 1].cle) && runDe(q.id, lid2, L2[ni - 1].cle) === runDe(q.id, lid2, L2[ni].cle)) return;
           if (!sauve.has(L2)) sauve.set(L2, L2.slice());
           const item = L2.splice(qi, 1)[0]; L2.splice(qi < ni ? ni - 1 : ni, 0, item); bouge = true; })); }));
       if (!bouge) break;
@@ -1538,7 +1622,10 @@ function placer(G, options) {
     clesListes(L).forEach(lid => { const arr = []; liste(L, lid).forEach(p => { const qs = (partenaires.get(L + SEP + p.cle) || []).filter(q => q.id === B);
       const it = { cle: p.cle, cur: yB(L, p.cle), des: qs.length ? mediane(qs.map(q => yB(q.id, q.cle))) : null }; arr.push(it); all.push(it); }); parFlanc[lid] = arr; });
     let exact = all.length > 0 && all.every(it => it.des != null);
-    if (exact) for (const lid in parFlanc) { const a = parFlanc[lid]; for (let i = 1; i < a.length; i++) if (a[i].des < a[i - 1].des + PRH - 0.5) { exact = false; break; } if (!exact) break; }
+    // exact seulement si l'ordre tient, et si les bornes d'un même groupe rigide restent au pas
+    if (exact) for (const lid in parFlanc) { const a = parFlanc[lid]; for (let i = 1; i < a.length; i++) { const g = a[i].des - a[i - 1].des;
+      const rp = runDe(L, lid, a[i - 1].cle), meme = rp && rp === runDe(L, lid, a[i].cle);
+      if (g < PRH - 0.5 || (meme && Math.abs(g - PRH) > 0.5)) { exact = false; break; } } if (!exact) break; }
     if (exact) { let lo = Infinity, hi = -Infinity; all.forEach(it => { lo = Math.min(lo, it.des); hi = Math.max(hi, it.des); });
       const nt = lo - mHaut.get(L), nb2 = hi + mBas.get(L);
       if (!heurte(L, nt, nb2)) { all.forEach(it => yBroche.set(L + SEP + it.cle, it.des)); hautDe.set(L, nt); basDe.set(L, nb2); return; } }
@@ -1584,7 +1671,7 @@ function placer(G, options) {
 
   /* ===== 8. ALLER-RETOUR BORNES ↔ ÉQUIPEMENTS ============================ */
   { const dansCorps = (id, y) => { const isS = !!listes.get(id).S;
-      return y >= hautDe.get(id) + (isS ? HHS + PRH / 2 : 16) - 0.5 && y <= basDe.get(id) - (isS ? PRH / 2 + 3 : 10) + 0.5; };
+      return y >= hautDe.get(id) + (isS ? mHaut.get(id) : 16) - 0.5 && y <= basDe.get(id) - (isS ? mBas.get(id) - 2 : 10) + 0.5; };
     const couloirLibre = (ia, ib, y) => { const xa = xDe.get(ia), xb = xDe.get(ib); if (xa == null || xb == null) return false;
       const seg = xa < xb ? [xa + largeurDe(ia), xb] : [xb + largeurDe(ib), xa]; if (seg[1] - seg[0] < 4) return true;
       return !tous.some(o => { if (o === ia || o === ib) return false; const ox = xDe.get(o), ow = largeurDe(o);
@@ -1597,18 +1684,23 @@ function placer(G, options) {
       return S; };
     const avaleUnDroit = (L, nt, nb) => { const x = xDe.get(L), w = largeurDe(L);
       return filsDroits().some(sg => sg.ia !== L && sg.ib !== L && sg.x1 > x + 2 && sg.x0 < x + w - 2 && sg.y > nt + 2 && sg.y < nb - 2); };
-    const espaceOK = (id, cle, y) => { let ok = true;
-      chaqueBroche(id, (p, lid) => { if (ok && p.cle !== cle && (listes.get(id).S || dedoublee(id, cle) || lid === listeDeBroche(id, cle)) && Math.abs(yB(id, p.cle) - y) < PRH - 0.5) ok = false; });
+    const espaceOK = (id, cle, y, exclus) => { let ok = true;
+      chaqueBroche(id, (p, lid) => { if (ok && p.cle !== cle && !exclus.has(p.cle) && (listes.get(id).S || dedoublee(id, cle) || lid === listeDeBroche(id, cle)) && Math.abs(yB(id, p.cle) - y) < PRH - 0.5) ok = false; });
       return ok; };
     // un fil droit à tout prix : le bloc a le droit de grandir pour l'attraper,
-    // sans chevaucher personne ni avaler le fil droit de personne
-    const poser = (id, cle, y) => { if (!espaceOK(id, cle, y)) return false;
-      if (dansCorps(id, y)) { yBroche.set(id + SEP + cle, y); return true; }
+    // sans chevaucher personne ni avaler le fil droit de personne. Une borne
+    // d'un groupe rigide emmène tout son groupe, d'un bloc.
+    const poser = (id, cle, y) => { if (rigide(id)) return false;
+      const grp = membres(id, cle), ens = new Set(grp), dy = y - yB(id, cle);
+      if (grp.some(c => !espaceOK(id, c, yB(id, c) + dy, ens))) return false;
+      const applique = () => grp.forEach(c => yBroche.set(id + SEP + c, yB(id, c) + dy));
+      if (grp.every(c => dansCorps(id, yB(id, c) + dy))) { applique(); return true; }
       if (listes.get(id).S || tous.length > 400) return false;
-      const nt = Math.min(hautDe.get(id), y - 16), nb = Math.max(basDe.get(id), y + 10);
+      let lo = Infinity, hi = -Infinity; grp.forEach(c => { const v = yB(id, c) + dy; lo = Math.min(lo, v); hi = Math.max(hi, v); });
+      const nt = Math.min(hautDe.get(id), lo - 16), nb = Math.max(basDe.get(id), hi + 10);
       if (nb - nt > 900 || (nb - nt) - (basDe.get(id) - hautDe.get(id)) > 260) return false;
       if (heurte(id, nt, nb) || avaleUnDroit(id, nt, nb)) return false;
-      yBroche.set(id + SEP + cle, y); hautDe.set(id, nt); basDe.set(id, nb); return true; };
+      applique(); hautDe.set(id, nt); basDe.set(id, nb); return true; };
     const detente = () => { let bouge = false;
       lk.forEach((l, li) => { const A = bouts.get(li + ':A'), B = bouts.get(li + ':B'); const ia = nid(A.nom, A.cle), ib = nid(B.nom, B.cle); if (ia === ib) return;
         const dc = Math.abs((colonneDe.get(ia) ?? 0) - (colonneDe.get(ib) ?? 0)); if (dc === 0 || estPastille(ia) || estPastille(ib)) return;
@@ -1629,12 +1721,12 @@ function placer(G, options) {
           if (n - cur > bg && !heurte(id, hautDe.get(id) + s, basDe.get(id) + s) && !heurteFil(id, hautDe.get(id) + s, basDe.get(id) + s)) { bg = n - cur; best = s; } });
         if (best) { glisser(id, best); any = true; } });
       return any; };
-    // dé-croisement : sur chaque flanc, les bornes pliées échangent leurs places
-    // pour suivre l'ordre vertical de leurs partenaires
+    // dé-croisement : sur chaque flanc, les bornes LIBRES pliées échangent leurs
+    // places pour suivre l'ordre vertical de leurs partenaires
     const permuter = () => { let any = false;
-      tous.forEach(id => { if (estPastille(id)) return;
+      tous.forEach(id => { if (estPastille(id) || rigide(id)) return;
         clesListes(id).forEach(lid => { const L = liste(id, lid); const grp = { L: [], R: [] };
-          L.forEach(p => { const ps = partenaires.get(id + SEP + p.cle) || []; if (ps.length !== 1) return; const q = ps[0]; if (q.id === id || estPastille(q.id)) return;
+          L.forEach(p => { if (!libre(id, p.cle)) return; const ps = partenaires.get(id + SEP + p.cle) || []; if (ps.length !== 1) return; const q = ps[0]; if (q.id === id || estPastille(q.id)) return;
             const dc = (colonneDe.get(q.id) ?? 0) - (colonneDe.get(id) ?? 0); if (Math.abs(dc) !== 1) return;
             const my = yB(id, p.cle), tgt = yB(q.id, q.cle); if (Math.abs(my - tgt) < 0.6) return; grp[dc > 0 ? 'R' : 'L'].push({ cle: p.cle, y: my, tgt }); });
           ['L', 'R'].forEach(g => { const libres = grp[g]; if (libres.length < 2) return;
@@ -1642,17 +1734,23 @@ function placer(G, options) {
             if (!ordre.some((f, i) => Math.abs(f.y - places[i]) > 0.5)) return;
             ordre.forEach((f, i) => yBroche.set(id + SEP + f.cle, places[i])); any = true; }); }); });
       return any; };
-    // rétreint : une broche extrême dont le fil est plié de toute façon se rapproche
-    const retreindre = () => { tous.forEach(id => { if (estPastille(id)) return;
+    // rétreint : une broche extrême dont le fil est plié de toute façon se
+    // rapproche — avec son groupe rigide, si aucun de ses fils n'est droit
+    const retreindre = () => { tous.forEach(id => { if (estPastille(id) || rigide(id)) return;
       let mT = Infinity, mB = -Infinity; chaqueBroche(id, p => { const y = yB(id, p.cle); mT = Math.min(mT, y); mB = Math.max(mB, y); });
       mT = isFinite(mT) ? mT - hautDe.get(id) : 0; mB = isFinite(mB) ? basDe.get(id) - mB : 0;
       for (let garde = 0; garde < 40; garde++) { const items = [];
-        chaqueBroche(id, p => { const k = id + SEP + p.cle, y = yB(id, p.cle); const ps = (partenaires.get(k) || []).filter(q => q.id !== id && !estPastille(q.id));
+        chaqueBroche(id, p => { const k = p.cle, y = yB(id, p.cle); const ps = (partenaires.get(id + SEP + k) || []).filter(q => q.id !== id && !estPastille(q.id));
           items.push({ k, y, droit: ps.length > 0 && ps.every(q => Math.abs(yB(q.id, q.cle) - y) < 0.6) }); });
         if (items.length < 2) break; items.sort((a, b) => a.y - b.y); let fait = false;
-        const h0 = items[0], h1 = items[1];
-        if (!h0.droit && h1.y - h0.y > PRH + 0.5) { yBroche.set(h0.k, h1.y - PRH); fait = true; }
-        else { const b0 = items[items.length - 1], b1 = items[items.length - 2]; if (!b0.droit && b0.y - b1.y > PRH + 0.5) { yBroche.set(b0.k, b1.y + PRH); fait = true; } }
+        // l'extrémité, c'est le groupe de la broche extrême ; il se rapproche du reste
+        const bout = (ext, signe) => { const g = new Set(membres(id, ext.k)); const dedans = items.filter(it => g.has(it.k)), dehors = items.filter(it => !g.has(it.k));
+          if (!dehors.length || dedans.some(it => it.droit)) return false;
+          const bord = signe > 0 ? Math.max(...dedans.map(it => it.y)) : Math.min(...dedans.map(it => it.y));
+          const voisin = signe > 0 ? Math.min(...dehors.map(it => it.y)) : Math.max(...dehors.map(it => it.y));
+          const d = signe * (voisin - bord) - PRH; if (d <= 0.5) return false;
+          dedans.forEach(it => yBroche.set(id + SEP + it.k, it.y + signe * d)); return true; };
+        fait = bout(items[0], 1) || bout(items[items.length - 1], -1);
         if (!fait) break; }
       let lo = Infinity, hi = -Infinity; chaqueBroche(id, p => { const y = yB(id, p.cle); lo = Math.min(lo, y); hi = Math.max(hi, y); });
       if (isFinite(lo)) { hautDe.set(id, lo - mT); basDe.set(id, hi + mB); } }); };
@@ -1702,6 +1800,7 @@ function placer(G, options) {
               const clesH = new Set(cote.map(it => it.k)); const mv = [], mvSet = new Set(); let ok = true;
               cote.forEach(it => (partenaires.get(H + SEP + it.k) || []).forEach(q => { if (!ok || estPastille(q.id)) return;
                 if (q.id === H) { if (!clesH.has(q.cle)) ok = false; return; }
+                if (!libre(q.id, q.cle)) { ok = false; return; }          // une borne d'un groupe rigide ne glisse pas seule
                 const pk = q.id + SEP + q.cle; if (mvSet.has(pk)) return;
                 for (const r of (partenaires.get(pk) || [])) { if (!(r.id === H && clesH.has(r.cle))) { ok = false; return; } }
                 mvSet.add(pk); mv.push({ id: q.id, cle: q.cle }); }));
@@ -1715,7 +1814,7 @@ function placer(G, options) {
                   for (const p of noeuds.get(m.id).broches) { if (mvSet.has(m.id + SEP + p.cle)) continue; if (Math.abs(yB(m.id, p.cle) - y) < PRH - 0.5) return false; } }
                 for (const id of touches) { let lo = Infinity, hi = -Infinity;
                   noeuds.get(id).broches.forEach(p => { const y = yB(id, p.cle) + (mvSet.has(id + SEP + p.cle) ? d : 0); lo = Math.min(lo, y); hi = Math.max(hi, y); });
-                  const isS = !!listes.get(id).S, nt = lo - (isS ? HHS + PRH / 2 : 22), nb = hi + (isS ? PRH / 2 + 5 : 22);
+                  const isS = !!listes.get(id).S, nt = lo - (isS ? mHaut.get(id) : 22), nb = hi + (isS ? mBas.get(id) : 22);
                   if (nt < hautDe.get(id) - 0.5 || nb > basDe.get(id) + 0.5) { if (heurte(id, nt, nb)) return false;
                     const x = xDe.get(id), w = largeurDe(id), zt1 = nt, zb1 = hautDe.get(id), zt2 = basDe.get(id), zb2 = nb;
                     if (sgs().some(sg => !enMouvement(sg) && sg.ia !== id && sg.ib !== id && sg.x1 > x + 2 && sg.x0 < x + w - 2 && ((sg.y > zt1 + 2 && sg.y < zb1 - 2) || (sg.y > zt2 + 2 && sg.y < zb2 - 2)))) return false; }
@@ -1733,7 +1832,7 @@ function placer(G, options) {
           if (!fait) break; bouge = true; }
         if (bouge) rebord.add(H); });
       rebord.forEach(B => { let lo = Infinity, hi = -Infinity; chaqueBroche(B, p => { const y = yB(B, p.cle); lo = Math.min(lo, y); hi = Math.max(hi, y); });
-        if (isFinite(lo)) { const isS = !!listes.get(B).S; hautDe.set(B, Math.max(hautDe.get(B), lo - (isS ? HHS + PRH / 2 : 22))); basDe.set(B, Math.min(basDe.get(B), hi + (isS ? PRH / 2 + 5 : 22))); } }); };
+        if (isFinite(lo)) { const isS = !!listes.get(B).S; hautDe.set(B, Math.max(hautDe.get(B), lo - (isS ? mHaut.get(B) : 22))); basDe.set(B, Math.min(basDe.get(B), hi + (isS ? mBas.get(B) : 22))); } }); };
     for (let tour = 0; tour < 4; tour++) { const a = detente(); const b = pousser(); const c = permuter(); recollerPastilles(); if (!a && !b && !c) break; }
     condenser(); retreindre(); detente(); permuter(); recollerPastilles();
     pastilles.forEach(sp => { sp.y1 = hautDe.get(sp.id); sp.y2 = basDe.get(sp.id); });
@@ -1792,11 +1891,18 @@ function placer(G, options) {
 
   /* ===== 10. LES BLOCS ET LES LIAISONS, PRÊTS À DESSINER ================= */
   const comps = [], compDe = new Map();
+  // de quel côté chaque borne reçoit ses fils : ce que le routeur tracera
+  const cotesDe = new Map();
+  lk.forEach((l, li) => { if (shunts.has(li)) return; const A = bouts.get(li + ':A'), B = bouts.get(li + ':B');
+    if (A.nom === B.nom && A.cle === B.cle) return;
+    [[A, B], [B, A]].forEach(([u, v]) => { const k = nid(u.nom, u.cle) + SEP + u.cle;
+      (cotesDe.get(k) || cotesDe.set(k, new Set()).get(k)).add(flancDuBout(u.nom, u.cle, v.nom, v.cle)); }); });
   for (const id of ids) { const N = noeuds.get(id); const x = xDe.get(id), haut = hautDe.get(id), bas = basDe.get(id); const ls = listes.get(id);
     const parCle = new Map(); const rangs = {};
     clesListes(id).forEach(lid => { rangs[lid] = liste(id, lid).map(p => { const py = yBroche.get(id + SEP + p.cle); parCle.set(p.cle, { y: py });
-      let g = 0, d = 0; (partenaires.get(id + SEP + p.cle) || []).forEach(q => { if (q.id === id) return; const dc = (colonneDe.get(q.id) ?? 0) - (colonneDe.get(id) ?? 0); if (dc < 0) g++; else if (dc > 0) d++; });
-      return { etiq: p.etiq, y: py, dir: (d && !g) ? 1 : ((g && !d) ? -1 : 0) }; }); });
+      const c = cotesDe.get(id + SEP + p.cle) || new Set();
+      // une prise de coupure a un fil de chaque côté de chaque contact, par nature
+      return { etiq: p.etiq, y: py, dir: (estCoupure(N.nom) || (c.has('L') && c.has('R'))) ? 0 : (c.has('R') ? 1 : (c.has('L') ? -1 : 0)) }; }); });
     const tag = estPastille(id);
     const c = { name: N.nom, id, x, y: haut, w: largeurDe(id), h: bas - haut, col: colonneDe.get(id),
       kind: tag ? 'tag' : (ls.S ? 'strip' : 'equip'), lw: tag ? 0 : STRIPW, rw: tag ? 0 : STRIPW, rangs, parCle, rail: estRail(N.nom) };
@@ -1857,9 +1963,13 @@ function jugeDePlacement() {
       croisements: compterCroisements(L.routage.fils, L.routage.barrettes),
       encombrement: Math.min(Math.max(e.w / A3, e.h), Math.max(e.w, e.h / A3)), surface: e.w * e.h,
       peignes: L.routage.barrettes.reduce((t, b) => t + Math.abs(b.y2 - b.y1), 0) }; } return L.jugement; };
+  /* un fil droit vaut un croisement évité : depuis que les réglettes et les
+     connecteurs sont compacts, un fil droit de plus s'achète souvent en
+     désordonnant une colonne, et l'œil voit d'abord les croisements */
   const bat = (L, ref) => { if (!ref) return true; const a = juger(L), b = juger(ref);
     if (a.sain !== b.sain) return a.sain; if (a.tient !== b.tient) return a.tient;
-    if (a.droits !== b.droits) return a.droits > b.droits; if (a.croisements !== b.croisements) return a.croisements < b.croisements;
+    const na = a.droits - a.croisements, nb = b.droits - b.croisements;
+    if (na !== nb) return na > nb; if (a.croisements !== b.croisements) return a.croisements < b.croisements;
     if (Math.abs(a.encombrement - b.encombrement) > 0.01 * b.encombrement) return a.encombrement < b.encombrement;
     if (Math.abs(a.surface - b.surface) > 0.01 * b.surface) return a.surface < b.surface;
     return a.peignes < b.peignes; };

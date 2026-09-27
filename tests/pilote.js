@@ -4,6 +4,7 @@
    cas : ce module cache la différence d'API derrière trois verbes.
      charger(page, lignes)   lignes = [[de, borneDe, vers, borneVers], …]
      essai(page)             le contrat d'essai
+     exemple(page, plan)     un folio du contrat d'exemple (nouveau moteur seulement)
      mesurer(page)           audit + géométrie, même forme pour les deux
    Le fichier se choisit par --fichier=chemin (défaut : index.html).
    =========================================================================== */
@@ -30,6 +31,10 @@ function essaiDansLaPage() {
   if (typeof atelier !== 'undefined' && atelier.essai) return atelier.essai();
   contratEssai();
 }
+// un folio du contrat d'exemple, tel que l'outil le dessine quand on ouvre ce plan
+function exempleDansLaPage(plan) {
+  return atelier.charger(contratExemple().filter(l => l.plan === plan));
+}
 function mesurerDansLaPage() {
   let a, comps, fils;
   if (typeof atelier !== 'undefined' && atelier.audit) {
@@ -50,4 +55,4 @@ function mesurerDansLaPage() {
            w, h, format: w / h, densite: aire / (w * h), allongement: vol ? tracee / vol : 1 };
 }
 
-module.exports = { fichierDemande, chargerDansLaPage, essaiDansLaPage, mesurerDansLaPage };
+module.exports = { fichierDemande, chargerDansLaPage, essaiDansLaPage, exempleDansLaPage, mesurerDansLaPage };

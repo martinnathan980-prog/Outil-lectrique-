@@ -39,7 +39,7 @@
    ========================================================================= */
 const { chromium } = require('playwright');
 const path = require('path');
-const { fichierDemande, chargerDansLaPage, essaiDansLaPage, mesurerDansLaPage } = require('./pilote');
+const { fichierDemande, chargerDansLaPage, essaiDansLaPage, exempleDansLaPage, mesurerDansLaPage } = require('./pilote');
 
 const FICHIER = fichierDemande();
 const JSON_OUT = process.argv.includes('--json');
@@ -116,7 +116,14 @@ const CAS = [
     ['733LE', '4', '409GH2', '2'], ['118CD', '8', '512VN', '5'], ['409GH2', '9', '845VG', '3'],
     ['845VG', '1', '601RC', '7'], ['210SP1', '5', '115CD', '9'], ['340AB1', '7', '512VN', '8']]],
 
-  ['contrat d’essai — le cas réel de référence', null]   // null = contratEssai()
+  ['contrat d’essai — le cas réel de référence', null],   // null = contratEssai()
+
+  /* Les trois folios du contrat d'exemple, ceux qu'on voit en ouvrant l'outil :
+     le troisième est le cas qui compte — 66 liaisons, un calculateur à trois
+     connecteurs, deux barrettes à shunts, deux prises de coupure, des masses. */
+  ['exemple, folio 1 — batterie, disjoncteur, relais', { plan: '1' }],
+  ['exemple, folio 2 — barrette, prise de coupure', { plan: '2' }],
+  ['exemple, folio 3 — 66 liaisons, très chargé', { plan: '3' }]
 ];
 
 (async () => {
@@ -131,7 +138,9 @@ const CAS = [
   const res = [];
   for (const [nom, gen] of CAS) {
     const t0 = Date.now();
-    if (gen) await page.evaluate(chargerDansLaPage, gen()); else await page.evaluate(essaiDansLaPage);
+    if (!gen) await page.evaluate(essaiDansLaPage);
+    else if (gen.plan) await page.evaluate(exempleDansLaPage, gen.plan);
+    else await page.evaluate(chargerDansLaPage, gen());
     const ms = Date.now() - t0;
     const r = await page.evaluate(mesurerDansLaPage);
     const m = { blocs: r.blocs, fils: r.fils, larg: r.w, haut: r.h, droits: r.taux, crois: r.croisements,
