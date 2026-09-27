@@ -39,8 +39,11 @@ function styleDessin() {
      .filnum{fill:#55636f;font-size:6px;font-weight:500;letter-spacing:.1px}
      .lead{stroke:#26323f;stroke-width:.95;stroke-linecap:butt}
      .borne{fill:#ffffff;stroke:#1b2430;stroke-width:.8}
-     .conn{fill:none;stroke:#8a96a2;stroke-width:.5}
-     .connlbl{fill:#6b7885;font-size:5.2px;font-weight:600;letter-spacing:.5px}
+     .conn{fill:#f5f7f9;stroke:#7d8994;stroke-width:.6}
+     .connbadge{fill:#1b2430;stroke:none}
+     .connlbl{fill:#ffffff;font-size:6px;font-weight:700;letter-spacing:.2px}
+     .fiche{fill:#ffffff;stroke:#1b2430;stroke-width:.9}
+     .embase{fill:none;stroke:#1b2430;stroke-width:1.1}
      .pont{stroke:#1b2430;stroke-width:2.2;stroke-linecap:round}
      .rpill{fill:#ffffff;stroke:#c8d1d9;stroke-width:.7}
      .rname{fill:#46535f;font-weight:600;font-size:7.5px;letter-spacing:.6px}
@@ -173,33 +176,39 @@ function reperesDeFil(fils) {
 /* Les bornes d'un équipement : le fil entre par le flanc et continue jusqu'au
    corps, où une petite borne ronde marque le contact ; le numéro s'écrit DANS
    le corps, contre le bord, comme sur un plan de câblage. Pas de boîte. */
-function bornesSvg(xCorps, dir, prof, rangs, baseY) {
+function bornesSvg(xCorps, dir, prof, rangs, baseY, connecteurDe) {
   let out = '';
-  rangs.forEach(p => { const y = p.y - baseY, xo = xCorps + dir * prof;
+  rangs.forEach(p => { const y = p.y - baseY, xo = xCorps + dir * prof, c = connecteurDe ? connecteurDe(p.etiq) : null;
     out += `<line class="lead" x1="${f1(xo)}" y1="${f1(y)}" x2="${f1(xCorps)}" y2="${f1(y)}"/><circle class="borne" cx="${f1(xCorps)}" cy="${f1(y)}" r="1.5"/>`;
-    if (p.etiq) out += `<text class="pinlbl" x="${f1(xCorps - dir * 4)}" y="${f1(y + 2.6)}" text-anchor="${dir > 0 ? 'end' : 'start'}">${esc(clip(String(p.etiq), 5))}</text>`; });
+    if (!p.etiq) return;
+    // dans le cadre d'un connecteur, la borne s'écrit au centre, sans répéter la lettre du connecteur
+    const etiq = c ? etiquetteDansConnecteur(p.etiq, c.nom) : String(p.etiq);
+    if (c) out += `<text class="pinlbl" x="${f1(xCorps - dir * (1.5 + CONN_W / 2))}" y="${f1(y + 2.6)}" text-anchor="middle">${esc(clip(etiq, 5))}</text>`;
+    else out += `<text class="pinlbl" x="${f1(xCorps - dir * 4)}" y="${f1(y + 2.6)}" text-anchor="${dir > 0 ? 'end' : 'start'}">${esc(clip(etiq, 5))}</text>`; });
   return out;
 }
-/* Les connecteurs : les bornes d'un même connecteur (A, B… ou un part
-   number) s'encadrent dans le corps, contre le flanc, avec leur nom en tête.
-   Un connecteur dont les bornes ne se suivent pas a plusieurs cadres du même
-   nom : le placement ordonne les bornes par leurs partenaires, pas par
-   connecteur, et c'est la droiture des fils qui l'emporte. */
-const CONN_W = 30;
+/* « A12 » dans le connecteur A s'écrit « 12 » : la lettre est déjà en tête du cadre. */
+function etiquetteDansConnecteur(etiq, nom) {
+  const m = LETTRE_CONNECTEUR.exec(String(etiq || '').trim());
+  return (m && m[1].toUpperCase() === nom) ? m[2] : String(etiq);
+}
+/* Les connecteurs : les bornes d'un même connecteur s'encadrent dans le corps,
+   contre le flanc, sous une pastille qui porte sa lettre. Un connecteur dont
+   les bornes ne se suivent pas a plusieurs cadres de la même lettre. */
+const CONN_W = 26, CONN_TETE = 11;
 function connecteursSvg(xCorps, dir, rangs, baseY, hCorps, connecteurDe) {
   const runs = []; let cur = null;
   rangs.forEach(p => { const c = connecteurDe(p.etiq); const nom = c ? c.nom : '';
     if (cur && cur.nom === nom) { cur.y1 = p.y - baseY; return; }
     cur = { nom, y0: p.y - baseY, y1: p.y - baseY }; runs.push(cur); });
   if (!runs.some(r => r.nom)) return '';
-  const x0 = dir > 0 ? xCorps - CONN_W - 1.5 : xCorps + 1.5;
+  const x0 = dir > 0 ? xCorps - CONN_W - 1.5 : xCorps + 1.5, cx = x0 + CONN_W / 2;
   let out = '';
   runs.forEach(r => { if (!r.nom) return;
-    const t = Math.max(1.5, r.y0 - PRH / 2 - 7.5), b = Math.min(hCorps - 1.5, r.y1 + PRH / 2 + 1);
-    out += `<rect class="conn" x="${f1(x0)}" y="${f1(t)}" width="${CONN_W}" height="${f1(b - t)}" rx="1.5"/>`;
-    // une lettre s'écrit en grand ; un part number se serre pour tenir dans le cadre
-    const nom = clip(r.nom, 10), fs = Math.max(3.6, Math.min(5.2, (CONN_W - 3) / (0.64 * nom.length)));
-    out += `<text class="connlbl" style="font-size:${f1(fs)}px" x="${f1(x0 + CONN_W / 2)}" y="${f1(t + 5.6)}" text-anchor="middle">${esc(nom)}</text>`; });
+    const t = Math.max(1.5, r.y0 - PRH / 2 - CONN_TETE), b = Math.min(hCorps - 1.5, r.y1 + PRH / 2 + 1.5);
+    out += `<rect class="conn" x="${f1(x0)}" y="${f1(t)}" width="${CONN_W}" height="${f1(b - t)}" rx="2.5"/>`;
+    const fs = r.nom.length > 1 ? 4.6 : 6;
+    out += `<circle class="connbadge" cx="${f1(cx)}" cy="${f1(t + 5.5)}" r="4.2"/><text class="connlbl" style="font-size:${fs}px" x="${f1(cx)}" y="${f1(t + 5.5 + fs * 0.36)}" text-anchor="middle">${esc(clip(r.nom, 3))}</text>`; });
   return out;
 }
 /* Le repère tient entre les numéros de borne des deux flancs : la taille
@@ -221,39 +230,38 @@ function blocSvg(c, designation, choisi) {
     s += `<rect class="rpill" x="0" y="${f1(c.h / 2 - 6)}" width="${c.w}" height="12" rx="6"/>`;
     s += `<text class="rname" x="${f1(c.w / 2)}" y="${f1(c.h / 2 + 2.7)}" text-anchor="middle">${esc(clip(c.name, 7))}</text>`;
   } else if (c.kind === 'strip' && estCoupure(c.name)) {
-    /* PRISE DE COUPURE : deux moitiés — la fiche et l'embase — séparées par
-       un jeu ; c'est le blanc entre les deux qui est le symbole, c'est là
-       qu'on coupe. Chaque contact est une cellule dans CHAQUE moitié, avec son
-       numéro des deux côtés, et entre les deux la fiche (triangle plein) qui
-       entre dans l'embase (arc ouvert). Le fil arrive sur le bord du bloc et
-       un fil de liaison le mène au contact. */
-    const G = 12, xg0 = bx, xg1 = mid - G / 2, xd0 = mid + G / 2, xd1 = bx + bw;
-    s += `<rect class="bstrip" x="${f1(xg0)}" y="0" width="${f1(xg1 - xg0)}" height="${c.h}"/><rect class="bstrip" x="${f1(xd0)}" y="0" width="${f1(xd1 - xd0)}" height="${c.h}"/>`;
+    /* PRISE DE COUPURE : la PARTIE FIXE (l'embase, sur la structure) est un
+       rectangle haut et fin ; la PARTIE MOBILE (la fiche, sur le faisceau) est
+       un rectangle plus large et un peu moins haut, qui entre dans la fixe.
+       Les contacts sont numérotés dans la partie mobile ; le fil amont arrive
+       sur la mobile, le fil aval repart de la fixe. */
+    const eW = Math.max(9, Math.min(13, bw * 0.16)), enf = 5;                  // épaisseur de l'embase, enfoncement
+    const xe0 = bx + bw * 0.62, xe1 = xe0 + eW;                                // l'embase
+    const xm0 = bx + Math.max(6, bw * 0.1), xm1 = xe0 + enf;                    // la fiche, qui entre dans l'embase
+    const ym0 = Math.max(3, PRH * 0.3), ym1 = c.h - ym0;
+    s += `<rect class="fiche" x="${f1(xm0)}" y="${f1(ym0)}" width="${f1(xm1 - xm0)}" height="${f1(ym1 - ym0)}" rx="1.2"/>`;
+    s += `<rect class="embase" x="${f1(xe0)}" y="0" width="${f1(eW)}" height="${c.h}" rx="1"/>`;
     rs.forEach(p => { const ly = p.y - c.y;
-      if (p.etiq) s += `<text class="pinlbl" x="${f1((xg0 + xg1) / 2)}" y="${f1(ly + 2.7)}" text-anchor="middle">${esc(p.etiq)}</text><text class="pinlbl" x="${f1((xd0 + xd1) / 2)}" y="${f1(ly + 2.7)}" text-anchor="middle">${esc(p.etiq)}</text>`;
-      // la fiche (triangle plein) pointe vers l'embase (demi-cercle ouvert vers elle)
-      s += `<path class="dot-fix" d="M ${f1(xg1)} ${f1(ly - 2.8)} L ${f1(mid - 0.5)} ${f1(ly)} L ${f1(xg1)} ${f1(ly + 2.8)} Z"/>`;
-      s += `<path class="sym" d="M ${f1(mid + 0.5)} ${f1(ly - 3.2)} A 3.2 3.2 0 0 1 ${f1(mid + 0.5)} ${f1(ly + 3.2)}"/><line class="lead" x1="${f1(mid + 3.7)}" y1="${f1(ly)}" x2="${f1(xd0)}" y2="${f1(ly)}"/>`;
-      if ((p.dir || 0) <= 0) s += `<line class="lead" x1="0" y1="${f1(ly)}" x2="${f1(xg0)}" y2="${f1(ly)}"/>`;
-      if ((p.dir || 0) >= 0) s += `<line class="lead" x1="${f1(xd1)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
+      if (p.etiq) s += `<text class="pinlbl" x="${f1((xm0 + xe0) / 2)}" y="${f1(ly + 2.7)}" text-anchor="middle">${esc(clip(String(p.etiq), 5))}</text>`;
+      if ((p.dir || 0) <= 0) s += `<line class="lead" x1="0" y1="${f1(ly)}" x2="${f1(xm0)}" y2="${f1(ly)}"/><circle class="borne" cx="${f1(xm0)}" cy="${f1(ly)}" r="1.4"/>`;
+      if ((p.dir || 0) >= 0) s += `<line class="lead" x1="${f1(xe1)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/><circle class="borne" cx="${f1(xe1)}" cy="${f1(ly)}" r="1.4"/>`; });
     s += `<text class="rep" x="${f1(mid)}" y="${f1(c.h + 12)}" text-anchor="middle">${esc(clip(c.name, 14))}</text>`;
     if (designation) s += `<text class="des" x="${f1(mid)}" y="${f1(c.h + 21)}" text-anchor="middle">${esc(clip(designation, 18))}</text>`;
   } else if (c.kind === 'strip' || estBarrette(c.name)) {
-    /* RÉGLETTE (barrette ou bornier) : une rangée de modules identiques. Chaque
-       borne est une cellule de la hauteur d'un pas, centrée sur son ordonnée ;
-       entre deux cellules éloignées, le corps continue en trait fin. Un shunt
-       entre deux bornes se dessine en PONT : une barre pleine le long des
-       cellules, comme le peigne de cuivre qu'on pose sur le matériel. */
+    /* RÉGLETTE (barrette, bornier) : une rangée de modules identiques, une
+       cellule par borne au pas PRH, le numéro au centre. Un shunt entre deux
+       bornes se dessine en PONT le long des cellules, côté aval, comme le
+       peigne de cuivre qu'on pose sur le matériel. */
     const rangs = c.kind === 'strip' ? rs : [...rl, ...rr].sort((u, v) => u.y - v.y);
-    s += `<rect class="bstrip" x="${f1(bx)}" y="0" width="${f1(bw)}" height="${c.h}"/>`;
-    rangs.forEach(p => { const ly = p.y - c.y, t = ly - PRH / 2, h = PRH;
-      s += `<rect class="bcell" x="${f1(bx)}" y="${f1(t)}" width="${f1(bw)}" height="${f1(h)}"/>`;
-      if (p.etiq) s += `<text class="pinlbl" x="${f1(mid)}" y="${f1(ly + 2.7)}" text-anchor="middle">${esc(p.etiq)}</text>`;
+    s += `<rect class="bstrip" x="${f1(bx)}" y="0" width="${f1(bw)}" height="${c.h}" rx="1"/>`;
+    rangs.forEach(p => { const ly = p.y - c.y;
+      s += `<rect class="bcell" x="${f1(bx)}" y="${f1(ly - PRH / 2)}" width="${f1(bw)}" height="${PRH}"/>`;
+      if (p.etiq) s += `<text class="pinlbl" x="${f1(mid)}" y="${f1(ly + 2.7)}" text-anchor="middle">${esc(clip(String(p.etiq), 5))}</text>`;
       const d = p.dir || 0;
-      if (d <= 0) s += `<line class="lead" x1="0" y1="${f1(ly)}" x2="${f1(bx)}" y2="${f1(ly)}"/>`;
-      if (d >= 0) s += `<line class="lead" x1="${f1(bx + bw)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
-    (c.shunts || []).forEach(([y1, y2]) => { const xs = bx + bw - 5;
-      s += `<line class="pont" x1="${f1(xs)}" y1="${f1(y1 - c.y)}" x2="${f1(xs)}" y2="${f1(y2 - c.y)}"/><circle class="jn" cx="${f1(xs)}" cy="${f1(y1 - c.y)}" r="1.7"/><circle class="jn" cx="${f1(xs)}" cy="${f1(y2 - c.y)}" r="1.7"/>`; });
+      if (d <= 0) s += `<line class="lead" x1="0" y1="${f1(ly)}" x2="${f1(bx)}" y2="${f1(ly)}"/><circle class="borne" cx="${f1(bx)}" cy="${f1(ly)}" r="1.3"/>`;
+      if (d >= 0) s += `<line class="lead" x1="${f1(bx + bw)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/><circle class="borne" cx="${f1(bx + bw)}" cy="${f1(ly)}" r="1.3"/>`; });
+    (c.shunts || []).forEach(([y1, y2]) => { const xs = bx + bw - 4;
+      s += `<line class="pont" x1="${f1(xs)}" y1="${f1(y1 - c.y)}" x2="${f1(xs)}" y2="${f1(y2 - c.y)}"/><circle class="jn" cx="${f1(xs)}" cy="${f1(y1 - c.y)}" r="1.6"/><circle class="jn" cx="${f1(xs)}" cy="${f1(y2 - c.y)}" r="1.6"/>`; });
     s += `<text class="rep" x="${f1(mid)}" y="${f1(c.h + 12)}" text-anchor="middle">${esc(clip(c.name, 14))}</text>`;
     if (designation) s += `<text class="des" x="${f1(mid)}" y="${f1(c.h + 21)}" text-anchor="middle">${esc(clip(designation, 18))}</text>`;
   } else if (estMasse(c.name)) {
@@ -277,8 +285,8 @@ function blocSvg(c, designation, choisi) {
     s += repereSvg('rep-big', mid, yRep, clip(c.name, 14), bw, (cg && cd) ? CONN_W + 5 : (cg || cd) ? (CONN_W + 5 + 16) / 2 : 16);
     if (c.h > 380) s += `<text class="bsname" x="${f1(mid)}" y="${f1(c.h - 9)}" text-anchor="middle">${esc(clip(c.name, 12))}</text>`;
     if (designation) s += `<text class="des" x="${f1(mid)}" y="${f1(yRep + 10)}" text-anchor="middle">${esc(clip(designation, 18))}</text>`;
-    if (rl.length) s += bornesSvg(bx, -1, c.lw, rl, c.y);
-    if (rr.length) s += bornesSvg(bx + bw, +1, c.rw, rr, c.y);
+    if (rl.length) s += bornesSvg(bx, -1, c.lw, rl, c.y, connDe);
+    if (rr.length) s += bornesSvg(bx + bw, +1, c.rw, rr, c.y, connDe);
   }
   return s + '</g>';
 }
