@@ -143,8 +143,10 @@ Fait, mesuré, en place :
   cellules numérotées des deux côtés, fiche dans embase ; réglette à cellules
   d'un pas, shunt en pont ; masse CEI sous un collecteur ponctué.
 - **Le site, reparti de zéro** (`page.html`, `style.css`, `08-interface`) :
-  le plan est l'écran, posé sur une table ; commandes flottantes en deux
-  coins, réglette de folios en bas ; recherche par repère ou numéro de fil
+  le plan est l'écran, posé sur une table ; un rail de commandes à gauche
+  (base, recherche, annuler, folios, cadrage, zoom, liaison, bible, ouvrir,
+  menu), réglette de folios en bas, rien dans la page qui ne se presse pas ;
+  recherche par repère ou numéro de fil
   qui change de folio ; le cuivre du fil pour seul accent ; aucune police ni
   image extérieure. **La base à côté du plan** : un panneau (droite, ou
   tiroir bas sur téléphone) montre les liaisons, éditables cellule par

@@ -12,14 +12,18 @@
    app.cible        ce qui est choisi : un bloc { type:'bloc', nom } ou un fil
                     { type:'fil', l } — allumé sur le plan, marqué dans la base
    app.actif        la liaison dont on écrit une cellule : son fil s'allume
+   app.bible        la bible des barrettes en cours, et son nom (bibleNom)
    La base est LE document : on la corrige, le plan suit. Une fiche ne sert
-   plus qu'au cartouche et au collage — jamais deux documents à la fois.
+   qu'au cartouche, au collage et à la bible — jamais deux documents à la fois.
+   Les commandes sont dans la barre de gauche (le rail) ; le menu, en bas
+   d'elle, porte ce qu'on fait une fois et ce qui se lit (le dossier ouvert).
    =========================================================================== */
 'use strict';
 
 const app = {
   contrat: nouveauContrat(), source: null, nFolios: 0, budget: 16, plan: '*', nom: '',
   vue: { s: 1, tx: 0, ty: 0 }, choisi: null, cible: null, actif: null, dessin: null, hist: [], fiche: null,
+  bible: [], bibleNom: '',
   base: { ouvert: false, filtre: '', tri: null, largeur: 0, hauteur: 0, sale: true, defiler: false, enSaisie: false }
 };
 const $ = id => document.getElementById(id);
@@ -53,9 +57,11 @@ function designationDe(n) { const d = app.contrat.designations.get(n); if (d) re
 const CLE_BIBLE = 'atelier.bible.v1';
 function relireBible() { try { const o = JSON.parse(localStorage.getItem(CLE_BIBLE) || 'null'); if (o && o.entrees && o.entrees.length) { app.bible = o.entrees.map(entreeBible).filter(Boolean); app.bibleNom = o.nom || ''; return true; } } catch (_) { }
   app.bible = bibleExemple(); app.bibleNom = ''; return false; }
+/* Une autre bible : les références sous les barrettes changent, la carte de
+   la barrette choisie aussi, et la fiche de la bible si elle est ouverte. */
 function adopterBible(entrees, nom) { app.bible = entrees; app.bibleNom = nom || '';
   try { localStorage.setItem(CLE_BIBLE, JSON.stringify({ entrees, nom: app.bibleNom, t: Date.now() })); } catch (_) { }
-  peindre(); }
+  peindre(); rallumer(); rafraichirBase(); if (app.fiche && app.fiche.mode === 'bible') ficheBible(); }
 function peindre() {
   const svg = $('svg');
   $('vide').hidden = app.contrat.liaisons.length > 0;
@@ -77,11 +83,14 @@ function appliquerVue() {
   o.style.display = 'block'; o.style.transform = `translate(${app.vue.tx + bb.x * s}px,${app.vue.ty + bb.y * s}px)`;
   o.style.width = bb.w * s + 'px'; o.style.height = bb.h * s + 'px';
 }
-/* Le vide que laissent les instruments et le document ouvert : la feuille se cadre dedans. */
-function marges() { const tel = telephone();
+/* Le vide que laissent le rail, la réglette des folios et le document
+   ouvert : la feuille se cadre dedans. Sur téléphone tout est en bas, empilé
+   au-dessus du tiroir : le rail (48), puis les folios (44) s'il y en a. */
+const RAIL = 52;
+function marges() { const tel = telephone(), folios = !$('folios').hidden;
   const doc = !$('base').hidden ? $('base') : (!$('fiche').hidden ? $('fiche') : null);
-  return { haut: tel ? 60 : 68, bas: (tel && doc) ? doc.offsetHeight + 12 : (tel ? 64 : 72),
-           gauche: tel ? 12 : 28, droite: (tel ? 12 : 28) + ((doc && !tel) ? doc.offsetWidth + 24 : 0) }; }
+  if (tel) return { haut: 16, bas: (doc ? doc.offsetHeight + 8 : 8) + 56 + (folios ? 52 : 0), gauche: 12, droite: 12 };
+  return { haut: 28, bas: folios ? 72 : 28, gauche: 12 + RAIL + 16, droite: 28 + (doc ? doc.offsetWidth + 24 : 0) }; }
 let anim = null;
 function animerVue(cible, doux) {
   if (anim) { cancelAnimationFrame(anim); anim = null; }
@@ -206,7 +215,8 @@ function synchroniserFolios() { const P = plans(), nav = $('folios'), strip = $(
   const i = P.indexOf(app.plan);
   strip.innerHTML = P.length < 2 ? '' : P.map(p => `<button class="chip${p === app.plan ? ' on' : ''}" data-plan="${escA(p)}" aria-label="Folio ${escA(p)}"${p === app.plan ? ' aria-current="page"' : ''}>${esc(p)}</button>`).join('');
   $('fo-lbl').textContent = i < 0 ? (P.length > 1 ? 'tout' : '1 / 1') : (i + 1) + ' / ' + P.length;
-  $('fo-prev').disabled = i === 0; $('fo-next').disabled = i >= 0 && i >= P.length - 1;
+  // une seule feuille : les flèches n'ont nulle part où aller
+  const seul = P.length < 2; $('fo-prev').disabled = seul || i === 0; $('fo-next').disabled = seul || (i >= 0 && i >= P.length - 1);
   const on = strip.querySelector('.chip.on'); if (on && on.scrollIntoView) { try { on.scrollIntoView({ block: 'nearest', inline: 'center' }); } catch (_) { } } }
 
 /* ---- aller à un repère ou à un fil, même sur un autre folio ------------ */
@@ -235,10 +245,14 @@ function montrerCandidats() { const box = $('q-liste'), q = $('q').value; qCands
   box.innerHTML = qCands.length ? qCands.map((c, i) => `<button class="q-item${i === qSel ? ' on' : ''}" role="option" data-i="${i}" aria-selected="${i === qSel}">
       <span class="genre">${c.type === 'fil' ? 'fil' : 'repère'}</span><span class="nom">${esc(c.nom)}</span><span class="des">${esc(c.des)}</span>${c.n ? `<span class="cpt">${c.n} fil${c.n > 1 ? 's' : ''}</span>` : ''}</button>`).join('')
     : '<div class="q-rien">Rien qui corresponde.</div>'; }
-function fermerRecherche() { $('q-liste').hidden = true; $('haut').classList.remove('cherche'); }
+/* La fenêtre de recherche s'ouvre à côté du rail, par le bouton ou « / »,
+   et disparaît sitôt qu'on a trouvé ou qu'on regarde ailleurs. */
+function ouvrirRecherche() { document.body.classList.add('cherche'); const q = $('q'); q.focus(); q.select(); if (q.value.trim()) montrerCandidats(); }
+function fermerRecherche() { $('q-liste').hidden = true; document.body.classList.remove('cherche'); }
+const rechercheOuverte = () => document.body.classList.contains('cherche');
 function lierRecherche() { const q = $('q'), box = $('q-liste');
   q.addEventListener('input', () => { qSel = 0; montrerCandidats(); });
-  q.addEventListener('focus', () => { $('haut').classList.add('cherche'); if (q.value.trim()) montrerCandidats(); });
+  q.addEventListener('focus', () => { document.body.classList.add('cherche'); if (q.value.trim()) montrerCandidats(); });
   q.addEventListener('keydown', e => {
     if (e.key === 'ArrowDown') { e.preventDefault(); qSel = Math.min(qSel + 1, qCands.length - 1); montrerCandidats(); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); qSel = Math.max(qSel - 1, 0); montrerCandidats(); }
@@ -249,8 +263,7 @@ function lierRecherche() { const q = $('q'), box = $('q-liste');
   box.addEventListener('pointerdown', e => e.preventDefault());   // le champ garde le focus
   box.addEventListener('click', e => { const b = e.target.closest('.q-item'); if (!b) return; const c = qCands[+b.dataset.i]; if (c) trouve(c); });
   q.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== q) fermerRecherche(); }, 120));
-  // sur téléphone le champ est replié : on l'ouvre d'abord, puis on lui donne le focus
-  $('recherche').addEventListener('click', e => { if (e.target.closest('.q-liste')) return; $('haut').classList.add('cherche'); q.focus(); }); }
+  $('recherche').addEventListener('click', e => { if (!e.target.closest('.q-liste')) q.focus(); }); }
 
 /* ---- la base : la table des liaisons, corrigée en direct --------------- */
 const COLONNES_BASE = [
@@ -305,19 +318,64 @@ function rafraichirBase() { if (app.base.enSaisie) { app.base.sale = true; retur
 function marquerLignes() { if ($('base').hidden) return;
   $('ba-tbody').querySelectorAll('tr[data-i]').forEach(tr => { const l = verite()[+tr.dataset.i]; tr.classList.toggle('on', !!l && ligneChoisie(l)); }); }
 const natureDe = nom => { const q = lireRepere(nom); return (q && q.num && CODES[q.code]) ? CODES[q.code].nom : 'équipement'; };
-/* L'équipement choisi : son repère et sa désignation, au-dessus de ses fils. */
+const triNaturel = (a, b) => String(a).localeCompare(String(b), 'fr', { numeric: true });
+const pluriel = (n, mot) => n + ' ' + mot + (n > 1 ? 's' : '');
+/* L'équipement choisi, au-dessus de ses fils : son repère, ce qu'on écrit
+   dessous, et ce que le contrat sait de lui — ses connecteurs ; pour une
+   barrette, tout ce que la bible en dit ; pour une prise, son part number. */
 function rendreEquip() { const box = $('ba-equip'), c = app.cible; box.hidden = !(c && c.type === 'bloc'); if (box.hidden) return;
-  const nom = c.nom, n = verite().filter(l => l.de === nom || l.vers === nom).length, pn = [...new Set(verite().flatMap(l => l.de === nom ? [l.pnDe] : (l.vers === nom ? [l.pnVers] : [])).filter(Boolean))];
-  box.innerHTML = `<div class="sur">${esc(natureDe(nom))} · ${n} fil${n > 1 ? 's' : ''}${pn.length ? ' · ' + esc(pn.join(' · ')) : ''}</div>
+  const nom = c.nom, V = verite(), n = V.filter(l => l.de === nom || l.vers === nom).length;
+  const barrette = estBarrette(nom), coupure = estCoupure(nom), b = barrette ? besoinsDeBarrette(nom, V) : null;
+  const tete = esc(natureDe(nom)) + ' · ' + pluriel(n, 'fil') + (b && b.shunts ? ' · ' + pluriel(b.shunts, 'shunt') : '');
+  box.innerHTML = `<div class="sur">${tete}</div>
     <div class="actions"><button class="btn lien danger" id="eq-del" title="Supprimer l’équipement et ses fils">Supprimer</button></div>
-    <input class="rep" id="eq-rep" value="${escA(nom)}" aria-label="Repère" title="Renommer : chaque fil suit" spellcheck="false">
-    <input class="des" id="eq-des" value="${escA(app.contrat.designations.get(nom) || '')}" placeholder="Désignation, écrite sous le repère" aria-label="Désignation" spellcheck="false">`;
+    <input class="rep" id="eq-rep" value="${escA(nom)}" aria-label="Repère" title="Renommer : chaque fil suit" spellcheck="false">`
+    + (barrette ? '' : `<input class="des" id="eq-des" value="${escA(app.contrat.designations.get(nom) || '')}" placeholder="Désignation, écrite sous le repère" aria-label="Désignation" spellcheck="false">`)
+    + (barrette ? carteBarrette(nom) : coupure ? carteCoupure(nom) : carteConnecteurs(nom));
   $('eq-rep').addEventListener('change', e => { const nr = e.target.value.trim(); if (!nr || nr === nom) { e.target.value = nom; return; }
     histPush('renommage de ' + nom); renommer(nom, nr); app.choisi = nr; app.cible = { type: 'bloc', nom: nr }; app.base.filtre = nr; apresEdition(); });
-  $('eq-des').addEventListener('change', e => { histPush('désignation de ' + nom); designer(nom, e.target.value.trim()); apresEdition(); });
+  if ($('eq-des')) $('eq-des').addEventListener('change', e => { histPush('désignation de ' + nom); designer(nom, e.target.value.trim()); apresEdition(); });
   $('eq-del').onclick = () => { if (!confirm('Supprimer « ' + nom + ' » et ses ' + n + ' liaison(s) ?')) return;
     histPush('suppression de ' + nom); supprimerEquipement(nom); app.base.filtre = ''; apresEdition(); dire(nom + ' supprimé.'); };
+  if (barrette) lierCarteBarrette(nom);
   box.querySelectorAll('input').forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } })); }
+/* Les connecteurs : « A · *704A46220028 · bornes A3, A4 », une ligne chacun.
+   Une borne qui ne dit pas son connecteur (« 12 », sans part number) n'en fait pas. */
+function carteConnecteurs(nom) { const C = connecteursDe(nom, verite()).filter(c => c.nom); if (!C.length) return '';
+  return `<div class="conns">` + C.map(c => `<div class="conn"><b>${esc(c.nom)}</b>${c.pn && c.pn !== c.nom ? ` · <span class="pn">${esc(c.pn)}</span>` : ''}`
+    + ` · borne${c.bornes.length > 1 ? 's' : ''} <span class="b">${esc(c.bornes.slice().sort(triNaturel).join(', '))}</span></div>`).join('') + '</div>'; }
+/* La prise de coupure : le part number que le fichier porte, ses bornes. */
+function carteCoupure(nom) { const b = besoinsDeBarrette(nom, verite());
+  return `<div class="bar-ref"><span class="ref">${esc(b.pn || '—')}</span><span class="dou">${b.pn ? 'part number du fichier' : 'aucun part number dans le fichier'}</span></div>
+    <div class="bar-faits"><span>bornes</span><span>${esc(b.bornes.slice().sort(triNaturel).join(', ') || '—')}</span>${b.jaugeFine != null ? `<span>jauge</span><span>${jaugeTexte(b)}</span>` : ''}</div>`; }
+const jaugeTexte = b => b.jaugeFine === b.jaugeGrosse ? String(b.jaugeFine) : b.jaugeFine + ' à ' + b.jaugeGrosse;
+const jaugeEntree = e => e.jaugeMin == null ? '—' : (e.jaugeMax != null && e.jaugeMax !== e.jaugeMin ? e.jaugeMin + '–' + e.jaugeMax : String(e.jaugeMin));
+const nombre = x => x == null ? '—' : String(x).replace('.', ',');
+/* Ce qu'on retient pour une barrette : la désignation qu'on lui a donnée
+   (une référence choisie à la main), sinon le choix de la bible. */
+function referenceRetenue(nom, infos) { const d = app.contrat.designations.get(nom);
+  if (d) return { ref: d, dou: 'choisie à la main', main: true };
+  if (infos.choix) return { ref: infos.reference, dou: 'choisie dans la bible', main: false };
+  return { ref: infos.pn || '—', dou: infos.pn ? 'du fichier — rien dans la bible ne convient' : 'rien dans la bible ne convient', main: false }; }
+/* La barrette : la référence retenue et pourquoi, ce qu'elle porte, et les
+   autres références qui conviendraient — on en retient une d'un clic. */
+function carteBarrette(nom) { const I = barretteInfos(nom, verite(), app.bible), R = referenceRetenue(nom, I);
+  const aLoger = Math.max(I.nBornes, I.borneMax || 0), libres = I.choix ? I.choix.bornes - aLoger : null;
+  const faits = [['bornes', esc(I.bornes.slice().sort(triNaturel).join(', ') || '—') + (I.choix ? ` · ${aLoger} sur ${I.choix.bornes}` : '')],
+    ['libres', libres == null ? '—' : String(libres)], ['jauge', I.jaugeFine != null ? jaugeTexte(I) : 'inconnue'],
+    ['blindage', I.blindes ? pluriel(I.blindes, 'fil blindé') : 'aucun'], ['shunts', String(I.shunts)]];
+  return `<div class="bar-ref"><span class="ref">${esc(R.ref)}</span><span class="dou">${R.dou}</span></div>`
+    + (I.changee && !R.main ? `<div class="bar-chg">Le fichier portait <b>${esc(I.pn)}</b> — la bible en dit une autre.</div>` : '')
+    + (R.main && I.pn && I.pn !== R.ref ? `<div class="bar-chg">Le fichier portait <b>${esc(I.pn)}</b>.</div>` : '')
+    + `<div class="raisons">${I.raisons.map(r => `<span>${esc(r)}</span>`).join('')}</div>`
+    + `<div class="bar-faits">${faits.map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('')}</div>`
+    + (I.candidats.length ? `<div class="cands"><div class="sur">Références qui conviennent</div>` + I.candidats.map(e =>
+      `<button class="cand" data-ref="${escA(e.reference)}" aria-pressed="${e.reference === R.ref}"><b>${esc(e.reference)}</b><span>${e.bornes} b.</span><span>${jaugeEntree(e)}</span><span>${e.intensite != null ? nombre(e.intensite) + ' A' : ''}</span>${e.blindage ? '<span>blindée</span>' : ''}${e.reference === R.ref ? '<span class="ok">retenue</span>' : ''}</button>`).join('')
+      + (R.main ? '<button class="btn lien" id="bar-auto">Revenir au choix automatique</button>' : '') + '</div>' : ''); }
+function lierCarteBarrette(nom) {
+  $('ba-equip').querySelectorAll('.cand').forEach(b => b.onclick = () => { const ref = b.dataset.ref; if (b.getAttribute('aria-pressed') === 'true') return;
+    histPush('référence de ' + nom); designer(nom, ref); apresEdition(); dire(nom + ' : ' + ref + ' retenue.'); });
+  const auto = $('bar-auto'); if (auto) auto.onclick = () => { histPush('référence de ' + nom); designer(nom, ''); apresEdition(); dire(nom + ' : retour au choix de la bible.'); }; }
 
 /* Une cellule corrigée : la vérité change, le plan suit, le fil s'allume.
    Un bloc choisi le reste : on corrige ses fils sans quitter sa fiche. */
@@ -351,7 +409,6 @@ function lierBase() { const t = $('ba-tab'), corps = $('ba-tbody'), fi = $('ba-f
     rendreBase(); rallumer(); }, 150); });
   fi.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); if (fi.value) { fi.value = ''; fi.dispatchEvent(new Event('input')); } else fi.blur(); } });
   $('ba-vider').onclick = () => { fi.value = ''; fi.dispatchEvent(new Event('input')); fi.focus(); };
-  $('ba-add').onclick = () => ajouterLiaison(app.cible && app.cible.type === 'bloc' ? app.cible.nom : '');
   $('ba-fermer').onclick = fermerBase;
   $('ba-thead').addEventListener('click', e => { const th = e.target.closest('th[data-k]'); if (!th) return; const k = th.dataset.k, tri = app.base.tri;
     app.base.tri = !tri || tri.k !== k ? { k, sens: 1 } : (tri.sens > 0 ? { k, sens: -1 } : null); rendreBase(); });
@@ -394,16 +451,20 @@ function relireBase() { let o = null; try { o = JSON.parse(localStorage.getItem(
   if (o) { app.base.largeur = o.largeur || 0; app.base.hauteur = o.hauteur || 0; } appliquerTailleBase();
   return o ? !!o.ouvert : !telephone(); }   // au premier lancement, la base est là sur un grand écran
 
-/* ---- la fiche : cartouche, collage — les documents rares ---------------- */
+/* ---- la fiche : cartouche, collage, bible — les documents rares --------- */
 function ouvrirFiche(mode, corps, pied) { const f = $('fiche'); fermerBase();
   $('fiche-corps').innerHTML = corps; const p = $('fiche-pied'); p.innerHTML = pied || ''; p.hidden = !pied;
   const nouveau = f.hidden || !app.fiche || app.fiche.mode !== mode.mode;
+  const r = document.documentElement.style; r.setProperty('--fiche-l', (mode.large ? 560 : 400) + 'px');
   f.hidden = false; if (nouveau) { f.classList.remove('entre'); void f.offsetWidth; f.classList.add('entre'); }
   app.fiche = mode; $('fiche-corps').scrollTop = 0;
+  // sur téléphone la fiche monte en tiroir : le rail et les folios se posent au-dessus d'elle
+  document.body.classList.add('fiche-ouverte'); r.setProperty('--fiche-h', f.offsetHeight + 'px');
   $('fi-fermer').onclick = () => fermerFiche(true); if (nouveau) ajuster(true); }
 /* `recadrer` : quand on ferme la fiche pour elle-même, le plan reprend la place. */
-function fermerFiche(recadrer) { const f = $('fiche'); if (f.hidden && !app.fiche) return; f.hidden = true; app.fiche = null; if (recadrer) ajuster(true); }
-const tete = (sur, titre) => `<div class="fiche-tete"><div class="min0"><div class="sur">${esc(sur)}</div><h2 class="titre">${esc(titre)}</h2></div>
+function fermerFiche(recadrer) { const f = $('fiche'); if (f.hidden && !app.fiche) return; f.hidden = true; app.fiche = null;
+  document.body.classList.remove('fiche-ouverte'); if (recadrer) ajuster(true); }
+const tete = (sur, titre, sans) => `<div class="fiche-tete"><div class="min0"><div class="sur">${esc(sur)}</div><h2 class="titre${sans ? ' sans' : ''}">${esc(titre)}</h2></div>
   <button class="rond fermer" id="fi-fermer" aria-label="Fermer la fiche"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`;
 const champ = (id, lib, val, opt) => `<label class="champ${opt && opt.sans ? ' sans' : ''}"><span>${lib}</span><input id="${id}" value="${escA(val || '')}"${opt && opt.ph ? ` placeholder="${escA(opt.ph)}"` : ''} spellcheck="false"></label>`;
 const CHAMPS_CARTOUCHE = [['ca-titre', 'titre', 'Titre'], ['ca-auteur', 'auteur', 'Dessiné par'], ['ca-indice', 'indice', 'Indice'], ['ca-date', 'date', 'Date'], ['ca-echelle', 'echelle', 'Échelle']];
@@ -427,6 +488,27 @@ function ficheColler() {
   $('co-fichier').onclick = () => $('fichier').click();
   $('co-txt').focus();
 }
+/* La bible des barrettes : d'où elle vient, ce qu'elle contient, et comment
+   en mettre une autre. */
+const COLONNES_BIBLE_TEXTE = '<b>Référence</b> et <b>Bornes</b> au minimum, puis Famille, Nature, Jauge min, Jauge max, Intensité, Blindage, Note';
+function ficheBible() { const B = app.bible || [], nom = app.bibleNom, n = B.length;
+  const etat = nom ? `<div class="bible-etat"><span><b>${esc(nom)}</b> · ${pluriel(n, 'référence')} · gardée dans ce navigateur</span></div>`
+    : `<div class="bible-etat exemple"><span><b>Bible d’exemple</b> · ${n} références plausibles, sans valeur normative — à remplacer par la tienne.</span></div>`;
+  const ligne = e => `<tr><td class="ref">${esc(e.reference)}</td><td class="sans">${esc(e.famille)}</td><td class="sans">${esc(e.nature)}</td><td class="d">${nombre(e.bornes)}</td>
+    <td class="d">${jaugeEntree(e)}</td><td class="d">${e.intensite != null ? nombre(e.intensite) + ' A' : '—'}</td><td>${e.blindage ? 'oui' : '—'}</td><td class="bible-note">${esc(e.note)}</td></tr>`;
+  const corps = tete('Les barrettes', 'Bible des barrettes', true) + etat
+    + (n ? `<table class="bible"><thead><tr><th>Référence</th><th>Famille</th><th>Nature</th><th>Bornes</th><th>Jauge</th><th>Intensité</th><th>Blindage</th><th>Note</th></tr></thead><tbody>${B.map(ligne).join('')}</tbody></table>` : '<p class="note">Aucune référence.</p>')
+    + `<p class="note">Un Excel ou un CSV dont une ligne d’en-têtes nomme ${COLONNES_BIBLE_TEXTE}. La jauge s’écrit en AWG : « min » est la plus fine acceptée. Une bible se dépose aussi directement sur la table.</p>`;
+  const pied = '<button class="btn cuivre" id="bi-importer">Importer un Excel / CSV</button><span class="espace"></span>' + (nom ? '<button class="btn lien" id="bi-exemple">Revenir à la bible d’exemple</button>' : '');
+  ouvrirFiche({ mode: 'bible', large: true }, corps, pied);
+  $('bi-importer').onclick = () => $('fichier-bible').click();
+  if ($('bi-exemple')) $('bi-exemple').onclick = () => { adopterBible(bibleExemple(), ''); dire('Bible d’exemple rétablie.'); };
+}
+async function importerBible(fichier) { if (!fichier) return;
+  try { const r = await lireBibleFichier(fichier);
+    if (!r.entrees.length) { dire('« ' + fichier.name + ' » n’a pas l’air d’une bible : il faut une ligne d’en-têtes avec ' + COLONNES_BIBLE_TEXTE.replace(/<\/?b>/g, '') + '.', true); return; }
+    adopterBible(r.entrees, fichier.name); dire(pluriel(r.entrees.length, 'référence') + ' lue' + (r.entrees.length > 1 ? 's' : '') + ' : les barrettes suivent.');
+  } catch (e) { dire('Erreur : ' + (e && e.message || e), true); } }
 
 /* ---- corriger : toujours la vérité, puis on refait les folios ----------- */
 /* Une demi-liaison de renvoi porte le vrai bout dans sa borne : « 733LE 4 ». */
@@ -503,8 +585,13 @@ function chargerContrat(liaisons, quoi, nom) { histPush(quoi || 'chargement d’
   const P = plans(); app.plan = P.length > 1 ? P[0] : '*';
   fermerFiche(); fermerMenu(); $('q').value = '';
   redessiner(); ajuster(); if (P.length <= 1) ajusterFolios(); sauver(); }
+/* Un fichier ouvert ou déposé : un retest (reconnu à ses seize colonnes),
+   sinon une bible si ses en-têtes en font une, sinon un tableau libre. */
 async function ouvrirFichier(fichier) { if (!fichier) return;
-  try { dire('Lecture de « ' + fichier.name + ' », puis dessin…'); const r = await lireFichier(fichier);
+  try { dire('Lecture de « ' + fichier.name + ' », puis dessin…'); const texte = await texteDuFichier(fichier);
+    if (!trouverEnteteRetest(texte.split(/\r?\n/))) { const b = lireBible(texte);
+      if (b.entrees.length) { adopterBible(b.entrees, fichier.name); dire('Bible : ' + pluriel(b.entrees.length, 'référence') + ' lue' + (b.entrees.length > 1 ? 's' : '') + ' dans « ' + fichier.name + ' » ; les barrettes suivent.'); return; } }
+    const r = lireTexte(texte);
     if (!r.liaisons.length) { dire('« ' + fichier.name + ' » est lu, mais aucune liaison n’est reconnue — vérifie les colonnes.', true); return; }
     chargerContrat(r.liaisons, 'ouverture de ' + fichier.name, fichier.name);
     dire(r.liaisons.length + ' liaisons' + (r.format === 'retest' ? ' — format retest, en-têtes ligne ' + r.entete : '') + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + '.');
@@ -532,19 +619,26 @@ function exporterPNG() { const S = svgDuFolio(); if (!S) return;
 function imprimer() { const S = svgDuFolio(); if (!S) return;
   $('printroot').innerHTML = S.txt.replace(/^<\?xml[^>]*\?>\s*/, ''); window.print(); }
 
-/* ---- ce que le haut affiche ------------------------------------------- */
+/* ---- ce que le menu et le rail affichent ------------------------------ */
 function synchroniserContexte() { const n = app.contrat.liaisons.length;
   $('ctx-nom').textContent = n ? (app.nom || 'Sans nom') : 'Aucun contrat';
   const P = plans();
   $('ctx-txt').textContent = n ? `${n} liaison${n > 1 ? 's' : ''} · ${reperesDe(verite()).filter(r => !estRenvoi(r)).length} repères` + (P.length > 1 ? ` · ${P.length} folios` : '') : ''; }
-function synchroniserHistorique() { const b = $('btnUndo'); b.hidden = !app.hist.length;
-  if (app.hist.length) b.title = 'Annuler : ' + app.hist[app.hist.length - 1].quoi + ' (Ctrl+Z)'; }
+/* Annuler reste à sa place, éteint quand il n'y a rien à annuler ; sa bulle
+   dit ce qu'il déferait. */
+function synchroniserHistorique() { const b = $('btnUndo'), d = app.hist[app.hist.length - 1]; b.disabled = !d;
+  const quoi = d ? 'Annuler : ' + d.quoi : 'Annuler';
+  b.setAttribute('aria-label', quoi + ' (Ctrl+Z)'); b.querySelector('.bulle').innerHTML = esc(quoi) + '<kbd>Ctrl+Z</kbd>'; }
 function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); rafraichirBase(); }
 let toastT = null;
 function dire(msg, erreur) { const t = $('toast'); t.textContent = msg; t.classList.toggle('erreur', !!erreur); t.classList.add('on');
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), erreur ? 6000 : 2800); }
-function ouvrirMenu() { $('menu').hidden = false; $('btnMenu').setAttribute('aria-expanded', 'true'); const b = $('menu').querySelector('button'); if (b) b.focus(); }
+function ouvrirMenu() { $('menu').hidden = false; $('btnMenu').setAttribute('aria-expanded', 'true'); const b = $('menu').querySelector('button[role="menuitem"]'); if (b) b.focus(); }
 function fermerMenu() { $('menu').hidden = true; $('btnMenu').setAttribute('aria-expanded', 'false'); }
+/* Depuis le rail : la base s'ouvre s'il le faut, la ligne se prépare sous
+   l'équipement choisi. */
+function nouvelleLiaison() { if (!app.base.ouvert) ouvrirBase(); ajouterLiaison(app.cible && app.cible.type === 'bloc' ? app.cible.nom : ''); }
+function basculerBible() { if (app.fiche && app.fiche.mode === 'bible') fermerFiche(true); else ficheBible(); }
 
 /* ---- tout relier -------------------------------------------------------- */
 function lierPanneau() {
@@ -552,10 +646,12 @@ function lierPanneau() {
   const choisirFichier = () => $('fichier').click();
   const exemple = () => chargerContrat(contratExemple(), 'contrat d’exemple', 'Contrat d’exemple');
   $('fichier').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) ouvrirFichier(f); e.target.value = ''; });
+  $('fichier-bible').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) importerBible(f); e.target.value = ''; });
   o('vd-ouvrir', choisirFichier); o('vd-coller', ficheColler); o('vd-exemple', exemple);
-  o('btnBase', basculerBase);
+  o('btnBase', basculerBase); o('btnCherche', () => { if (rechercheOuverte()) fermerRecherche(); else ouvrirRecherche(); });
+  o('btnLiaison', nouvelleLiaison); o('btnBible', basculerBible); o('btnOuvrir', choisirFichier);
   o('btnMenu', e => { e.stopPropagation(); $('menu').hidden ? ouvrirMenu() : fermerMenu(); });
-  const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple, cartouche: ficheCartouche, svg: exporterSVG, png: exporterPNG, imprimer,
+  const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple, cartouche: ficheCartouche, bible: ficheBible, svg: exporterSVG, png: exporterPNG, imprimer,
     vider: () => { if (!confirm('Effacer tout le contrat ?')) return; histPush('tout effacer'); app.contrat.liaisons = []; app.source = null; app.nFolios = 0; app.plan = '*'; app.nom = ''; app.cible = null; app.choisi = null;
       fermerFiche(); fermerBase(); redessiner(); ajuster(); sauver(); } };
   $('menu').addEventListener('click', e => { const b = e.target.closest('button[data-act]'); if (!b) return; fermerMenu(); actions[b.dataset.act](); });
@@ -567,17 +663,17 @@ function lierPanneau() {
   lierRecherche(); lierDepot(); lierBase();
   window.addEventListener('keydown', e => {
     const dansChamp = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '');
-    if (e.key === 'Escape') { if (!$('menu').hidden) { fermerMenu(); $('btnMenu').focus(); } else if (!$('q-liste').hidden || $('haut').classList.contains('cherche')) { fermerRecherche(); $('q').blur(); }
+    if (e.key === 'Escape') { if (!$('menu').hidden) { fermerMenu(); $('btnMenu').focus(); } else if (rechercheOuverte()) { fermerRecherche(); $('q').blur(); }
       else if (dansChamp) e.target.blur();   // dans un champ, Échap ne fait que le quitter
       else if (app.fiche) fermerFiche(true); else if (app.cible) deselectionner(); else fermerBase(); return; }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !dansChamp) { e.preventDefault(); const q = annuler(); if (q) dire('Annulé : ' + q + '.'); return; }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') { e.preventDefault(); imprimer(); return; }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'o') { e.preventDefault(); choisirFichier(); return; }
     if (dansChamp || e.ctrlKey || e.metaKey || e.altKey) return;
-    if (e.key === '/' || e.key === 'f') { e.preventDefault(); $('q').focus(); $('q').select(); }
+    if (e.key === '/') { e.preventDefault(); ouvrirRecherche(); }
     else if (e.key === 'b') basculerBase();
     else if (e.key === 'ArrowLeft') allerAuFolio(-1); else if (e.key === 'ArrowRight') allerAuFolio(+1);
-    else if (e.key === '+' || e.key === '=') zoomer(1.25); else if (e.key === '-') zoomer(1 / 1.25); else if (e.key === '0') ajuster(true); });
+    else if (e.key === '+' || e.key === '=') zoomer(1.25); else if (e.key === '-') zoomer(1 / 1.25); else if (e.key === '0' || e.key === 'f') ajuster(true); });
   let rT; window.addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(() => { if (telephone()) ajuster(); else appliquerVue(); }, 160); });
   window.addEventListener('orientationchange', () => setTimeout(() => ajuster(), 300));
 }

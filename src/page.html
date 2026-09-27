@@ -22,37 +22,74 @@
     <div id="depot" class="depot" aria-hidden="true"><div>Déposez le fichier</div></div>
   </main>
 
-  <!-- Le haut : ce qu'on fait tout le temps. Ouvrir un fichier se fait une
-       fois — c'est dans le menu, par dépôt, ou par Ctrl+O. -->
-  <header id="haut">
-    <div class="marque verre" aria-label="Atelier Schéma">
-      <svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="3.5" cy="9" r="2.5" fill="#b5541c"/><path d="M6 9h6" stroke="#eef2f6" stroke-width="1.8" stroke-linecap="round"/><circle cx="14.5" cy="9" r="2.5" fill="#b5541c"/></svg>
-      Atelier Schéma
-    </div>
-    <div class="dossier verre" id="dossier"><span id="ctx-nom">—</span><span id="ctx-txt"></span><span id="ctx-sauve" class="sauve"></span></div>
-    <button class="rond verre" id="btnUndo" hidden aria-label="Annuler la dernière action" title="Annuler (Ctrl+Z)">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>
+  <!-- La barre : tout ce qui se presse, une icône chacun, le nom et le
+       raccourci au survol. Ce qu'on fait tout le temps est en haut ; ouvrir
+       un fichier et le menu, en bas. Sur téléphone elle passe en bas. -->
+  <nav id="rail" class="verre" aria-label="Commandes">
+    <button class="rd bascule" id="btnBase" aria-pressed="false" aria-label="Base de données (B)">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M3 14h18M9 5v14"/></svg>
+      <span class="bulle" aria-hidden="true">Base<kbd>B</kbd></span>
     </button>
-    <div class="espace"></div>
-    <div class="recherche verre" id="recherche">
+    <button class="rd" id="btnCherche" aria-label="Rechercher un repère ou un fil (/)">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input id="q" type="search" placeholder="Repère ou n° de fil" aria-label="Chercher un repère ou un numéro de fil" autocomplete="off" spellcheck="false">
-      <span class="raccourci" aria-hidden="true">/</span>
-      <div id="q-liste" class="q-liste verre" role="listbox" hidden></div>
-    </div>
-    <button class="btn verre bascule" id="btnBase" aria-pressed="false" title="Voir la base de données à côté du plan (B)">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M3 14h18M9 5v14"/></svg><span>Base</span>
+      <span class="bulle" aria-hidden="true">Rechercher<kbd>/</kbd></span>
+    </button>
+    <button class="rd" id="btnUndo" disabled aria-label="Annuler la dernière action (Ctrl+Z)">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>
+      <span class="bulle" aria-hidden="true">Annuler<kbd>Ctrl+Z</kbd></span>
+    </button>
+    <hr>
+    <button class="rd" id="fo-prev" aria-label="Folio précédent (←)">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a1.5 1.5 0 0 0-1.5 1.5v15A1.5 1.5 0 0 0 7 21h10a1.5 1.5 0 0 0 1.5-1.5V8z"/><path d="M14 3v5h4.5"/><path d="m13 11-3 3 3 3"/></svg>
+      <span class="bulle" aria-hidden="true">Folio précédent<kbd>←</kbd></span>
+    </button>
+    <button class="rd" id="fo-next" aria-label="Folio suivant (→)">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a1.5 1.5 0 0 0-1.5 1.5v15A1.5 1.5 0 0 0 7 21h10a1.5 1.5 0 0 0 1.5-1.5V8z"/><path d="M14 3v5h4.5"/><path d="m11 11 3 3-3 3"/></svg>
+      <span class="bulle" aria-hidden="true">Folio suivant<kbd>→</kbd></span>
+    </button>
+    <hr>
+    <button class="rd" id="zfit" aria-label="Ajuster le plan à l’écran (0)">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>
+      <span class="bulle" aria-hidden="true">Ajuster<kbd>0</kbd></span>
+    </button>
+    <button class="rd" id="zin" aria-label="Zoomer (+)">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg>
+      <span class="bulle" aria-hidden="true">Zoomer<kbd>+</kbd></span>
+    </button>
+    <button class="rd zl" id="zlbl" aria-label="Échelle du plan ; ajuster à l’écran">100 %</button>
+    <button class="rd" id="zout" aria-label="Dézoomer (−)">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg>
+      <span class="bulle" aria-hidden="true">Dézoomer<kbd>−</kbd></span>
+    </button>
+    <hr>
+    <button class="rd" id="btnLiaison" aria-label="Ajouter une liaison">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 16h6"/><circle cx="11" cy="16" r="2"/><path d="M13 16h8"/><path d="M17 3v7M13.5 6.5h7"/></svg>
+      <span class="bulle" aria-hidden="true">+ Liaison</span>
+    </button>
+    <button class="rd" id="btnBible" aria-label="Bible des barrettes">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v16H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v4H6.5A2.5 2.5 0 0 1 4 20.5"/><path d="M9 7h7M9 10.5h5"/></svg>
+      <span class="bulle" aria-hidden="true">Bible des barrettes</span>
+    </button>
+    <span class="espace"></span>
+    <button class="rd sobre" id="btnOuvrir" aria-label="Ouvrir un fichier (Ctrl+O)">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      <span class="bulle" aria-hidden="true">Ouvrir un fichier<kbd>Ctrl+O</kbd></span>
     </button>
     <div id="menuBoite">
-      <button class="rond verre" id="btnMenu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="19" cy="12" r="1.4" fill="currentColor"/></svg>
+      <button class="rd" id="btnMenu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="19" r="1.4" fill="currentColor"/></svg>
+        <span class="bulle" aria-hidden="true">Menu</span>
       </button>
       <div id="menu" class="menu verre" hidden role="menu">
+        <!-- Ce qui est ouvert et son enregistrement : à lire, pas à presser. -->
+        <div class="ctx"><div id="ctx-nom">—</div><div id="ctx-txt"></div><div id="ctx-sauve" class="sauve"></div></div>
+        <hr>
         <button role="menuitem" data-act="ouvrir">Ouvrir un fichier… <span class="raccourci">Ctrl+O</span></button>
         <button role="menuitem" data-act="coller">Coller des liaisons…</button>
         <button role="menuitem" data-act="exemple">Charger l’exemple</button>
         <hr>
         <button role="menuitem" data-act="cartouche">Cartouche</button>
+        <button role="menuitem" data-act="bible">Bible des barrettes</button>
         <hr>
         <button role="menuitem" data-act="svg">Enregistrer le folio en SVG</button>
         <button role="menuitem" data-act="png">Enregistrer le folio en PNG</button>
@@ -61,21 +98,21 @@
         <button role="menuitem" data-act="vider" class="danger">Tout effacer</button>
       </div>
     </div>
-  </header>
-
-  <nav id="folios" class="verre" aria-label="Folios" hidden>
-    <button id="fo-prev" aria-label="Folio précédent"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
-    <div id="fo-strip" class="fo-strip"></div>
-    <span id="fo-lbl" class="fo-lbl">1 / 1</span>
-    <button id="fo-next" aria-label="Folio suivant"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
   </nav>
 
-  <div id="hud" class="verre">
-    <button id="zout" aria-label="Dézoomer"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button>
-    <button id="zlbl" title="Ajuster le plan à l’écran (0)">100 %</button>
-    <button id="zin" aria-label="Zoomer"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg></button>
-    <button id="zfit" aria-label="Ajuster à l’écran" title="Ajuster à l’écran (0)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
+  <!-- La recherche : une fenêtre qui s'ouvre à côté de la barre, par le
+       bouton ou par « / », et se referme sitôt trouvé. -->
+  <div class="recherche verre" id="recherche">
+    <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" type="search" placeholder="Repère ou n° de fil" aria-label="Chercher un repère ou un numéro de fil" autocomplete="off" spellcheck="false">
+    <span class="raccourci" aria-hidden="true">Échap</span>
+    <div id="q-liste" class="q-liste verre" role="listbox" hidden></div>
   </div>
+
+  <nav id="folios" class="verre" aria-label="Folios" hidden>
+    <div id="fo-strip" class="fo-strip"></div>
+    <span id="fo-lbl" class="fo-lbl">1 / 1</span>
+  </nav>
 
   <!-- La base : la table des liaisons, à côté du plan. On la corrige ici ;
        le plan suit. -->
@@ -83,7 +120,6 @@
     <div class="poignee" id="ba-poignee" title="Redimensionner" aria-hidden="true"></div>
     <div class="ba-tete">
       <div class="min0"><div class="sur">Base</div><div class="ba-titre" id="ba-titre">—</div></div>
-      <button class="btn papier" id="ba-add" title="Ajouter une liaison">+ Liaison</button>
       <button class="rond fermer" id="ba-fermer" aria-label="Cacher la base"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     </div>
     <div class="filtre">
@@ -101,5 +137,6 @@
   </aside>
   <div id="toast" class="verre" role="status" aria-live="polite"></div>
   <input type="file" id="fichier" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
+  <input type="file" id="fichier-bible" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
 </div>
 <div id="printroot"></div>

@@ -2,19 +2,23 @@
    DIRECTION « TABLE LUMINEUSE »
 
    Le plan est l'écran. Rien ne l'encadre : la feuille blanche est posée sur
-   une table d'ardoise bleutée et occupe tout — les commandes flottent dessus,
-   en deux coins et une réglette de folios en bas, comme sur une carte.
+   une table d'ardoise bleutée et occupe tout. Une seule barre d'outils,
+   verticale, à gauche — verre fumé, une icône par commande, le nom et le
+   raccourci au survol — et une réglette de folios en bas, comme sur une
+   carte. Rien n'est affiché qui ne se presse pas : le nom du dossier et
+   l'état d'enregistrement sont dans le menu.
    Les instruments sont sombres (verre fumé) ; les documents sont blancs :
-   la feuille, la base des liaisons à côté d'elle, la fiche du cartouche.
-   Un seul accent, le cuivre — celui du fil — pour ce qui est choisi et pour
-   la seule action qui compte sur l'accueil. Ce qu'on fait tout le temps
-   (aller d'un folio à l'autre, chercher, corriger la base, annuler, cadrer)
-   est sous la main ; ce qu'on fait une fois (ouvrir, exporter, effacer) est
-   dans le menu. Le langage est en linéale système ; toute DONNÉE (repère,
-   borne, n° de fil) est en chasse fixe. Le rayon est plein pour ce qui se
-   presse (pilules), 16 px pour ce qui se lit (cartes). Module 4 px.
-   Aucune image, aucune police extérieure. Sur téléphone, le plan reste seul ;
-   ce qui se lit monte en tiroir depuis le bas.
+   la feuille, la base des liaisons à côté d'elle, la fiche (cartouche,
+   collage, bible des barrettes). Un seul accent, le cuivre — celui du fil —
+   pour ce qui est choisi et pour la seule action qui compte sur l'accueil.
+   Ce qu'on fait tout le temps (base, chercher, annuler, folios, cadrer,
+   ajouter une liaison, la bible) est dans la barre ; ce qu'on fait une fois
+   (ouvrir, exporter, effacer) est en bas de la barre ou dans le menu.
+   Le langage est en linéale système ; toute DONNÉE (repère, borne, n° de
+   fil, référence) est en chasse fixe. Le rayon est plein pour ce qui se
+   presse, 16 px pour ce qui se lit (cartes). Module 4 px. Aucune image,
+   aucune police extérieure. Sur téléphone, la barre passe en bas et le plan
+   reste seul ; ce qui se lit monte en tiroir depuis le bas.
    ═══════════════════════════════════════════════════════════════════════ */
 :root{
   /* palette : six valeurs, le reste en est tiré */
@@ -46,8 +50,11 @@
   --ombre-2:0 18px 50px rgba(0,0,0,.35);
   --ombre-3:0 30px 90px rgba(0,0,0,.45);
   --rapide:.14s ease; --moyen:.24s ease;
+  --rail:52px;               /* largeur de la barre ; le plan commence après */
   --base-l:min(620px,44vw);  /* largeur de la base à droite ; se règle à la poignée */
   --base-h:46vh;             /* hauteur de la base en tiroir, sur téléphone   */
+  --fiche-l:400px;           /* largeur de la fiche ; 560 px pour la bible    */
+  --fiche-h:60vh;            /* hauteur de la fiche en tiroir, mesurée        */
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;overflow:hidden}
@@ -62,7 +69,7 @@ button{cursor:pointer}
 .mono{font-family:var(--mono)}
 .min0{min-width:0;flex:1}
 .espace{flex:1}
-svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
 /* ─── LA TABLE ET LA FEUILLE ────────────────────────────────────────────── */
 #planche{position:fixed;inset:0;overflow:hidden;touch-action:none;cursor:grab;
@@ -97,19 +104,37 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;st
 .bascule[aria-pressed="true"]{background:var(--papier);color:var(--encre);border-color:var(--papier)}
 .bascule[aria-pressed="true"]:hover{background:var(--papier-2)}
 
-/* ─── LE HAUT : dossier, annuler · recherche, base, menu ────────────────── */
-#haut{position:fixed;top:12px;left:12px;right:12px;display:flex;align-items:center;gap:8px;z-index:20;pointer-events:none}
-#haut>*{pointer-events:auto}
-.marque{height:40px;padding:0 14px 0 12px;border-radius:20px;display:flex;align-items:center;gap:9px;font-weight:600;letter-spacing:.005em;white-space:nowrap;flex:none}
-.marque svg{width:18px;height:18px;flex:none}
-.dossier{height:40px;padding:0 14px;border-radius:20px;display:flex;align-items:center;gap:10px;min-width:0;max-width:38vw}
-#ctx-nom{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#ctx-txt{color:var(--craie-2);white-space:nowrap;font-size:var(--t1)}
-.sauve{color:var(--craie-2);font-size:var(--t0);white-space:nowrap;display:flex;align-items:center;gap:6px}
-.sauve:not(:empty)::before{content:"";width:6px;height:6px;border-radius:50%;background:#6cc487}
-.sauve.ko::before{background:var(--cuivre-clair)}
-.recherche{position:relative;height:40px;width:300px;border-radius:20px;display:flex;align-items:center;padding:0 8px 0 14px;gap:8px;transition:width var(--moyen)}
-.recherche:focus-within{width:360px}
+/* ─── LA BARRE : à gauche, du haut en bas ───────────────────────────────── */
+#rail{position:fixed;left:12px;top:12px;bottom:12px;width:var(--rail);border-radius:26px;z-index:20;
+  display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0}
+#rail hr{width:22px;border:none;border-top:1px solid var(--trait-verre);margin:4px 0}
+.rd{position:relative;width:40px;height:40px;border-radius:50%;border:none;background:none;color:var(--craie);
+  display:grid;place-items:center;padding:0;flex:none;transition:background var(--rapide)}
+.rd svg.ico{width:20px;height:20px}
+.rd:hover:not(:disabled){background:rgba(255,255,255,.1)}
+.rd:active:not(:disabled){background:rgba(255,255,255,.16)}
+.rd:disabled{opacity:.32;cursor:default}
+.rd.sobre{color:var(--craie-2)}
+.rd.sobre:hover{color:var(--craie)}
+.rd.zl{font-family:var(--mono);font-size:var(--t0);color:var(--craie-2);height:26px;border-radius:13px}
+.rd.zl:hover{color:var(--craie)}
+/* le nom et le raccourci, à droite de l'icône : au survol et au clavier,
+   après un instant — pas au passage de la souris */
+.bulle{position:absolute;left:calc(100% + 12px);top:50%;transform:translateY(-50%);white-space:nowrap;pointer-events:none;
+  background:var(--verre-plein);color:var(--craie);border:1px solid var(--trait-verre);box-shadow:var(--ombre-1);
+  border-radius:9px;padding:6px 10px;font-size:var(--t1);font-weight:500;line-height:1.3;display:flex;align-items:center;gap:8px;
+  opacity:0;transition:opacity .12s ease}
+.bulle::before{content:"";position:absolute;right:100%;top:50%;margin-top:-5px;border:5px solid transparent;border-right-color:var(--verre-plein)}
+.bulle kbd{font-family:var(--mono);font-size:var(--t0);color:var(--craie-2);border:1px solid var(--trait-verre);border-radius:5px;padding:0 5px;line-height:1.5}
+.rd:hover .bulle{opacity:1;transition-delay:.4s}
+.rd:focus-visible .bulle{opacity:1}
+.rd:disabled .bulle{display:none}
+@media (hover:none){.bulle{display:none}}
+
+/* ─── LA RECHERCHE : une fenêtre à côté de la barre ─────────────────────── */
+.recherche{position:fixed;top:12px;left:calc(var(--rail) + 24px);height:40px;width:360px;max-width:calc(100vw - var(--rail) - 36px);border-radius:20px;
+  display:none;align-items:center;padding:0 10px 0 14px;gap:8px;z-index:30}
+body.cherche .recherche{display:flex}
 .recherche svg.ico{color:var(--craie-2)}
 .recherche input{flex:1;min-width:0;background:none;border:none;outline:none;color:var(--craie);font-family:var(--mono);font-size:var(--t2);height:100%}
 .recherche input::placeholder{color:var(--craie-2);font-family:var(--sans)}
@@ -123,39 +148,39 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;st
 .q-item .cpt{color:var(--craie-2);font-size:var(--t0);white-space:nowrap}
 .q-item .genre{font-size:var(--t0);color:var(--cuivre-clair);text-transform:uppercase;letter-spacing:.06em;font-weight:600;min-width:52px}
 .q-rien{padding:10px 12px;color:var(--craie-2)}
+
+/* ─── LE MENU : au bas de la barre, ouvert vers la droite ───────────────── */
 #menuBoite{position:relative}
-.menu{position:absolute;top:46px;right:0;width:260px;border-radius:16px;padding:6px;z-index:30}
+.menu{position:absolute;bottom:0;left:calc(100% + 14px);width:272px;border-radius:16px;padding:6px;z-index:30}
 .menu button{display:flex;width:100%;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;background:none;border:none;text-align:left;color:var(--craie);font-weight:500}
 .menu button:hover{background:rgba(255,255,255,.1)}
 .menu button.danger{color:#ff9c8f}
 .menu hr{border:none;border-top:1px solid var(--trait-verre);margin:6px 6px}
 .menu .raccourci{margin-left:auto;color:var(--craie-2);font-size:var(--t0);font-family:var(--mono)}
+.menu .ctx{padding:8px 12px 4px;min-width:0}
+#ctx-nom{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#ctx-txt{color:var(--craie-2);font-size:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sauve{color:var(--craie-2);font-size:var(--t0);white-space:nowrap;display:flex;align-items:center;gap:6px;margin-top:4px}
+.sauve:not(:empty)::before{content:"";width:6px;height:6px;border-radius:50%;background:#6cc487}
+.sauve.ko::before{background:var(--cuivre-clair)}
 
-/* ─── LE BAS : les folios, le zoom ──────────────────────────────────────── */
-#folios{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;align-items:center;gap:2px;height:44px;padding:0 6px;border-radius:22px;z-index:20;max-width:calc(100vw - 24px)}
-#fo-prev,#fo-next{width:32px;height:32px;border-radius:50%;background:none;border:none;color:var(--craie);display:grid;place-items:center;padding:0}
-#fo-prev:hover:not(:disabled),#fo-next:hover:not(:disabled){background:rgba(255,255,255,.1)}
-#fo-prev:disabled,#fo-next:disabled{opacity:.3;cursor:default}
+/* ─── LE BAS : les folios ───────────────────────────────────────────────── */
+#folios{position:fixed;left:calc(50% + var(--rail) / 2 + 12px);bottom:14px;transform:translateX(-50%);display:flex;align-items:center;gap:2px;height:44px;padding:0 6px;border-radius:22px;z-index:20;max-width:calc(100vw - var(--rail) - 48px)}
 .fo-strip{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;max-width:min(60vw,720px);padding:2px}
 .fo-strip::-webkit-scrollbar{display:none}
 .chip{height:32px;min-width:32px;padding:0 11px;border-radius:16px;border:none;background:none;color:var(--craie);font-family:var(--mono);font-weight:600;font-size:var(--t2);transition:background var(--rapide)}
 .chip:hover{background:rgba(255,255,255,.1)}
 .chip.on{background:var(--papier);color:var(--encre)}
 .fo-lbl{color:var(--craie-2);font-size:var(--t0);padding:0 10px 0 8px;white-space:nowrap;font-family:var(--mono)}
-#hud{position:fixed;right:12px;bottom:14px;display:flex;align-items:center;height:44px;padding:0 6px;border-radius:22px;z-index:20;gap:2px;transition:right var(--moyen)}
-#hud button{height:32px;min-width:32px;border:none;background:none;color:var(--craie);border-radius:16px;display:grid;place-items:center;padding:0}
-#hud button:hover{background:rgba(255,255,255,.1)}
-#zlbl{font-family:var(--mono);font-size:var(--t1);min-width:58px;color:var(--craie-2)}
-#zlbl:hover{color:var(--craie)}
-/* quand la base est ouverte, le zoom se range à sa gauche et les folios se recentrent sur le plan */
-body.base-ouverte #hud{right:calc(var(--base-l) + 24px)}
-body.base-ouverte #folios{left:calc((100vw - var(--base-l) - 24px) / 2)}
+/* quand un document est ouvert, les folios se recentrent sur ce qui reste du plan */
+body.base-ouverte #folios{left:calc((100vw - var(--base-l) + var(--rail)) / 2)}
+body.fiche-ouverte #folios{left:calc((100vw - var(--fiche-l) + var(--rail)) / 2)}
 
 /* ─── LES DOCUMENTS : blancs, à droite ──────────────────────────────────── */
-#base,#fiche{position:fixed;top:64px;right:12px;bottom:70px;max-width:calc(100vw - 24px);background:var(--papier);color:var(--encre);
+#base,#fiche{position:fixed;top:12px;right:12px;bottom:12px;max-width:calc(100vw - var(--rail) - 48px);background:var(--papier);color:var(--encre);
   border-radius:18px;box-shadow:var(--ombre-2);z-index:25;display:flex;flex-direction:column;overflow:hidden}
-#fiche{width:400px}
-#base{width:var(--base-l);min-width:340px;bottom:12px}
+#fiche{width:var(--fiche-l)}
+#base{width:var(--base-l);min-width:340px}
 .entre{animation:doc-entre var(--moyen)}
 @keyframes doc-entre{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
 .sur{font-size:var(--t0);text-transform:uppercase;letter-spacing:.09em;color:var(--encre-2);font-weight:700}
@@ -170,7 +195,6 @@ body.base-ouverte #folios{left:calc((100vw - var(--base-l) - 24px) / 2)}
 .ba-tete{display:flex;align-items:center;gap:10px;padding:16px 16px 0 22px}
 .ba-titre{font-size:var(--t4);font-weight:700;letter-spacing:-.005em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ba-titre b{font-family:var(--mono)}
-#ba-add{height:36px;padding:0 14px}
 .filtre{display:flex;align-items:center;gap:8px;height:38px;border:1px solid var(--filet);border-radius:10px;padding:0 6px 0 10px;margin:12px 16px 8px 22px;transition:border-color var(--rapide)}
 .filtre:focus-within{border-color:var(--cuivre);box-shadow:0 0 0 3px var(--cuivre-pale)}
 .filtre input{flex:1;min-width:0;border:none;background:none;outline:none;font-family:var(--mono)}
@@ -178,8 +202,10 @@ body.base-ouverte #folios{left:calc((100vw - var(--base-l) - 24px) / 2)}
 .filtre svg.ico{color:var(--encre-2);width:16px;height:16px}
 .filtre .vider{width:26px;height:26px;border:none;background:none;border-radius:50%;color:var(--encre-2);font-size:var(--t4);line-height:1}
 .filtre .vider:hover{background:var(--papier-2);color:var(--encre)}
-/* l'équipement choisi : son repère, sa désignation, au-dessus de ses fils */
-.equip{margin:4px 16px 8px 22px;padding:10px 12px 12px;border-radius:12px;background:var(--cuivre-pale);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center}
+/* l'équipement choisi : son repère, sa désignation, ses connecteurs — ou,
+   pour une barrette, tout ce que la bible en dit — au-dessus de ses fils */
+.equip{margin:4px 16px 8px 22px;padding:10px 12px 12px;border-radius:12px;background:var(--cuivre-pale);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:start;
+  flex:0 1 auto;min-height:0;max-height:58%;overflow:auto;overscroll-behavior:contain}
 .equip>*{grid-column:1}
 .equip .sur{color:var(--cuivre-2)}
 .equip input{border:none;background:none;padding:0 2px;margin-left:-2px;width:100%;border-bottom:1.5px dashed rgba(181,84,28,.35);border-radius:0;color:var(--encre);transition:border-color var(--rapide)}
@@ -190,7 +216,33 @@ body.base-ouverte #folios{left:calc((100vw - var(--base-l) - 24px) / 2)}
 .equip .des{font-size:var(--t2);margin-top:4px}
 .equip .actions{grid-column:2;grid-row:1/4;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
 .equip .actions .btn{height:30px;padding:0 8px;font-size:var(--t1)}
-.ba-corps{flex:1;overflow:auto;overscroll-behavior:contain;padding:0 8px 8px 12px}
+/* les connecteurs : une ligne chacun, la donnée en chasse fixe */
+.conns{margin-top:10px;padding-top:8px;border-top:1px solid rgba(181,84,28,.18);display:grid;gap:4px;font-size:var(--t1)}
+.conn{color:var(--encre-2);line-height:1.5;word-spacing:.15em}
+.conn b{font-family:var(--mono);color:var(--encre);font-weight:700;display:inline-block;min-width:1.2em}
+.conn .pn{font-family:var(--mono);color:var(--encre)}
+.conn .b{font-family:var(--mono);color:var(--encre)}
+/* la barrette : la référence retenue, d'où elle vient, pourquoi, et les autres */
+.bar-ref{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:6px}
+.bar-ref .ref{font-family:var(--mono);font-size:var(--t5);font-weight:700;letter-spacing:.01em;line-height:1.2}
+.bar-ref .dou{font-size:var(--t1);color:var(--encre-2)}
+.bar-chg{font-size:var(--t1);color:var(--encre-2);margin-top:2px}
+.bar-chg b{font-family:var(--mono);color:var(--encre);font-weight:600}
+.raisons{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.raisons span{font-size:var(--t0);color:var(--cuivre-2);background:var(--papier);border-radius:6px;padding:2px 7px;font-weight:600;white-space:nowrap}
+.bar-faits{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin-top:8px;font-size:var(--t1);color:var(--encre-2)}
+.bar-faits span:nth-child(2n){font-family:var(--mono);color:var(--encre)}
+.cands{margin-top:10px;padding-top:8px;border-top:1px solid rgba(181,84,28,.18)}
+.cands .sur{margin-bottom:4px}
+.cand{display:flex;align-items:center;gap:8px;width:100%;border:none;background:var(--papier);color:var(--encre);border-radius:8px;padding:5px 8px;margin-top:3px;text-align:left;font-size:var(--t1);transition:background var(--rapide)}
+.cand:hover{background:var(--papier-3)}
+.cand b{font-family:var(--mono);font-weight:700;white-space:nowrap}
+.cand span{font-family:var(--mono);color:var(--encre-2);white-space:nowrap}
+.cand .ok{margin-left:auto;font-family:var(--sans);font-size:var(--t0);text-transform:uppercase;letter-spacing:.06em;font-weight:700;color:var(--cuivre-2)}
+.cand[aria-pressed="true"]{background:var(--cuivre);color:#fff}
+.cand[aria-pressed="true"] span,.cand[aria-pressed="true"] .ok{color:#fff}
+.cand[aria-pressed="true"]:hover{background:var(--cuivre-2)}
+.ba-corps{flex:1;min-height:120px;overflow:auto;overscroll-behavior:contain;padding:0 8px 8px 12px}
 /* la table prend la largeur de ses colonnes ; trop large, elle défile — jamais elle n'écrase une valeur */
 table.tab{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;font-family:var(--mono);font-size:var(--t1);table-layout:auto}
 .tab th{position:sticky;top:0;z-index:1;background:var(--papier);text-align:left;font-size:var(--t0);color:var(--encre-2);font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:8px 6px 6px;border-bottom:1px solid var(--filet);font-family:var(--sans);white-space:nowrap;cursor:pointer;user-select:none}
@@ -209,9 +261,9 @@ table.tab{width:max-content;min-width:100%;border-collapse:separate;border-spaci
 .tab td.n input{width:52px}
 .tab td.fil input{width:88px}
 .tab td.type input{width:72px}
-.tab td.pn input{width:104px}
+.tab td.pn input{width:126px}
 .tab td.route input{width:76px}
-.tab input{width:100%;height:30px;border:1px solid transparent;border-radius:7px;padding:0 6px;background:none;font-family:var(--mono);font-size:var(--t1);color:var(--encre);transition:border-color var(--rapide)}
+.tab input{width:100%;height:30px;border:1px solid transparent;border-radius:7px;padding:0 6px;background:none;font-family:var(--mono);font-size:var(--t1);color:var(--encre);transition:border-color var(--rapide);text-overflow:ellipsis}
 .tab input:hover{border-color:#c9d1d9}
 .tab input:focus{border-color:var(--cuivre);outline:none;background:var(--papier);box-shadow:0 0 0 3px var(--cuivre-pale)}
 .tab .f{display:inline-block;font-size:var(--t0);color:var(--cuivre-2);font-weight:700;background:var(--cuivre-pale);border-radius:6px;padding:1px 6px;border:none;font-family:var(--mono);margin:0 2px}
@@ -224,10 +276,11 @@ button.f:hover{background:var(--cuivre);color:#fff}
 .tab .x button:hover{background:#fbeae8;color:var(--danger)}
 .tab .reste td{color:var(--encre-2);padding:12px 8px;white-space:normal;font-family:var(--sans)}
 
-/* ─── LA FICHE : cartouche, collage ─────────────────────────────────────── */
+/* ─── LA FICHE : cartouche, collage, bible ──────────────────────────────── */
 .fiche-corps{overflow:auto;padding:18px 20px 12px;flex:1;overscroll-behavior:contain}
 .fiche-tete{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}
 .titre{font-family:var(--mono);font-size:var(--t5);font-weight:700;line-height:1.2;margin:2px 0 0;color:var(--encre);letter-spacing:.01em}
+.titre.sans{font-family:var(--sans);letter-spacing:-.005em}
 .champ{display:block;margin:10px 0 0}
 .champ>span{display:block;font-size:var(--t0);color:var(--encre-2);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:4px}
 .champ input,.champ textarea{width:100%;height:38px;border:1px solid var(--filet);border-radius:10px;padding:0 10px;background:var(--papier);color:var(--encre);font-family:var(--mono);transition:border-color var(--rapide)}
@@ -240,9 +293,22 @@ button.f:hover{background:var(--cuivre);color:#fff}
 .fiche-pied{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 20px;border-top:1px solid var(--filet);background:var(--papier)}
 .note{font-size:var(--t1);color:var(--encre-2);margin:8px 0 0;line-height:1.5}
 .note b{color:var(--encre)}
+/* la bible : la liste des références, lisible, chaque donnée en chasse fixe */
+.bible-etat{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--papier-2);margin-bottom:12px;font-size:var(--t1);color:var(--encre-2)}
+.bible-etat b{color:var(--encre);font-weight:600}
+.bible-etat.exemple{background:var(--cuivre-pale);color:var(--cuivre-2)}
+.bible-etat.exemple b{color:var(--cuivre-2)}
+table.bible{width:100%;border-collapse:separate;border-spacing:0;font-size:var(--t1)}
+.bible th{position:sticky;top:0;background:var(--papier);text-align:left;font-size:var(--t0);color:var(--encre-2);font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:6px 6px 6px 0;border-bottom:1px solid var(--filet);white-space:nowrap}
+.bible td{padding:6px 6px 6px 0;border-bottom:1px solid var(--filet);vertical-align:top;font-family:var(--mono);white-space:nowrap}
+.bible td.ref{font-weight:700}
+.bible td.sans{font-family:var(--sans);color:var(--encre-2)}
+.bible td.d{text-align:right}
+.bible tr:hover td{background:var(--papier-2)}
+.bible td.bible-note{color:var(--encre-2);font-family:var(--sans);font-size:var(--t0);white-space:normal;min-width:120px}
 
 /* ─── L'ACCUEIL : rien de chargé ───────────────────────────────────────── */
-.vide{position:absolute;inset:0;display:grid;place-items:center;padding:16px;z-index:5}
+.vide{position:absolute;inset:0;display:grid;place-items:center;padding:16px 16px 16px calc(var(--rail) + 28px);z-index:5}
 .vide-carte{background:var(--papier);color:var(--encre);border-radius:22px;padding:36px 36px 30px;max-width:540px;text-align:center;box-shadow:var(--ombre-3)}
 .vide-carte .pictos{display:flex;justify-content:center;color:var(--cuivre)}
 .vide-carte h1{font-size:var(--t6);font-weight:700;margin:16px 0 8px;letter-spacing:-.01em;line-height:1.15}
@@ -252,49 +318,46 @@ button.f:hover{background:var(--cuivre);color:#fff}
 body.depot-actif .depot{display:grid}
 
 /* ─── LE MOT QUI PASSE ─────────────────────────────────────────────────── */
-#toast{position:fixed;left:50%;top:64px;transform:translateX(-50%);padding:10px 16px;border-radius:14px;z-index:35;max-width:min(92vw,520px);
+#toast{position:fixed;left:calc(50% + var(--rail) / 2 + 12px);top:16px;transform:translateX(-50%);padding:10px 16px;border-radius:14px;z-index:35;max-width:min(80vw,520px);
   font-weight:500;opacity:0;pointer-events:none;transition:opacity var(--moyen),transform var(--moyen)}
 #toast.on{opacity:1;transform:translateX(-50%) translateY(4px)}
 #toast.erreur{border-color:rgba(240,163,111,.5)}
 
-/* ─── ÉCRAN MOYEN : le dossier cède la place à la recherche ─────────────── */
-@media (max-width:1180px){
-  #ctx-txt{display:none}
-  .recherche{width:220px}
-  .recherche:focus-within{width:280px}
-  #btnBase{padding:0;width:40px;justify-content:center}
-  #btnBase span{display:none}
+/* ─── ÉCRAN BAS : la barre se serre pour tenir ──────────────────────────── */
+@media (max-height:660px) and (min-width:701px){
+  #rail{gap:0;padding:4px 0}
+  .rd{height:36px}
+  #rail hr{margin:2px 0}
+  .rd.zl{display:none}
 }
 
 /* ─── TÉLÉPHONE ─────────────────────────────────────────────────────────── */
 @media (max-width:700px){
-  #haut{top:8px;left:8px;right:8px;gap:6px}
-  .marque{display:none}
-  .dossier{flex:1;max-width:none;padding:0 12px}
-  #ctx-txt,.sauve{display:none}
-  .recherche{width:40px;padding:0;justify-content:center}
-  .recherche input,.recherche .raccourci{display:none}
-  .recherche svg.ico{color:var(--craie)}
-  #haut.cherche .recherche{position:absolute;left:0;right:0;width:auto;padding:0 8px 0 14px;justify-content:flex-start}
-  #haut.cherche .recherche input{display:block}
-  #haut.cherche>:not(.recherche){visibility:hidden}
-  #folios{bottom:10px;max-width:calc(100vw - 16px)}
-  .fo-strip{max-width:calc(100vw - 150px)}
-  #hud{right:8px;bottom:64px;height:40px;padding:0 4px}
-  #hud #zin,#hud #zout,#hud #zlbl{display:none}
+  :root{--rail:0px}
+  /* la barre passe en bas, sous le pouce ; ce que le geste fait déjà
+     (pincer pour zoomer, toucher un folio) n'y est pas */
+  #rail{top:auto;left:8px;right:8px;bottom:8px;width:auto;height:48px;border-radius:24px;flex-direction:row;justify-content:space-around;padding:0 4px;gap:0;transition:bottom var(--moyen)}
+  #rail hr,#zin,#zout,#zlbl,#fo-prev,#fo-next,#btnOuvrir{display:none}
+  #rail .espace{display:none}
+  .menu{bottom:calc(100% + 12px);left:auto;right:-4px;width:min(272px,calc(100vw - 16px))}
+  .recherche{top:8px;left:8px;right:8px;width:auto;max-width:none}
+  #folios{left:50%;bottom:64px;max-width:calc(100vw - 16px);transition:bottom var(--moyen)}
+  .fo-strip{max-width:calc(100vw - 110px)}
   /* les documents montent en tiroir ; la base garde la hauteur qu'on lui donne */
   #base,#fiche{top:auto;left:0;right:0;bottom:0;width:auto;min-width:0;max-width:none;border-radius:20px 20px 0 0}
   #fiche{max-height:72vh}
   #base{height:var(--base-h);max-height:85vh;min-height:160px}
-  body.base-ouverte #hud{right:8px;bottom:calc(var(--base-h) + 8px)}
-  body.base-ouverte #folios{left:50%;bottom:calc(var(--base-h) + 8px)}
+  body.base-ouverte #rail{bottom:calc(var(--base-h) + 8px)}
+  body.fiche-ouverte #rail{bottom:calc(var(--fiche-h) + 8px)}
+  body.base-ouverte #folios{left:50%;bottom:calc(var(--base-h) + 64px)}
+  body.fiche-ouverte #folios{left:50%;bottom:calc(var(--fiche-h) + 64px)}
   .entre{animation:doc-monte var(--moyen)}
   @keyframes doc-monte{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
   .poignee{left:0;right:0;top:0;bottom:auto;height:18px;width:auto;cursor:row-resize}
   .poignee::after{left:50%;top:6px;width:40px;height:4px;margin:0 0 0 -20px}
   .ba-tete{padding:18px 12px 0 16px}
   .filtre{margin:10px 12px 6px 16px}
-  .equip{margin:2px 12px 6px 16px}
+  .equip{margin:2px 12px 6px 16px;max-height:60%}
   .ba-corps{padding:0 4px 8px 8px}
   .tab{font-size:var(--t0)}
   .tab input{padding:0 4px;height:28px}
@@ -303,10 +366,10 @@ body.depot-actif .depot{display:grid}
   .tab th{padding:6px 4px}
   .fiche-corps{padding:14px 16px 10px}
   .fiche-pied{padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
+  .vide{padding:16px 16px 72px}
   .vide-carte{padding:28px 22px 24px}
   .vide-carte h1{font-size:var(--t5)}
-  .menu{width:min(260px,calc(100vw - 16px))}
-  #toast{top:56px}
+  #toast{left:50%;top:8px;max-width:calc(100vw - 16px)}
 }
 
 /* ─── IMPRESSION : la planche, rien d'autre ─────────────────────────────── */
