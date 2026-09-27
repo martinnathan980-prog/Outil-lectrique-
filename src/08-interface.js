@@ -435,7 +435,7 @@ const largeurFiche = () => (telephone() ? window.innerWidth - 32 : 520) - 24;   
    la barrette (elle est son « vers »), AVAL quand il en repart. */
 function filsDuModule(nom, m) { const V = verite();
   return m.fils.map(f => { const i = V.findIndex(l => l.cable === f.cable && ((l.de === nom && l.borneDe === m.borne && l.vers === f.vers) || (l.vers === nom && l.borneVers === m.borne && l.de === f.vers)));
-    if (i < 0) return null; const l = V[i]; return { i, l, cable: f.cable, vers: f.vers, borne: f.borne, amont: l.vers === nom, plans: foliosDe(l) }; }).filter(Boolean); }
+    if (i < 0) return null; const l = V[i]; return { i, cable: f.cable, vers: f.vers, borne: f.borne, amont: l.vers === nom, plans: foliosDe(l) }; }).filter(Boolean); }
 /* Le pas des modules : assez large pour le plus long texte écrit dessous. */
 function pasDesModules(fils, badge) { let cable = 0, dest = 0;
   fils.forEach(f => { cable = Math.max(cable, f.cable.length * PHY.carCable + (badge && f.plans.length ? 6 + f.plans.join(',').length * 5 + 6 : 0)); dest = Math.max(dest, destination(f).length * PHY.carDest); });
@@ -468,9 +468,10 @@ function dessinPhysique(nom, P, largeur, opts) { opts = opts || {};
   // le conteneur dit sa hauteur : dans une carte à hauteur bornée, une grille rognerait sinon un conteneur qui défile
   return `<div class="phy" style="min-height:${y + 10 + (W + 6 > largeur ? 14 : 0)}px"><svg class="phy-svg" width="${W + 6}" height="${y + 4}" viewBox="-3 -2 ${W + 6} ${y + 4}" role="img" aria-label="${escA(titre)}">${defsPhysique()}${s}</svg></div>`; }
 function defsPhysique() { return '<defs><pattern id="phy-hachure" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#eef1f5"/><line x1="0" y1="0" x2="0" y2="6" stroke="#c9d1d9" stroke-width="2"/></pattern></defs>'; }
-/* Un module ou un contact : sa classe dit s'il est utilisé, libre, ou hors
-   de la référence ; ses données disent ses fils, pour le survol. */
-function ouvrirModule(P, m, fils, sansFils) { const cls = sansFils ? 'mod neutre' : m.utilisee ? 'mod' : 'mod libre';
+/* Le début du groupe d'un module ou d'un contact — on le referme après ses
+   formes : sa classe dit s'il est utilisé, libre, ou hors de la référence ;
+   ses données disent ses fils, pour le survol. */
+function debutModule(P, m, fils, sansFils) { const cls = sansFils ? 'mod neutre' : m.utilisee ? 'mod' : 'mod libre';
   return `<g class="${cls}${horsReference(P, m) ? ' hors' : ''}" data-borne="${escA(m.borne)}" data-fils="${fils.map(f => f.i).join(' ')}"><title>${esc('Borne ' + m.borne + (sansFils ? '' : m.utilisee ? ' · ' + pluriel(fils.length, 'fil') : ' · libre'))}</title>`; }
 /* Un rang de RÉGLETTE : au-dessus, les fils qui arrivent ; la rangée de
    modules numérotés, le peigne de cuivre sur chaque paquet, le rail sous
@@ -481,7 +482,7 @@ function rangReglette(P, idx, fils, pas, o) {
   const yS = nT ? nT * PHY.ligne + PHY.plomb : 0, yR = yS + PHY.module + 2, yBas = yR + PHY.rail, Wr = idx.length * pas;
   let s = `<rect class="rail" x="-2" y="${yR}" width="${Wr + 4}" height="${PHY.rail}" rx="1"/>` + (o.premier ? '' : coupeRail(-2, yR)) + (o.dernier ? '' : coupeRail(Wr + 2, yR));
   idx.forEach((i, k) => { const m = P.modules[i], x = k * pas, cx = x + pas / 2;
-    s += ouvrirModule(P, m, fils[i], o.sansFils) + `<rect class="cell" x="${x + 1.5}" y="${yS}" width="${pas - 3}" height="${PHY.module}" rx="2"/><text class="num" x="${cx}" y="${yS + 13}" text-anchor="middle">${esc(clip(m.borne, 4))}</text></g>`; });
+    s += debutModule(P, m, fils[i], o.sansFils) + `<rect class="cell" x="${x + 1.5}" y="${yS}" width="${pas - 3}" height="${PHY.module}" rx="2"/><text class="num" x="${cx}" y="${yS + 13}" text-anchor="middle">${esc(clip(m.borne, 4))}</text></g>`; });
   // le peigne : une barre de cuivre d'un bout à l'autre du paquet, une dent par module ; coupé s'il continue sur un autre rang
   const yP = yS + PHY.module * 0.7;
   P.paquets.forEach((p, q) => { if (!p.ponte) return; const tous = P.modules.map((m, j) => m.paquet === q ? j : -1).filter(j => j >= 0);
@@ -505,7 +506,7 @@ function rangCoupure(P, idx, fils, pas, o) {
   s += `<rect class="fixe" x="0" y="${yF}" width="${Wr}" height="${PHY.bande}" rx="3"/><text class="part" x="7" y="${yF + PHY.bande - 5}">${mobile ? 'PARTIE FIXE · embase' : 'EMBASE'}</text>`
     + `<circle class="trou" cx="7" cy="${yF + 8}" r="2.4"/><circle class="trou" cx="${Wr - 7}" cy="${yF + 8}" r="2.4"/>`;
   idx.forEach((i, k) => { const m = P.modules[i], cx = k * pas + pas / 2, cyM = yM + PHY.bande / 2 + 5, cyF = yF + PHY.bande / 2 - 5, num = esc(clip(m.borne, 3));
-    s += ouvrirModule(P, m, fils[i], o.sansFils);
+    s += debutModule(P, m, fils[i], o.sansFils);
     if (mobile) s += `<circle class="cell" cx="${cx}" cy="${cyM}" r="8.5"/><text class="num" x="${cx}" y="${cyM + 3.6}" text-anchor="middle">${num}</text><line class="axe" x1="${cx}" y1="${yM + PHY.bande}" x2="${cx}" y2="${yF}"/>`;
     s += `<circle class="cell douille" cx="${cx}" cy="${cyF}" r="8.5"/><text class="num" x="${cx}" y="${cyF + 3.6}" text-anchor="middle">${num}</text></g>`; });
   idx.forEach((i, k) => { const cx = k * pas + pas / 2, m = P.modules[i], A = amont(i), B = aval(i);
