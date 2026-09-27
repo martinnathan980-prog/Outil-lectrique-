@@ -1534,8 +1534,12 @@ function placer(G, options) {
         if (!par.has(PK(ia, A.cle)) || !par.has(PK(ib, B.cle))) return;
         if (parBarrette.has(PK(ia, A.cle) + '|' + s) || parBarrette.has(PK(ib, B.cle) + '|' + (-s))) return;
         const genre = (estS.get(ia) ? 1 : 0) + (estS.get(ib) ? 1 : 0);
+        /* les fils d'une barrette passent en premier : elle s'allonge pour
+           les mettre tous droits, quand un connecteur au pas n'en met qu'un
+           ou deux en face d'un même bloc */
+        const barrette = (ordreFixe(ia) && !auPas(ia) ? 1 : 0) + (ordreFixe(ib) && !auPas(ib) ? 1 : 0);
         cand.push({ a: PK(ia, A.cle), b: PK(ib, B.cle), d, milieu: d === 2 ? ((colonneDe.get(ia) ?? 0) + (colonneDe.get(ib) ?? 0)) / 2 : -1,
-          pr: (d > 1 ? 10 : 0) + genre, w: (d === 1 ? 1 : 0.25) * (genre === 0 ? 1.06 : 1) }); });
+          pr: (d > 1 ? 10 : 0) + genre - 2 * barrette, w: (d === 1 ? 1 : 0.25) * (genre === 0 ? 1.06 : 1) }); });
       cand.sort((x, y) => x.pr - y.pr);
       let acc = 0;
       cand.forEach(wc => { const [ra, oa] = pos(wc.a), [rb, ob] = pos(wc.b);
@@ -1950,7 +1954,7 @@ function placer(G, options) {
     else if (r0 > A3) { const nh = Math.min(bbox.w / A3, bbox.h * GONFLE); if (nh > bbox.h) { bbox.y -= (nh - bbox.h) / 2; bbox.h = nh; } }
     // l'ordre des bornes de chaque connecteur, pour le rejouer au solveur
     const ordres = new Map(lesRuns().map(r => [r.id + '|' + r.lid + '|' + r.nom, r.cles.slice().sort((a, b) => yB(r.id, a) - yB(r.id, b))]));
-    return { comps, links, bbox, compDe, ordres, geom: { colonnes, colonneDe, colX, colW, chW, nCols, yMin, yMax, pastilles, rangees: SERP > 0 ? nRang : 0 } };
+    return { comps, links, bbox, compDe, ordres, options: opt, geom: { colonnes, colonneDe, colX, colW, chW, nCols, yMin, yMax, pastilles, rangees: SERP > 0 ? nRang : 0 } };
   };
 
   /* ===== 10. RECHERCHE LOCALE AU ROUTAGE RÉEL ============================ */
