@@ -138,19 +138,30 @@ function barretteInfos(repere, liaisons, bible) {
 
 /* ---- les connecteurs d'un équipement ------------------------------------- */
 /* Une borne « A12 » est la borne 12 du connecteur A ; sinon le connecteur
-   est le part number (PN) porté par la liaison. Rend, pour un repère, la
-   liste [{ nom, pn, bornes:[…] }] dans l'ordre des noms. */
+   est le part number (PN) porté par la liaison, et il reçoit une lettre —
+   la première libre, dans l'ordre d'apparition — parce qu'un connecteur se
+   nomme d'une lettre sur le plan ; son part number se lit dans sa carte.
+   Rend, pour un repère, [{ nom, pn, deduite, bornes:[…] }] dans l'ordre
+   des lettres. */
 const LETTRE_CONNECTEUR = /^([A-Z]{1,2})[-./ ]?(\d{1,3}[A-Z]?)$/i;
 function connecteurDeBorne(borne, pn) {
   const m = LETTRE_CONNECTEUR.exec(String(borne || '').trim());
-  if (m) return { nom: m[1].toUpperCase(), pn: pn || '' };
-  return pn ? { nom: pn, pn } : null;
+  if (m) return { nom: m[1].toUpperCase(), pn: pn || '', lettre: true };
+  return pn ? { nom: pn, pn, lettre: false } : null;
 }
 function connecteursDe(repere, liaisons) {
   const groupes = new Map();
   liaisons.forEach(l => { [[l.de, l.borneDe, l.pnDe], [l.vers, l.borneVers, l.pnVers]].forEach(([r, b, pn]) => {
-    if (r !== repere || !b) return; const c = connecteurDeBorne(b, pn); const cle = c ? c.nom : '';
-    const g = groupes.get(cle) || groupes.set(cle, { nom: cle, pn: c ? c.pn : '', bornes: new Set() }).get(cle);
-    g.bornes.add(b); if (!g.pn && c && c.pn) g.pn = c.pn; }); });
-  return [...groupes.values()].sort((a, b) => a.nom.localeCompare(b.nom)).map(g => ({ ...g, bornes: [...g.bornes] }));
+    if (r !== repere || !b) return; const c = connecteurDeBorne(b, pn); if (!c) return;
+    const cle = (c.lettre ? 'L:' : 'P:') + c.nom;
+    const g = groupes.get(cle) || groupes.set(cle, { nom: c.lettre ? c.nom : '', pn: c.pn, lettre: c.lettre, deduite: !c.lettre, bornes: new Set() }).get(cle);
+    g.bornes.add(b); if (!g.pn && c.pn) g.pn = c.pn; }); });
+  const prises = new Set([...groupes.values()].filter(g => g.lettre).map(g => g.nom));
+  let k = 0; const libre = () => { let n; do { n = String.fromCharCode(65 + (k % 26)) + (k >= 26 ? String(Math.floor(k / 26)) : ''); k++; } while (prises.has(n)); return n; };
+  groupes.forEach(g => { if (!g.lettre) g.nom = libre(); });
+  return [...groupes.values()].sort((a, b) => a.nom.localeCompare(b.nom)).map(g => ({ nom: g.nom, pn: g.pn, deduite: g.deduite, bornes: [...g.bornes] }));
+}
+/* La même chose, borne par borne : ce que le dessin lit. */
+function connecteurParBorne(repere, liaisons) {
+  const m = new Map(); connecteursDe(repere, liaisons).forEach(g => g.bornes.forEach(b => m.set(String(b), g))); return m;
 }

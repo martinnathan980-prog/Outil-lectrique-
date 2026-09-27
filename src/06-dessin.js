@@ -271,7 +271,7 @@ function blocSvg(c, designation, choisi) {
   } else {
     // équipement : corps, repère en tête (rappelé en pied s'il est très haut), bornes sur les flancs
     s += `<rect class="body" x="${f1(bx)}" y="0" width="${f1(bw)}" height="${c.h}"/>`;
-    const connDe = etiq => connecteurDeBorne(etiq, (c.pns && c.pns.get(String(etiq))) || '');
+    const connDe = etiq => (c.connecteurs && c.connecteurs.get(String(etiq))) || null;
     const cg = rl.length ? connecteursSvg(bx, -1, rl, c.y, c.h, connDe) : '', cd = rr.length ? connecteursSvg(bx + bw, +1, rr, c.y, c.h, connDe) : '';
     s += cg + cd;
     s += repereSvg('rep-big', mid, yRep, clip(c.name, 14), bw, (cg && cd) ? CONN_W + 5 : (cg || cd) ? (CONN_W + 5 + 16) / 2 : 16);
@@ -289,15 +289,12 @@ function sceneSvg(dessin, cartouche, folio, designationDe, choisi) {
   const fils = dessin.fils.filter(w => !w.shunt);
   const verticaux = verticauxDe([...fils.map(w => w.pts), ...tracesDePiquage(dessin.barrettes)]);
   fils.forEach(w => { s += filSvg(w, verticaux); });
-  const shunts = new Map(), pns = new Map();
+  const shunts = new Map();
   dessin.fils.forEach(w => { if (!w.shunt) return; const ys = [w.epA.y, w.epB.y].sort((u, v) => u - v); (shunts.get(w.de) || shunts.set(w.de, []).get(w.de)).push(ys); });
-  // le part number du connecteur de chaque borne, pour encadrer les connecteurs
-  dessin.fils.forEach(w => { [[w.de, w.borneDe, w.pnDe], [w.vers, w.borneVers, w.pnVers]].forEach(([n, b, pn]) => {
-    if (!pn || !b) return; const m = pns.get(n) || pns.set(n, new Map()).get(n); if (!m.has(String(b))) m.set(String(b), pn); }); });
   s += reperesDeFil(dessin.fils);
   s += piquagesSvg(dessin.barrettes, dessin.piquages, verticaux);
   dessin.points.forEach(d => s += `<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="1.9"/>`);
-  dessin.comps.forEach(c => { c.shunts = shunts.get(c.name) || []; c.pns = pns.get(c.name) || null; s += blocSvg(c, designationDe ? designationDe(c.name) : '', choisi === c.name); });
+  dessin.comps.forEach(c => { c.shunts = shunts.get(c.name) || []; c.connecteurs = c.kind === 'equip' ? connecteurParBorne(c.name, dessin.fils) : null; s += blocSvg(c, designationDe ? designationDe(c.name) : '', choisi === c.name); });
   return s;
 }
 /* Le même dessin, en document SVG autonome : pour enregistrer, imprimer, coller. */
