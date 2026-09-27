@@ -171,10 +171,26 @@ Fait, mesuré, en place :
   lettre ; le dessin encadre les bornes d'un même connecteur dans le corps,
   sa lettre en pastille. La prise de coupure se dessine en partie fixe (haute
   et fine) dans laquelle entre la partie mobile (plus large, moins haute).
+- **La barrette physique** (`physiqueDeBarrette` dans `09`, le dessin dans
+  `08`) : la carte d'une barrette ou d'une prise de coupure est d'abord un
+  DESSIN, de face — tous les modules de la référence retenue, numérotés au
+  pas, les libres hachurés, chaque paquet de bornes réunies par un shunt
+  dessiné en peigne de cuivre sur ses modules, et sous chaque module ses
+  fils de tous les folios réunis (n° de câble, folio en badge, « repère:borne »
+  d'en face) : ce qui arrive (amont) au-dessus, ce qui repart (aval) en
+  dessous. La réglette passe à la ligne sans couper un paquet quand elle ne
+  tient pas en largeur. Survoler un module allume ses fils sur le plan et
+  marque ses lignes dans la table ; cliquer un fil le cadre, même sur un
+  autre folio, la barrette restant choisie. La prise se dessine éclatée :
+  partie mobile (fiche) en haut où arrivent les fils d'amont, partie fixe
+  (embase) en bas d'où repartent ceux d'aval, contacts face à face. La table
+  sous le dessin est la base filtrée sur le repère ; le choix de la
+  référence (raisons, candidates) est replié dessous. La bible porte un
+  pictogramme par référence et dessine celle qu'on clique en grand.
 - **L'exemple en trois folios** : facile, moyen, très chargé (66 liaisons).
 - **Base de retest** : mise de côté dans `a-venir/09-retest.js` avec ses
   contrôles (`tests/retest.js` se passe si elle n'est pas dans la page).
-- **Contrôles** sur l'API `atelier` : 17 + 5 + 13, banc de 15 topologies, 34 sans navigateur pour la bible, les connecteurs et le suivi.
+- **Contrôles** sur l'API `atelier` : 17 + 5 + 13, banc de 15 topologies, 39 sans navigateur pour la bible, les connecteurs, le suivi et la barrette physique.
 
 Le compte : **6 685 lignes en un fichier → 2 600 lignes en neuf modules**, dont
 moins d'un cinquième de commentaires, tous au présent.

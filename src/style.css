@@ -52,7 +52,7 @@
   --rapide:.14s ease; --moyen:.24s ease;
   --rail:52px;               /* largeur de la barre ; le plan commence après */
   --base-l:min(620px,44vw);  /* largeur de la base à droite ; se règle à la poignée */
-  --base-h:46vh;             /* hauteur de la base en tiroir, sur téléphone   */
+  --base-h:56vh;             /* hauteur de la base en tiroir, sur téléphone   */
   --fiche-l:400px;           /* largeur de la fiche ; 560 px pour la bible    */
   --fiche-h:60vh;            /* hauteur de la fiche en tiroir, mesurée        */
 }
@@ -222,7 +222,7 @@ body.fiche-ouverte #folios{left:calc((100vw - var(--fiche-l) + var(--rail)) / 2)
 .conn b{font-family:var(--mono);color:var(--encre);font-weight:700;display:inline-block;min-width:1.2em}
 .conn .pn{font-family:var(--mono);color:var(--encre)}
 .conn .b{font-family:var(--mono);color:var(--encre)}
-/* la barrette : la référence retenue, d'où elle vient, pourquoi, et les autres */
+/* la barrette : la référence retenue et d'où elle vient, puis son dessin */
 .bar-ref{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:6px}
 .bar-ref .ref{font-family:var(--mono);font-size:var(--t5);font-weight:700;letter-spacing:.01em;line-height:1.2}
 .bar-ref .dou{font-size:var(--t1);color:var(--encre-2)}
@@ -232,7 +232,62 @@ body.fiche-ouverte #folios{left:calc((100vw - var(--fiche-l) + var(--rail)) / 2)
 .raisons span{font-size:var(--t0);color:var(--cuivre-2);background:var(--papier);border-radius:6px;padding:2px 7px;font-weight:600;white-space:nowrap}
 .bar-faits{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin-top:8px;font-size:var(--t1);color:var(--encre-2)}
 .bar-faits span:nth-child(2n){font-family:var(--mono);color:var(--encre)}
-.cands{margin-top:10px;padding-top:8px;border-top:1px solid rgba(181,84,28,.18)}
+/* au-delà du repère, tout prend la largeur de la carte : le dessin d'abord */
+.equip .bar-ref,.equip .phy-compte,.equip .phy,.equip .legende,.equip .choix,.equip .conns{grid-column:1/-1}
+.phy-compte{font-size:var(--t1);color:var(--encre-2);margin-top:2px}
+.phy-compte .ko{color:var(--danger);font-weight:600}
+/* ─── LA BARRETTE PHYSIQUE : la réglette de face, ses paquets, ses fils ──── */
+/* Le dessin est en pixels, jamais mis à l'échelle ; s'il déborde malgré les
+   rangs, il défile en douceur plutôt que d'écraser un texte. */
+.phy{margin-top:10px;overflow-x:auto;overscroll-behavior-x:contain;scroll-behavior:smooth;padding:2px 0 4px}
+.phy svg{display:block}
+.phy text{font-family:var(--mono)}
+.phy .cell{fill:var(--papier);stroke:var(--encre);stroke-width:1}
+.phy .libre .cell{fill:url(#phy-hachure);stroke:#8a96a2}
+.phy .neutre .cell{fill:var(--papier);stroke:var(--encre-2)}
+.phy .hors .cell{stroke:var(--danger);stroke-dasharray:3 2}
+.phy .num{fill:var(--encre);font-size:10.5px;font-weight:700}
+.phy .libre .num{fill:var(--encre-2);font-weight:500;paint-order:stroke;stroke:#eef1f5;stroke-width:3px;stroke-linejoin:round}   /* un halo : lisible sur les hachures */
+.phy .hors .num{fill:var(--danger)}
+.phy .rail{fill:#a7b1bd}
+.phy .coupe{fill:none;stroke:var(--encre-2);stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round}
+.phy .peigne{stroke:var(--cuivre);stroke-width:4;stroke-linecap:round}
+.phy .dent{fill:var(--cuivre);stroke:var(--papier);stroke-width:1}
+.phy .plomb{stroke:var(--encre);stroke-width:1.1}
+.phy .fleche{fill:var(--encre)}
+.phy .cable{fill:var(--encre);font-size:10px;font-weight:700}
+.phy .dest{fill:var(--encre-2);font-size:9.5px}
+.phy .badge{fill:var(--papier);stroke:#e4cdbd;stroke-width:.8}
+.phy .badge-t{fill:var(--cuivre-2);font-size:8px;font-weight:700}
+/* la prise de coupure, de face : la fiche en haut, l'embase en bas */
+.phy .mobile{fill:var(--papier);stroke:var(--encre);stroke-width:1}
+.phy .fixe{fill:#eceff3;stroke:var(--encre);stroke-width:1.2}
+.phy .part{fill:var(--encre-2);font-size:7.5px;font-weight:700;letter-spacing:.08em}
+.phy .trou{fill:var(--papier);stroke:var(--encre-2);stroke-width:.9}
+.phy .axe{stroke:#8a96a2;stroke-width:1;stroke-dasharray:2 2.5}
+.phy .douille{stroke-width:1.8}
+/* survoler un module ou un fil : il se marque en cuivre, comme sur le plan */
+.phy .mod,.phy .fil{cursor:pointer}
+.phy .fil .zone{fill:transparent}
+.phy .mod:hover .cell,.phy .mod.vise .cell{stroke:var(--cuivre);stroke-width:1.8}
+.phy .mod:hover .num,.phy .mod.vise .num{fill:var(--cuivre-2)}
+.phy .fil:hover .cable,.phy .fil.vise .cable,.phy .fil:focus-visible .cable{fill:var(--cuivre-2)}
+.phy .fil:hover .zone,.phy .fil.vise .zone{fill:var(--papier)}
+.phy .fil:focus-visible{outline:2px solid var(--cuivre);outline-offset:1px;border-radius:5px}
+.legende{font-size:var(--t0);color:var(--encre-2);margin-top:2px;line-height:1.6}
+.legende span{display:inline-block;vertical-align:middle;margin:0 4px 0 1px}
+.legende .l-fleche{width:0;height:0;border:4px solid transparent;border-top:6px solid var(--encre);border-bottom:none;margin-right:5px}
+.legende .l-peigne{width:16px;height:4px;border-radius:2px;background:var(--cuivre)}
+.legende .l-libre{width:12px;height:10px;border:1px solid #8a96a2;background:repeating-linear-gradient(45deg,#eef1f5 0 2px,#c9d1d9 2px 3.5px)}
+/* la référence, repliée sous le dessin */
+.choix{margin-top:8px;border-top:1px solid rgba(181,84,28,.18);padding-top:2px}
+.choix summary{display:flex;align-items:center;gap:6px;list-style:none;cursor:pointer;font-size:var(--t1);color:var(--cuivre-2);font-weight:600;padding:6px 0;border-radius:6px}
+.choix summary::-webkit-details-marker{display:none}
+.choix summary:hover{color:var(--encre)}
+.choix summary svg.ico{width:16px;height:16px;transition:transform var(--rapide);margin-left:auto}
+.choix[open] summary svg.ico{transform:rotate(180deg)}
+.choix #bar-bible{margin-top:8px}
+.cands{margin-top:6px;padding-top:8px;border-top:1px solid rgba(181,84,28,.18)}
 .cands .sur{margin-bottom:4px}
 .cand{display:flex;align-items:center;gap:8px;width:100%;border:none;background:var(--papier);color:var(--encre);border-radius:8px;padding:5px 8px;margin-top:3px;text-align:left;font-size:var(--t1);transition:background var(--rapide)}
 .cand:hover{background:var(--papier-3)}
@@ -252,6 +307,8 @@ table.tab{width:max-content;min-width:100%;border-collapse:separate;border-spaci
 .tab td{padding:1px;border-bottom:1px solid var(--filet);white-space:nowrap}
 .tab tr:hover td{background:var(--papier-2)}
 .tab tr.on td{background:var(--cuivre-pale)}
+/* la ligne d'un fil qu'on survole dans le dessin de la barrette */
+.tab tr.vise td{background:#f6dccb}
 .tab td.g{width:34px;padding:0}
 .tab td.g button{width:100%;height:30px;border:none;background:none;color:#7b8794;font-size:var(--t0);text-align:right;padding:0 6px;border-radius:6px;font-family:var(--mono)}
 .tab td.g button:hover{color:var(--cuivre);background:var(--cuivre-pale)}
@@ -305,7 +362,24 @@ table.bible{width:100%;border-collapse:separate;border-spacing:0;font-size:var(-
 .bible td.sans{font-family:var(--sans);color:var(--encre-2)}
 .bible td.d{text-align:right}
 .bible tr:hover td{background:var(--papier-2)}
-.bible td.bible-note{color:var(--encre-2);font-family:var(--sans);font-size:var(--t0);white-space:normal;min-width:120px}
+.bible tr.on td{background:var(--cuivre-pale)}
+.bible td.bible-note{color:var(--encre-2);font-family:var(--sans);font-size:var(--t0);white-space:normal;min-width:96px}
+/* chaque référence porte sa physique en petit ; son nom s'ouvre en grand */
+.bible td.pict{width:46px;padding-right:4px;vertical-align:middle}
+.picto{display:block}
+.picto .p-cell rect{fill:var(--papier);stroke:var(--encre);stroke-width:.7}
+.picto .p-blind rect{fill:#dfe4e9}
+.picto .p-rail{fill:#a7b1bd}
+.picto .p-bande rect{fill:var(--papier);stroke:var(--encre);stroke-width:.7}
+.picto .p-bande circle{fill:var(--encre)}
+.ref-btn{border:none;background:none;padding:2px 6px;margin:-2px -6px;border-radius:6px;font-family:var(--mono);font-weight:700;color:var(--encre);text-align:left;text-decoration:underline dotted rgba(24,33,44,.35);text-underline-offset:3px}
+.ref-btn:hover{color:var(--cuivre-2);background:var(--cuivre-pale)}
+.ref-btn[aria-pressed="true"]{color:var(--cuivre-2)}
+.bible-zoom{padding:12px 12px 14px;border-radius:12px;background:var(--cuivre-pale);margin-bottom:14px}
+.bz-tete{display:flex;align-items:flex-start;gap:10px}
+.bz-tete .sur{color:var(--cuivre-2)}
+.bz-ref{font-family:var(--mono);font-size:var(--t5);font-weight:700;letter-spacing:.01em;line-height:1.2}
+.bible-zoom .phy{margin-top:8px}
 
 /* ─── L'ACCUEIL : rien de chargé ───────────────────────────────────────── */
 .vide{position:absolute;inset:0;display:grid;place-items:center;padding:16px 16px 16px calc(var(--rail) + 28px);z-index:5}
@@ -357,7 +431,9 @@ body.depot-actif .depot{display:grid}
   .poignee::after{left:50%;top:6px;width:40px;height:4px;margin:0 0 0 -20px}
   .ba-tete{padding:18px 12px 0 16px}
   .filtre{margin:10px 12px 6px 16px}
-  .equip{margin:2px 12px 6px 16px;max-height:60%}
+  /* le dessin de la barrette passe avant la table : la carte prend toute la
+     place que la table (120 px au moins) ne réclame pas */
+  .equip{margin:2px 10px 6px 12px;padding:10px 8px 12px;max-height:none}
   .ba-corps{padding:0 4px 8px 8px}
   .tab{font-size:var(--t0)}
   .tab input{padding:0 4px;height:28px}
@@ -384,4 +460,5 @@ body.depot-actif .depot{display:grid}
 /* ─── MOUVEMENT RÉDUIT ──────────────────────────────────────────────────── */
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{transition:none!important;animation:none!important}
+  .phy{scroll-behavior:auto}
 }
