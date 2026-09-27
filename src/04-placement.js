@@ -206,8 +206,12 @@ function placer(G, options) {
   const membres = (id, cle) => { const vus = new Set([cle]), pile = [cle];
     while (pile.length) { const c = pile.pop(); clesListes(id).forEach(lid => { const r = runDe(id, lid, c); if (r) r.cles.forEach(k => { if (!vus.has(k)) { vus.add(k); pile.push(k); } }); }); }
     return [...vus]; };
+  /* un bornier est plus étroit qu'un équipement : une barrette est une rangée
+     de cellules numérotées, une prise de coupure sa partie mobile et sa
+     partie fixe ; les deux flancs gardent STRIPW */
+  const corpsDe = id => { const nom = noeuds.get(id).nom; return estBarrette(nom) ? 44 : (estCoupure(nom) ? 64 : BODYW); };
   const largeurDe = id => { const ls = listes.get(id);
-    if (ls.S) return estPastille(id) ? BORNW : (STRIPW + BODYW + STRIPW);
+    if (ls.S) return estPastille(id) ? BORNW : (STRIPW + corpsDe(id) + STRIPW);
     if (estMasse(noeuds.get(id).nom)) return 26;      // le symbole de masse tient en 10 unités
     return STRIPW + BODYW + STRIPW; };
   const hauteurEstimee = id => { const ls = listes.get(id);
