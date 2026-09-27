@@ -194,10 +194,17 @@ function placer(G, options) {
     const amontDe = r => { let g = 0, d = 0; const cr = colDe(r);
       noeuds.get(r).broches.forEach(p => (partenaires.get(r + SEP + p.cle) || []).forEach(q => { if (q.id === r) return; const cq = colDe(q.id); if (cq < cr) g++; else if (cq > cr) d++; }));
       return d > g ? 'L' : (g > d ? 'R' : null); };
+    /* sur demande (opt.entiers), un connecteur reste ENTIER sur un flanc : le
+       flanc de la majorité de ses fils, et ceux qui vont de l'autre côté font
+       le tour — le concours dit si c'est mieux que de le couper en deux */
+    const coteDuGroupe = new Map();
+    if (opt.entiers) N.broches.forEach(p => { const g = groupeDe(id, p.cle); if (g == null) return; const e = coteDuGroupe.get(g) || coteDuGroupe.set(g, { g: 0, d: 0 }).get(g);
+      (partenaires.get(id + SEP + p.cle) || []).forEach(q => { if (q.id === id) return; const cq = colDe(q.id); if (cq < cn) e.g++; else if (cq > cn) e.d++; }); });
     N.broches.forEach(p => { let d = 0, g = 0, meme = null;
       (partenaires.get(id + SEP + p.cle) || []).forEach(q => { if (q.id === id) return; const cq = colDe(q.id); if (cq < cn) g++; else if (cq > cn) d++; else meme = q; });
       let f; if (!d && !g && meme) f = noeuds.get(meme.id).reglette ? (amontDe(meme.id) || 'R') : (flancDe.get(meme.id + SEP + meme.cle) === 'L' ? 'L' : 'R');
       else f = (d && g) ? 'LR' : ((d >= g) ? 'R' : 'L');
+      const e = coteDuGroupe.get(groupeDe(id, p.cle)); if (e && e.g !== e.d) f = e.d > e.g ? 'R' : 'L';
       flancDe.set(id + SEP + p.cle, f); if (f !== 'R') L.push(p); if (f !== 'L') R.push(p); });
     listes.set(id, { L, R }); }
   const clesListes = id => listes.get(id).S ? ['S'] : ['L', 'R'];
@@ -1189,6 +1196,8 @@ function meilleurPlacement(liaisons) {
   // perdu et pas plus de croisements — elle rend les blocs compacts
   bOpt = { ...bOpt, goulottes: bGoulottes };
   { const L3 = essayer({ ...bOpt, condenser: true }); if (nePerdRien(L3, best)) { best = L3; bOpt.condenser = true; } }
+  // un connecteur entier sur un flanc plutôt que coupé en deux : si le juge le dit
+  { const L6 = essayer({ ...bOpt, entiers: true }); if (bat(L6, best)) { best = L6; bOpt.entiers = true; } }
   /* secours : serpentin. Un dessin qui ne tient pas sur la feuille ne gagne
      jamais : on essaie alors toutes les largeurs de rangée d'un petit
      dessin ; un dessin qui tient ne se replie que sans plier plus d'un fil
