@@ -3520,19 +3520,49 @@ async function lireBibleFichier(fichier) { return lireBible(await texteDuFichier
 function jaugeDuType(type) { const m = /(\d{1,2})\s*$/.exec(String(type || '').trim()); return m ? parseInt(m[1], 10) : null; }
 function blindeDuType(type) { return /^(ML|BL|SH|SC)/i.test(String(type || '').trim()); }
 function besoinsDeBarrette(repere, liaisons) {
-  const bornes = new Set(), jauges = [], pns = new Map(); let blindes = 0, shunts = 0, fils = 0;
+  const bornes = new Set(), jauges = [], pns = new Map(), ponts = [], parBorne = new Map(); let blindes = 0, shunts = 0, fils = 0;
+  const arrivee = (b, l, autre, borneAutre) => { if (!b) return; (parBorne.get(b) || parBorne.set(b, []).get(b)).push({ cable: l.cable, type: l.type, route: l.route, plan: l.plan, vers: autre, borne: borneAutre }); };
   liaisons.forEach(l => { const ici = [];
     if (l.de === repere) ici.push([l.borneDe, l.pnDe]);
     if (l.vers === repere) ici.push([l.borneVers, l.pnVers]);
     if (!ici.length) return;
-    if (l.de === repere && l.vers === repere) { shunts++; }
-    else { fils++; const g = jaugeDuType(l.type); if (g != null) jauges.push(g); if (blindeDuType(l.type)) blindes++; }
+    if (l.de === repere && l.vers === repere) { shunts++; ponts.push([l.borneDe, l.borneVers]); }
+    else { fils++; const g = jaugeDuType(l.type); if (g != null) jauges.push(g); if (blindeDuType(l.type)) blindes++;
+      if (l.de === repere) arrivee(l.borneDe, l, l.vers, l.borneVers); else arrivee(l.borneVers, l, l.de, l.borneDe); }
     ici.forEach(([b, pn]) => { if (b) bornes.add(b); if (pn) pns.set(pn, (pns.get(pn) || 0) + 1); }); });
   const numeros = [...bornes].map(b => parseInt(b, 10)).filter(x => !isNaN(x));
   const pn = [...pns.entries()].sort((a, b) => b[1] - a[1]).map(e => e[0])[0] || '';
   return { repere, bornes: [...bornes], nBornes: bornes.size, borneMax: numeros.length ? Math.max(...numeros) : bornes.size,
-           fils, shunts, jaugeFine: jauges.length ? Math.max(...jauges) : null, jaugeGrosse: jauges.length ? Math.min(...jauges) : null,
+           fils, shunts, ponts, parBorne, jaugeFine: jauges.length ? Math.max(...jauges) : null, jaugeGrosse: jauges.length ? Math.min(...jauges) : null,
            blindes, pn };
+}
+/* Les PAQUETS d'une barrette : les bornes réunies par des shunts forment un
+   paquet ; une borne seule est un paquet à elle seule. Rend, dans l'ordre
+   des bornes, [{ bornes:[…], ponte:bool }]. */
+function paquetsDeBarrette(bornes, ponts) {
+  const chef = new Map(); const trouver = b => { while (chef.has(b) && chef.get(b) !== b) b = chef.get(b); return b; };
+  bornes.forEach(b => chef.set(b, b));
+  ponts.forEach(([a, b]) => { if (!chef.has(a)) chef.set(a, a); if (!chef.has(b)) chef.set(b, b); const ra = trouver(a), rb = trouver(b); if (ra !== rb) chef.set(rb, ra); });
+  const groupes = new Map();
+  [...chef.keys()].sort(triBornes).forEach(b => { const r = trouver(b); (groupes.get(r) || groupes.set(r, []).get(r)).push(b); });
+  return [...groupes.values()].map(g => ({ bornes: g, ponte: g.length > 1 })).sort((u, v) => triBornes(u.bornes[0], v.bornes[0]));
+}
+/* La barrette telle qu'elle est physiquement : tous les modules de la
+   référence retenue (ou au moins ceux qu'on utilise), chacun avec ses fils
+   de tous les folios, son paquet, et s'il est libre. Ce que la fiche
+   visuelle dessine. */
+function physiqueDeBarrette(repere, liaisons, bible, retenue) {
+  const I = (estCoupure(repere) ? coupureInfos : barretteInfos)(repere, liaisons, bible);
+  const ref = retenue || I.reference, entree = (bible || []).find(e => e.reference === ref) || I.choix || null;
+  const n = Math.max(entree && entree.bornes || 0, I.borneMax || 0, I.nBornes);
+  const paquets = paquetsDeBarrette(I.bornes, I.ponts);
+  const paquetDe = new Map(); paquets.forEach((p, k) => p.bornes.forEach(b => paquetDe.set(b, k)));
+  const utilisees = new Set(I.bornes.map(String));
+  const modules = [];
+  for (let k = 1; k <= n; k++) { const b = String(k);
+    modules.push({ borne: b, utilisee: utilisees.has(b), paquet: paquetDe.has(b) ? paquetDe.get(b) : null, fils: I.parBorne.get(b) || [] }); }
+  I.bornes.filter(b => !/^\d+$/.test(String(b))).sort(triBornes).forEach(b => modules.push({ borne: b, utilisee: true, paquet: paquetDe.get(b) ?? null, fils: I.parBorne.get(b) || [] }));
+  return { repere, reference: ref, entree, modules, paquets, libres: modules.filter(m => !m.utilisee).length, nature: estCoupure(repere) ? 'prise de coupure' : (I.blindes ? 'barrette de blindage' : 'barrette') };
 }
 /* Le choix : parmi les entrées de la bonne nature qui conviennent, la
    famille déjà employée d'abord, puis la plus petite qui a assez de bornes,

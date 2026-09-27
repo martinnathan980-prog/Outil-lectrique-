@@ -10,7 +10,7 @@ const SRC = path.join(__dirname, '..', 'src');
 const code = ['01-modele.js', '02-lecture.js', '09-barrettes.js'].map(f => fs.readFileSync(path.join(SRC, f), 'utf8')).join('\n');
 const bac = { console };
 vm.createContext(bac);
-vm.runInContext(code + '\nthis.X = { lireBible, bibleExemple, jaugeDuType, blindeDuType, besoinsDeBarrette, choisirBarrette, barretteInfos, connecteursDe, connecteurDeBorne, connecteurParBorne, coupureInfos, connecteursInfos, suiviDuContrat, csvDuSuivi, contratExemple, contratEssai };', bac);
+vm.runInContext(code + '\nthis.X = { lireBible, bibleExemple, jaugeDuType, blindeDuType, besoinsDeBarrette, choisirBarrette, barretteInfos, connecteursDe, connecteurDeBorne, connecteurParBorne, coupureInfos, connecteursInfos, suiviDuContrat, csvDuSuivi, paquetsDeBarrette, physiqueDeBarrette, contratExemple, contratEssai };', bac);
 const X = bac.X;
 let total = 0, echecs = 0;
 const ok = (nom, cond, mesure) => { total++; if (!cond) echecs++; console.log('  ' + (cond ? 'OK    ' : 'ÉCHEC ') + nom + (mesure ? '   — ' + mesure : '')); };
@@ -85,6 +85,15 @@ ok('la barrette de blindage est dite telle', S.find(l => l.repere === '669VT32')
 const texteSuivi = X.csvDuSuivi(S);
 ok('le CSV a un en-tête et une ligne par chose', texteSuivi.split('\n').length === S.length + 1 && /^Contrat;Repère;Nature;Référence retenue/.test(texteSuivi));
 ok('les masses ne sont pas suivies', !S.some(l => /G$/.test(l.repere.split(' ')[0]) && l.nature !== 'connecteur' && /^\d+G$/.test(l.repere)));
+
+console.log('\n7. LA BARRETTE PHYSIQUE');
+const P = X.physiqueDeBarrette('668VT31', L, X.bibleExemple());
+ok('668VT31 : douze modules de la référence retenue', P.reference === 'ASNE0500-12' && P.modules.length === 12, P.reference + ' · ' + P.modules.length + ' modules');
+ok('les paquets pontés : 1-2-3, 5-6, 8-9-10', P.paquets.filter(p => p.ponte).map(p => p.bornes.join('-')).join(' ') === '1-2-3 5-6 8-9-10', P.paquets.map(p => p.bornes.join('-')).join(' '));
+ok('la borne 7 et les bornes 11, 12 sont libres', P.libres === 3 && !P.modules[6].utilisee && P.modules[10].paquet === null, P.libres + ' libres');
+ok('chaque module dit ses fils : la borne 2 reçoit W-304', P.modules[1].fils.map(f => f.cable).join(',') === 'W-304' && P.modules[1].fils[0].vers === '351PM1', P.modules[1].fils.map(f => f.cable + '→' + f.vers).join(' '));
+const Q = X.physiqueDeBarrette('409VC2A', L, X.bibleExemple());
+ok('une prise de coupure a la même physique, sans paquet', Q.nature === 'prise de coupure' && Q.modules.length === 3 && Q.paquets.every(p => !p.ponte), Q.reference + ' · ' + Q.modules.length);
 
 console.log('\n  ' + (total - echecs) + ' / ' + total + ' contrôles passés' + (echecs ? '  —  ' + echecs + ' ÉCHEC(S)' : '  —  tout est vert'));
 process.exit(echecs ? 1 : 0);
