@@ -146,6 +146,14 @@ function physiqueDeBarrette(repere, liaisons, bible, retenue) {
   I.bornes.filter(b => !/^\d+$/.test(String(b))).sort(triBornes).forEach(b => modules.push({ borne: b, utilisee: true, paquet: paquetDe.get(b) ?? null, fils: I.parBorne.get(b) || [] }));
   return { repere, reference: ref, entree, modules, paquets, libres: modules.filter(m => !m.utilisee).length, nature: estCoupure(repere) ? 'prise de coupure' : (I.blindes ? 'barrette de blindage' : 'barrette') };
 }
+/* La même physique pour une référence de la bible, sans contrat : tous ses
+   modules, aucun fil, aucun paquet. Ce que la fiche de la bible dessine. */
+function physiqueDeReference(entree) {
+  const n = entree && entree.bornes != null ? Math.max(0, Math.round(entree.bornes)) : 0, modules = [];
+  for (let k = 1; k <= n; k++) modules.push({ borne: String(k), utilisee: false, paquet: null, fils: [] });
+  const nature = !entree ? 'barrette' : entree.nature === 'coupure' ? 'prise de coupure' : entree.nature === 'connecteur' ? 'connecteur' : entree.nature === 'blindage' ? 'barrette de blindage' : 'barrette';
+  return { repere: '', reference: entree ? entree.reference : '', entree: entree || null, modules, paquets: [], libres: n, nature };
+}
 /* Le choix : parmi les entrées de la bonne nature qui conviennent, la
    famille déjà employée d'abord, puis la plus petite qui a assez de bornes,
    puis la plus courante en intensité. Chaque raison est dite pour qu'on
