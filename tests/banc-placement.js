@@ -126,7 +126,8 @@ const CAS = [
   ['exemple, folio 3 — 66 liaisons, très chargé', { plan: '3' }]
 ];
 
-(async () => {
+module.exports = { CAS };          // les topologies servent aussi aux essais sans navigateur
+if (require.main === module) (async () => {
   const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
   const page = await nav.newPage({ viewport: { width: 1500, height: 980 } });
   page.setDefaultTimeout(240000);
