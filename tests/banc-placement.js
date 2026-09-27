@@ -39,7 +39,7 @@
    ========================================================================= */
 const { chromium } = require('playwright');
 const path = require('path');
-const { fichierDemande, chargerDansLaPage, essaiDansLaPage, exempleDansLaPage, mesurerDansLaPage } = require('./pilote');
+const { fichierDemande, chargerDansLaPage, essaiDansLaPage, exempleDansLaPage, mesurerDansLaPage, echangesEvidentsDansLaPage } = require('./pilote');
 
 const FICHIER = fichierDemande();
 const JSON_OUT = process.argv.includes('--json');
@@ -126,7 +126,8 @@ const CAS = [
   ['exemple, folio 3 — 66 liaisons, très chargé', { plan: '3' }]
 ];
 
-(async () => {
+module.exports = { CAS };          // les topologies servent aussi aux essais sans navigateur
+if (require.main === module) (async () => {
   const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
   const page = await nav.newPage({ viewport: { width: 1500, height: 980 } });
   page.setDefaultTimeout(240000);
@@ -146,6 +147,10 @@ const CAS = [
     const m = { blocs: r.blocs, fils: r.fils, larg: r.w, haut: r.h, droits: r.taux, crois: r.croisements,
       surface: (r.w * r.h) / 1000, format: r.format, densite: r.densite, allong: r.allongement,
       ib: r.filsDansBloc, ch: r.chevauches, ms };
+    /* les échanges évidents : sur les folios de l'exemple, aucune permutation
+       de deux bornes d'un connecteur ne doit réduire les croisements sans
+       réduire les fils droits (vérification exacte, a posteriori) */
+    if (gen && gen.plan) m.echanges = await page.evaluate(echangesEvidentsDansLaPage);
     res.push({ nom, ...m });
   }
 
@@ -188,7 +193,12 @@ const CAS = [
       + Math.round(r.haut) + ', soit ' + n(r.format, 1) + ':1'));
   }
   if (faux) console.log('\n  ' + faux + ' cas VIOLENT un invariant sacré — aucun score ne rachète ça.');
+  let manques = 0;
+  res.filter(r => r.echanges).forEach(r => { const e = r.echanges; manques += e.manques.length;
+    console.log('\n  ' + (e.manques.length ? '✗ ' : '  ') + 'les échanges évidents sont trouvés — ' + r.nom + ' : '
+      + (e.manques.length ? e.manques.length + ' échange(s) manqué(s) sur ' + e.paires + ' paires' : 'aucun des ' + e.paires + ' échanges de deux bornes ne fait mieux'));
+    e.manques.forEach(x => console.log('      ' + x)); });
   if (erreurs.length) console.log('  erreurs console : ' + [...new Set(erreurs)].slice(0, 3).join(' | '));
   console.log('');
-  process.exit(faux ? 1 : 0);
+  process.exit(faux || manques ? 1 : 0);
 })();

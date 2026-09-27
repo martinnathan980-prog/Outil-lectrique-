@@ -149,30 +149,52 @@ function piquagesSvg(barrettes, piquages, verticaux) {
    vertical, jamais sur une autre étiquette, jamais barré par un fil vertical.
    Mieux vaut un fil muet qu'une planche où les étiquettes se marchent dessus :
    les plus longs segments choisissent en premier. */
-function reperesDeFil(fils, verticaux) {
+function reperesDeFil(fils, verticaux, barrettes) {
   const H = 5.6, CAR = 0.60, fs = 6, poses = [];
   const libre = (x0, y0, x1, y1) => !poses.some(b => x1 > b.x0 - 2 && x0 < b.x1 + 2 && y1 > b.y0 - 1.5 && y0 < b.y1 + 1.5)
     && !verticaux.some(v => v.x > x0 - R_PONT - 1 && v.x < x1 + R_PONT + 1 && v.y1 > y0 && v.y0 < y1);
-  const cands = [];
+  const horizontaux = fils.some(w => w.pts.length > 1);
+  const cands = [], debout = [];
   fils.forEach(w => { const nom = String(w.cable || '').trim(); if (!nom) return;
-    let bL = 0, bx0 = 0, bx1 = 0, by = 0;
-    for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1]; if (Math.abs(a.y - b.y) > 0.6) continue;
-      const L = Math.abs(b.x - a.x); if (L > bL) { bL = L; bx0 = Math.min(a.x, b.x); bx1 = Math.max(a.x, b.x); by = a.y; } }
-    if (bL > 0) cands.push({ nom, L: bL, x0: bx0, x1: bx1, y: by }); });
+    let bL = 0, bx0 = 0, bx1 = 0, by = 0, vL = 0, vx = 0, vy0 = 0, vy1 = 0;
+    for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1];
+      if (Math.abs(a.y - b.y) < 0.6) { const L = Math.abs(b.x - a.x); if (L > bL) { bL = L; bx0 = Math.min(a.x, b.x); bx1 = Math.max(a.x, b.x); by = a.y; } }
+      else if (Math.abs(a.x - b.x) < 0.6) { const L = Math.abs(b.y - a.y); if (L > vL) { vL = L; vx = a.x; vy0 = Math.min(a.y, b.y); vy1 = Math.max(a.y, b.y); } } }
+    // un fil qui n'est qu'un raccord vers un piquage a, sur la verticale du piquage, un tronçon à lui seul
+    if (vL === 0 && w.pts.length) { const t = tronconDePiquage(w, barrettes || []); if (t) { vL = t.vL; vx = t.vx; vy0 = t.vy0; vy1 = t.vy1; } }
+    cands.push({ nom, L: bL, x0: bx0, x1: bx1, y: by, vL, vx, vy0, vy1 }); });
   cands.sort((a, b) => b.L - a.L);
   let out = '';
-  cands.forEach(c => { const larg = c.nom.length * CAR * fs; if (larg + 10 > c.L) return;
-    const mid = (c.x0 + c.x1) / 2, marge = 5, dmax = Math.max(0, (c.L - larg) / 2 - marge);
+  cands.forEach(c => { const larg = c.nom.length * CAR * fs, marge = 5;
     let pose = null;
-    for (let d = 0; d <= dmax + 0.01 && !pose; d += Math.max(3, larg / 3)) {
-      for (const cx of (d === 0 ? [mid] : [mid - d, mid + d])) {
-        const x0 = cx - larg / 2, x1 = cx + larg / 2, y1 = c.y - 2.2, y0 = y1 - H;
-        if (x0 < c.x0 + marge || x1 > c.x1 - marge) continue;
-        if (libre(x0, y0, x1, y1)) { pose = { cx, x0, y0, x1, y1 }; break; } } }
-    if (!pose) return;
-    poses.push(pose);
-    out += `<text class="filnum" x="${f1(pose.cx)}" y="${f1(pose.y1)}" text-anchor="middle">${esc(c.nom)}</text>`; });
+    if (larg + 10 <= c.L) { const mid = (c.x0 + c.x1) / 2, dmax = Math.max(0, (c.L - larg) / 2 - marge);
+      for (let d = 0; d <= dmax + 0.01 && !pose; d += Math.max(3, larg / 3)) {
+        for (const cx of (d === 0 ? [mid] : [mid - d, mid + d])) {
+          const x0 = cx - larg / 2, x1 = cx + larg / 2, y1 = c.y - 2.2, y0 = y1 - H;
+          if (x0 < c.x0 + marge || x1 > c.x1 - marge) continue;
+          if (libre(x0, y0, x1, y1)) { pose = { cx, x0, y0, x1, y1 }; break; } } } }
+    if (pose) { poses.push(pose); out += `<text class="filnum" x="${f1(pose.cx)}" y="${f1(pose.y1)}" text-anchor="middle">${esc(c.nom)}</text>`; return; }
+    // pas de place à l'horizontale : le numéro se lit debout, le long du plus long vertical
+    if (larg + 10 > c.vL) return;
+    const cy = (c.vy0 + c.vy1) / 2, x1 = c.vx - 2.2, x0 = x1 - H, y0 = cy - larg / 2, y1 = cy + larg / 2;
+    if (!poses.some(b => x1 > b.x0 - 2 && x0 < b.x1 + 2 && y1 > b.y0 - 1.5 && y0 < b.y1 + 1.5)) {
+      poses.push({ x0, y0, x1, y1 });
+      out += `<text class="filnum" transform="rotate(-90 ${f1(x1)} ${f1(cy)})" x="${f1(x1)}" y="${f1(cy)}" text-anchor="middle">${esc(c.nom)}</text>`; } });
   return out;
+}
+/* Sur la verticale d'un piquage, le tronçon entre la borne d'un fil et le
+   départ voisin n'appartient qu'à ce fil : son numéro peut s'y écrire. */
+function tronconDePiquage(w, barrettes) {
+  for (const q of [w.pts[0], w.pts[w.pts.length - 1]]) {
+    const b = barrettes.find(b => Math.abs(b.x - q.x) < 0.5 && q.y > b.y1 - 0.5 && q.y < b.y2 + 0.5); if (!b) continue;
+    const ys = [b.py, ...b.gardes.map(g => g.y)].filter(y => Math.abs(y - q.y) > 0.6);
+    const versPy = b.py < q.y ? -1 : 1;
+    const voisins = ys.filter(y => versPy < 0 ? y < q.y : y > q.y);
+    if (!voisins.length) continue;
+    const y2 = versPy < 0 ? Math.max(...voisins) : Math.min(...voisins);
+    return { vL: Math.abs(y2 - q.y), vx: b.x, vy0: Math.min(q.y, y2), vy1: Math.max(q.y, y2) };
+  }
+  return null;
 }
 /* ---- les blocs -------------------------------------------------------- */
 /* Les bornes d'un équipement : le fil entre par le flanc et continue jusqu'au
@@ -319,7 +341,7 @@ function sceneSvg(dessin, cartouche, folio, designationDe, choisi) {
   fils.forEach(w => { s += filSvg(w, verticaux); });
   const shunts = new Map();
   dessin.fils.forEach(w => { if (!w.shunt) return; const ys = [w.epA.y, w.epB.y].sort((u, v) => u - v); (shunts.get(w.de) || shunts.set(w.de, []).get(w.de)).push(ys); });
-  s += reperesDeFil(dessin.fils, verticaux);
+  s += reperesDeFil(dessin.fils, verticaux, dessin.barrettes);
   s += piquagesSvg(dessin.barrettes, dessin.piquages, verticaux);
   dessin.points.forEach(d => s += `<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="1.9"/>`);
   dessin.comps.forEach(c => { c.shunts = shunts.get(c.name) || []; c.connecteurs = c.kind === 'equip' ? connecteurParBorne(c.name, dessin.fils) : null; s += blocSvg(c, designationDe ? designationDe(c.name) : '', choisi === c.name); });

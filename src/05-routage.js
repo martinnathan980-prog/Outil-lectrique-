@@ -277,20 +277,26 @@ function router(layout) {
    tranche un fil est un croisement comme un autre, l'œil ne fait pas la
    différence. */
 const compterDroits = fils => fils.filter(w => w.pts.length === 2).length;
+/* Seuls un horizontal et un vertical peuvent se croiser : on les sépare, et
+   la recherche locale, qui compte des centaines de fois, y gagne. */
 function compterCroisements(fils, barrettes) {
-  const segs = []; fils.forEach((w, wi) => { for (let i = 0; i < w.pts.length - 1; i++)
-    segs.push({ x1: w.pts[i].x, y1: w.pts[i].y, x2: w.pts[i + 1].x, y2: w.pts[i + 1].y, wi }); });
-  (barrettes || []).forEach((b, bi) => segs.push({ x1: b.x, y1: b.y1, x2: b.x, y2: b.y2, wi: 'barrette' + bi }));
+  const H = [], V = [];
+  fils.forEach((w, wi) => { for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1];
+    if (Math.abs(a.y - b.y) < .01) H.push({ y: a.y, x0: Math.min(a.x, b.x) + 1, x1: Math.max(a.x, b.x) - 1, wi });
+    else V.push({ x: a.x, y0: Math.min(a.y, b.y) + 1, y1: Math.max(a.y, b.y) - 1, wi }); } });
+  (barrettes || []).forEach((b, bi) => V.push({ x: b.x, y0: Math.min(b.y1, b.y2) + 1, y1: Math.max(b.y1, b.y2) - 1, wi: 'barrette' + bi }));
   let c = 0;
-  for (let i = 0; i < segs.length; i++) for (let j = i + 1; j < segs.length; j++) {
-    const a = segs[i], b = segs[j]; if (a.wi === b.wi) continue;
-    const ah = Math.abs(a.y1 - a.y2) < .01, bh = Math.abs(b.y1 - b.y2) < .01;
-    if (ah === bh) continue;
-    const h = ah ? a : b, v = ah ? b : a;
-    const hx0 = Math.min(h.x1, h.x2) + 1, hx1 = Math.max(h.x1, h.x2) - 1;
-    const vy0 = Math.min(v.y1, v.y2) + 1, vy1 = Math.max(v.y1, v.y2) - 1;
-    if (v.x1 > hx0 && v.x1 < hx1 && h.y1 > vy0 && h.y1 < vy1) c++; }
+  for (const h of H) for (const v of V) { if (h.wi === v.wi) continue;
+    if (v.x > h.x0 && v.x < h.x1 && h.y > v.y0 && h.y < v.y1) c++; }
   return c;
+}
+/* Un segment de fil qui passe dans un bloc : le premier invariant sacré. */
+function filsDansBlocs(fils, comps) {
+  let n = 0;
+  fils.forEach(w => { for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1];
+    const x0 = Math.min(a.x, b.x), x1 = Math.max(a.x, b.x), y0 = Math.min(a.y, b.y), y1 = Math.max(a.y, b.y);
+    for (const c of comps) { if (x1 > c.x + 2 && x0 < c.x + c.w - 2 && y1 > c.y + 2 && y0 < c.y + c.h - 2) { n++; break; } } } });
+  return n;
 }
 /* Les deux invariants sacrés : aucun fil à travers un bloc étranger, aucun
    chevauchement. Un dessin qui les viole est FAUX, quel que soit son score. */

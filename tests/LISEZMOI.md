@@ -31,14 +31,23 @@ verbes (charger, essai, mesurer) sur l'API `atelier` de `src/10-demarrage.js`.
 Avant de toucher au moteur, on relance le banc ; après, on le relance. Les
 chiffres de référence sur les dix-huit topologies (quinze historiques et
 les trois folios de l'exemple ; une barrette qui tranche un fil compte
-comme un croisement), depuis que borniers et connecteurs sont rigides —
-bornes dans l'ordre, au pas, corps compacts :
+comme un croisement), depuis que l'ordre des bornes d'un connecteur est
+libre, qu'une barrette s'allonge et qu'une prise de coupure reste au pas :
 
-    73,7 % de fils droits · 122 croisements · 0 violation · 0 cas hors feuille
-    contrat d'essai : 94,4 %, 2 croisements ; folio 3 de l'exemple : 46,4 %, 80
+    88,3 % de fils droits · 86 croisements · 0 violation · 0 cas hors feuille
+    contrat d'essai : 100 %, 3 croisements
+    folio 1 : 87,5 %, 1 · folio 2 : 70 %, 2 · folio 3 : 57,1 %, 47
 
+Quand borniers et connecteurs étaient rigides (ordre naturel, au pas),
+c'était 73,7 %, 122 croisements, folio 2 : 50 % / 5, folio 3 : 46,4 % / 80.
 Avant la rigidité, les quinze historiques donnaient 96,7 % et 4
 croisements : c'est le prix, mesuré, d'objets qui ressemblent au matériel.
+
+Le banc vérifie aussi, sur chaque folio de l'exemple, que **les échanges
+évidents sont trouvés** : aucune permutation de deux bornes d'un même
+connecteur ne réduit les croisements sans réduire les fils droits
+(vérification exacte, a posteriori, au routage réel). Un échange manqué
+fait rendre 1.
 
 Un changement qui fait baisser le premier chiffre doit dire pourquoi, dans son
 message de commit, mesure à l'appui.
