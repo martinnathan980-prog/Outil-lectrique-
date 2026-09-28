@@ -2513,9 +2513,10 @@ function formerLesPiquages(layout, fils, G) {
     const longueur = t => Math.abs(t.tv.paire[1].y - t.tv.paire[0].y);
     const porteur = b.departs.length ? b : (travaux.length ? travaux.reduce((m, t) => longueur(t) > longueur(m) ? t : m).tv : null);
     if (b.departs.length) { piquages.push(b); b.sansRaccord = barriere; }
+    else entrees.forEach(e => { if (fils.get(e.li).chez[e.tag] === b) delete fils.get(e.li).chez[e.tag]; });   // sans départ, pas de piquage
     travaux.forEach(({ tv, ici }) => { if (tv === porteur && !barriere) return;
       tv.att = tv.att.filter(a => a !== ici);
-      if (porteur && tv !== porteur) tv.contraintes.push({ porteur, mur }); }); });
+      if (porteur && tv !== porteur) tv.contraintes.push({ porteur, mur, borne: k }); }); });
   return piquages;
 }
 
@@ -2610,10 +2611,11 @@ function tracerLesFils(layout, fils, piquages) {
   const garde = (b, y) => { if (!b.gardes.some(g => Math.abs(g.y - y) < 0.6)) b.gardes.push({ y }); };
   const cleDe = ep => Math.round(ep.x) + ',' + Math.round(ep.y) + ',' + ep.stub;
   // combien de points ôter à un bout, et si le fil passe par la verticale du piquage
-  const bout = (f, ep, tv, tag) => { const b = f.chez[tag];
-    if (tv && tv.piquage && tv.piquage.borne === cleDe(ep)) return { ote: 2, plie: Math.abs(tv.att[0].y - ep.y) > 0.6 };
-    if (b && !(tv && tv.ch === ep.ch && tv.paire.some(a => a.bout === cle(f.li, tag)))) { garde(b, ep.y); return { ote: 1, jonction: { x: b.x, y: ep.y } }; }
-    if (b || (tv && tv.contraintes.length)) return { ote: 1 };
+  const bout = (f, ep, tv, tag) => { const b = f.chez[tag], k = cleDe(ep);
+    if (tv && tv.piquage && tv.piquage.borne === k) return { ote: 2, plie: Math.abs(tv.att[0].y - ep.y) > 0.6 };   // part du piquage
+    const saVerticale = tv && !tv.piquage && tv.ch === ep.ch && tv.paire.some(a => a.bout === cle(f.li, tag));
+    if (b && !saVerticale) { garde(b, ep.y); return { ote: 1, jonction: { x: b.x, y: ep.y } }; }                 // passe par la jonction
+    if (b || (tv && tv.contraintes.some(c => c.borne === k))) return { ote: 1 };                                 // naît sur l'horizontale du porteur
     return { ote: 0 }; };
   layout.links.forEach((l, li) => { if (l.boucle) return;
     if (l.shunt) { out[li] = { ...l, pts: [] }; return; }
@@ -2730,7 +2732,7 @@ function auditer(dessin) {
   return { ok: filsDansBloc === 0 && blocsChevauches === 0, fils: fils.length, droits,
            tauxDroits: fils.length ? +(droits / fils.length).toFixed(3) : 1,
            croisements: compterCroisements(fils, dessin.barrettes), filsDansBloc, blocsChevauches, blocs: blocs.length, details: coupables,
-           evitables: croisementsEvitables(dessin, { fils }) };
+           evitables: croisementsEvitables(dessin, { fils, barrettes: dessin.barrettes }) };
 }
 
 /* ---- les croisements ÉVITABLES ---------------------------------------------
@@ -2743,28 +2745,31 @@ function auditer(dessin) {
 function croisementsEvitables(layout, R) {
   const G = goulottes(layout); let total = 0;
   const barrettes = R.barrettes || [];
-  for (let ch = 0; ch < G.n; ch++) { const xL = G.x0(ch), xR = G.x1(ch), parX = new Map();
-    const travailEn = x => { const k = Math.round(x * 2); return parX.get(k) || parX.set(k, { x, lo: Infinity, hi: -Infinity, att: [], contraintes: [], piquage: null }).get(k); };
+  for (let ch = 0; ch < G.n; ch++) { const xL = G.x0(ch), xR = G.x1(ch), T = [];
+    // la verticale en x qui couvre [lo, hi] ; deux verticales sur une même piste, l'une au-dessus de l'autre, restent deux
+    const travailEn = (x, lo, hi) => { let t = T.find(u => Math.abs(u.x - x) < 0.5 && hi >= u.lo - 0.5 && lo <= u.hi + 0.5);
+      if (!t) { t = { x, lo, hi, att: [], contraintes: [], piquage: null }; T.push(t); }
+      t.lo = Math.min(t.lo, lo); t.hi = Math.max(t.hi, hi); return t; };
     // une horizontale qui part du point s vers q : une attache de la verticale en s
     const attacher = (t, q, s) => { if (!q || Math.abs(q.y - s.y) > 0.01 || Math.abs(q.x - s.x) < 0.5) return;
       const mur = q.x < s.x ? 'L' : 'R', auMur = mur === 'L' ? q.x <= xL + 1 : q.x >= xR - 1;
       if (!t.att.some(o => o.mur === mur && Math.abs(o.y - s.y) < 0.3)) t.att.push({ y: s.y, mur, jonctionX: auMur ? null : q.x }); };
     const dedans = x => x > xL + 1 && x < xR - 1;
-    barrettes.forEach(b => { if (!dedans(b.x)) return; const t = travailEn(b.x); t.piquage = b; t.lo = Math.min(t.lo, b.y1 + 3); t.hi = Math.max(t.hi, b.y2 - 3);
+    barrettes.forEach(b => { if (!dedans(b.x)) return; const t = travailEn(b.x, b.y1 + 3, b.y2 - 3); t.piquage = b;
       attacher(t, { x: b.raccord.x0, y: b.py }, { x: b.x, y: b.py }); });
     R.fils.forEach(w => { const p = w.pts; if (!p.length) return;
       for (let i = 0; i + 1 < p.length; i++) { const a = p[i], b = p[i + 1];
         if (Math.abs(a.x - b.x) > 0.01 || Math.abs(a.y - b.y) < 0.5 || !dedans(a.x)) continue;
-        const t = travailEn(a.x); t.lo = Math.min(t.lo, a.y, b.y); t.hi = Math.max(t.hi, a.y, b.y);
+        const t = travailEn(a.x, Math.min(a.y, b.y), Math.max(a.y, b.y));
         attacher(t, p[i - 1], a); attacher(t, p[i + 2], b); }
       // un fil qui part d'un piquage : son horizontale est une attache du piquage
       [[p[0], p[1]], [p[p.length - 1], p[p.length - 2]]].forEach(([s, q]) => { const b = barrettes.find(b => Math.abs(b.x - s.x) < 0.5 && s.y > b.y1 - 0.5 && s.y < b.y2 + 0.5);
-        if (b && dedans(b.x)) attacher(travailEn(b.x), q, s); }); });
+        if (b && dedans(b.x)) attacher(travailEn(b.x, s.y, s.y), q, s); }); });
     // une verticale qui naît sur le raccord d'un piquage reste entre la borne et lui
-    parX.forEach(t => { if (t.piquage) return; barrettes.forEach(b => { if (!dedans(b.x)) return; const r = b.raccord;
+    T.forEach(t => { if (t.piquage) return; barrettes.forEach(b => { if (!dedans(b.x)) return; const r = b.raccord;
       if (Math.abs(t.lo - b.py) > 0.3 && Math.abs(t.hi - b.py) > 0.3) return;
-      if (t.x > Math.min(r.x0, r.x1) - 0.5 && t.x < Math.max(r.x0, r.x1) + 0.5) t.contraintes.push({ porteur: travailEn(b.x), mur: r.x0 < r.x1 ? 'L' : 'R' }); }); });
-    const T = [...parX.values()].sort((u, v) => u.x - v.x); if (T.length < 2) continue;
+      if (t.x > Math.min(r.x0, r.x1) - 0.5 && t.x < Math.max(r.x0, r.x1) + 0.5) t.contraintes.push({ porteur: travailEn(b.x, b.py, b.py), mur: r.x0 < r.x1 ? 'L' : 'R' }); }); });
+    T.sort((u, v) => u.x - v.x); if (T.length < 2) continue;
     // par paroi et ordonnée, une seule attache compte : celle de la verticale la plus loin de la paroi
     const parBorne = new Map();
     T.forEach(t => t.att.forEach(a => { if (a.jonctionX != null) return; const k = a.mur + ':' + Math.round(a.y * 2);
