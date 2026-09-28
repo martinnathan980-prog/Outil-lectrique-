@@ -31,11 +31,33 @@ verbes (charger, essai, mesurer) sur l'API `atelier` de `src/10-demarrage.js`.
 Avant de toucher au moteur, on relance le banc ; après, on le relance. Les
 chiffres de référence sur les dix-huit topologies (quinze historiques et
 les trois folios de l'exemple ; un piquage qui tranche un fil compte comme
-un croisement), depuis le routeur à ordre exact des pistes :
+un croisement), depuis que le juge voit les corps étirés, les segments
+partagés et les tours :
 
-    82,1 % de fils droits · 70 croisements · 0 évitable · 0 violation · 0 cas hors feuille
-    contrat d'essai : 77,8 %, 1 croisement
-    folio 1 : 62,5 %, 1 · folio 2 : 60 %, 2 · folio 3 : 51,8 %, 41
+    82,7 % de fils droits · 45 croisements · 0 évitable · 0 violation · 0 cas hors feuille
+    contrat d'essai : 66,7 %, 0 croisement
+    folio 1 : 62,5 %, 1 · folio 2 : 60 %, 3 · folio 3 : 55,4 %, 22
+
+Un TOUR (un fil qui sort de son bloc par le flanc opposé à son partenaire
+et en fait le tour) coûte un croisement et demi : le lecteur suit un fil
+qui s'éloigne de sa cible, c'est pire qu'un pont. Avant ce poids (les tours
+ne faisaient que départager), c'était 82,4 % et 40 croisements, mais W-014
+du folio 1 faisait le tour de 395SW1 par la gauche et le bas ; il traverse
+maintenant en Z avec un pont. Le banc note ses variantes au même barème.
+
+Le juge précédent donnait 84,6 % et 53 croisements (contrat d'essai
+83,3 %, folio 1 75 % / 1, folio 3 50 % / 35) : les fils droits perdus
+étaient ACHETÉS PAR DES CORPS ÉTIRÉS — 601RC et 210SP1 sur toute la
+hauteur de l'essai, 103RL1 du folio 1, C1 et C7 de la boucle (100 → 90 %)
+— ce qu'un lecteur voit tout de suite et qu'aucun chiffre ne disait. Un
+corps qui dépasse une fois et demie sa hauteur naturelle coûte désormais
+un croisement et demi ; deux fils étrangers superposés sur un même trait
+(une connexion qui ment) coûtent deux croisements ; un fil qui fait le
+tour de son bloc coûte un croisement et demi ; une masse qui pend sur un
+fil, un connecteur coupé en deux flancs départagent ensuite — un
+connecteur se coupe quand ça supprime un tour ou un croisement, jamais
+sans raison (le banc l'admet si chaque borne regarde vers son
+partenaire).
 
 La mesure des fils droits est HONNÊTE depuis ce routeur : un fil qui passe
 par le raccord et la verticale d'un piquage n'est pas droit, même si son
@@ -54,11 +76,17 @@ c'était 73,7 %, 122 croisements, folio 2 : 50 % / 5, folio 3 : 46,4 % / 80
 96,7 % et 4 croisements : c'est le prix, mesuré, d'objets qui ressemblent
 au matériel.
 
-Le banc vérifie aussi, sur chaque folio de l'exemple, que **les échanges
-évidents sont trouvés** : aucune permutation de deux bornes d'un même
-connecteur ne réduit les croisements sans réduire les fils droits
-(vérification exacte, a posteriori, au routage réel). Un échange manqué
-fait rendre 1.
+Le banc vérifie aussi, sur chaque folio de l'exemple, que **les gestes
+évidents sont trouvés** : aucun échange de deux bornes d'un connecteur,
+aucun changement de flanc d'une borne, aucun glissement d'un bloc (ses
+pastilles avec lui) ne fait mieux — moins de croisements ou de segments
+partagés sans moins de fils droits, ou l'inverse (vérification exacte, a
+posteriori, au routage réel, sur la géométrie resserrée). Et que le dessin
+n'a **aucun segment partagé** par deux fils de nets différents, **aucun
+corps étiré** à plus de deux fois sa hauteur naturelle sans rendre droits
+deux fils de plus (on le compacte et on reroute), les masses collées à
+leur borne, et les cas montrés du doigt (W-120, 381RL1, 397TB1). Un
+manqué fait rendre 1.
 
 Un changement qui fait baisser le premier chiffre doit dire pourquoi, dans son
 message de commit, mesure à l'appui.

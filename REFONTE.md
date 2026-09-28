@@ -163,23 +163,32 @@ Fait, mesuré, en place :
   sur lui, survoler une ligne allume le fil. Ouvrir est dans le menu (et
   Ctrl+O, et le dépôt) : on ne le fait qu'une fois.
 - **Le dessin parle fil** : un croisement se lit par un pont sur le fil
-  horizontal ; un piquage est du fil avec des points de jonction ; les bornes
-  d'un équipement sont dans le corps, une petite borne ronde au contact.
+  horizontal ; un piquage se dessine comme la barrette qu'il faudra poser
+  (pointillé, points, numéros) ; les bornes d'un équipement sont dans une
+  pièce de connecteur hors du corps, sa lettre au-dessus.
 - **La bible et le suivi** (`09-barrettes`) : une seule table, lue dans un
   Excel ou un CSV de l'atelier par le nom des colonnes (Référence, Bornes,
   puis Famille, Nature, Jauge min, Jauge max, Intensité, Blindage, Mobile,
   Note) ; la Nature dit barrette (jonction, blindage), prise de coupure ou
   connecteur (l'embase, avec sa partie mobile). Une barrette et une prise
   reçoivent la référence la plus logique (bornes à loger, jauge des fils lue
-  dans le type, blindage, famille déjà employée) et l'écrivent sous leur
-  repère ; un connecteur d'équipement dit la partie mobile à poser. Le suivi
+  dans le type, blindage, famille déjà employée), qui se lit dans leur
+  carte, pas sur le plan ; un connecteur d'équipement dit la partie mobile
+  à poser. Le suivi
   du contrat liste tout ce qu'on pose et s'exporte en CSV. La bible embarquée
   n'est qu'un exemple, sans valeur normative.
 - **Les connecteurs** : une borne « A12 » est la borne 12 du connecteur A,
   sinon le connecteur est le part number porté par le retest et reçoit une
-  lettre ; le dessin encadre les bornes d'un même connecteur dans le corps,
-  sa lettre en pastille. La prise de coupure se dessine en partie fixe (haute
-  et fine) dans laquelle entre la partie mobile (plus large, moins haute).
+  lettre ; une borne sans chiffre (CNT) n'est d'aucun connecteur. Le dessin
+  pose les bornes d'un connecteur dans une pièce fine hors du corps, sa
+  lettre au-dessus ; un connecteur peut se couper sur deux flancs quand
+  chaque borne regarde ainsi vers son partenaire. La prise de coupure se
+  dessine en deux rectangles fins collés : l'embase, plus haute, numérotée,
+  et la partie mobile, un peu plus fine et moins haute. La barrette est une
+  ligne pointillée, un point par fil, tous les numéros du même côté, un
+  point de départ en bas avec le repère, le pont en trait plein. La masse
+  est collée à sa borne, dans l'axe du fil, perpendiculaire à l'équipement,
+  son repère petit sous les barres.
 - **La barrette physique** (`physiqueDeBarrette` dans `09`, le dessin dans
   `08`) : la carte d'une barrette ou d'une prise de coupure est d'abord un
   DESSIN, de face — tous les modules de la référence retenue, numérotés au
@@ -197,6 +206,13 @@ Fait, mesuré, en place :
   référence (raisons, candidates) est replié dessous. La bible porte un
   pictogramme par référence et dessine celle qu'on clique en grand.
 - **L'exemple en trois folios** : facile, moyen, très chargé (66 liaisons).
+- **Le juge voit ce que l'œil voit** (`04-placement`, banc) : un corps
+  étiré, un segment partagé par deux fils, un fil qui fait le tour de son
+  bloc coûtent des croisements (1,5 ; 2 ; 1,5) ; une borne peut changer de
+  flanc, les replis concourent, la passe finale converge sur le meilleur.
+  Le banc rejoue a posteriori les gestes évidents (échange, flanc,
+  glissement) au même barème, et rend 1 s'il en manque un. 82,7 %, 45
+  croisements, 0 évitable sur dix-huit topologies.
 - **Base de retest** : mise de côté dans `a-venir/09-retest.js` avec ses
   contrôles (`tests/retest.js` se passe si elle n'est pas dans la page).
 - **Contrôles** sur l'API `atelier` : 17 + 5 + 13, banc de 15 topologies, 39 sans navigateur pour la bible, les connecteurs, le suivi et la barrette physique.
