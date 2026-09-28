@@ -41,10 +41,17 @@
    et les deux invariants sacrés, qui ne sont pas des mesures mais des
    conditions : aucun fil à travers un bloc étranger, aucun chevauchement.
    Un cas qui les viole est marqué FAUX, quel que soit son score.
+
+   Sur les trois folios de l'exemple, des CONTRÔLES EXACTS a posteriori,
+   au routage réel, rendent 1 s'ils échouent : aucun échange de deux
+   bornes, aucun changement de flanc d'une borne, aucun glissement d'un bloc
+   ne fait mieux ; aucun segment partagé par deux fils étrangers ; aucun
+   corps étiré sans raison ; les masses collées ; les cas montrés du doigt.
    ========================================================================= */
 const { chromium } = require('playwright');
 const path = require('path');
-const { fichierDemande, chargerDansLaPage, essaiDansLaPage, exempleDansLaPage, mesurerDansLaPage, echangesEvidentsDansLaPage,
+const { fichierDemande, chargerDansLaPage, essaiDansLaPage, exempleDansLaPage, mesurerDansLaPage, preparerDansLaPage, echangesEvidentsDansLaPage,
+        flancsEvidentsDansLaPage, glissementsEvidentsDansLaPage, segmentsPartagesDansLaPage, corpsEtiresDansLaPage,
         massesColleesDansLaPage, blocLisibleDansLaPage, filDroitOuJustifieDansLaPage } = require('./pilote');
 
 const FICHIER = fichierDemande();
@@ -141,6 +148,7 @@ if (require.main === module) (async () => {
   page.on('pageerror', e => erreurs.push(String(e.message).slice(0, 140)));
   await page.goto(FICHIER);
   await page.waitForTimeout(1200);
+  await page.evaluate(preparerDansLaPage);
 
   const res = [];
   for (const [nom, gen] of CAS) {
@@ -153,15 +161,23 @@ if (require.main === module) (async () => {
     const m = { blocs: r.blocs, fils: r.fils, larg: r.w, haut: r.h, droits: r.taux, crois: r.croisements, evit: r.evitables,
       surface: (r.w * r.h) / 1000, format: r.format, densite: r.densite, allong: r.allongement,
       ib: r.filsDansBloc, ch: r.chevauches, ms };
-    /* les échanges évidents : sur les folios de l'exemple, aucune permutation
-       de deux bornes d'un connecteur ne doit réduire les croisements sans
-       réduire les fils droits (vérification exacte, a posteriori) */
-    if (gen && gen.plan) m.echanges = await page.evaluate(echangesEvidentsDansLaPage);
+    /* les gestes évidents : sur les folios de l'exemple, aucune permutation
+       de deux bornes d'un connecteur, aucun changement de flanc d'une borne,
+       aucun glissement d'un bloc ne doit faire mieux — moins de croisements
+       ou de segments partagés sans moins de fils droits, ou l'inverse
+       (vérification exacte, a posteriori, au routage réel) */
+    if (gen && gen.plan) { m.echanges = await page.evaluate(echangesEvidentsDansLaPage);
+      m.flancs = await page.evaluate(flancsEvidentsDansLaPage); m.glissements = await page.evaluate(glissementsEvidentsDansLaPage); }
     /* les cas que l'utilisateur a montrés du doigt, en contrôles exacts :
-       les masses collées à leur borne (tous les folios) ; sur le folio 2,
-       W-120 droit ou un glissement qui ne fait pas mieux ; sur le folio 3,
-       381RL1 et 397TB1 lisibles */
+       aucun segment partagé par deux fils étrangers, aucun corps étiré sans
+       raison, les masses collées à leur borne (tous les folios) ; sur le
+       folio 2, W-120 droit ou un glissement qui ne fait pas mieux ; sur le
+       folio 3, 381RL1 et 397TB1 lisibles */
     if (gen && gen.plan) { m.controles = [];
+      const partages = await page.evaluate(segmentsPartagesDansLaPage);
+      m.controles.push({ nom: 'aucun segment partagé par deux fils de nets différents', ok: !partages.n, detail: partages.detail.join(' | ') });
+      const etires = await page.evaluate(corpsEtiresDansLaPage);
+      m.controles.push({ nom: 'aucun corps étiré à plus de deux fois sa hauteur naturelle sans rendre droits deux fils de plus (' + etires.etires + ' étiré' + (etires.etires > 1 ? 's' : '') + ')', ok: !etires.defauts.length, detail: etires.defauts.join(' | ') });
       const masses = await page.evaluate(massesColleesDansLaPage);
       m.controles.push({ nom: 'les masses sont collées à leur borne (' + masses.masses + ')', ok: !masses.loin.length, detail: masses.loin.join(' | ') });
       if (gen.plan === '2') { const f = await page.evaluate(filDroitOuJustifieDansLaPage, 'W-120');
@@ -212,10 +228,13 @@ if (require.main === module) (async () => {
   }
   if (faux) console.log('\n  ' + faux + ' cas VIOLENT un invariant sacré — aucun score ne rachète ça.');
   let manques = 0;
-  res.filter(r => r.echanges).forEach(r => { const e = r.echanges; manques += e.manques.length;
-    console.log('\n  ' + (e.manques.length ? '✗ ' : '  ') + 'les échanges évidents sont trouvés — ' + r.nom + ' : '
-      + (e.manques.length ? e.manques.length + ' échange(s) manqué(s) sur ' + e.paires + ' paires' : 'aucun des ' + e.paires + ' échanges de deux bornes ne fait mieux'));
-    e.manques.forEach(x => console.log('      ' + x)); });
+  const gestes = [['echanges', 'les échanges évidents sont trouvés', 'paires', 'échange(s) de deux bornes'],
+    ['flancs', 'les changements de flanc évidents sont trouvés', 'essais', 'changement(s) de flanc d\'une borne'],
+    ['glissements', 'les glissements évidents sont trouvés', 'essais', 'glissement(s) d\'un bloc']];
+  res.forEach(r => gestes.forEach(([cle, titre, compte, quoi]) => { const e = r[cle]; if (!e) return; manques += e.manques.length;
+    console.log('\n  ' + (e.manques.length ? '✗ ' : '  ') + titre + ' — ' + r.nom + ' : '
+      + (e.manques.length ? e.manques.length + ' manqué(s) sur ' + e[compte] + ' ' + quoi : 'aucun des ' + e[compte] + ' ' + quoi + ' ne fait mieux'));
+    e.manques.forEach(x => console.log('      ' + x)); }));
   let rates = 0;
   res.filter(r => r.controles).forEach(r => r.controles.forEach(c => { if (!c.ok) rates++;
     console.log('\n  ' + (c.ok ? '  ' : '✗ ') + c.nom + ' — ' + r.nom + (c.detail ? ' : ' + c.detail : '')); }));
