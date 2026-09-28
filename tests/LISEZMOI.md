@@ -30,18 +30,29 @@ verbes (charger, essai, mesurer) sur l'API `atelier` de `src/10-demarrage.js`.
 
 Avant de toucher au moteur, on relance le banc ; après, on le relance. Les
 chiffres de référence sur les dix-huit topologies (quinze historiques et
-les trois folios de l'exemple ; une barrette qui tranche un fil compte
-comme un croisement), depuis que l'ordre des bornes d'un connecteur est
-libre, qu'une barrette s'allonge et qu'une prise de coupure reste au pas :
+les trois folios de l'exemple ; un piquage qui tranche un fil compte comme
+un croisement), depuis le routeur à ordre exact des pistes :
 
-    88,3 % de fils droits · 86 croisements · 0 violation · 0 cas hors feuille
-    contrat d'essai : 100 %, 3 croisements
-    folio 1 : 87,5 %, 1 · folio 2 : 70 %, 2 · folio 3 : 57,1 %, 47
+    82,1 % de fils droits · 70 croisements · 0 évitable · 0 violation · 0 cas hors feuille
+    contrat d'essai : 77,8 %, 1 croisement
+    folio 1 : 62,5 %, 1 · folio 2 : 60 %, 2 · folio 3 : 51,8 %, 41
+
+La mesure des fils droits est HONNÊTE depuis ce routeur : un fil qui passe
+par le raccord et la verticale d'un piquage n'est pas droit, même si son
+dernier segment l'est. L'ancien routeur les comptait droits : ses 88,3 %
+valaient 79,6 % à cette mesure (285 fils sur 358, à placement fixé), pour
+86 croisements dont plusieurs barrettes superposées comptées chacune.
+
+Les CROISEMENTS ÉVITABLES : à placement fixé, un croisement est évitable
+si un autre ordre des verticales de sa goulotte le supprime sans en créer.
+C'est la part du routeur, mesurée sur les tracés (pas dans le routeur), et
+elle vaut 0 ; sinon le banc rend 1.
 
 Quand borniers et connecteurs étaient rigides (ordre naturel, au pas),
-c'était 73,7 %, 122 croisements, folio 2 : 50 % / 5, folio 3 : 46,4 % / 80.
-Avant la rigidité, les quinze historiques donnaient 96,7 % et 4
-croisements : c'est le prix, mesuré, d'objets qui ressemblent au matériel.
+c'était 73,7 %, 122 croisements, folio 2 : 50 % / 5, folio 3 : 46,4 % / 80
+(mesure gonflée). Avant la rigidité, les quinze historiques donnaient
+96,7 % et 4 croisements : c'est le prix, mesuré, d'objets qui ressemblent
+au matériel.
 
 Le banc vérifie aussi, sur chaque folio de l'exemple, que **les échanges
 évidents sont trouvés** : aucune permutation de deux bornes d'un même
@@ -57,8 +68,8 @@ message de commit, mesure à l'appui.
 | # | Contrôle | Pourquoi c'est là |
 |---|---|---|
 | 1 | Le fichier se charge seul, bibliothèque Excel comprise | `index.html` doit marcher **sans aucun fichier à côté**. |
-| 2 | Le dessin reste sain sur les formes qui font mal | **Aucun fil ne traverse un bloc, aucun bloc n'en chevauche un autre.** La chaîne doit en plus tenir sur une feuille. |
-| 3 | Le contrat d'essai : barrettes repérées, numéros de fil écrits sans se marcher dessus | Le numéro de fil est l'information numéro un d'un câbleur. |
+| 2 | Le dessin reste sain sur les formes qui font mal, sans croisement évitable | **Aucun fil ne traverse un bloc, aucun bloc n'en chevauche un autre.** La chaîne doit en plus tenir sur une feuille ; le maillage, qui croise beaucoup, ne croise que l'inévitable. |
+| 3 | Le contrat d'essai : barrettes repérées, aucun croisement évitable, numéros de fil écrits sans se marcher dessus | Le numéro de fil est l'information numéro un d'un câbleur. |
 | 5 | Identification par empreinte, choix du contrat de départ, différentiel | Qu'un équipement aux bornes déplacées soit reconnu, que le bon contrat sorte premier, que les pièces manquantes remontent. |
 | 6 | Écriture des pièces, provenance, annulation exacte | On recopie, on ne reconstruit pas ; « Annuler » rend l'état d'avant. |
 | 7 | Les pièges déjà tombés | Chaque défaut trouvé un jour a son contrôle, pour ne pas revenir. |
