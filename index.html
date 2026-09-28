@@ -1874,6 +1874,16 @@ function compterTours(L) { let n = 0;
     if ((A.stub === 'L' && B.x < A.x - 1) || (A.stub === 'R' && B.x > A.x + 1)) n++;      // stub L : le bout est sur le flanc droit
     if ((B.stub === 'L' && A.x < B.x - 1) || (B.stub === 'R' && A.x > B.x + 1)) n++; });
   return n; }
+/* Les MASSES QUI PENDENT SUR UN FIL : le symbole de masse se dessine sous
+   son fil (trois barres et le repère, sur une trentaine d'unités) ; un fil
+   étranger qui passe dessous se lit à travers. Le placement l'évite en
+   rangeant la masse en bout de flanc ; le juge compte celles qui restent. */
+const PEND_MASSE = 30;
+function compterMassesGenees(L, fils) { let n = 0;
+  L.comps.forEach(c => { if (c.kind !== 'tag' || !estMasse(c.name)) return; const y0 = c.y + c.h / 2 + 1, y1 = y0 + PEND_MASSE;
+    if (fils.some(w => { for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1];
+      if (Math.abs(a.y - b.y) < 0.01 && a.y > y0 && a.y < y1 && Math.max(a.x, b.x) > c.x && Math.min(a.x, b.x) < c.x + c.w) return true; } return false; })) n++; });
+  return n; }
 /* Les DÉTOURS : ce qu'un fil parcourt de plus que la distance de Manhattan
    entre ses deux bouts — un U dans une goulotte, un couloir qui s'écarte.
    Un Z n'en a pas. */
@@ -1941,7 +1951,7 @@ function juger(L, R) {
   const tient = r <= FORMAT_MAX * 1.005 && r >= 1 / (FORMAT_MAX * 1.005), tiendra = tient || (r <= FORMAT_MAX * ETIRABLE && compterBandes(blocs) >= 2);
   const j = { sain: t.etrangers === 0 && chevauchements(L.comps) === 0, tient, tiendra, format: r, largeur: w,
     droits, croisements, partages, etires, lisibilite: droits - croisements / CROISEMENTS_PAR_DROIT - PARTAGE * partages - ETIRE * etires, propres: t.propres.size,
-    tours: compterTours(L), detours: compterDetours(fils), coupes: L.coupes || 0,
+    tours: compterTours(L), genees: compterMassesGenees(L, fils), detours: compterDetours(fils), coupes: L.coupes || 0,
     encombrement: Math.min(Math.max(w / A3, h), Math.max(w, h / A3)), surface: w * h, longueur };
   // les muets coûtent cher à compter (le dessin pose ses étiquettes) : seulement quand droits et croisements sont à égalité
   let muets = null; Object.defineProperty(j, 'muets', { enumerable: true, get() { if (muets == null) muets = compterMuets(R); return muets; } });
@@ -1956,8 +1966,8 @@ function juger(L, R) {
    fils étrangers (une connexion qui ment), une fois et demie chaque corps
    étiré (il ne vaut que s'il rend droits deux fils de plus) ; à égalité les fils droits, puis
    les croisements, puis les numéros muets, puis les TOURS (un fil qui fait
-   le tour de son bloc), les DÉTOURS (à partir d'une goulotte de
-   différence), puis les
+   le tour de son bloc), les masses qui pendent sur un fil, les DÉTOURS (à
+   partir d'une goulotte de différence), puis les
    connecteurs coupés en deux flancs (jamais sans raison : seuls un détour ou
    un croisement en moins le justifient), l'encombrement, la surface, la
    longueur des fils. */
@@ -1974,6 +1984,7 @@ function bat(a, b, tolerant) {
   if (a.droits !== b.droits) return a.droits > b.droits; if (a.croisements !== b.croisements) return a.croisements < b.croisements;
   if (a.muets !== b.muets) return a.muets < b.muets;
   if (a.tours !== b.tours) return a.tours < b.tours;
+  if (a.genees !== b.genees) return a.genees < b.genees;
   if (Math.abs(a.detours - b.detours) >= DETOUR_MIN) return a.detours < b.detours;
   if (a.coupes !== b.coupes) return a.coupes < b.coupes;
   if (Math.abs(a.encombrement - b.encombrement) > 0.01 * b.encombrement) return a.encombrement < b.encombrement;
@@ -2400,21 +2411,22 @@ function concours(M, opt, budget) {
   const largeursDeRepli = nc => nc <= 8 ? Array.from({ length: nc - 2 }, (_, i) => i + 2) : [...new Set([2, 3, 4, 5].map(k => Math.ceil(nc / k)))].filter(W => W >= 2);
   candidats.filter(c => !c.j.tient && c.L.geom.nCols >= 4).sort((a, b) => bat(a.j, b.j, true) ? -1 : 1).slice(0, 2)
     .forEach(c => largeursDeRepli(c.L.geom.nCols).forEach(W => essayer(c.E.col, { ...opt, serpentin: W })));
-  // la recherche locale, le resserrage, puis les échanges de bornes sur la géométrie resserrée (le routeur n'y prend pas les mêmes décisions), et le format
-  // le budget d'un finaliste : la recherche locale, puis la passe finale sur la géométrie resserrée — à parts presque égales,
-  // c'est la passe finale qui trouve les gestes évidents que le banc vérifie
-  const principal = Math.floor(budget / finalistes), finale = Math.min(250, Math.max(100, principal - 50));
-  const finir = c => etirerAuFormat(M, rechercheLocale(M, resserrer(M, rechercheLocale(M, c, principal - 50)), finale, true));
+  /* chaque finaliste a sa recherche locale ; le MEILLEUR seul reçoit la passe finale, sur la géométrie resserrée (le
+     routeur n'y prend pas les mêmes décisions), avec le budget de tous : c'est elle qui, balayage après balayage jusqu'à
+     convergence, trouve les gestes évidents que le banc vérifie — la donner à un finaliste qui perd, c'est la perdre */
+  const principal = Math.floor(budget / finalistes), finale = Math.min(800, Math.max(150, budget * 0.7));
+  const affiner = c => rechercheLocale(M, c, principal);
+  const finir = c => etirerAuFormat(M, rechercheLocale(M, resserrer(M, c), finale, true));
   let meilleur = null; const tetes = classer(true).slice(0, finalistes);
   // le miroir du hub commence mal ordonné (ses fils de retour traversent tout) : dans la famille coupée, il est finaliste d'office
   const miroir = opt.scinder && candidats.find(c => c.miroir); if (miroir && !tetes.includes(miroir)) tetes[tetes.length - 1] = miroir;
-  tetes.forEach(c => { const r = finir(c); if (!meilleur || bat(r.j, meilleur.j)) meilleur = r; });
+  tetes.forEach(c => { const r = affiner(c); if (!meilleur || bat(r.j, meilleur.j)) meilleur = r; });
   const nc = meilleur.L.geom.nCols;
   if (!meilleur.j.tient && nc >= 4) { const col = meilleur.E.col, avant = candidats.length;
     largeursDeRepli(nc).forEach(W => essayer(col, { ...opt, serpentin: W }));
     const replies = candidats.slice(avant).sort((a, b) => bat(a.j, b.j) ? -1 : 1).slice(0, 1);
-    replies.forEach(c => { const r = finir(c); if (bat(r.j, meilleur.j)) meilleur = r; }); }
-  return meilleur;
+    replies.forEach(c => { const r = affiner(c); if (bat(r.j, meilleur.j)) meilleur = r; }); }
+  return finir(meilleur);
 }
 /* Le CONCOURS, connecteurs entiers. (Une seconde famille, où un connecteur
    qui parle des deux côtés se coupait en deux flancs, a été essayée : sous
