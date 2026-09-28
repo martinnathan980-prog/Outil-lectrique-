@@ -39,7 +39,8 @@
    ========================================================================= */
 const { chromium } = require('playwright');
 const path = require('path');
-const { fichierDemande, chargerDansLaPage, essaiDansLaPage, exempleDansLaPage, mesurerDansLaPage, echangesEvidentsDansLaPage } = require('./pilote');
+const { fichierDemande, chargerDansLaPage, essaiDansLaPage, exempleDansLaPage, mesurerDansLaPage, echangesEvidentsDansLaPage,
+        massesColleesDansLaPage, blocLisibleDansLaPage, filDroitOuJustifieDansLaPage } = require('./pilote');
 
 const FICHIER = fichierDemande();
 const JSON_OUT = process.argv.includes('--json');
@@ -151,6 +152,17 @@ if (require.main === module) (async () => {
        de deux bornes d'un connecteur ne doit réduire les croisements sans
        réduire les fils droits (vérification exacte, a posteriori) */
     if (gen && gen.plan) m.echanges = await page.evaluate(echangesEvidentsDansLaPage);
+    /* les cas que l'utilisateur a montrés du doigt, en contrôles exacts :
+       les masses collées à leur borne (tous les folios) ; sur le folio 2,
+       W-120 droit ou un glissement qui ne fait pas mieux ; sur le folio 3,
+       381RL1 et 397TB1 lisibles */
+    if (gen && gen.plan) { m.controles = [];
+      const masses = await page.evaluate(massesColleesDansLaPage);
+      m.controles.push({ nom: 'les masses sont collées à leur borne (' + masses.masses + ')', ok: !masses.loin.length, detail: masses.loin.join(' | ') });
+      if (gen.plan === '2') { const f = await page.evaluate(filDroitOuJustifieDansLaPage, 'W-120');
+        m.controles.push({ nom: 'W-120 (340AB1:1 → 210SP1:A3) est droit, ou le glissement qui le rendrait droit coûte plus qu\'il ne rapporte', ok: f.ok, detail: f.detail }); }
+      if (gen.plan === '3') for (const bloc of ['381RL1', '397TB1']) { const df = await page.evaluate(blocLisibleDansLaPage, bloc);
+        m.controles.push({ nom: bloc + ' est lisible : connecteur d\'un seul flanc, aucun fil étranger dans son voisinage', ok: !df.length, detail: df.join(' | ') }); } }
     res.push({ nom, ...m });
   }
 
@@ -198,7 +210,10 @@ if (require.main === module) (async () => {
     console.log('\n  ' + (e.manques.length ? '✗ ' : '  ') + 'les échanges évidents sont trouvés — ' + r.nom + ' : '
       + (e.manques.length ? e.manques.length + ' échange(s) manqué(s) sur ' + e.paires + ' paires' : 'aucun des ' + e.paires + ' échanges de deux bornes ne fait mieux'));
     e.manques.forEach(x => console.log('      ' + x)); });
+  let rates = 0;
+  res.filter(r => r.controles).forEach(r => r.controles.forEach(c => { if (!c.ok) rates++;
+    console.log('\n  ' + (c.ok ? '  ' : '✗ ') + c.nom + ' — ' + r.nom + (c.detail ? ' : ' + c.detail : '')); }));
   if (erreurs.length) console.log('  erreurs console : ' + [...new Set(erreurs)].slice(0, 3).join(' | '));
   console.log('');
-  process.exit(faux || manques ? 1 : 0);
+  process.exit(faux || manques || rates ? 1 : 0);
 })();
