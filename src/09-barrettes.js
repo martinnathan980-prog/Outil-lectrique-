@@ -202,8 +202,11 @@ const coupureInfos  = (repere, liaisons, bible) => infosDe(repere, liaisons, bib
    Rend, pour un repère, [{ nom, pn, deduite, bornes:[…] }] dans l'ordre
    des lettres. */
 const LETTRE_CONNECTEUR = /^([A-Z]{1,2})[-./ ]?(\d{1,3}[A-Z]?)$/i;
+/* Une borne sans chiffre (CNT, GND…) n'est pas un contact de connecteur :
+   elle se raccorde au corps. */
 function connecteurDeBorne(borne, pn) {
-  const m = LETTRE_CONNECTEUR.exec(String(borne || '').trim());
+  const b = String(borne || '').trim(); if (!/\d/.test(b)) return null;
+  const m = LETTRE_CONNECTEUR.exec(b);
   if (m) return { nom: m[1].toUpperCase(), pn: pn || '', lettre: true };
   return pn ? { nom: pn, pn, lettre: false } : null;
 }

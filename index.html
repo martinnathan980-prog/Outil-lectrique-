@@ -2858,12 +2858,16 @@ function tracesDePiquage(barrettes) {
   return traces; }
 function piquagesSvg(barrettes, piquages, verticaux) {
   let s = '';
-  tracesDePiquage(barrettes).forEach(pts => { s += `<path class="cab" d="${cheminAvecPonts(pts, verticaux)}"/>`; });
-  barrettes.forEach(b => { const haut = b.y1 + 3 < b.py - 0.6, bas = b.y2 - 3 > b.py + 0.6, droit = b.gardes.some(k => Math.abs(k.y - b.py) < 1.2);
-    if (1 + haut + bas + droit >= 3) s += `<circle class="jn" cx="${f1(b.x)}" cy="${f1(b.py)}" r="1.7"/>`; });
-  // au bout de la verticale, le fil tourne : c'est un coin, pas une jonction
-  const coin = d => barrettes.some(b => Math.abs(b.x - d.x) < 0.5 && (Math.abs(d.y - b.y1 - 3) < 0.6 || Math.abs(d.y - b.y2 + 3) < 0.6));
-  piquages.forEach(d => { if (!coin(d)) s += `<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="1.7"/>`; });
+  (barrettes.raccords || []).forEach(r => { s += `<path class="cab" d="${cheminAvecPonts([{ x: r.x0, y: r.y }, { x: r.x1, y: r.y }], verticaux)}"/>`; });
+  barrettes.forEach(b => {
+    /* Un piquage — plusieurs fils sur une même borne — se dessine comme la
+       BARRETTE qu'il faudra poser : une fine ligne pointillée, un point à
+       chaque départ, les numéros 1, 2, 3… du côté des départs. */
+    const ys = [b.py, ...b.gardes.map(k => k.y)].filter((y, i, a) => a.findIndex(z => Math.abs(z - y) < 0.6) === i).sort((u, v) => u - v);
+    const cote = (b.dir || 1) > 0 ? -1 : 1;                                  // les numéros du côté opposé à la borne alimentée
+    s += `<line class="barre" x1="${f1(b.x)}" y1="${f1(ys[0])}" x2="${f1(b.x)}" y2="${f1(ys[ys.length - 1])}"/>`;
+    ys.forEach((y, i) => { s += `<circle class="jn" cx="${f1(b.x)}" cy="${f1(y)}" r="1.8"/>`;
+      s += `<text class="barnum" x="${f1(b.x + cote * 3)}" y="${f1(y - 1.8)}" text-anchor="${cote > 0 ? 'start' : 'end'}">${i + 1}</text>`; }); });
   return s;
 }
 /* Le numéro de fil, au-dessus du plus long segment horizontal, en son milieu
@@ -2979,15 +2983,16 @@ function blocSvg(c, designation, choisi) {
   const rl = c.rangs.L || [], rr = c.rangs.R || [], rs = c.rangs.S || [];
   const yRep = c.h > 90 ? 21 : c.h / 2 - 1.5;
   if (c.kind === 'tag' && estMasse(c.name)) {
-    /* MASSE collée à sa borne : le fil arrive par le flanc, descend d'un court
-       trait sur le symbole CEI 60617-02 — trois barres décroissantes — et le
-       repère se lit dessous. */
-    const p = rs[0] || { y: c.y + c.h / 2, dir: 0 }, ly = p.y - c.y, cx = c.w / 2, d = p.dir || 0, y0 = ly + 7;
-    if (d <= 0) s += `<line class="earth" x1="0" y1="${f1(ly)}" x2="${f1(cx)}" y2="${f1(ly)}"/>`;
-    if (d >= 0) s += `<line class="earth" x1="${f1(cx)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`;
-    s += `<line class="earth" x1="${f1(cx)}" y1="${f1(ly)}" x2="${f1(cx)}" y2="${f1(y0)}"/>`;
-    [[7, 0], [4.5, 3.2], [2, 6.4]].forEach(([l, dy]) => { s += `<line class="earth" x1="${f1(cx - l)}" y1="${f1(y0 + dy)}" x2="${f1(cx + l)}" y2="${f1(y0 + dy)}"/>`; });
-    s += `<text class="rep" x="${f1(cx)}" y="${f1(y0 + 17)}" text-anchor="middle">${esc(clip(c.name, 10))}</text>`;
+    /* MASSE collée à sa borne : le symbole CEI 60617-02 est dans l'AXE du fil,
+       perpendiculaire à l'équipement — trois barres verticales décroissantes
+       vers l'extérieur — et le repère se lit dessous. */
+    // p.dir dit par quel flanc le fil ARRIVE (-1 : par la gauche) ; le symbole grandit vers l'autre flanc.
+    const p = rs[0] || { y: c.y + c.h / 2, dir: -1 }, ly = p.y - c.y, d = (p.dir || -1) < 0 ? 1 : -1;
+    const x0 = d > 0 ? 0 : c.w, xs = d > 0 ? c.w - 12 : 12;                  // le fil entre par un flanc, le symbole est à l'autre bout
+    s += `<line class="earth" x1="${f1(x0)}" y1="${f1(ly)}" x2="${f1(xs)}" y2="${f1(ly)}"/>`;
+    [[6, 0], [4, 3.2], [2, 6.4]].forEach(([l, dx]) => { const x = xs + d * dx; s += `<line class="earth" x1="${f1(x)}" y1="${f1(ly - l)}" x2="${f1(x)}" y2="${f1(ly + l)}"/>`; });
+    // le repère, petit, sous les barres : entre ce fil et le suivant (un pas de 14), sans toucher ni l'un ni l'autre
+    s += `<text class="barnum" x="${f1(xs + d * 3.2)}" y="${f1(ly + 11.6)}" text-anchor="middle">${esc(clip(c.name, 10))}</text>`;
   } else if (c.kind === 'tag') {
     // pastille de potentiel, en face de la borne desservie
     s += `<rect class="rpill" x="0" y="${f1(c.h / 2 - 6)}" width="${c.w}" height="12" rx="6"/>`;
@@ -2999,12 +3004,12 @@ function blocSvg(c, designation, choisi) {
        haute. C'est la différence de hauteur qui dit laquelle est laquelle.
        Les contacts sont numérotés dans l'embase ; le fil amont arrive sur la
        mobile, le fil aval repart de l'embase. */
-    const W = 11, G = 1.5, xm0 = mid - G / 2 - W, xm1 = mid - G / 2, xe0 = mid + G / 2, xe1 = xe0 + W;
-    const ym0 = Math.min(PRH * 0.55, c.h / 4), ym1 = c.h - ym0;
-    s += `<rect class="embase" x="${f1(xe0)}" y="0" width="${W}" height="${c.h}" rx="1"/>`;
-    s += `<rect class="fiche" x="${f1(xm0)}" y="${f1(ym0)}" width="${W}" height="${f1(ym1 - ym0)}" rx="1"/>`;
+    const WE = 8, WM = 7, xe0 = mid - WE / 2, xe1 = xe0 + WE, xm1 = xe0, xm0 = xm1 - WM;   // la mobile collée à l'embase
+    const ym0 = Math.min(PRH * 0.35, c.h / 6), ym1 = c.h - ym0;
+    s += `<rect class="embase" x="${f1(xe0)}" y="0" width="${WE}" height="${c.h}" rx="1"/>`;
+    s += `<rect class="fiche" x="${f1(xm0)}" y="${f1(ym0)}" width="${WM}" height="${f1(ym1 - ym0)}" rx="1"/>`;
     rs.forEach(p => { const ly = p.y - c.y;
-      if (p.etiq) s += `<text class="connpin" x="${f1((xe0 + xe1) / 2)}" y="${f1(ly + 2)}" text-anchor="middle">${esc(clip(String(p.etiq), 3))}</text>`;
+      if (p.etiq) s += `<text class="connpin" style="font-size:4.8px" x="${f1((xe0 + xe1) / 2)}" y="${f1(ly + 1.7)}" text-anchor="middle">${esc(clip(String(p.etiq), 3))}</text>`;
       if ((p.dir || 0) <= 0) s += `<line class="lead" x1="0" y1="${f1(ly)}" x2="${f1(xm0)}" y2="${f1(ly)}"/>`;
       if ((p.dir || 0) >= 0) s += `<line class="lead" x1="${f1(xe1)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
     s += `<text class="rep" x="${f1(mid)}" y="${f1(c.h + 12)}" text-anchor="middle">${esc(clip(c.name, 14))}</text>`;
@@ -3019,12 +3024,13 @@ function blocSvg(c, designation, choisi) {
     s += `<line class="barre" x1="${f1(mid)}" y1="${f1(yh)}" x2="${f1(mid)}" y2="${f1(yb)}"/><circle class="bardot" cx="${f1(mid)}" cy="${f1(yb)}" r="2.1"/>`;
     paquetsDePonts(c.shunts || []).forEach(([y1, y2]) => {
       s += `<line class="pont" x1="${f1(mid)}" y1="${f1(y1 - c.y)}" x2="${f1(mid)}" y2="${f1(y2 - c.y)}"/>`; });
+    // les numéros s'écrivent tous du même côté : celui d'où viennent les fils, à droite sinon
+    const cote = rangs.filter(p => (p.dir || 0) < 0).length > rangs.filter(p => (p.dir || 0) > 0).length ? -1 : 1;
     rangs.forEach(p => { const ly = p.y - c.y, d = p.dir || 0, etiq = p.etiq ? clip(String(p.etiq), 4) : '';
-      s += `<circle class="jn" cx="${f1(mid)}" cy="${f1(ly)}" r="1.3"/>`;
-      if (d <= 0) { s += `<line class="lead" x1="0" y1="${f1(ly)}" x2="${f1(mid)}" y2="${f1(ly)}"/>`;
-        if (etiq) s += `<text class="barnum" x="${f1(mid - 2.5)}" y="${f1(ly - 1.6)}" text-anchor="end">${esc(etiq)}</text>`; }
-      if (d >= 0) { s += `<line class="lead" x1="${f1(mid)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`;
-        if (etiq && d > 0) s += `<text class="barnum" x="${f1(mid + 2.5)}" y="${f1(ly - 1.6)}" text-anchor="start">${esc(etiq)}</text>`; } });
+      if (d <= 0) s += `<line class="lead" x1="0" y1="${f1(ly)}" x2="${f1(mid)}" y2="${f1(ly)}"/>`;
+      if (d >= 0) s += `<line class="lead" x1="${f1(mid)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`;
+      s += `<circle class="jn" cx="${f1(mid)}" cy="${f1(ly)}" r="1.8"/>`;
+      if (etiq) s += `<text class="barnum" x="${f1(mid + cote * 3)}" y="${f1(ly - 1.8)}" text-anchor="${cote > 0 ? 'start' : 'end'}">${esc(etiq)}</text>`; });
     s += `<text class="rep" x="${f1(mid)}" y="${f1(yb + 12)}" text-anchor="middle">${esc(clip(c.name, 14))}</text>`;
   } else if (estMasse(c.name)) {
     /* MASSE : le fil descend d'un court trait sur le symbole CEI 60617-02 —
@@ -4234,8 +4240,11 @@ const coupureInfos  = (repere, liaisons, bible) => infosDe(repere, liaisons, bib
    Rend, pour un repère, [{ nom, pn, deduite, bornes:[…] }] dans l'ordre
    des lettres. */
 const LETTRE_CONNECTEUR = /^([A-Z]{1,2})[-./ ]?(\d{1,3}[A-Z]?)$/i;
+/* Une borne sans chiffre (CNT, GND…) n'est pas un contact de connecteur :
+   elle se raccorde au corps. */
 function connecteurDeBorne(borne, pn) {
-  const m = LETTRE_CONNECTEUR.exec(String(borne || '').trim());
+  const b = String(borne || '').trim(); if (!/\d/.test(b)) return null;
+  const m = LETTRE_CONNECTEUR.exec(b);
   if (m) return { nom: m[1].toUpperCase(), pn: pn || '', lettre: true };
   return pn ? { nom: pn, pn, lettre: false } : null;
 }
