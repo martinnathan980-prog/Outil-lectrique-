@@ -41,34 +41,44 @@ function titre(t) { console.log('\n' + t); }
   /* Les formes qui font mal : l'escalier d'un gros bornier, le carrefour à
      fort fan-out, le maillage complet (qui ne PEUT pas être droit — on ne lui
      demande que les invariants), la chaîne (qui doit se replier : droiture ET
-     format), le peigne. */
+     format), le peigne (trois départs sur une borne : un seul peut être
+     droit, les deux autres passent par la verticale du piquage — 3 fils
+     droits sur 5, pas plus). */
   titre('2. DESSIN — les formes qui font mal');
   const formes = [
     ['escalier — bornier de 24 bornes vers 24 appareils', 95, () => { const a = []; for (let i = 0; i < 24; i++) a.push(['BORN1', String(i + 1), 'E' + i, '1']); return a; }],
     ['carrefour — un calculateur, 30 départs', 90, () => { const a = []; for (let i = 0; i < 30; i++) a.push(['CALC1', String(i + 1), 'D' + i, '1']); return a; }],
     ['maillage — 7 équipements tous reliés', 20, () => { const a = []; for (let i = 0; i < 7; i++) for (let j = i + 1; j < 7; j++) a.push(['M' + i, String(j), 'M' + j, String(i)]); return a; }],
     ['chaîne — 30 équipements en série', 80, () => { const a = []; for (let i = 0; i < 30; i++) a.push(['N' + i, '2', 'N' + (i + 1), '1']); return a; }, 3],
-    ['peigne — 3 départs sur la même borne (barrette)', 90, () => [['SRC', '12', 'A1', '3'], ['SRC', '12', 'A2', '3'], ['SRC', '12', 'A3', '3'], ['A1', '8', 'B1', '2'], ['A2', '8', 'B2', '2']]]
+    ['peigne — 3 départs sur la même borne (barrette)', 60, () => [['SRC', '12', 'A1', '3'], ['SRC', '12', 'A2', '3'], ['SRC', '12', 'A3', '3'], ['A1', '8', 'B1', '2'], ['A2', '8', 'B2', '2']]]
   ];
+  let evitables = 0;
   for (const [nom, seuil, gen, fmax] of formes) {
     await page.evaluate(chargerDansLaPage, gen());
     const r = await page.evaluate(mesurerDansLaPage);
     const fmt = Math.round(100 * Math.max(r.format, 1 / r.format)) / 100, d = Math.round(r.taux * 100);
+    evitables += r.evitables;
     ok(nom, r.filsDansBloc === 0 && r.chevauches === 0 && d >= seuil && (!fmax || fmt <= fmax),
       r.blocs + ' blocs · ' + r.fils + ' fils · ' + d + ' % droits (seuil ' + seuil + ') · ' + r.croisements + ' croisements · filsDansBloc=' + r.filsDansBloc + ' chevauch=' + r.chevauches + (fmax ? ' · format ' + fmt + ':1 (max ' + fmax + ')' : ''));
   }
+  /* Le routeur ne laisse aucun croisement qu'un autre ordre des pistes de sa
+     goulotte ôterait : sur le maillage surtout, qui croise beaucoup. */
+  ok('aucun croisement évitable sur ces formes', evitables === 0, evitables + ' croisement(s) évitable(s)');
 
   titre('3. CONTRAT D’ESSAI');
   const essai = await page.evaluate(() => { atelier.essai(); const a = atelier.audit();
-    return { b: a.blocs, f: a.fils, d: Math.round(a.tauxDroits * 100), ib: a.filsDansBloc, ch: a.blocsChevauches, barrettes: app.dessin.barrettes.length }; });
+    return { b: a.blocs, f: a.fils, d: Math.round(a.tauxDroits * 100), ib: a.filsDansBloc, ch: a.blocsChevauches, cr: a.croisements, ev: a.evitables, barrettes: app.dessin.barrettes.length }; });
   ok('se dessine sans défaut', essai.ib === 0 && essai.ch === 0, essai.b + ' blocs · ' + essai.f + ' fils · ' + essai.d + ' % droits');
   ok('les deux barrettes sont repérées', essai.barrettes === 2, essai.barrettes + ' trouvée(s)');
+  ok('aucun croisement évitable', essai.ev === 0, essai.cr + ' croisement(s), dont ' + essai.ev + ' évitable(s)');
   /* Le numéro de fil est l'information numéro un d'un câbleur : il doit être
-     écrit, et jamais barré par un fil ni collé à un voisin. */
+     écrit, et jamais barré par un fil ni collé à un voisin. Un numéro
+     debout (le long d'un vertical) occupe une boîte tournée. */
   const nums = await page.evaluate(() => { atelier.essai(); peindre(); const W = app.dessin.fils;
     const avecNom = W.filter(w => !w.shunt && String(w.cable || '').trim()).length;   // un shunt n'a pas de segment où écrire
     const el = Array.from(document.querySelectorAll('#svg .filnum'));
-    const boites = el.map(t => { const x = +t.getAttribute('x'), y = +t.getAttribute('y'); const l = t.textContent.length * 0.60 * 6; return { x0: x - l / 2, x1: x + l / 2, y0: y - 5.6, y1: y }; });
+    const boites = el.map(t => { const x = +t.getAttribute('x'), y = +t.getAttribute('y'); const l = t.textContent.length * 0.60 * 6;
+      return t.getAttribute('transform') ? { x0: x - 5.6, x1: x, y0: y - l / 2, y1: y + l / 2 } : { x0: x - l / 2, x1: x + l / 2, y0: y - 5.6, y1: y }; });
     let chevauche = 0; for (let i = 0; i < boites.length; i++) for (let j = i + 1; j < boites.length; j++) { const a = boites[i], b = boites[j]; if (a.x1 > b.x0 && a.x0 < b.x1 && a.y1 > b.y0 && a.y0 < b.y1) chevauche++; }
     const vert = []; W.forEach(w => { for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1]; if (Math.abs(a.x - b.x) < 0.6 && Math.abs(a.y - b.y) > 1) vert.push({ x: a.x, y0: Math.min(a.y, b.y), y1: Math.max(a.y, b.y) }); } });
     let barres = 0; boites.forEach(b => { if (vert.some(v => v.x > b.x0 && v.x < b.x1 && v.y1 > b.y0 && v.y0 < b.y1)) barres++; });

@@ -14,8 +14,13 @@
    d'une version à l'autre.
 
    CE QU'IL MESURE, par cas :
-     droits      part des fils parfaitement horizontaux (LE critère)
-     croisements nombre de croisements entre fils
+     droits      part des fils parfaitement horizontaux (LE critère) — un
+                 fil qui passe par un raccord et la verticale d'un piquage
+                 n'est PAS droit, même si son dernier segment l'est
+     croisements nombre de croisements entre fils (piquages compris)
+     évitables   croisements qu'un autre ordre des pistes de leur goulotte
+                 supprimerait sans en créer, à placement fixé : c'est la
+                 part du routeur, elle doit valoir 0 — sinon le banc rend 1
      surface     largeur × hauteur de la planche, en milliers d'unités
      format      largeur ÷ hauteur de L'EMPRISE DES BLOCS — pas de la feuille.
                  Première version : on mesurait LAST.layout.bbox, et toutes
@@ -144,7 +149,7 @@ if (require.main === module) (async () => {
     else await page.evaluate(chargerDansLaPage, gen());
     const ms = Date.now() - t0;
     const r = await page.evaluate(mesurerDansLaPage);
-    const m = { blocs: r.blocs, fils: r.fils, larg: r.w, haut: r.h, droits: r.taux, crois: r.croisements,
+    const m = { blocs: r.blocs, fils: r.fils, larg: r.w, haut: r.h, droits: r.taux, crois: r.croisements, evit: r.evitables,
       surface: (r.w * r.h) / 1000, format: r.format, densite: r.densite, allong: r.allongement,
       ib: r.filsDansBloc, ch: r.chevauches, ms };
     /* les échanges évidents : sur les folios de l'exemple, aucune permutation
@@ -162,24 +167,25 @@ if (require.main === module) (async () => {
   const pc = x => (Math.round(x * 1000) / 10).toFixed(1).padStart(5) + ' %';
   const n = (x, d) => Number(x).toFixed(d);
   console.log('\nBANC DE PLACEMENT — ' + res.length + ' topologies\n');
-  console.log('  ' + 'cas'.padEnd(42) + 'blocs  fils   droits  croisem.  surface   format  densité  allong.    ms');
-  console.log('  ' + '─'.repeat(118));
-  let sD = 0, sF = 0, faux = 0;
+  console.log('  ' + 'cas'.padEnd(42) + 'blocs  fils   droits  croisem.  évit.  surface   format  densité  allong.    ms');
+  console.log('  ' + '─'.repeat(125));
+  let sD = 0, sF = 0, sC = 0, sE = 0, faux = 0;
   res.forEach(r => {
     const ko = r.ib || r.ch;
     if (ko) faux++;
-    sD += r.droits * r.fils; sF += r.fils;
+    sD += r.droits * r.fils; sF += r.fils; sC += r.crois; sE += r.evit;
     console.log('  ' + (ko ? '✗ ' : '  ') + r.nom.padEnd(40)
       + String(r.blocs).padStart(4) + String(r.fils).padStart(6)
-      + '   ' + pc(r.droits) + String(r.crois).padStart(9)
+      + '   ' + pc(r.droits) + String(r.crois).padStart(9) + String(r.evit).padStart(7)
       + n(r.surface, 0).padStart(9)
       + (n(r.format, 2) + (r.format > 2.2 || r.format < 0.45 ? '!' : ' ')).padStart(9)
       + (pc(r.densite) + (r.densite < 0.12 ? '!' : ' ')).padStart(9)
       + n(r.allong, 2).padStart(8) + String(r.ms).padStart(6)
       + (ko ? '   FAUX : filsDansBloc=' + r.ib + ' chevauch=' + r.ch : ''));
   });
-  console.log('  ' + '─'.repeat(118));
-  console.log('  ' + 'ENSEMBLE, pondéré par le nombre de fils'.padEnd(42) + '        ' + pc(sF ? sD / sF : 0));
+  console.log('  ' + '─'.repeat(125));
+  console.log('  ' + 'ENSEMBLE, pondéré par le nombre de fils'.padEnd(42) + '        ' + pc(sF ? sD / sF : 0) + String(sC).padStart(9) + String(sE).padStart(7));
+  if (sE) console.log('\n  ' + sE + ' croisement(s) ÉVITABLE(S) : le routeur laisse des croisements qu\'un autre ordre des pistes ôterait.');
   const vides = res.filter(r => r.densite < 0.12);
   if (vides.length) {
     console.log('\n  ' + vides.length + ' cas DESSINENT SURTOUT DU VIDE (densité marquée !) :');
@@ -200,5 +206,5 @@ if (require.main === module) (async () => {
     e.manques.forEach(x => console.log('      ' + x)); });
   if (erreurs.length) console.log('  erreurs console : ' + [...new Set(erreurs)].slice(0, 3).join(' | '));
   console.log('');
-  process.exit(faux || manques ? 1 : 0);
+  process.exit(faux || manques || sE ? 1 : 0);
 })();
