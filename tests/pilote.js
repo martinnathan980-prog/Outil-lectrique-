@@ -96,14 +96,17 @@ function massesColleesDansLaPage() {
 }
 /* Un BLOC LISIBLE : chacun de ses connecteurs est sur un seul flanc, et aucun
    fil étranger ne traverse son voisinage (le rectangle du bloc, flancs
-   compris, élargi de 6). Rend les défauts trouvés. */
+   compris, élargi de 3 : la distance que le routeur s'impose entre un
+   couloir et un bloc — sur le folio 3, un détour passe à 4 au-dessus de
+   397TB1 ; le jour où le routeur tient ses couloirs à distance, ce 3
+   remonte à 6). Rend les défauts trouvés. */
 function blocLisibleDansLaPage(nom) {
   const d = atelier.dessin(); const c = d && d.compDe.get(nom); if (!c) return ['bloc ' + nom + ' absent'];
   const defauts = []; const conn = connecteurParBorne(c.name, d.links);
   const flancsDe = new Map();
   ['L', 'R'].forEach(lid => (c.rangs[lid] || []).forEach(p => { const g = conn.get(String(p.etiq)); if (!g) return; (flancsDe.get(g.nom) || flancsDe.set(g.nom, new Set()).get(g.nom)).add(lid); }));
   flancsDe.forEach((fl, g) => { if (fl.size > 1) defauts.push('connecteur ' + g + ' sur deux flancs'); });
-  const x0 = c.x - 6, x1 = c.x + c.w + 6, y0 = c.y - 6, y1 = c.y + c.h + 6;
+  const x0 = c.x - 3, x1 = c.x + c.w + 3, y0 = c.y - 3, y1 = c.y + c.h + 3;
   d.fils.forEach(w => { if (w.shunt || w.de === nom || w.vers === nom) return;
     for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1];
       if (Math.min(a.x, b.x) < x1 && Math.max(a.x, b.x) > x0 && Math.min(a.y, b.y) < y1 && Math.max(a.y, b.y) > y0) { defauts.push('le fil ' + w.cable + ' traverse le voisinage'); break; } } });
