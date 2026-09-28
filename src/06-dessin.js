@@ -164,9 +164,9 @@ function reperesDeFil(fils, verticaux, barrettes) {
     cands.push({ nom, L: bL, x0: bx0, x1: bx1, y: by, vL, vx, vy0, vy1 }); });
   cands.sort((a, b) => b.L - a.L);
   let out = '';
-  cands.forEach(c => { const larg = c.nom.length * CAR * fs, marge = 5;
+  cands.forEach(c => { const larg = c.nom.length * CAR * fs, marge = c.L < 40 ? 2 : 5;   // un fil court (masse collée) garde son numéro
     let pose = null;
-    if (larg + 10 <= c.L) { const mid = (c.x0 + c.x1) / 2, dmax = Math.max(0, (c.L - larg) / 2 - marge);
+    if (larg + 2 * marge <= c.L) { const mid = (c.x0 + c.x1) / 2, dmax = Math.max(0, (c.L - larg) / 2 - marge);
       for (let d = 0; d <= dmax + 0.01 && !pose; d += Math.max(3, larg / 3)) {
         for (const cx of (d === 0 ? [mid] : [mid - d, mid + d])) {
           const x0 = cx - larg / 2, x1 = cx + larg / 2, y1 = c.y - 2.2, y0 = y1 - H;
@@ -255,7 +255,17 @@ function blocSvg(c, designation, choisi) {
   const bx = c.lw, bw = c.w - c.lw - c.rw, mid = bx + bw / 2;
   const rl = c.rangs.L || [], rr = c.rangs.R || [], rs = c.rangs.S || [];
   const yRep = c.h > 90 ? 21 : c.h / 2 - 1.5;
-  if (c.kind === 'tag') {
+  if (c.kind === 'tag' && estMasse(c.name)) {
+    /* MASSE collée à sa borne : le fil arrive par le flanc, descend d'un court
+       trait sur le symbole CEI 60617-02 — trois barres décroissantes — et le
+       repère se lit dessous. */
+    const p = rs[0] || { y: c.y + c.h / 2, dir: 0 }, ly = p.y - c.y, cx = c.w / 2, d = p.dir || 0, y0 = ly + 7;
+    if (d <= 0) s += `<line class="earth" x1="0" y1="${f1(ly)}" x2="${f1(cx)}" y2="${f1(ly)}"/>`;
+    if (d >= 0) s += `<line class="earth" x1="${f1(cx)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`;
+    s += `<line class="earth" x1="${f1(cx)}" y1="${f1(ly)}" x2="${f1(cx)}" y2="${f1(y0)}"/>`;
+    [[7, 0], [4.5, 3.2], [2, 6.4]].forEach(([l, dy]) => { s += `<line class="earth" x1="${f1(cx - l)}" y1="${f1(y0 + dy)}" x2="${f1(cx + l)}" y2="${f1(y0 + dy)}"/>`; });
+    s += `<text class="rep" x="${f1(cx)}" y="${f1(y0 + 17)}" text-anchor="middle">${esc(clip(c.name, 10))}</text>`;
+  } else if (c.kind === 'tag') {
     // pastille de potentiel, en face de la borne desservie
     s += `<rect class="rpill" x="0" y="${f1(c.h / 2 - 6)}" width="${c.w}" height="12" rx="6"/>`;
     s += `<text class="rname" x="${f1(c.w / 2)}" y="${f1(c.h / 2 + 2.7)}" text-anchor="middle">${esc(clip(c.name, 7))}</text>`;

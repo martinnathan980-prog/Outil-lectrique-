@@ -3,7 +3,8 @@
    Des liaisons on tire les objets que le placement manipule :
      · les NŒUDS : un équipement entier, ou un bornier — entier tant que le
        dessin est de taille de travail (≤ 60 repères), sinon découpé en un
-       fragment par destination pour que ses départs restent courts ;
+       fragment par destination pour que ses départs restent courts ; une
+       PASTILLE (masse, rail) par point de raccordement ;
      · les BROCHES de chaque nœud, identifiées par leur numéro de borne ;
      · les PARTENAIRES de chaque broche (à qui elle est reliée) ;
      · l'ADJACENCE entre nœuds, pondérée par le nombre de fils.
@@ -15,28 +16,31 @@ const SEP = '\u0001';        // sépare un id de nœud d'une clé de broche
 const FRAG = '\u0002';       // sépare un repère du numéro de son fragment
 
 /* Un rail (L1, N, PE, 0V…) n'est pas un équipement : c'est un potentiel, dont
-   chaque point de raccordement se dessine en pastille près de sa borne. */
+   chaque point de raccordement se dessine en pastille près de sa borne. Une
+   masse est un potentiel de la même espèce : son symbole se répète au pied de
+   chaque borne qu'elle sert, le fil reste court. */
 const estRail = nom => RAIL_RE.test(String(nom || '').trim());
+const estPotentiel = nom => estRail(nom) || estMasse(nom);
 /* Ce qui se place en RÉGLETTE (une pile de bornes, un fil de chaque côté) :
-   les rails, les prises de coupure et les barrettes. */
-const enReglette = nom => estRail(nom) || estBornier(nom);
+   les potentiels, les prises de coupure et les barrettes. */
+const enReglette = nom => estPotentiel(nom) || estBornier(nom);
 
 function construireGraphe(liaisons) {
   const lk = liaisons.filter(liaisonComplete);
   const noms = []; const vus = new Set();
   lk.forEach(l => [l.de, l.vers].forEach(n => { if (!vus.has(n)) { vus.add(n); noms.push(n); } }));
 
-  // --- broches par repère : une par numéro de borne ; un rail en reçoit une
-  //     par fil (chaque point du potentiel est une pastille distincte)
+  // --- broches par repère : une par numéro de borne ; un potentiel en reçoit
+  //     une par fil (chaque point de raccordement est une pastille distincte)
   const broches = new Map();
   const B0 = n => { if (!broches.has(n)) broches.set(n, { liste: [], parEtiquette: new Map(), cnt: 0 }); return broches.get(n); };
   const bouts = new Map();          // 'li:A' / 'li:B' -> { nom, cle }
   lk.forEach((l, li) => {
     [['de', 'borneDe', 'pnDe', 'A'], ['vers', 'borneVers', 'pnVers', 'B']].forEach(([a, ab, apn, tag]) => {
-      const nom = l[a]; const P = B0(nom); const rail = estRail(nom);
-      const etiq = rail ? l[apn] : l[ab];
+      const nom = l[a]; const P = B0(nom); const potentiel = estPotentiel(nom);
+      const etiq = estRail(nom) ? l[apn] : l[ab];
       let cle;
-      if (rail) { cle = 'r' + (P.cnt++); P.liste.push({ cle, etiq }); }
+      if (potentiel) { cle = 'r' + (P.cnt++); P.liste.push({ cle, etiq }); }
       else if (etiq && P.parEtiquette.has(etiq)) cle = P.parEtiquette.get(etiq);
       else { cle = etiq ? ('n:' + etiq) : ('p' + (P.cnt++)); if (etiq) P.parEtiquette.set(etiq, cle); P.liste.push({ cle, etiq }); }
       bouts.set(li + ':' + tag, { nom, cle });
@@ -54,11 +58,13 @@ function construireGraphe(liaisons) {
   // --- nœuds
   const noeuds = new Map(); const noeudDeBroche = new Map();
   const entier = noms.length <= 60;
-  /* Une masse est un potentiel, pas un appareil : son symbole est petit et se
-     répète au pied de chaque équipement qu'elle sert, le fil reste court. */
-  const fragmente = n => estMasse(n) || (enReglette(n) && !entier);
   for (const n of noms) { const P = B0(n);
-    if (!fragmente(n)) {
+    if (estPotentiel(n)) {
+      // une pastille par point de raccordement : c'est la borne d'en face qui la place
+      P.liste.forEach((p, i) => { const id = n + FRAG + i;
+        noeuds.set(id, { id, nom: n, reglette: true, broches: [p] }); noeudDeBroche.set(n + SEP + p.cle, id); });
+      continue; }
+    if (!(enReglette(n) && !entier)) {
       noeuds.set(n, { id: n, nom: n, reglette: enReglette(n), broches: P.liste.slice() });
       P.liste.forEach(p => noeudDeBroche.set(n + SEP + p.cle, n)); continue; }
     // un gros bornier se coupe près de l'équipement le plus LOCAL (plus petit
@@ -69,7 +75,7 @@ function construireGraphe(liaisons) {
       (groupes.get(g) || groupes.set(g, []).get(g)).push(p); });
     let gi = 0;
     for (const [, pins] of groupes) { const id = n + FRAG + (gi++);
-      noeuds.set(id, { id, nom: n, reglette: enReglette(n), broches: pins });
+      noeuds.set(id, { id, nom: n, reglette: true, broches: pins });
       pins.forEach(p => noeudDeBroche.set(n + SEP + p.cle, id)); }
   }
   const ids = [...noeuds.keys()];
@@ -86,11 +92,6 @@ function construireGraphe(liaisons) {
     adj.get(ia).set(ib, (adj.get(ia).get(ib) || 0) + 1);
     adj.get(ib).set(ia, (adj.get(ib).get(ia) || 0) + 1); });
   const degreDe = n => { let s = 0; for (const w of adj.get(n).values()) s += w; return s; };
-  // les FEUILLES d'un nœud : ses voisins à une seule borne qui ne parlent qu'à lui, dans l'ordre de ses bornes
-  const feuillesDe = n => { const vues = new Set(), out = [];
-    noeuds.get(n).broches.forEach(p => (partenaires.get(n + SEP + p.cle) || []).forEach(q => { if (vues.has(q.id)) return; vues.add(q.id);
-      if (q.id !== n && noeuds.get(q.id).broches.length === 1 && adj.get(q.id).size === 1) out.push(q.id); }));
-    return out; };
 
-  return { liaisons: lk, noms, noeuds, ids, bouts, nid, partenaires, adj, degreDe, feuillesDe };
+  return { liaisons: lk, noms, noeuds, ids, bouts, nid, partenaires, adj, degreDe };
 }

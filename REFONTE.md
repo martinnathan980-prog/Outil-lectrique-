@@ -122,7 +122,16 @@ Fait, mesuré, en place :
   la section 2, qui ne mesurait que la droiture : elles agissent sur la
   densité et sur la compacité des blocs. Vérifié bloc par bloc sur le contrat
   d'essai : les douze blocs sortent aux mêmes coordonnées qu'avant.
-- **Deuxième départ du placement** (après la parité) : une masse par
+- **Le placement, réécrit, et le routeur, réécrit** : le placement est un
+  moteur par étapes nommées — modèle, niveaux par flux, rangées et flancs,
+  ordonnées exactes, ordre des blocs et des bornes, assemblage, juge
+  (sain, tient, droits − croisements, muets, encombrement), estimation
+  rapide et recherche locale confirmée au routage réel, concours. Les
+  masses sont des pastilles collées à leur borne. Le routeur donne à chaque
+  fil la forme la moins chère, met les piquages en retrait, ordonne les
+  pistes de chaque goulotte exactement jusqu'à douze ; la mesure des fils
+  droits est honnête et les croisements évitables valent zéro.
+- **Deuxième départ du placement** (avant la réécriture) : une masse par
   équipement desservi, un shunt de réglette porté en pont et non routé, la
   barrette VT en réglette, les feuilles d'un bloc réparties des deux côtés,
   plus d'étirement pour remplir la feuille. Banc à métrique durcie (une
