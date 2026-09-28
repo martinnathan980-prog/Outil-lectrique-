@@ -27,7 +27,7 @@ function styleDessin() {
      .dot-fix{fill:#1b2430;stroke:none}
      .cab{fill:none;stroke:#26323f;stroke-width:.95;stroke-linecap:round;stroke-linejoin:round;transition:opacity .12s,stroke-width .12s}
      .jn{fill:#1b2430;stroke:none}
-     .earth{fill:none;stroke:#1b2430;stroke-width:.9;stroke-linecap:butt}
+     .earth{fill:none;stroke:#1b2430;stroke-width:1.1;stroke-linecap:butt}
      .rep{fill:#111b25;font-weight:500;font-size:10px;letter-spacing:1.15px}
      .rep-big{fill:#111b25;font-weight:500;font-size:10.5px;letter-spacing:1.15px}
      .des{fill:#8a96a2;font-size:6.8px;font-weight:400;letter-spacing:.4px}
@@ -38,17 +38,16 @@ function styleDessin() {
      .pinlbl{fill:#2b3743;font-size:7.5px;font-weight:500;letter-spacing:.2px}
      .filnum{fill:#55636f;font-size:6px;font-weight:500;letter-spacing:.1px}
      .lead{stroke:#26323f;stroke-width:.95;stroke-linecap:butt}
-     .borne{fill:#ffffff;stroke:#1b2430;stroke-width:.8}
      .conn{fill:#ffffff;stroke:#1b2430;stroke-width:.75}
-     .connbadge{fill:#1b2430;stroke:none}
-     .connlbl{fill:#ffffff;font-size:6px;font-weight:700;letter-spacing:.2px}
+     .connnom{fill:#1b2430;font-size:6.5px;font-weight:700;letter-spacing:.3px}
      .connpin{fill:#2b3743;font-size:5.6px;font-weight:500}
      .barre{fill:none;stroke:#1b2430;stroke-width:1;stroke-dasharray:3 2.2;stroke-linecap:butt}
      .bardot{fill:#1b2430;stroke:none}
+     .pontage{stroke:#1b2430;stroke-width:1.1;stroke-linecap:butt}
      .barnum{fill:#2b3743;font-size:5.6px;font-weight:600}
      .fiche{fill:#ffffff;stroke:#1b2430;stroke-width:.9}
      .embase{fill:#ffffff;stroke:#1b2430;stroke-width:1.1}
-     .pont{stroke:#1b2430;stroke-width:2.2;stroke-linecap:round}
+     .pont{stroke:#1b2430;stroke-width:1.6;stroke-linecap:butt}
      .rpill{fill:#ffffff;stroke:#c8d1d9;stroke-width:.7}
      .rname{fill:#46535f;font-weight:600;font-size:7.5px;letter-spacing:.6px}
      .frame{fill:none;stroke:#c2ccd5;stroke-width:.8}
@@ -205,7 +204,7 @@ function bornesSvg(xCorps, dir, prof, rangs, baseY, connecteurDe) {
   rangs.forEach(p => { const y = p.y - baseY, xo = xCorps + dir * prof, c = connecteurDe ? connecteurDe(p.etiq) : null;
     // dans un connecteur, le fil s'arrête sur le connecteur ; sinon il va jusqu'au corps
     const xb = c ? xCorps + dir * CONN_W : xCorps;
-    out += `<line class="lead" x1="${f1(xo)}" y1="${f1(y)}" x2="${f1(xb)}" y2="${f1(y)}"/><circle class="borne" cx="${f1(xb)}" cy="${f1(y)}" r="1.4"/>`;
+    out += `<line class="lead" x1="${f1(xo)}" y1="${f1(y)}" x2="${f1(xb)}" y2="${f1(y)}"/>`;
     if (!p.etiq) return;
     if (c) out += `<text class="connpin" x="${f1(xCorps + dir * CONN_W / 2)}" y="${f1(y + 2)}" text-anchor="middle">${esc(clip(etiquetteDansConnecteur(p.etiq, c.nom), 4))}</text>`;
     else out += `<text class="pinlbl" x="${f1(xCorps - dir * 4)}" y="${f1(y + 2.6)}" text-anchor="${dir > 0 ? 'end' : 'start'}">${esc(clip(String(p.etiq), 5))}</text>`; });
@@ -232,9 +231,8 @@ function connecteursSvg(xCorps, dir, rangs, baseY, connecteurDe) {
   runs.forEach(r => { if (!r.nom) return;
     const t = r.y0 - PRH / 2 - 1, b = r.y1 + PRH / 2 + 1;
     out += `<rect class="conn" x="${f1(x0)}" y="${f1(t)}" width="${CONN_W}" height="${f1(b - t)}" rx="1.5"/>`;
-    // la pastille, contre le corps, en tête de la pièce
-    const cx = xCorps - dir * 6, cy = t + 4.5, fs = r.nom.length > 1 ? 4.4 : 5.8;
-    out += `<circle class="connbadge" cx="${f1(cx)}" cy="${f1(cy)}" r="4"/><text class="connlbl" style="font-size:${fs}px" x="${f1(cx)}" y="${f1(cy + fs * 0.36)}" text-anchor="middle">${esc(clip(r.nom, 3))}</text>`; });
+    // la lettre du connecteur, au-dessus de la pièce
+    out += `<text class="connnom" x="${f1(x0 + CONN_W / 2)}" y="${f1(t - 2.2)}" text-anchor="middle">${esc(clip(r.nom, 3))}</text>`; });
   return out;
 }
 /* Le repère tient entre les numéros de borne des deux flancs : la taille
@@ -274,44 +272,38 @@ function blocSvg(c, designation, choisi) {
     s += `<rect class="fiche" x="${f1(xm0)}" y="${f1(ym0)}" width="${W}" height="${f1(ym1 - ym0)}" rx="1"/>`;
     rs.forEach(p => { const ly = p.y - c.y;
       if (p.etiq) s += `<text class="connpin" x="${f1((xe0 + xe1) / 2)}" y="${f1(ly + 2)}" text-anchor="middle">${esc(clip(String(p.etiq), 3))}</text>`;
-      if ((p.dir || 0) <= 0) s += `<line class="lead" x1="0" y1="${f1(ly)}" x2="${f1(xm0)}" y2="${f1(ly)}"/><circle class="borne" cx="${f1(xm0)}" cy="${f1(ly)}" r="1.3"/>`;
-      if ((p.dir || 0) >= 0) s += `<line class="lead" x1="${f1(xe1)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/><circle class="borne" cx="${f1(xe1)}" cy="${f1(ly)}" r="1.3"/>`; });
+      if ((p.dir || 0) <= 0) s += `<line class="lead" x1="0" y1="${f1(ly)}" x2="${f1(xm0)}" y2="${f1(ly)}"/>`;
+      if ((p.dir || 0) >= 0) s += `<line class="lead" x1="${f1(xe1)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
     s += `<text class="rep" x="${f1(mid)}" y="${f1(c.h + 12)}" text-anchor="middle">${esc(clip(c.name, 14))}</text>`;
-    if (designation) s += `<text class="des" x="${f1(mid)}" y="${f1(c.h + 21)}" text-anchor="middle">${esc(clip(designation, 18))}</text>`;
   } else if (c.kind === 'strip' || estBarrette(c.name)) {
     /* BARRETTE (et tout bornier, tout potentiel) : une fine ligne pointillée
-       verticale ; en bas, un point qui dit le départ, avec le repère et la
-       référence à côté ; chaque fil qui vient s'y coller porte le numéro de
-       sa borne, contre la ligne. Un shunt entre deux bornes se dessine en
-       pont plein le long de la ligne, comme le peigne qu'on pose. */
+       verticale ; en bas, un point qui dit le départ, le repère à côté ;
+       chaque fil qui vient s'y coller porte le numéro de sa borne, contre la
+       ligne. Entre deux bornes shuntées, la ligne devient PLEINE : c'est le
+       pontage, tel qu'on le pose. La référence se lit dans la carte. */
     const rangs = (c.kind === 'strip' ? rs : [...rl, ...rr]).slice().sort((u, v) => u.y - v.y);
     const ys = rangs.map(p => p.y - c.y), yh = (ys.length ? Math.min(...ys) : c.h / 2) - 9, yb = (ys.length ? Math.max(...ys) : c.h / 2) + 9;
     s += `<line class="barre" x1="${f1(mid)}" y1="${f1(yh)}" x2="${f1(mid)}" y2="${f1(yb)}"/><circle class="bardot" cx="${f1(mid)}" cy="${f1(yb)}" r="2.1"/>`;
+    paquetsDePonts(c.shunts || []).forEach(([y1, y2]) => {
+      s += `<line class="pont" x1="${f1(mid)}" y1="${f1(y1 - c.y)}" x2="${f1(mid)}" y2="${f1(y2 - c.y)}"/>`; });
     rangs.forEach(p => { const ly = p.y - c.y, d = p.dir || 0, etiq = p.etiq ? clip(String(p.etiq), 4) : '';
       s += `<circle class="jn" cx="${f1(mid)}" cy="${f1(ly)}" r="1.3"/>`;
-      // le numéro de borne sur le fil, à distance de la ligne pour laisser la place au pont
       if (d <= 0) { s += `<line class="lead" x1="0" y1="${f1(ly)}" x2="${f1(mid)}" y2="${f1(ly)}"/>`;
-        if (etiq) s += `<text class="barnum" x="${f1(mid - 9)}" y="${f1(ly - 1.8)}" text-anchor="end">${esc(etiq)}</text>`; }
+        if (etiq) s += `<text class="barnum" x="${f1(mid - 2.5)}" y="${f1(ly - 1.6)}" text-anchor="end">${esc(etiq)}</text>`; }
       if (d >= 0) { s += `<line class="lead" x1="${f1(mid)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`;
-        if (etiq && d > 0) s += `<text class="barnum" x="${f1(mid + 9)}" y="${f1(ly - 1.8)}" text-anchor="start">${esc(etiq)}</text>`; } });
-    // les shunts qui se touchent font un PAQUET : un seul pont, du côté où ses bornes n'ont pas de fil, à défaut à droite
-    paquetsDePonts(c.shunts || []).forEach(([y1, y2]) => { const entre = rangs.filter(p => p.y >= y1 - 0.6 && p.y <= y2 + 0.6);
-      const aGauche = entre.some(p => (p.dir || 0) <= 0), aDroite = entre.some(p => (p.dir || 0) >= 0), xs = mid + ((aDroite && !aGauche) ? -4.5 : 4.5);
-      s += `<line class="pont" x1="${f1(xs)}" y1="${f1(y1 - c.y)}" x2="${f1(xs)}" y2="${f1(y2 - c.y)}"/>`;
-      entre.forEach(p => { s += `<circle class="jn" cx="${f1(xs)}" cy="${f1(p.y - c.y)}" r="1.5"/>`; }); });
+        if (etiq && d > 0) s += `<text class="barnum" x="${f1(mid + 2.5)}" y="${f1(ly - 1.6)}" text-anchor="start">${esc(etiq)}</text>`; } });
     s += `<text class="rep" x="${f1(mid)}" y="${f1(yb + 12)}" text-anchor="middle">${esc(clip(c.name, 14))}</text>`;
-    if (designation) s += `<text class="des" x="${f1(mid)}" y="${f1(yb + 21)}" text-anchor="middle">${esc(clip(designation, 18))}</text>`;
   } else if (estMasse(c.name)) {
-    /* MASSE : les fils rejoignent un collecteur vertical, marqués d'un point
-       de jonction, et le collecteur descend sur le symbole CEI 60617-02 —
-       trois barres décroissantes. Le repère se lit sous le symbole. */
+    /* MASSE : le fil descend d'un court trait sur le symbole CEI 60617-02 —
+       trois barres décroissantes, la plus longue en haut — et le repère se lit
+       dessous. Plusieurs fils sur la même masse rejoignent un collecteur. */
     const cx = c.w / 2, ys = [...rl, ...rr].map(p => p.y - c.y);
-    const yh = ys.length ? Math.min(...ys) : c.h / 2, yb = ys.length ? Math.max(...ys) : c.h / 2, y0 = yb + 6;
+    const yh = ys.length ? Math.min(...ys) : c.h / 2, yb = ys.length ? Math.max(...ys) : c.h / 2, y0 = yb + 7;
     s += `<line class="earth" x1="${f1(cx)}" y1="${f1(yh)}" x2="${f1(cx)}" y2="${f1(y0)}"/>`;
     rl.forEach(p => { const ly = p.y - c.y; s += `<line class="earth" x1="0" y1="${f1(ly)}" x2="${f1(cx)}" y2="${f1(ly)}"/>`; });
     rr.forEach(p => { const ly = p.y - c.y; s += `<line class="earth" x1="${f1(cx)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
-    if (ys.length > 1) ys.forEach(ly => { s += `<circle class="jn" cx="${f1(cx)}" cy="${f1(ly)}" r="1.7"/>`; });
-    s += `<line class="earth" x1="${f1(cx - 6)}" y1="${f1(y0)}" x2="${f1(cx + 6)}" y2="${f1(y0)}"/><line class="earth" x1="${f1(cx - 4)}" y1="${f1(y0 + 3)}" x2="${f1(cx + 4)}" y2="${f1(y0 + 3)}"/><line class="earth" x1="${f1(cx - 2)}" y1="${f1(y0 + 6)}" x2="${f1(cx + 2)}" y2="${f1(y0 + 6)}"/>`;
+    if (ys.length > 1) ys.forEach(ly => { s += `<circle class="jn" cx="${f1(cx)}" cy="${f1(ly)}" r="1.5"/>`; });
+    [[7, 0], [4.5, 3.2], [2, 6.4]].forEach(([l, dy]) => { s += `<line class="earth" x1="${f1(cx - l)}" y1="${f1(y0 + dy)}" x2="${f1(cx + l)}" y2="${f1(y0 + dy)}"/>`; });
     s += `<text class="rep" x="${f1(cx)}" y="${f1(y0 + 17)}" text-anchor="middle">${esc(clip(c.name, 10))}</text>`;
   } else {
     // équipement : corps, repère en tête (rappelé en pied s'il est très haut), bornes sur les flancs
@@ -325,10 +317,11 @@ function blocSvg(c, designation, choisi) {
     if (rl.length) s += bornesSvg(bx, -1, c.lw, rl, c.y, connDe);
     if (rr.length) s += bornesSvg(bx + bw, +1, c.rw, rr, c.y, connDe);
     // un shunt entre deux bornes d'un équipement : un pont dans le cadre du connecteur, côté flanc
+    // un shunt entre bornes d'un connecteur : un pontage fin, juste devant la pièce, avec ses points
     paquetsDePonts(c.shunts || []).forEach(([y1, y2]) => { const aDroite = rr.some(p => Math.abs(p.y - y1) < 0.6) && !rl.some(p => Math.abs(p.y - y1) < 0.6);
-      const xs = aDroite ? bx + bw + CONN_W - 3 : bx - CONN_W + 3, entre = (aDroite ? rr : rl).filter(p => p.y >= y1 - 0.6 && p.y <= y2 + 0.6);
-      s += `<line class="pont" x1="${f1(xs)}" y1="${f1(y1 - c.y)}" x2="${f1(xs)}" y2="${f1(y2 - c.y)}"/>`;
-      entre.forEach(p => { s += `<circle class="jn" cx="${f1(xs)}" cy="${f1(p.y - c.y)}" r="1.5"/>`; }); });
+      const xs = aDroite ? bx + bw + CONN_W + 3.5 : bx - CONN_W - 3.5, entre = (aDroite ? rr : rl).filter(p => p.y >= y1 - 0.6 && p.y <= y2 + 0.6);
+      s += `<line class="pontage" x1="${f1(xs)}" y1="${f1(y1 - c.y)}" x2="${f1(xs)}" y2="${f1(y2 - c.y)}"/>`;
+      entre.forEach(p => { s += `<circle class="jn" cx="${f1(xs)}" cy="${f1(p.y - c.y)}" r="1.3"/>`; }); });
   }
   return s + '</g>';
 }

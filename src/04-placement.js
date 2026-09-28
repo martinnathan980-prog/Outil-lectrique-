@@ -582,7 +582,7 @@ function paquetsDe(M, id, cles) {
 }
 /* Ordonner un état : le barycentre et le solveur en alternance, l'ordre
    qui aligne le plus de fils est gardé. */
-function ordonner(M, E, maxit) {
+function ordonnerLesBlocs(M, E, maxit) {
   let pos = resoudre(M, E, null), best = pos, bestOrdre = photoOrdres(E), stagne = 0;
   const MAXIT = maxit || (M.ids.length > 300 ? 8 : 20);
   for (let it = 0; it < MAXIT && stagne < 6; it++) { barycentre(M, E, pos.y, (it >> 1) % 2 === 1, it % 2); pos = resoudre(M, E, pos.y);
@@ -784,7 +784,7 @@ function rechercheLocale(M, meilleur, budget) {
     E.piles.forEach(pile => pile.sort((a, b) => pos.haut.get(a) - pos.haut.get(b))); };
   const essayerGeometrie = pos => { const E = meilleur.E, cand = evaluer(M, E, pos); if (!garder(cand)) return false; ordonnerParY(E, pos); return true; };
   const essayerEtat = () => { const E = meilleur.E, cand = evaluer(M, E, resoudre(M, E, meilleur.pos.y)); return garder(cand); };
-  const essayerAutreEtat = E2 => garder(evaluer(M, E2, ordonner(M, E2, 8)));
+  const essayerAutreEtat = E2 => garder(evaluer(M, E2, ordonnerLesBlocs(M, E2, 8)));
   const gestes = [
     ['permutation', () => permutationsDeBornes(M, meilleur.E, () => meilleur.pos, copie, essayerGeometrie, temps)],
     ['glissement', () => glissements(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps)],
@@ -915,7 +915,7 @@ function goulottesOccupees(L, R) {
    serpentin, affiner, budget) : le contrat du routeur et du dessin, routé. */
 function placer(G, opt) {
   const M = modele(G); opt = opt || {};
-  const E = etatInitial(M, opt); let m = evaluer(M, E, ordonner(M, E));
+  const E = etatInitial(M, opt); let m = evaluer(M, E, ordonnerLesBlocs(M, E));
   if (opt.affiner) m = rechercheLocale(M, m, opt.budget || 1000);
   m = resserrer(M, m);
   return { ...m.L, routage: m.R, jugement: m.j };
@@ -937,7 +937,7 @@ function meilleurPlacement(liaisons) {
   const essayer = (col, o) => { const E = etatDepuisColonnes(M, col, o);
     const signature = [...E.place].map(([id, p]) => id + ':' + p.r + ',' + p.c).sort().join(';');
     if (vues.has(signature)) return null; vues.add(signature);
-    const r = evaluer(M, E, ordonner(M, E)); candidats.push(r); return r; };
+    const r = evaluer(M, E, ordonnerLesBlocs(M, E)); candidats.push(r); return r; };
   candidatsDeNiveaux(M, combien).forEach(col => essayer(col, {}));
   const classer = tolerant => candidats.sort((a, b) => bat(a.j, b.j, tolerant) ? -1 : (bat(b.j, a.j, tolerant) ? 1 : 0));
   const finir = c => etirerAuFormat(M, resserrer(M, rechercheLocale(M, c, Math.floor(budget / finalistes))));
