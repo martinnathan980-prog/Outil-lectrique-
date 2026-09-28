@@ -1264,9 +1264,12 @@ function flancsDeBornes(M, E, meilleurDe, essayer, temps, essayerFixe, fixeSeul,
         ls[f1] = [...ls[f1].slice(0, at), ...g, ...ls[f1].slice(at)];
         construireRuns(M, E);
         let garde = false;
-        if (g.length === 1 && essayerFixe) { const k = K(id, g[0].cle), y0 = pos.y.get(k), autres = ls[f1].filter(p => p !== g[0]).map(p => pos.y.get(K(id, p.cle)));
-          const libre = y => autres.every(v => Math.abs(v - y) >= PRH - 0.5) && y >= pos.haut.get(id) + 10 && y <= pos.bas.get(id) - 10;
-          let hauteurs = [y0, ...(autres.length ? [Math.min(...autres) - PRH, Math.max(...autres) + PRH] : [])].filter((y, i, a) => a.indexOf(y) === i && libre(y));
+        if (g.length === 1 && essayerFixe) { const k = K(id, g[0].cle), y0 = pos.y.get(k), nom = b.connecteur.get(g[0].cle);
+          // un pas d'une borne du même connecteur, deux d'une borne d'un autre (sa lettre s'écrit entre les deux)
+          const autres = ls[f1].filter(p => p !== g[0]).map(p => ({ y: pos.y.get(K(id, p.cle)), pas: b.connecteur.get(p.cle) === nom ? PRH : 2 * PRH }));
+          const libre = y => autres.every(a => Math.abs(a.y - y) >= a.pas - 0.5) && y >= pos.haut.get(id) + 10 && y <= pos.bas.get(id) - 10;
+          const haut = autres.reduce((m, a) => a.y - a.pas < m ? a.y - a.pas : m, Infinity), basY = autres.reduce((m, a) => a.y + a.pas > m ? a.y + a.pas : m, -Infinity);
+          let hauteurs = [y0, ...(autres.length ? [haut, basY] : [])].filter((y, i, a) => a.indexOf(y) === i && libre(y));
           // seule la meilleure hauteur à l'estimation se route : l'estimation ne coûte rien, le routage si
           if (estimerPos && hauteurs.length > 1) hauteurs = [hauteurs.map(y => [y, estimerPos(k, y)]).sort((u, v) => v[1] - u[1])[0][0]];
           for (const y of hauteurs) { if (!temps()) break; if (essayerFixe(k, y)) { garde = true; break; } } }
