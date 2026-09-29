@@ -148,7 +148,6 @@ function contratExemple() {
   li('2', '340AB1', '20', '904G',   '',     'W-141', 'DR20');
   li('2', '115CD',  '20', '907G',   '',     'W-142', 'DR20');
   li('2', '118CD',  '20', '907G',   '',     'W-143', 'DR20');
-  li('2', '601RC',  '11', '733LE',  'CNT',  'W-150', 'MLC24');
   // ---- plan 3 : très chargé — un calculateur à trois connecteurs, deux barrettes (une de
   //      distribution à shunts, une de reprise de blindage), deux prises de coupure, trois
   //      relais, deux pompes, trois vannes, deux capteurs blindés, lampes, interrupteurs, masses

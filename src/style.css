@@ -166,6 +166,12 @@ body.cherche .recherche{display:flex}
 
 /* ─── LE BAS : les folios ───────────────────────────────────────────────── */
 #folios{position:fixed;left:calc(50% + var(--rail) / 2 + 12px);bottom:14px;transform:translateX(-50%);display:flex;align-items:center;gap:2px;height:44px;padding:0 6px;border-radius:22px;z-index:20;max-width:calc(100vw - var(--rail) - 48px)}
+.fo-part{display:flex;align-items:center;gap:2px}
+.fo-part[hidden]{display:none}
+#folios hr{width:0;height:22px;border:none;border-left:1px solid var(--trait-verre);margin:0 4px}
+/* dans la barre du bas, la bulle se lit au-dessus du bouton */
+#folios .bulle{left:50%;top:auto;bottom:calc(100% + 10px);transform:translateX(-50%)}
+#folios .bulle::before{right:auto;top:100%;left:50%;margin:0 0 0 -5px;border-color:transparent;border-top-color:var(--verre-plein)}
 .fo-strip{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;max-width:min(60vw,720px);padding:2px}
 .fo-strip::-webkit-scrollbar{display:none}
 .chip{height:32px;min-width:32px;padding:0 11px;border-radius:16px;border:none;background:none;color:var(--craie);font-family:var(--mono);font-weight:600;font-size:var(--t2);transition:background var(--rapide)}
@@ -402,7 +408,6 @@ body.depot-actif .depot{display:grid}
   #rail{gap:0;padding:4px 0}
   .rd{height:36px}
   #rail hr{margin:2px 0}
-  .rd.zl{display:none}
 }
 
 /* ─── TÉLÉPHONE ─────────────────────────────────────────────────────────── */
@@ -411,7 +416,7 @@ body.depot-actif .depot{display:grid}
   /* la barre passe en bas, sous le pouce ; ce que le geste fait déjà
      (pincer pour zoomer, toucher un folio) n'y est pas */
   #rail{top:auto;left:8px;right:8px;bottom:8px;width:auto;height:48px;border-radius:24px;flex-direction:row;justify-content:space-around;padding:0 4px;gap:0;transition:bottom var(--moyen)}
-  #rail hr,#zin,#zout,#zlbl,#fo-prev,#fo-next,#btnOuvrir{display:none}
+  #rail hr,#zin,#zout,#zlbl,#fo-prev,#fo-next,#btnOuvrir,#folios hr{display:none}
   #rail .espace{display:none}
   .menu{bottom:calc(100% + 12px);left:auto;right:-4px;width:min(272px,calc(100vw - 16px))}
   .recherche{top:8px;left:8px;right:8px;width:auto;max-width:none}

@@ -51,7 +51,9 @@ function styleDessin() {
      .bcell{fill:#ffffff;stroke:#1b2430;stroke-width:.55}
      .bsname{fill:#7a8794;font-size:6.5px;font-weight:600;letter-spacing:.9px}
      .pinlbl{fill:#2b3743;font-size:7.5px;font-weight:500;letter-spacing:.2px}
-     .filnum{fill:#3a4753;font-size:${FS_FIL}px;font-weight:500;letter-spacing:.1px}
+     .filnum{fill:#26323f;font-size:${FS_FIL}px;font-weight:500;letter-spacing:.1px}
+     .halo{fill:#ffffff;stroke:none}
+     .rep-petit{fill:#1b2430;font-size:6px;font-weight:600;letter-spacing:.3px}
      .lead{stroke:#26323f;stroke-width:.95;stroke-linecap:butt}
      .conn{fill:#ffffff;stroke:#1b2430;stroke-width:.75}
      .connnom{fill:#1b2430;font-size:6.5px;font-weight:700;letter-spacing:.3px}
@@ -198,9 +200,10 @@ function occupationDe(fils, barrettes, comps) {
   const O = { H, V, boites, corps };
   // `sauf` : le bloc dont on pose le repère ne se gêne pas lui-même ; sans `sauf`, TOUT compte (les textes déjà posés n'ont pas d'id)
   const autre = (o, sauf) => sauf == null || o.id == null || o.id !== sauf;
-  O.libre = (b, mV, sauf) => !boites.some(o => autre(o, sauf) && b.x1 > o.x0 - 3 && b.x0 < o.x1 + 3 && b.y1 > o.y0 - 1.5 && b.y0 < o.y1 + 1.5)
+  // `sien` : la hauteur du fil qu'un numéro chevauche de plein droit (il s'écrit DANS le fil, qui le traverse)
+  O.libre = (b, mV, sauf, sien) => !boites.some(o => autre(o, sauf) && b.x1 > o.x0 - 3 && b.x0 < o.x1 + 3 && b.y1 > o.y0 - 1.5 && b.y0 < o.y1 + 1.5)
     && !corps.some(o => autre(o, sauf) && b.x1 > o.x0 && b.x0 < o.x1 && b.y1 > o.y0 && b.y0 < o.y1)
-    && !H.some(s => s.y > b.y0 - 0.5 && s.y < b.y1 + 0.5 && s.x1 > b.x0 && s.x0 < b.x1)
+    && !H.some(s => s.y > b.y0 - 0.5 && s.y < b.y1 + 0.5 && s.x1 > b.x0 && s.x0 < b.x1 && !(sien != null && Math.abs(s.y - sien) < 0.6))
     && !V.some(s => s.x > b.x0 - mV && s.x < b.x1 + mV && s.y1 > b.y0 && s.y0 < b.y1);
   O.poser = b => { boites.push(b); return b; };
   return O;
@@ -225,15 +228,15 @@ function reperesCandidats(c) {
   const bw = c.w - c.lw - c.rw, mid = c.x + c.lw + bw / 2, rs = c.rangs.S || [];
   const M = symboleDeMasse(c);
   if (M) { const cx = M.xs + M.d * 3.2;
-    return { cls: 'barnum', fs: 5.6, ls: 0.15, nom: clip(c.name, 10), cands: [
+    return { cls: 'rep-petit', fs: 6, ls: 0.3, nom: clip(c.name, 10), cands: [
       { x: cx, y: M.y + 11.6, a: 'middle' }, { x: cx, y: M.y - 8.4, a: 'middle' }, { x: M.xs + M.d * 9.5, y: M.y + 2, a: M.d > 0 ? 'start' : 'end' }] }; }
-  if (c.kind === 'strip' && estCoupure(c.name)) return { cls: 'rep', fs: 10, ls: 1.15, nom: clip(c.name, 14), cands: [
-    { x: mid, y: c.y + c.h + 12, a: 'middle' }, { x: mid, y: c.y - 5, a: 'middle' }, { x: mid, y: c.y + c.h + 23, a: 'middle' }] };
+  if (c.kind === 'strip' && estCoupure(c.name)) return { cls: 'rep-petit', fs: 6, ls: 0.3, nom: clip(c.name, 14), cands: [
+    { x: mid, y: c.y + c.h + 8, a: 'middle' }, { x: mid, y: c.y - 4, a: 'middle' }, { x: mid, y: c.y + c.h + 16, a: 'middle' }] };
   if (c.kind === 'strip' || estBarrette(c.name)) {
     const ys = (c.kind === 'strip' ? rs : [...(c.rangs.L || []), ...(c.rangs.R || [])]).map(p => p.y);
     const yh = (ys.length ? Math.min(...ys) : c.y + c.h / 2) - 9, yb = (ys.length ? Math.max(...ys) : c.y + c.h / 2) + 9;
-    return { cls: 'rep-strip', fs: 9, ls: 1, nom: clip(c.name, 14), yh, yb, mid, cands: [
-      { x: mid, y: yb + 11, a: 'middle' }, { x: mid + 6, y: yb + 3.2, a: 'start' }, { x: mid - 6, y: yb + 3.2, a: 'end' }, { x: mid, y: yh - 4, a: 'middle' }, { x: mid, y: yb + 22, a: 'middle' }] }; }
+    return { cls: 'rep-petit', fs: 6, ls: 0.3, nom: clip(c.name, 14), yh, yb, mid, cands: [
+      { x: mid, y: yb + 8, a: 'middle' }, { x: mid + 5, y: yb + 2.2, a: 'start' }, { x: mid - 5, y: yb + 2.2, a: 'end' }, { x: mid, y: yh - 3.5, a: 'middle' }, { x: mid, y: yb + 16, a: 'middle' }] }; }
   return null;
 }
 function poserReperes(comps, occ) {
@@ -273,14 +276,20 @@ function reperesDeFil(fils, verticaux, barrettes, occ) {
     let pose = null;
     // [écart au fil, débord permis à chaque bout] : sur un fil court, un numéro trop long monte d'une ligne et déborde
     // davantage — au-dessus du symbole, jamais sur le corps de l'équipement (l'occupation l'y repousse)
-    for (const [ecart, marge] of (court ? [[2.2, -4], [7.5, -30]] : [[2.2, 5]])) { if (pose || !c.L || larg + 2 * marge > c.L) continue;
-      const mid = (c.x0 + c.x1) / 2, dmax = Math.max(0, (c.L - larg) / 2 - marge);
+    /* le numéro s'écrit DANS le fil, qui le traverse (un halo blanc l'isole) : c'est ainsi qu'on sait que c'est le bon
+       fil ; s'il n'y a pas la place à cette hauteur, au-dessus. `ecart` : où va la ligne de base par rapport au fil */
+    const dans = -(H / 2 - 0.35 * fs) - 0.3;   // ligne de base pour que le texte soit centré sur le fil
+    for (const [ecart, marge] of (court ? [[dans, -4], [2.2, -4], [7.5, -30]] : [[dans, 5], [2.2, 5]])) { if (pose || !c.L || larg + 2 * marge > c.L) continue;
+      const mid = (c.x0 + c.x1) / 2, dmax = Math.max(0, (c.L - larg) / 2 - marge), sien = ecart === dans ? c.y : null;
       for (let d = 0; d <= dmax + 0.01 && !pose; d += court ? 1 : Math.max(3, larg / 3)) {
         for (const cx of (d === 0 ? [mid] : [mid - d, mid + d])) {
           const x0 = cx - larg / 2, x1 = cx + larg / 2, y1 = c.y - ecart, y0 = y1 - H;
           if (x0 < c.x0 + marge || x1 > c.x1 - marge) continue;
-          if (occ.libre({ x0, y0, x1, y1 }, R_PONT + 1)) { pose = { cx, x0, y0, x1, y1 }; break; } } } }
-    if (pose) { occ.poser(pose); out += `<text class="filnum" x="${f1(pose.cx)}" y="${f1(pose.y1)}" text-anchor="middle">${esc(c.nom)}</text>`; return; }
+          if (occ.libre({ x0, y0, x1, y1 }, R_PONT + 1, null, sien)) { pose = { cx, x0, y0, x1, y1, dedans: sien != null }; break; } } } }
+    if (pose) { occ.poser(pose);
+      // dans le fil : un fond blanc coupe le trait sous le numéro, le fil repart de part et d'autre
+      if (pose.dedans) out += `<rect class="halo" x="${f1(pose.x0 - 1.2)}" y="${f1(pose.y0 + 0.5)}" width="${f1(pose.x1 - pose.x0 + 2.4)}" height="${f1(pose.y1 - pose.y0 - 1)}"/>`;
+      out += `<text class="filnum" x="${f1(pose.cx)}" y="${f1(pose.y0 + 0.78 * fs)}" text-anchor="middle">${esc(c.nom)}</text>`; return; }
     // pas de place à l'horizontale : le numéro se lit debout, le long du plus long vertical
     if (larg + 10 > c.vL) return;
     const cy = (c.vy0 + c.vy1) / 2, x1 = c.vx - 2.2, x0 = x1 - H, y0 = cy - larg / 2, y1 = cy + larg / 2;
@@ -345,10 +354,16 @@ function piecesDeConnecteur(c) { const connDe = etiq => (c.connecteurs && c.conn
 function connecteursSvg(xCorps, dir, rangs, baseY, connecteurDe) {
   let out = '';
   piecesDuFlanc(xCorps, dir, rangs, baseY, connecteurDe).forEach(p => {
-    out += `<rect class="conn" x="${f1(p.x0)}" y="${f1(p.t)}" width="${CONN_W}" height="${f1(p.b - p.t)}" rx="1.5"/>`;
+    // carrée du côté du corps (elle y est collée), arrondie du côté du fil
+    out += `<path class="conn" d="${pieceCollee(p.x0, p.t, CONN_W, p.b - p.t, dir, 1.8)}"/>`;
     // la lettre du connecteur, au-dessus de la pièce
     out += `<text class="connnom" x="${f1(p.x0 + CONN_W / 2)}" y="${f1(p.t - 2.2)}" text-anchor="middle">${esc(clip(p.nom, 3))}</text>`; });
   return out;
+}
+/* Le contour d'une pièce collée au corps : angles vifs côté corps (dir > 0 : le corps est à gauche), arrondis dehors. */
+function pieceCollee(x, y, w, h, dir, r) {
+  if (dir > 0) return `M${f1(x)} ${f1(y)} H${f1(x + w - r)} a${r} ${r} 0 0 1 ${r} ${r} V${f1(y + h - r)} a${r} ${r} 0 0 1 -${r} ${r} H${f1(x)} Z`;
+  return `M${f1(x + w)} ${f1(y)} H${f1(x + r)} a${r} ${r} 0 0 0 -${r} ${r} V${f1(y + h - r)} a${r} ${r} 0 0 0 ${r} ${r} H${f1(x + w)} Z`;
 }
 /* Le repère tient entre les numéros de borne des deux flancs : la taille
    s'adapte au nom, jamais l'inverse. */
@@ -413,9 +428,7 @@ function blocSvg(c, designation, choisi) {
     const rangs = (c.kind === 'strip' ? rs : [...rl, ...rr]).slice().sort((u, v) => u.y - v.y);
     const ys = rangs.map(p => p.y - c.y), yh = (ys.length ? Math.min(...ys) : c.h / 2) - 9, yb = (ys.length ? Math.max(...ys) : c.h / 2) + 9;
     s += `<line class="barre" x1="${f1(mid)}" y1="${f1(yh)}" x2="${f1(mid)}" y2="${f1(yb)}"/><circle class="bardot" cx="${f1(mid)}" cy="${f1(yb)}" r="2.1"/>`;
-    // entre deux bornes shuntées, la ligne est pleine (aussi fine que le pointillé) : le pontage
-    paquetsDePonts(c.shunts || []).forEach(([y1, y2]) => {
-      s += `<line class="pont" x1="${f1(mid)}" y1="${f1(y1 - c.y)}" x2="${f1(mid)}" y2="${f1(y2 - c.y)}"/>`; });
+    // un morceau de barrette est un paquet : ses bornes sont pontées par construction, la ligne reste pointillée
     rangs.forEach(p => { const ly = p.y - c.y, d = p.dir || 0;
       if (d <= 0) s += `<line class="lead" x1="0" y1="${f1(ly)}" x2="${f1(mid)}" y2="${f1(ly)}"/>`;
       if (d >= 0) s += `<line class="lead" x1="${f1(mid)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });

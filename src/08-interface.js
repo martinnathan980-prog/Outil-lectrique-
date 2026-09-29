@@ -215,8 +215,9 @@ function allerAuFolio(pas) { const P = plans(); let i = P.indexOf(app.plan);
   if (i < 0) i = pas > 0 ? -1 : P.length; i += pas; if (i < 0 || i >= P.length) return; allerAuPlan(P[i]); }
 function plansDuRepere(nom) { return [...new Set(app.contrat.liaisons.filter(l => l.de === nom || l.vers === nom).map(l => l.plan).filter(Boolean))]; }
 function plansDuFil(cable) { return [...new Set(app.contrat.liaisons.filter(l => l.cable === cable).map(l => l.plan).filter(Boolean))]; }
-function synchroniserFolios() { const P = plans(), nav = $('folios'), strip = $('fo-strip');
-  nav.hidden = P.length < 2;
+function synchroniserFolios() { const P = plans(), strip = $('fo-strip');
+  // la barre du bas reste (cadrage, zoom) ; la partie folios ne se montre qu'à plusieurs feuilles
+  $('fo-part').hidden = P.length < 2;
   if (app.plan !== '*' && !P.includes(app.plan)) app.plan = P.length > 1 ? P[0] : '*';
   const i = P.indexOf(app.plan);
   strip.innerHTML = P.length < 2 ? '' : P.map(p => `<button class="chip${p === app.plan ? ' on' : ''}" data-plan="${escA(p)}" aria-label="Folio ${escA(p)}"${p === app.plan ? ' aria-current="page"' : ''}>${esc(p)}</button>`).join('');

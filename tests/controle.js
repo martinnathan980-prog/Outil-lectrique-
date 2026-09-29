@@ -97,7 +97,7 @@ function titre(t) { console.log('\n' + t); }
     const out = { folios: [], muets: 0, fils: 0, chev: [], barres: [], nus: [] };
     for (const plan of plansDe(app.contrat.liaisons)) { allerAuPlan(plan); const D = app.dessin;
       const T = []; document.querySelectorAll('#scene text').forEach(t => { const cls = t.getAttribute('class') || '';
-        if (!/^(filnum|rep|rep-strip|barnum|connnom|connpin|pinlbl|rep-big|des|rname|prnum)$/.test(cls)) return;
+        if (!/^(filnum|rep|rep-strip|rep-petit|barnum|connnom|connpin|pinlbl|rep-big|des|rname|prnum)$/.test(cls)) return;
         let bb = t.getBBox(); const tr = t.getAttribute('transform'), m = tr && /rotate\(-90 ([\d.\-]+) ([\d.\-]+)\)/.exec(tr);
         if (m) { const cx = +m[1], cy = +m[2], P = [[bb.x, bb.y], [bb.x + bb.width, bb.y], [bb.x, bb.y + bb.height], [bb.x + bb.width, bb.y + bb.height]].map(([x, y]) => [cx + (y - cy), cy - (x - cx)]);
           const xs = P.map(q => q[0]), ys = P.map(q => q[1]); bb = { x: Math.min(...xs), y: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) }; }
@@ -106,7 +106,9 @@ function titre(t) { console.log('\n' + t); }
       const S = []; D.fils.forEach(w => { for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1]; S.push({ n: w.cable, x0: Math.min(a.x, b.x), x1: Math.max(a.x, b.x), y0: Math.min(a.y, b.y), y1: Math.max(a.y, b.y), h: Math.abs(a.y - b.y) < 0.6 }); } });
       (D.barrettes || []).forEach(b => { S.push({ n: 'piquage', x0: b.x, x1: b.x, y0: b.y1 + 3, y1: b.y2 - 3, h: false }); });
       for (let i = 0; i < T.length; i++) for (let j = i + 1; j < T.length; j++) { const a = T[i], b = T[j]; if (a.x1 > b.x0 && a.x0 < b.x1 && a.y1 > b.y0 && a.y0 < b.y1) out.chev.push(plan + ' : ' + a.txt + ' × ' + b.txt); }
-      T.forEach(t => S.forEach(s => { const dedans = s.h ? (s.y0 > t.y0 + 0.4 && s.y0 < t.y1 - 0.4 && s.x1 > t.x0 + 0.4 && s.x0 < t.x1 - 0.4) : (s.x0 > t.x0 + 0.4 && s.x0 < t.x1 - 0.4 && s.y1 > t.y0 + 0.4 && s.y0 < t.y1 - 0.4);
+      // un numéro de fil s'écrit DANS son fil (le fil le traverse) : le segment de ce fil à sa hauteur n'est pas une barre
+      T.forEach(t => S.forEach(s => { if (t.cls === 'filnum' && s.h && s.n === t.txt) return;
+        const dedans = s.h ? (s.y0 > t.y0 + 0.4 && s.y0 < t.y1 - 0.4 && s.x1 > t.x0 + 0.4 && s.x0 < t.x1 - 0.4) : (s.x0 > t.x0 + 0.4 && s.x0 < t.x1 - 0.4 && s.y1 > t.y0 + 0.4 && s.y0 < t.y1 - 0.4);
         if (dedans) out.barres.push(plan + ' : ' + s.n + ' barre ' + t.txt); }));
       const nommes = D.fils.filter(w => !w.shunt && String(w.cable || '').trim()); out.fils += nommes.length;
       const ecrits = new Set([...document.querySelectorAll('#scene .filnum')].map(t => t.textContent));
