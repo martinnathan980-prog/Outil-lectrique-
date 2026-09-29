@@ -37,10 +37,15 @@
                  pas.
      allongement longueur totale des fils rapportée à la distance à vol
                  d'oiseau : 1.00 = tous les fils vont tout droit
+     partag.     segments partagés par deux fils de nets différents — une
+                 connexion qui n'existe pas ; règle dure, doit valoir 0
+     marches     fils qui font un escalier (un segment de moins de 12 entre
+                 deux angles, deux verticales à moins de 24) ; règle dure
      ms          temps de rendu
-   et les deux invariants sacrés, qui ne sont pas des mesures mais des
-   conditions : aucun fil à travers un bloc étranger, aucun chevauchement.
-   Un cas qui les viole est marqué FAUX, quel que soit son score.
+   et les invariants sacrés, qui ne sont pas des mesures mais des
+   conditions : aucun fil à travers un bloc étranger, aucun chevauchement,
+   aucun segment partagé, aucune marche. Un cas qui les viole est marqué
+   FAUX, quel que soit son score, et le banc rend 1.
 
    Sur les trois folios de l'exemple, des CONTRÔLES EXACTS a posteriori,
    au routage réel, rendent 1 s'ils échouent : aucun échange de deux
@@ -51,8 +56,8 @@
 const { chromium } = require('playwright');
 const path = require('path');
 const { fichierDemande, chargerDansLaPage, essaiDansLaPage, exempleDansLaPage, mesurerDansLaPage, preparerDansLaPage, echangesEvidentsDansLaPage,
-        flancsEvidentsDansLaPage, glissementsEvidentsDansLaPage, segmentsPartagesDansLaPage, corpsEtiresDansLaPage,
-        massesColleesDansLaPage, blocLisibleDansLaPage, filDroitOuJustifieDansLaPage } = require('./pilote');
+        flancsEvidentsDansLaPage, glissementsEvidentsDansLaPage, segmentsPartagesDansLaPage, marchesDansLaPage, corpsEtiresDansLaPage,
+        pastillesColleesDansLaPage, blocLisibleDansLaPage, filDroitOuJustifieDansLaPage } = require('./pilote');
 
 const FICHIER = fichierDemande();
 const JSON_OUT = process.argv.includes('--json');
@@ -160,7 +165,7 @@ if (require.main === module) (async () => {
     const r = await page.evaluate(mesurerDansLaPage);
     const m = { blocs: r.blocs, fils: r.fils, larg: r.w, haut: r.h, droits: r.taux, crois: r.croisements, evit: r.evitables,
       surface: (r.w * r.h) / 1000, format: r.format, densite: r.densite, allong: r.allongement,
-      ib: r.filsDansBloc, ch: r.chevauches, ms };
+      ib: r.filsDansBloc, ch: r.chevauches, partages: r.partages, marches: r.marches, ms };
     /* les gestes évidents : sur les folios de l'exemple, aucune permutation
        de deux bornes d'un connecteur, aucun changement de flanc d'une borne,
        aucun glissement d'un bloc ne doit faire mieux — moins de croisements
@@ -176,10 +181,12 @@ if (require.main === module) (async () => {
     if (gen && gen.plan) { m.controles = [];
       const partages = await page.evaluate(segmentsPartagesDansLaPage);
       m.controles.push({ nom: 'aucun segment partagé par deux fils de nets différents', ok: !partages.n, detail: partages.detail.join(' | ') });
+      const marches = await page.evaluate(marchesDansLaPage);
+      m.controles.push({ nom: 'aucune marche : un fil est droit, fait un Z, ou un U par un couloir', ok: !marches.n, detail: marches.detail.join(' | ') });
       const etires = await page.evaluate(corpsEtiresDansLaPage);
       m.controles.push({ nom: 'aucun corps étiré à plus de deux fois sa hauteur naturelle sans rendre droits deux fils de plus (' + etires.etires + ' étiré' + (etires.etires > 1 ? 's' : '') + ')', ok: !etires.defauts.length, detail: etires.defauts.join(' | ') });
-      const masses = await page.evaluate(massesColleesDansLaPage);
-      m.controles.push({ nom: 'les masses sont collées à leur borne (' + masses.masses + ')', ok: !masses.loin.length, detail: masses.loin.join(' | ') });
+      const pastilles = await page.evaluate(pastillesColleesDansLaPage);
+      m.controles.push({ nom: 'les masses (' + pastilles.masses + ') et les morceaux de barrette seuls (' + pastilles.morceaux + ') sont collés à leur borne', ok: !pastilles.loin.length, detail: pastilles.loin.join(' | ') });
       if (gen.plan === '2') { const f = await page.evaluate(filDroitOuJustifieDansLaPage, 'W-120');
         m.controles.push({ nom: 'W-120 (340AB1:1 → 210SP1:A3) est droit, ou le glissement qui le rendrait droit coûte plus qu\'il ne rapporte', ok: f.ok, detail: f.detail }); }
       /* chaque équipement du folio est lisible : aucune borne ne tourne le dos à son partenaire (un connecteur ne se coupe
@@ -199,11 +206,11 @@ if (require.main === module) (async () => {
   const pc = x => (Math.round(x * 1000) / 10).toFixed(1).padStart(5) + ' %';
   const n = (x, d) => Number(x).toFixed(d);
   console.log('\nBANC DE PLACEMENT — ' + res.length + ' topologies\n');
-  console.log('  ' + 'cas'.padEnd(42) + 'blocs  fils   droits  croisem.  évit.  surface   format  densité  allong.    ms');
-  console.log('  ' + '─'.repeat(125));
+  console.log('  ' + 'cas'.padEnd(42) + 'blocs  fils   droits  croisem.  évit.  surface   format  densité  allong.  partag. marches    ms');
+  console.log('  ' + '─'.repeat(141));
   let sD = 0, sF = 0, sC = 0, sE = 0, faux = 0;
   res.forEach(r => {
-    const ko = r.ib || r.ch;
+    const ko = r.ib || r.ch || r.partages || r.marches;
     if (ko) faux++;
     sD += r.droits * r.fils; sF += r.fils; sC += r.crois; sE += r.evit;
     console.log('  ' + (ko ? '✗ ' : '  ') + r.nom.padEnd(40)
@@ -212,10 +219,10 @@ if (require.main === module) (async () => {
       + n(r.surface, 0).padStart(9)
       + (n(r.format, 2) + (r.format > 2.2 || r.format < 0.45 ? '!' : ' ')).padStart(9)
       + (pc(r.densite) + (r.densite < 0.12 ? '!' : ' ')).padStart(9)
-      + n(r.allong, 2).padStart(8) + String(r.ms).padStart(6)
-      + (ko ? '   FAUX : filsDansBloc=' + r.ib + ' chevauch=' + r.ch : ''));
+      + n(r.allong, 2).padStart(8) + String(r.partages).padStart(8) + String(r.marches).padStart(8) + String(r.ms).padStart(6)
+      + (ko ? '   FAUX : filsDansBloc=' + r.ib + ' chevauch=' + r.ch + ' partagés=' + r.partages + ' marches=' + r.marches : ''));
   });
-  console.log('  ' + '─'.repeat(125));
+  console.log('  ' + '─'.repeat(141));
   console.log('  ' + 'ENSEMBLE, pondéré par le nombre de fils'.padEnd(42) + '        ' + pc(sF ? sD / sF : 0) + String(sC).padStart(9) + String(sE).padStart(7));
   if (sE) console.log('\n  ' + sE + ' croisement(s) ÉVITABLE(S) : le routeur laisse des croisements qu\'un autre ordre des pistes ôterait.');
   const vides = res.filter(r => r.densite < 0.12);
@@ -230,7 +237,7 @@ if (require.main === module) (async () => {
     horsPage.forEach(r => console.log('    ' + r.nom + ' — ' + Math.round(r.larg) + ' × '
       + Math.round(r.haut) + ', soit ' + n(r.format, 1) + ':1'));
   }
-  if (faux) console.log('\n  ' + faux + ' cas VIOLENT un invariant sacré — aucun score ne rachète ça.');
+  if (faux) console.log('\n  ' + faux + ' cas VIOLENT un invariant sacré (fil dans un bloc, chevauchement, segment partagé, marche) — aucun score ne rachète ça.');
   let manques = 0;
   const gestes = [['echanges', 'les échanges évidents sont trouvés', 'paires', 'échange(s) de deux bornes'],
     ['flancs', 'les changements de flanc évidents sont trouvés', 'essais', 'changement(s) de flanc d\'une borne'],

@@ -25,11 +25,22 @@ const RETRAIT = 14;         // de la paroi à la première verticale : la longue
 const ECART_VERT = 10;      // deux verticales sur la même piste se lisent séparées
 const NMAX_EXACT = 12;      // au-delà, l'ordre des pistes se cherche par déplacements
 const INTERDIT = 1e6;       // le coût d'un ordre impossible
-/* Un JOG : là où le coin d'un fil tomberait sur le trait d'un autre, le fil
-   s'écarte de JOG_X avant le coin de l'autre et rejoint sa verticale JOG
-   plus haut ou plus bas — deux fils ne se superposent JAMAIS. */
-const JOG = 6, JOG_X = 4, PARTAGE_COIN = 0.3;
-let numeroDeJog = 0;
+/* Deux fils de nets différents sur un même trait, c'est une connexion qui
+   n'existe pas : pire qu'un ordre impossible (qui ne fait que passer un fil
+   devant le porteur de sa borne — même potentiel). Deux attaches à la même
+   hauteur vers des parois opposées se séparent TOUJOURS par l'ordre des
+   pistes : la verticale attachée à gauche à gauche de l'autre ; ça ne coûte
+   que les croisements que l'entrelacement des bouts impose de toute façon —
+   un pont est un élément normal, une marche ne l'est pas. */
+const SUPERPOSE = 3e6;
+/* Une MARCHE : un segment de quelques unités entre deux angles — un fil est
+   droit, fait UN Z propre (une verticale, deux vrais angles droits), ou un U
+   par un couloir ; jamais un escalier. Un couloir se pose à Z_MIN au moins
+   des bornes qu'il relie (plus qu'un pas de borne : il ne tombe pas sur la
+   ligne de la borne voisine), une verticale de détour fait Z_MIN. Le juge
+   et le banc comptent les marches (`compterMarches`) : un segment de moins
+   de MARCHE entre deux angles, deux verticales d'un fil à moins de 2·MARCHE. */
+const MARCHE = 12, Z_MIN = 16;
 
 /* Les NETS : deux bornes reliées par un fil ou un shunt sont un même
    potentiel ; deux fils d'un même net peuvent se toucher (les départs d'un
@@ -55,22 +66,6 @@ function simplifier(pts) {
       else if (vert && (b.y - a.y) * (q.y - b.y) < 0) { out.pop(); if (Math.abs(a.y - q.y) < 0.3) return; } }
     out.push(q); });
   return out;
-}
-
-/* Le même tracé sans ses jogs ni ses enjambements (les verticales de moins
-   de JOG + 2) : le coin revient sur la ligne, la bosse s'aplatit. C'est la
-   géométrie que l'ordre des pistes a décidée, avant que les partages ne
-   s'écartent. */
-function sansJogs(pts) {
-  if (!pts.some(q => q.jog)) return pts;
-  const p = pts.slice();
-  for (let i = 0; i < p.length; i++) { if (!p[i].jog) continue; let j = i; while (j < p.length && p[j].jog === p[i].jog) j++;
-    // trois points : un coin décalé — le coin revient à l'abscisse de sa verticale et à la hauteur de son horizontale
-    if (j - i === 3) { const av = p[i - 1], ap = p[j]; const versV = av && Math.abs(av.x - p[i].x) < 0.3;
-      p.splice(i, 3, versV ? { x: p[i].x, y: p[j - 1].y } : { x: p[j - 1].x, y: p[i].y }); }
-    else p.splice(i, j - i);                       // quatre points : une bosse, qui s'aplatit
-    i--; }
-  return p;
 }
 
 /* ---- la géométrie des goulottes ---------------------------------------- */
@@ -120,17 +115,23 @@ function formerLesFils(layout, G, permis) {
   const couloirsPris = [];                    // corridors à travers une colonne : { y, xa, xb }
   const pris = (xa, xb, y) => couloirsPris.some(m => Math.abs(m.y - y) < 8 && xb > m.xa - 7 && xa < m.xb + 7);
   const prendre = (xa, xb, y) => couloirsPris.push({ y, xa, xb });
+  /* les hauteurs des bornes sur les parois de chaque goulotte : un couloir ne s'y pose pas — à la hauteur d'une borne d'en
+     face, son horizontale et celle de la borne sont sur la même ligne, et se lisent comme un seul fil */
+  const parois = Array.from({ length: G.n }, () => new Set());
+  layout.links.forEach(l => { if (l.boucle || l.shunt) return; [l.epA, l.epB].forEach(ep => parois[ep.ch].add(Math.round(ep.y * 2))); });
+  const surUneBorne = (ch, y) => parois[ch].has(Math.round(y * 2));
   const exclusDe = l => new Set([String(l.de), String(l.vers)]);
   const bouts = li => { const l = layout.links[li]; let A = { ...l.epA, tag: 'A' }, B = { ...l.epB, tag: 'B' };
     if (A.ch > B.ch || (A.ch === B.ch && murDe(A) === 'R' && murDe(B) === 'L')) { const t = A; A = B; B = t; }
     return [A, B]; };
-  // 1) les fils droits, d'abord : ce sont les barrières de tout le reste
+  // 1) les fils droits, d'abord : ce sont les barrières de tout le reste — dans les goulottes qu'ils traversent de part
+  //    en part (le fil d'une pastille reste dans la zone de sa colonne : il ne barre rien)
   layout.links.forEach((l, li) => { if (l.boucle || l.shunt) return;
     const [A, B] = bouts(li); if (Math.abs(A.y - B.y) > 0.75) return;
     const dr = murDe(A) === 'L' && murDe(B) === 'R';                       // A regarde à droite, B à gauche
     if (!dr || !G.couloirLibre(A.x + 2, B.x - 2, A.y, exclusDe(l))) return;
     fils.set(li, { forme: 'droit', A, B, travaux: [], chez: {} });
-    for (let ch = A.ch; ch <= B.ch; ch++) barrieres[ch].push(A.y);
+    for (let ch = A.ch; ch <= B.ch; ch++) if (A.x <= G.x0(ch) + 1 && B.x >= G.x1(ch) - 1) barrieres[ch].push(A.y);
     if (A.ch < B.ch) prendre(G.x1(A.ch), G.x0(B.ch), A.y); });
   // combien de barrières une verticale de la goulotte `ch` enjambe entre deux ordonnées (barrières triées, dichotomie)
   barrieres.forEach(B => B.sort((u, v) => u - v));
@@ -138,7 +139,7 @@ function formerLesFils(layout, G, permis) {
   const coupe = (ch, ya, yb) => { const B = barrieres[ch], lo = Math.min(ya, yb), hi = Math.max(ya, yb); return Math.max(0, avant(B, hi - 0.5) - avant(B, lo + 0.5 + 1e-9)); };
   // 2) les autres, par la forme qui croise le moins de barrières
   layout.links.forEach((l, li) => { if (l.boucle || l.shunt || fils.has(li)) return;
-    const [A, B] = bouts(li), K = { G, coupe, pris, ex: exclusDe(l), li, A, B, mA: murDe(A), mB: murDe(B) };
+    const [A, B] = bouts(li), K = { G, coupe, pris, surUneBorne, ex: exclusDe(l), li, A, B, mA: murDe(A), mB: murDe(B) };
     const choix = formesDirectes(K);
     /* un passage par une goulotte voisine ne se cherche que si le direct
        coûte ; il n'est pris que s'il est PERMIS — le routeur l'essaie pour de
@@ -153,12 +154,15 @@ function formerLesFils(layout, G, permis) {
   fils.candidats = candidats.sort((u, v) => v.gain - u.gain).map(c => c.li);
   return fils;
 }
+/* Un couloir à hauteur y fait-il un vrai Z depuis une borne à hauteur yb ?
+   Oui s'il est à Z_MIN au moins — jamais une marche de quelques unités. */
+const vraiZ = (y, yb) => Math.abs(y - yb) >= Z_MIN - 1e-9;
 /* Les formes DIRECTES d'un fil plié : dans sa goulotte (même goulotte),
    droit puis verticale à l'arrivée, verticale au départ puis droit, ou un
    corridor entre les deux avec un Z dans chaque goulotte. Le coût d'une forme
    est le nombre de fils droits que ses verticales enjambent. */
 function formesDirectes(K) {
-  const { G, coupe, pris, ex, li, A, B, mA, mB } = K;
+  const { G, coupe, pris, surUneBorne, ex, li, A, B, mA, mB } = K;
   K.attache = (ep, mur) => ({ y: ep.y, mur, bout: cle(li, ep.tag) });
   K.libre = (y, mur) => ({ y, mur, bout: null });
   const att = K.attache, libre = K.libre, choix = [];
@@ -167,11 +171,13 @@ function formesDirectes(K) {
     choix.push({ forme: 'arrivee', cout: coupe(B.ch, A.y, B.y), corridors: [[G.x1(A.ch), G.x0(B.ch), A.y]], travaux: [travail(B.ch, { y: A.y, mur: 'L', bout: cle(li, A.tag) }, att(B, mB), ex)] });
   if (mB === 'R' && G.couloirLibre(G.x1(A.ch) - 2, B.x - 2, B.y, ex) && !pris(G.x1(A.ch), G.x0(B.ch), B.y))
     choix.push({ forme: 'depart', cout: coupe(A.ch, A.y, B.y), corridors: [[G.x1(A.ch), G.x0(B.ch), B.y]], travaux: [travail(A.ch, att(A, mA), { y: B.y, mur: 'R', bout: cle(li, B.tag) }, ex)] });
-  // le corridor traverse des colonnes entières, celles des deux blocs comprises : rien n'en est exclu — le balayage saute les bandes de blocs
+  // le corridor traverse des colonnes entières, celles des deux blocs comprises : rien n'en est exclu — le balayage saute les bandes de blocs ;
+  // il passe à Z_MIN au moins des deux bornes : à leur hauteur, c'est une arrivée ou un départ, plus près c'est une marche
   const lo = Math.min(A.y, B.y), hi = Math.max(A.y, B.y), bandes = G.bandes(G.x0(A.ch) + 2, G.x1(B.ch) - 2); let meilleur = null;
   const y0 = Math.max(G.yMin - 12, lo - 240), yFin = Math.min(G.yMax + 12, hi + 240);
   for (let y = y0; y <= yFin; y += 4) {
     const b = G.bande(bandes, y); if (b) { y = surLaGrille(y0, 4, b[1]) - 4; continue; }
+    if (!vraiZ(y, A.y) || !vraiZ(y, B.y) || surUneBorne(A.ch, y) || surUneBorne(B.ch, y)) continue;
     const c = coupe(A.ch, A.y, y) + coupe(B.ch, y, B.y) + 0.5 + 0.0005 * Math.abs(y - (lo + hi) / 2) + (y < lo || y > hi ? 0.4 : 0);
     if (meilleur && c >= meilleur.cout) continue;
     if (pris(G.x1(A.ch), G.x0(B.ch), y)) continue;
@@ -184,19 +190,20 @@ function formesDirectes(K) {
    loin) et revient par un second corridor. Ça vaut quand la goulotte du fil
    est barrée de fils droits que la voisine n'a pas. */
 function formesParDetour(K) {
-  const { G, coupe, pris, ex, A, B, mA, mB } = K, att = K.attache, libre = K.libre, choix = [];
+  const { G, coupe, pris, surUneBorne, ex, A, B, mA, mB } = K, att = K.attache, libre = K.libre, choix = [];
   const PORTEE = 160, PAS = 8;      // un corridor traverse des colonnes entières, celle du bloc du fil comprise : rien n'en est exclu
   const corridorsPres = (ch0, ch1, yc) => { const out = [], xa = Math.min(G.x0(ch0), G.x0(ch1)) + 2, xb = Math.max(G.x1(ch0), G.x1(ch1)) - 2;
     const xc = Math.min(G.x1(ch0), G.x1(ch1)), xd = Math.max(G.x0(ch0), G.x0(ch1)), bandes = G.bandes(xa, xb);
     const y0 = Math.max(G.yMin - 12, yc - PORTEE), yFin = Math.min(G.yMax + 12, yc + PORTEE);
     for (let y = y0; y <= yFin; y += PAS) { const b = G.bande(bandes, y); if (b) { y = surLaGrille(y0, PAS, b[1]) - PAS; continue; }
-      if (!pris(xc, xd, y)) out.push(y); }
+      if (!pris(xc, xd, y) && !((surUneBorne(ch0, y) || surUneBorne(ch1, y)) && Math.abs(y - yc) > 0.5)) out.push(y); }
     return out; };
   [-1, -2, 1, 2].forEach(d => { const v = d < 0 ? A.ch + d : B.ch + d; if (v < 0 || v >= G.n) return;
-    const gauche = d < 0, c1s = corridorsPres(A.ch, v, A.y), c2s = corridorsPres(v, B.ch, B.y);
+    // un corridor à la hauteur de sa borne (le fil y entre droit), ou à Z_MIN au moins ; entre les deux, une marche
+    const gauche = d < 0, c1s = corridorsPres(A.ch, v, A.y).filter(y => Math.abs(y - A.y) < 0.5 || vraiZ(y, A.y)), c2s = corridorsPres(v, B.ch, B.y).filter(y => Math.abs(y - B.y) < 0.5 || vraiZ(y, B.y));
     if (!c1s.length || !c2s.length) return;
     let meilleur = null;
-    c1s.forEach(c1 => c2s.forEach(c2 => { if (Math.abs(c1 - c2) < 8) return;
+    c1s.forEach(c1 => c2s.forEach(c2 => { if (!vraiZ(c1, c2)) return;
       const c = coupe(A.ch, A.y, c1) + coupe(v, c1, c2) + coupe(B.ch, c2, B.y) + 1.5 + 0.5 * (Math.abs(d) - 1) + 0.0005 * (Math.abs(c1 - A.y) + Math.abs(c2 - B.y));
       if (!meilleur || c < meilleur.cout) meilleur = { cout: c, c1, c2 }; }));
     if (!meilleur) return; const { c1, c2 } = meilleur;
@@ -271,9 +278,8 @@ function formerLesPiquages(layout, fils, G) {
    porteur de la borne le paie très cher si elle passe de l'autre côté.
    Deux attaches à la MÊME hauteur vers des parois opposées, de nets
    différents : si la verticale attachée à droite est à gauche de l'autre,
-   leurs deux horizontales se superposent entre les deux coins — un jog le
-   répare (PARTAGE_COIN), et le jog croise l'autre verticale (1) quand les
-   deux continuent du même côté de cette hauteur. */
+   leurs deux horizontales se superposent entre les deux coins — cet ordre
+   est SUPERPOSE, l'autre les sépare. */
 function coutsParPaires(travaux) {
   const n = travaux.length, c = Array.from({ length: n }, () => new Float64Array(n));
   const idx = new Map(travaux.map((t, i) => [t, i]));
@@ -284,17 +290,11 @@ function coutsParPaires(travaux) {
     J.att.forEach(a => { if (a.mur === 'L' && dans(a.y, I) && !jonction(I, a)) v++; });
     I.att.forEach(a => { if (a.mur === 'R' && dans(a.y, J) && !jonction(J, a)) v++; });
     if (I.net != null && J.net != null && I.net !== J.net) I.att.forEach(a => { if (a.mur !== 'R') return;
-      J.att.forEach(b => { if (b.mur !== 'L' || Math.abs(a.y - b.y) > 0.5) return; v += PARTAGE_COIN + (coinLibre(I, J, a.y) ? 0 : 1); }); });
+      J.att.forEach(b => { if (b.mur === 'L' && Math.abs(a.y - b.y) <= 0.5) v += SUPERPOSE; }); });
     c[i][j] = v + (i > j ? 1e-4 : 0); }           // à égalité, l'ordre naturel (par ordonnée) reste
   travaux.forEach((t, i) => t.contraintes.forEach(ct => { const P = ct.porteur.travail || ct.porteur, p = idx.get(P); if (p == null || p === i) return;
     if (ct.mur === 'L') c[p][i] = INTERDIT; else c[i][p] = INTERDIT; }));
   return c;
-}
-/* Un jog est LIBRE (il ne croise pas l'autre verticale) si l'une des deux
-   verticales continue d'un côté de cette hauteur où l'autre ne va pas. */
-function coinLibre(I, J, y) {
-  const haut = t => t.lo < y - 0.5, bas = t => t.hi > y + 0.5;
-  return (haut(I) && !haut(J)) || (bas(I) && !bas(J)) || (haut(J) && !haut(I)) || (bas(J) && !bas(I));
 }
 function coutDeLOrdre(ordre, c) { let s = 0; for (let a = 0; a < ordre.length; a++) for (let b = a + 1; b < ordre.length; b++) s += c[ordre[a]][ordre[b]]; return s; }
 /* Exact : programmation dynamique sur les sous-ensembles — le dernier posé
@@ -402,75 +402,6 @@ function jonctions(layout, traces, barrettes) {
   return [...points.values()];
 }
 
-/* ---- aucun segment partagé --------------------------------------------------
-   Deux fils de nets différents ne se superposent JAMAIS : ce serait une
-   connexion qui n'existe pas. Quand deux horizontales se recouvrent, c'est
-   qu'un coin (une verticale qui tourne) est posé sur le trait de l'autre, à
-   la même hauteur. Le fil dont le coin est libre fait un JOG : il quitte sa
-   ligne JOG_X après le coin de l'autre, monte ou descend de JOG du côté où
-   sa verticale continue, et la rejoint là. Un départ de piquage naît sur la
-   verticale du piquage et ne peut pas s'écarter : quand aucun des deux ne
-   le peut, l'un ENJAMBE le coin de l'autre. Le jog croise l'autre verticale
-   quand elle continue du même côté : c'est un croisement, pas un partage. */
-function separerLesPartages(traces, barrettes, netDe) {
-  const rates = new Set();
-  for (let tour = 0; tour < 8; tour++) {
-    const H = [], V = [];
-    traces.forEach((w, li) => { if (!w || w.shunt || !w.pts) return; const net = netDe(li), p = w.pts;
-      for (let i = 0; i + 1 < p.length; i++) { const a = p[i], b = p[i + 1];
-        if (Math.abs(a.y - b.y) < 0.3 && Math.abs(a.x - b.x) > 0.5) H.push({ w, li, i, net, y: a.y, x0: Math.min(a.x, b.x), x1: Math.max(a.x, b.x) });
-        else if (Math.abs(a.x - b.x) < 0.3 && Math.abs(a.y - b.y) > 0.5) V.push({ x: a.x, lo: Math.min(a.y, b.y), hi: Math.max(a.y, b.y) }); } });
-    barrettes.forEach(b => { V.push({ x: b.x, lo: b.y1, hi: b.y2 }); const r = b.raccord;
-      H.push({ raccord: true, net: b.net, y: r.y, x0: Math.min(r.x0, r.x1), x1: Math.max(r.x0, r.x1) }); });
-    let paire = null;
-    for (let p = 0; p < H.length && !paire; p++) for (let q = p + 1; q < H.length; q++) { const a = H[p], b = H[q];
-      if (a.net === b.net || Math.abs(a.y - b.y) > 0.3 || Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0) <= 0.5) continue;
-      const k = (a.li ?? 'r') + ':' + a.i + '/' + (b.li ?? 'r') + ':' + b.i + '@' + Math.round(a.y); if (rates.has(k)) continue;
-      paire = [a, b, k]; break; }
-    if (!paire) return;
-    if (!ecarter(paire[0], paire[1], H, V)) rates.add(paire[2]);
-  }
-}
-/* Écarter deux horizontales qui se recouvrent : le jog du coin qui peut,
-   sinon l'enjambement. Rend faux si rien n'est possible. */
-function ecarter(a, b, H, V) {
-  const verticaleEn = (x, y0, y1, sauf) => V.some(v => Math.abs(v.x - x) < 1.5 && v.hi > Math.min(y0, y1) + 0.3 && v.lo < Math.max(y0, y1) - 0.3 && Math.abs(v.x - sauf) > 0.3);
-  const horizontaleEn = (y, x0, x1, net) => H.some(h => h.net !== net && Math.abs(h.y - y) < 0.6 && Math.min(h.x1, x1) - Math.max(h.x0, x0) > -0.5);
-  // les coins de chaque segment posés dans l'autre : le point, l'autre bout de l'horizontale, la verticale qui continue
-  const coins = [];
-  [[a, b], [b, a]].forEach(([s, o]) => { if (s.raccord) return; const p = s.w.pts;
-    [[s.i, s.i - 1, s.i + 1], [s.i + 1, s.i + 2, s.i]].forEach(([k, kv, kh]) => { const c = p[k], v = p[kv], h = p[kh];
-      if (c.x < o.x0 - 0.5 || c.x > o.x1 + 0.5) return;
-      const continue_ = !!v && Math.abs(v.x - c.x) < 0.3 && Math.abs(v.y - c.y) > 0.5;
-      // le coin de l'autre que ce fil doit dépasser : celui posé entre le coin et l'autre bout
-      const xo = [o.x0, o.x1].find(x => x > Math.min(c.x, h.x) - 0.5 && x < Math.max(c.x, h.x) + 0.5 && Math.abs(x - c.x) > 0.5);
-      coins.push({ s, o, p, k, kh, c, h, xo, sens: continue_ ? Math.sign(v.y - c.y) : 0, long: continue_ ? Math.abs(v.y - c.y) : 0 }); }); });
-  // 1. le jog : d'abord un coin dont le jog est libre (l'autre verticale ne continue pas de ce côté), puis la plus longue verticale
-  const jogs = [];
-  coins.forEach(q => { if (!q.sens || q.xo == null || q.long <= JOG + 2) return;
-    for (const dx of [JOG_X, 3, 5, 6]) for (const dy of [JOG, 5, 7, 8]) {
-      const xs = q.xo + dx * Math.sign(q.h.x - q.xo), ys = q.c.y + dy * q.sens;
-      if (Math.abs(q.h.x - q.xo) <= dx + 1 || q.long <= dy + 2) continue;
-      if (verticaleEn(xs, q.c.y, ys, q.c.x) || horizontaleEn(ys, Math.min(q.c.x, xs), Math.max(q.c.x, xs), q.s.net)) continue;
-      const libre = !V.some(v => Math.abs(v.x - q.xo) < 0.5 && v.lo < ys - 0.3 && v.hi > ys + 0.3);
-      jogs.push({ q, xs, ys, libre }); return; } });
-  jogs.sort((u, v) => (v.libre - u.libre) || (v.q.long - u.q.long));
-  const jog = ++numeroDeJog;                        // les points d'un même jog se reconnaissent (sansJogs)
-  if (jogs.length) { const { q, xs, ys } = jogs[0], c = q.c;
-    const nouveaux = q.k > q.kh ? [{ x: xs, y: c.y, jog }, { x: xs, y: ys, jog }, { x: c.x, y: ys, jog }] : [{ x: c.x, y: ys, jog }, { x: xs, y: ys, jog }, { x: xs, y: c.y, jog }];
-    q.p.splice(q.k, 1, ...nouveaux); return true; }
-  // 2. l'enjambement : un segment qui a le coin de l'autre en son milieu passe par-dessus, du côté où l'autre verticale ne va pas
-  for (const q of coins) { if (q.xo == null || q.xo - Math.min(q.c.x, q.h.x) <= JOG_X + 1 || Math.max(q.c.x, q.h.x) - q.xo <= JOG_X + 1) continue;
-    const vo = V.find(v => Math.abs(v.x - q.xo) < 0.5 && v.hi > q.c.y - 0.3 && v.lo < q.c.y + 0.3);
-    const sens = vo ? (vo.lo < q.c.y - 0.5 ? (vo.hi > q.c.y + 0.5 ? -1 : 1) : -1) : -1;
-    for (const s of [sens, -sens]) { const ys = q.c.y + JOG * s;
-      if (horizontaleEn(ys, q.xo - JOG_X, q.xo + JOG_X, q.s.net) || verticaleEn(q.xo - JOG_X, q.c.y, ys, q.xo) || verticaleEn(q.xo + JOG_X, q.c.y, ys, q.xo)) continue;
-      const vers = Math.sign(q.c.x - q.h.x), x1 = q.xo - JOG_X * vers, x2 = q.xo + JOG_X * vers;   // de h vers c
-      const bosse = [{ x: x1, y: q.c.y, jog }, { x: x1, y: ys, jog }, { x: x2, y: ys, jog }, { x: x2, y: q.c.y, jog }];
-      q.p.splice(Math.max(q.k, q.kh), 0, ...(q.k > q.kh ? bosse : bosse.reverse())); return true; } }
-  return false;
-}
-
 /* Le routage entier, puis chaque fil candidat à un détour par une goulotte
    voisine est essayé pour de vrai : le détour, plus long à lire, ne reste
    que s'il ôte au moins deux croisements au dessin entier. */
@@ -503,7 +434,6 @@ function routerUneFois(layout, permis) {
     return { x: b.x, y1: lo - 3, y2: hi + 3, py: b.py, gardes: [...b.departs.map(d => ({ y: d.y })), ...b.gardes], bus: b.n >= 4, dir: b.dir, px: b.px, net: b.net,
              pts: b.departs.filter(d => Math.abs(d.y - b.py) > 1.2).map(d => ({ x: b.x, y: d.y })), raccord: { x0: b.px, x1: b.x, y: b.py } }; });
   barrettes.raccords = barrettes.map(b => b.raccord);
-  separerLesPartages(traces, barrettes, netDe);
   const resultat = { fils: traces.filter(Boolean), points: jonctions(layout, traces, barrettes), barrettes, piquages: barrettes.flatMap(b => b.pts) };
   return { resultat, candidats: fils.candidats, croisements: compterCroisements(resultat.fils.filter(w => !w.shunt), barrettes) };
 }
@@ -514,6 +444,26 @@ function routerUneFois(layout, permis) {
    (le routeur le marque `parPiquage`). Un shunt n'est ni droit ni plié : il
    ne compte pas. */
 const compterDroits = fils => fils.filter(w => w.pts.length >= 2 && !w.parPiquage && w.pts.every(p => Math.abs(p.y - w.pts[0].y) < 0.01)).length;
+/* Les MARCHES d'un fil : un segment de moins de MARCHE entre deux angles
+   (une horizontale entre deux verticales, une verticale entre deux
+   horizontales), ou deux verticales à moins de 2·MARCHE l'une de l'autre.
+   Un fil est droit, fait un Z, ou un U par un couloir : jamais un escalier.
+   Rend le nombre de fils qui en ont ; `detail` reçoit lesquels. */
+function marchesDe(pts) {
+  const segs = []; for (let i = 0; i + 1 < pts.length; i++) { const a = pts[i], b = pts[i + 1];
+    segs.push(Math.abs(a.y - b.y) < 0.3 ? { h: true, L: Math.abs(b.x - a.x) } : { h: false, L: Math.abs(b.y - a.y), x: a.x }); }
+  const out = [];
+  for (let i = 1; i + 1 < segs.length; i++) if (segs[i].h !== segs[i - 1].h && segs[i].h !== segs[i + 1].h && segs[i].L < MARCHE - 1e-6)
+    out.push((segs[i].h ? 'horizontale' : 'verticale') + ' de ' + segs[i].L.toFixed(1) + ' entre deux angles');
+  const V = segs.filter(s => !s.h);
+  for (let i = 0; i < V.length; i++) for (let j = i + 1; j < V.length; j++) if (Math.abs(V[i].x - V[j].x) < 2 * MARCHE - 1e-6) out.push('deux verticales à ' + Math.abs(V[i].x - V[j].x).toFixed(1));
+  return out;
+}
+function compterMarches(fils, detail) { let n = 0;
+  fils.forEach(w => { if (w.shunt || !w.pts || w.pts.length < 4) return; const m = marchesDe(w.pts); if (!m.length) return; n++;
+    if (detail) detail.push(String(w.cable || (w.de + ':' + w.borneDe + '→' + w.vers + ':' + w.borneVers)) + ' : ' + m.join(', ')); });
+  return n;
+}
 /* Les segments du dessin, fusionnés : deux fils qui se superposent (les
    fils d'une même borne) font UN trait, et un croisement se compte une fois
    par trait. Les piquages y sont, verticales et raccords. */
@@ -588,8 +538,7 @@ function croisementsEvitables(layout, R) {
     const dedans = x => x > xL + 1 && x < xR - 1;
     barrettes.forEach(b => { if (!dedans(b.x)) return; const t = travailEn(b.x, b.y1 + 3, b.y2 - 3, b.net); t.piquage = b;
       attacher(t, { x: b.raccord.x0, y: b.py }, { x: b.x, y: b.py }); });
-    // les jogs sont des conséquences de l'ordre, pas des pistes : on relit les tracés sans eux
-    R.fils.forEach(w => { const p = sansJogs(w.pts), net = netDe(w.i); if (!p.length) return;
+    R.fils.forEach(w => { const p = w.pts, net = netDe(w.i); if (!p.length) return;
       for (let i = 0; i + 1 < p.length; i++) { const a = p[i], b = p[i + 1];
         if (Math.abs(a.x - b.x) > 0.01 || Math.abs(a.y - b.y) < 0.5 || !dedans(a.x)) continue;
         const t = travailEn(a.x, Math.min(a.y, b.y), Math.max(a.y, b.y), net);

@@ -4,7 +4,8 @@
      · les NŒUDS : un équipement entier, ou un bornier — entier tant que le
        dessin est de taille de travail (≤ 60 repères), sinon découpé en un
        fragment par destination pour que ses départs restent courts ; une
-       PASTILLE (masse, rail) par point de raccordement ;
+       PASTILLE (masse, rail) par point de raccordement ; un morceau de
+       barrette réduit à une borne et un fil est une pastille aussi ;
      · les BROCHES de chaque nœud, identifiées par leur numéro de borne ;
      · les PARTENAIRES de chaque broche (à qui elle est reliée) ;
      · l'ADJACENCE entre nœuds, pondérée par le nombre de fils.
@@ -72,7 +73,11 @@ function construireGraphe(liaisons) {
       const paquets = new Map(); P.liste.forEach(p => { const r = trouver(p.cle); (paquets.get(r) || paquets.set(r, []).get(r)).push(p); });
       let gi = 0;
       for (const pins of paquets.values()) { const id = paquets.size === 1 ? n : n + FRAG + (gi++);
-        noeuds.set(id, { id, nom: n, reglette: true, broches: pins }); pins.forEach(p => noeudDeBroche.set(n + SEP + p.cle, id)); }
+        // un morceau réduit à UNE borne et UN fil vers un bloc : rien après lui — il se colle à la borne qu'il sert, comme
+        // une masse (une PASTILLE), au lieu d'occuper une colonne ; à plusieurs bornes ou plusieurs partenaires, il reste un bloc
+        const ps = pins.length === 1 ? (partBruts.get(n + SEP + pins[0].cle) || []) : [];
+        const pastille = ps.length === 1 && ps[0].nom !== n && !estPotentiel(ps[0].nom);
+        noeuds.set(id, { id, nom: n, reglette: true, broches: pins, pastille }); pins.forEach(p => noeudDeBroche.set(n + SEP + p.cle, id)); }
       continue; }
     if (!(enReglette(n) && !entier)) {
       noeuds.set(n, { id: n, nom: n, reglette: enReglette(n), broches: P.liste.slice() });

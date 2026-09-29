@@ -31,28 +31,66 @@ verbes (charger, essai, mesurer) sur l'API `atelier` de `src/10-demarrage.js`.
 Avant de toucher au moteur, on relance le banc ; après, on le relance. Les
 chiffres de référence sur les dix-huit topologies (quinze historiques et
 les trois folios de l'exemple ; un piquage qui tranche un fil compte comme
-un croisement), depuis que le gros équipement se dessine au centre :
+un croisement), depuis que plus aucun fil ne fait de marche :
 
-    86,3 % de fils droits · 20 croisements · 0 évitable · 0 violation · 0 cas hors feuille
-    contrat d'essai : 66,7 %, 1 croisement
-    folio 1 : 75 %, 1 · folio 2 : 60 %, 1 · folio 3 : 60,7 %, 17 — 0 tour, 0 segment partagé, paysage (1,62)
+    86,9 % de fils droits · 19 croisements · 0 évitable · 0 violation · 0 cas hors feuille
+    contrat d'essai : 66,7 %, 0 croisement
+    folio 1 : 75 %, 1 · folio 2 : 65 %, 1 · folio 3 : 60,7 %, 17 — 0 tour, 0 segment partagé, 0 marche, paysage (1,62)
 
-Le folio 3 se calcule en un peu moins de cinq secondes, les folios 1 et 2 en
-moins de deux.
+Le folio 3 se calcule en deux secondes et demie, les folios 1 et 2 en moins
+d'une.
 
 LES RÈGLES DURES, tenues par construction et vérifiées par le banc :
 
-- **Deux fils ne se superposent jamais** (`05-routage`, `separerLesPartages`).
+- **Deux fils ne se superposent jamais** (`05-routage`, `coutsParPaires`).
   Le partage naît toujours du même motif : à une même hauteur, un fil
   accroché à la paroi gauche d'une goulotte et un fil accroché à la paroi
   droite, la verticale du second à gauche de celle du premier — leurs deux
-  horizontales se recouvrent entre les deux coins. L'ordre des pistes le
-  voit (un coin partagé coûte un jog, plus un croisement si le jog en
-  crée un), et ce qui reste s'écarte après le tracé : le fil dont le coin
-  est libre fait un JOG (il quitte sa ligne quatre unités après le coin de
-  l'autre et rejoint sa verticale six plus loin, du côté où elle continue) ;
-  un départ de piquage, qui naît sur la verticale du piquage, ENJAMBE. Le
-  contrôle des croisements évitables relit les tracés sans leurs jogs.
+  horizontales se recouvrent entre les deux coins. Cet ordre coûte
+  SUPERPOSE (plus qu'un ordre impossible) : l'ordre des pistes met toujours
+  la verticale attachée à gauche à gauche de l'autre, ce qui ne coûte que
+  les croisements que l'entrelacement des bouts impose de toute façon (un
+  pont est un élément normal). Il n'y a plus de jog. Le seul motif que
+  l'ordre ne défait pas : deux fils en X dans une goulotte, chaque bout de
+  l'un en face d'un bout de l'autre à la même hauteur (folio 2, W-133 /
+  W-136) — un décalage d'un demi-pas n'y peut rien, les bouts sont
+  rigidement liés par les pas des connecteurs et les fils droits ; ce qui le
+  casse, c'est un pas dans l'ordre d'un connecteur (409GH2 en 2, 7, 9), au
+  prix d'un croisement. Le juge paie donc un segment partagé QUATRE fils
+  droits (deux croisements), l'estimation voit le X, et la recherche prend
+  la permutation. Le banc rend 1 s'il en reste un, sur toutes les topologies.
+- **Aucune marche** (`05-routage`, `Z_MIN`, `compterMarches`). Un fil est
+  droit, fait UN Z propre (une verticale, deux vrais angles droits), ou un
+  U par un couloir ; jamais une petite marche de quelques unités. Une
+  marche, c'est un segment de moins de 12 entre deux angles (verticale ou
+  horizontale), ou deux verticales d'un même fil à moins de 24. Elles
+  venaient de deux endroits : le jog (disparu), et un couloir posé au
+  premier y libre sous le fragment qui barre la ligne de la borne — deux à
+  seize unités plus loin (folio 3, W-376, W-379, W-375). Un couloir se pose
+  maintenant à Z_MIN (16) au moins des deux bornes qu'il relie, jamais à la
+  hauteur d'une borne de paroi (deux horizontales sur la même ligne se
+  lisent comme un seul fil), et une verticale de détour fait Z_MIN. Le fil
+  d'une pastille (22 unités, dans la zone de sa colonne) ne compte plus
+  comme barrière sur toute la goulotte : c'est lui qui repoussait le
+  couloir juste sous la ligne de la borne. Le juge paie deux fils droits
+  chaque fil qui ferait encore une marche (seul le placement peut en
+  laisser : deux bornes presque en face, à moins de 12 l'une de l'autre),
+  et le banc rend 1 sur toutes les topologies.
+- **Un morceau de barrette seul se colle à sa borne** (`03-graphe`,
+  `pastille`). Un paquet réduit à une borne et un fil vers un bloc n'a rien
+  après lui : c'est une pastille, comme une masse, collée au flanc de la
+  borne qu'elle sert (folio 2 : 667VT21 borne 3 sur 118CD:3, borne 4 sur
+  409GH2:7), dessinée en petit morceau de barrette dans l'axe du fil — le
+  pointillé, la borne en point noir numéroté, le point de départ, le
+  repère `rep-petit` dessous, dans le pas des bornes. À plusieurs bornes
+  ou plusieurs partenaires, le morceau reste un bloc. Le banc vérifie que
+  ces morceaux sont collés, avec les masses.
+- **Une prise de coupure se pose entre ses partenaires** (`04-placement`,
+  `compterTours`). L'amont d'une borne entre d'un côté, l'aval ressort de
+  l'autre ; ses fils d'une borne qui sortent tous du même côté (un
+  piquage sur une prise de coupure) comptent un tour au juge. Au juge
+  seulement : chargée aussi dans la mise en niveaux, la règle déviait
+  l'exploration et le folio chargé perdait sa meilleure mise en niveaux.
 - **Aucun fil ne fait le tour de son bloc** (`04-placement`, `flancs`). Un
   connecteur dont les bornes servent les deux côtés se coupe en deux pièces,
   chaque paquet de bornes pontées regardant ses partenaires ; aucun geste
@@ -110,12 +148,13 @@ ensemble font un module, dessiné là où il sert, aussi petit que possible ;
 une barrette de dix bornes n'est plus une colonne de dix bornes que tous
 les fils contournent.
 
-Avant le hub au centre, c'était 86,0 % et 13 croisements, mais le folio 3
-sortait en portrait (0,77), avec 7 tours, 2 segments partagés, la
-recherche qui n'y convergeait pas, et 12 croisements dont plusieurs cachés
-dans des fils superposés ; le folio 2 avait un segment partagé (W-133 /
-W-136), devenu un croisement inévitable et un jog. Avant ce barème et les
-paquets, c'était 82,7 % et 45 croisements.
+Avant que les marches disparaissent, c'était 86,3 % et 20 croisements, avec
+un jog sur le folio 2 (W-133 / W-136, un X caché dans une marche) et trois
+marches de couloir sur le folio 3. Avant le hub au centre, c'était 86,0 %
+et 13 croisements, mais le folio 3 sortait en portrait (0,77), avec 7
+tours, 2 segments partagés, la recherche qui n'y convergeait pas, et 12
+croisements dont plusieurs cachés dans des fils superposés. Avant ce
+barème et les paquets, c'était 82,7 % et 45 croisements.
 
 La mesure des fils droits est HONNÊTE depuis ce routeur : un fil qui passe
 par le raccord et la verticale d'un piquage n'est pas droit, même si son
@@ -140,14 +179,15 @@ aucun changement de flanc d'une borne, aucun glissement d'un bloc (ses
 pastilles avec lui) ne fait mieux — moins de croisements sans moins de
 fils droits, ou l'inverse (vérification exacte, a posteriori, au routage
 réel, sur la géométrie resserrée, au barème du juge : croisements,
-contours, fils dans leur propre bloc ; un tour de plus n'est jamais
-« mieux »). Et que le dessin n'a **aucun segment partagé** par deux fils de
-nets différents, **aucun corps étiré** à plus de deux fois sa hauteur
-naturelle sans rendre droits deux fils de plus (on le compacte et on
-reroute), les masses collées à leur borne, **tous les équipements
-lisibles** (aucune borne ne tourne le dos à la colonne de son partenaire,
-aucun fil étranger dans leur voisinage), et le cas montré du doigt (W-120).
-Un manqué fait rendre 1.
+partages, marches, contours, fils dans leur propre bloc ; un tour de plus
+n'est jamais « mieux »). Et que le dessin n'a **aucun segment partagé** par
+deux fils de nets différents, **aucune marche**, **aucun corps étiré** à
+plus de deux fois sa hauteur naturelle sans rendre droits deux fils de
+plus (on le compacte et on reroute), les masses et les morceaux de
+barrette seuls collés à leur borne, **tous les équipements lisibles**
+(aucune borne ne tourne le dos à la colonne de son partenaire, aucun fil
+étranger dans leur voisinage), et le cas montré du doigt (W-120). Un
+manqué fait rendre 1.
 
 Un changement qui fait baisser le premier chiffre doit dire pourquoi, dans son
 message de commit, mesure à l'appui.

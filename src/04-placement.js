@@ -57,7 +57,8 @@ function modele(G) {
   const { liaisons: lk, ids, noeuds, bouts, nid } = G;
   const blocs = new Map(); const connecteursDuNom = new Map();
   for (const id of ids) { const N = noeuds.get(id), nom = N.nom;
-    const genre = estPotentiel(nom) ? 'tag' : estBarrette(nom) ? 'barrette' : estCoupure(nom) ? 'coupure' : 'equip';
+    // une pastille : un potentiel (masse, rail), ou un morceau de barrette réduit à une borne et un fil (03, `pastille`)
+    const genre = (estPotentiel(nom) || N.pastille) ? 'tag' : estBarrette(nom) ? 'barrette' : estCoupure(nom) ? 'coupure' : 'equip';
     const b = { id, nom, genre, bornes: N.broches.slice(), connecteur: new Map() };
     if (genre === 'equip') { if (!connecteursDuNom.has(nom)) connecteursDuNom.set(nom, connecteurParBorne(nom, lk));
       const m = connecteursDuNom.get(nom); b.bornes.forEach(p => { const c = m.get(String(p.etiq)); if (c) b.connecteur.set(p.cle, c.nom); }); }
@@ -75,9 +76,9 @@ function modele(G) {
   blocs.forEach(b => { const chef = new Map(b.bornes.map(p => [p.cle, p.cle])); const trouver = c => { while (chef.get(c) !== c) c = chef.get(c); return c; };
     (pontes.get(b.id) || []).forEach(([u, v]) => { const ru = trouver(u), rv = trouver(v); if (ru !== rv) chef.set(rv, ru); });
     b.bornes.forEach(p => paquetDe.set(K(b.id, p.cle), K(b.id, trouver(p.cle)))); });
-  // une pastille se colle à UNE borne d'un bloc ; sinon c'est un bloc comme un autre
+  // une pastille se colle à UNE borne d'un bloc ; sinon c'est un bloc comme un autre (un morceau de barrette redevient une barrette)
   blocs.forEach(b => { if (b.genre !== 'tag') return; const ps = parts.get(K(b.id, b.bornes[0].cle)) || [];
-    if (ps.length !== 1 || blocs.get(ps[0].id).genre === 'tag') b.genre = 'equip'; });
+    if (ps.length !== 1 || blocs.get(ps[0].id).genre === 'tag') b.genre = estBarrette(b.nom) ? 'barrette' : 'equip'; });
   const estTag = id => blocs.get(id).genre === 'tag';
   const partenairesDe = k => parts.get(k) || [];
   const partenairesBlocs = k => partenairesDe(k).filter(q => !estTag(q.id));
@@ -183,6 +184,9 @@ function coutDesFlancs(M, colDe, id) {
       // un paquet de bornes pontées sort d'un seul flanc (le pont ne se dessine pas entre deux flancs) : il vote d'un bloc
       if (b.connecteur.has(p.cle)) { const pq = paquets.get(paquet) || paquets.set(paquet, { g: 0, d: 0 }).get(paquet); if (t < 0) pq.g++; else pq.d++; } });
     cotes.forEach(set => { if (set.size >= 2) s += 1; }); });
+  /* une prise de coupure qui n'est pas posée entre ses partenaires est un tour au juge (`compterTours`), pas ici : chargée
+     ici aussi, elle déviait l'exploration des niveaux et le folio chargé perdait sa meilleure mise en niveaux (21
+     croisements au lieu de 17) — le juge suffit, le concours et la recherche locale écartent ces candidats */
   // un paquet (une borne seule en est un) qui sert les deux côtés : un de ses fils fait le tour, quoi qu'on fasse — plus cher
   // ici qu'au juge, pour que la mise en niveaux préfère un fil qui enjambe une colonne à un fil qui fait le tour de son bloc
   paquets.forEach(pq => { if (pq.g && pq.d) s += TOUR_NIVEAU * Math.min(pq.g, pq.d); });
@@ -887,20 +891,30 @@ function compterPartages(fils, detail) {
    son partenaire fait le tour du bloc — la distance de Manhattan ne le voit
    pas (le tour est déjà dans la distance), il se compte à part. Un
    partenaire de la même colonne n'est d'aucun côté : ce n'est pas un tour.
-   Un connecteur coupé en deux flancs se justifie en en supprimant un. */
+   Un connecteur coupé en deux flancs se justifie en en supprimant un.
+   Une PRISE DE COUPURE sépare deux tronçons de faisceau : l'amont d'une
+   borne entre d'un côté, l'aval ressort de l'autre. Ses fils d'une même
+   borne qui sortent tous du même côté (elle n'est pas posée entre ses
+   partenaires, ils se raccordent par un piquage) sont un tour aussi : il
+   faudrait faire le tour de la prise pour lire l'amont et l'aval. */
 const colonneDuBout = ep => ep.stub === 'L' ? ep.ch - 1 : ep.ch;          // stub L : le bout est sur le flanc droit, sa goulotte à droite
-function compterTours(L) { let n = 0;
+function compterTours(L) { let n = 0; const coupures = new Map();
   L.links.forEach(l => { if (l.boucle || l.shunt) return; const A = l.epA, B = l.epB, ca = colonneDuBout(A), cb = colonneDuBout(B);
     if ((A.stub === 'L' && cb < ca) || (A.stub === 'R' && cb > ca)) n++;
-    if ((B.stub === 'L' && ca < cb) || (B.stub === 'R' && ca > cb)) n++; });
+    if ((B.stub === 'L' && ca < cb) || (B.stub === 'R' && ca > cb)) n++;
+    [[l.de, l.borneDe, cb - ca], [l.vers, l.borneVers, ca - cb]].forEach(([nom, borne, d]) => { if (!estCoupure(nom)) return;
+      const k = nom + ':' + borne, c = coupures.get(k) || coupures.set(k, { fils: 0, cotes: new Set() }).get(k); c.fils++; c.cotes.add(Math.sign(d)); }); });
+  coupures.forEach(c => { if (c.fils >= 2 && !(c.cotes.has(-1) && c.cotes.has(1))) n++; });
   return n; }
-/* Les MASSES QUI PENDENT SUR UN FIL : le symbole de masse se dessine sous
-   son fil (trois barres et le repère, sur une trentaine d'unités) ; un fil
-   étranger qui passe dessous se lit à travers. Le placement l'évite en
-   rangeant la masse en bout de flanc ; le juge compte celles qui restent. */
+/* Les PASTILLES QUI PENDENT SUR UN FIL : le symbole d'une masse (trois
+   barres) ou d'un morceau de barrette collé (le pointillé, son point de
+   départ) se dessine avec son repère sous le fil, sur une trentaine
+   d'unités ; un fil étranger qui passe dessous se lit à travers. Le
+   placement l'évite en rangeant la pastille en bout de flanc ; le juge
+   compte celles qui restent. */
 const PEND_MASSE = 30;
-function compterMassesGenees(L, fils) { let n = 0;
-  L.comps.forEach(c => { if (c.kind !== 'tag' || !estMasse(c.name)) return; const y0 = c.y + c.h / 2 + 1, y1 = y0 + PEND_MASSE;
+function compterPastillesGenees(L, fils) { let n = 0;
+  L.comps.forEach(c => { if (c.kind !== 'tag' || !(estMasse(c.name) || estBarrette(c.name))) return; const y0 = c.y + c.h / 2 + 1, y1 = y0 + PEND_MASSE;
     if (fils.some(w => { for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1];
       if (Math.abs(a.y - b.y) < 0.01 && a.y > y0 && a.y < y1 && Math.max(a.x, b.x) > c.x && Math.min(a.x, b.x) < c.x + c.w) return true; } return false; })) n++; });
   return n; }
@@ -971,13 +985,13 @@ function juger(L, R) {
   const w = Math.max(1, x1 - x0 - resserre), h = Math.max(1, y1 - y0), r = w / h;
   let longueur = 0; fils.forEach(f => { for (let i = 0; i < f.pts.length - 1; i++) longueur += Math.abs(f.pts[i + 1].x - f.pts[i].x) + Math.abs(f.pts[i + 1].y - f.pts[i].y); });
   const droits = compterDroits(fils.filter(w => !t.propres.has(w))), croisements = compterCroisements(fils, R.barrettes) + 2 * t.propres.size;
-  const partages = compterPartages(R.fils), etires = compterEtires(L.comps);
+  const partages = compterPartages(R.fils), etires = compterEtires(L.comps), marches = compterMarches(fils);
   // un demi pour cent de tolérance : le juge mesure pastilles comprises, il est plus strict que la feuille
   const tient = r <= FORMAT_MAX * 1.005 && r >= 1 / (FORMAT_MAX * 1.005), tiendra = tient || (r <= FORMAT_MAX * ETIRABLE && compterBandes(blocs) >= 2);
   const contours = compterContours(fils);
   const j = { sain: t.etrangers === 0 && chevauchements(L.comps) === 0, tient, tiendra, format: r, largeur: w,
-    droits, croisements, partages, etires, tours: compterTours(L), propres: t.propres.size, contours,
-    lisibilite: droits - croisements / CROISEMENTS_PAR_DROIT - PARTAGE * partages - ETIRE * etires - TOUR * compterTours(L) - contours, genees: compterMassesGenees(L, fils), detours: compterDetours(fils), coupes: L.coupes || 0,
+    droits, croisements, partages, etires, marches, tours: compterTours(L), propres: t.propres.size, contours,
+    lisibilite: droits - croisements / CROISEMENTS_PAR_DROIT - PARTAGE * partages - PAR_MARCHE * marches - ETIRE * etires - TOUR * compterTours(L) - contours, genees: compterPastillesGenees(L, fils), detours: compterDetours(fils), coupes: L.coupes || 0,
     encombrement: Math.min(Math.max(w / A3, h), Math.max(w, h / A3)), surface: w * h, longueur };
   // les muets coûtent cher à compter (le dessin pose ses étiquettes) : seulement quand droits et croisements sont à égalité
   let muets = null; Object.defineProperty(j, 'muets', { enumerable: true, get() { if (muets == null) muets = compterMuets(R); return muets; } });
@@ -989,16 +1003,22 @@ function juger(L, R) {
    est un pont que le lecteur doit résoudre, et un croisement pour rien se
    voit avant un fil plié : quand échanger deux bornes ôte un croisement en
    pliant un fil, on échange (un lecteur l'a demandé deux fois sur la même
-   feuille, 210SP1 et 601RC) — et deux fois chaque segment partagé par deux
-   fils étrangers (une connexion qui ment), une fois et demie chaque corps
-   étiré (il ne vaut que s'il rend droits deux fils de plus) ; à égalité les fils droits, puis
+   feuille, 210SP1 et 601RC) — et QUATRE fois chaque segment partagé par deux
+   fils étrangers (une connexion qui ment : le routeur n'en laisse que
+   lorsque deux fils se croisent en X dans une goulotte, chaque bout de l'un
+   en face d'un bout de l'autre ; un pas dans l'ordre d'un connecteur le
+   casse au prix d'un croisement, et c'est ce qu'on veut — deux croisements
+   valent encore mieux qu'un mensonge), deux fois chaque fil qui fait une
+   MARCHE (un pli de quelques unités entre deux bornes presque en face : le
+   routeur n'en fabrique plus, seul le placement peut en laisser), une fois et
+   demie chaque corps étiré (il ne vaut que s'il rend droits deux fils de plus) ; à égalité les fils droits, puis
    les croisements, puis les numéros muets, puis les TOURS (un fil qui fait
    le tour de son bloc), les masses qui pendent sur un fil, les DÉTOURS (à
    partir d'une goulotte de différence), puis les
    connecteurs coupés en deux flancs (jamais sans raison : seuls un détour ou
    un croisement en moins le justifient), l'encombrement, la surface, la
    longueur des fils. */
-const CROISEMENTS_PAR_DROIT = 0.5, PARTAGE = 2, ETIRE = 1.5, TOUR = 3, DETOUR_MIN = GOULOTTE_MIN;
+const CROISEMENTS_PAR_DROIT = 0.5, PARTAGE = 4, PAR_MARCHE = 2, ETIRE = 1.5, TOUR = 3, DETOUR_MIN = GOULOTTE_MIN;
 /* Le choix des finalistes se fait sur une géométrie aux goulottes taillées large, que le resserrage et la recherche
    locale compactent d'un bon tiers : un candidat un peu trop large y a droit. */
 const TOLERANCE = 1.35;
@@ -1014,7 +1034,7 @@ function bat(a, b, tolerant) {
   if (a.droits !== b.droits) return a.droits > b.droits; if (a.croisements !== b.croisements) return a.croisements < b.croisements;
   if (a.muets !== b.muets) return a.muets < b.muets;
   if (a.tours !== b.tours) return a.tours < b.tours;
-  if (a.genees !== b.genees) return a.genees < b.genees;
+  if (a.genees !== b.genees) return a.genees < b.genees;                  // une pastille (masse, morceau de barrette) qui pend sur un fil
   if (Math.abs(a.detours - b.detours) >= DETOUR_MIN) return a.detours < b.detours;
   if (a.coupes !== b.coupes) return a.coupes < b.coupes;
   if (Math.abs(a.encombrement - b.encombrement) > 0.01 * b.encombrement) return a.encombrement < b.encombrement;
@@ -1071,10 +1091,14 @@ function estimer(L) {
       if (!f) { fondues.set(r, { lo: v.lo, hi: v.hi, att: v.att.slice() }); return; }
       f.lo = Math.min(f.lo, v.lo); f.hi = Math.max(f.hi, v.hi); v.att.forEach(a => { if (!f.att.some(b => cleDe(b) === cleDe(a))) f.att.push(a); }); });
     const V = [...fondues.values()]; let ici = 0; V.forEach(v => { ici += coupe(ch, v.lo, v.hi); });
-    for (let i = 0; i < V.length; i++) for (let j = i + 1; j < V.length; j++) { const I = V[i], J = V[j]; let ij = 0, ji = 0;   // I à gauche de J, puis l'inverse
+    for (let i = 0; i < V.length; i++) for (let j = i + 1; j < V.length; j++) { const I = V[i], J = V[j]; let ij = 0, ji = 0, pij = 0, pji = 0;   // I à gauche de J, puis l'inverse
       J.att.forEach(a => { if (dans(a.y, I)) { if (a.mur === 'L') ij++; else ji++; } });
       I.att.forEach(a => { if (dans(a.y, J)) { if (a.mur === 'R') ij++; else ji++; } });
-      ici += Math.min(ij, ji); }
+      // deux attaches à la même hauteur vers des parois opposées : l'ordre qui met à gauche la verticale attachée à droite
+      // superpose les deux horizontales — le routeur ne le prend jamais ; si les deux ordres le font (deux fils en X), il reste
+      // un segment partagé, que le juge paie PARTAGE
+      I.att.forEach(a => J.att.forEach(b => { if (a.mur === b.mur || Math.abs(a.y - b.y) > 0.5) return; if (a.mur === 'R') pij++; else pji++; }));
+      ici += Math.min(ij + PARTAGE * CROISEMENTS_PAR_DROIT * pij, ji + PARTAGE * CROISEMENTS_PAR_DROIT * pji); }
     croisements += ici; detail.push({ ch, verticales: V.length, brutes: V0.length, barrieres: barrieres[ch].length, croisements: ici }); });
   // les corps étirés se voient sans router : l'estimation les compte comme le juge
   const etires = compterEtires(blocs), tours = compterTours(L);
