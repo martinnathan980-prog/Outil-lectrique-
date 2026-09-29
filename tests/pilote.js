@@ -68,12 +68,17 @@ function mesurerDansLaPage() {
    vrai : c'est le routeur qui tranche, pas une estimation. */
 function preparerDansLaPage() {
   const propres = R => R.fils.filter(w => !w.shunt);
-  // les tours (un fil qui sort par le flanc opposé à son partenaire) se lisent sur les liaisons, pas sur les tracés : on les passe
-  const noter = (R, links) => ({ d: compterDroits(propres(R)), c: compterCroisements(propres(R), R.barrettes), p: compterPartages(R.fils), t: compterTours({ links: links || R.links }) });
-  // le même barème que le juge (ses constantes) : croisements, segments partagés, tours
-  const note = n => n.d - n.c / CROISEMENTS_PAR_DROIT - PARTAGE * n.p - TOUR * n.t;
-  const mieux = (n, b) => note(n) > note(b) + 0.01;
-  const texte = n => n.d + ' droits, ' + n.c + ' croisements, ' + n.p + ' partagés, ' + n.t + ' tours';
+  /* les tours (un fil qui sort par le flanc opposé à son partenaire) se lisent sur les liaisons, pas sur les tracés : on les
+     passe ; un fil qui traverse SON PROPRE bloc n'est pas droit et vaut deux croisements, comme au juge (le routeur exclut
+     les deux blocs d'un fil de sa vérification de couloir) : on passe les blocs */
+  const noter = (R, links, comps) => { const fils = propres(R), t = traversees(fils, (comps || R.comps).filter(c => c.kind !== 'tag'));
+    return { d: compterDroits(fils.filter(w => !t.propres.has(w))), c: compterCroisements(fils, R.barrettes) + 2 * t.propres.size, p: compterPartages(R.fils), t: compterTours({ links: links || R.links }), k: compterContours(fils) }; };
+  // le même barème que le juge (ses constantes) : croisements, segments partagés, tours, contours (un fil qui contourne des
+  // blocs) — et un TOUR de plus n'est jamais « mieux », quoi qu'il rapporte : un fil qui fait le tour de son bloc est ce
+  // qu'un lecteur déteste le plus
+  const note = n => n.d - n.c / CROISEMENTS_PAR_DROIT - PARTAGE * n.p - TOUR * n.t - n.k;
+  const mieux = (n, b) => n.t <= b.t && note(n) > note(b) + 0.01;
+  const texte = n => n.d + ' droits, ' + n.c + ' croisements, ' + n.p + ' partagés, ' + n.t + ' tours' + (n.k > 0.05 ? ', contours ' + n.k.toFixed(1) : '');
   const sain = (comps, R) => { const blocs = comps.filter(c => c.kind !== 'tag');
     for (let i = 0; i < blocs.length; i++) for (let j = i + 1; j < blocs.length; j++) { const a = blocs[i], b = blocs[j];
       if (a.x < b.x + b.w - 1 && b.x < a.x + a.w - 1 && a.y < b.y + b.h - 1 && b.y < a.y + a.h - 1) return false; }
@@ -114,7 +119,7 @@ function echangesEvidentsDansLaPage() {
           [['de', 'borneDe', 'epA'], ['vers', 'borneVers', 'epB']].forEach(([n, b, ep]) => { if (L2[n] !== c.name) return;
             if (String(L2[b]) === String(ps[i].etiq)) L2[ep].y = yb; else if (String(L2[b]) === String(ps[j].etiq)) L2[ep].y = ya; });
           return L2; });
-        const R = router({ comps: d.comps, links, geom: d.geom, bbox: d.bbox }), n = B.noter(R, links);
+        const R = router({ comps: d.comps, links, geom: d.geom, bbox: d.bbox }), n = B.noter(R, links, d.comps);
         if (B.mieux(n, base) && B.sain(d.comps, R)) manques.push(c.name + ' ' + ps[i].etiq + '↔' + ps[j].etiq + ' : ' + B.texte(base) + ' → ' + B.texte(n)); } }); }); });
   return { manques, paires, base };
 }
@@ -144,7 +149,7 @@ function flancsEvidentsDansLaPage() {
           if (l.de === c.name && String(l.borneDe) === etiq) L2.epA = { x, y, ch, stub }; if (l.vers === c.name && String(l.borneVers) === etiq) L2.epB = { x, y, ch, stub }; return L2; });
         const y0 = Math.min(c.y, y - 18), y1 = Math.max(c.y + c.h, y + 18);
         const comps = (y0 < c.y || y1 > c.y + c.h) ? d.comps.map(k => k === c ? { ...k, y: y0, h: y1 - y0 } : k) : d.comps;
-        const R = router({ comps, links, geom: d.geom, bbox: d.bbox }), n = B.noter(R, links);
+        const R = router({ comps, links, geom: d.geom, bbox: d.bbox }), n = B.noter(R, links, comps);
         if (B.mieux(n, base) && B.sain(comps, R)) trouve = c.name + ':' + etiq + ' sur le flanc ' + autre + ' : ' + B.texte(base) + ' → ' + B.texte(n); });
       if (trouve) manques.push(trouve); })); });
   return { manques, essais, base };
@@ -162,7 +167,7 @@ function glissementsEvidentsDansLaPage() {
       const k = d.compDe.get(autre); if (!k || k.kind === 'tag' || k.col === c.col) return;
       const dy = Math.round((la.y - ici.y) * 2) / 2; if (Math.abs(dy) > 0.75) dys.add(dy); });
     dys.forEach(dy => { essais++; const { comps, links } = B.glisser(d, c, dy);
-      const R = router({ comps, links, geom: d.geom, bbox: d.bbox }), n = B.noter(R, links);
+      const R = router({ comps, links, geom: d.geom, bbox: d.bbox }), n = B.noter(R, links, comps);
       if (B.mieux(n, base) && B.sain(comps, R)) manques.push(c.name + ' glissé de ' + dy + ' : ' + B.texte(base) + ' → ' + B.texte(n)); }); });
   return { manques, essais, base };
 }
@@ -191,7 +196,7 @@ function corpsEtiresDansLaPage() {
       const laTag = (nom, ep) => tags.find(t => t.name === nom && yTag.has(t) && Math.abs(t.y + t.h / 2 - ep.y) < 0.5);
       const ya = a ? nouvelle(l.epA) : null, yb = b ? nouvelle(l.epB) : null, versTag = a ? laTag(l.vers, l.epB) : laTag(l.de, l.epA);
       return { ...l, epA: { ...l.epA, y: ya ?? (versTag && !a ? yTag.get(versTag) : l.epA.y) }, epB: { ...l.epB, y: yb ?? (versTag && !b ? yTag.get(versTag) : l.epB.y) } }; });
-    const R = router({ comps, links, geom: d.geom, bbox: d.bbox }), n = B.noter(R, links);
+    const R = router({ comps, links, geom: d.geom, bbox: d.bbox }), n = B.noter(R, links, comps);
     if (base.d - n.d < 2) defauts.push(c.name + ' : ' + Math.round(c.h) + ' pour ' + nat + ' de naturel (' + (c.h / nat).toFixed(1) + '×), compact : ' + B.texte(n) + ' contre ' + B.texte(base)); });
   return { defauts, etires };
 }
@@ -208,24 +213,26 @@ function massesColleesDansLaPage() {
     if (!tag || !droit || dist > 40) loin.push(w[m] + ' (' + w.cable + ') : ' + (tag ? '' : 'pas une pastille, ') + (droit ? '' : 'fil plié, ') + 'à ' + Math.round(dist) + ' du flanc'); });
   return { masses, loin };
 }
-/* Un BLOC LISIBLE : chacun de ses connecteurs est sur un seul flanc, et aucun
-   fil étranger ne traverse son voisinage (le rectangle du bloc, flancs
-   compris, élargi de 3 : la distance que le routeur s'impose entre un
-   couloir et un bloc — sur le folio 3, un détour passe à 4 au-dessus de
-   397TB1 ; le jour où le routeur tient ses couloirs à distance, ce 3
-   remonte à 6). Rend les défauts trouvés. */
+/* Un BLOC LISIBLE : aucune de ses bornes ne tourne le dos à la colonne de
+   son partenaire (un connecteur coupé en deux flancs n'est admis que
+   JUSTIFIÉ : chaque borne regarde vers son partenaire — une borne qui sert
+   les deux côtés est excusée, l'un de ses fils fait le tour quoi qu'on
+   fasse), et aucun fil étranger ne traverse son voisinage (le rectangle du
+   bloc, flancs compris, élargi de 3 : la distance que le routeur s'impose
+   entre un couloir et un bloc). Rend les défauts trouvés. */
 function blocLisibleDansLaPage(nom) {
   const d = atelier.dessin(); const c = d && d.compDe.get(nom); if (!c) return ['bloc ' + nom + ' absent'];
   const defauts = []; const conn = connecteurParBorne(c.name, d.links);
-  /* un connecteur coupé en deux flancs n'est admis que JUSTIFIÉ : chaque borne
-     regarde vers son partenaire (aucune ne fait le tour du bloc) */
+  const colonneDuBout = ep => ep.stub === 'L' ? ep.ch - 1 : ep.ch;          // stub L : le bout est sur le flanc droit, sa goulotte à droite
   const flancsDe = new Map(), mal = [];
-  ['L', 'R'].forEach(lid => (c.rangs[lid] || []).forEach(p => { const g = conn.get(String(p.etiq)); if (!g) return; (flancsDe.get(g.nom) || flancsDe.set(g.nom, new Set()).get(g.nom)).add(lid);
+  ['L', 'R'].forEach(lid => (c.rangs[lid] || []).forEach(p => { const g = conn.get(String(p.etiq)); if (g) (flancsDe.get(g.nom) || flancsDe.set(g.nom, new Set()).get(g.nom)).add(lid);
+    const cotes = new Set();
     d.links.forEach(l => { if (l.shunt || l.boucle) return; const xf = lid === 'L' ? c.x : c.x + c.w;
       const surMoi = e => Math.abs(e.x - xf) < 1 && Math.abs(e.y - p.y) < 0.5, moi = surMoi(l.epA) ? l.epA : surMoi(l.epB) ? l.epB : null; if (!moi) return;
-      const autre = moi === l.epA ? l.epB : l.epA;
-      if ((lid === 'L' && autre.x > c.x + c.w) || (lid === 'R' && autre.x < c.x)) mal.push(g.nom + String(p.etiq)); }); }));
-  flancsDe.forEach((fl, g) => { if (fl.size > 1 && mal.some(b => b.startsWith(g))) defauts.push('connecteur ' + g + ' sur deux flancs sans raison (' + mal.join(', ') + ' tournent le dos à leur partenaire)'); });
+      const autre = moi === l.epA ? l.epB : l.epA; if (d.compDe.get(autre === l.epA ? l.de : l.vers) && d.compDe.get(autre === l.epA ? l.de : l.vers).kind === 'tag') return;
+      cotes.add(Math.sign(colonneDuBout(autre) - colonneDuBout(moi))); });
+    if (cotes.has(lid === 'L' ? 1 : -1) && !cotes.has(lid === 'L' ? -1 : 1)) mal.push((g ? g.nom : '') + String(p.etiq)); }));
+  if (mal.length) defauts.push('borne(s) ' + mal.join(', ') + ' tournant le dos à leur partenaire' + ([...flancsDe.values()].some(fl => fl.size > 1) ? ' (connecteur coupé sans raison)' : ''));
   const x0 = c.x - 3, x1 = c.x + c.w + 3, y0 = c.y - 3, y1 = c.y + c.h + 3;
   d.fils.forEach(w => { if (w.shunt || w.de === nom || w.vers === nom) return;
     for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1];

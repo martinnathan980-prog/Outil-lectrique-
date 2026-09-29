@@ -282,12 +282,18 @@ function coinLibre(I, J, y) {
 }
 function coutDeLOrdre(ordre, c) { let s = 0; for (let a = 0; a < ordre.length; a++) for (let b = a + 1; b < ordre.length; b++) s += c[ordre[a]][ordre[b]]; return s; }
 /* Exact : programmation dynamique sur les sous-ensembles — le dernier posé
-   ne coûte que contre ceux déjà posés. */
+   ne coûte que contre ceux déjà posés. Ce coût (la somme des c[i][j] pour i
+   dans le sous-ensemble) se calcule une fois par sous-ensemble et par j,
+   depuis le sous-ensemble sans son plus petit élément : tout se fait en
+   n × 2ⁿ, pas en n² × 2ⁿ. */
 function ordreExact(n, c) {
   const N = 1 << n, dp = new Float64Array(N).fill(Infinity), dernier = new Int8Array(N).fill(-1);
+  const somme = Array.from({ length: n }, () => new Float64Array(N));
+  for (let j = 0; j < n; j++) { const s = somme[j], cj = c.map(l => l[j]);
+    for (let S = 1; S < N; S++) { const b = S & -S; s[S] = s[S ^ b] + cj[31 - Math.clz32(b)]; } }
   dp[0] = 0;
   for (let S = 1; S < N; S++) for (let j = 0; j < n; j++) { if (!(S & (1 << j))) continue;
-    const T = S ^ (1 << j); let v = dp[T]; for (let i = 0; i < n; i++) if (T & (1 << i)) v += c[i][j];
+    const T = S ^ (1 << j), v = dp[T] + somme[j][T];
     if (v < dp[S]) { dp[S] = v; dernier[S] = j; } }
   const ordre = []; for (let S = N - 1; S; ) { const j = dernier[S]; ordre.push(j); S ^= 1 << j; }
   return ordre.reverse();

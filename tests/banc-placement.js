@@ -182,8 +182,12 @@ if (require.main === module) (async () => {
       m.controles.push({ nom: 'les masses sont collées à leur borne (' + masses.masses + ')', ok: !masses.loin.length, detail: masses.loin.join(' | ') });
       if (gen.plan === '2') { const f = await page.evaluate(filDroitOuJustifieDansLaPage, 'W-120');
         m.controles.push({ nom: 'W-120 (340AB1:1 → 210SP1:A3) est droit, ou le glissement qui le rendrait droit coûte plus qu\'il ne rapporte', ok: f.ok, detail: f.detail }); }
-      if (gen.plan === '3') for (const bloc of ['381RL1', '397TB1']) { const df = await page.evaluate(blocLisibleDansLaPage, bloc);
-        m.controles.push({ nom: bloc + ' est lisible : connecteur d\'un seul flanc, aucun fil étranger dans son voisinage', ok: !df.length, detail: df.join(' | ') }); } }
+      /* chaque équipement du folio est lisible : aucune borne ne tourne le dos à son partenaire (un connecteur ne se coupe
+         que justifié), aucun fil étranger dans son voisinage */
+      const equips = await page.evaluate(() => atelier.dessin().comps.filter(c => c.kind === 'equip').map(c => c.name));
+      const illisibles = [];
+      for (const bloc of equips) { const df = await page.evaluate(blocLisibleDansLaPage, bloc); if (df.length) illisibles.push(bloc + ' : ' + df.join(', ')); }
+      m.controles.push({ nom: 'les ' + equips.length + ' équipements sont lisibles : aucune borne ne tourne le dos à son partenaire, aucun fil étranger dans leur voisinage', ok: !illisibles.length, detail: illisibles.join(' | ') }); }
     res.push({ nom, ...m });
   }
 
