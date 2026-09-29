@@ -239,9 +239,57 @@ body.fiche-ouverte #folios{left:calc((100vw - var(--fiche-l) + var(--rail)) / 2)
 .bar-faits{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin-top:8px;font-size:var(--t1);color:var(--encre-2)}
 .bar-faits span:nth-child(2n){font-family:var(--mono);color:var(--encre)}
 /* au-delà du repère, tout prend la largeur de la carte : le dessin d'abord */
-.equip .bar-ref,.equip .phy-compte,.equip .phy,.equip .legende,.equip .choix,.equip .conns{grid-column:1/-1}
+.equip .bar-ref,.equip .phy-compte,.equip .bar-norme,.equip .phy,.equip .legende,.equip .verdicts,.equip .simu,.equip .choix,.equip .conns{grid-column:1/-1}
 .phy-compte{font-size:var(--t1);color:var(--encre-2);margin-top:2px}
 .phy-compte .ko{color:var(--danger);font-weight:600}
+/* ce que la norme sait de la famille, en une ligne ; en cuivre pâle si c'est un exemple */
+.bar-norme{font-size:var(--t1);color:var(--encre-2);margin-top:2px;line-height:1.5}
+.bar-norme b{font-family:var(--mono);color:var(--encre);font-weight:600}
+.bar-norme .ex{color:var(--cuivre-2);font-weight:600}
+.bar-norme.sans{color:var(--cuivre-2)}
+/* la règle de remplissage et ce qu'elle trouve à redire */
+.verdicts{margin-top:6px;font-size:var(--t1);line-height:1.5}
+.verdicts .regle{color:var(--encre-2)}
+.verdict-l{display:flex;gap:7px;align-items:baseline;color:var(--encre);padding-left:2px}
+.verdict-l::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:var(--danger);position:relative;top:-1px}
+.verdict-l.attention::before{background:var(--cuivre)}
+/* la simulation : un bandeau d'hypothèses, la table par fil, la formule */
+.simu{margin-top:10px;border-top:1px solid rgba(181,84,28,.18);padding-top:8px}
+.simu-tete{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.simu-note{font-size:var(--t0);color:var(--cuivre-2);font-weight:600}
+.hyp{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:var(--t1);color:var(--encre-2);align-items:center}
+.hyp-n{display:inline-flex;align-items:baseline;gap:4px;white-space:nowrap}
+.hyp-n input{width:56px;height:28px;border:1px solid rgba(181,84,28,.35);border-radius:7px;padding:0 6px;background:var(--papier);color:var(--encre);font-family:var(--mono);font-size:var(--t1);text-align:right;margin:0}
+.equip .hyp-n input{border-bottom:1px solid rgba(181,84,28,.35);width:56px}
+.equip .hyp-n input:hover{border-color:var(--cuivre)}
+.equip .hyp-n input:focus{outline:none;border-color:var(--cuivre);box-shadow:0 0 0 3px var(--papier)}
+.hyp-n .u{font-family:var(--mono);color:var(--encre)}
+.hyp-c{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;cursor:pointer}
+.hyp-c input{width:15px;height:15px;margin:0;accent-color:var(--cuivre)}
+.hyp-c span{font-family:var(--mono);color:var(--encre)}
+.simu-vide{font-size:var(--t1);color:var(--encre-2);margin:6px 0 0}
+.simu-defile{overflow-x:auto;overscroll-behavior-x:contain;margin-top:6px}
+table.simu-tab{border-collapse:separate;border-spacing:0;font-size:var(--t1);min-width:100%;white-space:nowrap}
+.simu-tab th{text-align:left;font-size:var(--t0);color:var(--encre-2);font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 8px 4px 0;border-bottom:1px solid rgba(181,84,28,.18)}
+.simu-tab td{padding:4px 8px 4px 0;border-bottom:1px solid rgba(181,84,28,.12);vertical-align:top;font-family:var(--mono)}
+.simu-tab td.c{color:var(--encre);font-weight:700}
+.simu-tab td .sens{display:block;font-family:var(--sans);font-size:var(--t0);color:var(--encre-2);font-weight:500}
+.simu-tab td .dest{display:block;font-size:var(--t0);color:var(--encre-2)}
+.simu-tab td.d{text-align:right}
+.simu-tab td .ko{display:block;font-family:var(--sans);font-size:var(--t0);color:var(--danger);font-weight:600}
+.simu-tab td .att{display:block;font-family:var(--sans);font-size:var(--t0);color:var(--cuivre-2);font-weight:600}
+.simu-tab tr.fil{cursor:pointer}
+.simu-tab tr.fil:hover td,.simu-tab tr.fil.vise td,.simu-tab tr.fil:focus-visible td{background:var(--papier)}
+.simu-tab tr.fil:focus-visible{outline:2px solid var(--cuivre);outline-offset:-2px}
+/* le verdict : un mot, vert quand tout va, rouge quand la norme refuse */
+.verdict{display:inline-block;font-family:var(--sans);font-size:var(--t0);font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 7px;border-radius:6px;background:#e3f2e6;color:#1f6b35;white-space:nowrap}
+.verdict.v-jauge,.verdict.v-fil,.verdict.v-contact,.verdict.v-chute{background:#fbeae8;color:var(--danger)}
+.verdict.v-inconnu{background:var(--papier-3);color:var(--encre-2)}
+.bilan{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px}
+.formule{font-size:var(--t0);color:var(--encre-2);margin-top:6px;line-height:1.55}
+.formule sub{font-size:8px}
+.calcul{font-size:var(--t0);color:var(--encre-2);margin-top:3px;line-height:1.55;font-family:var(--mono)}
+.calcul b{color:var(--encre)}
 /* ─── LA BARRETTE PHYSIQUE : la réglette de face, ses paquets, ses fils ──── */
 /* Le dessin est en pixels, jamais mis à l'échelle ; s'il déborde malgré les
    rangs, il défile en douceur plutôt que d'écraser un texte. */
@@ -263,6 +311,16 @@ body.fiche-ouverte #folios{left:calc((100vw - var(--fiche-l) + var(--rail)) / 2)
 .phy .fleche{fill:var(--encre)}
 .phy .cable{fill:var(--encre);font-size:10px;font-weight:700}
 .phy .dest{fill:var(--encre-2);font-size:9.5px}
+.phy .typ{fill:var(--encre-2);font-size:8.5px;font-weight:600}
+.phy .typ.ko{fill:var(--danger)}
+/* les trous sur le bord du module : plein quand un fil y est, vide sinon ;
+   un fil sans trou (surcharge) est cerné de rouge */
+.phy .trou-fil{fill:var(--papier);stroke:var(--encre-2);stroke-width:1}
+.phy .trou-fil.occ{fill:var(--encre);stroke:var(--encre)}
+.phy .trou-fil.sur{stroke:var(--danger);stroke-dasharray:2 1.5}
+.phy .mod.surcharge .cell{stroke:var(--danger)}
+.phy .fil.surcharge .zone{fill:#fbeae8;stroke:var(--danger);stroke-width:1;stroke-dasharray:3 2}
+.phy .cell.vide{fill:url(#phy-hachure);stroke:#8a96a2}
 .phy .badge{fill:var(--papier);stroke:#e4cdbd;stroke-width:.8}
 .phy .badge-t{fill:var(--cuivre-2);font-size:8px;font-weight:700}
 /* la prise de coupure, de face : la fiche en haut, l'embase en bas */
@@ -277,6 +335,9 @@ body.fiche-ouverte #folios{left:calc((100vw - var(--fiche-l) + var(--rail)) / 2)
 .phy .fil .zone{fill:transparent}
 .phy .mod:hover .cell,.phy .mod.vise .cell{stroke:var(--cuivre);stroke-width:1.8}
 .phy .mod:hover .num,.phy .mod.vise .num{fill:var(--cuivre-2)}
+.phy .trous{cursor:pointer}
+.phy .trous.vise .trou-fil{stroke:var(--cuivre)}
+.phy .trous.vise .trou-fil.occ{fill:var(--cuivre)}
 .phy .fil:hover .cable,.phy .fil.vise .cable,.phy .fil:focus-visible .cable{fill:var(--cuivre-2)}
 .phy .fil:hover .zone,.phy .fil.vise .zone{fill:var(--papier)}
 .phy .fil:focus-visible{outline:2px solid var(--cuivre);outline-offset:1px;border-radius:5px}
@@ -284,6 +345,8 @@ body.fiche-ouverte #folios{left:calc((100vw - var(--fiche-l) + var(--rail)) / 2)
 .legende span{display:inline-block;vertical-align:middle;margin:0 4px 0 1px}
 .legende .l-fleche{width:0;height:0;border:4px solid transparent;border-top:6px solid var(--encre);border-bottom:none;margin-right:5px}
 .legende .l-peigne{width:16px;height:4px;border-radius:2px;background:var(--cuivre)}
+.legende .l-trou{width:8px;height:8px;border-radius:50%;border:1px solid var(--encre-2);background:var(--papier)}
+.legende .l-trou.occ{background:var(--encre);border-color:var(--encre)}
 .legende .l-libre{width:12px;height:10px;border:1px solid #8a96a2;background:repeating-linear-gradient(45deg,#eef1f5 0 2px,#c9d1d9 2px 3.5px)}
 /* la référence, repliée sous le dessin */
 .choix{margin-top:8px;border-top:1px solid rgba(181,84,28,.18);padding-top:2px}
@@ -381,6 +444,23 @@ table.bible{width:100%;border-collapse:separate;border-spacing:0;font-size:var(-
 .ref-btn{border:none;background:none;padding:2px 6px;margin:-2px -6px;border-radius:6px;font-family:var(--mono);font-weight:700;color:var(--encre);text-align:left;text-decoration:underline dotted rgba(24,33,44,.35);text-underline-offset:3px}
 .ref-btn:hover{color:var(--cuivre-2);background:var(--cuivre-pale)}
 .ref-btn[aria-pressed="true"]{color:var(--cuivre-2)}
+/* la norme dans la fiche de la bible : repliée, ses tables défilent en largeur */
+.sous-titre{font-size:var(--t3);font-weight:700;margin:18px 0 8px;letter-spacing:-.005em}
+details.norme{margin:-4px 0 4px}
+details.norme summary{display:flex;align-items:center;gap:6px;list-style:none;cursor:pointer;font-size:var(--t1);color:var(--cuivre-2);font-weight:600;padding:6px 0;border-radius:6px}
+details.norme summary::-webkit-details-marker{display:none}
+details.norme summary:hover{color:var(--encre)}
+details.norme summary svg.ico{width:16px;height:16px;transition:transform var(--rapide);margin-left:auto}
+details.norme[open] summary svg.ico{transform:rotate(180deg)}
+.norme-defile{overflow-x:auto;overscroll-behavior-x:contain;padding-bottom:4px}
+.norme-defile .sur{margin:8px 0 4px}
+table.norme{border-collapse:separate;border-spacing:0;font-size:var(--t0);white-space:nowrap;min-width:100%}
+.norme th{text-align:left;font-size:var(--t0);color:var(--encre-2);font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:4px 8px 4px 0;border-bottom:1px solid var(--filet)}
+.norme td{padding:4px 8px 4px 0;border-bottom:1px solid var(--filet);font-family:var(--mono);vertical-align:top}
+.norme td.ref{font-weight:700}
+.norme td.sans{font-family:var(--sans);color:var(--encre-2)}
+.norme td.d{text-align:right}
+.norme td.note-c{white-space:normal;min-width:120px;max-width:260px}
 .bible-zoom{padding:12px 12px 14px;border-radius:12px;background:var(--cuivre-pale);margin-bottom:14px}
 .bz-tete{display:flex;align-items:flex-start;gap:10px}
 .bz-tete .sur{color:var(--cuivre-2)}
@@ -439,6 +519,12 @@ body.depot-actif .depot{display:grid}
   /* le dessin de la barrette passe avant la table : la carte prend toute la
      place que la table (120 px au moins) ne réclame pas */
   .equip{margin:2px 10px 6px 12px;padding:10px 8px 12px;max-height:none}
+  /* la simulation tient en largeur : le pourcentage sous les volts, l'en-tête et le verdict repliés */
+  .simu-tab th{white-space:normal;line-height:1.25}
+  .simu-tab td .sep{display:none}
+  .simu-tab td .pct{display:block;color:var(--encre-2)}
+  .simu-tab td{padding-right:6px}
+  .verdict{white-space:normal;line-height:1.3}
   .ba-corps{padding:0 4px 8px 8px}
   .tab{font-size:var(--t0)}
   .tab input{padding:0 4px;height:28px}

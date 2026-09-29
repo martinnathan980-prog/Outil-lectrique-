@@ -1,0 +1,41 @@
+NORME D'EXEMPLE — sans aucune valeur normative. Les chiffres sont inventés pour montrer le mécanisme ; remplace ce fichier par les tables de tes normes (voir normes/LISEZMOI.md).
+
+Familles — une ligne par famille de barrettes ou de prises de coupure : ce que chaque contact admet, et la règle de remplissage
+Norme;Famille;Nature;Variantes;Pas;Jauge min;Jauge max;Intensité;Résistance;Fils par côté;Ordre;Paquets;Réservés;Masse;Note
+ASNE0500 (exemple);ASNE0500;jonction;2 4 8 12 20;5;26;20;7,5;5;1;croissant;contigus;;;module de jonction : un fil de chaque côté, peigne de pontage entre modules voisins, modules pris dans l'ordre
+ASNE0501 (exemple);ASNE0501;jonction;4 8;7,5;22;16;23;3;1;libre;contigus;1;;grosses sections ; le module 1 est réservé (fixation)
+ASNE0502 (exemple);ASNE0502;blindage;4 8;5;26;20;7,5;5;2;libre;contigus;;par paquet;reprise de blindage : deux fils par côté, chaque paquet se ferme sur une masse
+EN3646 (exemple);EN3646;coupure;3 8;2,5;26;20;7,5;8;1;libre;;;;prise de coupure : un fil par contact, fiche (partie mobile) et embase
+
+Fils — par type et jauge AWG : section, résistance à 20 °C, intensité admissible du fil seul (avant déclassement)
+Type;Jauge;Section;Résistance;Intensité;Note
+DR;26;0,15;140;2,5;monoconducteur cuivre (exemple)
+DR;24;0,24;85;3,5;
+DR;22;0,38;55;5;
+DR;20;0,62;34;7,5;
+DR;18;0,96;21;10;
+DR;16;1,5;13,5;13;
+DR;14;2,5;8,5;17;
+DR;12;3,7;5,3;23;
+BN;26;0,15;150;2,5;monoconducteur nickelé (exemple) : un peu plus résistant
+BN;24;0,24;90;3,5;
+BN;22;0,38;58;5;
+BN;20;0,62;36;7,5;
+MLB;26;0,15;140;2;bifilaire blindé (exemple) : chaque conducteur
+MLB;24;0,24;85;3;
+MLB;22;0,38;55;4,5;
+MLB;20;0,62;34;6,5;
+MLC;26;0,15;140;2;trifilaire blindé (exemple) : chaque conducteur
+MLC;24;0,24;85;3;
+MLC;22;0,38;55;4,5;
+MLC;20;0,62;34;6,5;
+
+Déclassement — un facteur appliqué à l'intensité admissible du fil, quand la condition est cochée dans la simulation
+Condition;Facteur;Note
+faisceau;0,8;plusieurs fils frettés ensemble (exemple) — coché par défaut
+chaud;0,85;zone chaude, plus de 70 °C (exemple)
+
+Réseau — la chute de tension admise en ligne, selon la tension du réseau
+Tension;Chute max;Note
+28;1;28 V continu : 1 V en régime permanent (exemple)
+115;4;115 V alternatif (exemple)

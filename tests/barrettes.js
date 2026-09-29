@@ -1,16 +1,20 @@
 /* ===========================================================================
-   LA BIBLE DES BARRETTES ET LES CONNECTEURS — contrôles sans navigateur.
+   LA BIBLE DES BARRETTES, LES CONNECTEURS, LA NORME — contrôles sans navigateur.
        node tests/barrettes.js
    Le module 09 ne touche pas à la page : on le charge avec 01 et 02 dans un
-   bac à sable et on vérifie la lecture d'une bible, le choix d'une référence
-   et la lecture des connecteurs.
+   bac à sable et on vérifie la lecture d'une bible, le choix d'une référence,
+   la lecture des connecteurs, puis la norme : sa lecture, le remplissage
+   trou par trou, la simulation (valeurs connues à la main).
    ========================================================================= */
 const fs = require('fs'), path = require('path'), vm = require('vm');
-const SRC = path.join(__dirname, '..', 'src');
+const SRC = path.join(__dirname, '..', 'src'), NORMES = path.join(__dirname, '..', 'normes');
 const code = ['01-modele.js', '02-lecture.js', '09-barrettes.js'].map(f => fs.readFileSync(path.join(SRC, f), 'utf8')).join('\n');
+// la norme embarquée, comme construire.js la met dans la page : tous les CSV de normes/
+const normes = fs.readdirSync(NORMES).filter(f => /\.csv$/i.test(f)).sort().map(f => fs.readFileSync(path.join(NORMES, f), 'utf8')).join('\n\n');
 const bac = { console };
 vm.createContext(bac);
-vm.runInContext(code + '\nthis.X = { lireBible, bibleExemple, jaugeDuType, blindeDuType, besoinsDeBarrette, choisirBarrette, barretteInfos, connecteursDe, connecteurDeBorne, connecteurParBorne, coupureInfos, connecteursInfos, suiviDuContrat, csvDuSuivi, paquetsDeBarrette, physiqueDeBarrette, contratExemple, contratEssai };', bac);
+vm.runInContext('const NORME_EMBARQUEE = ' + JSON.stringify(normes) + ';\n' + code + '\nthis.X = { lireBible, bibleExemple, jaugeDuType, blindeDuType, besoinsDeBarrette, choisirBarrette, barretteInfos, connecteursDe, connecteurDeBorne, connecteurParBorne, coupureInfos, connecteursInfos, suiviDuContrat, csvDuSuivi, paquetsDeBarrette, physiqueDeBarrette, physiqueDeReference, contratExemple, contratEssai,'
+  + ' lireNorme, normeEmbarquee, normeExemple, normeLue, fusionnerNormes, familleDeNorme, typeDuFil, filDeNorme, facteurDeclassement, chuteAdmise, remplirSelonNorme, simulerBornier, liaison };', bac);
 const X = bac.X;
 let total = 0, echecs = 0;
 const ok = (nom, cond, mesure) => { total++; if (!cond) echecs++; console.log('  ' + (cond ? 'OK    ' : 'ÉCHEC ') + nom + (mesure ? '   — ' + mesure : '')); };
@@ -94,6 +98,82 @@ ok('la borne 7 et les bornes 11, 12 sont libres', P.libres === 3 && !P.modules[6
 ok('chaque module dit ses fils : la borne 2 reçoit W-304', P.modules[1].fils.map(f => f.cable).join(',') === 'W-304' && P.modules[1].fils[0].vers === '351PM1', P.modules[1].fils.map(f => f.cable + '→' + f.vers).join(' '));
 const Q = X.physiqueDeBarrette('409VC2A', L, X.bibleExemple());
 ok('une prise de coupure a la même physique, sans paquet', Q.nature === 'prise de coupure' && Q.modules.length === 3 && Q.paquets.every(p => !p.ponte), Q.reference + ' · ' + Q.modules.length);
+ok('chaque fil d’un module dit son sens et sa liaison : W-301 arrive (amont) sur la borne 1', P.modules[0].fils[0].cable === 'W-301' && P.modules[0].fils[0].amont === true && P.modules[0].fils[0].l === L.find(l => l.cable === 'W-301') && P.modules[1].fils[0].amont === false);
+
+console.log('\n8. LA NORME SE LIT PAR LE NOM DES COLONNES, TABLE PAR TABLE');
+const csvN = 'Ma norme\n\nFamilles\nNorme;Famille;Nature;Variantes;Pas;Jauge min;Jauge max;Intensité;Résistance;Fils par côté;Ordre;Paquets;Réservés;Masse;Note\n'
+  + 'NSA935420;NSA935420;jonction;2 6 10;5 mm;26;20;7,5;4;2;croissant;contigus;;;\nNSA935421;NSA935421;blindage;6;5;26;20;7,5;4;2;libre;contigus;1, 6;par paquet;reprise\n\n'
+  + 'Fils\nType;Jauge;Section;Résistance;Intensité\nDR;24;0,24;85;3,5\nDR;22;0,38;55;5\n;20;0,62;34;7,5\n\nCondition;Facteur\nfaisceau;0,8\n\nTension;Chute max\n28;1\n\nRéférence;Famille;Bornes\nNSA935420-02;NSA935420;2\n';
+const N = X.lireNorme(csvN);
+ok('quatre tables lues, la bible qui suit n’en est pas une', N.tables === 4 && N.familles.length === 2 && N.fils.length === 3 && N.declassements.length === 1 && N.reseau.length === 1, `${N.tables} tables · ${N.familles.length} familles · ${N.fils.length} fils`);
+const f0 = N.familles[0], f1 = N.familles[1];
+ok('une famille : le pas avec son unité, les jauges fine → grosse, l’intensité à virgule, deux fils par côté', f0.pas === 5 && f0.jaugeMin === 26 && f0.jaugeMax === 20 && f0.intensite === 7.5 && f0.resistance === 4 && f0.filsParCote === 2 && f0.variantes.join(',') === '2,6,10', JSON.stringify(f0));
+ok('la règle de remplissage : ordre, paquets, réservés, masse', f0.ordre === 'croissant' && f0.paquets === 'contigus' && f0.reserves.length === 0 && f0.masse === '' && f1.ordre === 'libre' && f1.reserves.join(',') === '1,6' && f1.masse === 'par paquet' && !f0.exemple);
+ok('un fil sans type vaut pour tous (« * »)', N.fils[2].type === '*' && N.fils[2].jauge === 20 && N.fils[0].type === 'DR' && N.fils[0].resistance === 85);
+ok('un tableau quelconque ne fait pas de norme', !X.normeLue(X.lireNorme('a;b\n1;2')) && !X.normeLue(X.lireNorme('Référence;Famille;Bornes\nX-1;X;2')));
+const NE = X.normeEmbarquee();
+ok('la norme embarquée (normes/*.csv) : quatre familles d’exemple, vingt fils, deux déclassements, deux réseaux', NE.familles.length === 4 && NE.fils.length === 20 && NE.declassements.length === 2 && NE.reseau.length === 2 && X.normeExemple(NE), `${NE.familles.map(f => f.famille).join(' ')} · ${NE.fils.length} fils`);
+ok('elle est marquée EXEMPLE, famille par famille', NE.familles.every(f => f.exemple && /exemple/i.test(f.norme)));
+const NF = X.fusionnerNormes(NE, N);
+ok('fusionner : la famille homonyme est remplacée, les autres s’ajoutent', NF.familles.length === 6 && NF.fils.length === 21 && NF.fils.find(f => f.type === 'DR' && f.jauge === 24) === N.fils[0], `${NF.familles.length} familles · ${NF.fils.length} fils`);
+ok('la famille d’une référence : par la bible, sinon par le début de la référence', X.familleDeNorme(NE, 'ASNE0500', '').famille === 'ASNE0500' && X.familleDeNorme(NE, '', 'EN3646A6083AAN').famille === 'EN3646' && X.familleDeNorme(NE, 'NSA935420', 'NSA935420-02') === null);
+ok('le fil de la norme : type et jauge exacts, sinon la jauge seule et on le dit', X.typeDuFil('MLB24') === 'MLB' && X.filDeNorme(NE, 'MLB24', 24).intensite === 3 && X.filDeNorme(NE, 'XX24', 24).approx === true && X.filDeNorme(NE, 'DR10', 10) === null && X.filDeNorme(N, 'DR20', 20).type === '*');
+ok('le déclassement se multiplie, la chute admise suit la tension', X.facteurDeclassement(NE, ['faisceau']) === 0.8 && Math.abs(X.facteurDeclassement(NE, ['faisceau', 'chaud']) - 0.68) < 1e-9 && X.facteurDeclassement(NE, []) === 1 && X.chuteAdmise(NE, 28).chuteMax === 1 && X.chuteAdmise(NE, 115).chuteMax === 4 && X.chuteAdmise(NE, 24).chuteMax === 1);
+
+console.log('\n9. LE REMPLISSAGE : CHAQUE FIL DANS SON TROU, LA RÈGLE DE LA NORME');
+const R = X.remplirSelonNorme(X.physiqueDeBarrette('667VT21', L, X.bibleExemple()), NE);
+ok('667VT21 sur ASNE0500 : un trou par côté, W-101 côté amont du module 1, le trou aval libre', R.famille.famille === 'ASNE0500' && R.filsParCote === 1 && R.modules[0].trous.amont[0].cable === 'W-101' && R.modules[0].trous.aval[0] === null, JSON.stringify(R.modules[0].trous.amont.map(f => f && f.cable)));
+ok('W-103 côté aval du module 2, l’amont libre ; le pont W-102 n’est dans aucun trou', R.modules[1].trous.aval[0].cable === 'W-103' && R.modules[1].trous.amont[0] === null && !R.modules.some(m => [...m.trous.amont, ...m.trous.aval].some(f => f && f.cable === 'W-102')));
+ok('quatre modules pleins dans l’ordre, jauge 24 admise : aucun verdict', R.verdicts.length === 0 && R.modules.every(m => m.fils.every(f => f.jaugeOk === true)), R.verdicts.map(v => v.texte).join(' | '));
+const R2 = X.remplirSelonNorme(X.physiqueDeBarrette('668VT31', L, X.bibleExemple()), NE);
+ok('668VT31 : le module 7 libre avant le 10 est une remarque (ordre croissant), pas un défaut', R2.verdicts.length === 1 && R2.verdicts[0].niveau === 'attention' && /module 7 libre avant le 10/.test(R2.verdicts[0].texte), R2.verdicts.map(v => v.texte).join(' | '));
+const R3 = X.remplirSelonNorme(X.physiqueDeBarrette('669VT32', L, X.bibleExemple()), NE);
+ok('669VT32 sur ASNE0502 : deux trous par côté, le paquet 1-2-3-4 se ferme sur la masse 905G, rien à redire', R3.famille.famille === 'ASNE0502' && R3.filsParCote === 2 && R3.modules[0].trous.amont.length === 2 && R3.modules[0].trous.amont[1] === null && R3.verdicts.length === 0, R3.verdicts.map(v => v.texte).join(' | '));
+const li = (de, bDe, vers, bVers, cable, type) => X.liaison({ de, borneDe: bDe, pnDe: de.endsWith('VT') ? '' : '', vers, borneVers: bVers, cable, type });
+const L4 = [li('A1', '1', '700VT', '1', 'W-1', 'DR24'), li('B1', '1', '700VT', '1', 'W-2', 'DR24'), li('700VT', '1', '700VT', '3', 'W-3', 'DR24'), li('700VT', '3', 'C1', '1', 'W-4', 'DR16')];
+const R4 = X.remplirSelonNorme(X.physiqueDeBarrette('700VT', L4, X.bibleExemple()), NE);
+const t4 = R4.verdicts.map(v => v.niveau + ':' + v.texte).join(' | ');
+ok('deux fils dans un trou : surcharge dite, le second fil marqué', /ko:module 1 : 2 fils côté amont pour 1 trou/.test(t4) && R4.modules[0].surcharge === 1 && R4.modules[0].trous.amont.length === 2, t4);
+ok('un pont qui saute le module 2 : le peigne ne saute pas un module', /ko:paquet 1-3 : le peigne de pontage ne saute pas un module/.test(t4));
+ok('un DR16 sur un contact 26–20 : jauge hors plage, sur le module dit', /ko:W-4 \(DR16\) : jauge 16 hors de 26–20 AWG sur le module 3/.test(t4) && R4.modules[2].fils[0].jaugeOk === false);
+const L5 = [li('A1', '1', '701VT', '1', 'W-1', 'DR16'), li('701VT', '2', 'B1', '1', 'W-2', 'DR16')];
+const R5 = X.remplirSelonNorme({ ...X.physiqueDeBarrette('701VT', L5, X.bibleExemple()), reference: 'ASNE0501-04', entree: X.bibleExemple().find(e => e.reference === 'ASNE0501-04') }, NE);
+ok('ASNE0501 : le module 1 réservé par la norme, utilisé → défaut ; DR16 admis sur 22–16', R5.verdicts.length === 1 && /module 1 réservé/.test(R5.verdicts[0].texte) && R5.modules[0].fils[0].jaugeOk === true, R5.verdicts.map(v => v.texte).join(' | '));
+const L6 = [li('A1', '1', '702VT', '1', 'W-1', 'MLB24'), li('702VT', '1', '702VT', '2', 'W-2', 'DR24'), li('B1', '1', '702VT', '2', 'W-3', 'MLB24')];
+const R6 = X.remplirSelonNorme({ ...X.physiqueDeBarrette('702VT', L6, X.bibleExemple()), reference: 'ASNE0502-04', entree: X.bibleExemple().find(e => e.reference === 'ASNE0502-04') }, NE);
+ok('une barrette de blindage dont le paquet ne va pas à la masse : défaut', R6.verdicts.length === 1 && /paquet 1-2 sans retour de masse/.test(R6.verdicts[0].texte), R6.verdicts.map(v => v.texte).join(' | '));
+const R7 = X.remplirSelonNorme(X.physiqueDeBarrette('667VT21', L, X.bibleExemple()), X.lireNorme(''));
+ok('sans norme : pas de famille, un trou par côté, aucun verdict, la jauge n’est pas jugée', R7.famille === null && R7.filsParCote === 1 && R7.verdicts.length === 0 && R7.modules[0].fils[0].jaugeOk === null);
+const RP = X.remplirSelonNorme(X.physiqueDeBarrette('408VC1A', L, X.bibleExemple()), NE);
+ok('408VC1A sur EN3646 : W-130 dans la fiche du contact 1, W-131 dans l’embase ; les contacts 2 et 3 libres des deux côtés', RP.famille.famille === 'EN3646' && RP.cotes.amont === 'fiche' && RP.modules[0].trous.amont[0].cable === 'W-130' && RP.modules[0].trous.aval[0].cable === 'W-131' && RP.modules[1].trous.amont[0] === null && RP.modules[2].trous.aval[0] === null && RP.verdicts.length === 0);
+const RR = X.remplirSelonNorme(X.physiqueDeReference(X.bibleExemple().find(e => e.reference === 'ASNE0502-08')), NE);
+ok('une référence de la bible, sans contrat : huit modules, deux trous libres par côté', RR.modules.length === 8 && RR.modules.every(m => m.trous.amont.length === 2 && m.trous.amont.every(t => t === null)));
+
+console.log('\n10. LA SIMULATION : DES VALEURS CONNUES À LA MAIN');
+const SI = X.simulerBornier(R, NE, { longueur: 5, courant: 2, tension: 28, conditions: ["faisceau"] });
+ok('667VT21 : quatre fils simulés, aucun pont, les hypothèses reprises', SI.lignes.length === 4 && SI.hyp.longueur === 5 && SI.hyp.courant === 2 && SI.facteur === 0.8 && SI.chute.chuteMax === 1 && !SI.sansNorme, SI.lignes.map(x => x.cable).join(' '));
+const w101 = SI.lignes.find(x => x.cable === 'W-101');
+ok('W-101 (DR24, 5 m, 2 A) : R = 85/1000×5 + 5/1000 = 0,43 Ω, ΔU = 0,86 V = 3,07 % de 28 V', w101 && Math.abs(w101.rFil - 0.425) < 1e-9 && Math.abs(w101.rContact - 0.005) < 1e-9 && Math.abs(w101.R - 0.43) < 1e-9 && Math.abs(w101.dU - 0.86) < 1e-9 && Math.abs(w101.pct - 3.0714) < 1e-3, JSON.stringify({ R: w101 && w101.R, dU: w101 && w101.dU, pct: w101 && w101.pct }));
+ok('…le fil admet 3,5 × 0,8 = 2,8 A, le contact 7,5 A, la jauge est admise : ok', Math.abs(w101.iFil - 2.8) < 1e-9 && w101.iContact === 7.5 && w101.jaugeOk === true && w101.verdict === 'ok' && w101.sens === 'amont' && w101.borne === "1" && SI.compte.ok === 4);
+const S2 = X.simulerBornier(R, NE, { courant: 3 });
+ok('à 3 A en faisceau, le courant dépasse le fil (2,8 A)', S2.lignes.every(x => x.verdict === 'fil'));
+const S3 = X.simulerBornier(R, NE, { courant: 3, conditions: [] });
+ok('à 3 A hors faisceau, le fil admet 3,5 A : la chute (1,29 V) dépasse le volt admis', S3.facteur === 1 && S3.lignes[0].iFil === 3.5 && Math.abs(S3.lignes[0].dU - 1.29) < 1e-9 && S3.lignes.every(x => x.verdict === 'chute'), S3.lignes[0].dU);
+const S4 = X.simulerBornier(R, NE, { courant: 10, conditions: [] });
+ok('à 10 A, c’est le contact (7,5 A) qui parle avant la chute', S4.lignes.every(x => x.verdict === 'fil') && X.simulerBornier(R, X.fusionnerNormes(NE, X.lireNorme('Type;Jauge;Résistance;Intensité\nDR;24;85;12')), { courant: 10, conditions: [] }).lignes[0].verdict === 'contact');
+const S5 = X.simulerBornier(R, NE, { longueur: 10, courant: 1, tension: 115 });
+ok('sur 115 V la chute admise est de 4 V : 0,855 V, soit 0,74 %, ok', S5.chute.chuteMax === 4 && Math.abs(S5.lignes[0].dU - 0.855) < 1e-9 && Math.abs(S5.lignes[0].pct - 0.7435) < 1e-3 && S5.lignes[0].verdict === 'ok');
+const S6 = X.simulerBornier(R4, NE, {});
+const w4 = S6.lignes.find(x => x.cable === 'W-4'), w2 = S6.lignes.find(x => x.cable === 'W-2');
+ok('une jauge hors plage l’emporte sur tout ; un fil en surcharge est dit tel', w4.verdict === 'jauge' && w4.fil && w4.fil.intensite === 13 && w2.surcharge === true && w2.trou === 2, JSON.stringify({ v: w4.verdict, trou: w2.trou }));
+const S7 = X.simulerBornier(X.remplirSelonNorme(X.physiqueDeBarrette('667VT21', L.map(l => ({ ...l, type: 'XX24' })), X.bibleExemple()), NE), NE, {});
+ok('un type inconnu de la norme : la jauge seule sert, et c’est dit (approx)', S7.lignes.every(x => x.approx && x.verdict === 'ok' && x.fil.jauge === 24));
+const S8 = X.simulerBornier(X.remplirSelonNorme(X.physiqueDeBarrette('667VT21', L.map(l => ({ ...l, type: 'DR10' })), X.bibleExemple()), NE), NE, {});
+ok('une jauge que la norme ne connaît pas : fil inconnu, rien d’inventé', S8.lignes.every(x => x.verdict === 'jauge' || x.verdict === 'inconnu') && S8.lignes[0].dU === null);
+const S9 = X.simulerBornier(R7, X.lireNorme(''), {});
+ok('sans norme : la simulation le dit, sans une ligne calculée', S9.sansNorme && S9.lignes.every(x => x.dU === null && x.verdict === 'inconnu'));
+const SP = X.simulerBornier(RP, NE, {});
+ok('la prise 408VC1A : deux fils MLB24 (3 × 0,8 = 2,4 A), contact EN3646 à 8 mΩ : ΔU = (0,425 + 0,008) × 2 = 0,866 V, ok', SP.lignes.length === 2 && Math.abs(SP.lignes[0].iFil - 2.4) < 1e-9 && Math.abs(SP.lignes[0].dU - 0.866) < 1e-9 && SP.lignes.every(x => x.verdict === 'ok') && SP.lignes[0].sens === 'amont' && SP.lignes[1].sens === 'aval');
 
 console.log('\n  ' + (total - echecs) + ' / ' + total + ' contrôles passés' + (echecs ? '  —  ' + echecs + ' ÉCHEC(S)' : '  —  tout est vert'));
 process.exit(echecs ? 1 : 0);

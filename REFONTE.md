@@ -230,6 +230,22 @@ Fait, mesuré, en place :
   prend le sens du folio. 86,3 %, 20 croisements, 0 évitable, 0 tour,
   0 segment partagé sur dix-huit topologies ; folio 3 en paysage en 4 s,
   banc vert.
+- **La norme, les trous, la simulation** (`normes/`, `09-barrettes`, la
+  carte dans `08`) : une norme est quatre tables lues par le nom de leurs
+  colonnes — Familles (pas, jauges, intensité et résistance de contact, fils
+  par côté, règle de remplissage : ordre, paquets contigus, réservés, masse),
+  Fils (type, jauge, section, résistance, intensité), Déclassement, Réseau
+  (chute admise). Les CSV de `normes/` sont embarqués à la construction ;
+  une norme s'importe aussi depuis la bible ou par dépôt, et se fond avec
+  les précédentes. La norme livrée est une FAUSSE norme, marquée exemple
+  partout. La carte d'une barrette ou d'une prise dessine alors chaque TROU
+  (plein ou vide, sur le bord du module ; hachuré sur la fiche ou l'embase
+  d'une prise) et le fil qui y est, avec son type, juge le remplissage, puis
+  SIMULE fil par fil sur des hypothèses dites et modifiables (longueur,
+  courant, tension, déclassements) : jauge admise, I fil / I contact,
+  ΔU = (ρ × L + R contact) × I en V et en %, un verdict, la formule et un
+  calcul écrit en entier. Survoler une ligne de la simulation ou un trou
+  allume le fil sur le plan. 37 contrôles sans navigateur de plus.
 - **Base de retest** : mise de côté dans `a-venir/09-retest.js` avec ses
   contrôles (`tests/retest.js` se passe si elle n'est pas dans la page).
 - **Contrôles** sur l'API `atelier` : 17 + 5 + 13, banc de 15 topologies, 39 sans navigateur pour la bible, les connecteurs, le suivi et la barrette physique.

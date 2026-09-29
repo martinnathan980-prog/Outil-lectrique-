@@ -7,7 +7,8 @@ node tests/controle.js         les invariants, le contrat d'essai, la base de re
 node tests/memoire.js          le travail survit-il à la fermeture de l'onglet
 node tests/format-retest.js    les seize colonnes sont lues par leur nom
 node tests/banc-placement.js   combien de fils sortent droits, et sur quelle feuille
-node tests/barrettes.js        la bible des barrettes se lit, la référence se choisit, les connecteurs se lisent (sans navigateur)
+node tests/barrettes.js        la bible des barrettes se lit, la référence se choisit, les connecteurs se lisent ; la norme se lit,
+                               chaque fil va dans son trou, la simulation donne des valeurs connues à la main (sans navigateur)
 ```
 
 Tous acceptent `--fichier=chemin` pour mesurer un autre fichier que
