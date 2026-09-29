@@ -34,30 +34,42 @@ les trois folios de l'exemple ; un piquage qui tranche un fil compte comme
 un croisement), depuis que le juge voit les corps étirés, les segments
 partagés et les tours :
 
-    82,7 % de fils droits · 45 croisements · 0 évitable · 0 violation · 0 cas hors feuille
+    86,0 % de fils droits · 13 croisements · 0 évitable · 0 violation · 0 cas hors feuille
     contrat d'essai : 66,7 %, 0 croisement
-    folio 1 : 62,5 %, 1 · folio 2 : 60 %, 3 · folio 3 : 55,4 %, 22
+    folio 1 : 75 %, 1 · folio 2 : 65 %, 0 · folio 3 : 57,1 %, 12
 
-Un TOUR (un fil qui sort de son bloc par le flanc opposé à son partenaire
-et en fait le tour) coûte un croisement et demi : le lecteur suit un fil
-qui s'éloigne de sa cible, c'est pire qu'un pont. Avant ce poids (les tours
-ne faisaient que départager), c'était 82,4 % et 40 croisements, mais W-014
-du folio 1 faisait le tour de 395SW1 par la gauche et le bas ; il traverse
-maintenant en Z avec un pont. Le banc note ses variantes au même barème.
+UN CROISEMENT VAUT DEUX FILS DROITS. Un lecteur a montré, deux fois sur la
+même feuille (210SP1, 601RC), un croisement pour rien qu'un échange de deux
+bornes ôtait en pliant un fil : c'est l'échange qu'il voulait. Le juge
+précédent (un croisement = un fil droit) préférait le fil droit à égalité.
+Un TOUR (un fil qui sort de son bloc par le flanc opposé à son partenaire et
+en fait le tour) coûte un croisement et demi, et l'estimation le voit.
+Le tamis de l'estimation se compte en croisements (un ; deux dans la passe
+finale, où l'estimation se trompe d'un ou deux croisements sur un changement
+de flanc). Une borne peut changer de flanc au-dessus ou au-dessous du corps,
+qui grandit d'autant ; un échange de bornes à hauteurs fixes qui plie un
+fil se rejoue au solveur, où le partenaire glisse et le garde droit. Les
+finalistes du concours se comparent sur la géométrie qu'on dessinera
+(resserrée, étirée au format) : sinon un dessin replié battait un paysage
+qui ne « tenait » pas encore parce que ses goulottes étaient taillées large.
 
-Le juge précédent donnait 84,6 % et 53 croisements (contrat d'essai
-83,3 %, folio 1 75 % / 1, folio 3 50 % / 35) : les fils droits perdus
-étaient ACHETÉS PAR DES CORPS ÉTIRÉS — 601RC et 210SP1 sur toute la
-hauteur de l'essai, 103RL1 du folio 1, C1 et C7 de la boucle (100 → 90 %)
-— ce qu'un lecteur voit tout de suite et qu'aucun chiffre ne disait. Un
-corps qui dépasse une fois et demie sa hauteur naturelle coûte désormais
-un croisement et demi ; deux fils étrangers superposés sur un même trait
-(une connexion qui ment) coûtent deux croisements ; un fil qui fait le
-tour de son bloc coûte un croisement et demi ; une masse qui pend sur un
-fil, un connecteur coupé en deux flancs départagent ensuite — un
-connecteur se coupe quand ça supprime un tour ou un croisement, jamais
-sans raison (le banc l'admet si chaque borne regarde vers son
-partenaire).
+LES BARRETTES SE POSENT PAR PAQUET (`03-graphe`) : les bornes pontées
+ensemble font un module, dessiné là où il sert, aussi petit que possible ;
+une barrette de dix bornes n'est plus une colonne de dix bornes que tous
+les fils contournent. C'est ce qui fait passer le folio 2 de 60 % / 3 à
+65 % / 0 et le folio 3 de 22 à 12 croisements (« réglette VT
+traversante » : 71 % / 17 → 100 % / 0). Beaucoup de petites composantes se
+rangent sur une étagère dont la largeur vise le format de la feuille.
+
+Avant ce barème et ces paquets, c'était 82,7 % et 45 croisements (folio 1
+62,5 % / 1, folio 2 60 % / 3, folio 3 55,4 % / 22).
+
+CE QUI RESTE ROUGE AU BANC, mesuré et non caché : sur le folio 3 (66
+liaisons), la recherche n'a pas convergé dans son budget — un changement de
+flanc évident (351PM1:3) est manqué, deux segments restent partagés et un
+connecteur est coupé sans raison (381RL1:A2) ; sur le folio 2, W-133 et
+W-136 partagent un segment que le juge ne sait pas défaire sans créer un
+croisement. Le banc rend 1 tant que c'est là.
 
 La mesure des fils droits est HONNÊTE depuis ce routeur : un fil qui passe
 par le raccord et la verticale d'un piquage n'est pas droit, même si son

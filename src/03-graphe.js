@@ -64,6 +64,16 @@ function construireGraphe(liaisons) {
       P.liste.forEach((p, i) => { const id = n + FRAG + i;
         noeuds.set(id, { id, nom: n, reglette: true, broches: [p] }); noeudDeBroche.set(n + SEP + p.cle, id); });
       continue; }
+    if (estBarrette(n)) {
+      // une BARRETTE se pose par PAQUET : les bornes pontées ensemble font un module, et chaque module se dessine
+      // là où il sert, aussi petit que possible — une barrette de dix bornes n'est pas une colonne de dix bornes
+      const chef = new Map(P.liste.map(p => [p.cle, p.cle])); const trouver = c => { while (chef.get(c) !== c) c = chef.get(c); return c; };
+      lk.forEach((l, li) => { if (l.de !== n || l.vers !== n) return; const A = bouts.get(li + ':A'), B = bouts.get(li + ':B'); const ra = trouver(A.cle), rb = trouver(B.cle); if (ra !== rb) chef.set(ra, rb); });
+      const paquets = new Map(); P.liste.forEach(p => { const r = trouver(p.cle); (paquets.get(r) || paquets.set(r, []).get(r)).push(p); });
+      let gi = 0;
+      for (const pins of paquets.values()) { const id = paquets.size === 1 ? n : n + FRAG + (gi++);
+        noeuds.set(id, { id, nom: n, reglette: true, broches: pins }); pins.forEach(p => noeudDeBroche.set(n + SEP + p.cle, id)); }
+      continue; }
     if (!(enReglette(n) && !entier)) {
       noeuds.set(n, { id: n, nom: n, reglette: enReglette(n), broches: P.liste.slice() });
       P.liste.forEach(p => noeudDeBroche.set(n + SEP + p.cle, n)); continue; }

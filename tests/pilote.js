@@ -70,8 +70,8 @@ function preparerDansLaPage() {
   const propres = R => R.fils.filter(w => !w.shunt);
   // les tours (un fil qui sort par le flanc opposé à son partenaire) se lisent sur les liaisons, pas sur les tracés : on les passe
   const noter = (R, links) => ({ d: compterDroits(propres(R)), c: compterCroisements(propres(R), R.barrettes), p: compterPartages(R.fils), t: compterTours({ links: links || R.links }) });
-  // le même barème que le juge : un croisement vaut un fil droit, un segment partagé deux, un tour un et demi
-  const note = n => n.d - n.c - 2 * n.p - 1.5 * n.t;
+  // le même barème que le juge (ses constantes) : croisements, segments partagés, tours
+  const note = n => n.d - n.c / CROISEMENTS_PAR_DROIT - PARTAGE * n.p - TOUR * n.t;
   const mieux = (n, b) => note(n) > note(b) + 0.01;
   const texte = n => n.d + ' droits, ' + n.c + ' croisements, ' + n.p + ' partagés, ' + n.t + ' tours';
   const sain = (comps, R) => { const blocs = comps.filter(c => c.kind !== 'tag');
@@ -131,15 +131,21 @@ function flancsEvidentsDansLaPage() {
       const siens = l => !l.shunt && !l.boucle && ((l.de === c.name && String(l.borneDe) === etiq) || (l.vers === c.name && String(l.borneVers) === etiq));
       const fils = d.links.filter(siens); if (!fils.length || fils.some(l => tags.has(l.de) || tags.has(l.vers))) return;
       if ((c.rangs[autre] || []).some(q => String(q.etiq) === etiq)) return;      // une borne libre dédoublée parle déjà des deux côtés
-      const ys = (c.rangs[autre] || []).map(q => q.y), libre = y => ys.every(v => Math.abs(v - y) >= PRH - 0.5);
-      const cands = [p.y, ...(ys.length ? [Math.min(...ys) - PRH, Math.max(...ys) + PRH] : [])].filter((y, i, a) => a.indexOf(y) === i && libre(y) && y >= c.y + 10 && y <= c.y + c.h - 10);
+      // un pas d'une borne du même connecteur, deux d'une borne d'un autre (sa lettre s'écrit entre les deux) — la règle du placement
+      const conn = connecteurParBorne(c.name, d.links), nomDe = e => (conn.get(String(e)) || {}).nom, pasDe = q => nomDe(q.etiq) === nomDe(etiq) ? PRH : 2 * PRH;
+      const autres = (c.rangs[autre] || []), libre = y => autres.every(q => Math.abs(q.y - y) >= pasDe(q) - 0.5);
+      // à sa hauteur, ou juste au-dessus ou au-dessous des bornes d'en face — hors du corps s'il le faut : le corps grandit d'autant
+      const haut = Math.min(...autres.map(q => q.y - pasDe(q))), bas = Math.max(...autres.map(q => q.y + pasDe(q)));
+      const cands = [p.y, ...(autres.length ? [haut, bas] : [])].filter((y, i, a) => a.indexOf(y) === i && libre(y) && y >= c.y + 10 - PRH && y <= c.y + c.h - 10 + PRH);
       const x = autre === 'R' ? c.x + c.w : c.x, ch = c.col + (autre === 'R' ? 1 : 0), stub = autre === 'R' ? 'L' : 'R';
       let trouve = null;      // une borne compte une fois, à la première hauteur qui fait mieux
       cands.forEach(y => { if (trouve) return; essais++;
         const links = d.links.map(l => { if (!siens(l)) return l; const L2 = { ...l };
           if (l.de === c.name && String(l.borneDe) === etiq) L2.epA = { x, y, ch, stub }; if (l.vers === c.name && String(l.borneVers) === etiq) L2.epB = { x, y, ch, stub }; return L2; });
-        const R = router({ comps: d.comps, links, geom: d.geom, bbox: d.bbox }), n = B.noter(R, links);
-        if (B.mieux(n, base) && B.sain(d.comps, R)) trouve = c.name + ':' + etiq + ' sur le flanc ' + autre + ' : ' + B.texte(base) + ' → ' + B.texte(n); });
+        const y0 = Math.min(c.y, y - 18), y1 = Math.max(c.y + c.h, y + 18);
+        const comps = (y0 < c.y || y1 > c.y + c.h) ? d.comps.map(k => k === c ? { ...k, y: y0, h: y1 - y0 } : k) : d.comps;
+        const R = router({ comps, links, geom: d.geom, bbox: d.bbox }), n = B.noter(R, links);
+        if (B.mieux(n, base) && B.sain(comps, R)) trouve = c.name + ':' + etiq + ' sur le flanc ' + autre + ' : ' + B.texte(base) + ' → ' + B.texte(n); });
       if (trouve) manques.push(trouve); })); });
   return { manques, essais, base };
 }

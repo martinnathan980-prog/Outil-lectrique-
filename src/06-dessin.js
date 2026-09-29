@@ -47,7 +47,9 @@ function styleDessin() {
      .barnum{fill:#2b3743;font-size:5.6px;font-weight:600}
      .fiche{fill:#ffffff;stroke:#1b2430;stroke-width:.9}
      .embase{fill:#ffffff;stroke:#1b2430;stroke-width:1.1}
-     .pont{stroke:#1b2430;stroke-width:1.6;stroke-linecap:butt}
+     .pont{stroke:#1b2430;stroke-width:1;stroke-linecap:butt}
+     .bpast{fill:#ffffff;stroke:#1b2430;stroke-width:.9}
+     .bpnum{fill:#1b2430;font-size:4px;font-weight:700}
      .rpill{fill:#ffffff;stroke:#c8d1d9;stroke-width:.7}
      .rname{fill:#46535f;font-weight:600;font-size:7.5px;letter-spacing:.6px}
      .frame{fill:none;stroke:#c2ccd5;stroke-width:.8}
@@ -141,11 +143,14 @@ function piquagesSvg(barrettes, piquages, verticaux) {
        BARRETTE qu'il faudra poser : une fine ligne pointillée, un point à
        chaque départ, les numéros 1, 2, 3… du côté des départs. */
     const ys = [b.py, ...b.gardes.map(k => k.y)].filter((y, i, a) => a.findIndex(z => Math.abs(z - y) < 0.6) === i).sort((u, v) => u - v);
-    const cote = (b.dir || 1) > 0 ? -1 : 1;                                  // les numéros du côté opposé à la borne alimentée
     s += `<line class="barre" x1="${f1(b.x)}" y1="${f1(ys[0])}" x2="${f1(b.x)}" y2="${f1(ys[ys.length - 1])}"/>`;
-    ys.forEach((y, i) => { s += `<circle class="jn" cx="${f1(b.x)}" cy="${f1(y)}" r="1.8"/>`;
-      s += `<text class="barnum" x="${f1(b.x + cote * 3)}" y="${f1(y - 1.8)}" text-anchor="${cote > 0 ? 'start' : 'end'}">${i + 1}</text>`; }); });
+    ys.forEach((y, i) => { s += pastilleSvg(b.x, y, String(i + 1)); }); });
   return s;
+}
+/* Une borne de barrette : une petite pastille sur la ligne, son numéro dedans. */
+function pastilleSvg(x, y, etiq) {
+  const r = etiq.length > 2 ? 4.2 : 3.2;
+  return `<circle class="bpast" cx="${f1(x)}" cy="${f1(y)}" r="${r}"/><text class="bpnum" x="${f1(x)}" y="${f1(y + 1.45)}" text-anchor="middle">${esc(etiq)}</text>`;
 }
 /* Le numéro de fil, au-dessus du plus long segment horizontal, en son milieu
    — ou décalé le long du segment si le milieu est pris. Jamais sur un
@@ -265,7 +270,7 @@ function blocSvg(c, designation, choisi) {
        vers l'extérieur — et le repère se lit dessous. */
     // p.dir dit par quel flanc le fil ARRIVE (-1 : par la gauche) ; le symbole grandit vers l'autre flanc.
     const p = rs[0] || { y: c.y + c.h / 2, dir: -1 }, ly = p.y - c.y, d = (p.dir || -1) < 0 ? 1 : -1;
-    const x0 = d > 0 ? 0 : c.w, xs = d > 0 ? c.w - 12 : 12;                  // le fil entre par un flanc, le symbole est à l'autre bout
+    const x0 = d > 0 ? 0 : c.w, xs = d > 0 ? 4 : c.w - 4;                    // le fil entre par un flanc, le symbole est tout de suite là
     s += `<line class="earth" x1="${f1(x0)}" y1="${f1(ly)}" x2="${f1(xs)}" y2="${f1(ly)}"/>`;
     [[6, 0], [4, 3.2], [2, 6.4]].forEach(([l, dx]) => { const x = xs + d * dx; s += `<line class="earth" x1="${f1(x)}" y1="${f1(ly - l)}" x2="${f1(x)}" y2="${f1(ly + l)}"/>`; });
     // le repère, petit, sous les barres : entre ce fil et le suivant (un pas de 14), sans toucher ni l'un ni l'autre
@@ -281,12 +286,13 @@ function blocSvg(c, designation, choisi) {
        haute. C'est la différence de hauteur qui dit laquelle est laquelle.
        Les contacts sont numérotés dans l'embase ; le fil amont arrive sur la
        mobile, le fil aval repart de l'embase. */
-    const WE = 8, WM = 7, xe0 = mid - WE / 2, xe1 = xe0 + WE, xm1 = xe0, xm0 = xm1 - WM;   // la mobile collée à l'embase
+    // l'embase est la plus FINE des deux ; la mobile, plus large, est un peu moins haute ; angles vifs
+    const WE = 5, WM = 9, xe0 = mid - WE / 2 + 2, xe1 = xe0 + WE, xm1 = xe0, xm0 = xm1 - WM;   // la mobile collée à l'embase
     const ym0 = Math.min(PRH * 0.35, c.h / 6), ym1 = c.h - ym0;
-    s += `<rect class="embase" x="${f1(xe0)}" y="0" width="${WE}" height="${c.h}" rx="1"/>`;
-    s += `<rect class="fiche" x="${f1(xm0)}" y="${f1(ym0)}" width="${WM}" height="${f1(ym1 - ym0)}" rx="1"/>`;
+    s += `<rect class="embase" x="${f1(xe0)}" y="0" width="${WE}" height="${c.h}"/>`;
+    s += `<rect class="fiche" x="${f1(xm0)}" y="${f1(ym0)}" width="${WM}" height="${f1(ym1 - ym0)}"/>`;
     rs.forEach(p => { const ly = p.y - c.y;
-      if (p.etiq) s += `<text class="connpin" style="font-size:4.8px" x="${f1((xe0 + xe1) / 2)}" y="${f1(ly + 1.7)}" text-anchor="middle">${esc(clip(String(p.etiq), 3))}</text>`;
+      if (p.etiq) s += `<text class="connpin" style="font-size:4px" x="${f1((xe0 + xe1) / 2)}" y="${f1(ly + 1.4)}" text-anchor="middle">${esc(clip(String(p.etiq), 2))}</text>`;
       if ((p.dir || 0) <= 0) s += `<line class="lead" x1="0" y1="${f1(ly)}" x2="${f1(xm0)}" y2="${f1(ly)}"/>`;
       if ((p.dir || 0) >= 0) s += `<line class="lead" x1="${f1(xe1)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
     s += `<text class="rep" x="${f1(mid)}" y="${f1(c.h + 12)}" text-anchor="middle">${esc(clip(c.name, 14))}</text>`;
@@ -299,15 +305,14 @@ function blocSvg(c, designation, choisi) {
     const rangs = (c.kind === 'strip' ? rs : [...rl, ...rr]).slice().sort((u, v) => u.y - v.y);
     const ys = rangs.map(p => p.y - c.y), yh = (ys.length ? Math.min(...ys) : c.h / 2) - 9, yb = (ys.length ? Math.max(...ys) : c.h / 2) + 9;
     s += `<line class="barre" x1="${f1(mid)}" y1="${f1(yh)}" x2="${f1(mid)}" y2="${f1(yb)}"/><circle class="bardot" cx="${f1(mid)}" cy="${f1(yb)}" r="2.1"/>`;
+    // entre deux bornes shuntées, la ligne est pleine (aussi fine que le pointillé) : le pontage
     paquetsDePonts(c.shunts || []).forEach(([y1, y2]) => {
       s += `<line class="pont" x1="${f1(mid)}" y1="${f1(y1 - c.y)}" x2="${f1(mid)}" y2="${f1(y2 - c.y)}"/>`; });
-    // les numéros s'écrivent tous du même côté : celui d'où viennent les fils, à droite sinon
-    const cote = rangs.filter(p => (p.dir || 0) < 0).length > rangs.filter(p => (p.dir || 0) > 0).length ? -1 : 1;
-    rangs.forEach(p => { const ly = p.y - c.y, d = p.dir || 0, etiq = p.etiq ? clip(String(p.etiq), 4) : '';
+    rangs.forEach(p => { const ly = p.y - c.y, d = p.dir || 0;
       if (d <= 0) s += `<line class="lead" x1="0" y1="${f1(ly)}" x2="${f1(mid)}" y2="${f1(ly)}"/>`;
-      if (d >= 0) s += `<line class="lead" x1="${f1(mid)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`;
-      s += `<circle class="jn" cx="${f1(mid)}" cy="${f1(ly)}" r="1.8"/>`;
-      if (etiq) s += `<text class="barnum" x="${f1(mid + cote * 3)}" y="${f1(ly - 1.8)}" text-anchor="${cote > 0 ? 'start' : 'end'}">${esc(etiq)}</text>`; });
+      if (d >= 0) s += `<line class="lead" x1="${f1(mid)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
+    // chaque borne est une pastille sur la ligne, son numéro dedans
+    rangs.forEach(p => { const ly = p.y - c.y; s += pastilleSvg(mid, ly, p.etiq ? clip(String(p.etiq), 3) : ''); });
     s += `<text class="rep" x="${f1(mid)}" y="${f1(yb + 12)}" text-anchor="middle">${esc(clip(c.name, 14))}</text>`;
   } else if (estMasse(c.name)) {
     /* MASSE : le fil descend d'un court trait sur le symbole CEI 60617-02 —
@@ -353,7 +358,9 @@ function sceneSvg(dessin, cartouche, folio, designationDe, choisi) {
   s += reperesDeFil(dessin.fils, verticaux, dessin.barrettes);
   s += piquagesSvg(dessin.barrettes, dessin.piquages, verticaux);
   dessin.points.forEach(d => s += `<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="1.9"/>`);
-  dessin.comps.forEach(c => { c.shunts = shunts.get(c.name) || []; c.connecteurs = c.kind === 'equip' ? connecteurParBorne(c.name, dessin.fils) : null; s += blocSvg(c, designationDe ? designationDe(c.name) : '', choisi === c.name); });
+  // un pont appartient au morceau (barrette en paquets, masses répétées) dont les bornes sont à ses hauteurs, pas à tout ce qui porte le nom
+  const dedans = (c, ys) => ys.every(y => y >= c.y - 0.5 && y <= c.y + c.h + 0.5);
+  dessin.comps.forEach(c => { c.shunts = (shunts.get(c.name) || []).filter(ys => dedans(c, ys)); c.connecteurs = c.kind === 'equip' ? connecteurParBorne(c.name, dessin.fils) : null; s += blocSvg(c, designationDe ? designationDe(c.name) : '', choisi === c.name); });
   return s;
 }
 /* Le même dessin, en document SVG autonome : pour enregistrer, imprimer, coller. */

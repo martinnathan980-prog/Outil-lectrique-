@@ -183,12 +183,13 @@ Fait, mesuré, en place :
   pose les bornes d'un connecteur dans une pièce fine hors du corps, sa
   lettre au-dessus ; un connecteur peut se couper sur deux flancs quand
   chaque borne regarde ainsi vers son partenaire. La prise de coupure se
-  dessine en deux rectangles fins collés : l'embase, plus haute, numérotée,
-  et la partie mobile, un peu plus fine et moins haute. La barrette est une
+  dessine en deux rectangles collés, angles vifs : l'embase, la plus fine,
+  plus haute, numérotée, et la partie mobile, plus large et moins haute. La barrette est une
   ligne pointillée, un point par fil, tous les numéros du même côté, un
-  point de départ en bas avec le repère, le pont en trait plein. La masse
+  point de départ en bas avec le repère, chaque borne une pastille avec son
+  numéro dedans, le pont en trait plein aussi fin que le pointillé. La masse
   est collée à sa borne, dans l'axe du fil, perpendiculaire à l'équipement,
-  son repère petit sous les barres.
+  le fil juste assez long pour son numéro, son repère petit sous les barres.
 - **La barrette physique** (`physiqueDeBarrette` dans `09`, le dessin dans
   `08`) : la carte d'une barrette ou d'une prise de coupure est d'abord un
   DESSIN, de face — tous les modules de la référence retenue, numérotés au
@@ -211,8 +212,15 @@ Fait, mesuré, en place :
   bloc coûtent des croisements (1,5 ; 2 ; 1,5) ; une borne peut changer de
   flanc, les replis concourent, la passe finale converge sur le meilleur.
   Le banc rejoue a posteriori les gestes évidents (échange, flanc,
-  glissement) au même barème, et rend 1 s'il en manque un. 82,7 %, 45
-  croisements, 0 évitable sur dix-huit topologies.
+  glissement) au même barème, et rend 1 s'il en manque un.
+- **Un croisement vaut deux fils droits, une barrette se pose par paquet**
+  (`03-graphe`, `04-placement`) : un croisement pour rien se voit avant un
+  fil plié, donc un échange de bornes qui ôte un croisement en pliant un
+  fil se fait ; les bornes pontées ensemble d'une barrette font un module
+  dessiné là où il sert, petit ; les finalistes du concours se comparent sur
+  la géométrie resserrée. 86,0 %, 13 croisements, 0 évitable sur dix-huit
+  topologies ; le folio chargé ne converge pas encore dans son budget (le
+  banc le dit).
 - **Base de retest** : mise de côté dans `a-venir/09-retest.js` avec ses
   contrôles (`tests/retest.js` se passe si elle n'est pas dans la page).
 - **Contrôles** sur l'API `atelier` : 17 + 5 + 13, banc de 15 topologies, 39 sans navigateur pour la bible, les connecteurs, le suivi et la barrette physique.
