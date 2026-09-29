@@ -48,8 +48,8 @@ function styleDessin() {
      .fiche{fill:#ffffff;stroke:#1b2430;stroke-width:.9}
      .embase{fill:#ffffff;stroke:#1b2430;stroke-width:1.1}
      .pont{stroke:#1b2430;stroke-width:1;stroke-linecap:butt}
-     .bpast{fill:#ffffff;stroke:#1b2430;stroke-width:.9}
-     .bpnum{fill:#1b2430;font-size:4px;font-weight:700}
+     .bpast{fill:#1b2430;stroke:none}
+     .bpnum{fill:#ffffff;font-size:4px;font-weight:700}
      .rpill{fill:#ffffff;stroke:#c8d1d9;stroke-width:.7}
      .rname{fill:#46535f;font-weight:600;font-size:7.5px;letter-spacing:.6px}
      .frame{fill:none;stroke:#c2ccd5;stroke-width:.8}
@@ -147,9 +147,9 @@ function piquagesSvg(barrettes, piquages, verticaux) {
     ys.forEach((y, i) => { s += pastilleSvg(b.x, y, String(i + 1)); }); });
   return s;
 }
-/* Une borne de barrette : une petite pastille sur la ligne, son numéro dedans. */
+/* Une borne de barrette : un point noir sur la ligne, comme d'habitude, son numéro dedans en blanc. */
 function pastilleSvg(x, y, etiq) {
-  const r = etiq.length > 2 ? 4.2 : 3.2;
+  const r = etiq.length > 2 ? 4.4 : 3.4;
   return `<circle class="bpast" cx="${f1(x)}" cy="${f1(y)}" r="${r}"/><text class="bpnum" x="${f1(x)}" y="${f1(y + 1.45)}" text-anchor="middle">${esc(etiq)}</text>`;
 }
 /* Le numéro de fil, au-dessus du plus long segment horizontal, en son milieu
