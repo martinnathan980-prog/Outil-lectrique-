@@ -18,6 +18,9 @@ const modules = fs.readdirSync(SRC).filter(f => /^\d\d-.*\.js$/.test(f)).sort();
 const css  = fs.readFileSync(path.join(SRC, 'style.css'), 'utf8');
 const page = fs.readFileSync(path.join(SRC, 'page.html'), 'utf8');
 const xlsx = fs.readFileSync(path.join(ICI, 'lib', 'xlsx.min.js'), 'utf8');
+// les normes embarquées : tous les CSV de normes/, à la suite — la norme livrée est un exemple (normes/LISEZMOI.md)
+const NORMES = path.join(ICI, 'normes');
+const normes = fs.existsSync(NORMES) ? fs.readdirSync(NORMES).filter(f => /\.csv$/i.test(f)).sort().map(f => fs.readFileSync(path.join(NORMES, f), 'utf8')).join('\n\n') : '';
 
 const js = modules.map(f => {
   const t = fs.readFileSync(path.join(SRC, f), 'utf8').replace(/^'use strict';\s*$/m, '');
@@ -38,6 +41,7 @@ ${css}
 ${page}
 <script>
 "use strict";
+const NORME_EMBARQUEE = ${JSON.stringify(normes)};
 ${js}
 </script>
 <!-- Le lecteur de fichiers Excel (SheetJS) est tout en bas : 624 Ko de
@@ -57,4 +61,4 @@ if (process.argv.includes('--verif')) {
   console.log('index.html à jour'); process.exit(0);
 }
 fs.writeFileSync(cible, html);
-console.log('index.html : ' + modules.length + ' modules, ' + Math.round(html.length / 1024) + ' Ko');
+console.log('index.html : ' + modules.length + ' modules, ' + Math.round(html.length / 1024) + ' Ko' + (normes ? ', normes embarquées' : ''));

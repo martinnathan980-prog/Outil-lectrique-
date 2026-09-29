@@ -22,6 +22,11 @@ Les lignes de ce fichier sont un EXEMPLE : des références plausibles pour
 montrer le mécanisme, pas des normes lues. Remplace-les par l'export de ta
 base.
 
+La bible dit QUELLE référence poser ; ce que la référence ADMET (pas, jauges,
+intensité et résistance de contact, fils par côté, règle de remplissage) et
+ce que valent les fils vient d'une NORME : voir `normes/LISEZMOI.md`. La
+Famille de la bible est la clé qui relie une référence à sa norme.
+
 ## Le suivi
 
 Le menu « Exporter le suivi (CSV) » écrit, pour le contrat ouvert, une ligne

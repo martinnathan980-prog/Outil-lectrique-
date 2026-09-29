@@ -23,6 +23,17 @@
    barrette, prise et connecteur avec sa référence, ses bornes, ses fils,
    ses routes, ses folios. C'est ce qui s'exporte et se garde d'un contrat
    à l'autre.
+
+   LA NORME — ce qu'une norme de matériel dit et que ni le contrat ni la
+   bible ne portent : pour une FAMILLE (ASNE0500, EN3646…), le pas, ce que
+   chaque contact admet (jauges, intensité, résistance), combien de fils par
+   côté, la règle de remplissage ; pour les FILS, par type et jauge, la
+   section, la résistance et l'intensité ; les DÉCLASSEMENTS ; le RÉSEAU
+   (la chute admise). Quatre tables lues par le nom de leurs colonnes. La
+   norme embarquée vient de normes/*.csv à la construction ; celle qui est
+   livrée est un EXEMPLE, sans valeur normative. Avec elle, la barrette se
+   REMPLIT trou par trou et se SIMULE (jauge admise, courant, chute) sur des
+   hypothèses dites — le retest ne porte ni longueur ni courant.
    =========================================================================== */
 'use strict';
 
@@ -103,7 +114,8 @@ function jaugeDuType(type) { const m = /(\d{1,2})\s*$/.exec(String(type || '').t
 function blindeDuType(type) { return /^(ML|BL|SH|SC)/i.test(String(type || '').trim()); }
 function besoinsDeBarrette(repere, liaisons) {
   const bornes = new Set(), jauges = [], pns = new Map(), ponts = [], parBorne = new Map(); let blindes = 0, shunts = 0, fils = 0;
-  const arrivee = (b, l, autre, borneAutre) => { if (!b) return; (parBorne.get(b) || parBorne.set(b, []).get(b)).push({ cable: l.cable, type: l.type, route: l.route, plan: l.plan, vers: autre, borne: borneAutre }); };
+  // AMONT : le fil arrive sur la barrette (elle est son « vers ») ; AVAL : il en repart. `l` : la liaison elle-même, pour la retrouver.
+  const arrivee = (b, l, autre, borneAutre) => { if (!b) return; (parBorne.get(b) || parBorne.set(b, []).get(b)).push({ cable: l.cable, type: l.type, route: l.route, plan: l.plan, vers: autre, borne: borneAutre, amont: l.vers === repere, l }); };
   liaisons.forEach(l => { const ici = [];
     if (l.de === repere) ici.push([l.borneDe, l.pnDe]);
     if (l.vers === repere) ici.push([l.borneVers, l.pnVers]);
@@ -260,6 +272,179 @@ function suiviDuContrat(liaisons, bible, contrat, retenue) {
 function triBornes(a, b) { const na = parseFloat(a), nb = parseFloat(b);
   if (!isNaN(na) && !isNaN(nb) && String(na) === String(a) && String(nb) === String(b)) return na - nb;
   return String(a).localeCompare(String(b), 'fr', { numeric: true }); }
+
+/* ---- la norme : quatre tables, lues par le nom des colonnes -------------- */
+/* Chaque table se reconnaît à ses colonnes ; une bible (Référence + Bornes)
+   n'est pas une table de familles. Les titres entre les tables sont ignorés. */
+const COLONNES_NORME = {
+  familles: [
+    ['norme',       ['norme', 'document', 'standard', 'spec', 'specification']],
+    ['famille',     ['famille', 'family', 'serie', 'series']],
+    ['reference',   ['reference', 'ref', 'partnumber', 'pn']],
+    ['nature',      ['nature', 'fonction', 'usage', 'kind']],
+    ['variantes',   ['variantes', 'contacts', 'modules', 'bornes', 'voies', 'tailles']],
+    ['pas',         ['pas', 'pasmm', 'pitch', 'entraxe']],
+    ['jaugeMin',    ['jaugemin', 'awgmin', 'jaugefine', 'gaugemin', 'minawg']],
+    ['jaugeMax',    ['jaugemax', 'awgmax', 'jaugegrosse', 'gaugemax', 'maxawg']],
+    ['intensite',   ['intensite', 'intensitecontact', 'intensiteparcontact', 'courant', 'current', 'a']],
+    ['resistance',  ['resistance', 'resistancecontact', 'resistancedecontact', 'rcontact', 'mohm']],
+    ['filsParCote', ['filsparcote', 'filspartrou', 'filsparcontact', 'trousparcote', 'trous', 'filsparmodule']],
+    ['ordre',       ['ordre', 'remplissage', 'sens']],
+    ['paquets',     ['paquets', 'pontage', 'ponts', 'peigne']],
+    ['reserves',    ['reserves', 'modulesreserves', 'reserve', 'contactsreserves']],
+    ['masse',       ['masse', 'retourdemasse', 'misealamasse']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+  fils: [
+    ['type',        ['type', 'typedefil', 'code', 'typedecable']],
+    ['jauge',       ['jauge', 'awg', 'gauge', 'jaugeawg']],
+    ['section',     ['section', 'sectionmm2', 'mm2', 'sectionmm']],
+    ['resistance',  ['resistance', 'resistanceohmkm', 'ohmkm', 'rlineique', 'resistancelineique']],
+    ['intensite',   ['intensite', 'courant', 'intensiteadmissible', 'current', 'a']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+  declassements: [
+    ['condition',   ['condition', 'cause', 'cas', 'situation']],
+    ['facteur',     ['facteur', 'coefficient', 'coef', 'k']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+  reseau: [
+    ['tension',     ['tension', 'reseau', 'u', 'volts', 'v']],
+    ['chuteMax',    ['chutemax', 'chute', 'chuteadmise', 'chutemaxv', 'deltau', 'chuteenv']],
+    ['chutePct',    ['chutemaxpct', 'chutepct', 'pourcent', 'chuteen']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]]
+};
+const TABLE_NORME = {
+  familles: c => c.famille != null && c.reference == null && (c.pas != null || c.intensite != null || c.filsParCote != null || c.ordre != null || c.jaugeMin != null),
+  fils: c => c.jauge != null && (c.section != null || c.resistance != null || c.intensite != null),
+  declassements: c => c.condition != null && c.facteur != null,
+  reseau: c => c.tension != null && c.chuteMax != null
+};
+/* Un nombre d'atelier : virgule ou point, une unité derrière (« 5 mm », « 0,8 »). */
+const NUMERO = v => { const t = String(v == null ? '' : v).trim().replace(',', '.'); if (!t) return null; const m = /-?\d+(\.\d+)?/.exec(t); return m ? parseFloat(m[0]) : null; };
+const LISTE_NUM = v => String(v == null ? '' : v).split(/[\s,;/|]+/).map(NUMERO).filter(x => x != null);
+const MOT = v => String(v == null ? '' : v).trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+/* Les jauges AWG comptent à l'envers : « min » est la plus fine acceptée. */
+function familleNorme(o) { const famille = String(o.famille || '').trim(); if (!famille) return null;
+  const jauges = [NUMERO(o.jaugeMin), NUMERO(o.jaugeMax)].filter(x => x != null), norme = String(o.norme || '').trim() || famille;
+  return { norme, famille, exemple: /exemple|example|fictif|fausse/.test(MOT(norme) + ' ' + MOT(o.note)), nature: MOT(o.nature) || 'jonction', variantes: LISTE_NUM(o.variantes), pas: NUMERO(o.pas),
+           jaugeMin: jauges.length ? Math.max(...jauges) : null, jaugeMax: jauges.length ? Math.min(...jauges) : null, intensite: NUMERO(o.intensite), resistance: NUMERO(o.resistance),
+           filsParCote: Math.max(1, Math.round(NUMERO(o.filsParCote) || 1)), ordre: /crois|ordre|suite/.test(MOT(o.ordre)) ? 'croissant' : 'libre',
+           paquets: /contig|voisin|adjac/.test(MOT(o.paquets)) ? 'contigus' : 'libres', reserves: LISTE_NUM(o.reserves), masse: /paquet|oui|^x$|^1$|vrai/.test(MOT(o.masse)) ? 'par paquet' : '',
+           note: String(o.note || '').trim() }; }
+function filNorme(o) { const jauge = NUMERO(o.jauge); if (jauge == null) return null;
+  return { type: String(o.type || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '') || '*', jauge, section: NUMERO(o.section), resistance: NUMERO(o.resistance), intensite: NUMERO(o.intensite), note: String(o.note || '').trim() }; }
+function declassementNorme(o) { const condition = MOT(o.condition), facteur = NUMERO(o.facteur); return condition && facteur != null ? { condition, facteur, note: String(o.note || '').trim() } : null; }
+function reseauNorme(o) { const tension = NUMERO(o.tension); return tension == null ? null : { tension, chuteMax: NUMERO(o.chuteMax), chutePct: NUMERO(o.chutePct), note: String(o.note || '').trim() }; }
+const ENTREE_NORME = { familles: familleNorme, fils: filNorme, declassements: declassementNorme, reseau: reseauNorme };
+const normeVide = () => ({ familles: [], fils: [], declassements: [], reseau: [], tables: 0 });
+/* Lire une norme : les tables se suivent (un titre libre, la ligne d'en-tête,
+   les lignes, une ligne vide), dans un CSV ou une feuille Excel. */
+function lireNorme(texte) { const N = normeVide(); let table = null, col = null;
+  const entete = row => { for (const [nom, cles] of Object.entries(COLONNES_NORME)) { const c = {}; row.forEach((cell, i) => { const t = NORMA(cell); if (!t) return;
+      for (const [champ, alias] of cles) if (c[champ] == null && alias.includes(t)) { c[champ] = i; break; } });
+    if (TABLE_NORME[nom](c)) return { nom, col: c }; } return null; };
+  String(texte || '').split(/\r?\n/).forEach(ligne => { if (!ligne.trim()) { table = null; return; }
+    const row = cellules(ligne), e = entete(row); if (e) { table = e.nom; col = e.col; N.tables++; return; }
+    if (!table) return; const o = {}; Object.entries(col).forEach(([champ, i]) => { o[champ] = row[i] == null ? '' : row[i]; });
+    const x = ENTREE_NORME[table](o); if (x) N[table].push(x); });
+  return N; }
+const normeLue = N => !!(N && (N.familles.length || N.fils.length || N.declassements.length || N.reseau.length));
+/* Un fichier de normes : chaque feuille d'un Excel est lue (une table par
+   feuille, ou plusieurs à la suite) ; un CSV d'un bloc. */
+async function lireNormeFichier(fichier) { const nom = (fichier.name || '').toLowerCase();
+  if (!(/\.xls[xm]?$/.test(nom) || /sheet|excel/.test(fichier.type || ''))) return lireNorme(await fichier.text());
+  if (typeof XLSX === 'undefined') throw new Error('bibliothèque Excel absente');
+  const wb = XLSX.read(await fichier.arrayBuffer(), { type: 'array' });
+  const feuilles = wb.SheetNames.map(n => XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, blankrows: true, defval: '' }).map(r => (Array.isArray(r) ? r : [r]).map(c => c == null ? '' : String(c)).join('\t')).join('\n'));
+  return lireNorme(feuilles.join('\n\n')); }
+/* Deux normes en une : ce qui vient en second remplace ce qui porte la même
+   clé (famille, type+jauge, condition, tension). C'est ainsi qu'une norme de
+   barrettes et une norme de fils, importées l'une après l'autre, se complètent. */
+function fusionnerNormes(a, b) { const N = normeVide(); const cle = { familles: x => x.famille.toUpperCase(), fils: x => x.type + '/' + x.jauge, declassements: x => x.condition, reseau: x => String(x.tension) };
+  Object.keys(cle).forEach(t => { const m = new Map(); [...(a ? a[t] : []), ...(b ? b[t] : [])].forEach(x => m.set(cle[t](x), x)); N[t] = [...m.values()]; });
+  N.tables = (a ? a.tables : 0) + (b ? b.tables : 0); return N; }
+/* La norme embarquée : normes/*.csv, mis dans la page à la construction. */
+function normeEmbarquee() { return lireNorme(typeof NORME_EMBARQUEE === 'string' ? NORME_EMBARQUEE : ''); }
+const normeExemple = N => !!(N && N.familles.length && N.familles.every(f => f.exemple));
+/* La famille d'une référence : celle que la bible lui donne, sinon la plus
+   longue famille de la norme dont la référence commence par le nom. */
+function familleDeNorme(norme, famille, reference) { if (!norme) return null; const F = norme.familles;
+  if (famille) { const f = F.find(x => x.famille.toUpperCase() === String(famille).toUpperCase()); if (f) return f; }
+  const ref = String(reference || '').toUpperCase(); if (!ref) return null;
+  return F.filter(x => ref.startsWith(x.famille.toUpperCase())).sort((u, v) => v.famille.length - u.famille.length)[0] || null; }
+/* Le type d'un fil est en tête de son code : DR24 → DR, MLB22 → MLB. */
+const typeDuFil = type => { const m = /^([A-Za-z]+)/.exec(String(type || '').trim()); return m ? m[1].toUpperCase() : ''; };
+/* Le fil de la norme : le type et la jauge exacts ; sinon la jauge seule
+   (type « * », ou n'importe quel type — c'est dit : `approx`). */
+function filDeNorme(norme, type, jauge) { if (!norme || jauge == null) return null; const t = typeDuFil(type);
+  const exact = norme.fils.find(f => f.jauge === jauge && f.type === t); if (exact) return exact;
+  const joker = norme.fils.find(f => f.jauge === jauge && f.type === '*'); if (joker) return joker;
+  const autre = norme.fils.find(f => f.jauge === jauge); return autre ? { ...autre, approx: true } : null; }
+function facteurDeclassement(norme, conditions) { return (conditions || []).reduce((k, c) => { const d = norme && norme.declassements.find(x => x.condition === MOT(c)); return d ? k * d.facteur : k; }, 1); }
+/* La chute admise pour la tension du réseau : la ligne de cette tension,
+   sinon la plus proche. */
+function chuteAdmise(norme, tension) { if (!norme || !norme.reseau.length) return null;
+  return norme.reseau.slice().sort((a, b) => Math.abs(a.tension - tension) - Math.abs(b.tension - tension))[0]; }
+
+/* ---- le remplissage : chaque fil dans son trou, selon la norme ------------ */
+/* Un module (un contact) a un côté AMONT et un côté AVAL, chacun avec autant
+   de trous que la famille en donne ; les fils s'y rangent dans l'ordre de
+   leur numéro, les trous qui restent sont libres, ce qui déborde est en
+   SURCHARGE. Puis la règle de remplissage juge : modules réservés, paquets
+   contigus (un peigne ne saute pas un module), ordre croissant, retour de
+   masse par paquet (blindage), jauge de chaque fil dans la plage du contact.
+   Les ponts (shunts) ne sont pas des fils dans un trou. Rend la physique
+   enrichie : famille, trous par module, verdicts. */
+function remplirSelonNorme(P, norme) {
+  const F = familleDeNorme(norme, P.entree ? P.entree.famille : '', P.reference), n = F ? F.filsParCote : 1;
+  const prise = P.nature === 'prise de coupure', mot = prise ? 'contact' : 'module', cote = { amont: prise ? 'fiche' : 'amont', aval: prise ? 'embase' : 'aval' };
+  const jaugeOk = j => (F && j != null && F.jaugeMin != null && F.jaugeMax != null) ? (j <= F.jaugeMin && j >= F.jaugeMax) : null;
+  const modules = P.modules.map(m => { const fils = m.fils.map(f => { const jauge = jaugeDuType(f.type); return { ...f, jauge, jaugeOk: jaugeOk(jauge) }; });
+    const trous = {}; ['amont', 'aval'].forEach(s => { const t = fils.filter(f => (s === 'amont') === !!f.amont).sort((a, b) => triBornes(a.cable, b.cable)); while (t.length < n) t.push(null); trous[s] = t; });
+    const surcharge = Math.max(0, trous.amont.length - n) + Math.max(0, trous.aval.length - n);
+    return { ...m, fils, trous, surcharge }; });
+  const verdicts = [], s = k => k > 1 ? 's' : '', modDe = b => modules.find(m => m.borne === String(b));
+  if (F) {
+    modules.forEach(m => ['amont', 'aval'].forEach(k => { const c = m.trous[k].filter(Boolean).length; if (c > n) verdicts.push({ niveau: 'ko', texte: `${mot} ${m.borne} : ${c} fils côté ${cote[k]} pour ${n} trou${s(n)}`, bornes: [m.borne] }); }));
+    F.reserves.forEach(r => { const m = modDe(r); if (m && m.utilisee) verdicts.push({ niveau: 'ko', texte: `${mot} ${r} réservé par la norme, et pourtant utilisé`, bornes: [m.borne] }); });
+    if (F.paquets === 'contigus') P.paquets.forEach(p => { if (!p.ponte) return; const nums = p.bornes.map(Number); if (nums.some(isNaN)) return; nums.sort((a, b) => a - b);
+      if (nums.some((v, i) => i && v !== nums[i - 1] + 1)) verdicts.push({ niveau: 'ko', texte: `paquet ${p.bornes.join('-')} : le peigne de pontage ne saute pas un ${mot}`, bornes: p.bornes }); });
+    if (F.ordre === 'croissant') { const nums = modules.filter(m => m.utilisee && /^\d+$/.test(m.borne)).map(m => +m.borne); if (nums.length) { const max = Math.max(...nums);
+      const creux = modules.filter(m => !m.utilisee && /^\d+$/.test(m.borne) && +m.borne < max).map(m => m.borne);
+      if (creux.length) verdicts.push({ niveau: 'attention', texte: `${mot}${s(creux.length)} ${creux.join(', ')} libre${s(creux.length)} avant le ${max} : la norme remplit dans l’ordre`, bornes: creux }); } }
+    if (F.masse === 'par paquet') P.paquets.forEach(p => { const fils = p.bornes.flatMap(b => (modDe(b) || { fils: [] }).fils); if (!fils.length) return;
+      if (!fils.some(f => estMasse(f.vers))) verdicts.push({ niveau: 'ko', texte: `paquet ${p.bornes.join('-')} sans retour de masse`, bornes: p.bornes }); });
+    modules.forEach(m => m.fils.forEach(f => { if (f.jaugeOk === false) verdicts.push({ niveau: 'ko', texte: `${f.cable} (${f.type}) : jauge ${f.jauge} hors de ${F.jaugeMin}–${F.jaugeMax} AWG sur le ${mot} ${m.borne}`, bornes: [m.borne] }); }));
+  }
+  return { ...P, famille: F, filsParCote: n, cotes: cote, modules, verdicts };
+}
+
+/* ---- la simulation : ce que chaque fil subit, sur des hypothèses dites ---- */
+/* Le retest ne porte ni longueur ni courant : on les SUPPOSE (longueur du
+   fil, courant qui le traverse, tension du réseau, conditions de
+   déclassement), on le dit, et on calcule, fil par fil :
+     I fil     = intensité du fil (norme) × facteur de déclassement
+     I contact = intensité du contact (norme, sinon la bible)
+     R         = ρ (Ω/km) / 1000 × L (m) + R contact (mΩ) / 1000
+     ΔU        = R × I, en V, et en % de la tension
+   Le verdict, dans l'ordre : jauge hors plage · le courant dépasse le fil ·
+   dépasse le contact · la chute dépasse ce que le réseau admet · fil
+   inconnu de la norme · ok. */
+const HYPOTHESES = { longueur: 5, courant: 2, tension: 28, conditions: ['faisceau'] };
+function simulerBornier(Q, norme, hyp) {
+  if (!Q.modules.every(m => m.trous)) Q = remplirSelonNorme(Q, norme);
+  const H = { ...HYPOTHESES, ...(hyp || {}) }, F = Q.famille, facteur = facteurDeclassement(norme, H.conditions), chute = chuteAdmise(norme, H.tension);
+  const iContact = F && F.intensite != null ? F.intensite : (Q.entree && Q.entree.intensite != null ? Q.entree.intensite : null);
+  const rContact = F && F.resistance != null ? F.resistance / 1000 : 0, lignes = [];
+  Q.modules.forEach(m => ['amont', 'aval'].forEach(sens => m.trous[sens].forEach((f, k) => { if (!f) return;
+    const fil = filDeNorme(norme, f.type, f.jauge);
+    const iFil = fil && fil.intensite != null ? fil.intensite * facteur : null, rFil = fil && fil.resistance != null ? fil.resistance / 1000 * H.longueur : null;
+    const R = rFil == null ? null : rFil + rContact, dU = R == null ? null : R * H.courant, pct = dU == null || !H.tension ? null : dU / H.tension * 100;
+    const verdict = f.jaugeOk === false ? 'jauge' : (iFil != null && H.courant > iFil + 1e-9) ? 'fil' : (iContact != null && H.courant > iContact + 1e-9) ? 'contact'
+      : (dU != null && chute && chute.chuteMax != null && dU > chute.chuteMax + 1e-9) ? 'chute' : !fil ? 'inconnu' : 'ok';
+    lignes.push({ borne: m.borne, sens, trou: k + 1, surcharge: k >= Q.filsParCote, cable: f.cable, type: f.type, jauge: f.jauge, jaugeOk: f.jaugeOk, fil, approx: !!(fil && fil.approx),
+                  iFil, iContact, rFil, rContact, R, dU, pct, verdict, vers: f.vers, borneVers: f.borne, l: f.l }); })));
+  const compte = {}; lignes.forEach(x => { compte[x.verdict] = (compte[x.verdict] || 0) + 1; });
+  return { hyp: H, facteur, chute, iContact, rContact, famille: F, lignes, compte, sansNorme: !F && !(norme && norme.fils.length) };
+}
 const COLONNES_SUIVI = [['contrat', 'Contrat'], ['repere', 'Repère'], ['nature', 'Nature'], ['reference', 'Référence retenue'], ['fichier', 'Référence du fichier'],
   ['nBornes', 'Bornes utilisées'], ['bornes', 'Bornes'], ['shunts', 'Shunts'], ['jauge', 'Jauge'], ['fils', 'Fils'], ['routes', 'Routes'], ['plans', 'Folios']];
 function csvDuSuivi(lignes) {
