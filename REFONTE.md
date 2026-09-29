@@ -218,9 +218,18 @@ Fait, mesuré, en place :
   fil plié, donc un échange de bornes qui ôte un croisement en pliant un
   fil se fait ; les bornes pontées ensemble d'une barrette font un module
   dessiné là où il sert, petit ; les finalistes du concours se comparent sur
-  la géométrie resserrée. 86,0 %, 13 croisements, 0 évitable sur dix-huit
-  topologies ; le folio chargé ne converge pas encore dans son budget (le
-  banc le dit).
+  la géométrie resserrée.
+- **Le dessin d'un câbleur** (`04-placement`, `05-routage`, `06-dessin`) :
+  deux fils ne se superposent jamais (le routeur écarte les coins partagés
+  par un jog, ou enjambe) ; le gros équipement se dessine au centre, ses
+  partenaires des deux côtés, étagés depuis lui ; un connecteur se coupe
+  par construction quand ses bornes servent les deux côtés, et plus aucun
+  fil ne fait le tour de son bloc ; les repères et les numéros de fil
+  cherchent leur place dans l'occupation (rien ne s'écrit sur rien), le
+  contrôle relit chaque folio avec les vraies boîtes ; l'impression A3
+  prend le sens du folio. 86,3 %, 20 croisements, 0 évitable, 0 tour,
+  0 segment partagé sur dix-huit topologies ; folio 3 en paysage en 4 s,
+  banc vert.
 - **Base de retest** : mise de côté dans `a-venir/09-retest.js` avec ses
   contrôles (`tests/retest.js` se passe si elle n'est pas dans la page).
 - **Contrôles** sur l'API `atelier` : 17 + 5 + 13, banc de 15 topologies, 39 sans navigateur pour la bible, les connecteurs, le suivi et la barrette physique.

@@ -196,8 +196,10 @@ function occupationDe(fils, barrettes, comps) {
     const M = symboleDeMasse(c); if (M) boites.push({ x0: Math.min(M.xs, M.xs + M.d * 6.4), x1: Math.max(M.xs, M.xs + M.d * 6.4), y0: M.y - 6, y1: M.y + 6, id: c.id });
     else boites.push({ x0: c.x, x1: c.x + c.w, y0: c.y + c.h / 2 - 6, y1: c.y + c.h / 2 + 6, id: c.id }); });
   const O = { H, V, boites, corps };
-  O.libre = (b, mV, sauf) => !boites.some(o => o.id !== sauf && b.x1 > o.x0 - 3 && b.x0 < o.x1 + 3 && b.y1 > o.y0 - 1.5 && b.y0 < o.y1 + 1.5)
-    && !corps.some(o => o.id !== sauf && b.x1 > o.x0 && b.x0 < o.x1 && b.y1 > o.y0 && b.y0 < o.y1)
+  // `sauf` : le bloc dont on pose le repère ne se gêne pas lui-même ; sans `sauf`, TOUT compte (les textes déjà posés n'ont pas d'id)
+  const autre = (o, sauf) => sauf == null || o.id == null || o.id !== sauf;
+  O.libre = (b, mV, sauf) => !boites.some(o => autre(o, sauf) && b.x1 > o.x0 - 3 && b.x0 < o.x1 + 3 && b.y1 > o.y0 - 1.5 && b.y0 < o.y1 + 1.5)
+    && !corps.some(o => autre(o, sauf) && b.x1 > o.x0 && b.x0 < o.x1 && b.y1 > o.y0 && b.y0 < o.y1)
     && !H.some(s => s.y > b.y0 - 0.5 && s.y < b.y1 + 0.5 && s.x1 > b.x0 && s.x0 < b.x1)
     && !V.some(s => s.x > b.x0 - mV && s.x < b.x1 + mV && s.y1 > b.y0 && s.y0 < b.y1);
   O.poser = b => { boites.push(b); return b; };
