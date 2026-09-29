@@ -451,10 +451,11 @@ body.depot-actif .depot{display:grid}
 /* ─── IMPRESSION : la planche, rien d'autre ─────────────────────────────── */
 #printroot{display:none}
 @media print{
-  body{background:#fff;overflow:visible}
+  html,body{height:auto;background:#fff;overflow:visible}
   #app{display:none!important}
   #printroot{display:block}
-  #printroot svg{width:100%;height:auto}
+  /* la feuille entière sur la page, quel que soit son sens ; l'encre telle quelle */
+  #printroot svg{display:block;width:100%;max-height:100vh;height:auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
 
 /* ─── MOUVEMENT RÉDUIT ──────────────────────────────────────────────────── */

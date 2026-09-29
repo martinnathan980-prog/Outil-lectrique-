@@ -806,8 +806,10 @@ function exporterPNG() { const S = svgDuFolio(); if (!S) return;
     const g = cv.getContext('2d'); g.fillStyle = '#fbfbf7'; g.fillRect(0, 0, cv.width, cv.height); g.drawImage(img, 0, 0, cv.width, cv.height);
     cv.toBlob(b => { if (b) { telecharger(b, nomFolio() + '.png'); dire('Folio enregistré en PNG.'); } }, 'image/png'); };
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(S.txt); }
-function imprimer() { const S = svgDuFolio(); if (!S) return;
-  $('printroot').innerHTML = S.txt.replace(/^<\?xml[^>]*\?>\s*/, ''); window.print(); }
+/* Imprimer : la planche seule, sur fond blanc, et la page prend le sens du
+   folio — un folio plus haut que large s'imprime en portrait. */
+function imprimer() { if (!app.dessin) return; const S = svgAutonome(app.dessin, app.contrat.cartouche, folioCourant(), designationDe, '#ffffff');
+  $('printroot').innerHTML = `<style>@page{size:A3 ${S.w >= S.h ? 'landscape' : 'portrait'};margin:8mm}</style>` + S.txt.replace(/^<\?xml[^>]*\?>\s*/, ''); window.print(); }
 
 /* ---- ce que le menu et le rail affichent ------------------------------ */
 function synchroniserContexte() { const n = app.contrat.liaisons.length;
