@@ -3,9 +3,12 @@
    Le cœur de l'outil. Un moteur en étapes nommées, un seul juge :
 
      modele        ce que le placement sait des blocs et des fils
-     niveaux       chaque bloc reçoit sa colonne (le flux amont → aval)
+     niveaux       chaque bloc reçoit sa colonne (le flux amont → aval ; ou,
+                   autour d'un gros équipement, le hub au centre et ses
+                   partenaires étagés des deux côtés)
      rangees       composantes, serpentin : chaque bloc reçoit sa rangée
-     flancs        un connecteur choisit un flanc ; les listes de bornes
+     flancs        un connecteur va sur le flanc de ses partenaires, se coupe
+                   s'il sert les deux côtés ; les listes de bornes
      resoudre      les ORDONNÉES : union des nets + plus long chemin — un
                    maximum de fils dont les deux bornes sont à la même hauteur
      barycentre    l'ordre des blocs d'une colonne et des bornes d'un

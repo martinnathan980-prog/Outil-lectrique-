@@ -15,7 +15,7 @@ Tous acceptent `--fichier=chemin` pour mesurer un autre fichier que
 la refonte). `controle.js` et `memoire.js` rendent 1 en cas d'échec, pour
 qu'un enchaînement s'arrête ; `banc-placement.js` est une MESURE et non un
 contrôle — il chiffre, avec `--json` pour comparer deux versions — et ne rend
-1 que si un invariant sacré est violé.
+1 que si un invariant sacré est violé ou qu'un contrôle exact échoue.
 
 Il faut Playwright et un Chromium :
 
@@ -31,45 +31,91 @@ verbes (charger, essai, mesurer) sur l'API `atelier` de `src/10-demarrage.js`.
 Avant de toucher au moteur, on relance le banc ; après, on le relance. Les
 chiffres de référence sur les dix-huit topologies (quinze historiques et
 les trois folios de l'exemple ; un piquage qui tranche un fil compte comme
-un croisement), depuis que le juge voit les corps étirés, les segments
-partagés et les tours :
+un croisement), depuis que le gros équipement se dessine au centre :
 
-    86,0 % de fils droits · 13 croisements · 0 évitable · 0 violation · 0 cas hors feuille
-    contrat d'essai : 66,7 %, 0 croisement
-    folio 1 : 75 %, 1 · folio 2 : 65 %, 0 · folio 3 : 57,1 %, 12
+    86,3 % de fils droits · 20 croisements · 0 évitable · 0 violation · 0 cas hors feuille
+    contrat d'essai : 66,7 %, 1 croisement
+    folio 1 : 75 %, 1 · folio 2 : 60 %, 1 · folio 3 : 60,7 %, 17 — 0 tour, 0 segment partagé, paysage (1,62)
+
+Le folio 3 se calcule en un peu moins de cinq secondes, les folios 1 et 2 en
+moins de deux.
+
+LES RÈGLES DURES, tenues par construction et vérifiées par le banc :
+
+- **Deux fils ne se superposent jamais** (`05-routage`, `separerLesPartages`).
+  Le partage naît toujours du même motif : à une même hauteur, un fil
+  accroché à la paroi gauche d'une goulotte et un fil accroché à la paroi
+  droite, la verticale du second à gauche de celle du premier — leurs deux
+  horizontales se recouvrent entre les deux coins. L'ordre des pistes le
+  voit (un coin partagé coûte un jog, plus un croisement si le jog en
+  crée un), et ce qui reste s'écarte après le tracé : le fil dont le coin
+  est libre fait un JOG (il quitte sa ligne quatre unités après le coin de
+  l'autre et rejoint sa verticale six plus loin, du côté où elle continue) ;
+  un départ de piquage, qui naît sur la verticale du piquage, ENJAMBE. Le
+  contrôle des croisements évitables relit les tracés sans leurs jogs.
+- **Aucun fil ne fait le tour de son bloc** (`04-placement`, `flancs`). Un
+  connecteur dont les bornes servent les deux côtés se coupe en deux pièces,
+  chaque paquet de bornes pontées regardant ses partenaires ; aucun geste
+  de la recherche ne fait tourner le dos à un partenaire. Un tour se compte
+  par colonne (un partenaire de la même colonne n'est d'aucun côté) et
+  coûte trois fils droits au juge, six à la mise en niveaux — pour qu'elle
+  préfère un fil qui enjambe une colonne. Seule une borne de connecteur qui
+  sert les deux côtés fait encore tourner un fil, quoi qu'on fasse ; il n'y
+  en a pas dans l'exemple.
+- **Le gros équipement se dessine au centre** (`couchesAutourDuHub`). Un
+  hub (huit bornes, six voisins) se pose au milieu ; sans lui, le graphe se
+  défait en sous-ensembles (une pompe et sa barrette, un relais, sa lampe et
+  son interrupteur), répartis des deux côtés — par la hauteur, ou dans
+  l'ordre des bornes du hub — et étagés depuis lui par le flux : ce qu'il
+  alimente à une colonne, ce que cela sert à la suivante, trois colonnes au
+  plus. La descente n'y règle que la profondeur, jamais le côté ni la
+  colonne du hub. Le flux rayonne alors du hub (`contresens`). Le meilleur
+  de ces candidats est finaliste d'office s'il tient sur la feuille.
+- **Un fil qui enjambe une colonne paie ce qu'elle obstrue** (`TRAVERSEE`) :
+  un équipement enjambé, ou un quart pour un fragment de barrette — les
+  couloirs restent aux fragments, et un équipement ne vient pas se poser
+  entre le hub et ce qu'il alimente.
+- **Un fil qui contourne des blocs coûte en lisibilité** (`compterContours`) :
+  ce qu'un détour dépasse de 120 unités se compte en fils droits, un par
+  150. Sans quoi le juge préférait faire faire à un fil le tour entier de
+  la feuille pour ôter deux croisements.
 
 UN CROISEMENT VAUT DEUX FILS DROITS. Un lecteur a montré, deux fois sur la
 même feuille (210SP1, 601RC), un croisement pour rien qu'un échange de deux
 bornes ôtait en pliant un fil : c'est l'échange qu'il voulait. Le juge
 précédent (un croisement = un fil droit) préférait le fil droit à égalité.
-Un TOUR (un fil qui sort de son bloc par le flanc opposé à son partenaire et
-en fait le tour) coûte un croisement et demi, et l'estimation le voit.
 Le tamis de l'estimation se compte en croisements (un ; deux dans la passe
 finale, où l'estimation se trompe d'un ou deux croisements sur un changement
 de flanc). Une borne peut changer de flanc au-dessus ou au-dessous du corps,
 qui grandit d'autant ; un échange de bornes à hauteurs fixes qui plie un
-fil se rejoue au solveur, où le partenaire glisse et le garde droit. Les
-finalistes du concours se comparent sur la géométrie qu'on dessinera
-(resserrée, étirée au format) : sinon un dessin replié battait un paysage
-qui ne « tenait » pas encore parce que ses goulottes étaient taillées large.
+fil se rejoue au solveur, où le partenaire glisse et le garde droit — mais
+seulement s'il n'a perdu qu'un fil droit à l'estimation. Les finalistes du
+concours se comparent sur la géométrie qu'on dessinera (resserrée, étirée
+au format), et le choix des finalistes admet un tiers de trop en largeur :
+la géométrie initiale a ses goulottes taillées large. Dans la passe finale,
+le flanc d'une borne se juge au routage complet directement (ni
+l'estimation ni le routage rapide ne voient le détour qui, seul, ôte
+parfois les croisements du changement), et toutes ses hauteurs se routent.
+
+LE BUDGET est en unités de routage, honnêtement mesurées sur le folio
+chargé : un routage rapide vaut 1, un routage complet 2, un solveur
+d'ordonnées 2. Le même contrat donne le même dessin sur toute machine.
+L'ordre exact des pistes se calcule en n·2ⁿ ; le solveur porte ses
+contraintes sur les nets une fois et ne retouche que le net qui fond ; le
+tri topologique travaille sur des tableaux ; un balayage de corridors saute
+d'une bande de blocs à l'autre.
 
 LES BARRETTES SE POSENT PAR PAQUET (`03-graphe`) : les bornes pontées
 ensemble font un module, dessiné là où il sert, aussi petit que possible ;
 une barrette de dix bornes n'est plus une colonne de dix bornes que tous
-les fils contournent. C'est ce qui fait passer le folio 2 de 60 % / 3 à
-65 % / 0 et le folio 3 de 22 à 12 croisements (« réglette VT
-traversante » : 71 % / 17 → 100 % / 0). Beaucoup de petites composantes se
-rangent sur une étagère dont la largeur vise le format de la feuille.
+les fils contournent.
 
-Avant ce barème et ces paquets, c'était 82,7 % et 45 croisements (folio 1
-62,5 % / 1, folio 2 60 % / 3, folio 3 55,4 % / 22).
-
-CE QUI RESTE ROUGE AU BANC, mesuré et non caché : sur le folio 3 (66
-liaisons), la recherche n'a pas convergé dans son budget — un changement de
-flanc évident (351PM1:3) est manqué, deux segments restent partagés et un
-connecteur est coupé sans raison (381RL1:A2) ; sur le folio 2, W-133 et
-W-136 partagent un segment que le juge ne sait pas défaire sans créer un
-croisement. Le banc rend 1 tant que c'est là.
+Avant le hub au centre, c'était 86,0 % et 13 croisements, mais le folio 3
+sortait en portrait (0,77), avec 7 tours, 2 segments partagés, la
+recherche qui n'y convergeait pas, et 12 croisements dont plusieurs cachés
+dans des fils superposés ; le folio 2 avait un segment partagé (W-133 /
+W-136), devenu un croisement inévitable et un jog. Avant ce barème et les
+paquets, c'était 82,7 % et 45 croisements.
 
 La mesure des fils droits est HONNÊTE depuis ce routeur : un fil qui passe
 par le raccord et la verticale d'un piquage n'est pas droit, même si son
@@ -91,17 +137,30 @@ au matériel.
 Le banc vérifie aussi, sur chaque folio de l'exemple, que **les gestes
 évidents sont trouvés** : aucun échange de deux bornes d'un connecteur,
 aucun changement de flanc d'une borne, aucun glissement d'un bloc (ses
-pastilles avec lui) ne fait mieux — moins de croisements ou de segments
-partagés sans moins de fils droits, ou l'inverse (vérification exacte, a
-posteriori, au routage réel, sur la géométrie resserrée). Et que le dessin
-n'a **aucun segment partagé** par deux fils de nets différents, **aucun
-corps étiré** à plus de deux fois sa hauteur naturelle sans rendre droits
-deux fils de plus (on le compacte et on reroute), les masses collées à
-leur borne, et les cas montrés du doigt (W-120, 381RL1, 397TB1). Un
-manqué fait rendre 1.
+pastilles avec lui) ne fait mieux — moins de croisements sans moins de
+fils droits, ou l'inverse (vérification exacte, a posteriori, au routage
+réel, sur la géométrie resserrée, au barème du juge : croisements,
+contours, fils dans leur propre bloc ; un tour de plus n'est jamais
+« mieux »). Et que le dessin n'a **aucun segment partagé** par deux fils de
+nets différents, **aucun corps étiré** à plus de deux fois sa hauteur
+naturelle sans rendre droits deux fils de plus (on le compacte et on
+reroute), les masses collées à leur borne, **tous les équipements
+lisibles** (aucune borne ne tourne le dos à la colonne de son partenaire,
+aucun fil étranger dans leur voisinage), et le cas montré du doigt (W-120).
+Un manqué fait rendre 1.
 
 Un changement qui fait baisser le premier chiffre doit dire pourquoi, dans son
 message de commit, mesure à l'appui.
+
+## Ce qui reste imparfait, mesuré
+
+Sur le folio 3, 17 croisements restent, presque tous du même ordre : les
+bornes d'un connecteur forment un peigne rigide (au pas de 14) alors que
+ses partenaires sont des blocs de cent de haut ; les fils d'un peigne vers
+une pile de blocs sont donc des Z, et un fil droit qui traverse leur
+goulotte (une barrette vers un relais) en croise plusieurs. Les défaire
+demanderait de couper un connecteur en plusieurs pièces sur un même flanc,
+ce qu'on n'a pas voulu : la pièce ressemble au matériel.
 
 ## Ce que `controle.js` vérifie
 

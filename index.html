@@ -1098,9 +1098,12 @@ function construireGraphe(liaisons) {
    Le cœur de l'outil. Un moteur en étapes nommées, un seul juge :
 
      modele        ce que le placement sait des blocs et des fils
-     niveaux       chaque bloc reçoit sa colonne (le flux amont → aval)
+     niveaux       chaque bloc reçoit sa colonne (le flux amont → aval ; ou,
+                   autour d'un gros équipement, le hub au centre et ses
+                   partenaires étagés des deux côtés)
      rangees       composantes, serpentin : chaque bloc reçoit sa rangée
-     flancs        un connecteur choisit un flanc ; les listes de bornes
+     flancs        un connecteur va sur le flanc de ses partenaires, se coupe
+                   s'il sert les deux côtés ; les listes de bornes
      resoudre      les ORDONNÉES : union des nets + plus long chemin — un
                    maximum de fils dont les deux bornes sont à la même hauteur
      barycentre    l'ordre des blocs d'une colonne et des bornes d'un
@@ -2695,8 +2698,21 @@ function goulottes(layout) {
     return !blocs.some(c => !exclus.has(c.name) && x > c.x - 3 && x < c.x + c.w + 3 && yb > c.y + 1 && ya < c.y + c.h - 1); };
   // les blocs qui vivent DANS une goulotte (pastilles collées à un flanc)
   const dedans = ch => blocs.filter(c => c.x + c.w > x0(ch) + 2 && c.x < x1(ch) - 2);
-  return { n: g.nCols + 1, x0, x1, couloirLibre, verticaleLibre, dedans, yMin: g.yMin, yMax: g.yMax };
+  /* les BANDES d'ordonnées qu'aucun corridor ne traverse entre deux abscisses (les mêmes marges que couloirLibre, sans
+     exclusion) : triées, fondues quand elles se recouvrent, calculées une fois par paire d'abscisses — un balayage de
+     corridors saute d'une bande à l'autre au lieu d'interroger chaque bloc à chaque pas */
+  const cache = new Map();
+  const bandes = (xa, xb) => { const k = xa + '|' + xb; let B = cache.get(k); if (B) return B;
+    const iv = blocs.filter(c => xb > c.x + 1 && xa < c.x + c.w - 1).map(c => [c.y - 3, c.y + c.h + 3]).sort((u, v) => u[0] - v[0]); B = [];
+    iv.forEach(([a, b]) => { const d = B[B.length - 1]; if (d && a < d[1]) d[1] = Math.max(d[1], b); else B.push([a, b]); });
+    cache.set(k, B); return B; };
+  // la bande qui contient y (ouverte aux deux bouts), ou rien
+  const bande = (B, y) => { let a = 0, b = B.length; while (a < b) { const m = (a + b) >> 1; if (B[m][0] < y) a = m + 1; else b = m; }
+    return a > 0 && y < B[a - 1][1] ? B[a - 1] : null; };
+  return { n: g.nCols + 1, x0, x1, couloirLibre, verticaleLibre, dedans, bandes, bande, yMin: g.yMin, yMax: g.yMax };
 }
+/* Le premier point de la grille y0 + k·pas qui vaut au moins v. */
+const surLaGrille = (y0, pas, v) => y0 + Math.ceil((v - y0) / pas - 1e-9) * pas;
 
 /* ---- la forme de chaque fil ---------------------------------------------
    Un fil est repéré par ses deux bouts A et B ; `ch` est la goulotte où le
@@ -2763,12 +2779,14 @@ function formesDirectes(K) {
     choix.push({ forme: 'arrivee', cout: coupe(B.ch, A.y, B.y), corridors: [[G.x1(A.ch), G.x0(B.ch), A.y]], travaux: [travail(B.ch, { y: A.y, mur: 'L', bout: cle(li, A.tag) }, att(B, mB), ex)] });
   if (mB === 'R' && G.couloirLibre(G.x1(A.ch) - 2, B.x - 2, B.y, ex) && !pris(G.x1(A.ch), G.x0(B.ch), B.y))
     choix.push({ forme: 'depart', cout: coupe(A.ch, A.y, B.y), corridors: [[G.x1(A.ch), G.x0(B.ch), B.y]], travaux: [travail(A.ch, att(A, mA), { y: B.y, mur: 'R', bout: cle(li, B.tag) }, ex)] });
-  // le corridor traverse des colonnes entières, celles des deux blocs comprises : rien n'en est exclu
-  const lo = Math.min(A.y, B.y), hi = Math.max(A.y, B.y), rien = new Set(); let meilleur = null;
-  for (let y = Math.max(G.yMin - 12, lo - 240); y <= Math.min(G.yMax + 12, hi + 240); y += 4) {
+  // le corridor traverse des colonnes entières, celles des deux blocs comprises : rien n'en est exclu — le balayage saute les bandes de blocs
+  const lo = Math.min(A.y, B.y), hi = Math.max(A.y, B.y), bandes = G.bandes(G.x0(A.ch) + 2, G.x1(B.ch) - 2); let meilleur = null;
+  const y0 = Math.max(G.yMin - 12, lo - 240), yFin = Math.min(G.yMax + 12, hi + 240);
+  for (let y = y0; y <= yFin; y += 4) {
+    const b = G.bande(bandes, y); if (b) { y = surLaGrille(y0, 4, b[1]) - 4; continue; }
     const c = coupe(A.ch, A.y, y) + coupe(B.ch, y, B.y) + 0.5 + 0.0005 * Math.abs(y - (lo + hi) / 2) + (y < lo || y > hi ? 0.4 : 0);
     if (meilleur && c >= meilleur.cout) continue;
-    if (!G.couloirLibre(G.x0(A.ch) + 2, G.x1(B.ch) - 2, y, rien) || pris(G.x1(A.ch), G.x0(B.ch), y)) continue;
+    if (pris(G.x1(A.ch), G.x0(B.ch), y)) continue;
     meilleur = { forme: 'couloir', cout: c, y }; }
   if (meilleur) choix.push({ ...meilleur, corridors: [[G.x1(A.ch), G.x0(B.ch), meilleur.y]], travaux: [travail(A.ch, att(A, mA), libre(meilleur.y, 'R'), ex), travail(B.ch, libre(meilleur.y, 'L'), att(B, mB), ex)] });
   return choix.sort((u, v) => u.cout - v.cout);
@@ -2779,11 +2797,12 @@ function formesDirectes(K) {
    est barrée de fils droits que la voisine n'a pas. */
 function formesParDetour(K) {
   const { G, coupe, pris, ex, A, B, mA, mB } = K, att = K.attache, libre = K.libre, choix = [];
-  const PORTEE = 160, PAS = 8, rien = new Set();      // un corridor traverse des colonnes entières, celle du bloc du fil comprise
-  const corridorsPres = (ch0, ch1, y0) => { const out = [], xa = Math.min(G.x0(ch0), G.x0(ch1)) + 2, xb = Math.max(G.x1(ch0), G.x1(ch1)) - 2;
-    const xc = Math.min(G.x1(ch0), G.x1(ch1)), xd = Math.max(G.x0(ch0), G.x0(ch1));
-    for (let y = Math.max(G.yMin - 12, y0 - PORTEE); y <= Math.min(G.yMax + 12, y0 + PORTEE); y += PAS)
-      if (G.couloirLibre(xa, xb, y, rien) && !pris(xc, xd, y)) out.push(y);
+  const PORTEE = 160, PAS = 8;      // un corridor traverse des colonnes entières, celle du bloc du fil comprise : rien n'en est exclu
+  const corridorsPres = (ch0, ch1, yc) => { const out = [], xa = Math.min(G.x0(ch0), G.x0(ch1)) + 2, xb = Math.max(G.x1(ch0), G.x1(ch1)) - 2;
+    const xc = Math.min(G.x1(ch0), G.x1(ch1)), xd = Math.max(G.x0(ch0), G.x0(ch1)), bandes = G.bandes(xa, xb);
+    const y0 = Math.max(G.yMin - 12, yc - PORTEE), yFin = Math.min(G.yMax + 12, yc + PORTEE);
+    for (let y = y0; y <= yFin; y += PAS) { const b = G.bande(bandes, y); if (b) { y = surLaGrille(y0, PAS, b[1]) - PAS; continue; }
+      if (!pris(xc, xd, y)) out.push(y); }
     return out; };
   [-1, -2, 1, 2].forEach(d => { const v = d < 0 ? A.ch + d : B.ch + d; if (v < 0 || v >= G.n) return;
     const gauche = d < 0, c1s = corridorsPres(A.ch, v, A.y), c2s = corridorsPres(v, B.ch, B.y);
@@ -2897,12 +2916,12 @@ function coutDeLOrdre(ordre, c) { let s = 0; for (let a = 0; a < ordre.length; a
    n × 2ⁿ, pas en n² × 2ⁿ. */
 function ordreExact(n, c) {
   const N = 1 << n, dp = new Float64Array(N).fill(Infinity), dernier = new Int8Array(N).fill(-1);
-  const somme = Array.from({ length: n }, () => new Float64Array(N));
-  for (let j = 0; j < n; j++) { const s = somme[j], cj = c.map(l => l[j]);
-    for (let S = 1; S < N; S++) { const b = S & -S; s[S] = s[S ^ b] + cj[31 - Math.clz32(b)]; } }
+  const somme = new Float64Array(n * N);                       // somme[j·N + S] : un seul tableau, une seule allocation
+  for (let j = 0; j < n; j++) { const o = j * N, cj = c.map(l => l[j]);
+    for (let S = 1; S < N; S++) { const b = S & -S; somme[o + S] = somme[o + (S ^ b)] + cj[31 - Math.clz32(b)]; } }
   dp[0] = 0;
-  for (let S = 1; S < N; S++) for (let j = 0; j < n; j++) { if (!(S & (1 << j))) continue;
-    const T = S ^ (1 << j), v = dp[T] + somme[j][T];
+  for (let S = 1; S < N; S++) for (let j = 0, bit = 1; j < n; j++, bit <<= 1) { if (!(S & bit)) continue;
+    const T = S ^ bit, v = dp[T] + somme[j * N + T];
     if (v < dp[S]) { dp[S] = v; dernier[S] = j; } }
   const ordre = []; for (let S = N - 1; S; ) { const j = dernier[S]; ordre.push(j); S ^= 1 << j; }
   return ordre.reverse();
