@@ -138,6 +138,8 @@ function flancsEvidentsDansLaPage() {
       const siens = l => !l.shunt && !l.boucle && ((l.de === c.name && String(l.borneDe) === etiq) || (l.vers === c.name && String(l.borneVers) === etiq));
       const fils = d.links.filter(siens); if (!fils.length || fils.some(l => tags.has(l.de) || tags.has(l.vers))) return;
       if ((c.rangs[autre] || []).some(q => String(q.etiq) === etiq)) return;      // une borne libre dédoublée parle déjà des deux côtés
+      // une borne pontée à une autre du bloc reste avec son paquet : un pont ne se dessine pas entre deux flancs
+      if (d.links.some(l => l.shunt && String(l.de) === c.name && String(l.vers) === c.name && (String(l.borneDe) === etiq || String(l.borneVers) === etiq))) return;
       // un pas d'une borne du même connecteur, deux d'une borne d'un autre (sa lettre s'écrit entre les deux) — la règle du placement
       const conn = connecteurParBorne(c.name, d.links), nomDe = e => (conn.get(String(e)) || {}).nom, pasDe = q => nomDe(q.etiq) === nomDe(etiq) ? PRH : 2 * PRH;
       const autres = (c.rangs[autre] || []), libre = y => autres.every(q => Math.abs(q.y - y) >= pasDe(q) - 0.5);
@@ -248,14 +250,21 @@ function blocLisibleDansLaPage(nom) {
   const d = atelier.dessin(); const c = d && d.compDe.get(nom); if (!c) return ['bloc ' + nom + ' absent'];
   const defauts = []; const conn = connecteurParBorne(c.name, d.links);
   const colonneDuBout = ep => ep.stub === 'L' ? ep.ch - 1 : ep.ch;          // stub L : le bout est sur le flanc droit, sa goulotte à droite
-  const flancsDe = new Map(), mal = [];
+  const flancsDe = new Map(), mal = [], bien = new Map(), flancDe = new Map(), douteux = [];
   ['L', 'R'].forEach(lid => (c.rangs[lid] || []).forEach(p => { const g = conn.get(String(p.etiq)); if (g) (flancsDe.get(g.nom) || flancsDe.set(g.nom, new Set()).get(g.nom)).add(lid);
     const cotes = new Set();
     d.links.forEach(l => { if (l.shunt || l.boucle) return; const xf = lid === 'L' ? c.x : c.x + c.w;
       const surMoi = e => Math.abs(e.x - xf) < 1 && Math.abs(e.y - p.y) < 0.5, moi = surMoi(l.epA) ? l.epA : surMoi(l.epB) ? l.epB : null; if (!moi) return;
       const autre = moi === l.epA ? l.epB : l.epA; if (d.compDe.get(autre === l.epA ? l.de : l.vers) && d.compDe.get(autre === l.epA ? l.de : l.vers).kind === 'tag') return;
       cotes.add(Math.sign(colonneDuBout(autre) - colonneDuBout(moi))); });
-    if (cotes.has(lid === 'L' ? 1 : -1) && !cotes.has(lid === 'L' ? -1 : 1)) mal.push((g ? g.nom : '') + String(p.etiq)); }));
+    const cle = String(p.etiq); flancDe.set(cle, lid); bien.set(cle, cotes.has(lid === 'L' ? -1 : 1));
+    if (cotes.has(lid === 'L' ? 1 : -1) && !cotes.has(lid === 'L' ? -1 : 1)) douteux.push({ cle, nom: (g ? g.nom : '') + cle }); }));
+  /* une borne PONTÉE à une borne du même flanc qui regarde bien ses partenaires est excusée : un pont ne se dessine
+     pas entre deux flancs, le paquet sort du côté de la majorité, et l'autre fil fait le tour — c'est la règle du dessin */
+  const chef = new Map([...bien.keys()].map(k => [k, k])), trouver = k => { while (chef.get(k) !== k) k = chef.get(k); return k; };
+  d.links.forEach(l => { if (!l.shunt || String(l.de) !== nom || String(l.vers) !== nom) return; const a = String(l.borneDe), b = String(l.borneVers);
+    if (chef.has(a) && chef.has(b) && flancDe.get(a) === flancDe.get(b)) chef.set(trouver(a), trouver(b)); });
+  douteux.forEach(({ cle, nom: n }) => { const r = trouver(cle); if (![...bien].some(([k, ok]) => ok && trouver(k) === r)) mal.push(n); });
   if (mal.length) defauts.push('borne(s) ' + mal.join(', ') + ' tournant le dos à leur partenaire' + ([...flancsDe.values()].some(fl => fl.size > 1) ? ' (connecteur coupé sans raison)' : ''));
   const x0 = c.x - 3, x1 = c.x + c.w + 3, y0 = c.y - 3, y1 = c.y + c.h + 3;
   d.fils.forEach(w => { if (w.shunt || w.de === nom || w.vers === nom) return;

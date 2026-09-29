@@ -459,6 +459,16 @@ function marchesDe(pts) {
   for (let i = 0; i < V.length; i++) for (let j = i + 1; j < V.length; j++) if (Math.abs(V[i].x - V[j].x) < 2 * MARCHE - 1e-6) out.push('deux verticales à ' + Math.abs(V[i].x - V[j].x).toFixed(1));
   return out;
 }
+/* Les ESCALIERS : un fil est droit, ou fait UN Z (trois segments). Chaque
+   paire d'angles au-delà — cinq segments, sept… — est une marche de plus
+   que le lecteur suit, même à longs segments ; ça se compte comme un
+   croisement chacune. Un fil qui traverse une colonne par un couloir en
+   fait une : le placement l'évite en mettant sa borne à la hauteur du
+   couloir, ou en compactant ce qui barre. */
+function compterEscaliers(fils) { let n = 0;
+  fils.forEach(w => { if (w.shunt || !w.pts) return; const segs = simplifier(w.pts).length - 1; if (segs > 3) n += Math.floor((segs - 3) / 2); });
+  return n;
+}
 function compterMarches(fils, detail) { let n = 0;
   fils.forEach(w => { if (w.shunt || !w.pts || w.pts.length < 4) return; const m = marchesDe(w.pts); if (!m.length) return; n++;
     if (detail) detail.push(String(w.cable || (w.de + ':' + w.borneDe + '→' + w.vers + ':' + w.borneVers)) + ' : ' + m.join(', ')); });

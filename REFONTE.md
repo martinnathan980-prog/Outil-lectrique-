@@ -213,6 +213,13 @@ Fait, mesuré, en place :
   flanc, les replis concourent, la passe finale converge sur le meilleur.
   Le banc rejoue a posteriori les gestes évidents (échange, flanc,
   glissement) au même barème, et rend 1 s'il en manque un.
+- **Autour d'un hub, un bloc change de colonne sans être rebâti**
+  (`04-placement`, `changementsDeColonne`) : il garde la géométrie polie du
+  meilleur, entre dans sa nouvelle pile par le creux le plus proche, se juge
+  au routage complet ; de son côté du hub, à côté d'un partenaire, jamais
+  dans la colonne du hub, aucun fil droit sacrifié. Le juge compte les
+  escaliers et les blocs dans la colonne du hub. Folio 3 : 73,2 % / 10, la
+  lampe à droite de ses relais, le boîtier devant ses pompes.
 - **Un croisement vaut deux fils droits, une barrette se pose par paquet**
   (`03-graphe`, `04-placement`) : un croisement pour rien se voit avant un
   fil plié, donc un échange de bornes qui ôte un croisement en pliant un

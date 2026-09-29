@@ -34,11 +34,31 @@ chiffres de référence sur les vingt et une topologies (quinze historiques
 et les six folios de l'exemple ; un piquage qui tranche un fil compte
 comme un croisement), depuis que plus aucun fil ne fait de marche :
 
-    85,0 % de fils droits · 36 croisements · 0 évitable · 0 violation · 0 cas hors feuille
+    85,0 % de fils droits · 28 croisements · 0 évitable · 0 violation · 0 cas hors feuille
     contrat d'essai : 66,7 %, 0 croisement
-    folio 1 : 75 %, 1 · folio 2 : 63,2 %, 1 · folio 3 : 71,4 %, 18 — paysage (1,20)
-    folio 4 : 53,8 %, 7 · folio 5 : 76,3 %, 5 · folio 6 : 84,4 %, 4
+    folio 1 : 75 %, 1 · folio 2 : 63,2 %, 1 · folio 3 : 73,2 %, 10 — paysage (1,33)
+    folio 4 : 53,8 %, 7 · folio 5 : 76,3 %, 5 · folio 6 : 81,3 %, 4 — portrait (0,88)
     partout : 0 tour, 0 segment partagé, 0 marche
+
+AUTOUR D'UN HUB, UN BLOC CHANGE DE COLONNE SANS ÊTRE REBÂTI
+(`changementsDeColonne`) : il garde la géométrie polie du meilleur (chaque
+borne son ordonnée), entre dans sa nouvelle pile par le creux le plus proche
+ou en la poussant, et se juge au routage complet ; une colonne qui existe ou
+une neuve au bord, jamais entre deux ; à côté d'un partenaire, de son côté du
+hub, jamais dans la colonne du hub ; aucun fil droit sacrifié, une
+lisibilité strictement meilleure. Avant, le candidat était rebâti de zéro
+par le solveur et perdait toujours contre un meilleur poli : le folio 3
+gardait deux équipements et un morceau de barrette au-dessus de son
+calculateur. Sans hub, l'ancien geste (rebâti) reste : c'est lui qui trouve
+le bloc à déplacer sur la boucle et la réglette traversante. Le juge compte
+aussi les ESCALIERS (chaque paire d'angles au-delà d'un Z, un croisement
+chacune) et les blocs SOUS LE HUB (dans sa colonne, trois chacun). Folio 3
+71,4 % / 18 → 73,2 % / 10 (391LP1 à droite de ses relais, 397TB1 devant
+ses pompes), folio 6 84,4 % / 4 → 81,3 % / 4 (portrait, les deux
+calculateurs face à face, les lampes entre eux) ; l'ensemble 85,0 % / 36 →
+85,0 % / 28. Le morceau 668VT31 (8, 9, 10) reste au-dessus du calculateur :
+dans la colonne des relais, il fait faire le tour de la feuille à son fil
+d'alimentation (contours 7,6, le juge le refuse à raison).
 
 UN GROS ÉQUIPEMENT S'ÉTIRE À LA HAUTEUR DE SES PARTENAIRES (`etirements`,
 HUB_MIN = 8 bornes sur un flanc) : chaque borne prend l'ordonnée de son
@@ -50,8 +70,9 @@ folio 3 60,7 % → 71,4 %, folio 6 37,5 % → 84,4 % (avant : 80,4 % / 35 sur
 les vingt et une topologies). Un changement de flanc ne pose plus une borne
 DANS un autre connecteur (entre sa première et sa dernière borne).
 
-Le folio 3 se calcule en deux secondes et demie, le folio 6 en deux et
-demie aussi, les autres en moins d'une seconde et demie.
+Le folio 3 se calcule en trois secondes, le folio 6 en une et demie, les
+autres en moins d'une seconde et demie (le regard structurel autour d'un
+hub a son propre budget : trois cents routages).
 
 Les trois nouveaux folios (01, `contratExemple`) ont des structures que les
 trois premiers n'avaient pas : un calculateur avec deux barrettes de
@@ -225,8 +246,10 @@ bloc ; un tour de plus n'est jamais « mieux »). Et que le dessin n'a
 marche**, **aucun corps étiré** (équipement ou réglette) que sa version
 tassée ne bat au juge (on le tasse et on reroute), les masses et les
 morceaux de barrette seuls collés à leur borne, **tous les équipements
-lisibles** (aucune borne ne tourne le dos à la colonne de son partenaire,
-aucun fil étranger dans leur voisinage), et le cas montré du doigt
+lisibles** (aucune borne ne tourne le dos à la colonne de son partenaire —
+une borne pontée à une borne de son flanc qui regarde bien est excusée, un
+pont ne se dessine pas entre deux flancs —, aucun fil étranger dans leur
+voisinage), et le cas montré du doigt
 (W-120). Un manqué fait rendre 1.
 
 Un changement qui fait baisser le premier chiffre doit dire pourquoi, dans son
