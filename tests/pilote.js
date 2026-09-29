@@ -53,8 +53,10 @@ function mesurerDansLaPage() {
   fils.forEach(f => { if (!f.pts.length) return;       // un shunt n'a pas de tracé
     for (let i = 0; i < f.pts.length - 1; i++) tracee += Math.abs(f.pts[i + 1].x - f.pts[i].x) + Math.abs(f.pts[i + 1].y - f.pts[i].y);
     const p = f.pts[0], q = f.pts[f.pts.length - 1]; vol += Math.hypot(q.x - p.x, q.y - p.y); });
+  // les deux règles dures du tracé : aucun segment partagé par deux fils de nets différents, aucune marche
+  const partages = typeof compterPartages === 'function' ? compterPartages(fils) : 0, marches = typeof compterMarches === 'function' ? compterMarches(fils) : 0;
   return { blocs: a.blocs, fils: a.fils, droits: a.droits, taux: a.tauxDroits, croisements: a.croisements, evitables: a.evitables || 0,
-           filsDansBloc: a.filsDansBloc, chevauches: a.blocsChevauches,
+           filsDansBloc: a.filsDansBloc, chevauches: a.blocsChevauches, partages, marches,
            w, h, format: w / h, densite: aire / (w * h), allongement: vol ? tracee / vol : 1 };
 }
 
@@ -72,13 +74,13 @@ function preparerDansLaPage() {
      passe ; un fil qui traverse SON PROPRE bloc n'est pas droit et vaut deux croisements, comme au juge (le routeur exclut
      les deux blocs d'un fil de sa vérification de couloir) : on passe les blocs */
   const noter = (R, links, comps) => { const fils = propres(R), t = traversees(fils, (comps || R.comps).filter(c => c.kind !== 'tag'));
-    return { d: compterDroits(fils.filter(w => !t.propres.has(w))), c: compterCroisements(fils, R.barrettes) + 2 * t.propres.size, p: compterPartages(R.fils), t: compterTours({ links: links || R.links }), k: compterContours(fils) }; };
-  // le même barème que le juge (ses constantes) : croisements, segments partagés, tours, contours (un fil qui contourne des
-  // blocs) — et un TOUR de plus n'est jamais « mieux », quoi qu'il rapporte : un fil qui fait le tour de son bloc est ce
-  // qu'un lecteur déteste le plus
-  const note = n => n.d - n.c / CROISEMENTS_PAR_DROIT - PARTAGE * n.p - TOUR * n.t - n.k;
+    return { d: compterDroits(fils.filter(w => !t.propres.has(w))), c: compterCroisements(fils, R.barrettes) + 2 * t.propres.size, p: compterPartages(R.fils), m: compterMarches(fils), t: compterTours({ links: links || R.links }), k: compterContours(fils) }; };
+  // le même barème que le juge (ses constantes) : croisements, segments partagés, marches, tours, contours (un fil qui
+  // contourne des blocs) — et un TOUR de plus n'est jamais « mieux », quoi qu'il rapporte : un fil qui fait le tour de son
+  // bloc est ce qu'un lecteur déteste le plus
+  const note = n => n.d - n.c / CROISEMENTS_PAR_DROIT - PARTAGE * n.p - PAR_MARCHE * n.m - TOUR * n.t - n.k;
   const mieux = (n, b) => n.t <= b.t && note(n) > note(b) + 0.01;
-  const texte = n => n.d + ' droits, ' + n.c + ' croisements, ' + n.p + ' partagés, ' + n.t + ' tours' + (n.k > 0.05 ? ', contours ' + n.k.toFixed(1) : '');
+  const texte = n => n.d + ' droits, ' + n.c + ' croisements, ' + n.p + ' partagés, ' + n.m + ' marches, ' + n.t + ' tours' + (n.k > 0.05 ? ', contours ' + n.k.toFixed(1) : '');
   const sain = (comps, R) => { const blocs = comps.filter(c => c.kind !== 'tag');
     for (let i = 0; i < blocs.length; i++) for (let j = i + 1; j < blocs.length; j++) { const a = blocs[i], b = blocs[j];
       if (a.x < b.x + b.w - 1 && b.x < a.x + a.w - 1 && a.y < b.y + b.h - 1 && b.y < a.y + a.h - 1) return false; }
@@ -97,7 +99,7 @@ function preparerDansLaPage() {
       const versTag = (a && suit.has(l.vers) && l.vers !== c.name) || (b && suit.has(l.de) && l.de !== c.name);
       return { ...l, epA: { ...l.epA, y: l.epA.y + ((a || versTag) ? dy : 0) }, epB: { ...l.epB, y: l.epB.y + ((b || versTag) ? dy : 0) } }; });
     return { comps, links }; };
-  window.banc = { noter, mieux, texte, sain, glisser, pastillesDe };
+  window.banc = { noter, note, mieux, texte, sain, glisser, pastillesDe };
   return true;
 }
 /* Les ÉCHANGES ÉVIDENTS : sur le dessin courant, pour chaque connecteur
@@ -157,7 +159,9 @@ function flancsEvidentsDansLaPage() {
 /* Les GLISSEMENTS ÉVIDENTS : chaque bloc glisse, ses pastilles avec lui,
    aux hauteurs exactes qui alignent une de ses bornes avec son partenaire
    d'une autre colonne — et se route. Un glissement qui fait mieux sans rien
-   chevaucher est un geste que le placement aurait dû trouver. */
+   chevaucher est un geste que le placement aurait dû trouver. Un bloc ne
+   glisse pas à moins de dix unités d'un autre bloc de sa colonne : c'est la
+   garde que la recherche s'impose (deux corps qui se touchent presque). */
 function glissementsEvidentsDansLaPage() {
   const B = window.banc, d = atelier.dessin(); if (!d) return { manques: [], essais: 0 };
   const base = B.noter(d), manques = []; let essais = 0;
@@ -166,7 +170,8 @@ function glissementsEvidentsDansLaPage() {
       if (l.de === c.name) { ici = l.epA; la = l.epB; autre = l.vers; } else if (l.vers === c.name) { ici = l.epB; la = l.epA; autre = l.de; } else return;
       const k = d.compDe.get(autre); if (!k || k.kind === 'tag' || k.col === c.col) return;
       const dy = Math.round((la.y - ici.y) * 2) / 2; if (Math.abs(dy) > 0.75) dys.add(dy); });
-    dys.forEach(dy => { essais++; const { comps, links } = B.glisser(d, c, dy);
+    const heurte = dy => d.comps.some(o => o !== c && o.kind !== 'tag' && o.col === c.col && c.y + dy < o.y + o.h + 10 && o.y < c.y + c.h + dy + 10);
+    dys.forEach(dy => { if (heurte(dy)) return; essais++; const { comps, links } = B.glisser(d, c, dy);
       const R = router({ comps, links, geom: d.geom, bbox: d.bbox }), n = B.noter(R, links, comps);
       if (B.mieux(n, base) && B.sain(comps, R)) manques.push(c.name + ' glissé de ' + dy + ' : ' + B.texte(base) + ' → ' + B.texte(n)); }); });
   return { manques, essais, base };
@@ -177,19 +182,29 @@ function segmentsPartagesDansLaPage() {
   const d = atelier.dessin(); if (!d) return { n: 0, detail: [] };
   const detail = []; const n = compterPartages(d.fils, detail); return { n, detail };
 }
-/* Les CORPS ÉTIRÉS : un équipement plus de deux fois plus haut que sa
-   hauteur naturelle (bornes au pas, plus les marges) est compacté — chaque
-   flanc au pas depuis le haut, ses pastilles suivent — et routé. Si le
-   corps étiré ne rend pas droits au moins deux fils de plus que le compact,
-   l'étirement n'était pas justifié. */
+/* Les MARCHES : un fil qui fait un escalier — un segment de moins de 12
+   entre deux angles, deux verticales à moins de 24 l'une de l'autre. Un fil
+   est droit, fait un Z, ou un U par un couloir. Rend les fils fautifs. */
+function marchesDansLaPage() {
+  const d = atelier.dessin(); if (!d) return { n: 0, detail: [] };
+  const detail = []; const n = compterMarches(d.fils.filter(w => !w.shunt), detail); return { n, detail };
+}
+/* Les CORPS ÉTIRÉS : un équipement (ou une réglette : un paquet de
+   barrette, une prise de coupure) que le juge tient pour étiré
+   (`corpsEtire` : une fois et demie sa hauteur naturelle, à un pas près)
+   est compacté — chaque flanc au pas depuis le haut, ses pastilles suivent
+   — et routé. Si le juge préfère le compact (au barème : fils droits,
+   croisements, partages, marches, tours, contours ; le corps compact vaut
+   ETIRE), l'étirement n'était pas justifié, et c'est un geste manqué. */
 function corpsEtiresDansLaPage() {
   const B = window.banc, d = atelier.dessin(); if (!d) return { defauts: [], etires: 0 };
   const base = B.noter(d), defauts = []; let etires = 0;
-  d.comps.forEach(c => { if (c.kind !== 'equip') return; const nat = hauteurNaturelle(c); if (c.h <= 2 * nat) return; etires++;
-    const marge = Math.max((c.rangs.L || []).length, (c.rangs.R || []).length) === 1 ? 23 : 18, yDe = new Map();
-    ['L', 'R'].forEach(lid => (c.rangs[lid] || []).slice().sort((u, v) => u.y - v.y).forEach((p, i) => yDe.set(lid + ':' + Math.round(p.y * 2), c.y + marge + i * PRH)));
-    const nouvelle = ep => yDe.get((Math.abs(ep.x - c.x) < 0.5 ? 'L' : 'R') + ':' + Math.round(ep.y * 2));
-    const tags = B.pastillesDe(d, c), yTag = new Map(); tags.forEach(t => { const y = t.y + t.h / 2, ny = yDe.get('L:' + Math.round(y * 2)) ?? yDe.get('R:' + Math.round(y * 2)); if (ny != null) yTag.set(t, ny); });
+  d.comps.forEach(c => { if (!corpsEtire(c)) return; const nat = hauteurNaturelle(c); etires++;
+    const reglette = c.kind !== 'equip', marge = reglette ? PRH / 2 + 5 : Math.max((c.rangs.L || []).length, (c.rangs.R || []).length) === 1 ? 23 : 18, yDe = new Map();
+    // les bornes d'une réglette sont sur une seule liste (S), servies des deux flancs
+    (reglette ? ['S'] : ['L', 'R']).forEach(lid => (c.rangs[lid] || []).slice().sort((u, v) => u.y - v.y).forEach((p, i) => yDe.set(lid + ':' + Math.round(p.y * 2), c.y + marge + i * PRH)));
+    const nouvelle = ep => yDe.get((reglette ? 'S' : Math.abs(ep.x - c.x) < 0.5 ? 'L' : 'R') + ':' + Math.round(ep.y * 2));
+    const tags = B.pastillesDe(d, c), yTag = new Map(); tags.forEach(t => { const y = t.y + t.h / 2, ny = yDe.get('L:' + Math.round(y * 2)) ?? yDe.get('R:' + Math.round(y * 2)) ?? yDe.get('S:' + Math.round(y * 2)); if (ny != null) yTag.set(t, ny); });
     const comps = d.comps.map(k => k === c ? { ...k, h: nat } : (yTag.has(k) ? { ...k, y: yTag.get(k) - k.h / 2 } : k));
     const links = d.links.map(l => { const a = l.de === c.name, b = l.vers === c.name; if (!a && !b) return l;
       // la pastille de ce fil : celle de ce nom collée à cette hauteur (deux masses d'un bloc portent souvent le même nom)
@@ -197,21 +212,30 @@ function corpsEtiresDansLaPage() {
       const ya = a ? nouvelle(l.epA) : null, yb = b ? nouvelle(l.epB) : null, versTag = a ? laTag(l.vers, l.epB) : laTag(l.de, l.epA);
       return { ...l, epA: { ...l.epA, y: ya ?? (versTag && !a ? yTag.get(versTag) : l.epA.y) }, epB: { ...l.epB, y: yb ?? (versTag && !b ? yTag.get(versTag) : l.epB.y) } }; });
     const R = router({ comps, links, geom: d.geom, bbox: d.bbox }), n = B.noter(R, links, comps);
-    if (base.d - n.d < 2) defauts.push(c.name + ' : ' + Math.round(c.h) + ' pour ' + nat + ' de naturel (' + (c.h / nat).toFixed(1) + '×), compact : ' + B.texte(n) + ' contre ' + B.texte(base)); });
+    if (B.sain(comps, R) && n.t <= base.t && B.note(n) > B.note(base) - ETIRE + 0.01) defauts.push(c.name + ' : ' + Math.round(c.h) + ' pour ' + nat + ' de naturel (' + (c.h / nat).toFixed(1) + '×), compact : ' + B.texte(n) + ' contre ' + B.texte(base)); });
   return { defauts, etires };
 }
 
-/* Les MASSES COLLÉES : chaque masse est une pastille au flanc de la borne
-   qu'elle sert — même hauteur, fil court et droit, à moins de 40 du flanc.
-   Rend les masses qui ne le sont pas, avec leur distance. */
-function massesColleesDansLaPage() {
-  const d = atelier.dessin(); if (!d) return { masses: 0, loin: [] };
-  const loin = []; let masses = 0;
-  d.fils.forEach(w => { const m = estMasse(w.de) ? 'de' : (estMasse(w.vers) ? 'vers' : null); if (!m || w.shunt) return; masses++;
+/* Les PASTILLES COLLÉES : chaque masse, et chaque morceau de barrette
+   réduit à une borne et un fil vers un bloc, est une pastille au flanc de
+   la borne qu'elle sert — même hauteur, fil court et droit, à moins de 40
+   du flanc. Rend celles qui ne le sont pas, avec leur distance. */
+function pastillesColleesDansLaPage() {
+  const d = atelier.dessin(); if (!d) return { masses: 0, morceaux: 0, loin: [] };
+  const loin = []; let masses = 0, morceaux = 0;
+  // les bornes de barrette qui ne portent qu'un fil, et si la barrette est seule sur ce paquet (aucun shunt sur la borne)
+  const filsParBorne = new Map(), shuntees = new Set();
+  d.fils.forEach(w => { [[w.de, w.borneDe], [w.vers, w.borneVers]].forEach(([r, b]) => { if (!estBarrette(r)) return; const k = r + ':' + b;
+    if (w.shunt) shuntees.add(k); else filsParBorne.set(k, (filsParBorne.get(k) || 0) + 1); }); });
+  d.fils.forEach(w => { if (w.shunt) return;
+    let m = estMasse(w.de) ? 'de' : (estMasse(w.vers) ? 'vers' : null), quoi = 'masse';
+    if (!m) { const feuille = (r, b, autre) => estBarrette(r) && !estMasse(autre) && !estRail(autre) && filsParBorne.get(r + ':' + b) === 1 && !shuntees.has(r + ':' + b);
+      if (feuille(w.de, w.borneDe, w.vers)) m = 'de'; else if (feuille(w.vers, w.borneVers, w.de)) m = 'vers'; quoi = 'morceau'; }
+    if (!m) return; if (quoi === 'masse') masses++; else morceaux++;
     const tag = d.comps.find(c => c.kind === 'tag' && c.name === w[m]); const ep = m === 'de' ? w.epA : w.epB, autre = m === 'de' ? w.epB : w.epA;
     const dist = Math.abs(ep.x - autre.x), droit = w.pts.length === 2 && Math.abs(ep.y - autre.y) < 0.75;
     if (!tag || !droit || dist > 40) loin.push(w[m] + ' (' + w.cable + ') : ' + (tag ? '' : 'pas une pastille, ') + (droit ? '' : 'fil plié, ') + 'à ' + Math.round(dist) + ' du flanc'); });
-  return { masses, loin };
+  return { masses, morceaux, loin };
 }
 /* Un BLOC LISIBLE : aucune de ses bornes ne tourne le dos à la colonne de
    son partenaire (un connecteur coupé en deux flancs n'est admis que
@@ -263,4 +287,4 @@ function filDroitOuJustifieDansLaPage(cable) {
 }
 
 module.exports = { fichierDemande, chargerDansLaPage, essaiDansLaPage, exempleDansLaPage, mesurerDansLaPage, preparerDansLaPage, echangesEvidentsDansLaPage,
-  flancsEvidentsDansLaPage, glissementsEvidentsDansLaPage, segmentsPartagesDansLaPage, corpsEtiresDansLaPage, massesColleesDansLaPage, blocLisibleDansLaPage, filDroitOuJustifieDansLaPage };
+  flancsEvidentsDansLaPage, glissementsEvidentsDansLaPage, segmentsPartagesDansLaPage, marchesDansLaPage, corpsEtiresDansLaPage, pastillesColleesDansLaPage, blocLisibleDansLaPage, filDroitOuJustifieDansLaPage };

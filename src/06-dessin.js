@@ -68,6 +68,7 @@ function styleDessin() {
      .pont{stroke:#1b2430;stroke-width:1;stroke-linecap:butt}
      .bpast{fill:#1b2430;stroke:none}
      .bpnum{fill:#ffffff;font-size:4px;font-weight:700}
+     .rep-petit{fill:#111b25;font-size:5.6px;font-weight:600;letter-spacing:.35px}
      .rpill{fill:#ffffff;stroke:#8f9ba6;stroke-width:.8}
      .rname{fill:#2b3743;font-weight:600;font-size:7.5px;letter-spacing:.6px}
      .frame{fill:none;stroke:#c2ccd5;stroke-width:.8}
@@ -194,8 +195,10 @@ function occupationDe(fils, barrettes, comps) {
     // le corps d'un équipement compte avec ses pièces de connecteur et leurs lettres ; celui d'une réglette, sa colonne
     if (c.kind !== 'tag') { const d = c.kind === 'equip' ? CONN_W : 0; corps.push({ x0: c.x + c.lw - d, y0: c.y, x1: c.x + c.w - c.rw + d, y1: c.y + c.h, id: c.id });
       if (c.kind === 'equip') piecesDeConnecteur(c).forEach(p => boites.push({ x0: p.x0, x1: p.x1, y0: p.t - 8.5, y1: p.t - 1, id: c.id })); return; }
-    // une pastille : les barres d'une masse, la pilule d'un rail — le bout de fil qui y mène reste libre
-    const M = symboleDeMasse(c); if (M) boites.push({ x0: Math.min(M.xs, M.xs + M.d * 6.4), x1: Math.max(M.xs, M.xs + M.d * 6.4), y0: M.y - 6, y1: M.y + 6, id: c.id });
+    // une pastille : les barres d'une masse, le pointillé d'un morceau de barrette, la pilule d'un rail — le bout de fil qui y mène reste libre
+    const M = symboleDePastille(c);
+    if (M && M.genre === 'masse') boites.push({ x0: Math.min(M.xs, M.xs + M.d * 6.4), x1: Math.max(M.xs, M.xs + M.d * 6.4), y0: M.y - 6, y1: M.y + 6, id: c.id });
+    else if (M) boites.push({ x0: M.xs - 5, x1: M.xs + 5, y0: M.y - 6.5, y1: M.y + 7.5, id: c.id });
     else boites.push({ x0: c.x, x1: c.x + c.w, y0: c.y + c.h / 2 - 6, y1: c.y + c.h / 2 + 6, id: c.id }); });
   const O = { H, V, boites, corps };
   // `sauf` : le bloc dont on pose le repère ne se gêne pas lui-même ; sans `sauf`, TOUT compte (les textes déjà posés n'ont pas d'id)
@@ -218,18 +221,26 @@ function boiteDeTexte(x, y, a, n, fs, ls) { const w = largeurTexte(n, fs, ls), x
    les attend, et c'est là qu'ils vont quand rien n'y passe. Sinon ils
    prennent la place libre la plus proche — à côté du point, au-dessus des
    barres, au-delà du symbole — plutôt que de se faire barrer par un fil. */
-/* Le symbole d'une masse collée à sa borne, en absolu : le fil ARRIVE par le
-   flanc que dit p.dir (-1 : par la gauche), les barres sont tout de suite là
-   (xs) et grandissent vers l'autre flanc (d). */
-function symboleDeMasse(c) { if (!(c.kind === 'tag' && estMasse(c.name))) return null;
-  const p = (c.rangs.S || [])[0] || { y: c.y + c.h / 2, dir: -1 }, d = (p.dir || -1) < 0 ? 1 : -1;
-  return { y: p.y, d, xs: d > 0 ? c.x + 4 : c.x + c.w - 4 }; }
+/* Le symbole d'une pastille collée à sa borne, en absolu : le fil ARRIVE par
+   le flanc que dit p.dir (-1 : par la gauche), le symbole est tout de suite
+   là (xs) et grandit vers l'autre flanc (d). Une MASSE : trois barres depuis
+   xs ; un MORCEAU DE BARRETTE (une borne, un fil, rien après) : un court
+   pointillé vertical en xs, la borne en point noir numéroté dessus, le point
+   de départ dessous. Le repère se lit sous le symbole, dans le pas des
+   bornes (HAUT_PASTILLE) : il ne touche pas le fil voisin. */
+function symboleDePastille(c) { if (c.kind !== 'tag') return null;
+  const genre = estMasse(c.name) ? 'masse' : estBarrette(c.name) ? 'barrette' : null; if (!genre) return null;
+  const p = (c.rangs.S || [])[0] || { y: c.y + c.h / 2, dir: -1 }, d = (p.dir || -1) < 0 ? 1 : -1, r = genre === 'masse' ? 4 : 7;
+  return { genre, y: p.y, d, xs: d > 0 ? c.x + r : c.x + c.w - r, etiq: p.etiq }; }
 function reperesCandidats(c) {
   const bw = c.w - c.lw - c.rw, mid = c.x + c.lw + bw / 2, rs = c.rangs.S || [];
-  const M = symboleDeMasse(c);
-  if (M) { const cx = M.xs + M.d * 3.2;
+  const M = symboleDePastille(c);
+  // masse, morceau de barrette collé, prise de coupure, barrette : le même petit repère
+  if (M && M.genre === 'masse') { const cx = M.xs + M.d * 3.2;
     return { cls: 'rep-petit', fs: 6, ls: 0.3, nom: clip(c.name, 10), cands: [
       { x: cx, y: M.y + 11.6, a: 'middle' }, { x: cx, y: M.y - 8.4, a: 'middle' }, { x: M.xs + M.d * 9.5, y: M.y + 2, a: M.d > 0 ? 'start' : 'end' }] }; }
+  if (M) return { cls: 'rep-petit', fs: 6, ls: 0.3, nom: clip(c.name, 10), cands: [
+    { x: M.xs, y: M.y + 12.4, a: 'middle' }, { x: M.xs, y: M.y - 8.4, a: 'middle' }, { x: M.xs + M.d * 7, y: M.y + 2, a: M.d > 0 ? 'start' : 'end' }] };
   if (c.kind === 'strip' && estCoupure(c.name)) return { cls: 'rep-petit', fs: 6, ls: 0.3, nom: clip(c.name, 14), cands: [
     { x: mid, y: c.y + c.h + 8, a: 'middle' }, { x: mid, y: c.y - 4, a: 'middle' }, { x: mid, y: c.y + c.h + 16, a: 'middle' }] };
   if (c.kind === 'strip' || estBarrette(c.name)) {
@@ -394,10 +405,20 @@ function blocSvg(c, designation, choisi) {
        perpendiculaire à l'équipement — trois barres verticales décroissantes
        vers l'extérieur — et le repère se lit dessous. */
     // p.dir dit par quel flanc le fil ARRIVE (-1 : par la gauche) ; le symbole grandit vers l'autre flanc.
-    const M = symboleDeMasse(c), ly = M.y - c.y, d = M.d, xs = M.xs - c.x, x0 = d > 0 ? 0 : c.w;   // le fil entre par un flanc, le symbole est tout de suite là
+    const M = symboleDePastille(c), ly = M.y - c.y, d = M.d, xs = M.xs - c.x, x0 = d > 0 ? 0 : c.w;   // le fil entre par un flanc, le symbole est tout de suite là
     s += `<line class="earth" x1="${f1(x0)}" y1="${f1(ly)}" x2="${f1(xs)}" y2="${f1(ly)}"/>`;
     [[6, 0], [4, 3.2], [2, 6.4]].forEach(([l, dx]) => { const x = xs + d * dx; s += `<line class="earth" x1="${f1(x)}" y1="${f1(ly - l)}" x2="${f1(x)}" y2="${f1(ly + l)}"/>`; });
     // le repère, petit, sous les barres — ou là où la place est libre
+    s += repereDe(c);
+  } else if (c.kind === 'tag' && estBarrette(c.name)) {
+    /* MORCEAU DE BARRETTE collé à sa borne — une borne, un fil, rien après :
+       il se dessine comme une masse, dans l'AXE du fil, en petit : le fil
+       arrive sur un court pointillé vertical, la borne est le point noir
+       numéroté dessus, le point de départ dessous, le repère en petit. */
+    const M = symboleDePastille(c), ly = M.y - c.y, xs = M.xs - c.x, x0 = M.d > 0 ? 0 : c.w;
+    s += `<line class="lead" x1="${f1(x0)}" y1="${f1(ly)}" x2="${f1(xs)}" y2="${f1(ly)}"/>`;
+    s += `<line class="barre" x1="${f1(xs)}" y1="${f1(ly - 6)}" x2="${f1(xs)}" y2="${f1(ly + 6)}"/><circle class="bardot" cx="${f1(xs)}" cy="${f1(ly + 6)}" r="1.5"/>`;
+    s += pastilleSvg(xs, ly, M.etiq ? clip(String(M.etiq), 3) : '');
     s += repereDe(c);
   } else if (c.kind === 'tag') {
     // pastille de potentiel, en face de la borne desservie

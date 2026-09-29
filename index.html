@@ -819,11 +819,12 @@ function contratEssai() {
   li('601RC',  '11', '733LE',  'CNT', 'W-150', 'MLC24');
   return L;
 }
-/* Le contrat d'exemple, celui qu'on voit en ouvrant l'outil : trois plans,
-   donc trois folios — un facile, un moyen, un très chargé — avec ce que le
-   retest porte en vrai : les part numbers des connecteurs, des bornes qui
-   disent leur connecteur (A12), des barrettes qui distribuent avec leurs
-   shunts, des prises de coupure, des fils blindés, des masses. */
+/* Le contrat d'exemple, celui qu'on voit en ouvrant l'outil : six plans,
+   donc six folios — un facile, un moyen, un très chargé, puis trois de
+   taille moyenne aux structures différentes — avec ce que le retest porte
+   en vrai : les part numbers des connecteurs, des bornes qui disent leur
+   connecteur (A12), des barrettes qui distribuent avec leurs shunts, des
+   prises de coupure, des fils blindés, des masses. */
 function contratExemple() {
   const PN = {
     '101BT1': 'MS3470L14-5P', '102CB1': 'NSA935401-10', '103RL1': 'E0836IS35-22SA', '104LP1': 'E0644D9S',
@@ -833,7 +834,13 @@ function contratExemple() {
     '300XC1': 'EN4165-2M', '351PM1': 'EN2997Y1A12P', '352PM2': 'EN2997Y1A12P', '361VL1': 'ABS0864-08', '362VL2': 'ABS0864-08', '363VL3': 'ABS0864-08',
     '371CP1': 'E0644B9S', '372CP2': 'E0644B9S', '381RL1': 'E0836IS35-22SA', '382RL2': 'E0836IS35-22SA', '383RL3': 'E0836IS35-22SA',
     '391LP1': 'E0644D9S', '392LP2': 'E0644D9S', '395SW1': 'NSA937802-03', '396SW2': 'NSA937802-03', '397TB1': 'ASNE0501-08',
-    '668VT31': 'ASNE0500-12', '669VT32': 'ASNE0502-08', '409VC2A': 'EN3646A6083AAN', '410VC2B': 'EN3646A6083AAN' };
+    '668VT31': 'ASNE0500-12', '669VT32': 'ASNE0502-08', '409VC2A': 'EN3646A6083AAN', '410VC2B': 'EN3646A6083AAN',
+    '400XC2': 'EN4165-2M', '421ST1': 'EN2997Y1A10P', '422ST2': 'EN2997Y1A10P', '423ST3': 'EN2997Y1A10P', '431PR1': 'EN2997Y1A08P',
+    '441VN1': 'ABS0864-08', '442VN2': 'ABS0864-08', '670VT41': 'ASNE0500-08', '671VT42': 'ASNE0502-04',
+    '500XC3': 'EN4165-2M', '510RL1': 'E0836IS35-22SA', '511RL2': 'E0836IS35-22SA', '520LP1': 'E0644D9S', '530PM3': 'EN2997Y1A12P', '531PM4': 'EN2997Y1A12P',
+    '540VL5': 'ABS0864-08', '550SW3': 'NSA937802-03', '560HT1': 'E0644B9S', '411VC3A': 'EN3646A6088AAN', '412VC3B': 'EN3646A6088AAN',
+    '600XC4': 'EN4165-2M', '601XC5': 'EN4165-2M', '672VT51': 'ASNE0500-12', '610LP3': 'E0644D9S', '611LP4': 'E0644D9S', '620SW4': 'NSA937802-03',
+    '630RL5': 'E0836IS35-22SA', '631RL6': 'E0836IS35-22SA' };
   const L = [];
   const li = (plan, de, bDe, vers, bVers, cable, type) =>
     L.push(liaison({ de, borneDe: bDe, pnDe: PN[de] || '', vers, borneVers: bVers, pnVers: PN[vers] || '', cable, type, plan }));
@@ -936,6 +943,123 @@ function contratExemple() {
   li('3', '363VL3', '3',   '300XC1',  'A11', 'W-379', 'DR24');
   li('3', '391LP1', '3',   '395SW1',  '4',  'W-380', 'DR24');
   li('3', '396SW2', '3',   '392LP2',  '3',  'W-381', 'DR24');
+  // ---- plan 4 : moyen — un calculateur qui distribue par une barrette à deux paquets de shunts, trois sondes
+  //      blindées dont les blindages se reprennent sur une seconde barrette, un pressostat, deux vannes ; un
+  //      morceau de barrette seul (la borne 7, alimentée d'un autre folio) ; des masses partout
+  li('4', '400XC2', 'B1',  '670VT41', '1',  'W-401', 'DR20');
+  li('4', '670VT41', '1',  '670VT41', '2',  'W-402', 'DR20');
+  li('4', '670VT41', '2',  '670VT41', '3',  'W-403', 'DR20');
+  li('4', '670VT41', '3',  '670VT41', '4',  'W-404', 'DR20');
+  li('4', '670VT41', '2',  '421ST1',  '1',  'W-405', 'DR22');
+  li('4', '670VT41', '3',  '422ST2',  '1',  'W-406', 'DR22');
+  li('4', '670VT41', '4',  '423ST3',  '1',  'W-407', 'DR22');
+  li('4', '400XC2', 'B2',  '670VT41', '5',  'W-408', 'DR20');
+  li('4', '670VT41', '5',  '670VT41', '6',  'W-409', 'DR20');
+  li('4', '670VT41', '5',  '431PR1',  '1',  'W-410', 'DR22');
+  li('4', '670VT41', '6',  '441VN1',  '1',  'W-411', 'DR22');
+  li('4', '670VT41', '7',  '442VN2',  '1',  'W-412', 'DR22');
+  li('4', '421ST1', '2',   '400XC2',  'A1', 'W-420', 'MLB24');
+  li('4', '422ST2', '2',   '400XC2',  'A2', 'W-421', 'MLB24');
+  li('4', '423ST3', '2',   '400XC2',  'A3', 'W-422', 'MLB24');
+  li('4', '431PR1', '2',   '400XC2',  'A4', 'W-423', 'DR24');
+  li('4', '441VN1', '2',   '400XC2',  'A5', 'W-424', 'DR24');
+  li('4', '441VN1', '3',   '400XC2',  'A6', 'W-425', 'DR24');
+  li('4', '442VN2', '2',   '400XC2',  'A7', 'W-426', 'DR24');
+  li('4', '421ST1', '3',   '671VT42', '1',  'W-430', 'MLB24');
+  li('4', '422ST2', '3',   '671VT42', '2',  'W-431', 'MLB24');
+  li('4', '423ST3', '3',   '671VT42', '3',  'W-432', 'MLB24');
+  li('4', '671VT42', '1',  '671VT42', '2',  'W-433', 'DR24');
+  li('4', '671VT42', '2',  '671VT42', '3',  'W-434', 'DR24');
+  li('4', '671VT42', '3',  '671VT42', '4',  'W-435', 'DR24');
+  li('4', '671VT42', '4',  '400XC2',  'A10', 'W-436', 'DR24');
+  li('4', '421ST1', '4',   '910G',    '',   'W-440', 'DR22');
+  li('4', '422ST2', '4',   '910G',    '',   'W-441', 'DR22');
+  li('4', '423ST3', '4',   '910G',    '',   'W-442', 'DR22');
+  li('4', '431PR1', '3',   '911G',    '',   'W-443', 'DR22');
+  li('4', '441VN1', '4',   '911G',    '',   'W-444', 'DR22');
+  li('4', '442VN2', '3',   '911G',    '',   'W-445', 'DR22');
+  li('4', '400XC2', 'B10', '911G',    '',   'W-446', 'DR20');
+  // ---- plan 5 : moyen — deux tronçons de faisceau (fuselage, voilure) séparés par une chaîne de deux prises
+  //      de coupure : un calculateur et deux relais d'un côté, deux pompes, une vanne, un interrupteur et un
+  //      réchauffeur de l'autre ; les fils traversent une prise, ou les deux
+  li('5', '500XC3', 'A1',  '411VC3A', '1',  'W-501', 'DR20');
+  li('5', '411VC3A', '1',  '412VC3B', '1',  'W-502', 'DR20');
+  li('5', '412VC3B', '1',  '530PM3',  '1',  'W-503', 'DR20');
+  li('5', '500XC3', 'A2',  '411VC3A', '2',  'W-504', 'DR20');
+  li('5', '411VC3A', '2',  '412VC3B', '2',  'W-505', 'DR20');
+  li('5', '412VC3B', '2',  '530PM3',  '2',  'W-506', 'DR20');
+  li('5', '500XC3', 'A3',  '411VC3A', '3',  'W-507', 'DR20');
+  li('5', '411VC3A', '3',  '412VC3B', '3',  'W-508', 'DR20');
+  li('5', '412VC3B', '3',  '531PM4',  '1',  'W-509', 'DR20');
+  li('5', '500XC3', 'A4',  '411VC3A', '4',  'W-510', 'DR20');
+  li('5', '411VC3A', '4',  '412VC3B', '4',  'W-511', 'DR20');
+  li('5', '412VC3B', '4',  '531PM4',  '2',  'W-512', 'DR20');
+  li('5', '500XC3', 'B1',  '411VC3A', '5',  'W-513', 'DR22');
+  li('5', '411VC3A', '5',  '540VL5',  '1',  'W-514', 'DR22');
+  li('5', '500XC3', 'B2',  '411VC3A', '6',  'W-515', 'DR22');
+  li('5', '411VC3A', '6',  '540VL5',  '2',  'W-516', 'DR22');
+  li('5', '510RL1', '2',   '411VC3A', '7',  'W-520', 'DR22');
+  li('5', '411VC3A', '7',  '412VC3B', '5',  'W-521', 'DR22');
+  li('5', '412VC3B', '5',  '550SW3',  '1',  'W-522', 'DR22');
+  li('5', '550SW3', '2',   '412VC3B', '6',  'W-523', 'DR24');
+  li('5', '412VC3B', '6',  '411VC3A', '8',  'W-524', 'DR24');
+  li('5', '411VC3A', '8',  '500XC3',  'B3', 'W-525', 'DR24');
+  li('5', '540VL5', '4',   '412VC3B', '7',  'W-526', 'DR22');
+  li('5', '412VC3B', '7',  '560HT1',  '1',  'W-527', 'DR22');
+  li('5', '500XC3', 'B4',  '510RL1',  '1',  'W-530', 'DR24');
+  li('5', '500XC3', 'B5',  '511RL2',  '1',  'W-531', 'DR24');
+  li('5', '500XC3', 'B6',  '511RL2',  '4',  'W-532', 'DR22');
+  li('5', '511RL2', '2',   '510RL1',  '4',  'W-533', 'DR22');
+  li('5', '511RL2', '5',   '520LP1',  '1',  'W-534', 'DR24');
+  li('5', '520LP1', '2',   '912G',    '',   'W-540', 'DR24');
+  li('5', '510RL1', '3',   '912G',    '',   'W-541', 'DR24');
+  li('5', '511RL2', '3',   '912G',    '',   'W-542', 'DR24');
+  li('5', '500XC3', 'B10', '912G',    '',   'W-543', 'DR20');
+  li('5', '530PM3', '3',   '913G',    '',   'W-544', 'DR20');
+  li('5', '531PM4', '3',   '913G',    '',   'W-545', 'DR20');
+  li('5', '540VL5', '3',   '913G',    '',   'W-546', 'DR22');
+  li('5', '550SW3', '3',   '913G',    '',   'W-547', 'DR22');
+  li('5', '560HT1', '2',   '913G',    '',   'W-548', 'DR22');
+  // ---- plan 6 : moyen — deux équipements de dix bornes qui se parlent à travers une barrette : huit fils qui la
+  //      traversent, un paquet ponté en bus, trois piquages par shunt vers des lampes et un interrupteur (un module de
+  //      barrette n'a qu'un contact par côté : un piquage, c'est un shunt), deux fils directs, une borne qui alimente
+  //      deux relais (un piquage sur l'équipement), des masses
+  li('6', '600XC4', 'A1',  '672VT51', '1',  'W-601', 'DR22');
+  li('6', '672VT51', '1',  '601XC5',  'B1', 'W-611', 'DR22');
+  li('6', '600XC4', 'A2',  '672VT51', '2',  'W-602', 'DR22');
+  li('6', '672VT51', '2',  '601XC5',  'B2', 'W-612', 'DR22');
+  li('6', '672VT51', '1',  '672VT51', '2',  'W-620', 'DR22');
+  li('6', '600XC4', 'A3',  '672VT51', '3',  'W-603', 'DR22');
+  li('6', '672VT51', '3',  '601XC5',  'B3', 'W-613', 'DR22');
+  li('6', '672VT51', '3',  '672VT51', '4',  'W-621', 'DR22');
+  li('6', '672VT51', '4',  '610LP3',  '1',  'W-622', 'DR24');
+  li('6', '600XC4', 'A4',  '672VT51', '5',  'W-604', 'DR22');
+  li('6', '672VT51', '5',  '601XC5',  'B4', 'W-614', 'DR22');
+  li('6', '600XC4', 'A5',  '672VT51', '6',  'W-605', 'DR22');
+  li('6', '672VT51', '6',  '601XC5',  'B5', 'W-615', 'DR22');
+  li('6', '672VT51', '6',  '672VT51', '7',  'W-623', 'DR22');
+  li('6', '672VT51', '7',  '611LP4',  '1',  'W-624', 'DR24');
+  li('6', '600XC4', 'A6',  '672VT51', '8',  'W-606', 'DR22');
+  li('6', '672VT51', '8',  '601XC5',  'B6', 'W-616', 'DR22');
+  li('6', '600XC4', 'A7',  '672VT51', '9',  'W-607', 'DR22');
+  li('6', '672VT51', '9',  '601XC5',  'B7', 'W-617', 'DR22');
+  li('6', '672VT51', '9',  '672VT51', '10', 'W-625', 'DR22');
+  li('6', '672VT51', '10', '620SW4',  '1',  'W-626', 'DR24');
+  li('6', '600XC4', 'A8',  '672VT51', '11', 'W-608', 'DR22');
+  li('6', '672VT51', '11', '601XC5',  'B8', 'W-618', 'DR22');
+  li('6', '600XC4', 'A9',  '601XC5',  'B9', 'W-627', 'DR24');
+  li('6', '600XC4', 'A10', '601XC5',  'B10', 'W-628', 'DR24');
+  li('6', '600XC4', 'A11', '630RL5',  '1',  'W-630', 'DR24');
+  li('6', '600XC4', 'A11', '631RL6',  '1',  'W-631', 'DR24');
+  li('6', '630RL5', '2',   '601XC5',  'B11', 'W-632', 'DR24');
+  li('6', '631RL6', '2',   '601XC5',  'B12', 'W-633', 'DR24');
+  li('6', '610LP3', '2',   '914G',    '',   'W-640', 'DR24');
+  li('6', '611LP4', '2',   '914G',    '',   'W-641', 'DR24');
+  li('6', '620SW4', '2',   '914G',    '',   'W-642', 'DR24');
+  li('6', '630RL5', '3',   '914G',    '',   'W-643', 'DR24');
+  li('6', '631RL6', '3',   '914G',    '',   'W-644', 'DR24');
+  li('6', '600XC4', 'A15', '915G',    '',   'W-645', 'DR22');
+  li('6', '601XC5', 'B15', '915G',    '',   'W-646', 'DR22');
   return L;
 }
 
@@ -1088,7 +1212,8 @@ async function lireFichier(fichier) { return lireTexte(await texteDuFichier(fich
      · les NŒUDS : un équipement entier, ou un bornier — entier tant que le
        dessin est de taille de travail (≤ 60 repères), sinon découpé en un
        fragment par destination pour que ses départs restent courts ; une
-       PASTILLE (masse, rail) par point de raccordement ;
+       PASTILLE (masse, rail) par point de raccordement ; un morceau de
+       barrette réduit à une borne et un fil est une pastille aussi ;
      · les BROCHES de chaque nœud, identifiées par leur numéro de borne ;
      · les PARTENAIRES de chaque broche (à qui elle est reliée) ;
      · l'ADJACENCE entre nœuds, pondérée par le nombre de fils.
@@ -1155,7 +1280,11 @@ function construireGraphe(liaisons) {
       const paquets = new Map(); P.liste.forEach(p => { const r = trouver(p.cle); (paquets.get(r) || paquets.set(r, []).get(r)).push(p); });
       let gi = 0;
       for (const pins of paquets.values()) { const id = paquets.size === 1 ? n : n + FRAG + (gi++);
-        noeuds.set(id, { id, nom: n, reglette: true, broches: pins }); pins.forEach(p => noeudDeBroche.set(n + SEP + p.cle, id)); }
+        // un morceau réduit à UNE borne et UN fil vers un bloc : rien après lui — il se colle à la borne qu'il sert, comme
+        // une masse (une PASTILLE), au lieu d'occuper une colonne ; à plusieurs bornes ou plusieurs partenaires, il reste un bloc
+        const ps = pins.length === 1 ? (partBruts.get(n + SEP + pins[0].cle) || []) : [];
+        const pastille = ps.length === 1 && ps[0].nom !== n && !estPotentiel(ps[0].nom);
+        noeuds.set(id, { id, nom: n, reglette: true, broches: pins, pastille }); pins.forEach(p => noeudDeBroche.set(n + SEP + p.cle, id)); }
       continue; }
     if (!(enReglette(n) && !entier)) {
       noeuds.set(n, { id: n, nom: n, reglette: enReglette(n), broches: P.liste.slice() });
@@ -1248,7 +1377,8 @@ function modele(G) {
   const { liaisons: lk, ids, noeuds, bouts, nid } = G;
   const blocs = new Map(); const connecteursDuNom = new Map();
   for (const id of ids) { const N = noeuds.get(id), nom = N.nom;
-    const genre = estPotentiel(nom) ? 'tag' : estBarrette(nom) ? 'barrette' : estCoupure(nom) ? 'coupure' : 'equip';
+    // une pastille : un potentiel (masse, rail), ou un morceau de barrette réduit à une borne et un fil (03, `pastille`)
+    const genre = (estPotentiel(nom) || N.pastille) ? 'tag' : estBarrette(nom) ? 'barrette' : estCoupure(nom) ? 'coupure' : 'equip';
     const b = { id, nom, genre, bornes: N.broches.slice(), connecteur: new Map() };
     if (genre === 'equip') { if (!connecteursDuNom.has(nom)) connecteursDuNom.set(nom, connecteurParBorne(nom, lk));
       const m = connecteursDuNom.get(nom); b.bornes.forEach(p => { const c = m.get(String(p.etiq)); if (c) b.connecteur.set(p.cle, c.nom); }); }
@@ -1266,9 +1396,9 @@ function modele(G) {
   blocs.forEach(b => { const chef = new Map(b.bornes.map(p => [p.cle, p.cle])); const trouver = c => { while (chef.get(c) !== c) c = chef.get(c); return c; };
     (pontes.get(b.id) || []).forEach(([u, v]) => { const ru = trouver(u), rv = trouver(v); if (ru !== rv) chef.set(rv, ru); });
     b.bornes.forEach(p => paquetDe.set(K(b.id, p.cle), K(b.id, trouver(p.cle)))); });
-  // une pastille se colle à UNE borne d'un bloc ; sinon c'est un bloc comme un autre
+  // une pastille se colle à UNE borne d'un bloc ; sinon c'est un bloc comme un autre (un morceau de barrette redevient une barrette)
   blocs.forEach(b => { if (b.genre !== 'tag') return; const ps = parts.get(K(b.id, b.bornes[0].cle)) || [];
-    if (ps.length !== 1 || blocs.get(ps[0].id).genre === 'tag') b.genre = 'equip'; });
+    if (ps.length !== 1 || blocs.get(ps[0].id).genre === 'tag') b.genre = estBarrette(b.nom) ? 'barrette' : 'equip'; });
   const estTag = id => blocs.get(id).genre === 'tag';
   const partenairesDe = k => parts.get(k) || [];
   const partenairesBlocs = k => partenairesDe(k).filter(q => !estTag(q.id));
@@ -1374,6 +1504,9 @@ function coutDesFlancs(M, colDe, id) {
       // un paquet de bornes pontées sort d'un seul flanc (le pont ne se dessine pas entre deux flancs) : il vote d'un bloc
       if (b.connecteur.has(p.cle)) { const pq = paquets.get(paquet) || paquets.set(paquet, { g: 0, d: 0 }).get(paquet); if (t < 0) pq.g++; else pq.d++; } });
     cotes.forEach(set => { if (set.size >= 2) s += 1; }); });
+  /* une prise de coupure qui n'est pas posée entre ses partenaires est un tour au juge (`compterTours`), pas ici : chargée
+     ici aussi, elle déviait l'exploration des niveaux et le folio chargé perdait sa meilleure mise en niveaux (21
+     croisements au lieu de 17) — le juge suffit, le concours et la recherche locale écartent ces candidats */
   // un paquet (une borne seule en est un) qui sert les deux côtés : un de ses fils fait le tour, quoi qu'on fasse — plus cher
   // ici qu'au juge, pour que la mise en niveaux préfère un fil qui enjambe une colonne à un fil qui fait le tour de son bloc
   paquets.forEach(pq => { if (pq.g && pq.d) s += TOUR_NIVEAU * Math.min(pq.g, pq.d); });
@@ -1660,12 +1793,15 @@ function flancs(M, place) {
     b.bornes.forEach(p => { const v = votes.get(groupe(p.cle)), libre = !b.connecteur.has(p.cle);
       if (coupes.has(groupe(p.cle))) { flancDe.set(K(id, p.cle), flancDuPaquet.get(p.cle)); return; }
       flancDe.set(K(id, p.cle), v.g > v.d ? 'L' : v.d > v.g ? 'R' : (v.g ? (libre ? 'LR' : 'R') : null)); }); }
-  // 2. le reste — partenaires de même colonne, pastilles seules — par la goulotte calme, la même pour les deux
+  // 2. le reste — partenaires de même colonne, pastilles seules — par la goulotte calme, la même pour les deux ; vers une
+  //    borne de prise de coupure, par le côté opposé à ses autres partenaires : l'amont entre d'un côté, l'aval sort de l'autre
   const valeur = (id, cle) => (M.blocs.get(id).genre === 'equip' ? flancDe : dirs).get(K(id, cle));
+  const autreCote = (q, id) => { if (M.blocs.get(q.id).genre !== 'coupure') return 0; const cs = new Set(M.partenairesBlocs(K(q.id, q.cle)).filter(r => r.id !== id).map(r => cote(q.id, r)).filter(s => s));
+    return cs.size === 1 ? -[...cs][0] : 0; };
   M.ids.forEach(id => { const b = M.blocs.get(id); if (b.genre === 'tag') return;
     b.bornes.forEach(p => { const k = K(id, p.cle); if (valeur(id, p.cle) != null) return;
       const memes = M.partenairesBlocs(k).filter(q => cote(id, q) === 0); let side = 0;
-      for (const q of memes) { const vq = valeur(q.id, q.cle); if (vq === 'L' || vq === -1) side = -1; else if (vq === 'R' || vq === 1) side = 1; if (side) break; }
+      for (const q of memes) { const vq = valeur(q.id, q.cle); if (vq === 'L' || vq === -1) side = -1; else if (vq === 'R' || vq === 1) side = 1; else side = autreCote(q, id); if (side) break; }
       if (!side) { const s = penchant.get(id) + memes.reduce((t, q) => t + penchant.get(q.id), 0); side = s > 0 ? -1 : 1; }
       if (b.genre !== 'equip') { dirs.set(k, side); return; }
       const g = groupe(b, p.cle); b.bornes.forEach(pp => { if (groupe(b, pp.cle) === g && flancDe.get(K(id, pp.cle)) == null) flancDe.set(K(id, pp.cle), side < 0 ? 'L' : 'R'); }); }); });
@@ -2078,20 +2214,34 @@ function compterPartages(fils, detail) {
    son partenaire fait le tour du bloc — la distance de Manhattan ne le voit
    pas (le tour est déjà dans la distance), il se compte à part. Un
    partenaire de la même colonne n'est d'aucun côté : ce n'est pas un tour.
-   Un connecteur coupé en deux flancs se justifie en en supprimant un. */
+   Un connecteur coupé en deux flancs se justifie en en supprimant un.
+   Une PRISE DE COUPURE sépare deux tronçons de faisceau : l'amont d'une
+   borne entre d'un côté, l'aval ressort de l'autre. Ses fils d'une même
+   borne qui SORTENT tous du même côté (ils se raccordent par un piquage,
+   la prise n'est pas posée entre ses partenaires) valent DEUX tours : le
+   dessin ment sur le tronçon (les deux fils semblent du même côté de la
+   coupure), et il faudrait faire le tour de la prise, aller et retour,
+   pour lire l'amont et l'aval — deux croisements valent mieux que ça.
+   C'est le côté de sortie qui compte, pas la colonne du partenaire : un
+   partenaire de la même colonne entre par la goulotte qu'on lui a choisie. */
 const colonneDuBout = ep => ep.stub === 'L' ? ep.ch - 1 : ep.ch;          // stub L : le bout est sur le flanc droit, sa goulotte à droite
-function compterTours(L) { let n = 0;
+function compterTours(L) { let n = 0; const coupures = new Map();
   L.links.forEach(l => { if (l.boucle || l.shunt) return; const A = l.epA, B = l.epB, ca = colonneDuBout(A), cb = colonneDuBout(B);
     if ((A.stub === 'L' && cb < ca) || (A.stub === 'R' && cb > ca)) n++;
-    if ((B.stub === 'L' && ca < cb) || (B.stub === 'R' && ca > cb)) n++; });
+    if ((B.stub === 'L' && ca < cb) || (B.stub === 'R' && ca > cb)) n++;
+    [[l.de, l.borneDe, A], [l.vers, l.borneVers, B]].forEach(([nom, borne, ep]) => { if (!estCoupure(nom)) return;
+      const k = nom + ':' + borne, c = coupures.get(k) || coupures.set(k, { fils: 0, cotes: new Set() }).get(k); c.fils++; c.cotes.add(ep.stub); }); });
+  coupures.forEach(c => { if (c.fils >= 2 && c.cotes.size < 2) n += 2; });
   return n; }
-/* Les MASSES QUI PENDENT SUR UN FIL : le symbole de masse se dessine sous
-   son fil (trois barres et le repère, sur une trentaine d'unités) ; un fil
-   étranger qui passe dessous se lit à travers. Le placement l'évite en
-   rangeant la masse en bout de flanc ; le juge compte celles qui restent. */
+/* Les PASTILLES QUI PENDENT SUR UN FIL : le symbole d'une masse (trois
+   barres) ou d'un morceau de barrette collé (le pointillé, son point de
+   départ) se dessine avec son repère sous le fil, sur une trentaine
+   d'unités ; un fil étranger qui passe dessous se lit à travers. Le
+   placement l'évite en rangeant la pastille en bout de flanc ; le juge
+   compte celles qui restent. */
 const PEND_MASSE = 30;
-function compterMassesGenees(L, fils) { let n = 0;
-  L.comps.forEach(c => { if (c.kind !== 'tag' || !estMasse(c.name)) return; const y0 = c.y + c.h / 2 + 1, y1 = y0 + PEND_MASSE;
+function compterPastillesGenees(L, fils) { let n = 0;
+  L.comps.forEach(c => { if (c.kind !== 'tag' || !(estMasse(c.name) || estBarrette(c.name))) return; const y0 = c.y + c.h / 2 + 1, y1 = y0 + PEND_MASSE;
     if (fils.some(w => { for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1];
       if (Math.abs(a.y - b.y) < 0.01 && a.y > y0 && a.y < y1 && Math.max(a.x, b.x) > c.x && Math.min(a.x, b.x) < c.x + c.w) return true; } return false; })) n++; });
   return n; }
@@ -2115,11 +2265,14 @@ function compterContours(fils) { let s = 0; fils.forEach(w => s += Math.max(0, d
    replis d'une chaîne en sont faits). Le solveur l'a
    allongé pour aligner un fil, et le bloc fait trois fois la taille de ses
    voisins. Ça se voit tout de suite ; ça ne vaut que si l'étirement rend
-   droits au moins deux fils de plus. */
+   droits au moins deux fils de plus. Une RÉGLETTE (un paquet de barrette,
+   une prise de coupure) s'étire de même : un paquet se dessine aussi petit
+   que possible, et un paquet tiré sur quatre cents unités pour redresser
+   trois fils devient un mur que les autres fils contournent. */
 const ETIREMENT_MAX = 1.5;
-const bornesParFlanc = c => Math.max(1, (c.rangs.L || []).length, (c.rangs.R || []).length);
-function hauteurNaturelle(c) { const n = bornesParFlanc(c); return (n - 1) * PRH + 2 * (n === 1 ? 23 : 18); }
-const corpsEtire = c => c.kind === 'equip' && c.h > ETIREMENT_MAX * hauteurNaturelle(c) + (bornesParFlanc(c) <= 2 ? 2 : 1) * PRH;
+const bornesParFlanc = c => Math.max(1, (c.rangs.L || []).length, (c.rangs.R || []).length, (c.rangs.S || []).length);
+function hauteurNaturelle(c) { const n = bornesParFlanc(c); return (n - 1) * PRH + 2 * (c.kind !== 'equip' ? PRH / 2 + 5 : n === 1 ? 23 : 18); }
+const corpsEtire = c => c.kind !== 'tag' && c.h > ETIREMENT_MAX * hauteurNaturelle(c) + (bornesParFlanc(c) <= 2 ? 2 : 1) * PRH;
 /* Les BANDES d'un dessin : ses rangées de blocs séparées par du vide, dans
    toutes les colonnes. Un dessin d'au moins deux bandes un peu trop large
    s'étire à la fin (etirerAuFormat) sans rien perdre : il TIENDRA. */
@@ -2162,13 +2315,13 @@ function juger(L, R) {
   const w = Math.max(1, x1 - x0 - resserre), h = Math.max(1, y1 - y0), r = w / h;
   let longueur = 0; fils.forEach(f => { for (let i = 0; i < f.pts.length - 1; i++) longueur += Math.abs(f.pts[i + 1].x - f.pts[i].x) + Math.abs(f.pts[i + 1].y - f.pts[i].y); });
   const droits = compterDroits(fils.filter(w => !t.propres.has(w))), croisements = compterCroisements(fils, R.barrettes) + 2 * t.propres.size;
-  const partages = compterPartages(R.fils), etires = compterEtires(L.comps);
+  const partages = compterPartages(R.fils), etires = compterEtires(L.comps), marches = compterMarches(fils);
   // un demi pour cent de tolérance : le juge mesure pastilles comprises, il est plus strict que la feuille
   const tient = r <= FORMAT_MAX * 1.005 && r >= 1 / (FORMAT_MAX * 1.005), tiendra = tient || (r <= FORMAT_MAX * ETIRABLE && compterBandes(blocs) >= 2);
   const contours = compterContours(fils);
   const j = { sain: t.etrangers === 0 && chevauchements(L.comps) === 0, tient, tiendra, format: r, largeur: w,
-    droits, croisements, partages, etires, tours: compterTours(L), propres: t.propres.size, contours,
-    lisibilite: droits - croisements / CROISEMENTS_PAR_DROIT - PARTAGE * partages - ETIRE * etires - TOUR * compterTours(L) - contours, genees: compterMassesGenees(L, fils), detours: compterDetours(fils), coupes: L.coupes || 0,
+    droits, croisements, partages, etires, marches, tours: compterTours(L), propres: t.propres.size, contours,
+    lisibilite: droits - croisements / CROISEMENTS_PAR_DROIT - PARTAGE * partages - PAR_MARCHE * marches - ETIRE * etires - TOUR * compterTours(L) - contours, genees: compterPastillesGenees(L, fils), detours: compterDetours(fils), coupes: L.coupes || 0,
     encombrement: Math.min(Math.max(w / A3, h), Math.max(w, h / A3)), surface: w * h, longueur };
   // les muets coûtent cher à compter (le dessin pose ses étiquettes) : seulement quand droits et croisements sont à égalité
   let muets = null; Object.defineProperty(j, 'muets', { enumerable: true, get() { if (muets == null) muets = compterMuets(R); return muets; } });
@@ -2180,16 +2333,22 @@ function juger(L, R) {
    est un pont que le lecteur doit résoudre, et un croisement pour rien se
    voit avant un fil plié : quand échanger deux bornes ôte un croisement en
    pliant un fil, on échange (un lecteur l'a demandé deux fois sur la même
-   feuille, 210SP1 et 601RC) — et deux fois chaque segment partagé par deux
-   fils étrangers (une connexion qui ment), une fois et demie chaque corps
-   étiré (il ne vaut que s'il rend droits deux fils de plus) ; à égalité les fils droits, puis
+   feuille, 210SP1 et 601RC) — et QUATRE fois chaque segment partagé par deux
+   fils étrangers (une connexion qui ment : le routeur n'en laisse que
+   lorsque deux fils se croisent en X dans une goulotte, chaque bout de l'un
+   en face d'un bout de l'autre ; un pas dans l'ordre d'un connecteur le
+   casse au prix d'un croisement, et c'est ce qu'on veut — deux croisements
+   valent encore mieux qu'un mensonge), deux fois chaque fil qui fait une
+   MARCHE (un pli de quelques unités entre deux bornes presque en face : le
+   routeur n'en fabrique plus, seul le placement peut en laisser), une fois et
+   demie chaque corps étiré (il ne vaut que s'il rend droits deux fils de plus) ; à égalité les fils droits, puis
    les croisements, puis les numéros muets, puis les TOURS (un fil qui fait
    le tour de son bloc), les masses qui pendent sur un fil, les DÉTOURS (à
    partir d'une goulotte de différence), puis les
    connecteurs coupés en deux flancs (jamais sans raison : seuls un détour ou
    un croisement en moins le justifient), l'encombrement, la surface, la
    longueur des fils. */
-const CROISEMENTS_PAR_DROIT = 0.5, PARTAGE = 2, ETIRE = 1.5, TOUR = 3, DETOUR_MIN = GOULOTTE_MIN;
+const CROISEMENTS_PAR_DROIT = 0.5, PARTAGE = 4, PAR_MARCHE = 2, ETIRE = 1.5, TOUR = 3, DETOUR_MIN = GOULOTTE_MIN;
 /* Le choix des finalistes se fait sur une géométrie aux goulottes taillées large, que le resserrage et la recherche
    locale compactent d'un bon tiers : un candidat un peu trop large y a droit. */
 const TOLERANCE = 1.35;
@@ -2205,7 +2364,7 @@ function bat(a, b, tolerant) {
   if (a.droits !== b.droits) return a.droits > b.droits; if (a.croisements !== b.croisements) return a.croisements < b.croisements;
   if (a.muets !== b.muets) return a.muets < b.muets;
   if (a.tours !== b.tours) return a.tours < b.tours;
-  if (a.genees !== b.genees) return a.genees < b.genees;
+  if (a.genees !== b.genees) return a.genees < b.genees;                  // une pastille (masse, morceau de barrette) qui pend sur un fil
   if (Math.abs(a.detours - b.detours) >= DETOUR_MIN) return a.detours < b.detours;
   if (a.coupes !== b.coupes) return a.coupes < b.coupes;
   if (Math.abs(a.encombrement - b.encombrement) > 0.01 * b.encombrement) return a.encombrement < b.encombrement;
@@ -2262,10 +2421,14 @@ function estimer(L) {
       if (!f) { fondues.set(r, { lo: v.lo, hi: v.hi, att: v.att.slice() }); return; }
       f.lo = Math.min(f.lo, v.lo); f.hi = Math.max(f.hi, v.hi); v.att.forEach(a => { if (!f.att.some(b => cleDe(b) === cleDe(a))) f.att.push(a); }); });
     const V = [...fondues.values()]; let ici = 0; V.forEach(v => { ici += coupe(ch, v.lo, v.hi); });
-    for (let i = 0; i < V.length; i++) for (let j = i + 1; j < V.length; j++) { const I = V[i], J = V[j]; let ij = 0, ji = 0;   // I à gauche de J, puis l'inverse
+    for (let i = 0; i < V.length; i++) for (let j = i + 1; j < V.length; j++) { const I = V[i], J = V[j]; let ij = 0, ji = 0, pij = 0, pji = 0;   // I à gauche de J, puis l'inverse
       J.att.forEach(a => { if (dans(a.y, I)) { if (a.mur === 'L') ij++; else ji++; } });
       I.att.forEach(a => { if (dans(a.y, J)) { if (a.mur === 'R') ij++; else ji++; } });
-      ici += Math.min(ij, ji); }
+      // deux attaches à la même hauteur vers des parois opposées : l'ordre qui met à gauche la verticale attachée à droite
+      // superpose les deux horizontales — le routeur ne le prend jamais ; si les deux ordres le font (deux fils en X), il reste
+      // un segment partagé, que le juge paie PARTAGE
+      I.att.forEach(a => J.att.forEach(b => { if (a.mur === b.mur || Math.abs(a.y - b.y) > 0.5) return; if (a.mur === 'R') pij++; else pji++; }));
+      ici += Math.min(ij + PARTAGE * CROISEMENTS_PAR_DROIT * pij, ji + PARTAGE * CROISEMENTS_PAR_DROIT * pji); }
     croisements += ici; detail.push({ ch, verticales: V.length, brutes: V0.length, barrieres: barrieres[ch].length, croisements: ici }); });
   // les corps étirés se voient sans router : l'estimation les compte comme le juge
   const etires = compterEtires(blocs), tours = compterTours(L);
@@ -2327,7 +2490,7 @@ function resserrer(M, meilleur) {
      · le glissement d'un bloc en face d'un partenaire, ses feuilles avec lui ;
      · l'échange de deux blocs d'une colonne, puis le solveur rejoue ;
      · un fil plié rendu prioritaire au solveur ; un fil droit qui étire
-       un corps refusé au solveur ;
+       un corps refusé au solveur ; un corps étiré tassé sur place ;
      · le flanc d'un connecteur ;
      · le flanc d'une borne, ou d'un sous-ensemble contigu d'un connecteur
        (le connecteur se coupe, ou se recolle) ;
@@ -2388,6 +2551,7 @@ function rechercheLocale(M, meilleur, budget, finale) {
     ['échange', () => echangesDeBlocs(M, meilleur.E, essayerEtat, temps)],
     ['priorité', () => promotions(M, meilleur.E, () => meilleur, essayerEtat, temps)],
     ['renoncement', () => renoncements(M, meilleur.E, () => meilleur, essayerEtat, temps)],
+    ['compaction', () => compactions(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps)],
     ['flanc', () => flancsDeConnecteurs(M, meilleur.E, essayerEtat, temps)],
     ['borne', () => flancsDeBornes(M, meilleur.E, () => meilleur, essayerEtat, temps, (k, y) => essayerGeometrie(borneA(k, y), TAMIS), false, (k, y) => estimer(assembler(M, meilleur.E, borneA(k, y))).lisibilite)],
     ['sortie', () => sortiesDeBornier(M, meilleur.E, essayerEtat, temps)],
@@ -2414,6 +2578,7 @@ function rechercheLocale(M, meilleur, budget, finale) {
     meilleur = plein; ordonnerParY(E, pos); return true; };
   const finaux = [
     ['borne', () => flancsDeBornes(M, meilleur.E, () => meilleur, essayerEtatTout, temps, essayerBorneAuComplet, true, estimerBorneA)],
+    ['compaction', () => compactions(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
     ['glissement', () => glissements(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
     ['permutation', () => permutationsDeBornes(M, meilleur.E, () => meilleur.pos, copie, essayerTout, temps, estimerOrdre, () => meilleur.est, () => meilleur, p2 => resoudreDans(p2, TAMIS_FINAL, true), TAMIS_FINAL)]];
   // un geste évident ne se manque pas : tant qu'un balayage trouve encore, la passe continue, jusqu'au double de son budget
@@ -2536,6 +2701,28 @@ function renoncements(M, E, meilleurDe, essayer, temps) {
   m.R.fils.forEach(w => { if (!temps() || w.shunt || w.pts.length !== 2 || E.refuses.has(w.i)) return; const l = M.liens[w.i];
     if (!etires.has(l.a.id) && !etires.has(l.b.id)) return;
     E.refuses.add(w.i); if (essayer()) any = true; else E.refuses.delete(w.i); });
+  return any;
+}
+/* Un corps ÉTIRÉ se TASSE sur place : ses bornes reprennent le pas depuis
+   la première (ou en remontant depuis la dernière), le corps se referme sur
+   elles, rien d'autre ne bouge — les pastilles collées suivent leur borne.
+   C'est le geste que le solveur ne sait pas faire : lui refuser un fil
+   droit (renoncement) lui fait tout réaligner, et il crée ailleurs les
+   croisements qu'on voulait éviter. Gardé si le juge préfère : un corps
+   compact vaut une fois et demie un fil droit. */
+function compactions(M, E, meilleurDe, copie, essayer, temps) {
+  let any = false; const m = meilleurDe();
+  m.L.comps.filter(corpsEtire).map(c => c.id).forEach(id => { if (!temps()) return; const b = M.blocs.get(id), pos = m.pos, [mh, mb] = margesDe(M, E, id);
+    // un pas entre deux bornes, deux entre deux connecteurs (la lettre du second s'écrit entre les deux) — la règle du solveur
+    const pasApres = (u, v) => (b.genre === 'equip' && b.connecteur.get(u.cle) !== b.connecteur.get(v.cle)) ? 2 * PRH : PRH;
+    for (const depuis of ['haut', 'bas']) { if (!temps()) return; const p2 = copie(pos); let lo = Infinity, hi = -Infinity;
+      E.clesListes(id).forEach(lid => { const L = E.listes.get(id)[lid].slice().sort((u, v) => pos.y.get(K(id, u.cle)) - pos.y.get(K(id, v.cle))); if (!L.length) return;
+        const pas = L.map((p, i) => i ? pasApres(L[i - 1], p) : 0), total = pas.reduce((s, v) => s + v, 0);
+        let y = depuis === 'haut' ? pos.y.get(K(id, L[0].cle)) : pos.y.get(K(id, L[L.length - 1].cle)) - total;
+        L.forEach((p, i) => { y += pas[i]; p2.y.set(K(id, p.cle), y); lo = Math.min(lo, y); hi = Math.max(hi, y); }); });
+      if (!isFinite(lo) || hi - lo + mh + mb >= pos.bas.get(id) - pos.haut.get(id) - 0.5) continue;      // rien à tasser
+      p2.haut.set(id, lo - mh); p2.bas.set(id, hi + mb);
+      if (essayer(p2)) { any = true; break; } } });
   return any;
 }
 /* Un flanc ne se quitte pas pour tourner le dos à un partenaire : passer des
@@ -2734,11 +2921,22 @@ const RETRAIT = 14;         // de la paroi à la première verticale : la longue
 const ECART_VERT = 10;      // deux verticales sur la même piste se lisent séparées
 const NMAX_EXACT = 12;      // au-delà, l'ordre des pistes se cherche par déplacements
 const INTERDIT = 1e6;       // le coût d'un ordre impossible
-/* Un JOG : là où le coin d'un fil tomberait sur le trait d'un autre, le fil
-   s'écarte de JOG_X avant le coin de l'autre et rejoint sa verticale JOG
-   plus haut ou plus bas — deux fils ne se superposent JAMAIS. */
-const JOG = 6, JOG_X = 4, PARTAGE_COIN = 0.3;
-let numeroDeJog = 0;
+/* Deux fils de nets différents sur un même trait, c'est une connexion qui
+   n'existe pas : pire qu'un ordre impossible (qui ne fait que passer un fil
+   devant le porteur de sa borne — même potentiel). Deux attaches à la même
+   hauteur vers des parois opposées se séparent TOUJOURS par l'ordre des
+   pistes : la verticale attachée à gauche à gauche de l'autre ; ça ne coûte
+   que les croisements que l'entrelacement des bouts impose de toute façon —
+   un pont est un élément normal, une marche ne l'est pas. */
+const SUPERPOSE = 3e6;
+/* Une MARCHE : un segment de quelques unités entre deux angles — un fil est
+   droit, fait UN Z propre (une verticale, deux vrais angles droits), ou un U
+   par un couloir ; jamais un escalier. Un couloir se pose à Z_MIN au moins
+   des bornes qu'il relie (plus qu'un pas de borne : il ne tombe pas sur la
+   ligne de la borne voisine), une verticale de détour fait Z_MIN. Le juge
+   et le banc comptent les marches (`compterMarches`) : un segment de moins
+   de MARCHE entre deux angles, deux verticales d'un fil à moins de 2·MARCHE. */
+const MARCHE = 12, Z_MIN = 16;
 
 /* Les NETS : deux bornes reliées par un fil ou un shunt sont un même
    potentiel ; deux fils d'un même net peuvent se toucher (les départs d'un
@@ -2764,22 +2962,6 @@ function simplifier(pts) {
       else if (vert && (b.y - a.y) * (q.y - b.y) < 0) { out.pop(); if (Math.abs(a.y - q.y) < 0.3) return; } }
     out.push(q); });
   return out;
-}
-
-/* Le même tracé sans ses jogs ni ses enjambements (les verticales de moins
-   de JOG + 2) : le coin revient sur la ligne, la bosse s'aplatit. C'est la
-   géométrie que l'ordre des pistes a décidée, avant que les partages ne
-   s'écartent. */
-function sansJogs(pts) {
-  if (!pts.some(q => q.jog)) return pts;
-  const p = pts.slice();
-  for (let i = 0; i < p.length; i++) { if (!p[i].jog) continue; let j = i; while (j < p.length && p[j].jog === p[i].jog) j++;
-    // trois points : un coin décalé — le coin revient à l'abscisse de sa verticale et à la hauteur de son horizontale
-    if (j - i === 3) { const av = p[i - 1], ap = p[j]; const versV = av && Math.abs(av.x - p[i].x) < 0.3;
-      p.splice(i, 3, versV ? { x: p[i].x, y: p[j - 1].y } : { x: p[j - 1].x, y: p[i].y }); }
-    else p.splice(i, j - i);                       // quatre points : une bosse, qui s'aplatit
-    i--; }
-  return p;
 }
 
 /* ---- la géométrie des goulottes ---------------------------------------- */
@@ -2829,17 +3011,23 @@ function formerLesFils(layout, G, permis) {
   const couloirsPris = [];                    // corridors à travers une colonne : { y, xa, xb }
   const pris = (xa, xb, y) => couloirsPris.some(m => Math.abs(m.y - y) < 8 && xb > m.xa - 7 && xa < m.xb + 7);
   const prendre = (xa, xb, y) => couloirsPris.push({ y, xa, xb });
+  /* les hauteurs des bornes sur les parois de chaque goulotte : un couloir ne s'y pose pas — à la hauteur d'une borne d'en
+     face, son horizontale et celle de la borne sont sur la même ligne, et se lisent comme un seul fil */
+  const parois = Array.from({ length: G.n }, () => new Set());
+  layout.links.forEach(l => { if (l.boucle || l.shunt) return; [l.epA, l.epB].forEach(ep => parois[ep.ch].add(Math.round(ep.y * 2))); });
+  const surUneBorne = (ch, y) => parois[ch].has(Math.round(y * 2));
   const exclusDe = l => new Set([String(l.de), String(l.vers)]);
   const bouts = li => { const l = layout.links[li]; let A = { ...l.epA, tag: 'A' }, B = { ...l.epB, tag: 'B' };
     if (A.ch > B.ch || (A.ch === B.ch && murDe(A) === 'R' && murDe(B) === 'L')) { const t = A; A = B; B = t; }
     return [A, B]; };
-  // 1) les fils droits, d'abord : ce sont les barrières de tout le reste
+  // 1) les fils droits, d'abord : ce sont les barrières de tout le reste — dans les goulottes qu'ils traversent de part
+  //    en part (le fil d'une pastille reste dans la zone de sa colonne : il ne barre rien)
   layout.links.forEach((l, li) => { if (l.boucle || l.shunt) return;
     const [A, B] = bouts(li); if (Math.abs(A.y - B.y) > 0.75) return;
     const dr = murDe(A) === 'L' && murDe(B) === 'R';                       // A regarde à droite, B à gauche
     if (!dr || !G.couloirLibre(A.x + 2, B.x - 2, A.y, exclusDe(l))) return;
     fils.set(li, { forme: 'droit', A, B, travaux: [], chez: {} });
-    for (let ch = A.ch; ch <= B.ch; ch++) barrieres[ch].push(A.y);
+    for (let ch = A.ch; ch <= B.ch; ch++) if (A.x <= G.x0(ch) + 1 && B.x >= G.x1(ch) - 1) barrieres[ch].push(A.y);
     if (A.ch < B.ch) prendre(G.x1(A.ch), G.x0(B.ch), A.y); });
   // combien de barrières une verticale de la goulotte `ch` enjambe entre deux ordonnées (barrières triées, dichotomie)
   barrieres.forEach(B => B.sort((u, v) => u - v));
@@ -2847,7 +3035,7 @@ function formerLesFils(layout, G, permis) {
   const coupe = (ch, ya, yb) => { const B = barrieres[ch], lo = Math.min(ya, yb), hi = Math.max(ya, yb); return Math.max(0, avant(B, hi - 0.5) - avant(B, lo + 0.5 + 1e-9)); };
   // 2) les autres, par la forme qui croise le moins de barrières
   layout.links.forEach((l, li) => { if (l.boucle || l.shunt || fils.has(li)) return;
-    const [A, B] = bouts(li), K = { G, coupe, pris, ex: exclusDe(l), li, A, B, mA: murDe(A), mB: murDe(B) };
+    const [A, B] = bouts(li), K = { G, coupe, pris, surUneBorne, ex: exclusDe(l), li, A, B, mA: murDe(A), mB: murDe(B) };
     const choix = formesDirectes(K);
     /* un passage par une goulotte voisine ne se cherche que si le direct
        coûte ; il n'est pris que s'il est PERMIS — le routeur l'essaie pour de
@@ -2862,12 +3050,15 @@ function formerLesFils(layout, G, permis) {
   fils.candidats = candidats.sort((u, v) => v.gain - u.gain).map(c => c.li);
   return fils;
 }
+/* Un couloir à hauteur y fait-il un vrai Z depuis une borne à hauteur yb ?
+   Oui s'il est à Z_MIN au moins — jamais une marche de quelques unités. */
+const vraiZ = (y, yb) => Math.abs(y - yb) >= Z_MIN - 1e-9;
 /* Les formes DIRECTES d'un fil plié : dans sa goulotte (même goulotte),
    droit puis verticale à l'arrivée, verticale au départ puis droit, ou un
    corridor entre les deux avec un Z dans chaque goulotte. Le coût d'une forme
    est le nombre de fils droits que ses verticales enjambent. */
 function formesDirectes(K) {
-  const { G, coupe, pris, ex, li, A, B, mA, mB } = K;
+  const { G, coupe, pris, surUneBorne, ex, li, A, B, mA, mB } = K;
   K.attache = (ep, mur) => ({ y: ep.y, mur, bout: cle(li, ep.tag) });
   K.libre = (y, mur) => ({ y, mur, bout: null });
   const att = K.attache, libre = K.libre, choix = [];
@@ -2876,11 +3067,13 @@ function formesDirectes(K) {
     choix.push({ forme: 'arrivee', cout: coupe(B.ch, A.y, B.y), corridors: [[G.x1(A.ch), G.x0(B.ch), A.y]], travaux: [travail(B.ch, { y: A.y, mur: 'L', bout: cle(li, A.tag) }, att(B, mB), ex)] });
   if (mB === 'R' && G.couloirLibre(G.x1(A.ch) - 2, B.x - 2, B.y, ex) && !pris(G.x1(A.ch), G.x0(B.ch), B.y))
     choix.push({ forme: 'depart', cout: coupe(A.ch, A.y, B.y), corridors: [[G.x1(A.ch), G.x0(B.ch), B.y]], travaux: [travail(A.ch, att(A, mA), { y: B.y, mur: 'R', bout: cle(li, B.tag) }, ex)] });
-  // le corridor traverse des colonnes entières, celles des deux blocs comprises : rien n'en est exclu — le balayage saute les bandes de blocs
+  // le corridor traverse des colonnes entières, celles des deux blocs comprises : rien n'en est exclu — le balayage saute les bandes de blocs ;
+  // il passe à Z_MIN au moins des deux bornes : à leur hauteur, c'est une arrivée ou un départ, plus près c'est une marche
   const lo = Math.min(A.y, B.y), hi = Math.max(A.y, B.y), bandes = G.bandes(G.x0(A.ch) + 2, G.x1(B.ch) - 2); let meilleur = null;
   const y0 = Math.max(G.yMin - 12, lo - 240), yFin = Math.min(G.yMax + 12, hi + 240);
   for (let y = y0; y <= yFin; y += 4) {
     const b = G.bande(bandes, y); if (b) { y = surLaGrille(y0, 4, b[1]) - 4; continue; }
+    if (!vraiZ(y, A.y) || !vraiZ(y, B.y) || surUneBorne(A.ch, y) || surUneBorne(B.ch, y)) continue;
     const c = coupe(A.ch, A.y, y) + coupe(B.ch, y, B.y) + 0.5 + 0.0005 * Math.abs(y - (lo + hi) / 2) + (y < lo || y > hi ? 0.4 : 0);
     if (meilleur && c >= meilleur.cout) continue;
     if (pris(G.x1(A.ch), G.x0(B.ch), y)) continue;
@@ -2893,19 +3086,20 @@ function formesDirectes(K) {
    loin) et revient par un second corridor. Ça vaut quand la goulotte du fil
    est barrée de fils droits que la voisine n'a pas. */
 function formesParDetour(K) {
-  const { G, coupe, pris, ex, A, B, mA, mB } = K, att = K.attache, libre = K.libre, choix = [];
+  const { G, coupe, pris, surUneBorne, ex, A, B, mA, mB } = K, att = K.attache, libre = K.libre, choix = [];
   const PORTEE = 160, PAS = 8;      // un corridor traverse des colonnes entières, celle du bloc du fil comprise : rien n'en est exclu
   const corridorsPres = (ch0, ch1, yc) => { const out = [], xa = Math.min(G.x0(ch0), G.x0(ch1)) + 2, xb = Math.max(G.x1(ch0), G.x1(ch1)) - 2;
     const xc = Math.min(G.x1(ch0), G.x1(ch1)), xd = Math.max(G.x0(ch0), G.x0(ch1)), bandes = G.bandes(xa, xb);
     const y0 = Math.max(G.yMin - 12, yc - PORTEE), yFin = Math.min(G.yMax + 12, yc + PORTEE);
     for (let y = y0; y <= yFin; y += PAS) { const b = G.bande(bandes, y); if (b) { y = surLaGrille(y0, PAS, b[1]) - PAS; continue; }
-      if (!pris(xc, xd, y)) out.push(y); }
+      if (!pris(xc, xd, y) && !((surUneBorne(ch0, y) || surUneBorne(ch1, y)) && Math.abs(y - yc) > 0.5)) out.push(y); }
     return out; };
   [-1, -2, 1, 2].forEach(d => { const v = d < 0 ? A.ch + d : B.ch + d; if (v < 0 || v >= G.n) return;
-    const gauche = d < 0, c1s = corridorsPres(A.ch, v, A.y), c2s = corridorsPres(v, B.ch, B.y);
+    // un corridor à la hauteur de sa borne (le fil y entre droit), ou à Z_MIN au moins ; entre les deux, une marche
+    const gauche = d < 0, c1s = corridorsPres(A.ch, v, A.y).filter(y => Math.abs(y - A.y) < 0.5 || vraiZ(y, A.y)), c2s = corridorsPres(v, B.ch, B.y).filter(y => Math.abs(y - B.y) < 0.5 || vraiZ(y, B.y));
     if (!c1s.length || !c2s.length) return;
     let meilleur = null;
-    c1s.forEach(c1 => c2s.forEach(c2 => { if (Math.abs(c1 - c2) < 8) return;
+    c1s.forEach(c1 => c2s.forEach(c2 => { if (!vraiZ(c1, c2)) return;
       const c = coupe(A.ch, A.y, c1) + coupe(v, c1, c2) + coupe(B.ch, c2, B.y) + 1.5 + 0.5 * (Math.abs(d) - 1) + 0.0005 * (Math.abs(c1 - A.y) + Math.abs(c2 - B.y));
       if (!meilleur || c < meilleur.cout) meilleur = { cout: c, c1, c2 }; }));
     if (!meilleur) return; const { c1, c2 } = meilleur;
@@ -2980,9 +3174,8 @@ function formerLesPiquages(layout, fils, G) {
    porteur de la borne le paie très cher si elle passe de l'autre côté.
    Deux attaches à la MÊME hauteur vers des parois opposées, de nets
    différents : si la verticale attachée à droite est à gauche de l'autre,
-   leurs deux horizontales se superposent entre les deux coins — un jog le
-   répare (PARTAGE_COIN), et le jog croise l'autre verticale (1) quand les
-   deux continuent du même côté de cette hauteur. */
+   leurs deux horizontales se superposent entre les deux coins — cet ordre
+   est SUPERPOSE, l'autre les sépare. */
 function coutsParPaires(travaux) {
   const n = travaux.length, c = Array.from({ length: n }, () => new Float64Array(n));
   const idx = new Map(travaux.map((t, i) => [t, i]));
@@ -2993,17 +3186,11 @@ function coutsParPaires(travaux) {
     J.att.forEach(a => { if (a.mur === 'L' && dans(a.y, I) && !jonction(I, a)) v++; });
     I.att.forEach(a => { if (a.mur === 'R' && dans(a.y, J) && !jonction(J, a)) v++; });
     if (I.net != null && J.net != null && I.net !== J.net) I.att.forEach(a => { if (a.mur !== 'R') return;
-      J.att.forEach(b => { if (b.mur !== 'L' || Math.abs(a.y - b.y) > 0.5) return; v += PARTAGE_COIN + (coinLibre(I, J, a.y) ? 0 : 1); }); });
+      J.att.forEach(b => { if (b.mur === 'L' && Math.abs(a.y - b.y) <= 0.5) v += SUPERPOSE; }); });
     c[i][j] = v + (i > j ? 1e-4 : 0); }           // à égalité, l'ordre naturel (par ordonnée) reste
   travaux.forEach((t, i) => t.contraintes.forEach(ct => { const P = ct.porteur.travail || ct.porteur, p = idx.get(P); if (p == null || p === i) return;
     if (ct.mur === 'L') c[p][i] = INTERDIT; else c[i][p] = INTERDIT; }));
   return c;
-}
-/* Un jog est LIBRE (il ne croise pas l'autre verticale) si l'une des deux
-   verticales continue d'un côté de cette hauteur où l'autre ne va pas. */
-function coinLibre(I, J, y) {
-  const haut = t => t.lo < y - 0.5, bas = t => t.hi > y + 0.5;
-  return (haut(I) && !haut(J)) || (bas(I) && !bas(J)) || (haut(J) && !haut(I)) || (bas(J) && !bas(I));
 }
 function coutDeLOrdre(ordre, c) { let s = 0; for (let a = 0; a < ordre.length; a++) for (let b = a + 1; b < ordre.length; b++) s += c[ordre[a]][ordre[b]]; return s; }
 /* Exact : programmation dynamique sur les sous-ensembles — le dernier posé
@@ -3111,75 +3298,6 @@ function jonctions(layout, traces, barrettes) {
   return [...points.values()];
 }
 
-/* ---- aucun segment partagé --------------------------------------------------
-   Deux fils de nets différents ne se superposent JAMAIS : ce serait une
-   connexion qui n'existe pas. Quand deux horizontales se recouvrent, c'est
-   qu'un coin (une verticale qui tourne) est posé sur le trait de l'autre, à
-   la même hauteur. Le fil dont le coin est libre fait un JOG : il quitte sa
-   ligne JOG_X après le coin de l'autre, monte ou descend de JOG du côté où
-   sa verticale continue, et la rejoint là. Un départ de piquage naît sur la
-   verticale du piquage et ne peut pas s'écarter : quand aucun des deux ne
-   le peut, l'un ENJAMBE le coin de l'autre. Le jog croise l'autre verticale
-   quand elle continue du même côté : c'est un croisement, pas un partage. */
-function separerLesPartages(traces, barrettes, netDe) {
-  const rates = new Set();
-  for (let tour = 0; tour < 8; tour++) {
-    const H = [], V = [];
-    traces.forEach((w, li) => { if (!w || w.shunt || !w.pts) return; const net = netDe(li), p = w.pts;
-      for (let i = 0; i + 1 < p.length; i++) { const a = p[i], b = p[i + 1];
-        if (Math.abs(a.y - b.y) < 0.3 && Math.abs(a.x - b.x) > 0.5) H.push({ w, li, i, net, y: a.y, x0: Math.min(a.x, b.x), x1: Math.max(a.x, b.x) });
-        else if (Math.abs(a.x - b.x) < 0.3 && Math.abs(a.y - b.y) > 0.5) V.push({ x: a.x, lo: Math.min(a.y, b.y), hi: Math.max(a.y, b.y) }); } });
-    barrettes.forEach(b => { V.push({ x: b.x, lo: b.y1, hi: b.y2 }); const r = b.raccord;
-      H.push({ raccord: true, net: b.net, y: r.y, x0: Math.min(r.x0, r.x1), x1: Math.max(r.x0, r.x1) }); });
-    let paire = null;
-    for (let p = 0; p < H.length && !paire; p++) for (let q = p + 1; q < H.length; q++) { const a = H[p], b = H[q];
-      if (a.net === b.net || Math.abs(a.y - b.y) > 0.3 || Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0) <= 0.5) continue;
-      const k = (a.li ?? 'r') + ':' + a.i + '/' + (b.li ?? 'r') + ':' + b.i + '@' + Math.round(a.y); if (rates.has(k)) continue;
-      paire = [a, b, k]; break; }
-    if (!paire) return;
-    if (!ecarter(paire[0], paire[1], H, V)) rates.add(paire[2]);
-  }
-}
-/* Écarter deux horizontales qui se recouvrent : le jog du coin qui peut,
-   sinon l'enjambement. Rend faux si rien n'est possible. */
-function ecarter(a, b, H, V) {
-  const verticaleEn = (x, y0, y1, sauf) => V.some(v => Math.abs(v.x - x) < 1.5 && v.hi > Math.min(y0, y1) + 0.3 && v.lo < Math.max(y0, y1) - 0.3 && Math.abs(v.x - sauf) > 0.3);
-  const horizontaleEn = (y, x0, x1, net) => H.some(h => h.net !== net && Math.abs(h.y - y) < 0.6 && Math.min(h.x1, x1) - Math.max(h.x0, x0) > -0.5);
-  // les coins de chaque segment posés dans l'autre : le point, l'autre bout de l'horizontale, la verticale qui continue
-  const coins = [];
-  [[a, b], [b, a]].forEach(([s, o]) => { if (s.raccord) return; const p = s.w.pts;
-    [[s.i, s.i - 1, s.i + 1], [s.i + 1, s.i + 2, s.i]].forEach(([k, kv, kh]) => { const c = p[k], v = p[kv], h = p[kh];
-      if (c.x < o.x0 - 0.5 || c.x > o.x1 + 0.5) return;
-      const continue_ = !!v && Math.abs(v.x - c.x) < 0.3 && Math.abs(v.y - c.y) > 0.5;
-      // le coin de l'autre que ce fil doit dépasser : celui posé entre le coin et l'autre bout
-      const xo = [o.x0, o.x1].find(x => x > Math.min(c.x, h.x) - 0.5 && x < Math.max(c.x, h.x) + 0.5 && Math.abs(x - c.x) > 0.5);
-      coins.push({ s, o, p, k, kh, c, h, xo, sens: continue_ ? Math.sign(v.y - c.y) : 0, long: continue_ ? Math.abs(v.y - c.y) : 0 }); }); });
-  // 1. le jog : d'abord un coin dont le jog est libre (l'autre verticale ne continue pas de ce côté), puis la plus longue verticale
-  const jogs = [];
-  coins.forEach(q => { if (!q.sens || q.xo == null || q.long <= JOG + 2) return;
-    for (const dx of [JOG_X, 3, 5, 6]) for (const dy of [JOG, 5, 7, 8]) {
-      const xs = q.xo + dx * Math.sign(q.h.x - q.xo), ys = q.c.y + dy * q.sens;
-      if (Math.abs(q.h.x - q.xo) <= dx + 1 || q.long <= dy + 2) continue;
-      if (verticaleEn(xs, q.c.y, ys, q.c.x) || horizontaleEn(ys, Math.min(q.c.x, xs), Math.max(q.c.x, xs), q.s.net)) continue;
-      const libre = !V.some(v => Math.abs(v.x - q.xo) < 0.5 && v.lo < ys - 0.3 && v.hi > ys + 0.3);
-      jogs.push({ q, xs, ys, libre }); return; } });
-  jogs.sort((u, v) => (v.libre - u.libre) || (v.q.long - u.q.long));
-  const jog = ++numeroDeJog;                        // les points d'un même jog se reconnaissent (sansJogs)
-  if (jogs.length) { const { q, xs, ys } = jogs[0], c = q.c;
-    const nouveaux = q.k > q.kh ? [{ x: xs, y: c.y, jog }, { x: xs, y: ys, jog }, { x: c.x, y: ys, jog }] : [{ x: c.x, y: ys, jog }, { x: xs, y: ys, jog }, { x: xs, y: c.y, jog }];
-    q.p.splice(q.k, 1, ...nouveaux); return true; }
-  // 2. l'enjambement : un segment qui a le coin de l'autre en son milieu passe par-dessus, du côté où l'autre verticale ne va pas
-  for (const q of coins) { if (q.xo == null || q.xo - Math.min(q.c.x, q.h.x) <= JOG_X + 1 || Math.max(q.c.x, q.h.x) - q.xo <= JOG_X + 1) continue;
-    const vo = V.find(v => Math.abs(v.x - q.xo) < 0.5 && v.hi > q.c.y - 0.3 && v.lo < q.c.y + 0.3);
-    const sens = vo ? (vo.lo < q.c.y - 0.5 ? (vo.hi > q.c.y + 0.5 ? -1 : 1) : -1) : -1;
-    for (const s of [sens, -sens]) { const ys = q.c.y + JOG * s;
-      if (horizontaleEn(ys, q.xo - JOG_X, q.xo + JOG_X, q.s.net) || verticaleEn(q.xo - JOG_X, q.c.y, ys, q.xo) || verticaleEn(q.xo + JOG_X, q.c.y, ys, q.xo)) continue;
-      const vers = Math.sign(q.c.x - q.h.x), x1 = q.xo - JOG_X * vers, x2 = q.xo + JOG_X * vers;   // de h vers c
-      const bosse = [{ x: x1, y: q.c.y, jog }, { x: x1, y: ys, jog }, { x: x2, y: ys, jog }, { x: x2, y: q.c.y, jog }];
-      q.p.splice(Math.max(q.k, q.kh), 0, ...(q.k > q.kh ? bosse : bosse.reverse())); return true; } }
-  return false;
-}
-
 /* Le routage entier, puis chaque fil candidat à un détour par une goulotte
    voisine est essayé pour de vrai : le détour, plus long à lire, ne reste
    que s'il ôte au moins deux croisements au dessin entier. */
@@ -3212,7 +3330,6 @@ function routerUneFois(layout, permis) {
     return { x: b.x, y1: lo - 3, y2: hi + 3, py: b.py, gardes: [...b.departs.map(d => ({ y: d.y })), ...b.gardes], bus: b.n >= 4, dir: b.dir, px: b.px, net: b.net,
              pts: b.departs.filter(d => Math.abs(d.y - b.py) > 1.2).map(d => ({ x: b.x, y: d.y })), raccord: { x0: b.px, x1: b.x, y: b.py } }; });
   barrettes.raccords = barrettes.map(b => b.raccord);
-  separerLesPartages(traces, barrettes, netDe);
   const resultat = { fils: traces.filter(Boolean), points: jonctions(layout, traces, barrettes), barrettes, piquages: barrettes.flatMap(b => b.pts) };
   return { resultat, candidats: fils.candidats, croisements: compterCroisements(resultat.fils.filter(w => !w.shunt), barrettes) };
 }
@@ -3223,6 +3340,26 @@ function routerUneFois(layout, permis) {
    (le routeur le marque `parPiquage`). Un shunt n'est ni droit ni plié : il
    ne compte pas. */
 const compterDroits = fils => fils.filter(w => w.pts.length >= 2 && !w.parPiquage && w.pts.every(p => Math.abs(p.y - w.pts[0].y) < 0.01)).length;
+/* Les MARCHES d'un fil : un segment de moins de MARCHE entre deux angles
+   (une horizontale entre deux verticales, une verticale entre deux
+   horizontales), ou deux verticales à moins de 2·MARCHE l'une de l'autre.
+   Un fil est droit, fait un Z, ou un U par un couloir : jamais un escalier.
+   Rend le nombre de fils qui en ont ; `detail` reçoit lesquels. */
+function marchesDe(pts) {
+  const segs = []; for (let i = 0; i + 1 < pts.length; i++) { const a = pts[i], b = pts[i + 1];
+    segs.push(Math.abs(a.y - b.y) < 0.3 ? { h: true, L: Math.abs(b.x - a.x) } : { h: false, L: Math.abs(b.y - a.y), x: a.x }); }
+  const out = [];
+  for (let i = 1; i + 1 < segs.length; i++) if (segs[i].h !== segs[i - 1].h && segs[i].h !== segs[i + 1].h && segs[i].L < MARCHE - 1e-6)
+    out.push((segs[i].h ? 'horizontale' : 'verticale') + ' de ' + segs[i].L.toFixed(1) + ' entre deux angles');
+  const V = segs.filter(s => !s.h);
+  for (let i = 0; i < V.length; i++) for (let j = i + 1; j < V.length; j++) if (Math.abs(V[i].x - V[j].x) < 2 * MARCHE - 1e-6) out.push('deux verticales à ' + Math.abs(V[i].x - V[j].x).toFixed(1));
+  return out;
+}
+function compterMarches(fils, detail) { let n = 0;
+  fils.forEach(w => { if (w.shunt || !w.pts || w.pts.length < 4) return; const m = marchesDe(w.pts); if (!m.length) return; n++;
+    if (detail) detail.push(String(w.cable || (w.de + ':' + w.borneDe + '→' + w.vers + ':' + w.borneVers)) + ' : ' + m.join(', ')); });
+  return n;
+}
 /* Les segments du dessin, fusionnés : deux fils qui se superposent (les
    fils d'une même borne) font UN trait, et un croisement se compte une fois
    par trait. Les piquages y sont, verticales et raccords. */
@@ -3297,8 +3434,7 @@ function croisementsEvitables(layout, R) {
     const dedans = x => x > xL + 1 && x < xR - 1;
     barrettes.forEach(b => { if (!dedans(b.x)) return; const t = travailEn(b.x, b.y1 + 3, b.y2 - 3, b.net); t.piquage = b;
       attacher(t, { x: b.raccord.x0, y: b.py }, { x: b.x, y: b.py }); });
-    // les jogs sont des conséquences de l'ordre, pas des pistes : on relit les tracés sans eux
-    R.fils.forEach(w => { const p = sansJogs(w.pts), net = netDe(w.i); if (!p.length) return;
+    R.fils.forEach(w => { const p = w.pts, net = netDe(w.i); if (!p.length) return;
       for (let i = 0; i + 1 < p.length; i++) { const a = p[i], b = p[i + 1];
         if (Math.abs(a.x - b.x) > 0.01 || Math.abs(a.y - b.y) < 0.5 || !dedans(a.x)) continue;
         const t = travailEn(a.x, Math.min(a.y, b.y), Math.max(a.y, b.y), net);
@@ -3397,6 +3533,7 @@ function styleDessin() {
      .pont{stroke:#1b2430;stroke-width:1;stroke-linecap:butt}
      .bpast{fill:#1b2430;stroke:none}
      .bpnum{fill:#ffffff;font-size:4px;font-weight:700}
+     .rep-petit{fill:#111b25;font-size:5.6px;font-weight:600;letter-spacing:.35px}
      .rpill{fill:#ffffff;stroke:#8f9ba6;stroke-width:.8}
      .rname{fill:#2b3743;font-weight:600;font-size:7.5px;letter-spacing:.6px}
      .frame{fill:none;stroke:#c2ccd5;stroke-width:.8}
@@ -3523,8 +3660,10 @@ function occupationDe(fils, barrettes, comps) {
     // le corps d'un équipement compte avec ses pièces de connecteur et leurs lettres ; celui d'une réglette, sa colonne
     if (c.kind !== 'tag') { const d = c.kind === 'equip' ? CONN_W : 0; corps.push({ x0: c.x + c.lw - d, y0: c.y, x1: c.x + c.w - c.rw + d, y1: c.y + c.h, id: c.id });
       if (c.kind === 'equip') piecesDeConnecteur(c).forEach(p => boites.push({ x0: p.x0, x1: p.x1, y0: p.t - 8.5, y1: p.t - 1, id: c.id })); return; }
-    // une pastille : les barres d'une masse, la pilule d'un rail — le bout de fil qui y mène reste libre
-    const M = symboleDeMasse(c); if (M) boites.push({ x0: Math.min(M.xs, M.xs + M.d * 6.4), x1: Math.max(M.xs, M.xs + M.d * 6.4), y0: M.y - 6, y1: M.y + 6, id: c.id });
+    // une pastille : les barres d'une masse, le pointillé d'un morceau de barrette, la pilule d'un rail — le bout de fil qui y mène reste libre
+    const M = symboleDePastille(c);
+    if (M && M.genre === 'masse') boites.push({ x0: Math.min(M.xs, M.xs + M.d * 6.4), x1: Math.max(M.xs, M.xs + M.d * 6.4), y0: M.y - 6, y1: M.y + 6, id: c.id });
+    else if (M) boites.push({ x0: M.xs - 5, x1: M.xs + 5, y0: M.y - 6.5, y1: M.y + 7.5, id: c.id });
     else boites.push({ x0: c.x, x1: c.x + c.w, y0: c.y + c.h / 2 - 6, y1: c.y + c.h / 2 + 6, id: c.id }); });
   const O = { H, V, boites, corps };
   // `sauf` : le bloc dont on pose le repère ne se gêne pas lui-même ; sans `sauf`, TOUT compte (les textes déjà posés n'ont pas d'id)
@@ -3547,18 +3686,26 @@ function boiteDeTexte(x, y, a, n, fs, ls) { const w = largeurTexte(n, fs, ls), x
    les attend, et c'est là qu'ils vont quand rien n'y passe. Sinon ils
    prennent la place libre la plus proche — à côté du point, au-dessus des
    barres, au-delà du symbole — plutôt que de se faire barrer par un fil. */
-/* Le symbole d'une masse collée à sa borne, en absolu : le fil ARRIVE par le
-   flanc que dit p.dir (-1 : par la gauche), les barres sont tout de suite là
-   (xs) et grandissent vers l'autre flanc (d). */
-function symboleDeMasse(c) { if (!(c.kind === 'tag' && estMasse(c.name))) return null;
-  const p = (c.rangs.S || [])[0] || { y: c.y + c.h / 2, dir: -1 }, d = (p.dir || -1) < 0 ? 1 : -1;
-  return { y: p.y, d, xs: d > 0 ? c.x + 4 : c.x + c.w - 4 }; }
+/* Le symbole d'une pastille collée à sa borne, en absolu : le fil ARRIVE par
+   le flanc que dit p.dir (-1 : par la gauche), le symbole est tout de suite
+   là (xs) et grandit vers l'autre flanc (d). Une MASSE : trois barres depuis
+   xs ; un MORCEAU DE BARRETTE (une borne, un fil, rien après) : un court
+   pointillé vertical en xs, la borne en point noir numéroté dessus, le point
+   de départ dessous. Le repère se lit sous le symbole, dans le pas des
+   bornes (HAUT_PASTILLE) : il ne touche pas le fil voisin. */
+function symboleDePastille(c) { if (c.kind !== 'tag') return null;
+  const genre = estMasse(c.name) ? 'masse' : estBarrette(c.name) ? 'barrette' : null; if (!genre) return null;
+  const p = (c.rangs.S || [])[0] || { y: c.y + c.h / 2, dir: -1 }, d = (p.dir || -1) < 0 ? 1 : -1, r = genre === 'masse' ? 4 : 7;
+  return { genre, y: p.y, d, xs: d > 0 ? c.x + r : c.x + c.w - r, etiq: p.etiq }; }
 function reperesCandidats(c) {
   const bw = c.w - c.lw - c.rw, mid = c.x + c.lw + bw / 2, rs = c.rangs.S || [];
-  const M = symboleDeMasse(c);
-  if (M) { const cx = M.xs + M.d * 3.2;
+  const M = symboleDePastille(c);
+  // masse, morceau de barrette collé, prise de coupure, barrette : le même petit repère
+  if (M && M.genre === 'masse') { const cx = M.xs + M.d * 3.2;
     return { cls: 'rep-petit', fs: 6, ls: 0.3, nom: clip(c.name, 10), cands: [
       { x: cx, y: M.y + 11.6, a: 'middle' }, { x: cx, y: M.y - 8.4, a: 'middle' }, { x: M.xs + M.d * 9.5, y: M.y + 2, a: M.d > 0 ? 'start' : 'end' }] }; }
+  if (M) return { cls: 'rep-petit', fs: 6, ls: 0.3, nom: clip(c.name, 10), cands: [
+    { x: M.xs, y: M.y + 12.4, a: 'middle' }, { x: M.xs, y: M.y - 8.4, a: 'middle' }, { x: M.xs + M.d * 7, y: M.y + 2, a: M.d > 0 ? 'start' : 'end' }] };
   if (c.kind === 'strip' && estCoupure(c.name)) return { cls: 'rep-petit', fs: 6, ls: 0.3, nom: clip(c.name, 14), cands: [
     { x: mid, y: c.y + c.h + 8, a: 'middle' }, { x: mid, y: c.y - 4, a: 'middle' }, { x: mid, y: c.y + c.h + 16, a: 'middle' }] };
   if (c.kind === 'strip' || estBarrette(c.name)) {
@@ -3723,10 +3870,20 @@ function blocSvg(c, designation, choisi) {
        perpendiculaire à l'équipement — trois barres verticales décroissantes
        vers l'extérieur — et le repère se lit dessous. */
     // p.dir dit par quel flanc le fil ARRIVE (-1 : par la gauche) ; le symbole grandit vers l'autre flanc.
-    const M = symboleDeMasse(c), ly = M.y - c.y, d = M.d, xs = M.xs - c.x, x0 = d > 0 ? 0 : c.w;   // le fil entre par un flanc, le symbole est tout de suite là
+    const M = symboleDePastille(c), ly = M.y - c.y, d = M.d, xs = M.xs - c.x, x0 = d > 0 ? 0 : c.w;   // le fil entre par un flanc, le symbole est tout de suite là
     s += `<line class="earth" x1="${f1(x0)}" y1="${f1(ly)}" x2="${f1(xs)}" y2="${f1(ly)}"/>`;
     [[6, 0], [4, 3.2], [2, 6.4]].forEach(([l, dx]) => { const x = xs + d * dx; s += `<line class="earth" x1="${f1(x)}" y1="${f1(ly - l)}" x2="${f1(x)}" y2="${f1(ly + l)}"/>`; });
     // le repère, petit, sous les barres — ou là où la place est libre
+    s += repereDe(c);
+  } else if (c.kind === 'tag' && estBarrette(c.name)) {
+    /* MORCEAU DE BARRETTE collé à sa borne — une borne, un fil, rien après :
+       il se dessine comme une masse, dans l'AXE du fil, en petit : le fil
+       arrive sur un court pointillé vertical, la borne est le point noir
+       numéroté dessus, le point de départ dessous, le repère en petit. */
+    const M = symboleDePastille(c), ly = M.y - c.y, xs = M.xs - c.x, x0 = M.d > 0 ? 0 : c.w;
+    s += `<line class="lead" x1="${f1(x0)}" y1="${f1(ly)}" x2="${f1(xs)}" y2="${f1(ly)}"/>`;
+    s += `<line class="barre" x1="${f1(xs)}" y1="${f1(ly - 6)}" x2="${f1(xs)}" y2="${f1(ly + 6)}"/><circle class="bardot" cx="${f1(xs)}" cy="${f1(ly + 6)}" r="1.5"/>`;
+    s += pastilleSvg(xs, ly, M.etiq ? clip(String(M.etiq), 3) : '');
     s += repereDe(c);
   } else if (c.kind === 'tag') {
     // pastille de potentiel, en face de la borne desservie
