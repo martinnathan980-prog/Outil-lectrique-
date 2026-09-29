@@ -952,7 +952,8 @@ function compterContours(fils) { let s = 0; fils.forEach(w => s += Math.max(0, d
 const ETIREMENT_MAX = 1.5;
 const bornesParFlanc = c => Math.max(1, (c.rangs.L || []).length, (c.rangs.R || []).length, (c.rangs.S || []).length);
 function hauteurNaturelle(c) { const n = bornesParFlanc(c); return (n - 1) * PRH + 2 * (c.kind !== 'equip' ? PRH / 2 + 5 : n === 1 ? 23 : 18); }
-const corpsEtire = c => c.kind !== 'tag' && c.h > ETIREMENT_MAX * hauteurNaturelle(c) + (bornesParFlanc(c) <= 2 ? 2 : 1) * PRH;
+// un gros équipement (HUB_MIN bornes ou plus sur un flanc) s'étire à la hauteur de ses partenaires sans être compté étiré
+const corpsEtire = c => c.kind !== 'tag' && bornesParFlanc(c) < HUB_MIN && c.h > ETIREMENT_MAX * hauteurNaturelle(c) + (bornesParFlanc(c) <= 2 ? 2 : 1) * PRH;
 /* Les BANDES d'un dessin : ses rangées de blocs séparées par du vide, dans
    toutes les colonnes. Un dessin d'au moins deux bandes un peu trop large
    s'étire à la fin (etirerAuFormat) sans rien perdre : il TIENDRA. */
@@ -1232,6 +1233,7 @@ function rechercheLocale(M, meilleur, budget, finale) {
     ['priorité', () => promotions(M, meilleur.E, () => meilleur, essayerEtat, temps)],
     ['renoncement', () => renoncements(M, meilleur.E, () => meilleur, essayerEtat, temps)],
     ['compaction', () => compactions(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps)],
+    ['étirement', () => etirements(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps)],
     ['flanc', () => flancsDeConnecteurs(M, meilleur.E, essayerEtat, temps)],
     ['borne', () => flancsDeBornes(M, meilleur.E, () => meilleur, essayerEtat, temps, (k, y) => essayerGeometrie(borneA(k, y), TAMIS), false, (k, y) => estimer(assembler(M, meilleur.E, borneA(k, y))).lisibilite)],
     ['sortie', () => sortiesDeBornier(M, meilleur.E, essayerEtat, temps)],
@@ -1259,6 +1261,7 @@ function rechercheLocale(M, meilleur, budget, finale) {
   const finaux = [
     ['borne', () => flancsDeBornes(M, meilleur.E, () => meilleur, essayerEtatTout, temps, essayerBorneAuComplet, true, estimerBorneA)],
     ['compaction', () => compactions(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
+    ['étirement', () => etirements(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
     ['glissement', () => glissements(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
     ['permutation', () => permutationsDeBornes(M, meilleur.E, () => meilleur.pos, copie, essayerTout, temps, estimerOrdre, () => meilleur.est, () => meilleur, p2 => resoudreDans(p2, TAMIS_FINAL, true), TAMIS_FINAL)]];
   // un geste évident ne se manque pas : tant qu'un balayage trouve encore, la passe continue, jusqu'au double de son budget
@@ -1383,6 +1386,45 @@ function renoncements(M, E, meilleurDe, essayer, temps) {
     E.refuses.add(w.i); if (essayer()) any = true; else E.refuses.delete(w.i); });
   return any;
 }
+/* Un GROS équipement S'ÉTIRE à la hauteur de ses partenaires : chaque borne
+   qui parle à une autre colonne prend l'ordonnée de son partenaire, la liste
+   se range dans cet ordre au pas (deux pas entre deux connecteurs), le corps
+   se referme dessus, et les voisins de la pile s'écartent. C'est ce qu'un
+   câbleur fait d'un calculateur : une colonne de bornes en face de ce
+   qu'elles servent, tous les fils droits. Le juge tranche (un corps étiré
+   coûte une fois et demie, contre tout ce que ça redresse). Un bloc qui a
+   des paquets pontés garde son ordre : il ne s'étire pas ainsi. */
+const HUB_MIN = 8;
+function etirements(M, E, meilleurDe, copie, essayer, temps) {
+  let any = false;
+  const glisser = (pos, id, dy) => { M.blocs.get(id).bornes.forEach(p => { const k = K(id, p.cle); if (pos.y.has(k)) pos.y.set(k, pos.y.get(k) + dy); }); pos.haut.set(id, pos.haut.get(id) + dy); pos.bas.set(id, pos.bas.get(id) + dy); };
+  M.ids.forEach(id => { if (M.estTag(id) || !temps()) return; const b = M.blocs.get(id); if (b.genre !== 'equip') return;
+    const nb = Math.max(0, ...E.clesListes(id).map(lid => E.listes.get(id)[lid].length)); if (nb < HUB_MIN) return;
+    if (paquetsDe(M, id, b.bornes.map(p => p.cle)).some(pq => pq.length > 1)) return;
+    const m = meilleurDe(), pos = m.pos, cible = new Map();
+    b.bornes.forEach(p => { const ys = M.partenairesBlocs(K(id, p.cle)).filter(q => !M.estTag(q.id) && E.place.get(q.id) && E.place.get(q.id).c !== E.place.get(id).c)
+      .map(q => pos.y.get(K(q.id, q.cle))).filter(y => y != null); if (ys.length) cible.set(p.cle, ys.reduce((t, v) => t + v, 0) / ys.length); });
+    if (cible.size < 4) return;
+    const p2 = copie(pos); let lo = Infinity, hi = -Infinity;
+    E.clesListes(id).forEach(lid => { const L = E.listes.get(id)[lid]; if (!L.length) return;
+      const yDe = p => cible.has(p.cle) ? cible.get(p.cle) : pos.y.get(K(id, p.cle));
+      // un connecteur reste d'un seul tenant : les connecteurs se rangent par la hauteur moyenne de leurs bornes, les bornes dedans
+      const groupes = new Map(); L.forEach(p => { const g = b.connecteur.get(p.cle) || ''; (groupes.get(g) || groupes.set(g, []).get(g)).push(p); });
+      const moy = ps => ps.reduce((t, p) => t + yDe(p), 0) / ps.length;
+      const tri = [...groupes.values()].sort((u, v) => moy(u) - moy(v)).flatMap(ps => ps.slice().sort((u, v) => yDe(u) - yDe(v))); let y = -Infinity;
+      tri.forEach((p, i) => { const pas = i ? (b.connecteur.get(tri[i - 1].cle) !== b.connecteur.get(p.cle) ? 2 * PRH : PRH) : 0;
+        y = Math.max(yDe(p), y + pas); p2.y.set(K(id, p.cle), y); lo = Math.min(lo, y); hi = Math.max(hi, y); }); });
+    if (!isFinite(lo)) return;
+    const [mh, mb] = margesDe(M, E, id); const haut = lo - mh, bas = hi + mb;
+    if (bas - haut <= pos.bas.get(id) - pos.haut.get(id) + 0.5) return;                    // rien à étirer
+    p2.haut.set(id, haut); p2.bas.set(id, bas);
+    // les voisins de la pile s'écartent, de proche en proche
+    const pile = (E.piles.get(E.pileDe(id)) || []).filter(o => o !== id).sort((u, v) => pos.haut.get(u) - pos.haut.get(v));
+    let plafond = haut - 10; pile.filter(o => pos.haut.get(o) < pos.haut.get(id)).reverse().forEach(o => { const d = plafond - p2.bas.get(o); if (d < 0) glisser(p2, o, d); plafond = p2.haut.get(o) - 10; });
+    let plancher = bas + 10; pile.filter(o => pos.haut.get(o) >= pos.haut.get(id)).forEach(o => { const d = plancher - p2.haut.get(o); if (d > 0) glisser(p2, o, d); plancher = p2.bas.get(o) + 10; });
+    if (essayer(p2)) any = true; });
+  return any;
+}
 /* Un corps ÉTIRÉ se TASSE sur place : ses bornes reprennent le pas depuis
    la première (ou en remontant depuis la dernière), le corps se referme sur
    elles, rien d'autre ne bouge — les pastilles collées suivent leur borne.
@@ -1477,7 +1519,10 @@ function flancsDeBornes(M, E, meilleurDe, essayer, temps, essayerFixe, fixeSeul,
           // un pas d'une borne du même connecteur, deux d'une borne d'un autre (sa lettre s'écrit entre les deux)
           const autres = ls[f1].filter(p => p !== g[0]).map(p => ({ y: pos.y.get(K(id, p.cle)), pas: b.connecteur.get(p.cle) === nom ? PRH : 2 * PRH }));
           // au-dessus ou au-dessous du corps d'un pas au plus : le corps grandit d'autant (borneA), le juge voit s'il heurte
-          const libre = y => autres.every(a => Math.abs(a.y - y) >= a.pas - 0.5) && y >= pos.haut.get(id) + 10 - PRH && y <= pos.bas.get(id) - 10 + PRH;
+          // jamais DANS un autre connecteur (entre sa première et sa dernière borne) : un corps étiré a des trous, un connecteur reste d'un seul tenant
+          const etendues = new Map(); ls[f1].filter(p => p !== g[0]).forEach(p => { const c = b.connecteur.get(p.cle); if (c == null || c === nom) return; const yy = pos.y.get(K(id, p.cle)), e = etendues.get(c) || etendues.set(c, [yy, yy]).get(c); e[0] = Math.min(e[0], yy); e[1] = Math.max(e[1], yy); });
+          const dedans = y => [...etendues.values()].some(([a, z]) => y > a - 0.5 && y < z + 0.5);
+          const libre = y => autres.every(a => Math.abs(a.y - y) >= a.pas - 0.5) && !dedans(y) && y >= pos.haut.get(id) + 10 - PRH && y <= pos.bas.get(id) - 10 + PRH;
           const haut = autres.reduce((m, a) => a.y - a.pas < m ? a.y - a.pas : m, Infinity), basY = autres.reduce((m, a) => a.y + a.pas > m ? a.y + a.pas : m, -Infinity);
           let hauteurs = [y0, ...(autres.length ? [haut, basY] : [])].filter((y, i, a) => a.indexOf(y) === i && libre(y));
           // les hauteurs se routent dans l'ordre de l'estimation (elle ne coûte rien) ; hors passe finale, la meilleure seulement

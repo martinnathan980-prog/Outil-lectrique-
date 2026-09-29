@@ -34,12 +34,21 @@ chiffres de référence sur les vingt et une topologies (quinze historiques
 et les six folios de l'exemple ; un piquage qui tranche un fil compte
 comme un croisement), depuis que plus aucun fil ne fait de marche :
 
-    80,4 % de fils droits · 35 croisements · 0 évitable · 0 violation · 0 cas hors feuille
-    (sur les dix-huit d'avant les trois nouveaux folios : 86,6 %, 19 croisements)
+    85,0 % de fils droits · 36 croisements · 0 évitable · 0 violation · 0 cas hors feuille
     contrat d'essai : 66,7 %, 0 croisement
-    folio 1 : 75 %, 1 · folio 2 : 65 %, 1 · folio 3 : 60,7 %, 17 — paysage (1,62)
-    folio 4 : 53,8 %, 7 · folio 5 : 76,3 %, 5 · folio 6 : 37,5 %, 4
-    partout : 0 tour, 0 segment partagé, 0 marche, tout tient en paysage
+    folio 1 : 75 %, 1 · folio 2 : 63,2 %, 1 · folio 3 : 71,4 %, 18 — paysage (1,20)
+    folio 4 : 53,8 %, 7 · folio 5 : 76,3 %, 5 · folio 6 : 84,4 %, 4
+    partout : 0 tour, 0 segment partagé, 0 marche
+
+UN GROS ÉQUIPEMENT S'ÉTIRE À LA HAUTEUR DE SES PARTENAIRES (`etirements`,
+HUB_MIN = 8 bornes sur un flanc) : chaque borne prend l'ordonnée de son
+partenaire, les connecteurs se rangent d'un seul tenant par la hauteur
+moyenne de leurs bornes, le corps se referme dessus, les voisins de la pile
+s'écartent ; un tel bloc n'est pas compté « étiré ». C'est ce qu'un câbleur
+fait d'un calculateur, et ce que le lecteur a demandé en voyant 300XC1 :
+folio 3 60,7 % → 71,4 %, folio 6 37,5 % → 84,4 % (avant : 80,4 % / 35 sur
+les vingt et une topologies). Un changement de flanc ne pose plus une borne
+DANS un autre connecteur (entre sa première et sa dernière borne).
 
 Le folio 3 se calcule en deux secondes et demie, le folio 6 en deux et
 demie aussi, les autres en moins d'une seconde et demie.
