@@ -141,7 +141,13 @@ const CAS = [
      connecteurs, deux barrettes à shunts, deux prises de coupure, des masses. */
   ['exemple, folio 1 — batterie, disjoncteur, relais', { plan: '1' }],
   ['exemple, folio 2 — barrette, prise de coupure', { plan: '2' }],
-  ['exemple, folio 3 — 66 liaisons, très chargé', { plan: '3' }]
+  ['exemple, folio 3 — 66 liaisons, très chargé', { plan: '3' }],
+  /* Trois folios de taille moyenne, de structures différentes : un calculateur avec deux barrettes de
+     distribution et des sondes à masses ; une chaîne de deux prises de coupure entre deux tronçons ; deux
+     équipements de dix bornes qui se parlent à travers une barrette à piquages. */
+  ['exemple, folio 4 — calculateur, deux barrettes, sondes', { plan: '4' }],
+  ['exemple, folio 5 — chaîne de prises de coupure', { plan: '5' }],
+  ['exemple, folio 6 — dix bornes contre dix, par une barrette', { plan: '6' }]
 ];
 
 module.exports = { CAS };          // les topologies servent aussi aux essais sans navigateur
@@ -184,7 +190,7 @@ if (require.main === module) (async () => {
       const marches = await page.evaluate(marchesDansLaPage);
       m.controles.push({ nom: 'aucune marche : un fil est droit, fait un Z, ou un U par un couloir', ok: !marches.n, detail: marches.detail.join(' | ') });
       const etires = await page.evaluate(corpsEtiresDansLaPage);
-      m.controles.push({ nom: 'aucun corps étiré à plus de deux fois sa hauteur naturelle sans rendre droits deux fils de plus (' + etires.etires + ' étiré' + (etires.etires > 1 ? 's' : '') + ')', ok: !etires.defauts.length, detail: etires.defauts.join(' | ') });
+      m.controles.push({ nom: 'aucun corps étiré (équipement ou réglette) que sa version tassée ne bat au juge (' + etires.etires + ' étiré' + (etires.etires > 1 ? 's' : '') + ')', ok: !etires.defauts.length, detail: etires.defauts.join(' | ') });
       const pastilles = await page.evaluate(pastillesColleesDansLaPage);
       m.controles.push({ nom: 'les masses (' + pastilles.masses + ') et les morceaux de barrette seuls (' + pastilles.morceaux + ') sont collés à leur borne', ok: !pastilles.loin.length, detail: pastilles.loin.join(' | ') });
       if (gen.plan === '2') { const f = await page.evaluate(filDroitOuJustifieDansLaPage, 'W-120');

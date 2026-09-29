@@ -100,11 +100,12 @@ function contratEssai() {
   li('601RC',  '11', '733LE',  'CNT', 'W-150', 'MLC24');
   return L;
 }
-/* Le contrat d'exemple, celui qu'on voit en ouvrant l'outil : trois plans,
-   donc trois folios — un facile, un moyen, un très chargé — avec ce que le
-   retest porte en vrai : les part numbers des connecteurs, des bornes qui
-   disent leur connecteur (A12), des barrettes qui distribuent avec leurs
-   shunts, des prises de coupure, des fils blindés, des masses. */
+/* Le contrat d'exemple, celui qu'on voit en ouvrant l'outil : six plans,
+   donc six folios — un facile, un moyen, un très chargé, puis trois de
+   taille moyenne aux structures différentes — avec ce que le retest porte
+   en vrai : les part numbers des connecteurs, des bornes qui disent leur
+   connecteur (A12), des barrettes qui distribuent avec leurs shunts, des
+   prises de coupure, des fils blindés, des masses. */
 function contratExemple() {
   const PN = {
     '101BT1': 'MS3470L14-5P', '102CB1': 'NSA935401-10', '103RL1': 'E0836IS35-22SA', '104LP1': 'E0644D9S',
@@ -114,7 +115,13 @@ function contratExemple() {
     '300XC1': 'EN4165-2M', '351PM1': 'EN2997Y1A12P', '352PM2': 'EN2997Y1A12P', '361VL1': 'ABS0864-08', '362VL2': 'ABS0864-08', '363VL3': 'ABS0864-08',
     '371CP1': 'E0644B9S', '372CP2': 'E0644B9S', '381RL1': 'E0836IS35-22SA', '382RL2': 'E0836IS35-22SA', '383RL3': 'E0836IS35-22SA',
     '391LP1': 'E0644D9S', '392LP2': 'E0644D9S', '395SW1': 'NSA937802-03', '396SW2': 'NSA937802-03', '397TB1': 'ASNE0501-08',
-    '668VT31': 'ASNE0500-12', '669VT32': 'ASNE0502-08', '409VC2A': 'EN3646A6083AAN', '410VC2B': 'EN3646A6083AAN' };
+    '668VT31': 'ASNE0500-12', '669VT32': 'ASNE0502-08', '409VC2A': 'EN3646A6083AAN', '410VC2B': 'EN3646A6083AAN',
+    '400XC2': 'EN4165-2M', '421ST1': 'EN2997Y1A10P', '422ST2': 'EN2997Y1A10P', '423ST3': 'EN2997Y1A10P', '431PR1': 'EN2997Y1A08P',
+    '441VN1': 'ABS0864-08', '442VN2': 'ABS0864-08', '670VT41': 'ASNE0500-08', '671VT42': 'ASNE0502-04',
+    '500XC3': 'EN4165-2M', '510RL1': 'E0836IS35-22SA', '511RL2': 'E0836IS35-22SA', '520LP1': 'E0644D9S', '530PM3': 'EN2997Y1A12P', '531PM4': 'EN2997Y1A12P',
+    '540VL5': 'ABS0864-08', '550SW3': 'NSA937802-03', '560HT1': 'E0644B9S', '411VC3A': 'EN3646A6088AAN', '412VC3B': 'EN3646A6088AAN',
+    '600XC4': 'EN4165-2M', '601XC5': 'EN4165-2M', '672VT51': 'ASNE0500-12', '610LP3': 'E0644D9S', '611LP4': 'E0644D9S', '620SW4': 'NSA937802-03',
+    '630RL5': 'E0836IS35-22SA', '631RL6': 'E0836IS35-22SA' };
   const L = [];
   const li = (plan, de, bDe, vers, bVers, cable, type) =>
     L.push(liaison({ de, borneDe: bDe, pnDe: PN[de] || '', vers, borneVers: bVers, pnVers: PN[vers] || '', cable, type, plan }));
@@ -218,5 +225,122 @@ function contratExemple() {
   li('3', '363VL3', '3',   '300XC1',  'A11', 'W-379', 'DR24');
   li('3', '391LP1', '3',   '395SW1',  '4',  'W-380', 'DR24');
   li('3', '396SW2', '3',   '392LP2',  '3',  'W-381', 'DR24');
+  // ---- plan 4 : moyen — un calculateur qui distribue par une barrette à deux paquets de shunts, trois sondes
+  //      blindées dont les blindages se reprennent sur une seconde barrette, un pressostat, deux vannes ; un
+  //      morceau de barrette seul (la borne 7, alimentée d'un autre folio) ; des masses partout
+  li('4', '400XC2', 'B1',  '670VT41', '1',  'W-401', 'DR20');
+  li('4', '670VT41', '1',  '670VT41', '2',  'W-402', 'DR20');
+  li('4', '670VT41', '2',  '670VT41', '3',  'W-403', 'DR20');
+  li('4', '670VT41', '3',  '670VT41', '4',  'W-404', 'DR20');
+  li('4', '670VT41', '2',  '421ST1',  '1',  'W-405', 'DR22');
+  li('4', '670VT41', '3',  '422ST2',  '1',  'W-406', 'DR22');
+  li('4', '670VT41', '4',  '423ST3',  '1',  'W-407', 'DR22');
+  li('4', '400XC2', 'B2',  '670VT41', '5',  'W-408', 'DR20');
+  li('4', '670VT41', '5',  '670VT41', '6',  'W-409', 'DR20');
+  li('4', '670VT41', '5',  '431PR1',  '1',  'W-410', 'DR22');
+  li('4', '670VT41', '6',  '441VN1',  '1',  'W-411', 'DR22');
+  li('4', '670VT41', '7',  '442VN2',  '1',  'W-412', 'DR22');
+  li('4', '421ST1', '2',   '400XC2',  'A1', 'W-420', 'MLB24');
+  li('4', '422ST2', '2',   '400XC2',  'A2', 'W-421', 'MLB24');
+  li('4', '423ST3', '2',   '400XC2',  'A3', 'W-422', 'MLB24');
+  li('4', '431PR1', '2',   '400XC2',  'A4', 'W-423', 'DR24');
+  li('4', '441VN1', '2',   '400XC2',  'A5', 'W-424', 'DR24');
+  li('4', '441VN1', '3',   '400XC2',  'A6', 'W-425', 'DR24');
+  li('4', '442VN2', '2',   '400XC2',  'A7', 'W-426', 'DR24');
+  li('4', '421ST1', '3',   '671VT42', '1',  'W-430', 'MLB24');
+  li('4', '422ST2', '3',   '671VT42', '2',  'W-431', 'MLB24');
+  li('4', '423ST3', '3',   '671VT42', '3',  'W-432', 'MLB24');
+  li('4', '671VT42', '1',  '671VT42', '2',  'W-433', 'DR24');
+  li('4', '671VT42', '2',  '671VT42', '3',  'W-434', 'DR24');
+  li('4', '671VT42', '3',  '671VT42', '4',  'W-435', 'DR24');
+  li('4', '671VT42', '4',  '400XC2',  'A10', 'W-436', 'DR24');
+  li('4', '421ST1', '4',   '910G',    '',   'W-440', 'DR22');
+  li('4', '422ST2', '4',   '910G',    '',   'W-441', 'DR22');
+  li('4', '423ST3', '4',   '910G',    '',   'W-442', 'DR22');
+  li('4', '431PR1', '3',   '911G',    '',   'W-443', 'DR22');
+  li('4', '441VN1', '4',   '911G',    '',   'W-444', 'DR22');
+  li('4', '442VN2', '3',   '911G',    '',   'W-445', 'DR22');
+  li('4', '400XC2', 'B10', '911G',    '',   'W-446', 'DR20');
+  // ---- plan 5 : moyen — deux tronçons de faisceau (fuselage, voilure) séparés par une chaîne de deux prises
+  //      de coupure : un calculateur et deux relais d'un côté, deux pompes, une vanne, un interrupteur et un
+  //      réchauffeur de l'autre ; les fils traversent une prise, ou les deux
+  li('5', '500XC3', 'A1',  '411VC3A', '1',  'W-501', 'DR20');
+  li('5', '411VC3A', '1',  '412VC3B', '1',  'W-502', 'DR20');
+  li('5', '412VC3B', '1',  '530PM3',  '1',  'W-503', 'DR20');
+  li('5', '500XC3', 'A2',  '411VC3A', '2',  'W-504', 'DR20');
+  li('5', '411VC3A', '2',  '412VC3B', '2',  'W-505', 'DR20');
+  li('5', '412VC3B', '2',  '530PM3',  '2',  'W-506', 'DR20');
+  li('5', '500XC3', 'A3',  '411VC3A', '3',  'W-507', 'DR20');
+  li('5', '411VC3A', '3',  '412VC3B', '3',  'W-508', 'DR20');
+  li('5', '412VC3B', '3',  '531PM4',  '1',  'W-509', 'DR20');
+  li('5', '500XC3', 'A4',  '411VC3A', '4',  'W-510', 'DR20');
+  li('5', '411VC3A', '4',  '412VC3B', '4',  'W-511', 'DR20');
+  li('5', '412VC3B', '4',  '531PM4',  '2',  'W-512', 'DR20');
+  li('5', '500XC3', 'B1',  '411VC3A', '5',  'W-513', 'DR22');
+  li('5', '411VC3A', '5',  '540VL5',  '1',  'W-514', 'DR22');
+  li('5', '500XC3', 'B2',  '411VC3A', '6',  'W-515', 'DR22');
+  li('5', '411VC3A', '6',  '540VL5',  '2',  'W-516', 'DR22');
+  li('5', '510RL1', '2',   '411VC3A', '7',  'W-520', 'DR22');
+  li('5', '411VC3A', '7',  '412VC3B', '5',  'W-521', 'DR22');
+  li('5', '412VC3B', '5',  '550SW3',  '1',  'W-522', 'DR22');
+  li('5', '550SW3', '2',   '412VC3B', '6',  'W-523', 'DR24');
+  li('5', '412VC3B', '6',  '411VC3A', '8',  'W-524', 'DR24');
+  li('5', '411VC3A', '8',  '500XC3',  'B3', 'W-525', 'DR24');
+  li('5', '540VL5', '4',   '412VC3B', '7',  'W-526', 'DR22');
+  li('5', '412VC3B', '7',  '560HT1',  '1',  'W-527', 'DR22');
+  li('5', '500XC3', 'B4',  '510RL1',  '1',  'W-530', 'DR24');
+  li('5', '500XC3', 'B5',  '511RL2',  '1',  'W-531', 'DR24');
+  li('5', '500XC3', 'B6',  '511RL2',  '4',  'W-532', 'DR22');
+  li('5', '511RL2', '2',   '510RL1',  '4',  'W-533', 'DR22');
+  li('5', '511RL2', '5',   '520LP1',  '1',  'W-534', 'DR24');
+  li('5', '520LP1', '2',   '912G',    '',   'W-540', 'DR24');
+  li('5', '510RL1', '3',   '912G',    '',   'W-541', 'DR24');
+  li('5', '511RL2', '3',   '912G',    '',   'W-542', 'DR24');
+  li('5', '500XC3', 'B10', '912G',    '',   'W-543', 'DR20');
+  li('5', '530PM3', '3',   '913G',    '',   'W-544', 'DR20');
+  li('5', '531PM4', '3',   '913G',    '',   'W-545', 'DR20');
+  li('5', '540VL5', '3',   '913G',    '',   'W-546', 'DR22');
+  li('5', '550SW3', '3',   '913G',    '',   'W-547', 'DR22');
+  li('5', '560HT1', '2',   '913G',    '',   'W-548', 'DR22');
+  // ---- plan 6 : moyen — deux équipements de dix bornes qui se parlent à travers une barrette : huit fils qui la
+  //      traversent, un paquet ponté en bus, trois piquages par shunt vers des lampes et un interrupteur (un module de
+  //      barrette n'a qu'un contact par côté : un piquage, c'est un shunt), deux fils directs, une borne qui alimente
+  //      deux relais (un piquage sur l'équipement), des masses
+  li('6', '600XC4', 'A1',  '672VT51', '1',  'W-601', 'DR22');
+  li('6', '672VT51', '1',  '601XC5',  'B1', 'W-611', 'DR22');
+  li('6', '600XC4', 'A2',  '672VT51', '2',  'W-602', 'DR22');
+  li('6', '672VT51', '2',  '601XC5',  'B2', 'W-612', 'DR22');
+  li('6', '672VT51', '1',  '672VT51', '2',  'W-620', 'DR22');
+  li('6', '600XC4', 'A3',  '672VT51', '3',  'W-603', 'DR22');
+  li('6', '672VT51', '3',  '601XC5',  'B3', 'W-613', 'DR22');
+  li('6', '672VT51', '3',  '672VT51', '4',  'W-621', 'DR22');
+  li('6', '672VT51', '4',  '610LP3',  '1',  'W-622', 'DR24');
+  li('6', '600XC4', 'A4',  '672VT51', '5',  'W-604', 'DR22');
+  li('6', '672VT51', '5',  '601XC5',  'B4', 'W-614', 'DR22');
+  li('6', '600XC4', 'A5',  '672VT51', '6',  'W-605', 'DR22');
+  li('6', '672VT51', '6',  '601XC5',  'B5', 'W-615', 'DR22');
+  li('6', '672VT51', '6',  '672VT51', '7',  'W-623', 'DR22');
+  li('6', '672VT51', '7',  '611LP4',  '1',  'W-624', 'DR24');
+  li('6', '600XC4', 'A6',  '672VT51', '8',  'W-606', 'DR22');
+  li('6', '672VT51', '8',  '601XC5',  'B6', 'W-616', 'DR22');
+  li('6', '600XC4', 'A7',  '672VT51', '9',  'W-607', 'DR22');
+  li('6', '672VT51', '9',  '601XC5',  'B7', 'W-617', 'DR22');
+  li('6', '672VT51', '9',  '672VT51', '10', 'W-625', 'DR22');
+  li('6', '672VT51', '10', '620SW4',  '1',  'W-626', 'DR24');
+  li('6', '600XC4', 'A8',  '672VT51', '11', 'W-608', 'DR22');
+  li('6', '672VT51', '11', '601XC5',  'B8', 'W-618', 'DR22');
+  li('6', '600XC4', 'A9',  '601XC5',  'B9', 'W-627', 'DR24');
+  li('6', '600XC4', 'A10', '601XC5',  'B10', 'W-628', 'DR24');
+  li('6', '600XC4', 'A11', '630RL5',  '1',  'W-630', 'DR24');
+  li('6', '600XC4', 'A11', '631RL6',  '1',  'W-631', 'DR24');
+  li('6', '630RL5', '2',   '601XC5',  'B11', 'W-632', 'DR24');
+  li('6', '631RL6', '2',   '601XC5',  'B12', 'W-633', 'DR24');
+  li('6', '610LP3', '2',   '914G',    '',   'W-640', 'DR24');
+  li('6', '611LP4', '2',   '914G',    '',   'W-641', 'DR24');
+  li('6', '620SW4', '2',   '914G',    '',   'W-642', 'DR24');
+  li('6', '630RL5', '3',   '914G',    '',   'W-643', 'DR24');
+  li('6', '631RL6', '3',   '914G',    '',   'W-644', 'DR24');
+  li('6', '600XC4', 'A15', '915G',    '',   'W-645', 'DR22');
+  li('6', '601XC5', 'B15', '915G',    '',   'W-646', 'DR22');
   return L;
 }

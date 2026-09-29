@@ -77,7 +77,7 @@ ok('un connecteur inconnu de la bible n’a pas de partie mobile, et on le dit',
 console.log('\n6. LE SUIVI DU CONTRAT');
 const S = X.suiviDuContrat(L, X.bibleExemple(), 'exemple', n => n === '667VT21' ? 'ASNE0500-08' : '');
 const barrettes = S.filter(l => /barrette/.test(l.nature)), prises = S.filter(l => l.nature === 'prise de coupure'), conns = S.filter(l => l.nature === 'connecteur');
-ok('une ligne par barrette, par prise, par connecteur', barrettes.length === 3 && prises.length === 3 && conns.length > 20, barrettes.length + ' barrettes · ' + prises.length + ' prises · ' + conns.length + ' connecteurs');
+ok('une ligne par barrette, par prise, par connecteur', barrettes.length === 6 && prises.length === 5 && conns.length > 20, barrettes.length + ' barrettes · ' + prises.length + ' prises · ' + conns.length + ' connecteurs');
 const l667 = S.find(l => l.repere === '667VT21');
 ok('la référence retenue à la main l’emporte, celle du fichier reste', l667.reference === 'ASNE0500-08' && l667.fichier === 'ASNE0500-04');
 ok('bornes dans l’ordre, fils et folios listés', l667.bornes.join(',') === '1,2,3,4' && l667.fils.length === 5 && l667.plans.join('') === '2', l667.bornes.join(',') + ' · ' + l667.fils.join(' ') + ' · folio ' + l667.plans);

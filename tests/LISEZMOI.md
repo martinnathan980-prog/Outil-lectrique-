@@ -6,7 +6,7 @@
 node tests/controle.js         les invariants, le contrat d'essai, la base de retest, les pièges déjà tombés
 node tests/memoire.js          le travail survit-il à la fermeture de l'onglet
 node tests/format-retest.js    les seize colonnes sont lues par leur nom
-node tests/banc-placement.js   combien de fils sortent droits, et sur quelle feuille
+node tests/banc-placement.js   combien de fils sortent droits, et sur quelle feuille ; les six folios de l'exemple relus
 node tests/barrettes.js        la bible des barrettes se lit, la référence se choisit, les connecteurs se lisent (sans navigateur)
 ```
 
@@ -29,16 +29,27 @@ verbes (charger, essai, mesurer) sur l'API `atelier` de `src/10-demarrage.js`.
 ## Le contrat de la refonte
 
 Avant de toucher au moteur, on relance le banc ; après, on le relance. Les
-chiffres de référence sur les dix-huit topologies (quinze historiques et
-les trois folios de l'exemple ; un piquage qui tranche un fil compte comme
-un croisement), depuis que plus aucun fil ne fait de marche :
+chiffres de référence sur les vingt et une topologies (quinze historiques
+et les six folios de l'exemple ; un piquage qui tranche un fil compte
+comme un croisement), depuis que plus aucun fil ne fait de marche :
 
-    86,9 % de fils droits · 19 croisements · 0 évitable · 0 violation · 0 cas hors feuille
+    80,4 % de fils droits · 35 croisements · 0 évitable · 0 violation · 0 cas hors feuille
+    (sur les dix-huit d'avant les trois nouveaux folios : 86,6 %, 19 croisements)
     contrat d'essai : 66,7 %, 0 croisement
-    folio 1 : 75 %, 1 · folio 2 : 65 %, 1 · folio 3 : 60,7 %, 17 — 0 tour, 0 segment partagé, 0 marche, paysage (1,62)
+    folio 1 : 75 %, 1 · folio 2 : 65 %, 1 · folio 3 : 60,7 %, 17 — paysage (1,62)
+    folio 4 : 53,8 %, 7 · folio 5 : 76,3 %, 5 · folio 6 : 37,5 %, 4
+    partout : 0 tour, 0 segment partagé, 0 marche, tout tient en paysage
 
-Le folio 3 se calcule en deux secondes et demie, les folios 1 et 2 en moins
-d'une.
+Le folio 3 se calcule en deux secondes et demie, le folio 6 en deux et
+demie aussi, les autres en moins d'une seconde et demie.
+
+Les trois nouveaux folios (01, `contratExemple`) ont des structures que les
+trois premiers n'avaient pas : un calculateur avec deux barrettes de
+distribution et des sondes à masses, un morceau de barrette seul (folio
+4) ; une chaîne de deux prises de coupure entre deux tronçons, des fils qui
+traversent une prise ou les deux (folio 5) ; deux équipements de dix bornes
+qui se parlent à travers une barrette, un bus ponté, des piquages par
+shunt, une borne qui alimente deux relais (folio 6).
 
 LES RÈGLES DURES, tenues par construction et vérifiées par le banc :
 
@@ -86,11 +97,29 @@ LES RÈGLES DURES, tenues par construction et vérifiées par le banc :
   ou plusieurs partenaires, le morceau reste un bloc. Le banc vérifie que
   ces morceaux sont collés, avec les masses.
 - **Une prise de coupure se pose entre ses partenaires** (`04-placement`,
-  `compterTours`). L'amont d'une borne entre d'un côté, l'aval ressort de
-  l'autre ; ses fils d'une borne qui sortent tous du même côté (un
-  piquage sur une prise de coupure) comptent un tour au juge. Au juge
-  seulement : chargée aussi dans la mise en niveaux, la règle déviait
-  l'exploration et le folio chargé perdait sa meilleure mise en niveaux.
+  `compterTours`, `flancs`). L'amont d'une borne entre d'un côté, l'aval
+  ressort de l'autre ; ses fils d'une borne qui sortent tous du même côté
+  (un piquage sur une prise de coupure : le dessin ment sur le tronçon)
+  comptent DEUX tours au juge — aller et retour autour de la prise, deux
+  croisements valent mieux (folio 5, 540VL5:4 → 412VC3B:7). C'est le côté
+  de sortie qui compte, pas la colonne : un partenaire de la même colonne
+  choisit sa goulotte, et vers une borne de prise, c'est le côté opposé
+  aux autres partenaires de cette borne. Au juge seulement : chargée aussi
+  dans la mise en niveaux, la règle déviait l'exploration et le folio
+  chargé perdait sa meilleure mise en niveaux (21 croisements au lieu de 17).
+- **Une réglette s'étire comme un équipement, et un corps étiré se tasse
+  sur place** (`corpsEtire`, `compactions`). Un paquet de barrette se
+  dessine aussi petit que possible : tiré sur quatre cents unités pour
+  redresser trois fils, il devient un mur que les autres fils contournent
+  (folio 4, 670VT41). Le juge compte donc les réglettes étirées avec les
+  équipements (une fois et demie la hauteur naturelle, à un pas près), et
+  la recherche sait TASSER un corps étiré sur place — ses bornes au pas
+  depuis la première ou jusqu'à la dernière, rien d'autre ne bouge — parce
+  que lui refuser un fil droit (renoncement) fait tout réaligner au
+  solveur, qui crée ailleurs les croisements qu'on voulait éviter. Gardé
+  si le juge préfère ; le banc vérifie qu'aucun corps étiré ne perd
+  contre sa version tassée, au barème du juge (croisements compris : un
+  paquet étiré qui ôte trois croisements reste étiré, 668VT31).
 - **Aucun fil ne fait le tour de son bloc** (`04-placement`, `flancs`). Un
   connecteur dont les bornes servent les deux côtés se coupe en deux pièces,
   chaque paquet de bornes pontées regardant ses partenaires ; aucun geste
@@ -176,18 +205,19 @@ au matériel.
 Le banc vérifie aussi, sur chaque folio de l'exemple, que **les gestes
 évidents sont trouvés** : aucun échange de deux bornes d'un connecteur,
 aucun changement de flanc d'une borne, aucun glissement d'un bloc (ses
-pastilles avec lui) ne fait mieux — moins de croisements sans moins de
-fils droits, ou l'inverse (vérification exacte, a posteriori, au routage
-réel, sur la géométrie resserrée, au barème du juge : croisements,
-partages, marches, contours, fils dans leur propre bloc ; un tour de plus
-n'est jamais « mieux »). Et que le dessin n'a **aucun segment partagé** par
-deux fils de nets différents, **aucune marche**, **aucun corps étiré** à
-plus de deux fois sa hauteur naturelle sans rendre droits deux fils de
-plus (on le compacte et on reroute), les masses et les morceaux de
-barrette seuls collés à leur borne, **tous les équipements lisibles**
-(aucune borne ne tourne le dos à la colonne de son partenaire, aucun fil
-étranger dans leur voisinage), et le cas montré du doigt (W-120). Un
-manqué fait rendre 1.
+pastilles avec lui ; jamais à moins de dix unités d'un autre bloc de sa
+colonne, la garde que la recherche s'impose) ne fait mieux — moins de
+croisements sans moins de fils droits, ou l'inverse (vérification exacte,
+a posteriori, au routage réel, sur la géométrie resserrée, au barème du
+juge : croisements, partages, marches, contours, fils dans leur propre
+bloc ; un tour de plus n'est jamais « mieux »). Et que le dessin n'a
+**aucun segment partagé** par deux fils de nets différents, **aucune
+marche**, **aucun corps étiré** (équipement ou réglette) que sa version
+tassée ne bat au juge (on le tasse et on reroute), les masses et les
+morceaux de barrette seuls collés à leur borne, **tous les équipements
+lisibles** (aucune borne ne tourne le dos à la colonne de son partenaire,
+aucun fil étranger dans leur voisinage), et le cas montré du doigt
+(W-120). Un manqué fait rendre 1.
 
 Un changement qui fait baisser le premier chiffre doit dire pourquoi, dans son
 message de commit, mesure à l'appui.
@@ -201,6 +231,19 @@ une pile de blocs sont donc des Z, et un fil droit qui traverse leur
 goulotte (une barrette vers un relais) en croise plusieurs. Les défaire
 demanderait de couper un connecteur en plusieurs pièces sur un même flanc,
 ce qu'on n'a pas voulu : la pièce ressemble au matériel.
+
+Sur le folio 6 (deux connecteurs de dix bornes à travers une barrette),
+37,5 % seulement : la barrette se pose par paquets, chaque paquet est un
+bloc avec ses marges, et une pile de paquets ne peut pas suivre le pas du
+connecteur d'en face (deux paquets consécutifs mettent 38 entre leurs
+bornes voisines, le connecteur 14). Un dessinateur tracerait la barrette
+d'un seul tenant entre les deux connecteurs, tout droit ; il faudrait
+pour cela recoller les paquets consécutifs quand ils servent les mêmes
+blocs. Sur le folio 4, W-408 fait le tour du calculateur par le haut (le
+connecteur B sert les deux côtés : un croisement de moins que de le
+couper), et le paquet 670VT41 (1-4) reste étiré : le juge le préfère aux
+deux fils qu'un paquet compact plierait, et il a raison au barème, même
+si deux fils le contournent.
 
 ## Ce que `controle.js` vérifie
 
