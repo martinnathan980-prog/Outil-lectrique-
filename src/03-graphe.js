@@ -26,7 +26,12 @@ const estPotentiel = nom => estRail(nom) || estMasse(nom);
    les potentiels, les prises de coupure et les barrettes. */
 const enReglette = nom => estPotentiel(nom) || estBornier(nom);
 
-function construireGraphe(liaisons) {
+/* `coupes` : les pontages (liaisons d'une barrette à elle-même) où la
+   barrette se COUPE en deux morceaux de même repère, comme un connecteur
+   sur deux flancs — le pontage devient un fil dessiné entre les deux
+   morceaux, avec son numéro (c'en est un : il a son numéro et son type au
+   contrat). Le placement les choisit (04, `coupesParCote`). */
+function construireGraphe(liaisons, coupes) {
   const lk = liaisons.filter(liaisonComplete);
   const noms = []; const vus = new Set();
   lk.forEach(l => [l.de, l.vers].forEach(n => { if (!vus.has(n)) { vus.add(n); noms.push(n); } }));
@@ -69,7 +74,7 @@ function construireGraphe(liaisons) {
       // une BARRETTE se pose par PAQUET : les bornes pontées ensemble font un module, et chaque module se dessine
       // là où il sert, aussi petit que possible — une barrette de dix bornes n'est pas une colonne de dix bornes
       const chef = new Map(P.liste.map(p => [p.cle, p.cle])); const trouver = c => { while (chef.get(c) !== c) c = chef.get(c); return c; };
-      lk.forEach((l, li) => { if (l.de !== n || l.vers !== n) return; const A = bouts.get(li + ':A'), B = bouts.get(li + ':B'); const ra = trouver(A.cle), rb = trouver(B.cle); if (ra !== rb) chef.set(ra, rb); });
+      lk.forEach((l, li) => { if (l.de !== n || l.vers !== n || (coupes && coupes.has(l))) return; const A = bouts.get(li + ':A'), B = bouts.get(li + ':B'); const ra = trouver(A.cle), rb = trouver(B.cle); if (ra !== rb) chef.set(ra, rb); });
       const paquets = new Map(); P.liste.forEach(p => { const r = trouver(p.cle); (paquets.get(r) || paquets.set(r, []).get(r)).push(p); });
       let gi = 0;
       for (const pins of paquets.values()) { const id = paquets.size === 1 ? n : n + FRAG + (gi++);

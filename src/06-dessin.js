@@ -90,8 +90,33 @@ function styleDessin() {
 }
 
 /* ---- la feuille : cadre, zones A/B/C × 1/2/3, cartouche ------------------ */
+/* UNE SEULE FEUILLE pour tous les folios, comme dans un outil de dessin : A3
+   paysage, le même cadre, les mêmes zones, le même cartouche. La feuille de
+   référence mesure 1680 × 1188 (un quart de millimètre l'unité) ; le dessin
+   s'y cale au centre de la zone utile (le cadre moins ses marges, moins la
+   bande du cartouche). Le dessin garde ses coordonnées : c'est la feuille
+   qui prend l'échelle `k` (unités du dessin par unité de feuille) — un
+   folio chargé la remplit, un petit folio s'y dessine plus gros, jamais plus
+   de 1 / K_PAGE_MIN fois (sinon ses textes seraient trois fois ceux du
+   folio chargé). */
+const PAGE_W = 1680, PAGE_H = 1188, PAGE_CADRE = 16, PAGE_MARGE = 44, PAGE_CARTOUCHE = 92, K_PAGE_MIN = 0.55;
+function pageDe(comps, fils) {
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  const voir = (x, y) => { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); };
+  comps.forEach(c => { voir(c.x, c.y - 16); voir(c.x + c.w, c.y + c.h + 12); });      // la lettre au-dessus, le repère dessous
+  (fils || []).forEach(w => (w.pts || []).forEach(q => voir(q.x, q.y)));
+  if (!isFinite(x0)) { x0 = 0; x1 = 400; y0 = 0; y1 = 280; }
+  const uw = PAGE_W - 2 * (PAGE_CADRE + PAGE_MARGE), uh = PAGE_H - 2 * (PAGE_CADRE + PAGE_MARGE) - PAGE_CARTOUCHE;
+  const k = Math.max(K_PAGE_MIN, (x1 - x0) / uw, (y1 - y0) / uh);
+  const ux = (x0 + x1) / 2 - uw * k / 2, uy = (y0 + y1) / 2 - uh * k / 2;
+  return { x: ux - (PAGE_CADRE + PAGE_MARGE) * k, y: uy - (PAGE_CADRE + PAGE_MARGE) * k, w: PAGE_W * k, h: PAGE_H * k, k };
+}
 function feuilleSvg(bb, cartouche, folio) {
-  const x = bb.x, y = bb.y, w = bb.w, h = bb.h, ix = x + 16, iy = y + 16, iw = w - 32, ih = h - 32;
+  const k = bb.k || bb.w / PAGE_W;
+  return `<g transform="translate(${f1(bb.x)},${f1(bb.y)}) scale(${k.toFixed(5)})">` + feuilleDeReference(cartouche, folio) + '</g>';
+}
+function feuilleDeReference(cartouche, folio) {
+  const x = 0, y = 0, w = PAGE_W, h = PAGE_H, ix = x + PAGE_CADRE, iy = y + PAGE_CADRE, iw = w - 2 * PAGE_CADRE, ih = h - 2 * PAGE_CADRE;
   let s = `<rect x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" fill="#ffffff"/>`;
   s += `<rect x="${f1(ix)}" y="${f1(iy)}" width="${f1(iw)}" height="${f1(ih)}" fill="url(#gfine)"/>`;
   s += `<rect class="frame" x="${f1(ix)}" y="${f1(iy)}" width="${f1(iw)}" height="${f1(ih)}"/>`;
@@ -513,9 +538,11 @@ function sceneSvg(dessin, cartouche, folio, designationDe, choisi) {
    coller. `fond` : ce qui entoure la feuille — papier crème à l'écran, blanc
    pour l'imprimante. */
 function svgAutonome(dessin, cartouche, folio, designationDe, fond) {
-  const bb = dessin.bbox, M = 24, W = Math.ceil(bb.w + 2 * M), H = Math.ceil(bb.h + 2 * M), x0 = f1(bb.x - M), y0 = f1(bb.y - M);
+  // le document a les dimensions de la feuille de référence, quel que soit le folio : tous s'enregistrent pareil
+  const bb = dessin.bbox, k = bb.k || bb.w / PAGE_W, M = 24 * k, vw = bb.w + 2 * M, vh = bb.h + 2 * M, W = Math.ceil(vw / k), H = Math.ceil(vh / k);
+  const x0 = f1(bb.x - M), y0 = f1(bb.y - M);
   const txt = '<?xml version="1.0" encoding="UTF-8"?>\n'
-    + `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="${x0} ${y0} ${W} ${H}">`
-    + `<rect x="${x0}" y="${y0}" width="${W}" height="${H}" fill="${fond || '#fbfbf7'}"/>` + styleDessin() + sceneSvg(dessin, cartouche, folio, designationDe, null) + '</svg>';
+    + `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="${x0} ${y0} ${f1(vw)} ${f1(vh)}">`
+    + `<rect x="${x0}" y="${y0}" width="${f1(vw)}" height="${f1(vh)}" fill="${fond || '#fbfbf7'}"/>` + styleDessin() + sceneSvg(dessin, cartouche, folio, designationDe, null) + '</svg>';
   return { w: W, h: H, txt };
 }

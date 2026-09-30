@@ -46,10 +46,22 @@ const telephone = () => window.innerWidth <= 700;
 /* ---- le dessin ---------------------------------------------------------- */
 function liaisonsDuPlan() { const L = app.contrat.liaisons.filter(liaisonComplete);
   return app.plan === '*' ? L : L.filter(l => l.plan === app.plan); }
+/* Le placement d'un folio se garde tant que ses liaisons ne changent pas : le
+   concours du folio chargé prend quelques secondes, revenir sur un folio déjà
+   vu est instantané. La clé : ce que le placement lit de chaque liaison. */
+const placements = new Map(), PLACEMENTS_GARDES = 24;
+function placementDe(L) {
+  const cle = JSON.stringify(L.map(l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable, l.pnDe, l.pnVers]));
+  if (placements.has(cle)) { const P = placements.get(cle); placements.delete(cle); placements.set(cle, P); return P; }
+  const P = meilleurPlacement(L); placements.set(cle, P);
+  if (placements.size > PLACEMENTS_GARDES) placements.delete(placements.keys().next().value);
+  return P;
+}
 function calculer() {
   const L = liaisonsDuPlan(); if (!L.length) { app.dessin = null; return null; }
-  const P = meilleurPlacement(L);
-  app.dessin = P ? { comps: P.comps, links: P.links, bbox: P.bbox, geom: P.geom, compDe: P.compDe,
+  const P = placementDe(L);
+  // la feuille : la même pour tous les folios (A3 paysage), le dessin calé dedans
+  app.dessin = P ? { comps: P.comps, links: P.links, bbox: pageDe(P.comps, P.routage.fils), geom: P.geom, compDe: P.compDe,
                      fils: P.routage.fils, points: P.routage.points, barrettes: P.routage.barrettes, piquages: P.routage.piquages } : null;
   return app.dessin;
 }
@@ -98,7 +110,8 @@ function redessiner() { calculer(); peindre(); synchroniser(); rallumer(); }
 const cadre = () => $('planche').getBoundingClientRect();
 function appliquerVue() {
   const sc = $('scene'); if (sc) sc.setAttribute('transform', `translate(${app.vue.tx},${app.vue.ty}) scale(${app.vue.s})`);
-  $('zlbl').textContent = Math.round(app.vue.s * 100) + ' %';
+  // le zoom se lit par rapport à la feuille : la même feuille, cadrée, affiche le même pourcentage sur tous les folios
+  $('zlbl').textContent = Math.round(app.vue.s * (app.dessin && app.dessin.bbox.k || 1) * 100) + ' %';
   const o = $('ombre');
   if (!app.dessin) { o.style.display = 'none'; return; }
   const bb = app.dessin.bbox, s = app.vue.s;
@@ -931,10 +944,10 @@ function exporterPNG() { const S = svgDuFolio(); if (!S) return;
     const g = cv.getContext('2d'); g.fillStyle = '#fbfbf7'; g.fillRect(0, 0, cv.width, cv.height); g.drawImage(img, 0, 0, cv.width, cv.height);
     cv.toBlob(b => { if (b) { telecharger(b, nomFolio() + '.png'); dire('Folio enregistré en PNG.'); } }, 'image/png'); };
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(S.txt); }
-/* Imprimer : la planche seule, sur fond blanc, et la page prend le sens du
-   folio — un folio plus haut que large s'imprime en portrait. */
+/* Imprimer : la planche seule, sur fond blanc, sur un A3 paysage — la
+   feuille de tous les folios. */
 function imprimer() { if (!app.dessin) return; const S = svgAutonome(app.dessin, app.contrat.cartouche, folioCourant(), designationDe, '#ffffff');
-  $('printroot').innerHTML = `<style>@page{size:A3 ${S.w >= S.h ? 'landscape' : 'portrait'};margin:8mm}</style>` + S.txt.replace(/^<\?xml[^>]*\?>\s*/, ''); window.print(); }
+  $('printroot').innerHTML = `<style>@page{size:A3 landscape;margin:8mm}</style>` + S.txt.replace(/^<\?xml[^>]*\?>\s*/, ''); window.print(); }
 
 /* ---- ce que le menu et le rail affichent ------------------------------ */
 function synchroniserContexte() { const n = app.contrat.liaisons.length;

@@ -34,11 +34,54 @@ chiffres de référence sur les vingt et une topologies (quinze historiques
 et les six folios de l'exemple ; un piquage qui tranche un fil compte
 comme un croisement), depuis que plus aucun fil ne fait de marche :
 
-    85,0 % de fils droits · 28 croisements · 0 évitable · 0 violation · 0 cas hors feuille
+    85,7 % de fils droits · 14 croisements · 0 évitable · 0 violation · 0 cas hors feuille
     contrat d'essai : 66,7 %, 0 croisement
-    folio 1 : 75 %, 1 · folio 2 : 63,2 %, 1 · folio 3 : 73,2 %, 10 — paysage (1,33)
-    folio 4 : 53,8 %, 7 · folio 5 : 76,3 %, 5 · folio 6 : 81,3 %, 4 — portrait (0,88)
+    folio 1 : 75 %, 0 · folio 2 : 63,2 %, 1 · folio 3 : 67,9 %, 4
+    folio 4 : 69,2 %, 4 · folio 5 : 76,3 %, 5 · folio 6 : 84,4 %, 0
     partout : 0 tour, 0 segment partagé, 0 marche
+
+(Le folio 3 compte moins de fils droits qu'avant, 38 au lieu de 41, mais
+six croisements de moins : le juge préfère, un croisement vaut deux fils.)
+
+LA RECHERCHE EST MOINS SENSIBLE AU HASARD DE SON CHEMIN. Elle tombait dans
+un creux ou un autre selon l'ordre des gestes, et le moindre réglage du
+juge changeait un folio du tout au tout (le folio 3 perdait seize fils
+droits pour une marge de barrette). Désormais : les finalistes du concours
+sont divers (le meilleur du flux et le meilleur du hub au centre) ; chacun
+est cherché deux fois, les gestes dans deux ordres ; la passe finale passe
+sur tous (celui qui gagne avant elle n'est pas celui qui gagne après) ; et
+l'étirement du hub, qui redresse plusieurs fils d'un coup en apportant
+d'abord des croisements, se juge après un court polissage. Le folio chargé
+prend cinq secondes au lieu de trois ; un folio déjà calculé se garde
+(08, `placementDe`) et revient aussitôt.
+
+UN CONNECTEUR DU HUB PEUT SE DESSINER EN PLUSIEURS MORCEAUX SUR UN FLANC
+(`etirements`, second essai) : chaque borne en face de son partenaire,
+quitte à intercaler A et B, chaque morceau sous sa lettre — comme on coupe
+un connecteur entre deux flancs. Folio 3 : 12 croisements → 4.
+
+UNE BARRETTE SE COUPE (`coupesParCote`, 03 `coupes`) : dans un premier
+placement, un morceau étiré dont trois bornes au moins partent d'un côté et
+d'autres de l'autre se coupe entre les deux ; le pontage coupé devient un
+fil dessiné, avec son numéro ; le dessin coupé concourt à demi-budget
+contre l'entier, le juge tranche. Sur l'exemple, l'entier gagne partout
+aujourd'hui (le folio 4 a gagné, coupé, à un moment de la mise au point).
+
+TROIS GESTES DE PLUS : la BANDE (un petit bloc va se poser contre son
+partenaire de colonne, tout ce qui est dessous descend — folio 6, les
+lampes sous leurs morceaux de barrette), le TASSEMENT (une tranche vide
+se referme, les fils droits le restent) et le RETOURNEMENT d'un morceau de
+barrette (ses bornes pontées dans l'ordre inverse). Un morceau de barrette
+DESSINÉ est serré sur ses pastilles (neuf), sa place réservée reste douze :
+le fil suivant d'un connecteur au pas passe dessous (folio 6, W-627 droit).
+Un équipement de six bornes au moins s'étire (plus seulement le hub), et un
+corps allongé dont les trois quarts des fils sont droits n'est plus compté
+étiré — un boîtier de moins de six bornes l'est toujours.
+
+LA FEUILLE EST LA MÊME POUR TOUS LES FOLIOS (06, `pageDe`) : A3 paysage,
+1680 × 1188, le dessin calé au centre de la zone utile ; la feuille prend
+l'échelle, jamais plus de 1 / 0,55 pour un petit folio ; le zoom affiché est
+rapporté à la feuille (le même sur tous les folios, cadrés).
 
 AUTOUR D'UN HUB, UN BLOC CHANGE DE COLONNE SANS ÊTRE REBÂTI
 (`changementsDeColonne`) : il garde la géométrie polie du meilleur (chaque
@@ -70,9 +113,10 @@ folio 3 60,7 % → 71,4 %, folio 6 37,5 % → 84,4 % (avant : 80,4 % / 35 sur
 les vingt et une topologies). Un changement de flanc ne pose plus une borne
 DANS un autre connecteur (entre sa première et sa dernière borne).
 
-Le folio 3 se calcule en trois secondes, le folio 6 en une et demie, les
-autres en moins d'une seconde et demie (le regard structurel autour d'un
-hub a son propre budget : trois cents routages).
+Le folio 3 se calcule en cinq secondes et demie, le folio 4 en moins de
+trois, les autres en deux au plus (le regard structurel autour d'un hub a
+son propre budget : trois cents routages ; il estime tous ses candidats et
+n'en route que les douze meilleurs).
 
 Les trois nouveaux folios (01, `contratExemple`) ont des structures que les
 trois premiers n'avaient pas : un calculateur avec deux barrettes de

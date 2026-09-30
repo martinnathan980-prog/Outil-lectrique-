@@ -213,6 +213,14 @@ Fait, mesuré, en place :
   flanc, les replis concourent, la passe finale converge sur le meilleur.
   Le banc rejoue a posteriori les gestes évidents (échange, flanc,
   glissement) au même barème, et rend 1 s'il en manque un.
+- **Une feuille pour tous, des connecteurs et des barrettes en morceaux**
+  (`06` `pageDe`, `04`) : tous les folios sur le même A3 paysage ; un
+  connecteur du hub se dessine en plusieurs morceaux sur son flanc, chaque
+  borne en face de son partenaire ; une barrette étirée peut se couper, le
+  pontage devenant un fil ; une lampe va se poser sous son morceau de
+  barrette (la bande), les trous se referment (le tassement), un morceau se
+  retourne ; la recherche passe deux fois chaque finaliste et la passe
+  finale à tous. Banc : 85,7 % / 14 croisements (85,0 % / 28 avant).
 - **Autour d'un hub, un bloc change de colonne sans être rebâti**
   (`04-placement`, `changementsDeColonne`) : il garde la géométrie polie du
   meilleur, entre dans sa nouvelle pile par le creux le plus proche, se juge

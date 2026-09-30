@@ -202,7 +202,7 @@ function corpsEtiresDansLaPage() {
   const B = window.banc, d = atelier.dessin(); if (!d) return { defauts: [], etires: 0 };
   const base = B.noter(d), defauts = []; let etires = 0;
   d.comps.forEach(c => { if (!corpsEtire(c)) return; const nat = hauteurNaturelle(c); etires++;
-    const reglette = c.kind !== 'equip', marge = reglette ? PRH / 2 + 5 : Math.max((c.rangs.L || []).length, (c.rangs.R || []).length) === 1 ? 23 : 18, yDe = new Map();
+    const reglette = c.kind !== 'equip', marge = reglette ? (estCoupure(c.name) ? PRH / 2 + 5 : MARGE_BARRETTE) : Math.max((c.rangs.L || []).length, (c.rangs.R || []).length) === 1 ? 23 : 18, yDe = new Map();
     // les bornes d'une réglette sont sur une seule liste (S), servies des deux flancs
     (reglette ? ['S'] : ['L', 'R']).forEach(lid => (c.rangs[lid] || []).slice().sort((u, v) => u.y - v.y).forEach((p, i) => yDe.set(lid + ':' + Math.round(p.y * 2), c.y + marge + i * PRH)));
     const nouvelle = ep => yDe.get((reglette ? 'S' : Math.abs(ep.x - c.x) < 0.5 ? 'L' : 'R') + ':' + Math.round(ep.y * 2));
