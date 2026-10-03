@@ -61,7 +61,7 @@ Le plan occupe tout l'écran. **En bas**, la barre de vue : folios (précédent,
 2. **Regarde ton propre écran avant de me livrer quoi que ce soit.** Avec Chromium et Playwright, capture les six folios de l'exemple en entier, puis zoome sur chaque zone que tu as touchée. Compare avant / après, côte à côte. Si ce n'est pas mieux **à l'œil**, ce n'est pas mieux, même si les chiffres montent.
 3. **Mesure, mais ne te cache pas derrière les mesures.** `node tests/banc-placement.js` (21 topologies, fils droits, croisements, marches, partages, gestes évidents), et les batteries `tests/controle.js`, `tests/barrettes.js`, `tests/memoire.js`, `tests/format-retest.js`. Tout doit rester vert.
 4. **Quand je pointe un défaut**, trouve la cause dans l'algorithme et corrige la **règle générale**, pas le cas particulier. Puis ajoute au banc un contrôle qui l'aurait vu : si je le trouve avant tes tests, tes tests ne sont pas assez bons.
-5. **Ne régresse jamais un folio que j'ai validé.** Aujourd'hui les folios 1, 2 et 5 sont bons. À chaque changement du placement, revérifie les six folios. Le placement est sensible : un petit réglage du juge peut bouleverser un dessin. Rends la recherche robuste plutôt que de régler au hasard.
+5. **Ne régresse jamais un folio que j'ai validé.** À chaque changement du placement, revérifie les six folios ; si un folio que j'avais validé change, montre-le-moi avant / après et dis pourquoi c'est mieux. Le placement est sensible : un petit réglage du juge peut bouleverser un dessin. Rends la recherche robuste plutôt que de régler au hasard.
 6. **Pas de couches sur des couches.** Si une partie est mal conçue, reprends-la proprement, au besoin de zéro, plutôt que d'empiler des rustines. Supprime ce qui ne sert plus.
 7. **Garde le calcul raisonnable** : un folio chargé s'affiche en quelques secondes au plus, un folio déjà vu revient aussitôt.
 8. Si tu utilises des agents, **un ou deux au plus** par tour, et tu relis toi-même leur travail à l'écran avant de le fusionner.
@@ -75,10 +75,12 @@ Le plan occupe tout l'écran. **En bas**, la barre de vue : folios (précédent,
 
 ## 8. Où en est l'outil (à corriger en priorité)
 
-- **Folio 3** (le plus chargé) : le morceau de barrette 668VT31 (8, 9, 10) est encore au-dessus du calculateur 300XC1. Le morceau (1, 2, 3) est tout à gauche des pompes, avec un long fil W-301. Je veux chaque morceau entre le calculateur et ce qu'il sert, fils droits.
-- **Folio 4** : la barrette 670VT41 est compacte mais rejetée tout à gauche, avec deux longs fils W-401 et W-405. 421ST1 est sous le calculateur.
-- **Folio 6** : zéro croisement, mais 620SW4 est sous le gros connecteur au lieu d'être au milieu, sous son morceau de barrette comme les lampes.
-- **Folio 5** : les quatre ponts près de 550SW3 viennent de l'ordre des contacts des deux prises. Si une disposition les supprime, prends-la.
-- Le placement doit rester **stable** : le même contrat donne le même dessin, et un petit changement ne doit pas tout bouleverser.
+Fait à la dernière passe : le calculateur au centre, seul dans sa colonne, chaque morceau de barrette entre lui et ce qu'il sert (folios 3 et 4) ; 620SW4 au milieu sous son morceau (folio 6) ; 540VL5 entre les deux prises (folio 5, 5 croisements → 3) ; deux bugs de dessin trouvés et devenus des contrôles (deux bornes l'une sur l'autre, un fil qui n'arrivait pas à sa borne). Banc : 89,0 % de fils droits, 7 croisements.
+
+- **Folio 4** : W-420 passe par-dessus le morceau 670VT41 et croise W-401. Il serait droit si la borne A1 de 400XC2 passait au-dessus de B1 (deux connecteurs à réordonner sur le flanc du calculateur, avec la borne 2 de 421ST1).
+- **Folio 3** : 397TB1 reste à gauche des pompes avec un long W-370 ; W-380 et W-326 sont longs. Un croisement (W-314 sur W-321) est imposé par la structure.
+- **Folio 5** : les trois croisements qui restent sont imposés par l'ordre des contacts des deux prises — si une disposition les supprime quand même, prends-la.
+- **Mon vrai fichier** sera plus chargé que l'exemple (plusieurs calculateurs, des dizaines de liaisons par folio) : le banc n'a qu'un calculateur par folio. Ajoute des topologies qui ressemblent à ça et regarde-les à l'écran.
+- Le placement doit rester **stable** : le même contrat donne le même dessin, et un petit changement ne doit pas tout bouleverser. Le folio chargé se calcule en cinq secondes et demie : pas plus.
 
 Le but final : que n'importe quel folio, simple ou complexe, sorte du premier coup comme un dessin de câbleur — propre, droit, lisible, sans que j'aie à te montrer un seul défaut.

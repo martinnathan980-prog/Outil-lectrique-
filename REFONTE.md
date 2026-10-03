@@ -213,6 +213,21 @@ Fait, mesuré, en place :
   flanc, les replis concourent, la passe finale converge sur le meilleur.
   Le banc rejoue a posteriori les gestes évidents (échange, flanc,
   glissement) au même barème, et rend 1 s'il en manque un.
+- **Le calculateur au centre, ce qui distribue contre lui** (`04`
+  `concours`, `couchesAutourDuHub`, `changementsDeColonne`,
+  `redressements`) : autour d'un hub, seules ses mises en niveaux « au
+  centre » vont en finale ; la colonne contre lui est celle des morceaux de
+  barrette et des prises, ses équipements à la suivante ; un morceau qu'il
+  alimente reste entre lui et ce qu'il sert ; une répartition par le flux
+  quand il est franc. Un dessin qui tient à l'échelle 1 sur l'A3 tient,
+  quelle que soit sa forme. Sans hub, un bloc va dans une colonne neuve
+  entre ce qu'il relie (folio 5, 540VL5 entre les deux prises). Un fil se
+  redresse en déplaçant ses deux bouts ensemble, jamais en allongeant une
+  barrette. Deux dessins faux deviennent des invariants : deux bornes l'une
+  sur l'autre (un connecteur en morceaux restait rigide au solveur), un fil
+  rompu (le routeur confondait les deux bouts d'un fil passant par la
+  jonction d'un piquage). Banc : 89,0 % / 7 croisements (85,7 % / 14
+  avant) ; folio 3 : 42 droits / 1, folio 4 : 23 / 2, folio 5 : 29 / 3.
 - **Une feuille pour tous, des connecteurs et des barrettes en morceaux**
   (`06` `pageDe`, `04`) : tous les folios sur le même A3 paysage ; un
   connecteur du hub se dessine en plusieurs morceaux sur son flanc, chaque

@@ -57,7 +57,13 @@ function mesurerDansLaPage() {
   const partages = typeof compterPartages === 'function' ? compterPartages(fils) : 0, marches = typeof compterMarches === 'function' ? compterMarches(fils) : 0;
   return { blocs: a.blocs, fils: a.fils, droits: a.droits, taux: a.tauxDroits, croisements: a.croisements, evitables: a.evitables || 0,
            filsDansBloc: a.filsDansBloc, chevauches: a.blocsChevauches, partages, marches,
-           w, h, format: w / h, densite: aire / (w * h), allongement: vol ? tracee / vol : 1 };
+           w, h, format: w / h, densite: aire / (w * h), allongement: vol ? tracee / vol : 1,
+           // la feuille est la même pour tous (A3 paysage) : un dessin qui tient dans sa zone utile à l'échelle 1 tient, quelle que soit sa forme
+           aLEchelle: typeof tientALEchelle === 'function' ? tientALEchelle(w, h) : false,
+           // deux bornes d'un même flanc l'une sur l'autre : le dessin est faux, comme un bloc sur un autre
+           superposees: typeof bornesSuperposees === 'function' ? bornesSuperposees(comps) : 0,
+           // un fil dont un bout n'arrive pas à sa borne
+           rompus: typeof filsRompus === 'function' ? filsRompus(fils, (atelier.dessin() || {}).barrettes) : 0 };
 }
 
 /* Le SOCLE des contrôles exacts a posteriori, défini une fois dans la page
@@ -295,5 +301,32 @@ function filDroitOuJustifieDansLaPage(cable) {
   return { ok: !essais.mieux, detail: 'plié ; juge ' + base.toFixed(2) + ' ; glisser ' + essais.join(', ') };
 }
 
+/* LE CALCULATEUR, quand le folio en a un (un hub : huit bornes, six
+   voisins) : il est SEUL dans sa colonne (rien au-dessus ni au-dessous de
+   lui) ; AU CENTRE, ses partenaires des deux côtés, dès qu'ils forment
+   deux sous-ensembles au moins (sans lui, le graphe se défait en plusieurs
+   morceaux) ; et chaque morceau de barrette qu'il alimente est ENTRE lui et
+   ce que le morceau sert, jamais derrière. Rend le hub et les défauts. */
+function calculateurDansLaPage() {
+  const d = atelier.dessin(); if (!d) return { hub: null, defauts: [] };
+  const M = modele(construireGraphe(liaisonsDuPlan())), H = hubDe(M); if (H == null) return { hub: null, defauts: [] };
+  const nom = M.blocs.get(H).nom, h = d.compDe.get(nom), defauts = [], cx = c => c.x + c.w / 2;
+  d.comps.forEach(c => { if (c !== h && c.kind !== 'tag' && c.col === h.col) defauts.push(c.name + ' dans la colonne de ' + nom); });
+  // les sous-ensembles : ce qui reste relié une fois le hub ôté
+  const vus = new Set([H]); let sousEnsembles = 0;
+  M.ids.forEach(id => { if (vus.has(id) || M.estTag(id)) return; sousEnsembles++; const pile = [id]; vus.add(id);
+    while (pile.length) M.voisins.get(pile.pop()).forEach(v => { if (!vus.has(v)) { vus.add(v); pile.push(v); } }); });
+  const surBloc = (ep, nomBloc) => d.comps.find(c => c.kind !== 'tag' && c.name === nomBloc && ep.y >= c.y - 1 && ep.y <= c.y + c.h + 1 && (Math.abs(ep.x - c.x) < 1 || Math.abs(ep.x - c.x - c.w) < 1));
+  const cotes = new Set();
+  d.links.forEach(l => { if (l.shunt || l.boucle) return; const [ici, la, autre] = l.de === nom ? [l.epA, l.epB, l.vers] : l.vers === nom ? [l.epB, l.epA, l.de] : [];
+    if (!ici) return; const c = surBloc(la, autre); if (c) cotes.add(Math.sign(cx(c) - cx(h))); });
+  if (sousEnsembles >= 2 && !(cotes.has(-1) && cotes.has(1))) defauts.push(nom + ' n\'est pas au centre : ses ' + sousEnsembles + ' sous-ensembles sont tous du même côté');
+  d.links.forEach(l => { if (l.shunt || l.boucle || l.de !== nom || !estBarrette(l.vers)) return; const m = surBloc(l.epB, l.vers); if (!m) return;
+    d.links.forEach(k => { if (k === l || k.shunt || k.boucle) return; const sur = (ep, n) => n === m.name && surBloc(ep, n) === m;
+      const autre = sur(k.epA, k.de) ? [k.epB, k.vers] : sur(k.epB, k.vers) ? [k.epA, k.de] : null; if (!autre || autre[1] === nom) return;
+      const c = surBloc(autre[0], autre[1]); if (c && Math.abs(cx(m) - cx(h)) > Math.abs(cx(c) - cx(h)) + 1) defauts.push(m.name + ' derrière ' + c.name + ' (' + k.cable + ')'); }); });
+  return { hub: nom, sousEnsembles, defauts };
+}
+
 module.exports = { fichierDemande, chargerDansLaPage, essaiDansLaPage, exempleDansLaPage, mesurerDansLaPage, preparerDansLaPage, echangesEvidentsDansLaPage,
-  flancsEvidentsDansLaPage, glissementsEvidentsDansLaPage, segmentsPartagesDansLaPage, marchesDansLaPage, corpsEtiresDansLaPage, pastillesColleesDansLaPage, blocLisibleDansLaPage, filDroitOuJustifieDansLaPage };
+  flancsEvidentsDansLaPage, glissementsEvidentsDansLaPage, segmentsPartagesDansLaPage, marchesDansLaPage, corpsEtiresDansLaPage, pastillesColleesDansLaPage, blocLisibleDansLaPage, filDroitOuJustifieDansLaPage, calculateurDansLaPage };

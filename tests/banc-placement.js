@@ -28,7 +28,9 @@
                  A normalisé. Évidemment : la feuille est calée sur un format
                  de papier, quoi qu'on dessine dessus. On mesure donc ce que
                  les blocs occupent réellement. Un dessin à 8:1 ou à 1:6 ne
-                 tient sur aucune page, même si ses fils sont tous droits.
+                 tient sur aucune page, même si ses fils sont tous droits —
+                 sauf s'il tient à l'échelle 1 dans la zone utile de l'A3
+                 paysage, la feuille de tous les folios.
      densité     surface des blocs ÷ surface de leur emprise. Dit si la page
                  est remplie ou si les blocs serpentent dans du vide : la
                  chaîne de 20 équipements sortait à 100 % de fils droits en
@@ -57,9 +59,12 @@ const { chromium } = require('playwright');
 const path = require('path');
 const { fichierDemande, chargerDansLaPage, essaiDansLaPage, exempleDansLaPage, mesurerDansLaPage, preparerDansLaPage, echangesEvidentsDansLaPage,
         flancsEvidentsDansLaPage, glissementsEvidentsDansLaPage, segmentsPartagesDansLaPage, marchesDansLaPage, corpsEtiresDansLaPage,
-        pastillesColleesDansLaPage, blocLisibleDansLaPage, filDroitOuJustifieDansLaPage } = require('./pilote');
+        pastillesColleesDansLaPage, blocLisibleDansLaPage, filDroitOuJustifieDansLaPage, calculateurDansLaPage } = require('./pilote');
 
 const FICHIER = fichierDemande();
+/* Un dessin trop allongé s'imprime trop petit — sauf s'il tient à l'échelle 1 dans la zone utile de la feuille, la même
+   pour tous les folios (A3 paysage) : alors sa forme ne coûte rien (04, `tientALEchelle`). */
+const horsFeuille = r => (r.format > 2.2 || r.format < 0.45) && !r.aLEchelle;
 const JSON_OUT = process.argv.includes('--json');
 
 /* ---- les douze topologies -------------------------------------------------
@@ -170,8 +175,8 @@ if (require.main === module) (async () => {
     const ms = Date.now() - t0;
     const r = await page.evaluate(mesurerDansLaPage);
     const m = { blocs: r.blocs, fils: r.fils, larg: r.w, haut: r.h, droits: r.taux, crois: r.croisements, evit: r.evitables,
-      surface: (r.w * r.h) / 1000, format: r.format, densite: r.densite, allong: r.allongement,
-      ib: r.filsDansBloc, ch: r.chevauches, partages: r.partages, marches: r.marches, ms };
+      surface: (r.w * r.h) / 1000, format: r.format, aLEchelle: r.aLEchelle, densite: r.densite, allong: r.allongement,
+      ib: r.filsDansBloc, ch: r.chevauches, sup: r.superposees, rompus: r.rompus, partages: r.partages, marches: r.marches, ms };
     /* les gestes évidents : sur les folios de l'exemple, aucune permutation
        de deux bornes d'un connecteur, aucun changement de flanc d'une borne,
        aucun glissement d'un bloc ne doit faire mieux — moins de croisements
@@ -193,6 +198,11 @@ if (require.main === module) (async () => {
       m.controles.push({ nom: 'aucun corps étiré (équipement ou réglette) que sa version tassée ne bat au juge (' + etires.etires + ' étiré' + (etires.etires > 1 ? 's' : '') + ')', ok: !etires.defauts.length, detail: etires.defauts.join(' | ') });
       const pastilles = await page.evaluate(pastillesColleesDansLaPage);
       m.controles.push({ nom: 'les masses (' + pastilles.masses + ') et les morceaux de barrette seuls (' + pastilles.morceaux + ') sont collés à leur borne', ok: !pastilles.loin.length, detail: pastilles.loin.join(' | ') });
+      /* le calculateur seul dans sa colonne, au centre, ses morceaux de barrette entre lui et ce qu'ils servent (le
+         lecteur : « deux équipements au-dessus du gros, c'est pas propre » ; 668VT31 au-dessus de 300XC1, 670VT41 rejetée
+         au bord, 620SW4 sous 600XC4) */
+      const calc = await page.evaluate(calculateurDansLaPage);
+      if (calc.hub) m.controles.push({ nom: calc.hub + ' est seul dans sa colonne, au centre (' + calc.sousEnsembles + ' sous-ensembles), ses morceaux de barrette entre lui et ce qu\'ils servent', ok: !calc.defauts.length, detail: calc.defauts.join(' | ') });
       if (gen.plan === '2') { const f = await page.evaluate(filDroitOuJustifieDansLaPage, 'W-120');
         m.controles.push({ nom: 'W-120 (340AB1:1 → 210SP1:A3) est droit, ou le glissement qui le rendrait droit coûte plus qu\'il ne rapporte', ok: f.ok, detail: f.detail }); }
       /* chaque équipement du folio est lisible : aucune borne ne tourne le dos à son partenaire (un connecteur ne se coupe
@@ -216,17 +226,17 @@ if (require.main === module) (async () => {
   console.log('  ' + '─'.repeat(141));
   let sD = 0, sF = 0, sC = 0, sE = 0, faux = 0;
   res.forEach(r => {
-    const ko = r.ib || r.ch || r.partages || r.marches;
+    const ko = r.ib || r.ch || r.sup || r.rompus || r.partages || r.marches;
     if (ko) faux++;
     sD += r.droits * r.fils; sF += r.fils; sC += r.crois; sE += r.evit;
     console.log('  ' + (ko ? '✗ ' : '  ') + r.nom.padEnd(40)
       + String(r.blocs).padStart(4) + String(r.fils).padStart(6)
       + '   ' + pc(r.droits) + String(r.crois).padStart(9) + String(r.evit).padStart(7)
       + n(r.surface, 0).padStart(9)
-      + (n(r.format, 2) + (r.format > 2.2 || r.format < 0.45 ? '!' : ' ')).padStart(9)
+      + (n(r.format, 2) + (horsFeuille(r) ? '!' : ' ')).padStart(9)
       + (pc(r.densite) + (r.densite < 0.12 ? '!' : ' ')).padStart(9)
       + n(r.allong, 2).padStart(8) + String(r.partages).padStart(8) + String(r.marches).padStart(8) + String(r.ms).padStart(6)
-      + (ko ? '   FAUX : filsDansBloc=' + r.ib + ' chevauch=' + r.ch + ' partagés=' + r.partages + ' marches=' + r.marches : ''));
+      + (ko ? '   FAUX : filsDansBloc=' + r.ib + ' chevauch=' + r.ch + ' bornes superposées=' + r.sup + ' fils rompus=' + r.rompus + ' partagés=' + r.partages + ' marches=' + r.marches : ''));
   });
   console.log('  ' + '─'.repeat(141));
   console.log('  ' + 'ENSEMBLE, pondéré par le nombre de fils'.padEnd(42) + '        ' + pc(sF ? sD / sF : 0) + String(sC).padStart(9) + String(sE).padStart(7));
@@ -237,13 +247,13 @@ if (require.main === module) (async () => {
     vides.forEach(r => console.log('    ' + r.nom + ' — les blocs occupent '
       + n(r.densite * 100, 1) + ' % de leur propre emprise'));
   }
-  const horsPage = res.filter(r => r.format > 2.2 || r.format < 0.45);
+  const horsPage = res.filter(horsFeuille);
   if (horsPage.length) {
     console.log('\n  ' + horsPage.length + ' cas NE TIENNENT SUR AUCUNE FEUILLE (format marqué !) :');
     horsPage.forEach(r => console.log('    ' + r.nom + ' — ' + Math.round(r.larg) + ' × '
       + Math.round(r.haut) + ', soit ' + n(r.format, 1) + ':1'));
   }
-  if (faux) console.log('\n  ' + faux + ' cas VIOLENT un invariant sacré (fil dans un bloc, chevauchement, segment partagé, marche) — aucun score ne rachète ça.');
+  if (faux) console.log('\n  ' + faux + ' cas VIOLENT un invariant sacré (fil dans un bloc, chevauchement, borne sur une autre, fil rompu, segment partagé, marche) — aucun score ne rachète ça.');
   let manques = 0;
   const gestes = [['echanges', 'les échanges évidents sont trouvés', 'paires', 'échange(s) de deux bornes'],
     ['flancs', 'les changements de flanc évidents sont trouvés', 'essais', 'changement(s) de flanc d\'une borne'],

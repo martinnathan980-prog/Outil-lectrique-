@@ -32,16 +32,77 @@ verbes (charger, essai, mesurer) sur l'API `atelier` de `src/10-demarrage.js`.
 Avant de toucher au moteur, on relance le banc ; après, on le relance. Les
 chiffres de référence sur les vingt et une topologies (quinze historiques
 et les six folios de l'exemple ; un piquage qui tranche un fil compte
-comme un croisement), depuis que plus aucun fil ne fait de marche :
+comme un croisement) :
 
-    85,7 % de fils droits · 14 croisements · 0 évitable · 0 violation · 0 cas hors feuille
-    contrat d'essai : 66,7 %, 0 croisement
-    folio 1 : 75 %, 0 · folio 2 : 63,2 %, 1 · folio 3 : 67,9 %, 4
-    folio 4 : 69,2 %, 4 · folio 5 : 76,3 %, 5 · folio 6 : 84,4 %, 0
-    partout : 0 tour, 0 segment partagé, 0 marche
+    89,0 % de fils droits · 7 croisements · 0 évitable · 0 violation · 0 cas hors feuille
+    contrat d'essai : 77,8 %, 1 croisement · deux borniers en cascade : 100 %, 0
+    folio 1 : 87,5 %, 0 · folio 2 : 68,4 %, 0 · folio 3 : 75 %, 1
+    folio 4 : 88,5 %, 2 · folio 5 : 76,3 %, 3 · folio 6 : 84,4 %, 0
+    partout : 0 tour, 0 segment partagé, 0 marche, 0 borne sur une autre, 0 fil rompu
 
-(Le folio 3 compte moins de fils droits qu'avant, 38 au lieu de 41, mais
-six croisements de moins : le juge préfère, un croisement vaut deux fils.)
+(Avant cette passe : 85,7 % et 14 croisements. Le folio 3 compte 42 fils
+droits au lieu de 38, et un croisement au lieu de quatre ; le folio 4,
+23 au lieu de 18, et deux au lieu de quatre.)
+
+AUTOUR D'UN CALCULATEUR, LE CALCULATEUR EST AU CENTRE (`concours`,
+`couchesAutourDuHub`). Quand le folio a un hub (huit bornes, six voisins),
+ses mises en niveaux « hub au centre » sont les SEULES finalistes. Jugées
+au départ, elles perdaient sur un format que leurs goulottes taillées large
+exagèrent : le folio 3 gardait un morceau de 668VT31 au-dessus de 300XC1,
+le folio 4 rejetait 670VT41 au bord et posait 421ST1 sous 400XC2. Quatre
+règles les tiennent :
+- la colonne contre le hub est celle de ce qui DISTRIBUE (morceaux de
+  barrette, prises) quand un côté en a ; ses équipements vont à la suivante ;
+- un fil qui enjambe une colonne de morceaux seuls n'est pas plus long (il
+  y passe droit), si bien que ce que le morceau sert ne vient pas s'empiler
+  avec lui ;
+- un morceau que le hub alimente reste ENTRE le hub et ce qu'il sert, jamais
+  derrière (le geste de colonne ne l'y envoie plus : folio 3, 668VT31 borne 4
+  derrière sa vanne, W-310 par-dessus elle) ;
+- une troisième répartition, par le FLUX, quand chaque sous-ensemble est
+  franchement en amont ou en aval : deux borniers en cascade se lisent
+  BORN1, BORN2, puis ses départs (80 % → 100 %).
+Le banc vérifie, sur chaque folio qui a un hub, qu'il est seul dans sa
+colonne, au centre dès qu'il a deux sous-ensembles, et chacun de ses
+morceaux entre lui et ce qu'il sert (`calculateurDansLaPage`) : ce contrôle
+relève, sur le dessin d'avant, 668VT31 au-dessus de 300XC1, 421ST1 sous
+400XC2, 670VT41 derrière ses sondes et 620SW4 sous 600XC4.
+
+LA FEUILLE EST UN A3 PAYSAGE, POUR TOUS : un dessin qui tient à l'échelle
+1 dans sa zone utile tient, quelle que soit sa forme (`tientALEchelle`). La
+règle d'avant (pas plus de 2,2 fois plus large que haut) datait de la
+feuille qui suivait le dessin ; elle rejetait le folio 4 au calculateur
+centré, plus large que haut. Les dessins trop grands pour l'A3 gardent la
+règle et se replient.
+
+SANS HUB, UN BLOC SE POSE ENTRE CE QU'IL RELIE (`changementsDeColonne`) :
+une colonne neuve entre deux colonnes qui portent toutes deux ses
+partenaires. Folio 5 : 540VL5, que la première prise alimente et qui
+repart vers la seconde, se pose entre les deux prises ; sous la seconde,
+ses deux fils croisaient les deux qui la traversent (5 croisements → 3, les
+deux qui restent sont imposés par l'ordre des contacts).
+
+UN FIL SE REDRESSE (`redressements`) : ses deux bouts vont ensemble à une
+même hauteur, chacun dans son flanc, sans passer une borne voisine ; un
+équipement grandit au besoin, un morceau de barrette ou une prise jamais
+(tiré sur la pile de ses relais, 668VT31 se faisait contourner). Folio 1 :
+W-015 droit, plus aucun fil autour du disjoncteur.
+
+DEUX DESSINS FAUX, invisibles jusqu'ici, sont maintenant des invariants (le
+juge les refuse, le banc rend 1) :
+- deux BORNES L'UNE SUR L'AUTRE (`bornesSuperposees`) : un connecteur
+  dessiné en morceaux restait rigide d'un seul tenant au solveur, et un
+  bloc qui change de colonne gardait deux bornes face à face sur le même
+  flanc. Les pièces d'un connecteur sont maintenant ses morceaux, chacun
+  rigide ; un bloc qui change de colonne écarte ses bornes (`espacer`) ;
+- un FIL ROMPU (`filsRompus`) : un bout qui n'arrive pas à sa borne. Le
+  routeur prenait l'étiquette d'un bout pour celle de l'autre quand un fil
+  droit passait par la jonction d'un piquage dans le sens inverse ; le
+  tronçon jusqu'à l'autre borne n'était pas dessiné.
+
+LE DERNIER MOT (`tasserLesEtires`) : un corps resté étiré que sa version
+tassée bat au juge se tasse — la passe finale, à court de budget, ne le
+regardait plus.
 
 LA RECHERCHE EST MOINS SENSIBLE AU HASARD DE SON CHEMIN. Elle tombait dans
 un creux ou un autre selon l'ordre des gestes, et le moindre réglage du
@@ -113,7 +174,7 @@ folio 3 60,7 % → 71,4 %, folio 6 37,5 % → 84,4 % (avant : 80,4 % / 35 sur
 les vingt et une topologies). Un changement de flanc ne pose plus une borne
 DANS un autre connecteur (entre sa première et sa dernière borne).
 
-Le folio 3 se calcule en cinq secondes et demie, le folio 4 en moins de
+Le folio 3 se calcule en cinq secondes et demie, le folio 5 en moins de
 trois, les autres en deux au plus (le regard structurel autour d'un hub a
 son propre budget : trois cents routages ; il estime tous ses candidats et
 n'en route que les douze meilleurs).
@@ -301,26 +362,25 @@ message de commit, mesure à l'appui.
 
 ## Ce qui reste imparfait, mesuré
 
-Sur le folio 3, 17 croisements restent, presque tous du même ordre : les
-bornes d'un connecteur forment un peigne rigide (au pas de 14) alors que
-ses partenaires sont des blocs de cent de haut ; les fils d'un peigne vers
-une pile de blocs sont donc des Z, et un fil droit qui traverse leur
-goulotte (une barrette vers un relais) en croise plusieurs. Les défaire
-demanderait de couper un connecteur en plusieurs pièces sur un même flanc,
-ce qu'on n'a pas voulu : la pièce ressemble au matériel.
+Folio 3 : un croisement, W-314 sur W-321 — trois relais reçoivent chacun
+un fil du calculateur et un fil du même morceau de barrette, posé entre
+eux et lui ; au mieux, un de ces fils en croise un autre. 397TB1 (trois
+bornes pontées) reste à gauche des pompes : son paquet sert les deux
+pompes et le calculateur, et un pont ne se dessine pas entre deux flancs.
 
-Sur le folio 6 (deux connecteurs de dix bornes à travers une barrette),
-37,5 % seulement : la barrette se pose par paquets, chaque paquet est un
-bloc avec ses marges, et une pile de paquets ne peut pas suivre le pas du
-connecteur d'en face (deux paquets consécutifs mettent 38 entre leurs
-bornes voisines, le connecteur 14). Un dessinateur tracerait la barrette
-d'un seul tenant entre les deux connecteurs, tout droit ; il faudrait
-pour cela recoller les paquets consécutifs quand ils servent les mêmes
-blocs. Sur le folio 4, W-408 fait le tour du calculateur par le haut (le
-connecteur B sert les deux côtés : un croisement de moins que de le
-couper), et le paquet 670VT41 (1-4) reste étiré : le juge le préfère aux
-deux fils qu'un paquet compact plierait, et il a raison au barème, même
-si deux fils le contournent.
+Folio 4 : W-420 passe par-dessus le morceau 670VT41 et croise W-401. Il
+serait droit si la borne A1 du calculateur passait au-dessus de B1 et la
+borne 2 de 421ST1 d'autant : deux connecteurs à réordonner sur le flanc du
+hub, ce qu'aucun geste ne fait encore. W-407 croise W-421 (les deux bus de
+barrette vers les trois sondes s'entrelacent).
+
+Folio 5 : trois croisements, imposés par l'ordre des contacts des deux
+prises : W-526 (540VL5 vers la borne 7 de 412VC3B) croise les deux fils
+qui traversent la seconde prise ; W-520 croise W-525 (la borne 8 de
+411VC3A vient de 500XC3, la 7 de 510RL1, posé dessous).
+
+Contrat d'essai : un croisement, W-130 sur W-132, pour deux fils droits de
+plus qu'avant (le morceau de barrette en face de ce qu'il sert).
 
 ## Ce que `controle.js` vérifie
 

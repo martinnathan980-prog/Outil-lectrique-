@@ -218,7 +218,10 @@ function occupationDe(fils, barrettes, comps) {
   (barrettes || []).forEach(b => bornesDePiquage(b).forEach((y, i) => { const r = R_PASTILLE(String(i + 1)) + 1; boites.push({ x0: b.x - r, y0: y - r, x1: b.x + r, y1: y + r }); }));
   (comps || []).forEach(c => {
     // le corps d'un équipement compte avec ses pièces de connecteur et leurs lettres ; celui d'une réglette, sa colonne
-    if (c.kind !== 'tag') { const d = c.kind === 'equip' ? CONN_W : 0; corps.push({ x0: c.x + c.lw - d, y0: c.y, x1: c.x + c.w - c.rw + d, y1: c.y + c.h, id: c.id });
+    /* un morceau de barrette finit par son point de départ, au ras de son cadre : un texte s'en garde de quatre (un numéro
+       de fil s'écrivait contre le point du morceau 668VT31, le fil passant un pas sous sa dernière borne) */
+    if (c.kind !== 'tag') { const d = c.kind === 'equip' ? CONN_W : 0, pied = c.kind === 'strip' && !estCoupure(c.name) ? 4 : 0;
+      corps.push({ x0: c.x + c.lw - d, y0: c.y, x1: c.x + c.w - c.rw + d, y1: c.y + c.h + pied, id: c.id });
       if (c.kind === 'equip') piecesDeConnecteur(c).forEach(p => boites.push({ x0: p.x0, x1: p.x1, y0: p.t - 8.5, y1: p.t - 1, id: c.id })); return; }
     // une pastille : les barres d'une masse, le pointillé d'un morceau de barrette, la pilule d'un rail — le bout de fil qui y mène reste libre
     const M = symboleDePastille(c);

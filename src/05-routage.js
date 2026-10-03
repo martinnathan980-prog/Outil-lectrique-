@@ -383,12 +383,23 @@ function tracerLesFils(layout, fils, piquages) {
     const f = fils.get(li); f.li = li; let pts = [{ x: f.A.x, y: f.A.y }];
     f.travaux.forEach(t => { const x = t.piquage ? t.piquage.x : t.x; pts.push({ x, y: t.paire[0].y }, { x, y: t.paire[1].y }); });
     pts.push({ x: f.B.x, y: f.B.y });
-    const dA = bout(f, f.A, f.travaux[0], 'A'), dB = bout(f, f.B, f.travaux[f.travaux.length - 1], 'B');
+    // chaque bout sous SON étiquette (de : A, vers : B) — le fil est rangé de gauche à droite, f.A n'est pas toujours le « de »
+    const dA = bout(f, f.A, f.travaux[0], f.A.tag), dB = bout(f, f.B, f.travaux[f.travaux.length - 1], f.B.tag);
     pts = pts.slice(dA.ote, pts.length - dB.ote);
     if (dA.jonction) pts.unshift(dA.jonction); if (dB.jonction) pts.push(dB.jonction);
     const trace = simplifier(pts); if (f.A.tag === 'B') trace.reverse();
     out[li] = { ...l, pts: trace, parPiquage: !!(dA.plie || dB.plie) }; });
   return out;
+}
+/* Un fil ROMPU : un de ses bouts n'arrive pas à sa borne — ni au bout de
+   son tracé, ni par le piquage de cette borne (le tracé finit alors sur la
+   verticale du piquage, qui trace lui-même le raccord jusqu'à la borne). Le
+   dessin ment : le juge le refuse, le banc le compte. */
+function filsRompus(fils, barrettes) {
+  const pres = (p, q) => Math.abs(p.x - q.x) < 0.5 && Math.abs(p.y - q.y) < 0.5;
+  return fils.filter(w => { if (w.shunt || w.boucle || !w.pts || w.pts.length < 2) return false; const bouts = [w.pts[0], w.pts[w.pts.length - 1]];
+    return [w.epA, w.epB].some(ep => !bouts.some(p => pres(p, ep)) && !(barrettes || []).some(b => b.raccord && Math.abs(b.raccord.x0 - ep.x) < 0.5 && Math.abs(b.raccord.y - ep.y) < 0.5
+      && bouts.some(p => Math.abs(p.x - b.x) < 0.5 && p.y > b.y1 - 0.5 && p.y < b.y2 + 0.5))); }).length;
 }
 /* Les JONCTIONS : un bout de fil qui n'est ni une borne ni sur un piquage
    est posé sur le fil d'un autre — un point le dit. */
