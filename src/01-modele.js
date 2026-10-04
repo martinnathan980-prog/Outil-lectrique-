@@ -123,8 +123,11 @@ function contratExemple() {
     '600XC4': 'EN4165-2M', '601XC5': 'EN4165-2M', '672VT51': 'ASNE0500-12', '610LP3': 'E0644D9S', '611LP4': 'E0644D9S', '620SW4': 'NSA937802-03',
     '630RL5': 'E0836IS35-22SA', '631RL6': 'E0836IS35-22SA' };
   const L = [];
+  /* des routes PROVISOIRES, tirées du type de fil, pour que la légende des routes se voie sur l'exemple : les vraies
+     routes viendront du fichier (colonne « route » ou « cheminement ») */
+  const routeExemple = t => /^ML/i.test(t) ? 'BLINDÉ' : /^DR(16|20)$/i.test(t) ? 'PUISSANCE' : 'SIGNAL';
   const li = (plan, de, bDe, vers, bVers, cable, type) =>
-    L.push(liaison({ de, borneDe: bDe, pnDe: PN[de] || '', vers, borneVers: bVers, pnVers: PN[vers] || '', cable, type, plan }));
+    L.push(liaison({ de, borneDe: bDe, pnDe: PN[de] || '', vers, borneVers: bVers, pnVers: PN[vers] || '', cable, type, route: routeExemple(type || ''), plan }));
   // ---- plan 1 : facile — une batterie, un disjoncteur, un relais, une lampe, une masse
   li('1', '101BT1', '1',  '102CB1', '1',   'W-011', 'DR16');
   li('1', '102CB1', '2',  '103RL1', 'A1',  'W-012', 'DR20');

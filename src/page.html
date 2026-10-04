@@ -99,6 +99,11 @@
       </button>
       <div id="fo-strip" class="fo-strip"></div>
       <span id="fo-lbl" class="fo-lbl">1 / 1</span>
+      <span id="affinage" class="affinage" hidden role="status" aria-live="polite"><i aria-hidden="true"></i><span id="af-txt"></span></span>
+      <button class="rd sobre auto" id="btnAuto" hidden aria-label="Revenir au dessin automatique de ce folio">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.7M4 4v4h4"/></svg>
+        <span class="bulle" aria-hidden="true">Folio retouché · revenir au dessin automatique</span>
+      </button>
       <button class="rd" id="fo-next" aria-label="Folio suivant (→)">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
         <span class="bulle" aria-hidden="true">Folio suivant<kbd>→</kbd></span>
@@ -141,6 +146,22 @@
     <div class="fiche-corps" id="fiche-corps"></div>
     <div class="fiche-pied" id="fiche-pied" hidden></div>
   </aside>
+  <!-- La VUE EN RELIEF d'une barrette ou d'une prise de coupure (08-relief) : la pièce en perspective, qu'on fait
+       tourner à la main, chaque fil dans son trou, à la couleur de sa route ; dessous, le tableau trou par trou. -->
+  <div id="relief" class="relief" hidden role="dialog" aria-modal="true" aria-labelledby="re-titre">
+    <div class="re-boite">
+      <div class="re-tete">
+        <div class="min0"><div class="sur" id="re-sur"></div><h2 class="titre" id="re-titre"></h2><div class="re-compte" id="re-compte"></div></div>
+        <div class="re-vues" id="re-vues" role="group" aria-label="Vue">
+          <button data-vue="3/4" title="Vue de trois quarts">3/4</button><button data-vue="face" title="Vue de face">Face</button><button data-vue="dessus" title="Vue de dessus">Dessus</button>
+        </div>
+        <button class="rond fermer" id="re-fermer" aria-label="Fermer la vue en relief (Échap)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </div>
+      <div class="re-scene" id="re-scene" title="Glisser pour tourner la pièce"></div>
+      <div class="re-note" id="re-note"></div>
+      <div class="re-tableau" id="re-tableau"></div>
+    </div>
+  </div>
   <div id="toast" class="verre" role="status" aria-live="polite"></div>
   <input type="file" id="fichier" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
   <input type="file" id="fichier-bible" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>

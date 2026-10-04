@@ -88,6 +88,10 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
 /* la feuille dessinée par le moteur ; on ne touche qu'à son conteneur */
 #svg .comp{cursor:pointer}
 #svg .cab{cursor:pointer}
+/* la retouche : un bloc se prend à la main */
+#svg .comp{cursor:grab}
+#planche.deplace,#planche.deplace *{cursor:grabbing!important}
+.rd.auto[hidden]{display:none}
 
 /* ─── LES INSTRUMENTS : verre fumé ──────────────────────────────────────── */
 .verre{background:var(--verre);-webkit-backdrop-filter:blur(16px) saturate(1.3);backdrop-filter:blur(16px) saturate(1.3);
@@ -184,6 +188,13 @@ body.cherche .recherche{display:flex}
 .chip{height:32px;min-width:32px;padding:0 11px;border-radius:16px;border:none;background:none;color:var(--craie);font-family:var(--mono);font-weight:600;font-size:var(--t2);transition:background var(--rapide)}
 .chip:hover{background:rgba(255,255,255,.1)}
 .chip.on{background:var(--papier);color:var(--encre)}
+/* l'affinage en cours : un point qui respire, ce qu'il fait, discret ; il cède sa place sur un téléphone */
+.affinage{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:var(--t0);color:var(--craie-2);padding:0 8px;white-space:nowrap}
+.affinage[hidden]{display:none}
+.affinage i{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.8;animation:respire 1.6s ease-in-out infinite}
+.affinage.ailleurs{opacity:.7}
+@keyframes respire{0%,100%{transform:scale(.6);opacity:.35}50%{transform:scale(1);opacity:.9}}
+@media (prefers-reduced-motion:reduce){.affinage i{animation:none}}
 .fo-lbl{color:var(--craie-2);font-size:var(--t0);padding:0 10px 0 8px;white-space:nowrap;font-family:var(--mono)}
 /* quand un document est ouvert, les folios se recentrent sur ce qui reste du plan */
 body.base-ouverte #folios{left:calc((100vw - var(--base-l) + var(--rail)) / 2)}
@@ -503,7 +514,7 @@ body.depot-actif .depot{display:grid}
   /* la barre passe en bas, sous le pouce ; ce que le geste fait déjà
      (pincer pour zoomer, toucher un folio) n'y est pas */
   #rail{top:auto;left:8px;right:8px;bottom:8px;width:auto;height:48px;border-radius:24px;flex-direction:row;justify-content:space-around;padding:0 4px;gap:0;transition:bottom var(--moyen)}
-  #rail hr,#zin,#zout,#zlbl,#fo-prev,#fo-next,#btnOuvrir,#folios hr{display:none}
+  #rail hr,#zin,#zout,#zlbl,#fo-prev,#fo-next,#btnOuvrir,#folios hr,.affinage span{display:none}
   #rail .espace{display:none}
   .menu{bottom:calc(100% + 12px);left:auto;right:-4px;width:min(272px,calc(100vw - 16px))}
   .recherche{top:8px;left:8px;right:8px;width:auto;max-width:none}
@@ -561,6 +572,54 @@ body.depot-actif .depot{display:grid}
   *,*::before,*::after{transition:none!important;animation:none!important}
   .phy{scroll-behavior:auto}
 }
+
+/* ── la VUE EN RELIEF (08-relief) : une feuille blanche posée sur la table assombrie ── */
+.relief{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(14,19,26,.55)}
+.relief[hidden]{display:none}
+.re-boite{background:var(--papier);color:var(--encre);border-radius:16px;width:min(1180px,100%);max-height:100%;overflow:auto;box-shadow:0 18px 60px rgba(0,0,0,.35);padding:18px 20px 20px}
+.re-tete{display:flex;align-items:flex-start;gap:14px}
+.re-tete .min0{flex:1;min-width:0}
+.re-tete .titre{font-family:var(--mono);font-size:22px;margin:2px 0 0}
+.re-compte{color:var(--encre-2);font-size:13px;margin-top:4px}
+.re-compte .ko,.re-tab .ko{color:var(--danger);font-weight:600}
+.re-vues{display:flex;gap:2px;background:var(--papier-2);border-radius:18px;padding:3px}
+.re-vues button{border:0;background:transparent;color:var(--encre-2);font:inherit;font-size:13px;padding:6px 12px;border-radius:15px;cursor:pointer}
+.re-vues button:hover{background:var(--papier-3)}
+.re-vues button.on{background:var(--papier);color:var(--encre);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.re-scene{margin:12px 0 4px;background:radial-gradient(ellipse at 50% 40%,#f7f9fb,#e9edf2);border-radius:12px;height:min(56vh,520px);cursor:grab;touch-action:none;user-select:none}
+.re-scene.tourne{cursor:grabbing}
+.re-scene svg{width:100%;height:100%;display:block}
+.re-gaine{fill:none;stroke:#18212c;stroke-opacity:.28;stroke-width:4.4;stroke-linecap:round;stroke-linejoin:round}
+.re-ame{fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.re-fil.on .re-ame{stroke-width:4}
+.re-fil.on .re-gaine{stroke-width:6.5}
+.re-trou{fill:#ffffff;stroke:#7a8796;stroke-width:1.2}
+.re-trou.plein{fill:#18212c;stroke-width:2.2}
+.re-trou.ko{stroke:var(--danger)!important;stroke-width:2.6}
+.re-trou.on{stroke-width:3.4}
+.re-num{font-family:var(--mono);font-size:13px;font-weight:600;fill:#ffffff}
+.re-num.libre{fill:#5b6875;font-weight:500}
+.re-num.petit{fill:#18212c;font-size:11px}
+.re-titre-piece{font-size:12px;letter-spacing:.08em;fill:#5b6875;font-weight:600}
+.re-cable{font-family:var(--mono);font-size:13px;font-weight:700}
+.re-dest{font-family:var(--mono);font-size:11px;fill:#5b6875}
+.re-etiq.on .re-cable{text-decoration:underline}
+.re-trait{fill:none;stroke-width:.8;stroke-opacity:.55}
+.re-etiq.on .re-trait{stroke-width:1.6;stroke-opacity:1}
+.re-emboite{stroke:#7a8796;stroke-width:1.4;stroke-dasharray:5 4;fill:none}
+.re-note{color:var(--encre-2);font-size:12.5px;margin:6px 2px 12px}
+svg .re-note{fill:#5b6875;font-size:10px}
+.re-tab{width:100%;border-collapse:collapse;font-size:12.5px}
+.re-tab th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--encre-2);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--filet)}
+.re-tab td{padding:5px 8px;border-bottom:1px solid var(--filet);vertical-align:top}
+.re-tab td.n{font-family:var(--mono);font-weight:600;width:64px}
+.re-tab tr.libre td{color:var(--encre-2)}
+.re-tab .re-libre{font-style:italic}
+.re-f{display:inline-flex;align-items:center;gap:6px;margin:0 12px 2px 0;font-family:var(--mono);cursor:pointer;border-radius:6px;padding:1px 4px}
+.re-f i{width:14px;height:3px;border-radius:2px;display:inline-block}
+.re-f em{color:var(--encre-2);font-style:normal}
+.re-f.on,.re-f:hover{background:var(--papier-2)}
+@media (max-width:700px){.re-boite{padding:14px}.re-tete{flex-wrap:wrap}.re-scene{height:46vh}}
 
 </style>
 </head>
@@ -666,6 +725,11 @@ body.depot-actif .depot{display:grid}
       </button>
       <div id="fo-strip" class="fo-strip"></div>
       <span id="fo-lbl" class="fo-lbl">1 / 1</span>
+      <span id="affinage" class="affinage" hidden role="status" aria-live="polite"><i aria-hidden="true"></i><span id="af-txt"></span></span>
+      <button class="rd sobre auto" id="btnAuto" hidden aria-label="Revenir au dessin automatique de ce folio">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.7M4 4v4h4"/></svg>
+        <span class="bulle" aria-hidden="true">Folio retouché · revenir au dessin automatique</span>
+      </button>
       <button class="rd" id="fo-next" aria-label="Folio suivant (→)">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
         <span class="bulle" aria-hidden="true">Folio suivant<kbd>→</kbd></span>
@@ -708,15 +772,31 @@ body.depot-actif .depot{display:grid}
     <div class="fiche-corps" id="fiche-corps"></div>
     <div class="fiche-pied" id="fiche-pied" hidden></div>
   </aside>
+  <!-- La VUE EN RELIEF d'une barrette ou d'une prise de coupure (08-relief) : la pièce en perspective, qu'on fait
+       tourner à la main, chaque fil dans son trou, à la couleur de sa route ; dessous, le tableau trou par trou. -->
+  <div id="relief" class="relief" hidden role="dialog" aria-modal="true" aria-labelledby="re-titre">
+    <div class="re-boite">
+      <div class="re-tete">
+        <div class="min0"><div class="sur" id="re-sur"></div><h2 class="titre" id="re-titre"></h2><div class="re-compte" id="re-compte"></div></div>
+        <div class="re-vues" id="re-vues" role="group" aria-label="Vue">
+          <button data-vue="3/4" title="Vue de trois quarts">3/4</button><button data-vue="face" title="Vue de face">Face</button><button data-vue="dessus" title="Vue de dessus">Dessus</button>
+        </div>
+        <button class="rond fermer" id="re-fermer" aria-label="Fermer la vue en relief (Échap)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </div>
+      <div class="re-scene" id="re-scene" title="Glisser pour tourner la pièce"></div>
+      <div class="re-note" id="re-note"></div>
+      <div class="re-tableau" id="re-tableau"></div>
+    </div>
+  </div>
   <div id="toast" class="verre" role="status" aria-live="polite"></div>
   <input type="file" id="fichier" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
   <input type="file" id="fichier-bible" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
 </div>
 <div id="printroot"></div>
 
-<script>
+<script id="moteur">
 "use strict";
-const NORME_EMBARQUEE = "NORME D'EXEMPLE — sans aucune valeur normative. Les chiffres sont inventés pour montrer le mécanisme ; remplace ce fichier par les tables de tes normes (voir normes/LISEZMOI.md).\n\nFamilles — une ligne par famille de barrettes ou de prises de coupure : ce que chaque contact admet, et la règle de remplissage\nNorme;Famille;Nature;Variantes;Pas;Jauge min;Jauge max;Intensité;Résistance;Fils par côté;Ordre;Paquets;Réservés;Masse;Note\nASNE0500 (exemple);ASNE0500;jonction;2 4 8 12 20;5;26;20;7,5;5;1;croissant;contigus;;;module de jonction : un fil de chaque côté, peigne de pontage entre modules voisins, modules pris dans l'ordre\nASNE0501 (exemple);ASNE0501;jonction;4 8;7,5;22;16;23;3;1;libre;contigus;1;;grosses sections ; le module 1 est réservé (fixation)\nASNE0502 (exemple);ASNE0502;blindage;4 8;5;26;20;7,5;5;2;libre;contigus;;par paquet;reprise de blindage : deux fils par côté, chaque paquet se ferme sur une masse\nEN3646 (exemple);EN3646;coupure;3 8;2,5;26;20;7,5;8;1;libre;;;;prise de coupure : un fil par contact, fiche (partie mobile) et embase\n\nFils — par type et jauge AWG : section, résistance à 20 °C, intensité admissible du fil seul (avant déclassement)\nType;Jauge;Section;Résistance;Intensité;Note\nDR;26;0,15;140;2,5;monoconducteur cuivre (exemple)\nDR;24;0,24;85;3,5;\nDR;22;0,38;55;5;\nDR;20;0,62;34;7,5;\nDR;18;0,96;21;10;\nDR;16;1,5;13,5;13;\nDR;14;2,5;8,5;17;\nDR;12;3,7;5,3;23;\nBN;26;0,15;150;2,5;monoconducteur nickelé (exemple) : un peu plus résistant\nBN;24;0,24;90;3,5;\nBN;22;0,38;58;5;\nBN;20;0,62;36;7,5;\nMLB;26;0,15;140;2;bifilaire blindé (exemple) : chaque conducteur\nMLB;24;0,24;85;3;\nMLB;22;0,38;55;4,5;\nMLB;20;0,62;34;6,5;\nMLC;26;0,15;140;2;trifilaire blindé (exemple) : chaque conducteur\nMLC;24;0,24;85;3;\nMLC;22;0,38;55;4,5;\nMLC;20;0,62;34;6,5;\n\nDéclassement — un facteur appliqué à l'intensité admissible du fil, quand la condition est cochée dans la simulation\nCondition;Facteur;Note\nfaisceau;0,8;plusieurs fils frettés ensemble (exemple) — coché par défaut\nchaud;0,85;zone chaude, plus de 70 °C (exemple)\n\nRéseau — la chute de tension admise en ligne, selon la tension du réseau\nTension;Chute max;Note\n28;1;28 V continu : 1 V en régime permanent (exemple)\n115;4;115 V alternatif (exemple)\n";
+const VERSION_MOTEUR = 'b247b0bd77fa';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -842,8 +922,11 @@ function contratExemple() {
     '600XC4': 'EN4165-2M', '601XC5': 'EN4165-2M', '672VT51': 'ASNE0500-12', '610LP3': 'E0644D9S', '611LP4': 'E0644D9S', '620SW4': 'NSA937802-03',
     '630RL5': 'E0836IS35-22SA', '631RL6': 'E0836IS35-22SA' };
   const L = [];
+  /* des routes PROVISOIRES, tirées du type de fil, pour que la légende des routes se voie sur l'exemple : les vraies
+     routes viendront du fichier (colonne « route » ou « cheminement ») */
+  const routeExemple = t => /^ML/i.test(t) ? 'BLINDÉ' : /^DR(16|20)$/i.test(t) ? 'PUISSANCE' : 'SIGNAL';
   const li = (plan, de, bDe, vers, bVers, cable, type) =>
-    L.push(liaison({ de, borneDe: bDe, pnDe: PN[de] || '', vers, borneVers: bVers, pnVers: PN[vers] || '', cable, type, plan }));
+    L.push(liaison({ de, borneDe: bDe, pnDe: PN[de] || '', vers, borneVers: bVers, pnVers: PN[vers] || '', cable, type, route: routeExemple(type || ''), plan }));
   // ---- plan 1 : facile — une batterie, un disjoncteur, un relais, une lampe, une masse
   li('1', '101BT1', '1',  '102CB1', '1',   'W-011', 'DR16');
   li('1', '102CB1', '2',  '103RL1', 'A1',  'W-012', 'DR20');
@@ -2400,11 +2483,16 @@ function compterBandes(blocs) {
    six bornes au moins (un interrupteur de trois bornes haut comme la feuille
    ne se lit pas mieux pour autant). Sans les fils (l'estimation), tout corps
    étiré compte. */
-const compterEtires = (comps, fils) => comps.filter(c => { if (!corpsEtire(c)) return false; if (!fils || c.kind !== 'equip') return true;
+const etiresDe = (comps, fils) => comps.filter(c => { if (!corpsEtire(c)) return false; if (!fils || c.kind !== 'equip') return true;
   // un petit boîtier (moins de six bornes) allongé sur la hauteur de la feuille reste un corps étiré, même ses fils droits
   if (Object.values(c.rangs).reduce((n, r) => n + r.length, 0) < ETIRE_BORNES) return true;
   const siens = fils.filter(w => !w.shunt && (w.de === c.name || w.vers === c.name)); if (!siens.length) return true;
-  return siens.filter(w => w.pts.length === 2).length < 0.75 * siens.length; }).length;
+  return siens.filter(w => w.pts.length === 2).length < 0.75 * siens.length; });
+const compterEtires = (comps, fils) => etiresDe(comps, fils).length;
+/* un corps ÉTIRÉ paie aussi sa hauteur en trop, comme une descente : une longueur verticale coûte autant dans un corps
+   que dans un fil. Au forfait seul, s'étirer rapportait deux fois (un fil droit, et la descente qu'il ne fait plus) : une
+   lampe de trois bornes montait sur trois cents unités pour un seul fil droit (folio 3, 392LP2) */
+const excesDesEtires = (comps, fils) => etiresDe(comps, fils).reduce((n, c) => n + hauteurEnTrop(c), 0);
 /* Deux bornes d'un même flanc à moins d'un pas l'une de l'autre se dessinent l'une sur l'autre : le dessin est faux, comme
    un bloc sur un autre. */
 function bornesSuperposees(C) { let n = 0;
@@ -2448,13 +2536,13 @@ function juger(L, R) {
   const w = Math.max(1, x1 - x0 - resserre), h = Math.max(1, y1 - y0), r = w / h;
   let longueur = 0; fils.forEach(f => { for (let i = 0; i < f.pts.length - 1; i++) longueur += Math.abs(f.pts[i + 1].x - f.pts[i].x) + Math.abs(f.pts[i + 1].y - f.pts[i].y); });
   const droits = compterDroits(fils.filter(w => !t.propres.has(w))), croisements = compterCroisements(fils, R.barrettes) + 2 * t.propres.size;
-  const partages = compterPartages(R.fils), etires = compterEtires(L.comps, fils), marches = compterMarches(fils), escaliers = compterEscaliers(fils), sousHub = compterSousHub(L.comps);
+  const partages = compterPartages(R.fils), etires = compterEtires(L.comps, fils), excesEtires = excesDesEtires(L.comps, fils), marches = compterMarches(fils), escaliers = compterEscaliers(fils), sousHub = compterSousHub(L.comps);
   // un demi pour cent de tolérance : le juge mesure pastilles comprises, il est plus strict que la feuille
   const tient = (r <= FORMAT_MAX * 1.005 && r >= FORMAT_MIN / 1.005) || tientALEchelle(w, h), tiendra = tient || (r <= FORMAT_MAX * ETIRABLE && compterBandes(blocs) >= 2);
   const contours = compterContours(fils), descentes = compterDescentes(boutsDesLiaisons(L.links));
   const j = { sain: t.etrangers === 0 && chevauchements(L.comps) === 0 && bornesSuperposees(L.comps) === 0 && filsRompus(R.fils, R.barrettes) === 0, tient, tiendra, format: r, largeur: w,
     droits, croisements, partages, etires, marches, tours: compterTours(L), propres: t.propres.size, contours,
-    escaliers, sousHub, lisibilite: droits - croisements / CROISEMENTS_PAR_DROIT - PARTAGE * partages - PAR_MARCHE * marches - ESCALIER * escaliers - ETIRE * etires - TOUR * compterTours(L) - SOUS_HUB * sousHub - contours - DESCENTE * descentes, descentes, exces: compterExces(blocs), genees: compterPastillesGenees(L, fils), detours: compterDetours(fils), coupes: L.coupes || 0,
+    escaliers, sousHub, lisibilite: droits - croisements / CROISEMENTS_PAR_DROIT - PARTAGE * partages - PAR_MARCHE * marches - ESCALIER * escaliers - ETIRE * etires - TOUR * compterTours(L) - SOUS_HUB * sousHub - contours - DESCENTE * (descentes + excesEtires), descentes, exces: compterExces(blocs), genees: compterPastillesGenees(L, fils), detours: compterDetours(fils), coupes: L.coupes || 0,
     encombrement: Math.min(Math.max(w / A3, h), Math.max(w, h / A3)), surface: w * h, longueur };
   // les muets coûtent cher à compter (le dessin pose ses étiquettes) : seulement quand droits et croisements sont à égalité
   let muets = null; Object.defineProperty(j, 'muets', { enumerable: true, get() { if (muets == null) muets = compterMuets(R); return muets; } });
@@ -2535,11 +2623,11 @@ function estimer(L) {
   const libre = (xa, xb, y, ex) => { if (xa > xb) { const t = xa; xa = xb; xb = t; } return !blocs.some(c => !ex.has(c.name) && xb > c.x + 1 && xa < c.x + c.w - 1 && y > c.y - 3 && y < c.y + c.h + 3); };
   const fils = []; L.links.forEach(l => { if (l.boucle || l.shunt) return; let A = l.epA, B = l.epB;
     if (A.ch > B.ch || (A.ch === B.ch && mur(A) === 'R' && mur(B) === 'L')) { const t = A; A = B; B = t; }
-    fils.push({ A, B, ex: new Set([String(l.de), String(l.vers)]) }); });
+    fils.push({ A, B, ex: new Set([String(l.de), String(l.vers)]), pont: String(l.de) === String(l.vers) }); });
   const nG = g.nCols + 1, barrieres = Array.from({ length: nG }, () => []), verticales = Array.from({ length: nG }, () => []);
   let droits = 0; const plies = [];
   fils.forEach(f => { const { A, B, ex } = f;
-    if (Math.abs(A.y - B.y) <= 0.75 && mur(A) === 'L' && mur(B) === 'R' && libre(A.x + 2, B.x - 2, A.y, ex)) { droits++;
+    if (Math.abs(A.y - B.y) <= 0.75 && mur(A) === 'L' && mur(B) === 'R' && libre(A.x + 2, B.x - 2, A.y, ex)) { if (!f.pont) droits++;          // un pont de barrette coupée n'est pas un fil droit gagné (05, compterDroits)
       // il barre les goulottes qu'il traverse de part en part (le fil d'une pastille reste dans sa colonne)
       for (let ch = A.ch; ch <= B.ch; ch++) if (A.x <= x0(ch) + 1 && B.x >= x1(ch) - 1) barrieres[ch].push(A.y); } else plies.push(f); });
   barrieres.forEach(b => b.sort((u, v) => u - v));
@@ -2579,8 +2667,8 @@ function estimer(L) {
       ici += Math.min(ij + PARTAGE * CROISEMENTS_PAR_DROIT * pij, ji + PARTAGE * CROISEMENTS_PAR_DROIT * pji); }
     croisements += ici; detail.push({ ch, verticales: V.length, brutes: V0.length, barrieres: barrieres[ch].length, croisements: ici }); });
   // les corps étirés se voient sans router : l'estimation les compte comme le juge
-  const etires = compterEtires(blocs), tours = compterTours(L), descentes = compterDescentes(boutsDesLiaisons(L.links));
-  return { droits, croisements, etires, tours, descentes, lisibilite: droits - croisements / CROISEMENTS_PAR_DROIT - ETIRE * etires - TOUR * tours - DESCENTE * descentes, detail };
+  const etires = compterEtires(blocs), tours = compterTours(L), descentes = compterDescentes(boutsDesLiaisons(L.links)), excesEtires = excesDesEtires(blocs);
+  return { droits, croisements, etires, tours, descentes, lisibilite: droits - croisements / CROISEMENTS_PAR_DROIT - ETIRE * etires - TOUR * tours - DESCENTE * (descentes + excesEtires), detail };
 }
 /* Évaluer un état à une position : assembler, router, juger. Le routage
    RAPIDE (le routeur sans ses détours par une goulotte voisine, qu'il
@@ -2790,7 +2878,12 @@ function rechercheLocale(M, meilleur, budget, finale, interne, variante) {
     ['glissement', () => glissements(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
     ['bande', () => bandes(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
     ['tassement', () => tassements(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
-    ['permutation', () => permutationsDeBornes(M, meilleur.E, () => meilleur.pos, copie, essayerTout, temps, estimerOrdre, () => meilleur.est, () => meilleur, p2 => resoudreDans(p2, TAMIS_FINAL, true), TAMIS_FINAL)]];
+    ['permutation', () => permutationsDeBornes(M, meilleur.E, () => meilleur.pos, copie, essayerTout, temps, estimerOrdre, () => meilleur.est, () => meilleur, p2 => resoudreDans(p2, TAMIS_FINAL, true), TAMIS_FINAL)],
+    ['en face', grosEnFaceGeste]];
+  /* sur la géométrie resserrée aussi, et d'abord : un fil plié se redresse en allongeant un bloc (avant le resserrage, la
+     borne n'était pas encore là où elle finit ; un fil plié d'un pas sous la lettre d'un connecteur, que le petit bloc
+     d'en face redresse en s'allongeant d'autant) */
+  finaux.unshift(['redressement', () => redressements(M, meilleur.E, () => meilleur, copie, essayerTout, temps, p2 => estimer(assembler(M, meilleur.E, p2)).lisibilite)]);
   // un geste évident ne se manque pas : tant qu'un balayage trouve encore, la passe continue, jusqu'au double de son budget
   const finFinale = evaluations + 2 * budget; temps = () => evaluations < finFinale;
   for (let passe = 0; passe < 6 && temps(); passe++) { let any = false; finaux.forEach(([nom, g]) => { geste = nom; if (temps() && g()) any = true; }); if (!any) break; }
@@ -3106,7 +3199,11 @@ function redressements(M, E, meilleurDe, copie, essayer, temps, estimerPos) {
     const ka = K(l.a.id, l.a.cle), kb = K(l.b.id, l.b.cle), ya = pos.y.get(ka), yb = pos.y.get(kb); if (ya == null || yb == null) continue;
     const pa = plage(l.a.id, l.a.cle), pb = plage(l.b.id, l.b.cle); if (!pa || !pb) continue;
     const lo = Math.max(pa[0], pb[0], Math.min(ya, yb) - 4 * PRH), hi = Math.min(pa[1], pb[1], Math.max(ya, yb) + 4 * PRH), cands = [];
-    for (let y = Math.ceil(lo * 2 / PRH) * PRH / 2; y <= hi + 1e-9; y += PRH / 2) {
+    // la grille au demi-pas, et les hauteurs exactes des deux bouts : un bout va à la hauteur de l'autre (la borne d'un
+    // calculateur, sous la lettre de son connecteur, n'est pas sur la grille ; le petit bloc d'en face s'allonge d'autant)
+    const hauteurs = [ya, yb].filter(y => y >= lo - 1e-9 && y <= hi + 1e-9);
+    for (let y = Math.ceil(lo * 2 / PRH) * PRH / 2; y <= hi + 1e-9; y += PRH / 2) if (!hauteurs.some(h => Math.abs(h - y) < 0.5)) hauteurs.push(y);
+    for (const y of hauteurs) {
       const p2 = copie(pos); p2.y.set(ka, y); p2.y.set(kb, y);
       [l.a.id, l.b.id].forEach(id => { const [mh, mb] = margesDe(M, E, id); if (y - mh < p2.haut.get(id)) p2.haut.set(id, y - mh); if (y + mb > p2.bas.get(id)) p2.bas.set(id, y + mb); });
       cands.push({ p2, est: estimerPos(p2) }); }
@@ -3221,8 +3318,20 @@ function compactions(M, E, meilleurDe, copie, essayer, temps) {
         L.forEach((p, i) => { p2.y.set(K(id, p.cle), ys[i]); lo = Math.min(lo, ys[i]); hi = Math.max(hi, ys[i]); }); });
       if (!isFinite(lo) || hi - lo + mh + mb >= pos.bas.get(id) - pos.haut.get(id) - 0.5) continue;      // rien à tasser
       p2.haut.set(id, lo - mh); p2.bas.set(id, hi + mb);
-      if (essayer(p2)) { any = true; break; } } });
+      // d'abord avec ses FEUILLES : un bloc d'une autre colonne qu'il est seul à servir suit sa borne, son fil reste droit
+      const p3 = avecSesFeuilles(id, pos, p2);
+      if ((p3 && essayer(p3)) || essayer(p2)) { any = true; break; } } });
   return any;
+  /* un corps qui se tasse emmène ses feuilles (une lampe, une pompe qu'il est seul à servir, dans une autre colonne) du
+     même pas que leur borne : tassé seul, il pliait le fil de sa lampe et le juge le gardait haut comme la feuille
+     (un relais de quatre bornes sur 345 unités, sa lampe en face de la borne du haut) ; rend null s'il n'en a pas */
+  function avecSesFeuilles(id, pos, p2) { const suivies = new Map();
+    M.blocs.get(id).bornes.forEach(p => { const k = K(id, p.cle), d = (p2.y.get(k) ?? 0) - (pos.y.get(k) ?? 0); if (Math.abs(d) < 0.5) return;
+      M.partenairesBlocs(k).forEach(q => { if (M.estTag(q.id) || !E.place.get(q.id) || E.place.get(q.id).c === E.place.get(id).c) return;
+        if (![...M.voisins.get(q.id)].every(v => v === id)) return;
+        const d0 = suivies.get(q.id); suivies.set(q.id, d0 == null || Math.abs(d0 - d) < 0.5 ? d : NaN); }); });
+    const ok = [...suivies].filter(([, d]) => !isNaN(d)); if (!ok.length) return null;
+    const p3 = copie(p2); ok.forEach(([f, d]) => glisserBloc(M, p3, f, d)); return p3; }
 }
 /* Un flanc ne se quitte pas pour tourner le dos à un partenaire : passer des
    bornes du côté s0 au côté −s0 ne crée pas de tour si autant de leurs
@@ -3413,16 +3522,62 @@ function tasserLesEtires(M, m) {
    un creux ou un autre selon le chemin, et un budget plus large la sort des
    mauvais (folio 3 : de 45 à 48 fils droits, un croisement ; le folio
    chargé d'un calculateur, 3 à 7 s ; le plus gros du corpus, 14 s). */
-function meilleurPlacement(liaisons) {
+const budgetDe = M => { const nB = M.ids.length; return nB <= 20 ? 2400 : nB <= 40 ? 1200 : nB <= 80 ? 800 : 600; };
+function placementInterne(liaisons) {
   const G = construireGraphe(liaisons); if (!G.ids.length) return null;
-  const placerSur = (G, part) => { const M = modele(G), nB = M.ids.length, budget = Math.round((nB <= 20 ? 2400 : nB <= 40 ? 1200 : nB <= 80 ? 800 : 600) * (part || 1));
-    const m = concours(M, {}, budget); m.M = M; return m; };
+  const placerSur = (G, part) => { const M = modele(G), m = concours(M, {}, Math.round(budgetDe(M) * (part || 1))); m.M = M; return m; };
   let meilleur = placerSur(G);
   // une barrette dont les bornes partent des deux côtés se COUPE, et le dessin coupé concourt contre l'entier
   const coupes = coupesParCote(meilleur.M, meilleur.E, meilleur.pos);
   // le dessin coupé concourt à demi-budget : c'est une variante du premier, pas un second folio
   if (coupes.size) { const coupe = placerSur(construireGraphe(liaisons, coupes), 0.5); if (bat(coupe.j, meilleur.j)) { meilleur = coupe; meilleur.coupes = coupes; } }
-  return { ...meilleur.L, routage: meilleur.R, jugement: { ...meilleur.j, muets: meilleur.j.muets, scindes: meilleur.E.scindes || [], barrettesCoupees: meilleur.coupes ? [...meilleur.coupes].map(l => l.cable || '') : [] } };
+  return meilleur;
+}
+// ce que l'interface et le dessin reçoivent : la géométrie, le routage, le jugement
+const sortieDuPlacement = m => ({ ...m.L, routage: m.R, jugement: { ...m.j, muets: m.j.muets, scindes: m.E.scindes || [], barrettesCoupees: m.coupes ? [...m.coupes].map(l => l.cable || '') : [] } });
+function meilleurPlacement(liaisons) { const m = placementInterne(liaisons); return m ? sortieDuPlacement(m) : null; }
+
+/* ===== 11. LA RECHERCHE PROFONDE ======================================== */
+/* Le temps de calcul n'est pas un souci (le lecteur : « une heure de calcul
+   pour une vie d'études bien faite, on s'en fiche ») : un dessin se calcule
+   une fois et sert toujours. La recherche locale tombe dans un creux ou un
+   autre selon son chemin ; la recherche PROFONDE l'en sort, à partir du
+   meilleur dessin du concours, par des PERTURBATIONS — un bloc change de
+   colonne (vers un partenaire, ou d'un cran), un sous-ensemble passe de
+   l'autre côté du calculateur — chacune repolie (recherche locale, resserrage,
+   passe finale, tassement) et jugée contre le meilleur. Le hasard est
+   déterministe, tiré du contrat lui-même : le même contrat donne le même
+   dessin partout. `rapporter(k, n, m)` dit où elle en est, à chaque tour. */
+function graineDe(liaisons) { let h = 2166136261 >>> 0;
+  liaisons.forEach(l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable].forEach(v => { for (const ch of String(v)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; } }));
+  return h; }
+function hasardDe(graine) { let s = graine >>> 0;
+  return () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function placementProfond(liaisons, tours, rapporter) {
+  const m0 = placementInterne(liaisons); if (!m0) return null;
+  const M = m0.M, r = hasardDe(graineDe(liaisons)), H = hubDe(M), budget = budgetDe(M);
+  let meilleur = m0; if (rapporter) rapporter(0, tours, meilleur);
+  const blocs = M.ids.filter(id => !M.estTag(id) && id !== H), ss = sousEnsemblesDuHub(M);
+  const normaliser = col => { const m = Math.min(...col.values()); if (m !== 0) col.forEach((c, id) => col.set(id, c - m)); return col; };
+  const perturber = col0 => { const col = new Map(col0), choix = r();
+    if (H != null && ss && choix < 0.25) {            // un sous-ensemble passe de l'autre côté du calculateur
+      const g = ss.get(blocs[Math.floor(r() * blocs.length)]), cH = col.get(H);
+      M.ids.forEach(id => { if (ss.get(id) === g && col.has(id)) col.set(id, 2 * cH - col.get(id)); }); return normaliser(col); }
+    const n = 1 + Math.floor(r() * 2);
+    for (let k = 0; k < n; k++) { const id = blocs[Math.floor(r() * blocs.length)]; if (!col.has(id)) continue;
+      const parts = [...M.voisins.get(id)].filter(v => col.has(v) && !M.estTag(v));
+      if (parts.length && r() < 0.6) { const q = parts[Math.floor(r() * parts.length)], c = col.get(q); col.set(id, c + (r() < 0.5 ? -1 : 1)); }     // à côté d'un partenaire
+      else col.set(id, col.get(id) + (r() < 0.5 ? -1 : 1)); }                                                                                      // d'un cran
+    if (H != null) { const cH = col.get(H); if ([...col].some(([id, c]) => id !== H && c === cH)) return null; }    // personne dans la colonne du calculateur
+    return normaliser(col); };
+  for (let k = 1; k <= tours; k++) {
+    const col = perturber(meilleur.E.col); if (col) {
+      const E = etatDepuisColonnes(M, col, meilleur.E.options); E.sorties = new Map();
+      let c = evaluer(M, E, ordonnerLesBlocs(M, E));
+      c = rechercheLocale(M, c, budget); c = etirerAuFormat(M, resserrer(M, c)); c = rechercheLocale(M, c, Math.min(1200, Math.max(150, budget)), true); c = tasserLesEtires(M, c);
+      if (bat(c.j, meilleur.j)) { c.M = M; c.coupes = m0.coupes; meilleur = c; } }
+    if (rapporter) rapporter(k, tours, meilleur); }
+  return sortieDuPlacement(meilleur);
 }
 /* Où COUPER une barrette : dans un placement, chaque borne d'un morceau
    regarde où partent ses fils — toutes à gauche (L), toutes à droite (R),
@@ -3908,8 +4063,12 @@ function routerUneFois(layout, permis) {
    Un fil est DROIT s'il est un seul segment horizontal, de borne à borne :
    un fil qui passe par un raccord et la verticale d'un piquage ne l'est pas
    (le routeur le marque `parPiquage`). Un shunt n'est ni droit ni plié : il
-   ne compte pas. */
-const compterDroits = fils => fils.filter(w => w.pts.length >= 2 && !w.parPiquage && w.pts.every(p => Math.abs(p.y - w.pts[0].y) < 0.01)).length;
+   ne compte pas ; le PONT d'une barrette coupée (un fil d'une barrette vers
+   elle-même) non plus : couper rapportait un « fil droit » par pont, et le
+   juge coupait un bus de six bornes en quatre morceaux reliés par cinq ponts
+   là où un seul morceau se lisait d'un coup d'œil. */
+const estPont = w => String(w.de) === String(w.vers);
+const compterDroits = fils => fils.filter(w => !estPont(w) && w.pts.length >= 2 && !w.parPiquage && w.pts.every(p => Math.abs(p.y - w.pts[0].y) < 0.01)).length;
 /* Les MARCHES d'un fil : un segment de moins de MARCHE entre deux angles
    (une horizontale entre deux verticales, une verticale entre deux
    horizontales), ou deux verticales à moins de 2·MARCHE l'une de l'autre.
@@ -3985,9 +4144,9 @@ function auditer(dessin) {
   let blocsChevauches = 0;
   for (let i = 0; i < blocs.length; i++) for (let j = i + 1; j < blocs.length; j++) { const a = blocs[i], b = blocs[j];
     if (a.x < b.x + b.w - 1 && b.x < a.x + a.w - 1 && a.y < b.y + b.h - 1 && b.y < a.y + a.h - 1) blocsChevauches++; }
-  const droits = compterDroits(fils);
-  return { ok: filsDansBloc === 0 && blocsChevauches === 0, fils: fils.length, droits,
-           tauxDroits: fils.length ? +(droits / fils.length).toFixed(3) : 1,
+  const droits = compterDroits(fils), nFils = fils.filter(w => !estPont(w)).length;
+  return { ok: filsDansBloc === 0 && blocsChevauches === 0, fils: nFils, droits,
+           tauxDroits: nFils ? +(droits / nFils).toFixed(3) : 1,
            croisements: compterCroisements(fils, dessin.barrettes), filsDansBloc, blocsChevauches, blocs: blocs.length, details: coupables,
            evitables: croisementsEvitables(dessin, { fils, barrettes: dessin.barrettes }) };
 }
@@ -4050,10 +4209,12 @@ function croisementsEvitables(layout, R) {
    avec ses zones et son cartouche, les fils, les numéros de fil, les
    barrettes, et un symbole par nature de matériel.
 
-   UNE SEULE ENCRE. Ce qui distingue une pièce d'une autre, c'est l'épaisseur
-   et la forme du trait, jamais sa couleur : 1,0 le corps d'un matériel,
-   0,95 un fil (et tout ce qui en est : piquage, pont de shunt), 0,7 une
-   réglette, 0,55 une cellule. Ça s'imprime en noir et blanc.
+   UNE SEULE ENCRE pour les pièces. Ce qui distingue une pièce d'une autre,
+   c'est l'épaisseur et la forme du trait, jamais sa couleur : 1,0 le corps
+   d'un matériel, 0,95 un fil (et tout ce qui en est : piquage, pont de
+   shunt), 0,7 une réglette, 0,55 une cellule. La seule couleur est celle
+   des ROUTES : un fil, et son numéro, prennent la couleur de sa route, que
+   la légende du bas de la feuille nomme ; sans route, il reste à l'encre.
 
    RIEN NE S'ÉCRIT SUR RIEN. Tout texte qui a le choix de sa place — le
    numéro d'un fil, le repère d'une barrette, d'une masse, d'une prise —
@@ -4156,11 +4317,11 @@ function pageDe(comps, fils) {
   const ux = (x0 + x1) / 2 - uw * k / 2, uy = (y0 + y1) / 2 - uh * k / 2;
   return { x: ux - (PAGE_CADRE + PAGE_MARGE) * k, y: uy - (PAGE_CADRE + PAGE_MARGE) * k, w: PAGE_W * k, h: PAGE_H * k, k };
 }
-function feuilleSvg(bb, cartouche, folio) {
+function feuilleSvg(bb, cartouche, folio, legende) {
   const k = bb.k || bb.w / PAGE_W;
-  return `<g transform="translate(${f1(bb.x)},${f1(bb.y)}) scale(${k.toFixed(5)})">` + feuilleDeReference(cartouche, folio) + '</g>';
+  return `<g transform="translate(${f1(bb.x)},${f1(bb.y)}) scale(${k.toFixed(5)})">` + feuilleDeReference(cartouche, folio, legende) + '</g>';
 }
-function feuilleDeReference(cartouche, folio) {
+function feuilleDeReference(cartouche, folio, legende) {
   const x = 0, y = 0, w = PAGE_W, h = PAGE_H, ix = x + PAGE_CADRE, iy = y + PAGE_CADRE, iw = w - 2 * PAGE_CADRE, ih = h - 2 * PAGE_CADRE;
   let s = `<rect x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" fill="#ffffff"/>`;
   s += `<rect x="${f1(ix)}" y="${f1(iy)}" width="${f1(iw)}" height="${f1(ih)}" fill="url(#gfine)"/>`;
@@ -4174,8 +4335,23 @@ function feuilleDeReference(cartouche, folio) {
     s += `<line class="zline" x1="${f1(ix)}" y1="${f1(yy)}" x2="${f1(ix - 6)}" y2="${f1(yy)}"/><line class="zline" x1="${f1(ix + iw)}" y1="${f1(yy)}" x2="${f1(ix + iw + 6)}" y2="${f1(yy)}"/>`; }
   for (let i = 0; i < nrow; i++) { const cy = iy + ih * (i + 0.5) / nrow; const L = String.fromCharCode(65 + i);
     s += `<text class="zone" x="${f1(ix - 10)}" y="${f1(cy + 3)}" text-anchor="middle">${L}</text><text class="zone" x="${f1(ix + iw + 10)}" y="${f1(cy + 3)}" text-anchor="middle">${L}</text>`; }
-  return s + cartoucheSvg(ix + iw, iy + ih, cartouche, folio);
+  return s + cartoucheSvg(ix + iw, iy + ih, cartouche, folio) + legendeSvg(ix, iy + ih, ix + iw - 224 - 16, legende);
 }
+/* La LÉGENDE DES ROUTES : en bas à gauche de la feuille, dans la bande que
+   le dessin laisse libre au-dessus du cadre (celle du cartouche), une ligne
+   par route — un trait de sa couleur, son nom, combien de fils elle porte
+   sur ce folio ; cinq lignes par colonne. Un fil sans route reste à l'encre
+   (« sans route »). Rien quand aucun fil n'a de route. */
+const LEG_LIGNE = 15, LEG_COLONNE = 176, LEG_PAR_COLONNE = 5;
+function legendeSvg(x, yBas, xMax, legende) { if (!legende || !legende.length) return '';
+  const n = legende.length, rangs = Math.min(n, LEG_PAR_COLONNE), cols = Math.ceil(n / LEG_PAR_COLONNE);
+  const w = Math.min(xMax - x, 14 + cols * LEG_COLONNE), h = 24 + rangs * LEG_LIGNE, y = yBas - h;
+  let s = `<rect class="cbox" x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}"/><text class="carth" x="${f1(x + 9)}" y="${f1(y + 13)}">ROUTES</text>`;
+  legende.forEach((r, i) => { const cx = x + 9 + Math.floor(i / LEG_PAR_COLONNE) * LEG_COLONNE, cy = y + 26 + (i % LEG_PAR_COLONNE) * LEG_LIGNE;
+    if (cx + LEG_COLONNE > xMax + 8) return;
+    s += `<line x1="${f1(cx)}" y1="${f1(cy - 3)}" x2="${f1(cx + 22)}" y2="${f1(cy - 3)}" style="stroke:${r.couleur || '#26323f'};stroke-width:2.2;stroke-linecap:round"/>`;
+    s += `<text class="cartx" x="${f1(cx + 30)}" y="${f1(cy)}">${esc(clip(r.route || 'sans route', 18))}</text><text class="carth" x="${f1(cx + LEG_COLONNE - 14)}" y="${f1(cy)}" text-anchor="end">${r.n} fil${r.n > 1 ? 's' : ''}</text>`; });
+  return s; }
 function cartoucheSvg(rx, by, c, folio) {
   const W = 224, H = 66, x = rx - W, y = by - H;
   let s = `<rect class="cbox" x="${f1(x)}" y="${f1(y)}" width="${W}" height="${H}"/>`;
@@ -4213,9 +4389,11 @@ function cheminAvecPonts(pts, verticaux) {
         d += ` L ${f1(x0)} ${f1(y)} A ${f1(rx)} ${f1(ry)} 0 0 ${s > 0 ? 1 : 0} ${f1(x1)} ${f1(y)}`; }); }
     d += ' L ' + f1(b.x) + ' ' + f1(b.y); }
   return d; }
-function filSvg(w, verticaux) {
+/* un fil se trace à l'encre, ou à la COULEUR DE SA ROUTE (le dessin en porte la fonction, `couleurDe` : l'interface la
+   tient du contrat) ; la surbrillance ne touche que l'opacité et l'épaisseur, la couleur reste */
+function filSvg(w, verticaux, couleur) {
   if (!w.pts.length) return '';           // un shunt n'a pas de tracé : la réglette le porte
-  return `<path class="cab" data-i="${w.i}" data-a="${escA(w.de)}" data-b="${escA(w.vers)}" d="${cheminAvecPonts(w.pts, verticaux)}"/>`;
+  return `<path class="cab" data-i="${w.i}" data-a="${escA(w.de)}" data-b="${escA(w.vers)}"${couleur ? ` style="stroke:${couleur}"` : ''} d="${cheminAvecPonts(w.pts, verticaux)}"/>`;
 }
 /* Un piquage — plusieurs fils sur une même borne — se dessine comme du fil :
    le fil sort de la borne, rejoint une verticale d'où partent les autres, et
@@ -4343,7 +4521,7 @@ const repereTexte = r => `<text class="${r.cls}" x="${f1(r.x)}" y="${f1(r.y)}" t
    muets). Le plus long segment seul laissait muet un fil dont l'horizontale
    passait sous une masse et la verticale entre deux ponts (folio 5,
    W-526). */
-function reperesDeFil(fils, verticaux, barrettes, occ) {
+function reperesDeFil(fils, verticaux, barrettes, occ, couleurDe) {
   const H = 5.6, fs = FS_FIL;
   occ = occ || occupationDe(fils, barrettes || [], []);
   const cands = [];
@@ -4355,7 +4533,7 @@ function reperesDeFil(fils, verticaux, barrettes, occ) {
     // un fil qui n'est qu'un raccord vers un piquage a, sur la verticale du piquage, un tronçon à lui seul
     if (!vs.length && w.pts.length) { const t = tronconDePiquage(w, barrettes || []); if (t) vs.push({ L: t.vL, x: t.vx, y0: t.vy0, y1: t.vy1 }); }
     hs.sort((u, v) => v.L - u.L); vs.sort((u, v) => v.L - u.L);
-    cands.push({ nom, L: hs.length ? hs[0].L : 0, hs, vs }); });
+    cands.push({ nom, L: hs.length ? hs[0].L : 0, hs, vs, couleur: couleurDe ? couleurDe(w) : null }); });
   cands.sort((a, b) => b.L - a.L);
   let out = '';
   /* un fil court (une masse collée à sa borne) garde son numéro : il peut
@@ -4379,13 +4557,13 @@ function reperesDeFil(fils, verticaux, barrettes, occ) {
     if (pose) { occ.poser(pose);
       // dans le fil : un fond blanc coupe le trait sous le numéro, le fil repart de part et d'autre
       if (pose.dedans) out += `<rect class="halo" x="${f1(pose.x0 - 1.2)}" y="${f1(pose.y0 + 0.5)}" width="${f1(pose.x1 - pose.x0 + 2.4)}" height="${f1(pose.y1 - pose.y0 - 1)}"/>`;
-      out += `<text class="filnum" x="${f1(pose.cx)}" y="${f1(pose.y0 + 0.78 * fs)}" text-anchor="middle">${esc(c.nom)}</text>`; return; }
+      out += `<text class="filnum"${c.couleur ? ` style="fill:${c.couleur}"` : ''} x="${f1(pose.cx)}" y="${f1(pose.y0 + 0.78 * fs)}" text-anchor="middle">${esc(c.nom)}</text>`; return; }
     // pas de place à l'horizontale : le numéro se lit debout, le long d'un vertical
     for (const v of c.vs) { if (larg + 10 > v.L) continue; const mid = (v.y0 + v.y1) / 2, dmax = (v.L - larg) / 2 - 5, x1 = v.x - 2.2, x0 = x1 - H;
       for (let d = 0; d <= dmax + 0.01; d += 3) for (const cy of (d === 0 ? [mid] : [mid - d, mid + d])) {
         const y0 = cy - larg / 2, y1 = cy + larg / 2; if (!occ.libre({ x0, y0, x1, y1 }, 0.5)) continue;
         occ.poser({ x0, y0, x1, y1 });
-        out += `<text class="filnum" transform="rotate(-90 ${f1(x1)} ${f1(cy)})" x="${f1(x1)}" y="${f1(cy)}" text-anchor="middle">${esc(c.nom)}</text>`; return; } } });
+        out += `<text class="filnum"${c.couleur ? ` style="fill:${c.couleur}"` : ''} transform="rotate(-90 ${f1(x1)} ${f1(cy)})" x="${f1(x1)}" y="${f1(cy)}" text-anchor="middle">${esc(c.nom)}</text>`; return; } } });
   return out;
 }
 /* Sur la verticale d'un piquage, le tronçon entre la borne d'un fil et le
@@ -4570,10 +4748,10 @@ function blocSvg(c, designation, choisi) {
 
 /* ---- la scène entière ------------------------------------------------- */
 function sceneSvg(dessin, cartouche, folio, designationDe, choisi) {
-  let s = feuilleSvg(dessin.bbox, cartouche, folio);
-  const fils = dessin.fils.filter(w => !w.shunt);
+  let s = feuilleSvg(dessin.bbox, cartouche, folio, dessin.legende);
+  const fils = dessin.fils.filter(w => !w.shunt), couleurDe = dessin.couleurDe || null;
   const verticaux = verticauxDe([...fils.map(w => w.pts), ...tracesDePiquage(dessin.barrettes)]);
-  fils.forEach(w => { s += filSvg(w, verticaux); });
+  fils.forEach(w => { s += filSvg(w, verticaux, couleurDe && couleurDe(w)); });
   const shunts = new Map();
   dessin.fils.forEach(w => { if (!w.shunt) return; const ys = [w.epA.y, w.epB.y].sort((u, v) => u - v); (shunts.get(w.de) || shunts.set(w.de, []).get(w.de)).push(ys); });
   // un pont appartient au morceau (barrette en paquets, masses répétées) dont les bornes sont à ses hauteurs, pas à tout ce qui porte le nom
@@ -4582,7 +4760,7 @@ function sceneSvg(dessin, cartouche, folio, designationDe, choisi) {
   // les textes cherchent leur place dans ce qui est tracé : les repères d'abord, les numéros de fil ensuite
   const occ = occupationDe(fils, dessin.barrettes, dessin.comps);
   poserReperes(dessin.comps, occ);
-  s += reperesDeFil(dessin.fils, verticaux, dessin.barrettes, occ);
+  s += reperesDeFil(dessin.fils, verticaux, dessin.barrettes, occ, couleurDe);
   s += piquagesSvg(dessin.barrettes, dessin.piquages, verticaux);
   dessin.points.forEach(d => s += `<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="1.9"/>`);
   dessin.comps.forEach(c => { s += blocSvg(c, designationDe ? designationDe(c.name) : '', choisi === c.name); });
@@ -4601,6 +4779,464 @@ function svgAutonome(dessin, cartouche, folio, designationDe, fond) {
   return { w: W, h: H, txt };
 }
 
+/* ───────── 09-barrettes.js ───────── */
+/* ===========================================================================
+   09 — LA BIBLE : BARRETTES, PRISES DE COUPURE, CONNECTEURS, ET LE SUIVI
+   Ce que le contrat ne porte qu'à moitié :
+
+   LA BIBLE — une seule table, venue d'un Excel ou d'un CSV de l'atelier :
+   les références normalisées (NSA, ASNE, ABS, EN…) avec ce qu'elles
+   acceptent. Sa colonne NATURE dit de quoi il s'agit : « jonction » ou
+   « blindage » (barrettes), « coupure » (prises de coupure), « connecteur »
+   (l'embase d'un équipement, avec sa PARTIE MOBILE — la fiche qu'on pose
+   sur le faisceau). La bible d'exemple embarquée ne sert qu'à montrer le
+   mécanisme ; elle n'a aucune valeur normative.
+
+   LE CHOIX — chaque barrette et chaque prise de coupure du contrat reçoit la
+   référence la plus logique pour ce qu'elle porte : assez de bornes, la
+   jauge des fils qui y arrivent, le blindage s'il y en a, la famille déjà
+   employée. Chaque connecteur d'équipement dit la partie mobile à poser.
+
+   LES CONNECTEURS — les bornes d'un équipement appartiennent à des
+   connecteurs (A, B, C…) : la lettre en tête de la borne (A12, B03), sinon
+   le part number du connecteur (PN1 / PN2), qui reçoit alors une lettre.
+
+   LE SUIVI — pour un contrat, la liste de tout ce qu'on pose : chaque
+   barrette, prise et connecteur avec sa référence, ses bornes, ses fils,
+   ses routes, ses folios. C'est ce qui s'exporte et se garde d'un contrat
+   à l'autre.
+
+   LA NORME — ce qu'une norme de matériel dit et que ni le contrat ni la
+   bible ne portent : pour une FAMILLE (ASNE0500, EN3646…), le pas, ce que
+   chaque contact admet (jauges, intensité, résistance), combien de fils par
+   côté, la règle de remplissage ; pour les FILS, par type et jauge, la
+   section, la résistance et l'intensité ; les DÉCLASSEMENTS ; le RÉSEAU
+   (la chute admise). Quatre tables lues par le nom de leurs colonnes. La
+   norme embarquée vient de normes/*.csv à la construction ; celle qui est
+   livrée est un EXEMPLE, sans valeur normative. Avec elle, la barrette se
+   REMPLIT trou par trou et se SIMULE (jauge admise, courant, chute) sur des
+   hypothèses dites — le retest ne porte ni longueur ni courant.
+   =========================================================================== */
+
+/* ---- la bible ------------------------------------------------------------ */
+/* Les en-têtes d'atelier ont des accents : « Référence », « Intensité ». */
+const NORMA = t => NORM(String(t == null ? '' : t).normalize('NFD'));
+const COLONNES_BIBLE = [
+  ['reference',  ['reference', 'ref', 'partnumber', 'pn', 'norme', 'designation']],
+  ['famille',    ['famille', 'family', 'serie', 'series', 'type']],
+  ['nature',     ['nature', 'fonction', 'usage', 'kind']],
+  ['bornes',     ['bornes', 'modules', 'nbbornes', 'nombredebornes', 'voies', 'ways', 'contacts', 'positions']],
+  ['jaugeMin',   ['jaugemin', 'awgmin', 'jaugefine', 'gaugemin', 'minawg']],
+  ['jaugeMax',   ['jaugemax', 'awgmax', 'jaugegrosse', 'gaugemax', 'maxawg']],
+  ['intensite',  ['intensite', 'intensitemax', 'courant', 'current', 'amperes', 'a']],
+  ['blindage',   ['blindage', 'blinde', 'shield', 'shielded', 'masse']],
+  ['mobile',     ['mobile', 'partiemobile', 'fiche', 'contrepartie', 'mating', 'plug', 'pnmobile']],
+  ['note',       ['note', 'notes', 'observation', 'observations', 'remarque', 'commentaire']]
+];
+/* Une entrée normalisée. Les jauges AWG comptent à l'envers : 26 est plus
+   fin que 20 ; « min » est la plus fine acceptée, « max » la plus grosse. */
+function entreeBible(o) {
+  const n = v => { const x = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isNaN(x) ? null : x; };
+  const oui = v => /^(oui|o|yes|y|x|1|true|vrai)$/i.test(String(v == null ? '' : v).trim());
+  const ref = String(o.reference || '').trim(); if (!ref) return null;
+  const jauges = [n(o.jaugeMin), n(o.jaugeMax)].filter(x => x != null);
+  return { reference: ref, famille: String(o.famille || ref.replace(/[-\s].*$/, '')).trim(),
+           nature: String(o.nature || 'jonction').trim().toLowerCase(), bornes: n(o.bornes),
+           jaugeMin: jauges.length ? Math.max(...jauges) : null, jaugeMax: jauges.length ? Math.min(...jauges) : null,
+           intensite: n(o.intensite), blindage: oui(o.blindage), mobile: String(o.mobile || '').trim(), note: String(o.note || '').trim() };
+}
+/* La bible d'exemple : des références PLAUSIBLES, pas des normes lues. Elle
+   montre le mécanisme en attendant la bible de l'atelier. */
+function bibleExemple() {
+  const E = (reference, famille, nature, bornes, jaugeMin, jaugeMax, intensite, blindage, note, mobile) =>
+    ({ reference, famille, nature, bornes, jaugeMin, jaugeMax, intensite, blindage, note, mobile });
+  return [
+    E('ASNE0500-02', 'ASNE0500', 'jonction', 2,  26, 20, 7.5, false, 'exemple'),
+    E('ASNE0500-04', 'ASNE0500', 'jonction', 4,  26, 20, 7.5, false, 'exemple'),
+    E('ASNE0500-08', 'ASNE0500', 'jonction', 8,  26, 20, 7.5, false, 'exemple'),
+    E('ASNE0500-12', 'ASNE0500', 'jonction', 12, 26, 20, 7.5, false, 'exemple'),
+    E('ASNE0500-20', 'ASNE0500', 'jonction', 20, 26, 20, 7.5, false, 'exemple'),
+    E('ASNE0501-04', 'ASNE0501', 'jonction', 4,  22, 16, 23,  false, 'exemple · grosses sections'),
+    E('ASNE0501-08', 'ASNE0501', 'jonction', 8,  22, 16, 23,  false, 'exemple · grosses sections'),
+    E('ASNE0502-04', 'ASNE0502', 'blindage', 4,  26, 20, 7.5, true,  'exemple · reprise de blindage'),
+    E('ASNE0502-08', 'ASNE0502', 'blindage', 8,  26, 20, 7.5, true,  'exemple · reprise de blindage'),
+    E('EN3646A6083AAN', 'EN3646', 'coupure', 3, 26, 20, 7.5, false, 'exemple · prise de coupure 3 contacts'),
+    E('EN3646A6088AAN', 'EN3646', 'coupure', 8, 26, 20, 7.5, false, 'exemple · prise de coupure 8 contacts'),
+    E('EN2997Y1A08P', 'EN2997', 'connecteur', 8, 26, 20, 7.5, false, 'exemple · embase 8 contacts', 'EN2997Y2A08S'),
+    E('ABS0864-12', 'ABS0864', 'connecteur', 12, 26, 20, 7.5, false, 'exemple · embase 12 contacts', 'ABS0865-12')
+  ].map(entreeBible);
+}
+/* Lire une bible : un tableau dont la première ligne reconnue nomme les
+   colonnes (au moins « référence » et « bornes »). Rend { entrees, entete }. */
+function lireBible(texte) {
+  const lignes = String(texte || '').split(/\r?\n/);
+  let entete = null;
+  for (let r = 0; r < Math.min(lignes.length, 30) && !entete; r++) {
+    const row = cellules(lignes[r] || ''); const col = {}; let n = 0;
+    row.forEach((cell, c) => { const k = NORMA(cell); if (!k) return;
+      for (const [nom, alias] of COLONNES_BIBLE) if (col[nom] == null && alias.includes(k)) { col[nom] = c; n++; break; } });
+    if (col.reference != null && col.bornes != null) entete = { ligne: r, col, trouvees: n };
+  }
+  if (!entete) return { entrees: [], entete: null };
+  const entrees = [];
+  for (let r = entete.ligne + 1; r < lignes.length; r++) { if (!lignes[r].trim()) continue;
+    const row = cellules(lignes[r]); const o = {};
+    Object.entries(entete.col).forEach(([nom, c]) => { o[nom] = row[c] == null ? '' : row[c]; });
+    const e = entreeBible(o); if (e) entrees.push(e); }
+  return { entrees, entete: entete.ligne + 1 };
+}
+async function lireBibleFichier(fichier) { return lireBible(await texteDuFichier(fichier)); }
+
+/* ---- ce que porte une barrette du contrat -------------------------------- */
+/* Le type de câble du retest dit la jauge en queue : DR24, MLB22, BN20 → 24,
+   22, 20. Le blindage se devine au code : ML… (multiconducteur blindé). C'est
+   une première lecture, à corriger avec la table de l'atelier. */
+function jaugeDuType(type) { const m = /(\d{1,2})\s*$/.exec(String(type || '').trim()); return m ? parseInt(m[1], 10) : null; }
+function blindeDuType(type) { return /^(ML|BL|SH|SC)/i.test(String(type || '').trim()); }
+function besoinsDeBarrette(repere, liaisons) {
+  const bornes = new Set(), jauges = [], pns = new Map(), ponts = [], parBorne = new Map(); let blindes = 0, shunts = 0, fils = 0;
+  // AMONT : le fil arrive sur la barrette (elle est son « vers ») ; AVAL : il en repart. `l` : la liaison elle-même, pour la retrouver.
+  const arrivee = (b, l, autre, borneAutre) => { if (!b) return; (parBorne.get(b) || parBorne.set(b, []).get(b)).push({ cable: l.cable, type: l.type, route: l.route, plan: l.plan, vers: autre, borne: borneAutre, amont: l.vers === repere, l }); };
+  liaisons.forEach(l => { const ici = [];
+    if (l.de === repere) ici.push([l.borneDe, l.pnDe]);
+    if (l.vers === repere) ici.push([l.borneVers, l.pnVers]);
+    if (!ici.length) return;
+    if (l.de === repere && l.vers === repere) { shunts++; ponts.push([l.borneDe, l.borneVers]); }
+    else { fils++; const g = jaugeDuType(l.type); if (g != null) jauges.push(g); if (blindeDuType(l.type)) blindes++;
+      if (l.de === repere) arrivee(l.borneDe, l, l.vers, l.borneVers); else arrivee(l.borneVers, l, l.de, l.borneDe); }
+    ici.forEach(([b, pn]) => { if (b) bornes.add(b); if (pn) pns.set(pn, (pns.get(pn) || 0) + 1); }); });
+  const numeros = [...bornes].map(b => parseInt(b, 10)).filter(x => !isNaN(x));
+  const pn = [...pns.entries()].sort((a, b) => b[1] - a[1]).map(e => e[0])[0] || '';
+  return { repere, bornes: [...bornes], nBornes: bornes.size, borneMax: numeros.length ? Math.max(...numeros) : bornes.size,
+           fils, shunts, ponts, parBorne, jaugeFine: jauges.length ? Math.max(...jauges) : null, jaugeGrosse: jauges.length ? Math.min(...jauges) : null,
+           blindes, pn };
+}
+/* Les PAQUETS d'une barrette : les bornes réunies par des shunts forment un
+   paquet ; une borne seule est un paquet à elle seule. Rend, dans l'ordre
+   des bornes, [{ bornes:[…], ponte:bool }]. */
+function paquetsDeBarrette(bornes, ponts) {
+  const chef = new Map(); const trouver = b => { while (chef.has(b) && chef.get(b) !== b) b = chef.get(b); return b; };
+  bornes.forEach(b => chef.set(b, b));
+  ponts.forEach(([a, b]) => { if (!chef.has(a)) chef.set(a, a); if (!chef.has(b)) chef.set(b, b); const ra = trouver(a), rb = trouver(b); if (ra !== rb) chef.set(rb, ra); });
+  const groupes = new Map();
+  [...chef.keys()].sort(triBornes).forEach(b => { const r = trouver(b); (groupes.get(r) || groupes.set(r, []).get(r)).push(b); });
+  return [...groupes.values()].map(g => ({ bornes: g, ponte: g.length > 1 })).sort((u, v) => triBornes(u.bornes[0], v.bornes[0]));
+}
+/* La barrette telle qu'elle est physiquement : tous les modules de la
+   référence retenue (ou au moins ceux qu'on utilise), chacun avec ses fils
+   de tous les folios, son paquet, et s'il est libre. Ce que la fiche
+   visuelle dessine. */
+function physiqueDeBarrette(repere, liaisons, bible, retenue) {
+  const I = (estCoupure(repere) ? coupureInfos : barretteInfos)(repere, liaisons, bible);
+  const ref = retenue || I.reference, entree = (bible || []).find(e => e.reference === ref) || I.choix || null;
+  const n = Math.max(entree && entree.bornes || 0, I.borneMax || 0, I.nBornes);
+  const paquets = paquetsDeBarrette(I.bornes, I.ponts);
+  const paquetDe = new Map(); paquets.forEach((p, k) => p.bornes.forEach(b => paquetDe.set(b, k)));
+  const utilisees = new Set(I.bornes.map(String));
+  const modules = [];
+  for (let k = 1; k <= n; k++) { const b = String(k);
+    modules.push({ borne: b, utilisee: utilisees.has(b), paquet: paquetDe.has(b) ? paquetDe.get(b) : null, fils: I.parBorne.get(b) || [] }); }
+  I.bornes.filter(b => !/^\d+$/.test(String(b))).sort(triBornes).forEach(b => modules.push({ borne: b, utilisee: true, paquet: paquetDe.get(b) ?? null, fils: I.parBorne.get(b) || [] }));
+  return { repere, reference: ref, entree, modules, paquets, libres: modules.filter(m => !m.utilisee).length, nature: estCoupure(repere) ? 'prise de coupure' : (I.blindes ? 'barrette de blindage' : 'barrette') };
+}
+/* La même physique pour une référence de la bible, sans contrat : tous ses
+   modules, aucun fil, aucun paquet. Ce que la fiche de la bible dessine. */
+function physiqueDeReference(entree) {
+  const n = entree && entree.bornes != null ? Math.max(0, Math.round(entree.bornes)) : 0, modules = [];
+  for (let k = 1; k <= n; k++) modules.push({ borne: String(k), utilisee: false, paquet: null, fils: [] });
+  const nature = !entree ? 'barrette' : entree.nature === 'coupure' ? 'prise de coupure' : entree.nature === 'connecteur' ? 'connecteur' : entree.nature === 'blindage' ? 'barrette de blindage' : 'barrette';
+  return { repere: '', reference: entree ? entree.reference : '', entree: entree || null, modules, paquets: [], libres: n, nature };
+}
+/* Le choix : parmi les entrées de la bonne nature qui conviennent, la
+   famille déjà employée d'abord, puis la plus petite qui a assez de bornes,
+   puis la plus courante en intensité. Chaque raison est dite pour qu'on
+   puisse la contester. */
+function choisirReference(besoins, bible, natures) {
+  const raisons = [];
+  const nBornes = Math.max(besoins.nBornes, besoins.borneMax || 0);
+  let cands = bible.filter(e => natures.includes(e.nature) && e.bornes != null && e.bornes >= nBornes);
+  raisons.push(`${nBornes} borne${nBornes > 1 ? 's' : ''} à loger`);
+  if (besoins.jaugeFine != null) {
+    const ok = cands.filter(e => (e.jaugeMin == null || e.jaugeMin >= besoins.jaugeFine) && (e.jaugeMax == null || e.jaugeMax <= besoins.jaugeGrosse));
+    if (ok.length) cands = ok;
+    raisons.push(besoins.jaugeFine === besoins.jaugeGrosse ? `fils de jauge ${besoins.jaugeFine}` : `fils de jauge ${besoins.jaugeFine} à ${besoins.jaugeGrosse}`);
+  }
+  if (besoins.blindes && natures.includes('blindage')) { const ok = cands.filter(e => e.blindage || e.nature === 'blindage'); if (ok.length) cands = ok;
+    raisons.push(`${besoins.blindes} fil${besoins.blindes > 1 ? 's' : ''} blindé${besoins.blindes > 1 ? 's' : ''}`); }
+  else if (natures.includes('blindage')) { const ok = cands.filter(e => e.nature !== 'blindage'); if (ok.length) cands = ok; }
+  const famille = besoins.pn ? (bible.find(e => e.reference === besoins.pn) || {}).famille || besoins.pn.replace(/[-\s].*$/, '') : '';
+  if (famille) { const ok = cands.filter(e => e.famille === famille); if (ok.length) { cands = ok; raisons.push(`famille ${famille} déjà employée`); } }
+  cands = cands.slice().sort((a, b) => (a.bornes - b.bornes) || ((a.intensite || 0) - (b.intensite || 0)) || a.reference.localeCompare(b.reference));
+  const choix = cands[0] || null;
+  if (choix && choix.bornes > nBornes) raisons.push(`${choix.bornes - nBornes} borne${choix.bornes - nBornes > 1 ? 's' : ''} libre${choix.bornes - nBornes > 1 ? 's' : ''}`);
+  if (!choix) raisons.push('aucune référence de la bible ne convient');
+  return { choix, nature: natures[0], raisons, candidats: cands.slice(0, 6), enPlus: Math.max(0, cands.length - 6) };
+}
+const choisirBarrette = (besoins, bible) => ({ ...choisirReference(besoins, bible, ['jonction', 'blindage']), nature: besoins.blindes ? 'blindage' : 'jonction' });
+const choisirCoupure  = (besoins, bible) => choisirReference(besoins, bible, ['coupure']);
+/* Tout ce qu'on sait d'une barrette (ou d'une prise) du contrat : ses
+   besoins, la référence choisie, le pourquoi, et celle que le fichier
+   portait déjà. */
+function infosDe(repere, liaisons, bible, choisir) {
+  const besoins = besoinsDeBarrette(repere, liaisons);
+  const choix = choisir(besoins, bible || []);
+  const deja = (bible || []).find(e => e.reference === besoins.pn) || null;
+  return { ...besoins, ...choix, deja, reference: choix.choix ? choix.choix.reference : (besoins.pn || ''),
+           changee: !!(besoins.pn && choix.choix && choix.choix.reference !== besoins.pn) };
+}
+const barretteInfos = (repere, liaisons, bible) => infosDe(repere, liaisons, bible, choisirBarrette);
+const coupureInfos  = (repere, liaisons, bible) => infosDe(repere, liaisons, bible, choisirCoupure);
+
+/* ---- les connecteurs d'un équipement ------------------------------------- */
+/* Une borne « A12 » est la borne 12 du connecteur A ; sinon le connecteur
+   est le part number (PN) porté par la liaison, et il reçoit une lettre —
+   la première libre, dans l'ordre d'apparition — parce qu'un connecteur se
+   nomme d'une lettre sur le plan ; son part number se lit dans sa carte.
+   Rend, pour un repère, [{ nom, pn, deduite, bornes:[…] }] dans l'ordre
+   des lettres. */
+const LETTRE_CONNECTEUR = /^([A-Z]{1,2})[-./ ]?(\d{1,3}[A-Z]?)$/i;
+/* Une borne sans chiffre (CNT, GND…) n'est pas un contact de connecteur :
+   elle se raccorde au corps. */
+function connecteurDeBorne(borne, pn) {
+  const b = String(borne || '').trim(); if (!/\d/.test(b)) return null;
+  const m = LETTRE_CONNECTEUR.exec(b);
+  if (m) return { nom: m[1].toUpperCase(), pn: pn || '', lettre: true };
+  return pn ? { nom: pn, pn, lettre: false } : null;
+}
+function connecteursDe(repere, liaisons) {
+  const groupes = new Map();
+  liaisons.forEach(l => { [[l.de, l.borneDe, l.pnDe], [l.vers, l.borneVers, l.pnVers]].forEach(([r, b, pn]) => {
+    if (r !== repere || !b) return; const c = connecteurDeBorne(b, pn); if (!c) return;
+    const cle = (c.lettre ? 'L:' : 'P:') + c.nom;
+    const g = groupes.get(cle) || groupes.set(cle, { nom: c.lettre ? c.nom : '', pn: c.pn, lettre: c.lettre, deduite: !c.lettre, bornes: new Set() }).get(cle);
+    g.bornes.add(b); if (!g.pn && c.pn) g.pn = c.pn; }); });
+  const prises = new Set([...groupes.values()].filter(g => g.lettre).map(g => g.nom));
+  let k = 0; const libre = () => { let n; do { n = String.fromCharCode(65 + (k % 26)) + (k >= 26 ? String(Math.floor(k / 26)) : ''); k++; } while (prises.has(n)); return n; };
+  groupes.forEach(g => { if (!g.lettre) g.nom = libre(); });
+  return [...groupes.values()].sort((a, b) => a.nom.localeCompare(b.nom)).map(g => ({ nom: g.nom, pn: g.pn, deduite: g.deduite, bornes: [...g.bornes] }));
+}
+/* La même chose, borne par borne : ce que le dessin lit. */
+function connecteurParBorne(repere, liaisons) {
+  const m = new Map(); connecteursDe(repere, liaisons).forEach(g => g.bornes.forEach(b => m.set(String(b), g))); return m;
+}
+/* Ce qu'on pose sur chaque connecteur d'un équipement : l'embase est celle
+   de l'équipement (le part number du fichier) ; la bible dit sa partie
+   mobile — la fiche qu'on câble — et son nombre de contacts. */
+function connecteursInfos(repere, liaisons, bible) {
+  return connecteursDe(repere, liaisons).map(c => { const e = (bible || []).find(x => x.reference === c.pn && x.nature === 'connecteur') || null;
+    return { ...c, embase: e, mobile: e ? e.mobile : '', contacts: e ? e.bornes : null, libres: e && e.bornes != null ? Math.max(0, e.bornes - c.bornes.length) : null }; });
+}
+
+/* ---- le suivi ------------------------------------------------------------ */
+/* Une ligne par chose posée : barrette, prise de coupure, connecteur — avec
+   la référence retenue (celle de la bible, ou celle qu'on a choisie à la
+   main, sinon celle du fichier), ses bornes, ses fils, ses routes, ses
+   folios. `retenue(repere)` rend la référence choisie à la main, s'il y en
+   a une. */
+function suiviDuContrat(liaisons, bible, contrat, retenue) {
+  const lignes = [], main = retenue || (() => '');
+  const filsDe = (r, borne) => liaisons.filter(l => (l.de === r && (!borne || l.borneDe === borne)) || (l.vers === r && (!borne || l.borneVers === borne)));
+  const champs = (fils) => ({ fils: [...new Set(fils.map(l => l.cable).filter(Boolean))], routes: [...new Set(fils.map(l => l.route).filter(Boolean))], plans: [...new Set(fils.map(l => l.plan).filter(Boolean))] });
+  reperesDe(liaisons).forEach(r => {
+    if (estBarrette(r) || estCoupure(r)) {
+      const I = (estBarrette(r) ? barretteInfos : coupureInfos)(r, liaisons, bible);
+      lignes.push({ contrat, repere: r, nature: estBarrette(r) ? (I.blindes ? 'barrette de blindage' : 'barrette') : 'prise de coupure',
+                    reference: main(r) || I.reference, fichier: I.pn, bornes: I.bornes.slice().sort(triBornes), nBornes: I.nBornes, shunts: I.shunts,
+                    jauge: I.jaugeFine == null ? '' : (I.jaugeFine === I.jaugeGrosse ? String(I.jaugeFine) : I.jaugeFine + '-' + I.jaugeGrosse), ...champs(filsDe(r)) });
+    } else if (!estMasse(r)) {
+      connecteursInfos(r, liaisons, bible).forEach(c => { const fils = liaisons.filter(l => (l.de === r && c.bornes.includes(l.borneDe)) || (l.vers === r && c.bornes.includes(l.borneVers)));
+        lignes.push({ contrat, repere: r + ' ' + c.nom, nature: 'connecteur', reference: c.mobile || '', fichier: c.pn, bornes: c.bornes.slice().sort(triBornes), nBornes: c.bornes.length, shunts: 0,
+                      jauge: '', ...champs(fils) }); }); } });
+  return lignes;
+}
+/* L'ordre naturel des bornes : 1, 2, 10 ; A1, A2, B1. */
+function triBornes(a, b) { const na = parseFloat(a), nb = parseFloat(b);
+  if (!isNaN(na) && !isNaN(nb) && String(na) === String(a) && String(nb) === String(b)) return na - nb;
+  return String(a).localeCompare(String(b), 'fr', { numeric: true }); }
+
+/* ---- la norme : quatre tables, lues par le nom des colonnes -------------- */
+/* Chaque table se reconnaît à ses colonnes ; une bible (Référence + Bornes)
+   n'est pas une table de familles. Les titres entre les tables sont ignorés. */
+const COLONNES_NORME = {
+  familles: [
+    ['norme',       ['norme', 'document', 'standard', 'spec', 'specification']],
+    ['famille',     ['famille', 'family', 'serie', 'series']],
+    ['reference',   ['reference', 'ref', 'partnumber', 'pn']],
+    ['nature',      ['nature', 'fonction', 'usage', 'kind']],
+    ['variantes',   ['variantes', 'contacts', 'modules', 'bornes', 'voies', 'tailles']],
+    ['pas',         ['pas', 'pasmm', 'pitch', 'entraxe']],
+    ['jaugeMin',    ['jaugemin', 'awgmin', 'jaugefine', 'gaugemin', 'minawg']],
+    ['jaugeMax',    ['jaugemax', 'awgmax', 'jaugegrosse', 'gaugemax', 'maxawg']],
+    ['intensite',   ['intensite', 'intensitecontact', 'intensiteparcontact', 'courant', 'current', 'a']],
+    ['resistance',  ['resistance', 'resistancecontact', 'resistancedecontact', 'rcontact', 'mohm']],
+    ['filsParCote', ['filsparcote', 'filspartrou', 'filsparcontact', 'trousparcote', 'trous', 'filsparmodule']],
+    ['ordre',       ['ordre', 'remplissage', 'sens']],
+    ['paquets',     ['paquets', 'pontage', 'ponts', 'peigne']],
+    ['reserves',    ['reserves', 'modulesreserves', 'reserve', 'contactsreserves']],
+    ['masse',       ['masse', 'retourdemasse', 'misealamasse']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+  fils: [
+    ['type',        ['type', 'typedefil', 'code', 'typedecable']],
+    ['jauge',       ['jauge', 'awg', 'gauge', 'jaugeawg']],
+    ['section',     ['section', 'sectionmm2', 'mm2', 'sectionmm']],
+    ['resistance',  ['resistance', 'resistanceohmkm', 'ohmkm', 'rlineique', 'resistancelineique']],
+    ['intensite',   ['intensite', 'courant', 'intensiteadmissible', 'current', 'a']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+  declassements: [
+    ['condition',   ['condition', 'cause', 'cas', 'situation']],
+    ['facteur',     ['facteur', 'coefficient', 'coef', 'k']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+  reseau: [
+    ['tension',     ['tension', 'reseau', 'u', 'volts', 'v']],
+    ['chuteMax',    ['chutemax', 'chute', 'chuteadmise', 'chutemaxv', 'deltau', 'chuteenv']],
+    ['chutePct',    ['chutemaxpct', 'chutepct', 'pourcent', 'chuteen']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]]
+};
+const TABLE_NORME = {
+  familles: c => c.famille != null && c.reference == null && (c.pas != null || c.intensite != null || c.filsParCote != null || c.ordre != null || c.jaugeMin != null),
+  fils: c => c.jauge != null && (c.section != null || c.resistance != null || c.intensite != null),
+  declassements: c => c.condition != null && c.facteur != null,
+  reseau: c => c.tension != null && c.chuteMax != null
+};
+/* Un nombre d'atelier : virgule ou point, une unité derrière (« 5 mm », « 0,8 »). */
+const NUMERO = v => { const t = String(v == null ? '' : v).trim().replace(',', '.'); if (!t) return null; const m = /-?\d+(\.\d+)?/.exec(t); return m ? parseFloat(m[0]) : null; };
+const LISTE_NUM = v => String(v == null ? '' : v).split(/[\s,;/|]+/).map(NUMERO).filter(x => x != null);
+const MOT = v => String(v == null ? '' : v).trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+/* Les jauges AWG comptent à l'envers : « min » est la plus fine acceptée. */
+function familleNorme(o) { const famille = String(o.famille || '').trim(); if (!famille) return null;
+  const jauges = [NUMERO(o.jaugeMin), NUMERO(o.jaugeMax)].filter(x => x != null), norme = String(o.norme || '').trim() || famille;
+  return { norme, famille, exemple: /exemple|example|fictif|fausse/.test(MOT(norme) + ' ' + MOT(o.note)), nature: MOT(o.nature) || 'jonction', variantes: LISTE_NUM(o.variantes), pas: NUMERO(o.pas),
+           jaugeMin: jauges.length ? Math.max(...jauges) : null, jaugeMax: jauges.length ? Math.min(...jauges) : null, intensite: NUMERO(o.intensite), resistance: NUMERO(o.resistance),
+           filsParCote: Math.max(1, Math.round(NUMERO(o.filsParCote) || 1)), ordre: /crois|ordre|suite/.test(MOT(o.ordre)) ? 'croissant' : 'libre',
+           paquets: /contig|voisin|adjac/.test(MOT(o.paquets)) ? 'contigus' : 'libres', reserves: LISTE_NUM(o.reserves), masse: /paquet|oui|^x$|^1$|vrai/.test(MOT(o.masse)) ? 'par paquet' : '',
+           note: String(o.note || '').trim() }; }
+function filNorme(o) { const jauge = NUMERO(o.jauge); if (jauge == null) return null;
+  return { type: String(o.type || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '') || '*', jauge, section: NUMERO(o.section), resistance: NUMERO(o.resistance), intensite: NUMERO(o.intensite), note: String(o.note || '').trim() }; }
+function declassementNorme(o) { const condition = MOT(o.condition), facteur = NUMERO(o.facteur); return condition && facteur != null ? { condition, facteur, note: String(o.note || '').trim() } : null; }
+function reseauNorme(o) { const tension = NUMERO(o.tension); return tension == null ? null : { tension, chuteMax: NUMERO(o.chuteMax), chutePct: NUMERO(o.chutePct), note: String(o.note || '').trim() }; }
+const ENTREE_NORME = { familles: familleNorme, fils: filNorme, declassements: declassementNorme, reseau: reseauNorme };
+const normeVide = () => ({ familles: [], fils: [], declassements: [], reseau: [], tables: 0 });
+/* Lire une norme : les tables se suivent (un titre libre, la ligne d'en-tête,
+   les lignes, une ligne vide), dans un CSV ou une feuille Excel. */
+function lireNorme(texte) { const N = normeVide(); let table = null, col = null;
+  const entete = row => { for (const [nom, cles] of Object.entries(COLONNES_NORME)) { const c = {}; row.forEach((cell, i) => { const t = NORMA(cell); if (!t) return;
+      for (const [champ, alias] of cles) if (c[champ] == null && alias.includes(t)) { c[champ] = i; break; } });
+    if (TABLE_NORME[nom](c)) return { nom, col: c }; } return null; };
+  String(texte || '').split(/\r?\n/).forEach(ligne => { if (!ligne.trim()) { table = null; return; }
+    const row = cellules(ligne), e = entete(row); if (e) { table = e.nom; col = e.col; N.tables++; return; }
+    if (!table) return; const o = {}; Object.entries(col).forEach(([champ, i]) => { o[champ] = row[i] == null ? '' : row[i]; });
+    const x = ENTREE_NORME[table](o); if (x) N[table].push(x); });
+  return N; }
+const normeLue = N => !!(N && (N.familles.length || N.fils.length || N.declassements.length || N.reseau.length));
+/* Un fichier de normes : chaque feuille d'un Excel est lue (une table par
+   feuille, ou plusieurs à la suite) ; un CSV d'un bloc. */
+async function lireNormeFichier(fichier) { const nom = (fichier.name || '').toLowerCase();
+  if (!(/\.xls[xm]?$/.test(nom) || /sheet|excel/.test(fichier.type || ''))) return lireNorme(await fichier.text());
+  if (typeof XLSX === 'undefined') throw new Error('bibliothèque Excel absente');
+  const wb = XLSX.read(await fichier.arrayBuffer(), { type: 'array' });
+  const feuilles = wb.SheetNames.map(n => XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, blankrows: true, defval: '' }).map(r => (Array.isArray(r) ? r : [r]).map(c => c == null ? '' : String(c)).join('\t')).join('\n'));
+  return lireNorme(feuilles.join('\n\n')); }
+/* Deux normes en une : ce qui vient en second remplace ce qui porte la même
+   clé (famille, type+jauge, condition, tension). C'est ainsi qu'une norme de
+   barrettes et une norme de fils, importées l'une après l'autre, se complètent. */
+function fusionnerNormes(a, b) { const N = normeVide(); const cle = { familles: x => x.famille.toUpperCase(), fils: x => x.type + '/' + x.jauge, declassements: x => x.condition, reseau: x => String(x.tension) };
+  Object.keys(cle).forEach(t => { const m = new Map(); [...(a ? a[t] : []), ...(b ? b[t] : [])].forEach(x => m.set(cle[t](x), x)); N[t] = [...m.values()]; });
+  N.tables = (a ? a.tables : 0) + (b ? b.tables : 0); return N; }
+/* La norme embarquée : normes/*.csv, mis dans la page à la construction. */
+function normeEmbarquee() { return lireNorme(typeof NORME_EMBARQUEE === 'string' ? NORME_EMBARQUEE : ''); }
+const normeExemple = N => !!(N && N.familles.length && N.familles.every(f => f.exemple));
+/* La famille d'une référence : celle que la bible lui donne, sinon la plus
+   longue famille de la norme dont la référence commence par le nom. */
+function familleDeNorme(norme, famille, reference) { if (!norme) return null; const F = norme.familles;
+  if (famille) { const f = F.find(x => x.famille.toUpperCase() === String(famille).toUpperCase()); if (f) return f; }
+  const ref = String(reference || '').toUpperCase(); if (!ref) return null;
+  return F.filter(x => ref.startsWith(x.famille.toUpperCase())).sort((u, v) => v.famille.length - u.famille.length)[0] || null; }
+/* Le type d'un fil est en tête de son code : DR24 → DR, MLB22 → MLB. */
+const typeDuFil = type => { const m = /^([A-Za-z]+)/.exec(String(type || '').trim()); return m ? m[1].toUpperCase() : ''; };
+/* Le fil de la norme : le type et la jauge exacts ; sinon la jauge seule
+   (type « * », ou n'importe quel type — c'est dit : `approx`). */
+function filDeNorme(norme, type, jauge) { if (!norme || jauge == null) return null; const t = typeDuFil(type);
+  const exact = norme.fils.find(f => f.jauge === jauge && f.type === t); if (exact) return exact;
+  const joker = norme.fils.find(f => f.jauge === jauge && f.type === '*'); if (joker) return joker;
+  const autre = norme.fils.find(f => f.jauge === jauge); return autre ? { ...autre, approx: true } : null; }
+function facteurDeclassement(norme, conditions) { return (conditions || []).reduce((k, c) => { const d = norme && norme.declassements.find(x => x.condition === MOT(c)); return d ? k * d.facteur : k; }, 1); }
+/* La chute admise pour la tension du réseau : la ligne de cette tension,
+   sinon la plus proche. */
+function chuteAdmise(norme, tension) { if (!norme || !norme.reseau.length) return null;
+  return norme.reseau.slice().sort((a, b) => Math.abs(a.tension - tension) - Math.abs(b.tension - tension))[0]; }
+
+/* ---- le remplissage : chaque fil dans son trou, selon la norme ------------ */
+/* Un module (un contact) a un côté AMONT et un côté AVAL, chacun avec autant
+   de trous que la famille en donne ; les fils s'y rangent dans l'ordre de
+   leur numéro, les trous qui restent sont libres, ce qui déborde est en
+   SURCHARGE. Puis la règle de remplissage juge : modules réservés, paquets
+   contigus (un peigne ne saute pas un module), ordre croissant, retour de
+   masse par paquet (blindage), jauge de chaque fil dans la plage du contact.
+   Les ponts (shunts) ne sont pas des fils dans un trou. Rend la physique
+   enrichie : famille, trous par module, verdicts. */
+function remplirSelonNorme(P, norme) {
+  const F = familleDeNorme(norme, P.entree ? P.entree.famille : '', P.reference), n = F ? F.filsParCote : 1;
+  const prise = P.nature === 'prise de coupure', mot = prise ? 'contact' : 'module', cote = { amont: prise ? 'fiche' : 'amont', aval: prise ? 'embase' : 'aval' };
+  const jaugeOk = j => (F && j != null && F.jaugeMin != null && F.jaugeMax != null) ? (j <= F.jaugeMin && j >= F.jaugeMax) : null;
+  const modules = P.modules.map(m => { const fils = m.fils.map(f => { const jauge = jaugeDuType(f.type); return { ...f, jauge, jaugeOk: jaugeOk(jauge) }; });
+    const trous = {}; ['amont', 'aval'].forEach(s => { const t = fils.filter(f => (s === 'amont') === !!f.amont).sort((a, b) => triBornes(a.cable, b.cable)); while (t.length < n) t.push(null); trous[s] = t; });
+    const surcharge = Math.max(0, trous.amont.length - n) + Math.max(0, trous.aval.length - n);
+    return { ...m, fils, trous, surcharge }; });
+  const verdicts = [], s = k => k > 1 ? 's' : '', modDe = b => modules.find(m => m.borne === String(b));
+  if (F) {
+    modules.forEach(m => ['amont', 'aval'].forEach(k => { const c = m.trous[k].filter(Boolean).length; if (c > n) verdicts.push({ niveau: 'ko', texte: `${mot} ${m.borne} : ${c} fils côté ${cote[k]} pour ${n} trou${s(n)}`, bornes: [m.borne] }); }));
+    F.reserves.forEach(r => { const m = modDe(r); if (m && m.utilisee) verdicts.push({ niveau: 'ko', texte: `${mot} ${r} réservé par la norme, et pourtant utilisé`, bornes: [m.borne] }); });
+    if (F.paquets === 'contigus') P.paquets.forEach(p => { if (!p.ponte) return; const nums = p.bornes.map(Number); if (nums.some(isNaN)) return; nums.sort((a, b) => a - b);
+      if (nums.some((v, i) => i && v !== nums[i - 1] + 1)) verdicts.push({ niveau: 'ko', texte: `paquet ${p.bornes.join('-')} : le peigne de pontage ne saute pas un ${mot}`, bornes: p.bornes }); });
+    if (F.ordre === 'croissant') { const nums = modules.filter(m => m.utilisee && /^\d+$/.test(m.borne)).map(m => +m.borne); if (nums.length) { const max = Math.max(...nums);
+      const creux = modules.filter(m => !m.utilisee && /^\d+$/.test(m.borne) && +m.borne < max).map(m => m.borne);
+      if (creux.length) verdicts.push({ niveau: 'attention', texte: `${mot}${s(creux.length)} ${creux.join(', ')} libre${s(creux.length)} avant le ${max} : la norme remplit dans l’ordre`, bornes: creux }); } }
+    if (F.masse === 'par paquet') P.paquets.forEach(p => { const fils = p.bornes.flatMap(b => (modDe(b) || { fils: [] }).fils); if (!fils.length) return;
+      if (!fils.some(f => estMasse(f.vers))) verdicts.push({ niveau: 'ko', texte: `paquet ${p.bornes.join('-')} sans retour de masse`, bornes: p.bornes }); });
+    modules.forEach(m => m.fils.forEach(f => { if (f.jaugeOk === false) verdicts.push({ niveau: 'ko', texte: `${f.cable} (${f.type}) : jauge ${f.jauge} hors de ${F.jaugeMin}–${F.jaugeMax} AWG sur le ${mot} ${m.borne}`, bornes: [m.borne] }); }));
+  }
+  return { ...P, famille: F, filsParCote: n, cotes: cote, modules, verdicts };
+}
+
+/* ---- la simulation : ce que chaque fil subit, sur des hypothèses dites ---- */
+/* Le retest ne porte ni longueur ni courant : on les SUPPOSE (longueur du
+   fil, courant qui le traverse, tension du réseau, conditions de
+   déclassement), on le dit, et on calcule, fil par fil :
+     I fil     = intensité du fil (norme) × facteur de déclassement
+     I contact = intensité du contact (norme, sinon la bible)
+     R         = ρ (Ω/km) / 1000 × L (m) + R contact (mΩ) / 1000
+     ΔU        = R × I, en V, et en % de la tension
+   Le verdict, dans l'ordre : jauge hors plage · le courant dépasse le fil ·
+   dépasse le contact · la chute dépasse ce que le réseau admet · fil
+   inconnu de la norme · ok. */
+const HYPOTHESES = { longueur: 5, courant: 2, tension: 28, conditions: ['faisceau'] };
+function simulerBornier(Q, norme, hyp) {
+  if (!Q.modules.every(m => m.trous)) Q = remplirSelonNorme(Q, norme);
+  const H = { ...HYPOTHESES, ...(hyp || {}) }, F = Q.famille, facteur = facteurDeclassement(norme, H.conditions), chute = chuteAdmise(norme, H.tension);
+  const iContact = F && F.intensite != null ? F.intensite : (Q.entree && Q.entree.intensite != null ? Q.entree.intensite : null);
+  const rContact = F && F.resistance != null ? F.resistance / 1000 : 0, lignes = [];
+  Q.modules.forEach(m => ['amont', 'aval'].forEach(sens => m.trous[sens].forEach((f, k) => { if (!f) return;
+    const fil = filDeNorme(norme, f.type, f.jauge);
+    const iFil = fil && fil.intensite != null ? fil.intensite * facteur : null, rFil = fil && fil.resistance != null ? fil.resistance / 1000 * H.longueur : null;
+    const R = rFil == null ? null : rFil + rContact, dU = R == null ? null : R * H.courant, pct = dU == null || !H.tension ? null : dU / H.tension * 100;
+    const verdict = f.jaugeOk === false ? 'jauge' : (iFil != null && H.courant > iFil + 1e-9) ? 'fil' : (iContact != null && H.courant > iContact + 1e-9) ? 'contact'
+      : (dU != null && chute && chute.chuteMax != null && dU > chute.chuteMax + 1e-9) ? 'chute' : !fil ? 'inconnu' : 'ok';
+    lignes.push({ borne: m.borne, sens, trou: k + 1, surcharge: k >= Q.filsParCote, cable: f.cable, type: f.type, jauge: f.jauge, jaugeOk: f.jaugeOk, fil, approx: !!(fil && fil.approx),
+                  iFil, iContact, rFil, rContact, R, dU, pct, verdict, vers: f.vers, borneVers: f.borne, l: f.l }); })));
+  const compte = {}; lignes.forEach(x => { compte[x.verdict] = (compte[x.verdict] || 0) + 1; });
+  return { hyp: H, facteur, chute, iContact, rContact, famille: F, lignes, compte, sansNorme: !F && !(norme && norme.fils.length) };
+}
+const COLONNES_SUIVI = [['contrat', 'Contrat'], ['repere', 'Repère'], ['nature', 'Nature'], ['reference', 'Référence retenue'], ['fichier', 'Référence du fichier'],
+  ['nBornes', 'Bornes utilisées'], ['bornes', 'Bornes'], ['shunts', 'Shunts'], ['jauge', 'Jauge'], ['fils', 'Fils'], ['routes', 'Routes'], ['plans', 'Folios']];
+function csvDuSuivi(lignes) {
+  const cell = v => { const t = Array.isArray(v) ? v.join(' ') : String(v == null ? '' : v); return /[;"\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+  return [COLONNES_SUIVI.map(c => c[1]).join(';'), ...lignes.map(l => COLONNES_SUIVI.map(c => cell(l[c[0]])).join(';'))].join('\n');
+}
+
+</script>
+<script>
+"use strict";
+const NORME_EMBARQUEE = "NORME D'EXEMPLE — sans aucune valeur normative. Les chiffres sont inventés pour montrer le mécanisme ; remplace ce fichier par les tables de tes normes (voir normes/LISEZMOI.md).\n\nFamilles — une ligne par famille de barrettes ou de prises de coupure : ce que chaque contact admet, et la règle de remplissage\nNorme;Famille;Nature;Variantes;Pas;Jauge min;Jauge max;Intensité;Résistance;Fils par côté;Ordre;Paquets;Réservés;Masse;Note\nASNE0500 (exemple);ASNE0500;jonction;2 4 8 12 20;5;26;20;7,5;5;1;croissant;contigus;;;module de jonction : un fil de chaque côté, peigne de pontage entre modules voisins, modules pris dans l'ordre\nASNE0501 (exemple);ASNE0501;jonction;4 8;7,5;22;16;23;3;1;libre;contigus;1;;grosses sections ; le module 1 est réservé (fixation)\nASNE0502 (exemple);ASNE0502;blindage;4 8;5;26;20;7,5;5;2;libre;contigus;;par paquet;reprise de blindage : deux fils par côté, chaque paquet se ferme sur une masse\nEN3646 (exemple);EN3646;coupure;3 8;2,5;26;20;7,5;8;1;libre;;;;prise de coupure : un fil par contact, fiche (partie mobile) et embase\n\nFils — par type et jauge AWG : section, résistance à 20 °C, intensité admissible du fil seul (avant déclassement)\nType;Jauge;Section;Résistance;Intensité;Note\nDR;26;0,15;140;2,5;monoconducteur cuivre (exemple)\nDR;24;0,24;85;3,5;\nDR;22;0,38;55;5;\nDR;20;0,62;34;7,5;\nDR;18;0,96;21;10;\nDR;16;1,5;13,5;13;\nDR;14;2,5;8,5;17;\nDR;12;3,7;5,3;23;\nBN;26;0,15;150;2,5;monoconducteur nickelé (exemple) : un peu plus résistant\nBN;24;0,24;90;3,5;\nBN;22;0,38;58;5;\nBN;20;0,62;36;7,5;\nMLB;26;0,15;140;2;bifilaire blindé (exemple) : chaque conducteur\nMLB;24;0,24;85;3;\nMLB;22;0,38;55;4,5;\nMLB;20;0,62;34;6,5;\nMLC;26;0,15;140;2;trifilaire blindé (exemple) : chaque conducteur\nMLC;24;0,24;85;3;\nMLC;22;0,38;55;4,5;\nMLC;20;0,62;34;6,5;\n\nDéclassement — un facteur appliqué à l'intensité admissible du fil, quand la condition est cochée dans la simulation\nCondition;Facteur;Note\nfaisceau;0,8;plusieurs fils frettés ensemble (exemple) — coché par défaut\nchaud;0,85;zone chaude, plus de 70 °C (exemple)\n\nRéseau — la chute de tension admise en ligne, selon la tension du réseau\nTension;Chute max;Note\n28;1;28 V continu : 1 V en régime permanent (exemple)\n115;4;115 V alternatif (exemple)\n";
 /* ───────── 07-folios.js ───────── */
 /* ===========================================================================
    07 — LES FOLIOS
@@ -4712,7 +5348,8 @@ const app = {
   contrat: nouveauContrat(), source: null, nFolios: 0, budget: 16, plan: '*', nom: '',
   vue: { s: 1, tx: 0, ty: 0 }, choisi: null, cible: null, actif: null, dessin: null, hist: [], fiche: null,
   bible: [], bibleNom: '', norme: null, normeNom: '', simu: null,   // simu : les hypothèses, posées au démarrage (relireSimu)
-  base: { ouvert: false, filtre: '', tri: null, largeur: 0, hauteur: 0, sale: true, defiler: false, enSaisie: false, choixOuvert: false, normeOuverte: false }
+  base: { ouvert: false, filtre: '', tri: null, largeur: 0, hauteur: 0, sale: true, defiler: false, enSaisie: false, choixOuvert: false, normeOuverte: false },
+  retouches: new Map()   // folio (sa clé de placement) -> le dessin retouché à la souris (la retouche)
 };
 const $ = id => document.getElementById(id);
 const CLE_CONTRAT = 'atelier.contrat.v2';
@@ -4730,21 +5367,153 @@ function liaisonsDuPlan() { const L = app.contrat.liaisons.filter(liaisonComplet
    concours du folio chargé prend quelques secondes, revenir sur un folio déjà
    vu est instantané. La clé : ce que le placement lit de chaque liaison. */
 const placements = new Map(), PLACEMENTS_GARDES = 24;
+const clePlacement = L => JSON.stringify(L.map(l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable, l.pnDe, l.pnVers]));
 function placementDe(L) {
-  const cle = JSON.stringify(L.map(l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable, l.pnDe, l.pnVers]));
+  const cle = clePlacement(L);
+  // un folio retouché à la souris : la retouche, toujours (elle se défait par « automatique » ou Ctrl+Z)
+  if (app.retouches.has(cle)) return app.retouches.get(cle);
+  // un folio déjà affiné (dans cette session, ou gardé d'une autre) : son meilleur dessin
+  if (affinage.profonds.has(cle)) return affinage.profonds.get(cle);
   if (placements.has(cle)) { const P = placements.get(cle); placements.delete(cle); placements.set(cle, P); return P; }
   const P = meilleurPlacement(L); placements.set(cle, P);
   if (placements.size > PLACEMENTS_GARDES) placements.delete(placements.keys().next().value);
   return P;
 }
+
+/* ---- l'AFFINAGE : la recherche profonde, en arrière-plan ---------------- */
+/* Le dessin qu'on voit d'abord est celui du concours (quelques secondes).
+   Puis la recherche profonde (04, `placementProfond`) tourne dans un Worker
+   — le moteur, refait depuis son <script id="moteur"> —, folio par folio, le
+   folio affiché d'abord : chaque fois qu'elle trouve mieux, le dessin se
+   remplace sous les yeux, la vue ne bouge pas. Le temps n'est pas un souci
+   (le lecteur : « une heure de calcul pour une vie d'études bien faite, on
+   s'en fiche ») : ce qu'elle trouve se GARDE dans ce navigateur (IndexedDB),
+   par folio et par version du moteur — un folio affiné l'est pour toujours.
+   Sous pilote automatique (navigator.webdriver), elle dort : les bancs
+   mesurent le concours, déterministe ; `atelier.affinage(true)` la réveille.
+   Sans Worker ni IndexedDB (un navigateur qui les refuse), rien ne change :
+   le dessin du concours reste. */
+const TOURS_PROFONDS = 24;
+const affinage = { actif: !(typeof navigator !== 'undefined' && navigator.webdriver), worker: null, file: [], encours: null,
+  profonds: new Map(), finis: new Set(), etat: null, vu: 0 };
+const cleCourante = () => { const L = liaisonsDuPlan(); return L.length ? clePlacement(L) : null; };
+// tous les folios du contrat dans la file, le folio affiché d'abord ; ceux qui ne sont plus au contrat en sortent
+function affinerTout() { if (!affinage.actif) return;
+  const P = plans(), L0 = app.contrat.liaisons.filter(liaisonComplete), parPlan = app.plan === '*' || !P.length ? [L0] : [liaisonsDuPlan(), ...P.filter(p => p !== app.plan).map(p => L0.filter(l => l.plan === p))];
+  const travaux = parPlan.filter(L => L.length).map(L => ({ cle: clePlacement(L), L: L.map(l => ({ ...l })) })).filter(t => !affinage.finis.has(t.cle) && !(affinage.encours && affinage.encours.cle === t.cle));
+  affinage.file = travaux.filter((t, i) => travaux.findIndex(u => u.cle === t.cle) === i); pomper(); }
+function pomper() { while (affinage.file.length && affinage.finis.has(affinage.file[0].cle)) affinage.file.shift();
+  if (affinage.encours || !affinage.file.length) { montrerAffinage(); return; }
+  const w = travailleur(); if (!w) return;
+  affinage.encours = affinage.file.shift(); affinage.etat = { k: 0, n: TOURS_PROFONDS };
+  w.postMessage({ cle: affinage.encours.cle, liaisons: affinage.encours.L, tours: TOURS_PROFONDS }); montrerAffinage(); }
+function travailleur() { if (affinage.worker) return affinage.worker; if (affinage.worker === false) return null;
+  try { const src = document.getElementById('moteur').textContent;
+    // le moteur rapporte à chaque tour ; un dessin meilleur part avec, la fin aussi
+    const glue = `\nself.onmessage = e => { const { cle, liaisons, tours } = e.data; let dernier = null;
+      try { const P = placementProfond(liaisons, tours, (k, n, m) => { if (k > 0 && m !== dernier) postMessage({ cle, k, n, P: sortieDuPlacement(m) }); else postMessage({ cle, k, n }); dernier = m; });
+        postMessage({ cle, fini: true, P }); }
+      catch (err) { postMessage({ cle, erreur: String(err && err.message || err) }); } };`;
+    const w = new Worker(URL.createObjectURL(new Blob([src + glue], { type: 'text/javascript' })));
+    w.onmessage = recevoirAffinage; w.onerror = () => { affinage.worker = false; affinage.encours = null; affinage.file = []; montrerAffinage(); };
+    return (affinage.worker = w); }
+  catch (_) { affinage.worker = false; return null; } }
+function recevoirAffinage(e) { const d = e.data, j = affinage.encours; if (!j || d.cle !== j.cle) return;
+  if (d.n) affinage.etat = { k: d.k, n: d.n };
+  if (d.P && !d.fini) { affinage.profonds.set(d.cle, d.P); if (cleCourante() === d.cle) { affinage.vu = Date.now(); rafraichirDessin(); } }
+  if (d.erreur) affinage.erreur = d.erreur;
+  if (d.fini || d.erreur) { affinage.finis.add(d.cle); if (d.P) { affinage.profonds.set(d.cle, d.P); garderAffine(d.cle, d.P); }
+    affinage.encours = null; pomper(); }
+  montrerAffinage(); }
+// le dessin se remplace, la vue reste où elle est
+function rafraichirDessin() { calculer(); peindre(); synchroniser(); rallumer(); }
+function montrerAffinage() { const el = $('affinage'); if (!el) return; const j = affinage.encours, e = affinage.etat;
+  if (!affinage.actif || !j) { el.hidden = true; return; }
+  const ici = j.cle === cleCourante(), reste = affinage.file.length;
+  el.hidden = false; el.classList.toggle('ailleurs', !ici);
+  $('af-txt').textContent = (ici ? 'affinage ' : 'affine un autre folio ') + (e ? e.k + ' / ' + e.n : '') + (reste ? ' · ' + reste + ' en attente' : '');
+  el.title = 'La recherche profonde améliore le dessin en arrière-plan ; chaque mieux trouvé le remplace, et le résultat se garde dans ce navigateur.'; }
+// IndexedDB : un magasin, une entrée par version du moteur et folio ; les versions passées s'effacent
+const IDB_NOM = 'atelier-schema', IDB_MAGASIN = 'placements', IDB_RETOUCHES = 'retouches';
+function ouvrirIDB() { return new Promise((ok, ko) => { try { const r = indexedDB.open(IDB_NOM, 2);
+  r.onupgradeneeded = () => { [IDB_MAGASIN, IDB_RETOUCHES].forEach(m => { if (!r.result.objectStoreNames.contains(m)) r.result.createObjectStore(m); }); };
+  r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error); } catch (err) { ko(err); } }); }
+function garderAffine(cle, P) { ouvrirIDB().then(db => { db.transaction(IDB_MAGASIN, 'readwrite').objectStore(IDB_MAGASIN).put({ P, t: Date.now() }, VERSION_MOTEUR + '|' + cle); }).catch(() => { }); }
+function relireAffines() { if (!affinage.actif) return; const avant = cleCourante();
+  ouvrirIDB().then(db => { const req = db.transaction(IDB_MAGASIN, 'readwrite').objectStore(IDB_MAGASIN).openCursor();
+    req.onsuccess = () => { const c = req.result;
+      if (!c) { const ici = cleCourante(); if (ici && ici === avant && affinage.profonds.has(ici)) rafraichirDessin(); affinerTout(); return; }
+      const k = String(c.key);
+      if (k.startsWith(VERSION_MOTEUR + '|')) { const cle = k.slice(VERSION_MOTEUR.length + 1); if (!affinage.profonds.has(cle) && c.value && c.value.P) affinage.profonds.set(cle, c.value.P); affinage.finis.add(cle); }
+      else c.delete();
+      c.continue(); }; }).catch(() => { }); }
+/* ---- la RETOUCHE : déplacer un bloc à la souris, tout suit ------------- */
+/* Le dessin automatique est le point de départ ; on peut le retoucher. Un
+   bloc (équipement, barrette, prise) se prend et glisse dans sa colonne :
+   ses masses collées le suivent, ses fils se reroutent en direct, et il
+   s'AIMANTE à la hauteur qui rend droit un de ses fils. Il s'arrête à huit
+   unités d'un voisin de sa colonne (deux blocs ne se collent pas). Lâché, le
+   folio est RETOUCHÉ : son dessin se garde dans ce navigateur (IndexedDB),
+   l'affinage ne le remplace plus, Ctrl+Z défait le geste, « automatique »
+   rend le dessin du moteur. Au doigt, un appui long prend le bloc (un
+   glissé simple déplace la vue). */
+const AIMANT = 5, GARDE_RETOUCHE = 8;
+// les pastilles (masses, morceaux de barrette seuls) collées au flanc d'un bloc, à sa hauteur : elles le suivent
+const pastillesCollees = (comps, c) => comps.filter(t => t.kind === 'tag' && t.y + t.h / 2 > c.y - 1 && t.y + t.h / 2 < c.y + c.h + 1
+  && (Math.abs(t.x + t.w + FIL_PASTILLE - c.x) < 2 || Math.abs(t.x - (c.x + c.w + FIL_PASTILLE)) < 2));
+const surLeBloc = (c, nom, e) => String(nom) === String(c.name) && e.x >= c.x - 1 && e.x <= c.x + c.w + 1 && e.y >= c.y - 1 && e.y <= c.y + c.h + 1;
+const decalerComp = (k, dy) => { const rangs = {}; Object.keys(k.rangs || {}).forEach(lid => { rangs[lid] = k.rangs[lid].map(p => ({ ...p, y: p.y + dy })); });
+  const parCle = new Map(); (k.parCle || new Map()).forEach((v, cl) => parCle.set(cl, { ...v, y: v.y + dy })); return { ...k, y: k.y + dy, rangs, parCle }; };
+// jusqu'où le bloc peut aller sans venir à moins de GARDE d'un voisin de sa colonne, ni sortir de la zone utile de la
+// feuille (seul dans sa colonne, il partait au-delà, et la feuille rapetissait tout pour le suivre) : [haut, bas] de dy
+function courseDuBloc(P, c) { let lo = -Infinity, hi = Infinity; const bb = app.dessin && app.dessin.bbox;
+  if (bb) { const k = bb.k || 1; lo = bb.y + (PAGE_CADRE + PAGE_MARGE) * k - c.y; hi = bb.y + bb.h - (PAGE_CADRE + PAGE_MARGE + PAGE_CARTOUCHE) * k - (c.y + c.h); }
+  P.comps.forEach(o => { if (o === c || o.kind === 'tag' || o.col !== c.col || o.x >= c.x + c.w || c.x >= o.x + o.w) return;
+    if (o.y + o.h <= c.y + 0.5) lo = Math.max(lo, o.y + o.h + GARDE_RETOUCHE - c.y); else if (o.y >= c.y + c.h - 0.5) hi = Math.min(hi, o.y - GARDE_RETOUCHE - (c.y + c.h)); });
+  return [Math.min(lo, 0), Math.max(hi, 0)]; }
+// les hauteurs où un fil du bloc devient droit (son autre bout sur un bloc qui ne bouge pas)
+function aimantsDuBloc(P, c, tags) { const ds = []; P.links.forEach(l => { if (l.shunt || l.boucle) return;
+  [[l.de, l.epA, l.vers, l.epB], [l.vers, l.epB, l.de, l.epA]].forEach(([n, e, n2, e2]) => { if (!surLeBloc(c, n, e)) return;
+    const autre = P.comps.find(k => surLeBloc(k, n2, e2)); if (!autre || autre === c || tags.includes(autre)) return; ds.push(e2.y - e.y); }); });
+  return ds; }
+// le dessin avec le bloc déplacé de dy, ses pastilles avec lui, rerouté
+function deplacerBloc(P, c, dy) { const tags = pastillesCollees(P.comps, c), bouge = new Set([c, ...tags]);
+  const comps = P.comps.map(k => bouge.has(k) ? decalerComp(k, dy) : k);
+  const touche = (nom, e) => [...bouge].some(k => surLeBloc(k, nom, e));
+  const links = P.links.map(l => { const a = touche(l.de, l.epA), b = touche(l.vers, l.epB); if (!a && !b) return l;
+    return { ...l, epA: a ? { ...l.epA, y: l.epA.y + dy } : l.epA, epB: b ? { ...l.epB, y: l.epB.y + dy } : l.epB }; });
+  const compDe = new Map(); comps.forEach(k => { if (k.id != null) compDe.set(k.id, k); if (!compDe.has(k.name)) compDe.set(k.name, k); });
+  const routage = router({ comps, links, geom: P.geom, bbox: P.bbox });
+  return { ...P, comps, links, compDe, routage, retouche: true }; }
+// la retouche se garde (IndexedDB) ; une clé sans retouche s'efface
+function garderRetouche(cle) { const P = app.retouches.get(cle);
+  ouvrirIDB().then(db => { const st = db.transaction(IDB_RETOUCHES, 'readwrite').objectStore(IDB_RETOUCHES); if (P) st.put({ P, t: Date.now() }, cle); else st.delete(cle); }).catch(() => { }); }
+function relireRetouches() { ouvrirIDB().then(db => { const req = db.transaction(IDB_RETOUCHES, 'readonly').objectStore(IDB_RETOUCHES).openCursor(); let vu = false;
+  req.onsuccess = () => { const c = req.result; if (!c) { if (vu) rafraichirDessin(); return; } if (c.value && c.value.P && !app.retouches.has(String(c.key))) { app.retouches.set(String(c.key), c.value.P); vu = true; } c.continue(); }; }).catch(() => { }); }
+function revenirAutomatique() { const cle = cleCourante(); if (!cle || !app.retouches.has(cle)) return;
+  histPush('retouche de ce folio'); app.retouches.delete(cle); garderRetouche(cle); rafraichirDessin(); dire('Dessin automatique rétabli.'); }
+function synchroniserRetouche() { const b = $('btnAuto'); if (!b) return; const cle = cleCourante(); b.hidden = !(cle && app.retouches.has(cle)); }
 function calculer() {
   const L = liaisonsDuPlan(); if (!L.length) { app.dessin = null; return null; }
-  const P = placementDe(L);
+  const P = placementDe(L); affinerTout();
   // la feuille : la même pour tous les folios (A3 paysage), le dessin calé dedans
   app.dessin = P ? { comps: P.comps, links: P.links, bbox: pageDe(P.comps, P.routage.fils), geom: P.geom, compDe: P.compDe,
                      fils: P.routage.fils, points: P.routage.points, barrettes: P.routage.barrettes, piquages: P.routage.piquages } : null;
+  if (app.dessin) { const routes = couleursDesRoutes(), routeDe = w => (L[w.i] && L[w.i].route) || '';
+    app.dessin.couleurDe = w => routes.get(routeDe(w)) || null; app.dessin.legende = legendeDesRoutes(app.dessin.fils.filter(w => !w.shunt && String(w.de) !== String(w.vers)), routeDe, routes); }
   return app.dessin;
 }
+/* LES ROUTES : un fil prend la couleur de sa route (la colonne « route » ou « cheminement » du fichier). Une route garde
+   sa couleur sur tous les folios du contrat — l'ordre naturel de leurs noms, dans une palette de dix teintes franches,
+   lisibles sur le blanc et à l'impression ; une couleur choisie au contrat (`couleursRoutes`) passe devant. */
+const PALETTE_ROUTES = ['#1f5fbf', '#c0392b', '#1e8449', '#d35400', '#7d3c98', '#117a8b', '#9a6324', '#c2185b', '#5d6d1e', '#34495e'];
+function couleursDesRoutes() { const choisies = app.contrat.couleursRoutes || {}, m = new Map();
+  [...new Set(app.contrat.liaisons.map(l => l.route).filter(Boolean))].sort(triNaturel).forEach((r, i) => m.set(r, choisies[r] || PALETTE_ROUTES[i % PALETTE_ROUTES.length]));
+  return m; }
+// la légende d'un folio : ses routes, chacune avec son nombre de fils ; « sans route » quand d'autres en ont une
+function legendeDesRoutes(fils, routeDe, routes) { const n = new Map(); fils.forEach(w => { const r = routeDe(w); n.set(r, (n.get(r) || 0) + 1); });
+  if (![...n.keys()].some(Boolean)) return [];
+  return [...n].sort((a, b) => (!a[0]) - (!b[0]) || triNaturel(a[0], b[0])).map(([route, k]) => ({ route, n: k, couleur: routes.get(route) || null })); }
 function folioCourant() { const P = plans();
   return (app.plan !== '*' && P.length > 1) ? (app.plan + ' / ' + P.length) : '1 / 1'; }
 /* Ce qui s'écrit sous le repère : la désignation si on en a donné une ;
@@ -4879,27 +5648,61 @@ function lierPlanche() {
     const ns = Math.max(ZMIN, Math.min(ZMAX, pinch.s0 * dist(p[0], p[1]) / pinch.d));
     const mx = (p[0].x + p[1].x) / 2 - r.left, my = (p[0].y + p[1].y) / 2 - r.top;
     app.vue = { s: ns, tx: mx - pinch.wx * ns, ty: my - pinch.wy * ns }; appliquerVue(); };
+  /* la PRISE d'un bloc (la retouche) : à la souris, appuyer sur un bloc et glisser le déplace ; au doigt, un appui long
+     le prend, un glissé simple déplace la vue. `prise` : le bloc, l'ordonnée de départ, le dessin d'avant, sa course */
+  let prise = null, long = null, image = 0, dernierBloc = null, dernierAppui = null;
+  const prenable = c => c && c.kind !== 'tag' && !c.rail && !estRenvoi(c.name);
+  const commencerPrise = () => { const L = liaisonsDuPlan(), cle = L.length ? clePlacement(L) : null; if (!cle) return false;
+    const P = placementDe(L), c = P.comps.find(k => k === prise.c) || null; if (!c) return false;
+    const tags = pastillesCollees(P.comps, c);
+    Object.assign(prise, { cle, P, avant: app.retouches.get(cle) || null, course: courseDuBloc(P, c), aimants: aimantsDuBloc(P, c, tags), dy: 0 });
+    histPush('déplacer ' + c.name); mode = 'bloc'; stage.classList.add('deplace'); eteindre(); return true; };
+  const suitPrise = e => { const w = versMonde(e.clientX, e.clientY); let dy = Math.round((w.y - prise.wy) * 2) / 2;
+    const tol = Math.max(2, Math.min(14, 6 / app.vue.s)), a = prise.aimants.filter(d => Math.abs(d - dy) <= tol).sort((u, v) => Math.abs(u - dy) - Math.abs(v - dy))[0];
+    if (a != null) dy = a;
+    dy = Math.max(prise.course[0], Math.min(prise.course[1], dy)); if (dy === prise.dy) return; prise.dy = dy;
+    cancelAnimationFrame(image); image = requestAnimationFrame(() => { app.retouches.set(prise.cle, dy ? deplacerBloc(prise.P, prise.c, dy) : (prise.avant || deplacerBloc(prise.P, prise.c, 0)));
+      calculer(); peindre(); }); };
+  const finPrise = () => { cancelAnimationFrame(image); stage.classList.remove('deplace');
+    if (!prise.dy) { if (prise.avant) app.retouches.set(prise.cle, prise.avant); else app.retouches.delete(prise.cle); app.hist.pop(); synchroniserHistorique(); }
+    else { app.retouches.set(prise.cle, deplacerBloc(prise.P, prise.c, prise.dy)); garderRetouche(prise.cle); dire(prise.c.name + ' déplacé · Ctrl+Z pour défaire, « automatique » pour tout rétablir'); }
+    calculer(); peindre(); synchroniser(); rallumer(); prise = null; };
   stage.addEventListener('pointerdown', e => { if (e.button && e.button !== 0) return; fermerMenu(); fermerRecherche();
     try { stage.setPointerCapture(e.pointerId); } catch (_) { }
-    pointeurs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (pointeurs.size >= 2) { debutPinch(); return; }
-    bouge = false; origine = [e.clientX, e.clientY]; mode = 'pan'; pan = { tx: app.vue.tx, ty: app.vue.ty, x: e.clientX, y: e.clientY }; });
+    pointeurs.set(e.pointerId, { x: e.clientX, y: e.clientY }); clearTimeout(long);
+    if (pointeurs.size >= 2) { prise = null; debutPinch(); return; }
+    bouge = false; origine = [e.clientX, e.clientY]; mode = 'pan'; pan = { tx: app.vue.tx, ty: app.vue.ty, x: e.clientX, y: e.clientY };
+    const w = versMonde(e.clientX, e.clientY), c = blocSous(w); prise = prenable(c) ? { c, wy: w.y } : null;
+    if (!dernierBloc || Date.now() - dernierBloc.t > 800) dernierBloc = c ? { nom: c.name, t: Date.now() } : null;   // le premier appui d'un double-clic fait foi
+    if (prise && e.pointerType !== 'touch') mode = 'prise';
+    else if (prise) long = setTimeout(() => { if (mode === 'pan' && !bouge && prise && commencerPrise()) { if (navigator.vibrate) navigator.vibrate(12); } }, 380); });
   stage.addEventListener('pointermove', e => { if (pointeurs.has(e.pointerId)) pointeurs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (mode === 'pinch') { suitPinch(); return; } if (!mode) return;
-    if (origine && (Math.abs(e.clientX - origine[0]) > 3 || Math.abs(e.clientY - origine[1]) > 3)) { bouge = true; stage.classList.add('tient'); }
+    if (origine && (Math.abs(e.clientX - origine[0]) > 3 || Math.abs(e.clientY - origine[1]) > 3)) { if (!bouge && mode === 'prise' && !commencerPrise()) mode = 'pan'; bouge = true; clearTimeout(long); if (mode === 'pan') stage.classList.add('tient'); }
+    if (mode === 'bloc') { suitPrise(e); return; }
     if (mode === 'pan') { app.vue.tx = pan.tx + (e.clientX - pan.x); app.vue.ty = pan.ty + (e.clientY - pan.y); appliquerVue(); } });
-  const fin = e => { try { stage.releasePointerCapture(e.pointerId); } catch (_) { } stage.classList.remove('tient');
+  const fin = e => { try { stage.releasePointerCapture(e.pointerId); } catch (_) { } stage.classList.remove('tient'); clearTimeout(long);
     const etaitPinch = mode === 'pinch'; pointeurs.delete(e.pointerId);
     if (etaitPinch) { if (pointeurs.size < 2) { mode = null; pinch = null; } return; }
-    if (mode === 'pan' && !bouge) cliquer(versMonde(e.clientX, e.clientY));
-    mode = null; pan = null; };
+    if (mode === 'bloc') { finPrise(); mode = null; pan = null; return; }
+    if ((mode === 'pan' || mode === 'prise') && !bouge) {
+      /* le DOUBLE appui se reconnaît ici : le premier clic choisit le bloc et redessine la page, et le navigateur
+         n'émet alors ni « click » ni « dblclick » — deux appuis à moins de 400 ms, au même endroit */
+      const t = Date.now(), d = dernierAppui; dernierAppui = { t, x: e.clientX, y: e.clientY };
+      if (d && t - d.t < 400 && Math.abs(e.clientX - d.x) < 8 && Math.abs(e.clientY - d.y) < 8) { dernierAppui = null; doubleAppui(e); }
+      else cliquer(versMonde(e.clientX, e.clientY)); }
+    mode = null; pan = null; prise = null; };
+  // double appui : sur une barrette ou une prise, sa vue en relief ; ailleurs, on zoome
+  const doubleAppui = e => { const c = blocSous(versMonde(e.clientX, e.clientY)), nom = dernierBloc && Date.now() - dernierBloc.t < 800 ? dernierBloc.nom : c && c.name;
+    if (nom && estBornier(nom)) { ouvrirRelief(nom); return; }
+    const r = cadre(); zoomer(1.6, e.clientX - r.left, e.clientY - r.top); };
   stage.addEventListener('pointerup', fin); stage.addEventListener('pointercancel', fin);
   stage.addEventListener('mousemove', e => { if (mode || pointeurs.size) return;
     const c = blocSous(versMonde(e.clientX, e.clientY)); const nm = c ? c.name : null;
     if (nm !== survole) { survole = nm; if (nm) allumerBloc(nm); else rallumer(); } });
   stage.addEventListener('mouseleave', () => { if (!mode) { survole = null; rallumer(); } });
   stage.addEventListener('wheel', e => { e.preventDefault(); const r = cadre(); zoomer(Math.exp(-e.deltaY * 0.0014), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
-  stage.addEventListener('dblclick', e => { const r = cadre(); zoomer(1.6, e.clientX - r.left, e.clientY - r.top); });
+
 }
 /* Un clic sur la planche : un bloc, un renvoi, un fil, ou le vide. */
 function cliquer(w) { const c = blocSous(w);
@@ -5049,7 +5852,7 @@ function rendreEquip() { const box = $('ba-equip'), c = app.cible; box.hidden = 
   const P = bornier ? remplirSelonNorme(physiqueDeBarrette(nom, V, app.bible, app.contrat.designations.get(nom) || ''), app.norme) : null;
   const tete = esc(P ? P.nature : natureDe(nom)) + ' · ' + pluriel(n, 'fil') + (b && b.shunts ? ' · ' + pluriel(b.shunts, 'shunt') : '');
   box.innerHTML = `<div class="sur">${tete}</div>
-    <div class="actions"><button class="btn lien danger" id="eq-del" title="Supprimer l’équipement et ses fils">Supprimer</button></div>
+    <div class="actions">${bornier ? '<button class="btn lien" id="eq-relief" title="La pièce en perspective, chaque fil dans son trou (ou double-clic sur le bloc)">Voir en relief</button>' : ''}<button class="btn lien danger" id="eq-del" title="Supprimer l’équipement et ses fils">Supprimer</button></div>
     <input class="rep" id="eq-rep" value="${escA(nom)}" aria-label="Repère" title="Renommer : chaque fil suit" spellcheck="false">`
     + (bornier ? '' : `<input class="des" id="eq-des" value="${escA(app.contrat.designations.get(nom) || '')}" placeholder="Désignation, écrite sous le repère" aria-label="Désignation" spellcheck="false">`)
     + (bornier ? cartePhysique(nom, P, b) : carteConnecteurs(nom));
@@ -5058,7 +5861,7 @@ function rendreEquip() { const box = $('ba-equip'), c = app.cible; box.hidden = 
   if ($('eq-des')) $('eq-des').addEventListener('change', e => { histPush('désignation de ' + nom); designer(nom, e.target.value.trim()); apresEdition(); });
   $('eq-del').onclick = () => { if (!confirm('Supprimer « ' + nom + ' » et ses ' + n + ' liaison(s) ?')) return;
     histPush('suppression de ' + nom); supprimerEquipement(nom); app.base.filtre = ''; apresEdition(); dire(nom + ' supprimé.'); };
-  if (bornier) lierCartePhysique(nom);
+  if (bornier) { lierCartePhysique(nom); $('eq-relief').onclick = () => ouvrirRelief(nom); }
   box.querySelectorAll('input').forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } })); }
 /* La carte se redessine quand la place change (fenêtre, poignée), jamais
    sous les doigts de qui y écrit. */
@@ -5555,10 +6358,12 @@ function ajusterFolios() { if (app.nFolios) return 0;
 
 /* ---- historique et enregistrement ------------------------------------- */
 function histPush(quoi) { app.hist.push({ quoi, liaisons: app.contrat.liaisons.map(l => ({ ...l })), source: app.source ? app.source.map(l => ({ ...l })) : null,
-  nFolios: app.nFolios, budget: app.budget, plan: app.plan, nom: app.nom, designations: new Map(app.contrat.designations) });
+  nFolios: app.nFolios, budget: app.budget, plan: app.plan, nom: app.nom, designations: new Map(app.contrat.designations), retouches: new Map(app.retouches) });
   if (app.hist.length > 40) app.hist.shift(); synchroniserHistorique(); }
 function annuler() { const p = app.hist.pop(); if (!p) return null;
   app.contrat.liaisons = p.liaisons; app.source = p.source; app.nFolios = p.nFolios; app.budget = p.budget || 16; app.plan = p.plan; app.nom = p.nom || ''; app.contrat.designations = p.designations;
+  // les retouches d'avant reviennent, et se gardent comme elles étaient
+  if (p.retouches) { const cles = new Set([...app.retouches.keys(), ...p.retouches.keys()]); app.retouches = p.retouches; cles.forEach(garderRetouche); }
   app.choisi = null; app.cible = null; app.actif = null; app.base.enSaisie = false; fermerFiche();
   if (document.activeElement && $('ba-tab').contains(document.activeElement)) document.activeElement.blur();
   redessiner(); ajuster(true); sauver(); return p.quoi; }
@@ -5639,7 +6444,7 @@ function synchroniserContexte() { const n = app.contrat.liaisons.length;
 function synchroniserHistorique() { const b = $('btnUndo'), d = app.hist[app.hist.length - 1]; b.disabled = !d;
   const quoi = d ? 'Annuler : ' + d.quoi : 'Annuler';
   b.setAttribute('aria-label', quoi + ' (Ctrl+Z)'); b.querySelector('.bulle').innerHTML = esc(quoi) + '<kbd>Ctrl+Z</kbd>'; }
-function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); rafraichirBase(); }
+function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); synchroniserRetouche(); rafraichirBase(); }
 let toastT = null;
 function dire(msg, erreur) { const t = $('toast'); t.textContent = msg; t.classList.toggle('erreur', !!erreur); t.classList.add('on');
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), erreur ? 6000 : 2800); }
@@ -5667,11 +6472,14 @@ function lierPanneau() {
   $('menu').addEventListener('click', e => { const b = e.target.closest('button[data-act]'); if (!b) return; fermerMenu(); actions[b.dataset.act](); });
   document.addEventListener('click', e => { if (!e.target.closest('#menuBoite')) fermerMenu(); });
   o('btnUndo', () => { const q = annuler(); if (q) dire('Annulé : ' + q + '.'); });
+  o('btnAuto', revenirAutomatique);
   o('fo-prev', () => allerAuFolio(-1)); o('fo-next', () => allerAuFolio(+1));
   $('fo-strip').addEventListener('click', e => { const c = e.target.closest('.chip'); if (c) allerAuPlan(c.dataset.plan); });
   o('zin', () => zoomer(1.25)); o('zout', () => zoomer(1 / 1.25)); o('zfit', () => ajuster(true)); o('zlbl', () => ajuster(true));
   lierRecherche(); lierDepot(); lierBase();
   window.addEventListener('keydown', e => {
+    // la vue en relief ouverte : Échap la ferme, le reste lui appartient
+    if (!$('relief').hidden) { if (e.key === 'Escape') fermerRelief(); return; }
     const dansChamp = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '');
     if (e.key === 'Escape') { if (!$('menu').hidden) { fermerMenu(); $('btnMenu').focus(); } else if (rechercheOuverte()) { fermerRecherche(); $('q').blur(); }
       else if (dansChamp) e.target.blur();   // dans un champ, Échap ne fait que le quitter
@@ -5689,459 +6497,218 @@ function lierPanneau() {
   window.addEventListener('orientationchange', () => setTimeout(() => ajuster(), 300));
 }
 
-/* ───────── 09-barrettes.js ───────── */
+/* ───────── 08-relief.js ───────── */
 /* ===========================================================================
-   09 — LA BIBLE : BARRETTES, PRISES DE COUPURE, CONNECTEURS, ET LE SUIVI
-   Ce que le contrat ne porte qu'à moitié :
+   08 bis — LA VUE EN RELIEF : une barrette, une prise de coupure, comme on
+   les tient dans la main.
+   ---------------------------------------------------------------------------
+   Un clic sur « Voir en relief » (ou un double-clic sur le bloc) ouvre une
+   grande fenêtre : la pièce en perspective, qu'on fait tourner à la main.
 
-   LA BIBLE — une seule table, venue d'un Excel ou d'un CSV de l'atelier :
-   les références normalisées (NSA, ASNE, ABS, EN…) avec ce qu'elles
-   acceptent. Sa colonne NATURE dit de quoi il s'agit : « jonction » ou
-   « blindage » (barrettes), « coupure » (prises de coupure), « connecteur »
-   (l'embase d'un équipement, avec sa PARTIE MOBILE — la fiche qu'on pose
-   sur le faisceau). La bible d'exemple embarquée ne sert qu'à montrer le
-   mécanisme ; elle n'a aucune valeur normative.
+     · BARRETTE : ses modules posés sur leur rail, un par borne, les libres
+       en clair ; le pont de métal sur les modules d'un même paquet ; sur le
+       dessus de chaque module ses trous — en arrière ce qui arrive (amont),
+       en avant ce qui repart (aval) ; de chaque trou occupé monte son fil, à
+       la couleur de sa route, jusqu'à son étiquette : numéro, destination,
+       type. Un trou dont le fil sort de la norme (jauge, courant, chute) est
+       cerclé de rouge.
+     · PRISE DE COUPURE : la fiche (partie mobile) et l'embase (partie
+       fixe), sorties l'une de l'autre, leurs faces de contact tournées vers
+       nous, chaque contact numéroté ; les fils entrent par l'arrière de la
+       fiche (amont) et sortent par l'arrière de l'embase (aval). La
+       disposition des contacts sur la face est indicative : elle dépend de
+       l'arrangement de l'insert, que la bible ne donne pas encore.
 
-   LE CHOIX — chaque barrette et chaque prise de coupure du contrat reçoit la
-   référence la plus logique pour ce qu'elle porte : assez de bornes, la
-   jauge des fils qui y arrivent, le blindage s'il y en a, la famille déjà
-   employée. Chaque connecteur d'équipement dit la partie mobile à poser.
+   Sous la pièce, le tableau module par module (ou contact par contact) :
+   ce qui arrive, ce qui repart. Survoler un fil — dans la vue ou dans le
+   tableau — l'allume sur le plan ; un clic y va.
 
-   LES CONNECTEURS — les bornes d'un équipement appartiennent à des
-   connecteurs (A, B, C…) : la lettre en tête de la borne (A12, B03), sinon
-   le part number du connecteur (PN1 / PN2), qui reçoit alors une lettre.
-
-   LE SUIVI — pour un contrat, la liste de tout ce qu'on pose : chaque
-   barrette, prise et connecteur avec sa référence, ses bornes, ses fils,
-   ses routes, ses folios. C'est ce qui s'exporte et se garde d'un contrat
-   à l'autre.
-
-   LA NORME — ce qu'une norme de matériel dit et que ni le contrat ni la
-   bible ne portent : pour une FAMILLE (ASNE0500, EN3646…), le pas, ce que
-   chaque contact admet (jauges, intensité, résistance), combien de fils par
-   côté, la règle de remplissage ; pour les FILS, par type et jauge, la
-   section, la résistance et l'intensité ; les DÉCLASSEMENTS ; le RÉSEAU
-   (la chute admise). Quatre tables lues par le nom de leurs colonnes. La
-   norme embarquée vient de normes/*.csv à la construction ; celle qui est
-   livrée est un EXEMPLE, sans valeur normative. Avec elle, la barrette se
-   REMPLIT trou par trou et se SIMULE (jauge admise, courant, chute) sur des
-   hypothèses dites — le retest ne porte ni longueur ni courant.
+   Le relief est un petit moteur 3D en SVG, sans bibliothèque : une
+   rotation (azimut autour de la verticale, puis inclinaison), une
+   projection orthographique, les faces cachées écartées, les autres peintes
+   du fond vers l'avant, ombrées selon une lumière fixe.
    =========================================================================== */
 
-/* ---- la bible ------------------------------------------------------------ */
-/* Les en-têtes d'atelier ont des accents : « Référence », « Intensité ». */
-const NORMA = t => NORM(String(t == null ? '' : t).normalize('NFD'));
-const COLONNES_BIBLE = [
-  ['reference',  ['reference', 'ref', 'partnumber', 'pn', 'norme', 'designation']],
-  ['famille',    ['famille', 'family', 'serie', 'series', 'type']],
-  ['nature',     ['nature', 'fonction', 'usage', 'kind']],
-  ['bornes',     ['bornes', 'modules', 'nbbornes', 'nombredebornes', 'voies', 'ways', 'contacts', 'positions']],
-  ['jaugeMin',   ['jaugemin', 'awgmin', 'jaugefine', 'gaugemin', 'minawg']],
-  ['jaugeMax',   ['jaugemax', 'awgmax', 'jaugegrosse', 'gaugemax', 'maxawg']],
-  ['intensite',  ['intensite', 'intensitemax', 'courant', 'current', 'amperes', 'a']],
-  ['blindage',   ['blindage', 'blinde', 'shield', 'shielded', 'masse']],
-  ['mobile',     ['mobile', 'partiemobile', 'fiche', 'contrepartie', 'mating', 'plug', 'pnmobile']],
-  ['note',       ['note', 'notes', 'observation', 'observations', 'remarque', 'commentaire']]
-];
-/* Une entrée normalisée. Les jauges AWG comptent à l'envers : 26 est plus
-   fin que 20 ; « min » est la plus fine acceptée, « max » la plus grosse. */
-function entreeBible(o) {
-  const n = v => { const x = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isNaN(x) ? null : x; };
-  const oui = v => /^(oui|o|yes|y|x|1|true|vrai)$/i.test(String(v == null ? '' : v).trim());
-  const ref = String(o.reference || '').trim(); if (!ref) return null;
-  const jauges = [n(o.jaugeMin), n(o.jaugeMax)].filter(x => x != null);
-  return { reference: ref, famille: String(o.famille || ref.replace(/[-\s].*$/, '')).trim(),
-           nature: String(o.nature || 'jonction').trim().toLowerCase(), bornes: n(o.bornes),
-           jaugeMin: jauges.length ? Math.max(...jauges) : null, jaugeMax: jauges.length ? Math.min(...jauges) : null,
-           intensite: n(o.intensite), blindage: oui(o.blindage), mobile: String(o.mobile || '').trim(), note: String(o.note || '').trim() };
-}
-/* La bible d'exemple : des références PLAUSIBLES, pas des normes lues. Elle
-   montre le mécanisme en attendant la bible de l'atelier. */
-function bibleExemple() {
-  const E = (reference, famille, nature, bornes, jaugeMin, jaugeMax, intensite, blindage, note, mobile) =>
-    ({ reference, famille, nature, bornes, jaugeMin, jaugeMax, intensite, blindage, note, mobile });
-  return [
-    E('ASNE0500-02', 'ASNE0500', 'jonction', 2,  26, 20, 7.5, false, 'exemple'),
-    E('ASNE0500-04', 'ASNE0500', 'jonction', 4,  26, 20, 7.5, false, 'exemple'),
-    E('ASNE0500-08', 'ASNE0500', 'jonction', 8,  26, 20, 7.5, false, 'exemple'),
-    E('ASNE0500-12', 'ASNE0500', 'jonction', 12, 26, 20, 7.5, false, 'exemple'),
-    E('ASNE0500-20', 'ASNE0500', 'jonction', 20, 26, 20, 7.5, false, 'exemple'),
-    E('ASNE0501-04', 'ASNE0501', 'jonction', 4,  22, 16, 23,  false, 'exemple · grosses sections'),
-    E('ASNE0501-08', 'ASNE0501', 'jonction', 8,  22, 16, 23,  false, 'exemple · grosses sections'),
-    E('ASNE0502-04', 'ASNE0502', 'blindage', 4,  26, 20, 7.5, true,  'exemple · reprise de blindage'),
-    E('ASNE0502-08', 'ASNE0502', 'blindage', 8,  26, 20, 7.5, true,  'exemple · reprise de blindage'),
-    E('EN3646A6083AAN', 'EN3646', 'coupure', 3, 26, 20, 7.5, false, 'exemple · prise de coupure 3 contacts'),
-    E('EN3646A6088AAN', 'EN3646', 'coupure', 8, 26, 20, 7.5, false, 'exemple · prise de coupure 8 contacts'),
-    E('EN2997Y1A08P', 'EN2997', 'connecteur', 8, 26, 20, 7.5, false, 'exemple · embase 8 contacts', 'EN2997Y2A08S'),
-    E('ABS0864-12', 'ABS0864', 'connecteur', 12, 26, 20, 7.5, false, 'exemple · embase 12 contacts', 'ABS0865-12')
-  ].map(entreeBible);
-}
-/* Lire une bible : un tableau dont la première ligne reconnue nomme les
-   colonnes (au moins « référence » et « bornes »). Rend { entrees, entete }. */
-function lireBible(texte) {
-  const lignes = String(texte || '').split(/\r?\n/);
-  let entete = null;
-  for (let r = 0; r < Math.min(lignes.length, 30) && !entete; r++) {
-    const row = cellules(lignes[r] || ''); const col = {}; let n = 0;
-    row.forEach((cell, c) => { const k = NORMA(cell); if (!k) return;
-      for (const [nom, alias] of COLONNES_BIBLE) if (col[nom] == null && alias.includes(k)) { col[nom] = c; n++; break; } });
-    if (col.reference != null && col.bornes != null) entete = { ligne: r, col, trouvees: n };
-  }
-  if (!entete) return { entrees: [], entete: null };
-  const entrees = [];
-  for (let r = entete.ligne + 1; r < lignes.length; r++) { if (!lignes[r].trim()) continue;
-    const row = cellules(lignes[r]); const o = {};
-    Object.entries(entete.col).forEach(([nom, c]) => { o[nom] = row[c] == null ? '' : row[c]; });
-    const e = entreeBible(o); if (e) entrees.push(e); }
-  return { entrees, entete: entete.ligne + 1 };
-}
-async function lireBibleFichier(fichier) { return lireBible(await texteDuFichier(fichier)); }
+const RELIEF = { nom: null, az: 0.42, el: 0.6, P: null, S: null, prise: false, glisse: null };
+// un fil de la vue (celui de la carte : `filsDuModule`) : sa ligne du contrat, la couleur de sa route
+const ligneRelief = e => (e && e.i != null ? verite()[e.i] : null);
+const couleurRelief = (e, routes) => { const l = ligneRelief(e); return (l && routes.get(l.route || '')) || '#26323f'; };
+const VUES_RELIEF = { '3/4': [0.42, 0.6], face: [0, 0.14], dessus: [0, 1.32] };
 
-/* ---- ce que porte une barrette du contrat -------------------------------- */
-/* Le type de câble du retest dit la jauge en queue : DR24, MLB22, BN20 → 24,
-   22, 20. Le blindage se devine au code : ML… (multiconducteur blindé). C'est
-   une première lecture, à corriger avec la table de l'atelier. */
-function jaugeDuType(type) { const m = /(\d{1,2})\s*$/.exec(String(type || '').trim()); return m ? parseInt(m[1], 10) : null; }
-function blindeDuType(type) { return /^(ML|BL|SH|SC)/i.test(String(type || '').trim()); }
-function besoinsDeBarrette(repere, liaisons) {
-  const bornes = new Set(), jauges = [], pns = new Map(), ponts = [], parBorne = new Map(); let blindes = 0, shunts = 0, fils = 0;
-  // AMONT : le fil arrive sur la barrette (elle est son « vers ») ; AVAL : il en repart. `l` : la liaison elle-même, pour la retrouver.
-  const arrivee = (b, l, autre, borneAutre) => { if (!b) return; (parBorne.get(b) || parBorne.set(b, []).get(b)).push({ cable: l.cable, type: l.type, route: l.route, plan: l.plan, vers: autre, borne: borneAutre, amont: l.vers === repere, l }); };
-  liaisons.forEach(l => { const ici = [];
-    if (l.de === repere) ici.push([l.borneDe, l.pnDe]);
-    if (l.vers === repere) ici.push([l.borneVers, l.pnVers]);
-    if (!ici.length) return;
-    if (l.de === repere && l.vers === repere) { shunts++; ponts.push([l.borneDe, l.borneVers]); }
-    else { fils++; const g = jaugeDuType(l.type); if (g != null) jauges.push(g); if (blindeDuType(l.type)) blindes++;
-      if (l.de === repere) arrivee(l.borneDe, l, l.vers, l.borneVers); else arrivee(l.borneVers, l, l.de, l.borneDe); }
-    ici.forEach(([b, pn]) => { if (b) bornes.add(b); if (pn) pns.set(pn, (pns.get(pn) || 0) + 1); }); });
-  const numeros = [...bornes].map(b => parseInt(b, 10)).filter(x => !isNaN(x));
-  const pn = [...pns.entries()].sort((a, b) => b[1] - a[1]).map(e => e[0])[0] || '';
-  return { repere, bornes: [...bornes], nBornes: bornes.size, borneMax: numeros.length ? Math.max(...numeros) : bornes.size,
-           fils, shunts, ponts, parBorne, jaugeFine: jauges.length ? Math.max(...jauges) : null, jaugeGrosse: jauges.length ? Math.min(...jauges) : null,
-           blindes, pn };
-}
-/* Les PAQUETS d'une barrette : les bornes réunies par des shunts forment un
-   paquet ; une borne seule est un paquet à elle seule. Rend, dans l'ordre
-   des bornes, [{ bornes:[…], ponte:bool }]. */
-function paquetsDeBarrette(bornes, ponts) {
-  const chef = new Map(); const trouver = b => { while (chef.has(b) && chef.get(b) !== b) b = chef.get(b); return b; };
-  bornes.forEach(b => chef.set(b, b));
-  ponts.forEach(([a, b]) => { if (!chef.has(a)) chef.set(a, a); if (!chef.has(b)) chef.set(b, b); const ra = trouver(a), rb = trouver(b); if (ra !== rb) chef.set(rb, ra); });
-  const groupes = new Map();
-  [...chef.keys()].sort(triBornes).forEach(b => { const r = trouver(b); (groupes.get(r) || groupes.set(r, []).get(r)).push(b); });
-  return [...groupes.values()].map(g => ({ bornes: g, ponte: g.length > 1 })).sort((u, v) => triBornes(u.bornes[0], v.bornes[0]));
-}
-/* La barrette telle qu'elle est physiquement : tous les modules de la
-   référence retenue (ou au moins ceux qu'on utilise), chacun avec ses fils
-   de tous les folios, son paquet, et s'il est libre. Ce que la fiche
-   visuelle dessine. */
-function physiqueDeBarrette(repere, liaisons, bible, retenue) {
-  const I = (estCoupure(repere) ? coupureInfos : barretteInfos)(repere, liaisons, bible);
-  const ref = retenue || I.reference, entree = (bible || []).find(e => e.reference === ref) || I.choix || null;
-  const n = Math.max(entree && entree.bornes || 0, I.borneMax || 0, I.nBornes);
-  const paquets = paquetsDeBarrette(I.bornes, I.ponts);
-  const paquetDe = new Map(); paquets.forEach((p, k) => p.bornes.forEach(b => paquetDe.set(b, k)));
-  const utilisees = new Set(I.bornes.map(String));
-  const modules = [];
-  for (let k = 1; k <= n; k++) { const b = String(k);
-    modules.push({ borne: b, utilisee: utilisees.has(b), paquet: paquetDe.has(b) ? paquetDe.get(b) : null, fils: I.parBorne.get(b) || [] }); }
-  I.bornes.filter(b => !/^\d+$/.test(String(b))).sort(triBornes).forEach(b => modules.push({ borne: b, utilisee: true, paquet: paquetDe.get(b) ?? null, fils: I.parBorne.get(b) || [] }));
-  return { repere, reference: ref, entree, modules, paquets, libres: modules.filter(m => !m.utilisee).length, nature: estCoupure(repere) ? 'prise de coupure' : (I.blindes ? 'barrette de blindage' : 'barrette') };
-}
-/* La même physique pour une référence de la bible, sans contrat : tous ses
-   modules, aucun fil, aucun paquet. Ce que la fiche de la bible dessine. */
-function physiqueDeReference(entree) {
-  const n = entree && entree.bornes != null ? Math.max(0, Math.round(entree.bornes)) : 0, modules = [];
-  for (let k = 1; k <= n; k++) modules.push({ borne: String(k), utilisee: false, paquet: null, fils: [] });
-  const nature = !entree ? 'barrette' : entree.nature === 'coupure' ? 'prise de coupure' : entree.nature === 'connecteur' ? 'connecteur' : entree.nature === 'blindage' ? 'barrette de blindage' : 'barrette';
-  return { repere: '', reference: entree ? entree.reference : '', entree: entree || null, modules, paquets: [], libres: n, nature };
-}
-/* Le choix : parmi les entrées de la bonne nature qui conviennent, la
-   famille déjà employée d'abord, puis la plus petite qui a assez de bornes,
-   puis la plus courante en intensité. Chaque raison est dite pour qu'on
-   puisse la contester. */
-function choisirReference(besoins, bible, natures) {
-  const raisons = [];
-  const nBornes = Math.max(besoins.nBornes, besoins.borneMax || 0);
-  let cands = bible.filter(e => natures.includes(e.nature) && e.bornes != null && e.bornes >= nBornes);
-  raisons.push(`${nBornes} borne${nBornes > 1 ? 's' : ''} à loger`);
-  if (besoins.jaugeFine != null) {
-    const ok = cands.filter(e => (e.jaugeMin == null || e.jaugeMin >= besoins.jaugeFine) && (e.jaugeMax == null || e.jaugeMax <= besoins.jaugeGrosse));
-    if (ok.length) cands = ok;
-    raisons.push(besoins.jaugeFine === besoins.jaugeGrosse ? `fils de jauge ${besoins.jaugeFine}` : `fils de jauge ${besoins.jaugeFine} à ${besoins.jaugeGrosse}`);
-  }
-  if (besoins.blindes && natures.includes('blindage')) { const ok = cands.filter(e => e.blindage || e.nature === 'blindage'); if (ok.length) cands = ok;
-    raisons.push(`${besoins.blindes} fil${besoins.blindes > 1 ? 's' : ''} blindé${besoins.blindes > 1 ? 's' : ''}`); }
-  else if (natures.includes('blindage')) { const ok = cands.filter(e => e.nature !== 'blindage'); if (ok.length) cands = ok; }
-  const famille = besoins.pn ? (bible.find(e => e.reference === besoins.pn) || {}).famille || besoins.pn.replace(/[-\s].*$/, '') : '';
-  if (famille) { const ok = cands.filter(e => e.famille === famille); if (ok.length) { cands = ok; raisons.push(`famille ${famille} déjà employée`); } }
-  cands = cands.slice().sort((a, b) => (a.bornes - b.bornes) || ((a.intensite || 0) - (b.intensite || 0)) || a.reference.localeCompare(b.reference));
-  const choix = cands[0] || null;
-  if (choix && choix.bornes > nBornes) raisons.push(`${choix.bornes - nBornes} borne${choix.bornes - nBornes > 1 ? 's' : ''} libre${choix.bornes - nBornes > 1 ? 's' : ''}`);
-  if (!choix) raisons.push('aucune référence de la bible ne convient');
-  return { choix, nature: natures[0], raisons, candidats: cands.slice(0, 6), enPlus: Math.max(0, cands.length - 6) };
-}
-const choisirBarrette = (besoins, bible) => ({ ...choisirReference(besoins, bible, ['jonction', 'blindage']), nature: besoins.blindes ? 'blindage' : 'jonction' });
-const choisirCoupure  = (besoins, bible) => choisirReference(besoins, bible, ['coupure']);
-/* Tout ce qu'on sait d'une barrette (ou d'une prise) du contrat : ses
-   besoins, la référence choisie, le pourquoi, et celle que le fichier
-   portait déjà. */
-function infosDe(repere, liaisons, bible, choisir) {
-  const besoins = besoinsDeBarrette(repere, liaisons);
-  const choix = choisir(besoins, bible || []);
-  const deja = (bible || []).find(e => e.reference === besoins.pn) || null;
-  return { ...besoins, ...choix, deja, reference: choix.choix ? choix.choix.reference : (besoins.pn || ''),
-           changee: !!(besoins.pn && choix.choix && choix.choix.reference !== besoins.pn) };
-}
-const barretteInfos = (repere, liaisons, bible) => infosDe(repere, liaisons, bible, choisirBarrette);
-const coupureInfos  = (repere, liaisons, bible) => infosDe(repere, liaisons, bible, choisirCoupure);
+/* ---- le moteur : rotation, projection, faces, ombre -------------------- */
+function tourner(v, az, el) { const ca = Math.cos(az), sa = Math.sin(az), ce = Math.cos(el), se = Math.sin(el);
+  const x1 = v.x * ca - v.z * sa, z1 = v.x * sa + v.z * ca;
+  return { x: x1, y: v.y * ce - z1 * se, d: v.y * se + z1 * ce }; }
+const projeter = (p, az, el) => { const t = tourner(p, az, el); return { x: t.x, y: -t.y, d: t.d }; };
+const LUMIERE = (() => { const l = { x: -0.35, y: 0.8, d: 0.5 }, n = Math.hypot(l.x, l.y, l.d); return { x: l.x / n, y: l.y / n, d: l.d / n }; })();
+const rvb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const ombrer = (h, k) => '#' + rvb(h).map(c => Math.max(0, Math.min(255, Math.round(c * k)))).map(c => c.toString(16).padStart(2, '0')).join('');
+// une face : ses sommets (dans l'ordre), sa normale, sa couleur ; écartée si elle tourne le dos, ombrée sinon
+function face(pts, n, coul, extra) { return { pts, n, coul, extra: extra || '' }; }
+function boite(x0, y0, z0, x1, y1, z1, coul, extra) { const P = (x, y, z) => ({ x, y, z });
+  return [face([P(x0, y1, z0), P(x1, y1, z0), P(x1, y1, z1), P(x0, y1, z1)], { x: 0, y: 1, z: 0 }, coul, extra),
+    face([P(x0, y0, z1), P(x1, y0, z1), P(x1, y0, z0), P(x0, y0, z0)], { x: 0, y: -1, z: 0 }, coul, extra),
+    face([P(x0, y0, z1), P(x0, y1, z1), P(x1, y1, z1), P(x1, y0, z1)], { x: 0, y: 0, z: 1 }, coul, extra),
+    face([P(x1, y0, z0), P(x1, y1, z0), P(x0, y1, z0), P(x0, y0, z0)], { x: 0, y: 0, z: -1 }, coul, extra),
+    face([P(x0, y0, z0), P(x0, y1, z0), P(x0, y1, z1), P(x0, y0, z1)], { x: -1, y: 0, z: 0 }, coul, extra),
+    face([P(x1, y0, z1), P(x1, y1, z1), P(x1, y1, z0), P(x1, y0, z0)], { x: 1, y: 0, z: 0 }, coul, extra)]; }
+// un cylindre d'axe Z (de z0 à z1), centré en (cx, cy), de rayon r : ses côtés et ses deux fonds
+function cylindre(cx, cy, z0, z1, r, coul, extra, n) { n = n || 32; const fs = [], pt = (k, z) => ({ x: cx + r * Math.cos(2 * Math.PI * k / n), y: cy + r * Math.sin(2 * Math.PI * k / n), z });
+  for (let k = 0; k < n; k++) { const a = 2 * Math.PI * (k + 0.5) / n; fs.push(face([pt(k, z0), pt(k + 1, z0), pt(k + 1, z1), pt(k, z1)], { x: Math.cos(a), y: Math.sin(a), z: 0 }, coul, extra)); }
+  fs.push(face(Array.from({ length: n }, (_, k) => pt(n - k, z1)), { x: 0, y: 0, z: 1 }, coul, extra));
+  fs.push(face(Array.from({ length: n }, (_, k) => pt(k, z0)), { x: 0, y: 0, z: -1 }, coul, extra));
+  return fs; }
+// les faces visibles, du fond vers l'avant, ombrées
+function peindreFaces(faces, az, el) { const vues = [];
+  faces.forEach(f => { const n = tourner(f.n, az, el); if (n.d <= 1e-6) return;
+    const q = f.pts.map(p => projeter(p, az, el)), d = q.reduce((s, p) => s + p.d, 0) / q.length, k = 0.62 + 0.42 * Math.max(0, n.x * LUMIERE.x + n.y * LUMIERE.y + n.d * LUMIERE.d);
+    vues.push({ q, d, fill: ombrer(f.coul, k), extra: f.extra }); });
+  vues.sort((a, b) => a.d - b.d);
+  return vues.map(v => `<polygon points="${v.q.map(p => p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' ')}" fill="${v.fill}" stroke="${ombrer(v.fill, 0.72)}" stroke-width=".6" stroke-linejoin="round"${v.extra}/>`).join(''); }
 
-/* ---- les connecteurs d'un équipement ------------------------------------- */
-/* Une borne « A12 » est la borne 12 du connecteur A ; sinon le connecteur
-   est le part number (PN) porté par la liaison, et il reçoit une lettre —
-   la première libre, dans l'ordre d'apparition — parce qu'un connecteur se
-   nomme d'une lettre sur le plan ; son part number se lit dans sa carte.
-   Rend, pour un repère, [{ nom, pn, deduite, bornes:[…] }] dans l'ordre
-   des lettres. */
-const LETTRE_CONNECTEUR = /^([A-Z]{1,2})[-./ ]?(\d{1,3}[A-Z]?)$/i;
-/* Une borne sans chiffre (CNT, GND…) n'est pas un contact de connecteur :
-   elle se raccorde au corps. */
-function connecteurDeBorne(borne, pn) {
-  const b = String(borne || '').trim(); if (!/\d/.test(b)) return null;
-  const m = LETTRE_CONNECTEUR.exec(b);
-  if (m) return { nom: m[1].toUpperCase(), pn: pn || '', lettre: true };
-  return pn ? { nom: pn, pn, lettre: false } : null;
-}
-function connecteursDe(repere, liaisons) {
-  const groupes = new Map();
-  liaisons.forEach(l => { [[l.de, l.borneDe, l.pnDe], [l.vers, l.borneVers, l.pnVers]].forEach(([r, b, pn]) => {
-    if (r !== repere || !b) return; const c = connecteurDeBorne(b, pn); if (!c) return;
-    const cle = (c.lettre ? 'L:' : 'P:') + c.nom;
-    const g = groupes.get(cle) || groupes.set(cle, { nom: c.lettre ? c.nom : '', pn: c.pn, lettre: c.lettre, deduite: !c.lettre, bornes: new Set() }).get(cle);
-    g.bornes.add(b); if (!g.pn && c.pn) g.pn = c.pn; }); });
-  const prises = new Set([...groupes.values()].filter(g => g.lettre).map(g => g.nom));
-  let k = 0; const libre = () => { let n; do { n = String.fromCharCode(65 + (k % 26)) + (k >= 26 ? String(Math.floor(k / 26)) : ''); k++; } while (prises.has(n)); return n; };
-  groupes.forEach(g => { if (!g.lettre) g.nom = libre(); });
-  return [...groupes.values()].sort((a, b) => a.nom.localeCompare(b.nom)).map(g => ({ nom: g.nom, pn: g.pn, deduite: g.deduite, bornes: [...g.bornes] }));
-}
-/* La même chose, borne par borne : ce que le dessin lit. */
-function connecteurParBorne(repere, liaisons) {
-  const m = new Map(); connecteursDe(repere, liaisons).forEach(g => g.bornes.forEach(b => m.set(String(b), g))); return m;
-}
-/* Ce qu'on pose sur chaque connecteur d'un équipement : l'embase est celle
-   de l'équipement (le part number du fichier) ; la bible dit sa partie
-   mobile — la fiche qu'on câble — et son nombre de contacts. */
-function connecteursInfos(repere, liaisons, bible) {
-  return connecteursDe(repere, liaisons).map(c => { const e = (bible || []).find(x => x.reference === c.pn && x.nature === 'connecteur') || null;
-    return { ...c, embase: e, mobile: e ? e.mobile : '', contacts: e ? e.bornes : null, libres: e && e.bornes != null ? Math.max(0, e.bornes - c.bornes.length) : null }; });
-}
+/* ---- la scène d'une barrette ------------------------------------------- */
+const RB = { pas: 46, l: 38, h: 34, p: 74, rail: 9 };
+function sceneBarrette(P, S, az, el) {
+  const n = P.modules.length, faces = [], fils = [], textes = [], trous = [];
+  const ko = new Set((S ? S.lignes : []).filter(x => x.verdict !== 'ok').map(x => x.borne + '|' + x.sens + '|' + x.trou));
+  const cx = k => k * RB.pas;
+  // le rail sous les modules, un peu plus long qu'eux
+  faces.push(...boite(-RB.pas * 0.6, -RB.rail, RB.p * 0.18, cx(n - 1) + RB.pas * 0.6, 0, RB.p * 0.82, '#9aa4ae'));
+  P.modules.forEach((m, k) => { const x0 = cx(k) - RB.l / 2, x1 = cx(k) + RB.l / 2;
+    faces.push(...boite(x0, 0, 0, x1, RB.h, RB.p, m.utilisee ? '#465568' : '#d9dee4', ` data-mod="${escA(m.borne)}"`)); });
+  // le pont de métal sur les modules d'un même paquet
+  P.paquets.forEach(pq => { if (!pq.ponte) return; const ks = pq.bornes.map(b => P.modules.findIndex(m => m.borne === String(b))).filter(k => k >= 0); if (ks.length < 2) return;
+    faces.push(...boite(cx(Math.min(...ks)) - RB.l * 0.32, RB.h, RB.p * 0.45, cx(Math.max(...ks)) + RB.l * 0.32, RB.h + 4, RB.p * 0.55, '#c0692b')); });
+  // les trous du dessus — l'amont en arrière, l'aval en avant — et le fil qui monte de chaque trou occupé
+  P.modules.forEach((m, k) => ['amont', 'aval'].forEach(sens => { const ts = trousDe(m, filsDuModule(RELIEF.nom, m), sens), z = sens === 'amont' ? RB.p * 0.22 : RB.p * 0.78;
+    ts.forEach((f, t) => { const x = cx(k) + (t - (ts.length - 1) / 2) * 11, trou = { x, y: RB.h + 0.5, z }, mauvais = ko.has(m.borne + '|' + sens + '|' + (t + 1));
+      trous.push({ p: trou, f, mauvais });
+      if (!f) return;
+      // le fil monte du trou, puis part vers l'arrière (amont) ou vers l'avant (aval) ; son étiquette se range plus loin
+      const monte = 14 + 7 * t, loin = sens === 'amont' ? -22 : RB.p + 22;
+      fils.push({ pts: [trou, { x, y: RB.h + monte, z }, { x, y: RB.h + monte, z: loin }], f, sens }); }); }));
+  // les numéros des modules, sur leur face avant (un module libre est clair)
+  P.modules.forEach((m, k) => textes.push({ p: { x: cx(k), y: RB.h * 0.42, z: RB.p }, t: m.borne, cls: m.utilisee ? 're-num' : 're-num libre', face: { x: 0, y: 0, z: 1 } }));
+  return { faces, fils, textes, trous }; }
 
-/* ---- le suivi ------------------------------------------------------------ */
-/* Une ligne par chose posée : barrette, prise de coupure, connecteur — avec
-   la référence retenue (celle de la bible, ou celle qu'on a choisie à la
-   main, sinon celle du fichier), ses bornes, ses fils, ses routes, ses
-   folios. `retenue(repere)` rend la référence choisie à la main, s'il y en
-   a une. */
-function suiviDuContrat(liaisons, bible, contrat, retenue) {
-  const lignes = [], main = retenue || (() => '');
-  const filsDe = (r, borne) => liaisons.filter(l => (l.de === r && (!borne || l.borneDe === borne)) || (l.vers === r && (!borne || l.borneVers === borne)));
-  const champs = (fils) => ({ fils: [...new Set(fils.map(l => l.cable).filter(Boolean))], routes: [...new Set(fils.map(l => l.route).filter(Boolean))], plans: [...new Set(fils.map(l => l.plan).filter(Boolean))] });
-  reperesDe(liaisons).forEach(r => {
-    if (estBarrette(r) || estCoupure(r)) {
-      const I = (estBarrette(r) ? barretteInfos : coupureInfos)(r, liaisons, bible);
-      lignes.push({ contrat, repere: r, nature: estBarrette(r) ? (I.blindes ? 'barrette de blindage' : 'barrette') : 'prise de coupure',
-                    reference: main(r) || I.reference, fichier: I.pn, bornes: I.bornes.slice().sort(triBornes), nBornes: I.nBornes, shunts: I.shunts,
-                    jauge: I.jaugeFine == null ? '' : (I.jaugeFine === I.jaugeGrosse ? String(I.jaugeFine) : I.jaugeFine + '-' + I.jaugeGrosse), ...champs(filsDe(r)) });
-    } else if (!estMasse(r)) {
-      connecteursInfos(r, liaisons, bible).forEach(c => { const fils = liaisons.filter(l => (l.de === r && c.bornes.includes(l.borneDe)) || (l.vers === r && c.bornes.includes(l.borneVers)));
-        lignes.push({ contrat, repere: r + ' ' + c.nom, nature: 'connecteur', reference: c.mobile || '', fichier: c.pn, bornes: c.bornes.slice().sort(triBornes), nBornes: c.bornes.length, shunts: 0,
-                      jauge: '', ...champs(fils) }); }); } });
-  return lignes;
-}
-/* L'ordre naturel des bornes : 1, 2, 10 ; A1, A2, B1. */
-function triBornes(a, b) { const na = parseFloat(a), nb = parseFloat(b);
-  if (!isNaN(na) && !isNaN(nb) && String(na) === String(a) && String(nb) === String(b)) return na - nb;
-  return String(a).localeCompare(String(b), 'fr', { numeric: true }); }
+/* ---- la scène d'une prise de coupure ------------------------------------ */
+// la disposition des contacts sur la face : indicative (un, un anneau, ou un anneau intérieur et un extérieur)
+function dispositionContacts(n, R) { if (n <= 1) return [{ x: 0, y: 0 }];
+  const anneau = (k, r, a0) => Array.from({ length: k }, (_, i) => { const a = a0 + 2 * Math.PI * i / k; return { x: r * Math.sin(a), y: r * Math.cos(a) }; });
+  if (n <= 7) return anneau(n, R * 0.56, 0);
+  const k1 = Math.max(3, Math.round(n * 0.34)); return [...anneau(k1, R * 0.32, 0), ...anneau(n - k1, R * 0.7, Math.PI / (n - k1))]; }
+function scenePrise(P, S, az, el) {
+  const n = P.modules.length, R = 30 + 7 * Math.sqrt(n), L = 70, ecart = R + 42, faces = [], fils = [], textes = [], trous = [];
+  const ko = new Set((S ? S.lignes : []).filter(x => x.verdict !== 'ok').map(x => x.borne + '|' + x.sens));
+  const pos = dispositionContacts(n, R);
+  // la fiche (à gauche) et l'embase (à droite), faces de contact vers nous (z = 0), corps vers l'arrière
+  faces.push(...cylindre(-ecart, 0, -L, 0, R, '#5d6b7c'));
+  faces.push(...cylindre(-ecart, 0, -L * 0.62, -L * 0.3, R + 5, '#4a5767'));          // la bague d'accouplement
+  faces.push(...cylindre(ecart, 0, -L, 0, R * 0.94, '#7a8796'));
+  faces.push(...boite(ecart - R - 14, -R - 14, -L * 0.42, ecart + R + 14, R + 14, -L * 0.34, '#6c7887'));   // la collerette de l'embase
+  P.modules.forEach((m, k) => { const c = pos[k] || { x: 0, y: 0 };
+    ['amont', 'aval'].forEach(sens => { const ox = sens === 'amont' ? -ecart : ecart, f = (trousDe(m, filsDuModule(RELIEF.nom, m), sens) || []).find(Boolean) || null;
+      trous.push({ p: { x: ox + c.x, y: c.y, z: 0.5 }, f, mauvais: ko.has(m.borne + '|' + sens), num: m.borne, prise: true });
+      textes.push({ p: { x: ox + c.x + 8, y: c.y + 8, z: 0.5 }, t: m.borne, cls: 're-num petit', face: { x: 0, y: 0, z: 1 } });
+      if (!f) return;
+      // le fil entre (ou sort) par l'arrière, puis s'écarte sur le côté, jusqu'à son étiquette
+      const cote = sens === 'amont' ? -1 : 1;
+      fils.push({ pts: [{ x: ox + c.x, y: c.y, z: -L }, { x: ox + c.x, y: c.y, z: -L - 26 }, { x: ox + cote * (R + 34), y: c.y, z: -L - 26 }], f, sens }); }); });
+  textes.push({ p: { x: -ecart, y: -R - 34, z: 0 }, t: 'FICHE · partie mobile', cls: 're-titre-piece', sous: true });
+  textes.push({ p: { x: ecart, y: -R - 34, z: 0 }, t: 'EMBASE · partie fixe', cls: 're-titre-piece', sous: true });
+  return { faces, fils, textes, trous, emboite: { a: { x: -ecart + R + 8, y: 0, z: 0 }, b: { x: ecart - R - 8, y: 0, z: 0 } } }; }
 
-/* ---- la norme : quatre tables, lues par le nom des colonnes -------------- */
-/* Chaque table se reconnaît à ses colonnes ; une bible (Référence + Bornes)
-   n'est pas une table de familles. Les titres entre les tables sont ignorés. */
-const COLONNES_NORME = {
-  familles: [
-    ['norme',       ['norme', 'document', 'standard', 'spec', 'specification']],
-    ['famille',     ['famille', 'family', 'serie', 'series']],
-    ['reference',   ['reference', 'ref', 'partnumber', 'pn']],
-    ['nature',      ['nature', 'fonction', 'usage', 'kind']],
-    ['variantes',   ['variantes', 'contacts', 'modules', 'bornes', 'voies', 'tailles']],
-    ['pas',         ['pas', 'pasmm', 'pitch', 'entraxe']],
-    ['jaugeMin',    ['jaugemin', 'awgmin', 'jaugefine', 'gaugemin', 'minawg']],
-    ['jaugeMax',    ['jaugemax', 'awgmax', 'jaugegrosse', 'gaugemax', 'maxawg']],
-    ['intensite',   ['intensite', 'intensitecontact', 'intensiteparcontact', 'courant', 'current', 'a']],
-    ['resistance',  ['resistance', 'resistancecontact', 'resistancedecontact', 'rcontact', 'mohm']],
-    ['filsParCote', ['filsparcote', 'filspartrou', 'filsparcontact', 'trousparcote', 'trous', 'filsparmodule']],
-    ['ordre',       ['ordre', 'remplissage', 'sens']],
-    ['paquets',     ['paquets', 'pontage', 'ponts', 'peigne']],
-    ['reserves',    ['reserves', 'modulesreserves', 'reserve', 'contactsreserves']],
-    ['masse',       ['masse', 'retourdemasse', 'misealamasse']],
-    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
-  fils: [
-    ['type',        ['type', 'typedefil', 'code', 'typedecable']],
-    ['jauge',       ['jauge', 'awg', 'gauge', 'jaugeawg']],
-    ['section',     ['section', 'sectionmm2', 'mm2', 'sectionmm']],
-    ['resistance',  ['resistance', 'resistanceohmkm', 'ohmkm', 'rlineique', 'resistancelineique']],
-    ['intensite',   ['intensite', 'courant', 'intensiteadmissible', 'current', 'a']],
-    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
-  declassements: [
-    ['condition',   ['condition', 'cause', 'cas', 'situation']],
-    ['facteur',     ['facteur', 'coefficient', 'coef', 'k']],
-    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
-  reseau: [
-    ['tension',     ['tension', 'reseau', 'u', 'volts', 'v']],
-    ['chuteMax',    ['chutemax', 'chute', 'chuteadmise', 'chutemaxv', 'deltau', 'chuteenv']],
-    ['chutePct',    ['chutemaxpct', 'chutepct', 'pourcent', 'chuteen']],
-    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]]
-};
-const TABLE_NORME = {
-  familles: c => c.famille != null && c.reference == null && (c.pas != null || c.intensite != null || c.filsParCote != null || c.ordre != null || c.jaugeMin != null),
-  fils: c => c.jauge != null && (c.section != null || c.resistance != null || c.intensite != null),
-  declassements: c => c.condition != null && c.facteur != null,
-  reseau: c => c.tension != null && c.chuteMax != null
-};
-/* Un nombre d'atelier : virgule ou point, une unité derrière (« 5 mm », « 0,8 »). */
-const NUMERO = v => { const t = String(v == null ? '' : v).trim().replace(',', '.'); if (!t) return null; const m = /-?\d+(\.\d+)?/.exec(t); return m ? parseFloat(m[0]) : null; };
-const LISTE_NUM = v => String(v == null ? '' : v).split(/[\s,;/|]+/).map(NUMERO).filter(x => x != null);
-const MOT = v => String(v == null ? '' : v).trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-/* Les jauges AWG comptent à l'envers : « min » est la plus fine acceptée. */
-function familleNorme(o) { const famille = String(o.famille || '').trim(); if (!famille) return null;
-  const jauges = [NUMERO(o.jaugeMin), NUMERO(o.jaugeMax)].filter(x => x != null), norme = String(o.norme || '').trim() || famille;
-  return { norme, famille, exemple: /exemple|example|fictif|fausse/.test(MOT(norme) + ' ' + MOT(o.note)), nature: MOT(o.nature) || 'jonction', variantes: LISTE_NUM(o.variantes), pas: NUMERO(o.pas),
-           jaugeMin: jauges.length ? Math.max(...jauges) : null, jaugeMax: jauges.length ? Math.min(...jauges) : null, intensite: NUMERO(o.intensite), resistance: NUMERO(o.resistance),
-           filsParCote: Math.max(1, Math.round(NUMERO(o.filsParCote) || 1)), ordre: /crois|ordre|suite/.test(MOT(o.ordre)) ? 'croissant' : 'libre',
-           paquets: /contig|voisin|adjac/.test(MOT(o.paquets)) ? 'contigus' : 'libres', reserves: LISTE_NUM(o.reserves), masse: /paquet|oui|^x$|^1$|vrai/.test(MOT(o.masse)) ? 'par paquet' : '',
-           note: String(o.note || '').trim() }; }
-function filNorme(o) { const jauge = NUMERO(o.jauge); if (jauge == null) return null;
-  return { type: String(o.type || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '') || '*', jauge, section: NUMERO(o.section), resistance: NUMERO(o.resistance), intensite: NUMERO(o.intensite), note: String(o.note || '').trim() }; }
-function declassementNorme(o) { const condition = MOT(o.condition), facteur = NUMERO(o.facteur); return condition && facteur != null ? { condition, facteur, note: String(o.note || '').trim() } : null; }
-function reseauNorme(o) { const tension = NUMERO(o.tension); return tension == null ? null : { tension, chuteMax: NUMERO(o.chuteMax), chutePct: NUMERO(o.chutePct), note: String(o.note || '').trim() }; }
-const ENTREE_NORME = { familles: familleNorme, fils: filNorme, declassements: declassementNorme, reseau: reseauNorme };
-const normeVide = () => ({ familles: [], fils: [], declassements: [], reseau: [], tables: 0 });
-/* Lire une norme : les tables se suivent (un titre libre, la ligne d'en-tête,
-   les lignes, une ligne vide), dans un CSV ou une feuille Excel. */
-function lireNorme(texte) { const N = normeVide(); let table = null, col = null;
-  const entete = row => { for (const [nom, cles] of Object.entries(COLONNES_NORME)) { const c = {}; row.forEach((cell, i) => { const t = NORMA(cell); if (!t) return;
-      for (const [champ, alias] of cles) if (c[champ] == null && alias.includes(t)) { c[champ] = i; break; } });
-    if (TABLE_NORME[nom](c)) return { nom, col: c }; } return null; };
-  String(texte || '').split(/\r?\n/).forEach(ligne => { if (!ligne.trim()) { table = null; return; }
-    const row = cellules(ligne), e = entete(row); if (e) { table = e.nom; col = e.col; N.tables++; return; }
-    if (!table) return; const o = {}; Object.entries(col).forEach(([champ, i]) => { o[champ] = row[i] == null ? '' : row[i]; });
-    const x = ENTREE_NORME[table](o); if (x) N[table].push(x); });
-  return N; }
-const normeLue = N => !!(N && (N.familles.length || N.fils.length || N.declassements.length || N.reseau.length));
-/* Un fichier de normes : chaque feuille d'un Excel est lue (une table par
-   feuille, ou plusieurs à la suite) ; un CSV d'un bloc. */
-async function lireNormeFichier(fichier) { const nom = (fichier.name || '').toLowerCase();
-  if (!(/\.xls[xm]?$/.test(nom) || /sheet|excel/.test(fichier.type || ''))) return lireNorme(await fichier.text());
-  if (typeof XLSX === 'undefined') throw new Error('bibliothèque Excel absente');
-  const wb = XLSX.read(await fichier.arrayBuffer(), { type: 'array' });
-  const feuilles = wb.SheetNames.map(n => XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, blankrows: true, defval: '' }).map(r => (Array.isArray(r) ? r : [r]).map(c => c == null ? '' : String(c)).join('\t')).join('\n'));
-  return lireNorme(feuilles.join('\n\n')); }
-/* Deux normes en une : ce qui vient en second remplace ce qui porte la même
-   clé (famille, type+jauge, condition, tension). C'est ainsi qu'une norme de
-   barrettes et une norme de fils, importées l'une après l'autre, se complètent. */
-function fusionnerNormes(a, b) { const N = normeVide(); const cle = { familles: x => x.famille.toUpperCase(), fils: x => x.type + '/' + x.jauge, declassements: x => x.condition, reseau: x => String(x.tension) };
-  Object.keys(cle).forEach(t => { const m = new Map(); [...(a ? a[t] : []), ...(b ? b[t] : [])].forEach(x => m.set(cle[t](x), x)); N[t] = [...m.values()]; });
-  N.tables = (a ? a.tables : 0) + (b ? b.tables : 0); return N; }
-/* La norme embarquée : normes/*.csv, mis dans la page à la construction. */
-function normeEmbarquee() { return lireNorme(typeof NORME_EMBARQUEE === 'string' ? NORME_EMBARQUEE : ''); }
-const normeExemple = N => !!(N && N.familles.length && N.familles.every(f => f.exemple));
-/* La famille d'une référence : celle que la bible lui donne, sinon la plus
-   longue famille de la norme dont la référence commence par le nom. */
-function familleDeNorme(norme, famille, reference) { if (!norme) return null; const F = norme.familles;
-  if (famille) { const f = F.find(x => x.famille.toUpperCase() === String(famille).toUpperCase()); if (f) return f; }
-  const ref = String(reference || '').toUpperCase(); if (!ref) return null;
-  return F.filter(x => ref.startsWith(x.famille.toUpperCase())).sort((u, v) => v.famille.length - u.famille.length)[0] || null; }
-/* Le type d'un fil est en tête de son code : DR24 → DR, MLB22 → MLB. */
-const typeDuFil = type => { const m = /^([A-Za-z]+)/.exec(String(type || '').trim()); return m ? m[1].toUpperCase() : ''; };
-/* Le fil de la norme : le type et la jauge exacts ; sinon la jauge seule
-   (type « * », ou n'importe quel type — c'est dit : `approx`). */
-function filDeNorme(norme, type, jauge) { if (!norme || jauge == null) return null; const t = typeDuFil(type);
-  const exact = norme.fils.find(f => f.jauge === jauge && f.type === t); if (exact) return exact;
-  const joker = norme.fils.find(f => f.jauge === jauge && f.type === '*'); if (joker) return joker;
-  const autre = norme.fils.find(f => f.jauge === jauge); return autre ? { ...autre, approx: true } : null; }
-function facteurDeclassement(norme, conditions) { return (conditions || []).reduce((k, c) => { const d = norme && norme.declassements.find(x => x.condition === MOT(c)); return d ? k * d.facteur : k; }, 1); }
-/* La chute admise pour la tension du réseau : la ligne de cette tension,
-   sinon la plus proche. */
-function chuteAdmise(norme, tension) { if (!norme || !norme.reseau.length) return null;
-  return norme.reseau.slice().sort((a, b) => Math.abs(a.tension - tension) - Math.abs(b.tension - tension))[0]; }
+/* ---- le rendu : la scène, projetée, en SVG ------------------------------ */
+function reliefSvg() { const { P, S, az, el, prise } = RELIEF; if (!P) return '';
+  const sc = prise ? scenePrise(P, S, az, el) : sceneBarrette(P, S, az, el), routes = couleursDesRoutes();
+  const pj = p => projeter(p, az, el); let minx = Infinity, maxx = -Infinity, miny = Infinity, maxy = -Infinity;
+  const voir = p => { minx = Math.min(minx, p.x); maxx = Math.max(maxx, p.x); miny = Math.min(miny, p.y); maxy = Math.max(maxy, p.y); };
+  sc.faces.forEach(f => f.pts.forEach(p => voir(pj(p)))); sc.fils.forEach(w => w.pts.forEach(p => voir(pj(p))));
+  sc.textes.forEach(t => voir(pj(t.p)));
+  /* les ÉTIQUETTES se rangent hors de la pièce, sans se chevaucher : une barrette, en rangée au-dessus (amont) et en
+     dessous (aval), dans l'ordre de leurs fils ; une prise, en colonne à gauche (fiche) et à droite (embase). Un trait
+     fin, à la couleur de la route, va du bout du fil à son étiquette. */
+  const LARG = 150, HAUT = 32, etiquettes = sc.fils.map(w => ({ w, a: pj(w.pts[w.pts.length - 1]) }));
+  /* une rangée trop longue pour la pièce (une barrette de douze fils) se replie en deux ou trois rangées décalées, leurs
+     étiquettes en quinconce — sinon la pièce rapetissait jusqu'à ne plus se lire. `sens` : de quel côté de la pièce la
+     rangée s'éloigne (-1 au-dessus, +1 en dessous). */
+  const ranger = (gr, cle, pas, base, sens) => { gr.sort((u, v) => u.a[cle] - v.a[cle]);
+    const etendue = cle === 'x' ? maxx - minx : maxy - miny, k = cle === 'x' ? Math.max(1, Math.min(3, Math.ceil(gr.length * pas / Math.max(1, 1.25 * etendue)))) : 1;
+    let prec = -Infinity; gr.forEach(e => { e.v = Math.max(e.a[cle], prec + pas / k); prec = e.v; });
+    if (gr.length) { const deborde = gr[gr.length - 1].v - gr[gr.length - 1].a[cle]; gr.forEach(e => { e.v -= deborde / 2; }); }
+    gr.forEach((e, j) => { const rang = (j % k) * 34 * (sens || 1); e.pos = cle === 'x' ? { x: e.v, y: base + rang } : { x: base, y: e.v }; }); };
+  const [x0s, x1s, y0s, y1s] = [minx, maxx, miny, maxy];
+  if (prise) { ranger(etiquettes.filter(e => e.w.sens === 'amont'), 'y', HAUT, x0s - 18); ranger(etiquettes.filter(e => e.w.sens === 'aval'), 'y', HAUT, x1s + 18); }
+  else { ranger(etiquettes.filter(e => e.w.sens === 'amont'), 'x', LARG, y0s - 30, -1); ranger(etiquettes.filter(e => e.w.sens === 'aval'), 'x', LARG, y1s + 30, 1); }
+  etiquettes.forEach(e => { const g = prise ? (e.w.sens === 'amont' ? -1 : 1) : 0; voir({ x: e.pos.x + (g ? g * LARG : -LARG / 2), y: e.pos.y - 14 }); voir({ x: e.pos.x + (g ? 0 : LARG / 2), y: e.pos.y + 16 }); });
+  const m = 22, vb = [minx - m, miny - m, maxx - minx + 2 * m, maxy - miny + 2 * m];
+  let s = `<svg id="re-svg" viewBox="${vb.map(v => v.toFixed(1)).join(' ')}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${escA((prise ? 'Prise de coupure ' : 'Barrette ') + RELIEF.nom + ' en relief')}">`;
+  // une prise : les fils d'abord (la pièce les cache derrière elle) ; une barrette : la pièce d'abord (les fils montent au-dessus)
+  const filsSvg = () => sc.fils.map(w => { const i = w.f.i, coul = couleurRelief(w.f, routes), d = 'M' + w.pts.map(p => { const q = pj(p); return q.x.toFixed(1) + ' ' + q.y.toFixed(1); }).join(' L');
+    return `<g class="re-fil" data-i="${i}"><path d="${d}" class="re-gaine"/><path d="${d}" class="re-ame" style="stroke:${coul}"/></g>`; }).join('');
+  if (prise) s += filsSvg();
+  s += peindreFaces(sc.faces, az, el);
+  if (!prise) s += filsSvg();
+  // les trous : occupés, libres, et cerclés de rouge quand la norme les refuse
+  sc.trous.forEach(t => { const q = pj(t.p), i = t.f ? t.f.i : -1, coul = t.f ? couleurRelief(t.f, routes) : null;
+    s += `<circle class="re-trou${t.f ? ' plein' : ''}${t.mauvais ? ' ko' : ''}"${i >= 0 ? ` data-i="${i}"` : ''} cx="${q.x.toFixed(1)}" cy="${q.y.toFixed(1)}" r="${t.prise ? 5 : 4.2}"${coul ? ` style="stroke:${coul}"` : ''}/>`; });
+  sc.textes.forEach(t => { if (t.face && tourner(t.face, az, el).d <= 0.05) return; const q = pj(t.p); s += `<text class="${t.cls}" x="${q.x.toFixed(1)}" y="${q.y.toFixed(1)}" text-anchor="middle">${esc(t.t)}</text>`; });
+  if (sc.emboite) { const a = pj(sc.emboite.a), b = pj(sc.emboite.b);
+    s += `<path class="re-emboite" d="M${a.x.toFixed(1)} ${a.y.toFixed(1)} L${b.x.toFixed(1)} ${b.y.toFixed(1)}" marker-end="url(#re-fleche)" marker-start="url(#re-fleche)"/><text class="re-note" x="${((a.x + b.x) / 2).toFixed(1)}" y="${((a.y + b.y) / 2 + 16).toFixed(1)}" text-anchor="middle">s’emboîtent</text>`; }
+  // les étiquettes : numéro (à la couleur de la route), destination, type
+  etiquettes.forEach(({ w, a, pos }) => { const f = w.f, i = f.i, coul = couleurRelief(f, routes);
+    const ancre = prise ? (w.sens === 'amont' ? 'end' : 'start') : 'middle', bout = prise ? { x: pos.x + (w.sens === 'amont' ? 4 : -4), y: pos.y - 4 } : { x: pos.x, y: w.sens === 'amont' ? pos.y + 14 : pos.y - 12 };
+    s += `<g class="re-etiq" data-i="${i}"><path class="re-trait" d="M${a.x.toFixed(1)} ${a.y.toFixed(1)} L${bout.x.toFixed(1)} ${bout.y.toFixed(1)}" style="stroke:${coul}"/>`
+      + `<text x="${pos.x.toFixed(1)}" y="${(pos.y - 1).toFixed(1)}" text-anchor="${ancre}" class="re-cable" style="fill:${coul}">${esc(f.cable || '—')}</text>`
+      + `<text x="${pos.x.toFixed(1)}" y="${(pos.y + 12).toFixed(1)}" text-anchor="${ancre}" class="re-dest">${esc(destination(f) + (f.type ? ' · ' + f.type : ''))}</text></g>`; });
+  s += `<defs><marker id="re-fleche" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#7a8796"/></marker></defs>`;
+  return s + '</svg>'; }
 
-/* ---- le remplissage : chaque fil dans son trou, selon la norme ------------ */
-/* Un module (un contact) a un côté AMONT et un côté AVAL, chacun avec autant
-   de trous que la famille en donne ; les fils s'y rangent dans l'ordre de
-   leur numéro, les trous qui restent sont libres, ce qui déborde est en
-   SURCHARGE. Puis la règle de remplissage juge : modules réservés, paquets
-   contigus (un peigne ne saute pas un module), ordre croissant, retour de
-   masse par paquet (blindage), jauge de chaque fil dans la plage du contact.
-   Les ponts (shunts) ne sont pas des fils dans un trou. Rend la physique
-   enrichie : famille, trous par module, verdicts. */
-function remplirSelonNorme(P, norme) {
-  const F = familleDeNorme(norme, P.entree ? P.entree.famille : '', P.reference), n = F ? F.filsParCote : 1;
-  const prise = P.nature === 'prise de coupure', mot = prise ? 'contact' : 'module', cote = { amont: prise ? 'fiche' : 'amont', aval: prise ? 'embase' : 'aval' };
-  const jaugeOk = j => (F && j != null && F.jaugeMin != null && F.jaugeMax != null) ? (j <= F.jaugeMin && j >= F.jaugeMax) : null;
-  const modules = P.modules.map(m => { const fils = m.fils.map(f => { const jauge = jaugeDuType(f.type); return { ...f, jauge, jaugeOk: jaugeOk(jauge) }; });
-    const trous = {}; ['amont', 'aval'].forEach(s => { const t = fils.filter(f => (s === 'amont') === !!f.amont).sort((a, b) => triBornes(a.cable, b.cable)); while (t.length < n) t.push(null); trous[s] = t; });
-    const surcharge = Math.max(0, trous.amont.length - n) + Math.max(0, trous.aval.length - n);
-    return { ...m, fils, trous, surcharge }; });
-  const verdicts = [], s = k => k > 1 ? 's' : '', modDe = b => modules.find(m => m.borne === String(b));
-  if (F) {
-    modules.forEach(m => ['amont', 'aval'].forEach(k => { const c = m.trous[k].filter(Boolean).length; if (c > n) verdicts.push({ niveau: 'ko', texte: `${mot} ${m.borne} : ${c} fils côté ${cote[k]} pour ${n} trou${s(n)}`, bornes: [m.borne] }); }));
-    F.reserves.forEach(r => { const m = modDe(r); if (m && m.utilisee) verdicts.push({ niveau: 'ko', texte: `${mot} ${r} réservé par la norme, et pourtant utilisé`, bornes: [m.borne] }); });
-    if (F.paquets === 'contigus') P.paquets.forEach(p => { if (!p.ponte) return; const nums = p.bornes.map(Number); if (nums.some(isNaN)) return; nums.sort((a, b) => a - b);
-      if (nums.some((v, i) => i && v !== nums[i - 1] + 1)) verdicts.push({ niveau: 'ko', texte: `paquet ${p.bornes.join('-')} : le peigne de pontage ne saute pas un ${mot}`, bornes: p.bornes }); });
-    if (F.ordre === 'croissant') { const nums = modules.filter(m => m.utilisee && /^\d+$/.test(m.borne)).map(m => +m.borne); if (nums.length) { const max = Math.max(...nums);
-      const creux = modules.filter(m => !m.utilisee && /^\d+$/.test(m.borne) && +m.borne < max).map(m => m.borne);
-      if (creux.length) verdicts.push({ niveau: 'attention', texte: `${mot}${s(creux.length)} ${creux.join(', ')} libre${s(creux.length)} avant le ${max} : la norme remplit dans l’ordre`, bornes: creux }); } }
-    if (F.masse === 'par paquet') P.paquets.forEach(p => { const fils = p.bornes.flatMap(b => (modDe(b) || { fils: [] }).fils); if (!fils.length) return;
-      if (!fils.some(f => estMasse(f.vers))) verdicts.push({ niveau: 'ko', texte: `paquet ${p.bornes.join('-')} sans retour de masse`, bornes: p.bornes }); });
-    modules.forEach(m => m.fils.forEach(f => { if (f.jaugeOk === false) verdicts.push({ niveau: 'ko', texte: `${f.cable} (${f.type}) : jauge ${f.jauge} hors de ${F.jaugeMin}–${F.jaugeMax} AWG sur le ${mot} ${m.borne}`, bornes: [m.borne] }); }));
-  }
-  return { ...P, famille: F, filsParCote: n, cotes: cote, modules, verdicts };
-}
+/* ---- le tableau, module par module ------------------------------------- */
+function tableauRelief() { const { P, S, prise } = RELIEF, routes = couleursDesRoutes();
+  const ko = new Map(); (S ? S.lignes : []).forEach(x => { if (x.verdict !== 'ok') ko.set(x.cable + '|' + x.borne, x.verdict); });
+  const fil = (f, m) => { if (!f) return ''; const i = f.i, coul = couleurRelief(f, routes), v = ko.get(f.cable + '|' + m.borne);
+    return `<span class="re-f" data-i="${i}"><i style="background:${coul}"></i><b>${esc(f.cable || '—')}</b> ${esc(destination(f))}${f.type ? ' <em>' + esc(f.type) + '</em>' : ''}${v ? ` <span class="ko">${esc(MOTS_VERDICT[v] || v)}</span>` : ''}</span>`; };
+  const lignes = P.modules.map(m => { const fs = filsDuModule(RELIEF.nom, m), am = trousDe(m, fs, 'amont').filter(Boolean), av = trousDe(m, fs, 'aval').filter(Boolean);
+    return `<tr class="${m.utilisee ? '' : 'libre'}"><td class="n">${esc(m.borne)}</td><td>${am.map(f => fil(f, m)).join('') || (m.utilisee ? '' : '<span class="re-libre">libre</span>')}</td><td>${av.map(f => fil(f, m)).join('')}</td></tr>`; }).join('');
+  return `<table class="re-tab"><thead><tr><th>${prise ? 'Contact' : 'Module'}</th><th>${prise ? 'Fiche · ce qui arrive' : 'Amont · ce qui arrive'}</th><th>${prise ? 'Embase · ce qui repart' : 'Aval · ce qui repart'}</th></tr></thead><tbody>${lignes}</tbody></table>`; }
 
-/* ---- la simulation : ce que chaque fil subit, sur des hypothèses dites ---- */
-/* Le retest ne porte ni longueur ni courant : on les SUPPOSE (longueur du
-   fil, courant qui le traverse, tension du réseau, conditions de
-   déclassement), on le dit, et on calcule, fil par fil :
-     I fil     = intensité du fil (norme) × facteur de déclassement
-     I contact = intensité du contact (norme, sinon la bible)
-     R         = ρ (Ω/km) / 1000 × L (m) + R contact (mΩ) / 1000
-     ΔU        = R × I, en V, et en % de la tension
-   Le verdict, dans l'ordre : jauge hors plage · le courant dépasse le fil ·
-   dépasse le contact · la chute dépasse ce que le réseau admet · fil
-   inconnu de la norme · ok. */
-const HYPOTHESES = { longueur: 5, courant: 2, tension: 28, conditions: ['faisceau'] };
-function simulerBornier(Q, norme, hyp) {
-  if (!Q.modules.every(m => m.trous)) Q = remplirSelonNorme(Q, norme);
-  const H = { ...HYPOTHESES, ...(hyp || {}) }, F = Q.famille, facteur = facteurDeclassement(norme, H.conditions), chute = chuteAdmise(norme, H.tension);
-  const iContact = F && F.intensite != null ? F.intensite : (Q.entree && Q.entree.intensite != null ? Q.entree.intensite : null);
-  const rContact = F && F.resistance != null ? F.resistance / 1000 : 0, lignes = [];
-  Q.modules.forEach(m => ['amont', 'aval'].forEach(sens => m.trous[sens].forEach((f, k) => { if (!f) return;
-    const fil = filDeNorme(norme, f.type, f.jauge);
-    const iFil = fil && fil.intensite != null ? fil.intensite * facteur : null, rFil = fil && fil.resistance != null ? fil.resistance / 1000 * H.longueur : null;
-    const R = rFil == null ? null : rFil + rContact, dU = R == null ? null : R * H.courant, pct = dU == null || !H.tension ? null : dU / H.tension * 100;
-    const verdict = f.jaugeOk === false ? 'jauge' : (iFil != null && H.courant > iFil + 1e-9) ? 'fil' : (iContact != null && H.courant > iContact + 1e-9) ? 'contact'
-      : (dU != null && chute && chute.chuteMax != null && dU > chute.chuteMax + 1e-9) ? 'chute' : !fil ? 'inconnu' : 'ok';
-    lignes.push({ borne: m.borne, sens, trou: k + 1, surcharge: k >= Q.filsParCote, cable: f.cable, type: f.type, jauge: f.jauge, jaugeOk: f.jaugeOk, fil, approx: !!(fil && fil.approx),
-                  iFil, iContact, rFil, rContact, R, dU, pct, verdict, vers: f.vers, borneVers: f.borne, l: f.l }); })));
-  const compte = {}; lignes.forEach(x => { compte[x.verdict] = (compte[x.verdict] || 0) + 1; });
-  return { hyp: H, facteur, chute, iContact, rContact, famille: F, lignes, compte, sansNorme: !F && !(norme && norme.fils.length) };
-}
-const COLONNES_SUIVI = [['contrat', 'Contrat'], ['repere', 'Repère'], ['nature', 'Nature'], ['reference', 'Référence retenue'], ['fichier', 'Référence du fichier'],
-  ['nBornes', 'Bornes utilisées'], ['bornes', 'Bornes'], ['shunts', 'Shunts'], ['jauge', 'Jauge'], ['fils', 'Fils'], ['routes', 'Routes'], ['plans', 'Folios']];
-function csvDuSuivi(lignes) {
-  const cell = v => { const t = Array.isArray(v) ? v.join(' ') : String(v == null ? '' : v); return /[;"\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
-  return [COLONNES_SUIVI.map(c => c[1]).join(';'), ...lignes.map(l => COLONNES_SUIVI.map(c => cell(l[c[0]])).join(';'))].join('\n');
-}
+/* ---- la fenêtre ------------------------------------------------------- */
+function ouvrirRelief(nom) { if (!estBornier(nom)) return; const V = verite();
+  RELIEF.nom = nom; RELIEF.prise = estCoupure(nom);
+  RELIEF.P = remplirSelonNorme(physiqueDeBarrette(nom, V, app.bible, app.contrat.designations.get(nom) || ''), app.norme);
+  RELIEF.S = simulerBornier(RELIEF.P, app.norme, app.simu);
+  [RELIEF.az, RELIEF.el] = VUES_RELIEF['3/4'];
+  const P = RELIEF.P, mot = RELIEF.prise ? 'contact' : 'module', kos = RELIEF.S ? RELIEF.S.lignes.filter(x => x.verdict !== 'ok').length : 0;
+  $('re-sur').textContent = (RELIEF.prise ? 'Prise de coupure' : P.nature.charAt(0).toUpperCase() + P.nature.slice(1)) + ' · ' + (P.reference || 'référence inconnue');
+  $('re-titre').textContent = nom;
+  $('re-compte').innerHTML = [pluriel(P.modules.length, mot), pluriel(P.modules.length - P.libres, 'utilisé'), pluriel(P.libres, 'libre')].join(' · ')
+    + (kos ? ` · <span class="ko">${pluriel(kos, 'fil')} hors norme</span>` : '');
+  $('re-tableau').innerHTML = tableauRelief();
+  $('re-note').textContent = RELIEF.prise ? 'Disposition des contacts sur la face : indicative (l’arrangement de l’insert n’est pas encore dans la bible).' : 'En arrière, ce qui arrive (amont) ; en avant, ce qui repart (aval). Le cuivre relie les modules d’un même paquet.';
+  const d = $('relief'); d.hidden = false; peindreRelief(); lierRelief(); $('re-fermer').focus(); }
+function fermerRelief() { $('relief').hidden = true; RELIEF.P = null; rallumer(); }
+function peindreRelief() { $('re-scene').innerHTML = reliefSvg();
+  document.querySelectorAll('#re-vues button').forEach(b => { const [a, e] = VUES_RELIEF[b.dataset.vue]; b.classList.toggle('on', Math.abs(a - RELIEF.az) < 1e-3 && Math.abs(e - RELIEF.el) < 1e-3); }); }
+// survoler un fil l'allume ici et sur le plan ; un clic y va
+function allumerRelief(i) { document.querySelectorAll('#relief [data-i]').forEach(el => el.classList.toggle('on', +el.dataset.i === i && i >= 0));
+  const l = i >= 0 ? verite()[i] : null, f = l && filDe(l); if (f) allumerFil(f); else rallumer(); }
+let reliefLie = false;
+function lierRelief() { if (reliefLie) return; reliefLie = true; const d = $('relief'), sc = $('re-scene');
+  $('re-fermer').onclick = fermerRelief;
+  d.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); fermerRelief(); } });
+  d.addEventListener('click', e => { if (e.target === d) fermerRelief(); });
+  $('re-vues').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; [RELIEF.az, RELIEF.el] = VUES_RELIEF[b.dataset.vue]; peindreRelief(); });
+  // tourner à la main : un glissé horizontal tourne autour de la verticale, un glissé vertical incline
+  sc.addEventListener('pointerdown', e => { RELIEF.glisse = { x: e.clientX, y: e.clientY, az: RELIEF.az, el: RELIEF.el }; try { sc.setPointerCapture(e.pointerId); } catch (_) { } sc.classList.add('tourne'); });
+  sc.addEventListener('pointermove', e => { const g = RELIEF.glisse; if (!g) return;
+    RELIEF.az = Math.max(-1.45, Math.min(1.45, g.az + (e.clientX - g.x) * 0.008)); RELIEF.el = Math.max(0.02, Math.min(1.5, g.el + (e.clientY - g.y) * 0.008));
+    cancelAnimationFrame(RELIEF.image); RELIEF.image = requestAnimationFrame(peindreRelief); });
+  const fin = () => { RELIEF.glisse = null; sc.classList.remove('tourne'); };
+  sc.addEventListener('pointerup', fin); sc.addEventListener('pointercancel', fin);
+  d.addEventListener('mouseover', e => { const el = e.target.closest('[data-i]'); allumerRelief(el ? +el.dataset.i : -1); });
+  d.addEventListener('click', e => { const el = e.target.closest('[data-i]'); if (!el || RELIEF.glisse) return; const l = verite()[+el.dataset.i], f = l && filDe(l);
+    if (f) { fermerRelief(); choisirFil(f); viserFil(f); } }); }
 
 /* ───────── 10-demarrage.js ───────── */
 /* ===========================================================================
@@ -6160,6 +6727,9 @@ const atelier = {
   lire(texte) { const r = lireTexte(texte); atelier.charger(r.liaisons); return r; },
   dessin() { return app.dessin; },
   audit() { return app.dessin ? auditer(app.dessin) : { ok: false, fils: 0, droits: 0, tauxDroits: 1, croisements: 0, filsDansBloc: 0, blocsChevauches: 0, blocs: 0 }; },
+  /* l'affinage (08) : endormi sous pilote automatique, pour que les bancs mesurent le concours ; réveillé ici */
+  affinage(on) { affinage.actif = !!on; if (on) { relireAffines(); affinerTout(); } return atelier.etatAffinage(); },
+  etatAffinage() { return { actif: affinage.actif, encours: affinage.encours ? affinage.encours.cle.length : 0, attente: affinage.file.length, finis: affinage.finis.size, etat: affinage.etat, worker: affinage.worker === false ? 'refusé' : affinage.worker ? 'oui' : 'pas encore', erreur: affinage.erreur || null }; },
   app
 };
 
@@ -6171,6 +6741,8 @@ function demarrer() {
   // la base se montre à côté du plan : c'est elle qu'on corrige
   if (baseOuverte) ouvrirBase();
   requestAnimationFrame(() => ajuster());
+  // les folios déjà affinés dans ce navigateur reviennent ; les autres s'affinent en arrière-plan ; les retouches aussi
+  relireAffines(); relireRetouches();
 }
 demarrer();
 

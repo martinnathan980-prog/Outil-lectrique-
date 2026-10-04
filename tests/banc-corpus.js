@@ -1,9 +1,10 @@
 /* ===========================================================================
    BANC DU CORPUS — l'outil sur des câblages qu'aucun réglage n'a vus.
    ---------------------------------------------------------------------------
-       node tests/banc-corpus.js                 les vingt-quatre cas
-       node tests/banc-corpus.js --cas=deux      les cas d'un profil
+       node tests/banc-corpus.js                 tous les cas (quatre graines par profil)
+       node tests/banc-corpus.js --cas=deux,trois   les cas de ces profils
        node tests/banc-corpus.js --images=dossier   et une capture de chacun
+       node tests/banc-corpus.js --profond=12    chaque cas après douze tours de recherche profonde (lent)
 
    Les six folios de l'exemple ont servi à régler le moteur ; ce banc dit si
    ce qu'on a corrigé tient ailleurs. Chaque cas (tests/corpus.js : une
@@ -25,10 +26,10 @@ const { genererDansLaPage, PROFILS } = require('./corpus');
 
 const FICHIER = P.fichierDemande();
 const arg = k => { const a = process.argv.find(x => x.startsWith('--' + k + '=')); return a ? a.slice(k.length + 3) : null; };
-const IMAGES = arg('images');
+const IMAGES = arg('images'), PROFOND = +(arg('profond') || 0);
 const CAS = [];
 PROFILS.forEach((profil, i) => { for (let k = 0; k < 4; k++) CAS.push([1000 + 37 * i + 101 * k, profil]); });
-const CHOISIS = arg('cas') ? CAS.filter(([, p]) => p === arg('cas')) : CAS;
+const CHOISIS = arg('cas') ? CAS.filter(([, p]) => arg('cas').split(',').includes(p)) : CAS;
 
 (async () => {
   const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
@@ -41,12 +42,14 @@ const CHOISIS = arg('cas') ? CAS.filter(([, p]) => p === arg('cas')) : CAS;
   for (const [graine, profil] of CHOISIS) {
     const nom = profil + '-' + graine, t0 = Date.now();
     const L = await page.evaluate(genererDansLaPage, [graine, profil]);
-    await page.evaluate(L => { atelier.charger(L); }, L);
+    // --profond=N : le dessin de la recherche profonde (N tours), celui que l'affinage montre ensuite dans l'outil
+    await page.evaluate(([L, N]) => { if (N) { const LL = L.map(liaison).filter(liaisonComplete); affinage.profonds.set(clePlacement(LL), placementProfond(LL, N)); }
+      atelier.charger(L); }, [L, PROFOND]);
     const ms = Date.now() - t0, m = await page.evaluate(P.mesurerDansLaPage);
     const ko = m.filsDansBloc || m.chevauches || m.superposees || m.rompus || m.partages || m.marches; if (ko) faux++;
     const defauts = [];
-    const ech = await page.evaluate(P.echangesEvidentsDansLaPage), fl = await page.evaluate(P.flancsEvidentsDansLaPage), gl = await page.evaluate(P.glissementsEvidentsDansLaPage);
-    ech.manques.forEach(x => defauts.push('échange ' + x)); fl.manques.forEach(x => defauts.push('flanc ' + x)); gl.manques.forEach(x => defauts.push('glissement ' + x));
+    const ech = await page.evaluate(P.echangesEvidentsDansLaPage), fl = await page.evaluate(P.flancsEvidentsDansLaPage), gl = await page.evaluate(P.glissementsEvidentsDansLaPage), rd = await page.evaluate(P.redressementsEvidentsDansLaPage);
+    ech.manques.forEach(x => defauts.push('échange ' + x)); fl.manques.forEach(x => defauts.push('flanc ' + x)); gl.manques.forEach(x => defauts.push('glissement ' + x)); rd.manques.forEach(x => defauts.push('redressement ' + x));
     (await page.evaluate(P.corpsEtiresDansLaPage)).defauts.forEach(x => defauts.push('étiré ' + x));
     (await page.evaluate(P.calculateurDansLaPage)).defauts.forEach(x => defauts.push('calculateur : ' + x));
     (await page.evaluate(P.blocsCollesDansLaPage)).forEach(x => defauts.push('collés : ' + x));

@@ -25,7 +25,8 @@ Le format qui compte est le **RETEST** Excel : seize colonnes nommées, en-tête
 - **Aucun croisement évitable.** Si intervertir deux bornes, deux fils, retourner un morceau de barrette ou déplacer un bloc supprime un croisement, ne pas l'avoir fait est une faute. Exemples que j'ai déjà dû signaler : 210SP1 bornes 3 et 4, 601RC bornes 7 et 11, 610LP3 bornes 1 et 2.
 - **Deux fils ne se chevauchent jamais** (aucun segment partagé). **Rien ne s'écrit sur rien** : textes, numéros, repères, symboles.
 - Un croisement inévitable se dessine par un **petit pont** sur le fil horizontal.
-- Le **numéro de fil s'écrit dans le fil**, sur un petit fond blanc, sur son plus long segment horizontal.
+- Le **numéro de fil s'écrit dans le fil**, sur un petit fond blanc, sur son plus long segment horizontal (ou le suivant, ou debout le long d'un vertical, s'il n'y a pas la place).
+- Un fil, et son numéro, prennent la **couleur de sa route** (colonne « route » ou « cheminement ») ; la **légende des routes** est en bas à gauche de la feuille. Sans route, il reste à l'encre. Les routes de l'exemple sont provisoires (tirées du type de fil) : je donnerai les vraies.
 
 ### Les équipements et leurs connecteurs
 - Le corps est un rectangle, son repère dedans. Les **connecteurs sont des pièces collées hors du corps** : bords carrés côté corps, arrondis côté fil, le numéro de chaque borne dans la pièce, la **lettre du connecteur au-dessus** de la pièce.
@@ -55,6 +56,10 @@ Le format qui compte est le **RETEST** Excel : seize colonnes nommées, en-tête
 
 Le plan occupe tout l'écran. **En bas**, la barre de vue : folios (précédent, numéros, suivant), puis ajuster, zoom moins, pourcentage, zoom plus. **À gauche**, le rail des commandes courantes : Base, Rechercher, Annuler, + Liaison, Bible, Ouvrir, Menu. La base des liaisons est éditable cellule par cellule et redessine le plan. Cliquer un bloc ouvre sa carte : connecteurs, ou pour une barrette et une prise, la référence, le dessin de chaque trou avec son fil, le remplissage selon la norme, et une simulation (jauge, intensité, chute de tension). La norme livrée est une **fausse norme d'exemple** (`normes/`), marquée comme telle. Export SVG/PNG, impression en A3 paysage.
 
+- **Retouche** : un bloc (équipement, barrette, prise) se prend à la souris et glisse dans sa colonne ; ses masses suivent, ses fils se reroutent en direct, il s'aimante à la hauteur qui rend un fil droit. Le folio retouché se garde ; Ctrl+Z défait ; le bouton « automatique » rend le dessin du moteur. Au doigt, un appui long prend le bloc.
+- **Affinage** : le dessin s'affiche tout de suite, puis la recherche profonde l'améliore en arrière-plan (un point qui respire dans la barre du bas) ; chaque mieux trouvé remplace le dessin ; le résultat se garde dans le navigateur. Le temps de calcul n'est pas un souci : la qualité d'abord.
+- **Vue en relief** : « Voir en relief » dans la carte d'une barrette ou d'une prise, ou un double-clic sur elle — la pièce en perspective, qu'on tourne à la main, chaque fil dans son trou à la couleur de sa route, et dessous le tableau trou par trou ; survoler un fil l'allume sur le plan.
+
 ## 6. Comment tu travailles
 
 1. **Lis d'abord** `REFONTE.md`, `tests/LISEZMOI.md` et les modules de `src/` (01 modèle, 02 lecture, 03 graphe, 04 placement, 05 routage, 06 dessin, 07 folios, 08 interface, 09 barrettes, 10 démarrage). Comprends le pipeline : graphe → placement (concours de mises en niveaux, recherche locale par gestes, juge) → routage → dessin.
@@ -75,12 +80,13 @@ Le plan occupe tout l'écran. **En bas**, la barre de vue : folios (précédent,
 
 ## 8. Où en est l'outil (à corriger en priorité)
 
-Fait à la dernière passe : un rond par fil sur une borne de barrette ; les ronds d'un morceau dans n'importe quel ordre (folio 3, 669VT32 : le fil de 372CP2 en bas) ; un bloc qui glisse pousse ses voisins (folio 3, 371CP1 : trois fils droits sur quatre) ; les calculateurs élastiques, chaque borne en face de son partenaire quand la place est libre, le second calculateur compris ; le juge compte les longues descentes (un dessin serré) ; un corps se tasse autour de son fil droit (folio 4, 431PR1) ; un corpus de vingt-quatre câblages nouveaux relus par les mêmes contrôles. Banc : 91,9 % de fils droits, 5 croisements (avant 89,0 % et 7) ; corpus : 90,4 % et 17 croisements (avant 87,6 % et 31).
+Fait à la dernière passe : une grande batterie de soixante-douze câblages (dix-huit profils, du minimal au géant à deux calculateurs) regardée à l'œil, ses défauts devenus des règles générales ; la recherche profonde en arrière-plan, dont le dessin se garde (sur les seize cas les plus complexes, 56 → 30 croisements) ; les couleurs des routes et leur légende ; la retouche à la souris ; la vue en relief des barrettes et des prises. Banc : 92,3 % de fils droits, 6 croisements ; corpus : 90,1 % et 84 croisements (89,0 % et 95 avant).
 
-- **Folio 3** : un croisement (W-312 sur W-321) est imposé par la structure ; 668VT31 (8, 9, 10) sous les relais, deux de ses fils montent.
+- **Retouche** : un bloc ne change pas encore de colonne à la souris, une borne ne se déplace pas encore dans son flanc, un fil ne se déplace pas à la main ; une retouche est perdue si les liaisons du folio changent (elle ne se recolle pas encore par repère).
+- **Relief** : la disposition des contacts d'une prise est indicative tant que la bible ne donne pas l'arrangement de l'insert.
+- **Routes** : celles de l'exemple sont provisoires ; les vraies viendront de mon fichier, avec leurs couleurs.
 - **Folio 5** : les trois croisements qui restent sont imposés par l'ordre des contacts des deux prises — si une disposition les supprime quand même, prends-la.
-- **Corpus** : des prises entrelacées autour d'un calculateur à deux connecteurs gardent deux croisements ; le cas le plus chargé (29 blocs) se calcule en quatorze secondes — trop long : les estimations et assemblages, hors budget, en prennent le tiers.
-- **Mon vrai fichier** sera plus chargé que l'exemple (plusieurs calculateurs, des dizaines de liaisons par folio) : enrichis le corpus de ce qui y ressemble et regarde-le à l'écran.
-- Le placement doit rester **stable** : le même contrat donne le même dessin, et un petit changement ne doit pas tout bouleverser. Le folio chargé se calcule en sept secondes et demie : pas plus.
+- **Corpus** : trois calculateurs reliés deux à deux gardent quelques croisements même après la recherche profonde ; regarde-les.
+- Le placement doit rester **stable** et **déterministe** : le même contrat donne le même dessin, recherche profonde comprise.
 
 Le but final : que n'importe quel folio, simple ou complexe, sorte du premier coup comme un dessin de câbleur — propre, droit, lisible, sans que j'aie à te montrer un seul défaut.

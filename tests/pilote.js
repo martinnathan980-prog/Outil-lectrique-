@@ -81,14 +81,16 @@ function preparerDansLaPage() {
      les deux blocs d'un fil de sa vérification de couloir) : on passe les blocs */
   const noter = (R, links, comps) => { const fils = propres(R), t = traversees(fils, (comps || R.comps).filter(c => c.kind !== 'tag'));
     return { d: compterDroits(fils.filter(w => !t.propres.has(w))), c: compterCroisements(fils, R.barrettes) + 2 * t.propres.size, p: compterPartages(R.fils), m: compterMarches(fils), t: compterTours({ links: links || R.links }), k: compterContours(fils),
-      s: typeof compterDescentes === 'function' ? compterDescentes(boutsDesLiaisons(links || R.links)) : 0 }; };
+      s: typeof compterDescentes === 'function' ? compterDescentes(boutsDesLiaisons(links || R.links)) : 0,
+      e: typeof compterEtires === 'function' ? compterEtires(comps || R.comps, fils) : 0,
+      x: typeof excesDesEtires === 'function' ? excesDesEtires(comps || R.comps, fils) : 0 }; };
   // le même barème que le juge (ses constantes) : croisements, segments partagés, marches, tours, contours (un fil qui
-  // contourne des blocs), descentes (ce que les fils pliés descendent) — et un TOUR de plus n'est jamais « mieux », quoi qu'il rapporte : un fil qui fait le tour de son
+  // contourne des blocs), descentes (ce que les fils pliés descendent), corps étirés — et un TOUR de plus n'est jamais « mieux », quoi qu'il rapporte : un fil qui fait le tour de son
   // bloc est ce qu'un lecteur déteste le plus
-  const note = n => n.d - n.c / CROISEMENTS_PAR_DROIT - PARTAGE * n.p - PAR_MARCHE * n.m - TOUR * n.t - n.k - (typeof DESCENTE === 'number' ? DESCENTE * n.s : 0);
+  const note = n => n.d - n.c / CROISEMENTS_PAR_DROIT - PARTAGE * n.p - PAR_MARCHE * n.m - TOUR * n.t - n.k - (typeof DESCENTE === 'number' ? DESCENTE * (n.s + (n.x || 0)) : 0) - ETIRE * (n.e || 0);
   // mieux d'un pas de descente au moins (une borne) : quelques unités de fil plié en moins ne se voient pas
   const mieux = (n, b) => n.t <= b.t && note(n) > note(b) + (typeof DESCENTE === 'number' ? DESCENTE * PRH : 0.01);
-  const texte = n => n.d + ' droits, ' + n.c + ' croisements, ' + n.p + ' partagés, ' + n.m + ' marches, ' + n.t + ' tours' + (n.k > 0.05 ? ', contours ' + n.k.toFixed(1) : '') + ', descentes ' + Math.round(n.s);
+  const texte = n => n.d + ' droits, ' + n.c + ' croisements, ' + n.p + ' partagés, ' + n.m + ' marches, ' + n.t + ' tours' + (n.k > 0.05 ? ', contours ' + n.k.toFixed(1) : '') + ', descentes ' + Math.round(n.s) + (n.e ? ', étirés ' + n.e : '');
   const sain = (comps, R) => { const blocs = comps.filter(c => c.kind !== 'tag');
     for (let i = 0; i < blocs.length; i++) for (let j = i + 1; j < blocs.length; j++) { const a = blocs[i], b = blocs[j];
       if (a.x < b.x + b.w - 1 && b.x < a.x + a.w - 1 && a.y < b.y + b.h - 1 && b.y < a.y + a.h - 1) return false; }
@@ -186,6 +188,38 @@ function glissementsEvidentsDansLaPage() {
       if (B.mieux(n, base) && B.sain(comps, R)) manques.push(c.name + ' glissé de ' + dy + ' : ' + B.texte(base) + ' → ' + B.texte(n)); }); });
   return { manques, essais, base };
 }
+/* Les REDRESSEMENTS ÉVIDENTS : un fil plié entre deux blocs de colonnes
+   différentes ; une de ses bornes, sur un équipement, va à la hauteur de
+   l'autre bout — sans passer une borne voisine, à un pas d'une borne du même
+   connecteur, deux d'une autre (sa lettre s'écrit entre les deux) —, le corps
+   s'allonge au besoin, les pastilles de cette borne suivent ; et se route.
+   S'il fait mieux sans rien heurter, la recherche l'a manqué (un fil plié
+   d'un pas sous la lettre d'un connecteur, que le petit bloc d'en face
+   redressait en s'allongeant d'autant). */
+function redressementsEvidentsDansLaPage() {
+  const B = window.banc, d = atelier.dessin(); if (!d) return { manques: [], essais: 0 };
+  const base = B.noter(d), manques = []; let essais = 0;
+  d.links.forEach(l => { if (l.shunt || l.boucle || Math.abs(l.epA.y - l.epB.y) < 0.75) return;
+    const ca = d.compDe.get(l.de), cb = d.compDe.get(l.vers); if (!ca || !cb || ca.kind === 'tag' || cb.kind === 'tag' || ca.col === cb.col) return;
+    [[ca, l.epA, l.epB.y], [cb, l.epB, l.epA.y]].forEach(([c, ep, y]) => { if (c.kind !== 'equip') return;
+      const lid = Math.abs(ep.x - c.x) < Math.abs(ep.x - (c.x + c.w)) ? 'L' : 'R', rs = c.rangs[lid] || [];
+      const p = rs.find(q => Math.abs(q.y - ep.y) < 0.5); if (!p) return;
+      const lo = Math.min(p.y, y), hi = Math.max(p.y, y);
+      if (rs.some(q => q !== p && ((q.y > lo + 0.5 && q.y < hi - 0.5) || Math.abs(q.y - y) < (q.cn === p.cn ? PRH : 2 * PRH) - 0.5))) return;
+      const y0 = Math.min(c.y, y - 18), y1 = Math.max(c.y + c.h, y + 18);
+      if (d.comps.some(o => o !== c && o.kind !== 'tag' && o.col === c.col && y0 < o.y + o.h + 8 && o.y < y1 + 8)) return;
+      essais++;
+      const tags = B.pastillesDe(d, c).filter(t => Math.abs(t.y + t.h / 2 - p.y) < 0.5), noms = new Set(tags.map(t => t.name)), dy = y - p.y;
+      const c2 = { ...c, y: y0, h: y1 - y0, rangs: { ...c.rangs, [lid]: rs.map(q => q === p ? { ...q, y } : q) } };
+      const comps = d.comps.map(k => k === c ? c2 : (tags.includes(k) ? { ...k, y: k.y + dy } : k));
+      const ici = (nom, e) => nom === c.name && Math.abs(e.x - ep.x) < 0.5 && Math.abs(e.y - p.y) < 0.5;
+      const links = d.links.map(m => { const a = ici(m.de, m.epA), b = ici(m.vers, m.epB); if (!a && !b) return m;
+        const versTag = (a && noms.has(m.vers) && Math.abs(m.epB.y - p.y) < 0.5) || (b && noms.has(m.de) && Math.abs(m.epA.y - p.y) < 0.5);
+        return { ...m, epA: (a || versTag) ? { ...m.epA, y: m.epA.y + dy } : m.epA, epB: (b || versTag) ? { ...m.epB, y: m.epB.y + dy } : m.epB }; });
+      const R = router({ comps, links, geom: d.geom, bbox: d.bbox }), n = B.noter(R, links, comps);
+      if (B.mieux(n, base) && B.sain(comps, R)) manques.push(c.name + ':' + p.etiq + ' à la hauteur de ' + (c === ca ? l.vers : l.de) + ' (' + l.cable + ') : ' + B.texte(base) + ' → ' + B.texte(n)); }); });
+  return { manques, essais, base };
+}
 /* Les SEGMENTS PARTAGÉS : deux fils de nets différents superposés sur un
    même trait — une connexion qui n'existe pas. Rend les paires. */
 function segmentsPartagesDansLaPage() {
@@ -204,8 +238,8 @@ function marchesDansLaPage() {
    (`corpsEtire` : une fois et demie sa hauteur naturelle, à un pas près)
    est compacté — chaque flanc au pas depuis le haut, ses pastilles suivent
    — et routé. Si le juge préfère le compact (au barème : fils droits,
-   croisements, partages, marches, tours, contours ; le corps compact vaut
-   ETIRE), l'étirement n'était pas justifié, et c'est un geste manqué. */
+   croisements, partages, marches, tours, contours, descentes, corps
+   étirés), l'étirement n'était pas justifié, et c'est un geste manqué. */
 function corpsEtiresDansLaPage() {
   const B = window.banc, d = atelier.dessin(); if (!d) return { defauts: [], etires: 0 };
   const base = B.noter(d), defauts = []; let etires = 0;
@@ -222,7 +256,7 @@ function corpsEtiresDansLaPage() {
       const ya = a ? nouvelle(l.epA) : null, yb = b ? nouvelle(l.epB) : null, versTag = a ? laTag(l.vers, l.epB) : laTag(l.de, l.epA);
       return { ...l, epA: { ...l.epA, y: ya ?? (versTag && !a ? yTag.get(versTag) : l.epA.y) }, epB: { ...l.epB, y: yb ?? (versTag && !b ? yTag.get(versTag) : l.epB.y) } }; });
     const R = router({ comps, links, geom: d.geom, bbox: d.bbox }), n = B.noter(R, links, comps);
-    if (B.sain(comps, R) && n.t <= base.t && B.note(n) > B.note(base) - ETIRE + 0.01) defauts.push(c.name + ' : ' + Math.round(c.h) + ' pour ' + nat + ' de naturel (' + (c.h / nat).toFixed(1) + '×), compact : ' + B.texte(n) + ' contre ' + B.texte(base)); });
+    if (B.sain(comps, R) && n.t <= base.t && B.note(n) > B.note(base) + 0.01) defauts.push(c.name + ' : ' + Math.round(c.h) + ' pour ' + nat + ' de naturel (' + (c.h / nat).toFixed(1) + '×), compact : ' + B.texte(n) + ' contre ' + B.texte(base)); });
   return { defauts, etires };
 }
 
@@ -343,4 +377,4 @@ function blocsCollesDansLaPage() {
 }
 
 module.exports = { fichierDemande, chargerDansLaPage, essaiDansLaPage, exempleDansLaPage, mesurerDansLaPage, preparerDansLaPage, echangesEvidentsDansLaPage,
-  flancsEvidentsDansLaPage, glissementsEvidentsDansLaPage, segmentsPartagesDansLaPage, marchesDansLaPage, corpsEtiresDansLaPage, pastillesColleesDansLaPage, blocLisibleDansLaPage, filDroitOuJustifieDansLaPage, calculateurDansLaPage, blocsCollesDansLaPage };
+  flancsEvidentsDansLaPage, glissementsEvidentsDansLaPage, redressementsEvidentsDansLaPage, segmentsPartagesDansLaPage, marchesDansLaPage, corpsEtiresDansLaPage, pastillesColleesDansLaPage, blocLisibleDansLaPage, filDroitOuJustifieDansLaPage, calculateurDansLaPage, blocsCollesDansLaPage };

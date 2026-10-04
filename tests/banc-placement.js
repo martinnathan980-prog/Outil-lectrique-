@@ -58,7 +58,7 @@
 const { chromium } = require('playwright');
 const path = require('path');
 const { fichierDemande, chargerDansLaPage, essaiDansLaPage, exempleDansLaPage, mesurerDansLaPage, preparerDansLaPage, echangesEvidentsDansLaPage,
-        flancsEvidentsDansLaPage, glissementsEvidentsDansLaPage, segmentsPartagesDansLaPage, marchesDansLaPage, corpsEtiresDansLaPage,
+        flancsEvidentsDansLaPage, glissementsEvidentsDansLaPage, redressementsEvidentsDansLaPage, segmentsPartagesDansLaPage, marchesDansLaPage, corpsEtiresDansLaPage,
         pastillesColleesDansLaPage, blocLisibleDansLaPage, filDroitOuJustifieDansLaPage, calculateurDansLaPage, blocsCollesDansLaPage } = require('./pilote');
 
 const FICHIER = fichierDemande();
@@ -183,7 +183,8 @@ if (require.main === module) (async () => {
        ou de segments partagés sans moins de fils droits, ou l'inverse
        (vérification exacte, a posteriori, au routage réel) */
     if (gen && gen.plan) { m.echanges = await page.evaluate(echangesEvidentsDansLaPage);
-      m.flancs = await page.evaluate(flancsEvidentsDansLaPage); m.glissements = await page.evaluate(glissementsEvidentsDansLaPage); }
+      m.flancs = await page.evaluate(flancsEvidentsDansLaPage); m.glissements = await page.evaluate(glissementsEvidentsDansLaPage);
+      m.redressements = await page.evaluate(redressementsEvidentsDansLaPage); }
     /* les cas que l'utilisateur a montrés du doigt, en contrôles exacts :
        aucun segment partagé par deux fils étrangers, aucun corps étiré sans
        raison, les masses collées à leur borne (tous les folios) ; sur le
@@ -259,7 +260,8 @@ if (require.main === module) (async () => {
   let manques = 0;
   const gestes = [['echanges', 'les échanges évidents sont trouvés', 'paires', 'échange(s) de deux bornes'],
     ['flancs', 'les changements de flanc évidents sont trouvés', 'essais', 'changement(s) de flanc d\'une borne'],
-    ['glissements', 'les glissements évidents sont trouvés', 'essais', 'glissement(s) d\'un bloc']];
+    ['glissements', 'les glissements évidents sont trouvés', 'essais', 'glissement(s) d\'un bloc'],
+    ['redressements', 'les redressements évidents sont trouvés', 'essais', 'redressement(s) d\'un fil plié']];
   res.forEach(r => gestes.forEach(([cle, titre, compte, quoi]) => { const e = r[cle]; if (!e) return; manques += e.manques.length;
     console.log('\n  ' + (e.manques.length ? '✗ ' : '  ') + titre + ' — ' + r.nom + ' : '
       + (e.manques.length ? e.manques.length + ' manqué(s) sur ' + e[compte] + ' ' + quoi : 'aucun des ' + e[compte] + ' ' + quoi + ' ne fait mieux'));

@@ -4,10 +4,12 @@
    avec ses zones et son cartouche, les fils, les numéros de fil, les
    barrettes, et un symbole par nature de matériel.
 
-   UNE SEULE ENCRE. Ce qui distingue une pièce d'une autre, c'est l'épaisseur
-   et la forme du trait, jamais sa couleur : 1,0 le corps d'un matériel,
-   0,95 un fil (et tout ce qui en est : piquage, pont de shunt), 0,7 une
-   réglette, 0,55 une cellule. Ça s'imprime en noir et blanc.
+   UNE SEULE ENCRE pour les pièces. Ce qui distingue une pièce d'une autre,
+   c'est l'épaisseur et la forme du trait, jamais sa couleur : 1,0 le corps
+   d'un matériel, 0,95 un fil (et tout ce qui en est : piquage, pont de
+   shunt), 0,7 une réglette, 0,55 une cellule. La seule couleur est celle
+   des ROUTES : un fil, et son numéro, prennent la couleur de sa route, que
+   la légende du bas de la feuille nomme ; sans route, il reste à l'encre.
 
    RIEN NE S'ÉCRIT SUR RIEN. Tout texte qui a le choix de sa place — le
    numéro d'un fil, le repère d'une barrette, d'une masse, d'une prise —
@@ -111,11 +113,11 @@ function pageDe(comps, fils) {
   const ux = (x0 + x1) / 2 - uw * k / 2, uy = (y0 + y1) / 2 - uh * k / 2;
   return { x: ux - (PAGE_CADRE + PAGE_MARGE) * k, y: uy - (PAGE_CADRE + PAGE_MARGE) * k, w: PAGE_W * k, h: PAGE_H * k, k };
 }
-function feuilleSvg(bb, cartouche, folio) {
+function feuilleSvg(bb, cartouche, folio, legende) {
   const k = bb.k || bb.w / PAGE_W;
-  return `<g transform="translate(${f1(bb.x)},${f1(bb.y)}) scale(${k.toFixed(5)})">` + feuilleDeReference(cartouche, folio) + '</g>';
+  return `<g transform="translate(${f1(bb.x)},${f1(bb.y)}) scale(${k.toFixed(5)})">` + feuilleDeReference(cartouche, folio, legende) + '</g>';
 }
-function feuilleDeReference(cartouche, folio) {
+function feuilleDeReference(cartouche, folio, legende) {
   const x = 0, y = 0, w = PAGE_W, h = PAGE_H, ix = x + PAGE_CADRE, iy = y + PAGE_CADRE, iw = w - 2 * PAGE_CADRE, ih = h - 2 * PAGE_CADRE;
   let s = `<rect x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" fill="#ffffff"/>`;
   s += `<rect x="${f1(ix)}" y="${f1(iy)}" width="${f1(iw)}" height="${f1(ih)}" fill="url(#gfine)"/>`;
@@ -129,8 +131,23 @@ function feuilleDeReference(cartouche, folio) {
     s += `<line class="zline" x1="${f1(ix)}" y1="${f1(yy)}" x2="${f1(ix - 6)}" y2="${f1(yy)}"/><line class="zline" x1="${f1(ix + iw)}" y1="${f1(yy)}" x2="${f1(ix + iw + 6)}" y2="${f1(yy)}"/>`; }
   for (let i = 0; i < nrow; i++) { const cy = iy + ih * (i + 0.5) / nrow; const L = String.fromCharCode(65 + i);
     s += `<text class="zone" x="${f1(ix - 10)}" y="${f1(cy + 3)}" text-anchor="middle">${L}</text><text class="zone" x="${f1(ix + iw + 10)}" y="${f1(cy + 3)}" text-anchor="middle">${L}</text>`; }
-  return s + cartoucheSvg(ix + iw, iy + ih, cartouche, folio);
+  return s + cartoucheSvg(ix + iw, iy + ih, cartouche, folio) + legendeSvg(ix, iy + ih, ix + iw - 224 - 16, legende);
 }
+/* La LÉGENDE DES ROUTES : en bas à gauche de la feuille, dans la bande que
+   le dessin laisse libre au-dessus du cadre (celle du cartouche), une ligne
+   par route — un trait de sa couleur, son nom, combien de fils elle porte
+   sur ce folio ; cinq lignes par colonne. Un fil sans route reste à l'encre
+   (« sans route »). Rien quand aucun fil n'a de route. */
+const LEG_LIGNE = 15, LEG_COLONNE = 176, LEG_PAR_COLONNE = 5;
+function legendeSvg(x, yBas, xMax, legende) { if (!legende || !legende.length) return '';
+  const n = legende.length, rangs = Math.min(n, LEG_PAR_COLONNE), cols = Math.ceil(n / LEG_PAR_COLONNE);
+  const w = Math.min(xMax - x, 14 + cols * LEG_COLONNE), h = 24 + rangs * LEG_LIGNE, y = yBas - h;
+  let s = `<rect class="cbox" x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}"/><text class="carth" x="${f1(x + 9)}" y="${f1(y + 13)}">ROUTES</text>`;
+  legende.forEach((r, i) => { const cx = x + 9 + Math.floor(i / LEG_PAR_COLONNE) * LEG_COLONNE, cy = y + 26 + (i % LEG_PAR_COLONNE) * LEG_LIGNE;
+    if (cx + LEG_COLONNE > xMax + 8) return;
+    s += `<line x1="${f1(cx)}" y1="${f1(cy - 3)}" x2="${f1(cx + 22)}" y2="${f1(cy - 3)}" style="stroke:${r.couleur || '#26323f'};stroke-width:2.2;stroke-linecap:round"/>`;
+    s += `<text class="cartx" x="${f1(cx + 30)}" y="${f1(cy)}">${esc(clip(r.route || 'sans route', 18))}</text><text class="carth" x="${f1(cx + LEG_COLONNE - 14)}" y="${f1(cy)}" text-anchor="end">${r.n} fil${r.n > 1 ? 's' : ''}</text>`; });
+  return s; }
 function cartoucheSvg(rx, by, c, folio) {
   const W = 224, H = 66, x = rx - W, y = by - H;
   let s = `<rect class="cbox" x="${f1(x)}" y="${f1(y)}" width="${W}" height="${H}"/>`;
@@ -168,9 +185,11 @@ function cheminAvecPonts(pts, verticaux) {
         d += ` L ${f1(x0)} ${f1(y)} A ${f1(rx)} ${f1(ry)} 0 0 ${s > 0 ? 1 : 0} ${f1(x1)} ${f1(y)}`; }); }
     d += ' L ' + f1(b.x) + ' ' + f1(b.y); }
   return d; }
-function filSvg(w, verticaux) {
+/* un fil se trace à l'encre, ou à la COULEUR DE SA ROUTE (le dessin en porte la fonction, `couleurDe` : l'interface la
+   tient du contrat) ; la surbrillance ne touche que l'opacité et l'épaisseur, la couleur reste */
+function filSvg(w, verticaux, couleur) {
   if (!w.pts.length) return '';           // un shunt n'a pas de tracé : la réglette le porte
-  return `<path class="cab" data-i="${w.i}" data-a="${escA(w.de)}" data-b="${escA(w.vers)}" d="${cheminAvecPonts(w.pts, verticaux)}"/>`;
+  return `<path class="cab" data-i="${w.i}" data-a="${escA(w.de)}" data-b="${escA(w.vers)}"${couleur ? ` style="stroke:${couleur}"` : ''} d="${cheminAvecPonts(w.pts, verticaux)}"/>`;
 }
 /* Un piquage — plusieurs fils sur une même borne — se dessine comme du fil :
    le fil sort de la borne, rejoint une verticale d'où partent les autres, et
@@ -298,7 +317,7 @@ const repereTexte = r => `<text class="${r.cls}" x="${f1(r.x)}" y="${f1(r.y)}" t
    muets). Le plus long segment seul laissait muet un fil dont l'horizontale
    passait sous une masse et la verticale entre deux ponts (folio 5,
    W-526). */
-function reperesDeFil(fils, verticaux, barrettes, occ) {
+function reperesDeFil(fils, verticaux, barrettes, occ, couleurDe) {
   const H = 5.6, fs = FS_FIL;
   occ = occ || occupationDe(fils, barrettes || [], []);
   const cands = [];
@@ -310,7 +329,7 @@ function reperesDeFil(fils, verticaux, barrettes, occ) {
     // un fil qui n'est qu'un raccord vers un piquage a, sur la verticale du piquage, un tronçon à lui seul
     if (!vs.length && w.pts.length) { const t = tronconDePiquage(w, barrettes || []); if (t) vs.push({ L: t.vL, x: t.vx, y0: t.vy0, y1: t.vy1 }); }
     hs.sort((u, v) => v.L - u.L); vs.sort((u, v) => v.L - u.L);
-    cands.push({ nom, L: hs.length ? hs[0].L : 0, hs, vs }); });
+    cands.push({ nom, L: hs.length ? hs[0].L : 0, hs, vs, couleur: couleurDe ? couleurDe(w) : null }); });
   cands.sort((a, b) => b.L - a.L);
   let out = '';
   /* un fil court (une masse collée à sa borne) garde son numéro : il peut
@@ -334,13 +353,13 @@ function reperesDeFil(fils, verticaux, barrettes, occ) {
     if (pose) { occ.poser(pose);
       // dans le fil : un fond blanc coupe le trait sous le numéro, le fil repart de part et d'autre
       if (pose.dedans) out += `<rect class="halo" x="${f1(pose.x0 - 1.2)}" y="${f1(pose.y0 + 0.5)}" width="${f1(pose.x1 - pose.x0 + 2.4)}" height="${f1(pose.y1 - pose.y0 - 1)}"/>`;
-      out += `<text class="filnum" x="${f1(pose.cx)}" y="${f1(pose.y0 + 0.78 * fs)}" text-anchor="middle">${esc(c.nom)}</text>`; return; }
+      out += `<text class="filnum"${c.couleur ? ` style="fill:${c.couleur}"` : ''} x="${f1(pose.cx)}" y="${f1(pose.y0 + 0.78 * fs)}" text-anchor="middle">${esc(c.nom)}</text>`; return; }
     // pas de place à l'horizontale : le numéro se lit debout, le long d'un vertical
     for (const v of c.vs) { if (larg + 10 > v.L) continue; const mid = (v.y0 + v.y1) / 2, dmax = (v.L - larg) / 2 - 5, x1 = v.x - 2.2, x0 = x1 - H;
       for (let d = 0; d <= dmax + 0.01; d += 3) for (const cy of (d === 0 ? [mid] : [mid - d, mid + d])) {
         const y0 = cy - larg / 2, y1 = cy + larg / 2; if (!occ.libre({ x0, y0, x1, y1 }, 0.5)) continue;
         occ.poser({ x0, y0, x1, y1 });
-        out += `<text class="filnum" transform="rotate(-90 ${f1(x1)} ${f1(cy)})" x="${f1(x1)}" y="${f1(cy)}" text-anchor="middle">${esc(c.nom)}</text>`; return; } } });
+        out += `<text class="filnum"${c.couleur ? ` style="fill:${c.couleur}"` : ''} transform="rotate(-90 ${f1(x1)} ${f1(cy)})" x="${f1(x1)}" y="${f1(cy)}" text-anchor="middle">${esc(c.nom)}</text>`; return; } } });
   return out;
 }
 /* Sur la verticale d'un piquage, le tronçon entre la borne d'un fil et le
@@ -525,10 +544,10 @@ function blocSvg(c, designation, choisi) {
 
 /* ---- la scène entière ------------------------------------------------- */
 function sceneSvg(dessin, cartouche, folio, designationDe, choisi) {
-  let s = feuilleSvg(dessin.bbox, cartouche, folio);
-  const fils = dessin.fils.filter(w => !w.shunt);
+  let s = feuilleSvg(dessin.bbox, cartouche, folio, dessin.legende);
+  const fils = dessin.fils.filter(w => !w.shunt), couleurDe = dessin.couleurDe || null;
   const verticaux = verticauxDe([...fils.map(w => w.pts), ...tracesDePiquage(dessin.barrettes)]);
-  fils.forEach(w => { s += filSvg(w, verticaux); });
+  fils.forEach(w => { s += filSvg(w, verticaux, couleurDe && couleurDe(w)); });
   const shunts = new Map();
   dessin.fils.forEach(w => { if (!w.shunt) return; const ys = [w.epA.y, w.epB.y].sort((u, v) => u - v); (shunts.get(w.de) || shunts.set(w.de, []).get(w.de)).push(ys); });
   // un pont appartient au morceau (barrette en paquets, masses répétées) dont les bornes sont à ses hauteurs, pas à tout ce qui porte le nom
@@ -537,7 +556,7 @@ function sceneSvg(dessin, cartouche, folio, designationDe, choisi) {
   // les textes cherchent leur place dans ce qui est tracé : les repères d'abord, les numéros de fil ensuite
   const occ = occupationDe(fils, dessin.barrettes, dessin.comps);
   poserReperes(dessin.comps, occ);
-  s += reperesDeFil(dessin.fils, verticaux, dessin.barrettes, occ);
+  s += reperesDeFil(dessin.fils, verticaux, dessin.barrettes, occ, couleurDe);
   s += piquagesSvg(dessin.barrettes, dessin.piquages, verticaux);
   dessin.points.forEach(d => s += `<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="1.9"/>`);
   dessin.comps.forEach(c => { s += blocSvg(c, designationDe ? designationDe(c.name) : '', choisi === c.name); });

@@ -15,6 +15,9 @@ const atelier = {
   lire(texte) { const r = lireTexte(texte); atelier.charger(r.liaisons); return r; },
   dessin() { return app.dessin; },
   audit() { return app.dessin ? auditer(app.dessin) : { ok: false, fils: 0, droits: 0, tauxDroits: 1, croisements: 0, filsDansBloc: 0, blocsChevauches: 0, blocs: 0 }; },
+  /* l'affinage (08) : endormi sous pilote automatique, pour que les bancs mesurent le concours ; réveillé ici */
+  affinage(on) { affinage.actif = !!on; if (on) { relireAffines(); affinerTout(); } return atelier.etatAffinage(); },
+  etatAffinage() { return { actif: affinage.actif, encours: affinage.encours ? affinage.encours.cle.length : 0, attente: affinage.file.length, finis: affinage.finis.size, etat: affinage.etat, worker: affinage.worker === false ? 'refusé' : affinage.worker ? 'oui' : 'pas encore', erreur: affinage.erreur || null }; },
   app
 };
 
@@ -26,5 +29,7 @@ function demarrer() {
   // la base se montre à côté du plan : c'est elle qu'on corrige
   if (baseOuverte) ouvrirBase();
   requestAnimationFrame(() => ajuster());
+  // les folios déjà affinés dans ce navigateur reviennent ; les autres s'affinent en arrière-plan ; les retouches aussi
+  relireAffines(); relireRetouches();
 }
 demarrer();

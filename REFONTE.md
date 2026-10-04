@@ -213,6 +213,23 @@ Fait, mesuré, en place :
   flanc, les replis concourent, la passe finale converge sur le meilleur.
   Le banc rejoue a posteriori les gestes évidents (échange, flanc,
   glissement) au même barème, et rend 1 s'il en manque un.
+- **La grande batterie, la recherche profonde, la retouche, le relief**
+  (`tests/corpus.js` dix-huit profils, `04` `placementProfond`, `08`
+  `affinage`, retouche, `08-relief`, `06` routes) : soixante-douze câblages,
+  du minimal au géant, regardés à l'œil ; les défauts trouvés deviennent des
+  règles générales (un pont de barrette coupée n'est pas un fil droit gagné ;
+  un corps tassé emmène ses feuilles ; un fil plié d'un pas se redresse en
+  allongeant un petit bloc, aussi sur la géométrie resserrée ; un corps
+  étiré paie sa hauteur en trop) et un contrôle de plus (les redressements
+  évidents). Le temps de calcul n'étant plus un souci, une recherche
+  PROFONDE (perturbations repolies) tourne en arrière-plan dans un Worker
+  refait du moteur (`<script id="moteur">`), remplace le dessin à chaque
+  mieux et se garde (IndexedDB) : sur les seize cas les plus complexes,
+  56 → 30 croisements. Les fils prennent la couleur de leur route, une
+  légende les nomme. Un bloc se déplace à la souris (retouche gardée,
+  Ctrl+Z, « automatique »). Une barrette, une prise se voient en relief.
+  Banc : 92,3 % / 6 (91,9 % / 5 avant) ; corpus de soixante-douze cas :
+  90,1 % / 84 (89,0 % / 95 avant ce tour).
 - **Pour n'importe quel fichier : un corpus, des calculateurs élastiques,
   un dessin serré** (`03` `ROND`, `04` `suivreLesGros`, `DESCENTE`,
   `hauteurEnTrop`, `compactions`, `glissements`, `permutationsDeBornes`,

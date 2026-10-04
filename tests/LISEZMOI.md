@@ -7,8 +7,13 @@ node tests/controle.js         les invariants, le contrat d'essai, la base de re
 node tests/memoire.js          le travail survit-il à la fermeture de l'onglet
 node tests/format-retest.js    les seize colonnes sont lues par leur nom
 node tests/banc-placement.js   combien de fils sortent droits, et sur quelle feuille ; les six folios de l'exemple relus
-node tests/banc-corpus.js      vingt-quatre câblages qu'aucun réglage n'a vus (tests/corpus.js), relus par les mêmes contrôles
-                               exacts ; --cas=deux pour un profil, --images=dossier pour une capture de chacun
+node tests/banc-corpus.js      soixante-douze câblages qu'aucun réglage n'a vus (tests/corpus.js, dix-huit profils, du plus simple
+                               au plus complexe), relus par les mêmes contrôles exacts ; --cas=deux,trois pour des profils,
+                               --images=dossier pour une capture de chacun, --profond=12 après la recherche profonde (lent)
+node tests/affinage.js         la recherche profonde tourne en arrière-plan (Worker), sans erreur, et son dessin se garde
+node tests/retouche.js         un bloc se déplace à la vraie souris, tout suit, Ctrl+Z, « automatique », et ça se garde
+node tests/relief.js           la vue en relief de chaque barrette et prise de l'exemple : un fil par trou, aucune étiquette
+                               sur une autre, tourner, survoler, Échap, double-clic
 node tests/barrettes.js        la bible des barrettes se lit, la référence se choisit, les connecteurs se lisent ; la norme se lit,
                                chaque fil va dans son trou, la simulation donne des valeurs connues à la main (sans navigateur)
 ```
@@ -36,20 +41,60 @@ chiffres de référence sur les vingt et une topologies (quinze historiques
 et les six folios de l'exemple ; un piquage qui tranche un fil compte
 comme un croisement) :
 
-    91,9 % de fils droits · 5 croisements · 0 évitable · 0 violation · 0 cas hors feuille
-    contrat d'essai : 83,3 %, 0 croisement · deux borniers en cascade : 100 %, 0
-    folio 1 : 87,5 %, 0 · folio 2 : 73,7 %, 0 · folio 3 : 85,7 %, 1
-    folio 4 : 92,6 %, 1 · folio 5 : 81,6 %, 3 · folio 6 : 87,5 %, 0
+    92,3 % de fils droits · 6 croisements · 0 évitable · 0 violation · 0 cas hors feuille
+    contrat d'essai : 77,8 %, 1 croisement · deux borniers en cascade : 100 %, 0
+    folio 1 : 87,5 %, 0 · folio 2 : 78,9 %, 0 · folio 3 : 89,3 %, 1
+    folio 4 : 92,3 %, 1 · folio 5 : 86,8 %, 3 · folio 6 : 87,5 %, 0
     partout : 0 tour, 0 segment partagé, 0 marche, 0 borne sur une autre, 0 fil rompu,
     0 bloc collé à un autre
 
-et sur le CORPUS (`banc-corpus.js`, vingt-quatre câblages, six profils) :
+et sur le CORPUS (`banc-corpus.js`, soixante-douze câblages, dix-huit profils) :
 
-    90,4 % de fils droits · 17 croisements · 1 défaut de lisibilité · 0 cas faux
+    90,1 % de fils droits · 84 croisements · 6 défauts de lisibilité · 0 cas faux
 
-(Avant cette passe : 89,0 % et 7 croisements sur le banc ; 87,6 % et 31
-croisements sur le corpus. Le folio 3 compte 48 fils droits au lieu de 42,
-le folio 4 25 au lieu de 23, le folio 5 31 au lieu de 29.)
+(Avant cette passe : 91,9 % et 5 croisements sur le banc ; sur les mêmes
+soixante-douze câblages, 89,0 % et 95 croisements. Les six premiers profils
+seuls, au tour précédent : 87,6 % et 31 croisements, puis 90,4 % et 17.
+Le banc mesure le dessin du CONCOURS, celui qu'on voit d'abord ; la
+recherche profonde le remplace ensuite dans l'outil.)
+
+Sur les seize cas les plus complexes (deux et trois calculateurs, les
+géants à deux calculateurs, le mélange), douze tours de RECHERCHE PROFONDE
+(`--profond=12`) : 88,0 % → 90,2 % de fils droits, 56 → 30 croisements
+(un géant de cent neuf fils, 17 → 7 ; l'outil en fait vingt-quatre tours).
+De dix secondes à une minute et demie par cas : c'est ce que l'affinage
+fait en arrière-plan, une fois pour toutes.
+
+LA GRANDE BATTERIE (`banc-corpus.js`, dix-huit profils de `tests/corpus.js`,
+du minimal — deux équipements, un fil — au géant — deux calculateurs, cent
+dix fils —, en passant par la série, l'étoile, les connecteurs multiples,
+les piquages, les rails, la barrette longue, trois calculateurs, les prises
+en chaîne) a été regardée à l'œil, cas par cas. Ce qui allait : les cas
+simples (minimal, étoile, rails, connecteurs, barrette longue) sortent à
+95-100 %, sans croisement. Ce qui n'allait pas, et ce qui l'a réglé :
+- un PONT de barrette coupée comptait comme un fil droit gagné (05,
+  `estPont`) : le juge coupait un bus de six bornes en quatre morceaux
+  reliés par cinq ponts. Il ne compte plus : un seul morceau, tout droit ;
+- un corps TASSÉ emmène ses FEUILLES (`compactions`, `avecSesFeuilles`) :
+  un relais de quatre bornes restait haut de 345 unités pour garder droit
+  le fil de sa lampe ; la lampe descend maintenant avec sa borne ;
+- un fil plié d'un pas sous la lettre d'un connecteur se REDRESSE en
+  allongeant le petit bloc d'en face (`redressements` : les hauteurs exactes
+  des deux bouts sont candidates, et le geste passe aussi, en premier, sur
+  la géométrie resserrée) ; le banc a un contrôle de plus, les REDRESSEMENTS
+  ÉVIDENTS, qui l'aurait vu ;
+- un corps ÉTIRÉ paie sa hauteur en trop comme une descente
+  (`excesDesEtires`) : au forfait seul, une lampe de trois bornes montait
+  sur trois cents unités pour un fil droit (folio 3, 392LP2) ;
+- le banc note comme le juge : descentes et corps étirés compris ;
+- les cas les plus complexes (deux ou trois calculateurs, plus de quatre-
+  vingts fils) restaient emmêlés : c'est la RECHERCHE PROFONDE qui les
+  démêle (04, `placementProfond` : des perturbations — un bloc change de
+  colonne, un sous-ensemble passe de l'autre côté du calculateur —, chacune
+  repolie et jugée ; un cas de cent neuf fils passe de 23 croisements à 3).
+  Le temps n'est pas un souci : elle tourne en arrière-plan (08,
+  `affinage`, un Worker refait du moteur), le dessin s'améliore sous les
+  yeux, et le résultat se garde dans le navigateur.
 
 LES SIX FOLIOS SONT DES EXEMPLES : ce qu'on corrige doit valoir pour
 n'importe quel fichier. Le CORPUS (`tests/corpus.js`) fabrique, d'une graine

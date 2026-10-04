@@ -453,8 +453,12 @@ function routerUneFois(layout, permis) {
    Un fil est DROIT s'il est un seul segment horizontal, de borne à borne :
    un fil qui passe par un raccord et la verticale d'un piquage ne l'est pas
    (le routeur le marque `parPiquage`). Un shunt n'est ni droit ni plié : il
-   ne compte pas. */
-const compterDroits = fils => fils.filter(w => w.pts.length >= 2 && !w.parPiquage && w.pts.every(p => Math.abs(p.y - w.pts[0].y) < 0.01)).length;
+   ne compte pas ; le PONT d'une barrette coupée (un fil d'une barrette vers
+   elle-même) non plus : couper rapportait un « fil droit » par pont, et le
+   juge coupait un bus de six bornes en quatre morceaux reliés par cinq ponts
+   là où un seul morceau se lisait d'un coup d'œil. */
+const estPont = w => String(w.de) === String(w.vers);
+const compterDroits = fils => fils.filter(w => !estPont(w) && w.pts.length >= 2 && !w.parPiquage && w.pts.every(p => Math.abs(p.y - w.pts[0].y) < 0.01)).length;
 /* Les MARCHES d'un fil : un segment de moins de MARCHE entre deux angles
    (une horizontale entre deux verticales, une verticale entre deux
    horizontales), ou deux verticales à moins de 2·MARCHE l'une de l'autre.
@@ -530,9 +534,9 @@ function auditer(dessin) {
   let blocsChevauches = 0;
   for (let i = 0; i < blocs.length; i++) for (let j = i + 1; j < blocs.length; j++) { const a = blocs[i], b = blocs[j];
     if (a.x < b.x + b.w - 1 && b.x < a.x + a.w - 1 && a.y < b.y + b.h - 1 && b.y < a.y + a.h - 1) blocsChevauches++; }
-  const droits = compterDroits(fils);
-  return { ok: filsDansBloc === 0 && blocsChevauches === 0, fils: fils.length, droits,
-           tauxDroits: fils.length ? +(droits / fils.length).toFixed(3) : 1,
+  const droits = compterDroits(fils), nFils = fils.filter(w => !estPont(w)).length;
+  return { ok: filsDansBloc === 0 && blocsChevauches === 0, fils: nFils, droits,
+           tauxDroits: nFils ? +(droits / nFils).toFixed(3) : 1,
            croisements: compterCroisements(fils, dessin.barrettes), filsDansBloc, blocsChevauches, blocs: blocs.length, details: coupables,
            evitables: croisementsEvitables(dessin, { fils, barrettes: dessin.barrettes }) };
 }

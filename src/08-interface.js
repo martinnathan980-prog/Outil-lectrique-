@@ -32,7 +32,8 @@ const app = {
   contrat: nouveauContrat(), source: null, nFolios: 0, budget: 16, plan: '*', nom: '',
   vue: { s: 1, tx: 0, ty: 0 }, choisi: null, cible: null, actif: null, dessin: null, hist: [], fiche: null,
   bible: [], bibleNom: '', norme: null, normeNom: '', simu: null,   // simu : les hypothèses, posées au démarrage (relireSimu)
-  base: { ouvert: false, filtre: '', tri: null, largeur: 0, hauteur: 0, sale: true, defiler: false, enSaisie: false, choixOuvert: false, normeOuverte: false }
+  base: { ouvert: false, filtre: '', tri: null, largeur: 0, hauteur: 0, sale: true, defiler: false, enSaisie: false, choixOuvert: false, normeOuverte: false },
+  retouches: new Map()   // folio (sa clé de placement) -> le dessin retouché à la souris (la retouche)
 };
 const $ = id => document.getElementById(id);
 const CLE_CONTRAT = 'atelier.contrat.v2';
@@ -50,21 +51,153 @@ function liaisonsDuPlan() { const L = app.contrat.liaisons.filter(liaisonComplet
    concours du folio chargé prend quelques secondes, revenir sur un folio déjà
    vu est instantané. La clé : ce que le placement lit de chaque liaison. */
 const placements = new Map(), PLACEMENTS_GARDES = 24;
+const clePlacement = L => JSON.stringify(L.map(l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable, l.pnDe, l.pnVers]));
 function placementDe(L) {
-  const cle = JSON.stringify(L.map(l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable, l.pnDe, l.pnVers]));
+  const cle = clePlacement(L);
+  // un folio retouché à la souris : la retouche, toujours (elle se défait par « automatique » ou Ctrl+Z)
+  if (app.retouches.has(cle)) return app.retouches.get(cle);
+  // un folio déjà affiné (dans cette session, ou gardé d'une autre) : son meilleur dessin
+  if (affinage.profonds.has(cle)) return affinage.profonds.get(cle);
   if (placements.has(cle)) { const P = placements.get(cle); placements.delete(cle); placements.set(cle, P); return P; }
   const P = meilleurPlacement(L); placements.set(cle, P);
   if (placements.size > PLACEMENTS_GARDES) placements.delete(placements.keys().next().value);
   return P;
 }
+
+/* ---- l'AFFINAGE : la recherche profonde, en arrière-plan ---------------- */
+/* Le dessin qu'on voit d'abord est celui du concours (quelques secondes).
+   Puis la recherche profonde (04, `placementProfond`) tourne dans un Worker
+   — le moteur, refait depuis son <script id="moteur"> —, folio par folio, le
+   folio affiché d'abord : chaque fois qu'elle trouve mieux, le dessin se
+   remplace sous les yeux, la vue ne bouge pas. Le temps n'est pas un souci
+   (le lecteur : « une heure de calcul pour une vie d'études bien faite, on
+   s'en fiche ») : ce qu'elle trouve se GARDE dans ce navigateur (IndexedDB),
+   par folio et par version du moteur — un folio affiné l'est pour toujours.
+   Sous pilote automatique (navigator.webdriver), elle dort : les bancs
+   mesurent le concours, déterministe ; `atelier.affinage(true)` la réveille.
+   Sans Worker ni IndexedDB (un navigateur qui les refuse), rien ne change :
+   le dessin du concours reste. */
+const TOURS_PROFONDS = 24;
+const affinage = { actif: !(typeof navigator !== 'undefined' && navigator.webdriver), worker: null, file: [], encours: null,
+  profonds: new Map(), finis: new Set(), etat: null, vu: 0 };
+const cleCourante = () => { const L = liaisonsDuPlan(); return L.length ? clePlacement(L) : null; };
+// tous les folios du contrat dans la file, le folio affiché d'abord ; ceux qui ne sont plus au contrat en sortent
+function affinerTout() { if (!affinage.actif) return;
+  const P = plans(), L0 = app.contrat.liaisons.filter(liaisonComplete), parPlan = app.plan === '*' || !P.length ? [L0] : [liaisonsDuPlan(), ...P.filter(p => p !== app.plan).map(p => L0.filter(l => l.plan === p))];
+  const travaux = parPlan.filter(L => L.length).map(L => ({ cle: clePlacement(L), L: L.map(l => ({ ...l })) })).filter(t => !affinage.finis.has(t.cle) && !(affinage.encours && affinage.encours.cle === t.cle));
+  affinage.file = travaux.filter((t, i) => travaux.findIndex(u => u.cle === t.cle) === i); pomper(); }
+function pomper() { while (affinage.file.length && affinage.finis.has(affinage.file[0].cle)) affinage.file.shift();
+  if (affinage.encours || !affinage.file.length) { montrerAffinage(); return; }
+  const w = travailleur(); if (!w) return;
+  affinage.encours = affinage.file.shift(); affinage.etat = { k: 0, n: TOURS_PROFONDS };
+  w.postMessage({ cle: affinage.encours.cle, liaisons: affinage.encours.L, tours: TOURS_PROFONDS }); montrerAffinage(); }
+function travailleur() { if (affinage.worker) return affinage.worker; if (affinage.worker === false) return null;
+  try { const src = document.getElementById('moteur').textContent;
+    // le moteur rapporte à chaque tour ; un dessin meilleur part avec, la fin aussi
+    const glue = `\nself.onmessage = e => { const { cle, liaisons, tours } = e.data; let dernier = null;
+      try { const P = placementProfond(liaisons, tours, (k, n, m) => { if (k > 0 && m !== dernier) postMessage({ cle, k, n, P: sortieDuPlacement(m) }); else postMessage({ cle, k, n }); dernier = m; });
+        postMessage({ cle, fini: true, P }); }
+      catch (err) { postMessage({ cle, erreur: String(err && err.message || err) }); } };`;
+    const w = new Worker(URL.createObjectURL(new Blob([src + glue], { type: 'text/javascript' })));
+    w.onmessage = recevoirAffinage; w.onerror = () => { affinage.worker = false; affinage.encours = null; affinage.file = []; montrerAffinage(); };
+    return (affinage.worker = w); }
+  catch (_) { affinage.worker = false; return null; } }
+function recevoirAffinage(e) { const d = e.data, j = affinage.encours; if (!j || d.cle !== j.cle) return;
+  if (d.n) affinage.etat = { k: d.k, n: d.n };
+  if (d.P && !d.fini) { affinage.profonds.set(d.cle, d.P); if (cleCourante() === d.cle) { affinage.vu = Date.now(); rafraichirDessin(); } }
+  if (d.erreur) affinage.erreur = d.erreur;
+  if (d.fini || d.erreur) { affinage.finis.add(d.cle); if (d.P) { affinage.profonds.set(d.cle, d.P); garderAffine(d.cle, d.P); }
+    affinage.encours = null; pomper(); }
+  montrerAffinage(); }
+// le dessin se remplace, la vue reste où elle est
+function rafraichirDessin() { calculer(); peindre(); synchroniser(); rallumer(); }
+function montrerAffinage() { const el = $('affinage'); if (!el) return; const j = affinage.encours, e = affinage.etat;
+  if (!affinage.actif || !j) { el.hidden = true; return; }
+  const ici = j.cle === cleCourante(), reste = affinage.file.length;
+  el.hidden = false; el.classList.toggle('ailleurs', !ici);
+  $('af-txt').textContent = (ici ? 'affinage ' : 'affine un autre folio ') + (e ? e.k + ' / ' + e.n : '') + (reste ? ' · ' + reste + ' en attente' : '');
+  el.title = 'La recherche profonde améliore le dessin en arrière-plan ; chaque mieux trouvé le remplace, et le résultat se garde dans ce navigateur.'; }
+// IndexedDB : un magasin, une entrée par version du moteur et folio ; les versions passées s'effacent
+const IDB_NOM = 'atelier-schema', IDB_MAGASIN = 'placements', IDB_RETOUCHES = 'retouches';
+function ouvrirIDB() { return new Promise((ok, ko) => { try { const r = indexedDB.open(IDB_NOM, 2);
+  r.onupgradeneeded = () => { [IDB_MAGASIN, IDB_RETOUCHES].forEach(m => { if (!r.result.objectStoreNames.contains(m)) r.result.createObjectStore(m); }); };
+  r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error); } catch (err) { ko(err); } }); }
+function garderAffine(cle, P) { ouvrirIDB().then(db => { db.transaction(IDB_MAGASIN, 'readwrite').objectStore(IDB_MAGASIN).put({ P, t: Date.now() }, VERSION_MOTEUR + '|' + cle); }).catch(() => { }); }
+function relireAffines() { if (!affinage.actif) return; const avant = cleCourante();
+  ouvrirIDB().then(db => { const req = db.transaction(IDB_MAGASIN, 'readwrite').objectStore(IDB_MAGASIN).openCursor();
+    req.onsuccess = () => { const c = req.result;
+      if (!c) { const ici = cleCourante(); if (ici && ici === avant && affinage.profonds.has(ici)) rafraichirDessin(); affinerTout(); return; }
+      const k = String(c.key);
+      if (k.startsWith(VERSION_MOTEUR + '|')) { const cle = k.slice(VERSION_MOTEUR.length + 1); if (!affinage.profonds.has(cle) && c.value && c.value.P) affinage.profonds.set(cle, c.value.P); affinage.finis.add(cle); }
+      else c.delete();
+      c.continue(); }; }).catch(() => { }); }
+/* ---- la RETOUCHE : déplacer un bloc à la souris, tout suit ------------- */
+/* Le dessin automatique est le point de départ ; on peut le retoucher. Un
+   bloc (équipement, barrette, prise) se prend et glisse dans sa colonne :
+   ses masses collées le suivent, ses fils se reroutent en direct, et il
+   s'AIMANTE à la hauteur qui rend droit un de ses fils. Il s'arrête à huit
+   unités d'un voisin de sa colonne (deux blocs ne se collent pas). Lâché, le
+   folio est RETOUCHÉ : son dessin se garde dans ce navigateur (IndexedDB),
+   l'affinage ne le remplace plus, Ctrl+Z défait le geste, « automatique »
+   rend le dessin du moteur. Au doigt, un appui long prend le bloc (un
+   glissé simple déplace la vue). */
+const AIMANT = 5, GARDE_RETOUCHE = 8;
+// les pastilles (masses, morceaux de barrette seuls) collées au flanc d'un bloc, à sa hauteur : elles le suivent
+const pastillesCollees = (comps, c) => comps.filter(t => t.kind === 'tag' && t.y + t.h / 2 > c.y - 1 && t.y + t.h / 2 < c.y + c.h + 1
+  && (Math.abs(t.x + t.w + FIL_PASTILLE - c.x) < 2 || Math.abs(t.x - (c.x + c.w + FIL_PASTILLE)) < 2));
+const surLeBloc = (c, nom, e) => String(nom) === String(c.name) && e.x >= c.x - 1 && e.x <= c.x + c.w + 1 && e.y >= c.y - 1 && e.y <= c.y + c.h + 1;
+const decalerComp = (k, dy) => { const rangs = {}; Object.keys(k.rangs || {}).forEach(lid => { rangs[lid] = k.rangs[lid].map(p => ({ ...p, y: p.y + dy })); });
+  const parCle = new Map(); (k.parCle || new Map()).forEach((v, cl) => parCle.set(cl, { ...v, y: v.y + dy })); return { ...k, y: k.y + dy, rangs, parCle }; };
+// jusqu'où le bloc peut aller sans venir à moins de GARDE d'un voisin de sa colonne, ni sortir de la zone utile de la
+// feuille (seul dans sa colonne, il partait au-delà, et la feuille rapetissait tout pour le suivre) : [haut, bas] de dy
+function courseDuBloc(P, c) { let lo = -Infinity, hi = Infinity; const bb = app.dessin && app.dessin.bbox;
+  if (bb) { const k = bb.k || 1; lo = bb.y + (PAGE_CADRE + PAGE_MARGE) * k - c.y; hi = bb.y + bb.h - (PAGE_CADRE + PAGE_MARGE + PAGE_CARTOUCHE) * k - (c.y + c.h); }
+  P.comps.forEach(o => { if (o === c || o.kind === 'tag' || o.col !== c.col || o.x >= c.x + c.w || c.x >= o.x + o.w) return;
+    if (o.y + o.h <= c.y + 0.5) lo = Math.max(lo, o.y + o.h + GARDE_RETOUCHE - c.y); else if (o.y >= c.y + c.h - 0.5) hi = Math.min(hi, o.y - GARDE_RETOUCHE - (c.y + c.h)); });
+  return [Math.min(lo, 0), Math.max(hi, 0)]; }
+// les hauteurs où un fil du bloc devient droit (son autre bout sur un bloc qui ne bouge pas)
+function aimantsDuBloc(P, c, tags) { const ds = []; P.links.forEach(l => { if (l.shunt || l.boucle) return;
+  [[l.de, l.epA, l.vers, l.epB], [l.vers, l.epB, l.de, l.epA]].forEach(([n, e, n2, e2]) => { if (!surLeBloc(c, n, e)) return;
+    const autre = P.comps.find(k => surLeBloc(k, n2, e2)); if (!autre || autre === c || tags.includes(autre)) return; ds.push(e2.y - e.y); }); });
+  return ds; }
+// le dessin avec le bloc déplacé de dy, ses pastilles avec lui, rerouté
+function deplacerBloc(P, c, dy) { const tags = pastillesCollees(P.comps, c), bouge = new Set([c, ...tags]);
+  const comps = P.comps.map(k => bouge.has(k) ? decalerComp(k, dy) : k);
+  const touche = (nom, e) => [...bouge].some(k => surLeBloc(k, nom, e));
+  const links = P.links.map(l => { const a = touche(l.de, l.epA), b = touche(l.vers, l.epB); if (!a && !b) return l;
+    return { ...l, epA: a ? { ...l.epA, y: l.epA.y + dy } : l.epA, epB: b ? { ...l.epB, y: l.epB.y + dy } : l.epB }; });
+  const compDe = new Map(); comps.forEach(k => { if (k.id != null) compDe.set(k.id, k); if (!compDe.has(k.name)) compDe.set(k.name, k); });
+  const routage = router({ comps, links, geom: P.geom, bbox: P.bbox });
+  return { ...P, comps, links, compDe, routage, retouche: true }; }
+// la retouche se garde (IndexedDB) ; une clé sans retouche s'efface
+function garderRetouche(cle) { const P = app.retouches.get(cle);
+  ouvrirIDB().then(db => { const st = db.transaction(IDB_RETOUCHES, 'readwrite').objectStore(IDB_RETOUCHES); if (P) st.put({ P, t: Date.now() }, cle); else st.delete(cle); }).catch(() => { }); }
+function relireRetouches() { ouvrirIDB().then(db => { const req = db.transaction(IDB_RETOUCHES, 'readonly').objectStore(IDB_RETOUCHES).openCursor(); let vu = false;
+  req.onsuccess = () => { const c = req.result; if (!c) { if (vu) rafraichirDessin(); return; } if (c.value && c.value.P && !app.retouches.has(String(c.key))) { app.retouches.set(String(c.key), c.value.P); vu = true; } c.continue(); }; }).catch(() => { }); }
+function revenirAutomatique() { const cle = cleCourante(); if (!cle || !app.retouches.has(cle)) return;
+  histPush('retouche de ce folio'); app.retouches.delete(cle); garderRetouche(cle); rafraichirDessin(); dire('Dessin automatique rétabli.'); }
+function synchroniserRetouche() { const b = $('btnAuto'); if (!b) return; const cle = cleCourante(); b.hidden = !(cle && app.retouches.has(cle)); }
 function calculer() {
   const L = liaisonsDuPlan(); if (!L.length) { app.dessin = null; return null; }
-  const P = placementDe(L);
+  const P = placementDe(L); affinerTout();
   // la feuille : la même pour tous les folios (A3 paysage), le dessin calé dedans
   app.dessin = P ? { comps: P.comps, links: P.links, bbox: pageDe(P.comps, P.routage.fils), geom: P.geom, compDe: P.compDe,
                      fils: P.routage.fils, points: P.routage.points, barrettes: P.routage.barrettes, piquages: P.routage.piquages } : null;
+  if (app.dessin) { const routes = couleursDesRoutes(), routeDe = w => (L[w.i] && L[w.i].route) || '';
+    app.dessin.couleurDe = w => routes.get(routeDe(w)) || null; app.dessin.legende = legendeDesRoutes(app.dessin.fils.filter(w => !w.shunt && String(w.de) !== String(w.vers)), routeDe, routes); }
   return app.dessin;
 }
+/* LES ROUTES : un fil prend la couleur de sa route (la colonne « route » ou « cheminement » du fichier). Une route garde
+   sa couleur sur tous les folios du contrat — l'ordre naturel de leurs noms, dans une palette de dix teintes franches,
+   lisibles sur le blanc et à l'impression ; une couleur choisie au contrat (`couleursRoutes`) passe devant. */
+const PALETTE_ROUTES = ['#1f5fbf', '#c0392b', '#1e8449', '#d35400', '#7d3c98', '#117a8b', '#9a6324', '#c2185b', '#5d6d1e', '#34495e'];
+function couleursDesRoutes() { const choisies = app.contrat.couleursRoutes || {}, m = new Map();
+  [...new Set(app.contrat.liaisons.map(l => l.route).filter(Boolean))].sort(triNaturel).forEach((r, i) => m.set(r, choisies[r] || PALETTE_ROUTES[i % PALETTE_ROUTES.length]));
+  return m; }
+// la légende d'un folio : ses routes, chacune avec son nombre de fils ; « sans route » quand d'autres en ont une
+function legendeDesRoutes(fils, routeDe, routes) { const n = new Map(); fils.forEach(w => { const r = routeDe(w); n.set(r, (n.get(r) || 0) + 1); });
+  if (![...n.keys()].some(Boolean)) return [];
+  return [...n].sort((a, b) => (!a[0]) - (!b[0]) || triNaturel(a[0], b[0])).map(([route, k]) => ({ route, n: k, couleur: routes.get(route) || null })); }
 function folioCourant() { const P = plans();
   return (app.plan !== '*' && P.length > 1) ? (app.plan + ' / ' + P.length) : '1 / 1'; }
 /* Ce qui s'écrit sous le repère : la désignation si on en a donné une ;
@@ -199,27 +332,61 @@ function lierPlanche() {
     const ns = Math.max(ZMIN, Math.min(ZMAX, pinch.s0 * dist(p[0], p[1]) / pinch.d));
     const mx = (p[0].x + p[1].x) / 2 - r.left, my = (p[0].y + p[1].y) / 2 - r.top;
     app.vue = { s: ns, tx: mx - pinch.wx * ns, ty: my - pinch.wy * ns }; appliquerVue(); };
+  /* la PRISE d'un bloc (la retouche) : à la souris, appuyer sur un bloc et glisser le déplace ; au doigt, un appui long
+     le prend, un glissé simple déplace la vue. `prise` : le bloc, l'ordonnée de départ, le dessin d'avant, sa course */
+  let prise = null, long = null, image = 0, dernierBloc = null, dernierAppui = null;
+  const prenable = c => c && c.kind !== 'tag' && !c.rail && !estRenvoi(c.name);
+  const commencerPrise = () => { const L = liaisonsDuPlan(), cle = L.length ? clePlacement(L) : null; if (!cle) return false;
+    const P = placementDe(L), c = P.comps.find(k => k === prise.c) || null; if (!c) return false;
+    const tags = pastillesCollees(P.comps, c);
+    Object.assign(prise, { cle, P, avant: app.retouches.get(cle) || null, course: courseDuBloc(P, c), aimants: aimantsDuBloc(P, c, tags), dy: 0 });
+    histPush('déplacer ' + c.name); mode = 'bloc'; stage.classList.add('deplace'); eteindre(); return true; };
+  const suitPrise = e => { const w = versMonde(e.clientX, e.clientY); let dy = Math.round((w.y - prise.wy) * 2) / 2;
+    const tol = Math.max(2, Math.min(14, 6 / app.vue.s)), a = prise.aimants.filter(d => Math.abs(d - dy) <= tol).sort((u, v) => Math.abs(u - dy) - Math.abs(v - dy))[0];
+    if (a != null) dy = a;
+    dy = Math.max(prise.course[0], Math.min(prise.course[1], dy)); if (dy === prise.dy) return; prise.dy = dy;
+    cancelAnimationFrame(image); image = requestAnimationFrame(() => { app.retouches.set(prise.cle, dy ? deplacerBloc(prise.P, prise.c, dy) : (prise.avant || deplacerBloc(prise.P, prise.c, 0)));
+      calculer(); peindre(); }); };
+  const finPrise = () => { cancelAnimationFrame(image); stage.classList.remove('deplace');
+    if (!prise.dy) { if (prise.avant) app.retouches.set(prise.cle, prise.avant); else app.retouches.delete(prise.cle); app.hist.pop(); synchroniserHistorique(); }
+    else { app.retouches.set(prise.cle, deplacerBloc(prise.P, prise.c, prise.dy)); garderRetouche(prise.cle); dire(prise.c.name + ' déplacé · Ctrl+Z pour défaire, « automatique » pour tout rétablir'); }
+    calculer(); peindre(); synchroniser(); rallumer(); prise = null; };
   stage.addEventListener('pointerdown', e => { if (e.button && e.button !== 0) return; fermerMenu(); fermerRecherche();
     try { stage.setPointerCapture(e.pointerId); } catch (_) { }
-    pointeurs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (pointeurs.size >= 2) { debutPinch(); return; }
-    bouge = false; origine = [e.clientX, e.clientY]; mode = 'pan'; pan = { tx: app.vue.tx, ty: app.vue.ty, x: e.clientX, y: e.clientY }; });
+    pointeurs.set(e.pointerId, { x: e.clientX, y: e.clientY }); clearTimeout(long);
+    if (pointeurs.size >= 2) { prise = null; debutPinch(); return; }
+    bouge = false; origine = [e.clientX, e.clientY]; mode = 'pan'; pan = { tx: app.vue.tx, ty: app.vue.ty, x: e.clientX, y: e.clientY };
+    const w = versMonde(e.clientX, e.clientY), c = blocSous(w); prise = prenable(c) ? { c, wy: w.y } : null;
+    if (!dernierBloc || Date.now() - dernierBloc.t > 800) dernierBloc = c ? { nom: c.name, t: Date.now() } : null;   // le premier appui d'un double-clic fait foi
+    if (prise && e.pointerType !== 'touch') mode = 'prise';
+    else if (prise) long = setTimeout(() => { if (mode === 'pan' && !bouge && prise && commencerPrise()) { if (navigator.vibrate) navigator.vibrate(12); } }, 380); });
   stage.addEventListener('pointermove', e => { if (pointeurs.has(e.pointerId)) pointeurs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (mode === 'pinch') { suitPinch(); return; } if (!mode) return;
-    if (origine && (Math.abs(e.clientX - origine[0]) > 3 || Math.abs(e.clientY - origine[1]) > 3)) { bouge = true; stage.classList.add('tient'); }
+    if (origine && (Math.abs(e.clientX - origine[0]) > 3 || Math.abs(e.clientY - origine[1]) > 3)) { if (!bouge && mode === 'prise' && !commencerPrise()) mode = 'pan'; bouge = true; clearTimeout(long); if (mode === 'pan') stage.classList.add('tient'); }
+    if (mode === 'bloc') { suitPrise(e); return; }
     if (mode === 'pan') { app.vue.tx = pan.tx + (e.clientX - pan.x); app.vue.ty = pan.ty + (e.clientY - pan.y); appliquerVue(); } });
-  const fin = e => { try { stage.releasePointerCapture(e.pointerId); } catch (_) { } stage.classList.remove('tient');
+  const fin = e => { try { stage.releasePointerCapture(e.pointerId); } catch (_) { } stage.classList.remove('tient'); clearTimeout(long);
     const etaitPinch = mode === 'pinch'; pointeurs.delete(e.pointerId);
     if (etaitPinch) { if (pointeurs.size < 2) { mode = null; pinch = null; } return; }
-    if (mode === 'pan' && !bouge) cliquer(versMonde(e.clientX, e.clientY));
-    mode = null; pan = null; };
+    if (mode === 'bloc') { finPrise(); mode = null; pan = null; return; }
+    if ((mode === 'pan' || mode === 'prise') && !bouge) {
+      /* le DOUBLE appui se reconnaît ici : le premier clic choisit le bloc et redessine la page, et le navigateur
+         n'émet alors ni « click » ni « dblclick » — deux appuis à moins de 400 ms, au même endroit */
+      const t = Date.now(), d = dernierAppui; dernierAppui = { t, x: e.clientX, y: e.clientY };
+      if (d && t - d.t < 400 && Math.abs(e.clientX - d.x) < 8 && Math.abs(e.clientY - d.y) < 8) { dernierAppui = null; doubleAppui(e); }
+      else cliquer(versMonde(e.clientX, e.clientY)); }
+    mode = null; pan = null; prise = null; };
+  // double appui : sur une barrette ou une prise, sa vue en relief ; ailleurs, on zoome
+  const doubleAppui = e => { const c = blocSous(versMonde(e.clientX, e.clientY)), nom = dernierBloc && Date.now() - dernierBloc.t < 800 ? dernierBloc.nom : c && c.name;
+    if (nom && estBornier(nom)) { ouvrirRelief(nom); return; }
+    const r = cadre(); zoomer(1.6, e.clientX - r.left, e.clientY - r.top); };
   stage.addEventListener('pointerup', fin); stage.addEventListener('pointercancel', fin);
   stage.addEventListener('mousemove', e => { if (mode || pointeurs.size) return;
     const c = blocSous(versMonde(e.clientX, e.clientY)); const nm = c ? c.name : null;
     if (nm !== survole) { survole = nm; if (nm) allumerBloc(nm); else rallumer(); } });
   stage.addEventListener('mouseleave', () => { if (!mode) { survole = null; rallumer(); } });
   stage.addEventListener('wheel', e => { e.preventDefault(); const r = cadre(); zoomer(Math.exp(-e.deltaY * 0.0014), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
-  stage.addEventListener('dblclick', e => { const r = cadre(); zoomer(1.6, e.clientX - r.left, e.clientY - r.top); });
+
 }
 /* Un clic sur la planche : un bloc, un renvoi, un fil, ou le vide. */
 function cliquer(w) { const c = blocSous(w);
@@ -369,7 +536,7 @@ function rendreEquip() { const box = $('ba-equip'), c = app.cible; box.hidden = 
   const P = bornier ? remplirSelonNorme(physiqueDeBarrette(nom, V, app.bible, app.contrat.designations.get(nom) || ''), app.norme) : null;
   const tete = esc(P ? P.nature : natureDe(nom)) + ' · ' + pluriel(n, 'fil') + (b && b.shunts ? ' · ' + pluriel(b.shunts, 'shunt') : '');
   box.innerHTML = `<div class="sur">${tete}</div>
-    <div class="actions"><button class="btn lien danger" id="eq-del" title="Supprimer l’équipement et ses fils">Supprimer</button></div>
+    <div class="actions">${bornier ? '<button class="btn lien" id="eq-relief" title="La pièce en perspective, chaque fil dans son trou (ou double-clic sur le bloc)">Voir en relief</button>' : ''}<button class="btn lien danger" id="eq-del" title="Supprimer l’équipement et ses fils">Supprimer</button></div>
     <input class="rep" id="eq-rep" value="${escA(nom)}" aria-label="Repère" title="Renommer : chaque fil suit" spellcheck="false">`
     + (bornier ? '' : `<input class="des" id="eq-des" value="${escA(app.contrat.designations.get(nom) || '')}" placeholder="Désignation, écrite sous le repère" aria-label="Désignation" spellcheck="false">`)
     + (bornier ? cartePhysique(nom, P, b) : carteConnecteurs(nom));
@@ -378,7 +545,7 @@ function rendreEquip() { const box = $('ba-equip'), c = app.cible; box.hidden = 
   if ($('eq-des')) $('eq-des').addEventListener('change', e => { histPush('désignation de ' + nom); designer(nom, e.target.value.trim()); apresEdition(); });
   $('eq-del').onclick = () => { if (!confirm('Supprimer « ' + nom + ' » et ses ' + n + ' liaison(s) ?')) return;
     histPush('suppression de ' + nom); supprimerEquipement(nom); app.base.filtre = ''; apresEdition(); dire(nom + ' supprimé.'); };
-  if (bornier) lierCartePhysique(nom);
+  if (bornier) { lierCartePhysique(nom); $('eq-relief').onclick = () => ouvrirRelief(nom); }
   box.querySelectorAll('input').forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } })); }
 /* La carte se redessine quand la place change (fenêtre, poignée), jamais
    sous les doigts de qui y écrit. */
@@ -875,10 +1042,12 @@ function ajusterFolios() { if (app.nFolios) return 0;
 
 /* ---- historique et enregistrement ------------------------------------- */
 function histPush(quoi) { app.hist.push({ quoi, liaisons: app.contrat.liaisons.map(l => ({ ...l })), source: app.source ? app.source.map(l => ({ ...l })) : null,
-  nFolios: app.nFolios, budget: app.budget, plan: app.plan, nom: app.nom, designations: new Map(app.contrat.designations) });
+  nFolios: app.nFolios, budget: app.budget, plan: app.plan, nom: app.nom, designations: new Map(app.contrat.designations), retouches: new Map(app.retouches) });
   if (app.hist.length > 40) app.hist.shift(); synchroniserHistorique(); }
 function annuler() { const p = app.hist.pop(); if (!p) return null;
   app.contrat.liaisons = p.liaisons; app.source = p.source; app.nFolios = p.nFolios; app.budget = p.budget || 16; app.plan = p.plan; app.nom = p.nom || ''; app.contrat.designations = p.designations;
+  // les retouches d'avant reviennent, et se gardent comme elles étaient
+  if (p.retouches) { const cles = new Set([...app.retouches.keys(), ...p.retouches.keys()]); app.retouches = p.retouches; cles.forEach(garderRetouche); }
   app.choisi = null; app.cible = null; app.actif = null; app.base.enSaisie = false; fermerFiche();
   if (document.activeElement && $('ba-tab').contains(document.activeElement)) document.activeElement.blur();
   redessiner(); ajuster(true); sauver(); return p.quoi; }
@@ -959,7 +1128,7 @@ function synchroniserContexte() { const n = app.contrat.liaisons.length;
 function synchroniserHistorique() { const b = $('btnUndo'), d = app.hist[app.hist.length - 1]; b.disabled = !d;
   const quoi = d ? 'Annuler : ' + d.quoi : 'Annuler';
   b.setAttribute('aria-label', quoi + ' (Ctrl+Z)'); b.querySelector('.bulle').innerHTML = esc(quoi) + '<kbd>Ctrl+Z</kbd>'; }
-function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); rafraichirBase(); }
+function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); synchroniserRetouche(); rafraichirBase(); }
 let toastT = null;
 function dire(msg, erreur) { const t = $('toast'); t.textContent = msg; t.classList.toggle('erreur', !!erreur); t.classList.add('on');
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), erreur ? 6000 : 2800); }
@@ -987,11 +1156,14 @@ function lierPanneau() {
   $('menu').addEventListener('click', e => { const b = e.target.closest('button[data-act]'); if (!b) return; fermerMenu(); actions[b.dataset.act](); });
   document.addEventListener('click', e => { if (!e.target.closest('#menuBoite')) fermerMenu(); });
   o('btnUndo', () => { const q = annuler(); if (q) dire('Annulé : ' + q + '.'); });
+  o('btnAuto', revenirAutomatique);
   o('fo-prev', () => allerAuFolio(-1)); o('fo-next', () => allerAuFolio(+1));
   $('fo-strip').addEventListener('click', e => { const c = e.target.closest('.chip'); if (c) allerAuPlan(c.dataset.plan); });
   o('zin', () => zoomer(1.25)); o('zout', () => zoomer(1 / 1.25)); o('zfit', () => ajuster(true)); o('zlbl', () => ajuster(true));
   lierRecherche(); lierDepot(); lierBase();
   window.addEventListener('keydown', e => {
+    // la vue en relief ouverte : Échap la ferme, le reste lui appartient
+    if (!$('relief').hidden) { if (e.key === 'Escape') fermerRelief(); return; }
     const dansChamp = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '');
     if (e.key === 'Escape') { if (!$('menu').hidden) { fermerMenu(); $('btnMenu').focus(); } else if (rechercheOuverte()) { fermerRecherche(); $('q').blur(); }
       else if (dansChamp) e.target.blur();   // dans un champ, Échap ne fait que le quitter
