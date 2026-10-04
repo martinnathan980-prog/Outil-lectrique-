@@ -59,7 +59,7 @@ const { chromium } = require('playwright');
 const path = require('path');
 const { fichierDemande, chargerDansLaPage, essaiDansLaPage, exempleDansLaPage, mesurerDansLaPage, preparerDansLaPage, echangesEvidentsDansLaPage,
         flancsEvidentsDansLaPage, glissementsEvidentsDansLaPage, segmentsPartagesDansLaPage, marchesDansLaPage, corpsEtiresDansLaPage,
-        pastillesColleesDansLaPage, blocLisibleDansLaPage, filDroitOuJustifieDansLaPage, calculateurDansLaPage } = require('./pilote');
+        pastillesColleesDansLaPage, blocLisibleDansLaPage, filDroitOuJustifieDansLaPage, calculateurDansLaPage, blocsCollesDansLaPage } = require('./pilote');
 
 const FICHIER = fichierDemande();
 /* Un dessin trop allongé s'imprime trop petit — sauf s'il tient à l'échelle 1 dans la zone utile de la feuille, la même
@@ -201,6 +201,8 @@ if (require.main === module) (async () => {
       /* le calculateur seul dans sa colonne, au centre, ses morceaux de barrette entre lui et ce qu'ils servent (le
          lecteur : « deux équipements au-dessus du gros, c'est pas propre » ; 668VT31 au-dessus de 300XC1, 670VT41 rejetée
          au bord, 620SW4 sous 600XC4) */
+      const colles = await page.evaluate(blocsCollesDansLaPage);
+      m.controles.push({ nom: 'aucun bloc collé à un autre (huit unités au moins entre deux blocs d\'une colonne)', ok: !colles.length, detail: colles.join(' | ') });
       const calc = await page.evaluate(calculateurDansLaPage);
       if (calc.hub) m.controles.push({ nom: calc.hub + ' est seul dans sa colonne, au centre (' + calc.sousEnsembles + ' sous-ensembles), ses morceaux de barrette entre lui et ce qu\'ils servent', ok: !calc.defauts.length, detail: calc.defauts.join(' | ') });
       if (gen.plan === '2') { const f = await page.evaluate(filDroitOuJustifieDansLaPage, 'W-120');

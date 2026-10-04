@@ -287,54 +287,60 @@ function poserReperes(comps, occ) {
 }
 const repereTexte = r => `<text class="${r.cls}" x="${f1(r.x)}" y="${f1(r.y)}" text-anchor="${r.a}">${esc(r.nom)}</text>`;
 
-/* Le numéro de fil, au-dessus du plus long segment horizontal, en son milieu
-   — ou décalé le long du segment si le milieu est pris. Jamais sur un
-   vertical, jamais sur une autre étiquette, jamais barré par un fil, jamais
-   collé à une pastille. Mieux vaut un fil muet qu'une planche où les
-   étiquettes se marchent dessus : les plus longs segments choisissent en
-   premier. Sans occupation donnée, on la bâtit des fils seuls (c'est ainsi
-   que le placement compte les fils muets). */
+/* Le numéro de fil, sur le plus long segment horizontal, en son milieu —
+   ou décalé le long du segment si le milieu est pris ; sinon sur le suivant,
+   du plus long au plus court ; sinon debout, le long d'un vertical (du plus
+   long au plus court, glissé le long de chacun). Jamais sur une autre
+   étiquette, jamais barré par un fil, jamais collé à une pastille. Mieux
+   vaut un fil muet qu'une planche où les étiquettes se marchent dessus :
+   les plus longs segments choisissent en premier. Sans occupation donnée,
+   on la bâtit des fils seuls (c'est ainsi que le placement compte les fils
+   muets). Le plus long segment seul laissait muet un fil dont l'horizontale
+   passait sous une masse et la verticale entre deux ponts (folio 5,
+   W-526). */
 function reperesDeFil(fils, verticaux, barrettes, occ) {
   const H = 5.6, fs = FS_FIL;
   occ = occ || occupationDe(fils, barrettes || [], []);
   const cands = [];
   fils.forEach(w => { const nom = String(w.cable || '').trim(); if (!nom) return;
-    let bL = 0, bx0 = 0, bx1 = 0, by = 0, vL = 0, vx = 0, vy0 = 0, vy1 = 0;
+    const hs = [], vs = [];
     for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1];
-      if (Math.abs(a.y - b.y) < 0.6) { const L = Math.abs(b.x - a.x); if (L > bL) { bL = L; bx0 = Math.min(a.x, b.x); bx1 = Math.max(a.x, b.x); by = a.y; } }
-      else if (Math.abs(a.x - b.x) < 0.6) { const L = Math.abs(b.y - a.y); if (L > vL) { vL = L; vx = a.x; vy0 = Math.min(a.y, b.y); vy1 = Math.max(a.y, b.y); } } }
+      if (Math.abs(a.y - b.y) < 0.6) hs.push({ L: Math.abs(b.x - a.x), x0: Math.min(a.x, b.x), x1: Math.max(a.x, b.x), y: a.y });
+      else if (Math.abs(a.x - b.x) < 0.6) vs.push({ L: Math.abs(b.y - a.y), x: a.x, y0: Math.min(a.y, b.y), y1: Math.max(a.y, b.y) }); }
     // un fil qui n'est qu'un raccord vers un piquage a, sur la verticale du piquage, un tronçon à lui seul
-    if (vL === 0 && w.pts.length) { const t = tronconDePiquage(w, barrettes || []); if (t) { vL = t.vL; vx = t.vx; vy0 = t.vy0; vy1 = t.vy1; } }
-    cands.push({ nom, L: bL, x0: bx0, x1: bx1, y: by, vL, vx, vy0, vy1 }); });
+    if (!vs.length && w.pts.length) { const t = tronconDePiquage(w, barrettes || []); if (t) vs.push({ L: t.vL, x: t.vx, y0: t.vy0, y1: t.vy1 }); }
+    hs.sort((u, v) => v.L - u.L); vs.sort((u, v) => v.L - u.L);
+    cands.push({ nom, L: hs.length ? hs[0].L : 0, hs, vs }); });
   cands.sort((a, b) => b.L - a.L);
   let out = '';
   /* un fil court (une masse collée à sa borne) garde son numéro : il peut
      déborder de quelques unités, mais pas sur le symbole — l'occupation le
      repousse vers l'équipement, où le flanc est vide */
-  cands.forEach(c => { const larg = largeurTexte(c.nom.length, fs, 0.1), court = c.L < 40;
+  cands.forEach(c => { const larg = largeurTexte(c.nom.length, fs, 0.1);
     let pose = null;
-    // [écart au fil, débord permis à chaque bout] : sur un fil court, un numéro trop long monte d'une ligne et déborde
-    // davantage — au-dessus du symbole, jamais sur le corps de l'équipement (l'occupation l'y repousse)
     /* le numéro s'écrit DANS le fil, qui le traverse (un halo blanc l'isole) : c'est ainsi qu'on sait que c'est le bon
-       fil ; s'il n'y a pas la place à cette hauteur, au-dessus. `ecart` : où va la ligne de base par rapport au fil */
+       fil ; s'il n'y a pas la place à cette hauteur, au-dessus. `ecart` : où va la ligne de base par rapport au fil ;
+       [écart au fil, débord permis à chaque bout] : sur un fil court, un numéro trop long monte d'une ligne et déborde
+       davantage — au-dessus du symbole, jamais sur le corps de l'équipement (l'occupation l'y repousse) */
     const dans = -(H / 2 - 0.35 * fs) - 0.3;   // ligne de base pour que le texte soit centré sur le fil
-    for (const [ecart, marge] of (court ? [[dans, -4], [2.2, -4], [7.5, -30]] : [[dans, 5], [2.2, 5]])) { if (pose || !c.L || larg + 2 * marge > c.L) continue;
-      const mid = (c.x0 + c.x1) / 2, dmax = Math.max(0, (c.L - larg) / 2 - marge), sien = ecart === dans ? c.y : null;
-      for (let d = 0; d <= dmax + 0.01 && !pose; d += court ? 1 : Math.max(3, larg / 3)) {
-        for (const cx of (d === 0 ? [mid] : [mid - d, mid + d])) {
-          const x0 = cx - larg / 2, x1 = cx + larg / 2, y1 = c.y - ecart, y0 = y1 - H;
-          if (x0 < c.x0 + marge || x1 > c.x1 - marge) continue;
-          if (occ.libre({ x0, y0, x1, y1 }, R_PONT + 1, null, sien)) { pose = { cx, x0, y0, x1, y1, dedans: sien != null }; break; } } } }
+    for (const g of c.hs) { if (pose) break; const court = g.L < 40;
+      for (const [ecart, marge] of (court ? [[dans, -4], [2.2, -4], [7.5, -30]] : [[dans, 5], [2.2, 5]])) { if (pose || !g.L || larg + 2 * marge > g.L) continue;
+        const mid = (g.x0 + g.x1) / 2, dmax = Math.max(0, (g.L - larg) / 2 - marge), sien = ecart === dans ? g.y : null;
+        for (let d = 0; d <= dmax + 0.01 && !pose; d += court ? 1 : Math.max(3, larg / 3)) {
+          for (const cx of (d === 0 ? [mid] : [mid - d, mid + d])) {
+            const x0 = cx - larg / 2, x1 = cx + larg / 2, y1 = g.y - ecart, y0 = y1 - H;
+            if (x0 < g.x0 + marge || x1 > g.x1 - marge) continue;
+            if (occ.libre({ x0, y0, x1, y1 }, R_PONT + 1, null, sien)) { pose = { cx, x0, y0, x1, y1, dedans: sien != null }; break; } } } } }
     if (pose) { occ.poser(pose);
       // dans le fil : un fond blanc coupe le trait sous le numéro, le fil repart de part et d'autre
       if (pose.dedans) out += `<rect class="halo" x="${f1(pose.x0 - 1.2)}" y="${f1(pose.y0 + 0.5)}" width="${f1(pose.x1 - pose.x0 + 2.4)}" height="${f1(pose.y1 - pose.y0 - 1)}"/>`;
       out += `<text class="filnum" x="${f1(pose.cx)}" y="${f1(pose.y0 + 0.78 * fs)}" text-anchor="middle">${esc(c.nom)}</text>`; return; }
-    // pas de place à l'horizontale : le numéro se lit debout, le long du plus long vertical
-    if (larg + 10 > c.vL) return;
-    const cy = (c.vy0 + c.vy1) / 2, x1 = c.vx - 2.2, x0 = x1 - H, y0 = cy - larg / 2, y1 = cy + larg / 2;
-    if (occ.libre({ x0, y0, x1, y1 }, 0.5)) {
-      occ.poser({ x0, y0, x1, y1 });
-      out += `<text class="filnum" transform="rotate(-90 ${f1(x1)} ${f1(cy)})" x="${f1(x1)}" y="${f1(cy)}" text-anchor="middle">${esc(c.nom)}</text>`; } });
+    // pas de place à l'horizontale : le numéro se lit debout, le long d'un vertical
+    for (const v of c.vs) { if (larg + 10 > v.L) continue; const mid = (v.y0 + v.y1) / 2, dmax = (v.L - larg) / 2 - 5, x1 = v.x - 2.2, x0 = x1 - H;
+      for (let d = 0; d <= dmax + 0.01; d += 3) for (const cy of (d === 0 ? [mid] : [mid - d, mid + d])) {
+        const y0 = cy - larg / 2, y1 = cy + larg / 2; if (!occ.libre({ x0, y0, x1, y1 }, 0.5)) continue;
+        occ.poser({ x0, y0, x1, y1 });
+        out += `<text class="filnum" transform="rotate(-90 ${f1(x1)} ${f1(cy)})" x="${f1(x1)}" y="${f1(cy)}" text-anchor="middle">${esc(c.nom)}</text>`; return; } } });
   return out;
 }
 /* Sur la verticale d'un piquage, le tronçon entre la borne d'un fil et le

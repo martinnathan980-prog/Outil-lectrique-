@@ -15,6 +15,7 @@
 
 const SEP = '\u0001';        // sépare un id de nœud d'une clé de broche
 const FRAG = '\u0002';       // sépare un repère du numéro de son fragment
+const ROND = '\u0003';       // sépare le numéro d'une borne de barrette du rang de son rond (un rond par fil)
 
 /* Un rail (L1, N, PE, 0V…) n'est pas un équipement : c'est un potentiel, dont
    chaque point de raccordement se dessine en pastille près de sa borne. Une
@@ -37,9 +38,14 @@ function construireGraphe(liaisons, coupes) {
   lk.forEach(l => [l.de, l.vers].forEach(n => { if (!vus.has(n)) { vus.add(n); noms.push(n); } }));
 
   // --- broches par repère : une par numéro de borne ; un potentiel en reçoit
-  //     une par fil (chaque point de raccordement est une pastille distincte)
+  //     une par fil (chaque point de raccordement est une pastille distincte) ;
+  //     une borne de BARRETTE aussi, un ROND par fil : un module a un contact
+  //     de chaque côté, le fil qui arrive et celui qui repart n'ont pas le même
+  //     trou — deux fils sur un seul rond se lisaient comme un fil qui traverse
+  //     (le lecteur : « ils ne vont pas avoir la même borne »). Les ronds d'une
+  //     même borne sont pontés : ils sont du même paquet.
   const broches = new Map();
-  const B0 = n => { if (!broches.has(n)) broches.set(n, { liste: [], parEtiquette: new Map(), cnt: 0 }); return broches.get(n); };
+  const B0 = n => { if (!broches.has(n)) broches.set(n, { liste: [], parEtiquette: new Map(), ronds: new Map(), fils: new Map(), cnt: 0 }); return broches.get(n); };
   const bouts = new Map();          // 'li:A' / 'li:B' -> { nom, cle }
   lk.forEach((l, li) => {
     [['de', 'borneDe', 'pnDe', 'A'], ['vers', 'borneVers', 'pnVers', 'B']].forEach(([a, ab, apn, tag]) => {
@@ -48,7 +54,12 @@ function construireGraphe(liaisons, coupes) {
       let cle;
       if (potentiel) { cle = 'r' + (P.cnt++); P.liste.push({ cle, etiq }); }
       else if (etiq && P.parEtiquette.has(etiq)) cle = P.parEtiquette.get(etiq);
-      else { cle = etiq ? ('n:' + etiq) : ('p' + (P.cnt++)); if (etiq) P.parEtiquette.set(etiq, cle); P.liste.push({ cle, etiq }); }
+      else { cle = etiq ? ('n:' + etiq) : ('p' + (P.cnt++)); if (etiq) { P.parEtiquette.set(etiq, cle); P.ronds.set(etiq, [cle]); } P.liste.push({ cle, etiq }); }
+      // un fil (pas un pontage, sauf un pontage coupé, qui se dessine) sur une borne de barrette : le premier rond libre, ou un rond neuf
+      if (etiq && estBarrette(nom) && (l.de !== l.vers || (coupes && coupes.has(l)))) {
+        const ronds = P.ronds.get(etiq), libre = ronds.find(c => !P.fils.get(c));
+        if (libre) cle = libre; else { cle = 'n:' + etiq + ROND + ronds.length; ronds.push(cle); P.liste.push({ cle, etiq }); }
+        P.fils.set(cle, 1); }
       bouts.set(li + ':' + tag, { nom, cle });
     });
   });
@@ -75,6 +86,7 @@ function construireGraphe(liaisons, coupes) {
       // là où il sert, aussi petit que possible — une barrette de dix bornes n'est pas une colonne de dix bornes
       const chef = new Map(P.liste.map(p => [p.cle, p.cle])); const trouver = c => { while (chef.get(c) !== c) c = chef.get(c); return c; };
       lk.forEach((l, li) => { if (l.de !== n || l.vers !== n || (coupes && coupes.has(l))) return; const A = bouts.get(li + ':A'), B = bouts.get(li + ':B'); const ra = trouver(A.cle), rb = trouver(B.cle); if (ra !== rb) chef.set(ra, rb); });
+      P.ronds.forEach(cles => cles.forEach(c => { const ra = trouver(c), rb = trouver(cles[0]); if (ra !== rb) chef.set(ra, rb); }));
       const paquets = new Map(); P.liste.forEach(p => { const r = trouver(p.cle); (paquets.get(r) || paquets.set(r, []).get(r)).push(p); });
       let gi = 0;
       for (const pins of paquets.values()) { const id = paquets.size === 1 ? n : n + FRAG + (gi++);

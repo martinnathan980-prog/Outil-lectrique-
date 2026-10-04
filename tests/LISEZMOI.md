@@ -7,6 +7,8 @@ node tests/controle.js         les invariants, le contrat d'essai, la base de re
 node tests/memoire.js          le travail survit-il à la fermeture de l'onglet
 node tests/format-retest.js    les seize colonnes sont lues par leur nom
 node tests/banc-placement.js   combien de fils sortent droits, et sur quelle feuille ; les six folios de l'exemple relus
+node tests/banc-corpus.js      vingt-quatre câblages qu'aucun réglage n'a vus (tests/corpus.js), relus par les mêmes contrôles
+                               exacts ; --cas=deux pour un profil, --images=dossier pour une capture de chacun
 node tests/barrettes.js        la bible des barrettes se lit, la référence se choisit, les connecteurs se lisent ; la norme se lit,
                                chaque fil va dans son trou, la simulation donne des valeurs connues à la main (sans navigateur)
 ```
@@ -34,15 +36,71 @@ chiffres de référence sur les vingt et une topologies (quinze historiques
 et les six folios de l'exemple ; un piquage qui tranche un fil compte
 comme un croisement) :
 
-    89,0 % de fils droits · 7 croisements · 0 évitable · 0 violation · 0 cas hors feuille
-    contrat d'essai : 77,8 %, 1 croisement · deux borniers en cascade : 100 %, 0
-    folio 1 : 87,5 %, 0 · folio 2 : 68,4 %, 0 · folio 3 : 75 %, 1
-    folio 4 : 88,5 %, 2 · folio 5 : 76,3 %, 3 · folio 6 : 84,4 %, 0
-    partout : 0 tour, 0 segment partagé, 0 marche, 0 borne sur une autre, 0 fil rompu
+    91,9 % de fils droits · 5 croisements · 0 évitable · 0 violation · 0 cas hors feuille
+    contrat d'essai : 83,3 %, 0 croisement · deux borniers en cascade : 100 %, 0
+    folio 1 : 87,5 %, 0 · folio 2 : 73,7 %, 0 · folio 3 : 85,7 %, 1
+    folio 4 : 92,6 %, 1 · folio 5 : 81,6 %, 3 · folio 6 : 87,5 %, 0
+    partout : 0 tour, 0 segment partagé, 0 marche, 0 borne sur une autre, 0 fil rompu,
+    0 bloc collé à un autre
 
-(Avant cette passe : 85,7 % et 14 croisements. Le folio 3 compte 42 fils
-droits au lieu de 38, et un croisement au lieu de quatre ; le folio 4,
-23 au lieu de 18, et deux au lieu de quatre.)
+et sur le CORPUS (`banc-corpus.js`, vingt-quatre câblages, six profils) :
+
+    90,4 % de fils droits · 17 croisements · 1 défaut de lisibilité · 0 cas faux
+
+(Avant cette passe : 89,0 % et 7 croisements sur le banc ; 87,6 % et 31
+croisements sur le corpus. Le folio 3 compte 48 fils droits au lieu de 42,
+le folio 4 25 au lieu de 23, le folio 5 31 au lieu de 29.)
+
+LES SIX FOLIOS SONT DES EXEMPLES : ce qu'on corrige doit valoir pour
+n'importe quel fichier. Le CORPUS (`tests/corpus.js`) fabrique, d'une graine
+et d'un profil, des câblages réalistes qu'aucun réglage n'a vus — un ou deux
+calculateurs, barrettes de distribution, prises de coupure en paires,
+relais et lampes, sondes blindées, sans calculateur — et `banc-corpus.js`
+les relit par les mêmes contrôles exacts que les folios. Il ne rend 1 que
+sur un invariant violé ou une erreur ; les défauts de lisibilité se lisent
+dans le rapport. Ce qu'il a appris :
+
+- UNE BORNE DE BARRETTE A UN ROND PAR FIL (`03-graphe`, `ROND`) : un module
+  a un contact de chaque côté, le fil qui arrive et celui qui repart n'ont
+  pas le même trou ; deux fils sur un seul rond se lisaient comme un fil qui
+  traverse (le lecteur : « ils ne vont pas avoir la même borne »). Les ronds
+  d'une borne sont pontés : ils sont du même paquet.
+- LES RONDS D'UN MORCEAU DE BARRETTE SE RANGENT DANS N'IMPORTE QUEL ORDRE
+  (`permutationsDeBornes`) : le fil qui descend vers un bloc du dessous prend
+  le rond du bas (folio 3, 669VT32 : le fil de 372CP2 en bas, celui du
+  calculateur et la masse au-dessus). Le retournement d'un morceau n'est
+  plus qu'une de ces permutations.
+- UN BLOC QUI GLISSE POUSSE SES VOISINS (`glissements`) : mieux vaut trois
+  fils droits et un plié que l'inverse (folio 3, 371CP1 remonte, ses trois
+  fils vers 409VC2A sont droits).
+- LES GROS ÉQUIPEMENTS SONT ÉLASTIQUES (`rechercheLocale`, `suivreLesGros`,
+  geste « en face ») : un geste qui déplace le partenaire d'un calculateur
+  emmène sa borne en face de lui si la place est libre sur le flanc ; et
+  chaque borne d'un calculateur va en face de son partenaire, toutes
+  ensemble puis une à une. Un second calculateur aussi : sur le corpus, un
+  fil remontait quatre cents unités le long de son flanc en croisant trois
+  fils (deux calculateurs : 9 croisements → 3).
+- LE JUGE COMPTE LES DESCENTES (`DESCENTE`, `compterDescentes`) : ce que les
+  fils pliés descendent d'une borne à l'autre, cent vingt-cinq unités pour
+  un fil droit. Un fil qui plonge de trois cents unités se suit mal, même
+  sans croiser personne ; sans ce terme, le folio 3 étalait trois blocs
+  au bas de la feuille pour un fil droit de plus. Le dessin est serré, et la
+  recherche, mieux guidée, trouve aussi plus de fils droits.
+- LA HAUTEUR EN TROP D'UN CORPS DÉPARTAGE (`hauteurEnTrop`), et un corps se
+  TASSE AUTOUR D'UNE BORNE DONT LE FIL EST DROIT (`compactions`) : serré par
+  un bout, il cassait son seul fil droit (folio 4, 431PR1). Dans la
+  lisibilité, ce terme changeait le choix des finalistes : il ne fait que
+  départager.
+- AUCUN BLOC COLLÉ À UN AUTRE : huit unités au moins entre deux blocs d'une
+  colonne (`GARDE`), au juge (un chevauchement) et au banc.
+- UN CONTACT DE PRISE DONT TOUS LES FILS ARRIVENT DU MÊME CÔTÉ ne se dessine
+  que de ce côté (`sensDeContact`) : un départ pendait dans le vide.
+- UN NUMÉRO DE FIL ESSAIE TOUS LES SEGMENTS (06, `reperesDeFil`) : le plus
+  long segment seul laissait muet un fil dont l'horizontale passait sous une
+  masse et la verticale entre deux ponts.
+- LE BUDGET A DOUBLÉ : la recherche tombe dans un creux ou un autre selon son
+  chemin ; plus large, elle sort des mauvais. Le folio 3 se calcule en sept
+  secondes et demie, le plus gros cas du corpus en quatorze.
 
 AUTOUR D'UN CALCULATEUR, LE CALCULATEUR EST AU CENTRE (`concours`,
 `couchesAutourDuHub`). Quand le folio a un hub (huit bornes, six voisins),
@@ -132,7 +190,8 @@ TROIS GESTES DE PLUS : la BANDE (un petit bloc va se poser contre son
 partenaire de colonne, tout ce qui est dessous descend — folio 6, les
 lampes sous leurs morceaux de barrette), le TASSEMENT (une tranche vide
 se referme, les fils droits le restent) et le RETOURNEMENT d'un morceau de
-barrette (ses bornes pontées dans l'ordre inverse). Un morceau de barrette
+barrette (ses bornes pontées dans l'ordre inverse — aujourd'hui une des
+permutations de ses ronds). Un morceau de barrette
 DESSINÉ est serré sur ses pastilles (neuf), sa place réservée reste douze :
 le fil suivant d'un connecteur au pas passe dessous (folio 6, W-627 droit).
 Un équipement de six bornes au moins s'étire (plus seulement le hub), et un
@@ -345,8 +404,9 @@ pastilles avec lui ; jamais à moins de dix unités d'un autre bloc de sa
 colonne, la garde que la recherche s'impose) ne fait mieux — moins de
 croisements sans moins de fils droits, ou l'inverse (vérification exacte,
 a posteriori, au routage réel, sur la géométrie resserrée, au barème du
-juge : croisements, partages, marches, contours, fils dans leur propre
-bloc ; un tour de plus n'est jamais « mieux »). Et que le dessin n'a
+juge : croisements, partages, marches, contours, descentes, fils dans leur
+propre bloc ; un tour de plus n'est jamais « mieux », et un gain de moins
+d'un pas de descente ne se voit pas). Et que le dessin n'a
 **aucun segment partagé** par deux fils de nets différents, **aucune
 marche**, **aucun corps étiré** (équipement ou réglette) que sa version
 tassée ne bat au juge (on le tasse et on reroute), les masses et les
@@ -362,25 +422,30 @@ message de commit, mesure à l'appui.
 
 ## Ce qui reste imparfait, mesuré
 
-Folio 3 : un croisement, W-314 sur W-321 — trois relais reçoivent chacun
+Folio 3 : un croisement, W-312 sur W-321 — trois relais reçoivent chacun
 un fil du calculateur et un fil du même morceau de barrette, posé entre
-eux et lui ; au mieux, un de ces fils en croise un autre. 397TB1 (trois
-bornes pontées) reste à gauche des pompes : son paquet sert les deux
-pompes et le calculateur, et un pont ne se dessine pas entre deux flancs.
+eux et lui ; au mieux, un de ces fils en croise un autre.
 
-Folio 4 : W-420 passe par-dessus le morceau 670VT41 et croise W-401. Il
-serait droit si la borne A1 du calculateur passait au-dessus de B1 et la
-borne 2 de 421ST1 d'autant : deux connecteurs à réordonner sur le flanc du
-hub, ce qu'aucun geste ne fait encore. W-407 croise W-421 (les deux bus de
-barrette vers les trois sondes s'entrelacent).
+Folio 4 : W-430 croise W-421 (les deux bus de barrette vers les trois
+sondes s'entrelacent).
 
 Folio 5 : trois croisements, imposés par l'ordre des contacts des deux
 prises : W-526 (540VL5 vers la borne 7 de 412VC3B) croise les deux fils
 qui traversent la seconde prise ; W-520 croise W-525 (la borne 8 de
 411VC3A vient de 500XC3, la 7 de 510RL1, posé dessous).
 
-Contrat d'essai : un croisement, W-130 sur W-132, pour deux fils droits de
-plus qu'avant (le morceau de barrette en face de ce qu'il sert).
+Corpus : le cas le plus chargé (29 blocs, 63 fils) se calcule en quatorze
+secondes — les estimations et les assemblages, que le budget ne compte
+pas, en prennent le tiers ; les prises entrelacées d'un calculateur à deux
+connecteurs gardent deux croisements ; un corps étiré pour un fil droit
+reste haut quand le tasser ferait plonger ce fil de plus de soixante unités
+(le juge le préfère ainsi) ; un changement de flanc qui ôterait un petit
+contour reste manqué (simple-1303).
+
+La recherche reste sensible à son chemin : un réglage du juge peut faire
+passer un folio d'une disposition à une autre, de qualité voisine au juge
+mais pas toujours à l'œil. Les deux ordres de gestes et le budget doublé
+l'atténuent ; on regarde les captures à chaque passe.
 
 ## Ce que `controle.js` vérifie
 

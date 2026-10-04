@@ -39,9 +39,9 @@ Le format qui compte est le **RETEST** Excel : seize colonnes nommées, en-tête
 - Elle se pose **par paquet** de bornes pontées, **là où elle sert**, aussi petite que possible : une barrette de dix bornes n'est pas une colonne de dix bornes.
 - Un morceau réduit à une borne et un fil **se colle à sa borne comme une masse**.
 - Une même barrette peut **se couper en morceaux de même repère**, comme un connecteur : les bornes qui partent à gauche dans un morceau à gauche, celles qui partent à droite dans un morceau à droite. Le pontage coupé devient un fil dessiné avec son numéro.
-- L'ordre des bornes d'un paquet peut s'inverser (on retourne le morceau) si ça évite un croisement.
+- Les ronds d'un paquet se rangent dans n'importe quel ordre (on retourne le morceau, ou mieux) : le fil qui descend vers un bloc du dessous prend le rond du bas.
 - Un morceau ne se met **pas au-dessus du gros équipement**, et ne devient pas si grand que tous les autres fils le contournent.
-- Une borne de barrette peut porter deux fils (un qui arrive, un qui repart). Dis-le si je pose la question.
+- Une borne de barrette peut porter deux fils (un qui arrive, un qui repart) : **chaque fil a son rond**, les deux ronds pontés — jamais deux fils sur un même rond.
 
 ### Masses, prises de coupure, repères
 - **Masse** : symbole CEI dans l'axe du fil, perpendiculaire, fil très court, le repère en petit dessous.
@@ -59,7 +59,7 @@ Le plan occupe tout l'écran. **En bas**, la barre de vue : folios (précédent,
 
 1. **Lis d'abord** `REFONTE.md`, `tests/LISEZMOI.md` et les modules de `src/` (01 modèle, 02 lecture, 03 graphe, 04 placement, 05 routage, 06 dessin, 07 folios, 08 interface, 09 barrettes, 10 démarrage). Comprends le pipeline : graphe → placement (concours de mises en niveaux, recherche locale par gestes, juge) → routage → dessin.
 2. **Regarde ton propre écran avant de me livrer quoi que ce soit.** Avec Chromium et Playwright, capture les six folios de l'exemple en entier, puis zoome sur chaque zone que tu as touchée. Compare avant / après, côte à côte. Si ce n'est pas mieux **à l'œil**, ce n'est pas mieux, même si les chiffres montent.
-3. **Mesure, mais ne te cache pas derrière les mesures.** `node tests/banc-placement.js` (21 topologies, fils droits, croisements, marches, partages, gestes évidents), et les batteries `tests/controle.js`, `tests/barrettes.js`, `tests/memoire.js`, `tests/format-retest.js`. Tout doit rester vert.
+3. **Mesure, mais ne te cache pas derrière les mesures.** `node tests/banc-placement.js` (21 topologies, fils droits, croisements, marches, partages, gestes évidents), `node tests/banc-corpus.js` (24 câblages que les réglages n'ont jamais vus : les six folios ne sont que des exemples), et les batteries `tests/controle.js`, `tests/barrettes.js`, `tests/memoire.js`, `tests/format-retest.js`. Tout doit rester vert.
 4. **Quand je pointe un défaut**, trouve la cause dans l'algorithme et corrige la **règle générale**, pas le cas particulier. Puis ajoute au banc un contrôle qui l'aurait vu : si je le trouve avant tes tests, tes tests ne sont pas assez bons.
 5. **Ne régresse jamais un folio que j'ai validé.** À chaque changement du placement, revérifie les six folios ; si un folio que j'avais validé change, montre-le-moi avant / après et dis pourquoi c'est mieux. Le placement est sensible : un petit réglage du juge peut bouleverser un dessin. Rends la recherche robuste plutôt que de régler au hasard.
 6. **Pas de couches sur des couches.** Si une partie est mal conçue, reprends-la proprement, au besoin de zéro, plutôt que d'empiler des rustines. Supprime ce qui ne sert plus.
@@ -75,12 +75,12 @@ Le plan occupe tout l'écran. **En bas**, la barre de vue : folios (précédent,
 
 ## 8. Où en est l'outil (à corriger en priorité)
 
-Fait à la dernière passe : le calculateur au centre, seul dans sa colonne, chaque morceau de barrette entre lui et ce qu'il sert (folios 3 et 4) ; 620SW4 au milieu sous son morceau (folio 6) ; 540VL5 entre les deux prises (folio 5, 5 croisements → 3) ; deux bugs de dessin trouvés et devenus des contrôles (deux bornes l'une sur l'autre, un fil qui n'arrivait pas à sa borne). Banc : 89,0 % de fils droits, 7 croisements.
+Fait à la dernière passe : un rond par fil sur une borne de barrette ; les ronds d'un morceau dans n'importe quel ordre (folio 3, 669VT32 : le fil de 372CP2 en bas) ; un bloc qui glisse pousse ses voisins (folio 3, 371CP1 : trois fils droits sur quatre) ; les calculateurs élastiques, chaque borne en face de son partenaire quand la place est libre, le second calculateur compris ; le juge compte les longues descentes (un dessin serré) ; un corps se tasse autour de son fil droit (folio 4, 431PR1) ; un corpus de vingt-quatre câblages nouveaux relus par les mêmes contrôles. Banc : 91,9 % de fils droits, 5 croisements (avant 89,0 % et 7) ; corpus : 90,4 % et 17 croisements (avant 87,6 % et 31).
 
-- **Folio 4** : W-420 passe par-dessus le morceau 670VT41 et croise W-401. Il serait droit si la borne A1 de 400XC2 passait au-dessus de B1 (deux connecteurs à réordonner sur le flanc du calculateur, avec la borne 2 de 421ST1).
-- **Folio 3** : 397TB1 reste à gauche des pompes avec un long W-370 ; W-380 et W-326 sont longs. Un croisement (W-314 sur W-321) est imposé par la structure.
+- **Folio 3** : un croisement (W-312 sur W-321) est imposé par la structure ; 668VT31 (8, 9, 10) sous les relais, deux de ses fils montent.
 - **Folio 5** : les trois croisements qui restent sont imposés par l'ordre des contacts des deux prises — si une disposition les supprime quand même, prends-la.
-- **Mon vrai fichier** sera plus chargé que l'exemple (plusieurs calculateurs, des dizaines de liaisons par folio) : le banc n'a qu'un calculateur par folio. Ajoute des topologies qui ressemblent à ça et regarde-les à l'écran.
-- Le placement doit rester **stable** : le même contrat donne le même dessin, et un petit changement ne doit pas tout bouleverser. Le folio chargé se calcule en cinq secondes et demie : pas plus.
+- **Corpus** : des prises entrelacées autour d'un calculateur à deux connecteurs gardent deux croisements ; le cas le plus chargé (29 blocs) se calcule en quatorze secondes — trop long : les estimations et assemblages, hors budget, en prennent le tiers.
+- **Mon vrai fichier** sera plus chargé que l'exemple (plusieurs calculateurs, des dizaines de liaisons par folio) : enrichis le corpus de ce qui y ressemble et regarde-le à l'écran.
+- Le placement doit rester **stable** : le même contrat donne le même dessin, et un petit changement ne doit pas tout bouleverser. Le folio chargé se calcule en sept secondes et demie : pas plus.
 
 Le but final : que n'importe quel folio, simple ou complexe, sorte du premier coup comme un dessin de câbleur — propre, droit, lisible, sans que j'aie à te montrer un seul défaut.

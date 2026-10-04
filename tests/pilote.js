@@ -68,7 +68,7 @@ function mesurerDansLaPage() {
 
 /* Le SOCLE des contrôles exacts a posteriori, défini une fois dans la page
    (`window.banc`) : noter un routage (fils droits, croisements, segments
-   partagés), dire si une variante FAIT MIEUX — moins de croisements ou de
+   partagés, descentes), dire si une variante FAIT MIEUX — moins de croisements ou de
    segments partagés sans moins de fils droits, ou plus de fils droits sans
    plus de croisements ni de partages —, si elle reste SAINE (aucun fil dans
    un bloc étranger, aucun chevauchement), et GLISSER un bloc avec les
@@ -80,13 +80,15 @@ function preparerDansLaPage() {
      passe ; un fil qui traverse SON PROPRE bloc n'est pas droit et vaut deux croisements, comme au juge (le routeur exclut
      les deux blocs d'un fil de sa vérification de couloir) : on passe les blocs */
   const noter = (R, links, comps) => { const fils = propres(R), t = traversees(fils, (comps || R.comps).filter(c => c.kind !== 'tag'));
-    return { d: compterDroits(fils.filter(w => !t.propres.has(w))), c: compterCroisements(fils, R.barrettes) + 2 * t.propres.size, p: compterPartages(R.fils), m: compterMarches(fils), t: compterTours({ links: links || R.links }), k: compterContours(fils) }; };
+    return { d: compterDroits(fils.filter(w => !t.propres.has(w))), c: compterCroisements(fils, R.barrettes) + 2 * t.propres.size, p: compterPartages(R.fils), m: compterMarches(fils), t: compterTours({ links: links || R.links }), k: compterContours(fils),
+      s: typeof compterDescentes === 'function' ? compterDescentes(boutsDesLiaisons(links || R.links)) : 0 }; };
   // le même barème que le juge (ses constantes) : croisements, segments partagés, marches, tours, contours (un fil qui
-  // contourne des blocs) — et un TOUR de plus n'est jamais « mieux », quoi qu'il rapporte : un fil qui fait le tour de son
+  // contourne des blocs), descentes (ce que les fils pliés descendent) — et un TOUR de plus n'est jamais « mieux », quoi qu'il rapporte : un fil qui fait le tour de son
   // bloc est ce qu'un lecteur déteste le plus
-  const note = n => n.d - n.c / CROISEMENTS_PAR_DROIT - PARTAGE * n.p - PAR_MARCHE * n.m - TOUR * n.t - n.k;
-  const mieux = (n, b) => n.t <= b.t && note(n) > note(b) + 0.01;
-  const texte = n => n.d + ' droits, ' + n.c + ' croisements, ' + n.p + ' partagés, ' + n.m + ' marches, ' + n.t + ' tours' + (n.k > 0.05 ? ', contours ' + n.k.toFixed(1) : '');
+  const note = n => n.d - n.c / CROISEMENTS_PAR_DROIT - PARTAGE * n.p - PAR_MARCHE * n.m - TOUR * n.t - n.k - (typeof DESCENTE === 'number' ? DESCENTE * n.s : 0);
+  // mieux d'un pas de descente au moins (une borne) : quelques unités de fil plié en moins ne se voient pas
+  const mieux = (n, b) => n.t <= b.t && note(n) > note(b) + (typeof DESCENTE === 'number' ? DESCENTE * PRH : 0.01);
+  const texte = n => n.d + ' droits, ' + n.c + ' croisements, ' + n.p + ' partagés, ' + n.m + ' marches, ' + n.t + ' tours' + (n.k > 0.05 ? ', contours ' + n.k.toFixed(1) : '') + ', descentes ' + Math.round(n.s);
   const sain = (comps, R) => { const blocs = comps.filter(c => c.kind !== 'tag');
     for (let i = 0; i < blocs.length; i++) for (let j = i + 1; j < blocs.length; j++) { const a = blocs[i], b = blocs[j];
       if (a.x < b.x + b.w - 1 && b.x < a.x + a.w - 1 && a.y < b.y + b.h - 1 && b.y < a.y + a.h - 1) return false; }
@@ -323,10 +325,22 @@ function calculateurDansLaPage() {
   if (sousEnsembles >= 2 && !(cotes.has(-1) && cotes.has(1))) defauts.push(nom + ' n\'est pas au centre : ses ' + sousEnsembles + ' sous-ensembles sont tous du même côté');
   d.links.forEach(l => { if (l.shunt || l.boucle || l.de !== nom || !estBarrette(l.vers)) return; const m = surBloc(l.epB, l.vers); if (!m) return;
     d.links.forEach(k => { if (k === l || k.shunt || k.boucle) return; const sur = (ep, n) => n === m.name && surBloc(ep, n) === m;
-      const autre = sur(k.epA, k.de) ? [k.epB, k.vers] : sur(k.epB, k.vers) ? [k.epA, k.de] : null; if (!autre || autre[1] === nom) return;
+      // un autre morceau de la même barrette (coupée) n'est pas ce que le morceau sert
+      const autre = sur(k.epA, k.de) ? [k.epB, k.vers] : sur(k.epB, k.vers) ? [k.epA, k.de] : null; if (!autre || autre[1] === nom || autre[1] === m.name) return;
       const c = surBloc(autre[0], autre[1]); if (c && Math.abs(cx(m) - cx(h)) > Math.abs(cx(c) - cx(h)) + 1) defauts.push(m.name + ' derrière ' + c.name + ' (' + k.cable + ')'); }); });
   return { hub: nom, sousEnsembles, defauts };
 }
 
+/* Les BLOCS COLLÉS : deux blocs d'une même colonne à moins de huit unités
+   l'un de l'autre — ils se lisent comme un seul. Rend les paires. */
+function blocsCollesDansLaPage() {
+  const d = atelier.dessin(); if (!d) return [];
+  const blocs = d.comps.filter(c => c.kind !== 'tag'), out = [];
+  for (let i = 0; i < blocs.length; i++) for (let j = i + 1; j < blocs.length; j++) { const a = blocs[i], b = blocs[j];
+    if (a.col !== b.col || a.x >= b.x + b.w || b.x >= a.x + a.w) continue;
+    const ecart = Math.max(a.y, b.y) - Math.min(a.y + a.h, b.y + b.h); if (ecart < 8) out.push(a.name + ' / ' + b.name + ' (' + Math.round(ecart) + ')'); }
+  return out;
+}
+
 module.exports = { fichierDemande, chargerDansLaPage, essaiDansLaPage, exempleDansLaPage, mesurerDansLaPage, preparerDansLaPage, echangesEvidentsDansLaPage,
-  flancsEvidentsDansLaPage, glissementsEvidentsDansLaPage, segmentsPartagesDansLaPage, marchesDansLaPage, corpsEtiresDansLaPage, pastillesColleesDansLaPage, blocLisibleDansLaPage, filDroitOuJustifieDansLaPage, calculateurDansLaPage };
+  flancsEvidentsDansLaPage, glissementsEvidentsDansLaPage, segmentsPartagesDansLaPage, marchesDansLaPage, corpsEtiresDansLaPage, pastillesColleesDansLaPage, blocLisibleDansLaPage, filDroitOuJustifieDansLaPage, calculateurDansLaPage, blocsCollesDansLaPage };

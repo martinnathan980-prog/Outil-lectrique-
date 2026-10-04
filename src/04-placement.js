@@ -110,6 +110,13 @@ function grapheDesNiveaux(M) {
 }
 // le hub d'un modèle ne change pas : calculé une fois
 const hubDe = M => (M.hub === undefined ? (M.hub = grapheDesNiveaux(M).hub) : M.hub);
+/* Les SOUS-ENSEMBLES autour d'un hub : ce qui reste relié une fois le hub ôté (une pompe et sa barrette, un relais, sa
+   lampe et son interrupteur). Rend bloc -> numéro, ou null sans hub ; calculé une fois. */
+function sousEnsemblesDuHub(M) { if (M.ss !== undefined) return M.ss; const H = hubDe(M); if (H == null) return (M.ss = null);
+  const ss = new Map(); let n = 0;
+  M.ids.forEach(id => { if (id === H || M.estTag(id) || ss.has(id)) return; const pile = [id]; ss.set(id, n);
+    while (pile.length) M.voisins.get(pile.pop()).forEach(v => { if (v !== H && !ss.has(v)) { ss.set(v, n); pile.push(v); } }); n++; });
+  return (M.ss = ss); }
 /* Ce qu'un fil coûte selon la portée entre ses colonnes : gratuit vers une
    colonne voisine (il peut être droit), plié à coup sûr et une piste de
    goulotte dans la même colonne (3), sa portée quand il enjambe. Un fil
@@ -333,8 +340,21 @@ function couchesAutourDuHub(M, N) {
   const bH = M.blocs.get(H);
   bH.bornes.forEach(p => M.partenairesBlocs(K(H, p.cle)).forEach(q => { const c = compDe.get(q.id); if (!c) return;
     const g = bH.connecteur.get(p.cle) ?? ('~' + p.cle); c.bornes.set(g, (c.bornes.get(g) || 0) + 1); }));
-  // les profondeurs, à trois colonnes au plus : au-delà, le fil de retour au hub traverse trop de monde
-  comps.forEach(c => { c.prof = profondeursDepuis(N, H, new Set(c.ids)); c.prof.forEach((d, id) => c.prof.set(id, Math.min(3, d))); });
+  /* les profondeurs, à trois colonnes au plus du hub : au-delà, le fil de retour au hub traverse trop de monde — sauf
+     derrière un SECOND gros équipement (un autre calculateur) : ce qu'il est seul à servir (ce que le hub n'atteint plus
+     sans passer par lui) se compte depuis lui, à trois colonnes au plus de lui. Plafonnées depuis le premier, les deux
+     moitiés d'une prise de coupure du second et ses capteurs s'empilaient dans une seule colonne. */
+  const domaines = new Map();          // un second gros équipement -> ce qu'il est seul à servir
+  comps.forEach(c => { const ids = new Set(c.ids), prof = profondeursDepuis(N, H, ids), plafond = new Map(c.ids.map(id => [id, Math.min(3, prof.get(id))]));
+    const gros = c.ids.filter(id => M.blocs.get(id).genre === 'equip' && M.blocs.get(id).bornes.length >= HUB_MIN && N.adj.get(id).size >= 3);
+    gros.sort((a, b) => prof.get(a) - prof.get(b)).forEach(S => { const dS = plafond.get(S), atteints = new Set();
+      const pile = [...N.adj.get(H).keys()].filter(k => ids.has(k) && k !== S); pile.forEach(k => atteints.add(k));
+      while (pile.length) { const u = pile.pop(); for (const v of N.adj.get(u).keys()) if (ids.has(v) && v !== S && !atteints.has(v)) { atteints.add(v); pile.push(v); } }
+      // ses profondeurs à lui : son flux, comme autour du hub (en amont du hub, il n'est pas dans le flux du hub, et tout ce
+      // qu'il sert tombait à la même profondeur, dans une seule colonne)
+      const domaine = c.ids.filter(id => id !== S && !atteints.has(id)), profS = profondeursDepuis(N, S, new Set(domaine)); domaines.set(S, domaine);
+      domaine.forEach(id => plafond.set(id, dS + Math.min(3, Math.max(1, profS.get(id))))); });
+    c.prof = plafond; });
   const hauteurDe = id => M.hauteurEstimee(id) + VGAP;
   // la hauteur d'un côté : sa colonne la plus haute
   /* la colonne contre le hub est celle de ce qui DISTRIBUE (morceaux de barrette, prises) quand un côté en a : ses
@@ -342,7 +362,13 @@ function couchesAutourDuHub(M, N) {
      ce qu'ils servent vient s'empiler avec eux, et leurs fils font le tour (folio 4, 670VT41 sous ses vannes) */
   const poser = (cote) => { const col = new Map([[H, 0]]); comps.forEach(c => c.prof.forEach((d, id) => col.set(id, cote.get(c) * d)));
     const equip = id => M.blocs.get(id).genre === 'equip';
-    [-1, 1].forEach(s => { if (![...col].some(([id, c]) => c === s && !equip(id))) return; col.forEach((c, id) => { if (c === s && equip(id)) col.set(id, 2 * s); }); });
+    // un équipement qui recule emmène ce qu'il est seul à servir (un second calculateur, ses prises, ses capteurs) : les
+    // morceaux qui le relient au hub restent entre les deux
+    [-1, 1].forEach(s => { if (![...col].some(([id, c]) => c === s && !equip(id))) return;
+      [...col].filter(([id, c]) => c === s && equip(id)).forEach(([id]) => { col.set(id, 2 * s); (domaines.get(id) || []).forEach(d => col.set(d, col.get(d) + s)); }); });
+    // autour d'un second gros équipement, la même règle, de son côté : ce qui distribue contre lui, ses équipements derrière
+    domaines.forEach((domaine, S) => { const s = Math.sign(col.get(S)), c1 = col.get(S) + s; if (!s || !domaine.some(id => col.get(id) === c1 && !equip(id))) return;
+      domaine.forEach(id => { if (col.get(id) === c1 && equip(id)) col.set(id, c1 + s); }); });
     return col; };
   const hauteurs = cs => { const h = new Map(); cs.forEach(c => c.prof.forEach((d, id) => h.set(d, (h.get(d) || 0) + hauteurDe(id)))); return Math.max(0, ...h.values()); };
   // 1. par la hauteur : le plus haut d'abord, chacun du côté qui reste le moins haut
@@ -773,7 +799,14 @@ function barycentre(M, E, y, moyenne, parite) {
     const cle = new Map(pile.map((id, i) => { const fixes = [], tous = [];
       M.blocs.get(id).bornes.forEach(p => M.partenairesBlocs(K(id, p.cle)).forEach(q => { const v = vue(id, q); if (v == null) return; tous.push(v); if (bornier(q.id)) fixes.push(v); }));
       const use = (!bornier(id) && fixes.length) ? fixes : tous; return [id, use.length ? centre(use) : 1e9 + i]; }));
-    pile.sort((a, b) => cle.get(a) - cle.get(b)); });
+    /* autour d'un hub, chaque SOUS-ENSEMBLE se dessine d'un seul tenant dans la colonne (les vannes ensemble, les relais
+       ensemble) : il se range à la moyenne de ses blocs, ses blocs entre eux à la leur — entremêlés, leurs fils vers le hub
+       croisaient ceux des autres (folio 3, cinq croisements de plus) */
+    const ss = sousEnsemblesDuHub(M), groupe = new Map();
+    if (ss) { const somme = new Map(); pile.forEach(id => { const g = ss.get(id); if (g == null) return; const t = somme.get(g) || somme.set(g, [0, 0]).get(g); t[0] += cle.get(id); t[1]++; });
+      somme.forEach(([s0, n], g) => groupe.set(g, s0 / n)); }
+    const cleDe = id => (ss && ss.has(id) ? groupe.get(ss.get(id)) : cle.get(id));
+    pile.sort((a, b) => (cleDe(a) - cleDe(b)) || (cle.get(a) - cle.get(b))); });
   // les bornes d'un équipement : un connecteur au centre de ses partenaires, ses bornes dans l'ordre vertical des leurs ; un paquet ponté reste ensemble
   M.ids.forEach(id => { const b = M.blocs.get(id); if (b.genre !== 'equip' || !auTour(id)) return;
     ['L', 'R'].forEach(lid => { const L = E.listes.get(id)[lid]; if (L.length < 2) return;
@@ -860,6 +893,12 @@ function assembler(M, E, pos) {
 }
 /* Les blocs et les liaisons, prêts à dessiner. */
 function contrat(M, E, pos, geo, bouts, cols) {
+  /* le sens d'un contact de prise de coupure : d'où viennent ses fils. Tous d'un même côté (deux fils sur un contact, un
+     seul fil), il ne se dessine que de ce côté — un départ de l'autre côté pendait dans le vide (folio 5, 412VC3B 7) */
+  const colDe = id => E.place.get(id).c;
+  // (un partenaire de la même colonne arrive d'un côté qu'on ne sait pas encore : les deux départs restent)
+  const sensDeContact = (id, cle) => { const s = new Set(M.partenairesBlocs(K(id, cle)).filter(q => !M.estTag(q.id)).map(q => Math.sign(colDe(q.id) - colDe(id))));
+    return s.size === 1 && !s.has(0) ? [...s][0] : 0; };
   const comps = [], compDe = new Map(), pastilles = [];
   let yMin = Infinity, yMax = -Infinity;
   M.ids.forEach(id => { const b = M.blocs.get(id), g = geo.get(id), parCle = new Map(), rangs = {};
@@ -867,13 +906,13 @@ function contrat(M, E, pos, geo, bouts, cols) {
       rangs.S = [{ etiq: b.bornes[0].etiq, y, dir: g.cote === 'R' ? -1 : 1 }]; parCle.set(b.bornes[0].cle, { y });
       pastilles.push({ id, ch: g.col + (g.cote === 'R' ? 1 : 0), y1: g.y, y2: g.y + g.h, x: g.x, w: g.w }); }
     else E.clesListes(id).forEach(lid => { rangs[lid] = E.listes.get(id)[lid].slice().sort((u, v) => pos.y.get(K(id, u.cle)) - pos.y.get(K(id, v.cle))).map(p => { const y = pos.y.get(K(id, p.cle)); parCle.set(p.cle, { y });
-      const f = flancDe1(E, id, p.cle), dir = lid === 'S' ? dirs1(E, id, p.cle) : (f === 'LR' ? 0 : (lid === 'R' ? 1 : -1));
-      return { etiq: p.etiq, y, dir }; }); });
+      const f = flancDe1(E, id, p.cle), dir = lid === 'S' ? (b.genre === 'coupure' ? sensDeContact(id, p.cle) : dirs1(E, id, p.cle)) : (f === 'LR' ? 0 : (lid === 'R' ? 1 : -1));
+      return { etiq: p.etiq, y, dir, cn: b.connecteur ? b.connecteur.get(p.cle) : undefined }; }); });
     const tag = b.genre === 'tag';
     // un morceau de barrette se dessine serré sur ses pastilles (sa place dans la colonne reste réservée plus large)
     if (b.genre === 'barrette') { const ys = Object.values(rangs).flat().map(p => p.y); if (ys.length) { g.y = Math.min(...ys) - MARGE_BARRETTE; g.h = Math.max(...ys) - Math.min(...ys) + 2 * MARGE_BARRETTE; } }
     const c = { name: b.nom, id, x: g.x, y: g.y, w: g.w, h: g.h, col: g.col, kind: tag ? 'tag' : (b.genre === 'equip' ? 'equip' : 'strip'),
-      lw: tag ? 0 : STRIPW, rw: tag ? 0 : STRIPW, rangs, parCle, rail: estRail(b.nom) };
+      lw: tag ? 0 : STRIPW, rw: tag ? 0 : STRIPW, rangs, parCle, rail: estRail(b.nom), hub: id === hubDe(M) };
     comps.push(c); compDe.set(id, c); if (!compDe.has(b.nom)) compDe.set(b.nom, c);
     if (!tag) { yMin = Math.min(yMin, g.y); yMax = Math.max(yMax, g.y + g.h); } });
   if (!isFinite(yMin)) { yMin = HAUT_PAGE; yMax = HAUT_PAGE + 200; }
@@ -999,6 +1038,16 @@ const bornesParFlanc = c => Math.max(1, (c.rangs.L || []).length, (c.rangs.R || 
 function hauteurNaturelle(c) { const n = bornesParFlanc(c); return (n - 1) * PRH + 2 * (c.kind !== 'equip' ? (estCoupure(c.name) ? PRH / 2 + 5 : MARGE_BARRETTE) : n === 1 ? 23 : 18); }
 // un gros équipement (HUB_MIN bornes ou plus sur un flanc) s'étire à la hauteur de ses partenaires sans être compté étiré
 const corpsEtire = c => c.kind !== 'tag' && bornesParFlanc(c) < HUB_MIN && c.h > ETIREMENT_MAX * hauteurNaturelle(c) + (bornesParFlanc(c) <= 2 ? 2 : 1) * PRH;
+/* La HAUTEUR EN TROP d'un équipement (le hub excepté : il s'allonge en face de ses partenaires) : ce que son corps a de
+   plus que ses bornes au pas — un pas entre deux bornes, deux entre deux connecteurs, ses marges. En dessous du seuil
+   d'un corps étiré, elle ne coûtait rien : un relais haut comme deux, une masse en haut et ses fils en bas, passait pour
+   compact (folio 4 : 431PR1). Elle départage à lisibilité égale (dans la lisibilité, elle changeait le choix des finalistes, et le folio 4 perdait quatre fils
+   droits) : un tassement qui ne coûte rien gagne. */
+function hauteurServie(c) { let h = 0;
+  Object.values(c.rangs).forEach(ps => { const r = ps.slice().sort((u, v) => u.y - v.y); let t = 0; for (let i = 1; i < r.length; i++) t += r[i].cn !== r[i - 1].cn ? 2 * PRH : PRH; h = Math.max(h, t); });
+  return h + 2 * (bornesParFlanc(c) === 1 ? 23 : 18); }
+const hauteurEnTrop = c => (c.kind !== 'equip' || c.hub || bornesParFlanc(c) >= HUB_MIN) ? 0 : Math.max(0, c.h - hauteurServie(c));
+const compterExces = comps => comps.reduce((n, c) => n + hauteurEnTrop(c), 0);
 /* Les BANDES d'un dessin : ses rangées de blocs séparées par du vide, dans
    toutes les colonnes. Un dessin d'au moins deux bandes un peu trop large
    s'étire à la fin (etirerAuFormat) sans rien perdre : il TIENDRA. */
@@ -1025,9 +1074,13 @@ function bornesSuperposees(C) { let n = 0;
   C.forEach(c => { if (c.kind === 'tag') return; Object.values(c.rangs).forEach(ps => { const ys = ps.map(p => p.y).sort((a, b) => a - b);
     for (let i = 1; i < ys.length; i++) if (ys[i] - ys[i - 1] < PRH - 0.5) n++; }); });
   return n; }
+/* Deux blocs qui se chevauchent — ou qui se touchent presque, l'un au-dessus de l'autre : à moins de GARDE, ils se lisent
+   comme un seul (un relais collé sous une sonde, après qu'un geste a fait grandir l'un d'eux). */
+const GARDE = 8;
 function chevauchements(C) { let n = 0;
   for (let i = 0; i < C.length; i++) for (let j = i + 1; j < C.length; j++) { const a = C[i], b = C[j];
-    if (a.x < b.x + b.w - 1 && b.x < a.x + a.w - 1 && a.y < b.y + b.h - 1 && b.y < a.y + a.h - 1) n++; }
+    if (a.kind === 'tag' || b.kind === 'tag') { if (a.x < b.x + b.w - 1 && b.x < a.x + a.w - 1 && a.y < b.y + b.h - 1 && b.y < a.y + a.h - 1) n++; continue; }
+    if (a.x < b.x + b.w - 1 && b.x < a.x + a.w - 1 && a.y < b.y + b.h + GARDE && b.y < a.y + a.h + GARDE) n++; }
   return n; }
 /* Les fils qui traversent un bloc : un bloc ÉTRANGER, c'est l'invariant
    violé, le dessin est faux ; LEUR PROPRE bloc, c'est une faiblesse du
@@ -1061,10 +1114,10 @@ function juger(L, R) {
   const partages = compterPartages(R.fils), etires = compterEtires(L.comps, fils), marches = compterMarches(fils), escaliers = compterEscaliers(fils), sousHub = compterSousHub(L.comps);
   // un demi pour cent de tolérance : le juge mesure pastilles comprises, il est plus strict que la feuille
   const tient = (r <= FORMAT_MAX * 1.005 && r >= FORMAT_MIN / 1.005) || tientALEchelle(w, h), tiendra = tient || (r <= FORMAT_MAX * ETIRABLE && compterBandes(blocs) >= 2);
-  const contours = compterContours(fils);
+  const contours = compterContours(fils), descentes = compterDescentes(boutsDesLiaisons(L.links));
   const j = { sain: t.etrangers === 0 && chevauchements(L.comps) === 0 && bornesSuperposees(L.comps) === 0 && filsRompus(R.fils, R.barrettes) === 0, tient, tiendra, format: r, largeur: w,
     droits, croisements, partages, etires, marches, tours: compterTours(L), propres: t.propres.size, contours,
-    escaliers, sousHub, lisibilite: droits - croisements / CROISEMENTS_PAR_DROIT - PARTAGE * partages - PAR_MARCHE * marches - ESCALIER * escaliers - ETIRE * etires - TOUR * compterTours(L) - SOUS_HUB * sousHub - contours, genees: compterPastillesGenees(L, fils), detours: compterDetours(fils), coupes: L.coupes || 0,
+    escaliers, sousHub, lisibilite: droits - croisements / CROISEMENTS_PAR_DROIT - PARTAGE * partages - PAR_MARCHE * marches - ESCALIER * escaliers - ETIRE * etires - TOUR * compterTours(L) - SOUS_HUB * sousHub - contours - DESCENTE * descentes, descentes, exces: compterExces(blocs), genees: compterPastillesGenees(L, fils), detours: compterDetours(fils), coupes: L.coupes || 0,
     encombrement: Math.min(Math.max(w / A3, h), Math.max(w, h / A3)), surface: w * h, longueur };
   // les muets coûtent cher à compter (le dessin pose ses étiquettes) : seulement quand droits et croisements sont à égalité
   let muets = null; Object.defineProperty(j, 'muets', { enumerable: true, get() { if (muets == null) muets = compterMuets(R); return muets; } });
@@ -1084,14 +1137,22 @@ function juger(L, R) {
    valent encore mieux qu'un mensonge), deux fois chaque fil qui fait une
    MARCHE (un pli de quelques unités entre deux bornes presque en face : le
    routeur n'en fabrique plus, seul le placement peut en laisser), une fois et
-   demie chaque corps étiré (il ne vaut que s'il rend droits deux fils de plus) ; à égalité les fils droits, puis
-   les croisements, puis les numéros muets, puis les TOURS (un fil qui fait
+   demie chaque corps étiré (il ne vaut que s'il rend droits deux fils de plus), et chaque DESCENTE (descentes) ; à
+   égalité les fils droits, puis les croisements, puis la hauteur en trop des corps, puis les numéros muets, puis les TOURS (un fil qui fait
    le tour de son bloc), les masses qui pendent sur un fil, les DÉTOURS (à
    partir d'une goulotte de différence), puis les
    connecteurs coupés en deux flancs (jamais sans raison : seuls un détour ou
    un croisement en moins le justifient), l'encombrement, la surface, la
    longueur des fils. */
 const CROISEMENTS_PAR_DROIT = 0.5, PARTAGE = 4, PAR_MARCHE = 2, ESCALIER = 1, ETIRE = 1.5, TOUR = 3, SOUS_HUB = 3, DETOUR_MIN = GOULOTTE_MIN;
+/* Les DESCENTES : ce que les fils pliés descendent (ou montent) d'un bout à l'autre, en tout. Un fil qui plonge de trois
+   cents unités pour rejoindre un bloc posé loin se suit mal à l'œil, même sans croiser personne : le lecteur veut un
+   dessin SERRÉ, chaque bloc près de ce qu'il sert (folio 3 : trois fils de 397TB1 et 351PM1 vers 352PM2, posé tout en
+   bas, pour un fil droit de plus). Cent vingt-cinq unités de descente (neuf pas de borne) coûtent un fil droit. */
+var DESCENTE = 1 / 125;
+function compterDescentes(bouts) { let n = 0; bouts.forEach(([a, b]) => { n += Math.abs(a - b); }); return n; }
+// d'une borne à l'autre, sur les liaisons (le juge et l'estimation comptent de même ; un fil routé part d'un piquage)
+const boutsDesLiaisons = links => links.filter(l => !l.shunt && !l.boucle).map(l => [l.epA.y, l.epB.y]);
 /* Un bloc AU-DESSUS OU AU-DESSOUS d'un gros équipement, dans sa colonne, se
    lit mal : le lecteur l'a dit (« deux équipements au-dessus du gros, c'est
    pas propre »), et ses fils font le tour. Chacun coûte comme un tour. */
@@ -1111,6 +1172,7 @@ function bat(a, b, tolerant) {
   if (!tolerant && a.sain !== b.sain) return a.sain; if (tient(a, b) !== tient(b, a)) return tient(a, b);
   if (Math.abs(a.lisibilite - b.lisibilite) > 0.01) return a.lisibilite > b.lisibilite;
   if (a.droits !== b.droits) return a.droits > b.droits; if (a.croisements !== b.croisements) return a.croisements < b.croisements;
+  if (Math.abs(a.exces - b.exces) > 0.5) return a.exces < b.exces;            // à lisibilité égale, le corps le plus serré
   if (a.muets !== b.muets) return a.muets < b.muets;
   if (a.tours !== b.tours) return a.tours < b.tours;
   if (a.genees !== b.genees) return a.genees < b.genees;                  // une pastille (masse, morceau de barrette) qui pend sur un fil
@@ -1180,8 +1242,8 @@ function estimer(L) {
       ici += Math.min(ij + PARTAGE * CROISEMENTS_PAR_DROIT * pij, ji + PARTAGE * CROISEMENTS_PAR_DROIT * pji); }
     croisements += ici; detail.push({ ch, verticales: V.length, brutes: V0.length, barrieres: barrieres[ch].length, croisements: ici }); });
   // les corps étirés se voient sans router : l'estimation les compte comme le juge
-  const etires = compterEtires(blocs), tours = compterTours(L);
-  return { droits, croisements, etires, tours, lisibilite: droits - croisements / CROISEMENTS_PAR_DROIT - ETIRE * etires - TOUR * tours, detail };
+  const etires = compterEtires(blocs), tours = compterTours(L), descentes = compterDescentes(boutsDesLiaisons(L.links));
+  return { droits, croisements, etires, tours, descentes, lisibilite: droits - croisements / CROISEMENTS_PAR_DROIT - ETIRE * etires - TOUR * tours - DESCENTE * descentes, detail };
 }
 /* Évaluer un état à une position : assembler, router, juger. Le routage
    RAPIDE (le routeur sans ses détours par une goulotte voisine, qu'il
@@ -1234,7 +1296,8 @@ function resserrer(M, meilleur) {
 /* ===== 10. LA RECHERCHE LOCALE AU ROUTAGE RÉEL ========================== */
 /* Chaque geste se juge en routant pour de vrai, et n'est gardé que s'il
    gagne au juge :
-     · l'ordre des bornes d'un connecteur (exact jusqu'à trois, échanges
+     · l'ordre des bornes d'un connecteur ou des ronds d'un morceau de
+       barrette (exact jusqu'à trois, échanges
        deux à deux au-delà), un paquet ponté restant ensemble ;
      · le glissement d'un bloc en face d'un partenaire, ses feuilles avec lui ;
      · l'échange de deux blocs d'une colonne, puis le solveur rejoue ;
@@ -1285,7 +1348,41 @@ function rechercheLocale(M, meilleur, budget, finale, interne, variante) {
   const ordonnerParY = (E, pos) => { M.ids.forEach(id => { if (M.estTag(id)) return; E.clesListes(id).forEach(lid => E.listes.get(id)[lid].sort((u, v) => pos.y.get(K(id, u.cle)) - pos.y.get(K(id, v.cle)))); });
     construireRuns(M, E);
     E.piles.forEach(pile => pile.sort((a, b) => pos.haut.get(a) - pos.haut.get(b))); };
-  const essayerGeometrie = (pos, tamis, large) => { const E = meilleur.E; if (!garder(E, pos, tamis, large)) return false; ordonnerParY(E, pos); return true; };
+  /* les calculateurs ÉLASTIQUES : un geste qui déplace un partenaire d'un gros équipement (le hub, un second calculateur)
+     emmène la borne qu'il est seul à servir, en face de lui, si la place est libre sur son flanc (un pas d'une borne du
+     même connecteur, deux d'une autre : sa lettre s'écrit entre les deux) ; le corps s'allonge au besoin. Un câbleur
+     dessine ainsi : il remonte un bloc, son fil vers le calculateur reste droit. Sans ça, un bloc ne montait jamais en
+     face de ce qu'il sert quand son fil vers le hub était droit avant (folio 3 : 668VT31 (8, 9, 10) resté tout en bas,
+     ses trois fils en escalier). */
+  const gros = M.ids.filter(id => !M.estTag(id) && M.blocs.get(id).genre === 'equip' && M.blocs.get(id).bornes.length >= HUB_MIN);
+  // la hauteur du partenaire d'une borne, quand elle n'en a qu'un, dans une autre colonne
+  const enFace = (E, pos, id, p) => { const qs = M.partenairesBlocs(K(id, p.cle)).filter(q => !M.estTag(q.id) && E.place.get(q.id) && E.place.get(q.id).c !== E.place.get(id).c);
+    return qs.length === 1 ? pos.y.get(K(qs[0].id, qs[0].cle)) : null; };
+  // des bornes (choisies) de gros équipements en face de leurs partenaires, là où la place est libre sur leur flanc ; rend la position, ou null
+  const grosEnFace = (pos, choisir) => { const E = meilleur.E, p2 = copie(pos); let bouge = false;
+    gros.forEach(id => { const b = M.blocs.get(id), [mh, mb] = margesDe(M, E, id);
+      E.clesListes(id).forEach(lid => { const L = E.listes.get(id)[lid], cibles = [];
+        L.forEach(p => { const y = choisir(id, p); if (y != null && Math.abs(y - pos.y.get(K(id, p.cle))) >= 0.5) cibles.push([p, y]); });
+        cibles.sort((u, v) => u[1] - v[1]).forEach(([p, y]) => { const c = b.connecteur.get(p.cle);
+          if (!L.every(o => o === p || Math.abs(p2.y.get(K(id, o.cle)) - y) >= (b.connecteur.get(o.cle) === c ? PRH : 2 * PRH) - 0.5)) return;
+          p2.y.set(K(id, p.cle), y); bouge = true;
+          if (y - mh < p2.haut.get(id)) p2.haut.set(id, y - mh); if (y + mb > p2.bas.get(id)) p2.bas.set(id, y + mb); }); }); });
+    return bouge ? p2 : null; };
+  const suivreLesGros = pos => { if (!gros.length) return null; const ref = meilleur.pos;
+    return grosEnFace(pos, (id, p) => { const k = K(id, p.cle); if (pos.y.get(k) !== ref.y.get(k)) return null;          // le geste l'a déjà placée
+      const y = enFace(meilleur.E, pos, id, p), y0 = enFace(meilleur.E, ref, id, p); return y == null || y === y0 ? null : y; }); };
+  /* les gros équipements EN FACE : leurs bornes vont en face de leurs partenaires, là où la place est libre — toutes
+     ensemble, puis une à une. L'élastique ne suit qu'un partenaire qui bouge ; une borne dont le partenaire ne bougeait
+     jamais restait où le solveur l'avait mise, et son fil remontait tout le flanc (un second calculateur : W-745, de sa
+     borne B1 au premier morceau de barrette, quatre cents unités plus haut, en croisant trois fils). */
+  const grosEnFaceGeste = () => { if (!gros.length) return false; let any = false;
+    const tous = grosEnFace(meilleur.pos, (id, p) => enFace(meilleur.E, meilleur.pos, id, p)); if (tous && essayerGeometrie(tous)) any = true;
+    gros.forEach(id => { const E = meilleur.E; E.clesListes(id).forEach(lid => E.listes.get(id)[lid].slice().forEach(p0 => { if (!temps()) return;
+      const p2 = grosEnFace(meilleur.pos, (i, p) => p === p0 ? enFace(meilleur.E, meilleur.pos, i, p) : null); if (p2 && essayerGeometrie(p2)) any = true; })); });
+    return any; };
+  const essayerGeometrie = (pos, tamis, large) => { const E = meilleur.E, e = suivreLesGros(pos);
+    if (e && garder(E, e, tamis, large)) { ordonnerParY(E, e); return true; }
+    if (!garder(E, pos, tamis, large)) return false; ordonnerParY(E, pos); return true; };
   // la position où une borne seule est à la hauteur y, rien d'autre ne bouge (le corps reste ce qu'il est : y est dedans)
   const borneA = (k, y) => { const p = copie(meilleur.pos); p.y.set(k, y); const id = k.split(SEP)[0];
     if (p.haut.has(id)) { if (y - 18 < p.haut.get(id)) p.haut.set(id, y - 18); if (y + 18 > p.bas.get(id)) p.bas.set(id, y + 18); } return p; };
@@ -1309,13 +1406,13 @@ function rechercheLocale(M, meilleur, budget, finale, interne, variante) {
     ['glissement', () => glissements(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps)],
     ['bande', () => bandes(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps)],
     ['tassement', () => tassements(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps)],
-    ['retournement', () => retournements(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps)],
     ['redressement', () => redressements(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps, p2 => estimer(assembler(M, meilleur.E, p2)).lisibilite)],
     ['échange', () => echangesDeBlocs(M, meilleur.E, essayerEtat, temps)],
     ['priorité', () => promotions(M, meilleur.E, () => meilleur, essayerEtat, temps)],
     ['renoncement', () => renoncements(M, meilleur.E, () => meilleur, essayerEtat, temps)],
     ['compaction', () => compactions(M, meilleur.E, () => meilleur, copie, essayerGeometrie, temps)],
     ['étirement', () => etirements(M, meilleur.E, () => meilleur, copie, interne ? essayerGeometrie : essayerPoli, temps)],
+    ['en face', grosEnFaceGeste],
     ['flanc', () => flancsDeConnecteurs(M, meilleur.E, essayerEtat, temps)],
     ['borne', () => flancsDeBornes(M, meilleur.E, () => meilleur, essayerEtat, temps, (k, y) => essayerGeometrie(borneA(k, y), TAMIS), false, (k, y) => estimer(assembler(M, meilleur.E, borneA(k, y))).lisibilite)],
     ['sortie', () => sortiesDeBornier(M, meilleur.E, essayerEtat, temps)],
@@ -1356,7 +1453,6 @@ function rechercheLocale(M, meilleur, budget, finale, interne, variante) {
     ['glissement', () => glissements(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
     ['bande', () => bandes(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
     ['tassement', () => tassements(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
-    ['retournement', () => retournements(M, meilleur.E, () => meilleur, copie, essayerTout, temps)],
     ['permutation', () => permutationsDeBornes(M, meilleur.E, () => meilleur.pos, copie, essayerTout, temps, estimerOrdre, () => meilleur.est, () => meilleur, p2 => resoudreDans(p2, TAMIS_FINAL, true), TAMIS_FINAL)]];
   // un geste évident ne se manque pas : tant qu'un balayage trouve encore, la passe continue, jusqu'au double de son budget
   const finFinale = evaluations + 2 * budget; temps = () => evaluations < finFinale;
@@ -1411,7 +1507,8 @@ function changementsDeColonne(M, meilleurDe, copie, heriter, confirmer) {
     const barrette = M.blocs.get(id).genre === 'barrette';
     // ce que le morceau sert, quand le hub l'alimente (un fil du hub vers lui) : les colonnes de ses autres partenaires
     const parts = M.blocs.get(id).bornes.flatMap(p => M.partenairesBlocs(K(id, p.cle))), alimente = M.liens.some(w => w.a.id === hub && w.b.id === id);
-    const servis = alimente ? parts.filter(q => q.id !== hub && E.col.has(q.id)).map(q => E.col.get(q.id)) : [];
+    // (un autre morceau de la même barrette, coupée, n'est pas ce qu'il sert : c'est elle encore)
+    const servis = alimente ? parts.filter(q => q.id !== hub && E.col.has(q.id) && M.blocs.get(q.id).nom !== M.blocs.get(id).nom).map(q => E.col.get(q.id)) : [];
     /* sans hub, un seul geste : une colonne neuve ENTRE deux colonnes qui portent toutes deux ses partenaires — le bloc se
        pose entre ce qu'il relie (folio 5 : 540VL5, que la première prise alimente et qui repart vers la seconde, entre
        les deux prises ; posée sous la seconde, ses deux fils croisaient les deux qui la traversent) */
@@ -1497,7 +1594,8 @@ function glisserBloc(M, pos, id, dy) { M.blocs.get(id).bornes.forEach(p => { con
   pos.haut.set(id, pos.haut.get(id) + dy); pos.bas.set(id, pos.bas.get(id) + dy); }
 const permutations = a => a.length <= 1 ? [a] : a.flatMap((x, i) => permutations([...a.slice(0, i), ...a.slice(i + 1)]).map(q => [x, ...q]));
 /* Les bornes d'un connecteur échangent leurs ordonnées ; les bornes libres
-   d'un flanc aussi, entre elles. Pour chaque groupe, d'abord une DESCENTE
+   d'un flanc aussi, entre elles ; les ronds d'un morceau de barrette, tous
+   ensemble (un paquet : n'importe quel ordre). Pour chaque groupe, d'abord une DESCENTE
    sur l'estimation seule (les échanges deux à deux tant qu'elle gagne),
    routée une fois au bout ; si le routage la refuse, ou si elle n'a rien
    trouvé, les échanges un à un au routage. L'estimation d'un échange ne
@@ -1513,7 +1611,12 @@ function permutationsDeBornes(M, E, posDe, copie, essayer, temps, estimerOrdre, 
   const pliees = new Set(); if (meilleurDe) meilleurDe().R.fils.forEach(w => { if (w.shunt || w.pts.length === 2) return; const l = M.liens[w.i]; pliees.add(K(l.a.id, l.a.cle)); pliees.add(K(l.b.id, l.b.cle)); });
   const utile = (id, a, b) => !meilleurDe || pliees.has(K(id, a)) || pliees.has(K(id, b)) || !M.partenairesBlocs(K(id, a)).length || !M.partenairesBlocs(K(id, b)).length;
   const groupes = [];
-  M.ids.forEach(id => { const b = M.blocs.get(id); if (b.genre !== 'equip') return;
+  M.ids.forEach(id => { const b = M.blocs.get(id);
+    /* un MORCEAU DE BARRETTE : toutes ses bornes sont pontées (c'est un paquet), ses ronds se rangent dans n'importe quel
+       ordre — le fil qui descend vers un bloc du dessous prend le rond du bas (le lecteur, folio 3 : « pourquoi il va au
+       milieu de la barrette ? pourquoi pas en bas ? ») */
+    if (b.genre === 'barrette') { const S = E.listes.get(id).S; if (S && S.length >= 2) groupes.push({ id, cles: S.map(p => p.cle), libre: true }); return; }
+    if (b.genre !== 'equip') return;
     ['L', 'R'].forEach(lid => { const L = E.listes.get(id)[lid], vus = new Set(), libres = [];
       L.forEach(p => { if (flancDe1(E, id, p.cle) === 'LR') return; const r = runDe(E, id, lid, p.cle);
         if (r) { if (!vus.has(r)) { vus.add(r); groupes.push({ id, cles: r.cles }); } } else libres.push(p.cle); });
@@ -1522,7 +1625,7 @@ function permutationsDeBornes(M, E, posDe, copie, essayer, temps, estimerOrdre, 
   groupes.forEach(g => { if (!temps()) return;
     const cles = () => g.cles.slice().sort((a, b) => posDe().y.get(K(g.id, a)) - posDe().y.get(K(g.id, b)));
     const essai = ordre => { const pos = posDe(), c0 = cles();
-      if (ordre.every((c, j) => c === c0[j]) || !voisinesOK(g.id, ordre)) return false;
+      if (ordre.every((c, j) => c === c0[j]) || (!g.libre && !voisinesOK(g.id, ordre))) return false;
       const est = estimerOrdre(g.id, c0, ordre).lisibilite, ref = estDe().lisibilite; if (est < ref - Math.max(tamis, 1) - 1e-6) return false;
       const ys = c0.map(c => pos.y.get(K(g.id, c))); const p2 = copie(pos); ordre.forEach((c, j) => p2.y.set(K(g.id, c), ys[j]));
       if (est >= ref - tamis - 1e-6 && essayer(p2)) return true;
@@ -1530,9 +1633,11 @@ function permutationsDeBornes(M, E, posDe, copie, essayer, temps, estimerOrdre, 
       return !!resoudreDans && est >= ref - 1 - 1e-6 && temps() && resoudreDans(p2); };
     const n = g.cles.length;
     if (n <= 3) { permutations(cles()).forEach(o => { if (temps() && essai(o)) any = true; }); return; }
+    // un morceau de barrette se retourne d'un coup (ses ronds dans l'ordre inverse) : un échange deux à deux n'y mène pas
+    if (g.libre && temps() && essai(cles().reverse())) { any = true; return; }
     const c0 = cles(); let ordre = c0.slice(), est = estDe().lisibilite, bouge = false;
     for (let passe = 0; passe < 3; passe++) { let gagne = false;
-      for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) { const o = echange(ordre.slice(), i, j); if (!voisinesOK(g.id, o)) continue;
+      for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) { const o = echange(ordre.slice(), i, j); if (!g.libre && !voisinesOK(g.id, o)) continue;
         const e = estimerOrdre(g.id, c0, o).lisibilite; if (e > est + 1e-9) { ordre = o; est = e; gagne = bouge = true; } }
       if (!gagne) break; }
     if (bouge && essai(ordre)) { any = true; return; }
@@ -1553,10 +1658,22 @@ function glissements(M, E, meilleurDe, copie, essayer, temps) {
     for (const dy of [...rs].sort((a, b) => Math.abs(a) - Math.abs(b))) { if (!temps()) return;
       const p2 = copie(pos), feuilles = [...M.voisins.get(id)].filter(f => feuilleDe(f, id) && E.place.get(f).c !== E.place.get(id).c);
       const exclus = new Set([id, ...feuilles]);
-      if (heurte(p2, id, p2.haut.get(id) + dy, p2.bas.get(id) + dy, exclus)) continue;
+      if (heurte(p2, id, p2.haut.get(id) + dy, p2.bas.get(id) + dy, exclus)) {
+        // il heurte un voisin de sa pile : il glisse quand même et POUSSE ce qui est devant lui, de proche en proche (le
+        // lecteur, folio 3 : « si tu remontes un peu ça, tous les fils seraient droits » — mieux vaut trois fils droits et
+        // un plié que l'inverse) ; le juge tranche
+        glisser(p2, id, dy); pousser(p2, id, Math.sign(dy));
+        if (essayer(p2)) { any = true; break; } continue; }
       glisser(p2, id, dy); feuilles.forEach(f => { if (!heurte(p2, f, p2.haut.get(f) + dy, p2.bas.get(f) + dy, exclus)) glisser(p2, f, dy); });
       if (essayer(p2)) { any = true; break; } } });
   return any;
+  // les blocs de la pile devant le bloc (au-dessus quand il monte, au-dessous quand il descend) s'écartent juste assez
+  function pousser(p2, id, sens) {
+    const pile = (E.piles.get(E.pileDe(id)) || []).filter(o => o !== id).sort((u, v) => sens * (p2.haut.get(u) - p2.haut.get(v)));
+    let bord = sens > 0 ? p2.bas.get(id) + 10 : p2.haut.get(id) - 10;
+    pile.forEach(o => { if (sens > 0 ? p2.haut.get(o) < meilleurDe().pos.haut.get(id) : p2.bas.get(o) > meilleurDe().pos.bas.get(id)) return;
+      const d = sens > 0 ? bord - p2.haut.get(o) : bord - p2.bas.get(o); if (sens * d > 0) glisser(p2, o, d);
+      bord = sens > 0 ? p2.bas.get(o) + 10 : p2.haut.get(o) - 10; }); }
 }
 /* Une BANDE s'ouvre : un petit bloc qui parle à un bloc de sa colonne va se
    poser juste au-dessus ou juste au-dessous de lui — tout ce qui est plus bas
@@ -1660,20 +1777,6 @@ function redressements(M, E, meilleurDe, copie, essayer, temps, estimerPos) {
     for (const c of cands.slice(0, 3)) { if (!temps()) break; if (essayer(c.p2)) { any = true; break; } } }
   return any;
 }
-/* Un morceau de barrette se RETOURNE : ses bornes pontées, dans l'ordre
-   inverse du haut vers le bas — un paquet est un seul potentiel, l'ordre ne
-   change rien au câblage, et la borne qui va vers le haut se met en haut
-   (folio 6 : la borne 4 au-dessus de la 3, le fil de la lampe ne croise plus
-   celui de la 3). */
-function retournements(M, E, meilleurDe, copie, essayer, temps) {
-  let any = false;
-  M.ids.forEach(id => { if (M.estTag(id) || M.blocs.get(id).genre !== 'barrette' || !temps()) return;
-    E.clesListes(id).forEach(lid => { const L = E.listes.get(id)[lid]; if (L.length < 2 || !temps()) return;
-      const pos = meilleurDe().pos, cles = L.map(p => p.cle).sort((u, v) => pos.y.get(K(id, u)) - pos.y.get(K(id, v))), ys = cles.map(c => pos.y.get(K(id, c)));
-      const p2 = copie(pos); cles.slice().reverse().forEach((c, j) => p2.y.set(K(id, c), ys[j]));
-      if (essayer(p2)) any = true; }); });
-  return any;
-}
 /* Deux blocs d'une colonne échangent leurs places, et le solveur rejoue. */
 function echangesDeBlocs(M, E, essayer, temps) {
   let any = false;
@@ -1749,23 +1852,36 @@ function etirements(M, E, meilleurDe, copie, essayer, temps) {
     if (id === hubDe(M) && temps() && essai(true)) any = true; });
   return any;
 }
-/* Un corps ÉTIRÉ se TASSE sur place : ses bornes reprennent le pas depuis
-   la première (ou en remontant depuis la dernière), le corps se referme sur
-   elles, rien d'autre ne bouge — les pastilles collées suivent leur borne.
+/* Un corps ÉTIRÉ se TASSE sur place : ses bornes reprennent le pas autour
+   de l'une d'elles, le corps se referme sur elles, rien d'autre ne bouge — les pastilles collées suivent leur borne.
    C'est le geste que le solveur ne sait pas faire : lui refuser un fil
    droit (renoncement) lui fait tout réaligner, et il crée ailleurs les
    croisements qu'on voulait éviter. Gardé si le juge préfère : un corps
    compact vaut une fois et demie un fil droit. */
 function compactions(M, E, meilleurDe, copie, essayer, temps) {
   let any = false; const m = meilleurDe();
-  m.L.comps.filter(corpsEtire).map(c => c.id).forEach(id => { if (!temps()) return; const b = M.blocs.get(id), pos = m.pos, [mh, mb] = margesDe(M, E, id);
+  // les bornes dont le fil est droit : un tassement autour de l'une d'elles ne le casse pas
+  const droites = new Set(); m.R.fils.forEach(w => { if (w.shunt || w.pts.length !== 2) return; const l = M.liens[w.i]; droites.add(K(l.a.id, l.a.cle)); droites.add(K(l.b.id, l.b.cle)); });
+  m.L.comps.filter(c => corpsEtire(c) || hauteurEnTrop(c) > PRH / 2).map(c => c.id).forEach(id => { if (!temps()) return; const b = M.blocs.get(id), pos = meilleurDe().pos, [mh, mb] = margesDe(M, E, id);
     // un pas entre deux bornes, deux entre deux connecteurs (la lettre du second s'écrit entre les deux) — la règle du solveur
     const pasApres = (u, v) => (b.genre === 'equip' && b.connecteur.get(u.cle) !== b.connecteur.get(v.cle)) ? 2 * PRH : PRH;
-    for (const depuis of ['haut', 'bas']) { if (!temps()) return; const p2 = copie(pos); let lo = Infinity, hi = -Infinity;
-      E.clesListes(id).forEach(lid => { const L = E.listes.get(id)[lid].slice().sort((u, v) => pos.y.get(K(id, u.cle)) - pos.y.get(K(id, v.cle))); if (!L.length) return;
-        const pas = L.map((p, i) => i ? pasApres(L[i - 1], p) : 0), total = pas.reduce((s, v) => s + v, 0);
-        let y = depuis === 'haut' ? pos.y.get(K(id, L[0].cle)) : pos.y.get(K(id, L[L.length - 1].cle)) - total;
-        L.forEach((p, i) => { y += pas[i]; p2.y.set(K(id, p.cle), y); lo = Math.min(lo, y); hi = Math.max(hi, y); }); });
+    const yDe = p => pos.y.get(K(id, p.cle)), droite = p => droites.has(K(id, p.cle));
+    const listes = E.clesListes(id).map(lid => E.listes.get(id)[lid].slice().sort((u, v) => yDe(u) - yDe(v))).filter(L => L.length);
+    const tout = listes.flat().map(yDe), yHaut = Math.min(...tout), yBas = Math.max(...tout);
+    /* chaque façon dit, sur chaque flanc, la borne qui tient et sa hauteur ; les autres se serrent au pas autour d'elle :
+       les deux flancs depuis la plus haute (ou jusqu'à la plus basse) — un flanc en haut et l'autre en bas laissaient le
+       corps aussi haut qu'avant (une sonde, 2,8 fois sa hauteur) ; chaque flanc depuis sa première borne (ou jusqu'à sa
+       dernière) ; ou AUTOUR D'UNE BORNE DONT LE FIL EST DROIT, sur chaque flanc celle qui tient le fil droit le plus proche
+       — serré par un bout, le corps cassait le seul fil droit qu'il avait (folio 4 : 431PR1, haut comme trois blocs pour
+       une masse en haut et deux bornes en bas, W-423 droit au milieu) */
+    const proche = (L, y, filtre) => { let k = -1; L.forEach((p, i) => { if (filtre(p) && (k < 0 || Math.abs(yDe(p) - y) < Math.abs(yDe(L[k]) - y))) k = i; }); return k; };
+    const facons = [L => [0, yHaut], L => [L.length - 1, yBas], L => [0, yDe(L[0])], L => [L.length - 1, yDe(L[L.length - 1])]];
+    listes.flat().filter(droite).forEach(a => facons.push(L => { let k = L.indexOf(a); if (k < 0) k = proche(L, yDe(a), droite); if (k < 0) k = proche(L, yDe(a), () => true); return [k, yDe(L[k])]; }));
+    for (const facon of facons) { if (!temps()) return; const p2 = copie(pos); let lo = Infinity, hi = -Infinity;
+      listes.forEach(L => { const [k, y0] = facon(L), ys = []; ys[k] = y0;
+        for (let i = k - 1; i >= 0; i--) ys[i] = ys[i + 1] - pasApres(L[i], L[i + 1]);
+        for (let i = k + 1; i < L.length; i++) ys[i] = ys[i - 1] + pasApres(L[i - 1], L[i]);
+        L.forEach((p, i) => { p2.y.set(K(id, p.cle), ys[i]); lo = Math.min(lo, ys[i]); hi = Math.max(hi, ys[i]); }); });
       if (!isFinite(lo) || hi - lo + mh + mb >= pos.bas.get(id) - pos.haut.get(id) - 0.5) continue;      // rien à tasser
       p2.haut.set(id, lo - mh); p2.bas.set(id, hi + mb);
       if (essayer(p2)) { any = true; break; } } });
@@ -1956,11 +2072,13 @@ function tasserLesEtires(M, m) {
   return meilleur;
 }
 /* Le CONCOURS. Le budget se compte en unités de routage : le même contrat
-   donne le même dessin partout — un contrat de vingt blocs en moins de deux
-   secondes, un folio de trente en moins de cinq. */
+   donne le même dessin partout. Il a doublé : la recherche locale tombe dans
+   un creux ou un autre selon le chemin, et un budget plus large la sort des
+   mauvais (folio 3 : de 45 à 48 fils droits, un croisement ; le folio
+   chargé d'un calculateur, 3 à 7 s ; le plus gros du corpus, 14 s). */
 function meilleurPlacement(liaisons) {
   const G = construireGraphe(liaisons); if (!G.ids.length) return null;
-  const placerSur = (G, part) => { const M = modele(G), nB = M.ids.length, budget = Math.round((nB <= 20 ? 1200 : nB <= 40 ? 600 : nB <= 80 ? 400 : 300) * (part || 1));
+  const placerSur = (G, part) => { const M = modele(G), nB = M.ids.length, budget = Math.round((nB <= 20 ? 2400 : nB <= 40 ? 1200 : nB <= 80 ? 800 : 600) * (part || 1));
     const m = concours(M, {}, budget); m.M = M; return m; };
   let meilleur = placerSur(G);
   // une barrette dont les bornes partent des deux côtés se COUPE, et le dessin coupé concourt contre l'entier

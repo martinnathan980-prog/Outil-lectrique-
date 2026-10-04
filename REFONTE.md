@@ -213,6 +213,21 @@ Fait, mesuré, en place :
   flanc, les replis concourent, la passe finale converge sur le meilleur.
   Le banc rejoue a posteriori les gestes évidents (échange, flanc,
   glissement) au même barème, et rend 1 s'il en manque un.
+- **Pour n'importe quel fichier : un corpus, des calculateurs élastiques,
+  un dessin serré** (`03` `ROND`, `04` `suivreLesGros`, `DESCENTE`,
+  `hauteurEnTrop`, `compactions`, `glissements`, `permutationsDeBornes`,
+  `06` `reperesDeFil`, `tests/corpus.js`, `tests/banc-corpus.js`) : vingt-
+  quatre câblages qu'aucun réglage n'a vus, relus par les contrôles exacts
+  des folios ; un rond par fil sur une borne de barrette, ses ronds dans
+  n'importe quel ordre ; un bloc qui glisse pousse ses voisins ; la borne
+  d'un gros équipement suit son partenaire et va en face de lui quand la
+  place est libre, le second calculateur compris ; le juge compte les
+  descentes des fils pliés (un dessin serré) et départage par la hauteur en
+  trop des corps, qui se tassent autour de leur fil droit ; huit unités au
+  moins entre deux blocs ; un numéro de fil essaie tous ses segments ; le
+  budget double. Banc : 91,9 % / 5 croisements (89,0 % / 7 avant) ; folio
+  3 : 48 droits / 1, folio 4 : 25 / 1, folio 5 : 31 / 3 ; corpus : 90,4 % /
+  17 (87,6 % / 31 avant).
 - **Le calculateur au centre, ce qui distribue contre lui** (`04`
   `concours`, `couchesAutourDuHub`, `changementsDeColonne`,
   `redressements`) : autour d'un hub, seules ses mises en niveaux « au
