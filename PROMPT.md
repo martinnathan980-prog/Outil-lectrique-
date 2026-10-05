@@ -26,13 +26,16 @@ Le format qui compte est le **RETEST** Excel : seize colonnes nommées, en-tête
 - **Deux fils ne se chevauchent jamais** (aucun segment partagé). **Rien ne s'écrit sur rien** : textes, numéros, repères, symboles.
 - Un croisement inévitable se dessine par un **petit pont** sur le fil horizontal.
 - Le **numéro de fil s'écrit dans le fil**, sur un petit fond blanc, sur son plus long segment horizontal (ou le suivant, ou debout le long d'un vertical, s'il n'y a pas la place).
-- Un fil, et son numéro, prennent la **couleur de sa route** (colonne « route » ou « cheminement ») ; la **légende des routes** est en bas à gauche de la feuille. Sans route, il reste à l'encre. Les routes de l'exemple sont provisoires (tirées du type de fil) : je donnerai les vraies.
+- Un fil prend la **couleur de sa route** (colonne « route » ou « cheminement ») **sur toute sa longueur**, jusqu'à la borne : le raccord dans le connecteur, l'amorce d'une masse, d'un rond de barrette, d'une prise sont du fil. Son **numéro s'écrit en noir**. La **légende des routes** est dans le cartouche. Sans route, il reste à l'encre. Les routes de l'exemple sont provisoires (tirées du type de fil) : je donnerai les vraies.
+- Un fil ne **frôle** pas un équipement qui n'est pas le sien (moins d'un pas de borne de son bord) : on croirait qu'il y entre.
 
 ### Les équipements et leurs connecteurs
 - Le corps est un rectangle, son repère dedans. Les **connecteurs sont des pièces collées hors du corps** : bords carrés côté corps, arrondis côté fil, le numéro de chaque borne dans la pièce, la **lettre du connecteur au-dessus** de la pièce.
 - Les bornes d'un connecteur **n'ont pas à garder le même espacement** : elles s'écartent pour être pile en face de l'équipement qu'elles servent, et le fil part droit.
 - Un connecteur peut se **couper en morceaux** (sur deux flancs, ou en plusieurs morceaux sur le même flanc), chacun avec sa lettre, si ça rend les fils droits.
 - Le **gros équipement** (un calculateur) se met **au centre**, ses partenaires des deux côtés, et il « regarde » le centre. Personne ne s'empile au-dessus ou au-dessous de lui dans sa colonne.
+- Le dessin est **serré, à la forme de la feuille** : jamais une longue rangée « dans la longueur » où l'œil se perd, jamais un bloc rejeté au bout de la feuille loin de ce qu'il sert, jamais un fil qui traverse toute la carte.
+- Les **contacts d'une prise de coupure** se rangent dans l'ordre qui ôte les croisements, comme les bornes d'un connecteur ; l'amont entre toujours d'un côté, l'aval sort de l'autre.
 - Un petit boîtier (relais, lampe, interrupteur) reste compact : jamais un interrupteur de trois bornes haut comme la feuille pour redresser un seul fil.
 
 ### Les barrettes (VT)
@@ -51,6 +54,7 @@ Le format qui compte est le **RETEST** Excel : seize colonnes nommées, en-tête
 
 ### La feuille
 - **Toutes les pages ont exactement les mêmes dimensions** (A3 paysage), comme dans un outil de dessin : même cadre, mêmes zones (1, 2, 3… / A, B, C…), même cartouche. Pas de portrait, pas de petite ni de grande feuille. Le dessin se cale au centre et la feuille prend l'échelle.
+- Le **cartouche** est un bandeau d'un seul tenant en bas à droite, au trait d'encre : le folio en grand et l'indice ; le titre et la marque ; dessiné, date, échelle ; la légende des routes à sa gauche (un trait épais de la couleur de chaque route, son nom, son nombre de fils sur le folio).
 
 ## 5. L'interface
 
@@ -80,12 +84,13 @@ Le plan occupe tout l'écran. **En bas**, la barre de vue : folios (précédent,
 
 ## 8. Où en est l'outil (à corriger en priorité)
 
-Fait à la dernière passe : une grande batterie de soixante-douze câblages (dix-huit profils, du minimal au géant à deux calculateurs) regardée à l'œil, ses défauts devenus des règles générales ; la recherche profonde en arrière-plan, dont le dessin se garde (sur les seize cas les plus complexes, 56 → 30 croisements) ; les couleurs des routes et leur légende ; la retouche à la souris ; la vue en relief des barrettes et des prises. Banc : 92,3 % de fils droits, 6 croisements ; corpus : 90,1 % et 84 croisements (89,0 % et 95 avant).
+Fait à la dernière passe : le dessin AFFINÉ (celui que la recherche profonde laisse, celui que tu vois) relu folio par folio. Le juge paie un dessin « dans la longueur » et un fil qui frôle un équipement étranger ; il a trois niveaux pour que ces termes ne détournent pas la recherche. Les contacts d'une prise se rangent comme des bornes (folio 5 : 550SW3 1↔2 avec les deux prises, plus aucun croisement). La recherche profonde essaie chaque grappe de blocs dans chaque colonne utile (351PM1 et 397TB1, 423ST3 ne restent plus au bout de la feuille), garde le calculateur au centre et finit par une passe exacte. Fils de la couleur de leur route jusqu'à la borne, numéros en noir, cartouche refait avec la légende. Banc : 92,3 % de fils droits, 4 croisements ; corpus : 89,6 % et 81 croisements (90,1 % et 84 avant : un demi-point perdu pour un dessin plus serré, sans frôlement).
 
 - **Retouche** : un bloc ne change pas encore de colonne à la souris, une borne ne se déplace pas encore dans son flanc, un fil ne se déplace pas à la main ; une retouche est perdue si les liaisons du folio changent (elle ne se recolle pas encore par repère).
 - **Relief** : la disposition des contacts d'une prise est indicative tant que la bible ne donne pas l'arrangement de l'insert.
 - **Routes** : celles de l'exemple sont provisoires ; les vraies viendront de mon fichier, avec leurs couleurs.
-- **Folio 5** : les trois croisements qui restent sont imposés par l'ordre des contacts des deux prises — si une disposition les supprime quand même, prends-la.
+- **Folio 2** : la recherche profonde trouve un fil droit de plus en étalant le dessin en escalier d'un coin à l'autre ; le juge préfère le dessin serré (15 droits sur 19). Si un dessin serré à 16 existe, prends-le.
+- **Corpus** : onze défauts de lisibilité au dessin du concours, presque tous un fil qu'on redresserait en allongeant un bloc, manqués sur les gros cas quand le budget s'épuise.
 - **Corpus** : trois calculateurs reliés deux à deux gardent quelques croisements même après la recherche profonde ; regarde-les.
 - Le placement doit rester **stable** et **déterministe** : le même contrat donne le même dessin, recherche profonde comprise.
 

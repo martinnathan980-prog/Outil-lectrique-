@@ -8,8 +8,9 @@
    c'est l'épaisseur et la forme du trait, jamais sa couleur : 1,0 le corps
    d'un matériel, 0,95 un fil (et tout ce qui en est : piquage, pont de
    shunt), 0,7 une réglette, 0,55 une cellule. La seule couleur est celle
-   des ROUTES : un fil, et son numéro, prennent la couleur de sa route, que
-   la légende du bas de la feuille nomme ; sans route, il reste à l'encre.
+   des ROUTES : un fil prend la couleur de sa route, jusqu'au bout — le
+   raccord de sa borne compris —, que la légende du cartouche nomme ; sans
+   route, il reste à l'encre. Son numéro s'écrit en noir.
 
    RIEN NE S'ÉCRIT SUR RIEN. Tout texte qui a le choix de sa place — le
    numéro d'un fil, le repère d'une barrette, d'une masse, d'une prise —
@@ -53,7 +54,7 @@ function styleDessin() {
      .bcell{fill:#ffffff;stroke:#1b2430;stroke-width:.55}
      .bsname{fill:#7a8794;font-size:6.5px;font-weight:600;letter-spacing:.9px}
      .pinlbl{fill:#2b3743;font-size:7.5px;font-weight:500;letter-spacing:.2px}
-     .filnum{fill:#26323f;font-size:${FS_FIL}px;font-weight:500;letter-spacing:.1px}
+     .filnum{fill:#0b0f14;font-size:${FS_FIL}px;font-weight:500;letter-spacing:.1px}
      .halo{fill:#ffffff;stroke:none}
      .rep-petit{fill:#1b2430;font-size:6px;font-weight:600;letter-spacing:.3px}
      .lead{stroke:#26323f;stroke-width:.95;stroke-linecap:butt}
@@ -76,12 +77,16 @@ function styleDessin() {
      .frame{fill:none;stroke:#c2ccd5;stroke-width:.8}
      .zline{stroke:#d8dee4;stroke-width:.7}
      .zone{fill:#9aa5b1;font-size:8px;font-weight:600;letter-spacing:.5px}
-     .cbox{fill:#ffffff;stroke:#c2ccd5;stroke-width:.8}
-     .cdiv{stroke:#e6ebef;stroke-width:.8}
-     .carth{fill:#8e99a4;font-size:5.6px;font-weight:700;letter-spacing:.6px}
-     .cartx{fill:#2b3743;font-size:7.5px;font-weight:600}
-     .cartT{fill:#111c26;font-size:9.5px;font-weight:700;letter-spacing:.3px}
-     .cartA{fill:#8e99a4;font-size:6.5px;font-weight:700;letter-spacing:1.2px}
+     .cbord{fill:none;stroke:#1b2430;stroke-width:1.2}
+     .cfond{fill:#f2f4f6;stroke:none}
+     .cdiv{stroke:#aab4be;stroke-width:.7}
+     .carth{fill:#7d8893;font-size:6px;font-weight:700;letter-spacing:.9px}
+     .cartx{fill:#111b25;font-size:8.5px;font-weight:600}
+     .cartT{fill:#0b1118;font-size:13px;font-weight:700;letter-spacing:.4px}
+     .cartF{fill:#0b1118;font-size:18px;font-weight:700;letter-spacing:.6px}
+     .cartA{fill:#7d8893;font-size:6.5px;font-weight:700;letter-spacing:1.6px}
+     .legnom{fill:#111b25;font-size:8px;font-weight:700;letter-spacing:.3px}
+     .legn{fill:#7d8893;font-size:7px;font-weight:600}
      .selbox{fill:none;stroke:#9c3a14;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
      .comp{cursor:pointer;transition:opacity .12s}
      .focus .cab,.focus .jn{opacity:.10}
@@ -131,34 +136,37 @@ function feuilleDeReference(cartouche, folio, legende) {
     s += `<line class="zline" x1="${f1(ix)}" y1="${f1(yy)}" x2="${f1(ix - 6)}" y2="${f1(yy)}"/><line class="zline" x1="${f1(ix + iw)}" y1="${f1(yy)}" x2="${f1(ix + iw + 6)}" y2="${f1(yy)}"/>`; }
   for (let i = 0; i < nrow; i++) { const cy = iy + ih * (i + 0.5) / nrow; const L = String.fromCharCode(65 + i);
     s += `<text class="zone" x="${f1(ix - 10)}" y="${f1(cy + 3)}" text-anchor="middle">${L}</text><text class="zone" x="${f1(ix + iw + 10)}" y="${f1(cy + 3)}" text-anchor="middle">${L}</text>`; }
-  return s + cartoucheSvg(ix + iw, iy + ih, cartouche, folio) + legendeSvg(ix, iy + ih, ix + iw - 224 - 16, legende);
+  return s + cartoucheSvg(ix + iw, iy + ih, cartouche, folio, legende);
 }
-/* La LÉGENDE DES ROUTES : en bas à gauche de la feuille, dans la bande que
-   le dessin laisse libre au-dessus du cadre (celle du cartouche), une ligne
-   par route — un trait de sa couleur, son nom, combien de fils elle porte
-   sur ce folio ; cinq lignes par colonne. Un fil sans route reste à l'encre
-   (« sans route »). Rien quand aucun fil n'a de route. */
-const LEG_LIGNE = 15, LEG_COLONNE = 176, LEG_PAR_COLONNE = 5;
-function legendeSvg(x, yBas, xMax, legende) { if (!legende || !legende.length) return '';
-  const n = legende.length, rangs = Math.min(n, LEG_PAR_COLONNE), cols = Math.ceil(n / LEG_PAR_COLONNE);
-  const w = Math.min(xMax - x, 14 + cols * LEG_COLONNE), h = 24 + rangs * LEG_LIGNE, y = yBas - h;
-  let s = `<rect class="cbox" x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}"/><text class="carth" x="${f1(x + 9)}" y="${f1(y + 13)}">ROUTES</text>`;
-  legende.forEach((r, i) => { const cx = x + 9 + Math.floor(i / LEG_PAR_COLONNE) * LEG_COLONNE, cy = y + 26 + (i % LEG_PAR_COLONNE) * LEG_LIGNE;
-    if (cx + LEG_COLONNE > xMax + 8) return;
-    s += `<line x1="${f1(cx)}" y1="${f1(cy - 3)}" x2="${f1(cx + 22)}" y2="${f1(cy - 3)}" style="stroke:${r.couleur || '#26323f'};stroke-width:2.2;stroke-linecap:round"/>`;
-    s += `<text class="cartx" x="${f1(cx + 30)}" y="${f1(cy)}">${esc(clip(r.route || 'sans route', 18))}</text><text class="carth" x="${f1(cx + LEG_COLONNE - 14)}" y="${f1(cy)}" text-anchor="end">${r.n} fil${r.n > 1 ? 's' : ''}</text>`; });
-  return s; }
-function cartoucheSvg(rx, by, c, folio) {
-  const W = 224, H = 66, x = rx - W, y = by - H;
-  let s = `<rect class="cbox" x="${f1(x)}" y="${f1(y)}" width="${W}" height="${H}"/>`;
-  [[x, y + 20, x + W, y + 20], [x, y + 43, x + W, y + 43], [x + 152, y + 20, x + 152, y + H], [x + 80, y + 20, x + 80, y + H]]
-    .forEach(([a, b, c2, d]) => { s += `<line class="cdiv" x1="${a}" y1="${b}" x2="${c2}" y2="${d}"/>`; });
-  s += `<text class="cartT" x="${x + 11}" y="${y + 13.5}">${esc(clip(c.titre || '—', 34))}</text>`;
-  const cell = (cx, cy, h, v) => `<text class="carth" x="${cx}" y="${cy}">${h}</text><text class="cartx" x="${cx}" y="${cy + 10}">${esc(v || '—')}</text>`;
-  s += cell(x + 11, y + 29, 'DESSINÉ', c.auteur) + cell(x + 87, y + 29, 'DATE', c.date) + cell(x + 11, y + 52, 'ÉCHELLE', c.echelle) + cell(x + 87, y + 52, 'INDICE', c.indice);
-  s += `<text class="carth" x="${x + 159}" y="${y + 29}">FOLIO</text><text class="cartT" x="${x + 159}" y="${y + 39.5}">${esc(folio || '1 / 1')}</text>`;
-  s += `<text class="cartA" x="${x + W - 9}" y="${y + 59}" text-anchor="end">ATELIER·SCHÉMA</text>`;
-  return s;
+/* Le CARTOUCHE, en bas à droite, contre le cadre, dans la bande que le dessin
+   laisse libre : un bandeau d'un seul tenant, au trait d'encre, comme sur une
+   planche de bureau d'études. De droite à gauche : le FOLIO en grand, et
+   l'indice dessous ; le TITRE, la marque de l'atelier, et dessous qui a
+   dessiné, quand, à quelle échelle ; puis la LÉGENDE DES ROUTES — un trait
+   épais de la couleur de chaque route, son nom, combien de fils elle porte
+   sur ce folio (quatre routes par colonne, les colonnes s'ajoutent vers la
+   gauche). Un fil sans route reste à l'encre (« sans route ») ; pas de
+   légende quand aucun fil n'a de route. */
+const CART_H = 84, CART_HAUT = 48, CART_FOLIO = 96, CART_TITRE = 264, LEG_COLONNE = 164, LEG_PAR_COLONNE = 4, LEG_LIGNE = 14.5;
+function cartoucheSvg(rx, by, c, folio, legende) {
+  const routes = legende && legende.length ? legende : [], nCol = Math.ceil(routes.length / LEG_PAR_COLONNE);
+  const W = CART_FOLIO + CART_TITRE + nCol * LEG_COLONNE, x = rx - W, y = by - CART_H, xT = rx - CART_FOLIO - CART_TITRE, xF = rx - CART_FOLIO, yB = y + CART_HAUT;
+  const trait = (a, b, c2, d) => `<line class="cdiv" x1="${f1(a)}" y1="${f1(b)}" x2="${f1(c2)}" y2="${f1(d)}"/>`;
+  let s = `<rect class="cfond" x="${f1(xF)}" y="${f1(y)}" width="${CART_FOLIO}" height="${CART_HAUT}"/>`;
+  // les cases : titre et folio en haut ; dessiné, date, échelle, indice en bas ; chaque colonne de la légende
+  s += trait(xT, yB, rx, yB) + trait(xF, y, xF, by) + trait(xT + 88, yB, xT + 88, by) + trait(xT + 176, yB, xT + 176, by);
+  for (let k = 0; k < nCol; k++) s += trait(xT - k * LEG_COLONNE, y, xT - k * LEG_COLONNE, by);
+  const champ = (cx, cy, h, v, n) => `<text class="carth" x="${f1(cx)}" y="${f1(cy)}">${h}</text><text class="cartx" x="${f1(cx)}" y="${f1(cy + 15)}">${esc(clip(v || '—', n))}</text>`;
+  s += champ(xT + 10, yB + 12, 'DESSINÉ', c.auteur, 12) + champ(xT + 98, yB + 12, 'DATE', c.date, 12) + champ(xT + 186, yB + 12, 'ÉCHELLE', c.echelle, 11) + champ(xF + 10, yB + 12, 'INDICE', c.indice, 11);
+  s += `<text class="carth" x="${f1(xT + 10)}" y="${f1(y + 13)}">TITRE</text><text class="cartA" x="${f1(xF - 10)}" y="${f1(y + 13)}" text-anchor="end">ATELIER·SCHÉMA</text>`;
+  s += `<text class="cartT" x="${f1(xT + 10)}" y="${f1(y + 36)}">${esc(clip(c.titre || '—', 30))}</text>`;
+  s += `<text class="carth" x="${f1(xF + 10)}" y="${f1(y + 13)}">FOLIO</text><text class="cartF" x="${f1(xF + CART_FOLIO / 2)}" y="${f1(y + 39)}" text-anchor="middle">${esc(folio || '1 / 1')}</text>`;
+  // la légende des routes, colonne après colonne vers la gauche
+  routes.forEach((r, i) => { const k = Math.floor(i / LEG_PAR_COLONNE), cx = xT - (nCol - k) * LEG_COLONNE + 10, cy = y + 30 + (i % LEG_PAR_COLONNE) * LEG_LIGNE;
+    s += `<line x1="${f1(cx)}" y1="${f1(cy - 3)}" x2="${f1(cx + 24)}" y2="${f1(cy - 3)}" style="stroke:${r.couleur || '#26323f'};stroke-width:3.2;stroke-linecap:round"/>`;
+    s += `<text class="legnom" x="${f1(cx + 32)}" y="${f1(cy)}">${esc(clip(r.route || 'sans route', 15))}</text><text class="legn" x="${f1(cx + LEG_COLONNE - 20)}" y="${f1(cy)}" text-anchor="end">${r.n} fil${r.n > 1 ? 's' : ''}</text>`; });
+  if (nCol) s += `<text class="carth" x="${f1(x + 10)}" y="${f1(y + 13)}">ROUTES</text>`;
+  return s + `<rect class="cbord" x="${f1(x)}" y="${f1(y)}" width="${f1(W)}" height="${CART_H}"/>`;
 }
 
 /* ---- les fils --------------------------------------------------------- */
@@ -202,9 +210,10 @@ function tracesDePiquage(barrettes) {
   return traces; }
 /* Les bornes d'un piquage, de haut en bas : la borne d'origine et chaque départ. */
 const bornesDePiquage = b => [b.py, ...b.gardes.map(k => k.y)].filter((y, i, a) => a.findIndex(z => Math.abs(z - y) < 0.6) === i).sort((u, v) => u - v);
-function piquagesSvg(barrettes, piquages, verticaux) {
+function piquagesSvg(barrettes, piquages, verticaux, couleurBout) {
   let s = '';
-  (barrettes.raccords || []).forEach(r => { s += `<path class="cab" d="${cheminAvecPonts([{ x: r.x0, y: r.y }, { x: r.x1, y: r.y }], verticaux)}"/>`; });
+  (barrettes.raccords || []).forEach(r => { const c = couleurBout && (couleurBout(r.x0, r.y) || couleurBout(r.x1, r.y));
+    s += `<path class="cab"${styleTrait(c)} d="${cheminAvecPonts([{ x: r.x0, y: r.y }, { x: r.x1, y: r.y }], verticaux)}"/>`; });
   barrettes.forEach(b => {
     /* Un piquage — plusieurs fils sur une même borne — se dessine comme la
        BARRETTE qu'il faudra poser : une fine ligne pointillée, un point à
@@ -218,6 +227,14 @@ function piquagesSvg(barrettes, piquages, verticaux) {
    numéro dedans en blanc. Le point grandit avec le numéro ; sur une même
    réglette, tous les points ont la taille du plus grand. */
 const R_PASTILLE = etiq => etiq.length > 2 ? 4.6 : (etiq.length > 1 ? 4 : 3.4);
+/* Le bout de fil qui entre dans un bloc — le raccord d'une borne, l'amorce d'une masse, d'un morceau de barrette, d'une
+   prise — est du fil : il prend la couleur de sa route (le lecteur : « tous les fils doivent être de la même couleur,
+   des fois les extrémités c'est pas le cas »). `couleurBout(x, y)` la dit pour un bout de fil, en absolu. */
+const styleTrait = couleur => couleur ? ` style="stroke:${couleur}"` : '';
+function couleursDesBouts(fils, couleurDe) { const m = new Map(), cle = (x, y) => Math.round(x * 2) + ',' + Math.round(y * 2);
+  if (couleurDe) fils.forEach(w => { if (w.shunt) return; const c = couleurDe(w); if (!c) return;
+    [w.epA, w.epB, w.pts[0], w.pts[w.pts.length - 1]].forEach(ep => { if (ep && !m.has(cle(ep.x, ep.y))) m.set(cle(ep.x, ep.y), c); }); });
+  return (x, y) => m.get(cle(x, y)) || null; }
 function pastilleSvg(x, y, etiq, r) {
   return `<circle class="bpast" cx="${f1(x)}" cy="${f1(y)}" r="${r || R_PASTILLE(etiq)}"/><text class="bpnum" x="${f1(x)}" y="${f1(y + 1.45)}" text-anchor="middle">${esc(etiq)}</text>`;
 }
@@ -317,7 +334,7 @@ const repereTexte = r => `<text class="${r.cls}" x="${f1(r.x)}" y="${f1(r.y)}" t
    muets). Le plus long segment seul laissait muet un fil dont l'horizontale
    passait sous une masse et la verticale entre deux ponts (folio 5,
    W-526). */
-function reperesDeFil(fils, verticaux, barrettes, occ, couleurDe) {
+function reperesDeFil(fils, verticaux, barrettes, occ) {
   const H = 5.6, fs = FS_FIL;
   occ = occ || occupationDe(fils, barrettes || [], []);
   const cands = [];
@@ -329,7 +346,7 @@ function reperesDeFil(fils, verticaux, barrettes, occ, couleurDe) {
     // un fil qui n'est qu'un raccord vers un piquage a, sur la verticale du piquage, un tronçon à lui seul
     if (!vs.length && w.pts.length) { const t = tronconDePiquage(w, barrettes || []); if (t) vs.push({ L: t.vL, x: t.vx, y0: t.vy0, y1: t.vy1 }); }
     hs.sort((u, v) => v.L - u.L); vs.sort((u, v) => v.L - u.L);
-    cands.push({ nom, L: hs.length ? hs[0].L : 0, hs, vs, couleur: couleurDe ? couleurDe(w) : null }); });
+    cands.push({ nom, L: hs.length ? hs[0].L : 0, hs, vs }); });
   cands.sort((a, b) => b.L - a.L);
   let out = '';
   /* un fil court (une masse collée à sa borne) garde son numéro : il peut
@@ -353,13 +370,13 @@ function reperesDeFil(fils, verticaux, barrettes, occ, couleurDe) {
     if (pose) { occ.poser(pose);
       // dans le fil : un fond blanc coupe le trait sous le numéro, le fil repart de part et d'autre
       if (pose.dedans) out += `<rect class="halo" x="${f1(pose.x0 - 1.2)}" y="${f1(pose.y0 + 0.5)}" width="${f1(pose.x1 - pose.x0 + 2.4)}" height="${f1(pose.y1 - pose.y0 - 1)}"/>`;
-      out += `<text class="filnum"${c.couleur ? ` style="fill:${c.couleur}"` : ''} x="${f1(pose.cx)}" y="${f1(pose.y0 + 0.78 * fs)}" text-anchor="middle">${esc(c.nom)}</text>`; return; }
+      out += `<text class="filnum" x="${f1(pose.cx)}" y="${f1(pose.y0 + 0.78 * fs)}" text-anchor="middle">${esc(c.nom)}</text>`; return; }
     // pas de place à l'horizontale : le numéro se lit debout, le long d'un vertical
     for (const v of c.vs) { if (larg + 10 > v.L) continue; const mid = (v.y0 + v.y1) / 2, dmax = (v.L - larg) / 2 - 5, x1 = v.x - 2.2, x0 = x1 - H;
       for (let d = 0; d <= dmax + 0.01; d += 3) for (const cy of (d === 0 ? [mid] : [mid - d, mid + d])) {
         const y0 = cy - larg / 2, y1 = cy + larg / 2; if (!occ.libre({ x0, y0, x1, y1 }, 0.5)) continue;
         occ.poser({ x0, y0, x1, y1 });
-        out += `<text class="filnum"${c.couleur ? ` style="fill:${c.couleur}"` : ''} transform="rotate(-90 ${f1(x1)} ${f1(cy)})" x="${f1(x1)}" y="${f1(cy)}" text-anchor="middle">${esc(c.nom)}</text>`; return; } } });
+        out += `<text class="filnum" transform="rotate(-90 ${f1(x1)} ${f1(cy)})" x="${f1(x1)}" y="${f1(cy)}" text-anchor="middle">${esc(c.nom)}</text>`; return; } } });
   return out;
 }
 /* Sur la verticale d'un piquage, le tronçon entre la borne d'un fil et le
@@ -380,12 +397,12 @@ function tronconDePiquage(w, barrettes) {
 /* Les bornes d'un équipement : le fil entre par le flanc et continue jusqu'au
    corps, où une petite borne ronde marque le contact ; le numéro s'écrit DANS
    le corps, contre le bord, comme sur un plan de câblage. Pas de boîte. */
-function bornesSvg(xCorps, dir, prof, rangs, baseY, connecteurDe) {
+function bornesSvg(xCorps, dir, prof, rangs, baseY, connecteurDe, couleurA) {
   let out = '';
   rangs.forEach(p => { const y = p.y - baseY, xo = xCorps + dir * prof, c = connecteurDe ? connecteurDe(p.etiq) : null;
-    // dans un connecteur, le fil s'arrête sur le connecteur ; sinon il va jusqu'au corps
+    // dans un connecteur, le fil s'arrête sur le connecteur ; sinon il va jusqu'au corps — à la couleur de son fil
     const xb = c ? xCorps + dir * CONN_W : xCorps;
-    out += `<line class="lead" x1="${f1(xo)}" y1="${f1(y)}" x2="${f1(xb)}" y2="${f1(y)}"/>`;
+    out += `<line class="lead"${styleTrait(couleurA && couleurA(p.y))} x1="${f1(xo)}" y1="${f1(y)}" x2="${f1(xb)}" y2="${f1(y)}"/>`;
     if (!p.etiq) return;
     if (c) out += `<text class="connpin" x="${f1(xCorps + dir * CONN_W / 2)}" y="${f1(y + 2)}" text-anchor="middle">${esc(clip(etiquetteDansConnecteur(p.etiq, c.nom), 4))}</text>`;
     else out += `<text class="pinlbl" x="${f1(xCorps - dir * 4)}" y="${f1(y + 2.6)}" text-anchor="${dir > 0 ? 'end' : 'start'}">${esc(clip(String(p.etiq), 5))}</text>`; });
@@ -447,8 +464,10 @@ function paquetsDePonts(shunts) {
    d'une place cherchée (un dessin sans occupation), la place attendue. */
 function repereDe(c) { const r = c.repere || (() => { const R = reperesCandidats(c); return R ? { ...R.cands[0], cls: R.cls, nom: R.nom } : null; })();
   return r ? repereTexte({ ...r, x: r.x - c.x, y: r.y - c.y }) : ''; }
-function blocSvg(c, designation, choisi) {
+function blocSvg(c, designation, choisi, couleurBout) {
   let s = `<g class="comp" data-name="${escA(c.name)}" transform="translate(${f1(c.x)},${f1(c.y)})">`;
+  // la couleur du fil qui arrive à une hauteur (absolue) sur le flanc gauche, ou droit, du bloc
+  const aGauche = y => couleurBout ? couleurBout(c.x, y) : null, aDroite = y => couleurBout ? couleurBout(c.x + c.w, y) : null;
   if (choisi) s += coins('selbox', 5, c.w, c.h);
   const bx = c.lw, bw = c.w - c.lw - c.rw, mid = bx + bw / 2;
   const rl = c.rangs.L || [], rr = c.rangs.R || [], rs = c.rangs.S || [];
@@ -459,7 +478,7 @@ function blocSvg(c, designation, choisi) {
        vers l'extérieur — et le repère se lit dessous. */
     // p.dir dit par quel flanc le fil ARRIVE (-1 : par la gauche) ; le symbole grandit vers l'autre flanc.
     const M = symboleDePastille(c), ly = M.y - c.y, d = M.d, xs = M.xs - c.x, x0 = d > 0 ? 0 : c.w;   // le fil entre par un flanc, le symbole est tout de suite là
-    s += `<line class="earth" x1="${f1(x0)}" y1="${f1(ly)}" x2="${f1(xs)}" y2="${f1(ly)}"/>`;
+    s += `<line class="earth"${styleTrait(d > 0 ? aGauche(M.y) : aDroite(M.y))} x1="${f1(x0)}" y1="${f1(ly)}" x2="${f1(xs)}" y2="${f1(ly)}"/>`;
     [[6, 0], [4, 3.2], [2, 6.4]].forEach(([l, dx]) => { const x = xs + d * dx; s += `<line class="earth" x1="${f1(x)}" y1="${f1(ly - l)}" x2="${f1(x)}" y2="${f1(ly + l)}"/>`; });
     // le repère, petit, sous les barres — ou là où la place est libre
     s += repereDe(c);
@@ -469,7 +488,7 @@ function blocSvg(c, designation, choisi) {
        arrive sur un court pointillé vertical, la borne est le point noir
        numéroté dessus, le point de départ dessous, le repère en petit. */
     const M = symboleDePastille(c), ly = M.y - c.y, xs = M.xs - c.x, x0 = M.d > 0 ? 0 : c.w;
-    s += `<line class="lead" x1="${f1(x0)}" y1="${f1(ly)}" x2="${f1(xs)}" y2="${f1(ly)}"/>`;
+    s += `<line class="lead"${styleTrait(M.d > 0 ? aGauche(M.y) : aDroite(M.y))} x1="${f1(x0)}" y1="${f1(ly)}" x2="${f1(xs)}" y2="${f1(ly)}"/>`;
     s += `<line class="barre" x1="${f1(xs)}" y1="${f1(ly - 6)}" x2="${f1(xs)}" y2="${f1(ly + 6)}"/><circle class="bardot" cx="${f1(xs)}" cy="${f1(ly + 6)}" r="1.5"/>`;
     s += pastilleSvg(xs, ly, M.etiq ? clip(String(M.etiq), 3) : '');
     s += repereDe(c);
@@ -490,8 +509,8 @@ function blocSvg(c, designation, choisi) {
     s += `<rect class="fiche" x="${f1(xm0)}" y="${f1(ym0)}" width="${WM}" height="${f1(ym1 - ym0)}"/>`;
     rs.forEach(p => { const ly = p.y - c.y, n = p.etiq ? clip(String(p.etiq), 2) : '';
       if (n) s += `<text class="prnum"${n.length > 1 ? ' style="font-size:3.8px"' : ''} x="${f1((xe0 + xe1) / 2)}" y="${f1(ly + 1.6)}" text-anchor="middle">${esc(n)}</text>`;
-      if ((p.dir || 0) <= 0) s += `<line class="lead" x1="0" y1="${f1(ly)}" x2="${f1(xm0)}" y2="${f1(ly)}"/>`;
-      if ((p.dir || 0) >= 0) s += `<line class="lead" x1="${f1(xe1)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
+      if ((p.dir || 0) <= 0) s += `<line class="lead"${styleTrait(aGauche(p.y))} x1="0" y1="${f1(ly)}" x2="${f1(xm0)}" y2="${f1(ly)}"/>`;
+      if ((p.dir || 0) >= 0) s += `<line class="lead"${styleTrait(aDroite(p.y))} x1="${f1(xe1)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
     s += repereDe(c);
   } else if (c.kind === 'strip' || estBarrette(c.name)) {
     /* BARRETTE (et tout bornier, tout potentiel) : une fine ligne pointillée
@@ -504,8 +523,8 @@ function blocSvg(c, designation, choisi) {
     s += `<line class="barre" x1="${f1(mid)}" y1="${f1(yh)}" x2="${f1(mid)}" y2="${f1(yb)}"/><circle class="bardot" cx="${f1(mid)}" cy="${f1(yb)}" r="2.1"/>`;
     // un morceau de barrette est un paquet : ses bornes sont pontées par construction, la ligne reste pointillée
     rangs.forEach(p => { const ly = p.y - c.y, d = p.dir || 0;
-      if (d <= 0) s += `<line class="lead" x1="0" y1="${f1(ly)}" x2="${f1(mid)}" y2="${f1(ly)}"/>`;
-      if (d >= 0) s += `<line class="lead" x1="${f1(mid)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
+      if (d <= 0) s += `<line class="lead"${styleTrait(aGauche(p.y))} x1="0" y1="${f1(ly)}" x2="${f1(mid)}" y2="${f1(ly)}"/>`;
+      if (d >= 0) s += `<line class="lead"${styleTrait(aDroite(p.y))} x1="${f1(mid)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
     // chaque borne est une pastille sur la ligne, son numéro dedans
     const etiqs = rangs.map(p => p.etiq ? clip(String(p.etiq), 3) : ''), r = Math.max(...etiqs.map(R_PASTILLE));
     rangs.forEach((p, i) => { s += pastilleSvg(mid, p.y - c.y, etiqs[i], r); });
@@ -531,8 +550,8 @@ function blocSvg(c, designation, choisi) {
     s += repereSvg('rep-big', mid, yRep, clip(c.name, 14), bw, 14);
     if (c.h > 380) s += `<text class="bsname" x="${f1(mid)}" y="${f1(c.h - 9)}" text-anchor="middle">${esc(clip(c.name, 12))}</text>`;
     if (designation) s += `<text class="des" x="${f1(mid)}" y="${f1(yRep + 10)}" text-anchor="middle">${esc(clip(designation, 18))}</text>`;
-    if (rl.length) s += bornesSvg(bx, -1, c.lw, rl, c.y, connDe);
-    if (rr.length) s += bornesSvg(bx + bw, +1, c.rw, rr, c.y, connDe);
+    if (rl.length) s += bornesSvg(bx, -1, c.lw, rl, c.y, connDe, aGauche);
+    if (rr.length) s += bornesSvg(bx + bw, +1, c.rw, rr, c.y, connDe, aDroite);
     // un shunt entre bornes d'un connecteur : un pontage fin, juste devant la pièce, un point sur chaque borne pontée
     paquetsDePonts(c.shunts || []).forEach(([y1, y2]) => { const aDroite = rr.some(p => Math.abs(p.y - y1) < 0.6) && !rl.some(p => Math.abs(p.y - y1) < 0.6);
       const xs = aDroite ? bx + bw + CONN_W + 3.5 : bx - CONN_W - 3.5, entre = (aDroite ? rr : rl).filter(p => p.y >= y1 - 0.6 && p.y <= y2 + 0.6);
@@ -556,10 +575,11 @@ function sceneSvg(dessin, cartouche, folio, designationDe, choisi) {
   // les textes cherchent leur place dans ce qui est tracé : les repères d'abord, les numéros de fil ensuite
   const occ = occupationDe(fils, dessin.barrettes, dessin.comps);
   poserReperes(dessin.comps, occ);
-  s += reperesDeFil(dessin.fils, verticaux, dessin.barrettes, occ, couleurDe);
-  s += piquagesSvg(dessin.barrettes, dessin.piquages, verticaux);
+  s += reperesDeFil(dessin.fils, verticaux, dessin.barrettes, occ);
+  const couleurBout = couleursDesBouts(fils, couleurDe);
+  s += piquagesSvg(dessin.barrettes, dessin.piquages, verticaux, couleurBout);
   dessin.points.forEach(d => s += `<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="1.9"/>`);
-  dessin.comps.forEach(c => { s += blocSvg(c, designationDe ? designationDe(c.name) : '', choisi === c.name); });
+  dessin.comps.forEach(c => { s += blocSvg(c, designationDe ? designationDe(c.name) : '', choisi === c.name, couleurBout); });
   return s;
 }
 /* Le même dessin, en document SVG autonome : pour enregistrer, imprimer,

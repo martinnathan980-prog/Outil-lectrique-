@@ -77,7 +77,7 @@ function placementDe(L) {
    mesurent le concours, déterministe ; `atelier.affinage(true)` la réveille.
    Sans Worker ni IndexedDB (un navigateur qui les refuse), rien ne change :
    le dessin du concours reste. */
-const TOURS_PROFONDS = 24;
+const TOURS_PROFONDS = 48;
 const affinage = { actif: !(typeof navigator !== 'undefined' && navigator.webdriver), worker: null, file: [], encours: null,
   profonds: new Map(), finis: new Set(), etat: null, vu: 0 };
 const cleCourante = () => { const L = liaisonsDuPlan(); return L.length ? clePlacement(L) : null; };

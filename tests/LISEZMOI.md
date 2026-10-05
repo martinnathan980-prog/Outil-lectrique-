@@ -41,22 +41,28 @@ chiffres de référence sur les vingt et une topologies (quinze historiques
 et les six folios de l'exemple ; un piquage qui tranche un fil compte
 comme un croisement) :
 
-    92,3 % de fils droits · 6 croisements · 0 évitable · 0 violation · 0 cas hors feuille
+    92,3 % de fils droits · 4 croisements · 0 évitable · 0 violation · 0 cas hors feuille
     contrat d'essai : 77,8 %, 1 croisement · deux borniers en cascade : 100 %, 0
-    folio 1 : 87,5 %, 0 · folio 2 : 78,9 %, 0 · folio 3 : 89,3 %, 1
-    folio 4 : 92,3 %, 1 · folio 5 : 86,8 %, 3 · folio 6 : 87,5 %, 0
+    folio 1 : 75,0 %, 0 · folio 2 : 78,9 %, 0 · folio 3 : 89,3 %, 1
+    folio 4 : 92,3 %, 1 · folio 5 : 89,5 %, 1 · folio 6 : 87,5 %, 0
     partout : 0 tour, 0 segment partagé, 0 marche, 0 borne sur une autre, 0 fil rompu,
     0 bloc collé à un autre
 
 et sur le CORPUS (`banc-corpus.js`, soixante-douze câblages, dix-huit profils) :
 
-    90,1 % de fils droits · 84 croisements · 6 défauts de lisibilité · 0 cas faux
+    89,6 % de fils droits · 81 croisements · 11 défauts de lisibilité · 0 cas faux
 
-(Avant cette passe : 91,9 % et 5 croisements sur le banc ; sur les mêmes
-soixante-douze câblages, 89,0 % et 95 croisements. Les six premiers profils
-seuls, au tour précédent : 87,6 % et 31 croisements, puis 90,4 % et 17.
-Le banc mesure le dessin du CONCOURS, celui qu'on voit d'abord ; la
-recherche profonde le remplace ensuite dans l'outil.)
+(Avant cette passe : 92,3 % et 6 croisements sur le banc ; sur les mêmes
+soixante-douze câblages, 90,1 %, 84 croisements, 6 défauts. Le dessin est
+plus serré, ne frôle plus les équipements et ne retourne plus une prise :
+un demi-point de fils droits s'y est perdu, sur huit cas — vus à l'œil,
+mieux dessinés pour cinq. Le banc mesure le dessin du CONCOURS, celui
+qu'on voit d'abord ; la recherche profonde le remplace ensuite dans l'outil.)
+
+LA RECHERCHE PROFONDE, sur les six folios (48 tours, ce que fait l'outil) :
+folio 1 : 6 droits sur 8, 0 croisement · folio 2 : 15 / 19, 0 · folio 3 :
+49 / 56, 1 · folio 4 : 24 / 26, 1 · folio 5 : 34 / 38, 0 · folio 6 :
+30 / 32, 0 ; de trois secondes (folio 1) à cinq minutes (folio 3).
 
 Sur les seize cas les plus complexes (deux et trois calculateurs, les
 géants à deux calculateurs, le mélange), douze tours de RECHERCHE PROFONDE
@@ -64,6 +70,43 @@ géants à deux calculateurs, le mélange), douze tours de RECHERCHE PROFONDE
 (un géant de cent neuf fils, 17 → 7 ; l'outil en fait vingt-quatre tours).
 De dix secondes à une minute et demie par cas : c'est ce que l'affinage
 fait en arrière-plan, une fois pour toutes.
+
+CE QUE LE LECTEUR A VU SUR LE DESSIN AFFINÉ, et ce qui l'a réglé — pour
+tout fichier, pas seulement pour ces folios :
+- « C'EST VACHEMENT DANS LA LONGUEUR, L'ŒIL SE PERD » (folios 1 et 2,
+  onze et neuf fois plus larges que hauts) : les DESCENTES n'aiment rien
+  tant qu'une rangée, et rien ne les retenait. Le juge paie l'ALLONGEMENT
+  au-delà de trois fois et demie plus large que haut (`coutDeForme`) ;
+- « IL FRÔLE QUAND MÊME 300XC1 », « IL COLLE VRAIMENT À 431PR1 » : un
+  FRÔLEMENT (un fil à moins de seize unités d'un équipement qui n'est pas
+  le sien, `compterFrolements`) coûte un demi fil droit. Le routeur ne
+  s'en mêle pas : poser ses corridors plus loin lui faisait réserver
+  d'autres places, et croiser davantage (un cas à trois calculateurs :
+  2 croisements → 8) ;
+- 351PM1 ET 397TB1 « UN PEU TROP EXCENTRÉS », 423ST3 de même : la recherche
+  profonde déplaçait un ou deux blocs au hasard ; elle essaie d'abord,
+  systématiquement, chaque GRAPPE (des blocs liés dans une même colonne)
+  dans chaque colonne voisine ou d'à côté d'un partenaire, et repart d'une
+  ÉLITE de trois dessins, pas d'un seul (`placementProfond`) ;
+- « POURQUOI LES BORNES 1 ET 2 DE 550SW3 NE SONT PAS ÉCHANGÉES ? » : les
+  contacts d'une PRISE se rangent comme les bornes d'un connecteur
+  (`groupesDeBornes`), et deux fils PARALLÈLES s'échangent par leurs deux
+  bouts à la fois (`echangesLies`) : folio 5, 411VC3A 7↔8, 412VC3B 5↔6,
+  550SW3 1↔2, plus aucun croisement. Une prise dont l'amont et l'aval
+  sortent du même côté vaut quatre tours (à deux, un bloc mieux rangé la
+  payait encore) ;
+- W-408 « IL POURRAIT ÊTRE DROIT » : la passe EXACTE qui finit la recherche
+  profonde route chaque geste pour de vrai, sans tamis, et y ajoute les
+  ÉCHANGES LIÉS (un échange qui redresse un fil et en plie un autre, puis
+  celui qui redresse l'autre chez son partenaire).
+- LE JUGE A TROIS NIVEAUX (`NIVEAU_JUGE`) : la structure se cherche aux fils
+  droits, croisements et descentes ; la passe finale y ajoute les
+  frôlements ; le choix entre dessins finis, la forme et les fils muets.
+  Ajoutés dès la structure, ces termes égaraient la recherche (folio 4 :
+  vingt fils droits au lieu de vingt-quatre) ; ajoutés à la passe finale,
+  la forme en barrait le premier pas.
+- UN FIL MUET (sans la place de son numéro) coûte un fil droit au choix,
+  compté comme le dessin le pose, corps et repères compris.
 
 LA GRANDE BATTERIE (`banc-corpus.js`, dix-huit profils de `tests/corpus.js`,
 du minimal — deux équipements, un fil — au géant — deux calculateurs, cent
@@ -474,10 +517,14 @@ eux et lui ; au mieux, un de ces fils en croise un autre.
 Folio 4 : W-430 croise W-421 (les deux bus de barrette vers les trois
 sondes s'entrelacent).
 
-Folio 5 : trois croisements, imposés par l'ordre des contacts des deux
-prises : W-526 (540VL5 vers la borne 7 de 412VC3B) croise les deux fils
-qui traversent la seconde prise ; W-520 croise W-525 (la borne 8 de
-411VC3A vient de 500XC3, la 7 de 510RL1, posé dessous).
+Folio 5 : un croisement au dessin du concours, aucun après la recherche
+profonde (les contacts des prises se rangent).
+
+Corpus : onze défauts de lisibilité, presque tous des REDRESSEMENTS que la
+passe finale manque sur un gros cas, son budget épuisé (un fil droit de
+plus en allongeant un bloc). La recherche profonde finit par une passe
+exacte, sans tamis, faite pour eux — pas encore mesurée sur le corpus
+(`--profond`, très lent depuis les grappes systématiques).
 
 Corpus : le cas le plus chargé (29 blocs, 63 fils) se calcule en quatorze
 secondes — les estimations et les assemblages, que le budget ne compte

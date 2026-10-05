@@ -213,6 +213,23 @@ Fait, mesuré, en place :
   flanc, les replis concourent, la passe finale converge sur le meilleur.
   Le banc rejoue a posteriori les gestes évidents (échange, flanc,
   glissement) au même barème, et rend 1 s'il en manque un.
+- **Le dessin affiné relu à l'œil : serré, sans frôlement, les prises
+  rangées** (`04` `coutDeForme`, `compterFrolements`, `NIVEAU_JUGE`,
+  `placementProfond` (grappes, élite, passe exacte), `groupesDeBornes`,
+  `echangesLies`, `06` `cartoucheSvg`, `couleursDesBouts`) : le juge paie
+  l'allongement (au-delà de 3,5 fois plus large que haut) et le frôlement
+  d'un équipement étranger (moins de seize unités) ; il a trois niveaux
+  (structure, finition, choix) pour que ces termes ne détournent pas la
+  recherche ; les contacts d'une prise se rangent librement, deux fils
+  parallèles s'échangent par leurs deux bouts, une prise retournée vaut
+  quatre tours ; la recherche profonde essaie chaque grappe de blocs dans
+  chaque colonne utile, repart d'une élite de trois dessins, garde le
+  calculateur au centre, et finit par une passe exacte (échanges liés
+  compris). Un fil est de la couleur de sa route jusqu'à sa borne, son
+  numéro en noir ; le cartouche est un bandeau d'encre qui porte la
+  légende des routes. Banc : 92,3 % / 4 (92,3 % / 6 avant) ; corpus : 89,6 %
+  / 81 (90,1 % / 84 avant) ; profond : folio 5 sans croisement, folio 6
+  30 droits sur 32.
 - **La grande batterie, la recherche profonde, la retouche, le relief**
   (`tests/corpus.js` dix-huit profils, `04` `placementProfond`, `08`
   `affinage`, retouche, `08-relief`, `06` routes) : soixante-douze câblages,

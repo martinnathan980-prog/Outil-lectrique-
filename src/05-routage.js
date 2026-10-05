@@ -41,6 +41,13 @@ const SUPERPOSE = 3e6;
    et le banc comptent les marches (`compterMarches`) : un segment de moins
    de MARCHE entre deux angles, deux verticales d'un fil à moins de 2·MARCHE. */
 const MARCHE = 12, Z_MIN = 16;
+/* Le DÉGAGEMENT : un fil qui longe un équipement étranger à moins de seize unités de son bord (un pas de borne, et ce
+   qu'il faut pour que l'œil les sépare) le FRÔLE — il se lit comme s'il y entrait (le lecteur : « il frôle quand même
+   300XC1 », à dix unités ; « il colle vraiment à 431PR1 », à six). C'est le juge qui les compte (`compterFrolements`) et
+   le placement qui les écarte : le routeur qui posait ses corridors plus loin pour les éviter réservait d'autres places
+   et croisait davantage (un cas à trois calculateurs : 2 croisements → 8). Une verticale de goulotte, posée à RETRAIT
+   de la paroi, ne frôle qu'en deçà de DEGAGEMENT_V. */
+const DEGAGEMENT = 16, DEGAGEMENT_V = 10;
 
 /* Les NETS : deux bornes reliées par un fil ou un shunt sont un même
    potentiel ; deux fils d'un même net peuvent se toucher (les départs d'un

@@ -83,14 +83,18 @@ function preparerDansLaPage() {
     return { d: compterDroits(fils.filter(w => !t.propres.has(w))), c: compterCroisements(fils, R.barrettes) + 2 * t.propres.size, p: compterPartages(R.fils), m: compterMarches(fils), t: compterTours({ links: links || R.links }), k: compterContours(fils),
       s: typeof compterDescentes === 'function' ? compterDescentes(boutsDesLiaisons(links || R.links)) : 0,
       e: typeof compterEtires === 'function' ? compterEtires(comps || R.comps, fils) : 0,
-      x: typeof excesDesEtires === 'function' ? excesDesEtires(comps || R.comps, fils) : 0 }; };
-  // le même barème que le juge (ses constantes) : croisements, segments partagés, marches, tours, contours (un fil qui
-  // contourne des blocs), descentes (ce que les fils pliés descendent), corps étirés — et un TOUR de plus n'est jamais « mieux », quoi qu'il rapporte : un fil qui fait le tour de son
+      x: typeof excesDesEtires === 'function' ? excesDesEtires(comps || R.comps, fils) : 0,
+      f: typeof compterFrolements === 'function' ? compterFrolements(fils, (comps || R.comps).filter(c => c.kind !== 'tag')) : 0 }; };
+  // le même barème que le juge à la passe finale (ses constantes) : croisements, segments partagés, marches, tours, contours (un fil qui
+  // contourne des blocs), descentes (ce que les fils pliés descendent), corps étirés, frôlements — la forme du dessin départage des
+  // dispositions entières, pas un geste — et un TOUR de plus n'est jamais « mieux », quoi qu'il rapporte : un fil qui fait le tour de son
   // bloc est ce qu'un lecteur déteste le plus
-  const note = n => n.d - n.c / CROISEMENTS_PAR_DROIT - PARTAGE * n.p - PAR_MARCHE * n.m - TOUR * n.t - n.k - (typeof DESCENTE === 'number' ? DESCENTE * (n.s + (n.x || 0)) : 0) - ETIRE * (n.e || 0);
+  const note = n => n.d - n.c / CROISEMENTS_PAR_DROIT - PARTAGE * n.p - PAR_MARCHE * n.m - TOUR * n.t - n.k - (typeof DESCENTE === 'number' ? DESCENTE * (n.s + (n.x || 0)) : 0) - ETIRE * (n.e || 0)
+    - (typeof FROLE === 'number' ? FROLE * (n.f || 0) : 0);
   // mieux d'un pas de descente au moins (une borne) : quelques unités de fil plié en moins ne se voient pas
   const mieux = (n, b) => n.t <= b.t && note(n) > note(b) + (typeof DESCENTE === 'number' ? DESCENTE * PRH : 0.01);
-  const texte = n => n.d + ' droits, ' + n.c + ' croisements, ' + n.p + ' partagés, ' + n.m + ' marches, ' + n.t + ' tours' + (n.k > 0.05 ? ', contours ' + n.k.toFixed(1) : '') + ', descentes ' + Math.round(n.s) + (n.e ? ', étirés ' + n.e : '');
+  const texte = n => n.d + ' droits, ' + n.c + ' croisements, ' + n.p + ' partagés, ' + n.m + ' marches, ' + n.t + ' tours' + (n.k > 0.05 ? ', contours ' + n.k.toFixed(1) : '') + ', descentes ' + Math.round(n.s) + (n.e ? ', étirés ' + n.e : '')
+    + (n.f ? ', frôlements ' + n.f : '');
   const sain = (comps, R) => { const blocs = comps.filter(c => c.kind !== 'tag');
     for (let i = 0; i < blocs.length; i++) for (let j = i + 1; j < blocs.length; j++) { const a = blocs[i], b = blocs[j];
       if (a.x < b.x + b.w - 1 && b.x < a.x + a.w - 1 && a.y < b.y + b.h - 1 && b.y < a.y + a.h - 1) return false; }
