@@ -12,6 +12,14 @@ dessine chaque **trou** et le fil qui y est placé, juge le remplissage, et
 **simule** fil par fil la jauge admise, le courant admissible et la chute en
 ligne — sur des hypothèses dites et modifiables.
 
+## `asne0059.csv` : les connecteurs circulaires Airbus
+
+L'**ASNE0059 indice R** (pages 2 à 6) : 31 arrangements, les mêmes que
+l'EN 3646 (mêmes codes, mêmes lettres, mêmes tailles), écrits à la façon
+de la norme (8-3A, 12-8, 14-4…). Les faces sont reprises de l'EN 3646 ;
+celle de l'isolant pour douilles est la symétrique de celle des broches.
+Les arrangements marqués * renvoient à la page 7, non fournie.
+
 ## `en3645.csv` : les connecteurs circulaires EN 3645
 
 L'**EN 3645-002:2024**, figures 1 à 68 (la figure 51 manque) : 99 arrangements, désignés taille de

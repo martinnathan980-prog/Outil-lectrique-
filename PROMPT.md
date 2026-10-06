@@ -84,7 +84,7 @@ Le plan occupe tout l'écran. **En bas**, la barre de vue : folios (précédent,
 
 ## 8. Où en est l'outil (à corriger en priorité)
 
-Fait à la dernière passe : l'**EN 3645-002** (99 arrangements des figures 1 à 68 sauf 51, `normes/en3645.csv`) — N, G, Q, L ; contacts numérotés, lettrés ou mêlés ; triaxiaux et quadrax qui refusent un fil ordinaire ; quatrième norme de connecteurs en concurrence pour les prises. Manque la figure 51.
+Fait à la dernière passe : l'**ASNE0059** (31 arrangements, ceux de l'EN 3646 sous les noms Airbus, `normes/asne0059.csv`), cinquième norme de connecteurs. Avant : l'**EN 3645-002** (99 arrangements des figures 1 à 68 sauf 51, `normes/en3645.csv`) — N, G, Q, L ; contacts numérotés, lettrés ou mêlés ; triaxiaux et quadrax qui refusent un fil ordinaire ; quatrième norme de connecteurs en concurrence pour les prises. Manque la figure 51.
 
 Passe d'avant : l'**EN 3646-002** (31 inserts circulaires à contacts lettrés, `normes/en3646.csv`) — une borne numérotée prend la lettre de même rang, le part number nomme l'arrangement (EN3646A6083AAN → 08-3A), une prise de coupure met les trois normes de connecteurs en concurrence. À confirmer : la place des lettres des grands inserts et des lettres intérieures de 20-34, 20-39, 22-41, la correspondance numéro → lettre (rang) avec ton vrai fichier.
 

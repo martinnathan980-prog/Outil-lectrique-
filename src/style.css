@@ -671,6 +671,11 @@ svg .re-note{fill:#5b6875;font-size:10px}
 .mj .f-en3645 .mj-insert{fill:#eef3f7;stroke:#a3b6c4}
 .picto.mj-picto.f-en3645 .p-corps{fill:#e3ecf2;stroke:#4f6f86}
 .mj-norme.f-en3645::before{background:#4f6f86;border-radius:4px}
+.mj .f-asne0059 .mj-corps{fill:#6a7d3f;stroke:#33401c}
+.mj .f-asne0059 .mj-flanc{fill:#4b5a2b;stroke:#2c3818}
+.mj .f-asne0059 .mj-insert{fill:#f2f5ea;stroke:#b3c08f}
+.picto.mj-picto.f-asne0059 .p-corps{fill:#ecf0df;stroke:#6a7d3f}
+.mj-norme.f-asne0059::before{background:#6a7d3f;border-radius:4px}
 .mj .mj-cle-arc{fill:none;stroke:#3a2d44;stroke-width:2.4;stroke-linecap:round}
 .picto.mj-picto.f-en2997 .p-corps{fill:#ece6f0;stroke:#7b6788}
 .mj-norme.f-en2997::before{background:#7b6788;border-radius:4px}

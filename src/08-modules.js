@@ -293,7 +293,7 @@ function carteContacts(Q, points, cle, opts) { opts = opts || {}; const V = veri
   return `<div class="mj-cavite"><div class="bar-ref"><span class="ref">${esc((opts.titre ? opts.titre + ' · ' : '') + (Q.reference || '—'))}</span><span class="dou">${dou}</span></div><div class="phy-compte">${compte}</div>`
     + (face ? `<div class="mj-faces">${facesSvg([face], largeurCarte())}</div>` : '') + verdicts + table + choix + '</div>'; }
 // la carte d'une prise de coupure en module de connecteur (EN 4165, EN 2997)
-const DIT_CONNECTEUR = { EN4165: 'connecteur rectangulaire modulaire', EN2997: 'connecteur circulaire', EN3646: 'connecteur circulaire à contacts lettrés', EN3645: 'connecteur circulaire' };
+const DIT_CONNECTEUR = { EN4165: 'connecteur rectangulaire modulaire', EN2997: 'connecteur circulaire', EN3646: 'connecteur circulaire à contacts lettrés', EN3645: 'connecteur circulaire', ASNE0059: 'connecteur circulaire Airbus à contacts lettrés' };
 function carteCoupureModules(nom) { const { points, plan: Q } = planDeCoupure(nom), visee = Q.visee || '';
   const normes = `<div class="mj-normes" role="group" aria-label="Norme de la prise"><span>norme</span>`
     + [['', 'automatique'], ...famillesDeModules(app.norme, 'connecteur').map(f => [f, nomDeFamille(app.norme, f)])].map(([f, t]) => `<button class="mj-norme ${f ? classeFamille(f) : ''}" data-coupure="${escA(f)}" aria-pressed="${!Q.main && visee === f}">${esc(t)}</button>`).join('') + '</div>';
@@ -301,7 +301,7 @@ function carteCoupureModules(nom) { const { points, plan: Q } = planDeCoupure(no
     + carteContacts(Q, points, nom, { prise: true }); }
 // les cavités EN 4165 d'un équipement, sous la liste de ses connecteurs
 function carteCavites(nom) { const C = cavitesDe(nom); if (!C.length) return '';
-  return [...new Set(C.map(c => c.plan.famille))].map(f => `<div class="bar-norme">norme <b>${esc(nomDeFamille(app.norme, f))}</b> · ${f === 'EN2997' ? 'connecteur circulaire, un insert, chaque borne sur le contact de même numéro' : f === 'EN3646' ? 'connecteur circulaire, un insert, contacts lettrés : la borne n prend la lettre de rang n' : f === 'EN3645' ? 'connecteur circulaire, un insert, chaque borne sur son contact (numéro, sinon la lettre de même rang)' : 'un module par cavité, chaque borne sur le contact de même numéro'}</div>`).join('')
+  return [...new Set(C.map(c => c.plan.famille))].map(f => `<div class="bar-norme">norme <b>${esc(nomDeFamille(app.norme, f))}</b> · ${f === 'EN2997' ? 'connecteur circulaire, un insert, chaque borne sur le contact de même numéro' : (f === 'EN3646' || f === 'ASNE0059') ? 'connecteur circulaire, un insert, contacts lettrés : la borne n prend la lettre de rang n' : f === 'EN3645' ? 'connecteur circulaire, un insert, chaque borne sur son contact (numéro, sinon la lettre de même rang)' : 'un module par cavité, chaque borne sur le contact de même numéro'}</div>`).join('')
     + C.map(c => carteContacts(c.plan, c.points, nom + '|' + c.nom, { titre: c.nom })).join(''); }
 function lierCarteContacts(nom) { const box = $('ba-equip');
   box.querySelectorAll('details.choix').forEach(d => d.addEventListener('toggle', () => { app.base.choixOuvert = d.open; }));
