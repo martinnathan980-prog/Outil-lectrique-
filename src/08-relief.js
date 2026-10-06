@@ -175,15 +175,16 @@ function tableauRelief() { const { P, S, prise } = RELIEF, routes = couleursDesR
   return `<table class="re-tab"><thead><tr><th>${prise ? 'Contact' : 'Module'}</th><th>${prise ? 'Fiche · ce qui arrive' : 'Amont · ce qui arrive'}</th><th>${prise ? 'Embase · ce qui repart' : 'Aval · ce qui repart'}</th></tr></thead><tbody>${lignes}</tbody></table>`; }
 
 /* ---- la fenêtre ------------------------------------------------------- */
-function ouvrirRelief(nom) { if (!estBornier(nom)) return; const V = verite();
+function ouvrirRelief(nom) { if (!reliefPossible(nom)) return; const V = verite();
   RELIEF.nom = nom; RELIEF.prise = estCoupure(nom); RELIEF.Q = null;
-  /* une barrette en modules de jonction : les modules sur leur rail, chaque contact lettré, les fils montant des contacts */
-  if (barretteEnModules(nom)) { const { plan: Q } = planDeBarrette(nom); RELIEF.Q = Q; RELIEF.P = null; RELIEF.S = null; [RELIEF.az, RELIEF.el] = VUES_RELIEF['3/4'];
+  /* des modules — de jonction (barrette), de connecteur (prise de coupure, cavités d'un équipement) : sur leur rail,
+     chaque contact à sa place, les fils montant des contacts */
+  const E = modulesEnRelief(nom);
+  if (E) { const Q = E.Q; RELIEF.Q = Q; RELIEF.P = null; RELIEF.S = null; [RELIEF.az, RELIEF.el] = VUES_RELIEF['3/4'];
     const ko = Q.fils.filter(x => x.jaugeOk === false).length;
-    $('re-sur').textContent = 'Barrette · ' + (Q.reference || 'aucun module ne convient'); $('re-titre').textContent = nom;
+    $('re-sur').textContent = E.sur; $('re-titre').textContent = nom;
     $('re-compte').innerHTML = [pluriel(Q.modules.length, 'module'), pluriel(Q.utilises, 'contact') + ' pris', pluriel(Q.contacts - Q.utilises, 'libre')].join(' · ') + (ko ? ` · <span class="ko">${pluriel(ko, 'fil')} hors taille</span>` : '');
-    $('re-tableau').innerHTML = tableauModules(Q);
-    $('re-note').textContent = 'Modules de jonction ' + [...new Set(Q.modules.map(M => nomDeFamille(app.norme, M.module.famille)))].join(' et ') + ' : chaque contact lettré ; le laiton relie les contacts d’un même groupe (shunt). En arrière, ce qui arrive ; en avant, ce qui repart.';
+    $('re-tableau').innerHTML = tableauModules(Q); $('re-note').textContent = E.note;
     const d = $('relief'); d.hidden = false; peindreRelief(); lierRelief(); $('re-fermer').focus(); return; }
   RELIEF.P = remplirSelonNorme(physiqueDeBarrette(nom, V, app.bible, app.contrat.designations.get(nom) || ''), app.norme);
   RELIEF.S = simulerBornier(RELIEF.P, app.norme, app.simu);

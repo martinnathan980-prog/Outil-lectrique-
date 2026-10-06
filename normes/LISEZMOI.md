@@ -12,6 +12,32 @@ dessine chaque **trou** et le fil qui y est placé, juge le remplissage, et
 **simule** fil par fil la jauge admise, le courant admissible et la chute en
 ligne — sur des hypothèses dites et modifiables.
 
+## `en4165.csv` : les modules des connecteurs et des prises de coupure
+
+L'**EN 4165-002:2023** (connecteurs rectangulaires modulaires), transcrite des
+figures 1 à 12 : 30 arrangements de contacts — 20-22 et 20A22 (20 contacts
+taille 22), 30R23, 12-20, 08-16 / 08W16 / 08G16, 04-12 / 04G12 / 04W12,
+01-08 / 01G08 / 01W08, les modules neutres N et NL, les contacts spéciaux à
+clé (01Q18… 01V28), les mixtes 99-01, 99A01, 99-10, et les modules
+shuntés Y (à broches) et Z (à douilles) 20Y22, 2AY22, 2BY22, 20Z22, 2AZ22,
+2BZ22. Leur colonne **Emploi** vaut `connecteur` : ils ne sont jamais
+proposés pour une barrette.
+
+Deux usages :
+
+- **Les connecteurs d'un équipement.** Un connecteur EN 4165 (part number
+  `EN4165…`) reçoit un module par cavité : le connecteur A, B… de
+  l'équipement. La borne A7 est le contact 7 du module de la cavité A. Le
+  module retenu est celui que le part number nomme (`EN4165-002-08W16`),
+  sinon le plus petit arrangement de base qui a tous les numéros et dont
+  chaque contact admet la jauge de son fil ; un autre se retient d'un clic.
+- **Les prises de coupure.** Une prise se fait d'un module EN 4165 (fiche
+  et embase) : chaque contact reçoit un fil de chaque côté.
+
+Les plages de jauge par taille de contact sont celles, usuelles, des
+contacts EN 3155 (l'EN 3155-002 n'a pas été fournie) : à confirmer. La
+désignation `EN4165-002-<arrangement>` est provisoire.
+
 ## `nsa937901.csv` : la seconde norme de barrettes
 
 Les modules de jonction à contacts **NSA937901** (mars 2021), transcrits des

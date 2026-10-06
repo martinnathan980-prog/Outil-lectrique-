@@ -172,6 +172,10 @@ Fait, mesuré, en place :
   remplissage automatique potentiel → groupe, fil → contact dont la taille
   admet la jauge, face du module en relief sur la carte et dans la bible,
   modules sur leur rail dans la vue en relief.
+- **Les modules de connecteur EN 4165-002** (`09-barrettes`, `08-modules`,
+  `normes/en4165.csv`) : une cavité de connecteur EN 4165 reçoit un module,
+  chaque borne sur le contact de même numéro ; une prise de coupure est un
+  module (fiche et embase) ; carte, relief, bible.
 - **La bible et le suivi** (`09-barrettes`) : une seule table, lue dans un
   Excel ou un CSV de l'atelier par le nom des colonnes (Référence, Bornes,
   puis Famille, Nature, Jauge min, Jauge max, Intensité, Blindage, Mobile,

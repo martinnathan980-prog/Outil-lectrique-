@@ -207,7 +207,7 @@ function designationDe(n) { const d = app.contrat.designations.get(n);
   // une barrette en modules : la désignation retenue (une variante, une norme) dit seulement ce que le remplissage vise
   if (estBarrette(n)) { const I = barretteInfos(n, verite(), app.bible, app.norme, d || ''); return I.plan ? I.reference : d || I.reference; }
   if (d) return d;
-  if (estCoupure(n)) return coupureInfos(n, verite(), app.bible).reference;
+  if (estCoupure(n)) return coupureEnModules(n) ? planDeCoupure(n).plan.reference || coupureInfos(n, verite(), app.bible).reference : coupureInfos(n, verite(), app.bible).reference;
   return ''; }
 const CLE_BIBLE = 'atelier.bible.v1', CLE_NORME = 'atelier.norme.v1', CLE_SIMU = 'atelier.simu.v1';
 /* La bible, et avec elle la norme et les hypothèses de simulation : ce que
@@ -380,7 +380,7 @@ function lierPlanche() {
     mode = null; pan = null; prise = null; };
   // double appui : sur une barrette ou une prise, sa vue en relief ; ailleurs, on zoome
   const doubleAppui = e => { const c = blocSous(versMonde(e.clientX, e.clientY)), nom = dernierBloc && Date.now() - dernierBloc.t < 800 ? dernierBloc.nom : c && c.name;
-    if (nom && estBornier(nom)) { ouvrirRelief(nom); return; }
+    if (nom && reliefPossible(nom)) { ouvrirRelief(nom); return; }
     const r = cadre(); zoomer(1.6, e.clientX - r.left, e.clientY - r.top); };
   stage.addEventListener('pointerup', fin); stage.addEventListener('pointercancel', fin);
   stage.addEventListener('mousemove', e => { if (mode || pointeurs.size) return;
@@ -535,19 +535,21 @@ function rendreEquip() { const box = $('ba-equip'), c = app.cible; box.hidden = 
   const nom = c.nom, V = verite(), n = V.filter(l => l.de === nom || l.vers === nom).length;
   const bornier = estBornier(nom), b = bornier ? besoinsDeBarrette(nom, V) : null;
   // la physique de la référence retenue, puis chaque fil dans son trou selon la norme
-  const enModules = barretteEnModules(nom), P = bornier && !enModules ? remplirSelonNorme(physiqueDeBarrette(nom, V, app.bible, app.contrat.designations.get(nom) || ''), app.norme) : null;
-  const tete = esc(enModules ? 'barrette · modules de jonction' : P ? P.nature : natureDe(nom)) + ' · ' + pluriel(n, 'fil') + (b && b.shunts ? ' · ' + pluriel(b.shunts, 'shunt') : '');
+  const enModules = barretteEnModules(nom), coupure = !enModules && coupureEnModules(nom), cavites = !bornier && cavitesDe(nom).length > 0;
+  const P = bornier && !enModules && !coupure ? remplirSelonNorme(physiqueDeBarrette(nom, V, app.bible, app.contrat.designations.get(nom) || ''), app.norme) : null;
+  const tete = esc(enModules ? 'barrette · modules de jonction' : coupure ? 'prise de coupure · module EN 4165' : P ? P.nature : natureDe(nom) + (cavites ? ' · connecteur EN 4165' : '')) + ' · ' + pluriel(n, 'fil') + (b && b.shunts ? ' · ' + pluriel(b.shunts, 'shunt') : '');
   box.innerHTML = `<div class="sur">${tete}</div>
-    <div class="actions">${bornier ? '<button class="btn lien" id="eq-relief" title="La pièce en perspective, chaque fil dans son trou (ou double-clic sur le bloc)">Voir en relief</button>' : ''}<button class="btn lien danger" id="eq-del" title="Supprimer l’équipement et ses fils">Supprimer</button></div>
+    <div class="actions">${bornier || cavites ? '<button class="btn lien" id="eq-relief" title="La pièce en perspective, chaque fil dans son trou (ou double-clic sur le bloc)">Voir en relief</button>' : ''}<button class="btn lien danger" id="eq-del" title="Supprimer l’équipement et ses fils">Supprimer</button></div>
     <input class="rep" id="eq-rep" value="${escA(nom)}" aria-label="Repère" title="Renommer : chaque fil suit" spellcheck="false">`
     + (bornier ? '' : `<input class="des" id="eq-des" value="${escA(app.contrat.designations.get(nom) || '')}" placeholder="Désignation, écrite sous le repère" aria-label="Désignation" spellcheck="false">`)
-    + (enModules ? carteModules(nom) : bornier ? cartePhysique(nom, P, b) : carteConnecteurs(nom));
+    + (enModules ? carteModules(nom) : coupure ? carteCoupureModules(nom) : bornier ? cartePhysique(nom, P, b) : carteConnecteurs(nom) + carteCavites(nom));
   $('eq-rep').addEventListener('change', e => { const nr = e.target.value.trim(); if (!nr || nr === nom) { e.target.value = nom; return; }
     histPush('renommage de ' + nom); renommer(nom, nr); app.choisi = nr; app.cible = { type: 'bloc', nom: nr }; app.base.filtre = nr; apresEdition(); });
   if ($('eq-des')) $('eq-des').addEventListener('change', e => { histPush('désignation de ' + nom); designer(nom, e.target.value.trim()); apresEdition(); });
   $('eq-del').onclick = () => { if (!confirm('Supprimer « ' + nom + ' » et ses ' + n + ' liaison(s) ?')) return;
     histPush('suppression de ' + nom); supprimerEquipement(nom); app.base.filtre = ''; apresEdition(); dire(nom + ' supprimé.'); };
-  if (bornier) { if (enModules) lierCarteModules(nom); else lierCartePhysique(nom); $('eq-relief').onclick = () => ouvrirRelief(nom); }
+  if (enModules) lierCarteModules(nom); else if (coupure || cavites) lierCarteContacts(nom); else if (bornier) lierCartePhysique(nom);
+  if ($('eq-relief')) $('eq-relief').onclick = () => ouvrirRelief(nom);
   box.querySelectorAll('input').forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } })); }
 /* La carte se redessine quand la place change (fenêtre, poignée), jamais
    sous les doigts de qui y écrit. */
@@ -933,7 +935,8 @@ const COLONNES_NORME_TEXTE = 'une table <b>Familles</b> (Famille, Pas, Jauge min
 function ficheBible(ref) { const B = app.bible || [], nom = app.bibleNom, n = B.length, familles = [...new Set(B.filter(e => e.module).map(e => e.famille))]; ref = typeof ref === 'string' ? ref : '';
   const zoom = ref ? B.find(e => e.reference === ref) || null : null;
   const etat = nom ? `<div class="bible-etat"><span><b>${esc(nom)}</b> · ${pluriel(n, 'référence')} · gardée dans ce navigateur</span></div>`
-    : `<div class="bible-etat exemple"><span><b>Bible de l’outil</b> · ${familles.map(f => pluriel(B.filter(e => e.module && e.famille === f).length, 'module') + ' ' + nomDeFamille(app.norme, f)).join(' et ')} — les seuls proposés pour une barrette — et ${pluriel(B.filter(e => !e.module).length, 'référence')} d’exemple (coupures, connecteurs).</span></div>`;
+    : (() => { const compte = fs => fs.map(f => pluriel(B.filter(e => e.module && e.famille === f).length, 'module') + ' ' + nomDeFamille(app.norme, f)).join(' et '), bar = famillesDeModules(app.norme), con = famillesDeModules(app.norme, 'connecteur');
+        return `<div class="bible-etat exemple"><span><b>Bible de l’outil</b> · pour les barrettes, ${compte(bar.filter(f => familles.includes(f)))}${con.length ? ` ; pour les connecteurs et les prises de coupure, ${compte(con.filter(f => familles.includes(f)))}` : ''} — et ${pluriel(B.filter(e => !e.module).length, 'référence')} d’exemple (coupures, connecteurs).</span></div>`; })();
   // un filtre par norme : les modules d'une norme, ou le reste (coupures, connecteurs)
   const filtre = app.base.bibleFiltre || '', garde = e => !filtre || (filtre === '-' ? !e.module : e.module && e.famille === filtre), vus = B.filter(e => garde(e) || e === zoom);
   const filtres = B.some(e => e.module) ? `<div class="bible-filtres" role="group" aria-label="Filtrer la bible">` + [['', 'tout', n], ...familles.map(f => [f, nomDeFamille(app.norme, f), B.filter(e => e.module && e.famille === f).length]), ['-', 'coupures et connecteurs', B.filter(e => !e.module).length]]
@@ -941,7 +944,7 @@ function ficheBible(ref) { const B = app.bible || [], nom = app.bibleNom, n = B.
   const ligne = e => `<tr class="${e === zoom ? 'on' : ''}"><td class="pict">${pictoBible(e)}</td><td class="ref"><button class="ref-btn" data-ref="${escA(e.reference)}" aria-pressed="${e === zoom}" title="${e === zoom ? 'Replier' : 'Voir la référence en grand'}">${esc(e.reference)}</button></td>
     <td class="sans">${esc(e.nature)}</td><td class="d">${nombre(e.bornes)}</td>
     <td class="d">${jaugeEntree(e)}</td><td class="d">${e.intensite != null ? nombre(e.intensite) + ' A' : '—'}</td><td>${e.blindage ? 'oui' : '—'}</td><td class="bible-note">${esc(e.note)}</td></tr>`;
-  const corps = tete('Les barrettes', 'Bible des barrettes', true) + etat + (zoom ? zoomBible(zoom) : '') + filtres
+  const corps = tete('Barrettes et connecteurs', 'Bible des barrettes', true) + etat + (zoom ? zoomBible(zoom) : '') + filtres
     + (n ? `<table class="bible"><thead><tr><th></th><th>Référence</th><th>Nature</th><th>Bornes</th><th>Jauge</th><th title="Intensité">Int.</th><th title="Blindage">Blindé</th><th>Note</th></tr></thead><tbody>${vus.map(ligne).join('')}</tbody></table>` : '<p class="note">Aucune référence.</p>')
     + `<p class="note">Un Excel ou un CSV dont une ligne d’en-têtes nomme ${COLONNES_BIBLE_TEXTE}. La jauge s’écrit en AWG : « min » est la plus fine acceptée. Une bible se dépose aussi directement sur la table.</p>`
     + ficheNorme();
