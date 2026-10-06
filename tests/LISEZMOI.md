@@ -17,7 +17,7 @@ node tests/relief.js           la vue en relief de chaque barrette (modules E059
 node tests/barrettes.js        la bible des barrettes se lit, la référence se choisit, les connecteurs se lisent ; la norme se lit,
                                chaque fil va dans son trou, la simulation donne des valeurs connues à la main ; les catalogues ASNE 0599
                                (29 variantes) et NSA937901 (43 codes), les jauges de chaque norme, le choix de la norme et le
-                               remplissage automatique des modules ; l'EN 4165-002 (30 arrangements) et l'EN 2997-002 (35 inserts circulaires), l'EN 3646-002 (31 inserts à contacts lettrés), l'EN 3645-002 (93 arrangements) pour les cavités des
+                               remplissage automatique des modules ; l'EN 4165-002 (30 arrangements) et l'EN 2997-002 (35 inserts circulaires), l'EN 3646-002 (31 inserts à contacts lettrés), l'EN 3645-002 (99 arrangements) pour les cavités des
                                connecteurs et les prises de coupure (sans navigateur)
 ```
 

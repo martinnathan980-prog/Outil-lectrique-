@@ -14,10 +14,9 @@ ligne — sur des hypothèses dites et modifiables.
 
 ## `en3645.csv` : les connecteurs circulaires EN 3645
 
-L'**EN 3645-002:2024**, figures 1 à 63 (la norme en compte 68 ; la figure 51
-manque, et 64 à 68 viendront avec les pages suivantes) : 93 arrangements, désignés taille de
+L'**EN 3645-002:2024**, figures 1 à 68 (la figure 51 manque) : 99 arrangements, désignés taille de
 boîtier + N (normal), G (mise à la masse, même face), Q ou L (quadrax) +
-arrangement, de 09G01 à 25N29 ; R pour un insert de contacts d'alimentation (21R48), taille 10 comprise. Contacts numérotés, lettrés ou les deux
+arrangement, de 09G01 à 25N61 ; R pour un insert de contacts d'alimentation (21R48), taille 10 comprise. Contacts numérotés, lettrés ou les deux
 (13N26 : 1, 2 et A à F) ; une borne numérotée va sur son numéro, sinon sur
 la lettre de même rang. Les contacts triaxiaux et quadrax (taille `8T`) ne
 reçoivent pas un fil ordinaire, et leurs arrangements ne sont jamais
