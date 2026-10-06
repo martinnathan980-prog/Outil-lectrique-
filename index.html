@@ -231,6 +231,7 @@ body.fiche-ouverte #folios{left:calc((100vw - var(--fiche-l) + var(--rail)) / 2)
 .equip{margin:4px 16px 8px 22px;padding:10px 12px 12px;border-radius:12px;background:var(--cuivre-pale);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:start;
   flex:0 1 auto;min-height:0;max-height:58%;overflow:auto;overscroll-behavior:contain}
 .equip>*{grid-column:1}
+.equip{grid-auto-rows:max-content}      /* une rangée prend la hauteur de ce qu’elle porte : la carte défile, rien ne se chevauche */
 .equip .sur{color:var(--cuivre-2)}
 .equip input{border:none;background:none;padding:0 2px;margin-left:-2px;width:100%;border-bottom:1.5px dashed rgba(181,84,28,.35);border-radius:0;color:var(--encre);transition:border-color var(--rapide)}
 .equip input:hover{border-bottom-color:var(--cuivre)}
@@ -620,6 +621,35 @@ svg .re-note{fill:#5b6875;font-size:10px}
 .re-f em{color:var(--encre-2);font-style:normal}
 .re-f.on,.re-f:hover{background:var(--papier-2)}
 @media (max-width:700px){.re-boite{padding:14px}.re-tete{flex-wrap:wrap}.re-scene{height:46vh}}
+/* ---- les modules de jonction (ASNE 0599) : la face, en léger relief ---- */
+.equip .mj-faces,.equip .mj-table{grid-column:1/-1}
+.mj-faces{margin-top:10px;padding:2px 0 6px;min-height:min-content}
+.mj-table{min-height:min-content}
+.mj{display:block}
+.mj text{font-family:var(--mono)}
+.mj .mj-ombre{fill:#1b2430;opacity:.12}
+.mj .mj-flanc{fill:#4c5866;stroke:#2c3540;stroke-width:.8}
+.mj .mj-corps{fill:#6b7684;stroke:#2c3540;stroke-width:1}
+.mj .mj-insert{fill:#e4e8ec;stroke:#9aa5b1;stroke-width:.8}
+.mj .mj-plaque-bord{fill:none;stroke:#8b6d3f;stroke-linecap:round;stroke-linejoin:round}
+.mj .mj-plaque{fill:none;stroke:#d9bf8c;stroke-linecap:round;stroke-linejoin:round}
+.mj .mj-fut{fill:#5b6672}
+.mj .mj-bague{fill:#c9cfd6;stroke:#59636e;stroke-width:.9}
+.mj .mj-trou{fill:#2a323c}
+.mj .plein .mj-bague{stroke:#1b2430;stroke-width:1.3}
+.mj .ko .mj-bague{stroke:var(--danger);stroke-width:2}
+.mj .mj-contact.plein{cursor:pointer}
+.mj .mj-contact.vise .mj-bague{stroke:var(--cuivre);stroke-width:2.4}
+.mj .mj-lettre{fill:#1b2430;font-size:7.5px;font-weight:700}
+.mj .mj-cable{fill:#0b0f14;font-size:7px;font-weight:700;paint-order:stroke;stroke:#e4e8ec;stroke-width:2.5px;stroke-linejoin:round}
+.mj .mj-titre{fill:var(--encre);font-size:11px;font-weight:700}
+.mj .mj-sous{fill:var(--encre-2);font-size:8.5px}
+.mj .mj-diode{fill:#1b2430;stroke:#1b2430;stroke-width:1.2}
+.mj-pastille{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.mj-tab td .sens{display:block;font-size:var(--t0,10px);color:var(--encre-2)}
+.picto.mj-picto .p-corps{fill:#e4e8ec;stroke:#6b7684;stroke-width:.8}
+.picto.mj-picto .p-groupe{fill:none;stroke:#d9bf8c;stroke-linecap:round;stroke-linejoin:round}
+.picto.mj-picto .p-contact{fill:#59636e}
 
 </style>
 </head>
@@ -796,7 +826,7 @@ svg .re-note{fill:#5b6875;font-size:10px}
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = 'b8b031fb1ffc';
+const VERSION_MOTEUR = '05a651ca67ea';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -910,16 +940,16 @@ function contratExemple() {
     '101BT1': 'MS3470L14-5P', '102CB1': 'NSA935401-10', '103RL1': 'E0836IS35-22SA', '104LP1': 'E0644D9S',
     '210SP1': '*704A46220028', '340AB1': 'EN2997Y1A08P', '340AB2': 'EN2997Y1A08P', '115CD': 'ABS0864-12', '118CD': 'ABS0864-12',
     '409GH2': 'NSA937802-05', '512VN': 'E0644G9S', '601RC': 'E0836IS35-22SA', '733LE': 'E0644D9S', '845VG': 'E0656A01N1S0',
-    '667VT21': 'ASNE0500-04', '408VC1A': 'EN3646A6083AAN',
+    '667VT21': 'E0599-1B201Z', '408VC1A': 'EN3646A6083AAN',
     '300XC1': 'EN4165-2M', '351PM1': 'EN2997Y1A12P', '352PM2': 'EN2997Y1A12P', '361VL1': 'ABS0864-08', '362VL2': 'ABS0864-08', '363VL3': 'ABS0864-08',
     '371CP1': 'E0644B9S', '372CP2': 'E0644B9S', '381RL1': 'E0836IS35-22SA', '382RL2': 'E0836IS35-22SA', '383RL3': 'E0836IS35-22SA',
-    '391LP1': 'E0644D9S', '392LP2': 'E0644D9S', '395SW1': 'NSA937802-03', '396SW2': 'NSA937802-03', '397TB1': 'ASNE0501-08',
-    '668VT31': 'ASNE0500-12', '669VT32': 'ASNE0502-08', '409VC2A': 'EN3646A6083AAN', '410VC2B': 'EN3646A6083AAN',
+    '391LP1': 'E0644D9S', '392LP2': 'E0644D9S', '395SW1': 'NSA937802-03', '396SW2': 'NSA937802-03', '397TB1': 'NSA936501-08',
+    '668VT31': 'E0599-1A101Z', '669VT32': 'E0599-1B204Z', '409VC2A': 'EN3646A6083AAN', '410VC2B': 'EN3646A6083AAN',
     '400XC2': 'EN4165-2M', '421ST1': 'EN2997Y1A10P', '422ST2': 'EN2997Y1A10P', '423ST3': 'EN2997Y1A10P', '431PR1': 'EN2997Y1A08P',
-    '441VN1': 'ABS0864-08', '442VN2': 'ABS0864-08', '670VT41': 'ASNE0500-08', '671VT42': 'ASNE0502-04',
+    '441VN1': 'ABS0864-08', '442VN2': 'ABS0864-08', '670VT41': 'E0599-1B201Z', '671VT42': 'E0599-1B202Z',
     '500XC3': 'EN4165-2M', '510RL1': 'E0836IS35-22SA', '511RL2': 'E0836IS35-22SA', '520LP1': 'E0644D9S', '530PM3': 'EN2997Y1A12P', '531PM4': 'EN2997Y1A12P',
     '540VL5': 'ABS0864-08', '550SW3': 'NSA937802-03', '560HT1': 'E0644B9S', '411VC3A': 'EN3646A6088AAN', '412VC3B': 'EN3646A6088AAN',
-    '600XC4': 'EN4165-2M', '601XC5': 'EN4165-2M', '672VT51': 'ASNE0500-12', '610LP3': 'E0644D9S', '611LP4': 'E0644D9S', '620SW4': 'NSA937802-03',
+    '600XC4': 'EN4165-2M', '601XC5': 'EN4165-2M', '672VT51': 'E0599-1A101Z', '610LP3': 'E0644D9S', '611LP4': 'E0644D9S', '620SW4': 'NSA937802-03',
     '630RL5': 'E0836IS35-22SA', '631RL6': 'E0836IS35-22SA' };
   const L = [];
   /* des routes PROVISOIRES, tirées du type de fil, pour que la légende des routes se voie sur l'exemple : les vraies
@@ -5008,7 +5038,8 @@ function entreeBible(o) {
   return { reference: ref, famille: String(o.famille || ref.replace(/[-\s].*$/, '')).trim(),
            nature: String(o.nature || 'jonction').trim().toLowerCase(), bornes: n(o.bornes),
            jaugeMin: jauges.length ? Math.max(...jauges) : null, jaugeMax: jauges.length ? Math.min(...jauges) : null,
-           intensite: n(o.intensite), blindage: oui(o.blindage), mobile: String(o.mobile || '').trim(), note: String(o.note || '').trim() };
+           intensite: n(o.intensite), blindage: oui(o.blindage), mobile: String(o.mobile || '').trim(), note: String(o.note || '').trim(),
+           module: (/^E0599-?1?([A-E]\d{3})/i.exec(ref) || [])[1] || '' };      // un module de jonction ASNE 0599 : sa variante
 }
 /* La bible d'exemple : des références PLAUSIBLES, pas des normes lues. Elle
    montre le mécanisme en attendant la bible de l'atelier. */
@@ -5016,21 +5047,17 @@ function bibleExemple() {
   const E = (reference, famille, nature, bornes, jaugeMin, jaugeMax, intensite, blindage, note, mobile) =>
     ({ reference, famille, nature, bornes, jaugeMin, jaugeMax, intensite, blindage, note, mobile });
   return [
-    E('ASNE0500-02', 'ASNE0500', 'jonction', 2,  26, 20, 7.5, false, 'exemple'),
-    E('ASNE0500-04', 'ASNE0500', 'jonction', 4,  26, 20, 7.5, false, 'exemple'),
-    E('ASNE0500-08', 'ASNE0500', 'jonction', 8,  26, 20, 7.5, false, 'exemple'),
-    E('ASNE0500-12', 'ASNE0500', 'jonction', 12, 26, 20, 7.5, false, 'exemple'),
-    E('ASNE0500-20', 'ASNE0500', 'jonction', 20, 26, 20, 7.5, false, 'exemple'),
-    E('ASNE0501-04', 'ASNE0501', 'jonction', 4,  22, 16, 23,  false, 'exemple · grosses sections'),
-    E('ASNE0501-08', 'ASNE0501', 'jonction', 8,  22, 16, 23,  false, 'exemple · grosses sections'),
-    E('ASNE0502-04', 'ASNE0502', 'blindage', 4,  26, 20, 7.5, true,  'exemple · reprise de blindage'),
-    E('ASNE0502-08', 'ASNE0502', 'blindage', 8,  26, 20, 7.5, true,  'exemple · reprise de blindage'),
     E('EN3646A6083AAN', 'EN3646', 'coupure', 3, 26, 20, 7.5, false, 'exemple · prise de coupure 3 contacts'),
     E('EN3646A6088AAN', 'EN3646', 'coupure', 8, 26, 20, 7.5, false, 'exemple · prise de coupure 8 contacts'),
     E('EN2997Y1A08P', 'EN2997', 'connecteur', 8, 26, 20, 7.5, false, 'exemple · embase 8 contacts', 'EN2997Y2A08S'),
     E('ABS0864-12', 'ABS0864', 'connecteur', 12, 26, 20, 7.5, false, 'exemple · embase 12 contacts', 'ABS0865-12')
   ].map(entreeBible);
 }
+/* La bible de l'outil : pour les barrettes, les modules de jonction de la norme ASNE 0599 — la seule proposée — ; pour
+   les prises de coupure et les connecteurs, les références d'exemple. */
+const bibleDeLOutil = () => avecModules(bibleExemple());
+// une bible, les modules ASNE 0599 en tête quand elle n'en porte pas : ce sont eux que les barrettes prennent
+const avecModules = (entrees, norme) => (entrees || []).some(e => e.module) ? entrees : [...bibleDesModules(norme), ...(entrees || [])];
 /* Lire une bible : un tableau dont la première ligne reconnue nomme les
    colonnes (au moins « référence » et « bornes »). Rend { entrees, entete }. */
 function lireBible(texte) {
@@ -5149,7 +5176,19 @@ function infosDe(repere, liaisons, bible, choisir) {
   return { ...besoins, ...choix, deja, reference: choix.choix ? choix.choix.reference : (besoins.pn || ''),
            changee: !!(besoins.pn && choix.choix && choix.choix.reference !== besoins.pn) };
 }
-const barretteInfos = (repere, liaisons, bible) => infosDe(repere, liaisons, bible, choisirBarrette);
+/* Une barrette, quand la bible porte des modules de jonction (ASNE 0599) : le REMPLISSAGE AUTOMATIQUE dit les modules
+   (`remplirModules`) ; la référence retenue est celle des modules posés (« 2 × E0599-1A101Z »), les candidates sont les
+   variantes qui la logent d'un seul module. Sinon, le choix d'une réglette par son nombre de bornes. */
+function barretteInfos(repere, liaisons, bible, norme) { const B = bible || [];
+  if (!B.some(e => e.module)) return infosDe(repere, liaisons, bible, choisirBarrette);
+  const besoins = besoinsDeBarrette(repere, liaisons), plan = remplirModules(besoins, norme), s = k => k > 1 ? 's' : '';
+  const choix = plan.modules.length ? B.find(e => e.reference === plan.modules[0].reference) || null : null;
+  const candidats = variantesQuiLogent(besoins, norme).map(m => B.find(e => e.module === m.variante)).filter(Boolean);
+  const raisons = [`${plan.potentiels} potentiel${s(plan.potentiels)} à loger`, ...(besoins.jaugeFine != null ? [besoins.jaugeFine === besoins.jaugeGrosse ? `fils de jauge ${besoins.jaugeFine}` : `fils de jauge ${besoins.jaugeFine} à ${besoins.jaugeGrosse}`] : []),
+    plan.modules.length ? `${plan.modules.length} module${s(plan.modules.length)} ASNE 0599, ${plan.contacts - plan.utilises} contact${s(plan.contacts - plan.utilises)} libre${s(plan.contacts - plan.utilises)}` : 'aucun module ASNE 0599 ne convient',
+    ...plan.verdicts.map(v => v.texte)];
+  return { ...besoins, choix, nature: 'jonction', raisons, candidats: candidats.slice(0, 6), enPlus: Math.max(0, candidats.length - 6), deja: B.find(e => e.reference === besoins.pn) || null, plan,
+           reference: plan.reference || besoins.pn || '', changee: !!(besoins.pn && plan.reference && plan.reference !== besoins.pn) }; }
 const coupureInfos  = (repere, liaisons, bible) => infosDe(repere, liaisons, bible, choisirCoupure);
 
 /* ---- les connecteurs d'un équipement ------------------------------------- */
@@ -5255,13 +5294,30 @@ const COLONNES_NORME = {
     ['tension',     ['tension', 'reseau', 'u', 'volts', 'v']],
     ['chuteMax',    ['chutemax', 'chute', 'chuteadmise', 'chutemaxv', 'deltau', 'chuteenv']],
     ['chutePct',    ['chutemaxpct', 'chutepct', 'pourcent', 'chuteen']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+  tailles: [
+    ['taille',      ['taille', 'taillecontact', 'tailledecontact', 'size']],
+    ['jaugeMin',    ['jaugemin', 'awgmin', 'jaugefine', 'gaugemin', 'minawg']],
+    ['jaugeMax',    ['jaugemax', 'awgmax', 'jaugegrosse', 'gaugemax', 'maxawg']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+  modules: [
+    ['variante',    ['variante', 'variantedinterconnexion', 'interconnexion']],
+    ['type',        ['type', 'typedemodule']],
+    ['taille',      ['taille', 'taillecontact', 'tailledecontact', 'size']],
+    ['disposition', ['disposition', 'face', 'implantation']],
+    ['groupes',     ['groupes', 'groupe', 'interconnexions']],
+    ['poids',       ['masse', 'poids', 'masseg']],
+    ['hauteur',     ['hauteur', 'hauteurmm', 'h']],
+    ['diodes',      ['diodes', 'diode']],
     ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]]
 };
 const TABLE_NORME = {
   familles: c => c.famille != null && c.reference == null && (c.pas != null || c.intensite != null || c.filsParCote != null || c.ordre != null || c.jaugeMin != null),
   fils: c => c.jauge != null && (c.section != null || c.resistance != null || c.intensite != null),
   declassements: c => c.condition != null && c.facteur != null,
-  reseau: c => c.tension != null && c.chuteMax != null
+  reseau: c => c.tension != null && c.chuteMax != null,
+  tailles: c => c.taille != null && c.jaugeMin != null,
+  modules: c => c.variante != null && c.groupes != null
 };
 /* Un nombre d'atelier : virgule ou point, une unité derrière (« 5 mm », « 0,8 »). */
 const NUMERO = v => { const t = String(v == null ? '' : v).trim().replace(',', '.'); if (!t) return null; const m = /-?\d+(\.\d+)?/.exec(t); return m ? parseFloat(m[0]) : null; };
@@ -5279,8 +5335,10 @@ function filNorme(o) { const jauge = NUMERO(o.jauge); if (jauge == null) return 
   return { type: String(o.type || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '') || '*', jauge, section: NUMERO(o.section), resistance: NUMERO(o.resistance), intensite: NUMERO(o.intensite), note: String(o.note || '').trim() }; }
 function declassementNorme(o) { const condition = MOT(o.condition), facteur = NUMERO(o.facteur); return condition && facteur != null ? { condition, facteur, note: String(o.note || '').trim() } : null; }
 function reseauNorme(o) { const tension = NUMERO(o.tension); return tension == null ? null : { tension, chuteMax: NUMERO(o.chuteMax), chutePct: NUMERO(o.chutePct), note: String(o.note || '').trim() }; }
-const ENTREE_NORME = { familles: familleNorme, fils: filNorme, declassements: declassementNorme, reseau: reseauNorme };
-const normeVide = () => ({ familles: [], fils: [], declassements: [], reseau: [], tables: 0 });
+function tailleNorme(o) { const taille = NUMERO(o.taille); if (taille == null) return null; const j = [NUMERO(o.jaugeMin), NUMERO(o.jaugeMax)].filter(x => x != null);
+  return { taille, jaugeMin: j.length ? Math.max(...j) : null, jaugeMax: j.length ? Math.min(...j) : null, note: String(o.note || '').trim() }; }
+const ENTREE_NORME = { familles: familleNorme, fils: filNorme, declassements: declassementNorme, reseau: reseauNorme, tailles: tailleNorme, modules: moduleNorme };
+const normeVide = () => ({ familles: [], fils: [], declassements: [], reseau: [], tailles: [], modules: [], tables: 0 });
 /* Lire une norme : les tables se suivent (un titre libre, la ligne d'en-tête,
    les lignes, une ligne vide), dans un CSV ou une feuille Excel. */
 function lireNorme(texte) { const N = normeVide(); let table = null, col = null;
@@ -5292,7 +5350,7 @@ function lireNorme(texte) { const N = normeVide(); let table = null, col = null;
     if (!table) return; const o = {}; Object.entries(col).forEach(([champ, i]) => { o[champ] = row[i] == null ? '' : row[i]; });
     const x = ENTREE_NORME[table](o); if (x) N[table].push(x); });
   return N; }
-const normeLue = N => !!(N && (N.familles.length || N.fils.length || N.declassements.length || N.reseau.length));
+const normeLue = N => !!(N && (N.familles.length || N.fils.length || N.declassements.length || N.reseau.length || N.modules.length));
 /* Un fichier de normes : chaque feuille d'un Excel est lue (une table par
    feuille, ou plusieurs à la suite) ; un CSV d'un bloc. */
 async function lireNormeFichier(fichier) { const nom = (fichier.name || '').toLowerCase();
@@ -5304,8 +5362,9 @@ async function lireNormeFichier(fichier) { const nom = (fichier.name || '').toLo
 /* Deux normes en une : ce qui vient en second remplace ce qui porte la même
    clé (famille, type+jauge, condition, tension). C'est ainsi qu'une norme de
    barrettes et une norme de fils, importées l'une après l'autre, se complètent. */
-function fusionnerNormes(a, b) { const N = normeVide(); const cle = { familles: x => x.famille.toUpperCase(), fils: x => x.type + '/' + x.jauge, declassements: x => x.condition, reseau: x => String(x.tension) };
-  Object.keys(cle).forEach(t => { const m = new Map(); [...(a ? a[t] : []), ...(b ? b[t] : [])].forEach(x => m.set(cle[t](x), x)); N[t] = [...m.values()]; });
+function fusionnerNormes(a, b) { const N = normeVide(); const cle = { familles: x => x.famille.toUpperCase(), fils: x => x.type + '/' + x.jauge, declassements: x => x.condition, reseau: x => String(x.tension),
+    tailles: x => String(x.taille), modules: x => x.variante };
+  Object.keys(cle).forEach(t => { const m = new Map(); [...(a ? a[t] || [] : []), ...(b ? b[t] || [] : [])].forEach(x => m.set(cle[t](x), x)); N[t] = [...m.values()]; });
   N.tables = (a ? a.tables : 0) + (b ? b.tables : 0); return N; }
 /* La norme embarquée : normes/*.csv, mis dans la page à la construction. */
 function normeEmbarquee() { return lireNorme(typeof NORME_EMBARQUEE === 'string' ? NORME_EMBARQUEE : ''); }
@@ -5398,10 +5457,105 @@ function csvDuSuivi(lignes) {
   return [COLONNES_SUIVI.map(c => c[1]).join(';'), ...lignes.map(l => COLONNES_SUIVI.map(c => cell(l[c[0]])).join(';'))].join('\n');
 }
 
+/* ---- les modules de jonction (ASNE 0599) --------------------------------
+   Une barrette du contrat se pose en MODULES DE JONCTION : un module est un
+   bloc de contacts lettrés (A, B, C… puis a, b, c…), et des GROUPES de
+   contacts reliés entre eux dans le module — la VARIANTE d'interconnexion
+   (A101 : dix-huit paires ; B204 : trois groupes de six ; D501 : un groupe
+   mêlant des contacts #16 et #12). Chaque POTENTIEL de la barrette — une
+   borne, ou les bornes que des shunts relient — prend un groupe ; chaque fil
+   de ce potentiel, un contact du groupe, dont la TAILLE admet sa jauge.
+   La norme (normes/asne0599.csv) donne les variantes : leur face (la place
+   de chaque contact), leurs groupes, leurs tailles, masse et hauteur ; et
+   les jauges que chaque taille de contact reçoit. */
+const lettresDe = t => String(t == null ? '' : t).split(/[\s,]+/).filter(Boolean);
+function moduleNorme(o) { const variante = String(o.variante || '').trim().toUpperCase(); if (!variante) return null;
+  const taille = NUMERO(o.taille), type = String(o.type || '').trim().toLowerCase(), place = new Map();
+  const rangs = String(o.disposition || '').split('/').map(r => lettresDe(r));
+  rangs.forEach((r, i) => r.forEach((l, j) => { if (l !== '.') place.set(l, { r: i, c: j }); }));
+  const colonnes = Math.max(1, ...rangs.map(r => r.length)), contacts = [];
+  const groupes = String(o.groupes || '').split('|').map((g, k) => {
+    const cs = lettresDe(g).map(t => { const m = /^(.+?)#(\d+)$/.exec(t), lettre = m ? m[1] : t, p = place.get(lettre) || { r: rangs.length + contacts.length, c: 0 };
+      const c = { lettre, taille: m ? +m[2] : taille, r: p.r, c: p.c, groupe: k }; contacts.push(c); return c; });
+    return { k, contacts: cs, nom: cs.length > 4 ? cs[0].lettre + '…' + cs[cs.length - 1].lettre : cs.map(c => c.lettre).join('-') }; }).filter(g => g.contacts.length);
+  const diodes = lettresDe(o.diodes).map(d => d.split('>')).filter(d => d.length === 2);
+  return { variante, type, taille, rangs: rangs.length, colonnes, contacts, groupes, poids: NUMERO(o.poids), hauteur: NUMERO(o.hauteur),
+           diodes, aDiodes: type === 'diodes' || diodes.length > 0, reference: 'E0599-1' + variante + 'Z', note: String(o.note || '').trim() }; }
+// la norme embarquée, lue une fois : ses modules servent quand la norme de l'atelier n'en porte pas
+let normeDesModulesLue = null;
+const normeDesModules = norme => (norme && norme.modules && norme.modules.length) ? norme : (normeDesModulesLue || (normeDesModulesLue = normeEmbarquee()));
+const moduleDeReference = (norme, ref) => { const m = /^E0599-?1?([A-E]\d{3})/i.exec(String(ref || '').trim()); return m ? normeDesModules(norme).modules.find(x => x.variante === m[1].toUpperCase()) || null : null; };
+/* Un contact de cette taille reçoit-il un fil de cette jauge ? Une jauge inconnue passe (c'est dit ailleurs) ; une
+   taille que la norme ne décrit pas aussi. */
+function contactAccepte(norme, taille, jauge) { if (jauge == null) return true;
+  const T = normeDesModules(norme).tailles.find(x => x.taille === taille); return !T || (jauge <= T.jaugeMin && jauge >= T.jaugeMax); }
+/* Les entrées de bible d'une norme de modules : une par variante — ses groupes sont les « bornes » qu'elle offre. */
+function bibleDesModules(norme) { const N = normeDesModules(norme);
+  return N.modules.map(m => { const tailles = [...new Set(m.contacts.map(c => c.taille))].map(t => N.tailles.find(x => x.taille === t)).filter(Boolean);
+    const e = entreeBible({ reference: m.reference, famille: 'E0599', nature: 'jonction', bornes: m.groupes.length,
+      jaugeMin: tailles.length ? Math.max(...tailles.map(t => t.jaugeMin)) : '', jaugeMax: tailles.length ? Math.min(...tailles.map(t => t.jaugeMax)) : '',
+      note: `${m.variante} · ${m.contacts.length} contacts · ${m.note}` });
+    return e; }); }
+/* Les POTENTIELS d'une barrette : chaque paquet de bornes (reliées par des shunts), avec tous ses fils. */
+function potentielsDeBarrette(besoins) {
+  return paquetsDeBarrette(besoins.bornes, besoins.ponts).map(p => ({ bornes: p.bornes,
+    fils: p.bornes.flatMap(b => (besoins.parBorne.get(b) || []).map(f => ({ ...f, borneBarrette: b, jauge: jaugeDuType(f.type) }))).sort((a, b) => triBornes(a.cable || '', b.cable || '')) }))
+    .filter(p => p.fils.length); }
+/* Les fils d'un potentiel dans un groupe : chaque fil un contact qui admet sa jauge — les plus gros fils d'abord, chacun
+   sur le plus petit contact qui le reçoit (les gros contacts restent aux gros fils) ; puis, à taille égale, dans l'ordre
+   des lettres et des numéros de fil. Rend [[fil, contact]…], ou null. */
+function placerDansGroupe(norme, groupe, fils) { if (fils.length > groupe.contacts.length) return null;
+  const libres = groupe.contacts.slice(), choix = [];
+  for (const f of fils.slice().sort((a, b) => (a.jauge == null ? 99 : a.jauge) - (b.jauge == null ? 99 : b.jauge))) {
+    const ok = libres.filter(c => contactAccepte(norme, c.taille, f.jauge)); if (!ok.length) return null;
+    const c = ok.sort((u, v) => v.taille - u.taille)[0]; libres.splice(libres.indexOf(c), 1); choix.push([f, c]); }
+  // à taille égale, le premier fil sur la première lettre
+  const parTaille = new Map(); choix.forEach(([f, c]) => (parTaille.get(c.taille) || parTaille.set(c.taille, []).get(c.taille)).push([f, c]));
+  const ordre = c => groupe.contacts.indexOf(c);
+  return [...parTaille.values()].flatMap(xs => { const fs = xs.map(x => x[0]).sort((a, b) => triBornes(a.cable || '', b.cable || '')), cs = xs.map(x => x[1]).sort((a, b) => ordre(a) - ordre(b)); return fs.map((f, i) => [f, cs[i]]); }); }
+/* Des potentiels dans un module : chacun, du plus chargé au moins chargé, dans le groupe qui le loge en perdant le moins
+   de contacts. */
+function placerDansModule(norme, mod, potentiels) { const libres = mod.groupes.slice(), places = [];
+  potentiels.forEach(p => { let mieux = null;
+    for (const g of libres) { const perte = g.contacts.length - p.fils.length; if (perte < 0 || (mieux && perte >= mieux.perte)) continue;
+      const a = placerDansGroupe(norme, g, p.fils); if (a) mieux = { g, a, perte }; }
+    if (mieux) { libres.splice(libres.indexOf(mieux.g), 1); places.push({ potentiel: p, groupe: mieux.g, fils: mieux.a, perte: mieux.perte }); } });
+  return places; }
+/* LE REMPLISSAGE : les modules d'une barrette, et chaque fil dans son contact. Tant qu'il reste des potentiels, le
+   module qui en loge le plus ; à égalité, celui qui perd le moins de contacts dans ses groupes, puis qui laisse le moins
+   de groupes libres (le plus petit qui convient), puis le plus léger. Le module à diodes n'est jamais choisi seul (il
+   n'est pas une simple jonction). `variante` : celle qu'on a retenue à la main — tous les modules la prennent. Un
+   potentiel qu'aucun groupe ne reçoit (trop de fils, une jauge qu'aucun contact n'admet) est dit. */
+function remplirModules(besoins, norme, variante) { const N = normeDesModules(norme);
+  const tous = N.modules.filter(m => !m.aDiodes || m.variante === variante), cands = variante ? tous.filter(m => m.variante === variante) : tous;
+  let restants = potentielsDeBarrette(besoins).sort((a, b) => b.fils.length - a.fils.length || triBornes(a.bornes[0], b.bornes[0]));
+  const nPot = restants.length, modules = [], meilleur = (a, b) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] > b[i]; return false; };
+  while (restants.length && modules.length < 16) { let choix = null;
+    for (const m of cands) { const pl = placerDansModule(N, m, restants); if (!pl.length) continue;
+      const score = [pl.length, -pl.reduce((s, x) => s + x.perte, 0), -(m.groupes.length - pl.length), -(m.poids || 0)];
+      if (!choix || meilleur(score, choix.score)) choix = { m, pl, score }; }
+    if (!choix) break;
+    modules.push({ module: choix.m, reference: choix.m.reference, places: choix.pl.sort((a, b) => a.groupe.k - b.groupe.k) });
+    restants = restants.filter(p => !choix.pl.some(x => x.potentiel === p)); }
+  const s = k => k > 1 ? 's' : '', verdicts = [];
+  restants.forEach(p => { const js = [...new Set(p.fils.map(f => f.jauge).filter(j => j != null))];
+    verdicts.push({ niveau: 'ko', texte: `borne${s(p.bornes.length)} ${p.bornes.join('-')} : ${p.fils.length} fil${s(p.fils.length)}${js.length ? ' de jauge ' + js.join(', ') : ''} — aucun groupe ${variante ? 'de ' + variante : 'de la norme'} ne les reçoit`, bornes: p.bornes }); });
+  const fils = modules.flatMap((M, k) => M.places.flatMap(pl => pl.fils.map(([f, c]) => ({ f, contact: c, module: k, groupe: pl.groupe, potentiel: pl.potentiel,
+    taille: c.taille, jaugeOk: f.jauge == null ? null : contactAccepte(N, c.taille, f.jauge) }))));
+  const contacts = modules.reduce((n, M) => n + M.module.contacts.length, 0);
+  const reference = (() => { const parRef = new Map(); modules.forEach(M => parRef.set(M.reference, (parRef.get(M.reference) || 0) + 1));
+    return [...parRef].map(([r, n]) => (n > 1 ? n + ' × ' : '') + r).join(' + '); })();
+  return { modules, fils, verdicts, potentiels: nPot, places: nPot - restants.length, restants, contacts, utilises: fils.length, reference, variante: variante || '' }; }
+/* Les variantes qui logent la barrette d'un seul module, de la mieux à la moins bien taillée — les candidates de la carte. */
+function variantesQuiLogent(besoins, norme) { const N = normeDesModules(norme), pots = potentielsDeBarrette(besoins);
+  return N.modules.filter(m => !m.aDiodes).map(m => ({ m, pl: placerDansModule(N, m, pots.slice().sort((a, b) => b.fils.length - a.fils.length)) }))
+    .filter(x => x.pl.length === pots.length).map(x => ({ m: x.m, perte: x.pl.reduce((s, p) => s + p.perte, 0), libres: x.m.groupes.length - x.pl.length }))
+    .sort((a, b) => a.perte - b.perte || a.libres - b.libres || (a.m.poids || 0) - (b.m.poids || 0)).map(x => x.m); }
+
 </script>
 <script>
 "use strict";
-const NORME_EMBARQUEE = "NORME D'EXEMPLE — sans aucune valeur normative. Les chiffres sont inventés pour montrer le mécanisme ; remplace ce fichier par les tables de tes normes (voir normes/LISEZMOI.md).\n\nFamilles — une ligne par famille de barrettes ou de prises de coupure : ce que chaque contact admet, et la règle de remplissage\nNorme;Famille;Nature;Variantes;Pas;Jauge min;Jauge max;Intensité;Résistance;Fils par côté;Ordre;Paquets;Réservés;Masse;Note\nASNE0500 (exemple);ASNE0500;jonction;2 4 8 12 20;5;26;20;7,5;5;1;croissant;contigus;;;module de jonction : un fil de chaque côté, peigne de pontage entre modules voisins, modules pris dans l'ordre\nASNE0501 (exemple);ASNE0501;jonction;4 8;7,5;22;16;23;3;1;libre;contigus;1;;grosses sections ; le module 1 est réservé (fixation)\nASNE0502 (exemple);ASNE0502;blindage;4 8;5;26;20;7,5;5;2;libre;contigus;;par paquet;reprise de blindage : deux fils par côté, chaque paquet se ferme sur une masse\nEN3646 (exemple);EN3646;coupure;3 8;2,5;26;20;7,5;8;1;libre;;;;prise de coupure : un fil par contact, fiche (partie mobile) et embase\n\nFils — par type et jauge AWG : section, résistance à 20 °C, intensité admissible du fil seul (avant déclassement)\nType;Jauge;Section;Résistance;Intensité;Note\nDR;26;0,15;140;2,5;monoconducteur cuivre (exemple)\nDR;24;0,24;85;3,5;\nDR;22;0,38;55;5;\nDR;20;0,62;34;7,5;\nDR;18;0,96;21;10;\nDR;16;1,5;13,5;13;\nDR;14;2,5;8,5;17;\nDR;12;3,7;5,3;23;\nBN;26;0,15;150;2,5;monoconducteur nickelé (exemple) : un peu plus résistant\nBN;24;0,24;90;3,5;\nBN;22;0,38;58;5;\nBN;20;0,62;36;7,5;\nMLB;26;0,15;140;2;bifilaire blindé (exemple) : chaque conducteur\nMLB;24;0,24;85;3;\nMLB;22;0,38;55;4,5;\nMLB;20;0,62;34;6,5;\nMLC;26;0,15;140;2;trifilaire blindé (exemple) : chaque conducteur\nMLC;24;0,24;85;3;\nMLC;22;0,38;55;4,5;\nMLC;20;0,62;34;6,5;\n\nDéclassement — un facteur appliqué à l'intensité admissible du fil, quand la condition est cochée dans la simulation\nCondition;Facteur;Note\nfaisceau;0,8;plusieurs fils frettés ensemble (exemple) — coché par défaut\nchaud;0,85;zone chaude, plus de 70 °C (exemple)\n\nRéseau — la chute de tension admise en ligne, selon la tension du réseau\nTension;Chute max;Note\n28;1;28 V continu : 1 V en régime permanent (exemple)\n115;4;115 V alternatif (exemple)\n";
+const NORME_EMBARQUEE = "ASNE 0599 indice E — modules de jonction NF L 53-105 (module « à retour »), transcrits des pages 8 à 11 de la norme. Seule norme de barrettes proposée par l'outil.\nDésignation d'un module : E0599-1<variante><tenue aux fluides>, par exemple E0599-1B204Z (1 : module à retour ; B204 : la variante d'interconnexion ; Z : la tenue aux fluides, tableau 2 de la norme — Z est la valeur de l'exemple de la norme, à confirmer). Borne de jonction : E0599B01. Shunt : E0599S01A (A = 2 trous, B = 3, C = 4, D = 5).\n\nFamilles — la famille E0599 : ce qu'un contact admet se lit par sa taille (table Tailles)\nNorme;Famille;Nature;Jauge min;Jauge max;Fils par côté;Ordre;Paquets;Note\nASNE 0599;E0599;jonction;26;12;1;libre;libres;module de jonction : chaque potentiel du contrat prend un GROUPE de contacts reliés dans le module, chaque fil un contact\n\nTailles — la taille d'un contact et les jauges AWG qu'il reçoit (plage usuelle d'un contact de cette taille : à confirmer avec la norme)\nTaille;Jauge min;Jauge max;Note\n22;26;22;modules type 1, 36 contacts (jauge 22 AWG)\n20;24;20;modules type 2, 18 contacts (jauge 20 AWG), et contacts #20 des modules mixtes\n16;20;16;modules type 3, 10 contacts (jauge 16 AWG), et contacts #16 des modules mixtes\n12;14;12;modules type 4, 8 contacts (jauge 12 AWG), et contacts #12 des modules mixtes\n\nModules — une ligne par variante d'interconnexion : la disposition des contacts sur la face (rangées séparées par /, « . » une place vide), les GROUPES (contacts reliés dans le module, séparés par |), la taille d'un contact (#12 derrière une lettre pour un contact d'une autre taille)\nVariante;Type;Taille;Disposition;Groupes;Masse;Hauteur;Diodes;Note\nA101;1;22;A B C D / E F G H / J K L M / N P R S / T U V X / a b c d / e f g h / j k m n / p q r s;A,B | C,D | E,F | G,H | J,K | L,M | N,P | R,S | T,U | V,X | a,b | c,d | e,f | g,h | j,k | m,n | p,q | r,s;16,6;19,5;;18 groupes de 2 contacts\nA102;1;22;A B C D / E F G H / J K L M / N P R S / T U V X / a b c d / e f g h / j k m n / p q r s;A,B,C,D | E,F,G,H | J,K,L,M | N,P,R,S | T,U,V,X | a,b,c,d | e,f,g,h | j,k,m,n | p,q,r,s;16,6;19,5;;9 groupes de 4 contacts\nA103;1;22;A B C D / E F G H / J K L M / N P R S / T U V X / a b c d / e f g h / j k m n / p q r s;A,B,C,D,E,F,G,H | J,K,L,M,N,P,R,S | T,U,a,b,e,f,j,k,p,q | V,X,c,d,g,h,m,n,r,s;16,6;19,5;;4 groupes : 2 de 8 contacts, 2 de 10\nA104;1;22;A B C D / E F G H / J K L M / N P R S / T U V X / a b c d / e f g h / j k m n / p q r s;A,E,J | N,T,a | e,j,p | B,F,K | P,U,b | f,k,q | C,G,L | R,V,c | g,m,r | D,H,M | S,X,d | h,n,s;16,6;19,5;;12 groupes de 3 contacts\nA105;1;22;A B C D / E F G H / J K L M / N P R S / T U V X / a b c d / e f g h / j k m n / p q r s;A,B,C,D,E,F,G,H,J,K,L,M,N,P,R,S | T,U,V,X,a,b,c,d,e,f,g,h,j,k,m,n,p,q,r,s;16,6;19,5;;2 groupes : 16 contacts et 20 contacts\nA106;1;22;A B C D / E F G H / J K L M / N P R S / T U V X / a b c d / e f g h / j k m n / p q r s;A,B,C,D,E,F,G,H,J,K,L,M,N,P,R,S,T,U,V,X,a,b,c,d,e,f,g,h,j,k,m,n,p,q,r,s;16,6;19,5;;1 groupe de 36 contacts ; non conforme à l'UTE C 93-462 feuille 5\nB201;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,D | G,K | N,S | B,E | H,L | P,T | C,F | J,M | R,U;17,0;22,5;;9 groupes de 2 contacts ; non conforme à l'UTE C 93-462 feuille 5 ; existe aussi en A201\nB202;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,B,C | D,E,F | G,H,J | K,L,M | N,P,R | S,T,U;17,0;22,5;;6 groupes de 3 contacts ; non conforme à l'UTE C 93-462 feuille 5 ; existe aussi en A202\nB203;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,B,C,D,E,F,G,H,J | K,L,M,N,P,R,S,T,U;17,0;22,5;;2 groupes de 9 contacts ; non conforme à l'UTE C 93-462 feuille 5 ; existe aussi en A203\nB204;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,B,C,D,E,F | G,H,J,K,L,M | N,P,R,S,T,U;17,0;22,5;;3 groupes de 6 contacts ; non conforme à l'UTE C 93-462 feuille 5 ; existe aussi en A204\nB205;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,B,C,D,E,F,G,H,J,K,L,M | N | P | R | S | T | U;17,0;22,5;;1 groupe de 12 contacts, les 6 autres seuls ; non conforme à l'UTE C 93-462 feuille 5 ; existe aussi en A205\nB206;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,B,C,D,E,F,G,H,J,K,L,M | N,P,R,S,T,U;17,0;22,5;;2 groupes : 12 contacts et 6 contacts ; non conforme à l'UTE C 93-462 feuille 5 ; existe aussi en A206\nB207;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,D,G,K | B,E,H,L | C,F,J,M | N,P,R | S,T,U;17,0;22,5;;5 groupes : 3 de 4 contacts, 2 de 3 ; non conforme à l'UTE C 93-462 feuille 5 ; existe aussi en A207\nB208;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,D,G,K | B,E,H,L | C,F,J,M | N,P,R,S,T,U;17,0;22,5;;4 groupes : 3 de 4 contacts, 1 de 6 ; non conforme à l'UTE C 93-462 feuille 5 ; existe aussi en A208\nB209;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,D | G,K | B,E | H,L | C,F | J,M | N,P,R | S,T,U;17,0;22,5;;8 groupes : 6 de 2 contacts, 2 de 3 ; non conforme à l'UTE C 93-462 feuille 5 ; existe aussi en A209\nC301;3;16;A B / C D / E F / G H / J K;A,C,E | B,D,F | G,H,J,K;18;24,5;;3 groupes : 2 de 3 contacts, 1 de 4\nC302;3;16;A B / C D / E F / G H / J K;A,B | C,D | E,F | G,H | J,K;18;24,5;;5 groupes de 2 contacts\nC303;3;16;A B / C D / E F / G H / J K;A,B,C,D,E,F,G,H | J,K;18;24,5;;2 groupes : 8 contacts et 2 contacts\nC304;3;16;A B / C D / E F / G H / J K;A,B,C,D | G,H,J,K | E,F;18;24,5;;3 groupes : 2 de 4 contacts, 1 de 2\nC305;3;16;A B / C D / E F / G H / J K;A,B,C,D,E,F,G,H,J,K;18;24,5;;1 groupe de 10 contacts\nC306;3;16;A B / C D / E F / G H / J K;A,B,C,D,E,F | G,H,J,K;18;24,5;;2 groupes : 6 contacts et 4 contacts\nD401;4;12;A B / C D / E F / G H;A,B,C,D | E,F,G,H;19,0;24,5;;2 groupes de 4 contacts (la photo de la norme lit « 2 X 8 », pour 8 contacts en tout)\nD402;4;12;A B / C D / E F / G H;A,B | C,D | E,F | G,H;19,0;24,5;;4 groupes de 2 contacts\nD403;4;12;A B / C D / E F / G H;A,B,C,D,E,F,G,H;19,0;24,5;;1 groupe de 8 contacts\nD501;mixte;16;A . B / . C . / D . E / . F . / G . H;A,B,C#12,D,E,F#12,G,H;19;24,5;;1 groupe : 6 contacts #16 et 2 contacts #12\nD502;mixte;20;A B C / D E . / F G H / J K L / . M N / P R S;A,B,C,D,E#12,F,G,H | J,K,L,M#12,N,P,R,S;18;24,5;;2 groupes : 2 de 7 contacts #20 et 1 contact #12\nD503;mixte;20;A B C / D E . / F G H / J K L / . M N / P R S;A,B,C,D,E#12,F,G,H,J,K,L,M#12,N,P,R,S;17;24,5;;1 groupe : 14 contacts #20 et 2 contacts #12\nD504;mixte;16;A . B / . C . / . D . / E . F;A,B,C#12 | D#12,E,F;19;24,5;;2 groupes : 2 contacts #16 et 1 contact #12 ; non conforme à l'UTE C 93-462 feuille 5\nE601;diodes;20;S2a S4a S6a / S2b S4b S6b / S1a S3a S5a / S1b S3b S5b;S1a,S1b | S2a,S2b | S3a,S3b | S4a,S4b | S5a,S5b | S6a,S6b;;4,5;S1>S2 S3>S4 S5>S6;6 groupes de 2 contacts #20, 3 diodes UT 4040 (Io 4 A, VRM 400 V) de S1 vers S2, S3 vers S4, S5 vers S6 ; non conforme à l'UTE C 93-462 feuille 5 ; jamais choisi seul\n\n\nNORME D'EXEMPLE — sans aucune valeur normative. Les chiffres sont inventés pour montrer le mécanisme ; remplace ce fichier par les tables de tes normes (voir normes/LISEZMOI.md).\n\nFamilles — une ligne par famille de prises de coupure : ce que chaque contact admet, et la règle de remplissage (les barrettes, elles, sont les modules de jonction de la norme ASNE 0599 : asne0599.csv)\nNorme;Famille;Nature;Variantes;Pas;Jauge min;Jauge max;Intensité;Résistance;Fils par côté;Ordre;Paquets;Réservés;Masse;Note\nEN3646 (exemple);EN3646;coupure;3 8;2,5;26;20;7,5;8;1;libre;;;;prise de coupure : un fil par contact, fiche (partie mobile) et embase\n\nFils — par type et jauge AWG : section, résistance à 20 °C, intensité admissible du fil seul (avant déclassement)\nType;Jauge;Section;Résistance;Intensité;Note\nDR;26;0,15;140;2,5;monoconducteur cuivre (exemple)\nDR;24;0,24;85;3,5;\nDR;22;0,38;55;5;\nDR;20;0,62;34;7,5;\nDR;18;0,96;21;10;\nDR;16;1,5;13,5;13;\nDR;14;2,5;8,5;17;\nDR;12;3,7;5,3;23;\nBN;26;0,15;150;2,5;monoconducteur nickelé (exemple) : un peu plus résistant\nBN;24;0,24;90;3,5;\nBN;22;0,38;58;5;\nBN;20;0,62;36;7,5;\nMLB;26;0,15;140;2;bifilaire blindé (exemple) : chaque conducteur\nMLB;24;0,24;85;3;\nMLB;22;0,38;55;4,5;\nMLB;20;0,62;34;6,5;\nMLC;26;0,15;140;2;trifilaire blindé (exemple) : chaque conducteur\nMLC;24;0,24;85;3;\nMLC;22;0,38;55;4,5;\nMLC;20;0,62;34;6,5;\n\nDéclassement — un facteur appliqué à l'intensité admissible du fil, quand la condition est cochée dans la simulation\nCondition;Facteur;Note\nfaisceau;0,8;plusieurs fils frettés ensemble (exemple) — coché par défaut\nchaud;0,85;zone chaude, plus de 70 °C (exemple)\n\nRéseau — la chute de tension admise en ligne, selon la tension du réseau\nTension;Chute max;Note\n28;1;28 V continu : 1 V en régime permanent (exemple)\n115;4;115 V alternatif (exemple)\n";
 /* ───────── 07-folios.js ───────── */
 /* ===========================================================================
    07 — LES FOLIOS
@@ -5692,11 +5846,11 @@ const CLE_BIBLE = 'atelier.bible.v1', CLE_NORME = 'atelier.norme.v1', CLE_SIMU =
 /* La bible, et avec elle la norme et les hypothèses de simulation : ce que
    ce navigateur a gardé, sinon ce qui est embarqué. */
 function relireBible() { relireNorme(); relireSimu();
-  try { const o = JSON.parse(localStorage.getItem(CLE_BIBLE) || 'null'); if (o && o.entrees && o.entrees.length) { app.bible = o.entrees.map(entreeBible).filter(Boolean); app.bibleNom = o.nom || ''; return true; } } catch (_) { }
-  app.bible = bibleExemple(); app.bibleNom = ''; return false; }
+  try { const o = JSON.parse(localStorage.getItem(CLE_BIBLE) || 'null'); if (o && o.entrees && o.entrees.length) { app.bible = avecModules(o.entrees.map(entreeBible).filter(Boolean)); app.bibleNom = o.nom || ''; return true; } } catch (_) { }
+  app.bible = bibleDeLOutil(); app.bibleNom = ''; return false; }
 /* Une autre bible : les références sous les barrettes changent, la carte de
    la barrette choisie aussi, et la fiche de la bible si elle est ouverte. */
-function adopterBible(entrees, nom) { app.bible = entrees; app.bibleNom = nom || '';
+function adopterBible(entrees, nom) { app.bible = avecModules(entrees); app.bibleNom = nom || '';
   try { localStorage.setItem(CLE_BIBLE, JSON.stringify({ entrees, nom: app.bibleNom, t: Date.now() })); } catch (_) { }
   peindre(); rallumer(); rafraichirBase(); if (app.fiche && app.fiche.mode === 'bible') ficheBible(app.fiche.ref); }
 function relireNorme() { try { const o = JSON.parse(localStorage.getItem(CLE_NORME) || 'null'); if (o && o.norme && normeLue(o.norme)) { app.norme = { ...normeVide(), ...o.norme }; app.normeNom = o.nom || ''; return true; } } catch (_) { }
@@ -6014,19 +6168,19 @@ function rendreEquip() { const box = $('ba-equip'), c = app.cible; box.hidden = 
   const nom = c.nom, V = verite(), n = V.filter(l => l.de === nom || l.vers === nom).length;
   const bornier = estBornier(nom), b = bornier ? besoinsDeBarrette(nom, V) : null;
   // la physique de la référence retenue, puis chaque fil dans son trou selon la norme
-  const P = bornier ? remplirSelonNorme(physiqueDeBarrette(nom, V, app.bible, app.contrat.designations.get(nom) || ''), app.norme) : null;
-  const tete = esc(P ? P.nature : natureDe(nom)) + ' · ' + pluriel(n, 'fil') + (b && b.shunts ? ' · ' + pluriel(b.shunts, 'shunt') : '');
+  const enModules = barretteEnModules(nom), P = bornier && !enModules ? remplirSelonNorme(physiqueDeBarrette(nom, V, app.bible, app.contrat.designations.get(nom) || ''), app.norme) : null;
+  const tete = esc(enModules ? 'barrette · modules de jonction' : P ? P.nature : natureDe(nom)) + ' · ' + pluriel(n, 'fil') + (b && b.shunts ? ' · ' + pluriel(b.shunts, 'shunt') : '');
   box.innerHTML = `<div class="sur">${tete}</div>
     <div class="actions">${bornier ? '<button class="btn lien" id="eq-relief" title="La pièce en perspective, chaque fil dans son trou (ou double-clic sur le bloc)">Voir en relief</button>' : ''}<button class="btn lien danger" id="eq-del" title="Supprimer l’équipement et ses fils">Supprimer</button></div>
     <input class="rep" id="eq-rep" value="${escA(nom)}" aria-label="Repère" title="Renommer : chaque fil suit" spellcheck="false">`
     + (bornier ? '' : `<input class="des" id="eq-des" value="${escA(app.contrat.designations.get(nom) || '')}" placeholder="Désignation, écrite sous le repère" aria-label="Désignation" spellcheck="false">`)
-    + (bornier ? cartePhysique(nom, P, b) : carteConnecteurs(nom));
+    + (enModules ? carteModules(nom) : bornier ? cartePhysique(nom, P, b) : carteConnecteurs(nom));
   $('eq-rep').addEventListener('change', e => { const nr = e.target.value.trim(); if (!nr || nr === nom) { e.target.value = nom; return; }
     histPush('renommage de ' + nom); renommer(nom, nr); app.choisi = nr; app.cible = { type: 'bloc', nom: nr }; app.base.filtre = nr; apresEdition(); });
   if ($('eq-des')) $('eq-des').addEventListener('change', e => { histPush('désignation de ' + nom); designer(nom, e.target.value.trim()); apresEdition(); });
   $('eq-del').onclick = () => { if (!confirm('Supprimer « ' + nom + ' » et ses ' + n + ' liaison(s) ?')) return;
     histPush('suppression de ' + nom); supprimerEquipement(nom); app.base.filtre = ''; apresEdition(); dire(nom + ' supprimé.'); };
-  if (bornier) { lierCartePhysique(nom); $('eq-relief').onclick = () => ouvrirRelief(nom); }
+  if (bornier) { if (enModules) lierCarteModules(nom); else lierCartePhysique(nom); $('eq-relief').onclick = () => ouvrirRelief(nom); }
   box.querySelectorAll('input').forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } })); }
 /* La carte se redessine quand la place change (fenêtre, poignée), jamais
    sous les doigts de qui y écrit. */
@@ -6412,7 +6566,7 @@ const COLONNES_NORME_TEXTE = 'une table <b>Familles</b> (Famille, Pas, Jauge min
 function ficheBible(ref) { const B = app.bible || [], nom = app.bibleNom, n = B.length; ref = typeof ref === 'string' ? ref : '';
   const zoom = ref ? B.find(e => e.reference === ref) || null : null;
   const etat = nom ? `<div class="bible-etat"><span><b>${esc(nom)}</b> · ${pluriel(n, 'référence')} · gardée dans ce navigateur</span></div>`
-    : `<div class="bible-etat exemple"><span><b>Bible d’exemple</b> · ${n} références plausibles, sans valeur normative — à remplacer par la tienne.</span></div>`;
+    : (m => `<div class="bible-etat exemple"><span><b>Bible de l’outil</b> · ${pluriel(m, 'module')} de jonction de la norme ASNE 0599 — les seuls proposés pour une barrette — et ${pluriel(n - m, 'référence')} d’exemple (coupures, connecteurs).</span></div>`)(B.filter(e => e.module).length);
   const ligne = e => `<tr class="${e === zoom ? 'on' : ''}"><td class="pict">${pictoBible(e)}</td><td class="ref"><button class="ref-btn" data-ref="${escA(e.reference)}" aria-pressed="${e === zoom}" title="${e === zoom ? 'Replier' : 'Voir la référence en grand'}">${esc(e.reference)}</button></td>
     <td class="sans">${esc(e.nature)}</td><td class="d">${nombre(e.bornes)}</td>
     <td class="d">${jaugeEntree(e)}</td><td class="d">${e.intensite != null ? nombre(e.intensite) + ' A' : '—'}</td><td>${e.blindage ? 'oui' : '—'}</td><td class="bible-note">${esc(e.note)}</td></tr>`;
@@ -6426,7 +6580,7 @@ function ficheBible(ref) { const B = app.bible || [], nom = app.bibleNom, n = B.
   $('bi-importer').onclick = () => $('fichier-bible').click();
   $('no-importer').onclick = () => $('fichier-norme').click();
   $('fichier-norme').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) importerNorme(f); e.target.value = ''; });
-  if ($('bi-exemple')) $('bi-exemple').onclick = () => { adopterBible(bibleExemple(), ''); dire('Bible d’exemple rétablie.'); };
+  if ($('bi-exemple')) $('bi-exemple').onclick = () => { adopterBible(bibleDeLOutil(), ''); dire('Bible d’exemple rétablie.'); };
   if ($('no-embarquee')) $('no-embarquee').onclick = () => { adopterNorme(normeEmbarquee(), ''); dire('Norme embarquée rétablie.'); };
   const det = $('fiche-corps').querySelector('details.norme'); if (det) det.addEventListener('toggle', () => { app.base.normeOuverte = det.open; });
   $('fiche-corps').querySelectorAll('.ref-btn').forEach(b => b.onclick = () => ficheBible(b.getAttribute('aria-pressed') === 'true' ? '' : b.dataset.ref));
@@ -6434,18 +6588,21 @@ function ficheBible(ref) { const B = app.bible || [], nom = app.bibleNom, n = B.
 }
 /* La norme en cours : d'où elle vient, puis ses quatre tables telles que
    l'outil les a lues — repliées, ouvertes depuis la carte d'une barrette. */
-function ficheNorme() { const N = app.norme || normeVide(), nom = app.normeNom, ex = normeExemple(N), lue = normeLue(N);
-  const compte = [pluriel(N.familles.length, 'famille'), pluriel(N.fils.length, 'fil'), pluriel(N.declassements.length, 'déclassement'), N.reseau.length + ' réseau' + (N.reseau.length > 1 ? 'x' : '')].join(' · ');
+function ficheNorme() { const N = app.norme || normeVide(), nom = app.normeNom, ex = normeExemple(N), lue = normeLue(N), mods = N.modules || [], tailles = N.tailles || [];
+  const compte = [...(mods.length ? [pluriel(mods.length, 'module') + ' de jonction'] : []), pluriel(N.familles.length, 'famille'), pluriel(N.fils.length, 'fil'), pluriel(N.declassements.length, 'déclassement'), N.reseau.length + ' réseau' + (N.reseau.length > 1 ? 'x' : '')].join(' · ');
   const etat = !lue ? `<div class="bible-etat"><span><b>Aucune norme</b> : les barrettes se dessinent avec un trou par côté, rien n’est jugé ni simulé.</span></div>`
     : nom ? `<div class="bible-etat"><span><b>${esc(nom)}</b> · ${compte} · gardée dans ce navigateur</span></div>`
-    : `<div class="bible-etat${ex ? ' exemple' : ''}"><span><b>Norme ${ex ? 'd’exemple' : 'embarquée'}</b> · ${compte}${ex ? ' · chiffres inventés, sans valeur normative — les vraies se déposent dans normes/' : ''}</span></div>`;
+    : `<div class="bible-etat exemple"><span><b>Norme ${ex ? 'd’exemple' : 'embarquée'}</b> · ${compte}${ex ? ' · chiffres inventés, sans valeur normative — les vraies se déposent dans normes/'
+      : mods.length ? ' · les modules viennent de la norme ASNE 0599 (plages AWG par taille de contact à confirmer) ; fils, déclassements, réseau et prise EN3646 restent des chiffres d’exemple' : ''}</span></div>`;
   const oui = v => v ? 'oui' : '—', t = (th, rows) => rows.length ? `<table class="norme"><thead><tr>${th.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>` : '';
   const familles = t(['Norme', 'Famille', 'Nature', 'Variantes', 'Pas', 'Jauge', 'Intensité', 'Résistance', 'Fils/côté', 'Ordre', 'Paquets', 'Réservés', 'Masse'], N.familles.map(f => `<tr><td class="sans">${esc(f.norme)}</td><td class="ref">${esc(f.famille)}</td><td class="sans">${esc(f.nature)}</td><td>${esc(f.variantes.join(' ') || '—')}</td><td class="d">${f.pas != null ? nombre(f.pas) + ' mm' : '—'}</td><td class="d">${f.jaugeMin != null ? jaugeEntree(f) : '—'}</td><td class="d">${f.intensite != null ? nombre(f.intensite) + ' A' : '—'}</td><td class="d">${f.resistance != null ? nombre(f.resistance) + ' mΩ' : '—'}</td><td class="d">${f.filsParCote}</td><td class="sans">${f.ordre}</td><td class="sans">${f.paquets}</td><td>${esc(f.reserves.join(', ') || '—')}</td><td class="sans">${f.masse || '—'}</td></tr>`));
   const fils = t(['Type', 'Jauge', 'Section', 'Résistance', 'Intensité', 'Note'], N.fils.map(f => `<tr><td class="ref">${esc(f.type)}</td><td class="d">${nombre(f.jauge)}</td><td class="d">${f.section != null ? nombre(f.section) + ' mm²' : '—'}</td><td class="d">${f.resistance != null ? nombre(f.resistance) + ' Ω/km' : '—'}</td><td class="d">${f.intensite != null ? nombre(f.intensite) + ' A' : '—'}</td><td class="sans note-c">${esc(f.note)}</td></tr>`));
+  const tl = t(['Taille', 'Jauge', 'Note'], tailles.map(x => `<tr><td class="ref">#${x.taille}</td><td class="d">${x.jaugeMin}–${x.jaugeMax} AWG</td><td class="sans note-c">${esc(x.note || '')}</td></tr>`));
+  const md = t(['Désignation', 'Variante', 'Contacts', 'Groupes', 'Masse', 'Hauteur', 'Note'], mods.map(m => `<tr><td class="ref">${esc(m.reference)}</td><td>${esc(m.variante)}</td><td class="d">${m.contacts.length} · #${[...new Set(m.contacts.map(c => c.taille))].join('/#')}</td><td class="d">${esc(tailleDesGroupes(m))}</td><td class="d">${m.poids != null ? nombre(m.poids) + ' g' : '—'}</td><td class="d">${m.hauteur != null ? nombre(m.hauteur) + ' mm' : '—'}</td><td class="sans note-c">${esc(m.note)}</td></tr>`));
   const decl = t(['Condition', 'Facteur', 'Note'], N.declassements.map(d => `<tr><td class="ref">${esc(d.condition)}</td><td class="d">×${nombre(d.facteur)}</td><td class="sans note-c">${esc(d.note)}</td></tr>`));
   const res = t(['Tension', 'Chute max', 'Note'], N.reseau.map(r => `<tr><td class="d">${nombre(r.tension)} V</td><td class="d">${r.chuteMax != null ? nombre(r.chuteMax) + ' V' : '—'}${r.chutePct != null ? ' · ' + nombre(r.chutePct) + ' %' : ''}</td><td class="sans note-c">${esc(r.note)}</td></tr>`));
   return `<h3 class="sous-titre">La norme</h3>${etat}` + (lue ? `<details class="norme"${app.base.normeOuverte ? ' open' : ''}><summary><span>Ce que la norme dit, table par table</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
-      <div class="norme-defile">${familles ? '<div class="sur">Familles — par contact : jauges, intensité, résistance ; fils par côté ; règle de remplissage</div>' + familles : ''}${fils ? '<div class="sur">Fils — section, résistance à 20 °C, intensité admissible du fil seul</div>' + fils : ''}${decl ? '<div class="sur">Déclassement</div>' + decl : ''}${res ? '<div class="sur">Réseau — la chute admise</div>' + res : ''}</div></details>` : '')
+      <div class="norme-defile">${md ? '<div class="sur">Modules de jonction ASNE 0599 — une variante par ligne : ses contacts et ses groupes reliés</div>' + md : ''}${tl ? '<div class="sur">Tailles de contact — les jauges qu’un contact reçoit</div>' + tl : ''}${familles ? '<div class="sur">Familles — par contact : jauges, intensité, résistance ; fils par côté ; règle de remplissage</div>' + familles : ''}${fils ? '<div class="sur">Fils — section, résistance à 20 °C, intensité admissible du fil seul</div>' + fils : ''}${decl ? '<div class="sur">Déclassement</div>' + decl : ''}${res ? '<div class="sur">Réseau — la chute admise</div>' + res : ''}</div></details>` : '')
     + `<p class="note">Une norme est un Excel (une table par feuille, ou à la suite) ou un CSV : ${COLONNES_NORME_TEXTE}. Une norme importée remplace la norme d’exemple et se fond avec celles déjà importées. Le PDF de la norme se garde à côté, dans normes/.</p>`; }
 async function importerNorme(fichier) { if (!fichier) return;
   try { const r = await lireNormeFichier(fichier);
@@ -6457,7 +6614,8 @@ async function importerNorme(fichier) { if (!fichier) return;
   } catch (e) { dire('Erreur : ' + (e && e.message || e), true); } }
 /* Le pictogramme d'une référence dans la table : sa physique en petit — un
    trait par module, à la même échelle pour toutes, pour comparer d'un œil. */
-function pictoBible(e) { const n = Math.min(40, Math.max(1, Math.round(e.bornes || 1))), w = n * 4 + 2, W = Math.min(w, 44), k = W / w;
+function pictoBible(e) { if (e.module) { const m = moduleDeReference(app.norme, e.reference); if (m) return pictoModule(m); }
+  const n = Math.min(40, Math.max(1, Math.round(e.bornes || 1))), w = n * 4 + 2, W = Math.min(w, 44), k = W / w;
   if (e.nature === 'coupure' || e.nature === 'connecteur') { const deux = e.nature === 'coupure', H = deux ? 15 : 8;
     const bande = y => `<rect x="0.5" y="${y + 0.5}" width="${w - 1}" height="6.5" rx="1.5"/>` + Array.from({ length: n }, (_, j) => `<circle cx="${j * 4 + 3}" cy="${y + 3.75}" r="1.1"/>`).join('');
     return `<svg class="picto" width="${f1(W)}" height="${f1(H * k)}" viewBox="0 0 ${w} ${H}" aria-hidden="true"><g class="p-bande">${bande(0)}${deux ? bande(8) : ''}</g></svg>`; }
@@ -6465,7 +6623,8 @@ function pictoBible(e) { const n = Math.min(40, Math.max(1, Math.round(e.bornes 
     + Array.from({ length: n }, (_, j) => `<rect x="${j * 4 + 1.5}" y="0.5" width="3" height="7"/>`).join('') + `</g><rect class="p-rail" x="0.5" y="8" width="${w - 1}" height="1.5"/></svg>`; }
 /* Une référence en grand : le même dessin que la carte d'une barrette, sans
    contrat — tous ses modules — et ses caractéristiques. */
-function zoomBible(e) { const P = remplirSelonNorme(physiqueDeReference(e), app.norme), forme = e.nature === 'coupure' ? 'coupure' : e.nature === 'connecteur' ? 'connecteur' : 'reglette', F = P.famille;
+function zoomBible(e) { if (e.module && moduleDeReference(app.norme, e.reference)) return zoomModule(e);
+  const P = remplirSelonNorme(physiqueDeReference(e), app.norme), forme = e.nature === 'coupure' ? 'coupure' : e.nature === 'connecteur' ? 'connecteur' : 'reglette', F = P.famille;
   const carac = [['famille', e.famille], ['nature', P.nature], [forme === 'reglette' ? 'modules' : 'contacts', nombre(e.bornes)], ['jauge', e.jaugeMin == null ? '—' : jaugeEntree(e) + ' AWG'],
     ['intensité', e.intensite != null ? nombre(e.intensite) + ' A' : '—'], ['blindage', e.blindage ? 'oui' : 'non'], e.mobile ? ['partie mobile', e.mobile] : null, e.note ? ['note', e.note] : null,
     ['norme', F ? F.norme + (F.pas != null ? ' · pas ' + nombre(F.pas) + ' mm' : '') + (F.resistance != null ? ' · ' + nombre(F.resistance) + ' mΩ' : '') + ' · ' + pluriel(F.filsParCote, 'fil') + ' par côté' : 'aucune pour cette famille']].filter(Boolean);
@@ -6662,6 +6821,191 @@ function lierPanneau() {
   window.addEventListener('orientationchange', () => setTimeout(() => ajuster(), 300));
 }
 
+/* ───────── 08-modules.js ───────── */
+/* ===========================================================================
+   08 ter — LES MODULES DE JONCTION (ASNE 0599), tels qu'on les pose
+   ---------------------------------------------------------------------------
+   Une barrette du contrat se pose en modules de jonction de la norme ASNE
+   0599 — la seule que l'outil propose pour une barrette. Le remplissage est
+   AUTOMATIQUE (`remplirModules`, 09) : chaque potentiel (une borne, ou les
+   bornes que des shunts relient) prend un groupe de contacts reliés, chaque
+   fil un contact dont la taille admet sa jauge ; le module le mieux taillé
+   d'abord, un second s'il le faut.
+
+   La carte d'une barrette dessine la FACE de chaque module, en léger relief
+   — le bloc et son épaisseur, les contacts lettrés comme sur la norme, les
+   groupes en plaques de laiton, chaque contact occupé à la couleur de la
+   route de son fil, le numéro du fil dessous — puis la table contact par
+   contact, ce que la norme refuse, et les variantes qui conviennent (une
+   d'un clic). La bible dessine chaque variante en petit et en grand ; la vue
+   en relief pose les modules sur leur rail, les fils montant des contacts.
+   =========================================================================== */
+
+/* Le plan d'une barrette du contrat : ses besoins, et ses modules — la variante retenue à la main, s'il y en a une. */
+function planDeBarrette(nom) { const V = verite(), besoins = besoinsDeBarrette(nom, V), d = app.contrat.designations.get(nom) || '';
+  const m = d ? moduleDeReference(app.norme, d) : null;
+  return { besoins, plan: remplirModules(besoins, app.norme, m ? m.variante : ''), main: m ? m.variante : '' }; }
+const barretteEnModules = nom => estBarrette(nom) && !estCoupure(nom) && (app.bible || []).some(e => e.module);
+
+/* ---- la face d'un module, en léger relief -------------------------------- */
+/* Mesures en pixels : le pas des contacts suit la taille du module (un module de 36 contacts est serré, un module de
+   8 gros contacts aéré) ; un contact #12 est plus gros qu'un #20. */
+const MJ = { pas: { 22: 36, 20: 42, 16: 50, 12: 58 }, rayon: { 22: 8.5, 20: 10, 16: 13, 12: 16 }, marge: 18, prof: 10, tete: 32 };
+const pasDuModule = m => Math.max(...[...new Set(m.contacts.map(c => c.taille))].map(t => MJ.pas[t] || 34), MJ.pas[m.taille] || 34);
+const rayonDe = c => MJ.rayon[c.taille] || 8;
+/* L'ARBRE d'un groupe : les traits les plus courts qui relient ses contacts (une plaque de laiton suit ces traits). */
+function arbreDuGroupe(pts) { if (pts.length < 2) return []; const dans = [0], aretes = [];
+  while (dans.length < pts.length) { let mieux = null;
+    dans.forEach(i => pts.forEach((p, j) => { if (dans.includes(j)) return; const d = Math.hypot(p.x - pts[i].x, p.y - pts[i].y); if (!mieux || d < mieux.d - 0.01) mieux = { i, j, d }; }));
+    dans.push(mieux.j); aretes.push([pts[mieux.i], pts[mieux.j]]); }
+  return aretes; }
+/* La face : `occupe(contact)` rend le fil (et sa couleur) d'un contact, ou rien. Rend { svg, w, h }. */
+function faceModuleSvg(m, occupe, opts) { opts = opts || {};
+  // avec les numéros de fil sous les contacts, les rangées s'écartent d'une ligne de texte
+  const pas = pasDuModule(m), pasY = pas + (opts.etiquettes ? 10 : 0), W = m.colonnes * pas + 2 * MJ.marge, H = m.rangs * pasY + 2 * MJ.marge, P = MJ.prof;
+  // le sous-titre se coupe à ses « · » pour tenir dans la largeur du module (5,2 px par signe, à peu près)
+  const lignes = []; String(opts.sous || '').split(' · ').forEach(b => { const n = lignes.length - 1;
+    if (n >= 0 && (lignes[n] + ' · ' + b).length * 5.2 <= W + P) lignes[n] += ' · ' + b; else lignes.push(b); });
+  const T = opts.titre ? MJ.tete + 10.5 * Math.max(0, lignes.length - 1) : 4;
+  const pos = c => ({ x: MJ.marge + (c.c + 0.5) * pas, y: T + MJ.marge + (c.r + 0.5) * pasY - (opts.etiquettes ? 4 : 0) });
+  let s = '';
+  // l'ombre portée, l'épaisseur (le côté droit et le dessous), puis la face
+  s += `<rect class="mj-ombre" x="${P + 3}" y="${T + P + 4}" width="${W}" height="${H}" rx="9"/>`;
+  s += `<path class="mj-flanc" d="M${W} ${T + 8} l${P} ${P} V${T + H + P - 8} q0 8 -8 8 H${P + 8} l${-P} ${-P} H${W - 8} q8 0 8 -8 Z"/>`;
+  s += `<rect class="mj-corps" x="0" y="${T}" width="${W}" height="${H}" rx="9"/><rect class="mj-insert" x="6" y="${T + 6}" width="${W - 12}" height="${H - 12}" rx="6"/>`;
+  // les groupes : une plaque de laiton le long de l'arbre de leurs contacts ; un groupe qui porte un potentiel se teinte
+  m.groupes.forEach(g => { const pts = g.contacts.map(pos), r = Math.max(...g.contacts.map(rayonDe)), o = occupe ? g.contacts.map(occupe).find(Boolean) : null;
+    const d = arbreDuGroupe(pts).map(([a, b]) => `M${f1(a.x)} ${f1(a.y)}L${f1(b.x)} ${f1(b.y)}`).join('') || `M${f1(pts[0].x)} ${f1(pts[0].y)}h0.01`;
+    s += `<path class="mj-plaque-bord" d="${d}" style="stroke-width:${f1(2 * r + 9)}"/><path class="mj-plaque${o ? ' prise' : ''}" d="${d}" style="stroke-width:${f1(2 * r + 6)}${o ? ';stroke:' + o.couleurClaire : ''}"/>`; });
+  // les diodes du module à diodes : de l'anode à la cathode, entre les deux groupes
+  (m.diodes || []).forEach(([a, k]) => { const ga = m.groupes.find(g => g.contacts[0].lettre.startsWith(a)), gk = m.groupes.find(g => g.contacts[0].lettre.startsWith(k)); if (!ga || !gk) return;
+    const pa = pos(ga.contacts[0]), pk = pos(gk.contacts[gk.contacts.length - 1]), mx = (pa.x + pk.x) / 2, my = (pa.y + pk.y) / 2, sens = pk.y < pa.y ? -1 : 1;
+    s += `<path class="mj-diode" d="M${f1(mx)} ${f1(pa.y)}V${f1(pk.y)}M${f1(mx - 6)} ${f1(my - 4 * sens)}h12l-6 ${8 * sens}zM${f1(mx - 6)} ${f1(my + 4 * sens)}h12"/>`; });
+  // les contacts : un fût de métal, son trou ; occupé, le trou à la couleur de la route
+  m.contacts.forEach(c => { const p = pos(c), r = rayonDe(c), o = occupe ? occupe(c) : null;
+    s += `<g class="mj-contact${o ? ' plein' : ''}${o && o.ko ? ' ko' : ''}"${o ? ` data-i="${o.i}" data-fils="${o.i}"` : ''}><circle class="mj-fut" cx="${f1(p.x + 1)}" cy="${f1(p.y + 1.5)}" r="${f1(r + 1)}"/><circle class="mj-bague" cx="${f1(p.x)}" cy="${f1(p.y)}" r="${f1(r)}"/>`
+      + `<circle class="mj-trou" cx="${f1(p.x)}" cy="${f1(p.y)}" r="${f1(r * 0.48)}"${o ? ` style="fill:${o.couleur}"` : ''}/>`
+      + `<text class="mj-lettre" x="${f1(p.x - r - 1.5)}" y="${f1(p.y - r + 2)}" text-anchor="end">${esc(c.lettre)}</text>`
+      + (o && opts.etiquettes ? `<text class="mj-cable" x="${f1(p.x)}" y="${f1(p.y + r + 8.5)}" text-anchor="middle">${esc(clip(o.cable, 7))}</text>` : '') + '</g>'; });
+  if (opts.titre) s += `<text class="mj-titre" x="0" y="12">${esc(opts.titre)}</text>` + lignes.map((l, i) => `<text class="mj-sous" x="0" y="${f1(24 + 10.5 * i)}">${esc(l)}</text>`).join('');
+  return { svg: s, w: W + P + 4, h: T + H + P + 5 }; }
+/* Une rangée de faces, passant à la ligne quand elles ne tiennent pas en largeur. */
+function facesSvg(faces, largeur) { let x = 0, y = 0, ligne = 0, wMax = 0, s = '';
+  faces.forEach(f => { if (x > 0 && x + f.w > largeur) { x = 0; y += ligne + 14; ligne = 0; }
+    s += `<g transform="translate(${f1(x)},${f1(y)})">${f.svg}</g>`; x += f.w + 18; ligne = Math.max(ligne, f.h); wMax = Math.max(wMax, x - 18); });
+  return `<svg class="mj" width="${f1(wMax)}" height="${f1(y + ligne)}" viewBox="0 0 ${f1(wMax)} ${f1(y + ligne)}" role="img" aria-label="Faces des modules de jonction">${s}</svg>`; }
+// « 18 × 2 », « 2 × 8 + 2 × 10 » : les groupes d'un module, comptés par taille
+const tailleDesGroupes = m => { const n = new Map(); m.groupes.forEach(g => n.set(g.contacts.length, (n.get(g.contacts.length) || 0) + 1));
+  return [...n].sort((a, b) => b[1] - a[1] || b[0] - a[0]).map(([t, k]) => k > 1 ? k + ' × ' + t : String(t)).join(' + '); };
+const resumeModule = m => `${m.contacts.length} contacts #${[...new Set(m.contacts.map(c => c.taille))].join('/#')} · ${pluriel(m.groupes.length, 'groupe')} (${tailleDesGroupes(m)})${m.poids != null ? ' · ' + nombre(m.poids) + ' g' : ''}${m.hauteur != null ? ' · H ' + nombre(m.hauteur) + ' mm' : ''}`;
+
+/* ---- la carte d'une barrette en modules ---------------------------------- */
+function carteModules(nom) { const { besoins: b, plan: Q, main } = planDeBarrette(nom), V = verite(), routes = couleursDesRoutes(), s = k => k > 1 ? 's' : '';
+  const parContact = new Map(); Q.fils.forEach(x => parContact.set(x.module + '|' + x.contact.lettre, x));
+  const infoFil = x => { const l = x.f.l, coul = routes.get((l && l.route) || '') || '#26323f'; return { i: V.indexOf(l), cable: x.f.cable || '—', couleur: coul, couleurClaire: melanger(coul, 0.72), ko: x.jaugeOk === false }; };
+  const faces = Q.modules.map((M, k) => faceModuleSvg(M.module, c => { const x = parContact.get(k + '|' + c.lettre); return x ? infoFil(x) : null; },
+    { titre: (Q.modules.length > 1 ? (k + 1) + ' · ' : '') + M.reference, sous: resumeModule(M.module), etiquettes: true }));
+  const libres = Q.contacts - Q.utilises, ko = Q.fils.filter(x => x.jaugeOk === false).length;
+  const dou = main ? 'choisie à la main' : Q.modules.length ? 'remplie automatiquement selon la norme ASNE 0599' : 'aucun module ne convient';
+  const compte = [pluriel(Q.modules.length, 'module'), `${Q.places} potentiel${s(Q.places)} sur ${Q.potentiels}`, pluriel(Q.utilises, 'contact') + ' pris', pluriel(libres, 'libre')].join(' · ')
+    + (b.jaugeFine != null ? ` · jauge ${jaugeTexte(b)}` : '') + (ko ? ` · <span class="ko">${pluriel(ko, 'fil')} hors taille</span>` : '');
+  const ligne = x => { const l = x.f.l, i = V.indexOf(l), coul = routes.get((l && l.route) || '') || '#26323f', g = x.groupe;
+    return `<tr class="fil${x.jaugeOk === false ? ' sim-jauge' : ''}" data-i="${i}" data-fils="${i}" tabindex="0" role="button" aria-label="${escA('Voir le fil ' + (x.f.cable || '') + ' sur le plan')}">`
+      + `<td class="c">${Q.modules.length > 1 ? (x.module + 1) + '·' : ''}<b>${esc(x.contact.lettre)}</b><span class="sens">#${x.taille}</span></td><td>${esc(x.potentiel.bornes.join('-'))}<span class="sens">groupe ${esc(g.nom)}</span></td>`
+      + `<td class="m"><i class="mj-pastille" style="background:${coul}"></i><b>${esc(x.f.cable || '—')}</b><span class="dest">${esc(destination(x.f))}</span></td>`
+      + `<td class="m${x.jaugeOk === false ? ' ko' : ''}">${esc(x.f.type || '—')}${x.jaugeOk === false ? '<span class="ko">refusé par le contact</span>' : x.jaugeOk == null ? '<span class="att">jauge inconnue</span>' : ''}</td></tr>`; };
+  const table = Q.fils.length ? `<div class="mj-table simu-defile"><table class="simu-tab mj-tab"><thead><tr><th>contact</th><th>borne · groupe</th><th>fil</th><th>type</th></tr></thead><tbody>`
+    + Q.fils.slice().sort((a, b2) => a.module - b2.module || a.groupe.k - b2.groupe.k || a.groupe.contacts.indexOf(a.contact) - b2.groupe.contacts.indexOf(b2.contact)).map(ligne).join('') + '</tbody></table></div>' : '';
+  const verdicts = `<div class="verdicts"><div class="regle">remplissage : un potentiel par groupe, un fil par contact, la jauge admise par la taille du contact — ${Q.verdicts.length + ko ? pluriel(Q.verdicts.length + ko, 'remarque') : 'rien à redire'}</div>`
+    + Q.verdicts.map(v => `<div class="verdict-l ${v.niveau}">${esc(v.texte)}</div>`).join('')
+    + Q.fils.filter(x => x.jaugeOk === false).map(x => `<div class="verdict-l ko">${esc((x.f.cable || '') + ' (' + x.f.type + ') : jauge ' + x.f.jauge + ' refusée par un contact #' + x.taille)}</div>`).join('') + '</div>';
+  return `<div class="bar-ref"><span class="ref">${esc(Q.reference || '—')}</span><span class="dou">${dou}</span></div><div class="phy-compte">${compte}</div>`
+    + `<div class="bar-norme">norme <b>ASNE 0599</b> · modules de jonction NF L 53-105 · contacts lettrés, groupes reliés dans le module</div>`
+    + `<div class="mj-faces">${Q.modules.length ? facesSvg(faces, largeurCarte()) : ''}</div>`
+    + `<div class="legende"><span class="l-trou occ"></span>contact pris (couleur de la route) · <span class="l-trou"></span>contact libre · <span class="l-peigne"></span>groupe : contacts reliés dans le module</div>`
+    + verdicts + table + choixModules(nom, b, Q, main); }
+// une couleur éclaircie vers le blanc, pour la plaque d'un groupe pris
+const melanger = (h, k) => '#' + rvb(h).map(c => Math.round(c + (255 - c) * k).toString(16).padStart(2, '0')).join('');
+/* Les variantes qui logent la barrette d'un seul module, d'un clic ; le retour au remplissage automatique. */
+function choixModules(nom, b, Q, main) { const vs = variantesQuiLogent(b, app.norme).slice(0, 10), retenue = main || (Q.modules.length === 1 ? Q.modules[0].module.variante : '');
+  return `<details class="choix"${app.base.choixOuvert ? ' open' : ''}><summary><span>Les variantes qui conviennent</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>`
+    + `<div class="raisons"><span>${pluriel(Q.potentiels, 'potentiel')} à loger</span><span>${pluriel(Q.fils.length + Q.restants.reduce((n, p) => n + p.fils.length, 0), 'fil')}</span>${b.jaugeFine != null ? `<span>jauge ${jaugeTexte(b)}</span>` : ''}${b.pn ? `<span>fichier : ${esc(b.pn)}</span>` : ''}</div>`
+    + (vs.length ? `<div class="cands"><div class="sur">D'un seul module</div>` + vs.map(m => `<button class="cand" data-ref="${escA(m.reference)}" aria-pressed="${m.variante === retenue}"><b>${esc(m.variante)}</b><span>${esc(resumeModule(m))}</span>${m.variante === retenue ? '<span class="ok">retenue</span>' : ''}</button>`).join('') + '</div>'
+      : '<p class="note">Aucune variante ne loge la barrette d’un seul module : elle en prend plusieurs.</p>')
+    + (main ? '<button class="btn lien" id="bar-auto">Revenir au remplissage automatique</button>' : '')
+    + `<button class="btn lien" id="bar-bible" data-ref="${escA(Q.modules.length ? Q.modules[0].reference : '')}">Voir dans la bible</button></details>`; }
+function lierCarteModules(nom) { const box = $('ba-equip');
+  const choix = box.querySelector('details.choix'); if (choix) choix.addEventListener('toggle', () => { app.base.choixOuvert = choix.open; });
+  box.querySelectorAll('.cand').forEach(bt => bt.onclick = () => { if (bt.getAttribute('aria-pressed') === 'true') return; const ref = bt.dataset.ref;
+    histPush('modules de ' + nom); designer(nom, ref); apresEdition(); dire(nom + ' : ' + ref + ' retenue.'); });
+  const auto = $('bar-auto'); if (auto) auto.onclick = () => { histPush('modules de ' + nom); designer(nom, ''); apresEdition(); dire(nom + ' : remplissage automatique.'); };
+  const bible = $('bar-bible'); if (bible) bible.onclick = () => ficheBible(bible.dataset.ref);
+  const indices = el => (el.dataset.fils || '').split(' ').filter(Boolean).map(Number); let dernier = null;
+  const viser = t => { const idx = indices(t), V = verite(); allumerFils(idx.map(i => filDe(V[i])).filter(Boolean)); marquerVisees(idx);
+    box.querySelectorAll('.mj-contact, .mj-tab tr.fil').forEach(x => x.classList.toggle('vise', !!x.dataset.i && x.dataset.i === t.dataset.i)); };
+  const lacher = () => { dernier = null; box.querySelectorAll('.vise').forEach(x => x.classList.remove('vise')); marquerVisees([]); rallumer(); };
+  box.addEventListener('mouseover', e => { const t = e.target.closest('.mj-contact.plein, .mj-tab tr.fil'); if (!t || t === dernier) return; dernier = t; viser(t); });
+  box.addEventListener('mouseout', e => { if (e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest('.mj, .mj-tab')) return; if (dernier) lacher(); });
+  box.addEventListener('click', e => { const t = e.target.closest('.mj-contact.plein, .mj-tab tr.fil'); if (t) voirFilDeCarte(+t.dataset.i); });
+  box.addEventListener('keydown', e => { const t = e.target.closest('.mj-tab tr.fil'); if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); voirFilDeCarte(+t.dataset.i); } }); }
+
+/* ---- la bible : chaque variante en petit, et en grand ------------------- */
+function pictoModule(m) { const k = 30 / Math.max(m.colonnes * 6, m.rangs * 6), W = m.colonnes * 6 * k, H = m.rangs * 6 * k, pos = c => ({ x: (c.c + 0.5) * 6 * k, y: (c.r + 0.5) * 6 * k });
+  return `<svg class="picto mj-picto" width="${f1(W + 4)}" height="${f1(H + 4)}" viewBox="-2 -2 ${f1(W + 4)} ${f1(H + 4)}" aria-hidden="true"><rect class="p-corps" x="-1.5" y="-1.5" width="${f1(W + 3)}" height="${f1(H + 3)}" rx="2"/>`
+    + m.groupes.map(g => { const pts = g.contacts.map(pos), d = arbreDuGroupe(pts).map(([a, b]) => `M${f1(a.x)} ${f1(a.y)}L${f1(b.x)} ${f1(b.y)}`).join('') || `M${f1(pts[0].x)} ${f1(pts[0].y)}h0.01`;
+      return `<path class="p-groupe" d="${d}" style="stroke-width:${f1(4 * k)}"/>`; }).join('')
+    + m.contacts.map(c => { const p = pos(c); return `<circle class="p-contact" cx="${f1(p.x)}" cy="${f1(p.y)}" r="${f1((c.taille <= 12 ? 2 : c.taille <= 16 ? 1.7 : 1.3) * k)}"/>`; }).join('') + '</svg>'; }
+function zoomModule(e) { const m = moduleDeReference(app.norme, e.reference); if (!m) return '';
+  const N = normeDesModules(app.norme), tailles = [...new Set(m.contacts.map(c => c.taille))].map(t => { const T = N.tailles.find(x => x.taille === t); return '#' + t + (T ? ' : ' + T.jaugeMin + '–' + T.jaugeMax + ' AWG' : ''); });
+  const f = faceModuleSvg(m, null, {});
+  const carac = [['norme', 'ASNE 0599 · NF L 53-105'], ['variante', m.variante], ['type', m.type === 'mixte' ? 'mixte (tailles de contact variables)' : m.type === 'diodes' ? 'à diodes incorporées' : 'type ' + m.type],
+    ['contacts', String(m.contacts.length)], ['groupes', tailleDesGroupes(m)], ['tailles', tailles.join(' ; ')],
+    ['masse', m.poids != null ? nombre(m.poids) + ' g' : '—'], ['hauteur', m.hauteur != null ? nombre(m.hauteur) + ' mm' : '—'],
+    ['désignation', m.reference + ' (module à retour, tenue aux fluides Z)'], ['note', m.note]];
+  return `<div class="bible-zoom"><div class="bz-tete"><div class="min0"><div class="sur">module de jonction</div><div class="bz-ref">${esc(e.reference)}</div></div>
+      <button class="rond fermer" id="bz-fermer" aria-label="Replier la référence"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <div class="mj-faces"><svg class="mj" width="${f1(f.w)}" height="${f1(f.h)}" viewBox="0 0 ${f1(f.w)} ${f1(f.h)}" role="img" aria-label="${escA('Face du module ' + m.variante)}">${f.svg}</svg></div>
+    <div class="bar-faits">${carac.map(([k, v]) => `<span>${esc(k)}</span><span>${esc(v)}</span>`).join('')}</div>
+    <p class="note">Borne de jonction : E0599B01. Shunt : E0599S01A (2 trous), B (3), C (4), D (5).</p></div>`; }
+
+/* ---- le relief : les modules sur leur rail, les fils montant des contacts -- */
+// un cylindre debout (axe Y), de y0 à y1
+function cylindreDebout(cx, cz, y0, y1, r, coul, extra, n) { n = n || 14; const fs = [], pt = (k, y) => ({ x: cx + r * Math.cos(2 * Math.PI * k / n), y, z: cz + r * Math.sin(2 * Math.PI * k / n) });
+  for (let k = 0; k < n; k++) { const a = 2 * Math.PI * (k + 0.5) / n; fs.push(face([pt(k + 1, y0), pt(k, y0), pt(k, y1), pt(k + 1, y1)], { x: Math.cos(a), y: 0, z: Math.sin(a) }, coul, extra)); }
+  fs.push(face(Array.from({ length: n }, (_, k) => pt(k, y1)), { x: 0, y: 1, z: 0 }, coul, extra));
+  return fs; }
+const RM = { pas: { 22: 26, 20: 30, 16: 36, 12: 42 }, marge: 14, ecart: 34 };
+function sceneModules(Q) { const faces = [], fils = [], textes = [], trous = [], routes = couleursDesRoutes(), V = verite();
+  const parContact = new Map(); Q.fils.forEach(x => parContact.set(x.module + '|' + x.contact.lettre, x));
+  let x0 = 0;
+  Q.modules.forEach((M, k) => { const m = M.module, pas = RM.pas[m.taille] || 15, w = m.colonnes * pas + 2 * RM.marge, d = m.rangs * pas + 2 * RM.marge, h = (m.hauteur || 20) * 2.2;
+    const pos = c => ({ x: x0 + RM.marge + (c.c + 0.5) * pas, z: RM.marge + (c.r + 0.5) * pas });
+    faces.push(...boite(x0 - 3, -6, -4, x0 + w + 3, 0, d + 4, '#9aa4ae'));                 // le rail
+    faces.push(...boite(x0, 0, 0, x0 + w, h, d, '#3f4b5a'));                               // le corps
+    // les plaques des groupes, à peine en saillie, le long de l'arbre de leurs contacts
+    m.groupes.forEach(g => { const pts = g.contacts.map(pos), pris = g.contacts.some(c => parContact.has(k + '|' + c.lettre));
+      arbreDuGroupe(pts.map(p => ({ x: p.x, y: p.z }))).forEach(([a, b]) => { const e = pas * 0.28;
+        faces.push(...boite(Math.min(a.x, b.x) - e, h, Math.min(a.y, b.y) - e, Math.max(a.x, b.x) + e, h + 1.6, Math.max(a.y, b.y) + e, pris ? '#c8954a' : '#a8916b')); });
+      if (pts.length === 1) faces.push(...boite(pts[0].x - pas * 0.28, h, pts[0].z - pas * 0.28, pts[0].x + pas * 0.28, h + 1.6, pts[0].z + pas * 0.28, pris ? '#c8954a' : '#a8916b')); });
+    m.contacts.forEach(c => { const p = pos(c), x = parContact.get(k + '|' + c.lettre), r = (c.taille <= 12 ? 0.36 : c.taille <= 16 ? 0.32 : 0.28) * pas;
+      faces.push(...cylindreDebout(p.x, p.z, h + 1.6, h + 6, r, x ? '#d9b36a' : '#b7bec6'));
+      const f = x ? { i: V.indexOf(x.f.l), f: x.f, cable: x.f.cable, vers: x.f.vers, borne: x.f.borne, type: x.f.type } : null;
+      trous.push({ p: { x: p.x, y: h + 6.1, z: p.z }, f, mauvais: !!(x && x.jaugeOk === false) });
+      textes.push({ p: { x: p.x - r - 2.5, y: h + 6.1, z: p.z - r - 1 }, t: c.lettre, cls: 're-num petit', face: { x: 0, y: 1, z: 0 } });
+      if (!f) return;
+      // le fil monte du contact, puis part vers l'arrière (ce qui arrive) ou vers l'avant (ce qui repart)
+      const amont = !!x.f.amont, monte = 26 + 8 * (c.r % 4), loin = amont ? -RM.ecart : d + RM.ecart;
+      fils.push({ pts: [{ x: p.x, y: h + 6, z: p.z }, { x: p.x, y: h + monte, z: p.z }, { x: p.x, y: h + monte, z: loin }], f, sens: amont ? 'amont' : 'aval' }); });
+    textes.push({ p: { x: x0 + w / 2, y: h * 0.45, z: d }, t: m.variante, cls: 're-num', face: { x: 0, y: 0, z: 1 } });
+    x0 += w + RM.ecart; });
+  return { faces, fils, textes, trous }; }
+function tableauModules(Q) { const routes = couleursDesRoutes(), V = verite();
+  const lignes = Q.fils.slice().sort((a, b) => a.module - b.module || a.groupe.k - b.groupe.k || a.groupe.contacts.indexOf(a.contact) - b.groupe.contacts.indexOf(b.contact)).map(x => {
+    const l = x.f.l, i = V.indexOf(l), coul = routes.get((l && l.route) || '') || '#26323f';
+    return `<tr><td class="n">${Q.modules.length > 1 ? (x.module + 1) + '·' : ''}${esc(x.contact.lettre)}</td><td>${esc(x.groupe.nom)} · borne ${esc(x.potentiel.bornes.join('-'))}</td>`
+      + `<td><span class="re-f" data-i="${i}"><i style="background:${coul}"></i><b>${esc(x.f.cable || '—')}</b> ${esc(destination(x.f))}${x.f.type ? ' <em>' + esc(x.f.type) + '</em>' : ''}${x.jaugeOk === false ? ' <span class="ko">refusé par le contact</span>' : ''}</span></td></tr>`; }).join('');
+  return `<table class="re-tab"><thead><tr><th>Contact</th><th>Groupe · potentiel</th><th>Fil</th></tr></thead><tbody>${lignes}</tbody></table>`; }
+
 /* ───────── 08-relief.js ───────── */
 /* ===========================================================================
    08 bis — LA VUE EN RELIEF : une barrette, une prise de coupure, comme on
@@ -6694,7 +7038,7 @@ function lierPanneau() {
    du fond vers l'avant, ombrées selon une lumière fixe.
    =========================================================================== */
 
-const RELIEF = { nom: null, az: 0.42, el: 0.6, P: null, S: null, prise: false, glisse: null };
+const RELIEF = { nom: null, az: 0.42, el: 0.6, P: null, S: null, Q: null, prise: false, glisse: null };
 // un fil de la vue (celui de la carte : `filsDuModule`) : sa ligne du contrat, la couleur de sa route
 const ligneRelief = e => (e && e.i != null ? verite()[e.i] : null);
 const couleurRelief = (e, routes) => { const l = ligneRelief(e); return (l && routes.get(l.route || '')) || '#26323f'; };
@@ -6784,8 +7128,8 @@ function scenePrise(P, S, az, el) {
   return { faces, fils, textes, trous, emboite: { a: { x: -ecart + R + 8, y: 0, z: 0 }, b: { x: ecart - R - 8, y: 0, z: 0 } } }; }
 
 /* ---- le rendu : la scène, projetée, en SVG ------------------------------ */
-function reliefSvg() { const { P, S, az, el, prise } = RELIEF; if (!P) return '';
-  const sc = prise ? scenePrise(P, S, az, el) : sceneBarrette(P, S, az, el), routes = couleursDesRoutes();
+function reliefSvg() { const { P, S, Q, az, el, prise } = RELIEF; if (!P && !Q) return '';
+  const sc = Q ? sceneModules(Q) : prise ? scenePrise(P, S, az, el) : sceneBarrette(P, S, az, el), routes = couleursDesRoutes();
   const pj = p => projeter(p, az, el); let minx = Infinity, maxx = -Infinity, miny = Infinity, maxy = -Infinity;
   const voir = p => { minx = Math.min(minx, p.x); maxx = Math.max(maxx, p.x); miny = Math.min(miny, p.y); maxy = Math.max(maxy, p.y); };
   sc.faces.forEach(f => f.pts.forEach(p => voir(pj(p)))); sc.fils.forEach(w => w.pts.forEach(p => voir(pj(p))));
@@ -6840,7 +7184,15 @@ function tableauRelief() { const { P, S, prise } = RELIEF, routes = couleursDesR
 
 /* ---- la fenêtre ------------------------------------------------------- */
 function ouvrirRelief(nom) { if (!estBornier(nom)) return; const V = verite();
-  RELIEF.nom = nom; RELIEF.prise = estCoupure(nom);
+  RELIEF.nom = nom; RELIEF.prise = estCoupure(nom); RELIEF.Q = null;
+  /* une barrette en modules de jonction : les modules sur leur rail, chaque contact lettré, les fils montant des contacts */
+  if (barretteEnModules(nom)) { const { plan: Q } = planDeBarrette(nom); RELIEF.Q = Q; RELIEF.P = null; RELIEF.S = null; [RELIEF.az, RELIEF.el] = VUES_RELIEF['3/4'];
+    const ko = Q.fils.filter(x => x.jaugeOk === false).length;
+    $('re-sur').textContent = 'Barrette · ' + (Q.reference || 'aucun module ne convient'); $('re-titre').textContent = nom;
+    $('re-compte').innerHTML = [pluriel(Q.modules.length, 'module'), pluriel(Q.utilises, 'contact') + ' pris', pluriel(Q.contacts - Q.utilises, 'libre')].join(' · ') + (ko ? ` · <span class="ko">${pluriel(ko, 'fil')} hors taille</span>` : '');
+    $('re-tableau').innerHTML = tableauModules(Q);
+    $('re-note').textContent = 'Modules de jonction ASNE 0599 : chaque contact lettré ; le laiton relie les contacts d’un même groupe. En arrière, ce qui arrive ; en avant, ce qui repart.';
+    const d = $('relief'); d.hidden = false; peindreRelief(); lierRelief(); $('re-fermer').focus(); return; }
   RELIEF.P = remplirSelonNorme(physiqueDeBarrette(nom, V, app.bible, app.contrat.designations.get(nom) || ''), app.norme);
   RELIEF.S = simulerBornier(RELIEF.P, app.norme, app.simu);
   [RELIEF.az, RELIEF.el] = VUES_RELIEF['3/4'];
@@ -6852,7 +7204,7 @@ function ouvrirRelief(nom) { if (!estBornier(nom)) return; const V = verite();
   $('re-tableau').innerHTML = tableauRelief();
   $('re-note').textContent = RELIEF.prise ? 'Disposition des contacts sur la face : indicative (l’arrangement de l’insert n’est pas encore dans la bible).' : 'En arrière, ce qui arrive (amont) ; en avant, ce qui repart (aval). Le cuivre relie les modules d’un même paquet.';
   const d = $('relief'); d.hidden = false; peindreRelief(); lierRelief(); $('re-fermer').focus(); }
-function fermerRelief() { $('relief').hidden = true; RELIEF.P = null; rallumer(); }
+function fermerRelief() { $('relief').hidden = true; RELIEF.P = null; RELIEF.Q = null; rallumer(); }
 function peindreRelief() { $('re-scene').innerHTML = reliefSvg();
   document.querySelectorAll('#re-vues button').forEach(b => { const [a, e] = VUES_RELIEF[b.dataset.vue]; b.classList.toggle('on', Math.abs(a - RELIEF.az) < 1e-3 && Math.abs(e - RELIEF.el) < 1e-3); }); }
 // survoler un fil l'allume ici et sur le plan ; un clic y va

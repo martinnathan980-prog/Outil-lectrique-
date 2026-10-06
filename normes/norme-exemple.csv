@@ -1,10 +1,7 @@
 NORME D'EXEMPLE — sans aucune valeur normative. Les chiffres sont inventés pour montrer le mécanisme ; remplace ce fichier par les tables de tes normes (voir normes/LISEZMOI.md).
 
-Familles — une ligne par famille de barrettes ou de prises de coupure : ce que chaque contact admet, et la règle de remplissage
+Familles — une ligne par famille de prises de coupure : ce que chaque contact admet, et la règle de remplissage (les barrettes, elles, sont les modules de jonction de la norme ASNE 0599 : asne0599.csv)
 Norme;Famille;Nature;Variantes;Pas;Jauge min;Jauge max;Intensité;Résistance;Fils par côté;Ordre;Paquets;Réservés;Masse;Note
-ASNE0500 (exemple);ASNE0500;jonction;2 4 8 12 20;5;26;20;7,5;5;1;croissant;contigus;;;module de jonction : un fil de chaque côté, peigne de pontage entre modules voisins, modules pris dans l'ordre
-ASNE0501 (exemple);ASNE0501;jonction;4 8;7,5;22;16;23;3;1;libre;contigus;1;;grosses sections ; le module 1 est réservé (fixation)
-ASNE0502 (exemple);ASNE0502;blindage;4 8;5;26;20;7,5;5;2;libre;contigus;;par paquet;reprise de blindage : deux fils par côté, chaque paquet se ferme sur une masse
 EN3646 (exemple);EN3646;coupure;3 8;2,5;26;20;7,5;8;1;libre;;;;prise de coupure : un fil par contact, fiche (partie mobile) et embase
 
 Fils — par type et jauge AWG : section, résistance à 20 °C, intensité admissible du fil seul (avant déclassement)

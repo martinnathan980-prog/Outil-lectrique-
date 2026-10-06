@@ -30,7 +30,7 @@
    =========================================================================== */
 'use strict';
 
-const RELIEF = { nom: null, az: 0.42, el: 0.6, P: null, S: null, prise: false, glisse: null };
+const RELIEF = { nom: null, az: 0.42, el: 0.6, P: null, S: null, Q: null, prise: false, glisse: null };
 // un fil de la vue (celui de la carte : `filsDuModule`) : sa ligne du contrat, la couleur de sa route
 const ligneRelief = e => (e && e.i != null ? verite()[e.i] : null);
 const couleurRelief = (e, routes) => { const l = ligneRelief(e); return (l && routes.get(l.route || '')) || '#26323f'; };
@@ -120,8 +120,8 @@ function scenePrise(P, S, az, el) {
   return { faces, fils, textes, trous, emboite: { a: { x: -ecart + R + 8, y: 0, z: 0 }, b: { x: ecart - R - 8, y: 0, z: 0 } } }; }
 
 /* ---- le rendu : la scène, projetée, en SVG ------------------------------ */
-function reliefSvg() { const { P, S, az, el, prise } = RELIEF; if (!P) return '';
-  const sc = prise ? scenePrise(P, S, az, el) : sceneBarrette(P, S, az, el), routes = couleursDesRoutes();
+function reliefSvg() { const { P, S, Q, az, el, prise } = RELIEF; if (!P && !Q) return '';
+  const sc = Q ? sceneModules(Q) : prise ? scenePrise(P, S, az, el) : sceneBarrette(P, S, az, el), routes = couleursDesRoutes();
   const pj = p => projeter(p, az, el); let minx = Infinity, maxx = -Infinity, miny = Infinity, maxy = -Infinity;
   const voir = p => { minx = Math.min(minx, p.x); maxx = Math.max(maxx, p.x); miny = Math.min(miny, p.y); maxy = Math.max(maxy, p.y); };
   sc.faces.forEach(f => f.pts.forEach(p => voir(pj(p)))); sc.fils.forEach(w => w.pts.forEach(p => voir(pj(p))));
@@ -176,7 +176,15 @@ function tableauRelief() { const { P, S, prise } = RELIEF, routes = couleursDesR
 
 /* ---- la fenêtre ------------------------------------------------------- */
 function ouvrirRelief(nom) { if (!estBornier(nom)) return; const V = verite();
-  RELIEF.nom = nom; RELIEF.prise = estCoupure(nom);
+  RELIEF.nom = nom; RELIEF.prise = estCoupure(nom); RELIEF.Q = null;
+  /* une barrette en modules de jonction : les modules sur leur rail, chaque contact lettré, les fils montant des contacts */
+  if (barretteEnModules(nom)) { const { plan: Q } = planDeBarrette(nom); RELIEF.Q = Q; RELIEF.P = null; RELIEF.S = null; [RELIEF.az, RELIEF.el] = VUES_RELIEF['3/4'];
+    const ko = Q.fils.filter(x => x.jaugeOk === false).length;
+    $('re-sur').textContent = 'Barrette · ' + (Q.reference || 'aucun module ne convient'); $('re-titre').textContent = nom;
+    $('re-compte').innerHTML = [pluriel(Q.modules.length, 'module'), pluriel(Q.utilises, 'contact') + ' pris', pluriel(Q.contacts - Q.utilises, 'libre')].join(' · ') + (ko ? ` · <span class="ko">${pluriel(ko, 'fil')} hors taille</span>` : '');
+    $('re-tableau').innerHTML = tableauModules(Q);
+    $('re-note').textContent = 'Modules de jonction ASNE 0599 : chaque contact lettré ; le laiton relie les contacts d’un même groupe. En arrière, ce qui arrive ; en avant, ce qui repart.';
+    const d = $('relief'); d.hidden = false; peindreRelief(); lierRelief(); $('re-fermer').focus(); return; }
   RELIEF.P = remplirSelonNorme(physiqueDeBarrette(nom, V, app.bible, app.contrat.designations.get(nom) || ''), app.norme);
   RELIEF.S = simulerBornier(RELIEF.P, app.norme, app.simu);
   [RELIEF.az, RELIEF.el] = VUES_RELIEF['3/4'];
@@ -188,7 +196,7 @@ function ouvrirRelief(nom) { if (!estBornier(nom)) return; const V = verite();
   $('re-tableau').innerHTML = tableauRelief();
   $('re-note').textContent = RELIEF.prise ? 'Disposition des contacts sur la face : indicative (l’arrangement de l’insert n’est pas encore dans la bible).' : 'En arrière, ce qui arrive (amont) ; en avant, ce qui repart (aval). Le cuivre relie les modules d’un même paquet.';
   const d = $('relief'); d.hidden = false; peindreRelief(); lierRelief(); $('re-fermer').focus(); }
-function fermerRelief() { $('relief').hidden = true; RELIEF.P = null; rallumer(); }
+function fermerRelief() { $('relief').hidden = true; RELIEF.P = null; RELIEF.Q = null; rallumer(); }
 function peindreRelief() { $('re-scene').innerHTML = reliefSvg();
   document.querySelectorAll('#re-vues button').forEach(b => { const [a, e] = VUES_RELIEF[b.dataset.vue]; b.classList.toggle('on', Math.abs(a - RELIEF.az) < 1e-3 && Math.abs(e - RELIEF.el) < 1e-3); }); }
 // survoler un fil l'allume ici et sur le plan ; un clic y va

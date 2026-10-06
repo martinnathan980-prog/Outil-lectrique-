@@ -12,9 +12,35 @@ dessine chaque **trou** et le fil qui y est placé, juge le remplissage, et
 **simule** fil par fil la jauge admise, le courant admissible et la chute en
 ligne — sur des hypothèses dites et modifiables.
 
+## `asne0599.csv` : les barrettes, ce sont les modules ASNE 0599
+
+Les barrettes ne se proposent plus qu'en **modules de jonction ASNE 0599**
+(NF L 53-105), transcrits des pages de la norme : les 29 variantes
+d'interconnexion (A101–A106 à 36 contacts #22, B201–B209 à 18 contacts #20,
+C301–C306 à 10 contacts #16, D401–D403 à 8 contacts #12, les mixtes
+D501–D504, le module à diodes E601), avec pour chacune la face (la place de
+chaque contact lettré), les **groupes** de contacts reliés dans le module, la
+masse et la hauteur. Désignation : `E0599-1<variante>Z` (Z, la tenue aux
+fluides de l'exemple de la norme, à confirmer).
+
+Deux tables de plus que les autres normes :
+
+| Table | Colonnes | Ce qu'elle dit |
+|---|---|---|
+| **Tailles** | Taille, Jauge min, Jauge max, Note | les jauges AWG qu'un contact de cette taille reçoit (plages usuelles, **à confirmer** avec la norme) |
+| **Modules** | Variante, Type, Taille, Disposition, Groupes, Masse, Hauteur, Diodes, Note | une variante par ligne ; Disposition : les rangées séparées par `/`, `.` une place vide ; Groupes : séparés par `|`, contacts par `,` ; `C#12` un contact d'une autre taille |
+
+Le **remplissage** est automatique : chaque potentiel de la barrette (une
+borne, ou les bornes que des shunts relient) prend un groupe, chaque fil un
+contact du groupe dont la taille admet sa jauge ; le module retenu est celui
+qui loge le plus de potentiels en perdant le moins de contacts ; s'il n'y
+suffit pas, un deuxième module. Ce qui ne passe pas est dit, jamais forcé.
+Le module à diodes n'est jamais choisi seul.
+
 ## `norme-exemple.csv` est une FAUSSE norme
 
-Tous ses chiffres sont inventés pour montrer le mécanisme : ils n'ont
+Il ne porte plus que la prise de coupure EN3646, les fils, les déclassements
+et le réseau. Tous ses chiffres sont inventés pour montrer le mécanisme : ils n'ont
 **aucune valeur normative**. Chaque famille y est nommée « (exemple) » et
 l'outil le répète partout où il s'en sert (carte, fiche de la bible).
 Remplace ce fichier par les tables de tes normes ; tant qu'il est là, il

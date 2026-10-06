@@ -7,7 +7,8 @@
      · la vue s'ouvre, dessine autant de fils que la pièce a de trous
        occupés, et une étiquette par fil, au numéro du contrat ;
      · aucune étiquette n'en chevauche une autre ;
-     · le tableau a une ligne par module (ou contact) ;
+     · le tableau a une ligne par module (ou contact) — pour une barrette
+       en modules de jonction E0599, une ligne par contact pris ;
    puis, sur l'une d'elles : un glissé fait tourner la pièce, le survol d'un
    fil l'allume, Échap ferme, un double-clic sur le bloc du plan rouvre.
    Rend 1 au premier échec.
@@ -26,15 +27,15 @@ const FICHIER = P.fichierDemande();
     new Set(app.dessin.comps.filter(c => c.kind !== 'tag' && estBornier(c.name)).map(c => c.name)).forEach(n => out.push([p, n])); }); return out; });
   for (const [plan, nom] of pieces) {
     const r = await page.evaluate(([plan, nom]) => { app.plan = plan; app.choisi = null; redessiner(); ouvrirRelief(nom);
-      const P = RELIEF.P, attendus = P.modules.reduce((n, m) => n + ['amont', 'aval'].reduce((k, s) => k + trousDe(m, filsDuModule(nom, m), s).filter(Boolean).length, 0), 0);
+      const P = RELIEF.P, Q = RELIEF.Q, attendus = Q ? Q.fils.length : P.modules.reduce((n, m) => n + ['amont', 'aval'].reduce((k, s) => k + trousDe(m, filsDuModule(nom, m), s).filter(Boolean).length, 0), 0);
       const fils = document.querySelectorAll('#re-svg .re-fil').length, etiq = [...document.querySelectorAll('#re-svg .re-etiq')];
       const boites = etiq.map(g => { const [a, b] = [...g.querySelectorAll('text')].map(t => t.getBBox()); const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y); return { x, y, width: Math.max(a.x + a.width, b.x + b.width) - x, height: Math.max(a.y + a.height, b.y + b.height) - y }; }), chevauche = boites.some((a, i) => boites.some((b, j) => j > i && a.x < b.x + b.width - 1 && b.x < a.x + a.width - 1 && a.y < b.y + b.height - 1 && b.y < a.y + a.height - 1));
       const cables = etiq.map(g => g.querySelector('.re-cable').textContent), lignes = document.querySelectorAll('#re-tableau tbody tr').length;
-      const res = { attendus, fils, etiquettes: etiq.length, chevauche, lignes, modules: P.modules.length, cablesOk: cables.every(c => verite().some(l => l.cable === c)) };
+      const res = { attendus, fils, etiquettes: etiq.length, chevauche, lignes, modules: Q ? Q.fils.length : P.modules.length, jonction: !!Q, cablesOk: cables.every(c => verite().some(l => l.cable === c)) };
       fermerRelief(); return res; }, [plan, nom]);
     ok(r.fils === r.attendus && r.etiquettes === r.attendus && r.cablesOk, nom + ' : un fil et une étiquette par trou occupé', r.fils + ' fils, ' + r.etiquettes + ' étiquettes, ' + r.attendus + ' trous occupés');
     ok(!r.chevauche, nom + ' : aucune étiquette sur une autre');
-    ok(r.lignes === r.modules, nom + ' : une ligne par module', r.lignes + ' / ' + r.modules);
+    ok(r.lignes === r.modules, nom + (r.jonction ? ' : une ligne par contact pris (module de jonction)' : ' : une ligne par module'), r.lignes + ' / ' + r.modules);
   }
   // à la main, sur la première barrette
   const [plan, nom] = pieces.find(([, n]) => /VT/.test(n)) || pieces[0];

@@ -166,6 +166,12 @@ Fait, mesuré, en place :
   horizontal ; un piquage se dessine comme la barrette qu'il faudra poser
   (pointillé, points, numéros) ; les bornes d'un équipement sont dans une
   pièce de connecteur hors du corps, sa lettre au-dessus.
+- **Les modules de jonction ASNE 0599** (`09-barrettes`, `08-modules`,
+  `normes/asne0599.csv`) : les seules barrettes proposées ; catalogue des 29
+  variantes lu par le nom des colonnes (tables Tailles et Modules),
+  remplissage automatique potentiel → groupe, fil → contact dont la taille
+  admet la jauge, face du module en relief sur la carte et dans la bible,
+  modules sur leur rail dans la vue en relief.
 - **La bible et le suivi** (`09-barrettes`) : une seule table, lue dans un
   Excel ou un CSV de l'atelier par le nom des colonnes (Référence, Bornes,
   puis Famille, Nature, Jauge min, Jauge max, Intensité, Blindage, Mobile,

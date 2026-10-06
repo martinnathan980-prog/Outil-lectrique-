@@ -62,7 +62,8 @@ function entreeBible(o) {
   return { reference: ref, famille: String(o.famille || ref.replace(/[-\s].*$/, '')).trim(),
            nature: String(o.nature || 'jonction').trim().toLowerCase(), bornes: n(o.bornes),
            jaugeMin: jauges.length ? Math.max(...jauges) : null, jaugeMax: jauges.length ? Math.min(...jauges) : null,
-           intensite: n(o.intensite), blindage: oui(o.blindage), mobile: String(o.mobile || '').trim(), note: String(o.note || '').trim() };
+           intensite: n(o.intensite), blindage: oui(o.blindage), mobile: String(o.mobile || '').trim(), note: String(o.note || '').trim(),
+           module: (/^E0599-?1?([A-E]\d{3})/i.exec(ref) || [])[1] || '' };      // un module de jonction ASNE 0599 : sa variante
 }
 /* La bible d'exemple : des références PLAUSIBLES, pas des normes lues. Elle
    montre le mécanisme en attendant la bible de l'atelier. */
@@ -70,21 +71,17 @@ function bibleExemple() {
   const E = (reference, famille, nature, bornes, jaugeMin, jaugeMax, intensite, blindage, note, mobile) =>
     ({ reference, famille, nature, bornes, jaugeMin, jaugeMax, intensite, blindage, note, mobile });
   return [
-    E('ASNE0500-02', 'ASNE0500', 'jonction', 2,  26, 20, 7.5, false, 'exemple'),
-    E('ASNE0500-04', 'ASNE0500', 'jonction', 4,  26, 20, 7.5, false, 'exemple'),
-    E('ASNE0500-08', 'ASNE0500', 'jonction', 8,  26, 20, 7.5, false, 'exemple'),
-    E('ASNE0500-12', 'ASNE0500', 'jonction', 12, 26, 20, 7.5, false, 'exemple'),
-    E('ASNE0500-20', 'ASNE0500', 'jonction', 20, 26, 20, 7.5, false, 'exemple'),
-    E('ASNE0501-04', 'ASNE0501', 'jonction', 4,  22, 16, 23,  false, 'exemple · grosses sections'),
-    E('ASNE0501-08', 'ASNE0501', 'jonction', 8,  22, 16, 23,  false, 'exemple · grosses sections'),
-    E('ASNE0502-04', 'ASNE0502', 'blindage', 4,  26, 20, 7.5, true,  'exemple · reprise de blindage'),
-    E('ASNE0502-08', 'ASNE0502', 'blindage', 8,  26, 20, 7.5, true,  'exemple · reprise de blindage'),
     E('EN3646A6083AAN', 'EN3646', 'coupure', 3, 26, 20, 7.5, false, 'exemple · prise de coupure 3 contacts'),
     E('EN3646A6088AAN', 'EN3646', 'coupure', 8, 26, 20, 7.5, false, 'exemple · prise de coupure 8 contacts'),
     E('EN2997Y1A08P', 'EN2997', 'connecteur', 8, 26, 20, 7.5, false, 'exemple · embase 8 contacts', 'EN2997Y2A08S'),
     E('ABS0864-12', 'ABS0864', 'connecteur', 12, 26, 20, 7.5, false, 'exemple · embase 12 contacts', 'ABS0865-12')
   ].map(entreeBible);
 }
+/* La bible de l'outil : pour les barrettes, les modules de jonction de la norme ASNE 0599 — la seule proposée — ; pour
+   les prises de coupure et les connecteurs, les références d'exemple. */
+const bibleDeLOutil = () => avecModules(bibleExemple());
+// une bible, les modules ASNE 0599 en tête quand elle n'en porte pas : ce sont eux que les barrettes prennent
+const avecModules = (entrees, norme) => (entrees || []).some(e => e.module) ? entrees : [...bibleDesModules(norme), ...(entrees || [])];
 /* Lire une bible : un tableau dont la première ligne reconnue nomme les
    colonnes (au moins « référence » et « bornes »). Rend { entrees, entete }. */
 function lireBible(texte) {
@@ -203,7 +200,19 @@ function infosDe(repere, liaisons, bible, choisir) {
   return { ...besoins, ...choix, deja, reference: choix.choix ? choix.choix.reference : (besoins.pn || ''),
            changee: !!(besoins.pn && choix.choix && choix.choix.reference !== besoins.pn) };
 }
-const barretteInfos = (repere, liaisons, bible) => infosDe(repere, liaisons, bible, choisirBarrette);
+/* Une barrette, quand la bible porte des modules de jonction (ASNE 0599) : le REMPLISSAGE AUTOMATIQUE dit les modules
+   (`remplirModules`) ; la référence retenue est celle des modules posés (« 2 × E0599-1A101Z »), les candidates sont les
+   variantes qui la logent d'un seul module. Sinon, le choix d'une réglette par son nombre de bornes. */
+function barretteInfos(repere, liaisons, bible, norme) { const B = bible || [];
+  if (!B.some(e => e.module)) return infosDe(repere, liaisons, bible, choisirBarrette);
+  const besoins = besoinsDeBarrette(repere, liaisons), plan = remplirModules(besoins, norme), s = k => k > 1 ? 's' : '';
+  const choix = plan.modules.length ? B.find(e => e.reference === plan.modules[0].reference) || null : null;
+  const candidats = variantesQuiLogent(besoins, norme).map(m => B.find(e => e.module === m.variante)).filter(Boolean);
+  const raisons = [`${plan.potentiels} potentiel${s(plan.potentiels)} à loger`, ...(besoins.jaugeFine != null ? [besoins.jaugeFine === besoins.jaugeGrosse ? `fils de jauge ${besoins.jaugeFine}` : `fils de jauge ${besoins.jaugeFine} à ${besoins.jaugeGrosse}`] : []),
+    plan.modules.length ? `${plan.modules.length} module${s(plan.modules.length)} ASNE 0599, ${plan.contacts - plan.utilises} contact${s(plan.contacts - plan.utilises)} libre${s(plan.contacts - plan.utilises)}` : 'aucun module ASNE 0599 ne convient',
+    ...plan.verdicts.map(v => v.texte)];
+  return { ...besoins, choix, nature: 'jonction', raisons, candidats: candidats.slice(0, 6), enPlus: Math.max(0, candidats.length - 6), deja: B.find(e => e.reference === besoins.pn) || null, plan,
+           reference: plan.reference || besoins.pn || '', changee: !!(besoins.pn && plan.reference && plan.reference !== besoins.pn) }; }
 const coupureInfos  = (repere, liaisons, bible) => infosDe(repere, liaisons, bible, choisirCoupure);
 
 /* ---- les connecteurs d'un équipement ------------------------------------- */
@@ -309,13 +318,30 @@ const COLONNES_NORME = {
     ['tension',     ['tension', 'reseau', 'u', 'volts', 'v']],
     ['chuteMax',    ['chutemax', 'chute', 'chuteadmise', 'chutemaxv', 'deltau', 'chuteenv']],
     ['chutePct',    ['chutemaxpct', 'chutepct', 'pourcent', 'chuteen']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+  tailles: [
+    ['taille',      ['taille', 'taillecontact', 'tailledecontact', 'size']],
+    ['jaugeMin',    ['jaugemin', 'awgmin', 'jaugefine', 'gaugemin', 'minawg']],
+    ['jaugeMax',    ['jaugemax', 'awgmax', 'jaugegrosse', 'gaugemax', 'maxawg']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+  modules: [
+    ['variante',    ['variante', 'variantedinterconnexion', 'interconnexion']],
+    ['type',        ['type', 'typedemodule']],
+    ['taille',      ['taille', 'taillecontact', 'tailledecontact', 'size']],
+    ['disposition', ['disposition', 'face', 'implantation']],
+    ['groupes',     ['groupes', 'groupe', 'interconnexions']],
+    ['poids',       ['masse', 'poids', 'masseg']],
+    ['hauteur',     ['hauteur', 'hauteurmm', 'h']],
+    ['diodes',      ['diodes', 'diode']],
     ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]]
 };
 const TABLE_NORME = {
   familles: c => c.famille != null && c.reference == null && (c.pas != null || c.intensite != null || c.filsParCote != null || c.ordre != null || c.jaugeMin != null),
   fils: c => c.jauge != null && (c.section != null || c.resistance != null || c.intensite != null),
   declassements: c => c.condition != null && c.facteur != null,
-  reseau: c => c.tension != null && c.chuteMax != null
+  reseau: c => c.tension != null && c.chuteMax != null,
+  tailles: c => c.taille != null && c.jaugeMin != null,
+  modules: c => c.variante != null && c.groupes != null
 };
 /* Un nombre d'atelier : virgule ou point, une unité derrière (« 5 mm », « 0,8 »). */
 const NUMERO = v => { const t = String(v == null ? '' : v).trim().replace(',', '.'); if (!t) return null; const m = /-?\d+(\.\d+)?/.exec(t); return m ? parseFloat(m[0]) : null; };
@@ -333,8 +359,10 @@ function filNorme(o) { const jauge = NUMERO(o.jauge); if (jauge == null) return 
   return { type: String(o.type || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '') || '*', jauge, section: NUMERO(o.section), resistance: NUMERO(o.resistance), intensite: NUMERO(o.intensite), note: String(o.note || '').trim() }; }
 function declassementNorme(o) { const condition = MOT(o.condition), facteur = NUMERO(o.facteur); return condition && facteur != null ? { condition, facteur, note: String(o.note || '').trim() } : null; }
 function reseauNorme(o) { const tension = NUMERO(o.tension); return tension == null ? null : { tension, chuteMax: NUMERO(o.chuteMax), chutePct: NUMERO(o.chutePct), note: String(o.note || '').trim() }; }
-const ENTREE_NORME = { familles: familleNorme, fils: filNorme, declassements: declassementNorme, reseau: reseauNorme };
-const normeVide = () => ({ familles: [], fils: [], declassements: [], reseau: [], tables: 0 });
+function tailleNorme(o) { const taille = NUMERO(o.taille); if (taille == null) return null; const j = [NUMERO(o.jaugeMin), NUMERO(o.jaugeMax)].filter(x => x != null);
+  return { taille, jaugeMin: j.length ? Math.max(...j) : null, jaugeMax: j.length ? Math.min(...j) : null, note: String(o.note || '').trim() }; }
+const ENTREE_NORME = { familles: familleNorme, fils: filNorme, declassements: declassementNorme, reseau: reseauNorme, tailles: tailleNorme, modules: moduleNorme };
+const normeVide = () => ({ familles: [], fils: [], declassements: [], reseau: [], tailles: [], modules: [], tables: 0 });
 /* Lire une norme : les tables se suivent (un titre libre, la ligne d'en-tête,
    les lignes, une ligne vide), dans un CSV ou une feuille Excel. */
 function lireNorme(texte) { const N = normeVide(); let table = null, col = null;
@@ -346,7 +374,7 @@ function lireNorme(texte) { const N = normeVide(); let table = null, col = null;
     if (!table) return; const o = {}; Object.entries(col).forEach(([champ, i]) => { o[champ] = row[i] == null ? '' : row[i]; });
     const x = ENTREE_NORME[table](o); if (x) N[table].push(x); });
   return N; }
-const normeLue = N => !!(N && (N.familles.length || N.fils.length || N.declassements.length || N.reseau.length));
+const normeLue = N => !!(N && (N.familles.length || N.fils.length || N.declassements.length || N.reseau.length || N.modules.length));
 /* Un fichier de normes : chaque feuille d'un Excel est lue (une table par
    feuille, ou plusieurs à la suite) ; un CSV d'un bloc. */
 async function lireNormeFichier(fichier) { const nom = (fichier.name || '').toLowerCase();
@@ -358,8 +386,9 @@ async function lireNormeFichier(fichier) { const nom = (fichier.name || '').toLo
 /* Deux normes en une : ce qui vient en second remplace ce qui porte la même
    clé (famille, type+jauge, condition, tension). C'est ainsi qu'une norme de
    barrettes et une norme de fils, importées l'une après l'autre, se complètent. */
-function fusionnerNormes(a, b) { const N = normeVide(); const cle = { familles: x => x.famille.toUpperCase(), fils: x => x.type + '/' + x.jauge, declassements: x => x.condition, reseau: x => String(x.tension) };
-  Object.keys(cle).forEach(t => { const m = new Map(); [...(a ? a[t] : []), ...(b ? b[t] : [])].forEach(x => m.set(cle[t](x), x)); N[t] = [...m.values()]; });
+function fusionnerNormes(a, b) { const N = normeVide(); const cle = { familles: x => x.famille.toUpperCase(), fils: x => x.type + '/' + x.jauge, declassements: x => x.condition, reseau: x => String(x.tension),
+    tailles: x => String(x.taille), modules: x => x.variante };
+  Object.keys(cle).forEach(t => { const m = new Map(); [...(a ? a[t] || [] : []), ...(b ? b[t] || [] : [])].forEach(x => m.set(cle[t](x), x)); N[t] = [...m.values()]; });
   N.tables = (a ? a.tables : 0) + (b ? b.tables : 0); return N; }
 /* La norme embarquée : normes/*.csv, mis dans la page à la construction. */
 function normeEmbarquee() { return lireNorme(typeof NORME_EMBARQUEE === 'string' ? NORME_EMBARQUEE : ''); }
@@ -451,3 +480,98 @@ function csvDuSuivi(lignes) {
   const cell = v => { const t = Array.isArray(v) ? v.join(' ') : String(v == null ? '' : v); return /[;"\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
   return [COLONNES_SUIVI.map(c => c[1]).join(';'), ...lignes.map(l => COLONNES_SUIVI.map(c => cell(l[c[0]])).join(';'))].join('\n');
 }
+
+/* ---- les modules de jonction (ASNE 0599) --------------------------------
+   Une barrette du contrat se pose en MODULES DE JONCTION : un module est un
+   bloc de contacts lettrés (A, B, C… puis a, b, c…), et des GROUPES de
+   contacts reliés entre eux dans le module — la VARIANTE d'interconnexion
+   (A101 : dix-huit paires ; B204 : trois groupes de six ; D501 : un groupe
+   mêlant des contacts #16 et #12). Chaque POTENTIEL de la barrette — une
+   borne, ou les bornes que des shunts relient — prend un groupe ; chaque fil
+   de ce potentiel, un contact du groupe, dont la TAILLE admet sa jauge.
+   La norme (normes/asne0599.csv) donne les variantes : leur face (la place
+   de chaque contact), leurs groupes, leurs tailles, masse et hauteur ; et
+   les jauges que chaque taille de contact reçoit. */
+const lettresDe = t => String(t == null ? '' : t).split(/[\s,]+/).filter(Boolean);
+function moduleNorme(o) { const variante = String(o.variante || '').trim().toUpperCase(); if (!variante) return null;
+  const taille = NUMERO(o.taille), type = String(o.type || '').trim().toLowerCase(), place = new Map();
+  const rangs = String(o.disposition || '').split('/').map(r => lettresDe(r));
+  rangs.forEach((r, i) => r.forEach((l, j) => { if (l !== '.') place.set(l, { r: i, c: j }); }));
+  const colonnes = Math.max(1, ...rangs.map(r => r.length)), contacts = [];
+  const groupes = String(o.groupes || '').split('|').map((g, k) => {
+    const cs = lettresDe(g).map(t => { const m = /^(.+?)#(\d+)$/.exec(t), lettre = m ? m[1] : t, p = place.get(lettre) || { r: rangs.length + contacts.length, c: 0 };
+      const c = { lettre, taille: m ? +m[2] : taille, r: p.r, c: p.c, groupe: k }; contacts.push(c); return c; });
+    return { k, contacts: cs, nom: cs.length > 4 ? cs[0].lettre + '…' + cs[cs.length - 1].lettre : cs.map(c => c.lettre).join('-') }; }).filter(g => g.contacts.length);
+  const diodes = lettresDe(o.diodes).map(d => d.split('>')).filter(d => d.length === 2);
+  return { variante, type, taille, rangs: rangs.length, colonnes, contacts, groupes, poids: NUMERO(o.poids), hauteur: NUMERO(o.hauteur),
+           diodes, aDiodes: type === 'diodes' || diodes.length > 0, reference: 'E0599-1' + variante + 'Z', note: String(o.note || '').trim() }; }
+// la norme embarquée, lue une fois : ses modules servent quand la norme de l'atelier n'en porte pas
+let normeDesModulesLue = null;
+const normeDesModules = norme => (norme && norme.modules && norme.modules.length) ? norme : (normeDesModulesLue || (normeDesModulesLue = normeEmbarquee()));
+const moduleDeReference = (norme, ref) => { const m = /^E0599-?1?([A-E]\d{3})/i.exec(String(ref || '').trim()); return m ? normeDesModules(norme).modules.find(x => x.variante === m[1].toUpperCase()) || null : null; };
+/* Un contact de cette taille reçoit-il un fil de cette jauge ? Une jauge inconnue passe (c'est dit ailleurs) ; une
+   taille que la norme ne décrit pas aussi. */
+function contactAccepte(norme, taille, jauge) { if (jauge == null) return true;
+  const T = normeDesModules(norme).tailles.find(x => x.taille === taille); return !T || (jauge <= T.jaugeMin && jauge >= T.jaugeMax); }
+/* Les entrées de bible d'une norme de modules : une par variante — ses groupes sont les « bornes » qu'elle offre. */
+function bibleDesModules(norme) { const N = normeDesModules(norme);
+  return N.modules.map(m => { const tailles = [...new Set(m.contacts.map(c => c.taille))].map(t => N.tailles.find(x => x.taille === t)).filter(Boolean);
+    const e = entreeBible({ reference: m.reference, famille: 'E0599', nature: 'jonction', bornes: m.groupes.length,
+      jaugeMin: tailles.length ? Math.max(...tailles.map(t => t.jaugeMin)) : '', jaugeMax: tailles.length ? Math.min(...tailles.map(t => t.jaugeMax)) : '',
+      note: `${m.variante} · ${m.contacts.length} contacts · ${m.note}` });
+    return e; }); }
+/* Les POTENTIELS d'une barrette : chaque paquet de bornes (reliées par des shunts), avec tous ses fils. */
+function potentielsDeBarrette(besoins) {
+  return paquetsDeBarrette(besoins.bornes, besoins.ponts).map(p => ({ bornes: p.bornes,
+    fils: p.bornes.flatMap(b => (besoins.parBorne.get(b) || []).map(f => ({ ...f, borneBarrette: b, jauge: jaugeDuType(f.type) }))).sort((a, b) => triBornes(a.cable || '', b.cable || '')) }))
+    .filter(p => p.fils.length); }
+/* Les fils d'un potentiel dans un groupe : chaque fil un contact qui admet sa jauge — les plus gros fils d'abord, chacun
+   sur le plus petit contact qui le reçoit (les gros contacts restent aux gros fils) ; puis, à taille égale, dans l'ordre
+   des lettres et des numéros de fil. Rend [[fil, contact]…], ou null. */
+function placerDansGroupe(norme, groupe, fils) { if (fils.length > groupe.contacts.length) return null;
+  const libres = groupe.contacts.slice(), choix = [];
+  for (const f of fils.slice().sort((a, b) => (a.jauge == null ? 99 : a.jauge) - (b.jauge == null ? 99 : b.jauge))) {
+    const ok = libres.filter(c => contactAccepte(norme, c.taille, f.jauge)); if (!ok.length) return null;
+    const c = ok.sort((u, v) => v.taille - u.taille)[0]; libres.splice(libres.indexOf(c), 1); choix.push([f, c]); }
+  // à taille égale, le premier fil sur la première lettre
+  const parTaille = new Map(); choix.forEach(([f, c]) => (parTaille.get(c.taille) || parTaille.set(c.taille, []).get(c.taille)).push([f, c]));
+  const ordre = c => groupe.contacts.indexOf(c);
+  return [...parTaille.values()].flatMap(xs => { const fs = xs.map(x => x[0]).sort((a, b) => triBornes(a.cable || '', b.cable || '')), cs = xs.map(x => x[1]).sort((a, b) => ordre(a) - ordre(b)); return fs.map((f, i) => [f, cs[i]]); }); }
+/* Des potentiels dans un module : chacun, du plus chargé au moins chargé, dans le groupe qui le loge en perdant le moins
+   de contacts. */
+function placerDansModule(norme, mod, potentiels) { const libres = mod.groupes.slice(), places = [];
+  potentiels.forEach(p => { let mieux = null;
+    for (const g of libres) { const perte = g.contacts.length - p.fils.length; if (perte < 0 || (mieux && perte >= mieux.perte)) continue;
+      const a = placerDansGroupe(norme, g, p.fils); if (a) mieux = { g, a, perte }; }
+    if (mieux) { libres.splice(libres.indexOf(mieux.g), 1); places.push({ potentiel: p, groupe: mieux.g, fils: mieux.a, perte: mieux.perte }); } });
+  return places; }
+/* LE REMPLISSAGE : les modules d'une barrette, et chaque fil dans son contact. Tant qu'il reste des potentiels, le
+   module qui en loge le plus ; à égalité, celui qui perd le moins de contacts dans ses groupes, puis qui laisse le moins
+   de groupes libres (le plus petit qui convient), puis le plus léger. Le module à diodes n'est jamais choisi seul (il
+   n'est pas une simple jonction). `variante` : celle qu'on a retenue à la main — tous les modules la prennent. Un
+   potentiel qu'aucun groupe ne reçoit (trop de fils, une jauge qu'aucun contact n'admet) est dit. */
+function remplirModules(besoins, norme, variante) { const N = normeDesModules(norme);
+  const tous = N.modules.filter(m => !m.aDiodes || m.variante === variante), cands = variante ? tous.filter(m => m.variante === variante) : tous;
+  let restants = potentielsDeBarrette(besoins).sort((a, b) => b.fils.length - a.fils.length || triBornes(a.bornes[0], b.bornes[0]));
+  const nPot = restants.length, modules = [], meilleur = (a, b) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] > b[i]; return false; };
+  while (restants.length && modules.length < 16) { let choix = null;
+    for (const m of cands) { const pl = placerDansModule(N, m, restants); if (!pl.length) continue;
+      const score = [pl.length, -pl.reduce((s, x) => s + x.perte, 0), -(m.groupes.length - pl.length), -(m.poids || 0)];
+      if (!choix || meilleur(score, choix.score)) choix = { m, pl, score }; }
+    if (!choix) break;
+    modules.push({ module: choix.m, reference: choix.m.reference, places: choix.pl.sort((a, b) => a.groupe.k - b.groupe.k) });
+    restants = restants.filter(p => !choix.pl.some(x => x.potentiel === p)); }
+  const s = k => k > 1 ? 's' : '', verdicts = [];
+  restants.forEach(p => { const js = [...new Set(p.fils.map(f => f.jauge).filter(j => j != null))];
+    verdicts.push({ niveau: 'ko', texte: `borne${s(p.bornes.length)} ${p.bornes.join('-')} : ${p.fils.length} fil${s(p.fils.length)}${js.length ? ' de jauge ' + js.join(', ') : ''} — aucun groupe ${variante ? 'de ' + variante : 'de la norme'} ne les reçoit`, bornes: p.bornes }); });
+  const fils = modules.flatMap((M, k) => M.places.flatMap(pl => pl.fils.map(([f, c]) => ({ f, contact: c, module: k, groupe: pl.groupe, potentiel: pl.potentiel,
+    taille: c.taille, jaugeOk: f.jauge == null ? null : contactAccepte(N, c.taille, f.jauge) }))));
+  const contacts = modules.reduce((n, M) => n + M.module.contacts.length, 0);
+  const reference = (() => { const parRef = new Map(); modules.forEach(M => parRef.set(M.reference, (parRef.get(M.reference) || 0) + 1));
+    return [...parRef].map(([r, n]) => (n > 1 ? n + ' × ' : '') + r).join(' + '); })();
+  return { modules, fils, verdicts, potentiels: nPot, places: nPot - restants.length, restants, contacts, utilises: fils.length, reference, variante: variante || '' }; }
+/* Les variantes qui logent la barrette d'un seul module, de la mieux à la moins bien taillée — les candidates de la carte. */
+function variantesQuiLogent(besoins, norme) { const N = normeDesModules(norme), pots = potentielsDeBarrette(besoins);
+  return N.modules.filter(m => !m.aDiodes).map(m => ({ m, pl: placerDansModule(N, m, pots.slice().sort((a, b) => b.fils.length - a.fils.length)) }))
+    .filter(x => x.pl.length === pots.length).map(x => ({ m: x.m, perte: x.pl.reduce((s, p) => s + p.perte, 0), libres: x.m.groupes.length - x.pl.length }))
+    .sort((a, b) => a.perte - b.perte || a.libres - b.libres || (a.m.poids || 0) - (b.m.poids || 0)).map(x => x.m); }
