@@ -185,7 +185,7 @@ function pictoModule(m) { const k = 30 / Math.max(m.colonnes * 6, m.rangs * 6), 
     + m.groupes.filter(g => g.contacts.length > 1 || m.famille === 'E0599').map(g => `<path class="p-groupe" d="${traitsDe(g.contacts.map(pos))}" style="stroke-width:${f1(4 * k)}"/>`).join('')
     + m.contacts.map(c => { const p = pos(c); return `<circle class="p-contact" cx="${f1(p.x)}" cy="${f1(p.y)}" r="${f1((c.calibre <= 12 ? 2 : c.calibre <= 16 ? 1.7 : 1.3) * k)}"/>`; }).join('') + '</svg>'; }
 function zoomModule(e) { const m = moduleDeReference(app.norme, e.reference); if (!m) return '';
-  const tailles = [...new Set(m.contacts.map(c => c.taille))].map(t => { const T = tailleDe(app.norme, m.famille, t); return '#' + t + (T ? ' : ' + T.jaugeMin + '–' + T.jaugeMax + ' AWG' : ''); });
+  const tailles = [...new Set(m.contacts.map(c => c.taille))].map(t => { const T = tailleDe(app.norme, m.famille, t); return '#' + t + (T ? (T.jaugeMin != null ? ' : ' + T.jaugeMin + '–' + T.jaugeMax + ' AWG' : ' : câble spécial') : ''); });
   const f = faceModuleSvg(m, null, {}), E = m.famille === 'E0599', C = m.emploi === 'connecteur';
   const type = m.type === 'mixte' ? 'mixte (tailles de contact variables)' : m.type === 'diodes' ? 'à diodes incorporées' : m.type === 'obturateur' ? 'module neutre, sans contact' : m.type === 'spécial' ? 'contact spécial à clé' : E ? 'type ' + m.type : 'contacts taille ' + m.type.toUpperCase();
   const carac = [['norme', nomDeFamille(app.norme, m.famille) + (E ? ' · NF L 53-105' : C ? ' · 2023' : ' · mars 2021')], [E ? 'variante' : 'arrangement', m.variante], ['type', type],
@@ -293,7 +293,7 @@ function carteContacts(Q, points, cle, opts) { opts = opts || {}; const V = veri
   return `<div class="mj-cavite"><div class="bar-ref"><span class="ref">${esc((opts.titre ? opts.titre + ' · ' : '') + (Q.reference || '—'))}</span><span class="dou">${dou}</span></div><div class="phy-compte">${compte}</div>`
     + (face ? `<div class="mj-faces">${facesSvg([face], largeurCarte())}</div>` : '') + verdicts + table + choix + '</div>'; }
 // la carte d'une prise de coupure en module de connecteur (EN 4165, EN 2997)
-const DIT_CONNECTEUR = { EN4165: 'connecteur rectangulaire modulaire', EN2997: 'connecteur circulaire', EN3646: 'connecteur circulaire à contacts lettrés' };
+const DIT_CONNECTEUR = { EN4165: 'connecteur rectangulaire modulaire', EN2997: 'connecteur circulaire', EN3646: 'connecteur circulaire à contacts lettrés', EN3645: 'connecteur circulaire' };
 function carteCoupureModules(nom) { const { points, plan: Q } = planDeCoupure(nom), visee = Q.visee || '';
   const normes = `<div class="mj-normes" role="group" aria-label="Norme de la prise"><span>norme</span>`
     + [['', 'automatique'], ...famillesDeModules(app.norme, 'connecteur').map(f => [f, nomDeFamille(app.norme, f)])].map(([f, t]) => `<button class="mj-norme ${f ? classeFamille(f) : ''}" data-coupure="${escA(f)}" aria-pressed="${!Q.main && visee === f}">${esc(t)}</button>`).join('') + '</div>';
@@ -301,7 +301,7 @@ function carteCoupureModules(nom) { const { points, plan: Q } = planDeCoupure(no
     + carteContacts(Q, points, nom, { prise: true }); }
 // les cavités EN 4165 d'un équipement, sous la liste de ses connecteurs
 function carteCavites(nom) { const C = cavitesDe(nom); if (!C.length) return '';
-  return [...new Set(C.map(c => c.plan.famille))].map(f => `<div class="bar-norme">norme <b>${esc(nomDeFamille(app.norme, f))}</b> · ${f === 'EN2997' ? 'connecteur circulaire, un insert, chaque borne sur le contact de même numéro' : f === 'EN3646' ? 'connecteur circulaire, un insert, contacts lettrés : la borne n prend la lettre de rang n' : 'un module par cavité, chaque borne sur le contact de même numéro'}</div>`).join('')
+  return [...new Set(C.map(c => c.plan.famille))].map(f => `<div class="bar-norme">norme <b>${esc(nomDeFamille(app.norme, f))}</b> · ${f === 'EN2997' ? 'connecteur circulaire, un insert, chaque borne sur le contact de même numéro' : f === 'EN3646' ? 'connecteur circulaire, un insert, contacts lettrés : la borne n prend la lettre de rang n' : f === 'EN3645' ? 'connecteur circulaire, un insert, chaque borne sur son contact (numéro, sinon la lettre de même rang)' : 'un module par cavité, chaque borne sur le contact de même numéro'}</div>`).join('')
     + C.map(c => carteContacts(c.plan, c.points, nom + '|' + c.nom, { titre: c.nom })).join(''); }
 function lierCarteContacts(nom) { const box = $('ba-equip');
   box.querySelectorAll('details.choix').forEach(d => d.addEventListener('toggle', () => { app.base.choixOuvert = d.open; }));

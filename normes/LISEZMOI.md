@@ -12,6 +12,17 @@ dessine chaque **trou** et le fil qui y est placé, juge le remplissage, et
 **simule** fil par fil la jauge admise, le courant admissible et la chute en
 ligne — sur des hypothèses dites et modifiables.
 
+## `en3645.csv` : les connecteurs circulaires EN 3645
+
+L'**EN 3645-002:2024**, figures 1 à 33 (la norme en compte 68 : le reste
+viendra avec les pages suivantes) : 45 arrangements, désignés taille de
+boîtier + N (normal), G (mise à la masse, même face), Q ou L (quadrax) +
+arrangement, de 09G01 à 19N12. Contacts numérotés, lettrés ou les deux
+(13N26 : 1, 2 et A à F) ; une borne numérotée va sur son numéro, sinon sur
+la lettre de même rang. Les contacts triaxiaux et quadrax (taille `8T`) ne
+reçoivent pas un fil ordinaire, et leurs arrangements ne sont jamais
+choisis seuls. La classe de tension (I, II, M, N) est dans la note.
+
 ## `en3646.csv` : les connecteurs circulaires à contacts lettrés
 
 Le **prEN 3646-002:2005**, transcrit des figures 1 à 31 : 31 arrangements

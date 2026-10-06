@@ -84,7 +84,9 @@ Le plan occupe tout l'écran. **En bas**, la barre de vue : folios (précédent,
 
 ## 8. Où en est l'outil (à corriger en priorité)
 
-Fait à la dernière passe : l'**EN 3646-002** (31 inserts circulaires à contacts lettrés, `normes/en3646.csv`) — une borne numérotée prend la lettre de même rang, le part number nomme l'arrangement (EN3646A6083AAN → 08-3A), une prise de coupure met les trois normes de connecteurs en concurrence. À confirmer : la place des lettres des grands inserts et des lettres intérieures de 20-34, 20-39, 22-41, la correspondance numéro → lettre (rang) avec ton vrai fichier.
+Fait à la dernière passe : l'**EN 3645-002** (45 arrangements des figures 1 à 33, `normes/en3645.csv`) — N, G, Q, L ; contacts numérotés, lettrés ou mêlés ; triaxiaux et quadrax qui refusent un fil ordinaire ; quatrième norme de connecteurs en concurrence pour les prises. Manquent les figures 34 à 68.
+
+Passe d'avant : l'**EN 3646-002** (31 inserts circulaires à contacts lettrés, `normes/en3646.csv`) — une borne numérotée prend la lettre de même rang, le part number nomme l'arrangement (EN3646A6083AAN → 08-3A), une prise de coupure met les trois normes de connecteurs en concurrence. À confirmer : la place des lettres des grands inserts et des lettres intérieures de 20-34, 20-39, 22-41, la correspondance numéro → lettre (rang) avec ton vrai fichier.
 
 Passe d'avant : l'**EN 2997-002** (35 inserts circulaires, `normes/en2997.csv`) — les connecteurs `EN2997…` des équipements prennent le plus petit insert qui loge leurs bornes avec leurs jauges ; une prise de coupure met EN 2997 et EN 4165 en concurrence, ou l'une d'un clic ; face ronde à clé, relief en cylindre. À confirmer : la place exacte des numéros des grands inserts, les contacts #16 de 20-39, la désignation.
 
