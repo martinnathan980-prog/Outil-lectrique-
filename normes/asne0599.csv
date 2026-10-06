@@ -1,4 +1,4 @@
-ASNE 0599 indice E — modules de jonction NF L 53-105 (module « à retour »), transcrits des pages 8 à 11 de la norme. Seule norme de barrettes proposée par l'outil.
+ASNE 0599 indice E — modules de jonction NF L 53-105 (module « à retour »), transcrits des pages 8 à 11 de la norme. Avec la NSA937901, l'une des deux normes de barrettes proposées par l'outil.
 Désignation d'un module : E0599-1<variante><tenue aux fluides>, par exemple E0599-1B204Z (1 : module à retour ; B204 : la variante d'interconnexion ; Z : la tenue aux fluides, tableau 2 de la norme — Z est la valeur de l'exemple de la norme, à confirmer). Borne de jonction : E0599B01. Shunt : E0599S01A (A = 2 trous, B = 3, C = 4, D = 5).
 
 Familles — la famille E0599 : ce qu'un contact admet se lit par sa taille (table Tailles)
@@ -6,40 +6,40 @@ Norme;Famille;Nature;Jauge min;Jauge max;Fils par côté;Ordre;Paquets;Note
 ASNE 0599;E0599;jonction;26;12;1;libre;libres;module de jonction : chaque potentiel du contrat prend un GROUPE de contacts reliés dans le module, chaque fil un contact
 
 Tailles — la taille d'un contact et les jauges AWG qu'il reçoit (plage usuelle d'un contact de cette taille : à confirmer avec la norme)
-Taille;Jauge min;Jauge max;Note
-22;26;22;modules type 1, 36 contacts (jauge 22 AWG)
-20;24;20;modules type 2, 18 contacts (jauge 20 AWG), et contacts #20 des modules mixtes
-16;20;16;modules type 3, 10 contacts (jauge 16 AWG), et contacts #16 des modules mixtes
-12;14;12;modules type 4, 8 contacts (jauge 12 AWG), et contacts #12 des modules mixtes
+Famille;Taille;Jauge min;Jauge max;Note
+E0599;22;26;22;modules type 1, 36 contacts (jauge 22 AWG)
+E0599;20;24;20;modules type 2, 18 contacts (jauge 20 AWG), et contacts #20 des modules mixtes
+E0599;16;20;16;modules type 3, 10 contacts (jauge 16 AWG), et contacts #16 des modules mixtes
+E0599;12;14;12;modules type 4, 8 contacts (jauge 12 AWG), et contacts #12 des modules mixtes
 
-Modules — une ligne par variante d'interconnexion : la disposition des contacts sur la face (rangées séparées par /, « . » une place vide), les GROUPES (contacts reliés dans le module, séparés par |), la taille d'un contact (#12 derrière une lettre pour un contact d'une autre taille)
-Variante;Type;Taille;Disposition;Groupes;Masse;Hauteur;Diodes;Note
-A101;1;22;A B C D / E F G H / J K L M / N P R S / T U V X / a b c d / e f g h / j k m n / p q r s;A,B | C,D | E,F | G,H | J,K | L,M | N,P | R,S | T,U | V,X | a,b | c,d | e,f | g,h | j,k | m,n | p,q | r,s;16,6;19,5;;18 groupes de 2 contacts
-A102;1;22;A B C D / E F G H / J K L M / N P R S / T U V X / a b c d / e f g h / j k m n / p q r s;A,B,C,D | E,F,G,H | J,K,L,M | N,P,R,S | T,U,V,X | a,b,c,d | e,f,g,h | j,k,m,n | p,q,r,s;16,6;19,5;;9 groupes de 4 contacts
-A103;1;22;A B C D / E F G H / J K L M / N P R S / T U V X / a b c d / e f g h / j k m n / p q r s;A,B,C,D,E,F,G,H | J,K,L,M,N,P,R,S | T,U,a,b,e,f,j,k,p,q | V,X,c,d,g,h,m,n,r,s;16,6;19,5;;4 groupes : 2 de 8 contacts, 2 de 10
-A104;1;22;A B C D / E F G H / J K L M / N P R S / T U V X / a b c d / e f g h / j k m n / p q r s;A,E,J | N,T,a | e,j,p | B,F,K | P,U,b | f,k,q | C,G,L | R,V,c | g,m,r | D,H,M | S,X,d | h,n,s;16,6;19,5;;12 groupes de 3 contacts
-A105;1;22;A B C D / E F G H / J K L M / N P R S / T U V X / a b c d / e f g h / j k m n / p q r s;A,B,C,D,E,F,G,H,J,K,L,M,N,P,R,S | T,U,V,X,a,b,c,d,e,f,g,h,j,k,m,n,p,q,r,s;16,6;19,5;;2 groupes : 16 contacts et 20 contacts
-A106;1;22;A B C D / E F G H / J K L M / N P R S / T U V X / a b c d / e f g h / j k m n / p q r s;A,B,C,D,E,F,G,H,J,K,L,M,N,P,R,S,T,U,V,X,a,b,c,d,e,f,g,h,j,k,m,n,p,q,r,s;16,6;19,5;;1 groupe de 36 contacts ; non conforme à l'UTE C 93-462 feuille 5
-B201;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,D | G,K | N,S | B,E | H,L | P,T | C,F | J,M | R,U;17,0;22,5;;9 groupes de 2 contacts ; non conforme à l'UTE C 93-462 feuille 5 ; existe aussi en A201
-B202;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,B,C | D,E,F | G,H,J | K,L,M | N,P,R | S,T,U;17,0;22,5;;6 groupes de 3 contacts ; non conforme à l'UTE C 93-462 feuille 5 ; existe aussi en A202
-B203;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,B,C,D,E,F,G,H,J | K,L,M,N,P,R,S,T,U;17,0;22,5;;2 groupes de 9 contacts ; non conforme à l'UTE C 93-462 feuille 5 ; existe aussi en A203
-B204;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,B,C,D,E,F | G,H,J,K,L,M | N,P,R,S,T,U;17,0;22,5;;3 groupes de 6 contacts ; non conforme à l'UTE C 93-462 feuille 5 ; existe aussi en A204
-B205;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,B,C,D,E,F,G,H,J,K,L,M | N | P | R | S | T | U;17,0;22,5;;1 groupe de 12 contacts, les 6 autres seuls ; non conforme à l'UTE C 93-462 feuille 5 ; existe aussi en A205
-B206;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,B,C,D,E,F,G,H,J,K,L,M | N,P,R,S,T,U;17,0;22,5;;2 groupes : 12 contacts et 6 contacts ; non conforme à l'UTE C 93-462 feuille 5 ; existe aussi en A206
-B207;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,D,G,K | B,E,H,L | C,F,J,M | N,P,R | S,T,U;17,0;22,5;;5 groupes : 3 de 4 contacts, 2 de 3 ; non conforme à l'UTE C 93-462 feuille 5 ; existe aussi en A207
-B208;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,D,G,K | B,E,H,L | C,F,J,M | N,P,R,S,T,U;17,0;22,5;;4 groupes : 3 de 4 contacts, 1 de 6 ; non conforme à l'UTE C 93-462 feuille 5 ; existe aussi en A208
-B209;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,D | G,K | B,E | H,L | C,F | J,M | N,P,R | S,T,U;17,0;22,5;;8 groupes : 6 de 2 contacts, 2 de 3 ; non conforme à l'UTE C 93-462 feuille 5 ; existe aussi en A209
-C301;3;16;A B / C D / E F / G H / J K;A,C,E | B,D,F | G,H,J,K;18;24,5;;3 groupes : 2 de 3 contacts, 1 de 4
-C302;3;16;A B / C D / E F / G H / J K;A,B | C,D | E,F | G,H | J,K;18;24,5;;5 groupes de 2 contacts
-C303;3;16;A B / C D / E F / G H / J K;A,B,C,D,E,F,G,H | J,K;18;24,5;;2 groupes : 8 contacts et 2 contacts
-C304;3;16;A B / C D / E F / G H / J K;A,B,C,D | G,H,J,K | E,F;18;24,5;;3 groupes : 2 de 4 contacts, 1 de 2
-C305;3;16;A B / C D / E F / G H / J K;A,B,C,D,E,F,G,H,J,K;18;24,5;;1 groupe de 10 contacts
-C306;3;16;A B / C D / E F / G H / J K;A,B,C,D,E,F | G,H,J,K;18;24,5;;2 groupes : 6 contacts et 4 contacts
-D401;4;12;A B / C D / E F / G H;A,B,C,D | E,F,G,H;19,0;24,5;;2 groupes de 4 contacts (la photo de la norme lit « 2 X 8 », pour 8 contacts en tout)
-D402;4;12;A B / C D / E F / G H;A,B | C,D | E,F | G,H;19,0;24,5;;4 groupes de 2 contacts
-D403;4;12;A B / C D / E F / G H;A,B,C,D,E,F,G,H;19,0;24,5;;1 groupe de 8 contacts
-D501;mixte;16;A . B / . C . / D . E / . F . / G . H;A,B,C#12,D,E,F#12,G,H;19;24,5;;1 groupe : 6 contacts #16 et 2 contacts #12
-D502;mixte;20;A B C / D E . / F G H / J K L / . M N / P R S;A,B,C,D,E#12,F,G,H | J,K,L,M#12,N,P,R,S;18;24,5;;2 groupes : 2 de 7 contacts #20 et 1 contact #12
-D503;mixte;20;A B C / D E . / F G H / J K L / . M N / P R S;A,B,C,D,E#12,F,G,H,J,K,L,M#12,N,P,R,S;17;24,5;;1 groupe : 14 contacts #20 et 2 contacts #12
-D504;mixte;16;A . B / . C . / . D . / E . F;A,B,C#12 | D#12,E,F;19;24,5;;2 groupes : 2 contacts #16 et 1 contact #12 ; non conforme à l'UTE C 93-462 feuille 5
-E601;diodes;20;S2a S4a S6a / S2b S4b S6b / S1a S3a S5a / S1b S3b S5b;S1a,S1b | S2a,S2b | S3a,S3b | S4a,S4b | S5a,S5b | S6a,S6b;;4,5;S1>S2 S3>S4 S5>S6;6 groupes de 2 contacts #20, 3 diodes UT 4040 (Io 4 A, VRM 400 V) de S1 vers S2, S3 vers S4, S5 vers S6 ; non conforme à l'UTE C 93-462 feuille 5 ; jamais choisi seul
+Modules — une ligne par variante d'interconnexion : la désignation, la disposition des contacts sur la face (rangées séparées par /, « . » une place vide), les GROUPES (contacts reliés dans le module, séparés par |), la taille d'un contact (#12 derrière une lettre pour un contact d'une autre taille), l'usage (diodes : jamais choisi seul), le corps
+Famille;Variante;Désignation;Type;Taille;Disposition;Groupes;Masse;Hauteur;Diodes;Usage;Corps;Note
+E0599;A101;E0599-1A101Z;1;22;A B C D / E F G H / J K L M / N P R S / T U V X / a b c d / e f g h / j k m n / p q r s;A,B | C,D | E,F | G,H | J,K | L,M | N,P | R,S | T,U | V,X | a,b | c,d | e,f | g,h | j,k | m,n | p,q | r,s;16,6;19,5;;normal;rectangle;18 groupes de 2 contacts
+E0599;A102;E0599-1A102Z;1;22;A B C D / E F G H / J K L M / N P R S / T U V X / a b c d / e f g h / j k m n / p q r s;A,B,C,D | E,F,G,H | J,K,L,M | N,P,R,S | T,U,V,X | a,b,c,d | e,f,g,h | j,k,m,n | p,q,r,s;16,6;19,5;;normal;rectangle;9 groupes de 4 contacts
+E0599;A103;E0599-1A103Z;1;22;A B C D / E F G H / J K L M / N P R S / T U V X / a b c d / e f g h / j k m n / p q r s;A,B,C,D,E,F,G,H | J,K,L,M,N,P,R,S | T,U,a,b,e,f,j,k,p,q | V,X,c,d,g,h,m,n,r,s;16,6;19,5;;normal;rectangle;4 groupes : 2 de 8 contacts, 2 de 10
+E0599;A104;E0599-1A104Z;1;22;A B C D / E F G H / J K L M / N P R S / T U V X / a b c d / e f g h / j k m n / p q r s;A,E,J | N,T,a | e,j,p | B,F,K | P,U,b | f,k,q | C,G,L | R,V,c | g,m,r | D,H,M | S,X,d | h,n,s;16,6;19,5;;normal;rectangle;12 groupes de 3 contacts
+E0599;A105;E0599-1A105Z;1;22;A B C D / E F G H / J K L M / N P R S / T U V X / a b c d / e f g h / j k m n / p q r s;A,B,C,D,E,F,G,H,J,K,L,M,N,P,R,S | T,U,V,X,a,b,c,d,e,f,g,h,j,k,m,n,p,q,r,s;16,6;19,5;;normal;rectangle;2 groupes : 16 contacts et 20 contacts
+E0599;A106;E0599-1A106Z;1;22;A B C D / E F G H / J K L M / N P R S / T U V X / a b c d / e f g h / j k m n / p q r s;A,B,C,D,E,F,G,H,J,K,L,M,N,P,R,S,T,U,V,X,a,b,c,d,e,f,g,h,j,k,m,n,p,q,r,s;16,6;19,5;;normal;rectangle;1 groupe de 36 contacts — non conforme à l'UTE C 93-462 feuille 5
+E0599;B201;E0599-1B201Z;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,D | G,K | N,S | B,E | H,L | P,T | C,F | J,M | R,U;17,0;22,5;;normal;rectangle;9 groupes de 2 contacts — non conforme à l'UTE C 93-462 feuille 5 — existe aussi en A201
+E0599;B202;E0599-1B202Z;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,B,C | D,E,F | G,H,J | K,L,M | N,P,R | S,T,U;17,0;22,5;;normal;rectangle;6 groupes de 3 contacts — non conforme à l'UTE C 93-462 feuille 5 — existe aussi en A202
+E0599;B203;E0599-1B203Z;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,B,C,D,E,F,G,H,J | K,L,M,N,P,R,S,T,U;17,0;22,5;;normal;rectangle;2 groupes de 9 contacts — non conforme à l'UTE C 93-462 feuille 5 — existe aussi en A203
+E0599;B204;E0599-1B204Z;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,B,C,D,E,F | G,H,J,K,L,M | N,P,R,S,T,U;17,0;22,5;;normal;rectangle;3 groupes de 6 contacts — non conforme à l'UTE C 93-462 feuille 5 — existe aussi en A204
+E0599;B205;E0599-1B205Z;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,B,C,D,E,F,G,H,J,K,L,M | N | P | R | S | T | U;17,0;22,5;;normal;rectangle;1 groupe de 12 contacts, les 6 autres seuls — non conforme à l'UTE C 93-462 feuille 5 — existe aussi en A205
+E0599;B206;E0599-1B206Z;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,B,C,D,E,F,G,H,J,K,L,M | N,P,R,S,T,U;17,0;22,5;;normal;rectangle;2 groupes : 12 contacts et 6 contacts — non conforme à l'UTE C 93-462 feuille 5 — existe aussi en A206
+E0599;B207;E0599-1B207Z;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,D,G,K | B,E,H,L | C,F,J,M | N,P,R | S,T,U;17,0;22,5;;normal;rectangle;5 groupes : 3 de 4 contacts, 2 de 3 — non conforme à l'UTE C 93-462 feuille 5 — existe aussi en A207
+E0599;B208;E0599-1B208Z;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,D,G,K | B,E,H,L | C,F,J,M | N,P,R,S,T,U;17,0;22,5;;normal;rectangle;4 groupes : 3 de 4 contacts, 1 de 6 — non conforme à l'UTE C 93-462 feuille 5 — existe aussi en A208
+E0599;B209;E0599-1B209Z;2;20;A B C / D E F / G H J / K L M / N P R / S T U;A,D | G,K | B,E | H,L | C,F | J,M | N,P,R | S,T,U;17,0;22,5;;normal;rectangle;8 groupes : 6 de 2 contacts, 2 de 3 — non conforme à l'UTE C 93-462 feuille 5 — existe aussi en A209
+E0599;C301;E0599-1C301Z;3;16;A B / C D / E F / G H / J K;A,C,E | B,D,F | G,H,J,K;18;24,5;;normal;rectangle;3 groupes : 2 de 3 contacts, 1 de 4
+E0599;C302;E0599-1C302Z;3;16;A B / C D / E F / G H / J K;A,B | C,D | E,F | G,H | J,K;18;24,5;;normal;rectangle;5 groupes de 2 contacts
+E0599;C303;E0599-1C303Z;3;16;A B / C D / E F / G H / J K;A,B,C,D,E,F,G,H | J,K;18;24,5;;normal;rectangle;2 groupes : 8 contacts et 2 contacts
+E0599;C304;E0599-1C304Z;3;16;A B / C D / E F / G H / J K;A,B,C,D | G,H,J,K | E,F;18;24,5;;normal;rectangle;3 groupes : 2 de 4 contacts, 1 de 2
+E0599;C305;E0599-1C305Z;3;16;A B / C D / E F / G H / J K;A,B,C,D,E,F,G,H,J,K;18;24,5;;normal;rectangle;1 groupe de 10 contacts
+E0599;C306;E0599-1C306Z;3;16;A B / C D / E F / G H / J K;A,B,C,D,E,F | G,H,J,K;18;24,5;;normal;rectangle;2 groupes : 6 contacts et 4 contacts
+E0599;D401;E0599-1D401Z;4;12;A B / C D / E F / G H;A,B,C,D | E,F,G,H;19,0;24,5;;normal;rectangle;2 groupes de 4 contacts (la photo de la norme lit « 2 X 8 », pour 8 contacts en tout)
+E0599;D402;E0599-1D402Z;4;12;A B / C D / E F / G H;A,B | C,D | E,F | G,H;19,0;24,5;;normal;rectangle;4 groupes de 2 contacts
+E0599;D403;E0599-1D403Z;4;12;A B / C D / E F / G H;A,B,C,D,E,F,G,H;19,0;24,5;;normal;rectangle;1 groupe de 8 contacts
+E0599;D501;E0599-1D501Z;mixte;16;A . B / . C . / D . E / . F . / G . H;A,B,C#12,D,E,F#12,G,H;19;24,5;;normal;rectangle;1 groupe : 6 contacts #16 et 2 contacts #12
+E0599;D502;E0599-1D502Z;mixte;20;A B C / D E . / F G H / J K L / . M N / P R S;A,B,C,D,E#12,F,G,H | J,K,L,M#12,N,P,R,S;18;24,5;;normal;rectangle;2 groupes : 2 de 7 contacts #20 et 1 contact #12
+E0599;D503;E0599-1D503Z;mixte;20;A B C / D E . / F G H / J K L / . M N / P R S;A,B,C,D,E#12,F,G,H,J,K,L,M#12,N,P,R,S;17;24,5;;normal;rectangle;1 groupe : 14 contacts #20 et 2 contacts #12
+E0599;D504;E0599-1D504Z;mixte;16;A . B / . C . / . D . / E . F;A,B,C#12 | D#12,E,F;19;24,5;;normal;rectangle;2 groupes : 2 contacts #16 et 1 contact #12 — non conforme à l'UTE C 93-462 feuille 5
+E0599;E601;E0599-1E601Z;diodes;20;S2a S4a S6a / S2b S4b S6b / S1a S3a S5a / S1b S3b S5b;S1a,S1b | S2a,S2b | S3a,S3b | S4a,S4b | S5a,S5b | S6a,S6b;;4,5;S1>S2 S3>S4 S5>S6;diodes;rectangle;6 groupes de 2 contacts #20, 3 diodes UT 4040 (Io 4 A, VRM 400 V) de S1 vers S2, S3 vers S4, S5 vers S6 — non conforme à l'UTE C 93-462 feuille 5 — jamais choisi seul

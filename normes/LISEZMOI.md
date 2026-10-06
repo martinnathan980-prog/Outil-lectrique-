@@ -12,9 +12,33 @@ dessine chaque **trou** et le fil qui y est placé, juge le remplissage, et
 **simule** fil par fil la jauge admise, le courant admissible et la chute en
 ligne — sur des hypothèses dites et modifiables.
 
-## `asne0599.csv` : les barrettes, ce sont les modules ASNE 0599
+## `nsa937901.csv` : la seconde norme de barrettes
 
-Les barrettes ne se proposent plus qu'en **modules de jonction ASNE 0599**
+Les modules de jonction à contacts **NSA937901** (mars 2021), transcrits des
+figures 13 à 15 : 43 codes d'arrangement — taille 22D (EN 3155, câble
+cuivre 26–22) et taille 22 (ABS1493/ABS1380, 24–22, aluminium) en 21
+contacts, codes 01 à 07 ; taille 20 (24–18) en 10 contacts, codes 01 à 12 ;
+taille 16 (20–16) en 8 contacts, codes 01 à 06 ; taille 12 (14–12) en 6
+contacts, codes 03 à 06 et 12 ; les mixtes M12-02, 07, 08, 09, 10, 11. Les
+codes marqués (*) par la norme sont d'**usage normal** : le remplissage les
+préfère. Les codes A350 (AD12) et M12-07 (liaisons internes illisibles sur
+la figure) ne sont jamais choisis seuls. La règle de désignation n'était pas
+sur les pages lues : l'outil écrit `NSA937901-<taille>-<code>`
+(`NSA937901-20-04`) en attendant.
+
+Une barrette prend la norme de son part number (le fichier dit
+`E0599-…` ou `NSA937901-…`), sinon la mieux taillée des deux ; la carte
+d'une barrette change de norme d'un clic.
+
+Les deux tables propres aux modules ont, en plus, une colonne **Famille**
+(une taille de contact n'admet pas les mêmes jauges dans les deux normes),
+et la table Modules les colonnes **Désignation**, **Usage** et **Corps**
+(rectangle, ovale, étanche). Une face irrégulière s'écrit contact par
+contact : `K@0.7:0.75` (colonne 0,7, rangée 0,75, en pas).
+
+## `asne0599.csv` : les modules ASNE 0599
+
+Les barrettes se proposent en **modules de jonction ASNE 0599** ou NSA937901
 (NF L 53-105), transcrits des pages de la norme : les 29 variantes
 d'interconnexion (A101–A106 à 36 contacts #22, B201–B209 à 18 contacts #20,
 C301–C306 à 10 contacts #16, D401–D403 à 8 contacts #12, les mixtes

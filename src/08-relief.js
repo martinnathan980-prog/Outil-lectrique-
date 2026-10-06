@@ -183,7 +183,7 @@ function ouvrirRelief(nom) { if (!estBornier(nom)) return; const V = verite();
     $('re-sur').textContent = 'Barrette · ' + (Q.reference || 'aucun module ne convient'); $('re-titre').textContent = nom;
     $('re-compte').innerHTML = [pluriel(Q.modules.length, 'module'), pluriel(Q.utilises, 'contact') + ' pris', pluriel(Q.contacts - Q.utilises, 'libre')].join(' · ') + (ko ? ` · <span class="ko">${pluriel(ko, 'fil')} hors taille</span>` : '');
     $('re-tableau').innerHTML = tableauModules(Q);
-    $('re-note').textContent = 'Modules de jonction ASNE 0599 : chaque contact lettré ; le laiton relie les contacts d’un même groupe. En arrière, ce qui arrive ; en avant, ce qui repart.';
+    $('re-note').textContent = 'Modules de jonction ' + [...new Set(Q.modules.map(M => nomDeFamille(app.norme, M.module.famille)))].join(' et ') + ' : chaque contact lettré ; le laiton relie les contacts d’un même groupe (shunt). En arrière, ce qui arrive ; en avant, ce qui repart.';
     const d = $('relief'); d.hidden = false; peindreRelief(); lierRelief(); $('re-fermer').focus(); return; }
   RELIEF.P = remplirSelonNorme(physiqueDeBarrette(nom, V, app.bible, app.contrat.designations.get(nom) || ''), app.norme);
   RELIEF.S = simulerBornier(RELIEF.P, app.norme, app.simu);

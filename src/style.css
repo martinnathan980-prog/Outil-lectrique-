@@ -638,6 +638,34 @@ svg .re-note{fill:#5b6875;font-size:10px}
 .mj .mj-titre{fill:var(--encre);font-size:11px;font-weight:700}
 .mj .mj-sous{fill:var(--encre-2);font-size:8.5px}
 .mj .mj-diode{fill:#1b2430;stroke:#1b2430;stroke-width:1.2}
+.mj .f-nsa937901 .mj-corps{fill:#46617d;stroke:#22334a}
+.mj .f-nsa937901 .mj-flanc{fill:#2e445c;stroke:#1d2c3d}
+.mj .f-nsa937901 .mj-insert{fill:#eef2f6;stroke:#9fb0c2}
+.mj .corps-etanche .mj-corps{fill:#555c65;stroke:#262b31}
+.mj .corps-etanche .mj-flanc{fill:#3a4047;stroke:#22272c}
+.mj .corps-etanche .mj-insert{fill:#e2e5e8;stroke:#a3abb3}
+.mj .corps-etanche .mj-bague{fill:#2e343b;stroke:#0f1317}
+.mj .corps-etanche .mj-fut{fill:#151a1f}
+.mj .corps-etanche .mj-trou{fill:#8a949e}
+.mj .mj-bombe{fill:none;stroke:#262b31;stroke-width:1.3}
+.mj .mj-plaque-bout{fill:#a9b2bb;stroke:#262b31;stroke-width:1}
+.mj .mj-plaque-trait{stroke:#262b31;stroke-width:1.2;fill:none}
+.mj .mj-shunt-bord{fill:none;stroke:#26384b;stroke-linecap:round;stroke-linejoin:round}
+.mj .mj-shunt{fill:none;stroke:#f7f9fb;stroke-linecap:round;stroke-linejoin:round}
+.mj .corps-etanche .mj-shunt{stroke:#eceef0}
+.mj .mj-shunt-cadre{fill:#f7f9fb;stroke:#26384b;stroke-width:1.7}
+.mj .corps-etanche .mj-shunt-cadre{fill:#eceef0}
+.mj-normes{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px;font-size:var(--t1);color:var(--encre-2)}
+.mj-normes>span{margin-right:2px}
+.mj-norme{border:1px solid rgba(38,50,63,.18);background:var(--papier);color:var(--encre);border-radius:999px;padding:3px 11px;font-size:var(--t1);font-weight:600;cursor:pointer;transition:background var(--rapide)}
+.mj-norme:hover{background:var(--papier-3)}
+.mj-norme[aria-pressed="true"]{background:var(--encre);border-color:var(--encre);color:#fff}
+.mj-norme.f-e0599::before,.mj-norme.f-nsa937901::before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:middle;background:#6b7684}
+.mj-norme.f-nsa937901::before{background:#46617d;border-radius:4px}
+.cand svg.picto{flex-shrink:0}
+.bible-filtres{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.picto.mj-picto.f-nsa937901 .p-corps{fill:#e3eaf1;stroke:#46617d}
+.picto.mj-picto.f-nsa937901 .p-groupe{stroke:#9db0c4}
 .mj-pastille{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
 .mj-tab td .sens{display:block;font-size:var(--t0,10px);color:var(--encre-2)}
 .picto.mj-picto .p-corps{fill:#e4e8ec;stroke:#6b7684;stroke-width:.8}

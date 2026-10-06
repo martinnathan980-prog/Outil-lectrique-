@@ -15,8 +15,9 @@ node tests/retouche.js         un bloc se déplace à la vraie souris, tout suit
 node tests/relief.js           la vue en relief de chaque barrette (modules E0599) et prise de l'exemple : un fil par contact pris, aucune étiquette
                                sur une autre, tourner, survoler, Échap, double-clic
 node tests/barrettes.js        la bible des barrettes se lit, la référence se choisit, les connecteurs se lisent ; la norme se lit,
-                               chaque fil va dans son trou, la simulation donne des valeurs connues à la main ; le catalogue ASNE 0599
-                               (29 variantes, contacts, groupes, tailles) et le remplissage automatique des modules (sans navigateur)
+                               chaque fil va dans son trou, la simulation donne des valeurs connues à la main ; les catalogues ASNE 0599
+                               (29 variantes) et NSA937901 (43 codes), les jauges de chaque norme, le choix de la norme et le
+                               remplissage automatique des modules (sans navigateur)
 ```
 
 Tous acceptent `--fichier=chemin` pour mesurer un autre fichier que
