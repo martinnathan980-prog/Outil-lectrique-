@@ -61,7 +61,7 @@ function styleDessin() {
      .conn{fill:#ffffff;stroke:#1b2430;stroke-width:.75}
      .connnom{fill:#1b2430;font-size:6.5px;font-weight:700;letter-spacing:.3px}
      .connpin{fill:#2b3743;font-size:5.6px;font-weight:500}
-     .prnum{fill:#1b2430;font-size:4.6px;font-weight:600}
+     .prnum{fill:#1b2430;font-size:5.4px;font-weight:700}
      .barre{fill:none;stroke:#1b2430;stroke-width:1;stroke-dasharray:3 2.2;stroke-linecap:butt}
      .bardot{fill:#1b2430;stroke:none}
      .pontage{stroke:#1b2430;stroke-width:1.1;stroke-linecap:butt}
@@ -215,12 +215,16 @@ function piquagesSvg(barrettes, piquages, verticaux, couleurBout) {
   (barrettes.raccords || []).forEach(r => { const c = couleurBout && (couleurBout(r.x0, r.y) || couleurBout(r.x1, r.y));
     s += `<path class="cab"${styleTrait(c)} d="${cheminAvecPonts([{ x: r.x0, y: r.y }, { x: r.x1, y: r.y }], verticaux)}"/>`; });
   barrettes.forEach(b => {
-    /* Un piquage — plusieurs fils sur une même borne — se dessine comme la
-       BARRETTE qu'il faudra poser : une fine ligne pointillée, un point à
-       chaque départ, les numéros 1, 2, 3… du côté des départs. */
-    const ys = bornesDePiquage(b);
-    s += `<line class="barre" x1="${f1(b.x)}" y1="${f1(ys[0])}" x2="${f1(b.x)}" y2="${f1(ys[ys.length - 1])}"/>`;
-    ys.forEach((y, i) => { s += pastilleSvg(b.x, y, String(i + 1)); }); });
+    /* Un piquage — plusieurs fils sur une même borne — n'est PAS une barrette : c'est du fil. Les deux fils partent de
+       la même borne (double sertissage) ; on les trace par une verticale pleine de la couleur de la route, un point de
+       jonction à chaque départ qui n'est pas un coin. Aucun numéro, aucun pointillé : rien qui se lise comme une
+       barrette sans repère (le lecteur : « j'ai pas le numéro de la barrette, et trois fils sur deux ports »). */
+    // chaque tronçon a la couleur du fil qu'il porte : celui du bout est au seul fil qui part au bout, les autres à la borne
+    const ys = bornesDePiquage(b), c = couleurBout && couleurBout(b.px, b.py), n = ys.length - 1, o = ys.findIndex(y => Math.abs(y - b.py) < 0.6);
+    for (let i = 0; i < n; i++) { const bout = i + 1 === n && o < n ? ys[n] : i === 0 && o > 0 ? ys[0] : null;
+      const ct = (bout != null && couleurBout && couleurBout(b.x, bout)) || c;
+      s += `<path class="cab"${styleTrait(ct)} d="M${f1(b.x)} ${f1(ys[i])}V${f1(ys[i + 1])}"/>`; }
+    ys.forEach((y, i) => { if (i > 0 && i < ys.length - 1) s += `<circle class="jn" cx="${f1(b.x)}" cy="${f1(y)}" r="1.9"/>`; }); });
   return s;
 }
 /* Une borne de barrette : un point noir sur la ligne, comme d'habitude, son
@@ -251,7 +255,7 @@ function occupationDe(fils, barrettes, comps) {
     else if (Math.abs(a.x - b.x) < 0.6) V.push({ x: a.x, y0: Math.min(a.y, b.y), y1: Math.max(a.y, b.y) }); };
   fils.forEach(w => { if (w.shunt) return; for (let i = 0; i < w.pts.length - 1; i++) seg(w.pts[i], w.pts[i + 1]); });
   tracesDePiquage(barrettes || []).forEach(pts => seg(pts[0], pts[1]));
-  (barrettes || []).forEach(b => bornesDePiquage(b).forEach((y, i) => { const r = R_PASTILLE(String(i + 1)) + 1; boites.push({ x0: b.x - r, y0: y - r, x1: b.x + r, y1: y + r }); }));
+  (barrettes || []).forEach(b => bornesDePiquage(b).forEach(y => boites.push({ x0: b.x - 2.5, y0: y - 2.5, x1: b.x + 2.5, y1: y + 2.5 })));
   (comps || []).forEach(c => {
     // le corps d'un équipement compte avec ses pièces de connecteur et leurs lettres ; celui d'une réglette, sa colonne
     /* un morceau de barrette finit par son point de départ, au ras de son cadre : un texte s'en garde de quatre (un numéro
@@ -500,7 +504,7 @@ function blocSvg(c, designation, choisi, couleurBout) {
     /* PRISE DE COUPURE : deux rectangles fins collés — à gauche la PARTIE
        MOBILE (la fiche, sur le faisceau), plus large et un peu moins haute ;
        à droite la PARTIE FIXE (l'embase, sur la structure), la plus fine et
-       la plus haute, où les contacts sont numérotés. C'est la différence de
+       la plus haute. Les contacts sont numérotés dans la fiche. C'est la différence de
        hauteur qui dit laquelle est laquelle. Le fil amont arrive sur la
        mobile, le fil aval repart de l'embase. Angles vifs. */
     const WE = 6, WM = 9, xm0 = mid - (WE + WM) / 2, xe0 = xm0 + WM, xe1 = xe0 + WE;
@@ -508,7 +512,8 @@ function blocSvg(c, designation, choisi, couleurBout) {
     s += `<rect class="embase" x="${f1(xe0)}" y="0" width="${WE}" height="${c.h}"/>`;
     s += `<rect class="fiche" x="${f1(xm0)}" y="${f1(ym0)}" width="${WM}" height="${f1(ym1 - ym0)}"/>`;
     rs.forEach(p => { const ly = p.y - c.y, n = p.etiq ? clip(String(p.etiq), 2) : '';
-      if (n) s += `<text class="prnum"${n.length > 1 ? ' style="font-size:3.8px"' : ''} x="${f1((xe0 + xe1) / 2)}" y="${f1(ly + 1.6)}" text-anchor="middle">${esc(n)}</text>`;
+      // le numéro du contact se lit dans la PARTIE MOBILE (la fiche) : c'est là que l'atelier l'écrit
+      if (n) s += `<text class="prnum"${n.length > 1 ? ' style="font-size:4.4px"' : ''} x="${f1(xm0 + WM / 2)}" y="${f1(ly + 1.7)}" text-anchor="middle">${esc(n)}</text>`;
       if ((p.dir || 0) <= 0) s += `<line class="lead"${styleTrait(aGauche(p.y))} x1="0" y1="${f1(ly)}" x2="${f1(xm0)}" y2="${f1(ly)}"/>`;
       if ((p.dir || 0) >= 0) s += `<line class="lead"${styleTrait(aDroite(p.y))} x1="${f1(xe1)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
     s += repereDe(c);

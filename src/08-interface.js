@@ -132,40 +132,49 @@ function relireAffines() { if (!affinage.actif) return; const avant = cleCourant
       else c.delete();
       c.continue(); }; }).catch(() => { }); }
 /* ---- la RETOUCHE : déplacer un bloc à la souris, tout suit ------------- */
-/* Le dessin automatique est le point de départ ; on peut le retoucher. Un
-   bloc (équipement, barrette, prise) se prend et glisse dans sa colonne :
-   ses masses collées le suivent, ses fils se reroutent en direct, et il
-   s'AIMANTE à la hauteur qui rend droit un de ses fils. Il s'arrête à huit
-   unités d'un voisin de sa colonne (deux blocs ne se collent pas). Lâché, le
-   folio est RETOUCHÉ : son dessin se garde dans ce navigateur (IndexedDB),
-   l'affinage ne le remplace plus, Ctrl+Z défait le geste, « automatique »
-   rend le dessin du moteur. Au doigt, un appui long prend le bloc (un
-   glissé simple déplace la vue). */
+/* Le dessin automatique est le point de départ ; on en a la MAÎTRISE TOTALE. Un bloc (équipement, barrette, prise) se
+   prend et glisse OÙ L'ON VEUT : en hauteur, et d'une colonne à l'autre (il se cale au milieu de la colonne la plus
+   proche de la souris, si elle est assez large pour lui). Ses masses collées le suivent, ses fils se reroutent en
+   direct, et il s'AIMANTE à la hauteur qui rend droit un de ses fils. Il ne chevauche jamais un voisin : posé sur
+   lui, il glisse à la place libre la plus proche. Lâché, le folio est RETOUCHÉ : l'automatique ne repasse plus dessus
+   (rien ne bouge sans qu'on l'ait voulu) ; son dessin se garde dans ce navigateur (IndexedDB), Ctrl+Z défait le
+   geste, « automatique » rend la main au moteur. Au doigt, un appui long prend le bloc (un glissé simple déplace la
+   vue). */
 const AIMANT = 5, GARDE_RETOUCHE = 8;
 // les pastilles (masses, morceaux de barrette seuls) collées au flanc d'un bloc, à sa hauteur : elles le suivent
 const pastillesCollees = (comps, c) => comps.filter(t => t.kind === 'tag' && t.y + t.h / 2 > c.y - 1 && t.y + t.h / 2 < c.y + c.h + 1
   && (Math.abs(t.x + t.w + FIL_PASTILLE - c.x) < 2 || Math.abs(t.x - (c.x + c.w + FIL_PASTILLE)) < 2));
 const surLeBloc = (c, nom, e) => String(nom) === String(c.name) && e.x >= c.x - 1 && e.x <= c.x + c.w + 1 && e.y >= c.y - 1 && e.y <= c.y + c.h + 1;
-const decalerComp = (k, dy) => { const rangs = {}; Object.keys(k.rangs || {}).forEach(lid => { rangs[lid] = k.rangs[lid].map(p => ({ ...p, y: p.y + dy })); });
-  const parCle = new Map(); (k.parCle || new Map()).forEach((v, cl) => parCle.set(cl, { ...v, y: v.y + dy })); return { ...k, y: k.y + dy, rangs, parCle }; };
-// jusqu'où le bloc peut aller sans venir à moins de GARDE d'un voisin de sa colonne, ni sortir de la zone utile de la
-// feuille (seul dans sa colonne, il partait au-delà, et la feuille rapetissait tout pour le suivre) : [haut, bas] de dy
-function courseDuBloc(P, c) { let lo = -Infinity, hi = Infinity; const bb = app.dessin && app.dessin.bbox;
+const decalerComp = (k, dy, dx, dcol) => { dx = dx || 0; dcol = dcol || 0;
+  const rangs = {}; Object.keys(k.rangs || {}).forEach(lid => { rangs[lid] = k.rangs[lid].map(p => ({ ...p, y: p.y + dy, ...(p.x != null ? { x: p.x + dx } : {}) })); });
+  const parCle = new Map(); (k.parCle || new Map()).forEach((v, cl) => parCle.set(cl, { ...v, y: v.y + dy, ...(v.x != null ? { x: v.x + dx } : {}) }));
+  return { ...k, x: k.x + dx, y: k.y + dy, col: k.col + dcol, rangs, parCle }; };
+// la colonne la plus proche d'une abscisse (le milieu du bloc), parmi celles assez larges pour lui ; rend son décalage
+function colonneVisee(P, c, xMilieu) { const g = P.geom; if (!g || !g.colX || c.col == null) return { dcol: 0, dx: 0 };
+  const milieu = k => g.colX[k] + g.colW[k] / 2; let mieux = c.col;
+  g.colX.forEach((_, k) => { if (g.colW[k] + 1 < c.w) return; if (Math.abs(milieu(k) - xMilieu) < Math.abs(milieu(mieux) - xMilieu)) mieux = k; });
+  return { dcol: mieux - c.col, dx: mieux === c.col ? 0 : Math.round(milieu(mieux) - milieu(c.col)) }; }
+// la place libre la plus proche de dy, une fois le bloc dans sa colonne (décalé de dx) : jamais sur un voisin
+function placeLibre(P, c, dx, dy) { const bb = app.dessin && app.dessin.bbox, x0 = c.x + dx, x1 = x0 + c.w, tags = pastillesCollees(P.comps, c);
+  let lo = -Infinity, hi = Infinity;
   if (bb) { const k = bb.k || 1; lo = bb.y + (PAGE_CADRE + PAGE_MARGE) * k - c.y; hi = bb.y + bb.h - (PAGE_CADRE + PAGE_MARGE + PAGE_CARTOUCHE) * k - (c.y + c.h); }
-  P.comps.forEach(o => { if (o === c || o.kind === 'tag' || o.col !== c.col || o.x >= c.x + c.w || c.x >= o.x + o.w) return;
-    if (o.y + o.h <= c.y + 0.5) lo = Math.max(lo, o.y + o.h + GARDE_RETOUCHE - c.y); else if (o.y >= c.y + c.h - 0.5) hi = Math.min(hi, o.y - GARDE_RETOUCHE - (c.y + c.h)); });
-  return [Math.min(lo, 0), Math.max(hi, 0)]; }
+  const autres = P.comps.filter(o => o !== c && o.kind !== 'tag' && !tags.includes(o) && o.x < x1 && x0 < o.x + o.w).map(o => [o.y - GARDE_RETOUCHE - c.h - c.y, o.y + o.h + GARDE_RETOUCHE - c.y]);
+  const libre = d => d >= lo - 0.01 && d <= hi + 0.01 && !autres.some(([a, b]) => d > a && d < b);
+  if (libre(dy)) return dy;
+  const cands = [lo, hi, ...autres.flat()].filter(libre).sort((u, v) => Math.abs(u - dy) - Math.abs(v - dy));
+  return cands.length ? cands[0] : null; }
 // les hauteurs où un fil du bloc devient droit (son autre bout sur un bloc qui ne bouge pas)
 function aimantsDuBloc(P, c, tags) { const ds = []; P.links.forEach(l => { if (l.shunt || l.boucle) return;
   [[l.de, l.epA, l.vers, l.epB], [l.vers, l.epB, l.de, l.epA]].forEach(([n, e, n2, e2]) => { if (!surLeBloc(c, n, e)) return;
     const autre = P.comps.find(k => surLeBloc(k, n2, e2)); if (!autre || autre === c || tags.includes(autre)) return; ds.push(e2.y - e.y); }); });
   return ds; }
-// le dessin avec le bloc déplacé de dy, ses pastilles avec lui, rerouté
-function deplacerBloc(P, c, dy) { const tags = pastillesCollees(P.comps, c), bouge = new Set([c, ...tags]);
-  const comps = P.comps.map(k => bouge.has(k) ? decalerComp(k, dy) : k);
+// le dessin avec le bloc déplacé (dy en hauteur ; dx, dcol d'une colonne à l'autre), ses pastilles avec lui, rerouté
+function deplacerBloc(P, c, dy, dx, dcol) { dx = dx || 0; dcol = dcol || 0; const tags = pastillesCollees(P.comps, c), bouge = new Set([c, ...tags]);
+  const comps = P.comps.map(k => bouge.has(k) ? decalerComp(k, dy, dx, dcol) : k);
   const touche = (nom, e) => [...bouge].some(k => surLeBloc(k, nom, e));
+  const bout = e => ({ ...e, y: e.y + dy, x: e.x + dx, ch: e.ch + dcol });
   const links = P.links.map(l => { const a = touche(l.de, l.epA), b = touche(l.vers, l.epB); if (!a && !b) return l;
-    return { ...l, epA: a ? { ...l.epA, y: l.epA.y + dy } : l.epA, epB: b ? { ...l.epB, y: l.epB.y + dy } : l.epB }; });
+    return { ...l, epA: a ? bout(l.epA) : l.epA, epB: b ? bout(l.epB) : l.epB }; });
   const compDe = new Map(); comps.forEach(k => { if (k.id != null) compDe.set(k.id, k); if (!compDe.has(k.name)) compDe.set(k.name, k); });
   const routage = router({ comps, links, geom: P.geom, bbox: P.bbox });
   return { ...P, comps, links, compDe, routage, retouche: true }; }
@@ -334,31 +343,35 @@ function lierPlanche() {
     const ns = Math.max(ZMIN, Math.min(ZMAX, pinch.s0 * dist(p[0], p[1]) / pinch.d));
     const mx = (p[0].x + p[1].x) / 2 - r.left, my = (p[0].y + p[1].y) / 2 - r.top;
     app.vue = { s: ns, tx: mx - pinch.wx * ns, ty: my - pinch.wy * ns }; appliquerVue(); };
-  /* la PRISE d'un bloc (la retouche) : à la souris, appuyer sur un bloc et glisser le déplace ; au doigt, un appui long
-     le prend, un glissé simple déplace la vue. `prise` : le bloc, l'ordonnée de départ, le dessin d'avant, sa course */
+  /* la PRISE d'un bloc (la retouche) : à la souris, appuyer sur un bloc et glisser le déplace, où l'on veut ; au doigt,
+     un appui long le prend, un glissé simple déplace la vue. `prise` : le bloc, le point de départ, le dessin d'avant */
   let prise = null, long = null, image = 0, dernierBloc = null, dernierAppui = null;
   const prenable = c => c && c.kind !== 'tag' && !c.rail && !estRenvoi(c.name);
   const commencerPrise = () => { const L = liaisonsDuPlan(), cle = L.length ? clePlacement(L) : null; if (!cle) return false;
     const P = placementDe(L), c = P.comps.find(k => k === prise.c) || null; if (!c) return false;
     const tags = pastillesCollees(P.comps, c);
-    Object.assign(prise, { cle, P, avant: app.retouches.get(cle) || null, course: courseDuBloc(P, c), aimants: aimantsDuBloc(P, c, tags), dy: 0 });
+    Object.assign(prise, { cle, P, avant: app.retouches.get(cle) || null, aimants: aimantsDuBloc(P, c, tags), dy: 0, dx: 0, dcol: 0 });
     histPush('déplacer ' + c.name); mode = 'bloc'; stage.classList.add('deplace'); eteindre(); return true; };
-  const suitPrise = e => { const w = versMonde(e.clientX, e.clientY); let dy = Math.round((w.y - prise.wy) * 2) / 2;
-    const tol = Math.max(2, Math.min(14, 6 / app.vue.s)), a = prise.aimants.filter(d => Math.abs(d - dy) <= tol).sort((u, v) => Math.abs(u - dy) - Math.abs(v - dy))[0];
+  const suitPrise = e => { const w = versMonde(e.clientX, e.clientY), c = prise.c; let dy = Math.round((w.y - prise.wy) * 2) / 2;
+    const { dcol, dx } = colonneVisee(prise.P, c, c.x + c.w / 2 + (w.x - prise.wx));
+    // l'aimant (un fil qui devient droit) ne vaut que dans la colonne d'origine : ailleurs les hauteurs changent de sens
+    const tol = Math.max(2, Math.min(14, 6 / app.vue.s)), a = dcol ? null : prise.aimants.filter(d => Math.abs(d - dy) <= tol).sort((u, v) => Math.abs(u - dy) - Math.abs(v - dy))[0];
     if (a != null) dy = a;
-    dy = Math.max(prise.course[0], Math.min(prise.course[1], dy)); if (dy === prise.dy) return; prise.dy = dy;
-    cancelAnimationFrame(image); image = requestAnimationFrame(() => { app.retouches.set(prise.cle, dy ? deplacerBloc(prise.P, prise.c, dy) : (prise.avant || deplacerBloc(prise.P, prise.c, 0)));
+    const d = placeLibre(prise.P, c, dx, dy); if (d == null) return; dy = d;
+    if (dy === prise.dy && dcol === prise.dcol) return; Object.assign(prise, { dy, dx, dcol });
+    cancelAnimationFrame(image); image = requestAnimationFrame(() => { app.retouches.set(prise.cle, dy || dcol ? deplacerBloc(prise.P, c, dy, dx, dcol) : (prise.avant || deplacerBloc(prise.P, c, 0)));
       calculer(); peindre(); }); };
   const finPrise = () => { cancelAnimationFrame(image); stage.classList.remove('deplace');
-    if (!prise.dy) { if (prise.avant) app.retouches.set(prise.cle, prise.avant); else app.retouches.delete(prise.cle); app.hist.pop(); synchroniserHistorique(); }
-    else { app.retouches.set(prise.cle, deplacerBloc(prise.P, prise.c, prise.dy)); garderRetouche(prise.cle); dire(prise.c.name + ' déplacé · Ctrl+Z pour défaire, « automatique » pour tout rétablir'); }
+    if (!prise.dy && !prise.dcol) { if (prise.avant) app.retouches.set(prise.cle, prise.avant); else app.retouches.delete(prise.cle); app.hist.pop(); synchroniserHistorique(); }
+    else { app.retouches.set(prise.cle, deplacerBloc(prise.P, prise.c, prise.dy, prise.dx, prise.dcol)); garderRetouche(prise.cle);
+      dire(prise.c.name + ' déplacé — ce folio garde vos retouches · Ctrl+Z pour défaire, « automatique » pour rendre la main au moteur'); }
     calculer(); peindre(); synchroniser(); rallumer(); prise = null; };
   stage.addEventListener('pointerdown', e => { if (e.button && e.button !== 0) return; fermerMenu(); fermerRecherche();
     try { stage.setPointerCapture(e.pointerId); } catch (_) { }
     pointeurs.set(e.pointerId, { x: e.clientX, y: e.clientY }); clearTimeout(long);
     if (pointeurs.size >= 2) { prise = null; debutPinch(); return; }
     bouge = false; origine = [e.clientX, e.clientY]; mode = 'pan'; pan = { tx: app.vue.tx, ty: app.vue.ty, x: e.clientX, y: e.clientY };
-    const w = versMonde(e.clientX, e.clientY), c = blocSous(w); prise = prenable(c) ? { c, wy: w.y } : null;
+    const w = versMonde(e.clientX, e.clientY), c = blocSous(w); prise = prenable(c) ? { c, wy: w.y, wx: w.x } : null;
     if (!dernierBloc || Date.now() - dernierBloc.t > 800) dernierBloc = c ? { nom: c.name, t: Date.now() } : null;   // le premier appui d'un double-clic fait foi
     if (prise && e.pointerType !== 'touch') mode = 'prise';
     else if (prise) long = setTimeout(() => { if (mode === 'pan' && !bouge && prise && commencerPrise()) { if (navigator.vibrate) navigator.vibrate(12); } }, 380); });
@@ -531,26 +544,7 @@ const pluriel = (n, mot) => n + ' ' + mot + (n > 1 ? 's' : '');
 /* L'équipement choisi, au-dessus de ses fils : son repère, ce qu'on écrit
    dessous, et ce que le contrat sait de lui — ses connecteurs ; pour une
    barrette ou une prise de coupure, son dessin physique, puis sa référence. */
-function rendreEquip() { const box = $('ba-equip'), c = app.cible; box.hidden = !(c && c.type === 'bloc'); if (box.hidden) return;
-  const nom = c.nom, V = verite(), n = V.filter(l => l.de === nom || l.vers === nom).length;
-  const bornier = estBornier(nom), b = bornier ? besoinsDeBarrette(nom, V) : null;
-  // la physique de la référence retenue, puis chaque fil dans son trou selon la norme
-  const enModules = barretteEnModules(nom), coupure = !enModules && coupureEnModules(nom), cavites = !bornier && cavitesDe(nom).length > 0;
-  const P = bornier && !enModules && !coupure ? remplirSelonNorme(physiqueDeBarrette(nom, V, app.bible, app.contrat.designations.get(nom) || ''), app.norme) : null;
-  const tete = esc(enModules ? 'barrette · modules de jonction' : coupure ? 'prise de coupure · ' + (nomDeFamille(app.norme, planDeCoupure(nom).plan.famille) || 'module de connecteur') : P ? P.nature : natureDe(nom) + (cavites ? ' · connecteur ' + [...new Set(cavitesDe(nom).map(c => nomDeFamille(app.norme, c.plan.famille)))].join(', ') : '')) + ' · ' + pluriel(n, 'fil') + (b && b.shunts ? ' · ' + pluriel(b.shunts, 'shunt') : '');
-  box.innerHTML = `<div class="sur">${tete}</div>
-    <div class="actions">${bornier || cavites ? '<button class="btn lien" id="eq-relief" title="La pièce en perspective, chaque fil dans son trou (ou double-clic sur le bloc)">Voir en relief</button>' : ''}<button class="btn lien danger" id="eq-del" title="Supprimer l’équipement et ses fils">Supprimer</button></div>
-    <input class="rep" id="eq-rep" value="${escA(nom)}" aria-label="Repère" title="Renommer : chaque fil suit" spellcheck="false">`
-    + (bornier ? '' : `<input class="des" id="eq-des" value="${escA(app.contrat.designations.get(nom) || '')}" placeholder="Désignation, écrite sous le repère" aria-label="Désignation" spellcheck="false">`)
-    + (enModules ? carteModules(nom) : coupure ? carteCoupureModules(nom) : bornier ? cartePhysique(nom, P, b) : carteConnecteurs(nom) + carteCavites(nom));
-  $('eq-rep').addEventListener('change', e => { const nr = e.target.value.trim(); if (!nr || nr === nom) { e.target.value = nom; return; }
-    histPush('renommage de ' + nom); renommer(nom, nr); app.choisi = nr; app.cible = { type: 'bloc', nom: nr }; app.base.filtre = nr; apresEdition(); });
-  if ($('eq-des')) $('eq-des').addEventListener('change', e => { histPush('désignation de ' + nom); designer(nom, e.target.value.trim()); apresEdition(); });
-  $('eq-del').onclick = () => { if (!confirm('Supprimer « ' + nom + ' » et ses ' + n + ' liaison(s) ?')) return;
-    histPush('suppression de ' + nom); supprimerEquipement(nom); app.base.filtre = ''; apresEdition(); dire(nom + ' supprimé.'); };
-  if (enModules) lierCarteModules(nom); else if (coupure || cavites) lierCarteContacts(nom); else if (bornier) lierCartePhysique(nom);
-  if ($('eq-relief')) $('eq-relief').onclick = () => ouvrirRelief(nom);
-  box.querySelectorAll('input').forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } })); }
+function rendreEquip() { rendreFiche(); }   // la fiche du bloc choisi : 08-fiche
 /* La carte se redessine quand la place change (fenêtre, poignée), jamais
    sous les doigts de qui y écrit. */
 function rafraichirCarte() { const box = $('ba-equip'); if (box.hidden || !(app.cible && app.cible.type === 'bloc') || box.contains(document.activeElement)) return; rendreEquip(); }
