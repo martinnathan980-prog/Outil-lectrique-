@@ -55,7 +55,8 @@ const blocPlein = g => { const rs = g.contacts.map(c => c.r), cs = g.contacts.ma
 /* La face : `occupe(contact)` rend le fil (et sa couleur) d'un contact, ou rien. Rend { svg, w, h }. */
 function faceModuleSvg(m, occupe, opts) { opts = opts || {};
   // avec les numéros de fil sous les contacts, les rangées s'écartent d'une ligne de texte
-  const nl = opts.etiquettes ? opts.lignes || 1 : 0, pas = pasDuModule(m), pasY = pas + (m.corps === 'circulaire' ? 0 : 10 * nl), bout = m.corps === 'étanche' ? 16 : 0;
+  // une face ronde porte ses numéros de fil sans rangées où les loger : elle s'élargit (deux numéros, fiche et embase : davantage)
+  const nl = opts.etiquettes ? opts.lignes || 1 : 0, pas = pasDuModule(m) * (m.corps === 'circulaire' && nl ? 1.15 + 0.25 * (nl - 1) : 1), pasY = pas + (m.corps === 'circulaire' ? 0 : 10 * nl), bout = m.corps === 'étanche' ? 16 : 0;
   const W = m.colonnes * pas + 2 * MJ.marge + bout, H = m.rangs * pasY + 2 * MJ.marge, P = MJ.prof;
   // le sous-titre se coupe à ses « · » pour tenir dans la largeur du module (5,2 px par signe, à peu près)
   const lignes = []; String(opts.sous || '').split(' · ').forEach(b => { const n = lignes.length - 1;
@@ -281,7 +282,7 @@ function carteContacts(Q, points, cle, opts) { opts = opts || {}; const V = veri
       + `<td class="m${x.jaugeOk === false ? ' ko' : ''}">${esc(x.f.type || '—')}${x.jaugeOk === false ? '<span class="ko">refusé par le contact</span>' : x.jaugeOk == null ? '<span class="att">jauge inconnue</span>' : ''}</td></tr>`; };
   const tri = (a, b) => triBornes(a.contact.lettre, b.contact.lettre) || (b.f.amont ? 1 : 0) - (a.f.amont ? 1 : 0);
   const table = Q.fils.length ? `<div class="mj-table simu-defile"><table class="simu-tab mj-tab"><thead><tr><th>contact</th><th>borne</th><th>fil</th><th>type</th></tr></thead><tbody>${Q.fils.slice().sort(tri).map(ligne).join('')}</tbody></table></div>` : '';
-  const verdicts = `<div class="verdicts"><div class="regle">${prise ? 'chaque contact : un fil de fiche, un fil d’embase' : 'chaque borne sur le contact de même numéro'}, la jauge admise par la taille du contact — ${Q.verdicts.length ? pluriel(Q.verdicts.length, 'remarque') : 'rien à redire'}</div>`
+  const verdicts = `<div class="verdicts"><div class="regle">${prise ? 'chaque contact : un fil de fiche, un fil d’embase' : 'chaque borne sur le contact de même numéro'}, la jauge admise par la taille du contact — ${(k => k ? pluriel(k, 'remarque') : 'rien à redire')(Q.verdicts.filter(v => v.niveau !== 'info').length)}</div>`
     + Q.verdicts.map(v => `<div class="verdict-l ${v.niveau}">${esc(v.texte)}</div>`).join('') + '</div>';
   const vs = arrangementsQuiLogent(points, app.norme, Q.famille).slice(0, 8), retenu = M ? M.reference : '';
   const choix = `<details class="choix"${app.base.choixOuvert ? ' open' : ''}><summary><span>Les arrangements qui conviennent</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>`
@@ -292,7 +293,7 @@ function carteContacts(Q, points, cle, opts) { opts = opts || {}; const V = veri
   return `<div class="mj-cavite"><div class="bar-ref"><span class="ref">${esc((opts.titre ? opts.titre + ' · ' : '') + (Q.reference || '—'))}</span><span class="dou">${dou}</span></div><div class="phy-compte">${compte}</div>`
     + (face ? `<div class="mj-faces">${facesSvg([face], largeurCarte())}</div>` : '') + verdicts + table + choix + '</div>'; }
 // la carte d'une prise de coupure en module de connecteur (EN 4165, EN 2997)
-const DIT_CONNECTEUR = { EN4165: 'connecteur rectangulaire modulaire', EN2997: 'connecteur circulaire' };
+const DIT_CONNECTEUR = { EN4165: 'connecteur rectangulaire modulaire', EN2997: 'connecteur circulaire', EN3646: 'connecteur circulaire à contacts lettrés' };
 function carteCoupureModules(nom) { const { points, plan: Q } = planDeCoupure(nom), visee = Q.visee || '';
   const normes = `<div class="mj-normes" role="group" aria-label="Norme de la prise"><span>norme</span>`
     + [['', 'automatique'], ...famillesDeModules(app.norme, 'connecteur').map(f => [f, nomDeFamille(app.norme, f)])].map(([f, t]) => `<button class="mj-norme ${f ? classeFamille(f) : ''}" data-coupure="${escA(f)}" aria-pressed="${!Q.main && visee === f}">${esc(t)}</button>`).join('') + '</div>';
@@ -300,7 +301,7 @@ function carteCoupureModules(nom) { const { points, plan: Q } = planDeCoupure(no
     + carteContacts(Q, points, nom, { prise: true }); }
 // les cavités EN 4165 d'un équipement, sous la liste de ses connecteurs
 function carteCavites(nom) { const C = cavitesDe(nom); if (!C.length) return '';
-  return [...new Set(C.map(c => c.plan.famille))].map(f => `<div class="bar-norme">norme <b>${esc(nomDeFamille(app.norme, f))}</b> · ${f === 'EN2997' ? 'connecteur circulaire, un insert' : 'un module par cavité'}, chaque borne sur le contact de même numéro</div>`).join('')
+  return [...new Set(C.map(c => c.plan.famille))].map(f => `<div class="bar-norme">norme <b>${esc(nomDeFamille(app.norme, f))}</b> · ${f === 'EN2997' ? 'connecteur circulaire, un insert, chaque borne sur le contact de même numéro' : f === 'EN3646' ? 'connecteur circulaire, un insert, contacts lettrés : la borne n prend la lettre de rang n' : 'un module par cavité, chaque borne sur le contact de même numéro'}</div>`).join('')
     + C.map(c => carteContacts(c.plan, c.points, nom + '|' + c.nom, { titre: c.nom })).join(''); }
 function lierCarteContacts(nom) { const box = $('ba-equip');
   box.querySelectorAll('details.choix').forEach(d => d.addEventListener('toggle', () => { app.base.choixOuvert = d.open; }));

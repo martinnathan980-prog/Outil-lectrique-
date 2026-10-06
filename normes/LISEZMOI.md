@@ -12,6 +12,19 @@ dessine chaque **trou** et le fil qui y est placé, juge le remplissage, et
 **simule** fil par fil la jauge admise, le courant admissible et la chute en
 ligne — sur des hypothèses dites et modifiables.
 
+## `en3646.csv` : les connecteurs circulaires à contacts lettrés
+
+Le **prEN 3646-002:2005**, transcrit des figures 1 à 31 : 31 arrangements
+d'insert, de 08-3A (3 contacts taille 20, aussi 08-98) à 24-61, mixtes
+compris (14-12, 14-15, 16-21, 16-23, 20-34, 20-39, 22-41). Les contacts sont
+des **lettres** (A, B… sans I ni O ; puis a, b… ; puis AA, BB…), rangées
+dans l'ordre de la norme : une borne numérotée du contrat (1, 2, 3…) prend
+la lettre de même rang, et la carte le dit ; une borne lettrée va sur sa
+lettre. Le part number nomme souvent l'arrangement (`EN3646A6083AAN` → 08-3A).
+La place des lettres est relevée en cercles dans le sens horaire des
+figures, approchée pour les grands inserts. La famille EN3646 de
+`norme-exemple.csv` (exemple, pour la simulation) reste distincte.
+
 ## `en2997.csv` : les connecteurs circulaires
 
 L'**EN 2997-002:2023**, transcrite des figures 1 à 35 : 35 arrangements

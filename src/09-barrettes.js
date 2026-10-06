@@ -541,7 +541,9 @@ let normeDesModulesLue = null;
 const normeDesModules = norme => (norme && norme.modules && norme.modules.length) ? norme : (normeDesModulesLue || (normeDesModulesLue = normeEmbarquee()));
 // les familles de modules, dans l'ordre de la norme ; le nom à montrer d'une famille (« ASNE 0599 », « NSA 937901 »)
 const famillesDeModules = (norme, emploi) => [...new Set(normeDesModules(norme).modules.filter(m => m.emploi === (emploi || 'barrette')).map(m => m.famille))];
-const nomDeFamille = (norme, f) => { const F = normeDesModules(norme).familles.find(x => cleNorme(x.famille) === f); return F ? F.norme : f; };
+// une famille d'exemple (EN3646 de la norme d'exemple) ne nomme pas les modules d'une vraie norme : « EN3646 » se dit alors « EN 3646-002 »
+const nomDeFamille = (norme, f) => { const F = normeDesModules(norme).familles.find(x => cleNorme(x.famille) === f && !x.exemple);
+  return F ? F.norme : String(f || '').replace(/^EN(\d{4})$/, 'EN $1-002'); };
 /* Le module d'une référence : sa désignation, ou famille et variante écrites autrement (« NSA937901 20-04 »,
    « E0599-1B204 »). */
 function moduleDeReference(norme, ref) { const r = cleNorme(ref); if (!r) return null; const M = normeDesModules(norme).modules;
@@ -647,7 +649,9 @@ function moduleDeConnecteur(norme, pn) { const m = moduleDeReference(norme, pn);
 const pointsDe = (besoins, bornes) => bornes.slice().sort(triBornes).map(b => ({ borne: b, num: numeroDeBorne(b), fils: (besoins.parBorne.get(b) || []).map(f => ({ ...f, jauge: jaugeDuType(f.type) })) }));
 /* Les points dans un module : chaque borne sur son contact ; rend ce qui se pose et ce qui ne se pose pas. */
 function poserPoints(norme, mod, points) { const pl = [], manque = [], refus = [];
-  points.forEach(p => { const c = mod.contacts.find(x => x.lettre === p.num); if (!c) { manque.push(p); return; }
+  // des contacts lettrés (EN 3646) et une borne numérotée : la borne n prend la lettre de rang n, dans l'ordre de la norme
+  const lettres = !mod.contacts.some(x => /^\d+$/.test(x.lettre)), contactDe = num => mod.contacts.find(x => x.lettre === num) || (lettres && /^\d+$/.test(num) ? mod.contacts[+num - 1] || null : null);
+  points.forEach(p => { const c = contactDe(p.num); if (!c) { manque.push(p); return; }
     const ko = p.fils.filter(f => !contactAccepte(norme, mod.famille, c.taille, f.jauge)); if (ko.length) refus.push({ p, c, ko });
     pl.push({ p, c, ok: !ko.length }); });
   return { pl, manque, refus }; }
@@ -671,6 +675,7 @@ function remplirContacts(points, norme, opts) { opts = opts || {}; const N = nor
     mieux.r.pl.forEach(x => x.p.fils.forEach(f => fils.push({ f, contact: x.c, module: 0, groupe: m.groupes[x.c.groupe], potentiel: { bornes: [x.p.borne], fils: x.p.fils }, taille: x.c.taille,
       jaugeOk: f.jauge == null ? null : contactAccepte(N, m.famille, x.c.taille, f.jauge) })));
     mieux.r.manque.forEach(p => verdicts.push({ niveau: 'ko', texte: `borne ${p.borne} : l'arrangement ${m.variante} n'a pas de contact ${p.num}`, bornes: [p.borne] }));
+    if (mieux.r.pl.some(x => x.c.lettre !== x.p.num)) verdicts.push({ niveau: 'info', texte: `contacts lettrés : chaque borne numérotée prend la lettre de même rang (${mieux.r.pl.slice(0, 4).map(x => x.p.num + ' → ' + x.c.lettre).join(', ')}${mieux.r.pl.length > 4 ? '…' : ''})`, bornes: [] });
     mieux.r.refus.forEach(({ p, c, ko }) => verdicts.push({ niveau: 'ko', texte: `borne ${p.borne} : ${ko.map(f => (f.cable || '?') + ' (' + f.type + ')').join(', ')} — jauge refusée par le contact ${c.lettre} (taille ${c.taille})`, bornes: [p.borne] }));
     mieux.r.pl.forEach(({ p, c }) => { const cotes = opts.prise ? [p.fils.filter(f => f.amont), p.fils.filter(f => !f.amont)] : [p.fils];
       if (cotes.some(x => x.length > 1)) verdicts.push({ niveau: 'attention', texte: `contact ${c.lettre} : ${p.fils.length} fils${opts.prise ? ', plus d’un d’un même côté' : ''} — un contact reçoit un fil${opts.prise ? ' de chaque côté' : ''}`, bornes: [p.borne] }); });
