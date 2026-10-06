@@ -511,16 +511,18 @@ function tailleNorme(o) { const taille = tailleCle(o.taille), calibre = NUMERO(t
   return { famille: cleNorme(o.famille), taille, calibre, jaugeMin: j.length ? Math.max(...j) : null, jaugeMax: j.length ? Math.min(...j) : null, note: String(o.note || '').trim() }; }
 /* L'USAGE d'une variante : « normal » (marqué par la norme), « possible », « A350 » (application spécifique), « à
    confirmer » (la figure ne se lit pas), « diodes ». Les deux derniers et l'A350 ne sont jamais choisis seuls. */
-const usageDe = t => { const u = MOT(t); return /diode/.test(u) ? 'diodes' : /a350|ad12|specifique/.test(u) ? 'A350' : /confirm/.test(u) ? 'à confirmer' : /shunt/.test(u) ? 'shuntés' : /special/.test(u) ? 'spécial'
+const usageDe = t => { const u = MOT(t); return /diode/.test(u) ? 'diodes' : /ancien|nouvelle conception|obsolet/.test(u) ? 'ancien' : /a350|ad12|specifique/.test(u) ? 'A350' : /confirm/.test(u) ? 'à confirmer' : /shunt/.test(u) ? 'shuntés' : /special/.test(u) ? 'spécial'
   : /normal|courant|\*/.test(u) || !u ? 'normal' : 'possible'; };
-const corpsDe = t => { const u = MOT(t); return /etanch|seal/.test(u) ? 'étanche' : /oval|rond/.test(u) ? 'ovale' : /module|carre/.test(u) ? 'module' : 'rectangle'; };
+const corpsDe = t => { const u = MOT(t); return /etanch|seal/.test(u) ? 'étanche' : /circul|rond/.test(u) ? 'circulaire' : /oval/.test(u) ? 'ovale' : /module|carre/.test(u) ? 'module' : 'rectangle'; };
 function moduleNorme(o) { const variante = String(o.variante || '').trim().toUpperCase(); if (!variante) return null;
   const famille = cleNorme(o.famille) || (/^[A-E]\d{3}$/.test(variante) ? 'E0599' : ''), taille = tailleCle(o.taille), type = String(o.type || '').trim().toLowerCase();
   const reference = String(o.reference || '').trim() || (famille === 'E0599' ? 'E0599-1' + variante + 'Z' : (famille ? famille + '-' : '') + variante);
   // la face : des rangées (« A B C / D E F », « . » une place vide), ou, pour une face irrégulière, « lettre@x:y » en pas
   const place = new Map(), disp = String(o.disposition || ''), libre = /@/.test(disp); let rangs, colonnes;
-  if (libre) { lettresDe(disp).forEach(t => { const m = /^(.+?)@(-?[\d.]+):(-?[\d.]+)$/.exec(t); if (m) place.set(m[1], { r: +m[3] - 0.5, c: +m[2] - 0.5 }); });
-    const ps = [...place.values()]; colonnes = Math.max(1, ...ps.map(p => p.c + 1.1)); rangs = Math.max(1, ...ps.map(p => p.r + 1.1)); }
+  if (libre) { let centre = null; lettresDe(disp).forEach(t => { const m = /^(.+?)@(-?[\d.]+):(-?[\d.]+)$/.exec(t); if (!m) return;
+      // « centre@x:y » : le centre d'une face ronde — la face est alors le carré qui l'entoure, et reste ronde
+      if (m[1].toLowerCase() === 'centre') centre = { x: +m[2], y: +m[3] }; else place.set(m[1], { r: +m[3] - 0.5, c: +m[2] - 0.5 }); });
+    const ps = [...place.values()]; colonnes = centre ? 2 * centre.x : Math.max(1, ...ps.map(p => p.c + 1.1)); rangs = centre ? 2 * centre.y : Math.max(1, ...ps.map(p => p.r + 1.1)); }
   else { const rs = disp.split('/').map(r => lettresDe(r)); rs.forEach((r, i) => r.forEach((l, j) => { if (l !== '.') place.set(l, { r: i, c: j }); }));
     rangs = rs.length; colonnes = Math.max(1, ...rs.map(r => r.length)); }
   const contacts = [];
@@ -531,7 +533,7 @@ function moduleNorme(o) { const variante = String(o.variante || '').trim().toUpp
   groupes.forEach(g => g.contacts.forEach(c => { c.groupe = g.k; }));
   const diodes = lettresDe(o.diodes).map(d => d.split('>')).filter(d => d.length === 2), usage = usageDe(type === 'diodes' ? 'diodes' : o.usage);
   return { famille, variante, reference, type, taille, rangs, colonnes, libre, contacts, groupes, poids: NUMERO(o.poids), hauteur: NUMERO(o.hauteur),
-           diodes, aDiodes: type === 'diodes' || diodes.length > 0, usage, auto: !/diodes|A350|confirmer|shuntés|spécial/.test(usage) && contacts.length > 0, corps: corpsDe(o.corps),
+           diodes, aDiodes: type === 'diodes' || diodes.length > 0, usage, auto: !/diodes|A350|confirmer|shuntés|spécial|ancien/.test(usage) && contacts.length > 0, corps: corpsDe(o.corps),
            // l'EMPLOI : une barrette (modules de jonction), ou un connecteur — d'équipement ou de prise de coupure (EN 4165)
            emploi: /connect|coupure|prise/.test(MOT(o.emploi)) ? 'connecteur' : 'barrette', note: String(o.note || '').trim() }; }
 // la norme embarquée, lue une fois : ses modules servent quand la norme de l'atelier n'en porte pas
@@ -623,7 +625,8 @@ function variantesQuiLogent(besoins, norme, famille) { const N = normeDesModules
     .filter(x => x.pl.length === pots.length).map(x => ({ m: x.m, score: scoreModule(x.m, x.pl) }))
     .sort((a, b) => meilleurScore(a.score, b.score) ? -1 : meilleurScore(b.score, a.score) ? 1 : 0).map(x => x.m); }
 
-/* ---- les modules de connecteur (EN 4165) ---------------------------------
+/* ---- les modules de connecteur (EN 4165, EN 2997) ------------------------
+   EN 2997 : un connecteur circulaire porte un seul insert, lu comme un module de même façon.
    Un connecteur EN 4165 reçoit un MODULE par cavité (A, B, C…) ; une prise
    de coupure en est faite aussi (fiche et embase). Le module se lit par son
    ARRANGEMENT (EN 4165-002 : 20-22, 12-20, 08-16…) : des contacts numérotés,
@@ -650,11 +653,14 @@ function poserPoints(norme, mod, points) { const pl = [], manque = [], refus = [
   return { pl, manque, refus }; }
 /* LE REMPLISSAGE d'un connecteur ou d'une prise de coupure. `choix` : l'arrangement retenu à la main ; `pn` : le part
    number du fichier ; `prise` : deux côtés (fiche et embase), un fil de chaque côté par contact — sinon un seul fil.
+   `choix` peut aussi nommer une norme seule (« EN2997 ») : ses arrangements seuls. Sans norme nommée (une prise de
+   coupure dont le part number n'en dit rien), toutes les normes de connecteurs concourent.
    Rend un plan de la même forme que celui des barrettes (un module). */
 function remplirContacts(points, norme, opts) { opts = opts || {}; const N = normeDesModules(norme), s = k => k > 1 ? 's' : '';
-  const main = opts.choix ? moduleDeReference(N, opts.choix) : null, nomme = main ? null : moduleDeConnecteur(N, opts.pn), force = main || nomme;
-  const famille = force ? force.famille : familleDeReference(N, opts.pn, 'connecteur') || famillesDeModules(N, 'connecteur')[0] || '';
-  const cands = force ? [force] : N.modules.filter(m => m.emploi === 'connecteur' && m.auto && m.famille === famille);
+  const main = opts.choix ? moduleDeReference(N, opts.choix) : null, visee = !main && opts.choix ? familleDeReference(N, opts.choix, 'connecteur') : '';
+  const nomme = main || visee ? null : moduleDeConnecteur(N, opts.pn), force = main || nomme;
+  const famille = force ? force.famille : visee || familleDeReference(N, opts.pn, 'connecteur');
+  const cands = force ? [force] : N.modules.filter(m => m.emploi === 'connecteur' && m.auto && (!famille || m.famille === famille));
   let mieux = null;
   cands.forEach(m => { const r = poserPoints(N, m, points), bons = r.pl.filter(x => x.ok).length;
     const score = [bons, m.usage === 'normal' ? 1 : 0, -m.contacts.length, m.poids != null ? -m.poids : -1e3];
@@ -670,10 +676,11 @@ function remplirContacts(points, norme, opts) { opts = opts || {}; const N = nor
       if (cotes.some(x => x.length > 1)) verdicts.push({ niveau: 'attention', texte: `contact ${c.lettre} : ${p.fils.length} fils${opts.prise ? ', plus d’un d’un même côté' : ''} — un contact reçoit un fil${opts.prise ? ' de chaque côté' : ''}`, bornes: [p.borne] }); });
     // les contacts shuntés d'un module retenu à la main relient des bornes qui ne le sont peut-être pas
     if (m.groupes.some(g => g.contacts.length > 1)) verdicts.push({ niveau: 'attention', texte: `l'arrangement ${m.variante} relie des contacts entre eux (module shunté) : à n'employer que si le contrat le veut`, bornes: [] }); }
-  else if (points.length) verdicts.push({ niveau: 'ko', texte: `aucun arrangement ${nomDeFamille(N, famille)} ne loge les bornes ${points.map(p => p.borne).join(', ')} avec ces jauges`, bornes: points.map(p => p.borne) });
+  else if (points.length) verdicts.push({ niveau: 'ko', texte: `aucun arrangement ${famille ? nomDeFamille(N, famille) : 'des normes de connecteurs'} ne loge les bornes ${points.map(p => p.borne).join(', ')} avec ces jauges`, bornes: points.map(p => p.borne) });
   const posees = new Set(mieux ? mieux.r.pl.map(x => x.p) : []), restants = points.filter(p => !posees.has(p));
   return { modules, fils, verdicts, potentiels: points.length, places: points.length - restants.length, restants, contacts: mieux ? mieux.m.contacts.length : 0,
-           utilises: new Set(fils.map(x => x.contact.lettre)).size, reference: mieux ? mieux.m.reference : '', famille, variante: main ? main.variante : '', main: !!main, nomme: !!nomme, choix: opts.choix || '' }; }
+           utilises: new Set(fils.map(x => x.contact.lettre)).size, reference: mieux ? mieux.m.reference : '', famille: famille || (mieux ? mieux.m.famille : ''), visee,
+           variante: main ? main.variante : '', main: !!main, nomme: !!nomme, choix: opts.choix || '' }; }
 /* Les arrangements qui logent ces points, du mieux taillé au moins bien — les candidats de la carte. */
 function arrangementsQuiLogent(points, norme, famille) { const N = normeDesModules(norme);
   return N.modules.filter(m => m.emploi === 'connecteur' && m.auto && (!famille || m.famille === famille))

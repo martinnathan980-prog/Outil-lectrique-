@@ -172,6 +172,7 @@ Fait, mesuré, en place :
   remplissage automatique potentiel → groupe, fil → contact dont la taille
   admet la jauge, face du module en relief sur la carte et dans la bible,
   modules sur leur rail dans la vue en relief.
+- **Les inserts circulaires EN 2997-002** (`normes/en2997.csv`) : même moteur que l'EN 4165, face ronde, relief en cylindre.
 - **Les modules de connecteur EN 4165-002** (`09-barrettes`, `08-modules`,
   `normes/en4165.csv`) : une cavité de connecteur EN 4165 reçoit un module,
   chaque borne sur le contact de même numéro ; une prise de coupure est un

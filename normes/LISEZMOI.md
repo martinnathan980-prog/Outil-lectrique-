@@ -12,6 +12,22 @@ dessine chaque **trou** et le fil qui y est placé, juge le remplissage, et
 **simule** fil par fil la jauge admise, le courant admissible et la chute en
 ligne — sur des hypothèses dites et modifiables.
 
+## `en2997.csv` : les connecteurs circulaires
+
+L'**EN 2997-002:2023**, transcrite des figures 1 à 35 : 35 arrangements
+d'insert, de 08-03 (3 contacts taille 20) à 28-42 (42 contacts taille 16),
+mixtes compris (14-12, 20-25, 20-28, 20-39, 22-39, 24-43, 24-57). 22-30 et
+22-32 ne sont « pas disponibles pour une nouvelle conception » : jamais
+choisis seuls. Corps `circulaire`, emploi `connecteur`. La face est relevée
+en cercles successifs numérotés dans le sens des figures ; la place exacte
+de chaque numéro est approchée pour les grands inserts (22-39, 24-30 et
+28-42 suivent les numéros lus). `centre@x:y` donne le centre du cercle.
+
+Un connecteur dont le part number commence par `EN2997` prend ces
+arrangements ; une prise de coupure dont le part number ne nomme aucune
+norme les met en concurrence avec ceux de l'EN 4165 — ou l'une des deux
+d'un clic sur sa carte.
+
 ## `en4165.csv` : les modules des connecteurs et des prises de coupure
 
 L'**EN 4165-002:2023** (connecteurs rectangulaires modulaires), transcrite des

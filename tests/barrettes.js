@@ -125,11 +125,11 @@ ok('la règle de remplissage : ordre, paquets, réservés, masse', f0.ordre === 
 ok('un fil sans type vaut pour tous (« * »)', N.fils[2].type === '*' && N.fils[2].jauge === 20 && N.fils[0].type === 'DR' && N.fils[0].resistance === 85);
 ok('un tableau quelconque ne fait pas de norme', !X.normeLue(X.lireNorme('a;b\n1;2')) && !X.normeLue(X.lireNorme('Référence;Famille;Bornes\nX-1;X;2')));
 const NE = X.normeEmbarquee();
-ok('la norme embarquée (normes/*.csv) : E0599, EN4165, la prise EN3646, NSA937901, vingt fils, deux déclassements, deux réseaux, quinze tailles de contact, 102 modules', NE.familles.map(f => f.famille).join(' ') === 'E0599 EN4165 EN3646 NSA937901' && NE.fils.length === 20 && NE.declassements.length === 2 && NE.reseau.length === 2 && NE.tailles.length === 15 && NE.modules.length === 102 && !X.normeExemple(NE), `${NE.familles.map(f => f.famille).join(' ')} · ${NE.fils.length} fils · ${NE.modules.length} modules`);
+ok('la norme embarquée (normes/*.csv) : E0599, EN2997, EN4165, la prise EN3646, NSA937901, vingt fils, deux déclassements, deux réseaux, dix-neuf tailles de contact, 137 modules', NE.familles.map(f => f.famille).join(' ') === 'E0599 EN2997 EN4165 EN3646 NSA937901' && NE.fils.length === 20 && NE.declassements.length === 2 && NE.reseau.length === 2 && NE.tailles.length === 19 && NE.modules.length === 137 && !X.normeExemple(NE), `${NE.familles.map(f => f.famille).join(' ')} · ${NE.fils.length} fils · ${NE.modules.length} modules`);
 ok('ASNE 0599 et NSA937901 ne sont pas des exemples ; EN3646 l’est', !NE.familles.find(f => f.famille === 'E0599').exemple && !NE.familles.find(f => f.famille === 'NSA937901').exemple && NE.familles.find(f => f.famille === 'EN3646').exemple);
 const NA = X.fusionnerNormes(NE, X.lireNorme(NORME_IMPORTEE));
 const NF = X.fusionnerNormes(NA, N);
-ok('fusionner : la famille homonyme est remplacée, les autres s’ajoutent ; les modules restent', NA.familles.length === 7 && NF.familles.length === 9 && NF.modules.length === 102 && NF.fils.length === 21 && NF.fils.find(f => f.type === 'DR' && f.jauge === 24) === N.fils[0], `${NF.familles.length} familles · ${NF.fils.length} fils`);
+ok('fusionner : la famille homonyme est remplacée, les autres s’ajoutent ; les modules restent', NA.familles.length === 8 && NF.familles.length === 10 && NF.modules.length === 137 && NF.fils.length === 21 && NF.fils.find(f => f.type === 'DR' && f.jauge === 24) === N.fils[0], `${NF.familles.length} familles · ${NF.fils.length} fils`);
 ok('la famille d’une référence : par la bible, sinon par le début de la référence', X.familleDeNorme(NA, 'ASNE0500', '').famille === 'ASNE0500' && X.familleDeNorme(NE, '', 'EN3646A6083AAN').famille === 'EN3646' && X.familleDeNorme(NE, 'NSA935420', 'NSA935420-02') === null);
 ok('le fil de la norme : type et jauge exacts, sinon la jauge seule et on le dit', X.typeDuFil('MLB24') === 'MLB' && X.filDeNorme(NE, 'MLB24', 24).intensite === 3 && X.filDeNorme(NE, 'XX24', 24).approx === true && X.filDeNorme(NE, 'DR10', 10) === null && X.filDeNorme(N, 'DR20', 20).type === '*');
 ok('le déclassement se multiplie, la chute admise suit la tension', X.facteurDeclassement(NE, ['faisceau']) === 0.8 && Math.abs(X.facteurDeclassement(NE, ['faisceau', 'chaud']) - 0.68) < 1e-9 && X.facteurDeclassement(NE, []) === 1 && X.chuteAdmise(NE, 28).chuteMax === 1 && X.chuteAdmise(NE, 115).chuteMax === 4 && X.chuteAdmise(NE, 24).chuteMax === 1);
@@ -204,7 +204,7 @@ ok('la désignation E0599-1B204Z désigne la variante B204 ; une référence d�
 const acc = (t, j) => X.contactAccepte(NE, 'E0599', t, j);
 ok('la taille d’un contact dit les jauges qu’il reçoit : #22 26–22, #20 24–20, #16 20–16, #12 14–12', acc('22', 24) && !acc('22', 20) && acc('20', 20) && !acc('20', 26) && !acc('20', 18) && acc('16', 16) && !acc('12', 16) && acc('12', 12));
 const BO = X.bibleDeLOutil();
-ok('la bible de l’outil : les 102 modules d’abord (29 ASNE 0599, 30 EN 4165-002, 43 NSA937901), puis les coupures et connecteurs d’exemple, aucune barrette d’ailleurs', BO.filter(e => e.module).length === 102 && BO.slice(0, 102).every(e => e.module) && BO.filter(e => e.famille === 'NSA937901').length === 43 && BO.filter(e => e.famille === 'EN4165').every(e => e.nature === 'module de connecteur') && !BO.some(e => /^ASNE05/.test(e.reference)) && BO.find(e => e.reference === 'E0599-1C302Z').jaugeMin === 20, BO.length + ' références');
+ok('la bible de l’outil : les 137 modules d’abord (29 ASNE 0599, 35 EN 2997-002, 30 EN 4165-002, 43 NSA937901), puis les coupures et connecteurs d’exemple, aucune barrette d’ailleurs', BO.filter(e => e.module).length === 137 && BO.slice(0, 137).every(e => e.module) && BO.filter(e => e.famille === 'NSA937901').length === 43 && BO.filter(e => e.famille === 'EN4165').every(e => e.nature === 'module de connecteur') && !BO.some(e => /^ASNE05/.test(e.reference)) && BO.find(e => e.reference === 'E0599-1C302Z').jaugeMin === 20, BO.length + ' références');
 
 console.log('\n12. LE REMPLISSAGE AUTOMATIQUE DES MODULES');
 const attendu = { '667VT21': ['E0599-1B209Z', 3], '668VT31': ['E0599-1B207Z', 4], '669VT32': ['E0599-1B208Z', 1], '670VT41': ['NSA937901-20-06', 3], '671VT42': ['NSA937901-20-04', 1], '672VT51': ['E0599-1A102Z', 7] };
@@ -253,7 +253,7 @@ ok('les candidates d’un seul module, par norme', X.variantesQuiLogent(b672, NE
 
 console.log('\n14. EN 4165-002 : LES MODULES DES CONNECTEURS ET DES PRISES DE COUPURE');
 const EN = NE.modules.filter(m => m.famille === 'EN4165'), ev = v => EN.find(m => m.variante === v);
-ok('30 arrangements, tous d’emploi connecteur, jamais proposés pour une barrette', EN.length === 30 && EN.every(m => m.emploi === 'connecteur') && X.famillesDeModules(NE).join() === 'E0599,NSA937901' && X.famillesDeModules(NE, 'connecteur').join() === 'EN4165'
+ok('30 arrangements, tous d’emploi connecteur, jamais proposés pour une barrette', EN.length === 30 && EN.every(m => m.emploi === 'connecteur') && X.famillesDeModules(NE).join() === 'E0599,NSA937901' && X.famillesDeModules(NE, 'connecteur').join() === 'EN2997,EN4165'
   && !X.remplirModules(X.besoinsDeBarrette('668VT31', L), NE).modules.some(M => M.module.famille === 'EN4165'));
 ok('les faces : 20-22 4 × 5 numérotés de 1 à 20, 12-20 3 × 4, 08-16 en quinconce 3-2-3, 04-12 2 × 2, 01-08 un contact, N sans contact', ev('20-22').contacts.length === 20 && ev('20-22').contacts.find(c => c.lettre === '16').r === 3 && ev('12-20').contacts.length === 12
   && ev('08-16').contacts.find(c => c.lettre === '4').c === 0.5 && ev('04-12').contacts.every(c => c.taille === '12') && ev('01-08').contacts[0].taille === '8' && ev('N').contacts.length === 0 && !ev('N').auto);
@@ -271,12 +271,26 @@ const cB2 = X.remplirContacts(cB.points, NE, { choix: 'EN4165-002-99-10' });
 ok('retenu à la main, le 99-10 dit ce qu’il refuse : les DR20 sur ses contacts 22, le contact 10 aussi', cB2.reference === 'EN4165-002-99-10' && cB2.main && cB2.fils.filter(x => x.jaugeOk === false).length === 2 && cB2.verdicts.filter(v => v.niveau === 'ko').length === 2, cB2.verdicts.map(v => v.texte).join(' | '));
 const C600 = X.connecteursEnModules('600XC4', L, NE)[0];
 ok('600XC4 A : douze bornes jusqu’à A15 sur un 20-22 ; deux fils sur le contact 11 sont signalés', C600.plan.reference === 'EN4165-002-20-22' && C600.plan.verdicts.some(v => v.niveau === 'attention' && /contact 11 : 2 fils/.test(v.texte)));
-const VC = X.coupureEnModule('411VC3A', L, NE).plan;
-ok('411VC3A en prise de coupure : 8 contacts sur un 12-20, deux fils par contact (fiche et embase), jauges admises', VC.reference === 'EN4165-002-12-20' && VC.places === 8 && VC.fils.length === 16 && VC.fils.every(x => x.jaugeOk === true) && !VC.verdicts.length);
-ok('408VC1A (MLB24, un contact) : le plus petit arrangement de base qui l’admet', X.coupureEnModule('408VC1A', L, NE).plan.reference === 'EN4165-002-12-20');
+const VC = X.coupureEnModule('411VC3A', L, NE, 'EN4165').plan;
+ok('411VC3A en prise de coupure EN 4165 (retenue à la main) : 8 contacts sur un 12-20, deux fils par contact (fiche et embase), jauges admises', VC.reference === 'EN4165-002-12-20' && VC.places === 8 && VC.fils.length === 16 && VC.fils.every(x => x.jaugeOk === true) && !VC.verdicts.length);
+ok('408VC1A (MLB24, un contact), sans norme nommée : les deux normes concourent, le plus petit qui l’admet (EN 2997 10-02)', X.coupureEnModule('408VC1A', L, NE).plan.reference === 'EN2997-002-10-02' && X.coupureEnModule('408VC1A', L, NE, 'EN4165').plan.reference === 'EN4165-002-12-20');
 const P8 = X.remplirContacts([{ borne: '1', num: '1', fils: [{ cable: 'W-9', type: 'DR8', jauge: 8 }] }], NE, {});
 ok('un fil de jauge 8 va sur le 01-08 (un contact taille 8)', P8.reference === 'EN4165-002-01-08', P8.reference);
 ok('les arrangements qui conviennent : l’usage normal d’abord, le plus petit d’abord', X.arrangementsQuiLogent(cA.points, NE, 'EN4165').map(m => m.variante).slice(0, 2).join() === '12-20,20-22');
+
+console.log('\n15. EN 2997-002 : LES CONNECTEURS CIRCULAIRES');
+const C9 = NE.modules.filter(m => m.famille === 'EN2997'), cv = v => C9.find(m => m.variante === v);
+ok('35 arrangements des figures 1 à 35, d’emploi connecteur, corps circulaire, contacts numérotés de 1 à N', C9.length === 35 && C9.every(m => m.emploi === 'connecteur' && m.corps === 'circulaire' && m.contacts.length === Math.max(...m.contacts.map(c => +c.lettre))));
+const nb = v => ['22', '20', '16', '12'].map(t => cv(v).contacts.filter(c => c.taille === t).length).join('/');
+ok('les tailles comptées comme la norme : 14-12 9 #20 + 3 #16, 20-25 19 #20 + 6 #12, 22-39 27 #20 + 12 #16, 24-43 23 #20 + 20 #16, 24-57 55 #20 + 2 #12, 28-42 42 #16, 10-12 12 #22',
+  nb('14-12') === '0/9/3/0' && nb('20-25') === '0/19/0/6' && nb('22-39') === '0/27/12/0' && nb('24-43') === '0/23/20/0' && nb('24-57') === '0/55/0/2' && nb('28-42') === '0/0/42/0' && nb('10-12') === '12/0/0/0' && nb('24-61') === '0/61/0/0');
+ok('22-30 et 22-32 « pas pour une nouvelle conception » : jamais choisis seuls', cv('22-30').usage === 'ancien' && !cv('22-32').auto && cv('14-12').auto);
+ok('aucun contact ne se chevauche sur une face', C9.every(m => m.contacts.every((a, i) => m.contacts.every((b, j) => j <= i || Math.hypot(a.r - b.r, a.c - b.c) > 0.55))), C9.filter(m => !m.contacts.every((a, i) => m.contacts.every((b, j) => j <= i || Math.hypot(a.r - b.r, a.c - b.c) > 0.55))).map(m => m.variante).join(' '));
+const E340 = X.connecteursEnModules('340AB1', L, NE)[0], E421 = X.connecteursEnModules('421ST1', L, NE)[0];
+ok('le part number EN2997… dit la norme : 421ST1 (4 bornes, DR22/24) sur un 10-05, 340AB1 (bornes 1, 4, 20) sur un 16-24', E421.plan.famille === 'EN2997' && E421.plan.reference === 'EN2997-002-10-05' && E340.plan.reference === 'EN2997-002-16-24', E421.plan.reference + ' · ' + E340.plan.reference);
+const P12 = X.remplirContacts([1, 2, 3].map(n => ({ borne: String(n), num: String(n), fils: [{ cable: 'W-' + n, type: 'DR12', jauge: 12 }] })), NE, { pn: 'EN2997Y1' });
+ok('trois fils de jauge 12 en EN 2997 : le 14-04 (4 contacts #12)', P12.reference === 'EN2997-002-14-04', P12.reference);
+ok('une prise de coupure retenue en EN 2997 : les arrangements EN 2997 seuls', X.coupureEnModule('411VC3A', L, NE, 'EN2997').plan.reference.startsWith('EN2997-002-') && X.coupureEnModule('411VC3A', L, NE, 'EN2997').plan.visee === 'EN2997');
 
 console.log('\n  ' + (total - echecs) + ' / ' + total + ' contrôles passés' + (echecs ? '  —  ' + echecs + ' ÉCHEC(S)' : '  —  tout est vert'));
 process.exit(echecs ? 1 : 0);
