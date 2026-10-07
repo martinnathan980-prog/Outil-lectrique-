@@ -31,6 +31,7 @@ function lireRepere(repere) {
   return m ? { num: m[1], code: m[2].toUpperCase(), suffixe: m[3] } : null;
 }
 function formeDe(repere) {
+  if (VT_A_POSER.test(String(repere || '').trim())) return 'barrette';   // une barrette à poser (VT1, VT2…)
   const q = lireRepere(repere);
   return (q && q.num && CODES[q.code]) ? CODES[q.code].forme : 'equipement';
 }
@@ -50,6 +51,38 @@ function liaison(o) {
 /* Une liaison sans équipement à un bout n'en est pas une : c'est une ligne
    en cours de saisie. On la garde dans la table, pas dans le dessin. */
 const liaisonComplete = l => !!(l.de && l.vers);
+
+/* ---- LES BARRETTES À POSER ---------------------------------------------------
+   Plusieurs fils sur une même borne d'équipement (le contrat dit « 102CB1:2 → 103RL1 » et « 395SW1 → 102CB1:2 ») : on
+   ne sertit pas deux fils dans un contact, on pose une BARRETTE (le lecteur : « quand les fils se dédoublent, il faut
+   une barrette »). Le folio la reçoit comme une vraie barrette, que le moteur place et dessine comme les autres — une
+   colonne, une borne par fil, jamais deux fils au même niveau :
+     · un fil À CRÉER de la borne de l'équipement à la borne 1 de la barrette (sans numéro, de la jauge du plus gros) ;
+     · chaque fil du contrat part d'une borne à lui, 2, 3… ;
+     · les bornes de la barrette sont reliées (des shunts : un même potentiel).
+   Repère provisoire VT1, VT2…, dans l'ordre du folio. Chaque liaison changée garde `origine` (la liaison du contrat ;
+   null pour ce que l'outil ajoute) : la base, elle, reste celle du contrat. Les bornes de barrette, de prise et de masse
+   ne sont pas concernées (leur moteur sait recevoir plusieurs fils). */
+const VT_A_POSER = /^VT\d+$/i;
+function avecBarrettesAPoser(L) {
+  const parBorne = new Map();
+  L.forEach((l, i) => { if (l.de === l.vers) return;
+    [[l.de, l.borneDe, 'de'], [l.vers, l.borneVers, 'vers']].forEach(([r, b, cote]) => {
+      if (!r || !b || estBornier(r) || estMasse(r) || VT_A_POSER.test(r)) return;
+      const k = r + '\u0001' + b; (parBorne.get(k) || parBorne.set(k, []).get(k)).push({ i, cote }); }); });
+  const groupes = [...parBorne].filter(([, xs]) => xs.length > 1);
+  if (!groupes.length) return L;
+  const remplace = new Map(), ajouts = [];
+  const jauge = t => { const m = /(\d{1,2})\s*$/.exec(String(t || '')); return m ? +m[1] : 99; };
+  groupes.forEach(([k, xs], g) => { const [r, b] = k.split('\u0001'), nom = 'VT' + (g + 1), l0 = L[xs[0].i];
+    const types = xs.map(x => L[x.i].type).filter(Boolean), gros = types.slice().sort((u, v) => jauge(u) - jauge(v))[0] || '';
+    const pn = xs[0].cote === 'de' ? l0.pnDe : l0.pnVers, commun = { route: l0.route, plan: l0.plan, origine: null, aPoser: nom };
+    ajouts.push({ de: r, borneDe: b, pnDe: pn, vers: nom, borneVers: '1', pnVers: '', cable: '', type: gros, ...commun });
+    xs.forEach((x, j) => { const cur = remplace.get(x.i) || { ...L[x.i], origine: L[x.i], aPoser: nom };
+      if (x.cote === 'de') { cur.de = nom; cur.borneDe = String(j + 2); cur.pnDe = ''; } else { cur.vers = nom; cur.borneVers = String(j + 2); cur.pnVers = ''; }
+      remplace.set(x.i, cur); });
+    for (let j = 1; j <= xs.length; j++) ajouts.push({ de: nom, borneDe: String(j), vers: nom, borneVers: String(j + 1), pnDe: '', pnVers: '', cable: '', type: '', ...commun }); });
+  return [...L.map((l, i) => remplace.get(i) || l), ...ajouts]; }
 
 function nouveauContrat() {
   return {

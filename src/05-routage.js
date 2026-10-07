@@ -22,7 +22,6 @@
 
 const PISTE = 9;            // entre deux verticales voisines d'une goulotte
 const RETRAIT = 14;         // de la paroi à la première verticale : la longueur d'un raccord
-const RETOUR_VT = 18;       // le recul de plus d'une barrette à poser dont un fil revient vers sa paroi
 const ECART_VERT = 10;      // deux verticales sur la même piste se lisent séparées
 const NMAX_EXACT = 12;      // au-delà, l'ordre des pistes se cherche par déplacements
 const INTERDIT = 1e6;       // le coût d'un ordre impossible
@@ -255,8 +254,7 @@ function formerLesPiquages(layout, fils, G) {
   groupes.forEach((entrees, k) => { if (entrees.length < 2) return;
     const ep = entrees[0].ep, mur = murDe(ep), ch = ep.ch, bx = mur === 'L' ? G.x0(ch) + RETRAIT : G.x1(ch) - RETRAIT;
     const l0 = layout.links[entrees[0].li], propre = String(entrees[0].tag === 'A' ? l0.de : l0.vers);
-    const etiquette = String(entrees[0].tag === 'A' ? l0.borneDe : l0.borneVers);
-    const b = { borne: k, ch, mur, x: bx, px: ep.x, py: ep.y, dir: mur === 'L' ? 1 : -1, departs: [], gardes: [], n: entrees.length, propre, etiquette, li: entrees[0].li };
+    const b = { borne: k, ch, mur, x: bx, px: ep.x, py: ep.y, dir: mur === 'L' ? 1 : -1, departs: [], gardes: [], n: entrees.length, propre, li: entrees[0].li };
     const travaux = [];                    // les verticales de la borne, avec leur attache à la borne
     let barriere = false;                  // un fil passe droit : son horizontale couvre toutes les autres
     entrees.forEach(e => { const f = fils.get(e.li), l = layout.links[e.li], ex = new Set([String(l.de), String(l.vers)]);
@@ -364,10 +362,7 @@ function poserLesPistes(travaux, ordre, ch, G) {
   // de gauche à droite : chacune se pose après celles qui la précèdent, au plus près de son vœu
   L.forEach((t, a) => { let lb = t.lb;
     for (let b = 0; b < a; b++) if (chevauche(L[a], L[b])) lb = Math.max(lb, L[b].x + pas);
-    /* une barrette à poser dont un fil REVIENT vers sa paroi (deux équipements d'une même colonne sur un même
-       potentiel) se pose plus loin de la paroi : ce fil n'a sinon qu'un raccord trop court pour porter son numéro */
-    const retour = t.piquage && t.piquage.departs.some(d => d.mur === t.piquage.mur), loin = retour ? RETRAIT + RETOUR_VT : RETRAIT;
-    const veut = t.piquage ? (t.piquage.mur === 'L' ? xL + loin : xR - loin) : (t.att.length && t.att.every(a2 => a2.mur === 'R') ? xR - RETRAIT : lb);
+    const veut = t.piquage ? (t.piquage.mur === 'L' ? xL + RETRAIT : xR - RETRAIT) : (t.att.length && t.att.every(a2 => a2.mur === 'R') ? xR - RETRAIT : lb);
     t.x = Math.max(lb, Math.min(t.ub, veut)); if (t.piquage) t.piquage.x = t.x; });
 }
 
@@ -455,7 +450,7 @@ function routerUneFois(layout, permis) {
   const traces = tracerLesFils(layout, fils, piquages);
   const barrettes = piquages.map(b => { const ys = [b.py, ...b.departs.map(d => d.y)], lo = Math.min(...ys), hi = Math.max(...ys);
     return { x: b.x, y1: lo - 3, y2: hi + 3, py: b.py, gardes: [...b.departs.map(d => ({ y: d.y })), ...b.gardes], bus: b.n >= 4, dir: b.dir, px: b.px, net: b.net,
-             pts: b.departs.filter(d => Math.abs(d.y - b.py) > 1.2).map(d => ({ x: b.x, y: d.y })), raccord: { x0: b.px, x1: b.x, y: b.py }, propre: b.propre, etiquette: b.etiquette }; });
+             pts: b.departs.filter(d => Math.abs(d.y - b.py) > 1.2).map(d => ({ x: b.x, y: d.y })), raccord: { x0: b.px, x1: b.x, y: b.py } }; });
   barrettes.raccords = barrettes.map(b => b.raccord);
   const resultat = { fils: traces.filter(Boolean), points: jonctions(layout, traces, barrettes), barrettes, piquages: barrettes.flatMap(b => b.pts) };
   return { resultat, candidats: fils.candidats, croisements: compterCroisements(resultat.fils.filter(w => !w.shunt), barrettes) };

@@ -84,10 +84,12 @@ const CAS = [
   ['chaîne — 20 équipements en série', () => {
     const a = []; for (let i = 0; i < 20; i++) a.push(['N' + i, '2', 'N' + (i + 1), '1']); return a; }],
 
+  /* deux vrais borniers (des repères VT) : nommés « BORN1 », « BORN2 », ce seraient deux équipements, et chaque borne
+     de BORN2, qui porte deux fils, recevrait sa barrette à poser (01, la règle du lecteur) — dix barrettes, un autre cas */
   ['deux borniers en cascade', () => {
     const a = [];
-    for (let i = 0; i < 10; i++) a.push(['BORN1', String(i + 1), 'BORN2', String(i + 1)]);
-    for (let i = 0; i < 10; i++) a.push(['BORN2', String(i + 1), 'E' + i, '1']);
+    for (let i = 0; i < 10; i++) a.push(['701VT1', String(i + 1), '702VT2', String(i + 1)]);
+    for (let i = 0; i < 10; i++) a.push(['702VT2', String(i + 1), 'E' + i, '1']);
     return a; }],
 
   ['masse commune — 15 équipements vers un point', () => {
@@ -115,8 +117,8 @@ const CAS = [
   ['boucle — 10 équipements en anneau', () => {
     const a = []; for (let i = 0; i < 10; i++) a.push(['C' + i, '2', 'C' + ((i + 1) % 10), '1']); return a; }],
 
-  /* Les cas ci-dessus nomment leurs borniers « BORN1 », que l'outil ne
-     reconnaît PAS comme un bornier : ils mesuraient donc le placement d'un
+  /* Le cas « escalier » nomme son bornier « BORN1 », que l'outil ne
+     reconnaît PAS comme un bornier : il mesure donc le placement d'un
      équipement ordinaire à 24 bornes, pas celui d'une réglette. Les deux qui
      suivent portent de vrais repères — VT pour une barrette, XC pour un
      bornier de répartition — et exercent le chemin qui compte. */

@@ -51,9 +51,8 @@
   --ombre-3:0 30px 90px rgba(0,0,0,.45);
   --rapide:.14s ease; --moyen:.24s ease;
   --rail:52px;               /* largeur de la barre ; le plan commence après */
-  --base-l:min(620px,44vw);  /* largeur de la base à droite ; se règle à la poignée */
   --base-h:30vh;             /* hauteur du tableau, en tiroir en bas          */
-  --insp-l:min(400px,34vw);  /* largeur de l'inspecteur, la fiche à droite    */
+  --insp-l:min(420px,36vw);  /* largeur de l'inspecteur, la fiche à droite    */
   --fiche-l:400px;           /* largeur de la fiche ; 560 px pour la bible    */
   --fiche-h:60vh;            /* hauteur de la fiche en tiroir, mesurée        */
 }
@@ -154,6 +153,40 @@ body.cherche .recherche{display:flex}
 .q-item .genre{font-size:var(--t0);color:var(--cuivre-clair);text-transform:uppercase;letter-spacing:.06em;font-weight:600;min-width:52px}
 .q-rien{padding:10px 12px;color:var(--craie-2)}
 
+/* ─── LE CONTRÔLE : en haut à gauche, l'état du contrat ──────────────────── */
+.controle{position:fixed;top:12px;left:calc(var(--rail) + 24px);z-index:22;border-radius:18px;width:max-content;max-width:min(440px,calc(100vw - var(--rail) - 48px));overflow:hidden;transition:width var(--moyen)}
+.controle.ouvert{width:min(440px,calc(100vw - var(--rail) - 48px))}
+body.cherche .controle{display:none}
+.co-bouton{display:flex;align-items:center;gap:14px;width:100%;height:44px;padding:0 6px 0 16px;border:none;background:none;color:var(--craie);border-radius:18px;text-align:left}
+.co-bouton:hover{background:rgba(255,255,255,.05)}
+.co-titre{display:flex;flex-direction:column;min-width:0;flex:1;line-height:1.2}
+.co-titre b{font-weight:600;font-size:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px}
+.co-titre small{font:500 var(--t0) var(--mono);color:var(--craie-2);white-space:nowrap}
+.co-etat{flex:none;display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 12px 0 7px;border-radius:999px;font-size:var(--t1);font-weight:700;white-space:nowrap}
+.co-etat i{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font:800 11px/1 var(--sans);font-style:normal;color:#fff}
+.co-etat em{font-style:normal;font-weight:600;opacity:.85}
+.co-etat.ok{background:rgba(46,139,87,.2);color:#a5e3bd}.co-etat.ok i{background:#2e8b57}
+.co-etat.att{background:rgba(212,135,15,.2);color:#ffcd85}.co-etat.att i{background:#d4870f}
+.co-etat.ko{background:rgba(179,38,30,.26);color:#ffb4aa}.co-etat.ko i{background:#d03b30}
+.co-liste{border-top:1px solid var(--trait-verre);padding:6px;max-height:min(62vh,540px);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;animation:co-deplie var(--moyen)}
+@keyframes co-deplie{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.co-groupe{display:flex;align-items:center;gap:8px;padding:10px 10px 4px;font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--craie-2)}
+.co-groupe b{font:600 var(--t0) var(--mono);letter-spacing:0;border-radius:999px;padding:0 7px;background:rgba(255,255,255,.1);color:var(--craie)}
+.co-groupe.ko b{background:rgba(208,59,48,.35)}
+.co-groupe.att b{background:rgba(212,135,15,.3)}
+.co-item{display:flex;align-items:center;gap:11px;width:100%;padding:8px;border-radius:12px;border:none;background:none;color:var(--craie);text-align:left;transition:background var(--rapide)}
+.co-item:hover,.co-item:focus-visible{background:rgba(255,255,255,.08)}
+.co-item .min0{display:flex;flex-direction:column;gap:1px}
+.co-item b{font:700 var(--t2) var(--mono)}
+.co-item small{color:var(--craie-2);font-size:var(--t1);line-height:1.35}
+.co-code{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font:700 11px/1 var(--mono);color:#fff;background:#3b4757}
+.co-code.barrette{background:var(--cuivre)}
+.co-code.coupure{background:#3d5a78}
+.co-code.aposer{background:rgba(181,84,28,.16);color:var(--cuivre-clair);box-shadow:inset 0 0 0 1.5px var(--cuivre-clair)}
+.co-code.tab svg.ico{width:17px;height:17px}
+.co-folio{flex:none;margin-left:auto;font:600 var(--t0) var(--mono);color:var(--craie-2);border:1px solid var(--trait-verre);border-radius:999px;padding:2px 8px;white-space:nowrap}
+.co-vide{margin:8px 10px 10px;color:var(--craie-2);font-size:var(--t1);line-height:1.5}
+
 /* ─── LE MENU : au bas de la barre, ouvert vers la droite ───────────────── */
 #menuBoite{position:relative}
 .menu{position:absolute;bottom:0;left:calc(100% + 14px);width:272px;border-radius:16px;padding:6px;z-index:30}
@@ -195,39 +228,48 @@ body.insp-ouvert #folios{left:calc((100vw - var(--insp-l) + var(--rail)) / 2)}
 body.fiche-ouverte #folios{left:calc((100vw - var(--fiche-l) + var(--rail)) / 2)}
 body.base-ouverte #folios{bottom:calc(var(--base-h) + 24px)}
 
-/* ─── LES DOCUMENTS : blancs, à droite ──────────────────────────────────── */
-#base,#fiche,#inspecteur{position:fixed;top:12px;right:12px;bottom:12px;max-width:calc(100vw - var(--rail) - 48px);background:var(--papier);color:var(--encre);
+/* ─── LES DOCUMENTS : blancs ────────────────────────────────────────────── */
+#fiche,#inspecteur{position:fixed;top:12px;right:12px;bottom:12px;max-width:calc(100vw - var(--rail) - 48px);background:var(--papier);color:var(--encre);
   border-radius:18px;box-shadow:var(--ombre-2);z-index:25;display:flex;flex-direction:column;overflow:hidden}
 #fiche{width:var(--fiche-l)}
-/* l'inspecteur : étroit, la fiche de ce qu'on a choisi */
+/* l'inspecteur : la fiche de ce qu'on a choisi, à droite */
 #inspecteur{width:var(--insp-l);z-index:26}
-#inspecteur .fi{flex:1 1 auto;margin:0;padding:16px 16px 18px 20px}
 /* le tableau : un tiroir en bas, de la barre de gauche au bord droit (ou à l'inspecteur) ; le plan au-dessus */
-#base{top:auto;left:calc(var(--rail) + 28px);height:var(--base-h);min-height:150px;max-width:none;width:auto;border-radius:16px}
+#base{position:fixed;left:calc(var(--rail) + 28px);right:12px;bottom:12px;height:var(--base-h);min-height:150px;background:var(--papier);color:var(--encre);
+  border-radius:18px;box-shadow:var(--ombre-2);z-index:25;display:flex;flex-direction:column;overflow:hidden}
 body.insp-ouvert #base{right:calc(var(--insp-l) + 24px)}
 .entre{animation:doc-entre var(--moyen)}
 @keyframes doc-entre{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+#base.entre{animation-name:doc-monte}
+@keyframes doc-monte{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
 .sur{font-size:var(--t0);text-transform:uppercase;letter-spacing:.09em;color:var(--encre-2);font-weight:700}
 .fermer{background:var(--papier-2);color:var(--encre-2);width:36px;height:36px;flex:none}
 .fermer:hover{background:var(--papier-3);color:var(--encre)}
 
-/* ─── LA BASE : la table des liaisons, corrigée en direct ───────────────── */
+/* ─── LE TABLEAU : les liaisons, corrigées en direct ─────────────────────── */
 .poignee{position:absolute;left:0;right:0;top:0;height:12px;cursor:row-resize;z-index:2}
-.poignee::after{content:"";position:absolute;left:50%;top:4px;width:44px;height:4px;margin-left:-22px;border-radius:2px;background:var(--filet);transition:background var(--rapide)}
+.poignee::after{content:"";position:absolute;left:50%;top:5px;width:40px;height:4px;margin-left:-20px;border-radius:2px;background:var(--filet);transition:background var(--rapide)}
 .poignee:hover::after,#base.redim .poignee::after{background:var(--cuivre)}
 #base.redim{user-select:none}
-.ba-tete{display:flex;align-items:center;gap:12px;padding:14px 12px 8px 18px}
-.ba-tete .filtre{flex:1;max-width:420px;margin:0}
-.ba-tete .btn{height:34px}
-.ba-titre{font-size:var(--t3);font-weight:700;letter-spacing:-.005em;white-space:nowrap}
-.ba-titre b{font-family:var(--mono)}
-.filtre{display:flex;align-items:center;gap:8px;height:38px;border:1px solid var(--filet);border-radius:10px;padding:0 6px 0 10px;margin:12px 16px 8px 22px;transition:border-color var(--rapide)}
+.ba-tete{display:flex;align-items:center;gap:10px;padding:16px 12px 10px 18px;border-bottom:1px solid var(--filet)}
+.ba-titre{display:flex;align-items:center;gap:8px;white-space:nowrap}
+.ba-titre span{font-size:var(--t3);font-weight:700;letter-spacing:-.005em}
+.ba-titre b{font:600 var(--t0)/1.6 var(--mono);color:var(--encre-2);background:var(--papier-2);border-radius:999px;padding:1px 9px}
+/* ce folio ou tout : deux boutons qui n'en font qu'un */
+.ba-portee{display:flex;gap:2px;padding:3px;background:var(--papier-2);border-radius:999px;flex:none}
+.ba-portee button{border:none;background:none;height:28px;padding:0 12px;border-radius:999px;font-size:var(--t1);font-weight:600;color:var(--encre-2);display:inline-flex;align-items:center;gap:7px;transition:background var(--rapide),color var(--rapide)}
+.ba-portee button:hover{color:var(--encre)}
+.ba-portee button i{font:500 var(--t0) var(--mono);font-style:normal;opacity:.75}
+.ba-portee button[aria-pressed="true"]{background:var(--papier);color:var(--encre);box-shadow:0 1px 3px rgba(16,24,40,.14)}
+.filtre{flex:1;max-width:340px;display:flex;align-items:center;gap:8px;height:34px;border:1px solid var(--filet);border-radius:999px;padding:0 5px 0 12px;transition:border-color var(--rapide),box-shadow var(--rapide)}
 .filtre:focus-within{border-color:var(--cuivre);box-shadow:0 0 0 3px var(--cuivre-pale)}
-.filtre input{flex:1;min-width:0;border:none;background:none;outline:none;font-family:var(--mono)}
+.filtre input{flex:1;min-width:0;border:none;background:none;outline:none;font-family:var(--mono);font-size:var(--t1)}
 .filtre input::placeholder{font-family:var(--sans);color:var(--encre-2)}
 .filtre svg.ico{color:var(--encre-2);width:16px;height:16px}
-.filtre .vider{width:26px;height:26px;border:none;background:none;border-radius:50%;color:var(--encre-2);font-size:var(--t4);line-height:1}
+.filtre .vider{width:24px;height:24px;border:none;background:none;border-radius:50%;color:var(--encre-2);font-size:var(--t4);line-height:1}
 .filtre .vider:hover{background:var(--papier-2);color:var(--encre)}
+.ba-tete .btn{height:34px}
+.ba-tete .btn svg.ico{width:16px;height:16px}
 /* l'équipement choisi : son repère, sa désignation, ses connecteurs — ou,
    pour une barrette, tout ce que la bible en dit — au-dessus de ses fils */
 .equip{margin:4px 16px 8px 22px;padding:10px 12px 12px;border-radius:12px;background:var(--cuivre-pale);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:start;
@@ -389,41 +431,54 @@ table.simu-tab{border-collapse:separate;border-spacing:0;font-size:var(--t1);min
 .cand[aria-pressed="true"]{background:var(--cuivre);color:#fff}
 .cand[aria-pressed="true"] span,.cand[aria-pressed="true"] .ok{color:#fff}
 .cand[aria-pressed="true"]:hover{background:var(--cuivre-2)}
-.ba-corps{flex:1;min-height:120px;overflow:auto;overscroll-behavior:contain;padding:0 8px 8px 12px}
+.ba-corps{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:0 10px 10px;scrollbar-width:thin}
 /* la table prend la largeur de ses colonnes ; trop large, elle défile — jamais elle n'écrase une valeur */
 table.tab{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;font-family:var(--mono);font-size:var(--t1);table-layout:auto}
-.tab th{position:sticky;top:0;z-index:1;background:var(--papier);text-align:left;font-size:var(--t0);color:var(--encre-2);font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:8px 6px 6px;border-bottom:1px solid var(--filet);font-family:var(--sans);white-space:nowrap;cursor:pointer;user-select:none}
+.tab th{position:sticky;top:0;z-index:1;background:var(--papier);text-align:left;font:700 var(--t0) var(--sans);color:var(--encre-2);letter-spacing:.07em;text-transform:uppercase;padding:11px 7px 7px;border-bottom:1px solid var(--filet);white-space:nowrap;cursor:pointer;user-select:none}
 .tab th:hover{color:var(--encre)}
+.tab th.g,.tab th.fl,.tab th:last-child{cursor:default}
 .tab th.tri{color:var(--cuivre-2)}
 .tab th .sens{font-size:9px;margin-left:3px}
-.tab td{padding:1px;border-bottom:1px solid var(--filet);white-space:nowrap}
-.tab tr:hover td{background:var(--papier-2)}
+.tab td{padding:1px;border-bottom:1px solid #edf0f3;white-space:nowrap}
+.tab tr:hover td{background:#f6f8fa}
 .tab tr.on td{background:var(--cuivre-pale)}
-/* la ligne d'un fil qu'on survole dans le dessin de la barrette */
 .tab tr.vise td{background:#f6dccb}
-.tab td.g{width:34px;padding:0}
-.tab td.g button{width:100%;height:30px;border:none;background:none;color:#7b8794;font-size:var(--t0);text-align:right;padding:0 6px;border-radius:6px;font-family:var(--mono)}
+/* le numéro de ligne porte la couleur de la route du fil, en liseré */
+.tab td.g{width:42px;padding:0;box-shadow:inset 3px 0 0 var(--route,transparent)}
+.tab td.g button{width:100%;height:32px;border:none;background:none;color:#7b8794;font-size:var(--t0);text-align:right;padding:0 8px;border-radius:6px;font-family:var(--mono)}
 .tab td.g button:hover{color:var(--cuivre);background:var(--cuivre-pale)}
-.tab tr.on td.g button{color:var(--cuivre-2)}
-.tab tr.hors td.g button{color:#a3adb8}
-.tab td.rep input{width:96px}
-.tab td.n input{width:52px}
-.tab td.fil input{width:88px}
-.tab td.type input{width:72px}
-.tab td.pn input{width:126px}
-.tab td.route input{width:76px}
-.tab input{width:100%;height:30px;border:1px solid transparent;border-radius:7px;padding:0 6px;background:none;font-family:var(--mono);font-size:var(--t1);color:var(--encre);transition:border-color var(--rapide);text-overflow:ellipsis}
-.tab input:hover{border-color:#c9d1d9}
-.tab input:focus{border-color:var(--cuivre);outline:none;background:var(--papier);box-shadow:0 0 0 3px var(--cuivre-pale)}
-.tab .f{display:inline-block;font-size:var(--t0);color:var(--cuivre-2);font-weight:700;background:var(--cuivre-pale);border-radius:6px;padding:1px 6px;border:none;font-family:var(--mono);margin:0 2px}
+.tab tr.on td.g button{color:var(--cuivre-2);font-weight:700}
+.tab td.fl{width:16px;padding:0;text-align:center;color:#a3adb8}
+.tab td.fl::before{content:"→"}
+.tab td.rep input{width:96px;font-weight:700}
+.tab td.n input{width:48px}
+.tab td.fil input{width:84px;font-weight:600}
+.tab td.type input{width:68px;color:var(--encre-2)}
+.tab td.pn input{width:132px;color:var(--encre-2)}
+.tab td.route input{width:84px;color:var(--encre-2);font-family:var(--sans);font-size:var(--t0);text-transform:uppercase;letter-spacing:.04em}
+.tab input{width:100%;height:30px;border:1px solid transparent;border-radius:7px;padding:0 7px;background:none;font-family:var(--mono);font-size:var(--t1);color:var(--encre);transition:border-color var(--rapide),background var(--rapide);text-overflow:ellipsis}
+.tab input:hover{border-color:#cfd6dd;background:var(--papier)}
+.tab input:focus{border-color:var(--cuivre);outline:none;background:var(--papier);box-shadow:0 0 0 3px var(--cuivre-pale);color:var(--encre)}
+/* une ligne d'un autre folio (dans « Tout ») : en retrait */
+.tab tr.hors input{color:#8995a1}
+.tab tr.hors td.rep input,.tab tr.hors td.fil input{font-weight:500}
+.tab .f{display:inline-block;font-size:var(--t0);color:var(--cuivre-2);font-weight:700;background:var(--cuivre-pale);border-radius:999px;padding:2px 8px;border:none;font-family:var(--mono);margin:0 2px;line-height:1.4}
+button.f{cursor:pointer}
 button.f:hover{background:var(--cuivre);color:#fff}
+/* l'intercalaire d'un folio, dans « Tout » */
+.tab tr.groupe td{background:var(--papier);padding:14px 6px 6px;border-bottom:1px solid var(--filet);font-family:var(--sans)}
+.tab tr.groupe:hover td{background:var(--papier)}
+.tab tr.groupe .f{font-family:var(--sans);font-size:var(--t1);padding:3px 11px;margin:0 8px 0 0;background:var(--papier-2);color:var(--encre)}
+.tab tr.groupe .f:hover{background:var(--encre);color:#fff}
+.tab tr.groupe.ici .f{background:var(--cuivre);color:#fff}
+.tab tr.groupe span{font-size:var(--t0);color:var(--encre-2)}
 .tab .x{width:30px;text-align:center}
 /* supprimer se découvre au survol de la ligne ; au doigt, il reste visible */
 .tab .x button{width:26px;height:26px;border:none;background:none;border-radius:50%;color:var(--encre-2);font-size:var(--t3);line-height:1;opacity:0;transition:opacity var(--rapide)}
 .tab tr:hover .x button,.tab tr:focus-within .x button,.tab .x button:focus-visible{opacity:1}
 @media (hover:none){.tab .x button{opacity:1}}
 .tab .x button:hover{background:#fbeae8;color:var(--danger)}
-.tab .reste td{color:var(--encre-2);padding:12px 8px;white-space:normal;font-family:var(--sans)}
+.tab .reste td{color:var(--encre-2);padding:14px 10px;white-space:normal;font-family:var(--sans)}
 
 /* ─── LA FICHE : cartouche, collage, bible ──────────────────────────────── */
 .fiche-corps{overflow:auto;padding:18px 20px 12px;flex:1;overscroll-behavior:contain}
@@ -523,6 +578,9 @@ body.depot-actif .depot{display:grid}
   #rail .espace{display:none}
   .menu{bottom:calc(100% + 12px);left:auto;right:-4px;width:min(272px,calc(100vw - 16px))}
   .recherche{top:8px;left:8px;right:8px;width:auto;max-width:none}
+  .controle{top:8px;left:8px;max-width:calc(100vw - 16px)}
+  .controle.ouvert{width:calc(100vw - 16px)}
+  .co-titre b{max-width:150px}
   #folios{left:50%;bottom:64px;max-width:calc(100vw - 16px);transition:bottom var(--moyen)}
   .fo-strip{max-width:calc(100vw - 110px)}
   /* les documents montent en tiroir ; la base garde la hauteur qu'on lui donne */
@@ -531,8 +589,16 @@ body.depot-actif .depot{display:grid}
   #inspecteur{top:auto;left:8px;right:8px;bottom:64px;width:auto;max-width:none;max-height:62vh;border-radius:18px}
   body.insp-ouvert #folios{display:none}
   body.insp-ouvert #base{right:0}
-  .ba-tete{flex-wrap:wrap}
-  .ba-tete .filtre{order:3;flex-basis:100%;max-width:none}
+  /* le tiroir : le titre et fermer, puis ce folio / tout et l'ajout, puis le filtre */
+  .ba-tete{flex-wrap:wrap;gap:8px}
+  .ba-tete .espace{display:none}
+  .ba-titre{order:1;flex:1}
+  #ba-fermer{order:2}
+  .ba-portee{order:3}
+  #ba-ajouter{order:4;margin-left:auto}
+  .ba-tete .filtre{order:5;flex-basis:100%;max-width:none}
+  .fi-chiffre span{font-size:10px;letter-spacing:.03em}
+  .fi{padding:16px 14px 16px}
   #fiche{max-height:72vh}
   #base{height:var(--base-h);max-height:85vh;min-height:160px}
   body.base-ouverte #rail{bottom:calc(var(--base-h) + 8px)}
@@ -543,8 +609,7 @@ body.depot-actif .depot{display:grid}
   @keyframes doc-monte{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
   .poignee{left:0;right:0;top:0;bottom:auto;height:18px;width:auto;cursor:row-resize}
   .poignee::after{left:50%;top:6px;width:40px;height:4px;margin:0 0 0 -20px}
-  .ba-tete{padding:18px 12px 0 16px}
-  .filtre{margin:10px 12px 6px 16px}
+  .ba-tete{padding:18px 12px 10px 14px}
   /* le dessin de la barrette passe avant la table : la carte prend toute la
      place que la table (120 px au moins) ne réclame pas */
   .equip{margin:2px 10px 6px 12px;padding:10px 8px 12px;max-height:none}
@@ -632,9 +697,6 @@ svg .re-note{fill:#5b6875;font-size:10px}
 .re-f.on,.re-f:hover{background:var(--papier-2)}
 @media (max-width:700px){.re-boite{padding:14px}.re-tete{flex-wrap:wrap}.re-scene{height:46vh}}
 /* ---- les modules de jonction (ASNE 0599) : la face, en léger relief ---- */
-.equip .mj-faces,.equip .mj-table{grid-column:1/-1}
-.mj-faces{margin-top:10px;padding:2px 0 6px;min-height:min-content}
-.mj-table{min-height:min-content}
 .mj{display:block}
 .mj text{font-family:var(--mono)}
 .mj .mj-ombre{fill:#1b2430;opacity:.12}
@@ -697,125 +759,178 @@ svg .re-note{fill:#5b6875;font-size:10px}
 .mj .mj-cle{fill:#3d5446;stroke:#24322a;stroke-width:.8}
 .picto.mj-picto.f-en4165 .p-corps{fill:#e4ede7;stroke:#5d7a69}
 .mj-norme.f-en4165::before{background:#5d7a69}
-.equip .mj-cavite{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;margin-top:10px;padding-top:8px;border-top:1px solid rgba(181,84,28,.18)}
-.equip .mj-cavite>*{grid-column:1/-1}
 .mj .mj-shunt-cadre{fill:#f7f9fb;stroke:#26384b;stroke-width:1.7}
 .mj .corps-etanche .mj-shunt-cadre{fill:#eceef0}
-.mj-normes{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px;font-size:var(--t1);color:var(--encre-2)}
-.mj-normes>span{margin-right:2px}
 .mj-norme{border:1px solid rgba(38,50,63,.18);background:var(--papier);color:var(--encre);border-radius:999px;padding:3px 11px;font-size:var(--t1);font-weight:600;cursor:pointer;transition:background var(--rapide)}
 .mj-norme:hover{background:var(--papier-3)}
 .mj-norme[aria-pressed="true"]{background:var(--encre);border-color:var(--encre);color:#fff}
-.mj-norme.f-e0599::before,.mj-norme.f-nsa937901::before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:middle;background:#6b7684}
+/* chaque norme a sa pastille de couleur ; la couleur vient de sa règle à elle (:where ne pèse rien) */
+:where(.mj-norme[class*=" f-"])::before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:middle;background:#6b7684}
 .mj-norme.f-nsa937901::before{background:#46617d;border-radius:4px}
 .cand svg.picto{flex-shrink:0}
 .bible-filtres{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
 .picto.mj-picto.f-nsa937901 .p-corps{fill:#e3eaf1;stroke:#46617d}
 .picto.mj-picto.f-nsa937901 .p-groupe{stroke:#9db0c4}
-.mj-pastille{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
-.mj-tab td .sens{display:block;font-size:var(--t0,10px);color:var(--encre-2)}
 .picto.mj-picto .p-corps{fill:#e4e8ec;stroke:#6b7684;stroke-width:.8}
 .picto.mj-picto .p-groupe{fill:none;stroke:#d9bf8c;stroke-linecap:round;stroke-linejoin:round}
 .picto.mj-picto .p-contact{fill:#59636e}
 
-/* ---- LA FICHE d'un bloc (08-fiche) : qui, est-ce bon, quoi et pourquoi, à quoi ça ressemble, ses fils ---- */
-.fi{margin:6px 12px 10px 16px;padding:0 6px 12px;min-height:0;overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:14px}
-.fi.compacte{gap:10px;padding-bottom:4px;flex:0 0 auto}
-.fi-retour{align-self:flex-start;display:inline-flex;align-items:center;gap:4px;border:none;background:none;color:var(--encre-2);font-size:var(--t1);padding:2px 6px 2px 0;cursor:pointer;border-radius:6px}
-.fi-retour:hover{color:var(--encre)}
-.fi-retour .ico{width:16px;height:16px}
+/* ─── LA FICHE d'un bloc ou d'un fil (08 bis) ───────────────────────────────
+   Un squelette pour tout : la tête, trois chiffres en cases, l'état en une
+   ligne, des cadres. Rien ne flotte : chaque chose dans sa case. */
+.fi{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;padding:18px 16px 18px 18px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin}
+.fi.fondu>*{animation:fi-monte .32s cubic-bezier(.2,.75,.25,1) both}
+.fi.fondu>*:nth-child(2){animation-delay:.03s}.fi.fondu>*:nth-child(3){animation-delay:.06s}.fi.fondu>*:nth-child(4){animation-delay:.09s}
+.fi.fondu>*:nth-child(5){animation-delay:.12s}.fi.fondu>*:nth-child(n+6){animation-delay:.15s}
+@keyframes fi-monte{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.fi>*{flex-shrink:0}          /* la fiche défile ; rien ne s'y écrase (les onglets, qui défilent en largeur, s'écrasaient) */
+.fi .espace{flex:1}
+/* la tête : le code en pastille, le repère, ce qu'il est */
 .fi-tete{display:flex;align-items:flex-start;gap:12px}
-.fi-tete>.min0{flex:1}
-.fi-nature{font-size:var(--t0,11px);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--cuivre)}
-.fi-nom{display:block;width:100%;border:none;background:none;padding:0;margin:2px 0 0;font-family:var(--mono);font-size:26px;font-weight:700;letter-spacing:.01em;color:var(--encre);border-bottom:1.5px solid transparent;border-radius:0}
-.fi-nom:hover{border-bottom-color:var(--filet)}
-.fi-nom:focus{outline:none;border-bottom-color:var(--cuivre)}
-.fi-des{display:block;width:100%;border:none;background:none;padding:0;margin:2px 0 0;font-size:var(--t2);color:var(--encre);border-bottom:1.5px dashed transparent}
-.fi-des::placeholder{color:var(--encre-2);opacity:.7}
+.fi-code{flex:none;width:46px;height:46px;border-radius:13px;display:grid;place-items:center;font:700 14px/1 var(--mono);letter-spacing:.02em;color:#fff;background:var(--encre);box-shadow:inset 0 -2px 0 rgba(0,0,0,.18)}
+.fi-code.barrette{background:var(--cuivre)}
+.fi-code.coupure{background:#3d5a78}
+.fi-code.aposer{background:var(--cuivre-pale);color:var(--cuivre-2);box-shadow:inset 0 0 0 1.5px var(--cuivre);background-image:repeating-linear-gradient(135deg,transparent 0 5px,rgba(181,84,28,.08) 5px 10px)}
+.fi-code.fil{background:var(--c,#26323f)}
+.fi-code.fil svg.ico{width:24px;height:24px;stroke-width:2.2}
+.fi-tete>.min0{flex:1;min-width:0;padding-top:1px}
+.fi-nom{display:block;width:100%;border:none;background:none;padding:0;margin:0;font:700 22px/1.2 var(--mono);letter-spacing:.01em;color:var(--encre);border-bottom:1.5px solid transparent;border-radius:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+input.fi-nom{cursor:text}
+input.fi-nom:hover{border-bottom-color:var(--filet)}
+input.fi-nom:focus{outline:none;border-bottom-color:var(--cuivre)}
+.fi-sous{margin-top:3px;color:var(--encre-2);font-size:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-sous b{font-family:var(--mono);color:var(--encre);font-weight:600}
+.fi-des{display:block;width:100%;border:none;background:none;padding:0;margin:3px 0 0;font-size:var(--t1);color:var(--encre);border-bottom:1.5px dashed transparent;border-radius:0}
+.fi-des::placeholder{color:var(--cuivre-2);opacity:.75}
 .fi-des:hover{border-bottom-color:var(--filet)}
 .fi-des:focus{outline:none;border-bottom-color:var(--cuivre)}
-.fi-resume{margin-top:4px;color:var(--encre-2);font-size:var(--t2)}
-.fi-relief{flex:none;display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--filet);background:var(--papier);color:var(--encre);font-size:var(--t1);font-weight:600;cursor:pointer;transition:background var(--rapide)}
-.fi-relief:hover{background:var(--papier-2)}
-.fi-relief .ico{width:16px;height:16px}
-.fi-onglets{display:flex;gap:4px;padding:3px;background:var(--papier-2);border-radius:10px;align-self:flex-start}
-.fi-onglets button{border:none;background:none;padding:6px 14px;border-radius:8px;font-size:var(--t1);font-weight:600;color:var(--encre-2);cursor:pointer}
-.fi-onglets button span{font-family:var(--mono);font-weight:500;opacity:.75}
-.fi-onglets button[aria-selected="true"]{background:var(--papier);color:var(--encre);box-shadow:0 1px 2px rgba(0,0,0,.08)}
-.fi-statut{border-radius:10px;padding:10px 12px 10px 38px;font-size:var(--t1);position:relative;line-height:1.45}
-.fi-statut::before{position:absolute;left:12px;top:9px;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff}
-.fi-statut b{display:block;font-size:var(--t2)}
-.fi-statut span{color:inherit;opacity:.85}
-.fi-statut ul{margin:2px 0 0;padding-left:16px}
-.fi-statut.ok{background:#e9f5ee;color:#1d5b35}.fi-statut.ok::before{content:"✓";background:#2e8b57}
-.fi-statut.att{background:#fdf3e4;color:#7a4a0c}.fi-statut.att::before{content:"!";background:#d4870f}
-.fi-statut.ko{background:#fbeceb;color:#8a1f18}.fi-statut.ko::before{content:"×";background:var(--danger)}
-.fi-sur{font-size:var(--t0,11px);font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--encre-2);margin-bottom:6px}
-.fi-choix .fi-ref{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--encre);word-break:break-word}
-.fi-ref.petit{font-size:var(--t2)}
-.fi-pourquoi{margin:4px 0 0;color:var(--encre-2);font-size:var(--t1);line-height:1.5}
-.fi-pourquoi b{color:var(--encre);font-family:var(--mono)}
-.fi-faces{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;padding:12px;background:var(--papier-2);border-radius:12px}
-.fi-faces.deux .fi-face{flex:1 1 200px}
-.fi-face{margin:0;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
-.fi-face svg{width:100%;height:auto;display:block}
+.fi-actions{flex:none;display:flex;align-items:center;gap:6px}
+.fi-bouton{flex:none;display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--filet);background:var(--papier);color:var(--encre);font-size:var(--t1);font-weight:600;cursor:pointer;transition:background var(--rapide),border-color var(--rapide);max-width:100%}
+.fi-bouton span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fi-bouton:hover{background:var(--papier-2);border-color:#cfd6dd}
+.fi-bouton svg.ico{width:16px;height:16px;color:var(--encre-2)}
+.fi-x{width:32px;height:32px;border-radius:50%;border:none;background:var(--papier-2);color:var(--encre-2);display:grid;place-items:center;cursor:pointer;transition:background var(--rapide)}
+.fi-x:hover{background:var(--papier-3);color:var(--encre)}
+.fi-x svg.ico{width:16px;height:16px}
+/* les chiffres : trois cases */
+.fi-chiffres{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.fi-chiffre{border:1px solid var(--filet);border-radius:12px;padding:8px 10px 7px;min-width:0;display:flex;flex-direction:column;gap:2px}
+.fi-chiffre b{font:700 18px/1.15 var(--mono);color:var(--encre);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-chiffre span{font-size:10.5px;color:var(--encre-2);text-transform:uppercase;letter-spacing:.07em;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-chiffre.att{border-color:#efc9a8;background:#fdf6ef}
+.fi-chiffre.att b{color:var(--cuivre-2)}
+/* l'état : une ligne ; le détail se déplie */
+.fi-etat{border-radius:12px;font-size:var(--t1);line-height:1.4}
+.fi-etat>summary,div.fi-etat{display:flex;align-items:center;gap:9px;padding:9px 12px;min-width:0}
+.fi-etat>summary{list-style:none;cursor:pointer}
+.fi-etat>summary::-webkit-details-marker{display:none}
+.fi-etat i{flex:none;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font:800 11px/1 var(--sans);font-style:normal;color:#fff}
+.fi-etat b{flex:none;font-weight:700}
+.fi-etat span{flex:1;min-width:0;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-etat[open]>summary span{visibility:hidden}
+.fi-etat .fi-chevron{flex:none;width:16px;height:16px;transition:transform var(--rapide);opacity:.7}
+.fi-etat[open] .fi-chevron{transform:rotate(180deg)}
+.fi-etat ul{margin:0;padding:0 14px 10px 39px;display:flex;flex-direction:column;gap:3px}
+.fi-etat.ok{background:#eaf5ee;color:#1d5b35}.fi-etat.ok i{background:#2e8b57}
+.fi-etat.att{background:#fcf3e6;color:#74450a}.fi-etat.att i{background:#d4870f}
+.fi-etat.ko{background:#fbeceb;color:#86201a}.fi-etat.ko i{background:var(--danger)}
+/* les cadres */
+.fi-cadre{border:1px solid var(--filet);border-radius:14px;padding:12px 12px 10px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.fi-cadre-tete{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:20px;margin-bottom:-2px}
+.fi-sur{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--encre-2)}
+.fi-lien{display:inline-flex;align-items:center;gap:4px;border:none;background:none;color:var(--cuivre-2);font-weight:600;font-size:var(--t1);padding:3px 8px;margin:-3px -6px -3px 0;border-radius:8px;cursor:pointer;transition:background var(--rapide)}
+.fi-lien:hover{background:var(--cuivre-pale)}
+.fi-lien .fi-chevron{width:14px;height:14px;transition:transform var(--rapide)}
+.fi-lien[aria-expanded="true"] .fi-chevron{transform:rotate(180deg)}
+.fi-lien.danger{color:var(--danger)}
+.fi-lien.danger:hover{background:#fbeae8}
+.fi-liens{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:2px}
+.fi-liens .fi-lien{margin:0 0 0 -8px}
+/* la référence et son pourquoi */
+.fi-ref-ligne{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px}
+.fi-ref{font:700 16px/1.25 var(--mono);color:var(--encre);word-break:break-all}
+.fi-norme{display:inline-flex;align-items:center;gap:6px;font-size:var(--t0);font-weight:700;padding:2px 9px 2px 7px;border-radius:999px;background:var(--papier-2);color:var(--encre-2);white-space:nowrap}
+.fi-norme::before{content:"";width:8px;height:8px;border-radius:3px;background:#6b7684}
+.fi-norme.f-nsa937901::before{background:#46617d;border-radius:4px}
+.fi-norme.f-en4165::before{background:#5d7a69}
+.fi-norme.f-en2997::before{background:#7b6788;border-radius:4px}
+.fi-norme.f-en3646::before{background:#8a6a4a;border-radius:4px}
+.fi-norme.f-en3645::before{background:#4f6f86;border-radius:4px}
+.fi-norme.f-asne0059::before{background:#6a7d3f;border-radius:4px}
+.fi-pourquoi{margin:-4px 0 0;color:var(--encre-2);font-size:var(--t1);line-height:1.45}
+.fi-pourquoi b{color:var(--encre);font-family:var(--mono);font-weight:600}
+/* la face : sur un fond gris clair, à l'échelle de la fiche */
+.fi-faces{display:flex;flex-direction:column;gap:8px}
+.fi-faces.deux{display:grid;grid-template-columns:1fr 1fr}
+.fi-face{margin:0;padding:10px 8px 8px;background:linear-gradient(180deg,#f5f7f9,#eceff3);border-radius:10px;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.fi-face svg{width:100%;height:auto;max-height:230px;display:block}
 .fi-face svg text{font-family:var(--mono)}
-.fi-face figcaption{font-size:var(--t0,11px);color:var(--encre-2);text-align:center}
-.fi-liste{list-style:none;margin:0;padding:0;border-top:1px solid var(--filet)}
-.fi-fil,.fi-paire{display:grid;grid-template-columns:44px minmax(0,auto) minmax(0,1fr);align-items:center;gap:10px;padding:7px 4px;border-bottom:1px solid var(--filet);font-size:var(--t1);cursor:pointer;border-radius:6px}
-.fi-fil:hover,.fi-fil.vise,.fi-paire:hover{background:var(--papier-2)}
-.fi-fil.ko,.fi-paire.ko{background:#fbeceb}
-.fi-ct{font-family:var(--mono);font-weight:700;text-align:center;background:var(--papier-2);border-radius:6px;padding:2px 0}
-.fi-cable{display:flex;align-items:baseline;gap:6px;white-space:nowrap}
-.fi-cable b,.fi-cote b{font-family:var(--mono)}
-.fi-cable small,.fi-cote small{color:var(--encre-2);font-size:var(--t0,11px)}
-.fi-puce{display:inline-block;width:9px;height:9px;border-radius:50%;flex:none;align-self:center}
-.fi-dest{color:var(--encre-2);font-family:var(--mono);font-size:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fi-ko{grid-column:2/-1;color:var(--danger);font-size:var(--t0,11px)}
-.fi-paire{grid-template-columns:44px minmax(0,1fr) 18px minmax(0,1fr);cursor:default}
-.fi-cote{display:flex;align-items:baseline;gap:6px;min-width:0;padding:2px 4px;border-radius:6px;cursor:pointer;overflow:hidden;white-space:nowrap}
-.fi-cote:hover,.fi-cote.vise{background:var(--papier-3)}
-.fi-entre::before{content:"⇄";color:var(--encre-2)}
-.fi-vide{color:var(--encre-2)}
-.fi-replie{border:1px solid var(--filet);border-radius:10px;padding:0 12px}
-.fi-replie summary{list-style:none;display:flex;align-items:center;justify-content:space-between;padding:10px 0;font-size:var(--t1);font-weight:600;cursor:pointer;color:var(--encre)}
-.fi-replie summary::-webkit-details-marker{display:none}
-.fi-replie summary .ico{width:16px;height:16px;transition:transform var(--rapide)}
-.fi-replie[open] summary .ico{transform:rotate(180deg)}
-.fi-replie-corps{padding-bottom:12px;display:flex;flex-direction:column;gap:6px}
-.fi-puces{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
-.fi-chip{border:1px solid var(--filet);background:var(--papier);border-radius:999px;padding:4px 12px;font-size:var(--t1);font-weight:600;cursor:pointer;color:var(--encre)}
+.fi-face figcaption{font-size:var(--t0);color:var(--encre-2);text-align:center;font-weight:600}
+/* changer : des puces de norme, des candidates */
+.fi-changer{display:flex;flex-direction:column;gap:6px;padding-top:10px;border-top:1px dashed var(--filet)}
+.fi-puces{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:2px}
+.fi-chip{border:1px solid var(--filet);background:var(--papier);border-radius:999px;padding:4px 11px;font-size:var(--t1);font-weight:600;cursor:pointer;color:var(--encre);transition:background var(--rapide)}
 .fi-chip:hover{background:var(--papier-2)}
 .fi-chip[aria-pressed="true"]{background:var(--encre);border-color:var(--encre);color:#fff}
-.fi-titre-conns{margin-bottom:-6px}
-.fi-bloc-conn{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid var(--filet);border-radius:12px}
-.fi-conn{display:flex;align-items:center;gap:10px}
-.fi-conn b{font-family:var(--mono);display:block}
-.fi-conn small{color:var(--encre-2)}
-.fi-lettre{flex:none;width:30px;height:30px;border-radius:8px;background:var(--encre);color:#fff;display:grid;place-items:center;font-family:var(--mono);font-weight:700}
-.fi-arr{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
-.fi-pq{color:var(--encre-2);font-size:var(--t1)}
-.fi-pied{padding-top:4px;border-top:1px solid var(--filet)}
-.fi .equip{margin:0}
-
-/* ---- l'inspecteur : la tête, le trajet d'un fil, le pied ---- */
-.fi-actions{flex:none;display:flex;align-items:center;gap:6px}
-.fi-actions .fermer{width:34px;height:34px}
-.fi-nom-fil{display:flex;align-items:center;gap:10px}
-.fi-puce.gros{width:12px;height:12px}
-.fi-trajet{display:grid;grid-template-columns:1fr 34px 1fr;align-items:center;gap:6px}
-.fi-bout{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px;border:1px solid var(--filet);border-radius:12px;background:var(--papier);cursor:pointer;text-align:left;min-width:0}
-.fi-bout:hover{background:var(--papier-2)}
-.fi-bout b{font-family:var(--mono);font-size:var(--t3)}
+/* le connecteur d'un équipement : son part number en tête du cadre */
+.fi-connecteur .fi-cadre-tete .fi-sur{display:flex;align-items:center;gap:8px;min-width:0;text-transform:none;letter-spacing:0}
+.fi-pn{font:700 var(--t2) var(--mono);color:var(--encre);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* les onglets : les connecteurs d'un équipement, un à la fois */
+.fi-onglets{display:flex;gap:3px;padding:3px;background:var(--papier-2);border-radius:12px;overflow-x:auto;scrollbar-width:none;margin-bottom:-4px}
+.fi-onglets::-webkit-scrollbar{display:none}
+.fi-onglets button{flex:1 0 auto;min-width:52px;display:inline-flex;align-items:baseline;justify-content:center;gap:6px;border:none;background:none;padding:7px 12px;border-radius:9px;color:var(--encre-2);cursor:pointer;transition:background var(--rapide),color var(--rapide)}
+.fi-onglets button b{font:700 var(--t2) var(--mono)}
+.fi-onglets button span{font:500 var(--t0) var(--mono);opacity:.75}
+.fi-onglets button:hover{color:var(--encre)}
+.fi-onglets button[aria-selected="true"]{background:var(--papier);color:var(--encre);box-shadow:0 1px 3px rgba(16,24,40,.14)}
+.fi-onglets button.ko b::after{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--danger);margin-left:5px;vertical-align:2px}
+.fi-panneau{display:flex;flex-direction:column;gap:12px}
+/* les fils : une ligne chacun */
+.fi-liste{list-style:none;margin:0 -6px;padding:0;display:flex;flex-direction:column}
+.fi-fil{display:grid;grid-template-columns:auto 9px auto minmax(0,auto) minmax(0,1fr) auto;align-items:center;column-gap:8px;padding:6px 6px;border-radius:8px;font-size:var(--t1);transition:background var(--rapide)}
+.fi-fil[data-i]{cursor:pointer}
+.fi-fil+.fi-fil{box-shadow:0 -1px 0 #edf0f3}
+.fi-fil[data-i]:hover,.fi-fil.vise{background:var(--cuivre-pale);box-shadow:none}
+.fi-fil[data-i]:hover+.fi-fil,.fi-fil.vise+.fi-fil{box-shadow:none}
+.fi-ct{min-width:34px;display:inline-flex;align-items:baseline;justify-content:center;gap:3px;font-family:var(--mono);background:var(--papier-2);border-radius:6px;padding:2px 6px}
+.fi-ct b{font-weight:700;color:var(--encre)}
+.fi-ct i{font-style:normal;font-weight:500;font-size:var(--t0);color:var(--encre-2)}
+.fi-puce{display:inline-block;width:9px;height:9px;border-radius:50%;flex:none}
+.fi-w{font-family:var(--mono);font-weight:700;white-space:nowrap}
+.fi-t{font-family:var(--mono);color:var(--encre-2);font-size:var(--t0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-dest{display:flex;align-items:center;justify-content:flex-end;gap:5px;min-width:0;font-family:var(--mono);color:var(--encre);white-space:nowrap}
+.fi-dest>span{overflow:hidden;text-overflow:ellipsis}
+.fi-dest svg.ico{width:13px;height:13px;color:#9aa5b1;flex:none}
+.fi-dest.amont svg.ico{transform:scaleX(-1)}
+.fi-tag{font:700 var(--t0) var(--mono);color:var(--cuivre-2);background:var(--cuivre-pale);border:1px dashed rgba(181,84,28,.5);border-radius:6px;padding:0 5px}
+.fi-fil.neuf .fi-w{color:var(--cuivre-2);font-style:italic;font-family:var(--sans)}
+.fi-fil.ko{background:#fbeceb}
+.fi-ko{grid-column:3/-1;color:var(--danger);font-size:var(--t0);font-weight:600}
+.fi-groupe{font-size:10.5px;color:var(--encre-2);font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:10px 6px 3px}
+.fi-groupe:first-child{padding-top:0}
+/* une prise : chaque contact, la fiche à gauche, l'embase à droite */
+.fi-paires-tete{display:grid;grid-template-columns:40px minmax(0,1fr) 16px minmax(0,1fr);gap:6px;font-size:10.5px;color:var(--encre-2);font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:-6px}
+.fi-paire{display:grid;grid-template-columns:40px minmax(0,1fr) 16px minmax(0,1fr);align-items:center;gap:6px;padding:5px 0;font-size:var(--t1)}
+.fi-paire+.fi-paire{box-shadow:0 -1px 0 #edf0f3}
+.fi-paire.ko{background:#fbeceb;border-radius:8px}
+.fi-cote{display:grid;grid-template-columns:9px minmax(0,1fr);column-gap:6px;align-items:center;min-width:0;padding:3px 6px;border-radius:7px;cursor:pointer;transition:background var(--rapide)}
+.fi-cote b{font-family:var(--mono);white-space:nowrap}
+.fi-cote small{grid-column:2;font-family:var(--mono);color:var(--encre-2);font-size:var(--t0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-cote:hover,.fi-cote.vise{background:var(--cuivre-pale)}
+.fi-cote.vide{color:var(--encre-2);cursor:default;display:block}
+.fi-cote.vide:hover{background:none}
+.fi-entre::before{content:"⇄";color:#9aa5b1}
+/* un fil : son trajet, d'un bout à l'autre */
+.fi-trajet{display:grid;grid-template-columns:minmax(0,1fr) 30px minmax(0,1fr);align-items:stretch;gap:6px}
+.fi-trajet .fi-fleche{align-self:center}
+.fi-bout{display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:10px 12px;border:1px solid var(--filet);border-radius:12px;background:var(--papier);cursor:pointer;text-align:left;min-width:0;transition:background var(--rapide),border-color var(--rapide)}
+.fi-bout:hover{background:var(--papier-2);border-color:#cfd6dd}
+.fi-bout b{font:700 var(--t3) var(--mono)}
 .fi-bout span{font-size:var(--t1);color:var(--encre-2)}
-.fi-bout small{font-family:var(--mono);font-size:var(--t0,11px);color:var(--encre-2);overflow:hidden;text-overflow:ellipsis;max-width:100%;white-space:nowrap}
-.fi-fleche{height:3px;border-radius:2px;position:relative}
-.fi-fleche::after{content:"";position:absolute;right:-1px;top:-4px;border:5.5px solid transparent;border-left:7px solid currentColor;border-right:0;color:inherit}
-.fi-nouveau .fi-cable b{color:var(--cuivre-2);font-family:var(--sans);font-style:italic}
-.fi-pied{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--filet)}
-.fi-pied .btn{height:36px;font-size:var(--t1)}
-.fi-pied .danger{margin-left:auto}
-
-.fi-tete{position:relative;display:block}
-.fi-tete .fi-actions{position:absolute;top:-6px;right:-4px}
-.fi-tete .fi-nature{padding-right:150px;min-height:18px}
+.fi-bout small{font-family:var(--mono);font-size:var(--t0);color:var(--encre-2);overflow:hidden;text-overflow:ellipsis;max-width:100%;white-space:nowrap}
+.fi-bout em{font-style:normal;font:700 var(--t0) var(--mono);color:var(--cuivre-2);background:var(--cuivre-pale);border-radius:6px;padding:0 5px;margin-top:3px}
+.fi-fleche{height:3px;border-radius:2px;position:relative;background:var(--c,#26323f);color:var(--c,#26323f)}
+.fi-fleche::after{content:"";position:absolute;right:-1px;top:-4px;border:5.5px solid transparent;border-left:7px solid currentColor;border-right:0}
+/* le pied : les gestes */
+.fi-pied{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:2px;margin-top:auto}
+.fi .equip{margin:0}

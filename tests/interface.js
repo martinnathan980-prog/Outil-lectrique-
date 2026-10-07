@@ -7,9 +7,13 @@
        la feuille se recadre à côté : aucun coin de la feuille sous lui ;
      · un clic sur un fil ouvre la fiche du fil ;
      · B ouvre le TABLEAU en tiroir en bas : la feuille se recadre au-dessus ;
-     · Échap ferme la fiche, puis le tableau ;
-   et, sur chaque folio, chaque barrette à poser (plusieurs fils sur une même
-   borne) a son repère et autant de pastilles que de fils, raccord compris.
+       « Ce folio » n'y montre que les liaisons du folio affiché ;
+     · Échap ferme la fiche, puis le tableau.
+   Puis, sur chaque folio, chaque BARRETTE À POSER (plusieurs fils sur une même
+   borne d'équipement) : une vraie barrette, une colonne, une borne par fil —
+   le fil à créer compris —, jamais deux fils au même niveau ; plus aucune
+   borne d'équipement ne porte deux fils sur le plan. Enfin, la poser au
+   contrat sous un vrai repère, et Ctrl+Z la rend.
    Rend 1 au premier échec.
    =========================================================================== */
 const { chromium } = require('playwright');
@@ -42,6 +46,8 @@ const FICHIER = P.fichierDemande();
     ok(await page.evaluate(() => app.cible && app.cible.type === 'fil' && $('ba-equip').textContent.includes('W-014')), 'un clic sur W-014 ouvre la fiche du fil');
     await page.keyboard.press('b'); await page.waitForTimeout(600);
     ok(await page.evaluate(() => !$('base').hidden), 'B ouvre le tableau');
+    ok(await page.evaluate(() => { app.base.filtre = ''; app.base.portee = 'folio'; rendreBase(); const n = $('ba-tbody').querySelectorAll('tr[data-i]').length;
+      return n === verite().filter(l => l.plan === '1').length && n > 0; }), '« Ce folio » montre les liaisons du folio 1, rien d’autre');
     r = await recouvre(); ok(!r.length, 'la feuille n’est ni sous l’inspecteur ni sous le tableau', r.join(' '));
     await page.keyboard.press('Escape'); await page.waitForTimeout(400);
     ok(await page.evaluate(() => $('inspecteur').hidden && !app.cible), 'Échap ferme la fiche');
@@ -50,14 +56,41 @@ const FICHIER = P.fichierDemande();
     ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
     await page.close();
   }
-  // chaque dédoublement : une barrette, un repère, une pastille par fil
+  // chaque dédoublement : une vraie barrette, une borne par fil, jamais deux fils au même niveau
   console.log('\nbarrettes à poser');
-  const page = await nav.newPage(); await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined');
-  const vts = await page.evaluate(() => plans().flatMap(pl => { app.plan = pl; redessiner(); const B = app.dessin.barrettes; nommerBarrettesAPoser(B);
-    const L = liaisonsDuPlan(); return B.map(b => { const fils = L.filter(l => (l.de === b.propre && String(l.borneDe) === b.etiquette) || (l.vers === b.propre && String(l.borneVers) === b.etiquette)).length;
-      const svg = $('svg').innerHTML; return { pl, nom: b.nomVT, ou: b.propre + ':' + b.etiquette, fils, pastilles: contactsDePiquage(b).length, ecrit: svg.includes('>' + b.nomVT + '</text>') }; }); }));
+  const page = await nav.newPage({ viewport: { width: 1600, height: 950 } }); const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
+  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined');
+  const vts = await page.evaluate(() => plans().flatMap(pl => { app.plan = pl; redessiner(); const L = liaisonsDuPlan(), svg = $('svg').innerHTML;
+    // plus aucune borne d'équipement à deux fils sur le plan
+    const n = new Map(); L.forEach(l => { if (l.de === l.vers) return; [[l.de, l.borneDe], [l.vers, l.borneVers]].forEach(([r, b]) => { if (!r || !b || estBornier(r) || estMasse(r)) return; const k = r + ':' + b; n.set(k, (n.get(k) || 0) + 1); }); });
+    const doubles = [...n].filter(([, k]) => k > 1).map(([k]) => k);
+    return app.dessin.comps.filter(c => VT_A_POSER.test(c.name) && c.kind !== 'tag').map(c => { const bornes = Object.values(c.rangs || {}).flat();
+      const fils = L.filter(l => l.origine && (l.de === c.name || l.vers === c.name)).length, ys = bornes.map(p => Math.round(p.y * 2));
+      return { pl, nom: c.name, fils, bornes: bornes.length, distinctes: new Set(ys).size === ys.length, ecrit: svg.includes('>' + c.name + '</text>'), doubles }; })
+      .concat(doubles.length ? [{ pl, nom: '—', doubles }] : []); }));
   ok(vts.length > 0, 'l’exemple a des dédoublements', vts.length + ' barrettes à poser');
-  vts.forEach(v => ok(v.pastilles === v.fils + 1 && v.ecrit, `folio ${v.pl} · ${v.nom} (${v.ou}) : ${v.fils} fils + le raccord = ${v.fils + 1} pastilles, repère écrit`, v.pastilles + ' pastilles'));
+  vts.forEach(v => v.nom === '—' ? ok(false, `folio ${v.pl} : des bornes d’équipement portent encore deux fils`, v.doubles.join(' '))
+    : ok(v.bornes === v.fils + 1 && v.distinctes && v.ecrit && !v.doubles.length, `folio ${v.pl} · ${v.nom} : ${v.fils} fils + le fil à créer = ${v.fils + 1} bornes, chacune à sa hauteur, repère écrit`, v.bornes + ' bornes'));
+  // la fiche de VT1, puis la poser au contrat sous un vrai repère, et la reprendre
+  await page.evaluate(() => { app.plan = '1'; redessiner(); ajuster(); choisirBloc(app.dessin.comps.find(k => k.name === 'VT1' && k.kind !== 'tag')); }); await page.waitForTimeout(300);
+  ok(await page.evaluate(() => /À poser/.test($('ba-equip').textContent) && $('ba-equip').querySelectorAll('.fi-fil').length === 3), 'la fiche de VT1 : à poser, trois bornes');
+  await page.fill('#eq-rep', '102VT9'); await page.press('#eq-rep', 'Enter'); await page.waitForTimeout(800);
+  ok(await page.evaluate(() => { const L = app.contrat.liaisons.filter(l => l.de === '102VT9' || l.vers === '102VT9');
+    return L.length === 5 && L.some(l => l.de === '102CB1' && l.borneDe === '2' && l.borneVers === '1' && !l.cable) && app.dessin.comps.some(c => c.name === '102VT9') && !app.dessin.comps.some(c => c.name === 'VT1'); }),
+    'VT1 posée sous 102VT9 : le fil à créer, les deux fils, deux shunts — dessinée comme avant');
+  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(800);
+  ok(await page.evaluate(() => app.contrat.liaisons.length === 201 && app.dessin.comps.some(c => c.name === 'VT1')), 'Ctrl+Z rend VT1');
+  // survoler une ligne de la fiche allume son fil sur le plan
+  await page.evaluate(() => { choisirBloc(app.dessin.comps.find(k => k.name === '103RL1' && k.kind !== 'tag')); }); await page.waitForTimeout(300);
+  const li = await page.locator('#ba-equip .fi-fil[data-i]').first().boundingBox(); await page.mouse.move(li.x + li.width / 2, li.y + li.height / 2); await page.waitForTimeout(200);
+  ok(await page.evaluate(() => !!document.querySelector('#scene.focus') && !!document.querySelector('#ba-equip .fi-fil.vise')), 'survoler un fil de la fiche l’allume sur le plan');
+  // la pastille de contrôle : son état, sa liste, et une ligne qui mène au bloc, sur son folio
+  await page.keyboard.press('Escape'); await page.click('#co-bouton'); await page.waitForTimeout(300);
+  ok(await page.evaluate(() => /problème/.test($('co-etat').textContent) && $('co-liste').querySelectorAll('.co-item').length === CONTROLE.items.length && CONTROLE.items.some(x => x.nom === 'VT1')),
+    'la pastille de contrôle dit l’état du contrat ; sa liste a chaque point, les barrettes à poser comprises');
+  await page.locator('.co-item', { hasText: '300XC1' }).click(); await page.waitForTimeout(600);
+  ok(await page.evaluate(() => app.plan === '3' && app.cible && app.cible.nom === '300XC1' && !$('inspecteur').hidden && $('co-liste').hidden), 'une ligne mène au folio 3 et à la fiche de 300XC1');
+  ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
   console.log('\n  ' + (ko ? ko + ' échec(s)' : 'tout tient'));
   await nav.close(); process.exit(ko ? 1 : 0);
 })();

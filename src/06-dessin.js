@@ -208,18 +208,6 @@ function tracesDePiquage(barrettes) {
   (barrettes.raccords || []).forEach(r => traces.push([{ x: r.x0, y: r.y }, { x: r.x1, y: r.y }]));
   barrettes.forEach(b => traces.push([{ x: b.x, y: b.y1 + 3 }, { x: b.x, y: b.y2 - 3 }]));
   return traces; }
-/* Les barrettes À POSER d'un folio (ses dédoublements) reçoivent un repère provisoire, VT1, VT2…, de haut en bas puis de
-   gauche à droite : le même sur le plan et dans la fiche. */
-function nommerBarrettesAPoser(barrettes) { (barrettes || []).slice().sort((a, b) => a.py - b.py || a.x - b.x).forEach((b, i) => { b.nomVT = 'VT' + (i + 1); }); return barrettes; }
-/* Les CONTACTS d'une barrette à poser : un par fil — le raccord vers la borne, puis chaque départ. Deux fils à la même
-   hauteur (le raccord et un fil qui part tout droit) ont chacun le leur : deux pastilles côte à côte sur ce rang, celle
-   du raccord du côté de la borne. Numérotés de haut en bas. Rend [{ x, y, n }]. */
-function contactsDePiquage(b) { const ys = [b.py, ...b.gardes.map(g => g.y)], rangs = [];
-  ys.forEach(y => { const r = rangs.find(k => Math.abs(k.y - y) < 0.6); if (r) r.n++; else rangs.push({ y, n: 1 }); });
-  rangs.sort((u, v) => u.y - v.y); const cote = b.px < b.x ? -1 : 1, out = [];
-  rangs.forEach(r => { if (r.n === 1) { out.push({ x: b.x, y: r.y }); return; }
-    const e = 4.4; for (let k = 0; k < r.n; k++) out.push({ x: b.x + cote * e * (k === 0 ? 1 : -1) * (r.n > 2 ? 1 + Math.floor(k / 2) : 1), y: r.y }); });
-  return out.map((c, i) => ({ ...c, n: i + 1 })); }
 /* Les bornes d'un piquage, de haut en bas : la borne d'origine et chaque départ. */
 const bornesDePiquage = b => [b.py, ...b.gardes.map(k => k.y)].filter((y, i, a) => a.findIndex(z => Math.abs(z - y) < 0.6) === i).sort((u, v) => u - v);
 function piquagesSvg(barrettes, piquages, verticaux, couleurBout) {
@@ -227,14 +215,11 @@ function piquagesSvg(barrettes, piquages, verticaux, couleurBout) {
   (barrettes.raccords || []).forEach(r => { const c = couleurBout && (couleurBout(r.x0, r.y) || couleurBout(r.x1, r.y));
     s += `<path class="cab"${styleTrait(c)} d="${cheminAvecPonts([{ x: r.x0, y: r.y }, { x: r.x1, y: r.y }], verticaux)}"/>`; });
   barrettes.forEach(b => {
-    /* Un DÉDOUBLEMENT — plusieurs fils sur une même borne — est une BARRETTE À POSER (le lecteur : « quand les fils se
-       dédoublent, il faut une barrette ; un point d'où sortent deux fils, ça ne va pas »). Elle se dessine comme toute
-       barrette : la ligne pointillée, une pastille numérotée par fil — le raccord vers la borne compris : autant de
-       contacts que de fils — et son repère provisoire dessous (VT1, VT2… dans l'ordre du folio). */
-    const ys = bornesDePiquage(b), cs = contactsDePiquage(b);
+    /* Un piquage — plusieurs fils sur une même borne de barrette, de masse ou de rail (ceux d'un équipement sont devenus
+       des barrettes à poser, 01) — se dessine comme une barrette : une fine ligne pointillée, un point à chaque départ. */
+    const ys = bornesDePiquage(b);
     s += `<line class="barre" x1="${f1(b.x)}" y1="${f1(ys[0])}" x2="${f1(b.x)}" y2="${f1(ys[ys.length - 1])}"/>`;
-    cs.forEach(k => { s += pastilleSvg(k.x, k.y, String(k.n)); });
-    if (b.nomVT) s += `<text class="rep-petit vt-prov" x="${f1(b.x)}" y="${f1(ys[0] - 6.5)}" text-anchor="middle">${esc(b.nomVT)}</text>`; });
+    ys.forEach((y, i) => { s += pastilleSvg(b.x, y, String(i + 1)); }); });
   return s;
 }
 /* Une borne de barrette : un point noir sur la ligne, comme d'habitude, son
@@ -265,8 +250,7 @@ function occupationDe(fils, barrettes, comps) {
     else if (Math.abs(a.x - b.x) < 0.6) V.push({ x: a.x, y0: Math.min(a.y, b.y), y1: Math.max(a.y, b.y) }); };
   fils.forEach(w => { if (w.shunt) return; for (let i = 0; i < w.pts.length - 1; i++) seg(w.pts[i], w.pts[i + 1]); });
   tracesDePiquage(barrettes || []).forEach(pts => seg(pts[0], pts[1]));
-  (barrettes || []).forEach(b => { const ys = bornesDePiquage(b); contactsDePiquage(b).forEach(k => { const r = R_PASTILLE(String(k.n)) + 1; boites.push({ x0: k.x - r, y0: k.y - r, x1: k.x + r, y1: k.y + r }); });
-    if (b.nomVT) { const y = ys[0] - 6.5; boites.push({ x0: b.x - 9, y0: y - 5.5, x1: b.x + 9, y1: y + 1.5 }); } });
+  (barrettes || []).forEach(b => bornesDePiquage(b).forEach((y, i) => { const r = R_PASTILLE(String(i + 1)) + 1; boites.push({ x0: b.x - r, y0: y - r, x1: b.x + r, y1: y + r }); }));
   (comps || []).forEach(c => {
     // le corps d'un équipement compte avec ses pièces de connecteur et leurs lettres ; celui d'une réglette, sa colonne
     /* un morceau de barrette finit par son point de départ, au ras de son cadre : un texte s'en garde de quatre (un numéro
@@ -589,7 +573,6 @@ function sceneSvg(dessin, cartouche, folio, designationDe, choisi) {
   const dedans = (c, ys) => ys.every(y => y >= c.y - 0.5 && y <= c.y + c.h + 0.5);
   dessin.comps.forEach(c => { c.shunts = (shunts.get(c.name) || []).filter(ys => dedans(c, ys)); c.connecteurs = c.kind === 'equip' ? connecteurParBorne(c.name, dessin.fils) : null; });
   // les textes cherchent leur place dans ce qui est tracé : les repères d'abord, les numéros de fil ensuite
-  nommerBarrettesAPoser(dessin.barrettes);
   const occ = occupationDe(fils, dessin.barrettes, dessin.comps);
   poserReperes(dessin.comps, occ);
   s += reperesDeFil(dessin.fils, verticaux, dessin.barrettes, occ);

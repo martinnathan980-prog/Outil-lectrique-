@@ -88,6 +88,16 @@
     <div id="q-liste" class="q-liste verre" role="listbox" hidden></div>
   </div>
 
+  <!-- LE CONTRÔLE : en haut à gauche, le nom du contrat et son état — « Conforme », « 1 problème · 3 à voir » —,
+       tenu à jour à chaque correction ; un clic déplie ce qu'il y a à reprendre, une ligne y mène (08-controle). -->
+  <div id="controle" class="controle verre" hidden>
+    <button class="co-bouton" id="co-bouton" aria-expanded="false" aria-controls="co-liste">
+      <span class="co-titre"><b id="co-nom">Contrat</b><small id="co-sous"></small></span>
+      <span class="co-etat" id="co-etat"></span>
+    </button>
+    <div class="co-liste" id="co-liste" hidden role="region" aria-label="Ce qu’il y a à reprendre"></div>
+  </div>
+
   <!-- Le bas : tout ce qui touche à la VUE — les folios, le cadrage, le
        zoom. Ce qui touche au TRAVAIL (base, recherche, bible, liaison) reste
        dans la barre de gauche. -->
@@ -133,16 +143,21 @@
   <!-- LE TABLEAU des liaisons : un tiroir en bas, ouvert à la demande (B) ; le plan se recadre au-dessus. On le corrige
        ici ; le plan suit. -->
   <aside id="base" hidden aria-label="Tableau des liaisons">
-    <div class="poignee" id="ba-poignee" title="Redimensionner" aria-hidden="true"></div>
+    <div class="poignee" id="ba-poignee" title="Glisser pour agrandir ou réduire" aria-hidden="true"></div>
     <div class="ba-tete">
-      <div class="ba-titre" id="ba-titre">—</div>
+      <div class="ba-titre"><span>Liaisons</span><b id="ba-compte">0</b></div>
+      <div class="ba-portee" id="ba-portee" role="group" aria-label="Lignes montrées">
+        <button data-portee="folio" aria-pressed="true"><span id="ba-lib-folio">Ce folio</span><i id="ba-n-folio"></i></button>
+        <button data-portee="tout" aria-pressed="false">Tout<i id="ba-n-tout"></i></button>
+      </div>
       <div class="filtre">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
-        <input id="ba-filtre" placeholder="Filtrer : repère, fil, type, folio…" aria-label="Filtrer le tableau" autocomplete="off" spellcheck="false">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="ba-filtre" placeholder="Filtrer : repère, fil, type…" aria-label="Filtrer le tableau" autocomplete="off" spellcheck="false">
         <button class="vider" id="ba-vider" hidden aria-label="Effacer le filtre">×</button>
       </div>
-      <button class="btn lien" id="ba-ajouter">+ Liaison</button>
-      <button class="rond fermer" id="ba-fermer" aria-label="Fermer le tableau"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      <span class="espace"></span>
+      <button class="btn lien" id="ba-ajouter"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Liaison</button>
+      <button class="rond fermer" id="ba-fermer" aria-label="Fermer le tableau (B)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     </div>
     <div class="ba-corps" id="ba-corps"><table class="tab" id="ba-tab"><thead id="ba-thead"></thead><tbody id="ba-tbody"></tbody></table></div>
   </aside>

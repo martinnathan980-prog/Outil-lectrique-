@@ -67,9 +67,9 @@ function titre(t) { console.log('\n' + t); }
 
   titre('3. CONTRAT D’ESSAI');
   const essai = await page.evaluate(() => { atelier.essai(); const a = atelier.audit();
-    return { b: a.blocs, f: a.fils, d: Math.round(a.tauxDroits * 100), ib: a.filsDansBloc, ch: a.blocsChevauches, cr: a.croisements, ev: a.evitables, barrettes: app.dessin.barrettes.length }; });
+    return { b: a.blocs, f: a.fils, d: Math.round(a.tauxDroits * 100), ib: a.filsDansBloc, ch: a.blocsChevauches, cr: a.croisements, ev: a.evitables, barrettes: new Set(app.dessin.comps.filter(c => VT_A_POSER.test(c.name)).map(c => c.name)).size }; });
   ok('se dessine sans défaut', essai.ib === 0 && essai.ch === 0, essai.b + ' blocs · ' + essai.f + ' fils · ' + essai.d + ' % droits');
-  ok('les deux barrettes sont repérées', essai.barrettes === 2, essai.barrettes + ' trouvée(s)');
+  ok('ses deux dédoublements sont deux barrettes à poser', essai.barrettes === 2, essai.barrettes + ' trouvée(s)');
   ok('aucun croisement évitable', essai.ev === 0, essai.cr + ' croisement(s), dont ' + essai.ev + ' évitable(s)');
   /* Le numéro de fil est l'information numéro un d'un câbleur : il doit être
      écrit, et jamais barré par un fil ni collé à un voisin. Un numéro

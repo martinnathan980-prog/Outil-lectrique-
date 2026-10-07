@@ -31,7 +31,7 @@ const FICHIER = P.fichierDemande();
       const fils = document.querySelectorAll('#re-svg .re-fil').length, etiq = [...document.querySelectorAll('#re-svg .re-etiq')];
       const boites = etiq.map(g => { const [a, b] = [...g.querySelectorAll('text')].map(t => t.getBBox()); const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y); return { x, y, width: Math.max(a.x + a.width, b.x + b.width) - x, height: Math.max(a.y + a.height, b.y + b.height) - y }; }), chevauche = boites.some((a, i) => boites.some((b, j) => j > i && a.x < b.x + b.width - 1 && b.x < a.x + a.width - 1 && a.y < b.y + b.height - 1 && b.y < a.y + a.height - 1));
       const cables = etiq.map(g => g.querySelector('.re-cable').textContent), lignes = document.querySelectorAll('#re-tableau tbody tr').length;
-      const res = { attendus, fils, etiquettes: etiq.length, chevauche, lignes, modules: Q ? (Q.prise ? new Set(Q.fils.map(x => x.contact.lettre)).size : Q.fils.length) : P.modules.length, jonction: !!Q, prise: !!(Q && Q.prise), cablesOk: cables.every(c => verite().some(l => l.cable === c)) };
+      const res = { attendus, fils, etiquettes: etiq.length, chevauche, lignes, modules: Q ? (Q.prise ? new Set(Q.fils.map(x => x.contact.lettre)).size : Q.fils.length) : P.modules.length, jonction: !!Q, prise: !!(Q && Q.prise), cablesOk: cables.every(c => c === 'à créer' || verite().some(l => l.cable === c)) };
       fermerRelief(); return res; }, [plan, nom]);
     ok(r.fils === r.attendus && r.etiquettes === r.attendus && r.cablesOk, nom + ' : un fil et une étiquette par trou occupé', r.fils + ' fils, ' + r.etiquettes + ' étiquettes, ' + r.attendus + ' trous occupés');
     ok(!r.chevauche, nom + ' : aucune étiquette sur une autre');

@@ -1,100 +1,199 @@
-# Feuille de route — ce qui vient, et ce qu'il me faut pour le faire
+# Feuille de route — ce qui vient, ce qu'il me faut, et les contrats déjà faits
 
-L'outil sait aujourd'hui : dessiner les folios, poser chaque fil d'une
-barrette dans un module (ASNE 0599, NSA937901), chaque fil d'un connecteur
-ou d'une prise dans un arrangement (EN 4165, EN 2997, EN 3646, EN 3645,
-ASNE0059), et juger la jauge par la taille du contact. Ce qui suit se
-branche dessus, une couche après l'autre, chacune avec son document.
+L'outil sait aujourd'hui :
 
-Principe pour chaque couche : **le document entre tel quel** (PDF transcrit
-en CSV dans `normes/`, ou tableau Excel lu par le nom de ses colonnes), une
-**règle** le lit, et la **fiche** de chaque bloc dit le résultat en une
-ligne (conforme / à voir / problème) et le pourquoi en une phrase.
+- dessiner les folios ;
+- poser chaque fil d'une barrette dans un module (ASNE 0599, NSA937901) ;
+- poser chaque fil d'un connecteur ou d'une prise dans un arrangement (EN 4165,
+  EN 2997, EN 3646, EN 3645, ASNE0059) ;
+- juger la jauge par la taille du contact ;
+- faire de chaque dédoublement une barrette à poser (VT1…), qu'on pose au
+  contrat d'un geste ;
+- dire l'état de tout le contrat dans la pastille en haut à gauche.
 
-## 1. Les contacts acceptés, norme par norme
+Ce qui suit se branche dessus, une couche après l'autre. Chaque couche suit
+le même principe :
 
-Ce qu'il me faut : pour chaque norme, chaque taille de contact, la liste des
-références de contact (EN 3155-xxx…) et pour chacune la plage de jauge, et
-le type de fil (cuivre, aluminium) si ça compte.
+- **le document entre tel quel** : un PDF transcrit en CSV dans `normes/`, ou
+  un tableau Excel lu par le nom de ses colonnes ;
+- une **règle** le lit ;
+- la **fiche** de chaque bloc et la **pastille de contrôle** disent le résultat
+  en une ligne (conforme / à voir / problème), et le pourquoi en une phrase.
 
-Format le plus simple : un tableau `Norme ; Taille ; Contact ; Jauge min ;
-Jauge max ; Note`. L'outil le lit déjà presque : il remplacera les plages
-« usuelles, à confirmer » d'aujourd'hui, et la fiche donnera la référence
-du contact à sertir pour chaque fil.
+---
 
-## 2. Le calibre des disjoncteurs
+## 1. Ce qu'il me faut — la liste complète
 
-Ce qu'il me faut : la courbe (ou la table) de la norme — courant consommé
-→ calibre — et, dans l'Excel du contrat, une colonne « consommation » (A ou
-W) par équipement alimenté et le repère du disjoncteur qui l'alimente.
+Rangée par ce que ça débloque, du plus utile au plus lointain. Pour chaque
+point : le document, et la forme la plus simple pour moi. Une photo de la
+page de norme suffit toujours : je la transcris.
 
-Ce que l'outil fera : pour chaque disjoncteur, la somme de ce qu'il
-alimente, le calibre que la courbe donne, et un verdict si le calibre posé
-diffère. Puis, en retour, le fil en aval doit supporter ce calibre (§ 4).
+### A. Les contacts, norme par norme (débloque tout le reste)
 
-## 3. La chute en ligne
+1. **Les références de contact et leurs jauges.** Pour chaque norme et chaque
+   taille de contact (#22, #20, #16, #12, #8…) :
+   - la référence du contact à sertir (EN 3155-xxx, ASNE…) ;
+   - la plage de jauge AWG acceptée ;
+   - le type de fil, s'il compte (cuivre, aluminium).
 
-Le mécanisme existe déjà (simulation des barrettes : résistance linéique
-× longueur + résistance de contact, comparée à la chute admise du réseau).
-Ce qu'il me faut : les vraies tables de résistance par type et jauge de fil,
-la chute admise par réseau, et une longueur par fil (colonne de l'Excel, ou
-une longueur par défaut par route).
+   Aujourd'hui l'outil prend des plages « usuelles, à confirmer ». Tableau
+   idéal : `Norme ; Taille ; Contact ; Jauge min ; Jauge max ; Note`.
+2. **La règle complète de désignation de chaque norme**, avec les valeurs
+   que vous prenez par défaut : classe et matériau, finition, position de clé,
+   fiche ou embase, type d'embase. L'outil écrit aujourd'hui des désignations
+   provisoires (`EN3646-002-12-08`).
+3. **Les pages manquantes** : la figure 51 de l'EN 3645, et la page 7 de
+   l'ASNE0059.
+4. **Vos préférences de norme** :
+   - pour une barrette : ASNE 0599 ou NSA937901, et selon quoi (programme,
+     client, appareil) ;
+   - pour une prise de coupure : quelle famille, quel type d'embase, et la
+     partie mobile toujours côté amont ou non.
 
-## 4. L'intensité admissible
+### B. Les fils : intensité admissible et chute en ligne
 
-Même mécanisme : intensité du fil seul par type et jauge, facteurs de
-déclassement (faisceau, température, altitude…), comparée au courant du
-fil — celui de l'équipement, ou le calibre du disjoncteur en amont.
-Ce qu'il me faut : la table de la norme de câblage et ses déclassements.
+5. **La table de la norme de câblage** (le nom de votre norme ou de votre
+   manuel). Pour chaque type de fil (DR, MLB, BN…) et chaque jauge :
+   - la section ;
+   - la résistance linéique (Ω/km à 20 °C) ;
+   - l'intensité admissible d'un fil seul ;
+   - le diamètre extérieur (il sert aussi aux raccords, § D).
+6. **Les déclassements** : selon le nombre de fils en faisceau, la
+   température de zone, l'altitude.
+7. **La chute de tension admise**, par réseau (28 V continu, 115 V alternatif…)
+   et par nature de circuit (puissance, signal).
+8. **Les longueurs de fil.** Le mieux : une colonne « longueur » dans l'Excel.
+   À défaut, une longueur par défaut par route ou par zone. Sans longueur, la
+   chute reste indicative.
 
-## 5. Raccords, cheminées, colliers d'identification
+### C. Les disjoncteurs
 
-Ce qu'il me faut : pour chaque famille de connecteur, la table qui donne,
-selon la taille du boîtier et le diamètre du faisceau, le raccord arrière,
-la cheminée, le collier — les macros Excel aussi : je relirai leur logique
-et je la réécrirai dans l'outil.
+9. **La courbe ou la table de la norme** : le courant consommé donne le
+   calibre. Avec elle, la gamme des calibres que vous posez (1, 2, 3, 5, 7,5,
+   10 A…) et la marge appliquée.
+10. **Pour chaque équipement alimenté** :
+    - sa consommation, en A ou en W, et sous quelle tension ;
+    - permanent ou intermittent ;
+    - son courant d'appel, s'il compte ;
+    - le repère du disjoncteur qui l'alimente.
 
-Ce que l'outil fera : sur la fiche d'un connecteur, une section
-« Accessoires » avec chaque référence et la raison de son choix
-(« faisceau de 6,2 mm → raccord taille 14 »).
+    Le plus simple : deux colonnes de plus dans l'Excel, ou un petit tableau à
+    part `Équipement ; Consommation ; Disjoncteur`.
 
-## 6. S'inspirer des anciens contrats (la grande base)
+### D. Raccords arrière, cheminées, colliers d'identification
 
-C'est le gros morceau. Ce que je propose, en trois temps.
+11. Pour chaque famille de connecteur : **la table qui donne, selon la taille
+    du boîtier et le diamètre du faisceau, le raccord, la cheminée, le
+    collier**.
+12. **Les macros Excel actuelles**, telles quelles : je relis leur logique et
+    je la réécris dans l'outil. Il les fera seul, avec le pourquoi
+    (« faisceau de 6,2 mm → raccord taille 14 »).
 
-**a. Ranger l'historique.** Chaque ancienne machine devient un « contrat de
-référence » : ses liaisons (de où à où, de pin à pin, fil, type, connecteur),
-lues avec le même lecteur que l'Excel du contrat. Rien n'est mélangé : on
-garde la machine d'origine sur chaque ligne.
+### E. Ce qui sort de l'outil
 
-**b. Comparer.** Pour notre contrat, l'outil cherche, équipement par
-équipement, les machines où le même équipement (même repère, ou même part
-number, ou même nature reliée aux mêmes voisins) existe, et mesure la
-ressemblance : mêmes bornes utilisées, mêmes destinations, mêmes types de
-fil. Il en sort un classement : « l'installation la plus proche pour
-300XC1 est la machine X (92 % des liaisons identiques) ».
+13. **La liste des documents à produire** (folios PDF, liste de fils,
+    nomenclature, tableau de raccordement, fiches barrette…) et **un exemple
+    rendu anonyme de chacun** : le cartouche officiel, le format, les indices
+    de révision.
+14. **Vos règles maison** :
+    - qui donne le numéro d'un fil à créer (le fil d'une barrette à poser), et
+      dans quelle plage ;
+    - comment se choisit le repère d'une nouvelle barrette ;
+    - le sens de lecture des folios ;
+    - ce qui va sur quel folio.
 
-**c. Proposer, jamais imposer.** Sur la fiche d'un équipement, une section
-« Déjà fait » :
-- ce que les machines proches ont fait et que notre contrat ne dit pas
-  (un relais en plus, une plaquette éclairante, une boîte) — à ajouter d'un
-  clic ;
-- ce qui diffère (un autre connecteur, une autre jauge, un autre contact) —
-  avec le choix « garder notre contrat » ou « reprendre comme machine X » ;
-- et, quoi qu'on reprenne, le passage de toutes les règles (contacts,
-  jauges, intensité, chute, raccords) : on se cale sur l'existant, mais
-  l'outil vérifie que l'existant est conforme.
+### F. Les contrats déjà faits (voir § 2)
 
-Ce qu'il me faut pour commencer : un extrait de cette grande base (quelques
-machines, données rendues anonymes si besoin), dans son format réel. Je
-construis d'abord la lecture et la comparaison, je te montre le classement
-sur un équipement que tu connais bien, et on ajuste les critères de
-ressemblance ensemble avant d'aller plus loin.
+15. **Un extrait de la grande base**, dans son format réel : deux ou trois
+    machines suffisent pour commencer, rendues anonymes si besoin (le nom du
+    client et le numéro de série remplacés par un code). Rien ne sort de
+    l'outil : il tourne dans le navigateur, sans réseau.
+16. **Ce que « semblable » veut dire pour vous** : même appareil (H160,
+    H175…), même client, même équipement (part number), même chaîne
+    fonctionnelle. Je propose un classement, vous le corrigez.
+17. **Ce qui a changé depuis** : les normes révisées depuis les anciennes
+    machines. Une installation reprise doit passer les règles d'aujourd'hui.
 
-## Ordre proposé
+---
 
-1. Contacts par norme (petit, débloque la suite).
-2. Intensité admissible et chute en ligne (le mécanisme existe).
-3. Disjoncteurs.
-4. Raccords, cheminées, colliers.
-5. L'historique : lecture, comparaison, puis propositions.
+## 2. Les contrats qui se ressemblent : ni zéro, ni copier-coller à l'aveugle
+
+**On ne repart jamais de zéro**, et **on ne colle jamais un contrat entier**.
+On part du contrat qu'on a, et l'outil propose, **installation par
+installation**, ce que les machines semblables ont déjà fait. Rien ne change
+sans un clic, tout se défait (Ctrl+Z), et tout passe les règles
+d'aujourd'hui. Quatre temps.
+
+### a. Ranger (une fois)
+
+Chaque ancienne machine devient un **contrat de référence** : son retest, lu
+par le même lecteur que celui du contrat en cours (les seize colonnes, par
+leur nom). Chaque ligne garde sa machine d'origine, rien n'est mélangé. On
+dépose les fichiers une fois ; l'outil les garde dans ce navigateur, ou dans
+un dossier partagé si vous préférez travailler à plusieurs.
+
+### b. Reconnaître (tout seul, à l'ouverture d'un contrat)
+
+Pour chaque équipement du contrat, l'outil cherche le même équipement dans
+les références :
+
+- même part number d'abord ;
+- sinon même code (XC, RL, SW…) relié aux mêmes voisins.
+
+Il compare les deux installations : bornes utilisées, destinations, types de
+fil, connecteurs, barrettes, prises. Il en tire **un taux de ressemblance**
+(« 300XC1 : machine X, 92 % des liaisons identiques »). Sur la fiche de
+l'équipement, une section **« Déjà fait »** donne les trois plus proches.
+
+### c. Reprendre (bloc par bloc, jamais à l'aveugle)
+
+Un clic **« Reprendre comme machine X »** sur un équipement montre d'abord la
+différence, ligne par ligne :
+
+- **en vert**, ce que X a et que notre contrat n'a pas (un relais, une
+  barrette, une plaquette éclairante) ;
+- **en orange**, ce qui diffère (un autre connecteur, une autre jauge) ;
+- **en gris**, ce qui est déjà identique.
+
+Les repères diffèrent d'une machine à l'autre (102CB1 chez X, 205CB3 chez
+nous) : l'outil propose la correspondance par part number et par voisins, et
+vous la validez. Les numéros de fil neufs se prennent dans votre plage. On
+coche ce qu'on garde, puis **« Appliquer »** : une seule action, qui se défait
+d'un Ctrl+Z.
+
+C'est ça, le copier-coller propre : **une installation, avec ses fils, ses
+barrettes, ses prises**, recâblée sur nos repères. Ce n'est ni une ligne
+d'Excel, ni un contrat entier.
+
+### d. Revérifier (toujours)
+
+Ce qui est repris passe les mêmes règles que le reste : contacts, jauges,
+intensité, chute, disjoncteurs, raccords. La pastille de contrôle dit tout de
+suite ce qui ne passe plus (une norme révisée depuis, un contact retiré). On
+se cale sur l'existant, mais l'outil vérifie que l'existant est conforme.
+
+### Et à l'échelle de la flotte
+
+Pour un équipement, la liste de toutes les machines où il apparaît, avec
+leurs variantes (connecteur, module de barrette, jauge). On voit tout de
+suite la façon habituelle (« 8 machines sur 10 font comme ça ») et les
+exceptions, qui méritent une question.
+
+### Pour commencer
+
+1. Envoyez-moi deux ou trois anciens retests rendus anonymes.
+2. Je construis la lecture et la comparaison.
+3. Je vous montre le classement sur un équipement que vous connaissez bien.
+4. On ajuste ensemble les critères de ressemblance avant d'aller plus loin.
+
+---
+
+## 3. L'ordre proposé
+
+1. Les contacts par norme : un petit travail, qui débloque la suite (§ 1 A).
+2. L'intensité admissible et la chute en ligne : le mécanisme existe déjà
+   (§ 1 B).
+3. Les disjoncteurs (§ 1 C).
+4. Les raccords, cheminées et colliers (§ 1 D).
+5. L'historique : ranger, reconnaître, reprendre, revérifier (§ 2).
+6. Les documents de sortie au gabarit maison (§ 1 E).

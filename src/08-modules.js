@@ -4,29 +4,25 @@
    Une barrette du contrat se pose en modules de jonction de la norme ASNE
    0599 ou de la NSA937901 — les deux que l'outil propose pour une barrette :
    celle du part number du fichier, sinon la mieux taillée ; l'une ou l'autre
-   d'un clic sur la carte. Le remplissage est
+   d'un clic sur la fiche. Le remplissage est
    AUTOMATIQUE (`remplirModules`, 09) : chaque potentiel (une borne, ou les
    bornes que des shunts relient) prend un groupe de contacts reliés, chaque
    fil un contact dont la taille admet sa jauge ; le module le mieux taillé
    d'abord, un second s'il le faut.
 
-   La carte d'une barrette dessine la FACE de chaque module, en léger relief
-   — le bloc et son épaisseur, les contacts lettrés comme sur la norme, les
-   groupes en plaques de laiton, chaque contact occupé à la couleur de la
-   route de son fil, le numéro du fil dessous — puis la table contact par
-   contact, ce que la norme refuse, et les variantes qui conviennent (une
-   d'un clic). La bible dessine chaque variante en petit et en grand ; la vue
-   en relief pose les modules sur leur rail, les fils montant des contacts.
+   Ce module dessine la FACE de chaque module, en léger relief — le bloc et
+   son épaisseur, les contacts lettrés comme sur la norme, les groupes en
+   plaques de laiton, chaque contact occupé à la couleur de la route de son
+   fil, le numéro du fil dessous — que la fiche (08 bis) montre ; la bible
+   dessine chaque variante en petit et en grand ; la vue en relief pose les
+   modules sur leur rail, les fils montant des contacts.
    =========================================================================== */
 'use strict';
 
 /* Le plan d'une barrette du contrat : ses besoins, et ses modules — la variante, ou la norme, retenue à la main. */
-function planDeBarrette(nom) { const besoins = besoinsDeBarrette(nom, verite()), d = app.contrat.designations.get(nom) || '';
+function planDeBarrette(nom) { const besoins = besoinsDeBarrette(nom, liaisonsDeRepere(nom)), d = app.contrat.designations.get(nom) || '';
   const plan = remplirModules(besoins, app.norme, d); return { besoins, plan, main: plan.variante }; }
 const barretteEnModules = nom => estBarrette(nom) && !estCoupure(nom) && (app.bible || []).some(e => e.module);
-// ce que la carte dit d'une norme de modules
-const DIT_FAMILLE = { E0599: 'modules de jonction NF L 53-105 · contacts lettrés, groupes reliés dans le module',
-                      NSA937901: 'modules de jonction à contacts (mars 2021) · codes d’arrangement par taille de contact, contacts shuntés' };
 const classeFamille = f => 'f-' + String(f || '').toLowerCase();
 
 /* ---- la face d'un module, en léger relief -------------------------------- */
@@ -98,11 +94,6 @@ function faceModuleSvg(m, occupe, opts) { opts = opts || {};
   if (opts.titre) s += `<text class="mj-titre" x="0" y="12">${esc(opts.titre)}</text>` + lignes.map((l, i) => `<text class="mj-sous" x="0" y="${f1(24 + 10.5 * i)}">${esc(l)}</text>`).join('');
   // le titre ne déborde pas sur la face voisine
   return { svg: s + '</g>', w: Math.max(W + P + 4, opts.titre ? String(opts.titre).length * 7 : 0), h: T + H + P + 5 }; }
-/* Une rangée de faces, passant à la ligne quand elles ne tiennent pas en largeur. */
-function facesSvg(faces, largeur) { let x = 0, y = 0, ligne = 0, wMax = 0, s = '';
-  faces.forEach(f => { if (x > 0 && x + f.w > largeur) { x = 0; y += ligne + 14; ligne = 0; }
-    s += `<g transform="translate(${f1(x)},${f1(y)})">${f.svg}</g>`; x += f.w + 18; ligne = Math.max(ligne, f.h); wMax = Math.max(wMax, x - 18); });
-  return `<svg class="mj" width="${f1(wMax)}" height="${f1(y + ligne)}" viewBox="0 0 ${f1(wMax)} ${f1(y + ligne)}" role="img" aria-label="Faces des modules de jonction">${s}</svg>`; }
 // « 18 × 2 », « 2 × 8 + 2 × 10 » : les groupes d'un module, comptés par taille
 const tailleDesGroupes = m => { const n = new Map(); m.groupes.forEach(g => n.set(g.contacts.length, (n.get(g.contacts.length) || 0) + 1));
   return [...n].sort((a, b) => b[1] - a[1] || b[0] - a[0]).map(([t, k]) => k > 1 ? k + ' × ' + t : String(t)).join(' + '); };
@@ -113,71 +104,8 @@ const resumeModule = m => `${taillesDe(m)}${seulsDe(m) ? '' : ` · ${pluriel(m.g
 const motUsage = u => u === 'normal' ? 'usage normal' : u === 'possible' ? 'usage possible' : u === 'A350' ? 'A350 (AD12) seulement' : u === 'diodes' ? 'à diodes, jamais choisi seul'
   : u === 'ancien' ? 'pas pour une nouvelle conception, jamais choisi seul' : u === 'shuntés' ? 'contacts shuntés, jamais choisi seul' : u === 'spécial' ? 'spécial, jamais choisi seul' : 'à confirmer, jamais choisi seul';
 
-/* ---- la carte d'une barrette en modules ---------------------------------- */
-function carteModules(nom) { const { besoins: b, plan: Q, main } = planDeBarrette(nom), V = verite(), routes = couleursDesRoutes(), s = k => k > 1 ? 's' : '';
-  const parContact = new Map(); Q.fils.forEach(x => parContact.set(x.module + '|' + x.contact.lettre, x));
-  const infoFil = x => { const l = x.f.l, coul = routes.get((l && l.route) || '') || '#26323f'; return { i: V.indexOf(l), cable: x.f.cable || '—', couleur: coul, couleurClaire: melanger(coul, 0.72), ko: x.jaugeOk === false }; };
-  const faces = Q.modules.map((M, k) => faceModuleSvg(M.module, c => { const x = parContact.get(k + '|' + c.lettre); return x ? infoFil(x) : null; },
-    { titre: (Q.modules.length > 1 ? (k + 1) + ' · ' : '') + M.reference, sous: resumeModule(M.module), etiquettes: true }));
-  const libres = Q.contacts - Q.utilises, ko = Q.fils.filter(x => x.jaugeOk === false).length;
-  const familles = [...new Set(Q.modules.map(M => M.module.famille))], nomF = f => nomDeFamille(app.norme, f);
-  const selon = Q.famille ? 'la norme ' + nomF(Q.famille) : 'les normes ' + famillesDeModules(app.norme).map(nomF).join(' et ');
-  const dou = main ? 'choisie à la main' : Q.modules.length ? 'remplie automatiquement selon ' + selon + (Q.main ? ' (retenue à la main)' : '') : 'aucun module ne convient';
-  const compte = [pluriel(Q.modules.length, 'module'), `${Q.places} potentiel${s(Q.places)} sur ${Q.potentiels}`, pluriel(Q.utilises, 'contact') + ' pris', pluriel(libres, 'libre')].join(' · ')
-    + (b.jaugeFine != null ? ` · jauge ${jaugeTexte(b)}` : '') + (ko ? ` · <span class="ko">${pluriel(ko, 'fil')} hors taille</span>` : '');
-  const ligne = x => { const l = x.f.l, i = V.indexOf(l), coul = routes.get((l && l.route) || '') || '#26323f', g = x.groupe;
-    return `<tr class="fil${x.jaugeOk === false ? ' sim-jauge' : ''}" data-i="${i}" data-fils="${i}" tabindex="0" role="button" aria-label="${escA('Voir le fil ' + (x.f.cable || '') + ' sur le plan')}">`
-      + `<td class="c">${Q.modules.length > 1 ? (x.module + 1) + '·' : ''}<b>${esc(x.contact.lettre)}</b><span class="sens">#${x.taille}</span></td><td>${esc(x.potentiel.bornes.join('-'))}<span class="sens">groupe ${esc(g.nom)}</span></td>`
-      + `<td class="m"><i class="mj-pastille" style="background:${coul}"></i><b>${esc(x.f.cable || '—')}</b><span class="dest">${esc(destination(x.f))}</span></td>`
-      + `<td class="m${x.jaugeOk === false ? ' ko' : ''}">${esc(x.f.type || '—')}${x.jaugeOk === false ? '<span class="ko">refusé par le contact</span>' : x.jaugeOk == null ? '<span class="att">jauge inconnue</span>' : ''}</td></tr>`; };
-  const table = Q.fils.length ? `<div class="mj-table simu-defile"><table class="simu-tab mj-tab"><thead><tr><th>contact</th><th>borne · groupe</th><th>fil</th><th>type</th></tr></thead><tbody>`
-    + Q.fils.slice().sort((a, b2) => a.module - b2.module || a.groupe.k - b2.groupe.k || a.groupe.contacts.indexOf(a.contact) - b2.groupe.contacts.indexOf(b2.contact)).map(ligne).join('') + '</tbody></table></div>' : '';
-  const verdicts = `<div class="verdicts"><div class="regle">remplissage : un potentiel par groupe, un fil par contact, la jauge admise par la taille du contact — ${Q.verdicts.length + ko ? pluriel(Q.verdicts.length + ko, 'remarque') : 'rien à redire'}</div>`
-    + Q.verdicts.map(v => `<div class="verdict-l ${v.niveau}">${esc(v.texte)}</div>`).join('')
-    + Q.fils.filter(x => x.jaugeOk === false).map(x => `<div class="verdict-l ko">${esc((x.f.cable || '') + ' (' + x.f.type + ') : jauge ' + x.f.jauge + ' refusée par un contact #' + x.taille)}</div>`).join('') + '</div>';
-  // la norme visée : automatique (celle du fichier, sinon la mieux taillée des deux), ou l'une des deux, d'un clic
-  const visee = Q.main && !main ? Q.famille : '';
-  const normes = `<div class="mj-normes" role="group" aria-label="Norme des modules"><span>norme</span>`
-    + [['', 'automatique'], ...famillesDeModules(app.norme).map(f => [f, nomF(f)])].map(([f, t]) => `<button class="mj-norme ${f ? classeFamille(f) : ''}" data-famille="${escA(f)}" aria-pressed="${!main && visee === f}">${esc(t)}</button>`).join('') + '</div>';
-  return `<div class="bar-ref"><span class="ref">${esc(Q.reference || '—')}</span><span class="dou">${dou}</span></div><div class="phy-compte">${compte}</div>` + normes
-    + (familles.length ? familles.map(f => `<div class="bar-norme">norme <b>${esc(nomF(f))}</b> · ${esc(DIT_FAMILLE[f] || 'modules de jonction')}</div>`).join('') : '')
-    + `<div class="mj-faces">${Q.modules.length ? facesSvg(faces, largeurCarte()) : ''}</div>`
-    + `<div class="legende"><span class="l-trou occ"></span>contact pris (couleur de la route) · <span class="l-trou"></span>contact libre · <span class="l-peigne"></span>groupe : contacts reliés dans le module</div>`
-    + verdicts + table + choixModules(nom, b, Q, main); }
 // une couleur éclaircie vers le blanc, pour la plaque d'un groupe pris
 const melanger = (h, k) => '#' + rvb(h).map(c => Math.round(c + (255 - c) * k).toString(16).padStart(2, '0')).join('');
-/* Les variantes qui logent la barrette d'un seul module, norme par norme, d'un clic ; le retour au remplissage automatique. */
-function choixModules(nom, b, Q, main) { const retenue = main ? Q.modules.length && Q.modules[0].reference : Q.modules.length === 1 ? Q.modules[0].reference : '';
-  const fs = Q.famille ? [Q.famille] : famillesDeModules(app.norme);
-  const listes = fs.map(f => ({ f, vs: variantesQuiLogent(b, app.norme, f).slice(0, 8) })).filter(x => x.vs.length);
-  return `<details class="choix"${app.base.choixOuvert ? ' open' : ''}><summary><span>Les variantes qui conviennent</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>`
-    + `<div class="raisons"><span>${pluriel(Q.potentiels, 'potentiel')} à loger</span><span>${pluriel(Q.fils.length + Q.restants.reduce((n, p) => n + p.fils.length, 0), 'fil')}</span>${b.jaugeFine != null ? `<span>jauge ${jaugeTexte(b)}</span>` : ''}${b.pn ? `<span>fichier : ${esc(b.pn)}</span>` : ''}</div>`
-    + (listes.length ? listes.map(({ f, vs }) => `<div class="cands"><div class="sur">${esc(nomDeFamille(app.norme, f))} — d'un seul module</div>`
-        + vs.map(m => `<button class="cand" data-ref="${escA(m.reference)}" aria-pressed="${m.reference === retenue}">${pictoModule(m)}<b>${esc(m.variante)}</b><span>${esc(resumeModule(m))}${m.usage !== 'normal' ? ' · ' + esc(motUsage(m.usage)) : ''}</span>${m.reference === retenue ? '<span class="ok">retenue</span>' : ''}</button>`).join('') + '</div>').join('')
-      : '<p class="note">Aucune variante ne loge la barrette d’un seul module : elle en prend plusieurs.</p>')
-    + (main ? '<button class="btn lien" id="bar-auto">Revenir au remplissage automatique</button>' : '')
-    + `<button class="btn lien" id="bar-bible" data-ref="${escA(Q.modules.length ? Q.modules[0].reference : '')}">Voir dans la bible</button></details>`; }
-function lierCarteModules(nom) { const box = $('ba-equip');
-  const choix = box.querySelector('details.choix'); if (choix) choix.addEventListener('toggle', () => { app.base.choixOuvert = choix.open; });
-  box.querySelectorAll('.cand').forEach(bt => bt.onclick = () => { if (bt.getAttribute('aria-pressed') === 'true') return; const ref = bt.dataset.ref;
-    histPush('modules de ' + nom); designer(nom, ref); apresEdition(); dire(nom + ' : ' + ref + ' retenue.'); });
-  box.querySelectorAll('.mj-norme').forEach(bt => bt.onclick = () => { if (bt.getAttribute('aria-pressed') === 'true') return; const f = bt.dataset.famille;
-    histPush('norme de ' + nom); designer(nom, f); apresEdition(); dire(nom + ' : ' + (f ? 'modules ' + nomDeFamille(app.norme, f) : 'remplissage automatique') + '.'); });
-  const auto = $('bar-auto'); if (auto) auto.onclick = () => { histPush('modules de ' + nom); designer(nom, ''); apresEdition(); dire(nom + ' : remplissage automatique.'); };
-  const bible = $('bar-bible'); if (bible) bible.onclick = () => ficheBible(bible.dataset.ref);
-  lierFilsDeCarte(box); }
-
-/* Survoler un contact pris ou une ligne de la table allume son fil sur le plan ; un clic l'y montre. */
-function lierFilsDeCarte(box) {
-  const indices = el => (el.dataset.fils || '').split(' ').filter(Boolean).map(Number); let dernier = null;
-  const viser = t => { const idx = indices(t), V = verite(); allumerFils(idx.map(i => filDe(V[i])).filter(Boolean)); marquerVisees(idx);
-    box.querySelectorAll('.mj-contact, .mj-tab tr.fil').forEach(x => x.classList.toggle('vise', !!x.dataset.i && x.dataset.i === t.dataset.i)); };
-  const lacher = () => { dernier = null; box.querySelectorAll('.vise').forEach(x => x.classList.remove('vise')); marquerVisees([]); rallumer(); };
-  box.addEventListener('mouseover', e => { const t = e.target.closest('.mj-contact.plein, .mj-tab tr.fil'); if (!t || t === dernier) return; dernier = t; viser(t); });
-  box.addEventListener('mouseout', e => { if (e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest('.mj, .mj-tab')) return; if (dernier) lacher(); });
-  box.addEventListener('click', e => { const t = e.target.closest('.mj-contact.plein, .mj-tab tr.fil'); if (t) voirFilDeCarte(+t.dataset.i); });
-  box.addEventListener('keydown', e => { const t = e.target.closest('.mj-tab tr.fil'); if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); voirFilDeCarte(+t.dataset.i); } }); }
-
 /* ---- la bible : chaque variante en petit, et en grand ------------------- */
 function pictoModule(m) { const k = 30 / Math.max(m.colonnes * 6, m.rangs * 6), W = m.colonnes * 6 * k, H = m.rangs * 6 * k, pos = c => ({ x: (c.c + 0.5) * 6 * k, y: (c.r + 0.5) * 6 * k });
   const r = m.corps === 'circulaire' ? Math.min(W, H) / 2 + 1.5 : m.corps === 'ovale' ? Math.min(H * 0.3, 6) : 2;
@@ -207,7 +135,7 @@ function cylindreDebout(cx, cz, y0, y1, r, coul, extra, n) { n = n || 14; const 
   fs.push(face(Array.from({ length: n }, (_, k) => pt(k, y1)), { x: 0, y: 1, z: 0 }, coul, extra));
   return fs; }
 const RM = { pas: { 23: 24, 22: 26, 20: 30, 16: 36, 12: 42, 8: 52 }, marge: 14, ecart: 34 };
-function sceneModules(Q) { const faces = [], fils = [], textes = [], trous = [], V = verite();
+function sceneModules(Q) { const faces = [], fils = [], textes = [], trous = [];
   // un contact peut porter deux fils (une prise de coupure : la fiche et l'embase)
   const parContact = new Map(); Q.fils.forEach(x => { const k = x.module + '|' + x.contact.lettre; (parContact.get(k) || parContact.set(k, []).get(k)).push(x); });
   let x0 = 0;
@@ -229,27 +157,27 @@ function sceneModules(Q) { const faces = [], fils = [], textes = [], trous = [],
       m.contacts.forEach(c => { const p = pos(c), xs = (parContact.get(k + '|' + c.lettre) || []).filter(y => part.amont == null || !!y.f.amont === part.amont), x = xs[0];
         const r = (MJ.rayon[c.calibre] || 8) / (MJ.pas[c.calibre] || 36) * (RM.pas[c.calibre] || pas);
         faces.push(...cylindreDebout(p.x, p.z, h + 1.6, h + 6, r, x ? '#d9b36a' : m.corps === 'étanche' ? '#3a3f46' : '#b7bec6'));
-        const f = x ? { i: V.indexOf(x.f.l), f: x.f, cable: x.f.cable, vers: x.f.vers, borne: x.f.borne, type: x.f.type } : null;
+        const f = x ? { i: cleFil(x.f.l), f: x.f, cable: x.f.cable, vers: x.f.vers, borne: x.f.borne, type: x.f.type } : null;
         trous.push({ p: { x: p.x, y: h + 6.1, z: p.z }, f, mauvais: xs.some(y => y.jaugeOk === false) });
         textes.push({ p: { x: p.x - r - 2.5, y: h + 6.1, z: p.z - r - 1 }, t: c.lettre, cls: 're-num petit', face: { x: 0, y: 1, z: 0 } });
-        xs.forEach(y => { const g = { i: V.indexOf(y.f.l), f: y.f, cable: y.f.cable, vers: y.f.vers, borne: y.f.borne, type: y.f.type };
+        xs.forEach(y => { const g = { i: cleFil(y.f.l), f: y.f, cable: y.f.cable, vers: y.f.vers, borne: y.f.borne, type: y.f.type };
           const amont = !!y.f.amont, monte = 26 + 8 * (Math.round(c.r) % 4), loin = amont ? -RM.ecart : (deux ? 2 * d + ecart : d) + RM.ecart;
           fils.push({ pts: [{ x: p.x, y: h + 6, z: p.z }, { x: p.x, y: h + monte, z: p.z }, { x: p.x, y: h + monte, z: loin }], f: g, sens: amont ? 'amont' : 'aval' }); }); });
       textes.push({ p: { x: x0 + w / 2, y: h * 0.45, z: z0 + d }, t: deux ? (part.nom === 'fiche' ? 'fiche' : 'embase') : (M.titre || m.variante), cls: 're-num', face: { x: 0, y: 0, z: 1 } }); });
     x0 += w + RM.ecart; });
   return { faces, fils, textes, trous }; }
-function tableauModules(Q) { const routes = couleursDesRoutes(), V = verite();
+function tableauModules(Q) { const routes = couleursDesRoutes();
   // une prise : une ligne par contact, le fil de la fiche et celui de l'embase côte à côte
   if (Q.prise && Q.modules[0]) { const fil = x => { if (!x) return '<span class="re-libre">—</span>'; const l = x.f.l, coul = routes.get((l && l.route) || '') || '#26323f';
-      return `<span class="re-f" data-i="${V.indexOf(l)}"><i style="background:${coul}"></i><b>${esc(x.f.cable || '—')}</b> ${esc(destination(x.f))}${x.f.type ? ' <em>' + esc(x.f.type) + '</em>' : ''}${x.jaugeOk === false ? ' <span class="ko">refusé par le contact</span>' : ''}</span>`; };
+      return `<span class="re-f" data-i="${cleFil(l)}"><i style="background:${coul}"></i><b>${esc(nomDuFil(x.f))}</b> ${esc(destination(x.f))}${x.f.type ? ' <em>' + esc(x.f.type) + '</em>' : ''}${x.jaugeOk === false ? ' <span class="ko">refusé par le contact</span>' : ''}</span>`; };
     const lignes = Q.modules[0].module.contacts.map(c => { const am = Q.fils.find(x => x.contact === c && x.f.amont), av = Q.fils.find(x => x.contact === c && !x.f.amont);
       return am || av ? `<tr><td class="n">${esc(c.lettre)}</td><td>${fil(am)}</td><td>${fil(av)}</td></tr>` : ''; }).join('');
     return `<table class="re-tab"><thead><tr><th>Contact</th><th>Fiche · ce qui arrive</th><th>Embase · ce qui repart</th></tr></thead><tbody>${lignes}</tbody></table>`; }
   const lignes = Q.fils.slice().sort((a, b) => a.module - b.module || a.groupe.k - b.groupe.k || a.groupe.contacts.indexOf(a.contact) - b.groupe.contacts.indexOf(b.contact)).map(x => {
-    const l = x.f.l, i = V.indexOf(l), coul = routes.get((l && l.route) || '') || '#26323f';
+    const l = x.f.l, i = cleFil(l), coul = routes.get((l && l.route) || '') || '#26323f';
     const M = Q.modules[x.module], pre = Q.modules.length > 1 ? (M.titre ? M.titre.split(' · ')[0] : x.module + 1) + '·' : '';
     return `<tr><td class="n">${esc(pre)}${esc(x.contact.lettre)}</td><td>${esc(x.groupe.nom)} · borne ${esc(x.potentiel.bornes.join('-'))}</td>`
-      + `<td><span class="re-f" data-i="${i}"><i style="background:${coul}"></i><b>${esc(x.f.cable || '—')}</b> ${esc(destination(x.f))}${x.f.type ? ' <em>' + esc(x.f.type) + '</em>' : ''}${x.jaugeOk === false ? ' <span class="ko">refusé par le contact</span>' : ''}</span></td></tr>`; }).join('');
+      + `<td><span class="re-f" data-i="${i}"><i style="background:${coul}"></i><b>${esc(nomDuFil(x.f))}</b> ${esc(destination(x.f))}${x.f.type ? ' <em>' + esc(x.f.type) + '</em>' : ''}${x.jaugeOk === false ? ' <span class="ko">refusé par le contact</span>' : ''}</span></td></tr>`; }).join('');
   return `<table class="re-tab"><thead><tr><th>Contact</th><th>Groupe · potentiel</th><th>Fil</th></tr></thead><tbody>${lignes}</tbody></table>`; }
 
 /* ---- les connecteurs et les prises de coupure en modules EN 4165 -------------
@@ -273,50 +201,3 @@ function modulesEnRelief(nom) {
   const Q = planDesCavites(C.map(c => ({ nom: c.nom, plan: c.plan })));
   return { Q, sur: 'Connecteur · ' + [...new Set(C.map(c => c.pn))].join(', '), note: 'Modules ' + [...new Set(C.map(c => nomDeFamille(app.norme, c.plan.famille)))].join(', ') + ', une cavité (un insert) chacun : chaque borne sur le contact de même numéro, sa jauge admise par la taille du contact.' }; }
 const reliefPossible = nom => estBornier(nom) || cavitesDe(nom).length > 0;
-/* La carte d'un module de contacts : la face, le compte, ce qui ne va pas, la table, les arrangements qui conviennent. */
-function carteContacts(Q, points, cle, opts) { opts = opts || {}; const V = verite(), routes = couleursDesRoutes(), prise = !!opts.prise;
-  const parContact = new Map(); Q.fils.forEach(x => (parContact.get(x.contact.lettre) || parContact.set(x.contact.lettre, []).get(x.contact.lettre)).push(x));
-  const coul = x => routes.get((x.f.l && x.f.l.route) || '') || '#26323f';
-  const occupe = c => { const xs = parContact.get(c.lettre); if (!xs) return null; const xs2 = prise ? [...xs.filter(x => x.f.amont), ...xs.filter(x => !x.f.amont)] : xs, c0 = coul(xs2[0]);
-    return { i: V.indexOf(xs2[0].f.l), fils: xs2.map(x => V.indexOf(x.f.l)).join(' '), cable: xs2[0].f.cable || '—', cables: xs2.map(x => x.f.cable || '—'), couleur: c0, couleurClaire: melanger(c0, 0.72), ko: xs.some(x => x.jaugeOk === false) }; };
-  const M = Q.modules[0], face = M ? faceModuleSvg(M.module, occupe, { titre: (opts.titre ? opts.titre + ' · ' : '') + M.reference, sous: resumeModule(M.module), etiquettes: true, lignes: prise ? 2 : 1 }) : null;
-  const ko = Q.fils.filter(x => x.jaugeOk === false).length, s = k => k > 1 ? 's' : '';
-  const dou = Q.main ? 'choisi à la main' : Q.visee ? 'choisi automatiquement en ' + nomDeFamille(app.norme, Q.visee) : Q.nomme ? 'nommé par le part number' : M ? 'choisi automatiquement' : 'aucun arrangement ne convient';
-  const compte = [`${Q.places} borne${s(Q.places)} sur ${Q.potentiels}`, pluriel(Q.utilises, 'contact') + ' pris', M ? pluriel(Q.contacts - Q.utilises, 'libre') : ''].filter(Boolean).join(' · ') + (ko ? ` · <span class="ko">${pluriel(ko, 'fil')} hors taille</span>` : '');
-  const ligne = x => { const i = V.indexOf(x.f.l);
-    return `<tr class="fil${x.jaugeOk === false ? ' sim-jauge' : ''}" data-i="${i}" data-fils="${i}" tabindex="0" role="button" aria-label="${escA('Voir le fil ' + (x.f.cable || '') + ' sur le plan')}">`
-      + `<td class="c"><b>${esc(x.contact.lettre)}</b><span class="sens">#${x.taille}</span></td><td>${esc(x.potentiel.bornes.join(''))}${prise ? `<span class="sens">${x.f.amont ? 'fiche' : 'embase'}</span>` : ''}</td>`
-      + `<td class="m"><i class="mj-pastille" style="background:${coul(x)}"></i><b>${esc(x.f.cable || '—')}</b><span class="dest">${esc(destination(x.f))}</span></td>`
-      + `<td class="m${x.jaugeOk === false ? ' ko' : ''}">${esc(x.f.type || '—')}${x.jaugeOk === false ? '<span class="ko">refusé par le contact</span>' : x.jaugeOk == null ? '<span class="att">jauge inconnue</span>' : ''}</td></tr>`; };
-  const tri = (a, b) => triBornes(a.contact.lettre, b.contact.lettre) || (b.f.amont ? 1 : 0) - (a.f.amont ? 1 : 0);
-  const table = Q.fils.length ? `<div class="mj-table simu-defile"><table class="simu-tab mj-tab"><thead><tr><th>contact</th><th>borne</th><th>fil</th><th>type</th></tr></thead><tbody>${Q.fils.slice().sort(tri).map(ligne).join('')}</tbody></table></div>` : '';
-  const verdicts = `<div class="verdicts"><div class="regle">${prise ? 'chaque contact : un fil de fiche, un fil d’embase' : 'chaque borne sur le contact de même numéro'}, la jauge admise par la taille du contact — ${(k => k ? pluriel(k, 'remarque') : 'rien à redire')(Q.verdicts.filter(v => v.niveau !== 'info').length)}</div>`
-    + Q.verdicts.map(v => `<div class="verdict-l ${v.niveau}">${esc(v.texte)}</div>`).join('') + '</div>';
-  const vs = arrangementsQuiLogent(points, app.norme, Q.famille).slice(0, 8), retenu = M ? M.reference : '';
-  const choix = `<details class="choix"${app.base.choixOuvert ? ' open' : ''}><summary><span>Les arrangements qui conviennent</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>`
-    + (vs.length ? `<div class="cands"><div class="sur">${esc(nomDeFamille(app.norme, Q.famille))}</div>` + vs.map(m => `<button class="cand" data-cle="${escA(cle)}" data-ref="${escA(m.reference)}" aria-pressed="${m.reference === retenu}">${pictoModule(m)}<b>${esc(m.variante)}</b><span>${esc(resumeModule(m))}${m.usage !== 'normal' ? ' · ' + esc(motUsage(m.usage)) : ''}</span>${m.reference === retenu ? '<span class="ok">retenu</span>' : ''}</button>`).join('') + '</div>'
-      : '<p class="note">Aucun arrangement ne loge toutes ces bornes avec ces jauges : il faut changer de câblage, ou retenir un arrangement à la main et lire ce qu’il refuse.</p>')
-    + (Q.main ? `<button class="btn lien" data-auto="${escA(cle)}">Revenir au choix automatique</button>` : '')
-    + (M ? `<button class="btn lien" data-bible="${escA(M.reference)}">Voir dans la bible</button>` : '') + '</details>';
-  return `<div class="mj-cavite"><div class="bar-ref"><span class="ref">${esc((opts.titre ? opts.titre + ' · ' : '') + (Q.reference || '—'))}</span><span class="dou">${dou}</span></div><div class="phy-compte">${compte}</div>`
-    + (face ? `<div class="mj-faces">${facesSvg([face], largeurCarte())}</div>` : '') + verdicts + table + choix + '</div>'; }
-// la carte d'une prise de coupure en module de connecteur (EN 4165, EN 2997)
-const DIT_CONNECTEUR = { EN4165: 'connecteur rectangulaire modulaire', EN2997: 'connecteur circulaire', EN3646: 'connecteur circulaire à contacts lettrés', EN3645: 'connecteur circulaire', ASNE0059: 'connecteur circulaire Airbus à contacts lettrés' };
-function carteCoupureModules(nom) { const { points, plan: Q } = planDeCoupure(nom), visee = Q.visee || '';
-  const normes = `<div class="mj-normes" role="group" aria-label="Norme de la prise"><span>norme</span>`
-    + [['', 'automatique'], ...famillesDeModules(app.norme, 'connecteur').map(f => [f, nomDeFamille(app.norme, f)])].map(([f, t]) => `<button class="mj-norme ${f ? classeFamille(f) : ''}" data-coupure="${escA(f)}" aria-pressed="${!Q.main && visee === f}">${esc(t)}</button>`).join('') + '</div>';
-  return normes + (Q.famille ? `<div class="bar-norme">norme <b>${esc(nomDeFamille(app.norme, Q.famille))}</b> · ${esc(DIT_CONNECTEUR[Q.famille] || 'connecteur')} · fiche et embase d’un même arrangement</div>` : '')
-    + carteContacts(Q, points, nom, { prise: true }); }
-// les cavités EN 4165 d'un équipement, sous la liste de ses connecteurs
-function carteCavites(nom) { const C = cavitesDe(nom); if (!C.length) return '';
-  return [...new Set(C.map(c => c.plan.famille))].map(f => `<div class="bar-norme">norme <b>${esc(nomDeFamille(app.norme, f))}</b> · ${f === 'EN2997' ? 'connecteur circulaire, un insert, chaque borne sur le contact de même numéro' : (f === 'EN3646' || f === 'ASNE0059') ? 'connecteur circulaire, un insert, contacts lettrés : la borne n prend la lettre de rang n' : f === 'EN3645' ? 'connecteur circulaire, un insert, chaque borne sur son contact (numéro, sinon la lettre de même rang)' : 'un module par cavité, chaque borne sur le contact de même numéro'}</div>`).join('')
-    + C.map(c => carteContacts(c.plan, c.points, nom + '|' + c.nom, { titre: c.nom })).join(''); }
-function lierCarteContacts(nom) { const box = $('ba-equip');
-  box.querySelectorAll('details.choix').forEach(d => d.addEventListener('toggle', () => { app.base.choixOuvert = d.open; }));
-  box.querySelectorAll('.cand[data-cle]').forEach(bt => bt.onclick = () => { if (bt.getAttribute('aria-pressed') === 'true') return; const { cle, ref } = bt.dataset;
-    histPush('arrangement de ' + nom); designer(cle, ref); apresEdition(); dire(cle.replace('|', ' · ') + ' : ' + ref + ' retenu.'); });
-  box.querySelectorAll('[data-coupure]').forEach(bt => bt.onclick = () => { if (bt.getAttribute('aria-pressed') === 'true') return; const f = bt.dataset.coupure;
-    histPush('norme de ' + nom); designer(nom, f); apresEdition(); dire(nom + ' : ' + (f ? 'arrangements ' + nomDeFamille(app.norme, f) : 'choix automatique') + '.'); });
-  box.querySelectorAll('[data-auto]').forEach(bt => bt.onclick = () => { histPush('arrangement de ' + nom); designer(bt.dataset.auto, ''); apresEdition(); dire(bt.dataset.auto.replace('|', ' · ') + ' : choix automatique.'); });
-  box.querySelectorAll('[data-bible]').forEach(bt => bt.onclick = () => ficheBible(bt.dataset.bible));
-  lierFilsDeCarte(box); }

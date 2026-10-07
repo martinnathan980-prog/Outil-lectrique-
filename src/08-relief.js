@@ -31,8 +31,9 @@
 'use strict';
 
 const RELIEF = { nom: null, az: 0.42, el: 0.6, P: null, S: null, Q: null, prise: false, glisse: null };
-// un fil de la vue (celui de la carte : `filsDuModule`) : sa ligne du contrat, la couleur de sa route
-const ligneRelief = e => (e && e.i != null ? verite()[e.i] : null);
+/* Un fil de la vue porte la clé de son fil (`cleFil`, 08 bis : son rang au contrat, ou « p » et son rang au folio pour
+   un fil que l'outil ajoute) ; sa couleur est celle de sa route. */
+const ligneRelief = e => (e && e.f && e.f.l) || (e && e.i != null && e.i !== '' ? verite()[+e.i] : null);
 const couleurRelief = (e, routes) => { const l = ligneRelief(e); return (l && routes.get(l.route || '')) || '#26323f'; };
 const VUES_RELIEF = { '3/4': [0.42, 0.6], face: [0, 0.14], dessus: [0, 1.32] };
 
@@ -152,7 +153,7 @@ function reliefSvg() { const { P, S, Q, az, el, prise } = RELIEF; if (!P && !Q) 
   if (!prise) s += filsSvg();
   // les trous : occupés, libres, et cerclés de rouge quand la norme les refuse
   sc.trous.forEach(t => { const q = pj(t.p), i = t.f ? t.f.i : -1, coul = t.f ? couleurRelief(t.f, routes) : null;
-    s += `<circle class="re-trou${t.f ? ' plein' : ''}${t.mauvais ? ' ko' : ''}"${i >= 0 ? ` data-i="${i}"` : ''} cx="${q.x.toFixed(1)}" cy="${q.y.toFixed(1)}" r="${t.prise ? 5 : 4.2}"${coul ? ` style="stroke:${coul}"` : ''}/>`; });
+    s += `<circle class="re-trou${t.f ? ' plein' : ''}${t.mauvais ? ' ko' : ''}"${i !== -1 && i !== '' ? ` data-i="${i}"` : ''} cx="${q.x.toFixed(1)}" cy="${q.y.toFixed(1)}" r="${t.prise ? 5 : 4.2}"${coul ? ` style="stroke:${coul}"` : ''}/>`; });
   sc.textes.forEach(t => { if (t.face && tourner(t.face, az, el).d <= 0.05) return; const q = pj(t.p); s += `<text class="${t.cls}" x="${q.x.toFixed(1)}" y="${q.y.toFixed(1)}" text-anchor="middle">${esc(t.t)}</text>`; });
   if (sc.emboite) { const a = pj(sc.emboite.a), b = pj(sc.emboite.b);
     s += `<path class="re-emboite" d="M${a.x.toFixed(1)} ${a.y.toFixed(1)} L${b.x.toFixed(1)} ${b.y.toFixed(1)}" marker-end="url(#re-fleche)" marker-start="url(#re-fleche)"/><text class="re-note" x="${((a.x + b.x) / 2).toFixed(1)}" y="${((a.y + b.y) / 2 + 16).toFixed(1)}" text-anchor="middle">s’emboîtent</text>`; }
@@ -160,7 +161,7 @@ function reliefSvg() { const { P, S, Q, az, el, prise } = RELIEF; if (!P && !Q) 
   etiquettes.forEach(({ w, a, pos }) => { const f = w.f, i = f.i, coul = couleurRelief(f, routes);
     const ancre = prise ? (w.sens === 'amont' ? 'end' : 'start') : 'middle', bout = prise ? { x: pos.x + (w.sens === 'amont' ? 4 : -4), y: pos.y - 4 } : { x: pos.x, y: w.sens === 'amont' ? pos.y + 14 : pos.y - 12 };
     s += `<g class="re-etiq" data-i="${i}"><path class="re-trait" d="M${a.x.toFixed(1)} ${a.y.toFixed(1)} L${bout.x.toFixed(1)} ${bout.y.toFixed(1)}" style="stroke:${coul}"/>`
-      + `<text x="${pos.x.toFixed(1)}" y="${(pos.y - 1).toFixed(1)}" text-anchor="${ancre}" class="re-cable" style="fill:${coul}">${esc(f.cable || '—')}</text>`
+      + `<text x="${pos.x.toFixed(1)}" y="${(pos.y - 1).toFixed(1)}" text-anchor="${ancre}" class="re-cable" style="fill:${coul}">${esc(nomDuFil(f.f || f))}</text>`
       + `<text x="${pos.x.toFixed(1)}" y="${(pos.y + 12).toFixed(1)}" text-anchor="${ancre}" class="re-dest">${esc(destination(f) + (f.type ? ' · ' + f.type : ''))}</text></g>`; });
   s += `<defs><marker id="re-fleche" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#7a8796"/></marker></defs>`;
   return s + '</svg>'; }
@@ -201,8 +202,8 @@ function fermerRelief() { $('relief').hidden = true; RELIEF.P = null; RELIEF.Q =
 function peindreRelief() { $('re-scene').innerHTML = reliefSvg();
   document.querySelectorAll('#re-vues button').forEach(b => { const [a, e] = VUES_RELIEF[b.dataset.vue]; b.classList.toggle('on', Math.abs(a - RELIEF.az) < 1e-3 && Math.abs(e - RELIEF.el) < 1e-3); }); }
 // survoler un fil l'allume ici et sur le plan ; un clic y va
-function allumerRelief(i) { document.querySelectorAll('#relief [data-i]').forEach(el => el.classList.toggle('on', +el.dataset.i === i && i >= 0));
-  const l = i >= 0 ? verite()[i] : null, f = l && filDe(l); if (f) allumerFil(f); else rallumer(); }
+function allumerRelief(k) { document.querySelectorAll('#relief [data-i]').forEach(el => el.classList.toggle('on', !!k && el.dataset.i === k));
+  const f = filDeCle(k); if (f) allumerFil(f); else rallumer(); }
 let reliefLie = false;
 function lierRelief() { if (reliefLie) return; reliefLie = true; const d = $('relief'), sc = $('re-scene');
   $('re-fermer').onclick = fermerRelief;
@@ -216,6 +217,6 @@ function lierRelief() { if (reliefLie) return; reliefLie = true; const d = $('re
     cancelAnimationFrame(RELIEF.image); RELIEF.image = requestAnimationFrame(peindreRelief); });
   const fin = () => { RELIEF.glisse = null; sc.classList.remove('tourne'); };
   sc.addEventListener('pointerup', fin); sc.addEventListener('pointercancel', fin);
-  d.addEventListener('mouseover', e => { const el = e.target.closest('[data-i]'); allumerRelief(el ? +el.dataset.i : -1); });
-  d.addEventListener('click', e => { const el = e.target.closest('[data-i]'); if (!el || RELIEF.glisse) return; const l = verite()[+el.dataset.i], f = l && filDe(l);
+  d.addEventListener('mouseover', e => { const el = e.target.closest('[data-i]'); allumerRelief(el ? el.dataset.i : ''); });
+  d.addEventListener('click', e => { const el = e.target.closest('[data-i]'); if (!el || RELIEF.glisse) return; const f = filDeCle(el.dataset.i);
     if (f) { fermerRelief(); choisirFil(f); viserFil(f); } }); }
