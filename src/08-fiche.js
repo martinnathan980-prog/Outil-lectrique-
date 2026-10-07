@@ -11,11 +11,12 @@
      5. SES FILS : contact, fil, d'où il vient ou où il va ;
      6. le reste — changer de norme, d'arrangement, le détail des règles —
         replié sous « Changer » et « Détails ».
-   Un second onglet, « Liaisons », montre les lignes de la base à éditer.
+   Elle vit dans l'INSPECTEUR, à droite ; le plan se recadre à côté. Les lignes
+   du tableau se corrigent dans le tiroir du bas (« dans le tableau »).
    =========================================================================== */
 'use strict';
 
-const ONGLETS_FICHE = { onglet: 'fiche' };
+const ONGLETS_FICHE = {};
 const coulDeFil = f => couleursDesRoutes().get((f.l && f.l.route) || '') || '#26323f';
 const puceFil = f => `<i class="fi-puce" style="background:${coulDeFil(f)}"></i>`;
 const typesDe = fils => [...new Set(fils.map(f => f.type).filter(Boolean))].sort(triNaturel).join(', ');
@@ -26,10 +27,11 @@ function ficheTete(nature, nom, resume, opts) { opts = opts || {};
     + `<input class="fi-nom" id="eq-rep" value="${escA(nom)}" aria-label="Repère" title="Renommer : chaque fil suit" spellcheck="false">`
     + (opts.designation != null ? `<input class="fi-des" id="eq-des" value="${escA(opts.designation)}" placeholder="Ajouter une désignation (écrite sous le repère)" aria-label="Désignation" spellcheck="false">` : '')
     + `<div class="fi-resume">${resume}</div></div>`
-    + (opts.relief ? `<button class="fi-relief" id="eq-relief" title="La pièce en perspective (ou double-clic sur le bloc)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg>Relief</button>` : '') + '</div>'; }
-function ficheOnglets(n) {
-  return `<div class="fi-onglets" role="tablist"><button role="tab" data-onglet="fiche" aria-selected="${ONGLETS_FICHE.onglet === 'fiche'}">Fiche</button>`
-    + `<button role="tab" data-onglet="liaisons" aria-selected="${ONGLETS_FICHE.onglet === 'liaisons'}">Liaisons <span>${n}</span></button></div>`; }
+    + `<div class="fi-actions">${opts.relief ? `<button class="fi-relief" id="eq-relief" title="La pièce en perspective (ou double-clic sur le bloc)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg>Relief</button>` : ''}`
+    + `<button class="rond fermer" id="in-fermer" aria-label="Fermer la fiche (Échap)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></div>`; }
+// le pied : voir ses lignes dans le tableau (pour les corriger), supprimer
+const fichePied = (nom, n, suppr) => `<div class="fi-pied"><button class="btn papier" id="fi-tableau" data-filtre="${escA(nom)}"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M3 14h18M9 5v14"/></svg>Ses ${pluriel(n, 'liaison')} dans le tableau</button>`
+  + (suppr ? `<button class="btn lien danger" id="eq-del">Supprimer</button>` : '') + '</div>';
 /* Le verdict, en une ligne : `ko` des problèmes, `att` des remarques. */
 function ficheStatut(ko, att, okTexte) {
   if (ko.length) return `<div class="fi-statut ko"><b>${ko.length > 1 ? ko.length + ' problèmes' : '1 problème'}</b><ul>${ko.slice(0, 4).map(t => `<li>${esc(t)}</li>`).join('')}${ko.length > 4 ? `<li>… et ${ko.length - 4} autres</li>` : ''}</ul></div>`;
@@ -49,28 +51,30 @@ const faceAjustee = (f, titre) => `<figure class="fi-face"><svg class="mj" viewB
 const miroir = m => ({ ...m, contacts: m.contacts.map(c => ({ ...c, c: m.colonnes - 1 - c.c })), groupes: m.groupes.map(g => ({ ...g, contacts: g.contacts.map(c => ({ ...c, c: m.colonnes - 1 - c.c })) })) });
 
 /* ---- la fiche ------------------------------------------------------------ */
-function rendreFiche() { const box = $('ba-equip'), c = app.cible, base = $('base'); const choisi = !!(c && c.type === 'bloc');
-  box.hidden = !choisi; base.classList.toggle('avec-fiche', choisi); if (!choisi) { base.classList.remove('onglet-liaisons'); return; }
-  const nom = c.nom, V = verite(), mes = V.filter(l => l.de === nom || l.vers === nom), n = mes.length;
-  base.classList.toggle('onglet-liaisons', ONGLETS_FICHE.onglet === 'liaisons');
-  let corps;
-  try { corps = barretteEnModules(nom) ? ficheBarrette(nom, n) : coupureEnModules(nom) ? ficheCoupure(nom, n) : estBornier(nom) ? ficheBornierAncien(nom, n) : ficheEquipement(nom, n, mes); }
-  catch (e) { corps = ficheTete('Équipement', nom, esc(pluriel(n, 'fil'))) + `<p class="note">${esc(String(e && e.message || e))}</p>`; }
-  // l'onglet « Liaisons » : la tête et les onglets, puis la base filtrée sur le bloc, à éditer
-  const liaisons = ONGLETS_FICHE.onglet === 'liaisons', k = corps.indexOf('<!--onglets-->');
-  const retour = `<button class="fi-retour" id="fi-retour"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>Toute la base</button>`;
-  box.className = 'fi' + (liaisons ? ' compacte' : '');
-  box.innerHTML = retour + (liaisons ? corps.slice(0, k) + ficheOnglets(n) : corps.replace('<!--onglets-->', ficheOnglets(n)) + `<div class="fi-pied"><button class="btn lien danger" id="eq-del">Supprimer ${esc(nom)} et ses ${pluriel(n, 'fil')}</button></div>`);
+function rendreFiche() { const box = $('ba-equip'), c = app.cible; if ($('inspecteur').hidden) return;
+  if (!c) { box.innerHTML = ''; return; }
+  let corps, nom = '', n = 0;
+  try {
+    if (c.type === 'fil') corps = ficheFil(c.l);
+    else if (c.type === 'vt') corps = ficheBarretteAPoser(c);
+    else { nom = c.nom; const mes = verite().filter(l => l.de === nom || l.vers === nom); n = mes.length;
+      corps = (barretteEnModules(nom) ? ficheBarrette(nom, n) : coupureEnModules(nom) ? ficheCoupure(nom, n) : estBornier(nom) ? ficheBornierAncien(nom, n) : ficheEquipement(nom, n, mes)) + fichePied(nom, n, true); } }
+  catch (e) { corps = ficheTete('Élément', nom || '—', '') + `<p class="note">${esc(String(e && e.message || e))}</p>`; }
+  const haut = box.scrollTop, meme = box.dataset.cle === (c.type + '|' + (c.nom || (c.l && c.l.cable) || ''));
+  box.className = 'fi'; box.innerHTML = corps.replace('<!--onglets-->', ''); box.dataset.cle = c.type + '|' + (c.nom || (c.l && c.l.cable) || '');
+  if (meme) box.scrollTop = haut;
   lierFiche(nom, n); }
 function lierFiche(nom, n) { const box = $('ba-equip');
-  box.querySelectorAll('.fi-onglets [data-onglet]').forEach(b => b.onclick = () => { ONGLETS_FICHE.onglet = b.dataset.onglet; rendreFiche(); });
+  $('in-fermer').onclick = () => deselectionner();
+  const tab = $('fi-tableau'); if (tab) tab.onclick = () => { app.base.filtre = tab.dataset.filtre; app.base.defiler = true; if (app.base.ouvert) rendreBase(); else ouvrirBase(); };
   box.querySelectorAll('details.fi-replie').forEach(d => d.addEventListener('toggle', () => { ONGLETS_FICHE[d.dataset.cle] = d.open; }));
+  box.querySelectorAll('[data-choisir-bloc]').forEach(b => b.onclick = () => { const k = (app.dessin.comps || []).find(x => x.name === b.dataset.choisirBloc && x.kind !== 'tag'); if (k) choisirBloc(k); else { app.cible = { type: 'bloc', nom: b.dataset.choisirBloc }; rendreFiche(); } });
+  if (!nom) { lierFilsDeCarte(box); return; }
   const rep = $('eq-rep'); if (rep) rep.addEventListener('change', e => { const nr = e.target.value.trim(); if (!nr || nr === nom) { e.target.value = nom; return; }
-    histPush('renommage de ' + nom); renommer(nom, nr); app.choisi = nr; app.cible = { type: 'bloc', nom: nr }; app.base.filtre = nr; apresEdition(); });
+    histPush('renommage de ' + nom); renommer(nom, nr); app.choisi = nr; app.cible = { type: 'bloc', nom: nr }; if (app.base.filtre === nom) app.base.filtre = nr; apresEdition(); });
   const des = $('eq-des'); if (des) des.addEventListener('change', e => { histPush('désignation de ' + nom); designer(nom, e.target.value.trim()); apresEdition(); });
-  $('fi-retour').onclick = () => { app.cible = null; app.choisi = null; app.base.filtre = ''; ONGLETS_FICHE.onglet = 'fiche'; peindre(); rendreBase(); rallumer(); };
   if ($('eq-del')) $('eq-del').onclick = () => { if (!confirm('Supprimer « ' + nom + ' » et ses ' + n + ' liaison(s) ?')) return;
-    histPush('suppression de ' + nom); supprimerEquipement(nom); app.base.filtre = ''; apresEdition(); dire(nom + ' supprimé.'); };
+    histPush('suppression de ' + nom); supprimerEquipement(nom); app.base.filtre = ''; deselectionner(); apresEdition(); dire(nom + ' supprimé.'); };
   if ($('eq-relief')) $('eq-relief').onclick = () => ouvrirRelief(nom);
   box.querySelectorAll('input').forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } }));
   // les choix : une norme, une variante, un arrangement, le retour à l'automatique
@@ -83,6 +87,49 @@ function lierFiche(nom, n) { const box = $('ba-equip');
   if (estBornier(nom) && !barretteEnModules(nom) && !coupureEnModules(nom) && typeof lierCartePhysique === 'function') lierCartePhysique(nom);
   lierFilsDeCarte(box);
   box.querySelectorAll('.fi-fil').forEach(li => li.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); voirFilDeCarte(+li.dataset.i); } })); }
+
+/* ---- un fil -------------------------------------------------------------- */
+const boutDeFil = (rep, borne, pn) => `<button class="fi-bout" data-choisir-bloc="${escA(rep)}"><b>${esc(rep)}</b><span>borne ${esc(borne || '—')}</span>${pn ? `<small>${esc(pn)}</small>` : ''}</button>`;
+function ficheFil(l) { const V = verite(), i = V.indexOf(l), coul = coulDeFil({ l }), route = l.route || '';
+  const folios = app.nFolios ? (foliosParSource().get(cleDe(l)) || []) : (l.plan ? [l.plan] : []);
+  const jauge = jaugeDuType(l.type), att = [];
+  if (!l.type) att.push('type de fil inconnu : la jauge ne se vérifie pas');
+  const corps = `<div class="fi-tete"><div class="min0"><div class="fi-nature">Fil${route ? ' · ' + esc(route) : ''}</div><div class="fi-nom fi-nom-fil"><i class="fi-puce gros" style="background:${coul}"></i>${esc(l.cable || 'sans numéro')}</div>`
+    + `<div class="fi-resume">${esc(l.type || 'type inconnu')}${jauge != null ? ' · jauge ' + jauge + ' AWG' : ''}${folios.length ? ' · folio ' + folios.join(', ') : ''}</div></div>`
+    + `<div class="fi-actions"><button class="rond fermer" id="in-fermer" aria-label="Fermer la fiche (Échap)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></div>`;
+  return corps + (att.length ? ficheStatut([], att, '') : '')
+    + `<div class="fi-trajet">${boutDeFil(l.de, l.borneDe, l.pnDe)}<span class="fi-fleche" style="background:${coul}"></span>${boutDeFil(l.vers, l.borneVers, l.pnVers)}</div>`
+    + `<div class="fi-pied"><button class="btn papier" id="fi-tableau" data-filtre="${escA(l.cable || l.de)}"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M3 14h18M9 5v14"/></svg>Corriger dans le tableau</button></div>`; }
+
+/* ---- une barrette à poser (un dédoublement de fils) ----------------------- */
+function ficheBarretteAPoser(c) { const b = besoinsDeBarrette(c.propre, verite()), fils = (b.parBorne.get(c.borne) || []).map(f => ({ ...f, jauge: jaugeDuType(f.type) }));
+  const js = fils.map(f => f.jauge).filter(j => j != null), raccord = { cable: '', type: js.length ? 'jauge ' + Math.min(...js) : '', jauge: js.length ? Math.min(...js) : null, l: fils[0] && fils[0].l };
+  // la barrette que la norme propose : un potentiel, autant de contacts que de fils (le raccord vers la borne compris)
+  let prop = null; try { prop = remplirModules({ bornes: ['1'], ponts: [], parBorne: new Map([['1', [...fils, raccord]]]), pn: '' }, app.norme); } catch (_) { }
+  const n = fils.length + 1;
+  const tete = `<div class="fi-tete"><div class="min0"><div class="fi-nature">Barrette à poser</div><div class="fi-nom">${esc(c.nom)}</div>`
+    + `<div class="fi-resume">${pluriel(n, 'fil')} sur la borne ${esc(c.borne)} de ${esc(c.propre)}</div></div>`
+    + `<div class="fi-actions"><button class="rond fermer" id="in-fermer" aria-label="Fermer la fiche (Échap)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></div>`;
+  const pourquoi = `${pluriel(fils.length, 'fil')} du contrat partent de la même borne (${esc(c.propre)}:${esc(c.borne)}). On ne sertit pas ${fils.length} fils dans un contact : on pose une barrette, `
+    + `un fil de la borne à la barrette, puis un fil par départ — ${n} contacts.`;
+  // les numéros de contact, ceux du plan : chaque fil à la hauteur où il touche la barrette, le raccord du côté de la borne
+  const B = (app.dessin && app.dessin.barrettes) || [], vb = B.find(x => x.propre === c.propre && x.etiquette === String(c.borne));
+  const num = new Map(); let nRaccord = 1;
+  if (vb) { const cs = contactsDePiquage(vb), pris = new Set(), L = liaisonsDuPlan();
+    const prendre = (y, cote) => { const k = cs.filter(x => !pris.has(x) && Math.abs(x.y - y) < 0.6).sort((u, v) => cote * (u.x - v.x))[0]; if (k) pris.add(k); return k; };
+    const kr = prendre(vb.py, vb.px < vb.x ? 1 : -1); if (kr) nRaccord = kr.n;
+    fils.forEach(f => { const w = (app.dessin.fils || []).find(w => L[w.i] && L[w.i] === f.l) || (app.dessin.fils || []).find(w => w.cable === f.cable); if (!w) return;
+      let y = null; for (let i = 0; i < w.pts.length; i++) { const p = w.pts[i], q = w.pts[i + 1];
+        if (Math.abs(p.x - vb.x) < 0.6) { y = p.y; break; } if (q && Math.abs(p.y - q.y) < 0.6 && (p.x - vb.x) * (q.x - vb.x) < 0) { y = p.y; break; } }
+      const k = y != null ? prendre(y, 1) : null; if (k) num.set(f, k.n); }); }
+  let libre = 1; const suivant = () => { while (nRaccord === libre || [...num.values()].includes(libre)) libre++; return libre++; };
+  fils.forEach(f => { if (!num.has(f)) num.set(f, suivant()); });
+  const lignes = [{ n: nRaccord, h: `<li class="fi-fil fi-nouveau"><span class="fi-ct">${nRaccord}</span><span class="fi-cable"><b>à créer</b><small>${esc(raccord.type)}</small></span><span class="fi-dest">→ ${esc(c.propre)}:${esc(c.borne)}</span></li>` },
+    ...fils.map(f => ({ n: num.get(f), h: ligneFil(String(num.get(f)), f, '→ ' + destination(f)) }))].sort((u, v) => u.n - v.n).map(x => x.h).join('');
+  return tete + ficheStatut([], ['repère provisoire : donne-lui son vrai repère dans le tableau (un repère « …VT… »), et numérote le fil à créer'], '')
+    + ficheChoix(prop && prop.reference ? prop.reference : 'à choisir', pourquoi + (prop && prop.reference ? ' La norme propose ce module : le plus petit groupe qui reçoit ces fils.' : ''), 'Barrette proposée')
+    + ficheSection('Contacts', `<ul class="fi-liste">${lignes}</ul>`)
+    + `<div class="fi-pied"><button class="btn papier" data-choisir-bloc="${escA(c.propre)}">Voir ${esc(c.propre)}</button></div>`; }
 
 /* ---- une barrette en modules de jonction --------------------------------- */
 function ficheBarrette(nom, n) { const { besoins: b, plan: Q, main } = planDeBarrette(nom), s = k => k > 1 ? 's' : '';
@@ -150,7 +197,9 @@ function ficheEquipement(nom, n, mes) { const V = verite(), C = connecteursDe(no
   const b = besoinsDeBarrette(nom, V);
   const resume = `${natureDe(nom)} · ${pluriel(C.length, 'connecteur')} · ${pluriel(n, 'fil')}`;
   // deux fils sur une même borne : c'est un double sertissage (ou une barrette à poser), on le dit
-  const doubles = [...b.parBorne].filter(([, fs]) => fs.length > 1).map(([bo, fs]) => `borne ${bo} : ${fs.length} fils (${fs.map(f => f.cable).join(', ')}) — double sertissage, ou une barrette à poser`);
+  const B = (app.dessin && app.dessin.barrettes) || []; nommerBarrettesAPoser(B);
+  const vtDe = bo => (B.find(x => x.propre === nom && x.etiquette === String(bo)) || {}).nomVT;
+  const doubles = [...b.parBorne].filter(([, fs]) => fs.length > 1).map(([bo, fs]) => `borne ${bo} : ${fs.length} fils (${fs.map(f => f.cable).join(', ')}) — une barrette à poser${vtDe(bo) ? ' (' + vtDe(bo) + ' sur le plan)' : ''}`);
   const ko = cav.flatMap(c => c.plan.verdicts.filter(v => v.niveau === 'ko').map(v => c.nom + ' · ' + v.texte));
   const att = [...doubles, ...cav.flatMap(c => c.plan.verdicts.filter(v => v.niveau === 'attention' && !/contact .* : \d fils/.test(v.texte)).map(v => c.nom + ' · ' + v.texte))];
   const blocs = C.map(c => { const k = parNom.get(c.nom), Q = k && k.plan, M = Q && Q.modules[0];

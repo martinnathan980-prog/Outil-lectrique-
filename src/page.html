@@ -27,9 +27,9 @@
        un fichier et le menu, en bas. Sur téléphone elle passe en bas. La VUE
        (folios, cadrage, zoom) est dans la barre du bas. -->
   <nav id="rail" class="verre" aria-label="Commandes">
-    <button class="rd bascule" id="btnBase" aria-pressed="false" aria-label="Base de données (B)">
+    <button class="rd bascule" id="btnBase" aria-pressed="false" aria-label="Tableau des liaisons (B)">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M3 14h18M9 5v14"/></svg>
-      <span class="bulle" aria-hidden="true">Base<kbd>B</kbd></span>
+      <span class="bulle" aria-hidden="true">Tableau des liaisons<kbd>B</kbd></span>
     </button>
     <button class="rd" id="btnCherche" aria-label="Rechercher un repère ou un fil (/)">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -125,20 +125,25 @@
     </button>
   </nav>
 
-  <!-- La base : la table des liaisons, à côté du plan. On la corrige ici ;
-       le plan suit. -->
-  <aside id="base" hidden aria-label="Base de données">
+  <!-- L'INSPECTEUR : la fiche de ce qu'on a cliqué (un équipement, une barrette, une prise, un fil), étroite, à droite ;
+       le plan se recadre à côté, jamais dessous. -->
+  <aside id="inspecteur" hidden aria-label="Fiche de l’élément choisi">
+    <div id="ba-equip" class="fi"></div>
+  </aside>
+  <!-- LE TABLEAU des liaisons : un tiroir en bas, ouvert à la demande (B) ; le plan se recadre au-dessus. On le corrige
+       ici ; le plan suit. -->
+  <aside id="base" hidden aria-label="Tableau des liaisons">
     <div class="poignee" id="ba-poignee" title="Redimensionner" aria-hidden="true"></div>
     <div class="ba-tete">
-      <div class="min0"><div class="sur">Base</div><div class="ba-titre" id="ba-titre">—</div></div>
-      <button class="rond fermer" id="ba-fermer" aria-label="Cacher la base"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      <div class="ba-titre" id="ba-titre">—</div>
+      <div class="filtre">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+        <input id="ba-filtre" placeholder="Filtrer : repère, fil, type, folio…" aria-label="Filtrer le tableau" autocomplete="off" spellcheck="false">
+        <button class="vider" id="ba-vider" hidden aria-label="Effacer le filtre">×</button>
+      </div>
+      <button class="btn lien" id="ba-ajouter">+ Liaison</button>
+      <button class="rond fermer" id="ba-fermer" aria-label="Fermer le tableau"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     </div>
-    <div class="filtre">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
-      <input id="ba-filtre" placeholder="Filtrer par repère, fil, type, folio…" aria-label="Filtrer la base" autocomplete="off" spellcheck="false">
-      <button class="vider" id="ba-vider" hidden aria-label="Effacer le filtre">×</button>
-    </div>
-    <div id="ba-equip" class="equip" hidden></div>
     <div class="ba-corps" id="ba-corps"><table class="tab" id="ba-tab"><thead id="ba-thead"></thead><tbody id="ba-tbody"></tbody></table></div>
   </aside>
 

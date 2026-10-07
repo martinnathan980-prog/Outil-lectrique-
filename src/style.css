@@ -52,7 +52,8 @@
   --rapide:.14s ease; --moyen:.24s ease;
   --rail:52px;               /* largeur de la barre ; le plan commence après */
   --base-l:min(620px,44vw);  /* largeur de la base à droite ; se règle à la poignée */
-  --base-h:56vh;             /* hauteur de la base en tiroir, sur téléphone   */
+  --base-h:30vh;             /* hauteur du tableau, en tiroir en bas          */
+  --insp-l:min(400px,34vw);  /* largeur de l'inspecteur, la fiche à droite    */
   --fiche-l:400px;           /* largeur de la fiche ; 560 px pour la bible    */
   --fiche-h:60vh;            /* hauteur de la fiche en tiroir, mesurée        */
 }
@@ -190,14 +191,20 @@ body.cherche .recherche{display:flex}
 @media (prefers-reduced-motion:reduce){.affinage i{animation:none}}
 .fo-lbl{color:var(--craie-2);font-size:var(--t0);padding:0 10px 0 8px;white-space:nowrap;font-family:var(--mono)}
 /* quand un document est ouvert, les folios se recentrent sur ce qui reste du plan */
-body.base-ouverte #folios{left:calc((100vw - var(--base-l) + var(--rail)) / 2)}
+body.insp-ouvert #folios{left:calc((100vw - var(--insp-l) + var(--rail)) / 2)}
 body.fiche-ouverte #folios{left:calc((100vw - var(--fiche-l) + var(--rail)) / 2)}
+body.base-ouverte #folios{bottom:calc(var(--base-h) + 24px)}
 
 /* ─── LES DOCUMENTS : blancs, à droite ──────────────────────────────────── */
-#base,#fiche{position:fixed;top:12px;right:12px;bottom:12px;max-width:calc(100vw - var(--rail) - 48px);background:var(--papier);color:var(--encre);
+#base,#fiche,#inspecteur{position:fixed;top:12px;right:12px;bottom:12px;max-width:calc(100vw - var(--rail) - 48px);background:var(--papier);color:var(--encre);
   border-radius:18px;box-shadow:var(--ombre-2);z-index:25;display:flex;flex-direction:column;overflow:hidden}
 #fiche{width:var(--fiche-l)}
-#base{width:var(--base-l);min-width:340px}
+/* l'inspecteur : étroit, la fiche de ce qu'on a choisi */
+#inspecteur{width:var(--insp-l);z-index:26}
+#inspecteur .fi{flex:1 1 auto;margin:0;padding:16px 16px 18px 20px}
+/* le tableau : un tiroir en bas, de la barre de gauche au bord droit (ou à l'inspecteur) ; le plan au-dessus */
+#base{top:auto;left:calc(var(--rail) + 28px);height:var(--base-h);min-height:150px;max-width:none;width:auto;border-radius:16px}
+body.insp-ouvert #base{right:calc(var(--insp-l) + 24px)}
 .entre{animation:doc-entre var(--moyen)}
 @keyframes doc-entre{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
 .sur{font-size:var(--t0);text-transform:uppercase;letter-spacing:.09em;color:var(--encre-2);font-weight:700}
@@ -205,12 +212,14 @@ body.fiche-ouverte #folios{left:calc((100vw - var(--fiche-l) + var(--rail)) / 2)
 .fermer:hover{background:var(--papier-3);color:var(--encre)}
 
 /* ─── LA BASE : la table des liaisons, corrigée en direct ───────────────── */
-.poignee{position:absolute;left:0;top:0;bottom:0;width:10px;cursor:col-resize;z-index:2}
-.poignee::after{content:"";position:absolute;left:3px;top:50%;width:4px;height:36px;margin-top:-18px;border-radius:2px;background:var(--filet);transition:background var(--rapide)}
+.poignee{position:absolute;left:0;right:0;top:0;height:12px;cursor:row-resize;z-index:2}
+.poignee::after{content:"";position:absolute;left:50%;top:4px;width:44px;height:4px;margin-left:-22px;border-radius:2px;background:var(--filet);transition:background var(--rapide)}
 .poignee:hover::after,#base.redim .poignee::after{background:var(--cuivre)}
 #base.redim{user-select:none}
-.ba-tete{display:flex;align-items:center;gap:10px;padding:16px 16px 0 22px}
-.ba-titre{font-size:var(--t4);font-weight:700;letter-spacing:-.005em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ba-tete{display:flex;align-items:center;gap:12px;padding:14px 12px 8px 18px}
+.ba-tete .filtre{flex:1;max-width:420px;margin:0}
+.ba-tete .btn{height:34px}
+.ba-titre{font-size:var(--t3);font-weight:700;letter-spacing:-.005em;white-space:nowrap}
 .ba-titre b{font-family:var(--mono)}
 .filtre{display:flex;align-items:center;gap:8px;height:38px;border:1px solid var(--filet);border-radius:10px;padding:0 6px 0 10px;margin:12px 16px 8px 22px;transition:border-color var(--rapide)}
 .filtre:focus-within{border-color:var(--cuivre);box-shadow:0 0 0 3px var(--cuivre-pale)}
@@ -518,6 +527,12 @@ body.depot-actif .depot{display:grid}
   .fo-strip{max-width:calc(100vw - 110px)}
   /* les documents montent en tiroir ; la base garde la hauteur qu'on lui donne */
   #base,#fiche{top:auto;left:0;right:0;bottom:0;width:auto;min-width:0;max-width:none;border-radius:20px 20px 0 0}
+  /* l'inspecteur : une carte au-dessus de la barre, le plan au-dessus de lui */
+  #inspecteur{top:auto;left:8px;right:8px;bottom:64px;width:auto;max-width:none;max-height:62vh;border-radius:18px}
+  body.insp-ouvert #folios{display:none}
+  body.insp-ouvert #base{right:0}
+  .ba-tete{flex-wrap:wrap}
+  .ba-tete .filtre{order:3;flex-basis:100%;max-width:none}
   #fiche{max-height:72vh}
   #base{height:var(--base-h);max-height:85vh;min-height:160px}
   body.base-ouverte #rail{bottom:calc(var(--base-h) + 8px)}
@@ -704,9 +719,6 @@ svg .re-note{fill:#5b6875;font-size:10px}
 .picto.mj-picto .p-contact{fill:#59636e}
 
 /* ---- LA FICHE d'un bloc (08-fiche) : qui, est-ce bon, quoi et pourquoi, à quoi ça ressemble, ses fils ---- */
-#base.avec-fiche .filtre{display:none}
-#base.avec-fiche:not(.onglet-liaisons) .ba-corps{display:none}
-#base.avec-fiche:not(.onglet-liaisons) #ba-equip{flex:1 1 auto;max-height:none}
 .fi{margin:6px 12px 10px 16px;padding:0 6px 12px;min-height:0;overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:14px}
 .fi.compacte{gap:10px;padding-bottom:4px;flex:0 0 auto}
 .fi-retour{align-self:flex-start;display:inline-flex;align-items:center;gap:4px;border:none;background:none;color:var(--encre-2);font-size:var(--t1);padding:2px 6px 2px 0;cursor:pointer;border-radius:6px}
@@ -785,3 +797,25 @@ svg .re-note{fill:#5b6875;font-size:10px}
 .fi-pq{color:var(--encre-2);font-size:var(--t1)}
 .fi-pied{padding-top:4px;border-top:1px solid var(--filet)}
 .fi .equip{margin:0}
+
+/* ---- l'inspecteur : la tête, le trajet d'un fil, le pied ---- */
+.fi-actions{flex:none;display:flex;align-items:center;gap:6px}
+.fi-actions .fermer{width:34px;height:34px}
+.fi-nom-fil{display:flex;align-items:center;gap:10px}
+.fi-puce.gros{width:12px;height:12px}
+.fi-trajet{display:grid;grid-template-columns:1fr 34px 1fr;align-items:center;gap:6px}
+.fi-bout{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px;border:1px solid var(--filet);border-radius:12px;background:var(--papier);cursor:pointer;text-align:left;min-width:0}
+.fi-bout:hover{background:var(--papier-2)}
+.fi-bout b{font-family:var(--mono);font-size:var(--t3)}
+.fi-bout span{font-size:var(--t1);color:var(--encre-2)}
+.fi-bout small{font-family:var(--mono);font-size:var(--t0,11px);color:var(--encre-2);overflow:hidden;text-overflow:ellipsis;max-width:100%;white-space:nowrap}
+.fi-fleche{height:3px;border-radius:2px;position:relative}
+.fi-fleche::after{content:"";position:absolute;right:-1px;top:-4px;border:5.5px solid transparent;border-left:7px solid currentColor;border-right:0;color:inherit}
+.fi-nouveau .fi-cable b{color:var(--cuivre-2);font-family:var(--sans);font-style:italic}
+.fi-pied{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--filet)}
+.fi-pied .btn{height:36px;font-size:var(--t1)}
+.fi-pied .danger{margin-left:auto}
+
+.fi-tete{position:relative;display:block}
+.fi-tete .fi-actions{position:absolute;top:-6px;right:-4px}
+.fi-tete .fi-nature{padding-right:150px;min-height:18px}

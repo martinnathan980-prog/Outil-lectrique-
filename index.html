@@ -59,7 +59,8 @@
   --rapide:.14s ease; --moyen:.24s ease;
   --rail:52px;               /* largeur de la barre ; le plan commence après */
   --base-l:min(620px,44vw);  /* largeur de la base à droite ; se règle à la poignée */
-  --base-h:56vh;             /* hauteur de la base en tiroir, sur téléphone   */
+  --base-h:30vh;             /* hauteur du tableau, en tiroir en bas          */
+  --insp-l:min(400px,34vw);  /* largeur de l'inspecteur, la fiche à droite    */
   --fiche-l:400px;           /* largeur de la fiche ; 560 px pour la bible    */
   --fiche-h:60vh;            /* hauteur de la fiche en tiroir, mesurée        */
 }
@@ -197,14 +198,20 @@ body.cherche .recherche{display:flex}
 @media (prefers-reduced-motion:reduce){.affinage i{animation:none}}
 .fo-lbl{color:var(--craie-2);font-size:var(--t0);padding:0 10px 0 8px;white-space:nowrap;font-family:var(--mono)}
 /* quand un document est ouvert, les folios se recentrent sur ce qui reste du plan */
-body.base-ouverte #folios{left:calc((100vw - var(--base-l) + var(--rail)) / 2)}
+body.insp-ouvert #folios{left:calc((100vw - var(--insp-l) + var(--rail)) / 2)}
 body.fiche-ouverte #folios{left:calc((100vw - var(--fiche-l) + var(--rail)) / 2)}
+body.base-ouverte #folios{bottom:calc(var(--base-h) + 24px)}
 
 /* ─── LES DOCUMENTS : blancs, à droite ──────────────────────────────────── */
-#base,#fiche{position:fixed;top:12px;right:12px;bottom:12px;max-width:calc(100vw - var(--rail) - 48px);background:var(--papier);color:var(--encre);
+#base,#fiche,#inspecteur{position:fixed;top:12px;right:12px;bottom:12px;max-width:calc(100vw - var(--rail) - 48px);background:var(--papier);color:var(--encre);
   border-radius:18px;box-shadow:var(--ombre-2);z-index:25;display:flex;flex-direction:column;overflow:hidden}
 #fiche{width:var(--fiche-l)}
-#base{width:var(--base-l);min-width:340px}
+/* l'inspecteur : étroit, la fiche de ce qu'on a choisi */
+#inspecteur{width:var(--insp-l);z-index:26}
+#inspecteur .fi{flex:1 1 auto;margin:0;padding:16px 16px 18px 20px}
+/* le tableau : un tiroir en bas, de la barre de gauche au bord droit (ou à l'inspecteur) ; le plan au-dessus */
+#base{top:auto;left:calc(var(--rail) + 28px);height:var(--base-h);min-height:150px;max-width:none;width:auto;border-radius:16px}
+body.insp-ouvert #base{right:calc(var(--insp-l) + 24px)}
 .entre{animation:doc-entre var(--moyen)}
 @keyframes doc-entre{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
 .sur{font-size:var(--t0);text-transform:uppercase;letter-spacing:.09em;color:var(--encre-2);font-weight:700}
@@ -212,12 +219,14 @@ body.fiche-ouverte #folios{left:calc((100vw - var(--fiche-l) + var(--rail)) / 2)
 .fermer:hover{background:var(--papier-3);color:var(--encre)}
 
 /* ─── LA BASE : la table des liaisons, corrigée en direct ───────────────── */
-.poignee{position:absolute;left:0;top:0;bottom:0;width:10px;cursor:col-resize;z-index:2}
-.poignee::after{content:"";position:absolute;left:3px;top:50%;width:4px;height:36px;margin-top:-18px;border-radius:2px;background:var(--filet);transition:background var(--rapide)}
+.poignee{position:absolute;left:0;right:0;top:0;height:12px;cursor:row-resize;z-index:2}
+.poignee::after{content:"";position:absolute;left:50%;top:4px;width:44px;height:4px;margin-left:-22px;border-radius:2px;background:var(--filet);transition:background var(--rapide)}
 .poignee:hover::after,#base.redim .poignee::after{background:var(--cuivre)}
 #base.redim{user-select:none}
-.ba-tete{display:flex;align-items:center;gap:10px;padding:16px 16px 0 22px}
-.ba-titre{font-size:var(--t4);font-weight:700;letter-spacing:-.005em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ba-tete{display:flex;align-items:center;gap:12px;padding:14px 12px 8px 18px}
+.ba-tete .filtre{flex:1;max-width:420px;margin:0}
+.ba-tete .btn{height:34px}
+.ba-titre{font-size:var(--t3);font-weight:700;letter-spacing:-.005em;white-space:nowrap}
 .ba-titre b{font-family:var(--mono)}
 .filtre{display:flex;align-items:center;gap:8px;height:38px;border:1px solid var(--filet);border-radius:10px;padding:0 6px 0 10px;margin:12px 16px 8px 22px;transition:border-color var(--rapide)}
 .filtre:focus-within{border-color:var(--cuivre);box-shadow:0 0 0 3px var(--cuivre-pale)}
@@ -525,6 +534,12 @@ body.depot-actif .depot{display:grid}
   .fo-strip{max-width:calc(100vw - 110px)}
   /* les documents montent en tiroir ; la base garde la hauteur qu'on lui donne */
   #base,#fiche{top:auto;left:0;right:0;bottom:0;width:auto;min-width:0;max-width:none;border-radius:20px 20px 0 0}
+  /* l'inspecteur : une carte au-dessus de la barre, le plan au-dessus de lui */
+  #inspecteur{top:auto;left:8px;right:8px;bottom:64px;width:auto;max-width:none;max-height:62vh;border-radius:18px}
+  body.insp-ouvert #folios{display:none}
+  body.insp-ouvert #base{right:0}
+  .ba-tete{flex-wrap:wrap}
+  .ba-tete .filtre{order:3;flex-basis:100%;max-width:none}
   #fiche{max-height:72vh}
   #base{height:var(--base-h);max-height:85vh;min-height:160px}
   body.base-ouverte #rail{bottom:calc(var(--base-h) + 8px)}
@@ -711,9 +726,6 @@ svg .re-note{fill:#5b6875;font-size:10px}
 .picto.mj-picto .p-contact{fill:#59636e}
 
 /* ---- LA FICHE d'un bloc (08-fiche) : qui, est-ce bon, quoi et pourquoi, à quoi ça ressemble, ses fils ---- */
-#base.avec-fiche .filtre{display:none}
-#base.avec-fiche:not(.onglet-liaisons) .ba-corps{display:none}
-#base.avec-fiche:not(.onglet-liaisons) #ba-equip{flex:1 1 auto;max-height:none}
 .fi{margin:6px 12px 10px 16px;padding:0 6px 12px;min-height:0;overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:14px}
 .fi.compacte{gap:10px;padding-bottom:4px;flex:0 0 auto}
 .fi-retour{align-self:flex-start;display:inline-flex;align-items:center;gap:4px;border:none;background:none;color:var(--encre-2);font-size:var(--t1);padding:2px 6px 2px 0;cursor:pointer;border-radius:6px}
@@ -793,6 +805,28 @@ svg .re-note{fill:#5b6875;font-size:10px}
 .fi-pied{padding-top:4px;border-top:1px solid var(--filet)}
 .fi .equip{margin:0}
 
+/* ---- l'inspecteur : la tête, le trajet d'un fil, le pied ---- */
+.fi-actions{flex:none;display:flex;align-items:center;gap:6px}
+.fi-actions .fermer{width:34px;height:34px}
+.fi-nom-fil{display:flex;align-items:center;gap:10px}
+.fi-puce.gros{width:12px;height:12px}
+.fi-trajet{display:grid;grid-template-columns:1fr 34px 1fr;align-items:center;gap:6px}
+.fi-bout{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px;border:1px solid var(--filet);border-radius:12px;background:var(--papier);cursor:pointer;text-align:left;min-width:0}
+.fi-bout:hover{background:var(--papier-2)}
+.fi-bout b{font-family:var(--mono);font-size:var(--t3)}
+.fi-bout span{font-size:var(--t1);color:var(--encre-2)}
+.fi-bout small{font-family:var(--mono);font-size:var(--t0,11px);color:var(--encre-2);overflow:hidden;text-overflow:ellipsis;max-width:100%;white-space:nowrap}
+.fi-fleche{height:3px;border-radius:2px;position:relative}
+.fi-fleche::after{content:"";position:absolute;right:-1px;top:-4px;border:5.5px solid transparent;border-left:7px solid currentColor;border-right:0;color:inherit}
+.fi-nouveau .fi-cable b{color:var(--cuivre-2);font-family:var(--sans);font-style:italic}
+.fi-pied{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--filet)}
+.fi-pied .btn{height:36px;font-size:var(--t1)}
+.fi-pied .danger{margin-left:auto}
+
+.fi-tete{position:relative;display:block}
+.fi-tete .fi-actions{position:absolute;top:-6px;right:-4px}
+.fi-tete .fi-nature{padding-right:150px;min-height:18px}
+
 </style>
 </head>
 <body>
@@ -825,9 +859,9 @@ svg .re-note{fill:#5b6875;font-size:10px}
        un fichier et le menu, en bas. Sur téléphone elle passe en bas. La VUE
        (folios, cadrage, zoom) est dans la barre du bas. -->
   <nav id="rail" class="verre" aria-label="Commandes">
-    <button class="rd bascule" id="btnBase" aria-pressed="false" aria-label="Base de données (B)">
+    <button class="rd bascule" id="btnBase" aria-pressed="false" aria-label="Tableau des liaisons (B)">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M3 14h18M9 5v14"/></svg>
-      <span class="bulle" aria-hidden="true">Base<kbd>B</kbd></span>
+      <span class="bulle" aria-hidden="true">Tableau des liaisons<kbd>B</kbd></span>
     </button>
     <button class="rd" id="btnCherche" aria-label="Rechercher un repère ou un fil (/)">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -923,20 +957,25 @@ svg .re-note{fill:#5b6875;font-size:10px}
     </button>
   </nav>
 
-  <!-- La base : la table des liaisons, à côté du plan. On la corrige ici ;
-       le plan suit. -->
-  <aside id="base" hidden aria-label="Base de données">
+  <!-- L'INSPECTEUR : la fiche de ce qu'on a cliqué (un équipement, une barrette, une prise, un fil), étroite, à droite ;
+       le plan se recadre à côté, jamais dessous. -->
+  <aside id="inspecteur" hidden aria-label="Fiche de l’élément choisi">
+    <div id="ba-equip" class="fi"></div>
+  </aside>
+  <!-- LE TABLEAU des liaisons : un tiroir en bas, ouvert à la demande (B) ; le plan se recadre au-dessus. On le corrige
+       ici ; le plan suit. -->
+  <aside id="base" hidden aria-label="Tableau des liaisons">
     <div class="poignee" id="ba-poignee" title="Redimensionner" aria-hidden="true"></div>
     <div class="ba-tete">
-      <div class="min0"><div class="sur">Base</div><div class="ba-titre" id="ba-titre">—</div></div>
-      <button class="rond fermer" id="ba-fermer" aria-label="Cacher la base"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      <div class="ba-titre" id="ba-titre">—</div>
+      <div class="filtre">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+        <input id="ba-filtre" placeholder="Filtrer : repère, fil, type, folio…" aria-label="Filtrer le tableau" autocomplete="off" spellcheck="false">
+        <button class="vider" id="ba-vider" hidden aria-label="Effacer le filtre">×</button>
+      </div>
+      <button class="btn lien" id="ba-ajouter">+ Liaison</button>
+      <button class="rond fermer" id="ba-fermer" aria-label="Fermer le tableau"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     </div>
-    <div class="filtre">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
-      <input id="ba-filtre" placeholder="Filtrer par repère, fil, type, folio…" aria-label="Filtrer la base" autocomplete="off" spellcheck="false">
-      <button class="vider" id="ba-vider" hidden aria-label="Effacer le filtre">×</button>
-    </div>
-    <div id="ba-equip" class="equip" hidden></div>
     <div class="ba-corps" id="ba-corps"><table class="tab" id="ba-tab"><thead id="ba-thead"></thead><tbody id="ba-tbody"></tbody></table></div>
   </aside>
 
@@ -968,7 +1007,7 @@ svg .re-note{fill:#5b6875;font-size:10px}
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = 'b240537e96a7';
+const VERSION_MOTEUR = '518ef3beccaf';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -3942,6 +3981,7 @@ function coupesParCote(M, E, pos) {
 
 const PISTE = 9;            // entre deux verticales voisines d'une goulotte
 const RETRAIT = 14;         // de la paroi à la première verticale : la longueur d'un raccord
+const RETOUR_VT = 18;       // le recul de plus d'une barrette à poser dont un fil revient vers sa paroi
 const ECART_VERT = 10;      // deux verticales sur la même piste se lisent séparées
 const NMAX_EXACT = 12;      // au-delà, l'ordre des pistes se cherche par déplacements
 const INTERDIT = 1e6;       // le coût d'un ordre impossible
@@ -4174,7 +4214,8 @@ function formerLesPiquages(layout, fils, G) {
   groupes.forEach((entrees, k) => { if (entrees.length < 2) return;
     const ep = entrees[0].ep, mur = murDe(ep), ch = ep.ch, bx = mur === 'L' ? G.x0(ch) + RETRAIT : G.x1(ch) - RETRAIT;
     const l0 = layout.links[entrees[0].li], propre = String(entrees[0].tag === 'A' ? l0.de : l0.vers);
-    const b = { borne: k, ch, mur, x: bx, px: ep.x, py: ep.y, dir: mur === 'L' ? 1 : -1, departs: [], gardes: [], n: entrees.length, propre, li: entrees[0].li };
+    const etiquette = String(entrees[0].tag === 'A' ? l0.borneDe : l0.borneVers);
+    const b = { borne: k, ch, mur, x: bx, px: ep.x, py: ep.y, dir: mur === 'L' ? 1 : -1, departs: [], gardes: [], n: entrees.length, propre, etiquette, li: entrees[0].li };
     const travaux = [];                    // les verticales de la borne, avec leur attache à la borne
     let barriere = false;                  // un fil passe droit : son horizontale couvre toutes les autres
     entrees.forEach(e => { const f = fils.get(e.li), l = layout.links[e.li], ex = new Set([String(l.de), String(l.vers)]);
@@ -4282,7 +4323,10 @@ function poserLesPistes(travaux, ordre, ch, G) {
   // de gauche à droite : chacune se pose après celles qui la précèdent, au plus près de son vœu
   L.forEach((t, a) => { let lb = t.lb;
     for (let b = 0; b < a; b++) if (chevauche(L[a], L[b])) lb = Math.max(lb, L[b].x + pas);
-    const veut = t.piquage ? (t.piquage.mur === 'L' ? xL + RETRAIT : xR - RETRAIT) : (t.att.length && t.att.every(a2 => a2.mur === 'R') ? xR - RETRAIT : lb);
+    /* une barrette à poser dont un fil REVIENT vers sa paroi (deux équipements d'une même colonne sur un même
+       potentiel) se pose plus loin de la paroi : ce fil n'a sinon qu'un raccord trop court pour porter son numéro */
+    const retour = t.piquage && t.piquage.departs.some(d => d.mur === t.piquage.mur), loin = retour ? RETRAIT + RETOUR_VT : RETRAIT;
+    const veut = t.piquage ? (t.piquage.mur === 'L' ? xL + loin : xR - loin) : (t.att.length && t.att.every(a2 => a2.mur === 'R') ? xR - RETRAIT : lb);
     t.x = Math.max(lb, Math.min(t.ub, veut)); if (t.piquage) t.piquage.x = t.x; });
 }
 
@@ -4370,7 +4414,7 @@ function routerUneFois(layout, permis) {
   const traces = tracerLesFils(layout, fils, piquages);
   const barrettes = piquages.map(b => { const ys = [b.py, ...b.departs.map(d => d.y)], lo = Math.min(...ys), hi = Math.max(...ys);
     return { x: b.x, y1: lo - 3, y2: hi + 3, py: b.py, gardes: [...b.departs.map(d => ({ y: d.y })), ...b.gardes], bus: b.n >= 4, dir: b.dir, px: b.px, net: b.net,
-             pts: b.departs.filter(d => Math.abs(d.y - b.py) > 1.2).map(d => ({ x: b.x, y: d.y })), raccord: { x0: b.px, x1: b.x, y: b.py } }; });
+             pts: b.departs.filter(d => Math.abs(d.y - b.py) > 1.2).map(d => ({ x: b.x, y: d.y })), raccord: { x0: b.px, x1: b.x, y: b.py }, propre: b.propre, etiquette: b.etiquette }; });
   barrettes.raccords = barrettes.map(b => b.raccord);
   const resultat = { fils: traces.filter(Boolean), points: jonctions(layout, traces, barrettes), barrettes, piquages: barrettes.flatMap(b => b.pts) };
   return { resultat, candidats: fils.candidats, croisements: compterCroisements(resultat.fils.filter(w => !w.shunt), barrettes) };
@@ -4729,6 +4773,18 @@ function tracesDePiquage(barrettes) {
   (barrettes.raccords || []).forEach(r => traces.push([{ x: r.x0, y: r.y }, { x: r.x1, y: r.y }]));
   barrettes.forEach(b => traces.push([{ x: b.x, y: b.y1 + 3 }, { x: b.x, y: b.y2 - 3 }]));
   return traces; }
+/* Les barrettes À POSER d'un folio (ses dédoublements) reçoivent un repère provisoire, VT1, VT2…, de haut en bas puis de
+   gauche à droite : le même sur le plan et dans la fiche. */
+function nommerBarrettesAPoser(barrettes) { (barrettes || []).slice().sort((a, b) => a.py - b.py || a.x - b.x).forEach((b, i) => { b.nomVT = 'VT' + (i + 1); }); return barrettes; }
+/* Les CONTACTS d'une barrette à poser : un par fil — le raccord vers la borne, puis chaque départ. Deux fils à la même
+   hauteur (le raccord et un fil qui part tout droit) ont chacun le leur : deux pastilles côte à côte sur ce rang, celle
+   du raccord du côté de la borne. Numérotés de haut en bas. Rend [{ x, y, n }]. */
+function contactsDePiquage(b) { const ys = [b.py, ...b.gardes.map(g => g.y)], rangs = [];
+  ys.forEach(y => { const r = rangs.find(k => Math.abs(k.y - y) < 0.6); if (r) r.n++; else rangs.push({ y, n: 1 }); });
+  rangs.sort((u, v) => u.y - v.y); const cote = b.px < b.x ? -1 : 1, out = [];
+  rangs.forEach(r => { if (r.n === 1) { out.push({ x: b.x, y: r.y }); return; }
+    const e = 4.4; for (let k = 0; k < r.n; k++) out.push({ x: b.x + cote * e * (k === 0 ? 1 : -1) * (r.n > 2 ? 1 + Math.floor(k / 2) : 1), y: r.y }); });
+  return out.map((c, i) => ({ ...c, n: i + 1 })); }
 /* Les bornes d'un piquage, de haut en bas : la borne d'origine et chaque départ. */
 const bornesDePiquage = b => [b.py, ...b.gardes.map(k => k.y)].filter((y, i, a) => a.findIndex(z => Math.abs(z - y) < 0.6) === i).sort((u, v) => u - v);
 function piquagesSvg(barrettes, piquages, verticaux, couleurBout) {
@@ -4736,16 +4792,14 @@ function piquagesSvg(barrettes, piquages, verticaux, couleurBout) {
   (barrettes.raccords || []).forEach(r => { const c = couleurBout && (couleurBout(r.x0, r.y) || couleurBout(r.x1, r.y));
     s += `<path class="cab"${styleTrait(c)} d="${cheminAvecPonts([{ x: r.x0, y: r.y }, { x: r.x1, y: r.y }], verticaux)}"/>`; });
   barrettes.forEach(b => {
-    /* Un piquage — plusieurs fils sur une même borne — n'est PAS une barrette : c'est du fil. Les deux fils partent de
-       la même borne (double sertissage) ; on les trace par une verticale pleine de la couleur de la route, un point de
-       jonction à chaque départ qui n'est pas un coin. Aucun numéro, aucun pointillé : rien qui se lise comme une
-       barrette sans repère (le lecteur : « j'ai pas le numéro de la barrette, et trois fils sur deux ports »). */
-    // chaque tronçon a la couleur du fil qu'il porte : celui du bout est au seul fil qui part au bout, les autres à la borne
-    const ys = bornesDePiquage(b), c = couleurBout && couleurBout(b.px, b.py), n = ys.length - 1, o = ys.findIndex(y => Math.abs(y - b.py) < 0.6);
-    for (let i = 0; i < n; i++) { const bout = i + 1 === n && o < n ? ys[n] : i === 0 && o > 0 ? ys[0] : null;
-      const ct = (bout != null && couleurBout && couleurBout(b.x, bout)) || c;
-      s += `<path class="cab"${styleTrait(ct)} d="M${f1(b.x)} ${f1(ys[i])}V${f1(ys[i + 1])}"/>`; }
-    ys.forEach((y, i) => { if (i > 0 && i < ys.length - 1) s += `<circle class="jn" cx="${f1(b.x)}" cy="${f1(y)}" r="1.9"/>`; }); });
+    /* Un DÉDOUBLEMENT — plusieurs fils sur une même borne — est une BARRETTE À POSER (le lecteur : « quand les fils se
+       dédoublent, il faut une barrette ; un point d'où sortent deux fils, ça ne va pas »). Elle se dessine comme toute
+       barrette : la ligne pointillée, une pastille numérotée par fil — le raccord vers la borne compris : autant de
+       contacts que de fils — et son repère provisoire dessous (VT1, VT2… dans l'ordre du folio). */
+    const ys = bornesDePiquage(b), cs = contactsDePiquage(b);
+    s += `<line class="barre" x1="${f1(b.x)}" y1="${f1(ys[0])}" x2="${f1(b.x)}" y2="${f1(ys[ys.length - 1])}"/>`;
+    cs.forEach(k => { s += pastilleSvg(k.x, k.y, String(k.n)); });
+    if (b.nomVT) s += `<text class="rep-petit vt-prov" x="${f1(b.x)}" y="${f1(ys[0] - 6.5)}" text-anchor="middle">${esc(b.nomVT)}</text>`; });
   return s;
 }
 /* Une borne de barrette : un point noir sur la ligne, comme d'habitude, son
@@ -4776,7 +4830,8 @@ function occupationDe(fils, barrettes, comps) {
     else if (Math.abs(a.x - b.x) < 0.6) V.push({ x: a.x, y0: Math.min(a.y, b.y), y1: Math.max(a.y, b.y) }); };
   fils.forEach(w => { if (w.shunt) return; for (let i = 0; i < w.pts.length - 1; i++) seg(w.pts[i], w.pts[i + 1]); });
   tracesDePiquage(barrettes || []).forEach(pts => seg(pts[0], pts[1]));
-  (barrettes || []).forEach(b => bornesDePiquage(b).forEach(y => boites.push({ x0: b.x - 2.5, y0: y - 2.5, x1: b.x + 2.5, y1: y + 2.5 })));
+  (barrettes || []).forEach(b => { const ys = bornesDePiquage(b); contactsDePiquage(b).forEach(k => { const r = R_PASTILLE(String(k.n)) + 1; boites.push({ x0: k.x - r, y0: k.y - r, x1: k.x + r, y1: k.y + r }); });
+    if (b.nomVT) { const y = ys[0] - 6.5; boites.push({ x0: b.x - 9, y0: y - 5.5, x1: b.x + 9, y1: y + 1.5 }); } });
   (comps || []).forEach(c => {
     // le corps d'un équipement compte avec ses pièces de connecteur et leurs lettres ; celui d'une réglette, sa colonne
     /* un morceau de barrette finit par son point de départ, au ras de son cadre : un texte s'en garde de quatre (un numéro
@@ -4885,7 +4940,7 @@ function reperesDeFil(fils, verticaux, barrettes, occ) {
        davantage — au-dessus du symbole, jamais sur le corps de l'équipement (l'occupation l'y repousse) */
     const dans = -(H / 2 - 0.35 * fs) - 0.3;   // ligne de base pour que le texte soit centré sur le fil
     for (const g of c.hs) { if (pose) break; const court = g.L < 40;
-      for (const [ecart, marge] of (court ? [[dans, -4], [2.2, -4], [7.5, -30]] : [[dans, 5], [2.2, 5]])) { if (pose || !g.L || larg + 2 * marge > g.L) continue;
+      for (const [ecart, marge] of (court ? [[dans, -4], [2.2, -4], [-(H + 1.4), -30], [7.5, -30]] : [[dans, 5], [2.2, 5]])) { if (pose || !g.L || larg + 2 * marge > g.L) continue;
         const mid = (g.x0 + g.x1) / 2, dmax = Math.max(0, (g.L - larg) / 2 - marge), sien = ecart === dans ? g.y : null;
         for (let d = 0; d <= dmax + 0.01 && !pose; d += court ? 1 : Math.max(3, larg / 3)) {
           for (const cx of (d === 0 ? [mid] : [mid - d, mid + d])) {
@@ -5099,6 +5154,7 @@ function sceneSvg(dessin, cartouche, folio, designationDe, choisi) {
   const dedans = (c, ys) => ys.every(y => y >= c.y - 0.5 && y <= c.y + c.h + 0.5);
   dessin.comps.forEach(c => { c.shunts = (shunts.get(c.name) || []).filter(ys => dedans(c, ys)); c.connecteurs = c.kind === 'equip' ? connecteurParBorne(c.name, dessin.fils) : null; });
   // les textes cherchent leur place dans ce qui est tracé : les repères d'abord, les numéros de fil ensuite
+  nommerBarrettesAPoser(dessin.barrettes);
   const occ = occupationDe(fils, dessin.barrettes, dessin.comps);
   poserReperes(dessin.comps, occ);
   s += reperesDeFil(dessin.fils, verticaux, dessin.barrettes, occ);
@@ -5924,10 +5980,11 @@ function formatDuDessin(dessin) {
      5. SES FILS : contact, fil, d'où il vient ou où il va ;
      6. le reste — changer de norme, d'arrangement, le détail des règles —
         replié sous « Changer » et « Détails ».
-   Un second onglet, « Liaisons », montre les lignes de la base à éditer.
+   Elle vit dans l'INSPECTEUR, à droite ; le plan se recadre à côté. Les lignes
+   du tableau se corrigent dans le tiroir du bas (« dans le tableau »).
    =========================================================================== */
 
-const ONGLETS_FICHE = { onglet: 'fiche' };
+const ONGLETS_FICHE = {};
 const coulDeFil = f => couleursDesRoutes().get((f.l && f.l.route) || '') || '#26323f';
 const puceFil = f => `<i class="fi-puce" style="background:${coulDeFil(f)}"></i>`;
 const typesDe = fils => [...new Set(fils.map(f => f.type).filter(Boolean))].sort(triNaturel).join(', ');
@@ -5938,10 +5995,11 @@ function ficheTete(nature, nom, resume, opts) { opts = opts || {};
     + `<input class="fi-nom" id="eq-rep" value="${escA(nom)}" aria-label="Repère" title="Renommer : chaque fil suit" spellcheck="false">`
     + (opts.designation != null ? `<input class="fi-des" id="eq-des" value="${escA(opts.designation)}" placeholder="Ajouter une désignation (écrite sous le repère)" aria-label="Désignation" spellcheck="false">` : '')
     + `<div class="fi-resume">${resume}</div></div>`
-    + (opts.relief ? `<button class="fi-relief" id="eq-relief" title="La pièce en perspective (ou double-clic sur le bloc)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg>Relief</button>` : '') + '</div>'; }
-function ficheOnglets(n) {
-  return `<div class="fi-onglets" role="tablist"><button role="tab" data-onglet="fiche" aria-selected="${ONGLETS_FICHE.onglet === 'fiche'}">Fiche</button>`
-    + `<button role="tab" data-onglet="liaisons" aria-selected="${ONGLETS_FICHE.onglet === 'liaisons'}">Liaisons <span>${n}</span></button></div>`; }
+    + `<div class="fi-actions">${opts.relief ? `<button class="fi-relief" id="eq-relief" title="La pièce en perspective (ou double-clic sur le bloc)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg>Relief</button>` : ''}`
+    + `<button class="rond fermer" id="in-fermer" aria-label="Fermer la fiche (Échap)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></div>`; }
+// le pied : voir ses lignes dans le tableau (pour les corriger), supprimer
+const fichePied = (nom, n, suppr) => `<div class="fi-pied"><button class="btn papier" id="fi-tableau" data-filtre="${escA(nom)}"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M3 14h18M9 5v14"/></svg>Ses ${pluriel(n, 'liaison')} dans le tableau</button>`
+  + (suppr ? `<button class="btn lien danger" id="eq-del">Supprimer</button>` : '') + '</div>';
 /* Le verdict, en une ligne : `ko` des problèmes, `att` des remarques. */
 function ficheStatut(ko, att, okTexte) {
   if (ko.length) return `<div class="fi-statut ko"><b>${ko.length > 1 ? ko.length + ' problèmes' : '1 problème'}</b><ul>${ko.slice(0, 4).map(t => `<li>${esc(t)}</li>`).join('')}${ko.length > 4 ? `<li>… et ${ko.length - 4} autres</li>` : ''}</ul></div>`;
@@ -5961,28 +6019,30 @@ const faceAjustee = (f, titre) => `<figure class="fi-face"><svg class="mj" viewB
 const miroir = m => ({ ...m, contacts: m.contacts.map(c => ({ ...c, c: m.colonnes - 1 - c.c })), groupes: m.groupes.map(g => ({ ...g, contacts: g.contacts.map(c => ({ ...c, c: m.colonnes - 1 - c.c })) })) });
 
 /* ---- la fiche ------------------------------------------------------------ */
-function rendreFiche() { const box = $('ba-equip'), c = app.cible, base = $('base'); const choisi = !!(c && c.type === 'bloc');
-  box.hidden = !choisi; base.classList.toggle('avec-fiche', choisi); if (!choisi) { base.classList.remove('onglet-liaisons'); return; }
-  const nom = c.nom, V = verite(), mes = V.filter(l => l.de === nom || l.vers === nom), n = mes.length;
-  base.classList.toggle('onglet-liaisons', ONGLETS_FICHE.onglet === 'liaisons');
-  let corps;
-  try { corps = barretteEnModules(nom) ? ficheBarrette(nom, n) : coupureEnModules(nom) ? ficheCoupure(nom, n) : estBornier(nom) ? ficheBornierAncien(nom, n) : ficheEquipement(nom, n, mes); }
-  catch (e) { corps = ficheTete('Équipement', nom, esc(pluriel(n, 'fil'))) + `<p class="note">${esc(String(e && e.message || e))}</p>`; }
-  // l'onglet « Liaisons » : la tête et les onglets, puis la base filtrée sur le bloc, à éditer
-  const liaisons = ONGLETS_FICHE.onglet === 'liaisons', k = corps.indexOf('<!--onglets-->');
-  const retour = `<button class="fi-retour" id="fi-retour"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>Toute la base</button>`;
-  box.className = 'fi' + (liaisons ? ' compacte' : '');
-  box.innerHTML = retour + (liaisons ? corps.slice(0, k) + ficheOnglets(n) : corps.replace('<!--onglets-->', ficheOnglets(n)) + `<div class="fi-pied"><button class="btn lien danger" id="eq-del">Supprimer ${esc(nom)} et ses ${pluriel(n, 'fil')}</button></div>`);
+function rendreFiche() { const box = $('ba-equip'), c = app.cible; if ($('inspecteur').hidden) return;
+  if (!c) { box.innerHTML = ''; return; }
+  let corps, nom = '', n = 0;
+  try {
+    if (c.type === 'fil') corps = ficheFil(c.l);
+    else if (c.type === 'vt') corps = ficheBarretteAPoser(c);
+    else { nom = c.nom; const mes = verite().filter(l => l.de === nom || l.vers === nom); n = mes.length;
+      corps = (barretteEnModules(nom) ? ficheBarrette(nom, n) : coupureEnModules(nom) ? ficheCoupure(nom, n) : estBornier(nom) ? ficheBornierAncien(nom, n) : ficheEquipement(nom, n, mes)) + fichePied(nom, n, true); } }
+  catch (e) { corps = ficheTete('Élément', nom || '—', '') + `<p class="note">${esc(String(e && e.message || e))}</p>`; }
+  const haut = box.scrollTop, meme = box.dataset.cle === (c.type + '|' + (c.nom || (c.l && c.l.cable) || ''));
+  box.className = 'fi'; box.innerHTML = corps.replace('<!--onglets-->', ''); box.dataset.cle = c.type + '|' + (c.nom || (c.l && c.l.cable) || '');
+  if (meme) box.scrollTop = haut;
   lierFiche(nom, n); }
 function lierFiche(nom, n) { const box = $('ba-equip');
-  box.querySelectorAll('.fi-onglets [data-onglet]').forEach(b => b.onclick = () => { ONGLETS_FICHE.onglet = b.dataset.onglet; rendreFiche(); });
+  $('in-fermer').onclick = () => deselectionner();
+  const tab = $('fi-tableau'); if (tab) tab.onclick = () => { app.base.filtre = tab.dataset.filtre; app.base.defiler = true; if (app.base.ouvert) rendreBase(); else ouvrirBase(); };
   box.querySelectorAll('details.fi-replie').forEach(d => d.addEventListener('toggle', () => { ONGLETS_FICHE[d.dataset.cle] = d.open; }));
+  box.querySelectorAll('[data-choisir-bloc]').forEach(b => b.onclick = () => { const k = (app.dessin.comps || []).find(x => x.name === b.dataset.choisirBloc && x.kind !== 'tag'); if (k) choisirBloc(k); else { app.cible = { type: 'bloc', nom: b.dataset.choisirBloc }; rendreFiche(); } });
+  if (!nom) { lierFilsDeCarte(box); return; }
   const rep = $('eq-rep'); if (rep) rep.addEventListener('change', e => { const nr = e.target.value.trim(); if (!nr || nr === nom) { e.target.value = nom; return; }
-    histPush('renommage de ' + nom); renommer(nom, nr); app.choisi = nr; app.cible = { type: 'bloc', nom: nr }; app.base.filtre = nr; apresEdition(); });
+    histPush('renommage de ' + nom); renommer(nom, nr); app.choisi = nr; app.cible = { type: 'bloc', nom: nr }; if (app.base.filtre === nom) app.base.filtre = nr; apresEdition(); });
   const des = $('eq-des'); if (des) des.addEventListener('change', e => { histPush('désignation de ' + nom); designer(nom, e.target.value.trim()); apresEdition(); });
-  $('fi-retour').onclick = () => { app.cible = null; app.choisi = null; app.base.filtre = ''; ONGLETS_FICHE.onglet = 'fiche'; peindre(); rendreBase(); rallumer(); };
   if ($('eq-del')) $('eq-del').onclick = () => { if (!confirm('Supprimer « ' + nom + ' » et ses ' + n + ' liaison(s) ?')) return;
-    histPush('suppression de ' + nom); supprimerEquipement(nom); app.base.filtre = ''; apresEdition(); dire(nom + ' supprimé.'); };
+    histPush('suppression de ' + nom); supprimerEquipement(nom); app.base.filtre = ''; deselectionner(); apresEdition(); dire(nom + ' supprimé.'); };
   if ($('eq-relief')) $('eq-relief').onclick = () => ouvrirRelief(nom);
   box.querySelectorAll('input').forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } }));
   // les choix : une norme, une variante, un arrangement, le retour à l'automatique
@@ -5995,6 +6055,49 @@ function lierFiche(nom, n) { const box = $('ba-equip');
   if (estBornier(nom) && !barretteEnModules(nom) && !coupureEnModules(nom) && typeof lierCartePhysique === 'function') lierCartePhysique(nom);
   lierFilsDeCarte(box);
   box.querySelectorAll('.fi-fil').forEach(li => li.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); voirFilDeCarte(+li.dataset.i); } })); }
+
+/* ---- un fil -------------------------------------------------------------- */
+const boutDeFil = (rep, borne, pn) => `<button class="fi-bout" data-choisir-bloc="${escA(rep)}"><b>${esc(rep)}</b><span>borne ${esc(borne || '—')}</span>${pn ? `<small>${esc(pn)}</small>` : ''}</button>`;
+function ficheFil(l) { const V = verite(), i = V.indexOf(l), coul = coulDeFil({ l }), route = l.route || '';
+  const folios = app.nFolios ? (foliosParSource().get(cleDe(l)) || []) : (l.plan ? [l.plan] : []);
+  const jauge = jaugeDuType(l.type), att = [];
+  if (!l.type) att.push('type de fil inconnu : la jauge ne se vérifie pas');
+  const corps = `<div class="fi-tete"><div class="min0"><div class="fi-nature">Fil${route ? ' · ' + esc(route) : ''}</div><div class="fi-nom fi-nom-fil"><i class="fi-puce gros" style="background:${coul}"></i>${esc(l.cable || 'sans numéro')}</div>`
+    + `<div class="fi-resume">${esc(l.type || 'type inconnu')}${jauge != null ? ' · jauge ' + jauge + ' AWG' : ''}${folios.length ? ' · folio ' + folios.join(', ') : ''}</div></div>`
+    + `<div class="fi-actions"><button class="rond fermer" id="in-fermer" aria-label="Fermer la fiche (Échap)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></div>`;
+  return corps + (att.length ? ficheStatut([], att, '') : '')
+    + `<div class="fi-trajet">${boutDeFil(l.de, l.borneDe, l.pnDe)}<span class="fi-fleche" style="background:${coul}"></span>${boutDeFil(l.vers, l.borneVers, l.pnVers)}</div>`
+    + `<div class="fi-pied"><button class="btn papier" id="fi-tableau" data-filtre="${escA(l.cable || l.de)}"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M3 14h18M9 5v14"/></svg>Corriger dans le tableau</button></div>`; }
+
+/* ---- une barrette à poser (un dédoublement de fils) ----------------------- */
+function ficheBarretteAPoser(c) { const b = besoinsDeBarrette(c.propre, verite()), fils = (b.parBorne.get(c.borne) || []).map(f => ({ ...f, jauge: jaugeDuType(f.type) }));
+  const js = fils.map(f => f.jauge).filter(j => j != null), raccord = { cable: '', type: js.length ? 'jauge ' + Math.min(...js) : '', jauge: js.length ? Math.min(...js) : null, l: fils[0] && fils[0].l };
+  // la barrette que la norme propose : un potentiel, autant de contacts que de fils (le raccord vers la borne compris)
+  let prop = null; try { prop = remplirModules({ bornes: ['1'], ponts: [], parBorne: new Map([['1', [...fils, raccord]]]), pn: '' }, app.norme); } catch (_) { }
+  const n = fils.length + 1;
+  const tete = `<div class="fi-tete"><div class="min0"><div class="fi-nature">Barrette à poser</div><div class="fi-nom">${esc(c.nom)}</div>`
+    + `<div class="fi-resume">${pluriel(n, 'fil')} sur la borne ${esc(c.borne)} de ${esc(c.propre)}</div></div>`
+    + `<div class="fi-actions"><button class="rond fermer" id="in-fermer" aria-label="Fermer la fiche (Échap)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></div>`;
+  const pourquoi = `${pluriel(fils.length, 'fil')} du contrat partent de la même borne (${esc(c.propre)}:${esc(c.borne)}). On ne sertit pas ${fils.length} fils dans un contact : on pose une barrette, `
+    + `un fil de la borne à la barrette, puis un fil par départ — ${n} contacts.`;
+  // les numéros de contact, ceux du plan : chaque fil à la hauteur où il touche la barrette, le raccord du côté de la borne
+  const B = (app.dessin && app.dessin.barrettes) || [], vb = B.find(x => x.propre === c.propre && x.etiquette === String(c.borne));
+  const num = new Map(); let nRaccord = 1;
+  if (vb) { const cs = contactsDePiquage(vb), pris = new Set(), L = liaisonsDuPlan();
+    const prendre = (y, cote) => { const k = cs.filter(x => !pris.has(x) && Math.abs(x.y - y) < 0.6).sort((u, v) => cote * (u.x - v.x))[0]; if (k) pris.add(k); return k; };
+    const kr = prendre(vb.py, vb.px < vb.x ? 1 : -1); if (kr) nRaccord = kr.n;
+    fils.forEach(f => { const w = (app.dessin.fils || []).find(w => L[w.i] && L[w.i] === f.l) || (app.dessin.fils || []).find(w => w.cable === f.cable); if (!w) return;
+      let y = null; for (let i = 0; i < w.pts.length; i++) { const p = w.pts[i], q = w.pts[i + 1];
+        if (Math.abs(p.x - vb.x) < 0.6) { y = p.y; break; } if (q && Math.abs(p.y - q.y) < 0.6 && (p.x - vb.x) * (q.x - vb.x) < 0) { y = p.y; break; } }
+      const k = y != null ? prendre(y, 1) : null; if (k) num.set(f, k.n); }); }
+  let libre = 1; const suivant = () => { while (nRaccord === libre || [...num.values()].includes(libre)) libre++; return libre++; };
+  fils.forEach(f => { if (!num.has(f)) num.set(f, suivant()); });
+  const lignes = [{ n: nRaccord, h: `<li class="fi-fil fi-nouveau"><span class="fi-ct">${nRaccord}</span><span class="fi-cable"><b>à créer</b><small>${esc(raccord.type)}</small></span><span class="fi-dest">→ ${esc(c.propre)}:${esc(c.borne)}</span></li>` },
+    ...fils.map(f => ({ n: num.get(f), h: ligneFil(String(num.get(f)), f, '→ ' + destination(f)) }))].sort((u, v) => u.n - v.n).map(x => x.h).join('');
+  return tete + ficheStatut([], ['repère provisoire : donne-lui son vrai repère dans le tableau (un repère « …VT… »), et numérote le fil à créer'], '')
+    + ficheChoix(prop && prop.reference ? prop.reference : 'à choisir', pourquoi + (prop && prop.reference ? ' La norme propose ce module : le plus petit groupe qui reçoit ces fils.' : ''), 'Barrette proposée')
+    + ficheSection('Contacts', `<ul class="fi-liste">${lignes}</ul>`)
+    + `<div class="fi-pied"><button class="btn papier" data-choisir-bloc="${escA(c.propre)}">Voir ${esc(c.propre)}</button></div>`; }
 
 /* ---- une barrette en modules de jonction --------------------------------- */
 function ficheBarrette(nom, n) { const { besoins: b, plan: Q, main } = planDeBarrette(nom), s = k => k > 1 ? 's' : '';
@@ -6062,7 +6165,9 @@ function ficheEquipement(nom, n, mes) { const V = verite(), C = connecteursDe(no
   const b = besoinsDeBarrette(nom, V);
   const resume = `${natureDe(nom)} · ${pluriel(C.length, 'connecteur')} · ${pluriel(n, 'fil')}`;
   // deux fils sur une même borne : c'est un double sertissage (ou une barrette à poser), on le dit
-  const doubles = [...b.parBorne].filter(([, fs]) => fs.length > 1).map(([bo, fs]) => `borne ${bo} : ${fs.length} fils (${fs.map(f => f.cable).join(', ')}) — double sertissage, ou une barrette à poser`);
+  const B = (app.dessin && app.dessin.barrettes) || []; nommerBarrettesAPoser(B);
+  const vtDe = bo => (B.find(x => x.propre === nom && x.etiquette === String(bo)) || {}).nomVT;
+  const doubles = [...b.parBorne].filter(([, fs]) => fs.length > 1).map(([bo, fs]) => `borne ${bo} : ${fs.length} fils (${fs.map(f => f.cable).join(', ')}) — une barrette à poser${vtDe(bo) ? ' (' + vtDe(bo) + ' sur le plan)' : ''}`);
   const ko = cav.flatMap(c => c.plan.verdicts.filter(v => v.niveau === 'ko').map(v => c.nom + ' · ' + v.texte));
   const att = [...doubles, ...cav.flatMap(c => c.plan.verdicts.filter(v => v.niveau === 'attention' && !/contact .* : \d fils/.test(v.texte)).map(v => c.nom + ' · ' + v.texte))];
   const blocs = C.map(c => { const k = parNom.get(c.nom), Q = k && k.plan, M = Q && Q.modules[0];
@@ -6356,10 +6461,12 @@ function appliquerVue() {
    ouvert : la feuille se cadre dedans. Sur téléphone tout est en bas, empilé
    au-dessus du tiroir : le rail (48), puis les folios (44) s'il y en a. */
 const RAIL = 52;
-function marges() { const tel = telephone(), folios = !$('folios').hidden;
-  const doc = !$('base').hidden ? $('base') : (!$('fiche').hidden ? $('fiche') : null);
-  if (tel) return { haut: 16, bas: (doc ? doc.offsetHeight + 8 : 8) + 56 + (folios ? 52 : 0), gauche: 12, droite: 12 };
-  return { haut: 28, bas: folios ? 72 : 28, gauche: 12 + RAIL + 16, droite: 28 + (doc ? doc.offsetWidth + 24 : 0) }; }
+/* La place du plan : ce que laissent l'inspecteur (à droite), le tableau (en bas), la fiche des documents (à droite).
+   Le plan se recadre dans ce qui reste : rien ne le recouvre. */
+function marges() { const tel = telephone(), folios = !$('folios').hidden, vu = id => !$(id).hidden ? $(id) : null;
+  const droite = vu('fiche') || vu('inspecteur'), bas = vu('base');
+  if (tel) { const d = vu('fiche') || vu('inspecteur') || bas; return { haut: 16, bas: (d ? d.offsetHeight + 8 : 8) + 56 + (folios ? 52 : 0), gauche: 12, droite: 12 }; }
+  return { haut: 28, bas: (bas ? bas.offsetHeight + 24 : 0) + (folios ? 72 : 28), gauche: 12 + RAIL + 16, droite: 28 + (droite ? droite.offsetWidth + 12 : 0) }; }
 let anim = null;
 function animerVue(cible, doux) {
   if (anim) { cancelAnimationFrame(anim); anim = null; }
@@ -6497,21 +6604,41 @@ function lierPlanche() {
 function cliquer(w) { const c = blocSous(w);
   if (c) { if (estRenvoi(c.name)) { const t = c.name.replace(RENVOI, ''); if (plans().includes(t)) allerAuPlan(t); return; }
     if (c.rail) return; choisirBloc(c); return; }
+  const vt = barretteAPoserSous(w); if (vt) { choisirBarretteAPoser(vt); return; }
   const f = filSous(w); if (f) choisirFil(f); else deselectionner(); }
-/* Choisir un bloc : la base se filtre sur lui — c'est sa fiche. */
-function choisirBloc(c) { app.choisi = c.name; app.cible = { type: 'bloc', nom: c.name }; app.base.filtre = c.name; app.base.defiler = true;
-  peindre(); ouvrirBase(); rendreBase(); allumerBloc(c.name); }
-/* Choisir un fil : sa ligne se marque et vient sous les yeux. */
+// une barrette à poser sous le pointeur : sur sa ligne pointillée, entre sa première et sa dernière pastille
+function barretteAPoserSous(w) { const B = (app.dessin && app.dessin.barrettes) || []; nommerBarrettesAPoser(B); const tol = 5 / Math.max(0.4, app.vue.s) + 2;
+  return B.find(b => { const ys = bornesDePiquage(b); return Math.abs(w.x - b.x) <= tol && w.y >= ys[0] - tol && w.y <= ys[ys.length - 1] + tol; }) || null; }
+/* Choisir un bloc : sa fiche dans l'inspecteur ; le tableau, s'il est ouvert, se filtre sur lui. */
+function choisirBloc(c) { app.choisi = c.name; app.cible = { type: 'bloc', nom: c.name };
+  if (app.base.ouvert) { app.base.filtre = c.name; app.base.defiler = true; rendreBase(); }
+  peindre(); ouvrirInspecteur(); allumerBloc(c.name); }
+/* Choisir un fil : sa fiche ; dans le tableau ouvert, sa ligne se marque et vient sous les yeux. */
 function choisirFil(f) { const l = liaisonsDuPlan()[f.i]; if (!l) return; const src = sourceDe(l) || l;
   if (app.choisi) { app.choisi = null; peindre(); }
-  app.cible = { type: 'fil', l: src }; app.base.defiler = true;
-  if (!lignesVisibles().some(([x]) => x === src)) app.base.filtre = '';
-  ouvrirBase(); rendreBase(); allumerFil(f); }
+  app.cible = { type: 'fil', l: src, f };
+  if (app.base.ouvert) { app.base.defiler = true; if (!lignesVisibles().some(([x]) => x === src)) app.base.filtre = ''; rendreBase(); }
+  ouvrirInspecteur(); allumerFil(f); }
+/* Choisir une barrette à poser (un dédoublement de fils) : sa fiche. */
+function choisirBarretteAPoser(b) { if (app.choisi) { app.choisi = null; peindre(); }
+  app.cible = { type: 'vt', nom: b.nomVT, propre: b.propre, borne: b.etiquette }; ouvrirInspecteur();
+  // ses fils s'allument : ceux qui partent de la borne dédoublée
+  const L = liaisonsDuPlan(), ws = (app.dessin.fils || []).filter(w => { const l = L[w.i]; return l && ((l.de === b.propre && String(l.borneDe) === b.etiquette) || (l.vers === b.propre && String(l.borneVers) === b.etiquette)); });
+  if (ws.length) allumerFils(ws); else allumerBloc(b.propre); }
 function deselectionner() { const c = app.cible;
   if (c) { app.cible = null; if (app.choisi) { app.choisi = null; peindre(); }
-    if (c.type === 'bloc' && app.base.filtre === c.nom) app.base.filtre = '';
-    rendreBase(); eteindre(); }
+    if (c.type === 'bloc' && app.base.filtre === c.nom) { app.base.filtre = ''; rendreBase(); }
+    else marquerLignes(); eteindre(); }
+  fermerInspecteur();
   if (app.fiche) fermerFiche(true); }
+/* L'inspecteur : s'ouvre sur ce qu'on choisit, se ferme quand on ne choisit plus rien ; le plan se recadre à côté
+   (sans bouger si ce qu'on vient de choisir est déjà en vue). */
+function ouvrirInspecteur() { const el = $('inspecteur'), etait = !el.hidden; if (app.fiche) fermerFiche();
+  el.hidden = false; document.body.classList.add('insp-ouvert'); rendreFiche();
+  if (!etait) { el.classList.remove('entre'); void el.offsetWidth; el.classList.add('entre'); recadrerSiCache(); } }
+function fermerInspecteur() { const el = $('inspecteur'); if (el.hidden) return; el.hidden = true; document.body.classList.remove('insp-ouvert'); recadrerSiCache(); }
+/* Le panneau qui s'ouvre ou se ferme change la place du plan : on le recadre en douceur. */
+function recadrerSiCache() { ajuster(true); }
 
 /* ---- les folios : y aller, les montrer --------------------------------- */
 function allerAuPlan(plan) { if (plan === app.plan) return; app.plan = plan; app.choisi = null; fermerFiche(); redessiner(); ajuster(); }
@@ -6619,7 +6746,6 @@ function rendreBase() { const b = app.base; b.sale = false; if ($('base').hidden
   $('ba-tbody').innerHTML = vues.slice(0, CAP_LIGNES).map(([l, i]) => rendreLigne(l, i, folios)).join('')
     + (vues.length > CAP_LIGNES ? `<tr class="reste"><td colspan="${colonnes().length + 2}">… et ${vues.length - CAP_LIGNES} autres lignes — affine le filtre.</td></tr>` : '')
     + (!vues.length ? `<tr class="reste"><td colspan="${colonnes().length + 2}">${V.length ? 'Rien qui corresponde au filtre.' : 'Aucune liaison. Ajoute une ligne, ou dépose un fichier.'}</td></tr>` : '');
-  rendreEquip();
   if (b.defiler) { b.defiler = false; const tr = $('ba-tbody').querySelector('tr.on'); if (tr && tr.scrollIntoView) { try { tr.scrollIntoView({ block: 'center' }); } catch (_) { } } } }
 /* Le rendu attend qu'on ait fini d'écrire dans une cellule : refaire le
    tableau sous les doigts casserait la saisie et la tabulation. On s'en
@@ -6637,7 +6763,7 @@ const pluriel = (n, mot) => n + ' ' + mot + (n > 1 ? 's' : '');
 function rendreEquip() { rendreFiche(); }   // la fiche du bloc choisi : 08-fiche
 /* La carte se redessine quand la place change (fenêtre, poignée), jamais
    sous les doigts de qui y écrit. */
-function rafraichirCarte() { const box = $('ba-equip'); if (box.hidden || !(app.cible && app.cible.type === 'bloc') || box.contains(document.activeElement)) return; rendreEquip(); }
+function rafraichirCarte() { const box = $('ba-equip'); if ($('inspecteur').hidden || !app.cible || box.contains(document.activeElement)) return; rendreFiche(); }
 /* Les connecteurs : « A · *704A46220028 · bornes A3, A4 », une ligne chacun.
    Une borne qui ne dit pas son connecteur (« 12 », sans part number) n'en fait pas. */
 function carteConnecteurs(nom) { const C = connecteursDe(nom, verite()).filter(c => c.nom); if (!C.length) return '';
@@ -6917,7 +7043,7 @@ function foliosDe(l) { return modeFolio() === 'auto' ? (foliosParSource().get(cl
 function voirLiaison(i) { const l = verite()[i]; if (!l) return;
   if (app.choisi) { app.choisi = null; peindre(); } app.cible = { type: 'fil', l };
   const ou = foliosDe(l); if (app.plan !== '*' && ou.length && !ou.includes(app.plan)) allerAuPlan(ou[0]);
-  const w = filDe(l); if (w) { allumerFil(w); viserFil(w); } marquerLignes(); }
+  const w = filDe(l); if (w) { allumerFil(w); viserFil(w); } marquerLignes(); ouvrirInspecteur(); }
 /* Le même geste depuis la carte d'une barrette : le bloc reste choisi, sa
    carte reste ; on va seulement voir le fil, même sur un autre folio. */
 function voirFilDeCarte(i) { const l = verite()[i]; if (!l) return;
@@ -6930,7 +7056,7 @@ function lierBase() { const t = $('ba-tab'), corps = $('ba-tbody'), fi = $('ba-f
     rendreBase(); rallumer(); }, 150); });
   fi.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); if (fi.value) { fi.value = ''; fi.dispatchEvent(new Event('input')); } else fi.blur(); } });
   $('ba-vider').onclick = () => { fi.value = ''; fi.dispatchEvent(new Event('input')); fi.focus(); };
-  $('ba-fermer').onclick = fermerBase;
+  $('ba-fermer').onclick = fermerBase; $('ba-ajouter').onclick = nouvelleLiaison;
   $('ba-thead').addEventListener('click', e => { const th = e.target.closest('th[data-k]'); if (!th) return; const k = th.dataset.k, tri = app.base.tri;
     app.base.tri = !tri || tri.k !== k ? { k, sens: 1 } : (tri.sens > 0 ? { k, sens: -1 } : null); rendreBase(); });
   t.addEventListener('focusin', e => { if (e.target.dataset.f != null) entrerCellule(e.target); });
@@ -6950,20 +7076,20 @@ function lierBase() { const t = $('ba-tab'), corps = $('ba-tbody'), fi = $('ba-f
 function lierPoignee() { const p = $('ba-poignee'), b = $('base'); let actif = false;
   p.addEventListener('pointerdown', e => { actif = true; b.classList.add('redim'); try { p.setPointerCapture(e.pointerId); } catch (_) { } e.preventDefault(); });
   p.addEventListener('pointermove', e => { if (!actif) return;
-    if (telephone()) { app.base.hauteur = Math.round(Math.max(160, Math.min(window.innerHeight * 0.85, window.innerHeight - e.clientY))); }
-    else { app.base.largeur = Math.round(Math.max(340, Math.min(window.innerWidth * 0.7, window.innerWidth - 12 - e.clientX))); }
+    // le tiroir se règle en hauteur, à la poignée du haut (sur téléphone comme sur grand écran)
+    app.base.hauteur = Math.round(Math.max(150, Math.min(window.innerHeight * 0.75, window.innerHeight - 12 - e.clientY)));
     appliquerTailleBase(); });
-  const fin = () => { if (!actif) return; actif = false; b.classList.remove('redim'); memoriserBase(); ajuster(true); rafraichirCarte(); };
+  const fin = () => { if (!actif) return; actif = false; b.classList.remove('redim'); memoriserBase(); ajuster(true); };
   p.addEventListener('pointerup', fin); p.addEventListener('pointercancel', fin); }
 function appliquerTailleBase() { const r = document.documentElement.style;
   if (app.base.largeur) r.setProperty('--base-l', app.base.largeur + 'px'); if (app.base.hauteur) r.setProperty('--base-h', app.base.hauteur + 'px'); }
 function ouvrirBase() { if (app.base.ouvert) return; app.base.ouvert = true; fermerFiche();
+  if (app.cible && app.cible.type === 'bloc') app.base.filtre = app.cible.nom; app.base.defiler = true;
   const b = $('base'); b.hidden = false; b.classList.remove('entre'); void b.offsetWidth; b.classList.add('entre');
   document.body.classList.add('base-ouverte'); $('btnBase').setAttribute('aria-pressed', 'true');
   rendreBase(); memoriserBase(); ajuster(true); }
 function fermerBase() { if (!app.base.ouvert) return; app.base.ouvert = false;
   $('base').hidden = true; document.body.classList.remove('base-ouverte'); $('btnBase').setAttribute('aria-pressed', 'false');
-  if (app.cible) { app.cible = null; if (app.choisi) { app.choisi = null; peindre(); } eteindre(); }
   memoriserBase(); ajuster(true); }
 function basculerBase() { if (app.base.ouvert) fermerBase(); else if (app.contrat.liaisons.length || verite().length) ouvrirBase(); else dire('Rien à montrer : dépose d’abord un fichier.'); }
 /* Ouverte ou non, sa taille : une commodité de ce navigateur, rien de plus. */
@@ -6973,7 +7099,7 @@ function relireBase() { let o = null; try { o = JSON.parse(localStorage.getItem(
   return o ? !!o.ouvert : !telephone(); }   // au premier lancement, la base est là sur un grand écran
 
 /* ---- la fiche : cartouche, collage, bible — les documents rares --------- */
-function ouvrirFiche(mode, corps, pied) { const f = $('fiche'); fermerBase();
+function ouvrirFiche(mode, corps, pied) { const f = $('fiche'); fermerBase(); if (!$('inspecteur').hidden) { $('inspecteur').hidden = true; document.body.classList.remove('insp-ouvert'); }
   $('fiche-corps').innerHTML = corps; const p = $('fiche-pied'); p.innerHTML = pied || ''; p.hidden = !pied;
   const nouveau = f.hidden || !app.fiche || app.fiche.mode !== mode.mode;
   const r = document.documentElement.style; r.setProperty('--fiche-l', (mode.large ? 560 : 400) + 'px');
@@ -7227,7 +7353,7 @@ function synchroniserContexte() { const n = app.contrat.liaisons.length;
 function synchroniserHistorique() { const b = $('btnUndo'), d = app.hist[app.hist.length - 1]; b.disabled = !d;
   const quoi = d ? 'Annuler : ' + d.quoi : 'Annuler';
   b.setAttribute('aria-label', quoi + ' (Ctrl+Z)'); b.querySelector('.bulle').innerHTML = esc(quoi) + '<kbd>Ctrl+Z</kbd>'; }
-function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); synchroniserRetouche(); rafraichirBase(); }
+function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); synchroniserRetouche(); rafraichirBase(); rafraichirCarte(); }
 let toastT = null;
 function dire(msg, erreur) { const t = $('toast'); t.textContent = msg; t.classList.toggle('erreur', !!erreur); t.classList.add('on');
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), erreur ? 6000 : 2800); }
@@ -7266,7 +7392,7 @@ function lierPanneau() {
     const dansChamp = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '');
     if (e.key === 'Escape') { if (!$('menu').hidden) { fermerMenu(); $('btnMenu').focus(); } else if (rechercheOuverte()) { fermerRecherche(); $('q').blur(); }
       else if (dansChamp) e.target.blur();   // dans un champ, Échap ne fait que le quitter
-      else if (app.fiche) fermerFiche(true); else if (app.cible) deselectionner(); else fermerBase(); return; }
+      else if (app.fiche) fermerFiche(true); else if (app.cible || !$('inspecteur').hidden) deselectionner(); else fermerBase(); return; }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !dansChamp) { e.preventDefault(); const q = annuler(); if (q) dire('Annulé : ' + q + '.'); return; }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') { e.preventDefault(); imprimer(); return; }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'o') { e.preventDefault(); choisirFichier(); return; }
