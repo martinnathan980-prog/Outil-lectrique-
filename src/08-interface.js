@@ -32,7 +32,7 @@ const app = {
   contrat: nouveauContrat(), source: null, nFolios: 0, budget: 16, plan: '*', nom: '',
   vue: { s: 1, tx: 0, ty: 0 }, choisi: null, cible: null, actif: null, dessin: null, hist: [], fiche: null,
   bible: [], bibleNom: '', norme: null, normeNom: '', simu: null,   // simu : les hypothèses, posées au démarrage (relireSimu)
-  base: { ouvert: false, portee: 'folio', filtre: '', tri: null, hauteur: 0, sale: true, defiler: false, enSaisie: false, choixOuvert: false, normeOuverte: false },
+  base: { ouvert: false, portee: 'folio', filtre: '', filtreAuto: false, tri: null, hauteur: 0, sale: true, defiler: false, enSaisie: false, choixOuvert: false, normeOuverte: false },
   retouches: new Map()   // folio (sa clé de placement) -> le dessin retouché à la souris (la retouche)
 };
 const $ = id => document.getElementById(id);
@@ -432,7 +432,7 @@ function cliquer(w) { const c = blocSous(w);
 const filtreDuBloc = nom => { if (!VT_A_POSER.test(nom)) return nom; const r = liaisonsDuPlan().find(l => l.origine === null && l.vers === nom && l.borneVers === '1'); return r ? r.de : ''; };
 /* Choisir un bloc : sa fiche dans l'inspecteur ; le tableau, s'il est ouvert, se filtre sur lui. */
 function choisirBloc(c) { app.choisi = c.name; app.cible = { type: 'bloc', nom: c.name };
-  if (app.base.ouvert) { app.base.filtre = filtreDuBloc(c.name); app.base.defiler = true; rendreBase(); }
+  if (app.base.ouvert) { app.base.filtre = filtreDuBloc(c.name); app.base.filtreAuto = true; app.base.defiler = true; rendreBase(); }
   peindre(); ouvrirInspecteur(); allumerBloc(c.name); }
 /* Choisir un fil : sa fiche ; dans le tableau ouvert, sa ligne se marque et vient sous les yeux. */
 function choisirFil(f) { const l = liaisonsDuPlan()[f.i]; if (!l) return; const src = sourceDe(l) || l;
@@ -876,7 +876,7 @@ function voirFilDeCarte(i) { const l = verite()[i]; if (!l) return;
   if (app.plan !== '*' && ou.length && !ou.includes(app.plan)) { allerAuPlan(ou[0]); if (app.cible && app.cible.type === 'bloc') { app.choisi = app.cible.nom; peindre(); } }
   const w = filDe(l); if (w) { allumerFil(w); viserFil(w); } else dire('Ce fil n’est pas dessiné sur ce folio.'); }
 function lierBase() { const t = $('ba-tab'), corps = $('ba-tbody'), fi = $('ba-filtre'); let sT, fT;
-  fi.addEventListener('input', () => { clearTimeout(fT); fT = setTimeout(() => { app.base.filtre = fi.value;
+  fi.addEventListener('input', () => { clearTimeout(fT); fT = setTimeout(() => { app.base.filtre = fi.value; app.base.filtreAuto = false;
     const c = app.cible; if (c && c.type === 'bloc' && fi.value.trim() !== filtreDuBloc(c.nom)) { app.cible = null; app.choisi = null; peindre(); }
     rendreBase(); rallumer(); }, 150); });
   fi.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); if (fi.value) { fi.value = ''; fi.dispatchEvent(new Event('input')); } else fi.blur(); } });
@@ -909,7 +909,10 @@ function lierPoignee() { const p = $('ba-poignee'), b = $('base'); let actif = f
   p.addEventListener('pointerup', fin); p.addEventListener('pointercancel', fin); }
 function appliquerTailleBase() { if (app.base.hauteur) document.documentElement.style.setProperty('--base-h', app.base.hauteur + 'px'); }
 function ouvrirBase() { if (app.base.ouvert) return; app.base.ouvert = true; fermerFiche();
-  if (app.cible && app.cible.type === 'bloc') app.base.filtre = filtreDuBloc(app.cible.nom); app.base.defiler = true;
+  // le filtre suit le bloc choisi ; sans bloc, celui qu'un bloc avait posé s'efface (celui qu'on a écrit reste)
+  if (app.cible && app.cible.type === 'bloc') { app.base.filtre = filtreDuBloc(app.cible.nom); app.base.filtreAuto = true; }
+  else if (app.base.filtreAuto) { app.base.filtre = ''; app.base.filtreAuto = false; }
+  app.base.defiler = true;
   const b = $('base'); b.hidden = false; b.classList.remove('entre'); void b.offsetWidth; b.classList.add('entre');
   document.body.classList.add('base-ouverte'); $('btnBase').setAttribute('aria-pressed', 'true');
   rendreBase(); memoriserBase(); ajuster(true); }

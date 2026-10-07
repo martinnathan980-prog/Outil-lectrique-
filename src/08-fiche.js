@@ -246,7 +246,7 @@ function ficheBornierAncien(nom) { const V = verite(), b = besoinsDeBarrette(nom
 /* ---- les gestes ------------------------------------------------------------------- */
 function lierFiche(c) { const box = $('ba-equip'), nom = c.type === 'fil' ? '' : c.nom;
   $('in-fermer').onclick = () => deselectionner();
-  const tab = $('fi-tableau'); if (tab) tab.onclick = () => { app.base.filtre = tab.dataset.filtre; app.base.portee = 'tout'; app.base.defiler = true; if (app.base.ouvert) rendreBase(); else ouvrirBase(); };
+  const tab = $('fi-tableau'); if (tab) tab.onclick = () => { app.base.filtre = tab.dataset.filtre; app.base.filtreAuto = false; app.base.portee = 'tout'; app.base.defiler = true; if (app.base.ouvert) rendreBase(); else ouvrirBase(); };
   box.querySelectorAll('[data-choisir-bloc]').forEach(b => b.onclick = () => { const n = b.dataset.choisirBloc, k = ((app.dessin && app.dessin.comps) || []).find(x => x.name === n && x.kind !== 'tag');
     if (k) choisirBloc(k); else { app.cible = { type: 'bloc', nom: n }; rendreFiche(); } });
   // les onglets : on montre un autre panneau, rien ne se refait
