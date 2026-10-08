@@ -10,10 +10,11 @@
        « Ce folio » n'y montre que les liaisons du folio affiché ;
      · Échap ferme la fiche, puis le tableau.
    Puis, sur chaque folio, chaque BARRETTE À POSER (plusieurs fils sur une même
-   borne d'équipement) : une vraie barrette, une colonne, une borne par fil —
-   le fil à créer compris —, jamais deux fils au même niveau ; plus aucune
-   borne d'équipement ne porte deux fils sur le plan. Enfin, la poser au
-   contrat sous un vrai repère, et Ctrl+Z la rend.
+   borne d'équipement) : posée par le routage au ras de la borne, une borne
+   par fil — le fil à créer compris, borne 1 —, numérotées comme la fiche,
+   jamais deux au même niveau ; plus aucune borne d'équipement ne porte deux
+   fils dans le folio. Un clic dessus ouvre sa fiche ; la poser au contrat
+   sous un vrai repère, et Ctrl+Z la rend.
    Rend 1 au premier échec.
    =========================================================================== */
 const { chromium } = require('playwright');
@@ -64,22 +65,29 @@ const FICHIER = P.fichierDemande();
     // plus aucune borne d'équipement à deux fils sur le plan
     const n = new Map(); L.forEach(l => { if (l.de === l.vers) return; [[l.de, l.borneDe], [l.vers, l.borneVers]].forEach(([r, b]) => { if (!r || !b || estBornier(r) || estMasse(r)) return; const k = r + ':' + b; n.set(k, (n.get(k) || 0) + 1); }); });
     const doubles = [...n].filter(([, k]) => k > 1).map(([k]) => k);
-    return app.dessin.comps.filter(c => VT_A_POSER.test(c.name) && c.kind !== 'tag').map(c => { const bornes = Object.values(c.rangs || {}).flat();
-      const fils = L.filter(l => l.origine && (l.de === c.name || l.vers === c.name)).length, ys = bornes.map(p => Math.round(p.y * 2));
-      return { pl, nom: c.name, fils, bornes: bornes.length, distinctes: new Set(ys).size === ys.length, ecrit: svg.includes('>' + c.name + '</text>'), doubles }; })
+    return app.dessin.barrettes.filter(b => b.nomVT).map(b => { const bs = bornesDePiquage(b);
+      const fils = L.filter(l => l.origine && (l.de === b.nomVT || l.vers === b.nomVT)).length, ys = bs.map(p => Math.round(p.y * 2));
+      return { pl, nom: b.nomVT, fils, bornes: bs.length, distinctes: new Set(ys).size === ys.length && bs.every((p, i) => !i || p.y - bs[i - 1].y >= 9.9),
+        numeros: bs.map(p => p.n).sort().join(''), ecrit: svg.includes('>' + b.nomVT + '</text>'), doubles }; })
       .concat(doubles.length ? [{ pl, nom: '—', doubles }] : []); }));
   ok(vts.length > 0, 'l’exemple a des dédoublements', vts.length + ' barrettes à poser');
   vts.forEach(v => v.nom === '—' ? ok(false, `folio ${v.pl} : des bornes d’équipement portent encore deux fils`, v.doubles.join(' '))
-    : ok(v.bornes === v.fils + 1 && v.distinctes && v.ecrit && !v.doubles.length, `folio ${v.pl} · ${v.nom} : ${v.fils} fils + le fil à créer = ${v.fils + 1} bornes, chacune à sa hauteur, repère écrit`, v.bornes + ' bornes'));
+    : ok(v.bornes === v.fils + 1 && v.distinctes && v.ecrit && !v.doubles.length && v.numeros === Array.from({ length: v.fils + 1 }, (_, i) => i + 1).join(''),
+      `folio ${v.pl} · ${v.nom} : ${v.fils} fils + le fil à créer = ${v.fils + 1} bornes numérotées 1 à ${v.fils + 1}, chacune à sa hauteur, repère écrit`, v.bornes + ' bornes · ' + v.numeros));
   // la fiche de VT1, puis la poser au contrat sous un vrai repère, et la reprendre
-  await page.evaluate(() => { app.plan = '1'; redessiner(); ajuster(); choisirBloc(app.dessin.comps.find(k => k.name === 'VT1' && k.kind !== 'tag')); }); await page.waitForTimeout(300);
-  ok(await page.evaluate(() => /À poser/.test($('ba-equip').textContent) && $('ba-equip').querySelectorAll('.fi-fil').length === 3), 'la fiche de VT1 : à poser, trois bornes');
+  // un clic sur la barrette, à la vraie souris
+  await page.evaluate(() => { app.plan = '1'; deselectionner(); redessiner(); ajuster(); }); await page.waitForTimeout(300);
+  const vt1 = await page.evaluate(() => { const b = app.dessin.barrettes.find(b => b.nomVT === 'VT1'), bs = bornesDePiquage(b), r = $('planche').getBoundingClientRect();
+    return { x: r.left + app.vue.tx + b.x * app.vue.s, y: r.top + app.vue.ty + (bs[0].y + bs[1].y) / 2 * app.vue.s }; });
+  await page.mouse.click(vt1.x, vt1.y); await page.waitForTimeout(400);
+  ok(await page.evaluate(() => app.cible && app.cible.nom === 'VT1' && !$('inspecteur').hidden), 'un clic sur la barrette VT1 ouvre sa fiche');
+  ok(await page.evaluate(() => /à poser/i.test($('ba-equip').textContent) && $('ba-equip').querySelectorAll('.fi-fil').length === 3), 'la fiche de VT1 : à poser, trois bornes');
   await page.fill('#eq-rep', '102VT9'); await page.press('#eq-rep', 'Enter'); await page.waitForTimeout(800);
   ok(await page.evaluate(() => { const L = app.contrat.liaisons.filter(l => l.de === '102VT9' || l.vers === '102VT9');
-    return L.length === 5 && L.some(l => l.de === '102CB1' && l.borneDe === '2' && l.borneVers === '1' && !l.cable) && app.dessin.comps.some(c => c.name === '102VT9') && !app.dessin.comps.some(c => c.name === 'VT1'); }),
+    return L.length === 5 && L.some(l => l.de === '102CB1' && l.borneDe === '2' && l.borneVers === '1' && !l.cable) && app.dessin.comps.some(c => c.name === '102VT9') && !app.dessin.barrettes.some(b => b.nomVT === 'VT1'); }),
     'VT1 posée sous 102VT9 : le fil à créer, les deux fils, deux shunts — dessinée comme avant');
   await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(800);
-  ok(await page.evaluate(() => app.contrat.liaisons.length === 201 && app.dessin.comps.some(c => c.name === 'VT1')), 'Ctrl+Z rend VT1');
+  ok(await page.evaluate(() => app.contrat.liaisons.length === 201 && app.dessin.barrettes.some(b => b.nomVT === 'VT1')), 'Ctrl+Z rend VT1');
   // survoler une ligne de la fiche allume son fil sur le plan
   await page.evaluate(() => { choisirBloc(app.dessin.comps.find(k => k.name === '103RL1' && k.kind !== 'tag')); }); await page.waitForTimeout(300);
   const li = await page.locator('#ba-equip .fi-fil[data-i]').first().boundingBox(); await page.mouse.move(li.x + li.width / 2, li.y + li.height / 2); await page.waitForTimeout(200);

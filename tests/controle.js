@@ -67,7 +67,7 @@ function titre(t) { console.log('\n' + t); }
 
   titre('3. CONTRAT D’ESSAI');
   const essai = await page.evaluate(() => { atelier.essai(); const a = atelier.audit();
-    return { b: a.blocs, f: a.fils, d: Math.round(a.tauxDroits * 100), ib: a.filsDansBloc, ch: a.blocsChevauches, cr: a.croisements, ev: a.evitables, barrettes: new Set(app.dessin.comps.filter(c => VT_A_POSER.test(c.name)).map(c => c.name)).size }; });
+    return { b: a.blocs, f: a.fils, d: Math.round(a.tauxDroits * 100), ib: a.filsDansBloc, ch: a.blocsChevauches, cr: a.croisements, ev: a.evitables, barrettes: app.dessin.barrettes.filter(b => b.nomVT).length }; });
   ok('se dessine sans défaut', essai.ib === 0 && essai.ch === 0, essai.b + ' blocs · ' + essai.f + ' fils · ' + essai.d + ' % droits');
   ok('ses deux dédoublements sont deux barrettes à poser', essai.barrettes === 2, essai.barrettes + ' trouvée(s)');
   ok('aucun croisement évitable', essai.ev === 0, essai.cr + ' croisement(s), dont ' + essai.ev + ' évitable(s)');

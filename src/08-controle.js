@@ -57,8 +57,9 @@ function ouvrirControle(ouvert) { CONTROLE.ouvert = ouvert; $('co-liste').hidden
 function allerAuControle(x) { ouvrirControle(false);
   if (x.tableau != null) { app.base.filtre = x.tableau; app.base.portee = 'tout'; app.base.tri = x.texte.includes('sans type') ? { k: 'type', sens: 1 } : { k: 'de', sens: 1 }; if (app.base.ouvert) rendreBase(); else ouvrirBase(); return; }
   if (x.plan && x.plan !== app.plan && plans().includes(x.plan)) allerAuPlan(x.plan);
-  const c = app.dessin && app.dessin.comps.find(k => k.name === x.nom && k.kind !== 'tag');
-  if (c) choisirBloc(c); else { app.cible = { type: 'bloc', nom: x.nom }; ouvrirInspecteur(); } }
+  const c = app.dessin && app.dessin.comps.find(k => k.name === x.nom && k.kind !== 'tag'), vt = c ? null : barretteAPoser(x.nom);
+  if (c) choisirBloc(c); else if (vt) choisirBarretteAPoser(vt); else { app.cible = { type: 'bloc', nom: x.nom }; ouvrirInspecteur(); }
+  viser(x.nom); }
 function lierControle() {
   $('co-bouton').onclick = () => ouvrirControle(!CONTROLE.ouvert);
   $('co-liste').addEventListener('click', e => { const b = e.target.closest('.co-item'); if (b) allerAuControle(CONTROLE.items[+b.dataset.k]); });

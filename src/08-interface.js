@@ -33,7 +33,8 @@ const app = {
   vue: { s: 1, tx: 0, ty: 0 }, choisi: null, cible: null, actif: null, dessin: null, hist: [], fiche: null,
   bible: [], bibleNom: '', norme: null, normeNom: '', simu: null,   // simu : les hypothèses, posées au démarrage (relireSimu)
   base: { ouvert: false, portee: 'folio', filtre: '', filtreAuto: false, tri: null, hauteur: 0, sale: true, defiler: false, enSaisie: false, choixOuvert: false, normeOuverte: false },
-  retouches: new Map()   // folio (sa clé de placement) -> le dessin retouché à la souris (la retouche)
+  retouches: new Map(),  // folio (sa clé de placement) -> le dessin retouché à la souris (la retouche)
+  insp: { index: false, filtre: '' }   // l'inspecteur : ouvert sur l'INDEX des repères (une fiche y revient par la flèche), ce qu'on y cherche
 };
 const $ = id => document.getElementById(id);
 const CLE_CONTRAT = 'atelier.contrat.v2';
@@ -47,13 +48,15 @@ const telephone = () => window.innerWidth <= 700;
 /* ---- le dessin ---------------------------------------------------------- */
 /* Le folio tel que le moteur le reçoit : ses liaisons complètes, chaque dédoublement devenu une barrette à poser
    (01, `avecBarrettesAPoser`). Le même tableau tant que rien ne change : le dessin, les clics et la fiche lisent les
-   mêmes objets (le fil n° i du dessin est la liaison n° i). */
+   mêmes objets (le fil n° i du dessin est la liaison n° i). Les barrettes à poser se numérotent d'un bout à l'autre du
+   contrat, dans l'ordre des folios : un seul VT1, et l'index comme la pastille de contrôle le retrouvent sans ambiguïté. */
 const folios = new Map();
 const signature = L => JSON.stringify(L.map(l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable, l.type, l.pnDe, l.pnVers, l.route]));
 function liaisonsDe(plan) { const L0 = app.contrat.liaisons.filter(liaisonComplete), L = plan === '*' ? L0 : L0.filter(l => l.plan === plan);
-  const g = folios.get(plan), sig = signature(L);
+  const P = plans(), depart = plan === '*' ? 0 : P.slice(0, Math.max(0, P.indexOf(plan))).reduce((n, p) => n + dedoublements(L0.filter(l => l.plan === p)).length, 0);
+  const g = folios.get(plan), sig = depart + '|' + signature(L);
   if (g && g.sig === sig && g.L.length === L.length && g.L.every((l, i) => l === L[i])) return g.sortie;
-  const sortie = avecBarrettesAPoser(L); folios.set(plan, { L, sig, sortie }); return sortie; }
+  const sortie = avecBarrettesAPoser(L, depart); folios.set(plan, { L, sig, sortie }); return sortie; }
 const liaisonsDuPlan = () => liaisonsDe(app.plan);
 /* Le placement d'un folio se garde tant que ses liaisons ne changent pas : le
    concours du folio chargé prend quelques secondes, revenir sur un folio déjà
@@ -201,9 +204,20 @@ function calculer() {
   app.dessin = P ? { comps: P.comps, links: P.links, bbox: pageDe(P.comps, P.routage.fils), geom: P.geom, compDe: P.compDe,
                      fils: P.routage.fils, points: P.routage.points, barrettes: P.routage.barrettes, piquages: P.routage.piquages } : null;
   if (app.dessin) { const routes = couleursDesRoutes(), routeDe = w => (L[w.i] && L[w.i].route) || '';
-    app.dessin.couleurDe = w => routes.get(routeDe(w)) || null; app.dessin.legende = legendeDesRoutes(app.dessin.fils.filter(w => !w.shunt && String(w.de) !== String(w.vers)), routeDe, routes); }
+    app.dessin.couleurDe = w => routes.get(routeDe(w)) || null; app.dessin.legende = legendeDesRoutes(app.dessin.fils.filter(w => !w.shunt && String(w.de) !== String(w.vers)), routeDe, routes);
+    nommerBarrettesAPoser(app.dessin.barrettes, L); }
   return app.dessin;
 }
+/* Les BARRETTES À POSER du folio (01) : le routage les a posées au ras de leur borne (05, les `barrettes` du dessin) ;
+   chacune reçoit ici son repère provisoire (VT1, VT2…) et, pour chaque borne, le numéro que le folio lui donne — la
+   borne 1 pour le fil à créer, la borne du contrat pour chaque fil : la fiche et le plan disent la même chose. */
+function nommerBarrettesAPoser(barrettes, L) { const noms = new Map();
+  L.forEach(l => { if (VT_A_POSER.test(l.vers) && l.borneVers === '1' && !VT_A_POSER.test(l.de)) noms.set(l.de + '\u0001' + l.borneDe, l.vers); });
+  (barrettes || []).forEach(b => { const nom = noms.get(b.propre + '\u0001' + b.etiquette); if (!nom) { delete b.nomVT; return; } b.nomVT = nom;
+    b.bornes = (b.bornes || []).map(p => { const l = p.li != null ? L[p.li] : null; return { ...p, n: !l ? 1 : l.de === nom ? +l.borneDe : l.vers === nom ? +l.borneVers : null }; }); }); }
+// la barrette à poser d'un repère, sur le dessin ; ses fils
+const barretteAPoser = nom => ((app.dessin && app.dessin.barrettes) || []).find(b => b.nomVT === nom) || null;
+const filsDeBarretteAPoser = nom => { const L = liaisonsDuPlan(); return ((app.dessin && app.dessin.fils) || []).filter(w => { const l = L[w.i]; return l && l.de !== l.vers && (l.de === nom || l.vers === nom); }); };
 /* LES ROUTES : un fil prend la couleur de sa route (la colonne « route » ou « cheminement » du fichier). Une route garde
    sa couleur sur tous les folios du contrat — l'ordre naturel de leurs noms, dans une palette de dix teintes franches,
    lisibles sur le blanc et à l'impression ; une couleur choisie au contrat (`couleursRoutes`) passe devant. */
@@ -314,7 +328,8 @@ function centrerSur(x, y, w, h) { const r = cadre(), m = marges();
   const s = Math.max(app.vue.s, Math.min(1.1, Math.min((r.width - m.gauche - m.droite) / (w + 80), (r.height - m.haut - m.bas) / (h + 80))));
   const cx = m.gauche + (r.width - m.gauche - m.droite) / 2, cy = m.haut + (r.height - m.haut - m.bas) / 2;
   animerVue({ s, tx: cx - (x + w / 2) * s, ty: cy - (y + h / 2) * s }, true); }
-function viser(nom) { const c = app.dessin && app.dessin.compDe.get(nom); if (!c) return false;
+function viser(nom) { const c = app.dessin && app.dessin.compDe.get(nom);
+  if (!c) { const b = barretteAPoser(nom); if (!b) return false; const bs = bornesDePiquage(b); centrerSur(b.x - 30, bs[0].y - 20, 60, bs[bs.length - 1].y - bs[0].y + 50); return true; }
   centrerSur(c.x, c.y, c.w, c.h); return true; }
 function viserFil(f) { const xs = f.pts.map(p => p.x), ys = f.pts.map(p => p.y);
   const x0 = Math.min(...xs), y0 = Math.min(...ys); centrerSur(x0, y0, Math.max(...xs) - x0, Math.max(...ys) - y0); }
@@ -330,13 +345,20 @@ function allumerBloc(nom) { const sc = $('scene'); if (!sc) return; eteindre(); 
 function allumerFils(ws) { const sc = $('scene'); if (!sc) return; eteindre(); if (!ws.length) return; sc.classList.add('focus');
   const idx = new Set(ws.map(w => w.i)), noms = new Set(); ws.forEach(w => { noms.add(xmlSur(w.de)); noms.add(xmlSur(w.vers)); });
   sc.querySelectorAll('.cab').forEach(p => { if (idx.has(+p.dataset.i)) p.classList.add('hl'); });
-  sc.querySelectorAll('.comp').forEach(g => { if (noms.has(g.dataset.name)) g.classList.add('hl'); }); }
+  sc.querySelectorAll('.comp').forEach(g => { if (noms.has(g.dataset.name)) g.classList.add('hl'); });
+  sc.querySelectorAll('.vt').forEach(g => { if (noms.has(g.dataset.vt)) g.classList.add('hl'); }); }
 const allumerFil = f => allumerFils([f]);
+// une barrette à poser s'allume avec ses fils ; par sa clé de fil (08 bis), un fil ou, à défaut, la barrette de son raccord
+function allumerBarretteAPoser(nom) { const sc = $('scene'); if (!sc) return; const ws = filsDeBarretteAPoser(nom); allumerFils(ws);
+  if (!ws.length) { eteindre(); sc.classList.add('focus'); } sc.querySelectorAll('.vt').forEach(g => { if (g.dataset.vt === xmlSur(nom)) g.classList.add('hl'); }); }
+function allumerCle(k) { const w = filDeCle(k); if (w) { allumerFil(w); return true; }
+  const l = k && k[0] === 'p' ? liaisonsDuPlan()[+k.slice(1)] : null; if (l && l.aPoser) { allumerBarretteAPoser(l.aPoser); return true; } return false; }
 /* Ce qui est choisi reste allumé après un survol ou un redessin ; la ligne
    qu'on écrit passe devant. */
 function rallumer() { const c = app.cible, w = app.actif && filDe(app.actif);
   if (w) allumerFil(w);
   else if (c && c.type === 'bloc' && app.dessin && app.dessin.compDe.has(c.nom)) allumerBloc(c.nom);
+  else if (c && c.type === 'bloc' && app.dessin && barretteAPoser(c.nom)) allumerFils(filsDeBarretteAPoser(c.nom));
   else if (c && c.type === 'fil' && app.dessin) { const w = filDe(c.l); if (w) allumerFil(w); else eteindre(); }
   else eteindre();
   marquerLignes(); }
@@ -382,8 +404,8 @@ function lierPlanche() {
     pointeurs.set(e.pointerId, { x: e.clientX, y: e.clientY }); clearTimeout(long);
     if (pointeurs.size >= 2) { prise = null; debutPinch(); return; }
     bouge = false; origine = [e.clientX, e.clientY]; mode = 'pan'; pan = { tx: app.vue.tx, ty: app.vue.ty, x: e.clientX, y: e.clientY };
-    const w = versMonde(e.clientX, e.clientY), c = blocSous(w); prise = prenable(c) ? { c, wy: w.y, wx: w.x } : null;
-    if (!dernierBloc || Date.now() - dernierBloc.t > 800) dernierBloc = c ? { nom: c.name, t: Date.now() } : null;   // le premier appui d'un double-clic fait foi
+    const w = versMonde(e.clientX, e.clientY), c = blocSous(w), vt = c ? null : barretteAPoserSous(w); prise = prenable(c) ? { c, wy: w.y, wx: w.x } : null;
+    if (!dernierBloc || Date.now() - dernierBloc.t > 800) dernierBloc = c ? { nom: c.name, t: Date.now() } : vt ? { nom: vt.nomVT, t: Date.now() } : null;   // le premier appui d'un double-clic fait foi
     if (prise && e.pointerType !== 'touch') mode = 'prise';
     else if (prise) long = setTimeout(() => { if (mode === 'pan' && !bouge && prise && commencerPrise()) { if (navigator.vibrate) navigator.vibrate(12); } }, 380); });
   stage.addEventListener('pointermove', e => { if (pointeurs.has(e.pointerId)) pointeurs.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -403,7 +425,8 @@ function lierPlanche() {
       else cliquer(versMonde(e.clientX, e.clientY)); }
     mode = null; pan = null; prise = null; };
   // double appui : sur une barrette ou une prise, sa vue en relief ; ailleurs, on zoome
-  const doubleAppui = e => { const c = blocSous(versMonde(e.clientX, e.clientY)), nom = dernierBloc && Date.now() - dernierBloc.t < 800 ? dernierBloc.nom : c && c.name;
+  const doubleAppui = e => { const w = versMonde(e.clientX, e.clientY), c = blocSous(w), vt = c ? null : barretteAPoserSous(w);
+    const nom = dernierBloc && Date.now() - dernierBloc.t < 800 ? dernierBloc.nom : (c && c.name) || (vt && vt.nomVT);
     if (nom && reliefPossible(nom)) { ouvrirRelief(nom); return; }
     const r = cadre(); zoomer(1.6, e.clientX - r.left, e.clientY - r.top); };
   stage.addEventListener('pointerup', fin); stage.addEventListener('pointercancel', fin);
@@ -426,7 +449,15 @@ let appuiDuPlan = null;   // le dernier appui simple sur la planche (l'instant, 
 function cliquer(w) { const c = blocSous(w);
   if (c) { if (estRenvoi(c.name)) { const t = c.name.replace(RENVOI, ''); if (plans().includes(t)) allerAuPlan(t); return; }
     if (c.rail) return; choisirBloc(c); return; }
+  const vt = barretteAPoserSous(w); if (vt) { choisirBarretteAPoser(vt); return; }
   const f = filSous(w); if (f) choisirFil(f); else deselectionner(); }
+// une barrette à poser sous le pointeur : sur sa ligne, de sa première à sa dernière borne
+function barretteAPoserSous(w) { const tol = 5 / Math.max(0.4, app.vue.s) + 3;
+  return ((app.dessin && app.dessin.barrettes) || []).find(b => { if (!b.nomVT) return false; const bs = bornesDePiquage(b); return Math.abs(w.x - b.x) <= tol && w.y >= bs[0].y - tol && w.y <= bs[bs.length - 1].y + tol; }) || null; }
+/* Choisir une barrette à poser : sa fiche, ses fils allumés, le tableau filtré sur la borne qu'elle dédouble. */
+function choisirBarretteAPoser(b) { app.choisi = b.nomVT; app.cible = { type: 'bloc', nom: b.nomVT };
+  if (app.base.ouvert) { app.base.filtre = filtreDuBloc(b.nomVT); app.base.filtreAuto = true; app.base.defiler = true; rendreBase(); }
+  peindre(); ouvrirInspecteur(); allumerFils(filsDeBarretteAPoser(b.nomVT)); }
 /* Ce que le tableau filtre pour un bloc : son repère ; pour une barrette à poser, qui n'est pas au contrat, l'équipement
    qu'elle dédouble (ses fils y sont). */
 const filtreDuBloc = nom => { if (!VT_A_POSER.test(nom)) return nom; const r = liaisonsDuPlan().find(l => l.origine === null && l.vers === nom && l.borneVers === '1'); return r ? r.de : ''; };
@@ -440,18 +471,67 @@ function choisirFil(f) { const l = liaisonsDuPlan()[f.i]; if (!l) return; const 
   app.cible = { type: 'fil', l: src, f };
   if (app.base.ouvert) { app.base.defiler = true; if (!lignesVisibles().some(([x]) => x === src)) app.base.filtre = ''; rendreBase(); }
   ouvrirInspecteur(); allumerFil(f); }
+/* Ne plus rien choisir : la fiche se ferme — ou rend la place à l'index, si c'est de lui qu'elle venait. */
 function deselectionner() { const c = app.cible;
   if (c) { app.cible = null; if (app.choisi) { app.choisi = null; peindre(); }
-    if (c.type === 'bloc' && app.base.filtre && app.base.filtre === filtreDuBloc(c.nom)) { app.base.filtre = ''; rendreBase(); }
-    else marquerLignes(); eteindre(); }
+    if (c.type === 'bloc' && app.base.filtre && app.base.filtre === filtreDuBloc(c.nom)) { app.base.filtre = ''; app.base.filtreAuto = false; rendreBase(); }
+    else marquerLignes(); eteindre();
+    if (app.insp.index && !$('inspecteur').hidden) { rendreFiche(); return; } }
   fermerInspecteur();
   if (app.fiche) fermerFiche(true); }
+const retourIndex = () => deselectionner();
 /* L'inspecteur : s'ouvre sur ce qu'on choisit, se ferme quand on ne choisit plus rien ; le plan se recadre à côté
    (sans bouger si ce qu'on vient de choisir est déjà en vue). */
 function ouvrirInspecteur() { const el = $('inspecteur'), etait = !el.hidden; if (app.fiche) fermerFiche();
   el.hidden = false; document.body.classList.add('insp-ouvert'); rendreFiche();
   if (!etait) { el.classList.remove('entre'); void el.offsetWidth; el.classList.add('entre'); recadrerSiCache(); } }
-function fermerInspecteur() { const el = $('inspecteur'); if (el.hidden) return; el.hidden = true; document.body.classList.remove('insp-ouvert'); recadrerSiCache(); }
+function fermerInspecteur() { const el = $('inspecteur'); app.insp.index = false; if (el.hidden) return; el.hidden = true; document.body.classList.remove('insp-ouvert'); recadrerSiCache(); }
+
+/* ---- l'INDEX : les repères du contrat ---------------------------------- */
+/* Le lecteur : « on se repère pas, on est perdu ». Un bouton du rail (R) ouvre l'inspecteur sur la liste de tous les
+   repères — équipements, barrettes (celles à poser comprises), prises —, chacun avec son état et ses folios ; on y
+   cherche ; un clic ouvre la fiche, la flèche ramène à la liste. Rien n'est caché derrière le plan. */
+function basculerIndex() { if (!$('inspecteur').hidden && app.insp.index) { fermerInspecteur(); return; }
+  if (!(app.contrat.liaisons.length || verite().length)) { dire('Rien à montrer : dépose d’abord un fichier.'); return; }
+  app.insp.index = true; if (app.cible) { const c = app.cible; app.cible = null; if (app.choisi) { app.choisi = null; peindre(); }
+    if (c.type === 'bloc' && app.base.filtreAuto) { app.base.filtre = ''; app.base.filtreAuto = false; rendreBase(); } eteindre(); marquerLignes(); }
+  ouvrirInspecteur(); const q = $('ix-q'); if (q && !telephone()) q.focus(); }
+// les repères du contrat, et les barrettes à poser de chaque folio : nom, genre, ce qu'on écrit dessous, ses folios
+function reperesDuContrat() { const V = verite(), out = [];
+  reperesDe(V).filter(r => !estRenvoi(r) && !estMasse(r) && !estRail(r)).forEach(nom => { const des = app.contrat.designations.get(nom) || '';
+    const genre = estCoupure(nom) ? 'coupure' : estBarrette(nom) ? 'barrette' : 'eqpt';
+    let sous = des || designationDe(nom);
+    if (!sous && genre === 'eqpt') sous = [...new Set(connecteursDe(nom, V).map(c => c.pn).filter(Boolean))].slice(0, 2).join(' · ');
+    if (!sous) sous = pluriel(V.filter(l => l.de === nom || l.vers === nom).length, 'fil');
+    out.push({ nom, genre, plans: plansDuRepere(nom).sort(triNaturel), sous }); });
+  (plans().length ? plans() : ['*']).forEach(p => liaisonsDe(p).forEach(l => { if (l.origine === null && l.vers === l.aPoser && l.borneVers === '1')
+    out.push({ nom: l.aPoser, genre: 'barrette', plan: p, plans: p === '*' ? [] : [p], sous: 'à poser sur ' + l.de + ':' + l.borneDe }); }));
+  return out.sort((a, b) => triNaturel(a.nom, b.nom) || triNaturel(a.plan || '', b.plan || '')); }
+function rendreIndex(box) { const etats = new Map();
+  (CONTROLE.items || []).forEach(x => { if (!x.nom) return; if (x.niveau === 'ko' || !etats.has(x.nom)) etats.set(x.nom, x.niveau); });
+  const f = app.insp.filtre.trim().toLowerCase(), items = reperesDuContrat().filter(r => !f || r.nom.toLowerCase().includes(f) || r.sous.toLowerCase().includes(f));
+  const groupes = [['eqpt', 'Équipements'], ['barrette', 'Barrettes'], ['coupure', 'Prises de coupure']].map(([g, t]) => { const xs = items.filter(r => r.genre === g); if (!xs.length) return '';
+    return `<div class="ix-groupe"><span>${t}</span><b>${xs.length}</b></div><ul class="ix-liste">` + xs.map(r => `<li><button class="ix-item" data-nom="${escA(r.nom)}"${r.plan ? ` data-plan="${escA(r.plan)}"` : ''}>`
+      + `<span class="ix-etat ${etats.get(r.nom) || 'ok'}" aria-hidden="true"></span><span class="min0"><b>${esc(r.nom)}</b><small>${esc(r.sous)}</small></span>`
+      + (r.plans.length ? `<span class="ix-folio">${esc(r.plans.length > 3 ? r.plans.length + ' folios' : r.plans.join(' · '))}</span>` : '') + '</button></li>').join('') + '</ul>'; }).join('');
+  const meme = box.dataset.cle === 'index', haut = box.scrollTop;
+  box.className = 'fi ix'; box.dataset.cle = 'index';
+  box.innerHTML = `<header class="ix-tete"><h2>Repères</h2><span class="fi-sous">${pluriel(items.length, 'repère')}</span><button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)">${ico('fermer')}</button></header>`
+    + `<div class="ix-filtre">${ico('loupe')}<input id="ix-q" value="${escA(app.insp.filtre)}" placeholder="Chercher un repère, une désignation" aria-label="Chercher un repère" autocomplete="off" spellcheck="false"></div>`
+    + (groupes || '<p class="ix-vide">Aucun repère ne correspond.</p>');
+  if (meme) box.scrollTop = haut;
+  $('in-fermer').onclick = () => fermerInspecteur();
+  const q = $('ix-q'); q.addEventListener('input', () => { app.insp.filtre = q.value; const pos = q.selectionStart; rendreIndex(box); const q2 = $('ix-q'); q2.focus(); q2.setSelectionRange(pos, pos); });
+  q.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); if (q.value) { q.value = ''; q.dispatchEvent(new Event('input')); } else fermerInspecteur(); }
+    else if (e.key === 'Enter') { const b = box.querySelector('.ix-item'); if (b) b.click(); } });
+  box.querySelectorAll('.ix-item').forEach(b => b.onclick = () => allerAuRepere(b.dataset.nom, b.dataset.plan)); }
+// depuis l'index : le folio du repère, son bloc choisi sur le plan, sa fiche
+function allerAuRepere(nom, plan) { const P = plans();
+  if (plan && plan !== app.plan && P.includes(plan)) allerAuPlan(plan);
+  else if (!plan) { const ou = plansDuRepere(nom); if (app.plan !== '*' && ou.length && !ou.includes(app.plan)) allerAuPlan(ou[0]); }
+  const c = app.dessin && app.dessin.comps.find(k => k.name === nom && k.kind !== 'tag'), vt = c ? null : barretteAPoser(nom);
+  if (c) choisirBloc(c); else if (vt) choisirBarretteAPoser(vt); else { app.cible = { type: 'bloc', nom }; ouvrirInspecteur(); }
+  viser(nom); }
 /* Le panneau qui s'ouvre ou se ferme change la place du plan : on le recadre en douceur. */
 function recadrerSiCache() { ajuster(true); }
 
@@ -593,7 +673,7 @@ const triNaturel = (a, b) => String(a).localeCompare(String(b), 'fr', { numeric:
 const pluriel = (n, mot) => n + ' ' + mot + (n > 1 ? 's' : '');
 /* La carte se redessine quand la place change (fenêtre, poignée), jamais
    sous les doigts de qui y écrit. */
-function rafraichirCarte() { const box = $('ba-equip'); if ($('inspecteur').hidden || !app.cible || box.contains(document.activeElement)) return; rendreFiche(); }
+function rafraichirCarte() { const box = $('ba-equip'); if ($('inspecteur').hidden || box.contains(document.activeElement)) return; rendreFiche(); }
 const jaugeTexte = b => b.jaugeFine === b.jaugeGrosse ? String(b.jaugeFine) : b.jaugeFine + ' à ' + b.jaugeGrosse;
 const jaugeEntree = e => e.jaugeMin == null ? '—' : (e.jaugeMax != null && e.jaugeMax !== e.jaugeMin ? e.jaugeMin + '–' + e.jaugeMax : String(e.jaugeMin));
 const nombre = x => x == null ? '—' : String(x).replace('.', ',');
@@ -1218,7 +1298,7 @@ function lierPanneau() {
   $('fichier').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) ouvrirFichier(f); e.target.value = ''; });
   $('fichier-bible').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) importerBible(f); e.target.value = ''; });
   o('vd-ouvrir', choisirFichier); o('vd-coller', ficheColler); o('vd-exemple', exemple);
-  o('btnBase', basculerBase); o('btnCherche', () => { if (rechercheOuverte()) fermerRecherche(); else ouvrirRecherche(); });
+  o('btnBase', basculerBase); o('btnIndex', basculerIndex); o('btnCherche', () => { if (rechercheOuverte()) fermerRecherche(); else ouvrirRecherche(); });
   o('btnLiaison', nouvelleLiaison); o('btnBible', basculerBible); o('btnOuvrir', choisirFichier);
   o('btnMenu', e => { e.stopPropagation(); $('menu').hidden ? ouvrirMenu() : fermerMenu(); });
   const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple, cartouche: ficheCartouche, bible: ficheBible, suivi: exporterSuivi, svg: exporterSVG, png: exporterPNG, imprimer,
@@ -1246,6 +1326,7 @@ function lierPanneau() {
     if (dansChamp || e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.key === '/') { e.preventDefault(); ouvrirRecherche(); }
     else if (e.key === 'b') basculerBase();
+    else if (e.key === 'r') basculerIndex();
     else if (e.key === 'ArrowLeft') allerAuFolio(-1); else if (e.key === 'ArrowRight') allerAuFolio(+1);
     else if (e.key === '+' || e.key === '=') zoomer(1.25); else if (e.key === '-') zoomer(1 / 1.25); else if (e.key === '0' || e.key === 'f') ajuster(true); });
   let rT; window.addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(() => { if (telephone()) ajuster(); else appliquerVue();

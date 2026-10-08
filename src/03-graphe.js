@@ -33,7 +33,7 @@ const enReglette = nom => estPotentiel(nom) || estBornier(nom);
    morceaux, avec son numéro (c'en est un : il a son numéro et son type au
    contrat). Le placement les choisit (04, `coupesParCote`). */
 function construireGraphe(liaisons, coupes) {
-  const lk = liaisons.filter(liaisonComplete);
+  const lk = sansBarrettesAPoser(liaisons.filter(liaisonComplete));   // les barrettes à poser (01) ne sont pas des blocs : le routage les pose
   const noms = []; const vus = new Set();
   lk.forEach(l => [l.de, l.vers].forEach(n => { if (!vus.has(n)) { vus.add(n); noms.push(n); } }));
 

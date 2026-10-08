@@ -93,6 +93,8 @@ function styleDessin() {
      .focus .comp{opacity:.28}
      .focus .cab.hl{opacity:1;stroke-width:2.9}
      .focus .comp.hl{opacity:1}
+     .focus .vt{opacity:.28}
+     .focus .vt.hl{opacity:1}
    </style></defs>`;
 }
 
@@ -208,18 +210,23 @@ function tracesDePiquage(barrettes) {
   (barrettes.raccords || []).forEach(r => traces.push([{ x: r.x0, y: r.y }, { x: r.x1, y: r.y }]));
   barrettes.forEach(b => traces.push([{ x: b.x, y: b.y1 + 3 }, { x: b.x, y: b.y2 - 3 }]));
   return traces; }
-/* Les bornes d'un piquage, de haut en bas : la borne d'origine et chaque départ. */
-const bornesDePiquage = b => [b.py, ...b.gardes.map(k => k.y)].filter((y, i, a) => a.findIndex(z => Math.abs(z - y) < 0.6) === i).sort((u, v) => u - v);
-function piquagesSvg(barrettes, piquages, verticaux, couleurBout) {
+/* Les bornes d'une barrette à poser, de haut en bas : le raccord (borne 1) et une par fil. Leur numéro vient du folio
+   (`b.bornes[].n`, posé par l'interface : la borne du contrat) ; à défaut, l'ordre de haut en bas. */
+const bornesDePiquage = b => (b.bornes || [{ y: b.py }, ...(b.gardes || [])]).filter((p, i, a) => a.findIndex(q => Math.abs(q.y - p.y) < 0.6) === i)
+  .sort((u, v) => u.y - v.y).map((p, i) => ({ ...p, n: p.n != null ? p.n : i + 1 }));
+function piquagesSvg(barrettes, piquages, verticaux, couleurBout, choisi) {
   let s = '';
   (barrettes.raccords || []).forEach(r => { const c = couleurBout && (couleurBout(r.x0, r.y) || couleurBout(r.x1, r.y));
     s += `<path class="cab"${styleTrait(c)} d="${cheminAvecPonts([{ x: r.x0, y: r.y }, { x: r.x1, y: r.y }], verticaux)}"/>`; });
   barrettes.forEach(b => {
-    /* Un piquage — plusieurs fils sur une même borne de barrette, de masse ou de rail (ceux d'un équipement sont devenus
-       des barrettes à poser, 01) — se dessine comme une barrette : une fine ligne pointillée, un point à chaque départ. */
-    const ys = bornesDePiquage(b);
-    s += `<line class="barre" x1="${f1(b.x)}" y1="${f1(ys[0])}" x2="${f1(b.x)}" y2="${f1(ys[ys.length - 1])}"/>`;
-    ys.forEach((y, i) => { s += pastilleSvg(b.x, y, String(i + 1)); }); });
+    /* Une BARRETTE À POSER (05) se dessine comme toute barrette : la ligne pointillée, une pastille numérotée par borne —
+       une par fil, le raccord compris, jamais deux au même niveau — et son repère provisoire dessous (VT1, VT2…). */
+    const bs = bornesDePiquage(b), y0 = bs[0].y, y1 = bs[bs.length - 1].y, sel = choisi && b.nomVT === choisi;
+    s += `<g class="vt${sel ? ' sel' : ''}"${b.nomVT ? ` data-vt="${escA(b.nomVT)}"` : ''}><line class="barre" x1="${f1(b.x)}" y1="${f1(y0)}" x2="${f1(b.x)}" y2="${f1(y1)}"/>`;
+    bs.forEach(p => { s += pastilleSvg(b.x, p.y, String(p.n)); });
+    if (b.nomVT) { const r = b.repere || { x: b.x, y: y1 + 11, a: 'middle' }; s += `<text class="rep-petit" x="${f1(r.x)}" y="${f1(r.y)}" text-anchor="${r.a}">${esc(b.nomVT)}</text>`; }
+    if (sel) s += coins('selbox', 5, 12, y1 - y0 + 8).replace('<path ', `<path transform="translate(${f1(b.x - 6)} ${f1(y0 - 4)})" `);
+    s += '</g>'; });
   return s;
 }
 /* Une borne de barrette : un point noir sur la ligne, comme d'habitude, son
@@ -250,7 +257,7 @@ function occupationDe(fils, barrettes, comps) {
     else if (Math.abs(a.x - b.x) < 0.6) V.push({ x: a.x, y0: Math.min(a.y, b.y), y1: Math.max(a.y, b.y) }); };
   fils.forEach(w => { if (w.shunt) return; for (let i = 0; i < w.pts.length - 1; i++) seg(w.pts[i], w.pts[i + 1]); });
   tracesDePiquage(barrettes || []).forEach(pts => seg(pts[0], pts[1]));
-  (barrettes || []).forEach(b => bornesDePiquage(b).forEach((y, i) => { const r = R_PASTILLE(String(i + 1)) + 1; boites.push({ x0: b.x - r, y0: y - r, x1: b.x + r, y1: y + r }); }));
+  (barrettes || []).forEach(b => bornesDePiquage(b).forEach(p => { const r = R_PASTILLE(String(p.n)) + 1; boites.push({ x0: b.x - r, y0: p.y - r, x1: b.x + r, y1: p.y + r }); }));
   (comps || []).forEach(c => {
     // le corps d'un équipement compte avec ses pièces de connecteur et leurs lettres ; celui d'une réglette, sa colonne
     /* un morceau de barrette finit par son point de départ, au ras de son cadre : un texte s'en garde de quatre (un numéro
@@ -320,6 +327,18 @@ function poserReperes(comps, occ) {
     if (!choix) { const k = R.cands[0]; choix = { ...k, b: boiteDeTexte(k.x, k.y, k.a, R.nom.length, R.fs, R.ls) }; }
     occ.poser(choix.b); c.repere = { x: choix.x, y: choix.y, a: choix.a, cls: R.cls, nom: R.nom }; });
 }
+/* Le repère d'une barrette à poser (VT1…) : à côté de la ligne, dans le plus grand écart entre deux bornes, du côté des
+   départs ; sinon de l'autre côté ; sinon sous la dernière borne, au-dessus de la première. Comme les repères des blocs :
+   avant les numéros de fil, qui se logent dans ce qui reste. */
+function poserReperesVT(barrettes, occ) {
+  (barrettes || []).forEach(b => { if (!b.nomVT) { delete b.repere; return; } const bs = bornesDePiquage(b), fs = 6, ls = 0.3;
+    let ecart = { y: (bs[0].y + bs[bs.length - 1].y) / 2, d: 0 }; for (let i = 1; i < bs.length; i++) { const d = bs[i].y - bs[i - 1].y; if (d > ecart.d) ecart = { y: (bs[i].y + bs[i - 1].y) / 2, d }; }
+    const cands = [{ x: b.x + b.dir * 6, y: ecart.y + 2.1, a: b.dir > 0 ? 'start' : 'end' }, { x: b.x - b.dir * 6, y: ecart.y + 2.1, a: b.dir > 0 ? 'end' : 'start' },
+      { x: b.x, y: bs[bs.length - 1].y + 11, a: 'middle' }, { x: b.x, y: bs[0].y - 5.5, a: 'middle' }, { x: b.x + b.dir * 6, y: bs[bs.length - 1].y + 2.1, a: b.dir > 0 ? 'start' : 'end' }];
+    let choix = null; for (const k of cands) { const bo = boiteDeTexte(k.x, k.y, k.a, b.nomVT.length, fs, ls); if (occ.libre(bo, 1)) { choix = { ...k, bo }; break; } }
+    if (!choix) { const k = cands[2]; choix = { ...k, bo: boiteDeTexte(k.x, k.y, k.a, b.nomVT.length, fs, ls) }; }
+    occ.poser(choix.bo); b.repere = { x: choix.x, y: choix.y, a: choix.a }; });
+}
 const repereTexte = r => `<text class="${r.cls}" x="${f1(r.x)}" y="${f1(r.y)}" text-anchor="${r.a}">${esc(r.nom)}</text>`;
 
 /* Le numéro de fil, sur le plus long segment horizontal, en son milieu —
@@ -383,7 +402,7 @@ function reperesDeFil(fils, verticaux, barrettes, occ) {
 function tronconDePiquage(w, barrettes) {
   for (const q of [w.pts[0], w.pts[w.pts.length - 1]]) {
     const b = barrettes.find(b => Math.abs(b.x - q.x) < 0.5 && q.y > b.y1 - 0.5 && q.y < b.y2 + 0.5); if (!b) continue;
-    const ys = [b.py, ...b.gardes.map(g => g.y)].filter(y => Math.abs(y - q.y) > 0.6);
+    const ys = bornesDePiquage(b).map(p => p.y).filter(y => Math.abs(y - q.y) > 0.6);
     const versPy = b.py < q.y ? -1 : 1;
     const voisins = ys.filter(y => versPy < 0 ? y < q.y : y > q.y);
     if (!voisins.length) continue;
@@ -574,10 +593,10 @@ function sceneSvg(dessin, cartouche, folio, designationDe, choisi) {
   dessin.comps.forEach(c => { c.shunts = (shunts.get(c.name) || []).filter(ys => dedans(c, ys)); c.connecteurs = c.kind === 'equip' ? connecteurParBorne(c.name, dessin.fils) : null; });
   // les textes cherchent leur place dans ce qui est tracé : les repères d'abord, les numéros de fil ensuite
   const occ = occupationDe(fils, dessin.barrettes, dessin.comps);
-  poserReperes(dessin.comps, occ);
+  poserReperes(dessin.comps, occ); poserReperesVT(dessin.barrettes, occ);
   s += reperesDeFil(dessin.fils, verticaux, dessin.barrettes, occ);
   const couleurBout = couleursDesBouts(fils, couleurDe);
-  s += piquagesSvg(dessin.barrettes, dessin.piquages, verticaux, couleurBout);
+  s += piquagesSvg(dessin.barrettes, dessin.piquages, verticaux, couleurBout, choisi);
   dessin.points.forEach(d => s += `<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="1.9"/>`);
   dessin.comps.forEach(c => { s += blocSvg(c, designationDe ? designationDe(c.name) : '', choisi === c.name, couleurBout); });
   return s;

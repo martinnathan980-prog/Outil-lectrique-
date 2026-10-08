@@ -24,7 +24,8 @@ const FICHIER = P.fichierDemande();
   let ko = 0; const ok = (c, nom, detail) => { if (!c) ko++; console.log('  ' + (c ? 'ok ' : 'KO ') + ' ' + nom + (detail ? '   ' + detail : '')); };
   await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined');
   const pieces = await page.evaluate(() => { const out = []; plans().forEach(p => { app.plan = p; app.choisi = null; redessiner();
-    new Set(app.dessin.comps.filter(c => c.kind !== 'tag' && estBornier(c.name)).map(c => c.name)).forEach(n => out.push([p, n])); }); return out; });
+    new Set(app.dessin.comps.filter(c => c.kind !== 'tag' && estBornier(c.name)).map(c => c.name)).forEach(n => out.push([p, n]));
+    app.dessin.barrettes.filter(b => b.nomVT).forEach(b => out.push([p, b.nomVT])); }); return out; });
   for (const [plan, nom] of pieces) {
     const r = await page.evaluate(([plan, nom]) => { app.plan = plan; app.choisi = null; redessiner(); ouvrirRelief(nom);
       const P = RELIEF.P, Q = RELIEF.Q, attendus = Q ? Q.fils.length : P.modules.reduce((n, m) => n + ['amont', 'aval'].reduce((k, s) => k + trousDe(m, filsDuModule(nom, m), s).filter(Boolean).length, 0), 0);
@@ -49,8 +50,10 @@ const FICHIER = P.fichierDemande();
   ok(allume, 'survoler un fil l\'allume dans la vue et sur le plan');
   await page.keyboard.press('Escape'); await page.waitForTimeout(100);
   ok(await page.evaluate(() => $('relief').hidden), 'Échap ferme la vue');
-  const b = await page.evaluate(n => { const c = app.dessin.comps.find(k => k.name === n); const r = $('planche').getBoundingClientRect();
-    return { x: r.left + app.vue.tx + (c.x + c.w / 2) * app.vue.s, y: r.top + app.vue.ty + (c.y + c.h / 2) * app.vue.s }; }, nom);
+  // un double-clic sur le bloc — ou, pour une barrette à poser, sur sa ligne
+  const b = await page.evaluate(n => { const c = app.dessin.comps.find(k => k.name === n && k.kind !== 'tag'), r = $('planche').getBoundingClientRect();
+    if (c) return { x: r.left + app.vue.tx + (c.x + c.w / 2) * app.vue.s, y: r.top + app.vue.ty + (c.y + c.h / 2) * app.vue.s };
+    const vt = app.dessin.barrettes.find(b => b.nomVT === n), bs = bornesDePiquage(vt); return { x: r.left + app.vue.tx + vt.x * app.vue.s, y: r.top + app.vue.ty + (bs[0].y + bs[1].y) / 2 * app.vue.s }; }, nom);
   await page.mouse.dblclick(b.x, b.y); await page.waitForTimeout(200);
   ok(await page.evaluate(n => !$('relief').hidden && RELIEF.nom === n, nom), 'un double-clic sur le bloc ouvre sa vue en relief');
   ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));

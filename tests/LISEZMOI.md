@@ -14,9 +14,10 @@ node tests/affinage.js         la recherche profonde tourne en arrière-plan (Wo
 node tests/retouche.js         un bloc se déplace à la vraie souris, tout suit, Ctrl+Z, « automatique », et ça se garde
 node tests/relief.js           la vue en relief de chaque barrette (modules E0599) et prise de l'exemple : un fil par contact pris, aucune étiquette
                                sur une autre, tourner, survoler, Échap, double-clic
-node tests/interface.js        à la vraie souris (grand écran, téléphone) : la fiche dans l'inspecteur, le tableau en tiroir
-                               (« Ce folio »), la feuille jamais recouverte ; chaque dédoublement est une vraie barrette, une
-                               borne par fil, chacune à sa hauteur ; la poser au contrat sous son vrai repère, et Ctrl+Z
+node tests/interface.js        à la vraie souris (grand écran, téléphone) : la fiche épurée dans l'inspecteur, le tableau en
+                               tiroir (« Ce folio »), la feuille jamais recouverte ; chaque dédoublement est une barrette à poser
+                               au ras de sa borne, une borne par fil, chacune à sa hauteur, son repère écrit ; un clic l'ouvre,
+                               la poser au contrat sous son vrai repère, et Ctrl+Z ; la pastille de contrôle y mène
 node tests/barrettes.js        la bible des barrettes se lit, la référence se choisit, les connecteurs se lisent ; la norme se lit,
                                chaque fil va dans son trou, la simulation donne des valeurs connues à la main ; les catalogues ASNE 0599
                                (29 variantes) et NSA937901 (43 codes), les jauges de chaque norme, le choix de la norme et le

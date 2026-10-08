@@ -13,7 +13,7 @@
 
    Contrat de sortie, lu par le dessin :
      fils[].pts          le tracé complet, de borne à borne
-     barrettes[]         les piquages { x, y1, y2, py, gardes:[{y}], bus }
+     barrettes[]         les barrettes à poser { x, y1, y2, py, bornes:[{y, li}], propre, etiquette }
      barrettes.raccords  le trait de la borne au piquage { x0, x1, y }
      piquages[]          les points de départ sur les piquages
      points[]            les jonctions : un fil qui quitte le fil d'un autre
@@ -236,43 +236,48 @@ function poserLesDetours(fils, G) {
     f.travaux.forEach(t2 => t2.paire.forEach(a => { if (a.y == null) a.y = f.y; })); });
 }
 
-/* ---- les piquages ---------------------------------------------------------
-   Plusieurs fils sur une même borne, du même côté : une verticale au ras de
-   la borne (à RETRAIT de la paroi), d'où chaque fil repart droit vers sa
-   destination quand rien ne l'en empêche. Un fil qui ne peut pas repartir
-   droit du piquage garde sa propre verticale, entre la borne et le piquage ;
-   un fil droit passe par la jonction sans s'arrêter.
-   Les horizontales qui partent d'une même borne se superposent : une seule
-   compte dans le modèle des croisements, celle du PORTEUR — le piquage, ou
-   à défaut la verticale la plus longue — et les autres verticales de la
-   borne restent entre la paroi et lui. */
+/* ---- les piquages : les barrettes à poser ------------------------------------
+   Plusieurs fils sur une même borne, du même côté : c'est une BARRETTE À POSER (01), que le routage pose au ras de la
+   borne, à RETRAIT de la paroi — une verticale, UNE BORNE PAR FIL, chacune à sa hauteur (le lecteur : « tu ne peux pas
+   mettre 2 et 3 au même niveau, il faut que ce soit décalé »). Le RACCORD, de la borne à la barrette, est la borne 1.
+   Un fil qui peut repartir droit de la barrette vers sa destination en PART : sa verticale se confond avec celle de la
+   barrette, sa borne est à la hauteur de sa destination. Un fil qui ne le peut pas — un fil droit, dont la destination
+   est à la hauteur de la borne même ; un fil dont la hauteur est déjà prise ; un fil que la goulotte barre — reçoit une
+   borne à lui, à un pas de la borne, et REJOINT sa hauteur par une verticale à lui, au-delà de la barrette : un Z. Le
+   juge ne le compte pas droit ; le placement peut alors décaler sa destination d'un pas pour le redresser.
+   La barrette est une verticale comme les autres pour l'ordre des pistes ; les verticales de ses fils décalés restent
+   au-delà d'elle, jamais entre elle et la paroi. */
+const PAS_VT = 14, ECART_VT = 10;   // le pas des bornes d'une barrette à poser ; deux bornes se lisent séparées à dix
 function formerLesPiquages(layout, fils, G) {
   const groupes = new Map();
   fils.forEach((f, li) => [f.A, f.B].forEach(ep => { const k = Math.round(ep.x) + ',' + Math.round(ep.y) + ',' + ep.stub;
     (groupes.get(k) || groupes.set(k, []).get(k)).push({ li, tag: ep.tag, ep }); }));
   const piquages = [];
   groupes.forEach((entrees, k) => { if (entrees.length < 2) return;
-    const ep = entrees[0].ep, mur = murDe(ep), ch = ep.ch, bx = mur === 'L' ? G.x0(ch) + RETRAIT : G.x1(ch) - RETRAIT;
-    const l0 = layout.links[entrees[0].li], propre = String(entrees[0].tag === 'A' ? l0.de : l0.vers);
-    const b = { borne: k, ch, mur, x: bx, px: ep.x, py: ep.y, dir: mur === 'L' ? 1 : -1, departs: [], gardes: [], n: entrees.length, propre, li: entrees[0].li };
-    const travaux = [];                    // les verticales de la borne, avec leur attache à la borne
-    let barriere = false;                  // un fil passe droit : son horizontale couvre toutes les autres
-    entrees.forEach(e => { const f = fils.get(e.li), l = layout.links[e.li], ex = new Set([String(l.de), String(l.vers)]);
-      const bout = cle(e.li, e.tag);
-      const tv = f.travaux.find(t => t.ch === ch && t.paire.some(a => a.bout === bout));
-      if (!tv || tv.piquage) { barriere = barriere || !tv; f.chez[e.tag] = b; return; }
-      const ici = tv.paire.find(a => a.bout === bout), autre = tv.paire.find(a => a.bout !== bout); ici.borne = k;
-      const murX = autre.mur === 'L' ? G.x0(ch) + 2 : G.x1(ch) - 2;
-      if (G.verticaleLibre(bx, ep.y, autre.y, ex) && G.couloirLibre(bx, murX, autre.y, ex)) {
-        tv.piquage = b; tv.att = [autre]; autre.li = e.li; b.departs.push(autre); return; }
-      f.chez[e.tag] = b; travaux.push({ tv, ici }); });
-    const longueur = t => Math.abs(t.tv.paire[1].y - t.tv.paire[0].y);
-    const porteur = b.departs.length ? b : (travaux.length ? travaux.reduce((m, t) => longueur(t) > longueur(m) ? t : m).tv : null);
-    if (b.departs.length) { piquages.push(b); b.sansRaccord = barriere; }
-    else entrees.forEach(e => { if (fils.get(e.li).chez[e.tag] === b) delete fils.get(e.li).chez[e.tag]; });   // sans départ, pas de piquage
-    travaux.forEach(({ tv, ici }) => { if (tv === porteur && !barriere) return;
-      tv.att = tv.att.filter(a => a !== ici);
-      if (porteur && tv !== porteur) tv.contraintes.push({ porteur, mur, borne: k }); }); });
+    const ep = entrees[0].ep, mur = murDe(ep), loin = mur === 'L' ? 'R' : 'L', ch = ep.ch, bx = mur === 'L' ? G.x0(ch) + RETRAIT : G.x1(ch) - RETRAIT;
+    const l0 = layout.links[entrees[0].li], propre = String(entrees[0].tag === 'A' ? l0.de : l0.vers), etiquette = String(entrees[0].tag === 'A' ? l0.borneDe : l0.borneVers);
+    const b = { borne: k, ch, mur, x: bx, px: ep.x, py: ep.y, dir: mur === 'L' ? 1 : -1, departs: [], decales: [], gardes: [], n: entrees.length, propre, etiquette, li: entrees[0].li };
+    const pris = [ep.y], libre = y => pris.every(v => Math.abs(v - y) >= ECART_VT);
+    // la première hauteur libre à un pas de la borne : en dessous, au-dessus, puis plus loin
+    const hauteurLibre = () => { for (let n = 1; ; n++) for (const sg of [1, -1]) { const y = ep.y + sg * n * PAS_VT; if (libre(y)) return y; } };
+    const W = entrees.map(e => { const f = fils.get(e.li), bout = cle(e.li, e.tag), tv = f.travaux.find(t => t.ch === ch && t.paire.some(a => a.bout === bout));
+      return { e, f, bout, tv, ici: tv && tv.paire.find(a => a.bout === bout), autre: tv && tv.paire.find(a => a.bout !== bout) }; });
+    // ceux qui peuvent partir droit d'abord (leur hauteur est celle de leur destination, elle ne se choisit pas), les autres après
+    W.sort((u, v) => (u.tv && !u.tv.piquage ? 0 : 1) - (v.tv && !v.tv.piquage ? 0 : 1));
+    W.forEach(({ e, f, bout, tv, ici, autre }) => { const l = layout.links[e.li], ex = new Set([String(l.de), String(l.vers)]);
+      f.chez[e.tag] = b;
+      if (tv && !tv.piquage && libre(autre.y) && G.verticaleLibre(bx, ep.y, autre.y, ex) && G.couloirLibre(bx, autre.mur === 'L' ? G.x0(ch) + 2 : G.x1(ch) - 2, autre.y, ex)) {
+        ici.borne = k; tv.piquage = b; tv.att = [autre]; autre.li = e.li; b.departs.push(autre); pris.push(autre.y); return; }   // part de la barrette
+      if (tv && tv.piquage) return;   // sa verticale est déjà celle d'une autre barrette de la goulotte : il y passe (rare)
+      // une borne à lui, à un pas, et sa propre verticale au-delà de la barrette jusqu'à sa hauteur
+      const y = hauteurLibre(); pris.push(y);
+      if (!tv) {   // un fil droit dans cette goulotte : il lui faut une verticale ici
+        const B2 = e.tag === 'A' ? f.B : f.A, sortie = { y: ep.y, mur: loin, bout: B2.ch === ch && murDe(B2) === loin ? cle(e.li, B2.tag) : null };
+        ici = { y, mur, bout, borne: k }; tv = e.tag === 'A' ? travail(ch, ici, sortie, ex) : travail(ch, sortie, ici, ex);
+        f.travaux.push(tv); f.travaux.sort((u, v) => u.ch - v.ch); f.forme = 'decale'; }
+      else { ici.y = y; ici.borne = k; }
+      tv.aupres = b; tv.contraintes.push({ porteur: b, mur: loin, borne: k }); b.decales.push({ y, li: e.li }); });
+    piquages.push(b); });
   return piquages;
 }
 
@@ -362,7 +367,9 @@ function poserLesPistes(travaux, ordre, ch, G) {
   // de gauche à droite : chacune se pose après celles qui la précèdent, au plus près de son vœu
   L.forEach((t, a) => { let lb = t.lb;
     for (let b = 0; b < a; b++) if (chevauche(L[a], L[b])) lb = Math.max(lb, L[b].x + pas);
-    const veut = t.piquage ? (t.piquage.mur === 'L' ? xL + RETRAIT : xR - RETRAIT) : (t.att.length && t.att.every(a2 => a2.mur === 'R') ? xR - RETRAIT : lb);
+    const veut = t.piquage ? (t.piquage.mur === 'L' ? xL + RETRAIT : xR - RETRAIT)
+      : t.aupres ? (t.aupres.mur === 'L' ? xL + RETRAIT + pas : xR - RETRAIT - pas)        // un fil décalé : juste au-delà de sa barrette
+      : (t.att.length && t.att.every(a2 => a2.mur === 'R') ? xR - RETRAIT : lb);
     t.x = Math.max(lb, Math.min(t.ub, veut)); if (t.piquage) t.piquage.x = t.x; });
 }
 
@@ -372,17 +379,21 @@ function poserLesPistes(travaux, ordre, ch, G) {
    piquage trace lui-même son raccord et sa verticale, une seule fois : un
    fil qui en part commence à son point de départ, un fil qui passe devant
    commence à la jonction, et un fil qui quitte l'horizontale d'un autre fil
-   de sa borne commence là où il la quitte. Un fil qui emprunte la verticale
-   d'un piquage est marqué `parPiquage` : il n'est pas droit. */
+   de sa borne commence là où il la quitte. Un fil qui part d'une borne de la
+   barrette à la hauteur de sa destination est DROIT : la barrette est une pièce, le fil commence à sa borne (le juge ne
+   lui compte plus le raccord). Un fil DÉCALÉ part de sa borne, à un pas de la borne de l'équipement, et rejoint sa
+   hauteur par sa verticale : il n'est pas droit, il est marqué `parPiquage`. */
 function tracerLesFils(layout, fils, piquages) {
   const out = new Array(layout.links.length);
-  const garde = (b, y) => { if (!b.gardes.some(g => Math.abs(g.y - y) < 0.6)) b.gardes.push({ y }); };
+  const garde = (b, y, li) => { if (!b.gardes.some(g => Math.abs(g.y - y) < 0.6)) b.gardes.push({ y, li }); };
   const cleDe = ep => Math.round(ep.x) + ',' + Math.round(ep.y) + ',' + ep.stub;
   // combien de points ôter à un bout, et si le fil passe par la verticale du piquage
   const bout = (f, ep, tv, tag) => { const b = f.chez[tag], k = cleDe(ep);
-    if (tv && tv.piquage && tv.piquage.borne === k) return { ote: 2, plie: Math.abs(tv.att[0].y - ep.y) > 0.6 };   // part du piquage
-    const saVerticale = tv && !tv.piquage && tv.ch === ep.ch && tv.paire.some(a => a.bout === cle(f.li, tag));
-    if (b && !saVerticale) { garde(b, ep.y); return { ote: 1, jonction: { x: b.x, y: ep.y } }; }                 // passe par la jonction
+    if (tv && tv.piquage && tv.piquage.borne === k) return { ote: 2 };   // part de la barrette, de sa borne, à la hauteur de sa destination : droit s'il y va droit
+    const ici = tv && tv.paire.find(a => a.bout === cle(f.li, tag));
+    if (b && ici && ici.borne === k && Math.abs(ici.y - ep.y) > 0.6) { garde(b, ici.y, f.li); return { ote: 1, jonction: { x: b.x, y: ici.y }, plie: true }; }   // décalé : part de sa borne, à un pas
+    const saVerticale = tv && !tv.piquage && tv.ch === ep.ch && !!ici;
+    if (b && !saVerticale) { garde(b, ep.y, f.li); return { ote: 1, jonction: { x: b.x, y: ep.y } }; }           // passe par la jonction
     if (b || (tv && tv.contraintes.some(c => c.borne === k))) return { ote: 1 };                                 // naît sur l'horizontale du porteur
     return { ote: 0 }; };
   layout.links.forEach((l, li) => { if (l.boucle) return;
@@ -442,14 +453,17 @@ function routerUneFois(layout, permis) {
   const etendue = t => { const ys = t.paire.map(a => a.y); t.lo = Math.min(...ys); t.hi = Math.max(...ys); return t; };
   fils.forEach((f, li) => f.travaux.forEach(t => { t.net = netDe(li); if (!t.piquage) parGoulotte[t.ch].push(etendue(t)); }));
   piquages.forEach(b => { const raccord = { y: b.py, mur: b.mur, borne: b.borne, bout: null }; b.net = netDe(b.li);
-    const t = { ch: b.ch, piquage: b, net: b.net, att: b.sansRaccord ? b.departs.slice() : [raccord, ...b.departs], paire: [raccord, ...b.departs], blocs: new Set([b.propre]), contraintes: [] };
+    // la barrette s'étend jusqu'aux bornes de ses fils décalés (leurs horizontales comptent sur leur propre verticale)
+    const t = { ch: b.ch, piquage: b, net: b.net, att: [raccord, ...b.departs], paire: [raccord, ...b.departs, ...b.decales.map(d => ({ y: d.y, mur: b.mur, bout: null, borne: b.borne }))], blocs: new Set([b.propre]), contraintes: [] };
     b.travail = etendue(t); parGoulotte[b.ch].push(t); });
   parGoulotte.forEach((T, ch) => { if (!T.length) return;
     T.sort((u, v) => (u.lo - v.lo) || (u.hi - v.hi));
     poserLesPistes(T, ordonner(T), ch, G); });
   const traces = tracerLesFils(layout, fils, piquages);
-  const barrettes = piquages.map(b => { const ys = [b.py, ...b.departs.map(d => d.y)], lo = Math.min(...ys), hi = Math.max(...ys);
-    return { x: b.x, y1: lo - 3, y2: hi + 3, py: b.py, gardes: [...b.departs.map(d => ({ y: d.y })), ...b.gardes], bus: b.n >= 4, dir: b.dir, px: b.px, net: b.net,
+  // chaque barrette : ses bornes — le raccord (borne 1), puis une par fil, celui qui part de là (`li`) —, de haut en bas
+  const barrettes = piquages.map(b => { const bornes = [{ y: b.py, li: null }, ...b.departs.map(d => ({ y: d.y, li: d.li })), ...b.gardes]
+      .filter((p, i, a) => a.findIndex(q => Math.abs(q.y - p.y) < 0.6) === i).sort((u, v) => u.y - v.y), lo = bornes[0].y, hi = bornes[bornes.length - 1].y;
+    return { x: b.x, y1: lo - 3, y2: hi + 3, py: b.py, bornes, gardes: bornes.slice(1), bus: b.n >= 4, dir: b.dir, px: b.px, net: b.net, propre: b.propre, etiquette: b.etiquette,
              pts: b.departs.filter(d => Math.abs(d.y - b.py) > 1.2).map(d => ({ x: b.x, y: d.y })), raccord: { x0: b.px, x1: b.x, y: b.py } }; });
   barrettes.raccords = barrettes.map(b => b.raccord);
   const resultat = { fils: traces.filter(Boolean), points: jonctions(layout, traces, barrettes), barrettes, piquages: barrettes.flatMap(b => b.pts) };
@@ -457,9 +471,10 @@ function routerUneFois(layout, permis) {
 }
 
 /* ---- mesures partagées par le concours de placement et les contrôles ----
-   Un fil est DROIT s'il est un seul segment horizontal, de borne à borne :
-   un fil qui passe par un raccord et la verticale d'un piquage ne l'est pas
-   (le routeur le marque `parPiquage`). Un shunt n'est ni droit ni plié : il
+   Un fil est DROIT s'il est un seul segment horizontal, de borne à borne —
+   la borne d'une barrette à poser en est une ; un fil décalé, qui rejoint
+   sa hauteur par un Z, ne l'est pas (le routeur le marque `parPiquage`).
+   Un shunt n'est ni droit ni plié : il
    ne compte pas ; le PONT d'une barrette coupée (un fil d'une barrette vers
    elle-même) non plus : couper rapportait un « fil droit » par pont, et le
    juge coupait un bus de six bornes en quatre morceaux reliés par cinq ponts

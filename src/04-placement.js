@@ -103,16 +103,9 @@ function grapheDesNiveaux(M) {
   M.liens.forEach(w => { if (w.shunt || w.boucle) return; const a = w.a.id, b = w.b.id; if (!adj.has(a) || !adj.has(b)) return;
     const ea = adj.get(a).get(b) || adj.get(a).set(b, { w: 0, aval: 0 }).get(b); ea.w++; ea.aval++;        // a → b : b est en aval de a
     const eb = adj.get(b).get(a) || adj.get(b).set(a, { w: 0, aval: 0 }).get(a); eb.w++; });
-  /* Une BARRETTE À POSER (VT1…, 01) prolonge la borne qu'elle dédouble : ce qu'elle relie compte à l'équipement, comme
-     quand ses fils partaient de la borne — un calculateur ne cesse pas d'être le hub parce qu'une de ses bornes a reçu
-     sa barrette (600XC4, folio 6 : son hub passait à 601XC5, et le folio se défaisait). */
-  const aPoser = id => VT_A_POSER.test(M.blocs.get(id).nom);
-  const vu = new Map(noeuds.map(n => { let d = 0; const vs = new Set();
-    adj.get(n).forEach((e, v) => { if (!aPoser(v) || aPoser(n)) { d += e.w; vs.add(v); return; }
-      adj.get(v).forEach((e2, k) => { if (k === n) return; d += e2.w; vs.add(k); }); });
-    return [n, { d, v: vs.size }]; }));
-  const parDegre = noeuds.slice().sort((a, b) => vu.get(b).d - vu.get(a).d);
-  const hub = parDegre.find(id => M.blocs.get(id).genre === 'equip' && M.blocs.get(id).bornes.length >= 8 && vu.get(id).v >= 6) || null;
+  const degre = new Map(noeuds.map(n => { let s = 0; adj.get(n).forEach(e => s += e.w); return [n, s]; }));
+  const parDegre = noeuds.slice().sort((a, b) => degre.get(b) - degre.get(a));
+  const hub = parDegre.find(id => M.blocs.get(id).genre === 'equip' && M.blocs.get(id).bornes.length >= 8 && adj.get(id).size >= 6) || null;
   return { noeuds, adj, parDegre, hub };
 }
 // le hub d'un modèle ne change pas : calculé une fois
