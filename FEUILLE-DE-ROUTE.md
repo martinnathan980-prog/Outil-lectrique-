@@ -11,6 +11,8 @@ L'outil sait aujourd'hui :
 - juger un disjoncteur : son calibre, le profil de charge (démarrage,
   transition, permanent) contre les courbes de disjonction, et chacun de ses
   fils contre ce profil (EN 2853 : l'intensité admissible par durée) ;
+- dire le câble de chaque fil (la base des câbles : brins, blindage,
+  résistance, diamètre, masse) et le faisceau de chaque connecteur ;
 - faire de chaque dédoublement une barrette à poser (VT1…), qu'on pose au
   contrat d'un geste ;
 - dire l'état de tout le contrat dans la pastille en haut à gauche.
@@ -62,9 +64,10 @@ page de norme suffit toujours : je la transcris.
 5. **La table de la norme de câblage.** ✔ Fait avec l'EN 2853 (tables 1
    et 2) : par jauge, l'intensité continue et par durée (2 s, 10 s, 1 min),
    la chute pour 10 m, d'où la résistance à 135 °C. Valable pour tout câble
-   cuivre. Reste, si vos types de fil (DR, MLB, BN…) ont leurs propres
-   valeurs : la table par type, et le diamètre extérieur (il sert aux
-   raccords, § D).
+   cuivre. ✔ Et la base des câbles de l'Excel (`normes/cables.csv`) : par
+   type, les brins, le blindage, la nature, la masse, la résistance, le
+   diamètre et la section. Reste : l'intensité admissible par type, si elle
+   diffère de celle de la jauge.
 6. **Les déclassements** : selon le nombre de fils en faisceau, la
    température de zone, l'altitude.
 7. **La chute de tension admise**, par réseau (28 V continu, 115 V alternatif…)
@@ -98,7 +101,10 @@ page de norme suffit toujours : je la transcris.
 
 11. Pour chaque famille de connecteur : **la table qui donne, selon la taille
     du boîtier et le diamètre du faisceau, le raccord, la cheminée, le
-    collier**.
+    collier**. Le diamètre du faisceau est déjà sur la fiche de chaque
+    connecteur (la section cumulée des câbles de la base, fois un
+    foisonnement de 1,2) : dites-moi la règle que vous appliquez pour
+    passer des câbles au diamètre, et la table des raccords fera le reste.
 12. **Les macros Excel actuelles**, telles quelles : je relis leur logique et
     je la réécris dans l'outil. Il les fera seul, avec le pourquoi
     (« faisceau de 6,2 mm → raccord taille 14 »).

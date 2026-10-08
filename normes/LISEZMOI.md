@@ -12,6 +12,39 @@ dessine chaque **trou** et le fil qui y est placé, juge le remplissage, et
 **simule** fil par fil la jauge admise, le courant admissible et la chute en
 ligne — sur des hypothèses dites et modifiables.
 
+## `cables.csv` : la base des câbles
+
+L'onglet **Câbles** de l'Excel du lecteur, transcrit : 223 câbles de 55
+familles (AD, ADB…, AM, BN, DG, DH, DR, DRB…, DW, GPB, HE, HJ, KC, KD, KL,
+KW, KX, LE, MLA, MLB, MLC, MLD, VNA…VND, WC…WX, XD…XY, YH, YV). Pour chaque
+**type de câble tel que le retest l'écrit** (DR24, MLB22, KD24, WC…) : sa
+famille, sa jauge, ses **brins**, s'il est **blindé**, sa **nature**
+(torsadé, blindé, torsadé blindé, twinax, coaxial, quadrax, fibre optique),
+sa **masse** (g/m), les **liaisons** qu'il porte (les brins, plus le
+blindage), sa **résistance** (mΩ/m, soit des Ω/km), son **diamètre
+extérieur** (mm) et sa **section** (mm²). HJ et LE y étaient en double ; LE
+(« fibre optique » puis « coaxial ») est gardé en fibre optique, à confirmer.
+
+Ce que l'outil en fait :
+- la **fiche d'un fil** dit son câble en une ligne (brins, nature, Ø,
+  section, résistance, masse) ;
+- la **chute en ligne** prend la résistance de ce câble-là (DR24 : 114
+  mΩ/m, MLB24 : 117) avant celle de la jauge seule (EN 2853) ; une ligne
+  Fils d'une norme importée qui distingue les types passe devant ;
+- chaque **connecteur** (et chaque côté d'une prise de coupure) a son
+  **faisceau** : ses câbles — un câble à plusieurs brins compte une fois,
+  par son numéro —, le **diamètre équivalent** (un rond de la section
+  cumulée, fois un foisonnement de 1,2 : une hypothèse, en attendant la
+  règle qui choisit les raccords, § D de la feuille de route) et la masse
+  au mètre ;
+- la **pastille de contrôle** relève les types de fil que la base ne
+  connaît pas (une faute de frappe, un câble à ajouter).
+
+Un type s'y retrouve tel quel, sinon par sa famille et sa jauge (« dr 24 »
+→ DR24). Une autre base, aux en-têtes de l'Excel (Cable, WireType, Gauge,
+Brins, BrinShield, Type, g/m, Liaisons, R (mΩ/m), Dext (mm), S (mm²)), se
+lit telle quelle.
+
 ## `en2853.csv` : l'intensité admissible des câbles, et leur chute
 
 L'**EN 2853:2005**, tables 1 et 2 (pages 14 et 16) : pour chaque jauge de

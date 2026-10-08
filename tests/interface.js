@@ -109,6 +109,11 @@ const FICHIER = P.fichierDemande();
   ok(await page.evaluate(() => app.contrat.charges.get('102CB1').perm.i === 5 && !CONTROLE.items.some(x => x.nom === '102CB1' && /permanent/.test(x.texte))), 'Ctrl+Z rend le profil de l’exemple');
   ok(await page.evaluate(() => { const s = document.querySelector('#ba-equip .fi-dj'); const li = [...s.querySelectorAll('.dj-fils .fi-fil')]; return li.length === 3 && li.some(x => /W-015/.test(x.textContent) && x.classList.contains('ko') && /5,2 A/.test(x.textContent)) && CONTROLE.items.some(x => x.nom === '102CB1' && /W-015/.test(x.texte) && x.niveau === 'ko'); }),
     'ses trois fils sont jugés : le DR24 (W-015) ne tient pas 9,31 A pendant 2 min (5,2 A en faisceau), et la pastille de contrôle le dit');
+  // la base des câbles : la fiche d'un fil dit son câble, celle d'un connecteur son faisceau
+  await page.evaluate(() => { const w = app.dessin.fils.find(w => w.cable === 'W-012'); if (w) { app.cible = { type: 'fil', l: verite()[w.i] }; ouvrirInspecteur(); } }); await page.waitForTimeout(400);
+  ok(await page.evaluate(() => { const c = document.querySelector('#ba-equip .fi-cable'); return !!c && /1 brin/.test(c.textContent) && /Ø 1,34 mm/.test(c.textContent) && /33,2 mΩ\/m/.test(c.textContent); }), 'la fiche de W-012 (DR20) : 1 brin, Ø 1,34 mm, 33,2 mΩ/m');
+  await page.evaluate(() => { allerAuPlan('3'); choisirBloc(app.dessin.comps.find(k => k.name === '300XC1' && k.kind !== 'tag')); }); await page.waitForTimeout(600);
+  ok(await page.evaluate(() => { const f = document.querySelector('#ba-equip [data-panneau="A"] .fi-faisceau'); return !!f && /11\s*câbles/.test(f.textContent) && /Ø ≈ [\d,]+ mm/.test(f.textContent) && /g\/m/.test(f.textContent); }), 'le connecteur A de 300XC1 : son faisceau — 11 câbles, un diamètre équivalent, une masse au mètre');
   ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
   console.log('\n  ' + (ko ? ko + ' échec(s)' : 'tout tient'));
   await nav.close(); process.exit(ko ? 1 : 0);

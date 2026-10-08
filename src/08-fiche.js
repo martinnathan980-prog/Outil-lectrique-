@@ -135,7 +135,16 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
     folios.length ? 'folio ' + esc(folios.join(', ')) : ''].filter(Boolean).join(' · ');
   return fiTete({ nom: neuf ? 'à créer' : (l.cable || 'sans numéro'), etat: `<span class="fi-route" style="--c:${coul}"></span>` + (att.length ? fiEtat([], att) : ''), sous })
     + `<div class="fi-trajet" style="--c:${coul}">${boutDeFil(l.de, l.borneDe, l.pnDe, via('de'), st.de)}<span class="fi-fleche"></span>${boutDeFil(l.vers, l.borneVers, l.pnVers, via('vers'), st.vers)}</div>`
-    + fiPied(neuf ? { voir: l.aPoser } : { tableau: l.cable || l.de }); }
+    + ficheCable(l.type) + fiPied(neuf ? { voir: l.aPoser } : { tableau: l.cable || l.de }); }
+/* Le câble d'un fil, en une ligne : ses brins, sa nature, son diamètre, sa section, sa résistance, sa masse. */
+function ficheCable(type) { const c = type ? cableDuType(app.norme, type) : null; if (!c) return '';
+  const brins = (c.brins > 1 ? c.brins + ' brins' : '1 brin') + (c.blindage ? ' + blindage' : '');
+  const xs = [brins, c.nature, c.diametre != null ? 'Ø ' + nombre(c.diametre) + ' mm' : '', c.section != null ? nombre(c.section) + ' mm²' : '', c.resistance != null ? nombre(c.resistance) + ' mΩ/m' : '', c.masse != null ? nombre(c.masse) + ' g/m' : ''].filter(Boolean);
+  return `<p class="fi-note fi-cable" title="${escA('Le câble ' + c.cable + ' dans la base des câbles' + (c.liaisons > 1 ? ' : il porte ' + c.liaisons + ' liaisons' : ''))}">${xs.map(esc).join(' · ')}</p>`; }
+/* Le faisceau d'un connecteur : ses câbles, le diamètre équivalent, la masse au mètre — ce qui choisira le raccord. */
+function faisceauHtml(fils, titre) { const d = faisceauDe(app.norme, fils); if (!d.n && !d.inconnus.length) return '';
+  const dia = d.diametre != null ? `<span title="${escA('Diamètre équivalent : un rond de la section cumulée (' + nombre(Math.round(d.section * 10) / 10) + ' mm²), fois un foisonnement de ' + nombre(FOISONNEMENT) + (d.complet ? '' : ' — section incomplète, des câbles sans section'))}">Ø ≈ ${nombre(Math.round(d.diametre * 10) / 10)} mm${d.complet ? '' : ' ?'}</span>` : '';
+  return `<div class="fi-nomen fi-faisceau"><span class="fi-nomen-t">${esc(titre || 'faisceau')}</span>${d.n ? `<span><b>${d.n}</b>${d.n > 1 ? 'câbles' : 'câble'}</span>` : ''}${dia}${d.masse > 0 ? `<span>${nombre(Math.round(d.masse * 10) / 10)} g/m</span>` : ''}${d.inconnus.length ? `<i>${esc(d.inconnus.join(', '))} : inconnu de la base</i>` : ''}</div>`; }
 
 /* ---- une barrette (et une barrette à poser) ------------------------------------- */
 function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsDeRepere(nom);
@@ -190,7 +199,8 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
   return fiTete({ nom, renommer: true, etat: fiEtat(ko, att, 'un fil de chaque côté par contact, chaque jauge acceptée'), sous: `${pluriel(points.length, 'contact')} · ${pluriel(Q.fils.length, 'fil')}`, designation: app.contrat.designations.get(nom) || '' })
     + `<section class="fi-cadre">${fiRef(Q.reference, Q.famille, cle, changer, pourquoi)}${faces}`
     + (lignes ? `<div class="fi-paires-tete"><span></span><span>fiche · arrive</span><span></span><span>embase · repart</span></div><ul class="fi-liste paires">${lignes}</ul>` : '')
-    + nomenclature(nomenclatureDe(Q.fils.filter(x => x.f.amont)), 'fiche') + nomenclature(nomenclatureDe(Q.fils.filter(x => !x.f.amont)), 'embase') + '</section>'
+    + nomenclature(nomenclatureDe(Q.fils.filter(x => x.f.amont)), 'fiche') + nomenclature(nomenclatureDe(Q.fils.filter(x => !x.f.amont)), 'embase')
+    + faisceauHtml(Q.fils.filter(x => x.f.amont).map(x => x.f), 'faisceau fiche') + faisceauHtml(Q.fils.filter(x => !x.f.amont).map(x => x.f), 'faisceau embase') + '</section>'
     + fiPied({ tableau: nom, relief: true, menu: MENU_BLOC }); }
 
 /* ---- un équipement --------------------------------------------------------------- */
@@ -216,7 +226,8 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
       corps = fiRef(M.reference, M.module.famille, cle, changer, (c.pn ? c.pn + ' — ' : '') + pourquoi)
         + faceAjustee(faceModuleSvg(M.module, ct => { const x = par.get(ct.lettre); return x ? occupant(x.f, x.jaugeOk === false) : null; }, { etiquettes: true })); }
     else corps = `<div class="fi-ref-ligne"><span class="fi-ct"><b>${esc(c.nom)}</b></span><b class="fi-ref">${esc(c.pn || 'sans part number')}</b></div>`;
-    return { id: c.nom, titre: c.nom, compte: String(c.bornes.length), ko: ko.some(t => t.startsWith(c.nom + ' · ')), corps: `<section class="fi-cadre">${corps}${fiListe(fils)}${nomen}</section>` }; });
+    const fsc = faisceauHtml(c.bornes.flatMap(bo => b.parBorne.get(bo) || []));
+    return { id: c.nom, titre: c.nom, compte: String(c.bornes.length), ko: ko.some(t => t.startsWith(c.nom + ' · ')), corps: `<section class="fi-cadre">${corps}${fiListe(fils)}${nomen}${fsc}</section>` }; });
   // les bornes sans connecteur
   const sans = [...b.parBorne].filter(([bo]) => !C.some(c => c.bornes.includes(bo))).sort((u, v) => triNaturel(u[0], v[0])).flatMap(([bo, fs]) => fs.map(f => ligne(bo, f))).join('');
   if (sans) onglets.push({ id: '—', titre: C.length ? 'Autres' : 'Fils', compte: String(b.parBorne.size - C.reduce((n, c) => n + c.bornes.length, 0)), corps: `<section class="fi-cadre">${fiListe(sans)}</section>` });

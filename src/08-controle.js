@@ -28,6 +28,9 @@ function controleDuContrat() { const V = verite(), items = [], ko = (nom, texte)
   // les barrettes à poser, folio par folio
   (plans().length ? plans() : ['*']).forEach(p => liaisonsDe(p).forEach(l => {
     if (l.origine === null && l.vers === l.aPoser && l.borneVers === '1') att(l.aPoser, `à poser sur ${l.de}:${l.borneDe}`, { plan: p }); }));
+  // les types de fil que la base des câbles ne connaît pas (une faute de frappe, un câble à ajouter)
+  if (cablesDe(app.norme).length) { const inc = [...new Set(V.filter(l => liaisonComplete(l) && l.de !== l.vers && l.type && !cableDuType(app.norme, l.type)).map(l => l.type))].sort(triNaturel);
+    if (inc.length) att('', (inc.length > 1 ? inc.length + ' types de fil inconnus' : 'un type de fil inconnu') + ' de la base des câbles : ' + inc.slice(0, 5).join(', ') + (inc.length > 5 ? '…' : ''), { tableau: '' }); }
   const sansType = V.filter(l => liaisonComplete(l) && l.de !== l.vers && !l.type).length;
   if (sansType) att('', pluriel(sansType, 'fil') + ' sans type : leur jauge ne se vérifie pas', { tableau: '' });
   const inc = V.filter(l => !liaisonComplete(l) && (l.de || l.vers || l.cable)).length;
