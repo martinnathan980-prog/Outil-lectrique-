@@ -1,32 +1,117 @@
 <div id="app">
-  <main id="planche" aria-label="Le plan">
-    <div id="ombre" aria-hidden="true"></div>
-    <svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg>
-    <div id="vide" class="vide" hidden>
-      <div class="vide-carte">
-        <div class="pictos" aria-hidden="true">
-          <svg width="64" height="44" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="8" width="18" height="28" rx="2"/><rect x="44" y="8" width="18" height="28" rx="2"/>
-            <path d="M20 16h8v12h16M20 28h4"/><circle cx="20" cy="16" r="2" fill="currentColor" stroke="none"/><circle cx="44" cy="28" r="2" fill="currentColor" stroke="none"/>
-          </svg>
-        </div>
-        <h1>Vos plans électriques, à partir de la base</h1>
-        <p>Déposez un fichier Excel ou CSV n’importe où sur cette table : chaque liaison devient un fil, chaque repère un équipement, folio par folio.</p>
-        <div class="vide-actions">
-          <button class="btn cuivre" id="vd-ouvrir">Choisir un fichier</button>
-          <button class="btn papier" id="vd-coller">Coller des liaisons</button>
-          <button class="btn lien" id="vd-exemple">Voir l’exemple</button>
+  <!-- LA BARRE DU HAUT : ce qu'on regarde (le contrat ouvert, ses comptes, son état) et ce qu'on fait une fois (chercher,
+       ouvrir, le menu). Le contenu de #en-nom, #en-sous et #en-etat est écrit par l'interface (synchroniserContexte,
+       rendreControle) ; la page ne porte que des valeurs par défaut. Sa hauteur est le jeton --entete : le plan commence
+       dessous. -->
+  <header id="entete" aria-label="Contrat ouvert et actions">
+    <div class="en-contrat">
+      <span class="en-marque" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><rect x="2.5" y="7.5" width="7" height="9" rx="1.5"/><rect x="14.5" y="7.5" width="7" height="9" rx="1.5"/><path d="M9.5 12h5"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>
+      </span>
+      <div class="min0">
+        <div id="en-nom" class="en-nom">Atelier Schéma</div>
+        <div id="en-sous" class="en-sous"></div>
+      </div>
+      <button type="button" id="en-etat" class="fi-etat en-etat" hidden aria-label="État du contrat ; ouvre la liste à reprendre"></button>
+    </div>
+
+    <!-- La recherche : toujours là, au milieu de la barre ; « / » y va, Échap en sort, la liste tombe dessous. -->
+    <div class="recherche" id="recherche">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Repère ou n° de fil" aria-label="Chercher un repère ou un numéro de fil" autocomplete="off" spellcheck="false">
+      <kbd class="raccourci rc-ouvrir" aria-hidden="true">/</kbd>
+      <kbd class="raccourci rc-fermer" aria-hidden="true">Échap</kbd>
+      <div id="q-liste" class="q-liste" role="listbox" hidden></div>
+    </div>
+
+    <div class="en-actions">
+      <button class="btn papier" id="btnOuvrir" aria-label="Ouvrir un fichier (Ctrl+O)" title="Ouvrir un retest Excel ou CSV (Ctrl+O)">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        <span>Ouvrir</span>
+      </button>
+      <div id="menuBoite">
+        <button class="rd" id="btnMenu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="19" r="1.4" fill="currentColor"/></svg>
+          <span class="bulle" aria-hidden="true">Menu</span>
+        </button>
+        <div id="menu" class="menu" hidden role="menu">
+          <!-- Ce qui est ouvert et son enregistrement : à lire, pas à presser. -->
+          <div class="ctx"><div id="ctx-nom">—</div><div id="ctx-txt"></div><div id="ctx-sauve" class="sauve"></div></div>
+          <hr>
+          <button role="menuitem" data-act="ouvrir">Ouvrir un fichier… <span class="raccourci">Ctrl+O</span></button>
+          <button role="menuitem" data-act="coller">Coller des liaisons…</button>
+          <button role="menuitem" data-act="exemple">Charger l’exemple</button>
+          <hr>
+          <button role="menuitem" data-act="cartouche">Cartouche</button>
+          <button role="menuitem" data-act="nomenclature">Nomenclature <span class="raccourci">N</span></button>
+          <button role="menuitem" data-act="bible">Bible des barrettes</button>
+          <button role="menuitem" data-act="suivi">Exporter le suivi (CSV)</button>
+          <hr>
+          <button role="menuitem" data-act="svg">Enregistrer le folio en SVG</button>
+          <button role="menuitem" data-act="png">Enregistrer le folio en PNG</button>
+          <button role="menuitem" data-act="imprimer">Imprimer <span class="raccourci">Ctrl+P</span></button>
+          <hr>
+          <button role="menuitem" data-act="vider" class="danger">Tout effacer</button>
         </div>
       </div>
     </div>
-    <div id="depot" class="depot" aria-hidden="true"><div>Déposez le fichier</div></div>
+  </header>
+
+  <!-- LA TABLE : le plan, et rien d'autre. La feuille (le SVG du moteur) est posée dessus, son ombre dessous. -->
+  <main id="planche" aria-label="Le plan">
+    <div id="ombre" aria-hidden="true"></div>
+    <svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg>
+
+    <!-- L'ACCUEIL : la table vide. Une page d'entrée d'outil : ce qu'il fait, par où l'on commence. « Reprendre » est caché ;
+         l'interface le montre (et y écrit le nom) quand le dernier geste a vidé la table. -->
+    <div id="vide" class="vide" hidden>
+      <div class="vd">
+        <header class="vd-tete">
+          <div class="vd-titre">
+            <span class="en-marque grand" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="7.5" width="7" height="9" rx="1.5"/><rect x="14.5" y="7.5" width="7" height="9" rx="1.5"/><path d="M9.5 12h5"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg></span>
+            <h1>Atelier Schéma</h1>
+          </div>
+          <p>Un retest Excel entre, les folios de schéma sortent : chaque liaison devient un fil, chaque repère un équipement — et tout est jugé contre les normes, du fil au contact.</p>
+        </header>
+
+        <div class="vd-zone" id="vd-zone" role="button" tabindex="0" aria-label="Déposer un retest Excel ici, ou cliquer pour choisir un fichier">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+          <b>Glisser un retest Excel ici</b>
+          <span>.xlsx, .xlsm, .xls ou .csv — ou cliquer pour choisir le fichier</span>
+        </div>
+
+        <div class="vd-gestes">
+          <button class="btn cuivre grand" id="vd-ouvrir">Ouvrir un fichier</button>
+          <button class="btn papier grand" id="vd-coller">Coller des liaisons</button>
+          <button class="btn papier grand" id="vd-exemple">Voir l’exemple</button>
+        </div>
+        <button class="vd-reprendre" id="vd-reprendre" hidden>Reprendre le contrat</button>
+
+        <ul class="vd-cartes">
+          <li>
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M6.5 9.5h3v5h5v-2h3"/><circle cx="9.5" cy="9.5" r="1" fill="currentColor" stroke="none"/><circle cx="17.5" cy="12.5" r="1" fill="currentColor" stroke="none"/></svg>
+            <b>Dessiner les folios</b>
+            <span>Un folio par plan, A3 paysage : les équipements placés, chaque fil droit et numéroté, le cartouche et la légende des routes.</span>
+          </li>
+          <li>
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v6c0 4.2 3.2 7.6 7.5 9 4.3-1.4 7.5-4.8 7.5-9V6z"/><path d="m8.8 12.2 2.2 2.2 4.2-4.6"/></svg>
+            <b>Vérifier</b>
+            <span>Contacts à sertir, câbles et intensités, disjoncteurs et profils de charge, raccords : chaque élément jugé contre les normes embarquées.</span>
+          </li>
+          <li>
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="8" height="16" rx="1.5"/><rect x="13" y="4" width="8" height="16" rx="1.5"/><path d="M6 9h2M6 12h2M6 15h2M16 9h2M16 12h2M16 15h2"/></svg>
+            <b>Comparer</b>
+            <span>Avec les contrats déjà faits : ce qui est pareil, ce qui diffère, ce qui manque — et reprendre ce qu'on coche.</span>
+          </li>
+        </ul>
+        <p class="vd-note">Tout se passe dans ce navigateur, hors ligne : rien ne part sur le réseau.</p>
+      </div>
+    </div>
   </main>
 
-  <!-- La barre : tout ce qui se presse, une icône chacun, le nom et le
-       raccourci au survol. Ce qu'on fait tout le temps est en haut ; ouvrir
-       un fichier et le menu, en bas. Sur téléphone elle passe en bas. La VUE
-       (folios, cadrage, zoom) est dans la barre du bas. -->
-  <nav id="rail" class="verre" aria-label="Commandes">
+  <!-- LE RAIL : les outils de tous les instants, une icône chacun, le nom et le raccourci au survol. Ce qu'on fait une fois
+       (ouvrir, exporter, effacer) est dans la barre du haut et son menu. Sur téléphone, le rail passe en bas. -->
+  <nav id="rail" aria-label="Outils">
     <button class="rd bascule" id="btnBase" aria-pressed="false" aria-label="Tableau des liaisons (B)">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M3 14h18M9 5v14"/></svg>
       <span class="bulle" aria-hidden="true">Tableau des liaisons<kbd>B</kbd></span>
@@ -46,94 +131,60 @@
     <hr>
     <button class="rd" id="btnLiaison" aria-label="Ajouter une liaison">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 16h6"/><circle cx="11" cy="16" r="2"/><path d="M13 16h8"/><path d="M17 3v7M13.5 6.5h7"/></svg>
-      <span class="bulle" aria-hidden="true">+ Liaison</span>
+      <span class="bulle" aria-hidden="true">Ajouter une liaison</span>
     </button>
     <button class="rd" id="btnBible" aria-label="Bible des barrettes">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v16H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v4H6.5A2.5 2.5 0 0 1 4 20.5"/><path d="M9 7h7M9 10.5h5"/></svg>
       <span class="bulle" aria-hidden="true">Bible des barrettes</span>
     </button>
-    <span class="espace"></span>
-    <button class="rd sobre" id="btnOuvrir" aria-label="Ouvrir un fichier (Ctrl+O)">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-      <span class="bulle" aria-hidden="true">Ouvrir un fichier<kbd>Ctrl+O</kbd></span>
-    </button>
-    <div id="menuBoite">
-      <button class="rd" id="btnMenu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="19" r="1.4" fill="currentColor"/></svg>
-        <span class="bulle" aria-hidden="true">Menu</span>
-      </button>
-      <div id="menu" class="menu verre" hidden role="menu">
-        <!-- Ce qui est ouvert et son enregistrement : à lire, pas à presser. -->
-        <div class="ctx"><div id="ctx-nom">—</div><div id="ctx-txt"></div><div id="ctx-sauve" class="sauve"></div></div>
-        <hr>
-        <button role="menuitem" data-act="ouvrir">Ouvrir un fichier… <span class="raccourci">Ctrl+O</span></button>
-        <button role="menuitem" data-act="coller">Coller des liaisons…</button>
-        <button role="menuitem" data-act="exemple">Charger l’exemple</button>
-        <hr>
-        <button role="menuitem" data-act="cartouche">Cartouche</button>
-        <button role="menuitem" data-act="bible">Bible des barrettes</button>
-        <button role="menuitem" data-act="suivi">Exporter le suivi (CSV)</button>
-        <hr>
-        <button role="menuitem" data-act="svg">Enregistrer le folio en SVG</button>
-        <button role="menuitem" data-act="png">Enregistrer le folio en PNG</button>
-        <button role="menuitem" data-act="imprimer">Imprimer <span class="raccourci">Ctrl+P</span></button>
-        <hr>
-        <button role="menuitem" data-act="vider" class="danger">Tout effacer</button>
-      </div>
-    </div>
   </nav>
 
-  <!-- La recherche : une fenêtre qui s'ouvre à côté de la barre, par le
-       bouton ou par « / », et se referme sitôt trouvé. -->
-  <div class="recherche verre" id="recherche">
-    <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-    <input id="q" type="search" placeholder="Repère ou n° de fil" aria-label="Chercher un repère ou un numéro de fil" autocomplete="off" spellcheck="false">
-    <span class="raccourci" aria-hidden="true">Échap</span>
-    <div id="q-liste" class="q-liste verre" role="listbox" hidden></div>
-  </div>
-
-  <!-- Le bas : tout ce qui touche à la VUE — les folios, le cadrage, le
-       zoom. Ce qui touche au TRAVAIL (base, recherche, bible, liaison) reste
-       dans la barre de gauche. -->
-  <nav id="folios" class="verre" aria-label="Vue et folios">
+  <!-- LE BAS : tout ce qui touche à la VUE — les folios, l'affinage en cours, le dessin retouché, le cadrage, le zoom. -->
+  <nav id="folios" aria-label="Vue et folios">
     <span id="fo-part" class="fo-part">
       <button class="rd" id="fo-prev" aria-label="Folio précédent (←)">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>
         <span class="bulle" aria-hidden="true">Folio précédent<kbd>←</kbd></span>
       </button>
       <div id="fo-strip" class="fo-strip"></div>
-      <span id="fo-lbl" class="fo-lbl">1 / 1</span>
-      <span id="affinage" class="affinage" hidden role="status" aria-live="polite"><i aria-hidden="true"></i><span id="af-txt"></span></span>
-      <button class="rd sobre auto" id="btnAuto" hidden aria-label="Revenir au dessin automatique de ce folio">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.7M4 4v4h4"/></svg>
-        <span class="bulle" aria-hidden="true">Folio retouché · revenir au dessin automatique</span>
-      </button>
       <button class="rd" id="fo-next" aria-label="Folio suivant (→)">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
         <span class="bulle" aria-hidden="true">Folio suivant<kbd>→</kbd></span>
       </button>
-      <hr>
+      <span id="fo-lbl" class="fo-lbl">1 / 1</span>
     </span>
-    <button class="rd" id="zfit" aria-label="Ajuster le plan à l’écran (0)">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>
-      <span class="bulle" aria-hidden="true">Ajuster<kbd>0</kbd></span>
-    </button>
-    <button class="rd" id="zout" aria-label="Dézoomer (−)">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg>
-      <span class="bulle" aria-hidden="true">Dézoomer<kbd>−</kbd></span>
-    </button>
-    <button class="rd zl" id="zlbl" aria-label="Échelle du plan ; ajuster à l’écran">100 %</button>
-    <button class="rd" id="zin" aria-label="Zoomer (+)">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg>
-      <span class="bulle" aria-hidden="true">Zoomer<kbd>+</kbd></span>
-    </button>
+    <span class="fo-milieu">
+      <span id="affinage" class="affinage" hidden role="status" aria-live="polite"><i aria-hidden="true"></i><span id="af-txt"></span></span>
+      <button class="rd auto" id="btnAuto" hidden aria-label="Folio retouché à la main : revenir au dessin automatique">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.7M4 4v4h4"/></svg>
+        <span>Retouché</span>
+        <span class="bulle" aria-hidden="true">Folio retouché · revenir au dessin automatique</span>
+      </button>
+    </span>
+    <span class="fo-zoom">
+      <button class="rd" id="zfit" aria-label="Ajuster le plan à l’écran (0)">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>
+        <span class="bulle" aria-hidden="true">Ajuster<kbd>0</kbd></span>
+      </button>
+      <hr>
+      <button class="rd" id="zout" aria-label="Dézoomer (−)">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg>
+        <span class="bulle" aria-hidden="true">Dézoomer<kbd>−</kbd></span>
+      </button>
+      <button class="rd zl" id="zlbl" aria-label="Échelle du plan ; ajuster à l’écran">100 %</button>
+      <button class="rd" id="zin" aria-label="Zoomer (+)">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg>
+        <span class="bulle" aria-hidden="true">Zoomer<kbd>+</kbd></span>
+      </button>
+    </span>
   </nav>
 
-  <!-- L'INSPECTEUR : la fiche de ce qu'on a cliqué (un équipement, une barrette, une prise, un fil), étroite, à droite ;
-       le plan se recadre à côté, jamais dessous. -->
+  <!-- L'INSPECTEUR : la fiche de ce qu'on a cliqué (un équipement, une barrette, une prise, un fil), à droite, du haut en bas ;
+       le plan se recadre à côté, jamais dessous. Son contenu (08 bis) est fait avec les mêmes jetons. -->
   <aside id="inspecteur" hidden aria-label="Fiche de l’élément choisi">
     <div id="ba-equip" class="fi"></div>
   </aside>
+
   <!-- LE TABLEAU des liaisons : un tiroir en bas, ouvert à la demande (B) ; le plan se recadre au-dessus. On le corrige
        ici ; le plan suit. -->
   <aside id="base" hidden aria-label="Tableau des liaisons">
@@ -150,16 +201,18 @@
         <button class="vider" id="ba-vider" hidden aria-label="Effacer le filtre">×</button>
       </div>
       <span class="espace"></span>
-      <button class="btn lien" id="ba-ajouter"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Liaison</button>
+      <button class="btn papier" id="ba-ajouter"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Liaison</button>
       <button class="rond fermer" id="ba-fermer" aria-label="Fermer le tableau (B)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     </div>
     <div class="ba-corps" id="ba-corps"><table class="tab" id="ba-tab"><thead id="ba-thead"></thead><tbody id="ba-tbody"></tbody></table></div>
   </aside>
 
+  <!-- LES DOCUMENTS rares (cartouche, collage, bible, nomenclature) : à droite, à la place de l'inspecteur. -->
   <aside id="fiche" hidden aria-label="Fiche">
     <div class="fiche-corps" id="fiche-corps"></div>
     <div class="fiche-pied" id="fiche-pied" hidden></div>
   </aside>
+
   <!-- La VUE EN RELIEF d'une barrette ou d'une prise de coupure (08-relief) : la pièce en perspective, qu'on fait
        tourner à la main, chaque fil dans son trou, à la couleur de sa route ; dessous, le tableau trou par trou. -->
   <div id="relief" class="relief" hidden role="dialog" aria-modal="true" aria-labelledby="re-titre">
@@ -176,7 +229,9 @@
       <div class="re-tableau" id="re-tableau"></div>
     </div>
   </div>
-  <div id="toast" class="verre" role="status" aria-live="polite"></div>
+  <!-- Le dépôt d'un fichier : toute la fenêtre devient la cible (hors de la planche, qui est un contexte d'empilement). -->
+  <div id="depot" class="depot" aria-hidden="true"><div>Déposer le fichier</div></div>
+  <div id="toast" role="status" aria-live="polite"></div>
   <input type="file" id="fichier" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
   <input type="file" id="fichier-bible" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
 </div>

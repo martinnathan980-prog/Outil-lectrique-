@@ -1,24 +1,23 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   DIRECTION « TABLE LUMINEUSE »
+   LE SITE — la feuille blanche sur une table gris très clair (DESIGN.md)
 
-   Le plan est l'écran. Rien ne l'encadre : la feuille blanche est posée sur
-   une table d'ardoise bleutée et occupe tout. Une seule barre d'outils,
-   verticale, à gauche — verre fumé, une icône par commande, le nom et le
-   raccourci au survol — et une réglette de folios en bas, comme sur une
-   carte. Rien n'est affiché qui ne se presse pas : le nom du dossier et
-   l'état d'enregistrement sont dans le menu.
-   Les instruments sont sombres (verre fumé) ; les documents sont blancs :
-   la feuille, la base des liaisons à côté d'elle, la fiche (cartouche,
-   collage, bible des barrettes). Un seul accent, le cuivre — celui du fil —
-   pour ce qui est choisi et pour la seule action qui compte sur l'accueil.
-   Ce qu'on fait tout le temps (base, chercher, annuler, folios, cadrer,
-   ajouter une liaison, la bible) est dans la barre ; ce qu'on fait une fois
-   (ouvrir, exporter, effacer) est en bas de la barre ou dans le menu.
-   Le langage est en linéale système ; toute DONNÉE (repère, borne, n° de
-   fil, référence) est en chasse fixe. Le rayon est plein pour ce qui se
-   presse, 16 px pour ce qui se lit (cartes). Module 4 px. Aucune image,
-   aucune police extérieure. Sur téléphone, la barre passe en bas et le plan
-   reste seul ; ce qui se lit monte en tiroir depuis le bas.
+   Le plan est l'objet ; tout le reste est un instrument autour de lui, net
+   et calme. L'écran est une grille : une BARRE DU HAUT (le contrat ouvert,
+   son état, la recherche, ouvrir, le menu), un RAIL à gauche (les outils de
+   tous les instants), une BARRE DU BAS (les folios, l'affinage, le zoom),
+   et à droite ou en bas les PANNEAUX (l'inspecteur, le tableau, les
+   documents) — tous blancs, posés sur la table, séparés par un filet d'un
+   pixel, jamais devant la feuille : le plan se recadre dans ce qui reste.
+   Un seul accent, le cuivre du fil (actions, sélection) ; trois couleurs
+   d'état ; des ombres courtes ; pas de verre fumé, pas de dégradé. Le
+   langage est en linéale, toute donnée (repère, borne, n° de fil,
+   référence) en chasse fixe, les chiffres tabulaires. Module 4 px, trois
+   rayons (6, 10, 14), transitions de 120 à 200 ms. Aucune image, aucune
+   police réseau. Sur téléphone, le rail passe en bas et les panneaux
+   montent en tiroir.
+   Ce fichier porte les JETONS (pour tout le monde) et le SITE ; les fiches,
+   la disjonction, les contrats faits, le relief et la nomenclature ont
+   chacun leur style-*.css, écrit avec les mêmes jetons.
    ═══════════════════════════════════════════════════════════════════════ */
 :root{
   /* ── LES JETONS COMMUNS (DESIGN.md) : le thème clair, les surfaces, le texte, l'accent, les états ── */
@@ -30,601 +29,618 @@
   --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px;
   --r-1:6px; --r-2:10px; --r-3:14px;
   --sh-1:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08); --sh-2:0 8px 24px rgba(16,24,40,.12),0 2px 6px rgba(16,24,40,.06);
-  --entete:0px;              /* la barre du haut, s'il y en a une : le plan commence dessous */
-  /* ── l'ancienne palette (la table sombre) : encore lue par les règles d'avant, à faire disparaître avec elles ── */
-  --nuit:#2e3846;            /* la table — 10,5:1 sous la craie              */
-  --nuit-2:#3d4857;          /* son centre, éclairé                          */
-  --craie:#eef2f6;           /* texte sur la table                           */
-  --papier:#ffffff;          /* les documents                                */
-  --encre:#18212c;           /* texte sur papier                             */
-  --cuivre:#b5541c;          /* l'accent — 4,9:1 sur papier                  */
-  --danger:#b3261e;          /* supprimer, erreur — 6,5:1 sur papier         */
-  /* tirées de la palette */
-  --verre:rgba(28,36,47,.9); /* instrument : verre fumé, plus sombre que la table */
-  --verre-plein:#1e2631;     /* le même, sans transparence                   */
-  --craie-2:#b3bdc8;         /* texte secondaire sur verre — 8:1             */
-  --trait-verre:rgba(255,255,255,.1);
-  --papier-2:#f2f4f7;        /* surface en retrait sur papier                */
-  --papier-3:#e6eaef;        /* survol de la surface en retrait              */
-  --encre-2:#5b6875;         /* texte secondaire sur papier — 5,7:1          */
-  --filet:#dfe4e9;           /* filet sur papier                             */
-  --cuivre-2:#9e4816;        /* cuivre pressé — 5,4:1 sur cuivre pâle        */
-  --cuivre-clair:#f0a36f;    /* cuivre sur la table (focus, badge) — 7,4:1   */
-  --cuivre-pale:#fbeee4;     /* fond cuivré très pâle : la ligne choisie     */
-  /* typographie : une échelle de sept corps, ratio ≈ 1,2 */
-  --t0:11px; --t1:12px; --t2:13.5px; --t3:15px; --t4:17px; --t5:22px; --t6:28px;
-  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","DejaVu Sans Mono",monospace;
-  /* élévations : une par étage */
-  --ombre-1:0 4px 18px rgba(0,0,0,.28);
-  --ombre-2:0 18px 50px rgba(0,0,0,.35);
-  --ombre-3:0 30px 90px rgba(0,0,0,.45);
-  --rapide:.14s ease; --moyen:.24s ease;
-  --rail:52px;               /* largeur de la barre ; le plan commence après */
-  --base-h:30vh;             /* hauteur du tableau, en tiroir en bas          */
-  --insp-l:min(420px,36vw);  /* largeur de l'inspecteur, la fiche à droite    */
-  --fiche-l:400px;           /* largeur de la fiche ; 560 px pour la bible    */
-  --fiche-h:60vh;            /* hauteur de la fiche en tiroir, mesurée        */
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","DejaVu Sans Mono",monospace;
+  --rapide:.12s ease; --moyen:.2s ease;
+  /* ── la géométrie de la page : le plan se recadre dans ce que les barres et les panneaux laissent ── */
+  --entete:48px;             /* la barre du haut ; le plan commence dessous                  */
+  --rail:48px;               /* le rail de gauche ; le plan commence après                    */
+  --pied:40px;               /* la barre du bas (folios, zoom)                                */
+  --insp-l:min(440px,36vw);  /* l'inspecteur, à droite                                        */
+  --fiche-l:400px;           /* les documents, à droite ; 560 px pour la bible et la nomenclature */
+  --base-h:30vh;             /* le tableau des liaisons, en tiroir en bas                     */
+  --fiche-h:60vh;            /* la hauteur du document en tiroir (téléphone), mesurée         */
+  /* ── les anciens noms, lus encore par les autres feuilles de style : des alias des jetons, qui partiront avec elles ── */
+  --papier:var(--s-surface); --papier-2:var(--s-sunken); --papier-3:var(--s-hover);
+  --encre:var(--t-1); --encre-2:var(--t-2); --filet:var(--s-line);
+  --cuivre:var(--accent); --cuivre-2:var(--accent-2); --cuivre-pale:var(--accent-soft); --cuivre-clair:#f0a36f;
+  --danger:var(--ko); --craie:#ffffff; --verre-plein:var(--t-1); --ombre-1:var(--sh-2);
+  --t0:var(--f-11); --t1:var(--f-12); --t2:var(--f-13); --t3:var(--f-14); --t4:var(--f-16); --t5:var(--f-20); --t6:var(--f-28);
 }
+
+/* ─── LE SOCLE ──────────────────────────────────────────────────────────── */
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;overflow:hidden}
-body{font:var(--t2)/1.45 var(--sans);background:var(--nuit);color:var(--craie);
-  -webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+body{font:var(--f-13)/1.45 var(--sans);background:var(--s-app);color:var(--t-1);
+  -webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;overscroll-behavior:none;font-variant-numeric:tabular-nums}
 [hidden]{display:none!important}
-button,input,textarea{font:inherit;color:inherit;margin:0}
+button,input,textarea,select{font:inherit;color:inherit;margin:0}
 button{cursor:pointer}
-:focus-visible{outline:2px solid var(--cuivre-clair);outline-offset:2px}
-#fiche :focus-visible,#base :focus-visible,.vide-carte :focus-visible{outline-color:var(--cuivre)}
+kbd{font-family:var(--mono)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .mono{font-family:var(--mono)}
 .min0{min-width:0;flex:1}
 .espace{flex:1}
 svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+/* un titre de section : petites capitales espacées, texte secondaire */
+.sur{font-size:var(--f-11);text-transform:uppercase;letter-spacing:.08em;color:var(--t-2);font-weight:700}
 
-/* ─── LA TABLE ET LA FEUILLE ────────────────────────────────────────────── */
-#planche{position:fixed;inset:0;overflow:hidden;touch-action:none;cursor:grab;
-  background:radial-gradient(ellipse 70% 60% at 50% 42%,var(--nuit-2) 0%,var(--nuit) 100%)}
-#planche.tient{cursor:grabbing}
-#svg{position:absolute;inset:0;width:100%;height:100%;display:block}
-#ombre{position:absolute;left:0;top:0;pointer-events:none;display:none;
-  box-shadow:0 0 0 1px rgba(255,255,255,.08),0 40px 100px rgba(0,0,0,.5),0 2px 8px rgba(0,0,0,.4)}
-/* la feuille dessinée par le moteur ; on ne touche qu'à son conteneur */
-#svg .comp{cursor:pointer}
-#svg .cab{cursor:pointer}
-/* la retouche : un bloc se prend à la main */
-#svg .comp{cursor:grab}
-#planche.deplace,#planche.deplace *{cursor:grabbing!important}
-.rd.auto[hidden]{display:none}
-
-/* ─── LES INSTRUMENTS : verre fumé ──────────────────────────────────────── */
-.verre{background:var(--verre);-webkit-backdrop-filter:blur(16px) saturate(1.3);backdrop-filter:blur(16px) saturate(1.3);
-  border:1px solid var(--trait-verre);box-shadow:var(--ombre-1);color:var(--craie)}
-.rond{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;border:none;background:none;color:inherit;padding:0;transition:background var(--rapide)}
-.rond:hover{background:rgba(255,255,255,.1)}
-.btn{height:40px;padding:0 16px;border-radius:20px;border:none;display:inline-flex;align-items:center;gap:8px;
-  font-weight:600;white-space:nowrap;transition:background var(--rapide),transform var(--rapide)}
+/* ─── LES COMPOSANTS COMMUNS ────────────────────────────────────────────── */
+/* le bouton : plein cuivre pour l'action principale (une par écran), papier pour le reste, lien pour ce qui s'efface */
+.btn{height:36px;padding:0 14px;border-radius:var(--r-1);border:1px solid transparent;display:inline-flex;align-items:center;gap:8px;
+  font-size:var(--f-13);font-weight:600;white-space:nowrap;background:none;transition:background var(--rapide),border-color var(--rapide),color var(--rapide)}
+.btn svg.ico{width:16px;height:16px}
 .btn:active{transform:translateY(1px)}
-.btn.cuivre{background:var(--cuivre);color:#fff}
-.btn.cuivre:hover{background:var(--cuivre-2)}
-.btn.papier{background:var(--papier-2);color:var(--encre)}
-.btn.papier:hover{background:var(--papier-3)}
-.btn.lien{background:none;color:var(--encre-2);padding:0 8px;font-weight:500}
-.btn.lien:hover{color:var(--encre);background:var(--papier-2)}
-.btn.lien.danger{color:var(--danger)}
-.btn.lien.danger:hover{background:#fbeae8;color:var(--danger)}
-.btn.verre{color:var(--craie)}
-.btn.verre:hover{background:rgba(44,54,68,.92)}
-/* une bascule : pressée, elle devient un document, blanc sur la table */
-.bascule[aria-pressed="true"]{background:var(--papier);color:var(--encre);border-color:var(--papier)}
-.bascule[aria-pressed="true"]:hover{background:var(--papier-2)}
-
-/* ─── LA BARRE : à gauche, du haut en bas ───────────────────────────────── */
-#rail{position:fixed;left:12px;top:12px;bottom:12px;width:var(--rail);border-radius:26px;z-index:20;
-  display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0}
-#rail hr{width:22px;border:none;border-top:1px solid var(--trait-verre);margin:4px 0}
-.rd{position:relative;width:40px;height:40px;border-radius:50%;border:none;background:none;color:var(--craie);
-  display:grid;place-items:center;padding:0;flex:none;transition:background var(--rapide)}
+.btn.cuivre{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.cuivre:hover{background:var(--accent-2);border-color:var(--accent-2)}
+.btn.papier{background:var(--s-surface);border-color:var(--s-line-2);color:var(--t-1)}
+.btn.papier:hover{background:var(--s-sunken);border-color:#b4bdc8}
+.btn.lien{color:var(--accent-2);padding:0 8px;font-weight:600}
+.btn.lien:hover{background:var(--accent-soft)}
+.btn.lien.danger{color:var(--ko)}
+.btn.lien.danger:hover{background:var(--ko-soft)}
+.btn.grand{height:40px;padding:0 18px;font-size:var(--f-14)}
+/* le bouton rond à icône seule (fermer un panneau, replier) */
+.rond{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;border:none;background:none;color:var(--t-2);padding:0;flex:none;transition:background var(--rapide),color var(--rapide)}
+.rond:hover{background:var(--s-hover);color:var(--t-1)}
+.rond svg.ico{width:18px;height:18px}
+.fermer{color:var(--t-2)}
+/* le bouton d'outil : carré arrondi de 40 px, une icône, une bulle au survol ; pressé, il se marque en cuivre pâle */
+.rd{position:relative;width:40px;height:40px;border-radius:var(--r-2);border:none;background:none;color:var(--t-2);
+  display:grid;place-items:center;padding:0;flex:none;transition:background var(--rapide),color var(--rapide)}
 .rd svg.ico{width:20px;height:20px}
-.rd:hover:not(:disabled){background:rgba(255,255,255,.1)}
-.rd:active:not(:disabled){background:rgba(255,255,255,.16)}
-.rd:disabled{opacity:.32;cursor:default}
-.rd.sobre{color:var(--craie-2)}
-.rd.sobre:hover{color:var(--craie)}
-.rd.zl{font-family:var(--mono);font-size:var(--t0);color:var(--craie-2);height:26px;border-radius:13px}
-.rd.zl:hover{color:var(--craie)}
-/* le nom et le raccourci, à droite de l'icône : au survol et au clavier,
-   après un instant — pas au passage de la souris */
-.bulle{position:absolute;left:calc(100% + 12px);top:50%;transform:translateY(-50%);white-space:nowrap;pointer-events:none;
-  background:var(--verre-plein);color:var(--craie);border:1px solid var(--trait-verre);box-shadow:var(--ombre-1);
-  border-radius:9px;padding:6px 10px;font-size:var(--t1);font-weight:500;line-height:1.3;display:flex;align-items:center;gap:8px;
-  opacity:0;transition:opacity .12s ease}
-.bulle::before{content:"";position:absolute;right:100%;top:50%;margin-top:-5px;border:5px solid transparent;border-right-color:var(--verre-plein)}
-.bulle kbd{font-family:var(--mono);font-size:var(--t0);color:var(--craie-2);border:1px solid var(--trait-verre);border-radius:5px;padding:0 5px;line-height:1.5}
-.rd:hover .bulle{opacity:1;transition-delay:.4s}
+.rd:hover:not(:disabled){background:var(--s-hover);color:var(--t-1)}
+.rd:active:not(:disabled){background:var(--s-line)}
+.rd:disabled{opacity:.35;cursor:default}
+.rd.sobre{color:var(--t-3)}
+.bascule[aria-pressed="true"],.rd[aria-expanded="true"]{background:var(--accent-soft);color:var(--accent-2)}
+.bascule[aria-pressed="true"]:hover:not(:disabled){background:#f6e2d2;color:var(--accent-2)}
+/* la bulle : le nom et le raccourci, à côté de l'icône, après un instant de survol ou au clavier */
+.bulle{position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);white-space:nowrap;pointer-events:none;z-index:5;
+  background:var(--t-1);color:#fff;border-radius:var(--r-1);padding:5px 9px;font-size:var(--f-12);font-weight:500;line-height:1.3;
+  display:flex;align-items:center;gap:8px;opacity:0;transition:opacity var(--rapide)}
+.bulle::before{content:"";position:absolute;right:100%;top:50%;margin-top:-4px;border:4px solid transparent;border-right-color:var(--t-1)}
+.bulle kbd{font-size:var(--f-11);color:#d4d8de;border:1px solid rgba(255,255,255,.28);border-radius:4px;padding:0 5px;line-height:1.5}
+.rd:hover .bulle{opacity:1;transition-delay:.45s}
 .rd:focus-visible .bulle{opacity:1}
 .rd:disabled .bulle{display:none}
 @media (hover:none){.bulle{display:none}}
+/* un champ de saisie encadré (le filtre du tableau, les champs d'un document) */
+.filtre{display:flex;align-items:center;gap:8px;height:32px;background:var(--s-surface);border:1px solid var(--s-line-2);border-radius:var(--r-1);padding:0 4px 0 10px;transition:border-color var(--rapide),box-shadow var(--rapide)}
+.filtre:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.filtre svg.ico{width:16px;height:16px;color:var(--t-3)}
+.filtre input{flex:1;min-width:0;border:none;background:none;outline:none;font-family:var(--mono);font-size:var(--f-12);color:var(--t-1)}
+.filtre input::placeholder{font-family:var(--sans);color:var(--t-3)}
+.filtre .vider{width:24px;height:24px;border:none;background:none;border-radius:50%;color:var(--t-3);font-size:var(--f-16);line-height:1;padding:0}
+.filtre .vider:hover{background:var(--s-hover);color:var(--t-1)}
+/* un segment : des boutons qui n'en font qu'un, le pressé en relief */
+.segment{display:inline-flex;gap:2px;padding:2px;background:var(--s-sunken);border-radius:var(--r-1);flex:none}
+.segment button{border:none;background:none;height:26px;padding:0 10px;border-radius:4px;font-size:var(--f-12);font-weight:600;color:var(--t-2);display:inline-flex;align-items:center;gap:6px;transition:background var(--rapide),color var(--rapide)}
+.segment button:hover{color:var(--t-1)}
+.segment button[aria-pressed="true"]{background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-1)}
 
-/* ─── LA RECHERCHE : une fenêtre à côté de la barre ─────────────────────── */
-.recherche{position:fixed;top:12px;left:calc(var(--rail) + 24px);height:40px;width:360px;max-width:calc(100vw - var(--rail) - 36px);border-radius:20px;
-  display:none;align-items:center;padding:0 10px 0 14px;gap:8px;z-index:30}
-body.cherche .recherche{display:flex}
-.recherche svg.ico{color:var(--craie-2)}
-.recherche input{flex:1;min-width:0;background:none;border:none;outline:none;color:var(--craie);font-family:var(--mono);font-size:var(--t2);height:100%}
-.recherche input::placeholder{color:var(--craie-2);font-family:var(--sans)}
-.recherche input::-webkit-search-cancel-button{-webkit-appearance:none}
-.recherche .raccourci{color:var(--craie-2);font-size:var(--t0);border:1px solid var(--trait-verre);border-radius:6px;padding:1px 6px;font-family:var(--mono)}
-.q-liste{position:absolute;top:46px;left:0;right:0;border-radius:16px;padding:6px;max-height:min(60vh,420px);overflow:auto;z-index:30}
-.q-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;width:100%;background:none;border:none;text-align:left;color:var(--craie)}
-.q-item.on,.q-item:hover{background:rgba(255,255,255,.1)}
-.q-item .nom{font-family:var(--mono);font-weight:600;white-space:nowrap}
-.q-item .des{color:var(--craie-2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--t1)}
-.q-item .cpt{color:var(--craie-2);font-size:var(--t0);white-space:nowrap}
-.q-item .genre{font-size:var(--t0);color:var(--cuivre-clair);text-transform:uppercase;letter-spacing:.06em;font-weight:600;min-width:52px}
-.q-rien{padding:10px 12px;color:var(--craie-2)}
+/* ─── LA TABLE ET LA FEUILLE ────────────────────────────────────────────── */
+#planche{position:fixed;top:var(--entete);left:0;right:0;bottom:0;overflow:hidden;touch-action:none;cursor:grab;
+  background:var(--s-app) radial-gradient(circle,#dde2e8 .9px,transparent 1.3px) 0 0/24px 24px}
+#planche.tient{cursor:grabbing}
+#svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+/* la feuille est dessinée par le moteur ; sous elle, une ombre courte et un filet */
+#ombre{position:absolute;left:0;top:0;pointer-events:none;display:none;
+  box-shadow:0 0 0 1px var(--s-line-2),0 12px 32px rgba(16,24,40,.10),0 2px 6px rgba(16,24,40,.06)}
+#svg .comp,#svg .cab{cursor:pointer}
+#svg .comp{cursor:grab}
+#planche.deplace,#planche.deplace *{cursor:grabbing!important}
 
-/* ─── LE CONTRÔLE : le compte sur le bouton des repères, la liste dans l'index ─── */
-.rd-point{position:absolute;top:4px;right:3px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;font:800 10px/16px var(--mono);font-style:normal;color:#fff;background:#d4870f;box-shadow:0 0 0 2px var(--verre-plein);pointer-events:none}
-.rd-point.ko{background:#d03b30}
-.rd-point[hidden]{display:none}
-.co-code{flex:none;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font:700 10px/1 var(--mono);color:#fff;background:#3b4757}
-.co-code.barrette{background:var(--cuivre)}
-.co-code.coupure{background:#3d5a78}
-.co-code.aposer{background:var(--cuivre-pale);color:var(--cuivre-2);box-shadow:inset 0 0 0 1.5px var(--cuivre)}
-.co-code.tab{background:var(--papier-2);color:var(--encre-2)}
-.co-code.tab svg.ico{width:15px;height:15px}
-.ix-controle{margin:-2px 0 2px}
-.ix-controle>summary{display:flex;align-items:center;gap:8px;list-style:none;cursor:pointer;padding:2px 0;border-radius:8px}
-.ix-controle>summary::-webkit-details-marker{display:none}
-.ix-controle>summary .fi-chevron{width:14px;height:14px;color:var(--encre-2);transition:transform var(--rapide)}
-.ix-controle[open]>summary .fi-chevron{transform:rotate(180deg)}
-.ix-item.co-item{grid-template-columns:30px minmax(0,1fr) auto}
-.ix-item.co-item small{white-space:normal;line-height:1.35}
-.ix-item.co-item b em{font:600 var(--t0) var(--sans);color:var(--encre-2);margin-left:4px}
-.ix-groupe.ko b{background:#fbeceb;color:#86201a}
-.ix-groupe.att b{background:#fcf3e6;color:#74450a}
-
-/* ─── LE MENU : au bas de la barre, ouvert vers la droite ───────────────── */
+/* ─── LA BARRE DU HAUT : le contrat, la recherche, ouvrir, le menu ──────── */
+#entete{position:fixed;top:0;left:0;right:0;height:var(--entete);z-index:30;background:var(--s-surface);border-bottom:1px solid var(--s-line);
+  display:grid;grid-template-columns:minmax(0,1.4fr) auto minmax(0,1fr);align-items:center;gap:16px;padding:0 10px 0 12px}
+.en-contrat{display:flex;align-items:center;gap:10px;min-width:0}
+.en-marque{flex:none;width:28px;height:28px;border-radius:8px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center}
+.en-marque svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.en-nom{font-size:var(--f-14);font-weight:600;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.en-sous{font-size:var(--f-11);color:var(--t-2);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.en-sous:empty{display:none}
+/* l'état du contrat : la pastille de la fiche (style-fiche), pressable — elle ouvre la liste à reprendre */
+.en-etat{border:none;cursor:pointer;flex:none;margin-left:4px;transition:filter var(--rapide)}
+.en-etat:hover{filter:brightness(.96)}
+.en-actions{display:flex;align-items:center;justify-content:flex-end;gap:4px}
+.en-actions .btn{height:32px;padding:0 12px}
+.en-actions .rd{width:36px;height:36px}
+.en-actions .rd svg.ico{width:18px;height:18px}
 #menuBoite{position:relative}
-.menu{position:absolute;bottom:0;left:calc(100% + 14px);width:272px;border-radius:16px;padding:6px;z-index:30}
-.menu button{display:flex;width:100%;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;background:none;border:none;text-align:left;color:var(--craie);font-weight:500}
-.menu button:hover{background:rgba(255,255,255,.1)}
-.menu button.danger{color:#ff9c8f}
-.menu hr{border:none;border-top:1px solid var(--trait-verre);margin:6px 6px}
-.menu .raccourci{margin-left:auto;color:var(--craie-2);font-size:var(--t0);font-family:var(--mono)}
-.menu .ctx{padding:8px 12px 4px;min-width:0}
+#entete .bulle{left:50%;top:calc(100% + 8px);transform:translateX(-50%)}
+#entete .bulle::before{right:auto;top:auto;bottom:100%;left:50%;margin:0 0 0 -4px;border-color:transparent;border-bottom-color:var(--t-1)}
+/* la recherche : un champ au milieu de la barre ; la liste des trouvailles tombe dessous */
+.recherche{position:relative;width:min(380px,28vw);height:32px;display:flex;align-items:center;gap:8px;padding:0 6px 0 10px;
+  background:var(--s-sunken);border:1px solid var(--s-line);border-radius:var(--r-1);transition:border-color var(--rapide),box-shadow var(--rapide),background var(--rapide)}
+.recherche:hover{border-color:var(--s-line-2)}
+body.cherche .recherche{background:var(--s-surface);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.recherche svg.ico{width:16px;height:16px;color:var(--t-3)}
+.recherche input{flex:1;min-width:0;background:none;border:none;outline:none;color:var(--t-1);font-family:var(--mono);font-size:var(--f-13);height:100%}
+.recherche input::placeholder{color:var(--t-3);font-family:var(--sans)}
+.recherche input::-webkit-search-cancel-button{-webkit-appearance:none}
+.recherche .raccourci{color:var(--t-3);font-size:var(--f-11);border:1px solid var(--s-line-2);border-radius:4px;padding:0 5px;line-height:1.6;white-space:nowrap}
+.recherche .rc-fermer,body.cherche .recherche .rc-ouvrir{display:none}
+body.cherche .recherche .rc-fermer{display:inline}
+.q-liste{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--s-surface);border:1px solid var(--s-line);border-radius:var(--r-2);box-shadow:var(--sh-2);padding:4px;max-height:min(60vh,420px);overflow:auto;z-index:40}
+.q-item{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;border-radius:var(--r-1);width:100%;background:none;border:none;text-align:left;color:var(--t-1)}
+.q-item.on,.q-item:hover{background:var(--s-sunken)}
+.q-item .genre{font-size:var(--f-11);color:var(--accent-2);text-transform:uppercase;letter-spacing:.06em;font-weight:700;min-width:50px}
+.q-item .nom{font-family:var(--mono);font-weight:700;white-space:nowrap}
+.q-item .des{color:var(--t-2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--f-12)}
+.q-item .cpt{color:var(--t-3);font-size:var(--f-11);white-space:nowrap}
+.q-rien{padding:10px 12px;color:var(--t-2);font-size:var(--f-12)}
+/* le menu : sous son bouton, ce qu'on fait une fois ; en tête, ce qui est ouvert (à lire) */
+.menu{position:absolute;top:calc(100% + 6px);right:0;width:272px;background:var(--s-surface);border:1px solid var(--s-line);border-radius:var(--r-2);box-shadow:var(--sh-2);padding:4px;z-index:40}
+.menu button{display:flex;width:100%;align-items:center;gap:10px;height:32px;padding:0 10px;border-radius:var(--r-1);background:none;border:none;text-align:left;color:var(--t-1);font-size:var(--f-13);font-weight:500}
+.menu button:hover,.menu button:focus-visible{background:var(--s-sunken);outline:none}
+.menu button.danger{color:var(--ko)}
+.menu button.danger:hover{background:var(--ko-soft)}
+.menu hr{border:none;border-top:1px solid var(--s-line);margin:4px 6px}
+.menu .raccourci{margin-left:auto;color:var(--t-3);font-size:var(--f-11);font-family:var(--mono)}
+.menu .ctx{padding:6px 10px 4px;min-width:0}
 #ctx-nom{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#ctx-txt{color:var(--craie-2);font-size:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sauve{color:var(--craie-2);font-size:var(--t0);white-space:nowrap;display:flex;align-items:center;gap:6px;margin-top:4px}
-.sauve:not(:empty)::before{content:"";width:6px;height:6px;border-radius:50%;background:#6cc487}
-.sauve.ko::before{background:var(--cuivre-clair)}
+#ctx-txt{color:var(--t-2);font-size:var(--f-12);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sauve{color:var(--t-3);font-size:var(--f-11);white-space:nowrap;display:flex;align-items:center;gap:6px;margin-top:3px}
+.sauve:not(:empty)::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ok)}
+.sauve.ko::before{background:var(--warn)}
 
-/* ─── LE BAS : les folios ───────────────────────────────────────────────── */
-#folios{position:fixed;left:calc(50% + var(--rail) / 2 + 12px);bottom:14px;transform:translateX(-50%);display:flex;align-items:center;gap:2px;height:44px;padding:0 6px;border-radius:22px;z-index:20;max-width:calc(100vw - var(--rail) - 48px)}
-.fo-part{display:flex;align-items:center;gap:2px}
-.fo-part[hidden]{display:none}
-#folios hr{width:0;height:22px;border:none;border-left:1px solid var(--trait-verre);margin:0 4px}
+/* ─── LE RAIL : à gauche, les outils de tous les instants ──────────────── */
+#rail{position:fixed;top:var(--entete);left:0;bottom:0;width:var(--rail);z-index:20;background:var(--s-surface);border-right:1px solid var(--s-line);
+  display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0}
+#rail hr{width:24px;border:none;border-top:1px solid var(--s-line);margin:4px 0}
+/* le compte de ce qu'il y a à reprendre, sur le bouton des repères */
+.rd-point{position:absolute;top:3px;right:2px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;font:700 10px/16px var(--mono);font-style:normal;color:#fff;background:var(--warn);box-shadow:0 0 0 2px var(--s-surface);pointer-events:none}
+.rd-point.ko{background:var(--ko)}
+
+/* ─── LA BARRE DU BAS : les folios, l'affinage, le cadrage et le zoom ───── */
+#folios{position:fixed;left:var(--rail);right:0;bottom:0;height:var(--pied);z-index:20;background:var(--s-surface);border-top:1px solid var(--s-line);
+  display:flex;align-items:center;gap:2px;padding:0 6px 0 8px;transition:right var(--moyen)}
+body.insp-ouvert #folios{right:var(--insp-l)}
+body.fiche-ouverte #folios{right:var(--fiche-l)}
+#folios .rd{width:30px;height:30px;border-radius:var(--r-1)}
+#folios .rd svg.ico{width:18px;height:18px}
+#folios hr{width:0;height:18px;border:none;border-left:1px solid var(--s-line);margin:0 4px}
 /* dans la barre du bas, la bulle se lit au-dessus du bouton */
-#folios .bulle{left:50%;top:auto;bottom:calc(100% + 10px);transform:translateX(-50%)}
-#folios .bulle::before{right:auto;top:100%;left:50%;margin:0 0 0 -5px;border-color:transparent;border-top-color:var(--verre-plein)}
-.fo-strip{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;max-width:min(60vw,720px);padding:2px}
+#folios .bulle{left:50%;top:auto;bottom:calc(100% + 8px);transform:translateX(-50%)}
+#folios .bulle::before{right:auto;top:100%;left:50%;margin:0 0 0 -4px;border-color:transparent;border-top-color:var(--t-1)}
+.fo-part,.fo-milieu,.fo-zoom{display:flex;align-items:center;gap:2px;min-width:0}
+.fo-milieu{flex:1;justify-content:center}
+.fo-strip{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;max-width:min(50vw,640px);padding:2px}
 .fo-strip::-webkit-scrollbar{display:none}
-.chip{height:32px;min-width:32px;padding:0 11px;border-radius:16px;border:none;background:none;color:var(--craie);font-family:var(--mono);font-weight:600;font-size:var(--t2);transition:background var(--rapide)}
-.chip:hover{background:rgba(255,255,255,.1)}
-.chip.on{background:var(--papier);color:var(--encre)}
-/* l'affinage en cours : un point qui respire, ce qu'il fait, discret ; il cède sa place sur un téléphone */
-.affinage{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:var(--t0);color:var(--craie-2);padding:0 8px;white-space:nowrap}
-.affinage[hidden]{display:none}
-.affinage i{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.8;animation:respire 1.6s ease-in-out infinite}
-.affinage.ailleurs{opacity:.7}
-@keyframes respire{0%,100%{transform:scale(.6);opacity:.35}50%{transform:scale(1);opacity:.9}}
-@media (prefers-reduced-motion:reduce){.affinage i{animation:none}}
-.fo-lbl{color:var(--craie-2);font-size:var(--t0);padding:0 10px 0 8px;white-space:nowrap;font-family:var(--mono)}
-/* quand un document est ouvert, les folios se recentrent sur ce qui reste du plan */
-body.insp-ouvert #folios{left:calc((100vw - var(--insp-l) + var(--rail)) / 2)}
-body.fiche-ouverte #folios{left:calc((100vw - var(--fiche-l) + var(--rail)) / 2)}
-body.base-ouverte #folios{bottom:calc(var(--base-h) + 24px)}
+.chip{height:26px;min-width:28px;padding:0 9px;border-radius:var(--r-1);border:none;background:none;color:var(--t-2);font-family:var(--mono);font-weight:600;font-size:var(--f-12);transition:background var(--rapide),color var(--rapide)}
+.chip:hover{background:var(--s-hover);color:var(--t-1)}
+.chip.on{background:var(--accent-soft);color:var(--accent-2);box-shadow:inset 0 0 0 1px rgba(181,84,28,.3)}
+.fo-lbl{color:var(--t-3);font-size:var(--f-11);padding:0 8px 0 6px;white-space:nowrap;font-family:var(--mono)}
+/* l'affinage en cours : un point qui respire, ce qu'il fait, discret */
+.affinage{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:var(--f-11);color:var(--t-3);padding:0 8px;white-space:nowrap}
+.affinage i{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:respire 1.6s ease-in-out infinite}
+.affinage.ailleurs i{background:var(--t-3)}
+@keyframes respire{0%,100%{transform:scale(.6);opacity:.35}50%{transform:scale(1);opacity:1}}
+/* le folio retouché à la main : un mot en cuivre, le bouton rend la main au moteur */
+.rd.auto{width:auto;display:inline-flex;align-items:center;gap:6px;padding:0 10px 0 8px;color:var(--accent-2);background:var(--accent-soft);font-size:var(--f-12);font-weight:600}
+.rd.auto:hover:not(:disabled){background:#f6e2d2;color:var(--accent-2)}
+.rd.auto svg.ico{width:16px;height:16px}
+.rd.zl{width:auto;min-width:52px;padding:0 6px;font-family:var(--mono);font-size:var(--f-11);color:var(--t-2);height:26px;border-radius:4px}
+.rd.zl:hover:not(:disabled){color:var(--t-1)}
 
-/* ─── LES DOCUMENTS : blancs ────────────────────────────────────────────── */
-#fiche,#inspecteur{position:fixed;top:12px;right:12px;bottom:12px;max-width:calc(100vw - var(--rail) - 48px);background:var(--papier);color:var(--encre);
-  border-radius:18px;box-shadow:var(--ombre-2);z-index:25;display:flex;flex-direction:column;overflow:hidden}
-#fiche{width:var(--fiche-l)}
-/* l'inspecteur : la fiche de ce qu'on a choisi, à droite */
+/* ─── LES PANNEAUX : l'inspecteur et les documents à droite, le tableau en bas ─── */
+#inspecteur,#fiche{position:fixed;top:var(--entete);right:0;bottom:0;max-width:calc(100vw - var(--rail));background:var(--s-surface);color:var(--t-1);
+  border-left:1px solid var(--s-line);z-index:25;display:flex;flex-direction:column;overflow:hidden}
 #inspecteur{width:var(--insp-l);z-index:26}
-/* le tableau : un tiroir en bas, de la barre de gauche au bord droit (ou à l'inspecteur) ; le plan au-dessus */
-#base{position:fixed;left:calc(var(--rail) + 28px);right:12px;bottom:12px;height:var(--base-h);min-height:150px;background:var(--papier);color:var(--encre);
-  border-radius:18px;box-shadow:var(--ombre-2);z-index:25;display:flex;flex-direction:column;overflow:hidden}
-body.insp-ouvert #base{right:calc(var(--insp-l) + 24px)}
+#fiche{width:var(--fiche-l)}
+#base{position:fixed;left:var(--rail);right:0;bottom:var(--pied);height:var(--base-h);min-height:150px;background:var(--s-surface);color:var(--t-1);
+  border-top:1px solid var(--s-line);z-index:24;display:flex;flex-direction:column;overflow:hidden}
+body.insp-ouvert #base{right:var(--insp-l)}
+/* un panneau qui s'ouvre glisse de son bord */
 .entre{animation:doc-entre var(--moyen)}
-@keyframes doc-entre{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+@keyframes doc-entre{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
 #base.entre{animation-name:doc-monte}
-@keyframes doc-monte{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
-.sur{font-size:var(--t0);text-transform:uppercase;letter-spacing:.09em;color:var(--encre-2);font-weight:700}
-.fermer{background:var(--papier-2);color:var(--encre-2);width:36px;height:36px;flex:none}
-.fermer:hover{background:var(--papier-3);color:var(--encre)}
+@keyframes doc-monte{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 
 /* ─── LE TABLEAU : les liaisons, corrigées en direct ─────────────────────── */
-.poignee{position:absolute;left:0;right:0;top:0;height:12px;cursor:row-resize;z-index:2}
-.poignee::after{content:"";position:absolute;left:50%;top:5px;width:40px;height:4px;margin-left:-20px;border-radius:2px;background:var(--filet);transition:background var(--rapide)}
-.poignee:hover::after,#base.redim .poignee::after{background:var(--cuivre)}
+.poignee{position:absolute;left:0;right:0;top:-1px;height:10px;cursor:row-resize;z-index:2}
+.poignee::after{content:"";position:absolute;left:50%;top:3px;width:36px;height:3px;margin-left:-18px;border-radius:2px;background:transparent;transition:background var(--rapide)}
+.poignee:hover::after,#base.redim .poignee::after{background:var(--accent)}
 #base.redim{user-select:none}
-.ba-tete{display:flex;align-items:center;gap:10px;padding:16px 12px 10px 18px;border-bottom:1px solid var(--filet)}
+.ba-tete{display:flex;align-items:center;gap:12px;height:48px;padding:0 10px 0 16px;border-bottom:1px solid var(--s-line);flex:none}
 .ba-titre{display:flex;align-items:center;gap:8px;white-space:nowrap}
-.ba-titre span{font-size:var(--t3);font-weight:700;letter-spacing:-.005em}
-.ba-titre b{font:600 var(--t0)/1.6 var(--mono);color:var(--encre-2);background:var(--papier-2);border-radius:999px;padding:1px 9px}
-/* ce folio ou tout : deux boutons qui n'en font qu'un */
-.ba-portee{display:flex;gap:2px;padding:3px;background:var(--papier-2);border-radius:999px;flex:none}
-.ba-portee button{border:none;background:none;height:28px;padding:0 12px;border-radius:999px;font-size:var(--t1);font-weight:600;color:var(--encre-2);display:inline-flex;align-items:center;gap:7px;transition:background var(--rapide),color var(--rapide)}
-.ba-portee button:hover{color:var(--encre)}
-.ba-portee button i{font:500 var(--t0) var(--mono);font-style:normal;opacity:.75}
-.ba-portee button[aria-pressed="true"]{background:var(--papier);color:var(--encre);box-shadow:0 1px 3px rgba(16,24,40,.14)}
-.filtre{flex:1;max-width:340px;display:flex;align-items:center;gap:8px;height:34px;border:1px solid var(--filet);border-radius:999px;padding:0 5px 0 12px;transition:border-color var(--rapide),box-shadow var(--rapide)}
-.filtre:focus-within{border-color:var(--cuivre);box-shadow:0 0 0 3px var(--cuivre-pale)}
-.filtre input{flex:1;min-width:0;border:none;background:none;outline:none;font-family:var(--mono);font-size:var(--t1)}
-.filtre input::placeholder{font-family:var(--sans);color:var(--encre-2)}
-.filtre svg.ico{color:var(--encre-2);width:16px;height:16px}
-.filtre .vider{width:24px;height:24px;border:none;background:none;border-radius:50%;color:var(--encre-2);font-size:var(--t4);line-height:1}
-.filtre .vider:hover{background:var(--papier-2);color:var(--encre)}
-.ba-tete .btn{height:34px}
-.ba-tete .btn svg.ico{width:16px;height:16px}
-/* l'équipement choisi : son repère, sa désignation, ses connecteurs — ou,
-   pour une barrette, tout ce que la bible en dit — au-dessus de ses fils */
-.equip{margin:4px 16px 8px 22px;padding:10px 12px 12px;border-radius:12px;background:var(--cuivre-pale);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:start;
-  flex:0 1 auto;min-height:0;max-height:58%;overflow:auto;overscroll-behavior:contain}
-.equip>*{grid-column:1}
-.equip{grid-auto-rows:max-content}      /* une rangée prend la hauteur de ce qu’elle porte : la carte défile, rien ne se chevauche */
-.equip .sur{color:var(--cuivre-2)}
-.equip input{border:none;background:none;padding:0 2px;margin-left:-2px;width:100%;border-bottom:1.5px dashed rgba(181,84,28,.35);border-radius:0;color:var(--encre);transition:border-color var(--rapide)}
-.equip input:hover{border-bottom-color:var(--cuivre)}
-.equip input:focus{outline:none;border-bottom-color:var(--cuivre)}
-.equip input::placeholder{color:var(--encre-2)}
-.equip .rep{font-family:var(--mono);font-size:var(--t5);font-weight:700;line-height:1.25;letter-spacing:.01em}
-.equip .des{font-size:var(--t2);margin-top:4px}
-.equip .actions{grid-column:2;grid-row:1/4;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
-.equip .actions .btn{height:30px;padding:0 8px;font-size:var(--t1)}
-/* les connecteurs : une ligne chacun, la donnée en chasse fixe */
-.conns{margin-top:10px;padding-top:8px;border-top:1px solid rgba(181,84,28,.18);display:grid;gap:4px;font-size:var(--t1)}
-.conn{color:var(--encre-2);line-height:1.5;word-spacing:.15em}
-.conn b{font-family:var(--mono);color:var(--encre);font-weight:700;display:inline-block;min-width:1.2em}
-.conn .pn{font-family:var(--mono);color:var(--encre)}
-.conn .b{font-family:var(--mono);color:var(--encre)}
-/* la barrette : la référence retenue et d'où elle vient, puis son dessin */
-.bar-ref{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:6px}
-.bar-ref .ref{font-family:var(--mono);font-size:var(--t5);font-weight:700;letter-spacing:.01em;line-height:1.2}
-.bar-ref .dou{font-size:var(--t1);color:var(--encre-2)}
-.bar-chg{font-size:var(--t1);color:var(--encre-2);margin-top:2px}
-.bar-chg b{font-family:var(--mono);color:var(--encre);font-weight:600}
-.raisons{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
-.raisons span{font-size:var(--t0);color:var(--cuivre-2);background:var(--papier);border-radius:6px;padding:2px 7px;font-weight:600;white-space:nowrap}
-.bar-faits{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin-top:8px;font-size:var(--t1);color:var(--encre-2)}
-.bar-faits span:nth-child(2n){font-family:var(--mono);color:var(--encre)}
-/* au-delà du repère, tout prend la largeur de la carte : le dessin d'abord */
-.equip .bar-ref,.equip .phy-compte,.equip .bar-norme,.equip .phy,.equip .legende,.equip .verdicts,.equip .simu,.equip .choix,.equip .conns{grid-column:1/-1}
-.phy-compte{font-size:var(--t1);color:var(--encre-2);margin-top:2px}
-.phy-compte .ko{color:var(--danger);font-weight:600}
-/* ce que la norme sait de la famille, en une ligne ; en cuivre pâle si c'est un exemple */
-.bar-norme{font-size:var(--t1);color:var(--encre-2);margin-top:2px;line-height:1.5}
-.bar-norme b{font-family:var(--mono);color:var(--encre);font-weight:600}
-.bar-norme .ex{color:var(--cuivre-2);font-weight:600}
-.bar-norme.sans{color:var(--cuivre-2)}
-/* la règle de remplissage et ce qu'elle trouve à redire */
-.verdicts{margin-top:6px;font-size:var(--t1);line-height:1.5}
-.verdicts .regle{color:var(--encre-2)}
-.verdict-l{display:flex;gap:7px;align-items:baseline;color:var(--encre);padding-left:2px}
-.verdict-l::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:var(--danger);position:relative;top:-1px}
-.verdict-l.attention::before{background:var(--cuivre)}
-.verdict-l.info{color:var(--encre-2)}
-.verdict-l.info::before{background:#8a97a6}
-/* la simulation : un bandeau d'hypothèses, la table par fil, la formule */
-.simu{margin-top:10px;border-top:1px solid rgba(181,84,28,.18);padding-top:8px}
-.simu-tete{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
-.simu-note{font-size:var(--t0);color:var(--cuivre-2);font-weight:600}
-.hyp{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:var(--t1);color:var(--encre-2);align-items:center}
-.hyp-n{display:inline-flex;align-items:baseline;gap:4px;white-space:nowrap}
-.hyp-n input{width:56px;height:28px;border:1px solid rgba(181,84,28,.35);border-radius:7px;padding:0 6px;background:var(--papier);color:var(--encre);font-family:var(--mono);font-size:var(--t1);text-align:right;margin:0}
-.equip .hyp-n input{border-bottom:1px solid rgba(181,84,28,.35);width:56px}
-.equip .hyp-n input:hover{border-color:var(--cuivre)}
-.equip .hyp-n input:focus{outline:none;border-color:var(--cuivre);box-shadow:0 0 0 3px var(--papier)}
-.hyp-n .u{font-family:var(--mono);color:var(--encre)}
-.hyp-c{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;cursor:pointer}
-.hyp-c input{width:15px;height:15px;margin:0;accent-color:var(--cuivre)}
-.hyp-c span{font-family:var(--mono);color:var(--encre)}
-.simu-vide{font-size:var(--t1);color:var(--encre-2);margin:6px 0 0}
-.simu-defile{overflow-x:auto;overscroll-behavior-x:contain;margin-top:6px}
-table.simu-tab{border-collapse:separate;border-spacing:0;font-size:var(--t1);min-width:100%;white-space:nowrap}
-.simu-tab th{text-align:left;font-size:var(--t0);color:var(--encre-2);font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 8px 4px 0;border-bottom:1px solid rgba(181,84,28,.18)}
-.simu-tab td{padding:4px 8px 4px 0;border-bottom:1px solid rgba(181,84,28,.12);vertical-align:top;font-family:var(--mono)}
-.simu-tab td.c{color:var(--encre);font-weight:700}
-.simu-tab td .sens{display:block;font-family:var(--sans);font-size:var(--t0);color:var(--encre-2);font-weight:500}
-.simu-tab td .dest{display:block;font-size:var(--t0);color:var(--encre-2)}
-.simu-tab td.d{text-align:right}
-.simu-tab td .ko{display:block;font-family:var(--sans);font-size:var(--t0);color:var(--danger);font-weight:600}
-.simu-tab td .att{display:block;font-family:var(--sans);font-size:var(--t0);color:var(--cuivre-2);font-weight:600}
-.simu-tab tr.fil{cursor:pointer}
-.simu-tab tr.fil:hover td,.simu-tab tr.fil.vise td,.simu-tab tr.fil:focus-visible td{background:var(--papier)}
-.simu-tab tr.fil:focus-visible{outline:2px solid var(--cuivre);outline-offset:-2px}
-/* le verdict : un mot, vert quand tout va, rouge quand la norme refuse */
-.verdict{display:inline-block;font-family:var(--sans);font-size:var(--t0);font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 7px;border-radius:6px;background:#e3f2e6;color:#1f6b35;white-space:nowrap}
-.verdict.v-jauge,.verdict.v-fil,.verdict.v-contact,.verdict.v-chute{background:#fbeae8;color:var(--danger)}
-.verdict.v-inconnu{background:var(--papier-3);color:var(--encre-2)}
-.bilan{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px}
-.formule{font-size:var(--t0);color:var(--encre-2);margin-top:6px;line-height:1.55}
-.formule sub{font-size:8px}
-.calcul{font-size:var(--t0);color:var(--encre-2);margin-top:3px;line-height:1.55;font-family:var(--mono)}
-.calcul b{color:var(--encre)}
-/* ─── LA BARRETTE PHYSIQUE : la réglette de face, ses paquets, ses fils ──── */
-/* Le dessin est en pixels, jamais mis à l'échelle ; s'il déborde malgré les
-   rangs, il défile en douceur plutôt que d'écraser un texte. */
-.phy{margin-top:10px;overflow-x:auto;overscroll-behavior-x:contain;scroll-behavior:smooth;padding:2px 0 4px}
-.phy svg{display:block}
-.phy text{font-family:var(--mono)}
-.phy .cell{fill:var(--papier);stroke:var(--encre);stroke-width:1}
-.phy .libre .cell{fill:url(#phy-hachure);stroke:#8a96a2}
-.phy .neutre .cell{fill:var(--papier);stroke:var(--encre-2)}
-.phy .hors .cell{stroke:var(--danger);stroke-dasharray:3 2}
-.phy .num{fill:var(--encre);font-size:10.5px;font-weight:700}
-.phy .libre .num{fill:var(--encre-2);font-weight:500;paint-order:stroke;stroke:#eef1f5;stroke-width:3px;stroke-linejoin:round}   /* un halo : lisible sur les hachures */
-.phy .hors .num{fill:var(--danger)}
-.phy .rail{fill:#a7b1bd}
-.phy .coupe{fill:none;stroke:var(--encre-2);stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round}
-.phy .peigne{stroke:var(--cuivre);stroke-width:4;stroke-linecap:round}
-.phy .dent{fill:var(--cuivre);stroke:var(--papier);stroke-width:1}
-.phy .plomb{stroke:var(--encre);stroke-width:1.1}
-.phy .fleche{fill:var(--encre)}
-.phy .cable{fill:var(--encre);font-size:10px;font-weight:700}
-.phy .dest{fill:var(--encre-2);font-size:9.5px}
-.phy .typ{fill:var(--encre-2);font-size:8.5px;font-weight:600}
-.phy .typ.ko{fill:var(--danger)}
-/* les trous sur le bord du module : plein quand un fil y est, vide sinon ;
-   un fil sans trou (surcharge) est cerné de rouge */
-.phy .trou-fil{fill:var(--papier);stroke:var(--encre-2);stroke-width:1}
-.phy .trou-fil.occ{fill:var(--encre);stroke:var(--encre)}
-.phy .trou-fil.sur{stroke:var(--danger);stroke-dasharray:2 1.5}
-.phy .mod.surcharge .cell{stroke:var(--danger)}
-.phy .fil.surcharge .zone{fill:#fbeae8;stroke:var(--danger);stroke-width:1;stroke-dasharray:3 2}
-.phy .cell.vide{fill:url(#phy-hachure);stroke:#8a96a2}
-.phy .badge{fill:var(--papier);stroke:#e4cdbd;stroke-width:.8}
-.phy .badge-t{fill:var(--cuivre-2);font-size:8px;font-weight:700}
-/* la prise de coupure, de face : la fiche en haut, l'embase en bas */
-.phy .mobile{fill:var(--papier);stroke:var(--encre);stroke-width:1}
-.phy .fixe{fill:#eceff3;stroke:var(--encre);stroke-width:1.2}
-.phy .part{fill:var(--encre-2);font-size:7.5px;font-weight:700;letter-spacing:.08em}
-.phy .trou{fill:var(--papier);stroke:var(--encre-2);stroke-width:.9}
-.phy .axe{stroke:#8a96a2;stroke-width:1;stroke-dasharray:2 2.5}
-.phy .douille{stroke-width:1.8}
-/* survoler un module ou un fil : il se marque en cuivre, comme sur le plan */
-.phy .mod,.phy .fil{cursor:pointer}
-.phy .fil .zone{fill:transparent}
-.phy .mod:hover .cell,.phy .mod.vise .cell{stroke:var(--cuivre);stroke-width:1.8}
-.phy .mod:hover .num,.phy .mod.vise .num{fill:var(--cuivre-2)}
-.phy .trous{cursor:pointer}
-.phy .trous.vise .trou-fil{stroke:var(--cuivre)}
-.phy .trous.vise .trou-fil.occ{fill:var(--cuivre)}
-.phy .fil:hover .cable,.phy .fil.vise .cable,.phy .fil:focus-visible .cable{fill:var(--cuivre-2)}
-.phy .fil:hover .zone,.phy .fil.vise .zone{fill:var(--papier)}
-.phy .fil:focus-visible{outline:2px solid var(--cuivre);outline-offset:1px;border-radius:5px}
-.legende{font-size:var(--t0);color:var(--encre-2);margin-top:2px;line-height:1.6}
-.legende span{display:inline-block;vertical-align:middle;margin:0 4px 0 1px}
-.legende .l-fleche{width:0;height:0;border:4px solid transparent;border-top:6px solid var(--encre);border-bottom:none;margin-right:5px}
-.legende .l-peigne{width:16px;height:4px;border-radius:2px;background:var(--cuivre)}
-.legende .l-trou{width:8px;height:8px;border-radius:50%;border:1px solid var(--encre-2);background:var(--papier)}
-.legende .l-trou.occ{background:var(--encre);border-color:var(--encre)}
-.legende .l-libre{width:12px;height:10px;border:1px solid #8a96a2;background:repeating-linear-gradient(45deg,#eef1f5 0 2px,#c9d1d9 2px 3.5px)}
-/* la référence, repliée sous le dessin */
-.choix{margin-top:8px;border-top:1px solid rgba(181,84,28,.18);padding-top:2px}
-.choix summary{display:flex;align-items:center;gap:6px;list-style:none;cursor:pointer;font-size:var(--t1);color:var(--cuivre-2);font-weight:600;padding:6px 0;border-radius:6px}
-.choix summary::-webkit-details-marker{display:none}
-.choix summary:hover{color:var(--encre)}
-.choix summary svg.ico{width:16px;height:16px;transition:transform var(--rapide);margin-left:auto}
-.choix[open] summary svg.ico{transform:rotate(180deg)}
-.choix #bar-bible{margin-top:8px}
-.cands{margin-top:6px;padding-top:8px;border-top:1px solid rgba(181,84,28,.18)}
-.cands .sur{margin-bottom:4px}
-.cand{display:flex;align-items:center;gap:8px;width:100%;border:none;background:var(--papier);color:var(--encre);border-radius:8px;padding:5px 8px;margin-top:3px;text-align:left;font-size:var(--t1);transition:background var(--rapide)}
-.cand:hover{background:var(--papier-3)}
-.cand b{font-family:var(--mono);font-weight:700;white-space:nowrap}
-.cand span{font-family:var(--mono);color:var(--encre-2);white-space:nowrap}
-.cand .ok{margin-left:auto;font-family:var(--sans);font-size:var(--t0);text-transform:uppercase;letter-spacing:.06em;font-weight:700;color:var(--cuivre-2)}
-.cand[aria-pressed="true"]{background:var(--cuivre);color:#fff}
-.cand[aria-pressed="true"] span,.cand[aria-pressed="true"] .ok{color:#fff}
-.cand[aria-pressed="true"]:hover{background:var(--cuivre-2)}
-.ba-corps{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:0 10px 10px;scrollbar-width:thin}
+.ba-titre span{font-size:var(--f-14);font-weight:700}
+.ba-titre b{font:600 var(--f-11)/1.7 var(--mono);color:var(--t-2);background:var(--s-sunken);border-radius:999px;padding:0 8px}
+/* ce folio ou tout : un segment */
+.ba-portee{display:inline-flex;gap:2px;padding:2px;background:var(--s-sunken);border-radius:var(--r-1);flex:none}
+.ba-portee button{border:none;background:none;height:26px;padding:0 10px;border-radius:4px;font-size:var(--f-12);font-weight:600;color:var(--t-2);display:inline-flex;align-items:center;gap:6px;transition:background var(--rapide),color var(--rapide)}
+.ba-portee button:hover{color:var(--t-1)}
+.ba-portee button i{font:500 var(--f-11) var(--mono);font-style:normal;color:var(--t-3)}
+.ba-portee button[aria-pressed="true"]{background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-1)}
+.ba-portee button[aria-pressed="true"] i{color:var(--t-2)}
+.ba-tete .filtre{flex:1;max-width:320px}
+.ba-tete .btn{height:32px;padding:0 10px}
+.ba-corps{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:0 8px 8px;scrollbar-width:thin}
 /* la table prend la largeur de ses colonnes ; trop large, elle défile — jamais elle n'écrase une valeur */
-table.tab{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;font-family:var(--mono);font-size:var(--t1);table-layout:auto}
-.tab th{position:sticky;top:0;z-index:1;background:var(--papier);text-align:left;font:700 var(--t0) var(--sans);color:var(--encre-2);letter-spacing:.07em;text-transform:uppercase;padding:11px 7px 7px;border-bottom:1px solid var(--filet);white-space:nowrap;cursor:pointer;user-select:none}
-.tab th:hover{color:var(--encre)}
+table.tab{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;font-family:var(--mono);font-size:var(--f-12);table-layout:auto}
+.tab th{position:sticky;top:0;z-index:1;height:32px;background:var(--s-surface);text-align:left;font:700 10.5px var(--sans);color:var(--t-2);letter-spacing:.06em;text-transform:uppercase;padding:0 8px;border-bottom:1px solid var(--s-line-2);white-space:nowrap;cursor:pointer;user-select:none}
+.tab th:hover{color:var(--t-1)}
 .tab th.g,.tab th.fl,.tab th:last-child{cursor:default}
-.tab th.tri{color:var(--cuivre-2)}
-.tab th .sens{font-size:9px;margin-left:3px}
-.tab td{padding:1px;border-bottom:1px solid #edf0f3;white-space:nowrap}
-.tab tr:hover td{background:#f6f8fa}
-.tab tr.on td{background:var(--cuivre-pale)}
+.tab th.tri{color:var(--accent-2)}
+.tab th .sens{font-size:8px;margin-left:3px;vertical-align:1px}
+.tab td{height:32px;padding:0 1px;border-bottom:1px solid var(--s-line);white-space:nowrap}
+.tab tr:hover td{background:var(--s-sunken)}
+.tab tr.on td{background:var(--accent-soft)}
 .tab tr.vise td{background:#f6dccb}
-/* le numéro de ligne porte la couleur de la route du fil, en liseré */
-.tab td.g{width:42px;padding:0;box-shadow:inset 3px 0 0 var(--route,transparent)}
-.tab td.g button{width:100%;height:32px;border:none;background:none;color:#7b8794;font-size:var(--t0);text-align:right;padding:0 8px;border-radius:6px;font-family:var(--mono)}
-.tab td.g button:hover{color:var(--cuivre);background:var(--cuivre-pale)}
-.tab tr.on td.g button{color:var(--cuivre-2);font-weight:700}
-.tab td.fl{width:16px;padding:0;text-align:center;color:#a3adb8}
+/* le numéro de ligne porte, en liseré, la couleur de la route du fil */
+.tab td.g{width:44px;padding:0;box-shadow:inset 3px 0 0 var(--route,transparent)}
+.tab td.g button{width:100%;height:31px;border:none;background:none;color:var(--t-3);font-size:var(--f-11);text-align:right;padding:0 8px 0 10px;font-family:var(--mono)}
+.tab td.g button:hover{color:var(--accent-2)}
+.tab tr.on td.g button{color:var(--accent-2);font-weight:700}
+.tab td.fl{width:18px;padding:0;text-align:center;color:var(--t-3)}
 .tab td.fl::before{content:"→"}
-.tab td.rep input{width:96px;font-weight:700}
-.tab td.n input{width:48px}
-.tab td.fil input{width:84px;font-weight:600}
-.tab td.type input{width:68px;color:var(--encre-2)}
-.tab td.pn input{width:132px;color:var(--encre-2)}
-.tab td.route input{width:84px;color:var(--encre-2);font-family:var(--sans);font-size:var(--t0);text-transform:uppercase;letter-spacing:.04em}
-.tab input{width:100%;height:30px;border:1px solid transparent;border-radius:7px;padding:0 7px;background:none;font-family:var(--mono);font-size:var(--t1);color:var(--encre);transition:border-color var(--rapide),background var(--rapide);text-overflow:ellipsis}
-.tab input:hover{border-color:#cfd6dd;background:var(--papier)}
-.tab input:focus{border-color:var(--cuivre);outline:none;background:var(--papier);box-shadow:0 0 0 3px var(--cuivre-pale);color:var(--encre)}
+.tab td.rep input{width:100px;font-weight:700}
+.tab td.n input{width:50px}
+.tab td.fil input{width:88px;font-weight:600}
+.tab td.type input{width:72px;color:var(--t-2)}
+.tab td.pn input{width:136px;color:var(--t-2)}
+.tab td.route input{width:88px;color:var(--t-2);font-family:var(--sans);font-size:var(--f-11);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+/* une cellule : un champ qui ne se voit qu'au survol et à l'écriture */
+.tab input{width:100%;height:28px;border:1px solid transparent;border-radius:4px;padding:0 7px;background:none;font-family:var(--mono);font-size:var(--f-12);color:var(--t-1);transition:border-color var(--rapide),background var(--rapide);text-overflow:ellipsis}
+.tab input:hover{border-color:var(--s-line-2);background:var(--s-surface)}
+.tab input:focus{border-color:var(--accent);outline:none;background:var(--s-surface);box-shadow:0 0 0 3px var(--accent-soft);color:var(--t-1)}
 /* une ligne d'un autre folio (dans « Tout ») : en retrait */
-.tab tr.hors input{color:#8995a1}
+.tab tr.hors input{color:var(--t-3)}
 .tab tr.hors td.rep input,.tab tr.hors td.fil input{font-weight:500}
-.tab .f{display:inline-block;font-size:var(--t0);color:var(--cuivre-2);font-weight:700;background:var(--cuivre-pale);border-radius:999px;padding:2px 8px;border:none;font-family:var(--mono);margin:0 2px;line-height:1.4}
+.tab .f{display:inline-block;font-size:var(--f-11);color:var(--accent-2);font-weight:700;background:var(--accent-soft);border-radius:4px;padding:1px 7px;border:none;font-family:var(--mono);margin:0 2px;line-height:1.5}
 button.f{cursor:pointer}
-button.f:hover{background:var(--cuivre);color:#fff}
+button.f:hover{background:var(--accent);color:#fff}
 /* l'intercalaire d'un folio, dans « Tout » */
-.tab tr.groupe td{background:var(--papier);padding:14px 6px 6px;border-bottom:1px solid var(--filet);font-family:var(--sans)}
-.tab tr.groupe:hover td{background:var(--papier)}
-.tab tr.groupe .f{font-family:var(--sans);font-size:var(--t1);padding:3px 11px;margin:0 8px 0 0;background:var(--papier-2);color:var(--encre)}
-.tab tr.groupe .f:hover{background:var(--encre);color:#fff}
-.tab tr.groupe.ici .f{background:var(--cuivre);color:#fff}
-.tab tr.groupe span{font-size:var(--t0);color:var(--encre-2)}
-.tab .x{width:30px;text-align:center}
+.tab tr.groupe td{height:auto;background:var(--s-surface);padding:14px 6px 6px;border-bottom:1px solid var(--s-line);font-family:var(--sans)}
+.tab tr.groupe:hover td{background:var(--s-surface)}
+.tab tr.groupe .f{font-family:var(--sans);font-size:var(--f-12);padding:3px 10px;margin:0 8px 0 0;background:var(--s-sunken);color:var(--t-1);border-radius:var(--r-1)}
+.tab tr.groupe .f:hover{background:var(--t-1);color:#fff}
+.tab tr.groupe.ici .f{background:var(--accent);color:#fff}
+.tab tr.groupe span{font-size:var(--f-11);color:var(--t-2)}
+.tab .x{width:32px;text-align:center}
 /* supprimer se découvre au survol de la ligne ; au doigt, il reste visible */
-.tab .x button{width:26px;height:26px;border:none;background:none;border-radius:50%;color:var(--encre-2);font-size:var(--t3);line-height:1;opacity:0;transition:opacity var(--rapide)}
+.tab .x button{width:24px;height:24px;border:none;background:none;border-radius:50%;color:var(--t-2);font-size:var(--f-14);line-height:1;opacity:0;padding:0;transition:opacity var(--rapide),background var(--rapide)}
 .tab tr:hover .x button,.tab tr:focus-within .x button,.tab .x button:focus-visible{opacity:1}
 @media (hover:none){.tab .x button{opacity:1}}
-.tab .x button:hover{background:#fbeae8;color:var(--danger)}
-.tab .reste td{color:var(--encre-2);padding:14px 10px;white-space:normal;font-family:var(--sans)}
+.tab .x button:hover{background:var(--ko-soft);color:var(--ko)}
+.tab .reste td{height:auto;color:var(--t-2);padding:14px 10px;white-space:normal;font-family:var(--sans)}
 
-/* ─── LA FICHE : cartouche, collage, bible ──────────────────────────────── */
-.fiche-corps{overflow:auto;padding:18px 20px 12px;flex:1;overscroll-behavior:contain}
-.fiche-tete{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}
-.titre{font-family:var(--mono);font-size:var(--t5);font-weight:700;line-height:1.2;margin:2px 0 0;color:var(--encre);letter-spacing:.01em}
-.titre.sans{font-family:var(--sans);letter-spacing:-.005em}
-.champ{display:block;margin:10px 0 0}
-.champ>span{display:block;font-size:var(--t0);color:var(--encre-2);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:4px}
-.champ input,.champ textarea{width:100%;height:38px;border:1px solid var(--filet);border-radius:10px;padding:0 10px;background:var(--papier);color:var(--encre);font-family:var(--mono);transition:border-color var(--rapide)}
-.champ input:hover{border-color:#c9d1d9}
-.champ input:focus,.champ textarea:focus{border-color:var(--cuivre);outline:none;box-shadow:0 0 0 3px var(--cuivre-pale)}
-.champ input::placeholder,.champ textarea::placeholder{color:var(--encre-2);font-family:var(--sans)}
-.champ textarea{height:180px;padding:10px;resize:vertical;font-size:var(--t1);line-height:1.5}
+/* ─── LES DOCUMENTS : cartouche, collage, bible, nomenclature ───────────── */
+.fiche-corps{overflow:auto;padding:16px 20px 16px;flex:1;overscroll-behavior:contain;scrollbar-width:thin}
+.fiche-tete{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
+/* le titre d'un document est du langage : en linéale (un repère en tête du relief repasse en chasse fixe chez lui) */
+.titre{font-family:var(--sans);font-size:var(--f-20);font-weight:700;line-height:1.2;margin:2px 0 0;color:var(--t-1);letter-spacing:-.01em}
+.champ{display:block;margin:12px 0 0}
+.champ>span{display:block;font-size:var(--f-11);color:var(--t-2);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:4px}
+.champ input,.champ textarea{width:100%;height:36px;border:1px solid var(--s-line-2);border-radius:var(--r-1);padding:0 10px;background:var(--s-surface);color:var(--t-1);font-family:var(--mono);transition:border-color var(--rapide),box-shadow var(--rapide)}
+.champ input:hover,.champ textarea:hover{border-color:#b4bdc8}
+.champ input:focus,.champ textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.champ input::placeholder,.champ textarea::placeholder{color:var(--t-3);font-family:var(--sans)}
+.champ textarea{height:180px;padding:10px;resize:vertical;font-size:var(--f-12);line-height:1.5}
 .champ.sans input{font-family:var(--sans)}
 .grille{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
-.fiche-pied{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 20px;border-top:1px solid var(--filet);background:var(--papier)}
-.note{font-size:var(--t1);color:var(--encre-2);margin:8px 0 0;line-height:1.5}
-.note b{color:var(--encre)}
-/* la bible : la liste des références, lisible, chaque donnée en chasse fixe */
-.bible-etat{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--papier-2);margin-bottom:12px;font-size:var(--t1);color:var(--encre-2)}
-.bible-etat b{color:var(--encre);font-weight:600}
-.bible-etat.exemple{background:var(--cuivre-pale);color:var(--cuivre-2)}
-.bible-etat.exemple b{color:var(--cuivre-2)}
-table.bible{width:100%;border-collapse:separate;border-spacing:0;font-size:var(--t1)}
-.bible th{position:sticky;top:0;background:var(--papier);text-align:left;font-size:var(--t0);color:var(--encre-2);font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:6px 6px 6px 0;border-bottom:1px solid var(--filet);white-space:nowrap}
-.bible td{padding:6px 6px 6px 0;border-bottom:1px solid var(--filet);vertical-align:top;font-family:var(--mono);white-space:nowrap}
+.fiche-pied{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 20px;border-top:1px solid var(--s-line);background:var(--s-surface);flex:none}
+.note{font-size:var(--f-12);color:var(--t-2);margin:10px 0 0;line-height:1.5}
+.note b{color:var(--t-1)}
+.sous-titre{font-size:var(--f-14);font-weight:700;margin:20px 0 8px;letter-spacing:-.005em}
+/* la bible : d'où elle vient, puis la liste des références, chaque donnée en chasse fixe */
+.bible-etat{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r-2);background:var(--s-sunken);border:1px solid var(--s-line);margin-bottom:12px;font-size:var(--f-12);color:var(--t-2);line-height:1.45}
+.bible-etat b{color:var(--t-1);font-weight:600}
+.bible-etat.exemple{box-shadow:inset 3px 0 0 var(--accent)}
+.bible-etat.exemple b{color:var(--accent-2)}
+table.bible{width:100%;border-collapse:separate;border-spacing:0;font-size:var(--f-12)}
+.bible th{position:sticky;top:0;z-index:1;background:var(--s-surface);text-align:left;font:700 10.5px var(--sans);color:var(--t-2);letter-spacing:.05em;text-transform:uppercase;padding:6px 5px 6px 0;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
+.bible td{padding:6px 5px 6px 0;border-bottom:1px solid var(--s-line);vertical-align:top;font-family:var(--mono);white-space:nowrap}
 .bible td.ref{font-weight:700}
-.bible td.sans{font-family:var(--sans);color:var(--encre-2)}
+.bible td.sans{font-family:var(--sans);color:var(--t-2);white-space:normal;min-width:80px}
 .bible td.d{text-align:right}
-.bible tr:hover td{background:var(--papier-2)}
-.bible tr.on td{background:var(--cuivre-pale)}
-.bible td.bible-note{color:var(--encre-2);font-family:var(--sans);font-size:var(--t0);white-space:normal;min-width:96px}
+.bible tr:hover td{background:var(--s-sunken)}
+.bible tr.on td{background:var(--accent-soft)}
+.bible td.bible-note{color:var(--t-2);font-family:var(--sans);font-size:var(--f-11);white-space:normal;min-width:76px;padding-right:0}
 /* chaque référence porte sa physique en petit ; son nom s'ouvre en grand */
-.bible td.pict{width:46px;padding-right:4px;vertical-align:middle}
+.bible td.pict{width:40px;padding-right:2px;vertical-align:middle}
 .picto{display:block}
-.picto .p-cell rect{fill:var(--papier);stroke:var(--encre);stroke-width:.7}
-.picto .p-blind rect{fill:#dfe4e9}
+.picto .p-cell rect{fill:var(--s-surface);stroke:var(--t-1);stroke-width:.7}
+.picto .p-blind rect{fill:var(--s-line)}
 .picto .p-rail{fill:#a7b1bd}
-.picto .p-bande rect{fill:var(--papier);stroke:var(--encre);stroke-width:.7}
-.picto .p-bande circle{fill:var(--encre)}
-.ref-btn{border:none;background:none;padding:2px 6px;margin:-2px -6px;border-radius:6px;font-family:var(--mono);font-weight:700;color:var(--encre);text-align:left;text-decoration:underline dotted rgba(24,33,44,.35);text-underline-offset:3px}
-.ref-btn:hover{color:var(--cuivre-2);background:var(--cuivre-pale)}
-.ref-btn[aria-pressed="true"]{color:var(--cuivre-2)}
+.picto .p-bande rect{fill:var(--s-surface);stroke:var(--t-1);stroke-width:.7}
+.picto .p-bande circle{fill:var(--t-1)}
+.ref-btn{border:none;background:none;padding:2px 6px;margin:-2px -6px;border-radius:4px;font-family:var(--mono);font-weight:700;color:var(--t-1);text-align:left;text-decoration:underline dotted rgba(17,24,39,.35);text-underline-offset:3px}
+.ref-btn:hover{color:var(--accent-2);background:var(--accent-soft)}
+.ref-btn[aria-pressed="true"]{color:var(--accent-2)}
 /* la norme dans la fiche de la bible : repliée, ses tables défilent en largeur */
-.sous-titre{font-size:var(--t3);font-weight:700;margin:18px 0 8px;letter-spacing:-.005em}
 details.norme{margin:-4px 0 4px}
-details.norme summary{display:flex;align-items:center;gap:6px;list-style:none;cursor:pointer;font-size:var(--t1);color:var(--cuivre-2);font-weight:600;padding:6px 0;border-radius:6px}
+details.norme summary{display:flex;align-items:center;gap:6px;list-style:none;cursor:pointer;font-size:var(--f-12);color:var(--accent-2);font-weight:600;padding:6px 0;border-radius:4px}
 details.norme summary::-webkit-details-marker{display:none}
-details.norme summary:hover{color:var(--encre)}
+details.norme summary:hover{color:var(--t-1)}
 details.norme summary svg.ico{width:16px;height:16px;transition:transform var(--rapide);margin-left:auto}
 details.norme[open] summary svg.ico{transform:rotate(180deg)}
 .norme-defile{overflow-x:auto;overscroll-behavior-x:contain;padding-bottom:4px}
-.norme-defile .sur{margin:8px 0 4px}
-table.norme{border-collapse:separate;border-spacing:0;font-size:var(--t0);white-space:nowrap;min-width:100%}
-.norme th{text-align:left;font-size:var(--t0);color:var(--encre-2);font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:4px 8px 4px 0;border-bottom:1px solid var(--filet)}
-.norme td{padding:4px 8px 4px 0;border-bottom:1px solid var(--filet);font-family:var(--mono);vertical-align:top}
+.norme-defile .sur{margin:10px 0 4px}
+table.norme{border-collapse:separate;border-spacing:0;font-size:var(--f-11);white-space:nowrap;min-width:100%}
+.norme th{text-align:left;font-size:10.5px;color:var(--t-2);font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:4px 8px 4px 0;border-bottom:1px solid var(--s-line-2)}
+.norme td{padding:4px 8px 4px 0;border-bottom:1px solid var(--s-line);font-family:var(--mono);vertical-align:top}
 .norme td.ref{font-weight:700}
-.norme td.sans{font-family:var(--sans);color:var(--encre-2)}
+.norme td.sans{font-family:var(--sans);color:var(--t-2)}
 .norme td.d{text-align:right}
 .norme td.note-c{white-space:normal;min-width:120px;max-width:260px}
-.bible-zoom{padding:12px 12px 14px;border-radius:12px;background:var(--cuivre-pale);margin-bottom:14px}
+/* une référence en grand, au-dessus de la table */
+.bible-zoom{padding:12px 12px 14px;border-radius:var(--r-2);background:var(--accent-soft);border:1px solid #f3d9c6;margin-bottom:14px}
 .bz-tete{display:flex;align-items:flex-start;gap:10px}
-.bz-tete .sur{color:var(--cuivre-2)}
-.bz-ref{font-family:var(--mono);font-size:var(--t5);font-weight:700;letter-spacing:.01em;line-height:1.2}
+.bz-tete .sur{color:var(--accent-2)}
+.bz-ref{font-family:var(--mono);font-size:var(--f-20);font-weight:700;letter-spacing:.01em;line-height:1.2}
 .bible-zoom .phy{margin-top:8px}
+.bar-faits{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin-top:8px;font-size:var(--f-12);color:var(--t-2)}
+.bar-faits span:nth-child(2n){font-family:var(--mono);color:var(--t-1)}
 
-/* ─── L'ACCUEIL : rien de chargé ───────────────────────────────────────── */
-.vide{position:absolute;inset:0;display:grid;place-items:center;padding:16px 16px 16px calc(var(--rail) + 28px);z-index:5}
-.vide-carte{background:var(--papier);color:var(--encre);border-radius:22px;padding:36px 36px 30px;max-width:540px;text-align:center;box-shadow:var(--ombre-3)}
-.vide-carte .pictos{display:flex;justify-content:center;color:var(--cuivre)}
-.vide-carte h1{font-size:var(--t6);font-weight:700;margin:16px 0 8px;letter-spacing:-.01em;line-height:1.15}
-.vide-carte p{color:var(--encre-2);margin:0 0 22px;font-size:var(--t3)}
-.vide-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
-.depot{position:fixed;inset:10px;z-index:40;display:none;place-items:center;background:rgba(46,56,70,.8);border:3px dashed var(--cuivre-clair);border-radius:24px;color:var(--craie);font-size:var(--t5);font-weight:600;pointer-events:none}
+/* ─── LA CARTE D'UNE BARRETTE OU D'UNE PRISE (dans l'inspecteur) : la réglette de face, la simulation, le choix ── */
+.equip{margin:0;padding:10px 12px 12px;border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-surface);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:start;grid-auto-rows:max-content;min-width:0}
+.equip>*{grid-column:1}
+.equip .sur{color:var(--t-2)}
+.equip .bar-ref,.equip .phy-compte,.equip .bar-norme,.equip .phy,.equip .legende,.equip .verdicts,.equip .simu,.equip .choix,.equip .conns{grid-column:1/-1}
+/* la référence retenue et d'où elle vient, puis son dessin */
+.bar-ref{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.bar-ref .ref{font-family:var(--mono);font-size:var(--f-16);font-weight:700;letter-spacing:.01em;line-height:1.2}
+.bar-ref .dou{font-size:var(--f-12);color:var(--t-2)}
+.bar-chg{font-size:var(--f-12);color:var(--t-2);margin-top:2px}
+.bar-chg b{font-family:var(--mono);color:var(--t-1);font-weight:600}
+.raisons{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.raisons span{font-size:var(--f-11);color:var(--t-2);background:var(--s-sunken);border-radius:4px;padding:2px 7px;font-weight:600;white-space:nowrap}
+.phy-compte{font-size:var(--f-12);color:var(--t-2);margin-top:2px}
+.phy-compte .ko{color:var(--ko);font-weight:600}
+.bar-norme{font-size:var(--f-12);color:var(--t-2);margin-top:2px;line-height:1.5}
+.bar-norme b{font-family:var(--mono);color:var(--t-1);font-weight:600}
+.bar-norme .ex,.bar-norme.sans{color:var(--warn);font-weight:600}
+.conns{margin-top:10px;padding-top:8px;border-top:1px solid var(--s-line);display:grid;gap:4px;font-size:var(--f-12)}
+.conn{color:var(--t-2);line-height:1.5;word-spacing:.15em}
+.conn b,.conn .pn,.conn .b{font-family:var(--mono);color:var(--t-1)}
+.conn b{font-weight:700;display:inline-block;min-width:1.2em}
+/* la règle de remplissage et ce qu'elle trouve à redire */
+.verdicts{margin-top:6px;font-size:var(--f-12);line-height:1.5}
+.verdicts .regle{color:var(--t-2)}
+.verdict-l{display:flex;gap:7px;align-items:baseline;color:var(--t-1);padding-left:2px}
+.verdict-l::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:var(--ko);position:relative;top:-1px}
+.verdict-l.attention::before{background:var(--warn)}
+.verdict-l.info{color:var(--t-2)}
+.verdict-l.info::before{background:var(--t-3)}
+/* la simulation : un bandeau d'hypothèses, la table par fil, la formule */
+.simu{margin-top:10px;border-top:1px solid var(--s-line);padding-top:8px}
+.simu-tete{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.simu-note{font-size:var(--f-11);color:var(--t-3)}
+.hyp{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:var(--f-12);color:var(--t-2);align-items:center}
+.hyp-n{display:inline-flex;align-items:baseline;gap:4px;white-space:nowrap}
+.hyp-n input{width:56px;height:28px;border:1px solid var(--s-line-2);border-radius:4px;padding:0 6px;background:var(--s-surface);color:var(--t-1);font-family:var(--mono);font-size:var(--f-12);text-align:right;margin:0}
+.hyp-n input:hover{border-color:#b4bdc8}
+.hyp-n input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.hyp-n .u{font-family:var(--mono);color:var(--t-1)}
+.hyp-n select{height:28px;border:1px solid var(--s-line-2);border-radius:4px;padding:0 4px;background:var(--s-surface);color:var(--t-1);font-family:var(--sans);font-size:var(--f-12)}
+.hyp-c{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;cursor:pointer}
+.hyp-c input{width:15px;height:15px;margin:0;accent-color:var(--accent)}
+.hyp-c span{font-family:var(--mono);color:var(--t-1)}
+.simu-vide{font-size:var(--f-12);color:var(--t-2);margin:6px 0 0}
+.simu-defile{overflow-x:auto;overscroll-behavior-x:contain;margin-top:6px}
+table.simu-tab{border-collapse:separate;border-spacing:0;font-size:var(--f-12);min-width:100%;white-space:nowrap}
+.simu-tab th{text-align:left;font-size:10.5px;color:var(--t-2);font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:4px 8px 4px 0;border-bottom:1px solid var(--s-line-2)}
+.simu-tab td{padding:4px 8px 4px 0;border-bottom:1px solid var(--s-line);vertical-align:top;font-family:var(--mono)}
+.simu-tab td.c{color:var(--t-1);font-weight:700}
+.simu-tab td .sens{display:block;font-family:var(--sans);font-size:var(--f-11);color:var(--t-2);font-weight:500}
+.simu-tab td .dest{display:block;font-size:var(--f-11);color:var(--t-2)}
+.simu-tab td.d{text-align:right}
+.simu-tab td .ko{display:block;font-family:var(--sans);font-size:var(--f-11);color:var(--ko);font-weight:600}
+.simu-tab td .att{display:block;font-family:var(--sans);font-size:var(--f-11);color:var(--warn);font-weight:600}
+.simu-tab tr.fil{cursor:pointer}
+.simu-tab tr.fil:hover td,.simu-tab tr.fil.vise td,.simu-tab tr.fil:focus-visible td{background:var(--accent-soft)}
+.simu-tab tr.fil:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+/* le verdict : un mot, vert quand tout va, rouge quand la norme refuse */
+.verdict{display:inline-block;font-family:var(--sans);font-size:var(--f-11);font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 7px;border-radius:4px;background:var(--ok-soft);color:var(--ok);white-space:nowrap}
+.verdict.v-jauge,.verdict.v-fil,.verdict.v-contact,.verdict.v-chute{background:var(--ko-soft);color:var(--ko)}
+.verdict.v-inconnu{background:var(--s-hover);color:var(--t-2)}
+.verdict.v-reactance{background:var(--warn-soft);color:var(--warn)}
+.bilan{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px}
+.formule{font-size:var(--f-11);color:var(--t-2);margin-top:6px;line-height:1.55}
+.formule sub{font-size:8px}
+.calcul{font-size:var(--f-11);color:var(--t-2);margin-top:3px;line-height:1.55;font-family:var(--mono)}
+.calcul b{color:var(--t-1)}
+/* la réglette de face : le dessin est en pixels, jamais mis à l'échelle ; s'il déborde, il défile */
+.phy{margin-top:10px;overflow-x:auto;overscroll-behavior-x:contain;scroll-behavior:smooth;padding:2px 0 4px}
+.phy svg{display:block}
+.phy text{font-family:var(--mono)}
+.phy .cell{fill:var(--s-surface);stroke:var(--t-1);stroke-width:1}
+.phy .libre .cell,.phy .cell.vide{fill:url(#phy-hachure);stroke:#8a96a2}
+.phy .neutre .cell{fill:var(--s-surface);stroke:var(--t-2)}
+.phy .hors .cell{stroke:var(--ko);stroke-dasharray:3 2}
+.phy .num{fill:var(--t-1);font-size:10.5px;font-weight:700}
+.phy .libre .num{fill:var(--t-2);font-weight:500;paint-order:stroke;stroke:#eef1f5;stroke-width:3px;stroke-linejoin:round}
+.phy .hors .num{fill:var(--ko)}
+.phy .rail{fill:#a7b1bd}
+.phy .coupe{fill:none;stroke:var(--t-2);stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round}
+.phy .peigne{stroke:var(--accent);stroke-width:4;stroke-linecap:round}
+.phy .dent{fill:var(--accent);stroke:var(--s-surface);stroke-width:1}
+.phy .plomb{stroke:var(--t-1);stroke-width:1.1}
+.phy .fleche{fill:var(--t-1)}
+.phy .cable{fill:var(--t-1);font-size:10px;font-weight:700}
+.phy .dest{fill:var(--t-2);font-size:9.5px}
+.phy .typ{fill:var(--t-2);font-size:8.5px;font-weight:600}
+.phy .typ.ko{fill:var(--ko)}
+.phy .trou-fil{fill:var(--s-surface);stroke:var(--t-2);stroke-width:1}
+.phy .trou-fil.occ{fill:var(--t-1);stroke:var(--t-1)}
+.phy .trou-fil.sur{stroke:var(--ko);stroke-dasharray:2 1.5}
+.phy .mod.surcharge .cell{stroke:var(--ko)}
+.phy .fil.surcharge .zone{fill:var(--ko-soft);stroke:var(--ko);stroke-width:1;stroke-dasharray:3 2}
+.phy .badge{fill:var(--s-surface);stroke:#e4cdbd;stroke-width:.8}
+.phy .badge-t{fill:var(--accent-2);font-size:8px;font-weight:700}
+.phy .mobile{fill:var(--s-surface);stroke:var(--t-1);stroke-width:1}
+.phy .fixe{fill:var(--s-hover);stroke:var(--t-1);stroke-width:1.2}
+.phy .part{fill:var(--t-2);font-size:7.5px;font-weight:700;letter-spacing:.08em}
+.phy .trou{fill:var(--s-surface);stroke:var(--t-2);stroke-width:.9}
+.phy .axe{stroke:#8a96a2;stroke-width:1;stroke-dasharray:2 2.5}
+.phy .douille{stroke-width:1.8}
+.phy .mod,.phy .fil,.phy .trous{cursor:pointer}
+.phy .fil .zone{fill:transparent}
+.phy .mod:hover .cell,.phy .mod.vise .cell{stroke:var(--accent);stroke-width:1.8}
+.phy .mod:hover .num,.phy .mod.vise .num{fill:var(--accent-2)}
+.phy .trous.vise .trou-fil{stroke:var(--accent)}
+.phy .trous.vise .trou-fil.occ{fill:var(--accent)}
+.phy .fil:hover .cable,.phy .fil.vise .cable,.phy .fil:focus-visible .cable{fill:var(--accent-2)}
+.phy .fil:hover .zone,.phy .fil.vise .zone{fill:var(--accent-soft)}
+.phy .fil:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-radius:5px}
+.legende{font-size:var(--f-11);color:var(--t-2);margin-top:2px;line-height:1.6}
+.legende span{display:inline-block;vertical-align:middle;margin:0 4px 0 1px}
+.legende .l-fleche{width:0;height:0;border:4px solid transparent;border-top:6px solid var(--t-1);border-bottom:none;margin-right:5px}
+.legende .l-peigne{width:16px;height:4px;border-radius:2px;background:var(--accent)}
+.legende .l-trou{width:8px;height:8px;border-radius:50%;border:1px solid var(--t-2);background:var(--s-surface)}
+.legende .l-trou.occ{background:var(--t-1);border-color:var(--t-1)}
+.legende .l-libre{width:12px;height:10px;border:1px solid #8a96a2;background:repeating-linear-gradient(45deg,#eef1f5 0 2px,#c9d1d9 2px 3.5px)}
+/* la référence, repliée sous le dessin : pourquoi, et les autres qui conviennent */
+.choix{margin-top:8px;border-top:1px solid var(--s-line);padding-top:2px}
+.choix summary{display:flex;align-items:center;gap:6px;list-style:none;cursor:pointer;font-size:var(--f-12);color:var(--accent-2);font-weight:600;padding:6px 0;border-radius:4px}
+.choix summary::-webkit-details-marker{display:none}
+.choix summary:hover{color:var(--t-1)}
+.choix summary svg.ico{width:16px;height:16px;transition:transform var(--rapide);margin-left:auto}
+.choix[open] summary svg.ico{transform:rotate(180deg)}
+.choix #bar-bible{margin-top:8px}
+.cands{margin-top:6px;padding-top:8px;border-top:1px solid var(--s-line)}
+.cands .sur{margin-bottom:4px}
+.cand{display:flex;align-items:center;gap:8px;width:100%;border:1px solid var(--s-line);background:var(--s-surface);color:var(--t-1);border-radius:var(--r-1);padding:5px 8px;margin-top:3px;text-align:left;font-size:var(--f-12);transition:background var(--rapide)}
+.cand:hover{background:var(--s-sunken)}
+.cand b{font-family:var(--mono);font-weight:700;white-space:nowrap}
+.cand span{font-family:var(--mono);color:var(--t-2);white-space:nowrap}
+.cand .ok{margin-left:auto;font-family:var(--sans);font-size:var(--f-11);text-transform:uppercase;letter-spacing:.06em;font-weight:700;color:var(--accent-2)}
+.cand[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.cand[aria-pressed="true"] span,.cand[aria-pressed="true"] .ok{color:#fff}
+.cand[aria-pressed="true"]:hover{background:var(--accent-2)}
+
+/* ─── LE CONTRÔLE dans l'index : la liste « à reprendre », un code par genre ─── */
+.co-code{flex:none;width:28px;height:28px;border-radius:var(--r-1);display:grid;place-items:center;font:700 10px/1 var(--mono);color:#fff;background:var(--t-2)}
+.co-code.barrette{background:var(--accent)}
+.co-code.coupure{background:var(--info)}
+.co-code.aposer{background:var(--accent-soft);color:var(--accent-2);box-shadow:inset 0 0 0 1.5px var(--accent)}
+.co-code.tab{background:var(--s-sunken);color:var(--t-2)}
+.co-code.tab svg.ico{width:15px;height:15px}
+.ix-controle{margin:-2px 0 2px}
+.ix-controle>summary{display:flex;align-items:center;gap:8px;list-style:none;cursor:pointer;padding:2px 0;border-radius:var(--r-1)}
+.ix-controle>summary::-webkit-details-marker{display:none}
+.ix-controle>summary .fi-chevron{width:14px;height:14px;color:var(--t-2);transition:transform var(--rapide)}
+.ix-controle[open]>summary .fi-chevron{transform:rotate(180deg)}
+.ix-item.co-item{grid-template-columns:28px minmax(0,1fr) auto}
+.ix-item.co-item small{white-space:normal;line-height:1.35}
+.ix-item.co-item b em{font:600 var(--f-11) var(--sans);color:var(--t-2);margin-left:4px}
+.ix-groupe.ko b{background:var(--ko-soft);color:var(--ko)}
+.ix-groupe.att b{background:var(--warn-soft);color:var(--warn)}
+
+/* ─── L'ACCUEIL : la table vide, une page d'entrée ─────────────────────── */
+.vide{position:absolute;inset:0;overflow:auto;display:grid;place-items:center;padding:24px 24px 24px calc(var(--rail) + 24px);z-index:5}
+.vd{width:min(760px,100%);background:var(--s-surface);border:1px solid var(--s-line);border-radius:var(--r-3);box-shadow:var(--sh-2);padding:36px 40px 28px}
+.vd-tete{margin-bottom:24px}
+.vd-titre{display:flex;align-items:center;gap:12px}
+.en-marque.grand{width:36px;height:36px;border-radius:10px}
+.en-marque.grand svg{width:24px;height:24px}
+.vd h1{font-size:var(--f-28);font-weight:700;margin:0;letter-spacing:-.015em;line-height:1.1}
+.vd-tete p{color:var(--t-2);margin:12px 0 0;font-size:var(--f-14);line-height:1.5;max-width:60ch}
+/* la zone de dépôt : un cadre en pointillé, un geste clair */
+.vd-zone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:112px;padding:16px;border:1.5px dashed var(--s-line-2);border-radius:var(--r-2);background:var(--s-sunken);color:var(--t-2);text-align:center;cursor:pointer;transition:border-color var(--rapide),background var(--rapide),color var(--rapide)}
+.vd-zone svg.ico{width:22px;height:22px;color:var(--accent);margin-bottom:4px}
+.vd-zone b{font-size:var(--f-14);color:var(--t-1)}
+.vd-zone span{font-size:var(--f-12)}
+.vd-zone:hover,.vd-zone:focus-visible,body.depot-actif .vd-zone{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-2)}
+.vd-gestes{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+/* reprendre le contrat que le dernier geste a vidé : une ligne à part, en cuivre */
+.vd-reprendre{display:flex;align-items:center;gap:10px;width:100%;margin-top:12px;height:40px;padding:0 14px;border:1px solid #f3d9c6;border-radius:var(--r-1);background:var(--accent-soft);color:var(--accent-2);font-weight:600;text-align:left;transition:background var(--rapide)}
+.vd-reprendre::before{content:"↶";font-size:var(--f-16);line-height:1}
+.vd-reprendre:hover{background:#f6e2d2}
+/* ce que l'outil fait, en trois cartes */
+.vd-cartes{list-style:none;margin:28px 0 0;padding:24px 0 0;border-top:1px solid var(--s-line);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.vd-cartes li{display:flex;flex-direction:column;gap:6px;min-width:0}
+.vd-cartes svg.ico{width:24px;height:24px;color:var(--accent);margin-bottom:4px}
+.vd-cartes b{font-size:var(--f-13);font-weight:700}
+.vd-cartes span{font-size:var(--f-12);color:var(--t-2);line-height:1.5}
+.vd-note{margin:20px 0 0;font-size:var(--f-11);color:var(--t-3)}
+/* le dépôt : la fenêtre entière devient la cible */
+.depot{position:fixed;inset:12px;z-index:40;display:none;place-items:center;background:rgba(238,241,245,.88);border:2px dashed var(--accent);border-radius:var(--r-3);color:var(--accent-2);font-size:var(--f-20);font-weight:600;pointer-events:none}
 body.depot-actif .depot{display:grid}
 
-/* ─── LE MOT QUI PASSE ─────────────────────────────────────────────────── */
-#toast{position:fixed;left:calc(50% + var(--rail) / 2 + 12px);top:16px;transform:translateX(-50%);padding:10px 16px;border-radius:14px;z-index:35;max-width:min(80vw,520px);
-  font-weight:500;opacity:0;pointer-events:none;transition:opacity var(--moyen),transform var(--moyen)}
-#toast.on{opacity:1;transform:translateX(-50%) translateY(4px)}
-#toast.erreur{border-color:rgba(240,163,111,.5)}
+/* ─── LE MOT QUI PASSE : sous la barre du haut, au milieu de ce qui reste du plan ─── */
+#toast{position:fixed;left:calc(var(--rail) + (100vw - var(--rail)) / 2);top:calc(var(--entete) + 12px);transform:translateX(-50%) translateY(-6px);padding:9px 14px;border-radius:var(--r-2);z-index:35;max-width:min(60vw,560px);
+  background:var(--t-1);color:#fff;box-shadow:var(--sh-2);font-size:var(--f-13);font-weight:500;line-height:1.4;opacity:0;pointer-events:none;transition:opacity var(--moyen),transform var(--moyen)}
+#toast.on{opacity:1;transform:translateX(-50%)}
+body.insp-ouvert #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--insp-l)) / 2)}
+body.fiche-ouverte #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--fiche-l)) / 2)}
+#toast.erreur{box-shadow:inset 3px 0 0 var(--ko),var(--sh-2)}
 
-/* ─── ÉCRAN BAS : la barre se serre pour tenir ──────────────────────────── */
+/* ─── ÉCRAN BAS : le rail se serre pour tenir ────────────────────────────── */
 @media (max-height:660px) and (min-width:701px){
   #rail{gap:0;padding:4px 0}
-  .rd{height:36px}
+  #rail .rd{height:36px}
   #rail hr{margin:2px 0}
 }
 
-/* ─── TÉLÉPHONE ─────────────────────────────────────────────────────────── */
+/* ─── TÉLÉPHONE : le rail en bas, les panneaux en tiroir ────────────────── */
 @media (max-width:700px){
   :root{--rail:0px}
-  /* la barre passe en bas, sous le pouce ; ce que le geste fait déjà
-     (pincer pour zoomer, toucher un folio) n'y est pas */
-  #rail{top:auto;left:8px;right:8px;bottom:8px;width:auto;height:48px;border-radius:24px;flex-direction:row;justify-content:space-around;padding:0 4px;gap:0;transition:bottom var(--moyen)}
-  #rail hr,#zin,#zout,#zlbl,#fo-prev,#fo-next,#btnOuvrir,#folios hr,.affinage span{display:none}
-  #rail .espace{display:none}
-  .menu{bottom:calc(100% + 12px);left:auto;right:-4px;width:min(272px,calc(100vw - 16px))}
-  .recherche{top:8px;left:8px;right:8px;width:auto;max-width:none}
-  #folios{left:50%;bottom:64px;max-width:calc(100vw - 16px);transition:bottom var(--moyen)}
-  .fo-strip{max-width:calc(100vw - 110px)}
-  /* les documents montent en tiroir ; la base garde la hauteur qu'on lui donne */
-  #base,#fiche{top:auto;left:0;right:0;bottom:0;width:auto;min-width:0;max-width:none;border-radius:20px 20px 0 0}
-  /* l'inspecteur : une carte au-dessus de la barre, le plan au-dessus de lui */
-  #inspecteur{top:auto;left:8px;right:8px;bottom:64px;width:auto;max-width:none;max-height:62vh;border-radius:18px}
+  #entete{gap:8px;padding:0 6px 0 10px;grid-template-columns:minmax(0,1fr) auto}
+  .en-marque{display:none}
+  #entete .en-etat{display:none}   /* le compte est déjà sur le bouton des repères, dans le rail */
+  #btnOuvrir span{display:none}
+  #btnOuvrir{width:36px;padding:0;justify-content:center}
+  /* la recherche : ouverte, elle couvre la barre du haut */
+  .recherche{display:none;position:absolute;left:6px;right:6px;top:7px;width:auto;height:34px;z-index:3}
+  body.cherche .recherche{display:flex}
+  .menu{width:min(280px,calc(100vw - 12px))}
+  /* le rail passe en bas, sous le pouce ; ce que le geste fait déjà (pincer pour zoomer, toucher un folio) n'y est pas */
+  #rail{top:auto;left:0;right:0;bottom:0;width:auto;height:48px;border-right:none;border-top:1px solid var(--s-line);flex-direction:row;justify-content:space-around;padding:0 4px;gap:0;transition:bottom var(--moyen)}
+  #rail hr{display:none}
+  .bulle{display:none}
+  /* la barre du bas au-dessus du rail : les folios et le cadrage, sans le zoom (on pince) */
+  #folios{left:0;right:0;bottom:48px;padding:0 6px;transition:bottom var(--moyen)}
+  #zin,#zout,#zlbl,#fo-prev,#fo-next,#folios hr,.affinage span,.rd.auto span:not(.bulle){display:none}
+  .fo-strip{max-width:calc(100vw - 150px)}
+  .rd.auto{padding:0 8px}
+  /* les panneaux montent en tiroir depuis le bas ; le tableau garde la hauteur qu'on lui donne */
+  #base,#fiche{top:auto;left:0;right:0;bottom:0;width:auto;min-width:0;max-width:none;border:none;border-top:1px solid var(--s-line);border-radius:var(--r-3) var(--r-3) 0 0;box-shadow:0 -8px 24px rgba(16,24,40,.10)}
+  #inspecteur{top:auto;left:0;right:0;bottom:48px;width:auto;max-width:none;max-height:62vh;border:none;border-top:1px solid var(--s-line);border-radius:var(--r-3) var(--r-3) 0 0;box-shadow:0 -8px 24px rgba(16,24,40,.10)}
   body.insp-ouvert #folios{display:none}
   body.insp-ouvert #base{right:0}
-  /* le tiroir : le titre et fermer, puis ce folio / tout et l'ajout, puis le filtre */
-  .ba-tete{flex-wrap:wrap;gap:8px}
-  .ba-tete .espace{display:none}
-  .ba-titre{order:1;flex:1}
-  #ba-fermer{order:2}
-  .ba-portee{order:3}
-  #ba-ajouter{order:4;margin-left:auto}
-  .ba-tete .filtre{order:5;flex-basis:100%;max-width:none}
-  .fi-chiffre span{font-size:10px;letter-spacing:.03em}
-  .fi{padding:16px 14px 16px}
   #fiche{max-height:72vh}
-  #base{height:var(--base-h);max-height:85vh;min-height:160px}
-  body.base-ouverte #rail{bottom:calc(var(--base-h) + 8px)}
-  body.fiche-ouverte #rail{bottom:calc(var(--fiche-h) + 8px)}
-  body.base-ouverte #folios{left:50%;bottom:calc(var(--base-h) + 64px)}
-  body.fiche-ouverte #folios{left:50%;bottom:calc(var(--fiche-h) + 64px)}
+  #base{height:var(--base-h);max-height:85vh;min-height:160px;z-index:26}
+  body.base-ouverte #rail{bottom:var(--base-h)}
+  body.fiche-ouverte #rail{bottom:var(--fiche-h)}
+  body.base-ouverte #folios{bottom:calc(var(--base-h) + 48px)}
+  body.fiche-ouverte #folios{bottom:calc(var(--fiche-h) + 48px)}
   .entre{animation:doc-monte var(--moyen)}
-  @keyframes doc-monte{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
-  .poignee{left:0;right:0;top:0;bottom:auto;height:18px;width:auto;cursor:row-resize}
-  .poignee::after{left:50%;top:6px;width:40px;height:4px;margin:0 0 0 -20px}
-  .ba-tete{padding:18px 12px 10px 14px}
-  /* le dessin de la barrette passe avant la table : la carte prend toute la
-     place que la table (120 px au moins) ne réclame pas */
-  .equip{margin:2px 10px 6px 12px;padding:10px 8px 12px;max-height:none}
-  /* la simulation tient en largeur : le pourcentage sous les volts, l'en-tête et le verdict repliés */
-  .simu-tab th{white-space:normal;line-height:1.25}
-  .simu-tab td .sep{display:none}
-  .simu-tab td .pct{display:block;color:var(--encre-2)}
-  .simu-tab td{padding-right:6px}
-  .verdict{white-space:normal;line-height:1.3}
-  .ba-corps{padding:0 4px 8px 8px}
-  .tab{font-size:var(--t0)}
-  .tab input{padding:0 4px;height:28px}
+  .poignee{height:16px;top:0}
+  .poignee::after{background:var(--s-line-2);top:5px}
+  /* le tiroir : le titre et fermer, puis ce folio / tout et l'ajout, puis le filtre */
+  .ba-tete{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 8px;height:auto;padding:14px 10px 10px 14px;align-items:center}
+  .ba-tete .espace{display:none}
+  .ba-titre{grid-row:1;grid-column:1}
+  #ba-fermer{grid-row:1;grid-column:2;justify-self:end}
+  .ba-portee{grid-row:2;grid-column:1;justify-self:start}
+  #ba-ajouter{grid-row:2;grid-column:2;justify-self:end}
+  .ba-tete .filtre{grid-row:3;grid-column:1/-1;max-width:none}
+  .ba-corps{padding:0 4px 8px 6px}
+  .tab{font-size:var(--f-11)}
+  .tab input{padding:0 4px;height:26px}
   .tab td.n input{width:44px}
-  .tab td.rep input{width:80px}
-  .tab th{padding:6px 4px}
+  .tab td.rep input{width:84px}
+  .tab th{padding:0 4px}
   .fiche-corps{padding:14px 16px 10px}
   .fiche-pied{padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
-  .vide{padding:16px 16px 72px}
-  .vide-carte{padding:28px 22px 24px}
-  .vide-carte h1{font-size:var(--t5)}
-  #toast{left:50%;top:8px;max-width:calc(100vw - 16px)}
+  .simu-tab th{white-space:normal;line-height:1.25}
+  .simu-tab td .sep{display:none}
+  .simu-tab td .pct{display:block;color:var(--t-2)}
+  .simu-tab td{padding-right:6px}
+  .verdict{white-space:normal;line-height:1.3}
+  /* l'accueil : une colonne */
+  .vide{padding:12px 12px 100px;align-items:start}
+  .vd{padding:24px 20px 20px}
+  .vd h1{font-size:var(--f-20)}
+  .vd-tete p{font-size:var(--f-13)}
+  .vd-gestes .btn{flex:1 1 auto;justify-content:center}
+  .vd-cartes{grid-template-columns:1fr;gap:16px;margin-top:20px;padding-top:20px}
+  .depot{inset:8px}
+  #toast,body.insp-ouvert #toast,body.fiche-ouverte #toast{left:50%;max-width:calc(100vw - 16px)}
 }
 
 /* ─── IMPRESSION : la planche, rien d'autre ─────────────────────────────── */
