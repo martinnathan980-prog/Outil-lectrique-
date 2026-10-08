@@ -199,6 +199,8 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
   const ko = cav.flatMap(c => c.plan.verdicts.filter(v => v.niveau === 'ko').map(v => c.nom + ' · ' + v.texte));
   const att = [...doubles.map(([bo, fs]) => `borne ${bo} : ${fs.length} fils — ${vt.has(String(bo)) ? 'barrette ' + vt.get(String(bo)) : 'une barrette'} à poser`),
     ...cav.flatMap(c => c.plan.verdicts.filter(v => v.niveau === 'attention' && !/contact .* : \d fils/.test(v.texte)).map(v => c.nom + ' · ' + v.texte))];
+  // un disjoncteur : son calibre et le profil de charge, jugés sur la courbe de disjonction
+  const dj = estDisjoncteur(nom), cd = dj ? controleDisjonction(nom) : null; if (cd) (cd.niveau === 'ko' ? ko : att).unshift(cd.texte);
   const ligne = (bo, f, st) => ligneFil(`<b>${esc(bo)}</b>`, f, { tag: vt.get(String(bo)), sertir: st });
   const onglets = C.map(c => { const k = parNom.get(c.nom), Q = k && k.plan, M = Q && Q.modules[0], cle = 'arr|' + nom + '|' + c.nom;
     const sertir = new Map(Q ? Q.fils.map(x => [x.f.l, x.sertir]) : []);
@@ -218,7 +220,7 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
   const nFils = V.filter(l => l.de === nom || l.vers === nom).length;
   return fiTete({ nom, renommer: true, etat: fiEtat(ko, att, cav.length ? 'chaque borne sur son contact, chaque jauge acceptée' : 'rien à redire'),
       sous: `${pluriel(nFils, 'fil')}${C.length > 1 ? ' · ' + pluriel(C.length, 'connecteur') : ''}`, designation: app.contrat.designations.get(nom) || '' })
-    + (onglets.length ? fiOnglets('eq|' + nom, onglets) : '')
+    + (dj ? ficheDisjonction(nom) : '') + (onglets.length ? fiOnglets('eq|' + nom, onglets) : '')
     + fiPied({ tableau: nom, relief: cav.length > 0, menu: MENU_BLOC }); }
 
 /* ---- un bornier hors modules (une bible importée sans modules) ------------------- */
@@ -268,7 +270,8 @@ function lierFiche(c) { const box = $('ba-equip'), nom = c.type === 'fil' ? '' :
   box.querySelectorAll('[data-sexe]').forEach(b => b.onclick = () => { if (b.getAttribute('aria-pressed') === 'true') return;
     histPush('sexe des contacts de ' + b.dataset.sexe); app.contrat.sexes.set(b.dataset.sexe, b.dataset.v); apresEdition(); });
   box.querySelectorAll('[data-bible]').forEach(b => b.onclick = () => ficheBible(b.dataset.bible));
-  if (box.querySelector('.equip') && typeof lierCartePhysique === 'function') lierCartePhysique(nom); }
+  if (box.querySelector('.equip') && typeof lierCartePhysique === 'function') lierCartePhysique(nom);
+  lierDisjonction(nom); }
 /* Les fils de la fiche et le plan : survoler une ligne (ou un contact de la face) allume le fil et marque tout ce qui
    le montre dans la fiche ; un clic ou Entrée va le voir sur le plan. */
 function lierFils(box) { let dernier = null;

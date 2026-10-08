@@ -328,6 +328,13 @@ const COLONNES_NORME = {
     ['jaugeMin',    ['jaugemin', 'awgmin', 'jaugefine', 'gaugemin', 'minawg']],
     ['jaugeMax',    ['jaugemax', 'awgmax', 'jaugegrosse', 'gaugemax', 'maxawg']],
     ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+  disjoncteurs: [
+    ['famille',     ['famille', 'disjoncteur', 'norme', 'family']],
+    ['courbe',      ['courbe', 'nom', 'serie', 'curve']],
+    ['temperature', ['temperature', 'temp', 'degres', 'degre', 'c']],
+    ['multiple',    ['multiple', 'multiples', 'multiplesin', 'multipledein', 'xin', 'iin']],
+    ['temps',       ['temps', 'tempsdedeclenchement', 'secondes', 'duree', 'time']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
   contacts: [
     ['famille',     ['norme', 'famille', 'connecteur', 'family']],
     ['sexe',        ['sexe', 'genre', 'typedecontact', 'contacttype', 'mf']],
@@ -360,7 +367,8 @@ const TABLE_NORME = {
   reseau: c => c.tension != null && c.chuteMax != null,
   tailles: c => c.taille != null && c.jaugeMin != null,
   modules: c => c.variante != null && c.groupes != null,
-  contacts: c => c.sexe != null && c.taille != null && c.reference != null
+  contacts: c => c.sexe != null && c.taille != null && c.reference != null,
+  disjoncteurs: c => c.multiple != null && c.temps != null
 };
 /* Un nombre d'atelier : virgule ou point, une unité derrière (« 5 mm », « 0,8 »). */
 const NUMERO = v => { const t = String(v == null ? '' : v).trim().replace(',', '.'); if (!t) return null; const m = /-?\d+(\.\d+)?/.exec(t); return m ? parseFloat(m[0]) : null; };
@@ -378,13 +386,17 @@ function filNorme(o) { const jauge = NUMERO(o.jauge); if (jauge == null) return 
   return { type: String(o.type || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '') || '*', jauge, section: NUMERO(o.section), resistance: NUMERO(o.resistance), intensite: NUMERO(o.intensite), note: String(o.note || '').trim() }; }
 function declassementNorme(o) { const condition = MOT(o.condition), facteur = NUMERO(o.facteur); return condition && facteur != null ? { condition, facteur, note: String(o.note || '').trim() } : null; }
 function reseauNorme(o) { const tension = NUMERO(o.tension); return tension == null ? null : { tension, chuteMax: NUMERO(o.chuteMax), chutePct: NUMERO(o.chutePct), note: String(o.note || '').trim() }; }
-const ENTREE_NORME = { familles: familleNorme, fils: filNorme, declassements: declassementNorme, reseau: reseauNorme, tailles: tailleNorme, modules: moduleNorme, contacts: contactNorme };
-const normeVide = () => ({ familles: [], fils: [], declassements: [], reseau: [], tailles: [], modules: [], contacts: [], tables: 0 });
+/* Une ligne d'une COURBE DE DISJONCTION (normes/disjoncteurs.csv) : la famille de disjoncteurs, la courbe (sa
+   température), un multiple du courant nominal et le temps de déclenchement en secondes. */
+function disjonctionNorme(o) { const multiple = NUMERO(o.multiple), temps = NUMERO(o.temps); if (multiple == null || temps == null || multiple <= 0 || temps <= 0) return null;
+  return { famille: cleNorme(o.famille) || 'DISJONCTEUR', courbe: String(o.courbe || '').trim() || String(o.temperature || '').trim() || '—', temperature: NUMERO(o.temperature), multiple, temps }; }
+const ENTREE_NORME = { familles: familleNorme, fils: filNorme, declassements: declassementNorme, reseau: reseauNorme, tailles: tailleNorme, modules: moduleNorme, contacts: contactNorme, disjoncteurs: disjonctionNorme };
+const normeVide = () => ({ familles: [], fils: [], declassements: [], reseau: [], tailles: [], modules: [], contacts: [], disjoncteurs: [], tables: 0 });
 /* Lire une norme : les tables se suivent (un titre libre, la ligne d'en-tête,
    les lignes, une ligne vide), dans un CSV ou une feuille Excel. */
 function lireNorme(texte) { const N = normeVide(); let table = null, col = null;
   // les tables les plus précises d'abord : une table de tailles nomme aussi sa famille et ses jauges, comme une table de familles
-  const entete = row => { for (const nom of ['contacts', 'modules', 'tailles', 'familles', 'fils', 'declassements', 'reseau']) { const cles = COLONNES_NORME[nom]; const c = {}; row.forEach((cell, i) => { const t = NORMA(cell); if (!t) return;
+  const entete = row => { for (const nom of ['disjoncteurs', 'contacts', 'modules', 'tailles', 'familles', 'fils', 'declassements', 'reseau']) { const cles = COLONNES_NORME[nom]; const c = {}; row.forEach((cell, i) => { const t = NORMA(cell); if (!t) return;
       for (const [champ, alias] of cles) if (c[champ] == null && alias.includes(t)) { c[champ] = i; break; } });
     if (TABLE_NORME[nom](c)) return { nom, col: c }; } return null; };
   String(texte || '').split(/\r?\n/).forEach(ligne => { if (!ligne.trim()) { table = null; return; }
@@ -392,7 +404,7 @@ function lireNorme(texte) { const N = normeVide(); let table = null, col = null;
     if (!table) return; const o = {}; Object.entries(col).forEach(([champ, i]) => { o[champ] = row[i] == null ? '' : row[i]; });
     const x = ENTREE_NORME[table](o); if (x) N[table].push(x); });
   return N; }
-const normeLue = N => !!(N && (N.familles.length || N.fils.length || N.declassements.length || N.reseau.length || N.modules.length || (N.contacts || []).length));
+const normeLue = N => !!(N && (N.familles.length || N.fils.length || N.declassements.length || N.reseau.length || N.modules.length || (N.contacts || []).length || (N.disjoncteurs || []).length));
 /* Un fichier de normes : chaque feuille d'un Excel est lue (une table par
    feuille, ou plusieurs à la suite) ; un CSV d'un bloc. */
 async function lireNormeFichier(fichier) { const nom = (fichier.name || '').toLowerCase();
@@ -405,7 +417,8 @@ async function lireNormeFichier(fichier) { const nom = (fichier.name || '').toLo
    clé (famille, type+jauge, condition, tension). C'est ainsi qu'une norme de
    barrettes et une norme de fils, importées l'une après l'autre, se complètent. */
 function fusionnerNormes(a, b) { const N = normeVide(); const cle = { familles: x => x.famille.toUpperCase(), fils: x => x.type + '/' + x.jauge, declassements: x => x.condition, reseau: x => String(x.tension),
-    tailles: x => x.famille + '/' + x.taille, modules: x => x.famille + '/' + x.variante, contacts: x => [x.famille, x.sexe, x.taille, x.typeFil, x.jauge, x.reference].join('/') };
+    tailles: x => x.famille + '/' + x.taille, modules: x => x.famille + '/' + x.variante, contacts: x => [x.famille, x.sexe, x.taille, x.typeFil, x.jauge, x.reference].join('/'),
+    disjoncteurs: x => [x.famille, x.courbe, x.multiple, x.temps].join('/') };
   Object.keys(cle).forEach(t => { const m = new Map(); [...(a ? a[t] || [] : []), ...(b ? b[t] || [] : [])].forEach(x => m.set(cle[t](x), x)); N[t] = [...m.values()]; });
   N.tables = (a ? a.tables : 0) + (b ? b.tables : 0); return N; }
 /* La norme embarquée : normes/*.csv, mis dans la page à la construction. */

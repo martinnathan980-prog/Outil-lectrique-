@@ -12,6 +12,40 @@ dessine chaque **trou** et le fil qui y est placé, juge le remplissage, et
 **simule** fil par fil la jauge admise, le courant admissible et la chute en
 ligne — sur des hypothèses dites et modifiables.
 
+## `disjoncteurs.csv` : les courbes de disjonction
+
+L'Excel du lecteur (feuille Base_de_données), transcrit point par point :
+quatre **courbes de disjonction à tension nominale** d'un disjoncteur
+thermique — le temps de déclenchement en secondes selon le **multiple du
+courant nominal In** — à **125 °C** (46 points), **23 °C** la plus rapide
+(51) et la plus lente (45), **−55 °C** (47). La famille `disjoncteur` vaut
+pour tous les calibres, la courbe étant en multiples de In ; une autre
+famille s'ajoute avec son nom.
+
+Ce que l'outil en fait, sur la fiche de chaque disjoncteur (code CB) : le
+**calibre** (lu en queue du part number, NSA935401-10 → 10 A, ou écrit), le
+**profil de charge** de ce qu'il protège — démarrage, transition (un courant
+pendant une durée), permanent — et le graphique log-log de l'Excel : les
+quatre courbes, la zone verte où tout tient, le profil en escalier. Le
+profil se lit en **points cumulés** : chaque phase dure, pour la courbe,
+autant que toutes les phases au moins aussi fortes qu'elle ; le permanent
+dure toujours et doit rester sous le premier multiple de la courbe, là où le
+disjoncteur ne déclenche jamais. Le verdict se prend sur la **courbe la plus
+rapide** (125 °C) ; les autres disent la marge. Entre deux points, l'outil
+interpole en log-log, et il tient la courbe en **enveloppe** (le temps ne
+remonte jamais avec le courant : les points lus sur une figure tremblent).
+La fiche dit « Tient » ou « Déclenche », la marge en une phrase, et le plus
+petit calibre de la gamme (1, 2, 2,5, 3, 4, 5, 7,5, 10, 15, 20, 25, 30, 35,
+50 A) qui tiendrait. Le profil se garde avec le contrat ; la pastille de
+contrôle relève chaque disjoncteur qui déclenche, sans calibre ou sans
+profil.
+
+À confirmer : de quel disjoncteur sont ces courbes (une seule famille pour
+l'instant), la gamme des calibres, et la marge qu'on s'impose (l'outil
+demande seulement que le disjoncteur tienne plus longtemps que la phase).
+Il manque encore, pour la protection du fil, l'intensité admissible et le
+I²t des fils (§ B de la feuille de route).
+
 ## `contacts.csv` : le contact à sertir sur chaque fil
 
 Les quatre tables **SEE Electrical Equipment Definition** (EN2997 v6,

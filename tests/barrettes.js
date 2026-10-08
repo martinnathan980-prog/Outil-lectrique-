@@ -8,12 +8,12 @@
    ========================================================================= */
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const SRC = path.join(__dirname, '..', 'src'), NORMES = path.join(__dirname, '..', 'normes');
-const code = ['01-modele.js', '02-lecture.js', '09-barrettes.js'].map(f => fs.readFileSync(path.join(SRC, f), 'utf8')).join('\n');
+const code = ['01-modele.js', '02-lecture.js', '09-barrettes.js', '09-disjoncteurs.js'].map(f => fs.readFileSync(path.join(SRC, f), 'utf8')).join('\n');
 // la norme embarquée, comme construire.js la met dans la page : tous les CSV de normes/
 const normes = fs.readdirSync(NORMES).filter(f => /\.csv$/i.test(f)).sort().map(f => fs.readFileSync(path.join(NORMES, f), 'utf8')).join('\n\n');
 const bac = { console };
 vm.createContext(bac);
-vm.runInContext('const NORME_EMBARQUEE = ' + JSON.stringify(normes) + ';\n' + code + '\nthis.X = { lireBible, bibleExemple, bibleDeLOutil, remplirModules, normeDesModules, moduleDeReference, contactAccepte, contactDuFil, contactsDeTaille, nomenclatureDe, sexeDe, variantesQuiLogent, familleDeReference, famillesDeModules, connecteursEnModules, coupureEnModule, moduleDeConnecteur, arrangementsQuiLogent, numeroDeBorne, remplirContacts, pointsDe, besoinsDeBarrette, jaugeDuType, blindeDuType, choisirBarrette, barretteInfos, connecteursDe, connecteurDeBorne, connecteurParBorne, coupureInfos, connecteursInfos, suiviDuContrat, csvDuSuivi, paquetsDeBarrette, physiqueDeBarrette, physiqueDeReference, contratExemple, contratEssai,'
+vm.runInContext('const NORME_EMBARQUEE = ' + JSON.stringify(normes) + ';\n' + code + '\nthis.X = { lireBible, bibleExemple, bibleDeLOutil, remplirModules, normeDesModules, moduleDeReference, contactAccepte, contactDuFil, contactsDeTaille, nomenclatureDe, sexeDe, courbesDeDisjonction, tempsDeDeclenchement, multipleAdmis, pointsDuProfil, verdictDisjonction, calibreDuPn, estDisjoncteur, CALIBRES, variantesQuiLogent, familleDeReference, famillesDeModules, connecteursEnModules, coupureEnModule, moduleDeConnecteur, arrangementsQuiLogent, numeroDeBorne, remplirContacts, pointsDe, besoinsDeBarrette, jaugeDuType, blindeDuType, choisirBarrette, barretteInfos, connecteursDe, connecteurDeBorne, connecteurParBorne, coupureInfos, connecteursInfos, suiviDuContrat, csvDuSuivi, paquetsDeBarrette, physiqueDeBarrette, physiqueDeReference, contratExemple, contratEssai,'
   + ' lireNorme, normeEmbarquee, normeExemple, normeLue, fusionnerNormes, familleDeNorme, typeDuFil, filDeNorme, facteurDeclassement, chuteAdmise, remplirSelonNorme, simulerBornier, liaison };', bac);
 const X = bac.X;
 /* Une norme et une bible « importées », d'une autre forme que les modules
@@ -346,6 +346,28 @@ ok('une prise de coupure : la fiche (ce qui arrive) en femelles, l’embase en m
 const R26 = X.remplirContacts([{ borne: '1', num: '1', fils: [{ cable: 'W-1', type: 'DR26', jauge: 26 }] }, { borne: '2', num: '2', fils: [{ cable: 'W-2', type: 'DR24', jauge: 24 }] }], NE, { choix: 'EN4165-002-08W16' });
 ok('retenu à la main sur un 08W16 (contacts 16) : le DR24 n’a aucun contact, et le verdict le dit par la table', R26.fils.some(x => x.jaugeOk === false) && R26.verdicts.some(v => v.niveau === 'ko' && /aucun contact femelle de taille 16/.test(v.texte)), R26.verdicts.map(v => v.texte).join(' | '));
 ok('la table se lit depuis un CSV importé, et se fond dans la norme', (() => { const r = X.lireNorme('Norme;Sexe;Taille;Type de fil;Jauge;Contact;Accessoire;Note\nEN4165;femelle;22;DR;24;TEST-F22;;essai\n'); return r.contacts.length === 1 && r.contacts[0].sexe === 'F' && r.contacts[0].typeFil === 'DR' && X.fusionnerNormes(NE, r).contacts.length === 429 && X.normeLue(r); })());
+
+console.log('\n20. LES DISJONCTEURS : LES COURBES DE DISJONCTION (L’EXCEL DU LECTEUR)');
+const CD = X.courbesDeDisjonction(NE), c125 = CD[0], par = n => CD.find(c => c.nom === n);
+ok('quatre courbes, de la plus rapide à la plus lente : 125 °C (46 points), 23 °C min (51), 23 °C max (45), −55 °C (47)', CD.length === 4 && CD.map(c => c.nom).join('|') === '125 °C|23 °C min|23 °C max|−55 °C' && CD.map(c => c.brut.length).join() === '46,51,45,47' && c125.temperature === 125 && par('−55 °C').temperature === -55, CD.map(c => c.nom + ':' + c.brut.length).join(' '));
+ok('l’enveloppe ne remonte jamais : à 125 °C, 0,93618 In lu 3001 s devient 1969 s (le point d’avant), et le temps décroît de bout en bout', c125.points.find(p => p.m === 0.93618).t === 1968.9011 && c125.points.every((p, i) => !i || p.t <= c125.points[i - 1].t));
+const t2 = X.tempsDeDeclenchement(c125, 2);
+ok('à 2 In, le 125 °C tient 2 s (entre 2,69 s à 1,79 In et 1,93 s à 2,02 In, en log-log)', t2 > 1.9 && t2 < 2.1, t2.toFixed(3) + ' s');
+ok('sous le premier multiple, jamais ; au-delà du dernier, moins que le dernier point ; le −55 °C tient plus longtemps que le 125 °C', X.tempsDeDeclenchement(c125, 0.9) === Infinity && X.tempsDeDeclenchement(c125, 100) < 0.00277 && X.tempsDeDeclenchement(par('−55 °C'), 2) > t2);
+const adm = X.multipleAdmis(c125, 5);
+ok('5 s admettent 1,45 In à 125 °C (l’inverse de la courbe) ; une durée infinie, 0,92 In', adm > 1.43 && adm < 1.47 && X.multipleAdmis(c125, Infinity) === 0.92361, adm.toFixed(3));
+ok('le calibre se lit en queue du part number : NSA935401-10 → 10 ; MS3470L14-5P, E0644D9S → rien ; 102CB1 est un disjoncteur, 103RL1 non', X.calibreDuPn('NSA935401-10') === 10 && X.calibreDuPn('MS3470L14-5P') === null && X.calibreDuPn('E0644D9S') === null && X.calibreDuPn('ABC-7,5A') === 7.5 && X.estDisjoncteur('102CB1') && !X.estDisjoncteur('103RL1'));
+const PROFIL = { dem: { i: 9.31, t: 5 }, trans: { i: 9.31, t: 120 }, perm: { i: 5 } };
+ok('le profil en points cumulés : 9,31 A (démarrage et transition) pendant 125 s, 5 A pour toujours', JSON.stringify(X.pointsDuProfil(PROFIL).map(p => [p.nom, p.i, p.t])) === '[["démarrage et transition",9.31,125],["permanent",5,null]]', JSON.stringify(X.pointsDuProfil(PROFIL)));
+ok('un démarrage plus fort que la transition : 20 A pendant 5 s, puis 12 A pendant 5 + 60 s', JSON.stringify(X.pointsDuProfil({ dem: { i: 20, t: 5 }, trans: { i: 12, t: 60 }, perm: { i: 5 } }).map(p => [p.i, p.t])) === '[[20,5],[12,65],[5,null]]');
+const V10 = X.verdictDisjonction(NE, '', 10, PROFIL);
+ok('l’Excel du lecteur : sur un 10 A, 9,31 A pendant 125 s (0,93 In) et 5 A en permanence tiennent à toute température ; le plus petit calibre qui tient est le 10 A', V10.valide && V10.points.every(p => p.marges.every(m => m.ok)) && V10.calibreMini === 10, JSON.stringify(V10.points.map(p => [p.nom, p.ok, p.marges[0].temps])));
+const V75 = X.verdictDisjonction(NE, '', 7.5, PROFIL);
+ok('sur un 7,5 A, 9,31 A font 1,24 In : le 125 °C déclenche en 9 s, bien avant 125 s — pas valide, le pire point est celui-là', !V75.valide && V75.pire.i === 9.31 && V75.pire.marges[0].temps > 8 && V75.pire.marges[0].temps < 10 && !V75.pire.marges[0].ok, V75.pire.marges[0].temps.toFixed(2));
+const V95 = X.verdictDisjonction(NE, '', 10, { perm: { i: 9.5 } });
+ok('9,5 A en permanence sur un 10 A (0,95 In) : déclenche un jour à 125 °C — pas valide ; la marge dit jusqu’où le permanent peut aller (9,24 A)', !V95.valide && V95.points[0].marges[0].ok === false && V95.points[0].marges[0].temps < 1e4 && Math.abs(V95.points[0].marges[0].admis - 9.2361) < 1e-6);
+ok('sans calibre ou sans profil, rien n’est jugé, et c’est dit', !X.verdictDisjonction(NE, '', null, PROFIL).valide && X.verdictDisjonction(NE, '', null, PROFIL).calibre === null && X.verdictDisjonction(NE, '', 10, {}).sansProfil);
+ok('la table se lit depuis un CSV importé : Famille, Courbe, Température, Multiple, Temps', (() => { const r = X.lireNorme('Famille;Courbe;Température;Multiple;Temps\nessai;chaud;100;1,1;1000\nessai;chaud;100;2;10\n'); const c = X.courbesDeDisjonction(r)[0]; return r.disjoncteurs.length === 2 && c && c.nom === 'chaud' && X.tempsDeDeclenchement(c, 1.5) > 10 && X.tempsDeDeclenchement(c, 1.5) < 1000 && X.normeLue(r); })());
 
 console.log('\n  ' + (total - echecs) + ' / ' + total + ' contrôles passés' + (echecs ? '  —  ' + echecs + ' ÉCHEC(S)' : '  —  tout est vert'));
 process.exit(echecs ? 1 : 0);

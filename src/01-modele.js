@@ -106,6 +106,7 @@ function nouveauContrat() {
     liaisons: [],
     designations: new Map(),           // repère -> désignation libre
     sexes: new Map(),                  // « repère|connecteur » (ou repère d'une prise) -> sexe des contacts à sertir, M ou F
+    charges: new Map(),                // repère d'un disjoncteur -> { calibre, dem: { i, t }, trans: { i, t }, perm: { i } } (A, s)
     cartouche: { titre: 'Contrat de câblage', auteur: '', indice: 'A',
                  date: new Date().toISOString().slice(0, 10), echelle: '—' }
   };
@@ -157,6 +158,9 @@ function contratEssai() {
    en vrai : les part numbers des connecteurs, des bornes qui disent leur
    connecteur (A12), des barrettes qui distribuent avec leurs shunts, des
    prises de coupure, des fils blindés, des masses. */
+/* Le profil de charge de l'exemple : celui de l'Excel du lecteur, sur le disjoncteur 10 A (102CB1) — un démarrage de
+   9,31 A pendant 5 s, une transition de 9,31 A pendant 120 s, 5 A en permanence. */
+function chargesExemple() { return new Map([['102CB1', { calibre: 10, dem: { i: 9.31, t: 5 }, trans: { i: 9.31, t: 120 }, perm: { i: 5, t: null } }]]); }
 function contratExemple() {
   const PN = {
     '101BT1': 'MS3470L14-5P', '102CB1': 'NSA935401-10', '103RL1': 'E0836IS35-22SA', '104LP1': 'E0644D9S',

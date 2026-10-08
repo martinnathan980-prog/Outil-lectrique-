@@ -877,6 +877,30 @@ details.fi-etat.ko ul{background:#fbeceb}details.fi-etat.att ul{background:#fcf3
 .fi-nomen b{color:var(--encre);margin-right:4px}
 .fi-nomen i{font-style:normal;color:#8a96a2;margin-left:4px}
 .fi-cote .fi-sertir{color:#8a96a2}
+/* la disjonction : le calibre, la courbe, le profil de charge */
+.dj-calibre{display:inline-flex;align-items:baseline;gap:4px;margin-left:10px}
+.dj-calibre input,.dj-profil input{border:1px solid var(--filet);border-radius:8px;padding:3px 8px;font:600 var(--t1) var(--mono);color:var(--encre);background:var(--papier);text-align:right;width:62px}
+.dj-calibre input{width:64px;font-weight:700;font-size:var(--t2)}
+.dj-calibre input:focus,.dj-profil input:focus{outline:none;border-color:var(--cuivre);box-shadow:0 0 0 3px var(--cuivre-pale)}
+.dj-calibre i,.dj-phase i{font-style:normal;color:var(--encre-2);font-size:var(--t0);min-width:8px}
+.dj-graphe{margin:0;padding:8px 6px 6px;background:linear-gradient(180deg,#f5f7f9,#eceff3);border-radius:10px}
+.dj-graphe svg{width:100%;height:auto;display:block;max-width:420px;margin:0 auto}
+.dj-graphe text{font:500 8.5px var(--mono);fill:#6b7684}
+.dj-graphe text.dj-titre{font-weight:700;fill:#4b5661}
+.dj-graphe .dj-grille{stroke:#d7dde3;stroke-width:.6}
+.dj-graphe .dj-axe{stroke:#9aa5b1;stroke-width:1}
+.dj-graphe .dj-zone{fill:#2e8b57;fill-opacity:.1}
+.dj-graphe .dj-courbe{fill:none;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}
+.dj-graphe .dj-systeme{fill:none;stroke:#26323f;stroke-width:2;stroke-linejoin:round}
+.dj-graphe .dj-systeme.ko{stroke:var(--danger)}
+.dj-graphe .dj-point{fill:#26323f;stroke:#fff;stroke-width:1.2}
+.dj-graphe .dj-point.ko{fill:var(--danger)}
+.dj-legende{display:flex;flex-wrap:wrap;gap:3px 12px;justify-content:center;font-size:var(--t0);color:var(--encre-2);padding-top:5px}
+.dj-legende i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.dj-profil{display:flex;flex-direction:column;gap:5px}
+.dj-phase{display:grid;grid-template-columns:minmax(64px,1fr) 62px 12px 62px 12px;align-items:center;column-gap:6px;font-size:var(--t1);color:var(--encre-2)}
+.dj-phase .dj-inf{font-size:var(--t2);text-align:right;color:var(--encre-2)}
+.dj-note{margin:0}
 .fi-bout .fi-bout-ct{color:#5b6773}
 .fi-bout .fi-bout-ct.ko{color:var(--danger);font-weight:600}
 .fi-dest{display:flex;align-items:center;justify-content:flex-end;gap:4px;min-width:0;font-family:var(--mono);color:var(--encre);white-space:nowrap}

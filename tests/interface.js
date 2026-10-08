@@ -98,6 +98,15 @@ const FICHIER = P.fichierDemande();
     'la pastille de contrôle dit l’état du contrat ; sa liste a chaque point, les barrettes à poser comprises');
   await page.locator('.co-item', { hasText: '300XC1' }).click(); await page.waitForTimeout(600);
   ok(await page.evaluate(() => app.plan === '3' && app.cible && app.cible.nom === '300XC1' && !$('inspecteur').hidden && $('co-liste').hidden), 'une ligne mène au folio 3 et à la fiche de 300XC1');
+  // le disjoncteur : son calibre lu dans le part number, le profil de l'exemple, le graphique, le verdict ; un profil qui déclenche, Ctrl+Z
+  await page.keyboard.press('Escape'); await page.evaluate(() => { allerAuPlan('1'); choisirBloc(app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag')); }); await page.waitForTimeout(500);
+  ok(await page.evaluate(() => { const s = document.querySelector('#ba-equip .fi-dj'); return !!s && $('dj-calibre').value === '10' && /Tient/.test(s.textContent) && !!s.querySelector('.dj-graphe svg .dj-systeme') && s.querySelectorAll('.dj-courbe').length === 4 && s.querySelector('[data-dj="dem"][data-q="i"]').value === '9,31'; }),
+    'la fiche de 102CB1 : calibre 10 A, le profil de l’exemple, quatre courbes, le profil en escalier, « Tient »');
+  await page.fill('#ba-equip [data-dj="perm"][data-q="i"]', '9,5'); await page.press('#ba-equip [data-dj="perm"][data-q="i"]', 'Enter'); await page.waitForTimeout(800);
+  ok(await page.evaluate(() => { const s = document.querySelector('#ba-equip .fi-dj'); return !!s && /Déclenche/.test(s.textContent) && !!s.querySelector('.dj-systeme.ko') && app.contrat.charges.get('102CB1').perm.i === 9.5 && CONTROLE.items.some(x => x.nom === '102CB1' && x.niveau === 'ko'); }),
+    '9,5 A en permanence : « Déclenche », l’escalier en rouge, la pastille de contrôle le relève');
+  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(800);
+  ok(await page.evaluate(() => app.contrat.charges.get('102CB1').perm.i === 5 && !CONTROLE.items.some(x => x.nom === '102CB1')), 'Ctrl+Z rend le profil de l’exemple');
   ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
   console.log('\n  ' + (ko ? ko + ' échec(s)' : 'tout tient'));
   await nav.close(); process.exit(ko ? 1 : 0);

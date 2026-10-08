@@ -8,6 +8,8 @@ L'outil sait aujourd'hui :
   EN 2997, EN 3646, EN 3645, ASNE0059) ;
 - donner à chaque fil son contact à sertir et son fourreau (tables SEE), et
   juger sa jauge par elles ;
+- juger un disjoncteur : son calibre, le profil de charge (démarrage,
+  transition, permanent) contre les courbes de disjonction ;
 - faire de chaque dédoublement une barrette à poser (VT1…), qu'on pose au
   contrat d'un geste ;
 - dire l'état de tout le contrat dans la pastille en haut à gauche.
@@ -72,10 +74,17 @@ page de norme suffit toujours : je la transcris.
 
 ### C. Les disjoncteurs
 
-9. **La courbe ou la table de la norme** : le courant consommé donne le
-   calibre. Avec elle, la gamme des calibres que vous posez (1, 2, 3, 5, 7,5,
-   10 A…) et la marge appliquée.
-10. **Pour chaque équipement alimenté** :
+9. **La courbe ou la table de la norme.** ✔ Fait : les quatre courbes de
+   l'Excel (125 °C, 23 °C min et max, −55 °C) sont dans
+   `normes/disjoncteurs.csv`. La fiche de chaque CB porte le calibre, le
+   profil de charge, le graphique et le verdict, et dit le plus petit
+   calibre qui tient. Reste à confirmer : de quel disjoncteur sont ces
+   courbes (d'autres familles ?), la gamme des calibres (l'outil prend 1, 2,
+   2,5, 3, 4, 5, 7,5, 10, 15, 20, 25, 30, 35, 50 A) et la marge que vous
+   vous imposez (l'outil demande seulement que le disjoncteur tienne plus
+   longtemps que la phase).
+10. **Pour chaque équipement alimenté** (c'est ce qui remplira les profils
+    de charge, aujourd'hui écrits à la main sur la fiche du disjoncteur) :
     - sa consommation, en A ou en W, et sous quelle tension ;
     - permanent ou intermittent ;
     - son courant d'appel, s'il compte ;
