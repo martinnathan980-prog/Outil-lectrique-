@@ -1,68 +1,173 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   LA DISJONCTION (08 quinquies) : la gamme, le graphique, les états, sur la fiche d’un disjoncteur
+   LA DISJONCTION (08 quinquies) : la gamme en segments, le graphique d'ingénieur, les états en table,
+   les fils par palier, la chute en jauge — sur la fiche d'un disjoncteur.
    Les jetons (couleurs, typo, espacements) sont dans style.css ; ici, seulement ce qui est propre à ce domaine.
+   Le graphique est un SVG à plat : traits de 1 à 2 px, texte avec halo, aucun dégradé ; ce qui se survole répond,
+   ce qui se glisse se saisit, ce qui change glisse (200 ms).
    ═══════════════════════════════════════════════════════════════════════ */
-/* la disjonction : la gamme en puces, le graphique qu'on survole et qu'on glisse, les états */
-.dj-gamme{display:flex;flex-direction:column;gap:5px}
-.dj-chips{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
-.dj-chip{min-width:38px;height:30px;padding:0 9px;border-radius:999px;border:1.5px solid var(--filet);background:var(--papier);font:700 var(--t1) var(--mono);color:var(--encre-2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background var(--rapide),border-color var(--rapide),color var(--rapide)}
-.dj-chip:hover{border-color:#c9d1d9;background:var(--papier-2)}
-.dj-chip.ok{border-color:#a9d9bb;color:#1d5b35}
-.dj-chip.ko{border-color:#f1c4bf;color:#86201a}
-.dj-chip.serre{border-style:dashed}
-.dj-chip i{font-style:normal;font-size:10px;color:#d4870f;margin-left:3px}
-.dj-chip[aria-pressed="true"]{background:var(--encre);border-color:var(--encre);color:#fff;border-style:solid}
-.dj-chip.ok[aria-pressed="true"]{background:#2e8b57;border-color:#2e8b57}
-.dj-chip.ko[aria-pressed="true"]{background:var(--danger);border-color:var(--danger)}
-.dj-chip[aria-pressed="true"] i{color:#ffd98a}
-.dj-unite{font:600 var(--t0) var(--mono);color:var(--encre-2);margin-left:2px}
-.dj-dou{font-size:var(--t0);color:var(--encre-2)}
-.dj-dou i{font-style:normal;color:#d4870f}
-.dj-graphe{position:relative;margin:0;padding:6px 4px 6px;background:linear-gradient(180deg,#f5f7f9,#eceff3);border-radius:10px}
-.dj-graphe svg{width:100%;height:auto;display:block;cursor:crosshair;touch-action:none}
-.dj-graphe svg.tient{cursor:grabbing}
-.dj-graphe text{font:500 9px var(--sans);fill:#5b6875;pointer-events:none;paint-order:stroke;stroke:#f3f5f7;stroke-width:3px;stroke-linejoin:round;font-variant-numeric:tabular-nums}
-.dj-graphe text.dj-titre{font-weight:700;fill:#4b5661}
-.dj-graphe .dj-grille{stroke:#d7dde3;stroke-width:.6}
-.dj-graphe .dj-grille.fine{stroke-dasharray:2 3}
-.dj-graphe .dj-axe{stroke:#9aa5b1;stroke-width:1;pointer-events:none}
-.dj-graphe .dj-zone{fill:#2e8b57;fill-opacity:.11;pointer-events:none}
-.dj-graphe .dj-courbe{fill:none;stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
-.dj-graphe .dj-fantome path{fill:none;stroke:#b4bcc5;stroke-width:1;stroke-dasharray:3 3;cursor:pointer;transition:stroke var(--rapide)}
-.dj-graphe .dj-fantome text{fill:#8a96a2;font-size:8.5px;font-weight:700;cursor:pointer;pointer-events:auto}
-.dj-graphe .dj-fantome:hover path{stroke:#4b5661;stroke-dasharray:none;stroke-width:1.4}
-.dj-graphe .dj-fantome:hover text{fill:#26323f}
-.dj-graphe .dj-systeme{fill:none;stroke:#26323f;stroke-width:2;stroke-linejoin:round;pointer-events:none}
-.dj-graphe .dj-pt{cursor:grab}
+.fi-dj{gap:14px}
+/* ── la gamme : sept segments jugés (la barre sous le chiffre : vert tient, ambre touche, rouge déclenche) ── */
+.dj-gamme{display:flex;flex-direction:column;gap:6px}
+.dj-gamme-t{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.dj-ideal{font-size:var(--f-11);color:var(--t-2);white-space:nowrap}
+.dj-ideal i,.dj-chip i,.dj-dou i{font-style:normal;color:var(--warn)}
+.dj-ideal b,.dj-dou b{font:700 var(--f-11) var(--mono);color:var(--t-1)}
+.dj-chips{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--s-line-2);border-radius:var(--r-1);overflow:hidden;background:var(--s-surface)}
+.dj-chip{position:relative;height:36px;border:none;border-right:1px solid var(--s-line);background:var(--s-surface);font:700 var(--f-13) var(--mono);color:var(--t-2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:3px;padding:0 3px 5px;transition:background var(--rapide),color var(--rapide)}
+.dj-chip:last-child{border-right:none}
+.dj-chip::after{content:"";position:absolute;left:7px;right:7px;bottom:4px;height:3px;border-radius:2px;background:var(--s-line);transition:background var(--rapide)}
+.dj-chip i{font-size:9px;line-height:1}
+.dj-chip.ok{color:var(--ok)} .dj-chip.ok::after{background:var(--ok)}
+.dj-chip.serre{color:var(--warn)} .dj-chip.serre::after{background:var(--warn)}
+.dj-chip.ko{color:var(--ko)} .dj-chip.ko::after{background:var(--ko)}
+.dj-chip:hover{background:var(--s-hover)}
+.dj-chip:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;z-index:1}
+.dj-chip[aria-pressed="true"]{background:var(--t-1);color:#fff}
+.dj-chip.ok[aria-pressed="true"]{background:var(--ok)}
+.dj-chip.serre[aria-pressed="true"]{background:var(--warn)}
+.dj-chip.ko[aria-pressed="true"]{background:var(--ko)}
+.dj-chip[aria-pressed="true"]::after{background:rgba(255,255,255,.55)}
+.dj-chip[aria-pressed="true"] i{color:#ffe08a}
+.dj-dou{font-size:var(--f-11);color:var(--t-2)}
+/* ── le graphique ── */
+.dj-graphe{position:relative;margin:0 -12px;padding:0}
+.dj-graphe svg{width:100%;height:auto;display:block;touch-action:none}
+.dj-graphe .dj-capte{cursor:crosshair}
+.dj-graphe svg.tient,.dj-graphe svg.tient *{cursor:grabbing}
+.dj-graphe text{font:500 9px var(--sans);fill:var(--t-2);pointer-events:none;font-variant-numeric:tabular-nums}
+.dj-graphe .dj-fond{fill:var(--s-surface)}
+.dj-graphe .dj-grad{fill:var(--t-3)}
+.dj-graphe .dj-titre{font-weight:600;fill:var(--t-2);letter-spacing:.02em}
+.dj-graphe .dj-zone-t{font:700 8.5px var(--sans);letter-spacing:.12em;text-transform:uppercase}
+.dj-graphe .dj-zone-t.ok{fill:var(--ok);opacity:.7}
+.dj-graphe .dj-zone-t.ko{fill:var(--ko);opacity:.55}
+.dj-graphe .dj-grille{stroke:var(--s-line);stroke-width:.75}
+.dj-graphe .dj-grille.maj{stroke:var(--s-line-2);opacity:.8}
+.dj-graphe .dj-grille.fin{stroke-width:.5;opacity:.6}
+.dj-graphe .dj-repere{stroke:var(--t-3);stroke-width:.6;stroke-dasharray:1.5 2.5;opacity:.75}
+.dj-graphe .dj-repere-t{font-size:8px;fill:var(--t-3)}
+.dj-graphe .dj-axe{stroke:var(--s-line-2);stroke-width:1;pointer-events:none}
+.dj-graphe .dj-cal{transition:transform var(--moyen)}
+.dj-graphe .dj-zone{fill:var(--ok);fill-opacity:.09;pointer-events:none}
+.dj-graphe .dj-bande{fill:var(--warn);fill-opacity:.11;pointer-events:none}
+.dj-graphe .dj-courbe{fill:none;stroke-width:1.75;stroke-linejoin:round;stroke-linecap:round;pointer-events:none;transition:opacity var(--rapide),stroke-width var(--rapide)}
+.dj-graphe .dj-courbe.tirets{stroke-dasharray:5 3}
+.dj-graphe svg.isole .dj-courbe:not(.vise){opacity:.14}
+.dj-graphe svg.isole .dj-courbe.vise{stroke-width:2.5}
+.dj-graphe svg.isole .dj-bande{fill-opacity:.05}
+.dj-graphe .dj-cal-etiq{font:700 8.5px var(--sans);fill:var(--t-1)}
+.dj-graphe .dj-fantome{transition:opacity var(--moyen)}
+.dj-graphe .dj-fantome path{fill:none;stroke:var(--t-3);stroke-width:.9;opacity:.5;transition:opacity var(--rapide),stroke var(--rapide),stroke-width var(--rapide)}
+.dj-graphe .dj-fantome .dj-prise{stroke:transparent;stroke-width:10;opacity:1;cursor:pointer;pointer-events:stroke}
+.dj-graphe .dj-fantome text{font:700 8.5px var(--sans);fill:var(--t-3);pointer-events:auto;cursor:pointer;transition:opacity var(--rapide),fill var(--rapide)}
+.dj-graphe .dj-fantome text.cache{opacity:0}
+.dj-graphe .dj-fantome.retenu{opacity:0;pointer-events:none}
+.dj-graphe .dj-fantome.vise path,.dj-graphe .dj-fantome:hover path{stroke:var(--t-1);opacity:.95;stroke-width:1.5}
+.dj-graphe .dj-fantome.vise .dj-prise,.dj-graphe .dj-fantome:hover .dj-prise{stroke:transparent}
+.dj-graphe .dj-fantome.vise text,.dj-graphe .dj-fantome:hover text{fill:var(--t-1);opacity:1}
+.dj-graphe .dj-fantome.vise.ko path,.dj-graphe .dj-fantome.ko:hover path{stroke:var(--ko)}
+.dj-graphe .dj-fantome.vise.ko text,.dj-graphe .dj-fantome.ko:hover text{fill:var(--ko)}
+.dj-graphe .dj-fantome.vise.ok path,.dj-graphe .dj-fantome.ok:hover path{stroke:var(--ok)}
+.dj-graphe .dj-fantome.vise.ok text,.dj-graphe .dj-fantome.ok:hover text{fill:var(--ok)}
+.dj-graphe .dj-fantome.vise.serre path,.dj-graphe .dj-fantome.serre:hover path{stroke:var(--warn)}
+.dj-graphe .dj-fantome.vise.serre text,.dj-graphe .dj-fantome.serre:hover text{fill:var(--warn)}
+.dj-graphe .dj-systeme-halo{fill:none;stroke:var(--s-surface);stroke-width:5;stroke-linejoin:round;opacity:.85;pointer-events:none}
+.dj-graphe .dj-systeme{fill:none;stroke:var(--t-1);stroke-width:2;stroke-linejoin:round;pointer-events:none}
+.dj-graphe .dj-pt{cursor:grab;outline:none}
 .dj-graphe .dj-halo{fill:transparent}
-.dj-graphe .dj-point{fill:#26323f;stroke:#fff;stroke-width:1.6;transition:r var(--rapide)}
-.dj-graphe .dj-pt:hover .dj-point{r:6}
-.dj-graphe .dj-pt.ko .dj-point{fill:var(--danger);stroke-width:2}
-.dj-graphe .dj-pt.ko .dj-etiq{fill:var(--danger)}
-.dj-graphe .dj-pt.serre .dj-point{fill:#d4870f}
-.dj-graphe .dj-etiq{font:700 8.5px var(--sans);fill:#26323f;paint-order:stroke;stroke:#f3f5f7;stroke-width:3px;stroke-linejoin:round}
-.dj-graphe .dj-croix{stroke:#26323f;stroke-width:.7;stroke-dasharray:3 3;opacity:.45;pointer-events:none}
-.dj-tip{position:absolute;pointer-events:none;background:var(--verre-plein);color:var(--craie);border-radius:9px;padding:6px 10px;font:500 var(--t0)/1.45 var(--sans);box-shadow:var(--ombre-1);max-width:230px;z-index:2;white-space:normal}
-.dj-tip b{font-family:var(--mono);color:#fff}
-.dj-tip em{font-style:normal;color:var(--cuivre-clair);font-weight:600}
-.dj-legende{display:flex;flex-wrap:wrap;gap:3px 12px;justify-content:center;font-size:var(--t0);color:var(--encre-2);padding-top:5px}
-.dj-legende i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
-.dj-legende i.prof{background:#26323f}
-.dj-legende i.fant{background:none;height:0;border-top:2px dashed #b4bcc5;border-radius:0}
-.dj-etats{display:flex;flex-direction:column;gap:4px}
-.dj-etat{display:grid;grid-template-columns:minmax(72px,1fr) 64px 12px 64px 12px 22px;align-items:center;column-gap:6px;font-size:var(--t1);color:var(--encre-2)}
-.dj-etat .dj-nom{color:var(--encre);font-weight:500}
-.dj-etat input{border:1px solid var(--filet);border-radius:8px;padding:3px 8px;font:600 var(--t1) var(--mono);color:var(--encre);background:var(--papier);text-align:right;width:64px;transition:border-color var(--rapide)}
-.dj-etat input.dj-nom{text-align:left;width:100%;font:500 var(--t1) var(--sans);border-color:transparent;padding-left:0}
-.dj-etat input.dj-nom:hover{border-color:var(--filet)}
-.dj-etat input:hover{border-color:#c9d1d9}
-.dj-etat input:focus{outline:none;border-color:var(--cuivre);box-shadow:0 0 0 3px var(--cuivre-pale)}
-.dj-etat i{font-style:normal;color:var(--encre-2);font-size:var(--t0);min-width:8px}
-.dj-etat .dj-inf{font-size:var(--t2);text-align:right;color:var(--encre-2)}
-.dj-x{width:22px;height:22px;border:none;background:none;border-radius:50%;color:var(--encre-2);font-size:var(--t3);line-height:1;cursor:pointer;padding:0}
-.dj-x:hover{background:#fbeae8;color:var(--danger)}
-.dj-plus{align-self:flex-start;margin:2px 0 0 -8px}
-.dj-fils{margin-top:2px}
+.dj-graphe .dj-aura{fill:var(--t-1);opacity:0;transition:opacity var(--rapide)}
+.dj-graphe .dj-pt:hover .dj-aura,.dj-graphe .dj-pt:focus-visible .dj-aura{opacity:.16}
+.dj-graphe .dj-point{fill:var(--t-1);stroke:#fff;stroke-width:1.75;transition:fill var(--rapide)}
+.dj-graphe .dj-pt.ko .dj-point,.dj-graphe .dj-pt.ko .dj-aura{fill:var(--ko)}
+.dj-graphe .dj-pt.ko .dj-aura{opacity:.16}
+.dj-graphe .dj-pt.ko:hover .dj-aura{opacity:.28}
+.dj-graphe .dj-pt.ko .dj-etiq{fill:var(--ko)}
+.dj-graphe .dj-pt.serre .dj-point,.dj-graphe .dj-pt.serre .dj-aura{fill:var(--warn)}
+.dj-graphe .dj-pt.serre .dj-etiq{fill:var(--warn)}
+.dj-graphe .dj-etiq{font:700 9px var(--sans);fill:var(--t-1);paint-order:stroke;stroke:var(--s-surface);stroke-width:3px;stroke-linejoin:round}
+.dj-graphe .dj-croix{stroke:var(--t-2);stroke-width:.7;stroke-dasharray:3 3;opacity:.5;pointer-events:none}
+/* la carte du survol */
+.dj-tip{position:absolute;z-index:3;pointer-events:none;width:max-content;min-width:150px;max-width:300px;background:var(--s-surface);color:var(--t-1);border:1px solid var(--s-line);border-radius:var(--r-2);box-shadow:var(--sh-2);padding:7px 10px 6px;font:500 var(--f-11)/1.4 var(--sans)}
+.dj-tip-t{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding-bottom:4px;margin-bottom:3px;border-bottom:1px solid var(--s-line)}
+.dj-tip-t b{font:700 var(--f-13) var(--mono);white-space:nowrap;font-variant-numeric:tabular-nums}
+.dj-tip-t span{color:var(--t-2);text-align:right;line-height:1.25}
+.dj-tip-l{display:grid;grid-template-columns:14px auto minmax(max-content,1fr) auto;align-items:center;column-gap:7px;padding:1px 0}
+.dj-tip-l i{height:0;border-top:2px solid var(--c);border-radius:1px}
+.dj-tip-l i.tirets{border-top-style:dashed}
+.dj-tip-l span{color:var(--t-2);white-space:nowrap}
+.dj-tip-l b{font-weight:600;white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
+.dj-tip-l em{font:600 var(--f-11) var(--mono);font-style:normal;color:var(--t-3);min-width:34px;text-align:right;font-variant-numeric:tabular-nums}
+.dj-tip-l em.ok{color:var(--ok)} .dj-tip-l em.serre{color:var(--warn)} .dj-tip-l em.ko{color:var(--ko)}
+.dj-tip-v{margin-top:3px;padding-top:4px;border-top:1px solid var(--s-line);font-weight:700;color:var(--ok)}
+.dj-tip-v.ko{color:var(--ko)} .dj-tip-v.serre{color:var(--warn)} .dj-tip-v.info{color:var(--t-2);font-weight:500}
+.dj-tip-v em{font-style:normal;text-transform:uppercase;letter-spacing:.06em}
+.dj-tip-t:only-child{border-bottom:none;padding-bottom:0;margin-bottom:0}
+.dj-tip-t+.dj-tip-v{border-top:none;margin-top:0;padding-top:0}
+/* la légende : survoler une courbe l'isole */
+.dj-legende{display:flex;flex-wrap:wrap;gap:1px 4px;justify-content:center;padding:6px 10px 0;font-size:var(--f-11);color:var(--t-2)}
+.dj-leg{display:inline-flex;align-items:center;gap:6px;border:none;background:none;padding:2px 6px;border-radius:var(--r-1);font:inherit;color:inherit;white-space:nowrap;cursor:default;transition:background var(--rapide),color var(--rapide)}
+button.dj-leg{cursor:pointer}
+button.dj-leg:hover,button.dj-leg:focus-visible{background:var(--s-hover);color:var(--t-1);outline:none}
+.dj-leg i{display:inline-block;width:14px;height:0;border-top:2px solid var(--c);border-radius:1px}
+.dj-leg i.tirets{border-top-style:dashed}
+.dj-leg i.zone{height:9px;width:12px;border:1px solid transparent;border-radius:2px}
+.dj-leg i.zone.ok{background:var(--ok-soft);border-color:#cfe8d9}
+.dj-leg i.zone.bande{background:var(--warn-soft);border-color:#f3dcb8}
+.dj-leg i.prof{border-top:2px solid var(--t-1)}
+.dj-leg i.fant{border-top:1px solid var(--t-3)}
+/* ── les états : une table ── */
+.dj-etats{display:flex;flex-direction:column;gap:5px}
+.dj-entete,.dj-etat{display:grid;grid-template-columns:12px minmax(0,1fr) 82px 82px 22px;align-items:center;column-gap:6px}
+.dj-entete{margin-bottom:1px}
+.dj-entete span{font:700 10px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-3);text-align:right;padding-right:22px}
+.dj-entete .fi-nomen-t{grid-column:1/3;text-align:left;padding-right:0;color:var(--t-2)}
+.dj-verdict{width:8px;height:8px;border-radius:50%;background:var(--s-line-2);justify-self:center;transition:background var(--rapide),box-shadow var(--rapide)}
+.dj-verdict.ok{background:var(--t-1)}
+.dj-verdict.ko{background:var(--ko);box-shadow:0 0 0 3px var(--ko-soft)}
+.dj-verdict.serre{background:var(--warn);box-shadow:0 0 0 3px var(--warn-soft)}
+.dj-etat .dj-nom{font-size:var(--f-13);color:var(--t-1);font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dj-etat input.dj-nom{width:calc(100% + 6px);margin-left:-6px;border:1px solid transparent;border-radius:var(--r-1);padding:4px 6px;font:500 var(--f-13) var(--sans);background:none;color:var(--t-1);transition:border-color var(--rapide),box-shadow var(--rapide)}
+.dj-etat input.dj-nom:hover{border-color:var(--s-line)}
+.dj-etat input.dj-nom:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);background:var(--s-surface)}
+.dj-champ{display:flex;align-items:center;height:30px;border:1px solid var(--s-line);border-radius:var(--r-1);background:var(--s-surface);padding:0 7px 0 4px;transition:border-color var(--rapide),box-shadow var(--rapide)}
+.dj-champ input{flex:1;min-width:0;width:100%;border:none;background:none;outline:none;text-align:right;font:600 var(--f-13) var(--mono);color:var(--t-1);font-variant-numeric:tabular-nums;padding:0 5px 0 0}
+.dj-champ input::placeholder{color:var(--t-3);font-weight:500}
+.dj-champ i{font:500 var(--f-11) var(--sans);font-style:normal;color:var(--t-3);width:12px;text-align:left}
+.dj-champ:hover{border-color:var(--s-line-2)}
+.dj-champ:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.dj-inf{font:600 var(--f-14) var(--sans);color:var(--t-3);text-align:center;padding-right:10px}
+.dj-x{width:22px;height:22px;border:none;background:none;border-radius:50%;color:var(--t-3);font-size:var(--f-16);line-height:1;cursor:pointer;padding:0;transition:background var(--rapide),color var(--rapide)}
+.dj-x:hover{background:var(--ko-soft);color:var(--ko)}
+.dj-plus{align-self:flex-start;margin:2px 0 0 12px}
+/* ── ses fils : ce qu'ils admettent par palier ── */
+.dj-fils .fi-fil{grid-template-columns:auto 14px auto minmax(0,1fr) auto;row-gap:6px}
 .dj-fils .fi-dest{justify-content:flex-start}
-.dj-adm{font-family:var(--mono);font-weight:600;color:var(--encre);white-space:nowrap;text-align:right}
-.dj-du{font-family:var(--mono);font-weight:700;white-space:nowrap}
+.dj-admet{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:0 0 1px}
+.dj-pal{display:flex;flex-direction:column;align-items:flex-end;min-width:58px;padding:3px 7px 2px;border-radius:var(--r-1);background:var(--s-sunken);border:1px solid transparent;line-height:1.2}
+.dj-pal b{font:700 var(--f-12) var(--mono);color:var(--t-1);font-variant-numeric:tabular-nums}
+.dj-pal i{font:500 10px var(--sans);color:var(--t-3);font-style:normal;letter-spacing:.02em}
+.dj-pal.ko{background:var(--ko-soft);border-color:#f0c4c4}
+.dj-pal.ko b,.dj-pal.ko i{color:var(--ko)}
+.dj-pal.att{background:var(--warn-soft);border-color:#f0d9b0}
+.dj-pal.att b,.dj-pal.att i{color:var(--warn)}
+.dj-pal em{font:600 10px var(--sans);font-style:normal;color:var(--warn);white-space:nowrap}
+.dj-ideal em{font-style:normal;color:var(--warn)}
+.dj-dou span{color:var(--t-3)}
+.fi-fil.ko .dj-pal{background:var(--s-surface)}
+.fi-fil.ko .dj-pal.ko{background:var(--ko-soft)}
+.dj-dep{font:600 var(--f-11) var(--sans);padding:0 2px 0 4px;line-height:1.3}
+.dj-dep.ko{color:var(--ko)} .dj-dep.att{color:var(--warn)}
+.dj-dep.ko::before{content:"›";margin-right:5px;font-weight:700}
+/* ── la chute en ligne : une jauge contre la chute admise ── */
+.dj-chutes .fi-fil{grid-template-columns:auto minmax(48px,1fr) auto auto;row-gap:3px}
+.dj-jauge{height:6px;border-radius:3px;background:var(--s-line);position:relative;overflow:hidden;margin:0 2px}
+.dj-jauge i{position:absolute;left:0;top:0;bottom:0;background:var(--ok);border-radius:3px;transition:width var(--moyen)}
+.fi-fil.ko .dj-jauge{background:#f0c4c4}
+.fi-fil.ko .dj-jauge i{background:var(--ko)}
+.dj-du{font:700 var(--f-13) var(--mono);white-space:nowrap;font-variant-numeric:tabular-nums}
+.fi-fil.ko .dj-du{color:var(--ko)}
+.dj-pct{font:500 var(--f-11) var(--mono);color:var(--t-3);white-space:nowrap;min-width:44px;text-align:right;font-variant-numeric:tabular-nums}
+.dj-chemin{grid-column:1/-1;font:500 var(--f-11) var(--mono);color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dj-chemin em{font-style:normal;font-family:var(--sans);color:var(--warn)}
+.dj-chemin em.ko{color:var(--ko);font-weight:600}
+@media (max-width:700px){.dj-graphe{margin:0 -8px}.dj-entete,.dj-etat{grid-template-columns:12px minmax(0,1fr) 72px 72px 22px}.dj-entete span{padding-right:14px}}
