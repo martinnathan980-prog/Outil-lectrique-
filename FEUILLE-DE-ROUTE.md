@@ -15,6 +15,9 @@ L'outil sait aujourd'hui :
   résistance, diamètre, masse) et le faisceau de chaque connecteur ;
 - dire ce qui englobe chaque connecteur (raccord, band-it, manchon, gaine)
   par le tutoriel, et la chute en continu, monophasé ou triphasé ;
+- lire le vrai retest (harness, longueur, appareil, date), suivre la chute
+  en ligne de la source à l'équipement, et comparer chaque équipement aux
+  contrats déjà faits pour en reprendre ce qu'on coche ;
 - faire de chaque dédoublement une barrette à poser (VT1…), qu'on pose au
   contrat d'un geste ;
 - dire l'état de tout le contrat dans la pastille en haut à gauche.
@@ -74,9 +77,14 @@ page de norme suffit toujours : je la transcris.
    température de zone, l'altitude.
 7. **La chute de tension admise**, par réseau (28 V continu, 115 V alternatif…)
    et par nature de circuit (puissance, signal).
-8. **Les longueurs de fil.** Le mieux : une colonne « longueur » dans l'Excel.
-   À défaut, une longueur par défaut par route ou par zone. Sans longueur, la
-   chute reste indicative.
+8. **Les longueurs de fil.** ✔ La colonne « Cable length (mm) » du retest
+   est lue : la chute d'un fil se calcule sur sa longueur, et la fiche d'un
+   disjoncteur suit chaque chemin jusqu'à l'équipement, à travers les
+   prises de coupure et les barrettes, comme la feuille Chute_en_ligne.
+   Sans longueur, l'hypothèse de la simulation sert, et c'est dit. Reste :
+   les chutes de vos connecteurs (la feuille compte 0,90 V ou 2,10 V par
+   paire de contacts : d'où viennent ces valeurs ?) — l'outil prend la
+   résistance de contact de la famille quand la norme la donne.
 
 ### C. Les disjoncteurs
 
@@ -148,6 +156,17 @@ On part du contrat qu'on a, et l'outil propose, **installation par
 installation**, ce que les machines semblables ont déjà fait. Rien ne change
 sans un clic, tout se défait (Ctrl+Z), et tout passe les règles
 d'aujourd'hui. Quatre temps.
+
+✔ Les quatre temps sont dans l'outil : on dépose la grande base (un retest
+de plusieurs harness, déposé sur la table ou par la bible), elle se garde
+dans le navigateur ; la fiche de chaque équipement dit « Déjà fait » (les
+trois machines les plus proches, même part number sinon même code, le taux
+de lignes communes) ; un clic ouvre la comparaison (manque, diffère, pareil,
+en plus ; les repères de la machine lus avec les nôtres) ; on coche, on
+reprend, Ctrl+Z défait ; ce qui est repris passe les mêmes contrôles. Reste
+à régler avec vous : le numéro des fils repris, la correspondance des
+repères quand le part number ne suffit pas, et le vrai sens de « 677VT2 51 »
+(le module 51 de la barrette, contact B ?).
 
 ### a. Ranger (une fois)
 

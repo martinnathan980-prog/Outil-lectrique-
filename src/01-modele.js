@@ -42,11 +42,23 @@ const estMasse    = r => formeDe(r) === 'masse';
    colonne de bornes, un fil de chaque côté. */
 const estBornier  = r => estBarrette(r) || estCoupure(r);
 
+/* Un bout tel que la base l'écrit : « 677VT2 51 » dans Device et « B » dans Pin — le repère, puis le MODULE de la
+   barrette, puis le contact du module. Chez nous : repère 677VT2, borne 51B (le module et son contact). Un repère sans
+   espace reste tel quel. */
+function boutLu(repere, borne) { const r = String(repere == null ? '' : repere).trim(), b = String(borne == null ? '' : borne).trim();
+  const m = /^(\S+)\s+(\d+)$/.exec(r); if (!m || !lireRepere(m[1])) return [r, b];
+  return [m[1], m[2] + (/^\d/.test(b) ? '-' : '') + b]; }
+// une longueur du retest : des mm (« 3670 ») ou des m (« 3,67 ») ; en mètres chez nous, ou null
+function longueurLue(v) { if (v == null || v === '') return null; if (typeof v === 'number') return v > 100 ? v / 1000 : v;
+  const t = String(v).trim().replace(',', '.'), m = /-?\d+(\.\d+)?/.exec(t); if (!m) return null; const x = parseFloat(m[0]); if (!(x > 0)) return null;
+  return /mm/i.test(t) || (!/\bm\b/i.test(t) && x > 100) ? x / 1000 : x; }
 function liaison(o) {
-  const s = v => (v == null ? '' : String(v).trim());
-  return { de: s(o.de), borneDe: s(o.borneDe), pnDe: s(o.pnDe),
-           vers: s(o.vers), borneVers: s(o.borneVers), pnVers: s(o.pnVers),
-           cable: s(o.cable), type: s(o.type), route: s(o.route), plan: s(o.plan) };
+  const s = v => (v == null ? '' : String(v).trim()), [de, borneDe] = boutLu(o.de, o.borneDe), [vers, borneVers] = boutLu(o.vers, o.borneVers);
+  const l = { de, borneDe, pnDe: s(o.pnDe), vers, borneVers, pnVers: s(o.pnVers), cable: s(o.cable), type: s(o.type), route: s(o.route), plan: s(o.plan) };
+  // ce que le vrai retest porte en plus : le faisceau, la longueur (m), l'appareil, la date du retest
+  const longueur = longueurLue(o.longueur); if (longueur != null) l.longueur = longueur;
+  if (s(o.harness)) l.harness = s(o.harness); if (s(o.appareil)) l.appareil = s(o.appareil); if (s(o.retest)) l.retest = s(o.retest);
+  return l;
 }
 /* Une liaison sans équipement à un bout n'en est pas une : c'est une ligne
    en cours de saisie. On la garde dans la table, pas dans le dessin. */

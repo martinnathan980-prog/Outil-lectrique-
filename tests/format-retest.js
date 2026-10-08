@@ -37,6 +37,13 @@ const FICHIER = fichierDemande();
     t = 'Pin2;Device2;Cable Tag;Device1;Pin1;FWD;PN1;PN2;Route;Cable T/G\n' + ['7', '409GH2', 'W-999', '210SP1', '12', '5', 'PNA', 'PNB', '3M', 'DR20'].join(';');
     r = lireTexte(t); const m = r.liaisons[0] || {};
     ok('colonnes dans le désordre', r.format === 'retest' && m.de === '210SP1' && m.vers === '409GH2' && m.borneVers === '7' && m.plan === '5', m.de + '·' + m.borneDe + ' → ' + m.vers + '·' + m.borneVers + ' folio ' + m.plan);
+    // le vrai format : la ligne d'exemple du lecteur, les seize colonnes, le « repère module », la longueur en mm
+    t = 'Harness;Device1;Pin1;PN1;Description1;Cable T/G;Cable Tag;Route;Device2;Pin2;PN2;Description2;FWD;Cable length (mm);APPAREIL;Date du retest\n332A601150-023-D;677VT2 51;B;NSA937cdk,c;;DR22;2564-1830;2MO;677VCH;1;EN36cdcdc;;MEE256A7815003A;3670;test;27/10/2025\n';
+    r = lireTexte(t); const v = r.liaisons[0] || {};
+    ok('la ligne du lecteur : harness, appareil, date gardés ; 3670 mm → 3,67 m', r.format === 'retest' && v.harness === '332A601150-023-D' && v.appareil === 'test' && v.retest === '27/10/2025' && v.longueur === 3.67 && r.harnais.join() === '332A601150-023-D', JSON.stringify([v.harness, v.appareil, v.retest, v.longueur]));
+    ok('« 677VT2 51 » + « B » → repère 677VT2, borne 51B (le module et son contact) ; 677VCH:1 tel quel', v.de === '677VT2' && v.borneDe === '51B' && v.vers === '677VCH' && v.borneVers === '1' && v.pnDe === 'NSA937cdk,c' && v.plan === 'MEE256A7815003A', v.de + ':' + v.borneDe);
+    r = lireTexte('Device1;Pin1;Device2;Pin2;Longueur\nA;1;B;2;2,5\nC;1;D;2;180');
+    ok('une longueur sans unité : des mètres sous 100 (2,5 m), des mm au-delà (180 → 0,18 m)', r.liaisons[0].longueur === 2.5 && r.liaisons[1].longueur === 0.18, r.liaisons.map(l => l.longueur).join(' '));
     r = lireTexte('De;Borne;Vers;Borne\nA;1;B;2\nC;3;D;4');
     ok('un tableau libre passe encore', r.liaisons.length === 2, 'format=' + r.format + ' · ' + r.liaisons.length + ' liaisons');
     r = lireTexte('A;1;;B;2;;;;;\nC;1;;D;2;;;;;');

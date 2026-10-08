@@ -121,6 +121,23 @@ const FICHIER = P.fichierDemande();
   ok(await page.evaluate(() => { const h = document.querySelector('#ba-equip [data-panneau="A"] .fi-habillage'); return !!h && /durci/.test(h.textContent) && /E0805-01/.test(h.textContent) && app.contrat.raccords.get('300XC1|A').blindage === 'GND'; }), 'reprise sur le corps : un raccord durci et un band-it E0805-01, gardés au contrat');
   await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(800);
   ok(await page.evaluate(() => !app.contrat.raccords.get('300XC1|A')), 'Ctrl+Z défait le choix du raccord');
+  // la chute en ligne depuis le disjoncteur, et la fiche d'un fil avec sa chute
+  await page.evaluate(() => { allerAuPlan('1'); choisirBloc(app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag')); }); await page.waitForTimeout(500);
+  ok(await page.evaluate(() => { const c = document.querySelector('#ba-equip .dj-chutes'); return !!c && c.querySelectorAll('.fi-fil').length === 3 && /W-015/.test(c.textContent) && /V/.test(c.textContent); }), 'la fiche de 102CB1 : la chute en ligne jusqu’à ses trois équipements');
+  // les contrats déjà faits : une base (l'exemple décalé), « Déjà fait » sur la fiche, la comparaison, reprendre, Ctrl+Z
+  await page.evaluate(() => { const d = r => r.replace(/^(\d)(\d\d)([A-Z]+)(\d*)/, (m, a, b, c, e) => String(+a + 2) + b + c + e);
+    const B = contratExemple().map(l => liaison({ ...l, de: d(l.de), vers: d(l.vers), harness: 'H-1', appareil: 'H160', retest: '2024-07-08' }));
+    B.push(liaison({ de: '302CB1', borneDe: '3', pnDe: 'NSA935401-10', vers: '305XX9', borneVers: '1', pnVers: 'ZZZ', cable: 'W-099', type: 'DR20', plan: '1', harness: 'H-1', appareil: 'H160' }));
+    adopterReferences(B, 'essai'); choisirBloc(app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag')); }); await page.waitForTimeout(600);
+  ok(await page.evaluate(() => { const d = document.querySelector('#ba-equip .fi-deja'); return !!d && d.querySelectorAll('.fi-cand').length === 1 && /302CB1/.test(d.textContent) && /75 %/.test(d.textContent) && /H160/.test(d.textContent); }), '« Déjà fait » sur 102CB1 : 302CB1 de H-1 (H160), 75 % de lignes communes');
+  await page.click('#ba-equip .fi-cand'); await page.waitForTimeout(500);
+  ok(await page.evaluate(() => app.cible && app.cible.type === 'ref' && document.querySelectorAll('#ba-equip .cp-liste .cp-manque').length === 2 && document.querySelectorAll('#ba-equip .cp-liste .cp-identique').length === 4 && /305XX9/.test($('ba-equip').textContent) && $('cp-reprendre').disabled), 'la comparaison : une ligne manque chez nous (305XX9), trois pareilles ; rien à reprendre tant que rien n’est coché');
+  const avant = await page.evaluate(() => verite().length);
+  await page.click('#cp-tout'); await page.waitForTimeout(300); await page.click('#cp-reprendre'); await page.waitForTimeout(1200);
+  ok(await page.evaluate(n => verite().length === n + 1 && verite().some(l => l.de === '102CB1' && l.borneDe === '3' && l.vers === '305XX9' && !l.cable) && app.cible && app.cible.type === 'bloc' && app.dessin.comps.some(c => c.name === '305XX9'), avant), 'reprendre : la liaison 102CB1:3 → 305XX9 entre au contrat, sans numéro, et se dessine');
+  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(800);
+  ok(await page.evaluate(n => verite().length === n, avant), 'Ctrl+Z défait la reprise');
+  await page.evaluate(() => { adopterReferences([], ''); });
   ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
   console.log('\n  ' + (ko ? ko + ' échec(s)' : 'tout tient'));
   await nav.close(); process.exit(ko ? 1 : 0);

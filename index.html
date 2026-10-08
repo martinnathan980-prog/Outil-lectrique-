@@ -913,6 +913,20 @@ details.fi-etat.ko ul{background:#fbeceb}details.fi-etat.att ul{background:#fcf3
 .fi-ko.fi-att{color:#74450a}
 .fi-cable{color:var(--encre-2);font-family:var(--mono);font-size:var(--t0)}
 .fi-faisceau{padding-top:6px}
+/* les contrats déjà faits : les candidats, la comparaison */
+.fi-cand{cursor:pointer}
+.fi-cand .fi-ct b{color:var(--encre)}
+.cp-liste .fi-fil{grid-template-columns:18px auto auto minmax(0,1fr) auto}
+.cp-liste .fi-groupe{grid-column:1/-1}
+.cp-coche{width:14px;height:14px;margin:0;accent-color:var(--cuivre)}
+.cp-manque{background:#eaf5ee}.cp-differe{background:#fcf3e6}.cp-identique{color:var(--encre-2)}.cp-enplus{background:#eef3fb}
+.fi-groupe.cp-manque,.fi-groupe.cp-differe,.fi-groupe.cp-identique,.fi-groupe.cp-enplus{background:none}
+.fi-groupe.cp-manque{color:#1d5b35}.fi-groupe.cp-differe{color:#74450a}.fi-groupe.cp-enplus{color:#2b4f8c}
+.fi-corr{font-style:normal;color:var(--encre-2);font-size:var(--t0);margin-left:4px}
+.fi-bouton.cuivre{background:var(--cuivre);border-color:var(--cuivre);color:#fff}
+.fi-bouton.cuivre svg.ico{color:#fff}
+.fi-bouton.cuivre:disabled{opacity:.45;cursor:default}
+.fi-etat i{min-width:14px;width:auto;padding:0 3px;border-radius:7px}
 .fi-habillage{padding-top:4px;align-items:center}
 .fi-habillage .fi-lien{margin-left:auto}
 .fi-habillage i{margin-left:4px}
@@ -1188,7 +1202,7 @@ details.fi-etat.ko ul{background:#fbeceb}details.fi-etat.att ul{background:#fcf3
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = 'c4b85d3c9eb1';
+const VERSION_MOTEUR = '2d16349a9497';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -1233,11 +1247,23 @@ const estMasse    = r => formeDe(r) === 'masse';
    colonne de bornes, un fil de chaque côté. */
 const estBornier  = r => estBarrette(r) || estCoupure(r);
 
+/* Un bout tel que la base l'écrit : « 677VT2 51 » dans Device et « B » dans Pin — le repère, puis le MODULE de la
+   barrette, puis le contact du module. Chez nous : repère 677VT2, borne 51B (le module et son contact). Un repère sans
+   espace reste tel quel. */
+function boutLu(repere, borne) { const r = String(repere == null ? '' : repere).trim(), b = String(borne == null ? '' : borne).trim();
+  const m = /^(\S+)\s+(\d+)$/.exec(r); if (!m || !lireRepere(m[1])) return [r, b];
+  return [m[1], m[2] + (/^\d/.test(b) ? '-' : '') + b]; }
+// une longueur du retest : des mm (« 3670 ») ou des m (« 3,67 ») ; en mètres chez nous, ou null
+function longueurLue(v) { if (v == null || v === '') return null; if (typeof v === 'number') return v > 100 ? v / 1000 : v;
+  const t = String(v).trim().replace(',', '.'), m = /-?\d+(\.\d+)?/.exec(t); if (!m) return null; const x = parseFloat(m[0]); if (!(x > 0)) return null;
+  return /mm/i.test(t) || (!/\bm\b/i.test(t) && x > 100) ? x / 1000 : x; }
 function liaison(o) {
-  const s = v => (v == null ? '' : String(v).trim());
-  return { de: s(o.de), borneDe: s(o.borneDe), pnDe: s(o.pnDe),
-           vers: s(o.vers), borneVers: s(o.borneVers), pnVers: s(o.pnVers),
-           cable: s(o.cable), type: s(o.type), route: s(o.route), plan: s(o.plan) };
+  const s = v => (v == null ? '' : String(v).trim()), [de, borneDe] = boutLu(o.de, o.borneDe), [vers, borneVers] = boutLu(o.vers, o.borneVers);
+  const l = { de, borneDe, pnDe: s(o.pnDe), vers, borneVers, pnVers: s(o.pnVers), cable: s(o.cable), type: s(o.type), route: s(o.route), plan: s(o.plan) };
+  // ce que le vrai retest porte en plus : le faisceau, la longueur (m), l'appareil, la date du retest
+  const longueur = longueurLue(o.longueur); if (longueur != null) l.longueur = longueur;
+  if (s(o.harness)) l.harness = s(o.harness); if (s(o.appareil)) l.appareil = s(o.appareil); if (s(o.retest)) l.retest = s(o.retest);
+  return l;
 }
 /* Une liaison sans équipement à un bout n'en est pas une : c'est une ligne
    en cours de saisie. On la garde dans la table, pas dans le dessin. */
@@ -1624,7 +1650,7 @@ const COLONNES = [
   ['fwd',      ['fwd', 'plan']],
   ['length',   ['cablelength', 'cablelengthmm', 'cablelengthinmm', 'length', 'longueur']],
   ['appareil', ['appareil', 'aircraft', 'contrat']],
-  ['retest',   ['dateretest', 'retestdate', 'datederetest', 'retest']]
+  ['retest',   ['dateretest', 'retestdate', 'datederetest', 'dateduretest', 'retest', 'date']]
 ];
 
 function decouperLigne(ligne) {
@@ -1695,6 +1721,8 @@ function lireTexte(texte) {
   const rt = trouverEnteteRetest(brutes);
   if (rt) {
     const c = rt.col, g = (row, i) => (i != null && row[i] != null) ? row[i] : '';
+    // la longueur : des mm quand l'en-tête le dit (« Cable length (mm) »)
+    const entete = cellules(brutes[rt.ligne] || ''), enMm = c.length != null && /mm/i.test(entete[c.length] || '');
     const liaisons = [];
     for (let r = rt.ligne + 1; r < brutes.length; r++) {
       if (!brutes[r].trim()) continue;
@@ -1702,10 +1730,12 @@ function lireTexte(texte) {
       const l = liaison({ de: g(row, c.device1), borneDe: g(row, c.pin1), pnDe: g(row, c.pn1),
                           vers: g(row, c.device2), borneVers: g(row, c.pin2), pnVers: g(row, c.pn2),
                           cable: g(row, c.cabletag), type: g(row, c.cabletg),
-                          route: g(row, c.route), plan: g(row, c.fwd) });
+                          route: g(row, c.route), plan: g(row, c.fwd),
+                          longueur: c.length != null && g(row, c.length) !== '' ? g(row, c.length) + (enMm ? ' mm' : '') : '',
+                          harness: g(row, c.harness), appareil: g(row, c.appareil), retest: g(row, c.retest) });
       if (liaisonComplete(l)) liaisons.push(l);
     }
-    return { liaisons, format: 'retest', entete: rt.ligne + 1, colonnes: rt.trouvees };
+    return { liaisons, format: 'retest', entete: rt.ligne + 1, colonnes: rt.trouvees, harnais: [...new Set(liaisons.map(l => l.harness).filter(Boolean))] };
   }
 
   let map = null, debut = 0; const premiere = cellules(pleines[0]);
@@ -6007,15 +6037,16 @@ function simulerBornier(Q, norme, hyp) {
   const rContact = F && F.resistance != null ? F.resistance / 1000 : 0, lignes = [];
   Q.modules.forEach(m => ['amont', 'aval'].forEach(sens => m.trous[sens].forEach((f, k) => { if (!f) return;
     const rd = resistanceDuFil(norme, f.type, f.jauge), fil = rd.fil;
-    const kT = facteurAmbiante(fil, H.ambiante), iFil = fil && fil.intensite != null ? fil.intensite * facteur * kT : null, rFil = rd.rho != null ? rd.rho / 1000 * H.longueur : null;
+    const Lf = f.l && f.l.longueur > 0 ? f.l.longueur : H.longueur, reelle = !!(f.l && f.l.longueur > 0);
+    const kT = facteurAmbiante(fil, H.ambiante), iFil = fil && fil.intensite != null ? fil.intensite * facteur * kT : null, rFil = rd.rho != null ? rd.rho / 1000 * Lf : null;
     const regime = REGIMES[H.regime] ? H.regime : 'continu', cosphi = regime === 'continu' ? 1 : Math.min(1, Math.max(0, +H.cosphi || 0.8)), sinphi = Math.sqrt(Math.max(0, 1 - cosphi * cosphi));
     const section = rd.cab && rd.cab.section != null ? rd.cab.section : (fil && fil.section != null ? fil.section : null), gros = regime !== 'continu' && section != null && section >= GROS_CABLE;
-    const X = regime === 'continu' ? 0 : (+H.reactance || 0) / 1000 * H.longueur, xRequis = gros && !(X > 0), kReg = regime === 'tri' ? Math.sqrt(3) : 1;
+    const X = regime === 'continu' ? 0 : (+H.reactance || 0) / 1000 * Lf, xRequis = gros && !(X > 0), kReg = regime === 'tri' ? Math.sqrt(3) : 1;
     const R = rFil == null ? null : rFil + rContact, dU = R == null || xRequis ? null : kReg * (R * cosphi + X * sinphi) * H.courant, pct = dU == null || !H.tension ? null : dU / H.tension * 100;
     const verdict = f.jaugeOk === false ? 'jauge' : (iFil != null && H.courant > iFil + 1e-9) ? 'fil' : (iContact != null && H.courant > iContact + 1e-9) ? 'contact'
       : xRequis ? 'reactance' : (dU != null && chute && chute.chuteMax != null && dU > chute.chuteMax + 1e-9) ? 'chute' : !fil ? 'inconnu' : 'ok';
     lignes.push({ borne: m.borne, sens, trou: k + 1, surcharge: k >= Q.filsParCote, cable: f.cable, type: f.type, jauge: f.jauge, jaugeOk: f.jaugeOk, fil, approx: !!(fil && fil.approx),
-                  iFil, iContact, rFil, rContact, R, dU, pct, verdict, kT, rho: rd.rho, rhoSource: rd.source, cab: rd.cab, section, regime, cosphi, X, xRequis, vers: f.vers, borneVers: f.borne, l: f.l }); })));
+                  iFil, iContact, rFil, rContact, R, dU, pct, verdict, kT, rho: rd.rho, rhoSource: rd.source, cab: rd.cab, section, regime, cosphi, X, xRequis, longueur: Lf, reelle, vers: f.vers, borneVers: f.borne, l: f.l }); })));
   const compte = {}; lignes.forEach(x => { compte[x.verdict] = (compte[x.verdict] || 0) + 1; });
   return { hyp: H, facteur, chute, iContact, rContact, famille: F, lignes, compte, regime: REGIMES[H.regime] ? H.regime : 'continu', sansNorme: !F && !(norme && norme.fils.length) };
 }
@@ -6283,6 +6314,66 @@ function planDesCavites(liste) { const modules = [], fils = [], verdicts = [];
   return { modules, fils, verdicts, potentiels: liste.reduce((n, x) => n + x.plan.potentiels, 0), places: liste.reduce((n, x) => n + x.plan.places, 0), restants: liste.flatMap(x => x.plan.restants),
            contacts: modules.reduce((n, M) => n + M.module.contacts.length, 0), utilises: liste.reduce((n, x) => n + x.plan.utilises, 0), reference: liste.map(x => x.nom + ' ' + (x.plan.reference || '—')).join(' · ') }; }
 
+/* ───────── 09-chute.js ───────── */
+/* ===========================================================================
+   09 quater — LA CHUTE EN LIGNE, DE LA SOURCE À L'ÉQUIPEMENT
+   ---------------------------------------------------------------------------
+   La feuille Chute_en_ligne du lecteur : une source (le disjoncteur, son
+   courant), puis des segments — un câble (sa longueur, son type), un
+   connecteur (une prise de coupure, ses contacts), un câble, une prise… —
+   jusqu'à l'équipement ; chaque segment a sa chute, le total aussi.
+   Ici : depuis un repère, on SUIT LE POTENTIEL à travers les prises de
+   coupure (le même contact des deux côtés), les barrettes (les bornes
+   shuntées) et les barrettes à poser (un seul potentiel), jusqu'à ce qu'on
+   arrive sur un équipement. Chaque câble compte sa longueur — celle du
+   retest quand il la porte, sinon l'hypothèse — fois la résistance de son
+   type (la base des câbles) fois le courant ; chaque prise traversée compte
+   la résistance de contact de sa famille (table Familles) si on la connaît.
+   Rien ici ne touche à la page : le moteur, comme 09.
+   =========================================================================== */
+
+const PROFONDEUR_CHUTE = 12;
+/* Un bout « de passage » : une prise de coupure, une barrette, une barrette à poser — le courant y entre et en ressort. */
+const estPassage = r => estCoupure(r) || estBarrette(r) || VT_A_POSER.test(String(r || ''));
+/* Les bornes d'un passage qui sont au même potentiel que `borne` : le même contact d'une prise ; les bornes shuntées
+   d'une barrette (une liaison de la barrette à elle-même est un shunt) ; toutes celles d'une barrette à poser. */
+function memePotentiel(liaisons, repere, borne) { if (VT_A_POSER.test(repere)) return null;   // null : tout
+  if (!estBarrette(repere)) return new Set([borne]);
+  const chef = new Map(), trouver = b => { while (chef.has(b) && chef.get(b) !== b) b = chef.get(b); return b; };
+  liaisons.forEach(l => { if (l.de === repere && l.vers === repere && l.borneDe && l.borneVers) { [l.borneDe, l.borneVers].forEach(b => { if (!chef.has(b)) chef.set(b, b); });
+    const a = trouver(l.borneDe), c = trouver(l.borneVers); if (a !== c) chef.set(c, a); } });
+  if (!chef.has(borne)) return new Set([borne]); const r = trouver(borne); return new Set([...chef.keys()].filter(b => trouver(b) === r)); }
+/* LES CHEMINS depuis un repère (un disjoncteur) : pour chaque fil qui en part, la suite des segments jusqu'à un
+   équipement — [{ fil: liaison, de, vers }, { passage: repère, borne }, …]. Une barrette qui dessert plusieurs fils
+   donne plusieurs chemins. Un chemin qui tourne en rond ou n'aboutit pas est rendu tel quel (`fini: false`). */
+function cheminsDepuis(liaisons, repere) { const L = liaisons.filter(l => l.de && l.vers && l.de !== l.vers), out = [];
+  const bouts = l => [[l.de, l.borneDe], [l.vers, l.borneVers]];
+  const suivre = (chemin, ici, borne, vus) => { if (chemin.length > PROFONDEUR_CHUTE) { out.push({ segments: chemin, fini: false, bout: [ici, borne] }); return; }
+    if (!estPassage(ici)) { out.push({ segments: chemin, fini: true, bout: [ici, borne] }); return; }
+    const pot = memePotentiel(L, ici, borne), suites = L.filter(l => !vus.has(l) && bouts(l).some(([r, b]) => r === ici && (!pot || pot.has(b))));
+    if (!suites.length) { out.push({ segments: chemin, fini: false, bout: [ici, borne] }); return; }
+    suites.forEach(l => { const [a, b] = bouts(l)[0][0] === ici && (!pot || pot.has(bouts(l)[0][1])) ? bouts(l) : bouts(l).slice().reverse();
+      suivre([...chemin, { passage: ici, borne, borneSortie: a[1] }, { fil: l, de: a, vers: b }], b[0], b[1], new Set([...vus, l])); }); };
+  L.filter(l => l.de === repere || l.vers === repere).forEach(l => { const [a, b] = l.de === repere ? bouts(l) : bouts(l).slice().reverse();
+    suivre([{ fil: l, de: a, vers: b }], b[0], b[1], new Set([l])); });
+  return out; }
+/* LA CHUTE d'un chemin : chaque câble (ρ × L × I), chaque passage (R contact × I), le total, et ce qu'on n'a pas su
+   compter. `courant` en A ; `hyp` : la longueur par défaut (m). Rend { segments: [{…, dU, note}], dU, longueur, inconnus }. */
+function chuteDuChemin(norme, chemin, courant, hyp) { const H = { ...HYPOTHESES, ...(hyp || {}) }, segs = [], inconnus = []; let dU = 0, longueur = 0;
+  chemin.segments.forEach(s => { if (s.fil) { const l = s.fil, L = l.longueur > 0 ? l.longueur : H.longueur, rd = resistanceDuFil(norme, l.type, jaugeDuType(l.type));
+      const r = rd.rho != null ? rd.rho / 1000 * L : null, d = r == null ? null : r * courant; if (d == null) inconnus.push((l.cable || 'fil') + ' : type ' + (l.type || 'inconnu') + ', résistance inconnue'); else dU += d; longueur += L;
+      segs.push({ ...s, longueur: L, reelle: l.longueur > 0, rho: rd.rho, R: r, dU: d }); }
+    else { const pn = pnDuPassage(norme, chemin, s.passage), F = estCoupure(s.passage) ? familleDeNorme(norme, null, pn) : null, r = F && F.resistance != null ? F.resistance / 1000 : (estCoupure(s.passage) ? null : 0);
+      const d = r == null ? null : r * courant; if (d == null) inconnus.push(s.passage + ' : résistance de contact inconnue'); else dU += d; segs.push({ ...s, R: r, dU: d, famille: F ? F.famille : '' }); } });
+  return { segments: segs, dU, longueur, inconnus, bout: chemin.bout, fini: chemin.fini }; }
+// le part number d'un passage, lu sur un fil du chemin qui y arrive
+const pnDuPassage = (norme, chemin, repere) => { for (const s of chemin.segments) { if (!s.fil) continue; if (s.fil.de === repere && s.fil.pnDe) return s.fil.pnDe; if (s.fil.vers === repere && s.fil.pnVers) return s.fil.pnVers; } return ''; };
+/* Toutes les chutes depuis un repère, prêtes à lire : la destination, le chemin en mots, le total. */
+function chutesDepuis(norme, liaisons, repere, courant, hyp) { const H = { ...HYPOTHESES, ...(hyp || {}) }, chute = chuteAdmise(norme, H.tension);
+  return cheminsDepuis(liaisons, repere).map(ch => { const c = chuteDuChemin(norme, ch, courant, H), pct = H.tension ? c.dU / H.tension * 100 : null;
+    return { ...c, pct, admis: chute && chute.chuteMax != null ? chute.chuteMax : null, trop: !!(chute && chute.chuteMax != null && c.dU > chute.chuteMax + 1e-9),
+             mots: c.segments.map(s => s.fil ? (s.fil.cable || 'fil') : '⇄ ' + s.passage).join(' → ') + ' → ' + c.bout[0] + (c.bout[1] ? ':' + c.bout[1] : '') }; }); }
+
 /* ───────── 09-disjoncteurs.js ───────── */
 /* ===========================================================================
    09 bis — LES DISJONCTEURS : la courbe de disjonction, et le profil de charge
@@ -6420,6 +6511,86 @@ function habillage(norme, fils, choix, pn) { const c = { ...CHOIX_RACCORD, ...(c
   const collier = r.bandit ? collierPour(norme, f.diametre) : null, gaine = c.gaine ? gainePour(norme, c.gaine, f.diametre) : null;
   return { choix: c, toron: f.diametre, deq: f.deq, faisceau: f, famille, raccord: sans ? 'aucun' : r.raccord, bandit: r.bandit, manchon: r.manchon, collier, gaine,
            pourquoi: sans ? 'un connecteur EN 3645 s’utilise sans raccord' : r.pourquoi, manquants: [...(!sans && r.raccord !== 'tyrap' ? ['la référence du raccord (table à venir)'] : []), ...(r.manchon ? ['la référence du manchon VG95343T18 (table à venir)'] : []), ...(c.gaine && !gaine ? ['aucune gaine ' + c.gaine + ' ne passe ce toron'] : [])] }; }
+
+/* ───────── 09-references.js ───────── */
+/* ===========================================================================
+   09 quinquies — LES CONTRATS DÉJÀ FAITS : ranger, reconnaître, comparer,
+   reprendre
+   ---------------------------------------------------------------------------
+   La grande base du lecteur : des milliers de lignes de retest, un HARNESS
+   (le faisceau d'une machine) par installation, avec l'appareil et la date.
+   On ne repart jamais de zéro, on ne colle jamais un contrat entier : pour
+   un équipement du contrat, on cherche le même équipement dans les
+   références — même part number d'abord, sinon même code —, on mesure ce
+   qui se ressemble (les bornes, les types de fil, ce qu'elles relient), on
+   montre la différence ligne à ligne, et on reprend ce qu'on coche, recâblé
+   sur nos repères. « La solution du PH n'est pas forcément la bonne » : ce
+   qui est repris passe les mêmes contrôles que le reste.
+   Rien ici ne touche à la page : le moteur, comme 09.
+   =========================================================================== */
+
+/* Une ligne d'un équipement, vue de lui : sa borne, le type de fil, l'autre bout (repère, code, borne, part number). */
+function lignesDeRepere(liaisons, repere) { return liaisons.filter(l => l.de !== l.vers && (l.de === repere || l.vers === repere)).map(l => { const amont = l.vers === repere;
+  const autre = amont ? l.de : l.vers, q = lireRepere(autre);
+  return { l, borne: amont ? l.borneVers : l.borneDe, pn: amont ? l.pnVers : l.pnDe, type: typeDuFil(l.type) + (jaugeDuType(l.type) != null ? jaugeDuType(l.type) : ''), typeBrut: l.type,
+           autre, codeAutre: q && q.code ? q.code : autre, borneAutre: amont ? l.borneDe : l.borneVers, pnAutre: amont ? l.pnDe : l.pnVers, amont, cable: l.cable }; }); }
+const cleLigne = x => [x.borne, x.type, x.codeAutre, x.borneAutre].join('|'), cleLibre = x => [x.type, x.codeAutre, x.borneAutre].join('|');
+/* L'INDEX des références : par harness, ses liaisons, son appareil, sa date, ses équipements (part numbers, lignes). */
+function indexerReferences(liaisons) { const H = new Map();
+  liaisons.forEach(l => { const h = l.harness || '—'; const e = H.get(h) || H.set(h, { harness: h, appareil: l.appareil || '', retest: l.retest || '', liaisons: [] }).get(h); e.liaisons.push(l);
+    if (!e.appareil && l.appareil) e.appareil = l.appareil; if (!e.retest && l.retest) e.retest = l.retest; });
+  H.forEach(e => { e.equipements = new Map(); reperesDe(e.liaisons).forEach(r => { if (estMasse(r)) return; const xs = lignesDeRepere(e.liaisons, r), q = lireRepere(r);
+    e.equipements.set(r, { repere: r, code: q && q.code ? q.code : '', pns: [...new Set(xs.map(x => x.pn).filter(Boolean))], lignes: xs }); }); });
+  return { harnais: H, liaisons: liaisons.length }; }
+/* LA RESSEMBLANCE de deux équipements : la part des lignes communes (borne, type, ce qu'elle relie) ; `libre` ignore la
+   borne (un équipement aux bornes déplacées se reconnaît encore). */
+function ressemblance(A, B) { const a = new Set(A.map(cleLigne)), b = new Set(B.map(cleLigne)), al = new Set(A.map(cleLibre)), bl = new Set(B.map(cleLibre));
+  const inter = [...a].filter(k => b.has(k)).length, union = new Set([...a, ...b]).size, il = [...al].filter(k => bl.has(k)).length, ul = new Set([...al, ...bl]).size;
+  return { taux: union ? inter / union : 0, libre: ul ? il / ul : 0, communes: inter }; }
+/* LES CANDIDATS pour un équipement du contrat : les équipements des références de même part number (d'abord), sinon
+   de même code ; les mieux ressemblants en tête, `n` au plus. */
+function candidatsDeReference(index, liaisons, repere, n) { if (!index) return []; const A = lignesDeRepere(liaisons, repere); if (!A.length) return [];
+  const pns = new Set(A.map(x => x.pn).filter(Boolean)), q = lireRepere(repere), code = q && q.code ? q.code : '', out = [];
+  index.harnais.forEach(h => h.equipements.forEach(e => { const parPn = e.pns.some(p => pns.has(p)), parCode = !!code && e.code === code; if (!parPn && !parCode) return;
+    const r = ressemblance(A, e.lignes); out.push({ harness: h.harness, appareil: h.appareil, retest: h.retest, repere: e.repere, pns: e.pns, par: parPn ? 'pn' : 'code', ...r, lignes: e.lignes.length }); }));
+  return out.sort((u, v) => (v.par === 'pn') - (u.par === 'pn') || v.taux - u.taux || v.libre - u.libre || v.communes - u.communes).slice(0, n || 3); }
+/* LA CORRESPONDANCE des repères de la référence vers les nôtres : le même repère s'il existe chez nous ; sinon un
+   repère de même part number ; sinon le même code, le numéro le plus proche (proposé, `sur`: 'code') ; sinon rien
+   (l'équipement est nouveau pour nous). */
+function correspondanceDesReperes(liaisons, refLignes, repereRef, repere) { const notres = reperesDe(liaisons), pnDe = new Map();
+  liaisons.forEach(l => { if (l.pnDe) pnDe.set(l.de, l.pnDe); if (l.pnVers) pnDe.set(l.vers, l.pnVers); });
+  const num = r => { const q = lireRepere(r); return q && q.num ? parseInt(q.num, 10) : NaN; }, code = r => { const q = lireRepere(r); return q && q.code ? q.code : ''; };
+  const m = new Map(); m.set(repereRef, { vers: repere, sur: 'cible' });
+  refLignes.forEach(x => { const r = x.autre; if (m.has(r)) return;
+    if (notres.includes(r)) { m.set(r, { vers: r, sur: 'repère' }); return; }
+    const parPn = x.pnAutre ? notres.find(n => pnDe.get(n) === x.pnAutre) : null; if (parPn) { m.set(r, { vers: parPn, sur: 'pn' }); return; }
+    const c = code(r), memes = c ? notres.filter(n => code(n) === c) : [];
+    if (memes.length) { const k = num(r), proche = memes.slice().sort((u, v) => Math.abs(num(u) - k) - Math.abs(num(v) - k))[0]; m.set(r, { vers: proche, sur: 'code' }); return; }
+    m.set(r, { vers: r, sur: 'nouveau' }); });
+  return m; }
+/* LE DIFFÉRENTIEL : chaque ligne de la référence contre les nôtres — identique (même borne, même type, même chose
+   reliée au même endroit), différente (la même borne, mais autre chose), manquante chez nous ; et ce que nous avons
+   en plus. La correspondance des repères sert à lire « ce qu'elle relie » avec nos repères. */
+function differentiel(liaisons, repere, refLiaisons, repereRef) { const A = lignesDeRepere(liaisons, repere), B = lignesDeRepere(refLiaisons, repereRef), corr = correspondanceDesReperes(liaisons, B, repereRef, repere);
+  const pris = new Set(), lignes = [];
+  B.forEach(b => { const vers = corr.get(b.autre), ident = A.find(a => !pris.has(a) && cleLigne(a) === cleLigne(b));
+    if (ident) { pris.add(ident); lignes.push({ etat: 'identique', ref: b, notre: ident, vers }); return; }
+    const meme = A.find(a => !pris.has(a) && a.borne === b.borne);
+    if (meme) { pris.add(meme); lignes.push({ etat: 'differe', ref: b, notre: meme, vers }); return; }
+    lignes.push({ etat: 'manque', ref: b, notre: null, vers }); });
+  A.forEach(a => { if (!pris.has(a)) lignes.push({ etat: 'enplus', ref: null, notre: a }); });
+  const r = ressemblance(A, B);
+  return { lignes, correspondance: corr, taux: r.taux, libre: r.libre, compte: { identique: lignes.filter(x => x.etat === 'identique').length, differe: lignes.filter(x => x.etat === 'differe').length, manque: lignes.filter(x => x.etat === 'manque').length, enplus: lignes.filter(x => x.etat === 'enplus').length } }; }
+/* REPRENDRE : les liaisons à ajouter chez nous pour les lignes cochées (manquantes, ou différentes qu'on remplace),
+   recâblées sur nos repères par la correspondance ; le numéro de fil reste à donner. `plan` : le folio où les poser. */
+function liaisonsAReprendre(diff, repere, lignes, plan) { const pnDe = new Map(); (diff.lignes || []).forEach(x => { if (x.notre && x.notre.pn) pnDe.set(repere, x.notre.pn); });
+  return lignes.map(x => { const b = x.ref, c = diff.correspondance.get(b.autre), autre = c ? c.vers : b.autre, pn = pnDe.get(repere) || b.pn || '';
+    const o = b.amont ? { de: autre, borneDe: b.borneAutre, pnDe: b.pnAutre, vers: repere, borneVers: b.borne, pnVers: pn } : { de: repere, borneDe: b.borne, pnDe: pn, vers: autre, borneVers: b.borneAutre, pnVers: b.pnAutre };
+    return liaison({ ...o, cable: '', type: b.typeBrut, route: b.l.route || '', plan: plan || '', longueur: b.l.longueur }); }); }
+/* LA FLOTTE : pour un équipement, toutes les machines où il apparaît (par part number), et ce qu'elles y font. */
+function flotteDe(index, liaisons, repere) { if (!index) return []; const A = lignesDeRepere(liaisons, repere), pns = new Set(A.map(x => x.pn).filter(Boolean)); if (!pns.size) return [];
+  const out = []; index.harnais.forEach(h => h.equipements.forEach(e => { if (e.pns.some(p => pns.has(p))) out.push({ harness: h.harness, appareil: h.appareil, retest: h.retest, repere: e.repere, lignes: e.lignes.length, ...ressemblance(A, e.lignes) }); }));
+  return out.sort((u, v) => v.taux - u.taux); }
 
 </script>
 <script>
@@ -6641,7 +6812,14 @@ function ficheDisjonction(nom) { const d = disjonctionDe(nom), c = d.profil || {
   return `<section class="fi-cadre fi-dj"><div class="fi-ref-ligne"><b class="fi-ref">Disjoncteur</b><label class="dj-calibre" title="${d.duPn && d.calibre ? 'Calibre lu dans le part number ' + escA(pnDuRepere(nom)) : 'Le calibre, en ampères'}"><input id="dj-calibre" value="${d.calibre > 0 ? escA(nombre(d.calibre)) : ''}" inputmode="decimal" placeholder="calibre" list="dj-calibres" aria-label="Calibre en ampères"><i>A</i></label>`
     + `<datalist id="dj-calibres">${CALIBRES.map(x => `<option value="${nombre(x)}">`).join('')}</datalist><span class="espace"></span>${etat}</div>`
     + (d.courbes.length ? graphiqueDisjonction(d) : '<p class="fi-note">Aucune courbe de disjonction dans la norme.</p>')
-    + `<div class="dj-profil">${champs}</div>${note ? `<p class="fi-note dj-note">${esc(note)}</p>` : ''}${fils}</section>`; }
+    + `<div class="dj-profil">${champs}</div>${note ? `<p class="fi-note dj-note">${esc(note)}</p>` : ''}${fils}${chutesHtml(nom, d)}</section>`; }
+/* LA CHUTE EN LIGNE depuis le disjoncteur, comme la feuille du lecteur : chaque chemin jusqu'à un équipement, à
+   travers les prises de coupure et les barrettes, au courant permanent du profil (sinon le calibre, sinon l'hypothèse). */
+function chutesHtml(nom, d) { const H = app.simu || HYPOTHESES, I = d.profil && d.profil.perm && d.profil.perm.i > 0 ? d.profil.perm.i : d.calibre > 0 ? d.calibre : H.courant;
+  const cs = chutesDepuis(app.norme, verite(), nom, I, H); if (!cs.length) return '';
+  const li = cs.map(c => { const detail = c.segments.map(s => s.fil ? `${s.fil.cable || 'fil'} : ${s.dU != null ? nombre(Math.round(s.dU * 1000) / 1000) + ' V' : '?'} (${nombre(Math.round(s.longueur * 100) / 100)} m${s.reelle ? '' : ', hypothèse'})` : `${s.passage} : ${s.dU != null ? nombre(Math.round(s.dU * 1000) / 1000) + ' V' : 'contact inconnu'}`).join(' · ');
+    return `<li class="fi-fil${c.trop ? ' ko' : ''}" title="${escA(detail + (c.inconnus.length ? ' — ' + c.inconnus.join(' ; ') : ''))}"><span class="fi-ct"><b>${esc(c.bout[0])}</b>${c.bout[1] ? `<i>${esc(c.bout[1])}</i>` : ''}</span><span></span><b class="fi-w">${c.dU != null ? esc(nombre(Math.round(c.dU * 100) / 100)) + ' V' : '—'}</b><span class="fi-t">${c.pct != null ? esc(nombre(Math.round(c.pct * 10) / 10)) + ' %' : ''}${c.inconnus.length ? ' · ' + c.inconnus.length + ' inconnu' + (c.inconnus.length > 1 ? 's' : '') : ''}</span><span class="fi-dest"><span>${esc(c.mots)}</span></span>${c.trop ? '<span class="fi-ko">dépasse la chute admise</span>' : !c.fini ? '<span class="fi-ko fi-att">chemin sans fin</span>' : ''}</li>`; }).join('');
+  return `<ul class="fi-liste dj-chutes"><li class="fi-groupe">chute en ligne à ${esc(nombre(I))} A${H.tension ? ' sous ' + esc(nombre(H.tension)) + ' V' : ''}${cs[0].admis != null ? ' · admis ' + esc(nombre(cs[0].admis)) + ' V' : ''} · câbles et prises traversées</li>${li}</ul>`; }
 /* Le graphique : multiples de In en abscisse (0,1 à 100), temps en ordonnée (1 ms à 10 000 s), tous deux en log ; la
    zone où tout tient, à gauche de la courbe la plus rapide, en vert ; le profil en escalier, rouge s'il déclenche. */
 function graphiqueDisjonction(d) { const W = 320, H = 236, L = 40, R = 10, T = 10, B = 26, x0 = -1, x1 = 2, y0 = -3, y1 = 4;
@@ -6780,12 +6958,12 @@ const MENU_BLOC = [['fi-renommer', 'Renommer'], ['fi-designer', 'Désignation'],
 function rendreFiche() { const box = $('ba-equip'), c = app.cible; if ($('inspecteur').hidden) return;
   if (!c) { if (typeof rendreIndex === 'function') rendreIndex(box); else { box.innerHTML = ''; box.dataset.cle = ''; } return; }
   const cle = c.type + '|' + (c.nom || (c.l && (c.l.cable || cleDe(c.l))) || '');
-  let html; try { html = c.type === 'fil' ? ficheFil(c.l) : ficheBloc(c.nom); }
+  let html; try { html = c.type === 'fil' ? ficheFil(c.l) : c.type === 'ref' ? ficheComparaison(c) : ficheBloc(c.nom); }
   catch (e) { html = fiTete({ nom: c.nom || '—', sous: 'élément' }) + `<p class="fi-note">${esc(String(e && e.message || e))}</p>`; }
   const meme = box.dataset.cle === cle, haut = box.scrollTop;
   box.innerHTML = html; box.dataset.cle = cle; box.className = 'fi';
   if (meme) box.scrollTop = haut; else { box.scrollTop = 0; box.classList.remove('fondu'); void box.offsetWidth; box.classList.add('fondu'); }
-  lierFiche(c); }
+  if (c.type === 'ref') lierComparaison(c); else lierFiche(c); }
 function ficheBloc(nom) {
   if (VT_A_POSER.test(nom) || barretteEnModules(nom)) return ficheBarrette(nom);
   if (coupureEnModules(nom)) return ficheCoupure(nom);
@@ -6806,10 +6984,15 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   const fn = l.type ? filDeNorme(app.norme, l.type, jauge) : null, adm = fn && fn.intensite != null ? [['continu', fn.intensite], ['2 s', fn.i2s], ['10 s', fn.i10s], ['1 min', fn.i1min]].filter(x => x[1] != null) : [];
   const sous = [l.route ? esc(l.route) : '', l.type ? esc(l.type) + (jauge != null ? ' · ' + jauge + ' AWG' : '') : '',
     adm.length ? `<span title="${escA('Ce que le fil admet (norme des fils) : ' + adm.map(x => amperes(x[1]) + ' ' + x[0]).join(' · ') + (fn.resistance != null ? ' · ' + nombre(fn.resistance) + ' Ω/km' : ''))}">${esc(amperes(fn.intensite))} en continu</span>` : '',
-    folios.length ? 'folio ' + esc(folios.join(', ')) : ''].filter(Boolean).join(' · ');
+    l.longueur > 0 ? `<span title="La longueur du retest">${esc(nombre(Math.round(l.longueur * 100) / 100))} m</span>` : '', chuteDuFil(l, jauge),
+    folios.length ? 'folio ' + esc(folios.join(', ')) : '', l.harness ? `<span title="Le harness">${esc(l.harness)}</span>` : ''].filter(Boolean).join(' · ');
   return fiTete({ nom: neuf ? 'à créer' : (l.cable || 'sans numéro'), etat: `<span class="fi-route" style="--c:${coul}"></span>` + (att.length ? fiEtat([], att) : ''), sous })
     + `<div class="fi-trajet" style="--c:${coul}">${boutDeFil(l.de, l.borneDe, l.pnDe, via('de'), st.de)}<span class="fi-fleche"></span>${boutDeFil(l.vers, l.borneVers, l.pnVers, via('vers'), st.vers)}</div>`
     + ficheCable(l.type) + fiPied(neuf ? { voir: l.aPoser } : { tableau: l.cable || l.de }); }
+/* La chute d'un fil, à l'hypothèse de courant de la simulation : sa longueur du retest, sinon celle de l'hypothèse. */
+function chuteDuFil(l, jauge) { if (!l.type) return ''; const rd = resistanceDuFil(app.norme, l.type, jauge); if (rd.rho == null) return '';
+  const H = app.simu || HYPOTHESES, L = l.longueur > 0 ? l.longueur : H.longueur, dU = rd.rho / 1000 * L * H.courant;
+  return `<span title="${escA('ΔU = ' + nombre(rd.rho) + ' Ω/km × ' + nombre(Math.round(L * 100) / 100) + ' m × ' + nombre(H.courant) + ' A' + (l.longueur > 0 ? '' : ' (longueur : l’hypothèse de la simulation)') + (rd.source === 'câble' ? ' — la résistance du câble ' + rd.cab.cable : ''))}">ΔU ${esc(nombre(Math.round(dU * 1000) / 1000))} V à ${esc(nombre(H.courant))} A</span>`; }
 /* Le câble d'un fil, en une ligne : ses brins, sa nature, son diamètre, sa section, sa résistance, sa masse. */
 function ficheCable(type) { const c = type ? cableDuType(app.norme, type) : null; if (!c) return '';
   const brins = (c.brins > 1 ? c.brins + ' brins' : '1 brin') + (c.blindage ? ' + blindage' : '');
@@ -6863,7 +7046,7 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
   (Q.restants || []).forEach(p => p.fils.forEach(f => { lignes += ligneFil(`<b>${esc(borneDe(f))}</b>`, f, { ko: 'sans place dans le module' }); }));
   return fiTete({ nom, renommer: true, aide: aPoser ? 'Écrire le vrai repère : la barrette entre au contrat' : '', etat, sous, designation: aPoser ? null : app.contrat.designations.get(nom) || '' })
     + `<section class="fi-cadre">${fiRef(Q.reference || (aPoser ? 'à choisir' : '—'), Q.famille, cle, changer, pourquoi)}${faces ? `<div class="fi-faces">${faces}</div>` : ''}${fiListe(lignes)}</section>`
-    + fiPied(aPoser ? { voir: raccord && raccord.de, relief: !!M0, menu: [['fi-renommer', 'Nommer et poser au contrat']] } : { tableau: nom, relief: true, menu: MENU_BLOC }); }
+    + (aPoser ? '' : dejaFaitHtml(nom)) + fiPied(aPoser ? { voir: raccord && raccord.de, relief: !!M0, menu: [['fi-renommer', 'Nommer et poser au contrat']] } : { tableau: nom, relief: true, menu: MENU_BLOC }); }
 
 /* ---- une prise de coupure -------------------------------------------------------- */
 function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupure(nom), M = Q.modules[0], nomF = f => nomDeFamille(app.norme, f);
@@ -6888,7 +7071,7 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
     + nomenclature(nomenclatureDe(Q.fils.filter(x => x.f.amont)), 'fiche') + nomenclature(nomenclatureDe(Q.fils.filter(x => !x.f.amont)), 'embase')
     + faisceauHtml(Q.fils.filter(x => x.f.amont).map(x => x.f), 'faisceau fiche') + raccordHtml(nom + '|fiche', Q.fils.filter(x => x.f.amont).map(x => x.f), b.pn)
     + faisceauHtml(Q.fils.filter(x => !x.f.amont).map(x => x.f), 'faisceau embase') + raccordHtml(nom + '|embase', Q.fils.filter(x => !x.f.amont).map(x => x.f), b.pn) + '</section>'
-    + fiPied({ tableau: nom, relief: true, menu: MENU_BLOC }); }
+    + dejaFaitHtml(nom) + fiPied({ tableau: nom, relief: true, menu: MENU_BLOC }); }
 
 /* ---- un équipement --------------------------------------------------------------- */
 function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V);
@@ -6921,7 +7104,7 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
   const nFils = V.filter(l => l.de === nom || l.vers === nom).length;
   return fiTete({ nom, renommer: true, etat: fiEtat(ko, att, cav.length ? 'chaque borne sur son contact, chaque jauge acceptée' : 'rien à redire'),
       sous: `${pluriel(nFils, 'fil')}${C.length > 1 ? ' · ' + pluriel(C.length, 'connecteur') : ''}`, designation: app.contrat.designations.get(nom) || '' })
-    + (dj ? ficheDisjonction(nom) : '') + (onglets.length ? fiOnglets('eq|' + nom, onglets) : '')
+    + (dj ? ficheDisjonction(nom) : '') + (onglets.length ? fiOnglets('eq|' + nom, onglets) : '') + dejaFaitHtml(nom)
     + fiPied({ tableau: nom, relief: cav.length > 0, menu: MENU_BLOC }); }
 
 /* ---- un bornier hors modules (une bible importée sans modules) ------------------- */
@@ -6968,6 +7151,7 @@ function lierFiche(c) { const box = $('ba-equip'), nom = c.type === 'fil' ? '' :
   box.querySelectorAll('[data-norme-prise]').forEach(b => b.onclick = () => choisir(nom, b.dataset.normePrise, 'norme de ' + nom));
   box.querySelectorAll('.cand[data-cle]').forEach(b => b.onclick = () => { if (b.getAttribute('aria-pressed') !== 'true') choisir(b.dataset.cle, b.dataset.ref, 'choix de ' + b.dataset.cle, b.dataset.ref + ' retenu.'); });
   box.querySelectorAll('[data-auto]').forEach(b => b.onclick = () => choisir(b.dataset.auto, '', 'choix automatique', 'Choix automatique rétabli.'));
+  box.querySelectorAll('[data-ref]').forEach(b => { const aller = () => { app.cible = { type: 'ref', nom, harness: b.dataset.ref, repere: b.dataset.rep }; rendreFiche(); }; b.onclick = aller; b.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); aller(); } }; });
   box.querySelectorAll('[data-raccord]').forEach(b => b.onclick = () => { if (b.getAttribute('aria-pressed') === 'true') return; const k = b.dataset.raccord, v = b.dataset.v;
     histPush('raccord de ' + k); const o = { ...(app.contrat.raccords.get(k) || {}) }; o[b.dataset.champ] = v === 'true' ? true : v === 'false' ? false : v; app.contrat.raccords.set(k, o); FI.change['rac|' + k] = true; apresEdition(); });
   box.querySelectorAll('[data-sexe]').forEach(b => b.onclick = () => { if (b.getAttribute('aria-pressed') === 'true') return;
@@ -7121,8 +7305,8 @@ function montrerAffinage() { const el = $('affinage'); if (!el) return; const j 
   el.title = 'La recherche profonde améliore le dessin en arrière-plan ; chaque mieux trouvé le remplace, et le résultat se garde dans ce navigateur.'; }
 // IndexedDB : un magasin, une entrée par version du moteur et folio ; les versions passées s'effacent
 const IDB_NOM = 'atelier-schema', IDB_MAGASIN = 'placements', IDB_RETOUCHES = 'retouches';
-function ouvrirIDB() { return new Promise((ok, ko) => { try { const r = indexedDB.open(IDB_NOM, 2);
-  r.onupgradeneeded = () => { [IDB_MAGASIN, IDB_RETOUCHES].forEach(m => { if (!r.result.objectStoreNames.contains(m)) r.result.createObjectStore(m); }); };
+function ouvrirIDB() { return new Promise((ok, ko) => { try { const r = indexedDB.open(IDB_NOM, 3);
+  r.onupgradeneeded = () => { [IDB_MAGASIN, IDB_RETOUCHES, 'references'].forEach(m => { if (!r.result.objectStoreNames.contains(m)) r.result.createObjectStore(m); }); };
   r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error); } catch (err) { ko(err); } }); }
 function garderAffine(cle, P) { ouvrirIDB().then(db => { db.transaction(IDB_MAGASIN, 'readwrite').objectStore(IDB_MAGASIN).put({ P, t: Date.now() }, VERSION_MOTEUR + '|' + cle); }).catch(() => { }); }
 function relireAffines() { if (!affinage.actif) return; const avant = cleCourante();
@@ -8064,12 +8248,14 @@ function ficheBible(ref) { const B = app.bible || [], nom = app.bibleNom, n = B.
   const corps = tete('Barrettes et connecteurs', 'Bible des barrettes', true) + etat + (zoom ? zoomBible(zoom) : '') + filtres
     + (n ? `<table class="bible"><thead><tr><th></th><th>Référence</th><th>Nature</th><th>Bornes</th><th>Jauge</th><th title="Intensité">Int.</th><th title="Blindage">Blindé</th><th>Note</th></tr></thead><tbody>${vus.map(ligne).join('')}</tbody></table>` : '<p class="note">Aucune référence.</p>')
     + `<p class="note">Un Excel ou un CSV dont une ligne d’en-têtes nomme ${COLONNES_BIBLE_TEXTE}. La jauge s’écrit en AWG : « min » est la plus fine acceptée. Une bible se dépose aussi directement sur la table.</p>`
-    + ficheNorme();
-  const pied = '<button class="btn cuivre" id="bi-importer">Importer un Excel / CSV</button><button class="btn papier" id="no-importer">Importer une norme</button><input type="file" id="fichier-norme" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden><span class="espace"></span>'
+    + ficheNorme() + ficheReferences();
+  const pied = '<button class="btn cuivre" id="bi-importer">Importer un Excel / CSV</button><button class="btn papier" id="no-importer">Importer une norme</button><button class="btn papier" id="re-importer">Contrats déjà faits</button><input type="file" id="fichier-norme" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden><input type="file" id="fichier-references" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden><span class="espace"></span>'
     + (nom ? '<button class="btn lien" id="bi-exemple">Revenir à la bible d’exemple</button>' : '') + (app.normeNom ? '<button class="btn lien" id="no-embarquee">Revenir à la norme embarquée</button>' : '');
   ouvrirFiche({ mode: 'bible', large: true, ref: zoom ? ref : '' }, corps, pied);
   $('bi-importer').onclick = () => $('fichier-bible').click();
   $('no-importer').onclick = () => $('fichier-norme').click();
+  $('re-importer').onclick = () => $('fichier-references').click();
+  $('fichier-references').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) importerReferences(f); e.target.value = ''; });
   $('fichier-norme').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) importerNorme(f); e.target.value = ''; });
   if ($('bi-exemple')) $('bi-exemple').onclick = () => { adopterBible(bibleDeLOutil(), ''); dire('Bible d’exemple rétablie.'); };
   if ($('no-embarquee')) $('no-embarquee').onclick = () => { adopterNorme(normeEmbarquee(), ''); dire('Norme embarquée rétablie.'); };
@@ -8243,6 +8429,7 @@ async function ouvrirFichier(fichier) { if (!fichier) return;
       if (normeLue(lireNorme(texte))) { await importerNorme(fichier); return; } }   // une norme déposée sur la table : reconnue à ses tables
     const r = lireTexte(texte);
     if (!r.liaisons.length) { dire('« ' + fichier.name + ' » est lu, mais aucune liaison n’est reconnue — vérifie les colonnes.', true); return; }
+    if (r.harnais && r.harnais.length > 1) { adopterReferences(r.liaisons, fichier.name); dire(pluriel(r.harnais.length, 'harness') + ' dans « ' + fichier.name + ' » : gardés comme contrats déjà faits (un contrat, c’est un harness ; les fiches disent ce qui a déjà été fait).'); return; }
     chargerContrat(r.liaisons, 'ouverture de ' + fichier.name, fichier.name);
     dire(r.liaisons.length + ' liaisons' + (r.format === 'retest' ? ' — format retest, en-têtes ligne ' + r.entete : '') + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + '.');
   } catch (e) { dire('Erreur : ' + (e && e.message || e), true); } }
@@ -8554,6 +8741,75 @@ function modulesEnRelief(nom) {
   return { Q, sur: 'Connecteur · ' + [...new Set(C.map(c => c.pn))].join(', '), note: 'Modules ' + [...new Set(C.map(c => nomDeFamille(app.norme, c.plan.famille)))].join(', ') + ', une cavité (un insert) chacun : chaque borne sur le contact de même numéro, sa jauge admise par la taille du contact.' }; }
 const reliefPossible = nom => estBornier(nom) || cavitesDe(nom).length > 0;
 
+/* ───────── 08-references.js ───────── */
+/* ===========================================================================
+   08 sexies — LES CONTRATS DÉJÀ FAITS, à l'écran
+   ---------------------------------------------------------------------------
+   On dépose la grande base (un retest de plusieurs harness) ; elle se garde
+   dans ce navigateur (IndexedDB). Sur la fiche de chaque équipement, « Déjà
+   fait » donne les trois machines les plus proches ; un clic ouvre la
+   COMPARAISON — en vert ce que la machine a et que nous n'avons pas, en
+   orange ce qui diffère, en gris ce qui est pareil, en bleu ce que nous avons
+   en plus — avec la correspondance de ses repères vers les nôtres ; on coche
+   ce qu'on reprend, « Reprendre » l'ajoute au contrat (Ctrl+Z le défait), et
+   ce qui est repris passe les mêmes contrôles que le reste.
+   =========================================================================== */
+
+const IDB_REFERENCES = 'references';
+const REF = { coches: new Set() };
+/* Garder, relire, oublier la base. */
+function adopterReferences(liaisons, nom) { app.references = liaisons && liaisons.length ? { nom: nom || '', liaisons, index: indexerReferences(liaisons), t: Date.now() } : null;
+  ouvrirIDB().then(db => { const st = db.transaction(IDB_REFERENCES, 'readwrite').objectStore(IDB_REFERENCES); if (app.references) st.put({ nom: app.references.nom, liaisons, t: app.references.t }, 'base'); else st.delete('base'); }).catch(() => { });
+  CONTROLE.cle = null; if (app.cible) rendreFiche(); if (app.fiche && app.fiche.mode === 'bible') ficheBible(app.fiche.ref); }
+function relireReferences() { ouvrirIDB().then(db => { const req = db.transaction(IDB_REFERENCES).objectStore(IDB_REFERENCES).get('base');
+  req.onsuccess = () => { const o = req.result; if (!o || !o.liaisons || !o.liaisons.length) return; app.references = { nom: o.nom || '', liaisons: o.liaisons.map(liaison), t: o.t || 0 }; app.references.index = indexerReferences(app.references.liaisons);
+    if (app.cible) rendreFiche(); if (app.fiche && app.fiche.mode === 'bible') ficheBible(app.fiche.ref); }; }).catch(() => { }); }
+async function importerReferences(fichier) { if (!fichier) return;
+  try { dire('Lecture de « ' + fichier.name + ' »…'); const r = lireTexte(await texteDuFichier(fichier));
+    if (!r.liaisons.length) { dire('« ' + fichier.name + ' » est lu, mais aucune liaison n’est reconnue — il faut les seize colonnes du retest.', true); return; }
+    adopterReferences(r.liaisons, fichier.name);
+    const H = app.references.index.harnais.size; dire(pluriel(r.liaisons.length, 'liaison') + ' de ' + pluriel(H, 'harness') + ' gardée' + (r.liaisons.length > 1 ? 's' : '') + ' : les fiches disent ce qui a déjà été fait.');
+  } catch (e) { dire('Erreur : ' + (e && e.message || e), true); } }
+const indexReferences = () => app.references && app.references.index || null;
+/* La base dans la bible : ce qu'elle contient, par harness. */
+function ficheReferences() { const R = app.references, I = indexReferences();
+  const etat = !R ? '<div class="bible-etat"><span><b>Aucun contrat déjà fait</b> : dépose un retest de plusieurs harness (les seize colonnes), il se garde dans ce navigateur, rien ne part sur le réseau.</span></div>'
+    : `<div class="bible-etat"><span><b>${esc(R.nom || 'Contrats déjà faits')}</b> · ${pluriel(I.harnais.size, 'harness')} · ${pluriel(R.liaisons.length, 'liaison')} · gardés dans ce navigateur</span></div>`;
+  const lignes = I ? [...I.harnais.values()].sort((a, b) => triNaturel(a.harness, b.harness)).map(h => `<tr><td class="ref">${esc(h.harness)}</td><td class="sans">${esc(h.appareil || '—')}</td><td class="d">${esc(h.retest || '—')}</td><td class="d">${h.equipements.size}</td><td class="d">${h.liaisons.length}</td></tr>`).join('') : '';
+  return `<h3 class="sous-titre">Les contrats déjà faits</h3>${etat}` + (lignes ? `<table class="norme"><thead><tr><th>Harness</th><th>Appareil</th><th>Retest</th><th>Équipements</th><th>Liaisons</th></tr></thead><tbody>${lignes}</tbody></table>` : '')
+    + '<p class="note">Pour un équipement du contrat, sa fiche dit les trois machines les plus proches (même part number, sinon même code) et le taux de lignes communes ; la comparaison montre ce qu’elles ont en plus, ce qui diffère, et reprend ce qu’on coche. « La solution du PH n’est pas forcément la bonne » : ce qui est repris passe les mêmes contrôles que le reste.</p>'; }
+/* « Déjà fait » sur la fiche d'un équipement : les trois plus proches. */
+function dejaFaitHtml(nom) { const I = indexReferences(); if (!I) return '';
+  const cs = candidatsDeReference(I, verite(), nom, 3); if (!cs.length) return '';
+  return `<section class="fi-cadre fi-deja"><div class="fi-ref-ligne"><b class="fi-ref">Déjà fait</b><span class="fi-norme">${pluriel(I.harnais.size, 'machine')}</span></div><ul class="fi-liste">`
+    + cs.map(c => `<li class="fi-fil fi-cand" data-ref="${escA(c.harness)}" data-rep="${escA(c.repere)}" tabindex="0" role="button" title="${escA('Comparer avec ' + c.repere + ' de ' + c.harness)}"><span class="fi-ct"><b>${Math.round(c.taux * 100)} %</b></span><span class="fi-puce" style="background:${c.taux >= 0.8 ? '#2e8b57' : c.taux >= 0.4 ? '#d4870f' : '#9aa5b1'}"></span><b class="fi-w">${esc(c.repere)}</b><span class="fi-t">${esc(c.harness)}${c.appareil ? ' · ' + esc(c.appareil) : ''}${c.retest ? ' · ' + esc(c.retest) : ''}</span><span class="fi-dest"><span>${c.par === 'pn' ? 'même part number' : 'même code'}</span></span></li>`).join('') + '</ul></section>'; }
+/* LA COMPARAISON : la fiche de l'équipement contre l'équipement d'une machine. */
+function ficheComparaison(c) { const I = indexReferences(), h = I && I.harnais.get(c.harness); if (!h) return fiTete({ nom: c.nom, sous: 'référence introuvable' }) + '<p class="fi-note">La base des contrats faits n’est plus là.</p>';
+  const D = differentiel(verite(), c.nom, h.liaisons, c.repere), cle = c.harness + '|' + c.repere, mots = { identique: 'pareil', differe: 'diffère', manque: 'manque chez nous', enplus: 'en plus chez nous' };
+  const vers = r => { const m = D.correspondance.get(r); return !m || m.vers === r ? esc(r) : `${esc(m.vers)}<i class="fi-corr" title="${escA(r + ' chez ' + c.harness + ' : ' + (m.sur === 'pn' ? 'même part number' : m.sur === 'code' ? 'même code, numéro le plus proche — à confirmer' : m.sur))}">← ${esc(r)}${m.sur === 'code' ? ' ?' : ''}</i>`; };
+  const ligne = x => { const b = x.ref || x.notre, k = x.ref ? cleLigne(x.ref) : '', coche = x.etat === 'manque' || x.etat === 'differe';
+    return `<li class="fi-fil cp-${x.etat}">${coche ? `<input type="checkbox" class="cp-coche" data-k="${escA(k)}"${REF.coches.has(cle + '|' + k) ? ' checked' : ''} aria-label="Reprendre cette ligne">` : '<span></span>'}<span class="fi-ct"><b>${esc(b.borne)}</b></span><span class="fi-w">${esc(b.typeBrut || '—')}</span><span class="fi-dest${b.amont ? ' amont' : ''}">${ico('fleche')}<span>${x.ref ? vers(x.ref.autre) : esc(x.notre.autre)}:${esc(b.borneAutre)}</span></span>`
+      + (x.etat === 'differe' ? `<span class="fi-ko">chez nous : ${esc(x.notre.typeBrut || '—')} → ${esc(x.notre.autre)}:${esc(x.notre.borneAutre)}</span>` : '') + '</li>'; };
+  const groupes = ['manque', 'differe', 'identique', 'enplus'].map(e => { const xs = D.lignes.filter(x => x.etat === e); return xs.length ? `<li class="fi-groupe cp-${e}">${mots[e]} · ${xs.length}</li>` + xs.map(ligne).join('') : ''; }).join('');
+  const corr = [...D.correspondance].filter(([r, m]) => m.sur !== 'cible' && m.sur !== 'repère').map(([r, m]) => `<span class="fi-chip" aria-pressed="false" title="${escA(m.sur === 'pn' ? 'même part number' : m.sur === 'code' ? 'même code, numéro le plus proche — à confirmer' : 'nouveau chez nous')}">${esc(r)} → ${esc(m.vers)}${m.sur === 'code' ? ' ?' : m.sur === 'nouveau' ? ' (nouveau)' : ''}</span>`).join('');
+  const nb = D.lignes.filter(x => (x.etat === 'manque' || x.etat === 'differe') && REF.coches.has(cle + '|' + cleLigne(x.ref))).length;
+  return `<header class="fi-tete"><button class="fi-x" id="cp-retour" aria-label="Retour à la fiche">${ico('retour')}</button><div class="min0"><div class="fi-nom">${esc(c.nom)}</div></div><button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)">${ico('fermer')}</button></header>`
+    + `<div class="fi-ligne"><span class="fi-etat ${D.taux >= 0.8 ? 'ok' : D.taux >= 0.4 ? 'att' : 'ko'}"><i aria-hidden="true">${Math.round(D.taux * 100)}</i>% de lignes communes</span><span class="fi-sous">contre <b>${esc(c.repere)}</b> · ${esc(c.harness)}${h.appareil ? ' · ' + esc(h.appareil) : ''}${h.retest ? ' · ' + esc(h.retest) : ''}</span></div>`
+    + `<section class="fi-cadre"><ul class="fi-liste cp-liste">${groupes}</ul>${corr ? `<p class="fi-note fi-rac-t">ses repères, chez nous</p><div class="fi-puces">${corr}</div>` : ''}</section>`
+    + `<p class="fi-note">Ce que cette machine a fait — pas forcément ce qu’il faut faire : ce qui est repris passe les mêmes contrôles que le reste. Les fils repris n’ont pas encore de numéro.</p>`
+    + `<footer class="fi-pied"><button class="fi-bouton" id="cp-tout">${ico('tableau')}<span>Tout cocher</span></button><span class="espace"></span><button class="fi-bouton cuivre" id="cp-reprendre"${nb ? '' : ' disabled'}>${ico('fleche')}<span>Reprendre${nb ? ' ' + nb : ''}</span></button></footer>`; }
+function lierComparaison(c) { const box = $('ba-equip'), I = indexReferences(), h = I && I.harnais.get(c.harness); if (!h) { $('in-fermer').onclick = () => deselectionner(); return; }
+  const cle = c.harness + '|' + c.repere;
+  $('in-fermer').onclick = () => deselectionner();
+  $('cp-retour').onclick = () => { app.cible = { type: 'bloc', nom: c.nom }; rendreFiche(); };
+  box.querySelectorAll('.cp-coche').forEach(el => el.addEventListener('change', () => { const k = cle + '|' + el.dataset.k; if (el.checked) REF.coches.add(k); else REF.coches.delete(k); rendreFiche(); }));
+  const D = differentiel(verite(), c.nom, h.liaisons, c.repere), aReprendre = () => D.lignes.filter(x => (x.etat === 'manque' || x.etat === 'differe') && REF.coches.has(cle + '|' + cleLigne(x.ref)));
+  $('cp-tout').onclick = () => { const xs = D.lignes.filter(x => x.etat === 'manque' || x.etat === 'differe'), tous = xs.every(x => REF.coches.has(cle + '|' + cleLigne(x.ref))); xs.forEach(x => { const k = cle + '|' + cleLigne(x.ref); if (tous) REF.coches.delete(k); else REF.coches.add(k); }); rendreFiche(); };
+  $('cp-reprendre').onclick = () => { const xs = aReprendre(); if (!xs.length) return;
+    const plan = plansDuRepere(c.nom)[0] || (app.plan !== '*' ? app.plan : ''), neuves = liaisonsAReprendre(D, c.nom, xs, plan);
+    histPush('reprise de ' + xs.length + ' ligne(s) de ' + c.harness); const cible = verite(); neuves.forEach(l => cible.push(l));
+    xs.forEach(x => REF.coches.delete(cle + '|' + cleLigne(x.ref))); app.cible = { type: 'bloc', nom: c.nom }; apresEdition(); dire(pluriel(neuves.length, 'liaison') + ' reprise' + (neuves.length > 1 ? 's' : '') + ' de ' + c.harness + ' : à numéroter, puis à vérifier.'); }; }
+
 /* ───────── 08-relief.js ───────── */
 /* ===========================================================================
    08 bis — LA VUE EN RELIEF : une barrette, une prise de coupure, comme on
@@ -8809,7 +9065,7 @@ function demarrer() {
   if (baseOuverte) ouvrirBase();
   requestAnimationFrame(() => ajuster());
   // les folios déjà affinés dans ce navigateur reviennent ; les autres s'affinent en arrière-plan ; les retouches aussi
-  relireAffines(); relireRetouches();
+  relireAffines(); relireRetouches(); relireReferences();
 }
 demarrer();
 

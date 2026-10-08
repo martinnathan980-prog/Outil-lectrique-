@@ -906,6 +906,20 @@ details.fi-etat.ko ul{background:#fbeceb}details.fi-etat.att ul{background:#fcf3
 .fi-ko.fi-att{color:#74450a}
 .fi-cable{color:var(--encre-2);font-family:var(--mono);font-size:var(--t0)}
 .fi-faisceau{padding-top:6px}
+/* les contrats déjà faits : les candidats, la comparaison */
+.fi-cand{cursor:pointer}
+.fi-cand .fi-ct b{color:var(--encre)}
+.cp-liste .fi-fil{grid-template-columns:18px auto auto minmax(0,1fr) auto}
+.cp-liste .fi-groupe{grid-column:1/-1}
+.cp-coche{width:14px;height:14px;margin:0;accent-color:var(--cuivre)}
+.cp-manque{background:#eaf5ee}.cp-differe{background:#fcf3e6}.cp-identique{color:var(--encre-2)}.cp-enplus{background:#eef3fb}
+.fi-groupe.cp-manque,.fi-groupe.cp-differe,.fi-groupe.cp-identique,.fi-groupe.cp-enplus{background:none}
+.fi-groupe.cp-manque{color:#1d5b35}.fi-groupe.cp-differe{color:#74450a}.fi-groupe.cp-enplus{color:#2b4f8c}
+.fi-corr{font-style:normal;color:var(--encre-2);font-size:var(--t0);margin-left:4px}
+.fi-bouton.cuivre{background:var(--cuivre);border-color:var(--cuivre);color:#fff}
+.fi-bouton.cuivre svg.ico{color:#fff}
+.fi-bouton.cuivre:disabled{opacity:.45;cursor:default}
+.fi-etat i{min-width:14px;width:auto;padding:0 3px;border-radius:7px}
 .fi-habillage{padding-top:4px;align-items:center}
 .fi-habillage .fi-lien{margin-left:auto}
 .fi-habillage i{margin-left:4px}

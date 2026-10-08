@@ -5,7 +5,8 @@
 ```
 node tests/controle.js         les invariants, le contrat d'essai, la base de retest, les pièges déjà tombés
 node tests/memoire.js          le travail survit-il à la fermeture de l'onglet
-node tests/format-retest.js    les seize colonnes sont lues par leur nom
+node tests/format-retest.js    les seize colonnes sont lues par leur nom ; harness, longueur (mm → m), appareil, date gardés ;
+                               « 677VT2 51 » + « B » → 677VT2:51B
 node tests/banc-placement.js   combien de fils sortent droits, et sur quelle feuille ; les six folios de l'exemple relus
 node tests/banc-corpus.js      soixante-douze câblages qu'aucun réglage n'a vus (tests/corpus.js, dix-huit profils, du plus simple
                                au plus complexe), relus par les mêmes contrôles exacts ; --cas=deux,trois pour des profils,
@@ -19,7 +20,8 @@ node tests/interface.js        à la vraie souris (grand écran, téléphone) : 
                                au ras de sa borne, une borne par fil, chacune à sa hauteur, son repère écrit ; un clic l'ouvre,
                                la poser au contrat sous son vrai repère, et Ctrl+Z ; la pastille de contrôle y mène ; la fiche d'un
                                disjoncteur (calibre, profil, graphique, verdict), un profil qui déclenche, Ctrl+Z ; le câble d'un fil
-                               sur sa fiche, le faisceau d'un connecteur, ce qui l'englobe (tyrap → durci + band-it, Ctrl+Z)
+                               sur sa fiche, le faisceau d'un connecteur, ce qui l'englobe (tyrap → durci + band-it, Ctrl+Z) ; la chute en
+                               ligne depuis un disjoncteur ; une base de contrats faits, « Déjà fait », la comparaison, reprendre, Ctrl+Z
 node tests/barrettes.js        la bible des barrettes se lit, la référence se choisit, les connecteurs se lisent ; la norme se lit,
                                chaque fil va dans son trou, la simulation donne des valeurs connues à la main ; les catalogues ASNE 0599
                                (29 variantes) et NSA937901 (43 codes), les jauges de chaque norme, le choix de la norme et le
@@ -29,7 +31,9 @@ node tests/barrettes.js        la bible des barrettes se lit, la référence se 
                                l'interpolation log-log, le profil en points cumulés, le verdict et le calibre mini) ; l'EN 2853 (l'intensité
                                par durée, l'ambiante, la protection des fils d'un disjoncteur) ; la base des câbles (223 câbles, le
                                câble d'un type, la résistance et d'où elle vient, le faisceau d'un connecteur) ; les raccords (la
-                               table du tutoriel, les gaines, les colliers, l'habillage d'un connecteur) et la chute en triphasé (sans navigateur)
+                               table du tutoriel, les gaines, les colliers, l'habillage d'un connecteur) et la chute en triphasé ; la chute en
+                               chaîne (à travers les prises et les barrettes, longueur réelle) ; les contrats déjà faits (ranger, reconnaître,
+                               comparer, reprendre) (sans navigateur)
 ```
 
 Tous acceptent `--fichier=chemin` pour mesurer un autre fichier que

@@ -28,7 +28,7 @@ const COLONNES = [
   ['fwd',      ['fwd', 'plan']],
   ['length',   ['cablelength', 'cablelengthmm', 'cablelengthinmm', 'length', 'longueur']],
   ['appareil', ['appareil', 'aircraft', 'contrat']],
-  ['retest',   ['dateretest', 'retestdate', 'datederetest', 'retest']]
+  ['retest',   ['dateretest', 'retestdate', 'datederetest', 'dateduretest', 'retest', 'date']]
 ];
 
 function decouperLigne(ligne) {
@@ -99,6 +99,8 @@ function lireTexte(texte) {
   const rt = trouverEnteteRetest(brutes);
   if (rt) {
     const c = rt.col, g = (row, i) => (i != null && row[i] != null) ? row[i] : '';
+    // la longueur : des mm quand l'en-tête le dit (« Cable length (mm) »)
+    const entete = cellules(brutes[rt.ligne] || ''), enMm = c.length != null && /mm/i.test(entete[c.length] || '');
     const liaisons = [];
     for (let r = rt.ligne + 1; r < brutes.length; r++) {
       if (!brutes[r].trim()) continue;
@@ -106,10 +108,12 @@ function lireTexte(texte) {
       const l = liaison({ de: g(row, c.device1), borneDe: g(row, c.pin1), pnDe: g(row, c.pn1),
                           vers: g(row, c.device2), borneVers: g(row, c.pin2), pnVers: g(row, c.pn2),
                           cable: g(row, c.cabletag), type: g(row, c.cabletg),
-                          route: g(row, c.route), plan: g(row, c.fwd) });
+                          route: g(row, c.route), plan: g(row, c.fwd),
+                          longueur: c.length != null && g(row, c.length) !== '' ? g(row, c.length) + (enMm ? ' mm' : '') : '',
+                          harness: g(row, c.harness), appareil: g(row, c.appareil), retest: g(row, c.retest) });
       if (liaisonComplete(l)) liaisons.push(l);
     }
-    return { liaisons, format: 'retest', entete: rt.ligne + 1, colonnes: rt.trouvees };
+    return { liaisons, format: 'retest', entete: rt.ligne + 1, colonnes: rt.trouvees, harnais: [...new Set(liaisons.map(l => l.harness).filter(Boolean))] };
   }
 
   let map = null, debut = 0; const premiere = cellules(pleines[0]);

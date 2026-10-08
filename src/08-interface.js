@@ -130,8 +130,8 @@ function montrerAffinage() { const el = $('affinage'); if (!el) return; const j 
   el.title = 'La recherche profonde améliore le dessin en arrière-plan ; chaque mieux trouvé le remplace, et le résultat se garde dans ce navigateur.'; }
 // IndexedDB : un magasin, une entrée par version du moteur et folio ; les versions passées s'effacent
 const IDB_NOM = 'atelier-schema', IDB_MAGASIN = 'placements', IDB_RETOUCHES = 'retouches';
-function ouvrirIDB() { return new Promise((ok, ko) => { try { const r = indexedDB.open(IDB_NOM, 2);
-  r.onupgradeneeded = () => { [IDB_MAGASIN, IDB_RETOUCHES].forEach(m => { if (!r.result.objectStoreNames.contains(m)) r.result.createObjectStore(m); }); };
+function ouvrirIDB() { return new Promise((ok, ko) => { try { const r = indexedDB.open(IDB_NOM, 3);
+  r.onupgradeneeded = () => { [IDB_MAGASIN, IDB_RETOUCHES, 'references'].forEach(m => { if (!r.result.objectStoreNames.contains(m)) r.result.createObjectStore(m); }); };
   r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error); } catch (err) { ko(err); } }); }
 function garderAffine(cle, P) { ouvrirIDB().then(db => { db.transaction(IDB_MAGASIN, 'readwrite').objectStore(IDB_MAGASIN).put({ P, t: Date.now() }, VERSION_MOTEUR + '|' + cle); }).catch(() => { }); }
 function relireAffines() { if (!affinage.actif) return; const avant = cleCourante();
@@ -1073,12 +1073,14 @@ function ficheBible(ref) { const B = app.bible || [], nom = app.bibleNom, n = B.
   const corps = tete('Barrettes et connecteurs', 'Bible des barrettes', true) + etat + (zoom ? zoomBible(zoom) : '') + filtres
     + (n ? `<table class="bible"><thead><tr><th></th><th>Référence</th><th>Nature</th><th>Bornes</th><th>Jauge</th><th title="Intensité">Int.</th><th title="Blindage">Blindé</th><th>Note</th></tr></thead><tbody>${vus.map(ligne).join('')}</tbody></table>` : '<p class="note">Aucune référence.</p>')
     + `<p class="note">Un Excel ou un CSV dont une ligne d’en-têtes nomme ${COLONNES_BIBLE_TEXTE}. La jauge s’écrit en AWG : « min » est la plus fine acceptée. Une bible se dépose aussi directement sur la table.</p>`
-    + ficheNorme();
-  const pied = '<button class="btn cuivre" id="bi-importer">Importer un Excel / CSV</button><button class="btn papier" id="no-importer">Importer une norme</button><input type="file" id="fichier-norme" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden><span class="espace"></span>'
+    + ficheNorme() + ficheReferences();
+  const pied = '<button class="btn cuivre" id="bi-importer">Importer un Excel / CSV</button><button class="btn papier" id="no-importer">Importer une norme</button><button class="btn papier" id="re-importer">Contrats déjà faits</button><input type="file" id="fichier-norme" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden><input type="file" id="fichier-references" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden><span class="espace"></span>'
     + (nom ? '<button class="btn lien" id="bi-exemple">Revenir à la bible d’exemple</button>' : '') + (app.normeNom ? '<button class="btn lien" id="no-embarquee">Revenir à la norme embarquée</button>' : '');
   ouvrirFiche({ mode: 'bible', large: true, ref: zoom ? ref : '' }, corps, pied);
   $('bi-importer').onclick = () => $('fichier-bible').click();
   $('no-importer').onclick = () => $('fichier-norme').click();
+  $('re-importer').onclick = () => $('fichier-references').click();
+  $('fichier-references').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) importerReferences(f); e.target.value = ''; });
   $('fichier-norme').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) importerNorme(f); e.target.value = ''; });
   if ($('bi-exemple')) $('bi-exemple').onclick = () => { adopterBible(bibleDeLOutil(), ''); dire('Bible d’exemple rétablie.'); };
   if ($('no-embarquee')) $('no-embarquee').onclick = () => { adopterNorme(normeEmbarquee(), ''); dire('Norme embarquée rétablie.'); };
@@ -1252,6 +1254,7 @@ async function ouvrirFichier(fichier) { if (!fichier) return;
       if (normeLue(lireNorme(texte))) { await importerNorme(fichier); return; } }   // une norme déposée sur la table : reconnue à ses tables
     const r = lireTexte(texte);
     if (!r.liaisons.length) { dire('« ' + fichier.name + ' » est lu, mais aucune liaison n’est reconnue — vérifie les colonnes.', true); return; }
+    if (r.harnais && r.harnais.length > 1) { adopterReferences(r.liaisons, fichier.name); dire(pluriel(r.harnais.length, 'harness') + ' dans « ' + fichier.name + ' » : gardés comme contrats déjà faits (un contrat, c’est un harness ; les fiches disent ce qui a déjà été fait).'); return; }
     chargerContrat(r.liaisons, 'ouverture de ' + fichier.name, fichier.name);
     dire(r.liaisons.length + ' liaisons' + (r.format === 'retest' ? ' — format retest, en-têtes ligne ' + r.entete : '') + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + '.');
   } catch (e) { dire('Erreur : ' + (e && e.message || e), true); } }

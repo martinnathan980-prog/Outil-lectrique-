@@ -30,6 +30,6 @@ function demarrer() {
   if (baseOuverte) ouvrirBase();
   requestAnimationFrame(() => ajuster());
   // les folios déjà affinés dans ce navigateur reviennent ; les autres s'affinent en arrière-plan ; les retouches aussi
-  relireAffines(); relireRetouches();
+  relireAffines(); relireRetouches(); relireReferences();
 }
 demarrer();

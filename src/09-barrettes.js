@@ -579,15 +579,16 @@ function simulerBornier(Q, norme, hyp) {
   const rContact = F && F.resistance != null ? F.resistance / 1000 : 0, lignes = [];
   Q.modules.forEach(m => ['amont', 'aval'].forEach(sens => m.trous[sens].forEach((f, k) => { if (!f) return;
     const rd = resistanceDuFil(norme, f.type, f.jauge), fil = rd.fil;
-    const kT = facteurAmbiante(fil, H.ambiante), iFil = fil && fil.intensite != null ? fil.intensite * facteur * kT : null, rFil = rd.rho != null ? rd.rho / 1000 * H.longueur : null;
+    const Lf = f.l && f.l.longueur > 0 ? f.l.longueur : H.longueur, reelle = !!(f.l && f.l.longueur > 0);
+    const kT = facteurAmbiante(fil, H.ambiante), iFil = fil && fil.intensite != null ? fil.intensite * facteur * kT : null, rFil = rd.rho != null ? rd.rho / 1000 * Lf : null;
     const regime = REGIMES[H.regime] ? H.regime : 'continu', cosphi = regime === 'continu' ? 1 : Math.min(1, Math.max(0, +H.cosphi || 0.8)), sinphi = Math.sqrt(Math.max(0, 1 - cosphi * cosphi));
     const section = rd.cab && rd.cab.section != null ? rd.cab.section : (fil && fil.section != null ? fil.section : null), gros = regime !== 'continu' && section != null && section >= GROS_CABLE;
-    const X = regime === 'continu' ? 0 : (+H.reactance || 0) / 1000 * H.longueur, xRequis = gros && !(X > 0), kReg = regime === 'tri' ? Math.sqrt(3) : 1;
+    const X = regime === 'continu' ? 0 : (+H.reactance || 0) / 1000 * Lf, xRequis = gros && !(X > 0), kReg = regime === 'tri' ? Math.sqrt(3) : 1;
     const R = rFil == null ? null : rFil + rContact, dU = R == null || xRequis ? null : kReg * (R * cosphi + X * sinphi) * H.courant, pct = dU == null || !H.tension ? null : dU / H.tension * 100;
     const verdict = f.jaugeOk === false ? 'jauge' : (iFil != null && H.courant > iFil + 1e-9) ? 'fil' : (iContact != null && H.courant > iContact + 1e-9) ? 'contact'
       : xRequis ? 'reactance' : (dU != null && chute && chute.chuteMax != null && dU > chute.chuteMax + 1e-9) ? 'chute' : !fil ? 'inconnu' : 'ok';
     lignes.push({ borne: m.borne, sens, trou: k + 1, surcharge: k >= Q.filsParCote, cable: f.cable, type: f.type, jauge: f.jauge, jaugeOk: f.jaugeOk, fil, approx: !!(fil && fil.approx),
-                  iFil, iContact, rFil, rContact, R, dU, pct, verdict, kT, rho: rd.rho, rhoSource: rd.source, cab: rd.cab, section, regime, cosphi, X, xRequis, vers: f.vers, borneVers: f.borne, l: f.l }); })));
+                  iFil, iContact, rFil, rContact, R, dU, pct, verdict, kT, rho: rd.rho, rhoSource: rd.source, cab: rd.cab, section, regime, cosphi, X, xRequis, longueur: Lf, reelle, vers: f.vers, borneVers: f.borne, l: f.l }); })));
   const compte = {}; lignes.forEach(x => { compte[x.verdict] = (compte[x.verdict] || 0) + 1; });
   return { hyp: H, facteur, chute, iContact, rContact, famille: F, lignes, compte, regime: REGIMES[H.regime] ? H.regime : 'continu', sansNorme: !F && !(norme && norme.fils.length) };
 }
