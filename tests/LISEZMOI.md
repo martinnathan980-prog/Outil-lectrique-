@@ -19,7 +19,7 @@ node tests/interface.js        à la vraie souris (grand écran, téléphone) : 
                                au ras de sa borne, une borne par fil, chacune à sa hauteur, son repère écrit ; un clic l'ouvre,
                                la poser au contrat sous son vrai repère, et Ctrl+Z ; la pastille de contrôle y mène ; la fiche d'un
                                disjoncteur (calibre, profil, graphique, verdict), un profil qui déclenche, Ctrl+Z ; le câble d'un fil
-                               sur sa fiche, le faisceau d'un connecteur
+                               sur sa fiche, le faisceau d'un connecteur, ce qui l'englobe (tyrap → durci + band-it, Ctrl+Z)
 node tests/barrettes.js        la bible des barrettes se lit, la référence se choisit, les connecteurs se lisent ; la norme se lit,
                                chaque fil va dans son trou, la simulation donne des valeurs connues à la main ; les catalogues ASNE 0599
                                (29 variantes) et NSA937901 (43 codes), les jauges de chaque norme, le choix de la norme et le
@@ -28,7 +28,8 @@ node tests/barrettes.js        la bible des barrettes se lit, la référence se 
                                le sexe, le fourreau, la nomenclature) ; les courbes de disjonction (quatre courbes, l'enveloppe,
                                l'interpolation log-log, le profil en points cumulés, le verdict et le calibre mini) ; l'EN 2853 (l'intensité
                                par durée, l'ambiante, la protection des fils d'un disjoncteur) ; la base des câbles (223 câbles, le
-                               câble d'un type, la résistance et d'où elle vient, le faisceau d'un connecteur) (sans navigateur)
+                               câble d'un type, la résistance et d'où elle vient, le faisceau d'un connecteur) ; les raccords (la
+                               table du tutoriel, les gaines, les colliers, l'habillage d'un connecteur) et la chute en triphasé (sans navigateur)
 ```
 
 Tous acceptent `--fichier=chemin` pour mesurer un autre fichier que

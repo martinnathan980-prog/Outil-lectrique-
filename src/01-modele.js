@@ -107,6 +107,7 @@ function nouveauContrat() {
     designations: new Map(),           // repère -> désignation libre
     sexes: new Map(),                  // « repère|connecteur » (ou repère d'une prise) -> sexe des contacts à sertir, M ou F
     charges: new Map(),                // repère d'un disjoncteur -> { calibre, dem: { i, t }, trans: { i, t }, perm: { i } } (A, s)
+    raccords: new Map(),               // « repère|connecteur » (ou « repère|fiche », « repère|embase » d'une prise) -> { blindage, etanche, orientation, gaine, surblindage, materiau }
     cartouche: { titre: 'Contrat de câblage', auteur: '', indice: 'A',
                  date: new Date().toISOString().slice(0, 10), echelle: '—' }
   };

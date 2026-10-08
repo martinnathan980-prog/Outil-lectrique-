@@ -13,6 +13,8 @@ L'outil sait aujourd'hui :
   fils contre ce profil (EN 2853 : l'intensité admissible par durée) ;
 - dire le câble de chaque fil (la base des câbles : brins, blindage,
   résistance, diamètre, masse) et le faisceau de chaque connecteur ;
+- dire ce qui englobe chaque connecteur (raccord, band-it, manchon, gaine)
+  par le tutoriel, et la chute en continu, monophasé ou triphasé ;
 - faire de chaque dédoublement une barrette à poser (VT1…), qu'on pose au
   contrat d'un geste ;
 - dire l'état de tout le contrat dans la pastille en haut à gauche.
@@ -99,12 +101,15 @@ page de norme suffit toujours : je la transcris.
 
 ### D. Raccords arrière, cheminées, colliers d'identification
 
-11. Pour chaque famille de connecteur : **la table qui donne, selon la taille
-    du boîtier et le diamètre du faisceau, le raccord, la cheminée, le
-    collier**. Le diamètre du faisceau est déjà sur la fiche de chaque
-    connecteur (la section cumulée des câbles de la base, fois un
-    foisonnement de 1,2) : dites-moi la règle que vous appliquez pour
-    passer des câbles au diamètre, et la table des raccords fera le reste.
+11. ✔ Le tutoriel Raccords, les gaines et les colliers sont dans l'outil :
+    chaque connecteur dit son raccord (durci, pour manchon, serre-câble,
+    tyrap), son band-it, son manchon et sa gaine selon la reprise de
+    blindage, l'étanchéité et la gaine choisies ; le toron suit la feuille
+    de calcul (Seq, Deq, + 10 %). Reste **la table des raccords** (la
+    référence selon la taille du boîtier, le matériau et le toron : la
+    cote A pour le toron, B pour la gaine, C et D pour le manchon), **la
+    table des manchons VG95343T18**, et ce que changent l'overshielding et
+    le matériau.
 12. **Les macros Excel actuelles**, telles quelles : je relis leur logique et
     je la réécris dans l'outil. Il les fera seul, avec le pourquoi
     (« faisceau de 6,2 mm → raccord taille 14 »).

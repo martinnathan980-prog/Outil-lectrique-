@@ -143,8 +143,20 @@ function ficheCable(type) { const c = type ? cableDuType(app.norme, type) : null
   return `<p class="fi-note fi-cable" title="${escA('Le câble ' + c.cable + ' dans la base des câbles' + (c.liaisons > 1 ? ' : il porte ' + c.liaisons + ' liaisons' : ''))}">${xs.map(esc).join(' · ')}</p>`; }
 /* Le faisceau d'un connecteur : ses câbles, le diamètre équivalent, la masse au mètre — ce qui choisira le raccord. */
 function faisceauHtml(fils, titre) { const d = faisceauDe(app.norme, fils); if (!d.n && !d.inconnus.length) return '';
-  const dia = d.diametre != null ? `<span title="${escA('Diamètre équivalent : un rond de la section cumulée (' + nombre(Math.round(d.section * 10) / 10) + ' mm²), fois un foisonnement de ' + nombre(FOISONNEMENT) + (d.complet ? '' : ' — section incomplète, des câbles sans section'))}">Ø ≈ ${nombre(Math.round(d.diametre * 10) / 10)} mm${d.complet ? '' : ' ?'}</span>` : '';
+  const dia = d.diametre != null ? `<span title="${escA('Le toron : un rond de la section cumulée (' + nombre(Math.round(d.section * 100) / 100) + ' mm² → Ø ' + nombre(Math.round(d.deq * 100) / 100) + ' mm), plus la marge de 10 % du tutoriel' + (d.complet ? '' : ' — section incomplète, des câbles sans section'))}">Ø toron ≈ ${nombre(Math.round(d.diametre * 10) / 10)} mm${d.complet ? '' : ' ?'}</span>` : '';
   return `<div class="fi-nomen fi-faisceau"><span class="fi-nomen-t">${esc(titre || 'faisceau')}</span>${d.n ? `<span><b>${d.n}</b>${d.n > 1 ? 'câbles' : 'câble'}</span>` : ''}${dia}${d.masse > 0 ? `<span>${nombre(Math.round(d.masse * 10) / 10)} g/m</span>` : ''}${d.inconnus.length ? `<i>${esc(d.inconnus.join(', '))} : inconnu de la base</i>` : ''}</div>`; }
+
+/* CE QUI ENGLOBE LE CONNECTEUR : le raccord, le band-it, le manchon, la gaine — par la table du tutoriel, selon ce qu'on
+   choisit sous « Changer » (reprise de blindage, étanchéité, orientation, gaine). Le choix se garde avec le contrat. */
+const PUCES_RACCORD = [['blindage', 'reprise de blindage', [['NO', 'aucune'], ['GND', 'sur le corps'], ['BLI', 'par cosse'], ['CONTACT', 'sur un contact']]],
+  ['etanche', 'étanchéité', [['false', 'pas requise'], ['true', 'requise']]], ['orientation', 'raccord', [['droit', 'droit'], ['coudé', 'coudé']]], ['gaine', 'gaine', [['', 'aucune'], ['HFA', 'HFA'], ['NOMEX', 'Nomex']]]];
+function raccordHtml(cle, fils, pn) { if (!fils.length) return ''; const h = habillage(app.norme, fils, app.contrat.raccords.get(cle), pn), c = h.choix;
+  const mots = [h.raccord === 'aucun' ? '<span>sans raccord</span>' : `<span>raccord <b>${esc(h.raccord)}</b></span>`, h.bandit ? `<span>band-it <b>${h.collier ? esc(h.collier.reference) : '?'}</b></span>` : '',
+    h.manchon ? '<span>manchon <i>VG95343T18</i></span>' : '', c.gaine ? `<span>gaine <b>${h.gaine ? esc(h.gaine.reference) : '?'}</b>${h.gaine && h.gaine.dint != null ? `<i>Ø int. ${esc(nombre(h.gaine.dint))}</i>` : ''}</span>` : ''].filter(Boolean).join('');
+  const puces = PUCES_RACCORD.map(([champ, titre, opts]) => `<p class="fi-note fi-rac-t">${titre}</p><div class="fi-puces">${opts.map(([v, t]) => `<button class="fi-chip" data-raccord="${escA(cle)}" data-champ="${champ}" data-v="${escA(v)}" aria-pressed="${String(c[champ]) === v}">${esc(t)}</button>`).join('')}</div>`).join('');
+  const k = 'rac|' + cle;
+  return `<div class="fi-nomen fi-habillage" title="${escA(h.pourquoi)}"><span class="fi-nomen-t">autour</span>${mots}<button class="fi-lien" data-changer="${escA(k)}" aria-expanded="${!!FI.change[k]}">Changer${ico('bas', 'fi-chevron')}</button></div>`
+    + `<div class="fi-changer" data-volet="${escA(k)}"${FI.change[k] ? '' : ' hidden'}>${puces}<p class="fi-note">${esc(h.pourquoi[0].toUpperCase() + h.pourquoi.slice(1))}.${h.manquants.length ? ' Manque : ' + esc(h.manquants.join(' ; ')) + '.' : ''}</p></div>`; }
 
 /* ---- une barrette (et une barrette à poser) ------------------------------------- */
 function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsDeRepere(nom);
@@ -200,7 +212,8 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
     + `<section class="fi-cadre">${fiRef(Q.reference, Q.famille, cle, changer, pourquoi)}${faces}`
     + (lignes ? `<div class="fi-paires-tete"><span></span><span>fiche · arrive</span><span></span><span>embase · repart</span></div><ul class="fi-liste paires">${lignes}</ul>` : '')
     + nomenclature(nomenclatureDe(Q.fils.filter(x => x.f.amont)), 'fiche') + nomenclature(nomenclatureDe(Q.fils.filter(x => !x.f.amont)), 'embase')
-    + faisceauHtml(Q.fils.filter(x => x.f.amont).map(x => x.f), 'faisceau fiche') + faisceauHtml(Q.fils.filter(x => !x.f.amont).map(x => x.f), 'faisceau embase') + '</section>'
+    + faisceauHtml(Q.fils.filter(x => x.f.amont).map(x => x.f), 'faisceau fiche') + raccordHtml(nom + '|fiche', Q.fils.filter(x => x.f.amont).map(x => x.f), b.pn)
+    + faisceauHtml(Q.fils.filter(x => !x.f.amont).map(x => x.f), 'faisceau embase') + raccordHtml(nom + '|embase', Q.fils.filter(x => !x.f.amont).map(x => x.f), b.pn) + '</section>'
     + fiPied({ tableau: nom, relief: true, menu: MENU_BLOC }); }
 
 /* ---- un équipement --------------------------------------------------------------- */
@@ -226,7 +239,7 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
       corps = fiRef(M.reference, M.module.famille, cle, changer, (c.pn ? c.pn + ' — ' : '') + pourquoi)
         + faceAjustee(faceModuleSvg(M.module, ct => { const x = par.get(ct.lettre); return x ? occupant(x.f, x.jaugeOk === false) : null; }, { etiquettes: true })); }
     else corps = `<div class="fi-ref-ligne"><span class="fi-ct"><b>${esc(c.nom)}</b></span><b class="fi-ref">${esc(c.pn || 'sans part number')}</b></div>`;
-    const fsc = faisceauHtml(c.bornes.flatMap(bo => b.parBorne.get(bo) || []));
+    const filsC = c.bornes.flatMap(bo => b.parBorne.get(bo) || []), fsc = faisceauHtml(filsC) + raccordHtml(nom + '|' + c.nom, filsC, c.pn);
     return { id: c.nom, titre: c.nom, compte: String(c.bornes.length), ko: ko.some(t => t.startsWith(c.nom + ' · ')), corps: `<section class="fi-cadre">${corps}${fiListe(fils)}${nomen}${fsc}</section>` }; });
   // les bornes sans connecteur
   const sans = [...b.parBorne].filter(([bo]) => !C.some(c => c.bornes.includes(bo))).sort((u, v) => triNaturel(u[0], v[0])).flatMap(([bo, fs]) => fs.map(f => ligne(bo, f))).join('');
@@ -281,6 +294,8 @@ function lierFiche(c) { const box = $('ba-equip'), nom = c.type === 'fil' ? '' :
   box.querySelectorAll('[data-norme-prise]').forEach(b => b.onclick = () => choisir(nom, b.dataset.normePrise, 'norme de ' + nom));
   box.querySelectorAll('.cand[data-cle]').forEach(b => b.onclick = () => { if (b.getAttribute('aria-pressed') !== 'true') choisir(b.dataset.cle, b.dataset.ref, 'choix de ' + b.dataset.cle, b.dataset.ref + ' retenu.'); });
   box.querySelectorAll('[data-auto]').forEach(b => b.onclick = () => choisir(b.dataset.auto, '', 'choix automatique', 'Choix automatique rétabli.'));
+  box.querySelectorAll('[data-raccord]').forEach(b => b.onclick = () => { if (b.getAttribute('aria-pressed') === 'true') return; const k = b.dataset.raccord, v = b.dataset.v;
+    histPush('raccord de ' + k); const o = { ...(app.contrat.raccords.get(k) || {}) }; o[b.dataset.champ] = v === 'true' ? true : v === 'false' ? false : v; app.contrat.raccords.set(k, o); FI.change['rac|' + k] = true; apresEdition(); });
   box.querySelectorAll('[data-sexe]').forEach(b => b.onclick = () => { if (b.getAttribute('aria-pressed') === 'true') return;
     histPush('sexe des contacts de ' + b.dataset.sexe); app.contrat.sexes.set(b.dataset.sexe, b.dataset.v); apresEdition(); });
   box.querySelectorAll('[data-bible]').forEach(b => b.onclick = () => ficheBible(b.dataset.bible));

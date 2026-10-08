@@ -1,0 +1,27 @@
+Raccords — ce qui englobe un connecteur, d'après le tutoriel Raccords de l'Excel du lecteur (octobre 2026). Sept pas : 1 le matériau (nickelage alu, cadmiage vert olive, passivation acier inox, anodisation alu noir), 2 le diamètre du toron (compter une petite marge, 10 %), 3 le connecteur, 4 le raccord (D(A) > D(toron)) — SIMPLE droit souvent dans une boîte, sauf l'EN 3645 qui s'utilise sans raccord, TYRAP quand pas de reprise de blindage, SERRE-CÂBLE pour une reprise de blindage par cosse (au plus 4 cosses, 2 par vis) et seulement si la place interdit un raccord durci, DURCI par défaut, POUR MANCHON droit si pas de reprise de blindage et zone étanche, 5 la gaine HFA DHS754-160 (D(HFA int) > D(B)), 6 le manchon VG95343T18 si étanchéité requise (D(AV) > D(C), D(AP) < D(D) et D(HFA ext)), 7 le collier band-it, en métal, qui tient la tresse de blindage seulement si elle est reprise sur le corps du connecteur, et n'implique pas forcément un manchon.
+La table de décision (reprise de blindage × étanchéité × gaine) est dans l'outil (09 ter, regleRaccord) : GND → durci + band-it, + manchon si étanche. BLI → étanche et gaine : durci + band-it + manchon, étanche sans gaine : durci + manchon, pas étanche avec gaine : durci + band-it, ni l'un ni l'autre : serre-câble. NO et CONTACT → étanche et gaine : durci + band-it + manchon, étanche sans gaine : droit = pour manchon + manchon, coudé = durci + manchon, pas étanche avec gaine : durci + band-it, ni l'un ni l'autre : tyrap.
+Il manque encore la table des RACCORDS (la référence selon la taille du boîtier, le matériau et le diamètre du toron) et celle des MANCHONS VG95343T18 : l'outil dit le type et la norme, pas la référence.
+
+Gaines — les gaines qui habillent le toron, par famille et référence : diamètre intérieur, diamètre extérieur (mm), masse (g/m). La plus petite dont l'intérieur passe le toron est retenue.
+Famille;Référence;Dint;Dext;Masse
+HFA;DHS754-160.10;4;4,5;15
+HFA;DHS754-160.20;6;6,5;22
+HFA;DHS754-160.30;8;8,5;29,1
+HFA;DHS754-160.40;10;10,5;36,1
+HFA;DHS754-160.50;12;12,5;43
+HFA;DHS754-160.60;15;15,5;53,7
+HFA;DHS754-160.70;20;20,8;107,6
+NOMEX;EN6049-003-02;1;2;3
+NOMEX;EN6049-003-04;2;4;4
+NOMEX;EN6049-003-06;4;8;8,5
+NOMEX;EN6049-003-08;6;12;11,5
+NOMEX;EN6049-003-10;8;16;14
+NOMEX;EN6049-003-15;10;20;17,5
+NOMEX;EN6049-003-20;12;24;22
+NOMEX;EN6049-003-25;15;30;32,5
+NOMEX;EN6049-003-30;20;40;39,5
+
+Colliers — le band-it E0805, selon le diamètre du toron : E0805-01 jusqu'à 15 mm, E0805-02 au-delà
+Référence;Diamètre min;Diamètre max;Note
+E0805-01;;15;toron de moins de 15 mm
+E0805-02;15;;toron de plus de 15 mm

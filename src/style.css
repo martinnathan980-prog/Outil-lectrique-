@@ -906,6 +906,13 @@ details.fi-etat.ko ul{background:#fbeceb}details.fi-etat.att ul{background:#fcf3
 .fi-ko.fi-att{color:#74450a}
 .fi-cable{color:var(--encre-2);font-family:var(--mono);font-size:var(--t0)}
 .fi-faisceau{padding-top:6px}
+.fi-habillage{padding-top:4px;align-items:center}
+.fi-habillage .fi-lien{margin-left:auto}
+.fi-habillage i{margin-left:4px}
+.fi-rac-t{margin:6px 0 2px;font:700 10px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--encre-2)}
+.fi-rac-t:first-child{margin-top:0}
+.hyp-n select{height:28px;border:1px solid rgba(181,84,28,.35);border-radius:7px;padding:0 4px;background:var(--papier);color:var(--encre);font-family:var(--sans);font-size:var(--t1)}
+.verdict.v-reactance{background:#fcf3e6;color:#74450a}
 .fi-bout .fi-bout-ct{color:#5b6773}
 .fi-bout .fi-bout-ct.ko{color:var(--danger);font-weight:600}
 .fi-dest{display:flex;align-items:center;justify-content:flex-end;gap:4px;min-width:0;font-family:var(--mono);color:var(--encre);white-space:nowrap}

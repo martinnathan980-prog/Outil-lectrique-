@@ -113,7 +113,14 @@ const FICHIER = P.fichierDemande();
   await page.evaluate(() => { const w = app.dessin.fils.find(w => w.cable === 'W-012'); if (w) { app.cible = { type: 'fil', l: verite()[w.i] }; ouvrirInspecteur(); } }); await page.waitForTimeout(400);
   ok(await page.evaluate(() => { const c = document.querySelector('#ba-equip .fi-cable'); return !!c && /1 brin/.test(c.textContent) && /Ø 1,34 mm/.test(c.textContent) && /33,2 mΩ\/m/.test(c.textContent); }), 'la fiche de W-012 (DR20) : 1 brin, Ø 1,34 mm, 33,2 mΩ/m');
   await page.evaluate(() => { allerAuPlan('3'); choisirBloc(app.dessin.comps.find(k => k.name === '300XC1' && k.kind !== 'tag')); }); await page.waitForTimeout(600);
-  ok(await page.evaluate(() => { const f = document.querySelector('#ba-equip [data-panneau="A"] .fi-faisceau'); return !!f && /11\s*câbles/.test(f.textContent) && /Ø ≈ [\d,]+ mm/.test(f.textContent) && /g\/m/.test(f.textContent); }), 'le connecteur A de 300XC1 : son faisceau — 11 câbles, un diamètre équivalent, une masse au mètre');
+  ok(await page.evaluate(() => { const f = document.querySelector('#ba-equip [data-panneau="A"] .fi-faisceau'); return !!f && /11\s*câbles/.test(f.textContent) && /Ø toron ≈ [\d,]+ mm/.test(f.textContent) && /g\/m/.test(f.textContent); }), 'le connecteur A de 300XC1 : son faisceau — 11 câbles, un diamètre équivalent, une masse au mètre');
+  // ce qui englobe le connecteur : par défaut un tyrap ; reprise sur le corps → durci + band-it ; Ctrl+Z
+  ok(await page.evaluate(() => { const h = document.querySelector('#ba-equip [data-panneau="A"] .fi-habillage'); return !!h && /tyrap/.test(h.textContent) && !/band-it/.test(h.textContent); }), 'le connecteur A de 300XC1, sans reprise de blindage ni étanchéité : un tyrap');
+  await page.evaluate(() => { const b = document.querySelector('#ba-equip [data-panneau="A"] [data-changer^="rac|"]'); b.click(); }); await page.waitForTimeout(200);
+  await page.evaluate(() => { document.querySelector('#ba-equip [data-panneau="A"] [data-raccord][data-champ="blindage"][data-v="GND"]').click(); }); await page.waitForTimeout(800);
+  ok(await page.evaluate(() => { const h = document.querySelector('#ba-equip [data-panneau="A"] .fi-habillage'); return !!h && /durci/.test(h.textContent) && /E0805-01/.test(h.textContent) && app.contrat.raccords.get('300XC1|A').blindage === 'GND'; }), 'reprise sur le corps : un raccord durci et un band-it E0805-01, gardés au contrat');
+  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(800);
+  ok(await page.evaluate(() => !app.contrat.raccords.get('300XC1|A')), 'Ctrl+Z défait le choix du raccord');
   ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
   console.log('\n  ' + (ko ? ko + ' échec(s)' : 'tout tient'));
   await nav.close(); process.exit(ko ? 1 : 0);

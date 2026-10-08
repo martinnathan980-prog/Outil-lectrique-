@@ -12,6 +12,33 @@ dessine chaque **trou** et le fil qui y est placé, juge le remplissage, et
 **simule** fil par fil la jauge admise, le courant admissible et la chute en
 ligne — sur des hypothèses dites et modifiables.
 
+## `raccords.csv` : ce qui englobe un connecteur
+
+Le **tutoriel Raccords** de l'Excel du lecteur, en sept pas : le matériau,
+le diamètre du toron (plus 10 %), le connecteur, le raccord, la gaine HFA,
+le manchon, le collier band-it. Le fichier porte les deux tables de
+**gaines** (HFA DHS754-160 : 7 références ; Nomex EN6049-003 : 9) avec leur
+Ø intérieur, Ø extérieur et masse, et les **colliers** band-it (E0805-01
+jusqu'à 15 mm de toron, E0805-02 au-delà). La **table de décision** est
+dans l'outil (09 ter, `regleRaccord`) : reprise de blindage (GND sur le
+corps, BLI par cosse, NO, CONTACT) × étanchéité × gaine, et l'orientation
+pour le cas sans reprise en zone étanche (droit : raccord pour manchon ;
+coudé : durci). L'EN 3645 s'utilise sans raccord.
+
+Sur la fiche de chaque connecteur (et de chaque côté d'une prise de
+coupure), une ligne **« autour »** dit le raccord, le band-it (sa référence
+par le toron), le manchon (VG95343T18) et la gaine (la plus petite dont
+l'intérieur passe le toron) ; « Changer » déplie les quatre choix, gardés
+avec le contrat (Ctrl+Z). Le toron est celui de la ligne « faisceau » :
+Seq, Deq, plus 10 %, comme la feuille de calcul de l'Excel.
+
+Ce qui manque : la **table des raccords** (la référence selon la taille du
+boîtier, le matériau et le toron — leur Excel aussi dit #N/A), la table des
+**manchons** VG95343T18 (D(AV), D(AP) contre les cotes C et D du raccord),
+et le rôle de l'**overshielding** et du **matériau** dans le choix. Le
+tutoriel sert la gaine sur la cote B du raccord ; sans cette cote, l'outil
+la sert sur le toron.
+
 ## `cables.csv` : la base des câbles
 
 L'onglet **Câbles** de l'Excel du lecteur, transcrit : 223 câbles de 55
@@ -66,6 +93,14 @@ sous ce que le fil admet pour cette durée (le palier juste au-dessus : 2 s,
 ne devrait pas dépasser ce que le fil admet en continu, sinon le fil n'est
 pas protégé en surcharge. Un dédoublement se partage on ne sait comment :
 chaque fil doit tenir tout. La fiche d'un fil dit ce qu'il admet en continu.
+
+La simulation connaît trois **régimes** (la notice du calculateur de
+chute triphasé) : continu (ΔU = R × I), alternatif monophasé (ΔU = I × (R
+cos φ + X sin φ)) et triphasé (ΔU composée, entre deux phases : √3 × I ×
+(R cos φ + X sin φ), I par phase, jamais la somme des phases, L la distance
+simple). cos φ vaut 0,8 en régime permanent, 0,35 au démarrage d'un
+moteur ; la réactance X est négligée sous 50 mm² et à saisir au-delà (le
+calcul est suspendu, comme dans l'Excel).
 
 Restent d'exemple : les **déclassements** (faisceau × 0,8, zone chaude
 × 0,85) et le **réseau** (la chute admise) ; vos vraies tables remplacent

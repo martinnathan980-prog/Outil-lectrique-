@@ -40,7 +40,7 @@ function controleDuContrat() { const V = verite(), items = [], ko = (nom, texte)
 /* La pastille : le nom du contrat, son compte, son état. Ne se relit que si le contrat a changé. */
 function rendreControle() { const el = $('controle'), V = verite(); if (!el) return;
   if (!V.length) { el.hidden = true; return; } el.hidden = false;
-  const cle = signature(V) + '|' + JSON.stringify([...app.contrat.designations]) + '|' + JSON.stringify([...(app.contrat.sexes || [])]) + '|' + JSON.stringify([...(app.contrat.charges || [])]) + '|' + (app.normeNom || '') + '|' + (app.bibleNom || '');
+  const cle = signature(V) + '|' + JSON.stringify([...app.contrat.designations]) + '|' + JSON.stringify([...(app.contrat.sexes || [])]) + '|' + JSON.stringify([...(app.contrat.charges || [])]) + '|' + JSON.stringify([...(app.contrat.raccords || [])]) + '|' + (app.normeNom || '') + '|' + (app.bibleNom || '');
   if (cle !== CONTROLE.cle) { CONTROLE.cle = cle; CONTROLE.items = controleDuContrat(); }
   const xs = CONTROLE.items, nko = xs.filter(x => x.niveau === 'ko').length, natt = xs.length - nko, P = plans();
   $('co-nom').textContent = (app.contrat.cartouche && app.contrat.cartouche.titre) || app.nom || 'Contrat';
