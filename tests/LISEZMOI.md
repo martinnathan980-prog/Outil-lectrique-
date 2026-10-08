@@ -39,6 +39,15 @@ node tests/barrettes.js        la bible des barrettes se lit, la référence se 
                                table du tutoriel, les gaines, les colliers, l'habillage d'un connecteur) et la chute en triphasé ; la chute en
                                chaîne (à travers les prises et les barrettes, longueur réelle) ; les contrats déjà faits (ranger, reconnaître,
                                comparer, reprendre) (sans navigateur)
+node tests/references.js       les contrats déjà faits et le FWD (sans navigateur) : la lecture garde le dessin et les descriptions ;
+                               un repère ELEC se décode (zone, nature, ordre, variante) et se dit en mots, une borne de barrette aussi ;
+                               la base s'indexe par harness et par dessin ; la comparaison d'un dessin entier et d'un voisinage, la
+                               correspondance des repères d'un bloc (repère, part number, voisins, code, nouveau), la reprise recâblée ;
+                               la recherche de la bible ; cinquante mille lignes indexées en une fraction de seconde
+node tests/fwd.js              à la vraie souris : « Déjà fait » dit le dessin de chaque machine ; la comparaison à trois échelles
+                               (équipement, voisinage à un ou deux pas, dessin entier), reprendre à l'échelle du dessin, Ctrl+Z ; le calque
+                               du dessin (le FWD dessiné par le moteur, l'équipement comparé encadré, la colonne qui explique, la
+                               recherche, un clic, Échap, « Comparer ») ; la bible qui cherche un repère et ouvre son dessin ; au téléphone
 ```
 
 Tous acceptent `--fichier=chemin` pour mesurer un autre fichier que

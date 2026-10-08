@@ -12,19 +12,50 @@
              type           type et section du fil (Cable T/G)
              route          cheminement
              plan           feuille d'origine (FWD) — sert au découpage en folios
+             et, quand le retest les porte : fwd (le DESSIN d'origine, gardé tel
+             quel même quand l'outil redécoupe les folios), descriptionDe /
+             descriptionVers (Description1 / Description2), harness, longueur,
+             appareil, retest
    =========================================================================== */
 'use strict';
 
 const RAIL_RE = /^(L1|L2|L3|L|N|PE|PEN|GND|0V|\+|-|VCC|VDD|\+?\d{1,3}V)$/i;
 
 /* Le repère aéronautique porte son code AU MILIEU : <numéro><CODE><suffixe>
-   — 667VT21, 408VC1A, 210SP1, 904G. Trois codes sont connus avec certitude,
-   ce sont les seuls qu'on interprète ; tout le reste est un équipement, et on
-   ne lui invente pas une nature qu'on ignore. */
+   — 667VT21, 408VC1A, 210SP1, 904G. Les trois chiffres de tête disent la zone
+   ou le système, le code la NATURE, la fin l'ordre et la variante (09
+   quinquies, `decoderRepere`). Chaque code connu a son nom ; seules trois
+   natures changent la FORME du dessin (barrette, prise de coupure, masse) :
+   tout le reste se dessine en équipement. Un code absent d'ici reste un
+   équipement sans nature : on ne lui en invente pas une. */
 const CODES = {
-  VT: { nom: 'barrette',          forme: 'barrette' },
-  VC: { nom: 'prise de coupure',  forme: 'coupure'  },
-  G:  { nom: 'masse',             forme: 'masse'    }
+  VT: { nom: 'barrette de jonction', forme: 'barrette' },
+  VC: { nom: 'prise de coupure',     forme: 'coupure'  },
+  G:  { nom: 'masse',                forme: 'masse'    },
+  CB: { nom: 'disjoncteur',          forme: 'equipement' },
+  RL: { nom: 'relais',               forme: 'equipement' },
+  CT: { nom: 'contacteur',           forme: 'equipement' },
+  SW: { nom: 'interrupteur',         forme: 'equipement' },
+  PB: { nom: 'bouton-poussoir',      forme: 'equipement' },
+  LP: { nom: 'voyant',               forme: 'equipement' },
+  BT: { nom: 'batterie',             forme: 'equipement' },
+  GN: { nom: 'génératrice',          forme: 'equipement' },
+  TR: { nom: 'transfo-redresseur',   forme: 'equipement' },
+  XC: { nom: 'connecteur',           forme: 'equipement' },
+  TB: { nom: 'bornier',              forme: 'equipement' },
+  CP: { nom: 'calculateur',          forme: 'equipement' },
+  PM: { nom: 'pompe',                forme: 'equipement' },
+  PL: { nom: 'pompe',                forme: 'equipement' },
+  VL: { nom: 'vanne',                forme: 'equipement' },
+  MT: { nom: 'moteur',               forme: 'equipement' },
+  HT: { nom: 'réchauffeur',          forme: 'equipement' },
+  SP: { nom: 'capteur',              forme: 'equipement' },
+  ST: { nom: 'sonde',                forme: 'equipement' },
+  PR: { nom: 'pressostat',           forme: 'equipement' },
+  FU: { nom: 'fusible',              forme: 'equipement' },
+  DI: { nom: 'diode',                forme: 'equipement' },
+  RS: { nom: 'résistance',           forme: 'equipement' },
+  AN: { nom: 'antenne',              forme: 'equipement' }
 };
 function lireRepere(repere) {
   const m = /^([0-9]*)\s*([A-Za-z]+)([0-9A-Za-z\-_.]*)$/.exec(String(repere || '').trim());
@@ -55,9 +86,11 @@ function longueurLue(v) { if (v == null || v === '') return null; if (typeof v =
 function liaison(o) {
   const s = v => (v == null ? '' : String(v).trim()), [de, borneDe] = boutLu(o.de, o.borneDe), [vers, borneVers] = boutLu(o.vers, o.borneVers);
   const l = { de, borneDe, pnDe: s(o.pnDe), vers, borneVers, pnVers: s(o.pnVers), cable: s(o.cable), type: s(o.type), route: s(o.route), plan: s(o.plan) };
-  // ce que le vrai retest porte en plus : le faisceau, la longueur (m), l'appareil, la date du retest
+  // ce que le vrai retest porte en plus : le faisceau, la longueur (m), l'appareil, la date du retest, le dessin (FWD)
+  // d'origine, les descriptions des deux équipements
   const longueur = longueurLue(o.longueur); if (longueur != null) l.longueur = longueur;
   if (s(o.harness)) l.harness = s(o.harness); if (s(o.appareil)) l.appareil = s(o.appareil); if (s(o.retest)) l.retest = s(o.retest);
+  if (s(o.fwd)) l.fwd = s(o.fwd); if (s(o.descriptionDe)) l.descriptionDe = s(o.descriptionDe); if (s(o.descriptionVers)) l.descriptionVers = s(o.descriptionVers);
   return l;
 }
 /* Une liaison sans équipement à un bout n'en est pas une : c'est une ligne
