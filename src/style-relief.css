@@ -1,0 +1,129 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LA VUE EN RELIEF (08-relief) et LES FACES des modules (08-modules)
+   Les jetons (couleurs, typo, espacements) sont dans style.css ; ici, seulement ce qui est propre à ce domaine.
+   ═══════════════════════════════════════════════════════════════════════ */
+/* ── la VUE EN RELIEF (08-relief) : une feuille blanche posée sur la table assombrie ── */
+.relief{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(14,19,26,.55)}
+.relief[hidden]{display:none}
+.re-boite{background:var(--papier);color:var(--encre);border-radius:16px;width:min(1180px,100%);max-height:100%;overflow:auto;box-shadow:0 18px 60px rgba(0,0,0,.35);padding:18px 20px 20px}
+.re-tete{display:flex;align-items:flex-start;gap:14px}
+.re-tete .min0{flex:1;min-width:0}
+.re-tete .titre{font-family:var(--mono);font-size:22px;margin:2px 0 0}
+.re-compte{color:var(--encre-2);font-size:13px;margin-top:4px}
+.re-compte .ko,.re-tab .ko{color:var(--danger);font-weight:600}
+.re-vues{display:flex;gap:2px;background:var(--papier-2);border-radius:18px;padding:3px}
+.re-vues button{border:0;background:transparent;color:var(--encre-2);font:inherit;font-size:13px;padding:6px 12px;border-radius:15px;cursor:pointer}
+.re-vues button:hover{background:var(--papier-3)}
+.re-vues button.on{background:var(--papier);color:var(--encre);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.re-scene{margin:12px 0 4px;background:radial-gradient(ellipse at 50% 40%,#f7f9fb,#e9edf2);border-radius:12px;height:min(56vh,520px);cursor:grab;touch-action:none;user-select:none}
+.re-scene.tourne{cursor:grabbing}
+.re-scene svg{width:100%;height:100%;display:block}
+.re-gaine{fill:none;stroke:#18212c;stroke-opacity:.28;stroke-width:4.4;stroke-linecap:round;stroke-linejoin:round}
+.re-ame{fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.re-fil.on .re-ame{stroke-width:4}
+.re-fil.on .re-gaine{stroke-width:6.5}
+.re-trou{fill:#ffffff;stroke:#7a8796;stroke-width:1.2}
+.re-trou.plein{fill:#18212c;stroke-width:2.2}
+.re-trou.ko{stroke:var(--danger)!important;stroke-width:2.6}
+.re-trou.on{stroke-width:3.4}
+.re-num{font-family:var(--mono);font-size:13px;font-weight:600;fill:#ffffff}
+.re-num.libre{fill:#5b6875;font-weight:500}
+.re-num.petit{fill:#18212c;font-size:11px}
+.re-titre-piece{font-size:12px;letter-spacing:.08em;fill:#5b6875;font-weight:600}
+.re-cable{font-family:var(--mono);font-size:13px;font-weight:700}
+.re-dest{font-family:var(--mono);font-size:11px;fill:#5b6875}
+.re-etiq.on .re-cable{text-decoration:underline}
+.re-trait{fill:none;stroke-width:.8;stroke-opacity:.55}
+.re-etiq.on .re-trait{stroke-width:1.6;stroke-opacity:1}
+.re-emboite{stroke:#7a8796;stroke-width:1.4;stroke-dasharray:5 4;fill:none}
+.re-note{color:var(--encre-2);font-size:12.5px;margin:6px 2px 12px}
+svg .re-note{fill:#5b6875;font-size:10px}
+.re-tab{width:100%;border-collapse:collapse;font-size:12.5px}
+.re-tab th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--encre-2);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--filet)}
+.re-tab td{padding:5px 8px;border-bottom:1px solid var(--filet);vertical-align:top}
+.re-tab td.n{font-family:var(--mono);font-weight:600;width:64px}
+.re-tab tr.libre td{color:var(--encre-2)}
+.re-tab .re-libre{font-style:italic}
+.re-f{display:inline-flex;align-items:center;gap:6px;margin:0 12px 2px 0;font-family:var(--mono);cursor:pointer;border-radius:6px;padding:1px 4px}
+.re-f i{width:14px;height:3px;border-radius:2px;display:inline-block}
+.re-f em{color:var(--encre-2);font-style:normal}
+.re-f.on,.re-f:hover{background:var(--papier-2)}
+@media (max-width:700px){.re-boite{padding:14px}.re-tete{flex-wrap:wrap}.re-scene{height:46vh}}
+/* ---- les modules de jonction (ASNE 0599) : la face, en léger relief ---- */
+.mj{display:block}
+.mj text{font-family:var(--mono)}
+.mj .mj-ombre{fill:#1b2430;opacity:.12}
+.mj .mj-flanc{fill:#4c5866;stroke:#2c3540;stroke-width:.8}
+.mj .mj-corps{fill:#6b7684;stroke:#2c3540;stroke-width:1}
+.mj .mj-insert{fill:#e4e8ec;stroke:#9aa5b1;stroke-width:.8}
+.mj .mj-plaque-bord{fill:none;stroke:#8b6d3f;stroke-linecap:round;stroke-linejoin:round}
+.mj .mj-plaque{fill:none;stroke:#d9bf8c;stroke-linecap:round;stroke-linejoin:round}
+.mj .mj-fut{fill:#5b6672}
+.mj .mj-bague{fill:#c9cfd6;stroke:#59636e;stroke-width:.9}
+.mj .mj-trou{fill:#2a323c}
+.mj .plein .mj-bague{stroke:#1b2430;stroke-width:1.3}
+.mj .ko .mj-bague{stroke:var(--danger);stroke-width:2}
+.mj .mj-contact.plein{cursor:pointer}
+.mj .mj-contact.vise .mj-bague{stroke:var(--cuivre);stroke-width:2.4}
+.mj .mj-lettre{fill:#1b2430;font-size:7.5px;font-weight:700}
+.mj .mj-cable{fill:#0b0f14;font-size:7px;font-weight:700;paint-order:stroke;stroke:#e4e8ec;stroke-width:2.5px;stroke-linejoin:round}
+.mj .mj-titre{fill:var(--encre);font-size:11px;font-weight:700}
+.mj .mj-sous{fill:var(--encre-2);font-size:8.5px}
+.mj .mj-diode{fill:#1b2430;stroke:#1b2430;stroke-width:1.2}
+.mj .f-nsa937901 .mj-corps{fill:#46617d;stroke:#22334a}
+.mj .f-nsa937901 .mj-flanc{fill:#2e445c;stroke:#1d2c3d}
+.mj .f-nsa937901 .mj-insert{fill:#eef2f6;stroke:#9fb0c2}
+.mj .corps-etanche .mj-corps{fill:#555c65;stroke:#262b31}
+.mj .corps-etanche .mj-flanc{fill:#3a4047;stroke:#22272c}
+.mj .corps-etanche .mj-insert{fill:#e2e5e8;stroke:#a3abb3}
+.mj .corps-etanche .mj-bague{fill:#2e343b;stroke:#0f1317}
+.mj .corps-etanche .mj-fut{fill:#151a1f}
+.mj .corps-etanche .mj-trou{fill:#8a949e}
+.mj .mj-bombe{fill:none;stroke:#262b31;stroke-width:1.3}
+.mj .mj-plaque-bout{fill:#a9b2bb;stroke:#262b31;stroke-width:1}
+.mj .mj-plaque-trait{stroke:#262b31;stroke-width:1.2;fill:none}
+.mj .mj-shunt-bord{fill:none;stroke:#26384b;stroke-linecap:round;stroke-linejoin:round}
+.mj .mj-shunt{fill:none;stroke:#f7f9fb;stroke-linecap:round;stroke-linejoin:round}
+.mj .corps-etanche .mj-shunt{stroke:#eceef0}
+.mj .f-en4165 .mj-corps{fill:#5d7a69;stroke:#2a3a31}
+.mj .f-en4165 .mj-flanc{fill:#3d5446;stroke:#24322a}
+.mj .f-en4165 .mj-insert{fill:#eef3ef;stroke:#9fb4a6}
+.mj .f-en2997 .mj-corps{fill:#7b6788;stroke:#3a2d44}
+.mj .f-en2997 .mj-flanc{fill:#55465f;stroke:#33283b}
+.mj .f-en2997 .mj-insert{fill:#f3eff5;stroke:#b4a6bd}
+.mj .f-en3646 .mj-corps{fill:#8a6a4a;stroke:#3f2f20}
+.mj .f-en3646 .mj-flanc{fill:#614a33;stroke:#3a2b1d}
+.mj .f-en3646 .mj-insert{fill:#f6f1ea;stroke:#c2ad95}
+.picto.mj-picto.f-en3646 .p-corps{fill:#f1e8de;stroke:#8a6a4a}
+.mj-norme.f-en3646::before{background:#8a6a4a;border-radius:4px}
+.mj .f-en3645 .mj-corps{fill:#4f6f86;stroke:#22323f}
+.mj .f-en3645 .mj-flanc{fill:#38515f;stroke:#1f2d37}
+.mj .f-en3645 .mj-insert{fill:#eef3f7;stroke:#a3b6c4}
+.picto.mj-picto.f-en3645 .p-corps{fill:#e3ecf2;stroke:#4f6f86}
+.mj-norme.f-en3645::before{background:#4f6f86;border-radius:4px}
+.mj .f-asne0059 .mj-corps{fill:#6a7d3f;stroke:#33401c}
+.mj .f-asne0059 .mj-flanc{fill:#4b5a2b;stroke:#2c3818}
+.mj .f-asne0059 .mj-insert{fill:#f2f5ea;stroke:#b3c08f}
+.picto.mj-picto.f-asne0059 .p-corps{fill:#ecf0df;stroke:#6a7d3f}
+.mj-norme.f-asne0059::before{background:#6a7d3f;border-radius:4px}
+.mj .mj-cle-arc{fill:none;stroke:#3a2d44;stroke-width:2.4;stroke-linecap:round}
+.picto.mj-picto.f-en2997 .p-corps{fill:#ece6f0;stroke:#7b6788}
+.mj-norme.f-en2997::before{background:#7b6788;border-radius:4px}
+.mj .mj-cle{fill:#3d5446;stroke:#24322a;stroke-width:.8}
+.picto.mj-picto.f-en4165 .p-corps{fill:#e4ede7;stroke:#5d7a69}
+.mj-norme.f-en4165::before{background:#5d7a69}
+.mj .mj-shunt-cadre{fill:#f7f9fb;stroke:#26384b;stroke-width:1.7}
+.mj .corps-etanche .mj-shunt-cadre{fill:#eceef0}
+.mj-norme{border:1px solid rgba(38,50,63,.18);background:var(--papier);color:var(--encre);border-radius:999px;padding:3px 11px;font-size:var(--t1);font-weight:600;cursor:pointer;transition:background var(--rapide)}
+.mj-norme:hover{background:var(--papier-3)}
+.mj-norme[aria-pressed="true"]{background:var(--encre);border-color:var(--encre);color:#fff}
+/* chaque norme a sa pastille de couleur ; la couleur vient de sa règle à elle (:where ne pèse rien) */
+:where(.mj-norme[class*=" f-"])::before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:middle;background:#6b7684}
+.mj-norme.f-nsa937901::before{background:#46617d;border-radius:4px}
+.cand svg.picto{flex-shrink:0}
+.bible-filtres{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.picto.mj-picto.f-nsa937901 .p-corps{fill:#e3eaf1;stroke:#46617d}
+.picto.mj-picto.f-nsa937901 .p-groupe{stroke:#9db0c4}
+.picto.mj-picto .p-corps{fill:#e4e8ec;stroke:#6b7684;stroke-width:.8}
+.picto.mj-picto .p-groupe{fill:none;stroke:#d9bf8c;stroke-linecap:round;stroke-linejoin:round}
+.picto.mj-picto .p-contact{fill:#59636e}

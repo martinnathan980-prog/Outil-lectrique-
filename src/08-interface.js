@@ -287,13 +287,13 @@ function appliquerVue() {
 /* Le vide que laissent le rail, la réglette des folios et le document
    ouvert : la feuille se cadre dedans. Sur téléphone tout est en bas, empilé
    au-dessus du tiroir : le rail (48), puis les folios (44) s'il y en a. */
-const RAIL = 52;
+const RAIL = 52;   // la largeur du rail de gauche ; le plan commence après (et sous la barre du haut, --entete)
 /* La place du plan : ce que laissent l'inspecteur (à droite), le tableau (en bas), la fiche des documents (à droite).
    Le plan se recadre dans ce qui reste : rien ne le recouvre. */
 function marges() { const tel = telephone(), folios = !$('folios').hidden, vu = id => !$(id).hidden ? $(id) : null;
-  const droite = vu('fiche') || vu('inspecteur'), bas = vu('base');
-  if (tel) { const d = vu('fiche') || vu('inspecteur') || bas; return { haut: 16, bas: (d ? d.offsetHeight + 8 : 8) + 56 + (folios ? 52 : 0), gauche: 12, droite: 12 }; }
-  return { haut: 28, bas: (bas ? bas.offsetHeight + 24 : 0) + (folios ? 72 : 28), gauche: 12 + RAIL + 16, droite: 28 + (droite ? droite.offsetWidth + 12 : 0) }; }
+  const droite = vu('fiche') || vu('inspecteur'), bas = vu('base'), entete = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--entete')) || 0;
+  if (tel) { const d = vu('fiche') || vu('inspecteur') || bas; return { haut: 16 + entete, bas: (d ? d.offsetHeight + 8 : 8) + 56 + (folios ? 52 : 0), gauche: 12, droite: 12 }; }
+  return { haut: 28 + entete, bas: (bas ? bas.offsetHeight + 24 : 0) + (folios ? 72 : 28), gauche: 12 + RAIL + 16, droite: 28 + (droite ? droite.offsetWidth + 12 : 0) }; }
 let anim = null;
 function animerVue(cible, doux) {
   if (anim) { cancelAnimationFrame(anim); anim = null; }

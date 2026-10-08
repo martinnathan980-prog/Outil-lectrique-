@@ -15,7 +15,8 @@ const path = require('path');
 const ICI = __dirname;
 const SRC = path.join(ICI, 'src');
 const modules = fs.readdirSync(SRC).filter(f => /^\d\d-.*\.js$/.test(f)).sort();
-const css  = fs.readFileSync(path.join(SRC, 'style.css'), 'utf8');
+// les feuilles de style : style.css (les jetons et le site) d'abord, puis style-*.css (un domaine chacune), dans l'ordre des noms
+const css  = ['style.css', ...fs.readdirSync(SRC).filter(f => /^style-.*\.css$/.test(f)).sort()].map(f => `/* ───────── ${f} ───────── */\n` + fs.readFileSync(path.join(SRC, f), 'utf8')).join('\n');
 const page = fs.readFileSync(path.join(SRC, 'page.html'), 'utf8');
 const xlsx = fs.readFileSync(path.join(ICI, 'lib', 'xlsx.min.js'), 'utf8');
 // les normes embarquées : tous les CSV de normes/, à la suite — la norme livrée est un exemple (normes/LISEZMOI.md)

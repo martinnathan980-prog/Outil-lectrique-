@@ -1,0 +1,18 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LES CONTRATS DÉJÀ FAITS (08 sexies) : « Déjà fait », la comparaison, le FWD
+   Les jetons (couleurs, typo, espacements) sont dans style.css ; ici, seulement ce qui est propre à ce domaine.
+   ═══════════════════════════════════════════════════════════════════════ */
+/* les contrats déjà faits : les candidats, la comparaison */
+.fi-cand{cursor:pointer}
+.fi-cand .fi-ct b{color:var(--encre)}
+.cp-liste .fi-fil{grid-template-columns:18px auto auto minmax(0,1fr) auto}
+.cp-liste .fi-puce{display:none}
+.cp-liste .fi-groupe{grid-column:1/-1}
+.cp-coche{width:14px;height:14px;margin:0;accent-color:var(--cuivre)}
+.cp-manque{background:#eaf5ee}.cp-differe{background:#fcf3e6}.cp-identique{color:var(--encre-2)}.cp-enplus{background:#eef3fb}
+.fi-groupe.cp-manque,.fi-groupe.cp-differe,.fi-groupe.cp-identique,.fi-groupe.cp-enplus{background:none}
+.fi-groupe.cp-manque{color:#1d5b35}.fi-groupe.cp-differe{color:#74450a}.fi-groupe.cp-enplus{color:#2b4f8c}
+.fi-corr{font-style:normal;color:var(--encre-2);font-size:var(--t0);margin-left:4px}
+.fi-bouton.cuivre{background:var(--cuivre);border-color:var(--cuivre);color:#fff}
+.fi-bouton.cuivre svg.ico{color:#fff}
+.fi-bouton.cuivre:disabled{opacity:.45;cursor:default}
