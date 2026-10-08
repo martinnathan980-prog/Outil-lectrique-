@@ -49,81 +49,42 @@ svg .re-note{fill:#5b6875;font-size:10px}
 .re-f em{color:var(--encre-2);font-style:normal}
 .re-f.on,.re-f:hover{background:var(--papier-2)}
 @media (max-width:700px){.re-boite{padding:14px}.re-tete{flex-wrap:wrap}.re-scene{height:46vh}}
-/* ---- les modules de jonction (ASNE 0599) : la face, en léger relief ---- */
-.mj{display:block}
+
+/* ── LES FACES des modules et des inserts (08-modules) : un dessin technique à plat ──
+   Deux traits pour le corps (le contour, l'insert en retrait), un contour par groupe de contacts reliés, un cercle
+   par contact. Ce qui distingue une famille, c'est sa forme (rectangle, bouts ronds, étanche, module carré,
+   circulaire) — pas une couleur. Un contact occupé est plein, à la couleur de la route de son fil (posée en ligne
+   par 08-modules) ; un contact qui refuse son fil est cerclé de rouge ; le survol le cercle de cuivre. */
+.mj{display:block;color:var(--t-1)}
 .mj text{font-family:var(--mono)}
-.mj .mj-ombre{fill:#1b2430;opacity:.12}
-.mj .mj-flanc{fill:#4c5866;stroke:#2c3540;stroke-width:.8}
-.mj .mj-corps{fill:#6b7684;stroke:#2c3540;stroke-width:1}
-.mj .mj-insert{fill:#e4e8ec;stroke:#9aa5b1;stroke-width:.8}
-.mj .mj-plaque-bord{fill:none;stroke:#8b6d3f;stroke-linecap:round;stroke-linejoin:round}
-.mj .mj-plaque{fill:none;stroke:#d9bf8c;stroke-linecap:round;stroke-linejoin:round}
-.mj .mj-fut{fill:#5b6672}
-.mj .mj-bague{fill:#c9cfd6;stroke:#59636e;stroke-width:.9}
-.mj .mj-trou{fill:#2a323c}
-.mj .plein .mj-bague{stroke:#1b2430;stroke-width:1.3}
-.mj .ko .mj-bague{stroke:var(--danger);stroke-width:2}
+.mj .mj-corps{fill:#fbfcfd;stroke:#2b3440;stroke-width:1.3}
+.mj .mj-insert{fill:none;stroke:#9aa3ad;stroke-width:.8}
+.mj .mj-cle{fill:#fbfcfd;stroke:#2b3440;stroke-width:1.1}
+.mj .mj-plaque-bout{fill:#eceff3;stroke:#2b3440;stroke-width:1}
+.mj .mj-plaque-trait{fill:none;stroke:#6b7684;stroke-width:.9}
+.mj .mj-bombe{fill:none;stroke:#2b3440;stroke-width:1.1}
+/* les groupes : le contour d'une plaque (ASNE 0599) ou d'un shunt (NSA937901), teinté quand il porte un potentiel */
+.mj .mj-plaque-bord,.mj .mj-shunt-bord{fill:none;stroke:#a3acb6;stroke-linecap:round;stroke-linejoin:round}
+.mj .mj-plaque,.mj .mj-shunt{fill:none;stroke:#eceff3;stroke-linecap:round;stroke-linejoin:round}
+.mj .mj-shunt-cadre{fill:#eceff3;stroke:#a3acb6;stroke-width:1}
+/* les contacts */
+.mj .mj-bague{fill:#fff;stroke:#2b3440;stroke-width:1.2}
+.mj .mj-trou{fill:#d5dae0}
 .mj .mj-contact.plein{cursor:pointer}
-.mj .mj-contact.vise .mj-bague{stroke:var(--cuivre);stroke-width:2.4}
-.mj .mj-lettre{fill:#1b2430;font-size:7.5px;font-weight:700}
-.mj .mj-cable{fill:#0b0f14;font-size:7px;font-weight:700;paint-order:stroke;stroke:#e4e8ec;stroke-width:2.5px;stroke-linejoin:round}
-.mj .mj-titre{fill:var(--encre);font-size:11px;font-weight:700}
-.mj .mj-sous{fill:var(--encre-2);font-size:8.5px}
-.mj .mj-diode{fill:#1b2430;stroke:#1b2430;stroke-width:1.2}
-.mj .f-nsa937901 .mj-corps{fill:#46617d;stroke:#22334a}
-.mj .f-nsa937901 .mj-flanc{fill:#2e445c;stroke:#1d2c3d}
-.mj .f-nsa937901 .mj-insert{fill:#eef2f6;stroke:#9fb0c2}
-.mj .corps-etanche .mj-corps{fill:#555c65;stroke:#262b31}
-.mj .corps-etanche .mj-flanc{fill:#3a4047;stroke:#22272c}
-.mj .corps-etanche .mj-insert{fill:#e2e5e8;stroke:#a3abb3}
-.mj .corps-etanche .mj-bague{fill:#2e343b;stroke:#0f1317}
-.mj .corps-etanche .mj-fut{fill:#151a1f}
-.mj .corps-etanche .mj-trou{fill:#8a949e}
-.mj .mj-bombe{fill:none;stroke:#262b31;stroke-width:1.3}
-.mj .mj-plaque-bout{fill:#a9b2bb;stroke:#262b31;stroke-width:1}
-.mj .mj-plaque-trait{stroke:#262b31;stroke-width:1.2;fill:none}
-.mj .mj-shunt-bord{fill:none;stroke:#26384b;stroke-linecap:round;stroke-linejoin:round}
-.mj .mj-shunt{fill:none;stroke:#f7f9fb;stroke-linecap:round;stroke-linejoin:round}
-.mj .corps-etanche .mj-shunt{stroke:#eceef0}
-.mj .f-en4165 .mj-corps{fill:#5d7a69;stroke:#2a3a31}
-.mj .f-en4165 .mj-flanc{fill:#3d5446;stroke:#24322a}
-.mj .f-en4165 .mj-insert{fill:#eef3ef;stroke:#9fb4a6}
-.mj .f-en2997 .mj-corps{fill:#7b6788;stroke:#3a2d44}
-.mj .f-en2997 .mj-flanc{fill:#55465f;stroke:#33283b}
-.mj .f-en2997 .mj-insert{fill:#f3eff5;stroke:#b4a6bd}
-.mj .f-en3646 .mj-corps{fill:#8a6a4a;stroke:#3f2f20}
-.mj .f-en3646 .mj-flanc{fill:#614a33;stroke:#3a2b1d}
-.mj .f-en3646 .mj-insert{fill:#f6f1ea;stroke:#c2ad95}
-.picto.mj-picto.f-en3646 .p-corps{fill:#f1e8de;stroke:#8a6a4a}
-.mj-norme.f-en3646::before{background:#8a6a4a;border-radius:4px}
-.mj .f-en3645 .mj-corps{fill:#4f6f86;stroke:#22323f}
-.mj .f-en3645 .mj-flanc{fill:#38515f;stroke:#1f2d37}
-.mj .f-en3645 .mj-insert{fill:#eef3f7;stroke:#a3b6c4}
-.picto.mj-picto.f-en3645 .p-corps{fill:#e3ecf2;stroke:#4f6f86}
-.mj-norme.f-en3645::before{background:#4f6f86;border-radius:4px}
-.mj .f-asne0059 .mj-corps{fill:#6a7d3f;stroke:#33401c}
-.mj .f-asne0059 .mj-flanc{fill:#4b5a2b;stroke:#2c3818}
-.mj .f-asne0059 .mj-insert{fill:#f2f5ea;stroke:#b3c08f}
-.picto.mj-picto.f-asne0059 .p-corps{fill:#ecf0df;stroke:#6a7d3f}
-.mj-norme.f-asne0059::before{background:#6a7d3f;border-radius:4px}
-.mj .mj-cle-arc{fill:none;stroke:#3a2d44;stroke-width:2.4;stroke-linecap:round}
-.picto.mj-picto.f-en2997 .p-corps{fill:#ece6f0;stroke:#7b6788}
-.mj-norme.f-en2997::before{background:#7b6788;border-radius:4px}
-.mj .mj-cle{fill:#3d5446;stroke:#24322a;stroke-width:.8}
-.picto.mj-picto.f-en4165 .p-corps{fill:#e4ede7;stroke:#5d7a69}
-.mj-norme.f-en4165::before{background:#5d7a69}
-.mj .mj-shunt-cadre{fill:#f7f9fb;stroke:#26384b;stroke-width:1.7}
-.mj .corps-etanche .mj-shunt-cadre{fill:#eceef0}
-.mj-norme{border:1px solid rgba(38,50,63,.18);background:var(--papier);color:var(--encre);border-radius:999px;padding:3px 11px;font-size:var(--t1);font-weight:600;cursor:pointer;transition:background var(--rapide)}
-.mj-norme:hover{background:var(--papier-3)}
-.mj-norme[aria-pressed="true"]{background:var(--encre);border-color:var(--encre);color:#fff}
-/* chaque norme a sa pastille de couleur ; la couleur vient de sa règle à elle (:where ne pèse rien) */
-:where(.mj-norme[class*=" f-"])::before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:middle;background:#6b7684}
-.mj-norme.f-nsa937901::before{background:#46617d;border-radius:4px}
+.mj .plein .mj-bague{stroke-width:1.4}
+.mj .ko .mj-bague{stroke:var(--ko);stroke-width:2.2}
+.mj .mj-contact.vise .mj-bague{stroke:var(--accent);stroke-width:2.6}
+.mj .mj-lettre{fill:#2b3440;font-size:9px;font-weight:700;paint-order:stroke;stroke:#fbfcfd;stroke-width:2.5px;stroke-linejoin:round}
+.mj .mj-cable{fill:#111827;font-size:8px;font-weight:700;paint-order:stroke;stroke:#fbfcfd;stroke-width:2.5px;stroke-linejoin:round}
+.mj .mj-diode{fill:#2b3440;stroke:#2b3440;stroke-width:1.2}
+.mj-faces{display:flex;justify-content:center;padding:8px 0 4px}
+/* la bible : le filtre par norme (des puces), chaque variante en picto */
+.mj-norme{border:1px solid var(--s-line-2);background:var(--s-surface);color:var(--t-1);border-radius:999px;padding:3px 11px;font-size:var(--f-12);font-weight:600;cursor:pointer;transition:background var(--rapide)}
+.mj-norme:hover{background:var(--s-hover)}
+.mj-norme[aria-pressed="true"]{background:var(--t-1);border-color:var(--t-1);color:#fff}
 .cand svg.picto{flex-shrink:0}
 .bible-filtres{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
-.picto.mj-picto.f-nsa937901 .p-corps{fill:#e3eaf1;stroke:#46617d}
-.picto.mj-picto.f-nsa937901 .p-groupe{stroke:#9db0c4}
-.picto.mj-picto .p-corps{fill:#e4e8ec;stroke:#6b7684;stroke-width:.8}
-.picto.mj-picto .p-groupe{fill:none;stroke:#d9bf8c;stroke-linecap:round;stroke-linejoin:round}
-.picto.mj-picto .p-contact{fill:#59636e}
+.picto.mj-picto .p-corps{fill:#fbfcfd;stroke:#2b3440;stroke-width:.9}
+.picto.mj-picto .p-groupe{fill:none;stroke:#c3cad2;stroke-linecap:round;stroke-linejoin:round}
+.picto.mj-picto .p-contact{fill:#4b5563}
+.cand[aria-pressed="true"] .picto.mj-picto .p-corps{stroke:var(--accent)}
