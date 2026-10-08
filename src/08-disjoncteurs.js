@@ -20,20 +20,30 @@ const chargeDe = nom => (app.contrat.charges && app.contrat.charges.get(nom)) ||
 function pnDuRepere(nom) { for (const l of verite()) { if (l.de === nom && l.pnDe) return l.pnDe; if (l.vers === nom && l.pnVers) return l.pnVers; } return ''; }
 /* Le calibre : celui qu'on a écrit, sinon celui que le part number porte en queue (NSA935401-10 → 10 A). */
 function calibreDe(nom) { const c = chargeDe(nom); return c && c.calibre > 0 ? c.calibre : calibreDuPn(pnDuRepere(nom)); }
+/* Les fils d'un disjoncteur, des deux côtés, avec la borne et l'autre bout. */
+const filsDuDisjoncteur = nom => verite().filter(l => (l.de === nom || l.vers === nom) && l.de !== l.vers)
+  .map(l => ({ cable: l.cable, type: l.type, borne: l.de === nom ? l.borneDe : l.borneVers, autre: l.de === nom ? l.vers + (l.borneVers ? ':' + l.borneVers : '') : l.de + (l.borneDe ? ':' + l.borneDe : ''), l }));
 function disjonctionDe(nom) { const calibre = calibreDe(nom), profil = chargeDe(nom), c = profil && profil.calibre > 0;
-  return { ...verdictDisjonction(app.norme, '', calibre, profil), profil, duPn: !c }; }
+  return { ...verdictDisjonction(app.norme, '', calibre, profil), profil, duPn: !c, fils: protectionDesFils(app.norme, calibre, profil, filsDuDisjoncteur(nom), app.simu) }; }
+// « pour 10 s », « pour 1 min », « en continu »
+const pourPalier = p => p === 2 ? 'pour 2 s' : p === 10 ? 'pour 10 s' : p === 60 ? 'pour 1 min' : 'en continu';
+const motFacteur = f => Math.abs(f - 1) < 1e-9 ? '' : ' (× ' + nombre(Math.round(f * 100) / 100) + ')';
 /* Un temps, lisible : « 12 ms », « 3,2 s », « 2,1 min », « jamais ». */
 function secondes(t) { if (!isFinite(t)) return 'jamais'; if (t < 1) return nombre(Math.round(t * 1000)) + ' ms'; if (t < 60) return nombre(Math.round(t * 10) / 10) + ' s';
   if (t < 3600) return nombre(Math.round(t / 6) / 10) + ' min'; return nombre(Math.round(t / 360) / 10) + ' h'; }
 const amperes = i => nombre(Math.round(i * 100) / 100) + ' A';
-/* Ce que le contrôle en dit : un problème si une phase fait déclencher ; à voir sans profil ou sans calibre. */
-function controleDisjonction(nom) { const d = disjonctionDe(nom); if (d.sansCourbe) return null;
-  if (!(d.calibre > 0)) return { niveau: 'att', texte: 'calibre inconnu : écris-le sur la fiche' };
-  if (d.sansProfil) return { niveau: 'att', texte: `${amperes(d.calibre)} · le profil de charge est à renseigner` };
-  if (d.valide) return null;
-  const p = d.pire, m = p.marges[0], mini = d.calibreMini ? ` — un ${amperes(d.calibreMini)} tiendrait` : ' — aucun calibre de la gamme ne tient';
-  return { niveau: 'ko', texte: (p.t === Infinity ? `le permanent (${amperes(p.i)}) fait déclencher le ${amperes(d.calibre)} à ${m.courbe} (il tient jusqu'à ${amperes(m.admis)})`
-    : `${p.nom} ${amperes(p.i)} pendant ${secondes(p.t)} : le ${amperes(d.calibre)} déclenche en ${secondes(m.temps)} à ${m.courbe}`) + mini }; }
+/* Ce que le contrôle en dit : un problème si une phase fait déclencher, ou si un fil ne tient pas le profil ; à voir
+   sans profil, sans calibre, ou si le calibre dépasse ce qu'un fil admet en continu. */
+function controleDisjonction(nom) { const d = disjonctionDe(nom), out = [];
+  if (!d.sansCourbe) { if (!(d.calibre > 0)) out.push({ niveau: 'att', texte: 'calibre inconnu : écris-le sur la fiche' });
+    else if (d.sansProfil) out.push({ niveau: 'att', texte: `${amperes(d.calibre)} · le profil de charge est à renseigner` });
+    else if (!d.valide) { const p = d.pire, m = p.marges[0], mini = d.calibreMini ? ` — un ${amperes(d.calibreMini)} tiendrait` : ' — aucun calibre de la gamme ne tient';
+      out.push({ niveau: 'ko', texte: (p.t === Infinity ? `le permanent (${amperes(p.i)}) fait déclencher le ${amperes(d.calibre)} à ${m.courbe} (il tient jusqu'à ${amperes(m.admis)})`
+        : `${p.nom} ${amperes(p.i)} pendant ${secondes(p.t)} : le ${amperes(d.calibre)} déclenche en ${secondes(m.temps)} à ${m.courbe}`) + mini }); } }
+  d.fils.forEach(f => { const nomF = (f.cable || 'fil sans numéro') + (f.type ? ' (' + f.type + ')' : '');
+    if (f.verdict === 'fil') out.push({ niveau: 'ko', texte: `${nomF} : ${f.pire.nom} ${amperes(f.pire.i)} pendant ${secondes(f.pire.t)} dépasse ${amperes(f.pire.admise)}, ce que le fil admet ${pourPalier(f.pire.palier)}${motFacteur(f.facteur)}` });
+    else if (f.verdict === 'calibre') out.push({ niveau: 'att', texte: `${nomF} admet ${amperes(f.continu)} en continu${motFacteur(f.facteur)}, moins que le calibre ${amperes(d.calibre)} : pas protégé en surcharge` }); });
+  return out; }
 
 /* ---- la section de la fiche -------------------------------------------------------- */
 function ficheDisjonction(nom) { const d = disjonctionDe(nom), c = d.profil || {}, val = (k, q) => (c[k] && c[k][q] != null ? nombre(c[k][q]) : '');
@@ -44,13 +54,19 @@ function ficheDisjonction(nom) { const d = disjonctionDe(nom), c = d.profil || {
     if (d.valide) note = p.t === Infinity ? `Le permanent (${amperes(p.i)}) reste sous ${amperes(m.admis)}, où le ${amperes(d.calibre)} ne déclenche jamais à ${m.courbe}.`
       : `${p.nom[0].toUpperCase() + p.nom.slice(1)} ${amperes(p.i)} pendant ${secondes(p.t)} : à ${m.courbe} le ${amperes(d.calibre)} tient ${secondes(m.temps)}${froid !== m ? `, à ${froid.courbe} ${secondes(froid.temps)}` : ''}.`
       + (d.calibreMini && d.calibreMini < d.calibre ? ` Un ${amperes(d.calibreMini)} tiendrait aussi.` : '');
-    else note = controleDisjonction(nom).texte; note = note[0].toUpperCase() + note.slice(1); if (!/[.!]$/.test(note)) note += '.'; }
+    else note = (controleDisjonction(nom).find(x => x.niveau === 'ko') || { texte: '' }).texte; if (note) { note = note[0].toUpperCase() + note.slice(1); if (!/[.!]$/.test(note)) note += '.'; } }
+  // ses fils : ce que chacun admet (la norme des fils), et s'il tient le profil
+  const lf = d.fils.map(f => { const k = f.l ? cleFil(f.l) : '', titre = f.fil ? [['continu', f.fil.intensite], ['2 s', f.fil.i2s], ['10 s', f.fil.i10s], ['1 min', f.fil.i1min]].filter(x => x[1] != null).map(x => amperes(x[1] * f.facteur) + ' ' + x[0]).join(' · ') + motFacteur(f.facteur) : 'fil inconnu de la norme';
+    const dit = f.verdict === 'fil' ? `<span class="fi-ko">${esc(f.pire.nom)} ${esc(amperes(f.pire.i))} pendant ${esc(secondes(f.pire.t))} : dépasse ${esc(amperes(f.pire.admise))} ${pourPalier(f.pire.palier)}</span>`
+      : f.verdict === 'calibre' ? `<span class="fi-ko fi-att">sous le calibre : pas protégé en surcharge</span>` : f.verdict === 'inconnu' ? '<span class="fi-ko fi-att">fil inconnu de la norme</span>' : '';
+    return `<li class="fi-fil${f.verdict === 'fil' ? ' ko' : ''}"${k ? ` data-i="${k}" tabindex="0" role="button" title="${escA(titre)}"` : ''}><span class="fi-ct"><b>${esc(f.borne)}</b></span>${puceFil(f)}<b class="fi-w">${esc(f.cable || '—')}</b><span class="fi-t">${esc(f.type || '')}</span><span class="dj-adm">${f.continu != null ? esc(amperes(f.continu)) : '—'}</span><span></span>${dit}</li>`; }).join('');
+  const fils = lf ? `<ul class="fi-liste dj-fils"><li class="fi-groupe">ses fils · ce qu'ils admettent en continu</li>${lf}</ul>` : '';
   const champs = PHASES.map(([k, t, duree]) => `<div class="dj-phase"><span>${t}</span><input data-dj="${k}" data-q="i" value="${escA(val(k, 'i'))}" inputmode="decimal" placeholder="—" aria-label="${t} : courant en ampères"><i>A</i>`
     + (duree ? `<input data-dj="${k}" data-q="t" value="${escA(val(k, 't'))}" inputmode="decimal" placeholder="—" aria-label="${t} : durée en secondes"><i>s</i>` : '<i class="dj-inf">∞</i><i></i>') + '</div>').join('');
   return `<section class="fi-cadre fi-dj"><div class="fi-ref-ligne"><b class="fi-ref">Disjoncteur</b><label class="dj-calibre" title="${d.duPn && d.calibre ? 'Calibre lu dans le part number ' + escA(pnDuRepere(nom)) : 'Le calibre, en ampères'}"><input id="dj-calibre" value="${d.calibre > 0 ? escA(nombre(d.calibre)) : ''}" inputmode="decimal" placeholder="calibre" list="dj-calibres" aria-label="Calibre en ampères"><i>A</i></label>`
     + `<datalist id="dj-calibres">${CALIBRES.map(x => `<option value="${nombre(x)}">`).join('')}</datalist><span class="espace"></span>${etat}</div>`
     + (d.courbes.length ? graphiqueDisjonction(d) : '<p class="fi-note">Aucune courbe de disjonction dans la norme.</p>')
-    + `<div class="dj-profil">${champs}</div>${note ? `<p class="fi-note dj-note">${esc(note)}</p>` : ''}</section>`; }
+    + `<div class="dj-profil">${champs}</div>${note ? `<p class="fi-note dj-note">${esc(note)}</p>` : ''}${fils}</section>`; }
 /* Le graphique : multiples de In en abscisse (0,1 à 100), temps en ordonnée (1 ms à 10 000 s), tous deux en log ; la
    zone où tout tient, à gauche de la courbe la plus rapide, en vert ; le profil en escalier, rouge s'il déclenche. */
 function graphiqueDisjonction(d) { const W = 320, H = 236, L = 40, R = 10, T = 10, B = 26, x0 = -1, x1 = 2, y0 = -3, y1 = 4;

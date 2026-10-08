@@ -129,7 +129,10 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   const via = cote => p && VT_A_POSER.test(p[cote]) ? p[cote] + ' · borne ' + (cote === 'de' ? p.borneDe : p.borneVers) : '';
   const att = []; if (!l.type) att.push('type de fil inconnu : la jauge ne se vérifie pas');
   if (neuf) att.push('fil à créer : donne-lui son numéro en posant ' + l.aPoser + ' au contrat');
-  const sous = [l.route ? esc(l.route) : '', l.type ? esc(l.type) + (jauge != null ? ' · ' + jauge + ' AWG' : '') : '', folios.length ? 'folio ' + esc(folios.join(', ')) : ''].filter(Boolean).join(' · ');
+  const fn = l.type ? filDeNorme(app.norme, l.type, jauge) : null, adm = fn && fn.intensite != null ? [['continu', fn.intensite], ['2 s', fn.i2s], ['10 s', fn.i10s], ['1 min', fn.i1min]].filter(x => x[1] != null) : [];
+  const sous = [l.route ? esc(l.route) : '', l.type ? esc(l.type) + (jauge != null ? ' · ' + jauge + ' AWG' : '') : '',
+    adm.length ? `<span title="${escA('Ce que le fil admet (norme des fils) : ' + adm.map(x => amperes(x[1]) + ' ' + x[0]).join(' · ') + (fn.resistance != null ? ' · ' + nombre(fn.resistance) + ' Ω/km' : ''))}">${esc(amperes(fn.intensite))} en continu</span>` : '',
+    folios.length ? 'folio ' + esc(folios.join(', ')) : ''].filter(Boolean).join(' · ');
   return fiTete({ nom: neuf ? 'à créer' : (l.cable || 'sans numéro'), etat: `<span class="fi-route" style="--c:${coul}"></span>` + (att.length ? fiEtat([], att) : ''), sous })
     + `<div class="fi-trajet" style="--c:${coul}">${boutDeFil(l.de, l.borneDe, l.pnDe, via('de'), st.de)}<span class="fi-fleche"></span>${boutDeFil(l.vers, l.borneVers, l.pnVers, via('vers'), st.vers)}</div>`
     + fiPied(neuf ? { voir: l.aPoser } : { tableau: l.cable || l.de }); }
@@ -200,7 +203,7 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
   const att = [...doubles.map(([bo, fs]) => `borne ${bo} : ${fs.length} fils — ${vt.has(String(bo)) ? 'barrette ' + vt.get(String(bo)) : 'une barrette'} à poser`),
     ...cav.flatMap(c => c.plan.verdicts.filter(v => v.niveau === 'attention' && !/contact .* : \d fils/.test(v.texte)).map(v => c.nom + ' · ' + v.texte))];
   // un disjoncteur : son calibre et le profil de charge, jugés sur la courbe de disjonction
-  const dj = estDisjoncteur(nom), cd = dj ? controleDisjonction(nom) : null; if (cd) (cd.niveau === 'ko' ? ko : att).unshift(cd.texte);
+  const dj = estDisjoncteur(nom); if (dj) controleDisjonction(nom).forEach(x => (x.niveau === 'ko' ? ko : att).push(x.texte));
   const ligne = (bo, f, st) => ligneFil(`<b>${esc(bo)}</b>`, f, { tag: vt.get(String(bo)), sertir: st });
   const onglets = C.map(c => { const k = parNom.get(c.nom), Q = k && k.plan, M = Q && Q.modules[0], cle = 'arr|' + nom + '|' + c.nom;
     const sertir = new Map(Q ? Q.fils.map(x => [x.f.l, x.sertir]) : []);

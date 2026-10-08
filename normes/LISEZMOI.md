@@ -12,6 +12,32 @@ dessine chaque **trou** et le fil qui y est placé, juge le remplissage, et
 **simule** fil par fil la jauge admise, le courant admissible et la chute en
 ligne — sur des hypothèses dites et modifiables.
 
+## `en2853.csv` : l'intensité admissible des câbles, et leur chute
+
+L'**EN 2853:2005**, tables 1 et 2 (pages 14 et 16) : pour chaque jauge de
+26 à 0 AWG, le code (001 à 530), l'**intensité admissible en continu** et
+**par durée** (2 s, 10 s, 1 min — les « duty cycle ratings ») d'un câble
+cuivre seul à l'air libre, échauffé de 40 °C depuis une ambiante de 95 °C
+jusqu'à 135 °C ; et la **chute de tension pour 10 m** au courant continu.
+La résistance (Ω/km à 135 °C) s'en déduit ; la section est la section
+nominale de la jauge, indicative. Le type est `*` : ces valeurs valent pour
+tout câble cuivre, tant qu'une norme ne distingue pas les types (DR, MLB…).
+Les fils inventés de la norme d'exemple sont partis.
+
+La **simulation** d'une barrette ou d'une prise lit ces lignes (intensité,
+résistance), avec une hypothèse de plus, l'**ambiante** (note 2 de la norme :
+I₂ = I₁ × √((135 − Tu)/40), 95 °C → ×1). La **fiche d'un disjoncteur** juge
+chacun de ses fils contre son profil : à chaque phase, le courant doit rester
+sous ce que le fil admet pour cette durée (le palier juste au-dessus : 2 s,
+10 s, 1 min, sinon le continu), déclassé comme la simulation ; et le calibre
+ne devrait pas dépasser ce que le fil admet en continu, sinon le fil n'est
+pas protégé en surcharge. Un dédoublement se partage on ne sait comment :
+chaque fil doit tenir tout. La fiche d'un fil dit ce qu'il admet en continu.
+
+Restent d'exemple : les **déclassements** (faisceau × 0,8, zone chaude
+× 0,85) et le **réseau** (la chute admise) ; vos vraies tables remplacent
+celles de `norme-exemple.csv`.
+
 ## `disjoncteurs.csv` : les courbes de disjonction
 
 L'Excel du lecteur (feuille Base_de_données), transcrit point par point :

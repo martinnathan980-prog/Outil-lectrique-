@@ -307,11 +307,17 @@ const COLONNES_NORME = {
     ['masse',       ['masse', 'retourdemasse', 'misealamasse']],
     ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
   fils: [
-    ['type',        ['type', 'typedefil', 'code', 'typedecable']],
-    ['jauge',       ['jauge', 'awg', 'gauge', 'jaugeawg']],
+    ['type',        ['type', 'typedefil', 'typedecable']],
+    ['jauge',       ['jauge', 'awg', 'gauge', 'jaugeawg', 'sizeawg']],
+    ['code',        ['code', 'codeen2853', 'reference']],
     ['section',     ['section', 'sectionmm2', 'mm2', 'sectionmm']],
     ['resistance',  ['resistance', 'resistanceohmkm', 'ohmkm', 'rlineique', 'resistancelineique']],
-    ['intensite',   ['intensite', 'courant', 'intensiteadmissible', 'current', 'a']],
+    ['intensite',   ['intensite', 'courant', 'intensiteadmissible', 'current', 'a', 'continu', 'intensitecontinue', 'continuousrating']],
+    ['i2s',         ['intensite2s', '2s', 'i2s', 'duty2s']],
+    ['i10s',        ['intensite10s', '10s', 'i10s', 'duty10s']],
+    ['i1min',       ['intensite1min', '1min', 'i1min', '60s', 'duty1min']],
+    ['chute10m',    ['chute10m', 'chutepour10m', 'voltagedrop10m', 'chute']],
+    ['tr',          ['tr', 'temperaturenominale', 'tnominale', 'ratedtemperature']],
     ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
   declassements: [
     ['condition',   ['condition', 'cause', 'cas', 'situation']],
@@ -382,8 +388,18 @@ function familleNorme(o) { const famille = String(o.famille || '').trim(); if (!
            filsParCote: Math.max(1, Math.round(NUMERO(o.filsParCote) || 1)), ordre: /crois|ordre|suite/.test(MOT(o.ordre)) ? 'croissant' : 'libre',
            paquets: /contig|voisin|adjac/.test(MOT(o.paquets)) ? 'contigus' : 'libres', reserves: LISTE_NUM(o.reserves), masse: /paquet|oui|^x$|^1$|vrai/.test(MOT(o.masse)) ? 'par paquet' : '',
            note: String(o.note || '').trim() }; }
+/* Un fil de la norme : par type (« * » : tous) et jauge, la section, la résistance (Ω/km), l'intensité admissible en
+   continu et, quand la norme les donne (EN 2853), par durée — 2 s, 10 s, 1 min —, la chute pour 10 m, la température
+   nominale Tr (la table vaut pour un échauffement de 40 °C depuis 95 °C). */
 function filNorme(o) { const jauge = NUMERO(o.jauge); if (jauge == null) return null;
-  return { type: String(o.type || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '') || '*', jauge, section: NUMERO(o.section), resistance: NUMERO(o.resistance), intensite: NUMERO(o.intensite), note: String(o.note || '').trim() }; }
+  return { type: String(o.type || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '') || '*', jauge, code: String(o.code || '').trim(), section: NUMERO(o.section), resistance: NUMERO(o.resistance), intensite: NUMERO(o.intensite),
+           i2s: NUMERO(o.i2s), i10s: NUMERO(o.i10s), i1min: NUMERO(o.i1min), chute10m: NUMERO(o.chute10m), tr: NUMERO(o.tr), note: String(o.note || '').trim() }; }
+/* Ce qu'un fil admet pour une durée : le palier de l'EN 2853 juste au-dessus (2 s, 10 s, 1 min), sinon le continu. */
+const palierDe = duree => !(duree > 0) || !isFinite(duree) ? Infinity : duree <= 2 ? 2 : duree <= 10 ? 10 : duree <= 60 ? 60 : Infinity;
+function intensiteAdmise(fil, duree) { if (!fil) return null; const p = palierDe(duree);
+  for (const [t, i] of [[2, fil.i2s], [10, fil.i10s], [60, fil.i1min]]) if (p <= t && i != null) return i; return fil.intensite; }
+/* La note 2 de l'EN 2853 : pour une ambiante Tu autre que 95 °C, I2 = I1 × √((Tr − Tu)/40). Un fil sans Tr n'en sait rien. */
+const facteurAmbiante = (fil, Tu) => fil && fil.tr != null && Tu != null ? Math.sqrt(Math.max(0, fil.tr - Tu) / 40) : 1;
 function declassementNorme(o) { const condition = MOT(o.condition), facteur = NUMERO(o.facteur); return condition && facteur != null ? { condition, facteur, note: String(o.note || '').trim() } : null; }
 function reseauNorme(o) { const tension = NUMERO(o.tension); return tension == null ? null : { tension, chuteMax: NUMERO(o.chuteMax), chutePct: NUMERO(o.chutePct), note: String(o.note || '').trim() }; }
 /* Une ligne d'une COURBE DE DISJONCTION (normes/disjoncteurs.csv) : la famille de disjoncteurs, la courbe (sa
@@ -488,7 +504,7 @@ function remplirSelonNorme(P, norme) {
    Le verdict, dans l'ordre : jauge hors plage · le courant dépasse le fil ·
    dépasse le contact · la chute dépasse ce que le réseau admet · fil
    inconnu de la norme · ok. */
-const HYPOTHESES = { longueur: 5, courant: 2, tension: 28, conditions: ['faisceau'] };
+const HYPOTHESES = { longueur: 5, courant: 2, tension: 28, ambiante: 95, conditions: ['faisceau'] };
 function simulerBornier(Q, norme, hyp) {
   if (!Q.modules.every(m => m.trous)) Q = remplirSelonNorme(Q, norme);
   const H = { ...HYPOTHESES, ...(hyp || {}) }, F = Q.famille, facteur = facteurDeclassement(norme, H.conditions), chute = chuteAdmise(norme, H.tension);
@@ -496,12 +512,12 @@ function simulerBornier(Q, norme, hyp) {
   const rContact = F && F.resistance != null ? F.resistance / 1000 : 0, lignes = [];
   Q.modules.forEach(m => ['amont', 'aval'].forEach(sens => m.trous[sens].forEach((f, k) => { if (!f) return;
     const fil = filDeNorme(norme, f.type, f.jauge);
-    const iFil = fil && fil.intensite != null ? fil.intensite * facteur : null, rFil = fil && fil.resistance != null ? fil.resistance / 1000 * H.longueur : null;
+    const kT = facteurAmbiante(fil, H.ambiante), iFil = fil && fil.intensite != null ? fil.intensite * facteur * kT : null, rFil = fil && fil.resistance != null ? fil.resistance / 1000 * H.longueur : null;
     const R = rFil == null ? null : rFil + rContact, dU = R == null ? null : R * H.courant, pct = dU == null || !H.tension ? null : dU / H.tension * 100;
     const verdict = f.jaugeOk === false ? 'jauge' : (iFil != null && H.courant > iFil + 1e-9) ? 'fil' : (iContact != null && H.courant > iContact + 1e-9) ? 'contact'
       : (dU != null && chute && chute.chuteMax != null && dU > chute.chuteMax + 1e-9) ? 'chute' : !fil ? 'inconnu' : 'ok';
     lignes.push({ borne: m.borne, sens, trou: k + 1, surcharge: k >= Q.filsParCote, cable: f.cable, type: f.type, jauge: f.jauge, jaugeOk: f.jaugeOk, fil, approx: !!(fil && fil.approx),
-                  iFil, iContact, rFil, rContact, R, dU, pct, verdict, vers: f.vers, borneVers: f.borne, l: f.l }); })));
+                  iFil, iContact, rFil, rContact, R, dU, pct, verdict, kT, vers: f.vers, borneVers: f.borne, l: f.l }); })));
   const compte = {}; lignes.forEach(x => { compte[x.verdict] = (compte[x.verdict] || 0) + 1; });
   return { hyp: H, facteur, chute, iContact, rContact, famille: F, lignes, compte, sansNorme: !F && !(norme && norme.fils.length) };
 }

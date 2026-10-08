@@ -901,6 +901,9 @@ details.fi-etat.ko ul{background:#fbeceb}details.fi-etat.att ul{background:#fcf3
 .dj-phase{display:grid;grid-template-columns:minmax(64px,1fr) 62px 12px 62px 12px;align-items:center;column-gap:6px;font-size:var(--t1);color:var(--encre-2)}
 .dj-phase .dj-inf{font-size:var(--t2);text-align:right;color:var(--encre-2)}
 .dj-note{margin:0}
+.dj-fils{margin-top:2px}
+.dj-adm{font-family:var(--mono);font-weight:600;color:var(--encre);white-space:nowrap;text-align:right}
+.fi-ko.fi-att{color:#74450a}
 .fi-bout .fi-bout-ct{color:#5b6773}
 .fi-bout .fi-bout-ct.ko{color:var(--danger);font-weight:600}
 .fi-dest{display:flex;align-items:center;justify-content:flex-end;gap:4px;min-width:0;font-family:var(--mono);color:var(--encre);white-space:nowrap}

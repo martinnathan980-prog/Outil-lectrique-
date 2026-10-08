@@ -18,7 +18,7 @@ const genreDe = nom => VT_A_POSER.test(nom) ? 'aposer' : estCoupure(nom) ? 'coup
 function controleDuContrat() { const V = verite(), items = [], ko = (nom, texte) => items.push({ niveau: 'ko', nom, texte }), att = (nom, texte, plus) => items.push({ niveau: 'att', nom, texte, ...plus });
   [...new Set(V.flatMap(l => [l.de, l.vers]).filter(Boolean))].sort(triNaturel).forEach(r => { if (estMasse(r) || estRenvoi(r)) return;
     try {
-      if (estDisjoncteur(r)) { const x = controleDisjonction(r); if (x) (x.niveau === 'ko' ? ko : att)(r, x.texte); }
+      if (estDisjoncteur(r)) controleDisjonction(r).forEach(x => (x.niveau === 'ko' ? ko : att)(r, x.texte));
       if (barretteEnModules(r)) { const Q = planDeBarrette(r).plan, n = Q.fils.filter(x => x.jaugeOk === false).length;
         Q.verdicts.filter(v => v.niveau === 'ko').forEach(v => ko(r, v.texte)); if (n) ko(r, pluriel(n, 'fil') + ' refusé' + (n > 1 ? 's' : '') + ' par son contact'); }
       else if (coupureEnModules(r)) { const Q = planDeCoupure(r).plan;

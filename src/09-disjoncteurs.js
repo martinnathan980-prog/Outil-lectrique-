@@ -73,3 +73,16 @@ function verdictDisjonction(norme, famille, calibre, profil) { const courbes = c
   const calibreMini = courbes.length && pts.length ? CALIBRES.find(c => juger(c).every(p => p.ok)) || null : null;
   const pire = points.filter(p => p.marges.length).sort((a, b) => a.marges[0].rapport - b.marges[0].rapport)[0] || null;
   return { courbes, points, valide, calibreMini, pire, calibre: calibre > 0 ? calibre : null, sansProfil: !pts.length, sansCourbe: !courbes.length }; }
+
+/* LA PROTECTION DES FILS. Chaque fil du disjoncteur — des deux côtés : le courant les traverse tous, et un dédoublement
+   se partage on ne sait comment, chacun doit donc tenir tout — contre le profil et le calibre. Un fil tient si, à
+   chaque phase, le courant reste sous ce que la norme des fils (EN 2853) admet pour cette durée (2 s, 10 s, 1 min,
+   continu), déclassé comme la simulation (faisceau, ambiante) ; et le calibre ne devrait pas dépasser ce que le fil
+   admet en continu — sinon une surcharge que le disjoncteur laisse passer cuit le fil. `fils` : [{ cable, type, … }]. */
+function protectionDesFils(norme, calibre, profil, fils, hyp) { const H = { ...HYPOTHESES, ...(hyp || {}) }, pts = pointsDuProfil(profil), k = facteurDeclassement(norme, H.conditions);
+  return (fils || []).map(f => { const jauge = jaugeDuType(f.type), fil = filDeNorme(norme, f.type, jauge);
+    if (!fil || fil.intensite == null) return { ...f, fil: fil || null, jauge, continu: null, facteur: 1, phases: [], pire: null, verdict: 'inconnu' };
+    const facteur = k * facteurAmbiante(fil, H.ambiante), continu = fil.intensite * facteur;
+    const phases = pts.map(p => { const admise = intensiteAdmise(fil, p.t) * facteur; return { ...p, admise, palier: palierDe(p.t), ok: p.i <= admise + 1e-9 }; });
+    const pire = phases.filter(p => !p.ok).sort((a, b) => b.i / b.admise - a.i / a.admise)[0] || null;
+    return { ...f, fil, jauge, continu, facteur, phases, pire, approx: !!fil.approx, verdict: pire ? 'fil' : (calibre > 0 && calibre > continu + 1e-9) ? 'calibre' : 'ok' }; }); }

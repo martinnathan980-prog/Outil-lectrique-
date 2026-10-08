@@ -1,0 +1,20 @@
+EN 2853:2005 — câbles d'aéronef à conducteurs cuivre : l'intensité admissible (table 1, § 5.1) et la chute de tension au courant continu (table 2, § 5.2), transcrites des pages 14 et 16 (extrait GDN 2017-09-05).
+Les intensités valent pour un câble seul à l'air libre, échauffé de 40 °C depuis une ambiante Tu de 95 °C jusqu'à sa température nominale Tr de 135 °C (note 1) ; pour une autre ambiante, I2 = I1 × √((Tr − Tu)/40) (note 2) — c'est l'hypothèse « ambiante » de la simulation. Les intensités par durée (2 s, 10 s, 1 min) sont les « duty cycle ratings ». La résistance (Ω/km à 135 °C) se déduit de la chute pour 10 m au courant continu ; la section est celle, nominale, de la jauge AWG (indicative, pas dans la norme).
+Note a de la norme : veiller à la compatibilité entre le courant du câble, ses terminaisons et le disjoncteur.
+
+Fils — par jauge AWG, pour tout type de câble cuivre (type *) : le code EN 2853, l'intensité continue et par durée, la chute pour 10 m, la résistance et la température nominale
+Type;Jauge;Code;Section;Résistance;Intensité;Intensité 2 s;Intensité 10 s;Intensité 1 min;Chute 10 m;Tr;Note
+*;26;001;0,129;232;4,8;13;6,7;4,8;11,14;135;alliage de cuivre (note b)
+*;24;002;0,205;165;6,5;19,5;9,5;6,5;10,74;135;alliage de cuivre (note b)
+*;22;004;0,326;87,1;8,5;23;12;8,5;7,4;135;
+*;20;006;0,519;48,2;11,5;39;20;11,5;5,54;135;
+*;18;010;0,823;30,6;15;58;30;16;4,59;135;
+*;16;012;1,31;21,0;19,5;81,5;41;21,5;4,1;135;
+*;14;020;2,08;15,8;24;105;53;28;3,79;135;
+*;12;030;3,31;9,86;35;160;82;43,5;3,45;135;
+*;10;050;5,26;6,09;43;245;125;52,8;2,62;135;
+*;8;090;8,37;3,34;68;420;215;94,5;2,27;135;
+*;6;140;13,3;2,29;85;587;300;135;1,95;135;
+*;4;220;21,2;1,41;115;890;450;202;1,62;135;
+*;2;340;33,6;0,886;166;1340;690;325;1,47;135;
+*;0;530;53,5;0,579;216;2015;1020;460;1,25;135;

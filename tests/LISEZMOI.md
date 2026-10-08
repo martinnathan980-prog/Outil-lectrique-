@@ -25,7 +25,8 @@ node tests/barrettes.js        la bible des barrettes se lit, la référence se 
                                remplissage automatique des modules ; l'EN 4165-002 (30 arrangements) et l'EN 2997-002 (35 inserts circulaires), l'EN 3646-002 (31 inserts à contacts lettrés), l'EN 3645-002 (99 arrangements), l'ASNE0059 (31) pour les cavités des
                                connecteurs et les prises de coupure ; les contacts à sertir des tables SEE (428 lignes, la ligne la plus précise,
                                le sexe, le fourreau, la nomenclature) ; les courbes de disjonction (quatre courbes, l'enveloppe,
-                               l'interpolation log-log, le profil en points cumulés, le verdict et le calibre mini) (sans navigateur)
+                               l'interpolation log-log, le profil en points cumulés, le verdict et le calibre mini) ; l'EN 2853 (l'intensité
+                               par durée, l'ambiante, la protection des fils d'un disjoncteur) (sans navigateur)
 ```
 
 Tous acceptent `--fichier=chemin` pour mesurer un autre fichier que

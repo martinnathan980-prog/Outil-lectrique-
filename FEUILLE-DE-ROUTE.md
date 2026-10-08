@@ -9,7 +9,8 @@ L'outil sait aujourd'hui :
 - donner à chaque fil son contact à sertir et son fourreau (tables SEE), et
   juger sa jauge par elles ;
 - juger un disjoncteur : son calibre, le profil de charge (démarrage,
-  transition, permanent) contre les courbes de disjonction ;
+  transition, permanent) contre les courbes de disjonction, et chacun de ses
+  fils contre ce profil (EN 2853 : l'intensité admissible par durée) ;
 - faire de chaque dédoublement une barrette à poser (VT1…), qu'on pose au
   contrat d'un geste ;
 - dire l'état de tout le contrat dans la pastille en haut à gauche.
@@ -58,12 +59,12 @@ page de norme suffit toujours : je la transcris.
 
 ### B. Les fils : intensité admissible et chute en ligne
 
-5. **La table de la norme de câblage** (le nom de votre norme ou de votre
-   manuel). Pour chaque type de fil (DR, MLB, BN…) et chaque jauge :
-   - la section ;
-   - la résistance linéique (Ω/km à 20 °C) ;
-   - l'intensité admissible d'un fil seul ;
-   - le diamètre extérieur (il sert aussi aux raccords, § D).
+5. **La table de la norme de câblage.** ✔ Fait avec l'EN 2853 (tables 1
+   et 2) : par jauge, l'intensité continue et par durée (2 s, 10 s, 1 min),
+   la chute pour 10 m, d'où la résistance à 135 °C. Valable pour tout câble
+   cuivre. Reste, si vos types de fil (DR, MLB, BN…) ont leurs propres
+   valeurs : la table par type, et le diamètre extérieur (il sert aux
+   raccords, § D).
 6. **Les déclassements** : selon le nombre de fils en faisceau, la
    température de zone, l'altitude.
 7. **La chute de tension admise**, par réseau (28 V continu, 115 V alternatif…)

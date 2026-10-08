@@ -106,7 +106,9 @@ const FICHIER = P.fichierDemande();
   ok(await page.evaluate(() => { const s = document.querySelector('#ba-equip .fi-dj'); return !!s && /Déclenche/.test(s.textContent) && !!s.querySelector('.dj-systeme.ko') && app.contrat.charges.get('102CB1').perm.i === 9.5 && CONTROLE.items.some(x => x.nom === '102CB1' && x.niveau === 'ko'); }),
     '9,5 A en permanence : « Déclenche », l’escalier en rouge, la pastille de contrôle le relève');
   await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(800);
-  ok(await page.evaluate(() => app.contrat.charges.get('102CB1').perm.i === 5 && !CONTROLE.items.some(x => x.nom === '102CB1')), 'Ctrl+Z rend le profil de l’exemple');
+  ok(await page.evaluate(() => app.contrat.charges.get('102CB1').perm.i === 5 && !CONTROLE.items.some(x => x.nom === '102CB1' && /permanent/.test(x.texte))), 'Ctrl+Z rend le profil de l’exemple');
+  ok(await page.evaluate(() => { const s = document.querySelector('#ba-equip .fi-dj'); const li = [...s.querySelectorAll('.dj-fils .fi-fil')]; return li.length === 3 && li.some(x => /W-015/.test(x.textContent) && x.classList.contains('ko') && /5,2 A/.test(x.textContent)) && CONTROLE.items.some(x => x.nom === '102CB1' && /W-015/.test(x.texte) && x.niveau === 'ko'); }),
+    'ses trois fils sont jugés : le DR24 (W-015) ne tient pas 9,31 A pendant 2 min (5,2 A en faisceau), et la pastille de contrôle le dit');
   ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
   console.log('\n  ' + (ko ? ko + ' échec(s)' : 'tout tient'));
   await nav.close(); process.exit(ko ? 1 : 0);
