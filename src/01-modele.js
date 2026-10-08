@@ -173,7 +173,7 @@ function contratEssai() {
    prises de coupure, des fils blindés, des masses. */
 /* Le profil de charge de l'exemple : celui de l'Excel du lecteur, sur le disjoncteur 10 A (102CB1) — un démarrage de
    9,31 A pendant 5 s, une transition de 9,31 A pendant 120 s, 5 A en permanence. */
-function chargesExemple() { return new Map([['102CB1', { calibre: 10, dem: { i: 9.31, t: 5 }, trans: { i: 9.31, t: 120 }, perm: { i: 5, t: null } }]]); }
+function chargesExemple() { return new Map([['102CB1', { calibre: null, dem: { i: 9.31, t: 5 }, trans: { i: 9.31, t: 120 }, perm: { i: 5, t: null } }]]); }
 function contratExemple() {
   const PN = {
     '101BT1': 'MS3470L14-5P', '102CB1': 'NSA935401-10', '103RL1': 'E0836IS35-22SA', '104LP1': 'E0644D9S',

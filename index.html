@@ -160,39 +160,25 @@ body.cherche .recherche{display:flex}
 .q-item .genre{font-size:var(--t0);color:var(--cuivre-clair);text-transform:uppercase;letter-spacing:.06em;font-weight:600;min-width:52px}
 .q-rien{padding:10px 12px;color:var(--craie-2)}
 
-/* ─── LE CONTRÔLE : en haut à gauche, l'état du contrat ──────────────────── */
-.controle{position:fixed;top:12px;left:calc(var(--rail) + 24px);z-index:22;border-radius:18px;width:max-content;max-width:min(440px,calc(100vw - var(--rail) - 48px));overflow:hidden;transition:width var(--moyen)}
-.controle.ouvert{width:min(440px,calc(100vw - var(--rail) - 48px))}
-body.cherche .controle{display:none}
-.co-bouton{display:flex;align-items:center;gap:14px;width:100%;height:44px;padding:0 6px 0 16px;border:none;background:none;color:var(--craie);border-radius:18px;text-align:left}
-.co-bouton:hover{background:rgba(255,255,255,.05)}
-.co-titre{display:flex;flex-direction:column;min-width:0;flex:1;line-height:1.2}
-.co-titre b{font-weight:600;font-size:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px}
-.co-titre small{font:500 var(--t0) var(--mono);color:var(--craie-2);white-space:nowrap}
-.co-etat{flex:none;display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 12px 0 7px;border-radius:999px;font-size:var(--t1);font-weight:700;white-space:nowrap}
-.co-etat i{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font:800 11px/1 var(--sans);font-style:normal;color:#fff}
-.co-etat em{font-style:normal;font-weight:600;opacity:.85}
-.co-etat.ok{background:rgba(46,139,87,.2);color:#a5e3bd}.co-etat.ok i{background:#2e8b57}
-.co-etat.att{background:rgba(212,135,15,.2);color:#ffcd85}.co-etat.att i{background:#d4870f}
-.co-etat.ko{background:rgba(179,38,30,.26);color:#ffb4aa}.co-etat.ko i{background:#d03b30}
-.co-liste{border-top:1px solid var(--trait-verre);padding:6px;max-height:min(62vh,540px);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;animation:co-deplie var(--moyen)}
-@keyframes co-deplie{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
-.co-groupe{display:flex;align-items:center;gap:8px;padding:10px 10px 4px;font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--craie-2)}
-.co-groupe b{font:600 var(--t0) var(--mono);letter-spacing:0;border-radius:999px;padding:0 7px;background:rgba(255,255,255,.1);color:var(--craie)}
-.co-groupe.ko b{background:rgba(208,59,48,.35)}
-.co-groupe.att b{background:rgba(212,135,15,.3)}
-.co-item{display:flex;align-items:center;gap:11px;width:100%;padding:8px;border-radius:12px;border:none;background:none;color:var(--craie);text-align:left;transition:background var(--rapide)}
-.co-item:hover,.co-item:focus-visible{background:rgba(255,255,255,.08)}
-.co-item .min0{display:flex;flex-direction:column;gap:1px}
-.co-item b{font:700 var(--t2) var(--mono)}
-.co-item small{color:var(--craie-2);font-size:var(--t1);line-height:1.35}
-.co-code{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font:700 11px/1 var(--mono);color:#fff;background:#3b4757}
+/* ─── LE CONTRÔLE : le compte sur le bouton des repères, la liste dans l'index ─── */
+.rd-point{position:absolute;top:4px;right:3px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;font:800 10px/16px var(--mono);font-style:normal;color:#fff;background:#d4870f;box-shadow:0 0 0 2px var(--verre-plein);pointer-events:none}
+.rd-point.ko{background:#d03b30}
+.rd-point[hidden]{display:none}
+.co-code{flex:none;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font:700 10px/1 var(--mono);color:#fff;background:#3b4757}
 .co-code.barrette{background:var(--cuivre)}
 .co-code.coupure{background:#3d5a78}
-.co-code.aposer{background:rgba(181,84,28,.16);color:var(--cuivre-clair);box-shadow:inset 0 0 0 1.5px var(--cuivre-clair)}
-.co-code.tab svg.ico{width:17px;height:17px}
-.co-folio{flex:none;margin-left:auto;font:600 var(--t0) var(--mono);color:var(--craie-2);border:1px solid var(--trait-verre);border-radius:999px;padding:2px 8px;white-space:nowrap}
-.co-vide{margin:8px 10px 10px;color:var(--craie-2);font-size:var(--t1);line-height:1.5}
+.co-code.aposer{background:var(--cuivre-pale);color:var(--cuivre-2);box-shadow:inset 0 0 0 1.5px var(--cuivre)}
+.co-code.tab{background:var(--papier-2);color:var(--encre-2)}
+.co-code.tab svg.ico{width:15px;height:15px}
+.ix-controle{margin:-2px 0 2px}
+.ix-controle>summary{display:flex;align-items:center;gap:8px;list-style:none;cursor:pointer;padding:2px 0;border-radius:8px}
+.ix-controle>summary::-webkit-details-marker{display:none}
+.ix-controle>summary .fi-chevron{width:14px;height:14px;color:var(--encre-2);transition:transform var(--rapide)}
+.ix-controle[open]>summary .fi-chevron{transform:rotate(180deg)}
+.ix-item.co-item{grid-template-columns:30px minmax(0,1fr) auto}
+.ix-item.co-item small{white-space:normal;line-height:1.35}
+.ix-groupe.ko b{background:#fbeceb;color:#86201a}
+.ix-groupe.att b{background:#fcf3e6;color:#74450a}
 
 /* ─── LE MENU : au bas de la barre, ouvert vers la droite ───────────────── */
 #menuBoite{position:relative}
@@ -585,9 +571,6 @@ body.depot-actif .depot{display:grid}
   #rail .espace{display:none}
   .menu{bottom:calc(100% + 12px);left:auto;right:-4px;width:min(272px,calc(100vw - 16px))}
   .recherche{top:8px;left:8px;right:8px;width:auto;max-width:none}
-  .controle{top:8px;left:8px;max-width:calc(100vw - 16px)}
-  .controle.ouvert{width:calc(100vw - 16px)}
-  .co-titre b{max-width:150px}
   #folios{left:50%;bottom:64px;max-width:calc(100vw - 16px);transition:bottom var(--moyen)}
   .fo-strip{max-width:calc(100vw - 110px)}
   /* les documents montent en tiroir ; la base garde la hauteur qu'on lui donne */
@@ -803,6 +786,7 @@ input.fi-nom:focus{outline:none;border-bottom-color:var(--cuivre)}
 .fi-ligne{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin-top:-6px;min-height:24px}
 .fi-sous{color:var(--encre-2);font-size:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fi-sous b{font-family:var(--mono);color:var(--encre);font-weight:600}
+.fi-sous .fi-route{display:inline-block;vertical-align:-1px;margin-right:6px}
 .fi-des{flex-basis:100%;border:none;background:none;padding:0;margin:0;font-size:var(--t1);color:var(--encre);border-bottom:1.5px dashed transparent;border-radius:0}
 .fi-des::placeholder{color:var(--encre-2)}
 .fi-des:hover{border-bottom-color:var(--filet)}
@@ -866,6 +850,8 @@ details.fi-etat.ko ul{background:#fbeceb}details.fi-etat.att ul{background:#fcf3
 /* les fils : une ligne chacun — la borne, le fil, son type en retrait, où il va */
 .fi-liste{list-style:none;margin:0 -6px;padding:0;display:flex;flex-direction:column}
 .fi-fil{display:grid;grid-template-columns:auto 8px auto minmax(0,1fr) auto auto;align-items:center;column-gap:8px;padding:5px 6px;border-radius:7px;font-size:var(--t1);transition:background var(--rapide)}
+.fi-type{font:700 var(--t1) var(--mono);white-space:nowrap}
+.fi-sertir{font:500 var(--t0) var(--mono);color:#8a96a2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fi-fil[data-i]{cursor:pointer}
 .fi-fil+.fi-fil{box-shadow:0 -1px 0 #edf0f3}
 .fi-fil[data-i]:hover,.fi-fil.vise{background:var(--cuivre-pale);box-shadow:none}
@@ -874,7 +860,8 @@ details.fi-etat.ko ul{background:#fbeceb}details.fi-etat.att ul{background:#fcf3
 .fi-ct b{font-weight:700;color:var(--encre)}
 .fi-ct i{font-style:normal;font-weight:500;font-size:var(--t0);color:var(--encre-2)}
 .fi-puce{display:inline-block;width:8px;height:8px;border-radius:50%;flex:none}
-.fi-w{font-family:var(--mono);font-weight:700;white-space:nowrap}
+.fi-w{font:500 var(--t0) var(--mono);color:#9aa5b1;white-space:nowrap;text-align:right}
+.fi-w.neuf{color:var(--cuivre-2);font-style:italic;font-family:var(--sans)}
 .fi-t{font-family:var(--mono);color:#8a96a2;font-size:var(--t0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fi-t em{font-style:normal;color:#5b6773;margin-left:7px}
 /* la nomenclature : ce qu'on sertit sur ce connecteur, chaque contact avec son nombre */
@@ -884,35 +871,87 @@ details.fi-etat.ko ul{background:#fbeceb}details.fi-etat.att ul{background:#fcf3
 .fi-nomen b{color:var(--encre);margin-right:4px}
 .fi-nomen i{font-style:normal;color:#8a96a2;margin-left:4px}
 .fi-cote .fi-sertir{color:#8a96a2}
-/* la disjonction : le calibre, la courbe, le profil de charge */
-.dj-calibre{display:inline-flex;align-items:baseline;gap:4px;margin-left:10px}
-.dj-calibre input,.dj-profil input{border:1px solid var(--filet);border-radius:8px;padding:3px 8px;font:600 var(--t1) var(--mono);color:var(--encre);background:var(--papier);text-align:right;width:62px}
-.dj-calibre input{width:64px;font-weight:700;font-size:var(--t2)}
-.dj-calibre input:focus,.dj-profil input:focus{outline:none;border-color:var(--cuivre);box-shadow:0 0 0 3px var(--cuivre-pale)}
-.dj-calibre i,.dj-phase i{font-style:normal;color:var(--encre-2);font-size:var(--t0);min-width:8px}
-.dj-graphe{margin:0;padding:8px 6px 6px;background:linear-gradient(180deg,#f5f7f9,#eceff3);border-radius:10px}
-.dj-graphe svg{width:100%;height:auto;display:block;max-width:420px;margin:0 auto}
-.dj-graphe text{font:500 8.5px var(--mono);fill:#6b7684}
+/* la disjonction : la gamme en puces, le graphique qu'on survole et qu'on glisse, les états */
+.dj-gamme{display:flex;flex-direction:column;gap:5px}
+.dj-chips{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.dj-chip{min-width:38px;height:30px;padding:0 9px;border-radius:999px;border:1.5px solid var(--filet);background:var(--papier);font:700 var(--t1) var(--mono);color:var(--encre-2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background var(--rapide),border-color var(--rapide),color var(--rapide)}
+.dj-chip:hover{border-color:#c9d1d9;background:var(--papier-2)}
+.dj-chip.ok{border-color:#a9d9bb;color:#1d5b35}
+.dj-chip.ko{border-color:#f1c4bf;color:#86201a}
+.dj-chip.serre{border-style:dashed}
+.dj-chip i{font-style:normal;font-size:10px;color:#d4870f;margin-left:3px}
+.dj-chip[aria-pressed="true"]{background:var(--encre);border-color:var(--encre);color:#fff;border-style:solid}
+.dj-chip.ok[aria-pressed="true"]{background:#2e8b57;border-color:#2e8b57}
+.dj-chip.ko[aria-pressed="true"]{background:var(--danger);border-color:var(--danger)}
+.dj-chip[aria-pressed="true"] i{color:#ffd98a}
+.dj-unite{font:600 var(--t0) var(--mono);color:var(--encre-2);margin-left:2px}
+.dj-dou{font-size:var(--t0);color:var(--encre-2)}
+.dj-graphe{position:relative;margin:0;padding:6px 4px 6px;background:linear-gradient(180deg,#f5f7f9,#eceff3);border-radius:10px}
+.dj-graphe svg{width:100%;height:auto;display:block;cursor:crosshair;touch-action:none}
+.dj-graphe svg.tient{cursor:grabbing}
+.dj-graphe text{font:500 8.5px var(--mono);fill:#6b7684;pointer-events:none}
 .dj-graphe text.dj-titre{font-weight:700;fill:#4b5661}
 .dj-graphe .dj-grille{stroke:#d7dde3;stroke-width:.6}
-.dj-graphe .dj-axe{stroke:#9aa5b1;stroke-width:1}
-.dj-graphe .dj-zone{fill:#2e8b57;fill-opacity:.1}
-.dj-graphe .dj-courbe{fill:none;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}
-.dj-graphe .dj-systeme{fill:none;stroke:#26323f;stroke-width:2;stroke-linejoin:round}
+.dj-graphe .dj-grille.fine{stroke-dasharray:2 3}
+.dj-graphe .dj-axe{stroke:#9aa5b1;stroke-width:1;pointer-events:none}
+.dj-graphe .dj-zone{fill:#2e8b57;fill-opacity:.11;pointer-events:none}
+.dj-graphe .dj-courbe{fill:none;stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
+.dj-graphe .dj-fantome path{fill:none;stroke:#b4bcc5;stroke-width:1;stroke-dasharray:3 3;cursor:pointer;transition:stroke var(--rapide)}
+.dj-graphe .dj-fantome text{fill:#9aa5b1;font-size:8px;font-weight:700;cursor:pointer;pointer-events:auto}
+.dj-graphe .dj-fantome:hover path{stroke:#4b5661;stroke-dasharray:none;stroke-width:1.4}
+.dj-graphe .dj-fantome:hover text{fill:#26323f}
+.dj-graphe .dj-systeme{fill:none;stroke:#26323f;stroke-width:2;stroke-linejoin:round;pointer-events:none}
 .dj-graphe .dj-systeme.ko{stroke:var(--danger)}
-.dj-graphe .dj-point{fill:#26323f;stroke:#fff;stroke-width:1.2}
-.dj-graphe .dj-point.ko{fill:var(--danger)}
+.dj-graphe .dj-pt{cursor:grab}
+.dj-graphe .dj-halo{fill:transparent}
+.dj-graphe .dj-point{fill:#26323f;stroke:#fff;stroke-width:1.6;transition:r var(--rapide)}
+.dj-graphe .dj-pt:hover .dj-point{r:6}
+.dj-graphe .dj-pt.ko .dj-point{fill:var(--danger)}
+.dj-graphe .dj-pt.serre .dj-point{fill:#d4870f}
+.dj-graphe .dj-etiq{font:700 8.5px var(--sans);fill:#26323f;paint-order:stroke;stroke:#f3f5f7;stroke-width:3px;stroke-linejoin:round}
+.dj-graphe .dj-croix{stroke:#26323f;stroke-width:.7;stroke-dasharray:3 3;opacity:.45;pointer-events:none}
+.dj-tip{position:absolute;pointer-events:none;background:var(--verre-plein);color:var(--craie);border-radius:9px;padding:6px 10px;font:500 var(--t0)/1.45 var(--sans);box-shadow:var(--ombre-1);max-width:230px;z-index:2;white-space:normal}
+.dj-tip b{font-family:var(--mono);color:#fff}
+.dj-tip em{font-style:normal;color:var(--cuivre-clair);font-weight:600}
 .dj-legende{display:flex;flex-wrap:wrap;gap:3px 12px;justify-content:center;font-size:var(--t0);color:var(--encre-2);padding-top:5px}
 .dj-legende i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
-.dj-profil{display:flex;flex-direction:column;gap:5px}
-.dj-phase{display:grid;grid-template-columns:minmax(64px,1fr) 62px 12px 62px 12px;align-items:center;column-gap:6px;font-size:var(--t1);color:var(--encre-2)}
-.dj-phase .dj-inf{font-size:var(--t2);text-align:right;color:var(--encre-2)}
-.dj-note{margin:0}
+.dj-legende i.prof{background:#26323f}
+.dj-legende i.fant{background:none;height:0;border-top:2px dashed #b4bcc5;border-radius:0}
+.dj-etats{display:flex;flex-direction:column;gap:4px}
+.dj-etats-tete,.dj-etat{display:grid;grid-template-columns:minmax(72px,1fr) 64px 12px 64px 12px 22px;align-items:center;column-gap:6px;font-size:var(--t1);color:var(--encre-2)}
+.dj-etats-tete{font:700 10px var(--mono);color:#9aa5b1;margin-bottom:-2px}
+.dj-etats-tete span:nth-child(n+2){text-align:right;padding-right:8px}
+.dj-etat .dj-nom{color:var(--encre);font-weight:500}
+.dj-etat input{border:1px solid var(--filet);border-radius:8px;padding:3px 8px;font:600 var(--t1) var(--mono);color:var(--encre);background:var(--papier);text-align:right;width:64px;transition:border-color var(--rapide)}
+.dj-etat input.dj-nom{text-align:left;width:100%;font:500 var(--t1) var(--sans);border-color:transparent;padding-left:0}
+.dj-etat input.dj-nom:hover{border-color:var(--filet)}
+.dj-etat input:hover{border-color:#c9d1d9}
+.dj-etat input:focus{outline:none;border-color:var(--cuivre);box-shadow:0 0 0 3px var(--cuivre-pale)}
+.dj-etat i{font-style:normal;color:var(--encre-2);font-size:var(--t0);min-width:8px}
+.dj-etat .dj-inf{font-size:var(--t2);text-align:right;color:var(--encre-2)}
+.dj-x{width:22px;height:22px;border:none;background:none;border-radius:50%;color:var(--encre-2);font-size:var(--t3);line-height:1;cursor:pointer;padding:0}
+.dj-x:hover{background:#fbeae8;color:var(--danger)}
+.dj-plus{align-self:flex-start;margin:2px 0 0 -8px}
 .dj-fils{margin-top:2px}
+.dj-fils .fi-dest{justify-content:flex-start}
 .dj-adm{font-family:var(--mono);font-weight:600;color:var(--encre);white-space:nowrap;text-align:right}
+.dj-du{font-family:var(--mono);font-weight:700;white-space:nowrap}
 .fi-ko.fi-att{color:#74450a}
-.fi-cable{color:var(--encre-2);font-family:var(--mono);font-size:var(--t0)}
 .fi-faisceau{padding-top:6px}
+/* des faits : la clé en petit, la valeur en chasse fixe */
+.fi-faits{display:grid;grid-template-columns:auto minmax(0,1fr);gap:7px 12px;margin:0;font-size:var(--t1)}
+.fi-faits dt{font:700 10px/1.7 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--encre-2);white-space:nowrap}
+.fi-faits dd{margin:0;font-family:var(--mono);color:var(--encre);line-height:1.5;min-width:0;overflow-wrap:anywhere}
+.fi-faits dd b{font-weight:700}
+.fi-faits dd i{font-style:normal;color:var(--encre-2)}
+.fi-faits dd .fi-ko{font-family:var(--sans)}
+.fi-faits.serre{gap:4px 12px}
+/* autour du connecteur : ce qu'on sertit, le toron, ce qui l'englobe */
+.fi-autour{display:flex;flex-direction:column;gap:7px;padding-top:8px;border-top:1px dashed var(--filet)}
+.fi-autour .fi-habillage{min-height:22px;gap:8px}
+.fi-autour .fi-nomen-t{white-space:nowrap}
+.fi-choix{font-size:var(--t0);color:var(--encre-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.fi-avenir{font-style:normal;font-size:var(--t0);color:var(--cuivre-2);background:var(--cuivre-pale);border-radius:6px;padding:0 6px;white-space:nowrap}
 /* les contrats déjà faits : les candidats, la comparaison */
 .fi-cand{cursor:pointer}
 .fi-cand .fi-ct b{color:var(--encre)}
@@ -927,9 +966,6 @@ details.fi-etat.ko ul{background:#fbeceb}details.fi-etat.att ul{background:#fcf3
 .fi-bouton.cuivre svg.ico{color:#fff}
 .fi-bouton.cuivre:disabled{opacity:.45;cursor:default}
 .fi-etat i{min-width:14px;width:auto;padding:0 3px;border-radius:7px}
-.fi-habillage{padding-top:4px;align-items:center}
-.fi-habillage .fi-lien{margin-left:auto}
-.fi-habillage i{margin-left:4px}
 .fi-rac-t{margin:6px 0 2px;font:700 10px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--encre-2)}
 .fi-rac-t:first-child{margin-top:0}
 .hyp-n select{height:28px;border:1px solid rgba(181,84,28,.35);border-radius:7px;padding:0 4px;background:var(--papier);color:var(--encre);font-family:var(--sans);font-size:var(--t1)}
@@ -940,8 +976,7 @@ details.fi-etat.ko ul{background:#fbeceb}details.fi-etat.att ul{background:#fcf3
 .fi-dest>span{overflow:hidden;text-overflow:ellipsis}
 .fi-dest svg.ico{width:12px;height:12px;color:#9aa5b1;flex:none}
 .fi-dest.amont svg.ico{transform:scaleX(-1)}
-.fi-tag{font:700 var(--t0) var(--mono);color:var(--cuivre-2);background:var(--cuivre-pale);border:1px dashed rgba(181,84,28,.5);border-radius:6px;padding:0 5px}
-.fi-fil.neuf .fi-w{color:var(--cuivre-2);font-style:italic;font-family:var(--sans)}
+.fi-tag{font:700 var(--t0) var(--mono);color:var(--cuivre-2);background:var(--cuivre-pale);border:1px dashed rgba(181,84,28,.5);border-radius:6px;padding:0 5px;margin-left:4px}
 .fi-fil.ko{background:#fbeceb}
 .fi-ko{grid-column:3/-1;color:var(--danger);font-size:var(--t0);font-weight:600}
 .fi-groupe{font-size:10.5px;color:var(--encre-2);font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:10px 6px 3px}
@@ -986,6 +1021,7 @@ details.fi-etat.ko ul{background:#fbeceb}details.fi-etat.att ul{background:#fcf3
 .ix-tete{display:flex;align-items:center;gap:10px;min-height:34px}
 .ix-tete h2{margin:0;font:700 var(--t4)/1.2 var(--sans);letter-spacing:-.005em}
 .ix-tete .fi-sous{flex:1}
+.ix-tete .fi-x.plus{color:var(--cuivre-2)}
 .ix-filtre{display:flex;align-items:center;gap:8px;height:34px;border:1px solid var(--filet);border-radius:999px;padding:0 8px 0 12px;transition:border-color var(--rapide),box-shadow var(--rapide)}
 .ix-filtre:focus-within{border-color:var(--cuivre);box-shadow:0 0 0 3px var(--cuivre-pale)}
 .ix-filtre svg.ico{width:16px;height:16px;color:var(--encre-2)}
@@ -1100,16 +1136,6 @@ details.fi-etat.ko ul{background:#fbeceb}details.fi-etat.att ul{background:#fcf3
     <div id="q-liste" class="q-liste verre" role="listbox" hidden></div>
   </div>
 
-  <!-- LE CONTRÔLE : en haut à gauche, le nom du contrat et son état — « Conforme », « 1 problème · 3 à voir » —,
-       tenu à jour à chaque correction ; un clic déplie ce qu'il y a à reprendre, une ligne y mène (08-controle). -->
-  <div id="controle" class="controle verre" hidden>
-    <button class="co-bouton" id="co-bouton" aria-expanded="false" aria-controls="co-liste">
-      <span class="co-titre"><b id="co-nom">Contrat</b><small id="co-sous"></small></span>
-      <span class="co-etat" id="co-etat"></span>
-    </button>
-    <div class="co-liste" id="co-liste" hidden role="region" aria-label="Ce qu’il y a à reprendre"></div>
-  </div>
-
   <!-- Le bas : tout ce qui touche à la VUE — les folios, le cadrage, le
        zoom. Ce qui touche au TRAVAIL (base, recherche, bible, liaison) reste
        dans la barre de gauche. -->
@@ -1202,7 +1228,7 @@ details.fi-etat.ko ul{background:#fbeceb}details.fi-etat.att ul{background:#fcf3
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = '2d16349a9497';
+const VERSION_MOTEUR = 'fdc289b13219';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -1378,7 +1404,7 @@ function contratEssai() {
    prises de coupure, des fils blindés, des masses. */
 /* Le profil de charge de l'exemple : celui de l'Excel du lecteur, sur le disjoncteur 10 A (102CB1) — un démarrage de
    9,31 A pendant 5 s, une transition de 9,31 A pendant 120 s, 5 A en permanence. */
-function chargesExemple() { return new Map([['102CB1', { calibre: 10, dem: { i: 9.31, t: 5 }, trans: { i: 9.31, t: 120 }, perm: { i: 5, t: null } }]]); }
+function chargesExemple() { return new Map([['102CB1', { calibre: null, dem: { i: 9.31, t: 5 }, trans: { i: 9.31, t: 120 }, perm: { i: 5, t: null } }]]); }
 function contratExemple() {
   const PN = {
     '101BT1': 'MS3470L14-5P', '102CB1': 'NSA935401-10', '103RL1': 'E0836IS35-22SA', '104LP1': 'E0644D9S',
@@ -6394,8 +6420,13 @@ function chutesDepuis(norme, liaisons, repere, courant, hyp) { const H = { ...HY
    Rien ici ne touche à la page : le moteur, comme 09.
    =========================================================================== */
 
-// la gamme des calibres qu'on pose, en ampères
-const CALIBRES = [1, 2, 2.5, 3, 4, 5, 7.5, 10, 15, 20, 25, 30, 35, 50];
+// la gamme des calibres qu'on pose, en ampères — celle du lecteur
+const CALIBRES = [1, 3, 5, 7.5, 10, 15, 25];
+// « dans le vert, sans toucher la courbe » : un point du profil est SERRÉ quand il n'a ni 10 % de courant de marge sur
+// ce que la courbe la plus rapide admet pour sa durée, ni trois fois sa durée de tenue — près du calibre, la courbe
+// est presque verticale et 4 % de courant valent une demi-heure de tenue ; un calibre est idéal quand aucun point
+// n'est serré
+const MARGE_DISJONCTION = 1.1, MARGE_TENUE = 3;
 // un disjoncteur : le code CB (102CB1)
 const estDisjoncteur = r => { const q = lireRepere(r); return !!(q && q.num && q.code === 'CB'); };
 /* Le calibre qu'un part number porte en queue : NSA935401-10 → 10 A ; rien si la queue n'est pas un nombre seul. */
@@ -6426,14 +6457,20 @@ function multipleAdmis(courbe, duree) { const P = courbe.points; if (!P.length) 
   const a = P[i - 1], b = P[i]; if (a.t === b.t) return b.m; const k = (Math.log(duree) - Math.log(a.t)) / (Math.log(b.t) - Math.log(a.t));
   return Math.exp(Math.log(a.m) + k * (Math.log(b.m) - Math.log(a.m))); }
 
-/* LE PROFIL en points (courant, durée cumulée) : chaque phase dure, pour la courbe, autant que toutes les phases au
-   moins aussi fortes qu'elle — le démarrage seul s'il est le plus fort, puis la transition avec le démarrage, puis le
-   permanent, pour toujours. Deux phases au même courant ne font qu'un point. Une phase sans courant ne compte pas. */
+/* LES ÉTATS d'un profil : le démarrage, la transition (chacun un courant et une durée), les états qu'on ajoute
+   (`plus` : [{ nom, i, t }]), et le permanent (un courant, pour toujours). Rend [{ k, nom, i, t }], tels qu'écrits. */
 const NOMS_PHASES = { dem: 'démarrage', trans: 'transition', perm: 'permanent' };
-function pointsDuProfil(profil) { profil = profil || {}; const n = v => { if (v == null || v === '') return null; const x = parseFloat(String(v).replace(',', '.')); return isNaN(x) ? null : x; };
-  const phases = ['dem', 'trans', 'perm'].map(k => ({ k, nom: NOMS_PHASES[k], i: n(profil[k] && profil[k].i), t: k === 'perm' ? Infinity : n(profil[k] && profil[k].t) })).filter(p => p.i > 0 && p.t > 0);
+const nombreLu = v => { if (v == null || v === '') return null; const x = parseFloat(String(v).replace(',', '.')); return isNaN(x) ? null : x; };
+function etatsDuProfil(profil) { profil = profil || {}; const e = k => profil[k] || {};
+  return [{ k: 'dem', nom: NOMS_PHASES.dem, i: nombreLu(e('dem').i), t: nombreLu(e('dem').t) }, { k: 'trans', nom: NOMS_PHASES.trans, i: nombreLu(e('trans').i), t: nombreLu(e('trans').t) },
+    ...(profil.plus || []).map((x, j) => ({ k: 'plus' + j, nom: String(x && x.nom || '').trim() || 'état ' + (j + 3), i: nombreLu(x && x.i), t: nombreLu(x && x.t) })),
+    { k: 'perm', nom: NOMS_PHASES.perm, i: nombreLu(e('perm').i), t: Infinity }]; }
+/* LE PROFIL en points (courant, durée cumulée) : chaque état dure, pour la courbe, autant que tous les états au moins
+   aussi forts que lui — le démarrage seul s'il est le plus fort, puis la transition avec le démarrage, puis le
+   permanent, pour toujours. Deux états au même courant ne font qu'un point. Un état sans courant ne compte pas. */
+function pointsDuProfil(profil) { const phases = etatsDuProfil(profil).filter(p => p.i > 0 && p.t > 0);
   const pts = []; phases.forEach(p => { if (pts.some(q => q.i === p.i)) return;
-    const t = phases.reduce((s, q) => q.i >= p.i ? s + q.t : s, 0); pts.push({ nom: phases.filter(q => q.i === p.i).map(q => q.nom).join(' et '), i: p.i, t }); });
+    const t = phases.reduce((s, q) => q.i >= p.i ? s + q.t : s, 0); pts.push({ nom: phases.filter(q => q.i === p.i).map(q => q.nom).join(' et '), k: p.k, i: p.i, t }); });
   return pts.sort((a, b) => b.i - a.i); }
 /* LE VERDICT : chaque point du profil contre chaque courbe — ce que le disjoncteur tient à ce multiple, et s'il tient
    plus que la phase ne dure (un permanent tient s'il ne déclenche jamais). Valide : tous les points tiennent sur la
@@ -6441,14 +6478,19 @@ function pointsDuProfil(profil) { profil = profil || {}; const n = v => { if (v 
    déclencher. */
 function verdictDisjonction(norme, famille, calibre, profil) { const courbes = courbesDeDisjonction(norme, famille), pts = pointsDuProfil(profil);
   const juger = cal => pts.map(p => { const multiple = p.i / cal;
-    const marges = courbes.map(c => { const temps = tempsDeDeclenchement(c, multiple), ok = p.t === Infinity ? temps === Infinity : temps > p.t;
-      return { courbe: c.nom, temps, ok, rapport: p.t === Infinity ? (ok ? Infinity : 0) : temps / p.t, admis: multipleAdmis(c, p.t) * cal }; });
-    return { ...p, multiple, marges, ok: marges.length ? marges[0].ok : null }; });
-  const points = calibre > 0 ? juger(calibre) : pts.map(p => ({ ...p, multiple: null, marges: [], ok: null }));
+    const marges = courbes.map(c => { const temps = tempsDeDeclenchement(c, multiple), ok = p.t === Infinity ? temps === Infinity : temps > p.t, admis = multipleAdmis(c, p.t) * cal;
+      return { courbe: c.nom, temps, ok, rapport: p.t === Infinity ? (ok ? Infinity : 0) : temps / p.t, admis, marge: admis / p.i }; });
+    // `serre` : tient, mais l'escalier touche la courbe (ni la marge de courant, ni la marge de tenue)
+    const m = marges[0], serre = !!(m && m.ok && m.marge < MARGE_DISJONCTION - 1e-9 && m.rapport < MARGE_TENUE);
+    return { ...p, multiple, marges, ok: marges.length ? m.ok : null, serre }; });
+  const points = calibre > 0 ? juger(calibre) : pts.map(p => ({ ...p, multiple: null, marges: [], ok: null, serre: false }));
   const valide = !!(calibre > 0 && courbes.length && pts.length) && points.every(p => p.ok);
-  const calibreMini = courbes.length && pts.length ? CALIBRES.find(c => juger(c).every(p => p.ok)) || null : null;
+  // chaque calibre de la gamme, jugé : tient, serré, et le premier qui tient avec sa marge est l'idéal
+  const gamme = courbes.length && pts.length ? CALIBRES.map(c => { const js = juger(c); return { calibre: c, valide: js.every(p => p.ok), serre: js.some(p => p.serre) }; }) : CALIBRES.map(c => ({ calibre: c, valide: null, serre: false }));
+  const calibreMini = (gamme.find(g => g.valide) || {}).calibre || null, calibreIdeal = (gamme.find(g => g.valide && !g.serre) || {}).calibre || calibreMini;
+  gamme.forEach(g => { g.ideal = g.calibre === calibreIdeal; });
   const pire = points.filter(p => p.marges.length).sort((a, b) => a.marges[0].rapport - b.marges[0].rapport)[0] || null;
-  return { courbes, points, valide, calibreMini, pire, calibre: calibre > 0 ? calibre : null, sansProfil: !pts.length, sansCourbe: !courbes.length }; }
+  return { courbes, points, valide, serre: valide && points.some(p => p.serre), gamme, calibreMini, calibreIdeal, pire, calibre: calibre > 0 ? calibre : null, sansProfil: !pts.length, sansCourbe: !courbes.length }; }
 
 /* LA PROTECTION DES FILS. Chaque fil du disjoncteur — des deux côtés : le courant les traverse tous, et un dédoublement
    se partage on ne sait comment, chacun doit donc tenir tout — contre le profil et le calibre. Un fil tient si, à
@@ -6677,10 +6719,11 @@ function formatDuDessin(dessin) {
 /* ===========================================================================
    08 quater — LE CONTRÔLE : ce que le contrat a à reprendre, d'un coup d'œil
    ---------------------------------------------------------------------------
-   En haut à gauche, une pastille dit l'état de TOUT le contrat — « Conforme »,
-   ou « 1 problème · 3 à voir » — tenue à jour à chaque correction (le contrat
-   entier se relit en quelques dizaines de millisecondes). Un clic déplie la
-   liste ; une ligne y mène : son folio, son bloc, sa fiche.
+   Le contrat entier se relit à chaque correction (quelques dizaines de
+   millisecondes). Rien ne flotte sur le plan pour le dire — le lecteur : « ça
+   sert à rien » — : le bouton des repères (R) porte un point avec le compte,
+   et l'index s'ouvre sur la liste « à reprendre » ; une ligne y mène : son
+   folio, son bloc, sa fiche. Chaque fiche porte sa propre pastille.
      · les PROBLÈMES : un connecteur, une barrette, une prise qu'aucun
        arrangement de la norme ne loge ; un fil que son contact refuse ;
      · les POINTS À VOIR : chaque barrette à poser (un dédoublement), ce
@@ -6712,65 +6755,69 @@ function controleDuContrat() { const V = verite(), items = [], ko = (nom, texte)
   if (inc) att('', pluriel(inc, 'liaison') + ' incomplète' + (inc > 1 ? 's' : '') + ' : ni dessinée' + (inc > 1 ? 's' : '') + ', ni vérifiée' + (inc > 1 ? 's' : ''), { tableau: '' });
   items.forEach(x => { if (x.nom && x.plan == null) x.plan = plansDuRepere(x.nom).sort(triNaturel)[0] || ''; });
   return items; }
-/* La pastille : le nom du contrat, son compte, son état. Ne se relit que si le contrat a changé. */
-function rendreControle() { const el = $('controle'), V = verite(); if (!el) return;
-  if (!V.length) { el.hidden = true; return; } el.hidden = false;
+/* Le contrôle se relit si le contrat a changé ; le bouton des repères porte le compte ; l'index ouvert se refait. */
+function rendreControle() { const V = verite();
   const cle = signature(V) + '|' + JSON.stringify([...app.contrat.designations]) + '|' + JSON.stringify([...(app.contrat.sexes || [])]) + '|' + JSON.stringify([...(app.contrat.charges || [])]) + '|' + JSON.stringify([...(app.contrat.raccords || [])]) + '|' + (app.normeNom || '') + '|' + (app.bibleNom || '');
-  if (cle !== CONTROLE.cle) { CONTROLE.cle = cle; CONTROLE.items = controleDuContrat(); }
-  const xs = CONTROLE.items, nko = xs.filter(x => x.niveau === 'ko').length, natt = xs.length - nko, P = plans();
-  $('co-nom').textContent = (app.contrat.cartouche && app.contrat.cartouche.titre) || app.nom || 'Contrat';
-  $('co-sous').textContent = pluriel(V.length, 'liaison') + (P.length ? ' · ' + pluriel(P.length, 'folio') : '');
-  const e = $('co-etat'); e.className = 'co-etat ' + (nko ? 'ko' : natt ? 'att' : 'ok');
-  e.innerHTML = nko ? `<i aria-hidden="true">✕</i>${nko > 1 ? nko + ' problèmes' : '1 problème'}${natt ? `<em>· ${natt} à voir</em>` : ''}` : natt ? `<i aria-hidden="true">!</i>${natt} à voir` : '<i aria-hidden="true">✓</i>Conforme';
-  if (CONTROLE.ouvert) rendreListeControle(); }
-function rendreListeControle() { const box = $('co-liste'), xs = CONTROLE.items;
-  box.innerHTML = !xs.length ? '<p class="co-vide">Rien à reprendre : chaque connecteur, chaque barrette, chaque prise est logé, chaque jauge acceptée.</p>'
-    : [['ko', 'Problèmes'], ['att', 'À voir']].map(([n, t]) => { const ys = xs.filter(x => x.niveau === n); if (!ys.length) return '';
-      return `<div class="co-groupe ${n}"><span>${t}</span><b>${ys.length}</b></div>` + ys.map(x => `<button class="co-item" data-k="${xs.indexOf(x)}">`
-        + `<span class="co-code ${x.nom ? genreDe(x.nom) : 'tab'}" aria-hidden="true">${x.nom ? esc(codeDe(x.nom)) : ico('tableau')}</span>`
-        + `<span class="min0"><b>${esc(x.nom || 'Tableau')}</b><small>${esc(x.texte)}</small></span>`
-        + (x.plan && x.plan !== '*' ? `<span class="co-folio">folio ${esc(x.plan)}</span>` : '') + '</button>').join(''); }).join(''); }
-function ouvrirControle(ouvert) { CONTROLE.ouvert = ouvert; $('co-liste').hidden = !ouvert; $('co-bouton').setAttribute('aria-expanded', String(ouvert)); $('controle').classList.toggle('ouvert', ouvert);
-  if (ouvert) rendreListeControle(); }
+  if (cle !== CONTROLE.cle) { CONTROLE.cle = cle; CONTROLE.items = V.length ? controleDuContrat() : []; }
+  const xs = CONTROLE.items, nko = xs.filter(x => x.niveau === 'ko').length, natt = xs.length - nko, b = $('btnIndex'); if (!b) return;
+  let p = b.querySelector('.rd-point'); if (!p) { p = document.createElement('i'); p.className = 'rd-point'; b.appendChild(p); }
+  p.hidden = !xs.length; p.className = 'rd-point ' + (nko ? 'ko' : 'att'); p.textContent = String(nko || natt);
+  b.setAttribute('aria-label', 'Repères du contrat (R)' + (nko ? ' — ' + pluriel(nko, 'problème') : natt ? ' — ' + natt + ' à voir' : ''));
+  if (app.insp.index && !$('inspecteur').hidden && !app.cible) rendreIndex($('ba-equip')); }
+/* La liste « à reprendre », en tête de l'index : les problèmes, puis les points à voir ; une ligne y mène. */
+function listeControleHtml() { const xs = CONTROLE.items; if (!xs.length) return '';
+  return [['ko', 'Problèmes'], ['att', 'À voir']].map(([n, t]) => { const ys = xs.filter(x => x.niveau === n); if (!ys.length) return '';
+    return `<div class="ix-groupe ${n}"><span>${t}</span><b>${ys.length}</b></div><ul class="ix-liste co-liste">` + ys.map(x => `<li><button class="ix-item co-item" data-k="${xs.indexOf(x)}">`
+      + `<span class="co-code ${x.nom ? genreDe(x.nom) : 'tab'}" aria-hidden="true">${x.nom ? esc(codeDe(x.nom)) : ico('tableau')}</span>`
+      + `<span class="min0"><b>${esc(x.nom || 'Tableau')}</b><small>${esc(x.texte)}</small></span>`
+      + (x.plan && x.plan !== '*' ? `<span class="ix-folio">${esc(x.plan)}</span>` : '') + '</button></li>').join('') + '</ul>'; }).join(''); }
 // une ligne : son folio, son bloc et sa fiche — ou le tableau, filtré sur ce qu'il faut reprendre
-function allerAuControle(x) { ouvrirControle(false);
+function allerAuControle(x) {
   if (x.tableau != null) { app.base.filtre = x.tableau; app.base.portee = 'tout'; app.base.tri = x.texte.includes('sans type') ? { k: 'type', sens: 1 } : { k: 'de', sens: 1 }; if (app.base.ouvert) rendreBase(); else ouvrirBase(); return; }
   if (x.plan && x.plan !== app.plan && plans().includes(x.plan)) allerAuPlan(x.plan);
   const c = app.dessin && app.dessin.comps.find(k => k.name === x.nom && k.kind !== 'tag'), vt = c ? null : barretteAPoser(x.nom);
   if (c) choisirBloc(c); else if (vt) choisirBarretteAPoser(vt); else { app.cible = { type: 'bloc', nom: x.nom }; ouvrirInspecteur(); }
   viser(x.nom); }
-function lierControle() {
-  $('co-bouton').onclick = () => ouvrirControle(!CONTROLE.ouvert);
-  $('co-liste').addEventListener('click', e => { const b = e.target.closest('.co-item'); if (b) allerAuControle(CONTROLE.items[+b.dataset.k]); });
-  document.addEventListener('pointerdown', e => { if (CONTROLE.ouvert && !$('controle').contains(e.target)) ouvrirControle(false); }); }
+function lierControle() { }
 
 /* ───────── 08-disjoncteurs.js ───────── */
 /* ===========================================================================
-   08 quinquies — LA DISJONCTION : sur la fiche d'un disjoncteur, son calibre,
-   le profil de charge de ce qu'il protège, la courbe et le verdict
+   08 quinquies — LA DISJONCTION : sur la fiche d'un disjoncteur, le calibre
+   que l'outil trouve, le profil de charge, la courbe — et rien à lire
    ---------------------------------------------------------------------------
-   Le lecteur vérifiait ça dans un Excel : le profil (démarrage, transition,
-   permanent) en escalier sur les courbes de disjonction, valide s'il reste à
-   gauche. Ici c'est une section de la fiche de chaque CB : le calibre (lu dans
-   le part number, ou écrit), trois lignes à remplir, le graphique log-log, une
-   pastille — « Tient » ou « Déclenche » — et, en une phrase, la marge ou le
-   calibre qui tiendrait. Le profil se garde avec le contrat (Ctrl+Z le défait)
-   et la pastille de contrôle du contrat relève chaque disjoncteur qui
-   déclenche ou qu'on n'a pas renseigné.
+   Le lecteur : « c'est à toi de trouver le calibre idéal ; il faut que ce
+   soit dans le vert et que ça ne touche pas la courbe ; si on gère tout, on
+   verra tout sur le graphique ». Donc :
+     · LA GAMME en puces — 1, 3, 5, 7,5, 10, 15, 25 A —, chacune jugée sur le
+       profil (verte : tient ; rouge : déclenche ; étoile : l'idéale, la plus
+       petite qui tient sans toucher la courbe). Celle du part number est
+       retenue d'office ; un clic en retient une autre, un second clic la
+       rend ; sans part number, l'idéale est retenue toute seule ;
+     · LE GRAPHIQUE, en ampères et en secondes (log-log) : la zone verte du
+       calibre retenu, ses quatre courbes, les courbes fantômes des autres
+       calibres (on clique l'une pour la retenir), l'escalier du profil avec
+       ses points — qu'on survole pour lire la marge, qu'on glisse pour
+       changer le courant ou la durée ;
+     · LES ÉTATS : démarrage, transition, ceux qu'on ajoute, le permanent —
+       un courant, une durée. Le profil se garde avec le contrat (Ctrl+Z) ;
+     · ses fils (ce qu'ils admettent, jugés) et la chute en ligne jusqu'aux
+       équipements. La pastille de la fiche relève ce qui déclenche.
    =========================================================================== */
 
-const PHASES = [['dem', 'Démarrage', true], ['trans', 'Transition', true], ['perm', 'Permanent', false]];
 const COULEURS_COURBES = ['#c0392b', '#d4870f', '#e2b55b', '#1f5fbf'];   // de la plus chaude à la plus froide
 const chargeDe = nom => (app.contrat.charges && app.contrat.charges.get(nom)) || null;
 /* Le part number d'un repère : celui que ses liaisons portent. */
 function pnDuRepere(nom) { for (const l of verite()) { if (l.de === nom && l.pnDe) return l.pnDe; if (l.vers === nom && l.pnVers) return l.pnVers; } return ''; }
-/* Le calibre : celui qu'on a écrit, sinon celui que le part number porte en queue (NSA935401-10 → 10 A). */
-function calibreDe(nom) { const c = chargeDe(nom); return c && c.calibre > 0 ? c.calibre : calibreDuPn(pnDuRepere(nom)); }
 /* Les fils d'un disjoncteur, des deux côtés, avec la borne et l'autre bout. */
 const filsDuDisjoncteur = nom => verite().filter(l => (l.de === nom || l.vers === nom) && l.de !== l.vers)
   .map(l => ({ cable: l.cable, type: l.type, borne: l.de === nom ? l.borneDe : l.borneVers, autre: l.de === nom ? l.vers + (l.borneVers ? ':' + l.borneVers : '') : l.de + (l.borneDe ? ':' + l.borneDe : ''), l }));
-function disjonctionDe(nom) { const calibre = calibreDe(nom), profil = chargeDe(nom), c = profil && profil.calibre > 0;
-  return { ...verdictDisjonction(app.norme, '', calibre, profil), profil, duPn: !c, fils: protectionDesFils(app.norme, calibre, profil, filsDuDisjoncteur(nom), app.simu) }; }
+/* Le calibre RETENU : celui qu'on a choisi à la main, sinon celui du part number (NSA935401-10 → 10 A), sinon l'idéal
+   que le profil donne. Rend le verdict complet (09 bis), le profil, d'où vient le calibre, et ses fils jugés. */
+function disjonctionDe(nom) { const profil = chargeDe(nom), ecrit = profil && profil.calibre > 0 ? profil.calibre : null, pn = calibreDuPn(pnDuRepere(nom));
+  let d = verdictDisjonction(app.norme, '', ecrit || pn || 0, profil);
+  const calibre = ecrit || pn || d.calibreIdeal || null; if (calibre && calibre !== d.calibre) d = verdictDisjonction(app.norme, '', calibre, profil);
+  return { ...d, profil, ecrit, pn, origine: ecrit ? 'main' : pn ? 'pn' : calibre ? 'ideal' : '', fils: protectionDesFils(app.norme, calibre, profil, filsDuDisjoncteur(nom), app.simu) }; }
+const calibreDe = nom => disjonctionDe(nom).calibre;
 // « pour 10 s », « pour 1 min », « en continu »
 const pourPalier = p => p === 2 ? 'pour 2 s' : p === 10 ? 'pour 10 s' : p === 60 ? 'pour 1 min' : 'en continu';
 const motFacteur = f => Math.abs(f - 1) < 1e-9 ? '' : ' (× ' + nombre(Math.round(f * 100) / 100) + ')';
@@ -6779,94 +6826,173 @@ function secondes(t) { if (!isFinite(t)) return 'jamais'; if (t < 1) return nomb
   if (t < 3600) return nombre(Math.round(t / 6) / 10) + ' min'; return nombre(Math.round(t / 360) / 10) + ' h'; }
 const amperes = i => nombre(Math.round(i * 100) / 100) + ' A';
 /* Ce que le contrôle en dit : un problème si une phase fait déclencher, ou si un fil ne tient pas le profil ; à voir
-   sans profil, sans calibre, ou si le calibre dépasse ce qu'un fil admet en continu. */
+   sans profil, si le calibre posé n'est pas l'idéal, ou si le calibre dépasse ce qu'un fil admet en continu. */
 function controleDisjonction(nom) { const d = disjonctionDe(nom), out = [];
-  if (!d.sansCourbe) { if (!(d.calibre > 0)) out.push({ niveau: 'att', texte: 'calibre inconnu : écris-le sur la fiche' });
-    else if (d.sansProfil) out.push({ niveau: 'att', texte: `${amperes(d.calibre)} · le profil de charge est à renseigner` });
-    else if (!d.valide) { const p = d.pire, m = p.marges[0], mini = d.calibreMini ? ` — un ${amperes(d.calibreMini)} tiendrait` : ' — aucun calibre de la gamme ne tient';
+  if (!d.sansCourbe) { if (d.sansProfil) out.push({ niveau: 'att', texte: (d.calibre ? amperes(d.calibre) + ' · ' : '') + 'le profil de charge est à renseigner : l’outil trouve le calibre' });
+    else if (!(d.calibre > 0)) out.push({ niveau: 'att', texte: 'aucun calibre de la gamme ne tient ce profil' });
+    else if (!d.valide) { const p = d.pire, m = p.marges[0], mini = d.calibreIdeal ? ` — l’idéal est un ${amperes(d.calibreIdeal)}` : ' — aucun calibre de la gamme ne tient';
       out.push({ niveau: 'ko', texte: (p.t === Infinity ? `le permanent (${amperes(p.i)}) fait déclencher le ${amperes(d.calibre)} à ${m.courbe} (il tient jusqu'à ${amperes(m.admis)})`
-        : `${p.nom} ${amperes(p.i)} pendant ${secondes(p.t)} : le ${amperes(d.calibre)} déclenche en ${secondes(m.temps)} à ${m.courbe}`) + mini }); } }
+        : `${p.nom} ${amperes(p.i)} pendant ${secondes(p.t)} : le ${amperes(d.calibre)} déclenche en ${secondes(m.temps)} à ${m.courbe}`) + mini }); }
+    else if (d.calibreIdeal && d.calibre !== d.calibreIdeal) out.push({ niveau: 'att', texte: d.calibre > d.calibreIdeal ? `${amperes(d.calibre)}${d.origine === 'pn' ? ' (part number)' : ''} : un ${amperes(d.calibreIdeal)} suffirait` : `${amperes(d.calibre)} tient mais touche la courbe : l’idéal est un ${amperes(d.calibreIdeal)}` }); }
   d.fils.forEach(f => { const nomF = (f.cable || 'fil sans numéro') + (f.type ? ' (' + f.type + ')' : '');
     if (f.verdict === 'fil') out.push({ niveau: 'ko', texte: `${nomF} : ${f.pire.nom} ${amperes(f.pire.i)} pendant ${secondes(f.pire.t)} dépasse ${amperes(f.pire.admise)}, ce que le fil admet ${pourPalier(f.pire.palier)}${motFacteur(f.facteur)}` });
     else if (f.verdict === 'calibre') out.push({ niveau: 'att', texte: `${nomF} admet ${amperes(f.continu)} en continu${motFacteur(f.facteur)}, moins que le calibre ${amperes(d.calibre)} : pas protégé en surcharge` }); });
   return out; }
+/* CE QUI ALIMENTE un fil : le disjoncteur en amont (le premier dont un chemin passe par ce fil), son courant permanent
+   et son courant de pointe — ce qu'il faut pour juger la charge et la chute du fil. */
+function alimentationDe(l) { if (!l) return null; const V = verite();
+  for (const cb of reperesDe(V).filter(estDisjoncteur)) { if (!cheminsDepuis(V, cb).some(ch => ch.segments.some(s => s.fil === l))) continue;
+    const d = disjonctionDe(cb), pts = d.points.length ? d.points : pointsDuProfil(d.profil), perm = pts.find(p => p.t === Infinity), pointe = pts[0];
+    return { nom: cb, calibre: d.calibre, perm: perm ? perm.i : null, pointe: pointe && pointe.t !== Infinity ? pointe : null, points: pts }; }
+  return null; }
 
 /* ---- la section de la fiche -------------------------------------------------------- */
-function ficheDisjonction(nom) { const d = disjonctionDe(nom), c = d.profil || {}, val = (k, q) => (c[k] && c[k][q] != null ? nombre(c[k][q]) : '');
-  const etat = d.sansCourbe ? '' : !(d.calibre > 0) ? '<span class="fi-etat att"><i aria-hidden="true">!</i>Calibre ?</span>' : d.sansProfil ? '<span class="fi-etat att"><i aria-hidden="true">!</i>Profil à renseigner</span>'
-    : d.valide ? '<span class="fi-etat ok"><i aria-hidden="true">✓</i>Tient</span>' : '<span class="fi-etat ko"><i aria-hidden="true">✕</i>Déclenche</span>';
-  let note = '';
-  if (d.calibre > 0 && !d.sansProfil && d.pire) { const p = d.pire, m = p.marges[0], froid = p.marges[p.marges.length - 1];
-    if (d.valide) note = p.t === Infinity ? `Le permanent (${amperes(p.i)}) reste sous ${amperes(m.admis)}, où le ${amperes(d.calibre)} ne déclenche jamais à ${m.courbe}.`
-      : `${p.nom[0].toUpperCase() + p.nom.slice(1)} ${amperes(p.i)} pendant ${secondes(p.t)} : à ${m.courbe} le ${amperes(d.calibre)} tient ${secondes(m.temps)}${froid !== m ? `, à ${froid.courbe} ${secondes(froid.temps)}` : ''}.`
-      + (d.calibreMini && d.calibreMini < d.calibre ? ` Un ${amperes(d.calibreMini)} tiendrait aussi.` : '');
-    else note = (controleDisjonction(nom).find(x => x.niveau === 'ko') || { texte: '' }).texte; if (note) { note = note[0].toUpperCase() + note.slice(1); if (!/[.!]$/.test(note)) note += '.'; } }
+function gammeHtml(nom, d) {
+  // la gamme : chaque calibre jugé ; celui qui est retenu est pressé ; l'idéal porte l'étoile
+  const puces = d.gamme.map(g => `<button class="dj-chip${g.valide === true ? ' ok' : g.valide === false ? ' ko' : ''}${g.serre ? ' serre' : ''}${g.ideal ? ' ideal' : ''}" data-cal="${g.calibre}" aria-pressed="${g.calibre === d.calibre}" title="${escA(g.valide == null ? amperes(g.calibre) : amperes(g.calibre) + (g.valide ? (g.ideal ? ' : l’idéal — tient sans toucher la courbe' : g.serre ? ' : tient, mais touche la courbe' : ' : tient') : ' : déclenche') + (g.calibre === d.calibre ? ' · retenu' + (d.origine === 'pn' ? ' (part number)' : d.origine === 'main' ? ' (choisi à la main)' : '') : ''))}">${nombre(g.calibre)}${g.ideal ? '<i aria-label="idéal">★</i>' : ''}</button>`).join('');
+  const dou = d.origine === 'pn' ? `part number ${esc(pnDuRepere(nom))}` : d.origine === 'main' ? 'choisi à la main' : d.origine === 'ideal' ? 'l’idéal, trouvé par l’outil' : 'à choisir';
+  return `<div class="dj-gamme"><span class="fi-nomen-t">calibre</span><div class="dj-chips" role="group" aria-label="Calibre, en ampères">${puces}<span class="dj-unite">A</span></div><span class="dj-dou">${dou}</span></div>`; }
+function ficheDisjonction(nom) { const d = disjonctionDe(nom), E = etatsDuProfil(d.profil), gamme = gammeHtml(nom, d);
+  // les états : un courant, une durée ; ceux qu'on ajoute ont un nom qu'on écrit et une croix
+  const ligne = e => { const val = q => e[q] != null && isFinite(e[q]) ? nombre(e[q]) : '', plus = /^plus/.test(e.k);
+    return `<div class="dj-etat${e.k === 'perm' ? ' perm' : ''}" data-k="${e.k}">${plus ? `<input class="dj-nom" data-dj="${e.k}" data-q="nom" value="${escA(e.nom)}" aria-label="Nom de l’état" spellcheck="false">` : `<span class="dj-nom">${esc(e.nom[0].toUpperCase() + e.nom.slice(1))}</span>`}`
+      + `<input data-dj="${e.k}" data-q="i" value="${escA(val('i'))}" inputmode="decimal" placeholder="—" aria-label="${escA(e.nom + ' : courant en ampères')}"><i>A</i>`
+      + (e.k === 'perm' ? '<i class="dj-inf" title="pour toujours">∞</i><i></i>' : `<input data-dj="${e.k}" data-q="t" value="${escA(val('t'))}" inputmode="decimal" placeholder="—" aria-label="${escA(e.nom + ' : durée en secondes')}"><i>s</i>`)
+      + (plus ? `<button class="dj-x" data-x="${e.k}" aria-label="Retirer cet état">×</button>` : '<span></span>') + '</div>'; };
+  const etats = `<div class="dj-etats"><div class="dj-etats-tete"><span class="fi-nomen-t">profil de charge</span><span></span><span>A</span><span>s</span></div>${E.map(ligne).join('')}<button class="fi-lien dj-plus" id="dj-plus">+ un état</button></div>`;
   // ses fils : ce que chacun admet (la norme des fils), et s'il tient le profil
   const lf = d.fils.map(f => { const k = f.l ? cleFil(f.l) : '', titre = f.fil ? [['continu', f.fil.intensite], ['2 s', f.fil.i2s], ['10 s', f.fil.i10s], ['1 min', f.fil.i1min]].filter(x => x[1] != null).map(x => amperes(x[1] * f.facteur) + ' ' + x[0]).join(' · ') + motFacteur(f.facteur) : 'fil inconnu de la norme';
     const dit = f.verdict === 'fil' ? `<span class="fi-ko">${esc(f.pire.nom)} ${esc(amperes(f.pire.i))} pendant ${esc(secondes(f.pire.t))} : dépasse ${esc(amperes(f.pire.admise))} ${pourPalier(f.pire.palier)}</span>`
-      : f.verdict === 'calibre' ? `<span class="fi-ko fi-att">sous le calibre : pas protégé en surcharge</span>` : f.verdict === 'inconnu' ? '<span class="fi-ko fi-att">fil inconnu de la norme</span>' : '';
-    return `<li class="fi-fil${f.verdict === 'fil' ? ' ko' : ''}"${k ? ` data-i="${k}" tabindex="0" role="button" title="${escA(titre)}"` : ''}><span class="fi-ct"><b>${esc(f.borne)}</b></span>${puceFil(f)}<b class="fi-w">${esc(f.cable || '—')}</b><span class="fi-t">${esc(f.type || '')}</span><span class="dj-adm">${f.continu != null ? esc(amperes(f.continu)) : '—'}</span><span></span>${dit}</li>`; }).join('');
+      : f.verdict === 'calibre' ? `<span class="fi-ko fi-att">admet moins que le calibre : pas protégé en surcharge</span>` : f.verdict === 'inconnu' ? '<span class="fi-ko fi-att">fil inconnu de la norme</span>' : '';
+    return `<li class="fi-fil${f.verdict === 'fil' ? ' ko' : ''}"${k ? ` data-i="${k}" tabindex="0" role="button" title="${escA(titre)}"` : ''}><span class="fi-ct"><b>${esc(f.borne)}</b></span>${puceFil(f)}<span class="fi-t">${esc(f.type || '—')}</span><span class="fi-dest"><span>${esc(f.autre)}</span></span><span class="dj-adm" title="${escA(titre)}">${f.continu != null ? esc(amperes(f.continu)) : '—'}</span><span class="fi-w">${esc(f.cable || '')}</span>${dit}</li>`; }).join('');
   const fils = lf ? `<ul class="fi-liste dj-fils"><li class="fi-groupe">ses fils · ce qu'ils admettent en continu</li>${lf}</ul>` : '';
-  const champs = PHASES.map(([k, t, duree]) => `<div class="dj-phase"><span>${t}</span><input data-dj="${k}" data-q="i" value="${escA(val(k, 'i'))}" inputmode="decimal" placeholder="—" aria-label="${t} : courant en ampères"><i>A</i>`
-    + (duree ? `<input data-dj="${k}" data-q="t" value="${escA(val(k, 't'))}" inputmode="decimal" placeholder="—" aria-label="${t} : durée en secondes"><i>s</i>` : '<i class="dj-inf">∞</i><i></i>') + '</div>').join('');
-  return `<section class="fi-cadre fi-dj"><div class="fi-ref-ligne"><b class="fi-ref">Disjoncteur</b><label class="dj-calibre" title="${d.duPn && d.calibre ? 'Calibre lu dans le part number ' + escA(pnDuRepere(nom)) : 'Le calibre, en ampères'}"><input id="dj-calibre" value="${d.calibre > 0 ? escA(nombre(d.calibre)) : ''}" inputmode="decimal" placeholder="calibre" list="dj-calibres" aria-label="Calibre en ampères"><i>A</i></label>`
-    + `<datalist id="dj-calibres">${CALIBRES.map(x => `<option value="${nombre(x)}">`).join('')}</datalist><span class="espace"></span>${etat}</div>`
-    + (d.courbes.length ? graphiqueDisjonction(d) : '<p class="fi-note">Aucune courbe de disjonction dans la norme.</p>')
-    + `<div class="dj-profil">${champs}</div>${note ? `<p class="fi-note dj-note">${esc(note)}</p>` : ''}${fils}${chutesHtml(nom, d)}</section>`; }
+  return `<section class="fi-cadre fi-dj">${gamme}${d.courbes.length ? graphiqueDisjonction(d) : '<p class="fi-note">Aucune courbe de disjonction dans la norme.</p>'}${etats}${fils}${chutesHtml(nom, d)}</section>`; }
 /* LA CHUTE EN LIGNE depuis le disjoncteur, comme la feuille du lecteur : chaque chemin jusqu'à un équipement, à
    travers les prises de coupure et les barrettes, au courant permanent du profil (sinon le calibre, sinon l'hypothèse). */
 function chutesHtml(nom, d) { const H = app.simu || HYPOTHESES, I = d.profil && d.profil.perm && d.profil.perm.i > 0 ? d.profil.perm.i : d.calibre > 0 ? d.calibre : H.courant;
   const cs = chutesDepuis(app.norme, verite(), nom, I, H); if (!cs.length) return '';
   const li = cs.map(c => { const detail = c.segments.map(s => s.fil ? `${s.fil.cable || 'fil'} : ${s.dU != null ? nombre(Math.round(s.dU * 1000) / 1000) + ' V' : '?'} (${nombre(Math.round(s.longueur * 100) / 100)} m${s.reelle ? '' : ', hypothèse'})` : `${s.passage} : ${s.dU != null ? nombre(Math.round(s.dU * 1000) / 1000) + ' V' : 'contact inconnu'}`).join(' · ');
-    return `<li class="fi-fil${c.trop ? ' ko' : ''}" title="${escA(detail + (c.inconnus.length ? ' — ' + c.inconnus.join(' ; ') : ''))}"><span class="fi-ct"><b>${esc(c.bout[0])}</b>${c.bout[1] ? `<i>${esc(c.bout[1])}</i>` : ''}</span><span></span><b class="fi-w">${c.dU != null ? esc(nombre(Math.round(c.dU * 100) / 100)) + ' V' : '—'}</b><span class="fi-t">${c.pct != null ? esc(nombre(Math.round(c.pct * 10) / 10)) + ' %' : ''}${c.inconnus.length ? ' · ' + c.inconnus.length + ' inconnu' + (c.inconnus.length > 1 ? 's' : '') : ''}</span><span class="fi-dest"><span>${esc(c.mots)}</span></span>${c.trop ? '<span class="fi-ko">dépasse la chute admise</span>' : !c.fini ? '<span class="fi-ko fi-att">chemin sans fin</span>' : ''}</li>`; }).join('');
-  return `<ul class="fi-liste dj-chutes"><li class="fi-groupe">chute en ligne à ${esc(nombre(I))} A${H.tension ? ' sous ' + esc(nombre(H.tension)) + ' V' : ''}${cs[0].admis != null ? ' · admis ' + esc(nombre(cs[0].admis)) + ' V' : ''} · câbles et prises traversées</li>${li}</ul>`; }
-/* Le graphique : multiples de In en abscisse (0,1 à 100), temps en ordonnée (1 ms à 10 000 s), tous deux en log ; la
-   zone où tout tient, à gauche de la courbe la plus rapide, en vert ; le profil en escalier, rouge s'il déclenche. */
-function graphiqueDisjonction(d) { const W = 320, H = 236, L = 40, R = 10, T = 10, B = 26, x0 = -1, x1 = 2, y0 = -3, y1 = 4;
-  const X = m => L + (Math.log10(m) - x0) / (x1 - x0) * (W - L - R), Y = t => T + (y1 - Math.log10(t)) / (y1 - y0) * (H - T - B);
-  const borne = t => Math.min(Math.pow(10, y1), Math.max(Math.pow(10, y0), t)), xb = m => Math.min(W - R, Math.max(L, X(m)));
-  const pt = p => f1(xb(p.m)) + ' ' + f1(Y(borne(p.t)));
+    return `<li class="fi-fil${c.trop ? ' ko' : ''}" title="${escA(detail + (c.inconnus.length ? ' — ' + c.inconnus.join(' ; ') : ''))}"><span class="fi-ct"><b>${esc(c.bout[0])}</b>${c.bout[1] ? `<i>${esc(c.bout[1])}</i>` : ''}</span><span></span><b class="dj-du">${c.dU != null ? esc(nombre(Math.round(c.dU * 100) / 100)) + ' V' : '—'}</b><span class="fi-t">${c.pct != null ? esc(nombre(Math.round(c.pct * 10) / 10)) + ' %' : ''}${c.inconnus.length ? ' · ' + c.inconnus.length + ' inconnu' + (c.inconnus.length > 1 ? 's' : '') : ''}</span><span class="fi-dest"><span>${esc(c.mots)}</span></span><span></span>${c.trop ? '<span class="fi-ko">dépasse la chute admise</span>' : !c.fini ? '<span class="fi-ko fi-att">chemin sans fin</span>' : ''}</li>`; }).join('');
+  return `<ul class="fi-liste dj-chutes"><li class="fi-groupe">chute en ligne à ${esc(nombre(I))} A${H.tension ? ' sous ' + esc(nombre(H.tension)) + ' V' : ''}${cs[0].admis != null ? ' · admise ' + esc(nombre(cs[0].admis)) + ' V' : ''}</li>${li}</ul>`; }
+
+/* ---- le graphique ------------------------------------------------------------------- */
+/* La géométrie : ampères en abscisse (log), secondes en ordonnée (log, 1 ms à 10 000 s). L'abscisse couvre la gamme et
+   le profil, jamais moins de trois décades. */
+const DJ = { W: 440, H: 300, L: 46, R: 14, T: 26, B: 30, ylo: -3, yhi: 4 };
+function geometrieDisjonction(d) { const P = d.points.filter(p => p.i > 0), cal = d.calibre || 10;
+  let lo = Math.min(0.3, ...P.map(p => p.i / 3), cal * 0.5), hi = Math.max(300, ...P.map(p => p.i * 3), cal * 20); lo = Math.pow(10, Math.floor(Math.log10(lo) * 2) / 2); hi = Math.pow(10, Math.ceil(Math.log10(hi) * 2) / 2);
+  const xlo = Math.log10(lo), xhi = Math.log10(hi), { W, H, L, R, T, B, ylo, yhi } = DJ;
+  const X = i => L + (Math.log10(i) - xlo) / (xhi - xlo) * (W - L - R), Y = t => T + (yhi - Math.log10(Math.min(Math.pow(10, yhi), Math.max(Math.pow(10, ylo), t)))) / (yhi - ylo) * (H - T - B);
+  return { xlo, xhi, X, Y, xb: i => Math.min(W - R, Math.max(L, X(i))), iDe: x => Math.pow(10, xlo + (x - L) / (W - L - R) * (xhi - xlo)), tDe: y => Math.pow(10, yhi - (y - T) / (H - T - B) * (yhi - ylo)) }; }
+/* L'escalier du profil et ses points : du haut (le permanent, pour toujours) vers le bas — à chaque point, descendre à sa
+   durée puis aller à droite à son courant. Rouge s'il déclenche. */
+function profilSvg(d, G) { const P = d.points.filter(p => p.i > 0).slice().sort((a, b) => a.i - b.i), { T, H, B } = DJ; if (!P.length) return '';
+  let x = G.xb(P[0].i), y = T, path = `M${f1(x)} ${f1(y)}`, ronds = '';
+  P.forEach((p, k) => { if (k) { y = G.Y(p.t); path += ` L${f1(x)} ${f1(y)}`; x = G.xb(p.i); path += ` L${f1(x)} ${f1(y)}`; }
+    const cy = k ? y : T + 4, dx = x > DJ.W * 0.72 ? -8 : 8;
+    ronds += `<g class="dj-pt${p.ok === false ? ' ko' : p.serre ? ' serre' : ''}" data-k="${escA(p.k)}"><circle class="dj-halo" cx="${f1(x)}" cy="${f1(cy)}" r="11"/><circle class="dj-point" cx="${f1(x)}" cy="${f1(cy)}" r="4"/><text class="dj-etiq" x="${f1(x + dx)}" y="${f1(cy - 7)}" text-anchor="${dx > 0 ? 'start' : 'end'}">${esc(p.nom)}</text></g>`; });
+  path += ` L${f1(x)} ${H - B}`;
+  return `<path class="dj-systeme${d.valide ? '' : ' ko'}" d="${path}"/>${ronds}`; }
+function graphiqueDisjonction(d) { const G = geometrieDisjonction(d), { W, H, L, R, T, B, ylo, yhi } = DJ, cal = d.calibre;
   let s = '';
-  for (let e = x0; e <= x1; e++) s += `<line class="dj-grille" x1="${f1(X(Math.pow(10, e)))}" y1="${T}" x2="${f1(X(Math.pow(10, e)))}" y2="${H - B}"/><text x="${f1(X(Math.pow(10, e)))}" y="${H - B + 11}" text-anchor="middle">${nombre(Math.pow(10, e))}</text>`;
-  for (let e = y0; e <= y1; e++) s += `<line class="dj-grille" x1="${L}" y1="${f1(Y(Math.pow(10, e)))}" x2="${W - R}" y2="${f1(Y(Math.pow(10, e)))}"/><text x="${L - 4}" y="${f1(Y(Math.pow(10, e))) + 3}" text-anchor="end">${e >= 3 ? nombre(Math.pow(10, e - 3)) + 'k' : nombre(Math.pow(10, e))}</text>`;
-  s += `<text x="${f1((L + W - R) / 2)}" y="${H - 2}" text-anchor="middle" class="dj-titre">× In</text><text transform="translate(9 ${f1((T + H - B) / 2)}) rotate(-90)" text-anchor="middle" class="dj-titre">s</text>`;
-  const rapide = d.courbes[0], b0 = rapide.brut[0], bn = rapide.brut[rapide.brut.length - 1];
-  s += `<path class="dj-zone" d="M${L} ${T} L${f1(xb(b0.m))} ${T} L${rapide.brut.map(pt).join(' L')} L${f1(xb(bn.m))} ${H - B} L${L} ${H - B} Z"/>`;
-  d.courbes.forEach((c, k) => { s += `<path class="dj-courbe" style="stroke:${COULEURS_COURBES[Math.min(k, COULEURS_COURBES.length - 1)]}" d="M${c.brut.map(pt).join(' L')}"/>`; });
-  // le profil : du haut (le permanent, pour toujours) vers le bas, un escalier — à chaque point, descendre puis aller à droite
-  const P = d.points.filter(p => p.multiple > 0).slice().sort((a, b) => a.i - b.i);
-  if (P.length) { let x = xb(P[0].multiple), y = T, path = `M${f1(x)} ${f1(y)}`, ronds = '';
-    P.forEach((p, k) => { if (k) { y = Y(borne(p.t)); path += ` L${f1(x)} ${f1(y)}`; x = xb(p.multiple); path += ` L${f1(x)} ${f1(y)}`; }
-      ronds += `<circle class="dj-point${p.ok === false ? ' ko' : ''}" cx="${f1(x)}" cy="${f1(k ? y : T + 3)}" r="3.2"><title>${escA(p.nom + ' : ' + amperes(p.i) + (isFinite(p.t) ? ' pendant ' + secondes(p.t) : ', pour toujours'))}</title></circle>`; });
-    path += ` L${f1(x)} ${H - B}`; s += `<path class="dj-systeme${d.valide ? '' : ' ko'}" d="${path}"/>${ronds}`; }
+  // la grille : les décades en abscisse (et 2, 5 entre elles), en ordonnée
+  for (let e = Math.floor(G.xlo); e <= Math.ceil(G.xhi); e++) [1, 2, 5].forEach(m => { const v = m * Math.pow(10, e); if (v < Math.pow(10, G.xlo) - 1e-9 || v > Math.pow(10, G.xhi) + 1e-9) return;
+    s += `<line class="dj-grille${m === 1 ? '' : ' fine'}" x1="${f1(G.X(v))}" y1="${T}" x2="${f1(G.X(v))}" y2="${H - B}"/><text x="${f1(G.X(v))}" y="${H - B + 12}" text-anchor="middle">${nombre(v)}</text>`; });
+  for (let e = ylo; e <= yhi; e++) s += `<line class="dj-grille" x1="${L}" y1="${f1(G.Y(Math.pow(10, e)))}" x2="${W - R}" y2="${f1(G.Y(Math.pow(10, e)))}"/><text x="${L - 5}" y="${f1(G.Y(Math.pow(10, e))) + 3}" text-anchor="end">${e >= 3 ? nombre(Math.pow(10, e - 3)) + 'k' : nombre(Math.pow(10, e))}</text>`;
+  s += `<text x="${f1((L + W - R) / 2)}" y="${H - 3}" text-anchor="middle" class="dj-titre">A</text><text transform="translate(10 ${f1((T + H - B) / 2)}) rotate(-90)" text-anchor="middle" class="dj-titre">s</text>`;
+  const pt = (p, c) => f1(G.xb(p.m * c)) + ' ' + f1(G.Y(p.t)), rapide = d.courbes[0];
+  s += `<rect class="dj-capte" x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="transparent"/>`;
+  // les courbes fantômes des autres calibres de la gamme : la plus rapide de chacun, en gris ; un clic la retient
+  d.gamme.forEach(g => { if (g.calibre === cal) return; const xe = G.xb(multipleAdmis(rapide, 0.3) * g.calibre); if (xe >= W - R - 2) return;
+    s += `<g class="dj-fantome${g.valide === true ? ' ok' : g.valide === false ? ' ko' : ''}" data-cal="${g.calibre}"><path d="M${rapide.brut.map(p => pt(p, g.calibre)).join(' L')}"/><text x="${f1(xe + 3)}" y="${f1(G.Y(0.3) + 3)}">${nombre(g.calibre)}</text></g>`; });
+  if (cal) { const b0 = rapide.brut[0], bn = rapide.brut[rapide.brut.length - 1];
+    s += `<path class="dj-zone" d="M${L} ${T} L${f1(G.xb(b0.m * cal))} ${T} L${rapide.brut.map(p => pt(p, cal)).join(' L')} L${f1(G.xb(bn.m * cal))} ${H - B} L${L} ${H - B} Z"/>`;
+    d.courbes.forEach((c, k) => { s += `<path class="dj-courbe" style="stroke:${COULEURS_COURBES[Math.min(k, COULEURS_COURBES.length - 1)]}" d="M${c.brut.map(p => pt(p, cal)).join(' L')}"><title>${escA(c.nom + ' · ' + amperes(cal))}</title></path>`; }); }
+  s += `<g class="dj-prof">${profilSvg(d, G)}</g>`;
+  s += `<g class="dj-vise" hidden><line class="dj-croix" x1="0" y1="0" x2="0" y2="0"/><line class="dj-croix" x1="0" y1="0" x2="0" y2="0"/></g>`;
   s += `<rect class="dj-axe" x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="none"/>`;
-  const legende = d.courbes.map((c, k) => `<span><i style="background:${COULEURS_COURBES[Math.min(k, COULEURS_COURBES.length - 1)]}"></i>${esc(c.nom)}</span>`).join('') + (P.length ? '<span><i style="background:#26323f"></i>profil</span>' : '');
-  return `<figure class="dj-graphe"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Courbes de disjonction et profil de charge">${s}</svg><figcaption class="dj-legende">${legende}</figcaption></figure>`; }
-/* Les champs : chaque changement s'écrit au contrat (Ctrl+Z le défait) et la fiche se refait. */
-function lierDisjonction(nom) { const sec = $('ba-equip').querySelector('.fi-dj'); if (!sec) return;
-  const n = v => { const t = String(v == null ? '' : v).trim().replace(',', '.'); if (t === '') return null; const x = parseFloat(t); return isNaN(x) || x < 0 ? null : x; };
-  const lire = () => { const c = {}; const cal = n($('dj-calibre').value); c.calibre = cal > 0 ? cal : null;
-    PHASES.forEach(([k]) => { const i = sec.querySelector(`[data-dj="${k}"][data-q="i"]`), t = sec.querySelector(`[data-dj="${k}"][data-q="t"]`); c[k] = { i: i ? n(i.value) : null, t: t ? n(t.value) : null }; });
+  const legende = d.courbes.map((c, k) => `<span><i style="background:${COULEURS_COURBES[Math.min(k, COULEURS_COURBES.length - 1)]}"></i>${esc(c.nom)}</span>`).join('') + (d.points.length ? '<span><i class="prof"></i>profil</span>' : '') + '<span><i class="fant"></i>autres calibres</span>';
+  return `<figure class="dj-graphe" data-xlo="${G.xlo}" data-xhi="${G.xhi}"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Courbes de disjonction du calibre retenu, les autres calibres en gris, et le profil de charge">${s}</svg><div class="dj-tip" hidden></div><figcaption class="dj-legende">${legende}</figcaption></figure>`; }
+
+/* ---- les gestes --------------------------------------------------------------------- */
+/* Les puces, les états, le graphique : chaque changement s'écrit au contrat (Ctrl+Z le défait). L'écriture attend que
+   le focus se pose : si l'on est passé à un autre champ de la fiche, la gamme et le graphique se refont EN PLACE (les
+   champs restent sous les doigts) ; sinon la fiche entière se refait. */
+function lierDisjonction(nom) { const box = $('ba-equip'), sec = box.querySelector('.fi-dj'); if (!sec) return;
+  const E = { d: disjonctionDe(nom) };
+  const lire = () => { const c = { calibre: E.d.ecrit || null, plus: [] };
+    const num = (k, q) => { const el = sec.querySelector(`[data-dj="${k}"][data-q="${q}"]`); const x = el ? nombreLu(el.value) : null; return x != null && x >= 0 ? x : null; };
+    ['dem', 'trans', 'perm'].forEach(k => { c[k] = { i: num(k, 'i'), t: k === 'perm' ? null : num(k, 't') }; });
+    sec.querySelectorAll('.dj-etat[data-k^="plus"]').forEach(el => { const k = el.dataset.k, n = el.querySelector('[data-q="nom"]'); c.plus.push({ nom: n ? n.value.trim() : '', i: num(k, 'i'), t: num(k, 't') }); });
     return c; };
-  sec.querySelectorAll('input').forEach(el => el.addEventListener('change', () => { histPush('profil de charge de ' + nom); app.contrat.charges.set(nom, lire()); apresEdition(); })); }
+  const rafraichir = () => { E.d = disjonctionDe(nom); const g = sec.querySelector('.dj-gamme'), f = sec.querySelector('.dj-graphe');
+    if (g) g.outerHTML = gammeHtml(nom, E.d); if (f && E.d.courbes.length) f.outerHTML = graphiqueDisjonction(E.d); lierPuces(); lierGraphique(sec, nom, E, lire, ecrire); };
+  const ecrire = (quoi, c) => setTimeout(() => { histPush(quoi); app.contrat.charges.set(nom, c); apresEdition();
+    const a = document.activeElement; if (a && a.tagName === 'INPUT' && box.contains(a)) rafraichir(); else if (box.contains(a)) rendreFiche(); }, 0);
+  // les puces : retenir un calibre ; presser celui qui l'est déjà rend celui du part number (ou l'idéal)
+  const retenir = cal => { const d = E.d, c = lire(); c.calibre = cal === d.calibre ? null : cal; if (c.calibre === (d.ecrit || null)) return;
+    ecrire('calibre de ' + nom, c); dire(c.calibre ? amperes(c.calibre) + ' retenu pour ' + nom + '.' : nom + ' : ' + (d.pn ? 'le calibre du part number' : 'le calibre idéal') + ' est repris.'); };
+  const lierPuces = () => { sec.querySelectorAll('.dj-chip').forEach(b => b.onclick = () => retenir(+b.dataset.cal)); sec.querySelectorAll('.dj-fantome').forEach(g => g.onclick = () => retenir(+g.dataset.cal)); };
+  sec.querySelectorAll('input').forEach(el => el.addEventListener('change', () => ecrire('profil de charge de ' + nom, lire())));
+  const plus = $('dj-plus'); if (plus) plus.onclick = () => { const c = lire(); c.plus.push({ nom: 'état ' + (c.plus.length + 3), i: null, t: null }); ecrire('un état de plus sur ' + nom, c); };
+  sec.querySelectorAll('.dj-x').forEach(b => b.onclick = () => { const c = lire(), j = +b.dataset.x.slice(4); c.plus.splice(j, 1); ecrire('un état de moins sur ' + nom, c); });
+  lierPuces(); lierGraphique(sec, nom, E, lire, ecrire); }
+/* Le graphique : survoler lit le courant et la durée (et, sur un point, ce que le disjoncteur y tient) ; glisser un point
+   change le courant et la durée de son état, écrits au contrat quand on lâche. */
+function lierGraphique(sec, nom, E, lire, ecrire) { const d = E.d, fig = sec.querySelector('.dj-graphe'), svg = fig && fig.querySelector('svg'); if (!svg || !d.courbes.length) return;
+  const tip = fig.querySelector('.dj-tip'), vise = svg.querySelector('.dj-vise'), G = geometrieDisjonction(d), { W, H, L, R, T, B } = DJ;
+  const local = e => { const r = svg.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H }; };
+  const dansLeCadre = p => p.x >= L && p.x <= W - R && p.y >= T && p.y <= H - B;
+  const montrer = (p, html) => { const r = svg.getBoundingClientRect(); tip.innerHTML = html; tip.hidden = false;
+    const gauche = p.x > W * 0.62; tip.style.left = gauche ? '' : (p.x / W * r.width + 14) + 'px'; tip.style.right = gauche ? ((W - p.x) / W * r.width + 14) + 'px' : ''; tip.style.top = Math.max(4, p.y / H * r.height - 28) + 'px'; };
+  const cacher = () => { tip.hidden = true; vise.hidden = true; };
+  const croix = p => { const [a, b] = vise.querySelectorAll('line'); a.setAttribute('x1', f1(p.x)); a.setAttribute('x2', f1(p.x)); a.setAttribute('y1', T); a.setAttribute('y2', H - B); b.setAttribute('x1', L); b.setAttribute('x2', W - R); b.setAttribute('y1', f1(p.y)); b.setAttribute('y2', f1(p.y)); vise.hidden = false; };
+  const motPoint = pt => { const m = pt.marges[0], froid = pt.marges[pt.marges.length - 1];
+    const tenue = !m ? '' : pt.t === Infinity ? (m.ok ? `le ${amperes(d.calibre)} ne déclenche jamais (jusqu'à ${amperes(m.admis)})` : `le ${amperes(d.calibre)} finit par déclencher à ${m.courbe} — il tient jusqu'à ${amperes(m.admis)}`)
+      : `à ${m.courbe} le ${amperes(d.calibre)} tient ${secondes(m.temps)}${froid && froid !== m ? `, à ${froid.courbe} ${secondes(froid.temps)}` : ''}`;
+    return `<b>${esc(pt.nom)}</b> ${esc(amperes(pt.i))}${pt.t === Infinity ? ' pour toujours' : ' pendant ' + esc(secondes(pt.t))}${tenue ? `<br>${esc(tenue)}` : ''}${pt.ok === false ? '<br><em>déclenche</em>' : pt.serre ? '<br><em>touche la courbe</em>' : ''}`; };
+  let prise = null;   // le point qu'on glisse : son état, et le profil en cours
+  svg.addEventListener('pointermove', e => { const p = local(e);
+    if (prise) { const i = Math.max(0.01, G.iDe(Math.min(W - R, Math.max(L, p.x)))), t = G.tDe(Math.min(H - B, Math.max(T, p.y)));
+      const el = prise.etat, ri = +i.toPrecision(3), rt = +t.toPrecision(2); el.i = ri; if (prise.k !== 'perm') el.t = rt;
+      const dd = { ...d, ...verdictDisjonction(app.norme, '', d.calibre, prise.profil) }; svg.querySelector('.dj-prof').innerHTML = profilSvg(dd, G);
+      montrer(p, `<b>${esc(el.nom)}</b> ${esc(amperes(ri))}${prise.k === 'perm' ? '' : ' pendant ' + esc(secondes(rt))}`); return; }
+    if (!dansLeCadre(p)) { cacher(); return; }
+    const g = e.target.closest && e.target.closest('.dj-pt'), fant = e.target.closest && e.target.closest('.dj-fantome');
+    if (g) { const pt = d.points.find(x => x.k === g.dataset.k); if (pt) { vise.hidden = true; montrer(p, motPoint(pt)); return; } }
+    if (fant) { const gm = d.gamme.find(x => x.calibre === +fant.dataset.cal); vise.hidden = true; montrer(p, `<b>${esc(amperes(gm.calibre))}</b> ${gm.valide == null ? '' : gm.valide ? (gm.ideal ? 'tiendrait — l’idéal' : gm.serre ? 'tiendrait, en touchant la courbe' : 'tiendrait') : 'déclencherait'}<br><em>cliquer pour le retenir</em>`); return; }
+    croix(p); montrer(p, `${esc(amperes(G.iDe(p.x)))} · ${esc(secondes(G.tDe(p.y)))}`); });
+  svg.addEventListener('pointerleave', () => { if (!prise) cacher(); });
+  svg.addEventListener('pointerdown', e => { const g = e.target.closest && e.target.closest('.dj-pt'); if (!g || e.button) return;
+    const profil = lire(), k = g.dataset.k, etat = k === 'perm' ? profil.perm : /^plus/.test(k) ? profil.plus[+k.slice(4)] : profil[k]; if (!etat) return;
+    // un point qui porte deux états au même courant (démarrage et transition) : on glisse le premier
+    prise = { k, etat, profil }; svg.classList.add('tient'); try { svg.setPointerCapture(e.pointerId); } catch (_) { } e.preventDefault(); });
+  const lacher = e => { if (!prise) return; const c = prise.profil; prise = null; svg.classList.remove('tient'); cacher(); try { svg.releasePointerCapture(e.pointerId); } catch (_) { } ecrire('profil de charge de ' + nom, c); };
+  svg.addEventListener('pointerup', lacher); svg.addEventListener('pointercancel', lacher); }
 
 /* ───────── 08-fiche.js ───────── */
 /* ===========================================================================
    08 bis — LA FICHE : ce qu'on voit quand on clique un bloc ou un fil
    ---------------------------------------------------------------------------
-   Le lecteur : « l'essentiel, pas trop écrit, carré, qu'on se repère ». Une
-   fiche ne dit que quatre choses, dans cet ordre, sans une phrase de plus :
-     1. QUI : le repère (on le renomme en écrivant dessus) et, en une pastille,
-        s'il est conforme — le détail se déplie d'un clic ;
-     2. QUOI : la référence retenue (module, arrangement) et sa norme ;
-        « Changer » déplie les autres possibles ;
+   Le lecteur : « se mettre à la place d'un technicien, d'un ingénieur : lui
+   montrer la plus-value, pas le nom du fil ». Une fiche dit, dans cet ordre :
+     1. QUI : le repère (on le renomme en écrivant dessus) et, seulement s'il
+        y a quelque chose à reprendre, une pastille — le détail se déplie ;
+     2. QUOI : la référence retenue (module, arrangement ; sa norme se lit
+        dedans) ; « Changer » déplie les autres possibles ;
      3. À QUOI ÇA RESSEMBLE : la face, chaque contact pris à la couleur de son
         fil ;
-     4. SES FILS, une ligne chacun : la borne, le fil, où il va. Survoler
-        allume le fil sur le plan et son contact sur la face ; cliquer y va.
+     4. SES FILS, une ligne chacun : le contact, le type du fil, le contact à
+        sertir, où il va — le numéro en retrait. Survoler allume le fil sur le
+        plan et son contact sur la face ; cliquer y va ;
+     5. AUTOUR DU CONNECTEUR : ce qu'on sertit, le toron, le raccord, le
+        band-it, le manchon, la gaine, avec leur référence.
+   La fiche d'un FIL : ses deux bouts, puis les faits — le câble, ce qu'il
+   admet, le courant qui le traverse (celui du disjoncteur en amont), la
+   chute, la longueur. Celle d'un DISJONCTEUR : 08 quinquies.
    Un équipement à plusieurs connecteurs les range en onglets, un à la fois.
-   Le reste — renommer, la désignation, supprimer — est sous « ··· ». La fiche
-   vit dans l'inspecteur, à droite ; le contrat se corrige dans le tableau.
+   Le pied : le tableau, « + fil », le relief ; sous « ··· », renommer, la
+   désignation, supprimer. La fiche vit dans l'inspecteur, à droite.
    =========================================================================== */
 
 const FI = { onglet: {}, change: {} };   // d'une fiche à l'autre : l'onglet ouvert de chaque bloc, « Changer » déplié ou non
@@ -6879,7 +7005,8 @@ const ICONES = {
   retour: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
   loupe: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   voir: '<circle cx="12" cy="12" r="3"/><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/>',
-  points: '<circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/>'
+  points: '<circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>'
 };
 const ico = (k, cls) => `<svg class="ico${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" aria-hidden="true">${ICONES[k]}</svg>`;
 const coulDeFil = f => couleursDesRoutes().get((f.l && f.l.route) || '') || '#26323f';
@@ -6905,25 +7032,27 @@ function fiTete(o) {
     + `<div class="min0">${nom}</div><button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)">${ico('fermer')}</button></header>`
     + `<div class="fi-ligne">${o.etat || ''}${o.sous ? `<span class="fi-sous">${o.sous}</span>` : ''}`
     + (o.designation != null ? `<input class="fi-des" id="eq-des" value="${escA(o.designation)}"${o.designation ? '' : ' hidden'} placeholder="désignation" aria-label="Désignation, écrite sous le repère" spellcheck="false" autocomplete="off">` : '') + '</div>'; }
-/* L'état, en une pastille : vert, orange ou rouge ; un clic déplie le détail (les problèmes, d'office). */
-function fiEtat(ko, att, texteOk) {
-  if (!ko.length && !att.length) return `<span class="fi-etat ok" title="${escA(texteOk || '')}"><i aria-hidden="true">✓</i>Conforme</span>`;
+/* L'état, en une pastille — seulement s'il y a quelque chose à dire (le lecteur : « conforme, tu peux l'enlever ») ;
+   un clic déplie le détail (les problèmes, d'office). */
+function fiEtat(ko, att) {
+  if (!ko.length && !att.length) return '';
   const cls = ko.length ? 'ko' : 'att', xs = ko.length ? ko : att, titre = ko.length ? (ko.length > 1 ? ko.length + ' problèmes' : '1 problème') : (att.length > 1 ? att.length + ' à voir' : '1 à voir');
   return `<details class="fi-etat ${cls}"${ko.length ? ' open' : ''}><summary><i aria-hidden="true">${cls === 'ko' ? '✕' : '!'}</i>${titre}${ico('bas', 'fi-chevron')}</summary><ul>${xs.map(t => `<li>${esc(t)}</li>`).join('')}</ul></details>`; }
-/* La référence retenue, sa norme, et « Changer » qui déplie les autres. */
+/* La référence retenue (sa norme se lit dedans : on ne la répète pas), et « Changer » qui déplie les autres. */
 function fiRef(ref, famille, cle, changer, titre) {
-  return `<div class="fi-ref-ligne"><b class="fi-ref"${titre ? ` title="${escA(titre)}"` : ''}>${esc(ref || '—')}</b>`
-    + (famille ? `<span class="fi-norme ${classeFamille(famille)}">${esc(nomDeFamille(app.norme, famille))}</span>` : '') + '<span class="espace"></span>'
+  return `<div class="fi-ref-ligne"><b class="fi-ref"${titre ? ` title="${escA(titre)}"` : ''}>${esc(ref || '—')}</b><span class="espace"></span>`
     + (changer ? `<button class="fi-lien" data-changer="${escA(cle)}" aria-expanded="${!!FI.change[cle]}">Changer${ico('bas', 'fi-chevron')}</button>` : '') + '</div>'
     + (changer ? `<div class="fi-changer" data-volet="${escA(cle)}"${FI.change[cle] ? '' : ' hidden'}>${changer}</div>` : ''); }
+/* Des faits, en grille : la clé en petit, la valeur en chasse fixe. rows : [[clé, valeur html, titre?]] */
+const faits = (rows, cls) => { const xs = rows.filter(r => r && r[1]); return xs.length ? `<dl class="fi-faits${cls ? ' ' + cls : ''}">${xs.map(([k, v, t]) => `<dt>${esc(k)}</dt><dd${t ? ` title="${escA(t)}"` : ''}>${v}</dd>`).join('')}</dl>` : ''; };
+const arrondi = (x, n) => x == null || !isFinite(x) ? null : Math.round(x * Math.pow(10, n)) / Math.pow(10, n);
+const volts = u => u == null ? '—' : nombre(arrondi(u, u < 0.1 ? 3 : 2)) + ' V';
 const puces = (attr, items, actif) => `<div class="fi-puces">${items.map(([f, t]) => `<button class="fi-chip${f ? ' ' + classeFamille(f) : ''}" ${attr}="${escA(f)}" aria-pressed="${f === actif}">${esc(t)}</button>`).join('')}</div>`;
 const candidat = (cle, m, retenu) => `<button class="cand" data-cle="${escA(cle)}" data-ref="${escA(m.reference)}" aria-pressed="${m.reference === retenu}">${pictoModule(m)}<b>${esc(m.variante)}</b><span>${esc(resumeModule(m))}</span></button>`;
 const liens = xs => xs.filter(Boolean).length ? `<div class="fi-liens">${xs.filter(Boolean).join('')}</div>` : '';
 /* Le sexe des contacts qu'on sertit : deux puces (une prise : la fiche d'un sexe, l'embase de l'autre). */
 const pucesSexe = (cle, actif, prise) => `<div class="fi-puces">${[['F', prise ? 'Fiche femelle · embase mâle' : 'Contacts femelles'], ['M', prise ? 'Fiche mâle · embase femelle' : 'Contacts mâles']]
   .map(([v, t]) => `<button class="fi-chip" data-sexe="${escA(cle)}" data-v="${v}" aria-pressed="${v === actif}">${esc(t)}</button>`).join('')}</div>`;
-/* La nomenclature : ce qu'il faut sertir, chaque contact avec son nombre. */
-const nomenclature = (xs, titre) => xs && xs.length ? `<div class="fi-nomen">${titre ? `<span class="fi-nomen-t">${esc(titre)}</span>` : ''}${xs.map(x => `<span><b>${x.n}×</b>${esc(x.reference)}${x.accessoire ? `<i>+ ${esc(x.accessoire)}</i>` : ''}</span>`).join('')}</div>` : '';
 /* Une face qui tient dans la largeur de la fiche : le SVG se met à l'échelle. */
 const faceAjustee = (f, titre) => `<figure class="fi-face"><svg class="mj" viewBox="0 0 ${f1(f.w)} ${f1(f.h)}" style="max-width:${f1(Math.min(f.w * 1.15, 520))}px" role="img" aria-label="${escA(titre || 'Face')}">${f.svg}</svg>${titre ? `<figcaption>${esc(titre)}</figcaption>` : ''}</figure>`;
 // le symétrique d'un module, comme on voit l'autre partie de face (fiche et embase sont symétriques par l'axe vertical)
@@ -6932,27 +7061,31 @@ const miroir = m => ({ ...m, contacts: m.contacts.map(c => ({ ...c, c: m.colonne
 const occupant = (f, ko) => { const cl = coulDeFil(f); return { i: cleFil(f.l), cable: f.cable || (f.l && f.l.origine === null ? 'neuf' : '—'), couleur: cl, couleurClaire: melanger(cl, 0.72), ko: !!ko }; };
 /* Le contact à sertir, en un mot : « EN3155-003F2020 + E0718-20-30 ». */
 const motSertir = st => st ? st.reference + (st.accessoire ? ' + ' + st.accessoire : '') : '';
-/* Une ligne de fil : la borne (ou le contact), le fil, son type en retrait — et le contact à sertir, quand la norme le
-   dit —, où il va. */
+/* Une ligne de fil : la borne (ou le contact), le type du fil, le contact à sertir quand la norme le dit, où il va —
+   et le numéro du fil, en retrait (le lecteur : « le nom du fil, on s'en fout un peu ; entre quoi et quoi, le DR20,
+   l'intensité, voilà ce qui compte »). */
 function ligneFil(ct, f, o) { o = o || {}; const k = cleFil(f.l), neuf = !!(f.l && f.l.origine === null), st = motSertir(o.sertir);
   return `<li class="fi-fil${o.ko ? ' ko' : ''}${neuf ? ' neuf' : ''}"${k ? ` data-i="${k}" tabindex="0" role="button" title="${escA((f.cable || 'fil à créer') + (f.type ? ' · ' + f.type : '') + (st ? ' · contact ' + st : '') + ' — voir sur le plan')}"` : ''}>`
-    + `<span class="fi-ct">${ct}</span>${puceFil(f)}<b class="fi-w">${neuf ? 'à créer' : esc(f.cable || '—')}</b><span class="fi-t">${esc(f.type || '')}${st ? `<em>${esc(st)}</em>` : ''}</span>`
-    + `<span class="fi-dest${f.amont ? ' amont' : ''}">${ico('fleche')}<span>${esc(o.dest != null ? o.dest : destination(f))}</span></span>`
-    + (o.tag ? `<span class="fi-tag" title="Barrette à poser sur cette borne">${esc(o.tag)}</span>` : '') + (o.ko ? `<span class="fi-ko">${esc(o.ko)}</span>` : '') + '</li>'; }
+    + `<span class="fi-ct">${ct}</span>${puceFil(f)}<span class="fi-type">${esc(f.type || '—')}</span><span class="fi-sertir">${esc(st)}</span>`
+    + `<span class="fi-dest${f.amont ? ' amont' : ''}">${ico('fleche')}<span>${esc(o.dest != null ? o.dest : destination(f))}</span>${o.tag ? `<span class="fi-tag" title="Barrette à poser sur cette borne">${esc(o.tag)}</span>` : ''}</span>`
+    + `<span class="fi-w${neuf ? ' neuf' : ''}">${neuf ? 'à créer' : esc(f.cable || '')}</span>` + (o.ko ? `<span class="fi-ko">${esc(o.ko)}</span>` : '') + '</li>'; }
 const fiListe = lignes => lignes ? `<ul class="fi-liste">${lignes}</ul>` : '';
 /* Les onglets : un panneau à la fois ; l'onglet ouvert se garde par bloc. items [{ id, titre, compte, ko, corps }] */
 function fiOnglets(cle, items) { if (items.length === 1) return items[0].corps;
   const actif = items.some(x => x.id === FI.onglet[cle]) ? FI.onglet[cle] : items[0].id;
   return `<div class="fi-onglets" role="tablist" data-cle="${escA(cle)}">${items.map(x => `<button role="tab" data-onglet="${escA(x.id)}" aria-selected="${x.id === actif}"${x.ko ? ' class="ko"' : ''}><b>${esc(x.titre)}</b><span>${esc(x.compte)}</span></button>`).join('')}</div>`
     + items.map(x => `<div class="fi-panneau" role="tabpanel" data-panneau="${escA(x.id)}"${x.id === actif ? '' : ' hidden'}>${x.corps}</div>`).join(''); }
-/* Le pied : le tableau, le relief, « voir », et sous « ··· » ce qu'on fait rarement. */
+/* Le pied : le tableau, « + fil » (une liaison de plus depuis ce repère, dans le tableau), le relief, « voir », et sous
+   « ··· » ce qu'on fait rarement. */
 function fiPied(o) { o = o || {};
   const boutons = [o.tableau != null ? `<button class="fi-bouton" id="fi-tableau" data-filtre="${escA(o.tableau)}" title="Ses liaisons dans le tableau">${ico('tableau')}<span>Tableau</span></button>` : '',
+    o.fil ? `<button class="fi-bouton" id="fi-fil-plus" data-de="${escA(o.fil)}" title="Ajouter un fil depuis ${escA(o.fil)} : une ligne de plus dans le tableau, à remplir">${ico('plus')}<span>Fil</span></button>` : '',
     o.relief ? `<button class="fi-bouton" id="eq-relief" title="La pièce en perspective (ou double-clic sur le bloc)">${ico('relief')}<span>Relief</span></button>` : '',
     o.voir ? `<button class="fi-bouton" data-choisir-bloc="${escA(o.voir)}">${ico('voir')}<span>${esc(o.voir)}</span></button>` : ''].join('');
   const menu = (o.menu || []).map(([id, t, cls]) => `<button role="menuitem" id="${id}"${cls ? ` class="${cls}"` : ''}>${esc(t)}</button>`).join('');
   return `<footer class="fi-pied">${boutons}<span class="espace"></span>${menu ? `<div class="fi-plus"><button class="fi-x" id="fi-menu" aria-haspopup="true" aria-expanded="false" aria-label="Plus">${ico('points')}</button><div class="fi-menu" id="fi-menu-liste" role="menu" hidden>${menu}</div></div>` : ''}</footer>`; }
 const MENU_BLOC = [['fi-renommer', 'Renommer'], ['fi-designer', 'Désignation'], ['eq-del', 'Supprimer', 'danger']];
+const MENU_FIL = [['fil-tableau', 'Corriger dans le tableau'], ['fil-del', 'Supprimer ce fil', 'danger']];
 
 /* ---- la fiche ------------------------------------------------------------------ */
 function rendreFiche() { const box = $('ba-equip'), c = app.cible; if ($('inspecteur').hidden) return;
@@ -6974,46 +7107,58 @@ function ficheBloc(nom) {
 const boutDeFil = (rep, borne, pn, via, st) => `<button class="fi-bout" data-choisir-bloc="${escA(rep)}"><b>${esc(rep)}</b><span>borne ${esc(borne || '—')}</span>`
   + (pn ? `<small>${esc(pn)}</small>` : '') + (st ? (st.sertir ? `<small class="fi-bout-ct" title="Le contact à sertir sur ce fil, et son accessoire">${esc(motSertir(st.sertir))}</small>` : st.ko ? '<small class="fi-bout-ct ko">aucun contact pour ce fil</small>' : '') : '')
   + (via ? `<em>par ${esc(via)}</em>` : '') + '</button>';
+/* LA FICHE D'UN FIL, pour celui qui le pose : d'où à où (ses deux bouts, le contact à sertir à chaque bout), puis les
+   faits — le câble, ce qu'il admet, le courant qui le traverse (celui du disjoncteur en amont), la chute en ligne,
+   sa longueur, son folio. Le numéro du fil est en tête, en petit : il ne dit rien de ce qu'il faut faire. */
 function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null, jauge = jaugeDuType(l.type), st = typeof sertirDuFil === 'function' ? sertirDuFil(l) : { de: null, vers: null };
   const folios = neuf ? [app.plan] : app.nFolios ? (foliosParSource().get(cleDe(l)) || []) : (l.plan ? [l.plan] : []);
   // sur le plan, un bout peut passer par une barrette à poser : on le dit sous ce bout
   const p = neuf ? null : liaisonsDuPlan().find(x => x.origine && x.aPoser && sourceDe(x) === l);
   const via = cote => p && VT_A_POSER.test(p[cote]) ? p[cote] + ' · borne ' + (cote === 'de' ? p.borneDe : p.borneVers) : '';
-  const att = []; if (!l.type) att.push('type de fil inconnu : la jauge ne se vérifie pas');
+  const att = [], ko = []; if (!l.type) att.push('type de fil inconnu : la jauge ne se vérifie pas');
   if (neuf) att.push('fil à créer : donne-lui son numéro en posant ' + l.aPoser + ' au contrat');
-  const fn = l.type ? filDeNorme(app.norme, l.type, jauge) : null, adm = fn && fn.intensite != null ? [['continu', fn.intensite], ['2 s', fn.i2s], ['10 s', fn.i10s], ['1 min', fn.i1min]].filter(x => x[1] != null) : [];
-  const sous = [l.route ? esc(l.route) : '', l.type ? esc(l.type) + (jauge != null ? ' · ' + jauge + ' AWG' : '') : '',
-    adm.length ? `<span title="${escA('Ce que le fil admet (norme des fils) : ' + adm.map(x => amperes(x[1]) + ' ' + x[0]).join(' · ') + (fn.resistance != null ? ' · ' + nombre(fn.resistance) + ' Ω/km' : ''))}">${esc(amperes(fn.intensite))} en continu</span>` : '',
-    l.longueur > 0 ? `<span title="La longueur du retest">${esc(nombre(Math.round(l.longueur * 100) / 100))} m</span>` : '', chuteDuFil(l, jauge),
-    folios.length ? 'folio ' + esc(folios.join(', ')) : '', l.harness ? `<span title="Le harness">${esc(l.harness)}</span>` : ''].filter(Boolean).join(' · ');
-  return fiTete({ nom: neuf ? 'à créer' : (l.cable || 'sans numéro'), etat: `<span class="fi-route" style="--c:${coul}"></span>` + (att.length ? fiEtat([], att) : ''), sous })
+  [st.de, st.vers].forEach((s, k) => { if (s && s.ko) ko.push('aucun contact n’accepte ce fil côté ' + (k ? l.vers : l.de)); });
+  const H = app.simu || HYPOTHESES, fn = l.type ? filDeNorme(app.norme, l.type, jauge) : null, cab = l.type ? cableDuType(app.norme, l.type) : null;
+  const fac = fn ? facteurDeclassement(app.norme, H.conditions) * facteurAmbiante(fn, H.ambiante) : 1;
+  const adm = fn && fn.intensite != null ? [['continu', fn.intensite], ['2 s', fn.i2s], ['10 s', fn.i10s], ['1 min', fn.i1min]].filter(x => x[1] != null).map(x => [x[0], x[1] * fac]) : [];
+  // le courant : celui du disjoncteur en amont, sinon l'hypothèse de la simulation
+  const al = neuf ? null : alimentationDe(l), I = al && al.perm ? al.perm : H.courant, charge = adm.length && I ? I / adm[0][1] : null;
+  const trop = adm.length ? (al ? al.points : [{ nom: 'hypothèse', i: I, t: Infinity }]).filter(pt => pt.i > intensiteAdmise(fn, pt.t) * fac + 1e-9) : [];
+  trop.forEach(pt => ko.push(`${pt.nom} ${amperes(pt.i)}${pt.t === Infinity ? '' : ' pendant ' + secondes(pt.t)} : plus que ce que le fil admet (${amperes(intensiteAdmise(fn, pt.t) * fac)})`));
+  const rd = l.type ? resistanceDuFil(app.norme, l.type, jauge) : { rho: null }, L = l.longueur > 0 ? l.longueur : H.longueur, dU = rd.rho != null ? rd.rho / 1000 * L * I : null;
+  const chemin = al ? cheminsDepuis(verite(), al.nom).find(ch => ch.segments.some(s => s.fil === l)) : null, total = chemin ? chuteDuChemin(app.norme, chemin, I, H) : null, admise = chuteAdmise(app.norme, H.tension);
+  if (total && admise && admise.chuteMax != null && total.dU > admise.chuteMax + 1e-9) ko.push(`la chute en ligne depuis ${al.nom} atteint ${volts(total.dU)} : plus que les ${volts(admise.chuteMax)} admis`);
+  const brins = cab ? (cab.brins > 1 ? cab.brins + ' brins' : '1 brin') + (cab.blindage ? ' + blindage' : '') : '';
+  const lignes = [
+    ['câble', l.type ? `<b>${esc(l.type)}</b>${jauge != null ? ` <i>${jauge} AWG</i>` : ''}${cab ? ' · ' + esc([brins, cab.nature, cab.diametre != null ? 'Ø ' + nombre(cab.diametre) + ' mm' : '', cab.section != null ? nombre(cab.section) + ' mm²' : '', cab.resistance != null ? nombre(cab.resistance) + ' mΩ/m' : '', cab.masse != null ? nombre(cab.masse) + ' g/m' : ''].filter(Boolean).join(' · ')) : (fn && fn.resistance != null ? ' · ' + esc(nombre(fn.resistance)) + ' mΩ/m' : '')}` : '', cab ? 'La base des câbles' : 'La norme des fils (EN 2853)'],
+    ['admet', adm.length ? adm.map(([q, i], k) => `${k ? '' : '<b>'}${esc(amperes(i))}${k ? '' : '</b>'} <i>${esc(q)}</i>`).join(' · ') : (l.type ? '<i>fil inconnu de la norme</i>' : ''), adm.length ? 'EN 2853, déclassé' + motFacteur(fac) + ' : ' + (H.conditions || []).join(', ') + ', ' + nombre(H.ambiante) + ' °C' : ''],
+    ['courant', I ? `<b>${esc(amperes(I))}</b>${al ? ` <i>par ${esc(al.nom)}${al.calibre ? ', ' + esc(amperes(al.calibre)) : ''}</i>` : ' <i>hypothèse</i>'}${al && al.pointe ? ` · pointe ${esc(amperes(al.pointe.i))} <i>${esc(secondes(al.pointe.t))}</i>` : ''}${charge != null ? ` · <span class="${charge > 1 ? 'fi-ko' : ''}">${Math.round(charge * 100)} % du continu</span>` : ''}` : '', al ? 'Le profil de charge de ' + al.nom : 'Le courant de la simulation (bible → hypothèses)'],
+    ['chute', dU != null ? `<b>${volts(dU)}</b> <i>sur ce fil</i>${total ? ` · ${volts(total.dU)} <i>en ligne depuis ${esc(al.nom)}${H.tension ? ', ' + nombre(Math.round(total.dU / H.tension * 1000) / 10) + ' %' : ''}${admise && admise.chuteMax != null ? ', ' + volts(admise.chuteMax) + ' admis' : ''}</i>` : ''}` : '', dU != null ? 'ΔU = ' + nombre(rd.rho) + ' Ω/km × ' + nombre(arrondi(L, 2)) + ' m × ' + nombre(I) + ' A' + (rd.source === 'câble' ? ' (la résistance du câble ' + rd.cab.cable + ')' : '') : ''],
+    ['longueur', `${esc(nombre(arrondi(L, 2)))} m <i>${l.longueur > 0 ? 'retest' : 'hypothèse'}</i>`],
+    ['où', [folios.length ? 'folio ' + esc(folios.join(', ')) : '', l.harness ? esc(l.harness) : ''].filter(Boolean).join(' · ')]];
+  return fiTete({ nom: neuf ? 'à créer' : (l.cable || 'sans numéro'), etat: fiEtat(ko, att), sous: `<span class="fi-route" style="--c:${coul}"></span>` + (l.type ? `<b>${esc(l.type)}</b>${jauge != null ? ' · ' + jauge + ' AWG' : ''}` : '') + (l.route ? ' · ' + esc(l.route) : '') })
     + `<div class="fi-trajet" style="--c:${coul}">${boutDeFil(l.de, l.borneDe, l.pnDe, via('de'), st.de)}<span class="fi-fleche"></span>${boutDeFil(l.vers, l.borneVers, l.pnVers, via('vers'), st.vers)}</div>`
-    + ficheCable(l.type) + fiPied(neuf ? { voir: l.aPoser } : { tableau: l.cable || l.de }); }
-/* La chute d'un fil, à l'hypothèse de courant de la simulation : sa longueur du retest, sinon celle de l'hypothèse. */
-function chuteDuFil(l, jauge) { if (!l.type) return ''; const rd = resistanceDuFil(app.norme, l.type, jauge); if (rd.rho == null) return '';
-  const H = app.simu || HYPOTHESES, L = l.longueur > 0 ? l.longueur : H.longueur, dU = rd.rho / 1000 * L * H.courant;
-  return `<span title="${escA('ΔU = ' + nombre(rd.rho) + ' Ω/km × ' + nombre(Math.round(L * 100) / 100) + ' m × ' + nombre(H.courant) + ' A' + (l.longueur > 0 ? '' : ' (longueur : l’hypothèse de la simulation)') + (rd.source === 'câble' ? ' — la résistance du câble ' + rd.cab.cable : ''))}">ΔU ${esc(nombre(Math.round(dU * 1000) / 1000))} V à ${esc(nombre(H.courant))} A</span>`; }
-/* Le câble d'un fil, en une ligne : ses brins, sa nature, son diamètre, sa section, sa résistance, sa masse. */
-function ficheCable(type) { const c = type ? cableDuType(app.norme, type) : null; if (!c) return '';
-  const brins = (c.brins > 1 ? c.brins + ' brins' : '1 brin') + (c.blindage ? ' + blindage' : '');
-  const xs = [brins, c.nature, c.diametre != null ? 'Ø ' + nombre(c.diametre) + ' mm' : '', c.section != null ? nombre(c.section) + ' mm²' : '', c.resistance != null ? nombre(c.resistance) + ' mΩ/m' : '', c.masse != null ? nombre(c.masse) + ' g/m' : ''].filter(Boolean);
-  return `<p class="fi-note fi-cable" title="${escA('Le câble ' + c.cable + ' dans la base des câbles' + (c.liaisons > 1 ? ' : il porte ' + c.liaisons + ' liaisons' : ''))}">${xs.map(esc).join(' · ')}</p>`; }
-/* Le faisceau d'un connecteur : ses câbles, le diamètre équivalent, la masse au mètre — ce qui choisira le raccord. */
-function faisceauHtml(fils, titre) { const d = faisceauDe(app.norme, fils); if (!d.n && !d.inconnus.length) return '';
-  const dia = d.diametre != null ? `<span title="${escA('Le toron : un rond de la section cumulée (' + nombre(Math.round(d.section * 100) / 100) + ' mm² → Ø ' + nombre(Math.round(d.deq * 100) / 100) + ' mm), plus la marge de 10 % du tutoriel' + (d.complet ? '' : ' — section incomplète, des câbles sans section'))}">Ø toron ≈ ${nombre(Math.round(d.diametre * 10) / 10)} mm${d.complet ? '' : ' ?'}</span>` : '';
-  return `<div class="fi-nomen fi-faisceau"><span class="fi-nomen-t">${esc(titre || 'faisceau')}</span>${d.n ? `<span><b>${d.n}</b>${d.n > 1 ? 'câbles' : 'câble'}</span>` : ''}${dia}${d.masse > 0 ? `<span>${nombre(Math.round(d.masse * 10) / 10)} g/m</span>` : ''}${d.inconnus.length ? `<i>${esc(d.inconnus.join(', '))} : inconnu de la base</i>` : ''}</div>`; }
-
-/* CE QUI ENGLOBE LE CONNECTEUR : le raccord, le band-it, le manchon, la gaine — par la table du tutoriel, selon ce qu'on
-   choisit sous « Changer » (reprise de blindage, étanchéité, orientation, gaine). Le choix se garde avec le contrat. */
+    + faits(lignes) + fiPied(neuf ? { voir: l.aPoser } : { tableau: l.cable || l.de, menu: MENU_FIL }); }
+/* AUTOUR DU CONNECTEUR : ce qu'on sertit, le toron, et ce qui l'englobe — le raccord, le band-it, le manchon, la gaine,
+   avec leur référence quand la table la donne — par le tutoriel, selon ce qu'on choisit sous « Changer » (reprise de
+   blindage, étanchéité, orientation, gaine). Le choix se garde avec le contrat. `nomen` : les contacts à sertir. */
 const PUCES_RACCORD = [['blindage', 'reprise de blindage', [['NO', 'aucune'], ['GND', 'sur le corps'], ['BLI', 'par cosse'], ['CONTACT', 'sur un contact']]],
   ['etanche', 'étanchéité', [['false', 'pas requise'], ['true', 'requise']]], ['orientation', 'raccord', [['droit', 'droit'], ['coudé', 'coudé']]], ['gaine', 'gaine', [['', 'aucune'], ['HFA', 'HFA'], ['NOMEX', 'Nomex']]]];
-function raccordHtml(cle, fils, pn) { if (!fils.length) return ''; const h = habillage(app.norme, fils, app.contrat.raccords.get(cle), pn), c = h.choix;
-  const mots = [h.raccord === 'aucun' ? '<span>sans raccord</span>' : `<span>raccord <b>${esc(h.raccord)}</b></span>`, h.bandit ? `<span>band-it <b>${h.collier ? esc(h.collier.reference) : '?'}</b></span>` : '',
-    h.manchon ? '<span>manchon <i>VG95343T18</i></span>' : '', c.gaine ? `<span>gaine <b>${h.gaine ? esc(h.gaine.reference) : '?'}</b>${h.gaine && h.gaine.dint != null ? `<i>Ø int. ${esc(nombre(h.gaine.dint))}</i>` : ''}</span>` : ''].filter(Boolean).join('');
-  const puces = PUCES_RACCORD.map(([champ, titre, opts]) => `<p class="fi-note fi-rac-t">${titre}</p><div class="fi-puces">${opts.map(([v, t]) => `<button class="fi-chip" data-raccord="${escA(cle)}" data-champ="${champ}" data-v="${escA(v)}" aria-pressed="${String(c[champ]) === v}">${esc(t)}</button>`).join('')}</div>`).join('');
+const MOTS_BLINDAGE = { NO: 'sans reprise de blindage', GND: 'blindage repris sur le corps', BLI: 'blindage repris par cosse', CONTACT: 'blindage repris sur un contact' };
+function autourHtml(cle, fils, pn, nomen, titre) { if (!fils.length) return ''; const h = habillage(app.norme, fils, app.contrat.raccords.get(cle), pn), c = h.choix, f = h.faisceau;
+  const sertir = nomen && nomen.length ? nomen.map(x => `<b>${x.n}×</b> ${esc(x.reference)}${x.accessoire ? ` <i>+ ${esc(x.accessoire)}</i>` : ''}`).join(' · ') : '';
+  const toron = f.diametre != null ? `<b>Ø ${esc(nombre(Math.round(f.diametre * 10) / 10))} mm</b>${f.complet ? '' : ' <i>?</i>'} · ${f.n} ${f.n > 1 ? 'câbles' : 'câble'}${f.masse > 0 ? ' · ' + esc(nombre(Math.round(f.masse * 10) / 10)) + ' g/m' : ''}${f.inconnus.length ? ` <i class="fi-ko">${esc(f.inconnus.join(', '))} : inconnu de la base</i>` : ''}` : (f.inconnus.length ? `<i class="fi-ko">${esc(f.inconnus.join(', '))} : inconnu de la base</i>` : '');
+  const aVenir = '<i class="fi-avenir" title="La table des références n’est pas encore dans la norme">référence à venir</i>';
+  const lignes = [['à sertir', sertir], ['toron', toron, f.diametre != null ? 'La section cumulée des câbles, en rond, plus 10 % (le tutoriel)' : ''],
+    ['raccord', h.raccord === 'aucun' ? '<i>aucun : un EN 3645 s’utilise sans raccord</i>' : `<b>${esc(h.raccord)}</b> ${h.raccord === 'tyrap' ? '' : aVenir}`, h.pourquoi],
+    ['band-it', h.bandit ? (h.collier ? `<b>${esc(h.collier.reference)}</b>${h.collier.note ? ` <i>${esc(h.collier.note)}</i>` : ''}` : '<i>aucun collier ne va à ce toron</i>') : '', 'Le collier qui tient la tresse ou la gaine'],
+    ['manchon', h.manchon ? `<b>VG95343T18</b> ${aVenir}` : '', 'L’étanchéité demande un manchon'],
+    ['gaine', c.gaine ? (h.gaine ? `<b>${esc(h.gaine.reference)}</b> <i>Ø int. ${esc(nombre(h.gaine.dint))}${h.gaine.dext != null ? ' · ext. ' + esc(nombre(h.gaine.dext)) : ''} mm</i>` : `<i class="fi-ko">aucune gaine ${esc(c.gaine)} ne passe ce toron</i>`) : '', 'La plus petite gaine dont l’intérieur passe le toron']];
+  const choix = [MOTS_BLINDAGE[c.blindage] || MOTS_BLINDAGE.NO, c.etanche ? 'zone étanche' : 'pas d’étanchéité', c.orientation === 'coudé' ? 'coudé' : 'droit', c.gaine ? 'gaine ' + c.gaine : 'sans gaine'].join(' · ');
+  const puces = PUCES_RACCORD.map(([champ, t, opts]) => `<p class="fi-note fi-rac-t">${t}</p><div class="fi-puces">${opts.map(([v, m]) => `<button class="fi-chip" data-raccord="${escA(cle)}" data-champ="${champ}" data-v="${escA(v)}" aria-pressed="${String(c[champ]) === v}">${esc(m)}</button>`).join('')}</div>`).join('');
   const k = 'rac|' + cle;
-  return `<div class="fi-nomen fi-habillage" title="${escA(h.pourquoi)}"><span class="fi-nomen-t">autour</span>${mots}<button class="fi-lien" data-changer="${escA(k)}" aria-expanded="${!!FI.change[k]}">Changer${ico('bas', 'fi-chevron')}</button></div>`
-    + `<div class="fi-changer" data-volet="${escA(k)}"${FI.change[k] ? '' : ' hidden'}>${puces}<p class="fi-note">${esc(h.pourquoi[0].toUpperCase() + h.pourquoi.slice(1))}.${h.manquants.length ? ' Manque : ' + esc(h.manquants.join(' ; ')) + '.' : ''}</p></div>`; }
+  return `<div class="fi-autour"><div class="fi-ref-ligne fi-habillage"><span class="fi-nomen-t">${esc(titre || 'autour')}</span><span class="fi-choix" title="${escA(h.pourquoi)}">${esc(choix)}</span><span class="espace"></span><button class="fi-lien" data-changer="${escA(k)}" aria-expanded="${!!FI.change[k]}">Changer${ico('bas', 'fi-chevron')}</button></div>`
+    + `<div class="fi-changer" data-volet="${escA(k)}"${FI.change[k] ? '' : ' hidden'}>${puces}<p class="fi-note">${esc(h.pourquoi[0].toUpperCase() + h.pourquoi.slice(1))}.</p></div>${faits(lignes, 'serre')}</div>`; }
 
 /* ---- une barrette (et une barrette à poser) ------------------------------------- */
 function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsDeRepere(nom);
@@ -7021,8 +7166,7 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
   const ko = [...Q.verdicts.filter(v => v.niveau === 'ko').map(v => v.texte), ...Q.fils.filter(x => x.jaugeOk === false).map(x => `${x.f.cable || 'fil à créer'} (${x.f.type}) : jauge refusée par le contact ${x.contact.lettre}`)];
   // la barrette à poser : la borne qu'elle dédouble
   const raccord = aPoser ? L.find(l => l.aPoser === nom && l.origine === null && l.vers === nom && l.borneVers === '1') : null, sur = raccord ? raccord.de + ':' + raccord.borneDe : '';
-  const etat = aPoser ? fiEtat(ko, [`à poser sur ${sur} — repère provisoire : écris le vrai repère en tête de fiche, la barrette entre au contrat`])
-    : fiEtat(ko, [], 'chaque fil sur un contact qui accepte sa jauge');
+  const etat = aPoser ? fiEtat(ko, [`à poser sur ${sur} — repère provisoire : écris le vrai repère en tête de fiche, la barrette entre au contrat`]) : fiEtat(ko, []);
   const sous = aPoser ? `à poser sur <b>${esc(sur)}</b>` : `${pluriel(Q.potentiels, 'potentiel')} · ${pluriel(Q.fils.length, 'fil')}`;
   const pnNorme = b.pn && familleDeReference(app.norme, b.pn);
   const pourquoi = main ? 'Choisi à la main.' : !Q.modules.length ? 'Aucun module ne loge ces fils.' : (Q.main ? 'Norme choisie à la main. ' : pnNorme ? 'La norme du part number. ' : '')
@@ -7046,7 +7190,7 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
   (Q.restants || []).forEach(p => p.fils.forEach(f => { lignes += ligneFil(`<b>${esc(borneDe(f))}</b>`, f, { ko: 'sans place dans le module' }); }));
   return fiTete({ nom, renommer: true, aide: aPoser ? 'Écrire le vrai repère : la barrette entre au contrat' : '', etat, sous, designation: aPoser ? null : app.contrat.designations.get(nom) || '' })
     + `<section class="fi-cadre">${fiRef(Q.reference || (aPoser ? 'à choisir' : '—'), Q.famille, cle, changer, pourquoi)}${faces ? `<div class="fi-faces">${faces}</div>` : ''}${fiListe(lignes)}</section>`
-    + (aPoser ? '' : dejaFaitHtml(nom)) + fiPied(aPoser ? { voir: raccord && raccord.de, relief: !!M0, menu: [['fi-renommer', 'Nommer et poser au contrat']] } : { tableau: nom, relief: true, menu: MENU_BLOC }); }
+    + (aPoser ? '' : dejaFaitHtml(nom)) + fiPied(aPoser ? { voir: raccord && raccord.de, relief: !!M0, menu: [['fi-renommer', 'Nommer et poser au contrat']] } : { tableau: nom, fil: nom, relief: true, menu: MENU_BLOC }); }
 
 /* ---- une prise de coupure -------------------------------------------------------- */
 function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupure(nom), M = Q.modules[0], nomF = f => nomDeFamille(app.norme, f);
@@ -7065,13 +7209,12 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
   const changer = (Q.tableContacts ? pucesSexe(nom, Q.sexe, true) : '') + puces('data-norme-prise', [['', 'Automatique'], ...famillesDeModules(app.norme, 'connecteur').map(f => [f, nomF(f)])], Q.main ? null : (Q.visee || ''))
     + (vs.map(m => candidat(nom, m, retenu)).join('') || '<p class="fi-note">Aucun arrangement de cette norme ne convient.</p>')
     + liens([Q.main ? `<button class="fi-lien" data-auto="${escA(nom)}">Choix automatique</button>` : '', M ? `<button class="fi-lien" data-bible="${escA(M.reference)}">Bible</button>` : '']);
-  return fiTete({ nom, renommer: true, etat: fiEtat(ko, att, 'un fil de chaque côté par contact, chaque jauge acceptée'), sous: `${pluriel(points.length, 'contact')} · ${pluriel(Q.fils.length, 'fil')}`, designation: app.contrat.designations.get(nom) || '' })
+  return fiTete({ nom, renommer: true, etat: fiEtat(ko, att), sous: `${pluriel(points.length, 'contact')} · ${pluriel(Q.fils.length, 'fil')}`, designation: app.contrat.designations.get(nom) || '' })
     + `<section class="fi-cadre">${fiRef(Q.reference, Q.famille, cle, changer, pourquoi)}${faces}`
     + (lignes ? `<div class="fi-paires-tete"><span></span><span>fiche · arrive</span><span></span><span>embase · repart</span></div><ul class="fi-liste paires">${lignes}</ul>` : '')
-    + nomenclature(nomenclatureDe(Q.fils.filter(x => x.f.amont)), 'fiche') + nomenclature(nomenclatureDe(Q.fils.filter(x => !x.f.amont)), 'embase')
-    + faisceauHtml(Q.fils.filter(x => x.f.amont).map(x => x.f), 'faisceau fiche') + raccordHtml(nom + '|fiche', Q.fils.filter(x => x.f.amont).map(x => x.f), b.pn)
-    + faisceauHtml(Q.fils.filter(x => !x.f.amont).map(x => x.f), 'faisceau embase') + raccordHtml(nom + '|embase', Q.fils.filter(x => !x.f.amont).map(x => x.f), b.pn) + '</section>'
-    + dejaFaitHtml(nom) + fiPied({ tableau: nom, relief: true, menu: MENU_BLOC }); }
+    + autourHtml(nom + '|fiche', Q.fils.filter(x => x.f.amont).map(x => x.f), b.pn, nomenclatureDe(Q.fils.filter(x => x.f.amont)), 'fiche')
+    + autourHtml(nom + '|embase', Q.fils.filter(x => !x.f.amont).map(x => x.f), b.pn, nomenclatureDe(Q.fils.filter(x => !x.f.amont)), 'embase') + '</section>'
+    + dejaFaitHtml(nom) + fiPied({ tableau: nom, fil: nom, relief: true, menu: MENU_BLOC }); }
 
 /* ---- un équipement --------------------------------------------------------------- */
 function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V);
@@ -7088,24 +7231,23 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
   const onglets = C.map(c => { const k = parNom.get(c.nom), Q = k && k.plan, M = Q && Q.modules[0], cle = 'arr|' + nom + '|' + c.nom;
     const sertir = new Map(Q ? Q.fils.map(x => [x.f.l, x.sertir]) : []);
     const fils = c.bornes.slice().sort(triNaturel).flatMap(bo => (b.parBorne.get(bo) || []).map(f => ligne(bo, f, sertir.get(f.l)))).join('');
-    let corps = '', nomen = '';
+    let corps = '';
     if (M) { const pourquoi = Q.main ? 'Choisi à la main.' : Q.nomme ? 'Le part number le nomme.' : 'Le plus petit qui a ces contacts et ces jauges.';
       const par = new Map(Q.fils.map(x => [x.contact.lettre, x])), vs = arrangementsQuiLogent(k.points, app.norme, Q.famille).slice(0, 5);
       const changer = (Q.tableContacts ? pucesSexe(nom + '|' + c.nom, Q.sexe, false) : '') + vs.map(m => candidat(nom + '|' + c.nom, m, M.reference)).join('') + liens([Q.main ? `<button class="fi-lien" data-auto="${escA(nom + '|' + c.nom)}">Choix automatique</button>` : '']);
-      nomen = nomenclature(Q.nomenclature);
       corps = fiRef(M.reference, M.module.famille, cle, changer, (c.pn ? c.pn + ' — ' : '') + pourquoi)
         + faceAjustee(faceModuleSvg(M.module, ct => { const x = par.get(ct.lettre); return x ? occupant(x.f, x.jaugeOk === false) : null; }, { etiquettes: true })); }
     else corps = `<div class="fi-ref-ligne"><span class="fi-ct"><b>${esc(c.nom)}</b></span><b class="fi-ref">${esc(c.pn || 'sans part number')}</b></div>`;
-    const filsC = c.bornes.flatMap(bo => b.parBorne.get(bo) || []), fsc = faisceauHtml(filsC) + raccordHtml(nom + '|' + c.nom, filsC, c.pn);
-    return { id: c.nom, titre: c.nom, compte: String(c.bornes.length), ko: ko.some(t => t.startsWith(c.nom + ' · ')), corps: `<section class="fi-cadre">${corps}${fiListe(fils)}${nomen}${fsc}</section>` }; });
+    const filsC = c.bornes.flatMap(bo => b.parBorne.get(bo) || []), fsc = autourHtml(nom + '|' + c.nom, filsC, c.pn, Q ? Q.nomenclature : null);
+    return { id: c.nom, titre: c.nom, compte: String(c.bornes.length), ko: ko.some(t => t.startsWith(c.nom + ' · ')), corps: `<section class="fi-cadre">${corps}${fiListe(fils)}${fsc}</section>` }; });
   // les bornes sans connecteur
   const sans = [...b.parBorne].filter(([bo]) => !C.some(c => c.bornes.includes(bo))).sort((u, v) => triNaturel(u[0], v[0])).flatMap(([bo, fs]) => fs.map(f => ligne(bo, f))).join('');
   if (sans) onglets.push({ id: '—', titre: C.length ? 'Autres' : 'Fils', compte: String(b.parBorne.size - C.reduce((n, c) => n + c.bornes.length, 0)), corps: `<section class="fi-cadre">${fiListe(sans)}</section>` });
-  const nFils = V.filter(l => l.de === nom || l.vers === nom).length;
-  return fiTete({ nom, renommer: true, etat: fiEtat(ko, att, cav.length ? 'chaque borne sur son contact, chaque jauge acceptée' : 'rien à redire'),
-      sous: `${pluriel(nFils, 'fil')}${C.length > 1 ? ' · ' + pluriel(C.length, 'connecteur') : ''}`, designation: app.contrat.designations.get(nom) || '' })
+  const nFils = V.filter(l => l.de === nom || l.vers === nom).length, pns = [...new Set(C.map(c => c.pn).filter(Boolean))];
+  return fiTete({ nom, renommer: true, etat: fiEtat(ko, att),
+      sous: `${pluriel(nFils, 'fil')}${C.length > 1 ? ' · ' + pluriel(C.length, 'connecteur') : ''}${!dj && pns.length === 1 ? ' · <b>' + esc(pns[0]) + '</b>' : ''}`, designation: app.contrat.designations.get(nom) || '' })
     + (dj ? ficheDisjonction(nom) : '') + (onglets.length ? fiOnglets('eq|' + nom, onglets) : '') + dejaFaitHtml(nom)
-    + fiPied({ tableau: nom, relief: cav.length > 0, menu: MENU_BLOC }); }
+    + fiPied({ tableau: nom, fil: nom, relief: cav.length > 0, menu: MENU_BLOC }); }
 
 /* ---- un bornier hors modules (une bible importée sans modules) ------------------- */
 function ficheBornierAncien(nom) { const V = verite(), b = besoinsDeBarrette(nom, V);
@@ -7134,7 +7276,12 @@ function lierFiche(c) { const box = $('ba-equip'), nom = c.type === 'fil' ? '' :
     box.addEventListener('pointerdown', e => { if (!liste.hidden && !e.target.closest('.fi-plus')) ouvrir(false); }, true); }
   box.querySelectorAll('input').forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } else if (e.key === 'Escape') { e.stopPropagation(); el.value = el.defaultValue; el.blur(); } }));
   lierFils(box);
-  if (!nom) return;
+  // un fil de plus depuis ce repère : une ligne neuve dans le tableau, le curseur sur « vers »
+  const plus = $('fi-fil-plus'); if (plus) plus.onclick = () => { if (!app.base.ouvert) ouvrirBase(); ajouterLiaison(plus.dataset.de); };
+  if (!nom) { const l = c.l, i = verite().indexOf(l);
+    if ($('fil-tableau')) $('fil-tableau').onclick = () => { app.base.filtre = l.cable || l.de; app.base.filtreAuto = false; app.base.portee = 'tout'; app.base.defiler = true; if (app.base.ouvert) rendreBase(); else ouvrirBase(); };
+    if ($('fil-del')) $('fil-del').onclick = () => { if (i < 0 || !confirm('Supprimer le fil ' + (l.cable || '') + ' entre ' + l.de + ' et ' + l.vers + ' ?')) return; supprimerLiaison(i); deselectionner(); dire('Fil supprimé.'); };
+    return; }
   const rep = $('eq-rep'); if (rep) rep.addEventListener('change', e => { const nr = e.target.value.trim(); if (!nr || nr === nom) { e.target.value = nom; return; }
     if (VT_A_POSER.test(nom)) { if (!poserBarrette(nom, nr)) e.target.value = nom; return; }
     histPush('renommage de ' + nom); renommer(nom, nr); app.choisi = nr; app.cible = { type: 'bloc', nom: nr }; if (app.base.filtre === nom) app.base.filtre = nr; apresEdition(); });
@@ -7467,9 +7614,8 @@ const RAIL = 52;
    Le plan se recadre dans ce qui reste : rien ne le recouvre. */
 function marges() { const tel = telephone(), folios = !$('folios').hidden, vu = id => !$(id).hidden ? $(id) : null;
   const droite = vu('fiche') || vu('inspecteur'), bas = vu('base');
-  const haut = $('controle').hidden ? 0 : 44;   // la pastille du contrôle, en haut à gauche : le plan passe dessous
-  if (tel) { const d = vu('fiche') || vu('inspecteur') || bas; return { haut: 16 + haut, bas: (d ? d.offsetHeight + 8 : 8) + 56 + (folios ? 52 : 0), gauche: 12, droite: 12 }; }
-  return { haut: 28 + haut, bas: (bas ? bas.offsetHeight + 24 : 0) + (folios ? 72 : 28), gauche: 12 + RAIL + 16, droite: 28 + (droite ? droite.offsetWidth + 12 : 0) }; }
+  if (tel) { const d = vu('fiche') || vu('inspecteur') || bas; return { haut: 16, bas: (d ? d.offsetHeight + 8 : 8) + 56 + (folios ? 52 : 0), gauche: 12, droite: 12 }; }
+  return { haut: 28, bas: (bas ? bas.offsetHeight + 24 : 0) + (folios ? 72 : 28), gauche: 12 + RAIL + 16, droite: 28 + (droite ? droite.offsetWidth + 12 : 0) }; }
 let anim = null;
 function animerVue(cible, doux) {
   if (anim) { cancelAnimationFrame(anim); anim = null; }
@@ -7674,32 +7820,40 @@ function basculerIndex() { if (!$('inspecteur').hidden && app.insp.index) { ferm
 // les repères du contrat, et les barrettes à poser de chaque folio : nom, genre, ce qu'on écrit dessous, ses folios
 function reperesDuContrat() { const V = verite(), out = [];
   reperesDe(V).filter(r => !estRenvoi(r) && !estMasse(r) && !estRail(r)).forEach(nom => { const des = app.contrat.designations.get(nom) || '';
-    const genre = estCoupure(nom) ? 'coupure' : estBarrette(nom) ? 'barrette' : 'eqpt';
+    const genre = estCoupure(nom) ? 'coupure' : estBarrette(nom) ? 'barrette' : estDisjoncteur(nom) ? 'cb' : 'eqpt';
     let sous = des || designationDe(nom);
+    if (genre === 'cb') { const c = calibreDe(nom); sous = (c ? amperes(c) : '') + (sous && sous !== 'disjoncteur' ? (c ? ' · ' : '') + sous : ''); }
     if (!sous && genre === 'eqpt') sous = [...new Set(connecteursDe(nom, V).map(c => c.pn).filter(Boolean))].slice(0, 2).join(' · ');
     if (!sous) sous = pluriel(V.filter(l => l.de === nom || l.vers === nom).length, 'fil');
     out.push({ nom, genre, plans: plansDuRepere(nom).sort(triNaturel), sous }); });
   (plans().length ? plans() : ['*']).forEach(p => liaisonsDe(p).forEach(l => { if (l.origine === null && l.vers === l.aPoser && l.borneVers === '1')
     out.push({ nom: l.aPoser, genre: 'barrette', plan: p, plans: p === '*' ? [] : [p], sous: 'à poser sur ' + l.de + ':' + l.borneDe }); }));
   return out.sort((a, b) => triNaturel(a.nom, b.nom) || triNaturel(a.plan || '', b.plan || '')); }
+/* L'index : d'abord ce qu'il y a à reprendre (08 quater), puis les repères par genre — les disjoncteurs à part. */
 function rendreIndex(box) { const etats = new Map();
   (CONTROLE.items || []).forEach(x => { if (!x.nom) return; if (x.niveau === 'ko' || !etats.has(x.nom)) etats.set(x.nom, x.niveau); });
   const f = app.insp.filtre.trim().toLowerCase(), items = reperesDuContrat().filter(r => !f || r.nom.toLowerCase().includes(f) || r.sous.toLowerCase().includes(f));
-  const groupes = [['eqpt', 'Équipements'], ['barrette', 'Barrettes'], ['coupure', 'Prises de coupure']].map(([g, t]) => { const xs = items.filter(r => r.genre === g); if (!xs.length) return '';
+  const groupes = [['cb', 'Disjoncteurs'], ['eqpt', 'Équipements'], ['barrette', 'Barrettes'], ['coupure', 'Prises de coupure']].map(([g, t]) => { const xs = items.filter(r => r.genre === g); if (!xs.length) return '';
     return `<div class="ix-groupe"><span>${t}</span><b>${xs.length}</b></div><ul class="ix-liste">` + xs.map(r => `<li><button class="ix-item" data-nom="${escA(r.nom)}"${r.plan ? ` data-plan="${escA(r.plan)}"` : ''}>`
       + `<span class="ix-etat ${etats.get(r.nom) || 'ok'}" aria-hidden="true"></span><span class="min0"><b>${esc(r.nom)}</b><small>${esc(r.sous)}</small></span>`
       + (r.plans.length ? `<span class="ix-folio">${esc(r.plans.length > 3 ? r.plans.length + ' folios' : r.plans.join(' · '))}</span>` : '') + '</button></li>').join('') + '</ul>'; }).join('');
-  const meme = box.dataset.cle === 'index', haut = box.scrollTop;
+  const meme = box.dataset.cle === 'index', haut = box.scrollTop, nko = (CONTROLE.items || []).filter(x => x.niveau === 'ko').length, natt = (CONTROLE.items || []).length - nko;
   box.className = 'fi ix'; box.dataset.cle = 'index';
-  box.innerHTML = `<header class="ix-tete"><h2>Repères</h2><span class="fi-sous">${pluriel(items.length, 'repère')}</span><button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)">${ico('fermer')}</button></header>`
+  box.innerHTML = `<header class="ix-tete"><h2>Repères</h2><span class="fi-sous">${pluriel(items.length, 'repère')}</span><button class="fi-x plus" id="ix-plus" title="Ajouter un équipement : son repère, puis ses fils dans le tableau" aria-label="Ajouter un équipement">${ico('plus')}</button><button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)">${ico('fermer')}</button></header>`
     + `<div class="ix-filtre">${ico('loupe')}<input id="ix-q" value="${escA(app.insp.filtre)}" placeholder="Chercher un repère, une désignation" aria-label="Chercher un repère" autocomplete="off" spellcheck="false"></div>`
+    + (f ? '' : `<details class="ix-controle"${nko ? ' open' : ''}><summary><span class="fi-etat ${nko ? 'ko' : natt ? 'att' : 'ok'}"><i aria-hidden="true">${nko ? '✕' : natt ? '!' : '✓'}</i>${nko ? pluriel(nko, 'problème') + (natt ? ' · ' + natt + ' à voir' : '') : natt ? natt + ' à voir' : 'rien à reprendre'}</span>${(nko || natt) ? ico('bas', 'fi-chevron') : ''}</summary>${listeControleHtml()}</details>`)
     + (groupes || '<p class="ix-vide">Aucun repère ne correspond.</p>');
   if (meme) box.scrollTop = haut;
   $('in-fermer').onclick = () => fermerInspecteur();
   const q = $('ix-q'); q.addEventListener('input', () => { app.insp.filtre = q.value; const pos = q.selectionStart; rendreIndex(box); const q2 = $('ix-q'); q2.focus(); q2.setSelectionRange(pos, pos); });
   q.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); if (q.value) { q.value = ''; q.dispatchEvent(new Event('input')); } else fermerInspecteur(); }
-    else if (e.key === 'Enter') { const b = box.querySelector('.ix-item'); if (b) b.click(); } });
-  box.querySelectorAll('.ix-item').forEach(b => b.onclick = () => allerAuRepere(b.dataset.nom, b.dataset.plan)); }
+    else if (e.key === 'Enter') { const b = box.querySelector('.ix-item[data-nom]'); if (b) b.click(); } });
+  $('ix-plus').onclick = () => { const r = (prompt('Repère du nouvel équipement (par exemple 105RL2) :') || '').trim(); if (!r) return;
+    if (!app.base.ouvert) ouvrirBase(); ajouterLiaison(r); dire(r + ' : écris ses fils dans le tableau, le plan suit.'); };
+  const det = box.querySelector('.ix-controle'); if (det) det.addEventListener('toggle', () => { CONTROLE.ouvert = det.open; });
+  if (det && CONTROLE.ouvert != null && !nko) det.open = !!CONTROLE.ouvert;
+  box.querySelectorAll('.ix-item.co-item').forEach(b => b.onclick = () => allerAuControle(CONTROLE.items[+b.dataset.k]));
+  box.querySelectorAll('.ix-item[data-nom]').forEach(b => b.onclick = () => allerAuRepere(b.dataset.nom, b.dataset.plan)); }
 // depuis l'index : le folio du repère, son bloc choisi sur le plan, sa fiche
 function allerAuRepere(nom, plan) { const P = plans();
   if (plan && plan !== app.plan && P.includes(plan)) allerAuPlan(plan);
@@ -8512,7 +8666,6 @@ function lierPanneau() {
     if (!$('relief').hidden) { if (e.key === 'Escape') fermerRelief(); return; }
     const dansChamp = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '');
     if (e.key === 'Escape') { if (!$('menu').hidden) { fermerMenu(); $('btnMenu').focus(); } else if (rechercheOuverte()) { fermerRecherche(); $('q').blur(); }
-      else if (CONTROLE.ouvert) ouvrirControle(false);
       else if (dansChamp) e.target.blur();   // dans un champ, Échap ne fait que le quitter
       else if (app.fiche) fermerFiche(true); else if (app.cible || !$('inspecteur').hidden) deselectionner(); else fermerBase(); return; }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !dansChamp) { e.preventDefault(); const q = annuler(); if (q) dire('Annulé : ' + q + '.'); return; }
@@ -8521,7 +8674,7 @@ function lierPanneau() {
     if (dansChamp || e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.key === '/') { e.preventDefault(); ouvrirRecherche(); }
     else if (e.key === 'b') basculerBase();
-    else if (e.key === 'r') basculerIndex();
+    else if (e.key === 'r') { e.preventDefault(); basculerIndex(); }   // sinon le « r » s'écrit dans le champ de l'index qui vient de prendre le focus
     else if (e.key === 'ArrowLeft') allerAuFolio(-1); else if (e.key === 'ArrowRight') allerAuFolio(+1);
     else if (e.key === '+' || e.key === '=') zoomer(1.25); else if (e.key === '-') zoomer(1 / 1.25); else if (e.key === '0' || e.key === 'f') ajuster(true); });
   let rT; window.addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(() => { if (telephone()) ajuster(); else appliquerVue();

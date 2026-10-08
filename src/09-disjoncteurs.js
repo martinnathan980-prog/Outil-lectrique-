@@ -18,8 +18,13 @@
    =========================================================================== */
 'use strict';
 
-// la gamme des calibres qu'on pose, en ampères
-const CALIBRES = [1, 2, 2.5, 3, 4, 5, 7.5, 10, 15, 20, 25, 30, 35, 50];
+// la gamme des calibres qu'on pose, en ampères — celle du lecteur
+const CALIBRES = [1, 3, 5, 7.5, 10, 15, 25];
+// « dans le vert, sans toucher la courbe » : un point du profil est SERRÉ quand il n'a ni 10 % de courant de marge sur
+// ce que la courbe la plus rapide admet pour sa durée, ni trois fois sa durée de tenue — près du calibre, la courbe
+// est presque verticale et 4 % de courant valent une demi-heure de tenue ; un calibre est idéal quand aucun point
+// n'est serré
+const MARGE_DISJONCTION = 1.1, MARGE_TENUE = 3;
 // un disjoncteur : le code CB (102CB1)
 const estDisjoncteur = r => { const q = lireRepere(r); return !!(q && q.num && q.code === 'CB'); };
 /* Le calibre qu'un part number porte en queue : NSA935401-10 → 10 A ; rien si la queue n'est pas un nombre seul. */
@@ -50,14 +55,20 @@ function multipleAdmis(courbe, duree) { const P = courbe.points; if (!P.length) 
   const a = P[i - 1], b = P[i]; if (a.t === b.t) return b.m; const k = (Math.log(duree) - Math.log(a.t)) / (Math.log(b.t) - Math.log(a.t));
   return Math.exp(Math.log(a.m) + k * (Math.log(b.m) - Math.log(a.m))); }
 
-/* LE PROFIL en points (courant, durée cumulée) : chaque phase dure, pour la courbe, autant que toutes les phases au
-   moins aussi fortes qu'elle — le démarrage seul s'il est le plus fort, puis la transition avec le démarrage, puis le
-   permanent, pour toujours. Deux phases au même courant ne font qu'un point. Une phase sans courant ne compte pas. */
+/* LES ÉTATS d'un profil : le démarrage, la transition (chacun un courant et une durée), les états qu'on ajoute
+   (`plus` : [{ nom, i, t }]), et le permanent (un courant, pour toujours). Rend [{ k, nom, i, t }], tels qu'écrits. */
 const NOMS_PHASES = { dem: 'démarrage', trans: 'transition', perm: 'permanent' };
-function pointsDuProfil(profil) { profil = profil || {}; const n = v => { if (v == null || v === '') return null; const x = parseFloat(String(v).replace(',', '.')); return isNaN(x) ? null : x; };
-  const phases = ['dem', 'trans', 'perm'].map(k => ({ k, nom: NOMS_PHASES[k], i: n(profil[k] && profil[k].i), t: k === 'perm' ? Infinity : n(profil[k] && profil[k].t) })).filter(p => p.i > 0 && p.t > 0);
+const nombreLu = v => { if (v == null || v === '') return null; const x = parseFloat(String(v).replace(',', '.')); return isNaN(x) ? null : x; };
+function etatsDuProfil(profil) { profil = profil || {}; const e = k => profil[k] || {};
+  return [{ k: 'dem', nom: NOMS_PHASES.dem, i: nombreLu(e('dem').i), t: nombreLu(e('dem').t) }, { k: 'trans', nom: NOMS_PHASES.trans, i: nombreLu(e('trans').i), t: nombreLu(e('trans').t) },
+    ...(profil.plus || []).map((x, j) => ({ k: 'plus' + j, nom: String(x && x.nom || '').trim() || 'état ' + (j + 3), i: nombreLu(x && x.i), t: nombreLu(x && x.t) })),
+    { k: 'perm', nom: NOMS_PHASES.perm, i: nombreLu(e('perm').i), t: Infinity }]; }
+/* LE PROFIL en points (courant, durée cumulée) : chaque état dure, pour la courbe, autant que tous les états au moins
+   aussi forts que lui — le démarrage seul s'il est le plus fort, puis la transition avec le démarrage, puis le
+   permanent, pour toujours. Deux états au même courant ne font qu'un point. Un état sans courant ne compte pas. */
+function pointsDuProfil(profil) { const phases = etatsDuProfil(profil).filter(p => p.i > 0 && p.t > 0);
   const pts = []; phases.forEach(p => { if (pts.some(q => q.i === p.i)) return;
-    const t = phases.reduce((s, q) => q.i >= p.i ? s + q.t : s, 0); pts.push({ nom: phases.filter(q => q.i === p.i).map(q => q.nom).join(' et '), i: p.i, t }); });
+    const t = phases.reduce((s, q) => q.i >= p.i ? s + q.t : s, 0); pts.push({ nom: phases.filter(q => q.i === p.i).map(q => q.nom).join(' et '), k: p.k, i: p.i, t }); });
   return pts.sort((a, b) => b.i - a.i); }
 /* LE VERDICT : chaque point du profil contre chaque courbe — ce que le disjoncteur tient à ce multiple, et s'il tient
    plus que la phase ne dure (un permanent tient s'il ne déclenche jamais). Valide : tous les points tiennent sur la
@@ -65,14 +76,19 @@ function pointsDuProfil(profil) { profil = profil || {}; const n = v => { if (v 
    déclencher. */
 function verdictDisjonction(norme, famille, calibre, profil) { const courbes = courbesDeDisjonction(norme, famille), pts = pointsDuProfil(profil);
   const juger = cal => pts.map(p => { const multiple = p.i / cal;
-    const marges = courbes.map(c => { const temps = tempsDeDeclenchement(c, multiple), ok = p.t === Infinity ? temps === Infinity : temps > p.t;
-      return { courbe: c.nom, temps, ok, rapport: p.t === Infinity ? (ok ? Infinity : 0) : temps / p.t, admis: multipleAdmis(c, p.t) * cal }; });
-    return { ...p, multiple, marges, ok: marges.length ? marges[0].ok : null }; });
-  const points = calibre > 0 ? juger(calibre) : pts.map(p => ({ ...p, multiple: null, marges: [], ok: null }));
+    const marges = courbes.map(c => { const temps = tempsDeDeclenchement(c, multiple), ok = p.t === Infinity ? temps === Infinity : temps > p.t, admis = multipleAdmis(c, p.t) * cal;
+      return { courbe: c.nom, temps, ok, rapport: p.t === Infinity ? (ok ? Infinity : 0) : temps / p.t, admis, marge: admis / p.i }; });
+    // `serre` : tient, mais l'escalier touche la courbe (ni la marge de courant, ni la marge de tenue)
+    const m = marges[0], serre = !!(m && m.ok && m.marge < MARGE_DISJONCTION - 1e-9 && m.rapport < MARGE_TENUE);
+    return { ...p, multiple, marges, ok: marges.length ? m.ok : null, serre }; });
+  const points = calibre > 0 ? juger(calibre) : pts.map(p => ({ ...p, multiple: null, marges: [], ok: null, serre: false }));
   const valide = !!(calibre > 0 && courbes.length && pts.length) && points.every(p => p.ok);
-  const calibreMini = courbes.length && pts.length ? CALIBRES.find(c => juger(c).every(p => p.ok)) || null : null;
+  // chaque calibre de la gamme, jugé : tient, serré, et le premier qui tient avec sa marge est l'idéal
+  const gamme = courbes.length && pts.length ? CALIBRES.map(c => { const js = juger(c); return { calibre: c, valide: js.every(p => p.ok), serre: js.some(p => p.serre) }; }) : CALIBRES.map(c => ({ calibre: c, valide: null, serre: false }));
+  const calibreMini = (gamme.find(g => g.valide) || {}).calibre || null, calibreIdeal = (gamme.find(g => g.valide && !g.serre) || {}).calibre || calibreMini;
+  gamme.forEach(g => { g.ideal = g.calibre === calibreIdeal; });
   const pire = points.filter(p => p.marges.length).sort((a, b) => a.marges[0].rapport - b.marges[0].rapport)[0] || null;
-  return { courbes, points, valide, calibreMini, pire, calibre: calibre > 0 ? calibre : null, sansProfil: !pts.length, sansCourbe: !courbes.length }; }
+  return { courbes, points, valide, serre: valide && points.some(p => p.serre), gamme, calibreMini, calibreIdeal, pire, calibre: calibre > 0 ? calibre : null, sansProfil: !pts.length, sansCourbe: !courbes.length }; }
 
 /* LA PROTECTION DES FILS. Chaque fil du disjoncteur — des deux côtés : le courant les traverse tous, et un dédoublement
    se partage on ne sait comment, chacun doit donc tenir tout — contre le profil et le calibre. Un fil tient si, à

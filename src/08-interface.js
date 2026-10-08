@@ -292,9 +292,8 @@ const RAIL = 52;
    Le plan se recadre dans ce qui reste : rien ne le recouvre. */
 function marges() { const tel = telephone(), folios = !$('folios').hidden, vu = id => !$(id).hidden ? $(id) : null;
   const droite = vu('fiche') || vu('inspecteur'), bas = vu('base');
-  const haut = $('controle').hidden ? 0 : 44;   // la pastille du contrôle, en haut à gauche : le plan passe dessous
-  if (tel) { const d = vu('fiche') || vu('inspecteur') || bas; return { haut: 16 + haut, bas: (d ? d.offsetHeight + 8 : 8) + 56 + (folios ? 52 : 0), gauche: 12, droite: 12 }; }
-  return { haut: 28 + haut, bas: (bas ? bas.offsetHeight + 24 : 0) + (folios ? 72 : 28), gauche: 12 + RAIL + 16, droite: 28 + (droite ? droite.offsetWidth + 12 : 0) }; }
+  if (tel) { const d = vu('fiche') || vu('inspecteur') || bas; return { haut: 16, bas: (d ? d.offsetHeight + 8 : 8) + 56 + (folios ? 52 : 0), gauche: 12, droite: 12 }; }
+  return { haut: 28, bas: (bas ? bas.offsetHeight + 24 : 0) + (folios ? 72 : 28), gauche: 12 + RAIL + 16, droite: 28 + (droite ? droite.offsetWidth + 12 : 0) }; }
 let anim = null;
 function animerVue(cible, doux) {
   if (anim) { cancelAnimationFrame(anim); anim = null; }
@@ -499,32 +498,40 @@ function basculerIndex() { if (!$('inspecteur').hidden && app.insp.index) { ferm
 // les repères du contrat, et les barrettes à poser de chaque folio : nom, genre, ce qu'on écrit dessous, ses folios
 function reperesDuContrat() { const V = verite(), out = [];
   reperesDe(V).filter(r => !estRenvoi(r) && !estMasse(r) && !estRail(r)).forEach(nom => { const des = app.contrat.designations.get(nom) || '';
-    const genre = estCoupure(nom) ? 'coupure' : estBarrette(nom) ? 'barrette' : 'eqpt';
+    const genre = estCoupure(nom) ? 'coupure' : estBarrette(nom) ? 'barrette' : estDisjoncteur(nom) ? 'cb' : 'eqpt';
     let sous = des || designationDe(nom);
+    if (genre === 'cb') { const c = calibreDe(nom); sous = (c ? amperes(c) : '') + (sous && sous !== 'disjoncteur' ? (c ? ' · ' : '') + sous : ''); }
     if (!sous && genre === 'eqpt') sous = [...new Set(connecteursDe(nom, V).map(c => c.pn).filter(Boolean))].slice(0, 2).join(' · ');
     if (!sous) sous = pluriel(V.filter(l => l.de === nom || l.vers === nom).length, 'fil');
     out.push({ nom, genre, plans: plansDuRepere(nom).sort(triNaturel), sous }); });
   (plans().length ? plans() : ['*']).forEach(p => liaisonsDe(p).forEach(l => { if (l.origine === null && l.vers === l.aPoser && l.borneVers === '1')
     out.push({ nom: l.aPoser, genre: 'barrette', plan: p, plans: p === '*' ? [] : [p], sous: 'à poser sur ' + l.de + ':' + l.borneDe }); }));
   return out.sort((a, b) => triNaturel(a.nom, b.nom) || triNaturel(a.plan || '', b.plan || '')); }
+/* L'index : d'abord ce qu'il y a à reprendre (08 quater), puis les repères par genre — les disjoncteurs à part. */
 function rendreIndex(box) { const etats = new Map();
   (CONTROLE.items || []).forEach(x => { if (!x.nom) return; if (x.niveau === 'ko' || !etats.has(x.nom)) etats.set(x.nom, x.niveau); });
   const f = app.insp.filtre.trim().toLowerCase(), items = reperesDuContrat().filter(r => !f || r.nom.toLowerCase().includes(f) || r.sous.toLowerCase().includes(f));
-  const groupes = [['eqpt', 'Équipements'], ['barrette', 'Barrettes'], ['coupure', 'Prises de coupure']].map(([g, t]) => { const xs = items.filter(r => r.genre === g); if (!xs.length) return '';
+  const groupes = [['cb', 'Disjoncteurs'], ['eqpt', 'Équipements'], ['barrette', 'Barrettes'], ['coupure', 'Prises de coupure']].map(([g, t]) => { const xs = items.filter(r => r.genre === g); if (!xs.length) return '';
     return `<div class="ix-groupe"><span>${t}</span><b>${xs.length}</b></div><ul class="ix-liste">` + xs.map(r => `<li><button class="ix-item" data-nom="${escA(r.nom)}"${r.plan ? ` data-plan="${escA(r.plan)}"` : ''}>`
       + `<span class="ix-etat ${etats.get(r.nom) || 'ok'}" aria-hidden="true"></span><span class="min0"><b>${esc(r.nom)}</b><small>${esc(r.sous)}</small></span>`
       + (r.plans.length ? `<span class="ix-folio">${esc(r.plans.length > 3 ? r.plans.length + ' folios' : r.plans.join(' · '))}</span>` : '') + '</button></li>').join('') + '</ul>'; }).join('');
-  const meme = box.dataset.cle === 'index', haut = box.scrollTop;
+  const meme = box.dataset.cle === 'index', haut = box.scrollTop, nko = (CONTROLE.items || []).filter(x => x.niveau === 'ko').length, natt = (CONTROLE.items || []).length - nko;
   box.className = 'fi ix'; box.dataset.cle = 'index';
-  box.innerHTML = `<header class="ix-tete"><h2>Repères</h2><span class="fi-sous">${pluriel(items.length, 'repère')}</span><button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)">${ico('fermer')}</button></header>`
+  box.innerHTML = `<header class="ix-tete"><h2>Repères</h2><span class="fi-sous">${pluriel(items.length, 'repère')}</span><button class="fi-x plus" id="ix-plus" title="Ajouter un équipement : son repère, puis ses fils dans le tableau" aria-label="Ajouter un équipement">${ico('plus')}</button><button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)">${ico('fermer')}</button></header>`
     + `<div class="ix-filtre">${ico('loupe')}<input id="ix-q" value="${escA(app.insp.filtre)}" placeholder="Chercher un repère, une désignation" aria-label="Chercher un repère" autocomplete="off" spellcheck="false"></div>`
+    + (f ? '' : `<details class="ix-controle"${nko ? ' open' : ''}><summary><span class="fi-etat ${nko ? 'ko' : natt ? 'att' : 'ok'}"><i aria-hidden="true">${nko ? '✕' : natt ? '!' : '✓'}</i>${nko ? pluriel(nko, 'problème') + (natt ? ' · ' + natt + ' à voir' : '') : natt ? natt + ' à voir' : 'rien à reprendre'}</span>${(nko || natt) ? ico('bas', 'fi-chevron') : ''}</summary>${listeControleHtml()}</details>`)
     + (groupes || '<p class="ix-vide">Aucun repère ne correspond.</p>');
   if (meme) box.scrollTop = haut;
   $('in-fermer').onclick = () => fermerInspecteur();
   const q = $('ix-q'); q.addEventListener('input', () => { app.insp.filtre = q.value; const pos = q.selectionStart; rendreIndex(box); const q2 = $('ix-q'); q2.focus(); q2.setSelectionRange(pos, pos); });
   q.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); if (q.value) { q.value = ''; q.dispatchEvent(new Event('input')); } else fermerInspecteur(); }
-    else if (e.key === 'Enter') { const b = box.querySelector('.ix-item'); if (b) b.click(); } });
-  box.querySelectorAll('.ix-item').forEach(b => b.onclick = () => allerAuRepere(b.dataset.nom, b.dataset.plan)); }
+    else if (e.key === 'Enter') { const b = box.querySelector('.ix-item[data-nom]'); if (b) b.click(); } });
+  $('ix-plus').onclick = () => { const r = (prompt('Repère du nouvel équipement (par exemple 105RL2) :') || '').trim(); if (!r) return;
+    if (!app.base.ouvert) ouvrirBase(); ajouterLiaison(r); dire(r + ' : écris ses fils dans le tableau, le plan suit.'); };
+  const det = box.querySelector('.ix-controle'); if (det) det.addEventListener('toggle', () => { CONTROLE.ouvert = det.open; });
+  if (det && CONTROLE.ouvert != null && !nko) det.open = !!CONTROLE.ouvert;
+  box.querySelectorAll('.ix-item.co-item').forEach(b => b.onclick = () => allerAuControle(CONTROLE.items[+b.dataset.k]));
+  box.querySelectorAll('.ix-item[data-nom]').forEach(b => b.onclick = () => allerAuRepere(b.dataset.nom, b.dataset.plan)); }
 // depuis l'index : le folio du repère, son bloc choisi sur le plan, sa fiche
 function allerAuRepere(nom, plan) { const P = plans();
   if (plan && plan !== app.plan && P.includes(plan)) allerAuPlan(plan);
@@ -1337,7 +1344,6 @@ function lierPanneau() {
     if (!$('relief').hidden) { if (e.key === 'Escape') fermerRelief(); return; }
     const dansChamp = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '');
     if (e.key === 'Escape') { if (!$('menu').hidden) { fermerMenu(); $('btnMenu').focus(); } else if (rechercheOuverte()) { fermerRecherche(); $('q').blur(); }
-      else if (CONTROLE.ouvert) ouvrirControle(false);
       else if (dansChamp) e.target.blur();   // dans un champ, Échap ne fait que le quitter
       else if (app.fiche) fermerFiche(true); else if (app.cible || !$('inspecteur').hidden) deselectionner(); else fermerBase(); return; }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !dansChamp) { e.preventDefault(); const q = annuler(); if (q) dire('Annulé : ' + q + '.'); return; }
@@ -1346,7 +1352,7 @@ function lierPanneau() {
     if (dansChamp || e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.key === '/') { e.preventDefault(); ouvrirRecherche(); }
     else if (e.key === 'b') basculerBase();
-    else if (e.key === 'r') basculerIndex();
+    else if (e.key === 'r') { e.preventDefault(); basculerIndex(); }   // sinon le « r » s'écrit dans le champ de l'index qui vient de prendre le focus
     else if (e.key === 'ArrowLeft') allerAuFolio(-1); else if (e.key === 'ArrowRight') allerAuFolio(+1);
     else if (e.key === '+' || e.key === '=') zoomer(1.25); else if (e.key === '-') zoomer(1 / 1.25); else if (e.key === '0' || e.key === 'f') ajuster(true); });
   let rT; window.addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(() => { if (telephone()) ajuster(); else appliquerVue();

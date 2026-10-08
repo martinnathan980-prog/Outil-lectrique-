@@ -90,13 +90,14 @@ page de norme suffit toujours : je la transcris.
 
 9. **La courbe ou la table de la norme.** ✔ Fait : les quatre courbes de
    l'Excel (125 °C, 23 °C min et max, −55 °C) sont dans
-   `normes/disjoncteurs.csv`. La fiche de chaque CB porte le calibre, le
-   profil de charge, le graphique et le verdict, et dit le plus petit
-   calibre qui tient. Reste à confirmer : de quel disjoncteur sont ces
-   courbes (d'autres familles ?), la gamme des calibres (l'outil prend 1, 2,
-   2,5, 3, 4, 5, 7,5, 10, 15, 20, 25, 30, 35, 50 A) et la marge que vous
-   vous imposez (l'outil demande seulement que le disjoncteur tienne plus
-   longtemps que la phase).
+   `normes/disjoncteurs.csv`. La fiche de chaque CB porte la gamme en puces
+   (1, 3, 5, 7,5, 10, 15, 25 A — la vôtre), chacune jugée sur le profil,
+   l'idéale étoilée (la plus petite qui tient sans toucher la courbe : 10 %
+   de courant de marge ou trois fois la durée de tenue), le graphique en
+   ampères et secondes qu'on survole et qu'on glisse, les états du profil
+   (démarrage, transition, ceux qu'on ajoute, le permanent). Reste à
+   confirmer : de quel disjoncteur sont ces courbes (d'autres familles ?)
+   et si la marge « ne touche pas la courbe » est la bonne.
 10. **Pour chaque équipement alimenté** (c'est ce qui remplira les profils
     de charge, aujourd'hui écrits à la main sur la fiche du disjoncteur) :
     - sa consommation, en A ou en W, et sous quelle tension ;

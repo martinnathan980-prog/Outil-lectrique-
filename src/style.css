@@ -153,39 +153,25 @@ body.cherche .recherche{display:flex}
 .q-item .genre{font-size:var(--t0);color:var(--cuivre-clair);text-transform:uppercase;letter-spacing:.06em;font-weight:600;min-width:52px}
 .q-rien{padding:10px 12px;color:var(--craie-2)}
 
-/* ─── LE CONTRÔLE : en haut à gauche, l'état du contrat ──────────────────── */
-.controle{position:fixed;top:12px;left:calc(var(--rail) + 24px);z-index:22;border-radius:18px;width:max-content;max-width:min(440px,calc(100vw - var(--rail) - 48px));overflow:hidden;transition:width var(--moyen)}
-.controle.ouvert{width:min(440px,calc(100vw - var(--rail) - 48px))}
-body.cherche .controle{display:none}
-.co-bouton{display:flex;align-items:center;gap:14px;width:100%;height:44px;padding:0 6px 0 16px;border:none;background:none;color:var(--craie);border-radius:18px;text-align:left}
-.co-bouton:hover{background:rgba(255,255,255,.05)}
-.co-titre{display:flex;flex-direction:column;min-width:0;flex:1;line-height:1.2}
-.co-titre b{font-weight:600;font-size:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px}
-.co-titre small{font:500 var(--t0) var(--mono);color:var(--craie-2);white-space:nowrap}
-.co-etat{flex:none;display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 12px 0 7px;border-radius:999px;font-size:var(--t1);font-weight:700;white-space:nowrap}
-.co-etat i{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font:800 11px/1 var(--sans);font-style:normal;color:#fff}
-.co-etat em{font-style:normal;font-weight:600;opacity:.85}
-.co-etat.ok{background:rgba(46,139,87,.2);color:#a5e3bd}.co-etat.ok i{background:#2e8b57}
-.co-etat.att{background:rgba(212,135,15,.2);color:#ffcd85}.co-etat.att i{background:#d4870f}
-.co-etat.ko{background:rgba(179,38,30,.26);color:#ffb4aa}.co-etat.ko i{background:#d03b30}
-.co-liste{border-top:1px solid var(--trait-verre);padding:6px;max-height:min(62vh,540px);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;animation:co-deplie var(--moyen)}
-@keyframes co-deplie{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
-.co-groupe{display:flex;align-items:center;gap:8px;padding:10px 10px 4px;font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--craie-2)}
-.co-groupe b{font:600 var(--t0) var(--mono);letter-spacing:0;border-radius:999px;padding:0 7px;background:rgba(255,255,255,.1);color:var(--craie)}
-.co-groupe.ko b{background:rgba(208,59,48,.35)}
-.co-groupe.att b{background:rgba(212,135,15,.3)}
-.co-item{display:flex;align-items:center;gap:11px;width:100%;padding:8px;border-radius:12px;border:none;background:none;color:var(--craie);text-align:left;transition:background var(--rapide)}
-.co-item:hover,.co-item:focus-visible{background:rgba(255,255,255,.08)}
-.co-item .min0{display:flex;flex-direction:column;gap:1px}
-.co-item b{font:700 var(--t2) var(--mono)}
-.co-item small{color:var(--craie-2);font-size:var(--t1);line-height:1.35}
-.co-code{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font:700 11px/1 var(--mono);color:#fff;background:#3b4757}
+/* ─── LE CONTRÔLE : le compte sur le bouton des repères, la liste dans l'index ─── */
+.rd-point{position:absolute;top:4px;right:3px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;font:800 10px/16px var(--mono);font-style:normal;color:#fff;background:#d4870f;box-shadow:0 0 0 2px var(--verre-plein);pointer-events:none}
+.rd-point.ko{background:#d03b30}
+.rd-point[hidden]{display:none}
+.co-code{flex:none;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font:700 10px/1 var(--mono);color:#fff;background:#3b4757}
 .co-code.barrette{background:var(--cuivre)}
 .co-code.coupure{background:#3d5a78}
-.co-code.aposer{background:rgba(181,84,28,.16);color:var(--cuivre-clair);box-shadow:inset 0 0 0 1.5px var(--cuivre-clair)}
-.co-code.tab svg.ico{width:17px;height:17px}
-.co-folio{flex:none;margin-left:auto;font:600 var(--t0) var(--mono);color:var(--craie-2);border:1px solid var(--trait-verre);border-radius:999px;padding:2px 8px;white-space:nowrap}
-.co-vide{margin:8px 10px 10px;color:var(--craie-2);font-size:var(--t1);line-height:1.5}
+.co-code.aposer{background:var(--cuivre-pale);color:var(--cuivre-2);box-shadow:inset 0 0 0 1.5px var(--cuivre)}
+.co-code.tab{background:var(--papier-2);color:var(--encre-2)}
+.co-code.tab svg.ico{width:15px;height:15px}
+.ix-controle{margin:-2px 0 2px}
+.ix-controle>summary{display:flex;align-items:center;gap:8px;list-style:none;cursor:pointer;padding:2px 0;border-radius:8px}
+.ix-controle>summary::-webkit-details-marker{display:none}
+.ix-controle>summary .fi-chevron{width:14px;height:14px;color:var(--encre-2);transition:transform var(--rapide)}
+.ix-controle[open]>summary .fi-chevron{transform:rotate(180deg)}
+.ix-item.co-item{grid-template-columns:30px minmax(0,1fr) auto}
+.ix-item.co-item small{white-space:normal;line-height:1.35}
+.ix-groupe.ko b{background:#fbeceb;color:#86201a}
+.ix-groupe.att b{background:#fcf3e6;color:#74450a}
 
 /* ─── LE MENU : au bas de la barre, ouvert vers la droite ───────────────── */
 #menuBoite{position:relative}
@@ -578,9 +564,6 @@ body.depot-actif .depot{display:grid}
   #rail .espace{display:none}
   .menu{bottom:calc(100% + 12px);left:auto;right:-4px;width:min(272px,calc(100vw - 16px))}
   .recherche{top:8px;left:8px;right:8px;width:auto;max-width:none}
-  .controle{top:8px;left:8px;max-width:calc(100vw - 16px)}
-  .controle.ouvert{width:calc(100vw - 16px)}
-  .co-titre b{max-width:150px}
   #folios{left:50%;bottom:64px;max-width:calc(100vw - 16px);transition:bottom var(--moyen)}
   .fo-strip{max-width:calc(100vw - 110px)}
   /* les documents montent en tiroir ; la base garde la hauteur qu'on lui donne */
@@ -796,6 +779,7 @@ input.fi-nom:focus{outline:none;border-bottom-color:var(--cuivre)}
 .fi-ligne{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin-top:-6px;min-height:24px}
 .fi-sous{color:var(--encre-2);font-size:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fi-sous b{font-family:var(--mono);color:var(--encre);font-weight:600}
+.fi-sous .fi-route{display:inline-block;vertical-align:-1px;margin-right:6px}
 .fi-des{flex-basis:100%;border:none;background:none;padding:0;margin:0;font-size:var(--t1);color:var(--encre);border-bottom:1.5px dashed transparent;border-radius:0}
 .fi-des::placeholder{color:var(--encre-2)}
 .fi-des:hover{border-bottom-color:var(--filet)}
@@ -859,6 +843,8 @@ details.fi-etat.ko ul{background:#fbeceb}details.fi-etat.att ul{background:#fcf3
 /* les fils : une ligne chacun — la borne, le fil, son type en retrait, où il va */
 .fi-liste{list-style:none;margin:0 -6px;padding:0;display:flex;flex-direction:column}
 .fi-fil{display:grid;grid-template-columns:auto 8px auto minmax(0,1fr) auto auto;align-items:center;column-gap:8px;padding:5px 6px;border-radius:7px;font-size:var(--t1);transition:background var(--rapide)}
+.fi-type{font:700 var(--t1) var(--mono);white-space:nowrap}
+.fi-sertir{font:500 var(--t0) var(--mono);color:#8a96a2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fi-fil[data-i]{cursor:pointer}
 .fi-fil+.fi-fil{box-shadow:0 -1px 0 #edf0f3}
 .fi-fil[data-i]:hover,.fi-fil.vise{background:var(--cuivre-pale);box-shadow:none}
@@ -867,7 +853,8 @@ details.fi-etat.ko ul{background:#fbeceb}details.fi-etat.att ul{background:#fcf3
 .fi-ct b{font-weight:700;color:var(--encre)}
 .fi-ct i{font-style:normal;font-weight:500;font-size:var(--t0);color:var(--encre-2)}
 .fi-puce{display:inline-block;width:8px;height:8px;border-radius:50%;flex:none}
-.fi-w{font-family:var(--mono);font-weight:700;white-space:nowrap}
+.fi-w{font:500 var(--t0) var(--mono);color:#9aa5b1;white-space:nowrap;text-align:right}
+.fi-w.neuf{color:var(--cuivre-2);font-style:italic;font-family:var(--sans)}
 .fi-t{font-family:var(--mono);color:#8a96a2;font-size:var(--t0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fi-t em{font-style:normal;color:#5b6773;margin-left:7px}
 /* la nomenclature : ce qu'on sertit sur ce connecteur, chaque contact avec son nombre */
@@ -877,35 +864,87 @@ details.fi-etat.ko ul{background:#fbeceb}details.fi-etat.att ul{background:#fcf3
 .fi-nomen b{color:var(--encre);margin-right:4px}
 .fi-nomen i{font-style:normal;color:#8a96a2;margin-left:4px}
 .fi-cote .fi-sertir{color:#8a96a2}
-/* la disjonction : le calibre, la courbe, le profil de charge */
-.dj-calibre{display:inline-flex;align-items:baseline;gap:4px;margin-left:10px}
-.dj-calibre input,.dj-profil input{border:1px solid var(--filet);border-radius:8px;padding:3px 8px;font:600 var(--t1) var(--mono);color:var(--encre);background:var(--papier);text-align:right;width:62px}
-.dj-calibre input{width:64px;font-weight:700;font-size:var(--t2)}
-.dj-calibre input:focus,.dj-profil input:focus{outline:none;border-color:var(--cuivre);box-shadow:0 0 0 3px var(--cuivre-pale)}
-.dj-calibre i,.dj-phase i{font-style:normal;color:var(--encre-2);font-size:var(--t0);min-width:8px}
-.dj-graphe{margin:0;padding:8px 6px 6px;background:linear-gradient(180deg,#f5f7f9,#eceff3);border-radius:10px}
-.dj-graphe svg{width:100%;height:auto;display:block;max-width:420px;margin:0 auto}
-.dj-graphe text{font:500 8.5px var(--mono);fill:#6b7684}
+/* la disjonction : la gamme en puces, le graphique qu'on survole et qu'on glisse, les états */
+.dj-gamme{display:flex;flex-direction:column;gap:5px}
+.dj-chips{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.dj-chip{min-width:38px;height:30px;padding:0 9px;border-radius:999px;border:1.5px solid var(--filet);background:var(--papier);font:700 var(--t1) var(--mono);color:var(--encre-2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background var(--rapide),border-color var(--rapide),color var(--rapide)}
+.dj-chip:hover{border-color:#c9d1d9;background:var(--papier-2)}
+.dj-chip.ok{border-color:#a9d9bb;color:#1d5b35}
+.dj-chip.ko{border-color:#f1c4bf;color:#86201a}
+.dj-chip.serre{border-style:dashed}
+.dj-chip i{font-style:normal;font-size:10px;color:#d4870f;margin-left:3px}
+.dj-chip[aria-pressed="true"]{background:var(--encre);border-color:var(--encre);color:#fff;border-style:solid}
+.dj-chip.ok[aria-pressed="true"]{background:#2e8b57;border-color:#2e8b57}
+.dj-chip.ko[aria-pressed="true"]{background:var(--danger);border-color:var(--danger)}
+.dj-chip[aria-pressed="true"] i{color:#ffd98a}
+.dj-unite{font:600 var(--t0) var(--mono);color:var(--encre-2);margin-left:2px}
+.dj-dou{font-size:var(--t0);color:var(--encre-2)}
+.dj-graphe{position:relative;margin:0;padding:6px 4px 6px;background:linear-gradient(180deg,#f5f7f9,#eceff3);border-radius:10px}
+.dj-graphe svg{width:100%;height:auto;display:block;cursor:crosshair;touch-action:none}
+.dj-graphe svg.tient{cursor:grabbing}
+.dj-graphe text{font:500 8.5px var(--mono);fill:#6b7684;pointer-events:none}
 .dj-graphe text.dj-titre{font-weight:700;fill:#4b5661}
 .dj-graphe .dj-grille{stroke:#d7dde3;stroke-width:.6}
-.dj-graphe .dj-axe{stroke:#9aa5b1;stroke-width:1}
-.dj-graphe .dj-zone{fill:#2e8b57;fill-opacity:.1}
-.dj-graphe .dj-courbe{fill:none;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}
-.dj-graphe .dj-systeme{fill:none;stroke:#26323f;stroke-width:2;stroke-linejoin:round}
+.dj-graphe .dj-grille.fine{stroke-dasharray:2 3}
+.dj-graphe .dj-axe{stroke:#9aa5b1;stroke-width:1;pointer-events:none}
+.dj-graphe .dj-zone{fill:#2e8b57;fill-opacity:.11;pointer-events:none}
+.dj-graphe .dj-courbe{fill:none;stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
+.dj-graphe .dj-fantome path{fill:none;stroke:#b4bcc5;stroke-width:1;stroke-dasharray:3 3;cursor:pointer;transition:stroke var(--rapide)}
+.dj-graphe .dj-fantome text{fill:#9aa5b1;font-size:8px;font-weight:700;cursor:pointer;pointer-events:auto}
+.dj-graphe .dj-fantome:hover path{stroke:#4b5661;stroke-dasharray:none;stroke-width:1.4}
+.dj-graphe .dj-fantome:hover text{fill:#26323f}
+.dj-graphe .dj-systeme{fill:none;stroke:#26323f;stroke-width:2;stroke-linejoin:round;pointer-events:none}
 .dj-graphe .dj-systeme.ko{stroke:var(--danger)}
-.dj-graphe .dj-point{fill:#26323f;stroke:#fff;stroke-width:1.2}
-.dj-graphe .dj-point.ko{fill:var(--danger)}
+.dj-graphe .dj-pt{cursor:grab}
+.dj-graphe .dj-halo{fill:transparent}
+.dj-graphe .dj-point{fill:#26323f;stroke:#fff;stroke-width:1.6;transition:r var(--rapide)}
+.dj-graphe .dj-pt:hover .dj-point{r:6}
+.dj-graphe .dj-pt.ko .dj-point{fill:var(--danger)}
+.dj-graphe .dj-pt.serre .dj-point{fill:#d4870f}
+.dj-graphe .dj-etiq{font:700 8.5px var(--sans);fill:#26323f;paint-order:stroke;stroke:#f3f5f7;stroke-width:3px;stroke-linejoin:round}
+.dj-graphe .dj-croix{stroke:#26323f;stroke-width:.7;stroke-dasharray:3 3;opacity:.45;pointer-events:none}
+.dj-tip{position:absolute;pointer-events:none;background:var(--verre-plein);color:var(--craie);border-radius:9px;padding:6px 10px;font:500 var(--t0)/1.45 var(--sans);box-shadow:var(--ombre-1);max-width:230px;z-index:2;white-space:normal}
+.dj-tip b{font-family:var(--mono);color:#fff}
+.dj-tip em{font-style:normal;color:var(--cuivre-clair);font-weight:600}
 .dj-legende{display:flex;flex-wrap:wrap;gap:3px 12px;justify-content:center;font-size:var(--t0);color:var(--encre-2);padding-top:5px}
 .dj-legende i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
-.dj-profil{display:flex;flex-direction:column;gap:5px}
-.dj-phase{display:grid;grid-template-columns:minmax(64px,1fr) 62px 12px 62px 12px;align-items:center;column-gap:6px;font-size:var(--t1);color:var(--encre-2)}
-.dj-phase .dj-inf{font-size:var(--t2);text-align:right;color:var(--encre-2)}
-.dj-note{margin:0}
+.dj-legende i.prof{background:#26323f}
+.dj-legende i.fant{background:none;height:0;border-top:2px dashed #b4bcc5;border-radius:0}
+.dj-etats{display:flex;flex-direction:column;gap:4px}
+.dj-etats-tete,.dj-etat{display:grid;grid-template-columns:minmax(72px,1fr) 64px 12px 64px 12px 22px;align-items:center;column-gap:6px;font-size:var(--t1);color:var(--encre-2)}
+.dj-etats-tete{font:700 10px var(--mono);color:#9aa5b1;margin-bottom:-2px}
+.dj-etats-tete span:nth-child(n+2){text-align:right;padding-right:8px}
+.dj-etat .dj-nom{color:var(--encre);font-weight:500}
+.dj-etat input{border:1px solid var(--filet);border-radius:8px;padding:3px 8px;font:600 var(--t1) var(--mono);color:var(--encre);background:var(--papier);text-align:right;width:64px;transition:border-color var(--rapide)}
+.dj-etat input.dj-nom{text-align:left;width:100%;font:500 var(--t1) var(--sans);border-color:transparent;padding-left:0}
+.dj-etat input.dj-nom:hover{border-color:var(--filet)}
+.dj-etat input:hover{border-color:#c9d1d9}
+.dj-etat input:focus{outline:none;border-color:var(--cuivre);box-shadow:0 0 0 3px var(--cuivre-pale)}
+.dj-etat i{font-style:normal;color:var(--encre-2);font-size:var(--t0);min-width:8px}
+.dj-etat .dj-inf{font-size:var(--t2);text-align:right;color:var(--encre-2)}
+.dj-x{width:22px;height:22px;border:none;background:none;border-radius:50%;color:var(--encre-2);font-size:var(--t3);line-height:1;cursor:pointer;padding:0}
+.dj-x:hover{background:#fbeae8;color:var(--danger)}
+.dj-plus{align-self:flex-start;margin:2px 0 0 -8px}
 .dj-fils{margin-top:2px}
+.dj-fils .fi-dest{justify-content:flex-start}
 .dj-adm{font-family:var(--mono);font-weight:600;color:var(--encre);white-space:nowrap;text-align:right}
+.dj-du{font-family:var(--mono);font-weight:700;white-space:nowrap}
 .fi-ko.fi-att{color:#74450a}
-.fi-cable{color:var(--encre-2);font-family:var(--mono);font-size:var(--t0)}
 .fi-faisceau{padding-top:6px}
+/* des faits : la clé en petit, la valeur en chasse fixe */
+.fi-faits{display:grid;grid-template-columns:auto minmax(0,1fr);gap:7px 12px;margin:0;font-size:var(--t1)}
+.fi-faits dt{font:700 10px/1.7 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--encre-2);white-space:nowrap}
+.fi-faits dd{margin:0;font-family:var(--mono);color:var(--encre);line-height:1.5;min-width:0;overflow-wrap:anywhere}
+.fi-faits dd b{font-weight:700}
+.fi-faits dd i{font-style:normal;color:var(--encre-2)}
+.fi-faits dd .fi-ko{font-family:var(--sans)}
+.fi-faits.serre{gap:4px 12px}
+/* autour du connecteur : ce qu'on sertit, le toron, ce qui l'englobe */
+.fi-autour{display:flex;flex-direction:column;gap:7px;padding-top:8px;border-top:1px dashed var(--filet)}
+.fi-autour .fi-habillage{min-height:22px;gap:8px}
+.fi-autour .fi-nomen-t{white-space:nowrap}
+.fi-choix{font-size:var(--t0);color:var(--encre-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.fi-avenir{font-style:normal;font-size:var(--t0);color:var(--cuivre-2);background:var(--cuivre-pale);border-radius:6px;padding:0 6px;white-space:nowrap}
 /* les contrats déjà faits : les candidats, la comparaison */
 .fi-cand{cursor:pointer}
 .fi-cand .fi-ct b{color:var(--encre)}
@@ -920,9 +959,6 @@ details.fi-etat.ko ul{background:#fbeceb}details.fi-etat.att ul{background:#fcf3
 .fi-bouton.cuivre svg.ico{color:#fff}
 .fi-bouton.cuivre:disabled{opacity:.45;cursor:default}
 .fi-etat i{min-width:14px;width:auto;padding:0 3px;border-radius:7px}
-.fi-habillage{padding-top:4px;align-items:center}
-.fi-habillage .fi-lien{margin-left:auto}
-.fi-habillage i{margin-left:4px}
 .fi-rac-t{margin:6px 0 2px;font:700 10px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--encre-2)}
 .fi-rac-t:first-child{margin-top:0}
 .hyp-n select{height:28px;border:1px solid rgba(181,84,28,.35);border-radius:7px;padding:0 4px;background:var(--papier);color:var(--encre);font-family:var(--sans);font-size:var(--t1)}
@@ -933,8 +969,7 @@ details.fi-etat.ko ul{background:#fbeceb}details.fi-etat.att ul{background:#fcf3
 .fi-dest>span{overflow:hidden;text-overflow:ellipsis}
 .fi-dest svg.ico{width:12px;height:12px;color:#9aa5b1;flex:none}
 .fi-dest.amont svg.ico{transform:scaleX(-1)}
-.fi-tag{font:700 var(--t0) var(--mono);color:var(--cuivre-2);background:var(--cuivre-pale);border:1px dashed rgba(181,84,28,.5);border-radius:6px;padding:0 5px}
-.fi-fil.neuf .fi-w{color:var(--cuivre-2);font-style:italic;font-family:var(--sans)}
+.fi-tag{font:700 var(--t0) var(--mono);color:var(--cuivre-2);background:var(--cuivre-pale);border:1px dashed rgba(181,84,28,.5);border-radius:6px;padding:0 5px;margin-left:4px}
 .fi-fil.ko{background:#fbeceb}
 .fi-ko{grid-column:3/-1;color:var(--danger);font-size:var(--t0);font-weight:600}
 .fi-groupe{font-size:10.5px;color:var(--encre-2);font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:10px 6px 3px}
@@ -979,6 +1014,7 @@ details.fi-etat.ko ul{background:#fbeceb}details.fi-etat.att ul{background:#fcf3
 .ix-tete{display:flex;align-items:center;gap:10px;min-height:34px}
 .ix-tete h2{margin:0;font:700 var(--t4)/1.2 var(--sans);letter-spacing:-.005em}
 .ix-tete .fi-sous{flex:1}
+.ix-tete .fi-x.plus{color:var(--cuivre-2)}
 .ix-filtre{display:flex;align-items:center;gap:8px;height:34px;border:1px solid var(--filet);border-radius:999px;padding:0 8px 0 12px;transition:border-color var(--rapide),box-shadow var(--rapide)}
 .ix-filtre:focus-within{border-color:var(--cuivre);box-shadow:0 0 0 3px var(--cuivre-pale)}
 .ix-filtre svg.ico{width:16px;height:16px;color:var(--encre-2)}
