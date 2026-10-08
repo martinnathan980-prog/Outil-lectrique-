@@ -53,8 +53,8 @@ function controleDisjonction(nom) { const d = disjonctionDe(nom), out = [];
         : `${p.nom} ${amperes(p.i)} pendant ${secondes(p.t)} : le ${amperes(d.calibre)} déclenche en ${secondes(m.temps)} à ${m.courbe}`) + mini }); }
     else if (d.calibreIdeal && d.calibre !== d.calibreIdeal) out.push({ niveau: 'att', texte: d.calibre > d.calibreIdeal ? `${amperes(d.calibre)}${d.origine === 'pn' ? ' (part number)' : ''} : un ${amperes(d.calibreIdeal)} suffirait` : `${amperes(d.calibre)} tient mais touche la courbe : l’idéal est un ${amperes(d.calibreIdeal)}` }); }
   d.fils.forEach(f => { const nomF = (f.cable || 'fil sans numéro') + (f.type ? ' (' + f.type + ')' : '');
-    if (f.verdict === 'fil') out.push({ niveau: 'ko', texte: `${nomF} : ${f.pire.nom} ${amperes(f.pire.i)} pendant ${secondes(f.pire.t)} dépasse ${amperes(f.pire.admise)}, ce que le fil admet ${pourPalier(f.pire.palier)}${motFacteur(f.facteur)}` });
-    else if (f.verdict === 'calibre') out.push({ niveau: 'att', texte: `${nomF} admet ${amperes(f.continu)} en continu${motFacteur(f.facteur)}, moins que le calibre ${amperes(d.calibre)} : pas protégé en surcharge` }); });
+    if (f.verdict === 'fil') out.push({ niveau: 'ko', texte: `${nomF} : ${f.pire.nom} ${amperes(f.pire.i)}${f.pire.t === Infinity ? '' : ' / ' + secondes(f.pire.t)} > ${amperes(f.pire.admise)} admis ${pourPalier(f.pire.palier)}${motFacteur(f.facteur)}` });
+    else if (f.verdict === 'calibre') out.push({ niveau: 'att', texte: `${nomF} : ${amperes(f.continu)} admis en continu${motFacteur(f.facteur)} < calibre ${amperes(d.calibre)} — pas protégé en surcharge` }); });
   return out; }
 /* CE QUI ALIMENTE un fil : le disjoncteur en amont (le premier dont un chemin passe par ce fil), son courant permanent
    et son courant de pointe — ce qu'il faut pour juger la charge et la chute du fil. */
@@ -69,7 +69,7 @@ function gammeHtml(nom, d) {
   // la gamme : chaque calibre jugé ; celui qui est retenu est pressé ; l'idéal porte l'étoile
   const puces = d.gamme.map(g => `<button class="dj-chip${g.valide === true ? ' ok' : g.valide === false ? ' ko' : ''}${g.serre ? ' serre' : ''}${g.ideal ? ' ideal' : ''}" data-cal="${g.calibre}" aria-pressed="${g.calibre === d.calibre}" title="${escA(g.valide == null ? amperes(g.calibre) : amperes(g.calibre) + (g.valide ? (g.ideal ? ' : l’idéal — tient sans toucher la courbe' : g.serre ? ' : tient, mais touche la courbe' : ' : tient') : ' : déclenche') + (g.calibre === d.calibre ? ' · retenu' + (d.origine === 'pn' ? ' (part number)' : d.origine === 'main' ? ' (choisi à la main)' : '') : ''))}">${nombre(g.calibre)}${g.ideal ? '<i aria-label="idéal">★</i>' : ''}</button>`).join('');
   const dou = d.origine === 'pn' ? `part number ${esc(pnDuRepere(nom))}` : d.origine === 'main' ? 'choisi à la main' : d.origine === 'ideal' ? 'l’idéal, trouvé par l’outil' : 'à choisir';
-  return `<div class="dj-gamme"><span class="fi-nomen-t">calibre</span><div class="dj-chips" role="group" aria-label="Calibre, en ampères">${puces}<span class="dj-unite">A</span></div><span class="dj-dou">${dou}</span></div>`; }
+  return `<div class="dj-gamme"><span class="fi-nomen-t">calibre (A)</span><div class="dj-chips" role="group" aria-label="Calibre, en ampères">${puces}</div><span class="dj-dou">${dou}${d.calibreIdeal ? ` · <i>★</i> ${d.calibre === d.calibreIdeal ? 'l’idéal' : 'idéal : ' + esc(amperes(d.calibreIdeal))}` : ''}</span></div>`; }
 function ficheDisjonction(nom) { const d = disjonctionDe(nom), E = etatsDuProfil(d.profil), gamme = gammeHtml(nom, d);
   // les états : un courant, une durée ; ceux qu'on ajoute ont un nom qu'on écrit et une croix
   const ligne = e => { const val = q => e[q] != null && isFinite(e[q]) ? nombre(e[q]) : '', plus = /^plus/.test(e.k);
@@ -77,7 +77,7 @@ function ficheDisjonction(nom) { const d = disjonctionDe(nom), E = etatsDuProfil
       + `<input data-dj="${e.k}" data-q="i" value="${escA(val('i'))}" inputmode="decimal" placeholder="—" aria-label="${escA(e.nom + ' : courant en ampères')}"><i>A</i>`
       + (e.k === 'perm' ? '<i class="dj-inf" title="pour toujours">∞</i><i></i>' : `<input data-dj="${e.k}" data-q="t" value="${escA(val('t'))}" inputmode="decimal" placeholder="—" aria-label="${escA(e.nom + ' : durée en secondes')}"><i>s</i>`)
       + (plus ? `<button class="dj-x" data-x="${e.k}" aria-label="Retirer cet état">×</button>` : '<span></span>') + '</div>'; };
-  const etats = `<div class="dj-etats"><div class="dj-etats-tete"><span class="fi-nomen-t">profil de charge</span><span></span><span>A</span><span>s</span></div>${E.map(ligne).join('')}<button class="fi-lien dj-plus" id="dj-plus">+ un état</button></div>`;
+  const etats = `<div class="dj-etats"><span class="fi-nomen-t">profil de charge</span>${E.map(ligne).join('')}<button class="fi-lien dj-plus" id="dj-plus">+ un état</button></div>`;
   // ses fils : ce que chacun admet (la norme des fils), et s'il tient le profil
   const lf = d.fils.map(f => { const k = f.l ? cleFil(f.l) : '', titre = f.fil ? [['continu', f.fil.intensite], ['2 s', f.fil.i2s], ['10 s', f.fil.i10s], ['1 min', f.fil.i1min]].filter(x => x[1] != null).map(x => amperes(x[1] * f.facteur) + ' ' + x[0]).join(' · ') + motFacteur(f.facteur) : 'fil inconnu de la norme';
     const dit = f.verdict === 'fil' ? `<span class="fi-ko">${esc(f.pire.nom)} ${esc(amperes(f.pire.i))} pendant ${esc(secondes(f.pire.t))} : dépasse ${esc(amperes(f.pire.admise))} ${pourPalier(f.pire.palier)}</span>`
@@ -107,22 +107,22 @@ function geometrieDisjonction(d) { const P = d.points.filter(p => p.i > 0), cal 
 function profilSvg(d, G) { const P = d.points.filter(p => p.i > 0).slice().sort((a, b) => a.i - b.i), { T, H, B } = DJ; if (!P.length) return '';
   let x = G.xb(P[0].i), y = T, path = `M${f1(x)} ${f1(y)}`, ronds = '';
   P.forEach((p, k) => { if (k) { y = G.Y(p.t); path += ` L${f1(x)} ${f1(y)}`; x = G.xb(p.i); path += ` L${f1(x)} ${f1(y)}`; }
-    const cy = k ? y : T + 4, dx = x > DJ.W * 0.72 ? -8 : 8;
-    ronds += `<g class="dj-pt${p.ok === false ? ' ko' : p.serre ? ' serre' : ''}" data-k="${escA(p.k)}"><circle class="dj-halo" cx="${f1(x)}" cy="${f1(cy)}" r="11"/><circle class="dj-point" cx="${f1(x)}" cy="${f1(cy)}" r="4"/><text class="dj-etiq" x="${f1(x + dx)}" y="${f1(cy - 7)}" text-anchor="${dx > 0 ? 'start' : 'end'}">${esc(p.nom)}</text></g>`; });
+    const cy = k ? y : T + 4, droite = x < DJ.W * 0.68;
+    ronds += `<g class="dj-pt${p.ok === false ? ' ko' : p.serre ? ' serre' : ''}" data-k="${escA(p.k)}"><circle class="dj-halo" cx="${f1(x)}" cy="${f1(cy)}" r="11"/><circle class="dj-point" cx="${f1(x)}" cy="${f1(cy)}" r="${p.ok === false ? 5 : 4}"/><text class="dj-etiq" x="${f1(droite ? x + 9 : x - 9)}" y="${f1(cy + (k ? -6 : 10))}" text-anchor="${droite ? 'start' : 'end'}">${esc(p.nom)}</text></g>`; });
   path += ` L${f1(x)} ${H - B}`;
-  return `<path class="dj-systeme${d.valide ? '' : ' ko'}" d="${path}"/>${ronds}`; }
+  return `<path class="dj-systeme" d="${path}"/>${ronds}`; }
 function graphiqueDisjonction(d) { const G = geometrieDisjonction(d), { W, H, L, R, T, B, ylo, yhi } = DJ, cal = d.calibre;
   let s = '';
   // la grille : les décades en abscisse (et 2, 5 entre elles), en ordonnée
   for (let e = Math.floor(G.xlo); e <= Math.ceil(G.xhi); e++) [1, 2, 5].forEach(m => { const v = m * Math.pow(10, e); if (v < Math.pow(10, G.xlo) - 1e-9 || v > Math.pow(10, G.xhi) + 1e-9) return;
     s += `<line class="dj-grille${m === 1 ? '' : ' fine'}" x1="${f1(G.X(v))}" y1="${T}" x2="${f1(G.X(v))}" y2="${H - B}"/><text x="${f1(G.X(v))}" y="${H - B + 12}" text-anchor="middle">${nombre(v)}</text>`; });
   for (let e = ylo; e <= yhi; e++) s += `<line class="dj-grille" x1="${L}" y1="${f1(G.Y(Math.pow(10, e)))}" x2="${W - R}" y2="${f1(G.Y(Math.pow(10, e)))}"/><text x="${L - 5}" y="${f1(G.Y(Math.pow(10, e))) + 3}" text-anchor="end">${e >= 3 ? nombre(Math.pow(10, e - 3)) + 'k' : nombre(Math.pow(10, e))}</text>`;
-  s += `<text x="${f1((L + W - R) / 2)}" y="${H - 3}" text-anchor="middle" class="dj-titre">A</text><text transform="translate(10 ${f1((T + H - B) / 2)}) rotate(-90)" text-anchor="middle" class="dj-titre">s</text>`;
+  s += `<text x="${W - R}" y="${H - 3}" text-anchor="end" class="dj-titre">courant (A)</text><text x="2" y="${T - 6}" text-anchor="start" class="dj-titre">temps (s)</text>`;
   const pt = (p, c) => f1(G.xb(p.m * c)) + ' ' + f1(G.Y(p.t)), rapide = d.courbes[0];
   s += `<rect class="dj-capte" x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="transparent"/>`;
   // les courbes fantômes des autres calibres de la gamme : la plus rapide de chacun, en gris ; un clic la retient
-  d.gamme.forEach(g => { if (g.calibre === cal) return; const xe = G.xb(multipleAdmis(rapide, 0.3) * g.calibre); if (xe >= W - R - 2) return;
-    s += `<g class="dj-fantome${g.valide === true ? ' ok' : g.valide === false ? ' ko' : ''}" data-cal="${g.calibre}"><path d="M${rapide.brut.map(p => pt(p, g.calibre)).join(' L')}"/><text x="${f1(xe + 3)}" y="${f1(G.Y(0.3) + 3)}">${nombre(g.calibre)}</text></g>`; });
+  d.gamme.forEach(g => { if (g.calibre === cal) return; const xe = G.X(rapide.brut[0].m * g.calibre); if (xe < L || xe > W - R) return;
+    s += `<g class="dj-fantome${g.valide === true ? ' ok' : g.valide === false ? ' ko' : ''}" data-cal="${g.calibre}"><path d="M${rapide.brut.map(p => pt(p, g.calibre)).join(' L')}"/><text x="${f1(xe)}" y="${T - 6}" text-anchor="middle">${nombre(g.calibre)}</text></g>`; });
   if (cal) { const b0 = rapide.brut[0], bn = rapide.brut[rapide.brut.length - 1];
     s += `<path class="dj-zone" d="M${L} ${T} L${f1(G.xb(b0.m * cal))} ${T} L${rapide.brut.map(p => pt(p, cal)).join(' L')} L${f1(G.xb(bn.m * cal))} ${H - B} L${L} ${H - B} Z"/>`;
     d.courbes.forEach((c, k) => { s += `<path class="dj-courbe" style="stroke:${COULEURS_COURBES[Math.min(k, COULEURS_COURBES.length - 1)]}" d="M${c.brut.map(p => pt(p, cal)).join(' L')}"><title>${escA(c.nom + ' · ' + amperes(cal))}</title></path>`; }); }
@@ -149,10 +149,10 @@ function lierDisjonction(nom) { const box = $('ba-equip'), sec = box.querySelect
     const a = document.activeElement; if (a && a.tagName === 'INPUT' && box.contains(a)) rafraichir(); else if (box.contains(a)) rendreFiche(); }, 0);
   // les puces : retenir un calibre ; presser celui qui l'est déjà rend celui du part number (ou l'idéal)
   const retenir = cal => { const d = E.d, c = lire(); c.calibre = cal === d.calibre ? null : cal; if (c.calibre === (d.ecrit || null)) return;
-    ecrire('calibre de ' + nom, c); dire(c.calibre ? amperes(c.calibre) + ' retenu pour ' + nom + '.' : nom + ' : ' + (d.pn ? 'le calibre du part number' : 'le calibre idéal') + ' est repris.'); };
+    ecrire('calibre de ' + nom, c); dire(c.calibre ? nom + ' : calibre ' + amperes(c.calibre) + ', choisi à la main.' : nom + ' : calibre ' + amperes(d.pn || d.calibreIdeal) + ' repris ' + (d.pn ? 'du part number.' : 'de l’idéal.')); };
   const lierPuces = () => { sec.querySelectorAll('.dj-chip').forEach(b => b.onclick = () => retenir(+b.dataset.cal)); sec.querySelectorAll('.dj-fantome').forEach(g => g.onclick = () => retenir(+g.dataset.cal)); };
   sec.querySelectorAll('input').forEach(el => el.addEventListener('change', () => ecrire('profil de charge de ' + nom, lire())));
-  const plus = $('dj-plus'); if (plus) plus.onclick = () => { const c = lire(); c.plus.push({ nom: 'état ' + (c.plus.length + 3), i: null, t: null }); ecrire('un état de plus sur ' + nom, c); };
+  const plus = $('dj-plus'); if (plus) plus.onclick = () => { const c = lire(); c.plus.push({ nom: 'État ' + (c.plus.length + 3), i: null, t: null }); ecrire('un état de plus sur ' + nom, c); };
   sec.querySelectorAll('.dj-x').forEach(b => b.onclick = () => { const c = lire(), j = +b.dataset.x.slice(4); c.plus.splice(j, 1); ecrire('un état de moins sur ' + nom, c); });
   lierPuces(); lierGraphique(sec, nom, E, lire, ecrire); }
 /* Le graphique : survoler lit le courant et la durée (et, sur un point, ce que le disjoncteur y tient) ; glisser un point
@@ -166,8 +166,9 @@ function lierGraphique(sec, nom, E, lire, ecrire) { const d = E.d, fig = sec.que
   const cacher = () => { tip.hidden = true; vise.hidden = true; };
   const croix = p => { const [a, b] = vise.querySelectorAll('line'); a.setAttribute('x1', f1(p.x)); a.setAttribute('x2', f1(p.x)); a.setAttribute('y1', T); a.setAttribute('y2', H - B); b.setAttribute('x1', L); b.setAttribute('x2', W - R); b.setAttribute('y1', f1(p.y)); b.setAttribute('y2', f1(p.y)); vise.hidden = false; };
   const motPoint = pt => { const m = pt.marges[0], froid = pt.marges[pt.marges.length - 1];
-    const tenue = !m ? '' : pt.t === Infinity ? (m.ok ? `le ${amperes(d.calibre)} ne déclenche jamais (jusqu'à ${amperes(m.admis)})` : `le ${amperes(d.calibre)} finit par déclencher à ${m.courbe} — il tient jusqu'à ${amperes(m.admis)}`)
-      : `à ${m.courbe} le ${amperes(d.calibre)} tient ${secondes(m.temps)}${froid && froid !== m ? `, à ${froid.courbe} ${secondes(froid.temps)}` : ''}`;
+    const tient = t => t === Infinity ? 'ne déclenche pas' : 'tient ' + secondes(t);
+    const tenue = !m ? '' : pt.t === Infinity ? (m.ok ? `le ${amperes(d.calibre)} ne déclenche pas (jusqu'à ${amperes(m.admis)})` : `le ${amperes(d.calibre)} finit par déclencher à ${m.courbe} — il tient jusqu'à ${amperes(m.admis)}`)
+      : `à ${m.courbe} le ${amperes(d.calibre)} ${tient(m.temps)}${froid && froid !== m ? `, à ${froid.courbe} ${tient(froid.temps)}` : ''}`;
     return `<b>${esc(pt.nom)}</b> ${esc(amperes(pt.i))}${pt.t === Infinity ? ' pour toujours' : ' pendant ' + esc(secondes(pt.t))}${tenue ? `<br>${esc(tenue)}` : ''}${pt.ok === false ? '<br><em>déclenche</em>' : pt.serre ? '<br><em>touche la courbe</em>' : ''}`; };
   let prise = null;   // le point qu'on glisse : son état, et le profil en cours
   svg.addEventListener('pointermove', e => { const p = local(e);

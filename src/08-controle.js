@@ -49,11 +49,14 @@ function rendreControle() { const V = verite();
   if (app.insp.index && !$('inspecteur').hidden && !app.cible) rendreIndex($('ba-equip')); }
 /* La liste « à reprendre », en tête de l'index : les problèmes, puis les points à voir ; une ligne y mène. */
 function listeControleHtml() { const xs = CONTROLE.items; if (!xs.length) return '';
+  // une ligne par repère : son premier point, et combien d'autres
   return [['ko', 'Problèmes'], ['att', 'À voir']].map(([n, t]) => { const ys = xs.filter(x => x.niveau === n); if (!ys.length) return '';
-    return `<div class="ix-groupe ${n}"><span>${t}</span><b>${ys.length}</b></div><ul class="ix-liste co-liste">` + ys.map(x => `<li><button class="ix-item co-item" data-k="${xs.indexOf(x)}">`
+    const par = new Map(); ys.forEach(x => { const k = x.nom || '\u0001' + x.texte; (par.get(k) || par.set(k, []).get(k)).push(x); });
+    return `<div class="ix-groupe ${n}"><span>${t}</span><b>${ys.length}</b></div><ul class="ix-liste co-liste">` + [...par.values()].map(g => { const x = g[0];
+      return `<li><button class="ix-item co-item" data-k="${xs.indexOf(x)}" title="${escA(g.map(y => y.texte).join('\n'))}">`
       + `<span class="co-code ${x.nom ? genreDe(x.nom) : 'tab'}" aria-hidden="true">${x.nom ? esc(codeDe(x.nom)) : ico('tableau')}</span>`
-      + `<span class="min0"><b>${esc(x.nom || 'Tableau')}</b><small>${esc(x.texte)}</small></span>`
-      + (x.plan && x.plan !== '*' ? `<span class="ix-folio">${esc(x.plan)}</span>` : '') + '</button></li>').join('') + '</ul>'; }).join(''); }
+      + `<span class="min0"><b>${esc(x.nom || 'Tableau')}${g.length > 1 ? ` <em>${g.length} ${n === 'ko' ? 'problèmes' : 'points'}</em>` : ''}</b><small>${esc(x.texte)}${g.length > 1 ? ' …' : ''}</small></span>`
+      + (x.plan && x.plan !== '*' ? `<span class="ix-folio">f. ${esc(x.plan)}</span>` : '') + '</button></li>'; }).join('') + '</ul>'; }).join(''); }
 // une ligne : son folio, son bloc et sa fiche — ou le tableau, filtré sur ce qu'il faut reprendre
 function allerAuControle(x) {
   if (x.tableau != null) { app.base.filtre = x.tableau; app.base.portee = 'tout'; app.base.tri = x.texte.includes('sans type') ? { k: 'type', sens: 1 } : { k: 'de', sens: 1 }; if (app.base.ouvert) rendreBase(); else ouvrirBase(); return; }

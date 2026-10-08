@@ -65,14 +65,15 @@ function fiTete(o) {
 function fiEtat(ko, att) {
   if (!ko.length && !att.length) return '';
   const cls = ko.length ? 'ko' : 'att', xs = ko.length ? ko : att, titre = ko.length ? (ko.length > 1 ? ko.length + ' problèmes' : '1 problème') : (att.length > 1 ? att.length + ' à voir' : '1 à voir');
-  return `<details class="fi-etat ${cls}"${ko.length ? ' open' : ''}><summary><i aria-hidden="true">${cls === 'ko' ? '✕' : '!'}</i>${titre}${ico('bas', 'fi-chevron')}</summary><ul>${xs.map(t => `<li>${esc(t)}</li>`).join('')}</ul></details>`; }
+  return `<details class="fi-etat ${cls}"${ko.length || att.length === 1 ? ' open' : ''}><summary><i aria-hidden="true">${cls === 'ko' ? '✕' : '!'}</i>${titre}${ico('bas', 'fi-chevron')}</summary><ul>${xs.map(t => `<li>${esc(t)}</li>`).join('')}</ul></details>`; }
 /* La référence retenue (sa norme se lit dedans : on ne la répète pas), et « Changer » qui déplie les autres. */
 function fiRef(ref, famille, cle, changer, titre) {
   return `<div class="fi-ref-ligne"><b class="fi-ref"${titre ? ` title="${escA(titre)}"` : ''}>${esc(ref || '—')}</b><span class="espace"></span>`
     + (changer ? `<button class="fi-lien" data-changer="${escA(cle)}" aria-expanded="${!!FI.change[cle]}">Changer${ico('bas', 'fi-chevron')}</button>` : '') + '</div>'
     + (changer ? `<div class="fi-changer" data-volet="${escA(cle)}"${FI.change[cle] ? '' : ' hidden'}>${changer}</div>` : ''); }
 /* Des faits, en grille : la clé en petit, la valeur en chasse fixe. rows : [[clé, valeur html, titre?]] */
-const faits = (rows, cls) => { const xs = rows.filter(r => r && r[1]); return xs.length ? `<dl class="fi-faits${cls ? ' ' + cls : ''}">${xs.map(([k, v, t]) => `<dt>${esc(k)}</dt><dd${t ? ` title="${escA(t)}"` : ''}>${v}</dd>`).join('')}</dl>` : ''; };
+const insecable = h => String(h).replace(/(\d) (A|V|mm²|mm|m|s|min|ms|h|AWG|%|g\/m|mΩ\/m|Ω\/km)(?![\wé])/g, '$1\u00a0$2').replace(/(Ø) (\d)/g, '$1\u00a0$2');
+const faits = (rows, cls) => { const xs = rows.filter(r => r && r[1]); return xs.length ? `<dl class="fi-faits${cls ? ' ' + cls : ''}">${xs.map(([k, v, t]) => `<dt>${esc(k)}</dt><dd${t ? ` title="${escA(t)}"` : ''}>${insecable(v)}</dd>`).join('')}</dl>` : ''; };
 const arrondi = (x, n) => x == null || !isFinite(x) ? null : Math.round(x * Math.pow(10, n)) / Math.pow(10, n);
 const volts = u => u == null ? '—' : nombre(arrondi(u, u < 0.1 ? 3 : 2)) + ' V';
 const puces = (attr, items, actif) => `<div class="fi-puces">${items.map(([f, t]) => `<button class="fi-chip${f ? ' ' + classeFamille(f) : ''}" ${attr}="${escA(f)}" aria-pressed="${f === actif}">${esc(t)}</button>`).join('')}</div>`;
@@ -100,7 +101,7 @@ function ligneFil(ct, f, o) { o = o || {}; const k = cleFil(f.l), neuf = !!(f.l 
 const fiListe = lignes => lignes ? `<ul class="fi-liste">${lignes}</ul>` : '';
 /* Les onglets : un panneau à la fois ; l'onglet ouvert se garde par bloc. items [{ id, titre, compte, ko, corps }] */
 function fiOnglets(cle, items) { if (items.length === 1) return items[0].corps;
-  const actif = items.some(x => x.id === FI.onglet[cle]) ? FI.onglet[cle] : items[0].id;
+  const actif = items.some(x => x.id === FI.onglet[cle]) ? FI.onglet[cle] : (items.find(x => x.ko) || items[0]).id;
   return `<div class="fi-onglets" role="tablist" data-cle="${escA(cle)}">${items.map(x => `<button role="tab" data-onglet="${escA(x.id)}" aria-selected="${x.id === actif}"${x.ko ? ' class="ko"' : ''}><b>${esc(x.titre)}</b><span>${esc(x.compte)}</span></button>`).join('')}</div>`
     + items.map(x => `<div class="fi-panneau" role="tabpanel" data-panneau="${escA(x.id)}"${x.id === actif ? '' : ' hidden'}>${x.corps}</div>`).join(''); }
 /* Le pied : le tableau, « + fil » (une liaison de plus depuis ce repère, dans le tableau), le relief, « voir », et sous
@@ -142,7 +143,8 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   const folios = neuf ? [app.plan] : app.nFolios ? (foliosParSource().get(cleDe(l)) || []) : (l.plan ? [l.plan] : []);
   // sur le plan, un bout peut passer par une barrette à poser : on le dit sous ce bout
   const p = neuf ? null : liaisonsDuPlan().find(x => x.origine && x.aPoser && sourceDe(x) === l);
-  const via = cote => p && VT_A_POSER.test(p[cote]) ? p[cote] + ' · borne ' + (cote === 'de' ? p.borneDe : p.borneVers) : '';
+  const via = cote => { if (!(p && VT_A_POSER.test(p[cote]))) return ''; let lettre = ''; try { const x = planDeBarrette(p[cote]).plan.fils.find(y => y.f.l === p); if (x) lettre = x.contact.lettre; } catch (_) { }
+    return p[cote] + ' · ' + (lettre ? lettre + ' (borne ' + (cote === 'de' ? p.borneDe : p.borneVers) + ')' : 'borne ' + (cote === 'de' ? p.borneDe : p.borneVers)); };
   const att = [], ko = []; if (!l.type) att.push('type de fil inconnu : la jauge ne se vérifie pas');
   if (neuf) att.push('fil à créer : donne-lui son numéro en posant ' + l.aPoser + ' au contrat');
   [st.de, st.vers].forEach((s, k) => { if (s && s.ko) ko.push('aucun contact n’accepte ce fil côté ' + (k ? l.vers : l.de)); });
@@ -160,7 +162,7 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   const lignes = [
     ['câble', l.type ? `<b>${esc(l.type)}</b>${jauge != null ? ` <i>${jauge} AWG</i>` : ''}${cab ? ' · ' + esc([brins, cab.nature, cab.diametre != null ? 'Ø ' + nombre(cab.diametre) + ' mm' : '', cab.section != null ? nombre(cab.section) + ' mm²' : '', cab.resistance != null ? nombre(cab.resistance) + ' mΩ/m' : '', cab.masse != null ? nombre(cab.masse) + ' g/m' : ''].filter(Boolean).join(' · ')) : (fn && fn.resistance != null ? ' · ' + esc(nombre(fn.resistance)) + ' mΩ/m' : '')}` : '', cab ? 'La base des câbles' : 'La norme des fils (EN 2853)'],
     ['admet', adm.length ? adm.map(([q, i], k) => `${k ? '' : '<b>'}${esc(amperes(i))}${k ? '' : '</b>'} <i>${esc(q)}</i>`).join(' · ') : (l.type ? '<i>fil inconnu de la norme</i>' : ''), adm.length ? 'EN 2853, déclassé' + motFacteur(fac) + ' : ' + (H.conditions || []).join(', ') + ', ' + nombre(H.ambiante) + ' °C' : ''],
-    ['courant', I ? `<b>${esc(amperes(I))}</b>${al ? ` <i>par ${esc(al.nom)}${al.calibre ? ', ' + esc(amperes(al.calibre)) : ''}</i>` : ' <i>hypothèse</i>'}${al && al.pointe ? ` · pointe ${esc(amperes(al.pointe.i))} <i>${esc(secondes(al.pointe.t))}</i>` : ''}${charge != null ? ` · <span class="${charge > 1 ? 'fi-ko' : ''}">${Math.round(charge * 100)} % du continu</span>` : ''}` : '', al ? 'Le profil de charge de ' + al.nom : 'Le courant de la simulation (bible → hypothèses)'],
+    ['courant', I ? `<b>${esc(amperes(I))}</b> <i>${al ? 'permanent' : 'hypothèse'}</i>${al ? ` · sous ${esc(al.nom)}${al.calibre ? ' <i>(' + esc(amperes(al.calibre)) + ')</i>' : ''}` : ''}${al && al.pointe ? ` · pointe <b>${esc(amperes(al.pointe.i))}</b> <i>pendant ${esc(secondes(al.pointe.t))}</i>` : ''}${charge != null ? ` · <span class="${charge > 1 ? 'fi-ko' : ''}">${Math.round(charge * 100)} % du continu</span>` : ''}` : '', al ? 'Le profil de charge de ' + al.nom : 'Le courant de la simulation (bible → hypothèses)'],
     ['chute', dU != null ? `<b>${volts(dU)}</b> <i>sur ce fil</i>${total ? ` · ${volts(total.dU)} <i>en ligne depuis ${esc(al.nom)}${H.tension ? ', ' + nombre(Math.round(total.dU / H.tension * 1000) / 10) + ' %' : ''}${admise && admise.chuteMax != null ? ', ' + volts(admise.chuteMax) + ' admis' : ''}</i>` : ''}` : '', dU != null ? 'ΔU = ' + nombre(rd.rho) + ' Ω/km × ' + nombre(arrondi(L, 2)) + ' m × ' + nombre(I) + ' A' + (rd.source === 'câble' ? ' (la résistance du câble ' + rd.cab.cable + ')' : '') : ''],
     ['longueur', `${esc(nombre(arrondi(L, 2)))} m <i>${l.longueur > 0 ? 'retest' : 'hypothèse'}</i>`],
     ['où', [folios.length ? 'folio ' + esc(folios.join(', ')) : '', l.harness ? esc(l.harness) : ''].filter(Boolean).join(' · ')]];
@@ -230,7 +232,8 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
   if (M) { const par = (amont, ct) => { const xs = Q.fils.filter(x => x.contact === ct && !!x.f.amont === amont); return xs.length ? occupant(xs[0].f, xs.some(x => x.jaugeOk === false)) : null; };
     faces = `<div class="fi-faces deux">${faceAjustee(faceModuleSvg(M.module, ct => par(true, ct), { etiquettes: true }), 'Fiche · ce qui arrive')}`
       + `${faceAjustee(faceModuleSvg(miroir(M.module), ct => par(false, M.module.contacts.find(k => k.lettre === ct.lettre)), { etiquettes: true }), 'Embase · ce qui repart')}</div>`; }
-  const cote = x => x ? `<span class="fi-cote" data-i="${cleFil(x.f.l)}" tabindex="0" role="button"${x.sertir ? ` title="${escA('contact ' + motSertir(x.sertir))}"` : ''}>${puceFil(x.f)}<b>${esc(x.f.cable || '—')}</b><small>${esc(destination(x.f))}</small>${x.sertir ? `<small class="fi-sertir">${esc(motSertir(x.sertir))}</small>` : ''}</span>` : '<span class="fi-cote vide">—</span>';
+  const unSeul = xs => { const n = nomenclatureDe(xs); return n.length === 1 ? motSertir(n[0]) : ''; }, seulF = unSeul(Q.fils.filter(x => x.f.amont)), seulE = unSeul(Q.fils.filter(x => !x.f.amont));
+  const cote = x => x ? `<span class="fi-cote" data-i="${cleFil(x.f.l)}" tabindex="0" role="button"${x.sertir ? ` title="${escA('contact ' + motSertir(x.sertir))}"` : ''}>${puceFil(x.f)}<b>${esc(destination(x.f))}</b><small>${esc(x.f.type || '')}${x.f.cable ? ' · ' + esc(x.f.cable) : ''}${x.sertir && motSertir(x.sertir) !== (x.f.amont ? seulF : seulE) ? ' · ' + esc(motSertir(x.sertir)) : ''}</small></span>` : '<span class="fi-cote vide">—</span>';
   const lignes = (M ? M.module.contacts : []).map(ct => { const am = Q.fils.find(x => x.contact === ct && x.f.amont), av = Q.fils.find(x => x.contact === ct && !x.f.amont); if (!am && !av) return '';
     return `<li class="fi-paire${[am, av].some(x => x && x.jaugeOk === false) ? ' ko' : ''}"><span class="fi-ct"><b>${esc(ct.lettre)}</b></span>${cote(am)}<span class="fi-entre" aria-hidden="true"></span>${cote(av)}</li>`; }).join('');
   const cle = 'cou|' + nom, vs = arrangementsQuiLogent(points, app.norme, Q.visee || Q.famille).slice(0, 6), retenu = M ? M.reference : '';
@@ -239,9 +242,9 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
     + liens([Q.main ? `<button class="fi-lien" data-auto="${escA(nom)}">Choix automatique</button>` : '', M ? `<button class="fi-lien" data-bible="${escA(M.reference)}">Bible</button>` : '']);
   return fiTete({ nom, renommer: true, etat: fiEtat(ko, att), sous: `${pluriel(points.length, 'contact')} · ${pluriel(Q.fils.length, 'fil')}`, designation: app.contrat.designations.get(nom) || '' })
     + `<section class="fi-cadre">${fiRef(Q.reference, Q.famille, cle, changer, pourquoi)}${faces}`
-    + (lignes ? `<div class="fi-paires-tete"><span></span><span>fiche · arrive</span><span></span><span>embase · repart</span></div><ul class="fi-liste paires">${lignes}</ul>` : '')
     + autourHtml(nom + '|fiche', Q.fils.filter(x => x.f.amont).map(x => x.f), b.pn, nomenclatureDe(Q.fils.filter(x => x.f.amont)), 'fiche')
-    + autourHtml(nom + '|embase', Q.fils.filter(x => !x.f.amont).map(x => x.f), b.pn, nomenclatureDe(Q.fils.filter(x => !x.f.amont)), 'embase') + '</section>'
+    + autourHtml(nom + '|embase', Q.fils.filter(x => !x.f.amont).map(x => x.f), b.pn, nomenclatureDe(Q.fils.filter(x => !x.f.amont)), 'embase')
+    + (lignes ? `<div class="fi-paires-tete"><span></span><span>fiche · arrive</span><span></span><span>embase · repart</span></div><ul class="fi-liste paires">${lignes}</ul>` : '') + '</section>'
     + dejaFaitHtml(nom) + fiPied({ tableau: nom, fil: nom, relief: true, menu: MENU_BLOC }); }
 
 /* ---- un équipement --------------------------------------------------------------- */
@@ -257,8 +260,8 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
   const dj = estDisjoncteur(nom); if (dj) controleDisjonction(nom).forEach(x => (x.niveau === 'ko' ? ko : att).push(x.texte));
   const ligne = (bo, f, st) => ligneFil(`<b>${esc(bo)}</b>`, f, { tag: vt.get(String(bo)), sertir: st });
   const onglets = C.map(c => { const k = parNom.get(c.nom), Q = k && k.plan, M = Q && Q.modules[0], cle = 'arr|' + nom + '|' + c.nom;
-    const sertir = new Map(Q ? Q.fils.map(x => [x.f.l, x.sertir]) : []);
-    const fils = c.bornes.slice().sort(triNaturel).flatMap(bo => (b.parBorne.get(bo) || []).map(f => ligne(bo, f, sertir.get(f.l)))).join('');
+    const sertir = new Map(Q ? Q.fils.map(x => [x.f.l, x.sertir]) : []), seul = Q && Q.nomenclature && Q.nomenclature.length === 1 ? motSertir(Q.nomenclature[0]) : '';
+    const fils = c.bornes.slice().sort(triNaturel).flatMap(bo => (b.parBorne.get(bo) || []).map(f => { const st = sertir.get(f.l); return ligne(bo, f, st && motSertir(st) === seul ? null : st); })).join('');
     let corps = '';
     if (M) { const pourquoi = Q.main ? 'Choisi à la main.' : Q.nomme ? 'Le part number le nomme.' : 'Le plus petit qui a ces contacts et ces jauges.';
       const par = new Map(Q.fils.map(x => [x.contact.lettre, x])), vs = arrangementsQuiLogent(k.points, app.norme, Q.famille).slice(0, 5);
@@ -267,13 +270,13 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
         + faceAjustee(faceModuleSvg(M.module, ct => { const x = par.get(ct.lettre); return x ? occupant(x.f, x.jaugeOk === false) : null; }, { etiquettes: true })); }
     else corps = `<div class="fi-ref-ligne"><span class="fi-ct"><b>${esc(c.nom)}</b></span><b class="fi-ref">${esc(c.pn || 'sans part number')}</b></div>`;
     const filsC = c.bornes.flatMap(bo => b.parBorne.get(bo) || []), fsc = autourHtml(nom + '|' + c.nom, filsC, c.pn, Q ? Q.nomenclature : null);
-    return { id: c.nom, titre: c.nom, compte: String(c.bornes.length), ko: ko.some(t => t.startsWith(c.nom + ' · ')), corps: `<section class="fi-cadre">${corps}${fiListe(fils)}${fsc}</section>` }; });
+    return { id: c.nom, titre: c.nom, compte: String(c.bornes.length), ko: ko.some(t => t.startsWith(c.nom + ' · ')), corps: `<section class="fi-cadre">${corps}${fsc}${fiListe(fils)}</section>` }; });
   // les bornes sans connecteur
   const sans = [...b.parBorne].filter(([bo]) => !C.some(c => c.bornes.includes(bo))).sort((u, v) => triNaturel(u[0], v[0])).flatMap(([bo, fs]) => fs.map(f => ligne(bo, f))).join('');
   if (sans) onglets.push({ id: '—', titre: C.length ? 'Autres' : 'Fils', compte: String(b.parBorne.size - C.reduce((n, c) => n + c.bornes.length, 0)), corps: `<section class="fi-cadre">${fiListe(sans)}</section>` });
-  const nFils = V.filter(l => l.de === nom || l.vers === nom).length, pns = [...new Set(C.map(c => c.pn).filter(Boolean))];
+  const nFils = V.filter(l => l.de === nom || l.vers === nom).length, pns = [...new Set(C.map(c => c.pn).filter(Boolean))], cal = dj ? calibreDe(nom) : null;
   return fiTete({ nom, renommer: true, etat: fiEtat(ko, att),
-      sous: `${pluriel(nFils, 'fil')}${C.length > 1 ? ' · ' + pluriel(C.length, 'connecteur') : ''}${!dj && pns.length === 1 ? ' · <b>' + esc(pns[0]) + '</b>' : ''}`, designation: app.contrat.designations.get(nom) || '' })
+      sous: dj ? `disjoncteur${cal ? ' · <b>' + esc(amperes(cal)) + '</b>' : ''}${pns.length === 1 ? ' · ' + esc(pns[0]) : ''} · ${pluriel(nFils, 'fil')}` : `${pluriel(nFils, 'fil')}${C.length > 1 ? ' · ' + pluriel(C.length, 'connecteur') : ''}${pns.length === 1 ? ' · <b>' + esc(pns[0]) + '</b>' : ''}`, designation: app.contrat.designations.get(nom) || '' })
     + (dj ? ficheDisjonction(nom) : '') + (onglets.length ? fiOnglets('eq|' + nom, onglets) : '') + dejaFaitHtml(nom)
     + fiPied({ tableau: nom, fil: nom, relief: cav.length > 0, menu: MENU_BLOC }); }
 
