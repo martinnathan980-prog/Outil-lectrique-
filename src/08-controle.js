@@ -46,6 +46,9 @@ function rendreControle() { const V = verite();
   let p = b.querySelector('.rd-point'); if (!p) { p = document.createElement('i'); p.className = 'rd-point'; b.appendChild(p); }
   p.hidden = !xs.length; p.className = 'rd-point ' + (nko ? 'ko' : 'att'); p.textContent = String(nko || natt);
   b.setAttribute('aria-label', 'Repères du contrat (R)' + (nko ? ' — ' + pluriel(nko, 'problème') : natt ? ' — ' + natt + ' à voir' : ''));
+  // la barre du haut, si la page en a une : l'état du contrat en une pastille, qui ouvre l'index
+  const e = $('en-etat'); if (e) { e.hidden = !V.length; e.className = 'fi-etat en-etat ' + (nko ? 'ko' : natt ? 'att' : 'ok');
+    e.innerHTML = `<i aria-hidden="true">${nko ? '✕' : natt ? '!' : '✓'}</i>${nko ? pluriel(nko, 'problème') + (natt ? ' · ' + natt + ' à voir' : '') : natt ? natt + ' à voir' : 'rien à reprendre'}`; e.onclick = () => { if (!(app.insp.index && !$('inspecteur').hidden)) basculerIndex(); }; }
   if (app.insp.index && !$('inspecteur').hidden && !app.cible) rendreIndex($('ba-equip')); }
 /* La liste « à reprendre », en tête de l'index : les problèmes, puis les points à voir ; une ligne y mène. */
 function listeControleHtml() { const xs = CONTROLE.items; if (!xs.length) return '';

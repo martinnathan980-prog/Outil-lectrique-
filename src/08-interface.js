@@ -1297,10 +1297,14 @@ function imprimer() { if (!app.dessin) return; const S = svgAutonome(app.dessin,
   $('printroot').innerHTML = `<style>@page{size:A3 landscape;margin:8mm}</style>` + S.txt.replace(/^<\?xml[^>]*\?>\s*/, ''); window.print(); }
 
 /* ---- ce que le menu et le rail affichent ------------------------------ */
-function synchroniserContexte() { const n = app.contrat.liaisons.length;
-  $('ctx-nom').textContent = n ? (app.nom || 'Sans nom') : 'Aucun contrat';
-  const P = plans();
-  $('ctx-txt').textContent = n ? `${n} liaison${n > 1 ? 's' : ''} · ${reperesDe(verite()).filter(r => !estRenvoi(r)).length} repères` + (P.length > 1 ? ` · ${P.length} folios` : '') : ''; }
+function synchroniserContexte() { const n = app.contrat.liaisons.length, P = plans(), nom = n ? (app.nom || 'Sans nom') : 'Aucun contrat';
+  const sous = n ? `${n} liaison${n > 1 ? 's' : ''} · ${reperesDe(verite()).filter(r => !estRenvoi(r)).length} repères` + (P.length > 1 ? ` · ${P.length} folios` : '') : '';
+  $('ctx-nom').textContent = nom; $('ctx-txt').textContent = sous;
+  // la barre du haut, si la page en a une : le nom du contrat et ses comptes (l'état est posé par rendreControle)
+  const en = $('en-nom'); if (en) { en.textContent = n ? ((app.contrat.cartouche && app.contrat.cartouche.titre) || app.nom || 'Sans nom') : 'Atelier Schéma'; const es = $('en-sous'); if (es) es.textContent = sous; }
+  // l'accueil : « reprendre » si le dernier geste a vidé la table
+  const rep = $('vd-reprendre'); if (rep) { const d = app.hist[app.hist.length - 1]; rep.hidden = !(!n && d && d.liaisons && d.liaisons.length); if (!rep.hidden) rep.textContent = 'Reprendre ' + (d.nom || 'le contrat'); }
+  if (typeof rendreAccueil === 'function') rendreAccueil(); }
 /* Annuler reste à sa place, éteint quand il n'y a rien à annuler ; sa bulle
    dit ce qu'il déferait. */
 function synchroniserHistorique() { const b = $('btnUndo'), d = app.hist[app.hist.length - 1]; b.disabled = !d;
@@ -1324,11 +1328,11 @@ function lierPanneau() {
   const exemple = () => { chargerContrat(contratExemple(), 'contrat d’exemple', 'Contrat d’exemple'); app.contrat.charges = chargesExemple(); synchroniser(); sauver(); };
   $('fichier').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) ouvrirFichier(f); e.target.value = ''; });
   $('fichier-bible').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) importerBible(f); e.target.value = ''; });
-  o('vd-ouvrir', choisirFichier); o('vd-coller', ficheColler); o('vd-exemple', exemple);
+  o('vd-ouvrir', choisirFichier); o('vd-coller', ficheColler); o('vd-exemple', exemple); o('vd-reprendre', () => { const q = annuler(); if (q) dire('Repris : ' + q + '.'); });
   o('btnBase', basculerBase); o('btnIndex', basculerIndex); o('btnCherche', () => { if (rechercheOuverte()) fermerRecherche(); else ouvrirRecherche(); });
   o('btnLiaison', nouvelleLiaison); o('btnBible', basculerBible); o('btnOuvrir', choisirFichier);
   o('btnMenu', e => { e.stopPropagation(); $('menu').hidden ? ouvrirMenu() : fermerMenu(); });
-  const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple, cartouche: ficheCartouche, bible: ficheBible, suivi: exporterSuivi, svg: exporterSVG, png: exporterPNG, imprimer,
+  const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple, cartouche: ficheCartouche, bible: ficheBible, nomenclature: ficheNomenclature, suivi: exporterSuivi, svg: exporterSVG, png: exporterPNG, imprimer,
     vider: () => { if (!confirm('Effacer tout le contrat ?')) return; histPush('tout effacer'); app.contrat.liaisons = []; app.source = null; app.nFolios = 0; app.plan = '*'; app.nom = ''; app.cible = null; app.choisi = null;
       fermerFiche(); fermerBase(); redessiner(); ajuster(); sauver(); } };
   $('menu').addEventListener('click', e => { const b = e.target.closest('button[data-act]'); if (!b) return; fermerMenu(); actions[b.dataset.act](); });
@@ -1353,6 +1357,7 @@ function lierPanneau() {
     if (e.key === '/') { e.preventDefault(); ouvrirRecherche(); }
     else if (e.key === 'b') basculerBase();
     else if (e.key === 'r') { e.preventDefault(); basculerIndex(); }   // sinon le « r » s'écrit dans le champ de l'index qui vient de prendre le focus
+    else if (e.key === 'n') { if (app.fiche && app.fiche.mode === 'nomenclature') fermerFiche(true); else if (verite().length) ficheNomenclature(); }
     else if (e.key === 'ArrowLeft') allerAuFolio(-1); else if (e.key === 'ArrowRight') allerAuFolio(+1);
     else if (e.key === '+' || e.key === '=') zoomer(1.25); else if (e.key === '-') zoomer(1 / 1.25); else if (e.key === '0' || e.key === 'f') ajuster(true); });
   let rT; window.addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(() => { if (telephone()) ajuster(); else appliquerVue();

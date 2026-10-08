@@ -1,0 +1,11 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LA NOMENCLATURE DU CONTRAT (08 septies) : un document, un résumé en tuiles, des tables
+   Les jetons (couleurs, typo, espacements) sont dans style.css ; ici, seulement ce qui est propre à ce domaine.
+   ═══════════════════════════════════════════════════════════════════════ */
+.no-resume{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:var(--sp-2);margin:var(--sp-3) 0 var(--sp-2)}
+.no-tuile{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-sunken);min-width:0}
+.no-tuile b{font:700 var(--f-20)/1.1 var(--mono);color:var(--t-1);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.no-tuile span{font-size:var(--f-11);color:var(--t-2);line-height:1.3}
+.no-table td.sans{color:var(--t-2);max-width:260px;white-space:normal}
+.no-table td.d{font-variant-numeric:tabular-nums}
+.no-table td i{font-style:normal;color:var(--t-3)}
