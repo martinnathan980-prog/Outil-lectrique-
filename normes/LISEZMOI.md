@@ -12,6 +12,39 @@ dessine chaque **trou** et le fil qui y est placé, juge le remplissage, et
 **simule** fil par fil la jauge admise, le courant admissible et la chute en
 ligne — sur des hypothèses dites et modifiables.
 
+## `contacts.csv` : le contact à sertir sur chaque fil
+
+Les quatre tables **SEE Electrical Equipment Definition** (EN2997 v6,
+EN3645 v2, EN3646 v13, EN4165 v49), transcrites ligne à ligne : 428 lignes.
+Pour une norme de connecteurs, une **taille** de cavité (22, 20, 16, 12, 8),
+un **sexe** (M broche, F douille), un **type de fil** (`*` : tous, ou un code
+comme HS, CF, WL, XM…) et une **jauge** (`*` : toutes), le **contact** à
+sertir (EN3155-003F2020, M39029/87-476, NSA938172SL1600…) et son
+**accessoire** (un fourreau de réduction E0718-20-30 quand le fil est plus
+fin que le contact, une bague EN4530-004, un 21-33321-5).
+
+La ligne la plus précise gagne : le type de fil exact avant `*`, la jauge
+exacte avant `*`. Le type d'un fil est en tête de son code (DR24 → DR, HS22
+→ HS) ; un type que la table ne nomme pas prend les lignes `*`. Quand la
+table connaît la taille, **c'est elle qui juge la jauge** : un fil sans ligne
+est refusé, et la fiche dit « aucun contact femelle de taille 16 pour ce
+fil ». Les tables **Tailles** des normes ne servent plus qu'aux tailles
+qu'elle ignore (EN 3645 : 10, 8T).
+
+Le **sexe** des contacts qu'on sertit est une hypothèse de l'outil, à
+confirmer : **femelles** (douilles) face à une embase d'équipement à broches,
+**femelles côté fiche** (ce qui arrive) et **mâles côté embase** d'une prise
+de coupure. Chaque fiche permet de l'inverser (« Changer »), et le choix se
+garde avec le contrat. Entre deux arrangements qui logent tout, l'outil
+préfère celui qui **accommode le moins** : pas de fourreau, pas de ligne
+`* *` (le contact par défaut d'une taille) — un 24 AWG va sur un contact 20,
+pas sur un 12 avec fourreau.
+
+Deux accessoires sont lus tronqués sur les captures (EN3646 KE 20, EN3645 YY
+20 : « EN3155-019F… », « EN3155-008M… ») ; la note le dit, 2020 supposé.
+Manquent encore : les contacts des barrettes NSA937901 et ASNE 0599, et de
+l'ASNE0059 (l'onglet NSA937901 existe dans SEE).
+
 ## `asne0059.csv` : les connecteurs circulaires Airbus
 
 L'**ASNE0059 indice R** (pages 2 à 6) : 31 arrangements, les mêmes que

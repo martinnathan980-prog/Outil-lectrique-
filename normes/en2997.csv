@@ -1,11 +1,11 @@
 EN 2997-002:2023 — connecteurs circulaires : les arrangements de contacts des inserts (figures 1 à 35), désignés <taille de boîtier>-<nombre de contacts> (14-12 : boîtier 14, 12 contacts). Un connecteur EN 2997 porte un insert ; une prise de coupure peut en être faite aussi.
-La place des contacts est relevée sur les figures en cercles successifs, numérotés dans le sens des figures (approchée pour les grands inserts ; 22-39, 24-30 et 28-42 suivent les numéros lus). Désignation provisoire : EN2997-002-<arrangement>. Contacts selon l'EN 3155-002 (non fournie) : plages de jauge usuelles, à confirmer.
+La place des contacts est relevée sur les figures en cercles successifs, numérotés dans le sens des figures (approchée pour les grands inserts ; 22-39, 24-30 et 28-42 suivent les numéros lus). Désignation provisoire : EN2997-002-<arrangement>. Les contacts à sertir sont dans normes/contacts.csv (tables SEE).
 
 Familles — la famille EN2997 : connecteurs circulaires, un fil par contact
 Norme;Famille;Nature;Jauge min;Jauge max;Fils par côté;Ordre;Paquets;Note
 EN 2997-002;EN2997;connecteur;26;12;1;libre;libres;connecteurs circulaires : chaque borne est le contact de même numéro, la jauge du fil admise par la taille du contact
 
-Tailles — la taille d'un contact EN 3155 et les jauges AWG qu'il reçoit (plage usuelle, à confirmer avec l'EN 3155-002)
+Tailles — la plage de jauges d'une taille de contact, quand la table Contacts (normes/contacts.csv, tables SEE) ne connaît pas la taille ; c'est elle qui juge d'abord
 Famille;Taille;Jauge min;Jauge max;Note
 EN2997;22;26;22;contact taille 22
 EN2997;20;24;20;contact taille 20

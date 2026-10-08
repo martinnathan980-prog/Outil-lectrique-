@@ -1,7 +1,7 @@
 EN 3645-002:2024 — connecteurs circulaires : les arrangements de contacts (figures 1 à 68 de la norme ; la figure 51 manque), désignés <taille de boîtier><N|G|Q|L><arrangement> (17N26). N : arrangement normal ; G : même face, version de mise à la masse ; Q, L : contacts quadrax ; la classe de tension (I, II, M, N) est dans la note.
-Les contacts sont des lettres ou des numéros, comme sur les figures ; une borne numérotée va sur le contact de même numéro, sinon sur la lettre de même rang. La place des contacts est relevée sur les figures, approchée pour les grands inserts. Les contacts triaxiaux et quadrax (taille 8T) ne reçoivent pas un fil ordinaire. Désignation provisoire : EN3645-002-<arrangement>. Contacts selon l'EN 3155 : plages de jauge usuelles, à confirmer.
+Les contacts sont des lettres ou des numéros, comme sur les figures ; une borne numérotée va sur le contact de même numéro, sinon sur la lettre de même rang. La place des contacts est relevée sur les figures, approchée pour les grands inserts. Les contacts triaxiaux et quadrax (taille 8T) ne reçoivent pas un fil ordinaire. Désignation provisoire : EN3645-002-<arrangement>. Les contacts à sertir sont dans normes/contacts.csv (tables SEE).
 
-Tailles — la taille d'un contact EN 3155 et les jauges AWG qu'il reçoit (plage usuelle, à confirmer)
+Tailles — la plage de jauges d'une taille de contact, quand la table Contacts (normes/contacts.csv, tables SEE) ne connaît pas la taille (10, 8T) ; c'est elle qui juge d'abord
 Famille;Taille;Jauge min;Jauge max;Note
 EN3645;22;26;22;contact taille 22
 EN3645;20;24;20;contact taille 20

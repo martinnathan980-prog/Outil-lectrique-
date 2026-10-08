@@ -1047,7 +1047,7 @@ function ficheColler() {
    en mettre une autre ; puis la NORME en cours, table par table, et comment
    en importer une. */
 const COLONNES_BIBLE_TEXTE = '<b>Référence</b> et <b>Bornes</b> au minimum, puis Famille, Nature, Jauge min, Jauge max, Intensité, Blindage, Note';
-const COLONNES_NORME_TEXTE = 'une table <b>Familles</b> (Famille, Pas, Jauge min, Jauge max, Intensité, Résistance, Fils par côté, Ordre, Paquets, Réservés, Masse), une table <b>Fils</b> (Type, Jauge, Section, Résistance, Intensité), <b>Déclassement</b> (Condition, Facteur), <b>Réseau</b> (Tension, Chute max)';
+const COLONNES_NORME_TEXTE = 'une table <b>Familles</b> (Famille, Pas, Jauge min, Jauge max, Intensité, Résistance, Fils par côté, Ordre, Paquets, Réservés, Masse), une table <b>Fils</b> (Type, Jauge, Section, Résistance, Intensité), <b>Déclassement</b> (Condition, Facteur), <b>Réseau</b> (Tension, Chute max), <b>Contacts</b> (Norme, Sexe, Taille, Type de fil, Jauge, Contact, Accessoire)';
 /* `ref` : une référence à montrer en grand, au-dessus de la table — celle
    qu'on a cliquée dans la table, ou depuis la carte d'une barrette. */
 function ficheBible(ref) { const B = app.bible || [], nom = app.bibleNom, n = B.length, familles = [...new Set(B.filter(e => e.module).map(e => e.famille))]; ref = typeof ref === 'string' ? ref : '';
@@ -1081,21 +1081,22 @@ function ficheBible(ref) { const B = app.bible || [], nom = app.bibleNom, n = B.
 }
 /* La norme en cours : d'où elle vient, puis ses quatre tables telles que
    l'outil les a lues — repliées, ouvertes depuis la carte d'une barrette. */
-function ficheNorme() { const N = app.norme || normeVide(), nom = app.normeNom, ex = normeExemple(N), lue = normeLue(N), mods = N.modules || [], tailles = N.tailles || [];
-  const compte = [...(mods.length ? [pluriel(mods.length, 'module') + ' de jonction'] : []), pluriel(N.familles.length, 'famille'), pluriel(N.fils.length, 'fil'), pluriel(N.declassements.length, 'déclassement'), N.reseau.length + ' réseau' + (N.reseau.length > 1 ? 'x' : '')].join(' · ');
+function ficheNorme() { const N = app.norme || normeVide(), nom = app.normeNom, ex = normeExemple(N), lue = normeLue(N), mods = N.modules || [], tailles = N.tailles || [], contacts = N.contacts || [];
+  const compte = [...(mods.length ? [pluriel(mods.length, 'module') + ' de jonction'] : []), ...(contacts.length ? [pluriel(contacts.length, 'contact') + ' à sertir'] : []), pluriel(N.familles.length, 'famille'), pluriel(N.fils.length, 'fil'), pluriel(N.declassements.length, 'déclassement'), N.reseau.length + ' réseau' + (N.reseau.length > 1 ? 'x' : '')].join(' · ');
   const etat = !lue ? `<div class="bible-etat"><span><b>Aucune norme</b> : les barrettes se dessinent avec un trou par côté, rien n’est jugé ni simulé.</span></div>`
     : nom ? `<div class="bible-etat"><span><b>${esc(nom)}</b> · ${compte} · gardée dans ce navigateur</span></div>`
     : `<div class="bible-etat exemple"><span><b>Norme ${ex ? 'd’exemple' : 'embarquée'}</b> · ${compte}${ex ? ' · chiffres inventés, sans valeur normative — les vraies se déposent dans normes/'
-      : mods.length ? ' · les modules viennent des normes ASNE 0599 et NSA937901 (plages AWG des contacts ASNE 0599 à confirmer) ; fils, déclassements, réseau et prise EN3646 restent des chiffres d’exemple' : ''}</span></div>`;
+      : mods.length ? ' · les modules viennent des normes ASNE 0599 et NSA937901, les contacts à sertir des tables SEE (EN 2997, EN 3645, EN 3646, EN 4165) ; fils, déclassements, réseau et prise EN3646 restent des chiffres d’exemple' : ''}</span></div>`;
   const oui = v => v ? 'oui' : '—', t = (th, rows) => rows.length ? `<table class="norme"><thead><tr>${th.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>` : '';
   const familles = t(['Norme', 'Famille', 'Nature', 'Variantes', 'Pas', 'Jauge', 'Intensité', 'Résistance', 'Fils/côté', 'Ordre', 'Paquets', 'Réservés', 'Masse'], N.familles.map(f => `<tr><td class="sans">${esc(f.norme)}</td><td class="ref">${esc(f.famille)}</td><td class="sans">${esc(f.nature)}</td><td>${esc(f.variantes.join(' ') || '—')}</td><td class="d">${f.pas != null ? nombre(f.pas) + ' mm' : '—'}</td><td class="d">${f.jaugeMin != null ? jaugeEntree(f) : '—'}</td><td class="d">${f.intensite != null ? nombre(f.intensite) + ' A' : '—'}</td><td class="d">${f.resistance != null ? nombre(f.resistance) + ' mΩ' : '—'}</td><td class="d">${f.filsParCote}</td><td class="sans">${f.ordre}</td><td class="sans">${f.paquets}</td><td>${esc(f.reserves.join(', ') || '—')}</td><td class="sans">${f.masse || '—'}</td></tr>`));
   const fils = t(['Type', 'Jauge', 'Section', 'Résistance', 'Intensité', 'Note'], N.fils.map(f => `<tr><td class="ref">${esc(f.type)}</td><td class="d">${nombre(f.jauge)}</td><td class="d">${f.section != null ? nombre(f.section) + ' mm²' : '—'}</td><td class="d">${f.resistance != null ? nombre(f.resistance) + ' Ω/km' : '—'}</td><td class="d">${f.intensite != null ? nombre(f.intensite) + ' A' : '—'}</td><td class="sans note-c">${esc(f.note)}</td></tr>`));
   const tl = t(['Norme', 'Taille', 'Jauge', 'Note'], tailles.map(x => `<tr><td class="sans">${esc(nomDeFamille(N, x.famille))}</td><td class="ref">#${x.taille}</td><td class="d">${x.jaugeMin != null ? x.jaugeMin + '–' + x.jaugeMax + ' AWG' : 'câble spécial'}</td><td class="sans note-c">${esc(x.note || '')}</td></tr>`));
+  const ct = t(['Norme', 'Taille', 'Sexe', 'Type de fil', 'Jauge', 'Contact', 'Accessoire', 'Note'], contacts.map(c => `<tr><td class="sans">${esc(nomDeFamille(N, c.famille))}</td><td class="ref">#${esc(c.taille)}</td><td class="sans">${nomDuSexe(c.sexe)}</td><td class="ref">${esc(c.typeFil)}</td><td class="d">${c.jauge != null ? nombre(c.jauge) : '*'}</td><td class="ref">${esc(c.reference)}</td><td class="ref">${esc(c.accessoire || '—')}</td><td class="sans note-c">${esc(c.note || '')}</td></tr>`));
   const md = t(['Désignation', 'Variante', 'Contacts', 'Groupes', 'Usage', 'Masse', 'Hauteur', 'Note'], mods.map(m => `<tr><td class="ref">${esc(m.reference)}</td><td>${esc(m.variante)}</td><td class="d">${esc(taillesDe(m))}</td><td class="d">${esc(tailleDesGroupes(m))}</td><td class="sans">${esc(m.usage)}</td><td class="d">${m.poids != null ? nombre(m.poids) + ' g' : '—'}</td><td class="d">${m.hauteur != null ? nombre(m.hauteur) + ' mm' : '—'}</td><td class="sans note-c">${esc(m.note)}</td></tr>`));
   const decl = t(['Condition', 'Facteur', 'Note'], N.declassements.map(d => `<tr><td class="ref">${esc(d.condition)}</td><td class="d">×${nombre(d.facteur)}</td><td class="sans note-c">${esc(d.note)}</td></tr>`));
   const res = t(['Tension', 'Chute max', 'Note'], N.reseau.map(r => `<tr><td class="d">${nombre(r.tension)} V</td><td class="d">${r.chuteMax != null ? nombre(r.chuteMax) + ' V' : '—'}${r.chutePct != null ? ' · ' + nombre(r.chutePct) + ' %' : ''}</td><td class="sans note-c">${esc(r.note)}</td></tr>`));
   return `<h3 class="sous-titre">La norme</h3>${etat}` + (lue ? `<details class="norme"${app.base.normeOuverte ? ' open' : ''}><summary><span>Ce que la norme dit, table par table</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
-      <div class="norme-defile">${md ? '<div class="sur">Modules — barrettes (ASNE 0599, NSA937901), connecteurs et prises (EN 4165, EN 2997) — une variante par ligne : ses contacts et ses groupes reliés</div>' + md : ''}${tl ? '<div class="sur">Tailles de contact — les jauges qu’un contact reçoit</div>' + tl : ''}${familles ? '<div class="sur">Familles — par contact : jauges, intensité, résistance ; fils par côté ; règle de remplissage</div>' + familles : ''}${fils ? '<div class="sur">Fils — section, résistance à 20 °C, intensité admissible du fil seul</div>' + fils : ''}${decl ? '<div class="sur">Déclassement</div>' + decl : ''}${res ? '<div class="sur">Réseau — la chute admise</div>' + res : ''}</div></details>` : '')
+      <div class="norme-defile">${md ? '<div class="sur">Modules — barrettes (ASNE 0599, NSA937901), connecteurs et prises (EN 4165, EN 2997) — une variante par ligne : ses contacts et ses groupes reliés</div>' + md : ''}${ct ? '<div class="sur">Contacts à sertir — selon la taille de la cavité, le sexe, le type et la jauge du fil : le contact et son accessoire (tables SEE)</div>' + ct : ''}${tl ? '<div class="sur">Tailles de contact — les jauges qu’un contact reçoit, quand la table des contacts ne connaît pas la taille</div>' + tl : ''}${familles ? '<div class="sur">Familles — par contact : jauges, intensité, résistance ; fils par côté ; règle de remplissage</div>' + familles : ''}${fils ? '<div class="sur">Fils — section, résistance à 20 °C, intensité admissible du fil seul</div>' + fils : ''}${decl ? '<div class="sur">Déclassement</div>' + decl : ''}${res ? '<div class="sur">Réseau — la chute admise</div>' + res : ''}</div></details>` : '')
     + `<p class="note">Une norme est un Excel (une table par feuille, ou à la suite) ou un CSV : ${COLONNES_NORME_TEXTE}. Une norme importée remplace la norme d’exemple et se fond avec celles déjà importées. Le PDF de la norme se garde à côté, dans normes/.</p>`; }
 async function importerNorme(fichier) { if (!fichier) return;
   try { const r = await lireNormeFichier(fichier);
@@ -1193,10 +1194,10 @@ function ajusterFolios() { if (app.nFolios) return 0;
 
 /* ---- historique et enregistrement ------------------------------------- */
 function histPush(quoi) { app.hist.push({ quoi, liaisons: app.contrat.liaisons.map(l => ({ ...l })), source: app.source ? app.source.map(l => ({ ...l })) : null,
-  nFolios: app.nFolios, budget: app.budget, plan: app.plan, nom: app.nom, designations: new Map(app.contrat.designations), retouches: new Map(app.retouches) });
+  nFolios: app.nFolios, budget: app.budget, plan: app.plan, nom: app.nom, designations: new Map(app.contrat.designations), sexes: new Map(app.contrat.sexes || []), retouches: new Map(app.retouches) });
   if (app.hist.length > 40) app.hist.shift(); synchroniserHistorique(); }
 function annuler() { const p = app.hist.pop(); if (!p) return null;
-  app.contrat.liaisons = p.liaisons; app.source = p.source; app.nFolios = p.nFolios; app.budget = p.budget || 16; app.plan = p.plan; app.nom = p.nom || ''; app.contrat.designations = p.designations;
+  app.contrat.liaisons = p.liaisons; app.source = p.source; app.nFolios = p.nFolios; app.budget = p.budget || 16; app.plan = p.plan; app.nom = p.nom || ''; app.contrat.designations = p.designations; app.contrat.sexes = p.sexes || new Map();
   // les retouches d'avant reviennent, et se gardent comme elles étaient
   if (p.retouches) { const cles = new Set([...app.retouches.keys(), ...p.retouches.keys()]); app.retouches = p.retouches; cles.forEach(garderRetouche); }
   app.choisi = null; app.cible = null; app.actif = null; app.base.enSaisie = false; fermerFiche();
@@ -1205,7 +1206,7 @@ function annuler() { const p = app.hist.pop(); if (!p) return null;
 let sauveT = null;
 function sauver() { clearTimeout(sauveT); sauveT = setTimeout(() => { try {
     localStorage.setItem(CLE_CONTRAT, JSON.stringify({ liaisons: app.contrat.liaisons, source: app.source, nFolios: app.nFolios, budget: app.budget, plan: app.plan, nom: app.nom,
-      designations: [...app.contrat.designations], cartouche: app.contrat.cartouche, t: Date.now() }));
+      designations: [...app.contrat.designations], sexes: [...(app.contrat.sexes || [])], cartouche: app.contrat.cartouche, t: Date.now() }));
     heureSauve(Date.now()); } catch (_) { heureSauve(null); } }, 400); }
 function heureSauve(t) { const el = $('ctx-sauve');
   if (!t) { el.textContent = 'non enregistré'; el.classList.add('ko'); el.title = 'Le navigateur refuse d’enregistrer (navigation privée ?). Le travail tient tant que l’onglet est ouvert.'; return; }
@@ -1214,7 +1215,7 @@ function heureSauve(t) { const el = $('ctx-sauve');
 function relire() { try { const j = localStorage.getItem(CLE_CONTRAT); if (!j) return false; const o = JSON.parse(j);
     if (!o || !o.liaisons || !o.liaisons.length) return false;
     app.contrat.liaisons = o.liaisons.map(liaison); app.source = o.source ? o.source.map(liaison) : null; app.nFolios = o.nFolios || 0; app.budget = o.budget || 16; app.plan = o.plan || '*'; app.nom = o.nom || '';
-    app.contrat.designations = new Map(o.designations || []); if (o.cartouche) Object.assign(app.contrat.cartouche, o.cartouche);
+    app.contrat.designations = new Map(o.designations || []); app.contrat.sexes = new Map(o.sexes || []); if (o.cartouche) Object.assign(app.contrat.cartouche, o.cartouche);
     const P = plans(); if (app.plan === '*' && P.length > 1) app.plan = P[0];
     redessiner(); ajuster(); heureSauve(o.t || Date.now()); return true; } catch (_) { return false; } }
 

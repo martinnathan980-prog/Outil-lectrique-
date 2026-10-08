@@ -1,11 +1,11 @@
 EN 4165-002:2023 — connecteurs rectangulaires modulaires : les arrangements de contacts des modules (figures 1 à 12). Un connecteur EN 4165 reçoit un module par cavité (A, B, C…) ; une prise de coupure se fait aussi de ces modules.
-Désignation : l'outil écrit EN4165-002-<arrangement> (EN4165-002-20-22) en attendant la règle de désignation de la norme. Les contacts amovibles sont dans l'EN 3155-002 (non fournie) : les plages de jauge ci-dessous sont celles, usuelles, des contacts EN 3155 de cette taille — à confirmer.
+Désignation : l'outil écrit EN4165-002-<arrangement> (EN4165-002-20-22) en attendant la règle de désignation de la norme. Les contacts à sertir, par taille, sexe, type et jauge de fil, sont dans normes/contacts.csv (tables SEE).
 
 Familles — la famille EN4165 : modules de connecteur, un fil par contact
 Norme;Famille;Nature;Jauge min;Jauge max;Fils par côté;Ordre;Paquets;Note
 EN 4165-002;EN4165;connecteur;26;8;1;libre;libres;modules de connecteur rectangulaire : chaque borne du connecteur est le contact de même numéro, la jauge du fil admise par la taille du contact
 
-Tailles — la taille d'un contact EN 3155 et les jauges AWG qu'il reçoit (plage usuelle, à confirmer avec l'EN 3155-002)
+Tailles — la plage de jauges d'une taille de contact, quand la table Contacts (normes/contacts.csv, tables SEE) ne connaît pas la taille ; c'est elle qui juge d'abord
 Famille;Taille;Jauge min;Jauge max;Note
 EN4165;23;26;24;contact taille 23 (module 30R23)
 EN4165;22;26;22;contact taille 22

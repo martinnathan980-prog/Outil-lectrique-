@@ -22,7 +22,8 @@ node tests/barrettes.js        la bible des barrettes se lit, la référence se 
                                chaque fil va dans son trou, la simulation donne des valeurs connues à la main ; les catalogues ASNE 0599
                                (29 variantes) et NSA937901 (43 codes), les jauges de chaque norme, le choix de la norme et le
                                remplissage automatique des modules ; l'EN 4165-002 (30 arrangements) et l'EN 2997-002 (35 inserts circulaires), l'EN 3646-002 (31 inserts à contacts lettrés), l'EN 3645-002 (99 arrangements), l'ASNE0059 (31) pour les cavités des
-                               connecteurs et les prises de coupure (sans navigateur)
+                               connecteurs et les prises de coupure ; les contacts à sertir des tables SEE (428 lignes, la ligne la plus précise,
+                               le sexe, le fourreau, la nomenclature) (sans navigateur)
 ```
 
 Tous acceptent `--fichier=chemin` pour mesurer un autre fichier que

@@ -328,6 +328,15 @@ const COLONNES_NORME = {
     ['jaugeMin',    ['jaugemin', 'awgmin', 'jaugefine', 'gaugemin', 'minawg']],
     ['jaugeMax',    ['jaugemax', 'awgmax', 'jaugegrosse', 'gaugemax', 'maxawg']],
     ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+  contacts: [
+    ['famille',     ['norme', 'famille', 'connecteur', 'family']],
+    ['sexe',        ['sexe', 'genre', 'typedecontact', 'contacttype', 'mf']],
+    ['taille',      ['taille', 'taillecontact', 'tailledecontact', 'size', 'cavite']],
+    ['typeFil',     ['typedefil', 'typefil', 'fil', 'wiretype', 'codefil', 'codedefil']],
+    ['jauge',       ['jauge', 'awg', 'gauge', 'jaugeawg', 'wiregauge']],
+    ['reference',   ['contact', 'reference', 'ref', 'partnumber', 'pn', 'partnumber1']],
+    ['accessoire',  ['accessoire', 'fourreau', 'additif', 'additive', 'additivepn', 'additivepn1', 'accessoires']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
   modules: [
     ['famille',     ['famille', 'norme', 'family']],
     ['variante',    ['variante', 'variantedinterconnexion', 'interconnexion', 'code', 'codedarrangement', 'arrangement']],
@@ -350,7 +359,8 @@ const TABLE_NORME = {
   declassements: c => c.condition != null && c.facteur != null,
   reseau: c => c.tension != null && c.chuteMax != null,
   tailles: c => c.taille != null && c.jaugeMin != null,
-  modules: c => c.variante != null && c.groupes != null
+  modules: c => c.variante != null && c.groupes != null,
+  contacts: c => c.sexe != null && c.taille != null && c.reference != null
 };
 /* Un nombre d'atelier : virgule ou point, une unité derrière (« 5 mm », « 0,8 »). */
 const NUMERO = v => { const t = String(v == null ? '' : v).trim().replace(',', '.'); if (!t) return null; const m = /-?\d+(\.\d+)?/.exec(t); return m ? parseFloat(m[0]) : null; };
@@ -368,13 +378,13 @@ function filNorme(o) { const jauge = NUMERO(o.jauge); if (jauge == null) return 
   return { type: String(o.type || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '') || '*', jauge, section: NUMERO(o.section), resistance: NUMERO(o.resistance), intensite: NUMERO(o.intensite), note: String(o.note || '').trim() }; }
 function declassementNorme(o) { const condition = MOT(o.condition), facteur = NUMERO(o.facteur); return condition && facteur != null ? { condition, facteur, note: String(o.note || '').trim() } : null; }
 function reseauNorme(o) { const tension = NUMERO(o.tension); return tension == null ? null : { tension, chuteMax: NUMERO(o.chuteMax), chutePct: NUMERO(o.chutePct), note: String(o.note || '').trim() }; }
-const ENTREE_NORME = { familles: familleNorme, fils: filNorme, declassements: declassementNorme, reseau: reseauNorme, tailles: tailleNorme, modules: moduleNorme };
-const normeVide = () => ({ familles: [], fils: [], declassements: [], reseau: [], tailles: [], modules: [], tables: 0 });
+const ENTREE_NORME = { familles: familleNorme, fils: filNorme, declassements: declassementNorme, reseau: reseauNorme, tailles: tailleNorme, modules: moduleNorme, contacts: contactNorme };
+const normeVide = () => ({ familles: [], fils: [], declassements: [], reseau: [], tailles: [], modules: [], contacts: [], tables: 0 });
 /* Lire une norme : les tables se suivent (un titre libre, la ligne d'en-tête,
    les lignes, une ligne vide), dans un CSV ou une feuille Excel. */
 function lireNorme(texte) { const N = normeVide(); let table = null, col = null;
   // les tables les plus précises d'abord : une table de tailles nomme aussi sa famille et ses jauges, comme une table de familles
-  const entete = row => { for (const nom of ['modules', 'tailles', 'familles', 'fils', 'declassements', 'reseau']) { const cles = COLONNES_NORME[nom]; const c = {}; row.forEach((cell, i) => { const t = NORMA(cell); if (!t) return;
+  const entete = row => { for (const nom of ['contacts', 'modules', 'tailles', 'familles', 'fils', 'declassements', 'reseau']) { const cles = COLONNES_NORME[nom]; const c = {}; row.forEach((cell, i) => { const t = NORMA(cell); if (!t) return;
       for (const [champ, alias] of cles) if (c[champ] == null && alias.includes(t)) { c[champ] = i; break; } });
     if (TABLE_NORME[nom](c)) return { nom, col: c }; } return null; };
   String(texte || '').split(/\r?\n/).forEach(ligne => { if (!ligne.trim()) { table = null; return; }
@@ -382,7 +392,7 @@ function lireNorme(texte) { const N = normeVide(); let table = null, col = null;
     if (!table) return; const o = {}; Object.entries(col).forEach(([champ, i]) => { o[champ] = row[i] == null ? '' : row[i]; });
     const x = ENTREE_NORME[table](o); if (x) N[table].push(x); });
   return N; }
-const normeLue = N => !!(N && (N.familles.length || N.fils.length || N.declassements.length || N.reseau.length || N.modules.length));
+const normeLue = N => !!(N && (N.familles.length || N.fils.length || N.declassements.length || N.reseau.length || N.modules.length || (N.contacts || []).length));
 /* Un fichier de normes : chaque feuille d'un Excel est lue (une table par
    feuille, ou plusieurs à la suite) ; un CSV d'un bloc. */
 async function lireNormeFichier(fichier) { const nom = (fichier.name || '').toLowerCase();
@@ -395,7 +405,7 @@ async function lireNormeFichier(fichier) { const nom = (fichier.name || '').toLo
    clé (famille, type+jauge, condition, tension). C'est ainsi qu'une norme de
    barrettes et une norme de fils, importées l'une après l'autre, se complètent. */
 function fusionnerNormes(a, b) { const N = normeVide(); const cle = { familles: x => x.famille.toUpperCase(), fils: x => x.type + '/' + x.jauge, declassements: x => x.condition, reseau: x => String(x.tension),
-    tailles: x => x.famille + '/' + x.taille, modules: x => x.famille + '/' + x.variante };
+    tailles: x => x.famille + '/' + x.taille, modules: x => x.famille + '/' + x.variante, contacts: x => [x.famille, x.sexe, x.taille, x.typeFil, x.jauge, x.reference].join('/') };
   Object.keys(cle).forEach(t => { const m = new Map(); [...(a ? a[t] || [] : []), ...(b ? b[t] || [] : [])].forEach(x => m.set(cle[t](x), x)); N[t] = [...m.values()]; });
   N.tables = (a ? a.tables : 0) + (b ? b.tables : 0); return N; }
 /* La norme embarquée : normes/*.csv, mis dans la page à la construction. */
@@ -509,6 +519,14 @@ const tailleCle = t => String(t == null ? '' : t).trim().toUpperCase().replace(/
 function tailleNorme(o) { const taille = tailleCle(o.taille), calibre = NUMERO(taille); if (!taille || calibre == null) return null;
   const j = [NUMERO(o.jaugeMin), NUMERO(o.jaugeMax)].filter(x => x != null);
   return { famille: cleNorme(o.famille), taille, calibre, jaugeMin: j.length ? Math.max(...j) : null, jaugeMax: j.length ? Math.min(...j) : null, note: String(o.note || '').trim() }; }
+/* Une ligne de la table CONTACTS (normes/contacts.csv, transcrite des tables SEE) : pour une norme de connecteurs, une
+   taille de cavité, un sexe (M broche, F douille), un type de fil (« * » : tous) et une jauge (« * » : toutes), le contact
+   à sertir et son accessoire (un fourreau de réduction E0718 pour un fil plus fin que le contact, une bague EN4530…). */
+const sexeDe = t => { const u = MOT(t); return /^m|^male|broche|pin/.test(u) ? 'M' : /^f|douille|socket/.test(u) ? 'F' : ''; };
+function contactNorme(o) { const famille = cleNorme(o.famille), taille = tailleCle(o.taille), sexe = sexeDe(o.sexe), reference = String(o.reference || '').trim();
+  if (!famille || !taille || !sexe || !reference) return null;
+  const typeFil = String(o.typeFil || '').trim().toUpperCase().replace(/[^A-Z0-9*]/g, '') || '*', j = String(o.jauge == null ? '' : o.jauge).trim();
+  return { famille, sexe, taille, typeFil, jauge: j && j !== '*' ? NUMERO(j) : null, reference, accessoire: String(o.accessoire || '').trim(), note: String(o.note || '').trim() }; }
 /* L'USAGE d'une variante : « normal » (marqué par la norme), « possible », « A350 » (application spécifique), « à
    confirmer » (la figure ne se lit pas), « diodes ». Les deux derniers et l'A350 ne sont jamais choisis seuls. */
 const usageDe = t => { const u = MOT(t); return /diode/.test(u) ? 'diodes' : /ancien|nouvelle conception|obsolet/.test(u) ? 'ancien' : /a350|ad12|specifique/.test(u) ? 'A350' : /confirm/.test(u) ? 'à confirmer' : /shunt/.test(u) ? 'shuntés' : /special/.test(u) ? 'spécial'
@@ -554,8 +572,33 @@ const familleDeReference = (norme, ref, emploi) => { const r = cleNorme(ref); re
 /* Ce qu'un contact de cette taille reçoit, dans sa norme ; et s'il reçoit un fil de cette jauge. Une jauge inconnue
    passe (c'est dit ailleurs) ; une taille que la norme ne décrit pas aussi. */
 const tailleDe = (norme, famille, taille) => { const T = normeDesModules(norme).tailles; return T.find(x => x.famille === famille && x.taille === taille) || T.find(x => !x.famille && x.taille === taille) || null; };
-function contactAccepte(norme, famille, taille, jauge) { if (jauge == null) return true;
+/* LE CONTACT À SERTIR. La table Contacts de la norme (tables SEE : EN 2997, EN 3645, EN 3646, EN 4165) donne, pour la
+   taille de la cavité, le sexe du contact, le type et la jauge du fil, le contact et son accessoire. La ligne la plus
+   précise gagne : le type de fil exact avant « * », la jauge exacte avant « * ». Sans sexe, n'importe lequel. Quand la
+   table connaît la taille, c'est elle qui juge la jauge (un fil sans ligne est refusé) ; sinon la plage de Tailles. */
+const contactsDeTaille = (norme, famille, taille) => (normeDesModules(norme).contacts || []).filter(c => c.famille === famille && c.taille === taille);
+const rangDeContact = c => (c.typeFil !== '*' ? 2 : 0) + (c.jauge != null ? 1 : 0);   // 3 : type et jauge exacts … 0 : la ligne « * * »
+function contactDuFil(norme, famille, taille, sexe, type, jauge) { const t = typeDuFil(type);
+  return contactsDeTaille(norme, famille, taille).filter(c => (!sexe || c.sexe === sexe) && (c.typeFil === '*' || c.typeFil === t) && (c.jauge == null || c.jauge === jauge))
+    .sort((a, b) => rangDeContact(b) - rangDeContact(a))[0] || null; }
+/* Ce qu'un arrangement coûte en ACCOMMODATIONS pour ces fils : un fil sur une ligne « * * » (le contact par défaut de
+   la taille, pour un fil que la table ne nomme pas) ou sur une ligne à jauge « * » compte 2, un accessoire (un fourreau
+   de réduction : le contact est trop gros pour le fil) compte 1. Entre deux arrangements qui logent tout, le moins
+   accommodant gagne — un 24 AWG va sur un contact 20, pas sur un 12 avec fourreau. */
+function accommodations(norme, famille, pl, sexeFil) { let n = 0;
+  pl.forEach(x => x.p.fils.forEach(f => { if (f.jauge == null) return; const c = contactDuFil(norme, famille, x.c.taille, sexeFil(f), f.type, f.jauge); if (!c) return;
+    if (c.jauge == null) n += 2; if (c.accessoire) n += 1; })); return n; }
+function contactAccepte(norme, famille, taille, jauge, sexe, type) { if (jauge == null) return true;
+  if (contactsDeTaille(norme, famille, taille).length) return !!contactDuFil(norme, famille, taille, sexe, type, jauge);
   const T = tailleDe(norme, famille, taille); return !T || (jauge <= T.jaugeMin && jauge >= T.jaugeMax); }
+// le sexe opposé ; le sexe des contacts d'une prise : la fiche (ce qui arrive) d'un côté, l'embase de l'autre
+const autreSexe = s => s === 'M' ? 'F' : 'M';
+const nomDuSexe = s => s === 'M' ? 'mâle' : s === 'F' ? 'femelle' : '';
+/* La NOMENCLATURE des contacts d'un plan : chaque contact (et son accessoire) avec son nombre, le plus courant d'abord. */
+function nomenclatureDe(fils) { const m = new Map();
+  fils.forEach(x => { if (!x.sertir) return; const k = x.sertir.reference + '\u0001' + (x.sertir.accessoire || '');
+    (m.get(k) || m.set(k, { reference: x.sertir.reference, accessoire: x.sertir.accessoire || '', n: 0 }).get(k)).n++; });
+  return [...m.values()].sort((a, b) => b.n - a.n || triBornes(a.reference, b.reference)); }
 /* Les entrées de bible d'une norme de modules : une par variante — ses groupes sont les « bornes » qu'elle offre. */
 function bibleDesModules(norme) {
   return normeDesModules(norme).modules.map(m => { const ts = [...new Set(m.contacts.map(c => c.taille))].map(t => tailleDe(norme, m.famille, t)).filter(Boolean);
@@ -648,35 +691,40 @@ function moduleDeConnecteur(norme, pn) { const m = moduleDeReference(norme, pn);
 /* Les POINTS d'un connecteur ou d'une prise : chaque borne, son numéro de contact, ses fils (jauge lue dans le type). */
 const pointsDe = (besoins, bornes) => bornes.slice().sort(triBornes).map(b => ({ borne: b, num: numeroDeBorne(b), fils: (besoins.parBorne.get(b) || []).map(f => ({ ...f, jauge: jaugeDuType(f.type) })) }));
 /* Les points dans un module : chaque borne sur son contact ; rend ce qui se pose et ce qui ne se pose pas. */
-function poserPoints(norme, mod, points) { const pl = [], manque = [], refus = [];
+function poserPoints(norme, mod, points, sexeFil) { const pl = [], manque = [], refus = []; sexeFil = sexeFil || (() => '');
   // des contacts lettrés (EN 3646) et une borne numérotée : la borne n prend la lettre de rang n, dans l'ordre de la norme
   const lettres = !mod.contacts.some(x => /^\d+$/.test(x.lettre)), contactDe = num => mod.contacts.find(x => x.lettre === num) || (lettres && /^\d+$/.test(num) ? mod.contacts[+num - 1] || null : null);
   points.forEach(p => { const c = contactDe(p.num); if (!c) { manque.push(p); return; }
-    const ko = p.fils.filter(f => !contactAccepte(norme, mod.famille, c.taille, f.jauge)); if (ko.length) refus.push({ p, c, ko });
+    const ko = p.fils.filter(f => !contactAccepte(norme, mod.famille, c.taille, f.jauge, sexeFil(f), f.type)); if (ko.length) refus.push({ p, c, ko });
     pl.push({ p, c, ok: !ko.length }); });
   return { pl, manque, refus }; }
 /* LE REMPLISSAGE d'un connecteur ou d'une prise de coupure. `choix` : l'arrangement retenu à la main ; `pn` : le part
    number du fichier ; `prise` : deux côtés (fiche et embase), un fil de chaque côté par contact — sinon un seul fil.
    `choix` peut aussi nommer une norme seule (« EN2997 ») : ses arrangements seuls. Sans norme nommée (une prise de
-   coupure dont le part number n'en dit rien), toutes les normes de connecteurs concourent.
+   coupure dont le part number n'en dit rien), toutes les normes de connecteurs concourent. `sexe` : le sexe des
+   contacts qu'on sertit — F (douilles) par défaut : face à une embase d'équipement à broches, et côté fiche d'une
+   prise de coupure, dont l'embase prend l'autre sexe. Chaque fil rend son contact à sertir (`sertir`, table Contacts).
    Rend un plan de la même forme que celui des barrettes (un module). */
 function remplirContacts(points, norme, opts) { opts = opts || {}; const N = normeDesModules(norme), s = k => k > 1 ? 's' : '';
+  const sexe0 = opts.sexe === 'M' ? 'M' : 'F', sexeFil = f => opts.prise && !f.amont ? autreSexe(sexe0) : sexe0;
   const main = opts.choix ? moduleDeReference(N, opts.choix) : null, visee = !main && opts.choix ? familleDeReference(N, opts.choix, 'connecteur') : '';
   const nomme = main || visee ? null : moduleDeConnecteur(N, opts.pn), force = main || nomme;
   const famille = force ? force.famille : visee || familleDeReference(N, opts.pn, 'connecteur');
   const cands = force ? [force] : N.modules.filter(m => m.emploi === 'connecteur' && m.auto && (!famille || m.famille === famille));
   let mieux = null;
-  cands.forEach(m => { const r = poserPoints(N, m, points), bons = r.pl.filter(x => x.ok).length;
-    const score = [bons, m.usage === 'normal' ? 1 : 0, -m.contacts.length, m.poids != null ? -m.poids : -1e3];
+  cands.forEach(m => { const r = poserPoints(N, m, points, sexeFil), bons = r.pl.filter(x => x.ok).length;
+    const score = [bons, m.usage === 'normal' ? 1 : 0, -accommodations(N, m.famille, r.pl, sexeFil), -m.contacts.length, m.poids != null ? -m.poids : -1e3];
     if (force || bons === points.length) if (!mieux || meilleurScore(score, mieux.score)) mieux = { m, r, score }; });
   const verdicts = [], modules = [], fils = [];
   if (mieux) { const m = mieux.m;
     modules.push({ module: m, reference: m.reference, places: mieux.r.pl.map(x => ({ potentiel: { bornes: [x.p.borne], fils: x.p.fils }, groupe: m.groupes[x.c.groupe], fils: x.p.fils.map(f => [f, x.c]), perte: 0 })) });
-    mieux.r.pl.forEach(x => x.p.fils.forEach(f => fils.push({ f, contact: x.c, module: 0, groupe: m.groupes[x.c.groupe], potentiel: { bornes: [x.p.borne], fils: x.p.fils }, taille: x.c.taille,
-      jaugeOk: f.jauge == null ? null : contactAccepte(N, m.famille, x.c.taille, f.jauge) })));
+    mieux.r.pl.forEach(x => x.p.fils.forEach(f => { const sx = sexeFil(f), st = contactDuFil(N, m.famille, x.c.taille, sx, f.type, f.jauge);
+      fils.push({ f, contact: x.c, module: 0, groupe: m.groupes[x.c.groupe], potentiel: { bornes: [x.p.borne], fils: x.p.fils }, taille: x.c.taille, sexe: sx,
+        jaugeOk: f.jauge == null ? null : contactAccepte(N, m.famille, x.c.taille, f.jauge, sx, f.type), sertir: st ? { reference: st.reference, accessoire: st.accessoire } : null }); }));
     mieux.r.manque.forEach(p => verdicts.push({ niveau: 'ko', texte: `borne ${p.borne} : l'arrangement ${m.variante} n'a pas de contact ${p.num}`, bornes: [p.borne] }));
     if (mieux.r.pl.some(x => x.c.lettre !== x.p.num)) verdicts.push({ niveau: 'info', texte: `contacts lettrés : chaque borne numérotée prend la lettre de même rang (${mieux.r.pl.slice(0, 4).map(x => x.p.num + ' → ' + x.c.lettre).join(', ')}${mieux.r.pl.length > 4 ? '…' : ''})`, bornes: [] });
-    mieux.r.refus.forEach(({ p, c, ko }) => verdicts.push({ niveau: 'ko', texte: `borne ${p.borne} : ${ko.map(f => (f.cable || '?') + ' (' + f.type + ')').join(', ')} — jauge refusée par le contact ${c.lettre} (taille ${c.taille})`, bornes: [p.borne] }));
+    mieux.r.refus.forEach(({ p, c, ko }) => { const table = contactsDeTaille(N, m.famille, c.taille).length;
+      verdicts.push({ niveau: 'ko', texte: `borne ${p.borne} : ${ko.map(f => (f.cable || '?') + ' (' + f.type + ')').join(', ')} — ` + (table ? `aucun contact ${nomDuSexe(sexeFil(ko[0]))} de taille ${c.taille} (${nomDeFamille(N, m.famille)}) pour ce fil` : `jauge refusée par le contact ${c.lettre} (taille ${c.taille})`), bornes: [p.borne] }); });
     mieux.r.pl.forEach(({ p, c }) => { const cotes = opts.prise ? [p.fils.filter(f => f.amont), p.fils.filter(f => !f.amont)] : [p.fils];
       if (cotes.some(x => x.length > 1)) verdicts.push({ niveau: 'attention', texte: `contact ${c.lettre} : ${p.fils.length} fils${opts.prise ? ', plus d’un d’un même côté' : ''} — un contact reçoit un fil${opts.prise ? ' de chaque côté' : ''}`, bornes: [p.borne] }); });
     // les contacts shuntés d'un module retenu à la main relient des bornes qui ne le sont peut-être pas
@@ -685,20 +733,22 @@ function remplirContacts(points, norme, opts) { opts = opts || {}; const N = nor
   const posees = new Set(mieux ? mieux.r.pl.map(x => x.p) : []), restants = points.filter(p => !posees.has(p));
   return { modules, fils, verdicts, potentiels: points.length, places: points.length - restants.length, restants, contacts: mieux ? mieux.m.contacts.length : 0,
            utilises: new Set(fils.map(x => x.contact.lettre)).size, reference: mieux ? mieux.m.reference : '', famille: famille || (mieux ? mieux.m.famille : ''), visee,
-           variante: main ? main.variante : '', main: !!main, nomme: !!nomme, choix: opts.choix || '' }; }
+           variante: main ? main.variante : '', main: !!main, nomme: !!nomme, choix: opts.choix || '', sexe: sexe0, prise: !!opts.prise,
+           nomenclature: nomenclatureDe(fils), tableContacts: !!(mieux && contactsDeTaille(N, mieux.m.famille, mieux.m.contacts[0].taille).length) }; }
 /* Les arrangements qui logent ces points, du mieux taillé au moins bien — les candidats de la carte. */
-function arrangementsQuiLogent(points, norme, famille) { const N = normeDesModules(norme);
+function arrangementsQuiLogent(points, norme, famille, sexeFil) { const N = normeDesModules(norme);
   return N.modules.filter(m => m.emploi === 'connecteur' && m.auto && (!famille || m.famille === famille))
-    .map(m => ({ m, r: poserPoints(N, m, points) })).filter(x => !x.r.manque.length && !x.r.refus.length)
-    .sort((a, b) => (b.m.usage === 'normal') - (a.m.usage === 'normal') || a.m.contacts.length - b.m.contacts.length).map(x => x.m); }
+    .map(m => ({ m, r: poserPoints(N, m, points, sexeFil) })).filter(x => !x.r.manque.length && !x.r.refus.length)
+    .map(x => ({ ...x, acc: accommodations(N, x.m.famille, x.r.pl, sexeFil || (() => '')) }))
+    .sort((a, b) => (b.m.usage === 'normal') - (a.m.usage === 'normal') || a.acc - b.acc || a.m.contacts.length - b.m.contacts.length).map(x => x.m); }
 /* Les connecteurs EN 4165 d'un équipement : chaque cavité (connecteur A, B…) et son module. `retenue(nom)` : la
-   désignation donnée à la main à « repère|lettre ». */
-function connecteursEnModules(repere, liaisons, norme, retenue) { const b = besoinsDeBarrette(repere, liaisons), main = retenue || (() => '');
+   désignation donnée à la main à « repère|lettre » ; `sexes(nom)` : le sexe des contacts choisi pour cette clé. */
+function connecteursEnModules(repere, liaisons, norme, retenue, sexes) { const b = besoinsDeBarrette(repere, liaisons), main = retenue || (() => ''), sx = sexes || (() => '');
   return connecteursDe(repere, liaisons).filter(c => familleDeReference(norme, c.pn, 'connecteur') || moduleDeConnecteur(norme, c.pn))
-    .map(c => { const points = pointsDe(b, c.bornes); return { ...c, points, plan: remplirContacts(points, norme, { choix: main(repere + '|' + c.nom), pn: c.pn }) }; }); }
-/* La prise de coupure en module : ses contacts, un fil de chaque côté (fiche et embase). */
-function coupureEnModule(repere, liaisons, norme, choix) { const b = besoinsDeBarrette(repere, liaisons), points = pointsDe(b, b.bornes);
-  return { besoins: b, points, plan: remplirContacts(points, norme, { choix, pn: b.pn, prise: true }) }; }
+    .map(c => { const points = pointsDe(b, c.bornes); return { ...c, points, plan: remplirContacts(points, norme, { choix: main(repere + '|' + c.nom), pn: c.pn, sexe: sx(repere + '|' + c.nom) }) }; }); }
+/* La prise de coupure en module : ses contacts, un fil de chaque côté (fiche et embase). `sexe` : celui de la fiche. */
+function coupureEnModule(repere, liaisons, norme, choix, sexe) { const b = besoinsDeBarrette(repere, liaisons), points = pointsDe(b, b.bornes);
+  return { besoins: b, points, plan: remplirContacts(points, norme, { choix, pn: b.pn, prise: true, sexe }) }; }
 /* Plusieurs plans d'un module en un seul (les cavités d'un connecteur, côte à côte) : ce que la vue en relief dessine. */
 function planDesCavites(liste) { const modules = [], fils = [], verdicts = [];
   liste.forEach(({ nom, plan }) => { const k0 = modules.length;

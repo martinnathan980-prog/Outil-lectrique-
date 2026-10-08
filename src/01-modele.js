@@ -105,6 +105,7 @@ function nouveauContrat() {
   return {
     liaisons: [],
     designations: new Map(),           // repère -> désignation libre
+    sexes: new Map(),                  // « repère|connecteur » (ou repère d'une prise) -> sexe des contacts à sertir, M ou F
     cartouche: { titre: 'Contrat de câblage', auteur: '', indice: 'A',
                  date: new Date().toISOString().slice(0, 10), echelle: '—' }
   };

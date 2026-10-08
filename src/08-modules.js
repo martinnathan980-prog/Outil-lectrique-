@@ -188,8 +188,16 @@ function tableauModules(Q) { const routes = couleursDesRoutes();
    module, chaque contact avec son fil de fiche et son fil d'embase. */
 const aDesModulesDeConnecteur = () => normeDesModules(app.norme).modules.some(m => m.emploi === 'connecteur');
 const coupureEnModules = nom => estCoupure(nom) && aDesModulesDeConnecteur() && (app.bible || []).some(e => e.module);
-const cavitesDe = nom => aDesModulesDeConnecteur() && !estBornier(nom) ? connecteursEnModules(nom, verite(), app.norme, k => app.contrat.designations.get(k) || '') : [];
-const planDeCoupure = nom => coupureEnModule(nom, verite(), app.norme, app.contrat.designations.get(nom) || '');
+const sexeChoisi = k => (app.contrat.sexes && app.contrat.sexes.get(k)) || '';
+const cavitesDe = nom => aDesModulesDeConnecteur() && !estBornier(nom) ? connecteursEnModules(nom, verite(), app.norme, k => app.contrat.designations.get(k) || '', sexeChoisi) : [];
+const planDeCoupure = nom => coupureEnModule(nom, verite(), app.norme, app.contrat.designations.get(nom) || '', sexeChoisi(nom));
+/* Le contact à sertir à chaque bout d'un fil du contrat : { de, vers } — ce que le plan de l'équipement, de la prise ou
+   de la barrette lui a donné (null si rien ne le dit). */
+function sertirDuFil(l) { const bout = rep => { if (!rep || VT_A_POSER.test(rep) || estMasse(rep) || estRenvoi(rep)) return null;
+    try { const plans = coupureEnModules(rep) ? [planDeCoupure(rep).plan] : barretteEnModules(rep) ? [planDeBarrette(rep).plan] : cavitesDe(rep).map(c => c.plan);
+      for (const Q of plans) { const x = (Q.fils || []).find(y => y.f.l === l); if (x) return { sertir: x.sertir || null, contact: x.contact, sexe: x.sexe || '', ko: x.jaugeOk === false }; } } catch (_) { }
+    return null; };
+  return { de: bout(l.de), vers: bout(l.vers) }; }
 /* Ce que la vue en relief dessine pour un repère : les modules d'une barrette, d'une prise de coupure, ou les cavités
    d'un équipement ; rien sinon. */
 function modulesEnRelief(nom) {

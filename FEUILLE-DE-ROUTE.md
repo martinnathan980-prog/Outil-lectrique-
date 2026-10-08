@@ -6,7 +6,8 @@ L'outil sait aujourd'hui :
 - poser chaque fil d'une barrette dans un module (ASNE 0599, NSA937901) ;
 - poser chaque fil d'un connecteur ou d'une prise dans un arrangement (EN 4165,
   EN 2997, EN 3646, EN 3645, ASNE0059) ;
-- juger la jauge par la taille du contact ;
+- donner à chaque fil son contact à sertir et son fourreau (tables SEE), et
+  juger sa jauge par elles ;
 - faire de chaque dédoublement une barrette à poser (VT1…), qu'on pose au
   contrat d'un geste ;
 - dire l'état de tout le contrat dans la pastille en haut à gauche.
@@ -30,14 +31,17 @@ page de norme suffit toujours : je la transcris.
 
 ### A. Les contacts, norme par norme (débloque tout le reste)
 
-1. **Les références de contact et leurs jauges.** Pour chaque norme et chaque
-   taille de contact (#22, #20, #16, #12, #8…) :
-   - la référence du contact à sertir (EN 3155-xxx, ASNE…) ;
-   - la plage de jauge AWG acceptée ;
-   - le type de fil, s'il compte (cuivre, aluminium).
-
-   Aujourd'hui l'outil prend des plages « usuelles, à confirmer ». Tableau
-   idéal : `Norme ; Taille ; Contact ; Jauge min ; Jauge max ; Note`.
+1. **Les références de contact et leurs jauges.** ✔ Fait pour les
+   connecteurs : les tables SEE EN2997, EN3645, EN3646 et EN4165 sont dans
+   `normes/contacts.csv` (428 lignes : taille, sexe, type de fil, jauge →
+   contact et accessoire). Chaque fil a son contact sur sa fiche, chaque
+   connecteur sa nomenclature. Reste :
+   - les mêmes tables pour **NSA937901**, **ASNE 0599** et **ASNE0059**
+     (l'onglet NSA937901 existe dans SEE : une capture suffit) ;
+   - confirmer le **sexe** des contacts : l'outil sertit des femelles face à
+     une embase d'équipement, des femelles côté fiche et des mâles côté
+     embase d'une prise de coupure (se change sur la fiche) ;
+   - deux accessoires lus tronqués (EN3646 KE 20, EN3645 YY 20).
 2. **La règle complète de désignation de chaque norme**, avec les valeurs
    que vous prenez par défaut : classe et matériau, finition, position de clé,
    fiche ou embase, type d'embase. L'outil écrit aujourd'hui des désignations

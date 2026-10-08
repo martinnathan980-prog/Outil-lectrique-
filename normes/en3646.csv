@@ -1,7 +1,7 @@
 prEN 3646-002:2005 — connecteurs circulaires à contacts lettrés : les arrangements des inserts (figures 1 à 31), désignés <taille de boîtier>-<nombre de contacts>.
-Les contacts sont des LETTRES (A, B… sans I, O ; puis a, b… ; puis AA, BB…), dans l'ordre de la norme : une borne numérotée du contrat (1, 2, 3…) prend la lettre de même rang. La place des lettres est relevée en cercles, dans le sens horaire des figures — approchée pour les grands inserts. Désignation provisoire : EN3646-002-<arrangement>. Contacts selon l'EN 3155-002 (non fournie) : plages de jauge usuelles, à confirmer.
+Les contacts sont des LETTRES (A, B… sans I, O ; puis a, b… ; puis AA, BB…), dans l'ordre de la norme : une borne numérotée du contrat (1, 2, 3…) prend la lettre de même rang. La place des lettres est relevée en cercles, dans le sens horaire des figures — approchée pour les grands inserts. Désignation provisoire : EN3646-002-<arrangement>. Les contacts à sertir sont dans normes/contacts.csv (tables SEE).
 
-Tailles — la taille d'un contact EN 3155 et les jauges AWG qu'il reçoit (plage usuelle, à confirmer avec l'EN 3155-002)
+Tailles — la plage de jauges d'une taille de contact, quand la table Contacts (normes/contacts.csv, tables SEE) ne connaît pas la taille ; c'est elle qui juge d'abord
 Famille;Taille;Jauge min;Jauge max;Note
 EN3646;20;24;20;contact taille 20
 EN3646;16;20;16;contact taille 16
