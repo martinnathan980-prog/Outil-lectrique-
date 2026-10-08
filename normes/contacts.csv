@@ -431,3 +431,13 @@ EN4165;F;12;YYWW;*;ECS0703CS12;;
 EN4165;M;12;YYWW;*;ECS0704BP12;;
 EN4165;F;8;LN;*;ECS7314M1;;
 EN4165;M;8;LN;*;ECS7314P1;;
+
+Résistance des contacts — par taille, ce qu'une paire de contacts sertie et accouplée, neuve, admet et laisse tomber aux bornes : les limites AS39029 / MIL-DTL-39029 (mêmes tailles et même technologie que l'EN 3155, dont la limite n'a pas été lue — essais EN 2591-201/-202), octobre 2026. La mesure comprend les deux sertissages et un bout de fil : c'est une borne haute (un contact doré neuf fait plutôt 2 à 5 mΩ en 22). La résistance de conception (fin de vie) est × 1,5 : une hypothèse de marge, pas une valeur de norme. La chute en ligne compte une résistance par prise de coupure traversée (la paire) et deux par barrette (deux sertissages et la barre).
+Taille;Intensité;Chute max;Résistance;Résistance fin de vie;Note
+22D;5;73;14,6;22;22D et 22 : mêmes limites
+22;5;73;14,6;22;
+20;7,5;55;7,3;11;
+16;13;49;3,8;5,7;
+12;23;42;1,8;2,7;
+10;33;33;1,0;1,5;
+8;46;;0,7;1,0;extrapolé (46 A fût 8, 33 A fût 10 : Amphenol EN3155-065/-083) ; la chute en mV n'a pas été trouvée

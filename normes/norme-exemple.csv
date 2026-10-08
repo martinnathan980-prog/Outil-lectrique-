@@ -1,15 +1,22 @@
-NORME D'EXEMPLE — sans aucune valeur normative : la famille de prise EN3646, les déclassements et le réseau sont inventés pour montrer le mécanisme ; remplace-les par les tables de tes normes (voir normes/LISEZMOI.md). Les fils, eux, sont ceux de l'EN 2853 (en2853.csv).
+NORME D'EXEMPLE — la famille de prise EN3646 est inventée pour montrer le mécanisme (ses 7,5 A et 8 mΩ par contact sont du bon ordre pour une taille 20 : AS39029) ; remplace-la par la table de ta norme (voir normes/LISEZMOI.md). Les déclassements et le réseau sont les points publics de l'AC 43.13-1B (FAA), en attendant les règles du programme. Les fils, eux, sont ceux de l'EN 2853 (en2853.csv).
 
 Familles — une ligne par famille de prises de coupure : ce que chaque contact admet, et la règle de remplissage (les barrettes, elles, sont les modules de jonction de la norme ASNE 0599 : asne0599.csv)
 Norme;Famille;Nature;Variantes;Pas;Jauge min;Jauge max;Intensité;Résistance;Fils par côté;Ordre;Paquets;Réservés;Masse;Note
 EN3646 (exemple);EN3646;coupure;3 8;2,5;26;20;7,5;8;1;libre;;;;prise de coupure : un fil par contact, fiche (partie mobile) et embase
 
-Déclassement — un facteur appliqué à l'intensité admissible du fil, quand la condition est cochée dans la simulation
-Condition;Facteur;Note
-faisceau;0,8;plusieurs fils frettés ensemble (exemple) — coché par défaut
-chaud;0,85;zone chaude, plus de 70 °C (exemple)
+Déclassement — un facteur sur l'intensité admissible du fil, quand la condition est cochée dans la simulation. Points publics de l'AC 43.13-1B chapitre 11 (FAA) : « faisceau » = fig. 11-5 (bundle derating : le facteur dépend du nombre de fils du faisceau et de la charge, le % de ce que ses fils admettent ensemble — l'outil prend le point le plus proche du faisceau simulé) ; « altitude » = fig. 11-6 (interpolée). Les courbes elles-mêmes sont graphiques : ce sont les valeurs lues dans le texte ; les courbes du programme (ABD0100.1.x) les remplaceront quand le lecteur les donnera.
+Condition;Fils;Charge;Altitude;Facteur;Note
+faisceau;8;60;;0,60;AC 43.13-1B § 11-68 f (4)-(5) — l'exemple de l'AC, pris quand on ne sait rien du faisceau
+faisceau;12;100;;0,43;AC 43.13-1B § 11-69 exemple 2
+faisceau;35;20;;0,52;AC 43.13-1B § 11-69 exemple 1
+faisceau;41;100;;0,25;MIL-W-5088K (même courbe), lecture à confirmer
+altitude;;;0;1,00;AC 43.13-1B fig. 11-6
+altitude;;;20000;0,91;AC 43.13-1B § 11-68 / 11-69
+altitude;;;60000;0,79;AC 43.13-1B § 11-69 exemple 1
 
-Réseau — la chute de tension admise en ligne, selon la tension du réseau
-Tension;Chute max;Note
-28;1;28 V continu : 1 V en régime permanent (exemple)
-115;4;115 V alternatif (exemple)
+Réseau — la chute de tension admise en ligne, du bus à la masse de l'équipement (AC 43.13-1B table 11-6, les mêmes valeurs que l'AS50881 / MIL-W-5088) : en continu, en intermittent (≤ 2 min), et en % de la tension. Le triphasé se compare à la ligne 200 V (la chute calculée est composée, entre deux phases). La règle Airbus (ABD0100) n'est pas publique : à demander au lecteur avec le document et l'indice.
+Tension;Nature;Chute max;Chute max intermittent;Chute max en %;Note
+14;continu;0,5;1;3,6;
+28;continu;1;2;3,6;de la génération au bus : 2 % de plus admis (§ 11-66 b)
+115;alternatif phase-neutre 400 Hz;4;8;3,5;
+200;alternatif entre phases 400 Hz;7;14;3,5;la chute composée (√3 ×) du régime triphasé se compare ici

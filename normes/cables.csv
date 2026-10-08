@@ -1,62 +1,62 @@
-Câbles — la base des câbles du lecteur (l'onglet Câbles de son Excel, octobre 2026) : pour chaque type de câble du retest (DR24, MLB22, KD24, WC…), sa famille, sa jauge, ses brins, s'il est blindé, sa nature (torsadé, blindé, twinax, coaxial, quadrax, fibre optique), sa masse en g/m, le nombre de liaisons qu'il porte (les brins, plus le blindage), sa résistance en mΩ/m (la même valeur en Ω/km), son diamètre extérieur en mm et sa section en mm².
-L'outil s'en sert pour la fiche d'un fil, pour la chute en ligne (la résistance de ce câble-là, avant celle de la jauge seule) et pour le faisceau de chaque connecteur (la section cumulée, le diamètre équivalent, la masse) — c'est de là que viendront les raccords. Un type sans ligne est signalé par la pastille de contrôle. 225 lignes dans l'Excel ; HJ y est en double (gardé une fois), LE aussi — « fibre optique » puis « coaxial », mêmes chiffres — gardé en fibre optique, à confirmer.
+Câbles — la base des câbles du lecteur (l'onglet Câbles de son Excel, octobre 2026, vérifié contre les fiches Lynxeo : DR 26→6 identiques, DRB à ±0,5 %, MLC, AD, VN identiques) : pour chaque type de câble du retest (DR24, MLB22, KD24, WC…), sa famille, sa jauge, ses brins, s'il est blindé, sa nature, sa masse en g/m (valeur max), le nombre de liaisons qu'il porte (les brins, plus le blindage), sa résistance en mΩ/m à 20 °C (la même valeur en Ω/km ; valeur max des fiches — la chute en ligne la corrige par la température du conducteur), son diamètre extérieur en mm et sa section HORS-TOUT en mm² (π Ø²/4 : isolant, gaine et blindage compris — pour le toron, pas pour le cuivre ; la section du conducteur est dans en2853.csv).
+L'outil s'en sert pour la fiche d'un fil, pour la chute en ligne (la résistance de ce câble-là, avant celle de la jauge seule) et pour le faisceau de chaque connecteur (la section cumulée, le diamètre équivalent, la masse) — c'est de là que viendront les raccords. Un type sans ligne est signalé par la pastille de contrôle. 225 lignes dans l'Excel ; HJ y est en double (gardé une fois), LE aussi — « fibre optique » puis « coaxial », mêmes chiffres — gardé en fibre optique, à confirmer. Complété en octobre 2026 (fiches Lynxeo) : les masses DRC/DRD, les résistances AD (aluminium cuivré : 27 à 65 % de plus que le DR cuivre, le rapport n'est pas constant), les diamètres AD4 et VN manquants ; ADB…ADE et VNA…VND prennent la résistance de l'AD de même jauge (les conducteurs VN sont des ABS 0949 AD : hypothèse à confirmer sur les fiches). Douteux, à relire dans l'Excel : DW24 (= DW22), GPB24 (= GPB22), MLA12 (Ø = MLA14), AM et YV (mêmes R et masses, seuls les Ø diffèrent ; 2,2 mΩ/m est bas pour un 6 AWG aluminium).
 
 Câble;Famille;Jauge;Brins;Blindage;Nature;Masse;Liaisons;Résistance;Diamètre;Section
-AD24;AD;24;1;0;;1,75;1;;0,96;0,72
-AD22;AD;22;1;0;;2,50;1;;1,10;0,95
-AD20;AD;20;1;0;;3,65;1;;1,34;1,41
-AD18;AD;18;1;0;;5,45;1;;1,61;2,04
-AD16;AD;16;1;0;;7,75;1;;1,92;2,90
-AD14;AD;14;1;0;;10,94;1;;2,24;3,94
-AD12;AD;12;1;0;;15,50;1;;2,70;5,73
-AD10;AD;10;1;0;;24,02;1;;3,33;8,71
-AD8;AD;8;1;0;;39,00;1;;4,40;15,21
+AD24;AD;24;1;0;;1,75;1;145;0,96;0,72
+AD22;AD;22;1;0;;2,50;1;90,2;1,10;0,95
+AD20;AD;20;1;0;;3,65;1;49,6;1,34;1,41
+AD18;AD;18;1;0;;5,45;1;33,2;1,61;2,04
+AD16;AD;16;1;0;;7,75;1;23,0;1,92;2,90
+AD14;AD;14;1;0;;10,94;1;15,5;2,24;3,94
+AD12;AD;12;1;0;;15,50;1;10,9;2,70;5,73
+AD10;AD;10;1;0;;24,02;1;5,8;3,33;8,71
+AD8;AD;8;1;0;;39,00;1;3,8;4,40;15,21
 AD6;AD;6;1;0;;63,70;1;;5,70;25,52
-AD4;AD;4;1;0;;96,30;1;;;
-ADB24;ADB;24;2;0;;3,61;2;;1,92;2,90
-ADB22;ADB;22;2;0;;5,15;2;;2,18;3,73
-ADB20;ADB;20;2;0;;7,52;2;;2,68;5,64
-ADB18;ADB;18;2;0;;11,23;2;;3,22;8,14
-ADB16;ADB;16;2;0;;15,97;2;;3,84;11,58
-ADB14;ADB;14;2;0;;22,54;2;;4,48;15,76
-ADB12;ADB;12;2;0;;31,93;2;;5,40;22,90
-ADB10;ADB;10;2;0;;49,48;2;;6,66;34,84
-ADB8;ADB;8;2;0;;80,34;2;;8,80;60,82
+AD4;AD;4;1;0;;96,30;1;1,5;7,40;43,01
+ADB24;ADB;24;2;0;;3,61;2;145;1,92;2,90
+ADB22;ADB;22;2;0;;5,15;2;90,2;2,18;3,73
+ADB20;ADB;20;2;0;;7,52;2;49,6;2,68;5,64
+ADB18;ADB;18;2;0;;11,23;2;33,2;3,22;8,14
+ADB16;ADB;16;2;0;;15,97;2;23,0;3,84;11,58
+ADB14;ADB;14;2;0;;22,54;2;15,5;4,48;15,76
+ADB12;ADB;12;2;0;;31,93;2;10,9;5,40;22,90
+ADB10;ADB;10;2;0;;49,48;2;5,8;6,66;34,84
+ADB8;ADB;8;2;0;;80,34;2;3,8;8,80;60,82
 ADB6;ADB;6;2;0;;131,22;2;;11,40;102,07
-ADB4;ADB;4;2;0;;198,38;2;;;
-ADC24;ADC;24;3;0;;5,41;3;;2,06;3,35
-ADC22;ADC;22;3;0;;7,73;3;;2,37;4,39
-ADC20;ADC;20;3;0;;11,28;3;;2,88;6,52
-ADC18;ADC;18;3;0;;16,84;3;;3,46;9,41
-ADC16;ADC;16;3;0;;23,95;3;;4,13;13,38
-ADC14;ADC;14;3;0;;33,80;3;;4,82;18,22
-ADC12;ADC;12;3;0;;47,90;3;;5,81;26,47
-ADC10;ADC;10;3;0;;74,22;3;;7,16;40,26
-ADC8;ADC;8;3;0;;120,51;3;;9,46;70,29
+ADB4;ADB;4;2;0;;198,38;2;1,5;;
+ADC24;ADC;24;3;0;;5,41;3;145;2,06;3,35
+ADC22;ADC;22;3;0;;7,73;3;90,2;2,37;4,39
+ADC20;ADC;20;3;0;;11,28;3;49,6;2,88;6,52
+ADC18;ADC;18;3;0;;16,84;3;33,2;3,46;9,41
+ADC16;ADC;16;3;0;;23,95;3;23,0;4,13;13,38
+ADC14;ADC;14;3;0;;33,80;3;15,5;4,82;18,22
+ADC12;ADC;12;3;0;;47,90;3;10,9;5,81;26,47
+ADC10;ADC;10;3;0;;74,22;3;5,8;7,16;40,26
+ADC8;ADC;8;3;0;;120,51;3;3,8;9,46;70,29
 ADC6;ADC;6;3;0;;196,83;3;;12,26;117,96
-ADC4;ADC;4;3;0;;297,57;3;;;
-ADD24;ADD;24;4;0;;7,21;4;;2,30;4,17
-ADD22;ADD;22;4;0;;10,30;4;;2,64;5,47
-ADD20;ADD;20;4;0;;15,04;4;;3,22;8,12
-ADD18;ADD;18;4;0;;22,45;4;;3,86;11,73
-ADD16;ADD;16;4;0;;31,93;4;;4,61;16,68
-ADD14;ADD;14;4;0;;45,07;4;;5,38;22,70
-ADD12;ADD;12;4;0;;63,86;4;;6,48;32,98
-ADD10;ADD;10;4;0;;98,96;4;;7,99;50,17
-ADD8;ADD;8;4;0;;160,68;4;;10,56;87,58
+ADC4;ADC;4;3;0;;297,57;3;1,5;;
+ADD24;ADD;24;4;0;;7,21;4;145;2,30;4,17
+ADD22;ADD;22;4;0;;10,30;4;90,2;2,64;5,47
+ADD20;ADD;20;4;0;;15,04;4;49,6;3,22;8,12
+ADD18;ADD;18;4;0;;22,45;4;33,2;3,86;11,73
+ADD16;ADD;16;4;0;;31,93;4;23,0;4,61;16,68
+ADD14;ADD;14;4;0;;45,07;4;15,5;5,38;22,70
+ADD12;ADD;12;4;0;;63,86;4;10,9;6,48;32,98
+ADD10;ADD;10;4;0;;98,96;4;5,8;7,99;50,17
+ADD8;ADD;8;4;0;;160,68;4;3,8;10,56;87,58
 ADD6;ADD;6;4;0;;262,44;4;;13,68;146,98
-ADD4;ADD;4;4;0;;396,76;4;;;
-ADE24;ADE;24;5;0;;9,01;5;;;
-ADE22;ADE;22;5;0;;12,88;5;;;
-ADE20;ADE;20;5;0;;18,80;5;;;
-ADE18;ADE;18;5;0;;28,07;5;;;
-ADE16;ADE;16;5;0;;39,91;5;;;
-ADE14;ADE;14;5;0;;56,34;5;;;
-ADE12;ADE;12;5;0;;79,83;5;;;
-ADE10;ADE;10;5;0;;123,70;5;;;
-ADE8;ADE;8;5;0;;200,85;5;;;
+ADD4;ADD;4;4;0;;396,76;4;1,5;;
+ADE24;ADE;24;5;0;;9,01;5;145;;
+ADE22;ADE;22;5;0;;12,88;5;90,2;;
+ADE20;ADE;20;5;0;;18,80;5;49,6;;
+ADE18;ADE;18;5;0;;28,07;5;33,2;;
+ADE16;ADE;16;5;0;;39,91;5;23,0;;
+ADE14;ADE;14;5;0;;56,34;5;15,5;;
+ADE12;ADE;12;5;0;;79,83;5;10,9;;
+ADE10;ADE;10;5;0;;123,70;5;5,8;;
+ADE8;ADE;8;5;0;;200,85;5;3,8;;
 ADE6;ADE;6;5;0;;328,06;5;;;
-ADE4;ADE;4;5;0;;495,95;5;;;
+ADE4;ADE;4;5;0;;495,95;5;1,5;;
 AM6;AM;6;1;0;;55,00;1;2,20;6,00;28,27
 AM4;AM;4;1;0;;77,00;1;1,50;7,40;43,01
 AM2;AM;2;1;0;;119,00;1;0,94;9,00;63,62
@@ -98,26 +98,26 @@ DRB12;DRB;12;2;0;torsadé;64,54;2;7,00;5,40;22,90
 DRB10;DRB;10;2;0;torsadé;102,69;2;4,22;6,66;34,84
 DRB8;DRB;8;2;0;torsadé;185,40;2;2,37;8,80;60,82
 DRB6;DRB;6;2;0;torsadé;278,10;2;1,63;11,40;102,07
-DRC24;DRC;24;3;0;;8,40;3;;2,06;3,35
-DRC22;DRC;22;3;0;;;3;;2,37;4,39
-DRC20;DRC;20;3;0;;;3;;2,88;6,52
-DRC18;DRC;18;3;0;;;3;;3,46;9,41
-DRC16;DRC;16;3;0;;;3;;4,13;13,38
-DRC14;DRC;14;3;0;;;3;;4,82;18,22
-DRC12;DRC;12;3;0;;;3;;5,81;26,47
-DRC10;DRC;10;3;0;;154,04;3;;7,16;40,26
-DRC8;DRC;8;3;0;;;3;;9,46;70,29
-DRC6;DRC;6;3;0;;;3;;12,26;117,96
-DRD24;DRD;24;4;0;;;4;;2,30;4,17
-DRD22;DRD;22;4;0;;;4;;2,64;5,47
-DRD20;DRD;20;4;0;;;4;;3,22;8,12
-DRD18;DRD;18;4;0;;;4;;3,86;11,73
-DRD16;DRD;16;4;0;;;4;;4,61;16,68
-DRD14;DRD;14;4;0;;;4;;5,38;22,70
-DRD12;DRD;12;4;0;;;4;;6,48;32,98
-DRD10;DRD;10;4;0;;205,38;4;;7,99;50,17
-DRD8;DRD;8;4;0;;;4;;10,56;87,58
-DRD6;DRD;6;4;0;;;4;;13,68;146,98
+DRC24;DRC;24;3;0;;8,40;3;117;2,06;3,35
+DRC22;DRC;22;3;0;torsadé;12,79;3;61,7;2,37;4,41
+DRC20;DRC;20;3;0;torsadé;21,17;3;34,1;2,88;6,51
+DRC18;DRC;18;3;0;torsadé;32,23;3;21,7;3,46;9,40
+DRC16;DRC;16;3;0;torsadé;45,14;3;14,9;4,13;13,40
+DRC14;DRC;14;3;0;torsadé;61,12;3;11,2;4,82;18,25
+DRC12;DRC;12;3;0;torsadé;96,81;3;6,99;5,81;26,51
+DRC10;DRC;10;3;0;torsadé;154,04;3;4,22;7,16;40,26
+DRC8;DRC;8;3;0;torsadé;278,10;3;2,37;9,46;70,29
+DRC6;DRC;6;3;0;torsadé;417,15;3;1,63;12,26;118,05
+DRD24;DRD;24;4;0;torsadé;11,21;4;117;2,30;4,15
+DRD22;DRD;22;4;0;torsadé;17,06;4;61,7;2,64;5,47
+DRD20;DRD;20;4;0;torsadé;28,22;4;34,1;3,22;8,14
+DRD18;DRD;18;4;0;torsadé;42,97;4;21,7;3,86;11,70
+DRD16;DRD;16;4;0;torsadé;60,19;4;14,9;4,61;16,69
+DRD14;DRD;14;4;0;torsadé;81,49;4;11,2;5,38;22,73
+DRD12;DRD;12;4;0;torsadé;129,08;4;6,99;6,48;32,98
+DRD10;DRD;10;4;0;torsadé;205,38;4;4,22;7,99;50,14
+DRD8;DRD;8;4;0;torsadé;370,80;4;2,37;10,56;87,58
+DRD6;DRD;6;4;0;torsadé;556,20;4;1,63;13,68;146,98
 DW24;DW;24;1;0;;3,90;1;60,00;1,65;2,14
 DW22;DW;22;1;0;;3,90;1;60,00;1,80;2,54
 GPB24;GPB;24;2;1;torsadé blindé;29,47;3;61,80;4,00;12,57
@@ -164,36 +164,36 @@ MLD20;MLD;20;4;1;torsadé blindé;38,81;5;34,10;3,82;11,46
 MLD18;MLD;18;4;1;torsadé blindé;55,22;5;21,70;4,41;15,27
 MLD16;MLD;16;4;1;torsadé blindé;78,02;5;14,90;5,23;21,48
 MLD14;MLD;14;4;1;torsadé blindé;107,36;5;11,20;6,06;28,84
-VNA24;VNA;24;1;1;;4,80;2;;1,45;1,65
-VNA22;VNA;22;1;1;;5,86;2;;1,60;2,01
-VNA20;VNA;20;1;1;;7,75;2;;1,87;2,75
-VNA18;VNA;18;1;1;;10,40;2;;2,11;3,50
-VNA16;VNA;16;1;1;;14,75;2;;2,48;4,83
-VNA14;VNA;14;1;1;;17,96;2;;2,79;6,11
-VNA12;VNA;12;1;1;;24,30;2;;3,20;8,04
-VNA10;VNA;10;1;1;;36,07;2;;;
-VNB24;VNB;24;2;1;;8,15;3;;2,40;4,52
-VNB22;VNB;22;2;1;;10,16;3;;2,70;5,73
-VNB20;VNB;20;2;1;;14,88;3;;3,27;8,40
-VNB18;VNB;18;2;1;;20,20;3;;3,75;11,04
-VNB16;VNB;16;2;1;;28,48;3;;4,44;15,48
-VNB14;VNB;14;2;1;;37,27;3;;5,13;20,67
-VNB12;VNB;12;2;1;;55,78;3;;6,09;29,13
-VNB10;VNB;10;2;1;;78,19;3;;;
-VNC24;VNC;24;3;1;;11,59;4;;2,59;5,27
-VNC22;VNC;22;3;1;;14,52;4;;2,91;6,65
-VNC20;VNC;20;3;1;;21,15;4;;3,52;9,73
-VNC18;VNC;18;3;1;;28,80;4;;4,05;12,88
-VNC16;VNC;16;3;1;;41,42;4;;4,80;18,10
-VNC14;VNC;14;3;1;;50,80;4;;5,47;23,50
-VNC12;VNC;12;3;1;;75,81;4;;6,50;33,18
-VNC10;VNC;10;3;1;;107,60;4;;;
-VND24;VND;24;4;1;;14,29;5;;;
-VND22;VND;22;4;1;;18,06;5;;;
-VND20;VND;20;4;1;;26,39;5;;;
-VND18;VND;18;4;1;;36,22;5;;;
-VND16;VND;16;4;1;;52,12;5;;;
-VND14;VND;14;4;1;;70,00;5;;;
+VNA24;VNA;24;1;1;;4,80;2;145;1,45;1,65
+VNA22;VNA;22;1;1;;5,86;2;90,2;1,60;2,01
+VNA20;VNA;20;1;1;;7,75;2;49,6;1,87;2,75
+VNA18;VNA;18;1;1;;10,40;2;33,2;2,11;3,50
+VNA16;VNA;16;1;1;;14,75;2;23,0;2,48;4,83
+VNA14;VNA;14;1;1;;17,96;2;15,5;2,79;6,11
+VNA12;VNA;12;1;1;;24,30;2;10,9;3,20;8,04
+VNA10;VNA;10;1;1;;36,07;2;5,8;;
+VNB24;VNB;24;2;1;;8,15;3;145;2,40;4,52
+VNB22;VNB;22;2;1;;10,16;3;90,2;2,70;5,73
+VNB20;VNB;20;2;1;;14,88;3;49,6;3,27;8,40
+VNB18;VNB;18;2;1;;20,20;3;33,2;3,75;11,04
+VNB16;VNB;16;2;1;;28,48;3;23,0;4,44;15,48
+VNB14;VNB;14;2;1;;37,27;3;15,5;5,13;20,67
+VNB12;VNB;12;2;1;;55,78;3;10,9;6,09;29,13
+VNB10;VNB;10;2;1;;78,19;3;5,8;7,39;42,89
+VNC24;VNC;24;3;1;;11,59;4;145;2,59;5,27
+VNC22;VNC;22;3;1;;14,52;4;90,2;2,91;6,65
+VNC20;VNC;20;3;1;;21,15;4;49,6;3,52;9,73
+VNC18;VNC;18;3;1;;28,80;4;33,2;4,05;12,88
+VNC16;VNC;16;3;1;;41,42;4;23,0;4,80;18,10
+VNC14;VNC;14;3;1;;50,80;4;15,5;5,47;23,50
+VNC12;VNC;12;3;1;;75,81;4;10,9;6,50;33,18
+VNC10;VNC;10;3;1;;107,60;4;5,8;7,90;49,02
+VND24;VND;24;4;1;;14,29;5;145;2,84;6,33
+VND22;VND;22;4;1;;18,06;5;90,2;3,19;7,99
+VND20;VND;20;4;1;;26,39;5;49,6;3,86;11,70
+VND18;VND;18;4;1;;36,22;5;33,2;4,46;15,62
+VND16;VND;16;4;1;;52,12;5;23,0;5,30;22,06
+VND14;VND;14;4;1;;70,00;5;15,5;6,16;29,80
 WC;WC;;1;0;coaxial;105,00;1;;6,40;32,17
 WD;WD;;1;1;coaxial;137,00;2;;7,70;46,57
 WF24;WF;24;2;1;twinax;23,40;3;117,50;3,30;8,55
@@ -225,3 +225,20 @@ YV2;YV;2;1;0;;119,00;1;0,94;9,20;66,48
 YV1;YV;1;1;0;;149,00;1;0,75;10,10;80,12
 YV0;YV;0;1;0;;186,00;1;0,60;11,60;105,68
 YV00;YV;00;1;0;;240,00;1;0,43;13,20;136,85
+
+Familles de câbles — une ligne par famille (ou groupe de familles) : la norme, le conducteur (cuivre, CCA = aluminium cuivré nickelé, aluminium), le placage, la température admise, la tension, l'isolant, le blindage, le rayon de courbure (× Ø), le marquage. C'est là que l'outil lit si un câble est en cuivre : pour un conducteur CCA ou aluminium, la ligne cuivre de l'EN 2853 ne vaut pas telle quelle (l'intensité se déclasse de √(R cuivre / R câble), la résistance vient du câble seul). Sources : Lynxeo, Wiremasters, BSI (octobre 2026) ; « déduit » = pas lu dans une fiche.
+Famille;Norme;Conducteur;Placage;T min;T max;Tension;Fréquence max;Isolant;Blindage;Rayon de courbure;Marquage;Note
+DR;EN 2267-010 (remplace ASNE0261…0269) — monoconducteur;cuivre (26/24 : alliage haute résistance);nickel;-55;260;600;2000;PI + PTFE;;10;UV laser;résistant à l'arc tracking (vérifié Lynxeo, Wiremasters)
+DRB DRC DRD;EN 2267-009 (2, 3, 4 conducteurs torsadés, non blindés);cuivre;nickel;-55;260;600;2000;PI + PTFE;;10;UV laser;vérifié Lynxeo
+MLA MLB MLC MLD;EN 2714-013 (1 à 4 conducteurs EN 2267-009A, blindage spiralé, gaine);cuivre;nickel;-55;260;600;2000;PI + PTFE;spirale cuivre nickelé;10;UV laser;vérifié Lynxeo, BSI
+AD;ABS 0949 (Airbus) ≈ EN 4681-003 famille AD;CCA (24/22 : 1 brin alliage cuivre + 6 CCA ; 20 à 8 : CCA concentrique ; 6/4 : CCA câblé);nickel;-60;180;600;2000;PI + PTFE;;10;UV laser;vérifié Lynxeo ; pas de contact cuivre ordinaire sans qualification CCA — à confirmer
+ADB ADC ADD ADE;multiconducteurs d'AD (≈ EN 4681-004, famille ADA);CCA;nickel;-65;180;600;2000;PI + PTFE;;10;UV laser;déduit (masses cohérentes) — norme à confirmer
+VNA VNB VNC VND;ABS 1356 (Airbus) — conducteurs ABS 0949 AD, blindage spiralé, gaine;CCA;nickel;-65;180;600;2000;PI + PTFE;spirale cuivre nickelé;10;UV laser;vérifié Lynxeo
+AM;non identifiée (masse ≈ 45 % du DR, R ≈ 1,4 × DR : aluminium) ;aluminium;;;;;;;;;;déduit — puissance ; norme à demander
+YV;non identifiée (mêmes R et masses qu'AM, Ø plus grands) ;aluminium;;;;;;;;;;déduit — puissance ; norme à demander
+DG DH;non identifiées (DG0/DH0 : 0,40 Ω/km = code EN 2083 530, cuivre) ;cuivre;;;;;;;;;;déduit — puissance
+KD;EN 3375-008 star quad 100 Ω (ABS 1503 : 4 × 24 AWG, Ethernet 100 Mbit/s);cuivre;;;;;;;tresse;;;vérifié BSI, Air Cost Control
+KL;EN 3375-011 star quad 100 Ω allégé;cuivre;;;;;;;tresse;;;vérifié (titre)
+WV WW WX;EN 3375-005 (77 Ω, double tresse + couche métallique) / -007 (77 Ω, taille 26) / -009 (CAN bus 120 Ω);cuivre;;;;;;;tresse;;;twinax, vérifié (titres)
+WD WL WM WN WS;EN 4604-008 / -005 (75 Ω) / -006 / -007 / -004 (micro-coax) — 50 Ω sauf WL;cuivre;;;200;;;;tresse;6;;coaxial, vérifié (titres)
+KW KX;EN 4604-009 (WN allégé, 180 °C) / -010 (WD allégé, 200 °C);cuivre;;;200;;;;tresse;6;;coaxial, vérifié (titres)

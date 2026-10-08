@@ -1,4 +1,4 @@
-Disjoncteurs — les courbes de disjonction à tension nominale d'un disjoncteur thermique (l'Excel du lecteur, feuille Base_de_données, octobre 2026) : le temps de déclenchement en secondes selon le multiple du courant nominal In, à 125 °C, à 23 °C (la plus rapide et la plus lente) et à −55 °C.
+Disjoncteurs — les courbes de disjonction à tension nominale d'un disjoncteur thermique COMPENSÉ EN TEMPÉRATURE, type EN 2495 / EN 2995 (Klixon 2TC, MS3320) — la recherche d'octobre 2026 les a comparées point par point à la calibration Klixon : plausibles ; 125 °C est l'enveloppe la plus rapide, −55 °C la plus lente (l'Excel du lecteur, feuille Base_de_données, octobre 2026) : le temps de déclenchement en secondes selon le multiple du courant nominal In, à 125 °C, à 23 °C (la plus rapide et la plus lente) et à −55 °C.
 Un profil de charge (le démarrage, la transition, le permanent : un courant pendant une durée) doit rester À GAUCHE de ces courbes : le disjoncteur ne déclenche pas avant la fin de chaque phase. L'outil juge sur la courbe la plus rapide (125 °C) et dit la marge sur les autres ; sous le premier multiple d'une courbe, le disjoncteur ne déclenche jamais. En dessous de deux points, l'outil interpole en log-log.
 La famille « disjoncteur » vaut pour tous les calibres (la courbe est en multiples de In). Si une autre famille de disjoncteurs a ses courbes, on l'ajoute avec son nom.
 
@@ -192,3 +192,56 @@ disjoncteur;−55 °C;-55;63,48572;0,01836
 disjoncteur;−55 °C;-55;73,17111;0,01539
 disjoncteur;−55 °C;-55;82,03768;0,01364
 disjoncteur;−55 °C;-55;93,07339;0,01181
+
+Calibration — les points normalisés des disjoncteurs thermiques d'aéronef, par famille et par température ambiante (Sensata 2TC/3TC/7274, Military-Fasteners MS3320, Safran 170 ; octobre 2026). Tient = multiple de In tenu 1 h ; Déclenche = multiple de In déclenchant en moins d'1 h ; t200 / t500 / t1000 = temps de déclenchement min–max en s à 200 %, 500 %, 1000 % de In.
+Famille;Norme;Température;Tient;Déclenche;t200 min;t200 max;t500 min;t500 max;t1000 min;t1000 max;Source
+2TC;MS3320 / AS33201 / AS58091;25;1,15;1,38;4;16;0,40;1,60;0,10;0,40;Sensata 2TC
+2TC;MS3320 / AS33201 / AS58091;-54;1,15;1,65;7;35;0,60;3,00;0,15;0,70;Sensata 2TC
+2TC;MS3320 / AS33201 / AS58091;121;0,85;1,45;2;13;0,25;1,00;0,06;0,25;Sensata 2TC
+3TC;MS14105;25;1,15;1,38;4;20;0,40;1,70;0,10;0,40;Sensata 3TC
+3TC;MS14105;-54;1,15;1,65;6;35;0,55;3,00;0,15;0,70;Sensata 3TC
+3TC;MS14105;121;0,85;1,45;2;15;0,25;1,00;0,06;0,25;Sensata 3TC
+7274;MIL-C-5809 / MS22073 / MS26574;25;1,15;1,50;2;20;0,16;1,20;0,046;0,80;Sensata 7274
+7274;MIL-C-5809 / MS22073 / MS26574;-55;1,35;1,80;;;;;;;Sensata 7274
+7274;MIL-C-5809 / MS22073 / MS26574;71;0,90;1,30;;;;;;;Sensata 7274
+Safran 170;MS25017;25;1,00;1,25;15;70;;;;;Safran 170 (400 % : 2-12 s, 600 % : 1-5 s)
+Safran 170;MS25017;71;0,70;1,25;;;;;;;Safran 170
+Safran 170;MS25017;-40;1,10;1,60;;;;;;;Safran 170
+
+Familles de disjoncteurs — ce qu'une famille est : la norme, les pôles, la gamme de calibres, la tension, la compensation en température, l'ambiante admise, la masse, la courbe à prendre (la famille de la table des courbes). Sources : Sensata (2TC, 3TC, 6TC, 9TC, 7274), Crouzet (2019), Safran (170), listings EN. Le calibre se lit en queue du part number seulement pour ces familles (NSA935401 est un collier, pas un disjoncteur).
+Famille;Norme;Pôles;Calibres;Tension;Compensé;Tmin;Tmax;Masse;Courbe;Note
+MS3320;MS3320 / AS33201 / AS58091 (Klixon 2TC2) / EN 2495 (croisement Sensata);1;1 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 120 V AC 400 Hz;oui;-54;121;24;disjoncteur;pouvoir de coupure 6000 A à 28 V DC (1-20 A), 2500 A à 120 V AC (1-15 A), trip-free, calibres coordonnés 2:1
+2TC;MS3320 (Klixon 2TC2, 2TC27 = MS3320L, 2TC63 = MS3320V);1;1 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 120 V AC 400 Hz;oui;-54;121;24;disjoncteur;
+AS33201;AS33201;1;1 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 120 V AC 400 Hz;oui;-54;121;24;disjoncteur;
+3TC;MS14105 / AS14105;1;15 20 25 30 35;28 V DC / 120 V AC 400 Hz;oui;-54;121;36;disjoncteur;
+MS14105;MS14105;1;15 20 25 30 35;28 V DC / 120 V AC 400 Hz;oui;-54;121;36;disjoncteur;
+6TC;MS14154 / AS14154;3;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115/200 V AC 400 Hz;oui;-54;121;65;disjoncteur;une phase déclenche les trois, 2000 A à 120 V AC
+MS14154;MS14154 / AS14154;3;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115/200 V AC 400 Hz;oui;-54;121;65;disjoncteur;tripolaire
+9TC;MS14153 / AS14153;3;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115/200 V AC 400 Hz;oui;-54;121;110;disjoncteur;tripolaire
+MS14153;MS14153 / AS14153;3;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115/200 V AC 400 Hz;oui;-54;121;110;disjoncteur;tripolaire
+7274;MIL-C-5809 / MS22073 (7274-11) / MS26574 (7274-2);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;non;-55;71;30;;non compensé : 90-130 % à 71 °C, 135-180 % à -55 °C
+MS22073;MS22073 (Klixon 7274-11);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;non;-55;71;30;;
+MS26574;MS26574 (Klixon 7274-2);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;non;-55;71;30;;
+EN2495;EN 2495:1990 (0,5-25 A) / EN 2995-001:2023 (1-25 A);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 115 V AC 400 Hz;oui;-55;125;20;disjoncteur;Crouzet : EN2495 + MS33201 V, < 20 g
+EN2995;EN 2995-001:2023;1;1 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 115 V AC 400 Hz;oui;-55;125;20;disjoncteur;
+MS33201;MS33201 (Crouzet, modèle EN 2495);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 115 V AC 400 Hz;oui;-55;125;20;disjoncteur;
+EN3661;EN 3661-001:2024;1;20 25 30 35 40 50;28 V DC / 115 V AC 400 Hz;oui;-55;125;;disjoncteur;
+EN2592;EN 2592:1990 / EN 2996-001:2023;3;1 2 2,5 3 4 5 7,5 10 15 20 25;115/200 V AC 400 Hz;oui;-55;125;;disjoncteur;tripolaire
+EN2996;EN 2996-001:2023;3;1 2 2,5 3 4 5 7,5 10 15 20 25;115/200 V AC 400 Hz;oui;-55;125;;disjoncteur;tripolaire
+EN3662;EN 3662-001:2024;3;20 25 30 35 40 50;115/200 V AC 400 Hz;oui;-55;125;;disjoncteur;tripolaire
+
+Protection — le calibre maximal du disjoncteur et du fusible par jauge de fil (FAA AC 43.13-1B chap. 11, table 11-3 : courant continu, faisceau à 57 °C ; « un fil seul à l'air libre peut être protégé par le calibre immédiatement supérieur »), et ce que le contact de la taille courante admet (MIL-DTL-38999 III : 22D 5 A, 20 7,5 A, 16 13 A, 12 23 A ; 8, 4, 0 de mémoire, à confirmer)
+Jauge;Disjoncteur max;Fusible max;Taille contact;I contact;Note
+22;5;5;22;5;contact 22D : fils 28-22 AWG
+20;7,5;5;20;7,5;contact 20 : fils 24-20 AWG
+18;10;10;16;13;
+16;15;10;16;13;contact 16 : fils 20-16 AWG
+14;20;15;12;23;
+12;30;20;12;23;contact 12 : fils 14-12 AWG
+10;40;30;8;46;I contact de mémoire
+8;50;50;8;46;I contact de mémoire
+6;80;70;4;80;I contact de mémoire
+4;100;70;4;80;I contact de mémoire
+2;125;100;0;150;I contact de mémoire
+1;150;;;;fusible non donné
+0;150;150;0;150;I contact de mémoire

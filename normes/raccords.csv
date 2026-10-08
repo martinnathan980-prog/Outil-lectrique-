@@ -1,27 +1,152 @@
-Raccords — ce qui englobe un connecteur, d'après le tutoriel Raccords de l'Excel du lecteur (octobre 2026). Sept pas : 1 le matériau (nickelage alu, cadmiage vert olive, passivation acier inox, anodisation alu noir), 2 le diamètre du toron (compter une petite marge, 10 %), 3 le connecteur, 4 le raccord (D(A) > D(toron)) — SIMPLE droit souvent dans une boîte, sauf l'EN 3645 qui s'utilise sans raccord, TYRAP quand pas de reprise de blindage, SERRE-CÂBLE pour une reprise de blindage par cosse (au plus 4 cosses, 2 par vis) et seulement si la place interdit un raccord durci, DURCI par défaut, POUR MANCHON droit si pas de reprise de blindage et zone étanche, 5 la gaine HFA DHS754-160 (D(HFA int) > D(B)), 6 le manchon VG95343T18 si étanchéité requise (D(AV) > D(C), D(AP) < D(D) et D(HFA ext)), 7 le collier band-it, en métal, qui tient la tresse de blindage seulement si elle est reprise sur le corps du connecteur, et n'implique pas forcément un manchon.
+Raccords — ce qui englobe un connecteur, d'après le tutoriel Raccords de l'Excel du lecteur (octobre 2026), complété par la recherche d'octobre 2026 (Glenair série 36, HellermannTyton, Airbus Helicopters via Aeroval, EN 3660, VG 95343). Sept pas : 1 le matériau (nickelage alu, cadmiage vert olive, passivation acier inox, anodisation alu noir), 2 le diamètre du toron (compter une petite marge, 10 %), 3 le connecteur (sa famille donne le filetage d'accessoire, sa taille de boîtier le raccord), 4 le raccord (EN 3660 : style A = serre-câble ou tyrap, J = étanche pour manchon, K = blindé étanche pour manchon « durci », C = blindé à cône) — SIMPLE droit souvent dans une boîte, TYRAP quand pas de reprise de blindage, SERRE-CÂBLE pour une reprise de blindage par cosse (au plus 4 cosses, 2 par vis) et seulement si la place interdit un raccord durci, DURCI par défaut, POUR MANCHON droit si pas de reprise de blindage et zone étanche ; « l'EN 3645 s'utilise sans raccord » est une règle d'atelier du lecteur (l'EN 3660-020 existe pour l'EN 3645), 5 la gaine : « HFA » DHS754-160 est en réalité une TRESSE CUIVRE ÉTAMÉ (un surblindage, repris par le band-it sur un raccord blindé), la Nomex EN 6049-003 une gaine textile expansible (une plage de toron, pas un Ø intérieur), 6 le manchon thermorétractable (VG 95343 T06 droit à lèvre, T18 précollé ; Raychem 202K) si étanchéité requise : Ha > C > Hb côté raccord, Ja > D > Jb côté toron, 7 le collier band-it (E0805), en métal, qui tient la tresse de blindage seulement si elle est reprise sur le corps du connecteur, et n'implique pas forcément un manchon.
 La table de décision (reprise de blindage × étanchéité × gaine) est dans l'outil (09 ter, regleRaccord) : GND → durci + band-it, + manchon si étanche. BLI → étanche et gaine : durci + band-it + manchon, étanche sans gaine : durci + manchon, pas étanche avec gaine : durci + band-it, ni l'un ni l'autre : serre-câble. NO et CONTACT → étanche et gaine : durci + band-it + manchon, étanche sans gaine : droit = pour manchon + manchon, coudé = durci + manchon, pas étanche avec gaine : durci + band-it, ni l'un ni l'autre : tyrap.
-Il manque encore la table des RACCORDS (la référence selon la taille du boîtier, le matériau et le diamètre du toron) et celle des MANCHONS VG95343T18 : l'outil dit le type et la norme, pas la référence.
+Les références des raccords (table Raccords) portent la norme EN 3660 du style, pas encore la désignation complète par taille : statut « à confirmer » tant que le lecteur n'a pas donné son catalogue ; les cotes B, C, D restent vides.
 
-Gaines — les gaines qui habillent le toron, par famille et référence : diamètre intérieur, diamètre extérieur (mm), masse (g/m). La plus petite dont l'intérieur passe le toron est retenue.
-Famille;Référence;Dint;Dext;Masse
-HFA;DHS754-160.10;4;4,5;15
-HFA;DHS754-160.20;6;6,5;22
-HFA;DHS754-160.30;8;8,5;29,1
-HFA;DHS754-160.40;10;10,5;36,1
-HFA;DHS754-160.50;12;12,5;43
-HFA;DHS754-160.60;15;15,5;53,7
-HFA;DHS754-160.70;20;20,8;107,6
-NOMEX;EN6049-003-02;1;2;3
-NOMEX;EN6049-003-04;2;4;4
-NOMEX;EN6049-003-06;4;8;8,5
-NOMEX;EN6049-003-08;6;12;11,5
-NOMEX;EN6049-003-10;8;16;14
-NOMEX;EN6049-003-15;10;20;17,5
-NOMEX;EN6049-003-20;12;24;22
-NOMEX;EN6049-003-25;15;30;32,5
-NOMEX;EN6049-003-30;20;40;39,5
+Gaines — ce qui habille le toron, par famille et référence. Rôle : surblindage (tresse cuivre étamé DHS754-160, Airbus Helicopters : Dint = Ø intérieur nominal, Dext = Ø extérieur ; le toron doit passer dans Dint) ou protection (Nomex EN 6049-003, hydrofuge EN 6049-004 : une tresse expansible qui habille un toron de Dmin à Dmax, HellermannTyton HEGMAN ; masses du lecteur, celles de HellermannTyton en note). On retient la gaine dont la plage encadre le toron (+ 10 %), le toron le plus près du milieu de la plage ; pour un surblindage, la plus petite dont l'intérieur passe le toron.
+Famille;Référence;Rôle;Dmin;Dmax;Dint;Dext;Masse;Note
+HFA;DHS754-160.10;surblindage;;;4;4,5;15;tresse cuivre étamé
+HFA;DHS754-160.20;surblindage;;;6;6,5;22;tresse cuivre étamé
+HFA;DHS754-160.30;surblindage;;;8;8,5;29,1;tresse cuivre étamé
+HFA;DHS754-160.40;surblindage;;;10;10,5;36,1;tresse cuivre étamé
+HFA;DHS754-160.50;surblindage;;;12;12,5;43;tresse cuivre étamé
+HFA;DHS754-160.60;surblindage;;;15;15,5;53,7;tresse cuivre étamé
+HFA;DHS754-160.70;surblindage;;;20;20,8;107,6;tresse cuivre étamé
+NOMEX;EN6049-003-02;protection;1;2;;;3;HellermannTyton : 2,7 g/m
+NOMEX;EN6049-003-04;protection;2;4;;;4;
+NOMEX;EN6049-003-06;protection;4;8;;;8,5;HellermannTyton : 8 g/m
+NOMEX;EN6049-003-08;protection;6;12;;;11,5;HellermannTyton : 12 g/m
+NOMEX;EN6049-003-10;protection;8;16;;;14;
+NOMEX;EN6049-003-15;protection;10;20;;;17,5;HellermannTyton : 17 g/m
+NOMEX;EN6049-003-20;protection;12;24;;;22;
+NOMEX;EN6049-003-25;protection;15;30;;;32,5;
+NOMEX;EN6049-003-30;protection;20;40;;;39,5;HellermannTyton : 38 g/m
+NOMEX-WO;EN6049-004-02;protection;1;2;;;2,7;hydrofuge et oléofuge (HEGMANWO)
+NOMEX-WO;EN6049-004-04;protection;2;4;;;4;hydrofuge
+NOMEX-WO;EN6049-004-06;protection;4;8;;;8;hydrofuge
+NOMEX-WO;EN6049-004-08;protection;6;12;;;12;hydrofuge
+NOMEX-WO;EN6049-004-10;protection;8;16;;;14;hydrofuge
+NOMEX-WO;EN6049-004-15;protection;10;20;;;17;hydrofuge
+NOMEX-WO;EN6049-004-20;protection;12;24;;;22;hydrofuge
+NOMEX-WO;EN6049-004-25;protection;15;30;;;32,5;hydrofuge
+NOMEX-WO;EN6049-004-30;protection;20;40;;;38;hydrofuge
 
-Colliers — le band-it E0805, selon le diamètre du toron : E0805-01 jusqu'à 15 mm, E0805-02 au-delà
-Référence;Diamètre min;Diamètre max;Note
-E0805-01;;15;toron de moins de 15 mm
-E0805-02;15;;toron de plus de 15 mm
+Colliers — le band-it E0805 (Airbus Helicopters : -01 « CLAMP » préformé, -02 « METALLIC CLAMPING STRIP » bande à couper ; le seuil de 15 mm est celui du tutoriel, à confirmer ; outil BAND-IT 600-058, serrage 150 lb pour une reprise de blindage) et les tyraps NSA 935401 (HellermannTyton, polyamide 6.6 ; dimensions vérifiées pour -05, -06, -13 ; les autres existent sans dimensions publiées)
+Référence;Type;Largeur;Longueur;Dmin;Dmax;Tenue;Température;Note
+E0805-01;band-it;;;;15;;;collier préformé — toron de moins de 15 mm
+E0805-02;band-it;;;15;;;;bande métallique à couper — toron de plus de 15 mm
+NSA935401-03;tyrap;;;;;;;existe (Boeing, Octopart), dimensions à donner
+NSA935401-04;tyrap;;;;;;;existe (Boeing, Bisco), dimensions à donner
+NSA935401-05;tyrap;;305;;50;225 N;105;polyamide noir (Arrow)
+NSA935401-06;tyrap;4,6;300;;;;;noir ou naturel (Aviatec)
+NSA935401-12;tyrap;;;;;;;existe (Proponent), dimensions à donner
+NSA935401-13;tyrap;3,5;290;;;;;« wrap strap », crantage intérieur (Boeing)
+
+Filetages — le filetage d'accessoire arrière et la lettre de taille, par famille de connecteur et taille de boîtier (Glenair AS85049/18 et 360A*001 ; EN 2997 et EN 3646 partagent le désignateur A de la famille MIL-DTL-26482 II / 83723 III ; EN 3645 = famille MIL-DTL-38999 III, lettres A à J). Dmax boîtier : le Ø B maximal du boîtier (Glenair), à confirmer dans l'EN 2997-001 / EN 3646-001.
+Famille;Taille;Lettre;Filetage;Dmax boîtier;Note
+EN3645;09;A;M12x1-6H;;
+EN3645;11;B;M15x1-6H;;
+EN3645;13;C;M18x1-6H;;
+EN3645;15;D;M22x1-6H;;
+EN3645;17;E;M25x1-6H;;
+EN3645;19;F;M28x1-6H;;
+EN3645;21;G;M31x1-6H;;
+EN3645;23;H;M34x1-6H;;
+EN3645;25;J;M37x1-6H;;
+EN2997;08;;0,500-20 UNF;16,5;
+EN2997;10;;0,625-24 UNEF;19,6;
+EN2997;12;;0,750-20 UNEF;23,9;
+EN2997;14;;0,875-20 UNEF;27,2;
+EN2997;16;;1,000-20 UNEF;30,7;
+EN2997;18;;1,0625-18 UNEF;31,2;
+EN2997;20;;1,1875-18 UNEF;34,5;
+EN2997;22;;1,3125-18 UNEF;37,6;
+EN2997;24;;1,4375-18 UNEF;43,9;
+EN2997;28;;1,750-18 UNS;50;
+EN3646;08;;0,500-20 UNF;16,5;mêmes filetages que l'EN 2997
+EN3646;10;;0,625-24 UNEF;19,6;
+EN3646;12;;0,750-20 UNEF;23,9;
+EN3646;14;;0,875-20 UNEF;27,2;
+EN3646;16;;1,000-20 UNEF;30,7;
+EN3646;18;;1,0625-18 UNEF;31,2;
+EN3646;20;;1,1875-18 UNEF;34,5;
+EN3646;22;;1,3125-18 UNEF;37,6;
+EN3646;24;;1,4375-18 UNEF;43,9;
+
+Entrées — le code d'entrée de câble d'un raccord à serre-câble et sa plage de toron (Glenair 360A*001, 2022 : la « cable range », une plage d'accommodation, pas un critère de contrôle), et les tailles de boîtier qui l'admettent sans adaptateur (la cote A du tutoriel)
+Code;Dmin;Dmax;Tailles min;Tailles max;Note
+03;3,2;6,4;08;40;
+04;3,2;7,9;10;40;
+06;6,4;11,1;12;40;
+08;7,9;14,3;14;40;
+10;8,9;15,9;16;40;
+12;12,7;19,1;18;40;
+16;15,9;23,8;22;40;
+20;22,2;31,8;28;40;
+24;25,4;34,9;28;40;
+28;31,8;41,3;32;40;
+32;36,5;47,6;40;40;
+
+Raccords — la référence d'un raccord arrière selon la famille du connecteur, la taille du boîtier (vide : toutes), le type du tutoriel (durci = style K blindé étanche pour manchon ; pour manchon = style J ; serre-câble = style A à clamp ; tyrap = style A à cable tie), l'orientation, la norme EN 3660 du style, le matériau et le fini, les cotes A (toron min/max), B (gaine), C (plateforme du manchon), D (sortie), la masse, la référence complète. Statut : « à confirmer » tant que la désignation complète (EN 3660-0xx + taille + fini) n'est pas donnée par le lecteur.
+Famille;Taille;Type;Orientation;Norme raccord;Matériau;Fini;Amin;Amax;B;C;D;Masse;Référence;Statut
+EN3645;;durci;droit;EN3660-064 (ou -010, -031);alu;nickel;;;;;;;;à confirmer
+EN3645;;durci;coudé;EN3660-065 (ou -011, -035, -066);alu;nickel;;;;;;;;à confirmer
+EN3645;;pour manchon;droit;EN3660-009;alu;nickel;;;;;;;;à confirmer
+EN3645;;serre-câble;droit;EN3660-020;alu;nickel;;;;;;;;à confirmer
+EN3645;;tyrap;droit;EN3660-022 (composite) ou -013;composite;nickel;;;;;;;;à confirmer
+EN3645;;tyrap;coudé;EN3660-023 (composite) ou -014;composite;nickel;;;;;;;;à confirmer
+EN2997;;durci;droit;EN3660-064;alu;nickel;;;;;;;;à confirmer
+EN2997;;durci;coudé;EN3660-062 ou -065;alu;nickel;;;;;;;;à confirmer
+EN2997;;pour manchon;droit;EN3660-009;alu;nickel;;;;;;;;à confirmer
+EN2997;;serre-câble;droit;EN3660-004;alu;nickel;;;;;;;;à confirmer
+EN2997;;serre-câble;coudé;EN3660-005;alu;nickel;;;;;;;;à confirmer
+EN2997;;tyrap;droit;EN3660-013;alu;nickel;;;;;;;;à confirmer
+EN2997;;tyrap;coudé;EN3660-014;alu;nickel;;;;;;;;à confirmer
+EN3646;;durci;droit;EN3660-064;alu;nickel;;;;;;;;à confirmer
+EN3646;;durci;coudé;EN3660-065;alu;nickel;;;;;;;;à confirmer
+EN3646;;pour manchon;droit;EN3660-009;alu;nickel;;;;;;;;à confirmer
+EN3646;;serre-câble;droit;EN3660-004;alu;nickel;;;;;;;;à confirmer
+EN3646;;tyrap;droit;EN3660-025;alu;nickel;;;;;;;;à confirmer
+EN3646;;tyrap;coudé;EN3660-026;alu;nickel;;;;;;;;à confirmer
+EN4165;;cheminée;droit;EN4165-015 (ronde) / -016 (double ovale) / -017 (borgne) + corps EN4165-014;;;;;;;;;;à confirmer
+
+Manchons — les manchons thermorétractables de connecteur, par désignation VG 95343 (HellermannTyton série 150 : droit à lèvre, T06 A court / B long / C très long, T18 précollé ; série 130 : T06 D sortie longue ; série 1100 : T06 F coudé 90° ; catalogue 2022 p. 280-282 ; équivalents Raychem 202K). Ha / Hb : grand bout (côté raccord) avant / après rétreint ; Ja / Jb : petit bout (côté toron) ; P longueur totale ; R longueur sur le toron ; JO la lèvre (mm). Choix : Ha > C > Hb (C = plateforme du raccord) et Ja > D > Jb (D = Ø de ce qui sort : gaine ou toron).
+Forme;Désignation;Référence;Ha;Hb;Ja;Jb;P;R;JO;Masse;Note
+droit;VG 95343 T06 A 001 A;HT 152-41-G (401-52780);24;10,5;24;6;26;9;10;;
+droit;VG 95343 T06 B 001 A;HT 152-42-G (401-52880);24;10,5;24;6;38;21;10;;
+droit;VG 95343 T06 A 002 A;HT 153-41-G (401-53780);25;14;9;3,5;40;13;16;;
+droit;VG 95343 T06 B 002 A;HT 153-42-G (401-53880);25;14;9;3,5;55;28;16;;
+droit;VG 95343 T06 A 003 A;HT 154-41-G (401-54780);30;14;30;6;43;20;13;;
+droit;VG 95343 T06 B 003 A;HT 154-42-G (401-54880);30;14;30;6;55;32;13;;
+droit;VG 95343 T06 A 004 A;HT 155-41-G (401-55780);31;18;31;7;47;15;18;;
+droit;VG 95343 T06 B 004 A;HT 155-42-G (401-55880);31;18;31;7;67;35;18;;
+droit;VG 95343 T06 A 005 A;HT 156-41-G (401-56780);36;22,5;36;8,5;60;22;20;;
+droit;VG 95343 T06 B 005 A;HT 156-42-G (401-56880);36;22,5;36;8,5;80;42;20;;
+droit;VG 95343 T06 A 006 A;HT 157-41-G (401-57780);43;28;43;10;60;21;20;;
+droit;VG 95343 T06 B 006 A;HT 157-42-G (401-57880);43;28;43;10;79;41;20;;
+droit;VG 95343 T06 C 001 A;HT 157-43-G (401-57980);43;28;43;10;99;61;20;;
+droit;VG 95343 T06 A 007 A;HT 158-41-G (401-58780);60;35;60;16;90;32;38;;
+droit;VG 95343 T06 B 007 A;HT 158-42-G (401-58880);60;35;60;16;110;52;38;;
+droit;VG 95343 T06 C 002 A;HT 158-43-G (401-58980);60;35;60;16;130;72;38;;
+droit;VG 95343 T06 A 008 A;HT 159-41-G (401-59780);66;45;66;17;130;50;50;;
+droit;VG 95343 T06 B 008 A;HT 159-42-G (401-59880);66;45;66;17;150;70;50;;
+droit;VG 95343 T18 C 003 A;HT 159-43-G (401-59980);66;45;66;17;171;90;50;;T18 : précollé (revêtement intérieur)
+droit;VG 95343 T06 A 009 A;HT 160-41-G (401-60780);82;58;82;27;137;37;62;;
+droit;VG 95343 T06 B 009 A;HT 160-42-G (401-60880);82;58;82;27;158;58;62;;
+droit;VG 95343 T06 C 004 A;HT 160-43-G (401-60980);82;58;82;27;213;113;62;;
+sortie longue;VG 95343 T06 D 001 A;HT 129-1-G (401-29180);22;12;22;6,5;76;12;;;
+sortie longue;VG 95343 T06 D 002 A;HT 130-1-G (401-30180);25,5;15;25,5;7,5;83;12;;;
+sortie longue;VG 95343 T06 D 003 A;HT 131-1-G (401-31180);29;19;29;8,5;89;12;;;
+sortie longue;VG 95343 T06 D 004 A;HT 132-1-G (401-32180);34;23;34;10;102;12;;;
+sortie longue;VG 95343 T06 D 005 A;HT 133-1-G (401-33180);37;30;37;11;108;14;;;
+sortie longue;VG 95343 T06 D 006 A;HT 134-1-G (401-34180);43,5;34;43,5;12;114;15;;;
+sortie longue;VG 95343 T06 D 007 A;HT 135-1-G (401-35180);50;41;50;14,5;118;15;;;
+sortie longue;VG 95343 T06 D 008 A;HT 136-1-G (401-36180);62,5;47;62,5;18;121;16;;;
+sortie longue;VG 95343 T06 D 009 A;HT 138-1-G (401-38180);69;60;69;20;127;16;;;
+coudé;VG 95343 T06 F 001 A;HT 1121-1-G (411-21180);22;12;22;6,5;70;19;;;
+coudé;VG 95343 T06 F 002 A;HT 1122-1-G (411-22180);25,5;15;25;7,5;79;20;;;
+coudé;VG 95343 T06 F 003 A;HT 1123-1-G (411-23180);29;19;29;8,5;89;21;;;
+coudé;VG 95343 T06 F 004 A;HT 1124-1-G (411-24180);34;23;34;10;102;22;;;
+coudé;VG 95343 T06 F 005 A;HT 1125-1-G (411-25180);37;30;37;11;108;24;;;
+coudé;VG 95343 T06 F 006 A;HT 1126-1-G (411-26180);43,5;34;43,5;12;121;27;;;
+coudé;VG 95343 T06 F 007 A;HT 1127-1-G (411-27180);50;41,5;50;14,5;132;30;;;
+coudé;VG 95343 T06 F 008 A;HT 1128-1-G (411-28180);62,5;47;62,5;18;133;33;;;

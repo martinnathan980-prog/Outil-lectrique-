@@ -309,25 +309,53 @@ const COLONNES_NORME = {
   fils: [
     ['type',        ['type', 'typedefil', 'typedecable']],
     ['jauge',       ['jauge', 'awg', 'gauge', 'jaugeawg', 'sizeawg']],
-    ['code',        ['code', 'codeen2853', 'reference']],
-    ['section',     ['section', 'sectionmm2', 'mm2', 'sectionmm']],
-    ['resistance',  ['resistance', 'resistanceohmkm', 'ohmkm', 'rlineique', 'resistancelineique']],
+    ['code',        ['code', 'codeen2853', 'codeen2083', 'reference']],
+    ['brins',       ['brins', 'toronnage', 'nombredebrins']],
+    ['section',     ['section', 'sectiontoron', 'sectionconducteur', 'sectionmm2', 'mm2', 'sectionmm']],
+    ['resistance20', ['resistance20', 'r20', 'resistancea20', 'resistance20c']],
+    ['resistance',  ['resistance', 'resistanceohmkm', 'ohmkm', 'rlineique', 'resistancelineique', 'resistance135']],
     ['intensite',   ['intensite', 'courant', 'intensiteadmissible', 'current', 'a', 'continu', 'intensitecontinue', 'continuousrating']],
     ['i2s',         ['intensite2s', '2s', 'i2s', 'duty2s']],
     ['i10s',        ['intensite10s', '10s', 'i10s', 'duty10s']],
     ['i1min',       ['intensite1min', '1min', 'i1min', '60s', 'duty1min']],
     ['chute10m',    ['chute10m', 'chutepour10m', 'voltagedrop10m', 'chute']],
-    ['tr',          ['tr', 'temperaturenominale', 'tnominale', 'ratedtemperature']],
+    ['tr',          ['tr', 'tconducteur', 'temperatureconducteur', 'temperaturenominale', 'tnominale', 'ratedtemperature']],
     ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
   declassements: [
     ['condition',   ['condition', 'cause', 'cas', 'situation']],
+    ['fils',        ['fils', 'nfils', 'nombredefils', 'filsdufaisceau']],
+    ['charge',      ['charge', 'chargepct', 'pourcentcharge', 'chargedufaisceau']],
+    ['altitude',    ['altitude', 'altitudeft', 'ft', 'pieds']],
     ['facteur',     ['facteur', 'coefficient', 'coef', 'k']],
-    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire', 'source']]],
   reseau: [
     ['tension',     ['tension', 'reseau', 'u', 'volts', 'v']],
-    ['chuteMax',    ['chutemax', 'chute', 'chuteadmise', 'chutemaxv', 'deltau', 'chuteenv']],
-    ['chutePct',    ['chutemaxpct', 'chutepct', 'pourcent', 'chuteen']],
+    ['nature',      ['nature', 'regime', 'courant', 'type']],
+    ['chuteMax',    ['chutemax', 'chute', 'chuteadmise', 'chutemaxv', 'deltau', 'chuteenv', 'chutemaxcontinue']],
+    ['chuteInter',  ['chutemaxintermittent', 'intermittent', 'chuteintermittente', 'chuteintermittent']],
+    ['chutePct',    ['chutemaxpct', 'chutepct', 'pourcent', 'chuteen', 'chutemaxen', 'pourcentmax']],
     ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+  cablesFamilles: [
+    ['famille',     ['famille', 'familles', 'family', 'serie']],
+    ['norme',       ['norme', 'standard', 'spec', 'document']],
+    ['conducteur',  ['conducteur', 'conductor', 'metal', 'ame']],
+    ['placage',     ['placage', 'plating', 'revetement']],
+    ['tmin',        ['tmin', 'temperaturemin', 'tminc']],
+    ['tmax',        ['tmax', 'temperaturemax', 'tmaxc', 'tmaxcable']],
+    ['tension',     ['tension', 'voltage', 'tensionv']],
+    ['frequence',   ['frequence', 'frequencemax', 'fmax', 'hz']],
+    ['isolant',     ['isolant', 'isolation', 'insulation']],
+    ['blindage',    ['blindage', 'ecran', 'shield']],
+    ['rayon',       ['rayon', 'rayondecourbure', 'rayonmin', 'courbure']],
+    ['marquage',    ['marquage', 'marking']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire', 'statut']]],
+  resistancesContacts: [
+    ['taille',      ['taille', 'taillecontact', 'tailledecontact', 'size']],
+    ['intensite',   ['intensite', 'courant', 'courantnominal', 'current']],
+    ['chuteMax',    ['chutemax', 'chute', 'chutemaxneuf', 'mv']],
+    ['resistance',  ['resistance', 'rmax', 'resistancemax', 'rmaxneuf', 'mohm']],
+    ['resistanceFin', ['resistancefindevie', 'findevie', 'rfindevie', 'resistanceconception']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire', 'source']]],
   tailles: [
     ['famille',     ['famille', 'norme', 'family']],
     ['taille',      ['taille', 'taillecontact', 'tailledecontact', 'size']],
@@ -337,15 +365,99 @@ const COLONNES_NORME = {
   gaines: [
     ['famille',     ['famille', 'gaine', 'norme', 'family']],
     ['reference',   ['reference', 'ref', 'code', 'designation']],
+    ['role',        ['role', 'nature', 'usage']],
+    ['dmin',        ['dmin', 'toronmin', 'diametremin']],
+    ['dmax',        ['dmax', 'toronmax', 'diametremax']],
     ['dint',        ['dint', 'dintmm', 'diametreinterieur', 'interieur', 'di']],
     ['dext',        ['dext', 'dextmm', 'diametreexterieur', 'exterieur', 'de']],
     ['masse',       ['masse', 'massegm', 'gm', 'poids']],
     ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
   colliers: [
     ['reference',   ['reference', 'ref', 'collier', 'bandit', 'designation']],
+    ['type',        ['type', 'nature', 'genre']],
+    ['largeur',     ['largeur', 'largeurmm', 'width']],
+    ['longueur',    ['longueur', 'longueurmm', 'length']],
     ['dmin',        ['dmin', 'diametremin', 'min', 'toronmin']],
     ['dmax',        ['dmax', 'diametremax', 'max', 'toronmax']],
+    ['tenue',       ['tenue', 'tenuen', 'resistance', 'traction']],
+    ['temperature', ['temperature', 'temperaturec', 'tmax']],
     ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+  filetages: [
+    ['famille',     ['famille', 'connecteur', 'norme', 'family']],
+    ['taille',      ['taille', 'tailleboitier', 'shellsize', 'boitier', 'size']],
+    ['lettre',      ['lettre', 'letter', 'code']],
+    ['filetage',    ['filetage', 'thread', 'filetageaccessoire']],
+    ['dmaxBoitier', ['dmaxboitier', 'dmax', 'diametreboitier', 'obmax']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+  entrees: [
+    ['code',        ['code', 'entree', 'codeentree', 'cableentry']],
+    ['dmin',        ['dmin', 'toronmin', 'diametremin', 'min']],
+    ['dmax',        ['dmax', 'toronmax', 'diametremax', 'max']],
+    ['tailleMin',   ['taillesmin', 'taillemin', 'boitiermin']],
+    ['tailleMax',   ['taillesmax', 'taillemax', 'boitiermax']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+  raccords: [
+    ['famille',     ['famille', 'connecteur', 'family']],
+    ['taille',      ['taille', 'tailleboitier', 'shellsize', 'boitier', 'size']],
+    ['type',        ['type', 'typederaccord', 'style']],
+    ['orientation', ['orientation', 'forme', 'sens']],
+    ['norme',       ['normeraccord', 'norme', 'standard', 'en3660']],
+    ['materiau',    ['materiau', 'matiere', 'material']],
+    ['fini',        ['fini', 'finition', 'finish', 'revetement']],
+    ['amin',        ['amin', 'toronmin', 'cableentrymin']],
+    ['amax',        ['amax', 'toronmax', 'cableentrymax']],
+    ['b',           ['b', 'coteb', 'dgaine']],
+    ['c',           ['c', 'cotec', 'plateforme', 'dmanchon']],
+    ['d',           ['d', 'coted', 'sortie']],
+    ['masse',       ['masse', 'massegm', 'poids', 'g']],
+    ['reference',   ['reference', 'ref', 'designation', 'partnumber', 'pn']],
+    ['statut',      ['statut', 'status', 'confiance']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+  manchons: [
+    ['forme',       ['forme', 'type', 'orientation']],
+    ['designation', ['designation', 'vg', 'norme']],
+    ['reference',   ['reference', 'ref', 'partnumber', 'pn']],
+    ['ha',          ['ha', 'havant', 'hmax']],
+    ['hb',          ['hb', 'hapres', 'hmin']],
+    ['ja',          ['ja', 'javant', 'jmax']],
+    ['jb',          ['jb', 'japres', 'jmin']],
+    ['p',           ['p', 'longueur', 'longueurtotale']],
+    ['r',           ['r', 'longueurtoron']],
+    ['jo',          ['jo', 'levre']],
+    ['masse',       ['masse', 'massegm', 'poids', 'g']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+  calibrations: [
+    ['famille',     ['famille', 'family', 'serie']],
+    ['norme',       ['norme', 'standard', 'spec']],
+    ['temperature', ['temperature', 'temperaturec', 'ambiante', 't']],
+    ['tient',       ['tient', 'musthold', 'hold', 'tenue']],
+    ['declenche',   ['declenche', 'musttrip', 'trip', 'ultimatetrip']],
+    ['t200min',     ['t200min', 't200']],
+    ['t200max',     ['t200max']],
+    ['t500min',     ['t500min', 't500']],
+    ['t500max',     ['t500max']],
+    ['t1000min',    ['t1000min', 't1000']],
+    ['t1000max',    ['t1000max']],
+    ['source',      ['source', 'note', 'origine']]],
+  disjoncteursFamilles: [
+    ['famille',     ['famille', 'family', 'serie', 'prefixe']],
+    ['norme',       ['norme', 'standard', 'spec']],
+    ['poles',       ['poles', 'pole', 'nbpoles']],
+    ['calibres',    ['calibres', 'gamme', 'ratings']],
+    ['tension',     ['tension', 'reseau', 'voltage']],
+    ['compense',    ['compense', 'compensation', 'tempcomp']],
+    ['tmin',        ['tmin', 'temperaturemin', 'ambiantemin']],
+    ['tmax',        ['tmax', 'temperaturemax', 'ambiantemax']],
+    ['masse',       ['masse', 'massegm', 'poids', 'g']],
+    ['courbe',      ['courbe', 'courbes', 'famillecourbe']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+  protections: [
+    ['jauge',       ['jauge', 'awg', 'gauge']],
+    ['disjoncteurMax', ['disjoncteurmax', 'calibremax', 'cbmax', 'disjoncteur']],
+    ['fusibleMax',  ['fusiblemax', 'fusible', 'fusemax']],
+    ['tailleContact', ['taillecontact', 'contact', 'taille']],
+    ['iContact',    ['icontact', 'intensitecontact', 'courantcontact']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire', 'source']]],
   cables: [
     ['cable',       ['cable', 'cablecode', 'codecable', 'typedecable']],
     ['famille',     ['famille', 'wiretype', 'typedefil', 'serie']],
@@ -396,17 +508,28 @@ const TABLE_NORME = {
   fils: c => c.jauge != null && (c.section != null || c.resistance != null || c.intensite != null),
   declassements: c => c.condition != null && c.facteur != null,
   reseau: c => c.tension != null && c.chuteMax != null,
+  cablesFamilles: c => c.famille != null && c.conducteur != null,
+  resistancesContacts: c => c.taille != null && c.resistance != null && c.famille == null && c.jaugeMin == null && c.sexe == null,
   tailles: c => c.taille != null && c.jaugeMin != null,
   modules: c => c.variante != null && c.groupes != null,
   contacts: c => c.sexe != null && c.taille != null && c.reference != null,
   disjoncteurs: c => c.multiple != null && c.temps != null,
   cables: c => c.cable != null && c.brins != null,
-  gaines: c => c.reference != null && c.dint != null,
-  colliers: c => c.reference != null && (c.dmin != null || c.dmax != null) && c.dint == null
+  gaines: c => c.famille != null && c.reference != null && (c.dint != null || c.dmax != null) && c.type == null && c.ha == null,
+  colliers: c => c.reference != null && c.famille == null && c.filetage == null && c.ha == null && (c.dmin != null || c.dmax != null || c.longueur != null),
+  filetages: c => c.filetage != null && c.taille != null,
+  entrees: c => c.code != null && c.dmin != null && c.dmax != null && c.reference == null && c.famille == null,
+  raccords: c => c.famille != null && c.type != null && c.orientation != null,
+  manchons: c => c.ha != null && c.ja != null,
+  calibrations: c => c.tient != null && c.declenche != null,
+  disjoncteursFamilles: c => c.poles != null && c.calibres != null,
+  protections: c => c.jauge != null && c.disjoncteurMax != null
 };
 /* Un nombre d'atelier : virgule ou point, une unité derrière (« 5 mm », « 0,8 »). */
 const NUMERO = v => { const t = String(v == null ? '' : v).trim().replace(',', '.'); if (!t) return null; const m = /-?\d+(\.\d+)?/.exec(t); return m ? parseFloat(m[0]) : null; };
-const LISTE_NUM = v => String(v == null ? '' : v).split(/[\s,;/|]+/).map(NUMERO).filter(x => x != null);
+/* Une liste de nombres d'atelier : « 2 4 8 12 20 », « 1 2 2,5 3 » (la virgule est décimale quand des espaces séparent),
+   « 1,2,3 » (sans espace, la virgule sépare). */
+const LISTE_NUM = v => { const t = String(v == null ? '' : v).trim(); if (!t) return []; return t.split(/[\s/|]/.test(t) ? /[\s/|]+/ : /[,;]+/).map(NUMERO).filter(x => x != null); };
 const MOT = v => String(v == null ? '' : v).trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 /* Les jauges AWG comptent à l'envers : « min » est la plus fine acceptée. */
 function familleNorme(o) { const famille = String(o.famille || '').trim(); if (!famille) return null;
@@ -420,7 +543,8 @@ function familleNorme(o) { const famille = String(o.famille || '').trim(); if (!
    continu et, quand la norme les donne (EN 2853), par durée — 2 s, 10 s, 1 min —, la chute pour 10 m, la température
    nominale Tr (la table vaut pour un échauffement de 40 °C depuis 95 °C). */
 function filNorme(o) { const jauge = NUMERO(o.jauge); if (jauge == null) return null;
-  return { type: String(o.type || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '') || '*', jauge, code: String(o.code || '').trim(), section: NUMERO(o.section), resistance: NUMERO(o.resistance), intensite: NUMERO(o.intensite),
+  return { type: String(o.type || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '') || '*', jauge, code: String(o.code || '').trim(), brins: String(o.brins || '').trim(), section: NUMERO(o.section),
+           resistance20: NUMERO(o.resistance20), resistance: NUMERO(o.resistance), intensite: NUMERO(o.intensite),
            i2s: NUMERO(o.i2s), i10s: NUMERO(o.i10s), i1min: NUMERO(o.i1min), chute10m: NUMERO(o.chute10m), tr: NUMERO(o.tr), note: String(o.note || '').trim() }; }
 /* Ce qu'un fil admet pour une durée : le palier de l'EN 2853 juste au-dessus (2 s, 10 s, 1 min), sinon le continu. */
 const palierDe = duree => !(duree > 0) || !isFinite(duree) ? Infinity : duree <= 2 ? 2 : duree <= 10 ? 10 : duree <= 60 ? 60 : Infinity;
@@ -428,8 +552,23 @@ function intensiteAdmise(fil, duree) { if (!fil) return null; const p = palierDe
   for (const [t, i] of [[2, fil.i2s], [10, fil.i10s], [60, fil.i1min]]) if (p <= t && i != null) return i; return fil.intensite; }
 /* La note 2 de l'EN 2853 : pour une ambiante Tu autre que 95 °C, I2 = I1 × √((Tr − Tu)/40). Un fil sans Tr n'en sait rien. */
 const facteurAmbiante = (fil, Tu) => fil && fil.tr != null && Tu != null ? Math.sqrt(Math.max(0, fil.tr - Tu) / 40) : 1;
-function declassementNorme(o) { const condition = MOT(o.condition), facteur = NUMERO(o.facteur); return condition && facteur != null ? { condition, facteur, note: String(o.note || '').trim() } : null; }
-function reseauNorme(o) { const tension = NUMERO(o.tension); return tension == null ? null : { tension, chuteMax: NUMERO(o.chuteMax), chutePct: NUMERO(o.chutePct), note: String(o.note || '').trim() }; }
+/* Un point de DÉCLASSEMENT : une condition (faisceau, altitude…), et pour la lire, le nombre de fils du faisceau et sa
+   charge en % (fig. 11-5 de l'AC 43.13-1B), ou l'altitude en pieds (fig. 11-6) ; le facteur sur l'intensité admissible. */
+function declassementNorme(o) { const condition = MOT(o.condition), facteur = NUMERO(o.facteur); return condition && facteur != null ? { condition, fils: NUMERO(o.fils), charge: NUMERO(o.charge), altitude: NUMERO(o.altitude), facteur, note: String(o.note || '').trim() } : null; }
+/* Le RÉSEAU : par tension, la chute admise en continu et en intermittent (≤ 2 min), en volts et en %. */
+function reseauNorme(o) { const tension = NUMERO(o.tension); return tension == null ? null : { tension, nature: String(o.nature || '').trim(), chuteMax: NUMERO(o.chuteMax), chuteInter: NUMERO(o.chuteInter), chutePct: NUMERO(o.chutePct), note: String(o.note || '').trim() }; }
+/* Une FAMILLE DE CÂBLES (normes/cables.csv, table Familles de câbles) : les familles qu'une ligne couvre (« DRB DRC
+   DRD »), la norme, le conducteur — cuivre, CCA (aluminium cuivré) ou aluminium —, la tenue en température et en
+   tension, l'isolant, le blindage, le rayon de courbure (× Ø), le marquage. */
+const CONDUCTEUR = t => { const u = MOT(t); return !u ? '' : /cca|clad|cuivr.*alu|alu.*cuivr/.test(u) ? 'CCA' : /alu/.test(u) ? 'aluminium' : /cuivre|copper|\bcu\b/.test(u) ? 'cuivre' : String(t).trim(); };
+function cableFamilleNorme(o) { const familles = String(o.famille || '').toUpperCase().split(/[\s,/|]+/).map(cleNorme).filter(Boolean); if (!familles.length) return null;
+  return { familles, norme: String(o.norme || '').trim(), conducteur: CONDUCTEUR(o.conducteur), placage: String(o.placage || '').trim(), tmin: NUMERO(o.tmin), tmax: NUMERO(o.tmax), tension: NUMERO(o.tension), frequence: NUMERO(o.frequence),
+           isolant: String(o.isolant || '').trim(), blindage: String(o.blindage || '').trim(), rayon: NUMERO(o.rayon), marquage: String(o.marquage || '').trim(), note: String(o.note || '').trim() }; }
+/* La RÉSISTANCE D'UN CONTACT par taille (normes/contacts.csv, table Résistance des contacts : AS39029, paire sertie et
+   accouplée, neuve) : le courant nominal, la chute max aux bornes (mV), la résistance max à neuf et celle de conception
+   (fin de vie), en mΩ. */
+function resistanceContactNorme(o) { const taille = tailleCle(o.taille), resistance = NUMERO(o.resistance); if (!taille || resistance == null) return null;
+  return { taille, intensite: NUMERO(o.intensite), chuteMax: NUMERO(o.chuteMax), resistance, resistanceFin: NUMERO(o.resistanceFin), note: String(o.note || '').trim() }; }
 /* Une ligne d'une COURBE DE DISJONCTION (normes/disjoncteurs.csv) : la famille de disjoncteurs, la courbe (sa
    température), un multiple du courant nominal et le temps de déclenchement en secondes. */
 function disjonctionNorme(o) { const multiple = NUMERO(o.multiple), temps = NUMERO(o.temps); if (multiple == null || temps == null || multiple <= 0 || temps <= 0) return null;
@@ -441,16 +580,40 @@ function cableNorme(o) { const cable = cleNorme(o.cable); if (!cable) return nul
   return { cable, famille: cleNorme(o.famille) || typeDuFil(cable), jauge: NUMERO(o.jauge), brins: brins == null ? 1 : Math.max(1, Math.round(brins)), blindage: /^(1|oui|x|vrai|true)$/i.test(String(o.blindage || '').trim()) || NUMERO(o.blindage) > 0,
            nature: String(o.nature || '').trim(), masse: NUMERO(o.masse), liaisons: NUMERO(o.liaisons), resistance: NUMERO(o.resistance), diametre: NUMERO(o.diametre), section: NUMERO(o.section), note: String(o.note || '').trim() }; }
 /* Une GAINE (HFA, Nomex) et un COLLIER band-it (normes/raccords.csv). */
-function gaineNorme(o) { const reference = String(o.reference || '').trim(), dint = NUMERO(o.dint); if (!reference || dint == null) return null;
-  return { famille: cleNorme(o.famille) || 'GAINE', reference, dint, dext: NUMERO(o.dext), masse: NUMERO(o.masse), note: String(o.note || '').trim() }; }
-function collierNorme(o) { const reference = String(o.reference || '').trim(); if (!reference) return null; return { reference, dmin: NUMERO(o.dmin), dmax: NUMERO(o.dmax), note: String(o.note || '').trim() }; }
-const ENTREE_NORME = { familles: familleNorme, fils: filNorme, declassements: declassementNorme, reseau: reseauNorme, tailles: tailleNorme, modules: moduleNorme, contacts: contactNorme, disjoncteurs: disjonctionNorme, cables: cableNorme, gaines: gaineNorme, colliers: collierNorme };
-const normeVide = () => ({ familles: [], fils: [], declassements: [], reseau: [], tailles: [], modules: [], contacts: [], disjoncteurs: [], cables: [], gaines: [], colliers: [], tables: 0 });
+/* Une gaine : un surblindage (tresse cuivre : Dint / Dext, le toron passe dans Dint) ou une protection (une tresse
+   expansible : la plage de toron Dmin / Dmax qu'elle habille). */
+function gaineNorme(o) { const reference = String(o.reference || '').trim(), dint = NUMERO(o.dint), dmin = NUMERO(o.dmin), dmax = NUMERO(o.dmax); if (!reference || (dint == null && dmax == null)) return null;
+  const role = /blind|tresse|cuivre|shield/.test(MOT(o.role)) || (dint != null && dmax == null && /HFA|DHS754/i.test(reference + ' ' + o.famille)) ? 'surblindage' : 'protection';
+  return { famille: cleNorme(o.famille) || 'GAINE', reference, role, dmin, dmax, dint, dext: NUMERO(o.dext), masse: NUMERO(o.masse), note: String(o.note || '').trim() }; }
+/* Un collier : un band-it (par le diamètre de ce qu'il serre) ou un tyrap (par sa longueur, sa largeur, le toron maximal). */
+function collierNorme(o) { const reference = String(o.reference || '').trim(); if (!reference) return null; const t = MOT(o.type);
+  return { reference, type: /tyrap|serre|tie|collierplast|nylon|polyamide/.test(t) || /^NSA9354/i.test(reference) ? 'tyrap' : 'band-it', largeur: NUMERO(o.largeur), longueur: NUMERO(o.longueur), dmin: NUMERO(o.dmin), dmax: NUMERO(o.dmax), tenue: NUMERO(o.tenue), temperature: NUMERO(o.temperature), note: String(o.note || '').trim() }; }
+const TAILLE_BOITIER = v => { const t = String(v == null ? '' : v).trim().toUpperCase(); return /^\d$/.test(t) ? '0' + t : t; };
+function filetageNorme(o) { const famille = cleNorme(o.famille), taille = TAILLE_BOITIER(o.taille), filetage = String(o.filetage || '').trim(); if (!famille || !taille || !filetage) return null;
+  return { famille, taille, lettre: String(o.lettre || '').trim().toUpperCase(), filetage, dmaxBoitier: NUMERO(o.dmaxBoitier), note: String(o.note || '').trim() }; }
+function entreeNorme(o) { const code = TAILLE_BOITIER(o.code), dmin = NUMERO(o.dmin), dmax = NUMERO(o.dmax); if (!code || dmin == null || dmax == null) return null;
+  return { code, dmin, dmax, tailleMin: TAILLE_BOITIER(o.tailleMin), tailleMax: TAILLE_BOITIER(o.tailleMax), note: String(o.note || '').trim() }; }
+const TYPE_RACCORD = t => { const u = MOT(t); return /durci|k|blind.*etanch/.test(u) && !/serre/.test(u) ? 'durci' : /manchon|j\b/.test(u) ? 'pour manchon' : /serre|clamp/.test(u) ? 'serre-câble' : /tyrap|tie|collier/.test(u) ? 'tyrap' : /chemin/.test(u) ? 'cheminée' : String(t || '').trim(); };
+function raccordNorme(o) { const famille = cleNorme(o.famille), type = TYPE_RACCORD(o.type); if (!famille || !type) return null;
+  return { famille, taille: TAILLE_BOITIER(o.taille), type, orientation: /coud|90|45|angle/.test(MOT(o.orientation)) ? 'coudé' : 'droit', norme: String(o.norme || '').trim(), materiau: String(o.materiau || '').trim(), fini: String(o.fini || '').trim(),
+           amin: NUMERO(o.amin), amax: NUMERO(o.amax), b: NUMERO(o.b), c: NUMERO(o.c), d: NUMERO(o.d), masse: NUMERO(o.masse), reference: String(o.reference || '').trim(), statut: String(o.statut || '').trim(), note: String(o.note || '').trim() }; }
+function manchonNorme(o) { const ha = NUMERO(o.ha), ja = NUMERO(o.ja), designation = String(o.designation || '').trim(); if (ha == null || ja == null || !designation) return null;
+  return { forme: /coud|90|angle/.test(MOT(o.forme)) ? 'coudé' : /long|sortie/.test(MOT(o.forme)) ? 'sortie longue' : 'droit', designation, reference: String(o.reference || '').trim(), ha, hb: NUMERO(o.hb), ja, jb: NUMERO(o.jb), p: NUMERO(o.p), r: NUMERO(o.r), jo: NUMERO(o.jo), masse: NUMERO(o.masse), note: String(o.note || '').trim() }; }
+function calibrationNorme(o) { const tient = NUMERO(o.tient), declenche = NUMERO(o.declenche), temperature = NUMERO(o.temperature); if (tient == null && declenche == null) return null;
+  return { famille: String(o.famille || '').trim(), norme: String(o.norme || '').trim(), temperature, tient, declenche, t200: [NUMERO(o.t200min), NUMERO(o.t200max)], t500: [NUMERO(o.t500min), NUMERO(o.t500max)], t1000: [NUMERO(o.t1000min), NUMERO(o.t1000max)], source: String(o.source || '').trim() }; }
+function disjoncteurFamilleNorme(o) { const nom = String(o.famille || '').trim(); if (!nom) return null;
+  return { famille: cleNorme(nom), nom, norme: String(o.norme || '').trim(), poles: NUMERO(o.poles) || 1, calibres: LISTE_NUM(o.calibres), tension: String(o.tension || '').trim(), compense: /^(oui|yes|o|y|1|true)/i.test(String(o.compense || '').trim()), tmin: NUMERO(o.tmin), tmax: NUMERO(o.tmax), masse: NUMERO(o.masse), courbe: String(o.courbe || '').trim(), note: String(o.note || '').trim() }; }
+function protectionNorme(o) { const jauge = NUMERO(o.jauge), disjoncteurMax = NUMERO(o.disjoncteurMax); if (jauge == null || disjoncteurMax == null) return null;
+  return { jauge, disjoncteurMax, fusibleMax: NUMERO(o.fusibleMax), tailleContact: String(o.tailleContact || '').trim().toUpperCase(), iContact: NUMERO(o.iContact), note: String(o.note || '').trim() }; }
+const ENTREE_NORME = { familles: familleNorme, fils: filNorme, declassements: declassementNorme, reseau: reseauNorme, tailles: tailleNorme, modules: moduleNorme, contacts: contactNorme, disjoncteurs: disjonctionNorme, cables: cableNorme, gaines: gaineNorme, colliers: collierNorme,
+  filetages: filetageNorme, entrees: entreeNorme, raccords: raccordNorme, manchons: manchonNorme, calibrations: calibrationNorme, disjoncteursFamilles: disjoncteurFamilleNorme, protections: protectionNorme, cablesFamilles: cableFamilleNorme, resistancesContacts: resistanceContactNorme };
+const TABLES_NORME = ['familles', 'fils', 'declassements', 'reseau', 'tailles', 'modules', 'contacts', 'disjoncteurs', 'cables', 'gaines', 'colliers', 'filetages', 'entrees', 'raccords', 'manchons', 'calibrations', 'disjoncteursFamilles', 'protections', 'cablesFamilles', 'resistancesContacts'];
+const normeVide = () => { const N = { tables: 0 }; TABLES_NORME.forEach(t => { N[t] = []; }); return N; };
 /* Lire une norme : les tables se suivent (un titre libre, la ligne d'en-tête,
    les lignes, une ligne vide), dans un CSV ou une feuille Excel. */
 function lireNorme(texte) { const N = normeVide(); let table = null, col = null;
   // les tables les plus précises d'abord : une table de tailles nomme aussi sa famille et ses jauges, comme une table de familles
-  const entete = row => { for (const nom of ['gaines', 'colliers', 'cables', 'disjoncteurs', 'contacts', 'modules', 'tailles', 'familles', 'fils', 'declassements', 'reseau']) { const cles = COLONNES_NORME[nom]; const c = {}; row.forEach((cell, i) => { const t = NORMA(cell); if (!t) return;
+  const entete = row => { for (const nom of ['calibrations', 'protections', 'disjoncteursFamilles', 'cablesFamilles', 'resistancesContacts', 'filetages', 'entrees', 'raccords', 'manchons', 'gaines', 'colliers', 'cables', 'disjoncteurs', 'contacts', 'modules', 'tailles', 'familles', 'fils', 'declassements', 'reseau']) { const cles = COLONNES_NORME[nom]; const c = {}; row.forEach((cell, i) => { const t = NORMA(cell); if (!t) return;
       for (const [champ, alias] of cles) if (c[champ] == null && alias.includes(t)) { c[champ] = i; break; } });
     if (TABLE_NORME[nom](c)) return { nom, col: c }; } return null; };
   String(texte || '').split(/\r?\n/).forEach(ligne => { if (!ligne.trim()) { table = null; return; }
@@ -458,7 +621,7 @@ function lireNorme(texte) { const N = normeVide(); let table = null, col = null;
     if (!table) return; const o = {}; Object.entries(col).forEach(([champ, i]) => { o[champ] = row[i] == null ? '' : row[i]; });
     const x = ENTREE_NORME[table](o); if (x) N[table].push(x); });
   return N; }
-const normeLue = N => !!(N && (N.familles.length || N.fils.length || N.declassements.length || N.reseau.length || N.modules.length || (N.contacts || []).length || (N.disjoncteurs || []).length || (N.cables || []).length || (N.gaines || []).length || (N.colliers || []).length));
+const normeLue = N => !!N && TABLES_NORME.some(t => (N[t] || []).length > 0);
 /* Un fichier de normes : chaque feuille d'un Excel est lue (une table par
    feuille, ou plusieurs à la suite) ; un CSV d'un bloc. */
 async function lireNormeFichier(fichier) { const nom = (fichier.name || '').toLowerCase();
@@ -470,9 +633,11 @@ async function lireNormeFichier(fichier) { const nom = (fichier.name || '').toLo
 /* Deux normes en une : ce qui vient en second remplace ce qui porte la même
    clé (famille, type+jauge, condition, tension). C'est ainsi qu'une norme de
    barrettes et une norme de fils, importées l'une après l'autre, se complètent. */
-function fusionnerNormes(a, b) { const N = normeVide(); const cle = { familles: x => x.famille.toUpperCase(), fils: x => x.type + '/' + x.jauge, declassements: x => x.condition, reseau: x => String(x.tension),
+function fusionnerNormes(a, b) { const N = normeVide(); const cle = { familles: x => x.famille.toUpperCase(), fils: x => x.type + '/' + x.jauge, declassements: x => [x.condition, x.fils, x.charge, x.altitude].join('/'), reseau: x => String(x.tension),
     tailles: x => x.famille + '/' + x.taille, modules: x => x.famille + '/' + x.variante, contacts: x => [x.famille, x.sexe, x.taille, x.typeFil, x.jauge, x.reference].join('/'),
-    disjoncteurs: x => [x.famille, x.courbe, x.multiple, x.temps].join('/'), cables: x => x.cable, gaines: x => x.famille + '/' + x.reference, colliers: x => x.reference };
+    disjoncteurs: x => [x.famille, x.courbe, x.multiple, x.temps].join('/'), cables: x => x.cable, gaines: x => x.famille + '/' + x.reference, colliers: x => x.reference,
+    filetages: x => x.famille + '/' + x.taille, entrees: x => x.code, raccords: x => [x.famille, x.taille, x.type, x.orientation].join('/'), manchons: x => x.designation, calibrations: x => x.famille + '/' + x.temperature, disjoncteursFamilles: x => x.famille, protections: x => String(x.jauge),
+    cablesFamilles: x => x.familles.join(' '), resistancesContacts: x => x.taille };
   Object.keys(cle).forEach(t => { const m = new Map(); [...(a ? a[t] || [] : []), ...(b ? b[t] || [] : [])].forEach(x => m.set(cle[t](x), x)); N[t] = [...m.values()]; });
   N.tables = (a ? a.tables : 0) + (b ? b.tables : 0); return N; }
 /* La norme embarquée : normes/*.csv, mis dans la page à la construction. */
@@ -492,12 +657,40 @@ const cablesDe = norme => (norme && norme.cables && norme.cables.length) ? norme
 function cableDuType(norme, type) { const t = cleNorme(type); if (!t) return null; const C = cablesDe(norme);
   const exact = C.find(c => c.cable === t); if (exact) return exact;
   const fam = typeDuFil(type), j = jaugeDuType(type); return (fam && j != null && C.find(c => c.famille === fam && c.jauge === j)) || null; }
-/* La résistance d'un fil, en Ω/km : une ligne Fils de son type exact (une norme importée qui distingue les types) ;
-   sinon son câble dans la base ; sinon la ligne de sa jauge (EN 2853, type « * »). D'où elle vient est dit. */
-function resistanceDuFil(norme, type, jauge) { const fil = filDeNorme(norme, type, jauge), cab = cableDuType(norme, type);
-  if (fil && fil.type !== '*' && !fil.approx && fil.resistance != null) return { rho: fil.resistance, source: 'fil', fil, cab };
-  if (cab && cab.resistance != null) return { rho: cab.resistance, source: 'câble', fil, cab };
-  return { rho: fil && fil.resistance != null ? fil.resistance : null, source: fil ? 'jauge' : null, fil, cab }; }
+/* LA FAMILLE D'UN CÂBLE (table Familles de câbles) : par le type du fil (DR24 → DR), la ligne qui couvre la famille. */
+function cableFamilleDe(norme, type) { const f = typeDuFil(type); if (!f) return null; const T = (normeDesModules(norme).cablesFamilles || []);
+  return T.find(x => x.familles.includes(f)) || null; }
+/* La résistance d'un conducteur à T °C depuis sa valeur à 20 °C : × (234,5 + T)/254,5 pour le cuivre (et le CCA, cuivre
+   en surface), × (238,1 + T)/258,1 pour l'aluminium — la formule de l'AC 43.13-1B § 11-66 (α ≈ 0,00393/K) : 20 °C → 1,
+   70 °C → 1,20, 95 °C → 1,29, 135 °C → 1,45. */
+const coefTemperature = (T, conducteur) => T == null ? 1 : conducteur === 'aluminium' ? (238.1 + T) / 258.1 : (234.5 + T) / 254.5;
+/* La résistance d'un fil, en Ω/km, à la température du conducteur T (20 °C par défaut — la convention de la base des
+   câbles et des fiches constructeur) : une ligne Fils de son type exact (une norme importée qui distingue les types) ;
+   sinon son câble dans la base (R à 20 °C) ; sinon la ligne de sa jauge (EN 2853, type « * », cuivre : sa R à 20 °C
+   quand la table la donne, sinon celle à sa température de table ramenée à 20 °C) — mais pas la jauge seule pour un
+   conducteur qui n'est pas du cuivre (AD, VN : aluminium cuivré, 30 à 65 % plus résistant). D'où elle vient est dit,
+   et le facteur de température aussi. */
+function resistanceDuFil(norme, type, jauge, T) { const fil = filDeNorme(norme, type, jauge), cab = cableDuType(norme, type), fam = cableFamilleDe(norme, type), conducteur = fam && fam.conducteur ? fam.conducteur : 'cuivre';
+  const r20 = f => f.resistance20 != null ? f.resistance20 : f.resistance != null ? f.resistance / coefTemperature(f.tr != null ? f.tr : 20, 'cuivre') : null;
+  let rho20 = null, source = null;
+  if (fil && fil.type !== '*' && !fil.approx && r20(fil) != null) { rho20 = r20(fil); source = 'fil'; }
+  else if (cab && cab.resistance != null) { rho20 = cab.resistance; source = 'câble'; }
+  else if (fil && r20(fil) != null && conducteur === 'cuivre') { rho20 = r20(fil); source = 'jauge'; }
+  const k = coefTemperature(T, conducteur), refuse = rho20 == null && !!fil && conducteur !== 'cuivre';
+  // un conducteur qui n'est pas du cuivre, jugé par la ligne cuivre de l'EN 2853 : l'intensité se déclasse de √(R cuivre / R câble) — même échauffement, moins de courant
+  const kConducteur = conducteur !== 'cuivre' && fil && fil.type === '*' && cab && cab.resistance > 0 && r20(fil) != null ? Math.sqrt(r20(fil) / cab.resistance) : 1;
+  return { rho: rho20 == null ? null : rho20 * k, rho20, k, T: T == null ? 20 : T, source, fil, cab, famille: fam, conducteur, refuse, kConducteur }; }
+/* LA TAILLE DE CONTACT d'une jauge : dans la famille (table Tailles : la plus petite taille qui admet la jauge), sinon
+   la table Protection (AC 43.13-1B : 22 → 22, 20 → 20, 18 → 16…). */
+function tailleDeJauge(norme, famille, jauge) { if (jauge == null) return ''; const N = normeDesModules(norme), f = cleNorme(famille);
+  const T = (N.tailles || []).filter(t => (!f || t.famille === f) && t.jaugeMin != null && t.jaugeMax != null && jauge <= t.jaugeMin && jauge >= t.jaugeMax).sort((a, b) => b.calibre - a.calibre);
+  if (T.length) return T[0].taille; const p = (N.protections || []).find(x => x.jauge === jauge); return p && p.tailleContact ? p.tailleContact : ''; }
+/* LA RÉSISTANCE D'UN CONTACT par sa taille (table Résistance des contacts), en Ω : à neuf, ou de conception (fin de
+   vie) si on le demande ; la taille 22D vaut 22. Rien si la table ne la connaît pas. */
+function resistanceDeContact(norme, taille, fin) { const t = tailleCle(taille); if (!t) return null; const T = normeDesModules(norme).resistancesContacts || [], num = x => NUMERO(x.replace(/[A-Z]+$/, ''));
+  // la taille exacte, sinon la même sans lettre (22D → 22), sinon la taille connue la plus proche en numéro (23 → 22 ; à égalité, la plus petite, qui résiste le plus)
+  const r = T.find(x => x.taille === t) || T.find(x => num(x.taille) === num(t)) || (num(t) == null ? null : T.slice().sort((a, b) => Math.abs(num(a.taille) - num(t)) - Math.abs(num(b.taille) - num(t)) || num(b.taille) - num(a.taille))[0]); if (!r) return null;
+  return (fin && r.resistanceFin != null ? r.resistanceFin : r.resistance) / 1000; }
 /* LE FAISCEAU d'un connecteur : ses câbles (un câble à plusieurs brins ne compte qu'une fois, par son numéro), la
    section cumulée, le diamètre équivalent `deq` (un rond de même section — l'Excel du lecteur : Seq puis Deq), le
    TORON `diametre` = Deq plus la marge de 10 % du tutoriel (FOISONNEMENT), et la masse au mètre. */
@@ -514,11 +707,27 @@ function filDeNorme(norme, type, jauge) { if (!norme || jauge == null) return nu
   const exact = norme.fils.find(f => f.jauge === jauge && f.type === t); if (exact) return exact;
   const joker = norme.fils.find(f => f.jauge === jauge && f.type === '*'); if (joker) return joker;
   const autre = norme.fils.find(f => f.jauge === jauge); return autre ? { ...autre, approx: true } : null; }
-function facteurDeclassement(norme, conditions) { return (conditions || []).reduce((k, c) => { const d = norme && norme.declassements.find(x => x.condition === MOT(c)); return d ? k * d.facteur : k; }, 1); }
-/* La chute admise pour la tension du réseau : la ligne de cette tension,
-   sinon la plus proche. */
-function chuteAdmise(norme, tension) { if (!norme || !norme.reseau.length) return null;
-  return norme.reseau.slice().sort((a, b) => Math.abs(a.tension - tension) - Math.abs(b.tension - tension))[0]; }
+/* LE DÉCLASSEMENT d'une condition, point par point (table Déclassement) : un facteur seul vaut tel quel ; une condition
+   à points « fils × charge » (le faisceau, fig. 11-5 de l'AC 43.13-1B) prend le point le plus proche du faisceau simulé
+   (le nombre de fils en échelle log, la charge en %) ; une condition à points d'altitude (fig. 11-6) interpole. `ctx` :
+   { fils, charge, altitude } — sans rien, le faisceau prend l'exemple de l'AC (8 fils à 60 % : × 0,60), l'altitude 0.
+   Rend [{ condition, facteur, point }] ; `facteurDeclassement` en fait le produit. */
+const CTX_DECLASSEMENT = { fils: 8, charge: 60, altitude: 0 };
+function detailDeclassement(norme, conditions, ctx) { const c = { ...CTX_DECLASSEMENT, ...(ctx || {}) }, D = norme ? norme.declassements : [];
+  return (conditions || []).map(nom => { const rows = D.filter(x => x.condition === MOT(nom)); if (!rows.length) return null;
+    const alt = rows.filter(x => x.altitude != null).sort((a, b) => a.altitude - b.altitude), fai = rows.filter(x => x.fils != null);
+    if (alt.length) { const h = Math.max(0, +c.altitude || 0); if (h <= alt[0].altitude) return { condition: rows[0].condition, facteur: alt[0].facteur, point: alt[0] };
+      const j = alt.findIndex(x => x.altitude >= h); if (j < 0) return { condition: rows[0].condition, facteur: alt[alt.length - 1].facteur, point: alt[alt.length - 1] };
+      const a = alt[j - 1], b = alt[j], t = (h - a.altitude) / (b.altitude - a.altitude); return { condition: rows[0].condition, facteur: a.facteur + t * (b.facteur - a.facteur), point: b, interpole: true }; }
+    if (fai.length) { const n = Math.max(1, +c.fils || CTX_DECLASSEMENT.fils), ch = c.charge != null ? +c.charge : CTX_DECLASSEMENT.charge;
+      const d = x => Math.abs(Math.log(n / x.fils)) + Math.abs(ch - (x.charge != null ? x.charge : 100)) / 100;
+      const p = fai.slice().sort((a, b) => d(a) - d(b))[0]; return { condition: rows[0].condition, facteur: p.facteur, point: p }; }
+    return { condition: rows[0].condition, facteur: rows[0].facteur, point: rows[0] }; }).filter(Boolean); }
+function facteurDeclassement(norme, conditions, ctx) { return detailDeclassement(norme, conditions, ctx).reduce((k, d) => k * d.facteur, 1); }
+/* La chute admise pour la tension du réseau : la ligne de cette tension, sinon la plus proche. En triphasé la chute
+   calculée est composée (entre deux phases) : on la compare à la ligne de la tension composée (115 V → 200 V). */
+function chuteAdmise(norme, tension, regime) { if (!norme || !norme.reseau.length) return null; const u = regime === 'tri' ? tension * Math.sqrt(3) : tension;
+  return norme.reseau.slice().sort((a, b) => Math.abs(a.tension - u) - Math.abs(b.tension - u))[0]; }
 
 /* ---- le remplissage : chaque fil dans son trou, selon la norme ------------ */
 /* Un module (un contact) a un côté AMONT et un côté AVAL, chacun avec autant
@@ -565,32 +774,43 @@ function remplirSelonNorme(P, norme) {
    dépasse le contact · la chute dépasse ce que le réseau admet · fil
    inconnu de la norme · ok. */
 /* Les hypothèses de la simulation : la longueur simple du câble, le courant (par phase), la tension du réseau,
-   l'ambiante, le RÉGIME — continu (ΔU = R × I), monophasé (ΔU = I × (R cos φ + X sin φ)) ou triphasé (ΔU composée,
-   entre deux phases : √3 × I × (R cos φ + X sin φ), I par phase, jamais la somme des phases) —, cos φ (0,8 en régime
-   permanent, 0,35 au démarrage d'un moteur) et la réactance X en mΩ/m : négligée sous 50 mm², à saisir au-delà
-   (l'Excel du lecteur suspend le calcul). */
-const HYPOTHESES = { longueur: 5, courant: 2, tension: 28, ambiante: 95, regime: 'continu', cosphi: 0.8, reactance: 0, conditions: ['faisceau'] };
-const GROS_CABLE = 50;   // mm² : au-delà, la réactance compte
+   l'ambiante, la TEMPÉRATURE DU CONDUCTEUR (20 °C : la convention des fiches et de la base des câbles ; 135 °C : la
+   table de l'EN 2853, le cas le plus défavorable), le RÉGIME — continu (ΔU = R × I), monophasé (ΔU = I × (R cos φ
+   + X sin φ)) ou triphasé (ΔU composée, entre deux phases : √3 × I × (R cos φ + X sin φ), I par phase, jamais la
+   somme des phases ; comparée à la ligne 200 V du réseau) —, cos φ (0,8 en régime permanent, 0,35 au démarrage d'un
+   moteur), la réactance X en mΩ/m (négligée sous 10 mm² de cuivre, à saisir au-delà : à 400 Hz, X vaut l'ordre de R
+   dès le 6–8 AWG pour un fil seul — l'Excel du lecteur suspend le calcul), la charge du faisceau (% de ce que ses fils
+   admettent ensemble) et l'altitude (pieds) pour le déclassement. */
+const HYPOTHESES = { longueur: 5, courant: 2, tension: 28, ambiante: 95, tconducteur: 20, regime: 'continu', cosphi: 0.8, reactance: 0, conditions: ['faisceau'], charge: 60, altitude: 0 };
+const GROS_CABLE = 10;   // mm² de conducteur : au-delà, la réactance compte en alternatif
 const REGIMES = { continu: 'continu', mono: 'alternatif monophasé', tri: 'alternatif triphasé' };
+/* Les fils d'un bornier : ce que le faisceau compte pour le déclassement. */
+const filsDuBornier = Q => Q.modules.reduce((s, m) => s + m.fils.filter(f => f.type).length, 0);
 function simulerBornier(Q, norme, hyp) {
   if (!Q.modules.every(m => m.trous)) Q = remplirSelonNorme(Q, norme);
-  const H = { ...HYPOTHESES, ...(hyp || {}) }, F = Q.famille, facteur = facteurDeclassement(norme, H.conditions), chute = chuteAdmise(norme, H.tension);
+  const H = { ...HYPOTHESES, ...(hyp || {}) }, F = Q.famille, regime = REGIMES[H.regime] ? H.regime : 'continu';
+  const declassement = detailDeclassement(norme, H.conditions, { fils: filsDuBornier(Q), charge: H.charge, altitude: H.altitude }), facteur = declassement.reduce((k, d) => k * d.facteur, 1), chute = chuteAdmise(norme, H.tension, regime);
   const iContact = F && F.intensite != null ? F.intensite : (Q.entree && Q.entree.intensite != null ? Q.entree.intensite : null);
-  const rContact = F && F.resistance != null ? F.resistance / 1000 : 0, lignes = [];
+  // la résistance de contact : celle de la famille (table Familles) ; sinon celle de la taille de contact de chaque fil (table Résistance des contacts), deux fois sur une barrette (deux sertissages et la barre)
+  const prise = Q.nature === 'prise de coupure', rFamille = F && F.resistance != null ? F.resistance / 1000 : null, lignes = [];
+  const rContactDe = f => { if (rFamille != null) return rFamille; const r = resistanceDeContact(norme, tailleDeJauge(norme, F ? F.famille : '', f.jauge)); return r == null ? 0 : r * (prise ? 1 : 2); };
   Q.modules.forEach(m => ['amont', 'aval'].forEach(sens => m.trous[sens].forEach((f, k) => { if (!f) return;
-    const rd = resistanceDuFil(norme, f.type, f.jauge), fil = rd.fil;
+    const rd = resistanceDuFil(norme, f.type, f.jauge, H.tconducteur), fil = rd.fil, rContact = rContactDe(f);
     const Lf = f.l && f.l.longueur > 0 ? f.l.longueur : H.longueur, reelle = !!(f.l && f.l.longueur > 0);
-    const kT = facteurAmbiante(fil, H.ambiante), iFil = fil && fil.intensite != null ? fil.intensite * facteur * kT : null, rFil = rd.rho != null ? rd.rho / 1000 * Lf : null;
-    const regime = REGIMES[H.regime] ? H.regime : 'continu', cosphi = regime === 'continu' ? 1 : Math.min(1, Math.max(0, +H.cosphi || 0.8)), sinphi = Math.sqrt(Math.max(0, 1 - cosphi * cosphi));
-    const section = rd.cab && rd.cab.section != null ? rd.cab.section : (fil && fil.section != null ? fil.section : null), gros = regime !== 'continu' && section != null && section >= GROS_CABLE;
+    const kT = facteurAmbiante(fil, H.ambiante), iFil = fil && fil.intensite != null ? fil.intensite * facteur * kT * rd.kConducteur : null, rFil = rd.rho != null ? rd.rho / 1000 * Lf : null;
+    const cosphi = regime === 'continu' ? 1 : Math.min(1, Math.max(0, +H.cosphi || 0.8)), sinphi = Math.sqrt(Math.max(0, 1 - cosphi * cosphi));
+    // la section du conducteur (la ligne Fils : le toron de cuivre), pas celle, hors-tout, du câble
+    const section = fil && fil.section != null ? fil.section : null, gros = regime !== 'continu' && section != null && section >= GROS_CABLE;
     const X = regime === 'continu' ? 0 : (+H.reactance || 0) / 1000 * Lf, xRequis = gros && !(X > 0), kReg = regime === 'tri' ? Math.sqrt(3) : 1;
     const R = rFil == null ? null : rFil + rContact, dU = R == null || xRequis ? null : kReg * (R * cosphi + X * sinphi) * H.courant, pct = dU == null || !H.tension ? null : dU / H.tension * 100;
     const verdict = f.jaugeOk === false ? 'jauge' : (iFil != null && H.courant > iFil + 1e-9) ? 'fil' : (iContact != null && H.courant > iContact + 1e-9) ? 'contact'
-      : xRequis ? 'reactance' : (dU != null && chute && chute.chuteMax != null && dU > chute.chuteMax + 1e-9) ? 'chute' : !fil ? 'inconnu' : 'ok';
+      : xRequis ? 'reactance' : (dU != null && chute && chute.chuteMax != null && dU > chute.chuteMax + 1e-9) ? 'chute' : !fil || rd.refuse ? 'inconnu' : 'ok';
     lignes.push({ borne: m.borne, sens, trou: k + 1, surcharge: k >= Q.filsParCote, cable: f.cable, type: f.type, jauge: f.jauge, jaugeOk: f.jaugeOk, fil, approx: !!(fil && fil.approx),
-                  iFil, iContact, rFil, rContact, R, dU, pct, verdict, kT, rho: rd.rho, rhoSource: rd.source, cab: rd.cab, section, regime, cosphi, X, xRequis, longueur: Lf, reelle, vers: f.vers, borneVers: f.borne, l: f.l }); })));
+                  iFil, iContact, rFil, rContact, R, dU, pct, verdict, kT, kConducteur: rd.kConducteur, conducteur: rd.conducteur, rho: rd.rho, rho20: rd.rho20, kTemperature: rd.k, rhoSource: rd.source, cab: rd.cab, section,
+                  sectionHorsTout: rd.cab && rd.cab.section != null ? rd.cab.section : null, regime, cosphi, X, xRequis, longueur: Lf, reelle, vers: f.vers, borneVers: f.borne, l: f.l }); })));
   const compte = {}; lignes.forEach(x => { compte[x.verdict] = (compte[x.verdict] || 0) + 1; });
-  return { hyp: H, facteur, chute, iContact, rContact, famille: F, lignes, compte, regime: REGIMES[H.regime] ? H.regime : 'continu', sansNorme: !F && !(norme && norme.fils.length) };
+  const rContact = lignes.length ? lignes[0].rContact : (rFamille != null ? rFamille : 0);
+  return { hyp: H, facteur, declassement, chute, iContact, rContact, famille: F, lignes, compte, regime, fils: filsDuBornier(Q), sansNorme: !F && !(norme && norme.fils.length) };
 }
 const COLONNES_SUIVI = [['contrat', 'Contrat'], ['repere', 'Repère'], ['nature', 'Nature'], ['reference', 'Référence retenue'], ['fichier', 'Référence du fichier'],
   ['nBornes', 'Bornes utilisées'], ['bornes', 'Bornes'], ['shunts', 'Shunts'], ['jauge', 'Jauge'], ['fils', 'Fils'], ['routes', 'Routes'], ['plans', 'Folios']];
