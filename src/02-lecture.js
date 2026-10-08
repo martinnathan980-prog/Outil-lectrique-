@@ -25,7 +25,7 @@ const COLONNES = [
   ['pin2',     ['pin2']],
   ['pn2',      ['pn2', 'partnumber2']],
   ['desc2',    ['description2', 'desc2']],
-  ['fwd',      ['fwd', 'plan']],
+  ['fwd',      ['fwd', 'plan', 'dessin', 'drawing']],
   ['length',   ['cablelength', 'cablelengthmm', 'cablelengthinmm', 'length', 'longueur']],
   ['appareil', ['appareil', 'aircraft', 'contrat']],
   ['retest',   ['dateretest', 'retestdate', 'datederetest', 'dateduretest', 'retest', 'date']]
@@ -109,6 +109,8 @@ function lireTexte(texte) {
                           vers: g(row, c.device2), borneVers: g(row, c.pin2), pnVers: g(row, c.pn2),
                           cable: g(row, c.cabletag), type: g(row, c.cabletg),
                           route: g(row, c.route), plan: g(row, c.fwd),
+                          // le FWD fait le folio, et reste gardé tel quel (le DESSIN d'origine) ; les descriptions aussi
+                          fwd: g(row, c.fwd), descriptionDe: g(row, c.desc1), descriptionVers: g(row, c.desc2),
                           longueur: c.length != null && g(row, c.length) !== '' ? g(row, c.length) + (enMm ? ' mm' : '') : '',
                           harness: g(row, c.harness), appareil: g(row, c.appareil), retest: g(row, c.retest) });
       if (liaisonComplete(l)) liaisons.push(l);
