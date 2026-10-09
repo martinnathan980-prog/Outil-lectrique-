@@ -80,9 +80,13 @@ function goulottes(layout) {
   const g = layout.geom, blocs = layout.comps;
   const x0 = ch => ch === 0 ? (g.colX.length ? g.colX[0] - g.chW[0] : 70) : g.colX[ch - 1] + g.colW[ch - 1];
   const x1 = ch => x0(ch) + g.chW[ch];
-  // un segment horizontal passe s'il ne traverse aucun bloc étranger
+  /* un segment horizontal passe s'il ne traverse aucun bloc étranger ; sur un dessin RETOUCHÉ (`geom.libre`, voir
+     `preparerPose`), aucun bloc du tout : un bloc posé à la main peut tourner le dos à son partenaire, et l'horizontale
+     qui partirait de l'autre flanc le traverserait — le fil le contourne par un couloir. Une horizontale qui part d'une
+     borne vers le dehors ne touche jamais son propre bloc (les marges de deux unités). */
+  const tous = !!g.libre;
   const couloirLibre = (xa, xb, y, exclus) => { if (xa > xb) { const t = xa; xa = xb; xb = t; }
-    return !blocs.some(c => !exclus.has(c.name) && xb > c.x + 1 && xa < c.x + c.w - 1 && y > c.y - 3 && y < c.y + c.h + 3); };
+    return !blocs.some(c => (tous || !exclus.has(c.name)) && xb > c.x + 1 && xa < c.x + c.w - 1 && y > c.y - 3 && y < c.y + c.h + 3); };
   // un segment vertical passe s'il ne traverse aucun bloc étranger
   const verticaleLibre = (x, ya, yb, exclus) => { if (ya > yb) { const t = ya; ya = yb; yb = t; }
     return !blocs.some(c => !exclus.has(c.name) && x > c.x - 3 && x < c.x + c.w + 3 && yb > c.y + 1 && ya < c.y + c.h - 1); };
@@ -99,7 +103,7 @@ function goulottes(layout) {
   // la bande qui contient y (ouverte aux deux bouts), ou rien
   const bande = (B, y) => { let a = 0, b = B.length; while (a < b) { const m = (a + b) >> 1; if (B[m][0] < y) a = m + 1; else b = m; }
     return a > 0 && y < B[a - 1][1] ? B[a - 1] : null; };
-  return { n: g.nCols + 1, x0, x1, couloirLibre, verticaleLibre, dedans, bandes, bande, yMin: g.yMin, yMax: g.yMax };
+  return { n: g.nCols + 1, x0, x1, couloirLibre, verticaleLibre, dedans, bandes, bande, yMin: g.yMin, yMax: g.yMax, libre: tous };
 }
 /* Le premier point de la grille y0 + k·pas qui vaut au moins v. */
 const surLaGrille = (y0, pas, v) => y0 + Math.ceil((v - y0) / pas - 1e-9) * pas;
@@ -252,12 +256,18 @@ function formerLesPiquages(layout, fils, G) {
   const groupes = new Map();
   fils.forEach((f, li) => [f.A, f.B].forEach(ep => { const k = Math.round(ep.x) + ',' + Math.round(ep.y) + ',' + ep.stub;
     (groupes.get(k) || groupes.set(k, []).get(k)).push({ li, tag: ep.tag, ep }); }));
+  /* sur un dessin retouché (G.libre), les hauteurs des bornes de chaque paroi : une borne de barrette ne s'y pose pas — le
+     fil de la borne voisine passe là, et les deux traits n'en feraient qu'un (le placement automatique n'y tombe jamais) */
+  const parois = new Map();
+  if (G.libre) fils.forEach((f, li) => [f.A, f.B].forEach(ep => { const k = ep.ch + murDe(ep); (parois.get(k) || parois.set(k, []).get(k)).push({ y: ep.y, li }); }));
   const piquages = [];
   groupes.forEach((entrees, k) => { if (entrees.length < 2) return;
     const ep = entrees[0].ep, mur = murDe(ep), loin = mur === 'L' ? 'R' : 'L', ch = ep.ch, bx = mur === 'L' ? G.x0(ch) + RETRAIT : G.x1(ch) - RETRAIT;
     const l0 = layout.links[entrees[0].li], propre = String(entrees[0].tag === 'A' ? l0.de : l0.vers), etiquette = String(entrees[0].tag === 'A' ? l0.borneDe : l0.borneVers);
     const b = { borne: k, ch, mur, x: bx, px: ep.x, py: ep.y, dir: mur === 'L' ? 1 : -1, departs: [], decales: [], gardes: [], n: entrees.length, propre, etiquette, li: entrees[0].li };
-    const pris = [ep.y], libre = y => pris.every(v => Math.abs(v - y) >= ECART_VT);
+    // les bornes voisines : ni celle de la barrette, ni l'autre bout de ses propres fils (un fil y part droit)
+    const siens = new Set(entrees.map(e => e.li)), voisines = (parois.get(ch + mur) || []).filter(v => !siens.has(v.li) && Math.abs(v.y - ep.y) > 0.5).map(v => v.y);
+    const pris = [ep.y], libre = y => pris.every(v => Math.abs(v - y) >= ECART_VT) && voisines.every(v => Math.abs(v - y) >= ECART_VT);
     // la première hauteur libre à un pas de la borne : en dessous, au-dessus, puis plus loin
     const hauteurLibre = () => { for (let n = 1; ; n++) for (const sg of [1, -1]) { const y = ep.y + sg * n * PAS_VT; if (libre(y)) return y; } };
     const W = entrees.map(e => { const f = fils.get(e.li), bout = cle(e.li, e.tag), tv = f.travaux.find(t => t.ch === ch && t.paire.some(a => a.bout === bout));
@@ -272,8 +282,11 @@ function formerLesPiquages(layout, fils, G) {
       // une borne à lui, à un pas, et sa propre verticale au-delà de la barrette jusqu'à sa hauteur
       const y = hauteurLibre(); pris.push(y);
       if (!tv) {   // un fil droit dans cette goulotte : il lui faut une verticale ici
-        const B2 = e.tag === 'A' ? f.B : f.A, sortie = { y: ep.y, mur: loin, bout: B2.ch === ch && murDe(B2) === loin ? cle(e.li, B2.tag) : null };
-        ici = { y, mur, bout, borne: k }; tv = e.tag === 'A' ? travail(ch, ici, sortie, ex) : travail(ch, sortie, ici, ex);
+        /* le fil se trace de f.A à f.B (rangés de gauche à droite) : sa verticale va de sa borne décalée à sa hauteur s'il
+           part d'ici (ce bout est f.A), de sa hauteur à sa borne s'il arrive ici — l'étiquette du bout (A : « de ») n'en dit
+           rien quand le fil est rangé à l'envers ; elle traçait alors deux obliques (vu sur un bloc posé à la main) */
+        const estA = f.A.tag === e.tag, B2 = estA ? f.B : f.A, sortie = { y: ep.y, mur: loin, bout: B2.ch === ch && murDe(B2) === loin ? cle(e.li, B2.tag) : null };
+        ici = { y, mur, bout, borne: k }; tv = estA ? travail(ch, ici, sortie, ex) : travail(ch, sortie, ici, ex);
         f.travaux.push(tv); f.travaux.sort((u, v) => u.ch - v.ch); f.forme = 'decale'; }
       else { ici.y = y; ici.borne = k; }
       tv.aupres = b; tv.contraintes.push({ porteur: b, mur: loin, borne: k }); b.decales.push({ y, li: e.li }); });
@@ -338,10 +351,12 @@ function ordreParDeplacements(n, c) {
     if (!gagne) break; }
   return ordre;
 }
-function ordonner(travaux) {
+/* `exact` : jusqu'où l'ordre se cherche exactement — NMAX_EXACT pour le moteur ; seize sur un dessin retouché, où un
+   gros bloc déplacé plie d'un coup tous ses fils dans la même goulotte (quelques millisecondes, une goulotte rare) */
+function ordonner(travaux, exact) {
   const n = travaux.length; if (n <= 1) return travaux.map((_, i) => i);
   const c = coutsParPaires(travaux);
-  return n <= NMAX_EXACT ? ordreExact(n, c) : ordreParDeplacements(n, c);
+  return n <= (exact || NMAX_EXACT) ? ordreExact(n, c) : ordreParDeplacements(n, c);
 }
 
 /* ---- les pistes : une abscisse par verticale --------------------------------
@@ -371,6 +386,7 @@ function poserLesPistes(travaux, ordre, ch, G) {
       : t.aupres ? (t.aupres.mur === 'L' ? xL + RETRAIT + pas : xR - RETRAIT - pas)        // un fil décalé : juste au-delà de sa barrette
       : (t.att.length && t.att.every(a2 => a2.mur === 'R') ? xR - RETRAIT : lb);
     t.x = Math.max(lb, Math.min(t.ub, veut)); if (t.piquage) t.piquage.x = t.x; });
+  return profondeur;
 }
 
 /* ---- le tracé ------------------------------------------------------------
@@ -456,9 +472,12 @@ function routerUneFois(layout, permis) {
     // la barrette s'étend jusqu'aux bornes de ses fils décalés (leurs horizontales comptent sur leur propre verticale)
     const t = { ch: b.ch, piquage: b, net: b.net, att: [raccord, ...b.departs], paire: [raccord, ...b.departs, ...b.decales.map(d => ({ y: d.y, mur: b.mur, bout: null, borne: b.borne }))], blocs: new Set([b.propre]), contraintes: [] };
     b.travail = etendue(t); parGoulotte[b.ch].push(t); });
+  /* la largeur que les pistes de chaque goulotte demandent à leur pas plein (deux retraits, PISTE entre deux verticales
+     voisines) : la retouche élargit une goulotte trop étroite pour ce qu'on y a mis (`preparerPose`) */
+  const besoins = new Array(G.n).fill(0);
   parGoulotte.forEach((T, ch) => { if (!T.length) return;
     T.sort((u, v) => (u.lo - v.lo) || (u.hi - v.hi));
-    poserLesPistes(T, ordonner(T), ch, G); });
+    besoins[ch] = 2 * RETRAIT + (poserLesPistes(T, ordonner(T, G.libre ? 16 : NMAX_EXACT), ch, G) - 1) * PISTE; });
   const traces = tracerLesFils(layout, fils, piquages);
   // chaque barrette : ses bornes — le raccord (borne 1), puis une par fil, celui qui part de là (`li`) —, de haut en bas
   const barrettes = piquages.map(b => { const bornes = [{ y: b.py, li: null }, ...b.departs.map(d => ({ y: d.y, li: d.li })), ...b.gardes]
@@ -466,7 +485,7 @@ function routerUneFois(layout, permis) {
     return { x: b.x, y1: lo - 3, y2: hi + 3, py: b.py, bornes, gardes: bornes.slice(1), bus: b.n >= 4, dir: b.dir, px: b.px, net: b.net, propre: b.propre, etiquette: b.etiquette,
              pts: b.departs.filter(d => Math.abs(d.y - b.py) > 1.2).map(d => ({ x: b.x, y: d.y })), raccord: { x0: b.px, x1: b.x, y: b.py } }; });
   barrettes.raccords = barrettes.map(b => b.raccord);
-  const resultat = { fils: traces.filter(Boolean), points: jonctions(layout, traces, barrettes), barrettes, piquages: barrettes.flatMap(b => b.pts) };
+  const resultat = { fils: traces.filter(Boolean), points: jonctions(layout, traces, barrettes), barrettes, piquages: barrettes.flatMap(b => b.pts), besoins };
   return { resultat, candidats: fils.candidats, croisements: compterCroisements(resultat.fils.filter(w => !w.shunt), barrettes) };
 }
 
@@ -612,4 +631,162 @@ function croisementsEvitables(layout, R) {
     const meilleur = coutDeLOrdre(T.length <= 14 ? ordreExact(T.length, c) : ordreParDeplacements(T.length, c), c);
     total += Math.max(0, Math.round(actuel - meilleur)); }
   return total;
+}
+
+/* ---- LA RETOUCHE : un bloc posé où l'on veut, en x comme en y -------------------
+   Le placement range les blocs en COLONNES ; entre deux colonnes, une goulotte, où passent les verticales des fils. Une
+   retouche pose un bloc n'importe où : ce sont alors les colonnes qui se RELISENT sur les blocs posés — le routeur, lui,
+   reste le même, il reçoit une géométrie juste.
+   · Un bloc qui ne bouge pas tient la colonne où il est, toute sa largeur.
+   · Le bloc déplacé (et les pastilles collées à ses flancs, qui le suivent) tient la colonne qui le contient tout
+     entier ; sinon sa propre largeur. Sa colonne est celle où il entre de plus d'une goulotte (GOULOTTE_MIN) : il la
+     rejoint, et l'élargit s'il en déborde. Une colonne qu'il ne fait que mordre s'écarte (ci-dessous). Sans colonne —
+     posé dans une goulotte, ou au-delà du dessin —, il en devient une à lui, qui partage la goulotte en deux. Dans deux
+     colonnes à la fois, la pose est refusée : les fondre ferait traverser à des fils toute la largeur de l'autre.
+   · Une colonne n'est juste que si ses blocs S'EMPILENT : les fils d'un bloc sortent de ses flancs jusqu'aux
+     goulottes, rien ne doit être à côté de lui à la même hauteur. Le bloc déplacé garde ECART_RETOUCHE de ses voisins
+     de colonne. Sinon la pose est refusée, et l'on dit pourquoi : 'chevauche' (il est sur un bloc), 'pile' (il serait à
+     côté d'un bloc de sa colonne, à la même hauteur, ou dans deux colonnes).
+   · Une goulotte ne descend jamais sous GOULOTTE_MIN : quand le bloc mord sur celle d'à côté, les colonnes au-delà
+     S'ÉCARTENT de ce qui manque (la POUSSÉE), en s'éloignant de lui ; une goulotte plus large absorbe ce qu'elle peut.
+     C'est ce qui permet le petit pas de côté dans un dessin serré. Le bloc posé, lui, ne bouge jamais.
+   · Une colonne qu'aucun bloc ne tient plus disparaît : ses deux goulottes n'en font qu'une.
+   · Routé, le dessin se lit : une goulotte que ses pistes débordent (un bloc déplacé plie tous ses fils droits)
+     s'élargit à leur pas plein, un fil dont le numéro ne s'écrit plus élargit celles que traverse sa plus longue
+     horizontale — toujours en écartant les colonnes du bloc (`elargirGoulottes`), et l'on reroute.
+   Les bouts des fils prennent la goulotte de leur nouvelle colonne (même flanc, même côté). La géométrie rendue porte
+   `libre` : le routeur y refuse aussi qu'une horizontale traverse le bloc de son propre fil (`goulottes`), une borne de
+   barrette à poser ne se pose pas à la hauteur d'une borne voisine, et l'ordre des pistes se cherche exactement plus
+   loin. Sans retouche rien de cela ne joue (les dessins automatiques sont les mêmes au point près) ; sans déplacement
+   (0, 0) la géométrie relue est celle d'avant. */
+const ECART_RETOUCHE = 8;
+// les pastilles collées au flanc d'un bloc, à sa hauteur : elles le suivent (plusieurs masses portent le même nom : par la position)
+const pastillesDuBloc = (comps, c) => comps.filter(t => t.kind === 'tag' && t.y + t.h / 2 > c.y - 1 && t.y + t.h / 2 < c.y + c.h + 1
+  && (Math.abs(t.x + t.w + FIL_PASTILLE - c.x) < 2 || Math.abs(t.x - (c.x + c.w + FIL_PASTILLE)) < 2));
+/* Le bloc d'un bout de fil : celui de ce nom dont le bord porte le bout (les morceaux d'une barrette, les masses, partagent
+   un nom) ; à défaut, le seul de ce nom. */
+function blocDuBout(parNom, nom, e) { const L = parNom.get(String(nom)) || [];
+  return L.find(c => e.x >= c.x - 1.5 && e.x <= c.x + c.w + 1.5 && e.y >= c.y - 1.5 && e.y <= c.y + c.h + 1.5) || (L.length === 1 ? L[0] : null); }
+// un bloc décalé, ses bornes avec lui, dans sa nouvelle colonne
+function decalerBloc(k, dx, dy, col) { if (!dx && !dy && col === k.col) return k;
+  const rangs = {}; Object.keys(k.rangs || {}).forEach(lid => { rangs[lid] = k.rangs[lid].map(p => ({ ...p, y: p.y + dy, ...(p.x != null ? { x: p.x + dx } : {}) })); });
+  const parCle = new Map(); (k.parCle || new Map()).forEach((v, cl) => parCle.set(cl, { ...v, y: v.y + dy, ...(v.x != null ? { x: v.x + dx } : {}) }));
+  return { ...k, x: k.x + dx, y: k.y + dy, col, rangs, parCle }; }
+/* Préparer la pose d'un bloc du dessin `layout` ({ comps, links, geom }) ; rend
+     examiner(dx, dy)   la pose est-elle juste ? { grappes, s, poussee } ou { refus, avec } — sans rien construire (la
+                        recherche de la place libre l'appelle des centaines de fois par geste)
+     poser(dx, dy)      le dessin avec le bloc décalé, routé : { comps, links, geom, routage, bloc, poussee } (la poussée :
+                        de combien la colonne la plus écartée a bougé) ou { refus, avec }
+     etendue            [gauche, droite] du bloc et de ses pastilles ; tags : ses pastilles */
+function preparerPose(layout, bloc) {
+  const g = layout.geom, comps = layout.comps, nC = g.colX.length, blocs = comps.filter(c => c.kind !== 'tag');
+  const sesTags = new Map(blocs.map(b => [b, pastillesDuBloc(comps, b)]));
+  const etendue = b => { let lo = b.x, hi = b.x + b.w; sesTags.get(b).forEach(t => { lo = Math.min(lo, t.x); hi = Math.max(hi, t.x + t.w); }); return [lo, hi]; };
+  const rang = k => [g.colX[k], g.colX[k] + g.colW[k]];
+  const dans = (k, lo, hi) => lo >= g.colX[k] - 0.5 && hi <= g.colX[k] + g.colW[k] + 0.5;
+  const contenant = (lo, hi) => { for (let k = 0; k < nC; k++) if (dans(k, lo, hi)) return k; return -1; };
+  // les colonnes que tiennent les blocs qui restent (toute leur largeur), de gauche à droite
+  const tenues = new Map();
+  blocs.forEach((b, i) => { if (b === bloc) return; const [lo, hi] = etendue(b);
+    const k = Number.isInteger(b.col) && b.col >= 0 && b.col < nC && dans(b.col, lo, hi) ? b.col : contenant(lo, hi), [a, z] = k >= 0 ? rang(k) : [lo, hi];
+    const cle = k >= 0 ? 'c' + k : 'b' + i; let t = tenues.get(cle);
+    if (!t) tenues.set(cle, t = { lo: a, hi: z, membres: [] }); t.membres.push(b); });
+  const fixes = [...tenues.values()].sort((u, v) => u.lo - v.lo);
+  const [flo, fhi] = etendue(bloc);
+  const examiner = (dx, dy) => {
+    const lo = flo + dx, hi = fhi + dx, y0 = bloc.y + dy, y1 = y0 + bloc.h, bx0 = bloc.x + dx, bx1 = bx0 + bloc.w;
+    const k = contenant(lo, hi), [a, z] = k >= 0 ? rang(k) : [lo, hi], moi = { lo: a, hi: z, moi: true, membres: [bloc] };
+    /* sa colonne : celle où il entre de plus d'une goulotte (GOULOTTE_MIN) ; une colonne qu'il ne fait que mordre
+       s'écartera, et sans colonne à lui il en devient une. Dans deux colonnes à la fois, la pose est refusée — les fondre
+       ferait passer les fils d'un flanc à travers toute la largeur de l'autre, et la goulotte qui les séparait
+       disparaîtrait */
+    const recouvre = f => Math.min(f.hi, z) - Math.max(f.lo, a), dedans = fixes.filter(f => recouvre(f) > GOULOTTE_MIN);
+    const loin = b => Math.abs(b.x + b.w / 2 - (bx0 + bx1) / 2) + Math.max(0, b.y - y1, y0 - b.y - b.h);
+    if (dedans.length > 1) { const autre = dedans.reduce((m, f) => recouvre(f) < recouvre(m) ? f : m); return { refus: 'pile', avec: autre.membres.reduce((m, b) => loin(b) < loin(m) ? b : m) }; }
+    const sienne = dedans[0] || null;
+    // la pile : le bloc et chaque bloc de sa colonne, l'un au-dessus de l'autre
+    if (sienne) for (const b of sienne.membres) if (y0 < b.y + b.h + ECART_RETOUCHE && b.y < y1 + ECART_RETOUCHE)
+      return { refus: bx0 < b.x + b.w && b.x < bx1 ? 'chevauche' : 'pile', avec: b };
+    // les colonnes, de gauche à droite : la sienne (avec lui), les autres de part et d'autre
+    const G = sienne ? { lo: Math.min(sienne.lo, a), hi: Math.max(sienne.hi, z), items: [sienne, moi], moi: true } : { lo: a, hi: z, items: [moi], moi: true };
+    const milieu = (G.lo + G.hi) / 2, cote = f => (f.lo + f.hi) / 2 < milieu;
+    const grappes = [...fixes.filter(f => f !== sienne && cote(f)), G, ...fixes.filter(f => f !== sienne && !cote(f))]
+      .map(f => f === G ? G : { lo: f.lo, hi: f.hi, items: [f] });
+    const i = grappes.indexOf(G);
+    // la poussée : chaque goulotte garde GOULOTTE_MIN, les colonnes s'écartent du bloc
+    const s = grappes.map(() => 0);
+    for (let j = i - 1; j >= 0; j--) s[j] = Math.min(0, grappes[j + 1].lo + s[j + 1] - GOULOTTE_MIN - grappes[j].hi);
+    for (let j = i + 1; j < grappes.length; j++) s[j] = Math.max(0, grappes[j - 1].hi + s[j - 1] + GOULOTTE_MIN - grappes[j].lo);
+    return { grappes, i, s, poussee: Math.max(0, ...s.map(Math.abs)) };
+  };
+  const poser = (dx, dy) => { const r = examiner(dx, dy); if (r.refus) return r;
+    const colDe = new Map(), dec = new Map();
+    const suivre = (b, k, ddx, ddy) => [b, ...sesTags.get(b)].forEach(c => { colDe.set(c, k); dec.set(c, [ddx, ddy]); });
+    r.grappes.forEach((gr, k) => gr.items.forEach(it => it.membres.forEach(b => b === bloc ? suivre(b, k, dx, dy) : suivre(b, k, r.s[k], 0))));
+    // une pastille qu'aucun bloc ne tient (il ne devrait pas y en avoir) : la colonne où elle est
+    comps.forEach(c => { if (colDe.has(c)) return; const m = c.x + c.w / 2; let k = r.grappes.findIndex(gr => m >= gr.lo - 1 && m <= gr.hi + 1);
+      if (k < 0) k = r.grappes.reduce((b, gr, j) => Math.abs((gr.lo + gr.hi) / 2 - m) < Math.abs((r.grappes[b].lo + r.grappes[b].hi) / 2 - m) ? j : b, 0);
+      colDe.set(c, k); dec.set(c, [r.s[k], 0]); });
+    const neuf = new Map(comps.map(c => [c, decalerBloc(c, dec.get(c)[0], dec.get(c)[1], colDe.get(c))]));
+    // chaque bout de fil suit son bloc, et prend la goulotte de sa nouvelle colonne
+    const parNom = new Map(); comps.forEach(c => { const n = String(c.name); (parNom.get(n) || parNom.set(n, []).get(n)).push(c); });
+    const bout = (nom, e) => { if (!e) return e; const c = blocDuBout(parNom, nom, e); if (!c) return e; const [ddx, ddy] = dec.get(c), col = colDe.get(c);
+      if (!ddx && !ddy && col === c.col) return e;
+      return { ...e, x: e.x + ddx, y: e.y + ddy, ch: Number.isInteger(c.col) && Number.isInteger(e.ch) ? e.ch - c.col + col : e.ch }; };
+    const links = layout.links.map(l => { const A = bout(l.de, l.epA), B = bout(l.vers, l.epB); return A === l.epA && B === l.epB ? l : { ...l, epA: A, epB: B }; });
+    const nouveaux = comps.map(c => neuf.get(c));
+    const colX = r.grappes.map((gr, k) => gr.lo + r.s[k]), colW = r.grappes.map(gr => gr.hi - gr.lo);
+    const chW = [g.chW[0], ...colX.slice(1).map((x, k) => x - colX[k] - colW[k]), g.chW[g.chW.length - 1]];
+    let yMin = Infinity, yMax = -Infinity; const colonnes = colX.map(() => []), colonneDe = new Map();
+    nouveaux.forEach(c => { colonneDe.set(c.id, c.col); if (c.kind === 'tag') return; colonnes[c.col].push(c.id); yMin = Math.min(yMin, c.y); yMax = Math.max(yMax, c.y + c.h); });
+    let D = { comps: nouveaux, links, geom: { ...g, colX, colW, chW, nCols: colX.length, yMin, yMax, colonnes, colonneDe, libre: true } };
+    // routé ; une goulotte trop étroite pour ses pistes s'élargit (les colonnes au-delà s'écartent du bloc), et l'on reroute
+    let routage = router(D); const total = r.s.slice();
+    for (let tour = 0; tour < 3; tour++) { const E = elargirGoulottes(D, routage.besoins, r.i); if (!E) break;
+      D = E.dessin; E.sx.forEach((v, k) => { total[k] += v; }); routage = router(D); }
+    /* les NUMÉROS : un fil dont le dessin ne peut plus écrire le numéro (une verticale coupe un fil droit court) fait
+       élargir les goulottes que traverse sa plus longue horizontale, de la largeur du numéro — gardé si ça en rend */
+    if (muetsAvant == null) muetsAvant = layout.routage ? filsMuets(layout.routage, comps).length : 0;
+    let muets = filsMuets(routage, D.comps);
+    for (let tour = 0; tour < 2 && muets.length > muetsAvant; tour++) { const g2 = D.geom, n2 = g2.colX.length, besoins = g2.chW.slice();
+      const x0 = ch => ch === 0 ? g2.colX[0] - g2.chW[0] : g2.colX[ch - 1] + g2.colW[ch - 1];
+      muets.forEach(w => { let h = null; for (let j = 0; j + 1 < w.pts.length; j++) { const a = w.pts[j], b = w.pts[j + 1];
+          if (Math.abs(a.y - b.y) < 0.6 && (!h || Math.abs(b.x - a.x) > h[1] - h[0])) h = [Math.min(a.x, b.x), Math.max(a.x, b.x)]; }
+        if (!h) return; const larg = largeurTexte(String(w.cable).trim().length, FS_FIL, 0.1) + 14;
+        for (let ch = 0; ch <= n2; ch++) if (h[1] > x0(ch) + 0.5 && h[0] < x0(ch) + g2.chW[ch] - 0.5) besoins[ch] = Math.max(besoins[ch], g2.chW[ch] + larg); });
+      const E = elargirGoulottes(D, besoins, r.i); if (!E) break;
+      const R2 = router(E.dessin), m2 = filsMuets(R2, E.dessin.comps); if (m2.length >= muets.length) break;
+      D = E.dessin; routage = R2; muets = m2; E.sx.forEach((v, k) => { total[k] += v; }); }
+    return { ...D, routage, bloc: D.comps[comps.indexOf(bloc)], poussee: Math.max(0, ...total.map(Math.abs)) };
+  };
+  let muetsAvant = null;
+  return { examiner, poser, bloc, tags: sesTags.get(bloc), etendue: [flo, fhi] };
+}
+/* Les fils dont le dessin ne peut pas écrire le numéro : le dessin le dit (06, `reperesDeFil`), comme au juge
+   (`compterMuets`), mais fil par fil. */
+function filsMuets(R, comps) {
+  if (typeof reperesDeFil !== 'function' || !R || !R.fils) return [];
+  const fils = R.fils.filter(w => !w.shunt && String(w.cable || '').trim()); if (!fils.length) return [];
+  const verticaux = verticauxDe([...fils.map(w => w.pts), ...tracesDePiquage(R.barrettes || [])]);
+  const cs = comps.map(c => ({ ...c })), occ = occupationDe(fils, R.barrettes || [], cs); poserReperes(cs, occ);
+  const ecrits = new Map(); (reperesDeFil(fils, verticaux, R.barrettes || [], occ).match(/>[^<]*<\/text>/g) || []).forEach(t => { const n = t.slice(1, -7); ecrits.set(n, (ecrits.get(n) || 0) + 1); });
+  return fils.filter(w => { const n = esc(String(w.cable).trim()), k = ecrits.get(n) || 0; if (k) { ecrits.set(n, k - 1); return false; } return true; });
+}
+/* Élargir les goulottes d'un dessin retouché que leurs pistes débordent (`besoins`, la largeur qu'elles demandent au pas
+   plein) : une goulotte à gauche de la colonne `i` (celle du bloc posé) écarte vers la gauche tout ce qui est à sa
+   gauche, une goulotte à droite écarte vers la droite ; celles du bord s'élargissent vers le dehors. Rien à élargir :
+   nul. Le bloc posé ne bouge jamais. */
+function elargirGoulottes(D, besoins, i) { const g = D.geom, n = g.colX.length; if (!besoins) return null;
+  const sx = new Array(n).fill(0), chW = g.chW.slice(); let rien = true;
+  const manque = ch => (besoins[ch] || 0) - g.chW[ch];
+  for (let ch = 0; ch <= n; ch++) { const d = manque(ch); if (d <= 0.5) continue; rien = false; chW[ch] += d;
+    if (ch === 0 || ch === n) continue;
+    if (ch <= i) for (let k = 0; k < ch; k++) sx[k] -= d; else for (let k = ch; k < n; k++) sx[k] += d; }
+  if (rien) return null;
+  const parNom = new Map(); D.comps.forEach(c => { const m = String(c.name); (parNom.get(m) || parNom.set(m, []).get(m)).push(c); });
+  const decale = c => sx[c.col] || 0;
+  const bout = (nom, e) => { if (!e) return e; const c = blocDuBout(parNom, nom, e), d = c ? decale(c) : 0; return d ? { ...e, x: e.x + d } : e; };
+  const links = D.links.map(l => { const A = bout(l.de, l.epA), B = bout(l.vers, l.epB); return A === l.epA && B === l.epB ? l : { ...l, epA: A, epB: B }; });
+  const comps = D.comps.map(c => decalerBloc(c, decale(c), 0, c.col));
+  return { sx, dessin: { comps, links, geom: { ...g, colX: g.colX.map((x, k) => x + sx[k]), chW } } };
 }

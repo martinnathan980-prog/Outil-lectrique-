@@ -18,7 +18,10 @@ node tests/placement.js        un gros folio jamais vu se place au loin (Worker)
                                par point que dans la page, un petit folio toujours synchrone, le concours gardé (IndexedDB) et relu
                                au rechargement, une cible choisie pendant l'attente (la recherche) choisie et cadrée à l'arrivée ;
                                sous pilote sans réveil (`placementAilleurs(true)`), tout reste synchrone pour les autres batteries
-node tests/retouche.js         un bloc se déplace à la vraie souris, tout suit, Ctrl+Z, « automatique », et ça se garde
+node tests/retouche.js         un bloc se déplace à la vraie souris dans tous les sens (hors de toute colonne : une colonne à lui,
+                               un petit pas de côté : les voisines s'écartent), au carreau, Alt libre, aux flèches ; le routage
+                               reste propre ; la place prise se voit (fantôme rouge) et se dit ; Ctrl+Z, « rendre au moteur »,
+                               et ça se garde
 node tests/relief.js           la vue en relief de chaque barrette (modules E0599) et prise de l'exemple : un fil par contact pris, aucune étiquette
                                sur une autre, tourner, survoler, Échap, double-clic
 node tests/interface.js        à la vraie souris (grand écran, téléphone) : la fiche épurée dans l'inspecteur, le tableau en

@@ -207,6 +207,16 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
 #svg .comp,#svg .cab{cursor:pointer}
 #svg .comp{cursor:grab}
 #planche.deplace,#planche.deplace *{cursor:grabbing!important}
+/* pendant un appui sur la planche, rien ne se sélectionne (le texte du folio passait en bleu sous le glisser) */
+#planche.appui,#planche.appui *{-webkit-user-select:none;user-select:none}
+/* la retouche, sur le papier (clair dans les deux thèmes, comme le dessin) : le fantôme du bloc à la place visée —
+   à l'encre, rouge quand la place est prise —, le contour plein de la place où il tombe, les guides d'alignement, fins
+   et pointillés, d'une encre plus douce. Les épaisseurs et les tirets viennent de l'interface, à l'échelle de la vue */
+.rt-calque{pointer-events:none}
+.rt-calque .rt-guide{fill:none;stroke:#636369}
+.rt-calque .rt-pose{fill:none;stroke:#1d1d1f}
+.rt-calque .rt-fantome{fill:rgba(29,29,31,.04);stroke:#1d1d1f}
+.rt-calque .rt-fantome.pris{fill:rgba(201,42,42,.07);stroke:#c92a2a}
 
 /* ─── LA BARRE DU HAUT : la marque, la recherche, le menu — blanche, un filet dessous ─── */
 #entete{position:fixed;top:0;left:0;right:0;height:calc(var(--entete) + var(--sur-h));z-index:36;background:var(--p-fond);color:var(--p-t1);border-bottom:1px solid var(--p-ligne);
