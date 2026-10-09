@@ -44,7 +44,7 @@ ok('un bloc se relit comme une autre table si on le demande (Tailles lu comme Fa
 const N1 = X.lireNorme(T1);
 ok('lireNorme : les mêmes tables qu’avant (N.tables, les entrées), avec brut en plus', N1.tables === 2 && N1.fils.length === 2 && N1.tailles.length === 1 && N1.fils[1].brut.type === 'DR');
 const NE = X.normeEmbarquee();
-ok('la norme embarquée se lit comme avant : 298 modules, 428 contacts, 14 fils, 7 déclassements, 4 réseaux, 223 câbles, 39 manchons', NE.modules.length === 298 && NE.contacts.length === 428 && NE.fils.length === 14 && NE.declassements.length === 7 && NE.reseau.length === 4 && NE.cables.length === 223 && NE.manchons.length === 39 && NE.modules.every(m => m.brut), `${NE.modules.length} modules · ${NE.contacts.length} contacts · ${NE.cables.length} câbles`);
+ok('la norme embarquée se lit comme avant : 300 modules, 428 contacts, 14 fils, 7 déclassements, 4 réseaux, 223 câbles, 39 manchons', NE.modules.length === 300 && NE.contacts.length === 428 && NE.fils.length === 14 && NE.declassements.length === 7 && NE.reseau.length === 4 && NE.cables.length === 223 && NE.manchons.length === 39 && NE.modules.every(m => m.brut), `${NE.modules.length} modules · ${NE.contacts.length} contacts · ${NE.cables.length} câbles`);
 
 console.log('\n3. LA CLÉ DE FUSION ET LA COMPARAISON');
 ok('chaque table a sa clé, et fusionnerNormes s’en sert', X.TABLES_NORME.every(t => typeof X.CLE_FUSION[t] === 'function') && X.cleDeLigne('fils', NE.fils[0]) === '*/26' && X.cleDeLigne('contacts', NE.contacts[0]).split('/').length === 6);
@@ -58,7 +58,7 @@ ok('comparerNormes : une table par table lue', Object.keys(X.comparerNormes(NE, 
 console.log('\n4. LA COUCHE DES APPORTS : REMPLACER, AJOUTER, MASQUER, REVENIR');
 const A = X.apportsVides(); A.tables.fils = { lignes: [{ brut: { type: '', jauge: '24', section: '0,24', resistance20: '85', intensite: '9' }, source: 'essai.csv', t: 1 }, { brut: { type: 'ZZ', jauge: '20', intensite: '7' }, source: 'main', t: 2 }], supprimees: ['*/26'] };
 const NA = X.normeAvecApports(NE, A);
-ok('la norme active : l’embarquée, moins la ligne masquée (26), plus la ligne qui remplace (24 → 9 A) et la ligne ajoutée (ZZ 20)', !NA.fils.some(f => f.jauge === 26) && X.filDeNorme(NA, 'DR24', 24).intensite === 9 && X.filDeNorme(NA, 'ZZ20', 20).intensite === 7 && NA.fils.length === NE.fils.length && NA.modules.length === 298, NA.fils.length + ' fils');
+ok('la norme active : l’embarquée, moins la ligne masquée (26), plus la ligne qui remplace (24 → 9 A) et la ligne ajoutée (ZZ 20)', !NA.fils.some(f => f.jauge === 26) && X.filDeNorme(NA, 'DR24', 24).intensite === 9 && X.filDeNorme(NA, 'ZZ20', 20).intensite === 7 && NA.fils.length === NE.fils.length && NA.modules.length === 300, NA.fils.length + ' fils');
 ok('chaque apport sait d’où il vient (source) ; l’embarqué non', NA.fils.find(f => f.jauge === 24).source === 'essai.csv' && NA.fils.find(f => f.type === 'ZZ').source === 'main' && NA.fils.find(f => f.jauge === 22).source == null);
 ok('sans apports, la norme active est l’embarquée telle quelle', X.normeAvecApports(NE, X.apportsVides()).fils.length === NE.fils.length && X.normeAvecApports(NE, null).contacts.length === 428);
 

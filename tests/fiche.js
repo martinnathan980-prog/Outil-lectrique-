@@ -57,12 +57,16 @@ const FICHIER = P.fichierDemande();
   ok(await page.evaluate(() => { const p = document.querySelector('#ba-equip [data-panneau="A"] .fi-cadre'), xs = [...p.children].map(e => e.className.split(' ')[0]); return xs.indexOf('fi-ref-ligne') < xs.indexOf('fi-face') && xs.indexOf('fi-face') < xs.indexOf('fi-autour') && xs.indexOf('fi-autour') < xs.indexOf('fi-liste'); }), 'dans le cadre : la référence, la face, autour, puis les fils');
   ok(/aucun arrangement/.test(await texte('[data-panneau="B"] .fi-ref')) && await q('[data-panneau="B"] .fi-changer [data-sexe]') === 2, 'le connecteur B, qu’aucun arrangement ne loge, le dit et laisse changer le sexe des contacts');
   ok((await texte('.fi-etat')).split('aucun arrangement').length === 2, 'le problème de B n’est écrit qu’une fois (l’état), pas répété sous la référence');
-  // à la vraie souris : la reprise de blindage sur le corps — le contrat change, la fiche se refait, la puce garde le focus
-  await page.click('#ba-equip [data-panneau="A"] [data-changer^="rac|"]'); await page.waitForTimeout(200);
-  await page.click('#ba-equip [data-panneau="A"] [data-raccord][data-champ="blindage"][data-v="GND"]'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => { const r = app.contrat.raccords.get('300XC1|A'), b = document.querySelector('#ba-equip [data-panneau="A"] [data-raccord][data-champ="blindage"][aria-pressed="true"]');
-    return !!r && r.blindage === 'GND' && b && b.dataset.v === 'GND' && /durci/.test(document.querySelector('#ba-equip [data-panneau="A"] .fi-autour').textContent) && document.activeElement === b; }), 'un clic de souris sur « sur le corps » : écrit au contrat, la fiche refaite (raccord durci), la puce pressée garde le focus');
+  // un EN 4165 n'a pas de raccord : la ligne le dit, et rien ne se calcule au-dessous (ni band-it, ni manchon, ni gaine)
+  ok(await page.evaluate(() => { const a = document.querySelector('#ba-equip [data-panneau="A"] .fi-autour'); const t = a ? a.textContent.slice(a.textContent.indexOf('à sertir')) : ''; return !!a && /raccordsans raccord : un EN 4165 n’en a pas/.test(t) && !/band-it|manchon|gaine/.test(t); }), 'le connecteur A (EN 4165) : « sans raccord : un EN 4165 n’en a pas », pas de ligne band-it, manchon ni gaine', await texte('[data-panneau="A"] .fi-autour'));
+  // à la vraie souris : la reprise de blindage sur le corps d'un EN 2997 — le contrat change, la fiche se refait, la puce garde le focus
+  await bloc('3', '351PM1'); await page.waitForTimeout(400);
+  await page.click('#ba-equip [data-changer^="rac|"]'); await page.waitForTimeout(200);
+  await page.click('#ba-equip [data-raccord][data-champ="blindage"][data-v="GND"]'); await page.waitForTimeout(700);
+  ok(await page.evaluate(() => { const r = app.contrat.raccords.get('351PM1|A'), b = document.querySelector('#ba-equip [data-raccord][data-champ="blindage"][aria-pressed="true"]');
+    return !!r && r.blindage === 'GND' && b && b.dataset.v === 'GND' && /durci/.test(document.querySelector('#ba-equip .fi-autour').textContent) && /band-it/.test(document.querySelector('#ba-equip .fi-autour').textContent) && document.activeElement === b; }), 'un clic de souris sur « sur le corps » (351PM1, EN 2997) : écrit au contrat, la fiche refaite (raccord durci, band-it), la puce pressée garde le focus');
   await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
+  ok(await page.evaluate(() => !app.contrat.raccords.get('351PM1|A')), 'Ctrl+Z défait le choix du raccord');
   // une variante d'un connecteur, à la vraie souris : retenue (et pas une comparaison « référence introuvable »)
   await bloc('3', '300XC1'); await page.waitForTimeout(400); await page.click('#ba-equip .fi-tuile[data-onglet-vers="A"]'); await page.waitForTimeout(200);
   await page.click('#ba-equip [data-panneau="A"] [data-changer^="arr|"]'); await page.waitForTimeout(200);
