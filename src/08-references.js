@@ -13,9 +13,13 @@
        ou deux pas) ou du DESSIN entier — en vert ce que la machine a et que
        nous n'avons pas, en orange ce qui diffère, en gris ce qui est pareil,
        en bleu ce que nous avons en plus ; ses repères lus avec les nôtres
-       (même repère, part number, voisins, code — « ? » quand c'est proposé).
+       (même repère, part number, voisins, code — « ? » quand c'est proposé :
+       un clic sur la puce CONFIRME la proposition ou la CORRIGE, parmi nos
+       repères de même code ou tous, ou « nouveau chez nous » ; le choix se
+       garde pour ce contrat et cette machine, à toutes les échelles).
        On coche, « Reprendre » l'ajoute au contrat (Ctrl+Z le défait), et ce
-       qui est repris passe les mêmes contrôles que le reste.
+       qui est repris passe les mêmes contrôles que le reste — avec sa route,
+       sans la longueur mesurée sur l'autre machine.
      · « DESSIN » ouvre un calque plein écran (`#fwd`, créé ici) qui DESSINE
        le FWD avec le moteur de l'outil — placé et routé comme un folio, sur
        sa feuille, qu'on zoome et déplace —, l'équipement comparé encadré,
@@ -32,10 +36,17 @@
 
 const IDB_REFERENCES = 'references';
 /* ce que l'écran garde d'une fiche à l'autre : les lignes cochées, l'échelle de la comparaison (équipement, voisinage à
-   `pas` pas, dessin), la recherche de la bible ; et les caches : les dessins calculés, les comparaisons de dessins */
-const REF = { coches: new Set(), portee: 'equipement', pas: 1, q: '', dessins: new Map(), cmp: new Map(), lie: false };
-const MOTS_SUR = { cible: 'l’équipement comparé', 'repère': 'même repère', pn: 'même part number', voisins: 'même code, mêmes voisins — à confirmer', code: 'même code, le plus proche — à confirmer', nouveau: 'nouveau chez nous' };
+   `pas` pas, dessin), la recherche de la bible ; LES CHOIX de l'utilisateur sur les repères proposés (`fixes` : clé
+   contrat ␁ harness ␁ repère de la machine → { vers, sur }, le repère dont le choix est ouvert, « tous les repères ») ;
+   et les caches : les dessins calculés, les comparaisons de dessins */
+const REF = { coches: new Set(), portee: 'equipement', pas: 1, q: '', dessins: new Map(), cmp: new Map(), lie: false, fixes: new Map(), corrOuverte: '', corrTous: false };
+const MOTS_SUR = { cible: 'l’équipement comparé', 'repère': 'même repère', pn: 'même part number', voisins: 'même code, mêmes voisins — à confirmer', code: 'même code, le plus proche — à confirmer', nouveau: 'nouveau chez nous', choisi: 'votre choix' };
 const incertain = sur => sur === 'code' || sur === 'voisins';
+/* Les choix se gardent par contrat (son nom) et par machine : ouvrir un autre fichier n'hérite pas des choix faits pour
+   celui-ci. Un choix qui vise un repère qui n'est plus au contrat (renommé, supprimé) ne vaut plus. */
+const cleFixe = (harness, r) => [typeof app !== 'undefined' && app.nom || '', harness, r].join('\u0001');
+function fixesPour(harness) { const f = new Map(), pre = cleFixe(harness, ''), nos = new Set(reperesDe(verite()));
+  REF.fixes.forEach((v, k) => { if (k.startsWith(pre)) { const r = k.slice(pre.length); if (v.sur === 'nouveau' || nos.has(v.vers)) f.set(r, v); } }); return f; }
 
 /* ---- la base : garder, relire, oublier ---------------------------------- */
 function viderCachesReferences() { REF.dessins.clear(); REF.cmp.clear(); }
@@ -45,20 +56,23 @@ function adopterReferences(liaisons, nom) { app.references = liaisons && liaison
 function relireReferences() { ouvrirIDB().then(db => { const req = db.transaction(IDB_REFERENCES).objectStore(IDB_REFERENCES).get('base');
   req.onsuccess = () => { const o = req.result; if (!o || !o.liaisons || !o.liaisons.length) return; app.references = { nom: o.nom || '', liaisons: o.liaisons.map(liaison), t: o.t || 0 }; app.references.index = indexerReferences(app.references.liaisons); viderCachesReferences();
     if (app.cible) rendreFiche(); if (app.fiche && app.fiche.mode === 'bible') ficheBible(app.fiche.ref); }; }).catch(() => { }); }
+// « Feuilles ignorées (pas les en-têtes du retest) : « Notes », « Feuil3 ». » — un classeur se lit feuille par feuille (02)
+const feuillesIgnorees = r => r.ignorees && r.ignorees.length ? ' Feuille' + (r.ignorees.length > 1 ? 's' : '') + ' ignorée' + (r.ignorees.length > 1 ? 's' : '') + ' (pas les en-têtes du retest) : ' + r.ignorees.map(n => '« ' + n + ' »').join(', ') + '.' : '';
 async function importerReferences(fichier) { if (!fichier) return;
-  try { dire('Lecture de « ' + fichier.name + ' »…'); const r = lireTexte(await texteDuFichier(fichier));
-    if (!r.liaisons.length) { dire('« ' + fichier.name + ' » est lu, mais aucune liaison n’est reconnue — il faut les seize colonnes du retest.', true); return; }
+  try { dire('Lecture de « ' + fichier.name + ' »…'); const r = await lireFichier(fichier);
+    if (!r.liaisons.length) { dire('« ' + fichier.name + ' » est lu, mais aucune liaison n’est reconnue — il faut les seize colonnes du retest.' + feuillesIgnorees(r), true); return; }
     adopterReferences(r.liaisons, fichier.name);
-    const I = app.references.index; dire(pluriel(r.liaisons.length, 'liaison') + ' de ' + I.harnais.size + ' harness et ' + pluriel(I.dessins.size, 'dessin') + ' gardée' + (r.liaisons.length > 1 ? 's' : '') + ' : les fiches disent ce qui a déjà été fait.');
+    const I = app.references.index; dire(pluriel(r.liaisons.length, 'liaison') + ' de ' + I.harnais.size + ' harness et ' + pluriel(I.dessins.size, 'dessin') + ' gardée' + (r.liaisons.length > 1 ? 's' : '') + (r.lues && r.lues.length > 1 ? ' (' + pluriel(r.lues.length, 'feuille') + ')' : '') + ' : les fiches disent ce qui a déjà été fait.' + feuillesIgnorees(r));
   } catch (e) { dire('Erreur : ' + (e && e.message || e), true); } }
 const indexReferences = () => app.references && app.references.index || null;
 /* Une empreinte courte du contrat (ce que la comparaison lit) : les comparaisons gardées se périment quand il change. */
 function empreinteContrat() { const V = verite(); let h = 2166136261; const s = V.length + '|' + V.map(l => l.de + l.borneDe + l.vers + l.borneVers + l.type + l.pnDe + l.pnVers).join('\u0001');
   for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); }
-/* La comparaison d'un dessin, ou du voisinage d'un équipement, contre le contrat — gardée tant que rien ne change. */
+/* La comparaison d'un dessin, ou du voisinage d'un équipement, contre le contrat — gardée tant que rien ne change (ni le
+   contrat, ni les choix de l'utilisateur sur les repères de cette machine). */
 function comparaisonDe(harness, fwd, repereRef, repere, portee, pas) { const D = dessinDe(indexReferences(), harness, fwd); if (!D) return null;
-  const k = [harness, fwd, repereRef || '', repere || '', portee, pas || 1, empreinteContrat()].join('\u0001'); if (REF.cmp.has(k)) return REF.cmp.get(k);
-  const c = portee === 'voisinage' ? comparerVoisinage(verite(), D, repereRef, repere, pas || 1) : comparerDessin(verite(), D, repereRef, repere);
+  const F = fixesPour(harness), k = [harness, fwd, repereRef || '', repere || '', portee, pas || 1, empreinteContrat(), JSON.stringify([...F])].join('\u0001'); if (REF.cmp.has(k)) return REF.cmp.get(k);
+  const c = portee === 'voisinage' ? comparerVoisinage(verite(), D, repereRef, repere, pas || 1, F) : comparerDessin(verite(), D, repereRef, repere, F);
   if (REF.cmp.size > 40) REF.cmp.delete(REF.cmp.keys().next().value); REF.cmp.set(k, c); return c; }
 
 /* ---- les mots ------------------------------------------------------------- */
@@ -89,9 +103,24 @@ const cleComparaison = (c, portee) => c.harness + '|' + c.repere + (portee === '
 // le dessin d'une comparaison : celui qu'on a demandé, sinon le dessin principal du repère de la machine
 function dessinDeComparaison(c) { const I = indexReferences(), h = I && I.harnais.get(c.harness); if (!h) return null;
   const fwd = c.fwd || dessinPrincipal(h.equipements.get(c.repere) || {}); return fwd ? dessinDe(I, c.harness, fwd) : null; }
+/* LE CHOIX d'un repère proposé — « 303RL7 (relais n° 7 · zone 303) chez nous, c'est… » : nos repères de même code, du
+   plus proche au plus loin (l'ordre, la variante, la zone — 09, `ecartDeReperes`), la proposition de l'outil pressée ;
+   « nouveau chez nous » ; « tous les repères » pour sortir du code ; et, après un choix, revenir à la proposition. Un
+   clic sur la proposition la CONFIRME (le « ? » s'en va), un clic sur un autre la CORRIGE : le choix se garde (`REF.fixes`)
+   et la comparaison se refait, à toutes les échelles, sur le dessin aussi. */
+function choixDeRepereHtml(c, corrDe, F) { const r = REF.corrOuverte, m = r && corrDe.get(r); if (!m || m.sur === 'cible' || m.sur === 'repère') return '';
+  const q = lireRepere(r), codeR = q && q.code ? q.code : '', nos = reperesDe(verite()).filter(n => !horsEquipement(n) && n !== c.nom);
+  const memeCode = codeR ? nos.filter(n => { const p = lireRepere(n); return p && p.code === codeR; }) : [];
+  const actuel = m.sur === 'nouveau' ? '' : m.vers, choisi = F.has(r);   // la proposition (ou le choix) d'abord, puis les autres du plus proche au plus loin
+  const liste = [...(actuel ? [actuel] : []), ...(REF.corrTous || !memeCode.length ? nos : memeCode).filter(n => n !== actuel).sort((u, v) => ecartDeReperes(r, u) - ecartDeReperes(r, v) || triNaturel(u, v))];
+  const puce = n => `<button class="fi-chip cp-cand" data-vers="${escA(n)}" aria-pressed="${n === actuel}" title="${escA(n === actuel && !choisi ? 'La proposition de l’outil : un clic la confirme' : 'Chez nous, ' + r + ' est ' + n)}">${esc(n)}</button>`;
+  return `<div class="cp-choix" role="group" aria-label="${escA('Chez nous, ' + r + ' est…')}"><p class="fi-note fi-rac-t">${esc(r)} <i>· ${esc(direRepere(r))}</i> — chez nous, c’est :</p><div class="fi-puces">${liste.map(puce).join('')}`
+    + `<button class="fi-chip cp-cand cp-corr-nouveau" data-vers="" aria-pressed="${actuel === ''}" title="${escA(r + ' n’existe pas chez nous : ses lignes manquent')}">nouveau chez nous</button>`
+    + (memeCode.length && memeCode.length < nos.length ? `<button class="fi-chip" id="cp-corr-tous" aria-pressed="${REF.corrTous}">tous les repères</button>` : '')
+    + (choisi ? '<button class="fi-chip" id="cp-corr-defaire">revenir à la proposition de l’outil</button>' : '') + '</div></div>'; }
 function ficheComparaison(c) { const I = indexReferences(), h = I && I.harnais.get(c.harness); if (!h) return fiTete({ nom: c.nom, sous: 'référence introuvable' }) + '<p class="fi-note">La base des contrats faits n’est plus là.</p>';
   const D = dessinDeComparaison(c), portee = D ? REF.portee : 'equipement', cle = cleComparaison(c, portee), mots = { identique: 'pareil', differe: 'diffère', manque: 'manque chez nous', enplus: 'en plus chez nous' };
-  const E = differentiel(verite(), c.nom, h.liaisons, c.repere), CD = D ? comparaisonDe(c.harness, D.fwd, c.repere, c.nom, 'dessin') : null, C = portee === 'equipement' ? null : comparaisonDe(c.harness, D.fwd, c.repere, c.nom, portee, REF.pas);
+  const F = fixesPour(c.harness), E = differentiel(verite(), c.nom, h.liaisons, c.repere, F), CD = D ? comparaisonDe(c.harness, D.fwd, c.repere, c.nom, 'dessin') : null, C = portee === 'equipement' ? null : comparaisonDe(c.harness, D.fwd, c.repere, c.nom, portee, REF.pas);
   const corrDe = portee === 'equipement' ? E.correspondance : C.correspondance;
   const vers = r => { const m = corrDe.get(r); return !m || m.vers === r ? esc(r) : `${esc(m.vers)}<i class="fi-corr" title="${escA(r + ' chez ' + c.harness + ' : ' + (MOTS_SUR[m.sur] || m.sur))}">← ${esc(r)}${incertain(m.sur) ? ' ?' : ''}</i>`; };
   const coche = (etat, k) => etat === 'manque' || etat === 'differe' ? `<input type="checkbox" class="cp-coche" data-k="${escA(k)}"${REF.coches.has(cle + '|' + k) ? ' checked' : ''} aria-label="Reprendre cette ligne">` : '<span></span>';
@@ -118,24 +147,32 @@ function ficheComparaison(c) { const I = indexReferences(), h = I && I.harnais.g
   }
   const taux = portee === 'equipement' ? E.taux : C.taux;
   const portees = D ? `<div class="fi-puces cp-portee" role="group" aria-label="Échelle de la comparaison">${[['equipement', 'Équipement'], ['voisinage', 'Voisinage'], ['dessin', 'Dessin']].map(([p, t]) => `<button class="fi-chip" data-portee="${p}" aria-pressed="${p === portee}">${t}</button>`).join('')}${portee === 'voisinage' ? `<span class="cp-saut"></span><span class="cp-pas-mot">ce qui lui est relié à</span>` + [1, 2].map(n => `<button class="fi-chip cp-pas" data-pas="${n}" aria-pressed="${REF.pas === n}">${n} pas</button>`).join('') : ''}</div>` : '';
-  const corr = [...corrDe].filter(([r, m]) => m.sur !== 'cible' && m.sur !== 'repère').map(([r, m]) => `<span class="fi-chip cp-corr-${m.sur}" aria-pressed="false" title="${escA(MOTS_SUR[m.sur] || m.sur)}">${esc(r)} → ${esc(m.vers)}${incertain(m.sur) ? ' ?' : m.sur === 'nouveau' ? ' (nouveau)' : ''}</span>`).join('');
+  // ses repères chez nous : chaque puce est un bouton — un clic ouvre le choix (confirmer la proposition, ou la corriger)
+  const corr = [...corrDe].filter(([r, m]) => m.sur !== 'cible' && m.sur !== 'repère').map(([r, m]) => `<button class="fi-chip cp-corr cp-corr-${m.sur}" data-corr="${escA(r)}" aria-pressed="${REF.corrOuverte === r}" aria-expanded="${REF.corrOuverte === r}" title="${escA((MOTS_SUR[m.sur] || m.sur) + ' — un clic pour confirmer ou changer')}">${esc(r)} → ${esc(m.vers)}${incertain(m.sur) ? ' ?' : m.sur === 'nouveau' ? ' (nouveau)' : m.sur === 'choisi' ? ' ✓' : ''}</button>`).join('');
   return `<header class="fi-tete"><button class="fi-x" id="cp-retour" aria-label="Retour à la fiche">${ico('retour')}</button><div class="min0"><div class="fi-nom">${esc(c.nom)}</div></div><button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)">${ico('fermer')}</button></header>`
     + `<div class="fi-ligne"><span class="fi-etat ${taux >= 0.8 ? 'ok' : taux >= 0.4 ? 'att' : 'ko'}"><i aria-hidden="true">${Math.round(taux * 100)}</i>% de lignes communes</span><span class="fi-sous">contre <b>${esc(c.repere)}</b> · ${esc(c.harness)}${h.appareil ? ' · ' + esc(h.appareil) : ''}${h.retest ? ' · ' + esc(h.retest) : ''}</span></div>`
     + portees + bilan
-    + `<section class="fi-cadre"><ul class="fi-liste cp-liste">${liste}</ul>${corr ? `<p class="fi-note fi-rac-t">ses repères, chez nous</p><div class="fi-puces">${corr}</div>` : ''}</section>`
+    + `<section class="fi-cadre"><ul class="fi-liste cp-liste">${liste}</ul>${corr ? `<p class="fi-note fi-rac-t">ses repères, chez nous — un clic confirme ou corrige</p><div class="fi-puces">${corr}</div>${choixDeRepereHtml(c, corrDe, F)}` : ''}</section>`
     + `<p class="fi-note">Ce que cette machine a fait — pas forcément ce qu’il faut faire : ce qui est repris passe les mêmes contrôles que le reste. Les fils repris n’ont pas encore de numéro.</p>`
     + `<footer class="fi-pied">${D ? `<button class="fi-bouton" id="cp-dessin" title="${escA('Voir le dessin ' + D.fwd + ' de ' + c.harness + ', dessiné par l’outil')}">${ico('voir')}<span>Dessin</span></button>` : ''}<button class="fi-bouton" id="cp-tout">${ico('tableau')}<span>Tout cocher</span></button><span class="espace"></span><button class="fi-bouton cuivre" id="cp-reprendre"${nb ? '' : ' disabled'}>${ico('fleche')}<span>Reprendre${nb ? ' ' + nb : ''}</span></button></footer>`; }
 function lierComparaison(c) { const box = $('ba-equip'), I = indexReferences(), h = I && I.harnais.get(c.harness); if (!h) { $('in-fermer').onclick = () => deselectionner(); return; }
-  const D = dessinDeComparaison(c), portee = D ? REF.portee : 'equipement', cle = cleComparaison(c, portee);
+  const D = dessinDeComparaison(c), portee = D ? REF.portee : 'equipement', cle = cleComparaison(c, portee), F = fixesPour(c.harness);
   $('in-fermer').onclick = () => deselectionner();
   $('cp-retour').onclick = () => { app.cible = { type: 'bloc', nom: c.nom }; rendreFiche(); };
   box.querySelectorAll('.cp-portee [data-portee]').forEach(b => b.onclick = () => { REF.portee = b.dataset.portee; rendreFiche(); });
   box.querySelectorAll('.cp-portee [data-pas]').forEach(b => b.onclick = () => { REF.pas = +b.dataset.pas; rendreFiche(); });
   if ($('cp-dessin')) $('cp-dessin').onclick = () => ouvrirFwd({ harness: c.harness, fwd: D.fwd, repere: c.repere, notre: c.nom });
   box.querySelectorAll('.cp-coche').forEach(el => el.addEventListener('change', () => { const k = cle + '|' + el.dataset.k; if (el.checked) REF.coches.add(k); else REF.coches.delete(k); rendreFiche(); }));
+  // les repères proposés : une puce ouvre le choix ; un choix (un des nôtres, ou « nouveau ») se garde et refait la fiche
+  const refaire = () => { REF.corrTous = false; rendreFiche(); };
+  box.querySelectorAll('.cp-corr[data-corr]').forEach(b => b.onclick = () => { REF.corrOuverte = REF.corrOuverte === b.dataset.corr ? '' : b.dataset.corr; refaire(); });
+  box.querySelectorAll('.cp-cand[data-vers]').forEach(b => b.onclick = () => { const r = REF.corrOuverte; if (!r) return;
+    REF.fixes.set(cleFixe(c.harness, r), b.dataset.vers ? { vers: b.dataset.vers, sur: 'choisi' } : { vers: r, sur: 'nouveau' }); REF.corrOuverte = ''; refaire(); });
+  if ($('cp-corr-tous')) $('cp-corr-tous').onclick = () => { REF.corrTous = !REF.corrTous; rendreFiche(); };
+  if ($('cp-corr-defaire')) $('cp-corr-defaire').onclick = () => { REF.fixes.delete(cleFixe(c.harness, REF.corrOuverte)); REF.corrOuverte = ''; refaire(); };
   // ce qui se coche, et ce qui se reprend : les lignes de l'équipement, ou les lignes uniques de l'ensemble
   let cochables, reprendre;
-  if (portee === 'equipement') { const E = differentiel(verite(), c.nom, h.liaisons, c.repere);
+  if (portee === 'equipement') { const E = differentiel(verite(), c.nom, h.liaisons, c.repere, F);
     cochables = E.lignes.filter(x => x.etat === 'manque' || x.etat === 'differe').map(x => ({ k: cleLigne(x.ref), x }));
     reprendre = (xs, plan) => liaisonsAReprendre(E, c.nom, xs, plan); }
   else { const C = comparaisonDe(c.harness, D.fwd, c.repere, c.nom, portee, REF.pas), u = new Map(); C.lignes.forEach(x => { if (x.k && (x.etat === 'manque' || x.etat === 'differe')) u.set(x.k, x); });

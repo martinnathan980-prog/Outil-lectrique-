@@ -18,9 +18,12 @@
        entier — les repères de la référence correspondus aux nôtres d'un bloc
        (même repère, part number, voisins, code), chaque fil jugé une fois :
        identique, différent, manquant chez nous, en plus chez nous ;
-     · REPRENDRE : ce qu'on coche, recâblé sur nos repères. « La solution du
-       PH n'est pas forcément la bonne » : ce qui est repris passe les mêmes
-       contrôles que le reste.
+     · REPRENDRE : ce qu'on coche, recâblé sur nos repères — avec sa route,
+       sans sa longueur (une mesure d'un autre aéronef) ni son numéro. « La
+       solution du PH n'est pas forcément la bonne » : ce qui est repris
+       passe les mêmes contrôles que le reste.
+   Ce que l'outil propose « à confirmer » se confirme ou se corrige : les
+   choix de l'utilisateur entrent dans la correspondance par `fixes`.
    Rien ici ne touche à la page : le moteur, comme 09.
    =========================================================================== */
 'use strict';
@@ -108,14 +111,17 @@ function ressemblance(A, B) { const a = new Set(A.map(cleLigne)), b = new Set(B.
   return { taux: union ? inter / union : 0, libre: ul ? il / ul : 0, communes: inter }; }
 /* LES CANDIDATS pour un équipement du contrat : les équipements des références de même part number (d'abord), sinon
    de même code — par les entrées de l'index, sans parcourir la base — ; les mieux ressemblants en tête, `n` au plus.
+   À ressemblance égale, la machine qui porte LE MÊME REPÈRE passe devant (une autre machine du même programme
+   ressemble plus qu'une zone décalée), puis celle du MÊME APPAREIL que notre contrat (quand le retest le dit).
    Chacun dit le dessin (FWD) où il apparaît. */
 function candidatsDeReference(index, liaisons, repere, n) { if (!index) return []; const A = lignesDeRepere(liaisons, repere); if (!A.length) return [];
   const pns = new Set(A.map(x => x.pn).filter(Boolean)), q = lireRepere(repere), code = q && q.code ? q.code : '', vus = new Set(), out = [];
+  const appareil = A.map(x => x.l.appareil).find(Boolean) || (liaisons.find(l => l.appareil) || {}).appareil || '', memeAppareil = c => !!appareil && c.appareil === appareil;
   const voir = (ent, par) => { const k = cleDessin(ent.h.harness, ent.e.repere); if (vus.has(k)) return; vus.add(k);
     out.push({ harness: ent.h.harness, appareil: ent.h.appareil, retest: ent.h.retest, repere: ent.e.repere, pns: ent.e.pns, par, ...ressemblance(A, ent.e.lignes), lignes: ent.e.lignes.length, fwd: dessinPrincipal(ent.e), fwds: [...ent.e.fwds.keys()] }); };
   pns.forEach(pn => (index.parPn.get(pn) || []).forEach(ent => voir(ent, 'pn')));
   if (code) (index.parCode.get(code) || []).forEach(ent => voir(ent, 'code'));
-  return out.sort((u, v) => (v.par === 'pn') - (u.par === 'pn') || v.taux - u.taux || v.libre - u.libre || v.communes - u.communes).slice(0, n || 3); }
+  return out.sort((u, v) => (v.par === 'pn') - (u.par === 'pn') || v.taux - u.taux || (v.repere === repere) - (u.repere === repere) || memeAppareil(v) - memeAppareil(u) || v.libre - u.libre || v.communes - u.communes).slice(0, n || 3); }
 /* LA FLOTTE : pour un équipement, toutes les machines où il apparaît (par part number), et ce qu'elles y font. */
 function flotteDe(index, liaisons, repere) { if (!index) return []; const A = lignesDeRepere(liaisons, repere), pns = new Set(A.map(x => x.pn).filter(Boolean)); if (!pns.size) return [];
   const vus = new Set(), out = []; pns.forEach(pn => (index.parPn.get(pn) || []).forEach(ent => { const k = cleDessin(ent.h.harness, ent.e.repere); if (vus.has(k)) return; vus.add(k);
@@ -131,13 +137,20 @@ function voisinageDe(liaisons, repere, pas) { const V = voisinsDe(liaisons), vus
   for (let k = 0; k < (pas == null ? 1 : pas) && front.length; k++) { const suivant = [];
     front.forEach(r => [...(V.get(r) || new Map()).keys()].sort().forEach(v => { if (!vus.has(v)) { vus.add(v); suivant.push(v); out.push(v); } })); front = suivant; }
   return out; }
+/* Ce qui sépare deux repères de même code, pour départager (et pour ranger les candidats qu'on propose à l'utilisateur) :
+   l'ordre d'abord (RL1 ↔ RL1), la variante, puis la zone. */
+function ecartDeReperes(r, n) { const a = decoderRepere(r), b = decoderRepere(n); if (!a || !b) return 1e9;
+  return (a.ordre !== b.ordre ? 1000 : 0) + (a.variante !== b.variante ? 500 : 0) + Math.abs((parseInt(a.zone, 10) || 0) - (parseInt(b.zone, 10) || 0)); }
 /* LA CORRESPONDANCE des repères d'une référence vers les nôtres, sur un ENSEMBLE d'équipements (un équipement et ses
    voisins, un dessin entier). Fixés d'abord : la cible (le repère comparé → le nôtre), puis le même repère s'il existe
    chez nous. Puis, de proche en proche tant que quelque chose se fixe : le même PART NUMBER (un seul candidat libre : lui ;
    plusieurs : celui qui est relié aux mêmes voisins, déjà correspondus), puis le même CODE relié aux mêmes voisins
    (« voisins » : proposé, à confirmer). Enfin, sans voisin pour départager : le part number puis le code, au numéro le
    plus proche (« code » : à confirmer) ; sinon rien, l'équipement est NOUVEAU pour nous. Un équipement de chez nous ne
-   reçoit qu'un repère de la référence ; les masses et les rails se correspondent par leur nom. */
+   reçoit qu'un repère de la référence ; les masses et les rails se correspondent par leur nom. `fixes` : ce qui est
+   posé d'avance — la cible de la comparaison, et LES CHOIX DE L'UTILISATEUR (« choisi » : il a confirmé ou corrigé la
+   proposition ; « nouveau » : il a dit que l'équipement n'existe pas chez nous) ; un choix qui vise un des nôtres déjà
+   pris par la cible est ignoré. */
 function correspondre(liaisons, refLiaisons, reperesRef, fixes) {
   const nomsNotres = new Set(); liaisons.forEach(l => { if (l.de) nomsNotres.add(l.de); if (l.vers) nomsNotres.add(l.vers); });
   const notres = [...nomsNotres].filter(r => !horsEquipement(r)), pnsDe = new Map(), pnsRef = new Map(), vn = voisinsDe(liaisons), vr = voisinsDe(refLiaisons);
@@ -145,11 +158,9 @@ function correspondre(liaisons, refLiaisons, reperesRef, fixes) {
   liaisons.forEach(l => { notePn(pnsDe, l.de, l.pnDe); notePn(pnsDe, l.vers, l.pnVers); }); refLiaisons.forEach(l => { notePn(pnsRef, l.de, l.pnDe); notePn(pnsRef, l.vers, l.pnVers); });
   const code = r => { const q = lireRepere(r); return q && q.code ? q.code : ''; };
   const m = new Map(), pris = new Set(), poser = (r, vers, sur) => { m.set(r, { vers, sur }); if (!horsEquipement(vers)) pris.add(vers); };
-  (fixes || new Map()).forEach((v, r) => poser(r, v.vers, v.sur));
+  (fixes || new Map()).forEach((v, r) => { if (!v || !v.vers) return; if (v.sur !== 'cible' && !horsEquipement(v.vers) && pris.has(v.vers)) return; poser(r, v.vers, v.sur); });
   const refs = [...new Set(reperesRef.filter(r => r && !m.has(r)))], equipements = refs.filter(r => !horsEquipement(r));
-  // ce qui sépare deux repères de même code, pour départager : l'ordre d'abord (RL1 ↔ RL1), la variante, puis la zone
-  const ecart = (r, n) => { const a = decoderRepere(r), b = decoderRepere(n); if (!a || !b) return 1e9;
-    return (a.ordre !== b.ordre ? 1000 : 0) + (a.variante !== b.variante ? 500 : 0) + Math.abs((parseInt(a.zone, 10) || 0) - (parseInt(b.zone, 10) || 0)); };
+  const ecart = ecartDeReperes;
   // les potentiels : le même nom chez nous ; une masse inconnue se propose sur la masse la plus proche ; sinon nouveau
   const masses = [...nomsNotres].filter(estMasse);
   refs.filter(horsEquipement).forEach(r => { if (nomsNotres.has(r)) poser(r, r, 'repère'); else if (estMasse(r) && masses.length) poser(r, masses.slice().sort((u, v) => ecart(r, u) - ecart(r, v) || (u < v ? -1 : 1))[0], 'code'); else poser(r, r, 'nouveau'); });
@@ -172,18 +183,22 @@ function correspondre(liaisons, refLiaisons, reperesRef, fixes) {
   fixer(parPn, 'pn', 0); fixer(parCode, 'code', 0);
   equipements.forEach(r => { if (!m.has(r)) poser(r, r, 'nouveau'); });
   return m; }
-/* À l'échelle d'un équipement : la référence (ses lignes) et ses voisins vers les nôtres — la cible fixée. `refLiaisons` :
-   toute la machine de référence quand on l'a (les voisins des voisins départagent) ; sinon les lignes elles-mêmes. */
-function correspondanceDesReperes(liaisons, refLignes, repereRef, repere, refLiaisons) {
-  const fixes = new Map([[repereRef, { vers: repere, sur: 'cible' }]]);
-  return correspondre(liaisons, refLiaisons || refLignes.map(x => x.l), [repereRef, ...refLignes.map(x => x.autre)], fixes); }
+/* Ce qui est posé d'avance : la cible (le repère comparé → le nôtre), puis les choix de l'utilisateur (`fixes`), sauf
+   pour la cible elle-même. */
+const fixesDe = (repereRef, repere, fixes) => { const f = new Map(); if (repereRef && repere) f.set(repereRef, { vers: repere, sur: 'cible' });
+  (fixes || new Map()).forEach((v, r) => { if (!f.has(r) && v && v.vers) f.set(r, v); }); return f; };
+/* À l'échelle d'un équipement : la référence (ses lignes) et ses voisins vers les nôtres — la cible fixée, les choix de
+   l'utilisateur aussi. `refLiaisons` : toute la machine de référence quand on l'a (les voisins des voisins
+   départagent) ; sinon les lignes elles-mêmes. */
+function correspondanceDesReperes(liaisons, refLignes, repereRef, repere, refLiaisons, fixes) {
+  return correspondre(liaisons, refLiaisons || refLignes.map(x => x.l), [repereRef, ...refLignes.map(x => x.autre)], fixesDe(repereRef, repere, fixes)); }
 
 /* ---- COMPARER ----------------------------------------------------------------- */
 const compteDe = lignes => ({ identique: lignes.filter(x => x.etat === 'identique').length, differe: lignes.filter(x => x.etat === 'differe').length, manque: lignes.filter(x => x.etat === 'manque').length, enplus: lignes.filter(x => x.etat === 'enplus').length });
 /* LE DIFFÉRENTIEL d'un équipement : chaque ligne de la référence contre les nôtres — identique (même borne, même type,
    même chose reliée au même endroit), différente (la même borne, mais autre chose), manquante chez nous ; et ce que
    nous avons en plus. La correspondance des repères sert à lire « ce qu'elle relie » avec nos repères. */
-function differentiel(liaisons, repere, refLiaisons, repereRef) { const A = lignesDeRepere(liaisons, repere), B = lignesDeRepere(refLiaisons, repereRef), corr = correspondanceDesReperes(liaisons, B, repereRef, repere, refLiaisons);
+function differentiel(liaisons, repere, refLiaisons, repereRef, fixes) { const A = lignesDeRepere(liaisons, repere), B = lignesDeRepere(refLiaisons, repereRef), corr = correspondanceDesReperes(liaisons, B, repereRef, repere, refLiaisons, fixes);
   const pris = new Set(), lignes = [];
   B.forEach(b => { const vers = corr.get(b.autre), ident = A.find(a => !pris.has(a) && cleLigne(a) === cleLigne(b));
     if (ident) { pris.add(ident); lignes.push({ etat: 'identique', ref: b, notre: ident, vers }); return; }
@@ -229,18 +244,24 @@ function comparerEnsemble(liaisons, refLiaisons, reperesRef, fixes) {
   const compte = compteDe(lignes), juge = compte.identique + compte.differe + compte.manque;
   return { lignes, equipements, correspondance: corr, compte, taux: juge ? compte.identique / juge : 0, nEquipements: ordre.length,
            chezNous: equipements.filter(e => e.chezNous).length, manquent: equipements.filter(e => !e.chezNous), proposes: equipements.filter(e => e.sur === 'code' || e.sur === 'voisins') }; }
-// le dessin entier ; le voisinage d'un équipement (à `pas` pas) — la cible fixée quand on compare depuis un équipement
-const fixesDe = (repereRef, repere) => { const f = new Map(); if (repereRef && repere) f.set(repereRef, { vers: repere, sur: 'cible' }); return f; };
-function comparerDessin(liaisons, dessin, repereRef, repere) { return comparerEnsemble(liaisons, dessin.liaisons, [...dessin.equipements.keys()], fixesDe(repereRef, repere)); }
-function comparerVoisinage(liaisons, dessin, repereRef, repere, pas) { return comparerEnsemble(liaisons, dessin.liaisons, voisinageDe(dessin.liaisons, repereRef, pas == null ? 1 : pas), fixesDe(repereRef, repere)); }
+// le dessin entier ; le voisinage d'un équipement (à `pas` pas) — la cible fixée quand on compare depuis un équipement,
+// et les choix de l'utilisateur (`fixes`)
+function comparerDessin(liaisons, dessin, repereRef, repere, fixes) { return comparerEnsemble(liaisons, dessin.liaisons, [...dessin.equipements.keys()], fixesDe(repereRef, repere, fixes)); }
+function comparerVoisinage(liaisons, dessin, repereRef, repere, pas, fixes) { return comparerEnsemble(liaisons, dessin.liaisons, voisinageDe(dessin.liaisons, repereRef, pas == null ? 1 : pas), fixesDe(repereRef, repere, fixes)); }
 
 /* ---- REPRENDRE ---------------------------------------------------------------- */
+/* Ce qu'une ligne reprise GARDE de l'autre machine, et ce qu'elle laisse. Elle garde le type de fil, la route (le
+   cheminement est un choix d'installation : c'est lui qu'on reprend, et s'il n'existe pas chez nous il paraît dans la
+   légende, où on le voit et le corrige) et les descriptions. Elle NE GARDE PAS la longueur : c'est une mesure sur un
+   autre aéronef, et la chute se calculerait dessus sans le dire — sans longueur, l'hypothèse de la simulation sert, et la
+   fiche du fil le dit (« hypothèse »). Ni le numéro de fil (à donner dans la plage maison). */
+const reprise = l => ({ cable: '', type: l.type, route: l.route || '', descriptionDe: l.descriptionDe, descriptionVers: l.descriptionVers });
 /* REPRENDRE : les liaisons à ajouter chez nous pour les lignes cochées (manquantes, ou différentes qu'on remplace),
    recâblées sur nos repères par la correspondance ; le numéro de fil reste à donner. `plan` : le folio où les poser. */
 function liaisonsAReprendre(diff, repere, lignes, plan) { const pnDe = new Map(); (diff.lignes || []).forEach(x => { if (x.notre && x.notre.pn) pnDe.set(repere, x.notre.pn); });
   return lignes.map(x => { const b = x.ref, c = diff.correspondance.get(b.autre), autre = c ? c.vers : b.autre, pn = pnDe.get(repere) || b.pn || '';
     const o = b.amont ? { de: autre, borneDe: b.borneAutre, pnDe: b.pnAutre, vers: repere, borneVers: b.borne, pnVers: pn } : { de: repere, borneDe: b.borne, pnDe: pn, vers: autre, borneVers: b.borneAutre, pnVers: b.pnAutre };
-    return liaison({ ...o, cable: '', type: b.typeBrut, route: b.l.route || '', plan: plan || '', longueur: b.l.longueur, descriptionDe: b.l.descriptionDe, descriptionVers: b.l.descriptionVers }); }); }
+    return liaison({ ...o, ...reprise(b.l), type: b.typeBrut, plan: plan || '' }); }); }
 /* REPRENDRE à l'échelle d'un ensemble (un équipement entier, un voisinage, un dessin) : chaque ligne cochée devient une
    liaison chez nous, ses deux bouts recâblés par la correspondance ; le part number d'un bout est le nôtre quand nous
    avons l'équipement (celui de ses fils sur le même connecteur), sinon celui de la référence ; le numéro reste à donner. */
@@ -250,5 +271,4 @@ function liaisonsDEnsembleAReprendre(cmp, lignes, liaisons, plan) { const pns = 
   const pnPour = (r, b, sinon) => { const xs = pns.get(r); if (!xs) return sinon || ''; const meme = xs.find(([bb]) => lettre(bb) === lettre(b)); return (meme || xs[0])[1]; };
   const image = r => { const c = cmp.correspondance.get(r); return c ? c.vers : r; };
   return lignes.map(x => { const L = x.ref, de = image(L.de), vers = image(L.vers);
-    return liaison({ de, borneDe: L.borneDe, pnDe: pnPour(de, L.borneDe, L.pnDe), vers, borneVers: L.borneVers, pnVers: pnPour(vers, L.borneVers, L.pnVers), cable: '', type: L.type, route: L.route || '', plan: plan || '',
-                     longueur: L.longueur, descriptionDe: L.descriptionDe, descriptionVers: L.descriptionVers }); }); }
+    return liaison({ de, borneDe: L.borneDe, pnDe: pnPour(de, L.borneDe, L.pnDe), vers, borneVers: L.borneVers, pnVers: pnPour(vers, L.borneVers, L.pnVers), ...reprise(L), plan: plan || '' }); }); }

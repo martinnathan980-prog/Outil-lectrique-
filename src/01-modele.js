@@ -106,7 +106,11 @@ const liaisonComplete = l => !!(l.de && l.vers);
      · chaque fil du contrat part d'une borne à lui, 2, 3… ;
      · les bornes de la barrette sont reliées (des shunts : un même potentiel).
    Repère provisoire VT1, VT2…, unique dans le contrat : la numérotation suit l'ordre des folios (`depart` = le nombre de
-   barrettes à poser des folios d'avant). Chaque liaison changée garde `origine` (la liaison du contrat ; null pour ce
+   barrettes à poser des folios d'avant). Avec une MÉMOIRE (`provisoires` du contrat : clé repère␁borne → numéro), un
+   nom TIENT : une borne dédoublée garde son numéro tant que le contrat vit, et poser VT1 au contrat ne fait pas
+   reculer VT2 en VT1 — un numéro donné à une borne n'est jamais repris par une autre, une borne nouvelle prend son rang
+   s'il est libre, sinon le premier numéro au-delà de tous ceux donnés. Sans mémoire (le dessin d'un FWD, le moteur),
+   la numérotation est celle du seul rang. Chaque liaison changée garde `origine` (la liaison du contrat ; null pour ce
    que l'outil ajoute) : la base, elle, reste celle du contrat. Les bornes de barrette, de prise et de masse ne sont pas
    concernées (leur moteur sait recevoir plusieurs fils). */
 const VT_A_POSER = /^VT\d+$/i;
@@ -118,12 +122,18 @@ function dedoublements(L) {
       if (!r || !b || estBornier(r) || estMasse(r) || VT_A_POSER.test(r)) return;
       const k = r + '\u0001' + b; (parBorne.get(k) || parBorne.set(k, []).get(k)).push({ i, cote }); }); });
   return [...parBorne].filter(([, xs]) => xs.length > 1); }
-function avecBarrettesAPoser(L, depart = 0) {
+function avecBarrettesAPoser(L, depart = 0, memoire = null) {
   const groupes = dedoublements(L);
   if (!groupes.length) return L;
   const remplace = new Map(), ajouts = [];
   const jauge = t => { const m = /(\d{1,2})\s*$/.exec(String(t || '')); return m ? +m[1] : 99; };
-  groupes.forEach(([k, xs], g) => { const [r, b] = k.split('\u0001'), nom = 'VT' + (depart + g + 1), l0 = L[xs[0].i];
+  // le numéro d'une borne dédoublée : celui que la mémoire lui garde ; sinon son rang, s'il n'est à personne d'autre ;
+  // sinon le premier au-delà de tous ceux déjà donnés — et la mémoire le retient
+  const donnes = new Map(); if (memoire) memoire.forEach((n, k) => donnes.set(n, k));   // numéro → clé
+  const numero = (k, g) => { if (memoire && memoire.has(k)) return memoire.get(k);
+    let n = depart + g + 1; if (donnes.has(n) && donnes.get(n) !== k) n = Math.max(0, ...donnes.keys()) + 1;
+    donnes.set(n, k); if (memoire) memoire.set(k, n); return n; };
+  groupes.forEach(([k, xs], g) => { const [r, b] = k.split('\u0001'), nom = 'VT' + numero(k, g), l0 = L[xs[0].i];
     const types = xs.map(x => L[x.i].type).filter(Boolean), gros = types.slice().sort((u, v) => jauge(u) - jauge(v))[0] || '';
     const pn = xs[0].cote === 'de' ? l0.pnDe : l0.pnVers, commun = { route: l0.route, plan: l0.plan, origine: null, aPoser: nom };
     ajouts.push({ de: r, borneDe: b, pnDe: pn, vers: nom, borneVers: '1', pnVers: '', cable: '', type: gros, ...commun });
@@ -153,6 +163,7 @@ function nouveauContrat() {
     sexes: new Map(),                  // « repère|connecteur » (ou repère d'une prise) -> sexe des contacts à sertir, M ou F
     charges: new Map(),                // repère d'un disjoncteur -> { calibre, dem: { i, t }, trans: { i, t }, perm: { i } } (A, s)
     raccords: new Map(),               // « repère|connecteur » (ou « repère|fiche », « repère|embase » d'une prise) -> { blindage, etanche, orientation, gaine, surblindage, materiau }
+    provisoires: new Map(),            // « repère␁borne » dédoublée -> numéro de sa barrette à poser (VTn) : un nom provisoire qui tient (`avecBarrettesAPoser`)
     cartouche: { titre: 'Contrat de câblage', auteur: '', indice: 'A',
                  date: new Date().toISOString().slice(0, 10), echelle: '—' }
   };
