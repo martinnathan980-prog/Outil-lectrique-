@@ -69,11 +69,26 @@ const FAMILLES_DISJONCTEURS = [
 function calibresEnQueue(pn) { const out = [], m = /[-\s](?:(\d+)-)?(\d+)\/(\d+)\s*A?$/i.exec(pn);
   if (m) { if (m[1]) out.push(+m[1] + m[2] / m[3]); out.push(m[2] / m[3]); }
   const n = /[-\s](\d{1,3}(?:[.,]\d{1,2})?)\s*A?$/i.exec(pn); if (n) out.push(parseFloat(n[1].replace(',', '.'))); return out; }
+/* LES FAMILLES DE DISJONCTEURS que l'outil connaît : la table Familles de disjoncteurs de la norme (normes/disjoncteurs.csv,
+   modifiable dans la page des normes), chaque motif devenu une expression (« MS3320 » → /^MS3320[A-Z]?(?=[-\s]|$)/ : un
+   nom qui finit par un chiffre admet une lettre de variante, MS3320L ; « 2TC » → /^2TC\d*(?=[-\s]|$)/ : un nom qui finit par
+   une lettre admet des chiffres, 2TC27) ; la liste codée ci-dessus seulement si la norme n'en a pas. */
+const motifEnRegex = m => { const q = String(m).toUpperCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); return new RegExp('^' + q + (/\d$/.test(q) ? '[A-Z]?' : '\\d*') + '(?=[-\\s/]|$)', 'i'); };
+function famillesDisjoncteurs(norme) { const src = norme && norme.disjoncteursFamilles && norme.disjoncteursFamilles.length ? norme : normeDesModules(norme), T = src.disjoncteursFamilles || [];
+  if (!T.length) return FAMILLES_DISJONCTEURS;
+  return T.map(f => ({ ...f, famille: f.nom || f.famille, regex: (f.motifs || [f.nom || f.famille]).map(motifEnRegex) })); }
 /* La famille d'un part number de disjoncteur, et son calibre s'il est de la gamme de la famille ; rien pour tout le
-   reste (un collier, un connecteur, un relais). */
-function familleDuPn(pn) { pn = String(pn || '').trim(); if (!pn) return null; const F = FAMILLES_DISJONCTEURS.find(f => f.motifs.some(r => r.test(pn))); if (!F) return null;
+   reste (un collier, un connecteur, un relais). `norme` : la norme active, sinon l'embarquée. */
+function familleDuPn(pn, norme) { pn = String(pn || '').trim(); if (!pn) return null; const F = famillesDisjoncteurs(norme).find(f => (f.regex || f.motifs).some(r => r.test(pn))); if (!F) return null;
   const dans = c => F.plage ? c >= F.calibres[0] - 1e-9 && c <= F.calibres[1] + 1e-9 : F.calibres.some(x => Math.abs(x - c) < 1e-9);
   const c = calibresEnQueue(pn).find(dans); return { ...F, pn, calibre: c != null ? c : null }; }
+/* LA CHUTE PROPRE D'UN DISJONCTEUR à In (table Chute disjoncteur) : la ligne de sa famille et de son calibre — la famille
+   par son nom, sinon par la famille de courbes qu'elle prend ; rien quand la table l'ignore. Rend { chute, nom, note } en V. */
+function chuteDuDisjoncteur(norme, famille, calibre) { if (!(calibre > 0)) return null; const T = normeDesModules(norme).chutesDisjoncteurs || []; if (!T.length) return null;
+  const F = famille && typeof famille === 'object' ? famille : (famille ? familleDuPn(String(famille), norme) || { famille: cleNorme(famille), courbe: '' } : null);
+  const cles = F ? [cleNorme(F.famille), cleNorme(F.nom || ''), cleNorme(F.courbe || '')].filter(Boolean) : [FAMILLE_COURBES_DEFAUT];
+  for (const k of cles) { const r = T.find(x => x.famille === k && x.calibres.some(c => Math.abs(c - calibre) < 1e-9)); if (r) return { chute: r.chuteMax, nom: r.nom, note: r.note }; }
+  return null; }
 const calibreDuPn = pn => { const f = familleDuPn(pn); return f ? f.calibre : null; };
 // un disjoncteur : le code CB (102CB1)
 const estDisjoncteur = r => { const q = lireRepere(r); return !!(q && q.num && q.code === 'CB'); };
@@ -85,8 +100,12 @@ const estDisjoncteur = r => { const q = lireRepere(r); return !!(q && q.num && q
    ne garde que les courbes qui ENCADRENT cette ambiante : celles dans la fenêtre, plus la première au-dessus du max
    (c'est elle qui juge l'intempestif) et la première au-dessous du min (c'est elle qui dit ce qui passe) — par défaut
    −55 à 125 °C, tout reste. Une courbe sans température reste toujours. */
-function courbesDeDisjonction(norme, famille, hyp) { const src = norme && norme.disjoncteurs && norme.disjoncteurs.length ? norme : normeDesModules(norme);
-  const rows = (src.disjoncteurs || []).filter(d => !famille || d.famille === famille), m = new Map();
+const FAMILLE_COURBES_DEFAUT = 'ETA483';   // la feuille du lecteur : ce que prend un part number inconnu
+function courbesDeDisjonction(norme, famille, hyp) { const src = norme && norme.disjoncteurs && norme.disjoncteurs.length ? norme : normeDesModules(norme), tous = src.disjoncteurs || [];
+  // la famille demandée (le nom d'une famille de courbes, ou une famille de disjoncteurs qui dit sa courbe) ; sans famille, ETA483, sinon la première de la table
+  let f = cleNorme(famille); if (f && !tous.some(d => d.famille === f)) { const F = famillesDisjoncteurs(norme).find(x => cleNorme(x.famille) === f || cleNorme(x.nom || '') === f); f = F && F.courbe && tous.some(d => d.famille === cleNorme(F.courbe)) ? cleNorme(F.courbe) : ''; }
+  if (!f) f = tous.some(d => d.famille === FAMILLE_COURBES_DEFAUT) ? FAMILLE_COURBES_DEFAUT : (tous[0] ? tous[0].famille : '');
+  const rows = tous.filter(d => !f || d.famille === f), m = new Map();
   rows.forEach(d => (m.get(d.courbe) || m.set(d.courbe, { nom: d.courbe, famille: d.famille, temperature: d.temperature, brut: [] }).get(d.courbe)).brut.push({ m: d.multiple, t: d.temps }));
   const cs = [...m.values()].map(c => { const brut = c.brut.slice().sort((a, b) => a.m - b.m || b.t - a.t); let mn = Infinity;
     const points = brut.map(p => { mn = Math.min(mn, p.t); return { m: p.m, t: mn }; }); return { ...c, brut, points }; })
@@ -207,7 +226,7 @@ const PALIERS_EN2853 = [[2, '2 s'], [10, '10 s'], [60, '1 min'], [Infinity, 'con
    `fils` : [{ cable, type, taille?, … }] ; `hyp` : les hypothèses de la simulation (l'ambiante du tableau choisit la
    courbe lente). La tenue du câble à l'ambiante est dite aussi (`tenue`). */
 function protectionDesFils(norme, calibre, profil, fils, hyp) { const H = { ...HYPOTHESES, ...(hyp || {}) }, pts = pointsDuProfil(profil), k = facteurDeclassement(norme, H.conditions);
-  const courbes = courbesDeDisjonction(norme, '', H), lente = courbes[courbes.length - 1] || null;
+  const courbes = courbesDeDisjonction(norme, H.courbe || '', H), lente = courbes[courbes.length - 1] || null;
   return (fils || []).map(f => { const jauge = jaugeDuType(f.type), fil = filDeNorme(norme, f.type, jauge), rd = resistanceDuFil(norme, f.type, jauge, H.tconducteur), tenue = tenueEnTemperature(norme, f.type, H.ambiante);
     const protection = protectionDeJauge(norme, jauge), calibreMax = protection ? protection.disjoncteurMax : null, horsTable = !!(calibre > 0 && calibreMax != null && calibre > calibreMax + 1e-9);
     // le contact : celui du plan si l'appelant le donne, sinon la taille usuelle de la jauge (table Protection, sinon la plus petite qui l'admet) — et la ligne de la table des contacts qui lui répond

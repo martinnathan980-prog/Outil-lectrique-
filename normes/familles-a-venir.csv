@@ -1,0 +1,29 @@
+FAMILLES À VENIR — les connecteurs et jonctions que l'outil ne connaît pas encore : ce qui est public (recherche R3, octobre 2026), le reste vide. Sans table Modules, une famille d'ici ne loge aucun arrangement : l'outil reconnaît la famille d'un part number, dit ce qu'il sait, et demande les pages d'arrangements. Pour l'enrichir : la page Normes, « Ajouter une norme » (un gabarit Modules par table).
+
+Familles — connecteurs et jonctions que l'outil ne connaît pas encore (ce qui est public — le reste vide)
+Norme;Famille;Nature;Jauge min;Jauge max;Fils par côté;Ordre;Paquets;Note
+EN 3545;EN3545;connecteur;26;8;1;libre;libres;rectangulaire Airbus (ex-ASNE0390), 36 clés, jusqu'à 78 contacts tailles 22/20/16/8 — contacts EN 3155-003/-008 — −55/+175 °C — arrangements non publics
+EN 4644;EN4644;connecteur;26;8;1;libre;libres;rectangulaire modulaire à inserts (Radiall EPX) : inserts A et B, classes A–H — contacts EN 3155-076/-077 — 175 °C
+ARINC 600;NSX;connecteur;26;8;1;libre;libres;rack avionique : tailles 1/2/3, cavités A B C (D E F), inserts codés (150, 36F36, 13C2, 15T6Q2) — classes N C H E
+EN 3708;EN3708;jonction;26;8;1;libre;libres;systèmes de jonction modulaires (= NSA937901 : codes 003A01… — modules à retour -004)
+ABS1569;ABS1569;jonction;;;1;libre;libres;modules 1200 micro-intensité Air LB, même rail que les 1100
+EN 3373;EN3373;splice;;;;;;cosses (-010, -011) et splices (-012 150 °C, -013 260 °C, -014 200 °C) — Airbus NSA936809 (splice), NSA9365xx (cosses)
+Tailles — plages de jauge usuelles, par famille nouvelle (contacts EN 3155 / AS39029 — à confirmer par famille)
+Famille;Taille;Jauge min;Jauge max;Note
+EN3545;22;26;22;contact EN3155-003F2222 / -008M2222
+EN3545;20;24;18;fûts 2022, 2020, 2018
+EN3545;16;20;14;fûts 1616, 1614
+EN3545;8;10;8;puissance — 1900SIM : 46 A (80 A version puissance)
+EN4644;22;26;22;Radiall : 22 AWG 5 A, 24 AWG 3 A, 26 AWG 2 A
+EN4644;20;24;20;7,5 / 5 / 3 A
+EN4644;16;20;16;13 / 10 / 7,5 A
+EN4644;12;16;12;23 / 17 / 13 A
+EN4644;8;8;8;46 A
+EN4644;5;16;8;46 A en 8 AWG, 23 A en 12, 13 A en 16 (lecture du catalogue approchée)
+NSX;22;26;22;signal, 5 A (TE)
+NSX;20;24;20;7,5 A
+NSX;16;20;16;13 A
+NSX;12;14;12;23 A
+NSX;10;;;contact taille 10 ajouté par Radiall (2010)
+NSX;8;;;puissance
+NSX;5;;;puissance, ancienne taille

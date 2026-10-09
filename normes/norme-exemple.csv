@@ -4,15 +4,63 @@ Familles — une ligne par famille de prises de coupure : ce que chaque contact 
 Norme;Famille;Nature;Variantes;Pas;Jauge min;Jauge max;Intensité;Résistance;Fils par côté;Ordre;Paquets;Réservés;Masse;Note
 EN3646 (exemple);EN3646;coupure;3 8;2,5;26;20;7,5;8;1;libre;;;;prise de coupure : un fil par contact, fiche (partie mobile) et embase
 
-Déclassement — un facteur sur l'intensité admissible du fil, quand la condition est cochée dans la simulation. Points publics de l'AC 43.13-1B chapitre 11 (FAA) : « faisceau » = fig. 11-5 (bundle derating : le facteur dépend du nombre de fils du faisceau et de la charge, le % de ce que ses fils admettent ensemble — l'outil prend le point le plus proche du faisceau simulé) ; « altitude » = fig. 11-6 (interpolée). Les courbes elles-mêmes sont graphiques : ce sont les valeurs lues dans le texte ; les courbes du programme (ABD0100.1.x) les remplaceront quand le lecteur les donnera.
+Déclassement — un facteur sur l'intensité admissible du fil (celle de l'EN 2853, « fil seul à l'air libre »), quand la condition est cochée dans les hypothèses. FAISCEAU : la figure 11-5 de l'AC 43.13-1B lue en points (±0,02) selon le nombre de fils du faisceau et la charge (% de la capacité totale du faisceau utilisée) — les lignes « texte » sont les valeurs écrites dans l'AC (§ 11-68 f, § 11-69) — l'outil prend le point le plus proche du faisceau de la fiche (nombre de fils, charge de l'hypothèse). ALTITUDE : la figure 11-6 lue en points (±0,01), interpolée. Les figures de l'AS50881 / MIL-W-5088 sont les mêmes (R5).
 Condition;Fils;Charge;Altitude;Facteur;Note
-faisceau;8;60;;0,60;AC 43.13-1B § 11-68 f (4)-(5) — l'exemple de l'AC, pris quand on ne sait rien du faisceau
-faisceau;12;100;;0,43;AC 43.13-1B § 11-69 exemple 2
-faisceau;35;20;;0,52;AC 43.13-1B § 11-69 exemple 1
-faisceau;41;100;;0,25;MIL-W-5088K (même courbe), lecture à confirmer
-altitude;;;0;1,00;AC 43.13-1B fig. 11-6
-altitude;;;20000;0,91;AC 43.13-1B § 11-68 / 11-69
-altitude;;;60000;0,79;AC 43.13-1B § 11-69 exemple 1
+faisceau;1;20;;1,00;toutes les courbes partent de 1,0 à 1 fil
+faisceau;5;20;;0,875;
+faisceau;5;40;;0,76;
+faisceau;5;60;;0,725;
+faisceau;5;80;;0,70;
+faisceau;5;100;;0,67;
+faisceau;8;60;;0,60;texte de l'AC (§ 11-68 f)
+faisceau;10;20;;0,73;
+faisceau;10;40;;0,62;
+faisceau;10;60;;0,57;
+faisceau;10;80;;0,53;
+faisceau;10;100;;0,49;
+faisceau;12;100;;0,43;texte de l'AC (§ 11-69 ex. 2)
+faisceau;15;20;;0,66;
+faisceau;15;40;;0,52;
+faisceau;15;60;;0,46;
+faisceau;15;80;;0,42;
+faisceau;15;100;;0,37;
+faisceau;20;20;;0,61;
+faisceau;20;40;;0,46;
+faisceau;20;60;;0,40;
+faisceau;20;80;;0,35;
+faisceau;20;100;;0,32;
+faisceau;25;20;;0,575;
+faisceau;25;40;;0,43;
+faisceau;25;60;;0,37;
+faisceau;25;80;;0,33;
+faisceau;25;100;;0,30;
+faisceau;30;20;;0,555;
+faisceau;30;40;;0,42;
+faisceau;30;60;;0,36;
+faisceau;30;80;;0,33;
+faisceau;30;100;;0,30;
+faisceau;35;20;;0,52;texte de l'AC (§ 11-69 ex. 1)
+faisceau;35;40;;0,41;
+faisceau;35;60;;0,35;
+faisceau;35;80;;0,32;
+faisceau;35;100;;0,295;
+faisceau;41;20;;0,495;bord de la figure
+faisceau;41;40;;0,39;
+faisceau;41;60;;0,33;
+faisceau;41;80;;0,30;
+faisceau;41;100;;0,275;MIL-W-5088K lu 0,25 par Koonce (R1)
+altitude;;;0;1,00;
+altitude;;;10000;0,955;
+altitude;;;15000;0,93;Avionics News (juillet 2020) lit 0,925
+altitude;;;20000;0,905;texte de l'AC : 0,91
+altitude;;;30000;0,87;
+altitude;;;40000;0,84;
+altitude;;;50000;0,815;
+altitude;;;60000;0,795;texte de l'AC : 0,79
+altitude;;;70000;0,77;
+altitude;;;80000;0,75;
+altitude;;;90000;0,725;
+altitude;;;100000;0,70;bord de la figure
 
 Réseau — la chute de tension admise en ligne, du bus à la masse de l'équipement (AC 43.13-1B table 11-6, les mêmes valeurs que l'AS50881 / MIL-W-5088) : en continu, en intermittent (≤ 2 min), et en % de la tension. Le triphasé se compare à la ligne 200 V (la chute calculée est composée, entre deux phases). La règle Airbus (ABD0100) n'est pas publique : à demander au lecteur avec le document et l'indice.
 Tension;Nature;Chute max;Chute max intermittent;Chute max en %;Note

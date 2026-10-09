@@ -214,10 +214,10 @@ XE;XE;;1;0;coaxial;18,00;1;;2,70;5,73
 XF;XF;;1;0;coaxial;67,00;1;;4,95;19,24
 XK;XK;;1;0;coaxial;59,50;1;;5,13;20,67
 XM24;XM;24;2;1;twinax;15,00;3;;3,10;7,55
-XS;XS;;2;1;twinax;270,00;3;;10,90;93,31
+XS;XS;;1;1;coaxial;270,00;2;;10,90;93,31;NSA 935355 : coaxial 50 Ω 10 GHz, 1 conducteur (R5), pas un twinax
 XY;XY;;2;1;twinax;16,10;3;;2,54;5,07
-YH22;YH;22;2;1;;24,30;3;;4,00;12,57
-YH20;YH;20;2;1;;31,40;3;;4,55;16,26
+YH22;YH;22;2;1;thermocouple;24,30;3;;4,00;12,57;MBBN 3320 : thermocouple NiCr/NiAl (R5) — ni chute en ligne ni intensité admissible, c’est une mesure
+YH20;YH;20;2;1;thermocouple;31,40;3;;4,55;16,26;MBBN 3320 : thermocouple NiCr/NiAl (R5) — ni chute en ligne ni intensité admissible, c’est une mesure
 YV6;YV;6;1;0;;55,00;1;2,20;6,40;32,17
 YV4;YV;4;1;0;;77,00;1;1,50;7,50;44,18
 YV3;YV;3;1;0;;;1;;8,40;55,42
@@ -226,19 +226,43 @@ YV1;YV;1;1;0;;149,00;1;0,75;10,10;80,12
 YV0;YV;0;1;0;;186,00;1;0,60;11,60;105,68
 YV00;YV;00;1;0;;240,00;1;0,43;13,20;136,85
 
-Familles de câbles — une ligne par famille (ou groupe de familles) : la norme, le conducteur (cuivre, CCA = aluminium cuivré nickelé, aluminium), le placage, la température admise, la tension, l'isolant, le blindage, le rayon de courbure (× Ø), le marquage. C'est là que l'outil lit si un câble est en cuivre : pour un conducteur CCA ou aluminium, la ligne cuivre de l'EN 2853 ne vaut pas telle quelle (l'intensité se déclasse de √(R cuivre / R câble), la résistance vient du câble seul). Sources : Lynxeo, Wiremasters, BSI (octobre 2026) ; « déduit » = pas lu dans une fiche.
+Familles de câbles — une ligne par famille (ou groupe de familles) : la norme, le conducteur (cuivre, CCA = aluminium cuivré nickelé, aluminium, acier cuivré, NiCr/NiAl pour un thermocouple), le placage, la température admise, la tension, la fréquence max, l'isolant, le blindage, le rayon de courbure (× Ø, ou mm quand la fiche le donne ainsi), le marquage. Lignes vérifiées Lynxeo / Draka Fileca / BSI / DIN (R1, R5 — octobre 2026) — les familles non identifiées (AM, XD, XY, LE, WC WG WH WK WP) le disent : à demander au lecteur. Une cellule ne contient jamais de « — ».
 Famille;Norme;Conducteur;Placage;T min;T max;Tension;Fréquence max;Isolant;Blindage;Rayon de courbure;Marquage;Note
 DR;EN 2267-010 (remplace ASNE0261…0269) — monoconducteur;cuivre (26/24 : alliage haute résistance);nickel;-55;260;600;2000;PI + PTFE;;10;UV laser;résistant à l'arc tracking (vérifié Lynxeo, Wiremasters)
 DRB DRC DRD;EN 2267-009 (2, 3, 4 conducteurs torsadés, non blindés);cuivre;nickel;-55;260;600;2000;PI + PTFE;;10;UV laser;vérifié Lynxeo
 MLA MLB MLC MLD;EN 2714-013 (1 à 4 conducteurs EN 2267-009A, blindage spiralé, gaine);cuivre;nickel;-55;260;600;2000;PI + PTFE;spirale cuivre nickelé;10;UV laser;vérifié Lynxeo, BSI
-AD;ABS 0949 (Airbus) ≈ EN 4681-003 famille AD;CCA (24/22 : 1 brin alliage cuivre + 6 CCA ; 20 à 8 : CCA concentrique ; 6/4 : CCA câblé);nickel;-60;180;600;2000;PI + PTFE;;10;UV laser;vérifié Lynxeo ; pas de contact cuivre ordinaire sans qualification CCA — à confirmer
+AD;ABS 0949 (Airbus) ≈ EN 4681-003 famille AD;CCA (24/22 : 1 brin alliage cuivre + 6 CCA, 20 à 8 : CCA concentrique, 6/4 : CCA câblé);nickel;-60;180;600;2000;PI + PTFE;;10;UV laser;vérifié Lynxeo — pas de contact cuivre ordinaire sans qualification CCA — à confirmer
 ADB ADC ADD ADE;multiconducteurs d'AD (≈ EN 4681-004, famille ADA);CCA;nickel;-65;180;600;2000;PI + PTFE;;10;UV laser;déduit (masses cohérentes) — norme à confirmer
 VNA VNB VNC VND;ABS 1356 (Airbus) — conducteurs ABS 0949 AD, blindage spiralé, gaine;CCA;nickel;-65;180;600;2000;PI + PTFE;spirale cuivre nickelé;10;UV laser;vérifié Lynxeo
-AM;non identifiée (masse ≈ 45 % du DR, R ≈ 1,4 × DR : aluminium) ;aluminium;;;;;;;;;;déduit — puissance ; norme à demander
-YV;non identifiée (mêmes R et masses qu'AM, Ø plus grands) ;aluminium;;;;;;;;;;déduit — puissance ; norme à demander
-DG DH;non identifiées (DG0/DH0 : 0,40 Ω/km = code EN 2083 530, cuivre) ;cuivre;;;;;;;;;;déduit — puissance
-KD;EN 3375-008 star quad 100 Ω (ABS 1503 : 4 × 24 AWG, Ethernet 100 Mbit/s);cuivre;;;;;;;tresse;;;vérifié BSI, Air Cost Control
-KL;EN 3375-011 star quad 100 Ω allégé;cuivre;;;;;;;tresse;;;vérifié (titre)
-WV WW WX;EN 3375-005 (77 Ω, double tresse + couche métallique) / -007 (77 Ω, taille 26) / -009 (CAN bus 120 Ω);cuivre;;;;;;;tresse;;;twinax, vérifié (titres)
 WD WL WM WN WS;EN 4604-008 / -005 (75 Ω) / -006 / -007 / -004 (micro-coax) — 50 Ω sauf WL;cuivre;;;200;;;;tresse;6;;coaxial, vérifié (titres)
 KW KX;EN 4604-009 (WN allégé, 180 °C) / -010 (WD allégé, 200 °C);cuivre;;;200;;;;tresse;6;;coaxial, vérifié (titres)
+YV;ASNE 0438 (NSA 307110, NSA 935000) — monoconducteur de puissance, léger — multiconducteur = QP (ASNE 0471);aluminium toronné;nickel;-55;180 (200 en crête);600;2000;rubans polyimide + tresse aramide imprégnée d'un vernis ininflammable;;;;AWG 6 3 1 0 00 (000 et 0000 par extension, hors ASN) — R max Lynxeo (QP) : 06 2,27 / 04 1,55 / 03 1,22 / 02 0,97 / 01 0,77 / 0 0,62 / 00 0,44 Ω/km = les YV6…YV00 du CSV — vérifié Lynxeo
+AM;non identifiée — mêmes résistances et masses que YV, diamètres plus petits (6,0 contre 6,4 mm en 6 AWG);aluminium (déduit des R);;;;;;;;;;à demander : un ancien code ou un code constructeur du même aluminium ASNE 0438 ? (les R 2,20 / 1,50 / 0,94 / 0,75 / 0,60 / 0,43 sont celles de l'aluminium AD 3-000 Lynxeo à ±5 %)
+DG;NSA 935131 DG (10 → 0000 AWG) et EN 2854-003 DG (8 → 0000) — câble d'alimentation (feeder);cuivre;nickel;-55;260;115 V AC (réseau);;composite polyimide + fibre de verre + PTFE;;;UV laser;auto-extinguible, ininflammable — vérifié Draka Fileca (R des DG0/DH0 = code EN 2083 530, R1)
+DH;ECS 0844 (Airbus Helicopters) — feeder à faible rayon de courbure, 2 / 0 / 00 AWG;cuivre;nickel;-65;260;115 V AC;;PTFE composite, jaune clair;;;UV laser;vérifié Draka Fileca
+BN;ASNE 0719 — câble d'interconnexion d'équipement 600 V, 24 → 16 AWG;cuivre (24 : alliage argenté — 22-16 : cuivre étamé);argent / étain;-90;150;600;;ETFE;tresse cuivre argenté (option);;;vérifié Draka Fileca — pas un câble d'aérostructure 260 °C
+DW DWB DWC;EN 2346-005 (−65/+260 °C, famille DW, 1 à 3 conducteurs, léger) — résistant au feu, non blindé;cuivre (24/22 : alliage cuivre nickelé) ;nickel;-65;260;600;2000;polyimide + PTFE ignifuge;;;UV laser (mono) EN DW ++ FR F**;vérifié Lynxeo, BSI, DIN — existe en 24 ET en 22 AWG : DW24 ≠ DW22 (R attendu ≈ 114 mΩ/m, pas 60) — non démontré résistant à l'arc au-dessus de 200 V
+GPA GPB GPC;EN 4608-004 (1/2/3 conducteurs blindés tresse, gainés, résistants au feu, −65/+260 °C) — GPB 24 = EN 4608-005B (2 × 24 AWG, 120 Ω, bus) ;cuivre alliage nickelé (24 : 19 × 0,12);nickel;-65;260;600;125 kHz (-005);polyimide + PTFE ignifuge;tresse cuivre nickelé 0,12 mm;;EN GPB 24 FRF**;vérifié Lynxeo, DIN, BSI — GPB24 = -005B (R ≈ 117), GPB22 = -004 (R ≈ 61,8) : la ligne GPB24 du CSV copie GPB22
+YH;MBBN 3320 YH (ISO 8056, prEN 4049-004) — THERMOCOUPLE NiCr / NiAl, paire torsadée blindée gainée, sections 004 et 006 (+++ = code de section);NiCr (blanc) + NiAl (vert);;-55;260;600;;PTFE / polyimide / PTFE;tresse cuivre nickelé;;MBBN 3320 YH +++ FR F **;vérifié Lynxeo — f.e.m. 10,56 mV à 260 °C — ni chute en ligne ni intensité admissible : c'est une mesure — les lignes YH22/YH20 du CSV (2 brins blindés) sont ce câble, « 22 » et « 20 » valant sans doute la section codée
+WF;ABS 0386 (Draka F2703-37) — twinax 100 Ω, 24 AWG, 1 tresse, gaine polyimide (bus);cuivre alliage nickelé (19 × 0,12);nickel;-55;200;600;;PTFE;tresse cuivre nickelé 0,08;25 (installé);WF 24 FR F ** (sous gaine);vérifié Lynxeo, Draka (Ø 3,50 max, 23,4 g/m = CSV)
+WJ;EN 3375-004C (ASNE 0479 — Draka WJC) — twinax 77 Ω, 24 AWG, double tresse, haute température;cuivre alliage argenté (19 × 0,12);argent;-65;200;600;;fluoropolymère;2 tresses cuivre argenté 0,10;26 (statique);FILOTEX ET 69794 (étude) / EN WJ;vérifié Lynxeo, Draka (Ø 3,90, 37 g/m = CSV)
+XM;ASNE 0290 XM (EN 3375-006D — Draka F2703-30) — twinax 78 Ω, 24 AWG, 1 tresse, gaine polyimide;cuivre;;-55;200;;;;1 tresse;;;vérifié Draka (Ø 3,10, 15 g/m = CSV XM24)
+XF;ASNE 0293 (= M17/128, RG400U) — coaxial 50 Ω;cuivre argenté;argent;-55;200;;;PTFE;2 tresses cuivre argenté;;;vérifié Draka (Ø 5,10, FEP) — CSV XF 4,95 mm 67 g/m
+XK;NSA 935348 (= M17/110, RG302) — coaxial 75 Ω;cuivre argenté;argent;-55;200;;;PTFE;1 tresse;;;vérifié Draka (Ø 5,20, FEP) — CSV XK 5,13 mm 59,5 g/m
+XE;NSA 935344 — coaxial 50 Ω, 1,8 GHz (page : 5 GHz);acier cuivré argenté (7 × 0,17);argent;;250;900;1,8 GHz;PTFE extrudé;1 tresse cuivre argenté 0,10;;XE FR F **;vérifié Lynxeo (Ø 2,70, 18 g/m = CSV)
+XS;NSA 935355 — COAXIAL 50 Ω, 10 GHz, 1 conducteur (pas un twinax) ;acier cuivré argenté (7 × 0,81, Ø 2,40);argent;-90;200;3700;10 GHz;PTFE extrudé Ø 7,25;double tresse cuivre argenté 0,16;;XS FR F **;vérifié Lynxeo (Ø 10,90, 270 g/m = CSV) — R conducteur 5,68 Ω/km → corriger la ligne XS : Brins 1, Liaisons 2, coaxial
+HE;ASNE 0259 — twinax 125 Ω, 24 AWG, 1 tresse, gaine polyimide (bus) ;cuivre alliage argenté (19 × 0,12);argent;-55;150;1500 (tenue);;PTFE extrudé;tresse cuivre nickelé 0,10 (≥ 62 %);;;vérifié Lynxeo (Ø et masse non publiés — CSV 4,50 mm 27 g/m) — R : alliage 24 AWG, 114-145 mΩ/m [déduit]
+HJ;ASNE 0849 — twinax 75 Ω, 26 AWG, haute immunité (2 tresses + rubans) ;cuivre alliage nickelé (19 × 0,10);nickel;-65;200;600;;polyimide + PTFE;2 tresses cuivre nickelé 0,08 / 0,10 + rubans;30 (installé);HJ 26 FR F **;vérifié Lynxeo — 165 mΩ/m du CSV = 26 AWG alliage ✓
+KC;ECS 0745 (Airbus Helicopters) — TRIAXIAL 75 Ω, 3 GHz, radio ;cuivre alliage argenté (7 × 0,10, Ø 0,30);argent;-65;200;500;3 GHz;fluorocarbone;double tresse + tresse argentées;17 statique / 35 dynamique;KC FR F **;vérifié Lynxeo (Ø 3,40, 27 g/m = CSV) — R conducteur 384 Ω/km
+LF;ABS 0963-003 (EN 4641-100) — fibre optique multimode 62,5/125/400 µm, Ø 1,80 mm;silice;;-55;135 (−65/+150 crête);;;copolymère sans halogène + tresse aramide + ETFE;;12 (pose) / 20 (long terme) / 40 (stockage);;vérifié Lynxeo (< 4 g/m) — LE non trouvé : autre partie de l'ABS 0963 ? (le CSV donne 2,84 g/m) à demander
+MQB MQD;ECS 0828 / ECS 0829 (EN 2267-009 + EN 2714-013) — 2 ou 4 paires DR blindées, gaine FEP (remplace ASNE 0642 HU / 0643 HV);cuivre;nickel;-55;200;600;2000;polyimide + PTFE;spirale + tresse cuivre nickelé;;MQB ++ FRF**;vérifié Lynxeo — pour mémoire (hors CSV)
+YK;NSA 935306 — câble faible bruit 260 °C, 2 conducteurs;acier cuivré argenté (19 × 0,17);argent;-55;260;600;;PTFE + rubans semi-conducteurs;tresse cuivre nickelé 0,12;;;vérifié Lynxeo — pour mémoire
+WZ;EN 4604-003 — coaxial 50 Ω léger, 3 GHz;cuivre argenté massif 0,905;argent;-65;200;;3 GHz;fluoropolymère aéré;feuille métallisée + tresse argentée;37 statique / 100 dynamique;EN WZ FRF**;vérifié Lynxeo (Ø 3,55, 30 g/m) — pour mémoire (R1 : WK n'est pas l'EN 4604)
+WW;EN 3375-007C (Draka F2703-72) — twinax 77 Ω, 26 AWG;cuivre alliage argenté (19 × 0,10);argent;-65;200;250;;fluoropolymère;2 tresses argentées 0,08;20;WW 26 FRF **;vérifié Lynxeo (Ø 3,00, 21 g/m = CSV WW26) — complète R1
+WV;EN 3375-005C — twinax 77 Ω, 24 AWG, 2 tresses + ruban haute immunité;cuivre alliage argenté (19 × 0,12);argent;-65;200;600;;fluoropolymère;2 tresses 0,10 (≥ 62 %) + ruban;40;EN WV 24 FRF**;vérifié Lynxeo — complète R1
+KD;ABS 1503 (Draka F4704-5, ARINC 664) — quadrax 100 Ω, 24 AWG;cuivre argenté;argent;-55;125 (Draka);;;fluoropolymère / PTFE mousse;1 tresse argentée;;;vérifié Draka (Ø 5,0 = CSV) — complète R1
+KL;EN 3375-011 (Draka F4704-19) — quadrax 100 Ω, 24 AWG, Ø 4,50;cuivre argenté;argent;-55;125;;;;Al/Mylar + tresse;;;vérifié Draka — complète R1
+WC WG WH WK WP;non identifiées — ATTENTION : WC WE WF WG WH WJ WK WL WM WN WP WR sont aussi les codes de fil de base du M27500 (NEMA WC 27500) ;;;;;;;;;;;à demander (CSV : WC 6,40 mm 105 g/m coax non blindé ? — WG 1,80 mm 9,4 g/m — WH 3,58 mm 29,8 — WK 2,50 mm 20 — WP 4,95 mm 75,5)
+XD;non identifiée (monoconducteur non blindé Ø 10,8 mm, 198 g/m) ;;;;;;;;;;;à demander
+XY;non identifiée (twinax Ø 2,54 mm, 16,1 g/m) ;;;;;;;;;;;à demander
+WX;EN 3375-009 — twinax 120 Ω (CAN bus);cuivre;;;;;;;tresse;;;twinax, vérifié (titre) ; WW et WV ont leur ligne

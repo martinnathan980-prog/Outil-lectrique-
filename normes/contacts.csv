@@ -432,12 +432,45 @@ EN4165;M;12;YYWW;*;ECS0704BP12;;
 EN4165;F;8;LN;*;ECS7314M1;;
 EN4165;M;8;LN;*;ECS7314P1;;
 
-Résistance des contacts — par taille, ce qu'une paire de contacts sertie et accouplée, neuve, admet et laisse tomber aux bornes : les limites AS39029 / MIL-DTL-39029 (mêmes tailles et même technologie que l'EN 3155, dont la limite n'a pas été lue — essais EN 2591-201/-202), octobre 2026. La mesure comprend les deux sertissages et un bout de fil : c'est une borne haute (un contact doré neuf fait plutôt 2 à 5 mΩ en 22). La résistance de conception (fin de vie) est × 1,5 : une hypothèse de marge, pas une valeur de norme. La chute en ligne compte une résistance par prise de coupure traversée (la paire) et deux par barrette (deux sertissages et la barre).
-Taille;Intensité;Chute max;Résistance;Résistance fin de vie;Note
-22D;5;73;14,6;22;22D et 22 : mêmes limites
-22;5;73;14,6;22;
-20;7,5;55;7,3;11;
-16;13;49;3,8;5,7;
-12;23;42;1,8;2,7;
-10;33;33;1,0;1,5;
+Résistance des contacts — par taille, ce qu'une paire de contacts sertie et accouplée, neuve, admet et laisse tomber aux bornes. EMPLOI « connecteur » : les limites AS39029 / MIL-DTL-39029 (mêmes tailles et même technologie que les EN 3155 — la limite EN 3155-001 n'a pas été lue) — mesure aux bornes, sertissages compris — EMPLOI « jonction » : les valeurs catalogue Amphenol Air LB des modules de jonction (NSA937901, E0599 — NF/UTE C 93-462), bien plus basses (R3). L'outil prend la ligne de l'emploi (une prise de coupure, un connecteur = connecteur — une barrette = jonction), sinon la première de la taille.
+Taille;Intensité;Chute max;Résistance;Résistance fin de vie;Emploi;Note
+22D;5;73;14,6;22;connecteur;22D et 22 : mêmes limites
+22;5;73;14,6;22;connecteur;
+20;7,5;55;7,3;11;connecteur;
+16;13;49;3,8;5,7;connecteur;
+12;23;42;1,8;2,7;connecteur;
+10;33;33;1,0;1,5;connecteur;
 8;46;;0,7;1,0;extrapolé (46 A fût 8, 33 A fût 10 : Amphenol EN3155-065/-083) ; la chute en mV n'a pas été trouvée
+22;5;;5;;jonction;modules de jonction Amphenol Air LB (1100 : NSA937901 / EN 3708 — 1750 : E0599, NF/UTE C 93-462), paire sertie, à neuf (R3) — les barrettes
+22D;5;;5;;jonction;idem
+20;7,5;;4;;jonction;idem
+16;13;;3;;jonction;idem
+12;23;;2;;jonction;idem
+10;33;;2;;jonction;1750 seulement (46 A avec le contact 001104 620 02)
+
+Courant des contacts — par fût et par jauge de fil : le courant d'essai nominal AS39029, les EN 3155-076/-077 chez Radiall, TE Deutsch pour l'EN 2997 (R3 § 3.1) — une ligne par couple. Un contact ne porte que ce que son fût serti porte : I contact = min(I nominal de la taille, I de la ligne (fût, jauge)) — un 24 AWG dans un contact 20 porte 3 A, pas 7,5.
+Taille;Fût;Jauge;Intensité;Intensité hermétique;Note
+22;22;22;5;;Amphenol, Radiall
+22;22;24;3;;
+22;22;26;2;;
+22;22;28;1,5;;Amphenol seulement
+22D;22;22;5;;mêmes valeurs que 22
+22D;22;24;3;;
+22D;22;26;2;;
+22D;22;28;1,5;;
+23;22;22;5;;Glenair HD #23 : 5 A max, 22–26 AWG — 1900SIM : 5 A
+23;26;26;;;AS39029/122-669 (fût 26) : courant non lu
+20;20;20;7,5;;Amphenol, Radiall, TE
+20;20;22;5;;
+20;20;24;3;5;TE : 3 A (5 A hermétique)
+20;18;18;7,5;;TE (fût 18 AWG, codes C/D de l'EN 2997)
+16;16;16;13;10;TE : 13 (10 hermétique)
+16;16;18;10;;Amphenol, Radiall — TE dit 11
+16;16;20;7,5;;
+12;12;12;23;17;TE : 23 (17 hermétique)
+12;12;14;17;;
+12;12;16;13;;Radiall
+10;10;10;33;;Air LB (001104 630 02), Amphenol EN3155-083 fût 10 : 33 A
+8;8;8;46;;Souriau DMC-M, Air LB, Radiall — 1900SIM version puissance : 80 A
+8;10;10;33;;EN3155-065/-083 fût 10 (Amphenol)
+5;8;8;46;;Radiall EPX taille 5 (lecture approchée)

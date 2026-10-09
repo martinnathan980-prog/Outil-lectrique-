@@ -1,199 +1,488 @@
 Disjoncteurs — les courbes de disjonction à tension nominale d'un disjoncteur thermique COMPENSÉ EN TEMPÉRATURE, type EN 2495 / EN 2995 (Klixon 2TC, MS3320) — la recherche d'octobre 2026 les a comparées point par point à la calibration Klixon : plausibles ; 125 °C est l'enveloppe la plus rapide, −55 °C la plus lente (l'Excel du lecteur, feuille Base_de_données, octobre 2026) : le temps de déclenchement en secondes selon le multiple du courant nominal In, à 125 °C, à 23 °C (la plus rapide et la plus lente) et à −55 °C.
 Un profil de charge (le démarrage, la transition, le permanent : un courant pendant une durée) doit rester À GAUCHE de ces courbes : le disjoncteur ne déclenche pas avant la fin de chaque phase. L'outil juge sur la courbe la plus rapide (125 °C) et dit la marge sur les autres ; sous le premier multiple d'une courbe, le disjoncteur ne déclenche jamais. En dessous de deux points, l'outil interpole en log-log.
-La famille « disjoncteur » vaut pour tous les calibres (la courbe est en multiples de In). Si une autre famille de disjoncteurs a ses courbes, on l'ajoute avec son nom.
+La famille ETA483 est celle des quatre courbes de la feuille du lecteur : la recherche R5 les a identifiées à la caractéristique temps-courant typique du disjoncteur E-T-A 483 (monopolaire compensé −55/+125 °C, 1-35 A, approuvé MS 3320 / prEN 2995) — identité à 1-4 % sur toute la plage 1 → 80 In. Les autres familles (2TC, 6TC, 5TC, 7274, EN2495) viennent des tracés vectoriels des fiches constructeur (Sensata, Crouzet), ±3 % sur le multiple, ±5 % sur le temps — le premier point de chaque courbe est le seuil lu au bout du graphique. La table Familles de disjoncteurs dit quelle famille de courbes prend chaque part number — un part number inconnu prend ETA483 (la feuille du lecteur).
 
 Famille;Courbe;Température;Multiple;Temps
-disjoncteur;125 °C;125;0,92361;4746,23649
-disjoncteur;125 °C;125;0,93618;3001,41218
-disjoncteur;125 °C;125;0,93197;1968,90110
-disjoncteur;125 °C;125;0,94466;1303,47467
-disjoncteur;125 °C;125;0,94466;895,16485
-disjoncteur;125 °C;125;0,94893;587,22024
-disjoncteur;125 °C;125;0,94466;395,95057
-disjoncteur;125 °C;125;0,94893;264,54530
-disjoncteur;125 °C;125;0,96185;180,01976
-disjoncteur;125 °C;125;0,96619;118,09137
-disjoncteur;125 °C;125;0,97056;78,90010
-disjoncteur;125 °C;125;0,98821;50,35405
-disjoncteur;125 °C;125;1,01531;34,58079
-disjoncteur;125 °C;125;1,04785;22,89357
-disjoncteur;125 °C;125;1,11611;15,86699
-disjoncteur;125 °C;125;1,18346;10,99704
-disjoncteur;125 °C;125;1,29608;7,44060
-disjoncteur;125 °C;125;1,43227;5,22829
-disjoncteur;125 °C;125;1,59951;3,75318
-disjoncteur;125 °C;125;1,78627;2,69426
-disjoncteur;125 °C;125;2,01593;1,93410
-disjoncteur;125 °C;125;2,26489;1,41140
-disjoncteur;125 °C;125;2,56956;1,02408
-disjoncteur;125 °C;125;2,87606;0,76376
-disjoncteur;125 °C;125;3,32231;0,55417
-disjoncteur;125 °C;125;3,83781;0,42095
-disjoncteur;125 °C;125;4,37374;0,30543
-disjoncteur;125 °C;125;4,98451;0,22989
-disjoncteur;125 °C;125;5,73202;0,17623
-disjoncteur;125 °C;125;6,68136;0,13143
-disjoncteur;125 °C;125;7,75292;0,09984
-disjoncteur;125 °C;125;8,99633;0,07584
-disjoncteur;125 °C;125;10,39221;0,05814
-disjoncteur;125 °C;125;12,05891;0,04498
-disjoncteur;125 °C;125;14,05613;0,03416
-disjoncteur;125 °C;125;16,38413;0,02692
-disjoncteur;125 °C;125;19,09771;0,02083
-disjoncteur;125 °C;125;22,46228;0,01641
-disjoncteur;125 °C;125;26,30081;0,01270
-disjoncteur;125 °C;125;30,93442;0,01038
-disjoncteur;125 °C;125;36,38438;0,00825
-disjoncteur;125 °C;125;42,79449;0,00644
-disjoncteur;125 °C;125;50,33392;0,00499
-disjoncteur;125 °C;125;59,20159;0,00411
-disjoncteur;125 °C;125;70,26216;0,00333
-disjoncteur;125 °C;125;81,53077;0,00277
-disjoncteur;23 °C min;23;1,04471;4697,54825
-disjoncteur;23 °C min;23;1,05022;3482,11012
-disjoncteur;23 °C min;23;1,05022;2270,32017
-disjoncteur;23 °C min;23;1,05575;1544,92443
-disjoncteur;23 °C min;23;1,06132;1040,11995
-disjoncteur;23 °C min;23;1,06692;700,26047
-disjoncteur;23 °C min;23;1,06692;502,68881
-disjoncteur;23 °C min;23;1,07820;345,75078
-disjoncteur;23 °C min;23;1,08388;227,85127
-disjoncteur;23 °C min;23;1,08960;150,15507
-disjoncteur;23 °C min;23;1,09534;103,27709
-disjoncteur;23 °C min;23;1,11276;71,79792
-disjoncteur;23 °C min;23;1,13045;50,45028
-disjoncteur;23 °C min;23;1,17284;34,69986
-disjoncteur;23 °C min;23;1,22969;24,12323
-disjoncteur;23 °C min;23;1,27580;17,69142
-disjoncteur;23 °C min;23;1,35177;13,11396
-disjoncteur;23 °C min;23;1,43982;9,72087
-disjoncteur;23 °C min;23;1,57447;6,75792
-disjoncteur;23 °C min;23;1,71268;5,11767
-disjoncteur;23 °C min;23;1,90262;3,79353
-disjoncteur;23 °C min;23;2,09152;2,84222
-disjoncteur;23 °C min;23;2,37287;2,12948
-disjoncteur;23 °C min;23;2,67795;1,56171
-disjoncteur;23 °C min;23;3,02225;1,19537
-disjoncteur;23 °C min;23;3,39293;0,90524
-disjoncteur;23 °C min;23;3,95191;0,66388
-disjoncteur;23 °C min;23;4,50716;0,50815
-disjoncteur;23 °C min;23;5,03343;0,38895
-disjoncteur;23 °C min;23;5,68057;0,30415
-disjoncteur;23 °C min;23;6,47871;0,23280
-disjoncteur;23 °C min;23;7,38897;0,17819
-disjoncteur;23 °C min;23;8,42714;0,13786
-disjoncteur;23 °C min;23;9,81548;0,10219
-disjoncteur;23 °C min;23;11,19458;0,07822
-disjoncteur;23 °C min;23;12,70048;0,06384
-disjoncteur;23 °C min;23;14,03502;0,05210
-disjoncteur;23 °C min;23;15,83949;0,04162
-disjoncteur;23 °C min;23;18,35223;0,03186
-disjoncteur;23 °C min;23;20,71178;0,02518
-disjoncteur;23 °C min;23;23,13013;0,02077
-disjoncteur;23 °C min;23;25,83087;0,01677
-disjoncteur;23 °C min;23;29,30562;0,01369
-disjoncteur;23 °C min;23;34,85921;0,01059
-disjoncteur;23 °C min;23;39,75702;0,00855
-disjoncteur;23 °C min;23;46,55101;0,00676
-disjoncteur;23 °C min;23;53,65287;0,00546
-disjoncteur;23 °C min;23;60,55096;0,00445
-disjoncteur;23 °C min;23;69,05852;0,00371
-disjoncteur;23 °C min;23;79,59415;0,00310
-disjoncteur;23 °C min;23;88,88769;0,00264
-disjoncteur;23 °C max;23;1,24924;4902,83083
-disjoncteur;23 °C max;23;1,26245;3752,75090
-disjoncteur;23 °C max;23;1,26245;2344,32968
-disjoncteur;23 °C max;23;1,26910;1480,23857
-disjoncteur;23 °C max;23;1,26910;1062,60337
-disjoncteur;23 °C max;23;1,28252;692,81263
-disjoncteur;23 °C max;23;1,30979;397,31384
-disjoncteur;23 °C max;23;1,32363;248,20057
-disjoncteur;23 °C max;23;1,36606;160,10441
-disjoncteur;23 °C max;23;1,43982;102,17865
-disjoncteur;23 °C max;23;1,54170;68,06005
-disjoncteur;23 °C max;23;1,61642;50,45028
-disjoncteur;23 °C max;23;1,71268;33,96564
-disjoncteur;23 °C max;23;1,82424;25,72165
-disjoncteur;23 °C max;23;1,96361;17,50326
-disjoncteur;23 °C max;23;2,11363;12,56488
-disjoncteur;23 °C max;23;2,37287;8,64216
-disjoncteur;23 °C max;23;2,70627;5,94410
-disjoncteur;23 °C max;23;3,07031;4,26703
-disjoncteur;23 °C max;23;3,42881;3,19699
-disjoncteur;23 °C max;23;3,93118;2,34460
-disjoncteur;23 °C max;23;4,50716;1,61262
-disjoncteur;23 °C max;23;5,16753;1,20822
-disjoncteur;23 °C max;23;5,86267;0,90524
-disjoncteur;23 °C max;23;6,58172;0,71548
-disjoncteur;23 °C max;23;7,46710;0,57158
-disjoncteur;23 °C max;23;8,29524;0,46649
-disjoncteur;23 °C max;23;9,21522;0,37667
-disjoncteur;23 °C max;23;10,62109;0,29141
-disjoncteur;23 °C max;23;11,79903;0,24298
-disjoncteur;23 °C max;23;13,38623;0,19830
-disjoncteur;23 °C max;23;15,10730;0,15842
-disjoncteur;23 °C max;23;17,22992;0,12929
-disjoncteur;23 °C max;23;20,06846;0,10110
-disjoncteur;23 °C max;23;22,76809;0,07991
-disjoncteur;23 °C max;23;26,37997;0,06384
-disjoncteur;23 °C max;23;29,92858;0,05266
-disjoncteur;23 °C max;23;33,24783;0,04391
-disjoncteur;23 °C max;23;39,75702;0,03397
-disjoncteur;23 °C max;23;45,10516;0,02772
-disjoncteur;23 °C max;23;53,09154;0,02168
-disjoncteur;23 °C max;23;60,23338;0,01887
-disjoncteur;23 °C max;23;71,27219;0,01573
-disjoncteur;23 °C max;23;81,28611;0,01354
-disjoncteur;23 °C max;23;90,77732;0,01179
-disjoncteur;−55 °C;-55;1,46850;4821,59437
-disjoncteur;−55 °C;-55;1,47430;3442,77332
-disjoncteur;−55 °C;-55;1,49185;2214,86939
-disjoncteur;−55 °C;-55;1,48598;1483,20913
-disjoncteur;−55 °C;-55;1,50366;1001,24244
-disjoncteur;−55 °C;-55;1,52156;633,88920
-disjoncteur;−55 °C;-55;1,56415;427,90821
-disjoncteur;−55 °C;-55;1,62067;275,28988
-disjoncteur;−55 °C;-55;1,68587;185,83497
-disjoncteur;−55 °C;-55;1,76758;106,85781
-disjoncteur;−55 °C;-55;1,83145;79,42158
-disjoncteur;−55 °C;-55;1,93542;54,48055
-disjoncteur;−55 °C;-55;2,02922;39,21407
-disjoncteur;−55 °C;-55;2,15290;28,22554
-disjoncteur;−55 °C;-55;2,33880;20,15394
-disjoncteur;−55 °C;-55;2,50100;15,97186
-disjoncteur;−55 °C;-55;2,74930;11,40442
-disjoncteur;−55 °C;-55;2,99851;8,75260
-disjoncteur;−55 °C;-55;3,27031;6,77148
-disjoncteur;−55 °C;-55;3,65216;5,11425
-disjoncteur;−55 °C;-55;4,11089;3,74066
-disjoncteur;−55 °C;-55;4,53689;2,91728
-disjoncteur;−55 °C;-55;5,00703;2,25696
-disjoncteur;−55 °C;-55;5,56965;1,80303
-disjoncteur;−55 °C;-55;6,24455;1,37273
-disjoncteur;−55 °C;-55;6,89165;1,07057
-disjoncteur;−55 °C;-55;7,63587;0,84842
-disjoncteur;−55 °C;-55;8,56115;0,65114
-disjoncteur;−55 °C;-55;9,52313;0,52018
-disjoncteur;−55 °C;-55;10,76166;0,39287
-disjoncteur;−55 °C;-55;12,25757;0,30395
-disjoncteur;−55 °C;-55;13,58123;0,24873
-disjoncteur;−55 °C;-55;15,28712;0,19711
-disjoncteur;−55 °C;-55;17,48090;0,15496
-disjoncteur;−55 °C;-55;19,83243;0,12281
-disjoncteur;−55 °C;-55;22,41171;0,09350
-disjoncteur;−55 °C;-55;26,03542;0,07410
-disjoncteur;−55 °C;-55;29,30563;0,05919
-disjoncteur;−55 °C;-55;32,72743;0,05042
-disjoncteur;−55 °C;-55;36,98378;0,03996
-disjoncteur;−55 °C;-55;41,62917;0,03404
-disjoncteur;−55 °C;-55;47,60314;0,02697
-disjoncteur;−55 °C;-55;54,86552;0,02190
-disjoncteur;−55 °C;-55;63,48572;0,01836
-disjoncteur;−55 °C;-55;73,17111;0,01539
-disjoncteur;−55 °C;-55;82,03768;0,01364
-disjoncteur;−55 °C;-55;93,07339;0,01181
+ETA483;125 °C;125;0,92361;4746,23649
+ETA483;125 °C;125;0,93618;3001,41218
+ETA483;125 °C;125;0,93197;1968,90110
+ETA483;125 °C;125;0,94466;1303,47467
+ETA483;125 °C;125;0,94466;895,16485
+ETA483;125 °C;125;0,94893;587,22024
+ETA483;125 °C;125;0,94466;395,95057
+ETA483;125 °C;125;0,94893;264,54530
+ETA483;125 °C;125;0,96185;180,01976
+ETA483;125 °C;125;0,96619;118,09137
+ETA483;125 °C;125;0,97056;78,90010
+ETA483;125 °C;125;0,98821;50,35405
+ETA483;125 °C;125;1,01531;34,58079
+ETA483;125 °C;125;1,04785;22,89357
+ETA483;125 °C;125;1,11611;15,86699
+ETA483;125 °C;125;1,18346;10,99704
+ETA483;125 °C;125;1,29608;7,44060
+ETA483;125 °C;125;1,43227;5,22829
+ETA483;125 °C;125;1,59951;3,75318
+ETA483;125 °C;125;1,78627;2,69426
+ETA483;125 °C;125;2,01593;1,93410
+ETA483;125 °C;125;2,26489;1,41140
+ETA483;125 °C;125;2,56956;1,02408
+ETA483;125 °C;125;2,87606;0,76376
+ETA483;125 °C;125;3,32231;0,55417
+ETA483;125 °C;125;3,83781;0,42095
+ETA483;125 °C;125;4,37374;0,30543
+ETA483;125 °C;125;4,98451;0,22989
+ETA483;125 °C;125;5,73202;0,17623
+ETA483;125 °C;125;6,68136;0,13143
+ETA483;125 °C;125;7,75292;0,09984
+ETA483;125 °C;125;8,99633;0,07584
+ETA483;125 °C;125;10,39221;0,05814
+ETA483;125 °C;125;12,05891;0,04498
+ETA483;125 °C;125;14,05613;0,03416
+ETA483;125 °C;125;16,38413;0,02692
+ETA483;125 °C;125;19,09771;0,02083
+ETA483;125 °C;125;22,46228;0,01641
+ETA483;125 °C;125;26,30081;0,01270
+ETA483;125 °C;125;30,93442;0,01038
+ETA483;125 °C;125;36,38438;0,00825
+ETA483;125 °C;125;42,79449;0,00644
+ETA483;125 °C;125;50,33392;0,00499
+ETA483;125 °C;125;59,20159;0,00411
+ETA483;125 °C;125;70,26216;0,00333
+ETA483;125 °C;125;81,53077;0,00277
+ETA483;23 °C min;23;1,04471;4697,54825
+ETA483;23 °C min;23;1,05022;3482,11012
+ETA483;23 °C min;23;1,05022;2270,32017
+ETA483;23 °C min;23;1,05575;1544,92443
+ETA483;23 °C min;23;1,06132;1040,11995
+ETA483;23 °C min;23;1,06692;700,26047
+ETA483;23 °C min;23;1,06692;502,68881
+ETA483;23 °C min;23;1,07820;345,75078
+ETA483;23 °C min;23;1,08388;227,85127
+ETA483;23 °C min;23;1,08960;150,15507
+ETA483;23 °C min;23;1,09534;103,27709
+ETA483;23 °C min;23;1,11276;71,79792
+ETA483;23 °C min;23;1,13045;50,45028
+ETA483;23 °C min;23;1,17284;34,69986
+ETA483;23 °C min;23;1,22969;24,12323
+ETA483;23 °C min;23;1,27580;17,69142
+ETA483;23 °C min;23;1,35177;13,11396
+ETA483;23 °C min;23;1,43982;9,72087
+ETA483;23 °C min;23;1,57447;6,75792
+ETA483;23 °C min;23;1,71268;5,11767
+ETA483;23 °C min;23;1,90262;3,79353
+ETA483;23 °C min;23;2,09152;2,84222
+ETA483;23 °C min;23;2,37287;2,12948
+ETA483;23 °C min;23;2,67795;1,56171
+ETA483;23 °C min;23;3,02225;1,19537
+ETA483;23 °C min;23;3,39293;0,90524
+ETA483;23 °C min;23;3,95191;0,66388
+ETA483;23 °C min;23;4,50716;0,50815
+ETA483;23 °C min;23;5,03343;0,38895
+ETA483;23 °C min;23;5,68057;0,30415
+ETA483;23 °C min;23;6,47871;0,23280
+ETA483;23 °C min;23;7,38897;0,17819
+ETA483;23 °C min;23;8,42714;0,13786
+ETA483;23 °C min;23;9,81548;0,10219
+ETA483;23 °C min;23;11,19458;0,07822
+ETA483;23 °C min;23;12,70048;0,06384
+ETA483;23 °C min;23;14,03502;0,05210
+ETA483;23 °C min;23;15,83949;0,04162
+ETA483;23 °C min;23;18,35223;0,03186
+ETA483;23 °C min;23;20,71178;0,02518
+ETA483;23 °C min;23;23,13013;0,02077
+ETA483;23 °C min;23;25,83087;0,01677
+ETA483;23 °C min;23;29,30562;0,01369
+ETA483;23 °C min;23;34,85921;0,01059
+ETA483;23 °C min;23;39,75702;0,00855
+ETA483;23 °C min;23;46,55101;0,00676
+ETA483;23 °C min;23;53,65287;0,00546
+ETA483;23 °C min;23;60,55096;0,00445
+ETA483;23 °C min;23;69,05852;0,00371
+ETA483;23 °C min;23;79,59415;0,00310
+ETA483;23 °C min;23;88,88769;0,00264
+ETA483;23 °C max;23;1,24924;4902,83083
+ETA483;23 °C max;23;1,26245;3752,75090
+ETA483;23 °C max;23;1,26245;2344,32968
+ETA483;23 °C max;23;1,26910;1480,23857
+ETA483;23 °C max;23;1,26910;1062,60337
+ETA483;23 °C max;23;1,28252;692,81263
+ETA483;23 °C max;23;1,30979;397,31384
+ETA483;23 °C max;23;1,32363;248,20057
+ETA483;23 °C max;23;1,36606;160,10441
+ETA483;23 °C max;23;1,43982;102,17865
+ETA483;23 °C max;23;1,54170;68,06005
+ETA483;23 °C max;23;1,61642;50,45028
+ETA483;23 °C max;23;1,71268;33,96564
+ETA483;23 °C max;23;1,82424;25,72165
+ETA483;23 °C max;23;1,96361;17,50326
+ETA483;23 °C max;23;2,11363;12,56488
+ETA483;23 °C max;23;2,37287;8,64216
+ETA483;23 °C max;23;2,70627;5,94410
+ETA483;23 °C max;23;3,07031;4,26703
+ETA483;23 °C max;23;3,42881;3,19699
+ETA483;23 °C max;23;3,93118;2,34460
+ETA483;23 °C max;23;4,50716;1,61262
+ETA483;23 °C max;23;5,16753;1,20822
+ETA483;23 °C max;23;5,86267;0,90524
+ETA483;23 °C max;23;6,58172;0,71548
+ETA483;23 °C max;23;7,46710;0,57158
+ETA483;23 °C max;23;8,29524;0,46649
+ETA483;23 °C max;23;9,21522;0,37667
+ETA483;23 °C max;23;10,62109;0,29141
+ETA483;23 °C max;23;11,79903;0,24298
+ETA483;23 °C max;23;13,38623;0,19830
+ETA483;23 °C max;23;15,10730;0,15842
+ETA483;23 °C max;23;17,22992;0,12929
+ETA483;23 °C max;23;20,06846;0,10110
+ETA483;23 °C max;23;22,76809;0,07991
+ETA483;23 °C max;23;26,37997;0,06384
+ETA483;23 °C max;23;29,92858;0,05266
+ETA483;23 °C max;23;33,24783;0,04391
+ETA483;23 °C max;23;39,75702;0,03397
+ETA483;23 °C max;23;45,10516;0,02772
+ETA483;23 °C max;23;53,09154;0,02168
+ETA483;23 °C max;23;60,23338;0,01887
+ETA483;23 °C max;23;71,27219;0,01573
+ETA483;23 °C max;23;81,28611;0,01354
+ETA483;23 °C max;23;90,77732;0,01179
+ETA483;−55 °C;-55;1,46850;4821,59437
+ETA483;−55 °C;-55;1,47430;3442,77332
+ETA483;−55 °C;-55;1,49185;2214,86939
+ETA483;−55 °C;-55;1,48598;1483,20913
+ETA483;−55 °C;-55;1,50366;1001,24244
+ETA483;−55 °C;-55;1,52156;633,88920
+ETA483;−55 °C;-55;1,56415;427,90821
+ETA483;−55 °C;-55;1,62067;275,28988
+ETA483;−55 °C;-55;1,68587;185,83497
+ETA483;−55 °C;-55;1,76758;106,85781
+ETA483;−55 °C;-55;1,83145;79,42158
+ETA483;−55 °C;-55;1,93542;54,48055
+ETA483;−55 °C;-55;2,02922;39,21407
+ETA483;−55 °C;-55;2,15290;28,22554
+ETA483;−55 °C;-55;2,33880;20,15394
+ETA483;−55 °C;-55;2,50100;15,97186
+ETA483;−55 °C;-55;2,74930;11,40442
+ETA483;−55 °C;-55;2,99851;8,75260
+ETA483;−55 °C;-55;3,27031;6,77148
+ETA483;−55 °C;-55;3,65216;5,11425
+ETA483;−55 °C;-55;4,11089;3,74066
+ETA483;−55 °C;-55;4,53689;2,91728
+ETA483;−55 °C;-55;5,00703;2,25696
+ETA483;−55 °C;-55;5,56965;1,80303
+ETA483;−55 °C;-55;6,24455;1,37273
+ETA483;−55 °C;-55;6,89165;1,07057
+ETA483;−55 °C;-55;7,63587;0,84842
+ETA483;−55 °C;-55;8,56115;0,65114
+ETA483;−55 °C;-55;9,52313;0,52018
+ETA483;−55 °C;-55;10,76166;0,39287
+ETA483;−55 °C;-55;12,25757;0,30395
+ETA483;−55 °C;-55;13,58123;0,24873
+ETA483;−55 °C;-55;15,28712;0,19711
+ETA483;−55 °C;-55;17,48090;0,15496
+ETA483;−55 °C;-55;19,83243;0,12281
+ETA483;−55 °C;-55;22,41171;0,09350
+ETA483;−55 °C;-55;26,03542;0,07410
+ETA483;−55 °C;-55;29,30563;0,05919
+ETA483;−55 °C;-55;32,72743;0,05042
+ETA483;−55 °C;-55;36,98378;0,03996
+ETA483;−55 °C;-55;41,62917;0,03404
+ETA483;−55 °C;-55;47,60314;0,02697
+ETA483;−55 °C;-55;54,86552;0,02190
+ETA483;−55 °C;-55;63,48572;0,01836
+ETA483;−55 °C;-55;73,17111;0,01539
+ETA483;−55 °C;-55;82,03768;0,01364
+ETA483;−55 °C;-55;93,07339;0,01181
+2TC;121 °C min;121;0,87;1000
+2TC;121 °C min;121;1,05;57,7
+2TC;121 °C min;121;1,10;37,5
+2TC;121 °C min;121;1,15;26,4
+2TC;121 °C min;121;1,20;19,3
+2TC;121 °C min;121;1,25;14,6
+2TC;121 °C min;121;1,30;11,3
+2TC;121 °C min;121;1,38;7,91
+2TC;121 °C min;121;1,45;6,03
+2TC;121 °C min;121;1,50;5,10
+2TC;121 °C min;121;1,65;3,52
+2TC;121 °C min;121;1,80;2,68
+2TC;121 °C min;121;2,00;1,97
+2TC;121 °C min;121;2,50;1,06
+2TC;121 °C min;121;3,00;0,664
+2TC;121 °C min;121;4,00;0,362
+2TC;121 °C min;121;5,00;0,233
+2TC;121 °C min;121;6,00;0,162
+2TC;121 °C min;121;8,00;0,0919
+2TC;25 °C min;25;1,13;1000
+2TC;25 °C min;25;1,15;589
+2TC;25 °C min;25;1,20;226
+2TC;25 °C min;25;1,25;104
+2TC;25 °C min;25;1,30;57,7
+2TC;25 °C min;25;1,38;32,6
+2TC;25 °C min;25;1,45;21,8
+2TC;25 °C min;25;1,50;17,1
+2TC;25 °C min;25;1,65;9,74
+2TC;25 °C min;25;1,80;6,51
+2TC;25 °C min;25;2,00;4,33
+2TC;25 °C min;25;2,50;2,17
+2TC;25 °C min;25;3,00;1,33
+2TC;25 °C min;25;4,00;0,656
+2TC;25 °C min;25;5,00;0,398
+2TC;25 °C min;25;6,00;0,27
+2TC;25 °C min;25;8,00;0,149
+2TC;25 °C max;25;1,32;1000
+2TC;25 °C max;25;1,38;307
+2TC;25 °C max;25;1,45;138
+2TC;25 °C max;25;1,50;92,8
+2TC;25 °C max;25;1,65;44,9
+2TC;25 °C max;25;1,80;28,6
+2TC;25 °C max;25;2,00;17,9
+2TC;25 °C max;25;2,50;7,83
+2TC;25 °C max;25;3,00;4,62
+2TC;25 °C max;25;4,00;2,43
+2TC;25 °C max;25;5,00;1,48
+2TC;25 °C max;25;6,00;1,01
+2TC;25 °C max;25;8,00;0,602
+2TC;25 °C max;25;10,0;0,411
+2TC;−54 °C max;-54;1,57;1000
+2TC;−54 °C max;-54;1,65;381
+2TC;−54 °C max;-54;1,80;141
+2TC;−54 °C max;-54;2,00;66,4
+2TC;−54 °C max;-54;2,50;23,4
+2TC;−54 °C max;-54;3,00;10,8
+2TC;−54 °C max;-54;4,00;4,72
+2TC;−54 °C max;-54;5,00;2,78
+2TC;−54 °C max;-54;6,00;1,87
+2TC;−54 °C max;-54;8,00;1,06
+6TC;90 °C min;90;1,02;988
+6TC;90 °C min;90;1,05;205
+6TC;90 °C min;90;1,10;61,0
+6TC;90 °C min;90;1,15;41,1
+6TC;90 °C min;90;1,20;28,9
+6TC;90 °C min;90;1,25;21,0
+6TC;90 °C min;90;1,30;15,8
+6TC;90 °C min;90;1,38;10,7
+6TC;90 °C min;90;1,45;8,07
+6TC;90 °C min;90;1,50;6,84
+6TC;90 °C min;90;1,65;4,95
+6TC;90 °C min;90;1,80;3,59
+6TC;90 °C min;90;2,00;2,52
+6TC;90 °C min;90;2,50;1,34
+6TC;90 °C min;90;3,00;0,844
+6TC;90 °C min;90;4,00;0,437
+6TC;90 °C min;90;5,00;0,273
+6TC;90 °C min;90;6,00;0,189
+6TC;90 °C min;90;8,00;0,109
+6TC;25 °C min;25;1,18;1000
+6TC;25 °C min;25;1,20;577
+6TC;25 °C min;25;1,25;147
+6TC;25 °C min;25;1,30;70,9
+6TC;25 °C min;25;1,38;38,3
+6TC;25 °C min;25;1,45;25,9
+6TC;25 °C min;25;1,50;20,5
+6TC;25 °C min;25;1,65;11,6
+6TC;25 °C min;25;1,80;7,68
+6TC;25 °C min;25;2,00;5,03
+6TC;25 °C min;25;2,50;2,40
+6TC;25 °C min;25;3,00;1,45
+6TC;25 °C min;25;4,00;0,725
+6TC;25 °C min;25;5,00;0,451
+6TC;25 °C min;25;6,00;0,316
+6TC;25 °C min;25;8,00;0,189
+6TC;25 °C min;25;10,0;0,132
+6TC;25 °C max;25;1,45;1000
+6TC;25 °C max;25;1,50;184
+6TC;25 °C max;25;1,65;55,6
+6TC;25 °C max;25;1,80;32,0
+6TC;25 °C max;25;2,00;19,0
+6TC;25 °C max;25;2,50;7,82
+6TC;25 °C max;25;3,00;4,44
+6TC;25 °C max;25;4,00;2,15
+6TC;25 °C max;25;5,00;1,34
+6TC;25 °C max;25;6,00;0,949
+6TC;25 °C max;25;8,00;0,591
+6TC;25 °C max;25;10,0;0,433
+6TC;−54 °C max;-54;1,78;988
+6TC;−54 °C max;-54;1,80;350
+6TC;−54 °C max;-54;2,00;48,2
+6TC;−54 °C max;-54;2,50;14,4
+6TC;−54 °C max;-54;3,00;8,12
+6TC;−54 °C max;-54;4,00;3,89
+6TC;−54 °C max;-54;5,00;2,36
+6TC;−54 °C max;-54;6,00;1,62
+6TC;−54 °C max;-54;8,00;0,944
+6TC;−54 °C max;-54;10,0;0,647
+5TC;125 °C min;125;1,00;1002
+5TC;125 °C min;125;1,05;18,7
+5TC;125 °C min;125;1,10;12,7
+5TC;125 °C min;125;1,15;9,46
+5TC;125 °C min;125;1,20;7,44
+5TC;125 °C min;125;1,25;6,05
+5TC;125 °C min;125;1,30;5,03
+5TC;125 °C min;125;1,38;3,88
+5TC;125 °C min;125;1,45;3,19
+5TC;125 °C min;125;1,50;2,81
+5TC;125 °C min;125;1,65;2,01
+5TC;125 °C min;125;1,80;1,54
+5TC;125 °C min;125;2,00;1,17
+5TC;125 °C min;125;2,50;0,703
+5TC;125 °C min;125;3,00;0,479
+5TC;125 °C min;125;4,00;0,268
+5TC;125 °C min;125;5,00;0,173
+5TC;125 °C min;125;6,00;0,122
+5TC;125 °C min;125;8,00;0,0709
+5TC;125 °C min;125;10,0;0,0468
+5TC;125 °C min;125;15,0;0,0222
+5TC;23 °C min;23;1,01;1002
+5TC;23 °C min;23;1,05;47,3
+5TC;23 °C min;23;1,10;34,2
+5TC;23 °C min;23;1,15;26,7
+5TC;23 °C min;23;1,20;21,8
+5TC;23 °C min;23;1,25;18,2
+5TC;23 °C min;23;1,30;15,4
+5TC;23 °C min;23;1,38;12,2
+5TC;23 °C min;23;1,45;10,2
+5TC;23 °C min;23;1,50;9,08
+5TC;23 °C min;23;1,65;6,62
+5TC;23 °C min;23;1,80;5,05
+5TC;23 °C min;23;2,00;3,70
+5TC;23 °C min;23;2,50;2,03
+5TC;23 °C min;23;3,00;1,29
+5TC;23 °C min;23;4,00;0,676
+5TC;23 °C min;23;5,00;0,423
+5TC;23 °C min;23;6,00;0,292
+5TC;23 °C min;23;8,00;0,167
+5TC;23 °C min;23;10,0;0,11
+5TC;23 °C min;23;15,0;0,0528
+5TC;23 °C max;23;1,35;1002
+5TC;23 °C max;23;1,38;323
+5TC;23 °C max;23;1,45;190
+5TC;23 °C max;23;1,50;138
+5TC;23 °C max;23;1,65;61,2
+5TC;23 °C max;23;1,80;36,6
+5TC;23 °C max;23;2,00;22,8
+5TC;23 °C max;23;2,50;10,2
+5TC;23 °C max;23;3,00;5,89
+5TC;23 °C max;23;4,00;2,63
+5TC;23 °C max;23;5,00;1,50
+5TC;23 °C max;23;6,00;1,01
+5TC;23 °C max;23;8,00;0,565
+5TC;23 °C max;23;10,0;0,373
+5TC;23 °C max;23;15,0;0,185
+5TC;−54 °C max;-54;1,59;1002
+5TC;−54 °C max;-54;1,65;290
+5TC;−54 °C max;-54;1,80;126
+5TC;−54 °C max;-54;2,00;66,1
+5TC;−54 °C max;-54;2,50;22,6
+5TC;−54 °C max;-54;3,00;12,0
+5TC;−54 °C max;-54;4,00;5,23
+5TC;−54 °C max;-54;5,00;2,87
+5TC;−54 °C max;-54;6,00;1,86
+5TC;−54 °C max;-54;8,00;1,02
+5TC;−54 °C max;-54;10,0;0,664
+5TC;−54 °C max;-54;15,0;0,325
+7274;71 °C min (partielle);71;0,874;999
+7274;71 °C min (partielle);71;1,05;11,2
+7274;71 °C min (partielle);71;1,10;7,88
+7274;71 °C min (partielle);71;1,15;5,91
+7274;71 °C min (partielle);71;1,20;4,66
+7274;25 °C min;25;1,11;999
+7274;25 °C min;25;1,15;88,9
+7274;25 °C min;25;1,20;45,3
+7274;25 °C min;25;1,25;25,0
+7274;25 °C min;25;1,30;15,9
+7274;25 °C min;25;1,38;9,68
+7274;25 °C min;25;1,45;6,87
+7274;25 °C min;25;1,50;5,55
+7274;25 °C min;25;1,65;3,28
+7274;25 °C min;25;1,80;2,17
+7274;25 °C min;25;2,00;1,45
+7274;25 °C min;25;2,50;0,697
+7274;25 °C min;25;3,00;0,422
+7274;25 °C min;25;4,00;0,221
+7274;25 °C min;25;5,00;0,138
+7274;25 °C min;25;6,00;0,0985
+7274;25 °C min;25;8,00;0,0615
+7274;25 °C max;25;1,41;999
+7274;25 °C max;25;1,45;201
+7274;25 °C max;25;1,50;124
+7274;25 °C max;25;1,65;48,3
+7274;25 °C max;25;1,80;22,5
+7274;25 °C max;25;2,00;11,9
+7274;25 °C max;25;2,50;5,36
+7274;25 °C max;25;3,00;3,25
+7274;25 °C max;25;4,00;1,69
+7274;25 °C max;25;5,00;1,11
+7274;25 °C max;25;6,00;0,828
+7274;25 °C max;25;8,00;0,572
+7274;−55 °C max (partielle);-55;1,75;1007
+7274;−55 °C max (partielle);-55;1,80;334
+7274;−55 °C max (partielle);-55;2,00;82,1
+7274;−55 °C max (partielle);-55;2,50;27,1
+7274;−55 °C max (partielle);-55;3,00;14,4
+EN2495;125 °C min;125;1,01;983
+EN2495;125 °C min;125;1,05;79,3
+EN2495;125 °C min;125;1,10;36,3
+EN2495;125 °C min;125;1,15;22,3
+EN2495;125 °C min;125;1,20;16,1
+EN2495;125 °C min;125;1,25;11,7
+EN2495;125 °C min;125;1,30;9,30
+EN2495;125 °C min;125;1,38;6,59
+EN2495;125 °C min;125;1,45;5,16
+EN2495;125 °C min;125;1,50;4,46
+EN2495;125 °C min;125;1,65;2,97
+EN2495;125 °C min;125;1,80;2,09
+EN2495;125 °C min;125;2,00;1,47
+EN2495;125 °C min;125;2,50;0,784
+EN2495;125 °C min;125;3,00;0,517
+EN2495;125 °C min;125;4,00;0,23
+EN2495;125 °C min;125;5,00;0,149
+EN2495;125 °C min;125;6,00;0,105
+EN2495;125 °C min;125;8,00;0,062
+EN2495;25 °C min;25;1,08;1000
+EN2495;25 °C min;25;1,10;803
+EN2495;25 °C min;25;1,15;208
+EN2495;25 °C min;25;1,20;53,4
+EN2495;25 °C min;25;1,25;34,3
+EN2495;25 °C min;25;1,30;26,2
+EN2495;25 °C min;25;1,38;17,6
+EN2495;25 °C min;25;1,45;13,7
+EN2495;25 °C min;25;1,50;11,6
+EN2495;25 °C min;25;1,65;7,45
+EN2495;25 °C min;25;1,80;5,52
+EN2495;25 °C min;25;2,00;3,87
+EN2495;25 °C min;25;2,50;2,10
+EN2495;25 °C min;25;3,00;1,26
+EN2495;25 °C min;25;4,00;0,62
+EN2495;25 °C min;25;5,00;0,385
+EN2495;25 °C min;25;6,00;0,264
+EN2495;25 °C min;25;8,00;0,158
+EN2495;25 °C min;25;10,0;0,106
+EN2495;25 °C max;25;1,30;983
+EN2495;25 °C max;25;1,38;93,9
+EN2495;25 °C max;25;1,45;62,8
+EN2495;25 °C max;25;1,50;51,7
+EN2495;25 °C max;25;1,65;29,9
+EN2495;25 °C max;25;1,80;19,2
+EN2495;25 °C max;25;2,00;12,6
+EN2495;25 °C max;25;2,50;6,48
+EN2495;25 °C max;25;3,00;3,89
+EN2495;25 °C max;25;4,00;2,03
+EN2495;25 °C max;25;5,00;1,34
+EN2495;25 °C max;25;6,00;0,949
+EN2495;25 °C max;25;8,00;0,586
+EN2495;25 °C max;25;10,0;0,431
+EN2495;−55 °C max;-55;1,51;966
+EN2495;−55 °C max;-55;1,65;65,0
+EN2495;−55 °C max;-55;1,80;34,0
+EN2495;−55 °C max;-55;2,00;23,1
+EN2495;−55 °C max;-55;2,50;10,5
+EN2495;−55 °C max;-55;3,00;6,67
+EN2495;−55 °C max;-55;4,00;3,50
+EN2495;−55 °C max;-55;5,00;2,15
+EN2495;−55 °C max;-55;6,00;1,50
+EN2495;−55 °C max;-55;8,00;0,975
+EN2495;−55 °C max;-55;10,0;0,695
 
-Calibration — les points normalisés des disjoncteurs thermiques d'aéronef, par famille et par température ambiante (Sensata 2TC/3TC/7274, Military-Fasteners MS3320, Safran 170 ; octobre 2026). Tient = multiple de In tenu 1 h ; Déclenche = multiple de In déclenchant en moins d'1 h ; t200 / t500 / t1000 = temps de déclenchement min–max en s à 200 %, 500 %, 1000 % de In.
+Calibration — les points normalisés des disjoncteurs thermiques d'aéronef, par famille et par température ambiante : les fiches Sensata 2TC/3TC/7274/6TC/9TC/5TC, Safran 170, les FEUILLES MILITAIRES (MS3320N 1991, MS22073M 1997, MS14153C / MS14154D 1990 — les valeurs contractuelles), Crouzet, E-T-A (octobre 2026). Tient = multiple de In tenu 1 h — Déclenche = multiple déclenchant en moins d'une heure — t200 / t500 / t1000 = temps min et max à 200 / 500 / 1000 % de In, en s. La ligne « préchargé à 60 % de In » (MS3320N) dit ce que le préchauffage fait : le temps divisé par 1,6 à 3,7.
 Famille;Norme;Température;Tient;Déclenche;t200 min;t200 max;t500 min;t500 max;t1000 min;t1000 max;Source
 2TC;MS3320 / AS33201 / AS58091;25;1,15;1,38;4;16;0,40;1,60;0,10;0,40;Sensata 2TC
 2TC;MS3320 / AS33201 / AS58091;-54;1,15;1,65;7;35;0,60;3,00;0,15;0,70;Sensata 2TC
@@ -207,28 +496,59 @@ Famille;Norme;Température;Tient;Déclenche;t200 min;t200 max;t500 min;t500 max;
 Safran 170;MS25017;25;1,00;1,25;15;70;;;;;Safran 170 (400 % : 2-12 s, 600 % : 1-5 s)
 Safran 170;MS25017;71;0,70;1,25;;;;;;;Safran 170
 Safran 170;MS25017;-40;1,10;1,60;;;;;;;Safran 170
+MS3320 (2TC);MS3320N table VII, +25 °C, niveau de la mer, à froid;25;1,15;1,38;5;20;0,5;2,0;0,12;0,53;MS3320N (everyspec)
+MS3320 (2TC);MS3320N table VII, −55 °C;-55;1,15;1,60;7;40;0,5;3,0;0,16;0,80;MS3320N
+MS3320 (2TC);MS3320N table VII, +121 °C et 70 000 ft, à froid;121;0,80;1,38;1,5;13,0;0,15;1,1;0,035;0,30;MS3320N
+MS3320 (2TC);MS3320N table VII, +121 °C et 70 000 ft, PRÉCHARGÉ à 60 % de In;121;;;0,4;8,0;0,06;0,8;0,014;0,21;MS3320N — le préchauffage divise les temps par 1,6 à 3,7
+MS3320 (2TC);MS3320N table II, enveloppe −55 à +121 °C (tous calibres ½-20 A);;1,15 (25 °C) / 1,00 (121 °C);1,38 (25 et 121 °C) / 1,60 (−55 °C);1,5;40;0,15;3,0;0,035;0,8;MS3320N — tolérance d'ambiante ±2 °C — essais ultimate trip : montée de 2 % de In par 5 min depuis le minimum tenu 1 h
+MS22073 (7274-11);MS22073M table II;25;1,15;1,50;2;20;0,16;2,0;0,046;0,8;MS22073M — Sensata dit 0,16-1,20 à 500 %
+MS22073 (7274-11);MS22073M table II;-55;1,35;1,80;;;;;;;MS22073M
+MS22073 (7274-11);MS22073M table II;71;0,90;1,30;;;;;;;MS22073M
+6TC / 9TC;Sensata 6TC14 / 9TC14 (MS14154 / MS14153), 2-20 A et 1, 15-35 A;25;1,10;1,45;4;20;0,40;2,0;0,10;0,53;Sensata catalogue p. 9
+6TC / 9TC;Sensata;-54;1,10;1,65;6;40;0,55;3,5;0,15;0,80;Sensata
+6TC / 9TC;Sensata;90;1,00;1,45;3;20;0,33;1,7;0,08;0,40;Sensata
+6TC / 9TC;Sensata;121;0,90;1,45;3;20;0,33;1,7;0,08;0,40;Sensata
+MS14153 / MS14154 (9TC / 6TC);MS14153C table II / MS14154D table III — tient/déclenche en charge triphasée équilibrée — temps en charge monophasée — déclenchement ultime max d'une phase avec les deux autres à 100 %;25;1,10;1,45;4;20;0,4;2,0;0,10;0,53;MS14153C, MS14154D (everyspec)
+MS14153 / MS14154;idem;-55;1,10;1,65;6;40;0,55;3,5;0,15;0,80;MS14154D (MS14153C lit 0,15-0,60, scan flou)
+MS14153 / MS14154;idem;71;1,00;1,45;3;20;0,33;1,7;0,06;0,40;MS14153C (MS14154D : 0,08-0,40)
+5TC;Klixon 5TC 20-50 A (±5 °C) ;23;1,10;1,45;2;18;0,15;2,5;0,045;0,6;Sensata catalogue p. 13
+5TC;idem;-54;1,10;1,65;;70;0,15;2,5;0,045;0,6;Sensata — 70 s max à 200 %
+5TC;idem;70;1,05;1,45;1,5;;0,15;2,5;0,045;0,6;Sensata — 1,5 s min à 200 %
+5TC;idem;125;0,90;1,45;1,5;;0,15;2,5;0,045;0,6;Sensata
+ETA483;E-T-A 483, caractéristique M1 — les temps viennent de la courbe typique (table Courbes ETA483), pas d'une table de calibration publiée;23;1,15;1,38;3,2;15,8;0,40;1,29;0,10;0,33;E-T-A fiche 483 + courbe extraite (bande +23 °C)
+ETA483;courbe typique ;125;0,93 (asymptote lue);;1,98;;0,24;;0,064;;courbe extraite +125 °C (minimum)
+ETA483;courbe typique ;-55;;1,47 (asymptote lue);;42,9;;2,29;;0,46;courbe extraite −55 °C (maximum)
+Crouzet 84406 (EN 2495 / EN 2995), 1,5-5 A;tableau Crouzet + courbe extraite;25;1,15;1,40;2 (table) / 3,9 (courbe);15 (table) / 12,6 (courbe);0,39;1,34;0,11;0,43;Crouzet catalogue FrogLeg p. 27
+Crouzet 84406, 7,5-25 A;tableau Crouzet;25;1,15;1,40;4;20;;;;;Crouzet
+Crouzet 84406;tableau + courbe;125;1,00;;1,47 (courbe);;0,15;;0,062 (8 In);;Crouzet — « non tripping point at 125 °C : 1 × RC »
+Crouzet 84406;courbe;-55;;1,51 (asymptote lue) / 1,60 (étiquette du graphique tripolaire);;23,1;;2,15;;0,70;Crouzet
+Crouzet 84417 (EN 2592 / EN 2996), 3 pôles;tableau Crouzet (identique au monopolaire);25;1,15;1,40;2 / 4;15 / 20;;;;;Crouzet — étiquettes 1,10 / 1,40 / 1,60 sur le graphique
 
-Familles de disjoncteurs — ce qu'une famille est : la norme, les pôles, la gamme de calibres, la tension, la compensation en température, l'ambiante admise, la masse, la courbe à prendre (la famille de la table des courbes). Sources : Sensata (2TC, 3TC, 6TC, 9TC, 7274), Crouzet (2019), Safran (170), listings EN. Le calibre se lit en queue du part number seulement pour ces familles (NSA935401 est un collier, pas un disjoncteur).
-Famille;Norme;Pôles;Calibres;Tension;Compensé;Tmin;Tmax;Masse;Courbe;Note
-MS3320;MS3320 / AS33201 / AS58091 (Klixon 2TC2) / EN 2495 (croisement Sensata);1;1 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 120 V AC 400 Hz;oui;-54;121;24;disjoncteur;pouvoir de coupure 6000 A à 28 V DC (1-20 A), 2500 A à 120 V AC (1-15 A), trip-free, calibres coordonnés 2:1
-2TC;MS3320 (Klixon 2TC2, 2TC27 = MS3320L, 2TC63 = MS3320V);1;1 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 120 V AC 400 Hz;oui;-54;121;24;disjoncteur;
-AS33201;AS33201;1;1 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 120 V AC 400 Hz;oui;-54;121;24;disjoncteur;
-3TC;MS14105 / AS14105;1;15 20 25 30 35;28 V DC / 120 V AC 400 Hz;oui;-54;121;36;disjoncteur;
-MS14105;MS14105;1;15 20 25 30 35;28 V DC / 120 V AC 400 Hz;oui;-54;121;36;disjoncteur;
-6TC;MS14154 / AS14154;3;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115/200 V AC 400 Hz;oui;-54;121;65;disjoncteur;une phase déclenche les trois, 2000 A à 120 V AC
-MS14154;MS14154 / AS14154;3;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115/200 V AC 400 Hz;oui;-54;121;65;disjoncteur;tripolaire
-9TC;MS14153 / AS14153;3;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115/200 V AC 400 Hz;oui;-54;121;110;disjoncteur;tripolaire
-MS14153;MS14153 / AS14153;3;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115/200 V AC 400 Hz;oui;-54;121;110;disjoncteur;tripolaire
-7274;MIL-C-5809 / MS22073 (7274-11) / MS26574 (7274-2);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;non;-55;71;30;;non compensé : 90-130 % à 71 °C, 135-180 % à -55 °C
-MS22073;MS22073 (Klixon 7274-11);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;non;-55;71;30;;
-MS26574;MS26574 (Klixon 7274-2);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;non;-55;71;30;;
-EN2495;EN 2495:1990 (0,5-25 A) / EN 2995-001:2023 (1-25 A);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 115 V AC 400 Hz;oui;-55;125;20;disjoncteur;Crouzet : EN2495 + MS33201 V, < 20 g
-EN2995;EN 2995-001:2023;1;1 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 115 V AC 400 Hz;oui;-55;125;20;disjoncteur;
-MS33201;MS33201 (Crouzet, modèle EN 2495);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 115 V AC 400 Hz;oui;-55;125;20;disjoncteur;
-EN3661;EN 3661-001:2024;1;20 25 30 35 40 50;28 V DC / 115 V AC 400 Hz;oui;-55;125;;disjoncteur;
-EN2592;EN 2592:1990 / EN 2996-001:2023;3;1 2 2,5 3 4 5 7,5 10 15 20 25;115/200 V AC 400 Hz;oui;-55;125;;disjoncteur;tripolaire
-EN2996;EN 2996-001:2023;3;1 2 2,5 3 4 5 7,5 10 15 20 25;115/200 V AC 400 Hz;oui;-55;125;;disjoncteur;tripolaire
-EN3662;EN 3662-001:2024;3;20 25 30 35 40 50;115/200 V AC 400 Hz;oui;-55;125;;disjoncteur;tripolaire
+Familles de disjoncteurs — ce qu'une famille est : la norme, les pôles, la gamme de calibres, la tension, la compensation en température, l'ambiante admise, la masse (g), la COURBE à prendre (une famille de la table Courbes : ETA483 = la feuille du lecteur — 2TC, 6TC, 5TC, 7274, EN2495 = les fiches constructeur), les MOTIFS (les débuts de part number qui nomment la famille : « MS3320 » reconnaît MS3320-10 et MS3320L-5, « 2TC » reconnaît 2TC2-10 et 2TC27-5 — le calibre se lit en queue, s'il est de la gamme). Sources : Sensata (2TC, 3TC, 6TC, 9TC, 5TC, 7274), feuilles MS (MS3320N, MS22073M, MS14153C, MS14154D), Crouzet (84 406, 84 417), E-T-A (483), titres DIN/BSI pour les EN (R2, R5 — octobre 2026). Les MS3320 / AS33201 prennent les courbes ETA483 parce que la feuille du lecteur les trace ainsi — un Klixon 2TC2 prendrait 2TC (plus lent à −54 °C) : à confirmer par le lecteur.
+Famille;Norme;Pôles;Calibres;Tension;Compensé;Tmin;Tmax;Masse;Courbe;Motifs;Note
+MS3320;MS3320N / AS33201 / AS58091 — monopolaire compensé ½-25 A (Klixon 2TC2 — E-T-A 483-G533 approuvé MS 3320);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 120 V AC 400 Hz;oui;-55;121;25;ETA483;MS3320;feuille MS3320N : −55/+121 °C, 70 000 ft, diélectrique 1500 V (500 V à 121 °C et 70 000 ft), tient 0,80 In à chaud en altitude — pouvoir de coupure 6000 A à 28 V DC (1-20 A), 2500 A à 120 V AC (1-15 A), trip-free — les courbes de la feuille du lecteur (E-T-A 483) — un Klixon 2TC2 prendrait 2TC : à confirmer
+2TC;Klixon 2TC (2TC2 = MS3320, 2TC27 = MS3320L, 2TC63 = MS3320V) — monopolaire compensé;1;1 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 120 V AC 400 Hz;oui;-54;121;25;2TC;2TC;coordonné 2:1 jusqu’à 6000 A (déclaration Sensata) — la −54 °C max dessinée (66 s à 2 In) est plus lente que la calibration (35-40 s) : la protection du fil se juge sur la table
+AS33201;AS33201 (SAE, ex-MS3320);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 120 V AC 400 Hz;oui;-55;121;25;ETA483;AS33201;comme MS3320
+3TC;Klixon 3TC (MS14105 / AS14105) — monopolaire compensé 15-35 A;1;15 20 25 30 35;28 V DC / 120 V AC 400 Hz;oui;-54;121;36;2TC;3TC;la fiche Sensata trace 2TC et 3TC ensemble
+MS14105;MS14105 / AS14105 (Klixon 3TC);1;15 20 25 30 35;28 V DC / 120 V AC 400 Hz;oui;-54;121;36;2TC;MS14105 AS14105;
+6TC;Klixon 6TC (MS14154 / AS14154) — tripolaire compensé;3;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115/200 V AC 400 Hz;oui;-55;71;68;6TC;6TC;une phase déclenche les trois — 2000 A monophasé, 1200 A triphasé — la feuille MS14154D ne qualifie que −55/+71 °C (Sensata publie +90 et +121)
+MS14154;MS14154D / AS14154 (Klixon 6TC);3;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115/200 V AC 400 Hz;oui;-55;71;68;6TC;MS14154 AS14154;tripolaire
+9TC;Klixon 9TC (MS14153 / AS14153) — tripolaire compensé;3;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115/200 V AC 400 Hz;oui;-55;71;113;6TC;9TC;tripolaire — les courbes 6TC (même fiche)
+MS14153;MS14153C / AS14153 (Klixon 9TC);3;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115/200 V AC 400 Hz;oui;-55;71;113;6TC;MS14153 AS14153;tripolaire
+5TC;Klixon 5TC — monopolaire compensé 20-50 A (pas de MS);1;20 25 35 50;115 V AC 400 Hz / 28 V DC;oui;-54;125;55;5TC;5TC;coupure 4000 A à 28 V DC, 2000 A à 115 V AC — chute 0,150 V (20-35 A), 0,120 V (50 A) — coordonné 2:1 jusqu’à 600 A seulement
+7274;MIL-C-5809 · MS22073 (7274-11) · MS26574 (7274-2) — monopolaire NON compensé;1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;non;-55;71;38;7274;7274;non compensé : 90-130 % à 71 °C, 135-180 % à −55 °C — 80 000 ft — la fiche ne trace en entier que la bande +25 °C
+MS22073;MS22073M (Klixon 7274-11);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;non;-55;71;38;7274;MS22073;
+MS26574;MS26574 (Klixon 7274-2 — E-T-A 483-G533-J3M1 approuvé);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;non;-55;71;38;7274;MS26574;
+ETA483;E-T-A 483 — approuvé MS 3320 (483-G533-J1M1-B2S0ZN), MS 3320-V (483-V533), MS26574 (483-G533-J3M1-C4S0Z), prEN 2995 (483-G814), VG 95345 T6, LN 29886 — EN 60934 type M;1;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115 V AC 400 Hz / 28 V DC;oui;-55;125;25;ETA483;483 ETA483;caractéristique M1 1,15-1,38 In — coupure 6000 A à 28 V DC (1-25 A), 4000 A (30-35 A), 1000 A (≤ 4 A) / 2000 A (5 A) / 2500 A (7,5-35 A) à 115 V AC — diélectrique 1500 V AC — altitude 25 000 m — 10 000 manœuvres à In (≤ 25 A) — chute à In 750 mV (1 A) à 150 mV (35 A) — LES QUATRE COURBES DE LA FEUILLE DU LECTEUR
+EN2495;EN 2495:1990 (0,5-25 A) / EN 2995-001:2023 (1-25 A) — Crouzet 84 406 (cosses 45°, MS26574) / 84 437 (60°);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 115 V AC 400 Hz;oui;-60;125;19;EN2495;EN2495 EN2995 84406 84437;Crouzet : coupure 6000 A à 28 V DC, 2500 A à 115 V AC — tient 1,15 × RC, déclenche 1,40 × RC à 25 °C, tient 1,0 × RC à 125 °C — 2 × RC : 2-15 s (1,5-5 A), 4-20 s (7,5-25 A) — 30 A : Tmax 90 °C
+MS33201;MS33201 (Crouzet, modèle EN 2495);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 115 V AC 400 Hz;oui;-55;125;20;EN2495;MS33201;
+EN3773;EN 3773-001:2024 / -004 (cosses UNC) / -006 (cosses plates 6,3 mm) — monopolaires compensés 1-25 A;1;1 à 25;28 V DC / 115 V AC 400 Hz;oui;-55;125;;EN2495;EN3773;titres DIN — courbes EN2495 à défaut (Crouzet)
+EN3661;EN 3661-001:2024 — monopolaire compensé 20-50 A;1;20 25 30 35 40 50;28 V DC / 115 V AC 400 Hz;oui;-55;125;;5TC;EN3661;aucune courbe publique : les courbes 5TC (Klixon 20-50 A) à défaut, en le disant
+EN2794;EN 2794-001:2024 / -004:2014 (cosses UNC, 20-25 A, 15 000 m) — monopolaires compensés 20-50 A;1;20 25 30 35 40 50;28 V DC / 115 V AC 400 Hz (EN 2282);oui;-55;125;;5TC;EN2794;titres DIN — une famille 20-50 A parallèle à l’EN 3661 — courbes 5TC à défaut
+EN2592;EN 2592:1990 / EN 2996-001:2023 — tripolaires compensés 1-25 A (Crouzet 84 417);3;1 2 2,5 3 4 5 7,5 10 15 20 25;115/200 V AC 400 Hz;oui;-60;125;55;EN2495;EN2592 EN2996 84417;tripolaire — Crouzet : coupure 2000 A à 115/200 V AC, mêmes limites de déclenchement que le monopolaire
+EN3774;EN 3774-001 / -004 / -006:2023 (6,3 mm) — tripolaires compensés 1-25 A;3;1 à 25;115/200 V AC 400 Hz;oui;-55;125;;EN2495;EN3774;titres DIN — Tmax 90 °C au-delà de 15 A — courbes EN2495 à défaut
+EN3662;EN 3662-001:2024 — tripolaire compensé 20-50 A;3;20 25 30 35 40 50;115/200 V AC 400 Hz;oui;-55;125;;5TC;EN3662;tripolaire — courbes 5TC à défaut
+Safran 170;Safran 170 (MS25017 encombrement · MIL-C-5809) — fort calibre, non compensé;1;125 140 150 160 180 200;28 V DC / 115 V AC;non;-40;71;130;;170;3000 A à 28 V DC — aucune courbe
 
 Protection — le calibre maximal du disjoncteur et du fusible par jauge de fil (FAA AC 43.13-1B chap. 11, table 11-3 : courant continu, faisceau à 57 °C ; « un fil seul à l'air libre peut être protégé par le calibre immédiatement supérieur »), et ce que le contact de la taille courante admet (MIL-DTL-38999 III : 22D 5 A, 20 7,5 A, 16 13 A, 12 23 A ; 8, 4, 0 de mémoire, à confirmer)
 Jauge;Disjoncteur max;Fusible max;Taille contact;I contact;Note
@@ -243,5 +563,77 @@ Jauge;Disjoncteur max;Fusible max;Taille contact;I contact;Note
 6;80;70;4;80;I contact de mémoire
 4;100;70;4;80;I contact de mémoire
 2;125;100;0;150;I contact de mémoire
-1;150;;;;fusible non donné
-0;150;150;0;150;I contact de mémoire
+1;;150;;;AC 43.13-1B : pas de calibre de disjoncteur pour le 1 AWG (colonne vide), fusible 150 A
+0;;150;0;150;AC 43.13-1B : pas de calibre de disjoncteur pour le 0 AWG (colonne vide), fusible 150 A ; I contact de mémoire
+
+Chute disjoncteur — la chute maximale aux bornes du disjoncteur à son courant nominal, en V (feuilles MS3320N / MS22073M / MS14154D / MS14153C table I, Sensata, E-T-A — Crouzet non publié). Une liste de calibres (« 15 20 25 30 35 ») vaut pour chacun. À 1 A un disjoncteur fait 1,1 V : du même ordre que la chute admise d'un réseau 28 V — l'outil la montre sur la fiche du disjoncteur et ne la compte dans la chute en ligne que si l'hypothèse « chute du disjoncteur » est cochée (où commence le « bus » de la règle du lecteur : à trancher).
+Famille;Calibre;Chute max;Note
+MS3320;0,5;1,90;MS3320N (Sensata 2TC14-1 : 1,10 V pour 1 A)
+2TC;0,5;1,90;MS3320N (Sensata 2TC14-1 : 1,10 V pour 1 A)
+MS3320;0,75;1,20;MS3320N
+2TC;0,75;1,20;MS3320N
+MS3320;1;1,10;MS3320N
+2TC;1;1,10;MS3320N
+MS3320;1,5;0,80;MS3320N
+2TC;1,5;0,80;MS3320N
+MS3320;2;0,75;MS3320N (Sensata 2TC14-2 : 0,70)
+2TC;2;0,75;MS3320N (Sensata 2TC14-2 : 0,70)
+MS3320;2,5;0,70;MS3320N (Sensata : 0,50)
+2TC;2,5;0,70;MS3320N (Sensata : 0,50)
+MS3320;3;0,55;MS3320N (Sensata : 0,40)
+2TC;3;0,55;MS3320N (Sensata : 0,40)
+MS3320;4;0,45;MS3320N
+2TC;4;0,45;MS3320N
+MS3320;5;0,35;MS3320N
+2TC;5;0,35;MS3320N
+MS3320;7,5;0,30;MS3320N
+2TC;7,5;0,30;MS3320N
+MS3320;10;0,28;MS3320N
+2TC;10;0,28;MS3320N
+MS3320;15;0,25;MS3320N
+2TC;15;0,25;MS3320N
+MS3320;20;0,25;MS3320N
+2TC;20;0,25;MS3320N
+MS3320;25;0,20;Sensata catalogue p. 7
+2TC;25;0,20;Sensata catalogue p. 7
+3TC;15 20 25 30 35;0,25;Sensata catalogue p. 7
+7274;0,5;2,00;MS22073M (Sensata idem)
+7274;0,75;1,45;MS22073M
+7274;1;1,10;MS22073M
+7274;1,5;0,75;MS22073M
+7274;2;0,75;MS22073M (Sensata : 0,70)
+7274;2,5;0,70;MS22073M
+7274;3;0,55;MS22073M
+7274;4;0,45;MS22073M
+7274;5;0,35;MS22073M
+7274;7,5;0,30;MS22073M
+7274;10;0,28;MS22073M
+7274;15;0,25;MS22073M
+7274;20;0,25;MS22073M
+6TC;1;1,10;MS14154D
+6TC;2;0,75;MS14154D
+6TC;2,5;0,70;MS14154D
+6TC;3;0,55;MS14154D
+6TC;4;0,45;MS14154D
+6TC;5;0,35;MS14154D
+6TC;7,5;0,30;MS14154D
+6TC;10;0,28;MS14154D
+6TC;15;0,28;MS14154D
+6TC;20;0,25;MS14154D
+9TC;1;1,10;MS14153C
+9TC;15 20 25 30 35;0,250;MS14153C
+5TC;20 25 35;0,150;Sensata
+5TC;50;0,120;Sensata
+ETA483;1;0,750;E-T-A (mV typiques)
+ETA483;2;0,520;E-T-A (mV typiques)
+ETA483;2,5;0,400;E-T-A (mV typiques)
+ETA483;3;0,360;E-T-A (mV typiques)
+ETA483;4;0,350;E-T-A (mV typiques)
+ETA483;5;0,260;E-T-A (mV typiques)
+ETA483;7,5;0,230;E-T-A (mV typiques)
+ETA483;10;0,190;E-T-A (mV typiques)
+ETA483;15;0,190;E-T-A (mV typiques)
+ETA483;20;0,200;E-T-A (mV typiques)
+ETA483;25;0,170;E-T-A (mV typiques)
+ETA483;30;0,160;E-T-A (mV typiques)
+ETA483;35;0,150;E-T-A (mV typiques)

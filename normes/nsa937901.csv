@@ -1,5 +1,5 @@
 NSA937901 (mars 2021) — modules de jonction à contacts, transcrits des figures 13, 14 et 15 (pages 11 à 14 de la norme) : les codes d'arrangement des contacts par taille, et les arrangements spéciaux à contacts mixtes.
-Désignation : la règle de désignation de la norme n'est pas sur les photos ; l'outil écrit NSA937901-<taille>-<code> (NSA937901-20-04) en attendant. « Usage normal » : les codes marqués (*) par la norme.
+Désignation : la désignation réelle est NSA937901M<taille>-<code> (NSA937901M22-01 … M22-06, M20-01 … M20-11, M16-01 … M16-06, M12-02 à M12-07 — vérifiée au catalogue Amphenol Air LB 01/19 et chez Boeing, R3) — l'outil l'écrit ainsi et relit encore l'ancienne forme NSA937901-<taille>-<code>. Les codes M / MA (cuivre, 22D) et MB / MC (aluminium, 22) de la norme 2021 ne sont pas au catalogue public : à demander. « Usage normal » : les codes marqués (*) par la norme.
 
 Familles — la famille NSA937901 : ce qu'un contact admet se lit par sa taille (table Tailles)
 Norme;Famille;Nature;Jauge min;Jauge max;Fils par côté;Ordre;Paquets;Note
@@ -15,46 +15,61 @@ NSA937901;12;14;12;contacts taille 12
 
 Modules — une ligne par code d'arrangement : la face (rangées séparées par /, ou lettre@x:y pour une face irrégulière), les GROUPES de contacts shuntés (séparés par |), la taille d'un contact (#12 derrière une lettre pour une autre taille), l'usage (normal = marqué * par la norme ; A350 = application AD12 spécifique ; à confirmer = jamais choisi seul), le corps (ovale, rectangle, étanche)
 Famille;Variante;Désignation;Type;Taille;Disposition;Groupes;Masse;Hauteur;Diodes;Usage;Corps;Note
-NSA937901;22D-01;NSA937901-22D-01;22D;22D;R S T U V X Y / H J K L M N P / A B C D E F G;R,S | T,U | V,X | H,J | K,L | M,N | A,B | C,D | E,F | Y,P,G;;;;normal;ovale;10 groupes : 9 de 2 contacts, 1 de 3 (Y-P-G) ; contacts EN 3155 taille 22D, câble cuivre (codes M et MA)
-NSA937901;22D-02;NSA937901-22D-02;22D;22D;R S T U V X Y / H J K L M N P / A B C D E F G;R,H,A | S,J,B | T,K,C | U,L,D | V,M,E | X,N,F | Y,P,G;;;;normal;ovale;7 groupes de 3 contacts, en colonnes ; contacts EN 3155 taille 22D, câble cuivre (codes M et MA)
-NSA937901;22D-03;NSA937901-22D-03;22D;22D;R S T U V X Y / H J K L M N P / A B C D E F G;R,S,T,U,V,X,Y,H,J,K,L,M,N,P,A,B,C,D,E,F,G;;;;normal;ovale;1 groupe de 21 contacts ; contacts EN 3155 taille 22D, câble cuivre (codes M et MA)
-NSA937901;22D-04;NSA937901-22D-04;22D;22D;R S T U V X Y / H J K L M N P / A B C D E F G;R,S,T,U | H,J,K,L | A,B,C,D | V,X,M,N,E,F | Y,P,G;;;;normal;ovale;5 groupes : 3 rangées de 4, 1 bloc de 6, 1 colonne de 3 ; contacts EN 3155 taille 22D, câble cuivre (codes M et MA)
-NSA937901;22D-05;NSA937901-22D-05;22D;22D;R S T U V X Y / H J K L M N P / A B C D E F G;R,S,T,H,J,K,A,B,C | U,V,X,Y,L,M,N,P,D,E,F,G;;;;possible;ovale;2 groupes : 9 contacts et 12 contacts ; contacts EN 3155 taille 22D, câble cuivre (codes M et MA)
-NSA937901;22D-06;NSA937901-22D-06;22D;22D;R S T U V X Y / H J K L M N P / A B C D E F G;R,S,T,U,V,X,Y | H,J,K,L,M,N,P | A,B,C,D,E,F,G;;;;normal;étanche;3 groupes de 7 contacts, en rangées ; module étanche (contacts pleins, plaque d’extrémité) ; contacts EN 3155 taille 22D, câble cuivre (codes M et MA)
-NSA937901;22D-07;NSA937901-22D-07;22D;22D;R S T U V X Y / H J K L M N P / A B C D E F G;R | S | T | U | V | X | Y | H | J | K | L | M | N | P | A | B | C | D | E | F | G;;;;possible;étanche;21 contacts non shuntés ; module étanche ; contacts EN 3155 taille 22D, câble cuivre (codes M et MA)
-NSA937901;22-01;NSA937901-22-01;22;22;R S T U V X Y / H J K L M N P / A B C D E F G;R,S | T,U | V,X | H,J | K,L | M,N | A,B | C,D | E,F | Y,P,G;;;;possible;ovale;10 groupes : 9 de 2 contacts, 1 de 3 (Y-P-G) ; contacts ABS1493 / ABS1380 taille 22, câble aluminium ou cuivre (codes MB et MC) — version étanche obligatoire pour l’aluminium
-NSA937901;22-02;NSA937901-22-02;22;22;R S T U V X Y / H J K L M N P / A B C D E F G;R,H,A | S,J,B | T,K,C | U,L,D | V,M,E | X,N,F | Y,P,G;;;;possible;ovale;7 groupes de 3 contacts, en colonnes ; contacts ABS1493 / ABS1380 taille 22, câble aluminium ou cuivre (codes MB et MC) — version étanche obligatoire pour l’aluminium
-NSA937901;22-03;NSA937901-22-03;22;22;R S T U V X Y / H J K L M N P / A B C D E F G;R,S,T,U,V,X,Y,H,J,K,L,M,N,P,A,B,C,D,E,F,G;;;;possible;ovale;1 groupe de 21 contacts ; contacts ABS1493 / ABS1380 taille 22, câble aluminium ou cuivre (codes MB et MC) — version étanche obligatoire pour l’aluminium
-NSA937901;22-04;NSA937901-22-04;22;22;R S T U V X Y / H J K L M N P / A B C D E F G;R,S,T,U | H,J,K,L | A,B,C,D | V,X,M,N,E,F | Y,P,G;;;;possible;ovale;5 groupes : 3 rangées de 4, 1 bloc de 6, 1 colonne de 3 ; contacts ABS1493 / ABS1380 taille 22, câble aluminium ou cuivre (codes MB et MC) — version étanche obligatoire pour l’aluminium
-NSA937901;22-05;NSA937901-22-05;22;22;R S T U V X Y / H J K L M N P / A B C D E F G;R,S,T,H,J,K,A,B,C | U,V,X,Y,L,M,N,P,D,E,F,G;;;;possible;ovale;2 groupes : 9 contacts et 12 contacts ; contacts ABS1493 / ABS1380 taille 22, câble aluminium ou cuivre (codes MB et MC) — version étanche obligatoire pour l’aluminium
-NSA937901;22-06;NSA937901-22-06;22;22;R S T U V X Y / H J K L M N P / A B C D E F G;R,S,T,U,V,X,Y | H,J,K,L,M,N,P | A,B,C,D,E,F,G;;;;possible;étanche;3 groupes de 7 contacts, en rangées ; module étanche (contacts pleins, plaque d’extrémité) ; contacts ABS1493 / ABS1380 taille 22, câble aluminium ou cuivre (codes MB et MC) — version étanche obligatoire pour l’aluminium
-NSA937901;22-07;NSA937901-22-07;22;22;R S T U V X Y / H J K L M N P / A B C D E F G;R | S | T | U | V | X | Y | H | J | K | L | M | N | P | A | B | C | D | E | F | G;;;;possible;étanche;21 contacts non shuntés ; module étanche ; contacts ABS1493 / ABS1380 taille 22, câble aluminium ou cuivre (codes MB et MC) — version étanche obligatoire pour l’aluminium
-NSA937901;20-01;NSA937901-20-01;20;20;F G H J K / A B C D E;A,F | B,G | C,H | D,J | E,K;;;;normal;ovale;5 groupes de 2 contacts, en colonnes
-NSA937901;20-02;NSA937901-20-02;20;20;F G H J K / A B C D E;A,B,C,D,E,F,G,H,J,K;;;;normal;ovale;1 groupe de 10 contacts
-NSA937901;20-03;NSA937901-20-03;20;20;F G H J K / A B C D E;A,F | B,C,D,E,G,H,J,K;;;;possible;ovale;2 groupes : 2 et 8 contacts
-NSA937901;20-04;NSA937901-20-04;20;20;F G H J K / A B C D E;A,B,F,G | C,D,E,H,J,K;;;;normal;ovale;2 groupes : 4 et 6 contacts
-NSA937901;20-05;NSA937901-20-05;20;20;F G H J K / A B C D E;A,F | B,C,D,G,H,J | E,K;;;;possible;ovale;3 groupes : 2, 6 et 2 contacts
-NSA937901;20-06;NSA937901-20-06;20;20;F G H J K / A B C D E;A,B,F,G | C,H | D,E,J,K;;;;normal;ovale;3 groupes : 4, 2 et 4 contacts
-NSA937901;20-07;NSA937901-20-07;20;20;F G H J K / A B C D E;A,F | B,C,G,H | D,J | E,K;;;;possible;ovale;4 groupes : 2, 4, 2 et 2 contacts
-NSA937901;20-08;NSA937901-20-08;20;20;F G H J K / A B C D E;F,G,H,J,K | A,B,C,D,E;;;;normal;ovale;2 groupes de 5 contacts, en rangées
-NSA937901;20-09;NSA937901-20-09;20;20;F G H J K / A B C D E;F,G | H,J,K | A,B | C,D,E;;;;normal;ovale;4 groupes : 2, 3, 2 et 3 contacts
-NSA937901;20-10;NSA937901-20-10;20;20;F G H J K / A B C D E;F,G,H,J,K | A,B | C,D,E;;;;possible;ovale;3 groupes : 5, 2 et 3 contacts
-NSA937901;20-11;NSA937901-20-11;20;20;F G H J K / A B C D E;A,B,F,G | H,J,K | C,D,E;;;;normal;ovale;3 groupes : 4, 3 et 3 contacts
-NSA937901;20-12;NSA937901-20-12;20;20;F G H J K / A B C D E;A | B | C | D | E | F | G | H | J | K;;;;possible;étanche;traversée de cloison étanche (sealed bulkhead) : 10 contacts non shuntés
-NSA937901;16-01;NSA937901-16-01;16;16;E F G H / A B C D;A,E | B,F | C,G | D,H;;;;normal;rectangle;4 groupes de 2 contacts, en colonnes
-NSA937901;16-02;NSA937901-16-02;16;16;E F G H / A B C D;A,B,C,D,E,F,G,H;;;;normal;rectangle;1 groupe de 8 contacts
-NSA937901;16-03;NSA937901-16-03;16;16;E F G H / A B C D;A,E | B,C,D,F,G,H;;;;possible;rectangle;2 groupes : 2 et 6 contacts
-NSA937901;16-04;NSA937901-16-04;16;16;E F G H / A B C D;A,B,E,F | C,D,G,H;;;;normal;rectangle;2 groupes de 4 contacts
-NSA937901;16-05;NSA937901-16-05;16;16;E F G H / A B C D;A,E | B,C,F,G | D,H;;;;normal;rectangle;3 groupes : 2, 4 et 2 contacts
-NSA937901;16-06;NSA937901-16-06;16;16;E F G H / A B C D;E,F,G | A,B,C | D,H;;;;possible;rectangle;3 groupes : 3, 3 et 2 contacts
-NSA937901;12-03;NSA937901-12-03;12;12;D E F / A B C;A,D | B,E | C,F;;;;possible;rectangle;3 groupes de 2 contacts, en colonnes
-NSA937901;12-04;NSA937901-12-04;12;12;D E F / A B C;A,B,C,D,E,F;;;;possible;rectangle;1 groupe de 6 contacts
-NSA937901;12-05;NSA937901-12-05;12;12;D E F / A B C;A,D | B,C,E,F;;;;possible;rectangle;2 groupes : 2 et 4 contacts
-NSA937901;12-06;NSA937901-12-06;12;12;D E F / A B C;D,E,F | A,B,C;;;;possible;rectangle;2 groupes de 3 contacts, en rangées
-NSA937901;12-12;NSA937901-12-12;12;12;D E F / A B C;A,B,C,D,E,F;;;;A350;rectangle;1 groupe de 6 contacts — application AD12 spécifique (A350 XWB)
-NSA937901;M12-02;NSA937901-M12-02;mixte;20;H@0.8:0.8 J@2.5:0.4 K@4.2:0.8 F@2.05:1.4 G@2.95:1.4 A@0.9:2.3 B@1.7:2.3 C@2.5:2.3 D@3.3:2.3 E@4.1:2.3;H#12,J,K#12,F,G,A,B,C,D,E;;;;possible;étanche;1 groupe : 8 contacts #20 et 2 contacts #12 (H, K)
-NSA937901;M12-07;NSA937901-M12-07;mixte;20;A@0.8:1.15 D@1.65:0.9 J@2.5:1.4 M@3.7:0.9 T@4.4:1.15 E@1.65:1.6 N@3.75:1.6 C@1.2:2.2 H@2.0:2.2 L@3.2:2.2 S@4.1:2.2 B@0.9:3.0 F@1.7:2.8 K@2.6:3.0 P@3.7:2.8 U@4.4:3.0 G@1.65:3.5 R@3.7:3.5;A | D | J#12 | M | T | E | N | C#16 | H#16 | L#16 | S#16 | B | F | K#12 | P | U | G | R;;;;à confirmer;étanche;18 contacts : 2 #12 (J, K), 4 #16 (C, H, L, S), 12 #20 ; les liaisons internes ne se lisent pas sur la figure — chaque contact seul tant que la norme ne dit pas mieux ; la lettre L est déduite
-NSA937901;M12-08;NSA937901-M12-08;mixte;20;K@0.7:0.75 C@1.75:0.6 B@1.75:1.5 A@1.75:2.4 H@0.7:2.25 F@2.75:0.6 E@2.75:1.5 D@2.75:2.4 J@3.8:0.75 G@3.8:2.25;K#12,C,B#16,A,H#12 | F,E#16,D,J#12,G#12;;;;possible;étanche;2 groupes de 5 : 2 contacts #12, 1 #16, 2 #20 chacun
-NSA937901;M12-09;NSA937901-M12-09;mixte;20;K@0.7:0.75 C@1.75:0.6 B@1.75:1.5 A@1.75:2.4 H@0.7:2.25 F@2.75:0.6 E@2.75:1.5 D@2.75:2.4 J@3.8:0.75 G@3.8:2.25;K#12,C,B#16,A,H#12,F,E#16,D,J#12,G#12;;;;possible;étanche;1 groupe de 10 : 4 contacts #12, 2 #16, 4 #20
-NSA937901;M12-10;NSA937901-M12-10;mixte;20;K@0.7:0.75 C@1.75:0.6 B@1.75:1.5 A@1.75:2.4 H@0.7:2.25 F@2.75:0.6 E@2.75:1.5 D@2.75:2.4 J@3.8:0.75 G@3.8:2.25;K#12,C,B#16,A,H#12 | F,E#16,D,J#12,G#12;;;;A350;étanche;comme M12-08 — application AD12 spécifique (A350 XWB)
-NSA937901;M12-11;NSA937901-M12-11;mixte;20;K@0.7:0.75 C@1.75:0.6 B@1.75:1.5 A@1.75:2.4 H@0.7:2.25 F@2.75:0.6 E@2.75:1.5 D@2.75:2.4 J@3.8:0.75 G@3.8:2.25;K#12,C,B#16,A,H#12,F,E#16,D,J#12,G#12;;;;A350;étanche;comme M12-09 — application AD12 spécifique (A350 XWB)
+NSA937901;22D-01;NSA937901M22D-01;22D;22D;R S T U V X Y / H J K L M N P / A B C D E F G;R,S | T,U | V,X | H,J | K,L | M,N | A,B | C,D | E,F | Y,P,G;;;;normal;ovale;10 groupes : 9 de 2 contacts, 1 de 3 (Y-P-G) ; contacts EN 3155 taille 22D, câble cuivre (codes M et MA)
+NSA937901;22D-02;NSA937901M22D-02;22D;22D;R S T U V X Y / H J K L M N P / A B C D E F G;R,H,A | S,J,B | T,K,C | U,L,D | V,M,E | X,N,F | Y,P,G;;;;normal;ovale;7 groupes de 3 contacts, en colonnes ; contacts EN 3155 taille 22D, câble cuivre (codes M et MA)
+NSA937901;22D-03;NSA937901M22D-03;22D;22D;R S T U V X Y / H J K L M N P / A B C D E F G;R,S,T,U,V,X,Y,H,J,K,L,M,N,P,A,B,C,D,E,F,G;;;;normal;ovale;1 groupe de 21 contacts ; contacts EN 3155 taille 22D, câble cuivre (codes M et MA)
+NSA937901;22D-04;NSA937901M22D-04;22D;22D;R S T U V X Y / H J K L M N P / A B C D E F G;R,S,T,U | H,J,K,L | A,B,C,D | V,X,M,N,E,F | Y,P,G;;;;normal;ovale;5 groupes : 3 rangées de 4, 1 bloc de 6, 1 colonne de 3 ; contacts EN 3155 taille 22D, câble cuivre (codes M et MA)
+NSA937901;22D-05;NSA937901M22D-05;22D;22D;R S T U V X Y / H J K L M N P / A B C D E F G;R,S,T,H,J,K,A,B,C | U,V,X,Y,L,M,N,P,D,E,F,G;;;;possible;ovale;2 groupes : 9 contacts et 12 contacts ; contacts EN 3155 taille 22D, câble cuivre (codes M et MA)
+NSA937901;22D-06;NSA937901M22D-06;22D;22D;R S T U V X Y / H J K L M N P / A B C D E F G;R,S,T,U,V,X,Y | H,J,K,L,M,N,P | A,B,C,D,E,F,G;;;;normal;étanche;3 groupes de 7 contacts, en rangées ; module étanche (contacts pleins, plaque d’extrémité) ; contacts EN 3155 taille 22D, câble cuivre (codes M et MA)
+NSA937901;22D-07;NSA937901M22D-07;22D;22D;R S T U V X Y / H J K L M N P / A B C D E F G;R | S | T | U | V | X | Y | H | J | K | L | M | N | P | A | B | C | D | E | F | G;;;;possible;étanche;21 contacts non shuntés ; module étanche ; contacts EN 3155 taille 22D, câble cuivre (codes M et MA)
+NSA937901;22-01;NSA937901M22-01;22;22;R S T U V X Y / H J K L M N P / A B C D E F G;R,S | T,U | V,X | H,J | K,L | M,N | A,B | C,D | E,F | Y,P,G;;;;possible;ovale;10 groupes : 9 de 2 contacts, 1 de 3 (Y-P-G) ; contacts ABS1493 / ABS1380 taille 22, câble aluminium ou cuivre (codes MB et MC) — version étanche obligatoire pour l’aluminium
+NSA937901;22-02;NSA937901M22-02;22;22;R S T U V X Y / H J K L M N P / A B C D E F G;R,H,A | S,J,B | T,K,C | U,L,D | V,M,E | X,N,F | Y,P,G;;;;possible;ovale;7 groupes de 3 contacts, en colonnes ; contacts ABS1493 / ABS1380 taille 22, câble aluminium ou cuivre (codes MB et MC) — version étanche obligatoire pour l’aluminium
+NSA937901;22-03;NSA937901M22-03;22;22;R S T U V X Y / H J K L M N P / A B C D E F G;R,S,T,U,V,X,Y,H,J,K,L,M,N,P,A,B,C,D,E,F,G;;;;possible;ovale;1 groupe de 21 contacts ; contacts ABS1493 / ABS1380 taille 22, câble aluminium ou cuivre (codes MB et MC) — version étanche obligatoire pour l’aluminium
+NSA937901;22-04;NSA937901M22-04;22;22;R S T U V X Y / H J K L M N P / A B C D E F G;R,S,T,U | H,J,K,L | A,B,C,D | V,X,M,N,E,F | Y,P,G;;;;possible;ovale;5 groupes : 3 rangées de 4, 1 bloc de 6, 1 colonne de 3 ; contacts ABS1493 / ABS1380 taille 22, câble aluminium ou cuivre (codes MB et MC) — version étanche obligatoire pour l’aluminium
+NSA937901;22-05;NSA937901M22-05;22;22;R S T U V X Y / H J K L M N P / A B C D E F G;R,S,T,H,J,K,A,B,C | U,V,X,Y,L,M,N,P,D,E,F,G;;;;possible;ovale;2 groupes : 9 contacts et 12 contacts ; contacts ABS1493 / ABS1380 taille 22, câble aluminium ou cuivre (codes MB et MC) — version étanche obligatoire pour l’aluminium
+NSA937901;22-06;NSA937901M22-06;22;22;R S T U V X Y / H J K L M N P / A B C D E F G;R,S,T,U,V,X,Y | H,J,K,L,M,N,P | A,B,C,D,E,F,G;;;;possible;étanche;3 groupes de 7 contacts, en rangées ; module étanche (contacts pleins, plaque d’extrémité) ; contacts ABS1493 / ABS1380 taille 22, câble aluminium ou cuivre (codes MB et MC) — version étanche obligatoire pour l’aluminium
+NSA937901;22-07;NSA937901M22-07;22;22;R S T U V X Y / H J K L M N P / A B C D E F G;R | S | T | U | V | X | Y | H | J | K | L | M | N | P | A | B | C | D | E | F | G;;;;possible;étanche;21 contacts non shuntés ; module étanche ; contacts ABS1493 / ABS1380 taille 22, câble aluminium ou cuivre (codes MB et MC) — version étanche obligatoire pour l’aluminium
+NSA937901;20-01;NSA937901M20-01;20;20;F G H J K / A B C D E;A,F | B,G | C,H | D,J | E,K;;;;normal;ovale;5 groupes de 2 contacts, en colonnes
+NSA937901;20-02;NSA937901M20-02;20;20;F G H J K / A B C D E;A,B,C,D,E,F,G,H,J,K;;;;normal;ovale;1 groupe de 10 contacts
+NSA937901;20-03;NSA937901M20-03;20;20;F G H J K / A B C D E;A,F | B,C,D,E,G,H,J,K;;;;possible;ovale;2 groupes : 2 et 8 contacts
+NSA937901;20-04;NSA937901M20-04;20;20;F G H J K / A B C D E;A,B,F,G | C,D,E,H,J,K;;;;normal;ovale;2 groupes : 4 et 6 contacts
+NSA937901;20-05;NSA937901M20-05;20;20;F G H J K / A B C D E;A,F | B,C,D,G,H,J | E,K;;;;possible;ovale;3 groupes : 2, 6 et 2 contacts
+NSA937901;20-06;NSA937901M20-06;20;20;F G H J K / A B C D E;A,B,F,G | C,H | D,E,J,K;;;;normal;ovale;3 groupes : 4, 2 et 4 contacts
+NSA937901;20-07;NSA937901M20-07;20;20;F G H J K / A B C D E;A,F | B,C,G,H | D,J | E,K;;;;possible;ovale;4 groupes : 2, 4, 2 et 2 contacts
+NSA937901;20-08;NSA937901M20-08;20;20;F G H J K / A B C D E;F,G,H,J,K | A,B,C,D,E;;;;normal;ovale;2 groupes de 5 contacts, en rangées
+NSA937901;20-09;NSA937901M20-09;20;20;F G H J K / A B C D E;F,G | H,J,K | A,B | C,D,E;;;;normal;ovale;4 groupes : 2, 3, 2 et 3 contacts
+NSA937901;20-10;NSA937901M20-10;20;20;F G H J K / A B C D E;F,G,H,J,K | A,B | C,D,E;;;;possible;ovale;3 groupes : 5, 2 et 3 contacts
+NSA937901;20-11;NSA937901M20-11;20;20;F G H J K / A B C D E;A,B,F,G | H,J,K | C,D,E;;;;normal;ovale;3 groupes : 4, 3 et 3 contacts
+NSA937901;20-12;NSA937901M20-12;20;20;F G H J K / A B C D E;A | B | C | D | E | F | G | H | J | K;;;;possible;étanche;traversée de cloison étanche (sealed bulkhead) : 10 contacts non shuntés
+NSA937901;16-01;NSA937901M16-01;16;16;E F G H / A B C D;A,E | B,F | C,G | D,H;;;;normal;rectangle;4 groupes de 2 contacts, en colonnes
+NSA937901;16-02;NSA937901M16-02;16;16;E F G H / A B C D;A,B,C,D,E,F,G,H;;;;normal;rectangle;1 groupe de 8 contacts
+NSA937901;16-03;NSA937901M16-03;16;16;E F G H / A B C D;A,E | B,C,D,F,G,H;;;;possible;rectangle;2 groupes : 2 et 6 contacts
+NSA937901;16-04;NSA937901M16-04;16;16;E F G H / A B C D;A,B,E,F | C,D,G,H;;;;normal;rectangle;2 groupes de 4 contacts
+NSA937901;16-05;NSA937901M16-05;16;16;E F G H / A B C D;A,E | B,C,F,G | D,H;;;;normal;rectangle;3 groupes : 2, 4 et 2 contacts
+NSA937901;16-06;NSA937901M16-06;16;16;E F G H / A B C D;E,F,G | A,B,C | D,H;;;;possible;rectangle;3 groupes : 3, 3 et 2 contacts
+NSA937901;12-03;NSA937901M12-03;12;12;D E F / A B C;A,D | B,E | C,F;;;;possible;rectangle;3 groupes de 2 contacts, en colonnes
+NSA937901;12-04;NSA937901M12-04;12;12;D E F / A B C;A,B,C,D,E,F;;;;possible;rectangle;1 groupe de 6 contacts
+NSA937901;12-05;NSA937901M12-05;12;12;D E F / A B C;A,D | B,C,E,F;;;;possible;rectangle;2 groupes : 2 et 4 contacts
+NSA937901;12-06;NSA937901M12-06;12;12;D E F / A B C;D,E,F | A,B,C;;;;possible;rectangle;2 groupes de 3 contacts, en rangées
+NSA937901;12-12;NSA937901M12-12;12;12;D E F / A B C;A,B,C,D,E,F;;;;A350;rectangle;1 groupe de 6 contacts — application AD12 spécifique (A350 XWB)
+NSA937901;M12-02;NSA937901MM12-02;mixte;20;H@0.8:0.8 J@2.5:0.4 K@4.2:0.8 F@2.05:1.4 G@2.95:1.4 A@0.9:2.3 B@1.7:2.3 C@2.5:2.3 D@3.3:2.3 E@4.1:2.3;H#12,J,K#12,F,G,A,B,C,D,E;;;;possible;étanche;1 groupe : 8 contacts #20 et 2 contacts #12 (H, K)
+NSA937901;M12-07;NSA937901MM12-07;mixte;20;A@0.8:1.15 D@1.65:0.9 J@2.5:1.4 M@3.7:0.9 T@4.4:1.15 E@1.65:1.6 N@3.75:1.6 C@1.2:2.2 H@2.0:2.2 L@3.2:2.2 S@4.1:2.2 B@0.9:3.0 F@1.7:2.8 K@2.6:3.0 P@3.7:2.8 U@4.4:3.0 G@1.65:3.5 R@3.7:3.5;A | D | J#12 | M | T | E | N | C#16 | H#16 | L#16 | S#16 | B | F | K#12 | P | U | G | R;;;;à confirmer;étanche;18 contacts : 2 #12 (J, K), 4 #16 (C, H, L, S), 12 #20 ; les liaisons internes ne se lisent pas sur la figure — chaque contact seul tant que la norme ne dit pas mieux ; la lettre L est déduite
+NSA937901;M12-08;NSA937901MM12-08;mixte;20;K@0.7:0.75 C@1.75:0.6 B@1.75:1.5 A@1.75:2.4 H@0.7:2.25 F@2.75:0.6 E@2.75:1.5 D@2.75:2.4 J@3.8:0.75 G@3.8:2.25;K#12,C,B#16,A,H#12 | F,E#16,D,J#12,G#12;;;;possible;étanche;2 groupes de 5 : 2 contacts #12, 1 #16, 2 #20 chacun
+NSA937901;M12-09;NSA937901MM12-09;mixte;20;K@0.7:0.75 C@1.75:0.6 B@1.75:1.5 A@1.75:2.4 H@0.7:2.25 F@2.75:0.6 E@2.75:1.5 D@2.75:2.4 J@3.8:0.75 G@3.8:2.25;K#12,C,B#16,A,H#12,F,E#16,D,J#12,G#12;;;;possible;étanche;1 groupe de 10 : 4 contacts #12, 2 #16, 4 #20
+NSA937901;M12-10;NSA937901MM12-10;mixte;20;K@0.7:0.75 C@1.75:0.6 B@1.75:1.5 A@1.75:2.4 H@0.7:2.25 F@2.75:0.6 E@2.75:1.5 D@2.75:2.4 J@3.8:0.75 G@3.8:2.25;K#12,C,B#16,A,H#12 | F,E#16,D,J#12,G#12;;;;A350;étanche;comme M12-08 — application AD12 spécifique (A350 XWB)
+NSA937901;M12-11;NSA937901MM12-11;mixte;20;K@0.7:0.75 C@1.75:0.6 B@1.75:1.5 A@1.75:2.4 H@0.7:2.25 F@2.75:0.6 E@2.75:1.5 D@2.75:2.4 J@3.8:0.75 G@3.8:2.25;K#12,C,B#16,A,H#12,F,E#16,D,J#12,G#12;;;;A350;étanche;comme M12-09 — application AD12 spécifique (A350 XWB)
+NSA937901;G20;NSA937916-20;20;20;F G H J K / A B C D E;A,B,C,D,E,F,G,H,J,K;10,5;21,5;;masse;rectangle;module de MASSE NSA937916-20 (Air LB 001118 202 02Y) : 10 contacts #20 reliés à la masse par l’étrier (L1 10, L2 10) — lettrage déduit des modules 1100 de même taille (R3) — jamais choisi d’office
+NSA937901;G16;NSA937916-16;16;16;E F G H / A B C D;A,B,C,D,E,F,G,H;17,5;27;;masse;rectangle;module de MASSE NSA937916-16 (Air LB 001118 302 02Y) : 8 contacts #16 reliés à la masse (L1 12, L2 9,6) — lettrage déduit (R3) — jamais choisi d’office
+
+Accessoires — les références annexes de la norme et leurs équivalents Amphenol Air LB (catalogue 01/19, pages 39, 41, 44-45, 49-50, 57-58 — R3) : butées, séparateurs, blocs à tige, shunts, étiquettes, étriers
+Famille;Référence;Équivalent;Rôle;Masse;Note
+NSA937901;NSA937901SC;001102 004 60;butée d’extrémité montée à droite (0.138-32 UNC);8,5;page 57
+NSA937901;NSA937901SD;001102 007 60;butée d’extrémité montée à gauche;8,5;page 57
+NSA937901;NSA937901P;001121 000 37;séparateur de capot (BJT);5,1;pages 44-45
+NSA937901;NSA937901IN;001123 000 39;séparateur Sh (shunt) PTFE;0,8;pages 44-45
+NSA937901;NSA937901IS;001126 000 39;séparateur PTFE;2,2;pages 44-45
+NSA937901;NSA937901B;001150 949 37;bloc de jonction à tige 0.190-32 UNF 3A (BJT, 16 mm², 60 A);10,6;page 44
+NSA937901;NSA937901SH05;024055 005 04;shunt laiton nickelé 5 trous, pas 13,2;3,15;page 45 — Boeing liste aussi SH3, SH5
+NSA937901;NSA937901Exx;130382 xxx 17/25;étiquettes de repérage (variante A : planches PVC/PTFE — variante B : 3111 100x 000 ACC);;pages 57-58
+NSA937901;NSA937915-20;001107 200 61;étrier droit acier cadmié tailles 22-20 (e 11,5) — inox : 001107 200 60;3,6;page 41
+NSA937901;NSA937915-16;001107 300 61;étrier droit acier cadmié taille 16 (e 13,5) — inox : 001107 300 60;4,0;page 41

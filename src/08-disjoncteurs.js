@@ -66,16 +66,19 @@ function contactDuPlan(l) { const xs = [];
   if (!xs.length) return {}; xs.sort((a, b) => a.i - b.i); return { taille: xs[0].taille, contactRepere: xs[0].repere }; }
 /* Les disjoncteurs VOISINS d'un repère : ceux où aboutit un chemin de fils depuis lui (bus → sous-bus) ; leur calibre
    nominal (écrit, sinon le part number) sert à la sélectivité 2:1 — sans passer par l'idéal, qui dépendrait du nôtre. */
-const calibreNominal = nom => { const p = chargeDe(nom); return p && p.calibre > 0 ? p.calibre : calibreDuPn(pnDuRepere(nom)); };
+const calibreNominal = nom => { const p = chargeDe(nom); if (p && p.calibre > 0) return p.calibre; const f = familleDuPn(pnDuRepere(nom), app.norme); return f ? f.calibre : null; };
 const disjoncteursVoisins = nom => [...new Set(cheminsDepuis(verite(), nom).map(ch => ch.bout[0]).filter(r => r && r !== nom && estDisjoncteur(r)))].map(r => ({ nom: r, calibre: calibreNominal(r) }));
 /* Le calibre RETENU : celui qu'on a choisi à la main, sinon celui du part number (MS3320-10 → 10 A, si la famille est un
    disjoncteur), sinon l'idéal que le moteur donne. Rend le verdict complet (09 bis, jugé avec ses fils et ses voisins),
    le profil, la famille du part number, d'où vient le calibre, et ses fils jugés. */
-function disjonctionDe(nom) { const profil = chargeDe(nom), ecrit = profil && profil.calibre > 0 ? profil.calibre : null, famille = familleDuPn(pnDuRepere(nom)), pn = famille ? famille.calibre : null, voisins = disjoncteursVoisins(nom);
-  const contexte = { fils: filsDuDisjoncteur(nom), hyp: app.simu, autres: voisins.map(v => v.calibre).filter(c => c > 0) };
-  let d = verdictDisjonction(app.norme, '', ecrit || pn || 0, profil, contexte);
-  const calibre = ecrit || pn || d.calibreIdeal || null; if (calibre && calibre !== d.calibre) d = verdictDisjonction(app.norme, '', calibre, profil, contexte);
-  return { ...d, profil, ecrit, pn, famille, voisins, contexte, origine: ecrit ? 'main' : pn ? 'pn' : calibre ? 'ideal' : '', fils: protectionDesFils(app.norme, calibre, profil, contexte.fils, app.simu) }; }
+function disjonctionDe(nom) { const profil = chargeDe(nom), ecrit = profil && profil.calibre > 0 ? profil.calibre : null, famille = familleDuPn(pnDuRepere(nom), app.norme), pn = famille ? famille.calibre : null, voisins = disjoncteursVoisins(nom);
+  // la famille de courbes : celle que la famille du part number dit (table Familles de disjoncteurs), sinon celle par défaut (la feuille du lecteur)
+  const courbe = famille && famille.courbe ? famille.courbe : '', hyp = { ...(app.simu || HYPOTHESES), courbe };
+  const contexte = { fils: filsDuDisjoncteur(nom), hyp, autres: voisins.map(v => v.calibre).filter(c => c > 0) };
+  let d = verdictDisjonction(app.norme, courbe, ecrit || pn || 0, profil, contexte);
+  const calibre = ecrit || pn || d.calibreIdeal || null; if (calibre && calibre !== d.calibre) d = verdictDisjonction(app.norme, courbe, calibre, profil, contexte);
+  const chutePropre = chuteDuDisjoncteur(app.norme, famille, calibre);
+  return { ...d, profil, ecrit, pn, famille, courbe, chutePropre, voisins, contexte, origine: ecrit ? 'main' : pn ? 'pn' : calibre ? 'ideal' : '', fils: protectionDesFils(app.norme, calibre, profil, contexte.fils, hyp) }; }
 const calibreDe = nom => disjonctionDe(nom).calibre;
 const pourcent = x => nombre(Math.round(x * 100)) + ' %';
 // « pour 10 s », « pour 1 min », « en continu »

@@ -35,7 +35,7 @@ const pres = (a, b, eps) => Math.abs(a - b) < (eps || 1e-9);
 const PN = { '200BT1': 'MS3470L14-5P', '201CB1': 'MS3320-10', '202CB2': '', '203CB3': 'ABC-15', '204CB4': 'MS14154-10', '205CB5': 'MS3320-5', '206CB6': 'MS3320-3', '207CB7': 'MS14105-35', '208CB8': 'MS3320-3',
   '210GN1': 'E0656A01N1S0', '310RL1': 'E0836IS35-22SA', '320PM1': 'EN2997', '330LP1': 'E0644D9S', '340SW1': 'NSA937802-03', '350VL1': 'ABS0864-08', '360HT1': 'E0644B9S', '371MT1': 'EN3645', '380CP1': 'E0644B9S',
   '500XC1': 'EN4165-2M', '411VC1': 'EN3646A6088AAN', '412VC2': 'ASNE0059-12-8', '530CP2': 'E0644B9S', '540PM2': 'EN2997Y1A12P', '550SW2': 'NSA937802-03', '560HT2': 'E0644B9S', '570MT2': 'EN3645', '580ST1': 'EN2997Y1A10P',
-  '701VT1': 'E0599-1B201Z', '702VT2': 'NSA937901-20-04' };
+  '701VT1': 'E0599-1B201Z', '702VT2': 'NSA937901M20-04' };
 const LIGNES = [
   // plan A : 28 V — une batterie, huit disjoncteurs, une barrette E0599 qui distribue (un DR20, un AD16), une NSA937901 vers un sous-disjoncteur
   ['A', '200BT1', '1', '201CB1', '1', 'W-A01', 'DR16', 1.2], ['A', '201CB1', '2', '701VT1', '1', 'W-A02', 'DR20', 3], ['A', '701VT1', '1', '701VT1', '2', 'W-A03', 'DR20'], ['A', '701VT1', '2', '310RL1', 'A1', 'W-A04', 'DR20', 5],
