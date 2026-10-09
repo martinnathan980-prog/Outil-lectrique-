@@ -43,13 +43,15 @@ node tests/barrettes.js        la bible des barrettes se lit, la référence se 
                                le part number, les filetages, les codes d'entrée, la table EN 3660, les manchons VG 95343, l'habillage
                                d'un connecteur — aucun pour un EN 4165, ni pour un EN 3645, à confirmer) et la chute en triphasé ; la
                                chute en chaîne (à travers les prises et les barrettes, longueur réelle) ; les contrats déjà faits (ranger,
-                               reconnaître, comparer, reprendre) — 223 contrôles (sans navigateur)
+                               reconnaître, comparer, reprendre) ; les tables des recherches R3 / R5 (les familles de disjoncteurs lues par le
+                               moteur et leurs motifs, les courbes par famille, le courant d'un contact par fût et jauge, l'emploi des
+                               résistances, le déclassement interpolé, la désignation NSA937901M) — 223 contrôles (sans navigateur)
 node tests/normes.js           les normes : importer, classer, modifier (08 octies, 09). Sans navigateur : les cellules (guillemets,
                                séparateurs), les nombres d'atelier (« −55 », « 10 000 ft »), les blocs d'un texte (titres libres,
                                en-têtes avec unité, l'hésitation entre deux tables, une feuille Excel en tabulations), la clé de
                                fusion et la comparaison (nouvelles, remplacées, identiques), la couche des apports (remplacer,
                                ajouter, masquer), les colonnes documentées, le gabarit de chacune des vingt tables qui se relit
-                               comme sa table, l'aller-retour export → import de chaque table embarquée — 25 contrôles
+                               comme sa table (vingt-trois tables), l'aller-retour export → import de chaque table embarquée — 25 contrôles
                                (--sans-navigateur pour s'arrêter là). Puis, à la vraie souris : la page par domaines (huit domaines,
                                vingt-trois vues), une table dépliée, filtrée, triée ; une ligne modifiée (double-clic, Entrée),
                                reprise par le moteur, défaite (Ctrl+Z), gardée après rechargement ; une ligne ajoutée (refusée sans

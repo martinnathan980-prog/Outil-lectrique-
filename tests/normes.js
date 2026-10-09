@@ -200,7 +200,7 @@ function excelEssai() { const wb = XLSX.utils.book_new();
   console.log('\nau téléphone');
   await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(400);
   await page.evaluate(() => { fermerFiche(true); ficheNormes({ table: 'contacts' }); }); await page.waitForTimeout(600);
-  okp(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1 && !document.getElementById('fiche').hidden && document.querySelectorAll('#fiche .nm-table').length === 24), 'la page tient dans la largeur du téléphone, en tiroir');
+  okp(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1 && !document.getElementById('fiche').hidden && document.querySelectorAll('#fiche .nm-table').length === 27), 'la page tient dans la largeur du téléphone, en tiroir');
   okp(await page.evaluate(() => { const z = document.querySelector('#fiche .nm-table[data-vue="contacts"] .nm-defile'); return !!z && z.scrollWidth > z.clientWidth && getComputedStyle(z).overflowX === 'auto'; }), 'une table large défile de côté, sans écraser une valeur');
   okp(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
   console.log('\n  ' + (ko || echecs ? (ko + echecs) + ' échec(s)' : 'tout tient'));
