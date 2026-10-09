@@ -199,33 +199,16 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
 #svg .comp{cursor:grab}
 #planche.deplace,#planche.deplace *{cursor:grabbing!important}
 
-/* ─── LA BARRE DU HAUT : le contrat, son voyant, la recherche, ouvrir, le menu — sur la planche de bord ─── */
+/* ─── LA BARRE DU HAUT : la marque, la recherche, le menu — sur la planche de bord ─── */
 #entete{position:fixed;top:0;left:0;right:0;height:calc(var(--entete) + var(--sur-h));z-index:36;background:var(--p-fond);color:var(--p-t1);border-bottom:1px solid var(--p-ligne);
   display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:16px;padding:var(--sur-h) max(12px,var(--sur-d)) 0 max(12px,var(--sur-g))}
-/* le contrat : la marque, le nom et ses comptes, le voyant tout contre ; quand la place manque, le voyant range ses mots */
-.en-contrat{display:flex;align-items:center;gap:12px;min-width:0;container-type:inline-size}
-.en-contrat .min0{flex:0 1 auto}
-@container (max-width:516px){ .en-etat .en-mot{display:none} }
+/* la marque et le nom de l'outil */
+.en-contrat{display:flex;align-items:center;gap:12px;min-width:0}
 /* la marque : deux blocs et leur fil, en cyan sur la planche */
 .en-marque{flex:none;width:28px;height:28px;border-radius:var(--r-1);background:var(--p-accent);color:var(--p-fond);display:grid;place-items:center}
 .en-marque svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .en-nom{font:700 var(--f-14)/1.2 var(--titre);letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--p-t1)}
-.en-sous{font-size:var(--f-11);line-height:1.35;color:var(--p-t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
-.en-sous:empty{display:none}
-/* l'état du contrat : un voyant de la planche de bord (la pastille .fi-etat, rallumée ici) — pressé, il ouvre la liste à reprendre */
-.en-etat{border:none;cursor:pointer;flex:none;margin-left:4px;transition:background var(--rapide)}
-#entete .fi-etat{background:transparent;color:var(--p-ok);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--p-ok) 40%,transparent);font:700 var(--f-11)/1 var(--titre);letter-spacing:.06em;text-transform:uppercase;height:26px}
-#entete .fi-etat i{background:var(--p-ok);box-shadow:0 0 6px color-mix(in srgb,var(--p-ok) 70%,transparent)}
-#entete .fi-etat.att{color:var(--p-warn);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--p-warn) 45%,transparent)}
-#entete .fi-etat.att i{background:var(--p-warn);box-shadow:0 0 6px color-mix(in srgb,var(--p-warn) 70%,transparent)}
-#entete .fi-etat.ko{color:var(--p-ko);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--p-ko) 45%,transparent)}
-#entete .fi-etat.ko i{background:var(--p-ko);box-shadow:0 0 7px color-mix(in srgb,var(--p-ko) 75%,transparent)}
-#entete .fi-etat:hover{background:var(--p-hover)}
 .en-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px}
-.en-actions .btn{height:32px;padding:0 12px}
-#entete .btn.papier{background:var(--p-fond-2);border-color:var(--p-ligne);color:var(--p-t1)}
-#entete .btn.papier:hover{background:var(--p-hover);border-color:var(--p-t3)}
-#entete .btn.papier svg.ico{color:var(--p-accent)}
 .en-actions .rd{width:36px;height:36px}
 .en-actions .rd svg.ico{width:18px;height:18px}
 #menuBoite{position:relative}
@@ -267,6 +250,14 @@ body.cherche .recherche .rc-fermer{display:inline}
 .menu{position:absolute;top:calc(100% + 8px);right:0;width:272px;color:var(--t-1);background:var(--s-flottant);border:1px solid var(--s-line);border-radius:var(--r-2);box-shadow:var(--sh-2);padding:4px;z-index:40}
 .menu button{display:flex;width:100%;align-items:center;gap:12px;height:32px;padding:0 12px;border-radius:var(--r-1);background:none;border:none;text-align:left;color:var(--t-1);font-size:var(--f-13);font-weight:400}
 .menu button:hover,.menu button:focus-visible{background:var(--s-hover);outline:none}
+/* sa bulle : ce que la ligne fait, ce qu'elle attend, ce qu'elle remplace — à gauche du menu, après un temps de survol
+   (on traverse le menu sans qu'elles clignotent), tout de suite au clavier */
+.menu button[data-aide]{position:relative}
+.menu button[data-aide]::after{content:attr(data-aide);position:absolute;right:calc(100% + 16px);top:-4px;width:300px;padding:10px 12px;border-radius:var(--r-2);
+  background:var(--bulle);color:var(--bulle-t);font:400 var(--f-12)/1.5 var(--sans);white-space:normal;text-align:left;box-shadow:var(--sh-2);pointer-events:none;
+  opacity:0;transform:translateX(4px);transition:opacity var(--rapide),transform var(--rapide);visibility:hidden}
+.menu button[data-aide]:hover::after{opacity:1;transform:none;visibility:visible;transition-delay:.35s}
+.menu button[data-aide]:focus-visible::after{opacity:1;transform:none;visibility:visible}
 .menu button.danger{color:var(--ko)}
 .menu button.danger:hover{background:var(--ko-soft)}
 .menu hr{border:none;border-top:1px solid var(--s-line);margin:4px 8px}
@@ -830,7 +821,6 @@ body.fiche-ouverte #toast{left:max(calc(var(--rail) + 16px + min(60vw,560px) / 2
 /* le téléphone couché : la planche de bord se resserre pour laisser le plan respirer */
 @media (max-height:500px) and (min-width:701px) and (pointer:coarse){
   :root{--entete:40px;--pied:36px;--base-h:62vh}
-  .en-sous{display:none}
   .recherche{width:min(240px,26vw)}
 }
 
@@ -842,10 +832,8 @@ body.fiche-ouverte #toast{left:max(calc(var(--rail) + 16px + min(60vw,560px) / 2
   :root{--rail:0px;--base-h:52vh;--rail-tel:calc(48px + var(--sur-b))}
   #entete{gap:8px;padding:var(--sur-h) max(4px,var(--sur-d)) 0 max(12px,var(--sur-g));grid-template-columns:minmax(0,1fr) auto}
   .en-marque{display:none}
-  #entete .en-etat{display:none}   /* le compte est déjà sur le bouton des repères, dans le rail */
-  #btnOuvrir span{display:none}
   /* deux boutons voisins, un seul traitement : nus, 40 px ; l'icône cyan dit l'action */
-  #entete #btnOuvrir,.en-actions .rd{width:40px;height:40px;padding:0;justify-content:center;background:none;border-color:transparent}
+  .en-actions .rd{width:40px;height:40px;padding:0;justify-content:center;background:none;border-color:transparent}
   .en-actions{gap:0}
   /* la recherche : ouverte, elle couvre la barre du haut, avec sa croix */
   .recherche{display:none;position:absolute;left:8px;right:8px;top:calc(var(--sur-h) + 6px);width:auto;height:36px;z-index:3}

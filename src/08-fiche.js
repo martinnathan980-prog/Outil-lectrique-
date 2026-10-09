@@ -79,12 +79,13 @@ function fiTete(o) {
     + (o.designation != null ? `<input class="fi-des" id="eq-des" value="${escA(o.designation)}"${o.designation ? '' : ' hidden'} placeholder="désignation" aria-label="Désignation, écrite sous le repère" spellcheck="false" autocomplete="off">` : '') + '</div>'
     + (o.etat || ''); }
 /* L'état — seulement s'il y a quelque chose à dire (le lecteur : « conforme, tu peux l'enlever ») : une carte, rouge
-   dès qu'il y a un problème, les problèmes d'abord puis les points à voir (en ambre, jamais cachés) ; dépliée d'office
-   s'il y a un problème ou un seul point, derrière un clic quand les points à voir sont plusieurs. */
+   dès qu'il y a un problème, les problèmes d'abord puis les points à voir (en ambre). Repliée en haut de la fiche
+   (le lecteur : « je ne veux pas que la liste soit déroulée ; on clique si on veut ») : son titre dit déjà combien ;
+   dépliée, elle le reste pour cet objet tant qu'on ne choisit pas autre chose. */
 function fiEtat(ko, att) {
   if (!ko.length && !att.length) return '';
   const cls = ko.length ? 'ko' : 'att', titre = [ko.length ? (ko.length > 1 ? ko.length + ' problèmes' : '1 problème') : '', att.length ? (att.length > 1 ? att.length + ' à voir' : '1 point à voir') : ''].filter(Boolean).join(' · ');
-  return `<details class="fi-etat ${cls}"${ko.length || att.length === 1 ? ' open' : ''}><summary><i aria-hidden="true">${cls === 'ko' ? '✕' : '!'}</i><span>${titre}</span>${ico('bas', 'fi-chevron')}</summary>`
+  return `<details class="fi-etat ${cls}"${app.insp.etatOuvert && app.insp.etatOuvert === cleDeCible() ? ' open' : ''}><summary><i aria-hidden="true">${cls === 'ko' ? '✕' : '!'}</i><span>${titre}</span>${ico('bas', 'fi-chevron')}</summary>`
     + `<ul>${ko.map(t => `<li>${insecable(esc(t))}</li>`).join('')}${att.map(t => `<li${ko.length ? ' class="fi-att"' : ''}>${insecable(esc(t))}</li>`).join('')}</ul></details>`; }
 /* La référence retenue (sa norme se lit dedans : on ne la répète pas), pourquoi en une ligne, et « Changer » qui
    déplie les autres. */

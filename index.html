@@ -229,33 +229,16 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
 #svg .comp{cursor:grab}
 #planche.deplace,#planche.deplace *{cursor:grabbing!important}
 
-/* ─── LA BARRE DU HAUT : le contrat, son voyant, la recherche, ouvrir, le menu — sur la planche de bord ─── */
+/* ─── LA BARRE DU HAUT : la marque, la recherche, le menu — sur la planche de bord ─── */
 #entete{position:fixed;top:0;left:0;right:0;height:calc(var(--entete) + var(--sur-h));z-index:36;background:var(--p-fond);color:var(--p-t1);border-bottom:1px solid var(--p-ligne);
   display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:16px;padding:var(--sur-h) max(12px,var(--sur-d)) 0 max(12px,var(--sur-g))}
-/* le contrat : la marque, le nom et ses comptes, le voyant tout contre ; quand la place manque, le voyant range ses mots */
-.en-contrat{display:flex;align-items:center;gap:12px;min-width:0;container-type:inline-size}
-.en-contrat .min0{flex:0 1 auto}
-@container (max-width:516px){ .en-etat .en-mot{display:none} }
+/* la marque et le nom de l'outil */
+.en-contrat{display:flex;align-items:center;gap:12px;min-width:0}
 /* la marque : deux blocs et leur fil, en cyan sur la planche */
 .en-marque{flex:none;width:28px;height:28px;border-radius:var(--r-1);background:var(--p-accent);color:var(--p-fond);display:grid;place-items:center}
 .en-marque svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .en-nom{font:700 var(--f-14)/1.2 var(--titre);letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--p-t1)}
-.en-sous{font-size:var(--f-11);line-height:1.35;color:var(--p-t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
-.en-sous:empty{display:none}
-/* l'état du contrat : un voyant de la planche de bord (la pastille .fi-etat, rallumée ici) — pressé, il ouvre la liste à reprendre */
-.en-etat{border:none;cursor:pointer;flex:none;margin-left:4px;transition:background var(--rapide)}
-#entete .fi-etat{background:transparent;color:var(--p-ok);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--p-ok) 40%,transparent);font:700 var(--f-11)/1 var(--titre);letter-spacing:.06em;text-transform:uppercase;height:26px}
-#entete .fi-etat i{background:var(--p-ok);box-shadow:0 0 6px color-mix(in srgb,var(--p-ok) 70%,transparent)}
-#entete .fi-etat.att{color:var(--p-warn);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--p-warn) 45%,transparent)}
-#entete .fi-etat.att i{background:var(--p-warn);box-shadow:0 0 6px color-mix(in srgb,var(--p-warn) 70%,transparent)}
-#entete .fi-etat.ko{color:var(--p-ko);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--p-ko) 45%,transparent)}
-#entete .fi-etat.ko i{background:var(--p-ko);box-shadow:0 0 7px color-mix(in srgb,var(--p-ko) 75%,transparent)}
-#entete .fi-etat:hover{background:var(--p-hover)}
 .en-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px}
-.en-actions .btn{height:32px;padding:0 12px}
-#entete .btn.papier{background:var(--p-fond-2);border-color:var(--p-ligne);color:var(--p-t1)}
-#entete .btn.papier:hover{background:var(--p-hover);border-color:var(--p-t3)}
-#entete .btn.papier svg.ico{color:var(--p-accent)}
 .en-actions .rd{width:36px;height:36px}
 .en-actions .rd svg.ico{width:18px;height:18px}
 #menuBoite{position:relative}
@@ -297,6 +280,14 @@ body.cherche .recherche .rc-fermer{display:inline}
 .menu{position:absolute;top:calc(100% + 8px);right:0;width:272px;color:var(--t-1);background:var(--s-flottant);border:1px solid var(--s-line);border-radius:var(--r-2);box-shadow:var(--sh-2);padding:4px;z-index:40}
 .menu button{display:flex;width:100%;align-items:center;gap:12px;height:32px;padding:0 12px;border-radius:var(--r-1);background:none;border:none;text-align:left;color:var(--t-1);font-size:var(--f-13);font-weight:400}
 .menu button:hover,.menu button:focus-visible{background:var(--s-hover);outline:none}
+/* sa bulle : ce que la ligne fait, ce qu'elle attend, ce qu'elle remplace — à gauche du menu, après un temps de survol
+   (on traverse le menu sans qu'elles clignotent), tout de suite au clavier */
+.menu button[data-aide]{position:relative}
+.menu button[data-aide]::after{content:attr(data-aide);position:absolute;right:calc(100% + 16px);top:-4px;width:300px;padding:10px 12px;border-radius:var(--r-2);
+  background:var(--bulle);color:var(--bulle-t);font:400 var(--f-12)/1.5 var(--sans);white-space:normal;text-align:left;box-shadow:var(--sh-2);pointer-events:none;
+  opacity:0;transform:translateX(4px);transition:opacity var(--rapide),transform var(--rapide);visibility:hidden}
+.menu button[data-aide]:hover::after{opacity:1;transform:none;visibility:visible;transition-delay:.35s}
+.menu button[data-aide]:focus-visible::after{opacity:1;transform:none;visibility:visible}
 .menu button.danger{color:var(--ko)}
 .menu button.danger:hover{background:var(--ko-soft)}
 .menu hr{border:none;border-top:1px solid var(--s-line);margin:4px 8px}
@@ -860,7 +851,6 @@ body.fiche-ouverte #toast{left:max(calc(var(--rail) + 16px + min(60vw,560px) / 2
 /* le téléphone couché : la planche de bord se resserre pour laisser le plan respirer */
 @media (max-height:500px) and (min-width:701px) and (pointer:coarse){
   :root{--entete:40px;--pied:36px;--base-h:62vh}
-  .en-sous{display:none}
   .recherche{width:min(240px,26vw)}
 }
 
@@ -872,10 +862,8 @@ body.fiche-ouverte #toast{left:max(calc(var(--rail) + 16px + min(60vw,560px) / 2
   :root{--rail:0px;--base-h:52vh;--rail-tel:calc(48px + var(--sur-b))}
   #entete{gap:8px;padding:var(--sur-h) max(4px,var(--sur-d)) 0 max(12px,var(--sur-g));grid-template-columns:minmax(0,1fr) auto}
   .en-marque{display:none}
-  #entete .en-etat{display:none}   /* le compte est déjà sur le bouton des repères, dans le rail */
-  #btnOuvrir span{display:none}
   /* deux boutons voisins, un seul traitement : nus, 40 px ; l'icône cyan dit l'action */
-  #entete #btnOuvrir,.en-actions .rd{width:40px;height:40px;padding:0;justify-content:center;background:none;border-color:transparent}
+  .en-actions .rd{width:40px;height:40px;padding:0;justify-content:center;background:none;border-color:transparent}
   .en-actions{gap:0}
   /* la recherche : ouverte, elle couvre la barre du haut, avec sa croix */
   .recherche{display:none;position:absolute;left:8px;right:8px;top:calc(var(--sur-h) + 6px);width:auto;height:36px;z-index:3}
@@ -1994,20 +1982,15 @@ svg .re-note{fill:#5b6875;font-size:calc(10px / var(--k,1))}
 </head>
 <body>
 <div id="app">
-  <!-- LA BARRE DU HAUT : ce qu'on regarde (le contrat ouvert, ses comptes, son état) et ce qu'on fait une fois (chercher,
-       ouvrir, le menu). Le contenu de #en-nom, #en-sous et #en-etat est écrit par l'interface (synchroniserContexte,
-       rendreControle) ; la page ne porte que des valeurs par défaut. Sa hauteur est le jeton --entete : le plan commence
-       dessous. -->
-  <header id="entete" aria-label="Contrat ouvert et actions">
+  <!-- LA BARRE DU HAUT : la marque, la recherche, le menu — rien d'autre (le lecteur : le contrat, ses comptes et son
+       état « ne servent à rien » ici ; ils sont dans le menu, et l'état sur le bouton des repères du rail). Sa hauteur est
+       le jeton --entete : le plan commence dessous. -->
+  <header id="entete" aria-label="Recherche et menu">
     <div class="en-contrat">
       <span class="en-marque" aria-hidden="true">
         <svg viewBox="0 0 24 24"><rect x="2.5" y="7.5" width="7" height="9" rx="1.5"/><rect x="14.5" y="7.5" width="7" height="9" rx="1.5"/><path d="M9.5 12h5"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>
       </span>
-      <div class="min0">
-        <div id="en-nom" class="en-nom">Atelier Schéma</div>
-        <div id="en-sous" class="en-sous"></div>
-      </div>
-      <button type="button" id="en-etat" class="fi-etat en-etat" hidden aria-label="État du contrat ; ouvre la liste à reprendre"></button>
+      <div class="en-nom">Atelier Schéma</div>
     </div>
 
     <!-- La recherche : toujours là, au milieu de la barre ; « / » y va, Échap en sort, la liste tombe dessous. -->
@@ -2022,35 +2005,33 @@ svg .re-note{fill:#5b6875;font-size:calc(10px / var(--k,1))}
     </div>
 
     <div class="en-actions">
-      <button class="btn papier" id="btnOuvrir" aria-label="Ouvrir un fichier (Ctrl+O)" title="Ouvrir un retest Excel ou CSV (Ctrl+O)">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-        <span>Ouvrir</span>
-      </button>
       <div id="menuBoite">
         <button class="rd" id="btnMenu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
           <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="19" r="1.4" fill="currentColor"/></svg>
           <span class="bulle" aria-hidden="true">Menu</span>
         </button>
         <div id="menu" class="menu" hidden role="menu">
-          <!-- Ce qui est ouvert et son enregistrement : à lire, pas à presser. -->
+          <!-- Ce qui est ouvert et son enregistrement : à lire, pas à presser. Chaque ligne porte sa bulle (data-aide) : ce
+               qu'elle fait, ce qu'elle attend, ce qu'elle remplace — lue au survol, à gauche du menu. -->
           <div class="ctx"><div id="ctx-nom">—</div><div id="ctx-txt"></div><div id="ctx-sauve" class="sauve"></div></div>
           <hr>
-          <button role="menuitem" data-act="ouvrir">Ouvrir un fichier… <span class="raccourci">Ctrl+O</span></button>
-          <button role="menuitem" data-act="coller">Coller des liaisons…</button>
-          <button role="menuitem" data-act="exemple">Charger l’exemple</button>
+          <button role="menuitem" data-act="ouvrir" data-aide="Charge un retest : un Excel (.xlsx, .xlsm, .xls) ou un CSV, une ligne par liaison — de quel repère et quelle borne, vers quel repère et quelle borne, le numéro de fil, le type de câble. L’outil dessine les folios et juge tout. Le contrat ouvert est remplacé (Ctrl+Z le rend).">Ouvrir un retest… <span class="raccourci">Ctrl+O</span></button>
+          <button role="menuitem" data-act="coller" data-aide="Pour quelques lignes copiées d’un Excel, ou tapées : on les colle dans une fenêtre, une liaison par ligne, colonnes séparées par une tabulation ou un point-virgule. Elles deviennent le contrat (le contrat ouvert est remplacé ; Ctrl+Z le rend).">Coller des liaisons…</button>
+          <button role="menuitem" data-act="exemple" data-aide="Ouvre un contrat d’exemple — 201 liaisons sur six folios — pour découvrir l’outil sans fichier. Le contrat ouvert est remplacé (Ctrl+Z le rend).">Charger l’exemple</button>
           <hr>
-          <button role="menuitem" data-act="cartouche">Cartouche</button>
-          <button role="menuitem" data-act="nomenclature">Nomenclature <span class="raccourci">N</span></button>
-          <button role="menuitem" data-act="bible">Bible des barrettes</button>
-          <button role="menuitem" data-act="normes">Normes</button>
-          <button role="menuitem" data-act="hypotheses">Hypothèses de simulation</button>
-          <button role="menuitem" data-act="suivi">Exporter le suivi (CSV)</button>
+          <button role="menuitem" data-act="references" data-aide="Ta base des contrats déjà faits : un seul gros Excel, une ligne par liaison, avec les colonnes du retest (Harness, Device1, Pin1, PN1, Cable TG, Cable Tag, Device2, Pin2, PN2, FWD, Appareil, Date de retest…). Chargée une fois, gardée dans ce navigateur ; ensuite chaque équipement du contrat est comparé à ce qui a déjà été fait.">Contrats déjà faits</button>
+          <button role="menuitem" data-act="cartouche" data-aide="Le cartouche écrit en bas à droite de chaque folio : le titre, le dessinateur, la date, l’indice, l’échelle.">Cartouche</button>
+          <button role="menuitem" data-act="nomenclature" data-aide="Ce qu’il faut commander et sertir, compté sur tout le contrat : contacts, modules de jonction, connecteurs et prises, fils et câbles (longueur, masse). S’enregistre en CSV.">Nomenclature <span class="raccourci">N</span></button>
+          <button role="menuitem" data-act="bible" data-aide="Les références de barrettes, de modules et de connecteurs que l’outil connaît — la bible embarquée ou la tienne, importée d’un Excel. C’est là qu’il choisit la référence de chaque barrette et de chaque prise.">Bible des barrettes</button>
+          <button role="menuitem" data-act="normes" data-aide="Toutes les tables qui servent à juger : câbles, intensités admissibles, contacts, arrangements, raccords, disjoncteurs, réseau. On les lit, on y cherche, on les corrige, on en importe.">Normes</button>
+          <button role="menuitem" data-act="hypotheses" data-aide="Ce que le retest ne dit pas et que l’outil suppose : la longueur d’un fil sans longueur, le courant d’un fil sans disjoncteur, la tension du réseau, les températures. Les changer refait tous les calculs.">Hypothèses de simulation</button>
+          <button role="menuitem" data-act="suivi" data-aide="Un tableau CSV de chaque barrette, prise de coupure et connecteur du contrat — sa référence, ses contacts, ses fils — pour le suivi de fabrication.">Exporter le suivi (CSV)</button>
           <hr>
-          <button role="menuitem" data-act="svg">Enregistrer le folio en SVG</button>
-          <button role="menuitem" data-act="png">Enregistrer le folio en PNG</button>
-          <button role="menuitem" data-act="imprimer">Imprimer <span class="raccourci">Ctrl+P</span></button>
+          <button role="menuitem" data-act="svg" data-aide="Le folio affiché, en dessin vectoriel (SVG) : net à toute échelle, pour un autre logiciel ou un document.">Enregistrer le folio en SVG</button>
+          <button role="menuitem" data-act="png" data-aide="Le folio affiché, en image (PNG) : pour un mail ou une présentation.">Enregistrer le folio en PNG</button>
+          <button role="menuitem" data-act="imprimer" data-aide="Imprime le folio affiché, seul, sur une feuille A3 paysage.">Imprimer <span class="raccourci">Ctrl+P</span></button>
           <hr>
-          <button role="menuitem" data-act="vider" class="danger">Tout effacer</button>
+          <button role="menuitem" data-act="vider" class="danger" data-aide="Vide l’outil : le contrat, ses choix, ses retouches. On revient à l’accueil ; Ctrl+Z rend tout tant que la page est ouverte.">Tout effacer</button>
         </div>
       </div>
     </div>
@@ -9025,11 +9006,6 @@ function rendreControle() { const V = verite();
   let p = b.querySelector('.rd-point'); if (!p) { p = document.createElement('i'); p.className = 'rd-point'; b.appendChild(p); }
   p.hidden = !xs.length; p.className = 'rd-point ' + (nko ? 'ko' : 'att'); p.textContent = String(nko || natt);
   b.setAttribute('aria-label', 'Repères du contrat (R)' + (nko ? ' — ' + pluriel(nko, 'problème') : natt ? ' — ' + natt + ' à voir' : ''));
-  // la barre du haut, si la page en a une : l'état du contrat en une pastille, qui ouvre l'index
-  const e = $('en-etat'); if (e) { e.hidden = !V.length; e.className = 'fi-etat en-etat ' + (nko ? 'ko' : natt ? 'att' : 'ok'); e.title = xs.length ? 'La liste de ce qu’il y a à reprendre' : 'Rien à reprendre : tout est jugé bon';
-    // les mots se rangent quand la barre manque de place (il reste « 3 · 10 », le voyant dit le reste) ; le texte lu est le même
-    const mot = t => `<span class="en-mot">${t}</span>`;
-    e.innerHTML = `<i aria-hidden="true">${nko ? '✕' : natt ? '!' : '✓'}</i><span>${nko ? nko + mot(nko > 1 ? ' problèmes' : ' problème') + (natt ? ' · ' + natt + mot(' à voir') : '') : natt ? natt + mot(' à voir') : 'rien à reprendre'}</span>`; e.onclick = () => { if (!(app.insp.index && !$('inspecteur').hidden)) basculerIndex(); }; }
   if (app.insp.index && !$('inspecteur').hidden && !app.cible) rendreIndex($('ba-equip')); }
 /* La liste « à reprendre », en tête de l'index : les problèmes, puis les points à voir ; une ligne y mène. */
 function listeControleHtml() { const xs = CONTROLE.items; if (!xs.length) return '';
@@ -9497,12 +9473,13 @@ function fiTete(o) {
     + (o.designation != null ? `<input class="fi-des" id="eq-des" value="${escA(o.designation)}"${o.designation ? '' : ' hidden'} placeholder="désignation" aria-label="Désignation, écrite sous le repère" spellcheck="false" autocomplete="off">` : '') + '</div>'
     + (o.etat || ''); }
 /* L'état — seulement s'il y a quelque chose à dire (le lecteur : « conforme, tu peux l'enlever ») : une carte, rouge
-   dès qu'il y a un problème, les problèmes d'abord puis les points à voir (en ambre, jamais cachés) ; dépliée d'office
-   s'il y a un problème ou un seul point, derrière un clic quand les points à voir sont plusieurs. */
+   dès qu'il y a un problème, les problèmes d'abord puis les points à voir (en ambre). Repliée en haut de la fiche
+   (le lecteur : « je ne veux pas que la liste soit déroulée ; on clique si on veut ») : son titre dit déjà combien ;
+   dépliée, elle le reste pour cet objet tant qu'on ne choisit pas autre chose. */
 function fiEtat(ko, att) {
   if (!ko.length && !att.length) return '';
   const cls = ko.length ? 'ko' : 'att', titre = [ko.length ? (ko.length > 1 ? ko.length + ' problèmes' : '1 problème') : '', att.length ? (att.length > 1 ? att.length + ' à voir' : '1 point à voir') : ''].filter(Boolean).join(' · ');
-  return `<details class="fi-etat ${cls}"${ko.length || att.length === 1 ? ' open' : ''}><summary><i aria-hidden="true">${cls === 'ko' ? '✕' : '!'}</i><span>${titre}</span>${ico('bas', 'fi-chevron')}</summary>`
+  return `<details class="fi-etat ${cls}"${app.insp.etatOuvert && app.insp.etatOuvert === cleDeCible() ? ' open' : ''}><summary><i aria-hidden="true">${cls === 'ko' ? '✕' : '!'}</i><span>${titre}</span>${ico('bas', 'fi-chevron')}</summary>`
     + `<ul>${ko.map(t => `<li>${insecable(esc(t))}</li>`).join('')}${att.map(t => `<li${ko.length ? ' class="fi-att"' : ''}>${insecable(esc(t))}</li>`).join('')}</ul></details>`; }
 /* La référence retenue (sa norme se lit dedans : on ne la répète pas), pourquoi en une ligne, et « Changer » qui
    déplie les autres. */
@@ -9897,9 +9874,13 @@ const app = {
   bible: [], bibleNom: '', norme: null, normeNom: '', simu: null,   // simu : les hypothèses, posées au démarrage (relireSimu)
   base: { ouvert: false, portee: 'folio', filtre: '', filtreAuto: false, tri: null, hauteur: 0, sale: true, defiler: false, enSaisie: false, choixOuvert: false, normeOuverte: false },
   retouches: new Map(),  // folio (sa clé de placement) -> le dessin retouché à la souris (la retouche)
-  insp: { index: false, filtre: '', ajout: false }   // l'inspecteur : ouvert sur l'INDEX des repères (une fiche y revient par la flèche), ce qu'on y cherche, le champ « ajouter » ouvert
+  insp: { index: false, filtre: '', ajout: false, etatOuvert: null }   // l'inspecteur : ouvert sur l'INDEX des repères (une fiche y revient par la flèche), ce qu'on y cherche, le champ « ajouter » ouvert, l'objet dont on a déplié les problèmes
 };
 const $ = id => document.getElementById(id);
+/* ce qui est choisi, en un mot : la clé d'un objet (un bloc par son repère, un fil par son numéro) */
+const cleDeCible = () => !app.cible ? '' : app.cible.type === 'fil' ? 'fil:' + (app.cible.l && app.cible.l.cable || '') : 'bloc:' + app.cible.nom;
+// la carte des problèmes d'une fiche : qu'on la déplie ou la replie, l'inspecteur s'en souvient pour cet objet
+document.addEventListener('toggle', e => { const d = e.target; if (d && d.matches && d.matches('details.fi-etat')) app.insp.etatOuvert = d.open ? cleDeCible() : null; }, true);
 /* La typographie française, une fois pour toutes, sur le texte affiché : une espace insécable avant « ; : ? ! » et le
    guillemet fermant, après l'ouvrant ; l'apostrophe courbe. Aucun signe ne tombe seul en début de ligne, quel que soit
    le texte (le nôtre, celui d'une table de normes, d'un retest). Jamais dans le dessin des folios (svg) ni dans un champ :
@@ -10506,7 +10487,7 @@ function rendreIndex(box) { const etats = new Map();
     // ajouter un équipement : un champ en ligne, sous le titre (pas une boîte du navigateur)
     + (app.insp.ajout ? `<form class="ix-ajout" id="ix-ajout"><div class="filtre">${ico('plus')}<input id="ix-nouveau" placeholder="Repère du nouvel équipement, par exemple 105RL2" aria-label="Repère du nouvel équipement" autocomplete="off" spellcheck="false"></div><button class="btn cuivre" type="submit">Ajouter</button><button class="btn lien" type="button" id="ix-annuler">Annuler</button></form>` : '')
     + `<div class="filtre ix-filtre">${ico('loupe')}<input id="ix-q" value="${escA(app.insp.filtre)}" placeholder="Chercher un repère, une désignation" aria-label="Chercher un repère" autocomplete="off" spellcheck="false"><button class="vider" id="ix-vider"${f ? '' : ' hidden'} aria-label="Effacer la recherche">×</button></div>`
-    + (f ? '' : `<details class="ix-controle"${nko ? ' open' : ''}><summary><span class="fi-etat ${nko ? 'ko' : natt ? 'att' : 'ok'}"><i aria-hidden="true">${nko ? '✕' : natt ? '!' : '✓'}</i>${nko ? pluriel(nko, 'problème') + (natt ? ' · ' + natt + ' à voir' : '') : natt ? natt + ' à voir' : 'rien à reprendre'}</span>${(nko || natt) ? ico('bas', 'fi-chevron') : ''}</summary>${listeControleHtml()}</details>`)
+    + (f ? '' : `<details class="ix-controle"${CONTROLE.ouvert ? ' open' : ''}><summary><span class="fi-etat ${nko ? 'ko' : natt ? 'att' : 'ok'}"><i aria-hidden="true">${nko ? '✕' : natt ? '!' : '✓'}</i>${nko ? pluriel(nko, 'problème') + (natt ? ' · ' + natt + ' à voir' : '') : natt ? natt + ' à voir' : 'rien à reprendre'}</span>${(nko || natt) ? ico('bas', 'fi-chevron') : ''}</summary>${listeControleHtml()}</details>`)
     + (groupes || `<p class="ix-vide">Aucun repère ne contient « ${esc(app.insp.filtre.trim())} ». <button class="btn lien" id="ix-effacer">Effacer</button></p>`);
   // la même liste refaite (un filtre tapé) garde sa place ; l'index qu'on ouvre commence en haut, titre et recherche en vue
   box.scrollTop = meme ? haut : 0;
@@ -10522,7 +10503,6 @@ function rendreIndex(box) { const etats = new Map();
       if (!app.base.ouvert) ouvrirBase(); ajouterLiaison(r); dire(r + ' : écris ses fils dans le tableau, le plan suit.'); });
     $('ix-annuler').onclick = fin; n.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); fin(); } }); }
   const det = box.querySelector('.ix-controle'); if (det) det.addEventListener('toggle', () => { CONTROLE.ouvert = det.open; });
-  if (det && CONTROLE.ouvert != null && !nko) det.open = !!CONTROLE.ouvert;
   box.querySelectorAll('.ix-item.co-item').forEach(b => b.onclick = () => allerAuControle(CONTROLE.items[+b.dataset.k]));
   box.querySelectorAll('.ix-item[data-nom]').forEach(b => b.onclick = () => allerAuRepere(b.dataset.nom, b.dataset.plan)); }
 // depuis l'index : le folio du repère, son bloc choisi sur le plan, sa fiche
@@ -11312,15 +11292,12 @@ function imprimer() { if (!app.dessin) return; const S = svgAutonome(app.dessin,
   $('printroot').innerHTML = `<style>@page{size:A3 landscape;margin:8mm}</style>` + S.txt.replace(/^<\?xml[^>]*\?>\s*/, ''); window.print(); }
 
 /* ---- ce que le menu et le rail affichent ------------------------------ */
-const TITRE_CARTOUCHE_DEFAUT = nouveauContrat().cartouche.titre, NOM_EXEMPLE = 'Contrat d’exemple';
+const NOM_EXEMPLE = 'Contrat d’exemple';
 /* L'en-tête dit QUEL contrat est ouvert : le titre du cartouche si on en a écrit un, sinon le nom du fichier ; et que
    c'est l'exemple embarqué quand c'est lui (à la première ouverture, il s'affiche sans qu'on l'ait demandé). */
 function synchroniserContexte() { const n = app.contrat.liaisons.length, P = plans(), nom = n ? (app.nom || 'Sans nom') : 'Aucun contrat', exemple = n && app.nom === NOM_EXEMPLE;
   const sous = n ? (exemple ? 'l’exemple embarqué · ' : '') + `${n} liaison${n > 1 ? 's' : ''} · ${reperesDuContrat().length} repères` + (P.length > 1 ? ` · ${P.length} folios` : '') : '';
   $('ctx-nom').textContent = nom; $('ctx-txt').textContent = sous; $('ctx-nom').title = nom;
-  // la barre du haut, si la page en a une : le nom du contrat et ses comptes (l'état est posé par rendreControle)
-  const titre = app.contrat.cartouche && app.contrat.cartouche.titre, en = $('en-nom');
-  if (en) { en.textContent = n ? (titre && titre !== TITRE_CARTOUCHE_DEFAUT ? titre : nom) : 'Atelier Schéma'; en.title = en.textContent; const es = $('en-sous'); if (es) { es.textContent = sous; es.title = sous; } }
   // l'accueil : « reprendre » si le dernier geste a vidé la table
   const rep = $('vd-reprendre'); if (rep) { const d = app.hist[app.hist.length - 1]; rep.hidden = !(!n && d && d.liaisons && d.liaisons.length); if (!rep.hidden) rep.textContent = d.nom ? 'Reprendre « ' + d.nom + ' »' : 'Reprendre le contrat'; }
   if (typeof rendreAccueil === 'function') rendreAccueil(); }
@@ -11349,9 +11326,11 @@ function lierPanneau() {
   $('fichier-bible').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) importerBible(f); e.target.value = ''; });
   o('vd-ouvrir', choisirFichier); o('vd-coller', ficheColler); o('vd-exemple', exemple); o('vd-reprendre', () => { const q = annuler(); if (q) dire('Repris : ' + q + '.'); });
   o('btnBase', basculerBase); o('btnIndex', basculerIndex); o('btnCherche', () => { if (rechercheOuverte()) fermerRecherche(); else ouvrirRecherche(); });
-  o('btnLiaison', nouvelleLiaison); o('btnBible', basculerBible); o('btnOuvrir', choisirFichier);
+  o('btnLiaison', nouvelleLiaison); o('btnBible', basculerBible);
   o('btnMenu', e => { e.stopPropagation(); $('menu').hidden ? ouvrirMenu() : fermerMenu(); });
-  const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple, cartouche: ficheCartouche, bible: ficheBible, normes: () => ficheNormes(), hypotheses: ficheHypotheses, nomenclature: ficheNomenclature, suivi: exporterSuivi, svg: exporterSVG, png: exporterPNG, imprimer,
+  // la base des contrats déjà faits vit (pour l'instant) dans la page de la bible : on y va, à sa section
+  const references = () => { ficheBible(''); const t = [...$('fiche-corps').querySelectorAll('h3.sous-titre')].find(h => /contrats déjà faits/i.test(h.textContent)); if (t) t.scrollIntoView({ block: 'start' }); };
+  const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple, references, cartouche: ficheCartouche, bible: ficheBible, normes: () => ficheNormes(), hypotheses: ficheHypotheses, nomenclature: ficheNomenclature, suivi: exporterSuivi, svg: exporterSVG, png: exporterPNG, imprimer,
     // tout effacer : la table vide (l'accueil), et un contrat neuf — les choix de celui-ci ne survivent pas (Ctrl+Z, ou « Reprendre », rend tout)
     vider: () => { if (!confirm('Effacer tout le contrat ?')) return; histPush('tout effacer'); app.contrat = contratNeuf(); app.source = null; app.nFolios = 0; app.plan = '*'; app.nom = ''; app.cible = null; app.choisi = null;
       fermerFiche(); fermerInspecteur(); fermerBase(); redessiner(); ajuster(); sauver(); } };

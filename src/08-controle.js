@@ -96,11 +96,6 @@ function rendreControle() { const V = verite();
   let p = b.querySelector('.rd-point'); if (!p) { p = document.createElement('i'); p.className = 'rd-point'; b.appendChild(p); }
   p.hidden = !xs.length; p.className = 'rd-point ' + (nko ? 'ko' : 'att'); p.textContent = String(nko || natt);
   b.setAttribute('aria-label', 'Repères du contrat (R)' + (nko ? ' — ' + pluriel(nko, 'problème') : natt ? ' — ' + natt + ' à voir' : ''));
-  // la barre du haut, si la page en a une : l'état du contrat en une pastille, qui ouvre l'index
-  const e = $('en-etat'); if (e) { e.hidden = !V.length; e.className = 'fi-etat en-etat ' + (nko ? 'ko' : natt ? 'att' : 'ok'); e.title = xs.length ? 'La liste de ce qu’il y a à reprendre' : 'Rien à reprendre : tout est jugé bon';
-    // les mots se rangent quand la barre manque de place (il reste « 3 · 10 », le voyant dit le reste) ; le texte lu est le même
-    const mot = t => `<span class="en-mot">${t}</span>`;
-    e.innerHTML = `<i aria-hidden="true">${nko ? '✕' : natt ? '!' : '✓'}</i><span>${nko ? nko + mot(nko > 1 ? ' problèmes' : ' problème') + (natt ? ' · ' + natt + mot(' à voir') : '') : natt ? natt + mot(' à voir') : 'rien à reprendre'}</span>`; e.onclick = () => { if (!(app.insp.index && !$('inspecteur').hidden)) basculerIndex(); }; }
   if (app.insp.index && !$('inspecteur').hidden && !app.cible) rendreIndex($('ba-equip')); }
 /* La liste « à reprendre », en tête de l'index : les problèmes, puis les points à voir ; une ligne y mène. */
 function listeControleHtml() { const xs = CONTROLE.items; if (!xs.length) return '';

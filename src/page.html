@@ -1,18 +1,13 @@
 <div id="app">
-  <!-- LA BARRE DU HAUT : ce qu'on regarde (le contrat ouvert, ses comptes, son état) et ce qu'on fait une fois (chercher,
-       ouvrir, le menu). Le contenu de #en-nom, #en-sous et #en-etat est écrit par l'interface (synchroniserContexte,
-       rendreControle) ; la page ne porte que des valeurs par défaut. Sa hauteur est le jeton --entete : le plan commence
-       dessous. -->
-  <header id="entete" aria-label="Contrat ouvert et actions">
+  <!-- LA BARRE DU HAUT : la marque, la recherche, le menu — rien d'autre (le lecteur : le contrat, ses comptes et son
+       état « ne servent à rien » ici ; ils sont dans le menu, et l'état sur le bouton des repères du rail). Sa hauteur est
+       le jeton --entete : le plan commence dessous. -->
+  <header id="entete" aria-label="Recherche et menu">
     <div class="en-contrat">
       <span class="en-marque" aria-hidden="true">
         <svg viewBox="0 0 24 24"><rect x="2.5" y="7.5" width="7" height="9" rx="1.5"/><rect x="14.5" y="7.5" width="7" height="9" rx="1.5"/><path d="M9.5 12h5"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>
       </span>
-      <div class="min0">
-        <div id="en-nom" class="en-nom">Atelier Schéma</div>
-        <div id="en-sous" class="en-sous"></div>
-      </div>
-      <button type="button" id="en-etat" class="fi-etat en-etat" hidden aria-label="État du contrat ; ouvre la liste à reprendre"></button>
+      <div class="en-nom">Atelier Schéma</div>
     </div>
 
     <!-- La recherche : toujours là, au milieu de la barre ; « / » y va, Échap en sort, la liste tombe dessous. -->
@@ -27,35 +22,33 @@
     </div>
 
     <div class="en-actions">
-      <button class="btn papier" id="btnOuvrir" aria-label="Ouvrir un fichier (Ctrl+O)" title="Ouvrir un retest Excel ou CSV (Ctrl+O)">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-        <span>Ouvrir</span>
-      </button>
       <div id="menuBoite">
         <button class="rd" id="btnMenu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
           <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="19" r="1.4" fill="currentColor"/></svg>
           <span class="bulle" aria-hidden="true">Menu</span>
         </button>
         <div id="menu" class="menu" hidden role="menu">
-          <!-- Ce qui est ouvert et son enregistrement : à lire, pas à presser. -->
+          <!-- Ce qui est ouvert et son enregistrement : à lire, pas à presser. Chaque ligne porte sa bulle (data-aide) : ce
+               qu'elle fait, ce qu'elle attend, ce qu'elle remplace — lue au survol, à gauche du menu. -->
           <div class="ctx"><div id="ctx-nom">—</div><div id="ctx-txt"></div><div id="ctx-sauve" class="sauve"></div></div>
           <hr>
-          <button role="menuitem" data-act="ouvrir">Ouvrir un fichier… <span class="raccourci">Ctrl+O</span></button>
-          <button role="menuitem" data-act="coller">Coller des liaisons…</button>
-          <button role="menuitem" data-act="exemple">Charger l’exemple</button>
+          <button role="menuitem" data-act="ouvrir" data-aide="Charge un retest : un Excel (.xlsx, .xlsm, .xls) ou un CSV, une ligne par liaison — de quel repère et quelle borne, vers quel repère et quelle borne, le numéro de fil, le type de câble. L’outil dessine les folios et juge tout. Le contrat ouvert est remplacé (Ctrl+Z le rend).">Ouvrir un retest… <span class="raccourci">Ctrl+O</span></button>
+          <button role="menuitem" data-act="coller" data-aide="Pour quelques lignes copiées d’un Excel, ou tapées : on les colle dans une fenêtre, une liaison par ligne, colonnes séparées par une tabulation ou un point-virgule. Elles deviennent le contrat (le contrat ouvert est remplacé ; Ctrl+Z le rend).">Coller des liaisons…</button>
+          <button role="menuitem" data-act="exemple" data-aide="Ouvre un contrat d’exemple — 201 liaisons sur six folios — pour découvrir l’outil sans fichier. Le contrat ouvert est remplacé (Ctrl+Z le rend).">Charger l’exemple</button>
           <hr>
-          <button role="menuitem" data-act="cartouche">Cartouche</button>
-          <button role="menuitem" data-act="nomenclature">Nomenclature <span class="raccourci">N</span></button>
-          <button role="menuitem" data-act="bible">Bible des barrettes</button>
-          <button role="menuitem" data-act="normes">Normes</button>
-          <button role="menuitem" data-act="hypotheses">Hypothèses de simulation</button>
-          <button role="menuitem" data-act="suivi">Exporter le suivi (CSV)</button>
+          <button role="menuitem" data-act="references" data-aide="Ta base des contrats déjà faits : un seul gros Excel, une ligne par liaison, avec les colonnes du retest (Harness, Device1, Pin1, PN1, Cable TG, Cable Tag, Device2, Pin2, PN2, FWD, Appareil, Date de retest…). Chargée une fois, gardée dans ce navigateur ; ensuite chaque équipement du contrat est comparé à ce qui a déjà été fait.">Contrats déjà faits</button>
+          <button role="menuitem" data-act="cartouche" data-aide="Le cartouche écrit en bas à droite de chaque folio : le titre, le dessinateur, la date, l’indice, l’échelle.">Cartouche</button>
+          <button role="menuitem" data-act="nomenclature" data-aide="Ce qu’il faut commander et sertir, compté sur tout le contrat : contacts, modules de jonction, connecteurs et prises, fils et câbles (longueur, masse). S’enregistre en CSV.">Nomenclature <span class="raccourci">N</span></button>
+          <button role="menuitem" data-act="bible" data-aide="Les références de barrettes, de modules et de connecteurs que l’outil connaît — la bible embarquée ou la tienne, importée d’un Excel. C’est là qu’il choisit la référence de chaque barrette et de chaque prise.">Bible des barrettes</button>
+          <button role="menuitem" data-act="normes" data-aide="Toutes les tables qui servent à juger : câbles, intensités admissibles, contacts, arrangements, raccords, disjoncteurs, réseau. On les lit, on y cherche, on les corrige, on en importe.">Normes</button>
+          <button role="menuitem" data-act="hypotheses" data-aide="Ce que le retest ne dit pas et que l’outil suppose : la longueur d’un fil sans longueur, le courant d’un fil sans disjoncteur, la tension du réseau, les températures. Les changer refait tous les calculs.">Hypothèses de simulation</button>
+          <button role="menuitem" data-act="suivi" data-aide="Un tableau CSV de chaque barrette, prise de coupure et connecteur du contrat — sa référence, ses contacts, ses fils — pour le suivi de fabrication.">Exporter le suivi (CSV)</button>
           <hr>
-          <button role="menuitem" data-act="svg">Enregistrer le folio en SVG</button>
-          <button role="menuitem" data-act="png">Enregistrer le folio en PNG</button>
-          <button role="menuitem" data-act="imprimer">Imprimer <span class="raccourci">Ctrl+P</span></button>
+          <button role="menuitem" data-act="svg" data-aide="Le folio affiché, en dessin vectoriel (SVG) : net à toute échelle, pour un autre logiciel ou un document.">Enregistrer le folio en SVG</button>
+          <button role="menuitem" data-act="png" data-aide="Le folio affiché, en image (PNG) : pour un mail ou une présentation.">Enregistrer le folio en PNG</button>
+          <button role="menuitem" data-act="imprimer" data-aide="Imprime le folio affiché, seul, sur une feuille A3 paysage.">Imprimer <span class="raccourci">Ctrl+P</span></button>
           <hr>
-          <button role="menuitem" data-act="vider" class="danger">Tout effacer</button>
+          <button role="menuitem" data-act="vider" class="danger" data-aide="Vide l’outil : le contrat, ses choix, ses retouches. On revient à l’accueil ; Ctrl+Z rend tout tant que la page est ouverte.">Tout effacer</button>
         </div>
       </div>
     </div>

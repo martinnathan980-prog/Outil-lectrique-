@@ -35,9 +35,13 @@ const app = {
   bible: [], bibleNom: '', norme: null, normeNom: '', simu: null,   // simu : les hypothèses, posées au démarrage (relireSimu)
   base: { ouvert: false, portee: 'folio', filtre: '', filtreAuto: false, tri: null, hauteur: 0, sale: true, defiler: false, enSaisie: false, choixOuvert: false, normeOuverte: false },
   retouches: new Map(),  // folio (sa clé de placement) -> le dessin retouché à la souris (la retouche)
-  insp: { index: false, filtre: '', ajout: false }   // l'inspecteur : ouvert sur l'INDEX des repères (une fiche y revient par la flèche), ce qu'on y cherche, le champ « ajouter » ouvert
+  insp: { index: false, filtre: '', ajout: false, etatOuvert: null }   // l'inspecteur : ouvert sur l'INDEX des repères (une fiche y revient par la flèche), ce qu'on y cherche, le champ « ajouter » ouvert, l'objet dont on a déplié les problèmes
 };
 const $ = id => document.getElementById(id);
+/* ce qui est choisi, en un mot : la clé d'un objet (un bloc par son repère, un fil par son numéro) */
+const cleDeCible = () => !app.cible ? '' : app.cible.type === 'fil' ? 'fil:' + (app.cible.l && app.cible.l.cable || '') : 'bloc:' + app.cible.nom;
+// la carte des problèmes d'une fiche : qu'on la déplie ou la replie, l'inspecteur s'en souvient pour cet objet
+document.addEventListener('toggle', e => { const d = e.target; if (d && d.matches && d.matches('details.fi-etat')) app.insp.etatOuvert = d.open ? cleDeCible() : null; }, true);
 /* La typographie française, une fois pour toutes, sur le texte affiché : une espace insécable avant « ; : ? ! » et le
    guillemet fermant, après l'ouvrant ; l'apostrophe courbe. Aucun signe ne tombe seul en début de ligne, quel que soit
    le texte (le nôtre, celui d'une table de normes, d'un retest). Jamais dans le dessin des folios (svg) ni dans un champ :
@@ -644,7 +648,7 @@ function rendreIndex(box) { const etats = new Map();
     // ajouter un équipement : un champ en ligne, sous le titre (pas une boîte du navigateur)
     + (app.insp.ajout ? `<form class="ix-ajout" id="ix-ajout"><div class="filtre">${ico('plus')}<input id="ix-nouveau" placeholder="Repère du nouvel équipement, par exemple 105RL2" aria-label="Repère du nouvel équipement" autocomplete="off" spellcheck="false"></div><button class="btn cuivre" type="submit">Ajouter</button><button class="btn lien" type="button" id="ix-annuler">Annuler</button></form>` : '')
     + `<div class="filtre ix-filtre">${ico('loupe')}<input id="ix-q" value="${escA(app.insp.filtre)}" placeholder="Chercher un repère, une désignation" aria-label="Chercher un repère" autocomplete="off" spellcheck="false"><button class="vider" id="ix-vider"${f ? '' : ' hidden'} aria-label="Effacer la recherche">×</button></div>`
-    + (f ? '' : `<details class="ix-controle"${nko ? ' open' : ''}><summary><span class="fi-etat ${nko ? 'ko' : natt ? 'att' : 'ok'}"><i aria-hidden="true">${nko ? '✕' : natt ? '!' : '✓'}</i>${nko ? pluriel(nko, 'problème') + (natt ? ' · ' + natt + ' à voir' : '') : natt ? natt + ' à voir' : 'rien à reprendre'}</span>${(nko || natt) ? ico('bas', 'fi-chevron') : ''}</summary>${listeControleHtml()}</details>`)
+    + (f ? '' : `<details class="ix-controle"${CONTROLE.ouvert ? ' open' : ''}><summary><span class="fi-etat ${nko ? 'ko' : natt ? 'att' : 'ok'}"><i aria-hidden="true">${nko ? '✕' : natt ? '!' : '✓'}</i>${nko ? pluriel(nko, 'problème') + (natt ? ' · ' + natt + ' à voir' : '') : natt ? natt + ' à voir' : 'rien à reprendre'}</span>${(nko || natt) ? ico('bas', 'fi-chevron') : ''}</summary>${listeControleHtml()}</details>`)
     + (groupes || `<p class="ix-vide">Aucun repère ne contient « ${esc(app.insp.filtre.trim())} ». <button class="btn lien" id="ix-effacer">Effacer</button></p>`);
   // la même liste refaite (un filtre tapé) garde sa place ; l'index qu'on ouvre commence en haut, titre et recherche en vue
   box.scrollTop = meme ? haut : 0;
@@ -660,7 +664,6 @@ function rendreIndex(box) { const etats = new Map();
       if (!app.base.ouvert) ouvrirBase(); ajouterLiaison(r); dire(r + ' : écris ses fils dans le tableau, le plan suit.'); });
     $('ix-annuler').onclick = fin; n.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); fin(); } }); }
   const det = box.querySelector('.ix-controle'); if (det) det.addEventListener('toggle', () => { CONTROLE.ouvert = det.open; });
-  if (det && CONTROLE.ouvert != null && !nko) det.open = !!CONTROLE.ouvert;
   box.querySelectorAll('.ix-item.co-item').forEach(b => b.onclick = () => allerAuControle(CONTROLE.items[+b.dataset.k]));
   box.querySelectorAll('.ix-item[data-nom]').forEach(b => b.onclick = () => allerAuRepere(b.dataset.nom, b.dataset.plan)); }
 // depuis l'index : le folio du repère, son bloc choisi sur le plan, sa fiche
@@ -1450,15 +1453,12 @@ function imprimer() { if (!app.dessin) return; const S = svgAutonome(app.dessin,
   $('printroot').innerHTML = `<style>@page{size:A3 landscape;margin:8mm}</style>` + S.txt.replace(/^<\?xml[^>]*\?>\s*/, ''); window.print(); }
 
 /* ---- ce que le menu et le rail affichent ------------------------------ */
-const TITRE_CARTOUCHE_DEFAUT = nouveauContrat().cartouche.titre, NOM_EXEMPLE = 'Contrat d’exemple';
+const NOM_EXEMPLE = 'Contrat d’exemple';
 /* L'en-tête dit QUEL contrat est ouvert : le titre du cartouche si on en a écrit un, sinon le nom du fichier ; et que
    c'est l'exemple embarqué quand c'est lui (à la première ouverture, il s'affiche sans qu'on l'ait demandé). */
 function synchroniserContexte() { const n = app.contrat.liaisons.length, P = plans(), nom = n ? (app.nom || 'Sans nom') : 'Aucun contrat', exemple = n && app.nom === NOM_EXEMPLE;
   const sous = n ? (exemple ? 'l’exemple embarqué · ' : '') + `${n} liaison${n > 1 ? 's' : ''} · ${reperesDuContrat().length} repères` + (P.length > 1 ? ` · ${P.length} folios` : '') : '';
   $('ctx-nom').textContent = nom; $('ctx-txt').textContent = sous; $('ctx-nom').title = nom;
-  // la barre du haut, si la page en a une : le nom du contrat et ses comptes (l'état est posé par rendreControle)
-  const titre = app.contrat.cartouche && app.contrat.cartouche.titre, en = $('en-nom');
-  if (en) { en.textContent = n ? (titre && titre !== TITRE_CARTOUCHE_DEFAUT ? titre : nom) : 'Atelier Schéma'; en.title = en.textContent; const es = $('en-sous'); if (es) { es.textContent = sous; es.title = sous; } }
   // l'accueil : « reprendre » si le dernier geste a vidé la table
   const rep = $('vd-reprendre'); if (rep) { const d = app.hist[app.hist.length - 1]; rep.hidden = !(!n && d && d.liaisons && d.liaisons.length); if (!rep.hidden) rep.textContent = d.nom ? 'Reprendre « ' + d.nom + ' »' : 'Reprendre le contrat'; }
   if (typeof rendreAccueil === 'function') rendreAccueil(); }
@@ -1487,9 +1487,11 @@ function lierPanneau() {
   $('fichier-bible').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) importerBible(f); e.target.value = ''; });
   o('vd-ouvrir', choisirFichier); o('vd-coller', ficheColler); o('vd-exemple', exemple); o('vd-reprendre', () => { const q = annuler(); if (q) dire('Repris : ' + q + '.'); });
   o('btnBase', basculerBase); o('btnIndex', basculerIndex); o('btnCherche', () => { if (rechercheOuverte()) fermerRecherche(); else ouvrirRecherche(); });
-  o('btnLiaison', nouvelleLiaison); o('btnBible', basculerBible); o('btnOuvrir', choisirFichier);
+  o('btnLiaison', nouvelleLiaison); o('btnBible', basculerBible);
   o('btnMenu', e => { e.stopPropagation(); $('menu').hidden ? ouvrirMenu() : fermerMenu(); });
-  const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple, cartouche: ficheCartouche, bible: ficheBible, normes: () => ficheNormes(), hypotheses: ficheHypotheses, nomenclature: ficheNomenclature, suivi: exporterSuivi, svg: exporterSVG, png: exporterPNG, imprimer,
+  // la base des contrats déjà faits vit (pour l'instant) dans la page de la bible : on y va, à sa section
+  const references = () => { ficheBible(''); const t = [...$('fiche-corps').querySelectorAll('h3.sous-titre')].find(h => /contrats déjà faits/i.test(h.textContent)); if (t) t.scrollIntoView({ block: 'start' }); };
+  const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple, references, cartouche: ficheCartouche, bible: ficheBible, normes: () => ficheNormes(), hypotheses: ficheHypotheses, nomenclature: ficheNomenclature, suivi: exporterSuivi, svg: exporterSVG, png: exporterPNG, imprimer,
     // tout effacer : la table vide (l'accueil), et un contrat neuf — les choix de celui-ci ne survivent pas (Ctrl+Z, ou « Reprendre », rend tout)
     vider: () => { if (!confirm('Effacer tout le contrat ?')) return; histPush('tout effacer'); app.contrat = contratNeuf(); app.source = null; app.nFolios = 0; app.plan = '*'; app.nom = ''; app.cible = null; app.choisi = null;
       fermerFiche(); fermerInspecteur(); fermerBase(); redessiner(); ajuster(); sauver(); } };

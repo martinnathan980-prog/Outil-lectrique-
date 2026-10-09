@@ -108,6 +108,9 @@ const FICHIER = P.fichierDemande();
   ok(await page.evaluate(() => !$('btnIndex').querySelector('.rd-point').hidden && /problème/.test($('ba-equip').querySelector('.ix-controle').textContent) && $('ba-equip').querySelectorAll('.co-item').length === new Set(CONTROLE.items.map(x => x.niveau + '|' + (x.nom || x.texte))).size && CONTROLE.items.some(x => x.nom === 'VT1') && /102CB1 2 problèmes/.test($('ba-equip').querySelector('.co-item').textContent) && !document.getElementById('controle')),
     'plus de pastille sur le plan : le bouton des repères porte le compte, l’index liste ce qu’il y a à reprendre, une ligne par repère (102CB1 : 2 problèmes), les barrettes à poser comprises');
   ok(await page.evaluate(() => [...$('ba-equip').querySelectorAll('.ix-groupe')].some(g => /Disjoncteurs/.test(g.textContent)) && /10\sA/.test($('ba-equip').textContent)), 'l’index range les disjoncteurs à part, avec leur calibre');
+  // « à reprendre » est replié en tête de l'index (le lecteur : on clique si on veut) : on le déplie, puis la ligne
+  ok(await page.evaluate(() => !$('ba-equip').querySelector('.ix-controle').open), '« à reprendre » est replié par défaut');
+  await page.click('#ba-equip .ix-controle > summary'); await page.waitForTimeout(200);
   await page.locator('#ba-equip .co-item', { hasText: '300XC1' }).click(); await page.waitForTimeout(600);
   ok(await page.evaluate(() => app.plan === '3' && app.cible && app.cible.nom === '300XC1' && !$('inspecteur').hidden), 'une ligne mène au folio 3 et à la fiche de 300XC1');
   ok(await page.evaluate(() => !$('ba-equip').querySelector('.fi-norme') && !/Conforme/.test($('ba-equip').textContent)), 'la fiche ne répète pas la norme à côté de la référence, et ne dit pas « conforme »');
@@ -201,11 +204,11 @@ const FICHIER = P.fichierDemande();
   ok(await page.evaluate(() => app.contrat.liaisons.length === 201 && app.contrat.charges.has('102CB1') && $('vide').hidden), '« Reprendre » rend l’exemple, avec son profil de charge');
   page.once('dialog', d => d.accept()); await page.click('#btnMenu'); await page.click('#menu [data-act="vider"]'); await page.waitForTimeout(400);
   await page.click('#vd-exemple'); await page.waitForTimeout(800);
-  ok(await page.evaluate(() => app.contrat.liaisons.length === 201 && app.nom === 'Contrat d’exemple' && $('en-nom').textContent === 'Contrat d’exemple' && /^l’exemple embarqué · 201 liaisons · \d+ repères · 6 folios$/.test($('en-sous').textContent)), '« Voir l’exemple » le charge ; l’en-tête dit que c’est l’exemple embarqué', await page.evaluate(() => $('en-sous').textContent));
-  // un autre fichier : rien du contrat d'avant ne survit ; l'en-tête dit son nom ; Ctrl+Z rend l'exemple et ses choix
+  ok(await page.evaluate(() => app.contrat.liaisons.length === 201 && app.nom === 'Contrat d’exemple' && $('ctx-nom').textContent === 'Contrat d’exemple' && /^l’exemple embarqué · 201 liaisons · \d+ repères · 6 folios$/.test($('ctx-txt').textContent)), '« Voir l’exemple » le charge ; le menu dit que c’est l’exemple embarqué (la barre du haut ne porte plus le contrat)', await page.evaluate(() => $('ctx-txt').textContent));
+  // un autre fichier : rien du contrat d'avant ne survit ; le menu dit son nom ; Ctrl+Z rend l'exemple et ses choix
   await page.evaluate(() => chargerContrat(contratExemple().filter(l => l.plan === '1'), 'ouverture de neuf.xlsx', 'neuf.xlsx')); await page.waitForTimeout(500);
-  ok(await page.evaluate(() => !app.contrat.charges.size && !app.contrat.designations.size && !app.contrat.sexes.size && !app.contrat.raccords.size && $('en-nom').textContent === 'neuf.xlsx' && !/exemple/.test($('en-sous').textContent) && !CONTROLE.items.some(x => x.nom === '102CB1' && /9,31/.test(x.texte))),
-    'un autre fichier ouvert : rien du contrat d’avant ne survit (son 102CB1 n’a pas le profil de l’exemple), l’en-tête dit le nom du fichier', await page.evaluate(() => $('en-nom').textContent + ' · ' + $('en-sous').textContent));
+  ok(await page.evaluate(() => !app.contrat.charges.size && !app.contrat.designations.size && !app.contrat.sexes.size && !app.contrat.raccords.size && $('ctx-nom').textContent === 'neuf.xlsx' && !/exemple/.test($('ctx-txt').textContent) && !CONTROLE.items.some(x => x.nom === '102CB1' && /9,31/.test(x.texte))),
+    'un autre fichier ouvert : rien du contrat d’avant ne survit (son 102CB1 n’a pas le profil de l’exemple), le menu dit le nom du fichier', await page.evaluate(() => $('ctx-nom').textContent + ' · ' + $('ctx-txt').textContent));
   await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
   ok(await page.evaluate(() => app.nom === 'Contrat d’exemple' && app.contrat.charges.has('102CB1') && app.contrat.liaisons.length === 201), 'Ctrl+Z rend l’exemple avec ses choix');
   // dix folios aux noms de dessin (FWD) : les puces s'abrègent, aucune ne déborde, la courante en entier, une liste déroulante en plus

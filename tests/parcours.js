@@ -110,6 +110,7 @@ function fixtures(M) {
 
 /* ---- parler à la page ---------------------------------------------------------------------------------------- */
 async function ouvrirPage(ctx) { const page = await ctx.newPage(); page.setDefaultTimeout(120000); page.erreurs = []; page.on('pageerror', e => page.erreurs.push(e.message));
+  await page.addInitScript(ETAT_DU_CONTROLE);
   await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await instrumenter(page); return page; }
 /* Les chronomètres dans la page : le placement d'un folio et le rendu d'une fiche (les fonctions globales du module 08 se
    remplacent par une version qui les mesure — rien d'autre ne change). */
@@ -152,12 +153,14 @@ const barreFolios = page => page.evaluate(() => { const s = $('fo-strip'), puces
   return { n: cs.length, visibles, chevauchent, debordent, largeStrip: Math.round(r.width), largePuces: large, defile: getComputedStyle(s).overflowX, lbl: $('fo-lbl').textContent }; });
 const PROPOSITION_BARRE = 'style.css `.fo-strip` / 08-interface.js `synchroniserFolios` : des puces à largeur bornée (le dessin abrégé « …01A », le nom entier en bulle), une bande qui défile pour de vrai (overflow-x:auto, la molette), la puce courante centrée — ou une liste déroulante au-delà de huit folios';
 /* Ouvrir un fichier comme le technicien : un bouton qui ouvre le choix de fichier, puis le fichier. Rend le temps jusqu'au plan. */
+/* « Ouvrir un retest… » du menu : le menu, puis sa ligne (la barre du haut n'a plus de bouton « Ouvrir ») */
+const parLeMenu = async page => { await page.click('#btnMenu'); await page.click('#menu [data-act="ouvrir"]'); };
 async function ouvrirParBouton(page, bouton, chemin) { const nom = path.basename(chemin), t0 = Date.now();
-  const [fc] = await Promise.all([page.waitForEvent('filechooser'), page.click(bouton)]); await fc.setFiles(chemin);
+  const [fc] = await Promise.all([page.waitForEvent('filechooser'), bouton === 'menu' ? parLeMenu(page) : page.click(bouton)]); await fc.setFiles(chemin);
   await page.waitForFunction(n => app.nom === n && !!app.dessin, nom); return Date.now() - t0; }
 /* Depuis l'ACCUEIL : « Ouvrir un fichier » d'un vrai clic de souris. S'il ne répond pas (frottement connu : le pointerdown
    de la planche prend la capture du pointeur, le clic n'atteint plus le bouton), on continue par `repli` — ce que ferait
-   le technicien : le bouton « Ouvrir » de la barre du haut, ou glisser le fichier. */
+   le technicien : « Ouvrir un retest… » dans le menu, ou glisser le fichier. */
 async function ouvrirDepuisAccueil(page, chemin, repli) { const nom = path.basename(chemin); let fc = null;
   try { [fc] = await Promise.all([page.waitForEvent('filechooser', { timeout: 3000 }), page.click('#vd-ouvrir')]); } catch (_) { fc = null; }
   frottement(!!fc, 'les boutons de l’accueil ne répondent pas à la souris', 'un vrai clic sur « Ouvrir un fichier » (comme sur la zone de dépôt, « Voir l’exemple », « Reprendre ») n’ouvre rien : le pointerdown de #planche prend la capture du pointeur (`lierPlanche`, `setPointerCapture`) et le clic est délivré à la planche, pas au bouton ; au clavier (Entrée) ça marche',
@@ -165,7 +168,7 @@ async function ouvrirDepuisAccueil(page, chemin, repli) { const nom = path.basen
   const t0 = Date.now();
   if (fc) await fc.setFiles(chemin);
   else if (repli === 'glisser') await deposer(page, chemin);
-  else { const [fc2] = await Promise.all([page.waitForEvent('filechooser'), page.click('#btnOuvrir')]); await fc2.setFiles(chemin); }
+  else { const [fc2] = await Promise.all([page.waitForEvent('filechooser'), parLeMenu(page)]); await fc2.setFiles(chemin); }
   await page.waitForFunction(n => app.nom === n && !!app.dessin, nom); return Date.now() - t0; }
 // la même chose en choisissant par l'entrée cachée (pour les fichiers qui ne dessinent rien : on attend le message)
 async function deposerParEntree(page, chemin) { await page.setInputFiles('#fichier', chemin); await page.waitForTimeout(900); }
@@ -177,7 +180,11 @@ async function deposer(page, chemin) { const b64 = fs.readFileSync(chemin).toStr
     window.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true })); }, [b64, nom]); }
 const toast = page => page.evaluate(() => ({ texte: $('toast').textContent, erreur: $('toast').classList.contains('erreur'), on: $('toast').classList.contains('on') }));
 const telecharger = async (page, action) => { const [d] = await Promise.all([page.waitForEvent('download', { timeout: 15000 }), action()]); return { nom: d.suggestedFilename(), chemin: await d.path() }; };
-const etat = page => page.evaluate(() => ({ nom: app.nom, plan: app.plan, n: verite().length, folios: plans().length, cible: app.cible && (app.cible.nom || (app.cible.l && app.cible.l.cable) || app.cible.type), insp: !$('inspecteur').hidden, base: app.base.ouvert, enNom: $('en-nom').textContent, enSous: $('en-sous').textContent, enEtat: $('en-etat').textContent.replace(/^[✕!✓]/, '').trim(), lbl: $('fo-lbl').textContent }));
+/* l'état du contrat en mots (« 3 problèmes · 10 à voir »), tel que le contrôle le compte — la barre du haut ne le porte
+   plus : le bouton des repères porte le compte, l'index la liste */
+const ETAT_DU_CONTROLE = `window.etatDuControle = function () { const xs = CONTROLE.items, k = xs.filter(x => x.niveau === 'ko').length, a = xs.length - k;
+  return k ? k + (k > 1 ? ' problèmes' : ' problème') + (a ? ' · ' + a + ' à voir' : '') : a ? a + ' à voir' : 'rien à reprendre'; };`;
+const etat = page => page.evaluate(() => ({ nom: app.nom, plan: app.plan, n: verite().length, folios: plans().length, cible: app.cible && (app.cible.nom || (app.cible.l && app.cible.l.cable) || app.cible.type), insp: !$('inspecteur').hidden, base: app.base.ouvert, enNom: $('ctx-nom').textContent, enSous: $('ctx-txt').textContent, enEtat: etatDuControle(), lbl: $('fo-lbl').textContent }));
 /* La base d'essai des contrats faits (comme tests/fwd.js) : H-1 l'exemple décalé de deux centaines (un dessin par folio, une
    ligne en plus vers 305XX9, une en moins, un type changé, des longueurs), H-2 soixante lignes de l'exemple, H-3 le folio 2 avec
    une barrette écrite « module 51, contact B » ; et H-4, le folio 1 décalé dont le relais et la lampe n'ont ni le même
@@ -205,7 +212,7 @@ function baseEssaiDansLaPage() {
     let e = await etat(page);
     ok(e.n > 0 && !e.insp, 'l’outil s’ouvre, sans fiche ouverte', e.nom + ' · ' + e.enSous);
     // la proposition retenue : l'exemple reste (il montre tout), et l'en-tête dit que c'est l'exemple embarqué
-    frottement(await page.evaluate(() => !$('vide').hidden || /exemple embarqué/.test($('en-sous').textContent)), 'à la première ouverture, c’est l’exemple qui s’affiche, pas l’accueil', 'le technicien qui ouvre l’outil pour un contrat neuf arrive sur un contrat qui n’est pas le sien ; il doit « Tout effacer » pour voir la page d’entrée',
+    frottement(await page.evaluate(() => !$('vide').hidden || /exemple embarqué/.test($('ctx-txt').textContent)), 'à la première ouverture, c’est l’exemple qui s’affiche, pas l’accueil', 'le technicien qui ouvre l’outil pour un contrat neuf arrive sur un contrat qui n’est pas le sien ; il doit « Tout effacer » pour voir la page d’entrée',
       'détail', '10-demarrage.js `demarrer` : sans contrat gardé, montrer l’accueil (#vide) avec « Voir l’exemple » plutôt que charger l’exemple d’office — ou garder l’exemple mais dire dans l’en-tête qu’il s’agit de l’exemple');
     // tout effacer : l'accueil
     await page.click('#btnMenu'); accepter(page); await page.click('#menu [data-act="vider"]'); await page.waitForTimeout(400);
@@ -219,11 +226,10 @@ function baseEssaiDansLaPage() {
     frottement(!herite.charges.length && !herite.designations && !herite.sexes && !herite.raccords, 'les choix du contrat d’avant survivent à l’ouverture d’un nouveau fichier', 'le profil de charge de l’exemple (102CB1 : 9,31 A pendant 2 min) s’applique au 102CB1 du nouveau retest, qui n’en a pas : l’en-tête lui compte des problèmes qui ne sont pas les siens ; désignations, sexes des contacts et raccords survivraient de même (ici : charges ' + herite.charges.join(',') + ')',
       'bloquant', '08-interface.js `chargerContrat` (et l’action « vider ») : repartir de `nouveauContrat()` en gardant le cartouche — designations, sexes, charges, raccords vides ; `relire()` les rend quand on rouvre SON contrat');
     const T = await toast(page); ok(/format retest/.test(T.texte) && /3 folios/.test(T.texte) && !T.erreur, 'le message dit le format reconnu et les folios', T.texte);
-    // l'en-tête compte les repères comme l'index (sans renvois, masses ni rails ; avec les barrettes à poser) : un seul nombre pour un même mot
-    const enTete = await page.evaluate(() => ({ sous: $('en-sous').textContent, reperes: reperesDuContrat().length }));
-    ok(new RegExp('^' + X.neufL.length + ' liaisons · ' + enTete.reperes + ' repères · 3 folios$').test(enTete.sous) && enTete.reperes > 0 && enTete.reperes <= X.neufReperes.length, 'l’en-tête compte juste : liaisons, repères (ceux de l’index), folios', enTete.sous + ' (l’index : ' + enTete.reperes + ' repères)');
-    frottement(/neuf/.test(e.enNom), 'l’en-tête ne dit pas quel fichier est ouvert', 'il écrit « ' + e.enNom + ' » (le titre par défaut du cartouche) ; le nom du fichier n’est que dans le menu',
-      'détail', '08-interface.js `synchroniserContexte` : quand le titre du cartouche est celui par défaut, écrire app.nom dans #en-nom (ou le nom du fichier en #en-sous)');
+    // le menu compte les repères comme l'index (sans renvois, masses ni rails ; avec les barrettes à poser) : un seul nombre pour un même mot
+    const enTete = await page.evaluate(() => ({ sous: $('ctx-txt').textContent, reperes: reperesDuContrat().length }));
+    ok(new RegExp('^' + X.neufL.length + ' liaisons · ' + enTete.reperes + ' repères · 3 folios$').test(enTete.sous) && enTete.reperes > 0 && enTete.reperes <= X.neufReperes.length, 'le menu compte juste : liaisons, repères (ceux de l’index), folios', enTete.sous + ' (l’index : ' + enTete.reperes + ' repères)');
+    ok(/neuf/.test(e.enNom), 'le menu dit quel fichier est ouvert', e.enNom);
     const blocs = await page.evaluate(() => app.dessin.comps.filter(c => c.kind !== 'tag').map(c => c.name).sort());
     ok(X.neufFolio1.every(r => blocs.includes(r)) && blocs.every(b => X.neufFolio1.includes(b)), 'les repères du plan sont ceux du fichier (folio 1)', blocs.join(' '));
     ok(await page.evaluate(() => [...document.querySelectorAll('#fo-strip .chip')].map(c => c.textContent).join(' ')) === [FWD(1), FWD(2), FWD(6)].join(' '), 'la barre du bas porte les trois dessins (FWD) du fichier');
@@ -291,7 +297,7 @@ function baseEssaiDansLaPage() {
   await parcours('B. Je pars d’un contrat déjà fait — la base, « Déjà fait », le FWD à trois échelles, reprendre, revérifier, Ctrl+Z, les « ? »', async () => {
     const ctx = await nav.newContext(grand), page = await ouvrirPage(ctx);
     await page.evaluate(baseEssaiDansLaPage); await page.waitForTimeout(300);
-    const tOuvrir = await ouvrirParBouton(page, '#btnOuvrir', X.neuf); mesure('ouvrir le retest proche (neuf.xlsx) avec une base de 4 machines', tOuvrir, SEUIL_FOLIO);
+    const tOuvrir = await ouvrirParBouton(page, 'menu', X.neuf); mesure('ouvrir le retest proche (neuf.xlsx) avec une base de 4 machines', tOuvrir, SEUIL_FOLIO);
     // sur chaque fiche du folio 1 : « Déjà fait » propose la machine la plus proche, en premier
     const deja = [];
     for (const nom of X.neufFolio1) { await cliquerBloc(page, nom);
@@ -320,10 +326,10 @@ function baseEssaiDansLaPage() {
     ok(FW.titre === 'MEE256A7815001A' && FW.cible && FW.manque && FW.items === 6 && FW.premier && FW.premier.nom === '302CB1', 'le calque dessine le FWD : le comparé encadré, 305XX9 en manque, la colonne explique, le comparé d’abord');
     await capture(page, 'B-3-fwd'); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
     // cocher, reprendre : les liaisons entrent au contrat, recâblées, sans numéro ; le contrôle revérifie ; Ctrl+Z
-    const avant = await page.evaluate(() => ({ n: verite().length, cle: CONTROLE.cle, etat: $('en-etat').textContent }));
+    const avant = await page.evaluate(() => ({ n: verite().length, cle: CONTROLE.cle, etat: etatDuControle() }));
     await page.click('#cp-tout'); await page.waitForTimeout(300); ok(await page.evaluate(() => /Reprendre 3/.test($('cp-reprendre').textContent)), 'tout cocher : trois lignes à reprendre (deux manquent, une diffère)');
     t0 = Date.now(); await page.click('#cp-reprendre'); await page.waitForFunction(n => verite().length === n + 3, avant.n); mesure('reprendre trois lignes → le plan et le contrôle refaits', Date.now() - t0, SEUIL_FOLIO); await page.waitForTimeout(400);
-    const R = await page.evaluate(n => { const V = verite(), neuves = V.slice(n), etranger = r => /^3\d\d/.test(r) && r !== '305XX9'; return { n: V.length, recablees: neuves.every(l => !etranger(l.de) && !etranger(l.vers)), sansNumero: neuves.every(l => !l.cable), pnNotre: neuves.some(l => l.de === '102CB1' && l.pnDe === 'MS3320-10'), dessine: app.dessin.comps.some(c => c.name === '305XX9'), plan: neuves.map(l => l.plan).join(','), longueurs: neuves.map(l => l.longueur), routes: neuves.map(l => l.route), cle: CONTROLE.cle, etat: $('en-etat').textContent, cible: app.cible && app.cible.type + ':' + app.cible.nom }; }, avant.n);
+    const R = await page.evaluate(n => { const V = verite(), neuves = V.slice(n), etranger = r => /^3\d\d/.test(r) && r !== '305XX9'; return { n: V.length, recablees: neuves.every(l => !etranger(l.de) && !etranger(l.vers)), sansNumero: neuves.every(l => !l.cable), pnNotre: neuves.some(l => l.de === '102CB1' && l.pnDe === 'MS3320-10'), dessine: app.dessin.comps.some(c => c.name === '305XX9'), plan: neuves.map(l => l.plan).join(','), longueurs: neuves.map(l => l.longueur), routes: neuves.map(l => l.route), cle: CONTROLE.cle, etat: etatDuControle(), cible: app.cible && app.cible.type + ':' + app.cible.nom }; }, avant.n);
     ok(R.n === avant.n + 3 && R.recablees && R.sansNumero && R.pnNotre && R.dessine, 'reprise : les trois liaisons entrent au contrat, recâblées sur nos repères, avec notre part number, sans numéro de fil ; 305XX9 se dessine', 'folios ' + R.plan + ' · ' + R.cible);
     ok(R.cle !== avant.cle, 'le contrôle a été refait sur le contrat repris', avant.etat + ' → ' + R.etat);
     frottement(!R.longueurs.some(x => x === 2.5), 'la longueur de fil de l’autre machine est copiée telle quelle', 'les lignes reprises portent 2,5 m, la longueur mesurée sur H-1 : une autre machine, une autre longueur — la chute se calcule sur un chiffre qui n’est pas le nôtre, sans le dire',
@@ -358,10 +364,12 @@ function baseEssaiDansLaPage() {
   /* ================================================================ C. LE CONTRÔLE D'UN CONTRAT ============== */
   await parcours('C. Le contrôle d’un contrat — l’en-tête, l’index « à reprendre », trois corrections, une hypothèse, un choix de fiche', async () => {
     const ctx = await nav.newContext(grand), page = await ouvrirPage(ctx); await page.waitForTimeout(300);
-    let e = await etat(page); const enEtat0 = e.enEtat; ok(e.nom === 'Contrat d’exemple' && /^3 problèmes · \d+ à voir$/.test(e.enEtat), 'l’exemple : l’en-tête dit « 3 problèmes · n à voir » (le compte des « à voir » suit les règles du contrôle)', e.enEtat);
-    let t0 = Date.now(); await page.click('#en-etat'); await page.waitForFunction(() => app.insp.index && document.querySelector('#ba-equip .co-item')); mesure('la pastille de l’en-tête → l’index « à reprendre »', Date.now() - t0, SEUIL_GESTE);
+    let e = await etat(page); const enEtat0 = e.enEtat; ok(e.nom === 'Contrat d’exemple' && /^3 problèmes · \d+ à voir$/.test(e.enEtat), 'l’exemple : « 3 problèmes · n à voir » (le compte des « à voir » suit les règles du contrôle)', e.enEtat);
+    let t0 = Date.now(); await page.click('#btnIndex'); await page.waitForFunction(() => app.insp.index && document.querySelector('#ba-equip .co-item')); mesure('le bouton des repères → l’index « à reprendre »', Date.now() - t0, SEUIL_GESTE);
     const items = await page.evaluate(() => [...document.querySelectorAll('#ba-equip .co-item')].map(b => { const x = CONTROLE.items[+b.dataset.k]; return { k: +b.dataset.k, nom: x.nom, plan: x.plan, tableau: x.tableau != null, texte: x.texte }; }));
-    ok(items.length === 6 && await page.evaluate(() => document.querySelector('#ba-equip .ix-controle').open), 'l’index s’ouvre, « à reprendre » déplié : six lignes (102CB1 deux fois, 300XC1, VT1, VT2, VT3)', items.map(x => x.nom).join(' '));
+    ok(items.length === 6 && await page.evaluate(() => !document.querySelector('#ba-equip .ix-controle').open), 'l’index s’ouvre, « à reprendre » replié en tête (le lecteur : on clique si on veut) : six lignes derrière (102CB1 deux fois, 300XC1, VT1, VT2, VT3)', items.map(x => x.nom).join(' '));
+    await page.click('#ba-equip .ix-controle > summary'); await page.waitForTimeout(200);
+    ok(await page.evaluate(() => document.querySelector('#ba-equip .ix-controle').open), 'un clic sur « à reprendre » le déplie');
     await capture(page, 'C-1-index-a-reprendre');
     // chaque ligne mène à son folio, sa fiche, son bloc cadré ; la flèche de la fiche ramène à la liste
     let premiere = true; const sauts = [];
@@ -439,8 +447,8 @@ function baseEssaiDansLaPage() {
       const dedans = r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight, sous = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2), lui = sous && (sous === el || el.contains(sous));
       return { ok: dedans && lui, detail: sel + ' ' + Math.round(r.left) + ',' + Math.round(r.top) + ' ' + Math.round(r.width) + '×' + Math.round(r.height) + (dedans ? '' : ' HORS ÉCRAN') + (lui ? '' : ' recouvert par ' + (sous ? sous.tagName + (sous.id ? '#' + sous.id : '.' + sous.className) : 'rien')) }; }, sel);
     const tous = async (sels, nom) => { const rs = []; for (const s of sels) rs.push(await atteignable(s)); const mal = rs.filter(r => !r.ok); ok(!mal.length, nom, mal.map(r => r.detail).join(' | ') || rs.length + ' éléments'); };
-    await tous(['#btnBase', '#btnIndex', '#btnCherche', '#btnUndo', '#btnLiaison', '#btnBible', '#btnOuvrir', '#btnMenu', '#zfit', '#fo-strip .chip.on'], 'au téléphone, le rail (en bas), la barre du haut et les folios sont atteignables');
-    ok(await page.evaluate(() => getComputedStyle($('en-etat')).display === 'none' && !$('btnIndex').querySelector('.rd-point').hidden), 'l’état du contrat est sur le bouton des repères (la pastille de l’en-tête est rangée)');
+    await tous(['#btnBase', '#btnIndex', '#btnCherche', '#btnUndo', '#btnLiaison', '#btnBible', '#btnMenu', '#zfit', '#fo-strip .chip.on'], 'au téléphone, le rail (en bas), la barre du haut et les folios sont atteignables');
+    ok(await page.evaluate(() => !$('en-etat') && !$('btnIndex').querySelector('.rd-point').hidden), 'l’état du contrat est sur le bouton des repères (la barre du haut ne le porte plus)');
     await capture(page, 'D-1-exemple');
     // A : l'accueil, le retest, le plan, les folios
     await page.click('#btnMenu'); accepter(page); await page.click('#menu [data-act="vider"]'); await page.waitForTimeout(400);
@@ -483,6 +491,7 @@ function baseEssaiDansLaPage() {
     await page.click('#btnMenu'); await page.click('#menu [data-act="exemple"]'); await page.waitForFunction(() => app.nom === 'Contrat d’exemple'); await page.waitForTimeout(400);
     await page.click('#btnIndex'); await page.waitForFunction(() => app.insp.index && document.querySelector('#ba-equip .co-item'));
     ok(await page.evaluate(() => document.querySelectorAll('#ba-equip .co-item').length === 6 && document.activeElement !== $('ix-q')), 'le bouton des repères ouvre l’index : six lignes à reprendre, sans voler le clavier');
+    await page.click('#ba-equip .ix-controle > summary'); await page.waitForTimeout(200);   // « à reprendre » se déplie d'un toucher
     await tous(['#ba-equip .co-item', '#ix-plus', '#ix-q'], 'dans l’index : une ligne, « + », le filtre'); await capture(page, 'D-7-index');
     await page.locator('#ba-equip .co-item', { hasText: '300XC1' }).click(); await page.waitForFunction(() => app.cible && app.cible.nom === '300XC1'); await page.waitForTimeout(500);
     e = await etat(page); const cad3 = await cadrage(page, '300XC1');
@@ -508,11 +517,11 @@ function baseEssaiDansLaPage() {
     ok(T.erreur && /aucune liaison/.test(T.texte) && e.n === n0 && e.nom === 'Contrat d’exemple', 'un retest vide : le message le dit, le contrat ouvert reste', T.texte);
     // une seule ligne
     await deposerParEntree(page, X.uneLigne); await page.waitForFunction(() => app.nom === 'une-ligne.csv'); e = await etat(page);
-    ok(e.n === 1 && e.folios <= 1 && await page.evaluate(() => !!app.dessin && app.dessin.fils.length === 1 && $('fo-part').hidden && /^1 liaison · 2 repères$/.test($('en-sous').textContent)), 'une seule ligne : un fil dessiné, pas de barre de folios, « 1 liaison · 2 repères »', e.enSous);
+    ok(e.n === 1 && e.folios <= 1 && await page.evaluate(() => !!app.dessin && app.dessin.fils.length === 1 && $('fo-part').hidden && /^1 liaison · 2 repères$/.test($('ctx-txt').textContent)), 'une seule ligne : un fil dessiné, pas de barre de folios, « 1 liaison · 2 repères »', e.enSous);
     await capture(page, 'E-1-une-ligne');
     // sans part numbers
     await deposerParEntree(page, X.sansPN); await page.waitForFunction(() => app.nom === 'sans-pn.csv'); await cliquerBloc(page, '102CB1');
-    const SP = await page.evaluate(() => ({ sous: document.querySelector('#ba-equip .fi-sous').textContent, ref: [...document.querySelectorAll('#ba-equip .fi-ref')].map(x => x.textContent).join(' | '), etat: $('en-etat').textContent, items: CONTROLE.items.map(x => (x.nom || 'tableau') + ' : ' + x.texte), charges: [...app.contrat.charges.keys()], dj: !!document.querySelector('#ba-equip .fi-dj') }));
+    const SP = await page.evaluate(() => ({ sous: document.querySelector('#ba-equip .fi-sous').textContent, ref: [...document.querySelectorAll('#ba-equip .fi-ref')].map(x => x.textContent).join(' | '), etat: etatDuControle(), items: CONTROLE.items.map(x => (x.nom || 'tableau') + ' : ' + x.texte), charges: [...app.contrat.charges.keys()], dj: !!document.querySelector('#ba-equip .fi-dj') }));
     ok(/disjoncteur/.test(SP.sous) && SP.dj && (/sans part number/.test(SP.ref) || !SP.ref), 'sans part numbers : la fiche de 102CB1 s’ouvre, disjoncteur sans part number, rien ne casse', SP.sous + ' · ' + SP.ref + ' · ' + SP.etat);
     frottement(!SP.charges.length && !/\d+ A/.test(SP.sous), 'un disjoncteur sans part number ni profil se voit prêter le profil de l’exemple', 'la ligne de nature dit « ' + SP.sous + ' » et le contrôle juge ses fils sur 9,31 A pendant 2 min : le profil de charge du contrat d’avant (102CB1 de l’exemple) n’a pas été effacé à l’ouverture du fichier', 'bloquant', 'le même point que « les choix du contrat d’avant survivent » (chargerContrat)');
     note('sans part number, le contrôle dit : ' + SP.items.join(' ; '));
@@ -544,7 +553,7 @@ function baseEssaiDansLaPage() {
     /* ---- LE GROS RETEST : 1 500 lignes, 20 folios ---- */
     console.log('\n  — le gros retest : ' + X.grosN + ' lignes, ' + X.grosFolios + ' folios —');
     const ctx2 = await nav.newContext(grand), p2 = await ouvrirPage(ctx2); await p2.waitForTimeout(300);
-    const tGros = await ouvrirParBouton(p2, '#btnOuvrir', X.gros); const pl1 = await derniere(p2, 'placement'); e = await etat(p2);
+    const tGros = await ouvrirParBouton(p2, 'menu', X.gros); const pl1 = await derniere(p2, 'placement'); e = await etat(p2);
     ok(e.n === X.grosN && e.folios === X.grosFolios && e.plan === FWD(1), X.grosN + ' liaisons lues, 20 folios (les dessins du fichier), le premier affiché', e.enSous);
     mesure('ouvrir gros.xlsx jusqu’au premier folio dessiné (75 fils)', tGros, SEUIL_FOLIO, PROPOSITION_FOLIO, GROUPE_FOLIO);
     mesure('dont la lecture du fichier et le reste', tGros - pl1); mesure('dont le placement du folio 1', pl1);
@@ -565,7 +574,7 @@ function baseEssaiDansLaPage() {
     if (w != null) mesure('fiche du fil W-20312 (dernier folio)', w, SEUIL_FICHE); else ok(false, 'le fil W-20312 est sur le folio 20');
     await p2.keyboard.press('Escape');
     // les gestes du contrat entier : le contrôle, l'index, le tableau, la nomenclature, la recherche, une correction
-    const G = await p2.evaluate(() => { const T = {}; let t = performance.now(); CONTROLE.cle = null; rendreControle(); T.controle = performance.now() - t; T.items = CONTROLE.items.length; T.etat = $('en-etat').textContent;
+    const G = await p2.evaluate(() => { const T = {}; let t = performance.now(); CONTROLE.cle = null; rendreControle(); T.controle = performance.now() - t; T.items = CONTROLE.items.length; T.etat = etatDuControle();
       t = performance.now(); const N = nomenclatureDuContrat(); T.nomenclature = performance.now() - t; T.contacts = N.contacts.reduce((s, x) => s + x.n, 0);
       t = performance.now(); basculerIndex(); T.index = performance.now() - t; T.reperes = document.querySelectorAll('#ba-equip .ix-item[data-nom]').length; fermerInspecteur();
       t = performance.now(); ouvrirBase(); T.tableau = performance.now() - t; T.lignes = $('ba-tbody').querySelectorAll('tr[data-i]').length; app.base.portee = 'tout'; t = performance.now(); rendreBase(); T.tableauTout = performance.now() - t; fermerBase(); app.base.portee = 'folio';
