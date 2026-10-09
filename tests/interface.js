@@ -28,7 +28,7 @@ const FICHIER = P.fichierDemande();
     console.log('\n' + titre);
     const page = await nav.newPage({ viewport: vp }); page.setDefaultTimeout(300000);
     const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
-    await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined');
+    await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => atelier.exemple());   // l’outil s’ouvre sur l’accueil (plus sur l’exemple) : la batterie, qui lit l’exemple, le demande
     await page.evaluate(() => { app.plan = '1'; if (app.base.ouvert) fermerBase(); redessiner(); ajuster(); }); await page.waitForTimeout(400);
     // la feuille à l'écran, et ce qui la recouvre
     const recouvre = () => page.evaluate(() => { const bb = app.dessin.bbox, r = $('planche').getBoundingClientRect(), s = app.vue.s;
@@ -71,7 +71,7 @@ const FICHIER = P.fichierDemande();
   // chaque dédoublement : une vraie barrette, une borne par fil, jamais deux fils au même niveau
   console.log('\nbarrettes à poser');
   const page = await nav.newPage({ viewport: { width: 1600, height: 950 } }); const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
-  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined');
+  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => atelier.exemple());   // l’outil s’ouvre sur l’accueil (plus sur l’exemple) : la batterie, qui lit l’exemple, le demande
   const vts = await page.evaluate(() => plans().flatMap(pl => { app.plan = pl; redessiner(); const L = liaisonsDuPlan(), svg = $('svg').innerHTML;
     // plus aucune borne d'équipement à deux fils sur le plan
     const n = new Map(); L.forEach(l => { if (l.de === l.vers) return; [[l.de, l.borneDe], [l.vers, l.borneVers]].forEach(([r, b]) => { if (!r || !b || estBornier(r) || estMasse(r)) return; const k = r + ':' + b; n.set(k, (n.get(k) || 0) + 1); }); });
@@ -232,6 +232,75 @@ const FICHIER = P.fichierDemande();
   await page.click('#choix-harness .ch-harness[data-harness="H-B"]'); await page.waitForTimeout(900);
   ok(await page.evaluate(() => verite().length > 0 && verite().every(l => l.harness === 'H-B') && /^H-B/.test(app.nom) && !app.fiche), 'ouvrir H-B : seul ce harness est sur la table');
   await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
+
+  /* LA PRISE EN MAIN (U.md § 5) : le menu en quatre blocs et ses bulles (au clavier aussi), « Vos fichiers » (cinq cartes,
+     ce que chacune attend), une erreur d'import écrite dans sa carte (le contrat ouvert intact), le rattrapage qui attend
+     « Charger », la base sans Harness, la base déposée et « Voir un équipement déjà fait », le collage et son aperçu
+     (ajouter au contrat), le modèle CSV — le même que modeles/. */
+  console.log('\nla prise en main : le menu, « Vos fichiers », les erreurs, le rattrapage, la base, le collage, le modèle');
+  const fs = require('fs'), path = require('path');
+  const depot = async (entree, nom, texte) => { await page.setInputFiles(entree, { name: nom, mimeType: 'text/csv', buffer: Buffer.from(texte, 'utf8') }); await page.waitForTimeout(700); };
+  const blocsMenu = await page.evaluate(() => [...document.querySelectorAll('#menu .menu-bloc')].map(b => b.querySelector('.menu-t').textContent + ':' + [...b.querySelectorAll('[data-act]')].map(x => x.dataset.act).join(',')).join(' | '));
+  ok(blocsMenu === 'Le contrat:ouvrir,coller,exemple | Vos fichiers:fichiers,references,bible,normes,hypotheses | Sortir:recapitulatif,nomenclature,suivi,svg,png,imprimer | Le reste:cartouche,vider'
+    && await page.evaluate(() => [...document.querySelectorAll('#menu [role="menuitem"]')].every(b => (b.dataset.aide || '').length > 40 && !!$(b.getAttribute('aria-describedby')))), 'le menu en quatre blocs, « Vos fichiers… » en tête du sien ; chaque ligne a sa bulle, dite aussi au lecteur d’écran', blocsMenu);
+  await page.click('#btnMenu'); for (let k = 0; k < 3; k++) await page.keyboard.press('ArrowDown'); await page.waitForTimeout(350);
+  ok(await page.evaluate(() => { const b = document.activeElement, u = $('menu-bulle'), r = u.getBoundingClientRect(), m = $('menu').getBoundingClientRect();
+    return !!b && b.dataset.act === 'fichiers' && u.classList.contains('on') && u.textContent === b.dataset.aide && /Ce que l’outil a reçu/.test(u.textContent) && r.right <= m.left && r.width <= 320 && r.top >= 0 && r.bottom <= innerHeight; }),
+    'au clavier (↓ ↓ ↓), la bulle de « Vos fichiers… » se lit tout de suite, à gauche du menu, entière à l’écran');
+  await page.hover('#menu [data-act="references"]'); await page.waitForTimeout(450);
+  ok(await page.evaluate(() => $('menu-bulle').classList.contains('on') && /Harness rempli/.test($('menu-bulle').textContent)), 'au survol, la bulle de « Contrats déjà faits… » : le fichier attendu, Harness rempli');
+  await page.keyboard.press('Enter'); await page.waitForTimeout(500);
+  const VF = await page.evaluate(() => ({ mode: app.fiche && app.fiche.mode, cartes: [...document.querySelectorAll('#fiche-corps .vf-carte')].map(c => c.dataset.entree + ':' + (c.className.match(/e-(\w+)/) || [])[1]).join(' '), apercus: [...document.querySelectorAll('#fiche-corps .vf-carte')].filter(c => c.querySelectorAll('.vf-apercu tbody tr').length === 3).length, ouverts: [...document.querySelectorAll('#fiche-corps details.vf-attend[open]')].map(d => d.dataset.volet).join(' ') }));
+  ok(VF.mode === 'fichiers' && VF.cartes === 'retest:vide base:vide bible:ok normes:ok hypotheses:ok' && VF.apercus === 4 && VF.ouverts === 'retest base', '« Vos fichiers » : cinq cartes et leur état (l’exemple n’est pas votre contrat, aucune base) ; trois lignes d’exemple pour le retest, la base, la bible, une norme ; « Ce que j’attends » ouvert où l’entrée est vide', VF.cartes + ' · ouverts : ' + VF.ouverts);
+  const nEx = await page.evaluate(() => verite().length);
+  await depot('#fichier', 'compta.csv', 'Date;Montant;Libellé\n03/10/2026;1250,00;Fournitures\n05/10/2026;318,40;Câbles\n');
+  const E1 = await page.evaluate(() => ({ toast: $('toast').textContent, erreur: $('toast').classList.contains('erreur'), voir: !!document.querySelector('#toast .toast-voir'), n: verite().length, nom: app.nom }));
+  ok(E1.erreur && E1.voir && /en-têtes du retest/.test(E1.toast) && E1.n === nEx && E1.nom === 'Contrat d’exemple', 'un fichier qui n’est pas un retest : le mot qui passe le signale, avec « Voir » ; le contrat ouvert ne bouge pas', E1.toast);
+  await page.click('#toast .toast-voir'); await page.waitForTimeout(400);
+  ok(await page.evaluate(() => { const c = $('vf-retest'), e = c && c.querySelector('.vf-erreur'); return app.fiche.mode === 'fichiers' && c.classList.contains('e-ko') && !!e && /J’ai lu/.test(e.textContent) && /Date/.test(e.textContent) && /Montant/.test(e.textContent) && /Device1, Pin1, Device2, Pin2/.test(e.textContent) && !!e.querySelector('[data-vf="modele-retest"]'); }),
+    '« Voir » : l’erreur est écrite dans la carte du retest, et y reste — ce que l’outil a lu (Date · Montant · Libellé), ce qu’il lui faut, un modèle');
+  await depot('#fichier', 'vide.csv', '');
+  ok(await page.evaluate(() => /vide\.csv est vide\s:\saucune ligne/.test($('vf-retest').querySelector('.vf-erreur').textContent)), 'un fichier vide : « vide.csv est vide : aucune ligne. », dans la carte');
+  await page.setInputFiles('#fichier', { name: 'photo.txt', mimeType: 'text/plain', buffer: Buffer.concat([Buffer.from('89504E470D0A1A0A0000000D49484452', 'hex'), Buffer.alloc(400, 3)]) }); await page.waitForTimeout(700);
+  ok(await page.evaluate(n => /photo\.txt n’est pas un tableau \(Excel ou CSV\)/.test($('vf-retest').querySelector('.vf-erreur').textContent) && verite().length === n, nEx), 'une image : « photo.txt n’est pas un tableau (Excel ou CSV). »');
+  await depot('#fichier', 'presque-retest.csv', 'Equipement;Broche;Cable;Equipement;Broche\n102CB1;2;W-012;103RL1;A1\n103RL1;A2;W-013;104LP1;1\n101BT1;1;W-011;102CB1;1\n');
+  const R1 = await page.evaluate(() => ({ n: verite().length, nom: app.nom, att: !!FICHIERS.attente, erreur: !!FICHIERS.erreurs.retest, dit: ($('vf-retest').querySelector('.vf-attente') || {}).textContent || '', lignes: $('vf-retest').querySelectorAll('.vf-attente .vf-apercu tbody tr').length }));
+  ok(R1.n === nEx && R1.nom === 'Contrat d’exemple' && R1.att && !R1.erreur && /J’ai compris/.test(R1.dit) && /Equipement\s→\sDe/.test(R1.dit) && /Cable\s→\sFil/.test(R1.dit) && R1.lignes === 3, 'des colonnes devinées : rien n’est remplacé ; la carte dit ce qu’elle a compris (Equipement → De, Cable → Fil…), avec l’aperçu, et attend « Charger »', R1.dit.slice(0, 150));
+  await page.click('#fiche-corps [data-vf="corriger"]'); await page.waitForTimeout(300);
+  await page.selectOption('#fiche-corps .vf-carte-cols select[data-colonne="2"]', ''); await page.waitForTimeout(300);
+  ok(await page.evaluate(() => FICHIERS.attente.map.cable === '' && !/W-012/.test($('vf-retest').querySelector('.vf-attente .vf-apercu').textContent)), '« Corriger » : la colonne Cable ignorée, l’aperçu se refait sans le numéro de fil');
+  await page.click('#fiche-corps [data-vf="charger"]'); await page.waitForTimeout(800);
+  ok(await page.evaluate(() => verite().length === 3 && app.nom === 'presque-retest.csv' && !FICHIERS.attente && !FICHIERS.erreurs.retest), '« Charger » : les trois liaisons deviennent le contrat, l’erreur d’avant s’efface');
+  await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
+  ok(await page.evaluate(n => verite().length === n && app.nom === 'Contrat d’exemple', nEx), 'Ctrl+Z rend l’exemple');
+  // la base des contrats déjà faits : sans Harness, le dire (et proposer de l'ouvrir comme contrat) ; deux harness : rangée
+  await depot('#fichier-base', 'base-2024.csv', 'Device1;Pin1;Cable TG;Cable Tag;Device2;Pin2;FWD\n102CB1;2;DR20;W-012;103RL1;A1;F1\n103RL1;A2;DR22;W-013;104LP1;1;F1\n');
+  await page.evaluate(() => ficheFichiers('base')); await page.waitForTimeout(300);
+  ok(await page.evaluate(() => { const e = $('vf-base').querySelector('.vf-erreur'); return !!e && /aucune colonne Harness/.test(e.textContent) && /séparer les machines/.test(e.textContent) && !app.references && !!$('vf-base').querySelector('[data-vf="base-contrat"]'); }), 'une base sans colonne Harness : « Sans elle, je ne sais pas séparer les machines », et « Ouvrir … comme contrat »');
+  const base = await page.evaluate(() => { const d = r => /G$/.test(r) ? r : r.replace(/^(\d)(\d\d)([A-Z]+)(\d*)/, (m, a, b, c, e) => String(+a + 2) + b + c + e), E = contratExemple();
+    return ['Harness;Device1;Pin1;PN1;Cable TG;Cable Tag;Device2;Pin2;PN2;FWD;Appareil;Date retest', ...E.map(l => ['H-1', d(l.de), l.borneDe, l.pnDe, l.type, l.cable, d(l.vers), l.borneVers, l.pnVers, 'F' + l.plan, 'H175', '27/10/2025'].join(';')),
+      ...E.slice(0, 40).map(l => ['H-2', l.de, l.borneDe, l.pnDe, l.type, l.cable, l.vers, l.borneVers, l.pnVers, 'G' + l.plan, 'H160', '12/03/2024'].join(';'))].join('\n'); });
+  await depot('#fichier-base', 'base-2024.csv', base); await page.waitForTimeout(300);
+  const B1 = await page.evaluate(() => ({ mode: app.fiche && app.fiche.mode, h: app.references && app.references.index.harnais.size, succes: ($('vf-base') && $('vf-base').querySelector('.vf-succes') || {}).textContent || '', bouton: !!document.querySelector('#vf-base [data-vf="deja-fait"]'), erreur: !!FICHIERS.erreurs.base }));
+  ok(B1.mode === 'fichiers' && B1.h === 2 && /2\sharness/.test(B1.succes) && /\d\sdessins/.test(B1.succes) && /\d\sliaisons/.test(B1.succes) && B1.bouton && !B1.erreur, 'la base déposée : « Vos fichiers » revient sur sa carte avec les comptes (harness · dessins · liaisons), l’erreur d’avant effacée, et « Voir un équipement déjà fait »', B1.succes.slice(0, 90));
+  await page.click('#vf-base [data-vf="deja-fait"]'); await page.waitForTimeout(900);
+  ok(await page.evaluate(() => !$('inspecteur').hidden && app.cible && app.cible.type === 'bloc' && !!document.querySelector('#ba-equip .fi-deja .fi-cand')), '« Voir un équipement déjà fait » : la fiche du premier équipement qui a une correspondance, « Déjà fait » sous les yeux');
+  await page.evaluate(() => { deselectionner(); adopterReferences([], ''); });
+  // le collage : l'ordre et un exemple, l'aperçu de ce qui est compris, ajouter au contrat (ou le remplacer)
+  await page.evaluate(() => ficheColler()); await page.waitForTimeout(300);
+  ok(await page.evaluate(() => document.querySelectorAll('#fiche-corps .co-ordre li').length === 10 && document.querySelectorAll('#fiche-corps .co-exemple .vf-apercu tbody tr').length === 3 && $('co-ajouter').disabled && $('co-remplacer').disabled), 'coller : l’ordre des dix colonnes, trois lignes d’exemple ; rien à ajouter tant que rien n’est collé');
+  await page.fill('#co-txt', '210SP1;12;;115CD;3;;W-901;DR24;SIGNAL;1\n115CD;4;;116RL1;A1;;W-902;DR24;SIGNAL;1\nune ligne sans second bout'); await page.waitForTimeout(400);
+  ok(await page.evaluate(() => /2\sliaisons/.test($('co-apercu').textContent) && /1\sligne sans ses deux bouts/.test($('co-apercu').textContent) && $('co-apercu').querySelectorAll('tbody tr').length === 2 && /W-901/.test($('co-apercu').textContent) && !$('co-ajouter').disabled && !$('co-remplacer').disabled),
+    'l’aperçu avant de charger : deux liaisons comprises (de 210SP1:12 vers 115CD:3, fil W-901…), une ligne laissée de côté ; « Ajouter » et « Remplacer »');
+  const nC = await page.evaluate(() => verite().length); await page.click('#co-ajouter'); await page.waitForTimeout(800);
+  ok(await page.evaluate(n => verite().length === n + 2 && app.nom === 'Contrat d’exemple' && verite().some(l => l.cable === 'W-901' && l.plan === '1'), nC), '« Ajouter au contrat » : les deux liaisons s’ajoutent à l’exemple, qui n’est pas remplacé');
+  await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
+  ok(await page.evaluate(n => verite().length === n, nC), 'Ctrl+Z les retire');
+  // le modèle CSV : les seize en-têtes et trois lignes, relus comme un retest ; le même fichier que modeles/
+  const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 15000 }), page.evaluate(() => telechargerModele('retest'))]);
+  const modele = fs.readFileSync(await dl.path(), 'utf8'), modeleDepot = fs.readFileSync(path.join(__dirname, '..', 'modeles', 'modele-retest.csv'), 'utf8');
+  const lu = await page.evaluate(t => { const r = lireTexte(t.replace(/^\ufeff/, '')); return { n: r.liaisons.length, format: r.format, colonnes: r.colonnes, entetes: t.split(/\r?\n/)[0].split(';').length }; }, modele);
+  ok(dl.suggestedFilename() === 'modele-retest.csv' && modele === modeleDepot && lu.n === 3 && lu.format === 'retest' && lu.colonnes === 16 && lu.entetes === 16, '« Télécharger un modèle (CSV) » : seize en-têtes, trois lignes, relus comme un retest — le même fichier que modeles/modele-retest.csv', JSON.stringify(lu));
   ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
   console.log('\n  ' + (ko ? ko + ' échec(s)' : 'tout tient'));
   await nav.close(); process.exit(ko ? 1 : 0);

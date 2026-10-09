@@ -277,7 +277,7 @@ else (async () => {
   const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
   const page = await nav.newPage({ viewport: { width: 1500, height: 950 } }); page.setDefaultTimeout(180000);
   const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
-  await page.goto(P.fichierDemande()); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.waitForTimeout(800);
+  await page.goto(P.fichierDemande()); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => atelier.exemple()); await page.waitForTimeout(800);   // l’outil s’ouvre sur l’accueil (plus sur l’exemple) : la batterie, qui lit l’exemple, le demande
   const lire = () => page.evaluate(() => controleDuContrat());
   const unique = items => { const vus = new Set(); return items.every(x => { const k = x.niveau + '|' + x.nom + '|' + x.texte; if (vus.has(k)) return false; vus.add(k); return true; }); };
   const reperesConnus = (items, reperes) => items.every(x => !x.nom || reperes.includes(x.nom) || /^VT\d+$/.test(x.nom));

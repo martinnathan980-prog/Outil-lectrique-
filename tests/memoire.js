@@ -22,7 +22,8 @@ const FICHIER = fichierDemande();
   const e = []; p.on('pageerror', x => e.push(x.message));
   const R = []; const ok = (n, c, d) => R.push((c ? '  ok   ' : '  KO   ') + n.padEnd(46) + (d || ''));
 
-  await p.goto(FICHIER); await p.waitForTimeout(1600);
+  // l’outil s’ouvre sur l’accueil : le contrat à garder est l’exemple, qu’on demande
+  await p.goto(FICHIER); await p.waitForTimeout(1600); await p.evaluate(() => atelier.exemple()); await p.waitForTimeout(600);
   const a = await p.evaluate(() => { histPush('essai'); app.contrat.liaisons.push(liaison({ de: 'MA-CORRECTION', borneDe: '1', vers: '210SP1', borneVers: '9' })); app.contrat.designations.set('210SP1', 'calculateur d’essai');
     redessiner(); ouvrirBase(); sauver(); return app.contrat.liaisons.length; });
   await p.waitForTimeout(700);
@@ -46,7 +47,7 @@ const FICHIER = fichierDemande();
 
   const p3 = await (await b.newContext({ viewport: { width: 1200, height: 800 } })).newPage(); p3.on('pageerror', x => e.push(x.message));
   await p3.addInitScript(() => { Object.defineProperty(window, 'localStorage', { configurable: true, get() { throw new Error('bloqué'); } }); });
-  await p3.goto(FICHIER); await p3.waitForTimeout(1800);
+  await p3.goto(FICHIER); await p3.waitForTimeout(1800); await p3.evaluate(() => atelier.exemple()); await p3.waitForTimeout(700);
   const s3 = await p3.evaluate(() => ({ dessine: !!app.dessin, n: app.contrat.liaisons.length, mention: document.getElementById('ctx-sauve').textContent }));
   ok('stockage bloqué : l’outil marche quand même', s3.dessine && s3.n > 0, s3.n + ' liaisons · «' + s3.mention + '»');
 

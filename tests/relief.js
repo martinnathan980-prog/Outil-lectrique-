@@ -22,7 +22,7 @@ const FICHIER = P.fichierDemande();
   const page = await nav.newPage({ viewport: { width: 1440, height: 1000 } }); page.setDefaultTimeout(300000);
   const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
   let ko = 0; const ok = (c, nom, detail) => { if (!c) ko++; console.log('  ' + (c ? 'ok ' : 'KO ') + ' ' + nom + (detail ? '   ' + detail : '')); };
-  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined');
+  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => atelier.exemple());   // l’outil s’ouvre sur l’accueil (plus sur l’exemple) : la batterie, qui lit l’exemple, le demande
   const pieces = await page.evaluate(() => { const out = []; plans().forEach(p => { app.plan = p; app.choisi = null; redessiner();
     new Set(app.dessin.comps.filter(c => c.kind !== 'tag' && estBornier(c.name)).map(c => c.name)).forEach(n => out.push([p, n]));
     app.dessin.barrettes.filter(b => b.nomVT).forEach(b => out.push([p, b.nomVT])); }); return out; });

@@ -1216,25 +1216,7 @@ function ficheCartouche() { const c = app.contrat.cartouche;
   ouvrirFiche({ mode: 'cartouche' }, corps, '');
   CHAMPS_CARTOUCHE.forEach(([id, k]) => { $(id).addEventListener('input', e => { c[k] = e.target.value; }); $(id).addEventListener('change', () => { peindre(); rallumer(); sauver(); }); });
 }
-/* Coller des liaisons : l'ordre des colonnes s'écrit avec des points médians liés à ce qui les précède (aucune ligne
-   ne commence par « · ») ; un texte où rien ne se reconnaît marque le champ lui-même, en rouge, avec ce qu'il faut
-   vérifier — le mot qui passe s'efface, le champ le dit encore — jusqu'à ce qu'on y écrive. */
-function ficheColler() {
-  const ordre = ['Équip.1', 'Borne', 'PN', 'Équip.2', 'Borne', 'PN', 'Fil', 'Type', 'Route', 'Folio'].join('\u00a0· ');
-  const corps = tete('Charger', 'Coller des liaisons')
-    + '<p class="note">Une liaison par ligne, colonnes séparées par <b>;</b> <b>,</b> ou une tabulation. Un export du retest est reconnu à ses en-têtes ; sinon l’ordre attendu est :</p>'
-    + `<p class="note mono">${ordre}</p>`
-    + '<label class="champ" id="co-champ"><span>Lignes</span><textarea id="co-txt" placeholder="210SP1;12;;115CD;3;;W-101;DR24;;" spellcheck="false" aria-describedby="co-msg"></textarea><small class="champ-msg" id="co-msg" hidden></small></label>';
-  const pied = '<button class="btn cuivre" id="co-ok">Charger</button><span class="espace"></span><button class="btn lien" id="co-fichier">…ou choisir un fichier</button>';
-  ouvrirFiche({ mode: 'coller' }, corps, pied);
-  const txt = $('co-txt'), marquer = msg => { $('co-champ').classList.toggle('erreur', !!msg); txt.setAttribute('aria-invalid', String(!!msg)); $('co-msg').textContent = msg || ''; $('co-msg').hidden = !msg; };
-  $('co-ok').onclick = () => { const r = lireTexte(txt.value);
-    if (!r.liaisons.length) { const msg = 'Aucune liaison reconnue : vérifie le séparateur et l’ordre des colonnes.'; marquer(msg); dire(msg, true); txt.focus(); return; }
-    marquer(''); chargerContrat(r.liaisons, 'collage de ' + pluriel(r.liaisons.length, 'liaison'), 'Collage'); dire(pluriel(r.liaisons.length, 'liaison') + ' chargée' + (r.liaisons.length > 1 ? 's' : '') + '.'); };
-  txt.addEventListener('input', () => { if ($('co-champ').classList.contains('erreur')) marquer(''); });
-  $('co-fichier').onclick = () => $('fichier').click();
-  txt.focus();
-}
+/* Coller des lignes (ficheColler : l'ordre, un exemple, l'aperçu, ajouter ou remplacer) vit dans 08-fichiers.js. */
 /* La bible des barrettes (ficheBible, pictoBible, zoomBible, importerBible), la norme et son import (ficheNormes, importerNorme) vivent dans 08-normes.js. */
 
 /* ---- corriger : toujours la vérité, puis on refait les folios ----------- */
@@ -1344,38 +1326,21 @@ function chargerContrat(liaisons, quoi, nom) { histPush(quoi || 'chargement d’
   const P = plans(); app.plan = P.length > 1 ? P[0] : '*';
   fermerFiche(); fermerMenu(); $('q').value = '';
   redessiner(); ajuster(); if (P.length <= 1) ajusterFolios(); sauver(); }
-/* Un fichier ouvert ou déposé : un retest (reconnu à ses seize colonnes),
-   sinon une bible si ses en-têtes en font une, sinon un tableau libre. */
-async function ouvrirFichier(fichier) { if (!fichier) return;
-  try { dire('Lecture de « ' + fichier.name + ' », puis dessin…'); const texte = await texteDuFichier(fichier);
-    if (!trouverEnteteRetest(texte.split(/\r?\n/))) { const b = lireBible(texte);
-      if (b.entrees.length) { adopterBible(b.entrees, fichier.name); dire('Bible : ' + pluriel(b.entrees.length, 'référence') + ' lue' + (b.entrees.length > 1 ? 's' : '') + ' dans « ' + fichier.name + ' » ; les barrettes suivent.'); return; }
-      if (normeLue(lireNorme(texte))) { await importerNorme(fichier); return; } }   // une norme déposée sur la table : reconnue à ses tables
-    const r = lireTexte(texte);
-    if (!r.liaisons.length) { dire('« ' + fichier.name + ' » est lu, mais aucune liaison n’est reconnue — vérifie les colonnes.', true); return; }
-    if (r.harnais && r.harnais.length > 1) { adopterReferences(r.liaisons, fichier.name); ficheHarnais(r, fichier.name);
-      dire(pluriel(r.harnais.length, 'harness') + ' dans « ' + fichier.name + ' » : gardés comme contrats déjà faits — lequel ouvrir sur la table ?'); return; }
-    chargerContrat(r.liaisons, 'ouverture de ' + fichier.name, fichier.name);
-    dire(r.liaisons.length + ' liaisons' + (r.format === 'retest' ? ' — format retest, en-têtes ligne ' + r.entete : '') + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + '.');
-  } catch (e) { dire('Erreur : ' + (e && e.message || e), true); } }
-/* Un fichier à PLUSIEURS HARNESS (un extrait de la base : une machine par harness) : tout est entré dans la base des
-   contrats déjà faits ; cette petite fiche demande lequel ouvrir comme contrat — un contrat, c'est un harness —, ou
-   aucun. `r` : la lecture (liaisons, harnais). */
-function ficheHarnais(r, nom) { const H = r.harnais.map(h => { const L = r.liaisons.filter(l => l.harness === h);
-    return { h, n: L.length, dessins: new Set(L.map(l => l.plan).filter(Boolean)).size, appareil: (L.find(l => l.appareil) || {}).appareil || '' }; });
-  const corps = tete('Ouvrir « ' + nom + ' »', pluriel(H.length, 'harness') + ' : lequel ouvrir ?', true)
-    + `<p class="note">Un contrat, c’est un harness. Les ${H.length} sont gardés comme <b>contrats déjà faits</b> : les fiches diront ce qui a déjà été fait. Celui qu’on ouvre devient le contrat sur la table.</p>`
-    + `<ul class="ch-liste" id="choix-harness">${H.map(x => `<li><button class="ch-harness" data-harness="${escA(x.h)}"><b>${esc(x.h)}</b><span>${[pluriel(x.n, 'liaison'), x.dessins ? pluriel(x.dessins, 'dessin') : '', x.appareil].filter(Boolean).map(esc).join(' · ')}</span>${ico('fleche')}</button></li>`).join('')}</ul>`;
-  ouvrirFiche({ mode: 'harnais' }, corps, '<button class="btn papier" id="ch-aucun">N’en ouvrir aucun</button>');
-  $('fiche-corps').querySelectorAll('.ch-harness').forEach(b => b.onclick = () => { const h = b.dataset.harness, L = r.liaisons.filter(l => l.harness === h);
-    chargerContrat(L, 'ouverture de ' + h + ' (' + nom + ')', h + ' (' + nom + ')'); dire(h + ' : ' + L.length + ' liaisons' + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + ' — les autres harness restent des contrats déjà faits.'); });
-  $('ch-aucun').onclick = () => fermerFiche(true); }
-function lierDepot() { let n = 0;
-  window.addEventListener('dragenter', e => { e.preventDefault(); n++; document.body.classList.add('depot-actif'); });
-  window.addEventListener('dragover', e => { e.preventDefault(); });
-  window.addEventListener('dragleave', e => { e.preventDefault(); if (--n <= 0) { n = 0; document.body.classList.remove('depot-actif'); } });
-  window.addEventListener('drop', e => { e.preventDefault(); n = 0; document.body.classList.remove('depot-actif');
-    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) ouvrirFichier(f); }); }
+/* Ouvrir un fichier (ouvrirFichier : le retest, ou ce qu'il est — une bible, une norme, une base, un tableau à
+   deviner — et l'erreur dite dans « Vos fichiers »), ficheHarnais (plusieurs harness : lequel ouvrir ?) vivent dans
+   08-fichiers.js. */
+/* Le dépôt : toute la fenêtre est la cible ; une étape de l'accueil ou une carte de « Vos fichiers » qui porte
+   data-depot dit ce qu'on y dépose (la base des contrats déjà faits, la bible, une norme) — ailleurs, un retest (ou ce
+   que le fichier se révèle être). La cible survolée s'allume. */
+function lierDepot() { let n = 0, vise = null;
+  const cible = e => e.target && e.target.closest ? e.target.closest('[data-depot]') : null;
+  const viser = el => { if (vise === el) return; if (vise) vise.classList.remove('survol-depot'); vise = el; if (el) el.classList.add('survol-depot'); };
+  window.addEventListener('dragenter', e => { e.preventDefault(); n++; document.body.classList.add('depot-actif'); viser(cible(e)); });
+  window.addEventListener('dragover', e => { e.preventDefault(); viser(cible(e)); });
+  window.addEventListener('dragleave', e => { e.preventDefault(); if (--n <= 0) { n = 0; document.body.classList.remove('depot-actif'); viser(null); } });
+  window.addEventListener('drop', e => { e.preventDefault(); n = 0; document.body.classList.remove('depot-actif'); const c = cible(e), ou = c && c.dataset.depot; viser(null);
+    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (!f) return;
+    if (ou === 'base') importerReferences(f); else if (ou === 'bible') importerBible(f); else if (ou === 'normes') importerNorme(f); else ouvrirFichier(f); }); }
 
 /* ---- sortir le dessin : SVG, PNG, impression -------------------------- */
 function nomFolio() { const base = (app.nom || 'atelier-schema').replace(/\.[^.]+$/, '').replace(/[^\w.-]+/g, '_');
@@ -1407,8 +1372,8 @@ function imprimer() { if (!app.dessin) return; const S = svgAutonome(app.dessin,
 
 /* ---- ce que le menu et le rail affichent ------------------------------ */
 const NOM_EXEMPLE = 'Contrat d’exemple';
-/* L'en-tête dit QUEL contrat est ouvert : le titre du cartouche si on en a écrit un, sinon le nom du fichier ; et que
-   c'est l'exemple embarqué quand c'est lui (à la première ouverture, il s'affiche sans qu'on l'ait demandé). */
+/* L'en-tête du menu dit QUEL contrat est ouvert : le titre du cartouche si on en a écrit un, sinon le nom du fichier ;
+   et que c'est l'exemple embarqué quand c'est lui (il ne s'ouvre qu'à la demande ; le bandeau sous la barre le dit aussi). */
 function synchroniserContexte() { const n = app.contrat.liaisons.length, P = plans(), nom = n ? (app.nom || 'Sans nom') : 'Aucun contrat', exemple = n && app.nom === NOM_EXEMPLE;
   const sous = n ? (exemple ? 'l’exemple embarqué · ' : '') + `${n} liaison${n > 1 ? 's' : ''} · ${reperesDuContrat().length} repères` + (P.length > 1 ? ` · ${P.length} folios` : '') : '';
   $('ctx-nom').textContent = nom; $('ctx-txt').textContent = sous; $('ctx-nom').title = nom;
@@ -1422,7 +1387,8 @@ function synchroniserHistorique() { const b = $('btnUndo'), d = app.hist[app.his
   b.setAttribute('aria-label', quoi + ' (Ctrl+Z)'); b.querySelector('.bulle').innerHTML = esc(quoi) + '<kbd>Ctrl+Z</kbd>'; }
 function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); synchroniserRetouche(); rendreControle(); rafraichirBase(); rafraichirCarte(); montrerAttente(); }
 let toastT = null;
-function dire(msg, erreur) { const t = $('toast'); t.textContent = msg; t.classList.toggle('erreur', !!erreur); t.classList.add('on');
+// le mot qui passe ; `signaler` (08-fichiers) y ajoute « Voir » quand ce qu'il dit s'écrit dans « Vos fichiers »
+function dire(msg, erreur) { const t = $('toast'); t.textContent = msg; t.classList.toggle('erreur', !!erreur); t.classList.remove('action'); t.classList.add('on');
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), erreur ? 6000 : 2800); }
 function ouvrirMenu() { $('menu').hidden = false; $('btnMenu').setAttribute('aria-expanded', 'true'); const b = $('menu').querySelector('button[role="menuitem"]'); if (b) b.focus(); }
 function fermerMenu() { $('menu').hidden = true; $('btnMenu').setAttribute('aria-expanded', 'false'); }
@@ -1432,16 +1398,17 @@ function basculerBible() { if (app.fiche && app.fiche.mode === 'bible') fermerFi
 function lierPanneau() {
   const o = (id, fn) => { const e = $(id); if (e) e.onclick = fn; };
   const choisirFichier = () => $('fichier').click();
-  const exemple = () => { chargerContrat(contratExemple(), 'contrat d’exemple', 'Contrat d’exemple'); app.contrat.charges = chargesExemple(); synchroniser(); sauver(); };
+  const exemple = () => ouvrirExemple();   // l'exemple embarqué, à la demande (08-fichiers)
   $('fichier').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) ouvrirFichier(f); e.target.value = ''; });
   $('fichier-bible').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) importerBible(f); e.target.value = ''; });
   o('vd-ouvrir', choisirFichier); o('vd-coller', ficheColler); o('vd-exemple', exemple); o('vd-reprendre', () => { const q = annuler(); if (q) dire('Repris : ' + q + '.'); });
   o('btnBase', basculerBase); o('btnIndex', basculerIndex); o('btnCherche', () => { if (rechercheOuverte()) fermerRecherche(); else ouvrirRecherche(); });
   o('btnLiaison', nouvelleLiaison); o('btnBible', basculerBible);
   o('btnMenu', e => { e.stopPropagation(); $('menu').hidden ? ouvrirMenu() : fermerMenu(); });
-  // la base des contrats déjà faits vit (pour l'instant) dans la page de la bible : on y va, à sa section
-  const references = () => { ficheBible(''); const t = [...$('fiche-corps').querySelectorAll('h3.sous-titre')].find(h => /contrats déjà faits/i.test(h.textContent)); if (t) t.scrollIntoView({ block: 'start' }); };
-  const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple, references, cartouche: ficheCartouche, bible: ficheBible, normes: () => ficheNormes(), hypotheses: ficheHypotheses, nomenclature: ficheNomenclature, suivi: exporterSuivi, svg: exporterSVG, png: exporterPNG, imprimer,
+  // le menu, en quatre blocs (page.html) : le contrat · vos fichiers · sortir · le reste. « Contrats déjà faits » mène à
+  // leur carte dans « Vos fichiers » : ce qu'on attend, l'état, le dépôt (08-fichiers)
+  const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple, fichiers: () => ficheFichiers(), references: () => ficheFichiers('base'), bible: ficheBible, normes: () => ficheNormes(), hypotheses: ficheHypotheses,
+    recapitulatif: basculerBase, nomenclature: ficheNomenclature, suivi: exporterSuivi, svg: exporterSVG, png: exporterPNG, imprimer, cartouche: ficheCartouche,
     // tout effacer : la table vide (l'accueil), et un contrat neuf — les choix de celui-ci ne survivent pas (Ctrl+Z, ou « Reprendre », rend tout)
     vider: () => { if (!confirm('Effacer tout le contrat ?')) return; histPush('tout effacer'); app.contrat = contratNeuf(); app.source = null; app.nFolios = 0; app.plan = '*'; app.nom = ''; app.cible = null; app.choisi = null;
       fermerFiche(); fermerInspecteur(); fermerBase(); redessiner(); ajuster(); sauver(); } };

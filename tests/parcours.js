@@ -109,9 +109,11 @@ function fixtures(M) {
 }
 
 /* ---- parler à la page ---------------------------------------------------------------------------------------- */
-async function ouvrirPage(ctx) { const page = await ctx.newPage(); page.setDefaultTimeout(120000); page.erreurs = []; page.on('pageerror', e => page.erreurs.push(e.message));
+/* `exemple` : l'outil s'ouvre sur l'accueil (plus sur l'exemple) ; un parcours qui part de l'exemple le demande, comme le
+   technicien d'un clic sur « Ouvrir l'exemple ». */
+async function ouvrirPage(ctx, exemple) { const page = await ctx.newPage(); page.setDefaultTimeout(120000); page.erreurs = []; page.on('pageerror', e => page.erreurs.push(e.message));
   await page.addInitScript(ETAT_DU_CONTROLE);
-  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await instrumenter(page); return page; }
+  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); if (exemple) await page.evaluate(() => atelier.exemple()); await instrumenter(page); return page; }
 /* Les chronomètres dans la page : le placement d'un folio et le rendu d'une fiche (les fonctions globales du module 08 se
    remplacent par une version qui les mesure — rien d'autre ne change). */
 const instrumenter = page => page.evaluate(() => { if (window.__mes) return; window.__mes = { placement: [], fiche: [] };
@@ -210,13 +212,19 @@ function baseEssaiDansLaPage() {
   await parcours('A. Un contrat neuf — l’accueil, le retest déposé, le plan, les folios, la recherche, une correction, la mémoire, les exports', async () => {
     const ctx = await nav.newContext(grand); let page = await ouvrirPage(ctx);
     let e = await etat(page);
-    ok(e.n > 0 && !e.insp, 'l’outil s’ouvre, sans fiche ouverte', e.nom + ' · ' + e.enSous);
-    // la proposition retenue : l'exemple reste (il montre tout), et l'en-tête dit que c'est l'exemple embarqué
-    frottement(await page.evaluate(() => !$('vide').hidden || /exemple embarqué/.test($('ctx-txt').textContent)), 'à la première ouverture, c’est l’exemple qui s’affiche, pas l’accueil', 'le technicien qui ouvre l’outil pour un contrat neuf arrive sur un contrat qui n’est pas le sien ; il doit « Tout effacer » pour voir la page d’entrée',
+    // le premier lancement montre l'ACCUEIL, plus l'exemple : trois étapes (le retest, les contrats déjà faits, la bible et
+    // les normes), les quatre colonnes obligatoires, trois lignes d'aperçu, le dépôt, le modèle ; l'exemple à un clic
+    const A0 = await page.evaluate(() => ({ vide: !$('vide').hidden, etapes: document.querySelectorAll('#vide .vd-etape').length, req: [...document.querySelectorAll('#vide .vd-apercu th.req')].map(t => t.textContent).join(' '),
+      lignes: document.querySelectorAll('#vide .vd-apercu tbody tr').length, bandeau: !$('bandeau-exemple').hidden, gestes: ['vd-zone', 'vd-ouvrir', 'vd-modele', 'vd-base', 'vd-embarque', 'vd-exemple', 'vd-coller'].filter(id => !$(id)) }));
+    ok(e.n === 0 && !e.insp && A0.vide && A0.etapes === 3 && A0.req === 'Device1 Pin1 Device2 Pin2' && A0.lignes === 3 && !A0.bandeau && !A0.gestes.length, 'le premier lancement montre l’accueil, pas l’exemple : trois étapes, les quatre colonnes obligatoires, trois lignes d’aperçu, le dépôt, le modèle, l’exemple à un clic', JSON.stringify(A0));
+    frottement(A0.vide && !e.n, 'à la première ouverture, c’est l’exemple qui s’affiche, pas l’accueil', 'le technicien qui ouvre l’outil pour un contrat neuf arrive sur un contrat qui n’est pas le sien ; il doit « Tout effacer » pour voir la page d’entrée',
       'détail', '10-demarrage.js `demarrer` : sans contrat gardé, montrer l’accueil (#vide) avec « Voir l’exemple » plutôt que charger l’exemple d’office — ou garder l’exemple mais dire dans l’en-tête qu’il s’agit de l’exemple');
-    // tout effacer : l'accueil
+    await capture(page, 'A-0-premier-lancement');
+    // l'exemple, à la demande : un bandeau sous la barre du haut dit qu'on le regarde ; tout effacer : l'accueil, et « Reprendre »
+    await page.click('#vd-exemple'); await page.waitForFunction(() => app.nom === 'Contrat d’exemple' && !!app.dessin); await page.waitForTimeout(300);
+    ok(await page.evaluate(() => $('vide').hidden && !$('bandeau-exemple').hidden && /Vous regardez l’exemple/.test($('bandeau-exemple').textContent) && /Ouvrir mon retest/.test($('bandeau-exemple').textContent)), 'l’exemple ouvert d’un clic : « Vous regardez l’exemple · Ouvrir mon retest », collé sous la barre du haut');
     await page.click('#btnMenu'); accepter(page); await page.click('#menu [data-act="vider"]'); await page.waitForTimeout(400);
-    ok(await page.evaluate(() => !$('vide').hidden && !$('vd-reprendre').hidden && /Reprendre/.test($('vd-reprendre').textContent)), 'l’accueil : la zone de dépôt, les trois gestes, « Reprendre le contrat »');
+    ok(await page.evaluate(() => !$('vide').hidden && $('bandeau-exemple').hidden && !$('vd-reprendre').hidden && /Reprendre/.test($('vd-reprendre').textContent)), 'tout effacer : l’accueil, le bandeau s’en va, « Reprendre le contrat »');
     await capture(page, 'A-1-accueil');
     // le retest, par « Ouvrir un fichier » de l'accueil (sinon glissé sur la fenêtre)
     const tOuvrir = await ouvrirDepuisAccueil(page, X.neuf, 'glisser'); const tPlacement = await derniere(page, 'placement');
@@ -363,7 +371,7 @@ function baseEssaiDansLaPage() {
 
   /* ================================================================ C. LE CONTRÔLE D'UN CONTRAT ============== */
   await parcours('C. Le contrôle d’un contrat — l’en-tête, l’index « à reprendre », trois corrections, une hypothèse, un choix de fiche', async () => {
-    const ctx = await nav.newContext(grand), page = await ouvrirPage(ctx); await page.waitForTimeout(300);
+    const ctx = await nav.newContext(grand), page = await ouvrirPage(ctx, true); await page.waitForTimeout(300);
     let e = await etat(page); const enEtat0 = e.enEtat; ok(e.nom === 'Contrat d’exemple' && /^4 problèmes · \d+ à voir$/.test(e.enEtat), 'l’exemple : « 4 problèmes · n à voir » (W-012 et W-015 dépassés par la charge, le contact 23 du DR24 W-015 sous son permanent, 300XC1 B sans arrangement ; le compte des « à voir » suit les règles du contrôle)', e.enEtat);
     let t0 = Date.now(); await page.click('#btnIndex'); await page.waitForFunction(() => app.insp.index && document.querySelector('#ba-equip .co-item')); mesure('le bouton des repères → l’index « à reprendre »', Date.now() - t0, SEUIL_GESTE);
     const items = await page.evaluate(() => [...document.querySelectorAll('#ba-equip .co-item')].map(b => { const x = CONTROLE.items[+b.dataset.k]; return { k: +b.dataset.k, nom: x.nom, plan: x.plan, tableau: x.tableau != null, texte: x.texte }; }));
@@ -440,7 +448,7 @@ function baseEssaiDansLaPage() {
 
   /* ================================================================ D. LE TÉLÉPHONE ========================== */
   await parcours('D. Le téléphone (390 × 844) — les parcours A et C au doigt : tout reste-t-il atteignable ?', async () => {
-    const ctx = await nav.newContext(tel), page = await ouvrirPage(ctx); await page.waitForTimeout(400);
+    const ctx = await nav.newContext(tel), page = await ouvrirPage(ctx, true); await page.waitForTimeout(400);
     /* un élément est ATTEIGNABLE : visible, dans l'écran, et rien ne le recouvre (ce qu'on touche en son centre, c'est lui) */
     const atteignable = sel => page.evaluate(sel => { const el = document.querySelector(sel); if (!el) return { ok: false, detail: sel + ' absent' }; if (el.hidden || getComputedStyle(el).display === 'none') return { ok: false, detail: sel + ' caché' };
       if (el.scrollIntoView) { try { el.scrollIntoView({ block: 'nearest' }); } catch (_) { } } const r = el.getBoundingClientRect(); if (!r.width || !r.height) return { ok: false, detail: sel + ' sans taille' };
@@ -510,7 +518,7 @@ function baseEssaiDansLaPage() {
 
   /* ================================================================ E. LES CAS LIMITES ====================== */
   await parcours('E. Les cas limites — vide, une ligne, sans part numbers, codes inconnus, plusieurs feuilles, deux harness, le gros retest', async () => {
-    const ctx = await nav.newContext(grand), page = await ouvrirPage(ctx); await page.waitForTimeout(300);
+    const ctx = await nav.newContext(grand), page = await ouvrirPage(ctx, true); await page.waitForTimeout(300);
     const n0 = (await etat(page)).n;
     // un retest vide (les en-têtes, aucune ligne)
     await deposerParEntree(page, X.vide); let T = await toast(page), e = await etat(page);

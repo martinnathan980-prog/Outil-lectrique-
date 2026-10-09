@@ -52,18 +52,29 @@ function fixesPour(harness) { const f = new Map(), pre = cleFixe(harness, ''), n
 function viderCachesReferences() { REF.dessins.clear(); REF.cmp.clear(); }
 function adopterReferences(liaisons, nom) { app.references = liaisons && liaisons.length ? { nom: nom || '', liaisons, index: indexerReferences(liaisons), t: Date.now() } : null; viderCachesReferences();
   ouvrirIDB().then(db => { const st = db.transaction(IDB_REFERENCES, 'readwrite').objectStore(IDB_REFERENCES); if (app.references) st.put({ nom: app.references.nom, liaisons, t: app.references.t }, 'base'); else st.delete('base'); }).catch(() => { });
-  CONTROLE.cle = null; if (app.cible) rendreFiche(); if (app.fiche && app.fiche.mode === 'bible') ficheBible(app.fiche.ref); }
+  CONTROLE.cle = null; if (app.cible) rendreFiche(); if (app.fiche && app.fiche.mode === 'bible') ficheBible(app.fiche.ref); if (typeof rendreFichiers === 'function') rendreFichiers(); }
 function relireReferences() { ouvrirIDB().then(db => { const req = db.transaction(IDB_REFERENCES).objectStore(IDB_REFERENCES).get('base');
   req.onsuccess = () => { const o = req.result; if (!o || !o.liaisons || !o.liaisons.length) return; app.references = { nom: o.nom || '', liaisons: o.liaisons.map(liaison), t: o.t || 0 }; app.references.index = indexerReferences(app.references.liaisons); viderCachesReferences();
-    if (app.cible) rendreFiche(); if (app.fiche && app.fiche.mode === 'bible') ficheBible(app.fiche.ref); }; }).catch(() => { }); }
-// « Feuilles ignorées (pas les en-têtes du retest) : « Notes », « Feuil3 ». » — un classeur se lit feuille par feuille (02)
-const feuillesIgnorees = r => r.ignorees && r.ignorees.length ? ' Feuille' + (r.ignorees.length > 1 ? 's' : '') + ' ignorée' + (r.ignorees.length > 1 ? 's' : '') + ' (pas les en-têtes du retest) : ' + r.ignorees.map(n => '« ' + n + ' »').join(', ') + '.' : '';
-async function importerReferences(fichier) { if (!fichier) return;
-  try { dire('Lecture de « ' + fichier.name + ' »…'); const r = await lireFichier(fichier);
-    if (!r.liaisons.length) { dire('« ' + fichier.name + ' » est lu, mais aucune liaison n’est reconnue — il faut les seize colonnes du retest.' + feuillesIgnorees(r), true); return; }
-    adopterReferences(r.liaisons, fichier.name);
-    const I = app.references.index; dire(pluriel(r.liaisons.length, 'liaison') + ' de ' + I.harnais.size + ' harness et ' + pluriel(I.dessins.size, 'dessin') + ' gardée' + (r.liaisons.length > 1 ? 's' : '') + (r.lues && r.lues.length > 1 ? ' (' + pluriel(r.lues.length, 'feuille') + ')' : '') + ' : les fiches disent ce qui a déjà été fait.' + feuillesIgnorees(r));
-  } catch (e) { dire('Erreur : ' + (e && e.message || e), true); } }
+    if (app.cible) rendreFiche(); if (app.fiche && app.fiche.mode === 'bible') ficheBible(app.fiche.ref); if (typeof rendreFichiers === 'function') rendreFichiers(); }; }).catch(() => { }); }
+/* DÉPOSER LA BASE (sa carte dans « Vos fichiers », l'étape 2 de l'accueil, le menu) : un retest de plusieurs harness — les
+   mêmes colonnes, Harness rempli. Ce qui ne convient pas s'écrit dans la carte de la base, en clair, et la base d'avant
+   reste : un fichier illisible ou vide, des en-têtes introuvables (ce que l'outil a lu, ce qu'il lui faut), aucune
+   colonne Harness (« Sans elle, je ne sais pas séparer les machines » — et l'ouvrir comme contrat), des feuilles
+   ignorées (en liste). Un dépôt réussi ramène sur la carte, avec les comptes et « Voir un équipement déjà fait ». */
+async function importerReferences(fichier) { if (!fichier) return; const nom = fichier.name || 'la base';
+  dire('Lecture de « ' + nom + ' »…'); const L = await lireLeFichier(fichier); FICHIERS.base = null;
+  if (L.erreur) { echecImport('base', L.erreur); return; }
+  try { const r = lireTexte(L.texte), ig = feuillesHtml(L.lu), liste = ig.length ? ['Feuilles ignorées (pas les en-têtes du retest) : ' + ig.join(', ')] : [];
+    if (r.format !== 'retest') { echecImport('base', { texte: `${esc(nom)} : je ne trouve pas les en-têtes du retest dans les 30 premières lignes — la base a les mêmes colonnes que le retest, avec <span class="id">Harness</span>. ${ceQueJaiLu(L.brutes)} ${IL_ME_FAUT}`, gestes: [['modele-base', 'Télécharger un modèle']] },
+      nom + ' : je ne trouve pas les en-têtes du retest dans les 30 premières lignes.'); return; }
+    if (!r.liaisons.length) { echecImport('base', { texte: `«\u00a0${esc(nom)}\u00a0» : les en-têtes du retest sont là (ligne ${r.entete}), mais aucune liaison dessous.`, liste }); return; }
+    if (!r.harnais.length) { const e = trouverEnteteRetest(L.brutes), sans = !e || e.col.harness == null;
+      echecImport('base', { texte: `${esc(nom)} : ${sans ? 'aucune colonne <span class="id">Harness</span>' : 'la colonne <span class="id">Harness</span> est vide'}. Sans elle, je ne sais pas séparer les machines. Ajoutez-la, ou ouvrez ce fichier comme contrat.`, liste },
+        nom + ' : aucune colonne Harness — sans elle, je ne sais pas séparer les machines.');
+      FICHIERS.base = { nom, liaisons: r.liaisons }; rendreFichiers(); return; }
+    adopterReferences(r.liaisons, nom); baseRecue(nom, ig.length ? { texte: 'Feuilles ignorées (pas les en-têtes du retest) :', liste: ig } : null); ficheFichiers('base');
+    const I = app.references.index; dire(lies([plurielLie(I.harnais.size, 'harness'), plurielLie(I.dessins.size, 'dessin'), plurielLie(r.liaisons.length, 'liaison')]) + ' gardés dans ce navigateur : les fiches disent ce qui a déjà été fait.');
+  } catch (e) { echecImport('base', { texte: `${esc(nom)} n’a pas pu être lu : ${esc(String(e && e.message || e))}.` }); } }
 const indexReferences = () => app.references && app.references.index || null;
 /* Une empreinte courte du contrat (ce que la comparaison lit) : les comparaisons gardées se périment quand il change. */
 function empreinteContrat() { const V = verite(); let h = 2166136261; const s = V.length + '|' + V.map(l => l.de + l.borneDe + l.vers + l.borneVers + l.type + l.pnDe + l.pnVers).join('\u0001');
@@ -303,7 +314,7 @@ function lierFwd() { const d = $('fwd'), sc = $('fw-scene');
 
 /* ---- LA BIBLE : la base par harness et par dessin, une recherche ---------------------------------------------- */
 function ficheReferences() { const R = app.references, I = indexReferences();
-  const etat = !R ? '<div class="bible-etat"><span><b>Aucun contrat déjà fait</b> : dépose un retest de plusieurs harness (les seize colonnes), il se garde dans ce navigateur, rien ne part sur le réseau.</span></div>'
+  const etat = !R ? '<div class="bible-etat"><span><b>Aucun contrat déjà fait</b> : la base se dépose dans ⋮ → Vos fichiers → Contrats déjà faits (un Excel aux colonnes du retest, Harness rempli) ; elle se garde dans ce navigateur, rien ne part sur le réseau.</span></div>'
     : `<div class="bible-etat"><span><b>${esc(R.nom || 'Contrats déjà faits')}</b>${SEP_POINT}${plurielLie(I.harnais.size, 'harness')}${SEP_POINT}${plurielLie(I.dessins.size, 'dessin')}${SEP_POINT}${plurielLie(R.liaisons.length, 'liaison')}${SEP_POINT}gardés dans ce navigateur</span></div>`;
   return `<h3 class="sous-titre">Les contrats déjà faits</h3>${etat}` + (I ? `<div id="rf-base">${rfBaseHtml()}</div>` : '')
     + '<p class="note">Pour un équipement du contrat, sa fiche dit les trois machines les plus proches (même part number, sinon même code), le taux de lignes communes, et le dessin (FWD) où il apparaît ; la comparaison — l’équipement, son voisinage, le dessin entier — montre ce qu’elles ont en plus, ce qui diffère, et reprend ce qu’on coche ; « Dessin » ouvre le FWD dessiné par l’outil. « La solution du PH n’est pas forcément la bonne » : ce qui est repris passe les mêmes contrôles que le reste.</p>'; }

@@ -12,6 +12,9 @@ const atelier = {
   charger(liaisons) { app.contrat.liaisons = liaisons.map(liaison); app.source = null; app.nFolios = 0; app.plan = '*'; app.choisi = null;
     fermerFiche(); redessiner(); return app.dessin; },
   essai() { return atelier.charger(contratEssai()); },
+  /* l'exemple embarqué, avec son profil de charge, comme si l'outil venait de s'ouvrir dessus (sans historique) : les
+     batteries qui le lisent le demandent — l'outil, lui, s'ouvre sur l'accueil */
+  exemple() { ouvrirExemple(true); return app.dessin; },
   lire(texte) { const r = lireTexte(texte); atelier.charger(r.liaisons); return r; },
   dessin() { return app.dessin; },
   audit() { return app.dessin ? auditer(app.dessin) : { ok: false, fils: 0, droits: 0, tauxDroits: 1, croisements: 0, filsDansBloc: 0, blocsChevauches: 0, blocs: 0 }; },
@@ -28,8 +31,9 @@ function demarrer() {
   typographieVivante(); relireBible(); lierPanneau(); lierPlanche();
   // le tableau garde sa taille et sa portée, jamais son état ouvert : on rouvre sur le plan seul, le tableau à la demande (B)
   relireBase();
-  // on retrouve son contrat (avec ses choix) ; à défaut l'exemple embarqué, que l'en-tête nomme — jamais un écran vide
-  if (!relire()) { chargerContrat(contratExemple(), 'contrat d’exemple', 'Contrat d’exemple'); app.contrat.charges = chargesExemple(); rendreControle(); app.hist = []; synchroniserHistorique(); }
+  // on retrouve son contrat (avec ses choix) ; à défaut l'ACCUEIL — ce que l'outil attend, dans l'ordre (le retest, les
+  // contrats déjà faits, la bible et les normes) —, jamais un contrat qu'on n'a pas ouvert : l'exemple attend qu'on le demande
+  if (!relire()) redessiner();
   requestAnimationFrame(() => ajuster());
   // les folios déjà affinés dans ce navigateur reviennent ; les autres s'affinent en arrière-plan ; les retouches aussi
   relireAffines(); relireRetouches(); relireReferences();

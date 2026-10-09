@@ -37,7 +37,8 @@ const FICHIER = P.fichierDemande();
   const ctx = await nav.newContext({ viewport: { width: 1500, height: 950 } }), page = await ctx.newPage(); page.setDefaultTimeout(300000);
   const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
   let ko = 0; const ok = (c, nom, detail) => { if (!c) ko++; console.log('  ' + (c ? 'ok ' : 'KO ') + ' ' + nom + (detail ? '   ' + detail : '')); };
-  const ouvrir = async (plan, recharger) => { if (recharger !== false) { await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); }
+  // l’outil s’ouvre sur l’accueil : la première fois, l’exemple se demande ; ensuite le contrat gardé revient
+  const ouvrir = async (plan, recharger) => { if (recharger !== false) { await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => app.contrat.liaisons.length || atelier.exemple()); }
     await page.evaluate(plan => { app.plan = plan; app.choisi = null; app.cible = null; redessiner(); ajuster(); }, plan || '3'); await page.waitForTimeout(400); };
   // le centre d'un bloc à l'écran, et sa place dans le dessin
   const bloc = nom => page.evaluate(nom => { const c = app.dessin.comps.find(k => k.name === nom && k.kind !== 'tag'); const r = $('planche').getBoundingClientRect();

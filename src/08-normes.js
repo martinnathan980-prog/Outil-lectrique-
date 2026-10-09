@@ -113,7 +113,7 @@ const DOMAINES_NORMES = [
   { id: 'chute', titre: 'Chute, réseau et déclassement', sens: 'Ce que le réseau admet de chute en ligne, et ce qui réduit l’intensité admissible d’un fil (faisceau, altitude).', vues: ['reseau', 'declassements'] },
   { id: 'disjoncteurs', titre: 'Disjoncteurs', sens: 'Les courbes de disjonction qui jugent un profil de charge, la protection par jauge, les familles et leurs points de calibration.', vues: ['disjoncteurs', 'protections', 'disjoncteursFamilles', 'calibrations', 'chutesDisjoncteurs'] },
   { id: 'raccords', titre: 'Raccords, gaines, colliers, manchons', sens: 'Ce qui englobe un connecteur, par le tutoriel du lecteur corrigé par R3 : le toron (le facteur TE selon le nombre de câbles), la taille et la classe du boîtier, le raccord EN 3660 (sa désignation construite, sa masse) ou la cheminée de l’EN 4165, le code d’entrée (la plage de toron de la norme), la chambre, la bande, la gaine, le manchon.', vues: ['raccords', 'torons', 'entrees', 'chambres', 'massesRaccords', 'classes', 'manchons', 'gaines', 'colliers', 'filetages', 'accessoires:connecteur'] },
-  { id: 'contrats', titre: 'Contrats déjà faits', sens: 'La base des harness déjà câblés (un retest de plusieurs harness) : « Déjà fait » sur chaque fiche, la comparaison, le FWD dessiné. Elle se dépose et se cherche depuis la bible.', vues: [] }
+  { id: 'contrats', titre: 'Contrats déjà faits', sens: 'La base des harness déjà câblés (un retest de plusieurs harness) : « Déjà fait » sur chaque fiche, la comparaison, le FWD dessiné. Elle se dépose dans « Vos fichiers » (menu ⋮ → Contrats déjà faits…) et se cherche depuis la bible.', vues: [] }
 ];
 /* Pour chaque table : d'où elle vient, à quoi elle sert dans l'outil, qui la lit, comment une ligne se choisit. */
 const FICHES_TABLES = {
@@ -309,16 +309,18 @@ function guideHtml() { return `<section class="nm-guide"><div class="sur">Ajoute
   + `<div class="nm-gabarits nm-tous"><span class="sur">Tous les gabarits</span>${TABLES_NORME.map(t => `<button class="fi-lien" data-gabarit="${escA(t)}">${esc(TITRES_NORME[t])}</button>`).join('')}</div></section>`; }
 
 /* ---- l'import : lire, prévisualiser, adopter ----------------------------------- */
-/* Un fichier déposé ou choisi : lu, découpé en blocs, montré dans la page avant d'être adopté. */
+/* Un fichier déposé ou choisi : lu, découpé en blocs, montré dans la page avant d'être adopté. Ce qui ne se lit pas
+   s'écrit aussi dans la carte des normes de « Vos fichiers » (08-fichiers), le mot qui passe propose « Voir ». */
 async function importerNorme(fichier) { if (!fichier) return;
   try { dire('Lecture de « ' + fichier.name + ' »…'); importerNormeTexte(await texteDeNormeFichier(fichier), fichier.name); }
-  catch (e) { dire('Erreur : ' + (e && e.message || e), true); } }
+  catch (e) { echecImport('normes', { texte: `${esc(fichier.name)} n’a pas pu être lu : ${esc(String(e && e.message || e))}.` }); } }
 /* Un texte (un CSV, des lignes collées, les feuilles d'un Excel) : les blocs reconnus, prévisualisés. Rend l'import. */
 function importerNormeTexte(texte, nom) { const blocs = decouperTables(texte);
   NORMES.import = { nom: nom || 'texte collé', blocs: blocs.map(b => ({ ...b, cible: b.table, manuel: {} })), vide: !blocs.length };
   NORMES.import.blocs.forEach(preparerBloc);
-  if (!blocs.length) dire('« ' + (nom || 'le texte') + '» : aucune ligne d’en-tête reconnue — il faut les en-têtes de l’outil (voir les gabarits).', true);
-  else dire(pluriel(blocs.length, 'table') + ' reconnue' + (blocs.length > 1 ? 's' : '') + ' dans « ' + (nom || 'le texte') + ' » : vérifie, puis adopte.');
+  if (!blocs.length) echecImport('normes', { texte: `«\u00a0${esc(nom || 'le texte')}\u00a0» : aucune ligne d’en-tête reconnue. Il faut les en-têtes de l’outil, une table par bloc (un gabarit par table, dans la page Normes).`, gestes: [['gabarits', 'Les gabarits']] },
+    '« ' + (nom || 'le texte') + ' » : aucune ligne d’en-tête reconnue — il faut les en-têtes de l’outil (voir les gabarits).');
+  else { effacerErreur('normes'); dire(pluriel(blocs.length, 'table') + ' reconnue' + (blocs.length > 1 ? 's' : '') + ' dans « ' + (nom || 'le texte') + ' » : vérifie, puis adopte.'); }
   ficheNormes(); const imp = $('nm-import'); if (imp && imp.scrollIntoView) { try { imp.scrollIntoView({ block: 'start' }); } catch (_) { } }
   return NORMES.import; }
 /* Ce qu'un bloc donne pour sa cible : les colonnes (reconnues, puis celles attribuées à la main), les lignes lues et
@@ -343,7 +345,7 @@ function importHtml() { const I = NORMES.import, n = I.blocs.filter(b => b.cible
 function adopterImportNorme() { const I = NORMES.import; if (!I) return; const A = JSON.parse(JSON.stringify(NORMES.apports)); let n = 0, tables = new Set();
   I.blocs.forEach(b => { if (!b.cible || !b.lecture) return; b.lecture.lues.forEach(x => { if (poserApport(A, b.cible, x.brut, I.nom)) n++; }); if (b.lecture.lues.length) tables.add(b.cible); });
   NORMES.import = null; tables.forEach(t => { vuesNorme().forEach(v => { if (vueDe(v).table === t) NORMES.ouverts.add(v); }); });
-  adopterApports(nettoyerApports(A), 'import de ' + I.nom); dire(pluriel(n, 'ligne') + ' adoptée' + (n > 1 ? 's' : '') + ' de « ' + I.nom + ' » : les fiches et le contrôle suivent.'); }
+  adopterApports(nettoyerApports(A), 'import de ' + I.nom); effacerErreur('normes'); dire(pluriel(n, 'ligne') + ' adoptée' + (n > 1 ? 's' : '') + ' de « ' + I.nom + ' » : les fiches et le contrôle suivent.'); }
 function annulerImportNorme() { NORMES.import = null; rendreNormes(); }
 
 /* ---- modifier : une ligne, sur place ----------------------------------------------- */
@@ -507,8 +509,12 @@ function zoomBible(e) { if (e.module && moduleDeReference(app.norme, e.reference
       <button class="rond fermer" id="bz-fermer" aria-label="Replier la référence"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
     ${dessinPhysique('', P, largeurFiche(), { forme })}
     <div class="bar-faits">${carac.map(([k, v]) => `<span>${esc(k)}</span><span>${esc(v)}</span>`).join('')}</div></div>`; }
-async function importerBible(fichier) { if (!fichier) return;
-  try { const r = await lireBibleFichier(fichier);
-    if (!r.entrees.length) { dire('« ' + fichier.name + ' » n’a pas l’air d’une bible : il faut une ligne d’en-têtes avec ' + COLONNES_BIBLE_TEXTE.replace(/<\/?b>/g, '') + '.', true); return; }
-    adopterBible(r.entrees, fichier.name); dire(pluriel(r.entrees.length, 'référence') + ' lue' + (r.entrees.length > 1 ? 's' : '') + ' : les barrettes suivent.');
-  } catch (e) { dire('Erreur : ' + (e && e.message || e), true); } }
+/* Importer une bible : ce qui ne convient pas s'écrit dans la carte de la bible de « Vos fichiers » (ce qui a été lu, ce
+   qu'il faut, un modèle), et la bible d'avant reste. */
+async function importerBible(fichier) { if (!fichier) return; const nom = fichier.name || 'le fichier';
+  const L = await lireLeFichier(fichier); if (L.erreur) { echecImport('bible', L.erreur); return; }
+  try { const r = lireBible(L.texte);
+    if (!r.entrees.length) { echecImport('bible', { texte: `${esc(nom)} n’a pas l’air d’une bible : il faut une ligne d’en-têtes avec ${COLONNES_BIBLE_TEXTE}. ${ceQueJaiLu(L.brutes)}`, gestes: [['modele-bible', 'Télécharger un modèle']] },
+      '« ' + nom + ' » n’a pas l’air d’une bible : il faut au moins les colonnes Référence et Bornes.'); return; }
+    adopterBible(r.entrees, nom); effacerErreur('bible'); rendreFichiers(); dire(pluriel(r.entrees.length, 'référence') + ' lue' + (r.entrees.length > 1 ? 's' : '') + ' : les barrettes suivent.');
+  } catch (e) { echecImport('bible', { texte: `${esc(nom)} n’a pas pu être lu : ${esc(String(e && e.message || e))}.` }); } }

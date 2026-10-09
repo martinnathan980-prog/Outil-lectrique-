@@ -42,7 +42,11 @@ node tests/interface.js        à la vraie souris (grand écran, téléphone) : 
                                fichier ouvert ne garde rien du contrat d'avant (profils, désignations, sexes, raccords), l'en-tête dit son
                                nom, Ctrl+Z rend l'exemple et ses choix ; dix folios aux noms de dessin (FWD) : puces abrégées, aucune ne
                                déborde, la courante en entier, la liste déroulante ; « 2 harness » ; les noms de fichier en ASCII ; un
-                               fichier à deux harness demande lequel ouvrir
+                               fichier à deux harness demande lequel ouvrir ; LA PRISE EN MAIN : le menu en quatre blocs et ses bulles
+                               (au clavier aussi), « Vos fichiers » (cinq cartes, leur état, trois lignes d'exemple), une erreur d'import
+                               écrite dans sa carte (une compta, un fichier vide, une image), le rattrapage qui attend « Charger »
+                               (« Corriger »), la base sans Harness, la base déposée et « Voir un équipement déjà fait », le collage et
+                               son aperçu (ajouter au contrat), le modèle CSV — le même que modeles/modele-retest.csv
 node tests/fiche.js            la fiche de chaque sorte de bloc (équipement à trois connecteurs, barrette, disjoncteur, barrette à poser,
                                prise de coupure, fil) dit les choses dans l'ordre voulu, les faces à plat, autour avant les fils ; les
                                hypothèses de la simulation depuis le mot « hypothèse » de la fiche d'un fil (115 V → 4 V admis, puis
@@ -101,7 +105,8 @@ node tests/fwd.js              à la vraie souris : « Déjà fait » dit le des
                                du dessin (le FWD dessiné par le moteur, l'équipement comparé encadré, la colonne qui explique, la
                                recherche, un clic, Échap, « Comparer ») ; la bible qui cherche un repère et ouvre son dessin ; au téléphone
 node tests/parcours.js         LES PARCOURS DU LECTEUR, de bout en bout, à la vraie souris, chronométrés (grand écran, puis téléphone) :
-                               A. un contrat neuf (l'accueil, un retest Excel au vrai format déposé, le plan, les folios au clavier et à la
+                               A. un contrat neuf (le premier lancement sur l'accueil, l'exemple à la demande et son bandeau, un retest
+                               Excel au vrai format déposé, le plan, les folios au clavier et à la
                                barre du bas, la recherche, une correction dans le tableau que le plan suit, Ctrl+Z, fermer et rouvrir, les
                                exports SVG / PNG / CSV, la nomenclature, le relief) ; B. je pars d'un contrat déjà fait (une base de quatre
                                machines, « Déjà fait » sur chaque fiche, le FWD à trois échelles, cocher et reprendre, le contrôle refait,
@@ -116,6 +121,10 @@ node tests/parcours.js         LES PARCOURS DU LECTEUR, de bout en bout, à la v
                                capture par pas et parcours-mesures.json ; --sans-gros saute le gros retest ; --parcours=C,E ne rejoue
                                que ceux-là
 ```
+
+L'outil s'ouvre sur l'accueil (le premier lancement ne charge plus l'exemple) : une batterie qui lit
+l'exemple le demande, `atelier.exemple()` — l'exemple et son profil de charge, sans historique, comme
+l'ouverture d'avant.
 
 Tous acceptent `--fichier=chemin` pour mesurer un autre fichier que
 `index.html` (c'est ainsi qu'on a tenu la parité avec l'ancien moteur pendant

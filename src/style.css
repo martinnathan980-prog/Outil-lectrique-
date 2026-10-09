@@ -115,6 +115,7 @@
   --t-1:#1d1d1f; --t-2:#47474c; --t-3:#636369; --t-inverse:#ffffff;
   --accent:#1d1d1f; --accent-2:#000000; --accent-soft:#ebebef; --accent-line:#c7c7cd; --on-accent:#ffffff;
   --route-a:#c0392b; --route-b:#1e8449; --route-voile:transparent; --anneau:0 0 0 3px rgba(0,0,0,.07);
+  --ok:#1d7a3c; --ok-soft:#e8f5ec; --warn:#965800; --warn-soft:#fdf2df; --ko:#c3271f; --ko-soft:#fdeceb; --info:#47474c; --info-soft:#f0f0f3;
   color-scheme:light; color:var(--t-1) }
 
 /* ─── LE SOCLE ──────────────────────────────────────────────────────────── */
@@ -266,17 +267,23 @@ body.cherche .recherche .rc-fermer{display:inline}
 .q-item .cpt{color:var(--t-3);font:400 var(--f-11) var(--mono);white-space:nowrap}
 .q-rien{padding:10px 12px;color:var(--t-2);font-size:var(--f-12)}
 /* le menu : sous son bouton, ce qu'on fait une fois ; en tête, ce qui est ouvert (à lire) */
-.menu{position:absolute;top:calc(100% + 8px);right:0;width:280px;color:var(--t-1);background:var(--s-flottant);border:1px solid var(--s-line);border-radius:12px;box-shadow:var(--sh-2);padding:6px;z-index:40}
+/* plus haut que l'écran (un portable de 768 px, un téléphone), il défile ; ses bulles sont posées sur la page, pas dedans */
+.menu{position:absolute;top:calc(100% + 8px);right:0;width:288px;color:var(--t-1);background:var(--s-flottant);border:1px solid var(--s-line);border-radius:12px;box-shadow:var(--sh-2);padding:6px;z-index:40;
+  max-height:calc(100vh - var(--entete) - var(--sur-h) - 16px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
 .menu button{display:flex;width:100%;align-items:center;gap:12px;height:32px;padding:0 12px;border-radius:var(--r-1);background:none;border:none;text-align:left;color:var(--t-1);font-size:var(--f-13);font-weight:400}
 .menu button:hover,.menu button:focus-visible{background:var(--s-hover);outline:none}
-/* sa bulle : ce que la ligne fait, ce qu'elle attend, ce qu'elle remplace — à gauche du menu, après un temps de survol
-   (on traverse le menu sans qu'elles clignotent), tout de suite au clavier */
-.menu button[data-aide]{position:relative}
-.menu button[data-aide]::after{content:attr(data-aide);position:absolute;right:calc(100% + 16px);top:-4px;width:300px;padding:10px 12px;border-radius:var(--r-2);
-  background:var(--bulle);color:var(--bulle-t);font:400 var(--f-12)/1.5 var(--sans);white-space:normal;text-align:left;box-shadow:var(--sh-2);pointer-events:none;
-  opacity:0;transform:translateX(4px);transition:opacity var(--rapide),transform var(--rapide);visibility:hidden}
-.menu button[data-aide]:hover::after{opacity:1;transform:none;visibility:visible;transition-delay:.35s}
-.menu button[data-aide]:focus-visible::after{opacity:1;transform:none;visibility:visible}
+/* ses quatre blocs (le contrat · vos fichiers · sortir · le reste), chacun nommé d'un mot, séparés d'un filet */
+.menu-bloc+.menu-bloc{border-top:1px solid var(--s-line);margin-top:4px;padding-top:2px}
+.menu .ctx+.menu-bloc{border-top:1px solid var(--s-line);margin-top:4px;padding-top:2px}
+.menu-t{padding:8px 12px 3px;font:500 var(--f-11)/1.3 var(--sans);color:var(--t-3)}
+/* sa bulle, en trois temps : ce que la ligne fait, ce qu'elle attend, ce qui se passe ensuite — UNE bulle sur la page
+   (08-accueil, `lierBullesDuMenu`), à gauche du menu, à la hauteur de la ligne, après un temps de survol, tout de suite au
+   clavier ; 320 px */
+.menu-bulle{position:fixed;top:0;right:0;z-index:45;width:320px;padding:10px 12px;border-radius:var(--r-2);background:var(--bulle);color:var(--bulle-t);
+  font:400 var(--f-12)/1.5 var(--sans);text-align:left;box-shadow:var(--sh-2);pointer-events:none;opacity:0;transform:translateX(4px);visibility:hidden;
+  transition:opacity var(--rapide),transform var(--rapide),visibility 0s linear var(--rapide)}
+.menu-bulle.on{opacity:1;transform:none;visibility:visible;transition:opacity var(--rapide),transform var(--rapide)}
+@media (max-width:700px){ .menu-bulle{display:none} }
 .menu button.danger{color:var(--ko)}
 .menu button.danger:hover{background:var(--ko-soft)}
 .menu hr{border:none;border-top:1px solid var(--s-line);margin:4px 8px}
@@ -635,11 +642,16 @@ table.simu-tab{border-collapse:separate;border-spacing:0;font-size:var(--f-12);m
 .cand[aria-pressed="true"] span,.cand[aria-pressed="true"] .ok{color:var(--on-accent)}
 .cand[aria-pressed="true"]:hover{background:var(--accent-2)}
 
-/* ─── L'ACCUEIL : la table vide, et dessus une feuille de garde ─────────────
-   La page d'entrée est un folio : le cadre gradué (1 à 6, A à D) comme sur les plans, un petit schéma qui se trace
-   à l'ouverture, les trois gestes, et le cartouche en bas à droite, collé au cadre. */
-.vide{position:absolute;inset:0;overflow:auto;display:grid;place-items:center;padding:24px 24px 24px calc(var(--rail) + 24px);z-index:5}
-.vd{width:min(820px,100%);display:grid;grid-template-columns:18px minmax(0,1fr) 18px;grid-template-rows:18px auto 18px;
+/* ─── L'ACCUEIL : la table vide, et dessus une feuille de garde qui prend la main ─────────────
+   Le premier lancement montre l'accueil, pas l'exemple. La page est un folio — le cadre gradué (1 à 6, A à D), un petit
+   schéma qui se trace — qui dit ce que l'outil attend, dans l'ordre : 1. VOTRE RETEST, indispensable (le cadre à
+   l'encre ; les quatre colonnes obligatoires soulignées dans un aperçu de trois lignes ; la zone de dépôt ; un modèle à
+   télécharger) ; 2. VOS CONTRATS DÉJÀ FAITS, une fois ; 3. BIBLE ET NORMES, embarquées. En bas, l'exemple et le
+   collage pour qui n'a pas de fichier. Une feuille claire dans les deux thèmes (`.ilot-clair`), comme un folio. */
+.vide{position:absolute;inset:0;overflow:auto;display:grid;place-items:center;padding:24px 24px 24px calc(var(--rail) + 24px);z-index:5;container:accueil/inline-size}
+/* un document ouvert à côté (« Vos fichiers », le collage) : l'accueil se centre dans la place qui reste, il ne passe pas dessous */
+body.fiche-ouverte .vide{right:var(--fiche-l)}
+.vd{width:min(1100px,100%);display:grid;grid-template-columns:18px minmax(0,1fr) 18px;grid-template-rows:18px auto 18px;
   background:var(--s-surface);border:1px solid var(--s-line-2);border-radius:var(--r-1);box-shadow:var(--sh-2);animation:vd-pose .35s ease-out both}
 @keyframes vd-pose{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 /* la graduation du cadre : des chiffres en haut et en bas, des lettres à gauche et à droite */
@@ -647,14 +659,14 @@ table.simu-tab{border-collapse:separate;border-spacing:0;font-size:var(--f-12);m
 .vd-reg-h{grid-area:1/2}.vd-reg-b{grid-area:3/2}
 .vd-reg-g,.vd-reg-d{flex-direction:column}
 .vd-reg-g{grid-area:2/1}.vd-reg-d{grid-area:2/3}
-.vd-feuille{grid-area:2/2;border:1px solid var(--t-1);padding:32px 36px 0;display:flex;flex-direction:column;min-width:0}
-/* le titre et le schéma */
-.vd-tete{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:28px;align-items:center;margin-bottom:24px}
-.vd-sur{display:flex;align-items:center;gap:10px;font:500 var(--f-12)/1 var(--sans);letter-spacing:0;color:var(--accent-2)}
+.vd-feuille{grid-area:2/2;border:1px solid var(--t-1);padding:26px 30px 22px;display:flex;flex-direction:column;min-width:0}
+/* le titre, ce que l'outil fait en une phrase, et le schéma qui se trace */
+.vd-tete{display:grid;grid-template-columns:minmax(0,1fr) 236px;gap:32px;align-items:center;margin-bottom:20px}
+.vd-sur{display:flex;align-items:center;gap:10px;font:500 var(--f-12)/1 var(--sans);letter-spacing:0;color:var(--t-3)}
 .vd-sur .en-marque{width:26px;height:26px;background:var(--t-1);color:var(--t-inverse)}
 .vd-sur .en-marque svg{width:18px;height:18px}
-.vd h1{font:600 40px/1.05 var(--titre);margin:16px 0 0;letter-spacing:-.01em;color:var(--t-1);text-wrap:balance}
-.vd-titre p{color:var(--t-2);margin:16px 0 0;font-size:var(--f-14);line-height:1.55;max-width:52ch}
+.vd h1{font:600 34px/1.05 var(--titre);margin:12px 0 0;letter-spacing:-.02em;color:var(--t-1);text-wrap:balance}
+.vd-titre p{color:var(--t-2);margin:10px 0 0;font-size:var(--f-14);line-height:1.55;max-width:62ch}
 .vd-dessin{width:100%;height:auto;display:block;overflow:visible}
 .vd-dessin rect{fill:var(--s-surface);stroke:var(--t-1);stroke-width:1}
 .vd-dessin rect.bornes{stroke-width:.75}
@@ -671,49 +683,83 @@ table.simu-tab{border-collapse:separate;border-spacing:0;font-size:var(--f-12);m
 .vd-dessin .bloc.b2{animation-delay:.25s}.vd-dessin .bloc.b3{animation-delay:.35s}
 @keyframes vd-trace{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
 @keyframes vd-paraitre{from{opacity:0}to{opacity:1}}
-/* la zone de dépôt : un cadre en pointillé, un geste clair */
-.vd-zone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:104px;padding:16px;border:1.5px dashed var(--s-line-2);border-radius:var(--r-2);background:var(--s-sunken);color:var(--t-2);text-align:center;cursor:pointer;transition:border-color var(--rapide),background var(--rapide),color var(--rapide)}
-.vd-zone svg.ico{width:22px;height:22px;color:var(--accent);margin-bottom:4px}
-.vd-zone b{font-size:var(--f-14);color:var(--t-1);font-weight:600}
-.vd-zone span{font-size:var(--f-12)}
-.vd-zone:hover,.vd-zone:focus-visible,body.depot-actif .vd-zone{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-2)}
-.vd-gestes{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
-/* reprendre le contrat que le dernier geste a vidé : une ligne à part, à l'encre */
-.vd-reprendre{display:flex;align-items:center;gap:8px;width:100%;margin-top:12px;height:40px;padding:0 16px 0 12px;border:1px solid var(--accent-line);border-radius:var(--r-1);background:var(--accent-soft);color:var(--accent-2);font-weight:600;text-align:left;transition:background var(--rapide)}
+/* reprendre le contrat que le dernier geste a vidé : une ligne à part, à l'encre, avant les étapes */
+.vd-reprendre{display:flex;align-items:center;gap:8px;width:100%;margin:0 0 16px;height:40px;padding:0 16px 0 12px;border:1px solid var(--accent-line);border-radius:var(--r-btn);background:var(--accent-soft);color:var(--accent-2);font-weight:600;text-align:left;transition:background var(--rapide)}
 /* l'icône « annuler » du rail, au trait, en masque (pas un caractère de police) */
 .vd-reprendre::before{content:"";flex:none;width:18px;height:18px;background:currentColor;
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 14 4 9l5-5'/%3E%3Cpath d='M4 9h10a6 6 0 0 1 0 12h-3'/%3E%3C/svg%3E") center/contain no-repeat;
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 14 4 9l5-5'/%3E%3Cpath d='M4 9h10a6 6 0 0 1 0 12h-3'/%3E%3C/svg%3E") center/contain no-repeat}
-.vd-reprendre:hover{background:color-mix(in srgb,var(--accent) 20%,var(--s-surface))}
-/* ce que l'outil fait, en trois temps numérotés */
-.vd-cartes{list-style:none;margin:28px 0 0;padding:24px 0 0;border-top:1px solid var(--s-line);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
-.vd-cartes li{display:flex;flex-direction:column;gap:6px;min-width:0}
-.vd-num{font:600 var(--f-12)/1 var(--mono);font-style:normal;color:var(--accent);letter-spacing:.04em;padding-bottom:6px;border-bottom:2px solid var(--accent);align-self:flex-start;margin-bottom:6px}
-.vd-cartes b{font:600 var(--f-14)/1.3 var(--titre);letter-spacing:.01em}
-.vd-cartes span{font-size:var(--f-12);color:var(--t-2);line-height:1.55}
-/* le cartouche : collé au coin bas-droit du cadre, des cases à filet d'encre, une étiquette en petites capitales */
-.vd-cartouche{align-self:flex-end;margin:28px -36px 0 0;width:min(560px,100%);display:grid;gap:1px;background:var(--t-1);border-top:1px solid var(--t-1);border-left:1px solid var(--t-1);
-  grid-template-columns:auto minmax(0,1fr) auto auto;grid-template-areas:"routes reseau format folio"}
-.vd-case{display:flex;flex-direction:column;gap:4px;padding:8px 12px;background:var(--s-surface);min-width:0}
-.vd-routes{grid-area:routes}.vd-reseau{grid-area:reseau}.vd-format{grid-area:format}.vd-folio{grid-area:folio}
-.vd-case small{font:500 var(--f-12)/1 var(--sans);letter-spacing:0;color:var(--t-3)}
-.vd-case b{font:600 var(--f-12)/1.3 var(--mono);white-space:nowrap}
-.vd-folio b{font-size:var(--f-14)}
-.vd-routes span{display:flex;align-items:center;gap:6px;font:500 var(--f-12)/1.08 var(--sans);letter-spacing:0;color:var(--t-1);white-space:nowrap}
-.vd-routes i{width:16px;height:0;border-top:2px solid var(--route-a)}
-.vd-routes i.signal{border-color:var(--route-b)}
-.vd-note{margin:0;font-size:var(--f-11);line-height:1.4;color:var(--t-2)}
-/* un écran de portable (moins de 860 px de haut) : la feuille de garde se resserre pour tenir sans défiler, cartouche compris */
+.vd-reprendre:hover{background:color-mix(in srgb,var(--accent) 12%,var(--s-surface))}
+/* les trois étapes : la première, indispensable, plus large et cadrée à l'encre */
+.vd-etapes{display:grid;grid-template-columns:minmax(0,1.42fr) minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:stretch}
+.vd-etape{display:flex;flex-direction:column;gap:10px;min-width:0;padding:16px 18px 18px;border:1px solid var(--s-line-2);border-radius:var(--r-2);background:var(--s-surface);transition:border-color var(--rapide),box-shadow var(--rapide)}
+.vd-etape.vd-un{border-color:var(--t-1);box-shadow:0 0 0 3px var(--accent-soft)}
+/* une étape survolée par un fichier qu'on glisse : c'est elle qui le recevra */
+.vd-etape.survol-depot{border-color:var(--t-1);box-shadow:0 0 0 4px color-mix(in srgb,var(--t-1) 14%,transparent)}
+.vd-num{display:flex;align-items:center;gap:8px;font:500 var(--f-12)/1 var(--sans);color:var(--t-3)}
+.vd-num i{width:22px;height:22px;flex:none;border-radius:50%;display:grid;place-items:center;font:600 var(--f-12)/1 var(--sans);font-style:normal;border:1px solid var(--s-line-2);color:var(--t-1)}
+.vd-un .vd-num i{background:var(--t-1);border-color:var(--t-1);color:var(--t-inverse)}
+.vd-etape h2{margin:0;font:600 var(--f-16)/1.25 var(--titre);letter-spacing:-.01em;color:var(--t-1)}
+.vd-etape p{margin:0;font-size:var(--f-13);line-height:1.5;color:var(--t-2)}
+.vd-etape p b{color:var(--t-1);font-weight:600}
+/* les colonnes obligatoires, nommées dans la phrase : un identifiant à l'encre, sur un fond doux */
+.vd-req{font:600 var(--f-12)/1 var(--mono);color:var(--t-1);background:var(--accent-soft);border-radius:4px;padding:2px 5px;white-space:nowrap}
+.vd-id{font:500 var(--f-12)/1 var(--mono);color:var(--t-1)}
+/* l'aperçu : trois lignes d'un retest, les quatre colonnes obligatoires à l'encre et soulignées, les autres en retrait */
+.vd-apercu{border:1px solid var(--s-line);border-radius:var(--r-1);overflow:hidden}
+.vd-apercu table{border-collapse:collapse;width:100%;font:400 var(--f-11)/1.5 var(--mono)}
+.vd-apercu th{background:var(--s-sunken);font-weight:500;text-align:left;padding:4px 7px;color:var(--t-3);border-bottom:1px solid var(--s-line);white-space:nowrap}
+.vd-apercu th.req{color:var(--t-1);font-weight:600;box-shadow:inset 0 -2px 0 var(--t-1)}
+.vd-apercu td{padding:2px 7px;border-bottom:1px solid var(--s-line);white-space:nowrap;color:var(--t-3)}
+.vd-apercu td.req{color:var(--t-1)}
+.vd-apercu tbody tr:last-child td{border-bottom:none}
+.vd-etape .vd-facult{margin:0;padding:6px 8px;border-top:1px solid var(--s-line);background:var(--s-sunken);font:400 var(--f-11)/1.45 var(--sans);color:var(--t-3)}
+/* la zone de dépôt : un cadre en pointillé, une ligne ; elle s'allume quand un fichier arrive */
+.vd-zone{display:flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:10px 12px;border:1.5px dashed var(--s-line-2);border-radius:var(--r-2);background:var(--s-sunken);color:var(--t-2);text-align:center;font-size:var(--f-12);cursor:pointer;transition:border-color var(--rapide),background var(--rapide),color var(--rapide)}
+.vd-zone svg.ico{width:20px;height:20px;color:var(--t-1)}
+.vd-zone b{font-size:var(--f-13);color:var(--t-1);font-weight:600}
+.vd-zone:hover,.vd-zone:focus-visible,body.depot-actif .vd-un .vd-zone,.vd-un.survol-depot .vd-zone{border-color:var(--t-1);background:var(--accent-soft);color:var(--t-1)}
+/* l'état d'une entrée : un point de sa couleur (vert : reçu, ambre : rien, rouge : une erreur) et ce qu'il dit */
+.vd-etat{display:flex;align-items:baseline;gap:8px;font-size:var(--f-12);line-height:1.45;color:var(--t-2)}
+.vd-etat i{width:8px;height:8px;flex:none;border-radius:50%;background:var(--warn);transform:translateY(-1px)}
+.vd-etat.e-ok i{background:var(--ok)}.vd-etat.e-ko i{background:var(--ko)}
+/* l'erreur du dernier dépôt : écrite dans l'étape, elle y reste jusqu'au prochain */
+.vd-erreur{padding:8px 10px;border-radius:var(--r-1);background:var(--ko-soft);box-shadow:inset 3px 0 0 var(--ko);font-size:var(--f-12);line-height:1.45;color:var(--t-1)}
+.vd-erreur.att{background:var(--warn-soft);box-shadow:inset 3px 0 0 var(--warn)}
+.vd-etape .vd-erreur p{margin:0 0 2px;font-size:var(--f-12);color:var(--t-1)}
+.vd-erreur .id{font-family:var(--mono);font-size:var(--f-11)}
+.vd-erreur .btn{height:26px;padding:0 4px;font-size:var(--f-12)}
+/* les gestes au pied de l'étape ; l'état d'une entrée juste au-dessus d'eux (ils descendent ensemble) */
+.vd-actions{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-top:auto;padding-top:4px}
+.vd-etape .vd-etat{margin-top:auto;padding-top:4px}
+.vd-etat~.vd-actions{margin-top:0}
+/* le bas : pour qui n'a pas de fichier, l'exemple et le collage ; et où tout se retrouve ensuite */
+.vd-bas{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:18px;padding-top:16px;border-top:1px solid var(--s-line);font-size:var(--f-13);color:var(--t-2)}
+.vd-ex-n{color:var(--t-3);font-weight:400}
+.vd-plus{margin-left:auto;display:inline-flex;align-items:center;gap:2px;color:var(--t-3);font-size:var(--f-12)}
+.vd-plus .btn{height:28px;padding:0 4px;font-size:var(--f-12)}
+/* un écran de portable (moins de 860 px de haut) : la feuille se resserre pour tenir sans défiler */
 @media (max-height:860px) and (min-width:701px){
-  .vide{padding-top:16px;padding-bottom:16px}
-  .vd-feuille{padding-top:24px}
-  .vd h1{font-size:32px;margin-top:12px}
-  .vd-titre p{margin-top:12px}
-  .vd-tete{margin-bottom:16px}
-  .vd-zone{min-height:88px;padding:12px}
-  .vd-gestes{margin-top:12px}
-  .vd-cartes{margin-top:20px;padding-top:16px}
-  .vd-cartouche{margin-top:20px}
+  .vide{padding-top:14px;padding-bottom:14px}
+  .vd-feuille{padding-top:20px;padding-bottom:18px}
+  .vd h1{font-size:30px;margin-top:10px}
+  .vd-tete{margin-bottom:14px;grid-template-columns:minmax(0,1fr) 200px}
+  .vd-titre p{margin-top:8px}
+  .vd-etape{padding:14px 16px 16px;gap:9px}
+  .vd-bas{margin-top:14px;padding-top:12px}
+}
+/* moins de place (une fenêtre étroite, un document ouvert à côté) : les deux étapes facultatives passent sous la
+   première ; plus étroit encore, une colonne, et le schéma s'efface */
+@container accueil (max-width:1000px){
+  .vd-etapes{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .vd-un{grid-column:1/-1}
+}
+@container accueil (max-width:620px){
+  .vd-etapes{grid-template-columns:minmax(0,1fr)}
+  .vd-tete{grid-template-columns:minmax(0,1fr)}
+  .vd-dessin{display:none}
+  .vd-apercu{overflow-x:auto}
+  .vd-plus{margin-left:0}
 }
 
 /* le dépôt : la fenêtre entière devient la cible — un voile, et au milieu une carte en pointillé qui dit quoi faire ;
@@ -799,18 +845,18 @@ body.fiche-ouverte #toast{left:max(calc(var(--rail) + 16px + min(60vw,560px) / 2
   .simu-tab td .pct{display:block;color:var(--t-2)}
   .simu-tab td{padding-right:6px}
   .verdict{white-space:normal;line-height:1.3}
-  /* l'accueil : une colonne, la feuille centrée entre les deux barres */
-  .vide{padding:12px 12px calc(60px + var(--sur-b));align-items:start}
+  /* l'accueil : une colonne, les étapes l'une sous l'autre ; ce qu'on fait défiler au doigt s'arrête au-dessus du rail */
+  .vide{padding:12px 12px calc(60px + var(--sur-b));align-items:start;scroll-padding-bottom:calc(var(--rail-tel) + 12px)}
   .vd{grid-template-columns:10px minmax(0,1fr) 10px;grid-template-rows:10px auto 10px}
   .vd-reg{font-size:0}
-  .vd-feuille{padding:24px 16px 0}
-  .vd-tete{grid-template-columns:1fr;gap:16px;margin-bottom:20px}
+  .vd-feuille{padding:20px 14px 16px}
+  .vd-tete{grid-template-columns:1fr;gap:16px;margin-bottom:16px}
   .vd h1{font-size:30px}
   .vd-titre p{font-size:var(--f-13)}
-  .vd-dessin{max-width:300px}
-  .vd-gestes .btn{flex:1 1 auto;justify-content:center}
-  .vd-cartes{grid-template-columns:1fr;gap:20px;margin-top:24px;padding-top:20px}
-  .vd-cartouche{margin:24px -16px 0;width:auto;border-left:none;grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"reseau reseau reseau" "routes format folio"}
+  .vd-dessin{max-width:260px}
+  .vd-etapes{grid-template-columns:1fr}
+  .vd-apercu{overflow-x:auto}
+  .vd-plus{margin-left:0}
   .depot>div{margin:16px;padding:20px 24px;font-size:var(--f-16)}
   /* le mot qui passe : toute la largeur s'il le faut, sur une ligne si possible */
   #toast,body.insp-ouvert #toast,body.fiche-ouverte #toast{left:50%;width:max-content;max-width:calc(100vw - 16px)}

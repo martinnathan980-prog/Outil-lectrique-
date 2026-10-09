@@ -21,7 +21,7 @@ const FICHIER = P.fichierDemande();
   const ctx = await nav.newContext(), page = await ctx.newPage(); page.setDefaultTimeout(600000);
   const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
   let ko = 0; const ok = (c, nom, detail) => { if (!c) ko++; console.log('  ' + (c ? 'ok ' : 'KO ') + ' ' + nom + (detail ? '   ' + detail : '')); };
-  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined');
+  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => atelier.exemple());   // l’outil s’ouvre sur l’accueil (plus sur l’exemple) : la batterie, qui lit l’exemple, le demande
   const dort = await page.evaluate(() => atelier.etatAffinage().actif === false);
   ok(dort, 'endormi sous pilote automatique');
   // le folio 1 de l'exemple : petit, il s'affine en quelques secondes

@@ -27,52 +27,64 @@
           <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="19" r="1.4" fill="currentColor"/></svg>
           <span class="bulle" aria-hidden="true">Menu</span>
         </button>
-        <div id="menu" class="menu" hidden role="menu">
-          <!-- Ce qui est ouvert et son enregistrement : à lire, pas à presser. Chaque ligne porte sa bulle (data-aide) : ce
-               qu'elle fait, ce qu'elle attend, ce qu'elle remplace — lue au survol, à gauche du menu. -->
+        <div id="menu" class="menu" hidden role="menu" aria-label="Menu">
+          <!-- Ce qui est ouvert et son enregistrement : à lire, pas à presser. Puis quatre blocs : le contrat, vos fichiers,
+               sortir, le reste. Chaque ligne porte sa bulle (data-aide), en trois temps — ce qu'elle fait, ce qu'elle attend,
+               ce qui se passe ensuite — lue à gauche du menu, au survol ou au clavier (08-accueil, `lierBullesDuMenu`). -->
           <div class="ctx"><div id="ctx-nom">—</div><div id="ctx-txt"></div><div id="ctx-sauve" class="sauve"></div></div>
-          <hr>
-          <button role="menuitem" data-act="ouvrir" data-aide="Charge un retest : un Excel (.xlsx, .xlsm, .xls) ou un CSV, une ligne par liaison — de quel repère et quelle borne, vers quel repère et quelle borne, le numéro de fil, le type de câble. L’outil dessine les folios et juge tout. Le contrat ouvert est remplacé (Ctrl+Z le rend).">Ouvrir un retest… <span class="raccourci">Ctrl+O</span></button>
-          <button role="menuitem" data-act="coller" data-aide="Pour quelques lignes copiées d’un Excel, ou tapées : on les colle dans une fenêtre, une liaison par ligne, colonnes séparées par une tabulation ou un point-virgule. Elles deviennent le contrat (le contrat ouvert est remplacé ; Ctrl+Z le rend).">Coller des liaisons…</button>
-          <button role="menuitem" data-act="exemple" data-aide="Ouvre un contrat d’exemple — 201 liaisons sur six folios — pour découvrir l’outil sans fichier. Le contrat ouvert est remplacé (Ctrl+Z le rend).">Charger l’exemple</button>
-          <hr>
-          <button role="menuitem" data-act="references" data-aide="Ta base des contrats déjà faits : un seul gros Excel, une ligne par liaison, avec les colonnes du retest (Harness, Device1, Pin1, PN1, Cable TG, Cable Tag, Device2, Pin2, PN2, FWD, Appareil, Date de retest…). Chargée une fois, gardée dans ce navigateur ; ensuite chaque équipement du contrat est comparé à ce qui a déjà été fait.">Contrats déjà faits</button>
-          <button role="menuitem" data-act="cartouche" data-aide="Le cartouche écrit en bas à droite de chaque folio : le titre, le dessinateur, la date, l’indice, l’échelle.">Cartouche</button>
-          <button role="menuitem" data-act="nomenclature" data-aide="Ce qu’il faut commander et sertir, compté sur tout le contrat : contacts, modules de jonction, connecteurs et prises, fils et câbles (longueur, masse). S’enregistre en CSV.">Nomenclature <span class="raccourci">N</span></button>
-          <button role="menuitem" data-act="bible" data-aide="Les références de barrettes, de modules et de connecteurs que l’outil connaît — la bible embarquée ou la tienne, importée d’un Excel. C’est là qu’il choisit la référence de chaque barrette et de chaque prise.">Bible des barrettes</button>
-          <button role="menuitem" data-act="normes" data-aide="Toutes les tables qui servent à juger : câbles, intensités admissibles, contacts, arrangements, raccords, disjoncteurs, réseau. On les lit, on y cherche, on les corrige, on en importe.">Normes</button>
-          <button role="menuitem" data-act="hypotheses" data-aide="Ce que le retest ne dit pas et que l’outil suppose : la longueur d’un fil sans longueur, le courant d’un fil sans disjoncteur, la tension du réseau, les températures. Les changer refait tous les calculs.">Hypothèses de simulation</button>
-          <button role="menuitem" data-act="suivi" data-aide="Un tableau CSV de chaque barrette, prise de coupure et connecteur du contrat — sa référence, ses contacts, ses fils — pour le suivi de fabrication.">Exporter le suivi (CSV)</button>
-          <hr>
-          <button role="menuitem" data-act="svg" data-aide="Le folio affiché, en dessin vectoriel (SVG) : net à toute échelle, pour un autre logiciel ou un document.">Enregistrer le folio en SVG</button>
-          <button role="menuitem" data-act="png" data-aide="Le folio affiché, en image (PNG) : pour un mail ou une présentation.">Enregistrer le folio en PNG</button>
-          <button role="menuitem" data-act="imprimer" data-aide="Imprime le folio affiché, seul, sur une feuille A3 paysage.">Imprimer <span class="raccourci">Ctrl+P</span></button>
-          <hr>
-          <button role="menuitem" data-act="vider" class="danger" data-aide="Vide l’outil : le contrat, ses choix, ses retouches. On revient à l’accueil ; Ctrl+Z rend tout tant que la page est ouverte.">Tout effacer</button>
+          <div class="menu-bloc" role="group" aria-labelledby="mb-contrat"><div class="menu-t" id="mb-contrat">Le contrat</div>
+            <button role="menuitem" data-act="ouvrir" data-aide="Charge votre retest, Excel ou CSV : une ligne par fil, avec au moins Device1, Pin1, Device2 et Pin2 (les 16 colonnes du retest sont reconnues par leur nom). Il remplace le contrat ouvert ; Ctrl+Z le rend. S’il porte plusieurs harness, on vous demande lequel ouvrir. Les autres deviennent des contrats déjà faits.">Ouvrir un retest… <span class="raccourci">Ctrl+O</span></button>
+            <button role="menuitem" data-act="coller" data-aide="Sans fichier : collez quelques lignes copiées d’Excel, une par fil, dans l’ordre Équip.1 ; Borne ; PN ; Équip.2 ; Borne ; PN ; Fil ; Type ; Route ; Folio. Exemple : 102CB1;2;MS3320-10;103RL1;A1;;W-012;DR20;PUISSANCE;1. Vous choisissez ensuite : ajouter au contrat, ou le remplacer.">Coller des lignes…</button>
+            <button role="menuitem" data-act="exemple" data-aide="Un contrat fictif, 201 fils sur 6 folios, pour essayer l’outil sans fichier. Votre contrat est mis de côté : Ctrl+Z ou « Reprendre » le rend.">Ouvrir l’exemple</button>
+          </div>
+          <div class="menu-bloc" role="group" aria-labelledby="mb-fichiers"><div class="menu-t" id="mb-fichiers">Vos fichiers</div>
+            <button role="menuitem" data-act="fichiers" data-aide="Ce que l’outil a reçu (retest, contrats déjà faits, bible, normes, hypothèses), quand, ce qu’il en a fait, et ce qu’il attend pour chacun, avec un exemple.">Vos fichiers…</button>
+            <button role="menuitem" data-act="references" data-aide="Votre base d’anciennes machines : un Excel aux mêmes colonnes que le retest, avec Harness rempli (une machine par harness). Déposée une fois, gardée dans ce navigateur. Ensuite, la fiche de chaque équipement dit « déjà fait sur H175, 92 % pareil » et propose de reprendre ce qu’on coche.">Contrats déjà faits…</button>
+            <button role="menuitem" data-act="bible" data-aide="Les références que l’outil choisit pour chaque barrette, prise et connecteur (306 embarquées : ASNE 0599, NSA937901, EN 4165…). Pour importer la vôtre, il faut au moins Référence et Bornes.">Bible des barrettes</button>
+            <button role="menuitem" data-act="normes" data-aide="Les 24 tables qui jugent : câbles et intensités (EN 2853), contacts, arrangements, raccords (EN 3660), disjoncteurs, chute admise (AC 43.13-1B). On y cherche, on corrige une ligne, on importe une table (un gabarit par table).">Normes</button>
+            <button role="menuitem" data-act="hypotheses" data-aide="Ce que le retest ne dit pas et que l’outil suppose : 5 m par fil sans longueur, 2 A pour un fil sans disjoncteur, 28 V, 95 °C ambiants… Les changer refait tous les calculs.">Hypothèses</button>
+          </div>
+          <div class="menu-bloc" role="group" aria-labelledby="mb-sortir"><div class="menu-t" id="mb-sortir">Sortir</div>
+            <button role="menuitem" data-act="recapitulatif" data-aide="Tout le contrat en tableaux, par onglet : liaisons, équipements, disjoncteurs, barrettes, prises, câbles, contacts, raccords, problèmes, normes. On y corrige comme sur la fiche.">Récapitulatif <span class="raccourci">B</span></button>
+            <button role="menuitem" data-act="nomenclature" data-aide="Ce qu’il faut commander, compté sur tout le contrat : contacts à sertir, modules de jonction, connecteurs et prises, câbles (longueur et masse). S’enregistre en CSV.">Nomenclature <span class="raccourci">N</span></button>
+            <button role="menuitem" data-act="suivi" data-aide="Un CSV pour le suivi de fabrication : chaque barrette, prise et connecteur avec sa référence, ses contacts et ses fils. Ce n’est pas la nomenclature : une ligne par pièce posée, pas par référence.">Exporter le suivi (CSV)</button>
+            <button role="menuitem" data-act="svg" data-aide="Le folio affiché avec son cartouche, en dessin vectoriel : net à toute échelle, pour un logiciel de dessin ou un document.">Enregistrer le folio (SVG)</button>
+            <button role="menuitem" data-act="png" data-aide="Le folio affiché avec son cartouche, en image : pour un mail ou une présentation.">Enregistrer le folio (PNG)</button>
+            <button role="menuitem" data-act="imprimer" data-aide="Le folio affiché, seul, sur une feuille A3 paysage.">Imprimer <span class="raccourci">Ctrl+P</span></button>
+          </div>
+          <div class="menu-bloc" role="group" aria-labelledby="mb-reste"><div class="menu-t" id="mb-reste">Le reste</div>
+            <button role="menuitem" data-act="cartouche" data-aide="Le titre, le dessinateur, la date, l’indice et l’échelle, écrits en bas à droite de chaque folio. Le numéro de folio s’écrit tout seul.">Cartouche</button>
+            <button role="menuitem" data-act="vider" class="danger" data-aide="Vide la table : le contrat, ses choix, ses retouches. La base des contrats déjà faits, la bible et les normes restent. Ctrl+Z rend tout tant que l’onglet est ouvert.">Tout effacer</button>
+          </div>
         </div>
       </div>
     </div>
   </header>
+  <!-- LE BANDEAU DE L'EXEMPLE : collé sous la barre du haut, seulement quand c'est l'exemple qui est sur la table — pour
+       qu'on ne le prenne pas pour son contrat (08-accueil, `rendreAccueil`). -->
+  <div id="bandeau-exemple" class="bandeau-exemple" hidden role="note"><i aria-hidden="true"></i><span>Vous regardez l’exemple</span><button type="button" id="be-ouvrir">Ouvrir mon retest</button></div>
 
   <!-- LA TABLE : le plan, et rien d'autre. La feuille (le SVG du moteur) est posée dessus, son ombre dessous. -->
   <main id="planche" aria-label="Le plan">
     <div id="ombre" aria-hidden="true"></div>
     <svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg>
 
-    <!-- L'ACCUEIL : la table vide. Une page d'entrée d'outil : ce qu'il fait, par où l'on commence. « Reprendre » est caché ;
-         l'interface le montre (et y écrit le nom) quand le dernier geste a vidé la table. -->
+    <!-- L'ACCUEIL : la table vide — au premier lancement, et après « Tout effacer ». Une feuille de folio (le cadre gradué,
+         un petit schéma qui se trace) qui dit ce que l'outil attend, dans l'ordre : 1. votre retest (indispensable),
+         2. vos contrats déjà faits (une fois), 3. la bible et les normes (embarquées). En bas, l'exemple et le collage pour
+         qui n'a pas de fichier. Ce qui change (l'état de la base, ce qui est embarqué, l'erreur du dernier dépôt, les
+         comptes) est écrit par 08-accueil (`rendreAccueil`) ; « Reprendre » est montré par l'interface quand le dernier
+         geste a vidé la table. Une étape qui porte data-depot reçoit le fichier qu'on glisse dessus. -->
     <div id="vide" class="vide" hidden>
-      <!-- La page d'entrée est elle-même une feuille de folio : le cadre gradué (1 à 6, A à D), un petit schéma qui se trace,
-           et en bas à droite le cartouche — les routes, le réseau (aucun), le format, le folio. -->
       <div class="vd ilot-clair">
         <div class="vd-reg vd-reg-h" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span></div>
         <div class="vd-reg vd-reg-g" aria-hidden="true"><span>A</span><span>B</span><span>C</span><span>D</span></div>
         <div class="vd-feuille">
           <header class="vd-tete">
             <div class="vd-titre">
-              <div class="vd-sur"><span class="en-marque" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="7.5" width="7" height="9" rx="1.5"/><rect x="14.5" y="7.5" width="7" height="9" rx="1.5"/><path d="M9.5 12h5"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg></span>Retest · folios · normes</div>
+              <div class="vd-sur"><span class="en-marque" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="7.5" width="7" height="9" rx="1.5"/><rect x="14.5" y="7.5" width="7" height="9" rx="1.5"/><path d="M9.5 12h5"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg></span>Premier pas · rien n’est encore chargé</div>
               <h1>Atelier Schéma</h1>
-              <p>Un retest Excel entre, les folios de schéma sortent : chaque liaison devient un fil, chaque repère un équipement — et tout est jugé contre les normes, du fil au contact.</p>
+              <p>Donnez-lui votre retest : il dessine les folios, trouve contacts, modules, raccords et calibres, et juge chaque fil contre les normes. Rien ne quitte ce navigateur.</p>
             </div>
             <svg class="vd-dessin" viewBox="0 0 300 130" aria-hidden="true">
               <g class="bloc"><rect x="8" y="14" width="84" height="44"/><text x="50" y="40">102CB1</text></g>
@@ -88,32 +100,58 @@
               <g class="etiq"><text x="155" y="22">W-011</text><text x="126" y="40">W-012</text><text x="180" y="99">W-013</text></g>
             </svg>
           </header>
-
-          <div class="vd-zone" id="vd-zone" role="button" tabindex="0" aria-label="Déposer un retest Excel ici, ou cliquer pour choisir un fichier">
-            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
-            <b>Glisser un retest Excel ici</b>
-            <span>.xlsx, .xlsm, .xls ou .csv — ou cliquer pour choisir le fichier</span>
-          </div>
-
-          <div class="vd-gestes">
-            <button class="btn cuivre grand" id="vd-ouvrir">Ouvrir un fichier</button>
-            <button class="btn papier grand" id="vd-coller">Coller des liaisons</button>
-            <button class="btn papier grand" id="vd-exemple">Voir l’exemple</button>
-          </div>
           <button class="vd-reprendre" id="vd-reprendre" hidden>Reprendre le contrat</button>
 
-          <ol class="vd-cartes">
-            <li><i class="vd-num" aria-hidden="true">01</i><b>Dessiner les folios</b><span>Un folio par plan, A3 paysage : les équipements placés, chaque fil droit et numéroté, le cartouche et la légende des routes.</span></li>
-            <li><i class="vd-num" aria-hidden="true">02</i><b>Vérifier</b><span>Contacts à sertir, câbles et intensités, disjoncteurs et profils de charge, raccords : chaque élément jugé contre les normes embarquées.</span></li>
-            <li><i class="vd-num" aria-hidden="true">03</i><b>Comparer</b><span>Avec les contrats déjà faits : ce qui est pareil, ce qui diffère, ce qui manque — et reprendre ce qu’on coche.</span></li>
-          </ol>
-
-          <div class="vd-cartouche">
-            <div class="vd-case vd-routes"><small>Routes</small><span><i class="puissance"></i>Puissance</span><span><i class="signal"></i>Signal</span></div>
-            <div class="vd-case vd-reseau"><small>Réseau</small><p class="vd-note">Aucun : tout se passe dans ce navigateur, hors ligne — rien ne part sur le réseau.</p></div>
-            <div class="vd-case vd-format"><small>Format</small><b>A3 paysage</b></div>
-            <div class="vd-case vd-folio"><small>Folio</small><b>— / —</b></div>
+          <div class="vd-etapes">
+            <!-- 1. le retest : ce qu'on attend (une ligne par fil, les quatre colonnes obligatoires), un aperçu, le dépôt -->
+            <section class="vd-etape vd-un" data-depot="retest" aria-labelledby="vd-t1">
+              <div class="vd-num"><i aria-hidden="true">1</i>indispensable</div>
+              <h2 id="vd-t1">Votre retest</h2>
+              <p>Un Excel (.xlsx, .xls) ou un CSV, <b>une ligne par fil</b>. Les en-têtes sont reconnus par leur nom, où qu’ils soient dans les 30 premières lignes. Il en faut quatre : <span class="vd-req">Device1</span> · <span class="vd-req">Pin1</span> · <span class="vd-req">Device2</span> · <span class="vd-req">Pin2</span>.</p>
+              <div class="vd-apercu">
+                <table aria-label="Trois lignes d’un retest : les quatre colonnes obligatoires et deux facultatives">
+                  <thead><tr><th class="req">Device1</th><th class="req">Pin1</th><th>Cable TG</th><th>Cable Tag</th><th class="req">Device2</th><th class="req">Pin2</th></tr></thead>
+                  <tbody>
+                    <tr><td class="req">102CB1</td><td class="req">2</td><td>DR20</td><td>W-012</td><td class="req">103RL1</td><td class="req">A1</td></tr>
+                    <tr><td class="req">103RL1</td><td class="req">A2</td><td>DR22</td><td>W-013</td><td class="req">104LP1</td><td class="req">1</td></tr>
+                    <tr><td class="req">101BT1</td><td class="req">1</td><td>DR16</td><td>W-011</td><td class="req">102CB1</td><td class="req">1</td></tr>
+                  </tbody>
+                </table>
+                <p class="vd-facult">et, si vous les avez : Harness · PN1 · Description1 · Route · PN2 · Description2 · FWD · Cable length (mm) · Appareil · Date retest</p>
+              </div>
+              <div class="vd-zone" id="vd-zone" role="button" tabindex="0" aria-label="Déposer votre retest ici, ou cliquer pour choisir le fichier">
+                <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+                <span><b>Glissez le fichier ici</b> ou cliquez pour le choisir</span>
+              </div>
+              <div class="vd-erreur" id="vd-erreur" hidden></div>
+              <div class="vd-actions"><button class="btn cuivre" id="vd-ouvrir">Ouvrir mon retest…</button><button class="btn lien" id="vd-modele">Télécharger un modèle (CSV)</button></div>
+            </section>
+            <!-- 2. les contrats déjà faits : la grande base, déposée une fois ; ce qu'elle fait ensuite ; son état -->
+            <section class="vd-etape" data-depot="base" aria-labelledby="vd-t2">
+              <div class="vd-num"><i aria-hidden="true">2</i>une fois, si vous l’avez</div>
+              <h2 id="vd-t2">Vos contrats déjà faits</h2>
+              <p>Votre grande base, téléchargée une fois : <b>un seul Excel, une ligne par liaison, aux colonnes du retest</b>. <span class="vd-id">Harness</span> dit de quelle machine vient la ligne, <span class="vd-id">FWD</span> de quel dessin, <span class="vd-id">Appareil</span> de quel contrat.</p>
+              <p>Ensuite, la fiche de chaque équipement dit « déjà fait sur H175, 92 % pareil », compare, et reprend ce que vous cochez.</p>
+              <div class="vd-etat e-vide" id="vd-etat-base"><i aria-hidden="true"></i><span>aucune base pour l’instant</span></div>
+              <div class="vd-erreur" id="vd-erreur-base" hidden></div>
+              <div class="vd-actions"><button class="btn papier" id="vd-base">Déposer la base…</button><button class="btn lien" id="vd-base-aide">Comment ça marche</button></div>
+            </section>
+            <!-- 3. la bible et les normes : embarquées ; on commence sans -->
+            <section class="vd-etape" aria-labelledby="vd-t3">
+              <div class="vd-num"><i aria-hidden="true">3</i>si vous avez les vôtres</div>
+              <h2 id="vd-t3">Bible et normes</h2>
+              <p>L’outil embarque déjà la bible (<span id="vd-n-bible">306 références</span> : ASNE 0599, NSA937901, EN 4165…) et <span id="vd-n-tables">24 tables</span> de normes (EN 2853, EN 3660, AC 43.13-1B…). Vous pouvez commencer sans rien changer.</p>
+              <div class="vd-etat e-ok" id="vd-etat-embarque"><i aria-hidden="true"></i><span>bible embarquée · normes embarquées</span></div>
+              <div class="vd-actions"><button class="btn papier" id="vd-embarque">Voir ce qui est embarqué</button></div>
+            </section>
           </div>
+
+          <footer class="vd-bas">
+            <span class="vd-bas-q">Pas de fichier sous la main ?</span>
+            <button class="btn papier" id="vd-exemple">Ouvrir l’exemple <span class="vd-ex-n" id="vd-ex-n">(201 liaisons, 6 folios)</span></button>
+            <button class="btn lien" id="vd-coller">Coller quelques lignes</button>
+            <span class="vd-plus">Tout se retrouve ensuite dans ⋮ → <button class="btn lien" id="vd-fichiers">Vos fichiers</button></span>
+          </footer>
         </div>
         <div class="vd-reg vd-reg-d" aria-hidden="true"><span>A</span><span>B</span><span>C</span><span>D</span></div>
         <div class="vd-reg vd-reg-b" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span></div>
@@ -237,7 +275,7 @@
     <div class="ba-corps" id="ba-corps"><table class="tab rc-tab" id="ba-tab"><thead id="ba-thead"></thead><tbody id="ba-tbody"></tbody></table></div>
   </aside>
 
-  <!-- LES DOCUMENTS rares (cartouche, collage, bible, nomenclature) : à droite, à la place de l'inspecteur. -->
+  <!-- LES DOCUMENTS rares (vos fichiers, cartouche, collage, bible, nomenclature) : à droite, à la place de l'inspecteur. -->
   <aside id="fiche" hidden aria-label="Fiche">
     <div class="fiche-corps" id="fiche-corps"></div>
     <div class="fiche-pied" id="fiche-pied" hidden></div>
@@ -264,5 +302,8 @@
   <div id="toast" role="status" aria-live="polite"></div>
   <input type="file" id="fichier" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
   <input type="file" id="fichier-bible" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
+  <!-- la base des contrats déjà faits et une norme, depuis l'accueil et « Vos fichiers » (08-fichiers) -->
+  <input type="file" id="fichier-base" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
+  <input type="file" id="fichier-normes" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
 </div>
 <div id="printroot"></div>

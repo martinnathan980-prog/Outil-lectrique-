@@ -44,7 +44,7 @@ function ajouterH4() {
   let ko = 0; const ok = (c, nom, detail) => { if (!c) ko++; console.log('  ' + (c ? 'ok ' : 'KO ') + ' ' + nom + (detail ? '   ' + detail : '')); };
   const page = await nav.newPage({ viewport: { width: 1600, height: 950 } }); page.setDefaultTimeout(120000);
   const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
-  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined');
+  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => atelier.exemple());   // l’outil s’ouvre sur l’accueil (plus sur l’exemple) : la batterie, qui lit l’exemple, le demande
   await page.evaluate(baseEssai); await page.waitForTimeout(300);
   await page.evaluate(() => { allerAuPlan('1'); choisirBloc(app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag')); }); await page.waitForTimeout(500);
   // « Déjà fait » : deux machines, chacune avec son dessin et ce qui y manque
@@ -134,7 +134,7 @@ function ajouterH4() {
   ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
   // au téléphone : le calque se montre, en pile
   const tel = await nav.newPage({ viewport: { width: 390, height: 844 } }); const err2 = []; tel.on('pageerror', e => err2.push(e.message));
-  await tel.goto(FICHIER); await tel.waitForFunction(() => typeof atelier !== 'undefined'); await tel.evaluate(baseEssai); await tel.waitForTimeout(300);
+  await tel.goto(FICHIER); await tel.waitForFunction(() => typeof atelier !== 'undefined'); await tel.evaluate(() => atelier.exemple()); await tel.evaluate(baseEssai); await tel.waitForTimeout(300);
   await tel.evaluate(() => ouvrirFwd({ harness: 'H-2', fwd: 'MEE256A7815001B', repere: '102CB1', notre: '102CB1' })); await tel.waitForFunction(() => document.querySelector('#fw-vue .comp[data-name]')); await tel.waitForTimeout(300);
   ok(await tel.evaluate(() => { const s = $('fw-scene').getBoundingClientRect(), c = $('fw-colonne').getBoundingClientRect(); return !$('fwd').hidden && c.top >= s.bottom - 1 && s.width > 300; }) && !err2.length, 'au téléphone, la colonne passe sous le dessin, sans erreur', err2.join(' | '));
   // un disjoncteur qui a sa forme (102CB1 de H-2 : ses deux fils d'un flanc) n'a pas de boîte : la zone de son corps dit son état, à l'encre ; son calibre est celui de SON part number
