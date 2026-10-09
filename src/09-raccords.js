@@ -62,11 +62,13 @@ function gainePour(norme, famille, d) { const G = tableNorme(norme, 'gaines').fi
   const blind = G.filter(g => g.role === 'surblindage' && g.dint != null && g.dint > d).sort((a, b) => a.dint - b.dint);
   const prot = G.filter(g => g.role !== 'surblindage' && g.dmin != null && g.dmax != null && d >= g.dmin && d <= g.dmax).sort((a, b) => Math.abs(d - (a.dmin + a.dmax) / 2) / (a.dmax - a.dmin) - Math.abs(d - (b.dmin + b.dmax) / 2) / (b.dmax - b.dmin));
   return blind[0] || prot[0] || null; }
-/* La taille du boîtier, lue dans le part number : le premier groupe de chiffres qui est une taille de la famille dans
-   la table des filetages (EN3646-002-12-08 → 12 ; EN3645-002-13N26 → 13). */
+/* La taille du boîtier, lue dans le part number : après le nom de la famille, la première paire de chiffres qui est une
+   taille de la famille dans la table des filetages — la taille précède toujours l'arrangement (EN3646-002-12-08 → 12 ;
+   EN3645-002-13N26 → 13 ; EN3646A6088AAN → 08, la classe 6 devant). */
 function tailleDuPn(norme, famille, pn) { const F = tableNorme(norme, 'filetages').filter(f => f.famille === famille); if (!F.length || !pn) return '';
-  const tailles = new Set(F.map(f => f.taille)), groupes = String(pn).toUpperCase().replace(/^[A-Z]+\d+/, '').match(/\d{1,2}/g) || [];
-  return groupes.map(TAILLE_BOITIER).find(t => tailles.has(t)) || ''; }
+  const tailles = new Set(F.map(f => f.taille)), reste = String(pn).toUpperCase().replace(/^[A-Z]+\d+/, ''), fenetres = [];
+  for (let i = 0; i + 1 < reste.length; i++) if (/^\d\d$/.test(reste.slice(i, i + 2))) fenetres.push(reste.slice(i, i + 2));
+  return fenetres.map(TAILLE_BOITIER).find(t => tailles.has(t)) || ''; }
 const filetageDe = (norme, famille, taille) => tableNorme(norme, 'filetages').find(f => f.famille === famille && f.taille === taille) || null;
 /* Le code d'entrée de câble d'un raccord à serre-câble : le plus petit dont la plage passe le toron et que la taille
    du boîtier admet. */
@@ -83,8 +85,9 @@ function manchonPour(norme, d, c, orientation) { if (d == null) return null; con
 
 /* L'HABILLAGE d'un connecteur : le toron, la taille et le filetage, le choix du tutoriel, la référence du raccord, le
    code d'entrée, le collier, la gaine, le manchon — et ce qui manque. `pn` : le part number du connecteur. */
-function habillage(norme, fils, choix, pn) { const c = { ...CHOIX_RACCORD, ...(choix || {}) }, f = faisceauDe(norme, fils), famille = familleDeReference(norme, pn, 'connecteur');
-  const r = regleRaccord(c), sans = SANS_RACCORD.includes(famille), taille = tailleDuPn(norme, famille, pn), filetage = taille ? filetageDe(norme, famille, taille) : null;
+function habillage(norme, fils, choix, pn, reference) { const c = { ...CHOIX_RACCORD, ...(choix || {}) }, f = faisceauDe(norme, fils), famille = familleDeReference(norme, pn, 'connecteur') || familleDeReference(norme, reference, 'connecteur');
+  // la taille : dans le part number du fichier, sinon dans la référence retenue (l'arrangement choisi, EN3646-002-12-08)
+  const r = regleRaccord(c), sans = SANS_RACCORD.includes(famille), taille = tailleDuPn(norme, famille, pn) || tailleDuPn(norme, famille, reference), filetage = taille ? filetageDe(norme, famille, taille) : null;
   const raccord = sans ? 'aucun' : r.raccord, ref = sans ? null : raccordDeTable(norme, famille, taille, raccord, c.orientation);
   const entree = !sans && raccord === 'serre-câble' ? entreePour(norme, f.diametre, taille) : null;
   const collier = r.bandit ? collierPour(norme, f.diametre) : null, tyrap = raccord === 'tyrap' ? tyrapPour(norme, f.diametre) : null, gaine = c.gaine ? gainePour(norme, c.gaine, f.diametre) : null;

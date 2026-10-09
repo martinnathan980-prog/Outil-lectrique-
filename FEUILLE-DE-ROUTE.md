@@ -13,14 +13,22 @@ L'outil sait aujourd'hui :
   fils contre ce profil (EN 2853 : l'intensité admissible par durée) ;
 - dire le câble de chaque fil (la base des câbles : brins, blindage,
   résistance, diamètre, masse) et le faisceau de chaque connecteur ;
-- dire ce qui englobe chaque connecteur (raccord, band-it, manchon, gaine)
-  par le tutoriel, et la chute en continu, monophasé ou triphasé ;
+- dire ce qui englobe chaque connecteur (la taille du boîtier et son
+  filetage, le raccord et sa norme EN 3660, le code d'entrée, le band-it ou
+  le tyrap, le manchon VG 95343, la gaine) par le tutoriel et les tables
+  publiques, et la chute en continu, monophasé ou triphasé — avec la
+  résistance à 20 °C corrigée par la température du conducteur, le
+  déclassement de la FAA (faisceau, altitude), la résistance des contacts
+  (AS39029) par prise et par barrette, le réseau de l'AC 43.13-1B ;
 - lire le vrai retest (harness, longueur, appareil, date), suivre la chute
-  en ligne de la source à l'équipement, et comparer chaque équipement aux
-  contrats déjà faits pour en reprendre ce qu'on coche ;
+  en ligne de la source à l'équipement, comparer chaque équipement aux
+  contrats déjà faits à trois échelles (équipement, voisinage, dessin),
+  dessiner le FWD d'origine, et reprendre ce qu'on coche ;
 - faire de chaque dédoublement une barrette à poser (VT1…), qu'on pose au
   contrat d'un geste ;
-- dire l'état de tout le contrat dans la pastille en haut à gauche.
+- établir la nomenclature du contrat (contacts, modules, connecteurs,
+  habillage, câbles) et l'enregistrer en CSV ;
+- dire l'état de tout le contrat dans l'en-tête et dans l'index des repères.
 
 Ce qui suit se branche dessus, une couche après l'autre. Chaque couche suit
 le même principe :
@@ -68,36 +76,55 @@ page de norme suffit toujours : je la transcris.
 
 5. **La table de la norme de câblage.** ✔ Fait avec l'EN 2853 (tables 1
    et 2) : par jauge, l'intensité continue et par durée (2 s, 10 s, 1 min),
-   la chute pour 10 m, d'où la résistance à 135 °C. Valable pour tout câble
-   cuivre. ✔ Et la base des câbles de l'Excel (`normes/cables.csv`) : par
-   type, les brins, le blindage, la nature, la masse, la résistance, le
-   diamètre et la section. Reste : l'intensité admissible par type, si elle
-   diffère de celle de la jauge.
-6. **Les déclassements** : selon le nombre de fils en faisceau, la
-   température de zone, l'altitude.
-7. **La chute de tension admise**, par réseau (28 V continu, 115 V alternatif…)
-   et par nature de circuit (puissance, signal).
+   la chute pour 10 m, la résistance à 20 °C et à 135 °C, le toronnage.
+   Valable pour tout câble cuivre. ✔ Et la base des câbles de l'Excel
+   (`normes/cables.csv`), vérifiée contre les fiches Lynxeo et complétée
+   (masses DRC/DRD, résistances AD, diamètres VN), avec une table des
+   familles (norme, conducteur cuivre ou aluminium cuivré, température).
+   Reste : relire dans le PDF de l'EN 2853 le 12 AWG (35 A) et le 8 AWG
+   (68 A), hors tendance ; les normes des familles AM, YV, DG, DH, BN, DW,
+   GPB, XD, YH, LE et des coax WC WG WH WK WP KC XE XF XK, des twinax WF WJ
+   XM XS XY HE HJ ; relire DW24, GPB24, MLA12 dans l'Excel (copies
+   probables).
+6. **Les déclassements.** ✔ Les points publics de l'AC 43.13-1B (faisceau
+   selon le nombre de fils et la charge, altitude) sont dans l'outil, en
+   attendant les courbes du programme (ABD0100.1.x ?) : si vous les avez,
+   les mêmes colonnes (Condition ; Fils ; Charge ; Altitude ; Facteur).
+   Reste : la température par zone (cabine, soute, case train, mât) à la
+   place d'une ambiante globale.
+7. **La chute de tension admise.** ✔ La table 11-6 de l'AC 43.13-1B (14,
+   28, 115, 200 V ; continu et intermittent) est dans l'outil. Reste : la
+   règle Airbus (quel document, quel indice, continu / intermittent,
+   puissance / signal), qui la remplacera.
 8. **Les longueurs de fil.** ✔ La colonne « Cable length (mm) » du retest
    est lue : la chute d'un fil se calcule sur sa longueur, et la fiche d'un
    disjoncteur suit chaque chemin jusqu'à l'équipement, à travers les
    prises de coupure et les barrettes, comme la feuille Chute_en_ligne.
-   Sans longueur, l'hypothèse de la simulation sert, et c'est dit. Reste :
-   les chutes de vos connecteurs (la feuille compte 0,90 V ou 2,10 V par
-   paire de contacts : d'où viennent ces valeurs ?) — l'outil prend la
-   résistance de contact de la famille quand la norme la donne.
+   Sans longueur, l'hypothèse de la simulation sert, et c'est dit. ✔ La
+   résistance des contacts (AS39029, par taille) compte pour chaque prise
+   et deux fois par barrette. Reste : **les 0,90 V et 2,10 V « par prise »
+   de votre feuille** — ce n'est pas R × I (une paire de contacts à 10 A
+   fait 0,1 à 0,2 V) : ouvrez la cellule et dites si c'est une constante,
+   une formule (laquelle) ou une recherche dans un onglet ; si 2,10 − 0,90
+   = la chute du câble entre les deux, c'est un cumul.
 
 ### C. Les disjoncteurs
 
 9. **La courbe ou la table de la norme.** ✔ Fait : les quatre courbes de
    l'Excel (125 °C, 23 °C min et max, −55 °C) sont dans
-   `normes/disjoncteurs.csv`. La fiche de chaque CB porte la gamme en puces
-   (1, 3, 5, 7,5, 10, 15, 25 A — la vôtre), chacune jugée sur le profil,
-   l'idéale étoilée (la plus petite qui tient sans toucher la courbe : 10 %
-   de courant de marge ou trois fois la durée de tenue), le graphique en
-   ampères et secondes qu'on survole et qu'on glisse, les états du profil
-   (démarrage, transition, ceux qu'on ajoute, le permanent). Reste à
-   confirmer : de quel disjoncteur sont ces courbes (d'autres familles ?)
-   et si la marge « ne touche pas la courbe » est la bonne.
+   `normes/disjoncteurs.csv`, avec les points de calibration publics
+   (Sensata 2TC/3TC/7274, Safran 170), les familles (MS3320 / 2TC, 3TC, 6TC,
+   9TC, 7274, EN 2495 / EN 2995, EN 3661, EN 2592 / EN 2996, EN 3662) et la
+   protection par jauge (AC 43.13-1B). La fiche de chaque CB porte la gamme
+   en segments (1, 3, 5, 7,5, 10, 15, 25 A — la vôtre), chacun jugé sur le
+   profil par la somme des fractions de temps de déclenchement, l'idéal
+   étoilé (le plus petit avec marge — 10 % de courant, 75 % du temps —, qui
+   protège les fils sur la courbe lente et reste à 2:1 des voisins), le
+   graphique d'ingénieur qu'on survole et qu'on glisse, les états du profil.
+   Reste à confirmer : de quelle famille sont vos courbes (l'outil suppose
+   un disjoncteur compensé type EN 2495 / MS3320), vos part numbers réels
+   (NSA935401 est un collier, pas un disjoncteur : l'exemple dit MS3320-10)
+   et la marge que vous vous imposez.
 10. **Pour chaque équipement alimenté** (c'est ce qui remplira les profils
     de charge, aujourd'hui écrits à la main sur la fiche du disjoncteur) :
     - sa consommation, en A ou en W, et sous quelle tension ;
@@ -111,14 +138,16 @@ page de norme suffit toujours : je la transcris.
 ### D. Raccords arrière, cheminées, colliers d'identification
 
 11. ✔ Le tutoriel Raccords, les gaines et les colliers sont dans l'outil :
-    chaque connecteur dit son raccord (durci, pour manchon, serre-câble,
-    tyrap), son band-it, son manchon et sa gaine selon la reprise de
+    chaque connecteur dit sa taille de boîtier et son filetage (lus dans le
+    part number), son raccord (durci, pour manchon, serre-câble avec son
+    code d'entrée, tyrap NSA935401) avec la norme EN 3660 du style, son
+    band-it, son manchon VG 95343 (choisi par ce qui sort du raccord) et sa
+    gaine (surblindage HFA ou protection Nomex) selon la reprise de
     blindage, l'étanchéité et la gaine choisies ; le toron suit la feuille
-    de calcul (Seq, Deq, + 10 %). Reste **la table des raccords** (la
-    référence selon la taille du boîtier, le matériau et le toron : la
-    cote A pour le toron, B pour la gaine, C et D pour le manchon), **la
-    table des manchons VG95343T18**, et ce que changent l'overshielding et
-    le matériau.
+    de calcul (Seq, Deq, + 10 %). Reste **les désignations complètes des
+    raccords** (la table dit EN3660-064 « à confirmer », pas la référence
+    commandable) et leurs **cotes A, B, C, D** (sans C, le manchon est pris
+    par le toron seul), et ce que changent l'overshielding et le matériau.
 12. **Les macros Excel actuelles**, telles quelles : je relis leur logique et
     je la réécris dans l'outil. Il les fera seul, avec le pourquoi
     (« faisceau de 6,2 mm → raccord taille 14 »).
@@ -164,10 +193,16 @@ dans le navigateur ; la fiche de chaque équipement dit « Déjà fait » (les
 trois machines les plus proches, même part number sinon même code, le taux
 de lignes communes) ; un clic ouvre la comparaison (manque, diffère, pareil,
 en plus ; les repères de la machine lus avec les nôtres) ; on coche, on
-reprend, Ctrl+Z défait ; ce qui est repris passe les mêmes contrôles. Reste
-à régler avec vous : le numéro des fils repris, la correspondance des
-repères quand le part number ne suffit pas, et le vrai sens de « 677VT2 51 »
-(le module 51 de la barrette, contact B ?).
+reprend, Ctrl+Z défait ; ce qui est repris passe les mêmes contrôles. ✔ Et
+depuis, le **FWD** : chaque ligne de la base porte son dessin d'origine,
+l'outil l'ouvre (le calque FWD le dessine avec son propre moteur de
+placement), le compare à trois échelles (l'équipement, son voisinage à un ou
+deux pas, le dessin entier), décode les repères en mots (« 412VC3B : prise
+de coupure n° 3, variante B, zone 412 » ; « 677VT2 51B : module 51, contact
+B » — merci pour la réponse) et propose les repères manquants. Reste à
+régler avec vous : le numéro des fils repris, la correspondance des repères
+quand le part number ne suffit pas, et les codes d'équipement que l'outil
+ne connaît pas encore (il en connaît 24).
 
 ### a. Ranger (une fois)
 

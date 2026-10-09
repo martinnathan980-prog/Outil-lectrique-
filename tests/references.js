@@ -49,7 +49,7 @@ console.log('\n3. LA BASE S’INDEXE PAR HARNESS ET PAR DESSIN');
 // une autre machine : l'exemple aux repères décalés de deux centaines (les masses gardent leur nom), un dessin par folio
 const E = X.contratExemple(), decale = s => /G$/.test(s) ? s : s.replace(/^(\d)(\d\d)([A-Z]+)(\d*)/, (m, a, b, c, e) => String(+a + 2) + b + c + e), F = (p, v) => 'MEE256A78150' + String(p).padStart(2, '0') + v;
 const H1 = [...E.map(l => X.liaison({ ...l, de: decale(l.de), vers: decale(l.vers), fwd: F(l.plan, 'A'), harness: 'H-1', appareil: 'H160', retest: '2024-07-08', longueur: 2500 })),
-  X.liaison({ de: '302CB1', borneDe: '3', pnDe: 'NSA935401-10', vers: '305XX9', borneVers: '1', pnVers: 'ZZZ', cable: 'W-099', type: 'DR20', plan: '1', fwd: F(1, 'A'), harness: 'H-1', appareil: 'H160' }),
+  X.liaison({ de: '302CB1', borneDe: '3', pnDe: 'MS3320-10', vers: '305XX9', borneVers: '1', pnVers: 'ZZZ', cable: 'W-099', type: 'DR20', plan: '1', fwd: F(1, 'A'), harness: 'H-1', appareil: 'H160' }),
   X.liaison({ de: '305XX9', borneDe: '2', pnDe: 'ZZZ', vers: '901G', borneVers: '', cable: 'W-098', type: 'DR20', plan: '1', fwd: F(1, 'A'), harness: 'H-1', appareil: 'H160' })];
 const H2 = E.slice(0, 60).map(l => X.liaison({ ...l, fwd: F(l.plan, 'B'), harness: 'H-2', appareil: 'H175', retest: '2023-01-01' }));
 const H3 = E.filter(l => l.plan === '2').map(l => { const m = x => x === '667VT21' ? '677VT2' : x, b = (x, bo) => x === '667VT21' ? '5' + bo + 'B' : bo;
@@ -60,13 +60,13 @@ ok('H-1 garde ses 65 équipements, son appareil et sa date (comme avant)', IR.ha
 const D1 = X.dessinDe(IR, 'H-1', F(1, 'A'));
 ok('le dessin MEE256A7815001A de H-1 : 6 équipements (le 305XX9 en plus), 10 fils, une masse 901G sur 4 fils', D1 && D1.equipements.size === 6 && D1.fils === 10 && D1.pontages === 0 && D1.masses.get('901G') === 4 && D1.appareil === 'H160', D1 && JSON.stringify([D1.equipements.size, D1.fils, [...D1.masses]]));
 const e302 = D1.equipements.get('302CB1');
-ok('302CB1 dans ce dessin : disjoncteur, part number NSA935401-10, 4 lignes, voisins 301BT1, 303RL1, 595SW1, 305XX9', e302.nature === 'disjoncteur' && e302.pns.join() === 'NSA935401-10' && e302.lignes.length === 4 && [...e302.voisins.keys()].sort().join() === '301BT1,303RL1,305XX9,595SW1', JSON.stringify([...e302.voisins]));
+ok('302CB1 dans ce dessin : disjoncteur, part number MS3320-10, 4 lignes, voisins 301BT1, 303RL1, 595SW1, 305XX9', e302.nature === 'disjoncteur' && e302.pns.join() === 'MS3320-10' && e302.lignes.length === 4 && [...e302.voisins.keys()].sort().join() === '301BT1,303RL1,305XX9,595SW1', JSON.stringify([...e302.voisins]));
 const D3 = X.dessinDe(IR, 'H-1', F(3, 'A'));
 ok('le dessin 3 de H-1 compte ses pontages (5 de 868VT31, 3 de 869VT32, 2 de 597TB1) à part des fils', D3.pontages === 10 && D3.fils === D3.liaisons.length - 10 && D3.equipements.get('868VT31').pontages === 5, D3.pontages + ' pontages');
 const R3 = X.resumeDessin(D3);
 ok('son résumé : 20 équipements dont 2 barrettes et 2 prises, 3 relais, 3 vannes…, 4 masses', R3.equipements === 20 && R3.barrettes === 2 && R3.coupures === 2 && R3.masses === 4 && R3.natures.find(x => x[0] === 'relais')[1] === 3 && R3.natures.find(x => x[0] === 'vanne')[1] === 3, JSON.stringify(R3.natures));
 ok('l’équipement 300XC1 de H-2 est surtout sur le dessin 3 (dessinPrincipal)', X.dessinPrincipal(IR.harnais.get('H-2').equipements.get('300XC1')) === F(3, 'B'));
-ok('l’index par part number et par code mène aux mêmes équipements', IR.parPn.get('NSA935401-10').length === 2 && IR.parCode.get('CB').length === 2 && IR.parCode.get('RL').length > 10);
+ok('l’index par part number et par code mène aux mêmes équipements', IR.parPn.get('MS3320-10').length === 2 && IR.parCode.get('CB').length === 2 && IR.parCode.get('RL').length > 10);
 
 console.log('\n4. RECONNAÎTRE, COMME AVANT, AVEC LE DESSIN EN PLUS');
 const L = E, CR = X.candidatsDeReference(IR, L, '102CB1', 3);
@@ -103,9 +103,9 @@ ok('la correspondance à l’échelle de l’équipement rend les mêmes verdict
 
 console.log('\n6. REPRENDRE UN ENSEMBLE, CHERCHER DANS LA BASE');
 const NV = X.liaisonsDEnsembleAReprendre(C1, C1.lignes.filter(x => x.etat === 'manque'), L, '1');
-ok('les deux lignes manquantes reprises : 102CB1:3 → 305XX9:1 avec notre part number, 305XX9:2 → 901G ; sans numéro, folio 1', NV.length === 2 && NV[0].de === '102CB1' && NV[0].borneDe === '3' && NV[0].pnDe === 'NSA935401-10' && NV[0].vers === '305XX9' && NV[0].pnVers === 'ZZZ' && NV[0].cable === '' && NV[0].plan === '1' && NV[1].de === '305XX9' && NV[1].vers === '901G', JSON.stringify(NV));
+ok('les deux lignes manquantes reprises : 102CB1:3 → 305XX9:1 avec notre part number, 305XX9:2 → 901G ; sans numéro, folio 1', NV.length === 2 && NV[0].de === '102CB1' && NV[0].borneDe === '3' && NV[0].pnDe === 'MS3320-10' && NV[0].vers === '305XX9' && NV[0].pnVers === 'ZZZ' && NV[0].cable === '' && NV[0].plan === '1' && NV[1].de === '305XX9' && NV[1].vers === '901G', JSON.stringify(NV));
 const NA = X.liaisonsAReprendre(DF, '102CB1', DF.lignes.filter(x => x.etat === 'manque'), '1');
-ok('la reprise à l’échelle de l’équipement tient toujours : 102CB1:3 → 305XX9:1, DR20, nos part numbers', NA.length === 1 && NA[0].de === '102CB1' && NA[0].vers === '305XX9' && NA[0].type === 'DR20' && NA[0].pnDe === 'NSA935401-10');
+ok('la reprise à l’échelle de l’équipement tient toujours : 102CB1:3 → 305XX9:1, DR20, nos part numbers', NA.length === 1 && NA[0].de === '102CB1' && NA[0].vers === '305XX9' && NA[0].type === 'DR20' && NA[0].pnDe === 'MS3320-10');
 const Q1 = X.chercherReferences(IR, '677VT'), Q2 = X.chercherReferences(IR, 'H175'), Q3 = X.chercherReferences(IR, '');
 ok('chercher « 677VT » : l’équipement 677VT2 de H-3, sur son dessin ; « H175 » : le harness H-2 et ses trois dessins ; rien : tout', Q1.equipements.length === 1 && Q1.equipements[0].e.repere === '677VT2' && Q1.equipements[0].fwd === F(2, 'C') && Q2.harnais.length === 1 && Q2.dessins.length === 3 && Q3.harnais.length === 3 && Q3.dessins.length === 10 && Q3.equipements.length === 0, JSON.stringify([Q1.total, Q2.total, Q3.total]));
 

@@ -56,11 +56,11 @@ const filsDuDisjoncteur = nom => verite().filter(l => (l.de === nom || l.vers ==
 /* Les disjoncteurs VOISINS d'un repère : ceux où aboutit un chemin de fils depuis lui (bus → sous-bus) ; leur calibre
    nominal (écrit, sinon le part number) sert à la sélectivité 2:1 — sans passer par l'idéal, qui dépendrait du nôtre. */
 const calibreNominal = nom => { const p = chargeDe(nom); return p && p.calibre > 0 ? p.calibre : calibreDuPn(pnDuRepere(nom)); };
-const voisinsDe = nom => [...new Set(cheminsDepuis(verite(), nom).map(ch => ch.bout[0]).filter(r => r && r !== nom && estDisjoncteur(r)))].map(r => ({ nom: r, calibre: calibreNominal(r) }));
+const disjoncteursVoisins = nom => [...new Set(cheminsDepuis(verite(), nom).map(ch => ch.bout[0]).filter(r => r && r !== nom && estDisjoncteur(r)))].map(r => ({ nom: r, calibre: calibreNominal(r) }));
 /* Le calibre RETENU : celui qu'on a choisi à la main, sinon celui du part number (MS3320-10 → 10 A, si la famille est un
    disjoncteur), sinon l'idéal que le moteur donne. Rend le verdict complet (09 bis, jugé avec ses fils et ses voisins),
    le profil, la famille du part number, d'où vient le calibre, et ses fils jugés. */
-function disjonctionDe(nom) { const profil = chargeDe(nom), ecrit = profil && profil.calibre > 0 ? profil.calibre : null, famille = familleDuPn(pnDuRepere(nom)), pn = famille ? famille.calibre : null, voisins = voisinsDe(nom);
+function disjonctionDe(nom) { const profil = chargeDe(nom), ecrit = profil && profil.calibre > 0 ? profil.calibre : null, famille = familleDuPn(pnDuRepere(nom)), pn = famille ? famille.calibre : null, voisins = disjoncteursVoisins(nom);
   const contexte = { fils: filsDuDisjoncteur(nom), hyp: app.simu, autres: voisins.map(v => v.calibre).filter(c => c > 0) };
   let d = verdictDisjonction(app.norme, '', ecrit || pn || 0, profil, contexte);
   const calibre = ecrit || pn || d.calibreIdeal || null; if (calibre && calibre !== d.calibre) d = verdictDisjonction(app.norme, '', calibre, profil, contexte);

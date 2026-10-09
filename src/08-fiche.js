@@ -168,21 +168,25 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   if (neuf) att.push('fil à créer : donne-lui son numéro en posant ' + l.aPoser + ' au contrat');
   [st.de, st.vers].forEach((s, k) => { if (s && s.ko) ko.push('aucun contact n’accepte ce fil côté ' + (k ? l.vers : l.de)); });
   const H = app.simu || HYPOTHESES, fn = l.type ? filDeNorme(app.norme, l.type, jauge) : null, cab = l.type ? cableDuType(app.norme, l.type) : null;
-  const fac = fn ? facteurDeclassement(app.norme, H.conditions) * facteurAmbiante(fn, H.ambiante) : 1;
+  // le déclassement : le faisceau est celui du repère de départ (ses fils), la charge et l'altitude de la simulation ; un conducteur qui n'est pas du cuivre déclasse encore
+  const rd = l.type ? resistanceDuFil(app.norme, l.type, jauge, H.tconducteur) : { rho: null, kConducteur: 1, conducteur: 'cuivre' };
+  const faisceau = neuf ? null : verite().filter(x => x.type && x.de !== x.vers && (x.de === l.de || x.vers === l.de)).length;
+  const fac = fn ? facteurDeclassement(app.norme, H.conditions, { fils: faisceau, charge: H.charge, altitude: H.altitude }) * facteurAmbiante(fn, H.ambiante) * (rd.kConducteur || 1) : 1;
+  if (rd.refuse) att.push('conducteur ' + rd.conducteur + ' sans résistance dans la base : la ligne cuivre de l’EN 2853 ne vaut pas, la chute n’est pas calculée');
   const adm = fn && fn.intensite != null ? [['continu', fn.intensite], ['2 s', fn.i2s], ['10 s', fn.i10s], ['1 min', fn.i1min]].filter(x => x[1] != null).map(x => [x[0], x[1] * fac]) : [];
   // le courant : celui du disjoncteur en amont, sinon l'hypothèse de la simulation
   const al = neuf ? null : alimentationDe(l), I = al && al.perm ? al.perm : H.courant, charge = adm.length && I ? I / adm[0][1] : null;
   const trop = adm.length ? (al ? al.points : [{ nom: 'hypothèse', i: I, t: Infinity }]).filter(pt => pt.i > intensiteAdmise(fn, pt.t) * fac + 1e-9) : [];
   trop.forEach(pt => ko.push(`${pt.nom} ${amperes(pt.i)}${pt.t === Infinity ? '' : ' pendant ' + secondes(pt.t)} : plus que ce que le fil admet (${amperes(intensiteAdmise(fn, pt.t) * fac)})`));
-  const rd = l.type ? resistanceDuFil(app.norme, l.type, jauge) : { rho: null }, L = l.longueur > 0 ? l.longueur : H.longueur, dU = rd.rho != null ? rd.rho / 1000 * L * I : null;
+  const L = l.longueur > 0 ? l.longueur : H.longueur, dU = rd.rho != null ? rd.rho / 1000 * L * I : null;
   const chemin = al ? cheminsDepuis(verite(), al.nom).find(ch => ch.segments.some(s => s.fil === l)) : null, total = chemin ? chuteDuChemin(app.norme, chemin, I, H) : null, admise = chuteAdmise(app.norme, H.tension);
   if (total && admise && admise.chuteMax != null && total.dU > admise.chuteMax + 1e-9) ko.push(`la chute en ligne depuis ${al.nom} atteint ${volts(total.dU)} : plus que les ${volts(admise.chuteMax)} admis`);
   const brins = cab ? (cab.brins > 1 ? cab.brins + ' brins' : '1 brin') + (cab.blindage ? ' + blindage' : '') : '';
   const lignes = [
     ['câble', l.type ? `<b>${esc(l.type)}</b>${jauge != null ? ` <i>${jauge} AWG</i>` : ''}${cab ? ' · ' + esc([brins, cab.nature, cab.diametre != null ? 'Ø ' + nombre(cab.diametre) + ' mm' : '', cab.section != null ? nombre(cab.section) + ' mm²' : '', cab.resistance != null ? nombre(cab.resistance) + ' mΩ/m' : '', cab.masse != null ? nombre(cab.masse) + ' g/m' : ''].filter(Boolean).join(' · ')) : (fn && fn.resistance != null ? ' · ' + esc(nombre(fn.resistance)) + ' mΩ/m' : '')}` : '', cab ? 'La base des câbles' : 'La norme des fils (EN 2853)'],
-    ['admet', adm.length ? adm.map(([q, i], k) => `${k ? '' : '<b>'}${esc(amperes(i))}${k ? '' : '</b>'} <i>${esc(q)}</i>`).join(' · ') : (l.type ? '<i>fil inconnu de la norme</i>' : ''), adm.length ? 'EN 2853, déclassé' + motFacteur(fac) + ' : ' + (H.conditions || []).join(', ') + ', ' + nombre(H.ambiante) + ' °C' : ''],
+    ['admet', adm.length ? adm.map(([q, i], k) => `${k ? '' : '<b>'}${esc(amperes(i))}${k ? '' : '</b>'} <i>${esc(q)}</i>`).join(' · ') : (l.type ? '<i>fil inconnu de la norme</i>' : ''), adm.length ? 'EN 2853, déclassé' + motFacteur(fac) + ' : ' + (H.conditions || []).join(', ') + ', ' + nombre(H.ambiante) + ' °C' + (rd.kConducteur && rd.kConducteur !== 1 ? ', conducteur ' + rd.conducteur : '') : ''],
     ['courant', I ? `<b>${esc(amperes(I))}</b> <i>${al ? 'permanent' : 'hypothèse'}</i>${al ? ` · sous ${esc(al.nom)}${al.calibre ? ' <i>(' + esc(amperes(al.calibre)) + ')</i>' : ''}` : ''}${al && al.pointe ? ` · pointe <b>${esc(amperes(al.pointe.i))}</b> <i>pendant ${esc(secondes(al.pointe.t))}</i>` : ''}${charge != null ? ` · <span class="${charge > 1 ? 'fi-ko' : ''}">${Math.round(charge * 100)} % du continu</span>` : ''}` : '', al ? 'Le profil de charge de ' + al.nom : 'Le courant de la simulation (bible → hypothèses)'],
-    ['chute', dU != null ? `<b>${volts(dU)}</b> <i>sur ce fil</i>${total ? ` · ${volts(total.dU)} <i>en ligne depuis ${esc(al.nom)}${H.tension ? ', ' + nombre(Math.round(total.dU / H.tension * 1000) / 10) + ' %' : ''}${admise && admise.chuteMax != null ? ', ' + volts(admise.chuteMax) + ' admis' : ''}</i>` : ''}` : '', dU != null ? 'ΔU = ' + nombre(rd.rho) + ' Ω/km × ' + nombre(arrondi(L, 2)) + ' m × ' + nombre(I) + ' A' + (rd.source === 'câble' ? ' (la résistance du câble ' + rd.cab.cable + ')' : '') : ''],
+    ['chute', dU != null ? `<b>${volts(dU)}</b> <i>sur ce fil</i>${total ? ` · ${volts(total.dU)} <i>en ligne depuis ${esc(al.nom)}${H.tension ? ', ' + nombre(Math.round(total.dU / H.tension * 1000) / 10) + ' %' : ''}${admise && admise.chuteMax != null ? ', ' + volts(admise.chuteMax) + ' admis' : ''}</i>` : ''}` : '', dU != null ? 'ΔU = ' + nombre(arrondi(rd.rho, 1)) + ' Ω/km à ' + nombre(rd.T) + ' °C × ' + nombre(arrondi(L, 2)) + ' m × ' + nombre(I) + ' A' + (rd.source === 'câble' ? ' (la résistance du câble ' + rd.cab.cable + ')' : rd.source === 'jauge' ? ' (la jauge seule, EN 2853)' : '') : ''],
     ['longueur', `${esc(nombre(arrondi(L, 2)))} m <i>${l.longueur > 0 ? 'retest' : 'hypothèse'}</i>`],
     ['où', [folios.length ? 'folio ' + esc(folios.join(', ')) : '', l.harness ? esc(l.harness) : ''].filter(Boolean).join(' · ')]];
   const sous = ['fil', l.type ? `<b>${esc(l.type)}</b>${jauge != null ? ' · ' + jauge + ' AWG' : ''}` : '', l.route ? `<i class="fi-route" style="--c:${coul}"></i>${esc(l.route)}` : '', l.longueur > 0 ? insecable(nombre(arrondi(l.longueur, 2)) + ' m') : ''].filter(Boolean).join(' · ');
@@ -198,17 +202,25 @@ const PUCES_RACCORD = [['blindage', 'reprise de blindage', [['NO', 'aucune'], ['
   ['etanche', 'étanchéité', [['false', 'pas requise'], ['true', 'requise']]], ['orientation', 'raccord', [['droit', 'droit'], ['coudé', 'coudé']]], ['gaine', 'gaine', [['', 'aucune'], ['HFA', 'HFA'], ['NOMEX', 'Nomex']]]];
 const MOTS_BLINDAGE = { NO: 'sans reprise de blindage', GND: 'blindage repris sur le corps', BLI: 'blindage repris par cosse', CONTACT: 'blindage repris sur un contact' };
 // le toron et le raccord d'un connecteur, en deux mots (pour les tuiles)
-function habitDe(cle, fils, pn) { if (!fils.length) return null; const h = habillage(app.norme, fils, app.contrat.raccords.get(cle), pn);
+function habitDe(cle, fils, pn, ref) { if (!fils.length) return null; const h = habillage(app.norme, fils, app.contrat.raccords.get(cle), pn, ref);
   return { toron: h.faisceau.diametre != null ? 'Ø ' + mm(h.faisceau.diametre) + ' mm' : '', raccord: h.raccord === 'aucun' ? 'sans raccord' : h.raccord, h }; }
-function autourHtml(cle, fils, pn, nomen, titre) { if (!fils.length) return ''; const h = habillage(app.norme, fils, app.contrat.raccords.get(cle), pn), c = h.choix, f = h.faisceau;
+function autourHtml(cle, fils, pn, nomen, titre, ref) { if (!fils.length) return ''; const h = habillage(app.norme, fils, app.contrat.raccords.get(cle), pn, ref), c = h.choix, f = h.faisceau;
   const sertir = nomen && nomen.length ? nomen.map(x => `<b>${x.n}×</b> ${esc(x.reference)}${x.accessoire ? ` <i>+ ${esc(x.accessoire)}</i>` : ''}`).join(' · ') : '';
   const toron = f.diametre != null ? `<b>Ø ${esc(mm(f.diametre))} mm</b>${f.complet ? '' : ' <i>?</i>'} · ${f.n} ${f.n > 1 ? 'câbles' : 'câble'}${f.masse > 0 ? ' · ' + esc(mm(f.masse)) + ' g/m' : ''}${f.inconnus.length ? ` <i class="fi-ko">${esc(f.inconnus.join(', '))} : inconnu de la base</i>` : ''}` : (f.inconnus.length ? `<i class="fi-ko">${esc(f.inconnus.join(', '))} : inconnu de la base</i>` : '');
-  const aVenir = '<i class="fi-avenir" title="La table des références n’est pas encore dans la norme">référence à venir</i>';
+  const aConfirmer = t => `<i class="fi-avenir" title="La désignation complète n’est pas encore dans la table Raccords de la norme">${esc(t)}</i>`, R = h.reference;
+  // le raccord : son type, la norme EN 3660 du style (la désignation complète quand la table l'a), son code d'entrée pour un serre-câble
+  const raccord = h.raccord === 'aucun' ? '<i>aucun : un EN 3645 s’utilise sans raccord</i>' : h.raccord === 'tyrap' ? `<b>tyrap</b>${h.tyrap ? ' · ' + esc(h.tyrap.reference) + (h.tyrap.longueur ? ` <i>${esc(nombre(h.tyrap.longueur))} mm</i>` : '') : ''}`
+    : `<b>${esc(h.raccord)}</b>${R ? ' · ' + (R.reference ? `<b>${esc(R.reference)}</b>` : esc(R.norme) + ' ' + aConfirmer(R.statut || 'à confirmer')) + (R.materiau ? ` <i>${esc([R.materiau, R.fini].filter(Boolean).join(' '))}</i>` : '') : ' ' + aConfirmer('référence à venir')}${h.entree ? ` · entrée <b>${esc(h.entree.code)}</b> <i>${esc(nombre(h.entree.dmin))}–${esc(nombre(h.entree.dmax))} mm</i>` : ''}`;
+  const boitier = h.taille ? `<b>${esc(h.taille)}</b>${h.filetage ? ` · ${esc(h.filetage.filetage)}${h.filetage.lettre ? ' <i>(' + esc(h.filetage.lettre) + ')' + '</i>' : ''}${h.filetage.dmaxBoitier != null ? ` · Ø ${esc(nombre(h.filetage.dmaxBoitier))} mm` : ''}` : ''}` : '';
+  const M = h.manchonRef, manchon = h.manchon ? (M ? `<b>${esc(M.designation)}</b>${M.reference ? ` · ${esc(M.reference)}` : ''} <i>toron ${esc(nombre(M.jb != null ? M.jb : 0))}–${esc(nombre(M.ja))} mm${M.p ? ' · ' + esc(nombre(M.p)) + ' mm' : ''}</i>` : `<i class="fi-ko">aucun manchon de la table ne va à Ø ${esc(mm(h.sortie || 0))} mm</i>`) : '';
+  const G = h.gaine, gaine = c.gaine ? (G ? `<b>${esc(G.reference)}</b> <i>${G.role === 'surblindage' ? 'surblindage · Ø int. ' + esc(nombre(G.dint)) + (G.dext != null ? ' · ext. ' + esc(nombre(G.dext)) : '') + ' mm' : 'protection · toron ' + esc(nombre(G.dmin)) + '–' + esc(nombre(G.dmax)) + ' mm'}${G.masse != null ? ' · ' + esc(nombre(G.masse)) + ' g/m' : ''}</i>` : `<i class="fi-ko">aucune gaine ${esc(c.gaine)} ne va à ce toron</i>`) : '';
   const lignes = [['à sertir', sertir], ['toron', toron, f.diametre != null ? 'La section cumulée des câbles, en rond, plus 10 % (le tutoriel)' : ''],
-    ['raccord', h.raccord === 'aucun' ? '<i>aucun : un EN 3645 s’utilise sans raccord</i>' : `<b>${esc(h.raccord)}</b> ${h.raccord === 'tyrap' ? '' : aVenir}`, h.pourquoi],
-    ['band-it', h.bandit ? (h.collier ? `<b>${esc(h.collier.reference)}</b>${h.collier.note ? ` <i>${esc(h.collier.note)}</i>` : ''}` : '<i>aucun collier ne va à ce toron</i>') : '', 'Le collier qui tient la tresse ou la gaine'],
-    ['manchon', h.manchon ? `<b>VG95343T18</b> ${aVenir}` : '', 'L’étanchéité demande un manchon'],
-    ['gaine', c.gaine ? (h.gaine ? `<b>${esc(h.gaine.reference)}</b> <i>Ø int. ${esc(nombre(h.gaine.dint))}${h.gaine.dext != null ? ' · ext. ' + esc(nombre(h.gaine.dext)) : ''} mm</i>` : `<i class="fi-ko">aucune gaine ${esc(c.gaine)} ne passe ce toron</i>`) : '', 'La plus petite gaine dont l’intérieur passe le toron']];
+    ['boîtier', boitier, 'La taille du boîtier, lue dans le part number, et le filetage de ses accessoires'],
+    ['raccord', raccord, h.pourquoi],
+    ['band-it', h.bandit ? (h.collier ? `<b>${esc(h.collier.reference)}</b>${h.collier.dmax != null ? ` <i>jusqu’à Ø ${esc(nombre(h.collier.dmax))} mm</i>` : ''}` : '<i class="fi-ko">aucun collier ne va à ce toron</i>') : '', 'Le collier qui tient la tresse ou la gaine'],
+    ['manchon', manchon, 'L’étanchéité demande un manchon : Ja > ce qui sort du raccord > Jb (VG 95343)'],
+    ['gaine', gaine, G && G.role === 'surblindage' ? 'La plus petite tresse dont l’intérieur passe le toron' : 'La gaine dont la plage encadre le toron'],
+    ['manque', h.manquants.length ? h.manquants.map(m => `<i class="fi-avenir fi-long">${esc(m)}</i>`).join('<br>') : '', 'Ce que la norme ne dit pas encore : à compléter dans la table']];
   const choix = [MOTS_BLINDAGE[c.blindage] || MOTS_BLINDAGE.NO, c.etanche ? 'zone étanche' : 'pas d’étanchéité', c.orientation === 'coudé' ? 'coudé' : 'droit', c.gaine ? 'gaine ' + c.gaine : 'sans gaine'].join(' · ');
   const segments = PUCES_RACCORD.map(([champ, t, opts]) => `<div class="fi-seg">${voletT(t)}<div class="fi-puces">${opts.map(([v, m]) => `<button class="fi-chip" data-raccord="${escA(cle)}" data-champ="${champ}" data-v="${escA(v)}" aria-pressed="${String(c[champ]) === v}">${esc(m)}</button>`).join('')}</div></div>`).join('');
   const k = 'rac|' + cle;
@@ -258,7 +270,7 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
   const nums = points.map(p => p.num).join(', '), types = typesDe(Q.fils.map(x => x.f)), refuses = Q.fils.some(x => x.jaugeOk === false);
   const pourquoi = Q.main ? 'choisi à la main' : Q.nomme ? `le part number du fichier (${b.pn}) nomme cet arrangement` : !M ? 'aucun arrangement ne loge ces contacts avec ces jauges'
     : `le plus petit arrangement qui a les contacts ${nums} et accepte ${types || 'ces fils'}`;
-  const amont = Q.fils.filter(x => x.f.amont), aval = Q.fils.filter(x => !x.f.amont), hF = habitDe(nom + '|fiche', amont.map(x => x.f), b.pn), hE = habitDe(nom + '|embase', aval.map(x => x.f), b.pn);
+  const amont = Q.fils.filter(x => x.f.amont), aval = Q.fils.filter(x => !x.f.amont), hF = habitDe(nom + '|fiche', amont.map(x => x.f), b.pn, Q.reference), hE = habitDe(nom + '|embase', aval.map(x => x.f), b.pn, Q.reference);
   const resume = tuiles([[String(points.length), pluriel(points.length, 'contact').replace(/^\d+ /, ''), M ? `sur ${M.module.contacts.length} · ${M.module.contacts.length - Q.utilises} libre${s_(M.module.contacts.length - Q.utilises)}` : ''],
     [String(amont.length), 'fiche', hF ? [hF.toron, hF.raccord].filter(Boolean).join(' · ') : 'ce qui arrive'], [String(aval.length), 'embase', hE ? [hE.toron, hE.raccord].filter(Boolean).join(' · ') : 'ce qui repart']]);
   let faces = '';
@@ -276,8 +288,8 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
   const sous = ['prise de coupure', Q.reference ? `<b>${esc(Q.reference)}</b>` : '', pluriel(points.length, 'contact'), pluriel(Q.fils.length, 'fil')].filter(Boolean).join(' · ');
   return fiTete({ nom, renommer: true, etat: fiEtat(ko, att), sous, designation: app.contrat.designations.get(nom) || '' }) + resume
     + `<section class="fi-cadre">${fiRef(Q.reference, Q.famille, cle, changer, pourquoi)}${faces}`
-    + autourHtml(nom + '|fiche', amont.map(x => x.f), b.pn, nomenclatureDe(amont), 'fiche')
-    + autourHtml(nom + '|embase', aval.map(x => x.f), b.pn, nomenclatureDe(aval), 'embase')
+    + autourHtml(nom + '|fiche', amont.map(x => x.f), b.pn, nomenclatureDe(amont), 'fiche', Q.reference)
+    + autourHtml(nom + '|embase', aval.map(x => x.f), b.pn, nomenclatureDe(aval), 'embase', Q.reference)
     + (lignes ? `<div class="fi-paires-tete"><span></span><span>fiche · arrive</span><span></span><span>embase · repart</span></div><ul class="fi-liste paires">${lignes}</ul>` : '') + '</section>'
     + dejaFaitHtml(nom) + fiPied({ tableau: nom, fil: nom, relief: true, menu: MENU_BLOC }); }
 
@@ -293,7 +305,7 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
   // un disjoncteur : son calibre et le profil de charge, jugés sur la courbe de disjonction
   const dj = estDisjoncteur(nom); if (dj) controleDisjonction(nom).forEach(x => (x.niveau === 'ko' ? ko : att).push(x.texte));
   const ligne = (bo, f, st) => ligneFil(`<b>${esc(bo)}</b>`, f, { tag: vt.get(String(bo)), sertir: st });
-  const filsDe = c => c.bornes.flatMap(bo => b.parBorne.get(bo) || []), habits = new Map(C.map(c => [c.nom, habitDe(nom + '|' + c.nom, filsDe(c).filter(f => f.l), c.pn)]));
+  const filsDe = c => c.bornes.flatMap(bo => b.parBorne.get(bo) || []), refDe = c => { const k = parNom.get(c.nom); return k && k.plan && k.plan.modules[0] ? k.plan.modules[0].reference : ''; }, habits = new Map(C.map(c => [c.nom, habitDe(nom + '|' + c.nom, filsDe(c).filter(f => f.l), c.pn, refDe(c))]));
   const onglets = C.map(c => { const k = parNom.get(c.nom), Q = k && k.plan, M = Q && Q.modules[0], cle = 'arr|' + nom + '|' + c.nom, h = habits.get(c.nom);
     const sertir = new Map(Q ? Q.fils.map(x => [x.f.l, x.sertir]) : []), seul = Q && Q.nomenclature && Q.nomenclature.length === 1 ? motSertir(Q.nomenclature[0]) : '';
     const fils = c.bornes.slice().sort(triNaturel).flatMap(bo => (b.parBorne.get(bo) || []).map(f => { const st = sertir.get(f.l); return ligne(bo, f, st && motSertir(st) === seul ? null : st); })).join('');
@@ -308,7 +320,7 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
       const changer = (table ? pucesSexe(nom + '|' + c.nom, Q.sexe, false) : '') + `<p class="fi-note">${esc(Q.verdicts.filter(v => v.niveau === 'ko').map(v => v.texte).join(' ; ') || 'Aucun arrangement ne convient.')}</p>` + liens([Q.main ? `<button class="fi-lien" data-auto="${escA(nom + '|' + c.nom)}">Choix automatique</button>` : '']);
       corps = fiRef('aucun arrangement', Q.famille, cle, changer, (c.pn ? c.pn + ' — ' : '') + 'aucun arrangement ' + (nomDeFamille(app.norme, Q.famille) || 'de la norme') + ' ne loge ces bornes avec ces jauges'); }
     else corps = `<div class="fi-ref-ligne"><span class="fi-ct"><b>${esc(c.nom)}</b></span><div class="min0"><b class="fi-ref${c.pn ? '' : ' vide'}">${esc(c.pn || 'sans part number')}</b>${c.pn && !dj ? '<small class="fi-pourquoi">hors des normes de connecteurs embarquées : pas de face à dessiner</small>' : ''}</div></div>`;
-    const fsc = autourHtml(nom + '|' + c.nom, filsDe(c), c.pn, Q ? Q.nomenclature : null);
+    const fsc = autourHtml(nom + '|' + c.nom, filsDe(c), c.pn, Q ? Q.nomenclature : null, '', refDe(c));
     return { id: c.nom, titre: c.nom, compte: String(c.bornes.length), ko: ko.some(t => t.startsWith(c.nom + ' · ')), corps: `<section class="fi-cadre">${corps}${fsc}${fiListe(fils)}</section>` }; });
   // les bornes sans connecteur
   const sans = [...b.parBorne].filter(([bo]) => !C.some(c => c.bornes.includes(bo))).sort((u, v) => triNaturel(u[0], v[0])).flatMap(([bo, fs]) => fs.map(f => ligne(bo, f))).join('');

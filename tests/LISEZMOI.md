@@ -35,10 +35,15 @@ node tests/barrettes.js        la bible des barrettes se lit, la référence se 
                                le sexe, le fourreau, la nomenclature) ; les courbes de disjonction (quatre courbes, l'enveloppe,
                                l'interpolation log-log, le profil en points cumulés, le verdict et le calibre mini) ; l'EN 2853 (l'intensité
                                par durée, l'ambiante, la protection des fils d'un disjoncteur) ; la base des câbles (223 câbles, le
-                               câble d'un type, la résistance et d'où elle vient, le faisceau d'un connecteur) ; les raccords (la
-                               table du tutoriel, les gaines, les colliers, l'habillage d'un connecteur) et la chute en triphasé ; la chute en
-                               chaîne (à travers les prises et les barrettes, longueur réelle) ; les contrats déjà faits (ranger, reconnaître,
-                               comparer, reprendre) (sans navigateur)
+                               câble d'un type, la résistance à 20 °C et d'où elle vient, la température du conducteur, les familles
+                               de câbles et le conducteur CCA refusé sur la ligne cuivre, le faisceau d'un connecteur) ; le déclassement
+                               par les points FAA (faisceau fils × charge, altitude) et le réseau (continu, intermittent, le triphasé
+                               sur la ligne 200 V) ; la résistance des contacts par taille (une fois par prise, deux par barrette) ; les
+                               raccords (la table du tutoriel, les gaines par rôle, les colliers et tyraps, la taille du boîtier lue dans
+                               le part number, les filetages, les codes d'entrée, la table EN 3660, les manchons VG 95343, l'habillage
+                               d'un connecteur) et la chute en triphasé ; la chute en chaîne (à travers les prises et les barrettes,
+                               longueur réelle) ; les contrats déjà faits (ranger, reconnaître, comparer, reprendre) — 222 contrôles
+                               (sans navigateur)
 node tests/references.js       les contrats déjà faits et le FWD (sans navigateur) : la lecture garde le dessin et les descriptions ;
                                un repère ELEC se décode (zone, nature, ordre, variante) et se dit en mots, une borne de barrette aussi ;
                                la base s'indexe par harness et par dessin ; la comparaison d'un dessin entier et d'un voisinage, la

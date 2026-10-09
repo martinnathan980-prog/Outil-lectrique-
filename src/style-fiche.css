@@ -120,6 +120,7 @@ button.fi-tuile:hover{background:var(--s-hover);border-color:var(--s-line-2)}
 .fi-choix{font-size:var(--f-11);color:var(--t-3);min-width:0;line-height:1.3}
 .fi-autour .fi-changer{background:var(--s-surface);border:1px solid var(--s-line)}
 .fi-avenir{font-style:normal;font-size:var(--f-11);font-weight:600;color:var(--t-3);background:var(--s-surface);border:1px dashed var(--s-line-2);border-radius:999px;padding:0 7px;white-space:nowrap}
+.fi-avenir.fi-long{display:inline-block;white-space:normal;line-height:1.35;border-radius:var(--r-1);padding:2px 7px;margin:1px 0}
 /* des faits : la clé en petites capitales, la valeur en linéale, les identifiants en chasse fixe */
 .fi-faits{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:7px 12px;margin:0;font-size:var(--f-12)}
 .fi-faits dt{font:700 10px/1.75 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-2);white-space:nowrap}

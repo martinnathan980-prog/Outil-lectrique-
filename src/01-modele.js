@@ -209,7 +209,7 @@ function contratEssai() {
 function chargesExemple() { return new Map([['102CB1', { calibre: null, dem: { i: 9.31, t: 5 }, trans: { i: 9.31, t: 120 }, perm: { i: 5, t: null } }]]); }
 function contratExemple() {
   const PN = {
-    '101BT1': 'MS3470L14-5P', '102CB1': 'NSA935401-10', '103RL1': 'E0836IS35-22SA', '104LP1': 'E0644D9S',
+    '101BT1': 'MS3470L14-5P', '102CB1': 'MS3320-10', '103RL1': 'E0836IS35-22SA', '104LP1': 'E0644D9S',
     '210SP1': '*704A46220028', '340AB1': 'EN2997Y1A08P', '340AB2': 'EN2997Y1A08P', '115CD': 'ABS0864-12', '118CD': 'ABS0864-12',
     '409GH2': 'NSA937802-05', '512VN': 'E0644G9S', '601RC': 'E0836IS35-22SA', '733LE': 'E0644D9S', '845VG': 'E0656A01N1S0',
     '667VT21': 'E0599-1B201Z', '408VC1A': 'EN3646A6083AAN',

@@ -513,17 +513,6 @@ table.simu-tab{border-collapse:separate;border-spacing:0;font-size:var(--f-12);m
 .cand[aria-pressed="true"]:hover{background:var(--accent-2)}
 
 /* ─── LE CONTRÔLE dans l'index : la liste « à reprendre », un code par genre ─── */
-.co-code{flex:none;width:28px;height:28px;border-radius:var(--r-1);display:grid;place-items:center;font:700 10px/1 var(--mono);color:#fff;background:var(--t-2)}
-.co-code.barrette{background:var(--accent)}
-.co-code.coupure{background:var(--info)}
-.co-code.aposer{background:var(--accent-soft);color:var(--accent-2);box-shadow:inset 0 0 0 1.5px var(--accent)}
-.co-code.tab{background:var(--s-sunken);color:var(--t-2)}
-.co-code.tab svg.ico{width:15px;height:15px}
-.ix-controle{margin:-2px 0 2px}
-.ix-controle>summary{display:flex;align-items:center;gap:8px;list-style:none;cursor:pointer;padding:2px 0;border-radius:var(--r-1)}
-.ix-controle>summary::-webkit-details-marker{display:none}
-.ix-controle>summary .fi-chevron{width:14px;height:14px;color:var(--t-2);transition:transform var(--rapide)}
-.ix-controle[open]>summary .fi-chevron{transform:rotate(180deg)}
 .ix-item.co-item{grid-template-columns:28px minmax(0,1fr) auto}
 .ix-item.co-item small{white-space:normal;line-height:1.35}
 .ix-item.co-item b em{font:600 var(--f-11) var(--sans);color:var(--t-2);margin-left:4px}

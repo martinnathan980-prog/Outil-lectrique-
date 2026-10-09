@@ -18,21 +18,23 @@ function compteur() { const m = new Map();
 /* La nomenclature : relue depuis le contrat, les normes et les choix (références, sexes, raccords). */
 function nomenclatureDuContrat() { const V = verite(), H = app.simu || HYPOTHESES, contacts = compteur(), modules = compteur(), connecteurs = compteur(), habits = compteur(), cables = compteur();
   const sertir = (xs, ou) => nomenclatureDe(xs).forEach(x => contacts.plus(x.reference + '|' + x.accessoire, { reference: x.reference, accessoire: x.accessoire }, ou, x.n));
-  const habiller = (cle, fils, pn, ou) => { if (!fils.length) return; const h = habillage(app.norme, fils, app.contrat.raccords.get(cle), pn);
-    if (h.raccord !== 'aucun') habits.plus('raccord|' + h.raccord, { quoi: 'raccord', reference: h.raccord, note: h.raccord === 'tyrap' ? '' : 'référence à venir' }, ou);
+  const habiller = (cle, fils, pn, ou, ref) => { if (!fils.length) return; const h = habillage(app.norme, fils, app.contrat.raccords.get(cle), pn, ref);
+    const R = h.reference, M = h.manchonRef, G = h.gaine;
+    if (h.raccord === 'tyrap') habits.plus('tyrap|' + (h.tyrap ? h.tyrap.reference : '?'), { quoi: 'tyrap', reference: h.tyrap ? h.tyrap.reference : 'aucun dans la table', note: '' }, ou);
+    else if (h.raccord !== 'aucun') habits.plus('raccord|' + h.raccord + '|' + (R ? R.reference || R.norme : ''), { quoi: 'raccord ' + h.raccord + (h.entree ? ', entrée ' + h.entree.code : ''), reference: R ? (R.reference || R.norme) : h.raccord, note: R && R.reference ? '' : R ? (R.statut || 'à confirmer') : 'référence à venir' }, ou);
     if (h.bandit) habits.plus('collier|' + (h.collier ? h.collier.reference : '?'), { quoi: 'band-it', reference: h.collier ? h.collier.reference : 'aucun ne va au toron', note: '' }, ou);
-    if (h.manchon) habits.plus('manchon|VG95343T18', { quoi: 'manchon', reference: 'VG95343T18', note: 'référence à venir' }, ou);
-    if (h.choix.gaine) habits.plus('gaine|' + (h.gaine ? h.gaine.reference : h.choix.gaine), { quoi: 'gaine ' + h.choix.gaine, reference: h.gaine ? h.gaine.reference : 'aucune ne passe le toron', note: h.gaine ? 'Ø int. ' + nombre(h.gaine.dint) + ' mm' : '' }, ou); };
+    if (h.manchon) habits.plus('manchon|' + (M ? M.designation : '?'), { quoi: 'manchon', reference: M ? M.designation : 'aucun ne va au toron', note: M && M.reference ? M.reference : '' }, ou);
+    if (h.choix.gaine) habits.plus('gaine|' + (G ? G.reference : h.choix.gaine), { quoi: 'gaine ' + h.choix.gaine + (G ? ' (' + G.role + ')' : ''), reference: G ? G.reference : 'aucune ne va au toron', note: G ? (G.role === 'surblindage' ? 'Ø int. ' + nombre(G.dint) + ' mm' : 'toron ' + nombre(G.dmin) + '–' + nombre(G.dmax) + ' mm') : '' }, ou); };
   reperesDe(V).forEach(r => { if (estMasse(r) || estRenvoi(r) || estRail(r)) return;
     try {
       if (barretteEnModules(r)) { const Q = planDeBarrette(r).plan; Q.modules.forEach(M => modules.plus(M.reference, { reference: M.reference, famille: nomDeFamille(app.norme, M.module.famille) }, r)); sertir(Q.fils, r); }
       else if (coupureEnModules(r)) { const { besoins: b, plan: Q } = planDeCoupure(r); if (Q.reference) connecteurs.plus(Q.reference, { reference: Q.reference, nature: 'prise de coupure' }, r);
         const am = Q.fils.filter(x => x.f.amont), av = Q.fils.filter(x => !x.f.amont); sertir(am, r + ' fiche'); sertir(av, r + ' embase');
-        habiller(r + '|fiche', am.map(x => x.f), b.pn, r + ' fiche'); habiller(r + '|embase', av.map(x => x.f), b.pn, r + ' embase'); }
+        habiller(r + '|fiche', am.map(x => x.f), b.pn, r + ' fiche', Q.reference); habiller(r + '|embase', av.map(x => x.f), b.pn, r + ' embase', Q.reference); }
       else if (!estBornier(r)) { const b = besoinsDeBarrette(r, V), C = connecteursDe(r, V).filter(c => c.nom), cav = new Map(cavitesDe(r).map(c => [c.nom, c]));
         C.forEach(c => { const k = cav.get(c.nom), ou = r + ' ' + c.nom, fils = c.bornes.flatMap(bo => b.parBorne.get(bo) || []);
           if (c.pn) connecteurs.plus(c.pn, { reference: c.pn, nature: 'connecteur' + (k && k.plan.modules[0] ? ' · ' + k.plan.modules[0].reference : '') }, ou);
-          if (k) sertir(k.plan.fils, ou); habiller(r + '|' + c.nom, fils, c.pn, ou); }); }
+          if (k) sertir(k.plan.fils, ou); habiller(r + '|' + c.nom, fils, c.pn, ou, k && k.plan.modules[0] ? k.plan.modules[0].reference : ''); }); }
     } catch (_) { } });
   // les câbles : un fil compte un, la longueur se cumule à part (celle du retest, sinon l'hypothèse)
   const longueurs = new Map(), reelles = new Map(); V.forEach(l => { if (!liaisonComplete(l) || l.de === l.vers || !l.type) return; const L = l.longueur > 0 ? l.longueur : H.longueur;

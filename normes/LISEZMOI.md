@@ -15,29 +15,44 @@ ligne — sur des hypothèses dites et modifiables.
 ## `raccords.csv` : ce qui englobe un connecteur
 
 Le **tutoriel Raccords** de l'Excel du lecteur, en sept pas : le matériau,
-le diamètre du toron (plus 10 %), le connecteur, le raccord, la gaine HFA,
-le manchon, le collier band-it. Le fichier porte les deux tables de
-**gaines** (HFA DHS754-160 : 7 références ; Nomex EN6049-003 : 9) avec leur
-Ø intérieur, Ø extérieur et masse, et les **colliers** band-it (E0805-01
-jusqu'à 15 mm de toron, E0805-02 au-delà). La **table de décision** est
-dans l'outil (09 ter, `regleRaccord`) : reprise de blindage (GND sur le
-corps, BLI par cosse, NO, CONTACT) × étanchéité × gaine, et l'orientation
-pour le cas sans reprise en zone étanche (droit : raccord pour manchon ;
-coudé : durci). L'EN 3645 s'utilise sans raccord.
+le diamètre du toron (plus 10 %), le connecteur, le raccord, la gaine,
+le manchon, le collier band-it — complété en octobre 2026 par une recherche
+sur les documents publics (EN 3660, Glenair, HellermannTyton, VG 95343).
+Le fichier porte six tables :
 
-Sur la fiche de chaque connecteur (et de chaque côté d'une prise de
-coupure), une ligne **« autour »** dit le raccord, le band-it (sa référence
-par le toron), le manchon (VG95343T18) et la gaine (la plus petite dont
-l'intérieur passe le toron) ; « Changer » déplie les quatre choix, gardés
-avec le contrat (Ctrl+Z). Le toron est celui de la ligne « faisceau » :
-Seq, Deq, plus 10 %, comme la feuille de calcul de l'Excel.
+| Table | Ce qu'elle dit | Source |
+|---|---|---|
+| **Gaines** | par famille et référence, le **rôle** — `surblindage` (tresse cuivre HFA DHS754-160 : Ø intérieur, Ø extérieur) ou `protection` (Nomex EN 6049-003, hydrofuge EN 6049-004 : la plage de toron Dmin–Dmax) —, la masse | HellermannTyton |
+| **Colliers** | les band-it E0805-01 (jusqu'à 15 mm) et -02, et les **tyraps NSA935401-03…-13** (longueur, toron maximal, tenue, température) — NSA935401 est un collier, pas un disjoncteur | HellermannTyton, Arrow |
+| **Filetages** | par famille de connecteur et **taille de boîtier** (EN 3645 : 09 à 25, M12x1 à M37x1 ; EN 2997 : 08 à 28, UNEF ; EN 3646 : 08 à 24), le filetage d'accessoire et le Ø du boîtier | EN 3645-002, EN 2997-002, EN 3646-002 |
+| **Entrées** | les codes d'entrée de câble d'un serre-câble (03 : 3,2–6,4 mm … 32) et les tailles de boîtier qui les admettent | Glenair |
+| **Raccords** | par famille, type (durci, pour manchon, serre-câble, cheminée) et orientation, la **norme EN 3660** du style (-004, -009, -062, -064, -065…), le matériau, le fini, et quand on l'aura la désignation complète et les cotes A, B, C, D — aujourd'hui `à confirmer` | EN 3660 (titres), catalogues |
+| **Manchons** | 39 manchons **VG 95343 T06 / T18** (droits, coudés, sortie longue) : Ha/Hb (côté raccord), Ja/Jb (côté toron), longueurs P, R, la lèvre Jo, la référence HellermannTyton | VG 95343 |
 
-Ce qui manque : la **table des raccords** (la référence selon la taille du
-boîtier, le matériau et le toron — leur Excel aussi dit #N/A), la table des
-**manchons** VG95343T18 (D(AV), D(AP) contre les cotes C et D du raccord),
-et le rôle de l'**overshielding** et du **matériau** dans le choix. Le
-tutoriel sert la gaine sur la cote B du raccord ; sans cette cote, l'outil
-la sert sur le toron.
+La **table de décision** est dans l'outil (09 ter, `regleRaccord`) :
+reprise de blindage (GND sur le corps, BLI par cosse, NO, CONTACT) ×
+étanchéité × gaine, et l'orientation pour le cas sans reprise en zone
+étanche (droit : raccord pour manchon ; coudé : durci). « L'EN 3645
+s'utilise sans raccord » est la règle d'atelier du lecteur (l'EN 3660-020
+existe) : elle reste, en le disant.
+
+Ce que l'outil en fait (`habillage`), sur la fiche de chaque connecteur et
+de chaque côté d'une prise de coupure, la ligne **« autour »** : la **taille
+du boîtier** lue dans le part number (EN3646-002-12-08 → 12) et son
+filetage ; le **raccord** (son type, la norme EN 3660 du style, la
+désignation quand la table l'a, le **code d'entrée** d'un serre-câble par le
+toron) ; le **band-it** par le toron ; le **tyrap** le plus court qui passe ;
+la **gaine** par son rôle (un surblindage dont l'intérieur passe le toron,
+une protection dont la plage l'encadre) ; le **manchon** par ce qui sort du
+raccord — Ja > D > Jb, et Ha > C > Hb quand la cote C du raccord est connue ;
+et une ligne **« manque »** : ce que la norme ne dit pas encore. « Changer »
+déplie les quatre choix, gardés avec le contrat (Ctrl+Z). Le toron est celui
+de la ligne « faisceau » : Seq, Deq, plus 10 %, comme la feuille de calcul.
+
+Ce qui manque : les **désignations complètes** des raccords (la table dit la
+norme du style, pas la référence commandable), leurs cotes A, B, C, D (le
+manchon est choisi par le toron seul tant que C manque), et le rôle du
+**matériau** dans le choix.
 
 ## `cables.csv` : la base des câbles
 
@@ -47,22 +62,45 @@ KW, KX, LE, MLA, MLB, MLC, MLD, VNA…VND, WC…WX, XD…XY, YH, YV). Pour chaqu
 **type de câble tel que le retest l'écrit** (DR24, MLB22, KD24, WC…) : sa
 famille, sa jauge, ses **brins**, s'il est **blindé**, sa **nature**
 (torsadé, blindé, torsadé blindé, twinax, coaxial, quadrax, fibre optique),
-sa **masse** (g/m), les **liaisons** qu'il porte (les brins, plus le
-blindage), sa **résistance** (mΩ/m, soit des Ω/km), son **diamètre
-extérieur** (mm) et sa **section** (mm²). HJ et LE y étaient en double ; LE
-(« fibre optique » puis « coaxial ») est gardé en fibre optique, à confirmer.
+sa **masse** (g/m, valeur max), les **liaisons** qu'il porte (les brins,
+plus le blindage), sa **résistance à 20 °C** (mΩ/m, soit des Ω/km ; valeur
+max des fiches), son **diamètre extérieur** (mm) et sa **section hors-tout**
+(mm², π Ø²/4 : isolant, gaine et blindage compris — c'est la section du
+toron, pas celle du cuivre, qui est dans `en2853.csv`). HJ et LE y étaient
+en double ; LE (« fibre optique » puis « coaxial ») est gardé en fibre
+optique, à confirmer.
+
+Vérifié en octobre 2026 contre les fiches Lynxeo : DR 26→6 identiques, DRB
+à ±0,5 %, MLC, AD, VN identiques. Complété : les masses DRC/DRD, les
+**résistances AD** (aluminium cuivré, 27 à 65 % de plus que le DR cuivre),
+les diamètres manquants ; ADB…ADE et VNA…VND prennent la résistance de l'AD
+de même jauge (hypothèse : les conducteurs VN sont des ABS 0949 AD). Douteux,
+à relire dans l'Excel : DW24 (= DW22), GPB24 (= GPB22), MLA12 (Ø = MLA14),
+AM et YV (mêmes R et masses).
+
+Une seconde table, **Familles de câbles** : par famille, la norme (EN
+2267-010 pour DR, EN 2714-013 pour MLx, ABS 0949 pour AD, ABS 1356 pour VN,
+EN 3375 pour KD/KL/Wx, EN 4604 pour les coax), le **conducteur** (cuivre,
+CCA = aluminium cuivré nickelé, aluminium), le placage, la température
+admise (DR : −55 à 260 °C ; AD/VN : 180 °C), la tension, l'isolant, le
+blindage, le rayon de courbure, le marquage. C'est là que l'outil lit si un
+câble est en cuivre.
 
 Ce que l'outil en fait :
 - la **fiche d'un fil** dit son câble en une ligne (brins, nature, Ø,
   section, résistance, masse) ;
 - la **chute en ligne** prend la résistance de ce câble-là (DR24 : 114
-  mΩ/m, MLB24 : 117) avant celle de la jauge seule (EN 2853) ; une ligne
+  mΩ/m, MLB24 : 117), à 20 °C, corrigée par l'hypothèse **température du
+  conducteur** (× (234,5 + T)/254,5 pour le cuivre, AC 43.13-1B § 11-66 :
+  70 °C → × 1,20, 135 °C → × 1,45) ; sinon celle de la jauge seule (EN
+  2853, elle aussi à 20 °C) — jamais pour un conducteur **CCA ou aluminium**
+  (AD, VN, AM, YV), dont l'intensité se déclasse encore de √(R cuivre / R
+  câble) quand c'est la ligne cuivre de l'EN 2853 qui la donne ; une ligne
   Fils d'une norme importée qui distingue les types passe devant ;
 - chaque **connecteur** (et chaque côté d'une prise de coupure) a son
   **faisceau** : ses câbles — un câble à plusieurs brins compte une fois,
   par son numéro —, le **diamètre équivalent** (un rond de la section
-  cumulée, fois un foisonnement de 1,2 : une hypothèse, en attendant la
-  règle qui choisit les raccords, § D de la feuille de route) et la masse
+  hors-tout cumulée, plus 10 % : la marge du tutoriel Raccords) et la masse
   au mètre ;
 - la **pastille de contrôle** relève les types de fil que la base ne
   connaît pas (une faute de frappe, un câble à ajouter).
@@ -75,36 +113,50 @@ lit telle quelle.
 ## `en2853.csv` : l'intensité admissible des câbles, et leur chute
 
 L'**EN 2853:2005**, tables 1 et 2 (pages 14 et 16) : pour chaque jauge de
-26 à 0 AWG, le code (001 à 530), l'**intensité admissible en continu** et
+26 à 0 AWG, le code EN 2083 du conducteur (001 à 530), son **toronnage** et
+la **section du toron** de cuivre, l'**intensité admissible en continu** et
 **par durée** (2 s, 10 s, 1 min — les « duty cycle ratings ») d'un câble
 cuivre seul à l'air libre, échauffé de 40 °C depuis une ambiante de 95 °C
-jusqu'à 135 °C ; et la **chute de tension pour 10 m** au courant continu.
-La résistance (Ω/km à 135 °C) s'en déduit ; la section est la section
-nominale de la jauge, indicative. Le type est `*` : ces valeurs valent pour
-tout câble cuivre, tant qu'une norme ne distingue pas les types (DR, MLB…).
-Les fils inventés de la norme d'exemple sont partis.
+jusqu'à 135 °C — la température du **conducteur** dans la table, pas la
+tenue du câble (DR : 260 °C) — ; la **chute de tension pour 10 m** au
+courant continu ; deux résistances, **à 20 °C** (EN 2267-010, la même que la
+base des câbles : la chute en ligne la prend) et à 135 °C (déduite de la
+chute). Le type est `*` : ces valeurs valent pour tout câble cuivre, tant
+qu'une norme ne distingue pas les types (DR, MLB…). Vérifié contre la
+physique (I ∝ √section) : le 12 AWG (35 A) et le 8 AWG (68 A) sortent de
+11-12 % de la tendance, à relire dans le PDF.
 
 La **simulation** d'une barrette ou d'une prise lit ces lignes (intensité,
-résistance), avec une hypothèse de plus, l'**ambiante** (note 2 de la norme :
-I₂ = I₁ × √((135 − Tu)/40), 95 °C → ×1). La **fiche d'un disjoncteur** juge
-chacun de ses fils contre son profil : à chaque phase, le courant doit rester
-sous ce que le fil admet pour cette durée (le palier juste au-dessus : 2 s,
-10 s, 1 min, sinon le continu), déclassé comme la simulation ; et le calibre
-ne devrait pas dépasser ce que le fil admet en continu, sinon le fil n'est
-pas protégé en surcharge. Un dédoublement se partage on ne sait comment :
-chaque fil doit tenir tout. La fiche d'un fil dit ce qu'il admet en continu.
+résistance), avec deux hypothèses de plus : l'**ambiante** (note 2 de la
+norme : I₂ = I₁ × √((135 − Tu)/40), 95 °C → ×1 — sur le continu seulement,
+les paliers courts sont adiabatiques) et la **température du conducteur**
+(20 °C par défaut, comme les fiches ; 135 °C, la table, est le cas le plus
+défavorable). La **fiche d'un disjoncteur** juge chacun de ses fils contre
+son profil : à chaque phase, le courant doit rester sous ce que le fil admet
+pour cette durée (le palier juste au-dessus : 2 s, 10 s, 1 min, sinon le
+continu), déclassé comme la simulation ; et ce que le disjoncteur laisse
+passer sur sa courbe lente (−55 °C) ne devrait pas dépasser ce que le fil
+admet, sinon le fil n'est pas protégé. Un dédoublement se partage on ne sait
+comment : chaque fil doit tenir tout. La fiche d'un fil dit ce qu'il admet.
 
 La simulation connaît trois **régimes** (la notice du calculateur de
 chute triphasé) : continu (ΔU = R × I), alternatif monophasé (ΔU = I × (R
 cos φ + X sin φ)) et triphasé (ΔU composée, entre deux phases : √3 × I ×
 (R cos φ + X sin φ), I par phase, jamais la somme des phases, L la distance
-simple). cos φ vaut 0,8 en régime permanent, 0,35 au démarrage d'un
-moteur ; la réactance X est négligée sous 50 mm² et à saisir au-delà (le
+simple — comparée à la ligne **200 V** du réseau, pas à la ligne 115 V
+phase-neutre). cos φ vaut 0,8 en régime permanent, 0,35 au démarrage d'un
+moteur ; la réactance X est négligée sous **10 mm² de cuivre** et à saisir
+au-delà (à 400 Hz, X vaut l'ordre de R dès le 6–8 AWG pour un fil seul ; le
 calcul est suspendu, comme dans l'Excel).
 
-Restent d'exemple : les **déclassements** (faisceau × 0,8, zone chaude
-× 0,85) et le **réseau** (la chute admise) ; vos vraies tables remplacent
-celles de `norme-exemple.csv`.
+Le **déclassement** et le **réseau** de `norme-exemple.csv` sont les points
+publics de l'**AC 43.13-1B** (FAA, chapitre 11), en attendant les règles du
+programme (ABD0100, non public) : le faisceau par points « fils × charge »
+(fig. 11-5 : 8 fils à 60 % → × 0,60, 12 à 100 % → × 0,43, 35 à 20 % →
+× 0,52 ; l'outil prend le point le plus proche du faisceau simulé),
+l'altitude interpolée (fig. 11-6 : 20 000 ft → 0,91, 60 000 → 0,79) ; la
+chute admise du bus à la masse de l'équipement (table 11-6 : 14 V 0,5 V,
+28 V 1 V, 115 V 4 V, 200 V 7 V ; le double en intermittent ≤ 2 min).
 
 ## `disjoncteurs.csv` : les courbes de disjonction
 
@@ -116,8 +168,20 @@ courant nominal In** — à **125 °C** (46 points), **23 °C** la plus rapide
 pour tous les calibres, la courbe étant en multiples de In ; une autre
 famille s'ajoute avec son nom.
 
+Trois tables de plus (octobre 2026) : la **Calibration** (les points
+normalisés par famille et par ambiante : ce qu'un disjoncteur tient une
+heure, ce qui le déclenche, les temps à 200, 500 et 1000 % de In — Sensata
+2TC/3TC/7274, Safran 170), les **Familles de disjoncteurs** (MS3320 / 2TC,
+AS33201, 3TC, 6TC, 9TC, 7274 / MS22073 / MS26574, EN 2495 / EN 2995, MS33201,
+EN 3661, EN 2592 / EN 2996, EN 3662 : norme, pôles, gamme de calibres,
+tension, compensation en température, ambiante admise, masse, courbe à
+prendre) et la **Protection** par jauge de fil (AC 43.13-1B table 11-3 : le
+calibre maximal du disjoncteur et du fusible, la taille de contact et son
+courant). Le calibre ne se lit en queue d'un part number que pour une
+famille connue : **MS3320-10 → 10 A** ; NSA935401-10 est un collier.
+
 Ce que l'outil en fait, sur la fiche de chaque disjoncteur (code CB) : le
-**calibre** (lu en queue du part number, NSA935401-10 → 10 A, ou écrit), le
+**calibre** (lu en queue du part number d'une famille connue, ou écrit), le
 **profil de charge** de ce qu'il protège — démarrage, transition (un courant
 pendant une durée), permanent — et le graphique log-log de l'Excel : les
 quatre courbes, la zone verte où tout tient, le profil en escalier. Le
@@ -172,6 +236,17 @@ Deux accessoires sont lus tronqués sur les captures (EN3646 KE 20, EN3645 YY
 20 : « EN3155-019F… », « EN3155-008M… ») ; la note le dit, 2020 supposé.
 Manquent encore : les contacts des barrettes NSA937901 et ASNE 0599, et de
 l'ASNE0059 (l'onglet NSA937901 existe dans SEE).
+
+Une table de plus, **Résistance des contacts**, par taille (22D, 22, 20, 16,
+12, 10, 8) : le courant nominal, la chute max aux bornes (mV) et la
+**résistance max à neuf** d'une paire sertie et accouplée (AS39029 /
+MIL-DTL-39029 : 22 → 14,6 mΩ, 20 → 7,3, 16 → 3,8, 12 → 1,8, 10 → 1,0 ; la
+limite EN 3155 n'a pas été lue), et une résistance de conception (× 1,5,
+hypothèse de fin de vie). La **chute en ligne** la compte pour chaque prise
+de coupure traversée (la paire, une fois) quand sa famille ne donne pas sa
+résistance, et **deux fois pour une barrette** (deux sertissages et la
+barre) ; la taille vient de la jauge du fil (la plus petite qui l'admet dans
+la famille, sinon la table Protection).
 
 ## `asne0059.csv` : les connecteurs circulaires Airbus
 
@@ -295,14 +370,15 @@ qui loge le plus de potentiels en perdant le moins de contacts ; s'il n'y
 suffit pas, un deuxième module. Ce qui ne passe pas est dit, jamais forcé.
 Le module à diodes n'est jamais choisi seul.
 
-## `norme-exemple.csv` est une FAUSSE norme
+## `norme-exemple.csv` : la prise d'exemple, le déclassement et le réseau
 
-Il ne porte plus que la prise de coupure EN3646, les fils, les déclassements
-et le réseau. Tous ses chiffres sont inventés pour montrer le mécanisme : ils n'ont
-**aucune valeur normative**. Chaque famille y est nommée « (exemple) » et
-l'outil le répète partout où il s'en sert (carte, fiche de la bible).
-Remplace ce fichier par les tables de tes normes ; tant qu'il est là, il
-reste marqué exemple.
+Il porte la prise de coupure EN3646 **d'exemple** (ses 7,5 A et 8 mΩ par
+contact sont du bon ordre pour une taille 20, mais inventés : la famille est
+nommée « (exemple) » et l'outil le répète partout où il s'en sert), et deux
+tables qui ne sont plus inventées : le **déclassement** et le **réseau**,
+pris dans l'AC 43.13-1B (FAA, chapitre 11) — voir `en2853.csv` ci-dessus.
+Les règles du programme (ABD0100, les courbes Airbus) les remplaceront quand
+le lecteur les donnera : mêmes colonnes.
 
 ## Comment l'outil lit une norme
 
@@ -341,39 +417,67 @@ une bible (`modeles/bible-barrettes.csv`).
 |---|---|---|
 | Jauge | oui | AWG |
 | Type | non | le début du code du retest (`DR` pour DR24, `MLB` pour MLB24) ; vide : vaut pour tous les types de cette jauge |
-| Section | non | mm² |
-| Résistance | non | Ω/km à 20 °C — la chute en ligne se calcule avec |
-| Intensité | non | ampères admissibles du fil seul, avant déclassement |
+| Code | non | le code EN 2083 du conducteur |
+| Brins | non | le toronnage (« 19 × 0,20 ») |
+| Section | non | mm² du conducteur (le toron de cuivre) |
+| Résistance 20 | non | Ω/km à 20 °C — la chute en ligne se calcule avec, corrigée par la température du conducteur |
+| Résistance | non | Ω/km à la température du conducteur de la table (T conducteur) ; sans Résistance 20, l'outil la ramène à 20 °C |
+| Intensité, Intensité 2 s, Intensité 10 s, Intensité 1 min | non | ampères admissibles du fil seul, avant déclassement, en continu et par durée |
+| Chute 10 m | non | la chute pour 10 m au courant continu (informatif) |
+| T conducteur | non | la température du conducteur de la table (135 °C) : l'ambiante se compte depuis elle |
 | Note | non | libre |
 
 Quand le type du fil n'est pas dans la table mais sa jauge l'est, la ligne
-de la jauge sert, et la simulation le dit (« jauge seule »).
+de la jauge sert, et la simulation le dit (« jauge seule ») — jamais pour un
+conducteur qui n'est pas du cuivre (table Familles de câbles).
 
-### Déclassement — une ligne par condition
+### Déclassement — une ligne par condition, ou par point d'une condition
 
 | colonne | obligatoire | sens |
 |---|---|---|
-| Condition | oui | un mot (`faisceau`, `chaud`) : chaque condition devient une case à cocher dans la simulation |
-| Facteur | oui | multiplie l'intensité admissible du fil (0,8) ; plusieurs conditions cochées se multiplient |
+| Condition | oui | un mot (`faisceau`, `altitude`) : chaque condition devient une case à cocher dans la simulation |
+| Fils, Charge | non | le point d'une courbe de faisceau : le nombre de fils et la charge en % ; l'outil prend le point le plus proche du faisceau simulé |
+| Altitude | non | le point d'une courbe d'altitude (pieds) ; l'outil interpole |
+| Facteur | oui | multiplie l'intensité admissible du fil ; plusieurs conditions cochées se multiplient |
 
 ### Réseau — une ligne par tension
 
 | colonne | obligatoire | sens |
 |---|---|---|
-| Tension | oui | volts (28, 115) ; la simulation prend la ligne de la tension d'hypothèse, sinon la plus proche |
-| Chute max | oui | la chute de tension admise en ligne, en V |
-| Chute max % | non | la même, en % (informatif) |
+| Tension | oui | volts (14, 28, 115, 200) ; la simulation prend la ligne de la tension d'hypothèse, sinon la plus proche ; en triphasé, celle de la tension composée (115 → 200) |
+| Nature | non | continu, alternatif phase-neutre, entre phases |
+| Chute max | oui | la chute de tension admise en ligne, en V, en continu |
+| Chute max intermittent | non | la même pour une charge intermittente (≤ 2 min) |
+| Chute max en % | non | la même, en % (informatif) |
+
+### Familles de câbles — une ligne par famille (ou groupe de familles)
+
+| colonne | obligatoire | sens |
+|---|---|---|
+| Famille | oui | les familles couvertes (« DRB DRC DRD ») |
+| Conducteur | oui | cuivre, CCA (aluminium cuivré), aluminium : décide si la ligne cuivre de l'EN 2853 vaut |
+| Norme, Placage, T min, T max, Tension, Fréquence max, Isolant, Blindage, Rayon de courbure, Marquage, Note | non | informatif (la fiche d'un fil les dira) |
+
+### Résistance des contacts — une ligne par taille
+
+| colonne | obligatoire | sens |
+|---|---|---|
+| Taille | oui | 22D, 22, 20, 16, 12, 10, 8 |
+| Résistance | oui | mΩ, la paire sertie et accouplée, à neuf |
+| Intensité, Chute max, Résistance fin de vie, Note | non | le courant nominal, la chute max aux bornes (mV), la résistance de conception |
 
 ## Ce que la simulation calcule, fil par fil
 
-Les hypothèses (longueur du fil, courant, tension, conditions de
-déclassement) sont affichées dans la carte et se changent sur place : le
-retest ne porte ni longueur ni courant, l'outil ne les invente pas.
+Les hypothèses (longueur du fil, courant, tension, ambiante, température du
+conducteur, régime, cos φ, réactance, conditions de déclassement, charge du
+faisceau, altitude) sont affichées dans la carte et se changent sur place :
+le retest ne porte ni longueur ni courant, l'outil ne les invente pas.
 
-    I fil     = intensité du fil (table Fils) × facteur de déclassement
+    I fil     = intensité du fil (table Fils) × déclassement (faisceau, altitude) × √((T conducteur − ambiante)/40) × √(R cuivre / R câble) si le conducteur n'est pas du cuivre
     I contact = intensité du contact (table Familles)
-    R         = Résistance du fil (Ω/km) / 1000 × longueur (m) + Résistance du contact (mΩ) / 1000
-    ΔU        = R × courant, en V et en % de la tension
+    ρ(T)      = Résistance 20 (Ω/km) × (234,5 + T conducteur)/254,5   (aluminium : (238,1 + T)/258,1)
+    R         = ρ(T) / 1000 × longueur (m) + Résistance du contact (mΩ) / 1000   (la famille, sinon la taille du contact ; deux fois sur une barrette)
+    ΔU        = R × courant, en V et en % de la tension (mono : I (R cos φ + X sin φ) ; tri : √3 × …, comparée à la ligne 200 V)
 
 Le verdict, dans l'ordre : jauge hors plage · le courant dépasse le fil ·
 dépasse le contact · la chute dépasse ce que le réseau admet · fil inconnu

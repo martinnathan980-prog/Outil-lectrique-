@@ -21,7 +21,7 @@ const FICHIER = P.fichierDemande();
 function baseEssai() {
   const d = r => /G$/.test(r) ? r : r.replace(/^(\d)(\d\d)([A-Z]+)(\d*)/, (m, a, b, c, e) => String(+a + 2) + b + c + e), E = contratExemple(), F = (p, v) => 'MEE256A78150' + String(p).padStart(2, '0') + v;
   const H1 = E.map(l => liaison({ ...l, de: d(l.de), vers: d(l.vers), fwd: F(l.plan, 'A'), harness: 'H-1', appareil: 'H160', retest: '08/07/2024' })).filter(l => l.cable !== 'W-014').map(l => l.cable === 'W-012' ? liaison({ ...l, type: 'DR16' }) : l);
-  H1.push(liaison({ de: '302CB1', borneDe: '3', pnDe: 'NSA935401-10', vers: '305XX9', borneVers: '1', pnVers: 'ZZZ', cable: 'W-099', type: 'DR20', plan: '1', fwd: F(1, 'A'), harness: 'H-1', appareil: 'H160' }));
+  H1.push(liaison({ de: '302CB1', borneDe: '3', pnDe: 'MS3320-10', vers: '305XX9', borneVers: '1', pnVers: 'ZZZ', cable: 'W-099', type: 'DR20', plan: '1', fwd: F(1, 'A'), harness: 'H-1', appareil: 'H160' }));
   H1.push(liaison({ de: '305XX9', borneDe: '2', pnDe: 'ZZZ', vers: '901G', borneVers: '', cable: 'W-098', type: 'DR20', plan: '1', fwd: F(1, 'A'), harness: 'H-1', appareil: 'H160' }));
   const H2 = E.slice(0, 60).map(l => liaison({ ...l, fwd: F(l.plan, 'B'), harness: 'H-2', appareil: 'H175', retest: '27/10/2025' }));
   const H3 = E.filter(l => l.plan === '2').map(l => { const m = r => r === '667VT21' ? '677VT2' : r, b = (r, bo) => r === '667VT21' ? '5' + bo + 'B' : bo;
@@ -57,7 +57,7 @@ function baseEssai() {
   await page.click('#cp-tout'); await page.waitForTimeout(300);
   ok(await page.evaluate(() => /Reprendre 3/.test($('cp-reprendre').textContent) && !$('cp-reprendre').disabled), 'tout cocher : trois lignes uniques à reprendre');
   await page.click('#cp-reprendre'); await page.waitForTimeout(1200);
-  ok(await page.evaluate(n => verite().length === n + 3 && verite().some(l => l.de === '102CB1' && l.borneDe === '3' && l.vers === '305XX9' && l.pnDe === 'NSA935401-10' && !l.cable) && verite().some(l => l.de === '305XX9' && l.vers === '901G') && app.dessin.comps.some(c => c.name === '305XX9'), avant), 'reprendre : 102CB1:3 → 305XX9, 305XX9 → 901G et le fil qui différait entrent au contrat, recâblés sur nos repères, sans numéro');
+  ok(await page.evaluate(n => verite().length === n + 3 && verite().some(l => l.de === '102CB1' && l.borneDe === '3' && l.vers === '305XX9' && l.pnDe === 'MS3320-10' && !l.cable) && verite().some(l => l.de === '305XX9' && l.vers === '901G') && app.dessin.comps.some(c => c.name === '305XX9'), avant), 'reprendre : 102CB1:3 → 305XX9, 305XX9 → 901G et le fil qui différait entrent au contrat, recâblés sur nos repères, sans numéro');
   await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(800);
   ok(await page.evaluate(n => verite().length === n, avant), 'Ctrl+Z défait la reprise');
   // le calque du dessin, depuis la comparaison
