@@ -212,7 +212,7 @@
     <div class="poignee" id="ba-poignee" title="Glisser pour agrandir ou réduire" aria-hidden="true"></div>
     <div class="ba-tete">
       <div class="ba-titre"><span>Liaisons</span><b id="ba-compte">0</b></div>
-      <div class="ba-portee" id="ba-portee" role="group" aria-label="Lignes montrées">
+      <div class="segment ba-portee" id="ba-portee" role="group" aria-label="Lignes montrées">
         <button data-portee="folio" aria-pressed="true"><span id="ba-lib-folio">Ce folio</span><i id="ba-n-folio"></i></button>
         <button data-portee="tout" aria-pressed="false">Tout<i id="ba-n-tout"></i></button>
       </div>
@@ -240,8 +240,8 @@
     <div class="re-boite">
       <div class="re-tete">
         <div class="min0"><div class="sur" id="re-sur"></div><h2 class="titre" id="re-titre"></h2><div class="re-compte" id="re-compte"></div></div>
-        <div class="re-vues" id="re-vues" role="group" aria-label="Vue">
-          <button data-vue="3/4" title="Vue de trois quarts">3/4</button><button data-vue="face" title="Vue de face">Face</button><button data-vue="dessus" title="Vue de dessus">Dessus</button>
+        <div class="segment re-vues" id="re-vues" role="group" aria-label="Vue">
+          <button data-vue="3/4" title="Vue de trois quarts" aria-pressed="true">3/4</button><button data-vue="face" title="Vue de face" aria-pressed="false">Face</button><button data-vue="dessus" title="Vue de dessus" aria-pressed="false">Dessus</button>
         </div>
         <button class="rond fermer" id="re-fermer" aria-label="Fermer la vue en relief (Échap)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
       </div>

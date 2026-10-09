@@ -60,13 +60,17 @@ function cylindre(cx, cy, z0, z1, r, coul, extra, n) { n = n || 32; const fs = [
   fs.push(face(Array.from({ length: n }, (_, k) => pt(n - k, z1)), { x: 0, y: 0, z: 1 }, coul, extra));
   fs.push(face(Array.from({ length: n }, (_, k) => pt(k, z0)), { x: 0, y: 0, z: -1 }, coul, extra));
   return fs; }
-// les faces visibles, du fond vers l'avant, ombrées
-function peindreFaces(faces, az, el) { const vues = [];
+// les faces visibles, projetées, du fond vers l'avant, ombrées ; puis peintes
+function facesVisibles(faces, az, el) { const vues = [];
   faces.forEach(f => { const n = tourner(f.n, az, el); if (n.d <= 1e-6) return;
     const q = f.pts.map(p => projeter(p, az, el)), d = q.reduce((s, p) => s + p.d, 0) / q.length, k = 0.62 + 0.42 * Math.max(0, n.x * LUMIERE.x + n.y * LUMIERE.y + n.d * LUMIERE.d);
     vues.push({ q, d, fill: ombrer(f.coul, k), extra: f.extra }); });
-  vues.sort((a, b) => a.d - b.d);
-  return vues.map(v => `<polygon points="${v.q.map(p => p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' ')}" fill="${v.fill}" stroke="${ombrer(v.fill, 0.72)}" stroke-width=".6" stroke-linejoin="round"${v.extra}/>`).join(''); }
+  return vues.sort((a, b) => a.d - b.d); }
+const peindreFaces = vues => vues.map(v => `<polygon points="${v.q.map(p => p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' ')}" fill="${v.fill}" stroke="${ombrer(v.fill, 0.72)}" stroke-width=".6" stroke-linejoin="round"${v.extra}/>`).join('');
+// un point projeté caché par une face nettement plus proche que lui — le nom d'une pièce derrière une autre (la fiche
+// derrière l'embase, en vue de face) ; la marge (8 unités) laisse au point les facettes de sa propre surface (un cylindre)
+const dansPolygone = (p, q) => { let dedans = false; for (let i = 0, j = q.length - 1; i < q.length; j = i++) { if ((q[i].y > p.y) !== (q[j].y > p.y) && p.x < (q[j].x - q[i].x) * (p.y - q[i].y) / (q[j].y - q[i].y) + q[i].x) dedans = !dedans; } return dedans; };
+const cachePar = (p, vues) => vues.some(v => v.d > p.d + 8 && dansPolygone(p, v.q));
 
 /* ---- la scène d'une barrette ------------------------------------------- */
 const RB = { pas: 46, l: 38, h: 34, p: 74, rail: 9 };
@@ -121,48 +125,64 @@ function scenePrise(P, S, az, el) {
   return { faces, fils, textes, trous, emboite: { a: { x: -ecart + R + 8, y: 0, z: 0 }, b: { x: ecart - R - 8, y: 0, z: 0 } } }; }
 
 /* ---- le rendu : la scène, projetée, en SVG ------------------------------ */
+/* La pièce se met à l'échelle de la scène (viewBox, « meet ») ; LES ÉCRITURES, NON : un numéro de fil fait 13 px à
+   l'écran dans toutes les vues (un peu moins dans la scène étroite d'un téléphone : `e`). `u0` est ce que vaut un pixel
+   d'écran en unités de la scène : les étiquettes (leurs écarts, leurs rangées) se mesurent en `u0 × e`, et la feuille de
+   style divise ses corps par `--k` = 1/(u0 × e). Comme les
+   étiquettes agrandissent le cadre qui fixe `u`, on le cherche en quelques passes (il converge vite : les étiquettes
+   ne sont qu'une bordure autour de la pièce). Une écriture posée sur une face qu'on voit trop de biais (la face du dessus
+   en vue de face) ne s'écrit pas ; le nom d'une pièce caché par une autre (la fiche derrière l'embase) non plus. */
 function reliefSvg() { const { P, S, Q, az, el, prise } = RELIEF; if (!P && !Q) return '';
   const sc = Q ? sceneModules(Q) : prise ? scenePrise(P, S, az, el) : sceneBarrette(P, S, az, el), routes = couleursDesRoutes();
-  const pj = p => projeter(p, az, el); let minx = Infinity, maxx = -Infinity, miny = Infinity, maxy = -Infinity;
-  const voir = p => { minx = Math.min(minx, p.x); maxx = Math.max(maxx, p.x); miny = Math.min(miny, p.y); maxy = Math.max(maxy, p.y); };
-  sc.faces.forEach(f => f.pts.forEach(p => voir(pj(p)))); sc.fils.forEach(w => w.pts.forEach(p => voir(pj(p))));
-  sc.textes.forEach(t => voir(pj(t.p)));
+  const pj = p => projeter(p, az, el), vues = facesVisibles(sc.faces, az, el);
+  // le cadre de la pièce seule : ses faces, ses fils, ses écritures
+  const B0 = { minx: Infinity, maxx: -Infinity, miny: Infinity, maxy: -Infinity }, etendre = (B, p) => { B.minx = Math.min(B.minx, p.x); B.maxx = Math.max(B.maxx, p.x); B.miny = Math.min(B.miny, p.y); B.maxy = Math.max(B.maxy, p.y); };
+  sc.faces.forEach(f => f.pts.forEach(p => etendre(B0, pj(p)))); sc.fils.forEach(w => w.pts.forEach(p => etendre(B0, pj(p)))); sc.textes.forEach(t => etendre(B0, pj(t.p)));
   /* les ÉTIQUETTES se rangent hors de la pièce, sans se chevaucher : une barrette, en rangée au-dessus (amont) et en
      dessous (aval), dans l'ordre de leurs fils ; une prise, en colonne à gauche (fiche) et à droite (embase). Un trait
      fin, à la couleur de la route, va du bout du fil à son étiquette. */
-  const LARG = 150, HAUT = 32, etiquettes = sc.fils.map(w => ({ w, a: pj(w.pts[w.pts.length - 1]) }));
+  const etiquettes = sc.fils.map(w => ({ w, a: pj(w.pts[w.pts.length - 1]) }));
   /* une rangée trop longue pour la pièce (une barrette de douze fils) se replie en deux ou trois rangées décalées, leurs
      étiquettes en quinconce — sinon la pièce rapetissait jusqu'à ne plus se lire. `sens` : de quel côté de la pièce la
      rangée s'éloigne (-1 au-dessus, +1 en dessous). */
-  const ranger = (gr, cle, pas, base, sens) => { gr.sort((u, v) => u.a[cle] - v.a[cle]);
-    const etendue = cle === 'x' ? maxx - minx : maxy - miny, k = cle === 'x' ? Math.max(1, Math.min(3, Math.ceil(gr.length * pas / Math.max(1, 1.25 * etendue)))) : 1;
+  const ranger = (gr, cle, pas, base, sens, rangee) => { gr.sort((u, v) => u.a[cle] - v.a[cle]);
+    const etendue = cle === 'x' ? B0.maxx - B0.minx : B0.maxy - B0.miny, k = cle === 'x' ? Math.max(1, Math.min(3, Math.ceil(gr.length * pas / Math.max(1, 1.25 * etendue)))) : 1;
     let prec = -Infinity; gr.forEach(e => { e.v = Math.max(e.a[cle], prec + pas / k); prec = e.v; });
     if (gr.length) { const deborde = gr[gr.length - 1].v - gr[gr.length - 1].a[cle]; gr.forEach(e => { e.v -= deborde / 2; }); }
-    gr.forEach((e, j) => { const rang = (j % k) * 34 * (sens || 1); e.pos = cle === 'x' ? { x: e.v, y: base + rang } : { x: base, y: e.v }; }); };
-  const [x0s, x1s, y0s, y1s] = [minx, maxx, miny, maxy];
-  if (prise) { ranger(etiquettes.filter(e => e.w.sens === 'amont'), 'y', HAUT, x0s - 18); ranger(etiquettes.filter(e => e.w.sens === 'aval'), 'y', HAUT, x1s + 18); }
-  else { ranger(etiquettes.filter(e => e.w.sens === 'amont'), 'x', LARG, y0s - 30, -1); ranger(etiquettes.filter(e => e.w.sens === 'aval'), 'x', LARG, y1s + 30, 1); }
-  etiquettes.forEach(e => { const g = prise ? (e.w.sens === 'amont' ? -1 : 1) : 0; voir({ x: e.pos.x + (g ? g * LARG : -LARG / 2), y: e.pos.y - 14 }); voir({ x: e.pos.x + (g ? 0 : LARG / 2), y: e.pos.y + 16 }); });
-  const m = 22, vb = [minx - m, miny - m, maxx - minx + 2 * m, maxy - miny + 2 * m];
-  let s = `<svg id="re-svg" viewBox="${vb.map(v => v.toFixed(1)).join(' ')}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${escA((prise ? 'Prise de coupure ' : 'Barrette ') + RELIEF.nom + ' en relief')}">`;
+    gr.forEach((e, j) => { const rang = (j % k) * rangee * (sens || 1); e.pos = cle === 'x' ? { x: e.v, y: base + rang } : { x: base, y: e.v }; }); };
+  /* l'échelle des écritures suit la taille de la scène, jamais la vue : 1 au grand écran, jusqu'à 0,7 dans la scène
+     étroite d'un téléphone (sinon les étiquettes prennent toute la place et la pièce n'est plus qu'un point) */
+  const scene = $('re-scene'), W = scene ? scene.clientWidth : 0, H = scene ? scene.clientHeight : 0, e = W > 0 ? Math.max(0.7, Math.min(1, W / 900)) : 1;
+  // les étiquettes rangées pour un `u` donné, et le cadre qui en résulte (leurs mesures : des pixels d'écran × u × e)
+  const disposer = u0 => { const u = u0 * e, LARG = 150 * u, HAUT = 32 * u, B = { ...B0 };
+    if (prise) { ranger(etiquettes.filter(e => e.w.sens === 'amont'), 'y', HAUT, B0.minx - 18 * u, 0, 34 * u); ranger(etiquettes.filter(e => e.w.sens === 'aval'), 'y', HAUT, B0.maxx + 18 * u, 0, 34 * u); }
+    else { ranger(etiquettes.filter(e => e.w.sens === 'amont'), 'x', LARG, B0.miny - 30 * u, -1, 34 * u); ranger(etiquettes.filter(e => e.w.sens === 'aval'), 'x', LARG, B0.maxy + 30 * u, 1, 34 * u); }
+    etiquettes.forEach(e => { const g = prise ? (e.w.sens === 'amont' ? -1 : 1) : 0; etendre(B, { x: e.pos.x + (g ? g * LARG : -LARG / 2), y: e.pos.y - 14 * u }); etendre(B, { x: e.pos.x + (g ? 0 : LARG / 2), y: e.pos.y + 16 * u }); });
+    const m = 22 * u; return [B.minx - m, B.miny - m, B.maxx - B.minx + 2 * m, B.maxy - B.miny + 2 * m]; };
+  let u0 = 1, vb = disposer(u0);
+  for (let passe = 0; passe < 4 && W > 0 && H > 0; passe++) { const u2 = 1 / Math.min(W / vb[2], H / vb[3]); if (Math.abs(u2 - u0) < 0.01 * u0) break; u0 = u2; vb = disposer(u0); }
+  // la feuille de style divise ses corps par --k : l'échelle de la vue, rapportée à celle des écritures
+  const k = W > 0 && H > 0 ? Math.min(W / vb[2], H / vb[3]) : 1, u = u0 * e;
+  let s = `<svg id="re-svg" viewBox="${vb.map(v => v.toFixed(1)).join(' ')}" preserveAspectRatio="xMidYMid meet" style="--k:${(k / e).toFixed(4)}" data-e="${e.toFixed(3)}" role="img" aria-label="${escA((prise ? 'Prise de coupure ' : 'Barrette ') + RELIEF.nom + ' en relief')}">`;
   // une prise : les fils d'abord (la pièce les cache derrière elle) ; une barrette : la pièce d'abord (les fils montent au-dessus)
   const filsSvg = () => sc.fils.map(w => { const i = w.f.i, coul = couleurRelief(w.f, routes), d = 'M' + w.pts.map(p => { const q = pj(p); return q.x.toFixed(1) + ' ' + q.y.toFixed(1); }).join(' L');
     return `<g class="re-fil" data-i="${i}"><path d="${d}" class="re-gaine"/><path d="${d}" class="re-ame" style="stroke:${coul}"/></g>`; }).join('');
   if (prise) s += filsSvg();
-  s += peindreFaces(sc.faces, az, el);
+  s += peindreFaces(vues);
   if (!prise) s += filsSvg();
   // les trous : occupés, libres, et cerclés de rouge quand la norme les refuse
   sc.trous.forEach(t => { const q = pj(t.p), i = t.f ? t.f.i : -1, coul = t.f ? couleurRelief(t.f, routes) : null;
     s += `<circle class="re-trou${t.f ? ' plein' : ''}${t.mauvais ? ' ko' : ''}"${i !== -1 && i !== '' ? ` data-i="${i}"` : ''} cx="${q.x.toFixed(1)}" cy="${q.y.toFixed(1)}" r="${t.prise ? 5 : 4.2}"${coul ? ` style="stroke:${coul}"` : ''}/>`; });
-  sc.textes.forEach(t => { if (t.face && tourner(t.face, az, el).d <= 0.05) return; const q = pj(t.p); s += `<text class="${t.cls}" x="${q.x.toFixed(1)}" y="${q.y.toFixed(1)}" text-anchor="middle">${esc(t.t)}</text>`; });
+  sc.textes.forEach(t => { if (t.face && tourner(t.face, az, el).d <= 0.35) return; const q = pj(t.p); if (t.cls === 're-num' && cachePar(q, vues)) return;
+    s += `<text class="${t.cls}" x="${q.x.toFixed(1)}" y="${q.y.toFixed(1)}" text-anchor="middle">${esc(t.t)}</text>`; });
   if (sc.emboite) { const a = pj(sc.emboite.a), b = pj(sc.emboite.b);
-    s += `<path class="re-emboite" d="M${a.x.toFixed(1)} ${a.y.toFixed(1)} L${b.x.toFixed(1)} ${b.y.toFixed(1)}" marker-end="url(#re-fleche)" marker-start="url(#re-fleche)"/><text class="re-note" x="${((a.x + b.x) / 2).toFixed(1)}" y="${((a.y + b.y) / 2 + 16).toFixed(1)}" text-anchor="middle">s’emboîtent</text>`; }
-  // les étiquettes : numéro (à la couleur de la route), destination, type
+    s += `<path class="re-emboite" d="M${a.x.toFixed(1)} ${a.y.toFixed(1)} L${b.x.toFixed(1)} ${b.y.toFixed(1)}" marker-end="url(#re-fleche)" marker-start="url(#re-fleche)"/><text class="re-note" x="${((a.x + b.x) / 2).toFixed(1)}" y="${((a.y + b.y) / 2 + 16 * u).toFixed(1)}" text-anchor="middle">s’emboîtent</text>`; }
+  // les étiquettes : numéro (à la couleur de la route), destination, type — leurs écarts en pixels d'écran (× u)
   etiquettes.forEach(({ w, a, pos }) => { const f = w.f, i = f.i, coul = couleurRelief(f, routes);
-    const ancre = prise ? (w.sens === 'amont' ? 'end' : 'start') : 'middle', bout = prise ? { x: pos.x + (w.sens === 'amont' ? 4 : -4), y: pos.y - 4 } : { x: pos.x, y: w.sens === 'amont' ? pos.y + 14 : pos.y - 12 };
+    const ancre = prise ? (w.sens === 'amont' ? 'end' : 'start') : 'middle', bout = prise ? { x: pos.x + (w.sens === 'amont' ? 4 : -4) * u, y: pos.y - 4 * u } : { x: pos.x, y: pos.y + (w.sens === 'amont' ? 14 : -12) * u };
     s += `<g class="re-etiq" data-i="${i}"><path class="re-trait" d="M${a.x.toFixed(1)} ${a.y.toFixed(1)} L${bout.x.toFixed(1)} ${bout.y.toFixed(1)}" style="stroke:${coul}"/>`
-      + `<text x="${pos.x.toFixed(1)}" y="${(pos.y - 1).toFixed(1)}" text-anchor="${ancre}" class="re-cable" style="fill:${coul}">${esc(nomDuFil(f.f || f))}</text>`
-      + `<text x="${pos.x.toFixed(1)}" y="${(pos.y + 12).toFixed(1)}" text-anchor="${ancre}" class="re-dest">${esc(destination(f) + (f.type ? ' · ' + f.type : ''))}</text></g>`; });
+      + `<text x="${pos.x.toFixed(1)}" y="${(pos.y - u).toFixed(1)}" text-anchor="${ancre}" class="re-cable" style="fill:${coul}">${esc(nomDuFil(f.f || f))}</text>`
+      + `<text x="${pos.x.toFixed(1)}" y="${(pos.y + 12 * u).toFixed(1)}" text-anchor="${ancre}" class="re-dest">${esc(destination(f) + (f.type ? ' · ' + f.type : ''))}</text></g>`; });
   s += `<defs><marker id="re-fleche" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#7a8796"/></marker></defs>`;
   return s + '</svg>'; }
 
@@ -199,8 +219,11 @@ function ouvrirRelief(nom) { if (!reliefPossible(nom)) return; const V = verite(
   $('re-note').textContent = RELIEF.prise ? 'Disposition des contacts sur la face : indicative (l’arrangement de l’insert n’est pas encore dans la bible).' : 'En arrière, ce qui arrive (amont) ; en avant, ce qui repart (aval). Le cuivre relie les modules d’un même paquet.';
   const d = $('relief'); d.hidden = false; peindreRelief(); lierRelief(); $('re-fermer').focus(); }
 function fermerRelief() { $('relief').hidden = true; RELIEF.P = null; RELIEF.Q = null; rallumer(); }
+/* Peindre : la scène, l'échelle réelle relue (les écritures gardent leur taille à l'écran), la vue pressée dans le
+   segment — aucune quand on a tourné la pièce à la main. */
 function peindreRelief() { $('re-scene').innerHTML = reliefSvg();
-  document.querySelectorAll('#re-vues button').forEach(b => { const [a, e] = VUES_RELIEF[b.dataset.vue]; b.classList.toggle('on', Math.abs(a - RELIEF.az) < 1e-3 && Math.abs(e - RELIEF.el) < 1e-3); }); }
+  const s = $('re-svg'), m = s && s.getScreenCTM && s.getScreenCTM(); if (m && m.a > 0) s.style.setProperty('--k', (m.a / (+s.dataset.e || 1)).toFixed(4));
+  document.querySelectorAll('#re-vues button').forEach(b => { const [a, e] = VUES_RELIEF[b.dataset.vue]; b.setAttribute('aria-pressed', String(Math.abs(a - RELIEF.az) < 1e-3 && Math.abs(e - RELIEF.el) < 1e-3)); }); }
 // survoler un fil l'allume ici et sur le plan ; un clic y va
 function allumerRelief(k) { document.querySelectorAll('#relief [data-i]').forEach(el => el.classList.toggle('on', !!k && el.dataset.i === k));
   if (!allumerCle(k)) rallumer(); }

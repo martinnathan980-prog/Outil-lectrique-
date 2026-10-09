@@ -770,12 +770,14 @@ const premierFolio = (l, folios) => (modeFolio() === 'auto' ? (folios.get(cleDe(
 const groupesParFolio = () => avecPortee() && app.base.portee === 'tout' && !app.base.tri && !app.base.filtre.trim();
 function ligneChoisie(l) { const c = app.cible; if (!c) return false;
   return c.type === 'fil' ? c.l === l : (l.de === c.nom || l.vers === c.nom); }
+/* Une ligne : chaque cellule est un champ, qui porte le nom de sa colonne en attente (on ne le voit que sur la ligne
+   choisie : une ligne neuve montre ses cases vides) ; supprimer, au bout, est la croix de tout l'outil. */
 function rendreLigne(l, i, folios) { const mode = modeFolio(), coul = couleursDesRoutes().get(l.route || '') || '';
   const cell = col => { if (col.k === 'plan' && mode === 'auto') return `<td class="n">${(folios.get(cleDe(l)) || []).map(p => `<button class="f" data-plan="${escA(p)}" title="Aller au folio ${escA(p)}">${esc(p)}</button>`).join('')}</td>`;
-    return `<td${col.cls ? ` class="${col.cls}"` : ''}><input data-i="${i}" data-f="${col.k}" value="${escA(l[col.k])}" aria-label="${col.lib}, ligne ${i + 1}" spellcheck="false" autocomplete="off"></td>`
+    return `<td${col.cls ? ` class="${col.cls}"` : ''}><input data-i="${i}" data-f="${col.k}" value="${escA(l[col.k])}" placeholder="${escA(col.lib)}" aria-label="${col.lib}, ligne ${i + 1}" spellcheck="false" autocomplete="off"></td>`
       + (col.k === 'borneDe' ? '<td class="fl" aria-hidden="true"></td>' : ''); };
   return `<tr data-i="${i}" class="${ligneChoisie(l) ? 'on' : ''}${surLeFolio(l, folios) && liaisonComplete(l) ? '' : ' hors'}"${coul ? ` style="--route:${coul}"` : ''}><td class="g"><button data-voir="${i}" title="Voir ce fil sur le plan">${i + 1}</button></td>`
-    + colonnes().map(cell).join('') + `<td class="x"><button data-x="${i}" aria-label="Supprimer la ligne ${i + 1}">×</button></td></tr>`; }
+    + colonnes().map(cell).join('') + `<td class="x"><button data-x="${i}" aria-label="Supprimer la ligne ${i + 1}" title="Supprimer la ligne"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></td></tr>`; }
 /* Tout le tiroir se déduit de `app` ; le tableau n'est pas refait tant qu'on y écrit (voir rafraichirBase). */
 function rendreBase() { const b = app.base; b.sale = false; if ($('base').hidden) { b.sale = true; return; }
   const V = verite(), folios = foliosParSource(), vues = lignesVisibles(folios), tri = b.tri, C = colonnes(), n = C.length + 3;
@@ -785,7 +787,9 @@ function rendreBase() { const b = app.base; b.sale = false; if ($('base').hidden
   if (portee) { $('ba-n-folio').textContent = ici; $('ba-n-tout').textContent = V.length; $('ba-lib-folio').textContent = 'Folio ' + app.plan;
     $('ba-portee').querySelectorAll('[data-portee]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.portee === b.portee))); }
   const fi = $('ba-filtre'); if (fi.value !== b.filtre) fi.value = b.filtre; $('ba-vider').hidden = !b.filtre;
-  $('ba-thead').innerHTML = '<tr><th class="g" title="Numéro de ligne">#</th>' + C.map(c => `<th data-k="${c.k}" class="${tri && tri.k === c.k ? 'tri' : ''}" title="Trier par ${escA(c.lib)}">${c.lib}${tri && tri.k === c.k ? `<span class="sens">${tri.sens > 0 ? '▲' : '▼'}</span>` : ''}</th>` + (c.k === 'borneDe' ? '<th class="fl"></th>' : '')).join('') + '<th></th></tr>';
+  // l'en-tête : chaque colonne garde sa largeur (sa classe), qu'il y ait des lignes ou non ; elle trie au clic, à Entrée, à Espace
+  $('ba-thead').innerHTML = '<tr><th class="g" title="Numéro de ligne">#</th>' + C.map(c => { const t = tri && tri.k === c.k;
+    return `<th data-k="${c.k}" class="${c.cls}${t ? ' tri' : ''}" title="Trier par ${escA(c.lib)}" tabindex="0" role="button" aria-sort="${t ? (tri.sens > 0 ? 'ascending' : 'descending') : 'none'}">${c.lib}${t ? `<span class="sens" aria-hidden="true">${tri.sens > 0 ? '▲' : '▼'}</span>` : ''}</th>` + (c.k === 'borneDe' ? '<th class="fl"></th>' : ''); }).join('') + '<th class="x"></th></tr>';
   // « Tout », sans tri ni filtre : un intercalaire par folio
   let html = '', dernier = null; const groupes = groupesParFolio(), parFolio = new Map();
   if (groupes) vues.forEach(([l]) => { const p = premierFolio(l, folios); parFolio.set(p, (parFolio.get(p) || 0) + 1); });
@@ -806,6 +810,10 @@ function marquerLignes() { if ($('base').hidden) return;
 const natureDe = nom => { const q = lireRepere(nom); return (q && q.num && CODES[q.code]) ? CODES[q.code].nom : 'équipement'; };
 const triNaturel = (a, b) => String(a).localeCompare(String(b), 'fr', { numeric: true });
 const pluriel = (n, mot) => n + ' ' + mot + (n > 1 && !/[sxz]$/.test(mot) ? 's' : '');   // « 2 harness », pas « harnesss »
+/* Le même, le nombre lié à son mot par une espace insécable : dans un texte qui coule (un bilan, l'état d'un document),
+   jamais le chiffre en bout de ligne et son mot dessous. `pluriel` garde l'espace simple : la fiche en retire le nombre
+   (« 3 potentiels » → « potentiels », 08-fiche). */
+const INSECABLE = '\u00a0', plurielLie = (n, mot) => pluriel(n, mot).replace(' ', INSECABLE);
 /* La fiche se refait après chaque correction et quand la place change (fenêtre, poignée) — jamais sous les doigts de
    qui y ÉCRIT (un champ de la fiche a le focus). Un bouton de la fiche qu'on vient de presser (une puce, une variante)
    a le focus lui aussi : la fiche se refait quand même, et `rendreFiche` lui rend le focus. */
@@ -1038,7 +1046,9 @@ function rangsDeModules(P, capacite) { const n = P.modules.length; if (n <= capa
 function dessinPhysique(nom, P, largeur, opts) { opts = opts || {};
   const fils = P.modules.map(m => nom ? filsDuModule(nom, m) : []), badge = !!nom && plans().length > 1;
   const pas = pasDesModules(fils.flat(), badge), rangs = rangsDeModules(P, Math.max(1, Math.floor((largeur - 6) / pas)));   // 6 : les marges du SVG
-  const W = Math.max(...rangs.map(r => r.length)) * pas, forme = opts.forme || 'reglette';
+  // une prise (ou un connecteur) a ses deux bandes d'au moins 140 px, la largeur de « PARTIE MOBILE · fiche » (rangCoupure) :
+  // le dessin les prend en entier, bord droit compris
+  const forme = opts.forme || 'reglette', W = Math.max(Math.max(...rangs.map(r => r.length)) * pas, forme === 'reglette' ? 0 : 140);
   let y = 0, s = '';
   rangs.forEach((r, k) => { const o = { badge, sansFils: !nom, forme, premier: k === 0, dernier: k === rangs.length - 1 };
     const R = forme === 'reglette' ? rangReglette(P, r, fils, pas, o) : rangCoupure(P, r, fils, pas, o);
@@ -1166,6 +1176,9 @@ function lierBase() { const t = $('ba-tab'), corps = $('ba-tbody'), fi = $('ba-f
   $('ba-portee').addEventListener('click', e => { const b = e.target.closest('[data-portee]'); if (!b || app.base.portee === b.dataset.portee) return; app.base.portee = b.dataset.portee; memoriserBase(); rendreBase(); });
   $('ba-thead').addEventListener('click', e => { const th = e.target.closest('th[data-k]'); if (!th) return; const k = th.dataset.k, tri = app.base.tri;
     app.base.tri = !tri || tri.k !== k ? { k, sens: 1 } : (tri.sens > 0 ? { k, sens: -1 } : null); rendreBase(); });
+  // au clavier, comme les en-têtes des normes : Entrée ou Espace trie, et l'en-tête refait garde le focus
+  $('ba-thead').addEventListener('keydown', e => { const th = e.target.closest('th[data-k]'); if (!th || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault(); e.stopPropagation(); const k = th.dataset.k; th.click(); const n = $('ba-thead').querySelector(`th[data-k="${k}"]`); if (n) n.focus(); });
   t.addEventListener('focusin', e => { if (e.target.dataset.f != null) entrerCellule(e.target); });
   t.addEventListener('input', e => { const inp = e.target; if (inp.dataset.f == null) return; clearTimeout(sT); sT = setTimeout(() => appliquerCellule(inp), 350); });
   t.addEventListener('change', e => { const inp = e.target; if (inp.dataset.f == null) return; clearTimeout(sT); appliquerCellule(inp); });
@@ -1233,18 +1246,24 @@ function ficheCartouche() { const c = app.contrat.cartouche;
   ouvrirFiche({ mode: 'cartouche' }, corps, '');
   CHAMPS_CARTOUCHE.forEach(([id, k]) => { $(id).addEventListener('input', e => { c[k] = e.target.value; }); $(id).addEventListener('change', () => { peindre(); rallumer(); sauver(); }); });
 }
+/* Coller des liaisons : l'ordre des colonnes s'écrit avec des points médians liés à ce qui les précède (aucune ligne
+   ne commence par « · ») ; un texte où rien ne se reconnaît marque le champ lui-même, en rouge, avec ce qu'il faut
+   vérifier — le mot qui passe s'efface, le champ le dit encore — jusqu'à ce qu'on y écrive. */
 function ficheColler() {
+  const ordre = ['Équip.1', 'Borne', 'PN', 'Équip.2', 'Borne', 'PN', 'Fil', 'Type', 'Route', 'Folio'].join('\u00a0· ');
   const corps = tete('Charger', 'Coller des liaisons')
     + '<p class="note">Une liaison par ligne, colonnes séparées par <b>;</b> <b>,</b> ou une tabulation. Un export du retest est reconnu à ses en-têtes ; sinon l’ordre attendu est :</p>'
-    + '<p class="note mono">Équip.1 · Borne · PN · Équip.2 · Borne · PN · Fil · Type · Route · Folio</p>'
-    + '<label class="champ"><span>Lignes</span><textarea id="co-txt" placeholder="210SP1;12;;115CD;3;;W-101;DR24;;" spellcheck="false"></textarea></label>';
+    + `<p class="note mono">${ordre}</p>`
+    + '<label class="champ" id="co-champ"><span>Lignes</span><textarea id="co-txt" placeholder="210SP1;12;;115CD;3;;W-101;DR24;;" spellcheck="false" aria-describedby="co-msg"></textarea><small class="champ-msg" id="co-msg" hidden></small></label>';
   const pied = '<button class="btn cuivre" id="co-ok">Charger</button><span class="espace"></span><button class="btn lien" id="co-fichier">…ou choisir un fichier</button>';
   ouvrirFiche({ mode: 'coller' }, corps, pied);
-  $('co-ok').onclick = () => { const r = lireTexte($('co-txt').value);
-    if (!r.liaisons.length) { dire('Aucune liaison reconnue : vérifie le séparateur et l’ordre des colonnes.', true); return; }
-    chargerContrat(r.liaisons, 'collage de ' + r.liaisons.length + ' liaisons', 'Collage'); dire(r.liaisons.length + ' liaisons chargées.'); };
+  const txt = $('co-txt'), marquer = msg => { $('co-champ').classList.toggle('erreur', !!msg); txt.setAttribute('aria-invalid', String(!!msg)); $('co-msg').textContent = msg || ''; $('co-msg').hidden = !msg; };
+  $('co-ok').onclick = () => { const r = lireTexte(txt.value);
+    if (!r.liaisons.length) { const msg = 'Aucune liaison reconnue : vérifie le séparateur et l’ordre des colonnes.'; marquer(msg); dire(msg, true); txt.focus(); return; }
+    marquer(''); chargerContrat(r.liaisons, 'collage de ' + pluriel(r.liaisons.length, 'liaison'), 'Collage'); dire(pluriel(r.liaisons.length, 'liaison') + ' chargée' + (r.liaisons.length > 1 ? 's' : '') + '.'); };
+  txt.addEventListener('input', () => { if ($('co-champ').classList.contains('erreur')) marquer(''); });
   $('co-fichier').onclick = () => $('fichier').click();
-  $('co-txt').focus();
+  txt.focus();
 }
 /* La bible des barrettes (ficheBible, pictoBible, zoomBible, importerBible), la norme et son import (ficheNormes, importerNorme) vivent dans 08-normes.js. */
 

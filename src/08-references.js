@@ -11,8 +11,8 @@
      · Un clic ouvre la COMPARAISON : à l'échelle de l'ÉQUIPEMENT (ses
        lignes), de son VOISINAGE (ce qui lui est relié dans le dessin, à un
        ou deux pas) ou du DESSIN entier — en vert ce que la machine a et que
-       nous n'avons pas, en orange ce qui diffère, en gris ce qui est pareil,
-       en bleu ce que nous avons en plus ; ses repères lus avec les nôtres
+       nous n'avons pas, en ambre ce qui diffère, en gris ce qui est pareil,
+       sur fond gris (neutre : ni à reprendre ni à voir) ce que nous avons en plus ; ses repères lus avec les nôtres
        (même repère, part number, voisins, code — « ? » quand c'est proposé :
        un clic sur la puce CONFIRME la proposition ou la CORRIGE, parmi nos
        repères de même code ou tous, ou « nouveau chez nous » ; le choix se
@@ -80,8 +80,10 @@ function comparaisonDe(harness, fwd, repereRef, repere, portee, pas) { const D =
 function repereHtml(r) { const d = decoderRepere(r); if (!d) return `<span class="rp">${esc(r)}</span>`;
   return `<span class="rp" title="${escA(direRepere(r))}"><span class="rp-zone">${esc(d.zone)}</span><span class="rp-code${d.connu ? '' : ' inconnu'}">${esc(d.code)}</span><span class="rp-ordre">${d.ordre != null ? d.ordre : ''}</span>${d.variante ? `<span class="rp-var">${esc(d.variante)}</span>` : ''}</span>`; }
 const plurielNature = (n, k) => k > 1 && !/[sx]$/.test(n.split(' ')[0]) ? n.replace(/^(\S+)/, '$1s') : n;
-// « 3 pareils · 1 diffère · 2 manquent · 1 en plus » — seulement ce qui est là
-function compteMots(c) { return [c.identique ? c.identique + ' pareil' + (c.identique > 1 ? 's' : '') : '', c.differe ? c.differe + ' diffère' + (c.differe > 1 ? 'nt' : '') : '', c.manque ? c.manque + ' manque' + (c.manque > 1 ? 'nt' : '') : '', c.enplus ? c.enplus + ' en plus' : ''].filter(Boolean).join(' · ') || 'aucune ligne'; }
+// « 3 pareils · 1 diffère · 2 manquent · 1 en plus » — seulement ce qui est là ; chaque chiffre lié à son mot, chaque
+// « · » à ce qui le précède (espaces insécables : la ligne ne coupe qu'après un point médian)
+const SEP_POINT = INSECABLE + '· ';   // INSECABLE, plurielLie : 08-interface
+function compteMots(c) { return [c.identique ? c.identique + INSECABLE + 'pareil' + (c.identique > 1 ? 's' : '') : '', c.differe ? c.differe + INSECABLE + 'diffère' + (c.differe > 1 ? 'nt' : '') : '', c.manque ? c.manque + INSECABLE + 'manque' + (c.manque > 1 ? 'nt' : '') : '', c.enplus ? c.enplus + INSECABLE + 'en plus' : ''].filter(Boolean).join(SEP_POINT) || 'aucune ligne'; }
 // les descriptions que le retest porte, par repère
 function descriptionsDe(D) { const m = new Map(); D.liaisons.forEach(l => { if (l.descriptionDe && !m.has(l.de)) m.set(l.de, l.descriptionDe); if (l.descriptionVers && !m.has(l.vers)) m.set(l.vers, l.descriptionVers); }); return m; }
 const etatEquipement = e => e.sur === 'cible' ? 'cible' : !e.chezNous ? 'manque' : incertain(e.sur) ? 'propose' : 'chez';
@@ -92,11 +94,11 @@ function dejaFaitHtml(nom) { const I = indexReferences(); if (!I) return '';
   const cs = candidatsDeReference(I, verite(), nom, 3); if (!cs.length) return '';
   const ligne = c => { const D = c.fwd ? dessinDe(I, c.harness, c.fwd) : null, C = D ? comparaisonDe(c.harness, c.fwd, c.repere, nom, 'dessin') : null;
     const manque = C ? C.manquent.slice(0, 3).map(e => `<b>${esc(e.repere)}</b>${e.nature ? ' <i>' + esc(e.nature) + '</i>' : ''}`).join(', ') + (C.manquent.length > 3 ? ' …' : '') : '';
-    const dessin = D ? `<span class="cd-ligne cd-dessin"><span class="cd-fwd" title="Le dessin (FWD) où ${escA(c.repere)} apparaît">${esc(c.fwd)}</span> · ${pluriel(D.equipements.size, 'équipement')}${C ? ` · <b>${C.chezNous}</b> chez nous${C.manquent.length ? ' · il manque ' + manque : ''}${C.compte.differe ? ` · ${C.compte.differe} fil${C.compte.differe > 1 ? 's' : ''} diffère${C.compte.differe > 1 ? 'nt' : ''}` : ''}` : ''}${c.fwds.length > 1 ? ` · sur ${c.fwds.length} dessins` : ''}</span>` : '';
+    const dessin = D ? `<span class="cd-ligne cd-dessin"><span class="cd-fwd" title="Le dessin (FWD) où ${escA(c.repere)} apparaît">${esc(c.fwd)}</span>${SEP_POINT}${plurielLie(D.equipements.size, 'équipement')}${C ? `${SEP_POINT}<b>${C.chezNous}</b>${INSECABLE}chez${INSECABLE}nous${C.manquent.length ? SEP_POINT + 'il manque ' + manque : ''}${C.compte.differe ? `${SEP_POINT}${C.compte.differe}${INSECABLE}fil${C.compte.differe > 1 ? 's' : ''} diffère${C.compte.differe > 1 ? 'nt' : ''}` : ''}` : ''}${c.fwds.length > 1 ? `${SEP_POINT}sur ${plurielLie(c.fwds.length, 'dessin')}` : ''}</span>` : '';
     return `<li class="fi-cand cd-${c.taux >= 0.8 ? 'ok' : c.taux >= 0.4 ? 'att' : 'ko'}" data-ref="${escA(c.harness)}" data-rep="${escA(c.repere)}" data-fwd="${escA(c.fwd || '')}" tabindex="0" role="button" title="${escA('Comparer avec ' + c.repere + ' de ' + c.harness)}">`
-      + `<span class="cd-taux"><b>${Math.round(c.taux * 100)} %</b></span><span class="cd-corps"><span class="cd-ligne">${repereHtml(c.repere)}<span class="cd-mots">${esc(direRepere(c.repere))}</span></span>`
-      + `<span class="cd-ligne cd-ou"><b>${esc(c.harness)}</b>${c.appareil ? ' · ' + esc(c.appareil) : ''}${c.retest ? ' · ' + esc(c.retest) : ''} · <i>${c.par === 'pn' ? 'même part number' : 'même code'}</i></span>${dessin}</span>${ico('fleche', 'cd-fleche')}</li>`; };
-  return `<section class="fi-cadre fi-deja"><div class="fi-ref-ligne"><b class="fi-ref">Déjà fait</b><span class="cd-compte">${pluriel(I.harnais.size, 'machine')} · ${pluriel(I.dessins.size, 'dessin')}</span></div><ul class="fi-liste cd-liste">${cs.map(ligne).join('')}</ul></section>`; }
+      + `<span class="cd-taux"><b>${Math.round(c.taux * 100)}${INSECABLE}%</b></span><span class="cd-corps"><span class="cd-ligne">${repereHtml(c.repere)} <span class="cd-mots">${esc(direRepere(c.repere))}</span></span>`
+      + `<span class="cd-ligne cd-ou"><b>${esc(c.harness)}</b>${c.appareil ? SEP_POINT + esc(c.appareil) : ''}${c.retest ? SEP_POINT + esc(c.retest) : ''}${SEP_POINT}<i>${c.par === 'pn' ? 'même part number' : 'même code'}</i></span>${dessin}</span>${ico('fleche', 'cd-fleche')}</li>`; };
+  return `<section class="fi-cadre fi-deja"><div class="fi-ref-ligne"><b class="fi-ref">Déjà fait</b><span class="cd-compte">${plurielLie(I.harnais.size, 'machine')}${SEP_POINT}${plurielLie(I.dessins.size, 'dessin')}</span></div><ul class="fi-liste cd-liste">${cs.map(ligne).join('')}</ul></section>`; }
 
 /* ---- LA COMPARAISON : la fiche de l'équipement contre l'équipement d'une machine, à trois échelles ------------ */
 const cleComparaison = (c, portee) => c.harness + '|' + c.repere + (portee === 'equipement' ? '' : '|' + portee + (portee === 'voisinage' ? REF.pas : ''));
@@ -130,9 +132,9 @@ function ficheComparaison(c) { const I = indexReferences(), h = I && I.harnais.g
     const ligne = x => { const b = x.ref || x.notre, k = x.ref ? cleLigne(x.ref) : '';
       return `<li class="fi-fil cp-${x.etat}">${coche(x.etat, k)}<span class="fi-ct"><b>${esc(b.borne)}</b></span><span class="fi-w">${esc(b.typeBrut || '—')}</span><span class="fi-dest${b.amont ? ' amont' : ''}">${ico('fleche')}<span>${x.ref ? vers(x.ref.autre) : esc(x.notre.autre)}${bout(b.borneAutre)}</span></span>`
         + (x.etat === 'differe' ? `<span class="fi-ko">chez nous : ${esc(x.notre.typeBrut || '—')} → ${esc(x.notre.autre)}${bout(x.notre.borneAutre)}</span>` : '') + '</li>'; };
-    liste = ['manque', 'differe', 'identique', 'enplus'].map(e => { const xs = E.lignes.filter(x => x.etat === e); return xs.length ? `<li class="fi-groupe cp-${e}">${mots[e]} · ${xs.length}</li>` + xs.map(ligne).join('') : ''; }).join('');
+    liste = ['manque', 'differe', 'identique', 'enplus'].map(e => { const xs = E.lignes.filter(x => x.etat === e); return xs.length ? `<li class="fi-groupe cp-${e}">${mots[e]}${SEP_POINT}${xs.length}</li>` + xs.map(ligne).join('') : ''; }).join('');
     nb = E.lignes.filter(x => (x.etat === 'manque' || x.etat === 'differe') && REF.coches.has(cle + '|' + cleLigne(x.ref))).length;
-    bilan = CD ? `<p class="cp-bilan">Dessin <b class="cd-fwd">${esc(D.fwd)}</b> · ${pluriel(CD.nEquipements, 'équipement')} · <b>${CD.chezNous}</b> chez nous${CD.manquent.length ? ' · il manque ' + CD.manquent.slice(0, 4).map(e => `<b>${esc(e.repere)}</b>${e.nature ? ' <i>' + esc(e.nature) + '</i>' : ''}`).join(', ') + (CD.manquent.length > 4 ? ' …' : '') : ''} · ${compteMots(CD.compte)}</p>` : '';
+    bilan = CD ? `<p class="cp-bilan">Dessin <b class="cd-fwd">${esc(D.fwd)}</b>${SEP_POINT}${plurielLie(CD.nEquipements, 'équipement')}${SEP_POINT}<b>${CD.chezNous}</b>${INSECABLE}chez${INSECABLE}nous${CD.manquent.length ? SEP_POINT + 'il manque ' + CD.manquent.slice(0, 4).map(e => `<b>${esc(e.repere)}</b>${e.nature ? ' <i>' + esc(e.nature) + '</i>' : ''}`).join(', ') + (CD.manquent.length > 4 ? ' …' : '') : ''}${SEP_POINT}${compteMots(CD.compte)}</p>` : '';
   } else {
     // une ligne de la référence vue de l'équipement `e` de l'ensemble ; une ligne en plus, vue de son image chez nous
     const ligne = (x, e) => { if (x.ref) { const L = x.ref, amont = L.vers === e.repere && L.de !== e.repere, borne = amont ? L.borneVers : L.borneDe, autre = amont ? L.de : L.vers, bAutre = amont ? L.borneDe : L.borneVers;
@@ -143,7 +145,7 @@ function ficheComparaison(c) { const I = indexReferences(), h = I && I.harnais.g
     liste = C.equipements.map(e => `<li class="fi-groupe cp-eq cp-eq-${etatEquipement(e)}"><span class="cp-eq-rep">${repereHtml(e.repere)}</span><span class="cp-eq-mots">${esc(e.nature || 'équipement')}</span><span class="cp-eq-vers">${versMots(e)}</span><span class="cp-eq-n">${compteMots(e.compte)}</span></li>` + e.lignes.map(x => ligne(x, e)).join('')).join('');
     const uniques = new Map(); C.lignes.forEach(x => { if (x.k && (x.etat === 'manque' || x.etat === 'differe')) uniques.set(x.k, x); });
     nb = [...uniques.keys()].filter(k => REF.coches.has(cle + '|' + k)).length;
-    bilan = `<p class="cp-bilan">${portee === 'dessin' ? 'Dessin' : 'Voisinage à ' + pluriel(REF.pas, 'pas') + ' dans'} <b class="cd-fwd">${esc(D.fwd)}</b> · ${pluriel(C.nEquipements, 'équipement')} · <b>${C.chezNous}</b> chez nous${C.manquent.length ? ' · il manque ' + C.manquent.slice(0, 4).map(e => `<b>${esc(e.repere)}</b>${e.nature ? ' <i>' + esc(e.nature) + '</i>' : ''}`).join(', ') + (C.manquent.length > 4 ? ' …' : '') : ''}${C.proposes.length ? ` · ${C.proposes.length} proposé${C.proposes.length > 1 ? 's' : ''} à confirmer` : ''} · ${compteMots(C.compte)}</p>`;
+    bilan = `<p class="cp-bilan">${portee === 'dessin' ? 'Dessin' : 'Voisinage à ' + plurielLie(REF.pas, 'pas') + ' dans'} <b class="cd-fwd">${esc(D.fwd)}</b>${SEP_POINT}${plurielLie(C.nEquipements, 'équipement')}${SEP_POINT}<b>${C.chezNous}</b>${INSECABLE}chez${INSECABLE}nous${C.manquent.length ? SEP_POINT + 'il manque ' + C.manquent.slice(0, 4).map(e => `<b>${esc(e.repere)}</b>${e.nature ? ' <i>' + esc(e.nature) + '</i>' : ''}`).join(', ') + (C.manquent.length > 4 ? ' …' : '') : ''}${C.proposes.length ? `${SEP_POINT}${C.proposes.length}${INSECABLE}proposé${C.proposes.length > 1 ? 's' : ''} à confirmer` : ''}${SEP_POINT}${compteMots(C.compte)}</p>`;
   }
   const taux = portee === 'equipement' ? E.taux : C.taux;
   const portees = D ? `<div class="fi-puces cp-portee" role="group" aria-label="Échelle de la comparaison">${[['equipement', 'Équipement'], ['voisinage', 'Voisinage'], ['dessin', 'Dessin']].map(([p, t]) => `<button class="fi-chip" data-portee="${p}" aria-pressed="${p === portee}">${t}</button>`).join('')}${portee === 'voisinage' ? `<span class="cp-saut"></span><span class="cp-pas-mot">ce qui lui est relié à</span>` + [1, 2].map(n => `<button class="fi-chip cp-pas" data-pas="${n}" aria-pressed="${REF.pas === n}">${n} pas</button>`).join('') : ''}</div>` : '';
@@ -188,9 +190,10 @@ function lierComparaison(c) { const box = $('ba-equip'), I = indexReferences(), 
 const FWD = { ouvert: false, D: null, repere: '', notre: '', L: null, dessin: null, cmp: null, choisi: '', q: '', vue: { s: 1, tx: 0, ty: 0 }, glisse: null };
 const ICONES_FWD = { ajuster: '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>', enregistrer: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>', comparer: '<path d="M4 7h11M11 3l4 4-4 4M20 17H9M13 13l-4 4 4 4"/>' };
 const icoFwd = k => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONES_FWD[k]}</svg>`;
-/* Le calque, créé une fois : la tête (le dessin, sa machine, ses chiffres, les outils), la scène, la colonne. */
+/* Le calque, créé une fois : la tête (le dessin, sa machine, les outils), la scène, la colonne (qui dit ses chiffres,
+   une fois). */
 function assurerFwd() { if ($('fwd')) return; const d = document.createElement('div'); d.id = 'fwd'; d.className = 'fwd'; d.hidden = true; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-labelledby', 'fw-titre');
-  d.innerHTML = `<div class="fw-boite"><header class="fw-tete"><div class="min0"><div class="sur" id="fw-sur"></div><h2 class="titre" id="fw-titre"></h2><div class="fw-compte" id="fw-compte"></div></div>`
+  d.innerHTML = `<div class="fw-boite"><header class="fw-tete"><div class="min0"><div class="sur" id="fw-sur"></div><h2 class="titre" id="fw-titre"></h2></div>`
     + `<div class="fw-outils"><button class="fi-bouton" id="fw-comparer" hidden title="La comparaison de ce dessin entier avec notre contrat">${icoFwd('comparer')}<span>Comparer</span></button><button class="fi-bouton" id="fw-ajuster" title="Ajuster le dessin à l’écran (0)">${icoFwd('ajuster')}<span>Ajuster</span></button><button class="fi-bouton" id="fw-svg" title="Enregistrer ce dessin en SVG">${icoFwd('enregistrer')}<span>SVG</span></button></div>`
     + `<button class="fi-x" id="fw-fermer" aria-label="Fermer le dessin (Échap)">${ico('fermer')}</button></header>`
     + `<div class="fw-corps"><div class="fw-scene" id="fw-scene" title="Molette pour zoomer, glisser pour déplacer"></div><aside class="fw-colonne" id="fw-colonne" aria-label="Ce que le dessin contient"></aside></div></div>`;
@@ -200,8 +203,7 @@ function assurerFwd() { if ($('fwd')) return; const d = document.createElement('
 function ouvrirFwd(o) { const I = indexReferences(), D = I && dessinDe(I, o.harness, o.fwd); if (!D) { dire('Ce dessin n’est pas dans la base.', true); return; }
   assurerFwd(); Object.assign(FWD, { D, repere: o.repere || '', notre: o.notre || '', L: null, dessin: null, cmp: null, choisi: o.repere || '', q: '', ouvert: true });
   const d = $('fwd'); d.hidden = false; document.body.classList.add('fwd-ouvert');
-  $('fw-sur').textContent = ['Dessin', D.harness, D.appareil, D.retest].filter(Boolean).join(' · '); $('fw-titre').textContent = D.fwd;
-  const R = resumeDessin(D); $('fw-compte').textContent = [pluriel(R.equipements, 'équipement'), pluriel(R.fils, 'fil'), R.pontages ? pluriel(R.pontages, 'pontage') : '', R.masses ? pluriel(R.masses, 'masse') : ''].filter(Boolean).join(' · ');
+  $('fw-sur').textContent = ['Dessin', D.harness, D.appareil, D.retest].filter(Boolean).join(SEP_POINT); $('fw-titre').textContent = D.fwd;
   $('fw-comparer').hidden = !(FWD.repere && FWD.notre);
   $('fw-scene').innerHTML = '<div class="fw-attente">Le moteur place et route le dessin…</div>'; $('fw-colonne').innerHTML = ''; $('fw-fermer').focus();
   setTimeout(() => { if (!FWD.ouvert || FWD.D !== D) return;
@@ -254,7 +256,8 @@ function choisirDansFwd(nom, aller) { FWD.choisi = nom || ''; marquerFwd(); cons
   col.querySelectorAll('.fw-eq').forEach(li => li.classList.toggle('on', li.dataset.nom === FWD.choisi));
   const li = col.querySelector('.fw-eq.on'); if (li && li.scrollIntoView) { try { li.scrollIntoView({ block: 'nearest' }); } catch (_) { } }
   if (aller && nom) viserFwd(nom); }
-/* LA COLONNE qui explique le dessin : ce qu'il contient (par nature), le bilan contre notre contrat, la légende, puis
+/* LA COLONNE qui explique le dessin : ses chiffres (lus comme un instrument, en B612), ce qu'il contient (par nature),
+   le bilan contre notre contrat, la légende, puis
    chaque équipement — le repère décodé, sa description et son part number, ce qu'il devient chez nous, ce qui lui est
    relié, ses lignes (pareilles, différentes, manquantes). Le comparé d'abord, puis ce qui manque, puis le reste. */
 function colonneFwd() { const D = FWD.D, C = FWD.cmp, R = resumeDessin(D), des = descriptionsDe(D), parRep = new Map((C ? C.equipements : []).map(e => [e.repere, e]));
@@ -301,19 +304,20 @@ function lierFwd() { const d = $('fwd'), sc = $('fw-scene');
 /* ---- LA BIBLE : la base par harness et par dessin, une recherche ---------------------------------------------- */
 function ficheReferences() { const R = app.references, I = indexReferences();
   const etat = !R ? '<div class="bible-etat"><span><b>Aucun contrat déjà fait</b> : dépose un retest de plusieurs harness (les seize colonnes), il se garde dans ce navigateur, rien ne part sur le réseau.</span></div>'
-    : `<div class="bible-etat"><span><b>${esc(R.nom || 'Contrats déjà faits')}</b> · ${I.harnais.size} harness · ${pluriel(I.dessins.size, 'dessin')} · ${pluriel(R.liaisons.length, 'liaison')} · gardés dans ce navigateur</span></div>`;
+    : `<div class="bible-etat"><span><b>${esc(R.nom || 'Contrats déjà faits')}</b>${SEP_POINT}${plurielLie(I.harnais.size, 'harness')}${SEP_POINT}${plurielLie(I.dessins.size, 'dessin')}${SEP_POINT}${plurielLie(R.liaisons.length, 'liaison')}${SEP_POINT}gardés dans ce navigateur</span></div>`;
   return `<h3 class="sous-titre">Les contrats déjà faits</h3>${etat}` + (I ? `<div id="rf-base">${rfBaseHtml()}</div>` : '')
     + '<p class="note">Pour un équipement du contrat, sa fiche dit les trois machines les plus proches (même part number, sinon même code), le taux de lignes communes, et le dessin (FWD) où il apparaît ; la comparaison — l’équipement, son voisinage, le dessin entier — montre ce qu’elles ont en plus, ce qui diffère, et reprend ce qu’on coche ; « Dessin » ouvre le FWD dessiné par l’outil. « La solution du PH n’est pas forcément la bonne » : ce qui est repris passe les mêmes contrôles que le reste.</p>'; }
 function rfBaseHtml() { const I = indexReferences(); if (!I) return ''; const Q = chercherReferences(I, REF.q, 80), t = s => `<div class="sur rf-sur">${s}</div>`;
-  const cherche = `<div class="rf-cherche">${ico('loupe')}<input id="rf-q" value="${escA(REF.q)}" placeholder="Chercher un harness, un dessin (FWD), un appareil, un repère" aria-label="Chercher dans les contrats déjà faits" autocomplete="off" spellcheck="false"></div>`;
+  const cherche = `<div class="filtre rf-cherche">${ico('loupe')}<input id="rf-q" value="${escA(REF.q)}" placeholder="Chercher un harness, un dessin (FWD), un appareil, un repère" aria-label="Chercher dans les contrats déjà faits" autocomplete="off" spellcheck="false"></div>`;
   // le nom d'un dessin est le bouton qui l'ouvre ; une table large défile de côté (`.norme-defile`, comme la norme)
   const voir = (h, fwd, rep) => `<button class="rf-voir" data-h="${escA(h)}" data-fwd="${escA(fwd)}"${rep ? ` data-rep="${escA(rep)}"` : ''} title="${escA('Voir le dessin ' + fwd + ' de ' + h + (rep ? ', ' + rep + ' en évidence' : ''))}">${ico('voir')}<span>${esc(fwd)}</span></button>`;
-  const table = (th, lignes) => `<div class="norme-defile"><table class="norme rf-tab"><thead><tr>${th.map(x => `<th>${x}</th>`).join('')}</tr></thead><tbody>${lignes}</tbody></table></div>`;
-  const harnais = Q.harnais.length ? t('Par harness · ' + Q.harnais.length) + table(['Harness', 'Appareil', 'Retest', 'Dessins', 'Équipements', 'Liaisons'],
+  // une colonne de chiffres (ou de dates) se range à droite, son en-tête avec elle : `droite('Fils')`
+  const droite = x => ({ d: x }), table = (th, lignes) => `<div class="norme-defile"><table class="norme rf-tab"><thead><tr>${th.map(x => x.d ? `<th class="d">${x.d}</th>` : `<th>${x}</th>`).join('')}</tr></thead><tbody>${lignes}</tbody></table></div>`;
+  const harnais = Q.harnais.length ? t('Par harness · ' + Q.harnais.length) + table(['Harness', 'Appareil', droite('Retest'), droite('Dessins'), droite('Équipements'), droite('Liaisons')],
     Q.harnais.sort((a, b) => triNaturel(a.harness, b.harness)).map(h => `<tr><td class="ref">${esc(h.harness)}</td><td class="sans">${esc(h.appareil || '—')}</td><td class="d">${esc(h.retest || '—')}</td><td class="d">${h.dessins.length}</td><td class="d">${h.equipements.size}</td><td class="d">${h.liaisons.length}</td></tr>`).join('')) : '';
-  const dessins = Q.dessins.length ? t('Par dessin (FWD) · ' + Q.dessins.length) + table(['Dessin', 'Harness', 'Appareil', '<span title="Équipements">Équip.</span>', 'Fils'],
+  const dessins = Q.dessins.length ? t('Par dessin (FWD) · ' + Q.dessins.length) + table(['Dessin', 'Harness', 'Appareil', droite('<span title="Équipements">Équip.</span>'), droite('Fils')],
     Q.dessins.sort((a, b) => triNaturel(a.fwd, b.fwd) || triNaturel(a.harness, b.harness)).map(d => `<tr><td class="ref">${voir(d.harness, d.fwd)}</td><td>${esc(d.harness)}</td><td class="sans">${esc(d.appareil || '—')}</td><td class="d">${d.equipements.size}</td><td class="d">${d.fils}</td></tr>`).join('')) : '';
-  const equipements = Q.equipements.length ? t('Repères · ' + Q.equipements.length) + table(['Repère', 'Nature', 'Part number', 'Dessin', 'Fils'],
+  const equipements = Q.equipements.length ? t('Repères · ' + Q.equipements.length) + table(['Repère', 'Nature', 'Part number', 'Dessin', droite('Fils')],
     Q.equipements.map(x => `<tr><td class="ref">${repereHtml(x.e.repere)}</td><td class="sans">${esc(direRepere(x.e.repere).replace(/ · zone .*$/, ''))}</td><td>${esc(x.e.pns.join(', ') || '—')}</td><td>${voir(x.harness, x.fwd, x.e.repere)}<div class="rf-sous">${esc(x.harness)}${x.appareil ? ' · ' + esc(x.appareil) : ''}</div></td><td class="d">${x.e.lignes.length}</td></tr>`).join('')) : '';
   return cherche + harnais + dessins + equipements + (!Q.total ? '<p class="note">Rien qui corresponde.</p>' : '') + (Q.plus ? `<p class="note">… et ${Q.plus} de plus — affine la recherche.</p>` : ''); }
 /* Les gestes de la bible, posés une fois sur le document (la bible se refait sans nous) : la recherche refait la base

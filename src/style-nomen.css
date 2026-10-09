@@ -1,11 +1,16 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    LA NOMENCLATURE DU CONTRAT (08 septies) : un document, un résumé en tuiles, des tables
    Les jetons (couleurs, typo, espacements) sont dans style.css ; ici, seulement ce qui est propre à ce domaine.
+   Le résumé : des tuiles comme celles de la fiche (.fi-tuile) — un chiffre en B612, ce qu'il compte — trois par rang.
+   Les tables : celles des documents (table.norme) ; une note « à confirmer » garde son ambre, la colonne « Où » sa place.
    ═══════════════════════════════════════════════════════════════════════ */
-.no-resume{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:var(--sp-2);margin:var(--sp-3) 0 var(--sp-2)}
-.no-tuile{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-sunken);min-width:0}
-.no-tuile b{font:700 var(--f-20)/1.1 var(--mono);color:var(--t-1);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.no-tuile span{font-size:var(--f-11);color:var(--t-2);line-height:1.3}
-.no-table td.sans{color:var(--t-2);max-width:260px;white-space:normal}
+.no-resume{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-2);margin:var(--sp-3) 0 var(--sp-2)}
+.no-tuile{display:flex;flex-direction:column;gap:2px;padding:12px;border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-surface);min-width:0}
+.no-tuile b{font:700 18px/1.2 var(--titre);color:var(--t-1);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.no-tuile span{font-size:var(--f-12);color:var(--t-2);line-height:1.35}
+.no-table td.sans{color:var(--t-2);min-width:160px;max-width:260px;white-space:normal}
 .no-table td.d{font-variant-numeric:tabular-nums}
-.no-table td i{font-style:normal;color:var(--t-3)}
+/* un « ~ » (une longueur d'hypothèse) en retrait ; une note « à confirmer » (.fi-avenir) garde son ambre, en linéale,
+   sous la référence */
+.no-table td i:not(.fi-avenir){font-style:normal;color:var(--t-3)}
+.no-table .fi-avenir{display:block;width:fit-content;max-width:100%;margin-top:4px;white-space:normal;font-family:var(--sans)}
