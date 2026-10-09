@@ -7,7 +7,8 @@
    app.source       les liaisons d'origine quand le contrat est découpé en folios
                     tout seul ; `verite()` rend toujours ce qu'on édite
    app.plan         '*' = tout d'un tenant, sinon le folio affiché
-   app.dessin       le dessin du folio affiché (placement + routage)
+   app.dessin       le dessin du folio affiché (placement + routage) — nul le
+                    temps qu'un gros folio jamais vu se place au loin (Worker)
    app.base         le tableau des liaisons, en tiroir en bas : ouvert ou non, ce
                     qu'il montre (ce folio ou tout), son filtre, son tri
    app.cible        ce qui est choisi : un bloc { type:'bloc', nom } ou un fil
@@ -63,6 +64,9 @@ const liaisonsDuPlan = () => liaisonsDe(app.plan);
    vu est instantané. La clé : ce que le placement lit de chaque liaison. */
 const placements = new Map(), PLACEMENTS_GARDES = 24;
 const clePlacement = L => JSON.stringify(L.map(l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable, l.pnDe, l.pnVers]));
+// un placement entre en mémoire ; au-delà de la réserve, le moins récent s'en va — jamais celui du folio affiché (la retouche le relit)
+function garderPlacement(cle, P) { placements.delete(cle); placements.set(cle, P); const ici = cleCourante();
+  for (const k of [...placements.keys()]) { if (placements.size <= PLACEMENTS_GARDES) break; if (k !== ici) placements.delete(k); } }
 function placementDe(L) {
   const cle = clePlacement(L);
   // un folio retouché à la souris : la retouche, toujours (elle se défait par « automatique » ou Ctrl+Z)
@@ -70,8 +74,10 @@ function placementDe(L) {
   // un folio déjà affiné (dans cette session, ou gardé d'une autre) : son meilleur dessin
   if (affinage.profonds.has(cle)) return affinage.profonds.get(cle);
   if (placements.has(cle)) { const P = placements.get(cle); placements.delete(cle); placements.set(cle, P); return P; }
-  const P = meilleurPlacement(L); placements.set(cle, P);
-  if (placements.size > PLACEMENTS_GARDES) placements.delete(placements.keys().next().value);
+  // un gros folio jamais vu : le moteur le place AU LOIN (un Worker), le dessin viendra — l'attente se voit ; un petit, ici même
+  if (placement.attentes.has(cle)) { const a = placement.attentes.get(cle); if (!a.vue || a.plan !== app.plan) { a.vue = true; a.plan = app.plan; a.cibleAvant = app.cible; } return null; }
+  if (auLoin(L) && demanderPlacement(cle, L, app.plan)) return null;
+  const P = meilleurPlacement(L); garderPlacement(cle, P); if (placement.ailleurs && L.length > SEUIL_ICI) garderConcours(cle, P);
   return P;
 }
 
@@ -129,10 +135,10 @@ function montrerAffinage() { const el = $('affinage'); if (!el) return; const j 
   $('af-txt').textContent = (ici ? 'affinage ' : 'affine un autre folio ') + (e ? e.k + ' / ' + e.n : '') + (reste ? ' · ' + reste + ' en attente' : '');
   el.title = 'La recherche profonde améliore le dessin en arrière-plan ; chaque mieux trouvé le remplace, et le résultat se garde dans ce navigateur.'; }
 // IndexedDB : un magasin, une entrée par version du moteur et folio ; les versions passées s'effacent
-const IDB_NOM = 'atelier-schema', IDB_MAGASIN = 'placements', IDB_RETOUCHES = 'retouches';
-function ouvrirIDB() { return new Promise((ok, ko) => { try { const r = indexedDB.open(IDB_NOM, 3);
-  r.onupgradeneeded = () => { [IDB_MAGASIN, IDB_RETOUCHES, 'references'].forEach(m => { if (!r.result.objectStoreNames.contains(m)) r.result.createObjectStore(m); }); };
-  r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error); } catch (err) { ko(err); } }); }
+const IDB_NOM = 'atelier-schema', IDB_MAGASIN = 'placements', IDB_RETOUCHES = 'retouches', IDB_CONCOURS = 'concours';
+function ouvrirIDB() { return new Promise((ok, ko) => { try { const r = indexedDB.open(IDB_NOM, 4);   // 4 : le magasin des concours (le placement d'un folio, relu à l'ouverture suivante)
+  r.onupgradeneeded = () => { [IDB_MAGASIN, IDB_RETOUCHES, 'references', IDB_CONCOURS].forEach(m => { if (!r.result.objectStoreNames.contains(m)) r.result.createObjectStore(m); }); };
+  r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error); r.onblocked = () => ko(new Error('base occupée par un autre onglet')); } catch (err) { ko(err); } }); }
 function garderAffine(cle, P) { ouvrirIDB().then(db => { db.transaction(IDB_MAGASIN, 'readwrite').objectStore(IDB_MAGASIN).put({ P, t: Date.now() }, VERSION_MOTEUR + '|' + cle); }).catch(() => { }); }
 function relireAffines() { if (!affinage.actif) return; const avant = cleCourante();
   ouvrirIDB().then(db => { const req = db.transaction(IDB_MAGASIN, 'readwrite').objectStore(IDB_MAGASIN).openCursor();
@@ -142,6 +148,113 @@ function relireAffines() { if (!affinage.actif) return; const avant = cleCourant
       if (k.startsWith(VERSION_MOTEUR + '|')) { const cle = k.slice(VERSION_MOTEUR.length + 1); if (!affinage.profonds.has(cle) && c.value && c.value.P) affinage.profonds.set(cle, c.value.P); affinage.finis.add(cle); }
       else c.delete();
       c.continue(); }; }).catch(() => { }); }
+
+/* ---- le PLACEMENT AU LOIN : un folio jamais vu se place dans un Worker --- */
+/* Le concours d'un folio chargé prend des secondes (75 fils : onze) : dans la
+   page, l'écran se figeait sans un mot. Un gros folio jamais vu se place donc
+   AU LOIN — dans un Worker refait du moteur, comme l'affinage et le FWD —
+   pendant que l'écran reste libre : un mot au milieu de la place libre (« Le
+   moteur place le folio 3… »), la puce du folio qui respire, et l'on change
+   de folio, on ouvre une fiche ou le menu. Le dessin qui arrive est
+   EXACTEMENT celui que la page aurait calculé (le concours est déterministe :
+   même entrée, même sortie) ; il se garde dans ce navigateur (IndexedDB,
+   magasin `concours`, par version du moteur) et revient à l'ouverture
+   suivante en quelques dizaines de millisecondes. Le folio affiché passe
+   toujours devant (un autre en cours lui cède la place et reprend après) ;
+   puis les folios demandés ; puis les autres folios du contrat, dans l'ordre,
+   pour être prêts quand on y va. Restent dans la page, comme avant : un petit
+   folio (SEUIL_ICI liaisons au plus — bien moins d'une seconde, on ne verrait
+   que l'attente), un contrat sans folios ou découpé par l'outil
+   (`ajusterFolios` lit le dessin aussitôt), et tout quand le navigateur
+   refuse le Worker. Sous pilote automatique (navigator.webdriver) le
+   placement reste dans la page, synchrone, pour que les bancs lisent le
+   dessin dès `redessiner()` ; `placementAilleurs(true)` l'envoie au loin
+   (tests/placement.js). */
+const SEUIL_ICI = 12;
+const placement = { ailleurs: !(typeof navigator !== 'undefined' && navigator.webdriver), worker: null, url: null, encours: null, file: [], attentes: new Map(), faits: 0, relus: 0, erreur: null, nettoye: false };
+// ce folio part-il au loin ? gros, venu du fichier (ni le dessin entier, ni un découpage de l'outil), le Worker possible
+const auLoin = L => placement.ailleurs && placement.worker !== false && app.plan !== '*' && !app.nFolios && L.length > SEUIL_ICI;
+const attenteCourante = () => { const cle = cleCourante(); return cle && placement.attentes.has(cle) ? placement.attentes.get(cle) : null; };
+/* Demander un folio : d'abord ce navigateur (le concours gardé d'une session passée), sinon la file du Worker. L'attente
+   retient la cible du moment : si une autre est choisie pendant le calcul (l'index, la recherche), c'est elle qu'on cadrera. */
+function demanderPlacement(cle, L, plan) { if (!travailleurPlacement()) return false;
+  placement.attentes.set(cle, { L: L.map(({ origine, ...l }) => l), plan, t: performance.now(), vue: plan === app.plan, cibleAvant: app.cible });
+  lireConcours(cle).then(P => { if (!placement.attentes.has(cle)) return;
+    if (P) { placement.relus++; recevoirPlacement(cle, P, false); } else { placement.file.push(cle); pomperPlacement(); } });
+  return true; }
+function travailleurPlacement() { if (placement.worker) return placement.worker; if (placement.worker === false) return null;
+  try { if (!placement.url) { const src = document.getElementById('moteur').textContent;   // le moteur, une fois : un Worker relancé le relit
+      const glue = `\nself.onmessage = e => { const { cle, liaisons } = e.data; try { postMessage({ cle, P: meilleurPlacement(liaisons) }); } catch (err) { postMessage({ cle, erreur: String(err && err.message || err) }); } };`;
+      placement.url = URL.createObjectURL(new Blob([src + glue], { type: 'text/javascript' })); }
+    const w = new Worker(placement.url);
+    w.onmessage = recevoirDuLoin; w.onerror = e => { placement.erreur = String((e && e.message) || 'Worker refusé'); placement.worker = false; placement.encours = null; placerIci(); };
+    return (placement.worker = w); }
+  catch (_) { placement.worker = false; return null; } }
+/* La file : le folio affiché d'abord — s'il attend pendant qu'un autre se calcule, l'autre cède (il reprendra) — ; puis
+   les folios demandés ; puis, d'avance, les autres folios du contrat. Ce qui ne correspond plus à un folio du contrat
+   (une liaison corrigée, un autre fichier) sort de la file. */
+function pomperPlacement() { if (!placement.ailleurs || placement.worker === false) return;
+  const vivant = cle => { const a = placement.attentes.get(cle); return !!a && plans().includes(a.plan) && clePlacement(liaisonsDe(a.plan)) === cle; };
+  placement.file = placement.file.filter(vivant);
+  [...placement.attentes.keys()].forEach(cle => { if (!vivant(cle) && !(placement.encours && placement.encours.cle === cle)) placement.attentes.delete(cle); });
+  const ici = cleCourante();
+  if (placement.encours) { if (placement.encours.cle === ici || !placement.file.includes(ici)) { montrerAttente(); return; }
+    const w = placement.worker, cede = placement.encours.cle; placement.worker = null; placement.encours = null; try { w.terminate(); } catch (_) { }
+    if (vivant(cede)) placement.file.push(cede); }
+  const cle = placement.file.includes(ici) ? ici : placement.file.shift(); placement.file = placement.file.filter(k => k !== cle);
+  if (!cle) { const p = prochainAuLoin(); if (p) demanderPlacement(p.cle, p.L, p.plan); montrerAttente(); return; }
+  const w = travailleurPlacement(); if (!w) { placerIci(); return; }
+  placement.encours = { cle, t: performance.now() }; w.postMessage({ cle, liaisons: placement.attentes.get(cle).L }); montrerAttente(); }
+// le prochain folio du contrat à placer d'avance : après le folio affiché, dans l'ordre, un folio gros et jamais vu
+function prochainAuLoin() { if (app.plan === '*' || app.nFolios) return null; const P = plans(), i = Math.max(0, P.indexOf(app.plan));
+  for (let k = 1; k < P.length; k++) { const p = P[(i + k) % P.length], L = liaisonsDe(p); if (L.length <= SEUIL_ICI) continue; const cle = clePlacement(L);
+    if (app.retouches.has(cle) || affinage.profonds.has(cle) || placements.has(cle) || placement.attentes.has(cle)) continue; return { cle, L, plan: p }; }
+  return null; }
+function recevoirDuLoin(e) { const d = e.data || {}; if (!placement.encours || d.cle !== placement.encours.cle) return;   // un calcul qu'on avait abandonné
+  placement.encours = null;
+  if (d.erreur) { placement.erreur = d.erreur; placerIci(d.cle); return; }
+  placement.faits++; recevoirPlacement(d.cle, d.P, true); }
+/* Sans Worker (refusé, ou en erreur) : le chemin d'avant, dans la page — juste après que l'attente s'est affichée, pour
+   qu'on sache ce qui se passe ; le folio affiché d'abord. */
+function placerIci(cle) { const ici = cleCourante(), cles = (cle ? [cle] : [...placement.attentes.keys()]).sort((a, b) => (b === ici) - (a === ici));
+  setTimeout(() => cles.forEach(k => { const a = placement.attentes.get(k); if (!a) return; let P = null;
+    try { P = meilleurPlacement(a.L); } catch (err) { placement.erreur = String((err && err.message) || err); }
+    recevoirPlacement(k, P, true); }), 30); }
+function recevoirPlacement(cle, P, neuf) { const a = placement.attentes.get(cle); placement.attentes.delete(cle); placement.file = placement.file.filter(k => k !== cle);
+  if (P) { garderPlacement(cle, P); if (neuf) garderConcours(cle, P); }
+  else if (a && cleCourante() === cle) dire('Le folio ' + a.plan + ' n’a pas pu se dessiner' + (placement.erreur ? ' : ' + placement.erreur : '') + '.', true);
+  if (P && cleCourante() === cle) { rafraichirDessin(); finirAttente(a); }
+  pomperPlacement(); montrerAttente(); }
+/* Le dessin attendu est là : la vue se cadre comme si le folio venait de s'ouvrir ; ce qu'on a choisi pendant l'attente
+   (depuis l'index, la recherche, le tableau) est choisi et cadré, comme si le dessin avait été là. */
+function finirAttente(a) { const c = app.cible, d = app.dessin; if (!d) return; ajuster(); if (!c) return;
+  if (c.type === 'fil') { const w = filDe(c.l); if (w) { allumerFil(w); viserFil(w); } return; }
+  if (c.type !== 'bloc' || !a || c === a.cibleAvant) return;
+  const k = d.comps.find(x => x.name === c.nom && x.kind !== 'tag'), vt = k ? null : barretteAPoser(c.nom);
+  if (k) choisirBloc(k); else if (vt) choisirBarretteAPoser(vt); viser(c.nom); }
+// la cible d'une recherche pendant que son folio se place au loin : sa fiche tout de suite, choisie et cadrée quand le dessin arrive
+function reporterCible(cible) { if (cible.type === 'fil') { const l = verite().find(x => x.cable === cible.nom); if (!l) return; app.cible = { type: 'fil', l }; } else app.cible = { type: 'bloc', nom: cible.nom };
+  ouvrirInspecteur(); }
+/* L'attente, visible : au milieu de la place libre du plan, le mot et le point qui respire ; dans la barre du bas, la puce du
+   folio qui se calcule respire aussi. L'élément se crée à la première attente, dans la planche (#attente). */
+function montrerAttente() { const a = app.contrat.liaisons.length && !app.dessin ? attenteCourante() : null; let el = $('attente');
+  if (!el && !a && !placement.encours) return;
+  if (!el && a) { el = document.createElement('div'); el.id = 'attente'; el.className = 'attente'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite'); $('planche').appendChild(el); }
+  if (el) { if (!a) el.hidden = true; else { const m = marges(); Object.assign(el.style, { left: m.gauche + 'px', right: m.droite + 'px', top: m.haut + 'px', bottom: m.bas + 'px' });
+    el.innerHTML = `<i aria-hidden="true"></i><b>Le moteur place le folio ${esc(app.plan)}…</b><small>${pluriel(a.L.length, 'fil')} · quelques secondes — l’écran reste libre</small>`; el.hidden = false; } }
+  const vifs = new Set(); if (a) vifs.add(app.plan); if (placement.encours && placement.attentes.has(placement.encours.cle)) vifs.add(placement.attentes.get(placement.encours.cle).plan);
+  $('fo-strip').querySelectorAll('.chip').forEach(c => c.classList.toggle('attend', vifs.has(c.dataset.plan))); }
+// le concours gardé : une entrée par version du moteur et folio ; les concours d'un moteur passé s'effacent, une fois par session
+function garderConcours(cle, P) { ouvrirIDB().then(db => { db.transaction(IDB_CONCOURS, 'readwrite').objectStore(IDB_CONCOURS).put({ P, t: Date.now() }, VERSION_MOTEUR + '|' + cle); }).catch(() => { }); }
+function lireConcours(cle) { return ouvrirIDB().then(db => new Promise(ok => { if (!placement.nettoye) { placement.nettoye = true; nettoyerConcours(db); }
+  const r = db.transaction(IDB_CONCOURS).objectStore(IDB_CONCOURS).get(VERSION_MOTEUR + '|' + cle); r.onsuccess = () => ok((r.result && r.result.P) || null); r.onerror = () => ok(null); })).catch(() => null); }
+function nettoyerConcours(db) { try { const st = db.transaction(IDB_CONCOURS, 'readwrite').objectStore(IDB_CONCOURS), req = st.openKeyCursor(), vieux = [];
+  req.onsuccess = () => { const c = req.result; if (c) { if (!String(c.key).startsWith(VERSION_MOTEUR + '|')) vieux.push(c.key); c.continue(); } else vieux.forEach(k => st.delete(k)); }; } catch (_) { } }
+/* Pour les bancs : envoyer le placement au loin sous pilote (il y dort), et lire où il en est. */
+function placementAilleurs(on) { placement.ailleurs = !!on; if (on && app.contrat.liaisons.length && !app.dessin) redessiner(); return etatPlacement(); }
+function etatPlacement() { const plan = cle => { const a = placement.attentes.get(cle); return a ? a.plan : null; };
+  return { ailleurs: placement.ailleurs, worker: placement.worker === false ? 'refusé' : placement.worker ? 'oui' : 'pas encore', encours: placement.encours ? plan(placement.encours.cle) : null,
+    file: placement.file.map(plan), attentes: [...placement.attentes.values()].map(a => a.plan), faits: placement.faits, relus: placement.relus, gardes: placements.size, erreur: placement.erreur }; }
 /* ---- la RETOUCHE : déplacer un bloc à la souris, tout suit ------------- */
 /* Le dessin automatique est le point de départ ; on en a la MAÎTRISE TOTALE. Un bloc (équipement, barrette, prise) se
    prend et glisse OÙ L'ON VEUT : en hauteur, et d'une colonne à l'autre (il se cale au milieu de la colonne la plus
@@ -244,10 +357,11 @@ function designationDe(n) { const d = app.contrat.designations.get(n);
 function peindre() {
   const svg = $('svg');
   $('vide').hidden = app.contrat.liaisons.length > 0;
-  if (!app.dessin) { svg.innerHTML = ''; appliquerVue(); return; }
+  // pas de dessin : la table vide — ou, si le folio se place au loin, l'attente à sa place
+  if (!app.dessin) { svg.innerHTML = ''; appliquerVue(); montrerAttente(); return; }
   svg.innerHTML = styleDessin() + `<g id="scene" transform="translate(${app.vue.tx},${app.vue.ty}) scale(${app.vue.s})">`
     + sceneSvg(app.dessin, app.contrat.cartouche, folioCourant(), designationDe, app.choisi) + '</g>';
-  appliquerVue();
+  appliquerVue(); montrerAttente();
 }
 function redessiner() { calculer(); peindre(); synchroniser(); rallumer(); }
 
@@ -544,6 +658,7 @@ function synchroniserFolios() { const P = plans(), strip = $('fo-strip');
 function aller(cible) { const P = plans(); const nom = cible.nom;
   const ou = cible.type === 'fil' ? plansDuFil(nom) : plansDuRepere(nom);
   if (P.length > 1 && app.plan !== '*' && ou.length && !ou.includes(app.plan)) allerAuPlan(ou[0]);
+  if (!app.dessin && attenteCourante()) { reporterCible(cible); return; }   // le folio se place au loin : la cible attend le dessin (finirAttente)
   if (cible.type === 'fil') { const f = app.dessin && app.dessin.fils.find(w => w.cable === nom); if (!f) { dire('« ' + nom + ' » n’est pas dessiné.'); return; }
     choisirFil(f); viserFil(f); return; }
   const c = app.dessin && app.dessin.compDe.get(nom); if (!c) { dire('« ' + nom + ' » n’est sur aucun folio.'); return; }
@@ -962,7 +1077,7 @@ function voirLiaison(i) { const l = verite()[i]; if (!l) return;
 function voirFilDeCarte(i) { const l = verite()[i]; if (!l) return;
   const ou = foliosDe(l);
   if (app.plan !== '*' && ou.length && !ou.includes(app.plan)) { allerAuPlan(ou[0]); if (app.cible && app.cible.type === 'bloc') { app.choisi = app.cible.nom; peindre(); } }
-  const w = filDe(l); if (w) { allumerFil(w); viserFil(w); } else dire('Ce fil n’est pas dessiné sur ce folio.'); }
+  const w = filDe(l); if (w) { allumerFil(w); viserFil(w); } else if (!attenteCourante()) dire('Ce fil n’est pas dessiné sur ce folio.'); }
 function lierBase() { const t = $('ba-tab'), corps = $('ba-tbody'), fi = $('ba-filtre'); let sT, fT;
   fi.addEventListener('input', () => { clearTimeout(fT); fT = setTimeout(() => { app.base.filtre = fi.value; app.base.filtreAuto = false;
     const c = app.cible; if (c && c.type === 'bloc' && fi.value.trim() !== filtreDuBloc(c.nom)) { app.cible = null; app.choisi = null; peindre(); }
@@ -1210,7 +1325,7 @@ function synchroniserContexte() { const n = app.contrat.liaisons.length, P = pla
 function synchroniserHistorique() { const b = $('btnUndo'), d = app.hist[app.hist.length - 1]; b.disabled = !d;
   const quoi = d ? 'Annuler : ' + d.quoi : 'Annuler';
   b.setAttribute('aria-label', quoi + ' (Ctrl+Z)'); b.querySelector('.bulle').innerHTML = esc(quoi) + '<kbd>Ctrl+Z</kbd>'; }
-function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); synchroniserRetouche(); rendreControle(); rafraichirBase(); rafraichirCarte(); }
+function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); synchroniserRetouche(); rendreControle(); rafraichirBase(); rafraichirCarte(); montrerAttente(); }
 let toastT = null;
 function dire(msg, erreur) { const t = $('toast'); t.textContent = msg; t.classList.toggle('erreur', !!erreur); t.classList.add('on');
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), erreur ? 6000 : 2800); }
