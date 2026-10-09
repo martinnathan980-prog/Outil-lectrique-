@@ -380,7 +380,7 @@ function peindre() {
   // pas de dessin : la table vide — ou, si le folio se place au loin, l'attente à sa place
   if (!app.dessin) { svg.innerHTML = ''; appliquerVue(); montrerAttente(); return; }
   svg.innerHTML = styleDessin() + `<g id="scene" transform="translate(${app.vue.tx},${app.vue.ty}) scale(${app.vue.s})">`
-    + sceneSvg(app.dessin, app.contrat.cartouche, folioCourant(), designationDe, app.choisi) + '</g>';
+    + sceneSvg(app.dessin, app.contrat.cartouche, folioCourant(), designationDe, app.choisi, n => ({ calibre: calibreNominal(n) })) + '</g>';
   appliquerVue(); montrerAttente();
 }
 function redessiner() { calculer(); peindre(); synchroniser(); rallumer(); }
@@ -1433,7 +1433,7 @@ const nomAscii = nom => String(nom).normalize('NFD').replace(/[̀-ͯ]/g, '').rep
 const nomContrat = () => nomAscii((app.nom || 'contrat').replace(/\.[^.]+$/, '')) || 'contrat';
 function telecharger(blob, nom) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nomAscii(nom);
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); }
-function svgDuFolio() { return app.dessin ? svgAutonome(app.dessin, app.contrat.cartouche, folioCourant(), designationDe) : null; }
+function svgDuFolio() { return app.dessin ? svgAutonome(app.dessin, app.contrat.cartouche, folioCourant(), designationDe, null, n => ({ calibre: calibreNominal(n) })) : null; }
 /* Le suivi : tout ce que le contrat pose (barrettes, prises, connecteurs),
    en CSV, pour le garder d'un contrat à l'autre. */
 function exporterSuivi() { const L = suiviDuContrat(verite(), app.bible, app.nom || 'contrat', n => app.contrat.designations.get(n) || '');
@@ -1449,7 +1449,7 @@ function exporterPNG() { const S = svgDuFolio(); if (!S) return;
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(S.txt); }
 /* Imprimer : la planche seule, sur fond blanc, sur un A3 paysage — la
    feuille de tous les folios. */
-function imprimer() { if (!app.dessin) return; const S = svgAutonome(app.dessin, app.contrat.cartouche, folioCourant(), designationDe, '#ffffff');
+function imprimer() { if (!app.dessin) return; const S = svgAutonome(app.dessin, app.contrat.cartouche, folioCourant(), designationDe, '#ffffff', n => ({ calibre: calibreNominal(n) }));
   $('printroot').innerHTML = `<style>@page{size:A3 landscape;margin:8mm}</style>` + S.txt.replace(/^<\?xml[^>]*\?>\s*/, ''); window.print(); }
 
 /* ---- ce que le menu et le rail affichent ------------------------------ */

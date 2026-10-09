@@ -6,8 +6,9 @@
 
    UNE SEULE ENCRE pour les pièces. Ce qui distingue une pièce d'une autre,
    c'est l'épaisseur et la forme du trait, jamais sa couleur : 1,0 le corps
-   d'un matériel, 0,95 un fil (et tout ce qui en est : piquage, pont de
-   shunt), 0,7 une réglette, 0,55 une cellule. La seule couleur est celle
+   d'un matériel, 1,35 l'arc et le bouton d'un disjoncteur, 0,95 un fil (et
+   tout ce qui en est : piquage, pont de shunt), 0,7 une réglette, 0,55 une
+   cellule. La seule couleur est celle
    des ROUTES : un fil prend la couleur de sa route, jusqu'au bout — le
    raccord de sa borne compris —, que la légende du cartouche nomme ; sans
    route, il reste à l'encre. Son numéro s'écrit en noir.
@@ -87,6 +88,11 @@ function styleDessin() {
      .cartA{fill:#7d8893;font-size:6.5px;font-weight:700;letter-spacing:1.6px}
      .legnom{fill:#111b25;font-size:8px;font-weight:700;letter-spacing:.3px}
      .legn{fill:#7d8893;font-size:7px;font-weight:600}
+     .cb-arc,.cb-bouton{fill:none;stroke:#1d1d1f;stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round}
+     .cb-borne{fill:#ffffff;stroke:#1d1d1f;stroke-width:1}
+     .cb-lien{fill:none;stroke:#1d1d1f;stroke-width:.8;stroke-dasharray:2.4 1.8;stroke-linecap:butt}
+     .cb-cal{fill:#1d1d1f;font-size:8px;font-weight:700;letter-spacing:.5px}
+     .cb-zone{fill:#ffffff;fill-opacity:0;stroke:none}
      .selbox{fill:none;stroke:#1d1d1f;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
      .comp{cursor:pointer;transition:opacity .12s}
      .focus .cab,.focus .jn{opacity:.10}
@@ -482,7 +488,175 @@ function paquetsDePonts(shunts) {
    d'une place cherchée (un dessin sans occupation), la place attendue. */
 function repereDe(c) { const r = c.repere || (() => { const R = reperesCandidats(c); return R ? { ...R.cands[0], cls: R.cls, nom: R.nom } : null; })();
   return r ? repereTexte({ ...r, x: r.x - c.x, y: r.y - c.y }) : ''; }
-function blocSvg(c, designation, choisi, couleurBout) {
+
+/* ---- le disjoncteur --------------------------------------------------- */
+/* LE DISJONCTEUR a sa forme à lui (le lecteur : « les disjoncteurs ont leur propre forme, ce ne sont pas des
+   équipements ») : celle des manuels de câblage d'avion — FAA AC 65-9A fig. 2-24 « push reset – pull off », le WDM du
+   Cessna 208, la famille IEEE 315 —, deux BORNES rondes, un ARC qui les relie et, sur l'arc, le BOUTON poussoir-tirette
+   en T. Il est dessiné FERMÉ (le poussoir enfoncé), comme sur tout schéma d'avion.
+   Le bloc garde l'emprise et les ports d'un équipement : le placement (04) et le routage (05) n'en savent rien, chaque
+   amenée part d'un flanc (x = 0 ou c.w) à la hauteur exacte de sa borne. Seuls la boîte, la pièce de connecteur et
+   les numéros écrits dans le corps s'effacent.
+   Chaque PÔLE — deux bornes appariées — se pose selon d'où viennent ses fils :
+     · DEBOUT, ses deux fils d'un même flanc : les bornes l'une sous l'autre au milieu du bloc, aux hauteurs des fils,
+       l'arc tourné vers le flanc vide, le bouton au sommet de l'arc ; au-delà d'un écart de CB_COMPACT, le symbole
+       garde sa taille et les fils font un coude ;
+     · COUCHÉ, un fil de chaque flanc : les bornes côte à côte à la hauteur du fil le plus haut, l'arc au-dessus, le
+       bouton en haut ; l'autre fil fait un coude.
+   Un TRIPOLAIRE : un arc par pôle, une seule commande — un pointillé, la liaison mécanique, joint les sommets des
+   arcs. À côté du symbole : le repère, le CALIBRE en gras (« 10 A » : celui qu'on a choisi, sinon celui du part
+   number ; le moteur ne le sait pas, l'interface le passe), la désignation. Si la forme ne tient pas proprement (une
+   borne sur les deux flancs, un pôle debout et un couché, des pôles qui se touchent ou dont les amenées se croisent,
+   des textes sans place libre), le disjoncteur garde la boîte d'un équipement : jamais pire qu'avant. */
+const CB_R = 2.6;                   // le rayon d'une borne
+const CB_E = 7;                     // couché : la demi-distance entre les deux bornes (14 entre elles : le pas des bornes)
+const CB_TIGE = 4.5;                // la tige du bouton, depuis le sommet de l'arc
+const CB_BARRE = 9;                 // la barre du bouton (le T)
+const CB_COUDE = 6;                 // le coude d'un fil qui n'arrive pas à la hauteur de sa borne, à 6 d'elle
+const CB_COMPACT = 22;              // debout : au-delà de cet écart entre ses deux fils, le symbole garde sa taille (14)
+const flecheCb = corde => Math.min(7.5, Math.max(5, 0.46 * corde));   // la flèche de l'arc : 6,4 pour 14, presque un demi-cercle
+const amperesCb = a => String(Math.round(a * 100) / 100).replace('.', ',') + ' A';   // « 10 A », « 7,5 A », « 0,5 A »
+/* Les bornes du disjoncteur, en coordonnées du bloc : une par étiquette, ses flancs (L, R) et combien de rangs la
+   portent (plus d'un : la forme ne saurait pas les dessiner toutes). */
+function bornesDuDisjoncteur(c) { const m = new Map();
+  [['L', c.rangs.L || []], ['R', c.rangs.R || []]].forEach(([f, ps]) => ps.forEach(p => {
+    const k = String(p.etiq == null ? '' : p.etiq).trim() || '?' + f + p.y;
+    const b = m.get(k) || m.set(k, { etiq: p.etiq, y: p.y - c.y, L: false, R: false, n: 0 }).get(k); b[f] = true; b.n++; }));
+  return [...m.values()]; }
+/* Les PÔLES : les bornes appariées, de haut en bas, { p (la plus haute), q (l'autre, ou null) }. L1/T1 par le chiffre
+   (la ligne et la charge d'un même pôle) ; A1/A2, B1/B2 par la lettre ; LINE/LOAD ensemble ; 1/2, 3/4, 5/6 deux à
+   deux (la règle CEI des pôles de puissance ; deux bornes seules font un pôle) ; sinon dans l'ordre naturel, deux à
+   deux. Une borne seule — l'autre est sur un autre folio, ou libre — fait un pôle à elle seule. */
+function polesDuDisjoncteur(bs) {
+  const E = b => String(b.etiq == null ? '' : b.etiq).trim().toUpperCase(), tous = re => bs.every(b => re.test(E(b))), lettres = new Set(bs.map(b => E(b)[0]));
+  const par = cle => { const g = new Map(); bs.forEach(b => { const k = cle(E(b)); (g.get(k) || g.set(k, []).get(k)).push(b); }); return [...g.values()]; };
+  let G = null;
+  if (tous(/^[LT]\d+$/) && lettres.has('L') && lettres.has('T')) G = par(e => e.slice(1));
+  else if (tous(/^[A-Z]\d+$/)) G = par(e => e[0]);
+  else if (tous(/^(LINE|LOAD)$/)) G = [bs];
+  else if (tous(/^\d+$/)) G = bs.length === 2 ? [bs] : par(e => String(Math.ceil(+e / 2)));
+  if (!G || G.some(g => g.length > 2)) { const t = bs.slice().sort((u, v) => ordreNaturel(E(u), E(v))); G = []; for (let i = 0; i < t.length; i += 2) G.push(t.slice(i, i + 2)); }
+  return G.map(g => { const s = g.slice().sort((u, v) => u.y - v.y); return { p: s[0], q: s[1] || null }; }).sort((a, b) => a.p.y - b.p.y);
+}
+/* LE DISJONCTEUR, en coordonnées du bloc ; null s'il ne tient pas (le bloc garde alors la boîte). `info` : ce que
+   l'interface en sait — { calibre (en A), tableau (« 121VU B05 », quand la nomenclature du lecteur viendra) } ;
+   `aGauche(y)`, `aDroite(y)` : la couleur du fil qui arrive à cette hauteur (absolue), comme pour un équipement. */
+function disjoncteurSvg(c, designation, info, aGauche, aDroite) {
+  const calibre = info && info.calibre > 0 ? info.calibre : null, tableau = info && info.tableau ? String(info.tableau) : '';
+  const bs = bornesDuDisjoncteur(c); if (!bs.length || bs.some(b => b.n > 1)) return null;        // une borne sur les deux flancs, ou deux fois : la boîte
+  const poles = polesDuDisjoncteur(bs), mid = c.lw + (c.w - c.lw - c.rw) / 2;
+  const debouts = poles.filter(P => !P.q || P.p.L === P.q.L), couches = poles.filter(P => P.q && P.p.L !== P.q.L);
+  if (debouts.length && couches.length) return null;                                               // un pôle debout, un couché : la boîte
+  const traits = [], symboles = [], nums = [], sommets = [];   // le tracé dans le bloc (les textes ne le coupent pas), les numéros de borne
+  const H = (x0, x1, y) => traits.push({ x0: Math.min(x0, x1), x1: Math.max(x0, x1), y0: y, y1: y });
+  const V = (x, y0, y1) => traits.push({ x0: x, x1: x, y0: Math.min(y0, y1), y1: Math.max(y0, y1) });
+  const couleur = (b, f) => f === 'L' ? aGauche && aGauche(b.y + c.y) : aDroite && aDroite(b.y + c.y);
+  let fils = '', arcs = '', bornes = '', lien = '', bouton = '', cote = 0;
+  const borne = (x, y) => { bornes += `<circle class="cb-borne" cx="${f1(x)}" cy="${f1(y)}" r="${CB_R}"/>`; symboles.push({ x0: x - CB_R, x1: x + CB_R, y0: y - CB_R, y1: y + CB_R }); };
+  /* l'amenée d'une borne, à la couleur de son fil : du port (xF, à la hauteur du fil) jusqu'à la borne (xB, yB) ; droite,
+     ou par un coude en xc quand la borne n'est pas à la hauteur du fil. Rend vrai s'il y a un coude. */
+  const amenee = (b, f, xF, xB, yB, xc) => { const st = styleTrait(couleur(b, f));
+    if (Math.abs(yB - b.y) < 0.6) { fils += `<line class="lead"${st} x1="${f1(xF)}" y1="${f1(b.y)}" x2="${f1(xB)}" y2="${f1(b.y)}"/>`; H(xF, xB, b.y); return false; }
+    fils += `<path class="lead"${st} fill="none" d="M${f1(xF)} ${f1(b.y)} H${f1(xc)} V${f1(yB)} H${f1(xB)}"/>`; H(xF, xc, b.y); V(xc, b.y, yB); H(xc, xB, yB); return true; };
+  /* le numéro d'une borne : contre elle (ou contre son coude), sur son amenée — au-dessus si le symbole est debout,
+     au-dessous s'il est couché (au-dessus, il y a le repère et le calibre) */
+  const numero = (b, x, y, d, dessous) => { if (b.etiq == null || String(b.etiq).trim() === '') return; const t = clip(String(b.etiq).trim(), 5), a = d > 0 ? 'start' : 'end', yb = dessous ? y + 8.3 : y - 2.4;
+    nums.push({ t, x, y: yb, a, b: boiteDeTexte(x, yb, a, t.length, 7.5, 0.2) }); };
+
+  if (debouts.length) {
+    /* DEBOUT : les fils d'un même flanc (d = +1 : à droite). Les bornes au milieu, aux hauteurs des fils ; l'arc vers le
+       flanc vide ; une borne seule a sa JUMELLE, sans fil, 14 plus bas — ou plus haut —, là où le bloc la tient et où
+       aucune autre borne n'est (1, 2 et 3 d'un même flanc : le pôle 1/2, puis 3 et sa jumelle sous lui). */
+    const f = debouts[0].p.L ? 'L' : 'R', d = f === 'R' ? 1 : -1, xT = mid, xF = d > 0 ? c.w : 0; cote = -d;
+    if (debouts.some(P => (P.p.L ? 'L' : 'R') !== f)) return null;                                 // des pôles debout sur les deux flancs : la boîte
+    const prises = bs.map(b => b.y), jumelle = y => { const v = [y + 14, y - 14].find(v => v >= CB_R + 3 && v <= c.h - CB_R - 1 && prises.every(u => Math.abs(u - v) > 13.4));
+      if (v != null) prises.push(v); return v; };
+    if (debouts.some(P => !P.q && (P.j = jumelle(P.p.y)) == null)) return null;                    // une borne seule sans place pour sa jumelle : la boîte
+    const T = debouts.map(P => { const ya = P.p.y, yb = P.q ? P.q.y : P.j;
+      const y0 = Math.min(ya, yb), y1 = Math.max(ya, yb), m = (y0 + y1) / 2;
+      return y1 - y0 <= CB_COMPACT ? { P, y0, y1, ya, yb } : { P, y0: m - 7, y1: m + 7, ya: ya < yb ? m - 7 : m + 7, yb: ya < yb ? m + 7 : m - 7 }; }).sort((u, v) => u.y0 - v.y0);
+    if (T.some((t, i) => i && t.y0 - T[i - 1].y1 < 2 * CB_R + 4)) return null;                   // deux pôles qui se touchent : la boîte
+    const F = Math.min(...T.map(t => flecheCb(t.y1 - t.y0)));
+    T.forEach(({ P, y0, y1, ya, yb }) => {
+      [[P.p, ya], [P.q, yb]].forEach(([b, yt]) => { if (!b) return; const xc = xT + d * CB_COUDE;
+        numero(b, amenee(b, f, xF, xT + d * CB_R, yt, xc) ? xc + d * 2.6 : xT + d * (CB_R + 2.6), b.y, d); });
+      borne(xT, y0); borne(xT, y1);
+      const ax = xT - d * CB_R, L = y1 - y0, r = (L * L / 4 + F * F) / (2 * F), sx = ax - d * F;
+      arcs += `<path class="cb-arc" d="M${f1(ax)} ${f1(y0)} A${f1(r)} ${f1(r)} 0 0 ${d > 0 ? 0 : 1} ${f1(ax)} ${f1(y1)}"/>`;
+      sommets.push({ x: sx, y: (y0 + y1) / 2 }); symboles.push({ x0: Math.min(ax, sx), x1: Math.max(ax, sx), y0, y1 }); });
+    // le bouton, sur le premier pôle : la tige vers le flanc vide, la barre en travers
+    const s0 = sommets[0], bx = s0.x - d * CB_TIGE;
+    bouton = `M${f1(s0.x)} ${f1(s0.y)} H${f1(bx)} M${f1(bx)} ${f1(s0.y - CB_BARRE / 2)} V${f1(s0.y + CB_BARRE / 2)}`;
+    symboles.push({ x0: Math.min(bx, s0.x), x1: Math.max(bx, s0.x), y0: s0.y - CB_BARRE / 2, y1: s0.y + CB_BARRE / 2 });
+  } else {
+    /* COUCHÉ : un fil de chaque flanc. Le symbole à la hauteur de la borne la plus haute du pôle ; l'autre fil fait un
+       coude. */
+    const F = flecheCb(2 * CB_E), xg = mid - CB_E, xd = mid + CB_E;
+    if (couches.some((P, i) => i && P.p.y - couches[i - 1].p.y < 2 * CB_R + F + 2)) return null;    // deux pôles qui se touchent : la boîte
+    couches.forEach(P => { const ys = P.p.y, g = P.p.L ? P.p : P.q, dr = P.p.L ? P.q : P.p;
+      [[g, 'L', xg, -1], [dr, 'R', xd, 1]].forEach(([b, f, xT, d]) => { const xc = xT + d * CB_COUDE;
+        numero(b, amenee(b, f, d > 0 ? c.w : 0, xT + d * CB_R, ys, xc) ? xc + d * 2.6 : xT + d * (CB_R + 1.2), b.y, d, true); });
+      borne(xg, ys); borne(xd, ys);
+      const r = (CB_E * CB_E + F * F) / (2 * F);
+      arcs += `<path class="cb-arc" d="M${f1(xg)} ${f1(ys - CB_R)} A${f1(r)} ${f1(r)} 0 0 1 ${f1(xd)} ${f1(ys - CB_R)}"/>`;
+      sommets.push({ x: mid, y: ys - CB_R - F }); symboles.push({ x0: xg, x1: xd, y0: ys - CB_R - F, y1: ys }); });
+    const s0 = sommets[0], by = s0.y - CB_TIGE;
+    bouton = `M${f1(mid)} ${f1(s0.y)} V${f1(by)} M${f1(mid - CB_BARRE / 2)} ${f1(by)} H${f1(mid + CB_BARRE / 2)}`;
+    symboles.push({ x0: mid - CB_BARRE / 2, x1: mid + CB_BARRE / 2, y0: by, y1: s0.y });
+  }
+  // plusieurs pôles, une commande : la liaison mécanique en pointillé, d'un sommet d'arc au dernier
+  if (sommets.length > 1) { const s0 = sommets[0], sl = sommets[sommets.length - 1];
+    lien = `<line class="cb-lien" x1="${f1(s0.x)}" y1="${f1(s0.y)}" x2="${f1(sl.x)}" y2="${f1(sl.y)}"/>`; symboles.push({ x0: s0.x - 1, x1: s0.x + 1, y0: s0.y, y1: sl.y }); }
+  // deux amenées qui se croisent ou se touchent (des pôles entrelacés) : la boîte
+  const coupe = (a, b) => a.x1 > b.x0 + 0.3 && a.x0 < b.x1 - 0.3 && a.y1 > b.y0 - 0.3 && a.y0 < b.y1 + 0.3;
+  const bout = (u, v) => [[u.x0, u.y0], [u.x1, u.y1]].some(([x, y]) => [[v.x0, v.y0], [v.x1, v.y1]].some(([X, Y]) => Math.abs(x - X) < 0.6 && Math.abs(y - Y) < 0.6));
+  for (let i = 0; i < traits.length; i++) for (let j = i + 1; j < traits.length; j++) { const a = traits[i], b = traits[j];
+    if (a.y0 === a.y1 && b.y0 === b.y1 && Math.abs(a.y0 - b.y0) > 0.6) continue;
+    if (a.x0 === a.x1 && b.x0 === b.x1 && Math.abs(a.x0 - b.x0) > 0.6) continue;
+    if (coupe(a, b) && !bout(a, b)) return null; }
+
+  /* LES TEXTES : le repère (à la taille que la place permet, comme celui d'un équipement), le calibre, le tableau, la
+     désignation — un bloc de lignes posé à la première place libre, dans le corps que l'occupation réserve au bloc
+     (rien d'un autre bloc ne s'y écrit) : du côté vide, centré sur le symbole (debout) ; de part et d'autre du bouton
+     (couché) ; sinon tout au-dessus, tout au-dessous. Aucune place libre : la boîte. */
+  const nom = clip(c.name, 14), X0 = c.lw - CONN_W + 1, X1 = c.w - c.rw + CONN_W - 1;
+  const tient = (t, fs, ls, W, n) => clip(t, Math.max(4, Math.min(n, Math.floor(W / (CAR * fs + ls)))));
+  const lignes = W => { const L = [{ cls: 'rep-big', t: nom, fs: Math.max(7, Math.min(10.5, (W / nom.length - 1.15) / CAR)), ls: 1.15 }];
+    if (calibre) L.push({ cls: 'cb-cal', t: amperesCb(calibre), fs: 8, ls: 0.5 });
+    if (tableau) L.push({ cls: 'des', t: tient(tableau, 6.8, 0.4, W, 14), fs: 6.8, ls: 0.4 });
+    if (designation) L.push({ cls: 'des', t: tient(String(designation), 6.8, 0.4, W, 18), fs: 6.8, ls: 0.4 });
+    return L; };
+  // des lignes empilées depuis yHaut, ancrées en x ; la hauteur d'une pile
+  const empiler = (L, x, a, yHaut) => { let y = yHaut; return L.map(l => { y += 0.78 * l.fs; const o = { ...l, x, y, a, b: boiteDeTexte(x, y, a, l.t.length, l.fs, l.ls) }; y += 0.16 * l.fs + 2.2; return o; }); };
+  const hauteur = L => L.reduce((h, l) => h + 0.94 * l.fs, 0) + 2.2 * (L.length - 1);
+  const yHaut = Math.min(...symboles.map(s => s.y0)), yBas = Math.max(...symboles.map(s => s.y1)), cands = [];
+  if (cote) {   // debout : du côté vide, centré sur le symbole
+    const x = cote < 0 ? Math.min(...symboles.map(s => s.x0)) - 4 : Math.max(...symboles.map(s => s.x1)) + 4, L = lignes(cote < 0 ? x - X0 : X1 - x);
+    cands.push(empiler(L, x, cote < 0 ? 'end' : 'start', (yHaut + yBas) / 2 - hauteur(L) / 2)); }
+  else {        // couché : le repère à gauche du bouton, le calibre à droite, au-dessus des amenées, le reste dessous ; ou le repère au-dessus du bouton
+    const ys = couches[0].p.y, xg = mid - CB_E - CB_R - 2.5, xd = mid + CB_E + CB_R + 2.5, base = ys - 5;
+    const bas = Math.max(yBas, ...traits.map(t => t.y1), ...nums.map(n => n.b.y1)) + 2.2;
+    const L = lignes(xg - X0), rep = { ...L[0], x: xg, y: base, a: 'end' }, cal = L.find(l => l.cls === 'cb-cal'), des = L.filter(l => l.cls === 'des');
+    const cote1 = [{ ...rep, b: boiteDeTexte(xg, base, 'end', rep.t.length, rep.fs, rep.ls) }];
+    if (cal) cote1.push({ ...cal, x: xd, y: base, a: 'start', b: boiteDeTexte(xd, base, 'start', cal.t.length, cal.fs, cal.ls) });
+    cands.push([...cote1, ...empiler(des, mid, 'middle', bas)]);
+    const L2 = lignes(X1 - X0); cands.push([...empiler(L2.slice(0, 1), mid, 'middle', yHaut - 2.5 - hauteur(L2.slice(0, 1))), ...empiler(L2.slice(1), mid, 'middle', bas)]); }
+  const Lc = lignes(X1 - X0);
+  cands.push(empiler(Lc, mid, 'middle', yHaut - 3 - hauteur(Lc)), empiler(Lc, mid, 'middle', yBas + 3));
+  const dedans = b => b.x0 >= X0 - 0.01 && b.x1 <= X1 + 0.01 && b.y0 >= 0.5 && b.y1 <= c.h - 0.5;
+  const touche = (b, o, m) => b.x1 > o.x0 - m && b.x0 < o.x1 + m && b.y1 > o.y0 - m && b.y0 < o.y1 + m;
+  const choix = cands.find(L => L.every(l => dedans(l.b) && !traits.some(t => touche(l.b, t, 1)) && !symboles.some(s => touche(l.b, s, 1.2)) && !nums.some(n => touche(l.b, n.b, 1))));
+  if (!choix) return null;
+
+  /* la ZONE : le corps, invisible sur le folio (mais on peut y cliquer, comme dans le corps d'un équipement) ; le calque
+     des dessins déjà faits (style-ref.css) la teinte pour dire « manque », « proposé », comme le corps d'un équipement */
+  let s = `<rect class="cb-zone" x="${f1(c.lw)}" y="0" width="${f1(c.w - c.lw - c.rw)}" height="${f1(c.h)}"/>` + fils + arcs + lien + `<path class="cb-bouton" d="${bouton}"/>` + bornes;
+  nums.forEach(n => { s += `<text class="pinlbl" x="${f1(n.x)}" y="${f1(n.y)}" text-anchor="${n.a}">${esc(n.t)}</text>`; });
+  choix.forEach(l => { s += `<text class="${l.cls}"${l.cls === 'rep-big' ? ` style="font-size:${f1(l.fs)}px"` : ''} x="${f1(l.x)}" y="${f1(l.y)}" text-anchor="${l.a}">${esc(l.t)}</text>`; });
+  return s;
+}
+
+function blocSvg(c, designation, choisi, couleurBout, info) {
   let s = `<g class="comp" data-name="${escA(c.name)}" transform="translate(${f1(c.x)},${f1(c.y)})">`;
   // la couleur du fil qui arrive à une hauteur (absolue) sur le flanc gauche, ou droit, du bloc
   const aGauche = y => couleurBout ? couleurBout(c.x, y) : null, aDroite = y => couleurBout ? couleurBout(c.x + c.w, y) : null;
@@ -490,6 +664,7 @@ function blocSvg(c, designation, choisi, couleurBout) {
   const bx = c.lw, bw = c.w - c.lw - c.rw, mid = bx + bw / 2;
   const rl = c.rangs.L || [], rr = c.rangs.R || [], rs = c.rangs.S || [];
   const yRep = c.h > 90 ? 21 : c.h / 2 - 1.5;
+  let dj;
   if (c.kind === 'tag' && estMasse(c.name)) {
     /* MASSE collée à sa borne : le symbole CEI 60617-02 est dans l'AXE du fil,
        perpendiculaire à l'équipement — trois barres verticales décroissantes
@@ -560,6 +735,9 @@ function blocSvg(c, designation, choisi, couleurBout) {
     if (ys.length > 1) ys.forEach(ly => { s += `<circle class="jn" cx="${f1(cx)}" cy="${f1(ly)}" r="1.5"/>`; });
     [[7, 0], [4.5, 3.2], [2, 6.4]].forEach(([l, dy]) => { s += `<line class="earth" x1="${f1(cx - l)}" y1="${f1(y0 + dy)}" x2="${f1(cx + l)}" y2="${f1(y0 + dy)}"/>`; });
     s += `<text class="rep" x="${f1(cx)}" y="${f1(y0 + 17)}" text-anchor="middle">${esc(clip(c.name, 10))}</text>`;
+  } else if (c.kind === 'equip' && estDisjoncteur(c.name) && (dj = disjoncteurSvg(c, designation, info, aGauche, aDroite))) {
+    // DISJONCTEUR : sa forme, pas une boîte (« le disjoncteur », plus haut) ; s'il ne tient pas, il reste un équipement
+    s += dj;
   } else {
     // équipement : corps, repère en tête (rappelé en pied s'il est très haut), bornes sur les flancs
     s += `<rect class="body" x="${f1(bx)}" y="0" width="${f1(bw)}" height="${c.h}"/>`;
@@ -581,7 +759,9 @@ function blocSvg(c, designation, choisi, couleurBout) {
 }
 
 /* ---- la scène entière ------------------------------------------------- */
-function sceneSvg(dessin, cartouche, folio, designationDe, choisi) {
+/* `disjoncteurDe(nom)` : ce que l'interface sait d'un disjoncteur — { calibre, tableau } — pour l'écrire à côté de son
+   symbole (le moteur ne connaît ni la fiche ni le part number retenu) ; sans elle, le symbole n'a que son repère. */
+function sceneSvg(dessin, cartouche, folio, designationDe, choisi, disjoncteurDe) {
   let s = feuilleSvg(dessin.bbox, cartouche, folio, dessin.legende);
   const fils = dessin.fils.filter(w => !w.shunt), couleurDe = dessin.couleurDe || null;
   const verticaux = verticauxDe([...fils.map(w => w.pts), ...tracesDePiquage(dessin.barrettes)]);
@@ -598,18 +778,18 @@ function sceneSvg(dessin, cartouche, folio, designationDe, choisi) {
   const couleurBout = couleursDesBouts(fils, couleurDe);
   s += piquagesSvg(dessin.barrettes, dessin.piquages, verticaux, couleurBout, choisi);
   dessin.points.forEach(d => s += `<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="1.9"/>`);
-  dessin.comps.forEach(c => { s += blocSvg(c, designationDe ? designationDe(c.name) : '', choisi === c.name, couleurBout); });
+  dessin.comps.forEach(c => { s += blocSvg(c, designationDe ? designationDe(c.name) : '', choisi === c.name, couleurBout, disjoncteurDe && c.kind === 'equip' && estDisjoncteur(c.name) ? disjoncteurDe(c.name) : null); });
   return s;
 }
 /* Le même dessin, en document SVG autonome : pour enregistrer, imprimer,
    coller. `fond` : ce qui entoure la feuille — papier crème à l'écran, blanc
-   pour l'imprimante. */
-function svgAutonome(dessin, cartouche, folio, designationDe, fond) {
+   pour l'imprimante ; `disjoncteurDe` : comme pour `sceneSvg`. */
+function svgAutonome(dessin, cartouche, folio, designationDe, fond, disjoncteurDe) {
   // le document a les dimensions de la feuille de référence, quel que soit le folio : tous s'enregistrent pareil
   const bb = dessin.bbox, k = bb.k || bb.w / PAGE_W, M = 24 * k, vw = bb.w + 2 * M, vh = bb.h + 2 * M, W = Math.ceil(vw / k), H = Math.ceil(vh / k);
   const x0 = f1(bb.x - M), y0 = f1(bb.y - M);
   const txt = '<?xml version="1.0" encoding="UTF-8"?>\n'
     + `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="${x0} ${y0} ${f1(vw)} ${f1(vh)}">`
-    + `<rect x="${x0}" y="${y0}" width="${f1(vw)}" height="${f1(vh)}" fill="${fond || '#fbfbf7'}"/>` + styleDessin() + sceneSvg(dessin, cartouche, folio, designationDe, null) + '</svg>';
+    + `<rect x="${x0}" y="${y0}" width="${f1(vw)}" height="${f1(vh)}" fill="${fond || '#fbfbf7'}"/>` + styleDessin() + sceneSvg(dessin, cartouche, folio, designationDe, null, disjoncteurDe) + '</svg>';
   return { w: W, h: H, txt };
 }

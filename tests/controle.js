@@ -11,12 +11,49 @@
         une feuille ;
      3. le contrat d'essai se dessine, ses barrettes sont repérées, ses
         numéros de fil sont écrits sans se marcher dessus ;
+     5. chaque disjoncteur a sa forme (06, « le disjoncteur ») aux ports
+        d'un équipement, ses textes sans rien chevaucher ;
      7. les pièges déjà tombés ne reviennent pas.
    La base de retest a ses propres contrôles dans tests/retest.js.
    Le code de sortie vaut 1 si un seul contrôle échoue.
    ========================================================================= */
 const { chromium } = require('playwright');
 const { fichierDemande, chargerDansLaPage, mesurerDansLaPage } = require('./pilote');
+const { genererDansLaPage } = require('./corpus');
+
+/* LE DISJONCTEUR SUR LE FOLIO, dans la page : chaque disjoncteur du folio a-t-il sa forme (un arc, pas de boîte), garde-t-il
+   la géométrie d'un équipement (la zone de son corps est le rectangle qu'aurait la boîte ; chaque fil que le routeur amène
+   s'arrête à un port, x = 0 ou c.w à la hauteur d'une borne, d'où part une amenée du symbole, et aucune amenée n'en part
+   ailleurs), et ses textes (repère, calibre, numéros de borne) ne chevauchent-ils aucun autre texte, ni ne sont barrés
+   par un fil ? Les boîtes viennent de getBBox(). */
+function disjoncteursDansLaPage() {
+  const D = app.dessin, T = [];
+  document.querySelectorAll('#scene text').forEach(t => { const cls = t.getAttribute('class') || '';
+    if (!/^(filnum|rep|rep-strip|rep-petit|barnum|connnom|connpin|pinlbl|rep-big|des|rname|prnum|cb-cal)$/.test(cls)) return;
+    let bb = t.getBBox(); const tr = t.getAttribute('transform'), m = tr && /rotate\(-90 ([\d.\-]+) ([\d.\-]+)\)/.exec(tr);
+    if (m) { const cx = +m[1], cy = +m[2], P = [[bb.x, bb.y], [bb.x + bb.width, bb.y], [bb.x, bb.y + bb.height], [bb.x + bb.width, bb.y + bb.height]].map(([x, y]) => [cx + (y - cy), cy - (x - cx)]);
+      const xs = P.map(q => q[0]), ys = P.map(q => q[1]); bb = { x: Math.min(...xs), y: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) }; }
+    const g = t.closest('.comp'); let dx = 0, dy = 0; if (g) { const k = /translate\(([\d.\-]+),([\d.\-]+)\)/.exec(g.getAttribute('transform')); if (k) { dx = +k[1]; dy = +k[2]; } }
+    T.push({ txt: t.textContent, cls, cb: !!(g && estDisjoncteur(g.dataset.name)), x0: bb.x + dx, y0: bb.y + dy, x1: bb.x + dx + bb.width, y1: bb.y + dy + bb.height }); });
+  const S = []; D.fils.forEach(w => { for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1]; S.push({ n: w.cable, x0: Math.min(a.x, b.x), x1: Math.max(a.x, b.x), y0: Math.min(a.y, b.y), y1: Math.max(a.y, b.y), h: Math.abs(a.y - b.y) < 0.6 }); } });
+  (D.barrettes || []).forEach(b => { S.push({ n: 'piquage', x0: b.x, x1: b.x, y0: b.y1 + 3, y1: b.y2 - 3, h: false }); });
+  const r = { cbs: 0, formes: 0, repli: [], geometrie: [], chev: [], barres: [], calibres: [] };
+  for (let i = 0; i < T.length; i++) for (let j = i + 1; j < T.length; j++) { const a = T[i], b = T[j]; if ((a.cb || b.cb) && a.x1 > b.x0 && a.x0 < b.x1 && a.y1 > b.y0 && a.y0 < b.y1) r.chev.push(a.txt + ' × ' + b.txt); }
+  T.forEach(t => { if (t.cb) S.forEach(s => { const dedans = s.h ? (s.y0 > t.y0 + 0.4 && s.y0 < t.y1 - 0.4 && s.x1 > t.x0 + 0.4 && s.x0 < t.x1 - 0.4) : (s.x0 > t.x0 + 0.4 && s.x0 < t.x1 - 0.4 && s.y1 > t.y0 + 0.4 && s.y0 < t.y1 - 0.4); if (dedans) r.barres.push(s.n + ' barre ' + t.txt); }); });
+  D.comps.filter(c => c.kind === 'equip' && estDisjoncteur(c.name)).forEach(c => { r.cbs++;
+    const g = document.querySelector(`#scene .comp[data-name="${c.name}"]`), sur = c.name + ' L[' + (c.rangs.L || []).map(p => p.etiq + '@' + (p.y - c.y)) + '] R[' + (c.rangs.R || []).map(p => p.etiq + '@' + (p.y - c.y)) + ']';
+    if (!g.querySelector('.cb-arc') || g.querySelector('rect.body') || g.querySelector('.conn')) { r.repli.push(sur); return; } r.formes++;
+    const cal = g.querySelector('text.cb-cal'); r.calibres.push(cal ? cal.textContent : '');
+    const z = g.querySelector('rect.cb-zone'), zone = z && [+z.getAttribute('x'), +z.getAttribute('y'), +z.getAttribute('width'), +z.getAttribute('height')];
+    const ports = [...(c.rangs.L || []).map(p => ({ x: 0, y: p.y - c.y })), ...(c.rangs.R || []).map(p => ({ x: c.w, y: p.y - c.y }))];
+    const bouts = [...g.querySelectorAll('.lead')].map(l => l.tagName === 'line' ? { x: +l.getAttribute('x1'), y: +l.getAttribute('y1') } : (m => ({ x: +m[1], y: +m[2] }))(/^M([\d.\-]+) ([\d.\-]+)/.exec(l.getAttribute('d'))));
+    const au = (u, v) => Math.abs(u.x - v.x) < 0.06 && Math.abs(u.y - v.y) < 0.06;
+    const fils = D.fils.filter(w => !w.shunt && (w.de === c.name || w.vers === c.name)).flatMap(w => [w.pts[0], w.pts[w.pts.length - 1]]).filter(q => q && q.y >= c.y - 0.5 && q.y <= c.y + c.h + 0.5 && (Math.abs(q.x - c.x) < 0.06 || Math.abs(q.x - c.x - c.w) < 0.06)).map(q => ({ x: q.x - c.x, y: q.y - c.y }));
+    const ok = c.w === LARGEUR.equip && zone && zone.join() === [c.lw, 0, c.w - c.lw - c.rw, c.h].map(f1).join() && bouts.length === ports.length
+      && ports.every(p => bouts.some(b => au(b, p))) && fils.length >= 1 && fils.every(q => ports.some(p => au(p, q)));
+    if (!ok) r.geometrie.push(sur + ' amenées ' + JSON.stringify(bouts) + ' fils ' + JSON.stringify(fils)); });
+  return r;
+}
 
 const FICHIER = fichierDemande();
 let echecs = 0, total = 0;
@@ -97,7 +134,7 @@ function titre(t) { console.log('\n' + t); }
     const out = { folios: [], muets: 0, fils: 0, chev: [], barres: [], nus: [] };
     for (const plan of plansDe(app.contrat.liaisons)) { allerAuPlan(plan); const D = app.dessin;
       const T = []; document.querySelectorAll('#scene text').forEach(t => { const cls = t.getAttribute('class') || '';
-        if (!/^(filnum|rep|rep-strip|rep-petit|barnum|connnom|connpin|pinlbl|rep-big|des|rname|prnum)$/.test(cls)) return;
+        if (!/^(filnum|rep|rep-strip|rep-petit|barnum|connnom|connpin|pinlbl|rep-big|des|rname|prnum|cb-cal)$/.test(cls)) return;
         let bb = t.getBBox(); const tr = t.getAttribute('transform'), m = tr && /rotate\(-90 ([\d.\-]+) ([\d.\-]+)\)/.exec(tr);
         if (m) { const cx = +m[1], cy = +m[2], P = [[bb.x, bb.y], [bb.x + bb.width, bb.y], [bb.x, bb.y + bb.height], [bb.x + bb.width, bb.y + bb.height]].map(([x, y]) => [cx + (y - cy), cy - (x - cx)]);
           const xs = P.map(q => q[0]), ys = P.map(q => q[1]); bb = { x: Math.min(...xs), y: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) }; }
@@ -118,6 +155,26 @@ function titre(t) { console.log('\n' + t); }
   ok('aucun texte n’en chevauche un autre (repères, numéros, lettres)', oeil.chev.length === 0, oeil.chev.length ? oeil.chev.slice(0, 4).join(' | ') : oeil.folios.join(', '));
   ok('aucun repère ni numéro n’est barré par un fil', oeil.barres.length === 0, oeil.barres.length ? oeil.barres.slice(0, 4).join(' | ') : 'aucun');
   ok('chaque fil porte son numéro', oeil.muets === 0, oeil.muets ? oeil.nus.slice(0, 4).join(' | ') : oeil.fils + ' fils, tous numérotés');
+
+  /* LE DISJONCTEUR a sa forme, pas une boîte d'équipement (le lecteur : « les disjoncteurs ont leur propre forme ») : sur
+     le folio 1 de l'exemple (102CB1, ses deux fils à droite, le calibre lu dans le part number MS3320-10) et sur les
+     folios du corpus qui portent un disjoncteur (tests/corpus.js : sans, minimal, série, piquages, barrette longue ;
+     trois graines chacun — dont 1, 2 et 3 sur un même flanc), que personne n'a réglés. */
+  titre('5. LE DISJONCTEUR SUR LE FOLIO — sa forme, aux ports d’un équipement');
+  const dj = { folios: 0, cbs: 0, formes: 0, repli: [], geometrie: [], chev: [], barres: [], calibres: [] };
+  const noterDj = (nom, r) => { dj.folios++; dj.cbs += r.cbs; dj.formes += r.formes; ['repli', 'geometrie', 'chev', 'barres', 'calibres'].forEach(k => r[k].forEach(x => dj[k].push(nom + ' : ' + x))); };
+  noterDj('exemple 1', await page.evaluate(src => { chargerContrat(contratExemple(), 'exemple', 'Contrat d’exemple'); allerAuPlan('1'); return eval('(' + src + ')')(); }, disjoncteursDansLaPage.toString()));
+  for (const profil of ['sans', 'minimal', 'serie', 'piquages', 'barretteLongue']) for (let g = 1; g <= 3; g++) {
+    const L = await page.evaluate(genererDansLaPage, [g * 7919, profil]);
+    noterDj(profil + ' #' + g, await page.evaluate(([L, src]) => { chargerContrat(L.map(l => liaison(l)), 'corpus', 'corpus'); return eval('(' + src + ')')(); }, [L, disjoncteursDansLaPage.toString()])); }
+  ok('chaque disjoncteur prend sa forme (l’arc, le bouton), aucun ne garde la boîte', dj.cbs >= 15 && dj.formes === dj.cbs, dj.repli.length ? dj.repli.slice(0, 3).join(' | ') : dj.cbs + ' disjoncteurs sur ' + dj.folios + ' folios, tous en symbole');
+  ok('la géométrie d’un équipement, au point près : la zone du corps, chaque fil à un port, une amenée par port', dj.geometrie.length === 0, dj.geometrie.length ? dj.geometrie.slice(0, 2).join(' | ') : 'emprise 144 × h, ports en x = 0 et x = c.w');
+  ok('aucun texte d’un disjoncteur n’en chevauche un autre', dj.chev.length === 0, dj.chev.length ? dj.chev.slice(0, 4).join(' | ') : 'aucun');
+  ok('aucun texte d’un disjoncteur n’est barré par un fil', dj.barres.length === 0, dj.barres.length ? dj.barres.slice(0, 4).join(' | ') : 'aucun');
+  ok('le calibre s’écrit quand on le sait (« 10 A » : le part number de 102CB1), rien quand ni le part number ni un choix ne le disent', dj.calibres[0] === 'exemple 1 : 10 A' && dj.calibres.slice(1).every(x => / : $/.test(x)), dj.calibres.slice(0, 3).join(' | '));
+  const exportDj = await page.evaluate(() => { chargerContrat(contratExemple(), 'exemple', 'Contrat d’exemple'); allerAuPlan('1'); const S = svgDuFolio(), doc = new DOMParser().parseFromString(S.txt, 'image/svg+xml'), g = doc.querySelector('.comp[data-name="102CB1"]');
+    return { xml: !doc.querySelector('parsererror'), style: /\.cb-arc[,{]/.test(S.txt) && /\.cb-cal\{/.test(S.txt), arc: !!(g && g.querySelector('.cb-arc')), cal: g && g.querySelector('.cb-cal') ? g.querySelector('.cb-cal').textContent : '' }; });
+  ok('le SVG enregistré porte le symbole et son style, et se relit en XML', exportDj.xml && exportDj.style && exportDj.arc && exportDj.cal === '10 A', JSON.stringify(exportDj));
 
   /* Les défauts que rien ne signalait : l'outil ne se plaignait pas, il
      répondait mal, ou pas du tout. Chacun a son contrôle. */

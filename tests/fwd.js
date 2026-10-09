@@ -80,6 +80,10 @@ function ajouterH4() {
     items: document.querySelectorAll('#fw-liste .fw-eq').length, premier: document.querySelector('#fw-liste .fw-eq').dataset.nom, mots: document.querySelector('#fw-liste .fw-eq').textContent, bilan: document.querySelector('.fw-bilan').textContent, comparer: !$('fw-comparer').hidden }));
   ok(FW.visible && FW.titre === 'MEE256A7815001A' && FW.cible && FW.chez >= 4 && FW.manque && FW.filsManque === 2 && FW.filsDiff === 1 && FW.items === 6 && FW.premier === '302CB1' && /disjoncteur n° 1 · zone 302/.test(FW.mots) && /relié à/.test(FW.mots) && /5\schez\snous/.test(FW.bilan) && /1 manque/.test(FW.bilan) && FW.comparer,
     'le calque dessine MEE256A7815001A : 302CB1 encadré, les autres chez nous, 305XX9 en manque, deux fils qui manquent et un qui diffère en pointillé ; la colonne explique chaque repère, le comparé d’abord', JSON.stringify(FW));
+  /* 302CB1, ici, a sa borne 3 seule à gauche et son pôle 1/2 debout à droite : la forme du disjoncteur ne tient pas (06,
+     « le disjoncteur »), il garde la boîte — et l'état qu'elle porte, à l'encre */
+  const CB3 = await page.evaluate(() => { const g = document.querySelector('#fw-vue .comp[data-name="302CB1"]'), b = g && g.querySelector('rect.body'); return { boite: !!b && !g.querySelector('.cb-arc'), trait: b ? getComputedStyle(b).stroke : '' }; });
+  ok(CB3.boite && CB3.trait === 'rgb(29, 29, 31)', '302CB1 (la borne 3 seule à gauche, le pôle 1/2 à droite) garde la boîte d’un équipement, encadrée à l’encre : jamais pire qu’avant', JSON.stringify(CB3));
   await page.fill('#fw-q', 'relais'); await page.waitForTimeout(300);
   ok(await page.evaluate(() => document.querySelectorAll('#fw-liste .fw-eq').length === 1 && document.querySelector('#fw-liste .fw-eq').dataset.nom === '303RL1'), 'la recherche de la colonne filtre : « relais » ne laisse que 303RL1');
   await page.fill('#fw-q', ''); await page.waitForTimeout(300);
@@ -133,6 +137,10 @@ function ajouterH4() {
   await tel.goto(FICHIER); await tel.waitForFunction(() => typeof atelier !== 'undefined'); await tel.evaluate(baseEssai); await tel.waitForTimeout(300);
   await tel.evaluate(() => ouvrirFwd({ harness: 'H-2', fwd: 'MEE256A7815001B', repere: '102CB1', notre: '102CB1' })); await tel.waitForFunction(() => document.querySelector('#fw-vue .comp[data-name]')); await tel.waitForTimeout(300);
   ok(await tel.evaluate(() => { const s = $('fw-scene').getBoundingClientRect(), c = $('fw-colonne').getBoundingClientRect(); return !$('fwd').hidden && c.top >= s.bottom - 1 && s.width > 300; }) && !err2.length, 'au téléphone, la colonne passe sous le dessin, sans erreur', err2.join(' | '));
+  // un disjoncteur qui a sa forme (102CB1 de H-2 : ses deux fils d'un flanc) n'a pas de boîte : la zone de son corps dit son état, à l'encre ; son calibre est celui de SON part number
+  const CB = await tel.evaluate(() => { const g = document.querySelector('#fw-vue .comp[data-name="102CB1"]'), z = g && g.querySelector('.cb-zone');
+    return { forme: !!(g && g.querySelector('.cb-arc')) && !g.querySelector('rect.body'), cible: !!z && g.classList.contains('fw-cible'), trait: z ? getComputedStyle(z).stroke : '', epaisseur: z ? getComputedStyle(z).strokeWidth : '', cal: g && g.querySelector('.cb-cal') ? g.querySelector('.cb-cal').textContent : '' }; });
+  ok(CB.forme && CB.cible && CB.trait === 'rgb(29, 29, 31)' && parseFloat(CB.epaisseur) >= 2.4 && CB.cal === '10 A', 'sur le calque, 102CB1 de H-2 a la forme d’un disjoncteur ; comparé (et choisi), la zone de son corps est encadrée à l’encre, « 10 A » lu dans son part number (MS3320-10)', JSON.stringify(CB));
   console.log('\n  ' + (ko ? ko + ' échec(s)' : 'tout tient'));
   await nav.close(); process.exit(ko ? 1 : 0);
 })();

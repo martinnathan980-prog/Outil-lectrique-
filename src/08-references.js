@@ -233,7 +233,7 @@ async function dessinDuFwd(D) { if (REF.dessins.has(D.cle)) return REF.dessins.g
 const cartoucheFwd = D => ({ titre: D.fwd, auteur: D.appareil || '', indice: '', date: D.retest || '', echelle: '—' });
 const transformFwd = () => `translate(${f1(FWD.vue.tx)},${f1(FWD.vue.ty)}) scale(${FWD.vue.s.toFixed(4)})`;
 function peindreFwd() { const d = FWD.dessin, D = FWD.D; if (!d) return; const des = descriptionsDe(D);
-  $('fw-scene').innerHTML = `<svg id="fw-svg-dessin" xmlns="http://www.w3.org/2000/svg">${styleDessin()}<g id="fw-vue" transform="${transformFwd()}">${sceneSvg(d, cartoucheFwd(D), '1 / 1', n => des.get(n) || '', FWD.repere || null)}</g></svg>`;
+  $('fw-scene').innerHTML = `<svg id="fw-svg-dessin" xmlns="http://www.w3.org/2000/svg">${styleDessin()}<g id="fw-vue" transform="${transformFwd()}">${sceneSvg(d, cartoucheFwd(D), '1 / 1', n => des.get(n) || '', FWD.repere || null, n => { const e = D.equipements.get(n), f = e && e.pns.map(p => familleDuPn(p, app.norme)).find(Boolean); return { calibre: f ? f.calibre : null }; })}</g></svg>`;
   marquerFwd(); }
 /* Ce que le dessin dit de chaque bloc : comparé (encadré), chez nous, proposé (à confirmer), manque chez nous ; et de
    chaque fil : manque chez nous, diffère — en pointillé, la couleur de la route reste. */
@@ -283,7 +283,7 @@ function listeFwdHtml(parRep, des) { const D = FWD.D, t = FWD.q.trim().toLowerCa
 // les gestes du calque : fermer, ajuster, enregistrer, comparer ; zoomer, déplacer ; un bloc ou une ligne choisit
 function lierFwd() { const d = $('fwd'), sc = $('fw-scene');
   $('fw-fermer').onclick = fermerFwd; $('fw-ajuster').onclick = ajusterFwd;
-  $('fw-svg').onclick = () => { if (!FWD.dessin) return; const des = descriptionsDe(FWD.D), S = svgAutonome(FWD.dessin, cartoucheFwd(FWD.D), '1 / 1', n => des.get(n) || '');
+  $('fw-svg').onclick = () => { if (!FWD.dessin) return; const des = descriptionsDe(FWD.D), S = svgAutonome(FWD.dessin, cartoucheFwd(FWD.D), '1 / 1', n => des.get(n) || '', null, n => { const e = FWD.D.equipements.get(n), f = e && e.pns.map(p => familleDuPn(p, app.norme)).find(Boolean); return { calibre: f ? f.calibre : null }; });
     telecharger(new Blob([S.txt], { type: 'image/svg+xml;charset=utf-8' }), (FWD.D.harness + '-' + FWD.D.fwd).replace(/[^\w.-]+/g, '_') + '.svg'); dire('Dessin enregistré en SVG.'); };
   $('fw-comparer').onclick = () => { if (!(FWD.repere && FWD.notre)) return; const o = { type: 'ref', nom: FWD.notre, harness: FWD.D.harness, repere: FWD.repere, fwd: FWD.D.fwd }; fermerFwd(); REF.portee = 'dessin'; app.cible = o; ouvrirInspecteur(); };
   d.addEventListener('click', e => { if (e.target === d) fermerFwd(); });

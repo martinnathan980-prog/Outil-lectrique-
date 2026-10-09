@@ -15,7 +15,14 @@
    dit ce que le disjoncteur tient à chaque température ; glisser un point
    (pointer capture) écrit le profil au contrat et Ctrl+Z le rend ; changer
    de calibre fait glisser les courbes ; la table des états, les paliers des
-   fils, la jauge des chutes. Rend 1 au premier échec.
+   fils, la jauge des chutes.
+   Le folio : 102CB1 n'est plus une boîte mais sa forme (deux bornes, l'arc,
+   le bouton en T), aux ports d'un équipement, avec « 10 A » à côté ; le
+   calibre retenu dans la fiche s'y écrit, Ctrl+Z le rend. Le symbole cas par
+   cas, sur des blocs fabriqués (debout, couché, coudes, une borne seule,
+   tripolaires, une borne sur les deux flancs : la boîte), ses pôles
+   appariés, ses textes dans le corps sans se chevaucher. Rend 1 au premier
+   échec.
    =========================================================================== */
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const SRC = path.join(__dirname, '..', 'src'), NORMES = path.join(__dirname, '..', 'normes');
@@ -74,6 +81,36 @@ console.log('\nLE MOTEUR');
 
 const { chromium } = require('playwright');
 const P = require('./pilote');
+/* LE SYMBOLE CAS PAR CAS, dans la page : des blocs fabriqués (l'emprise d'un équipement, 144 × h, ses bornes [étiquette,
+   flanc, hauteur]) passés à `blocSvg`, rendus dans un SVG de la page pour mesurer les textes (getBBox) ; et les pôles. */
+function symboleCasParCasDansLaPage() {
+  const bloc = (name, h, bornes) => { const c = { name, kind: 'equip', x: 0, y: 0, w: 144, h, lw: 20, rw: 20, rangs: { L: [], R: [] } };
+    bornes.forEach(([etiq, f, y]) => c.rangs[f].push({ etiq, y, dir: f === 'L' ? -1 : 1 })); c.rangs.L.sort((u, v) => u.y - v.y); c.rangs.R.sort((u, v) => u.y - v.y); return c; };
+  const ns = 'http://www.w3.org/2000/svg', svg = document.createElementNS(ns, 'svg'); svg.setAttribute('width', '600'); svg.setAttribute('height', '400');
+  svg.style.cssText = 'position:fixed;left:0;top:0;visibility:hidden'; document.body.appendChild(svg);
+  const lire = (c, calibre) => { svg.innerHTML = styleDessin() + blocSvg(c, '', false, null, calibre === undefined ? { calibre: 10 } : { calibre }); const g = svg.querySelector('.comp');
+    const num = (e, a) => +e.getAttribute(a), bornes = [...g.querySelectorAll('.cb-borne')].map(e => ({ x: num(e, 'cx'), y: num(e, 'cy') }));
+    const arcs = [...g.querySelectorAll('.cb-arc')].map(e => { const b = e.getBBox(), m = /^M([\d.\-]+) ([\d.\-]+) A[\d.\-]+ [\d.\-]+ 0 0 [01] ([\d.\-]+) ([\d.\-]+)$/.exec(e.getAttribute('d')); return { x0: b.x, x1: b.x + b.width, y0: b.y, y1: b.y + b.height, de: m && [+m[1], +m[2]], a: m && [+m[3], +m[4]] }; });
+    const textes = [...g.querySelectorAll('text')].map(t => { const b = t.getBBox(); return { t: t.textContent, cls: t.getAttribute('class'), x0: b.x, y0: b.y, x1: b.x + b.width, y1: b.y + b.height }; });
+    const X0 = c.lw - CONN_W, X1 = c.w - c.rw + CONN_W, dedans = textes.every(t => t.x0 >= X0 - 0.5 && t.x1 <= X1 + 0.5 && t.y0 >= -0.5 && t.y1 <= c.h + 0.5);
+    let chev = 0; for (let i = 0; i < textes.length; i++) for (let j = i + 1; j < textes.length; j++) { const a = textes[i], b = textes[j]; if (a.x1 > b.x0 && a.x0 < b.x1 && a.y1 > b.y0 && a.y0 < b.y1) chev++; }
+    return { boite: !!g.querySelector('rect.body'), bornes, arcs, bouton: g.querySelectorAll('.cb-bouton').length, lien: g.querySelectorAll('.cb-lien').length, droites: g.querySelectorAll('line.lead').length, coudes: g.querySelectorAll('path.lead').length,
+      cal: (g.querySelector('.cb-cal') || {}).textContent || '', rep: (g.querySelector('.rep-big') || {}).textContent || '', dedans, chev, textes: textes.map(t => t.t) }; };
+  const R = {
+    deboutDroite: lire(bloc('102CB1', 50, [['1', 'R', 18], ['2', 'R', 32]])),
+    deboutGauche: lire(bloc('102CB1', 50, [['1', 'L', 18], ['2', 'L', 32]])),
+    coucheAligne: lire(bloc('702CB1', 46, [['1', 'L', 23], ['2', 'R', 23]]), 7.5),
+    coucheCoude: lire(bloc('705CB2', 64, [['1', 'L', 18], ['2', 'R', 46]]), 5),
+    deboutEcarte: lire(bloc('511CB1', 92, [['1', 'R', 18], ['2', 'R', 74]]), 15),
+    uneBorne: lire(bloc('701CB8', 46, [['1', 'R', 23]]), null),
+    unDeuxTrois: lire(bloc('201CB6', 64, [['1', 'R', 18], ['2', 'R', 32], ['3', 'R', 46]]), null),
+    triCouche: lire(bloc('802CB1', 92, [['A1', 'L', 18], ['B1', 'L', 46], ['C1', 'L', 74], ['A2', 'R', 18], ['B2', 'R', 46], ['C2', 'R', 74]])),
+    triDebout: lire(bloc('802CB1', 106, [['1', 'R', 18], ['2', 'R', 32], ['3', 'R', 46], ['4', 'R', 60], ['5', 'R', 74], ['6', 'R', 88]])),
+    deuxFlancs: lire(bloc('804CB3', 46, [['1', 'L', 23], ['1', 'R', 23]])) };
+  svg.remove();
+  const poles = (...etiqs) => polesDuDisjoncteur(etiqs.map((etiq, i) => ({ etiq, y: 18 + 14 * i }))).map(P => P.p.etiq + (P.q ? '/' + P.q.etiq : '')).join(' ');
+  R.poles = { lettres: poles('A1', 'A2', 'B1', 'B2', 'C1', 'C2'), nombres: poles('1', '2', '3', '4', '5', '6'), lt: poles('L1', 'T1', 'L2', 'T2'), ligne: poles('LINE', 'LOAD'), trois: poles('1', '2', '3') };
+  return R; }
 const FICHIER = P.fichierDemande();
 (async () => {
   console.log('\nL’ÉCRAN');
@@ -83,6 +120,16 @@ const FICHIER = P.fichierDemande();
   await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined');
   const ouvrir = async () => { await page.evaluate(() => { allerAuPlan('1'); choisirBloc(app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag')); }); await page.waitForTimeout(500); };
   await ouvrir();
+  // LE FOLIO : 102CB1 a sa forme, pas la boîte d'un équipement — aux ports d'un équipement, choisi à l'encre (« Graphite »)
+  const folioCb = () => page.evaluate(() => { const c = app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag'), g = document.querySelector('#scene .comp[data-name="102CB1"]'), t = cls => [...g.querySelectorAll('text.' + cls)].map(e => e.textContent);
+    const ports = [...(c.rangs.L || []).map(p => [0, p.y - c.y]), ...(c.rangs.R || []).map(p => [c.w, p.y - c.y])];
+    const bouts = [...g.querySelectorAll('.lead')].map(l => l.tagName === 'line' ? [+l.getAttribute('x1'), +l.getAttribute('y1')] : (m => [+m[1], +m[2]])(/^M([\d.\-]+) ([\d.\-]+)/.exec(l.getAttribute('d'))));
+    const sel = g.querySelector('.selbox');
+    return { boite: !!g.querySelector('rect.body'), conn: !!g.querySelector('.conn'), bornes: g.querySelectorAll('.cb-borne').length, arcs: g.querySelectorAll('.cb-arc').length, bouton: g.querySelectorAll('.cb-bouton').length, rep: t('rep-big'), cal: t('cb-cal'),
+      ports: bouts.length === ports.length && ports.every(p => bouts.some(b => Math.abs(b[0] - p[0]) < 0.06 && Math.abs(b[1] - p[1]) < 0.06)), largeur: c.w, sel: sel ? getComputedStyle(sel).stroke : '' }; });
+  const F1 = await folioCb();
+  ok(!F1.boite && !F1.conn && F1.bornes === 2 && F1.arcs === 1 && F1.bouton === 1 && F1.rep.join() === '102CB1' && F1.cal.join() === '10 A' && F1.ports && F1.largeur === 144 && F1.sel === 'rgb(29, 29, 31)',
+    'le folio : 102CB1 n’est plus une boîte (ni corps, ni pièce de connecteur « A ») mais deux bornes, l’arc et le bouton en T, son repère et « 10 A » (le part number) ; chaque amenée part d’un port d’équipement (x = 0 ou 144, à la hauteur de sa borne) ; choisi, il est encadré à l’encre', JSON.stringify(F1));
   const S = '#ba-equip .fi-dj ';
   ok(await page.evaluate(() => { const s = document.querySelector('#ba-equip .fi-dj'), chips = [...s.querySelectorAll('.dj-chips .dj-chip')];
     return chips.length === 7 && chips.map(c => c.dataset.cal).join() === '1,3,5,7.5,10,15,25' && chips.map(c => c.classList.contains('serre') ? 's' : c.classList.contains('ok') ? 'o' : c.classList.contains('ko') ? 'x' : '?').join('') === 'xxxxsoo'
@@ -137,11 +184,13 @@ const FICHIER = P.fichierDemande();
   const m = s => { const r = /matrix\(([^)]+)\)/.exec(s); return r ? +r[1].split(',')[4] : NaN; };
   ok(pendant.tx > tx10 && Math.abs(pendant.tx - Math.log10(1.5) * (400 - 56) / 3.5 - tx10) < 0.5 && parseFloat(pendant.duree) > 0 && m(pendant.mat) < pendant.tx - 1 && Math.abs(m(apres.mat) - apres.tx) < 0.5 && apres.retenu === '15' && apres.dix,
     'le 15 A retenu : le groupe glisse de log10(1,5) décade (en transition, pas d’un coup), le fantôme du 15 se cache, celui du 10 reparaît', JSON.stringify({ tx10, pendant, apres }));
+  ok((await folioCb()).cal.join() === '15 A', 'le folio écrit le calibre retenu : « 15 A » à côté du symbole');
   ok(await page.evaluate(() => /choisi à la main/.test(document.querySelector('#ba-equip .dj-dou').textContent) && !!document.querySelector('#ba-equip .dj-ideal .dj-etoile svg') && /l’idéal · les fils ne suivent pas/.test(document.querySelector('#ba-equip .dj-ideal').textContent) && CONTROLE.items.some(x => x.nom === '102CB1' && x.niveau === 'att' && /W-011 \(DR16\) : 11,7 A admis en continu \(× 0,6\) < calibre 15 A — pas protégé en surcharge/.test(x.texte))),
     '« choisi à la main », c’est l’idéal (avec sa réserve) ; le contrôle dit que le DR16 n’est pas protégé en surcharge par un 15 A (19,5 × 0,6 = 11,7 A admis en continu, le point FAA, moins que le calibre)', await page.evaluate(() => CONTROLE.items.filter(x => x.nom === '102CB1').map(x => x.niveau + ' ' + x.texte).join(' | ')));
   ok(await page.evaluate(() => CONTROLE.items.filter(x => x.nom === '102CB1').map(x => x.niveau + ' ' + x.texte).every(t => !/W-012 \(DR20\) : pas protégé en surcharge brève/.test(t))), 'un fil déjà en problème (W-012 : la charge le dépasse) ne reçoit pas en plus l’avertissement de surcharge brève');
   await page.click(S + '.dj-chip[data-cal="15"]'); await page.waitForTimeout(700);
   ok(await page.evaluate(() => app.contrat.charges.get('102CB1').calibre === null && document.querySelector('#ba-equip .dj-cal').dataset.cal === '10'), 'presser de nouveau le 15 rend le 10 du part number');
+  ok((await folioCb()).cal.join() === '10 A', 'et le folio écrit de nouveau « 10 A »');
   // la table des états, les paliers des fils, la jauge des chutes
   ok(await page.evaluate(() => { const s = document.querySelector('#ba-equip .fi-dj'), E = [...s.querySelectorAll('.dj-etat')]; return !!s.querySelector('.dj-entete') && E.map(e => e.dataset.k).join() === 'dem,trans,perm' && E[0].querySelector('.dj-verdict.serre') && E[1].querySelector('.dj-verdict.serre') && E[2].querySelector('.dj-verdict.ok') && E[2].querySelector('.dj-inf') && !E[2].querySelector('[data-q="t"]') && s.querySelectorAll('.dj-champ input').length === 5 && !!s.querySelector('#dj-plus'); }),
     'les états en table : démarrage, transition (pastilles ambre : leur point touche la courbe), permanent (pour toujours, sans durée, pastille sombre), cinq champs, « + un état »');
@@ -161,6 +210,33 @@ const FICHIER = P.fichierDemande();
     'sa carte : 12 A pendant 30 s, le 10 A tient 10,4 s à 125 °C (290 % consommés par cet état), déclenche à 125 °C et 23 °C min, 295 % en tout');
   await page.click(S + '.dj-x[data-x="plus0"]'); await page.waitForTimeout(700);
   ok(await page.evaluate(() => app.contrat.charges.get('102CB1').plus.length === 0 && document.querySelectorAll('#ba-equip .dj-pt').length === 2), 'retiré');
+  // le calibre du folio suit l'historique : retenir le 15, Ctrl+Z
+  await page.click(S + '.dj-chip[data-cal="15"]'); await page.waitForTimeout(700); const avecQuinze = (await folioCb()).cal.join();
+  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
+  const defait = await folioCb();
+  ok(avecQuinze === '15 A' && defait.cal.join() === '10 A' && !defait.boite && await page.evaluate(() => app.contrat.charges.get('102CB1').calibre === null), 'retenir le 15 écrit « 15 A » sur le folio, Ctrl+Z y rend « 10 A »', avecQuinze + ' → ' + defait.cal.join());
+
+  console.log('\nLE SYMBOLE, CAS PAR CAS');
+  const C = await page.evaluate(symboleCasParCasDansLaPage);
+  const sym = ['deboutDroite', 'deboutGauche', 'coucheAligne', 'coucheCoude', 'deboutEcarte', 'uneBorne', 'unDeuxTrois', 'triCouche', 'triDebout'].map(k => [k, C[k]]);
+  ok(sym.every(([, r]) => !r.boite && r.arcs.length >= 1 && r.bouton === 1), 'chaque cas prend la forme : un arc par pôle, un seul bouton', sym.filter(([, r]) => r.boite).map(([k]) => k).join(', '));
+  const [dd, dg] = [C.deboutDroite, C.deboutGauche];
+  ok(dd.arcs[0].x1 <= dd.bornes[0].x - 2 && dg.arcs[0].x0 >= dg.bornes[0].x + 2 && dd.bornes.map(b => b.y).join() === '18,32' && dd.droites === 2 && dd.coudes === 0,
+    'debout : les bornes aux hauteurs des fils (18 et 32), sans coude ; l’arc tourné vers le flanc vide (à gauche quand les fils sont à droite, et l’inverse)');
+  ok(C.coucheAligne.coudes === 0 && C.coucheAligne.bornes.every(b => b.y === 23) && C.coucheAligne.arcs[0].y1 <= 23 && C.coucheAligne.cal === '7,5 A',
+    'couché, aligné : les deux bornes à la hauteur du fil, l’arc au-dessus, pas de coude ; « 7,5 A » à la française');
+  ok(C.coucheCoude.coudes === 1 && Math.abs(C.coucheCoude.bornes[1].x - C.coucheCoude.bornes[0].x) === 14 && C.deboutEcarte.coudes === 2 && Math.abs(C.deboutEcarte.bornes[1].y - C.deboutEcarte.bornes[0].y) === 14,
+    'à deux hauteurs (couché) ou écartés de 56 (debout) : le symbole garde sa taille (14 entre les bornes), les fils font un coude');
+  ok(C.uneBorne.bornes.length === 2 && C.uneBorne.droites + C.uneBorne.coudes === 1 && C.uneBorne.cal === '',
+    'une seule borne sur le folio : la jumelle dessinée sans fil (2 bornes, 1 amenée) ; sans calibre connu, rien d’écrit');
+  ok(C.unDeuxTrois.bornes.map(b => b.y).join() === '18,32,46,60' && C.unDeuxTrois.arcs.length === 2 && C.unDeuxTrois.lien === 1,
+    '1, 2 et 3 d’un même flanc : le pôle 1/2, puis 3 et sa jumelle sous lui (jamais sur la borne 2), la liaison mécanique en pointillé', C.unDeuxTrois.bornes.map(b => b.y).join());
+  ok(C.triCouche.arcs.length === 3 && C.triCouche.bouton === 1 && C.triCouche.lien === 1 && C.triCouche.coudes === 0, 'tripolaire couché (A1/A2, B1/B2, C1/C2) : trois arcs, un bouton, une liaison');
+  ok(C.triDebout.arcs.length === 3 && C.triDebout.arcs.map(a => a.de && a.de[1] + '-' + a.a[1]).join() === '18-32,46-60,74-88' && C.triDebout.lien === 1, 'tripolaire debout, bornes 1 à 6 : les arcs 1/2, 3/4, 5/6', C.triDebout.arcs.map(a => a.de && a.de[1] + '-' + a.a[1]).join());
+  ok(C.deuxFlancs.boite && C.deuxFlancs.arcs.length === 0, 'une borne sur les deux flancs : la forme ne tient pas, le disjoncteur garde la boîte (jamais pire qu’avant)');
+  ok(sym.every(([, r]) => r.dedans && r.chev === 0 && r.rep), 'les textes (repère, calibre, numéros de borne) restent dans le corps réservé au bloc et ne se chevauchent pas', sym.filter(([, r]) => !r.dedans || r.chev).map(([k, r]) => k + ' ' + r.textes.join('/')).join(' | '));
+  ok(C.poles.lettres === 'A1/A2 B1/B2 C1/C2' && C.poles.nombres === '1/2 3/4 5/6' && C.poles.lt === 'L1/T1 L2/T2' && C.poles.ligne === 'LINE/LOAD' && C.poles.trois === '1/2 3',
+    'les pôles : A1/A2 par la lettre, 1/2 3/4 5/6 deux à deux, L1/T1 par le chiffre, LINE/LOAD ensemble, 1 2 3 → 1/2 et 3 seul', JSON.stringify(C.poles));
   ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
   await nav.close();
   console.log('\n' + (echecs ? echecs + ' échec(s) sur ' + total : total + ' / ' + total + ' contrôles passés — tout est vert'));
