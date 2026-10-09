@@ -1,37 +1,37 @@
-Contacts EN 3155 — le contact à sertir sur chaque fil, et ce qui s'y ajoute (un manchon thermorétractable d'étanchéité E0718 sur l'isolant quand le fil est plus fin que la cavité — pour le joint arrière, pas un réducteur de fût : recherche R3 —, une bague d'étanchéité EN4530…), selon le connecteur, la taille de la cavité, le sexe du contact, le type et la jauge du fil.
-Transcrit des tables SEE Electrical Equipment Definition (EN2997 v6, EN3645 v2, EN3646 v13, EN4165 v49, octobre 2026). Le type « * » vaut pour tout type de fil, la jauge « * » pour toute jauge : la ligne la plus précise gagne (type exact avant *, jauge exacte avant *). Un fil sans ligne est refusé par le contact.
+Contacts EN 3155 — le contact à sertir sur chaque fil, et ce qui s'y ajoute (un manchon thermorétractable d'étanchéité E0718 sur l'isolant quand le fil est plus fin que la plage du joint arrière — pas un réducteur de fût : recherches R3 et R1 —, une bague d'étanchéité EN4530…), selon le connecteur ou le module de jonction, la taille de la cavité, le sexe du contact, le type et la jauge du fil.
+Transcrit des tables SEE Electrical Equipment Definition (EN2997 v6, EN3645 v2, EN3646 v13, EN4165 v49, octobre 2026), relues par la recherche R1 (octobre 2026) : 311 lignes désignent un contact EN 3155 ou M39029 qui existe, les 187 lignes EN 3155 à jauge précise tombent dans la plage du fût. Le type « * » vaut pour tout type de fil, la jauge « * » pour toute jauge : la ligne la plus précise gagne (type exact avant *, jauge exacte avant *). Un fil sans ligne est refusé par le contact. Source et Statut : vides pour la donnée du lecteur — « à confirmer » pour les 59 références qu'aucune source publique ne vérifie (Airbus, Airbus Helicopters, fournisseur) et les lignes des 11 points à relire (scratchpad/phase5/H/a-relire.md) — la donnée elle-même n'est pas changée. En fin de table, les contacts des barrettes (NSA937901, ASNE 0599 : broches EN 3155-016, catalogue Air LB) et des tailles que la table ignorait (EN 4165 23, EN 3645 10), ajoutés par R1 avec leur source et leur statut.
 Sexe : M (mâle, broche) ou F (femelle, douille) — celui du contact qu'on sertit sur le fil, dans la fiche du faisceau : F face à une embase d'équipement à broches, F côté fiche et M côté embase d'une prise de coupure (hypothèse de l'outil, à confirmer ; se change sur la fiche).
 
-Norme;Sexe;Taille;Type de fil;Jauge;Contact;Accessoire;Note
-EN2997;M;20;*;24;EN3155-018M2020;;
-EN2997;M;20;*;22;EN3155-018M2020;;
-EN2997;M;20;*;20;EN3155-018M2020;;
-EN2997;F;20;*;24;EN3155-019F2020;;
-EN2997;F;20;*;22;EN3155-019F2020;;
-EN2997;F;20;*;20;EN3155-019F2020;;
-EN2997;M;20;*;26;EN3155-018M2022;E0718-20-30;
-EN2997;F;20;*;26;EN3155-019F2022;E0718-20-30;
-EN2997;M;20;*;18;EN3155-018M2018;;
-EN2997;F;20;*;18;EN3155-019F2018;;
-EN2997;M;16;*;24;EN3155-018M1618;E0718-20-30;
-EN2997;F;16;*;24;EN3155-019F1618;E0718-20-30;
-EN2997;M;16;*;22;EN3155-018M1618;E0718-20-30;
-EN2997;F;16;*;22;EN3155-019F1618;E0718-20-30;
-EN2997;M;16;*;20;EN3155-018M1616;;
-EN2997;M;16;*;18;EN3155-018M1616;;
-EN2997;M;16;*;16;EN3155-018M1616;;
-EN2997;F;16;*;20;EN3155-019F1616;;
-EN2997;F;16;*;18;EN3155-019F1616;;
-EN2997;F;16;*;16;EN3155-019F1616;;
-EN2997;M;16;*;14;EN3155-018M1614;;
-EN2997;F;16;*;14;EN3155-019F1614;;
-EN2997;M;12;*;14;EN3155-018M1212;;
-EN2997;M;12;*;12;EN3155-018M1212;;
-EN2997;F;12;*;14;EN3155-019F1212;;
-EN2997;M;16;DN;22;EN3155-018M1618;;
-EN2997;M;16;DL;22;EN3155-018M1618;;
-EN2997;F;16;DN;22;EN3155-019F1618;;
-EN2997;F;16;DL;22;EN3155-019F1618;;
+Norme;Sexe;Taille;Type de fil;Jauge;Contact;Accessoire;Note;Source;Statut
+EN2997;M;20;*;24;EN3155-018M2020;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;20;*;22;EN3155-018M2020;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;20;*;20;EN3155-018M2020;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;F;20;*;24;EN3155-019F2020;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;F;20;*;22;EN3155-019F2020;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;F;20;*;20;EN3155-019F2020;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;20;*;26;EN3155-018M2022;E0718-20-30;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;F;20;*;26;EN3155-019F2022;E0718-20-30;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;20;*;18;EN3155-018M2018;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;F;20;*;18;EN3155-019F2018;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;16;*;24;EN3155-018M1618;E0718-20-30;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;F;16;*;24;EN3155-019F1618;E0718-20-30;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;16;*;22;EN3155-018M1618;E0718-20-30;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;F;16;*;22;EN3155-019F1618;E0718-20-30;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;16;*;20;EN3155-018M1616;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;16;*;18;EN3155-018M1616;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;16;*;16;EN3155-018M1616;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;F;16;*;20;EN3155-019F1616;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;F;16;*;18;EN3155-019F1616;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;F;16;*;16;EN3155-019F1616;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;16;*;14;EN3155-018M1614;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;F;16;*;14;EN3155-019F1614;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;12;*;14;EN3155-018M1212;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;12;*;12;EN3155-018M1212;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;F;12;*;14;EN3155-019F1212;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;16;DN;22;EN3155-018M1618;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;16;DL;22;EN3155-018M1618;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;F;16;DN;22;EN3155-019F1618;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;F;16;DL;22;EN3155-019F1618;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
 EN2997;M;20;HM;22;EN3155-056M2020;;
 EN2997;F;20;HM;22;EN3155-057F2020;;
 EN2997;M;20;HN;22;EN3155-054M2020;;
@@ -44,30 +44,30 @@ EN2997;M;20;HS;20;EN3155-056M2020;;
 EN2997;F;20;HS;20;EN3155-057F2020;;
 EN2997;M;20;HT;20;EN3155-054M2020;;
 EN2997;F;20;HT;20;EN3155-055F2020;;
-EN2997;F;12;*;12;EN3155-019F1212;;
-EN2997;M;12;*;18;EN3155-018M1218;E0718-20-30;
-EN2997;M;12;*;20;EN3155-018M1218;E0718-20-30;
-EN2997;M;12;*;22;EN3155-018M1218;E0718-20-30;
-EN2997;M;12;*;24;EN3155-018M1218;E0718-20-30;
-EN2997;F;12;*;18;EN3155-019F1218;E0718-20-30;
-EN2997;F;12;*;20;EN3155-019F1218;E0718-20-30;
-EN2997;F;12;*;22;EN3155-019F1218;E0718-20-30;
-EN2997;F;12;*;24;EN3155-019F1218;E0718-20-30;
-EN2997;M;20;WF;*;EN3155-018M2020;;
-EN2997;F;20;WF;*;EN3155-019F2020;;
-EN2997;M;20;XM;*;EN3155-018M2020;;
-EN2997;F;20;XM;*;EN3155-019F2020;;
-EN2997;M;20;KD;*;EN3155-018M2020;;
-EN2997;F;20;KD;*;EN3155-019F2020;;
-EN2997;M;20;KQ;*;EN3155-018M2020;;
-EN2997;F;20;KQ;*;EN3155-019F2020;;
-EN2997;M;20;WW;*;EN3155-018M2022;E0718-20-30;
-EN2997;F;20;WW;*;EN3155-019F2022;E0718-20-30;
-EN2997;M;20;WX;*;EN3155-018M2022;E0718-20-30;
-EN2997;F;20;WX;*;EN3155-019F2022;E0718-20-30;
-EN2997;M;20;KL;*;EN3155-018M2020;;
-EN2997;F;20;KL;*;EN3155-019F2020;;
-EN2997;M;20;YY;22;EN3155-018M2020;;
+EN2997;F;12;*;12;EN3155-019F1212;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;12;*;18;EN3155-018M1218;E0718-20-30;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;12;*;20;EN3155-018M1218;E0718-20-30;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;12;*;22;EN3155-018M1218;E0718-20-30;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;12;*;24;EN3155-018M1218;E0718-20-30;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;F;12;*;18;EN3155-019F1218;E0718-20-30;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;F;12;*;20;EN3155-019F1218;E0718-20-30;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;F;12;*;22;EN3155-019F1218;E0718-20-30;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;F;12;*;24;EN3155-019F1218;E0718-20-30;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;20;WF;*;EN3155-018M2020;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;F;20;WF;*;EN3155-019F2020;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;20;XM;*;EN3155-018M2020;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;F;20;XM;*;EN3155-019F2020;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;20;KD;*;EN3155-018M2020;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;F;20;KD;*;EN3155-019F2020;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;20;KQ;*;EN3155-018M2020;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;F;20;KQ;*;EN3155-019F2020;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;20;WW;*;EN3155-018M2022;E0718-20-30;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;F;20;WW;*;EN3155-019F2022;E0718-20-30;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;20;WX;*;EN3155-018M2022;E0718-20-30;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;F;20;WX;*;EN3155-019F2022;E0718-20-30;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;20;KL;*;EN3155-018M2020;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;F;20;KL;*;EN3155-019F2020;;;tables SEE (relecture R1, octobre 2026);à confirmer : classe S (200 °C) — un EN 2997 coupe-feu (KE, SE : 260 °C) prend les EN3155-004/-005 classe T (R1, point 10)
+EN2997;M;20;YY;22;EN3155-018M2020;;;tables SEE (relecture R1, octobre 2026);à confirmer : broche sans douille (F 20 YY 22 → EN3155-019F2020 si SEE l'a) (R1, point 7)
 EN3646;M;20;*;24;EN3155-018M2020;;
 EN3646;M;20;*;22;EN3155-018M2020;;
 EN3646;M;20;*;20;EN3155-018M2020;;
@@ -118,24 +118,24 @@ EN3646;F;12;*;18;EN3155-019F1218;E0718-20-30;
 EN3646;F;12;*;20;EN3155-019F1218;E0718-20-30;
 EN3646;F;12;*;22;EN3155-019F1218;E0718-20-30;
 EN3646;F;12;*;24;EN3155-019F1218;E0718-20-30;
-EN3646;M;16;WL;*;NSA938172SL1600;;
-EN3646;F;16;WL;*;NSA938171PL1600;;
-EN3646;F;16;XE;*;NSA938171PL1600;;
-EN3646;F;16;XY;*;NSA938171PL1600;;
-EN3646;M;16;XE;*;NSA938172SL1600;;
-EN3646;M;16;XY;*;NSA938172SL1600;;
-EN3646;F;12;*;10;ECS0746F1210;;
+EN3646;M;16;WL;*;NSA938172SL1600;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus (NSA) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN3646;F;16;WL;*;NSA938171PL1600;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus (NSA) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN3646;F;16;XE;*;NSA938171PL1600;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus (NSA) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN3646;F;16;XY;*;NSA938171PL1600;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus (NSA) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN3646;M;16;XE;*;NSA938172SL1600;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus (NSA) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN3646;M;16;XY;*;NSA938172SL1600;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus (NSA) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN3646;F;12;*;10;ECS0746F1210;;;tables SEE (relecture R1, octobre 2026);à confirmer : douille sans broche (M 12 jauge 10) — référence Airbus Helicopters non publique (R1, point 8)
 EN3646;F;20;HJ;*;EN3155-019F2022;E0718-20-30;
 EN3646;M;20;HJ;*;EN3155-018M2022;E0718-20-30;
-EN3646;F;20;KE;*;E0848B22N;EN3155-019F2020;accessoire tronqué sur la capture (« EN3155-019F… ») : 2020 supposé
+EN3646;F;20;KE;*;E0848B22N;EN3155-019F2020;accessoire tronqué sur la capture (« EN3155-019F… ») : 2020 supposé;tables SEE (relecture R1, octobre 2026);à confirmer : le contact est une référence Airbus non publique (E0848) et l'accessoire un contact EN 3155 — colonnes inversées dans SEE ? (R1, point 9)
 EN3646;M;20;WX;*;EN3155-018M2022;;
 EN3646;F;20;WX;*;EN3155-019F2022;;
 EN3646;M;20;XM;*;EN3155-018M2018;;
 EN3646;F;20;XM;*;EN3155-019F2018;;
 EN3646;M;20;WF;24;EN3155-018M2020;;
 EN3646;F;20;WF;24;EN3155-019F2020;;
-EN3646;M;16;KC;*;NSA938172SL1600;;
-EN3646;F;16;KC;*;NSA938171PL1600;;
+EN3646;M;16;KC;*;NSA938172SL1600;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus (NSA) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN3646;F;16;KC;*;NSA938171PL1600;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus (NSA) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
 EN3646;M;20;KL;*;EN3155-018M2020;;
 EN3646;F;20;KL;*;EN3155-019F2020;;
 EN3646;M;20;WW;*;EN3155-018M2022;;
@@ -186,12 +186,12 @@ EN3645;F;12;*;14;EN3155-009F1212;E0718-01-30;
 EN3645;F;12;CF;14;EN3155-009F1212;E0718-01-30;
 EN3645;F;12;*;12;EN3155-009F1212;;
 EN3645;F;12;CF;12;EN3155-009F1212;E0718-02-30;
-EN3645;M;12;*;10;ECS0721M1210;;
-EN3645;F;12;*;10;ECS0722F1210;;
+EN3645;M;12;*;10;ECS0721M1210;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus Helicopters (ECS) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN3645;F;12;*;10;ECS0722F1210;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus Helicopters (ECS) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
 EN3645;M;8;*;10;EN3155-065M0810A;E0718-03-30;
-EN3645;F;8;*;10;EN3155-066F0810A;E0718-03-30;
-EN3645;M;8;*;8;E0824KV0800;;
-EN3645;F;8;*;8;E0825LW0800;;
+EN3645;F;8;*;10;EN3155-066F0810A;E0718-03-30;;tables SEE (relecture R1, octobre 2026);à confirmer : douille taille 8 EN3155-066 ou -083 (Souriau qualifie la -083F0810 pour l'EN 3645) (R1, point 5)
+EN3645;M;8;*;8;E0824KV0800;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus (E0…) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN3645;F;8;*;8;E0825LW0800;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus (E0…) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
 EN3645;M;20;HM;22;M39029/87-476;;
 EN3645;F;20;HM;22;M39029/88-488;;
 EN3645;M;20;HN;22;M39029/87-475;;
@@ -206,21 +206,21 @@ EN3645;M;22;HT;22;M39029/87-471;;
 EN3645;F;22;HT;22;M39029/88-483;;
 EN3645;M;16;WL;*;EN3155-058M16;;
 EN3645;M;16;WS;*;EN3155-058M16;;
-EN3645;M;16;XE;*;KB1600;;
-EN3645;M;16;XY;*;KB1600;;
-EN3645;M;16;WG;*;KB1601;;
+EN3645;M;16;XE;*;KB1600;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence fournisseur (KB, LB, KC, LC) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN3645;M;16;XY;*;KB1600;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence fournisseur (KB, LB, KC, LC) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN3645;M;16;WG;*;KB1601;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence fournisseur (KB, LB, KC, LC) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
 EN3645;F;16;WL;*;EN3155-059F16;;
 EN3645;F;16;WS;*;EN3155-059F16;;
-EN3645;F;16;XE;*;LB1600;;
-EN3645;F;16;XY;*;LB1600;;
-EN3645;F;16;WG;*;LB1601;;
+EN3645;F;16;XE;*;LB1600;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence fournisseur (KB, LB, KC, LC) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN3645;F;16;XY;*;LB1600;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence fournisseur (KB, LB, KC, LC) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN3645;F;16;WG;*;LB1601;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence fournisseur (KB, LB, KC, LC) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
 EN3645;M;12;*;*;EN3155-060M12;;
 EN3645;M;12;WH;*;M39029/28-409;;
 EN3645;F;12;*;*;EN3155-061F12;;
 EN3645;F;12;WH;*;M39029/75-417;;
-EN3645;M;8;WH;*;KB0800;;
+EN3645;M;8;WH;*;KB0800;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence fournisseur (KB, LB, KC, LC) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
 EN3645;M;8;XF;*;EN3155-067M08A;;
-EN3645;F;8;WH;*;LB0800;;
+EN3645;F;8;WH;*;LB0800;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence fournisseur (KB, LB, KC, LC) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
 EN3645;F;8;XF;*;EN3155-068F08A;;
 EN3645;M;8;WM;*;EN3155-067M08A;;
 EN3645;F;8;WM;*;EN3155-068F08A;;
@@ -228,12 +228,12 @@ EN3645;M;8;WY;26;EN3155-012M08AB;;
 EN3645;F;8;WY;26;EN3155-013F08AB;;
 EN3645;M;8;XM;*;EN3155-012M08AB;;
 EN3645;F;8;XM;*;EN3155-013F08AB;;
-EN3645;M;8;WJ;*;KC0800;;
-EN3645;F;8;WJ;*;LC0800;;
-EN3645;M;8;KD;*;ECS0754QM08A;;
-EN3645;F;8;KD;*;ECS0754QF08A;;
-EN3645;M;20;YY;*;E0848A20N;EN3155-008M2020;accessoire tronqué sur la capture (« EN3155-008M… ») : 2020 supposé
-EN3645;F;20;YY;*;E0848A20N;EN3155-009F2020;accessoire tronqué sur la capture (« EN3155-009F… ») : 2020 supposé
+EN3645;M;8;WJ;*;KC0800;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence fournisseur (KB, LB, KC, LC) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN3645;F;8;WJ;*;LC0800;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence fournisseur (KB, LB, KC, LC) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN3645;M;8;KD;*;ECS0754QM08A;;;tables SEE (relecture R1, octobre 2026);à confirmer : quadrax Airbus Helicopters (ECS0754), choix du programme — l'EN 3155 a ses quadrax -074/-075 qualifiés EN 3645 et EN 4165 (R1, point 6)
+EN3645;F;8;KD;*;ECS0754QF08A;;;tables SEE (relecture R1, octobre 2026);à confirmer : quadrax Airbus Helicopters (ECS0754), choix du programme — l'EN 3155 a ses quadrax -074/-075 qualifiés EN 3645 et EN 4165 (R1, point 6)
+EN3645;M;20;YY;*;E0848A20N;EN3155-008M2020;accessoire tronqué sur la capture (« EN3155-008M… ») : 2020 supposé;tables SEE (relecture R1, octobre 2026);à confirmer : le contact est une référence Airbus non publique (E0848) et l'accessoire un contact EN 3155 — colonnes inversées dans SEE ? (R1, point 9)
+EN3645;F;20;YY;*;E0848A20N;EN3155-009F2020;accessoire tronqué sur la capture (« EN3155-009F… ») : 2020 supposé;tables SEE (relecture R1, octobre 2026);à confirmer : le contact est une référence Airbus non publique (E0848) et l'accessoire un contact EN 3155 — colonnes inversées dans SEE ? (R1, point 9)
 EN3645;M;20;*;26;EN3155-008M2022;E0718-20-30;
 EN3645;F;20;*;26;EN3155-009F2022;E0718-20-30;
 EN3645;M;12;*;16;EN3155-008M1214;E0718-01-30;
@@ -260,10 +260,10 @@ EN3645;F;22;WX;*;EN3155-009F2222;;
 EN3645;F;22;XM;*;EN3155-009F2222;;
 EN3645;M;20;HJ;*;EN3155-008M2022;;
 EN3645;F;20;HJ;*;EN3155-009F2022;;
-EN3645;M;20;WY;*;E0547FZ2002;;
-EN3645;M;20;WX;*;E0547FZ2002;;
-EN3645;F;20;WY;*;E0546DZ2002;;
-EN3645;F;20;WX;*;E0546DZ2002;;
+EN3645;M;20;WY;*;E0547FZ2002;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus (E0…) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN3645;M;20;WX;*;E0547FZ2002;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus (E0…) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN3645;F;20;WY;*;E0546DZ2002;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus (E0…) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN3645;F;20;WX;*;E0546DZ2002;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus (E0…) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
 EN3645;M;20;WJ;*;EN3155-008M2020;E0718-20-30;
 EN3645;F;20;WJ;*;EN3155-009F2020;E0718-20-30;
 EN3645;M;20;WV;*;EN3155-008M2020;E0718-20-30;
@@ -296,12 +296,12 @@ EN4165;M;12;*;14;EN3155-008M1212;E0718-02-30;
 EN4165;M;12;*;12;EN3155-008M1212;;
 EN4165;F;12;*;14;EN3155-003F1212;E0718-02-30;
 EN4165;F;12;*;12;EN3155-003F1212;;
-EN4165;M;12;*;10;ECS0721M1210;;
-EN4165;F;12;*;10;ECS0728F1210;;
-EN4165;M;8;*;8;E0824KV0800;;
-EN4165;F;8;*;8;E0825LW0800;;
+EN4165;M;12;*;10;ECS0721M1210;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus Helicopters (ECS) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN4165;F;12;*;10;ECS0728F1210;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus Helicopters (ECS) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN4165;M;8;*;8;E0824KV0800;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus (E0…) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN4165;F;8;*;8;E0825LW0800;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus (E0…) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
 EN4165;M;8;*;10;EN3155-065M0810A;;
-EN4165;F;8;*;10;EN3155-066F0810A;;
+EN4165;F;8;*;10;EN3155-066F0810A;;;tables SEE (relecture R1, octobre 2026);à confirmer : douille taille 8 EN3155-066 ou -083 (Souriau qualifie la -083F0810 pour l'EN 4165) (R1, point 4)
 EN4165;M;16;XE;*;EN3155-058M16;;
 EN4165;M;12;XE;*;EN3155-060M12;;
 EN4165;F;12;XE;*;M39029/27-210;;
@@ -349,12 +349,12 @@ EN4165;F;20;HS;22;M39029/89-500;;
 EN4165;F;20;HM;22;M39029/89-500;;
 EN4165;F;20;HT;22;M39029/89-499;;
 EN4165;F;20;HN;22;M39029/89-499;;
-EN4165;M;8;KD;*;ECS0754QM08AA;;
-EN4165;F;8;KD;*;ECS0754QF08AA;;
+EN4165;M;8;KD;*;ECS0754QM08AA;;;tables SEE (relecture R1, octobre 2026);à confirmer : quadrax Airbus Helicopters (ECS0754), choix du programme — l'EN 3155 a ses quadrax -074/-075 qualifiés EN 3645 et EN 4165 (R1, point 6)
+EN4165;F;8;KD;*;ECS0754QF08AA;;;tables SEE (relecture R1, octobre 2026);à confirmer : quadrax Airbus Helicopters (ECS0754), choix du programme — l'EN 3155 a ses quadrax -074/-075 qualifiés EN 3645 et EN 4165 (R1, point 6)
 EN4165;M;22;KD;*;EN3155-008M2222;;
 EN4165;F;22;KD;*;EN3155-003F2222;;
-EN4165;M;12;WW;*;ECS0704BP12;;
-EN4165;F;12;WW;*;ECS0703CS12;;
+EN4165;M;12;WW;*;ECS0704BP12;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus Helicopters (ECS) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN4165;F;12;WW;*;ECS0703CS12;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus Helicopters (ECS) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
 EN4165;M;22;HJ;*;EN3155-008M2222;;
 EN4165;F;22;HJ;*;EN3155-003F2222;;
 EN4165;M;20;HJ;*;EN3155-008M2022;E0718-20-30;
@@ -373,8 +373,8 @@ EN4165;M;22;WX;*;EN3155-008M2222;;
 EN4165;F;22;WX;*;EN3155-003F2222;;
 EN4165;M;22;XM;*;EN3155-008M2222;;
 EN4165;F;22;XM;*;EN3155-003F2222;;
-EN4165;M;20;WW;*;EN3155-008M2022;;
-EN4165;F;20;WW;*;EN3155-003F2022;E0718-20-30;
+EN4165;M;20;WW;*;EN3155-008M2022;;;tables SEE (relecture R1, octobre 2026);à confirmer : le manchon E0718-20-30 d'un seul côté (la douille WW 20 l'a, la broche non) (R1, point 2)
+EN4165;F;20;WW;*;EN3155-003F2022;E0718-20-30;;tables SEE (relecture R1, octobre 2026);à confirmer : le manchon E0718-20-30 d'un seul côté (la douille WW 20 l'a, la broche non) (R1, point 2)
 EN4165;F;16;XE;*;EN3155-069F16;;
 EN4165;F;16;WL;*;EN3155-069F16;;
 EN4165;F;16;WS;*;EN3155-069F16;;
@@ -387,28 +387,28 @@ EN4165;M;20;WF;*;EN3155-008M2020;;
 EN4165;F;20;WF;*;EN3155-003F2020;;
 EN4165;F;20;WJ;*;EN3155-003F2020;;
 EN4165;M;20;WJ;*;EN3155-008M2020;;
-EN4165;F;12;KC;*;M39029/27-210;;
+EN4165;F;12;KC;*;M39029/27-210;;;tables SEE (relecture R1, octobre 2026);à confirmer : /28-409 (broche RG180) ne s'accouple pas avec /27-210 (douille RG174/316/179) — KC est un triaxial dans cables.csv (R1, point 3)
 EN4165;M;16;KC;*;EN3155-058M16;;
 EN4165;F;16;KC;*;EN3155-069F16;;
-EN4165;M;8;KL;*;ECS0754QM08AA;;
-EN4165;F;8;KL;*;ECS0754QF08AA;;
+EN4165;M;8;KL;*;ECS0754QM08AA;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus Helicopters (ECS) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN4165;F;8;KL;*;ECS0754QF08AA;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus Helicopters (ECS) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
 EN4165;M;22;KL;*;EN3155-008M2222;;
 EN4165;F;22;KL;*;EN3155-003F2222;;
-EN4165;M;12;KC;*;M39029/28-409;;
-EN4165;M;8;KX;*;ECS0812M08A;21-33321-5;
-EN4165;F;8;KX;*;ECS0812F08A;21-33321-5;
-EN4165;M;12;KS;*;ECS7159-12M-U-B;;
-EN4165;F;12;KS;*;ECS7159-12F-A-B;;
+EN4165;M;12;KC;*;M39029/28-409;;;tables SEE (relecture R1, octobre 2026);à confirmer : /28-409 (broche RG180) ne s'accouple pas avec /27-210 (douille RG174/316/179) — KC est un triaxial dans cables.csv (R1, point 3)
+EN4165;M;8;KX;*;ECS0812M08A;21-33321-5;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus Helicopters (ECS) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN4165;F;8;KX;*;ECS0812F08A;21-33321-5;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus Helicopters (ECS) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN4165;M;12;KS;*;ECS7159-12M-U-B;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus Helicopters (ECS) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN4165;F;12;KS;*;ECS7159-12F-A-B;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus Helicopters (ECS) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
 EN4165;M;22;YYTSC;*;EN3155-008M2222;;
 EN4165;M;22;YYTSB;*;EN3155-008M2222;;
 EN4165;M;22;KR;24;EN3155-008M2222;;
 EN4165;F;22;KR;24;EN3155-003F2222;;
-EN4165;M;22;YYBKW;*;EN3155-008M2020;;
-EN4165;M;8;WZ;*;ABS1496-04WZ;;
-EN4165;F;8;WZ;*;ABS1496-03WZ;;
-EN4165;F;8;DG;8;E0825LW0800;;
-EN4165;M;8;DG;8;E0824KV0800;;
-EN4165;M;16;KS;*;ECS7177-16-M-U-A;;
+EN4165;M;22;YYBKW;*;EN3155-008M2020;;;tables SEE (relecture R1, octobre 2026);à confirmer : un contact taille 20 (EN3155-008M2020) dans une cavité 22 — EN3155-008M2222, comme YYTSB et YYTSC ? (R1, point 1)
+EN4165;M;8;WZ;*;ABS1496-04WZ;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus (ABS) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN4165;F;8;WZ;*;ABS1496-03WZ;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus (ABS) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN4165;F;8;DG;8;E0825LW0800;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus (E0…) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN4165;M;8;DG;8;E0824KV0800;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus (E0…) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN4165;M;16;KS;*;ECS7177-16-M-U-A;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus Helicopters (ECS) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
 EN4165;F;20;KL;*;EN3155-003F2020;;
 EN4165;M;20;KL;*;EN3155-008M2020;;
 EN4165;M;12;*;16;EN3155-008M1214;E0718-01-30;
@@ -421,56 +421,234 @@ EN4165;M;22;KA;*;EN3155-008M2222;;
 EN4165;F;22;KA;*;EN3155-003F2222;;
 EN4165;M;22;KV;*;EN3155-008M2222;;
 EN4165;F;22;KV;*;EN3155-003F2222;;
-EN4165;F;8;KXHF;*;ECS0812F08AR;21-33321-5;
-EN4165;M;8;KXHF;*;ECS0812M08AR;21-33321-5;
-EN4165;F;8;KT;*;ECS7374T2SA;;
-EN4165;M;8;KT;*;ECS7374T2PA;;
+EN4165;F;8;KXHF;*;ECS0812F08AR;21-33321-5;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus Helicopters (ECS) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN4165;M;8;KXHF;*;ECS0812M08AR;21-33321-5;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus Helicopters (ECS) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN4165;F;8;KT;*;ECS7374T2SA;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus Helicopters (ECS) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN4165;M;8;KT;*;ECS7374T2PA;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus Helicopters (ECS) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
 EN4165;M;22;KT;*;EN3155-008M2222;;
 EN4165;F;22;KT;*;EN3155-003F2222;;
-EN4165;F;12;YYWW;*;ECS0703CS12;;
-EN4165;M;12;YYWW;*;ECS0704BP12;;
-EN4165;F;8;LN;*;ECS7314M1;;
-EN4165;M;8;LN;*;ECS7314P1;;
+EN4165;F;12;YYWW;*;ECS0703CS12;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus Helicopters (ECS) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN4165;M;12;YYWW;*;ECS0704BP12;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus Helicopters (ECS) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN4165;F;8;LN;*;ECS7314M1;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus Helicopters (ECS) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+EN4165;M;8;LN;*;ECS7314P1;;;tables SEE (relecture R1, octobre 2026);à confirmer : référence Airbus Helicopters (ECS) non publique, un choix du programme — aucune source publique ne la vérifie (R1)
+NSA937901;M;22D;*;26;EN3155-016M2222;;= NSA937910EA2200 = NF L 53105/1 = Air LB 001104 100 02 — 26 à 22 AWG, 0,15-0,40 mm², Ø isolant 0,74-1,37 mm;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80 tableau Contacts;déduit (contact vérifié au catalogue, la taille 22D de la NSA est le « 22 » du catalogue)
+NSA937901;M;22D;*;24;EN3155-016M2222;;= NSA937910EA2200 = NF L 53105/1 = Air LB 001104 100 02 — 26 à 22 AWG, 0,15-0,40 mm², Ø isolant 0,74-1,37 mm;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80 tableau Contacts;déduit (contact vérifié au catalogue, la taille 22D de la NSA est le « 22 » du catalogue)
+NSA937901;M;22D;*;22;EN3155-016M2222;;= NSA937910EA2200 = NF L 53105/1 = Air LB 001104 100 02 — 26 à 22 AWG, 0,15-0,40 mm², Ø isolant 0,74-1,37 mm;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80 tableau Contacts;déduit (contact vérifié au catalogue, la taille 22D de la NSA est le « 22 » du catalogue)
+NSA937901;M;20;*;24;EN3155-016M2018;;= NSA937910EA2000 = NF L 53105/2 = Air LB 001104 200 02 — 24 à 18 AWG, 0,25-1,00 mm², Ø isolant 0,95-2,10 mm. Variante EN3155-016M2020 (24 à 20 AWG, NAS 1748/1749, Air LB 001104 203 02);Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80 tableau Contacts;vérifié (catalogue)
+NSA937901;M;20;*;22;EN3155-016M2018;;= NSA937910EA2000 = NF L 53105/2 = Air LB 001104 200 02 — 24 à 18 AWG, 0,25-1,00 mm², Ø isolant 0,95-2,10 mm. Variante EN3155-016M2020 (24 à 20 AWG, NAS 1748/1749, Air LB 001104 203 02);Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80 tableau Contacts;vérifié (catalogue)
+NSA937901;M;20;*;20;EN3155-016M2018;;= NSA937910EA2000 = NF L 53105/2 = Air LB 001104 200 02 — 24 à 18 AWG, 0,25-1,00 mm², Ø isolant 0,95-2,10 mm. Variante EN3155-016M2020 (24 à 20 AWG, NAS 1748/1749, Air LB 001104 203 02);Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80 tableau Contacts;vérifié (catalogue)
+NSA937901;M;20;*;18;EN3155-016M2018;;= NSA937910EA2000 = NF L 53105/2 = Air LB 001104 200 02 — 24 à 18 AWG, 0,25-1,00 mm², Ø isolant 0,95-2,10 mm. Variante EN3155-016M2020 (24 à 20 AWG, NAS 1748/1749, Air LB 001104 203 02);Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80 tableau Contacts;vérifié (catalogue)
+NSA937901;M;16;*;20;EN3155-016M1616;;= NSA937910EA1600 = NF L 53105/3 = Air LB 001104 300 02 — 20 à 16 AWG, 0,60-1,20 mm², Ø isolant 1,34-2,62 mm;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80 tableau Contacts;vérifié (catalogue)
+NSA937901;M;16;*;18;EN3155-016M1616;;= NSA937910EA1600 = NF L 53105/3 = Air LB 001104 300 02 — 20 à 16 AWG, 0,60-1,20 mm², Ø isolant 1,34-2,62 mm;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80 tableau Contacts;vérifié (catalogue)
+NSA937901;M;16;*;16;EN3155-016M1616;;= NSA937910EA1600 = NF L 53105/3 = Air LB 001104 300 02 — 20 à 16 AWG, 0,60-1,20 mm², Ø isolant 1,34-2,62 mm;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80 tableau Contacts;vérifié (catalogue)
+NSA937901;M;12;*;14;EN3155-016M1212;;= NSA937910EA1200 = NF L 53105/4 = Air LB 001104 400 02 — 14 à 12 AWG, 2,00-3,00 mm², Ø isolant 2,20-4,01 mm;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80 tableau Contacts;vérifié (catalogue)
+NSA937901;M;12;*;12;EN3155-016M1212;;= NSA937910EA1200 = NF L 53105/4 = Air LB 001104 400 02 — 14 à 12 AWG, 2,00-3,00 mm², Ø isolant 2,20-4,01 mm;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80 tableau Contacts;vérifié (catalogue)
+E0599;M;22;*;26;EN3155-016M2222;;= NF L 53105/1 = Air LB 001104 100 02 — 26 à 22 AWG, Ø isolant 0,74-1,37 mm;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80 tableau Contacts;vérifié (catalogue Air LB gamme 1750 = NF L 53-105, l'ASNE 0599 elle-même n'a pas été relue)
+E0599;M;22;*;24;EN3155-016M2222;;= NF L 53105/1 = Air LB 001104 100 02 — 26 à 22 AWG, Ø isolant 0,74-1,37 mm;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80 tableau Contacts;vérifié (catalogue Air LB gamme 1750 = NF L 53-105, l'ASNE 0599 elle-même n'a pas été relue)
+E0599;M;22;*;22;EN3155-016M2222;;= NF L 53105/1 = Air LB 001104 100 02 — 26 à 22 AWG, Ø isolant 0,74-1,37 mm;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80 tableau Contacts;vérifié (catalogue Air LB gamme 1750 = NF L 53-105, l'ASNE 0599 elle-même n'a pas été relue)
+E0599;M;20;*;24;EN3155-016M2018;;= NF L 53105/2 = Air LB 001104 200 02 — 24 à 18 AWG, Ø isolant 0,95-2,10 mm (la table Tailles E0599 disait 24-20 : corrigée par R1);Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80 tableau Contacts;vérifié (catalogue Air LB gamme 1750 = NF L 53-105, l'ASNE 0599 elle-même n'a pas été relue)
+E0599;M;20;*;22;EN3155-016M2018;;= NF L 53105/2 = Air LB 001104 200 02 — 24 à 18 AWG, Ø isolant 0,95-2,10 mm (la table Tailles E0599 disait 24-20 : corrigée par R1);Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80 tableau Contacts;vérifié (catalogue Air LB gamme 1750 = NF L 53-105, l'ASNE 0599 elle-même n'a pas été relue)
+E0599;M;20;*;20;EN3155-016M2018;;= NF L 53105/2 = Air LB 001104 200 02 — 24 à 18 AWG, Ø isolant 0,95-2,10 mm (la table Tailles E0599 disait 24-20 : corrigée par R1);Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80 tableau Contacts;vérifié (catalogue Air LB gamme 1750 = NF L 53-105, l'ASNE 0599 elle-même n'a pas été relue)
+E0599;M;20;*;18;EN3155-016M2018;;= NF L 53105/2 = Air LB 001104 200 02 — 24 à 18 AWG, Ø isolant 0,95-2,10 mm (la table Tailles E0599 disait 24-20 : corrigée par R1);Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80 tableau Contacts;vérifié (catalogue Air LB gamme 1750 = NF L 53-105, l'ASNE 0599 elle-même n'a pas été relue)
+E0599;M;16;*;20;EN3155-016M1616;;= NF L 53105/3 = Air LB 001104 300 02 — 20 à 16 AWG, Ø isolant 1,34-2,62 mm;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80 tableau Contacts;vérifié (catalogue Air LB gamme 1750 = NF L 53-105, l'ASNE 0599 elle-même n'a pas été relue)
+E0599;M;16;*;18;EN3155-016M1616;;= NF L 53105/3 = Air LB 001104 300 02 — 20 à 16 AWG, Ø isolant 1,34-2,62 mm;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80 tableau Contacts;vérifié (catalogue Air LB gamme 1750 = NF L 53-105, l'ASNE 0599 elle-même n'a pas été relue)
+E0599;M;16;*;16;EN3155-016M1616;;= NF L 53105/3 = Air LB 001104 300 02 — 20 à 16 AWG, Ø isolant 1,34-2,62 mm;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80 tableau Contacts;vérifié (catalogue Air LB gamme 1750 = NF L 53-105, l'ASNE 0599 elle-même n'a pas été relue)
+E0599;M;12;*;14;EN3155-016M1212;;= NF L 53105/4 = Air LB 001104 400 02 — 14 à 12 AWG, Ø isolant 2,20-4,01 mm;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80 tableau Contacts;vérifié (catalogue Air LB gamme 1750 = NF L 53-105, l'ASNE 0599 elle-même n'a pas été relue)
+E0599;M;12;*;12;EN3155-016M1212;;= NF L 53105/4 = Air LB 001104 400 02 — 14 à 12 AWG, Ø isolant 2,20-4,01 mm;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80 tableau Contacts;vérifié (catalogue Air LB gamme 1750 = NF L 53-105, l'ASNE 0599 elle-même n'a pas été relue)
+EN4165;M;23;*;26;EN3155-008M2322;;module 30R23 : contact taille 23, fût 22 (TE 182-4043-23 broche / 182-4042-23 douille, « 23/22 », 26 à 22 AWG, bagues EN 3155 vert-violet). Le projet prEN 3155-002:2026 ajoute EN 3155-003 F2322 et -008 M2322 pour l'EN 4165;TE Deutsch, DMC-M multicavity EN4165 (https://www.farnell.com/datasheets/2996815.pdf) p.36-37 + DIN, projet prEN 3155-002:2026 (https://www.din.de/en/getting-involved/standards-committees/nl/projects/wdc-proj:din21:398174300) et page d'enquête ELOT (https://standardsdevelopment.elot.gr/drafts/13892, accès restreint : changements lus dans son résumé);à confirmer (désignation EN encore en projet)
+EN4165;M;23;*;24;EN3155-008M2322;;module 30R23 : contact taille 23, fût 22 (TE 182-4043-23 broche / 182-4042-23 douille, « 23/22 », 26 à 22 AWG, bagues EN 3155 vert-violet). Le projet prEN 3155-002:2026 ajoute EN 3155-003 F2322 et -008 M2322 pour l'EN 4165;TE Deutsch, DMC-M multicavity EN4165 (https://www.farnell.com/datasheets/2996815.pdf) p.36-37 + DIN, projet prEN 3155-002:2026 (https://www.din.de/en/getting-involved/standards-committees/nl/projects/wdc-proj:din21:398174300) et page d'enquête ELOT (https://standardsdevelopment.elot.gr/drafts/13892, accès restreint : changements lus dans son résumé);à confirmer (désignation EN encore en projet)
+EN4165;M;23;*;22;EN3155-008M2322;;module 30R23 : contact taille 23, fût 22 (TE 182-4043-23 broche / 182-4042-23 douille, « 23/22 », 26 à 22 AWG, bagues EN 3155 vert-violet). Le projet prEN 3155-002:2026 ajoute EN 3155-003 F2322 et -008 M2322 pour l'EN 4165;TE Deutsch, DMC-M multicavity EN4165 (https://www.farnell.com/datasheets/2996815.pdf) p.36-37 + DIN, projet prEN 3155-002:2026 (https://www.din.de/en/getting-involved/standards-committees/nl/projects/wdc-proj:din21:398174300) et page d'enquête ELOT (https://standardsdevelopment.elot.gr/drafts/13892, accès restreint : changements lus dans son résumé);à confirmer (désignation EN encore en projet)
+EN4165;F;23;*;26;EN3155-003F2322;;module 30R23 : contact taille 23, fût 22 (TE 182-4043-23 broche / 182-4042-23 douille, « 23/22 », 26 à 22 AWG, bagues EN 3155 vert-violet). Le projet prEN 3155-002:2026 ajoute EN 3155-003 F2322 et -008 M2322 pour l'EN 4165;TE Deutsch, DMC-M multicavity EN4165 (https://www.farnell.com/datasheets/2996815.pdf) p.36-37 + DIN, projet prEN 3155-002:2026 (https://www.din.de/en/getting-involved/standards-committees/nl/projects/wdc-proj:din21:398174300) et page d'enquête ELOT (https://standardsdevelopment.elot.gr/drafts/13892, accès restreint : changements lus dans son résumé);à confirmer (désignation EN encore en projet)
+EN4165;F;23;*;24;EN3155-003F2322;;module 30R23 : contact taille 23, fût 22 (TE 182-4043-23 broche / 182-4042-23 douille, « 23/22 », 26 à 22 AWG, bagues EN 3155 vert-violet). Le projet prEN 3155-002:2026 ajoute EN 3155-003 F2322 et -008 M2322 pour l'EN 4165;TE Deutsch, DMC-M multicavity EN4165 (https://www.farnell.com/datasheets/2996815.pdf) p.36-37 + DIN, projet prEN 3155-002:2026 (https://www.din.de/en/getting-involved/standards-committees/nl/projects/wdc-proj:din21:398174300) et page d'enquête ELOT (https://standardsdevelopment.elot.gr/drafts/13892, accès restreint : changements lus dans son résumé);à confirmer (désignation EN encore en projet)
+EN4165;F;23;*;22;EN3155-003F2322;;module 30R23 : contact taille 23, fût 22 (TE 182-4043-23 broche / 182-4042-23 douille, « 23/22 », 26 à 22 AWG, bagues EN 3155 vert-violet). Le projet prEN 3155-002:2026 ajoute EN 3155-003 F2322 et -008 M2322 pour l'EN 4165;TE Deutsch, DMC-M multicavity EN4165 (https://www.farnell.com/datasheets/2996815.pdf) p.36-37 + DIN, projet prEN 3155-002:2026 (https://www.din.de/en/getting-involved/standards-committees/nl/projects/wdc-proj:din21:398174300) et page d'enquête ELOT (https://standardsdevelopment.elot.gr/drafts/13892, accès restreint : changements lus dans son résumé);à confirmer (désignation EN encore en projet)
+EN3645;M;10;*;10;EN3155-008M1010;;arrangement 21R48 (9 contacts taille 10) : la broche EN 3155-008 taille 10 fût 10 existe;Carlisle / Tri-Star, EN3155 Contact Selection Guide (https://amphenol.co.jp/military/catalog/EN3155_Contacts.pdf) p.3 + Souriau, EN3155 Qualified Contacts 2014 (https://atta.szlcsc.com/upload/public/pdf/source/20250627/562BD244F3F842A1AA6B9F72BD86CDD2.pdf) p.3 (le -008 est la broche de l'EN 3645);déduit (référence publique, emploi dans l'EN 3645 non lu)
+EN3645;F;10;*;10;EN3155-009F1010;;arrangement 21R48 : la douille EN 3155-009 taille 10 fût 10 existe (le projet 2026 retire son lien avec l'EN 3545, pas avec l'EN 3645);Carlisle / Tri-Star, EN3155 Contact Selection Guide (https://amphenol.co.jp/military/catalog/EN3155_Contacts.pdf) p.3 + DIN, projet prEN 3155-002:2026 (https://www.din.de/en/getting-involved/standards-committees/nl/projects/wdc-proj:din21:398174300) et page d'enquête ELOT (https://standardsdevelopment.elot.gr/drafts/13892, accès restreint : changements lus dans son résumé);déduit (référence publique, emploi dans l'EN 3645 non lu)
 
-Résistance des contacts — par taille, ce qu'une paire de contacts sertie et accouplée, neuve, admet et laisse tomber aux bornes. EMPLOI « connecteur » : les limites AS39029 / MIL-DTL-39029 (mêmes tailles et même technologie que les EN 3155 — la limite EN 3155-001 n'a pas été lue) — mesure aux bornes, sertissages compris — EMPLOI « jonction » : les valeurs catalogue Amphenol Air LB des modules de jonction (NSA937901, E0599 — NF/UTE C 93-462), bien plus basses (R3). L'outil prend la ligne de l'emploi (une prise de coupure, un connecteur = connecteur — une barrette = jonction), sinon la première de la taille.
-Taille;Intensité;Chute max;Résistance;Résistance fin de vie;Emploi;Note
-22D;5;73;14,6;22;connecteur;22D et 22 : mêmes limites
-22;5;73;14,6;22;connecteur;
-20;7,5;55;7,3;11;connecteur;
-16;13;49;3,8;5,7;connecteur;
-12;23;42;1,8;2,7;connecteur;
-10;33;33;1,0;1,5;connecteur;
-8;46;;0,7;1,0;extrapolé (46 A fût 8, 33 A fût 10 : Amphenol EN3155-065/-083) ; la chute en mV n'a pas été trouvée
-22;5;;5;;jonction;modules de jonction Amphenol Air LB (1100 : NSA937901 / EN 3708 — 1750 : E0599, NF/UTE C 93-462), paire sertie, à neuf (R3) — les barrettes
-22D;5;;5;;jonction;idem
-20;7,5;;4;;jonction;idem
-16;13;;3;;jonction;idem
-12;23;;2;;jonction;idem
-10;33;;2;;jonction;1750 seulement (46 A avec le contact 001104 620 02)
+Résistance des contacts — par taille, ce qu'une paire de contacts sertie et accouplée, neuve, admet et laisse tomber aux bornes. EMPLOI « connecteur » : les limites AS39029 / MIL-DTL-39029 (mêmes tailles et même technologie que les EN 3155 — la limite EN 3155-001 n'a pas été lue) — mesure aux bornes, sertissages compris — EMPLOI « jonction » : les valeurs catalogue Amphenol Air LB des modules de jonction (NSA937901, E0599 — NF/UTE C 93-462), bien plus basses (R3). L'outil prend la ligne de l'emploi (une prise de coupure, un connecteur = connecteur — une barrette = jonction), sinon la première de la taille. Octobre 2026 (recherche R1) : les limites AS39029 sont confirmées sur la fiche Amphenol 38999 p. 18 (chute max au courant d'essai) — la taille 8 n'est plus extrapolée (0,70) : 26 mV à 46 A = 0,57 mΩ — les tailles 23, 4 et 0 s'ajoutent.
+Taille;Intensité;Chute max;Résistance;Résistance fin de vie;Emploi;Note;Source;Statut
+22D;5;73;14,6;22;connecteur;confirmé;Amphenol Aerospace, 38999 Contact Ratings / Contact Part Numbers p.18 (https://docs.rs-online.com/3896/0900766b814b6ba8.pdf) tableau « Contact rating » (courant d'essai, chute max en mV, sertissage) + Milnec, TX series contact specifications p.B-9 (https://www.milnec.com/mil-d38999-connectors/d38999-contacts.pdf);vérifié
+22;5;73;14,6;22;connecteur;confirmé : 73 mV à 5 A (Souriau 8D : 14,6 mΩ);Amphenol Aerospace, 38999 Contact Ratings / Contact Part Numbers p.18 (https://docs.rs-online.com/3896/0900766b814b6ba8.pdf) tableau « Contact rating » (courant d'essai, chute max en mV, sertissage) + Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.12;vérifié
+20;7,5;55;7,3;11;connecteur;confirmé : 55 mV à 7,5 A (Souriau 8D : 7,3 mΩ);Amphenol Aerospace, 38999 Contact Ratings / Contact Part Numbers p.18 (https://docs.rs-online.com/3896/0900766b814b6ba8.pdf) tableau « Contact rating » (courant d'essai, chute max en mV, sertissage) + Milnec, TX series contact specifications p.B-9 (https://www.milnec.com/mil-d38999-connectors/d38999-contacts.pdf) + Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.12;vérifié
+16;13;49;3,8;5,7;connecteur;confirmé : 49 mV à 13 A (Souriau 8D : 3,8 mΩ);Amphenol Aerospace, 38999 Contact Ratings / Contact Part Numbers p.18 (https://docs.rs-online.com/3896/0900766b814b6ba8.pdf) tableau « Contact rating » (courant d'essai, chute max en mV, sertissage) + Milnec, TX series contact specifications p.B-9 (https://www.milnec.com/mil-d38999-connectors/d38999-contacts.pdf) + Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.12;vérifié
+12;23;42;1,8;2,7;connecteur;confirmé : 42 mV à 23 A. Souriau 8D publie 3,5 mΩ pour la taille 12 : écart à trancher;Amphenol Aerospace, 38999 Contact Ratings / Contact Part Numbers p.18 (https://docs.rs-online.com/3896/0900766b814b6ba8.pdf) tableau « Contact rating » (courant d'essai, chute max en mV, sertissage) + Milnec, TX series contact specifications p.B-9 (https://www.milnec.com/mil-d38999-connectors/d38999-contacts.pdf) + Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.12;vérifié
+10;33;33;1,0;1,5;connecteur;confirmé : 33 mV à 33 A (contact puissance);Amphenol Aerospace, 38999 Contact Ratings / Contact Part Numbers p.18 (https://docs.rs-online.com/3896/0900766b814b6ba8.pdf) tableau « Contact rating » (courant d'essai, chute max en mV, sertissage);vérifié
+8;46;26;0,57;0,85;connecteur;remplace la valeur extrapolée de 0,7 mΩ : 26 mV à 46 A (fin de vie = × 1,5, l'hypothèse de l'outil). Souriau 8D publie 3 mΩ pour la taille 8 : écart à trancher;Amphenol Aerospace, 38999 Contact Ratings / Contact Part Numbers p.18 (https://docs.rs-online.com/3896/0900766b814b6ba8.pdf) tableau « Contact rating » (courant d'essai, chute max en mV, sertissage) + Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.12;vérifié
+23;5;73;14,6;22;connecteur;taille 23 (EN 4165 30R23) : avant, l'outil prenait la taille 22 la plus proche, même valeur;Amphenol Aerospace, 38999 Contact Ratings / Contact Part Numbers p.18 (https://docs.rs-online.com/3896/0900766b814b6ba8.pdf) tableau « Contact rating » (courant d'essai, chute max en mV, sertissage);vérifié
+4;80;23;0,29;0,43;connecteur;pour plus tard (aucun arrangement taille 4 dans les tables);Amphenol Aerospace, 38999 Contact Ratings / Contact Part Numbers p.18 (https://docs.rs-online.com/3896/0900766b814b6ba8.pdf) tableau « Contact rating » (courant d'essai, chute max en mV, sertissage);vérifié
+0;150;21;0,14;0,21;connecteur;pour plus tard;Amphenol Aerospace, 38999 Contact Ratings / Contact Part Numbers p.18 (https://docs.rs-online.com/3896/0900766b814b6ba8.pdf) tableau « Contact rating » (courant d'essai, chute max en mV, sertissage);vérifié
+22;5;;5;;jonction;modules de jonction Amphenol Air LB (1100 : NSA937901 / EN 3708 — 1750 : E0599, NF/UTE C 93-462), paire sertie, à neuf (R3) — les barrettes;Amphenol Air LB, Quick Junction Modules 01/19 (recherche R3);
+22D;5;;5;;jonction;idem;Amphenol Air LB, Quick Junction Modules 01/19 (recherche R3);
+20;7,5;;4;;jonction;idem;Amphenol Air LB, Quick Junction Modules 01/19 (recherche R3);
+16;13;;3;;jonction;idem;Amphenol Air LB, Quick Junction Modules 01/19 (recherche R3);
+12;23;;2;;jonction;idem;Amphenol Air LB, Quick Junction Modules 01/19 (recherche R3);
+10;33;;2;;jonction;1750 seulement (46 A avec le contact 001104 620 02);Amphenol Air LB, Quick Junction Modules 01/19 (recherche R3);
 
-Courant des contacts — par fût et par jauge de fil : le courant d'essai nominal AS39029, les EN 3155-076/-077 chez Radiall, TE Deutsch pour l'EN 2997 (R3 § 3.1) — une ligne par couple. Un contact ne porte que ce que son fût serti porte : I contact = min(I nominal de la taille, I de la ligne (fût, jauge)) — un 24 AWG dans un contact 20 porte 3 A, pas 7,5.
-Taille;Fût;Jauge;Intensité;Intensité hermétique;Note
-22;22;22;5;;Amphenol, Radiall
-22;22;24;3;;
-22;22;26;2;;
-22;22;28;1,5;;Amphenol seulement
-22D;22;22;5;;mêmes valeurs que 22
-22D;22;24;3;;
-22D;22;26;2;;
-22D;22;28;1,5;;
-23;22;22;5;;Glenair HD #23 : 5 A max, 22–26 AWG — 1900SIM : 5 A
-23;26;26;;;AS39029/122-669 (fût 26) : courant non lu
-20;20;20;7,5;;Amphenol, Radiall, TE
-20;20;22;5;;
-20;20;24;3;5;TE : 3 A (5 A hermétique)
-20;18;18;7,5;;TE (fût 18 AWG, codes C/D de l'EN 2997)
-16;16;16;13;10;TE : 13 (10 hermétique)
-16;16;18;10;;Amphenol, Radiall — TE dit 11
-16;16;20;7,5;;
-12;12;12;23;17;TE : 23 (17 hermétique)
-12;12;14;17;;
-12;12;16;13;;Radiall
-10;10;10;33;;Air LB (001104 630 02), Amphenol EN3155-083 fût 10 : 33 A
-8;8;8;46;;Souriau DMC-M, Air LB, Radiall — 1900SIM version puissance : 80 A
-8;10;10;33;;EN3155-065/-083 fût 10 (Amphenol)
-5;8;8;46;;Radiall EPX taille 5 (lecture approchée)
+Courant des contacts — par fût et par jauge de fil : le courant d'essai nominal AS39029, les EN 3155-076/-077 chez Radiall, TE Deutsch pour l'EN 2997 (R3 § 3.1) — une ligne par couple. Un contact ne porte que ce que son fût serti porte : I contact = min(I nominal de la taille, I de la ligne (fût, jauge)) — un 24 AWG dans un contact 20 porte 3 A, pas 7,5. Octobre 2026 (recherche R1, Amphenol EN3155 p. 9 et 38999 p. 18) : les lignes qui changent le résultat s'ajoutent (contact 20 + 26 AWG : 2 A — 16 à fût 18 + 22 ou 24 AWG — 12 à fût 18 et à fût 14), le 16 AWG d'un contact 12 passe au fût 14, et l'intensité hermétique (5 A) revient à la taille 20. Le fût se lit dans la référence EN 3155 du contact (EN3155-018M1218 → fût 18) : sans lui, l'outil prend la ligne la plus prudente.
+Taille;Fût;Jauge;Intensité;Intensité hermétique;Note;Source;Statut
+22;22;22;5;3;hermétique 3 A;Amphenol Aerospace, 38999 Contact Ratings / Contact Part Numbers p.18 (https://docs.rs-online.com/3896/0900766b814b6ba8.pdf);vérifié
+22;22;24;3;;;;
+22;22;26;2;;;;
+22;22;28;1,5;;Amphenol seulement;;
+22D;22;22;5;3;hermétique 3 A;Amphenol Aerospace, 38999 Contact Ratings / Contact Part Numbers p.18 (https://docs.rs-online.com/3896/0900766b814b6ba8.pdf);vérifié
+22D;22;24;3;;;;
+22D;22;26;2;;;;
+22D;22;28;1,5;;;;
+23;22;22;5;3;taille 23 : 5 A, hermétique 3 A;Amphenol Aerospace, 38999 Contact Ratings / Contact Part Numbers p.18 (https://docs.rs-online.com/3896/0900766b814b6ba8.pdf);vérifié
+23;26;26;;;AS39029/122-669 (fût 26) : courant non lu;;
+23;22;24;3;;valeur du fût 22 avec un 24 AWG appliquée au contact 23 (même fût);Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.9 tableau « EN3155 wire barrel range and nominal test current » + TE Deutsch, DMC-M multicavity EN4165 (https://www.farnell.com/datasheets/2996815.pdf) p.36;déduit
+23;22;26;2;;valeur du fût 22 avec un 26 AWG appliquée au contact 23;Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.9 tableau « EN3155 wire barrel range and nominal test current » + TE Deutsch, DMC-M multicavity EN4165 (https://www.farnell.com/datasheets/2996815.pdf) p.36;déduit
+20;20;20;7,5;5;corrige l'ancienne ligne : l'intensité hermétique 5 A est celle de la taille 20 (l'ancienne ligne la mettait sur le 24 AWG);Amphenol Aerospace, 38999 Contact Ratings / Contact Part Numbers p.18 (https://docs.rs-online.com/3896/0900766b814b6ba8.pdf) tableau Contact rating;vérifié
+20;20;22;5;;;;
+20;20;24;3;;corrige l'ancienne ligne : sans le « 5 A hermétique » mal placé;Amphenol Aerospace, 38999 Contact Ratings / Contact Part Numbers p.18 (https://docs.rs-online.com/3896/0900766b814b6ba8.pdf);vérifié
+20;18;18;7,5;;TE (fût 18 AWG, codes C/D de l'EN 2997);;
+20;22;26;2;;ajout R1 : un 26 AWG sur un contact 20 (EN3155-…2022) était crédité de 7,5 A sans cette ligne. Fût 22 + 26 AWG = 2 A;Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.9 tableau « EN3155 wire barrel range and nominal test current »;vérifié
+16;16;16;13;10;TE : 13 (10 hermétique);;
+16;16;18;10;;Amphenol, Radiall — TE dit 11;;
+16;16;20;7,5;;;;
+16;18;22;5;;ajout R1 : contact EN3155-018M1618 / -019F1618 (EN 2997, EN 3646) avec un 22 AWG, crédité de 13 A sans cette ligne. Fût 18 + 22 AWG = 5 A;Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.9 tableau « EN3155 wire barrel range and nominal test current » + Souriau, EN3155 Qualified Contacts 2014 (https://atta.szlcsc.com/upload/public/pdf/source/20250627/562BD244F3F842A1AA6B9F72BD86CDD2.pdf) p.2;vérifié
+16;18;24;3;;ajout R1 : idem avec un 24 AWG. Fût 18 + 24 AWG = 3 A;Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.9 tableau « EN3155 wire barrel range and nominal test current »;vérifié
+16;14;14;13;;contact EN3155-…1614 avec un 14 AWG : 13 A (borné par la taille 16);Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.9 tableau « EN3155 wire barrel range and nominal test current » + TE Deutsch, DMC-M multicavity EN4165 (https://www.farnell.com/datasheets/2996815.pdf) p.36 (16/14 : 20 à 14 AWG);vérifié
+12;12;12;23;17;TE : 23 (17 hermétique);;
+12;12;14;17;;;;
+12;18;18;7,5;;ajout R1 : contact EN3155-018M1218 / -019F1218 (EN 2997, EN 3646). Le tableau donne 7,5 A au fût 18 avec un 18 AWG;Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.9 tableau « EN3155 wire barrel range and nominal test current »;vérifié
+12;18;20;7,5;;ajout R1 : idem avec un 20 AWG;Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.9 tableau « EN3155 wire barrel range and nominal test current »;vérifié
+12;18;22;5;;ajout R1 : idem avec un 22 AWG;Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.9 tableau « EN3155 wire barrel range and nominal test current »;vérifié
+12;18;24;3;;ajout R1 : idem avec un 24 AWG;Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.9 tableau « EN3155 wire barrel range and nominal test current »;vérifié
+12;14;16;13;;l'ancienne ligne 12 / fût 12 / 16 AWG disait la bonne valeur sur le mauvais fût : le 16 AWG va dans le fût 14 (EN3155-…1214, 20 à 14 AWG) : elle est retirée;Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.9 tableau « EN3155 wire barrel range and nominal test current »;vérifié
+12;14;18;10;;ajout R1 : contact EN3155-…1214 (EN 3645, EN 4165) avec un 18 AWG, crédité de 23 A sans cette ligne;Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.9 tableau « EN3155 wire barrel range and nominal test current »;vérifié
+12;14;20;7,5;;ajout R1 : idem avec un 20 AWG;Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.9 tableau « EN3155 wire barrel range and nominal test current »;vérifié
+10;10;10;33;;Air LB (001104 630 02), Amphenol EN3155-083 fût 10 : 33 A;;
+8;8;8;46;;Souriau DMC-M, Air LB, Radiall — 1900SIM version puissance : 80 A;;
+8;10;10;33;;EN3155-065/-083 fût 10 (Amphenol);;
+5;8;8;46;;Radiall EPX taille 5 (lecture approchée);;
+
+Joint arrière — par famille et taille de contact (et par fût quand la plage en dépend), le Ø sur isolant que le trou du joint arrière serre (recherche R1, octobre 2026 — l'EN 4165 par la recherche R3, EN 4165-002:2023 tableau 6). En dessous, l'eau passe : c'est le manchon E0718 de la table Contacts qui grossit le fil. Au-dessus, le fil n'entre pas (l'EN 4165 l'interdit). Le Ø à comparer est celui du conducteur isolé qui entre dans le trou : pour un câble multiconducteur (MLA, MLB…), pas celui de sa gaine — l'outil ne juge que les câbles à un conducteur.
+Famille;Taille;Fût;Ø isolant min;Ø isolant max;Note;Source;Statut
+EN3645;22;;0,76;1,37;#22D MIL-DTL-38999 série III = EN 3645. ce minimum explique les manchons E0718 de la table Contacts (36 lignes sur 36);Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.65 tableau Crimp contacts (External Ø over insulator) + Milnec, TX series contact specifications p.B-9 (https://www.milnec.com/mil-d38999-connectors/d38999-contacts.pdf);vérifié
+EN3645;20;;1,02;2,11;un DR24 (Ø 0,96) est sous le minimum : d'où le E0718 de la table Contacts;Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.65 tableau Crimp contacts (External Ø over insulator) + Milnec, TX series contact specifications p.B-9 (https://www.milnec.com/mil-d38999-connectors/d38999-contacts.pdf);vérifié
+EN3645;16;;1,65;2,77;DR20 (1,34) et DR18 (1,61) sous le minimum : E0718;Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.65 tableau Crimp contacts (External Ø over insulator) + Milnec, TX series contact specifications p.B-9 (https://www.milnec.com/mil-d38999-connectors/d38999-contacts.pdf);vérifié
+EN3645;12;;2,46;3,61;DR14 (2,24) sous le minimum : E0718;Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.65 tableau Crimp contacts (External Ø over insulator) + Milnec, TX series contact specifications p.B-9 (https://www.milnec.com/mil-d38999-connectors/d38999-contacts.pdf);vérifié
+EN3645;10;;;2,95;minimum non publié;Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.65 tableau Crimp contacts (External Ø over insulator);vérifié (maximum seulement)
+EN3645;8;;4,50;6,50;taille 8 puissance avec son manchon (réducteur : 2,50 à 4);Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.65 tableau Crimp contacts (External Ø over insulator);vérifié
+EN3645;8T (twinax);;3,15;3,40;câble twinax concentrique M17/176-00002 et équivalents;Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.65 tableau Crimp contacts (External Ø over insulator);vérifié
+EN2997;20;;0,85;2,10;un autre tableau du même document dit 1,02-2,11. ce minimum explique les 34 lignes E0718 EN 2997 de la table Contacts sans exception (DR26 0,84 : manchon, DR24 0,96 : sans);TE Deutsch 983 / EN2997 (https://www.peigenesis.com/images/content/pei_tabs/deutsch/en2997-983-series/pdf-thumbs/9-28_en2997.pdf : PDF protégé, valeurs lues dans l'extrait du moteur de recherche);à confirmer (lu dans un extrait, corroboré par les règles SEE de la table Contacts)
+EN2997;16;;1,20;2,70;autre tableau : 1,35-2,62. DR22 (1,10) : manchon, DR20 (1,34) : sans;TE Deutsch 983 / EN2997 (https://www.peigenesis.com/images/content/pei_tabs/deutsch/en2997-983-series/pdf-thumbs/9-28_en2997.pdf : PDF protégé, valeurs lues dans l'extrait du moteur de recherche);à confirmer (lu dans un extrait, corroboré par les règles SEE de la table Contacts)
+EN2997;12;;1,90;4,00;autre tableau : 2,46-4,01. DR18 (1,61) : manchon, DR14 (2,24) : sans;TE Deutsch 983 / EN2997 (https://www.peigenesis.com/images/content/pei_tabs/deutsch/en2997-983-series/pdf-thumbs/9-28_en2997.pdf : PDF protégé, valeurs lues dans l'extrait du moteur de recherche);à confirmer (lu dans un extrait, corroboré par les règles SEE de la table Contacts)
+EN3646;20 16 12;;;;les 35 lignes E0718 EN 3646 de la table Contacts suivent exactement l'encadrement EN 2997;tables SEE (contacts.csv) + cables.csv;déduit
+EN4165;22;22;0,71;1,37;contact 22, fût 22 (22, 24, 26 AWG) : un câble plus gros que le maximum est interdit, plus fin que le minimum admis par dérogation (EN 3197) — R1 avait encadré le minimum par les règles SEE (#12 entre 2,25 et 2,70) : la norme dit 1,90;EN 4165-002:2023 tableaux 3-6 (aperçu iTeh, SIST EN 4165-002:2023);vérifié
+EN4165;23;22;0,71;1,37;contact 23, fût 22 (22, 24, 26 AWG) : un câble plus gros que le maximum est interdit, plus fin que le minimum admis par dérogation (EN 3197) — R1 avait encadré le minimum par les règles SEE (#12 entre 2,25 et 2,70) : la norme dit 1,90;EN 4165-002:2023 tableaux 3-6 (aperçu iTeh, SIST EN 4165-002:2023);vérifié
+EN4165;20;20;0,85;2,11;contact 20, fût 20 (20, 22, 24 AWG) : un câble plus gros que le maximum est interdit, plus fin que le minimum admis par dérogation (EN 3197) — R1 avait encadré le minimum par les règles SEE (#12 entre 2,25 et 2,70) : la norme dit 1,90;EN 4165-002:2023 tableaux 3-6 (aperçu iTeh, SIST EN 4165-002:2023);vérifié
+EN4165;20;18;0,85;2,11;contact 20, fût 18 (18, 20, 22, 24 AWG) : un câble plus gros que le maximum est interdit, plus fin que le minimum admis par dérogation (EN 3197) — R1 avait encadré le minimum par les règles SEE (#12 entre 2,25 et 2,70) : la norme dit 1,90;EN 4165-002:2023 tableaux 3-6 (aperçu iTeh, SIST EN 4165-002:2023);vérifié
+EN4165;16;16;1,31;2,62;contact 16, fût 16 (16, 18, 20 AWG) : un câble plus gros que le maximum est interdit, plus fin que le minimum admis par dérogation (EN 3197) — R1 avait encadré le minimum par les règles SEE (#12 entre 2,25 et 2,70) : la norme dit 1,90;EN 4165-002:2023 tableaux 3-6 (aperçu iTeh, SIST EN 4165-002:2023);vérifié
+EN4165;16;14;1,63;2,62;contact 16, fût 14 (14, 16, 18, 20 AWG) : un câble plus gros que le maximum est interdit, plus fin que le minimum admis par dérogation (EN 3197) — R1 avait encadré le minimum par les règles SEE (#12 entre 2,25 et 2,70) : la norme dit 1,90;EN 4165-002:2023 tableaux 3-6 (aperçu iTeh, SIST EN 4165-002:2023);vérifié
+EN4165;12;12;1,9;3,7;contact 12, fût 12 (12, 14 AWG) : un câble plus gros que le maximum est interdit, plus fin que le minimum admis par dérogation (EN 3197) — R1 avait encadré le minimum par les règles SEE (#12 entre 2,25 et 2,70) : la norme dit 1,90;EN 4165-002:2023 tableaux 3-6 (aperçu iTeh, SIST EN 4165-002:2023);vérifié
+NSA937901;22D;;0,74;1,37;;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80 (colonne Ø / gaine);vérifié (catalogue)
+NSA937901;20;;0,95;2,10;;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80;vérifié (catalogue)
+NSA937901;16;;1,34;2,62;;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80;vérifié (catalogue)
+NSA937901;12;;2,20;4,01;;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80;vérifié (catalogue)
+E0599;22;;0,74;1,37;;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80;vérifié (catalogue)
+E0599;20;;0,95;2,10;;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80;vérifié (catalogue)
+E0599;16;;1,34;2,62;;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80;vérifié (catalogue)
+E0599;12;;2,20;4,01;;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80;vérifié (catalogue)
+E0599;10;;4,00;5,50;contact spécial 001104 620 02 (8-10 AWG). Le 001104 630 02 (10-12 AWG) : 2,40-5,20;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80;vérifié (catalogue)
+
+Outillage des contacts — par contact (recherche R1, octobre 2026) : la plage de jauges du fût, la plage de Ø sur isolant que le joint arrière accepte, la pince et son positionneur (ou sa tourelle), l'outil d'insertion et d'extraction, la longueur de dénudage (mm), les bagues couleur EN 3155 (taille d'engagement / fût). Les positionneurs EN côté norme sont dans l'EN 4008 (payante) : ici les références MIL M22520. Rien de public pour les -018/-019 de l'EN 2997 et de l'EN 3646.
+Famille;Référence du contact;Sexe;Taille;Fût;Jauges;Ø isolant min;Ø isolant max;Pince;Positionneur;Insertion;Extraction;Dénudage;Bagues couleur;Source;Statut
+EN3645 EN4165;EN3155-008M2222;M;22;22;26-22;0,76;1,37;M22520/2-01;M22520/2-09;M81969/14-01;M81969/14-01;4;vert / vert;Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.10 « EN3155 crimping tools » + Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.69-71 + TE Deutsch, DMC-M multicavity EN4165 (https://www.farnell.com/datasheets/2996815.pdf) p.37;vérifié
+EN3645;EN3155-009F2222;F;22;22;26-22;0,76;1,37;M22520/2-01;M22520/2-07;M81969/14-01;M81969/14-01;4;vert / vert;Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.10 « EN3155 crimping tools » + Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.69-71;vérifié
+EN4165;EN3155-003F2222;F;22;22;26-22;;;M22520/2-01;M22520/2-06;M81969/14-01;M81969/14-01;;vert / vert;Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.10 « EN3155 crimping tools » + TE Deutsch, DMC-M multicavity EN4165 (https://www.farnell.com/datasheets/2996815.pdf) p.37;vérifié
+EN4165;EN3155-008M2322;M;23;22;26-22;;;M22520/2-01;M22520/2-09;M81969/14-01;M81969/14-01;;vert / violet;TE Deutsch, DMC-M multicavity EN4165 (https://www.farnell.com/datasheets/2996815.pdf) p.36-37 (182-4043-23);à confirmer (désignation EN en projet)
+EN4165;EN3155-003F2322;F;23;22;26-22;;;M22520/2-01;M22520/2-06;M81969/14-01;M81969/14-01;;vert / violet;TE Deutsch, DMC-M multicavity EN4165 (https://www.farnell.com/datasheets/2996815.pdf) p.36-37 (182-4042-23);à confirmer (désignation EN en projet)
+EN3645 EN4165;EN3155-008M / -003F / -009F 2022;M ou F;20;22;26-22;1,02;2,11;M22520/2-01 ou M22520/1-01;M22520/2-10 ou M22520/1-04;M81969/14-10;M81969/14-10;6;rouge / vert;Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.10 « EN3155 crimping tools » + Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.69-71;vérifié
+EN3645 EN4165;EN3155-008M / -003F / -009F 2020;M ou F;20;20;24-20;1,02;2,11;M22520/2-01 ou M22520/1-01;M22520/2-10 ou M22520/1-04;M81969/14-10;M81969/14-10;6;rouge / rouge;Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.10 « EN3155 crimping tools » + Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.69-71 + TE Deutsch, DMC-M multicavity EN4165 (https://www.farnell.com/datasheets/2996815.pdf) p.37;vérifié
+EN3645 EN4165;EN3155-008M / -003F / -009F 2018;M ou F;20;18;24-18;1,02;2,11;M22520/2-01 ou M22520/1-01;M22520/2-10 ou M22520/1-04;M81969/14-10;M81969/14-10;6;rouge / marron;Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.10 « EN3155 crimping tools » + TE Deutsch, DMC-M multicavity EN4165 (https://www.farnell.com/datasheets/2996815.pdf) p.36-37;vérifié
+EN3645 EN4165;EN3155-008M / -003F / -009F 1616;M ou F;16;16;20-16;1,65;2,77;M22520/1-01;M22520/1-04;M81969/14-03;M81969/14-03;6;bleu / bleu;Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.10 « EN3155 crimping tools » + Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.69-71 + TE Deutsch, DMC-M multicavity EN4165 (https://www.farnell.com/datasheets/2996815.pdf) p.37;vérifié
+EN3645 EN4165;EN3155-008M / -003F / -009F 1614;M ou F;16;14;20-14;1,65;2,77;M22520/1-01;M22520/1-04;M81969/14-03;M81969/14-03;6;bleu / blanc;Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.10 « EN3155 crimping tools » + TE Deutsch, DMC-M multicavity EN4165 (https://www.farnell.com/datasheets/2996815.pdf) p.36-37;vérifié
+EN3645 EN4165;EN3155-008M / -003F / -009F 1212;M ou F;12;12;14-12;2,46;3,61;M22520/1-01;M22520/1-04;M81969/14-04;M81969/14-04;6;jaune / jaune;Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.10 « EN3155 crimping tools » + Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.69-71 + TE Deutsch, DMC-M multicavity EN4165 (https://www.farnell.com/datasheets/2996815.pdf) p.37;vérifié
+EN3645 EN4165;EN3155-008M / -003F / -009F 1214;M ou F;12;14;20-14;2,46;3,61;M22520/1-01;M22520/1-04;M81969/14-04;M81969/14-04;6;jaune / blanc;Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.10 « EN3155 crimping tools » + Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.9;vérifié
+EN3645;contact taille 10 puissance;M ou F;10;;;;2,95;;;M81969/14-05;M81969/14-05;;;Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.69-71 (Souriau : pince et positionneur du #10 « nous consulter »);vérifié (insertion et Ø max seulement)
+EN3645;contact taille 8 puissance (Souriau 8599-7544 / -7541, « #8 ou 10 »);M ou F;8;8 ou 10;;4,50 (manchon);6,50 (manchon);M22520/23-01;M22520/23-02 (Souriau 8599-9601);M81969/14-12 ou 8660-197 (métal);M81969/14-12 ou 8660-197;12;;Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.65, 70, 114;déduit (outillage Souriau vérifié, équivalence avec EN3155-065 / -066 / -083 non lue)
+EN4165;contact taille 8 puissance TE 724-0001-08 / 724-0003-08;M ou F;8;8;8 (5,30-8,98 mm²);;;TE 057-0064-05A;TE 057-0065-05A;114-008 ou M81969/14-06;114-008 ou M81969/14-06;;;TE Deutsch, DMC-M multicavity EN4165 (https://www.farnell.com/datasheets/2996815.pdf) p.36-37;vérifié (catalogue TE, équivalence avec E0824 / E0825 ou EN3155-065 / -083 non lue)
+EN3645 EN4165;EN3155-074M08(A) / EN3155-075F08(A) quadrax;M ou F;8;;quadrax 100 Ω;;;intérieur : M22520/2-01 — corps : M22520/5-01;intérieur : K709 — corps : matrice M22520/5-45;M81969/14-06 ou 8660-197 (métal);M81969/14-06 ou 8660-197;;;Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.109 + Souriau, EN3155 Qualified Contacts 2014 (https://atta.szlcsc.com/upload/public/pdf/source/20250627/562BD244F3F842A1AA6B9F72BD86CDD2.pdf) p.3;vérifié
+EN3645 EN4165;triax taille 8 (« twinax concentrique », Souriau);M ou F;8;;twinax;3,15;3,40;intérieur : M22520/2-01 — milieu et virole : M22520/5-01;intérieur : K709 — milieu : Y631 fermeture B — virole : Y631 fermeture A;;;;;Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.65, 70;déduit (outillage Souriau vérifié, équivalence avec les EN3155-012 / -013 de la table Contacts non lue)
+EN3645;M39029/28-211 broche + M39029/75-416 douille coax taille 12 (RG174 / RG316 / RG179);M ou F;12;;coax;2,40;2,60;intérieur : M22520/2-01 — blindage : M22520/31-01;intérieur : M22520/2-34 — blindage : M22520/31-02;M81969/14-04 (ou M81969/8-09);M81969/14-04 (ou M81969/8-10);;;Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.65, 70 + Amphenol, Coaxial Contacts (https://www.amphenol.co.jp/military/catalog/CoaxialContact.pdf);vérifié
+EN3645 EN4165;M39029/28-409, /27-402, /75-417 coax taille 12 (RG180 / RG195);M ou F;12;;coax;;;;;M81969/14-04 (ou M81969/8-09);M81969/14-04 (ou M81969/8-10);;;Amphenol, Coaxial Contacts (https://www.amphenol.co.jp/military/catalog/CoaxialContact.pdf);à confirmer (pince et positionneur du RG180 non lus)
+EN3645;M39029/87-471 / -472 broche, /88-483 / -484 douille thermocouple 22;M ou F;22;;28-22;0,76;1,37;M22520/2-01;broche M22520/2-09 — douille M22520/2-07;M81969/14-01;M81969/14-01;4;;Glenair, SuperNine signal and power crimp contact tool cross reference (https://www.glenair.com/supernine/contacts-and-tools/pdf/signal-and-power-crimp-contact-tool-cross-reference.pdf) page J-32 (thermocouple) + Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.68;vérifié
+EN3645;M39029/87-475 / -476 broche, /88-487 / -488 douille thermocouple 20;M ou F;20;;24-20;1,02;2,11;M22520/2-01;M22520/2-10;M81969/14-10;M81969/14-10;6;;Glenair, SuperNine signal and power crimp contact tool cross reference (https://www.glenair.com/supernine/contacts-and-tools/pdf/signal-and-power-crimp-contact-tool-cross-reference.pdf) page J-32 + Glenair 850-023 AS39029/87 (https://cdn.glenair.com/as39029-qpl-and-glenair-commercial-high-performance-connector-contacts/pdf/d/850-023.pdf);vérifié
+NSA937901 E0599;EN3155-016M2222 (NSA937910EA2200);M;22;22;26-22;0,74;1,37;M22520/2-01;Air LB K 673;M81969/14-01 (Air LB 001112 100 25);M81969/14-01;;;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80;vérifié
+NSA937901 E0599;EN3155-016M2018 (NSA937910EA2000);M;20;18;24-18;0,95;2,10;M22520/1-01 ou M22520/2-01 ou M22520/7-01;M22520/1-02 ou M22520/2-02 ou M22520/7-02;M81969/14-11 (NAS 1664-20, Air LB 001112 200 25);M81969/14-11;;;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80;vérifié
+NSA937901 E0599;EN3155-016M2020 (NAS 1748/1749);M;20;20;24-20;0,95;2,10;M22520/1-01 ou M22520/2-01 ou M22520/7-01;M22520/1-02 ou M22520/2-02 ou M22520/7-02;M81969/14-11;M81969/14-11;;;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80;vérifié
+NSA937901 E0599;EN3155-016M1616 (NSA937910EA1600);M;16;16;20-16;1,34;2,62;M22520/1-01 ou M22520/7-01;M22520/1-02 ou M22520/7-03;M81969/14-03 (NAS 1664-16, Air LB 001112 300 25);M81969/14-03;;;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80;vérifié
+NSA937901 E0599;EN3155-016M1212 (NSA937910EA1200);M;12;12;14-12;2,20;4,01;M22520/1-01;M22520/1-02;M81969/14-04 (NAS 1664-12, Air LB 001112 400 25);M81969/14-04;;;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80;vérifié
+E0599;Air LB 001104 620 02 (contact spécial taille 10);M;10;;10-8;4,00;5,50;M 300 BT;TP 986;M81969/14-05 (Air LB 001112 600 25);M81969/14-05;;;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80;vérifié
+EN2997 EN3646;EN3155-018M / -019F (toutes tailles) et thermocouples EN3155-054 à -057;M ou F;20 16 12;;;;;;;;;;;rien trouvé en public;à confirmer (outillage non trouvé)
+
+Obturateurs — par famille et taille de contact, l'obturateur qui ferme une cavité sans fil (recherche R1, octobre 2026). La règle de pose dépend de la zone (AC 43.13-1B § 11-262 et 11-263) : contact de réserve et fil témoin en zone feu non pressurisée, contact de réserve et obturateur ailleurs, obturateur obligatoire en zone pressurisée sur un connecteur étanche. Les réserves : 2 contacts jusqu'à 25, 4 de 26 à 100, 6 au-delà (§ 11-234).
+Famille;Taille;Obturateur;Équivalent;Couleur;Note;Source;Statut
+EN3645;22;MS27488-22-2;Souriau 8660-212;noir;taille 22D de la MIL-DTL-38999 série III. Se pose derrière un contact NON CÂBLÉ, pour garder l'étanchéité;Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.68 + Amphenol Aerospace, 38999 Contact Ratings / Contact Part Numbers p.18 (https://docs.rs-online.com/3896/0900766b814b6ba8.pdf);vérifié
+EN3645;20;MS27488-20-2;Souriau 8522-389A;rouge;;Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.68 + Amphenol Aerospace, 38999 Contact Ratings / Contact Part Numbers p.18 (https://docs.rs-online.com/3896/0900766b814b6ba8.pdf);vérifié
+EN3645;16;MS27488-16-2;Souriau 8522-390A;bleu;certains distributeurs le disent vert : Souriau dit bleu;Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.68 + Amphenol Aerospace, 38999 Contact Ratings / Contact Part Numbers p.18 (https://docs.rs-online.com/3896/0900766b814b6ba8.pdf);vérifié
+EN3645;12;MS27488-12-2;Souriau 8522-391A;jaune;;Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.68 + Amphenol Aerospace, 38999 Contact Ratings / Contact Part Numbers p.18 (https://docs.rs-online.com/3896/0900766b814b6ba8.pdf);vérifié
+EN3645;10;M85049/81-10;Amphenol T3-4010-59P;;taille 10 puissance (38999 série III);Amphenol Aerospace, 38999 Contact Ratings / Contact Part Numbers p.18 (https://docs.rs-online.com/3896/0900766b814b6ba8.pdf) tableau Sealing plugs;vérifié
+EN3645;8;MS27488-8-3;Amphenol 10-405996-83;;taille 8 puissance (38999 série III);Amphenol Aerospace, 38999 Contact Ratings / Contact Part Numbers p.18 (https://docs.rs-online.com/3896/0900766b814b6ba8.pdf) tableau Sealing plugs;vérifié
+EN3645;8T (coax);;Amphenol 10-482099-8;;pas de référence militaire;Amphenol Aerospace, 38999 Contact Ratings / Contact Part Numbers p.18 (https://docs.rs-online.com/3896/0900766b814b6ba8.pdf) tableau Sealing plugs;vérifié
+EN3645;8T (twinax);;Amphenol T3-4008-59P;;pas de référence militaire;Amphenol Aerospace, 38999 Contact Ratings / Contact Part Numbers p.18 (https://docs.rs-online.com/3896/0900766b814b6ba8.pdf) tableau Sealing plugs;vérifié
+NSA937901;22D;Air LB 001109 190 38;;noir;cavité de module non utilisée (sachets de 100 ou 500). Référence NSA non trouvée;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.81;vérifié (catalogue)
+NSA937901;20;Air LB 001109 200 42;;rouge;;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.81;vérifié (catalogue)
+NSA937901;16;Air LB 001109 300 40;;bleu;;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.81;vérifié (catalogue)
+NSA937901;12;Air LB 001109 400 41;;jaune;;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.81;vérifié (catalogue)
+E0599;22;Air LB 001109 190 38;;noir;;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.81;vérifié (catalogue)
+E0599;20;Air LB 001109 200 42;;rouge;;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.81;vérifié (catalogue)
+E0599;16;Air LB 001109 300 40;;bleu;;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.81;vérifié (catalogue)
+E0599;12;Air LB 001109 400 41;;jaune;;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.81;vérifié (catalogue)
+E0599;10;Air LB 001109 600 00;;vert;;Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.81;vérifié (catalogue)
+EN2997;20 16 12;;;;TE 983 / EN 2997 : « remplir toute cavité vide avec un obturateur ». Références non lues;TE Deutsch 983 / EN2997 (https://www.peigenesis.com/images/content/pei_tabs/deutsch/en2997-983-series/pdf-thumbs/9-28_en2997.pdf : PDF protégé, valeurs lues dans l'extrait du moteur de recherche);à confirmer
+EN3646 ASNE0059;20 16 12;;;;rien trouvé;;à confirmer
+EN4165;module;EN4165-002-N / NL (module neutre);TE DMC-M 00-00;;module entier inutilisé : déjà dans en4165.csv. Contact libre dans un module : référence non trouvée;TE Deutsch, DMC-M single module EN4165 (https://www.airelectro.com/downloads/ENG_DS_1-1773725-9_dmcm_single_1014.pdf) p.9;vérifié (module) / à confirmer (contact)
+toutes;;EN 4529;;;la norme EN des obturateurs : EN 4529-002 (index des normes produit) et EN 4529-003 (classe T). Titres seulement, contenu payant;catalogue en-standard.eu, titres des parties (https://www.en-standard.eu/search/?q=EN+3155);à confirmer
+
+Parties de l'EN 3155 — ce que chaque numéro de partie désigne (titre officiel, en-standard.eu), le type (A cuivre, C thermocouple, D blindé ou coaxial, E quadrax), la classe (P 125 °C, R 150, S 200, T 260, U 350), les connecteurs qui l'emploient d'après les catalogues, et si la table Contacts s'en sert (recherche R1, octobre 2026). Une référence se lit EN3155-<partie><M ou F><taille d'engagement><fût> : EN3155-008M2018 = broche, taille 20, fût 18 AWG.
+Partie;Titre;Type;Sexe;Taille;Terminaison;Classe;Employé pour;Dans la table Contacts;Source;Statut
+EN 3155-001;spécification technique (2025);;;;;;toutes;non (payante : la limite de résistance de contact y est);catalogue en-standard.eu, titres des parties (https://www.en-standard.eu/search/?q=EN+3155);vérifié
+EN 3155-002;liste et utilisation des contacts (2024, projet 2026 en enquête);;;;;;toutes;non (payante : les fûts par taille, les connecteurs de chaque contact);catalogue en-standard.eu, titres des parties (https://www.en-standard.eu/search/?q=EN+3155) + DIN, projet prEN 3155-002:2026 (https://www.din.de/en/getting-involved/standards-committees/nl/projects/wdc-proj:din21:398174300) et page d'enquête ELOT (https://standardsdevelopment.elot.gr/drafts/13892, accès restreint : changements lus dans son résumé);vérifié
+EN 3155-003;contact femelle type A serti classe S;A cuivre;F;22 à 10;serti;S 200 °C;EN 4165, EN 3545, MIL-DTL-38999 série II;oui (EN4165 F);Souriau, EN3155 Qualified Contacts 2014 (https://atta.szlcsc.com/upload/public/pdf/source/20250627/562BD244F3F842A1AA6B9F72BD86CDD2.pdf) p.2-4 + Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.9;vérifié
+EN 3155-004;contact mâle type A serti classe T;A cuivre;M;20 16 12;serti;T 260 °C;EN 2997, EN 4067;non (la table Contacts prend le -018 classe S);Souriau, EN3155 Qualified Contacts 2014 (https://atta.szlcsc.com/upload/public/pdf/source/20250627/562BD244F3F842A1AA6B9F72BD86CDD2.pdf) p.2-4;vérifié
+EN 3155-005;contact femelle type A serti classe T;A cuivre;F;20 16 12;serti;T 260 °C;EN 2997, EN 4067;non (la table Contacts prend le -019 classe S);Souriau, EN3155 Qualified Contacts 2014 (https://atta.szlcsc.com/upload/public/pdf/source/20250627/562BD244F3F842A1AA6B9F72BD86CDD2.pdf) p.2-4;vérifié
+EN 3155-008;contact mâle type A serti classe S;A cuivre;M;22 à 10;serti;S 200 °C;EN 3645, EN 4165, EN 3545, EN 3372, MIL-DTL-38999 séries I II III;oui (EN3645 et EN4165 M);Souriau, EN3155 Qualified Contacts 2014 (https://atta.szlcsc.com/upload/public/pdf/source/20250627/562BD244F3F842A1AA6B9F72BD86CDD2.pdf) p.2-4 + Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.9;vérifié
+EN 3155-009;contact femelle type A serti classe S;A cuivre;F;22 à 10;serti;S 200 °C;EN 3645, EN 3372, MIL-DTL-38999 séries I et III;oui (EN3645 F);Souriau, EN3155 Qualified Contacts 2014 (https://atta.szlcsc.com/upload/public/pdf/source/20250627/562BD244F3F842A1AA6B9F72BD86CDD2.pdf) p.2-4 + Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.9;vérifié
+EN 3155-012 / 013;contact triaxial taille 8 mâle / femelle type D soudé classe R;D blindé;M / F;8;soudé;R 150 °C;;oui (twinax XM WW WJ WY en EN3645 et EN4165);catalogue en-standard.eu, titres des parties (https://www.en-standard.eu/search/?q=EN+3155);vérifié
+EN 3155-014 / 015;contact mâle / femelle type A serti classe S;A cuivre;M / F;20;serti;S 200 °C;EN 3545. Le -015 aussi dans les modules Air LB 1200 (ABS1569);non;Souriau, EN3155 Qualified Contacts 2014 (https://atta.szlcsc.com/upload/public/pdf/source/20250627/562BD244F3F842A1AA6B9F72BD86CDD2.pdf) p.2-4 + Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80;vérifié
+EN 3155-016;contact mâle type A serti classe S;A cuivre;M;22 20 16 12;serti;S 200 °C;EN 3708 (modules de jonction = NSA937901), NF L 53-105 (E0599), EN 2995, EN 2996;oui : le contact des barrettes NSA937901 et E0599 (ajouté par R1);Souriau, EN3155 Qualified Contacts 2014 (https://atta.szlcsc.com/upload/public/pdf/source/20250627/562BD244F3F842A1AA6B9F72BD86CDD2.pdf) p.2-4 + Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80;vérifié
+EN 3155-017;contact femelle type A serti classe P, embase de relais;A cuivre;F;16 12;serti;P 125 °C;EN 2593, EN 3206;non;Souriau, EN3155 Qualified Contacts 2014 (https://atta.szlcsc.com/upload/public/pdf/source/20250627/562BD244F3F842A1AA6B9F72BD86CDD2.pdf) p.2-4;vérifié
+EN 3155-018;contact mâle type A serti classe S;A cuivre;M;20 16 12;serti;S 200 °C;EN 2997, EN 3646;oui (EN2997 et EN3646 M);Souriau, EN3155 Qualified Contacts 2014 (https://atta.szlcsc.com/upload/public/pdf/source/20250627/562BD244F3F842A1AA6B9F72BD86CDD2.pdf) p.2-4;vérifié
+EN 3155-019;contact femelle type A serti classe S;A cuivre;F;20 16 12;serti;S 200 °C;EN 2997, EN 3646;oui (EN2997 et EN3646 F);Souriau, EN3155 Qualified Contacts 2014 (https://atta.szlcsc.com/upload/public/pdf/source/20250627/562BD244F3F842A1AA6B9F72BD86CDD2.pdf) p.2-4;vérifié
+EN 3155-024 / 025;contact triaxial taille 8 mâle / femelle type D serti classe S;D blindé;M / F;8;serti;S 200 °C;;non;catalogue en-standard.eu, titres des parties (https://www.en-standard.eu/search/?q=EN+3155);vérifié
+EN 3155-026 / 027;contact mâle / femelle type A serti classe R;A cuivre;M / F;22 20 16 12;serti;R 150 °C;EN 3682;non;Souriau, EN3155 Qualified Contacts 2014 (https://atta.szlcsc.com/upload/public/pdf/source/20250627/562BD244F3F842A1AA6B9F72BD86CDD2.pdf) p.2-4;vérifié
+EN 3155-028 / 029;contact coaxial blindé taille 16 mâle / femelle type D serti classe R;D coax;M / F;16;serti;R 150 °C;;non;catalogue en-standard.eu, titres des parties (https://www.en-standard.eu/search/?q=EN+3155);vérifié
+EN 3155-030 / 031;contact coaxial blindé taille 12 mâle / femelle type D serti classe R;D coax;M / F;12;serti;R 150 °C;;non;catalogue en-standard.eu, titres des parties (https://www.en-standard.eu/search/?q=EN+3155);vérifié
+EN 3155-032 / 033;contact coaxial 50 Ω taille 5 mâle / femelle type D serti classe R;D coax;M / F;5;serti;R 150 °C;;non;catalogue en-standard.eu, titres des parties (https://www.en-standard.eu/search/?q=EN+3155);vérifié
+EN 3155-034 / 035;contact triaxial taille 08 mâle / femelle type D serti classe R;D blindé;M / F;8;serti;R 150 °C;;non;catalogue en-standard.eu, titres des parties (https://www.en-standard.eu/search/?q=EN+3155);vérifié
+EN 3155-039;contact coaxial taille 16 femelle type D soudé classe R;D coax;F;16;soudé;R 150 °C;;non;catalogue en-standard.eu, titres des parties (https://www.en-standard.eu/search/?q=EN+3155);vérifié
+EN 3155-040 / 041;contact coaxial taille 12 mâle / femelle type D soudé classe R;D coax;M / F;12;soudé;R 150 °C;;non;catalogue en-standard.eu, titres des parties (https://www.en-standard.eu/search/?q=EN+3155);vérifié
+EN 3155-042 / 043;contact triaxial taille 08 mâle / femelle type D soudé classe P;D blindé;M / F;8;soudé;P 125 °C;;non;catalogue en-standard.eu, titres des parties (https://www.en-standard.eu/search/?q=EN+3155);vérifié
+EN 3155-044 / 045;contact mâle / femelle type A double sertissage classe T;A cuivre;M / F;20;double sertissage;T 260 °C;EN 2997 (044M2022 / 045F2022);non;Souriau, EN3155 Qualified Contacts 2014 (https://atta.szlcsc.com/upload/public/pdf/source/20250627/562BD244F3F842A1AA6B9F72BD86CDD2.pdf) p.2-4;vérifié
+EN 3155-046 / 047;contact mâle / femelle type A double sertissage classe S;A cuivre;M / F;20;double sertissage;S 200 °C;EN 3645 (046M2022 / 047F2022);non;Souriau, EN3155 Qualified Contacts 2014 (https://atta.szlcsc.com/upload/public/pdf/source/20250627/562BD244F3F842A1AA6B9F72BD86CDD2.pdf) p.2-4;vérifié
+EN 3155-052 / 053;contact mâle / femelle type A serti classe S;A cuivre;M / F;;serti;S 200 °C;;non;catalogue en-standard.eu, titres des parties (https://www.en-standard.eu/search/?q=EN+3155);vérifié
+EN 3155-054 / 055;contact thermocouple NiAl (alumel) mâle / femelle type C serti classe T;C thermocouple;M / F;20;serti;T 260 °C;EN 2997, EN 3646;oui (types HT et HN : alumel);Souriau, EN3155 Qualified Contacts 2014 (https://atta.szlcsc.com/upload/public/pdf/source/20250627/562BD244F3F842A1AA6B9F72BD86CDD2.pdf) p.2-4 + Carlisle / Tri-Star, EN3155 Contact Selection Guide (https://amphenol.co.jp/military/catalog/EN3155_Contacts.pdf) p.3;vérifié
+EN 3155-056 / 057;contact thermocouple NiCr (chromel) mâle / femelle type C serti classe T;C thermocouple;M / F;20;serti;T 260 °C;EN 2997, EN 3646;oui (types HS et HM : chromel);Souriau, EN3155 Qualified Contacts 2014 (https://atta.szlcsc.com/upload/public/pdf/source/20250627/562BD244F3F842A1AA6B9F72BD86CDD2.pdf) p.2-4 + Carlisle / Tri-Star, EN3155 Contact Selection Guide (https://amphenol.co.jp/military/catalog/EN3155_Contacts.pdf) p.3;vérifié
+EN 3155-058 / 059;contact coaxial taille 16 mâle / femelle type D soudé classe R;D coax;M / F;16;soudé;R 150 °C;;oui (WL WS XE… EN3645 EN4165);catalogue en-standard.eu, titres des parties (https://www.en-standard.eu/search/?q=EN+3155);vérifié
+EN 3155-060 / 061;contact coaxial taille 12 mâle / femelle type D soudé classe R;D coax;M / F;12;soudé;R 150 °C;;oui (EN3645 taille 12 par défaut, EN4165 M);catalogue en-standard.eu, titres des parties (https://www.en-standard.eu/search/?q=EN+3155);vérifié
+EN 3155-063 / 064;contact coaxial 50 Ω taille 1 mâle / femelle type D soudé classe R;D coax;M / F;1;soudé;R 150 °C;;non;catalogue en-standard.eu, titres des parties (https://www.en-standard.eu/search/?q=EN+3155);vérifié
+EN 3155-065 / 066;contact mâle / femelle type A serti classe S taille 8;A cuivre;M / F;8;serti;S 200 °C;EN 3645, EN 4165 (-065);oui (8 AWG et 10 AWG);Souriau, EN3155 Qualified Contacts 2014 (https://atta.szlcsc.com/upload/public/pdf/source/20250627/562BD244F3F842A1AA6B9F72BD86CDD2.pdf) p.2-4 p.3 + catalogue en-standard.eu, titres des parties (https://www.en-standard.eu/search/?q=EN+3155);vérifié
+EN 3155-067 / 068;contact coaxial taille 08 mâle / femelle type D soudé classe R;D coax;M / F;8;soudé;R 150 °C;;oui (XF WM WH);catalogue en-standard.eu, titres des parties (https://www.en-standard.eu/search/?q=EN+3155);vérifié
+EN 3155-069;contact coaxial taille 16 femelle type D soudé classe P;D coax;F;16;soudé;P 125 °C;;oui (EN4165 F 16);catalogue en-standard.eu, titres des parties (https://www.en-standard.eu/search/?q=EN+3155);vérifié
+EN 3155-070 / 071;contact mâle / femelle type A serti classe S;A cuivre;M / F;22;serti;S 200 °C;EN 4165 (TE : modules compatibles câble aluminium et EN3155-070/71 taille 22);non;TE Deutsch, DMC-M single module EN4165 (https://www.airelectro.com/downloads/ENG_DS_1-1773725-9_dmcm_single_1014.pdf) p.9 + catalogue en-standard.eu, titres des parties (https://www.en-standard.eu/search/?q=EN+3155);à confirmer (emploi aluminium)
+EN 3155-074 / 075;contact quadrax taille 8 mâle / femelle type E serti classes P R S;E quadrax;M / F;8;serti;P R S;EN 3645, EN 4165, EN 3372;non (la table Contacts prend ECS0754, norme Airbus Helicopters);Souriau, EN3155 Qualified Contacts 2014 (https://atta.szlcsc.com/upload/public/pdf/source/20250627/562BD244F3F842A1AA6B9F72BD86CDD2.pdf) p.2-4 p.3 + Souriau, 8D Series catalogue 2013 (https://www.farnell.com/datasheets/1699755.pdf) p.109;vérifié
+EN 3155-076 / 077;contact mâle / femelle type A serti classe R;A cuivre;M / F;;serti;R 150 °C;EN 4644 (recherche R3);non;catalogue en-standard.eu, titres des parties (https://www.en-standard.eu/search/?q=EN+3155) + familles-a-venir.csv (R3);vérifié
+EN 3155-078 / 079;contact taille 22 pour EN 2997 mâle / femelle type A serti classe S;A cuivre;M / F;22;serti;S 200 °C;EN 2997 haute densité (arrangements 08-06, 10-12, 12-21);non : il manque à la table Contacts EN2997 (référence complète non publique);catalogue en-standard.eu, titres des parties (https://www.en-standard.eu/search/?q=EN+3155);vérifié
+EN 3155-080 / 081;contact taille 22 pour EN 2997 mâle / femelle type A serti classe T;A cuivre;M / F;22;serti;T 260 °C;EN 2997 haute densité;non;catalogue en-standard.eu, titres des parties (https://www.en-standard.eu/search/?q=EN+3155);vérifié
+EN 3155-082;contact femelle type A serti classe S;A cuivre;F;;serti;S 200 °C;EN 4165 (cité par TE);non;catalogue en-standard.eu, titres des parties (https://www.en-standard.eu/search/?q=EN+3155) + TE Deutsch, DMC-M single module EN4165 (https://www.airelectro.com/downloads/ENG_DS_1-1773725-9_dmcm_single_1014.pdf) p.9;à confirmer (emploi)
+EN 3155-083;contact femelle type A serti classe S taille 8;A cuivre;F;8;serti;S 200 °C;EN 3645, EN 4165;non (la table Contacts prend le -066);Souriau, EN3155 Qualified Contacts 2014 (https://atta.szlcsc.com/upload/public/pdf/source/20250627/562BD244F3F842A1AA6B9F72BD86CDD2.pdf) p.2-4 p.3;vérifié
+classes;P 125 °C, R 150 °C, S 200 °C, T 260 °C, U 350 °C;;;;;;;;Carlisle / Tri-Star, EN3155 Contact Selection Guide (https://amphenol.co.jp/military/catalog/EN3155_Contacts.pdf) p.2;vérifié
+types;A alliage de cuivre, B alliage ferreux, C thermocouple, D blindé ou coaxial, E quadrax;;;;;;;;Carlisle / Tri-Star, EN3155 Contact Selection Guide (https://amphenol.co.jp/military/catalog/EN3155_Contacts.pdf) p.2 + catalogue en-standard.eu, titres des parties (https://www.en-standard.eu/search/?q=EN+3155);vérifié
+désignation;EN3155-<partie><M ou F><taille d'engagement><fût> : EN3155-008M2018 = broche, taille 20, fût 18 AWG;;;;;;;;Amphenol, Signal Contacts EN3155 / SAE39029 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf) p.9;vérifié

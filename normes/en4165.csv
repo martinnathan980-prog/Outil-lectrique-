@@ -6,8 +6,8 @@ Norme;Famille;Nature;Jauge min;Jauge max;Fils par côté;Ordre;Paquets;Note
 EN 4165-002;EN4165;connecteur;26;8;1;libre;libres;modules de connecteur rectangulaire : chaque borne du connecteur est le contact de même numéro, la jauge du fil admise par la taille du contact
 
 Tailles — la plage de jauges d'une taille de contact, quand la table Contacts (normes/contacts.csv, tables SEE) ne connaît pas la taille ; c'est elle qui juge d'abord
-Famille;Taille;Jauge min;Jauge max;Note
-EN4165;23;26;24;contact taille 23 (module 30R23)
+Famille;Taille;Jauge min;Jauge max;Note;Source;Statut
+EN4165;23;26;22;contact taille 23 (module 30R23) : fût 22, 26 à 22 AWG. la ligne disait 26-24 alors que la table Courant citait déjà Glenair HD #23 22-26 AWG;TE Deutsch, DMC-M multicavity EN4165 (https://www.farnell.com/datasheets/2996815.pdf) p.36 (182-4043-23 / 182-4042-23 « 23/22 », 26-22 AWG);vérifié
 EN4165;22;26;22;contact taille 22
 EN4165;20;24;20;contact taille 20
 EN4165;16;20;16;contact taille 16
@@ -46,3 +46,13 @@ EN4165;2BY22;EN4165-002-2BY22;22;22;5 4 3 2 1 / 10 9 8 7 6 / 15 14 13 12 11 / 20
 EN4165;20Z22;EN4165-002-20Z22;22;22;1 2 3 4 5 / 6 7 8 9 10 / 11 12 13 14 15 / 16 17 18 19 20;1,6,11,16 | 2,7,12,17 | 3,8,13,18 | 4,9,14,19 | 5,10,15,20;;;;shuntés;module;connecteur;figures 11 et 12 : module à douilles — 5 colonnes de 4 contacts shuntés
 EN4165;2AZ22;EN4165-002-2AZ22;22;22;1 2 3 4 5 / 6 7 8 9 10 / 11 12 13 14 15 / 16 17 18 19 20;3,8,13,18 | 4,9,14,19 | 5,10,15,20 | 1,6 | 11,16 | 2,7 | 12,17;;;;shuntés;module;connecteur;figures 11 et 12 : module à douilles — 3 colonnes de 4 et 4 paires shuntées
 EN4165;2BZ22;EN4165-002-2BZ22;22;22;1 2 3 4 5 / 6 7 8 9 10 / 11 12 13 14 15 / 16 17 18 19 20;1,6 | 11,16 | 2,7 | 12,17 | 3,8 | 13,18 | 4,9 | 14,19 | 5,10 | 15,20;;;;shuntés;module;connecteur;figures 11 et 12 : module à douilles — 10 paires shuntées
+
+Accessoires — ce que le mot « cheminée » désigne dans l'EN 4165 et ce qui l'entoure (recherche R3, octobre 2026 : titres et domaines des aperçus iTeh, AFNOR, BSI). La cheminée est le raccord d'un EN 4165 : une ronde (-015) par cavité de module câblé, une double ovale (-016) pour deux modules voisins, un obturateur (-017) sur une cavité vide. Les cotes (Ø intérieur d'une cheminée) ne sont pas dans les aperçus publics.
+Famille;Référence;Équivalent;Rôle;Masse;Source;Statut
+EN4165;EN4165-013;;collier de câble (serre-câble) pour connecteurs 2 et 4 modules, séries 2 et 3 (classes W et F);;aperçu iTeh SIST EN 4165-013:2025;vérifié
+EN4165;EN4165-014;;corps d’accessoire sur lequel se montent les cheminées rondes;;fiche BSI BS EN 4165-015 (résumé de recherche);à confirmer
+EN4165;EN4165-015;;« cheminée cylindrique pour accessoires » : 1 par cavité de module (2 et 4 modules) – classe de cheminée B (EN 4165-002:2023 t. 5) – d’après un résumé DIN, l’éd. 2015 ajoute un support de collier et fait de B l’alu nickelé (à confirmer);;AFNOR NF EN 4165-015 (domaine d’application, éd. 2006) – EN 4165-002:2023 t. 5;vérifié (rôle) – à confirmer (modifications 2015)
+EN4165;EN4165-016;;« double cheminée ovale pour accessoires (1 pour 2 modules) »;;aperçu iTeh SIST EN 4165-016:2025 (titre français officiel);vérifié
+EN4165;EN4165-017;;« obturateur pour accessoires (1 par cavité de module) » : ferme une cavité sans câble;;aperçu iTeh SIST EN 4165-017:2025 (titre français officiel);vérifié
+EN4165;EN4165-018;;capot de protection (connecteurs modulaires);;aperçu iTeh SIST EN 4165-018:2026 (titre);vérifié
+EN4165;EN4165-026;;accessoires blindés des connecteurs monomodule EN 4165-024/-025, reprise par bande EN 3660-033 – rien pour le module de contacts taille 8;;aperçu iTeh SIST EN 4165-026:2025;vérifié

@@ -6,9 +6,9 @@ Norme;Famille;Nature;Jauge min;Jauge max;Fils par côté;Ordre;Paquets;Note
 ASNE 0599;E0599;jonction;26;12;1;libre;libres;module de jonction : chaque potentiel du contrat prend un GROUPE de contacts reliés dans le module, chaque fil un contact
 
 Tailles — la taille d'un contact et les jauges AWG qu'il reçoit (plage usuelle d'un contact de cette taille : à confirmer avec la norme)
-Famille;Taille;Jauge min;Jauge max;Note
+Famille;Taille;Jauge min;Jauge max;Note;Source;Statut
 E0599;22;26;22;modules type 1, 36 contacts (jauge 22 AWG)
-E0599;20;24;20;modules type 2, 18 contacts (jauge 20 AWG), et contacts #20 des modules mixtes
+E0599;20;24;18;modules type 2, 18 contacts, et contacts #20 des modules mixtes — contacts #20 des modules E0599 : la broche EN3155-016M2018 reçoit 24 à 18 AWG (la ligne disait 24-20 : un 18 AWG était refusé);Amphenol Air LB, Quick Junction Modules 01/19 (https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7134/1574.pdf) p.80;vérifié (catalogue, ASNE 0599 non relue)
 E0599;16;20;16;modules type 3, 10 contacts (jauge 16 AWG), et contacts #16 des modules mixtes
 E0599;12;14;12;modules type 4, 8 contacts (jauge 12 AWG), et contacts #12 des modules mixtes
 

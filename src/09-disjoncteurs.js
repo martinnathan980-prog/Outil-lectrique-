@@ -84,8 +84,7 @@ const PRECHARGE = 0.6;
 /* Les marges d'une hypothèse : le facteur de courant (1 + marge %), la fraction du temps de déclenchement admise. */
 const margesDuMeilleur = H => { const m = H ? +H.marge : NaN, f = H ? +H.margeTemps : NaN, okM = isFinite(m) && m >= 0, okF = isFinite(f) && f > 0;
   return { marge: okM ? m : Math.round((MARGE_DISJONCTION - 1) * 100), k: okM ? 1 + m / 100 : MARGE_DISJONCTION, fraction: okF ? f / 100 : MARGE_FRACTION }; };
-/* Des mots pour les phrases du moteur (pas de page ici : `nombre` est à la page). */
-const nombreFr = x => String(Math.round(x * 100) / 100).replace('.', ',').replace(/^-/, '−');
+/* Des mots pour les phrases du moteur (`nombreFr` est dans 09-barrettes). */
 const motA = x => nombreFr(x) + ' A';
 const motPct = x => x > 9.995 ? '> 1 000 %' : nombreFr(Math.round(x * 100)) + ' %';
 const motDuree = t => !isFinite(t) ? 'toujours' : t < 1 ? nombreFr(Math.round(t * 1000)) + ' ms' : t < 60 ? nombreFr(Math.round(t * 10) / 10) + ' s' : t < 3600 ? nombreFr(Math.round(t / 6) / 10) + ' min' : nombreFr(Math.round(t / 360) / 10) + ' h';
@@ -441,8 +440,9 @@ function protectionDesFils(norme, calibre, profil, fils, hyp) { const H = { ...H
 function protegerFil(norme, calibre, f, H, ctx) { const { k, lente, pts } = ctx;
   const jauge = jaugeDuType(f.type), fil = filDeNorme(norme, f.type, jauge), rd = resistanceDuFil(norme, f.type, jauge, H.tconducteur), tenue = tenueEnTemperature(norme, f.type, H.ambiante);
   const protection = protectionDeJauge(norme, jauge), calibreMax = protection ? protection.disjoncteurMax : null, horsTable = !!(calibre > 0 && calibreMax != null && calibre > calibreMax + 1e-9);
-  // le contact : celui du plan si l'appelant le donne, sinon la taille usuelle de la jauge (table Protection, sinon la plus petite qui l'admet) — et la ligne de la table des contacts qui lui répond
-  const taille = f.taille || (protection && protection.tailleContact) || tailleDeJauge(norme, f.famille || '', jauge), ic = intensiteDeContact(norme, taille), contact = ic ? { ...ic, taille: f.taille || ic.taille, parLePlan: !!f.taille } : null;
+  // le contact : celui du plan si l'appelant le donne, sinon la taille usuelle de la jauge (table Protection, sinon la plus petite qui l'admet) — et la ligne de la table des contacts qui lui répond,
+  // bornée par la jauge du fil serti et le fût quand on le connaît (table Courant des contacts : un 24 AWG dans un contact 20 porte 3 A, pas 7,5)
+  const taille = f.taille || (protection && protection.tailleContact) || tailleDeJauge(norme, f.famille || '', jauge), ic = intensiteDeContact(norme, taille, jauge, null, f.fut != null ? f.fut : null), contact = ic ? { ...ic, taille: f.taille || ic.taille, parLePlan: !!f.taille } : null;
   const permanent = pts.filter(p => p.t === Infinity).reduce((m, p) => Math.max(m, p.i), 0);
   const contactSurcharge = !!(contact && calibre > 0 && calibre > contact.intensite + 1e-9), contactDepasse = !!(contact && permanent > contact.intensite + 1e-9);
   const commun = { fil: fil || null, jauge, conducteur: rd.conducteur, kConducteur: rd.kConducteur, tenue, calibreMax, horsTable, contact, contactSurcharge, contactDepasse, permanent, courbeLente: lente ? lente.nom : '' };

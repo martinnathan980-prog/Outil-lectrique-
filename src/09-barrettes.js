@@ -356,21 +356,27 @@ const COLONNES_NORME = {
     ['resistance',  ['resistance', 'rmax', 'resistancemax', 'rmaxneuf', 'mohm']],
     ['resistanceFin', ['resistancefindevie', 'findevie', 'rfindevie', 'resistanceconception']],
     ['emploi',      ['emploi', 'usage', 'pour', 'nature', 'application']],
-    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire', 'source']]],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']],
+    ['origine',     ['source', 'sources', 'origine']],
+    ['statut',      ['statut', 'status', 'confiance']]],
   courantsContacts: [
     ['taille',      ['taille', 'taillecontact', 'tailledecontact', 'size']],
     ['fut',         ['fut', 'futawg', 'futdesertissage', 'barrel', 'wirebarrel', 'crimpbarrel']],
     ['jauge',       ['jauge', 'awg', 'gauge', 'jaugefil', 'jaugedufil', 'wire']],
     ['intensite',   ['intensite', 'courant', 'current', 'intensitea', 'courantdessai', 'testcurrent']],
     ['intensiteHermetique', ['intensitehermetique', 'hermetique', 'hermetic', 'courantherme']],
-    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire', 'source']]],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']],
+    ['origine',     ['source', 'sources', 'origine']],
+    ['statut',      ['statut', 'status', 'confiance']]],
   accessoires: [
     ['famille',     ['famille', 'norme', 'family']],
     ['reference',   ['reference', 'ref', 'designation', 'code']],
     ['equivalent',  ['equivalent', 'equivalence', 'airlb', 'catalogue', 'constructeur', 'fabricant']],
     ['role',        ['role', 'fonction', 'nature', 'usage', 'quoi']],
     ['masse',       ['masse', 'poids', 'g', 'massegm']],
-    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire', 'page', 'source']]],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire', 'page']],
+    ['origine',     ['source', 'sources', 'origine']],
+    ['statut',      ['statut', 'status', 'confiance']]],
   chutesDisjoncteurs: [
     ['famille',     ['famille', 'disjoncteur', 'family', 'serie', 'prefixe']],
     ['calibre',     ['calibre', 'calibres', 'in', 'courantnominal', 'rating']],
@@ -381,7 +387,9 @@ const COLONNES_NORME = {
     ['taille',      ['taille', 'taillecontact', 'tailledecontact', 'size']],
     ['jaugeMin',    ['jaugemin', 'awgmin', 'jaugefine', 'gaugemin', 'minawg']],
     ['jaugeMax',    ['jaugemax', 'awgmax', 'jaugegrosse', 'gaugemax', 'maxawg']],
-    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']],
+    ['origine',     ['source', 'sources', 'origine']],
+    ['statut',      ['statut', 'status', 'confiance']]],
   gaines: [
     ['famille',     ['famille', 'gaine', 'norme', 'family']],
     ['reference',   ['reference', 'ref', 'code', 'designation']],
@@ -406,7 +414,9 @@ const COLONNES_NORME = {
     ['tension',     ['tension', 'tensiondepose', 'serrage', 'tensionlb']],
     ['tenue',       ['tenue', 'tenuen', 'resistance', 'traction']],
     ['temperature', ['temperature', 'temperaturec', 'tmax']],
-    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']],
+    ['origine',     ['source', 'sources', 'origine']],
+    ['statut',      ['statut', 'status', 'confiance']]],
   classes: [
     ['famille',     ['famille', 'connecteur', 'family']],
     ['classe',      ['classe', 'class', 'classeconnecteur', 'lettre']],
@@ -421,7 +431,9 @@ const COLONNES_NORME = {
     ['lettre',      ['lettre', 'letter', 'code']],
     ['filetage',    ['filetage', 'thread', 'filetageaccessoire']],
     ['dmaxBoitier', ['dmaxboitier', 'dmax', 'diametreboitier', 'obmax']],
-    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']],
+    ['origine',     ['source', 'sources', 'origine']],
+    ['statut',      ['statut', 'status', 'confiance']]],
   entrees: [
     ['systeme',     ['systeme', 'system', 'serie', 'jeu']],
     ['code',        ['code', 'entree', 'codeentree', 'cableentry']],
@@ -433,7 +445,9 @@ const COLONNES_NORME = {
     ['bb',          ['bb', 'obb', 'plateforme', 'plateformedebande']],
     ['cc',          ['cc', 'occ', 'epaulement', 'cotec']],
     ['dd',          ['dd', 'levre', 'epaisseurlevre']],
-    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']],
+    ['origine',     ['source', 'sources', 'origine']],
+    ['statut',      ['statut', 'status', 'confiance']]],
   raccords: [
     ['famille',     ['famille', 'connecteur', 'family']],
     ['taille',      ['taille', 'tailleboitier', 'shellsize', 'boitier', 'size']],
@@ -450,7 +464,9 @@ const COLONNES_NORME = {
     ['masse',       ['masse', 'massegm', 'poids', 'g']],
     ['reference',   ['reference', 'ref', 'designation', 'partnumber', 'pn']],
     ['statut',      ['statut', 'status', 'confiance']],
-    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']],
+    ['couple',      ['couple', 'coupledepose', 'couplenm', 'serrage']],
+    ['origine',     ['source', 'sources', 'origine']]],
   manchons: [
     ['forme',       ['forme', 'type', 'orientation']],
     ['designation', ['designation', 'vg', 'norme']],
@@ -463,7 +479,9 @@ const COLONNES_NORME = {
     ['r',           ['r', 'longueurtoron']],
     ['jo',          ['jo', 'levre']],
     ['masse',       ['masse', 'massegm', 'poids', 'g']],
-    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']],
+    ['origine',     ['source', 'sources', 'origine']],
+    ['statut',      ['statut', 'status', 'confiance']]],
   calibrations: [
     ['famille',     ['famille', 'family', 'serie']],
     ['norme',       ['norme', 'standard', 'spec']],
@@ -540,7 +558,88 @@ const COLONNES_NORME = {
     ['jauge',       ['jauge', 'awg', 'gauge', 'jaugeawg', 'wiregauge']],
     ['reference',   ['contact', 'reference', 'ref', 'partnumber', 'pn', 'partnumber1']],
     ['accessoire',  ['accessoire', 'fourreau', 'additif', 'additive', 'additivepn', 'additivepn1', 'accessoires']],
-    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']],
+    ['origine',     ['source', 'sources', 'origine']],
+    ['statut',      ['statut', 'status', 'confiance']]],
+  /* les tables d'octobre 2026 (recherches R1 et R3) : le toron, la chambre et la masse des raccords ; le joint arrière,
+     l'outillage, les obturateurs et les parties de l'EN 3155 pour les contacts */
+  torons: [
+    ['methode',     ['methode', 'method', 'regle']],
+    ['fils',        ['nombredefils', 'fils', 'nfils', 'nombredecables', 'cables']],
+    ['facteur',     ['facteur', 'factor', 'coefficient']],
+    ['k',           ['kequivalent', 'kequiv', 'coefficientequivalent']],
+    ['formule',     ['formule', 'formula']],
+    ['ajout',       ['ajout', 'ajouts', 'majoration']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']],
+    ['origine',     ['source', 'sources', 'origine']],
+    ['statut',      ['statut', 'status', 'confiance']]],
+  chambres: [
+    ['norme',       ['norme', 'normeraccord', 'partie']],
+    ['code',        ['code', 'chambre', 'codedelongueur']],
+    ['hmax',        ['hmax', 'h', 'longueurmax']],
+    ['j',           ['j', 'partiecylindrique']],
+    ['derriere',    ['longueurderrierelaface', 'derrierelaface', 'derriere', 'encombrement']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']],
+    ['origine',     ['source', 'sources', 'origine']],
+    ['statut',      ['statut', 'status', 'confiance']]],
+  massesRaccords: [
+    ['norme',       ['norme', 'normeraccord', 'partie']],
+    ['taille',      ['taille', 'tailleboitier', 'shellsize', 'boitier', 'size']],
+    ['longueur',    ['longueur', 'chambre', 'longueurdechambre']],
+    ['code',        ['code', 'codedentree', 'entree']],
+    ['classes',     ['classes', 'classe']],
+    ['masse',       ['masse', 'masseg', 'poids', 'g']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']],
+    ['origine',     ['source', 'sources', 'origine']],
+    ['statut',      ['statut', 'status', 'confiance']]],
+  outillages: [
+    ['famille',     ['famille', 'familles', 'norme']],
+    ['reference',   ['referenceducontact', 'contact', 'reference', 'ref']],
+    ['sexe',        ['sexe', 'genre']],
+    ['taille',      ['taille', 'taillecontact', 'tailledecontact', 'size']],
+    ['fut',         ['fut', 'futawg', 'barrel']],
+    ['jauges',      ['jauges', 'plagedejauges', 'awg', 'jauge']],
+    ['dmin',        ['isolantmin', 'oisolantmin', 'diametreisolantmin', 'cablemin']],
+    ['dmax',        ['isolantmax', 'oisolantmax', 'diametreisolantmax', 'cablemax']],
+    ['pince',       ['pince', 'pinces', 'crimptool', 'outildesertissage']],
+    ['positionneur', ['positionneur', 'positionner', 'tourelle', 'locator']],
+    ['insertion',   ['insertion', 'outildinsertion', 'insertiontool']],
+    ['extraction',  ['extraction', 'outildextraction', 'removaltool']],
+    ['denudage',    ['denudage', 'longueurdedenudage', 'strip']],
+    ['bagues',      ['baguescouleur', 'bagues', 'couleurs', 'colorbands']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']],
+    ['origine',     ['source', 'sources', 'origine']],
+    ['statut',      ['statut', 'status', 'confiance']]],
+  joints: [
+    ['famille',     ['famille', 'norme', 'family']],
+    ['taille',      ['taille', 'taillecontact', 'tailledecontact', 'size']],
+    ['fut',         ['fut', 'futawg', 'barrel']],
+    ['dmin',        ['isolantmin', 'oisolantmin', 'diametreisolantmin', 'cablemin']],
+    ['dmax',        ['isolantmax', 'oisolantmax', 'diametreisolantmax', 'cablemax']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']],
+    ['origine',     ['source', 'sources', 'origine']],
+    ['statut',      ['statut', 'status', 'confiance']]],
+  obturateurs: [
+    ['famille',     ['famille', 'norme', 'family']],
+    ['taille',      ['taille', 'taillecontact', 'tailledecontact', 'size']],
+    ['obturateur',  ['obturateur', 'bouchon', 'sealingplug', 'obturateurs']],
+    ['equivalent',  ['equivalent', 'equivalence', 'catalogue', 'fabricant']],
+    ['couleur',     ['couleur', 'color', 'colour']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']],
+    ['origine',     ['source', 'sources', 'origine']],
+    ['statut',      ['statut', 'status', 'confiance']]],
+  partiesEN3155: [
+    ['partie',      ['partie', 'part', 'parties']],
+    ['titre',       ['titre', 'title', 'intitule']],
+    ['type',        ['type', 'typedecontact']],
+    ['sexe',        ['sexe', 'genre']],
+    ['taille',      ['taille', 'tailles', 'size']],
+    ['terminaison', ['terminaison', 'raccordement', 'termination']],
+    ['classe',      ['classe', 'class']],
+    ['emploi',      ['employepour', 'emploi', 'pour', 'connecteurs']],
+    ['tables',      ['danslatablecontacts', 'danslestablessee', 'danslestables', 'danstestables', 'tables']],
+    ['origine',     ['source', 'sources', 'origine']],
+    ['statut',      ['statut', 'status', 'confiance']]],
   modules: [
     ['famille',     ['famille', 'norme', 'family']],
     ['variante',    ['variante', 'variantedinterconnexion', 'interconnexion', 'code', 'codedarrangement', 'arrangement']],
@@ -582,7 +681,14 @@ const TABLE_NORME = {
   calibrations: c => c.tient != null && c.declenche != null,
   disjoncteursFamilles: c => c.poles != null && c.calibres != null,
   protections: c => c.jauge != null && c.disjoncteurMax != null,
-  dommages: c => c.jauge != null && c.i2t != null && c.tmax != null
+  dommages: c => c.jauge != null && c.i2t != null && c.tmax != null,
+  torons: c => c.methode != null && c.fils != null && c.facteur != null,
+  chambres: c => c.norme != null && c.code != null && c.hmax != null,
+  massesRaccords: c => c.norme != null && c.taille != null && c.code != null && c.masse != null,
+  outillages: c => c.reference != null && c.taille != null && c.pince != null,
+  joints: c => c.famille != null && c.taille != null && c.dmin != null && c.dmax != null,
+  obturateurs: c => c.famille != null && c.taille != null && c.obturateur != null,
+  partiesEN3155: c => c.partie != null && c.titre != null
 };
 /* Un nombre d'atelier : virgule ou point, une unité derrière (« 5 mm », « 0,8 »), un signe moins typographique (« −55 »),
    des milliers séparés par une espace (« 10 000 ft ») — ce qu'un Excel ou une photo de norme écrivent. */
@@ -630,7 +736,12 @@ function cableFamilleNorme(o) { const familles = String(o.famille || '').toUpper
    accouplée, neuve) : le courant nominal, la chute max aux bornes (mV), la résistance max à neuf et celle de conception
    (fin de vie), en mΩ. */
 function resistanceContactNorme(o) { const taille = tailleCle(o.taille), resistance = NUMERO(o.resistance); if (!taille || resistance == null) return null;
-  return { taille, intensite: NUMERO(o.intensite), chuteMax: NUMERO(o.chuteMax), resistance, resistanceFin: NUMERO(o.resistanceFin), emploi: EMPLOI_CONTACT(o.emploi), note: String(o.note || '').trim() }; }
+  return { taille, intensite: NUMERO(o.intensite), chuteMax: NUMERO(o.chuteMax), resistance, resistanceFin: NUMERO(o.resistanceFin), emploi: EMPLOI_CONTACT(o.emploi), note: String(o.note || '').trim(), ...origineStatut(o) }; }
+/* D'OÙ VIENT UNE LIGNE et ce qu'elle vaut (les recherches d'octobre 2026 : R1, R3) : la source bibliographique (`origine`
+   — pas `source`, qui dit d'où vient un apport du navigateur) et le statut, ramené à un mot (`confiance` : vérifié,
+   structure, déduit, à confirmer ; vide pour une ligne sans statut, comme celles des tables SEE du lecteur). */
+const STATUT_LIGNE = s => { const u = MOT(s); return !u ? '' : /^verif|^confirm/.test(u) ? 'vérifié' : /struct/.test(u) ? 'structure' : /^dedui/.test(u) ? 'déduit' : 'à confirmer'; };
+const origineStatut = o => { const statut = String(o.statut || '').trim(); return { origine: String(o.origine || '').trim(), statut, confiance: STATUT_LIGNE(statut) }; };
 /* L'EMPLOI d'une ligne de résistance : « jonction » (les modules de jonction des barrettes : NSA937901, E0599 — les valeurs
    Amphenol Air LB) ou « connecteur » (une prise, un connecteur : les limites AS39029). Vide = vaut pour les deux. */
 const EMPLOI_CONTACT = t => { const u = MOT(t); return /jonction|barrette|module/.test(u) ? 'jonction' : /connecteur|prise|coupure/.test(u) ? 'connecteur' : ''; };
@@ -638,11 +749,11 @@ const EMPLOI_CONTACT = t => { const u = MOT(t); return /jonction|barrette|module
    un contact ne porte que ce que son fût serti porte — un 24 AWG dans un contact 20 porte 3 A, pas 7,5. */
 function courantContactNorme(o) { const taille = tailleCle(o.taille), jauge = NUMERO(o.jauge), intensite = NUMERO(o.intensite); if (!taille || jauge == null) return null;
   if (intensite == null && NUMERO(o.intensiteHermetique) == null) return null;
-  return { taille, fut: NUMERO(o.fut), jauge, intensite, hermetique: NUMERO(o.intensiteHermetique), note: String(o.note || '').trim() }; }
+  return { taille, fut: NUMERO(o.fut), jauge, intensite, hermetique: NUMERO(o.intensiteHermetique), note: String(o.note || '').trim(), ...origineStatut(o) }; }
 /* Un ACCESSOIRE d'une famille (normes/nsa937901.csv, table Accessoires) : butée, séparateur, shunt, étrier, étiquette — la
    référence de la norme, l'équivalent catalogue, le rôle, la masse (g). Pour la nomenclature et la bible, rien n'est calculé. */
 function accessoireNorme(o) { const famille = cleNorme(o.famille), reference = String(o.reference || '').trim(); if (!famille || !reference) return null;
-  return { famille, reference, equivalent: String(o.equivalent || '').trim(), role: String(o.role || '').trim(), masse: NUMERO(o.masse), note: String(o.note || '').trim() }; }
+  return { famille, reference, equivalent: String(o.equivalent || '').trim(), role: String(o.role || '').trim(), masse: NUMERO(o.masse), note: String(o.note || '').trim(), ...origineStatut(o) }; }
 /* LA CHUTE PROPRE D'UN DISJONCTEUR à son courant nominal (normes/disjoncteurs.csv, table Chute disjoncteur : feuilles MS,
    Sensata, E-T-A) : par famille et calibre(s), en V. Une liste de calibres vaut pour chacun. */
 // un calibre seul écrit à la française (« 2,5 », « 0,75 ») est UN nombre, pas la liste 2 et 5 : sans quoi un MS3320-5 prenait la chute du 0,5 A
@@ -670,27 +781,45 @@ function gaineNorme(o) { const reference = String(o.reference || '').trim(), din
 function collierNorme(o) { const reference = String(o.reference || '').trim(); if (!reference) return null; const t = MOT(o.type);
   const type = /tyrap|serre|tie|collierplast|nylon|polyamide/.test(t) || /^NSA9354/i.test(reference) ? 'tyrap' : 'band-it';
   return { reference, type, norme: /^EN ?3660/i.test(reference), micro: type === 'band-it' && /micro/.test(t), largeur: NUMERO(o.largeur), epaisseur: NUMERO(o.epaisseur), longueur: NUMERO(o.longueur), boucle: NUMERO(o.boucle),
-           dmin: NUMERO(o.dmin), dmax: NUMERO(o.dmax), masse: NUMERO(o.masse), outil: String(o.outil || '').trim(), tension: String(o.tension || '').trim(), tenue: NUMERO(o.tenue), temperature: NUMERO(o.temperature), note: String(o.note || '').trim() }; }
+           dmin: NUMERO(o.dmin), dmax: NUMERO(o.dmax), masse: NUMERO(o.masse), outil: String(o.outil || '').trim(), tension: String(o.tension || '').trim(), tenue: NUMERO(o.tenue), temperature: NUMERO(o.temperature), note: String(o.note || '').trim(), ...origineStatut(o) }; }
 const TAILLE_BOITIER = v => { const t = String(v == null ? '' : v).trim().toUpperCase(); return /^\d$/.test(t) ? '0' + t : t; };
 function filetageNorme(o) { const famille = cleNorme(o.famille), taille = TAILLE_BOITIER(o.taille), filetage = String(o.filetage || '').trim(); if (!famille || !taille || !filetage) return null;
-  return { famille, taille, lettre: String(o.lettre || '').trim().toUpperCase(), filetage, dmaxBoitier: NUMERO(o.dmaxBoitier), note: String(o.note || '').trim() }; }
+  return { famille, taille, lettre: String(o.lettre || '').trim().toUpperCase(), filetage, dmaxBoitier: NUMERO(o.dmaxBoitier), note: String(o.note || '').trim(), ...origineStatut(o) }; }
+/* Une ligne de la table TORON (normes/raccords.csv, recherche R3 — lue par 09 ter, `toronDe`) : la méthode (TE/Polamco, Glenair, l'Excel du lecteur),
+   le nombre de câbles (« 7 et plus » : à partir de 7 ; « tous »), le facteur et son coefficient équivalent sur √(Σ Ø²). */
+const CLE_TORON = t => { const u = MOT(t); return /excel|tutoriel|outil/.test(u) ? 'Excel' : /remplissage/.test(u) ? '' : /glenair/.test(u) ? 'Glenair' : /\bte\b|polamco/.test(u) ? 'TE' : ''; };
+function toronNorme(o) { const methode = String(o.methode || '').trim(); if (!methode) return null; const fils = String(o.fils == null ? '' : o.fils).trim();
+  return { methode, cle: CLE_TORON(methode), fils: !fils || /tous|^\*$/i.test(fils) ? null : NUMERO(fils), etPlus: /plus|\+|≥|au-?dela/.test(MOT(fils)), facteur: NUMERO(o.facteur), k: NUMERO(o.k),
+           formule: String(o.formule || '').trim(), ajout: String(o.ajout || '').trim(), note: String(o.note || '').trim(), ...origineStatut(o) }; }
+/* Une ligne CHAMBRES : la longueur de chambre d'un raccord droit à bande, par partie et code (EN 3660-064 A 27,5 ; -063 A 27,1). */
+function chambreNorme(o) { const norme = cleNorme(o.norme), code = String(o.code || '').trim().toUpperCase(); if (!norme || !code) return null;
+  return { norme, code, hmax: NUMERO(o.hmax), j: NUMERO(o.j), derriere: NUMERO(o.derriere), note: String(o.note || '').trim(), ...origineStatut(o) }; }
+/* Une ligne MASSES DES RACCORDS : la masse nominale d'une pièce EN 3660 par taille, chambre (droits) et code d'entrée, pour
+   un groupe de classes (« N T W Z », « K »). Une masse que la norme imprime fausse (une coquille) reste vide, la note le dit. */
+function masseRaccordNorme(o) { const norme = cleNorme(o.norme), taille = TAILLE_BOITIER(o.taille), code = String(o.code || '').trim().toUpperCase(); if (!norme || !taille || !code) return null;
+  return { norme, taille, longueur: String(o.longueur || '').trim().toUpperCase(), code, classes: String(o.classes || '').toUpperCase().split(/[\s,/]+/).filter(Boolean), masse: NUMERO(o.masse), note: String(o.note || '').trim(), ...origineStatut(o) }; }
 /* Le SYSTÈME d'une entrée : « EN 3660 » (les codes lettrés A à M des raccords à bande) ou « Glenair » (les codes 03 à 32 du
    serre-câble série 36) ; un autre mot reste tel quel. Sans système dit : un code lettré est EN 3660, un code chiffré Glenair. */
 const SYSTEME_ENTREE = (s, code) => { const u = MOT(s); return /3660/.test(u) ? 'EN 3660' : /glenair|36\b/.test(u) ? 'Glenair' : u ? String(s).trim() : /^[A-Z]$/.test(code) ? 'EN 3660' : 'Glenair'; };
 /* Un CODE D'ENTRÉE : sa plage de toron (Dmin vide = 0 : le premier code), les tailles de boîtier qui l'admettent et, pour
    l'EN 3660, les cotes ØAA (alésage), ØBB (plateforme de bande), ØCC (épaulement du manchon : la cote C), DD (lèvre). */
 function entreeNorme(o) { const code = TAILLE_BOITIER(o.code), dmin = NUMERO(o.dmin), dmax = NUMERO(o.dmax); if (!code || dmax == null) return null;
-  return { systeme: SYSTEME_ENTREE(o.systeme, code), code, dmin: dmin == null ? 0 : dmin, dmax, tailleMin: TAILLE_BOITIER(o.tailleMin), tailleMax: TAILLE_BOITIER(o.tailleMax), aa: NUMERO(o.aa), bb: NUMERO(o.bb), cc: NUMERO(o.cc), dd: NUMERO(o.dd), note: String(o.note || '').trim() }; }
+  return { systeme: SYSTEME_ENTREE(o.systeme, code), code, dmin: dmin == null ? 0 : dmin, dmax, tailleMin: TAILLE_BOITIER(o.tailleMin), tailleMax: TAILLE_BOITIER(o.tailleMax), aa: NUMERO(o.aa), bb: NUMERO(o.bb), cc: NUMERO(o.cc), dd: NUMERO(o.dd), note: String(o.note || '').trim(), ...origineStatut(o) }; }
 const TYPE_RACCORD = t => { const u = MOT(t); return /durci|k|blind.*etanch/.test(u) && !/serre/.test(u) ? 'durci' : /manchon|j\b/.test(u) ? 'pour manchon' : /serre|clamp/.test(u) ? 'serre-câble' : /tyrap|tie|collier/.test(u) ? 'tyrap' : /chemin/.test(u) ? 'cheminée' : String(t || '').trim(); };
 /* Le STATUT d'une ligne Raccords, ramené à un mot : « vérifié » (cotes lues sur un dessin), « structure » (désignation
-   vérifiée, cotes de cette taille non lues), « déduit » (même filetage, la norme ne nomme pas la famille), « à confirmer ». */
-const STATUT_RACCORD = s => { const u = MOT(s); return /verif/.test(u) ? 'vérifié' : /struct/.test(u) ? 'structure' : /dedui/.test(u) ? 'déduit' : 'à confirmer'; };
+   vérifiée, cotes de cette taille non lues), « déduit » (même filetage, la norme ne nomme pas la famille), « à confirmer » —
+   par le premier mot du statut (« déduit (… cotes vérifiées) » est déduit ; « à confirmer (rôle vérifié) » est à confirmer). */
+const STATUT_RACCORD = s => { const u = MOT(s); return /^verif/.test(u) ? 'vérifié' : /^struct/.test(u) ? 'structure' : /^dedui/.test(u) ? 'déduit' : 'à confirmer'; };
 /* Une ligne RACCORDS : la référence est un MODÈLE de désignation — `EN3660-064N08<L><E>` : la classe N à remplacer par celle
    du connecteur, <L> le code de longueur de chambre, <E> le code d'entrée que le toron choisit (`designationRaccord`). */
 function raccordNorme(o) { const famille = cleNorme(o.famille), type = TYPE_RACCORD(o.type); if (!famille || !type) return null;
   const statut = String(o.statut || '').trim();
-  return { famille, taille: TAILLE_BOITIER(o.taille), type, orientation: /coud|90|45|angle/.test(MOT(o.orientation)) ? 'coudé' : 'droit', norme: String(o.norme || '').trim(), materiau: String(o.materiau || '').trim(), fini: String(o.fini || '').trim(),
-           amin: NUMERO(o.amin), amax: NUMERO(o.amax), b: NUMERO(o.b), c: NUMERO(o.c), d: NUMERO(o.d), masse: NUMERO(o.masse), reference: String(o.reference || '').trim(), statut, confiance: STATUT_RACCORD(statut), note: String(o.note || '').trim() }; }
+  return { famille, taille: TAILLE_BOITIER(o.taille), type, orientation: ORIENTATION_RACCORD(o.orientation), norme: String(o.norme || '').trim(), materiau: String(o.materiau || '').trim(), fini: String(o.fini || '').trim(),
+           amin: NUMERO(o.amin), amax: NUMERO(o.amax), b: NUMERO(o.b), c: NUMERO(o.c), d: NUMERO(o.d), masse: NUMERO(o.masse), reference: String(o.reference || '').trim(), statut, confiance: STATUT_RACCORD(statut), note: String(o.note || '').trim(),
+           couple: NUMERO(o.couple), origine: String(o.origine || '').trim() }; }
+/* L'ORIENTATION d'un raccord : droit, coudé (90°) — et 45° (l'EN 3660-027), gardé pour mémoire : l'outil ne propose que
+   droit et coudé, et une ligne à 45° ne remplace jamais une ligne coudée de même taille. */
+const ORIENTATION_RACCORD = t => { const u = MOT(t); return /45/.test(u) ? '45°' : /coud|90|angle/.test(u) ? 'coudé' : 'droit'; };
 /* La FORME d'un manchon : droit, coudé (90°), coudé à lèvre, sortie longue, 45°, transition (une pièce en T), 2, 3 ou
    4 sorties — seuls droit, coudé et coudé à lèvre se proposent d'eux-mêmes ; les autres restent dans la table, à la main.
    PRÉCOLLÉ (revêtement intérieur adhésif) : les T18 / T19 de la VG 95343, ou la note le dit. */
@@ -698,7 +827,7 @@ const FORME_MANCHON = t => { const u = MOT(t);
   return /(\d)\s*sortie|\by\b/.test(u) ? ((/(\d)\s*sortie/.exec(u) || [0, '2'])[1] + ' sorties') : /transition|\(t\)|\bt\b/.test(u) ? 'transition' : /45/.test(u) ? '45°' : /levre|lip/.test(u) ? 'coudé à lèvre' : /coud|90|angle|elbow/.test(u) ? 'coudé' : /long|sortie|bottle|bouteille/.test(u) ? 'sortie longue' : 'droit'; };
 function manchonNorme(o) { const ha = NUMERO(o.ha), ja = NUMERO(o.ja), designation = String(o.designation || '').trim(); if (ha == null || ja == null || !designation) return null;
   const note = String(o.note || '').trim(), precolle = /\bT1[89]\b/.test(designation) || /precoll|adhesi|revetement int/.test(MOT(note));
-  return { forme: FORME_MANCHON(o.forme), designation, reference: String(o.reference || '').trim(), ha, hb: NUMERO(o.hb), ja, jb: NUMERO(o.jb), p: NUMERO(o.p), r: NUMERO(o.r), jo: NUMERO(o.jo), masse: NUMERO(o.masse), precolle, note }; }
+  return { forme: FORME_MANCHON(o.forme), designation, reference: String(o.reference || '').trim(), ha, hb: NUMERO(o.hb), ja, jb: NUMERO(o.jb), p: NUMERO(o.p), r: NUMERO(o.r), jo: NUMERO(o.jo), masse: NUMERO(o.masse), precolle, note, ...origineStatut(o) }; }
 /* Une CLASSE de connecteur (normes/raccords.csv, table Classes) : la famille, les lettres de classe lues dans le part number
    juste après le nom de la famille (W, WS, SE…), le matériau et le fini, la lettre de classe EN 3660-001 du raccord qui va
    avec (N, W, K, Z — jamais A), la température du connecteur. */
@@ -723,8 +852,11 @@ function dommageNorme(o) { const jauge = NUMERO(o.jauge), tmax = NUMERO(o.tmax),
            note: String(o.note || '').trim(), source: String(o.source || '').trim(), statut: String(o.statut || '').trim() }; }
 const ENTREE_NORME = { familles: familleNorme, fils: filNorme, declassements: declassementNorme, reseau: reseauNorme, tailles: tailleNorme, modules: moduleNorme, contacts: contactNorme, disjoncteurs: disjonctionNorme, cables: cableNorme, gaines: gaineNorme, colliers: collierNorme,
   filetages: filetageNorme, entrees: entreeNorme, raccords: raccordNorme, manchons: manchonNorme, classes: classeNorme, calibrations: calibrationNorme, disjoncteursFamilles: disjoncteurFamilleNorme, protections: protectionNorme, cablesFamilles: cableFamilleNorme, resistancesContacts: resistanceContactNorme,
-  courantsContacts: courantContactNorme, accessoires: accessoireNorme, chutesDisjoncteurs: chuteDisjoncteurNorme, dommages: dommageNorme };
-const TABLES_NORME = ['familles', 'fils', 'declassements', 'reseau', 'tailles', 'modules', 'contacts', 'disjoncteurs', 'cables', 'gaines', 'colliers', 'filetages', 'entrees', 'raccords', 'manchons', 'classes', 'calibrations', 'disjoncteursFamilles', 'protections', 'cablesFamilles', 'resistancesContacts', 'courantsContacts', 'accessoires', 'chutesDisjoncteurs', 'dommages'];
+  courantsContacts: courantContactNorme, accessoires: accessoireNorme, chutesDisjoncteurs: chuteDisjoncteurNorme, dommages: dommageNorme,
+  // octobre 2026 : le toron, la chambre et la masse des raccords (servis par 09 ter) ; le joint arrière, l'outillage, les obturateurs, les parties de l'EN 3155
+  torons: toronNorme, chambres: chambreNorme, massesRaccords: masseRaccordNorme, outillages: outillageNorme, joints: jointNorme, obturateurs: obturateurNorme, partiesEN3155: partieEN3155Norme };
+const TABLES_NORME = ['familles', 'fils', 'declassements', 'reseau', 'tailles', 'modules', 'contacts', 'disjoncteurs', 'cables', 'gaines', 'colliers', 'filetages', 'entrees', 'raccords', 'manchons', 'classes', 'calibrations', 'disjoncteursFamilles', 'protections', 'cablesFamilles', 'resistancesContacts', 'courantsContacts', 'accessoires', 'chutesDisjoncteurs', 'dommages',
+  'torons', 'chambres', 'massesRaccords', 'joints', 'outillages', 'obturateurs', 'partiesEN3155'];
 const normeVide = () => { const N = { tables: 0 }; TABLES_NORME.forEach(t => { N[t] = []; }); return N; };
 /* ---- lire n'importe quelle table : un texte, des blocs, des lignes ----------
    Un CSV, un texte collé, les feuilles d'un Excel mises bout à bout : des BLOCS, chacun une ligne d'en-tête reconnue à
@@ -753,7 +885,8 @@ function colonnesDEntete(nom, row) { const cles = COLONNES_NORME[nom], col = {},
   row.forEach((cell, i) => { if (!String(cell || '').trim()) return; const champ = champDeCellule(cles, cell, col); if (champ) col[champ] = i; else inconnues.push(i); });
   return { col, inconnues }; }
 // l'ordre de reconnaissance : les tables les plus précises d'abord — une table de tailles nomme aussi sa famille et ses jauges, comme une table de familles
-const ORDRE_RECONNAISSANCE = ['dommages', 'courantsContacts', 'chutesDisjoncteurs', 'accessoires', 'calibrations', 'protections', 'disjoncteursFamilles', 'cablesFamilles', 'resistancesContacts', 'filetages', 'classes', 'entrees', 'raccords', 'manchons', 'gaines', 'colliers', 'cables', 'disjoncteurs', 'contacts', 'modules', 'tailles', 'familles', 'fils', 'declassements', 'reseau'];
+// les tables d'octobre 2026 d'abord : leurs en-têtes nomment des colonnes (Pince, Obturateur, Ø isolant…) qu'aucune autre n'a — l'outillage avant le joint arrière (il en a aussi les Ø isolant)
+const ORDRE_RECONNAISSANCE = ['outillages', 'joints', 'obturateurs', 'partiesEN3155', 'torons', 'chambres', 'massesRaccords', 'dommages', 'courantsContacts', 'chutesDisjoncteurs', 'accessoires', 'calibrations', 'protections', 'disjoncteursFamilles', 'cablesFamilles', 'resistancesContacts', 'filetages', 'classes', 'entrees', 'raccords', 'manchons', 'gaines', 'colliers', 'cables', 'disjoncteurs', 'contacts', 'modules', 'tailles', 'familles', 'fils', 'declassements', 'reseau'];
 /* Les tables qu'une ligne d'en-tête peut être : chacune avec ses colonnes et combien elle en reconnaît (`n`), la plus
    précise d'abord. L'outil HÉSITE quand une autre candidate reconnaît autant de colonnes que la première — c'est alors
    à l'utilisateur de dire laquelle ; sinon la première l'emporte sans question. */
@@ -799,11 +932,14 @@ async function lireNormeFichier(fichier) { return lireNorme(await texteDeNormeFi
 /* LA CLÉ DE FUSION d'une ligne : ce qui fait qu'une ligne en remplace une autre (une famille, un type + une jauge, une
    condition et son point, une tension, une variante de module, un contact par ses cinq critères…). */
 const CLE_FUSION = { familles: x => x.famille.toUpperCase(), fils: x => x.type + '/' + x.jauge, declassements: x => [x.condition, x.fils, x.charge, x.altitude].join('/'), reseau: x => String(x.tension),
-  tailles: x => x.famille + '/' + x.taille, modules: x => x.famille + '/' + x.variante, contacts: x => [x.famille, x.sexe, x.taille, x.typeFil, x.jauge, x.reference].join('/'),
+  // un contact par ses cinq critères (norme, sexe, taille, type de fil, jauge) : une ligne corrigée qui change le contact REMPLACE l'ancienne (recherche R1)
+  tailles: x => x.famille + '/' + x.taille, modules: x => x.famille + '/' + x.variante, contacts: x => [x.famille, x.sexe, x.taille, x.typeFil, x.jauge].join('/'),
   disjoncteurs: x => [x.famille, x.courbe, x.multiple, x.temps].join('/'), cables: x => x.cable, gaines: x => x.famille + '/' + x.reference, colliers: x => x.reference,
   filetages: x => x.famille + '/' + x.taille, entrees: x => x.systeme + '/' + x.code, raccords: x => [x.famille, x.taille, x.type, x.orientation].join('/'), manchons: x => x.designation, classes: x => x.famille + '/' + x.classe, calibrations: x => x.famille + '/' + x.temperature, disjoncteursFamilles: x => x.famille, protections: x => String(x.jauge),
   cablesFamilles: x => x.familles.join(' '), resistancesContacts: x => x.taille + '/' + x.emploi, courantsContacts: x => [x.taille, x.fut, x.jauge].join('/'),
-  accessoires: x => x.famille + '/' + x.reference, chutesDisjoncteurs: x => x.famille + '/' + x.calibres.join(' '), dommages: x => [x.conducteur, x.jauge, x.tmax].join('/') };
+  accessoires: x => x.famille + '/' + x.reference, chutesDisjoncteurs: x => x.famille + '/' + x.calibres.join(' '), dommages: x => [x.conducteur, x.jauge, x.tmax].join('/'),
+  torons: x => x.methode + '/' + (x.fils == null ? '*' : x.fils + (x.etPlus ? '+' : '')), chambres: x => x.norme + '/' + x.code, massesRaccords: x => [x.norme, x.taille, x.longueur, x.code, x.classes.join(' ')].join('/'),
+  outillages: x => x.familles.join(' ') + '/' + x.reference, joints: x => [x.famille, x.taille, x.fut == null ? '*' : x.fut].join('/'), obturateurs: x => [x.famille, x.taille, x.obturateur].join('/'), partiesEN3155: x => x.partie };
 const cleDeLigne = (table, x) => CLE_FUSION[table](x);
 /* Deux normes en une : ce qui vient en second remplace ce qui porte la même clé. C'est ainsi qu'une norme de barrettes
    et une norme de fils, importées l'une après l'autre, se complètent — et que ce qui est importé ou modifié passe
@@ -848,24 +984,25 @@ function comparerNormes(base, N) { const R = {}; TABLES_NORME.forEach(t => { if 
    embarqué (et toujours l'un de ses alias : un gabarit se relit tel quel). */
 const TITRES_NORME = { familles: 'Familles', fils: 'Fils', declassements: 'Déclassement', reseau: 'Réseau', tailles: 'Tailles', modules: 'Modules', contacts: 'Contacts', disjoncteurs: 'Courbes de disjonction', cables: 'Câbles', gaines: 'Gaines', colliers: 'Colliers',
   filetages: 'Filetages', entrees: 'Entrées', raccords: 'Raccords', manchons: 'Manchons', classes: 'Classes', calibrations: 'Calibration', disjoncteursFamilles: 'Familles de disjoncteurs', protections: 'Protection', cablesFamilles: 'Familles de câbles', resistancesContacts: 'Résistance des contacts',
-  courantsContacts: 'Courant des contacts', accessoires: 'Accessoires', chutesDisjoncteurs: 'Chute disjoncteur', dommages: 'Dommage des fils' };
+  courantsContacts: 'Courant des contacts', accessoires: 'Accessoires', chutesDisjoncteurs: 'Chute disjoncteur', dommages: 'Dommage des fils',
+  torons: 'Toron', chambres: 'Chambres des raccords', massesRaccords: 'Masses des raccords', joints: 'Joint arrière', outillages: 'Outillage des contacts', obturateurs: 'Obturateurs', partiesEN3155: 'Parties de l’EN 3155' };
 const LIBELLES_NORME = {
   familles: { norme: 'Norme', famille: 'Famille', nature: 'Nature', variantes: 'Variantes', pas: 'Pas', jaugeMin: 'Jauge min', jaugeMax: 'Jauge max', intensite: 'Intensité', resistance: 'Résistance', filsParCote: 'Fils par côté', ordre: 'Ordre', paquets: 'Paquets', reserves: 'Réservés', masse: 'Masse', note: 'Note' },
   fils: { type: 'Type', jauge: 'Jauge', code: 'Code', brins: 'Brins', section: 'Section', resistance20: 'Résistance 20', resistance: 'Résistance', intensite: 'Intensité', i2s: 'Intensité 2 s', i10s: 'Intensité 10 s', i1min: 'Intensité 1 min', chute10m: 'Chute 10 m', tr: 'T conducteur', note: 'Note' },
   declassements: { condition: 'Condition', fils: 'Fils', charge: 'Charge', altitude: 'Altitude', facteur: 'Facteur', note: 'Note' },
   reseau: { tension: 'Tension', nature: 'Nature', chuteMax: 'Chute max', chuteInter: 'Chute max intermittent', chutePct: 'Chute max en %', note: 'Note' },
   cablesFamilles: { famille: 'Famille', norme: 'Norme', conducteur: 'Conducteur', placage: 'Placage', tmin: 'T min', tmax: 'T max', tension: 'Tension', frequence: 'Fréquence max', isolant: 'Isolant', blindage: 'Blindage', rayon: 'Rayon de courbure', marquage: 'Marquage', note: 'Note' },
-  resistancesContacts: { taille: 'Taille', intensite: 'Intensité', chuteMax: 'Chute max', resistance: 'Résistance', resistanceFin: 'Résistance fin de vie', emploi: 'Emploi', note: 'Note' },
-  courantsContacts: { taille: 'Taille', fut: 'Fût', jauge: 'Jauge', intensite: 'Intensité', intensiteHermetique: 'Intensité hermétique', note: 'Note' },
-  accessoires: { famille: 'Famille', reference: 'Référence', equivalent: 'Équivalent', role: 'Rôle', masse: 'Masse', note: 'Note' },
+  resistancesContacts: { taille: 'Taille', intensite: 'Intensité', chuteMax: 'Chute max', resistance: 'Résistance', resistanceFin: 'Résistance fin de vie', emploi: 'Emploi', note: 'Note', origine: 'Source', statut: 'Statut' },
+  courantsContacts: { taille: 'Taille', fut: 'Fût', jauge: 'Jauge', intensite: 'Intensité', intensiteHermetique: 'Intensité hermétique', note: 'Note', origine: 'Source', statut: 'Statut' },
+  accessoires: { famille: 'Famille', reference: 'Référence', equivalent: 'Équivalent', role: 'Rôle', masse: 'Masse', note: 'Note', origine: 'Source', statut: 'Statut' },
   chutesDisjoncteurs: { famille: 'Famille', calibre: 'Calibre', chuteMax: 'Chute max', note: 'Note' },
-  tailles: { famille: 'Famille', taille: 'Taille', jaugeMin: 'Jauge min', jaugeMax: 'Jauge max', note: 'Note' },
+  tailles: { famille: 'Famille', taille: 'Taille', jaugeMin: 'Jauge min', jaugeMax: 'Jauge max', note: 'Note', origine: 'Source', statut: 'Statut' },
   gaines: { famille: 'Famille', reference: 'Référence', role: 'Rôle', dmin: 'Dmin', dmax: 'Dmax', dint: 'Dint', dext: 'Dext', masse: 'Masse', note: 'Note' },
-  colliers: { reference: 'Référence', type: 'Type', largeur: 'Largeur', epaisseur: 'Épaisseur', longueur: 'Longueur', boucle: 'Boucle', dmin: 'Dmin', dmax: 'Dmax', masse: 'Masse', outil: 'Outil', tension: 'Tension', tenue: 'Tenue', temperature: 'Température', note: 'Note' },
-  filetages: { famille: 'Famille', taille: 'Taille', lettre: 'Lettre', filetage: 'Filetage', dmaxBoitier: 'Dmax boîtier', note: 'Note' },
-  entrees: { systeme: 'Système', code: 'Code', dmin: 'Dmin', dmax: 'Dmax', tailleMin: 'Tailles min', tailleMax: 'Tailles max', aa: 'AA', bb: 'BB', cc: 'CC', dd: 'DD', note: 'Note' },
-  raccords: { famille: 'Famille', taille: 'Taille', type: 'Type', orientation: 'Orientation', norme: 'Norme raccord', materiau: 'Matériau', fini: 'Fini', amin: 'Amin', amax: 'Amax', b: 'B', c: 'C', d: 'D', masse: 'Masse', reference: 'Référence', statut: 'Statut', note: 'Note' },
-  manchons: { forme: 'Forme', designation: 'Désignation', reference: 'Référence', ha: 'Ha', hb: 'Hb', ja: 'Ja', jb: 'Jb', p: 'P', r: 'R', jo: 'JO', masse: 'Masse', note: 'Note' },
+  colliers: { reference: 'Référence', type: 'Type', largeur: 'Largeur', epaisseur: 'Épaisseur', longueur: 'Longueur', boucle: 'Boucle', dmin: 'Dmin', dmax: 'Dmax', masse: 'Masse', outil: 'Outil', tension: 'Tension', tenue: 'Tenue', temperature: 'Température', note: 'Note', origine: 'Source', statut: 'Statut' },
+  filetages: { famille: 'Famille', taille: 'Taille', lettre: 'Lettre', filetage: 'Filetage', dmaxBoitier: 'Dmax boîtier', note: 'Note', origine: 'Source', statut: 'Statut' },
+  entrees: { systeme: 'Système', code: 'Code', dmin: 'Dmin', dmax: 'Dmax', tailleMin: 'Tailles min', tailleMax: 'Tailles max', aa: 'AA', bb: 'BB', cc: 'CC', dd: 'DD', note: 'Note', origine: 'Source', statut: 'Statut' },
+  raccords: { famille: 'Famille', taille: 'Taille', type: 'Type', orientation: 'Orientation', norme: 'Norme raccord', materiau: 'Matériau', fini: 'Fini', amin: 'Amin', amax: 'Amax', b: 'B', c: 'C', d: 'D', masse: 'Masse', reference: 'Référence', statut: 'Statut', note: 'Note', couple: 'Couple', origine: 'Source' },
+  manchons: { forme: 'Forme', designation: 'Désignation', reference: 'Référence', ha: 'Ha', hb: 'Hb', ja: 'Ja', jb: 'Jb', p: 'P', r: 'R', jo: 'JO', masse: 'Masse', note: 'Note', origine: 'Source', statut: 'Statut' },
   classes: { famille: 'Famille', classe: 'Classe', materiau: 'Matériau', fini: 'Fini', raccord: 'Raccord', temperature: 'Température', note: 'Note' },
   calibrations: { famille: 'Famille', norme: 'Norme', temperature: 'Température', tient: 'Tient', declenche: 'Déclenche', t200min: 't200 min', t200max: 't200 max', t500min: 't500 min', t500max: 't500 max', t1000min: 't1000 min', t1000max: 't1000 max', source: 'Source' },
   disjoncteursFamilles: { famille: 'Famille', norme: 'Norme', poles: 'Pôles', calibres: 'Calibres', tension: 'Tension', compense: 'Compensé', tmin: 'Tmin', tmax: 'Tmax', masse: 'Masse', courbe: 'Courbe', motifs: 'Motifs', note: 'Note' },
@@ -873,8 +1010,15 @@ const LIBELLES_NORME = {
   dommages: { conducteur: 'Conducteur', jauge: 'Fil AWG', section: 'Toron mm2', resistance20: 'R20 ohm par km', t0: 'T avant défaut', tmax: 'T tenue', i2t: 'I2t admis', i2s: 'Dommage 2 s', i10s: 'Dommage 10 s', facteur: 'Facteur continu dommage', note: 'Note', source: 'Source', statut: 'Statut' },
   cables: { cable: 'Câble', famille: 'Famille', jauge: 'Jauge', brins: 'Brins', blindage: 'Blindage', nature: 'Nature', masse: 'Masse', liaisons: 'Liaisons', resistance: 'Résistance', diametre: 'Diamètre', section: 'Section', note: 'Note' },
   disjoncteurs: { famille: 'Famille', courbe: 'Courbe', temperature: 'Température', multiple: 'Multiple', temps: 'Temps', note: 'Note' },
-  contacts: { famille: 'Norme', sexe: 'Sexe', taille: 'Taille', typeFil: 'Type de fil', jauge: 'Jauge', reference: 'Contact', accessoire: 'Accessoire', note: 'Note' },
-  modules: { famille: 'Famille', variante: 'Variante', reference: 'Désignation', type: 'Type', taille: 'Taille', disposition: 'Disposition', groupes: 'Groupes', poids: 'Masse', hauteur: 'Hauteur', diodes: 'Diodes', usage: 'Usage', corps: 'Corps', emploi: 'Emploi', note: 'Note' }
+  contacts: { famille: 'Norme', sexe: 'Sexe', taille: 'Taille', typeFil: 'Type de fil', jauge: 'Jauge', reference: 'Contact', accessoire: 'Accessoire', note: 'Note', origine: 'Source', statut: 'Statut' },
+  modules: { famille: 'Famille', variante: 'Variante', reference: 'Désignation', type: 'Type', taille: 'Taille', disposition: 'Disposition', groupes: 'Groupes', poids: 'Masse', hauteur: 'Hauteur', diodes: 'Diodes', usage: 'Usage', corps: 'Corps', emploi: 'Emploi', note: 'Note' },
+  torons: { methode: 'Méthode', fils: 'Nombre de fils', facteur: 'Facteur', k: 'k équivalent', formule: 'Formule', ajout: 'Ajout', note: 'Note', origine: 'Source', statut: 'Statut' },
+  chambres: { norme: 'Norme', code: 'Code', hmax: 'H max', j: 'J', derriere: 'Longueur derrière la face', note: 'Note', origine: 'Source', statut: 'Statut' },
+  massesRaccords: { norme: 'Norme', taille: 'Taille', longueur: 'Longueur', code: 'Code', classes: 'Classes', masse: 'Masse', note: 'Note', origine: 'Source', statut: 'Statut' },
+  outillages: { famille: 'Famille', reference: 'Référence du contact', sexe: 'Sexe', taille: 'Taille', fut: 'Fût', jauges: 'Jauges', dmin: 'Ø isolant min', dmax: 'Ø isolant max', pince: 'Pince', positionneur: 'Positionneur', insertion: 'Insertion', extraction: 'Extraction', denudage: 'Dénudage', bagues: 'Bagues couleur', note: 'Note', origine: 'Source', statut: 'Statut' },
+  joints: { famille: 'Famille', taille: 'Taille', fut: 'Fût', dmin: 'Ø isolant min', dmax: 'Ø isolant max', note: 'Note', origine: 'Source', statut: 'Statut' },
+  obturateurs: { famille: 'Famille', taille: 'Taille', obturateur: 'Obturateur', equivalent: 'Équivalent', couleur: 'Couleur', note: 'Note', origine: 'Source', statut: 'Statut' },
+  partiesEN3155: { partie: 'Partie', titre: 'Titre', type: 'Type', sexe: 'Sexe', taille: 'Taille', terminaison: 'Terminaison', classe: 'Classe', emploi: 'Employé pour', tables: 'Dans la table Contacts', origine: 'Source', statut: 'Statut' }
 };
 /* Ce qu'une ligne doit porter pour exister (`champs` : sinon elle est rejetée), et ce qu'un en-tête doit nommer pour
    que la table soit reconnue (`entete`). */
@@ -903,26 +1047,34 @@ const OBLIGATOIRES_NORME = {
   calibrations: { champs: [], entete: 'Tient et Déclenche' },
   disjoncteursFamilles: { champs: ['famille'], entete: 'Pôles et Calibres' },
   protections: { champs: ['jauge', 'disjoncteurMax'], entete: 'Jauge et Disjoncteur max' },
-  dommages: { champs: ['jauge', 'tmax', 'i2t'], entete: 'Fil AWG, T tenue et I2t admis' }
+  dommages: { champs: ['jauge', 'tmax', 'i2t'], entete: 'Fil AWG, T tenue et I2t admis' },
+  torons: { champs: ['methode'], entete: 'Méthode et Facteur' },
+  chambres: { champs: ['norme', 'code'], entete: 'Norme, Code et H max' },
+  massesRaccords: { champs: ['norme', 'taille', 'code', 'masse'], entete: 'Norme, Taille, Code et Masse' },
+  outillages: { champs: ['reference'], entete: 'Référence du contact et Pince' },
+  joints: { champs: ['famille', 'taille'], entete: 'Famille, Taille, Ø isolant min et Ø isolant max' },
+  obturateurs: { champs: ['famille'], entete: 'Famille et Obturateur' },
+  partiesEN3155: { champs: ['partie'], entete: 'Partie et Titre' }
 };
 /* Le sens de chaque colonne, pour la page et pour normes/LISEZMOI.md. Les unités sont dites ici. */
+const SENS_ORIGINE = 'la source : le document lu, sa page (recherches d’octobre 2026) ; vide : la donnée du lecteur (tables SEE, Excel)', SENS_STATUT = '« vérifié » (lu sur le document), « déduit » (conclu de documents lus), « à confirmer » ; vide : la donnée du lecteur, non relue';
 const SENS_NORME = {
   familles: { norme: 'le nom du document (« ASNE 0599 ») ; s’il contient « exemple », la famille est marquée telle', famille: 'le début commun des références (ASNE0500 pour ASNE0500-04) : c’est par là qu’une barrette ou une prise retrouve sa norme', nature: 'jonction ou blindage (barrettes), coupure (prises), connecteur', variantes: 'les nombres de modules ou de contacts des références de la famille (« 2 4 8 12 20 »), informatif', pas: 'le pas des modules ou des contacts, en mm', jaugeMin: 'la plus fine jauge AWG qu’un contact admet ; un fil hors plage est refusé', jaugeMax: 'la plus grosse jauge AWG admise', intensite: 'ampères admissibles par contact', resistance: 'la résistance d’un contact, en mΩ (elle entre dans la chute de tension)', filsParCote: 'combien de fils un module reçoit de chaque côté : le nombre de trous dessinés ; au-delà, c’est une surcharge', ordre: '« croissant » : les modules se prennent dans l’ordre, un module libre avant un module utilisé est signalé ; « libre » sinon', paquets: '« contigus » : un peigne de pontage ne saute pas un module ; « libres » sinon', reserves: 'les modules que la norme réserve (« 1 », « 1 12 ») : utilisés, c’est un défaut', masse: '« par paquet » : chaque paquet doit se fermer sur une masse (barrettes de blindage)', note: 'libre' },
   fils: { type: 'le début du code du retest (DR pour DR24, MLB pour MLB24) ; vide ou « * » : vaut pour tous les types de cette jauge', jauge: 'AWG', code: 'le code EN 2083 du conducteur', brins: 'le toronnage (« 19 × 0,20 »)', section: 'mm² du conducteur (le toron de cuivre, pas le hors-tout du câble)', resistance20: 'Ω/km à 20 °C : c’est elle que la chute en ligne prend, corrigée par la température du conducteur', resistance: 'Ω/km à la température du conducteur de la table ; sans Résistance 20, l’outil la ramène à 20 °C', intensite: 'ampères admissibles en continu, câble seul à l’air libre, avant déclassement', i2s: 'ampères admis pendant 2 s', i10s: 'ampères admis pendant 10 s', i1min: 'ampères admis pendant 1 min', chute10m: 'la chute pour 10 m au courant continu, en V (informatif)', tr: 'la température du conducteur de la table, en °C (135 pour l’EN 2853) : l’ambiante se compte depuis elle', note: 'libre' },
   declassements: { condition: 'un mot (faisceau, altitude) : chaque condition devient une case à cocher dans la simulation', fils: 'le nombre de fils du faisceau d’un point de la courbe (fig. 11-5 de l’AC 43.13-1B)', charge: 'la charge du faisceau en % de ce que ses fils admettent, pour ce point', altitude: 'un point d’une courbe d’altitude, en pieds (l’outil interpole)', facteur: 'multiplie l’intensité admissible du fil ; plusieurs conditions cochées se multiplient', note: 'la source du point' },
   reseau: { tension: 'volts (14, 28, 115, 200) ; la simulation prend la ligne de la tension d’hypothèse, sinon la plus proche ; en triphasé, celle de la tension composée (115 → 200)', nature: 'continu, alternatif phase-neutre, entre phases', chuteMax: 'la chute de tension admise en ligne, en V, en continu', chuteInter: 'la même pour une charge intermittente (≤ 2 min), en V', chutePct: 'la même, en % (informatif)', note: 'la source' },
   cablesFamilles: { famille: 'les familles couvertes par la ligne (« DRB DRC DRD »)', norme: 'la norme du câble (EN 2267-010, ABS 0949…)', conducteur: 'cuivre, CCA (aluminium cuivré) ou aluminium : décide si la ligne cuivre de l’EN 2853 vaut pour ce câble', placage: 'le placage du conducteur', tmin: 'température admise, minimale, °C', tmax: 'température admise, maximale, °C', tension: 'tension admise, V', frequence: 'fréquence maximale, Hz', isolant: 'l’isolant', blindage: 'le blindage', rayon: 'le rayon de courbure, en × Ø', marquage: 'le marquage', note: 'libre' },
-  resistancesContacts: { taille: '22D, 22, 20, 16, 12, 10, 8', intensite: 'le courant nominal du contact, A', chuteMax: 'la chute max aux bornes de la paire, mV', resistance: 'mΩ : la paire sertie et accouplée, à neuf', resistanceFin: 'mΩ : la résistance de conception (fin de vie)', emploi: '« connecteur » (prises, connecteurs : AS39029) ou « jonction » (les modules des barrettes : Air LB) ; vide = les deux', note: 'la source' },
-  courantsContacts: { taille: 'la taille du contact (22, 22D, 20, 16, 12, 8)', fut: 'le fût de sertissage, en AWG (le contact 20 existe en fût 20 et 18)', jauge: 'la jauge du fil serti, AWG', intensite: 'A : ce que le contact porte avec ce fil (AS39029 courant d’essai)', intensiteHermetique: 'A : la version hermétique, quand elle diffère', note: 'la source' },
-  accessoires: { famille: 'la famille (NSA937901)', reference: 'la référence de la norme (NSA937901SC)', equivalent: 'l’équivalent catalogue (Amphenol Air LB 001102 004 60)', role: 'à quoi il sert, en mots', masse: 'g', note: 'la page, la source' },
+  resistancesContacts: { taille: '22D, 22, 20, 16, 12, 10, 8', intensite: 'le courant nominal du contact, A', chuteMax: 'la chute max aux bornes de la paire, mV', resistance: 'mΩ : la paire sertie et accouplée, à neuf', resistanceFin: 'mΩ : la résistance de conception (fin de vie)', emploi: '« connecteur » (prises, connecteurs : AS39029) ou « jonction » (les modules des barrettes : Air LB) ; vide = les deux', note: 'la source', origine: SENS_ORIGINE, statut: SENS_STATUT },
+  courantsContacts: { taille: 'la taille du contact (22, 22D, 20, 16, 12, 8)', fut: 'le fût de sertissage, en AWG (le contact 20 existe en fût 20 et 18)', jauge: 'la jauge du fil serti, AWG', intensite: 'A : ce que le contact porte avec ce fil (AS39029 courant d’essai)', intensiteHermetique: 'A : la version hermétique, quand elle diffère', note: 'la source', origine: SENS_ORIGINE, statut: SENS_STATUT },
+  accessoires: { famille: 'la famille (NSA937901)', reference: 'la référence de la norme (NSA937901SC)', equivalent: 'l’équivalent catalogue (Amphenol Air LB 001102 004 60)', role: 'à quoi il sert, en mots', masse: 'g', note: 'la page, la source', origine: SENS_ORIGINE, statut: SENS_STATUT },
   chutesDisjoncteurs: { famille: 'la famille de disjoncteurs (MS3320, 2TC, ETA483…)', calibre: 'le calibre en A, ou une liste (« 15 20 25 ») qui vaut pour chacun', chuteMax: 'V : la chute maximale aux bornes à In', note: 'la source (feuille MS, fiche)' },
-  tailles: { famille: 'la norme des modules (E0599, NSA937901, EN4165…) ; vide : toute famille', taille: 'la taille du contact (22D, 22, 20, 16, 12, 8, 8T)', jaugeMin: 'la plus fine jauge AWG que ce contact reçoit', jaugeMax: 'la plus grosse ; les deux vides : un câble spécial, jamais un fil ordinaire', note: 'libre' },
+  tailles: { famille: 'la norme des modules (E0599, NSA937901, EN4165…) ; vide : toute famille', taille: 'la taille du contact (22D, 22, 20, 16, 12, 8, 8T)', jaugeMin: 'la plus fine jauge AWG que ce contact reçoit', jaugeMax: 'la plus grosse ; les deux vides : un câble spécial, jamais un fil ordinaire', note: 'libre', origine: SENS_ORIGINE, statut: SENS_STATUT },
   gaines: { famille: 'la famille de gaine (HFA, NOMEX, NOMEX-WO) : ce que « Changer » propose sur la fiche', reference: 'la référence', role: '« surblindage » (tresse cuivre : le toron passe dans Dint) ou « protection » (la plage Dmin–Dmax encadre le toron)', dmin: 'mm : le toron minimal habillé (protection)', dmax: 'mm : le toron maximal', dint: 'mm : le Ø intérieur nominal (surblindage)', dext: 'mm : le Ø extérieur', masse: 'g/m', note: 'libre' },
-  colliers: { reference: 'la référence (EN3660-033AF, E0805-01, NSA935401-03…)', type: '« bande » ou « band-it » (par le Ø serré : la bande EN 3660-033 sur la plateforme ØBB du raccord, l’E0805 par le toron) ou « tyrap » (par le toron maximal et la longueur)', largeur: 'mm', epaisseur: 'mm', longueur: 'mm : à plat', boucle: 'mm : la boucle de la bande', dmin: 'mm : le toron minimal serré', dmax: 'mm : le Ø serré maximal (double tour pour une bande)', masse: 'g', outil: 'l’outil de pose (M81306/1-01, 600-058…)', tension: 'la tension de pose (150 lb pour une reprise de blindage)', tenue: 'N', temperature: '°C', note: 'libre' },
-  filetages: { famille: 'la famille du connecteur (EN3645, EN2997, EN3646)', taille: 'la taille du boîtier (09 à 25, 08 à 28)', lettre: 'la lettre de taille', filetage: 'le filetage d’accessoire arrière (M12x1, 7/16-28 UNEF)', dmaxBoitier: 'mm : le Ø du boîtier', note: 'libre' },
-  entrees: { systeme: '« EN 3660 » (les codes lettrés A à M des raccords à bande EN 3660-064/-063/-065) ou « Glenair » (les codes 03 à 32 du serre-câble série 36) : le raccord retenu dit lequel', code: 'le code d’entrée de câble (A à M, ou 03 à 32)', dmin: 'mm : le toron minimal que l’entrée passe (vide : 0)', dmax: 'mm : le toron maximal (ØAA pour l’EN 3660)', tailleMin: 'la plus petite taille de boîtier qui admet ce code : c’est elle qui borne le code au boîtier', tailleMax: 'la plus grande', aa: 'mm : ØAA, l’alésage d’entrée (EN 3660)', bb: 'mm : ØBB, la plateforme de bande — le band-it serre la tresse dessus', cc: 'mm : ØCC, l’épaulement à lèvre — la cote C du manchon', dd: 'mm : DD, l’épaisseur de la lèvre', note: 'libre' },
-  raccords: { famille: 'la famille du connecteur', taille: 'la taille du boîtier ; vide : toutes', type: 'durci, pour manchon, serre-câble, tyrap, cheminée (le type que le tutoriel décide)', orientation: 'droit ou coudé', norme: 'la partie EN 3660 du style', materiau: 'le matériau', fini: 'le fini (de la classe N par défaut : la classe suit le connecteur, table Classes)', amin: 'mm : le toron minimal (cote A : le premier code d’entrée, ou l’ouverture M min du serre-câble)', amax: 'mm : le toron maximal (le code d’entrée maximal de la taille, ou M max) : au-delà, « toron trop gros pour ce boîtier »', b: 'mm : la cote B (Ø de la plateforme de bande ØBB du code maximal)', c: 'mm : la cote C (l’épaulement ØCC du code maximal : le manchon vient dessus ; le code retenu donne la sienne)', d: 'mm : la cote D (la sortie)', masse: 'g', reference: 'le modèle de désignation : EN3660-064N08<L><E> — la classe N se remplace par celle du connecteur, <L> par le code de longueur de chambre (A par défaut), <E> par le code d’entrée que le toron choisit', statut: '« vérifié (dessin) » : cotes lues ; « structure » : désignation vérifiée, cotes non lues ; « déduit » : même filetage, la norme ne nomme pas la famille ; « à confirmer »', note: 'libre' },
-  manchons: { forme: 'droit, coudé, coudé à lèvre, sortie longue, 45°, transition (T), 2 / 3 / 4 sorties — seuls droit, coudé et coudé à lèvre se proposent d’eux-mêmes', designation: 'la désignation VG 95343 (T06 A 013… ; T18 / T19 : précollé)', reference: 'la référence HellermannTyton', ha: 'mm : le Ø maximal côté raccord', hb: 'mm : le Ø minimal côté raccord', ja: 'mm : le Ø maximal côté toron', jb: 'mm : le Ø minimal côté toron', p: 'mm : la longueur totale', r: 'mm : la longueur côté toron', jo: 'mm : la lèvre', masse: 'g', note: 'libre (« précollé » y suffit)' },
+  colliers: { reference: 'la référence (EN3660-033AF, E0805-01, NSA935401-03…)', type: '« bande » ou « band-it » (par le Ø serré : la bande EN 3660-033 sur la plateforme ØBB du raccord, l’E0805 par le toron) ou « tyrap » (par le toron maximal et la longueur)', largeur: 'mm', epaisseur: 'mm', longueur: 'mm : à plat', boucle: 'mm : la boucle de la bande', dmin: 'mm : le toron minimal serré', dmax: 'mm : le Ø serré maximal (double tour pour une bande)', masse: 'g', outil: 'l’outil de pose (M81306/1-01, 600-058…)', tension: 'la tension de pose (150 lb pour une reprise de blindage)', tenue: 'N', temperature: '°C', note: 'libre', origine: SENS_ORIGINE, statut: SENS_STATUT },
+  filetages: { famille: 'la famille du connecteur (EN3645, EN2997, EN3646)', taille: 'la taille du boîtier (09 à 25, 08 à 28)', lettre: 'la lettre de taille', filetage: 'le filetage d’accessoire arrière (M12x1, 7/16-28 UNEF)', dmaxBoitier: 'mm : le Ø du boîtier', note: 'libre', origine: SENS_ORIGINE, statut: SENS_STATUT },
+  entrees: { systeme: '« EN 3660 » (les codes lettrés A à M des raccords à bande EN 3660-064/-063/-065) ou « Glenair » (les codes 03 à 32 du serre-câble série 36) : le raccord retenu dit lequel', code: 'le code d’entrée de câble (A à M, ou 03 à 32)', dmin: 'mm : le toron minimal que l’entrée passe (vide : 0)', dmax: 'mm : le toron maximal (ØAA pour l’EN 3660)', tailleMin: 'la plus petite taille de boîtier qui admet ce code : c’est elle qui borne le code au boîtier', tailleMax: 'la plus grande', aa: 'mm : ØAA, l’alésage d’entrée (EN 3660)', bb: 'mm : ØBB, la plateforme de bande — le band-it serre la tresse dessus', cc: 'mm : ØCC, l’épaulement à lèvre — la cote C du manchon', dd: 'mm : DD, l’épaisseur de la lèvre', note: 'libre', origine: SENS_ORIGINE, statut: SENS_STATUT },
+  raccords: { famille: 'la famille du connecteur', taille: 'la taille du boîtier ; vide : toutes', type: 'durci, pour manchon, serre-câble, tyrap, cheminée (le type que le tutoriel décide)', orientation: 'droit ou coudé', norme: 'la partie EN 3660 du style', materiau: 'le matériau', fini: 'le fini (de la classe N par défaut : la classe suit le connecteur, table Classes)', amin: 'mm : le toron minimal (cote A : le premier code d’entrée, ou l’ouverture M min du serre-câble)', amax: 'mm : le toron maximal (le code d’entrée maximal de la taille, ou M max) : au-delà, « toron trop gros pour ce boîtier »', b: 'mm : la cote B (Ø de la plateforme de bande ØBB du code maximal)', c: 'mm : la cote C (l’épaulement ØCC du code maximal : le manchon vient dessus ; le code retenu donne la sienne)', d: 'mm : la cote D (la sortie)', masse: 'g', reference: 'le modèle de désignation : EN3660-064N08<L><E> — la classe N se remplace par celle du connecteur, <L> par le code de longueur de chambre (A par défaut), <E> par le code d’entrée que le toron choisit', statut: '« vérifié (dessin) » : cotes lues ; « structure » : désignation vérifiée, cotes non lues ; « déduit » : même filetage, la norme ne nomme pas la famille ; « à confirmer »', note: 'libre', couple: 'N·m : le couple de pose de l’écrou (EN 3660-017/-018/-025/-026/-027, tableau 3)', origine: SENS_ORIGINE },
+  manchons: { forme: 'droit, coudé, coudé à lèvre, sortie longue, 45°, transition (T), 2 / 3 / 4 sorties — seuls droit, coudé et coudé à lèvre se proposent d’eux-mêmes', designation: 'la désignation VG 95343 (T06 A 013… ; T18 / T19 : précollé)', reference: 'la référence HellermannTyton', ha: 'mm : le Ø maximal côté raccord', hb: 'mm : le Ø minimal côté raccord', ja: 'mm : le Ø maximal côté toron', jb: 'mm : le Ø minimal côté toron', p: 'mm : la longueur totale', r: 'mm : la longueur côté toron', jo: 'mm : la lèvre', masse: 'g', note: 'libre (« précollé » y suffit)', origine: SENS_ORIGINE, statut: SENS_STATUT },
   classes: { famille: 'la famille du connecteur (EN2997, EN3645, EN3646)', classe: 'les lettres de classe lues dans le part number juste après le nom de la famille (W, WS, SE, F…)', materiau: 'le matériau du connecteur', fini: 'son fini', raccord: 'la lettre de classe EN 3660-001 du raccord qui va avec : N nickel, W cadmium, K inox, Z zinc-nickel — jamais A (anodisé, non conducteur)', temperature: '°C : la température du connecteur', note: 'libre' },
   calibrations: { famille: 'la famille de disjoncteurs', norme: 'la norme', temperature: '°C : l’ambiante du point', tient: '× In tenu une heure', declenche: '× In qui déclenche en moins d’une heure', t200min: 's : le temps mini à 200 % de In', t200max: 's : le temps maxi à 200 %', t500min: 's : mini à 500 %', t500max: 's : maxi à 500 %', t1000min: 's : mini à 1000 %', t1000max: 's : maxi à 1000 %', source: 'la source' },
   disjoncteursFamilles: { famille: 'le nom de la famille (MS3320, 2TC, ETA483)', norme: 'la norme', poles: 'le nombre de pôles', calibres: 'la gamme de calibres, en A : une liste (« 1 2 2,5 3 5 ») ou une plage (« 1 à 25 »)', tension: 'la tension nominale', compense: 'oui / non : compensé en température', tmin: '°C : l’ambiante minimale admise', tmax: '°C : l’ambiante maximale', masse: 'g', courbe: 'la famille de la table des courbes à prendre (ETA483, 2TC, 6TC, 5TC, 7274, EN2495)', motifs: 'les débuts de part number qui nomment la famille (« MS3320 » reconnaît MS3320-10 et MS3320L-5 ; « 2TC » reconnaît 2TC2-10) ; vide = le nom de la famille', note: 'libre' },
@@ -933,8 +1085,15 @@ const SENS_NORME = {
     facteur: '× sur l’intensité EN 2853 en continu, √((T tenue − ambiante)/40) à 95 °C (informatif : le moteur le refait à l’ambiante de l’hypothèse)', note: 'libre', source: 'la source', statut: 'vérifié, déduit, à confirmer' },
   cables: { cable: 'le type tel que le retest l’écrit (DR24, MLB22, KD24, WC)', famille: 'la famille (DR, MLB…) ; vide : lue en tête du type', jauge: 'AWG', brins: 'le nombre de conducteurs du câble', blindage: '1 ou oui si le câble est blindé', nature: 'torsadé, blindé, coaxial, quadrax, fibre optique…', masse: 'g/m', liaisons: 'le nombre de liaisons que le câble porte (les brins, plus le blindage)', resistance: 'mΩ/m à 20 °C (soit des Ω/km) : la chute en ligne la prend', diametre: 'mm : le Ø extérieur', section: 'mm² hors-tout (π Ø²/4, isolant et blindage compris) : la section du toron', note: 'libre' },
   disjoncteurs: { famille: 'la famille de courbes (« disjoncteur » vaut pour tous les calibres)', courbe: 'le nom de la courbe (125 °C, 23 °C min, 23 °C max, −55 °C)', temperature: '°C', multiple: 'le multiple du courant nominal (× In)', temps: 's : le temps de déclenchement', note: 'libre' },
-  contacts: { famille: 'la norme du connecteur (EN2997, EN3645, EN3646, EN4165…)', sexe: 'M (mâle, broche) ou F (femelle, douille) : le contact qu’on sertit', taille: 'la taille de la cavité (22, 20, 16, 12, 8)', typeFil: 'le type de fil (HS, CF, WL…) ; « * » : tous', jauge: 'AWG ; « * » : toutes', reference: 'le contact à sertir', accessoire: 'ce qui s’y ajoute : fourreau de réduction, bague…', note: 'libre' },
-  modules: { famille: 'E0599, NSA937901 (barrettes) ; EN4165, EN2997, EN3645, EN3646, ASNE0059 (connecteurs)', variante: 'la variante d’interconnexion ou le code d’arrangement (A101, 20-04, 08W16, 14-12)', reference: 'la désignation commandable ; vide : l’outil l’écrit (E0599-1A101Z, NSA937901-20-04…)', type: 'le type de module (1 à 4, mixte, diodes, obturateur, spécial) ou la taille', taille: 'la taille des contacts (22, 20, 16, 12)', disposition: 'la face : les rangées séparées par « / », « . » une place vide ; ou « lettre@x:y » en pas, « centre@x:y » pour une face ronde', groupes: 'les contacts reliés dans le module, groupes séparés par « | », contacts par des espaces ; « C#12 » un contact d’une autre taille', poids: 'g', hauteur: 'mm', diodes: 'les diodes incorporées (« A>B »)', usage: 'normal, possible, A350, à confirmer, ancien, shuntés, spécial — seul « normal » et « possible » se choisissent seuls', corps: 'rectangle, ovale (bouts ronds), étanche, module (carré), circulaire', emploi: '« barrette » (modules de jonction) ou « connecteur » (équipements et prises de coupure)', note: 'libre' }
+  contacts: { famille: 'la norme du connecteur (EN2997, EN3645, EN3646, EN4165…)', sexe: 'M (mâle, broche) ou F (femelle, douille) : le contact qu’on sertit', taille: 'la taille de la cavité (22, 20, 16, 12, 8)', typeFil: 'le type de fil (HS, CF, WL…) ; « * » : tous', jauge: 'AWG ; « * » : toutes', reference: 'le contact à sertir', accessoire: 'ce qui s’y ajoute : fourreau de réduction, bague…', note: 'libre', origine: SENS_ORIGINE, statut: SENS_STATUT },
+  modules: { famille: 'E0599, NSA937901 (barrettes) ; EN4165, EN2997, EN3645, EN3646, ASNE0059 (connecteurs)', variante: 'la variante d’interconnexion ou le code d’arrangement (A101, 20-04, 08W16, 14-12)', reference: 'la désignation commandable ; vide : l’outil l’écrit (E0599-1A101Z, NSA937901-20-04…)', type: 'le type de module (1 à 4, mixte, diodes, obturateur, spécial) ou la taille', taille: 'la taille des contacts (22, 20, 16, 12)', disposition: 'la face : les rangées séparées par « / », « . » une place vide ; ou « lettre@x:y » en pas, « centre@x:y » pour une face ronde', groupes: 'les contacts reliés dans le module, groupes séparés par « | », contacts par des espaces ; « C#12 » un contact d’une autre taille', poids: 'g', hauteur: 'mm', diodes: 'les diodes incorporées (« A>B »)', usage: 'normal, possible, A350, à confirmer, ancien, shuntés, spécial — seul « normal » et « possible » se choisissent seuls', corps: 'rectangle, ovale (bouts ronds), étanche, module (carré), circulaire', emploi: '« barrette » (modules de jonction) ou « connecteur » (équipements et prises de coupure)', note: 'libre' },
+  torons: { methode: '« TE/Polamco » (le facteur selon le nombre de câbles : celui de l’outil), « Excel (tutoriel) » (+ 10 %, l’hypothèse « comme l’Excel »), « Glenair » (pour contrôle : × le Ø moyen)', fils: 'le nombre de câbles du toron (« 7 et plus » : à partir de 7) ; « tous » : la ligne vaut pour tout nombre', facteur: 'ce par quoi on multiplie (TE : √(Σ Ø²) ; Glenair : le Ø moyen)', k: 'le coefficient équivalent sur √(Σ Ø²), pour comparer les méthodes', formule: 'la formule, en mots', ajout: 'ce qui s’ajoute au toron (tresse, gaine) selon la méthode', note: 'libre', origine: SENS_ORIGINE, statut: SENS_STATUT },
+  chambres: { norme: 'la partie EN 3660 du raccord droit à bande (EN3660-064, EN3660-063)', code: 'le code de longueur de chambre <L> de la désignation (A à D)', hmax: 'mm : la longueur maximale de la chambre de câblage', j: 'mm : sa partie cylindrique libre', derriere: 'mm : l’encombrement du raccord derrière la face d’accouplement (déduit de la figure)', note: 'libre', origine: SENS_ORIGINE, statut: SENS_STATUT },
+  massesRaccords: { norme: 'la partie EN 3660 (EN3660-062, -063, -064, -065)', taille: 'la taille du boîtier', longueur: 'le code de chambre (droits seulement ; vide : un coudé)', code: 'le code d’entrée (A à M)', classes: 'les classes EN 3660 de la masse (N W T Z, ou K l’inox)', masse: 'g : la masse nominale de la pièce', note: 'libre (les coquilles de la norme y sont dites, la masse laissée vide)', origine: SENS_ORIGINE, statut: SENS_STATUT },
+  outillages: { famille: 'les familles de connecteurs du contact (« EN3645 EN4165 »)', reference: 'le contact, comme le catalogue l’écrit (« EN3155-008M / -003F / -009F 2018 » vaut pour les trois)', sexe: 'M, F, ou « M ou F »', taille: 'la taille d’engagement', fut: 'le fût (AWG)', jauges: 'les jauges que le fût reçoit', dmin: 'mm : le Ø sur isolant minimal que le joint serre', dmax: 'mm : le maximal', pince: 'la pince (M22520/…)', positionneur: 'le positionneur ou la tourelle', insertion: 'l’outil d’insertion (M81969/14-…)', extraction: 'l’outil d’extraction', denudage: 'mm : la longueur de dénudage', bagues: 'les bagues de couleur EN 3155 (taille / fût)', note: 'libre', origine: SENS_ORIGINE, statut: SENS_STATUT },
+  joints: { famille: 'la famille de connecteurs (EN3645, EN2997, EN4165, NSA937901, E0599…)', taille: 'la taille du contact (22, 22D, 23, 20, 16, 12, 10, 8, 8T)', fut: 'le fût (AWG) quand la plage en dépend (EN 4165 16 : fût 16 ou 14) ; vide : tous', dmin: 'mm : le Ø sur isolant minimal que le trou du joint serre — dessous, l’eau passe (manchon E0718)', dmax: 'mm : le maximal — dessus, le fil n’entre pas (EN 4165-002 : interdit)', note: 'libre', origine: SENS_ORIGINE, statut: SENS_STATUT },
+  obturateurs: { famille: 'la famille (ou les familles) de connecteurs', taille: 'la taille de contact (plusieurs séparées par une espace)', obturateur: 'la référence de l’obturateur ; vide : non trouvée', equivalent: 'l’équivalent catalogue', couleur: 'la couleur de l’obturateur', note: 'libre', origine: SENS_ORIGINE, statut: SENS_STATUT },
+  partiesEN3155: { partie: 'la partie de l’EN 3155 (« EN 3155-016 », « EN 3155-012 / 013 »)', titre: 'le titre officiel, en mots', type: 'A cuivre, B ferreux, C thermocouple, D blindé ou coaxial, E quadrax', sexe: 'M, F, ou les deux', taille: 'les tailles d’engagement', terminaison: 'serti, soudé, double sertissage', classe: 'P 125 °C, R 150, S 200, T 260, U 350', emploi: 'les connecteurs qui l’emploient (catalogues)', tables: 'si la table Contacts s’en sert', origine: SENS_ORIGINE, statut: SENS_STATUT }
 };
 /* Une ligne d'exemple par table (le gabarit à télécharger), aux en-têtes de l'outil. */
 const EXEMPLES_NORME = {
@@ -962,7 +1121,14 @@ const EXEMPLES_NORME = {
   cables: { cable: 'DR24', famille: 'DR', jauge: '24', brins: '1', blindage: '0', nature: '', masse: '1,6', liaisons: '1', resistance: '0,114', diametre: '1,1', section: '0,95', note: 'exemple' },
   disjoncteurs: { famille: 'ETA483', courbe: '125 °C', temperature: '125', multiple: '1,2', temps: '3600', note: 'exemple' },
   contacts: { famille: 'EN4165', sexe: 'F', taille: '22', typeFil: '*', jauge: '*', reference: 'EN3155-003F2222', accessoire: '', note: 'exemple' },
-  modules: { famille: 'E0599', variante: 'B201', reference: 'E0599-1B201Z', type: '2', taille: '20', disposition: 'A B C D E F G H J / K L M N P Q R S T', groupes: 'A K | B L | C M | D N | E P | F Q | G R | H S | J T', poids: '14', hauteur: '20', diodes: '', usage: 'normal', corps: 'rectangle', emploi: 'barrette', note: 'exemple' }
+  modules: { famille: 'E0599', variante: 'B201', reference: 'E0599-1B201Z', type: '2', taille: '20', disposition: 'A B C D E F G H J / K L M N P Q R S T', groupes: 'A K | B L | C M | D N | E P | F Q | G R | H S | J T', poids: '14', hauteur: '20', diodes: '', usage: 'normal', corps: 'rectangle', emploi: 'barrette', note: 'exemple' },
+  torons: { methode: 'TE/Polamco', fils: '7 et plus', facteur: '1,15', k: '1,15', formule: 'Ø toron = facteur × √(Σ Ø²)', ajout: '', note: 'exemple', origine: '', statut: '' },
+  chambres: { norme: 'EN3660-064', code: 'A', hmax: '27,5', j: '8,57', derriere: '35,25', note: 'exemple', origine: '', statut: '' },
+  massesRaccords: { norme: 'EN3660-064', taille: '12', longueur: 'A', code: 'D', classes: 'N T W Z', masse: '16,1', note: 'exemple', origine: '', statut: '' },
+  outillages: { famille: 'EN3645 EN4165', reference: 'EN3155-008M / -003F / -009F 2020', sexe: 'M ou F', taille: '20', fut: '20', jauges: '24-20', dmin: '1,02', dmax: '2,11', pince: 'M22520/2-01', positionneur: 'M22520/2-10', insertion: 'M81969/14-10', extraction: 'M81969/14-10', denudage: '6', bagues: 'rouge / rouge', note: 'exemple', origine: '', statut: '' },
+  joints: { famille: 'EN3645', taille: '20', fut: '', dmin: '1,02', dmax: '2,11', note: 'exemple', origine: '', statut: '' },
+  obturateurs: { famille: 'EN3645', taille: '20', obturateur: 'MS27488-20-2', equivalent: 'Souriau 8522-389A', couleur: 'rouge', note: 'exemple', origine: '', statut: '' },
+  partiesEN3155: { partie: 'EN 3155-016', titre: 'contact mâle type A serti classe S', type: 'A cuivre', sexe: 'M', taille: '22 20 16 12', terminaison: 'serti', classe: 'S 200 °C', emploi: 'EN 3708, NF L 53-105', tables: 'oui', origine: '', statut: '' }
 };
 /* Les colonnes d'une table, pour les expliquer sans doublon : [{ champ, libelle, alias, obligatoire, sens }]. */
 function colonnesDeTable(table) { const L = LIBELLES_NORME[table] || {}, S = SENS_NORME[table] || {}, O = (OBLIGATOIRES_NORME[table] || { champs: [] }).champs;
@@ -1028,16 +1194,21 @@ function tailleDeJauge(norme, famille, jauge) { if (jauge == null) return ''; co
    vie) si on le demande ; la taille 22D vaut 22. Rien si la table ne la connaît pas. */
 function resistanceDeContact(norme, taille, fin, emploi) { const r = ligneDeContact(norme, taille, emploi); if (!r) return null;
   return (fin && r.resistanceFin != null ? r.resistanceFin : r.resistance) / 1000; }
-// la ligne de la table Résistance des contacts d'une taille : d'abord celles de l'EMPLOI demandé (« jonction » pour une barrette, « connecteur » pour une prise), puis les autres ;
-// la taille exacte, sinon la même sans lettre (22D → 22), sinon la taille connue la plus proche en numéro (23 → 22 ; à égalité, la plus petite, qui résiste le plus)
+// la ligne de la table Résistance des contacts d'une taille : d'abord celles de l'EMPLOI demandé (« jonction » pour une barrette, « connecteur » pour une prise) et
+// celles sans emploi — la taille exacte, sinon la même sans lettre (22D → 22), sinon la taille connue la plus proche en numéro (23 → 22 ; à égalité, la plus
+// petite, qui résiste le plus) ; les lignes des autres emplois seulement quand l'emploi n'en a aucune. Une taille qu'un seul emploi connaît (la 23 des
+// connecteurs, octobre 2026) ne donne pas sa valeur de connecteur à un module de jonction.
 function ligneDeContact(norme, taille, emploi) { const t = tailleCle(taille); if (!t) return null; const T0 = normeDesModules(norme).resistancesContacts || [], num = x => NUMERO(x.replace(/[A-Z]+$/, ''));
-  const e = emploi || 'connecteur', T = T0.filter(x => x.emploi === e).concat(T0.filter(x => !x.emploi)).concat(T0.filter(x => x.emploi && x.emploi !== e));
-  return T.find(x => x.taille === t) || T.find(x => num(x.taille) === num(t) && !/[A-Z]$/.test(x.taille)) || T.find(x => num(x.taille) === num(t))
-    || (num(t) == null ? null : T.slice().sort((a, b) => Math.abs(num(a.taille) - num(t)) - Math.abs(num(b.taille) - num(t)) || num(b.taille) - num(a.taille) || a.taille.length - b.taille.length)[0]) || null; }
+  const e = emploi || 'connecteur', propres = T0.filter(x => x.emploi === e).concat(T0.filter(x => !x.emploi)), autres = T0.filter(x => x.emploi && x.emploi !== e);
+  const chercher = T => T.find(x => x.taille === t) || T.find(x => num(x.taille) === num(t) && !/[A-Z]$/.test(x.taille)) || T.find(x => num(x.taille) === num(t))
+    || (num(t) == null ? null : T.slice().sort((a, b) => Math.abs(num(a.taille) - num(t)) - Math.abs(num(b.taille) - num(t)) || num(b.taille) - num(a.taille) || a.taille.length - b.taille.length)[0]) || null;
+  return chercher(propres.length ? propres : autres); }
 /* L'INTENSITÉ D'UN CONTACT par sa taille, en A : la table Résistance des contacts (AS39029 : 22 → 5 A, 20 → 7,5, 16 → 13,
    12 → 23, 10 → 33, 8 → 46), sinon la table Protection (AC 43.13-1B, par la taille de contact qu'elle nomme). Rend
-   { intensite, taille, source } ou null. La taille d'un fil dont on ne connaît pas le contact : `tailleDeJauge`. */
-function intensiteDeContact(norme, taille, jauge, emploi) { const t = tailleCle(taille); if (!t) return null; const N = normeDesModules(norme), num = x => NUMERO(String(x).replace(/[A-Z]+$/, ''));
+   { intensite, taille, source } ou null. La taille d'un fil dont on ne connaît pas le contact : `tailleDeJauge`.
+   La JAUGE du fil serti (et le FÛT du contact, quand on le connaît : `fut`, lu dans sa référence EN 3155) borne encore
+   le courant — un 26 AWG sur un contact 20 porte 2 A, pas 7,5 (table Courant des contacts, recherche R1). */
+function intensiteDeContact(norme, taille, jauge, emploi, fut) { const t = tailleCle(taille); if (!t) return null; const N = normeDesModules(norme), num = x => NUMERO(String(x).replace(/[A-Z]+$/, ''));
   // la taille exacte (22D vaut 22) dans la table des contacts (l'emploi d'abord), sinon dans la table Protection, sinon la taille la plus proche de la table des contacts
   const e = emploi || 'connecteur', R0 = (N.resistancesContacts || []).filter(x => x.intensite != null), R = R0.filter(x => x.emploi === e).concat(R0.filter(x => !x.emploi)).concat(R0.filter(x => x.emploi && x.emploi !== e));
   const exact = R.find(x => x.taille === t) || R.find(x => num(x.taille) === num(t) && !/[A-Z]$/.test(x.taille)) || R.find(x => num(x.taille) === num(t));
@@ -1045,12 +1216,20 @@ function intensiteDeContact(norme, taille, jauge, emploi) { const t = tailleCle(
   if (!base) { const p = (N.protections || []).find(x => tailleCle(x.tailleContact) === t && x.iContact != null); if (p) base = { intensite: p.iContact, taille: t, source: 'protection' }; }
   if (!base) { const r = ligneDeContact(norme, t, emploi); base = r && r.intensite != null ? { intensite: r.intensite, taille: r.taille, source: 'contacts' } : null; }
   // la jauge du fil serti borne encore le courant (table Courant des contacts : un 24 AWG dans un contact 20 porte 3 A, pas 7,5)
-  const j = courantDeContact(norme, t, jauge); if (!j) return base; if (!base) return { intensite: j.intensite, taille: t, source: 'courants', jauge: j.jauge };
-  return j.intensite < base.intensite - 1e-9 ? { ...base, intensite: j.intensite, source: 'courants', jauge: j.jauge, nominal: base.intensite } : base; }
-/* LA LIGNE (taille, jauge) de la table Courant des contacts : la taille exacte (22D vaut 22, sinon le même numéro), la jauge
-   exacte ; sinon rien — on n'interpole pas un courant de contact. */
-function courantDeContact(norme, taille, jauge) { if (jauge == null) return null; const t = tailleCle(taille), num = x => NUMERO(String(x).replace(/[A-Z]+$/, '')), C = (normeDesModules(norme).courantsContacts || []).filter(x => x.intensite != null && x.jauge === +jauge);
-  return C.find(x => x.taille === t) || C.find(x => num(x.taille) === num(t) && !/[A-Z]$/.test(x.taille)) || C.find(x => num(x.taille) === num(t)) || null; }
+  const j = courantDeContact(norme, t, jauge, fut); if (!j) return base; if (!base) return { intensite: j.intensite, taille: t, source: 'courants', jauge: j.jauge, fut: j.fut };
+  return j.intensite < base.intensite - 1e-9 ? { ...base, intensite: j.intensite, source: 'courants', jauge: j.jauge, fut: j.fut, nominal: base.intensite } : base; }
+/* LA LIGNE (taille, fût, jauge) de la table Courant des contacts : la taille exacte (22D vaut 22, sinon le même numéro), la
+   jauge exacte ; le fût exact quand on le connaît — sinon, si la table en a plusieurs pour cette taille et cette jauge
+   (un contact 12 à fût 18 de l'EN 2997 porte 7,5 A avec un 18 AWG, à fût 14 de l'EN 3645, 10 A), la plus prudente.
+   Rien sans ligne : on n'interpole pas un courant de contact. */
+function courantDeContact(norme, taille, jauge, fut) { if (jauge == null) return null; const t = tailleCle(taille), num = x => NUMERO(String(x).replace(/[A-Z]+$/, '')), C = (normeDesModules(norme).courantsContacts || []).filter(x => x.intensite != null && x.jauge === +jauge);
+  const parTaille = [x => x.taille === t, x => num(x.taille) === num(t) && !/[A-Z]$/.test(x.taille), x => num(x.taille) === num(t)].map(g => C.filter(g)).find(xs => xs.length) || [];
+  if (!parTaille.length) return null; const exact = fut != null ? parTaille.find(x => x.fut === +fut) : null;
+  return exact || parTaille.slice().sort((a, b) => a.intensite - b.intensite)[0]; }
+/* LE COURANT DU CONTACT D'UN FIL POSÉ (une entrée `fils` d'un plan : sa taille, la jauge de son fil, le fût lu dans la
+   référence du contact à sertir) — ce que les fiches et le contrôle d'un disjoncteur devraient prendre plutôt que la
+   taille seule. */
+const intensiteDuContactPose = (norme, x, emploi) => x ? intensiteDeContact(norme, x.taille, x.f ? x.f.jauge : null, emploi, x.sertir && x.sertir.fut != null ? x.sertir.fut : null) : null;
 /* LES ACCESSOIRES d'une famille (butées, séparateurs, shunts, étriers…), tels que la table les donne. */
 const accessoiresDe = (norme, famille) => { const f = cleNorme(famille); return (normeDesModules(norme).accessoires || []).filter(a => a.famille === f); };
 /* Un contact QUALIFIÉ POUR L'ALUMINIUM CUIVRÉ (CCA) : la NSA937901 nomme les ABS1493 / ABS1380 (taille 22, câble aluminium
@@ -1090,7 +1269,9 @@ function reactanceEstimee(section, hauteur, frequence) { if (!(section > 0)) ret
   const L = 2e-7 * Math.log(2 * h / r) + 0.05e-6; return 2 * Math.PI * f * L * 1000; }
 /* LE FAISCEAU d'un connecteur : ses câbles (un câble à plusieurs brins ne compte qu'une fois, par son numéro), la
    section cumulée, le diamètre équivalent `deq` (un rond de même section — l'Excel du lecteur : Seq puis Deq), le
-   TORON `diametre` = Deq plus la marge de 10 % du tutoriel (FOISONNEMENT), et la masse au mètre. */
+   TORON `diametre` = Deq plus la marge de 10 % du tutoriel (FOISONNEMENT), et la masse au mètre. L'habillage
+   (09-raccords) remplace ce toron par celui de la table Toron (`toronDe`) : le facteur TE par nombre de câbles par
+   défaut, ces + 10 % quand l'hypothèse « toron » vaut « Excel » (ou sans table Toron). */
 const FOISONNEMENT = 1.1;
 function faisceauDe(norme, fils) { const vus = new Map(), inconnus = new Set(); let k = 0;
   (fils || []).forEach(f => { if (!f.type) return; const cle = f.cable ? 'W' + f.cable : 'n' + (k++); if (vus.has(cle)) return;
@@ -1284,7 +1465,7 @@ const cleNorme = t => String(t == null ? '' : t).toUpperCase().replace(/[^A-Z0-9
 const tailleCle = t => String(t == null ? '' : t).trim().toUpperCase().replace(/^#/, '').replace(/\s+/g, '');
 function tailleNorme(o) { const taille = tailleCle(o.taille), calibre = NUMERO(taille); if (!taille || calibre == null) return null;
   const j = [NUMERO(o.jaugeMin), NUMERO(o.jaugeMax)].filter(x => x != null);
-  return { famille: cleNorme(o.famille), taille, calibre, jaugeMin: j.length ? Math.max(...j) : null, jaugeMax: j.length ? Math.min(...j) : null, note: String(o.note || '').trim() }; }
+  return { famille: cleNorme(o.famille), taille, calibre, jaugeMin: j.length ? Math.max(...j) : null, jaugeMax: j.length ? Math.min(...j) : null, note: String(o.note || '').trim(), ...origineStatut(o) }; }
 /* Une ligne de la table CONTACTS (normes/contacts.csv, transcrite des tables SEE) : pour une norme de connecteurs, une
    taille de cavité, un sexe (M broche, F douille), un type de fil (« * » : tous) et une jauge (« * » : toutes), le contact
    à sertir et son accessoire (un fourreau de réduction E0718 pour un fil plus fin que le contact, une bague EN4530…). */
@@ -1292,7 +1473,66 @@ const sexeDe = t => { const u = MOT(t); return /^m|^male|broche|pin/.test(u) ? '
 function contactNorme(o) { const famille = cleNorme(o.famille), taille = tailleCle(o.taille), sexe = sexeDe(o.sexe), reference = String(o.reference || '').trim();
   if (!famille || !taille || !sexe || !reference) return null;
   const typeFil = String(o.typeFil || '').trim().toUpperCase().replace(/[^A-Z0-9*]/g, '') || '*', j = String(o.jauge == null ? '' : o.jauge).trim();
-  return { famille, sexe, taille, typeFil, jauge: j && j !== '*' ? NUMERO(j) : null, reference, accessoire: String(o.accessoire || '').trim(), note: String(o.note || '').trim() }; }
+  return { famille, sexe, taille, typeFil, jauge: j && j !== '*' ? NUMERO(j) : null, reference, accessoire: String(o.accessoire || '').trim(), note: String(o.note || '').trim(), ...origineStatut(o) }; }
+/* LE FÛT d'un contact EN 3155, lu dans sa référence : EN3155-<partie><M ou F><taille d'engagement><fût> — EN3155-018M1218
+   → taille 12, fût 18 AWG ; EN3155-065M0810A → 8, 10 (recherche R1, Amphenol p. 9). Rien pour une autre référence
+   (M39029, Airbus…) : le fût ne s'y lit pas. */
+function futDeContact(reference) { const m = /^EN ?3155-?\d{3}[MF](\d{2})(\d{2})/i.exec(String(reference || '').trim()); return m ? { taille: +m[1], fut: +m[2] } : null; }
+/* LES TABLES DES CONTACTS d'octobre 2026 (normes/contacts.csv, recherche R1 ; l'EN 4165 par la recherche R3) :
+     · le JOINT ARRIÈRE : par famille, taille (et fût), la plage de Ø sur isolant que le trou du joint serre — dessous
+       l'eau passe (le manchon E0718 grossit le fil), dessus le fil n'entre pas (EN 4165-002 : interdit) ;
+     · l'OUTILLAGE : par contact, la pince, le positionneur, l'outil d'insertion et d'extraction, le dénudage, les bagues ;
+     · les OBTURATEURS : par famille et taille, ce qui ferme une cavité sans fil ;
+     · les PARTIES DE L'EN 3155 : ce que chaque numéro de partie désigne (titre, type, classe, emploi). */
+const LISTE_FAMILLES = t => String(t == null ? '' : t).toUpperCase().split(/[\s,/|]+/).map(cleNorme).filter(Boolean);
+function jointNorme(o) { const famille = cleNorme(o.famille), taille = tailleCle(o.taille); if (!famille || !taille) return null;
+  return { famille, taille, fut: NUMERO(o.fut), dmin: NUMERO(o.dmin), dmax: NUMERO(o.dmax), note: String(o.note || '').trim(), ...origineStatut(o) }; }
+/* Les références qu'une ligne d'outillage couvre, écrites comme le catalogue les écrit : « EN3155-008M / -003F / -009F
+   2022 » (trois contacts de même code), « M39029/87-471 / -472 broche, /88-483 / -484 douille », « EN3155-074M08(A) ». */
+function referencesOutillage(texte) { const refs = [], parts = []; let m39 = null, suffixe = null;
+  String(texte || '').replace(/\([A-Z]\)/g, '').split(/[\s,+;]+/).forEach(t => { let m;
+    if ((m = /^(EN ?3155)-(\d{3}[MF])(\d{2,4}[A-Z]?)?$/i.exec(t))) { if (m[3]) refs.push('EN3155-' + m[2].toUpperCase() + m[3].toUpperCase()); else parts.push(m[2].toUpperCase()); m39 = null; }
+    else if ((m = /^-(\d{3}[MF])$/i.exec(t))) parts.push(m[1].toUpperCase());
+    else if ((m = /^(\d{4})$/.exec(t)) && parts.length) suffixe = m[1];
+    else if ((m = /^M39029\/(\d+)-(\d+)$/i.exec(t))) { m39 = m[1]; refs.push('M39029/' + m[1] + '-' + m[2]); }
+    else if ((m = /^\/(\d+)-(\d+)$/.exec(t))) { m39 = m[1]; refs.push('M39029/' + m[1] + '-' + m[2]); }
+    else if ((m = /^-(\d{3})$/.exec(t)) && m39) refs.push('M39029/' + m39 + '-' + m[1]); });
+  if (suffixe) parts.forEach(p => refs.push('EN3155-' + p + suffixe));
+  return [...new Set(refs)]; }
+function outillageNorme(o) { const reference = String(o.reference || '').trim(); if (!reference) return null;
+  return { familles: LISTE_FAMILLES(o.famille), reference, refs: referencesOutillage(reference), sexe: String(o.sexe || '').trim(), taille: String(o.taille || '').trim(), fut: String(o.fut || '').trim(), jauges: String(o.jauges || '').trim(),
+           dmin: NUMERO(o.dmin), dmax: NUMERO(o.dmax), pince: String(o.pince || '').trim(), positionneur: String(o.positionneur || '').trim(), insertion: String(o.insertion || '').trim(), extraction: String(o.extraction || '').trim(),
+           denudage: NUMERO(o.denudage), bagues: String(o.bagues || '').trim(), note: String(o.note || '').trim(), ...origineStatut(o) }; }
+function obturateurNorme(o) { const famille = String(o.famille || '').trim(); if (!famille) return null;
+  return { famille: cleNorme(famille) || famille, familles: LISTE_FAMILLES(famille), taille: String(o.taille || '').trim().toUpperCase(), tailles: String(o.taille || '').trim().toUpperCase().split(/\s+/).filter(Boolean),
+           obturateur: String(o.obturateur || '').trim(), equivalent: String(o.equivalent || '').trim(), couleur: String(o.couleur || '').trim(), note: String(o.note || '').trim(), ...origineStatut(o) }; }
+function partieEN3155Norme(o) { const partie = String(o.partie || '').trim(); if (!partie) return null; const m = /3155-(\d{3})(?:\s*\/\s*(\d{3}))?/.exec(partie);
+  return { partie, numeros: m ? [m[1], m[2]].filter(Boolean) : [], titre: String(o.titre || '').trim(), type: String(o.type || '').trim(), sexe: String(o.sexe || '').trim(), taille: String(o.taille || '').trim(), terminaison: String(o.terminaison || '').trim(),
+           classe: String(o.classe || '').trim(), emploi: String(o.emploi || '').trim(), tables: String(o.tables || '').trim(), ...origineStatut(o) }; }
+/* Le JOINT ARRIÈRE d'un contact : la ligne de la famille et de la taille, au fût exact s'il y en a une, sinon celle sans
+   fût ; sans fût connu quand la table en distingue plusieurs (EN 4165 16 : fût 16 ou 14), la plus étroite — la plus
+   prudente. Rien si la table ne connaît pas la famille. */
+function jointArriere(norme, famille, taille, fut) { const f = cleNorme(famille), t = tailleCle(taille), J = (normeDesModules(norme).joints || []).filter(j => j.famille === f && j.taille === t); if (!J.length) return null;
+  const exact = fut != null ? J.find(j => j.fut === +fut) : null; if (exact) return exact; const sans = J.find(j => j.fut == null); if (sans) return sans;
+  return J.slice().sort((a, b) => ((b.dmin || 0) - (b.dmax || 0)) - ((a.dmin || 0) - (a.dmax || 0)))[0]; }
+/* LE FIL CONTRE LE JOINT ARRIÈRE : son Ø sur isolant (la base des câbles) dans la plage du joint. Seulement un câble à un
+   conducteur, ni coaxial ni twinax/quadrax (le Ø d'un multiconducteur est celui de sa gaine, pas celui du conducteur qui
+   entre dans le trou : R1). Rend { joint, d, verdict } — « dans », « sous » (le manchon d'étanchéité de la ligne
+   Contacts y pourvoit, sinon c'est à dire), « dessus » (le fil n'entre pas) — ou null quand on ne peut pas juger. */
+function filContreJoint(norme, famille, taille, fut, type, accessoire) { const J = jointArriere(norme, famille, taille, fut); if (!J || (J.dmin == null && J.dmax == null)) return null;
+  const c = cableDuType(norme, type); if (!c || c.diametre == null || c.brins > 1 || /coax|twinax|quadrax|triax|fibre/i.test(c.nature || '')) return { joint: J, d: null, verdict: null };
+  const d = c.diametre, verdict = J.dmax != null && d > J.dmax + 1e-9 ? 'dessus' : J.dmin != null && d < J.dmin - 1e-9 ? 'sous' : 'dans';
+  return { joint: J, d, verdict, manchon: verdict === 'sous' ? (accessoire || '') : '' }; }
+/* L'OUTILLAGE d'un contact : la ligne qui nomme sa référence (EN3155-008M2018 est dans « EN3155-008M / -003F / -009F 2018 »). */
+function outillageDuContact(norme, reference) { const r = cleNorme(reference); if (!r) return null; const O = normeDesModules(norme).outillages || [];
+  return O.find(o => o.refs.some(x => cleNorme(x) === r)) || O.find(o => o.refs.some(x => r.startsWith(cleNorme(x)) || cleNorme(x).startsWith(r))) || null; }
+/* L'OBTURATEUR d'une cavité libre : par famille et taille (la NSA937901 22D, l'EN 3645 20…). Rien quand la table ne le
+   nomme pas (EN 2997, EN 3646, EN 4165 : non publiés). */
+function obturateurDe(norme, famille, taille) { const f = cleNorme(famille), t = tailleCle(taille);
+  return (normeDesModules(norme).obturateurs || []).find(o => o.obturateur && o.familles.includes(f) && o.tailles.includes(t)) || null; }
+/* LA PARTIE EN 3155 d'une référence : EN3155-016M2018 → la ligne « EN 3155-016 » (contact mâle type A serti classe S). */
+function partieDuContact(norme, reference) { const m = /^EN ?3155-?(\d{3})/i.exec(String(reference || '').trim()); if (!m) return null;
+  return (normeDesModules(norme).partiesEN3155 || []).find(p => p.numeros.includes(m[1])) || null; }
 /* L'USAGE d'une variante : « normal » (marqué par la norme), « possible », « A350 » (application spécifique), « à
    confirmer » (la figure ne se lit pas), « diodes ». Les deux derniers et l'A350 ne sont jamais choisis seuls. */
 const usageDe = t => { const u = MOT(t); return /diode/.test(u) ? 'diodes' : /ancien|nouvelle conception|obsolet/.test(u) ? 'ancien' : /a350|ad12|specifique/.test(u) ? 'A350' : /confirm/.test(u) ? 'à confirmer' : /shunt/.test(u) ? 'shuntés' : /masse|ground|terre/.test(u) ? 'masse' : /special/.test(u) ? 'spécial'
@@ -1362,12 +1602,18 @@ function contactAccepte(norme, famille, taille, jauge, sexe, type) { if (jauge =
   const T = tailleDe(norme, famille, taille); return !T || (jauge <= T.jaugeMin && jauge >= T.jaugeMax); }
 // le sexe opposé ; le sexe des contacts d'une prise : la fiche (ce qui arrive) d'un côté, l'embase de l'autre
 const autreSexe = s => s === 'M' ? 'F' : 'M';
+// un nombre à la française pour les phrases du moteur (pas de page ici : `nombre` est à la page) — 09-disjoncteurs s'en sert aussi
+const nombreFr = x => String(Math.round(x * 100) / 100).replace('.', ',').replace(/^-/, '−');
 const nomDuSexe = s => s === 'M' ? 'mâle' : s === 'F' ? 'femelle' : '';
 /* La NOMENCLATURE des contacts d'un plan : chaque contact (et son accessoire) avec son nombre, le plus courant d'abord. */
 function nomenclatureDe(fils) { const m = new Map();
   fils.forEach(x => { if (!x.sertir) return; const k = x.sertir.reference + '\u0001' + (x.sertir.accessoire || '');
-    (m.get(k) || m.set(k, { reference: x.sertir.reference, accessoire: x.sertir.accessoire || '', n: 0 }).get(k)).n++; });
+    (m.get(k) || m.set(k, { reference: x.sertir.reference, accessoire: x.sertir.accessoire || '', statut: x.sertir.statut || '', confiance: x.sertir.confiance || '', outillage: x.sertir.outillage || null, n: 0 }).get(k)).n++; });
   return [...m.values()].sort((a, b) => b.n - a.n || triBornes(a.reference, b.reference)); }
+/* LE CONTACT À SERTIR d'un fil, tel qu'un plan le pose (`sertir`) : la référence et l'accessoire de la ligne Contacts, son
+   statut (« à confirmer » pour une référence que la recherche R1 n'a pas pu vérifier), le fût lu dans la référence (le
+   courant en dépend), l'outillage (pince, positionneur, insertion) quand la table le connaît. */
+const sertirDe = (norme, st) => st ? { reference: st.reference, accessoire: st.accessoire, statut: st.statut || '', confiance: st.confiance || '', fut: (futDeContact(st.reference) || {}).fut != null ? futDeContact(st.reference).fut : null, outillage: outillageDuContact(norme, st.reference) } : null;
 /* Les entrées de bible d'une norme de modules : une par variante — ses groupes sont les « bornes » qu'elle offre. */
 function bibleDesModules(norme) {
   return normeDesModules(norme).modules.map(m => { const ts = [...new Set(m.contacts.map(c => c.taille))].map(t => tailleDe(norme, m.famille, t)).filter(Boolean);
@@ -1425,8 +1671,10 @@ function remplirModules(besoins, norme, choix) { const N = normeDesModules(norme
   const s = k => k > 1 ? 's' : '', verdicts = [], ou = V.module ? 'de ' + V.module.variante : V.famille ? 'de la norme ' + nomDeFamille(N, V.famille) : 'des deux normes';
   restants.forEach(p => { const js = [...new Set(p.fils.map(f => f.jauge).filter(j => j != null))];
     verdicts.push({ niveau: 'ko', texte: `borne${s(p.bornes.length)} ${p.bornes.join('-')} : ${p.fils.length} fil${s(p.fils.length)}${js.length ? ' de jauge ' + js.join(', ') : ''} — aucun groupe ${ou} ne les reçoit`, bornes: p.bornes }); });
-  const fils = modules.flatMap((M, k) => M.places.flatMap(pl => pl.fils.map(([f, c]) => ({ f, contact: c, module: k, groupe: pl.groupe, potentiel: pl.potentiel,
-    taille: c.taille, jaugeOk: f.jauge == null ? null : contactAccepte(N, M.module.famille, c.taille, f.jauge) }))));
+  // chaque fil, son contact à sertir quand la table Contacts connaît la famille (NSA937901, E0599 : les broches EN 3155-016, recherche R1)
+  const fils = modules.flatMap((M, k) => M.places.flatMap(pl => pl.fils.map(([f, c]) => { const st = f.jauge == null ? null : contactDuFil(N, M.module.famille, c.taille, '', f.type, f.jauge);
+    return { f, contact: c, module: k, groupe: pl.groupe, potentiel: pl.potentiel, taille: c.taille, sexe: st ? st.sexe : '',
+      jaugeOk: f.jauge == null ? null : contactAccepte(N, M.module.famille, c.taille, f.jauge), sertir: sertirDe(N, st) }; })));
   const contacts = modules.reduce((n, M) => n + M.module.contacts.length, 0);
   const parRef = new Map(); modules.forEach(M => parRef.set(M.reference, (parRef.get(M.reference) || 0) + 1));
   const reference = [...parRef].map(([r, n]) => (n > 1 ? n + ' × ' : '') + r).join(' + ');
@@ -1487,9 +1735,13 @@ function remplirContacts(points, norme, opts) { opts = opts || {}; const N = nor
   const verdicts = [], modules = [], fils = [];
   if (mieux) { const m = mieux.m;
     modules.push({ module: m, reference: m.reference, places: mieux.r.pl.map(x => ({ potentiel: { bornes: [x.p.borne], fils: x.p.fils }, groupe: m.groupes[x.c.groupe], fils: x.p.fils.map(f => [f, x.c]), perte: 0 })) });
-    mieux.r.pl.forEach(x => x.p.fils.forEach(f => { const sx = sexeFil(f), st = contactDuFil(N, m.famille, x.c.taille, sx, f.type, f.jauge);
+    mieux.r.pl.forEach(x => x.p.fils.forEach(f => { const sx = sexeFil(f), st = contactDuFil(N, m.famille, x.c.taille, sx, f.type, f.jauge), sertir = sertirDe(N, st);
+      const joint = filContreJoint(N, m.famille, x.c.taille, sertir ? sertir.fut : null, f.type, st ? st.accessoire : '');
       fils.push({ f, contact: x.c, module: 0, groupe: m.groupes[x.c.groupe], potentiel: { bornes: [x.p.borne], fils: x.p.fils }, taille: x.c.taille, sexe: sx,
-        jaugeOk: f.jauge == null ? null : contactAccepte(N, m.famille, x.c.taille, f.jauge, sx, f.type), sertir: st ? { reference: st.reference, accessoire: st.accessoire } : null }); }));
+        jaugeOk: f.jauge == null ? null : contactAccepte(N, m.famille, x.c.taille, f.jauge, sx, f.type), sertir, joint }); }));
+    // le fil contre le joint arrière (table Joint arrière) : trop gros, il n'entre pas ; trop fin sans manchon d'étanchéité, l'eau passe
+    fils.forEach(x => { const j = x.joint; if (!j || !j.verdict || j.verdict === 'dans' || (j.verdict === 'sous' && j.manchon)) return; const J = j.joint, plage = (J.dmin != null ? nombreFr(J.dmin) : '?') + '–' + (J.dmax != null ? nombreFr(J.dmax) : '?') + ' mm';
+      verdicts.push({ niveau: 'attention', texte: `borne ${x.potentiel.bornes[0]} : ${x.f.cable || 'fil'} (${x.f.type}, Ø ${nombreFr(j.d)} mm) ${j.verdict === 'dessus' ? 'plus gros que le joint arrière du contact ' + x.contact.lettre + ' n’admet (' + plage + ') : il n’entre pas' : 'sous la plage du joint arrière du contact ' + x.contact.lettre + ' (' + plage + ') et sans manchon d’étanchéité : l’eau passe'}${J.confiance && J.confiance !== 'vérifié' ? ' (plage ' + J.confiance + ')' : ''}`, bornes: x.potentiel.bornes }); });
     mieux.r.manque.forEach(p => verdicts.push({ niveau: 'ko', texte: `borne ${p.borne} : l'arrangement ${m.variante} n'a pas de contact ${p.num}`, bornes: [p.borne] }));
     if (mieux.r.pl.some(x => x.c.lettre !== x.p.num)) verdicts.push({ niveau: 'info', texte: `contacts lettrés : chaque borne numérotée prend la lettre de même rang (${mieux.r.pl.slice(0, 4).map(x => x.p.num + ' → ' + x.c.lettre).join(', ')}${mieux.r.pl.length > 4 ? '…' : ''})`, bornes: [] });
     mieux.r.refus.forEach(({ p, c, ko }) => { const table = contactsDeTaille(N, m.famille, c.taille).length;

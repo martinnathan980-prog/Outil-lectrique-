@@ -44,10 +44,11 @@ ok('un bloc se relit comme une autre table si on le demande (Tailles lu comme Fa
 const N1 = X.lireNorme(T1);
 ok('lireNorme : les mêmes tables qu’avant (N.tables, les entrées), avec brut en plus', N1.tables === 2 && N1.fils.length === 2 && N1.tailles.length === 1 && N1.fils[1].brut.type === 'DR');
 const NE = X.normeEmbarquee();
-ok('la norme embarquée se lit comme avant : 302 modules, 428 contacts, 14 fils, 55 déclassements, 4 réseaux, 223 câbles, 82 manchons', NE.modules.length === 302 && NE.contacts.length === 428 && NE.fils.length === 14 && NE.declassements.length === 55 && NE.reseau.length === 4 && NE.cables.length === 223 && NE.manchons.length === 82 && NE.modules.every(m => m.brut), `${NE.modules.length} modules · ${NE.contacts.length} contacts · ${NE.cables.length} câbles`);
+ok('la norme embarquée se lit : 302 modules, 460 contacts (les 428 des tables SEE et 32 de R1 : barrettes, tailles 23 et 10), 14 fils, 55 déclassements, 4 réseaux, 223 câbles, 112 manchons (les T18 de R3) ; les tables d’octobre 2026 : 45 lignes de toron, 8 chambres, 1 384 masses de raccords, 27 joints arrière, 28 outillages, 21 obturateurs, 43 parties de l’EN 3155', NE.modules.length === 302 && NE.contacts.length === 460 && NE.fils.length === 14 && NE.declassements.length === 55 && NE.reseau.length === 4 && NE.cables.length === 223 && NE.manchons.length === 112 && NE.modules.every(m => m.brut)
+  && NE.torons.length === 45 && NE.chambres.length === 8 && NE.massesRaccords.length === 1384 && NE.joints.length === 27 && NE.outillages.length === 28 && NE.obturateurs.length === 21 && NE.partiesEN3155.length === 43, `${NE.modules.length} modules · ${NE.contacts.length} contacts · ${NE.cables.length} câbles`);
 
 console.log('\n3. LA CLÉ DE FUSION ET LA COMPARAISON');
-ok('chaque table a sa clé, et fusionnerNormes s’en sert', X.TABLES_NORME.every(t => typeof X.CLE_FUSION[t] === 'function') && X.cleDeLigne('fils', NE.fils[0]) === '*/26' && X.cleDeLigne('contacts', NE.contacts[0]).split('/').length === 6);
+ok('chaque table a sa clé, et fusionnerNormes s’en sert', X.TABLES_NORME.every(t => typeof X.CLE_FUSION[t] === 'function') && X.cleDeLigne('fils', NE.fils[0]) === '*/26' && X.cleDeLigne('contacts', NE.contacts[0]).split('/').length === 5);
 // la ligne 26 AWG de l'EN 2853 telle quelle, la ligne 24 AWG avec une autre intensité, une ligne DR 22 que l'embarquée n'a pas
 const N2 = X.lireNorme(X.csvDeTable('fils', [NE.fils[0], { brut: { ...NE.fils[1].brut, intensite: '9' } }, { brut: { type: 'DR', jauge: '22', section: '0,38', resistance20: '55', intensite: '5' } }]));
 const C2 = X.comparerTable('fils', NE.fils, N2.fils);
@@ -60,13 +61,13 @@ const A = X.apportsVides(); A.tables.fils = { lignes: [{ brut: { type: '', jauge
 const NA = X.normeAvecApports(NE, A);
 ok('la norme active : l’embarquée, moins la ligne masquée (26), plus la ligne qui remplace (24 → 9 A) et la ligne ajoutée (ZZ 20)', !NA.fils.some(f => f.jauge === 26) && X.filDeNorme(NA, 'DR24', 24).intensite === 9 && X.filDeNorme(NA, 'ZZ20', 20).intensite === 7 && NA.fils.length === NE.fils.length && NA.modules.length === 302, NA.fils.length + ' fils');
 ok('chaque apport sait d’où il vient (source) ; l’embarqué non', NA.fils.find(f => f.jauge === 24).source === 'essai.csv' && NA.fils.find(f => f.type === 'ZZ').source === 'main' && NA.fils.find(f => f.jauge === 22).source == null);
-ok('sans apports, la norme active est l’embarquée telle quelle', X.normeAvecApports(NE, X.apportsVides()).fils.length === NE.fils.length && X.normeAvecApports(NE, null).contacts.length === 428);
+ok('sans apports, la norme active est l’embarquée telle quelle', X.normeAvecApports(NE, X.apportsVides()).fils.length === NE.fils.length && X.normeAvecApports(NE, null).contacts.length === 460);
 
 console.log('\n5. LES COLONNES DOCUMENTÉES, LES GABARITS, L’ALLER-RETOUR DE CHAQUE TABLE');
 ok('chaque table a un titre, ses colonnes avec libellé, sens, alias, obligatoire', X.TABLES_NORME.every(t => X.TITRES_NORME[t] && X.colonnesDeTable(t).length >= 4 && X.colonnesDeTable(t).every(c => c.libelle && c.sens && Array.isArray(c.alias) && typeof c.obligatoire === 'boolean')), X.TABLES_NORME.map(t => t + ':' + X.colonnesDeTable(t).length).join(' '));
 ok('le libellé de chaque colonne est l’un des alias de son champ (un gabarit se relit tel quel)', X.TABLES_NORME.every(t => X.COLONNES_NORME[t].every(([champ, alias]) => !X.LIBELLES_NORME[t][champ] || alias.includes(X.NORMA(X.LIBELLES_NORME[t][champ])))));
 const gabarits = X.TABLES_NORME.map(t => { const g = X.gabaritCsv(t), B = X.decouperTables(g), N = X.lireNorme(g); return { t, lu: B.length === 1 ? B[0].table : '?', n: B.length === 1 ? (N[B[0].table] || []).length : 0, hesite: B.length === 1 ? B[0].hesite : true }; });
-ok('le gabarit de chacune des vingt-cinq tables (Dommage des fils, la vingt-cinquième, vient de la recherche R2) se relit comme sa table, sans hésiter, avec sa ligne d’exemple', gabarits.every(g => g.lu === g.t && g.n === 1 && !g.hesite), gabarits.filter(g => !(g.lu === g.t && g.n === 1 && !g.hesite)).map(g => g.t + '→' + g.lu + ':' + g.n + (g.hesite ? ' hésite' : '')).join(' ') || 'tous');
+ok('le gabarit de chacune des trente-deux tables (Dommage des fils vient de la recherche R2, les sept d’octobre 2026 de R1 et R3) se relit comme sa table, sans hésiter, avec sa ligne d’exemple', gabarits.every(g => g.lu === g.t && g.n === 1 && !g.hesite), gabarits.filter(g => !(g.lu === g.t && g.n === 1 && !g.hesite)).map(g => g.t + '→' + g.lu + ':' + g.n + (g.hesite ? ' hésite' : '')).join(' ') || 'tous');
 const allers = X.TABLES_NORME.map(t => { const csv = X.csvDeTable(t, NE[t], 'Aller-retour ' + t), N = X.lireNorme(csv); const cles = xs => xs.map(x => X.cleDeLigne(t, x)).sort().join('\n');
   return { t, n0: NE[t].length, n1: (N[t] || []).length, memes: cles(NE[t]) === cles(N[t] || []), contenu: NE[t].every((x, i) => (N[t] || []).some(y => X.memeLigne(x, y))) }; });
 ok('chaque table embarquée exportée en CSV se relit à l’identique (mêmes lignes, mêmes clés, même contenu lu)', allers.every(a => a.n0 === a.n1 && a.memes && a.contenu), allers.filter(a => !(a.n0 === a.n1 && a.memes && a.contenu)).map(a => a.t + ' ' + a.n0 + '→' + a.n1 + (a.memes ? '' : ' clés≠') + (a.contenu ? '' : ' contenu≠')).join(' ; ') || X.TABLES_NORME.length + ' tables');
@@ -102,14 +103,14 @@ function excelEssai() { const wb = XLSX.utils.book_new();
 
   console.log('\nla page des normes');
   await page.evaluate(() => ficheNormes()); await page.waitForTimeout(500);
-  okp(await page.evaluate(() => app.fiche && app.fiche.mode === 'normes') && await q('.nm-dom') === 8 && await q('.nm-table[data-vue]') === 27 && await q('.nm-table.nm-contrats') === 1, 'huit domaines, vingt-sept vues des vingt-cinq tables (la table Dommage des fils n’a pas encore sa vue : 08-normes.js ; modules, tailles et familles coupées entre barrettes et connecteurs), la carte des contrats déjà faits', (await q('.nm-dom')) + ' domaines · ' + (await q('.nm-table[data-vue]')) + ' vues');
-  okp(/25 tables/.test(await texte('.nm-etat')) && /rien d’importé/.test(await texte('.nm-etat')), 'l’état : vingt-cinq tables, rien d’importé ni de modifié', await texte('.nm-etat'));
+  okp(await page.evaluate(() => app.fiche && app.fiche.mode === 'normes') && await q('.nm-dom') === 8 && await q('.nm-table[data-vue]') === 35 && await q('.nm-table.nm-contrats') === 1, 'huit domaines, trente-cinq vues des trente-deux tables (la table Dommage des fils n’a pas encore sa vue ; modules, tailles, familles et accessoires coupés entre barrettes et connecteurs ; les sept tables d’octobre 2026 : toron, chambres, masses des raccords, joints, outillages, obturateurs, parties de l’EN 3155), la carte des contrats déjà faits', (await q('.nm-dom')) + ' domaines · ' + (await q('.nm-table[data-vue]')) + ' vues');
+  okp(/32 tables/.test(await texte('.nm-etat')) && /rien d’importé/.test(await texte('.nm-etat')), 'l’état : trente-deux tables, rien d’importé ni de modifié', await texte('.nm-etat'));
   okp(await page.evaluate(() => { const f = document.getElementById('fiche'); return f.offsetWidth > 800 && !f.hidden; }), 'la page est plus large que la bible (les tables ont jusqu’à seize colonnes)', await page.evaluate(() => document.getElementById('fiche').offsetWidth + ' px'));
   await page.click('#fiche .nm-table[data-vue="contacts"] .nm-t-tete'); await page.waitForTimeout(400);
-  okp(await q('.nm-table[data-vue="contacts"] .nm-doc dt') === 5 && /juge la jauge/.test(await texte('.nm-table[data-vue="contacts"] .nm-doc')) && /Changer/.test(await texte('.nm-table[data-vue="contacts"] .nm-doc')), 'la table dépliée dit d’où elle vient (la source entière), ce qu’elle sert, qui la lit, comment une ligne se choisit (automatique, et « Changer »)');
-  okp(await q('.nm-table[data-vue="contacts"] tbody tr[data-cle]') === 120 && /308 lignes restantes/.test(await texte('.nm-table[data-vue="contacts"] .nm-plus')), 'les 120 premières lignes, et les 308 restantes sur demande');
+  okp(await q('.nm-table[data-vue="contacts"] .nm-doc dt') === 6 && /juge la jauge/.test(await texte('.nm-table[data-vue="contacts"] .nm-doc')) && /Changer/.test(await texte('.nm-table[data-vue="contacts"] .nm-doc')), 'la table dépliée dit d’où elle vient (la source entière), ce qu’elle sert, qui la lit, comment une ligne se choisit (automatique, et « Changer »), ce qui manque (les points à relire de R1)');
+  okp(await q('.nm-table[data-vue="contacts"] tbody tr[data-cle]') === 120 && /340 lignes restantes/.test(await texte('.nm-table[data-vue="contacts"] .nm-plus')), 'les 120 premières lignes, et les 340 restantes sur demande (460 contacts : les 32 de R1 en plus)');
   await page.click('#fiche .nm-table[data-vue="contacts"] .nm-voir-cols'); await page.waitForTimeout(300);
-  okp(await q('.nm-table[data-vue="contacts"] .nm-cols dt') === 8 && /obligatoire/.test(await texte('.nm-table[data-vue="contacts"] .nm-note')), 'les colonnes expliquées : huit, les obligatoires marquées');
+  okp(await q('.nm-table[data-vue="contacts"] .nm-cols dt') === 10 && /obligatoire/.test(await texte('.nm-table[data-vue="contacts"] .nm-note')), 'les colonnes expliquées : dix (Source et Statut de chaque ligne en plus), les obligatoires marquées');
   await page.fill('#fiche .nm-table[data-vue="contacts"] input[data-filtre]', 'EN3155-003F2020'); await page.waitForTimeout(400);
   const nFiltre = await q('.nm-table[data-vue="contacts"] tbody tr[data-cle]');
   okp(nFiltre > 0 && nFiltre < 20 && await q('.nm-table[data-vue="contacts"] tbody tr[data-cle]', 'xs => xs.every(tr => /EN3155-003F2020/.test(tr.textContent))'), 'le filtre d’une table', nFiltre + ' lignes');
@@ -121,7 +122,7 @@ function excelEssai() { const wb = XLSX.utils.book_new();
   console.log('\nmodifier une ligne');
   const cle0 = await q('.nm-table[data-vue="contacts"] tbody tr[data-cle]', 'xs => xs[0].dataset.cle');
   await page.dblclick('#fiche .nm-table[data-vue="contacts"] tbody tr[data-cle]'); await page.waitForTimeout(400);
-  okp(await q('.nm-table[data-vue="contacts"] tr.nm-edition') === 1 && await q('.nm-table[data-vue="contacts"] tr.nm-edition input.nm-champ') === 8 && await page.evaluate(() => document.activeElement && document.activeElement.classList.contains('nm-champ')), 'double-clic : la ligne devient huit champs, le premier a le focus');
+  okp(await q('.nm-table[data-vue="contacts"] tr.nm-edition') === 1 && await q('.nm-table[data-vue="contacts"] tr.nm-edition input.nm-champ') === 10 && await page.evaluate(() => document.activeElement && document.activeElement.classList.contains('nm-champ')), 'double-clic : la ligne devient dix champs (Source et Statut compris), le premier a le focus');
   await page.keyboard.press('Escape'); await page.waitForTimeout(300);
   okp(await q('.nm-table[data-vue="contacts"] tr.nm-edition') === 0 && await page.evaluate(() => app.fiche && app.fiche.mode === 'normes'), 'Échap annule sans fermer la page');
   await page.dblclick('#fiche .nm-table[data-vue="contacts"] tbody tr[data-cle]'); await page.waitForTimeout(300);
@@ -200,7 +201,7 @@ function excelEssai() { const wb = XLSX.utils.book_new();
   console.log('\nau téléphone');
   await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(400);
   await page.evaluate(() => { fermerFiche(true); ficheNormes({ table: 'contacts' }); }); await page.waitForTimeout(600);
-  okp(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1 && !document.getElementById('fiche').hidden && document.querySelectorAll('#fiche .nm-table').length === 28), 'la page tient dans la largeur du téléphone, en tiroir');
+  okp(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1 && !document.getElementById('fiche').hidden && document.querySelectorAll('#fiche .nm-table').length === 36), 'la page tient dans la largeur du téléphone, en tiroir');
   okp(await page.evaluate(() => { const z = document.querySelector('#fiche .nm-table[data-vue="contacts"] .nm-defile'); return !!z && z.scrollWidth > z.clientWidth && getComputedStyle(z).overflowX === 'auto'; }), 'une table large défile de côté, sans écraser une valeur');
   okp(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
   console.log('\n  ' + (ko || echecs ? (ko + echecs) + ' échec(s)' : 'tout tient'));
