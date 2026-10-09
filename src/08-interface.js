@@ -50,14 +50,16 @@ const telephone = () => window.innerWidth <= 700;
 /* Le folio tel que le moteur le reçoit : ses liaisons complètes, chaque dédoublement devenu une barrette à poser
    (01, `avecBarrettesAPoser`). Le même tableau tant que rien ne change : le dessin, les clics et la fiche lisent les
    mêmes objets (le fil n° i du dessin est la liaison n° i). Les barrettes à poser se numérotent d'un bout à l'autre du
-   contrat, dans l'ordre des folios : un seul VT1, et l'index comme la pastille de contrôle le retrouvent sans ambiguïté. */
+   contrat, dans l'ordre des folios : un seul VT1, et l'index comme la pastille de contrôle le retrouvent sans ambiguïté.
+   Le numéro TIENT (`app.contrat.provisoires`, gardée avec le contrat) : poser VT1 ne renomme pas VT2 en VT1. */
 const folios = new Map();
 const signature = L => JSON.stringify(L.map(l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable, l.type, l.pnDe, l.pnVers, l.route]));
 function liaisonsDe(plan) { const L0 = app.contrat.liaisons.filter(liaisonComplete), L = plan === '*' ? L0 : L0.filter(l => l.plan === plan);
   const P = plans(), depart = plan === '*' ? 0 : P.slice(0, Math.max(0, P.indexOf(plan))).reduce((n, p) => n + dedoublements(L0.filter(l => l.plan === p)).length, 0);
   const g = folios.get(plan), sig = depart + '|' + signature(L);
   if (g && g.sig === sig && g.L.length === L.length && g.L.every((l, i) => l === L[i])) return g.sortie;
-  const sortie = avecBarrettesAPoser(L, depart); folios.set(plan, { L, sig, sortie }); return sortie; }
+  if (!app.contrat.provisoires) app.contrat.provisoires = new Map();
+  const sortie = avecBarrettesAPoser(L, depart, app.contrat.provisoires); folios.set(plan, { L, sig, sortie }); return sortie; }
 const liaisonsDuPlan = () => liaisonsDe(app.plan);
 /* Le placement d'un folio se garde tant que ses liaisons ne changent pas : le
    concours du folio chargé prend quelques secondes, revenir sur un folio déjà
@@ -1313,7 +1315,7 @@ function annuler() { const p = app.hist.pop(); if (!p) return null;
 let sauveT = null;
 function sauver() { clearTimeout(sauveT); sauveT = setTimeout(() => { try {
     localStorage.setItem(CLE_CONTRAT, JSON.stringify({ liaisons: app.contrat.liaisons, source: app.source, nFolios: app.nFolios, budget: app.budget, plan: app.plan, nom: app.nom,
-      designations: [...app.contrat.designations], sexes: [...(app.contrat.sexes || [])], charges: [...(app.contrat.charges || [])], raccords: [...(app.contrat.raccords || [])], cartouche: app.contrat.cartouche, t: Date.now() }));
+      designations: [...app.contrat.designations], sexes: [...(app.contrat.sexes || [])], charges: [...(app.contrat.charges || [])], raccords: [...(app.contrat.raccords || [])], provisoires: [...(app.contrat.provisoires || [])], cartouche: app.contrat.cartouche, t: Date.now() }));
     heureSauve(Date.now()); } catch (_) { heureSauve(null); } }, 400); }
 function heureSauve(t) { const el = $('ctx-sauve');
   if (!t) { el.textContent = 'non enregistré'; el.classList.add('ko'); el.title = 'Le navigateur refuse d’enregistrer (navigation privée ?). Le travail tient tant que l’onglet est ouvert.'; return; }
@@ -1322,7 +1324,7 @@ function heureSauve(t) { const el = $('ctx-sauve');
 function relire() { try { const j = localStorage.getItem(CLE_CONTRAT); if (!j) return false; const o = JSON.parse(j);
     if (!o || !o.liaisons || !o.liaisons.length) return false;
     app.contrat.liaisons = o.liaisons.map(liaison); app.source = o.source ? o.source.map(liaison) : null; app.nFolios = o.nFolios || 0; app.budget = o.budget || 16; app.plan = o.plan || '*'; app.nom = o.nom || '';
-    app.contrat.designations = new Map(o.designations || []); app.contrat.sexes = new Map(o.sexes || []); app.contrat.charges = new Map(o.charges || []); app.contrat.raccords = new Map(o.raccords || []); if (o.cartouche) Object.assign(app.contrat.cartouche, o.cartouche);
+    app.contrat.designations = new Map(o.designations || []); app.contrat.sexes = new Map(o.sexes || []); app.contrat.charges = new Map(o.charges || []); app.contrat.raccords = new Map(o.raccords || []); app.contrat.provisoires = new Map(o.provisoires || []); if (o.cartouche) Object.assign(app.contrat.cartouche, o.cartouche);
     const P = plans(); if (app.plan === '*' && P.length > 1) app.plan = P[0];
     redessiner(); ajuster(); heureSauve(o.t || Date.now()); return true; } catch (_) { return false; } }
 

@@ -17,6 +17,9 @@ const atelier = {
   audit() { return app.dessin ? auditer(app.dessin) : { ok: false, fils: 0, droits: 0, tauxDroits: 1, croisements: 0, filsDansBloc: 0, blocsChevauches: 0, blocs: 0 }; },
   /* l'affinage (08) : endormi sous pilote automatique, pour que les bancs mesurent le concours ; réveillé ici */
   affinage(on) { affinage.actif = !!on; if (on) { relireAffines(); affinerTout(); } return atelier.etatAffinage(); },
+  /* le placement d'un folio jamais vu (08) : au loin dans un Worker, sauf sous pilote (synchrone) ; réveillé ici */
+  placement(on) { return placementAilleurs(on); },
+  etatPlacement() { return etatPlacement(); },
   etatAffinage() { return { actif: affinage.actif, encours: affinage.encours ? affinage.encours.cle.length : 0, attente: affinage.file.length, finis: affinage.finis.size, etat: affinage.etat, worker: affinage.worker === false ? 'refusé' : affinage.worker ? 'oui' : 'pas encore', erreur: affinage.erreur || null }; },
   app
 };
