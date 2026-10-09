@@ -3,9 +3,9 @@
    Les jetons (couleurs, typo, espacements) sont dans style.css ; ici, seulement ce qui est propre à ce domaine.
    Les couleurs d'état, celles de tout l'outil : vert = la machine l'a et nous pas (à reprendre), ambre = ça diffère ou
    c'est proposé à confirmer ; le neutre (un fond gris, un filet gris) = ce que nous avons en plus, ni à reprendre ni à
-   voir ; l'encre secondaire = ce qui est pareil ; le cyan, seulement ce qui se presse et l'équipement comparé (choisi).
+   voir ; l'encre secondaire = ce qui est pareil ; l'encre, seulement ce qui se presse et l'équipement comparé (choisi).
    ═══════════════════════════════════════════════════════════════════════ */
-/* ─── le repère décodé : zone · code · ordre · variante, en chasse fixe, la nature au survol (aucun cyan : il ne se
+/* ─── le repère décodé : zone · code · ordre · variante, en chasse fixe, la nature au survol (aucune encre forte : il ne se
    presse pas) ─── */
 .rp{font:600 var(--f-12) var(--mono);color:var(--t-1);white-space:nowrap;letter-spacing:.01em}
 .rp .rp-zone{color:var(--t-2);font-weight:500}
@@ -13,15 +13,15 @@
 .rp .rp-var{color:var(--t-2)}
 
 /* ─── « Déjà fait » sur la fiche : une ligne par machine, le taux, le repère en mots, la machine, le dessin ─── */
-.fi-deja .fi-ref{font:700 var(--f-16)/1.25 var(--titre);letter-spacing:.01em}
+.fi-deja .fi-ref{font:600 var(--f-16)/1.25 var(--titre);letter-spacing:.01em}
 .fi-deja .cd-compte{margin-left:auto;font-size:var(--f-11);color:var(--t-3);white-space:nowrap}
 .cd-liste{gap:2px}
 .fi-cand{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;column-gap:10px;padding:8px;border-radius:var(--r-1);cursor:pointer;transition:background var(--rapide)}
 .fi-cand:hover{background:var(--s-hover)}
-/* le focus au clavier : l'anneau cyan, distinct du gris du survol */
+/* le focus au clavier : l'anneau d'encre, distinct du gris du survol */
 .fi-cand:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 /* le taux : une lecture d'instrument, en B612, dans sa case colorée selon ce qu'il vaut */
-.cd-taux{display:inline-flex;align-items:center;justify-content:center;min-width:48px;height:24px;padding:0 8px;border-radius:var(--r-1);font:700 var(--f-12)/1 var(--titre);font-variant-numeric:tabular-nums;white-space:nowrap;background:var(--s-sunken);color:var(--t-2)}
+.cd-taux{display:inline-flex;align-items:center;justify-content:center;min-width:48px;height:24px;padding:0 8px;border-radius:var(--r-1);font:600 var(--f-12)/1 var(--titre);font-variant-numeric:tabular-nums;white-space:nowrap;background:var(--s-sunken);color:var(--t-2)}
 .cd-taux b{font-weight:inherit}
 .fi-cand.cd-ok .cd-taux{background:var(--ok-soft);color:var(--ok)}
 .fi-cand.cd-att .cd-taux{background:var(--warn-soft);color:var(--warn)}
@@ -53,7 +53,7 @@
 .cp-manque{background:var(--ok-soft)}
 .cp-differe{background:var(--warn-soft)}
 .cp-identique{color:var(--t-2)}
-/* en plus chez nous : neutre — un fond gris et un filet gris, rien qui ressemble à une ligne choisie (cyan) */
+/* en plus chez nous : neutre — un fond gris et un filet gris, rien qui ressemble à une ligne choisie (gris doux) */
 .cp-enplus{background:var(--s-sunken);box-shadow:inset 3px 0 0 var(--s-line-2)}
 .fi-groupe.cp-manque,.fi-groupe.cp-differe,.fi-groupe.cp-identique,.fi-groupe.cp-enplus{background:none;box-shadow:none}
 .fi-groupe.cp-manque{color:var(--ok)}
@@ -84,9 +84,9 @@
 .fwd[hidden]{display:none}
 .fw-boite{display:flex;flex-direction:column;width:100%;height:100%;max-width:1680px;overflow:hidden;background:var(--s-surface);color:var(--t-1);border-radius:var(--r-3);box-shadow:var(--sh-2)}
 .fw-tete{display:flex;align-items:center;gap:12px;padding:12px 16px 12px 20px;border-bottom:1px solid var(--s-line)}
-.fw-tete .sur{font:400 10px var(--titre);letter-spacing:.12em;text-transform:uppercase;color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fw-tete .sur{font:500 var(--f-12) var(--sans);letter-spacing:0;color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* le nom du dessin en titre : en B612, comme tous les titres */
-.fw-tete .titre{margin:1px 0 0;font:700 var(--f-20)/1.2 var(--titre);letter-spacing:.01em}
+.fw-tete .titre{margin:1px 0 0;font:600 var(--f-20)/1.2 var(--titre);letter-spacing:.01em}
 .fw-outils{display:flex;gap:6px;flex:none}
 .fw-tete .fi-x{flex:none;width:32px;height:32px;border-radius:50%;border:none;background:none;color:var(--t-2);display:grid;place-items:center;cursor:pointer}
 .fw-tete .fi-x:hover{background:var(--s-hover);color:var(--t-1)}
@@ -100,11 +100,11 @@
 .fw-resume{display:flex;flex-direction:column;gap:8px;padding:12px 16px;border-bottom:1px solid var(--s-line)}
 /* les chiffres du dessin, dits une fois (la tête ne les répète pas) : des lectures d'instrument, en B612 */
 .fw-chiffres{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:var(--f-12);color:var(--t-2)}
-.fw-chiffres b{font:700 var(--f-16)/1.2 var(--titre);color:var(--t-1);font-variant-numeric:tabular-nums;margin-right:4px}
+.fw-chiffres b{font:600 var(--f-16)/1.2 var(--titre);color:var(--t-1);font-variant-numeric:tabular-nums;margin-right:4px}
 .fw-natures{margin:0;font-size:var(--f-11);color:var(--t-2);line-height:1.45}
 .fw-bilan{display:flex;flex-wrap:wrap;gap:4px}
 /* une pastille : la recette de tout l'outil pour un mot d'état dans sa case (.nm-badge, .verdict) */
-.fw-pastille{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 8px;border-radius:var(--r-1);font:400 10px/1 var(--titre);letter-spacing:.1em;text-transform:uppercase;background:var(--s-sunken);color:var(--t-1);white-space:nowrap}
+.fw-pastille{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 8px;border-radius:var(--r-1);font:500 var(--f-12)/1 var(--sans);letter-spacing:0;background:var(--s-sunken);color:var(--t-1);white-space:nowrap}
 .fw-pastille b{font-weight:inherit}
 .fw-pastille.manque,.fw-pastille.fil-manque{background:var(--ok-soft);color:var(--ok)}
 .fw-pastille.propose,.fw-pastille.differe{background:var(--warn-soft);color:var(--warn)}
@@ -120,7 +120,7 @@
 .fw-legende i.fil-manque,.fw-legende i.fil-differe{height:0;border-width:0 0 2px;border-radius:0;background:none;border-style:dashed}
 .fw-legende i.fil-manque{border-color:var(--ok)}
 .fw-legende i.fil-differe{border-color:var(--warn)}
-/* la recherche de la colonne : une bande (pas une boîte) ; on y écrit, un trait cyan la souligne */
+/* la recherche de la colonne : une bande (pas une boîte) ; on y écrit, un trait d'encre la souligne */
 .fw-cherche{display:flex;align-items:center;gap:8px;padding:4px 16px;border-bottom:1px solid var(--s-line);transition:box-shadow var(--rapide)}
 .fw-cherche:focus-within{box-shadow:inset 0 -2px 0 var(--accent)}
 .fw-cherche svg.ico{width:16px;height:16px;color:var(--t-3);flex:none}
@@ -128,7 +128,7 @@
 .fw-cherche input{flex:1;min-width:0;border:none;background:none;font:inherit;font-size:var(--f-13);color:var(--t-1);padding:6px 0}
 .fw-cherche input:focus{outline:none}
 .fw-liste{list-style:none;margin:0;padding:8px 8px 16px;flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
-/* un équipement : son voyant (le carré de 8 px de tout l'outil), puis ce qu'il est ; le focus au clavier, l'anneau cyan */
+/* un équipement : son voyant (le carré de 8 px de tout l'outil), puis ce qu'il est ; le focus au clavier, l'anneau d'encre */
 .fw-eq{display:grid;grid-template-columns:8px minmax(0,1fr);column-gap:8px;padding:8px;border-radius:var(--r-1);cursor:pointer;transition:background var(--rapide)}
 .fw-eq:hover,.fw-eq.vise{background:var(--s-hover)}
 .fw-eq:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
@@ -154,14 +154,14 @@
 .fw-eq-n{font-size:var(--f-11);color:var(--t-3)}
 .fw-vide{padding:16px 8px;color:var(--t-3);font-size:var(--f-12)}
 /* sur la feuille (du papier : des couleurs d'encre, littérales) : chaque bloc selon ce qu'il devient chez nous, les fils
-   qui manquent ou diffèrent en pointillé (la couleur de la route reste) ; le bloc choisi dans la colonne en cyan plein,
-   celui qu'on survole en cyan pointillé (le même cyan : une seule couleur pour « ce qu'on vise ») */
+   qui manquent ou diffèrent en pointillé (la couleur de la route reste) ; le bloc choisi dans la colonne à l'encre pleine,
+   celui qu'on survole en pointillé (la même encre : une seule couleur pour « ce qu'on vise ») */
 #fw-vue .fw-chez .body,#fw-vue .fw-chez .bstrip,#fw-vue .fw-chez .fiche,#fw-vue .fw-chez .embase{fill:#f2f4f7}
 #fw-vue .fw-manque .body,#fw-vue .fw-manque .bstrip,#fw-vue .fw-manque .fiche,#fw-vue .fw-manque .embase{fill:#e8f5ee;stroke:#1a7f4b;stroke-width:1.3;stroke-dasharray:4 2.5}
 #fw-vue .fw-propose .body,#fw-vue .fw-propose .bstrip,#fw-vue .fw-propose .fiche,#fw-vue .fw-propose .embase{fill:#fdf3e4;stroke:#b45309;stroke-width:1.3;stroke-dasharray:4 2.5}
-#fw-vue .fw-cible .body,#fw-vue .fw-cible .bstrip,#fw-vue .fw-cible .fiche,#fw-vue .fw-cible .embase{stroke:#08798f;stroke-width:2}
-#fw-vue .fw-on .body,#fw-vue .fw-on .bstrip,#fw-vue .fw-on .fiche,#fw-vue .fw-on .embase{stroke:#08798f;stroke-width:2.4;stroke-dasharray:none}
-#fw-vue .fw-vise .body,#fw-vue .fw-vise .bstrip,#fw-vue .fw-vise .fiche,#fw-vue .fw-vise .embase{stroke:#08798f;stroke-width:2;stroke-dasharray:4 2.5}
+#fw-vue .fw-cible .body,#fw-vue .fw-cible .bstrip,#fw-vue .fw-cible .fiche,#fw-vue .fw-cible .embase{stroke:#1d1d1f;stroke-width:2.4}
+#fw-vue .fw-on .body,#fw-vue .fw-on .bstrip,#fw-vue .fw-on .fiche,#fw-vue .fw-on .embase{stroke:#1d1d1f;stroke-width:2.8;stroke-dasharray:none}
+#fw-vue .fw-vise .body,#fw-vue .fw-vise .bstrip,#fw-vue .fw-vise .fiche,#fw-vue .fw-vise .embase{stroke:#1d1d1f;stroke-width:2.2;stroke-dasharray:4 2.5}
 #fw-vue .cab.fw-l-manque{stroke-dasharray:5 3;stroke-width:1.7}
 #fw-vue .cab.fw-l-differe{stroke-dasharray:2 2.4;stroke-width:1.7}
 @media (max-width:900px){

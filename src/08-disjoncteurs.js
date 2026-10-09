@@ -363,3 +363,11 @@ function lierGraphique(sec, nom, E, lire, ecrire) { const d = E.d, fig = sec.que
     b.onpointerenter = b.onfocus = () => isoler(true); b.onpointerleave = b.onblur = () => isoler(false); });
   svg.querySelectorAll('.dj-pt').forEach(g => { g.addEventListener('focus', () => { const pt = d.points.find(x => x.k === g.dataset.k), c = g.querySelector('.dj-point'); if (pt && c) montrer({ x: +c.getAttribute('cx'), y: +c.getAttribute('cy') }, cartePoint(pt)); });
     g.addEventListener('blur', cacher); }); }
+
+/* LES SECTIONS DU DISJONCTEUR, pour la fiche à sections (08-sections.js) : ce que sa fiche porte en propre — le
+   meilleur calibre, la courbe, le profil de charge, ses fils et leur intensité, la chute, le détail du calcul. La fiche
+   commune y ajoute l'identité, le connecteur, les contacts, l'habillage, « déjà fait » et les problèmes.
+   Contrat : rend une liste de sections { cle, titre?, resume?, badge?, contenu, vide? } (voir ficheSection), les clés
+   parmi 'calibre', 'courbe', 'profil', 'fils', 'chute', 'detail'. Pour l'instant, la disjonction d'aujourd'hui en
+   une section ; la fiche du disjoncteur la refait. */
+function sectionsDisjoncteur(nom, vt) { return [{ cle: 'calibre', titre: 'Calibre et courbe', contenu: ficheDisjonction(nom, vt) }]; }

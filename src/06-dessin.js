@@ -87,7 +87,7 @@ function styleDessin() {
      .cartA{fill:#7d8893;font-size:6.5px;font-weight:700;letter-spacing:1.6px}
      .legnom{fill:#111b25;font-size:8px;font-weight:700;letter-spacing:.3px}
      .legn{fill:#7d8893;font-size:7px;font-weight:600}
-     .selbox{fill:none;stroke:#08798f;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+     .selbox{fill:none;stroke:#1d1d1f;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
      .comp{cursor:pointer;transition:opacity .12s}
      .focus .cab,.focus .jn{opacity:.10}
      .focus .comp{opacity:.28}

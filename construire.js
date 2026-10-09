@@ -19,11 +19,12 @@ const modules = fs.readdirSync(SRC).filter(f => /^\d\d-.*\.js$/.test(f)).sort();
 const css  = ['style.css', ...fs.readdirSync(SRC).filter(f => /^style-.*\.css$/.test(f)).sort()].map(f => `/* ───────── ${f} ───────── */\n` + fs.readFileSync(path.join(SRC, f), 'utf8')).join('\n');
 const page = fs.readFileSync(path.join(SRC, 'page.html'), 'utf8');
 /* LES POLICES, embarquées : polices/<famille>-<sous-ensemble>-<graisse>-<style>.woff2 devient une @font-face en data:
-   URI — aucune police réseau, l'outil reste un fichier hors ligne (polices/LISEZMOI.md). B612 : la police des écrans de
-   cockpit Airbus, pour les titres et les étiquettes ; IBM Plex Sans pour le texte, IBM Plex Mono pour les données. Le
-   sous-ensemble « latin » porte le texte ; « symboles » (flèches, √ ≤ ≥ ≈ ∞…) et « grec » (Ω Δ φ ρ…) ne se chargent
-   que pour leurs caractères (unicode-range) : un mΩ/m ou un √3 reste dans la police de la phrase. */
-const POLICES = path.join(ICI, 'polices'), FAMILLES = { 'b612': 'B612', 'ibm-plex-sans': 'IBM Plex Sans', 'ibm-plex-mono': 'IBM Plex Mono' };
+   URI — aucune police réseau, l'outil reste un fichier hors ligne (polices/LISEZMOI.md). Inter pour le texte et les
+   titres, JetBrains Mono pour les identifiants. Le sous-ensemble « latin » porte le texte ; « grec » (Ω Δ φ ρ…) ne se
+   charge que pour ses caractères (unicode-range) : un mΩ/m reste dans la police de la phrase ; les flèches et les
+   signes (→ ⇄ √ ≤ ≥ ≈ ∞ ✓), qu'Inter et JetBrains Mono n'ont pas dans ces sous-ensembles, viennent du sous-ensemble
+   « symboles » d'IBM Plex, la police suivante de la pile. */
+const POLICES = path.join(ICI, 'polices'), FAMILLES = { 'inter': 'Inter', 'jetbrains-mono': 'JetBrains Mono', 'ibm-plex-sans': 'IBM Plex Sans', 'ibm-plex-mono': 'IBM Plex Mono' };
 const PLAGES = { latin: '', symboles: 'U+2190-2194,U+21B6,U+21C4,U+2212,U+221A,U+221E,U+2248,U+2260,U+2264-2265,U+2713', grec: 'U+0394,U+03A3,U+03A6,U+03A9,U+03BB,U+03C0,U+03C1,U+03C6' };
 const polices = fs.existsSync(POLICES) ? fs.readdirSync(POLICES).filter(f => /\.woff2$/.test(f)).sort().map(f => {
   const m = /^(.+)-(latin|symboles|grec)-(\d{3})-(normal|italic)\.woff2$/.exec(f); if (!m || !FAMILLES[m[1]]) return '';

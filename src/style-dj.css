@@ -12,13 +12,13 @@
 .dj-gamme{display:flex;flex-direction:column;gap:8px}
 .dj-gamme-t{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 .dj-ideal{display:inline-flex;align-items:center;gap:2px;font-size:var(--f-11);color:var(--t-2);white-space:nowrap}
-.dj-ideal b,.dj-dou b{font:700 var(--f-11) var(--titre);color:var(--t-1)}
+.dj-ideal b,.dj-dou b{font:600 var(--f-11) var(--titre);color:var(--t-1)}
 .dj-dou b.id{font:600 var(--f-11) var(--mono)}
 /* l'étoile de l'idéal : une icône pleine, ambre */
 .dj-etoile{display:inline-flex;font-style:normal;color:var(--warn);margin-right:2px}
 .dj-etoile svg.ico{width:12px;height:12px;stroke:none}
 .dj-chips{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--s-line-2);border-radius:var(--r-1);overflow:hidden;background:var(--s-surface)}
-.dj-chip{position:relative;height:40px;border:none;border-right:1px solid var(--s-line);background:var(--s-surface);font:700 var(--f-14) var(--titre);color:var(--t-2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:2px;padding:0 2px 4px;transition:background var(--rapide),color var(--rapide)}
+.dj-chip{position:relative;height:40px;border:none;border-right:1px solid var(--s-line);background:var(--s-surface);font:600 var(--f-14) var(--titre);color:var(--t-2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:2px;padding:0 2px 4px;transition:background var(--rapide),color var(--rapide)}
 .dj-chip:last-child{border-right:none}
 .dj-chip::after{content:"";position:absolute;left:8px;right:8px;bottom:4px;height:3px;border-radius:2px;background:var(--s-line);transition:background var(--rapide)}
 .dj-chip .dj-etoile svg.ico{width:10px;height:10px}
@@ -43,7 +43,7 @@
 .dj-graphe .dj-grad{fill:var(--t-3)}
 .dj-graphe .dj-titre{font-weight:600;fill:var(--t-2);letter-spacing:.02em}
 /* « tient » et « déclenche » : des mots d'instrument, pleins, détachés des courbes par un halo */
-.dj-graphe .dj-zone-t{font:400 10px var(--titre);letter-spacing:.12em;text-transform:uppercase;paint-order:stroke;stroke:var(--s-surface);stroke-width:3px;stroke-linejoin:round}
+.dj-graphe .dj-zone-t{font:500 var(--f-12) var(--sans);letter-spacing:0;paint-order:stroke;stroke:var(--s-surface);stroke-width:3px;stroke-linejoin:round}
 .dj-graphe .dj-zone-t.ok{fill:var(--ok)}
 .dj-graphe .dj-zone-t.ko{fill:var(--ko)}
 .dj-graphe .dj-grille{stroke:var(--s-line);stroke-width:.75}
@@ -60,11 +60,11 @@
 .dj-graphe svg.isole .dj-courbe:not(.vise){opacity:.14}
 .dj-graphe svg.isole .dj-courbe.vise{stroke-width:2.5}
 .dj-graphe svg.isole .dj-bande{fill-opacity:.05}
-.dj-graphe .dj-cal-etiq{font:700 9.5px var(--titre);fill:var(--t-1)}
+.dj-graphe .dj-cal-etiq{font:600 var(--f-11) var(--titre);fill:var(--t-1)}
 .dj-graphe .dj-fantome{transition:opacity var(--moyen)}
 .dj-graphe .dj-fantome path{fill:none;stroke:var(--t-3);stroke-width:.9;opacity:.5;transition:opacity var(--rapide),stroke var(--rapide),stroke-width var(--rapide)}
 .dj-graphe .dj-fantome .dj-prise{stroke:transparent;stroke-width:10;opacity:1;cursor:pointer;pointer-events:stroke}
-.dj-graphe .dj-fantome text{font:700 9.5px var(--titre);fill:var(--t-3);pointer-events:auto;cursor:pointer;transition:opacity var(--rapide),fill var(--rapide)}
+.dj-graphe .dj-fantome text{font:600 var(--f-11) var(--titre);fill:var(--t-3);pointer-events:auto;cursor:pointer;transition:opacity var(--rapide),fill var(--rapide)}
 .dj-graphe .dj-fantome text.cache{opacity:0}
 .dj-graphe .dj-fantome.retenu{opacity:0;pointer-events:none}
 .dj-graphe .dj-fantome.vise path,.dj-graphe .dj-fantome:hover path{stroke:var(--t-1);opacity:.95;stroke-width:1.5}
@@ -78,7 +78,7 @@
 .dj-graphe .dj-fantome.vise.serre text,.dj-graphe .dj-fantome.serre:hover text{fill:var(--warn)}
 .dj-graphe .dj-systeme-halo{fill:none;stroke:var(--s-surface);stroke-width:5;stroke-linejoin:round;opacity:.85;pointer-events:none}
 .dj-graphe .dj-systeme{fill:none;stroke:var(--t-1);stroke-width:2;stroke-linejoin:round;pointer-events:none}
-/* un point du profil : il se saisit ; au clavier, il se marque lui-même (cerclé de cyan), pas seulement sa bulle */
+/* un point du profil : il se saisit ; au clavier, il se marque lui-même (cerclé d'encre), pas seulement sa bulle */
 .dj-graphe .dj-pt{cursor:grab;outline:none}
 .dj-graphe .dj-halo{fill:transparent}
 .dj-graphe .dj-aura{fill:var(--t-1);opacity:0;transition:opacity var(--rapide)}
@@ -97,21 +97,21 @@
 /* la carte du survol : sur la feuille flottante (plus claire que le graphique, dans les deux thèmes), ses chiffres en B612 */
 .dj-tip{position:absolute;z-index:3;pointer-events:none;width:max-content;min-width:160px;max-width:240px;background:var(--s-flottant);color:var(--t-1);border:1px solid var(--s-line-2);border-radius:var(--r-2);box-shadow:var(--sh-2);padding:8px 12px;font:500 var(--f-11)/1.4 var(--sans)}
 .dj-tip-t{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding-bottom:4px;margin-bottom:4px;border-bottom:1px solid var(--s-line)}
-.dj-tip-t b{font:700 var(--f-13) var(--titre);white-space:nowrap;font-variant-numeric:tabular-nums}
+.dj-tip-t b{font:600 var(--f-13) var(--titre);white-space:nowrap;font-variant-numeric:tabular-nums}
 .dj-tip-t span{color:var(--t-2);text-align:right;line-height:1.25}
 .dj-tip-l{display:grid;grid-template-columns:14px auto minmax(max-content,1fr) auto;align-items:center;column-gap:8px;padding:1px 0}
 .dj-tip-l i{height:0;border-top:2px solid var(--c);border-radius:1px}
 .dj-tip-l i.tirets{border-top-style:dashed}
 .dj-tip-l span{color:var(--t-2);white-space:nowrap}
-.dj-tip-l b{font:700 var(--f-11) var(--titre);white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
-.dj-tip-l em{font:400 var(--f-11) var(--titre);font-style:normal;color:var(--t-3);min-width:36px;text-align:right;font-variant-numeric:tabular-nums}
+.dj-tip-l b{font:600 var(--f-11) var(--titre);white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
+.dj-tip-l em{font:500 var(--f-12) var(--sans);font-style:normal;color:var(--t-3);min-width:36px;text-align:right;font-variant-numeric:tabular-nums}
 .dj-tip-l em.ok{color:var(--ok)} .dj-tip-l em.serre{color:var(--warn)} .dj-tip-l em.ko{color:var(--ko)}
 .dj-tip-v{margin-top:4px;padding-top:4px;border-top:1px solid var(--s-line);font-weight:600;color:var(--ok)}
 .dj-tip-v.ko{color:var(--ko)} .dj-tip-v.serre{color:var(--warn)} .dj-tip-v.info{color:var(--t-2);font-weight:500}
-.dj-tip-v em{font-style:normal;text-transform:uppercase;letter-spacing:.06em}
+.dj-tip-v em{font-style:normal;letter-spacing:0}
 .dj-tip-t:only-child{border-bottom:none;padding-bottom:0;margin-bottom:0}
 .dj-tip-t+.dj-tip-v{border-top:none;margin-top:0;padding-top:0}
-/* la légende : survoler une courbe l'isole ; au clavier, le contour cyan de tout l'outil */
+/* la légende : survoler une courbe l'isole ; au clavier, le contour d'encre de tout l'outil */
 .dj-legende{display:flex;flex-wrap:wrap;gap:2px 4px;justify-content:center;padding:8px 12px 0;font-size:var(--f-11);color:var(--t-2)}
 .dj-leg{display:inline-flex;align-items:center;gap:6px;min-height:24px;border:none;background:none;padding:2px 6px;border-radius:var(--r-1);font:inherit;color:inherit;white-space:nowrap;cursor:default;transition:background var(--rapide),color var(--rapide)}
 button.dj-leg{cursor:pointer}
@@ -127,7 +127,7 @@ button.dj-leg:focus-visible{background:var(--s-hover);color:var(--t-1);outline:2
 /* ── les états : une table — le voyant (un carré de 8 px, vert quand le point tient), le nom, le courant, la durée ── */
 .dj-etats{display:flex;flex-direction:column;gap:4px}
 .dj-entete,.dj-etat{display:grid;grid-template-columns:12px minmax(0,1fr) 84px 84px 24px;align-items:center;column-gap:8px}
-.dj-entete span{font:400 10px var(--titre);letter-spacing:.12em;text-transform:uppercase;color:var(--t-3);text-align:right;padding-right:24px}
+.dj-entete span{font:500 var(--f-12) var(--sans);letter-spacing:0;color:var(--t-3);text-align:right;padding-right:24px}
 .dj-entete .fi-nomen-t{grid-column:1/3;text-align:left;padding-right:0}
 .dj-verdict{width:8px;height:8px;border-radius:1px;background:var(--s-line-2);justify-self:center;transition:background var(--rapide),box-shadow var(--rapide)}
 .dj-verdict.ok{background:var(--ok)}
@@ -157,9 +157,9 @@ button.dj-leg:focus-visible{background:var(--s-hover);color:var(--t-1);outline:2
 .dj-admet{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) minmax(0,1.2fr);align-items:stretch;gap:4px}
 .dj-admet .dj-dep{grid-column:1/-1}
 .dj-pal,.dj-ctc{display:flex;flex-direction:column;align-items:flex-end;justify-content:flex-start;min-width:0;padding:4px 8px;border-radius:var(--r-1);background:var(--s-sunken);border:1px solid var(--s-line);line-height:1.25}
-.dj-pal b,.dj-ctc b{font:700 var(--f-12) var(--titre);color:var(--t-1);font-variant-numeric:tabular-nums;white-space:nowrap}
+.dj-pal b,.dj-ctc b{font:600 var(--f-12) var(--titre);color:var(--t-1);font-variant-numeric:tabular-nums;white-space:nowrap}
 /* l'unité d'un palier reste une unité (« 2 s », « 1 min ») : pas de capitales */
-.dj-pal i,.dj-ctc i{font:400 10px var(--titre);color:var(--t-3);font-style:normal;letter-spacing:.02em;white-space:nowrap}
+.dj-pal i,.dj-ctc i{font:500 var(--f-12) var(--sans);color:var(--t-3);font-style:normal;letter-spacing:.02em;white-space:nowrap}
 .dj-pal.ko,.dj-ctc.ko{background:var(--ko-soft);border-color:color-mix(in srgb,var(--ko) 28%,var(--s-surface))}
 .dj-pal.ko b,.dj-pal.ko i,.dj-ctc.ko b,.dj-ctc.ko i{color:var(--ko)}
 .dj-pal.att,.dj-ctc.att{background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 28%,var(--s-surface))}
@@ -180,9 +180,9 @@ button.dj-leg:focus-visible{background:var(--s-hover);color:var(--t-1);outline:2
 .dj-jauge i{position:absolute;left:0;top:0;bottom:0;background:var(--ok);border-radius:3px;transition:width var(--moyen)}
 .fi-fil.ko .dj-jauge{background:color-mix(in srgb,var(--ko) 22%,var(--s-surface))}
 .fi-fil.ko .dj-jauge i{background:var(--ko)}
-.dj-du{font:700 var(--f-13) var(--titre);white-space:nowrap;font-variant-numeric:tabular-nums}
+.dj-du{font:600 var(--f-13) var(--titre);white-space:nowrap;font-variant-numeric:tabular-nums}
 .fi-fil.ko .dj-du{color:var(--ko)}
-.dj-pct{font:400 var(--f-11) var(--titre);color:var(--t-3);white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
+.dj-pct{font:500 var(--f-12) var(--sans);color:var(--t-3);white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
 .dj-chemin{grid-column:1/-1;font:500 var(--f-11) var(--mono);color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dj-chemin em{font-style:normal;font-family:var(--sans);color:var(--warn)}
 .dj-chemin em.ko{color:var(--ko);font-weight:600}

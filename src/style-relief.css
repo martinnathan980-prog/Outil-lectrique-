@@ -44,7 +44,7 @@ svg .re-note{fill:#5b6875;font-size:calc(10px / var(--k,1))}
    centrent en hauteur : le contact et le fil (une puce rembourrée) d'une ligne sont sur la même ligne de lecture */
 .re-tableau{overflow-x:auto;overscroll-behavior-x:contain}
 .re-tab{width:100%;border-collapse:separate;border-spacing:0;font-size:var(--f-12)}
-.re-tab th{text-align:left;font:400 10px var(--titre);text-transform:uppercase;letter-spacing:.12em;color:var(--t-3);padding:8px;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
+.re-tab th{text-align:left;font:500 var(--f-12) var(--sans);letter-spacing:0;color:var(--t-3);padding:8px;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
 .re-tab td{padding:4px 8px;border-bottom:1px solid var(--s-line);vertical-align:middle}
 .re-tab td.n{font-family:var(--mono);font-weight:600;width:64px}
 .re-tab tr.libre td{color:var(--t-2)}
@@ -91,7 +91,7 @@ svg .re-note{fill:#5b6875;font-size:calc(10px / var(--k,1))}
 .mj .mj-cable{fill:#111827;font-size:8px;font-weight:600;paint-order:stroke;stroke:#fbfcfd;stroke-width:2.5px;stroke-linejoin:round}
 .mj .mj-diode{fill:#2b3440;stroke:#2b3440;stroke-width:1.2}
 .mj-faces{display:flex;justify-content:center;padding:8px 0 4px}
-/* la bible : le filtre par norme — des puces de choix, celles de tout l'outil (.fi-chip) : pressée, en cyan */
+/* la bible : le filtre par norme — des puces de choix, celles de tout l'outil (.fi-chip) : pressée, à l'encre */
 .mj-norme{height:30px;display:inline-flex;align-items:center;border:1px solid var(--s-line-2);background:var(--s-surface);color:var(--t-1);border-radius:var(--r-1);padding:0 12px;font:500 var(--f-12) var(--sans);cursor:pointer;transition:background var(--rapide),border-color var(--rapide),color var(--rapide)}
 .mj-norme:hover{border-color:var(--t-3)}
 .mj-norme[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}

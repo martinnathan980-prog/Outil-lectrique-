@@ -5,7 +5,7 @@
    ses tables repliées — une ligne chacune : le nom, la source, le compte, l'état — qui se déplient sur leur fiche
    (sert à, lue par, choix, colonnes), leur barre et la table elle-même. Les données en chasse fixe, les mots en
    linéale ; l'ambre pour ce qui est modifié ou à confirmer, le vert pour ce qui est ajouté, le gris pour ce qui est
-   masqué ; le cyan pour ce qui se presse. Les tables larges défilent de côté, jamais elles n'écrasent une valeur ; les
+   masqué ; l'encre pour ce qui se presse. Les tables larges défilent de côté, jamais elles n'écrasent une valeur ; les
    longues défilent dans leur boîte, l'en-tête en haut ; les gestes d'une ligne restent collés au bord droit.
    ═══════════════════════════════════════════════════════════════════════ */
 .nm{display:flex;flex-direction:column;gap:var(--sp-3);min-width:0;container-type:inline-size}   /* la bible se règle sur sa largeur */
@@ -23,7 +23,7 @@
 .nm-vide{font-size:var(--f-12);color:var(--t-2);margin:8px 0;line-height:1.5}
 /* les badges d'état : modifiée, ajoutée, masquée, à confirmer, importée, vide — la recette de tout l'outil pour un mot
    d'état dans sa case (.fw-pastille, .verdict) : B612 10 px, capitales espacées, 20 px de haut, rayon 4 */
-.nm-badge{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:var(--r-1);font:400 10px/1 var(--titre);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;background:var(--s-sunken);color:var(--t-2);border:1px solid var(--s-line)}
+.nm-badge{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:var(--r-1);font:500 var(--f-12)/1 var(--sans);letter-spacing:0;white-space:nowrap;background:var(--s-sunken);color:var(--t-2);border:1px solid var(--s-line)}
 .nm-badge.mod{background:var(--warn-soft);color:var(--warn);border-color:transparent}
 .nm-badge.ajo{background:var(--ok-soft);color:var(--ok);border-color:transparent}
 .nm-badge.masq{background:var(--s-hover);color:var(--t-3);border-color:transparent;text-decoration:line-through}
@@ -33,7 +33,7 @@
 .nm-mod{color:var(--warn)}.nm-ajo{color:var(--ok)}.nm-ko{color:var(--ko)}
 /* ─── un domaine : son titre, à quoi il sert, ses tables ─── */
 .nm-dom{display:flex;flex-direction:column;gap:var(--sp-2);padding-top:var(--sp-2)}
-.nm-dom-t{font:700 var(--f-14)/1.3 var(--titre);margin:0;letter-spacing:.01em;padding-top:var(--sp-2);border-top:1px solid var(--s-line)}
+.nm-dom-t{font:600 var(--f-14)/1.3 var(--titre);margin:0;letter-spacing:.01em;padding-top:var(--sp-2);border-top:1px solid var(--s-line)}
 .nm-dom-sens{margin:0 0 4px;font-size:var(--f-12);color:var(--t-2);line-height:1.5}
 /* ─── une table : sa tête (une ligne), et dépliée, sa fiche, sa barre, la table ─── */
 .nm-table{border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-surface);min-width:0;transition:border-color var(--rapide)}
@@ -55,7 +55,7 @@
 .nm-t-corps{display:flex;flex-direction:column;gap:var(--sp-3);padding:var(--sp-3)}
 /* la fiche d'une table : des faits, la clé en petites capitales */
 .nm-doc{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:var(--sp-1) var(--sp-3);margin:0;font-size:var(--f-12)}
-.nm-doc dt,.nm-cols dt{font:400 10px/1.75 var(--titre);letter-spacing:.12em;text-transform:uppercase;color:var(--t-3);white-space:nowrap}
+.nm-doc dt,.nm-cols dt{font:500 var(--f-12)/1.46 var(--sans);letter-spacing:0;color:var(--t-3);white-space:nowrap}
 .nm-doc dd,.nm-cols dd{margin:0;color:var(--t-1);line-height:1.5;min-width:0}
 .nm-doc dd.nm-manque{color:var(--warn)}
 .nm-doc .fi-lien{margin:-4px 0 -4px -8px}
@@ -74,7 +74,7 @@
    et la colonne des gestes reste au bord droit (modifier, dupliquer, supprimer, OK, Annuler toujours à portée) */
 .nm-defile{max-height:min(70vh,640px);overflow:auto;overscroll-behavior-x:contain;padding-bottom:4px;scrollbar-width:thin}
 .nm-tab{border-collapse:separate;border-spacing:0;font-size:var(--f-11);white-space:nowrap;min-width:100%}
-.nm-tab th{position:sticky;top:0;z-index:1;background:var(--s-surface);text-align:left;font:400 10px var(--titre);color:var(--t-3);letter-spacing:.12em;text-transform:uppercase;padding:5px 8px 5px 0;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
+.nm-tab th{position:sticky;top:0;z-index:1;background:var(--s-surface);text-align:left;font:500 var(--f-12) var(--sans);color:var(--t-3);letter-spacing:0;padding:5px 8px 5px 0;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
 .nm-tab th[data-tri]{cursor:pointer;user-select:none}
 .nm-tab th[data-tri]:hover{color:var(--t-1)}
 .nm-tab th[aria-sort="ascending"],.nm-tab th[aria-sort="descending"]{color:var(--accent-2)}
@@ -123,12 +123,12 @@
 .nm-bloc-ou{font-size:var(--f-11);color:var(--t-3)}
 .nm-cible{display:inline-flex;align-items:center;gap:8px;font-size:var(--f-12);color:var(--t-2)}
 .nm-cible select,.nm-col-ko select{height:30px;border:1px solid var(--s-line-2);border-radius:var(--r-1);background:var(--s-surface);color:var(--t-1);padding:0 6px;font-size:var(--f-12);max-width:220px}
-/* le focus d'une liste : celui des champs (filet cyan et halo), pas l'anneau décalé du navigateur */
+/* le focus d'une liste : celui des champs (filet d'encre et halo), pas l'anneau décalé du navigateur */
 .nm-cible select:focus-visible,.nm-col-ko select:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .nm-bloc-compte{font-size:var(--f-12);color:var(--t-2)}
 .nm-bloc-compte b{font-weight:600}
 .nm-bloc-cols{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;font-size:var(--f-11)}
-.nm-cols-t{font:400 10px var(--titre);letter-spacing:.12em;text-transform:uppercase;color:var(--t-3);margin-right:2px}
+.nm-cols-t{font:500 var(--f-12) var(--sans);letter-spacing:0;color:var(--t-3);margin-right:2px}
 .nm-col-ok{font-family:var(--mono);background:var(--s-surface);border:1px solid var(--s-line);border-radius:var(--r-1);padding:1px 8px;color:var(--t-1)}
 .nm-col-ko{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);background:var(--warn-soft);border-radius:var(--r-1);padding:1px 4px 1px 8px;color:var(--warn)}
 .nm-col-ko select{height:24px;font-size:var(--f-11);font-family:var(--sans)}

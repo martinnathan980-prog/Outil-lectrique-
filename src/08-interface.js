@@ -607,7 +607,7 @@ function ouvrirInspecteur() { const el = $('inspecteur'), etait = !el.hidden; if
   el.hidden = false; document.body.classList.add('insp-ouvert'); rendreFiche(); synchroniserRail();
   if (!etait) { el.classList.remove('entre'); void el.offsetWidth; el.classList.add('entre'); recadrerSiCache(); } }
 function fermerInspecteur() { const el = $('inspecteur'); app.insp.index = false; synchroniserRail(); if (el.hidden) return; el.hidden = true; document.body.classList.remove('insp-ouvert'); recadrerSiCache(); }
-/* Le rail dit ce qui est ouvert : l'outil dont le panneau est là se marque pressé (le trait cyan contre le bord). */
+/* Le rail dit ce qui est ouvert : l'outil dont le panneau est là se marque pressé (dans un carré gris). */
 function synchroniserRail() { const p = (id, on) => { const b = $(id); if (b) b.setAttribute('aria-pressed', on ? 'true' : 'false'); };
   p('btnIndex', app.insp.index && !$('inspecteur').hidden); p('btnCherche', document.body.classList.contains('cherche')); p('btnBible', !!(app.fiche && app.fiche.mode === 'bible')); }
 

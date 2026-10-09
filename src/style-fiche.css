@@ -6,7 +6,7 @@
    face à plat, autour, les fils), le pied, toujours en vue. Les étiquettes sont petites et effacées (B612), les
    identifiants en Plex Mono (`.id`), les lectures chiffrées en B612, le texte et les valeurs en Plex Sans ; des
    filets d'un pixel, des angles nets (4 px), presque pas de fond coloré : la couleur est réservée à ce qui est
-   jugé — le rouge d'un problème, l'ambre d'un point à voir — et au cyan de ce qu'on peut faire. Un voyant est
+   jugé — le rouge d'un problème, l'ambre d'un point à voir — et à l'encre de ce qu'on peut faire. Un voyant est
    toujours un carré de 8 px. Les colonnes d'une liste de fils tombent juste d'une ligne à l'autre (une grille
    portée par la liste, que chaque ligne partage).
    ═══════════════════════════════════════════════════════════════════════ */
@@ -24,7 +24,7 @@
 
 /* ─── L'EN-TÊTE : le repère, dessous la ligne de nature, la désignation, l'état ─── */
 .fi-tete{display:flex;align-items:center;gap:var(--sp-2);min-height:36px;margin-bottom:-8px}
-.fi-nom{display:block;width:100%;border:none;background:none;padding:2px 0;margin:0;font:700 var(--f-24)/1.15 var(--titre);letter-spacing:.02em;color:var(--t-1);border-bottom:2px solid transparent;border-radius:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-nom{display:block;width:100%;border:none;background:none;padding:2px 0;margin:0;font:600 var(--f-24)/1.15 var(--titre);letter-spacing:.02em;color:var(--t-1);border-bottom:2px solid transparent;border-radius:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 input.fi-nom{cursor:text}
 input.fi-nom:hover{border-bottom-color:var(--s-line-2)}
 input.fi-nom:focus{outline:none;border-bottom-color:var(--accent)}
@@ -72,14 +72,14 @@ details.fi-etat.ok li::before{background:var(--ok)}
    tuiles-onglets ont le filet et le survol d'un bouton ─── */
 .fi-tuiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:var(--sp-2)}
 .fi-tuile{display:flex;flex-direction:column;gap:2px;min-width:0;padding:12px;border-radius:var(--r-2);background:var(--s-sunken);border:1px solid transparent;text-align:left;color:inherit;font:inherit}
-.fi-tuile b{font:700 var(--f-20)/1.2 var(--titre);font-variant-numeric:tabular-nums;color:var(--t-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-tuile b{font:600 var(--f-20)/1.2 var(--titre);font-variant-numeric:tabular-nums;color:var(--t-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fi-tuile span{font:400 var(--f-12)/1.35 var(--sans);color:var(--t-2)}
 .fi-tuile small{font:400 var(--f-11)/1.35 var(--sans);color:var(--t-3);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-top:2px;text-wrap:balance}
 button.fi-tuile{cursor:pointer;transition:background var(--rapide),border-color var(--rapide)}
 button.fi-tuile:hover{background:var(--s-hover)}
 
 /* ─── LES ONGLETS : les connecteurs d'un équipement, un à la fois — chaque onglet est une tuile du résumé (le
-   connecteur, ses contacts, son toron, son raccord) qu'on presse ; l'ouvert porte le cyan de la sélection et un trait
+   connecteur, ses contacts, son toron, son raccord) qu'on presse ; l'ouvert porte l'encre de la sélection et un trait
    en tête (le focus clavier, lui, est un contour décalé : on ne les confond pas) ─── */
 .fi-onglets{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:var(--sp-2)}
 .fi-onglets .fi-tuile{background:var(--s-surface);border-color:var(--s-line);cursor:pointer;transition:background var(--rapide),border-color var(--rapide),box-shadow var(--rapide)}
@@ -110,13 +110,13 @@ button.fi-tuile:hover{background:var(--s-hover)}
 /* le volet « Changer » : en retrait, ses titres en étiquettes, ses puces, ses candidats */
 .fi-changer{display:flex;flex-direction:column;gap:var(--sp-3);padding:12px;border-radius:var(--r-2);background:var(--s-sunken);border:1px solid var(--s-line)}
 .fi-puces{display:flex;flex-wrap:wrap;gap:8px}
-/* une puce de choix : pressée, elle se marque comme le candidat retenu (fond doux, filet cyan) — l'aplat plein reste
+/* une puce de choix : pressée, elle se marque comme le candidat retenu (fond doux, filet d'encre) — l'aplat plein reste
    à l'action principale */
 .fi-chip{height:30px;display:inline-flex;align-items:center;border:1px solid var(--s-line-2);background:var(--s-surface);border-radius:var(--r-1);padding:0 12px;font:500 var(--f-12) var(--sans);cursor:pointer;color:var(--t-1);transition:background var(--rapide),border-color var(--rapide),color var(--rapide)}
 .fi-chip:hover{border-color:var(--t-3)}
 .fi-chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);color:var(--accent-2);font-weight:600}
 .fi-note{margin:0;color:var(--t-2);font-size:var(--f-12);line-height:1.5}
-.fi-rac-t,.fi-nomen-t{margin:0;font:400 10px/1.6 var(--titre);letter-spacing:.12em;text-transform:uppercase;color:var(--t-3)}
+.fi-rac-t,.fi-nomen-t{margin:0;font:500 var(--f-12)/1.33 var(--sans);letter-spacing:0;color:var(--t-3)}
 .fi-seg{display:flex;flex-direction:column;gap:4px}
 .fi-cands{display:flex;flex-direction:column;gap:4px}
 .fi .cand{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:12px;align-items:center;width:100%;margin:0;border:1px solid var(--s-line);background:var(--s-surface);color:var(--t-1);border-radius:var(--r-1);padding:8px 12px 8px 8px;text-align:left;cursor:pointer;transition:background var(--rapide),border-color var(--rapide)}
@@ -134,7 +134,7 @@ button.fi-tuile:hover{background:var(--s-hover)}
 .fi-face{margin:0;padding:12px 8px 8px;background:var(--s-papier);color:var(--t-papier);border:1px solid var(--s-line);border-radius:var(--r-2);display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0;
   background-image:linear-gradient(var(--s-papier-grille) 1px,transparent 1px),linear-gradient(90deg,var(--s-papier-grille) 1px,transparent 1px);background-size:12px 12px;background-position:-1px -1px}
 .fi-face svg{width:100%;height:auto;max-height:340px;display:block}
-.fi-face figcaption{font:400 10px/1.4 var(--titre);letter-spacing:.12em;text-transform:uppercase;color:var(--t-papier-2);text-align:center}
+.fi-face figcaption{font:500 var(--f-12)/1.17 var(--sans);letter-spacing:0;color:var(--t-papier-2);text-align:center}
 .fi-legende{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:4px 16px;margin-top:-8px;font-size:var(--f-11);color:var(--t-2)}
 .fi-legende>span{display:inline-flex;align-items:center}
 .fi-legende i{display:inline-block;width:10px;height:10px;border-radius:50%;border:1.3px solid var(--t-1);background:var(--s-surface);margin-right:6px;box-sizing:border-box;flex:none}
@@ -155,7 +155,7 @@ button.fi-tuile:hover{background:var(--s-hover)}
 .fi-avenir.fi-long{display:inline-block;white-space:normal;line-height:1.4;padding:2px 8px;margin:1px 0}
 /* des faits : la clé en étiquette, la valeur en linéale (ses chiffres tabulaires), les identifiants en chasse fixe */
 .fi-faits{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:8px 16px;margin:0;font-size:var(--f-12)}
-.fi-faits dt{font:400 10px/1.9 var(--titre);letter-spacing:.12em;text-transform:uppercase;color:var(--t-3);white-space:nowrap}
+.fi-faits dt{font:500 var(--f-12)/1.58 var(--sans);letter-spacing:0;color:var(--t-3);white-space:nowrap}
 .fi-faits dd{margin:0;color:var(--t-1);line-height:1.55;min-width:0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
 .fi-faits dd b{font:600 var(--f-12) var(--sans);font-variant-numeric:tabular-nums}
 .fi-faits dd b.id{font-family:var(--mono)}
@@ -193,11 +193,11 @@ button.fi-tuile:hover{background:var(--s-hover)}
 .fi-tag{font:400 var(--f-11) var(--mono);color:var(--warn);background:var(--warn-soft);border:1px dashed color-mix(in srgb,var(--warn) 45%,transparent);border-radius:var(--r-1);padding:0 4px;margin-left:4px}
 .fi-ko{grid-column:3/-1;color:var(--ko);font-size:var(--f-11);font-weight:500;line-height:1.4}
 .fi-ko.fi-att{color:var(--warn)}
-.fi-groupe{display:flex;align-items:baseline;gap:8px;font:400 10px/1.6 var(--titre);letter-spacing:.12em;text-transform:uppercase;color:var(--t-3);padding:12px 8px 4px}
+.fi-groupe{display:flex;align-items:baseline;gap:8px;font:500 var(--f-12)/1.33 var(--sans);letter-spacing:0;color:var(--t-3);padding:12px 8px 4px}
 .fi-groupe:first-child{padding-top:0}
 .fi-groupe i{font:400 var(--f-11) var(--mono);letter-spacing:0;text-transform:none;color:var(--t-3)}
 /* une prise : chaque contact, la fiche à gauche, l'embase à droite (au même retrait que le reste du cadre) */
-.fi-paires-tete{display:grid;grid-template-columns:36px minmax(0,1fr) 16px minmax(0,1fr);gap:8px;font:400 10px/1.6 var(--titre);color:var(--t-3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:-8px}
+.fi-paires-tete{display:grid;grid-template-columns:36px minmax(0,1fr) 16px minmax(0,1fr);gap:8px;font:500 var(--f-12)/1.33 var(--sans);color:var(--t-3);letter-spacing:0;margin-bottom:-8px}
 .fi-paire{position:relative;display:grid;grid-template-columns:36px minmax(0,1fr) 16px minmax(0,1fr);align-items:center;gap:8px;padding:4px 8px;font-size:var(--f-12)}
 .fi-paire.ko{background:var(--ko-soft);border-radius:var(--r-1)}
 .fi-paire.ko::before,.fi-paire.ko+.fi-paire::before{display:none}
@@ -218,7 +218,7 @@ button.fi-tuile:hover{background:var(--s-hover)}
 .fi-trajet .fi-fleche{align-self:center}
 .fi-bout{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:12px;border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-surface);cursor:pointer;text-align:left;min-width:0;color:inherit;transition:background var(--rapide),border-color var(--rapide)}
 .fi-bout:hover{background:var(--s-sunken);border-color:var(--s-line-2)}
-.fi-bout .fi-bout-k{font:400 10px/1.5 var(--titre);letter-spacing:.12em;text-transform:uppercase;color:var(--t-3);font-style:normal}
+.fi-bout .fi-bout-k{font:500 var(--f-12)/1.25 var(--sans);letter-spacing:0;color:var(--t-3);font-style:normal}
 .fi-bout b{font:600 var(--f-14) var(--mono);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fi-bout span{font-size:var(--f-12);color:var(--t-2)}
 .fi-bout small{font:var(--f-11) var(--mono);color:var(--t-3);overflow:hidden;text-overflow:ellipsis;max-width:100%;white-space:nowrap}
@@ -247,7 +247,7 @@ button.fi-tuile:hover{background:var(--s-hover)}
 /* ─── L'INDEX : les repères du contrat, dans l'inspecteur ─── */
 .fi.ix{gap:var(--sp-3);padding-bottom:var(--sp-5)}
 .ix-tete{display:flex;align-items:center;gap:8px;min-height:36px;margin-bottom:2px}
-.ix-tete h2{margin:0;font:700 var(--f-24)/1.15 var(--titre);letter-spacing:.02em;display:flex;align-items:baseline;gap:12px}
+.ix-tete h2{margin:0;font:600 var(--f-24)/1.15 var(--titre);letter-spacing:.02em;display:flex;align-items:baseline;gap:12px}
 .ix-tete .ix-n{font:400 var(--f-12)/1 var(--mono);letter-spacing:0;color:var(--t-3);background:none;padding:0}
 .ix-tete .fi-x.plus{color:var(--accent-2)}
 /* la recherche de l'index : le champ encadré commun (.filtre), un peu plus haut */
@@ -270,7 +270,7 @@ button.fi-tuile:hover{background:var(--s-hover)}
 .ix-controle[open]>summary .fi-chevron{transform:rotate(180deg)}
 .ix-controle .ix-groupe{padding:12px 0 4px}
 .ix-controle .ix-liste{margin:0 -8px}
-.ix-groupe{display:flex;align-items:baseline;gap:8px;padding:16px 0 4px;font:400 10px/1.6 var(--titre);letter-spacing:.12em;text-transform:uppercase;color:var(--t-3)}
+.ix-groupe{display:flex;align-items:baseline;gap:8px;padding:16px 0 4px;font:500 var(--f-12)/1.33 var(--sans);letter-spacing:0;color:var(--t-3)}
 .ix-groupe b{font:400 var(--f-11) var(--mono);letter-spacing:0;background:none;padding:0;color:var(--t-3)}
 .ix-groupe.ko,.ix-groupe.ko b{color:var(--ko)}
 .ix-groupe.att,.ix-groupe.att b{color:var(--warn)}

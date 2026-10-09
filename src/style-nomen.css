@@ -6,7 +6,7 @@
    ═══════════════════════════════════════════════════════════════════════ */
 .no-resume{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-2);margin:var(--sp-3) 0 var(--sp-2)}
 .no-tuile{display:flex;flex-direction:column;gap:2px;padding:12px;border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-surface);min-width:0}
-.no-tuile b{font:700 18px/1.2 var(--titre);color:var(--t-1);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.no-tuile b{font:600 18px/1.2 var(--titre);color:var(--t-1);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .no-tuile span{font-size:var(--f-12);color:var(--t-2);line-height:1.35}
 .no-table td.sans{color:var(--t-2);min-width:160px;max-width:260px;white-space:normal}
 .no-table td.d{font-variant-numeric:tabular-nums}
