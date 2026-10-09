@@ -54,6 +54,17 @@ const FICHIER = P.fichierDemande();
     ok(await page.evaluate(() => $('inspecteur').hidden && !app.cible), 'Échap ferme la fiche');
     await page.keyboard.press('Escape'); await page.waitForTimeout(400);
     ok(await page.evaluate(() => $('base').hidden), 'Échap encore ferme le tableau');
+    if (vp.width <= 700) {
+      // fiche ouverte, la bande des folios reste, posée au-dessus du tiroir (sa hauteur est dite au style par --insp-h)
+      e = await ecran(...c); await page.mouse.click(e.x, e.y); await page.waitForTimeout(600);
+      const b = await page.evaluate(() => { const f = $('folios').getBoundingClientRect(), i = $('inspecteur').getBoundingClientRect(); return { display: getComputedStyle($('folios')).display, bas: Math.round(f.bottom), haut: Math.round(i.top), chip: !!document.querySelector('#fo-strip .chip.on'), insp: !$('inspecteur').hidden }; });
+      ok(b.insp && b.display !== 'none' && Math.abs(b.bas - b.haut) <= 2 && b.chip, 'au téléphone, fiche ouverte, la bande des folios reste, posée au-dessus du tiroir', JSON.stringify(b));
+      // un bloc haut visé depuis l'index (300XC1, le calculateur du folio 3) : cadré sur sa largeur, lisible, le haut du bloc à l'écran
+      await page.evaluate(() => { fermerInspecteur(); allerAuPlan('3'); allerAuRepere('300XC1'); }); await page.waitForTimeout(900);
+      const v = await page.evaluate(() => { const c = app.dessin.comps.find(k => k.name === '300XC1' && k.kind !== 'tag'), s = app.vue.s, r = $('planche').getBoundingClientRect(), y0 = r.top + app.vue.ty + c.y * s, x0 = r.left + app.vue.tx + c.x * s;
+        return { w: Math.round(c.w * s), y0: Math.round(y0), x0: Math.round(x0), x1: Math.round(x0 + c.w * s), haut: $('entete').getBoundingClientRect().bottom, bas: $('folios').getBoundingClientRect().top }; });
+      ok(v.w >= 100 && v.y0 >= v.haut && v.y0 < v.bas - 40 && v.x0 >= 0 && v.x1 <= 390, 'au téléphone, 300XC1 visé depuis l’index fait au moins 100 px de large et son haut (le repère) est dans la place libre', JSON.stringify(v));
+      await page.keyboard.press('Escape'); await page.waitForTimeout(300); }
     ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
     await page.close();
   }
@@ -168,6 +179,53 @@ const FICHIER = P.fichierDemande();
   await page.keyboard.press('r'); await page.waitForTimeout(400); page.once('dialog', d => d.accept('105RL2')); await page.click('#ix-plus'); await page.waitForTimeout(600);
   ok(await page.evaluate(n => app.base.ouvert && verite().length === n + 1 && verite()[n].de === '105RL2', n0), '« + » dans l’index : un équipement 105RL2, sa première ligne dans le tableau');
   await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
+  // R depuis une fiche venue de l'index ramène à la liste (il ne ferme plus le panneau)
+  await page.evaluate(() => { app.cible = null; fermerInspecteur(); }); await page.keyboard.press('r'); await page.waitForTimeout(400);
+  await page.locator('#ba-equip .co-item', { hasText: '102CB1' }).first().click(); await page.waitForTimeout(500); await page.keyboard.press('r'); await page.waitForTimeout(300);
+  ok(await page.evaluate(() => !$('inspecteur').hidden && app.insp.index && !app.cible && !!document.querySelector('#ba-equip .co-item')), 'R depuis la fiche de 102CB1 (venue de l’index) ramène à la liste des repères');
+  await page.keyboard.press('Escape'); await page.waitForTimeout(200);
+
+  /* L'ACCUEIL à la vraie souris, le contrat neuf, les folios aux noms longs, les mots au pluriel, les noms de fichier */
+  console.log('\nl’accueil à la vraie souris, le contrat neuf, les folios aux noms de dessin');
+  page.once('dialog', d => d.accept()); await page.click('#btnMenu'); await page.click('#menu [data-act="vider"]'); await page.waitForTimeout(400);
+  ok(await page.evaluate(() => !$('vide').hidden && !app.contrat.liaisons.length && !app.contrat.charges.size && $('inspecteur').hidden), '« Tout effacer » : l’accueil, un contrat neuf (plus de profil de charge), rien d’ouvert');
+  // chaque geste de l'accueil répond à un clic de souris (la planche ne prend plus la capture du pointeur sur l'accueil)
+  let fc = null; try { [fc] = await Promise.all([page.waitForEvent('filechooser', { timeout: 3000 }), page.click('#vd-ouvrir')]); } catch (_) { }
+  ok(!!fc, 'un clic de souris sur « Ouvrir un fichier » ouvre le choix de fichier');
+  fc = null; try { [fc] = await Promise.all([page.waitForEvent('filechooser', { timeout: 3000 }), page.click('#vd-zone')]); } catch (_) { }
+  ok(!!fc, 'un clic sur la zone de dépôt aussi');
+  await page.click('#vd-reprendre'); await page.waitForTimeout(700);
+  ok(await page.evaluate(() => app.contrat.liaisons.length === 201 && app.contrat.charges.has('102CB1') && $('vide').hidden), '« Reprendre » rend l’exemple, avec son profil de charge');
+  page.once('dialog', d => d.accept()); await page.click('#btnMenu'); await page.click('#menu [data-act="vider"]'); await page.waitForTimeout(400);
+  await page.click('#vd-exemple'); await page.waitForTimeout(800);
+  ok(await page.evaluate(() => app.contrat.liaisons.length === 201 && app.nom === 'Contrat d’exemple' && $('en-nom').textContent === 'Contrat d’exemple' && /^l’exemple embarqué · 201 liaisons · \d+ repères · 6 folios$/.test($('en-sous').textContent)), '« Voir l’exemple » le charge ; l’en-tête dit que c’est l’exemple embarqué', await page.evaluate(() => $('en-sous').textContent));
+  // un autre fichier : rien du contrat d'avant ne survit ; l'en-tête dit son nom ; Ctrl+Z rend l'exemple et ses choix
+  await page.evaluate(() => chargerContrat(contratExemple().filter(l => l.plan === '1'), 'ouverture de neuf.xlsx', 'neuf.xlsx')); await page.waitForTimeout(500);
+  ok(await page.evaluate(() => !app.contrat.charges.size && !app.contrat.designations.size && !app.contrat.sexes.size && !app.contrat.raccords.size && $('en-nom').textContent === 'neuf.xlsx' && !/exemple/.test($('en-sous').textContent) && !CONTROLE.items.some(x => x.nom === '102CB1' && /9,31/.test(x.texte))),
+    'un autre fichier ouvert : rien du contrat d’avant ne survit (son 102CB1 n’a pas le profil de l’exemple), l’en-tête dit le nom du fichier', await page.evaluate(() => $('en-nom').textContent + ' · ' + $('en-sous').textContent));
+  await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
+  ok(await page.evaluate(() => app.nom === 'Contrat d’exemple' && app.contrat.charges.has('102CB1') && app.contrat.liaisons.length === 201), 'Ctrl+Z rend l’exemple avec ses choix');
+  // dix folios aux noms de dessin (FWD) : les puces s'abrègent, aucune ne déborde, la courante en entier, une liste déroulante en plus
+  await page.evaluate(() => { const E = contratExemple(), F = p => 'MEE256A78150' + String(p).padStart(2, '0') + 'A', L = E.map(l => liaison({ ...l, plan: F(l.plan) }));
+    for (let k = 7; k <= 10; k++) { const z = r => r.replace(/^(\d+)/, d => String(+d + 1000 * k)); E.filter(l => l.plan === '1').forEach(l => L.push(liaison({ ...l, de: z(l.de), vers: z(l.vers), cable: l.cable + '-' + k, plan: F(k) }))); }
+    chargerContrat(L, 'essai', 'fwd.xlsx'); }); await page.waitForTimeout(800);
+  ok(await page.evaluate(() => { const cs = [...document.querySelectorAll('#fo-strip .chip')], on = document.querySelector('#fo-strip .chip.on'), sel = $('fo-select'), r = $('fo-strip').getBoundingClientRect(), o = on && on.getBoundingClientRect();
+    return cs.length === 10 && cs.every(c => c.classList.contains('abrege') && c.scrollWidth <= c.clientWidth + 1 && c.title === 'Folio ' + c.dataset.plan && c.textContent === c.dataset.plan) && on && on.dataset.plan === 'MEE256A7815001A' && getComputedStyle(on.querySelector('.chip-pre')).display !== 'none' && cs.filter(c => c !== on).every(c => getComputedStyle(c.querySelector('.chip-pre')).display === 'none') && o.left >= r.left - 1 && o.right <= r.right + 1 && !sel.hidden && sel.options.length === 10 && sel.value === 'MEE256A7815001A'; }),
+    'dix folios aux noms de dessin (MEE256A7815001A…) : les puces abrégées (« …01A », le nom entier dedans et en bulle), aucune ne déborde, la courante en entier et dans la bande, une liste déroulante en plus');
+  await page.selectOption('#fo-select', 'MEE256A7815009A'); await page.waitForTimeout(700);
+  ok(await page.evaluate(() => app.plan === 'MEE256A7815009A' && $('fo-lbl').textContent === '9 / 10' && document.querySelector('#fo-strip .chip.on').dataset.plan === 'MEE256A7815009A'), 'la liste déroulante va au folio 9');
+  await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
+  // les mots au pluriel, les noms de fichier enregistrés (ASCII : sous file://, Chromium remplace par « download » un nom qui porte un accent ou un tiret cadratin)
+  ok(await page.evaluate(() => pluriel(2, 'harness') === '2 harness' && pluriel(2, 'fil') === '2 fils' && pluriel(1, 'harness') === '1 harness'), '« 2 harness », « 2 fils »');
+  const nomTelecharge = async act => { const [d] = await Promise.all([page.waitForEvent('download', { timeout: 15000 }), page.evaluate(act)]); return d.suggestedFilename(); };
+  const noms = [await nomTelecharge('exporterSuivi()'), await nomTelecharge('exporterNomenclature()'), await nomTelecharge('exporterSVG()')];
+  ok(noms[0] === 'Contrat-d-exemple-suivi.csv' && noms[1] === 'Contrat-d-exemple-nomenclature.csv' && /^Contrat_d_exemple-folio-1\.svg$/.test(noms[2]), 'les fichiers enregistrés ont un nom ASCII', noms.join(' · '));
+  // un fichier à plusieurs harness : une fiche demande lequel ouvrir (tous restent des contrats déjà faits)
+  await page.evaluate(() => { const L = contratExemple().map(l => liaison({ ...l, harness: +l.plan <= 3 ? 'H-A' : 'H-B', appareil: 'H160' })); ficheHarnais({ liaisons: L, harnais: ['H-A', 'H-B'] }, 'base.xlsx'); }); await page.waitForTimeout(400);
+  ok(await page.evaluate(() => app.fiche && app.fiche.mode === 'harnais' && document.querySelectorAll('#choix-harness .ch-harness[data-harness]').length === 2 && !!$('ch-aucun')), 'un fichier à deux harness : la fiche demande lequel ouvrir, ou aucun');
+  await page.click('#choix-harness .ch-harness[data-harness="H-B"]'); await page.waitForTimeout(900);
+  ok(await page.evaluate(() => verite().length > 0 && verite().every(l => l.harness === 'H-B') && /^H-B/.test(app.nom) && !app.fiche), 'ouvrir H-B : seul ce harness est sur la table');
+  await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
   ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
   console.log('\n  ' + (ko ? ko + ' échec(s)' : 'tout tient'));
   await nav.close(); process.exit(ko ? 1 : 0);

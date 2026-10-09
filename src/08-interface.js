@@ -416,11 +416,15 @@ function filSous(w) { if (!app.dessin) return null; const tol = Math.max(4, 7 / 
   const d = (px, py, a, b) => { const dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy; let t = L2 ? ((px - a.x) * dx + (py - a.y) * dy) / L2 : 0; t = Math.max(0, Math.min(1, t)); return Math.hypot(px - (a.x + t * dx), py - (a.y + t * dy)); };
   for (const f of app.dessin.fils) for (let i = 0; i < f.pts.length - 1; i++) { const dd = d(w.x, w.y, f.pts[i], f.pts[i + 1]); if (dd < bd) { bd = dd; best = f; } }
   return best; }
-/* Aller voir quelque chose : on le met au centre du vide, lisible. */
-function centrerSur(x, y, w, h) { const r = cadre(), m = marges();
-  const s = Math.max(app.vue.s, Math.min(1.1, Math.min((r.width - m.gauche - m.droite) / (w + 80), (r.height - m.haut - m.bas) / (h + 80))));
-  const cx = m.gauche + (r.width - m.gauche - m.droite) / 2, cy = m.haut + (r.height - m.haut - m.bas) / 2;
-  animerVue({ s, tx: cx - (x + w / 2) * s, ty: cy - (y + h / 2) * s }, true); }
+/* Aller voir quelque chose : on le met au centre du vide, lisible. Au téléphone la place est petite : un bloc haut (un
+   calculateur) y tiendrait en vignette illisible. On le cadre alors sur sa largeur, assez grand pour que son repère se
+   lise (LISIBLE : cent pixels de large), et l'on en montre le haut — le reste se fait défiler au doigt. */
+const LISIBLE = 100;
+function centrerSur(x, y, w, h) { const r = cadre(), m = marges(), W = r.width - m.gauche - m.droite, H = r.height - m.haut - m.bas;
+  let s = Math.max(app.vue.s, Math.min(1.1, Math.min(W / (w + 80), H / (h + 80))));
+  if (telephone()) s = Math.max(s, Math.min(2.5, W / (w + 24), LISIBLE / Math.max(w, 40)));
+  const cx = m.gauche + W / 2, cy = m.haut + H / 2, entier = h * s <= H - 16;
+  animerVue({ s, tx: cx - (x + w / 2) * s, ty: entier ? cy - (y + h / 2) * s : m.haut + 12 - y * s }, true); }
 function viser(nom) { const c = app.dessin && app.dessin.compDe.get(nom);
   if (!c) { const b = barretteAPoser(nom); if (!b) return false; const bs = bornesDePiquage(b); centrerSur(b.x - 30, bs[0].y - 20, 60, bs[bs.length - 1].y - bs[0].y + 50); return true; }
   centrerSur(c.x, c.y, c.w, c.h); return true; }
@@ -492,7 +496,10 @@ function lierPlanche() {
     else { app.retouches.set(prise.cle, deplacerBloc(prise.P, prise.c, prise.dy, prise.dx, prise.dcol)); garderRetouche(prise.cle);
       dire(prise.c.name + ' déplacé — ce folio garde vos retouches · Ctrl+Z pour défaire, « automatique » pour rendre la main au moteur'); }
     calculer(); peindre(); synchroniser(); rallumer(); prise = null; };
-  stage.addEventListener('pointerdown', e => { if (e.button && e.button !== 0) return; fermerMenu(); fermerRecherche();
+  // l'ACCUEIL (#vide) vit sur la planche : un appui qui en part est un clic sur ses boutons, pas une prise de la vue — ni
+  // capture du pointeur (elle volerait le « click » au bouton), ni pan
+  const surLAccueil = e => !!(e.target && e.target.closest && e.target.closest('#vide'));
+  stage.addEventListener('pointerdown', e => { if (e.button && e.button !== 0) return; fermerMenu(); fermerRecherche(); if (surLAccueil(e)) return;
     try { stage.setPointerCapture(e.pointerId); } catch (_) { }
     pointeurs.set(e.pointerId, { x: e.clientX, y: e.clientY }); clearTimeout(long);
     if (pointeurs.size >= 2) { prise = null; debutPinch(); return; }
@@ -534,7 +541,8 @@ function lierPlanche() {
     const c = blocSous(versMonde(e.clientX, e.clientY)); const nm = c ? c.name : null;
     if (nm !== survole) { survole = nm; if (nm) allumerBloc(nm); else rallumer(); } });
   stage.addEventListener('mouseleave', () => { if (!mode) { survole = null; rallumer(); } });
-  stage.addEventListener('wheel', e => { e.preventDefault(); const r = cadre(); zoomer(Math.exp(-e.deltaY * 0.0014), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+  stage.addEventListener('wheel', e => { if (surLAccueil(e)) return;   // l'accueil défile, il ne zoome pas
+    e.preventDefault(); const r = cadre(); zoomer(Math.exp(-e.deltaY * 0.0014), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
 
 }
 let appuiDuPlan = null;   // le dernier appui simple sur la planche (l'instant, l'endroit, le bloc) : un double-clic peut finir ailleurs
@@ -584,7 +592,7 @@ function fermerInspecteur() { const el = $('inspecteur'); app.insp.index = false
 /* Le lecteur : « on se repère pas, on est perdu ». Un bouton du rail (R) ouvre l'inspecteur sur la liste de tous les
    repères — équipements, barrettes (celles à poser comprises), prises —, chacun avec son état et ses folios ; on y
    cherche ; un clic ouvre la fiche, la flèche ramène à la liste. Rien n'est caché derrière le plan. */
-function basculerIndex() { if (!$('inspecteur').hidden && app.insp.index) { fermerInspecteur(); return; }
+function basculerIndex() { if (!$('inspecteur').hidden && app.insp.index) { if (app.cible) retourIndex(); else fermerInspecteur(); return; }   // depuis une fiche venue de l'index, R ramène à la liste
   if (!(app.contrat.liaisons.length || verite().length)) { dire('Rien à montrer : dépose d’abord un fichier.'); return; }
   app.insp.index = true; if (app.cible) { const c = app.cible; app.cible = null; if (app.choisi) { app.choisi = null; peindre(); }
     if (c.type === 'bloc' && app.base.filtreAuto) { app.base.filtre = ''; app.base.filtreAuto = false; rendreBase(); } eteindre(); marquerLignes(); }
@@ -642,13 +650,21 @@ function allerAuFolio(pas) { const P = plans(); let i = P.indexOf(app.plan);
   if (i < 0) i = pas > 0 ? -1 : P.length; i += pas; if (i < 0 || i >= P.length) return; allerAuPlan(P[i]); }
 function plansDuRepere(nom) { return [...new Set(app.contrat.liaisons.filter(l => l.de === nom || l.vers === nom).map(l => l.plan).filter(Boolean))]; }
 function plansDuFil(cable) { return [...new Set(app.contrat.liaisons.filter(l => l.cable === cable).map(l => l.plan).filter(Boolean))]; }
-function synchroniserFolios() { const P = plans(), strip = $('fo-strip');
+/* Les folios du lecteur sont des DESSINS (FWD : MEE256A7815001A, …02A) : des noms longs qui partagent un début. Les
+   puces de la bande l'abrègent à ce qui les distingue (« …01A ») — le nom entier reste dans la puce (en retrait, caché
+   par le style, lu par les lecteurs d'écran), en bulle, et en clair sur la puce du folio courant. Rend [début, reste]. */
+function coupureDesFolios(P) { if (P.length < 2 || P.some(p => p.length < 10)) return null;
+  let n = 0; while (n < P[0].length && P.every(p => p[n] === P[0][n])) n++;
+  n = Math.min(n, Math.min(...P.map(p => p.length)) - 3); return n >= 5 ? n : null; }
+const FOLIOS_EN_LISTE = 8;   // au-delà, une liste déroulante double la bande
+function synchroniserFolios() { const P = plans(), strip = $('fo-strip'), sel = $('fo-select');
   // la barre du bas reste (cadrage, zoom) ; la partie folios ne se montre qu'à plusieurs feuilles ; sans contrat (l'accueil), rien
   $('folios').hidden = !app.contrat.liaisons.length;
   $('fo-part').hidden = P.length < 2;
   if (app.plan !== '*' && !P.includes(app.plan)) app.plan = P.length > 1 ? P[0] : '*';
-  const i = P.indexOf(app.plan);
-  strip.innerHTML = P.length < 2 ? '' : P.map(p => `<button class="chip${p === app.plan ? ' on' : ''}" data-plan="${escA(p)}" aria-label="Folio ${escA(p)}"${p === app.plan ? ' aria-current="page"' : ''}>${esc(p)}</button>`).join('');
+  const i = P.indexOf(app.plan), k = coupureDesFolios(P);
+  strip.innerHTML = P.length < 2 ? '' : P.map(p => `<button class="chip${p === app.plan ? ' on' : ''}${k ? ' abrege' : ''}" data-plan="${escA(p)}" title="${escA('Folio ' + p)}" aria-label="Folio ${escA(p)}"${p === app.plan ? ' aria-current="page"' : ''}>${k ? `<span class="chip-pre">${esc(p.slice(0, k))}</span>${esc(p.slice(k))}` : esc(p)}</button>`).join('');
+  if (sel) { sel.hidden = P.length <= FOLIOS_EN_LISTE; sel.innerHTML = sel.hidden ? '' : P.map((p, j) => `<option value="${escA(p)}"${p === app.plan ? ' selected' : ''}>${j + 1} · ${esc(p)}</option>`).join(''); }
   $('fo-lbl').textContent = i < 0 ? (P.length > 1 ? 'tout' : '1 / 1') : (i + 1) + ' / ' + P.length;
   // une seule feuille : les flèches n'ont nulle part où aller
   const seul = P.length < 2; $('fo-prev').disabled = seul || i === 0; $('fo-next').disabled = seul || (i >= 0 && i >= P.length - 1);
@@ -773,7 +789,7 @@ function marquerLignes() { if ($('base').hidden) return;
   $('ba-tbody').querySelectorAll('tr[data-i]').forEach(tr => { const l = verite()[+tr.dataset.i]; tr.classList.toggle('on', !!l && ligneChoisie(l)); }); }
 const natureDe = nom => { const q = lireRepere(nom); return (q && q.num && CODES[q.code]) ? CODES[q.code].nom : 'équipement'; };
 const triNaturel = (a, b) => String(a).localeCompare(String(b), 'fr', { numeric: true });
-const pluriel = (n, mot) => n + ' ' + mot + (n > 1 ? 's' : '');
+const pluriel = (n, mot) => n + ' ' + mot + (n > 1 && !/[sxz]$/.test(mot) ? 's' : '');   // « 2 harness », pas « harnesss »
 /* La fiche se refait après chaque correction et quand la place change (fenêtre, poignée) — jamais sous les doigts de
    qui y ÉCRIT (un champ de la fiche a le focus). Un bouton de la fiche qu'on vient de presser (une puce, une variante)
    a le focus lui aussi : la fiche se refait quand même, et `rendreFiche` lui rend le focus. */
@@ -819,20 +835,65 @@ const MOTS_VERDICT = { ok: 'ok', jauge: 'jauge hors plage', fil: 'dépasse le fi
 /* La formule de la chute selon le régime. */
 const formuleChute = r => r === 'tri' ? 'ΔU composée (entre deux phases) = √3 × I × (R cos φ + X sin φ)' : r === 'mono' ? 'ΔU = I × (R cos φ + X sin φ)' : 'ΔU = (ρ × L + R<sub>contact</sub>) × I';
 const dec = (x, n) => x == null ? '—' : x.toFixed(n).replace('.', ',');
-function carteSimulation(nom, P, S) { const H = S.hyp, V = verite(), N = app.norme || normeVide();
+/* ---- LES HYPOTHÈSES de la simulation --------------------------------------- */
+/* Ce que le retest ne porte pas, l'outil le SUPPOSE : la longueur et le courant d'un fil, la tension du réseau, l'ambiante,
+   le régime, le déclassement, l'ambiante du tableau de disjoncteurs (`HYPOTHESES`, 09). Elles vivent dans `app.simu`,
+   gardées dans ce navigateur (`memoriserSimu`), relues au démarrage (`relireSimu`) — une commodité de l'outil, pas une
+   donnée du contrat : pas de Ctrl+Z, « Revenir aux valeurs de l'outil » les rend. Chaque fiche qui s'en sert le dit
+   (« hypothèse ») et mène à la fiche des hypothèses ; un changement rejuge tout (le contrôle, la fiche ouverte).
+   `hypothesesDe` : la liste des champs, dans l'ordre, chacun avec ce qu'il sert et quelle règle le lit — une seule
+   définition pour le bandeau d'une carte (`carteSimulation`) et la fiche (`ficheHypotheses`). `ctx.fils` : le faisceau
+   simulé (le facteur de déclassement en dépend ; sans lui, le faisceau de référence de la table). */
+function hypothesesDe(N, H, ctx) { ctx = ctx || {}; const regime = REGIMES[H.regime] ? H.regime : 'continu';
+  const nb = (id, k, lib, unite, pas, groupe, sert, o) => ({ genre: 'nombre', id, k, lib, unite, pas, groupe, sert, min: o && o.negatif ? null : 0, titre: (o && o.titre) || '' });
   // les conditions de déclassement, une case par condition, avec le facteur que la table donne pour ce faisceau (le point FAA le plus proche, l'altitude interpolée)
-  const noms = [...new Set(N.declassements.map(d => d.condition))], detail = detailDeclassement(N, noms, { fils: S.fils, charge: H.charge, altitude: H.altitude });
-  const conds = noms.map(c => { const d = detail.find(x => x.condition === c), titre = d && d.point ? (d.point.fils != null ? `le point ${d.point.fils} fils à ${nombre(d.point.charge != null ? d.point.charge : 100)} % (${d.point.note || 'table'})` : d.point.altitude != null ? `${nombre(d.point.altitude)} ft (${d.point.note || 'table'})` : d.point.note || '') : '';
-    return `<label class="hyp-c" title="${escA(titre)}"><input type="checkbox" data-cond="${escA(c)}"${H.conditions.includes(c) ? ' checked' : ''}><span>${esc(c)} ×${nombre(Math.round((d ? d.facteur : 1) * 100) / 100)}</span></label>`; }).join('');
-  const champ = (id, lib, val, unite, pas) => `<label class="hyp-n"><span>${lib}</span><input id="${id}" type="number" inputmode="decimal" step="${pas}" min="0" value="${val}" aria-label="${lib} (hypothèse)"><span class="u">${unite}</span></label>`;
-  // l'ambiante du tableau de disjoncteurs (min / max) peut être négative : seules les courbes qui l'encadrent jugent
-  const champT = (id, lib, val, unite, pas) => `<label class="hyp-n" title="L’ambiante du tableau de disjoncteurs : seules les courbes de disjonction qui l’encadrent jugent"><span>${lib}</span><input id="${id}" type="number" inputmode="decimal" step="${pas}" value="${val}" aria-label="${lib} (hypothèse)"><span class="u">${unite}</span></label>`;
+  const noms = [...new Set(N.declassements.map(d => d.condition))], detail = detailDeclassement(N, noms, { fils: ctx.fils, charge: H.charge, altitude: H.altitude });
+  const conds = noms.map(c => { const d = detail.find(x => x.condition === c), p = d && d.point;
+    const titre = p ? (p.fils != null ? `le point ${p.fils} fils à ${nombre(p.charge != null ? p.charge : 100)} % (${p.note || 'table'})` : p.altitude != null ? `${nombre(p.altitude)} ft (${p.note || 'table'})` : p.note || '') : '';
+    const sert = c === 'faisceau' ? 'Des fils en faisceau admettent moins qu’un fil seul (AC 43.13-1B, fig. 11-5) : le facteur dépend du nombre de fils et de leur charge.' : c === 'altitude' ? 'L’air raréfié refroidit moins (AC 43.13-1B, fig. 11-6) : le facteur dépend de l’altitude.' : 'Un déclassement de la table Déclassement de la norme, sur ce qu’un fil admet.';
+    return { genre: 'condition', c, lib: c, facteur: d ? d.facteur : 1, titre, groupe: 'declassement', sert }; });
   const faisceau = N.declassements.some(d => d.fils != null) && H.conditions.includes('faisceau'), altitude = N.declassements.some(d => d.altitude != null) && H.conditions.includes('altitude');
+  const TABLEAU = 'L’ambiante du tableau de disjoncteurs : seules les courbes de disjonction qui l’encadrent jugent';
+  return [
+    nb('si-L', 'longueur', 'longueur', 'm', '0.5', 'fil', 'La longueur d’un fil que le retest ne mesure pas : la chute sur ce fil, et la chute en ligne depuis le disjoncteur, se calculent dessus.'),
+    nb('si-I', 'courant', 'courant', 'A', '0.5', 'fil', 'Le courant d’un fil qu’aucun disjoncteur n’alimente, et celui de la simulation d’une barrette ou d’une prise.'),
+    nb('si-U', 'tension', 'tension', 'V', '1', 'fil', 'La tension du réseau : la chute admise en ligne (table Réseau) et le pourcentage de chute.'),
+    N.fils.some(f => f.tr != null) ? nb('si-T', 'ambiante', 'ambiante', '°C', '5', 'temperature', 'L’ambiante autour des fils : l’EN 2853 déclasse ce qu’un fil admet (note 2), et la tenue en température des câbles se juge dessus (+ 40 °C au conducteur).') : null,
+    nb('si-Tc', 'tconducteur', 'conducteur', '°C', '5', 'temperature', 'La température du conducteur, pour sa résistance : 20 °C, la convention de la base des câbles ; 135 °C, le cas de l’EN 2853.'),
+    { genre: 'choix', id: 'si-Ret', k: 'retour', lib: 'retour', aria: 'Retour du courant', options: Object.entries(RETOURS), valeur: H.retour || 'structure', groupe: 'fil', sert: 'Par la structure, l’aller seul compte (AC 43.13-1B : du bus à la masse de l’équipement) ; par un fil identique, la résistance double — le fil et ses contacts, deux fois.' },
+    { genre: 'choix', id: 'si-R', k: 'regime', lib: 'régime', aria: 'Régime du réseau', options: Object.entries(REGIMES), valeur: regime, groupe: 'reseau', sert: 'Continu, monophasé ou triphasé : la formule de la chute ; en triphasé, la chute composée (√3 ×) se compare à la ligne 200 V du réseau.' },
+    regime !== 'continu' ? { genre: 'choix', id: 'si-C', k: 'cosphi', lib: 'cos φ', aria: 'cos φ', options: [['0.8', '0,8 · régime permanent'], ['0.35', '0,35 · démarrage moteur']], valeur: Math.abs(H.cosphi - 0.35) < 1e-9 ? '0.35' : Math.abs(H.cosphi - 0.8) < 1e-9 ? '0.8' : '', groupe: 'reseau', sert: '0,8 en régime permanent, 0,35 au démarrage d’un moteur.' } : null,
+    regime !== 'continu' ? nb('si-X', 'reactance', 'X', 'mΩ/m', '0.01', 'reseau', 'La réactance linéique à 400 Hz : négligée sous ' + GROS_CABLE + ' mm² de cuivre, à saisir au-delà (la simulation l’estime, sans jamais la prendre d’office).') : null,
+    ...conds,
+    faisceau ? nb('si-P', 'charge', 'charge du faisceau', '%', '10', 'declassement', 'La part de ce que les fils du faisceau admettent ensemble qui circule vraiment : le point de la figure 11-5.') : null,
+    altitude ? nb('si-A', 'altitude', 'altitude', 'ft', '5000', 'declassement', 'L’altitude de vol, pour le déclassement de la figure 11-6.') : null,
+    N.disjoncteurs && N.disjoncteurs.length ? nb('si-Tmin', 'tableauMin', 'tableau min', '°C', '5', 'tableau', 'L’ambiante la plus basse du tableau de disjoncteurs : la courbe de disjonction juste au-dessous (la lente) juge la protection du fil.', { negatif: true, titre: TABLEAU }) : null,
+    N.disjoncteurs && N.disjoncteurs.length ? nb('si-Tmax', 'tableauMax', 'tableau max', '°C', '5', 'tableau', 'L’ambiante la plus haute du tableau : la courbe juste au-dessus (la rapide) juge le déclenchement intempestif.', { negatif: true, titre: TABLEAU }) : null
+  ].filter(Boolean); }
+/* Un champ d'hypothèse, tel que le bandeau d'une carte le montre (compact) ; la fiche l'habille d'une ligne qui dit à
+   quoi il sert. Les identifiants (si-L, si-I…) sont ceux que `lierHypotheses` lit. */
+function champHypotheseHtml(c, H) {
+  if (c.genre === 'condition') return `<label class="hyp-c" title="${escA(c.titre)}"><input type="checkbox" data-cond="${escA(c.c)}"${H.conditions.includes(c.c) ? ' checked' : ''}><span>${esc(c.c)} ×${nombre(Math.round(c.facteur * 100) / 100)}</span></label>`;
+  if (c.genre === 'choix') return `<label class="hyp-n"><span>${esc(c.lib)}</span><select id="${c.id}" aria-label="${escA(c.aria + ' (hypothèse)')}">${c.options.map(([v, t]) => `<option value="${escA(v)}"${String(v) === String(c.valeur) ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
+  return `<label class="hyp-n"${c.titre ? ` title="${escA(c.titre)}"` : ''}><span>${esc(c.lib)}</span><input id="${c.id}" type="number" inputmode="decimal" step="${c.pas}"${c.min != null ? ` min="${c.min}"` : ''} value="${H[c.k]}" aria-label="${escA(c.lib + ' (hypothèse)')}"><span class="u">${esc(c.unite)}</span></label>`; }
+const GROUPES_HYPOTHESES = [['fil', 'Le fil'], ['temperature', 'La température'], ['reseau', 'Le réseau'], ['declassement', 'Le déclassement'], ['tableau', 'Le tableau de disjoncteurs']];
+const ligneHypotheseHtml = (c, H) => `<div class="hy-ligne"><div class="hy-champ">${champHypotheseHtml(c, H)}</div><p class="hy-sert">${esc(c.sert)}${c.genre === 'condition' && c.titre ? ` <i>· ${esc(c.titre)}</i>` : ''}</p></div>`;
+/* LA FICHE DES HYPOTHÈSES : un document à droite (mode `hypotheses`), un groupe par thème, chaque hypothèse avec son
+   champ et ce qu'elle sert ; « Revenir aux valeurs de l'outil » rend `HYPOTHESES`. Atteignable du menu, du mot
+   « hypothèse » de la fiche d'un fil, de « longueurs d'hypothèse » de la fiche d'un disjoncteur. */
+function ficheHypotheses() { const H = app.simu || (app.simu = { ...HYPOTHESES }), N = app.norme || normeVide(), cs = hypothesesDe(N, H);
+  const defaut = Object.keys(HYPOTHESES).every(k => JSON.stringify(H[k]) === JSON.stringify(HYPOTHESES[k]));
+  const corps = tete('Simulation', 'Hypothèses') + `<p class="note">Ce que le retest ne porte pas, l’outil le suppose. Chaque fiche qui s’en sert le dit (<b>hypothèse</b>) ; ce qu’on règle ici rejuge tout — le contrôle, les fiches, la nomenclature — et se garde dans ce navigateur, pas avec le contrat.${defaut ? '' : ' <b>Réglées</b> : l’outil proposait d’autres valeurs.'}</p>`
+    + GROUPES_HYPOTHESES.map(([g, t]) => { const xs = cs.filter(c => c.groupe === g); return xs.length ? `<section class="hy-groupe"><div class="sur">${esc(t)}</div>${xs.map(c => ligneHypotheseHtml(c, H)).join('')}</section>` : ''; }).join('');
+  const deja = app.fiche && app.fiche.mode === 'hypotheses', y = deja ? $('fiche-corps').scrollTop : 0;
+  ouvrirFiche({ mode: 'hypotheses' }, corps, `<button class="btn papier" id="hy-defaut"${defaut ? ' disabled' : ''}>Revenir aux valeurs de l’outil</button>`); if (deja) $('fiche-corps').scrollTop = y;
+  lierHypotheses($('fiche-corps'), ficheHypotheses);
+  $('hy-defaut').onclick = () => { app.simu = { ...HYPOTHESES, conditions: [...HYPOTHESES.conditions] }; apresHypotheses(); ficheHypotheses(); dire('Les hypothèses de l’outil sont rétablies.'); }; }
+/* Une hypothèse a changé : gardée, le contrôle se refait (sa clé l'oublie), la fiche ouverte dans l'inspecteur aussi. */
+function apresHypotheses() { memoriserSimu(); if (typeof CONTROLE !== 'undefined') CONTROLE.cle = null; rendreControle(); rafraichirCarte(); }
+function carteSimulation(nom, P, S) { const H = S.hyp, V = verite(), N = app.norme || normeVide();
   let s = `<div class="simu"><div class="simu-tete"><span class="sur">Simulation</span><span class="simu-note">hypothèses, pas des mesures : le retest ne porte ni longueur ni courant</span></div>
-    <div class="hyp">${champ('si-L', 'longueur', H.longueur, 'm', '0.5')}${champ('si-I', 'courant', H.courant, 'A', '0.5')}${champ('si-U', 'tension', H.tension, 'V', '1')}${N.fils.some(f => f.tr != null) ? champ('si-T', 'ambiante', H.ambiante, '°C', '5') : ''}${champ('si-Tc', 'conducteur', H.tconducteur, '°C', '5')}
-    <label class="hyp-n"><span>retour</span><select id="si-Ret" aria-label="Retour du courant (hypothèse)">${Object.entries(RETOURS).map(([k, t]) => `<option value="${k}"${(H.retour || 'structure') === k ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
-    <label class="hyp-n"><span>régime</span><select id="si-R" aria-label="Régime du réseau (hypothèse)">${Object.entries(REGIMES).map(([k, t]) => `<option value="${k}"${S.regime === k ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
-    ${S.regime !== 'continu' ? `<label class="hyp-n"><span>cos φ</span><select id="si-C" aria-label="cos φ (hypothèse)"><option value="0.8"${Math.abs(H.cosphi - 0.8) < 1e-9 ? ' selected' : ''}>0,8 · régime permanent</option><option value="0.35"${Math.abs(H.cosphi - 0.35) < 1e-9 ? ' selected' : ''}>0,35 · démarrage moteur</option></select></label>${champ('si-X', 'X', H.reactance, 'mΩ/m', '0.01')}` : ''}${conds}${faisceau ? champ('si-P', 'charge du faisceau', H.charge, '%', '10') : ''}${altitude ? champ('si-A', 'altitude', H.altitude, 'ft', '5000') : ''}${N.disjoncteurs && N.disjoncteurs.length ? champT('si-Tmin', 'tableau min', H.tableauMin, '°C', '5') + champT('si-Tmax', 'tableau max', H.tableauMax, '°C', '5') : ''}</div>`;
+    <div class="hyp">${hypothesesDe(N, H, { fils: S.fils }).map(c => champHypotheseHtml(c, H)).join('')}</div>`;
   if (S.sansNorme) return s + `<p class="simu-vide">Aucune norme ne connaît cette famille ni ces fils : rien n’est calculé. Importe une norme depuis la bible.</p></div>`;
   if (!S.lignes.length) return s + `<p class="simu-vide">Aucun fil dans un trou : rien à simuler.</p></div>`;
   const ligne = x => { const i = V.indexOf(x.l), dest = x.vers + (x.borneVers ? ':' + x.borneVers : '');
@@ -898,19 +959,20 @@ function lierCartePhysique(nom) { const box = $('ba-equip');
   box.addEventListener('click', e => { const f = e.target.closest('.fil'); if (f) { voirFilDeCarte(+f.dataset.i); return; }
     const m = e.target.closest('.mod, .trous'); if (m) voirModule(indices(m)); });
   box.addEventListener('keydown', e => { const f = e.target.closest('.fil'); if (f && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); voirFilDeCarte(+f.dataset.i); } }); }
-/* Une hypothèse changée : elle est gardée, la carte se refait, le champ
-   garde la main. */
-function lierHypotheses(box) { const H = app.simu;
-  const refaire = id => { memoriserSimu(); rendreFiche(); const el = id && $(id); if (el) el.focus(); };
-  [['si-R', 'regime'], ['si-C', 'cosphi'], ['si-Ret', 'retour']].forEach(([id, k]) => { const el = $(id); if (!el) return; el.addEventListener('change', () => { H[k] = k === 'cosphi' ? parseFloat(el.value) : el.value; refaire(id); }); });
+/* Une hypothèse changée : elle est gardée et tout se rejuge (`apresHypotheses`) ; ce qui la montre se refait —
+   `refaireFiche` (la fiche des hypothèses), sinon la carte de l'inspecteur — et le champ garde la main. `box` : le
+   conteneur des champs (les identifiants s'y cherchent : un bandeau de carte et la fiche peuvent coexister). */
+function lierHypotheses(box, refaireFiche) { const H = app.simu, el = id => box.querySelector('#' + id);
+  const refaire = id => { apresHypotheses(); (refaireFiche || rendreFiche)(); const e = id && el(id); if (e) e.focus(); };
+  [['si-R', 'regime'], ['si-C', 'cosphi'], ['si-Ret', 'retour']].forEach(([id, k]) => { const e = el(id); if (!e) return; e.addEventListener('change', () => { H[k] = k === 'cosphi' ? parseFloat(e.value) : e.value; refaire(id); }); });
   // l'ambiante du tableau : deux nombres, négatifs permis, le min sous le max
-  [['si-Tmin', 'tableauMin'], ['si-Tmax', 'tableauMax']].forEach(([id, k]) => { const el = $(id); if (!el) return;
-    el.addEventListener('change', () => { const v = parseFloat(String(el.value).replace(',', '.')); if (isNaN(v)) { el.value = H[k]; return; } if (v === H[k]) return; H[k] = v;
+  [['si-Tmin', 'tableauMin'], ['si-Tmax', 'tableauMax']].forEach(([id, k]) => { const e = el(id); if (!e) return;
+    e.addEventListener('change', () => { const v = parseFloat(String(e.value).replace(',', '.')); if (isNaN(v)) { e.value = H[k]; return; } if (v === H[k]) return; H[k] = v;
       if (H.tableauMin > H.tableauMax) { if (k === 'tableauMin') H.tableauMax = v; else H.tableauMin = v; } refaire(id); }); });
-  [['si-L', 'longueur'], ['si-I', 'courant'], ['si-U', 'tension'], ['si-T', 'ambiante'], ['si-Tc', 'tconducteur'], ['si-X', 'reactance'], ['si-P', 'charge'], ['si-A', 'altitude']].forEach(([id, k]) => { const el = $(id); if (!el) return;
-    el.addEventListener('change', () => { const v = parseFloat(String(el.value).replace(',', '.')); if (isNaN(v) || v < 0) { el.value = H[k]; return; } if (v === H[k]) return; H[k] = v; refaire(id); }); });
-  box.querySelectorAll('.hyp input[data-cond]').forEach(el => el.addEventListener('change', () => { const c = el.dataset.cond;
-    H.conditions = el.checked ? [...new Set([...H.conditions, c])] : H.conditions.filter(x => x !== c); refaire(); })); }
+  [['si-L', 'longueur'], ['si-I', 'courant'], ['si-U', 'tension'], ['si-T', 'ambiante'], ['si-Tc', 'tconducteur'], ['si-X', 'reactance'], ['si-P', 'charge'], ['si-A', 'altitude']].forEach(([id, k]) => { const e = el(id); if (!e) return;
+    e.addEventListener('change', () => { const v = parseFloat(String(e.value).replace(',', '.')); if (isNaN(v) || v < 0) { e.value = H[k]; return; } if (v === H[k]) return; H[k] = v; refaire(id); }); });
+  box.querySelectorAll('input[data-cond]').forEach(e => e.addEventListener('change', () => { const c = e.dataset.cond;
+    H.conditions = e.checked ? [...new Set([...H.conditions, c])] : H.conditions.filter(x => x !== c); refaire(); })); }
 /* Les lignes des fils qu'on survole dans le dessin, marquées dans la table. */
 function marquerVisees(idx) { $('ba-tbody').querySelectorAll('tr[data-i]').forEach(tr => tr.classList.toggle('vise', idx.includes(+tr.dataset.i))); }
 /* Cliquer un module : sa première ligne vient sous les yeux dans la table. */
@@ -1123,11 +1185,11 @@ function fermerBase() { if (!app.base.ouvert) return; app.base.ouvert = false;
   $('base').hidden = true; document.body.classList.remove('base-ouverte'); $('btnBase').setAttribute('aria-pressed', 'false');
   memoriserBase(); ajuster(true); }
 function basculerBase() { if (app.base.ouvert) fermerBase(); else if (app.contrat.liaisons.length || verite().length) ouvrirBase(); else dire('Rien à montrer : dépose d’abord un fichier.'); }
-/* Ouverte ou non, sa taille : une commodité de ce navigateur, rien de plus. */
-function memoriserBase() { try { localStorage.setItem(CLE_BASE, JSON.stringify({ ouvert: app.base.ouvert, portee: app.base.portee, hauteur: app.base.hauteur })); } catch (_) { } }
+/* Sa taille et sa portée : une commodité de ce navigateur, rien de plus. Ouvert ou non ne se garde pas : on rouvre
+   toujours sur le plan seul (c'est lui qu'on scanne), le tableau vient à la demande (B). */
+function memoriserBase() { try { localStorage.setItem(CLE_BASE, JSON.stringify({ portee: app.base.portee, hauteur: app.base.hauteur })); } catch (_) { } }
 function relireBase() { let o = null; try { o = JSON.parse(localStorage.getItem(CLE_BASE) || 'null'); } catch (_) { }
-  if (o) { app.base.hauteur = o.hauteur || 0; if (o.portee === 'tout' || o.portee === 'folio') app.base.portee = o.portee; } appliquerTailleBase();
-  return o ? !!o.ouvert : false; }   // au premier lancement, le plan seul : le tableau s'ouvre à la demande (B)
+  if (o) { app.base.hauteur = o.hauteur || 0; if (o.portee === 'tout' || o.portee === 'folio') app.base.portee = o.portee; } appliquerTailleBase(); }
 
 /* ---- la fiche : cartouche, collage, bible — les documents rares --------- */
 function ouvrirFiche(mode, corps, pied) { const f = $('fiche'); fermerBase(); if (!$('inspecteur').hidden) { $('inspecteur').hidden = true; document.body.classList.remove('insp-ouvert'); }
@@ -1139,9 +1201,11 @@ function ouvrirFiche(mode, corps, pied) { const f = $('fiche'); fermerBase(); if
   // sur téléphone la fiche monte en tiroir : le rail et les folios se posent au-dessus d'elle
   document.body.classList.add('fiche-ouverte'); r.setProperty('--fiche-h', f.offsetHeight + 'px');
   $('fi-fermer').onclick = () => fermerFiche(true); if (nouveau) ajuster(true); }
-/* `recadrer` : quand on ferme la fiche pour elle-même, le plan reprend la place. */
+/* `recadrer` : quand on ferme la fiche pour elle-même, ce qu'on avait choisi revient dans l'inspecteur (le document
+   l'avait remplacé), sinon le plan reprend la place. */
 function fermerFiche(recadrer) { const f = $('fiche'); if (f.hidden && !app.fiche) return; f.hidden = true; app.fiche = null;
-  document.body.classList.remove('fiche-ouverte'); if (recadrer) ajuster(true); }
+  document.body.classList.remove('fiche-ouverte'); if (!recadrer) return;
+  if (app.cible && $('inspecteur').hidden) ouvrirInspecteur(); else ajuster(true); }
 const tete = (sur, titre, sans) => `<div class="fiche-tete"><div class="min0"><div class="sur">${esc(sur)}</div><h2 class="titre${sans ? ' sans' : ''}">${esc(titre)}</h2></div>
   <button class="rond fermer" id="fi-fermer" aria-label="Fermer la fiche"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`;
 const champ = (id, lib, val, opt) => `<label class="champ${opt && opt.sans ? ' sans' : ''}"><span>${lib}</span><input id="${id}" value="${escA(val || '')}"${opt && opt.ph ? ` placeholder="${escA(opt.ph)}"` : ''} spellcheck="false"></label>`;
@@ -1233,11 +1297,14 @@ function ajusterFolios() { if (app.nFolios) return 0;
   return meilleur.n; }
 
 /* ---- historique et enregistrement ------------------------------------- */
+/* L'historique photographie le contrat entier — les liaisons, les choix (désignations, sexes, raccords, profils de
+   charge), le cartouche — : défaire un chargement rend aussi les choix et le cartouche d'avant. */
 function histPush(quoi) { app.hist.push({ quoi, liaisons: app.contrat.liaisons.map(l => ({ ...l })), source: app.source ? app.source.map(l => ({ ...l })) : null,
-  nFolios: app.nFolios, budget: app.budget, plan: app.plan, nom: app.nom, designations: new Map(app.contrat.designations), sexes: new Map(app.contrat.sexes || []), raccords: new Map([...(app.contrat.raccords || [])].map(([k, v]) => [k, { ...v }])), charges: new Map([...(app.contrat.charges || [])].map(([k, v]) => [k, JSON.parse(JSON.stringify(v))])), retouches: new Map(app.retouches) });
+  nFolios: app.nFolios, budget: app.budget, plan: app.plan, nom: app.nom, designations: new Map(app.contrat.designations), sexes: new Map(app.contrat.sexes || []), raccords: new Map([...(app.contrat.raccords || [])].map(([k, v]) => [k, { ...v }])), charges: new Map([...(app.contrat.charges || [])].map(([k, v]) => [k, JSON.parse(JSON.stringify(v))])), cartouche: { ...app.contrat.cartouche }, retouches: new Map(app.retouches) });
   if (app.hist.length > 40) app.hist.shift(); synchroniserHistorique(); }
 function annuler() { const p = app.hist.pop(); if (!p) return null;
   app.contrat.liaisons = p.liaisons; app.source = p.source; app.nFolios = p.nFolios; app.budget = p.budget || 16; app.plan = p.plan; app.nom = p.nom || ''; app.contrat.designations = p.designations; app.contrat.sexes = p.sexes || new Map(); app.contrat.charges = p.charges || new Map(); app.contrat.raccords = p.raccords || new Map();
+  if (p.cartouche) app.contrat.cartouche = { ...p.cartouche };
   // les retouches d'avant reviennent, et se gardent comme elles étaient
   if (p.retouches) { const cles = new Set([...app.retouches.keys(), ...p.retouches.keys()]); app.retouches = p.retouches; cles.forEach(garderRetouche); }
   app.choisi = null; app.cible = null; app.actif = null; app.base.enSaisie = false; fermerFiche();
@@ -1260,7 +1327,12 @@ function relire() { try { const j = localStorage.getItem(CLE_CONTRAT); if (!j) r
     redessiner(); ajuster(); heureSauve(o.t || Date.now()); return true; } catch (_) { return false; } }
 
 /* ---- charger un contrat ----------------------------------------------- */
-function chargerContrat(liaisons, quoi, nom) { histPush(quoi || 'chargement d’un contrat');
+/* Un contrat NEUF : rien du contrat d'avant ne survit — ni désignations, ni sexes des contacts, ni profils de charge,
+   ni raccords (les repères se répètent d'une machine à l'autre : le 102CB1 d'un retest prendrait le profil du 102CB1 de
+   l'autre) ; le cartouche repart à neuf, sauf qui dessine et à quelle échelle, qui sont ceux du bureau. `relire()` rend
+   les choix du contrat gardé ; Ctrl+Z rend ceux d'avant le chargement. */
+function contratNeuf() { const d = app.contrat.cartouche, c = nouveauContrat(); c.cartouche.auteur = d.auteur; c.cartouche.echelle = d.echelle; return c; }
+function chargerContrat(liaisons, quoi, nom) { histPush(quoi || 'chargement d’un contrat'); app.contrat = contratNeuf();
   app.contrat.liaisons = liaisons.map(liaison); app.source = null; app.nFolios = 0; app.choisi = null; app.cible = null; app.actif = null; app.nom = nom || app.nom;
   app.base.filtre = ''; app.base.tri = null; app.base.enSaisie = false;
   if (document.activeElement && $('ba-tab').contains(document.activeElement)) document.activeElement.blur();
@@ -1276,10 +1348,23 @@ async function ouvrirFichier(fichier) { if (!fichier) return;
       if (normeLue(lireNorme(texte))) { await importerNorme(fichier); return; } }   // une norme déposée sur la table : reconnue à ses tables
     const r = lireTexte(texte);
     if (!r.liaisons.length) { dire('« ' + fichier.name + ' » est lu, mais aucune liaison n’est reconnue — vérifie les colonnes.', true); return; }
-    if (r.harnais && r.harnais.length > 1) { adopterReferences(r.liaisons, fichier.name); dire(pluriel(r.harnais.length, 'harness') + ' dans « ' + fichier.name + ' » : gardés comme contrats déjà faits (un contrat, c’est un harness ; les fiches disent ce qui a déjà été fait).'); return; }
+    if (r.harnais && r.harnais.length > 1) { adopterReferences(r.liaisons, fichier.name); ficheHarnais(r, fichier.name);
+      dire(pluriel(r.harnais.length, 'harness') + ' dans « ' + fichier.name + ' » : gardés comme contrats déjà faits — lequel ouvrir sur la table ?'); return; }
     chargerContrat(r.liaisons, 'ouverture de ' + fichier.name, fichier.name);
     dire(r.liaisons.length + ' liaisons' + (r.format === 'retest' ? ' — format retest, en-têtes ligne ' + r.entete : '') + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + '.');
   } catch (e) { dire('Erreur : ' + (e && e.message || e), true); } }
+/* Un fichier à PLUSIEURS HARNESS (un extrait de la base : une machine par harness) : tout est entré dans la base des
+   contrats déjà faits ; cette petite fiche demande lequel ouvrir comme contrat — un contrat, c'est un harness —, ou
+   aucun. `r` : la lecture (liaisons, harnais). */
+function ficheHarnais(r, nom) { const H = r.harnais.map(h => { const L = r.liaisons.filter(l => l.harness === h);
+    return { h, n: L.length, dessins: new Set(L.map(l => l.plan).filter(Boolean)).size, appareil: (L.find(l => l.appareil) || {}).appareil || '' }; });
+  const corps = tete('Ouvrir « ' + nom + ' »', pluriel(H.length, 'harness') + ' : lequel ouvrir ?', true)
+    + `<p class="note">Un contrat, c’est un harness. Les ${H.length} sont gardés comme <b>contrats déjà faits</b> : les fiches diront ce qui a déjà été fait. Celui qu’on ouvre devient le contrat sur la table.</p>`
+    + `<ul class="ch-liste" id="choix-harness">${H.map(x => `<li><button class="ch-harness" data-harness="${escA(x.h)}"><b>${esc(x.h)}</b><span>${[pluriel(x.n, 'liaison'), x.dessins ? pluriel(x.dessins, 'dessin') : '', x.appareil].filter(Boolean).map(esc).join(' · ')}</span>${ico('fleche')}</button></li>`).join('')}</ul>`;
+  ouvrirFiche({ mode: 'harnais' }, corps, '<button class="btn papier" id="ch-aucun">N’en ouvrir aucun</button>');
+  $('fiche-corps').querySelectorAll('.ch-harness').forEach(b => b.onclick = () => { const h = b.dataset.harness, L = r.liaisons.filter(l => l.harness === h);
+    chargerContrat(L, 'ouverture de ' + h + ' (' + nom + ')', h + ' (' + nom + ')'); dire(h + ' : ' + L.length + ' liaisons' + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + ' — les autres harness restent des contrats déjà faits.'); });
+  $('ch-aucun').onclick = () => fermerFiche(true); }
 function lierDepot() { let n = 0;
   window.addEventListener('dragenter', e => { e.preventDefault(); n++; document.body.classList.add('depot-actif'); });
   window.addEventListener('dragover', e => { e.preventDefault(); });
@@ -1290,14 +1375,18 @@ function lierDepot() { let n = 0;
 /* ---- sortir le dessin : SVG, PNG, impression -------------------------- */
 function nomFolio() { const base = (app.nom || 'atelier-schema').replace(/\.[^.]+$/, '').replace(/[^\w.-]+/g, '_');
   return base + (app.plan !== '*' ? '-folio-' + String(app.plan).replace(/[^\w.-]+/g, '_') : ''); }
-function telecharger(blob, nom) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nom;
+/* Un nom de fichier en ASCII : ouvert depuis file://, Chromium remplace par « download » tout nom qui porte un accent,
+   une apostrophe ou un tiret cadratin. Les accents tombent, tout le reste devient un tiret. */
+const nomAscii = nom => String(nom).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9._-]+/g, '-').replace(/-{2,}/g, '-').replace(/^-+|-+(?=\.|$)/g, '');
+const nomContrat = () => nomAscii((app.nom || 'contrat').replace(/\.[^.]+$/, '')) || 'contrat';
+function telecharger(blob, nom) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nomAscii(nom);
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); }
 function svgDuFolio() { return app.dessin ? svgAutonome(app.dessin, app.contrat.cartouche, folioCourant(), designationDe) : null; }
 /* Le suivi : tout ce que le contrat pose (barrettes, prises, connecteurs),
    en CSV, pour le garder d'un contrat à l'autre. */
 function exporterSuivi() { const L = suiviDuContrat(verite(), app.bible, app.nom || 'contrat', n => app.contrat.designations.get(n) || '');
   if (!L.length) { dire('Rien à suivre : ni barrette, ni prise, ni connecteur dans ce contrat.'); return; }
-  telecharger(new Blob(['\ufeff' + csvDuSuivi(L)], { type: 'text/csv;charset=utf-8' }), (app.nom || 'contrat').replace(/\.[^.]+$/, '') + ' — suivi.csv');
+  telecharger(new Blob(['\ufeff' + csvDuSuivi(L)], { type: 'text/csv;charset=utf-8' }), nomContrat() + '-suivi.csv');
   dire(pluriel(L.length, 'ligne') + ' de suivi enregistrée' + (L.length > 1 ? 's' : '') + '.'); }
 function exporterSVG() { const S = svgDuFolio(); if (!S) return; telecharger(new Blob([S.txt], { type: 'image/svg+xml;charset=utf-8' }), nomFolio() + '.svg'); dire('Folio enregistré en SVG.'); }
 function exporterPNG() { const S = svgDuFolio(); if (!S) return;
@@ -1312,11 +1401,15 @@ function imprimer() { if (!app.dessin) return; const S = svgAutonome(app.dessin,
   $('printroot').innerHTML = `<style>@page{size:A3 landscape;margin:8mm}</style>` + S.txt.replace(/^<\?xml[^>]*\?>\s*/, ''); window.print(); }
 
 /* ---- ce que le menu et le rail affichent ------------------------------ */
-function synchroniserContexte() { const n = app.contrat.liaisons.length, P = plans(), nom = n ? (app.nom || 'Sans nom') : 'Aucun contrat';
-  const sous = n ? `${n} liaison${n > 1 ? 's' : ''} · ${reperesDe(verite()).filter(r => !estRenvoi(r)).length} repères` + (P.length > 1 ? ` · ${P.length} folios` : '') : '';
+const TITRE_CARTOUCHE_DEFAUT = nouveauContrat().cartouche.titre, NOM_EXEMPLE = 'Contrat d’exemple';
+/* L'en-tête dit QUEL contrat est ouvert : le titre du cartouche si on en a écrit un, sinon le nom du fichier ; et que
+   c'est l'exemple embarqué quand c'est lui (à la première ouverture, il s'affiche sans qu'on l'ait demandé). */
+function synchroniserContexte() { const n = app.contrat.liaisons.length, P = plans(), nom = n ? (app.nom || 'Sans nom') : 'Aucun contrat', exemple = n && app.nom === NOM_EXEMPLE;
+  const sous = n ? (exemple ? 'l’exemple embarqué · ' : '') + `${n} liaison${n > 1 ? 's' : ''} · ${reperesDe(verite()).filter(r => !estRenvoi(r)).length} repères` + (P.length > 1 ? ` · ${P.length} folios` : '') : '';
   $('ctx-nom').textContent = nom; $('ctx-txt').textContent = sous;
   // la barre du haut, si la page en a une : le nom du contrat et ses comptes (l'état est posé par rendreControle)
-  const en = $('en-nom'); if (en) { en.textContent = n ? ((app.contrat.cartouche && app.contrat.cartouche.titre) || app.nom || 'Sans nom') : 'Atelier Schéma'; const es = $('en-sous'); if (es) es.textContent = sous; }
+  const titre = app.contrat.cartouche && app.contrat.cartouche.titre, en = $('en-nom');
+  if (en) { en.textContent = n ? (titre && titre !== TITRE_CARTOUCHE_DEFAUT ? titre : nom) : 'Atelier Schéma'; const es = $('en-sous'); if (es) es.textContent = sous; }
   // l'accueil : « reprendre » si le dernier geste a vidé la table
   const rep = $('vd-reprendre'); if (rep) { const d = app.hist[app.hist.length - 1]; rep.hidden = !(!n && d && d.liaisons && d.liaisons.length); if (!rep.hidden) rep.textContent = 'Reprendre ' + (d.nom || 'le contrat'); }
   if (typeof rendreAccueil === 'function') rendreAccueil(); }
@@ -1347,15 +1440,21 @@ function lierPanneau() {
   o('btnBase', basculerBase); o('btnIndex', basculerIndex); o('btnCherche', () => { if (rechercheOuverte()) fermerRecherche(); else ouvrirRecherche(); });
   o('btnLiaison', nouvelleLiaison); o('btnBible', basculerBible); o('btnOuvrir', choisirFichier);
   o('btnMenu', e => { e.stopPropagation(); $('menu').hidden ? ouvrirMenu() : fermerMenu(); });
-  const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple, cartouche: ficheCartouche, bible: ficheBible, normes: () => ficheNormes(), nomenclature: ficheNomenclature, suivi: exporterSuivi, svg: exporterSVG, png: exporterPNG, imprimer,
-    vider: () => { if (!confirm('Effacer tout le contrat ?')) return; histPush('tout effacer'); app.contrat.liaisons = []; app.source = null; app.nFolios = 0; app.plan = '*'; app.nom = ''; app.cible = null; app.choisi = null;
-      fermerFiche(); fermerBase(); redessiner(); ajuster(); sauver(); } };
+  const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple, cartouche: ficheCartouche, bible: ficheBible, normes: () => ficheNormes(), hypotheses: ficheHypotheses, nomenclature: ficheNomenclature, suivi: exporterSuivi, svg: exporterSVG, png: exporterPNG, imprimer,
+    // tout effacer : la table vide (l'accueil), et un contrat neuf — les choix de celui-ci ne survivent pas (Ctrl+Z, ou « Reprendre », rend tout)
+    vider: () => { if (!confirm('Effacer tout le contrat ?')) return; histPush('tout effacer'); app.contrat = contratNeuf(); app.source = null; app.nFolios = 0; app.plan = '*'; app.nom = ''; app.cible = null; app.choisi = null;
+      fermerFiche(); fermerInspecteur(); fermerBase(); redessiner(); ajuster(); sauver(); } };
   $('menu').addEventListener('click', e => { const b = e.target.closest('button[data-act]'); if (!b) return; fermerMenu(); actions[b.dataset.act](); });
   document.addEventListener('click', e => { if (!e.target.closest('#menuBoite')) fermerMenu(); });
   o('btnUndo', () => { const q = annuler(); if (q) dire('Annulé : ' + q + '.'); });
   o('btnAuto', revenirAutomatique);
   o('fo-prev', () => allerAuFolio(-1)); o('fo-next', () => allerAuFolio(+1));
-  $('fo-strip').addEventListener('click', e => { const c = e.target.closest('.chip'); if (c) allerAuPlan(c.dataset.plan); });
+  const strip = $('fo-strip'); strip.addEventListener('click', e => { const c = e.target.closest('.chip'); if (c) allerAuPlan(c.dataset.plan); });
+  // la bande des folios défile à la molette (elle n'a pas de barre), la liste déroulante y va d'un choix
+  strip.addEventListener('wheel', e => { if (!e.deltaY || e.deltaX || strip.scrollWidth <= strip.clientWidth) return; e.preventDefault(); strip.scrollLeft += e.deltaY; }, { passive: false });
+  const sel = $('fo-select'); if (sel) sel.addEventListener('change', () => allerAuPlan(sel.value));
+  // au téléphone, la bande des folios se pose au-dessus de l'inspecteur : sa hauteur (celle de la fiche ouverte) se dit au style par le jeton --insp-h
+  const insp = $('inspecteur'); if (window.ResizeObserver) new ResizeObserver(() => document.documentElement.style.setProperty('--insp-h', (insp.hidden ? 0 : insp.offsetHeight) + 'px')).observe(insp);
   o('zin', () => zoomer(1.25)); o('zout', () => zoomer(1 / 1.25)); o('zfit', () => ajuster(true)); o('zlbl', () => ajuster(true));
   lierRecherche(); lierDepot(); lierBase(); lierControle();
   window.addEventListener('keydown', e => {

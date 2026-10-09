@@ -46,6 +46,7 @@
           <button role="menuitem" data-act="nomenclature">Nomenclature <span class="raccourci">N</span></button>
           <button role="menuitem" data-act="bible">Bible des barrettes</button>
           <button role="menuitem" data-act="normes">Normes</button>
+          <button role="menuitem" data-act="hypotheses">Hypothèses de simulation</button>
           <button role="menuitem" data-act="suivi">Exporter le suivi (CSV)</button>
           <hr>
           <button role="menuitem" data-act="svg">Enregistrer le folio en SVG</button>
@@ -153,6 +154,8 @@
         <span class="bulle" aria-hidden="true">Folio suivant<kbd>→</kbd></span>
       </button>
       <span id="fo-lbl" class="fo-lbl">1 / 1</span>
+      <!-- au-delà de huit folios, une liste déroulante double la bande (l'interface la remplit) -->
+      <select id="fo-select" class="fo-select" hidden aria-label="Aller à un folio"></select>
     </span>
     <span class="fo-milieu">
       <span id="affinage" class="affinage" hidden role="status" aria-live="polite"><i aria-hidden="true"></i><span id="af-txt"></span></span>
