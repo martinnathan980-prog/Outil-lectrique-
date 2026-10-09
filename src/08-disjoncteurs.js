@@ -52,7 +52,7 @@ const chargeDe = nom => (app.contrat.charges && app.contrat.charges.get(nom)) ||
 function pnDuRepere(nom) { for (const l of verite()) { if (l.de === nom && l.pnDe) return l.pnDe; if (l.vers === nom && l.pnVers) return l.pnVers; } return ''; }
 /* Les fils d'un disjoncteur, des deux côtés, avec la borne et l'autre bout. */
 const filsDuDisjoncteur = nom => verite().filter(l => (l.de === nom || l.vers === nom) && l.de !== l.vers)
-  .map(l => ({ cable: l.cable, type: l.type, borne: l.de === nom ? l.borneDe : l.borneVers, autre: l.de === nom ? l.vers + (l.borneVers ? ':' + l.borneVers : '') : l.de + (l.borneDe ? ':' + l.borneDe : ''), l }));
+  .map(l => ({ cable: l.cable, type: l.type, borne: l.de === nom ? l.borneDe : l.borneVers, autre: l.de === nom ? l.vers + (l.borneVers ? ':' + l.borneVers : '') : l.de + (l.borneDe ? ':' + l.borneDe : ''), amont: l.vers === nom, l }));
 /* Les disjoncteurs VOISINS d'un repère : ceux où aboutit un chemin de fils depuis lui (bus → sous-bus) ; leur calibre
    nominal (écrit, sinon le part number) sert à la sélectivité 2:1 — sans passer par l'idéal, qui dépendrait du nôtre. */
 const calibreNominal = nom => { const p = chargeDe(nom); return p && p.calibre > 0 ? p.calibre : calibreDuPn(pnDuRepere(nom)); };
@@ -132,8 +132,9 @@ function etatsHtml(d) { const E = etatsDuProfil(d.profil), parI = new Map(d.poin
    continu seulement), la case que la charge dépasse en rouge avec l'état qui la dépasse ; en ambre, la case que le
    disjoncteur laisse dépasser sur la courbe lente, avec ce qu'il laisse passer, et le continu sous le calibre. */
 const PALIERS_FIL = [[2, 'i2s', '2 s'], [10, 'i10s', '10 s'], [60, 'i1min', '1 min'], [Infinity, 'intensite', 'continu']];
-function filsHtml(d) { if (!d.fils.length) return '';
-  const li = d.fils.map(f => { const k = f.l ? cleFil(f.l) : '';
+/* `vt` : borne → barrette à poser sur cette borne (un dédoublement), étiquetée comme sur la fiche d'un équipement. */
+function filsHtml(d, vt) { if (!d.fils.length) return '';
+  const li = d.fils.map(f => { const k = f.l ? cleFil(f.l) : '', tag = vt && vt.get(String(f.borne));
     // chaque palier : ce que le fil admet ; en ambre ce que le disjoncteur laisse dépasser, le chiffre sur la case la pire
     const cases = f.fil ? PALIERS_FIL.filter(([, q]) => f.fil[q] != null).map(([pal, q, mot]) => { const ko = f.phases.some(p => !p.ok && p.palier === pal), lp = f.laisse.find(x => x.palier === pal), att = (lp && !lp.ok) || (pal === Infinity && f.verdict === 'calibre');
       return `<span class="dj-pal${ko ? ' ko' : att ? ' att' : ''}" title="${escA('admis ' + pourPalier(pal) + (lp ? ' · le ' + amperes(d.calibre) + ' laisse passer ' + amperes1(lp.courant) + ' à ' + f.courbeLente : ''))}"><b>${esc(amperes(f.fil[q] * (pal === Infinity ? f.facteur : f.facteurCourt)))}</b><i>${mot}</i>${lp && !lp.ok && f.pireLaisse && lp.palier === f.pireLaisse.palier ? `<em>laisse ${esc(amperes1(lp.courant))}</em>` : ''}</span>`; }).join('') : '';
@@ -141,12 +142,12 @@ function filsHtml(d) { if (!d.fils.length) return '';
       : f.verdict === 'calibre' ? `<span class="dj-dep att">sous le calibre ${esc(amperes(d.calibre))} : pas protégé en surcharge</span>` : f.protege === false ? `<span class="dj-dep att">pas protégé en surcharge brève (${esc(f.courbeLente)})</span>` : f.verdict === 'inconnu' ? '<span class="dj-dep att">fil inconnu de la norme</span>' : '';
     const titre = (f.cable || 'fil') + (f.type ? ' · ' + f.type : '') + (f.fil ? ' · ' + amperes(f.continu) + ' en continu' + motFacteur(f.facteur) : '') + ' — voir sur le plan';
     return `<li class="fi-fil${f.verdict === 'fil' ? ' ko' : ''}"${k ? ` data-i="${k}" tabindex="0" role="button" title="${escA(titre)}"` : ''}><span class="fi-ct"><b>${esc(f.borne)}</b></span>${puceFil(f)}<span class="fi-type">${esc(f.type || '—')}</span>`
-      + `<span class="fi-dest">${ico('fleche')}<span>${esc(f.autre)}</span></span><span class="fi-w">${esc(f.cable || '')}</span><div class="dj-admet">${cases}${dep}</div></li>`; }).join('');
+      + `<span class="fi-dest${f.amont ? ' amont' : ''}">${ico('fleche')}<span>${esc(f.autre)}</span>${tag ? `<span class="fi-tag" title="Barrette à poser sur cette borne">${esc(tag)}</span>` : ''}</span><span class="fi-w">${esc(f.cable || '')}</span><div class="dj-admet">${cases}${dep}</div></li>`; }).join('');
   const courts = [...new Set(d.fils.map(f => motFacteur(f.facteurCourt)))], continus = [...new Set(d.fils.map(f => motFacteur(f.facteur)))];
   const declasse = courts.length === 1 && courts[0] ? ', déclassés' + courts[0] + (continus.length === 1 && continus[0] !== courts[0] ? ', le continu' + continus[0] : '') : courts.some(Boolean) || continus.some(Boolean) ? ', déclassés' : '';
   return `<ul class="fi-liste dj-fils"><li class="fi-groupe">ses fils · ce qu’ils admettent${declasse}</li>${li}</ul>`; }
-function ficheDisjonction(nom) { const d = disjonctionDe(nom);
-  return `<section class="fi-cadre fi-dj">${gammeHtml(nom, d)}${d.courbes.length ? graphiqueDisjonction(d) : '<p class="fi-note">Aucune courbe de disjonction dans la norme.</p>'}${etatsHtml(d)}${filsHtml(d)}${chutesHtml(nom, d)}</section>`; }
+function ficheDisjonction(nom, vt) { const d = disjonctionDe(nom);
+  return `<section class="fi-cadre fi-dj">${gammeHtml(nom, d)}${d.courbes.length ? graphiqueDisjonction(d) : '<p class="fi-note">Aucune courbe de disjonction dans la norme.</p>'}${etatsHtml(d)}${filsHtml(d, vt)}${chutesHtml(nom, d)}</section>`; }
 /* LA CHUTE EN LIGNE depuis le disjoncteur, comme la feuille du lecteur : chaque chemin jusqu'à un équipement, à
    travers les prises de coupure et les barrettes, au courant permanent du profil (sinon le calibre, sinon l'hypothèse) :
    la chute en volts et en pourcentage, une jauge contre la chute admise. */
@@ -248,13 +249,17 @@ function lierDisjonction(nom) { const box = $('ba-equip'), sec = box.querySelect
     sec.querySelectorAll('.dj-etat[data-k^="plus"]').forEach(el => { const k = el.dataset.k, n = el.querySelector('[data-q="nom"]'); c.plus.push({ nom: n ? n.value.trim() : '', i: num(k, 'i'), t: num(k, 't') }); });
     return c; };
   const remplacer = (cls, html, apres) => { const el = sec.querySelector('.' + cls); if (el) { if (html) el.outerHTML = html; else el.remove(); } else if (html) apres.insertAdjacentHTML('afterend', html); };
+  // les barrettes à poser sur ses bornes, pour étiqueter ses fils comme la fiche d'un équipement
+  const vt = () => { const m = new Map(); liaisonsDuPlan().forEach(l => { if (l.origine === null && l.de === nom && l.vers === l.aPoser && l.borneVers === '1') m.set(String(l.borneDe), l.aPoser); }); return m; };
   const rafraichir = () => { E.d = disjonctionDe(nom);
     remplacer('dj-gamme', gammeHtml(nom, E.d)); if (E.d.courbes.length) remplacer('dj-graphe', graphiqueDisjonction(E.d));
     const parI = new Map(E.d.points.map(p => [p.i, p])); etatsDuProfil(E.d.profil).forEach(e => { const el = sec.querySelector(`.dj-etat[data-k="${e.k}"] .dj-verdict`), p = e.i > 0 ? parI.get(e.i) : null; if (el) { el.className = 'dj-verdict' + classeVerdict(p); el.title = motVerdict(p); } });
-    remplacer('dj-fils', filsHtml(E.d), sec.querySelector('.dj-etats')); remplacer('dj-chutes', chutesHtml(nom, E.d), sec.querySelector('.dj-fils') || sec.querySelector('.dj-etats'));
+    remplacer('dj-fils', filsHtml(E.d, vt()), sec.querySelector('.dj-etats')); remplacer('dj-chutes', chutesHtml(nom, E.d), sec.querySelector('.dj-fils') || sec.querySelector('.dj-etats'));
     lierPuces(); lierGraphique(sec, nom, E, lire, ecrire); };
+  // on écrit au contrat ; la fiche se refait (`rafraichirCarte`, 08) sauf si l'on est dans un champ de la fiche : alors
+  // seulement ce qui change, en place, les champs restant sous les doigts
   const ecrire = (quoi, c) => setTimeout(() => { histPush(quoi); app.contrat.charges.set(nom, c); apresEdition();
-    const a = document.activeElement; if (a && a.tagName === 'INPUT' && box.contains(a)) rafraichir(); else if (box.contains(a)) rendreFiche(); }, 0);
+    const a = document.activeElement; if (a && a.tagName === 'INPUT' && box.contains(a)) rafraichir(); }, 0);
   // les segments : retenir un calibre ; presser celui qui l'est déjà rend celui du part number (ou l'idéal) ; en
   // survoler un montre sa courbe
   const retenir = cal => { const d = E.d, c = lire(); c.calibre = cal === d.calibre ? null : cal; if (c.calibre === (d.ecrit || null)) return;

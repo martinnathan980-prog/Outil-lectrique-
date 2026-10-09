@@ -16,7 +16,14 @@
        une fois par fiche ; une forme par famille (rectangle ASNE 0599,
        bouts ronds NSA937901, module carré EN 4165, insert circulaire) ;
      · AUTOUR (à sertir, toron, raccord) avant LES FILS, une ligne chacun ;
-     · la fiche d'un FIL : ses deux bouts, puis les faits dans un cadre.
+     · la fiche d'un FIL : ses deux bouts, puis les faits dans un cadre ;
+     · à la VRAIE souris : un clic sur une puce (raccord, sexe) ou une variante
+       écrit au contrat ET refait la fiche, la puce pressée gardant le focus
+       (un bouton cliqué prend le focus : la fiche ne doit pas s'en servir
+       pour refuser de se redessiner) ; une variante n'ouvre pas une
+       comparaison ;
+     · l'état dit les problèmes ET les points à voir ; les onglets d'un
+       équipement sont ses tuiles (une seule rangée).
    Rend 1 au premier échec.
    =========================================================================== */
 const { chromium } = require('playwright');
@@ -40,6 +47,7 @@ const FICHIER = P.fichierDemande();
   ok(await page.evaluate(() => { const f = document.querySelector('#ba-equip'), xs = [...f.children].slice(0, 3).map(e => e.className.split(' ')[0]); return xs[0] === 'fi-tete' && xs[1] === 'fi-ligne' && xs[2] === 'fi-etat'; }), 'l’en-tête : le repère, la ligne de nature, puis l’état');
   ok(/^équipement · 23 fils · 3 connecteurs · EN4165-2M$/.test(await texte('.fi-sous')), 'la ligne de nature : « équipement · 23 fils · 3 connecteurs · EN4165-2M »', await texte('.fi-sous'));
   ok(await q('.fi-tuiles .fi-tuile[data-onglet-vers]') === 3 && /A.*11 contacts.*Ø/.test(await texte('.fi-tuiles')), 'le résumé : une tuile par connecteur, ses contacts, son toron, son raccord', await texte('.fi-tuiles'));
+  ok(await q('.fi-tuiles') === 1 && await q('.fi-onglets.fi-tuiles [role="tab"]') === 3, 'les tuiles SONT les onglets : une seule rangée, pas deux');
   ok(await q('.fi-onglets [aria-selected="true"]', 'xs => xs[0] && xs[0].dataset.onglet') === 'B', 'la fiche s’ouvre sur B, le connecteur qui porte le problème');
   await page.click('#ba-equip .fi-tuile[data-onglet-vers="A"]'); await page.waitForTimeout(200);
   ok(await q('.fi-onglets [aria-selected="true"]', 'xs => xs[0] && xs[0].dataset.onglet') === 'A' && !(await q('[data-panneau="A"]', 'xs => xs[0].hidden')), 'la tuile A ouvre l’onglet A');
@@ -48,6 +56,20 @@ const FICHIER = P.fichierDemande();
   ok(await q('[data-panneau="A"] .fi-legende') === 1 && /un fil, à la couleur de sa route/.test(await texte('[data-panneau="A"] .fi-legende')), 'une légende, une fois, qui dit ce qu’un contact plein veut dire');
   ok(await page.evaluate(() => { const p = document.querySelector('#ba-equip [data-panneau="A"] .fi-cadre'), xs = [...p.children].map(e => e.className.split(' ')[0]); return xs.indexOf('fi-ref-ligne') < xs.indexOf('fi-face') && xs.indexOf('fi-face') < xs.indexOf('fi-autour') && xs.indexOf('fi-autour') < xs.indexOf('fi-liste'); }), 'dans le cadre : la référence, la face, autour, puis les fils');
   ok(/aucun arrangement/.test(await texte('[data-panneau="B"] .fi-ref')) && await q('[data-panneau="B"] .fi-changer [data-sexe]') === 2, 'le connecteur B, qu’aucun arrangement ne loge, le dit et laisse changer le sexe des contacts');
+  ok((await texte('.fi-etat')).split('aucun arrangement').length === 2, 'le problème de B n’est écrit qu’une fois (l’état), pas répété sous la référence');
+  // à la vraie souris : la reprise de blindage sur le corps — le contrat change, la fiche se refait, la puce garde le focus
+  await page.click('#ba-equip [data-panneau="A"] [data-changer^="rac|"]'); await page.waitForTimeout(200);
+  await page.click('#ba-equip [data-panneau="A"] [data-raccord][data-champ="blindage"][data-v="GND"]'); await page.waitForTimeout(700);
+  ok(await page.evaluate(() => { const r = app.contrat.raccords.get('300XC1|A'), b = document.querySelector('#ba-equip [data-panneau="A"] [data-raccord][data-champ="blindage"][aria-pressed="true"]');
+    return !!r && r.blindage === 'GND' && b && b.dataset.v === 'GND' && /durci/.test(document.querySelector('#ba-equip [data-panneau="A"] .fi-autour').textContent) && document.activeElement === b; }), 'un clic de souris sur « sur le corps » : écrit au contrat, la fiche refaite (raccord durci), la puce pressée garde le focus');
+  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
+  // une variante d'un connecteur, à la vraie souris : retenue (et pas une comparaison « référence introuvable »)
+  await bloc('3', '300XC1'); await page.waitForTimeout(400); await page.click('#ba-equip .fi-tuile[data-onglet-vers="A"]'); await page.waitForTimeout(200);
+  await page.click('#ba-equip [data-panneau="A"] [data-changer^="arr|"]'); await page.waitForTimeout(200);
+  await page.click('#ba-equip [data-panneau="A"] .fi-changer .cand:not([aria-pressed="true"])'); await page.waitForTimeout(700);
+  ok(await page.evaluate(() => { const d = app.contrat.designations.get('300XC1|A'), b = document.querySelector('#ba-equip [data-panneau="A"] .cand[aria-pressed="true"]');
+    return !!d && app.cible.type === 'bloc' && b && b.dataset.ref === d && document.querySelector('#ba-equip [data-panneau="A"] .fi-ref').textContent === d && !/introuvable/.test($('ba-equip').textContent); }), 'un clic de souris sur une variante la retient : la référence change, la variante est pressée, aucune comparaison ne s’ouvre', await texte('[data-panneau="A"] .fi-ref'));
+  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
 
   console.log('\nune barrette (668VT31, folio 3)');
   await bloc('3', '668VT31'); await page.waitForTimeout(400);
@@ -58,6 +80,12 @@ const FICHIER = P.fichierDemande();
   ok(await q('.mj-contact.plein') === 12 && await q('.mj-contact') === 18 && await q('.mj-plaque.prise') === 4 && await q('.mj-plaque') === 5, 'douze contacts pleins sur dix-huit ; quatre plaques teintées sur cinq');
   ok(await q('.fi-groupe') === 4 && await q('.fi-fil[data-i]') === 12, 'les fils par potentiel : quatre groupes, douze lignes');
   ok(await q('.fi-changer .cand') >= 2 && await q('.fi-changer .cand[aria-pressed="true"]') === 1 && await q('.fi-changer .cand svg.picto') >= 2, '« Changer » : les variantes candidates avec leur picto, celle retenue pressée');
+
+  console.log('\nun disjoncteur (102CB1, folio 1)');
+  await bloc('1', '102CB1'); await page.waitForTimeout(400);
+  ok(await q('details.fi-etat.ko') === 1 && await q('details.fi-etat li') === 5 && await q('details.fi-etat li.fi-att') === 3 && /2 problèmes · 3 à voir/.test(await texte('details.fi-etat summary')), 'l’état dit les deux problèmes ET les trois points à voir (le calibre serré, la surcharge brève, la barrette à poser), jamais cachés derrière les problèmes', await texte('details.fi-etat summary'));
+  ok(await q('.dj-fils .fi-fil') === 3 && await q('.fi-cadre:not(.fi-dj) .fi-fil') === 0 && await q('.dj-fils .fi-tag') === 2, 'ses fils sont listés une fois, dans sa disjonction, avec l’étiquette VT1 des deux fils de la borne dédoublée');
+  ok(await q('.fi-tuiles') === 0, 'un seul connecteur : pas de tuiles qui répètent le cadre');
 
   console.log('\nune barrette à poser (VT1, folio 1)');
   await bloc('1', 'VT1'); await page.waitForTimeout(400);
@@ -82,6 +110,10 @@ const FICHIER = P.fichierDemande();
   console.log('\nl’index');
   await page.keyboard.press('Escape'); await page.keyboard.press('r'); await page.waitForTimeout(400);
   ok(await q('.ix-controle .fi-etat.ko') === 1 && await q('.ix-groupe') >= 5 && await q('.ix-item[data-nom]') > 50, 'l’index : « à reprendre » en tête, les groupes, les repères');
+  ok(/^Repères\d+$/.test(await texte('.ix-tete h2')) && await q('.ix-tete .fi-sous') === 0, 'le titre porte le compte une fois (« Repères 67 »), pas « 67 repères » à côté', await texte('.ix-tete h2'));
+  ok(await page.evaluate(() => { app.hist = []; app.contrat.liaisons = []; app.source = null; app.nFolios = 0; app.plan = '*'; app.cible = null; fermerInspecteur(); redessiner(); return $('folios').hidden && !$('vide').hidden; }), 'la table vide (l’accueil) : plus de barre de zoom ni de folios');
+  await page.evaluate(() => { chargerContrat(contratExemple(), 'contrat d’exemple', 'Contrat d’exemple'); app.contrat.charges = chargesExemple(); synchroniser(); });
+  ok(await page.evaluate(() => !$('folios').hidden), 'l’exemple rechargé : la barre du bas revient');
   ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
   console.log('\n  ' + (ko ? ko + ' échec(s)' : 'tout tient'));
   await nav.close(); process.exit(ko ? 1 : 0);
