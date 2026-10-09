@@ -240,28 +240,7 @@ function designationDe(n) { const d = app.contrat.designations.get(n);
   if (d) return d;
   if (estCoupure(n)) return coupureEnModules(n) ? planDeCoupure(n).plan.reference || coupureInfos(n, verite(), app.bible).reference : coupureInfos(n, verite(), app.bible).reference;
   return ''; }
-const CLE_BIBLE = 'atelier.bible.v1', CLE_NORME = 'atelier.norme.v1', CLE_SIMU = 'atelier.simu.v1';
-/* La bible, et avec elle la norme et les hypothèses de simulation : ce que
-   ce navigateur a gardé, sinon ce qui est embarqué. */
-function relireBible() { relireNorme(); relireSimu();
-  try { const o = JSON.parse(localStorage.getItem(CLE_BIBLE) || 'null'); if (o && o.entrees && o.entrees.length) { app.bible = avecModules(o.entrees.map(entreeBible).filter(Boolean)); app.bibleNom = o.nom || ''; return true; } } catch (_) { }
-  app.bible = bibleDeLOutil(); app.bibleNom = ''; return false; }
-/* Une autre bible : les références sous les barrettes changent, la carte de
-   la barrette choisie aussi, et la fiche de la bible si elle est ouverte. */
-function adopterBible(entrees, nom) { app.bible = avecModules(entrees); app.bibleNom = nom || '';
-  try { localStorage.setItem(CLE_BIBLE, JSON.stringify({ entrees, nom: app.bibleNom, t: Date.now() })); } catch (_) { }
-  peindre(); rallumer(); rafraichirBase(); if (app.fiche && app.fiche.mode === 'bible') ficheBible(app.fiche.ref); }
-function relireNorme() { try { const o = JSON.parse(localStorage.getItem(CLE_NORME) || 'null'); if (o && o.norme && normeLue(o.norme)) { app.norme = { ...normeVide(), ...o.norme }; app.normeNom = o.nom || ''; return true; } } catch (_) { }
-  app.norme = normeEmbarquee(); app.normeNom = ''; return false; }
-/* Une autre norme : la carte de la barrette choisie se remplit et se simule
-   autrement ; la fiche de la bible le dit. Le plan, lui, ne bouge pas. */
-function adopterNorme(norme, nom) { app.norme = norme; app.normeNom = nom || '';
-  try { if (nom) localStorage.setItem(CLE_NORME, JSON.stringify({ norme, nom, t: Date.now() })); else localStorage.removeItem(CLE_NORME); } catch (_) { }
-  rafraichirBase(); if (app.fiche && app.fiche.mode === 'bible') ficheBible(app.fiche.ref); }
-/* Les hypothèses de la simulation : une commodité de ce navigateur. */
-function relireSimu() { app.simu = { ...HYPOTHESES };
-  try { const o = JSON.parse(localStorage.getItem(CLE_SIMU) || 'null'); if (o && typeof o === 'object') app.simu = { ...HYPOTHESES, ...o, conditions: Array.isArray(o.conditions) ? o.conditions : HYPOTHESES.conditions }; } catch (_) { } }
-function memoriserSimu() { try { localStorage.setItem(CLE_SIMU, JSON.stringify(app.simu)); } catch (_) { } }
+/* La bible, la norme et les hypothèses de simulation (leur persistance, leur adoption) vivent dans 08-normes.js : relireBible, adopterBible, relireNorme, adopterNorme, relireSimu, memoriserSimu. */
 function peindre() {
   const svg = $('svg');
   $('vide').hidden = app.contrat.liaisons.length > 0;
@@ -781,7 +760,7 @@ function lierCartePhysique(nom) { const box = $('ba-equip');
     histPush('référence de ' + nom); designer(nom, ref); apresEdition(); dire(nom + ' : ' + ref + ' retenue.'); });
   const auto = $('bar-auto'); if (auto) auto.onclick = () => { histPush('référence de ' + nom); designer(nom, ''); apresEdition(); dire(nom + ' : retour au choix de la bible.'); };
   const bible = $('bar-bible'); if (bible) bible.onclick = () => ficheBible(bible.dataset.ref);
-  const norme = $('bar-norme'); if (norme) norme.onclick = () => { app.base.normeOuverte = true; ficheBible(''); };
+  const norme = $('bar-norme'); if (norme) norme.onclick = () => { app.base.normeOuverte = true; ficheNormes({ table: 'familles:' + (estCoupure(nom) ? 'connecteur' : 'barrette') }); };
   lierHypotheses(box);
   const phy = box.querySelector('.phy'); if (!phy) return; let dernier = null;
   const indices = el => (el.dataset.fils || '').split(' ').filter(Boolean).map(Number);
@@ -1065,100 +1044,7 @@ function ficheColler() {
   $('co-fichier').onclick = () => $('fichier').click();
   $('co-txt').focus();
 }
-/* La bible des barrettes : d'où elle vient, ce qu'elle contient, et comment
-   en mettre une autre ; puis la NORME en cours, table par table, et comment
-   en importer une. */
-const COLONNES_BIBLE_TEXTE = '<b>Référence</b> et <b>Bornes</b> au minimum, puis Famille, Nature, Jauge min, Jauge max, Intensité, Blindage, Note';
-const COLONNES_NORME_TEXTE = 'une table <b>Familles</b> (Famille, Pas, Jauge min, Jauge max, Intensité, Résistance, Fils par côté, Ordre, Paquets, Réservés, Masse), une table <b>Fils</b> (Type, Jauge, Section, Résistance, Intensité), <b>Déclassement</b> (Condition, Facteur), <b>Réseau</b> (Tension, Chute max), <b>Contacts</b> (Norme, Sexe, Taille, Type de fil, Jauge, Contact, Accessoire), <b>Câbles</b> (Câble, Famille, Jauge, Brins, Blindage, Nature, Masse, Liaisons, Résistance, Diamètre, Section), <b>Gaines</b> (Famille, Référence, Dint, Dext, Masse), <b>Colliers</b> (Référence, Diamètre min, Diamètre max)';
-/* `ref` : une référence à montrer en grand, au-dessus de la table — celle
-   qu'on a cliquée dans la table, ou depuis la carte d'une barrette. */
-function ficheBible(ref) { const B = app.bible || [], nom = app.bibleNom, n = B.length, familles = [...new Set(B.filter(e => e.module).map(e => e.famille))]; ref = typeof ref === 'string' ? ref : '';
-  const zoom = ref ? B.find(e => e.reference === ref) || null : null;
-  const etat = nom ? `<div class="bible-etat"><span><b>${esc(nom)}</b> · ${pluriel(n, 'référence')} · gardée dans ce navigateur</span></div>`
-    : (() => { const compte = fs => fs.map(f => pluriel(B.filter(e => e.module && e.famille === f).length, 'module') + ' ' + nomDeFamille(app.norme, f)).join(' et '), bar = famillesDeModules(app.norme), con = famillesDeModules(app.norme, 'connecteur');
-        return `<div class="bible-etat exemple"><span><b>Bible de l’outil</b> · pour les barrettes, ${compte(bar.filter(f => familles.includes(f)))}${con.length ? ` ; pour les connecteurs et les prises de coupure, ${compte(con.filter(f => familles.includes(f)))}` : ''} — et ${pluriel(B.filter(e => !e.module).length, 'référence')} d’exemple (coupures, connecteurs).</span></div>`; })();
-  // un filtre par norme : les modules d'une norme, ou le reste (coupures, connecteurs)
-  const filtre = app.base.bibleFiltre || '', garde = e => !filtre || (filtre === '-' ? !e.module : e.module && e.famille === filtre), vus = B.filter(e => garde(e) || e === zoom);
-  const filtres = B.some(e => e.module) ? `<div class="bible-filtres" role="group" aria-label="Filtrer la bible">` + [['', 'tout', n], ...familles.map(f => [f, nomDeFamille(app.norme, f), B.filter(e => e.module && e.famille === f).length]), ['-', 'coupures et connecteurs', B.filter(e => !e.module).length]]
-    .map(([f, t, k]) => `<button class="mj-norme ${f && f !== '-' ? classeFamille(f) : ''}" data-filtre="${escA(f)}" aria-pressed="${filtre === f}">${esc(t)} · ${k}</button>`).join('') + '</div>' : '';
-  const ligne = e => `<tr class="${e === zoom ? 'on' : ''}"><td class="pict">${pictoBible(e)}</td><td class="ref"><button class="ref-btn" data-ref="${escA(e.reference)}" aria-pressed="${e === zoom}" title="${e === zoom ? 'Replier' : 'Voir la référence en grand'}">${esc(e.reference)}</button></td>
-    <td class="sans">${esc(e.nature)}</td><td class="d">${nombre(e.bornes)}</td>
-    <td class="d">${jaugeEntree(e)}</td><td class="d">${e.intensite != null ? nombre(e.intensite) + ' A' : '—'}</td><td>${e.blindage ? 'oui' : '—'}</td><td class="bible-note">${esc(e.note)}</td></tr>`;
-  const corps = tete('Barrettes et connecteurs', 'Bible des barrettes', true) + etat + (zoom ? zoomBible(zoom) : '') + filtres
-    + (n ? `<table class="bible"><thead><tr><th></th><th>Référence</th><th>Nature</th><th>Bornes</th><th>Jauge</th><th title="Intensité">Int.</th><th title="Blindage">Blindé</th><th>Note</th></tr></thead><tbody>${vus.map(ligne).join('')}</tbody></table>` : '<p class="note">Aucune référence.</p>')
-    + `<p class="note">Un Excel ou un CSV dont une ligne d’en-têtes nomme ${COLONNES_BIBLE_TEXTE}. La jauge s’écrit en AWG : « min » est la plus fine acceptée. Une bible se dépose aussi directement sur la table.</p>`
-    + ficheNorme() + ficheReferences();
-  const pied = '<button class="btn cuivre" id="bi-importer">Importer un Excel / CSV</button><button class="btn papier" id="no-importer">Importer une norme</button><button class="btn papier" id="re-importer">Contrats déjà faits</button><input type="file" id="fichier-norme" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden><input type="file" id="fichier-references" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden><span class="espace"></span>'
-    + (nom ? '<button class="btn lien" id="bi-exemple">Revenir à la bible d’exemple</button>' : '') + (app.normeNom ? '<button class="btn lien" id="no-embarquee">Revenir à la norme embarquée</button>' : '');
-  ouvrirFiche({ mode: 'bible', large: true, ref: zoom ? ref : '' }, corps, pied);
-  $('bi-importer').onclick = () => $('fichier-bible').click();
-  $('no-importer').onclick = () => $('fichier-norme').click();
-  $('re-importer').onclick = () => $('fichier-references').click();
-  $('fichier-references').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) importerReferences(f); e.target.value = ''; });
-  $('fichier-norme').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) importerNorme(f); e.target.value = ''; });
-  if ($('bi-exemple')) $('bi-exemple').onclick = () => { adopterBible(bibleDeLOutil(), ''); dire('Bible d’exemple rétablie.'); };
-  if ($('no-embarquee')) $('no-embarquee').onclick = () => { adopterNorme(normeEmbarquee(), ''); dire('Norme embarquée rétablie.'); };
-  const det = $('fiche-corps').querySelector('details.norme'); if (det) det.addEventListener('toggle', () => { app.base.normeOuverte = det.open; });
-  $('fiche-corps').querySelectorAll('.ref-btn').forEach(b => b.onclick = () => ficheBible(b.getAttribute('aria-pressed') === 'true' ? '' : b.dataset.ref));
-  if ($('bz-fermer')) $('bz-fermer').onclick = () => ficheBible('');
-  $('fiche-corps').querySelectorAll('.bible-filtres .mj-norme').forEach(b => b.onclick = () => { app.base.bibleFiltre = b.dataset.filtre; ficheBible(zoom ? ref : ''); });
-}
-/* La norme en cours : d'où elle vient, puis ses quatre tables telles que
-   l'outil les a lues — repliées, ouvertes depuis la carte d'une barrette. */
-function ficheNorme() { const N = app.norme || normeVide(), nom = app.normeNom, ex = normeExemple(N), lue = normeLue(N), mods = N.modules || [], tailles = N.tailles || [], contacts = N.contacts || [], courbes = courbesDeDisjonction(N), cables = N.cables || [], gaines = N.gaines || [], colliers = N.colliers || [];
-  const compte = [...(mods.length ? [pluriel(mods.length, 'module') + ' de jonction'] : []), ...(contacts.length ? [pluriel(contacts.length, 'contact') + ' à sertir'] : []), ...(cables.length ? [pluriel(cables.length, 'câble')] : []), ...(gaines.length ? [pluriel(gaines.length, 'gaine')] : []), ...(courbes.length ? [pluriel(courbes.length, 'courbe') + ' de disjonction'] : []), pluriel(N.familles.length, 'famille'), pluriel(N.fils.length, 'fil'), pluriel(N.declassements.length, 'déclassement'), N.reseau.length + ' réseau' + (N.reseau.length > 1 ? 'x' : '')].join(' · ');
-  const etat = !lue ? `<div class="bible-etat"><span><b>Aucune norme</b> : les barrettes se dessinent avec un trou par côté, rien n’est jugé ni simulé.</span></div>`
-    : nom ? `<div class="bible-etat"><span><b>${esc(nom)}</b> · ${compte} · gardée dans ce navigateur</span></div>`
-    : `<div class="bible-etat exemple"><span><b>Norme ${ex ? 'd’exemple' : 'embarquée'}</b> · ${compte}${ex ? ' · chiffres inventés, sans valeur normative — les vraies se déposent dans normes/'
-      : mods.length ? ' · les modules viennent des normes ASNE 0599 et NSA937901, les contacts à sertir des tables SEE (EN 2997, EN 3645, EN 3646, EN 4165), les fils de l’EN 2853, les courbes de disjonction, la base des câbles, les gaines et le tutoriel des raccords de l’Excel ; déclassements, réseau et prise EN3646 restent des chiffres d’exemple' : ''}</span></div>`;
-  const oui = v => v ? 'oui' : '—', t = (th, rows) => rows.length ? `<table class="norme"><thead><tr>${th.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>` : '';
-  const familles = t(['Norme', 'Famille', 'Nature', 'Variantes', 'Pas', 'Jauge', 'Intensité', 'Résistance', 'Fils/côté', 'Ordre', 'Paquets', 'Réservés', 'Masse'], N.familles.map(f => `<tr><td class="sans">${esc(f.norme)}</td><td class="ref">${esc(f.famille)}</td><td class="sans">${esc(f.nature)}</td><td>${esc(f.variantes.join(' ') || '—')}</td><td class="d">${f.pas != null ? nombre(f.pas) + ' mm' : '—'}</td><td class="d">${f.jaugeMin != null ? jaugeEntree(f) : '—'}</td><td class="d">${f.intensite != null ? nombre(f.intensite) + ' A' : '—'}</td><td class="d">${f.resistance != null ? nombre(f.resistance) + ' mΩ' : '—'}</td><td class="d">${f.filsParCote}</td><td class="sans">${f.ordre}</td><td class="sans">${f.paquets}</td><td>${esc(f.reserves.join(', ') || '—')}</td><td class="sans">${f.masse || '—'}</td></tr>`));
-  const fils = t(['Type', 'Jauge', 'Code', 'Section', 'Résistance', 'Continu', '2 s', '10 s', '1 min', 'Chute 10 m', 'Note'], N.fils.map(f => `<tr><td class="ref">${esc(f.type)}</td><td class="d">${nombre(f.jauge)}</td><td class="ref">${esc(f.code || '—')}</td><td class="d">${f.section != null ? nombre(f.section) + ' mm²' : '—'}</td><td class="d">${f.resistance != null ? nombre(f.resistance) + ' Ω/km' : '—'}</td><td class="d">${f.intensite != null ? nombre(f.intensite) + ' A' : '—'}</td><td class="d">${f.i2s != null ? nombre(f.i2s) + ' A' : '—'}</td><td class="d">${f.i10s != null ? nombre(f.i10s) + ' A' : '—'}</td><td class="d">${f.i1min != null ? nombre(f.i1min) + ' A' : '—'}</td><td class="d">${f.chute10m != null ? nombre(f.chute10m) + ' V' : '—'}</td><td class="sans note-c">${esc(f.note)}</td></tr>`));
-  const tl = t(['Norme', 'Taille', 'Jauge', 'Note'], tailles.map(x => `<tr><td class="sans">${esc(nomDeFamille(N, x.famille))}</td><td class="ref">#${x.taille}</td><td class="d">${x.jaugeMin != null ? x.jaugeMin + '–' + x.jaugeMax + ' AWG' : 'câble spécial'}</td><td class="sans note-c">${esc(x.note || '')}</td></tr>`));
-  const gn = t(['Gaine', 'Référence', 'Ø int.', 'Ø ext.', 'Masse'], gaines.map(g => `<tr><td class="sans">${esc(g.famille)}</td><td class="ref">${esc(g.reference)}</td><td class="d">${nombre(g.dint)} mm</td><td class="d">${g.dext != null ? nombre(g.dext) + ' mm' : '—'}</td><td class="d">${g.masse != null ? nombre(g.masse) + ' g/m' : '—'}</td></tr>`))
-    + t(['Collier', 'Toron min', 'Toron max', 'Note'], colliers.map(c => `<tr><td class="ref">${esc(c.reference)}</td><td class="d">${c.dmin != null ? nombre(c.dmin) + ' mm' : '—'}</td><td class="d">${c.dmax != null ? nombre(c.dmax) + ' mm' : '—'}</td><td class="sans note-c">${esc(c.note || '')}</td></tr>`));
-  const cb = t(['Câble', 'Famille', 'Jauge', 'Brins', 'Blindé', 'Nature', 'Masse', 'Liaisons', 'Résistance', 'Ø ext.', 'Section'], cables.map(c => `<tr><td class="ref">${esc(c.cable)}</td><td class="ref">${esc(c.famille)}</td><td class="d">${c.jauge != null ? nombre(c.jauge) : '—'}</td><td class="d">${c.brins}</td><td>${c.blindage ? 'oui' : '—'}</td><td class="sans">${esc(c.nature || '—')}</td><td class="d">${c.masse != null ? nombre(c.masse) + ' g/m' : '—'}</td><td class="d">${c.liaisons != null ? nombre(c.liaisons) : '—'}</td><td class="d">${c.resistance != null ? nombre(c.resistance) + ' mΩ/m' : '—'}</td><td class="d">${c.diametre != null ? nombre(c.diametre) + ' mm' : '—'}</td><td class="d">${c.section != null ? nombre(c.section) + ' mm²' : '—'}</td></tr>`));
-  const dj = t(['Disjoncteur', 'Courbe', 'Température', 'Points', 'Ne déclenche jamais sous', 'Dernier point'], courbes.map(c => `<tr><td class="sans">${esc(c.famille.toLowerCase())}</td><td class="ref">${esc(c.nom)}</td><td class="d">${c.temperature != null ? nombre(c.temperature) + ' °C' : '—'}</td><td class="d">${c.brut.length}</td><td class="d">${nombre(Math.round(c.points[0].m * 100) / 100)} In (${secondes(c.points[0].t)})</td><td class="d">${nombre(Math.round(c.brut[c.brut.length - 1].m * 10) / 10)} In → ${secondes(c.brut[c.brut.length - 1].t)}</td></tr>`));
-  const ct = t(['Norme', 'Taille', 'Sexe', 'Type de fil', 'Jauge', 'Contact', 'Accessoire', 'Note'], contacts.map(c => `<tr><td class="sans">${esc(nomDeFamille(N, c.famille))}</td><td class="ref">#${esc(c.taille)}</td><td class="sans">${nomDuSexe(c.sexe)}</td><td class="ref">${esc(c.typeFil)}</td><td class="d">${c.jauge != null ? nombre(c.jauge) : '*'}</td><td class="ref">${esc(c.reference)}</td><td class="ref">${esc(c.accessoire || '—')}</td><td class="sans note-c">${esc(c.note || '')}</td></tr>`));
-  const md = t(['Désignation', 'Variante', 'Contacts', 'Groupes', 'Usage', 'Masse', 'Hauteur', 'Note'], mods.map(m => `<tr><td class="ref">${esc(m.reference)}</td><td>${esc(m.variante)}</td><td class="d">${esc(taillesDe(m))}</td><td class="d">${esc(tailleDesGroupes(m))}</td><td class="sans">${esc(m.usage)}</td><td class="d">${m.poids != null ? nombre(m.poids) + ' g' : '—'}</td><td class="d">${m.hauteur != null ? nombre(m.hauteur) + ' mm' : '—'}</td><td class="sans note-c">${esc(m.note)}</td></tr>`));
-  const decl = t(['Condition', 'Facteur', 'Note'], N.declassements.map(d => `<tr><td class="ref">${esc(d.condition)}</td><td class="d">×${nombre(d.facteur)}</td><td class="sans note-c">${esc(d.note)}</td></tr>`));
-  const res = t(['Tension', 'Chute max', 'Note'], N.reseau.map(r => `<tr><td class="d">${nombre(r.tension)} V</td><td class="d">${r.chuteMax != null ? nombre(r.chuteMax) + ' V' : '—'}${r.chutePct != null ? ' · ' + nombre(r.chutePct) + ' %' : ''}</td><td class="sans note-c">${esc(r.note)}</td></tr>`));
-  return `<h3 class="sous-titre">La norme</h3>${etat}` + (lue ? `<details class="norme"${app.base.normeOuverte ? ' open' : ''}><summary><span>Ce que la norme dit, table par table</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
-      <div class="norme-defile">${md ? '<div class="sur">Modules — barrettes (ASNE 0599, NSA937901), connecteurs et prises (EN 4165, EN 2997) — une variante par ligne : ses contacts et ses groupes reliés</div>' + md : ''}${gn ? '<div class="sur">Raccords — les gaines (HFA DHS754-160, Nomex EN6049-003) et les colliers band-it ; le choix du raccord suit le tutoriel (voir la fiche d’un connecteur)</div>' + gn : ''}${cb ? '<div class="sur">Câbles — la base des câbles : brins, blindage, nature, masse, résistance, diamètre, section (l’Excel du lecteur)</div>' + cb : ''}${dj ? '<div class="sur">Disjoncteurs — le temps de déclenchement selon le multiple du courant nominal, par température (l’Excel du lecteur)</div>' + dj : ''}${ct ? '<div class="sur">Contacts à sertir — selon la taille de la cavité, le sexe, le type et la jauge du fil : le contact et son accessoire (tables SEE)</div>' + ct : ''}${tl ? '<div class="sur">Tailles de contact — les jauges qu’un contact reçoit, quand la table des contacts ne connaît pas la taille</div>' + tl : ''}${familles ? '<div class="sur">Familles — par contact : jauges, intensité, résistance ; fils par côté ; règle de remplissage</div>' + familles : ''}${fils ? '<div class="sur">Fils — par jauge : section, résistance (EN 2853 : à 135 °C), intensité admissible en continu et par durée (câble seul, ambiante 95 °C)</div>' + fils : ''}${decl ? '<div class="sur">Déclassement</div>' + decl : ''}${res ? '<div class="sur">Réseau — la chute admise</div>' + res : ''}</div></details>` : '')
-    + `<p class="note">Une norme est un Excel (une table par feuille, ou à la suite) ou un CSV : ${COLONNES_NORME_TEXTE}. Une norme importée remplace la norme d’exemple et se fond avec celles déjà importées. Le PDF de la norme se garde à côté, dans normes/.</p>`; }
-async function importerNorme(fichier) { if (!fichier) return;
-  try { const r = await lireNormeFichier(fichier);
-    if (!normeLue(r)) { dire('« ' + fichier.name + ' » n’a pas l’air d’une norme : il faut ' + COLONNES_NORME_TEXTE.replace(/<\/?b>/g, '') + '.', true); return; }
-    // la norme d'exemple s'efface devant une vraie ; les vraies se complètent entre elles
-    const base = app.normeNom ? app.norme : normeVide(), N = fusionnerNormes(base, r), nom = app.normeNom ? app.normeNom + ' + ' + fichier.name : fichier.name;
-    adopterNorme(N, nom); app.base.normeOuverte = true; if (app.fiche && app.fiche.mode === 'bible') ficheBible(app.fiche.ref);
-    dire(pluriel(r.familles.length, 'famille') + ', ' + pluriel(r.fils.length, 'fil') + ' lu' + (r.fils.length > 1 ? 's' : '') + ' dans « ' + fichier.name + ' » : les cartes suivent.');
-  } catch (e) { dire('Erreur : ' + (e && e.message || e), true); } }
-/* Le pictogramme d'une référence dans la table : sa physique en petit — un
-   trait par module, à la même échelle pour toutes, pour comparer d'un œil. */
-function pictoBible(e) { if (e.module) { const m = moduleDeReference(app.norme, e.reference); if (m) return pictoModule(m); }
-  const n = Math.min(40, Math.max(1, Math.round(e.bornes || 1))), w = n * 4 + 2, W = Math.min(w, 44), k = W / w;
-  if (e.nature === 'coupure' || e.nature === 'connecteur') { const deux = e.nature === 'coupure', H = deux ? 15 : 8;
-    const bande = y => `<rect x="0.5" y="${y + 0.5}" width="${w - 1}" height="6.5" rx="1.5"/>` + Array.from({ length: n }, (_, j) => `<circle cx="${j * 4 + 3}" cy="${y + 3.75}" r="1.1"/>`).join('');
-    return `<svg class="picto" width="${f1(W)}" height="${f1(H * k)}" viewBox="0 0 ${w} ${H}" aria-hidden="true"><g class="p-bande">${bande(0)}${deux ? bande(8) : ''}</g></svg>`; }
-  return `<svg class="picto" width="${f1(W)}" height="${f1(10 * k)}" viewBox="0 0 ${w} 10" aria-hidden="true"><g class="p-cell${e.nature === 'blindage' ? ' p-blind' : ''}">`
-    + Array.from({ length: n }, (_, j) => `<rect x="${j * 4 + 1.5}" y="0.5" width="3" height="7"/>`).join('') + `</g><rect class="p-rail" x="0.5" y="8" width="${w - 1}" height="1.5"/></svg>`; }
-/* Une référence en grand : le même dessin que la carte d'une barrette, sans
-   contrat — tous ses modules — et ses caractéristiques. */
-function zoomBible(e) { if (e.module && moduleDeReference(app.norme, e.reference)) return zoomModule(e);
-  const P = remplirSelonNorme(physiqueDeReference(e), app.norme), forme = e.nature === 'coupure' ? 'coupure' : e.nature === 'connecteur' ? 'connecteur' : 'reglette', F = P.famille;
-  const carac = [['famille', e.famille], ['nature', P.nature], [forme === 'reglette' ? 'modules' : 'contacts', nombre(e.bornes)], ['jauge', e.jaugeMin == null ? '—' : jaugeEntree(e) + ' AWG'],
-    ['intensité', e.intensite != null ? nombre(e.intensite) + ' A' : '—'], ['blindage', e.blindage ? 'oui' : 'non'], e.mobile ? ['partie mobile', e.mobile] : null, e.note ? ['note', e.note] : null,
-    ['norme', F ? F.norme + (F.pas != null ? ' · pas ' + nombre(F.pas) + ' mm' : '') + (F.resistance != null ? ' · ' + nombre(F.resistance) + ' mΩ' : '') + ' · ' + pluriel(F.filsParCote, 'fil') + ' par côté' : 'aucune pour cette famille']].filter(Boolean);
-  return `<div class="bible-zoom"><div class="bz-tete"><div class="min0"><div class="sur">${esc(P.nature)}</div><div class="bz-ref">${esc(e.reference)}</div></div>
-      <button class="rond fermer" id="bz-fermer" aria-label="Replier la référence"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
-    ${dessinPhysique('', P, largeurFiche(), { forme })}
-    <div class="bar-faits">${carac.map(([k, v]) => `<span>${esc(k)}</span><span>${esc(v)}</span>`).join('')}</div></div>`; }
-async function importerBible(fichier) { if (!fichier) return;
-  try { const r = await lireBibleFichier(fichier);
-    if (!r.entrees.length) { dire('« ' + fichier.name + ' » n’a pas l’air d’une bible : il faut une ligne d’en-têtes avec ' + COLONNES_BIBLE_TEXTE.replace(/<\/?b>/g, '') + '.', true); return; }
-    adopterBible(r.entrees, fichier.name); dire(pluriel(r.entrees.length, 'référence') + ' lue' + (r.entrees.length > 1 ? 's' : '') + ' : les barrettes suivent.');
-  } catch (e) { dire('Erreur : ' + (e && e.message || e), true); } }
+/* La bible des barrettes (ficheBible, pictoBible, zoomBible, importerBible), la norme et son import (ficheNormes, importerNorme) vivent dans 08-normes.js. */
 
 /* ---- corriger : toujours la vérité, puis on refait les folios ----------- */
 /* Une demi-liaison de renvoi porte le vrai bout dans sa borne : « 733LE 4 ». */

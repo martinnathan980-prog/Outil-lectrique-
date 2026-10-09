@@ -1,0 +1,150 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LES NORMES (08 octies) : la page des normes — les domaines, les tables, l'import, l'édition d'une ligne
+   Les jetons (couleurs, typo, espacements) sont dans style.css ; ici, seulement ce qui est propre à ce domaine.
+   Une page qui se lit de haut en bas : l'état, la recherche et les gestes, l'import à vérifier, puis les domaines, chacun
+   ses tables repliées — une ligne chacune : le nom, la source, le compte, l'état — qui se déplient sur leur fiche
+   (sert à, lue par, choix, colonnes), leur barre et la table elle-même. Les données en chasse fixe, les mots en
+   linéale ; l'ambre pour ce qui est modifié, le vert pour ce qui est ajouté, le gris pour ce qui est masqué ; le
+   cuivre pour ce qui se presse. Les tables larges défilent de côté, jamais elles n'écrasent une valeur.
+   ═══════════════════════════════════════════════════════════════════════ */
+.nm{display:flex;flex-direction:column;gap:var(--sp-3);min-width:0}
+.nm .fiche-tete{margin-bottom:0}
+.nm-nav{align-self:flex-start}
+.nm-etat{margin-bottom:0}
+.nm-etat .nm-mod{color:var(--warn)}
+.nm-etat i{font-style:normal;color:var(--t-3)}
+/* la recherche et les gestes, sur une ligne qui se replie */
+.nm-outils{display:flex;flex-wrap:wrap;gap:var(--sp-2);align-items:center}
+.nm-cherche{flex:1 1 320px;min-width:0;height:36px}
+.nm-cherche input{font-family:var(--sans);font-size:var(--f-13)}
+.nm-gestes{display:flex;flex-wrap:wrap;gap:var(--sp-2)}
+.nm-note{font-size:var(--f-12);color:var(--t-2);margin:0;line-height:1.5}
+.nm-vide{font-size:var(--f-12);color:var(--t-2);margin:8px 0;line-height:1.5}
+/* les badges d'état : embarquée, modifiée, ajoutée, masquée, à confirmer, importée, vide */
+.nm-badge{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:999px;font:700 10.5px/1 var(--sans);letter-spacing:.03em;white-space:nowrap;background:var(--s-sunken);color:var(--t-2);border:1px solid var(--s-line)}
+.nm-badge.mod{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.nm-badge.ajo{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.nm-badge.masq{background:var(--s-hover);color:var(--t-3);border-color:transparent;text-decoration:line-through}
+.nm-badge.conf{background:var(--info-soft);color:var(--info);border-color:transparent}
+.nm-badge.import{background:var(--accent-soft);color:var(--accent-2);border-color:transparent}
+.nm-badge.rien{color:var(--t-3)}
+.nm-mod{color:var(--warn)}.nm-ajo{color:var(--ok)}.nm-ko{color:var(--ko)}
+/* ─── un domaine : son titre, à quoi il sert, ses tables ─── */
+.nm-dom{display:flex;flex-direction:column;gap:6px;padding-top:var(--sp-2)}
+.nm-dom-t{font-size:var(--f-14);font-weight:700;margin:0;letter-spacing:-.005em;padding-top:var(--sp-2);border-top:1px solid var(--s-line)}
+.nm-dom-sens{margin:0 0 4px;font-size:var(--f-12);color:var(--t-2);line-height:1.5}
+/* ─── une table : sa tête (une ligne), et dépliée, sa fiche, sa barre, la table ─── */
+.nm-table{border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-surface);min-width:0;transition:border-color var(--rapide)}
+.nm-table.ouvert{border-color:var(--s-line-2)}
+.nm-table.modifiee{box-shadow:inset 3px 0 0 var(--warn)}
+.nm-t-tete{display:flex;align-items:center;gap:var(--sp-3);width:100%;min-height:44px;padding:6px 10px 6px 12px;border:none;background:none;text-align:left;color:inherit;font:inherit;border-radius:var(--r-2);cursor:pointer;transition:background var(--rapide)}
+.nm-t-tete:hover{background:var(--s-sunken)}
+.nm-t-tete.nm-t-fixe{cursor:default}.nm-t-tete.nm-t-fixe:hover{background:none}
+.nm-table.ouvert>.nm-t-tete{border-radius:var(--r-2) var(--r-2) 0 0;border-bottom:1px solid var(--s-line)}
+.nm-t-titre{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
+.nm-t-titre b{font-size:var(--f-13);font-weight:700;color:var(--t-1)}
+.nm-t-source{font-size:var(--f-11);color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nm-t-compte{font:600 var(--f-12) var(--mono);color:var(--t-2);white-space:nowrap}
+.nm-t-badges{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}
+.nm-chevron{width:16px;height:16px;color:var(--t-3);transition:transform var(--rapide)}
+.nm-table.ouvert .nm-chevron{transform:rotate(180deg)}
+.nm-t-corps{display:flex;flex-direction:column;gap:var(--sp-3);padding:var(--sp-3)}
+/* la fiche d'une table : des faits, la clé en petites capitales */
+.nm-doc{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:5px 12px;margin:0;font-size:var(--f-12)}
+.nm-doc dt,.nm-cols dt{font:700 10px/1.75 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-2);white-space:nowrap}
+.nm-doc dd,.nm-cols dd{margin:0;color:var(--t-1);line-height:1.5;min-width:0}
+.nm-doc dd.nm-manque{color:var(--warn)}
+.nm-doc .fi-lien{margin:-4px 0 -4px -8px}
+.nm-cols{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:3px 12px;margin:0;padding:10px 12px;border-radius:var(--r-1);background:var(--s-sunken);font-size:var(--f-12)}
+.nm-cols dt{font:600 var(--f-12) var(--mono);text-transform:none;letter-spacing:0;color:var(--t-1)}
+.nm-cols dt i{font-style:normal;color:var(--accent);margin-left:2px}
+.nm-cols dd{color:var(--t-2)}
+.nm-alias{display:block;font-size:var(--f-11);color:var(--t-3)}
+/* la barre : le filtre, ajouter, exporter, le gabarit, revenir à l'embarquée, les masquées */
+.nm-t-barre{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
+.nm-filtre{flex:1 1 200px;min-width:0;max-width:360px}
+.nm-t-barre .btn{height:32px}
+.nm-t-barre .btn.lien{padding:0 8px}
+/* ─── la table : en chasse fixe, triable à l'en-tête, les gestes au survol de la ligne ─── */
+.nm-defile{overflow-x:auto;overscroll-behavior-x:contain;padding-bottom:4px;scrollbar-width:thin}
+.nm-tab{border-collapse:separate;border-spacing:0;font-size:var(--f-11);white-space:nowrap;min-width:100%}
+.nm-tab th{position:sticky;top:0;z-index:1;background:var(--s-surface);text-align:left;font:700 10.5px var(--sans);color:var(--t-2);letter-spacing:.05em;text-transform:uppercase;padding:5px 8px 5px 0;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
+.nm-tab th[data-tri]{cursor:pointer;user-select:none}
+.nm-tab th[data-tri]:hover{color:var(--t-1)}
+.nm-tab th[aria-sort="ascending"],.nm-tab th[aria-sort="descending"]{color:var(--accent-2)}
+.nm-tab td{padding:4px 8px 4px 0;border-bottom:1px solid var(--s-line);font-family:var(--mono);vertical-align:top;max-width:260px;overflow:hidden;text-overflow:ellipsis}
+.nm-tab td.d{text-align:right;font-variant-numeric:tabular-nums}
+.nm-tab td.nm-texte{font-family:var(--sans);color:var(--t-2);max-width:320px}
+.nm-tab tr.nm-l{transition:background var(--rapide)}
+.nm-tab tr.nm-l:hover td,.nm-tab tr.nm-l:focus-visible td{background:var(--s-sunken)}
+.nm-tab tr.nm-l:focus-visible{outline:none}
+.nm-tab tr.nm-l:focus-visible td:first-child{box-shadow:inset 2px 0 0 var(--accent)}
+.nm-tab tr.nm-mod td{background:var(--warn-soft)}
+.nm-tab tr.nm-ajo td{background:var(--ok-soft)}
+.nm-tab tr.nm-masquee td{color:var(--t-3);text-decoration:line-through;background:var(--s-sunken)}
+.nm-tab tr.nm-masquee td.nm-gestes-l{text-decoration:none}
+.nm-tab td.nm-etat,.nm-tab th.nm-etat{width:1px;padding-right:6px;white-space:nowrap}
+.nm-src{display:block;font:500 10px var(--sans);color:var(--t-3);max-width:90px;overflow:hidden;text-overflow:ellipsis}
+/* les gestes d'une ligne : à droite, visibles au survol ou au clavier (au doigt, toujours) */
+.nm-tab td.nm-gestes-l,.nm-tab th.nm-gestes-l{width:1px;padding:2px 2px 2px 6px;white-space:nowrap;text-align:right;vertical-align:middle}
+.nm-g{width:26px;height:26px;border:none;background:none;border-radius:50%;color:var(--t-2);display:inline-grid;place-items:center;padding:0;opacity:0;transition:opacity var(--rapide),background var(--rapide),color var(--rapide)}
+.nm-g svg.ico{width:14px;height:14px}
+.nm-tab tr:hover .nm-g,.nm-tab tr:focus-within .nm-g,.nm-g:focus-visible{opacity:1}
+@media (hover:none){.nm-g{opacity:1}}
+.nm-g:hover{background:var(--s-hover);color:var(--t-1)}
+.nm-g.danger:hover{background:var(--ko-soft);color:var(--ko)}
+.nm-plus{margin:4px 0 0 -8px}
+/* ─── une ligne en édition : chaque cellule un champ, OK et Annuler au bout ─── */
+.nm-tab tr.nm-edition td{background:var(--accent-soft);padding:4px 6px 4px 0;vertical-align:middle}
+.nm-champ{width:100%;min-width:72px;height:28px;border:1px solid var(--s-line-2);border-radius:4px;padding:0 6px;background:var(--s-surface);color:var(--t-1);font:500 var(--f-12) var(--mono);transition:border-color var(--rapide),box-shadow var(--rapide)}
+.nm-champ[data-obligatoire]{border-color:#e4b58f}
+.nm-champ:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px #fbeee4}
+.nm-champ::placeholder{color:var(--t-3);font-family:var(--sans);font-weight:400}
+.nm-tab td.nm-valider{text-align:left;padding-left:6px}
+.nm-tab td.nm-valider .btn{height:28px;padding:0 10px;margin-right:2px}
+/* ─── l'import : un bloc par table reconnue, la cible, les colonnes, le compte, l'aperçu ─── */
+.nm-import,.nm-resultats,.nm-guide{border:1px solid var(--s-line-2);border-radius:var(--r-2);padding:var(--sp-3);background:var(--s-surface);display:flex;flex-direction:column;gap:var(--sp-3);box-shadow:var(--sh-1)}
+.nm-import{box-shadow:inset 3px 0 0 var(--accent),var(--sh-1)}
+.nm-imp-tete{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2) var(--sp-3)}
+.nm-imp-tete b{font-size:var(--f-14)}
+.nm-imp-tete .btn.lien{margin-left:-6px}
+.nm-bloc{border:1px solid var(--s-line);border-radius:var(--r-1);padding:10px 12px;display:flex;flex-direction:column;gap:8px;background:var(--s-sunken)}
+.nm-bloc.hesite{border-color:var(--info)}
+.nm-bloc-tete{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.nm-bloc-tete b{display:block;font-size:var(--f-13);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nm-bloc-ou{font-size:var(--f-11);color:var(--t-3)}
+.nm-cible{display:inline-flex;align-items:center;gap:8px;font-size:var(--f-12);color:var(--t-2)}
+.nm-cible select,.nm-col-ko select{height:30px;border:1px solid var(--s-line-2);border-radius:var(--r-1);background:var(--s-surface);color:var(--t-1);padding:0 6px;font-size:var(--f-12);max-width:220px}
+.nm-bloc-compte{font-size:var(--f-12);color:var(--t-2)}
+.nm-bloc-compte b{font-weight:700}
+.nm-bloc-cols{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;font-size:var(--f-11)}
+.nm-cols-t{font:700 10px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-2);margin-right:2px}
+.nm-col-ok{font-family:var(--mono);background:var(--s-surface);border:1px solid var(--s-line);border-radius:999px;padding:1px 8px;color:var(--t-1)}
+.nm-col-ko{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);background:var(--warn-soft);border-radius:999px;padding:1px 4px 1px 8px;color:var(--warn)}
+.nm-col-ko select{height:24px;font-size:var(--f-11);font-family:var(--sans)}
+.nm-apercu td{background:var(--s-surface)}
+/* ─── les résultats de la recherche : par table, les premières lignes, le chemin vers la table ─── */
+.nm-hit{display:flex;flex-direction:column;gap:4px}
+.nm-hit-t{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:var(--f-12)}
+.nm-hit-t b{font-size:var(--f-13)}
+.nm-hit-t span{color:var(--t-3);font-family:var(--mono)}
+/* ─── le guide : ajouter une norme, les gabarits ─── */
+.nm-cas{display:grid;grid-template-columns:minmax(140px,max-content) minmax(0,1fr);gap:8px 14px;margin:0;font-size:var(--f-12)}
+.nm-cas dt{font-weight:700;color:var(--t-1);line-height:1.5}
+.nm-cas dd{margin:0;color:var(--t-2);line-height:1.5}
+.nm-gabarits{display:flex;flex-wrap:wrap;gap:0 6px;margin-top:2px;align-items:center}
+.nm-gabarits .fi-lien{margin:0 0 0 -8px}
+.nm-gabarits.nm-tous{padding-top:6px;border-top:1px solid var(--s-line)}
+.nm-gabarits.nm-tous .sur{margin-right:6px}
+/* ─── au téléphone : la page est un tiroir ; la fiche d'une table s'empile ─── */
+@media (max-width:700px){
+  .nm-doc,.nm-cols,.nm-cas{grid-template-columns:1fr;gap:2px 0}
+  .nm-doc dt,.nm-cols dt,.nm-cas dt{margin-top:6px}
+  .nm-t-tete{flex-wrap:wrap;gap:6px 10px}
+  .nm-t-titre{flex-basis:calc(100% - 30px)}
+  .nm-t-badges{justify-content:flex-start}
+  .nm-tab td{max-width:160px}
+  /* la tête de l'import et le titre d'un bloc prennent toute la largeur : les boutons et la cible passent dessous */
+  .nm-imp-tete .min0,.nm-bloc-tete .min0{flex:1 1 100%}
+  .nm-bloc-tete b{white-space:normal}
+}

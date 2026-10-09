@@ -384,12 +384,40 @@ le lecteur les donnera : mêmes colonnes.
 
 ## Comment l'outil lit une norme
 
-Un CSV (`;`, virgule ou point décimal) ou un Excel (une table par feuille,
-ou plusieurs à la suite). Chaque table se reconnaît à **sa ligne d'en-tête**,
-par le nom de ses colonnes, dans n'importe quel ordre ; un titre libre peut
-la précéder ; une ligne vide la termine. Quatre tables, dont aucune n'est
-obligatoire seule, mais sans Familles il n'y a ni trous ni règle, et sans
-Fils il n'y a pas de simulation.
+Un CSV (`;`, `,` ou tabulation ; virgule ou point décimal ; un champ entre
+guillemets garde ses séparateurs), un texte collé, ou un Excel (chaque
+feuille est lue, sous son nom ; une feuille porte une table ou plusieurs à
+la suite). Le texte est découpé en **blocs** (`decouperTables`, 09) : chaque
+table se reconnaît à **sa ligne d'en-tête**, par le nom de ses colonnes,
+dans n'importe quel ordre, sous leurs alias (« Jauge », « AWG », « Gauge »,
+« Jauge (AWG) » : l'unité entre parenthèses est ignorée) ; un titre libre
+(une ligne sans séparateur) peut la précéder, c'est lui qui la nomme dans la
+prévisualisation ; une ligne vide ou un titre la termine. Les nombres sont
+lus comme un atelier les écrit : « 7,5 », « 7.5 », « 5 mm », « −55 °C »,
+« 10 000 ft ». Vingt tables (`TABLES_NORME`), reconnues par ce que leur
+en-tête doit nommer (`OBLIGATOIRES_NORME[table].entete`) ; quand deux tables
+reconnaissent autant de colonnes d'un même en-tête, l'outil **hésite** et
+la page d'import demande laquelle (`reconnaitreEntete`, `hesite`). Chaque
+ligne lue garde ses cellules telles quelles (`brut`) : c'est ce que la page
+montre, modifie et exporte ; le moteur, lui, lit l'entrée (`ENTREE_NORME`).
+
+Une ligne **remplace** une ligne de même **clé de fusion** (`CLE_FUSION` :
+une famille, un type + une jauge, une condition et son point, une tension,
+une variante de module, un contact par ses cinq critères, un câble par son
+type…) ; les autres s'ajoutent (`fusionnerNormes`). `comparerTable` dit,
+pour des lignes importées, lesquelles sont nouvelles, lesquelles remplacent
+une ligne (avant → après) et lesquelles sont identiques à ce que l'outil a
+déjà. `colonnesDeTable(table)` rend les colonnes d'une table (libellé,
+alias, obligatoire, sens) ; `gabaritCsv(table)` un gabarit (titre, en-tête,
+une ligne d'exemple) ; `csvDeTable(table, lignes)` l'export, qui se relit
+tel quel (chaque table embarquée fait l'aller-retour, `tests/normes.js`).
+
+Les tables ci-dessous sont celles de la simulation d'une barrette ; les
+autres (Contacts, Modules, Tailles, Câbles, Familles de câbles, Courbes de
+disjonction, Calibration, Familles de disjoncteurs, Protection, Raccords,
+Gaines, Colliers, Filetages, Entrées, Manchons, Résistance des contacts)
+sont décrites plus haut, fichier par fichier, et dans la page **Normes** de
+l'outil, colonne par colonne (le même texte : `SENS_NORME`, 09).
 
 ### Familles — une ligne par famille (ASNE0500, EN3646…)
 
@@ -491,18 +519,76 @@ ne sont pas simulés.
 1. Garde le PDF de la norme ici (`normes/ASNE0599.pdf`, par exemple) : il
    n'est pas embarqué, c'est la référence.
 2. Transcris ses tables dans un CSV à côté (`normes/ASNE0599.csv`), avec les
-   en-têtes ci-dessus. Une norme de barrettes porte surtout la table
-   Familles ; une norme de fils, la table Fils ; les déclassements et le
-   réseau viennent souvent d'un troisième document. Un fichier par norme
-   convient : ils se lisent tous.
+   en-têtes de l'outil — la page **Normes** donne un **gabarit** par table
+   (« Ajouter une norme, les gabarits » : l'en-tête et une ligne d'exemple),
+   et dit, cas par cas, par quelles tables entre ce que l'outil ne connaît
+   pas encore : une nouvelle norme de barrette (Familles, Tailles, Modules,
+   Contacts), une famille de prise ou de connecteur (Familles, Tailles,
+   Modules à emploi connecteur, Contacts, Filetages, Raccords), un câble
+   (Câbles, Familles de câbles), les règles du programme (Réseau,
+   Déclassement, Fils par type), un disjoncteur (Courbes de disjonction,
+   Familles de disjoncteurs, Calibration), un raccord, un manchon, une
+   gaine, un collier, une entrée (leur table). Un fichier par norme
+   convient : ils se lisent tous. Une photo de norme n'est pas encore lue :
+   on la transcrit dans un gabarit.
 3. Soit `node construire.js` : tous les CSV de ce dossier sont **embarqués**
    dans `index.html` (retire `norme-exemple.csv`, ou garde-le, il reste
-   marqué exemple). Soit, sans reconstruire, **Importer une norme** dans la
-   fiche « Bible des barrettes », ou déposer le fichier sur la table : la
-   première norme importée efface l'exemple, les suivantes se fondent avec
-   elle (une famille, un type+jauge, une condition, une tension de même nom
-   remplace la précédente). La norme importée est gardée dans le navigateur ;
-   « Revenir à la norme embarquée » l'oublie.
+   marqué exemple). Soit, sans reconstruire, dans l'outil : **Importer un
+   fichier** ou **Coller des lignes** dans la page Normes (ou « Importer une
+   norme » dans la bible, ou déposer le fichier sur la table) : chaque table
+   reconnue est **prévisualisée** avant d'être adoptée — la table cible (à
+   changer quand l'outil hésite, ou pour lire un bloc autrement), les
+   colonnes reconnues et celles qui ne le sont pas (qu'on peut attribuer à
+   une colonne de l'outil), combien de lignes sont lues, nouvelles,
+   remplacent une ligne, sont identiques, sont rejetées (incomplètes), et
+   les premières lignes. **Adopter** les pose dans la couche du navigateur
+   (voir ci-dessous) : les fiches, le plan et le contrôle suivent aussitôt.
+
+## Modifier une norme dans l'outil
+
+La page **Normes** (bouton « Voir les normes » dans la bible, « Voir la
+norme » sur la carte d'une barrette, `ficheNormes()`) classe les vingt
+tables par domaine — barrettes et modules de jonction · prises de coupure
+et connecteurs · contacts à sertir · câbles et fils · chute, réseau et
+déclassement · disjoncteurs · raccords, gaines, colliers, manchons ·
+contrats déjà faits — et pour chaque table dit **à quoi elle sert**, **qui
+la lit** (quelle fiche, quel contrôle), **comment une ligne se choisit**
+(automatique, et le geste manuel qui passe devant : « Changer » sur la
+fiche, le sexe des contacts, les hypothèses de la simulation), ce qui
+**manque**, et ses **colonnes** expliquées. Une recherche en tête cherche
+dans toutes les tables (une référence, un part number, une jauge).
+
+Chaque table se déplie, se **filtre** et se **trie** (un clic sur l'en-tête)
+et se modifie sur place : un **double-clic** (ou le crayon au bout de la
+ligne) fait de chaque cellule un champ, **Entrée** valide, **Échap**
+annule ; « Ligne » en ajoute une, le bouton dupliquer en copie une, la croix
+en retire une (une ligne embarquée se **masque** : elle se montre barrée sur
+demande et se **rétablit**). Une ligne incomplète est refusée en disant ce
+qui manque. Une ligne modifiée ou ajoutée est **marquée**, la table aussi
+(« 1 modifiée », « 2 ajoutées », « 1 masquée »), avec le fichier d'où elle
+vient. **Ctrl+Z** défait (tant que la page a le focus : c'est l'historique
+des normes, pas celui du contrat ; « Défaire » au pied fait pareil).
+
+Rien de tout cela ne touche aux fichiers embarqués : ce qui est importé ou
+modifié est une **couche** (`NORMES.apports`, 08 octies : par table, les
+lignes brutes avec leur source, et les clés des lignes embarquées
+masquées), gardée dans ce navigateur (`localStorage`, clé
+`atelier.normes.v2`), et la **norme active** (`app.norme`) est l'embarquée,
+moins les lignes masquées, fusionnée avec les apports (`normeAvecApports`,
+09) — dans cet ordre : ce qui est importé ou modifié passe devant. Chaque
+changement est repris aussitôt par les fiches, le plan, le tableau, le
+contrôle et la bible (ses modules). « Revenir à l'embarquée » vide la
+couche d'une table ; « Revenir à la norme embarquée » (au pied) vide tout.
+L'ancien mécanisme (une norme importée qui **remplaçait** l'embarquée, clé
+`atelier.norme.v1`) n'est plus lu : une norme ainsi gardée se réimporte,
+et se voit alors ligne par ligne.
+
+**Exporter CSV** enregistre n'importe quelle table telle que l'outil la lit
+(lignes importées et modifiées comprises), aux en-têtes de l'outil ; elle se
+relit telle quelle, et se dépose dans `normes/` pour devenir embarquée.
+**Exporter mes modifications** enregistre en un seul fichier tout ce que le
+navigateur a ajouté ou changé (un bloc par table, et les clés masquées) :
+c'est ce fichier qu'on renvoie pour que l'embarqué en profite.
 
 Ce qu'il faudra dans les vraies normes pour remplacer la fausse : par
 famille, le pas, la plage de jauges, l'intensité et la résistance de contact,

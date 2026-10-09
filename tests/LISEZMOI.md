@@ -44,6 +44,20 @@ node tests/barrettes.js        la bible des barrettes se lit, la référence se 
                                d'un connecteur) et la chute en triphasé ; la chute en chaîne (à travers les prises et les barrettes,
                                longueur réelle) ; les contrats déjà faits (ranger, reconnaître, comparer, reprendre) — 222 contrôles
                                (sans navigateur)
+node tests/normes.js           les normes : importer, classer, modifier (08 octies, 09). Sans navigateur : les cellules (guillemets,
+                               séparateurs), les nombres d'atelier (« −55 », « 10 000 ft »), les blocs d'un texte (titres libres,
+                               en-têtes avec unité, l'hésitation entre deux tables, une feuille Excel en tabulations), la clé de
+                               fusion et la comparaison (nouvelles, remplacées, identiques), la couche des apports (remplacer,
+                               ajouter, masquer), les colonnes documentées, le gabarit de chacune des vingt tables qui se relit
+                               comme sa table, l'aller-retour export → import de chaque table embarquée — 25 contrôles
+                               (--sans-navigateur pour s'arrêter là). Puis, à la vraie souris : la page par domaines (huit domaines,
+                               vingt-trois vues), une table dépliée, filtrée, triée ; une ligne modifiée (double-clic, Entrée),
+                               reprise par le moteur, défaite (Ctrl+Z), gardée après rechargement ; une ligne ajoutée (refusée sans
+                               jauge), une ligne embarquée masquée puis rétablie, dupliquée ; l'import d'un CSV collé (compte : lues,
+                               nouvelle, remplace, identique, rejetée ; un bloc ignoré) et d'un Excel généré (deux feuilles, trois
+                               tables, en-têtes avec unités), prévisualisés puis adoptés ; l'export d'une table, d'un gabarit, de
+                               toutes les modifications ; la recherche dans toutes les tables et « Voir dans la table » ; le retour
+                               à l'embarquée, table par table puis partout ; la bible depuis la page et retour ; le téléphone
 node tests/references.js       les contrats déjà faits et le FWD (sans navigateur) : la lecture garde le dessin et les descriptions ;
                                un repère ELEC se décode (zone, nature, ordre, variante) et se dit en mots, une borne de barrette aussi ;
                                la base s'indexe par harness et par dessin ; la comparaison d'un dessin entier et d'un voisinage, la
