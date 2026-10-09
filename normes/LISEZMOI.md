@@ -160,15 +160,51 @@ physique (I ∝ √section) : le 12 AWG (35 A) et le 8 AWG (68 A) sortent de
 La **simulation** d'une barrette ou d'une prise lit ces lignes (intensité,
 résistance), avec deux hypothèses de plus : l'**ambiante** (note 2 de la
 norme : I₂ = I₁ × √((135 − Tu)/40), 95 °C → ×1 — sur le continu seulement,
-les paliers courts sont adiabatiques) et la **température du conducteur**
-(20 °C par défaut, comme les fiches ; 135 °C, la table, est le cas le plus
-défavorable). La **fiche d'un disjoncteur** juge chacun de ses fils contre
-son profil : à chaque phase, le courant doit rester sous ce que le fil admet
-pour cette durée (le palier juste au-dessus : 2 s, 10 s, 1 min, sinon le
-continu), déclassé comme la simulation ; et ce que le disjoncteur laisse
-passer sur sa courbe lente (−55 °C) ne devrait pas dépasser ce que le fil
-admet, sinon le fil n'est pas protégé. Un dédoublement se partage on ne sait
-comment : chaque fil doit tenir tout. La fiche d'un fil dit ce qu'il admet.
+les paliers courts sont adiabatiques) et la **température du conducteur**.
+Par défaut (recherche R2, règle 6) le conducteur est **à la température que
+son courant lui donne** : T2 = Tu + (135 − Tu) × (I / I admise)², soit
+Tu + 40 × (I / I EN 2853 déclassée)² (AC 43.13-1B § 11-66 d(4) à d(6) — un
+DR20 à 5 A sous 8 fils à 60 % et 95 °C monte à 116 °C : × 1,38 sur sa
+résistance) ; l'hypothèse `chuteConducteur` = « fixe » reprend la
+température de l'hypothèse « conducteur » (20 °C, comme l'Excel et les
+fiches ; 135 °C, la table, est le cas le plus défavorable). La **fiche d'un
+disjoncteur** juge chacun de ses fils contre son profil : à chaque phase, le
+courant doit rester sous ce que le fil admet pour cette durée (le palier
+juste au-dessus : 2 s, 10 s, 1 min, sinon le continu), déclassé comme la
+simulation ; le calibre doit rester sous ce que le fil admet en service
+continu (un verdict à part) ; et ce que le disjoncteur laisse passer sur sa
+courbe lente (−55 °C) doit rester sous la **courbe de dommage** du fil
+(`dommage-fils.csv`, ci-dessous), sinon le fil n'est pas protégé. Un
+dédoublement se partage on ne sait comment : chaque fil doit tenir tout. La
+fiche d'un fil dit ce qu'il admet.
+
+## `dommage-fils.csv` : ce qu'un fil supporte avant de s'abîmer
+
+La table **Dommage des fils** (recherche R2, octobre 2026) : pour chaque
+jauge cuivre de 26 à 0 AWG et chaque tenue de câble (260 °C : DR, MLx, DW,
+GPB, DG, DH ; 200 °C : WF, WJ, WW, WV, XM, HJ, coaxiaux ; 150 °C : BN), l'**I²t
+admis** de 135 °C (le fil à sa température de service quand la surcharge
+arrive) jusqu'à la tenue — l'adiabatique de la CEI 60949 (K = 226 A·s½/mm²,
+β = 234,5), corrigé de la résistivité réelle du toron de l'EN 2853 —, ce
+qu'il en reste à 2 s et 10 s, et le facteur du continu à 95 °C (informatif).
+Le moteur prend la ligne de la jauge dont la tenue est la plus haute sans
+dépasser la T max de la famille du câble (table Familles de câbles) ; en t
+secondes le fil supporte le plus grand de √(I²t / t) et du continu porté à
+la tenue — l'EN 2853 déclassée (faisceau, altitude) × √((T tenue −
+ambiante)/40) : l'AC 43.13-1B (§ 11-67 b-c) et le MIL-W-5088L (§ 6.7)
+classent un fil sur ΔT = tenue − ambiante. Le disjoncteur **protège** le fil
+quand ce qu'il laisse passer sur sa courbe lente reste dessous aux quatre
+paliers de l'EN 2853 (2 s, 10 s, 1 min, continu ; entre deux paliers, le
+plus grand des deux sous-estime ce que le fil supporte : l'adiabatique
+ignore le refroidissement). Validée : dans les conditions de la table 11-3
+de la FAA (57 °C, 15 fils à 20 %, 30 000 ft, disjoncteur à 23 °C), la
+méthode retrouve exactement ses calibres de 22 à 16 AWG et en 8 AWG, un cran
+en dessous ailleurs, jamais au-dessus (`tests/couverture.js`) ; l'ancienne
+règle — les intensités de service — en acceptait à peu près la moitié.
+Rien pour le CCA (AD, VN) ni l'aluminium (AM, YV : K et β non trouvés) : leur
+protection se juge encore sur les intensités de service, plus sévères. Le 26
+et le 24 AWG sont en alliage de cuivre : la correction de résistivité couvre
+l'alliage, pas sa chaleur massique — à confirmer. Statut : déduit.
 
 La simulation connaît trois **régimes** (la notice du calculateur de
 chute triphasé) : continu (ΔU = R × I), alternatif monophasé (ΔU = I × (R
@@ -220,12 +256,18 @@ compensation, ambiante admise, masse, **la courbe à prendre** et les
 moteur lit : `MS3320` reconnaît MS3320-10 et MS3320L-5, `2TC` reconnaît
 2TC2-10 ; le calibre se lit en queue s'il est de la gamme ; un part number
 inconnu prend les courbes ETA483), la **Protection** par jauge de fil
-(AC 43.13-1B table 11-3 : le calibre maximal du disjoncteur et du fusible —
-rien en 1 et 0 AWG pour le disjoncteur —, la taille de contact et son
-courant ; la fiche et le contrôle d'un disjoncteur la confrontent à chaque
-fil nourri) et la **Chute disjoncteur** (la chute propre aux bornes à In :
-1,1 V à 1 A, 0,25 V à 15-25 A — montrée sur la fiche, pas encore comptée
-dans la chute en ligne : à trancher avec le lecteur). Les MS3320 /
+(AC 43.13-1B table 11-3, relue par R2 : le calibre maximal du disjoncteur et
+du fusible — rien en 1 et 0 AWG pour le disjoncteur —, la taille de contact
+et son courant — les 80 A et 150 A des tailles 4 et 0, écrits de mémoire,
+sont retirés : non trouvés, l'outil prend la taille connue la plus proche,
+8 : 46 A, ce qui est prudent ; la fiche et le contrôle d'un disjoncteur la
+confrontent à chaque fil nourri) et la **Chute disjoncteur** (la chute
+propre aux bornes à In : 1,1 V à 1 A, 0,25 V à 15-25 A — COMPTÉE dans la
+chute en ligne depuis R2 (règle 7), à I / In de sa chute à In, parce que
+l'AC 43.13-1B mesure la chute « entre le bus et la masse de l'équipement » ;
+l'hypothèse `chuteDisjoncteur` l'ôte si la règle du programme part du bus
+aval, à confirmer avec l'ABD0100 ; un calibre écrit « 2,5 » est un calibre,
+pas la liste 2 et 5). Les MS3320 /
 AS33201 prennent les courbes ETA483 parce que la feuille du lecteur les
 trace ainsi — un Klixon 2TC2 prendrait 2TC (plus lent à −54 °C) : à
 confirmer. NSA935401-10 reste un collier.
@@ -238,21 +280,47 @@ quatre courbes, la zone verte où tout tient, le profil en escalier. Le
 profil se lit en **points cumulés** : chaque phase dure, pour la courbe,
 autant que toutes les phases au moins aussi fortes qu'elle ; le permanent
 dure toujours et doit rester sous le premier multiple de la courbe, là où le
-disjoncteur ne déclenche jamais. Le verdict se prend sur la **courbe la plus
-rapide** (125 °C) ; les autres disent la marge. Entre deux points, l'outil
-interpole en log-log, et il tient la courbe en **enveloppe** (le temps ne
-remonte jamais avec le courant : les points lus sur une figure tremblent).
-La fiche dit « Tient » ou « Déclenche », la marge en une phrase, et le plus
-petit calibre de la gamme (1, 2, 2,5, 3, 4, 5, 7,5, 10, 15, 20, 25, 30, 35,
-50 A) qui tiendrait. Le profil se garde avec le contrat ; la pastille de
+disjoncteur ne déclenche jamais — et sous ce que la famille **garantit** de
+tenir à la température max du tableau (table Calibration, « Tient »,
+interpolée en température : la feuille MS3320N ne garantit que 0,80 In à
+121 °C, le Klixon 2TC 0,85 In ; la courbe typique dirait 0,92 In). Le
+verdict se prend sur la **courbe la plus rapide** (125 °C) ; les autres
+disent la marge. Entre deux températures du tableau, la courbe qui juge est
+**interpolée** (le multiple admis à chaque durée, linéaire en température).
+Un état qui survient en service (après le permanent) trouve le bilame chaud :
+son temps de déclenchement se divise par le facteur de **préchauffage**
+(MS3320N table VII : ÷ 1,6 à 3,7 préchargé à 60 % ; l'outil prend 1,6, en
+plein dès 60 % de In, en proportion du carré au-dessous). Entre deux points,
+l'outil interpole en log-log, et il tient la courbe en **enveloppe** (le
+temps ne remonte jamais avec le courant : les points lus sur une figure
+tremblent).
+
+La **gamme** est le catalogue de la famille du part number (colonne Calibres
+de la table Familles de disjoncteurs : MS3320 de ½ à 25 A ; une plage « 1 à
+25 » prend la série d'aéronef qu'elle couvre), filtré par la liste préférée
+du lecteur s'il en garde une (hypothèse `calibresPreferes`) ; sans famille,
+les sept calibres de son Excel (1, 3, 5, 7,5, 10, 15, 25 A). Le **meilleur
+calibre** (R2 § 3.1 ; NASA TM-102179 étapes 3 à 7) est le plus petit de la
+gamme qui tient le permanent et les pointes avec la marge (hypothèses
+`marge` : 10 % de courant, à 0 % si le profil sort du bilan électrique au
+pire cas ; `margeTemps` : au plus 75 % du temps de déclenchement), à la
+température max du tableau, et qui reste sélectif 2:1 avec ses voisins ;
+puis, pour chaque fil qui ne le suit pas (la charge, le service, la table
+11-3, le contact, la courbe de dommage), la plus petite jauge de sa famille
+dans la base des câbles qui le suit — on ne monte **jamais** le calibre pour
+sauver un fil — et les contacts que cette jauge change de taille. Exemple,
+102CB1 (5 A permanents, 9,31 A pendant 125 s) : avec 10 % de marge au
+tableau à 125 °C, 15 A et ses trois fils en DR12 ; sans marge, 10 A et
+W-012, W-015 en DR16. Le profil se garde avec le contrat ; la pastille de
 contrôle relève chaque disjoncteur qui déclenche, sans calibre ou sans
 profil.
 
 À confirmer : la référence réelle des disjoncteurs du lecteur (E-T-A 483,
 Klixon 2TC2 ou Crouzet 84 406 : les courbes à −55 °C diffèrent, de 23 à
-66 s à 2 In), l'ambiante du tableau (hypothèses « tableau min / max » : seules
-les courbes qui l'encadrent jugent), la marge qu'on s'impose, et où commence
-le « bus » de sa règle de chute (la chute propre du disjoncteur compte-t-elle).
+66 s à 2 In), l'ambiante du tableau et des zones des fils (hypothèses
+« tableau min / max », « ambiante »), la marge qu'on s'impose (10 % par
+défaut), le préchauffage (quels états), et où commence le « bus » de sa règle
+de chute (la chute propre du disjoncteur, comptée par défaut).
 
 ## `contacts.csv` : le contact à sertir sur chaque fil
 
@@ -449,7 +517,7 @@ dans n'importe quel ordre, sous leurs alias (« Jauge », « AWG », « Gauge »
 (une ligne sans séparateur) peut la précéder, c'est lui qui la nomme dans la
 prévisualisation ; une ligne vide ou un titre la termine. Les nombres sont
 lus comme un atelier les écrit : « 7,5 », « 7.5 », « 5 mm », « −55 °C »,
-« 10 000 ft ». Vingt tables (`TABLES_NORME`), reconnues par ce que leur
+« 10 000 ft ». Vingt-cinq tables (`TABLES_NORME`), reconnues par ce que leur
 en-tête doit nommer (`OBLIGATOIRES_NORME[table].entete`) ; quand deux tables
 reconnaissent autant de colonnes d'un même en-tête, l'outil **hésite** et
 la page d'import demande laquelle (`reconnaitreEntete`, `hesite`). Chaque
@@ -469,7 +537,7 @@ tel quel (chaque table embarquée fait l'aller-retour, `tests/normes.js`).
 
 Les tables ci-dessous sont celles de la simulation d'une barrette ; les
 autres (Contacts, Modules, Tailles, Câbles, Familles de câbles, Courbes de
-disjonction, Calibration, Familles de disjoncteurs, Protection, Raccords,
+disjonction, Calibration, Familles de disjoncteurs, Protection, Dommage des fils, Raccords,
 Gaines, Colliers, Filetages, Entrées, Manchons, Résistance des contacts)
 sont décrites plus haut, fichier par fichier, et dans la page **Normes** de
 l'outil, colonne par colonne (le même texte : `SENS_NORME`, 09).
@@ -563,7 +631,15 @@ conducteur qui n'est pas du cuivre (table Familles de câbles).
 
 | colonne | obligatoire | sens |
 |---|---|---|
-| Famille, Calibre, Chute max | oui | la famille (MS3320, 2TC, ETA483…), le calibre ou une liste (« 15 20 25 ») qui vaut pour chacun, la chute aux bornes à In (V) |
+| Famille, Calibre, Chute max | oui | la famille (MS3320, 2TC, ETA483…), le calibre (« 2,5 » est un calibre) ou une liste (« 15 20 25 ») qui vaut pour chacun, la chute aux bornes à In (V) — comptée dans la chute en ligne à I / In |
+
+### Dommage des fils — une ligne par jauge et par tenue
+
+| colonne | obligatoire | sens |
+|---|---|---|
+| Fil AWG, T tenue, I2t admis | oui | la jauge, la tenue du câble (°C), l'I²t (A²s) que le fil encaisse de T avant défaut à T tenue |
+| Conducteur | non | cuivre (la table ne vaut que pour lui) |
+| Toron mm2, R20 ohm par km, T avant défaut, Dommage 2 s, Dommage 10 s, Facteur continu dommage, Note, Source, Statut | non | informatifs : le moteur refait le continu à l'ambiante de l'hypothèse |
 
 ### Accessoires — une ligne par référence annexe
 
@@ -592,11 +668,16 @@ porte ni longueur ni courant, l'outil ne les invente pas. Chaque ligne dit
 en plus si le câble tient l'ambiante (T max de sa famille contre Tu + 40 °C)
 et, quand X est à saisir, une estimation (fil seul à 20 mm de la structure).
 
-    I fil     = intensité du fil (table Fils) × déclassement (faisceau, altitude) × √((T conducteur − ambiante)/40) × √(R cuivre / R câble) si le conducteur n'est pas du cuivre
+    I fil     = intensité du fil (table Fils) × déclassement (faisceau, altitude) × √((T conducteur − ambiante)/40) × √(R cuivre / R câble) si le conducteur n'est pas du cuivre (l'aluminium : 0,80 au plus, MIL-W-5088L § 3.8.8.1.1)
     I contact = intensité du contact (table Familles, sinon Résistance des contacts par emploi, bornée par la ligne (fût, jauge) de Courant des contacts)
-    ρ(T)      = Résistance 20 (Ω/km) × (234,5 + T conducteur)/254,5   (aluminium : (238,1 + T)/258,1)
-    R         = (ρ(T) / 1000 × longueur (m) + Résistance du contact (mΩ) / 1000) × 2 si le retour se fait par un fil identique   (la résistance de contact : la famille, sinon la taille du contact et l'emploi — jonction sur une barrette, deux fois ; connecteur sur une prise)
-    ΔU        = R × courant, en V et en % de la tension (mono : I (R cos φ + X sin φ) ; tri : √3 × …, comparée à la ligne 200 V)
+    T         = ambiante + 40 × (courant / I EN 2853 déclassée)², bornée par la T max du câble (AC 43.13-1B § 11-66 d(6)) — ou l'hypothèse « conducteur » (20 °C) en mode « fixe »
+    ρ(T)      = Résistance 20 (Ω/km) × (234,5 + T)/254,5   (aluminium : (238,1 + T)/258,1)
+    R         = (ρ(T) / 1000 × longueur (m) + Résistance du contact (mΩ) / 1000) × 2 si le retour se fait par un fil identique, sauf en triphasé (aucun courant ne revient)   (la résistance de contact : la famille, sinon la taille du contact et l'emploi — jonction sur une barrette, deux fois ; connecteur sur une prise)
+    ΔU        = R × courant, en V et en % de la tension (mono : I (R cos φ + X sin φ) ; tri : √3 × …, comparée à la ligne 200 V ; X saisie à 400 Hz, × fréquence / 400 — 800 Hz en fréquence variable, MIL-STD-704F)
+
+La **chute en ligne** depuis un disjoncteur ajoute, en tête, sa chute propre
+(table Chute disjoncteur, × courant / In) ; une pointe du profil y prend la
+résistance du permanent (un état court ne chauffe pas le fil plus que lui).
 
 Le verdict, dans l'ordre : jauge hors plage · le courant dépasse le fil ·
 dépasse le contact · la chute dépasse ce que le réseau admet · fil inconnu

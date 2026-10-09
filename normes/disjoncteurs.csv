@@ -550,23 +550,23 @@ EN3774;EN 3774-001 / -004 / -006:2023 (6,3 mm) — tripolaires compensés 1-25 A
 EN3662;EN 3662-001:2024 — tripolaire compensé 20-50 A;3;20 25 30 35 40 50;115/200 V AC 400 Hz;oui;-55;125;;5TC;EN3662;tripolaire — courbes 5TC à défaut
 Safran 170;Safran 170 (MS25017 encombrement · MIL-C-5809) — fort calibre, non compensé;1;125 140 150 160 180 200;28 V DC / 115 V AC;non;-40;71;130;;170;3000 A à 28 V DC — aucune courbe
 
-Protection — le calibre maximal du disjoncteur et du fusible par jauge de fil (FAA AC 43.13-1B chap. 11, table 11-3 : courant continu, faisceau à 57 °C ; « un fil seul à l'air libre peut être protégé par le calibre immédiatement supérieur »), et ce que le contact de la taille courante admet (MIL-DTL-38999 III : 22D 5 A, 20 7,5 A, 16 13 A, 12 23 A ; 8, 4, 0 de mémoire, à confirmer)
-Jauge;Disjoncteur max;Fusible max;Taille contact;I contact;Note
-22;5;5;22;5;contact 22D : fils 28-22 AWG
-20;7,5;5;20;7,5;contact 20 : fils 24-20 AWG
-18;10;10;16;13;
-16;15;10;16;13;contact 16 : fils 20-16 AWG
-14;20;15;12;23;
-12;30;20;12;23;contact 12 : fils 14-12 AWG
-10;40;30;8;46;I contact de mémoire
-8;50;50;8;46;I contact de mémoire
-6;80;70;4;80;I contact de mémoire
-4;100;70;4;80;I contact de mémoire
-2;125;100;0;150;I contact de mémoire
-1;;150;;;AC 43.13-1B : pas de calibre de disjoncteur pour le 1 AWG (colonne vide), fusible 150 A
-0;;150;0;150;AC 43.13-1B : pas de calibre de disjoncteur pour le 0 AWG (colonne vide), fusible 150 A ; I contact de mémoire
+Protection — relue par R2 (octobre 2026) sur l'AC 43.13-1B chg 1, table 11-3 page 11-15 : le calibre maximal du disjoncteur et du fusible par jauge de fil cuivre, pour des faisceaux à 57 °C (135 °F) jusqu'à 30 000 ft, de 15 fils ou plus chargés à 20 % au plus de leur capacité, des disjoncteurs à 24-29 °C (75-85 °F) au MIL-C-5809, « un fil seul à l'air libre peut être protégé par le calibre immédiatement supérieur » (§ 11-49), « le disjoncteur protège le fil, pas l'équipement » (§ 11-51). Le courant du contact : AS39029 pour les tailles 22D à 12 (Glenair 2011), taille 8 : 46 A (EN 3155-065, Amphenol, rapport R1), tailles 4 et 0 : NON TROUVÉ — l'ancienne valeur (80 A, 150 A) était de mémoire, la case est laissée vide (l'outil prendra la taille connue la plus proche, 8 : 46 A, ce qui est prudent).
+Jauge;Disjoncteur max;Fusible max;Taille contact;I contact;Note;Source;Statut
+22;5;5;22;5;contact 22D : fils 28-22 AWG;"AC 43.13-1B chg 1, table 11-3, page 11-15 (faa.gov) ; Glenair, AS39029 Contact Performance Specifications (2011), § 3.5.4.1";vérifié
+20;7,5;5;20;7,5;contact 20 : fils 24-20 AWG;"AC 43.13-1B chg 1, table 11-3, page 11-15 (faa.gov) ; Glenair, AS39029 Contact Performance Specifications (2011), § 3.5.4.1";vérifié
+18;10;10;16;13;la taille de contact est l’usage courant (un 18 AWG se sertit dans un 16 ou un 20 selon la famille);"AC 43.13-1B chg 1, table 11-3, page 11-15 (faa.gov) ; Glenair, AS39029 Contact Performance Specifications (2011), § 3.5.4.1";vérifié (calibres, courant) / à confirmer (taille)
+16;15;10;16;13;contact 16 : fils 20-16 AWG;"AC 43.13-1B chg 1, table 11-3, page 11-15 (faa.gov) ; Glenair, AS39029 Contact Performance Specifications (2011), § 3.5.4.1";vérifié
+14;20;15;12;23;;"AC 43.13-1B chg 1, table 11-3, page 11-15 (faa.gov) ; Glenair, AS39029 Contact Performance Specifications (2011), § 3.5.4.1";vérifié
+12;30;20;12;23;contact 12 : fils 14-12 AWG;"AC 43.13-1B chg 1, table 11-3, page 11-15 (faa.gov) ; Glenair, AS39029 Contact Performance Specifications (2011), § 3.5.4.1";vérifié
+10;40;30;8;46;"contact 8 fût 8 : 46 A, fût 10 : 33 A (table Courant des contacts) ; un contact taille 10 AS39029 porte 33 A";"AC 43.13-1B chg 1, table 11-3, page 11-15 (faa.gov) ; R1 (Amphenol EN3155-065) ; Glenair, AS39029 Contact Performance Specifications (2011), § 3.5.4.1 (taille 10 : 33 A)";vérifié (calibres) / à confirmer (taille de contact)
+8;50;50;8;46;;"AC 43.13-1B chg 1, table 11-3, page 11-15 (faa.gov) ; R1 (Amphenol EN3155-065)";vérifié
+6;80;70;4;;courant du contact taille 4 non trouvé dans une source lue (un catalogue Amphenol 38999 haute puissance annonce jusqu’à 100 A en taille 4 : non lu) — l’ancien 80 A était de mémoire;AC 43.13-1B chg 1, table 11-3, page 11-15 (faa.gov);vérifié (calibres) / à confirmer (contact)
+4;100;70;4;;idem taille 4;AC 43.13-1B chg 1, table 11-3, page 11-15 (faa.gov);vérifié (calibres) / à confirmer (contact)
+2;125;100;0;;courant du contact taille 0 non trouvé — l’ancien 150 A était de mémoire;AC 43.13-1B chg 1, table 11-3, page 11-15 (faa.gov);vérifié (calibres) / à confirmer (contact)
+1;;150;;;la table 11-3 ne donne pas de disjoncteur pour le 1 AWG (case vide), fusible 150 A;AC 43.13-1B chg 1, table 11-3, page 11-15 (faa.gov);vérifié
+0;;150;0;;"la table 11-3 ne donne pas de disjoncteur pour le 0 AWG (case vide), fusible 150 A ; courant du contact taille 0 non trouvé";AC 43.13-1B chg 1, table 11-3, page 11-15 (faa.gov);vérifié (calibres) / à confirmer (contact)
 
-Chute disjoncteur — la chute maximale aux bornes du disjoncteur à son courant nominal, en V (feuilles MS3320N / MS22073M / MS14154D / MS14153C table I, Sensata, E-T-A — Crouzet non publié). Une liste de calibres (« 15 20 25 30 35 ») vaut pour chacun. À 1 A un disjoncteur fait 1,1 V : du même ordre que la chute admise d'un réseau 28 V — l'outil la montre sur la fiche du disjoncteur et ne la compte dans la chute en ligne que si l'hypothèse « chute du disjoncteur » est cochée (où commence le « bus » de la règle du lecteur : à trancher).
+Chute disjoncteur — la chute maximale aux bornes du disjoncteur à son courant nominal, en V (feuilles MS3320N / MS22073M / MS14154D / MS14153C table I, Sensata, E-T-A — Crouzet non publié). Une liste de calibres (« 15 20 25 30 35 ») vaut pour chacun. À 1 A un disjoncteur fait 1,1 V : du même ordre que la chute admise d'un réseau 28 V — l'outil la COMPTE dans la chute en ligne, à I / In de sa chute à In (prudent : sous In le bilame est plus froid), parce que l'AC 43.13-1B (table 11-6) mesure la chute « entre le bus et la masse de l'équipement » et que le disjoncteur est entre les deux (recherche R2, règle 7), l'hypothèse `chuteDisjoncteur` l'ôte si la règle du programme part du bus aval (ABD0100 : à confirmer).
 Famille;Calibre;Chute max;Note
 MS3320;0,5;1,90;MS3320N (Sensata 2TC14-1 : 1,10 V pour 1 A)
 2TC;0,5;1,90;MS3320N (Sensata 2TC14-1 : 1,10 V pour 1 A)

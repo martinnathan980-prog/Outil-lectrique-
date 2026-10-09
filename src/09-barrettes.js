@@ -497,6 +497,21 @@ const COLONNES_NORME = {
     ['tailleContact', ['taillecontact', 'contact', 'taille']],
     ['iContact',    ['icontact', 'intensitecontact', 'courantcontact']],
     ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire', 'source']]],
+  // la courbe de DOMMAGE d'un fil (normes/dommage-fils.csv, recherche R2) : ce qu'il supporte en défaut avant de s'abîmer
+  dommages: [
+    ['conducteur',  ['conducteur', 'metal', 'ame']],
+    ['jauge',       ['filawg', 'jauge', 'awg', 'gauge']],
+    ['section',     ['toronmm2', 'toron', 'sectiontoron']],
+    ['resistance20', ['r20ohmparkm', 'r20', 'resistance20']],
+    ['t0',          ['tavantdefaut', 'tdepart', 'tservice']],
+    ['tmax',        ['ttenue', 'tenue', 'tenuecable']],
+    ['i2t',         ['i2tadmis', 'i2t', 'integralei2t']],
+    ['i2s',         ['dommage2s']],
+    ['i10s',        ['dommage10s']],
+    ['facteur',     ['facteurcontinudommage', 'facteurcontinu']],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']],
+    ['source',      ['source', 'origine']],
+    ['statut',      ['statut', 'status', 'confiance']]],
   cables: [
     ['cable',       ['cable', 'cablecode', 'codecable', 'typedecable']],
     ['famille',     ['famille', 'wiretype', 'typedefil', 'serie']],
@@ -566,7 +581,8 @@ const TABLE_NORME = {
   manchons: c => c.ha != null && c.ja != null,
   calibrations: c => c.tient != null && c.declenche != null,
   disjoncteursFamilles: c => c.poles != null && c.calibres != null,
-  protections: c => c.jauge != null && c.disjoncteurMax != null
+  protections: c => c.jauge != null && c.disjoncteurMax != null,
+  dommages: c => c.jauge != null && c.i2t != null && c.tmax != null
 };
 /* Un nombre d'atelier : virgule ou point, une unité derrière (« 5 mm », « 0,8 »), un signe moins typographique (« −55 »),
    des milliers séparés par une espace (« 10 000 ft ») — ce qu'un Excel ou une photo de norme écrivent. */
@@ -629,7 +645,8 @@ function accessoireNorme(o) { const famille = cleNorme(o.famille), reference = S
   return { famille, reference, equivalent: String(o.equivalent || '').trim(), role: String(o.role || '').trim(), masse: NUMERO(o.masse), note: String(o.note || '').trim() }; }
 /* LA CHUTE PROPRE D'UN DISJONCTEUR à son courant nominal (normes/disjoncteurs.csv, table Chute disjoncteur : feuilles MS,
    Sensata, E-T-A) : par famille et calibre(s), en V. Une liste de calibres vaut pour chacun. */
-function chuteDisjoncteurNorme(o) { const nom = String(o.famille || '').trim(), chuteMax = NUMERO(o.chuteMax), calibres = LISTE_NUM(o.calibre); if (!nom || chuteMax == null || !calibres.length) return null;
+// un calibre seul écrit à la française (« 2,5 », « 0,75 ») est UN nombre, pas la liste 2 et 5 : sans quoi un MS3320-5 prenait la chute du 0,5 A
+function chuteDisjoncteurNorme(o) { const nom = String(o.famille || '').trim(), chuteMax = NUMERO(o.chuteMax), texte = String(o.calibre == null ? '' : o.calibre).trim(), calibres = /^\d+[.,]\d+$/.test(texte) ? [NUMERO(texte)] : LISTE_NUM(texte); if (!nom || chuteMax == null || !calibres.length) return null;
   return { famille: cleNorme(nom), nom, calibres, chuteMax, note: String(o.note || '').trim() }; }
 /* Une ligne d'une COURBE DE DISJONCTION (normes/disjoncteurs.csv) : la famille de disjoncteurs, la courbe (sa
    température), un multiple du courant nominal et le temps de déclenchement en secondes. */
@@ -697,10 +714,17 @@ function disjoncteurFamilleNorme(o) { const nom = String(o.famille || '').trim()
   return { famille: cleNorme(nom), nom, norme: String(o.norme || '').trim(), poles: NUMERO(o.poles) || 1, calibres, plage, tension: String(o.tension || '').trim(), compense: /^(oui|yes|o|y|1|true)/i.test(String(o.compense || '').trim()), tmin: NUMERO(o.tmin), tmax: NUMERO(o.tmax), masse: NUMERO(o.masse), courbe: cleNorme(o.courbe), motifs, note: String(o.note || '').trim() }; }
 function protectionNorme(o) { const jauge = NUMERO(o.jauge), disjoncteurMax = NUMERO(o.disjoncteurMax); if (jauge == null || disjoncteurMax == null) return null;
   return { jauge, disjoncteurMax, fusibleMax: NUMERO(o.fusibleMax), tailleContact: String(o.tailleContact || '').trim().toUpperCase(), iContact: NUMERO(o.iContact), note: String(o.note || '').trim() }; }
+/* Une ligne DOMMAGE (normes/dommage-fils.csv, recherche R2) : pour un conducteur (cuivre) et une jauge, la tenue du câble
+   (T tenue : 260 °C pour un DR, 200, 150), l'I²t admis de la température de service (T avant défaut, 135 °C) jusqu'à
+   cette tenue — l'adiabatique de la CEI 60949 —, ce qu'il en reste à 2 s et 10 s, et le facteur du continu (informatif :
+   le moteur le refait à l'ambiante de l'hypothèse). C'est contre elle que se juge la PROTECTION d'un fil. */
+function dommageNorme(o) { const jauge = NUMERO(o.jauge), tmax = NUMERO(o.tmax), i2t = NUMERO(o.i2t); if (jauge == null || tmax == null || i2t == null) return null;
+  return { conducteur: CONDUCTEUR(o.conducteur) || 'cuivre', jauge, section: NUMERO(o.section), resistance20: NUMERO(o.resistance20), t0: NUMERO(o.t0), tmax, i2t, i2s: NUMERO(o.i2s), i10s: NUMERO(o.i10s), facteur: NUMERO(o.facteur),
+           note: String(o.note || '').trim(), source: String(o.source || '').trim(), statut: String(o.statut || '').trim() }; }
 const ENTREE_NORME = { familles: familleNorme, fils: filNorme, declassements: declassementNorme, reseau: reseauNorme, tailles: tailleNorme, modules: moduleNorme, contacts: contactNorme, disjoncteurs: disjonctionNorme, cables: cableNorme, gaines: gaineNorme, colliers: collierNorme,
   filetages: filetageNorme, entrees: entreeNorme, raccords: raccordNorme, manchons: manchonNorme, classes: classeNorme, calibrations: calibrationNorme, disjoncteursFamilles: disjoncteurFamilleNorme, protections: protectionNorme, cablesFamilles: cableFamilleNorme, resistancesContacts: resistanceContactNorme,
-  courantsContacts: courantContactNorme, accessoires: accessoireNorme, chutesDisjoncteurs: chuteDisjoncteurNorme };
-const TABLES_NORME = ['familles', 'fils', 'declassements', 'reseau', 'tailles', 'modules', 'contacts', 'disjoncteurs', 'cables', 'gaines', 'colliers', 'filetages', 'entrees', 'raccords', 'manchons', 'classes', 'calibrations', 'disjoncteursFamilles', 'protections', 'cablesFamilles', 'resistancesContacts', 'courantsContacts', 'accessoires', 'chutesDisjoncteurs'];
+  courantsContacts: courantContactNorme, accessoires: accessoireNorme, chutesDisjoncteurs: chuteDisjoncteurNorme, dommages: dommageNorme };
+const TABLES_NORME = ['familles', 'fils', 'declassements', 'reseau', 'tailles', 'modules', 'contacts', 'disjoncteurs', 'cables', 'gaines', 'colliers', 'filetages', 'entrees', 'raccords', 'manchons', 'classes', 'calibrations', 'disjoncteursFamilles', 'protections', 'cablesFamilles', 'resistancesContacts', 'courantsContacts', 'accessoires', 'chutesDisjoncteurs', 'dommages'];
 const normeVide = () => { const N = { tables: 0 }; TABLES_NORME.forEach(t => { N[t] = []; }); return N; };
 /* ---- lire n'importe quelle table : un texte, des blocs, des lignes ----------
    Un CSV, un texte collé, les feuilles d'un Excel mises bout à bout : des BLOCS, chacun une ligne d'en-tête reconnue à
@@ -729,7 +753,7 @@ function colonnesDEntete(nom, row) { const cles = COLONNES_NORME[nom], col = {},
   row.forEach((cell, i) => { if (!String(cell || '').trim()) return; const champ = champDeCellule(cles, cell, col); if (champ) col[champ] = i; else inconnues.push(i); });
   return { col, inconnues }; }
 // l'ordre de reconnaissance : les tables les plus précises d'abord — une table de tailles nomme aussi sa famille et ses jauges, comme une table de familles
-const ORDRE_RECONNAISSANCE = ['courantsContacts', 'chutesDisjoncteurs', 'accessoires', 'calibrations', 'protections', 'disjoncteursFamilles', 'cablesFamilles', 'resistancesContacts', 'filetages', 'classes', 'entrees', 'raccords', 'manchons', 'gaines', 'colliers', 'cables', 'disjoncteurs', 'contacts', 'modules', 'tailles', 'familles', 'fils', 'declassements', 'reseau'];
+const ORDRE_RECONNAISSANCE = ['dommages', 'courantsContacts', 'chutesDisjoncteurs', 'accessoires', 'calibrations', 'protections', 'disjoncteursFamilles', 'cablesFamilles', 'resistancesContacts', 'filetages', 'classes', 'entrees', 'raccords', 'manchons', 'gaines', 'colliers', 'cables', 'disjoncteurs', 'contacts', 'modules', 'tailles', 'familles', 'fils', 'declassements', 'reseau'];
 /* Les tables qu'une ligne d'en-tête peut être : chacune avec ses colonnes et combien elle en reconnaît (`n`), la plus
    précise d'abord. L'outil HÉSITE quand une autre candidate reconnaît autant de colonnes que la première — c'est alors
    à l'utilisateur de dire laquelle ; sinon la première l'emporte sans question. */
@@ -779,7 +803,7 @@ const CLE_FUSION = { familles: x => x.famille.toUpperCase(), fils: x => x.type +
   disjoncteurs: x => [x.famille, x.courbe, x.multiple, x.temps].join('/'), cables: x => x.cable, gaines: x => x.famille + '/' + x.reference, colliers: x => x.reference,
   filetages: x => x.famille + '/' + x.taille, entrees: x => x.systeme + '/' + x.code, raccords: x => [x.famille, x.taille, x.type, x.orientation].join('/'), manchons: x => x.designation, classes: x => x.famille + '/' + x.classe, calibrations: x => x.famille + '/' + x.temperature, disjoncteursFamilles: x => x.famille, protections: x => String(x.jauge),
   cablesFamilles: x => x.familles.join(' '), resistancesContacts: x => x.taille + '/' + x.emploi, courantsContacts: x => [x.taille, x.fut, x.jauge].join('/'),
-  accessoires: x => x.famille + '/' + x.reference, chutesDisjoncteurs: x => x.famille + '/' + x.calibres.join(' ') };
+  accessoires: x => x.famille + '/' + x.reference, chutesDisjoncteurs: x => x.famille + '/' + x.calibres.join(' '), dommages: x => [x.conducteur, x.jauge, x.tmax].join('/') };
 const cleDeLigne = (table, x) => CLE_FUSION[table](x);
 /* Deux normes en une : ce qui vient en second remplace ce qui porte la même clé. C'est ainsi qu'une norme de barrettes
    et une norme de fils, importées l'une après l'autre, se complètent — et que ce qui est importé ou modifié passe
@@ -824,7 +848,7 @@ function comparerNormes(base, N) { const R = {}; TABLES_NORME.forEach(t => { if 
    embarqué (et toujours l'un de ses alias : un gabarit se relit tel quel). */
 const TITRES_NORME = { familles: 'Familles', fils: 'Fils', declassements: 'Déclassement', reseau: 'Réseau', tailles: 'Tailles', modules: 'Modules', contacts: 'Contacts', disjoncteurs: 'Courbes de disjonction', cables: 'Câbles', gaines: 'Gaines', colliers: 'Colliers',
   filetages: 'Filetages', entrees: 'Entrées', raccords: 'Raccords', manchons: 'Manchons', classes: 'Classes', calibrations: 'Calibration', disjoncteursFamilles: 'Familles de disjoncteurs', protections: 'Protection', cablesFamilles: 'Familles de câbles', resistancesContacts: 'Résistance des contacts',
-  courantsContacts: 'Courant des contacts', accessoires: 'Accessoires', chutesDisjoncteurs: 'Chute disjoncteur' };
+  courantsContacts: 'Courant des contacts', accessoires: 'Accessoires', chutesDisjoncteurs: 'Chute disjoncteur', dommages: 'Dommage des fils' };
 const LIBELLES_NORME = {
   familles: { norme: 'Norme', famille: 'Famille', nature: 'Nature', variantes: 'Variantes', pas: 'Pas', jaugeMin: 'Jauge min', jaugeMax: 'Jauge max', intensite: 'Intensité', resistance: 'Résistance', filsParCote: 'Fils par côté', ordre: 'Ordre', paquets: 'Paquets', reserves: 'Réservés', masse: 'Masse', note: 'Note' },
   fils: { type: 'Type', jauge: 'Jauge', code: 'Code', brins: 'Brins', section: 'Section', resistance20: 'Résistance 20', resistance: 'Résistance', intensite: 'Intensité', i2s: 'Intensité 2 s', i10s: 'Intensité 10 s', i1min: 'Intensité 1 min', chute10m: 'Chute 10 m', tr: 'T conducteur', note: 'Note' },
@@ -846,6 +870,7 @@ const LIBELLES_NORME = {
   calibrations: { famille: 'Famille', norme: 'Norme', temperature: 'Température', tient: 'Tient', declenche: 'Déclenche', t200min: 't200 min', t200max: 't200 max', t500min: 't500 min', t500max: 't500 max', t1000min: 't1000 min', t1000max: 't1000 max', source: 'Source' },
   disjoncteursFamilles: { famille: 'Famille', norme: 'Norme', poles: 'Pôles', calibres: 'Calibres', tension: 'Tension', compense: 'Compensé', tmin: 'Tmin', tmax: 'Tmax', masse: 'Masse', courbe: 'Courbe', motifs: 'Motifs', note: 'Note' },
   protections: { jauge: 'Jauge', disjoncteurMax: 'Disjoncteur max', fusibleMax: 'Fusible max', tailleContact: 'Taille contact', iContact: 'I contact', note: 'Note' },
+  dommages: { conducteur: 'Conducteur', jauge: 'Fil AWG', section: 'Toron mm2', resistance20: 'R20 ohm par km', t0: 'T avant défaut', tmax: 'T tenue', i2t: 'I2t admis', i2s: 'Dommage 2 s', i10s: 'Dommage 10 s', facteur: 'Facteur continu dommage', note: 'Note', source: 'Source', statut: 'Statut' },
   cables: { cable: 'Câble', famille: 'Famille', jauge: 'Jauge', brins: 'Brins', blindage: 'Blindage', nature: 'Nature', masse: 'Masse', liaisons: 'Liaisons', resistance: 'Résistance', diametre: 'Diamètre', section: 'Section', note: 'Note' },
   disjoncteurs: { famille: 'Famille', courbe: 'Courbe', temperature: 'Température', multiple: 'Multiple', temps: 'Temps', note: 'Note' },
   contacts: { famille: 'Norme', sexe: 'Sexe', taille: 'Taille', typeFil: 'Type de fil', jauge: 'Jauge', reference: 'Contact', accessoire: 'Accessoire', note: 'Note' },
@@ -877,7 +902,8 @@ const OBLIGATOIRES_NORME = {
   classes: { champs: ['famille', 'classe', 'raccord'], entete: 'Famille, Classe et Raccord' },
   calibrations: { champs: [], entete: 'Tient et Déclenche' },
   disjoncteursFamilles: { champs: ['famille'], entete: 'Pôles et Calibres' },
-  protections: { champs: ['jauge', 'disjoncteurMax'], entete: 'Jauge et Disjoncteur max' }
+  protections: { champs: ['jauge', 'disjoncteurMax'], entete: 'Jauge et Disjoncteur max' },
+  dommages: { champs: ['jauge', 'tmax', 'i2t'], entete: 'Fil AWG, T tenue et I2t admis' }
 };
 /* Le sens de chaque colonne, pour la page et pour normes/LISEZMOI.md. Les unités sont dites ici. */
 const SENS_NORME = {
@@ -901,6 +927,10 @@ const SENS_NORME = {
   calibrations: { famille: 'la famille de disjoncteurs', norme: 'la norme', temperature: '°C : l’ambiante du point', tient: '× In tenu une heure', declenche: '× In qui déclenche en moins d’une heure', t200min: 's : le temps mini à 200 % de In', t200max: 's : le temps maxi à 200 %', t500min: 's : mini à 500 %', t500max: 's : maxi à 500 %', t1000min: 's : mini à 1000 %', t1000max: 's : maxi à 1000 %', source: 'la source' },
   disjoncteursFamilles: { famille: 'le nom de la famille (MS3320, 2TC, ETA483)', norme: 'la norme', poles: 'le nombre de pôles', calibres: 'la gamme de calibres, en A : une liste (« 1 2 2,5 3 5 ») ou une plage (« 1 à 25 »)', tension: 'la tension nominale', compense: 'oui / non : compensé en température', tmin: '°C : l’ambiante minimale admise', tmax: '°C : l’ambiante maximale', masse: 'g', courbe: 'la famille de la table des courbes à prendre (ETA483, 2TC, 6TC, 5TC, 7274, EN2495)', motifs: 'les débuts de part number qui nomment la famille (« MS3320 » reconnaît MS3320-10 et MS3320L-5 ; « 2TC » reconnaît 2TC2-10) ; vide = le nom de la famille', note: 'libre' },
   protections: { jauge: 'AWG', disjoncteurMax: 'A : le calibre maximal du disjoncteur pour ce fil', fusibleMax: 'A : le calibre maximal du fusible', tailleContact: 'la taille de contact courante pour cette jauge', iContact: 'A : ce que ce contact admet', note: 'la source' },
+  dommages: { conducteur: 'le métal du conducteur : la table ne vaut que pour lui (cuivre ; rien pour le CCA ni l’aluminium)', jauge: 'AWG', section: 'mm² du toron (EN 2853), informatif', resistance20: 'Ω/km à 20 °C (EN 2853), informatif',
+    t0: '°C : la température du fil quand la surcharge arrive (135, celle du conducteur de l’EN 2853)', tmax: '°C : la tenue du câble — le moteur prend la ligne la plus haute qui ne dépasse pas la T max de la famille du câble (DR 260, coaxiaux 200, BN 150)',
+    i2t: 'A²s : ce que le fil encaisse de T avant défaut à T tenue (adiabatique, CEI 60949 : K = 226, β = 234,5, corrigé de la résistivité du toron) ; en t secondes il supporte √(I²t / t)', i2s: 'A : ce qu’il supporte 2 s (informatif)', i10s: 'A : 10 s (informatif)',
+    facteur: '× sur l’intensité EN 2853 en continu, √((T tenue − ambiante)/40) à 95 °C (informatif : le moteur le refait à l’ambiante de l’hypothèse)', note: 'libre', source: 'la source', statut: 'vérifié, déduit, à confirmer' },
   cables: { cable: 'le type tel que le retest l’écrit (DR24, MLB22, KD24, WC)', famille: 'la famille (DR, MLB…) ; vide : lue en tête du type', jauge: 'AWG', brins: 'le nombre de conducteurs du câble', blindage: '1 ou oui si le câble est blindé', nature: 'torsadé, blindé, coaxial, quadrax, fibre optique…', masse: 'g/m', liaisons: 'le nombre de liaisons que le câble porte (les brins, plus le blindage)', resistance: 'mΩ/m à 20 °C (soit des Ω/km) : la chute en ligne la prend', diametre: 'mm : le Ø extérieur', section: 'mm² hors-tout (π Ø²/4, isolant et blindage compris) : la section du toron', note: 'libre' },
   disjoncteurs: { famille: 'la famille de courbes (« disjoncteur » vaut pour tous les calibres)', courbe: 'le nom de la courbe (125 °C, 23 °C min, 23 °C max, −55 °C)', temperature: '°C', multiple: 'le multiple du courant nominal (× In)', temps: 's : le temps de déclenchement', note: 'libre' },
   contacts: { famille: 'la norme du connecteur (EN2997, EN3645, EN3646, EN4165…)', sexe: 'M (mâle, broche) ou F (femelle, douille) : le contact qu’on sertit', taille: 'la taille de la cavité (22, 20, 16, 12, 8)', typeFil: 'le type de fil (HS, CF, WL…) ; « * » : tous', jauge: 'AWG ; « * » : toutes', reference: 'le contact à sertir', accessoire: 'ce qui s’y ajoute : fourreau de réduction, bague…', note: 'libre' },
@@ -928,6 +958,7 @@ const EXEMPLES_NORME = {
   calibrations: { famille: 'MS3320', norme: 'MS3320', temperature: '25', tient: '1,15', declenche: '1,38', t200min: '5', t200max: '45', t500min: '0,3', t500max: '2', t1000min: '', t1000max: '', source: 'exemple' },
   disjoncteursFamilles: { famille: 'MS3320', norme: 'MS3320', poles: '1', calibres: '1 2 2,5 3 5 7,5 10 15 20 25', tension: '28 V DC', compense: 'oui', tmin: '-55', tmax: '125', masse: '', courbe: 'ETA483', motifs: 'MS3320', note: 'exemple' },
   protections: { jauge: '20', disjoncteurMax: '7,5', fusibleMax: '5', tailleContact: '20', iContact: '7,5', note: 'exemple' },
+  dommages: { conducteur: 'cuivre', jauge: '20', section: '0,597', resistance20: '33,2', t0: '135', tmax: '260', i2t: '4614', i2s: '48', i10s: '21,5', facteur: '2,031', note: 'exemple', source: '', statut: 'déduit' },
   cables: { cable: 'DR24', famille: 'DR', jauge: '24', brins: '1', blindage: '0', nature: '', masse: '1,6', liaisons: '1', resistance: '0,114', diametre: '1,1', section: '0,95', note: 'exemple' },
   disjoncteurs: { famille: 'ETA483', courbe: '125 °C', temperature: '125', multiple: '1,2', temps: '3600', note: 'exemple' },
   contacts: { famille: 'EN4165', sexe: 'F', taille: '22', typeFil: '*', jauge: '*', reference: 'EN3155-003F2222', accessoire: '', note: 'exemple' },
@@ -982,9 +1013,12 @@ function resistanceDuFil(norme, type, jauge, T) { const fil = filDeNorme(norme, 
   else if (cab && cab.resistance != null) { rho20 = cab.resistance; source = 'câble'; }
   else if (fil && r20(fil) != null && conducteur === 'cuivre') { rho20 = r20(fil); source = 'jauge'; }
   const k = coefTemperature(T, conducteur), refuse = rho20 == null && !!fil && conducteur !== 'cuivre';
-  // un conducteur qui n'est pas du cuivre, jugé par la ligne cuivre de l'EN 2853 : l'intensité se déclasse de √(R cuivre / R câble) — même échauffement, moins de courant
-  const kConducteur = conducteur !== 'cuivre' && fil && fil.type === '*' && cab && cab.resistance > 0 && r20(fil) != null ? Math.sqrt(r20(fil) / cab.resistance) : 1;
+  // un conducteur qui n'est pas du cuivre, jugé par la ligne cuivre de l'EN 2853 : l'intensité se déclasse de √(R cuivre / R câble) — même échauffement, moins de courant ;
+  // l'aluminium pur, de 20 % au moins (MIL-W-5088L § 3.8.8.1.1 et § 6.7 a : « for aluminum, derate these values by 20 percent ») — le CCA garde la racine (AD16 : 0,79)
+  const kRacine = conducteur !== 'cuivre' && fil && fil.type === '*' && cab && cab.resistance > 0 && r20(fil) != null ? Math.sqrt(r20(fil) / cab.resistance) : 1;
+  const kConducteur = conducteur === 'aluminium' && kRacine < 1 ? Math.min(kRacine, DECLASSEMENT_ALUMINIUM) : kRacine;
   return { rho: rho20 == null ? null : rho20 * k, rho20, k, T: T == null ? 20 : T, source, fil, cab, famille: fam, conducteur, refuse, kConducteur }; }
+const DECLASSEMENT_ALUMINIUM = 0.80;
 /* LA TAILLE DE CONTACT d'une jauge : dans la famille (table Tailles : la plus petite taille qui admet la jauge), sinon
    la table Protection (AC 43.13-1B : 22 → 22, 20 → 20, 18 → 16…). */
 function tailleDeJauge(norme, famille, jauge) { if (jauge == null) return ''; const N = normeDesModules(norme), f = cleNorme(famille);
@@ -1031,6 +1065,22 @@ const ECHAUFFEMENT_EN2853 = 40;
 function tenueEnTemperature(norme, type, ambiante) { const fam = cableFamilleDe(norme, type); if (!fam || fam.tmax == null) return null;
   const Tu = ambiante == null ? HYPOTHESES.ambiante : +ambiante, conducteurA = Tu + ECHAUFFEMENT_EN2853;
   return { famille: fam, tmax: fam.tmax, tmin: fam.tmin, ambiante: Tu, conducteurA, ok: conducteurA <= fam.tmax + 1e-9 }; }
+/* LA TEMPÉRATURE ESTIMÉE DU CONDUCTEUR sous un courant, pour sa résistance — la chute se calcule fil chaud, pas à 20 °C
+   (AC 43.13-1B § 11-66 d(4) à d(6)) : T2 = T1 + (TR − T1) × (I / Imax)², T1 l'ambiante, Imax ce que le fil admet à T1.
+   Avec l'EN 2853 (40 °C d'échauffement à son intensité, déclassée comme la simulation : faisceau, altitude, conducteur),
+   c'est T2 = Tu + 40 × (I / I EN 2853 déclassée)² — la même formule, qui tient même quand l'ambiante dépasse 135 °C.
+   Bornée par la tenue du câble (au-delà, le fil est déjà jugé en surcharge). `iRef` : l'intensité déclassée quand
+   l'appelant la connaît (la simulation compte le faisceau de sa barrette). L'hypothèse `chuteConducteur` = 'fixe' rend la
+   température de l'hypothèse `tconducteur` (20 °C : la convention des fiches, comme l'Excel du lecteur) ; un fil sans
+   ligne EN 2853 aussi (rien n'est inventé). Rend { T, estimee, tu, iRef, borne }. */
+function temperatureDuConducteur(norme, type, courant, hyp, iRef) { const H = { ...HYPOTHESES, ...(hyp || {}) }, fixe = { T: +H.tconducteur, estimee: false };
+  if (H.chuteConducteur === 'fixe') return fixe;
+  let ref = iRef; if (!(ref > 0)) { const jauge = jaugeDuType(type), fil = filDeNorme(norme, type, jauge); if (!fil || !(fil.intensite > 0)) return fixe;
+    const rd = resistanceDuFil(norme, type, jauge, null); if (rd.refuse) return fixe;
+    ref = fil.intensite * facteurDeclassement(norme, H.conditions, { fils: H.fils, charge: H.charge, altitude: H.altitude }) * (rd.kConducteur || 1); }
+  if (!(ref > 0)) return fixe;
+  const tu = +H.ambiante, T2 = tu + ECHAUFFEMENT_EN2853 * Math.pow(Math.max(0, +courant || 0) / ref, 2), fam = cableFamilleDe(norme, type), tmax = fam && fam.tmax != null ? fam.tmax : null;
+  return { T: tmax != null && T2 > tmax ? tmax : T2, estimee: true, tu, iRef: ref, borne: tmax != null && T2 > tmax }; }
 /* LA RÉACTANCE ESTIMÉE d'un fil seul au-dessus de la structure, en mΩ/m à 400 Hz : X = 2πf·L, L ≈ (µ₀/2π) ln(2h/r) +
    0,05 µH/m (h la hauteur au-dessus de la structure, r le rayon du conducteur tiré de sa section) — l'ordre de grandeur
    du rapport R1 (20 AWG à 20 mm : ≈ 2,4 mΩ/m, 7 % de R ; 0 AWG : ≈ 1,3 mΩ/m, plus que R). Une estimation à PROPOSER
@@ -1141,10 +1191,37 @@ function remplirSelonNorme(P, norme) {
    négligeable avec un bon bonding) ou par un fil identique (neutre filaire, signal à deux fils, fuselage composite :
    le double) — ; et l'AMBIANTE DU TABLEAU de disjoncteurs (min / max) : la courbe de disjonction qui juge est celle de
    la température juste au-dessus du max (l'intempestif), la courbe lente celle juste au-dessous du min (la protection
-   du fil) ; −55 et 125 °C, les deux bouts des courbes, par défaut — le cas le plus pessimiste des deux côtés. */
-const HYPOTHESES = { longueur: 5, courant: 2, tension: 28, ambiante: 95, tconducteur: 20, regime: 'continu', cosphi: 0.8, reactance: 0, conditions: ['faisceau'], fils: 8, charge: 60, altitude: 0, retour: 'structure', tableauMin: -55, tableauMax: 125 };
+   du fil) ; −55 et 125 °C, les deux bouts des courbes, par défaut — le cas le plus pessimiste des deux côtés ; entre deux
+   courbes, la tenue s'interpole en température (09 bis).
+   Les hypothèses de la recherche R2 (octobre 2026), chacune avec sa valeur par défaut et sa source :
+     · `chuteConducteur` : 'estimee' (défaut) — la résistance de chaque fil à la température que son courant lui donne,
+       T2 = Tu + 40 × (I / I admise)² (AC 43.13-1B § 11-66 d(6)) ; 'fixe' — la température `tconducteur` (20 °C, comme
+       l'Excel du lecteur et les fiches constructeur) ;
+     · `chuteDisjoncteur` : true (défaut) — la chute propre du disjoncteur (table Chute disjoncteur, à I / In de sa chute
+       à In) compte dans la chute en ligne : l'AC 43.13-1B table 11-6 mesure la chute « entre le bus et la masse de
+       l'équipement », le disjoncteur est entre les deux ; false si la règle du programme part du bus aval (ABD0100, à
+       confirmer) ;
+     · `frequence` : 400 Hz (défaut) — la réactance saisie vaut à 400 Hz ; en fréquence variable (360-800 Hz, MIL-STD-704F
+       § 5.2.1 et table II) mettre 800 : X compte au double ;
+     · `marge` : 10 % (défaut) — le courant majoré pour choisir le meilleur calibre : 10 % sur un profil estimé, 0 % sur
+       un profil qui sort du bilan électrique au pire cas (R2 règle 13 ; NASA TM-102179 table 1 : charge appliquée au plus
+       95 % du calibre) — à confirmer par le lecteur ;
+     · `margeTemps` : 75 % (défaut) — ce qu'une pointe peut consommer au plus du temps de déclenchement (R2 § 3.1 étape 2) ;
+     · `prechauffage` : 1,6 (défaut) — un état qui survient EN SERVICE (les états qu'on ajoute, après le permanent : pas
+       le démarrage ni la transition) trouve le bilame chaud : son temps de déclenchement se divise par ce facteur
+       (MS3320N table VII, préchargé à 60 % de In : ÷ 1,6 à 3,7 — la borne basse), en plein dès que le permanent atteint
+       60 % de In, en proportion du carré au-dessous — à confirmer ; 1 l'ôte ;
+     · `calibresPreferes` : [] (défaut) — la liste de calibres que le lecteur s'impose dans le catalogue de la famille
+       (vide : tout le catalogue). */
+const HYPOTHESES = { longueur: 5, courant: 2, tension: 28, ambiante: 95, tconducteur: 20, regime: 'continu', cosphi: 0.8, reactance: 0, conditions: ['faisceau'], fils: 8, charge: 60, altitude: 0, retour: 'structure', tableauMin: -55, tableauMax: 125,
+  chuteConducteur: 'estimee', chuteDisjoncteur: true, frequence: 400, marge: 10, margeTemps: 75, prechauffage: 1.6, calibresPreferes: [] };
 const RETOURS = { structure: 'par la structure (aller seul)', fil: 'par un fil identique (aller et retour)' };
-const kRetour = H => H && H.retour === 'fil' ? 2 : 1;
+const MODES_CONDUCTEUR = { estimee: 'estimée sous le courant (AC 43.13-1B § 11-66 d(6))', fixe: 'fixe : l’hypothèse « conducteur » (20 °C, comme l’Excel)' };
+/* Le RETOUR par un fil identique double la résistance — en continu et en monophasé ; en triphasé équilibré, aucun courant
+   ne revient (CEI 60364-5-52 annexe G : b = 1 en triphasé, 2 en monophasé) : le retour ne double rien (R2 règle 9). */
+const kRetour = (H, regime) => H && H.retour === 'fil' && (regime || H.regime) !== 'tri' ? 2 : 1;
+/* La réactance saisie vaut à 400 Hz (FREQUENCE_BORD) ; à la fréquence de l'hypothèse, X = 2πfL monte en proportion. */
+const facteurFrequence = H => H && +H.frequence > 0 ? +H.frequence / FREQUENCE_BORD : 1;
 const GROS_CABLE = 10;   // mm² de conducteur : au-delà, la réactance compte en alternatif
 const REGIMES = { continu: 'continu', mono: 'alternatif monophasé', tri: 'alternatif triphasé' };
 /* Les fils d'un bornier : ce que le faisceau compte pour le déclassement. */
@@ -1158,25 +1235,28 @@ function simulerBornier(Q, norme, hyp) {
   const prise = Q.nature === 'prise de coupure', rFamille = F && F.resistance != null ? F.resistance / 1000 : null, lignes = [];
   const rContactDe = f => { if (rFamille != null) return rFamille; const r = resistanceDeContact(norme, tailleDeJauge(norme, F ? F.famille : '', f.jauge), false, prise ? 'connecteur' : 'jonction'); return r == null ? 0 : r * (prise ? 1 : 2); };
   Q.modules.forEach(m => ['amont', 'aval'].forEach(sens => m.trous[sens].forEach((f, k) => { if (!f) return;
-    const rd = resistanceDuFil(norme, f.type, f.jauge, H.tconducteur), fil = rd.fil, rContact = rContactDe(f);
+    // la température du conducteur : estimée sous le courant de l'hypothèse (le faisceau de cette barrette compté), sinon fixe
+    const r0 = resistanceDuFil(norme, f.type, f.jauge, null), f0 = r0.fil, iRef = f0 && f0.intensite != null && !r0.refuse ? f0.intensite * facteur * r0.kConducteur : null;
+    const tc = temperatureDuConducteur(norme, f.type, H.courant, H, iRef), rd = resistanceDuFil(norme, f.type, f.jauge, tc.T), fil = rd.fil, rContact = rContactDe(f);
     const Lf = f.l && f.l.longueur > 0 ? f.l.longueur : H.longueur, reelle = !!(f.l && f.l.longueur > 0);
     const kT = facteurAmbiante(fil, H.ambiante), iFil = fil && fil.intensite != null ? fil.intensite * facteur * kT * rd.kConducteur : null, rFil = rd.rho != null ? rd.rho / 1000 * Lf : null;
     const cosphi = regime === 'continu' ? 1 : Math.min(1, Math.max(0, +H.cosphi || 0.8)), sinphi = Math.sqrt(Math.max(0, 1 - cosphi * cosphi));
     // la section du conducteur (la ligne Fils : le toron de cuivre), pas celle, hors-tout, du câble
     const section = fil && fil.section != null ? fil.section : null, gros = regime !== 'continu' && section != null && section >= GROS_CABLE;
-    const X = regime === 'continu' ? 0 : (+H.reactance || 0) / 1000 * Lf, xRequis = gros && !(X > 0), kReg = regime === 'tri' ? Math.sqrt(3) : 1, kR = kRetour(H);
-    // le retour par un fil identique double la résistance (le fil et ses contacts, deux fois)
+    const X = regime === 'continu' ? 0 : (+H.reactance || 0) / 1000 * facteurFrequence(H) * Lf, xRequis = gros && !(X > 0), kReg = regime === 'tri' ? Math.sqrt(3) : 1, kR = kRetour(H, regime);
+    // le retour par un fil identique double la résistance (le fil et ses contacts, deux fois) — pas en triphasé
     const R = rFil == null ? null : (rFil + rContact) * kR, dU = R == null || xRequis ? null : kReg * (R * cosphi + X * kR * sinphi) * H.courant, pct = dU == null || !H.tension ? null : dU / H.tension * 100;
     const verdict = f.jaugeOk === false ? 'jauge' : (iFil != null && H.courant > iFil + 1e-9) ? 'fil' : (iContact != null && H.courant > iContact + 1e-9) ? 'contact'
       : xRequis ? 'reactance' : (dU != null && chute && chute.chuteMax != null && dU > chute.chuteMax + 1e-9) ? 'chute' : !fil || rd.refuse ? 'inconnu' : 'ok';
     // ce qui se dit en plus du verdict : la tenue du câble à l'ambiante (T max de sa famille contre Tu + 40), l'estimation de X quand il est à saisir
-    const tenue = tenueEnTemperature(norme, f.type, H.ambiante), xEstime = xRequis ? reactanceEstimee(section) : null;
+    const tenue = tenueEnTemperature(norme, f.type, H.ambiante), xEstime = xRequis ? reactanceEstimee(section, null, H.frequence) : null;
     lignes.push({ borne: m.borne, sens, trou: k + 1, surcharge: k >= Q.filsParCote, cable: f.cable, type: f.type, jauge: f.jauge, jaugeOk: f.jaugeOk, fil, approx: !!(fil && fil.approx),
-                  iFil, iContact, rFil, rContact, R, dU, pct, verdict, kT, kConducteur: rd.kConducteur, conducteur: rd.conducteur, rho: rd.rho, rho20: rd.rho20, kTemperature: rd.k, rhoSource: rd.source, cab: rd.cab, section,
+                  iFil, iContact, rFil, rContact, R, dU, pct, verdict, kT, kConducteur: rd.kConducteur, conducteur: rd.conducteur, rho: rd.rho, rho20: rd.rho20, kTemperature: rd.k, T: rd.T, tEstimee: tc.estimee, rhoSource: rd.source, cab: rd.cab, section,
                   sectionHorsTout: rd.cab && rd.cab.section != null ? rd.cab.section : null, regime, cosphi, X, xRequis, xEstime, kRetour: kR, tenue, longueur: Lf, reelle, vers: f.vers, borneVers: f.borne, l: f.l }); })));
   const compte = {}; lignes.forEach(x => { compte[x.verdict] = (compte[x.verdict] || 0) + 1; });
   const rContact = lignes.length ? lignes[0].rContact : (rFamille != null ? rFamille : 0);
-  return { hyp: H, facteur, declassement, chute, iContact, rContact, famille: F, lignes, compte, regime, retour: H.retour === 'fil' ? 'fil' : 'structure', fils: filsDuBornier(Q), sansNorme: !F && !(norme && norme.fils.length) };
+  return { hyp: H, facteur, declassement, chute, iContact, rContact, famille: F, lignes, compte, regime, retour: H.retour === 'fil' ? 'fil' : 'structure', fils: filsDuBornier(Q), sansNorme: !F && !(norme && norme.fils.length),
+           conducteur: H.chuteConducteur === 'fixe' ? 'fixe' : 'estimee' };
 }
 const COLONNES_SUIVI = [['contrat', 'Contrat'], ['repere', 'Repère'], ['nature', 'Nature'], ['reference', 'Référence retenue'], ['fichier', 'Référence du fichier'],
   ['nBornes', 'Bornes utilisées'], ['bornes', 'Bornes'], ['shunts', 'Shunts'], ['jauge', 'Jauge'], ['fils', 'Fils'], ['routes', 'Routes'], ['plans', 'Folios']];

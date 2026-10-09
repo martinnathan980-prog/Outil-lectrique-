@@ -62,7 +62,7 @@ altitude;;;80000;0,75;
 altitude;;;90000;0,725;
 altitude;;;100000;0,70;bord de la figure
 
-Réseau — la chute de tension admise en ligne, du bus à la masse de l'équipement (AC 43.13-1B table 11-6, les mêmes valeurs que l'AS50881 / MIL-W-5088) : en continu, en intermittent (≤ 2 min), et en % de la tension. Le triphasé se compare à la ligne 200 V (la chute calculée est composée, entre deux phases). La règle Airbus (ABD0100) n'est pas publique : à demander au lecteur avec le document et l'indice.
+Réseau — la chute de tension admise en ligne, du bus à la masse de l'équipement — le disjoncteur est entre les deux, sa chute propre en fait partie (AC 43.13-1B table 11-6, relue par R2 en octobre 2026 — le MIL-W-5088L ne porte pas cette table, son § 3.8.8.4 renvoie aux bornes du MIL-STD-704, et l'AS50881 n'a pas été lu) : en continu, en intermittent (≤ 2 min), et en % de la tension. Le triphasé se compare à la ligne 200 V (la chute calculée est composée, entre deux phases). La règle Airbus (ABD0100) n'est pas publique : à demander au lecteur avec le document et l'indice.
 Tension;Nature;Chute max;Chute max intermittent;Chute max en %;Note
 14;continu;0,5;1;3,6;
 28;continu;1;2;3,6;de la génération au bus : 2 % de plus admis (§ 11-66 b)

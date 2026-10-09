@@ -47,26 +47,47 @@ function cheminsDepuis(liaisons, repere) { const L = liaisons.filter(l => l.de &
   L.filter(l => l.de === repere || l.vers === repere).forEach(l => { const [a, b] = l.de === repere ? bouts(l) : bouts(l).slice().reverse();
     suivre([{ fil: l, de: a, vers: b }], b[0], b[1], new Set([l])); });
   return out; }
-/* LA CHUTE d'un chemin : chaque câble (ρ × L × I, ρ à la température du conducteur de l'hypothèse), chaque passage
-   (R contact × I : la résistance de contact de la famille d'une prise si la norme la donne, sinon celle de la taille
-   de contact du fil qui y arrive — une fois sur une prise, la paire accouplée ; deux fois sur une barrette, deux
-   sertissages et la barre), le total, et ce qu'on n'a pas su compter. Le RÉGIME de la simulation s'applique comme
-   fil par fil : en alternatif I × (R cos φ + X sin φ), × √3 en triphasé (la chute composée) ; le RETOUR par un fil
-   identique double chaque segment. `courant` en A ; `hyp` : la longueur par défaut (m), la température du conducteur,
-   le régime, cos φ, X (mΩ/m), le retour. Rend { segments: [{…, dU, note}], dU, longueur, inconnus, reel }. */
-function chuteDuChemin(norme, chemin, courant, hyp) { const H = { ...HYPOTHESES, ...(hyp || {}) }, segs = [], inconnus = []; let dU = 0, longueur = 0, filPrecedent = null, reel = true;
+/* LA CHUTE d'un chemin : chaque câble (ρ × L × I, ρ à la température de son conducteur — estimée sous ce courant,
+   T2 = Tu + 40 × (I / I admise)², AC 43.13-1B § 11-66 d(6) ; ou celle de l'hypothèse, 20 °C comme l'Excel, si
+   `chuteConducteur` = 'fixe'), chaque passage (R contact × I : la résistance de contact de la famille d'une prise si
+   la norme la donne, sinon celle de la taille de contact du fil qui y arrive — une fois sur une prise, la paire
+   accouplée ; deux fois sur une barrette, deux sertissages et la barre), LE DISJONCTEUR d'où part le chemin (sa chute
+   propre, à I / In de sa chute à In — le bilame est plus froid sous In : c'est prudent ; table Chute disjoncteur ;
+   l'AC 43.13-1B mesure la chute « entre le bus et la masse de l'équipement », le disjoncteur est entre les deux —
+   l'hypothèse `chuteDisjoncteur` = false l'ôte), le total, et ce qu'on n'a pas su compter. Le RÉGIME de la simulation
+   s'applique comme fil par fil : en alternatif I × (R cos φ + X sin φ), × √3 en triphasé (la chute composée), X à la
+   fréquence de l'hypothèse ; le RETOUR par un fil identique double chaque segment, sauf en triphasé (aucun courant ne
+   revient). `courant` en A ; `hyp` : les hypothèses ; `disjoncteur` : { famille, calibre } du disjoncteur de tête quand
+   l'appelant les connaît (le calibre retenu), sinon ceux de son part number. Rend { segments: [{…, dU, T}], disjoncteur:
+   { nom, famille, calibre, chuteIn, R, dU } | null, dU, longueur, inconnus, reel }. */
+function chuteDuChemin(norme, chemin, courant, hyp, disjoncteur) { const H = { ...HYPOTHESES, ...(hyp || {}) }, segs = [], inconnus = []; let dU = 0, longueur = 0, filPrecedent = null, reel = true;
   const regime = REGIMES[H.regime] ? H.regime : 'continu', cosphi = regime === 'continu' ? 1 : Math.min(1, Math.max(0, +H.cosphi || 0.8)), sinphi = Math.sqrt(Math.max(0, 1 - cosphi * cosphi));
-  const kReg = regime === 'tri' ? Math.sqrt(3) : 1, kR = kRetour(H), xParM = regime === 'continu' ? 0 : (+H.reactance || 0) / 1000;
-  chemin.segments.forEach(s => { if (s.fil) { const l = s.fil, L = l.longueur > 0 ? l.longueur : H.longueur, rd = resistanceDuFil(norme, l.type, jaugeDuType(l.type), H.tconducteur); filPrecedent = l; if (!(l.longueur > 0)) reel = false;
+  const kReg = regime === 'tri' ? Math.sqrt(3) : 1, kR = kRetour(H, regime), xParM = regime === 'continu' ? 0 : (+H.reactance || 0) / 1000 * facteurFrequence(H);
+  chemin.segments.forEach(s => { if (s.fil) { const l = s.fil, L = l.longueur > 0 ? l.longueur : H.longueur, tc = temperatureDuConducteur(norme, l.type, courant, H), rd = resistanceDuFil(norme, l.type, jaugeDuType(l.type), tc.T); filPrecedent = l; if (!(l.longueur > 0)) reel = false;
       const r = rd.rho != null ? rd.rho / 1000 * L * kR : null, X = xParM * L * kR, d = r == null ? null : kReg * (r * cosphi + X * sinphi) * courant;
       if (d == null) inconnus.push((l.cable || 'fil') + ' : type ' + (l.type || 'inconnu') + ', résistance inconnue' + (rd.refuse ? ' (conducteur ' + rd.conducteur + ' : la ligne cuivre ne vaut pas)' : '')); else dU += d; longueur += L;
-      segs.push({ ...s, longueur: L, reelle: l.longueur > 0, rho: rd.rho, rhoSource: rd.source, conducteur: rd.conducteur, R: r, X, dU: d }); }
+      segs.push({ ...s, longueur: L, reelle: l.longueur > 0, rho: rd.rho, rho20: rd.rho20, T: rd.T, tEstimee: tc.estimee, rhoSource: rd.source, conducteur: rd.conducteur, R: r, X, dU: d }); }
     else { const pn = pnDuPassage(norme, chemin, s.passage), coupure = estCoupure(s.passage), F = coupure ? familleDeNorme(norme, null, pn) : null;
       const taille = tailleDeJauge(norme, F ? F.famille : '', filPrecedent ? jaugeDuType(filPrecedent.type) : null), rTaille = resistanceDeContact(norme, taille);
       const r0 = F && F.resistance != null ? F.resistance / 1000 : rTaille != null ? rTaille * (coupure ? 1 : 2) : (coupure ? null : 0), r = r0 == null ? null : r0 * kR;
       const d = r == null ? null : kReg * r * cosphi * courant; if (d == null) inconnus.push(s.passage + ' : résistance de contact inconnue'); else dU += d;
       segs.push({ ...s, R: r, dU: d, famille: F ? F.famille : '', taille: F && F.resistance != null ? '' : taille, contacts: coupure ? 1 : 2 }); } });
-  return { segments: segs, dU, longueur, inconnus, reel, regime, kRetour: kR, bout: chemin.bout, fini: chemin.fini }; }
+  // le disjoncteur de tête : sa chute propre, sur l'aller seul (le retour ne le traverse pas)
+  const cb = disjoncteurDuChemin(norme, chemin, H, disjoncteur);
+  if (cb && cb.R == null) inconnus.push(cb.nom + ' : chute propre du disjoncteur inconnue (' + cb.raison + ')');
+  const dCb = cb && cb.R != null ? kReg * cb.R * cosphi * courant : null; if (dCb != null) dU += dCb;
+  return { segments: segs, disjoncteur: cb ? { ...cb, dU: dCb } : null, dU, longueur, inconnus, reel, regime, kRetour: kR, conducteur: H.chuteConducteur === 'fixe' ? 'fixe' : 'estimee', bout: chemin.bout, fini: chemin.fini }; }
+/* LE DISJONCTEUR D'OÙ PART un chemin, pour sa chute propre : le repère du premier fil, s'il est un disjoncteur ; sa famille et
+   son calibre — ceux que l'appelant donne (le calibre retenu sur la fiche), sinon ceux de son part number ; sa chute à In
+   (table Chute disjoncteur) et la résistance équivalente chute / In. Rien si l'hypothèse `chuteDisjoncteur` l'ôte. */
+function disjoncteurDuChemin(norme, chemin, H, donne) { const s0 = chemin.segments.find(s => s.fil); if (!s0 || H.chuteDisjoncteur === false) return null;
+  const nom = s0.de[0]; if (!estDisjoncteur(nom)) return null;
+  const pn = s0.fil.de === nom ? s0.fil.pnDe : s0.fil.vers === nom ? s0.fil.pnVers : '', F = donne && donne.famille !== undefined ? donne.famille : familleDuPn(pn, norme);
+  const calibre = donne && donne.calibre > 0 ? donne.calibre : F && F.calibre > 0 ? F.calibre : null;
+  if (!calibre) return { nom, famille: F ? F.famille : '', calibre: null, chuteIn: null, R: null, raison: 'calibre inconnu' };
+  const c = chuteDuDisjoncteur(norme, F, calibre);
+  if (!c) return { nom, famille: F ? F.famille : '', calibre, chuteIn: null, R: null, raison: 'famille ' + (F ? F.famille : 'inconnue') + ', ' + String(calibre).replace('.', ',') + ' A : absent de la table Chute disjoncteur' };
+  return { nom, famille: F ? F.famille : '', calibre, chuteIn: c.chute, R: c.chute / calibre, ligne: c.nom, note: c.note }; }
 // le part number d'un passage, lu sur un fil du chemin qui y arrive
 const pnDuPassage = (norme, chemin, repere) => { for (const s of chemin.segments) { if (!s.fil) continue; if (s.fil.de === repere && s.fil.pnDe) return s.fil.pnDe; if (s.fil.vers === repere && s.fil.pnVers) return s.fil.pnVers; } return ''; };
 /* L'INTERMITTENT de l'AC 43.13-1B (table 11-6) : une charge qui ne dure pas plus de deux minutes a droit au double de
@@ -74,15 +95,17 @@ const pnDuPassage = (norme, chemin, repere) => { for (const s of chemin.segments
 const INTERMITTENT_MAX = 120;
 /* Toutes les chutes depuis un repère, prêtes à lire : la destination, le chemin en mots, le total — au courant
    permanent `courant`, comparé à la chute admise en continu ; et, si on donne les POINTES du profil ([{ i, t }] : les
-   états courts, en points cumulés), la chute à chacun de ces courants (la chute est linéaire en courant), comparée à
-   la chute admise en intermittent quand l'état dure deux minutes au plus, sinon au continu. `trop` et `tropPointe`
-   disent le dépassement ; `reel` que toutes les longueurs sont celles du retest (sans quoi c'est l'hypothèse qui
-   parle). */
-function chutesDepuis(norme, liaisons, repere, courant, hyp, pointes) { const H = { ...HYPOTHESES, ...(hyp || {}) }, regime = REGIMES[H.regime] ? H.regime : 'continu', chute = chuteAdmise(norme, H.tension, regime);
+   états courts, en points cumulés), la chute à chacun de ces courants — linéaire en courant : un état court ne laisse
+   pas au conducteur le temps de chauffer au-delà de ce que le permanent lui donne, sa résistance est celle du
+   permanent (sans permanent, celle de la pointe, à l'équilibre : prudent) —, comparée à la chute admise en
+   intermittent quand l'état dure deux minutes au plus, sinon au continu. `trop` et `tropPointe` disent le
+   dépassement ; `reel` que toutes les longueurs sont celles du retest (sans quoi c'est l'hypothèse qui parle).
+   `disjoncteur` : { famille, calibre } du repère quand l'appelant les connaît (sa chute propre, `chuteDuChemin`). */
+function chutesDepuis(norme, liaisons, repere, courant, hyp, pointes, disjoncteur) { const H = { ...HYPOTHESES, ...(hyp || {}) }, regime = REGIMES[H.regime] ? H.regime : 'continu', chute = chuteAdmise(norme, H.tension, regime);
   const admis = chute && chute.chuteMax != null ? chute.chuteMax : null, inter = chute ? (chute.chuteInter != null ? chute.chuteInter : chute.chuteMax) : null;
   const P = (pointes || []).filter(p => p && p.i > 0 && p.t > 0 && isFinite(p.t));
-  return cheminsDepuis(liaisons, repere).map(ch => { const c = chuteDuChemin(norme, ch, courant, H), pct = H.tension ? c.dU / H.tension * 100 : null;
-    const ps = P.map(p => { const dU = courant > 0 ? c.dU * p.i / courant : chuteDuChemin(norme, ch, p.i, H).dU, intermittent = p.t <= INTERMITTENT_MAX, a = intermittent ? inter : admis;
+  return cheminsDepuis(liaisons, repere).map(ch => { const c = chuteDuChemin(norme, ch, courant, H, disjoncteur), pct = H.tension ? c.dU / H.tension * 100 : null;
+    const ps = P.map(p => { const dU = courant > 0 ? c.dU * p.i / courant : chuteDuChemin(norme, ch, p.i, H, disjoncteur).dU, intermittent = p.t <= INTERMITTENT_MAX, a = intermittent ? inter : admis;
       return { i: p.i, t: p.t, nom: p.nom || '', dU, admis: a, intermittent, trop: !!(a != null && dU > a + 1e-9) }; });
     return { ...c, pct, admis, trop: !!(admis != null && c.dU > admis + 1e-9), tension: chute ? chute.tension : H.tension, pointes: ps, tropPointe: ps.some(p => p.trop),
              mots: c.segments.map(s => s.fil ? (s.fil.cable || 'fil') : '⇄ ' + s.passage).join(' → ') + ' → ' + c.bout[0] + (c.bout[1] ? ':' + c.bout[1] : '') }; }); }

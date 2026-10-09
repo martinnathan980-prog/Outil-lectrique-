@@ -87,7 +87,7 @@ const FICHIER = P.fichierDemande();
 
   console.log('\nun disjoncteur (102CB1, folio 1)');
   await bloc('1', '102CB1'); await page.waitForTimeout(400);
-  ok(await q('details.fi-etat.ko') === 1 && await q('details.fi-etat li') === 5 && await q('details.fi-etat li.fi-att') === 3 && /2 problèmes · 3 à voir/.test(await texte('details.fi-etat summary')), 'l’état dit les deux problèmes ET les trois points à voir (le calibre serré, la surcharge brève, la barrette à poser), jamais cachés derrière les problèmes', await texte('details.fi-etat summary'));
+  ok(await q('details.fi-etat.ko') === 1 && await q('details.fi-etat li') === 4 && await q('details.fi-etat li.fi-att') === 2 && /2 problèmes · 2 à voir/.test(await texte('details.fi-etat summary')), 'l’état dit les deux problèmes ET les deux points à voir (le calibre serré, la barrette à poser — le DR16 n’est plus « pas protégé en surcharge brève » : le 10 A le protège, sous sa courbe de dommage, R2), jamais cachés derrière les problèmes', await texte('details.fi-etat summary'));
   ok(await q('.dj-fils .fi-fil') === 3 && await q('.fi-cadre:not(.fi-dj) .fi-fil') === 0 && await q('.dj-fils .fi-tag') === 2, 'ses fils sont listés une fois, dans sa disjonction, avec l’étiquette VT1 des deux fils de la borne dédoublée');
   ok(await q('.fi-tuiles') === 0, 'un seul connecteur : pas de tuiles qui répètent le cadre');
 

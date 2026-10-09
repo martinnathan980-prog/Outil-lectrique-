@@ -5,8 +5,9 @@
    Le lecteur : « c'est à toi de trouver le calibre idéal ; il faut que ce
    soit dans le vert et que ça ne touche pas la courbe ; si on gère tout, on
    verra tout sur le graphique ». L'écran, de haut en bas :
-     · LA GAMME en segments — 1, 3, 5, 7,5, 10, 15, 25 A, et le calibre du
-       part number s'il est ailleurs —, chacun jugé sur le profil (une barre
+     · LA GAMME en segments — le catalogue de la famille du part number
+       (sans famille, 1, 3, 5, 7,5, 10, 15, 25 A), et le calibre retenu s'il
+       est ailleurs —, chacun jugé sur le profil (une barre
        verte : tient ; ambre : tient en touchant la courbe, sans la marge ;
        rouge : déclenche ; ★ l'idéal du moteur : tient avec la marge, protège
        les fils, sélectif — ou, à défaut, celui de la charge, avec sa
@@ -75,12 +76,17 @@ const disjoncteursVoisins = nom => [...new Set(cheminsDepuis(verite(), nom).map(
 function disjonctionDe(nom) { const profil = chargeDe(nom), ecrit = profil && profil.calibre > 0 ? profil.calibre : null, famille = familleDuPn(pnDuRepere(nom), app.norme), pn = famille ? famille.calibre : null, voisins = disjoncteursVoisins(nom);
   // la famille de courbes : celle que la famille du part number dit (table Familles de disjoncteurs), sinon celle par défaut (la feuille du lecteur)
   const courbe = famille && famille.courbe ? famille.courbe : '', hyp = { ...(app.simu || HYPOTHESES), courbe };
-  const contexte = { fils: filsDuDisjoncteur(nom), hyp, autres: voisins.map(v => v.calibre).filter(c => c > 0) };
+  // la famille du part number donne au moteur son catalogue (la gamme), sa calibration (ce qu'il garantit) et le part number du meilleur
+  const contexte = { fils: filsDuDisjoncteur(nom), hyp, autres: voisins.map(v => v.calibre).filter(c => c > 0), famille, pn: pnDuRepere(nom) };
   let d = verdictDisjonction(app.norme, courbe, ecrit || pn || 0, profil, contexte);
   const calibre = ecrit || pn || d.calibreIdeal || null; if (calibre && calibre !== d.calibre) d = verdictDisjonction(app.norme, courbe, calibre, profil, contexte);
   const chutePropre = chuteDuDisjoncteur(app.norme, famille, calibre);
   return { ...d, profil, ecrit, pn, famille, courbe, chutePropre, voisins, contexte, origine: ecrit ? 'main' : pn ? 'pn' : calibre ? 'ideal' : '', fils: protectionDesFils(app.norme, calibre, profil, contexte.fils, hyp) }; }
 const calibreDe = nom => disjonctionDe(nom).calibre;
+/* LE MEILLEUR CALIBRE d'un disjoncteur, avec ses fils (09 bis, `meilleurDe`) : { calibre, pn, famille, catalogue, pourquoi,
+   marge, filsAChanger: [{ cable, actuel, propose, raison, … }], contactsTouches: [{ cable, actuel, propose, raison, … }],
+   filsInconnus, selectif, serre, reserve } — ce que la fiche du disjoncteur lit pour dire « le meilleur ». */
+const meilleurCalibre = nom => disjonctionDe(nom).meilleur;
 const pourcent = x => nombre(Math.round(x * 100)) + ' %';
 // « pour 10 s », « pour 1 min », « en continu »
 const pourPalier = p => p === 2 ? 'pour 2 s' : p === 10 ? 'pour 10 s' : p === 60 ? 'pour 1 min' : 'en continu';
@@ -101,7 +107,7 @@ function controleDisjonction(nom) { const d = disjonctionDe(nom), out = [], pnMo
       out.push({ niveau: 'ko', texte: (p.t === Infinity ? `le permanent (${amperes(p.i)}) fait déclencher le ${amperes(d.calibre)} à ${m.courbe} (il tient jusqu'à ${amperes(m.admis)})`
         : `${p.nom} ${amperes(p.i)} pendant ${secondes(p.t)} : le ${amperes(d.calibre)} déclenche à ${m.courbe} (${motFraction(d.somme)} du temps de déclenchement consommé, il tient ${secondes(m.temps)} à ce courant)`) + mini }); }
     else if (d.calibreIdeal && d.calibre !== d.calibreIdeal) out.push({ niveau: 'att', texte: d.calibre > d.calibreIdeal ? `${amperes(d.calibre)}${pnMot} : un ${amperes(d.calibreIdeal)} suffirait`
-      : !d.avecMarge ? `${amperes(d.calibre)}${pnMot} tient mais touche la courbe (${d.somme > MARGE_FRACTION ? motFraction(d.somme) + ' du temps de déclenchement consommé' : 'sans 10 % de marge de courant'}) : l’idéal est un ${amperes(d.calibreIdeal)}`
+      : !d.avecMarge ? `${amperes(d.calibre)}${pnMot} tient mais touche la courbe (${d.somme > d.marges.fraction ? motFraction(d.somme) + ' du temps de déclenchement consommé' : 'sans ' + nombre(d.marges.marge) + ' % de marge de courant'}) : l’idéal est un ${amperes(d.calibreIdeal)}`
       : `${amperes(d.calibre)}${pnMot} tient ; l’idéal est un ${amperes(d.calibreIdeal)} (sélectivité avec le voisin)` }); }
   d.voisins.forEach(v => { if (v.calibre > 0 && d.calibre > 0 && Math.max(v.calibre, d.calibre) < SELECTIVITE * Math.min(v.calibre, d.calibre) - 1e-9) out.push({ niveau: 'att', texte: `sélectivité avec ${v.nom} (${amperes(v.calibre)}) : l’amont devrait faire au moins le double de l’aval` }); });
   d.fils.forEach(f => { const nomF = (f.cable || 'fil sans numéro') + (f.type ? ' (' + f.type + ')' : '');
@@ -128,7 +134,8 @@ function gammeHtml(nom, d) {
   const mot = g => g.valide == null ? '' : g.valide ? (g.ideal ? 'l’idéal' + (d.reserve ? ' pour la charge' : '') + (g.serre ? ', en touchant la courbe' : ' — tient sans toucher la courbe') : g.serre ? 'tient, mais touche la courbe' : 'tient') + (g.fils === false ? ' · ne protège pas tous les fils' : '') + (g.selectif === false ? ' · pas 2:1 avec le voisin' : '') : 'déclenche';
   const segs = d.gamme.map(g => `<button class="dj-chip${g.valide === true ? ' ok' : g.valide === false ? ' ko' : ''}${g.serre ? ' serre' : ''}${g.ideal ? ' ideal' : ''}" data-cal="${g.calibre}" aria-pressed="${g.calibre === d.calibre}" title="${escA(amperes(g.calibre) + (mot(g) ? ' : ' + mot(g) : '') + (g.somme != null ? ' · ' + motFraction(g.somme) + ' du temps de déclenchement consommé' : '') + (g.calibre === d.calibre ? ' · retenu' : ' · cliquer pour le retenir'))}">${g.ideal ? `<i class="dj-etoile" aria-label="idéal">${ico('etoile')}</i>` : ''}<b>${nombre(g.calibre)}</b></button>`).join('');
   const dou = d.origine === 'pn' ? `part number <b class="id">${esc(pnDuRepere(nom))}</b>${d.famille ? ` · <span title="${escA(d.famille.norme + (d.famille.compense ? ' · compensé en température' : ' · non compensé') + ' · ' + d.famille.tmin + ' à ' + d.famille.tmax + ' °C')}">${esc(d.famille.famille)}</span>` : ''}` : d.origine === 'main' ? 'choisi à la main' : d.origine === 'ideal' ? 'l’idéal, trouvé par l’outil' : 'à choisir';
-  const titreIdeal = d.reserve === 'fils' ? 'Le plus petit calibre qui tient la charge avec sa marge ; aucun ne protège aussi tous les fils : c’est le fil qu’il faut changer' : d.reserve === 'selectivite' ? 'Le plus petit calibre qui tient la charge avec sa marge ; aucun n’est aussi à 2:1 avec le disjoncteur voisin' : d.reserve === 'serre' ? 'Aucun calibre ne tient avec la marge (10 % de courant, 75 % du temps de déclenchement) : le plus petit qui tient' : 'Le plus petit calibre qui tient la charge avec sa marge, protège les fils et reste sélectif';
+  // le titre de l'idéal : la phrase du meilleur calibre (09 bis), qui dit aussi quels fils grossir et en quoi
+  const titreIdeal = d.meilleur && d.meilleur.pourquoi ? majuscule(d.meilleur.pourquoi) : 'Le plus petit calibre qui tient la charge avec sa marge, protège les fils et reste sélectif';
   const ideal = d.sansCourbe ? '' : d.calibreIdeal ? `<span title="${escA(titreIdeal)}"><i class="dj-etoile">${ico('etoile')}</i> ${d.calibre === d.calibreIdeal ? 'l’idéal' : 'l’idéal : <b>' + esc(amperes(d.calibreIdeal)) + '</b>'}${d.reserve ? ' · <em>' + RESERVES[d.reserve] + '</em>' : ''}</span>` : d.sansProfil ? '' : 'aucun calibre ne tient';
   return `<div class="dj-gamme"><div class="dj-gamme-t"><span class="fi-nomen-t">calibre (A)</span><span class="dj-ideal">${ideal}</span></div>`
     + `<div class="dj-chips" role="group" aria-label="Calibre, en ampères">${segs}</div><div class="dj-dou">${d.calibre ? `<b>${esc(amperes(d.calibre))}</b> · ` : ''}${dou}</div></div>`; }
@@ -172,8 +179,9 @@ function ficheDisjonction(nom, vt) { const d = disjonctionDe(nom);
    la chute en volts et en pourcentage, une jauge contre la chute admise. */
 function chutesHtml(nom, d) { const H = app.simu || HYPOTHESES, I = d.profil && d.profil.perm && d.profil.perm.i > 0 ? d.profil.perm.i : d.calibre > 0 ? d.calibre : H.courant;
   const courts = (d.points || []).filter(p => p.t !== Infinity && p.i > 0);
-  const cs = chutesDepuis(app.norme, verite(), nom, I, H, courts); if (!cs.length) return ''; const admis = cs[0].admis, mV = u => nombre(Math.round(u * 1000) / 1000) + ' V', tousHyp = cs.every(c => !c.reel);
-  const li = cs.map(c => { const detail = c.segments.map(s => s.fil ? `${s.fil.cable || 'fil'} : ${s.dU != null ? mV(s.dU) : '?'} (${nombre(Math.round(s.longueur * 100) / 100)} m${s.reelle ? '' : ', hypothèse'})` : `${s.passage} : ${s.dU != null ? mV(s.dU) : 'contact inconnu'}`).join(' · ');
+  // le calibre retenu (pas seulement celui du part number) : la chute propre du disjoncteur compte dans la chute en ligne
+  const cs = chutesDepuis(app.norme, verite(), nom, I, H, courts, { famille: d.famille, calibre: d.calibre }); if (!cs.length) return ''; const admis = cs[0].admis, mV = u => nombre(Math.round(u * 1000) / 1000) + ' V', tousHyp = cs.every(c => !c.reel);
+  const li = cs.map(c => { const detail = (c.disjoncteur && c.disjoncteur.dU != null ? [`${c.disjoncteur.nom} : ${mV(c.disjoncteur.dU)} (sa chute propre)`] : []).concat(c.segments.map(s => s.fil ? `${s.fil.cable || 'fil'} : ${s.dU != null ? mV(s.dU) : '?'} (${nombre(Math.round(s.longueur * 100) / 100)} m${s.reelle ? '' : ', hypothèse'}${s.T != null ? ', ' + nombre(Math.round(s.T)) + ' °C' : ''})` : `${s.passage} : ${s.dU != null ? mV(s.dU) : 'contact inconnu'}`)).join(' · ');
     const part = c.dU != null && admis ? Math.min(1, c.dU / admis) : 0, chemin = c.mots.replace(/ → [^→]*$/, '');
     // la pointe la pire : la chute à chaque état court du profil contre l'admis en intermittent (≤ 2 min), sinon le continu
     const pointe = (c.pointes || []).filter(p => p.trop).sort((a, b) => b.dU / b.admis - a.dU / a.admis)[0] || null;
