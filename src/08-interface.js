@@ -36,13 +36,13 @@ const app = {
   bible: [], bibleNom: '', norme: null, normeNom: '', simu: null,   // simu : les hypothèses, posées au démarrage (relireSimu)
   base: { ouvert: false, portee: 'folio', filtre: '', filtreAuto: false, tri: null, hauteur: 0, sale: true, defiler: false, enSaisie: false, choixOuvert: false, normeOuverte: false },
   retouches: new Map(),  // folio (sa clé de placement) -> le dessin retouché à la souris (la retouche)
-  insp: { index: false, filtre: '', ajout: false, etatOuvert: null }   // l'inspecteur : ouvert sur l'INDEX des repères (une fiche y revient par la flèche), ce qu'on y cherche, le champ « ajouter » ouvert, l'objet dont on a déplié les problèmes
+  // l'inspecteur : ouvert sur l'INDEX des repères (une fiche venue de lui y revient par ‹), ce qu'on y cherche, le champ
+  // « ajouter » ouvert ; la PILE des fiches vues (30 au plus) et celle qu'on regarde (08 bis, la navigation ‹ ›)
+  insp: { index: false, filtre: '', ajout: false, pile: [], pos: -1 }
 };
 const $ = id => document.getElementById(id);
 /* ce qui est choisi, en un mot : la clé d'un objet (un bloc par son repère, un fil par son numéro) */
 const cleDeCible = () => !app.cible ? '' : app.cible.type === 'fil' ? 'fil:' + (app.cible.l && app.cible.l.cable || '') : 'bloc:' + app.cible.nom;
-// la carte des problèmes d'une fiche : qu'on la déplie ou la replie, l'inspecteur s'en souvient pour cet objet
-document.addEventListener('toggle', e => { const d = e.target; if (d && d.matches && d.matches('details.fi-etat')) app.insp.etatOuvert = d.open ? cleDeCible() : null; }, true);
 /* La typographie française, une fois pour toutes, sur le texte affiché : une espace insécable avant « ; : ? ! » et le
    guillemet fermant, après l'ouvrant ; l'apostrophe courbe. Aucun signe ne tombe seul en début de ligne, quel que soit
    le texte (le nôtre, celui d'une table de normes, d'un retest). Jamais dans le dessin des folios (svg) ni dans un champ :
@@ -737,7 +737,9 @@ function rendreIndex(box) { const etats = new Map();
       + (r.plans.length ? `<span class="ix-folio" title="Folio">${esc(r.plans.length > 3 ? r.plans.length + ' folios' : 'f. ' + r.plans.join(' · '))}</span>` : '') + '</button></li>').join('') + '</ul>'; }).join('');
   const meme = box.dataset.cle === 'index', haut = box.scrollTop, nko = (CONTROLE.items || []).filter(x => x.niveau === 'ko').length, natt = (CONTROLE.items || []).length - nko;
   box.className = 'fi ix'; box.dataset.cle = 'index';
-  box.innerHTML = `<header class="ix-tete"><h2>Repères<b class="ix-n" title="${escA(pluriel(items.length, 'repère') + ' — hors renvois, masses et rails')}">${items.length}</b></h2><span class="espace"></span><button class="fi-x plus" id="ix-plus" title="Ajouter un équipement : son repère, puis ses fils dans le tableau" aria-label="Ajouter un équipement" aria-expanded="${!!app.insp.ajout}">${ico('plus')}</button><button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)">${ico('fermer')}</button></header>`
+  // la fiche qu'on y a laissée : ‹ la rouvre (Alt+←), à la même place
+  const I = typeof pileInsp === 'function' ? pileInsp() : null, laissee = I && I.pile[I.pos];
+  box.innerHTML = `<header class="ix-tete">${laissee ? `<button class="fi-pas" id="fi-prec" aria-label="${escA('Revenir à ' + nomDEntree(laissee) + ' (Alt+←)')}" title="${escA('Revenir à ' + nomDEntree(laissee) + ' (Alt+←)')}">${ico('gauche')}</button>` : ''}<h2>Repères<b class="ix-n" title="${escA(pluriel(items.length, 'repère') + ' — hors renvois, masses et rails')}">${items.length}</b></h2><span class="espace"></span><button class="fi-x plus" id="ix-plus" title="Ajouter un équipement : son repère, puis ses fils dans le tableau" aria-label="Ajouter un équipement" aria-expanded="${!!app.insp.ajout}">${ico('plus')}</button><button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)">${ico('fermer')}</button></header>`
     // ajouter un équipement : un champ en ligne, sous le titre (pas une boîte du navigateur)
     + (app.insp.ajout ? `<form class="ix-ajout" id="ix-ajout"><div class="filtre">${ico('plus')}<input id="ix-nouveau" placeholder="Repère du nouvel équipement, par exemple 105RL2" aria-label="Repère du nouvel équipement" autocomplete="off" spellcheck="false"></div><button class="btn cuivre" type="submit">Ajouter</button><button class="btn lien" type="button" id="ix-annuler">Annuler</button></form>` : '')
     + `<div class="filtre ix-filtre">${ico('loupe')}<input id="ix-q" value="${escA(app.insp.filtre)}" placeholder="Chercher un repère, une désignation" aria-label="Chercher un repère" autocomplete="off" spellcheck="false"><button class="vider" id="ix-vider"${f ? '' : ' hidden'} aria-label="Effacer la recherche">×</button></div>`
@@ -746,6 +748,7 @@ function rendreIndex(box) { const etats = new Map();
   // la même liste refaite (un filtre tapé) garde sa place ; l'index qu'on ouvre commence en haut, titre et recherche en vue
   box.scrollTop = meme ? haut : 0;
   $('in-fermer').onclick = () => fermerInspecteur();
+  if ($('fi-prec')) $('fi-prec').onclick = () => naviguer(-1);
   const q = $('ix-q'); q.addEventListener('input', () => { app.insp.filtre = q.value; const pos = q.selectionStart; rendreIndex(box); const q2 = $('ix-q'); q2.focus(); q2.setSelectionRange(pos, pos); });
   q.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); if (q.value) { q.value = ''; q.dispatchEvent(new Event('input')); } else fermerInspecteur(); }
     else if (e.key === 'Enter') { const b = box.querySelector('.ix-item[data-nom]'); if (b) b.click(); } });
@@ -766,8 +769,23 @@ function allerAuRepere(nom, plan) { const P = plans();
   const c = app.dessin && app.dessin.comps.find(k => k.name === nom && k.kind !== 'tag'), vt = c ? null : barretteAPoser(nom);
   if (c) choisirBloc(c); else if (vt) choisirBarretteAPoser(vt); else { app.cible = { type: 'bloc', nom }; ouvrirInspecteur(); }
   viser(nom); }
-/* Le panneau qui s'ouvre ou se ferme change la place du plan : on le recadre en douceur. */
-function recadrerSiCache() { ajuster(true); }
+/* Le panneau qui s'ouvre ou se ferme change la place du plan. Si l'on regardait la feuille ENTIÈRE, elle se recadre en
+   douceur dans la place qui reste (jamais sous le panneau) ; si l'on avait zoomé sur un endroit, on n'y touche pas —
+   seulement, si ce qu'on vient de choisir passe sous le panneau, on le ramène, à la même échelle. */
+function recadrerSiCache() { const d = app.dessin; if (!d) { ajuster(true); return; }
+  const r = cadre(), s = app.vue.s, bb = d.bbox, x0 = app.vue.tx + bb.x * s, y0 = app.vue.ty + bb.y * s, x1 = x0 + bb.w * s, y1 = y0 + bb.h * s;
+  if (x0 >= -2 && y0 >= -2 && x1 <= r.width + 2 && y1 <= r.height + 2) { ajuster(true); return; }
+  const c = app.cible, k = c && c.type === 'bloc' && d.compDe.get(c.nom), w = c && c.type === 'fil' && filDe(c.l);
+  if (k) montrerSiCache({ x: k.x, y: k.y, w: k.w, h: k.h });
+  else if (w) { const xs = w.pts.map(p => p.x), ys = w.pts.map(p => p.y), a = Math.min(...xs), b = Math.min(...ys); montrerSiCache({ x: a, y: b, w: Math.max(...xs) - a, h: Math.max(...ys) - b }); } }
+/* R5 — LE PLAN NE BOUGE PAS pour rien : ouvrir une fiche depuis une fiche allume l'objet ; le plan ne glisse que si
+   l'objet est hors de la place libre (sous un panneau, hors de l'écran), et alors à la même échelle quand il y tient.
+   `b` : la boîte de l'objet, dans le repère du dessin. */
+function montrerSiCache(b) { if (!b || !app.dessin) return; const r = cadre(), m = marges(), s = app.vue.s;
+  const X0 = app.vue.tx + b.x * s, Y0 = app.vue.ty + b.y * s, X1 = X0 + b.w * s, Y1 = Y0 + b.h * s, L = m.gauche, T = m.haut, R = r.width - m.droite, B = r.height - m.bas;
+  if (X0 >= L - 1 && X1 <= R + 1 && Y0 >= T - 1 && Y1 <= B + 1) return;
+  if (b.w * s > R - L || b.h * s > B - T) { centrerSur(b.x, b.y, b.w, b.h); return; }
+  animerVue({ s, tx: (L + R) / 2 - (b.x + b.w / 2) * s, ty: (T + B) / 2 - (b.y + b.h / 2) * s }, true); }
 
 /* ---- les folios : y aller, les montrer --------------------------------- */
 function allerAuPlan(plan) { if (plan === app.plan) return; app.plan = plan; app.choisi = null; fermerFiche(); redessiner(); ajuster(); }

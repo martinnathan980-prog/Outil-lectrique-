@@ -24,11 +24,17 @@ details.fs[open] .fs-resume{white-space:normal}
 .fs-chevron{width:16px;height:16px;color:var(--t-3);transition:transform var(--rapide)}
 details.fs[open]>.fs-tete .fs-chevron{transform:rotate(180deg)}
 .fs-corps{padding:4px 4px 20px;display:flex;flex-direction:column;gap:var(--sp-3)}
-/* une section dont la donnée manque : à sa place, fermée, grise ; son résumé dit ce qui manque */
-details.fs.fs-vide>.fs-tete{cursor:default}
-details.fs.fs-vide>.fs-tete:hover{background:none}
+/* une section dont la donnée manque : à sa place, fermée, grise ; son résumé dit ce qui manque — en entier — et, s'il le
+   faut, où l'envoyer (`.fs-action`) ; elle ne s'ouvre que si elle a quelque chose à montrer */
+details.fs.fs-clos>.fs-tete{cursor:default}
+details.fs.fs-clos>.fs-tete:hover{background:none}
 details.fs.fs-vide .fs-titre{color:var(--t-3)}
-details.fs.fs-vide .fs-chevron{visibility:hidden}
+details.fs.fs-vide .fs-resume{white-space:normal}
+details.fs.fs-clos .fs-chevron{visibility:hidden}
+.fs-action{border:none;background:none;padding:0 2px;margin:0 -2px;font:500 var(--f-12)/1.4 var(--sans);color:var(--accent-2);text-decoration:underline;text-decoration-color:var(--accent-line);text-underline-offset:3px;border-radius:3px;cursor:pointer}
+.fs-action:hover{background:var(--accent-soft);text-decoration-color:var(--accent-2)}
+/* un lien posé dans un résumé (le mot « hypothèse ») : il agit sans ouvrir la section */
+.fs-resume .fi-hyp{font-size:inherit}
 
 /* l'ORIGINE d'une valeur, en petit à côté d'elle */
 .orig{font:500 10.5px/1 var(--sans);font-style:normal;padding:2px 6px;border-radius:999px;margin-left:6px;vertical-align:1px;white-space:nowrap;

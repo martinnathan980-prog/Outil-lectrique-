@@ -52,7 +52,7 @@ function ajouterH4() {
     return cs.length === 2 && cs[0].dataset.fwd === 'MEE256A7815001B' && /5\séquipements/.test(cs[0].textContent) && /5\schez\snous/.test(cs[0].textContent) && cs[1].dataset.rep === '302CB1' && /il manque 305XX9/.test(cs[1].textContent) && /1\sfil diffère/.test(cs[1].textContent) && /disjoncteur n° 1 · zone 302/.test(cs[1].textContent) && /3\smachines\s· 10\sdessins/.test(d.textContent); }),
     '« Déjà fait » sur 102CB1 : H-2 (dessin …001B, 5 équipements, 5 chez nous) et H-1/302CB1 (il manque 305XX9, 1 fil diffère), le repère dit en mots');
   // la comparaison avec H-1/302CB1 : trois échelles
-  await page.click('#ba-equip .fi-cand[data-rep="302CB1"]'); await page.waitForTimeout(500);
+  await page.evaluate(() => { const d = document.querySelector('#ba-equip details[data-section="dejafait"]'); if (d) d.open = true; }); await page.click('#ba-equip .fi-cand[data-rep="302CB1"]'); await page.waitForTimeout(500);
   ok(await page.evaluate(() => app.cible && app.cible.type === 'ref' && document.querySelectorAll('#ba-equip .cp-portee [data-portee]').length === 3 && document.querySelector('#ba-equip .cp-portee [data-portee="equipement"]').getAttribute('aria-pressed') === 'true' && /Dessin MEE256A7815001A/.test(document.querySelector('#ba-equip .cp-bilan').textContent) && !!document.getElementById('cp-dessin') && document.querySelectorAll('#ba-equip .cp-liste .fi-fil.cp-manque').length === 1 && document.querySelectorAll('#ba-equip .cp-liste .fi-fil.cp-differe').length === 1),
     'la comparaison s’ouvre à l’échelle de l’équipement : trois échelles, le bilan du dessin, le bouton « Dessin », une ligne qui manque et une qui diffère');
   await page.click('#ba-equip .cp-portee [data-portee="voisinage"]'); await page.waitForTimeout(400);
@@ -74,7 +74,7 @@ function ajouterH4() {
   ok(await page.evaluate(n => verite().length === n, avant), 'Ctrl+Z défait la reprise');
   // le calque du dessin, depuis la comparaison
   await page.evaluate(() => { choisirBloc(app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag')); }); await page.waitForTimeout(400);
-  await page.click('#ba-equip .fi-cand[data-rep="302CB1"]'); await page.waitForTimeout(400); await page.click('#cp-dessin');
+  await page.evaluate(() => { const d = document.querySelector('#ba-equip details[data-section="dejafait"]'); if (d) d.open = true; }); await page.click('#ba-equip .fi-cand[data-rep="302CB1"]'); await page.waitForTimeout(400); await page.click('#cp-dessin');
   await page.waitForFunction(() => document.querySelector('#fw-vue .comp[data-name]')); await page.waitForTimeout(400);
   const FW = await page.evaluate(() => ({ visible: !$('fwd').hidden, titre: $('fw-titre').textContent, cible: !!document.querySelector('#fw-vue .comp[data-name="302CB1"].fw-cible'), chez: document.querySelectorAll('#fw-vue .comp.fw-chez').length, manque: !!document.querySelector('#fw-vue .comp[data-name="305XX9"].fw-manque'), filsManque: document.querySelectorAll('#fw-vue .cab.fw-l-manque').length, filsDiff: document.querySelectorAll('#fw-vue .cab.fw-l-differe').length,
     items: document.querySelectorAll('#fw-liste .fw-eq').length, premier: document.querySelector('#fw-liste .fw-eq').dataset.nom, mots: document.querySelector('#fw-liste .fw-eq').textContent, bilan: document.querySelector('.fw-bilan').textContent, comparer: !$('fw-comparer').hidden }));
@@ -109,7 +109,7 @@ function ajouterH4() {
   // les repères proposés « ? » se confirment ou se corrigent : H-4 (relais et lampe sans part number, reliés par les voisins)
   await page.evaluate(() => { fermerFiche(true); }); await page.evaluate(ajouterH4); await page.waitForTimeout(300);
   await page.evaluate(() => { REF.portee = 'equipement'; allerAuPlan('1'); choisirBloc(app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag')); }); await page.waitForTimeout(400);
-  await page.click('#ba-equip .fi-cand[data-ref="H-4"]'); await page.waitForTimeout(400);
+  await page.evaluate(() => { const d = document.querySelector('#ba-equip details[data-section="dejafait"]'); if (d) d.open = true; }); await page.click('#ba-equip .fi-cand[data-ref="H-4"]'); await page.waitForTimeout(400);
   const Q0 = await page.evaluate(() => [...document.querySelectorAll('#ba-equip .cp-corr')].map(b => b.tagName + ':' + b.textContent));
   ok(Q0.includes('BUTTON:303RL7 → 103RL1\u00a0?') && Q0.includes('BUTTON:301BT1 → 101BT1') && Q0.length === 3, 'contre H-4 : « 303RL7 → 103RL1 ? » (même code, mêmes voisins) ; chaque puce « ses repères, chez nous » est un bouton', Q0.join(' · '));
   await page.click('#ba-equip .cp-corr[data-corr="303RL7"]'); await page.waitForTimeout(300);

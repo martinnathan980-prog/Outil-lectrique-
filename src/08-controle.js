@@ -21,13 +21,19 @@
        trop sur des longueurs d'hypothèse, un conducteur CCA sur un contact
        cuivre ordinaire, un câble qui ne tient pas l'ambiante.
    Chaque défaut une fois, sur son repère ; ce qui vaut pour tout le contrat
-   (les types inconnus, l'ambiante) va sur le tableau.
+   (les types inconnus, l'ambiante) va sur le tableau. Chaque point porte la
+   section de la fiche qui le démontre : une ligne de l'index ouvre la fiche
+   sur elle.
    =========================================================================== */
 'use strict';
 
 const CONTROLE = { cle: null, items: [], ouvert: false };
 const genreDe = nom => VT_A_POSER.test(nom) ? 'aposer' : estCoupure(nom) ? 'coupure' : estBarrette(nom) ? 'barrette' : 'eqpt';
-function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu || HYPOTHESES, items = [], ko = (nom, texte) => items.push({ niveau: 'ko', nom, texte }), att = (nom, texte, plus) => items.push({ niveau: 'att', nom, texte, ...plus });
+/* La SECTION de la fiche qui démontre un point (08-sections) : la ligne de l'index y mène, ouverte. Un disjoncteur dit
+   la sienne (`sectionDj`, 08 bis) ; ailleurs, un contact ou un fil refusé se voit dans « Contacts », un arrangement qui
+   ne loge pas dans « Connecteur », une barrette à poser dans son « Identité » (où elle se pose). */
+const sectionDuPoint = (nom, texte) => !nom ? '' : estDisjoncteur(nom) ? sectionDj(texte) : /^à poser sur/.test(texte) ? 'identite' : /contact|refusé|jauge|CCA|pour ce fil/.test(texte) && !/^(\S+ · )?(aucun arrangement|l'arrangement)/.test(texte) ? 'contacts' : 'connecteur';
+function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu || HYPOTHESES, items = [], ko = (nom, texte) => items.push({ niveau: 'ko', nom, texte, section: sectionDuPoint(nom, texte) }), att = (nom, texte, plus) => items.push({ niveau: 'att', nom, texte, section: sectionDuPoint(nom, texte), ...plus });
   // le contact de chaque bout d'un fil, par les plans (la taille, la référence à sertir) : la protection et le CCA s'en servent
   const contacts = new Map(), noter = (r, fils) => (fils || []).forEach(x => { if (!x.f || !x.f.l) return; (contacts.get(x.f.l) || contacts.set(x.f.l, []).get(x.f.l)).push({ repere: r, taille: x.taille, sertir: x.sertir || null }); });
   const reperes = [...new Set(V.flatMap(l => [l.de, l.vers]).filter(Boolean))].sort(triNaturel).filter(r => !estMasse(r) && !estRenvoi(r));
@@ -112,7 +118,11 @@ function allerAuControle(x) {
   if (x.tableau != null) { app.base.filtreAuto = false; changerOnglet('liaisons', true); app.base.filtre = x.tableau; app.base.portee = 'tout';
     app.base.tri = x.texte.includes('sans type') ? { k: 'jauge', sens: -1 } : { k: 'de', sens: 1 }; if (app.base.ouvert) rendreBase(true); else ouvrirBase(); return; }
   if (x.plan && x.plan !== app.plan && plans().includes(x.plan)) allerAuPlan(x.plan);
+  // le connecteur que le point nomme (« B · aucun arrangement… ») est celui que la fiche montre
+  const k = /^([A-Z]{1,2}\d?) · /.exec(x.texte); if (k && typeof FI !== 'undefined') FI.connecteur[x.nom] = k[1];
   const c = app.dessin && app.dessin.comps.find(k => k.name === x.nom && k.kind !== 'tag'), vt = c ? null : barretteAPoser(x.nom);
   if (c) choisirBloc(c); else if (vt) choisirBarretteAPoser(vt); else { app.cible = { type: 'bloc', nom: x.nom }; ouvrirInspecteur(); }
+  // la fiche s'ouvre sur la section qui démontre le point (sinon sur la liste des problèmes)
+  const box = $('ba-equip'); if (x.section && box) [x.section, estDisjoncteur(x.nom) ? 'calibre' : '', 'problemes'].filter(Boolean).some(s => ouvrirSection(box, s));
   viser(x.nom); }
 function lierControle() { }

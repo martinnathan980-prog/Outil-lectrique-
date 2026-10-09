@@ -206,14 +206,20 @@ const sexeChoisi = k => (app.contrat.sexes && app.contrat.sexes.get(k)) || '';
 const cavitesDe = nom => aDesModulesDeConnecteur() && !estBornier(nom) ? connecteursEnModules(nom, verite(), app.norme, k => app.contrat.designations.get(k) || '', sexeChoisi) : [];
 const planDeCoupure = nom => coupureEnModule(nom, verite(), app.norme, app.contrat.designations.get(nom) || '', sexeChoisi(nom));
 /* Le contact à sertir à chaque bout d'un fil du contrat : { de, vers } — ce que le plan de l'équipement, de la prise ou
-   de la barrette lui a donné (null si rien ne le dit) ; celui qu'on a écrit à la main (le récapitulatif : `contactDe`,
-   `contactVers`) passe devant (`main`). */
-function sertirDuFil(l) { const bout = (rep, force) => { if (!rep || VT_A_POSER.test(rep) || estMasse(rep) || estRenvoi(rep)) return null; let x = null;
+   de la barrette lui a donné (null si rien ne le dit). Un contact écrit à la main (`contactMain` : le récapitulatif ou
+   la fiche) passe devant celui de la table : `main` le dit, `auto` garde celui de la table. */
+function sertirDuFil(l) { const bout = (rep, borne) => { if (!rep || VT_A_POSER.test(rep) || estMasse(rep) || estRenvoi(rep)) return null; let x = null;
     try { const plans = coupureEnModules(rep) ? [planDeCoupure(rep).plan] : barretteEnModules(rep) ? [planDeBarrette(rep).plan] : cavitesDe(rep).map(c => c.plan);
       for (const Q of plans) { x = (Q.fils || []).find(y => y.f.l === l); if (x) break; } } catch (_) { }
-    if (force) return { sertir: { reference: force, accessoire: '' }, contact: x ? x.contact : null, sexe: x ? x.sexe || '' : '', ko: false, main: true };
-    return x ? { sertir: x.sertir || null, contact: x.contact, sexe: x.sexe || '', ko: x.jaugeOk === false } : null; };
-  return { de: bout(l.de, l.contactDe), vers: bout(l.vers, l.contactVers) }; }
+    const main = contactMain(l, rep, borne), auto = x ? x.sertir || null : null;
+    if (main) return { sertir: { reference: main, accessoire: '' }, auto, main: true, contact: x ? x.contact : null, sexe: x ? x.sexe || '' : '', ko: false };
+    return x ? { sertir: auto, auto, main: false, contact: x.contact, sexe: x.sexe || '', ko: x.jaugeOk === false } : null; };
+  return { de: bout(l.de, l.borneDe), vers: bout(l.vers, l.borneVers) }; }
+/* LE CONTACT ÉCRIT À LA MAIN au bout `rep` (borne `borne`) d'un fil : sur la liaison (le récapitulatif : `contactDe`,
+   `contactVers`), sinon choisi sur la fiche (gardé avec le contrat : `designations`, « sertir|repère|borne »). Le
+   récapitulatif, la fiche, la nomenclature et le contrôle lisent celui-ci. */
+function contactMain(l, rep, borne) { if (!l || !rep) return ''; const k = rep === l.de && l.contactDe ? l.contactDe : rep === l.vers && l.contactVers ? l.contactVers : '';
+  return k || (app.contrat.designations && app.contrat.designations.get('sertir|' + rep + '|' + (borne != null ? borne : rep === l.de ? l.borneDe : l.borneVers))) || ''; }
 /* Ce que la vue en relief dessine pour un repère : les modules d'une barrette, d'une prise de coupure, ou les cavités
    d'un équipement ; rien sinon. */
 function modulesEnRelief(nom) {

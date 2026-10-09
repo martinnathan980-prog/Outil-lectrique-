@@ -107,7 +107,7 @@ function planDuRepere(r) { return memo('plan|' + r, () => { const fils = new Map
   return out; }); }
 /* Le contact d'un bout de fil : celui qu'on a écrit à la main, sinon celui que le plan lui donne ; null pour un bout qui
    n'en prend pas (une masse, un renvoi). */
-function contactDuBout(l, cote) { const r = cote === 'de' ? l.de : l.vers, force = cote === 'de' ? l.contactDe : l.contactVers;
+function contactDuBout(l, cote) { const r = cote === 'de' ? l.de : l.vers, force = contactMain(l, r, cote === 'de' ? l.borneDe : l.borneVers);
   if (!r || VT_A_POSER.test(r) || estMasse(r) || estRenvoi(r) || estRail(r)) return null;
   const x = planDuRepere(r).fils.get(l) || null, auto = x && x.sertir ? x.sertir.reference : '';
   if (force) return { ref: force, acc: '', main: true, auto, taille: x && x.contact ? x.contact.taille : '', sexe: x ? x.sexe || '' : '' };
@@ -157,10 +157,10 @@ const pastilleJauge = g => `<span class="rc-jauge ${g == null ? 'inconnue' : g <
 const traitRoute = c => `<i class="rc-trait"${c ? ` style="--c:${c}"` : ''}></i>`;
 const listeFolios = ps => ps.length ? (ps.length > 3 ? ps.length + ' folios' : 'f. ' + ps.join(' · ')) : '';
 // le genre d'un repère, en mot et en symbole
-const SYMBOLES = { eqpt: '<rect x="4" y="5" width="12" height="14" rx="1.5"/><path d="M16 9h4M16 15h4"/>', cb: '<path d="M3 15h5M16 15h5"/><circle cx="8" cy="15" r="1.3"/><circle cx="16" cy="15" r="1.3"/><path d="M8.5 13.6C10 9 14 9 15.5 13.6"/><path d="M12 9.6V6"/>',
+const SYMBOLES_RECAP = { eqpt: '<rect x="4" y="5" width="12" height="14" rx="1.5"/><path d="M16 9h4M16 15h4"/>', cb: '<path d="M3 15h5M16 15h5"/><circle cx="8" cy="15" r="1.3"/><circle cx="16" cy="15" r="1.3"/><path d="M8.5 13.6C10 9 14 9 15.5 13.6"/><path d="M12 9.6V6"/>',
   barrette: '<rect x="3" y="9" width="18" height="6" rx="1.5"/><circle cx="7.5" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="16.5" cy="12" r="1" fill="currentColor"/>',
   coupure: '<path d="M10 5H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h3z"/><path d="M14 5h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-3z"/><path d="M10 9h4M10 15h4"/>', aposer: '<rect x="3" y="9" width="18" height="6" rx="1.5" stroke-dasharray="2.5 2"/>' };
-const symbole = g => `<svg class="ico rc-sym" viewBox="0 0 24 24" aria-hidden="true">${SYMBOLES[g] || SYMBOLES.eqpt}</svg>`;
+const symboleRecap = g => `<svg class="ico rc-sym" viewBox="0 0 24 24" aria-hidden="true">${SYMBOLES_RECAP[g] || SYMBOLES_RECAP.eqpt}</svg>`;
 
 /* ---- LIAISONS ----------------------------------------------------------- */
 // la portée : le folio affiché ; ce que l'outil a découpé se lit par la clé de la liaison (une fois par état du contrat)
@@ -231,7 +231,7 @@ const LIAISONS = {
   supprimer: r => supprimerLiaison(r.i),
   editeur: (r, f) => editeurFil(r, f),
   ecrire: (r, f, v) => ecrireFil(r.l, f, v),
-  rendre: (r, f) => { const l = r.l; if (f === 'contactDe' || f === 'contactVers') return ecrireFil(l, f, '');
+  rendre: (r, f) => { const l = r.l; if (f === 'contactDe' || f === 'contactVers') { const de = f === 'contactDe'; app.contrat.designations.delete('sertir|' + (de ? l.de : l.vers) + '|' + (de ? l.borneDe : l.borneVers)); return ecrireFil(l, f, ''); }
     return rendreChamp(l, f); } };
 const LISTES = { de: 'reperes', vers: 'reperes', pnDe: 'pns', pnVers: 'pns', type: 'types', route: 'routes', plan: 'folios', contactDe: 'contacts', contactVers: 'contacts' };
 function editeurFil(r, f) { const l = r.l;
@@ -297,7 +297,7 @@ function infoRepere(r) { return memo('rep|' + r.k, () => { const nom = r.nom;
   else if (P.coupure) { const M = P.coupure.plan.modules[0]; contacts = [P.coupure.points.length, M ? M.module.contacts.length : null]; }
   else if (P.cavites.length) contacts = [P.cavites.reduce((n, c) => n + c.plan.utilises, 0), P.cavites.reduce((n, c) => n + c.plan.modules.reduce((m, M) => m + M.module.contacts.length, 0), 0)];
   return { fils: B.fils, contacts, connecteurs, pns: B.pns, b: B.b }; }); }
-const filsDuRepere = r => r.aPoser ? infoRepere(r).fils : baseRepere(r.nom).fils;
+const nFilsDuRepere = r => r.aPoser ? infoRepere(r).fils : baseRepere(r.nom).fils;
 const dejaFait = nom => memo('deja|' + nom, () => { const I = indexReferences(); if (!I) return null; try { const c = candidatsDeReference(I, verite(), nom, 1)[0]; return c ? c : null; } catch (_) { return null; } });
 const natureAuto = nom => { const q = lireRepere(nom), c = q && (q.codeLu || q.code); return q && q.num && CODES[c] ? CODES[c].nom : 'équipement'; };
 const natureModifiable = r => !r.aPoser && (r.genre === 'eqpt' || r.genre === 'cb');
@@ -305,7 +305,7 @@ const COLONNES_REPERES = [
   { k: 'etat', t: '', titre: 'État', cls: 'rc-et', html: r => { const e = etatDuNom(r.nom); return point(e.niveau, motsEtat(e)); }, tri: r => ({ ko: 0, att: 1 })[etatDuNom(r.nom).niveau] ?? 2, texte: r => ({ ko: 'problème', att: 'à voir' })[etatDuNom(r.nom).niveau] || '' },
   { k: 'rep', t: 'Repère', cls: 'rc-c-rep', html: r => valT('rep', r.nom, { cls: 'rc-r' + (r.aPoser ? ' aposer' : ''), titre: r.aPoser ? 'Barrette à poser : écris son vrai repère, elle entre au contrat' : 'Écrire ici renomme : chaque fil suit' }) + (r.aPoser ? `<small class="rc-nat">${esc(r.sous)}</small>` : ''), tri: r => r.nom, texte: r => r.nom },
   { k: 'nature', t: 'Nature', cls: 'rc-c-nature', html: r => { const d = natureDite(r.nom), mot = r.aPoser ? 'barrette à poser' : r.genre === 'eqpt' || r.genre === 'cb' ? natureDe(r.nom) : GENRES[r.genre];
-      return `<div class="rc-nature">${symbole(r.aPoser ? 'aposer' : r.genre)}${natureModifiable(r) ? valT('nature', mot, { titre: d ? 'Dite à la main ; le code du repère dit « ' + natureAuto(r.nom) + ' »' : 'Lue dans le code du repère — double-clic pour la dire' }) : `<span class="rc-mot">${esc(mot)}</span>`}${d ? orig('main') + rond('nature', 'la nature du code (' + natureAuto(r.nom) + ')') : ''}</div>`; },
+      return `<div class="rc-nature">${symboleRecap(r.aPoser ? 'aposer' : r.genre)}${natureModifiable(r) ? valT('nature', mot, { titre: d ? 'Dite à la main ; le code du repère dit « ' + natureAuto(r.nom) + ' »' : 'Lue dans le code du repère — double-clic pour la dire' }) : `<span class="rc-mot">${esc(mot)}</span>`}${d ? orig('main') + rond('nature', 'la nature du code (' + natureAuto(r.nom) + ')') : ''}</div>`; },
     tri: r => natureDe(r.nom), texte: r => natureDe(r.nom) },
   { k: 'des', t: 'Désignation', cls: 'rc-c-texte', html: r => r.aPoser ? rien : valT('des', app.contrat.designations.get(r.nom) || '', { cls: 'rc-texte', ph: 'à écrire' }), tri: r => app.contrat.designations.get(r.nom) || '', texte: r => app.contrat.designations.get(r.nom) || '' },
   { k: 'pn', t: 'Part number', cls: 'rc-c-pn', html: r => { if (r.aPoser) return rien; const I = baseRepere(r.nom);
@@ -313,7 +313,7 @@ const COLONNES_REPERES = [
     tri: r => r.aPoser ? '' : baseRepere(r.nom).pns.map(c => c.pn).join(' '), texte: r => r.aPoser ? '' : baseRepere(r.nom).pns.map(c => c.pn).filter(Boolean).join(' ') },
   { k: 'connecteurs', t: 'Connecteurs', html: r => { const I = infoRepere(r); return I.connecteurs.length ? `<span class="rc-cnx">${I.connecteurs.map(c => `<i class="${c.ko ? 'ko' : ''}" title="${escA((c.pn || 'sans part number') + (c.ref ? ' · ' + c.ref : '') + ' · ' + pluriel(c.bornes.length, 'borne') + (c.ko ? ' — aucun arrangement ne convient' : ''))}">${esc(c.nom)}</i>`).join('')}</span>` : rien; },
     tri: r => infoRepere(r).connecteurs.length, texte: r => infoRepere(r).connecteurs.map(c => c.nom).join(' ') },
-  { k: 'fils', t: 'Fils', cls: 'rc-c-n', html: r => `<b class="rc-n">${filsDuRepere(r)}</b>`, tri: filsDuRepere, texte: r => String(filsDuRepere(r)) },
+  { k: 'fils', t: 'Fils', cls: 'rc-c-n', html: r => `<b class="rc-n">${nFilsDuRepere(r)}</b>`, tri: nFilsDuRepere, texte: r => String(nFilsDuRepere(r)) },
   { k: 'contacts', t: 'Contacts', cls: 'rc-c-n', html: r => { const c = infoRepere(r).contacts; return c ? `<span class="rc-frac"><b class="rc-n">${c[0]}</b><i>/ ${c[1] == null ? '?' : c[1]}</i></span>` : rien; },
     tri: r => (infoRepere(r).contacts || [-1])[0], texte: r => { const c = infoRepere(r).contacts; return c ? c[0] + ' / ' + (c[1] == null ? '?' : c[1]) : ''; } },
   { k: 'folio', t: 'Folio', cls: 'rc-c-folio', html: r => r.plans.length ? `<span class="rc-folios">${esc(listeFolios(r.plans))}</span>` : rien, tri: r => r.plans[0] || '', texte: r => r.plans.join(' ') },
@@ -365,10 +365,7 @@ function creerEquipement(nom) { if (verite().some(l => l.de === nom || l.vers ==
 /* Le part number d'un connecteur (ou de tout le repère) : toutes ses liaisons le prennent, en une action (Ctrl+Z). */
 function changerPartNumber(nom, bornes, pn) { const xs = [];
   verite().forEach(l => { if (l.de === nom && (!bornes || bornes.includes(l.borneDe)) && (l.pnDe || '') !== pn) xs.push([l, 'pnDe']); if (l.vers === nom && (!bornes || bornes.includes(l.borneVers)) && (l.pnVers || '') !== pn) xs.push([l, 'pnVers']); });
-  return changerLiaisons(xs, pn, 'part number de ' + nom); }
-/* Plusieurs liaisons d'un coup : une entrée d'historique ; chacune garde ce qu'elle portait (comme `changerLiaison`). */
-function changerLiaisons(xs, v, quoi) { if (!xs.length) return false; histPush(quoi);
-  xs.forEach(([l, k]) => { if (!(l.avant && k in l.avant)) l.avant = { ...(l.avant || {}), [k]: l[k] == null ? null : l[k] }; l[k] = v; }); apresEdition(); return true; }
+  return changerLiaisons(xs.map(([l, k]) => [l, k, pn]), 'part number de ' + nom); }   // plusieurs liaisons, un seul Ctrl+Z (08-sections)
 /* Choisir un repère depuis une ligne : son folio, son bloc, sa fiche — sans toucher au filtre de l'onglet. */
 function choisirRepere(nom, plan) { const P = plans();
   if (plan && plan !== app.plan && P.includes(plan)) allerAuPlan(plan);
@@ -509,13 +506,13 @@ const CABLES = { colonnes: COLONNES_CABLES, lignes: cables, etat: etatCable, cho
   voirFils: c => montrerLiaisons(c.type),
   editeur: (c, f) => f === 'type' ? { valeur: c.type, liste: 'types', aide: 'tous les fils de ce type le prennent' } : null,
   ecrire: (c, f, v) => { if (f !== 'type' || v === c.type) return false; const xs = verite().filter(l => liaisonComplete(l) && l.de !== l.vers && (l.type || '') === c.type).map(l => [l, 'type']);
-    return changerLiaisons(xs, v, 'type ' + (c.type || 'vide') + ' → ' + (v || 'vide')); } };
+    return changerLiaisons(xs.map(([l, k]) => [l, k, v]), 'type ' + (c.type || 'vide') + ' → ' + (v || 'vide')); } };
 /* L'onglet Liaisons, filtré sur ce qu'on cherche (un type, un contact). */
 function montrerLiaisons(q) { const b = app.base; b.filtreAuto = false; changerOnglet('liaisons', true); b.filtre = q || ''; b.portee = 'tout'; memoriserBase(); if (b.ouvert) rendreBase(true); else ouvrirBase(); }
 
 /* ---- CONTACTS (une référence à sertir par ligne) ----------------------------- */
 const contacts = () => memo('contacts', () => { const m = new Map(), V = verite(), T = normeDesModules(app.norme).contacts || [];
-  reperesDe(V).forEach(r => planDuRepere(r).fils.forEach((x, l) => { const force = l.de === r ? l.contactDe : l.vers === r ? l.contactVers : '', ref = force || (x.sertir && x.sertir.reference); if (!ref) return;
+  reperesDe(V).forEach(r => planDuRepere(r).fils.forEach((x, l) => { const force = contactMain(l, r), ref = force || (x.sertir && x.sertir.reference); if (!ref) return;
     const acc = force ? '' : (x.sertir.accessoire || ''), k = ref + '\u0001' + acc, e = m.get(k) || m.set(k, { k: 'c:' + ref + '|' + acc, ref, acc, n: 0, ou: new Set(), tailles: new Set(), main: 0 }).get(k);
     e.n++; e.ou.add(r); if (x.contact && x.contact.taille) e.tailles.add(String(x.contact.taille)); if (force) e.main++; }));
   return [...m.values()].map(e => { const t = T.find(c => c.reference === e.ref); return { ...e, ou: [...e.ou].sort(triNaturel), tailles: [...e.tailles].sort(triNaturel), norme: t ? t.famille : '', sexe: t ? t.sexe : '' }; })

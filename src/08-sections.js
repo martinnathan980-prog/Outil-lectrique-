@@ -33,12 +33,15 @@ function sectionOuverte(type, cle) { const m = MEMOIRE_SECTIONS[type]; return m 
 function retenirSection(type, cle, ouvert) { (MEMOIRE_SECTIONS[type] = MEMOIRE_SECTIONS[type] || {})[cle] = !!ouvert;
   try { localStorage.setItem(CLE_SECTIONS, JSON.stringify(MEMOIRE_SECTIONS)); } catch (_) { } }
 
-/* Une section : { cle, titre?, resume?, badge?: { t, etat: 'ko'|'att'|'ok'|'' }, contenu, vide?, ouvert? }.
-   `resume` et `contenu` sont du HTML déjà échappé ; `vide` est la raison (texte) quand la donnée manque. */
-function ficheSection(type, s) { const titre = s.titre || SECTIONS[s.cle] || s.cle, ouvert = !s.vide && (s.ouvert != null ? s.ouvert : sectionOuverte(type, s.cle));
+/* Une section : { cle, titre?, resume?, badge?: { t, etat: 'ko'|'att'|'ok'|'' }, contenu, vide?, action?, ouvert? }.
+   `resume`, `contenu` et `action` sont du HTML déjà échappé ; `vide` est la raison (texte) quand la donnée manque, et
+   `action` ce qu'on peut y faire (un bouton `.fs-action` : « charger les contrats déjà faits »), posé au bout du résumé.
+   Une section vide qui a quand même un contenu (où envoyer la donnée, ce qu'on peut saisir) s'ouvre ; sans contenu, non. */
+function ficheSection(type, s) { const titre = s.titre || SECTIONS[s.cle] || s.cle, ouvrable = !s.vide || !!s.contenu;
+  const ouvert = ouvrable && (s.ouvert != null ? s.ouvert : !s.vide && sectionOuverte(type, s.cle));
   const badge = s.badge && s.badge.t != null && s.badge.t !== '' ? `<span class="fs-badge${s.badge.etat ? ' ' + s.badge.etat : ''}">${s.badge.t}</span>` : '';
-  const resume = s.vide ? esc(s.vide) : s.resume || '';
-  return `<details class="fs${s.vide ? ' fs-vide' : ''}" data-section="${escA(s.cle)}" data-type="${escA(type)}"${ouvert ? ' open' : ''}>`
+  const resume = (s.vide ? esc(s.vide) : s.resume || '') + (s.action ? ' ' + s.action : '');
+  return `<details class="fs${s.vide ? ' fs-vide' : ''}${ouvrable ? '' : ' fs-clos'}" data-section="${escA(s.cle)}" data-type="${escA(type)}"${ouvert ? ' open' : ''}>`
     + `<summary class="fs-tete"><span class="fs-titres"><span class="fs-titre">${esc(titre)}</span>${resume ? `<span class="fs-resume">${resume}</span>` : ''}</span>`
     + `${badge}${ico('bas', 'fs-chevron')}</summary><div class="fs-corps">${s.contenu || ''}</div></details>`; }
 /* Les sections d'une fiche, dans l'ordre fixe ; une clé hors de l'ordre se met à la fin. */
@@ -47,10 +50,19 @@ function ficheSections(type, liste) { const xs = liste.filter(Boolean), rang = s
 /* Ouvrir une section par programme (un lien « voir » d'un problème, une pastille) : elle s'ouvre et vient sous les yeux ;
    ce n'est pas un choix de l'ingénieur, on ne le retient pas. */
 function ouvrirSection(box, cle) { const d = box && box.querySelector(`details.fs[data-section="${CSS.escape(cle)}"]`); if (!d) return null;
-  d.open = true; try { d.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (_) { d.scrollIntoView(); } return d; }
-// ce que l'ingénieur ouvre ou ferme à la main (un clic, ou Entrée / Espace sur le titre), on le retient pour ce type
+  d.open = true; try { d.scrollIntoView({ block: 'start', behavior: mouvementReduit() ? 'auto' : 'smooth' }); } catch (_) { d.scrollIntoView(); } return d; }
+// ce que l'ingénieur ouvre ou ferme à la main (un clic, ou Entrée / Espace sur le titre), on le retient pour ce type ; une
+// action posée dans le résumé (`.fs-action`) agit sans ouvrir ni fermer ; une section vide sans contenu ne s'ouvre pas
 document.addEventListener('click', e => { const t = e.target && e.target.closest && e.target.closest('summary.fs-tete'); if (!t) return;
-  const d = t.parentElement; if (!d || d.classList.contains('fs-vide')) return; setTimeout(() => retenirSection(d.dataset.type, d.dataset.section, d.open), 0); });
+  if (e.target.closest('.fs-action')) { e.preventDefault(); return; }
+  const d = t.parentElement; if (!d) return; if (d.classList.contains('fs-clos')) { e.preventDefault(); return; }
+  if (d.classList.contains('fs-vide')) return; setTimeout(() => retenirSection(d.dataset.type, d.dataset.section, d.open), 0); });
+
+/* LA PASTILLE D'UNE SECTION par ses problèmes : chaque problème d'une fiche porte la section qui le démontre
+   (`{ niveau: 'ko'|'att', texte, section }`) ; la section le compte dans sa pastille, rouge s'il y a un problème, ambre
+   s'il n'y a que des points à voir. Rend la pastille, ou null s'il n'y a rien (la section garde alors la sienne). */
+function badgeProblemes(probs, cle) { const xs = (probs || []).filter(p => p.section === cle); if (!xs.length) return null;
+  const ko = xs.filter(p => p.niveau === 'ko').length; return { t: String(ko || xs.length), etat: ko ? 'ko' : 'att' }; }
 
 /* L'ORIGINE d'une valeur, en petit à côté d'elle : d'où vient ce qu'on lit. */
 const ORIGINES = { auto: 'auto', retest: 'retest', main: 'main', hyp: 'hyp.', norme: 'norme' };
@@ -76,3 +88,12 @@ function origineChamp(l, champ) { if (!l) return 'auto';
 function rendreChamp(l, champ) { if (!(l && l.avant && champ in l.avant)) return false; const v = l.avant[champ];
   histPush('retour au fichier'); const av = { ...l.avant }; delete av[champ]; if (Object.keys(av).length) l.avant = av; else delete l.avant;
   if (v == null) delete l[champ]; else l[champ] = v; apresEdition(); return true; }
+/* Plusieurs liaisons d'un geste (le part number d'un connecteur : le pnDe ou le pnVers de chacune de ses liaisons) : une
+   seule entrée d'historique, l'avant de chaque champ gardé comme `changerLiaison`. `xs` : [[liaison, champ, valeur]]. */
+function changerLiaisons(xs, quoi) { const ys = xs.filter(([l, c, v]) => l && l[c] !== v); if (!ys.length) return false; histPush(quoi || 'modification de liaisons');
+  ys.forEach(([l, c, v]) => { if (!(l.avant && c in l.avant)) l.avant = { ...(l.avant || {}), [c]: l[c] == null ? null : l[c] }; if (v == null || v === '') delete l[c]; else l[c] = v; });
+  apresEdition(); return true; }
+/* … et les rendre ensemble à ce que portait le fichier. `xs` : [[liaison, champ]]. */
+function rendreChamps(xs, quoi) { const ys = xs.filter(([l, c]) => l && l.avant && c in l.avant); if (!ys.length) return false; histPush(quoi || 'retour au fichier');
+  ys.forEach(([l, c]) => { const v = l.avant[c], av = { ...l.avant }; delete av[c]; if (Object.keys(av).length) l.avant = av; else delete l.avant; if (v == null) delete l[c]; else l[c] = v; });
+  apresEdition(); return true; }

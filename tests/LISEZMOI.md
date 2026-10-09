@@ -48,9 +48,14 @@ node tests/interface.js        à la vraie souris (grand écran, téléphone) : 
                                (« Corriger »), la base sans Harness, la base déposée et « Voir un équipement déjà fait », le collage et
                                son aperçu (ajouter au contrat), le modèle CSV — le même que modeles/modele-retest.csv
 node tests/fiche.js            la fiche de chaque sorte de bloc (équipement à trois connecteurs, barrette, disjoncteur, barrette à poser,
-                               prise de coupure, fil) dit les choses dans l'ordre voulu, les faces à plat, autour avant les fils ; les
-                               hypothèses de la simulation depuis le mot « hypothèse » de la fiche d'un fil (115 V → 4 V admis, puis
-                               « Revenir aux valeurs de l'outil ») ; l'index
+                               prise de coupure, fil) a le même squelette : la barre de navigation (‹ ›, le fil d'Ariane), l'en-tête
+                               (le repère et son crayon, la nature, la pastille des problèmes repliée), les sections dans l'ordre fixe,
+                               ouvertes d'office celles du type, chaque problème compté dans la section qui le démontre (« voir ») ; les
+                               faces à plat ; tout se change sur place avec son origine et « ↺ automatique » (l'arrangement dans une
+                               liste sous la valeur, le part number d'un connecteur pour toutes ses liaisons, la longueur et le numéro
+                               d'un fil, la nature, le contact à sertir, l'habillage), Ctrl+Z défait et la fiche reste ouverte ; la pile
+                               (un fil ouvert depuis l'équipement s'empile, Alt+← / Alt+→, un bout ouvre l'équipement le contact allumé,
+                               le plan ne bouge pas) ; les hypothèses depuis le mot « hypothèse » (115 V → 4 V admis) ; l'index et son ‹
 node tests/barrettes.js        la bible des barrettes se lit, la référence se choisit, les connecteurs se lisent ; la norme se lit,
                                chaque fil va dans son trou, la simulation donne des valeurs connues à la main ; les catalogues ASNE 0599
                                (29 variantes) et NSA937901 (43 codes), les jauges de chaque norme, le choix de la norme et le

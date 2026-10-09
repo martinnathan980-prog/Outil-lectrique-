@@ -17,9 +17,9 @@ function compteur() { const m = new Map();
            lignes() { return [...m.values()].map(e => ({ ...e, ou: [...e.ou].sort(triNaturel) })).sort((a, b) => b.n - a.n || triNaturel(a.reference, b.reference)); } }; }
 /* La nomenclature : relue depuis le contrat, les normes et les choix (références, sexes, raccords). */
 function nomenclatureDuContrat() { const V = verite(), H = app.simu || HYPOTHESES, contacts = compteur(), modules = compteur(), connecteurs = compteur(), habits = compteur(), cables = compteur();
-  // le contact écrit à la main à un bout (le récapitulatif : `contactDe`, `contactVers`) passe devant celui du plan ;
+  // le contact écrit à la main à un bout (le récapitulatif ou la fiche : `contactMain`) passe devant celui du plan ;
   // un contact « à confirmer » (une référence que la recherche R1 n'a pas pu vérifier) le reste dans la nomenclature
-  const force = (x, r) => { const l = x.f && x.f.l, k = !l ? '' : l.de === r.split(' ')[0] ? l.contactDe : l.vers === r.split(' ')[0] ? l.contactVers : ''; return k ? { ...x, sertir: { reference: k, accessoire: '' } } : x; };
+  const force = (x, r) => { const l = x.f && x.f.l, k = l ? contactMain(l, r.split(' ')[0], x.borne) : ''; return k ? { ...x, sertir: { reference: k, accessoire: '' } } : x; };
   const sertir = (xs, ou) => nomenclatureDe(xs.map(x => force(x, ou))).forEach(x => contacts.plus(x.reference + '|' + x.accessoire, { reference: x.reference, accessoire: x.accessoire, confiance: x.confiance, outillage: x.outillage }, ou, x.n));
   /* Le raccord entre par sa désignation construite (classe du connecteur, taille, chambre, code d'entrée) quand elle est
      entière, sinon par la partie EN 3660 du style ; la note dit le statut de la ligne (sauf « vérifié »), la chambre quand

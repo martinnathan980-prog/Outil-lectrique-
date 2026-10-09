@@ -320,7 +320,7 @@ function baseEssaiDansLaPage() {
     mesure('la fiche la plus lente avec « Déjà fait »', Math.max(...deja.map(x => x.fiche)), SEUIL_FICHE);
     await capture(page, 'B-1-deja-fait-102CB1');
     // 102CB1 contre H-1/302CB1 : la comparaison à trois échelles, puis le dessin
-    await cliquerBloc(page, '102CB1'); await page.click('#ba-equip .fi-cand[data-ref="H-1"]'); await page.waitForTimeout(500);
+    await cliquerBloc(page, '102CB1'); await page.evaluate(() => { const d = document.querySelector('#ba-equip details[data-section="dejafait"]'); if (d) d.open = true; }); await page.click('#ba-equip .fi-cand[data-ref="H-1"]'); await page.waitForTimeout(500);
     const C1 = await page.evaluate(() => ({ type: app.cible && app.cible.type, portees: document.querySelectorAll('#ba-equip .cp-portee [data-portee]').length, pressee: (document.querySelector('#ba-equip .cp-portee [aria-pressed="true"]') || {}).dataset, bilan: (document.querySelector('#ba-equip .cp-bilan') || {}).textContent || '', manque: document.querySelectorAll('#ba-equip .cp-liste .fi-fil.cp-manque').length, differe: document.querySelectorAll('#ba-equip .cp-liste .fi-fil.cp-differe').length, dessin: !!$('cp-dessin'), reprendre: $('cp-reprendre').disabled }));
     ok(C1.type === 'ref' && C1.portees === 3 && C1.pressee && C1.pressee.portee === 'equipement' && /Dessin MEE256A7815001A/.test(C1.bilan) && C1.manque === 1 && C1.differe === 1 && C1.dessin && C1.reprendre, 'la comparaison s’ouvre à l’échelle de l’équipement : trois échelles, le bilan du dessin, une ligne manque, une diffère, rien à reprendre tant que rien n’est coché', C1.bilan.slice(0, 120));
     await page.click('#ba-equip .cp-portee [data-portee="voisinage"]'); await page.waitForTimeout(400);
@@ -347,14 +347,14 @@ function baseEssaiDansLaPage() {
     await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(800);
     ok(await page.evaluate(n => verite().length === n && !app.dessin.comps.some(c => c.name === '305XX9'), avant.n), 'Ctrl+Z défait la reprise, 305XX9 quitte le plan');
     // les repères proposés en « ? » : H-4 relie 303RL7 (sans part number) à notre 103RL1 par les voisins — peut-on le confirmer, le changer ?
-    await cliquerBloc(page, '102CB1'); await page.click('#ba-equip .fi-cand[data-ref="H-4"]'); await page.waitForTimeout(500);
+    await cliquerBloc(page, '102CB1'); await page.evaluate(() => { const d = document.querySelector('#ba-equip details[data-section="dejafait"]'); if (d) d.open = true; }); await page.click('#ba-equip .fi-cand[data-ref="H-4"]'); await page.waitForTimeout(500);
     const Q = await page.evaluate(() => { const xs = [...document.querySelectorAll('#ba-equip .fi-chip.cp-corr-voisins, #ba-equip .fi-chip.cp-corr-code')]; return { n: xs.length, textes: xs.map(x => x.textContent), cliquables: xs.filter(x => x.tagName === 'BUTTON' || x.onclick || x.getAttribute('role') === 'button' || x.tabIndex >= 0).length, lignes: [...document.querySelectorAll('#ba-equip .cp-liste .fi-corr')].map(x => x.textContent) }; });
     ok(Q.n >= 1 && Q.textes.some(t => /303RL7 → 103RL1\s\?/.test(t)), 'contre H-4, l’outil propose 303RL7 → 103RL1 avec un « ? » (même code, mêmes voisins, à confirmer)', Q.textes.join(' · '));
     frottement(Q.cliquables === Q.n && Q.n > 0, 'un repère proposé en « ? » ne se confirme ni ne se corrige', 'les puces « 303RL7 → 103RL1 ? » sont inertes : on ne peut ni valider la correspondance ni la changer avant de reprendre (la feuille de route dit « l’outil propose, vous validez »)',
       'gênant', '08-references.js `ficheComparaison`/`lierComparaison` : rendre les puces `.cp-corr-voisins/.cp-corr-code` actives — un clic ouvre la liste de nos repères de même code, le choix se garde dans REF (une Map repèreRef → nôtre) et passe à `correspondre` par `fixes`');
     await capture(page, 'B-5-proposes');
     // reprendre puis RENOMMER le repris : 305XX9 devient 105XX9 par la tête de sa fiche
-    await cliquerBloc(page, '102CB1'); await page.click('#ba-equip .fi-cand[data-ref="H-1"]'); await page.waitForTimeout(400); await page.click('#cp-tout'); await page.waitForTimeout(200); await page.click('#cp-reprendre'); await page.waitForFunction(n => verite().length === n + 3, avant.n); await page.waitForTimeout(500);
+    await cliquerBloc(page, '102CB1'); await page.evaluate(() => { const d = document.querySelector('#ba-equip details[data-section="dejafait"]'); if (d) d.open = true; }); await page.click('#ba-equip .fi-cand[data-ref="H-1"]'); await page.waitForTimeout(400); await page.click('#cp-tout'); await page.waitForTimeout(200); await page.click('#cp-reprendre'); await page.waitForFunction(n => verite().length === n + 3, avant.n); await page.waitForTimeout(500);
     await cliquerBloc(page, '305XX9'); ok(await page.evaluate(() => app.cible && app.cible.nom === '305XX9' && /équipement/.test(document.querySelector('#ba-equip .fi-sous').textContent)), 'la fiche du repris 305XX9 s’ouvre d’un clic sur le plan');
     await page.fill('#eq-rep', '105XX9'); await page.press('#eq-rep', 'Enter'); await page.waitForTimeout(700);
     ok(await page.evaluate(() => verite().some(l => l.vers === '105XX9' || l.de === '105XX9') && !verite().some(l => l.vers === '305XX9' || l.de === '305XX9') && app.dessin.comps.some(c => c.name === '105XX9')), 'écrire 105XX9 en tête de fiche renomme le repris : chaque fil suit, le plan aussi');
@@ -385,11 +385,11 @@ function baseEssaiDansLaPage() {
       t0 = Date.now(); await page.locator(`#ba-equip .co-item[data-k="${x.k}"]`).click(); await page.waitForFunction(n => app.cible && app.cible.nom === n, x.nom); const ms = Date.now() - t0; await page.waitForTimeout(450);
       sauts.push({ nom: x.nom + ' f.' + x.plan, ms }); e = await etat(page); const cad = await cadrage(page, x.nom);
       ok(e.plan === x.plan && e.cible === x.nom && e.insp && cad.dedans, `« ${x.nom} » → folio ${x.plan}, sa fiche, le bloc cadré`, ms + ' ms · ' + cad.detail);
-      if (x.nom === '300XC1') { ok(await page.evaluate(() => document.querySelector('#ba-equip .fi-onglets [aria-selected="true"]').dataset.onglet === 'B'), 'la fiche de 300XC1 s’ouvre sur B, le connecteur qui porte le problème'); await capture(page, 'C-2-300XC1'); }
+      if (x.nom === '300XC1') { ok(await page.evaluate(() => document.querySelector('#ba-equip .fi-segs [aria-pressed="true"]').dataset.connecteur === 'B'), 'la fiche de 300XC1 s’ouvre sur B, le connecteur qui porte le problème'); await capture(page, 'C-2-300XC1'); }
       if (premiere) { premiere = false; await page.keyboard.press('r'); await page.waitForTimeout(300);
         frottement(await page.evaluate(() => app.insp.index && !$('inspecteur').hidden && !!document.querySelector('#ba-equip .co-item')), 'R depuis une fiche venue de l’index ferme le panneau au lieu de revenir à la liste', 'on est sur la fiche de 102CB1 (ouverte depuis « à reprendre »), on presse R pour revenir aux repères : l’inspecteur se ferme ; il faut la flèche de la fiche ou Échap', 'détail', '08-interface.js `basculerIndex` : quand une fiche est ouverte (app.cible) et vient de l’index, revenir à la liste (`retourIndex()`) plutôt que fermer');
         if (!(await page.evaluate(() => app.insp.index && !$('inspecteur').hidden))) { await page.keyboard.press('r'); await page.waitForFunction(() => app.insp.index && document.querySelector('#ba-equip .co-item')); } continue; }
-      ok(await page.evaluate(() => !!$('fi-retour')), 'la fiche porte la flèche de retour à la liste'); await page.click('#fi-retour'); await page.waitForFunction(() => app.insp.index && document.querySelector('#ba-equip .co-item')); }
+      ok(await page.evaluate(() => !!$('fi-prec') && !$('fi-prec').disabled), 'la fiche porte ‹ (Alt+←) : venue de l’index, elle y ramène'); await page.click('#fi-prec'); await page.waitForFunction(() => app.insp.index && document.querySelector('#ba-equip .co-item')); }
     mesure('depuis l’index, le saut de folio le plus lent (' + sauts.sort((a, b) => b.ms - a.ms)[0].nom + ')', sauts[0].ms, SEUIL_FOLIO, PROPOSITION_FOLIO, GROUPE_FOLIO);
     // trois corrections : une barrette à poser (posée), un type de fil (dans le tableau), un calibre (sur la fiche)
     await page.evaluate(() => { allerAuPlan('1'); deselectionner(); }); await cliquerBloc(page, 'VT1'); await page.fill('#eq-rep', '102VT9'); await page.press('#eq-rep', 'Enter'); await page.waitForTimeout(900);
@@ -427,17 +427,17 @@ function baseEssaiDansLaPage() {
     // un choix sur une fiche change la nomenclature : le sexe des contacts du connecteur A de 300XC1, puis une reprise de blindage
     const N0 = await page.evaluate(() => JSON.stringify(nomenclatureDuContrat().contacts));
     await page.evaluate(() => { allerAuPlan('3'); choisirBloc(app.dessin.comps.find(k => k.name === '300XC1' && k.kind !== 'tag')); }); await page.waitForTimeout(400);
-    await page.click('#ba-equip .fi-onglets [data-onglet="A"]'); await page.click('#ba-equip [data-changer="arr|300XC1|A"]'); await page.waitForTimeout(200);
-    ok(await page.evaluate(() => !document.querySelector('#ba-equip [data-volet="arr|300XC1|A"]').hidden && document.querySelectorAll('#ba-equip [data-sexe="300XC1|A"]').length === 2), '« Changer » sur le connecteur A déplie le sexe des contacts et les arrangements');
+    await page.click('#ba-equip .fi-segs [data-connecteur="A"]'); await page.click('#ba-equip [data-changer="arr|300XC1|A"]'); await page.waitForTimeout(200);
+    ok(await page.evaluate(() => !!document.querySelector('#ba-equip [data-volet="arr|300XC1|A"] .cand') && document.querySelectorAll('#ba-equip [data-sexe="300XC1|A"]').length === 2), '« Changer » sur le connecteur A ouvre les arrangements sous la valeur ; le sexe des contacts est à côté');
     await page.click('#ba-equip [data-sexe="300XC1|A"][data-v="M"]'); await page.waitForTimeout(700);
     const N1 = await page.evaluate(() => JSON.stringify(nomenclatureDuContrat().contacts));
     ok(N1 !== N0 && await page.evaluate(() => app.contrat.sexes.get('300XC1|A') === 'M'), 'des contacts mâles sur A : la nomenclature des contacts change');
     // un EN 4165 (300XC1) n'a pas de raccord : la reprise de blindage se choisit sur un EN 2997 (351PM1, folio 3)
-    await page.evaluate(() => { const b = document.querySelector('#ba-equip [data-panneau="A"] [data-changer^="rac|"]'); if (b.getAttribute('aria-expanded') !== 'true') b.click(); }); await page.waitForTimeout(200);
-    await page.click('#ba-equip [data-panneau="A"] [data-raccord][data-champ="blindage"][data-v="GND"]'); await page.waitForTimeout(700);
+    await page.evaluate(() => { document.querySelector('#ba-equip details[data-section="habillage"]').open = true; const b = document.querySelector('#ba-equip [data-hab="300XC1|A"] [data-changer^="rac|"]'); if (b.getAttribute('aria-expanded') !== 'true') b.click(); }); await page.waitForTimeout(200);
+    await page.click('#ba-equip [data-hab="300XC1|A"] [data-raccord][data-champ="blindage"][data-v="GND"]'); await page.waitForTimeout(700);
     ok(await page.evaluate(() => !nomenclatureDuContrat().habits.some(h => h.quoi === 'band-it' && /300XC1 A/.test(h.ou.join(' '))) && app.contrat.raccords.get('300XC1|A').blindage === 'GND'), 'une reprise de blindage sur le corps d’un EN 4165 : le choix se garde, mais aucun band-it n’entre à la nomenclature (un EN 4165 n’a pas de raccord)');
     await page.evaluate(() => { allerAuPlan('3'); choisirBloc(app.dessin.comps.find(k => k.name === '351PM1' && k.kind !== 'tag')); }); await page.waitForTimeout(500);
-    await page.evaluate(() => { const b = document.querySelector('#ba-equip [data-changer^="rac|"]'); if (b.getAttribute('aria-expanded') !== 'true') b.click(); }); await page.waitForTimeout(200);
+    await page.evaluate(() => { document.querySelector('#ba-equip details[data-section="habillage"]').open = true; const b = document.querySelector('#ba-equip [data-changer^="rac|"]'); if (b.getAttribute('aria-expanded') !== 'true') b.click(); }); await page.waitForTimeout(200);
     await page.click('#ba-equip [data-raccord][data-champ="blindage"][data-v="GND"]'); await page.waitForTimeout(700);
     ok(await page.evaluate(() => nomenclatureDuContrat().habits.some(h => h.quoi === 'band-it' && /351PM1/.test(h.ou.join(' ')))), 'une reprise de blindage sur le corps d’un EN 2997 (351PM1) : un band-it entre à la nomenclature');
     await capture(page, 'C-4-300XC1-choix');
