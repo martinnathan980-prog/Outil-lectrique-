@@ -62,7 +62,7 @@
   --pied:40px;               /* la barre du bas (folios, zoom)                                */
   --insp-l:min(36vw,clamp(440px,28vw,560px));  /* l'inspecteur, à droite : 440 px, plus large sur un grand écran */
   --fiche-l:400px;           /* les documents, à droite ; plus large pour la bible et la nomenclature */
-  --base-h:30vh;             /* le tableau des liaisons, en tiroir en bas                     */
+  --base-h:50vh;             /* le récapitulatif en moitié : la moitié de la hauteur (style-recap.css) */
   /* les zones sûres d'un téléphone (encoche, barre d'accueil) : 0 ailleurs */
   --sur-h:env(safe-area-inset-top,0px); --sur-b:env(safe-area-inset-bottom,0px); --sur-g:env(safe-area-inset-left,0px); --sur-d:env(safe-area-inset-right,0px);
   /* ── les anciens noms, lus encore par les autres feuilles de style : des alias des jetons ── */
@@ -128,7 +128,7 @@ button{cursor:pointer}
 kbd{font-family:var(--mono)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 /* ce qui défile garde de l'air sous le dernier élément atteint au clavier : son contour n'est pas rogné */
-.fi,.fiche-corps,.ba-corps{scroll-padding-block:12px}
+.fi,.fiche-corps{scroll-padding-block:12px}
 mark{background:var(--warn-soft);color:inherit;border-radius:2px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .mono{font-family:var(--mono)}
@@ -361,101 +361,15 @@ body.fiche-ouverte #folios{right:var(--fiche-l)}
 /* la barre étroite (un document large à côté, une tablette) : les folios et le cadrage, sans le zoom ni le compte */
 @container (max-width:480px){ #zin,#zout,#zlbl,.fo-zoom hr,#fo-lbl,.affinage span{display:none} }
 
-/* ─── LES PANNEAUX : l'inspecteur et les documents à droite, le tableau en bas ─── */
+/* ─── LES PANNEAUX : l'inspecteur et les documents à droite (le récapitulatif : style-recap.css) ─── */
 #inspecteur,#fiche{position:fixed;top:calc(var(--entete) + var(--sur-h));right:0;bottom:0;max-width:calc(100vw - var(--rail));padding-right:var(--sur-d);background:var(--s-surface);color:var(--t-1);
   box-shadow:var(--sh-panneau);z-index:25;display:flex;flex-direction:column;overflow:hidden}
 #inspecteur{width:var(--insp-l);z-index:26}
 #fiche{width:var(--fiche-l)}
-#base{position:fixed;left:var(--rail);right:0;bottom:var(--pied);height:var(--base-h);min-height:150px;background:var(--s-surface);color:var(--t-1);
-  box-shadow:0 -1px 0 var(--s-line),0 -12px 32px rgba(0,0,0,.05);z-index:24;display:flex;flex-direction:column;overflow:hidden}
-body.insp-ouvert #base{right:var(--insp-l)}
 /* un panneau qui s'ouvre glisse de son bord */
 .entre{animation:doc-entre var(--moyen)}
 @keyframes doc-entre{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
-#base.entre{animation-name:doc-monte}
 @keyframes doc-monte{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-
-/* ─── LE TABLEAU : les liaisons, corrigées en direct ─────────────────────── */
-/* la poignée : un trait gris au repos (on voit qu'il se tire), à l'encre au survol et pendant le geste */
-.poignee{position:absolute;left:0;right:0;top:-1px;height:10px;cursor:row-resize;z-index:2}
-.poignee::after{content:"";position:absolute;left:50%;top:3px;width:36px;height:3px;margin-left:-18px;border-radius:2px;background:var(--s-line-2);transition:background var(--rapide)}
-.poignee:hover::after,#base.redim .poignee::after{background:var(--accent)}
-#base.redim{user-select:none}
-.ba-tete{display:flex;align-items:center;gap:12px;height:48px;padding:0 8px 0 16px;border-bottom:1px solid var(--s-line);flex:none}
-.ba-titre{display:flex;align-items:center;gap:8px;white-space:nowrap}
-.ba-titre span{font-size:var(--f-14);font-weight:600}
-/* le compte, « 201 » ou « 8 / 201 », dans une case de largeur fixe : le segment et le filtre ne glissent pas */
-.ba-titre b{font:600 var(--f-11)/1.7 var(--mono);color:var(--t-2);background:var(--s-sunken);border-radius:var(--r-1);padding:0 8px;min-width:64px;text-align:center}
-/* ce folio ou tout : le segment commun (.segment), et le compte de chaque portée */
-.ba-portee button i{font:500 var(--f-11) var(--mono);font-style:normal;color:var(--t-3)}
-.ba-portee button[aria-pressed="true"] i{color:var(--t-2)}
-.ba-tete .filtre{flex:1;max-width:320px}
-.ba-tete .btn{height:32px;padding:0 12px}
-.ba-corps{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:0 8px 8px;scrollbar-width:thin}
-/* la table prend la largeur de ses colonnes ; trop large, elle défile — jamais elle n'écrase une valeur */
-table.tab{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;font-family:var(--mono);font-size:var(--f-12);table-layout:auto}
-.tab th{position:sticky;top:0;z-index:1;height:32px;background:var(--s-surface);text-align:left;font:500 var(--f-12) var(--sans);color:var(--t-3);letter-spacing:0;padding:0 8px;border-bottom:1px solid var(--s-line-2);white-space:nowrap;cursor:pointer;user-select:none}
-.tab th:hover{color:var(--t-1)}
-.tab th:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-.tab th.g,.tab th.fl,.tab th.x{cursor:default}
-.tab th.tri{color:var(--accent-2)}
-.tab th .sens{font-size:var(--f-11);margin-left:4px;letter-spacing:0}
-/* chaque colonne a la largeur de son champ (+ 16 px), qu'il y ait des lignes ou non (un filtre qui ne trouve rien ne
-   redistribue rien) ; la dernière, celle de « supprimer », prend le reste : au grand écran, rien ne s'étire entre une
-   borne et sa flèche */
-.tab th.g{width:44px}.tab th.fl{width:18px}
-.tab th.rep{width:116px}.tab th.n{width:66px}.tab th.fil{width:104px}.tab th.type{width:88px}.tab th.pn{width:152px}.tab th.route{width:120px}
-.tab td{height:32px;padding:0 1px;border-bottom:1px solid var(--s-line);white-space:nowrap}
-.tab tr:hover td{background:var(--s-sunken)}
-.tab tr.on td{background:var(--accent-soft)}
-.tab tr.vise td{background:color-mix(in srgb,var(--accent) 22%,var(--s-surface))}
-/* le numéro de ligne porte, en liseré, la couleur de la route du fil */
-.tab td.g{width:44px;padding:0;box-shadow:inset 3px 0 0 var(--route,transparent)}
-.tab td.g button{width:100%;height:31px;border:none;background:none;color:var(--t-3);font-size:var(--f-11);text-align:right;padding:0 8px 0 12px;font-family:var(--mono)}
-.tab td.g button:hover{color:var(--accent-2)}
-.tab tr.on td.g button{color:var(--accent-2);font-weight:600}
-.tab td.fl{width:18px;padding:0;text-align:center;color:var(--t-3)}
-.tab td.fl::before{content:"→"}
-/* la hiérarchie d'une ligne : les repères (de, vers) en demi-gras, le fil en moyen, le reste en encre secondaire */
-.tab td.rep input{width:100px;font-weight:600}
-.tab td.n input{width:50px}
-.tab td.fil input{width:88px;font-weight:500}
-.tab td.type input{width:72px;color:var(--t-2)}
-.tab td.pn input{width:136px;color:var(--t-2)}
-.tab td.route input{width:104px;color:var(--t-2);font-family:var(--titre);font-size:10px;letter-spacing:0;font-weight:400}
-/* une cellule : un champ qui ne se voit qu'au survol et à l'écriture */
-.tab input{width:100%;height:28px;border:1px solid transparent;border-radius:var(--r-1);padding:0 8px;background:none;font-family:var(--mono);font-size:var(--f-12);color:var(--t-1);transition:border-color var(--rapide),background var(--rapide);text-overflow:ellipsis}
-.tab input:hover{border-color:var(--s-line-2);background:var(--s-surface)}
-.tab input:focus{border-color:var(--accent);outline:none;background:var(--s-surface);box-shadow:0 0 0 3px var(--accent-soft);color:var(--t-1)}
-/* sur la ligne choisie (son fond est déjà gris doux), le halo du focus se fonce pour rester visible */
-.tab tr.on input:focus{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 30%,transparent)}
-/* une case vide porte le nom de sa colonne, qu'on ne lit que sur la ligne choisie : une ligne neuve montre ses dix cases */
-.tab input::placeholder{color:transparent;font-family:var(--sans)}
-.tab tr.on input::placeholder,.tab input:focus::placeholder{color:var(--t-3)}
-.tab tr.on input:placeholder-shown{border-color:var(--s-line-2);background:var(--s-surface)}
-/* une ligne d'un autre folio (dans « Tout ») : l'intercalaire la situe déjà ; elle reste lisible, d'une encre en retrait */
-.tab tr.hors input{color:var(--t-2)}
-.tab tr.hors td.rep input{font-weight:500}
-.tab tr.hors td.fil input{font-weight:400}
-.tab .f{display:inline-block;font-size:var(--f-11);color:var(--accent-2);font-weight:600;background:var(--accent-soft);border-radius:var(--r-1);padding:1px 8px;border:none;font-family:var(--mono);margin:0 2px;line-height:1.5}
-button.f{cursor:pointer}
-button.f:hover{background:var(--accent);color:var(--on-accent)}
-/* l'intercalaire d'un folio, dans « Tout » */
-.tab tr.groupe td{height:auto;background:var(--s-surface);padding:16px 8px 8px;border-bottom:1px solid var(--s-line);font-family:var(--sans)}
-.tab tr.groupe:hover td{background:var(--s-surface)}
-.tab tr.groupe .f{font-family:var(--sans);font-size:var(--f-12);padding:4px 12px;margin:0 8px 0 0;background:var(--s-sunken);color:var(--t-1);border-radius:var(--r-1)}
-.tab tr.groupe .f:hover{background:var(--t-1);color:var(--t-inverse)}
-.tab tr.groupe.ici .f{background:var(--accent);color:var(--on-accent)}
-.tab tr.groupe span{font-size:var(--f-11);color:var(--t-2)}
-/* supprimer : la croix de tout l'outil (un SVG dans un rond de 26 px), au bout de la ligne ; elle se découvre au survol
-   de la ligne et au clavier — au doigt, elle reste visible */
-.tab th.x,.tab td.x{text-align:right;padding-right:8px}
-.tab .x button{width:26px;height:26px;display:inline-grid;place-items:center;border:none;background:none;border-radius:50%;color:var(--t-2);opacity:0;padding:0;transition:opacity var(--rapide),background var(--rapide),color var(--rapide)}
-.tab .x button svg.ico{width:14px;height:14px}
-.tab tr:hover .x button,.tab tr:focus-within .x button,.tab .x button:focus-visible{opacity:1}
-@media (hover:none){.tab .x button{opacity:1}}
-.tab .x button:hover{background:var(--ko-soft);color:var(--ko)}
-.tab .reste td{height:auto;color:var(--t-2);padding:16px 12px;white-space:normal;font-family:var(--sans)}
 
 /* ─── LES DOCUMENTS : cartouche, collage, bible, nomenclature, hypothèses ─── */
 .fiche-corps{overflow:auto;padding:16px 20px 16px;flex:1;overscroll-behavior:contain;scrollbar-width:thin}
@@ -864,7 +778,7 @@ body.fiche-ouverte #toast{left:max(calc(var(--rail) + 16px + min(60vw,560px) / 2
   #rail hr{display:none}
   #rail .bascule[aria-pressed="true"]::before{left:9px;right:9px;top:-4px;bottom:auto;width:auto;height:2px;border-radius:0 0 2px 2px}
   .bulle{display:none}
-  /* la bande des folios : au-dessus du rail, ou au-dessus du tiroir ouvert (sa hauteur, --insp-h, est mesurée) */
+  /* la bande des folios : au-dessus du rail, ou au-dessus du tiroir ouvert (sa hauteur, --insp-h, est mesurée ; le récapitulatif : --base-h) */
   #folios,body.insp-ouvert #folios{left:0;right:0;height:44px;bottom:var(--rail-tel);padding:0 max(8px,var(--sur-d)) 0 max(8px,var(--sur-g));transition:bottom var(--moyen)}
   #zin,#zout,#zlbl,#fo-prev,#fo-next,#folios hr,.affinage span,.rd.auto span:not(.bulle){display:none}
   #folios .rd.auto{padding:0 8px}
@@ -872,30 +786,12 @@ body.fiche-ouverte #toast{left:max(calc(var(--rail) + 16px + min(60vw,560px) / 2
   body.base-ouverte #folios{bottom:calc(var(--base-h) + var(--rail-tel))}
   body.fiche-ouverte #folios{display:none}
   /* les tiroirs */
-  #inspecteur,#base,#fiche{left:0;right:0;bottom:var(--rail-tel);width:auto;min-width:0;max-width:none;padding-right:0;border:none;border-top:1px solid var(--p-ligne);border-radius:0;box-shadow:none}
+  #inspecteur,#fiche{left:0;right:0;bottom:var(--rail-tel);width:auto;min-width:0;max-width:none;padding-right:0;border:none;border-top:1px solid var(--p-ligne);border-radius:0;box-shadow:none}
   #inspecteur{top:auto;max-height:62vh}
-  #base{top:auto;height:var(--base-h);max-height:calc(100% - var(--entete) - var(--rail-tel) - 120px);min-height:160px;z-index:26}
-  body.insp-ouvert #base{right:0}
   #fiche{top:calc(var(--entete) + var(--sur-h));max-height:none}
   .entre{animation:doc-monte var(--moyen)}
   /* l'en-tête d'un tiroir reste en vue quand on fait défiler : on sait ce qu'on lit, et on peut toujours fermer */
   .fiche-tete{position:sticky;top:-16px;z-index:3;background:var(--s-surface);margin:-16px -16px 12px;padding:16px 16px 8px;border-bottom:1px solid var(--s-line)}
-  .poignee{height:16px;top:0}
-  .poignee::after{background:var(--s-line-2);top:5px}
-  /* le tableau : deux rangées de tête (le titre, l'ajout, fermer ; puis ce folio / tout et le filtre) — les lignes gardent la place */
-  .ba-tete{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:8px;height:auto;padding:12px 8px 8px 16px;align-items:center}
-  .ba-tete .espace{display:none}
-  .ba-titre{grid-row:1;grid-column:1}
-  #ba-ajouter{grid-row:1;grid-column:3;font-size:0;gap:0;padding:0 10px}   /* l'icône seule : la tête tient dans l'écran */
-  #ba-fermer{grid-row:1;grid-column:4}
-  .ba-portee{grid-row:2;grid-column:1;justify-self:start}
-  .ba-tete .filtre{grid-row:2;grid-column:2/-1;max-width:none}
-  .ba-corps{padding:0 4px 8px 6px}
-  .tab{font-size:var(--f-11)}
-  .tab input{padding:0 4px;height:28px}
-  .tab td.n input{width:44px}
-  .tab td.rep input{width:84px}
-  .tab th{padding:0 4px}
   .fiche-corps{padding:16px 16px 12px}
   .fiche-pied{padding:12px 16px}
   .simu-tab th{white-space:normal;line-height:1.25}
@@ -922,8 +818,6 @@ body.fiche-ouverte #toast{left:max(calc(var(--rail) + 16px + min(60vw,560px) / 2
   /* les documents : c'est la tête du document qui reste collée en haut (son titre, sa croix) ; l'en-tête de la bible
      défile avec la table, qui tient dans l'écran (ses colonnes secondaires rangées) */
   .bible th{position:static}
-  /* le tableau : chaque colonne à la largeur de son champ resserré (+ 8 px) */
-  .tab th.rep{width:92px}.tab th.n{width:52px}.tab th.fil{width:96px}.tab th.type{width:80px}.tab th.pn{width:144px}.tab th.route{width:112px}
 }
 
 /* ─── AU DOIGT : des cibles de 40 px, des champs à 16 px (sinon Safari zoome et reste zoomé), pas de raccourcis ─── */
@@ -936,9 +830,8 @@ body.fiche-ouverte #toast{left:max(calc(var(--rail) + 16px + min(60vw,560px) / 2
   @container (max-width:480px){ #fo-prev,#fo-next{display:none} }
   .rond{width:40px;height:40px}
   .menu button{height:44px}
-  .segment button,.ba-portee button,.re-vues button{height:36px}
+  .segment button,.re-vues button{height:36px}
   .btn{min-height:40px}
-  .tab .x button{width:36px;height:36px}
   #entete .fi-etat{height:36px}
   .menu .raccourci,.recherche .raccourci{display:none}
 }
@@ -947,7 +840,6 @@ body.fiche-ouverte #toast{left:max(calc(var(--rail) + 16px + min(60vw,560px) / 2
   #entete .rd:hover:not(:disabled),#rail .rd:hover:not(:disabled),#folios .rd:hover:not(:disabled),.chip:hover{background:none;color:var(--p-t2)}
   #rail .bascule[aria-pressed="true"]:hover:not(:disabled){background:color-mix(in srgb,var(--p-accent) 15%,var(--p-fond));color:var(--p-accent)}
   .chip.on:hover{background:color-mix(in srgb,var(--p-accent) 15%,var(--p-fond));color:var(--p-accent)}
-  .tab input:hover{border-color:transparent;background:none}
   .rond:hover,.q-item:hover,.menu button:hover{background:none}
 }
 

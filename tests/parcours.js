@@ -262,7 +262,7 @@ function baseEssaiDansLaPage() {
     await page.keyboard.press('Escape'); await page.click('#fo-strip .chip:first-child'); await page.waitForTimeout(300); await page.keyboard.press('b'); await page.waitForTimeout(500);
     ok(await page.evaluate(() => app.base.ouvert && $('ba-portee').querySelector('[aria-pressed="true"]').dataset.portee === 'folio' && $('ba-tbody').querySelectorAll('tr[data-i]').length === 8), 'B ouvre le tableau sur « ce folio » : les huit lignes du folio 1');
     const i13 = await page.evaluate(() => verite().findIndex(l => l.cable === 'W-013'));
-    await page.fill(`#ba-tbody tr[data-i="${i13}"] input[data-f="vers"]`, '104LP9'); t0 = Date.now(); await page.press(`#ba-tbody tr[data-i="${i13}"] input[data-f="vers"]`, 'Enter'); await page.waitForFunction(() => app.dessin.comps.some(c => c.name === '104LP9')); mesure('une cellule corrigée → le plan suit', Date.now() - t0, SEUIL_FOLIO);
+    await page.dblclick(`#ba-tbody tr[data-i="${i13}"] [data-f="vers"]`); await page.fill(`#ba-tbody tr[data-i="${i13}"] input[data-f="vers"]`, '104LP9'); t0 = Date.now(); await page.press(`#ba-tbody tr[data-i="${i13}"] input[data-f="vers"]`, 'Enter'); await page.waitForFunction(() => app.dessin.comps.some(c => c.name === '104LP9')); mesure('une cellule corrigée → le plan suit', Date.now() - t0, SEUIL_FOLIO);
     ok(await page.evaluate(i => verite()[i].vers === '104LP9' && app.dessin.comps.some(c => c.name === '104LP9') && !app.dessin.fils.some(w => w.cable === 'W-013' && w.vers === '104LP1'), i13), 'W-013 va maintenant vers 104LP9 : le bloc est sur le plan');
     await capture(page, 'A-5-tableau-correction');
     await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(700);
@@ -396,7 +396,7 @@ function baseEssaiDansLaPage() {
     e = await etat(page); ok(e.enEtat === enEtat0, 'Ctrl+Z : VT1 redevient à poser, l’en-tête redit l’état du départ', e.enEtat);
     await page.keyboard.press('b'); await page.waitForTimeout(500);
     const i15 = await page.evaluate(() => verite().findIndex(l => l.cable === 'W-015'));
-    await page.fill(`#ba-tbody tr[data-i="${i15}"] input[data-f="type"]`, 'DR12'); await page.press(`#ba-tbody tr[data-i="${i15}"] input[data-f="type"]`, 'Enter'); await page.waitForTimeout(700);
+    await page.dblclick(`#ba-tbody tr[data-i="${i15}"] [data-f="type"]`); await page.fill(`#ba-tbody tr[data-i="${i15}"] input[data-f="type"]`, 'DR12'); await page.press(`#ba-tbody tr[data-i="${i15}"] input[data-f="type"]`, 'Enter'); await page.waitForTimeout(700);
     e = await etat(page); ok(!(await page.evaluate(() => CONTROLE.items.some(x => /W-015/.test(x.texte)))) && /^2 problèmes · \d+ à voir$/.test(e.enEtat), 'W-015 en DR12 (un DR16 ne ferait que le ramener en « à voir ») : son problème disparaît, l’en-tête passe à 2 problèmes', e.enEtat);
     await page.keyboard.press('Escape'); await page.keyboard.press('b'); await page.waitForTimeout(300); await cliquerBloc(page, '102CB1');
     await page.click('#ba-equip .dj-chip[data-cal="15"]'); await page.waitForTimeout(700);
@@ -479,7 +479,7 @@ function baseEssaiDansLaPage() {
     await cliquerBloc(page, '600XC4'); ok(await page.evaluate(() => app.cible && app.cible.nom === '600XC4'), 'toucher 600XC4 ouvre sa fiche');
     await page.click('#in-fermer'); await page.click('#btnBase'); await page.waitForTimeout(500);
     ok(await page.evaluate(() => app.base.ouvert && $('ba-tbody').querySelectorAll('tr[data-i]').length > 0), 'le bouton du tableau ouvre le tiroir des liaisons');
-    await tous(['#ba-fermer', '#ba-ajouter', '#ba-filtre', '#ba-portee [data-portee="tout"]', '#ba-tbody tr[data-i] input[data-f="type"]'], 'dans le tableau : fermer, ajouter, filtrer, « tout », une cellule');
+    await tous(['#ba-fermer', '#ba-ajouter', '#ba-filtre', '#ba-portee [data-portee="tout"]', '#ba-tbody tr[data-i] [data-f="type"]'], 'dans le tableau : fermer, ajouter, filtrer, « tout », une cellule');
     await capture(page, 'D-5-tableau'); await page.click('#ba-fermer'); await page.waitForTimeout(300);
     const d = await telecharger(page, async () => { await page.click('#btnMenu'); await page.click('#menu [data-act="svg"]'); }); ok(/\.svg$/.test(d.nom), 'le menu enregistre le folio en SVG', d.nom);
     await page.click('#btnMenu'); await page.click('#menu [data-act="nomenclature"]'); await page.waitForTimeout(600);
@@ -584,7 +584,7 @@ function baseEssaiDansLaPage() {
     mesure('le tableau sur « ce folio » (' + G.lignes + ' lignes)', G.tableau, SEUIL_GESTE); mesure('le tableau sur « tout » (1 500 lignes, 400 montrées)', G.tableauTout, SEUIL_GESTE); mesure('la recherche d’un repère', G.recherche, 200);
     await p2.evaluate(() => { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); }); await p2.click('#btnBase'); await p2.waitForFunction(() => app.base.ouvert && !!$('ba-tbody').querySelector('tr[data-i]'));
     const iw = await p2.evaluate(() => verite().findIndex(l => l.cable === 'W-20313'));
-    t0 = Date.now(); await p2.fill(`#ba-tbody tr[data-i="${iw}"] input[data-f="type"]`, 'DR20'); await p2.press(`#ba-tbody tr[data-i="${iw}"] input[data-f="type"]`, 'Enter'); await p2.waitForFunction(i => verite()[i].type === 'DR20', iw); await p2.waitForTimeout(100); mesure('une cellule corrigée sur le gros contrat (le plan, le contrôle, l’enregistrement)', Date.now() - t0, SEUIL_GESTE);
+    await p2.dblclick(`#ba-tbody tr[data-i="${iw}"] [data-f="type"]`); t0 = Date.now(); await p2.fill(`#ba-tbody tr[data-i="${iw}"] input[data-f="type"]`, 'DR20'); await p2.press(`#ba-tbody tr[data-i="${iw}"] input[data-f="type"]`, 'Enter'); await p2.waitForFunction(i => verite()[i].type === 'DR20', iw); await p2.waitForTimeout(100); mesure('une cellule corrigée sur le gros contrat (le plan, le contrôle, l’enregistrement)', Date.now() - t0, SEUIL_GESTE);
     await p2.keyboard.press('Escape'); t0 = Date.now(); await p2.keyboard.press('Control+z'); await p2.waitForFunction(i => verite()[i].type === 'DR22', iw); mesure('Ctrl+Z sur le gros contrat', Date.now() - t0, SEUIL_GESTE);
     await p2.keyboard.press('b'); await p2.waitForTimeout(300);
     // la mémoire d'un gros contrat : rouvrir

@@ -1,0 +1,266 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LE RÉCAPITULATIF (08-recap.js) — tout le contrat en onglets, corrigé sur place.
+   Une feuille blanche posée contre la table : en bas (Moitié), ou à la place du plan (Page) ; l'inspecteur reste à
+   droite. Tout est à l'encre ; la couleur ne dit que l'état (le point en tête de ligne, le fond très pâle d'une ligne
+   fautive, la barre d'intensité) et la route d'un fil (son trait). Une ligne de liaison se lit comme une phrase :
+   de (le repère en chasse fixe demi-gras, la borne en retrait, le part number dessous) → le fil (le trait, épais selon
+   la jauge, le numéro dans une pastille, la flèche) → vers ; puis la jauge en pastille, et les nombres alignés à droite
+   en chiffres tabulaires, l'unité en retrait.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── le panneau : Moitié (en bas, le plan au-dessus), Page (toute la place du plan) ─── */
+#base{position:fixed;left:var(--rail);right:0;bottom:var(--pied);height:var(--base-h);min-height:160px;max-height:calc(100% - var(--entete) - var(--pied) - 96px);
+  background:var(--s-surface);color:var(--t-1);box-shadow:0 -1px 0 var(--s-line),0 -16px 40px rgba(0,0,0,.06);z-index:24;display:flex;flex-direction:column;overflow:hidden}
+body.insp-ouvert #base{right:var(--insp-l)}
+#base.page{top:calc(var(--entete) + var(--sur-h));height:auto;max-height:none;box-shadow:inset 0 1px 0 var(--s-line)}
+#base.entre{animation-name:doc-monte}
+#base.page.entre{animation:doc-fondu var(--moyen)}
+@keyframes doc-fondu{from{opacity:0}to{opacity:1}}
+/* la poignée : un trait gris au repos (on voit qu'il se tire), à l'encre au survol et pendant le geste ; en page, rien */
+.poignee{position:absolute;left:0;right:0;top:-1px;height:10px;cursor:row-resize;z-index:3}
+.poignee::after{content:"";position:absolute;left:50%;top:3px;width:36px;height:3px;margin-left:-18px;border-radius:2px;background:var(--s-line-2);transition:background var(--rapide)}
+.poignee:hover::after,#base.redim .poignee::after{background:var(--accent)}
+#base.redim{user-select:none}
+#base.page .poignee{display:none}
+
+/* ─── la tête : le titre, le contrat, la taille, l'export ─── */
+.rc-tete{display:flex;align-items:center;gap:12px;padding:12px 16px 0 20px;flex:none;min-width:0}
+.rc-titre{margin:0;font:600 var(--f-16)/1.2 var(--titre);letter-spacing:-.015em;color:var(--t-1);white-space:nowrap}
+.rc-contexte{font-size:var(--f-12);color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.rc-tete .btn{height:30px;padding:0 12px;font-size:var(--f-12)}
+.rc-taille button{min-width:58px;justify-content:center}
+
+/* ─── les onglets : un mot, son compte, un carré d'état s'il y a lieu ; le choisi souligné à l'encre ─── */
+.rc-onglets{display:flex;gap:2px;padding:6px 12px 0;border-bottom:1px solid var(--s-line);flex:none;overflow-x:auto;scrollbar-width:none}
+.rc-onglets::-webkit-scrollbar{display:none}
+.rc-onglet{position:relative;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 10px;border:none;background:none;border-radius:var(--r-1) var(--r-1) 0 0;
+  font:500 var(--f-13) var(--sans);color:var(--t-2);white-space:nowrap;transition:color var(--rapide),background var(--rapide)}
+.rc-onglet:hover{color:var(--t-1);background:var(--s-hover)}
+.rc-onglet small{font:500 var(--f-11) var(--sans);color:var(--t-3);font-variant-numeric:tabular-nums}
+.rc-onglet[aria-selected="true"]{color:var(--t-1);font-weight:600}
+.rc-onglet[aria-selected="true"]::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;border-radius:2px 2px 0 0;background:var(--accent)}
+.rc-onglet[aria-selected="true"] small{color:var(--t-2)}
+.rc-onglet:focus-visible{outline-offset:-2px}
+.rc-carre{width:7px;height:7px;border-radius:2px;flex:none}
+.rc-carre.ko{background:var(--ko)}
+.rc-carre.att{background:var(--warn)}
+
+/* ─── les outils : la portée, la recherche, les puces ; à droite les colonnes et l'ajout ─── */
+.rc-outils{display:flex;align-items:flex-start;gap:8px;padding:10px 16px 10px 20px;border-bottom:1px solid var(--s-line);flex:none}
+.rc-outils .btn{height:30px;padding:0 12px;font-size:var(--f-12);flex:none}
+.rc-outils .btn svg.ico{width:14px;height:14px}
+.ba-portee button i{font:500 var(--f-11) var(--sans);font-style:normal;color:var(--t-3);font-variant-numeric:tabular-nums}
+.ba-portee button[aria-pressed="true"] i{color:var(--t-2)}
+.rc-filtre{width:280px;height:30px;flex:none}
+.rc-filtre input{font-family:var(--sans);font-size:var(--f-13)}
+/* les puces prennent la place qui reste et passent à la ligne ; les colonnes et l'ajout restent en haut à droite */
+.rc-puces{display:flex;flex-wrap:wrap;gap:6px;min-width:0;flex:1 1 0}
+/* une puce : un choix ; pressée, un filet d'encre et le fond blanc (la puce commune, .fi-chip) */
+.rc-chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:1px solid var(--s-line-2);border-radius:999px;background:var(--s-surface);
+  font:500 var(--f-12) var(--sans);color:var(--t-2);white-space:nowrap;transition:border-color var(--rapide),color var(--rapide),background var(--rapide)}
+.rc-chip:hover{color:var(--t-1);border-color:var(--t-3)}
+.rc-chip small{font:500 var(--f-11) var(--sans);color:var(--t-3);font-variant-numeric:tabular-nums}
+.rc-chip[aria-pressed="true"]{border-color:var(--t-1);color:var(--t-1);box-shadow:inset 0 0 0 .5px var(--t-1)}
+.rc-chip .rc-trait{width:14px}
+.rc-colonnes{position:relative;flex:none}
+.rc-colonnes .btn svg.ico{transition:transform var(--rapide)}
+.rc-colonnes .btn[aria-expanded="true"] svg.ico{transform:rotate(180deg)}
+.rc-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;min-width:220px;max-height:min(60vh,420px);overflow:auto;padding:6px;background:var(--s-flottant);border-radius:var(--r-2);box-shadow:var(--sh-2)}
+.rc-menu-t{font:500 var(--f-12) var(--sans);color:var(--t-3);padding:6px 8px 4px}
+.rc-coche{display:flex;align-items:center;gap:8px;height:30px;padding:0 8px;border-radius:var(--r-1);font-size:var(--f-13);color:var(--t-1);cursor:pointer}
+.rc-coche:hover{background:var(--s-hover)}
+.rc-coche input{accent-color:var(--accent);margin:0}
+.rc-coche small{margin-left:auto;font-size:var(--f-11);color:var(--t-3)}
+.rc-menu .rc-lien{margin:6px 8px 4px}
+
+/* ─── la table ─── */
+.ba-corps{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:0 12px 24px 12px;scrollbar-width:thin;scroll-padding-block:48px 12px}
+table.rc-tab{width:100%;min-width:max-content;border-collapse:separate;border-spacing:0;font:400 var(--f-13)/1.35 var(--sans);color:var(--t-1)}
+.rc-tab th{position:sticky;top:0;z-index:2;height:34px;padding:0 10px;background:var(--s-surface);border-bottom:1px solid var(--s-line-2);text-align:left;white-space:nowrap;
+  font:500 var(--f-12) var(--sans);color:var(--t-3);user-select:none}
+.rc-tab th[role="button"]{cursor:pointer}
+.rc-tab th[role="button"]:hover{color:var(--t-1)}
+.rc-tab th:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.rc-tab th.tri{color:var(--t-1)}
+.rc-tab th .sens{font-size:9px;margin-left:5px;vertical-align:1px}
+.rc-tab td{height:46px;padding:5px 10px;border-bottom:1px solid var(--s-line);vertical-align:middle;white-space:nowrap}
+.rc-tab tr[data-k]{cursor:default}
+.rc-tab tbody tr[data-k]:hover td{background:var(--s-sunken)}
+/* les états : la seule couleur des lignes — le point en tête, le fond très pâle d'une ligne fautive */
+.rc-tab tr.ko td{background:color-mix(in srgb,var(--ko-soft) 55%,var(--s-surface))}
+.rc-tab tbody tr.ko[data-k]:hover td{background:color-mix(in srgb,var(--ko-soft) 85%,var(--s-surface))}
+.rc-tab tr.on td,.rc-tab tbody tr.on[data-k]:hover td{background:var(--accent-soft)}
+.rc-tab tr.neuve td{background:color-mix(in srgb,var(--accent-soft) 55%,var(--s-surface))}
+.rc-tab tr.rc-hors .rc-r{font-weight:500;color:var(--t-2)}
+.rc-tab th.rc-et,.rc-tab td.rc-et{width:22px;padding:0 0 0 8px}
+.rc-point{display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle}
+.rc-point.ko{background:var(--ko)}
+.rc-point.att{background:var(--warn)}
+.rc-x{width:40px;text-align:right}
+.rc-x button{width:26px;height:26px;display:inline-grid;place-items:center;border:none;background:none;border-radius:50%;color:var(--t-2);opacity:0;padding:0;transition:opacity var(--rapide),background var(--rapide),color var(--rapide)}
+.rc-x button svg.ico{width:14px;height:14px}
+.rc-tab tr:hover .rc-x button,.rc-tab tr:focus-within .rc-x button,.rc-x button:focus-visible{opacity:1}
+.rc-x button:hover{background:var(--ko-soft);color:var(--ko)}
+@media (hover:none){.rc-x button{opacity:1}}
+
+/* une valeur qu'on corrige : un clic la choisit (le cercle d'encre), double-clic, Entrée ou F2 l'édite ; vide, elle dit
+   ce qu'on y écrirait — sur la ligne survolée, choisie ou neuve seulement */
+.rc-v{display:inline-block;min-width:14px;border-radius:4px;padding:1px 3px;margin:-1px -3px;outline:none;transition:background var(--rapide)}
+.rc-v:hover{background:var(--s-hover)}
+.rc-v:focus-visible,.rc-v:focus{box-shadow:0 0 0 1.5px var(--accent);background:var(--s-surface)}
+.rc-v.rc-vide{min-width:24px;min-height:1.3em;vertical-align:middle}
+.rc-v.rc-vide::before{content:attr(data-ph);color:var(--t-3);font:italic 400 var(--f-12) var(--sans);opacity:0;transition:opacity var(--rapide)}
+.rc-tab tr:hover .rc-v.rc-vide::before,.rc-tab tr.on .rc-v.rc-vide::before,.rc-tab tr.neuve .rc-v.rc-vide::before,.rc-v.rc-vide:focus::before{opacity:1}
+.rc-ct.rc-vide::before{opacity:1;font-style:normal;color:var(--t-3)}
+.rc-v.edite{padding:0;margin:0;background:none;box-shadow:none}
+.rc-v.edite::before{content:none}
+.rc-saisie{height:28px;min-width:64px;border:1px solid var(--accent);border-radius:var(--r-1);padding:0 8px;background:var(--s-surface);color:var(--t-1);
+  font:500 var(--f-13) var(--mono);box-shadow:var(--anneau);outline:none;vertical-align:middle}
+select.rc-saisie{font-family:var(--sans);padding:0 4px;max-width:280px}
+.rc-saisie::placeholder{color:var(--t-3);font-family:var(--sans);font-weight:400}
+.rc-rien{color:var(--s-line-2)}
+.rc-tab tr:hover .rc-rien{color:var(--t-3)}
+
+/* ─── une liaison : de → le fil → vers ─── */
+.rc-bout{display:flex;flex-direction:column;justify-content:center;line-height:1.25;min-width:0}
+.rc-rep{display:flex;align-items:baseline;white-space:nowrap;font:600 var(--f-13) var(--mono);color:var(--t-1);letter-spacing:-.01em}
+.rc-sep{font-style:normal;font-weight:400;color:var(--t-3)}
+.rc-sep.rc-vide{visibility:hidden}
+.rc-b{font-weight:400;color:var(--t-2)}
+.rc-sous{display:flex;align-items:baseline;gap:6px;min-height:14px}
+.rc-pn{font:400 10.5px/1.3 var(--mono);color:var(--t-3);letter-spacing:0}
+.rc-pn.rc-vide::before{font-size:10.5px}
+.rc-nat{font:italic 400 var(--f-11) var(--sans);color:var(--t-3)}
+.rc-tab th.rc-c-bout,.rc-tab td.rc-c-bout{min-width:128px}
+/* le fil : un trait à la couleur de sa route, épais selon la jauge (--e), une flèche, le numéro au milieu dans une pastille */
+.rc-tab th.rc-c-fil{text-align:center}
+.rc-tab td.rc-c-fil{min-width:150px;width:180px;padding-left:4px;padding-right:12px}
+.rc-fil{--c:var(--t-2);position:relative;display:flex;align-items:center;justify-content:center;height:24px;min-width:140px}
+.rc-fil::before{content:"";position:absolute;left:0;right:7px;top:50%;height:var(--e,2px);transform:translateY(-50%);border-radius:var(--e,2px);
+  background:linear-gradient(var(--route-voile),var(--route-voile)),var(--c)}
+.rc-fil::after{content:"";position:absolute;right:0;top:50%;width:9px;height:calc(var(--e,2px) * 1.6 + 6px);transform:translateY(-50%);
+  background:linear-gradient(var(--route-voile),var(--route-voile)),var(--c);clip-path:polygon(0 0,100% 50%,0 100%)}
+.rc-fil.sans-jauge::before{background:repeating-linear-gradient(90deg,var(--c) 0 6px,transparent 6px 10px)}
+.rc-fil.sans-route{--c:var(--t-3)}
+.rc-no{position:relative;z-index:1;margin:0;padding:0 8px;height:20px;line-height:18px;border:1px solid var(--s-line-2);border-radius:10px;background:var(--s-surface);
+  font:600 11.5px/18px var(--mono);color:var(--t-1);text-align:center;min-width:44px}
+.rc-no:hover{background:var(--s-surface);border-color:var(--t-3)}
+.rc-tab tr.on .rc-no,.rc-tab tr:hover .rc-no{background:var(--s-surface)}
+.rc-no.rc-vide::before{font-size:var(--f-11)}
+.rc-no.edite{border:none;height:auto;padding:0;background:none}
+/* la jauge en pastille : pleine à l'encre pour 16 AWG et moins (la puissance qu'on remarque), un filet épais pour 18 et
+   20, un filet gris pour 22 et au-delà ; le type du câble à côté, en chasse fixe */
+.rc-jc{display:flex;align-items:center;gap:8px}
+.rc-jauge{display:inline-grid;place-items:center;min-width:26px;height:20px;padding:0 6px;border-radius:10px;font:600 var(--f-11)/1 var(--sans);font-variant-numeric:tabular-nums;flex:none;box-sizing:border-box}
+.rc-jauge.forte{background:var(--t-1);color:var(--t-inverse)}
+.rc-jauge.moyenne{border:1.5px solid var(--t-1);color:var(--t-1)}
+.rc-jauge.fine{border:1px solid var(--s-line-2);color:var(--t-2)}
+.rc-jauge.inconnue{border:1px dashed var(--s-line-2);color:var(--t-3)}
+.rc-type{font:500 var(--f-12) var(--mono);color:var(--t-1)}
+/* les nombres : à droite, en chiffres tabulaires ; l'unité et l'origine en retrait */
+.rc-tab th.rc-c-n{text-align:right}
+.rc-tab td.rc-c-n{text-align:right}
+.rc-num{display:inline-flex;align-items:baseline;justify-content:flex-end;gap:3px;white-space:nowrap}
+.rc-n{font-weight:500;font-variant-numeric:tabular-nums;color:var(--t-1)}
+b.rc-n{font-weight:500}
+.rc-n.ko{color:var(--ko);font-weight:600}
+.rc-n.att{color:var(--warn);font-weight:600}
+.rc-u{font-style:normal;font-size:var(--f-11);color:var(--t-3)}
+.rc-o{font:500 10.5px/1 var(--sans);font-style:normal;color:var(--t-3);padding:2px 6px;border-radius:999px;background:var(--s-sunken);margin-left:5px;white-space:nowrap;align-self:center}
+.rc-o.rc-hyp{font-style:italic;background:none;padding:0 2px}
+.rc-o.main{color:var(--warn);background:var(--warn-soft)}
+.rc-auto{border:none;background:none;width:22px;height:22px;padding:0;margin-left:2px;border-radius:50%;color:var(--t-2);font:500 var(--f-13)/1 var(--sans);align-self:center;cursor:pointer}
+.rc-auto:hover{background:var(--s-hover);color:var(--t-1)}
+.rc-calc{cursor:pointer}
+/* l'intensité contre l'admis : le chiffre, « / l'admis », une barre — verte, ambre au-delà de 60 %, rouge au-delà de 100 % */
+.rc-tab td.rc-c-int{min-width:160px}
+.rc-int{display:flex;align-items:center;gap:10px}
+.rc-iv{display:inline-flex;align-items:baseline;gap:3px;min-width:96px;white-space:nowrap}
+.rc-iv.ko .rc-n{color:var(--ko);font-weight:600}
+.rc-adm{font-size:var(--f-12);color:var(--t-3);font-variant-numeric:tabular-nums;margin-left:2px}
+.rc-barre{position:relative;width:60px;height:5px;border-radius:3px;background:var(--s-line);overflow:hidden;flex:none}
+.rc-barre i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--ok)}
+.rc-barre.att i{background:var(--warn)}
+.rc-barre.ko i{background:var(--ko)}
+/* le contact de chaque bout : en chasse fixe ; refusé, en rouge */
+.rc-tab td.rc-c-ct{min-width:120px}
+.rc-ctc{display:flex;align-items:center;flex-wrap:nowrap;gap:2px}
+.rc-ct{font:400 var(--f-12) var(--mono);color:var(--t-2)}
+.rc-ct.ko{color:var(--ko);font-weight:500}
+.rc-acc{font:400 10.5px var(--mono);color:var(--t-3);margin-left:4px}
+/* la route : son trait, et son nom */
+.rc-route{display:flex;align-items:center;gap:8px;font-size:var(--f-12);color:var(--t-2)}
+.rc-trait{display:inline-block;width:18px;height:3px;border-radius:2px;flex:none;background:linear-gradient(var(--route-voile),var(--route-voile)),var(--c,var(--t-3))}
+.rc-f{display:inline-block;border:none;background:var(--s-sunken);color:var(--t-1);font:500 var(--f-12) var(--sans);border-radius:var(--r-1);padding:2px 9px;margin:0 2px;cursor:pointer}
+.rc-f:hover{background:var(--accent);color:var(--on-accent)}
+.rc-texte{max-width:260px;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;color:var(--t-2)}
+/* l'intercalaire d'un folio, quand « Tout » se lit sans tri ni recherche */
+.rc-tab tr.rc-groupe td{height:auto;padding:18px 8px 8px;border-bottom:1px solid var(--s-line-2);background:var(--s-surface);font:600 var(--f-12) var(--sans);color:var(--t-2)}
+.rc-tab tr.rc-groupe .rc-f{margin:0 10px 0 0;padding:3px 10px;font-weight:600;font-size:var(--f-13);background:var(--s-sunken)}
+.rc-tab tr.rc-groupe.ici .rc-f{background:var(--accent);color:var(--on-accent)}
+.rc-tab tr.rc-reste td{height:auto;padding:18px 12px;white-space:normal;color:var(--t-2);font-size:var(--f-13)}
+.rc-lien{border:none;background:none;padding:2px 4px;border-radius:var(--r-1);font:500 var(--f-12) var(--sans);color:var(--t-1);text-decoration:underline;text-decoration-color:var(--s-line-2);text-underline-offset:3px;cursor:pointer;white-space:nowrap}
+.rc-lien:hover{background:var(--s-hover);text-decoration-color:var(--t-1)}
+
+/* ─── les autres onglets ─── */
+.rc-id{font:400 var(--f-12) var(--mono);color:var(--t-2)}
+.rc-fort{font-weight:600;color:var(--t-1)}
+.rc-c-rep .rc-r,.rc-c-rep .rc-id{font:600 var(--f-13) var(--mono);color:var(--t-1)}
+.rc-r.aposer{font-style:italic;font-weight:500;color:var(--t-2)}
+.rc-c-rep .rc-nat{display:block}
+.rc-mot{font-size:var(--f-13);color:var(--t-2)}
+.rc-mot.att{color:var(--warn)}
+.rc-mot.aposer{font-style:italic}
+.rc-nature{display:flex;align-items:center;gap:8px}
+.rc-nature .rc-v{color:var(--t-1)}
+svg.ico.rc-sym{width:20px;height:20px;color:var(--t-2)}
+.rc-pns{display:flex;flex-direction:column;gap:1px}
+.rc-pnl{display:flex;align-items:baseline;gap:6px}
+.rc-c-pn .rc-pn{font:400 var(--f-12) var(--mono);color:var(--t-2)}
+.rc-cn{font:600 10.5px var(--mono);font-style:normal;color:var(--t-3);min-width:12px}
+.rc-cnx{display:inline-flex;gap:4px}
+.rc-cnx i{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 4px;border:1px solid var(--s-line-2);border-radius:4px;font:600 var(--f-11) var(--mono);font-style:normal;color:var(--t-1)}
+.rc-cnx i.ko{color:var(--ko);border-color:color-mix(in srgb,var(--ko) 45%,var(--s-surface));background:var(--ko-soft)}
+.rc-frac{display:inline-flex;align-items:baseline;gap:4px;white-space:nowrap}
+.rc-frac i{font-style:normal;font-size:var(--f-12);color:var(--t-3)}
+.rc-frac.ko .rc-n{color:var(--ko);font-weight:600}
+.rc-folios{font-size:var(--f-12);color:var(--t-2);white-space:nowrap}
+.rc-deja{display:inline-flex;align-items:baseline;gap:2px}
+.rc-deja i{font-style:normal;color:var(--t-3);font-size:var(--f-11)}
+.rc-ideal{gap:4px}
+.rc-etoile{display:inline-grid;align-self:center;color:var(--t-1)}
+.rc-etoile svg.ico{width:13px;height:13px}
+.rc-ideal .rc-lien{margin-left:6px;align-self:center}
+.rc-deux-lignes{display:flex;flex-direction:column;align-items:flex-start;line-height:1.3}
+.rc-deux-lignes .rc-num{justify-content:flex-start}
+.rc-pointe{font-size:var(--f-11);color:var(--t-3)}
+.rc-statut{display:inline-flex;align-items:center;gap:10px}
+.rc-tab .rc-poser{height:26px;padding:0 10px}
+.rc-choix{display:flex;align-items:baseline;gap:6px;font-size:var(--f-13);color:var(--t-2)}
+.rc-pt{font-style:normal;color:var(--t-3)}
+.rc-niveau{display:inline-flex;align-items:center;gap:8px;font-size:var(--f-13);color:var(--t-2)}
+.rc-tab td.rc-c-phrase{white-space:normal;min-width:220px;max-width:400px}
+.rc-phrase{display:block;font-size:var(--f-13);line-height:1.4;color:var(--t-2);text-wrap:pretty}
+.rc-phrase.rc-fort{font-weight:500;color:var(--t-1)}
+.rc-tab td.rc-c-aller{text-align:right}
+.rc-ou{font-size:var(--f-12);color:var(--t-2)}
+.rc-tab[data-onglet="problemes"] td,.rc-tab[data-onglet="normes"] td{padding-top:10px;padding-bottom:10px}
+
+/* ─── la tablette et le téléphone (le code reste, on ne le soigne plus) ─── */
+@media (max-width:700px){
+  #base{left:0;right:0;bottom:var(--rail-tel);height:var(--base-h);max-height:calc(100% - var(--entete) - var(--rail-tel) - 120px);min-height:160px;z-index:26;box-shadow:none;border-top:1px solid var(--p-ligne)}
+  body.insp-ouvert #base{right:0}
+  #base.page{top:calc(var(--entete) + var(--sur-h));height:auto;max-height:none}
+  .poignee{height:16px;top:0}
+  .rc-tete{padding:10px 8px 0 12px;gap:8px}
+  .rc-contexte,#ba-csv{display:none}
+  .rc-outils{padding:8px 8px 8px 12px;flex-wrap:wrap}
+  .rc-puces{flex:1 1 100%;order:5}
+  .rc-filtre{width:auto;flex:1 1 160px}
+  .rc-colonnes{display:none}
+  .ba-corps{padding:0 4px 8px}
+}
+@media (pointer:coarse){
+  .rc-chip,.rc-onglet{height:36px}
+  .rc-x button{width:36px;height:36px}
+}

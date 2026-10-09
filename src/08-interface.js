@@ -9,8 +9,9 @@
    app.plan         '*' = tout d'un tenant, sinon le folio affiché
    app.dessin       le dessin du folio affiché (placement + routage) — nul le
                     temps qu'un gros folio jamais vu se place au loin (Worker)
-   app.base         le tableau des liaisons, en tiroir en bas : ouvert ou non, ce
-                    qu'il montre (ce folio ou tout), son filtre, son tri
+   app.base         le récapitulatif (08-recap), en moitié en bas ou en page :
+                    ouvert ou non, son onglet, ce qu'il montre (ce folio ou
+                    tout), sa recherche, son tri
    app.cible        ce qui est choisi : un bloc { type:'bloc', nom } ou un fil
                     { type:'fil', l } — allumé sur le plan, sa fiche dans
                     l'inspecteur, sa ligne marquée dans le tableau
@@ -20,8 +21,8 @@
                     et son nom (normeNom) ; app.simu : les hypothèses de la
                     simulation (longueur, courant, tension, conditions)
    Le plan d'abord. Un clic sur un bloc ou un fil ouvre sa FICHE dans
-   l'INSPECTEUR, à droite (08 bis) ; le TABLEAU des liaisons, en tiroir en
-   bas (B), est le contrat : on le corrige, le plan suit. Le plan se recadre
+   l'INSPECTEUR, à droite (08 bis) ; le RÉCAPITULATIF, en bas (B) ou en page
+   (Maj+B), est le contrat en onglets : on le corrige, le plan suit. Le plan se recadre
    à côté de l'un, au-dessus de l'autre, jamais dessous. Les documents rares
    (cartouche, collage, bible) s'ouvrent dans une fiche à part.
    Les commandes sont dans la barre de gauche (le rail) ; le menu, en bas
@@ -57,7 +58,6 @@ function typographieVivante() { typographier(document.body);
   new MutationObserver(ms => { for (const m of ms) { if (m.type === 'characterData') typographier(m.target); else m.addedNodes.forEach(typographier); } })
     .observe(document.body, { childList: true, subtree: true, characterData: true }); }
 const CLE_CONTRAT = 'atelier.contrat.v2';
-const CLE_BASE = 'atelier.base.v2';
 const ZMIN = 0.06, ZMAX = 8;
 const verite = () => app.source || app.contrat.liaisons;
 const plans = () => plansDe(app.contrat.liaisons);
@@ -843,80 +843,16 @@ function lierRecherche() { const q = $('q'), box = $('q-liste');
   q.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== q) fermerRecherche(); }, 120));
   $('recherche').addEventListener('click', e => { if (!e.target.closest('.q-liste')) q.focus(); }); }
 
-/* ---- la base : la table des liaisons, corrigée en direct --------------- */
-const COLONNES_BASE = [
-  { k: 'de', lib: 'De', cls: 'rep' }, { k: 'borneDe', lib: 'B.', cls: 'n' },
-  { k: 'vers', lib: 'Vers', cls: 'rep' }, { k: 'borneVers', lib: 'B.', cls: 'n' },
-  { k: 'cable', lib: 'Fil', cls: 'fil' }, { k: 'type', lib: 'Type', cls: 'type', option: true }, { k: 'plan', lib: 'Folio', cls: 'n' },
-  { k: 'pnDe', lib: 'Conn. dép.', cls: 'pn', option: true }, { k: 'pnVers', lib: 'Conn. arr.', cls: 'pn', option: true }, { k: 'route', lib: 'Route', cls: 'route', option: true }];
-const CAP_LIGNES = 400;
-/* La colonne Folio : se corrige quand le folio vient du fichier ; se lit
-   seulement quand l'outil a découpé lui-même ; absente s'il n'y a qu'une feuille. */
+/* ---- les folios d'une liaison (le récapitulatif, la fiche du fil) -------- */
+/* Le folio d'une liaison : il se corrige quand il vient du fichier ; il se lit seulement quand l'outil a découpé
+   lui-même ; il n'y en a pas s'il n'y a qu'une feuille. */
 const modeFolio = () => app.nFolios ? 'auto' : (plans().length ? 'fichier' : 'aucun');
-/* Une colonne du retest que le contrat n'utilise pas ne prend pas de place. */
-function colonnes() { const V = verite(), mf = modeFolio();
-  return COLONNES_BASE.filter(c => c.k === 'plan' ? mf !== 'aucun' : (!c.option || V.some(l => l[c.k]))); }
 const cleDe = l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable].join('\u0001');
 /* Quand l'outil a découpé, chaque liaison d'origine vit sur un ou deux
    folios : on retrouve la sienne par sa clé, sans parcourir la source. */
 function foliosParSource() { const m = new Map(); if (!app.nFolios) return m;
   app.contrat.liaisons.forEach(d => { const k = cleSource(d); const t = m.get(k) || m.set(k, []).get(k); if (!t.includes(d.plan)) t.push(d.plan); });
   return m; }
-/* Ce que le tableau montre : les liaisons du folio affiché (« Ce folio »), ou tout le contrat ; puis le filtre, puis le
-   tri. Sans tri ni filtre, « Tout » se range par folio. Rend [[liaison, rang]…]. */
-const avecPortee = () => app.plan !== '*' && plans().length > 0;
-function surLeFolio(l, folios) { if (app.plan === '*') return true;
-  return modeFolio() === 'auto' ? (folios.get(cleDe(l)) || []).includes(app.plan) : l.plan === app.plan; }
-function lignesVisibles(folios) { folios = folios || foliosParSource(); const V = verite(), f = app.base.filtre.trim().toLowerCase(), C = colonnes();
-  let L = V.map((l, i) => [l, i]);
-  if (avecPortee() && app.base.portee === 'folio') L = L.filter(([l]) => surLeFolio(l, folios));
-  if (f) L = L.filter(([l]) => C.some(c => String(l[c.k]).toLowerCase().includes(f)));
-  const tri = app.base.tri;
-  if (!tri) { if (groupesParFolio()) { const fo = l => premierFolio(l, folios); L.sort((a, b) => triNaturel(fo(a[0]), fo(b[0])) || a[1] - b[1]); } return L; }
-  const cmp = (a, b) => { const x = a[0][tri.k], y = b[0][tri.k], nx = parseFloat(x), ny = parseFloat(y);
-    return (!isNaN(nx) && !isNaN(ny) && String(nx) === x && String(ny) === y) ? nx - ny : String(x).localeCompare(String(y), 'fr', { numeric: true }); };
-  return L.sort((a, b) => tri.sens * cmp(a, b) || a[1] - b[1]); }
-const premierFolio = (l, folios) => (modeFolio() === 'auto' ? (folios.get(cleDe(l)) || [])[0] : l.plan) || '';
-const groupesParFolio = () => avecPortee() && app.base.portee === 'tout' && !app.base.tri && !app.base.filtre.trim();
-function ligneChoisie(l) { const c = app.cible; if (!c) return false;
-  return c.type === 'fil' ? c.l === l : (l.de === c.nom || l.vers === c.nom); }
-/* Une ligne : chaque cellule est un champ, qui porte le nom de sa colonne en attente (on ne le voit que sur la ligne
-   choisie : une ligne neuve montre ses cases vides) ; supprimer, au bout, est la croix de tout l'outil. */
-function rendreLigne(l, i, folios) { const mode = modeFolio(), coul = couleursDesRoutes().get(l.route || '') || '';
-  const cell = col => { if (col.k === 'plan' && mode === 'auto') return `<td class="n">${(folios.get(cleDe(l)) || []).map(p => `<button class="f" data-plan="${escA(p)}" title="Aller au folio ${escA(p)}">${esc(p)}</button>`).join('')}</td>`;
-    return `<td${col.cls ? ` class="${col.cls}"` : ''}><input data-i="${i}" data-f="${col.k}" value="${escA(l[col.k])}" placeholder="${escA(col.lib)}" aria-label="${col.lib}, ligne ${i + 1}" spellcheck="false" autocomplete="off"></td>`
-      + (col.k === 'borneDe' ? '<td class="fl" aria-hidden="true"></td>' : ''); };
-  return `<tr data-i="${i}" class="${ligneChoisie(l) ? 'on' : ''}${surLeFolio(l, folios) && liaisonComplete(l) ? '' : ' hors'}"${coul ? ` style="--route:${coul}"` : ''}><td class="g"><button data-voir="${i}" title="Voir ce fil sur le plan">${i + 1}</button></td>`
-    + colonnes().map(cell).join('') + `<td class="x"><button data-x="${i}" aria-label="Supprimer la ligne ${i + 1}" title="Supprimer la ligne"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></td></tr>`; }
-/* Tout le tiroir se déduit de `app` ; le tableau n'est pas refait tant qu'on y écrit (voir rafraichirBase). */
-function rendreBase() { const b = app.base; b.sale = false; if ($('base').hidden) { b.sale = true; return; }
-  const V = verite(), folios = foliosParSource(), vues = lignesVisibles(folios), tri = b.tri, C = colonnes(), n = C.length + 3;
-  const portee = avecPortee(), ici = portee ? V.filter(l => surLeFolio(l, folios)).length : V.length;
-  $('ba-compte').textContent = vues.length === V.length ? String(V.length) : vues.length + ' / ' + V.length;
-  $('ba-portee').hidden = !portee;
-  if (portee) { $('ba-n-folio').textContent = ici; $('ba-n-tout').textContent = V.length; $('ba-lib-folio').textContent = 'Folio ' + app.plan;
-    $('ba-portee').querySelectorAll('[data-portee]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.portee === b.portee))); }
-  const fi = $('ba-filtre'); if (fi.value !== b.filtre) fi.value = b.filtre; $('ba-vider').hidden = !b.filtre;
-  // l'en-tête : chaque colonne garde sa largeur (sa classe), qu'il y ait des lignes ou non ; elle trie au clic, à Entrée, à Espace
-  $('ba-thead').innerHTML = '<tr><th class="g" title="Numéro de ligne">#</th>' + C.map(c => { const t = tri && tri.k === c.k;
-    return `<th data-k="${c.k}" class="${c.cls}${t ? ' tri' : ''}" title="Trier par ${escA(c.lib)}" tabindex="0" role="button" aria-sort="${t ? (tri.sens > 0 ? 'ascending' : 'descending') : 'none'}">${c.lib}${t ? `<span class="sens" aria-hidden="true">${tri.sens > 0 ? '▲' : '▼'}</span>` : ''}</th>` + (c.k === 'borneDe' ? '<th class="fl"></th>' : ''); }).join('') + '<th class="x"></th></tr>';
-  // « Tout », sans tri ni filtre : un intercalaire par folio
-  let html = '', dernier = null; const groupes = groupesParFolio(), parFolio = new Map();
-  if (groupes) vues.forEach(([l]) => { const p = premierFolio(l, folios); parFolio.set(p, (parFolio.get(p) || 0) + 1); });
-  vues.slice(0, CAP_LIGNES).forEach(([l, i]) => { if (groupes) { const p = premierFolio(l, folios);
-      if (p !== dernier) { dernier = p; html += `<tr class="groupe${p === app.plan ? ' ici' : ''}"><td colspan="${n}"><button class="f" data-plan="${escA(p)}">${p ? 'Folio ' + esc(p) : 'Sans folio'}</button><span>${pluriel(parFolio.get(p), 'liaison')}</span></td></tr>`; } }
-    html += rendreLigne(l, i, folios); });
-  $('ba-tbody').innerHTML = html
-    + (vues.length > CAP_LIGNES ? `<tr class="reste"><td colspan="${n}">… et ${vues.length - CAP_LIGNES} autres lignes — affine le filtre.</td></tr>` : '')
-    + (!vues.length ? `<tr class="reste"><td colspan="${n}">${V.length ? (b.filtre ? 'Rien qui corresponde au filtre.' : 'Aucune liaison sur ce folio.') : 'Aucune liaison. Ajoute une ligne, ou dépose un fichier.'}</td></tr>` : '');
-  if (b.defiler) { b.defiler = false; const tr = $('ba-tbody').querySelector('tr.on'); if (tr && tr.scrollIntoView) { try { tr.scrollIntoView({ block: 'center' }); } catch (_) { } } } }
-/* Le rendu attend qu'on ait fini d'écrire dans une cellule : refaire le
-   tableau sous les doigts casserait la saisie et la tabulation. On s'en
-   remet à `enSaisie` (focusin / focusout) et non à document.activeElement :
-   pendant le `change` que déclenche Tab, le navigateur l'a déjà vidé. */
-function rafraichirBase() { if (app.base.enSaisie) { app.base.sale = true; return; } rendreBase(); }
-function marquerLignes() { if ($('base').hidden) return;
-  $('ba-tbody').querySelectorAll('tr[data-i]').forEach(tr => { const l = verite()[+tr.dataset.i]; tr.classList.toggle('on', !!l && ligneChoisie(l)); }); }
 const natureDe = nom => { const q = lireRepere(nom); return (q && q.num && CODES[q.code]) ? CODES[q.code].nom : 'équipement'; };
 const triNaturel = (a, b) => String(a).localeCompare(String(b), 'fr', { numeric: true });
 const pluriel = (n, mot) => n + ' ' + mot + (n > 1 && !/[sxz]$/.test(mot) ? 's' : '');   // « 2 harness », pas « harnesss »
@@ -1242,94 +1178,18 @@ const plomb = (cx, y0, y1) => `<line class="plomb" x1="${cx}" y1="${y0}" x2="${c
 /* Le rail coupé : la réglette continue sur le rang d'à côté. */
 const coupeRail = (x, y) => `<path class="coupe" d="M${x - 3} ${y - 4}l3 3.5l-3 3.5l3 3.5"/>`;
 
-/* Une cellule corrigée : la vérité change, le plan suit, le fil s'allume.
-   Un bloc choisi le reste : on corrige ses fils sans quitter sa fiche. */
-function appliquerCellule(inp) { const l = verite()[+inp.dataset.i], k = inp.dataset.f; if (!l || !k) return;
-  const v = inp.value.trim(); if (l[k] === v) return;
-  if (!inp.dataset.hist) { histPush('modification d’une liaison'); inp.dataset.hist = '1'; }   // une seule entrée d'historique par saisie
-  l[k] = v; app.actif = l; if (!(app.cible && app.cible.type === 'bloc')) app.cible = { type: 'fil', l }; apresEdition(); }
-/* Entrer dans une cellule : sa ligne devient ce qu'on regarde. */
-function entrerCellule(inp) { delete inp.dataset.hist; app.base.enSaisie = true;
-  const l = verite()[+inp.dataset.i]; if (!l) return; app.actif = l;
-  if (!(app.cible && app.cible.type === 'bloc')) app.cible = { type: 'fil', l }; rallumer(); }
-function quitterTable() { app.base.enSaisie = false; app.actif = null; if (app.base.sale) rendreBase(); rallumer(); }
-function ajouterLiaison(de) { histPush('ajout d’une liaison');
-  const n = liaison({ de: de || '', plan: (modeFolio() === 'fichier' && app.plan !== '*') ? app.plan : '' }); verite().push(n);
-  const i = verite().length - 1, sousBloc = de && app.cible && app.cible.type === 'bloc' && app.cible.nom === de;
-  if (!sousBloc) { app.cible = { type: 'fil', l: n }; app.base.filtre = ''; }
-  app.base.tri = null; apresEdition(); rendreBase();
-  const tr = $('ba-tbody').querySelector(`tr[data-i="${i}"]`); const inp = tr && tr.querySelector(`input[data-f="${de ? 'vers' : 'de'}"]`);
-  if (inp) { inp.focus(); try { tr.scrollIntoView({ block: 'nearest' }); } catch (_) { } } }
+/* Supprimer une liaison (le récapitulatif, la fiche du fil) : une entrée d'historique, le plan suit. */
 function supprimerLiaison(i) { const V = verite(), l = V[i]; if (!l) return; histPush('suppression d’une liaison'); V.splice(i, 1);
   if (app.cible && app.cible.type === 'fil' && app.cible.l === l) app.cible = null; apresEdition(); rendreBase(); }
 /* Les folios où une liaison se dessine : ceux que l'outil lui a donnés en
    découpant, sinon celui que le fichier porte. */
 function foliosDe(l) { return modeFolio() === 'auto' ? (foliosParSource().get(cleDe(l)) || []) : (l.plan ? [l.plan] : []); }
-/* Voir un fil depuis sa ligne : on change de folio s'il le faut, on le cadre. */
-function voirLiaison(i) { const l = verite()[i]; if (!l) return;
-  if (app.choisi) { app.choisi = null; peindre(); } app.cible = { type: 'fil', l };
-  const ou = foliosDe(l); if (app.plan !== '*' && ou.length && !ou.includes(app.plan)) allerAuPlan(ou[0]);
-  const w = filDe(l); if (w) { allumerFil(w); viserFil(w); } marquerLignes(); ouvrirInspecteur(); }
 /* Le même geste depuis la carte d'une barrette : le bloc reste choisi, sa
    carte reste ; on va seulement voir le fil, même sur un autre folio. */
 function voirFilDeCarte(i) { const l = verite()[i]; if (!l) return;
   const ou = foliosDe(l);
   if (app.plan !== '*' && ou.length && !ou.includes(app.plan)) { allerAuPlan(ou[0]); if (app.cible && app.cible.type === 'bloc') { app.choisi = app.cible.nom; peindre(); } }
   const w = filDe(l); if (w) { allumerFil(w); viserFil(w); } else if (!attenteCourante()) dire('Ce fil n’est pas dessiné sur ce folio.'); }
-function lierBase() { const t = $('ba-tab'), corps = $('ba-tbody'), fi = $('ba-filtre'); let sT, fT;
-  fi.addEventListener('input', () => { clearTimeout(fT); fT = setTimeout(() => { app.base.filtre = fi.value; app.base.filtreAuto = false;
-    const c = app.cible; if (c && c.type === 'bloc' && fi.value.trim() !== filtreDuBloc(c.nom)) { app.cible = null; app.choisi = null; peindre(); }
-    rendreBase(); rallumer(); }, 150); });
-  fi.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); if (fi.value) { fi.value = ''; fi.dispatchEvent(new Event('input')); } else fi.blur(); } });
-  $('ba-vider').onclick = () => { fi.value = ''; fi.dispatchEvent(new Event('input')); fi.focus(); };
-  $('ba-fermer').onclick = fermerBase; $('ba-ajouter').onclick = nouvelleLiaison;
-  $('ba-portee').addEventListener('click', e => { const b = e.target.closest('[data-portee]'); if (!b || app.base.portee === b.dataset.portee) return; app.base.portee = b.dataset.portee; memoriserBase(); rendreBase(); });
-  $('ba-thead').addEventListener('click', e => { const th = e.target.closest('th[data-k]'); if (!th) return; const k = th.dataset.k, tri = app.base.tri;
-    app.base.tri = !tri || tri.k !== k ? { k, sens: 1 } : (tri.sens > 0 ? { k, sens: -1 } : null); rendreBase(); });
-  // au clavier, comme les en-têtes des normes : Entrée ou Espace trie, et l'en-tête refait garde le focus
-  $('ba-thead').addEventListener('keydown', e => { const th = e.target.closest('th[data-k]'); if (!th || (e.key !== 'Enter' && e.key !== ' ')) return;
-    e.preventDefault(); e.stopPropagation(); const k = th.dataset.k; th.click(); const n = $('ba-thead').querySelector(`th[data-k="${k}"]`); if (n) n.focus(); });
-  t.addEventListener('focusin', e => { if (e.target.dataset.f != null) entrerCellule(e.target); });
-  t.addEventListener('input', e => { const inp = e.target; if (inp.dataset.f == null) return; clearTimeout(sT); sT = setTimeout(() => appliquerCellule(inp), 350); });
-  t.addEventListener('change', e => { const inp = e.target; if (inp.dataset.f == null) return; clearTimeout(sT); appliquerCellule(inp); });
-  // le focus part : si c'est hors de la table (on le sait un instant plus tard), la saisie est finie
-  t.addEventListener('focusout', () => setTimeout(() => { if (!t.contains(document.activeElement)) quitterTable(); }, 0));
-  t.addEventListener('keydown', e => { const inp = e.target; if (inp.dataset.f == null) return;
-    if (e.key === 'Escape') { e.stopPropagation(); inp.blur(); }
-    else if (e.key === 'Enter') { e.preventDefault(); const tr = inp.closest('tr'), suiv = tr && tr.nextElementSibling; const n = suiv && suiv.querySelector(`input[data-f="${inp.dataset.f}"]`); if (n) n.focus(); else inp.blur(); } });
-  corps.addEventListener('mouseover', e => { const tr = e.target.closest('tr[data-i]'); if (!tr) return; const w = filDe(verite()[+tr.dataset.i]); if (w) allumerFil(w); });
-  corps.addEventListener('mouseleave', () => rallumer());
-  corps.addEventListener('click', e => { const v = e.target.closest('button[data-voir]'), x = e.target.closest('button[data-x]'), f = e.target.closest('button[data-plan]');
-    if (v) voirLiaison(+v.dataset.voir); else if (x) supprimerLiaison(+x.dataset.x); else if (f) allerAuPlan(f.dataset.plan); });
-  lierPoignee(); }
-/* La poignée : le tiroir se règle en hauteur. */
-function lierPoignee() { const p = $('ba-poignee'), b = $('base'); let actif = false;
-  p.addEventListener('pointerdown', e => { actif = true; b.classList.add('redim'); try { p.setPointerCapture(e.pointerId); } catch (_) { } e.preventDefault(); });
-  p.addEventListener('pointermove', e => { if (!actif) return;
-    // le tiroir se règle en hauteur, à la poignée du haut (sur téléphone comme sur grand écran)
-    app.base.hauteur = Math.round(Math.max(150, Math.min(window.innerHeight * 0.75, b.getBoundingClientRect().bottom - e.clientY)));
-    appliquerTailleBase(); });
-  const fin = () => { if (!actif) return; actif = false; b.classList.remove('redim'); memoriserBase(); ajuster(true); };
-  p.addEventListener('pointerup', fin); p.addEventListener('pointercancel', fin); }
-function appliquerTailleBase() { if (app.base.hauteur) document.documentElement.style.setProperty('--base-h', app.base.hauteur + 'px'); }
-function ouvrirBase() { if (app.base.ouvert) return; app.base.ouvert = true; fermerFiche();
-  // le filtre suit le bloc choisi ; sans bloc, celui qu'un bloc avait posé s'efface (celui qu'on a écrit reste)
-  if (app.cible && app.cible.type === 'bloc') { app.base.filtre = filtreDuBloc(app.cible.nom); app.base.filtreAuto = true; }
-  else if (app.base.filtreAuto) { app.base.filtre = ''; app.base.filtreAuto = false; }
-  app.base.defiler = true;
-  const b = $('base'); b.hidden = false; b.classList.remove('entre'); void b.offsetWidth; b.classList.add('entre');
-  document.body.classList.add('base-ouverte'); $('btnBase').setAttribute('aria-pressed', 'true');
-  rendreBase(); memoriserBase(); ajuster(true); }
-function fermerBase() { if (!app.base.ouvert) return; app.base.ouvert = false;
-  $('base').hidden = true; document.body.classList.remove('base-ouverte'); $('btnBase').setAttribute('aria-pressed', 'false');
-  memoriserBase(); ajuster(true); }
-function basculerBase() { if (app.base.ouvert) fermerBase(); else if (app.contrat.liaisons.length || verite().length) ouvrirBase(); else dire('Rien à montrer : dépose d’abord un fichier.'); }
-/* Sa taille et sa portée : une commodité de ce navigateur, rien de plus. Ouvert ou non ne se garde pas : on rouvre
-   toujours sur le plan seul (c'est lui qu'on scanne), le tableau vient à la demande (B). */
-function memoriserBase() { try { localStorage.setItem(CLE_BASE, JSON.stringify({ portee: app.base.portee, hauteur: app.base.hauteur })); } catch (_) { } }
-function relireBase() { let o = null; try { o = JSON.parse(localStorage.getItem(CLE_BASE) || 'null'); } catch (_) { }
-  if (o) { app.base.hauteur = o.hauteur || 0; if (o.portee === 'tout' || o.portee === 'folio') app.base.portee = o.portee; } appliquerTailleBase(); }
-
 /* ---- la fiche : cartouche, collage, bible — les documents rares --------- */
 function ouvrirFiche(mode, corps, pied) { const f = $('fiche'); fermerBase(); if (!$('inspecteur').hidden) { $('inspecteur').hidden = true; document.body.classList.remove('insp-ouvert'); }
   $('fiche-corps').innerHTML = corps; const p = $('fiche-pied'); p.innerHTML = pied || ''; p.hidden = !pied;
@@ -1566,9 +1426,6 @@ function dire(msg, erreur) { const t = $('toast'); t.textContent = msg; t.classL
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), erreur ? 6000 : 2800); }
 function ouvrirMenu() { $('menu').hidden = false; $('btnMenu').setAttribute('aria-expanded', 'true'); const b = $('menu').querySelector('button[role="menuitem"]'); if (b) b.focus(); }
 function fermerMenu() { $('menu').hidden = true; $('btnMenu').setAttribute('aria-expanded', 'false'); }
-/* Depuis le rail : la base s'ouvre s'il le faut, la ligne se prépare sous
-   l'équipement choisi. */
-function nouvelleLiaison() { if (!app.base.ouvert) ouvrirBase(); ajouterLiaison(app.cible && app.cible.type === 'bloc' ? app.cible.nom : ''); }
 function basculerBible() { if (app.fiche && app.fiche.mode === 'bible') fermerFiche(true); else ficheBible(); }
 
 /* ---- tout relier -------------------------------------------------------- */

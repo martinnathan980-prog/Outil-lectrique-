@@ -124,9 +124,9 @@
   <!-- LE RAIL : les outils de tous les instants, une icône chacun, le nom et le raccourci au survol. Ce qu'on fait une fois
        (ouvrir, exporter, effacer) est dans la barre du haut et son menu. Sur téléphone, le rail passe en bas. -->
   <nav id="rail" aria-label="Outils">
-    <button class="rd bascule" id="btnBase" aria-pressed="false" aria-label="Tableau des liaisons (B)">
+    <button class="rd bascule" id="btnBase" aria-pressed="false" aria-label="Récapitulatif (B)">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M3 14h18M9 5v14"/></svg>
-      <span class="bulle" aria-hidden="true">Tableau des liaisons<kbd>B</kbd></span>
+      <span class="bulle" aria-hidden="true">Récapitulatif<kbd>B</kbd></span>
     </button>
     <button class="rd bascule" id="btnIndex" aria-pressed="false" aria-label="Repères du contrat (R)">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1.2" fill="currentColor"/><circle cx="4" cy="12" r="1.2" fill="currentColor"/><circle cx="4" cy="18" r="1.2" fill="currentColor"/></svg>
@@ -199,26 +199,42 @@
     <div id="ba-equip" class="fi"></div>
   </aside>
 
-  <!-- LE TABLEAU des liaisons : un tiroir en bas, ouvert à la demande (B) ; le plan se recadre au-dessus. On le corrige
-       ici ; le plan suit. -->
-  <aside id="base" hidden aria-label="Tableau des liaisons">
+  <!-- LE RÉCAPITULATIF : tout le contrat en onglets (liaisons, équipements, disjoncteurs, barrettes, prises, câbles,
+       contacts, raccords, problèmes, normes), corrigé sur place ; le plan suit. Trois tailles : Plan (fermé), Moitié (en
+       bas, le plan au-dessus : B), Page (toute la place du plan : Maj+B) ; l'inspecteur reste à droite. 08-recap le
+       remplit ; ce qui ne change pas d'un rendu à l'autre (le champ du filtre) est ici. -->
+  <aside id="base" class="recap" hidden aria-label="Récapitulatif du contrat">
     <div class="poignee" id="ba-poignee" title="Glisser pour agrandir ou réduire" aria-hidden="true"></div>
-    <div class="ba-tete">
-      <div class="ba-titre"><span>Liaisons</span><b id="ba-compte">0</b></div>
+    <header class="rc-tete">
+      <h2 class="rc-titre">Récapitulatif</h2>
+      <span class="rc-contexte" id="ba-contexte"></span>
+      <span class="espace"></span>
+      <div class="segment rc-taille" id="ba-taille" role="group" aria-label="Taille du récapitulatif">
+        <button id="ba-fermer" data-taille="plan" aria-pressed="false" title="Le plan seul : le récapitulatif se ferme (B)">Plan</button>
+        <button data-taille="moitie" aria-pressed="true" title="En bas, le plan au-dessus (B)">Moitié</button>
+        <button data-taille="page" aria-pressed="false" title="Toute la place du plan (Maj+B)">Page</button>
+      </div>
+      <button class="btn papier" id="ba-csv" title="Les lignes de cet onglet telles qu’elles sont filtrées et triées, en CSV">Exporter CSV</button>
+    </header>
+    <div class="rc-onglets" id="ba-onglets" role="tablist" aria-label="Ce que le récapitulatif montre"></div>
+    <div class="rc-outils">
       <div class="segment ba-portee" id="ba-portee" role="group" aria-label="Lignes montrées">
         <button data-portee="folio" aria-pressed="true"><span id="ba-lib-folio">Ce folio</span><i id="ba-n-folio"></i></button>
         <button data-portee="tout" aria-pressed="false">Tout<i id="ba-n-tout"></i></button>
       </div>
-      <div class="filtre">
+      <div class="filtre rc-filtre">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input id="ba-filtre" placeholder="Filtrer : repère, fil, type…" aria-label="Filtrer le tableau" autocomplete="off" spellcheck="false">
-        <button class="vider" id="ba-vider" hidden aria-label="Effacer le filtre">×</button>
+        <input id="ba-filtre" placeholder="Chercher partout : repère, fil, câble, contact…" aria-label="Chercher dans l’onglet" autocomplete="off" spellcheck="false">
+        <button class="vider" id="ba-vider" hidden aria-label="Effacer la recherche">×</button>
       </div>
-      <span class="espace"></span>
-      <button class="btn papier" id="ba-ajouter"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Liaison</button>
-      <button class="rond fermer" id="ba-fermer" aria-label="Fermer le tableau (B)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      <div class="rc-puces" id="ba-puces" role="group" aria-label="Ne montrer que"></div>
+      <div class="rc-colonnes">
+        <button class="btn papier" id="ba-colonnes" aria-haspopup="true" aria-expanded="false">Colonnes<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="rc-menu" id="ba-colonnes-menu" role="menu" hidden></div>
+      </div>
+      <button class="btn cuivre" id="ba-ajouter"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span id="ba-ajouter-t">Liaison</span></button>
     </div>
-    <div class="ba-corps" id="ba-corps"><table class="tab" id="ba-tab"><thead id="ba-thead"></thead><tbody id="ba-tbody"></tbody></table></div>
+    <div class="ba-corps" id="ba-corps"><table class="tab rc-tab" id="ba-tab"><thead id="ba-thead"></thead><tbody id="ba-tbody"></tbody></table></div>
   </aside>
 
   <!-- LES DOCUMENTS rares (cartouche, collage, bible, nomenclature) : à droite, à la place de l'inspecteur. -->

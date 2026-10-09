@@ -57,9 +57,16 @@ const CODES = {
   RS: { nom: 'résistance',           forme: 'equipement' },
   AN: { nom: 'antenne',              forme: 'equipement' }
 };
+/* La NATURE DITE : un équipement dont le code ne dit pas la nature (115CD), ou la dit mal, l'ingénieur la dit (« c'est un
+   disjoncteur ») ; le contrat la garde et l'interface installe ici sa lecture (08-recap) — le moteur seul (un Worker)
+   ne la connaît pas. Elle ne vaut que d'un équipement à un autre : la forme du dessin (barrette, prise, masse) reste
+   celle du code. `codeLu` : le code tel que le repère l'écrit. */
+let natureDite = null;
 function lireRepere(repere) {
-  const m = /^([0-9]*)\s*([A-Za-z]+)([0-9A-Za-z\-_.]*)$/.exec(String(repere || '').trim());
-  return m ? { num: m[1], code: m[2].toUpperCase(), suffixe: m[3] } : null;
+  const m = /^([0-9]*)\s*([A-Za-z]+)([0-9A-Za-z\-_.]*)$/.exec(String(repere || '').trim()); if (!m) return null;
+  const q = { num: m[1], code: m[2].toUpperCase(), suffixe: m[3] }, d = natureDite ? natureDite(String(repere).trim()) : '';
+  const equipement = c => !CODES[c] || CODES[c].forme === 'equipement';
+  return d && d !== q.code && equipement(q.code) && (CODES[d] ? CODES[d].forme === 'equipement' : d === 'EQ') ? { ...q, code: d, codeLu: q.code } : q;
 }
 function formeDe(repere) {
   if (VT_A_POSER.test(String(repere || '').trim())) return 'barrette';   // une barrette à poser (VT1, VT2…)
@@ -91,6 +98,8 @@ function liaison(o) {
   const longueur = longueurLue(o.longueur); if (longueur != null) l.longueur = longueur;
   if (s(o.harness)) l.harness = s(o.harness); if (s(o.appareil)) l.appareil = s(o.appareil); if (s(o.retest)) l.retest = s(o.retest);
   if (s(o.fwd)) l.fwd = s(o.fwd); if (s(o.descriptionDe)) l.descriptionDe = s(o.descriptionDe); if (s(o.descriptionVers)) l.descriptionVers = s(o.descriptionVers);
+  // le contact à sertir écrit à la main à un bout (le récapitulatif) : il passe devant celui que le plan donne
+  if (s(o.contactDe)) l.contactDe = s(o.contactDe); if (s(o.contactVers)) l.contactVers = s(o.contactVers);
   return l;
 }
 /* Une liaison sans équipement à un bout n'en est pas une : c'est une ligne
