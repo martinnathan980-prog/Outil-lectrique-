@@ -281,7 +281,7 @@ table.tab{width:max-content;min-width:100%;border-collapse:separate;border-spaci
 .tab td.fil input{width:88px;font-weight:600}
 .tab td.type input{width:72px;color:var(--t-2)}
 .tab td.pn input{width:136px;color:var(--t-2)}
-.tab td.route input{width:88px;color:var(--t-2);font-family:var(--sans);font-size:var(--f-11);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.tab td.route input{width:104px;color:var(--t-2);font-family:var(--sans);font-size:var(--f-11);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
 /* une cellule : un champ qui ne se voit qu'au survol et à l'écriture */
 .tab input{width:100%;height:28px;border:1px solid transparent;border-radius:4px;padding:0 7px;background:none;font-family:var(--mono);font-size:var(--f-12);color:var(--t-1);transition:border-color var(--rapide),background var(--rapide);text-overflow:ellipsis}
 .tab input:hover{border-color:var(--s-line-2);background:var(--s-surface)}
@@ -512,13 +512,6 @@ table.simu-tab{border-collapse:separate;border-spacing:0;font-size:var(--f-12);m
 .cand[aria-pressed="true"] span,.cand[aria-pressed="true"] .ok{color:#fff}
 .cand[aria-pressed="true"]:hover{background:var(--accent-2)}
 
-/* ─── LE CONTRÔLE dans l'index : la liste « à reprendre », un code par genre ─── */
-.ix-item.co-item{grid-template-columns:28px minmax(0,1fr) auto}
-.ix-item.co-item small{white-space:normal;line-height:1.35}
-.ix-item.co-item b em{font:600 var(--f-11) var(--sans);color:var(--t-2);margin-left:4px}
-.ix-groupe.ko b{background:var(--ko-soft);color:var(--ko)}
-.ix-groupe.att b{background:var(--warn-soft);color:var(--warn)}
-
 /* ─── L'ACCUEIL : la table vide, une page d'entrée ─────────────────────── */
 .vide{position:absolute;inset:0;overflow:auto;display:grid;place-items:center;padding:24px 24px 24px calc(var(--rail) + 24px);z-index:5}
 .vd{width:min(760px,100%);background:var(--s-surface);border:1px solid var(--s-line);border-radius:var(--r-3);box-shadow:var(--sh-2);padding:36px 40px 28px}
@@ -581,8 +574,9 @@ body.fiche-ouverte #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--f
   #rail{top:auto;left:0;right:0;bottom:0;width:auto;height:48px;border-right:none;border-top:1px solid var(--s-line);flex-direction:row;justify-content:space-around;padding:0 4px;gap:0;transition:bottom var(--moyen)}
   #rail hr{display:none}
   .bulle{display:none}
-  /* la barre du bas au-dessus du rail : les folios et le cadrage, sans le zoom (on pince) */
-  #folios{left:0;right:0;bottom:48px;padding:0 6px;transition:bottom var(--moyen)}
+  /* la barre du bas au-dessus du rail : les folios et le cadrage, sans le zoom (on pince) ; d'un bord à l'autre, même
+     quand un document est ouvert (sur grand écran elle s'arrête au document) */
+  #folios,body.fiche-ouverte #folios{left:0;right:0;bottom:48px;padding:0 6px;transition:bottom var(--moyen)}
   #zin,#zout,#zlbl,#fo-prev,#fo-next,#folios hr,.affinage span,.rd.auto span:not(.bulle){display:none}
   .fo-strip{max-width:calc(100vw - 150px)}
   .rd.auto{padding:0 8px}

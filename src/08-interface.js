@@ -518,7 +518,7 @@ function rendreIndex(box) { const etats = new Map();
       + (r.plans.length ? `<span class="ix-folio" title="Folio">${esc(r.plans.length > 3 ? r.plans.length + ' folios' : 'f. ' + r.plans.join(' · '))}</span>` : '') + '</button></li>').join('') + '</ul>'; }).join('');
   const meme = box.dataset.cle === 'index', haut = box.scrollTop, nko = (CONTROLE.items || []).filter(x => x.niveau === 'ko').length, natt = (CONTROLE.items || []).length - nko;
   box.className = 'fi ix'; box.dataset.cle = 'index';
-  box.innerHTML = `<header class="ix-tete"><h2>Repères</h2><span class="fi-sous">${pluriel(items.length, 'repère')}</span><button class="fi-x plus" id="ix-plus" title="Ajouter un équipement : son repère, puis ses fils dans le tableau" aria-label="Ajouter un équipement">${ico('plus')}</button><button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)">${ico('fermer')}</button></header>`
+  box.innerHTML = `<header class="ix-tete"><h2>Repères<b class="ix-n" title="${escA(pluriel(items.length, 'repère'))}">${items.length}</b></h2><span class="espace"></span><button class="fi-x plus" id="ix-plus" title="Ajouter un équipement : son repère, puis ses fils dans le tableau" aria-label="Ajouter un équipement">${ico('plus')}</button><button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)">${ico('fermer')}</button></header>`
     + `<div class="ix-filtre">${ico('loupe')}<input id="ix-q" value="${escA(app.insp.filtre)}" placeholder="Chercher un repère, une désignation" aria-label="Chercher un repère" autocomplete="off" spellcheck="false"></div>`
     + (f ? '' : `<details class="ix-controle"${nko ? ' open' : ''}><summary><span class="fi-etat ${nko ? 'ko' : natt ? 'att' : 'ok'}"><i aria-hidden="true">${nko ? '✕' : natt ? '!' : '✓'}</i>${nko ? pluriel(nko, 'problème') + (natt ? ' · ' + natt + ' à voir' : '') : natt ? natt + ' à voir' : 'rien à reprendre'}</span>${(nko || natt) ? ico('bas', 'fi-chevron') : ''}</summary>${listeControleHtml()}</details>`)
     + (groupes || '<p class="ix-vide">Aucun repère ne correspond.</p>');
@@ -550,7 +550,8 @@ function allerAuFolio(pas) { const P = plans(); let i = P.indexOf(app.plan);
 function plansDuRepere(nom) { return [...new Set(app.contrat.liaisons.filter(l => l.de === nom || l.vers === nom).map(l => l.plan).filter(Boolean))]; }
 function plansDuFil(cable) { return [...new Set(app.contrat.liaisons.filter(l => l.cable === cable).map(l => l.plan).filter(Boolean))]; }
 function synchroniserFolios() { const P = plans(), strip = $('fo-strip');
-  // la barre du bas reste (cadrage, zoom) ; la partie folios ne se montre qu'à plusieurs feuilles
+  // la barre du bas reste (cadrage, zoom) ; la partie folios ne se montre qu'à plusieurs feuilles ; sans contrat (l'accueil), rien
+  $('folios').hidden = !app.contrat.liaisons.length;
   $('fo-part').hidden = P.length < 2;
   if (app.plan !== '*' && !P.includes(app.plan)) app.plan = P.length > 1 ? P[0] : '*';
   const i = P.indexOf(app.plan);
@@ -679,9 +680,10 @@ function marquerLignes() { if ($('base').hidden) return;
 const natureDe = nom => { const q = lireRepere(nom); return (q && q.num && CODES[q.code]) ? CODES[q.code].nom : 'équipement'; };
 const triNaturel = (a, b) => String(a).localeCompare(String(b), 'fr', { numeric: true });
 const pluriel = (n, mot) => n + ' ' + mot + (n > 1 ? 's' : '');
-/* La carte se redessine quand la place change (fenêtre, poignée), jamais
-   sous les doigts de qui y écrit. */
-function rafraichirCarte() { const box = $('ba-equip'); if ($('inspecteur').hidden || box.contains(document.activeElement)) return; rendreFiche(); }
+/* La fiche se refait après chaque correction et quand la place change (fenêtre, poignée) — jamais sous les doigts de
+   qui y ÉCRIT (un champ de la fiche a le focus). Un bouton de la fiche qu'on vient de presser (une puce, une variante)
+   a le focus lui aussi : la fiche se refait quand même, et `rendreFiche` lui rend le focus. */
+function rafraichirCarte() { const box = $('ba-equip'), a = document.activeElement; if ($('inspecteur').hidden || (box.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return; rendreFiche(); }
 const jaugeTexte = b => b.jaugeFine === b.jaugeGrosse ? String(b.jaugeFine) : b.jaugeFine + ' à ' + b.jaugeGrosse;
 const jaugeEntree = e => e.jaugeMin == null ? '—' : (e.jaugeMax != null && e.jaugeMax !== e.jaugeMin ? e.jaugeMin + '–' + e.jaugeMax : String(e.jaugeMin));
 const nombre = x => x == null ? '—' : String(x).replace('.', ',');
