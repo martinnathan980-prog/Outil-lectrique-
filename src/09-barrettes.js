@@ -525,8 +525,11 @@ const TABLE_NORME = {
   disjoncteursFamilles: c => c.poles != null && c.calibres != null,
   protections: c => c.jauge != null && c.disjoncteurMax != null
 };
-/* Un nombre d'atelier : virgule ou point, une unité derrière (« 5 mm », « 0,8 »). */
-const NUMERO = v => { const t = String(v == null ? '' : v).trim().replace(',', '.'); if (!t) return null; const m = /-?\d+(\.\d+)?/.exec(t); return m ? parseFloat(m[0]) : null; };
+/* Un nombre d'atelier : virgule ou point, une unité derrière (« 5 mm », « 0,8 »), un signe moins typographique (« −55 »),
+   des milliers séparés par une espace (« 10 000 ft ») — ce qu'un Excel ou une photo de norme écrivent. */
+const NUMERO = v => { let t = String(v == null ? '' : v).trim().replace(/[−–]/g, '-'); if (!t) return null;
+  if (/^-?\d{1,3}(?:[\s  ]\d{3})+(?:[.,]\d+)?(?:\s*\D.*)?$/.test(t)) t = t.replace(/(\d)[\s  ](?=\d{3})/g, '$1');
+  const m = /-?\d+([.,]\d+)?/.exec(t); return m ? parseFloat(m[0].replace(',', '.')) : null; };
 /* Une liste de nombres d'atelier : « 2 4 8 12 20 », « 1 2 2,5 3 » (la virgule est décimale quand des espaces séparent),
    « 1,2,3 » (sans espace, la virgule sépare). */
 const LISTE_NUM = v => { const t = String(v == null ? '' : v).trim(); if (!t) return []; return t.split(/[\s/|]/.test(t) ? /[\s/|]+/ : /[,;]+/).map(NUMERO).filter(x => x != null); };
@@ -609,40 +612,234 @@ const ENTREE_NORME = { familles: familleNorme, fils: filNorme, declassements: de
   filetages: filetageNorme, entrees: entreeNorme, raccords: raccordNorme, manchons: manchonNorme, calibrations: calibrationNorme, disjoncteursFamilles: disjoncteurFamilleNorme, protections: protectionNorme, cablesFamilles: cableFamilleNorme, resistancesContacts: resistanceContactNorme };
 const TABLES_NORME = ['familles', 'fils', 'declassements', 'reseau', 'tailles', 'modules', 'contacts', 'disjoncteurs', 'cables', 'gaines', 'colliers', 'filetages', 'entrees', 'raccords', 'manchons', 'calibrations', 'disjoncteursFamilles', 'protections', 'cablesFamilles', 'resistancesContacts'];
 const normeVide = () => { const N = { tables: 0 }; TABLES_NORME.forEach(t => { N[t] = []; }); return N; };
-/* Lire une norme : les tables se suivent (un titre libre, la ligne d'en-tête,
-   les lignes, une ligne vide), dans un CSV ou une feuille Excel. */
-function lireNorme(texte) { const N = normeVide(); let table = null, col = null;
-  // les tables les plus précises d'abord : une table de tailles nomme aussi sa famille et ses jauges, comme une table de familles
-  const entete = row => { for (const nom of ['calibrations', 'protections', 'disjoncteursFamilles', 'cablesFamilles', 'resistancesContacts', 'filetages', 'entrees', 'raccords', 'manchons', 'gaines', 'colliers', 'cables', 'disjoncteurs', 'contacts', 'modules', 'tailles', 'familles', 'fils', 'declassements', 'reseau']) { const cles = COLONNES_NORME[nom]; const c = {}; row.forEach((cell, i) => { const t = NORMA(cell); if (!t) return;
-      for (const [champ, alias] of cles) if (c[champ] == null && alias.includes(t)) { c[champ] = i; break; } });
-    if (TABLE_NORME[nom](c)) return { nom, col: c }; } return null; };
-  String(texte || '').split(/\r?\n/).forEach(ligne => { if (!ligne.trim()) { table = null; return; }
-    const row = cellules(ligne), e = entete(row); if (e) { table = e.nom; col = e.col; N.tables++; return; }
-    if (!table) return; const o = {}; Object.entries(col).forEach(([champ, i]) => { o[champ] = row[i] == null ? '' : row[i]; });
-    const x = ENTREE_NORME[table](o); if (x) N[table].push(x); });
+/* ---- lire n'importe quelle table : un texte, des blocs, des lignes ----------
+   Un CSV, un texte collé, les feuilles d'un Excel mises bout à bout : des BLOCS, chacun une ligne d'en-tête reconnue à
+   ses colonnes (dans n'importe quel ordre, sous leurs alias, avec ou sans unité entre parenthèses), les lignes qui
+   suivent, jusqu'à une ligne vide ou un titre libre (une ligne sans séparateur). Une table se lit par le nom de ses
+   colonnes, jamais par sa place : un fichier réorganisé demain continue de se lire. */
+/* Les cellules d'une ligne : tabulation, point-virgule ou virgule (le premier des trois présent hors guillemets) ; un
+   champ qui commence par un guillemet est lu jusqu'au guillemet fermant (`""` : un guillemet littéral). */
+function cellulesDeNorme(ligne, sep) { const s = String(ligne == null ? '' : ligne); if (!sep) { const hors = s.replace(/"(?:[^"]|"")*"/g, ''); sep = hors.includes('\t') ? '\t' : hors.includes(';') ? ';' : ','; }
+  const cells = []; let cur = '', q = false, debut = true;
+  for (let i = 0; i < s.length; i++) { const ch = s[i];
+    if (q) { if (ch === '"') { if (s[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; continue; }
+    if (ch === '"' && debut) { q = true; debut = false; continue; }
+    if (ch === sep) { cells.push(cur); cur = ''; debut = true; continue; }
+    cur += ch; debut = false; }
+  cells.push(cur); return cells.map(x => x.trim()); }
+/* Le séparateur d'une ligne, celui que `cellulesDeNorme` prendrait. */
+const separateurDe = ligne => { const hors = String(ligne || '').replace(/"(?:[^"]|"")*"/g, ''); return hors.includes('\t') ? '\t' : hors.includes(';') ? ';' : ','; };
+/* Le champ qu'une cellule d'en-tête nomme : son alias, sinon le même sans l'unité entre parenthèses (« Intensité (A) »,
+   « Jauge [AWG] ») ; `pris` : les champs déjà attribués par une cellule d'avant. */
+function champDeCellule(cles, cell, pris) { const brut = NORMA(cell); if (!brut) return null;
+  const essais = [brut, NORMA(String(cell).replace(/\s*[(\[][^)\]]*[)\]]\s*$/, ''))].filter((t, i, a) => t && a.indexOf(t) === i);
+  for (const t of essais) for (const [champ, alias] of cles) if (!(pris && pris[champ] != null) && alias.includes(t)) return champ; return null; }
+/* Les colonnes d'une ligne d'en-tête pour une table : { col: { champ: indice }, inconnues: [indices non reconnus] }. */
+function colonnesDEntete(nom, row) { const cles = COLONNES_NORME[nom], col = {}, inconnues = [];
+  row.forEach((cell, i) => { if (!String(cell || '').trim()) return; const champ = champDeCellule(cles, cell, col); if (champ) col[champ] = i; else inconnues.push(i); });
+  return { col, inconnues }; }
+// l'ordre de reconnaissance : les tables les plus précises d'abord — une table de tailles nomme aussi sa famille et ses jauges, comme une table de familles
+const ORDRE_RECONNAISSANCE = ['calibrations', 'protections', 'disjoncteursFamilles', 'cablesFamilles', 'resistancesContacts', 'filetages', 'entrees', 'raccords', 'manchons', 'gaines', 'colliers', 'cables', 'disjoncteurs', 'contacts', 'modules', 'tailles', 'familles', 'fils', 'declassements', 'reseau'];
+/* Les tables qu'une ligne d'en-tête peut être : chacune avec ses colonnes et combien elle en reconnaît (`n`), la plus
+   précise d'abord. L'outil HÉSITE quand une autre candidate reconnaît autant de colonnes que la première — c'est alors
+   à l'utilisateur de dire laquelle ; sinon la première l'emporte sans question. */
+function reconnaitreEntete(row) { const cands = [];
+  ORDRE_RECONNAISSANCE.forEach(nom => { const { col, inconnues } = colonnesDEntete(nom, row); if (TABLE_NORME[nom](col)) cands.push({ nom, col, inconnues, n: Object.keys(col).length }); });
+  return cands; }
+const enteteHesite = cands => cands.length > 1 && cands[1].n >= cands[0].n;
+/* Découper un texte en blocs : [{ ligne, titre, entete, separateur, candidats, hesite, table, col, inconnues, lignes }]. Le
+   titre est la dernière ligne libre lue avant l'en-tête (« Fils — par jauge AWG… », le nom d'une feuille Excel). */
+function decouperTables(texte) { const blocs = []; let b = null, titre = '';
+  String(texte || '').split(/\r?\n/).forEach((ligne, k) => { if (!ligne.trim()) { b = null; return; }
+    const sep = separateurDe(ligne), row = cellulesDeNorme(ligne, sep), cands = reconnaitreEntete(row);
+    if (cands.length) { const c = cands[0]; b = { ligne: k, titre, entete: row, separateur: sep, candidats: cands, hesite: enteteHesite(cands), table: c.nom, col: c.col, inconnues: c.inconnues, lignes: [] }; blocs.push(b); titre = ''; return; }
+    if (!b) { if (row.length === 1) titre = ligne.trim(); return; }
+    const cells = sep === b.separateur ? row : cellulesDeNorme(ligne, b.separateur);
+    if (cells.length === 1) { b = null; titre = ligne.trim(); return; }   // un titre libre ferme la table
+    b.lignes.push(cells); });
+  return blocs; }
+/* Lire un bloc comme une table : chaque ligne devient une entrée (`ENTREE_NORME`), qui garde ses cellules telles
+   quelles dans `brut` (ce que la page montre, modifie et exporte) ; ce qui ne fait pas une entrée est dans `rejets`.
+   `table` et `col` : pour lire le bloc autrement que reconnu (le choix de l'utilisateur). */
+function lireBloc(bloc, table, col) { table = table || bloc.table; col = col || bloc.col; const lues = [], rejets = [];
+  bloc.lignes.forEach(row => { const o = {}; Object.entries(col).forEach(([champ, i]) => { o[champ] = row[i] == null ? '' : String(row[i]); });
+    if (!Object.values(o).some(v => v !== '')) return;   // des séparateurs seuls
+    const x = ENTREE_NORME[table](o); if (x) { x.brut = o; lues.push(x); } else rejets.push(o); });
+  return { table, lues, rejets }; }
+/* Lire une norme : les tables se suivent (un titre libre, la ligne d'en-tête, les lignes, une ligne vide), dans un
+   CSV, un texte collé ou les feuilles d'un Excel. */
+function lireNorme(texte) { const N = normeVide();
+  decouperTables(texte).forEach(b => { N.tables++; lireBloc(b).lues.forEach(x => N[b.table].push(x)); });
   return N; }
 const normeLue = N => !!N && TABLES_NORME.some(t => (N[t] || []).length > 0);
-/* Un fichier de normes : chaque feuille d'un Excel est lue (une table par
-   feuille, ou plusieurs à la suite) ; un CSV d'un bloc. */
-async function lireNormeFichier(fichier) { const nom = (fichier.name || '').toLowerCase();
-  if (!(/\.xls[xm]?$/.test(nom) || /sheet|excel/.test(fichier.type || ''))) return lireNorme(await fichier.text());
+/* Le texte d'un fichier de normes : un CSV tel quel ; un Excel feuille par feuille, chacune sous son nom (un titre
+   libre), les cellules séparées par des tabulations, les retours à la ligne d'une cellule aplatis. */
+async function texteDeNormeFichier(fichier) { const nom = (fichier.name || '').toLowerCase();
+  if (!(/\.xls[xm]?$/.test(nom) || /sheet|excel/.test(fichier.type || ''))) return await fichier.text();
   if (typeof XLSX === 'undefined') throw new Error('bibliothèque Excel absente');
   const wb = XLSX.read(await fichier.arrayBuffer(), { type: 'array' });
-  const feuilles = wb.SheetNames.map(n => XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, blankrows: true, defval: '' }).map(r => (Array.isArray(r) ? r : [r]).map(c => c == null ? '' : String(c)).join('\t')).join('\n'));
-  return lireNorme(feuilles.join('\n\n')); }
-/* Deux normes en une : ce qui vient en second remplace ce qui porte la même
-   clé (famille, type+jauge, condition, tension). C'est ainsi qu'une norme de
-   barrettes et une norme de fils, importées l'une après l'autre, se complètent. */
-function fusionnerNormes(a, b) { const N = normeVide(); const cle = { familles: x => x.famille.toUpperCase(), fils: x => x.type + '/' + x.jauge, declassements: x => [x.condition, x.fils, x.charge, x.altitude].join('/'), reseau: x => String(x.tension),
-    tailles: x => x.famille + '/' + x.taille, modules: x => x.famille + '/' + x.variante, contacts: x => [x.famille, x.sexe, x.taille, x.typeFil, x.jauge, x.reference].join('/'),
-    disjoncteurs: x => [x.famille, x.courbe, x.multiple, x.temps].join('/'), cables: x => x.cable, gaines: x => x.famille + '/' + x.reference, colliers: x => x.reference,
-    filetages: x => x.famille + '/' + x.taille, entrees: x => x.code, raccords: x => [x.famille, x.taille, x.type, x.orientation].join('/'), manchons: x => x.designation, calibrations: x => x.famille + '/' + x.temperature, disjoncteursFamilles: x => x.famille, protections: x => String(x.jauge),
-    cablesFamilles: x => x.familles.join(' '), resistancesContacts: x => x.taille };
-  Object.keys(cle).forEach(t => { const m = new Map(); [...(a ? a[t] || [] : []), ...(b ? b[t] || [] : [])].forEach(x => m.set(cle[t](x), x)); N[t] = [...m.values()]; });
+  return wb.SheetNames.map(n => 'Feuille ' + n + '\n' + XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, blankrows: true, defval: '' })
+    .map(r => (Array.isArray(r) ? r : [r]).map(c => c == null ? '' : String(c).replace(/[\r\n]+/g, ' ')).join('\t')).join('\n')).join('\n\n'); }
+/* Un fichier de normes : chaque feuille d'un Excel est lue (une table par feuille, ou plusieurs à la suite) ; un CSV d'un bloc. */
+async function lireNormeFichier(fichier) { return lireNorme(await texteDeNormeFichier(fichier)); }
+/* LA CLÉ DE FUSION d'une ligne : ce qui fait qu'une ligne en remplace une autre (une famille, un type + une jauge, une
+   condition et son point, une tension, une variante de module, un contact par ses cinq critères…). */
+const CLE_FUSION = { familles: x => x.famille.toUpperCase(), fils: x => x.type + '/' + x.jauge, declassements: x => [x.condition, x.fils, x.charge, x.altitude].join('/'), reseau: x => String(x.tension),
+  tailles: x => x.famille + '/' + x.taille, modules: x => x.famille + '/' + x.variante, contacts: x => [x.famille, x.sexe, x.taille, x.typeFil, x.jauge, x.reference].join('/'),
+  disjoncteurs: x => [x.famille, x.courbe, x.multiple, x.temps].join('/'), cables: x => x.cable, gaines: x => x.famille + '/' + x.reference, colliers: x => x.reference,
+  filetages: x => x.famille + '/' + x.taille, entrees: x => x.code, raccords: x => [x.famille, x.taille, x.type, x.orientation].join('/'), manchons: x => x.designation, calibrations: x => x.famille + '/' + x.temperature, disjoncteursFamilles: x => x.famille, protections: x => String(x.jauge),
+  cablesFamilles: x => x.familles.join(' '), resistancesContacts: x => x.taille };
+const cleDeLigne = (table, x) => CLE_FUSION[table](x);
+/* Deux normes en une : ce qui vient en second remplace ce qui porte la même clé. C'est ainsi qu'une norme de barrettes
+   et une norme de fils, importées l'une après l'autre, se complètent — et que ce qui est importé ou modifié passe
+   devant l'embarqué. */
+function fusionnerNormes(a, b) { const N = normeVide();
+  TABLES_NORME.forEach(t => { const m = new Map(); [...(a ? a[t] || [] : []), ...(b ? b[t] || [] : [])].forEach(x => m.set(cleDeLigne(t, x), x)); N[t] = [...m.values()]; });
   N.tables = (a ? a.tables : 0) + (b ? b.tables : 0); return N; }
 /* La norme embarquée : normes/*.csv, mis dans la page à la construction. */
 function normeEmbarquee() { return lireNorme(typeof NORME_EMBARQUEE === 'string' ? NORME_EMBARQUEE : ''); }
 const normeExemple = N => !!(N && N.familles.length && N.familles.every(f => f.exemple));
+
+/* ---- les APPORTS : ce que le navigateur ajoute à l'embarqué -----------------
+   Ce que le lecteur importe ou corrige ne remplace jamais le fichier embarqué : c'est une COUCHE par-dessus —
+   { tables: { fils: { lignes: [{ brut, source, t }], supprimees: [clé] } } } —, gardée dans le navigateur, et la norme
+   ACTIVE est l'embarqué, moins les lignes supprimées, fusionné avec ces lignes (elles passent devant, par leur clé).
+   « Revenir à l'embarqué » vide la couche, table par table ou d'un coup. */
+const apportsVides = () => ({ v: 2, nom: '', tables: {}, t: 0 });
+const apportsDeTable = (apports, t) => (apports && apports.tables && apports.tables[t]) || { lignes: [], supprimees: [] };
+/* Les apports lus comme une norme : chaque ligne brute devient une entrée, qui sait d'où elle vient (`source`). */
+function normeDesApports(apports) { const N = normeVide(); if (!apports || !apports.tables) return N;
+  TABLES_NORME.forEach(t => { const A = apportsDeTable(apports, t); (A.lignes || []).forEach(l => { const brut = l.brut || l, x = ENTREE_NORME[t](brut); if (!x) return;
+    x.brut = brut; x.source = l.source || ''; x.t = l.t || 0; N[t].push(x); }); if ((A.lignes || []).length) N.tables++; });
+  return N; }
+/* La norme active : l'embarquée moins les lignes supprimées, puis les apports par-dessus. */
+function normeAvecApports(base, apports) { const B = normeVide(); B.tables = base ? base.tables : 0;
+  TABLES_NORME.forEach(t => { const sup = new Set(apportsDeTable(apports, t).supprimees || []); B[t] = (base ? base[t] || [] : []).filter(x => !sup.has(cleDeLigne(t, x))); });
+  return fusionnerNormes(B, normeDesApports(apports)); }
+/* Deux lignes disent-elles la même chose ? Sur ce que le moteur lit (pas sur la forme des cellules : « 7,5 » et « 7.5 »
+   sont une même intensité), sans ce qui dit d'où elles viennent. */
+function memeLigne(a, b) { const nette = x => { const { brut, source, t, approx, ...reste } = x; return JSON.stringify(reste); }; return nette(a) === nette(b); }
+/* COMPARER des lignes à une table de base (l'embarquée) par la clé de fusion : ce qui est nouveau, ce qui remplace une
+   ligne (avant → après), ce qui est identique — et le verdict de chaque ligne (`parLigne`). */
+function comparerTable(table, base, lignes) { const par = new Map((base || []).map(x => [cleDeLigne(table, x), x])), nouvelles = [], remplacees = [], identiques = [], parLigne = new Map();
+  (lignes || []).forEach(x => { const k = cleDeLigne(table, x), e = par.get(k);
+    if (!e) { nouvelles.push(x); parLigne.set(x, 'ajoutée'); } else if (memeLigne(e, x)) { identiques.push(x); parLigne.set(x, 'identique'); } else { remplacees.push({ avant: e, apres: x }); parLigne.set(x, 'modifiée'); } });
+  return { table, nouvelles, remplacees, identiques, parLigne }; }
+/* La même comparaison pour une norme entière (toutes ses tables), contre une base. */
+function comparerNormes(base, N) { const R = {}; TABLES_NORME.forEach(t => { if ((N && N[t] || []).length) R[t] = comparerTable(t, base ? base[t] : [], N[t]); }); return R; }
+
+/* ---- DÉCRIRE une table : ses colonnes, leur sens, un gabarit, un export ----
+   Ce que la page des normes explique et ce que le lecteur télécharge. Le libellé d'une colonne est l'en-tête du CSV
+   embarqué (et toujours l'un de ses alias : un gabarit se relit tel quel). */
+const TITRES_NORME = { familles: 'Familles', fils: 'Fils', declassements: 'Déclassement', reseau: 'Réseau', tailles: 'Tailles', modules: 'Modules', contacts: 'Contacts', disjoncteurs: 'Courbes de disjonction', cables: 'Câbles', gaines: 'Gaines', colliers: 'Colliers',
+  filetages: 'Filetages', entrees: 'Entrées', raccords: 'Raccords', manchons: 'Manchons', calibrations: 'Calibration', disjoncteursFamilles: 'Familles de disjoncteurs', protections: 'Protection', cablesFamilles: 'Familles de câbles', resistancesContacts: 'Résistance des contacts' };
+const LIBELLES_NORME = {
+  familles: { norme: 'Norme', famille: 'Famille', nature: 'Nature', variantes: 'Variantes', pas: 'Pas', jaugeMin: 'Jauge min', jaugeMax: 'Jauge max', intensite: 'Intensité', resistance: 'Résistance', filsParCote: 'Fils par côté', ordre: 'Ordre', paquets: 'Paquets', reserves: 'Réservés', masse: 'Masse', note: 'Note' },
+  fils: { type: 'Type', jauge: 'Jauge', code: 'Code', brins: 'Brins', section: 'Section', resistance20: 'Résistance 20', resistance: 'Résistance', intensite: 'Intensité', i2s: 'Intensité 2 s', i10s: 'Intensité 10 s', i1min: 'Intensité 1 min', chute10m: 'Chute 10 m', tr: 'T conducteur', note: 'Note' },
+  declassements: { condition: 'Condition', fils: 'Fils', charge: 'Charge', altitude: 'Altitude', facteur: 'Facteur', note: 'Note' },
+  reseau: { tension: 'Tension', nature: 'Nature', chuteMax: 'Chute max', chuteInter: 'Chute max intermittent', chutePct: 'Chute max en %', note: 'Note' },
+  cablesFamilles: { famille: 'Famille', norme: 'Norme', conducteur: 'Conducteur', placage: 'Placage', tmin: 'T min', tmax: 'T max', tension: 'Tension', frequence: 'Fréquence max', isolant: 'Isolant', blindage: 'Blindage', rayon: 'Rayon de courbure', marquage: 'Marquage', note: 'Note' },
+  resistancesContacts: { taille: 'Taille', intensite: 'Intensité', chuteMax: 'Chute max', resistance: 'Résistance', resistanceFin: 'Résistance fin de vie', note: 'Note' },
+  tailles: { famille: 'Famille', taille: 'Taille', jaugeMin: 'Jauge min', jaugeMax: 'Jauge max', note: 'Note' },
+  gaines: { famille: 'Famille', reference: 'Référence', role: 'Rôle', dmin: 'Dmin', dmax: 'Dmax', dint: 'Dint', dext: 'Dext', masse: 'Masse', note: 'Note' },
+  colliers: { reference: 'Référence', type: 'Type', largeur: 'Largeur', longueur: 'Longueur', dmin: 'Dmin', dmax: 'Dmax', tenue: 'Tenue', temperature: 'Température', note: 'Note' },
+  filetages: { famille: 'Famille', taille: 'Taille', lettre: 'Lettre', filetage: 'Filetage', dmaxBoitier: 'Dmax boîtier', note: 'Note' },
+  entrees: { code: 'Code', dmin: 'Dmin', dmax: 'Dmax', tailleMin: 'Tailles min', tailleMax: 'Tailles max', note: 'Note' },
+  raccords: { famille: 'Famille', taille: 'Taille', type: 'Type', orientation: 'Orientation', norme: 'Norme raccord', materiau: 'Matériau', fini: 'Fini', amin: 'Amin', amax: 'Amax', b: 'B', c: 'C', d: 'D', masse: 'Masse', reference: 'Référence', statut: 'Statut', note: 'Note' },
+  manchons: { forme: 'Forme', designation: 'Désignation', reference: 'Référence', ha: 'Ha', hb: 'Hb', ja: 'Ja', jb: 'Jb', p: 'P', r: 'R', jo: 'JO', masse: 'Masse', note: 'Note' },
+  calibrations: { famille: 'Famille', norme: 'Norme', temperature: 'Température', tient: 'Tient', declenche: 'Déclenche', t200min: 't200 min', t200max: 't200 max', t500min: 't500 min', t500max: 't500 max', t1000min: 't1000 min', t1000max: 't1000 max', source: 'Source' },
+  disjoncteursFamilles: { famille: 'Famille', norme: 'Norme', poles: 'Pôles', calibres: 'Calibres', tension: 'Tension', compense: 'Compensé', tmin: 'Tmin', tmax: 'Tmax', masse: 'Masse', courbe: 'Courbe', note: 'Note' },
+  protections: { jauge: 'Jauge', disjoncteurMax: 'Disjoncteur max', fusibleMax: 'Fusible max', tailleContact: 'Taille contact', iContact: 'I contact', note: 'Note' },
+  cables: { cable: 'Câble', famille: 'Famille', jauge: 'Jauge', brins: 'Brins', blindage: 'Blindage', nature: 'Nature', masse: 'Masse', liaisons: 'Liaisons', resistance: 'Résistance', diametre: 'Diamètre', section: 'Section', note: 'Note' },
+  disjoncteurs: { famille: 'Famille', courbe: 'Courbe', temperature: 'Température', multiple: 'Multiple', temps: 'Temps', note: 'Note' },
+  contacts: { famille: 'Norme', sexe: 'Sexe', taille: 'Taille', typeFil: 'Type de fil', jauge: 'Jauge', reference: 'Contact', accessoire: 'Accessoire', note: 'Note' },
+  modules: { famille: 'Famille', variante: 'Variante', reference: 'Désignation', type: 'Type', taille: 'Taille', disposition: 'Disposition', groupes: 'Groupes', poids: 'Masse', hauteur: 'Hauteur', diodes: 'Diodes', usage: 'Usage', corps: 'Corps', emploi: 'Emploi', note: 'Note' }
+};
+/* Ce qu'une ligne doit porter pour exister (`champs` : sinon elle est rejetée), et ce qu'un en-tête doit nommer pour
+   que la table soit reconnue (`entete`). */
+const OBLIGATOIRES_NORME = {
+  familles: { champs: ['famille'], entete: 'Famille, et l’une de Pas, Intensité, Fils par côté, Ordre, Jauge min — sans colonne Référence (ce serait une bible)' },
+  fils: { champs: ['jauge'], entete: 'Jauge, et l’une de Section, Résistance, Intensité' },
+  declassements: { champs: ['condition', 'facteur'], entete: 'Condition et Facteur' },
+  reseau: { champs: ['tension', 'chuteMax'], entete: 'Tension et Chute max' },
+  cablesFamilles: { champs: ['famille', 'conducteur'], entete: 'Famille et Conducteur' },
+  resistancesContacts: { champs: ['taille', 'resistance'], entete: 'Taille et Résistance (sans Famille, Jauge min ni Sexe)' },
+  tailles: { champs: ['taille'], entete: 'Taille et Jauge min' },
+  modules: { champs: ['variante'], entete: 'Variante et Groupes' },
+  contacts: { champs: ['famille', 'sexe', 'taille', 'reference'], entete: 'Sexe, Taille et Contact' },
+  disjoncteurs: { champs: ['multiple', 'temps'], entete: 'Multiple et Temps' },
+  cables: { champs: ['cable'], entete: 'Câble et Brins' },
+  gaines: { champs: ['reference'], entete: 'Famille, Référence, et Dint ou Dmax' },
+  colliers: { champs: ['reference'], entete: 'Référence, et Dmin, Dmax ou Longueur (sans Famille)' },
+  filetages: { champs: ['famille', 'taille', 'filetage'], entete: 'Filetage et Taille' },
+  entrees: { champs: ['code', 'dmin', 'dmax'], entete: 'Code, Dmin et Dmax (sans Référence ni Famille)' },
+  raccords: { champs: ['famille', 'type'], entete: 'Famille, Type et Orientation' },
+  manchons: { champs: ['designation', 'ha', 'ja'], entete: 'Ha et Ja' },
+  calibrations: { champs: [], entete: 'Tient et Déclenche' },
+  disjoncteursFamilles: { champs: ['famille'], entete: 'Pôles et Calibres' },
+  protections: { champs: ['jauge', 'disjoncteurMax'], entete: 'Jauge et Disjoncteur max' }
+};
+/* Le sens de chaque colonne, pour la page et pour normes/LISEZMOI.md. Les unités sont dites ici. */
+const SENS_NORME = {
+  familles: { norme: 'le nom du document (« ASNE 0599 ») ; s’il contient « exemple », la famille est marquée telle', famille: 'le début commun des références (ASNE0500 pour ASNE0500-04) : c’est par là qu’une barrette ou une prise retrouve sa norme', nature: 'jonction ou blindage (barrettes), coupure (prises), connecteur', variantes: 'les nombres de modules ou de contacts des références de la famille (« 2 4 8 12 20 »), informatif', pas: 'le pas des modules ou des contacts, en mm', jaugeMin: 'la plus fine jauge AWG qu’un contact admet ; un fil hors plage est refusé', jaugeMax: 'la plus grosse jauge AWG admise', intensite: 'ampères admissibles par contact', resistance: 'la résistance d’un contact, en mΩ (elle entre dans la chute de tension)', filsParCote: 'combien de fils un module reçoit de chaque côté : le nombre de trous dessinés ; au-delà, c’est une surcharge', ordre: '« croissant » : les modules se prennent dans l’ordre, un module libre avant un module utilisé est signalé ; « libre » sinon', paquets: '« contigus » : un peigne de pontage ne saute pas un module ; « libres » sinon', reserves: 'les modules que la norme réserve (« 1 », « 1 12 ») : utilisés, c’est un défaut', masse: '« par paquet » : chaque paquet doit se fermer sur une masse (barrettes de blindage)', note: 'libre' },
+  fils: { type: 'le début du code du retest (DR pour DR24, MLB pour MLB24) ; vide ou « * » : vaut pour tous les types de cette jauge', jauge: 'AWG', code: 'le code EN 2083 du conducteur', brins: 'le toronnage (« 19 × 0,20 »)', section: 'mm² du conducteur (le toron de cuivre, pas le hors-tout du câble)', resistance20: 'Ω/km à 20 °C : c’est elle que la chute en ligne prend, corrigée par la température du conducteur', resistance: 'Ω/km à la température du conducteur de la table ; sans Résistance 20, l’outil la ramène à 20 °C', intensite: 'ampères admissibles en continu, câble seul à l’air libre, avant déclassement', i2s: 'ampères admis pendant 2 s', i10s: 'ampères admis pendant 10 s', i1min: 'ampères admis pendant 1 min', chute10m: 'la chute pour 10 m au courant continu, en V (informatif)', tr: 'la température du conducteur de la table, en °C (135 pour l’EN 2853) : l’ambiante se compte depuis elle', note: 'libre' },
+  declassements: { condition: 'un mot (faisceau, altitude) : chaque condition devient une case à cocher dans la simulation', fils: 'le nombre de fils du faisceau d’un point de la courbe (fig. 11-5 de l’AC 43.13-1B)', charge: 'la charge du faisceau en % de ce que ses fils admettent, pour ce point', altitude: 'un point d’une courbe d’altitude, en pieds (l’outil interpole)', facteur: 'multiplie l’intensité admissible du fil ; plusieurs conditions cochées se multiplient', note: 'la source du point' },
+  reseau: { tension: 'volts (14, 28, 115, 200) ; la simulation prend la ligne de la tension d’hypothèse, sinon la plus proche ; en triphasé, celle de la tension composée (115 → 200)', nature: 'continu, alternatif phase-neutre, entre phases', chuteMax: 'la chute de tension admise en ligne, en V, en continu', chuteInter: 'la même pour une charge intermittente (≤ 2 min), en V', chutePct: 'la même, en % (informatif)', note: 'la source' },
+  cablesFamilles: { famille: 'les familles couvertes par la ligne (« DRB DRC DRD »)', norme: 'la norme du câble (EN 2267-010, ABS 0949…)', conducteur: 'cuivre, CCA (aluminium cuivré) ou aluminium : décide si la ligne cuivre de l’EN 2853 vaut pour ce câble', placage: 'le placage du conducteur', tmin: 'température admise, minimale, °C', tmax: 'température admise, maximale, °C', tension: 'tension admise, V', frequence: 'fréquence maximale, Hz', isolant: 'l’isolant', blindage: 'le blindage', rayon: 'le rayon de courbure, en × Ø', marquage: 'le marquage', note: 'libre' },
+  resistancesContacts: { taille: '22D, 22, 20, 16, 12, 10, 8', intensite: 'le courant nominal du contact, A', chuteMax: 'la chute max aux bornes de la paire, mV', resistance: 'mΩ : la paire sertie et accouplée, à neuf', resistanceFin: 'mΩ : la résistance de conception (fin de vie)', note: 'la source' },
+  tailles: { famille: 'la norme des modules (E0599, NSA937901, EN4165…) ; vide : toute famille', taille: 'la taille du contact (22D, 22, 20, 16, 12, 8, 8T)', jaugeMin: 'la plus fine jauge AWG que ce contact reçoit', jaugeMax: 'la plus grosse ; les deux vides : un câble spécial, jamais un fil ordinaire', note: 'libre' },
+  gaines: { famille: 'la famille de gaine (HFA, NOMEX, NOMEX-WO) : ce que « Changer » propose sur la fiche', reference: 'la référence', role: '« surblindage » (tresse cuivre : le toron passe dans Dint) ou « protection » (la plage Dmin–Dmax encadre le toron)', dmin: 'mm : le toron minimal habillé (protection)', dmax: 'mm : le toron maximal', dint: 'mm : le Ø intérieur nominal (surblindage)', dext: 'mm : le Ø extérieur', masse: 'g/m', note: 'libre' },
+  colliers: { reference: 'la référence (E0805-01, NSA935401-07…)', type: '« band-it » (par le diamètre serré) ou « tyrap » (par le toron maximal)', largeur: 'mm', longueur: 'mm', dmin: 'mm : le toron minimal serré', dmax: 'mm : le toron maximal', tenue: 'N', temperature: '°C', note: 'libre' },
+  filetages: { famille: 'la famille du connecteur (EN3645, EN2997, EN3646)', taille: 'la taille du boîtier (09 à 25, 08 à 28)', lettre: 'la lettre de taille', filetage: 'le filetage d’accessoire arrière (M12x1, 7/16-28 UNEF)', dmaxBoitier: 'mm : le Ø du boîtier', note: 'libre' },
+  entrees: { code: 'le code d’entrée de câble d’un serre-câble (03 à 32)', dmin: 'mm : le toron minimal que l’entrée passe', dmax: 'mm : le toron maximal', tailleMin: 'la plus petite taille de boîtier qui admet ce code', tailleMax: 'la plus grande', note: 'libre' },
+  raccords: { famille: 'la famille du connecteur', taille: 'la taille du boîtier ; vide : toutes', type: 'durci, pour manchon, serre-câble, tyrap, cheminée (le type que le tutoriel décide)', orientation: 'droit ou coudé', norme: 'la norme EN 3660 du style', materiau: 'le matériau', fini: 'le fini', amin: 'mm : le toron minimal (cote A)', amax: 'mm : le toron maximal', b: 'mm : la cote B (Ø gaine)', c: 'mm : la cote C (le Ø du plateau, côté manchon)', d: 'mm : la cote D (la sortie)', masse: 'g', reference: 'la désignation commandable', statut: '« à confirmer » tant que le catalogue n’est pas lu', note: 'libre' },
+  manchons: { forme: 'droit, coudé, sortie longue', designation: 'la désignation VG 95343 (T06 A 013…)', reference: 'la référence HellermannTyton', ha: 'mm : le Ø maximal côté raccord', hb: 'mm : le Ø minimal côté raccord', ja: 'mm : le Ø maximal côté toron', jb: 'mm : le Ø minimal côté toron', p: 'mm : la longueur totale', r: 'mm : la longueur côté toron', jo: 'mm : la lèvre', masse: 'g', note: 'libre' },
+  calibrations: { famille: 'la famille de disjoncteurs', norme: 'la norme', temperature: '°C : l’ambiante du point', tient: '× In tenu une heure', declenche: '× In qui déclenche en moins d’une heure', t200min: 's : le temps mini à 200 % de In', t200max: 's : le temps maxi à 200 %', t500min: 's : mini à 500 %', t500max: 's : maxi à 500 %', t1000min: 's : mini à 1000 %', t1000max: 's : maxi à 1000 %', source: 'la source' },
+  disjoncteursFamilles: { famille: 'le préfixe du part number (MS3320 pour MS3320-10)', norme: 'la norme', poles: 'le nombre de pôles', calibres: 'la gamme de calibres, en A (« 1 2 2,5 3 5 »)', tension: 'la tension nominale', compense: 'oui / non : compensé en température', tmin: '°C : l’ambiante minimale admise', tmax: '°C : l’ambiante maximale', masse: 'g', courbe: 'la famille de la table des courbes à prendre', note: 'libre' },
+  protections: { jauge: 'AWG', disjoncteurMax: 'A : le calibre maximal du disjoncteur pour ce fil', fusibleMax: 'A : le calibre maximal du fusible', tailleContact: 'la taille de contact courante pour cette jauge', iContact: 'A : ce que ce contact admet', note: 'la source' },
+  cables: { cable: 'le type tel que le retest l’écrit (DR24, MLB22, KD24, WC)', famille: 'la famille (DR, MLB…) ; vide : lue en tête du type', jauge: 'AWG', brins: 'le nombre de conducteurs du câble', blindage: '1 ou oui si le câble est blindé', nature: 'torsadé, blindé, coaxial, quadrax, fibre optique…', masse: 'g/m', liaisons: 'le nombre de liaisons que le câble porte (les brins, plus le blindage)', resistance: 'mΩ/m à 20 °C (soit des Ω/km) : la chute en ligne la prend', diametre: 'mm : le Ø extérieur', section: 'mm² hors-tout (π Ø²/4, isolant et blindage compris) : la section du toron', note: 'libre' },
+  disjoncteurs: { famille: 'la famille de courbes (« disjoncteur » vaut pour tous les calibres)', courbe: 'le nom de la courbe (125 °C, 23 °C min, 23 °C max, −55 °C)', temperature: '°C', multiple: 'le multiple du courant nominal (× In)', temps: 's : le temps de déclenchement', note: 'libre' },
+  contacts: { famille: 'la norme du connecteur (EN2997, EN3645, EN3646, EN4165…)', sexe: 'M (mâle, broche) ou F (femelle, douille) : le contact qu’on sertit', taille: 'la taille de la cavité (22, 20, 16, 12, 8)', typeFil: 'le type de fil (HS, CF, WL…) ; « * » : tous', jauge: 'AWG ; « * » : toutes', reference: 'le contact à sertir', accessoire: 'ce qui s’y ajoute : fourreau de réduction, bague…', note: 'libre' },
+  modules: { famille: 'E0599, NSA937901 (barrettes) ; EN4165, EN2997, EN3645, EN3646, ASNE0059 (connecteurs)', variante: 'la variante d’interconnexion ou le code d’arrangement (A101, 20-04, 08W16, 14-12)', reference: 'la désignation commandable ; vide : l’outil l’écrit (E0599-1A101Z, NSA937901-20-04…)', type: 'le type de module (1 à 4, mixte, diodes, obturateur, spécial) ou la taille', taille: 'la taille des contacts (22, 20, 16, 12)', disposition: 'la face : les rangées séparées par « / », « . » une place vide ; ou « lettre@x:y » en pas, « centre@x:y » pour une face ronde', groupes: 'les contacts reliés dans le module, groupes séparés par « | », contacts par des espaces ; « C#12 » un contact d’une autre taille', poids: 'g', hauteur: 'mm', diodes: 'les diodes incorporées (« A>B »)', usage: 'normal, possible, A350, à confirmer, ancien, shuntés, spécial — seul « normal » et « possible » se choisissent seuls', corps: 'rectangle, ovale (bouts ronds), étanche, module (carré), circulaire', emploi: '« barrette » (modules de jonction) ou « connecteur » (équipements et prises de coupure)', note: 'libre' }
+};
+/* Une ligne d'exemple par table (le gabarit à télécharger), aux en-têtes de l'outil. */
+const EXEMPLES_NORME = {
+  familles: { norme: 'NSA 935420', famille: 'NSA935420', nature: 'jonction', variantes: '2 6 10', pas: '5', jaugeMin: '26', jaugeMax: '20', intensite: '7,5', resistance: '4', filsParCote: '2', ordre: 'croissant', paquets: 'contigus', reserves: '', masse: '', note: 'exemple' },
+  fils: { type: 'DR', jauge: '24', code: '003', brins: '19 × 0,20', section: '0,24', resistance20: '85', resistance: '', intensite: '3,5', i2s: '', i10s: '', i1min: '', chute10m: '', tr: '', note: 'exemple' },
+  declassements: { condition: 'faisceau', fils: '8', charge: '60', altitude: '', facteur: '0,6', note: 'exemple' },
+  reseau: { tension: '28', nature: 'continu', chuteMax: '1', chuteInter: '2', chutePct: '3,6', note: 'exemple' },
+  cablesFamilles: { famille: 'DR', norme: 'EN 2267-010', conducteur: 'cuivre', placage: 'nickel', tmin: '-55', tmax: '260', tension: '600', frequence: '', isolant: 'PTFE/polyimide', blindage: '', rayon: '6', marquage: '', note: 'exemple' },
+  resistancesContacts: { taille: '20', intensite: '7,5', chuteMax: '55', resistance: '7,3', resistanceFin: '11', note: 'exemple' },
+  tailles: { famille: 'E0599', taille: '20', jaugeMin: '24', jaugeMax: '20', note: 'exemple' },
+  gaines: { famille: 'HFA', reference: 'DHS754-160-08', role: 'surblindage', dmin: '', dmax: '', dint: '8', dext: '9,5', masse: '20', note: 'exemple' },
+  colliers: { reference: 'E0805-01', type: 'band-it', largeur: '6,4', longueur: '', dmin: '', dmax: '15', tenue: '', temperature: '', note: 'exemple' },
+  filetages: { famille: 'EN3645', taille: '13', lettre: 'C', filetage: 'M15x1', dmaxBoitier: '20,5', note: 'exemple' },
+  entrees: { code: '05', dmin: '4,7', dmax: '8,0', tailleMin: '09', tailleMax: '25', note: 'exemple' },
+  raccords: { famille: 'EN3645', taille: '', type: 'durci', orientation: 'droit', norme: 'EN 3660-004', materiau: 'alu', fini: 'nickel', amin: '', amax: '', b: '', c: '', d: '', masse: '', reference: '', statut: 'à confirmer', note: 'exemple' },
+  manchons: { forme: 'droit', designation: 'VG 95343 T06 A 013', reference: '', ha: '19', hb: '13,7', ja: '7,6', jb: '3,8', p: '41', r: '18', jo: '', masse: '', note: 'exemple' },
+  calibrations: { famille: 'MS3320', norme: 'MS3320', temperature: '25', tient: '1,15', declenche: '1,38', t200min: '5', t200max: '45', t500min: '0,3', t500max: '2', t1000min: '', t1000max: '', source: 'exemple' },
+  disjoncteursFamilles: { famille: 'MS3320', norme: 'MS3320', poles: '1', calibres: '1 2 2,5 3 5 7,5 10 15 20 25', tension: '28 V DC', compense: 'oui', tmin: '-55', tmax: '125', masse: '', courbe: 'disjoncteur', note: 'exemple' },
+  protections: { jauge: '20', disjoncteurMax: '7,5', fusibleMax: '5', tailleContact: '20', iContact: '7,5', note: 'exemple' },
+  cables: { cable: 'DR24', famille: 'DR', jauge: '24', brins: '1', blindage: '0', nature: '', masse: '1,6', liaisons: '1', resistance: '0,114', diametre: '1,1', section: '0,95', note: 'exemple' },
+  disjoncteurs: { famille: 'disjoncteur', courbe: '125 °C', temperature: '125', multiple: '1,2', temps: '3600', note: 'exemple' },
+  contacts: { famille: 'EN4165', sexe: 'F', taille: '22', typeFil: '*', jauge: '*', reference: 'EN3155-003F2222', accessoire: '', note: 'exemple' },
+  modules: { famille: 'E0599', variante: 'B201', reference: 'E0599-1B201Z', type: '2', taille: '20', disposition: 'A B C D E F G H J / K L M N P Q R S T', groupes: 'A K | B L | C M | D N | E P | F Q | G R | H S | J T', poids: '14', hauteur: '20', diodes: '', usage: 'normal', corps: 'rectangle', emploi: 'barrette', note: 'exemple' }
+};
+/* Les colonnes d'une table, pour les expliquer sans doublon : [{ champ, libelle, alias, obligatoire, sens }]. */
+function colonnesDeTable(table) { const L = LIBELLES_NORME[table] || {}, S = SENS_NORME[table] || {}, O = (OBLIGATOIRES_NORME[table] || { champs: [] }).champs;
+  return (COLONNES_NORME[table] || []).filter(([champ]) => L[champ]).map(([champ, alias]) => ({ champ, libelle: L[champ], alias: alias.filter(a => a !== NORMA(L[champ])), obligatoire: O.includes(champ), sens: S[champ] || '' })); }
+/* Les cellules d'une entrée, telles que le fichier les portait (`brut`) ; sinon, ce que le moteur en a lu, remis en
+   mots (une ligne fabriquée par le code, pas lue). */
+function brutDe(table, x) { if (x.brut) return x.brut; const o = {};
+  colonnesDeTable(table).forEach(c => { const v = x[c.champ]; o[c.champ] = v == null ? '' : Array.isArray(v) ? v.join(' ') : typeof v === 'object' ? '' : typeof v === 'boolean' ? (v ? 'oui' : '') : String(v).replace('.', ','); });
+  if (table === 'cablesFamilles' && x.familles) o.famille = x.familles.join(' '); return o; }
+/* Une table en CSV (« ; », virgule décimale telle quelle) : un titre libre, l'en-tête, les lignes. */
+function csvDeTable(table, lignes, titre) { const cols = colonnesDeTable(table), cell = v => { const t = String(v == null ? '' : v); return /[;"\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+  const tete = (titre ? titre.replace(/[\r\n]+/g, ' ') + '\n' : '') + cols.map(c => c.libelle).join(';');
+  return tete + (lignes || []).map(x => { const b = brutDe(table, x); return '\n' + cols.map(c => cell(b[c.champ])).join(';'); }).join('') + '\n'; }
+/* Le gabarit d'une table : son titre, l'en-tête, une ligne d'exemple — à remplir et à déposer sur la table. */
+function gabaritCsv(table) { const ex = EXEMPLES_NORME[table] || {};
+  return csvDeTable(table, [{ brut: ex }], TITRES_NORME[table] + ' — ' + ((OBLIGATOIRES_NORME[table] || {}).entete || '') + ' ; une ligne par entrée, les colonnes dans n’importe quel ordre'); }
 /* La famille d'une référence : celle que la bible lui donne, sinon la plus
    longue famille de la norme dont la référence commence par le nom. */
 function familleDeNorme(norme, famille, reference) { if (!norme) return null; const F = norme.familles;
