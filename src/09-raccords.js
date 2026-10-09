@@ -17,8 +17,9 @@
        (style A), un serre-câble pour une cosse à l'étroit, « pour manchon »
        (style J) droit en zone étanche sans reprise ; un band-it tient la
        tresse reprise sur le corps ; un manchon quand il faut l'étanchéité.
-       « L'EN 3645 s'utilise sans raccord » est la règle d'atelier du
-       lecteur (l'EN 3660-020 existe) : elle reste, en le disant ;
+       Deux familles SANS RACCORD (rien ne se calcule, SANS_RACCORD) : l'EN
+       4165 — le lecteur : « il n'y en a pas » — et l'EN 3645 — la règle
+       d'atelier du tutoriel, à confirmer (l'EN 3660-020 existe) ;
      · la RÉFÉRENCE du raccord (table Raccords : la norme EN 3660 du style,
        la désignation complète quand le lecteur l'aura donnée), le CODE
        D'ENTRÉE par le toron (table Entrées), le collier par le diamètre
@@ -35,7 +36,12 @@
 const BLINDAGES = { NO: 'aucune reprise de blindage', GND: 'reprise sur le corps du connecteur', BLI: 'reprise par cosse', CONTACT: 'reprise sur un contact' };
 const MATERIAUX = ['nickelage alu', 'cadmiage vert olive', 'passivation acier inox', 'anodisation alu noir'];
 const CHOIX_RACCORD = { blindage: 'NO', etanche: false, orientation: 'droit', gaine: '', surblindage: false, materiau: '' };
-const SANS_RACCORD = ['EN3645'];   // la règle d'atelier du lecteur : l'EN 3645 s'utilise sans raccord
+/* Les familles SANS RACCORD, et pourquoi : rien ne se calcule pour elles — ni raccord, ni band-it, ni manchon, ni gaine,
+   ni tyrap. L'EN 4165 : la règle du lecteur (« sauf pour les EN 4165, il n'y en a pas » — les cheminées EN 4165-015/-016
+   restent dans la table Raccords, pour mémoire). L'EN 3645 : la règle d'atelier lue dans le tutoriel, que le lecteur
+   n'a pas redite — à confirmer (l'EN 3660-020 existe pour l'EN 3645). */
+const SANS_RACCORD = { EN4165: 'sans raccord : un EN 4165 n’en a pas', EN3645: 'sans raccord : un EN 3645 s’utilise sans raccord (la règle d’atelier du tutoriel, à confirmer — l’EN 3660-020 existe)' };
+const sansRaccord = famille => Object.prototype.hasOwnProperty.call(SANS_RACCORD, famille || '');
 /* La table du tutoriel : reprise de blindage × étanchéité × gaine (et l'orientation, pour le cas sans reprise en zone
    étanche). Rend le type de raccord, s'il faut un band-it, un manchon, et le pourquoi en une phrase. */
 function regleRaccord(c) { const b = BLINDAGES[c.blindage] ? c.blindage : 'NO', e = !!c.etanche, g = !!c.gaine, coude = c.orientation === 'coudé';
@@ -87,18 +93,21 @@ function manchonPour(norme, d, c, orientation) { if (d == null) return null; con
    code d'entrée, le collier, la gaine, le manchon — et ce qui manque. `pn` : le part number du connecteur. */
 function habillage(norme, fils, choix, pn, reference) { const c = { ...CHOIX_RACCORD, ...(choix || {}) }, f = faisceauDe(norme, fils), famille = familleDeReference(norme, pn, 'connecteur') || familleDeReference(norme, reference, 'connecteur');
   // la taille : dans le part number du fichier, sinon dans la référence retenue (l'arrangement choisi, EN3646-002-12-08)
-  const r = regleRaccord(c), sans = SANS_RACCORD.includes(famille), taille = tailleDuPn(norme, famille, pn) || tailleDuPn(norme, famille, reference), filetage = taille ? filetageDe(norme, famille, taille) : null;
-  const raccord = sans ? 'aucun' : r.raccord, ref = sans ? null : raccordDeTable(norme, famille, taille, raccord, c.orientation);
-  const entree = !sans && raccord === 'serre-câble' ? entreePour(norme, f.diametre, taille) : null;
+  const taille = tailleDuPn(norme, famille, pn) || tailleDuPn(norme, famille, reference), filetage = taille ? filetageDe(norme, famille, taille) : null;
+  // une famille sans raccord : le toron et le boîtier se disent, rien d'autre ne se calcule
+  if (sansRaccord(famille)) return { choix: c, toron: f.diametre, deq: f.deq, faisceau: f, famille, taille, filetage, raccord: 'aucun', sansRaccord: famille, reference: null, entree: null, bandit: false, manchon: false, manchonRef: null, collier: null, tyrap: null, gaine: null, sortie: null,
+    pourquoi: SANS_RACCORD[famille], aConfirmer: famille === 'EN3645', manquants: [] };
+  const r = regleRaccord(c), raccord = r.raccord, ref = raccordDeTable(norme, famille, taille, raccord, c.orientation);
+  const entree = raccord === 'serre-câble' ? entreePour(norme, f.diametre, taille) : null;
   const collier = r.bandit ? collierPour(norme, f.diametre) : null, tyrap = raccord === 'tyrap' ? tyrapPour(norme, f.diametre) : null, gaine = c.gaine ? gainePour(norme, c.gaine, f.diametre) : null;
   // ce qui sort du raccord : la gaine (son extérieur), sinon le toron ; la cote C du raccord si la table la donne
   const sortie = gaine ? (gaine.dext != null ? gaine.dext : gaine.dmax != null ? Math.min(gaine.dmax, (f.diametre || 0) * 1.3) : f.diametre) : f.diametre;
   const manchon = r.manchon ? manchonPour(norme, sortie, ref && ref.c != null ? ref.c : null, c.orientation) : null;
   const manquants = [];
-  if (!sans && raccord !== 'tyrap' && !(ref && ref.reference)) manquants.push(ref ? 'la désignation complète du raccord (' + ref.norme + ', ' + (ref.statut || 'à confirmer') + ')' : 'la référence du raccord (table à compléter' + (famille ? ' pour ' + nomDeFamille(norme, famille) : '') + ')');
+  if (raccord !== 'tyrap' && !(ref && ref.reference)) manquants.push(ref ? 'la désignation complète du raccord (' + ref.norme + ', ' + (ref.statut || 'à confirmer') + ')' : 'la référence du raccord (table à compléter' + (famille ? ' pour ' + nomDeFamille(norme, famille) : '') + ')');
   if (r.manchon && !manchon) manquants.push('aucun manchon de la table ne va à Ø ' + (sortie != null ? String(Math.round(sortie * 10) / 10).replace('.', ',') + ' mm' : '?'));
   if (r.manchon && manchon && !(ref && ref.c != null)) manquants.push('la cote C du raccord : le manchon est choisi par le toron seulement');
   if (c.gaine && !gaine) manquants.push('aucune gaine ' + c.gaine + ' ne va à ce toron');
   if (r.bandit && !collier) manquants.push('aucun collier ne va à ce toron');
-  return { choix: c, toron: f.diametre, deq: f.deq, faisceau: f, famille, taille, filetage, raccord, reference: ref, entree, bandit: r.bandit, manchon: r.manchon, manchonRef: manchon, collier, tyrap, gaine, sortie,
-           pourquoi: sans ? 'un connecteur EN 3645 s’utilise sans raccord (la règle d’atelier ; l’EN 3660-020 existe)' : r.pourquoi, manquants }; }
+  return { choix: c, toron: f.diametre, deq: f.deq, faisceau: f, famille, taille, filetage, raccord, sansRaccord: '', reference: ref, entree, bandit: r.bandit, manchon: r.manchon, manchonRef: manchon, collier, tyrap, gaine, sortie,
+           pourquoi: r.pourquoi, aConfirmer: false, manquants }; }

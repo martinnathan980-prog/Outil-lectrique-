@@ -687,10 +687,40 @@ function tailleDeJauge(norme, famille, jauge) { if (jauge == null) return ''; co
   if (T.length) return T[0].taille; const p = (N.protections || []).find(x => x.jauge === jauge); return p && p.tailleContact ? p.tailleContact : ''; }
 /* LA RÉSISTANCE D'UN CONTACT par sa taille (table Résistance des contacts), en Ω : à neuf, ou de conception (fin de
    vie) si on le demande ; la taille 22D vaut 22. Rien si la table ne la connaît pas. */
-function resistanceDeContact(norme, taille, fin) { const t = tailleCle(taille); if (!t) return null; const T = normeDesModules(norme).resistancesContacts || [], num = x => NUMERO(x.replace(/[A-Z]+$/, ''));
-  // la taille exacte, sinon la même sans lettre (22D → 22), sinon la taille connue la plus proche en numéro (23 → 22 ; à égalité, la plus petite, qui résiste le plus)
-  const r = T.find(x => x.taille === t) || T.find(x => num(x.taille) === num(t)) || (num(t) == null ? null : T.slice().sort((a, b) => Math.abs(num(a.taille) - num(t)) - Math.abs(num(b.taille) - num(t)) || num(b.taille) - num(a.taille))[0]); if (!r) return null;
+function resistanceDeContact(norme, taille, fin) { const r = ligneDeContact(norme, taille); if (!r) return null;
   return (fin && r.resistanceFin != null ? r.resistanceFin : r.resistance) / 1000; }
+// la ligne de la table Résistance des contacts d'une taille : la taille exacte, sinon la même sans lettre (22D → 22), sinon la taille connue la plus proche en numéro (23 → 22 ; à égalité, la plus petite, qui résiste le plus)
+function ligneDeContact(norme, taille) { const t = tailleCle(taille); if (!t) return null; const T = normeDesModules(norme).resistancesContacts || [], num = x => NUMERO(x.replace(/[A-Z]+$/, ''));
+  return T.find(x => x.taille === t) || T.find(x => num(x.taille) === num(t) && !/[A-Z]$/.test(x.taille)) || T.find(x => num(x.taille) === num(t))
+    || (num(t) == null ? null : T.slice().sort((a, b) => Math.abs(num(a.taille) - num(t)) - Math.abs(num(b.taille) - num(t)) || num(b.taille) - num(a.taille) || a.taille.length - b.taille.length)[0]) || null; }
+/* L'INTENSITÉ D'UN CONTACT par sa taille, en A : la table Résistance des contacts (AS39029 : 22 → 5 A, 20 → 7,5, 16 → 13,
+   12 → 23, 10 → 33, 8 → 46), sinon la table Protection (AC 43.13-1B, par la taille de contact qu'elle nomme). Rend
+   { intensite, taille, source } ou null. La taille d'un fil dont on ne connaît pas le contact : `tailleDeJauge`. */
+function intensiteDeContact(norme, taille) { const t = tailleCle(taille); if (!t) return null; const N = normeDesModules(norme), num = x => NUMERO(String(x).replace(/[A-Z]+$/, ''));
+  // la taille exacte (22D vaut 22) dans la table des contacts, sinon dans la table Protection, sinon la taille la plus proche de la table des contacts
+  const R = (N.resistancesContacts || []).filter(x => x.intensite != null), exact = R.find(x => x.taille === t) || R.find(x => num(x.taille) === num(t) && !/[A-Z]$/.test(x.taille)) || R.find(x => num(x.taille) === num(t));
+  if (exact) return { intensite: exact.intensite, taille: exact.taille, source: 'contacts' };
+  const p = (N.protections || []).find(x => tailleCle(x.tailleContact) === t && x.iContact != null); if (p) return { intensite: p.iContact, taille: t, source: 'protection' };
+  const r = ligneDeContact(norme, t); return r && r.intensite != null ? { intensite: r.intensite, taille: r.taille, source: 'contacts' } : null; }
+/* Un contact QUALIFIÉ POUR L'ALUMINIUM CUIVRÉ (CCA) : la NSA937901 nomme les ABS1493 / ABS1380 (taille 22, câble aluminium
+   et cuivre) ; un contact EN 3155 ordinaire est un contact cuivre. La table Familles de câbles le dit en note pour l'AD :
+   « pas de contact cuivre ordinaire sans qualification CCA — à confirmer » : l'outil le signale, il ne refuse pas. */
+const CONTACT_CCA = /^(ABS1493|ABS1380)/i;
+const contactPourCca = reference => CONTACT_CCA.test(String(reference || '').trim());
+/* LA TENUE EN TEMPÉRATURE d'un câble sous l'ambiante : l'EN 2853 suppose un échauffement de 40 °C depuis l'ambiante
+   (ECHAUFFEMENT_EN2853) — le conducteur monte à Tu + 40 au courant admissible ; le câble doit le tenir (table Familles
+   de câbles, T max : DR 260 °C, AD/VN 180 °C). Rend { tmax, tmin, conducteurA, ok, famille } — ok null si on ne sait pas. */
+const ECHAUFFEMENT_EN2853 = 40;
+function tenueEnTemperature(norme, type, ambiante) { const fam = cableFamilleDe(norme, type); if (!fam || fam.tmax == null) return null;
+  const Tu = ambiante == null ? HYPOTHESES.ambiante : +ambiante, conducteurA = Tu + ECHAUFFEMENT_EN2853;
+  return { famille: fam, tmax: fam.tmax, tmin: fam.tmin, ambiante: Tu, conducteurA, ok: conducteurA <= fam.tmax + 1e-9 }; }
+/* LA RÉACTANCE ESTIMÉE d'un fil seul au-dessus de la structure, en mΩ/m à 400 Hz : X = 2πf·L, L ≈ (µ₀/2π) ln(2h/r) +
+   0,05 µH/m (h la hauteur au-dessus de la structure, r le rayon du conducteur tiré de sa section) — l'ordre de grandeur
+   du rapport R1 (20 AWG à 20 mm : ≈ 2,4 mΩ/m, 7 % de R ; 0 AWG : ≈ 1,3 mΩ/m, plus que R). Une estimation à PROPOSER
+   quand X est à saisir, jamais prise d'office : l'Excel du lecteur suspend le calcul, l'outil aussi. */
+const POSE_HAUTEUR = 20, FREQUENCE_BORD = 400;
+function reactanceEstimee(section, hauteur, frequence) { if (!(section > 0)) return null; const h = (hauteur || POSE_HAUTEUR) / 1000, r = Math.sqrt(section / Math.PI) / 1000, f = frequence || FREQUENCE_BORD;
+  const L = 2e-7 * Math.log(2 * h / r) + 0.05e-6; return 2 * Math.PI * f * L * 1000; }
 /* LE FAISCEAU d'un connecteur : ses câbles (un câble à plusieurs brins ne compte qu'une fois, par son numéro), la
    section cumulée, le diamètre équivalent `deq` (un rond de même section — l'Excel du lecteur : Seq puis Deq), le
    TORON `diametre` = Deq plus la marge de 10 % du tutoriel (FOISONNEMENT), et la masse au mètre. */
@@ -768,11 +798,12 @@ function remplirSelonNorme(P, norme) {
    déclassement), on le dit, et on calcule, fil par fil :
      I fil     = intensité du fil (norme) × facteur de déclassement
      I contact = intensité du contact (norme, sinon la bible)
-     R         = ρ (Ω/km) / 1000 × L (m) + R contact (mΩ) / 1000
+     R         = ρ (Ω/km) / 1000 × L (m) + R contact (mΩ) / 1000   (× 2 si le retour se fait par un fil identique)
      ΔU        = R × I, en V, et en % de la tension
    Le verdict, dans l'ordre : jauge hors plage · le courant dépasse le fil ·
    dépasse le contact · la chute dépasse ce que le réseau admet · fil
-   inconnu de la norme · ok. */
+   inconnu de la norme · ok. Chaque ligne dit en plus la tenue du câble à
+   l'ambiante (`tenue`) et, quand X est à saisir, son estimation (`xEstime`). */
 /* Les hypothèses de la simulation : la longueur simple du câble, le courant (par phase), la tension du réseau,
    l'ambiante, la TEMPÉRATURE DU CONDUCTEUR (20 °C : la convention des fiches et de la base des câbles ; 135 °C : la
    table de l'EN 2853, le cas le plus défavorable), le RÉGIME — continu (ΔU = R × I), monophasé (ΔU = I × (R cos φ
@@ -780,8 +811,15 @@ function remplirSelonNorme(P, norme) {
    somme des phases ; comparée à la ligne 200 V du réseau) —, cos φ (0,8 en régime permanent, 0,35 au démarrage d'un
    moteur), la réactance X en mΩ/m (négligée sous 10 mm² de cuivre, à saisir au-delà : à 400 Hz, X vaut l'ordre de R
    dès le 6–8 AWG pour un fil seul — l'Excel du lecteur suspend le calcul), la charge du faisceau (% de ce que ses fils
-   admettent ensemble) et l'altitude (pieds) pour le déclassement. */
-const HYPOTHESES = { longueur: 5, courant: 2, tension: 28, ambiante: 95, tconducteur: 20, regime: 'continu', cosphi: 0.8, reactance: 0, conditions: ['faisceau'], charge: 60, altitude: 0 };
+   admettent ensemble) et l'altitude (pieds) pour le déclassement ; le RETOUR du courant — par la structure (l'aller
+   seul compte : l'AC 43.13-1B mesure la chute du bus à la masse de l'équipement, le retour par la structure est
+   négligeable avec un bon bonding) ou par un fil identique (neutre filaire, signal à deux fils, fuselage composite :
+   le double) — ; et l'AMBIANTE DU TABLEAU de disjoncteurs (min / max) : la courbe de disjonction qui juge est celle de
+   la température juste au-dessus du max (l'intempestif), la courbe lente celle juste au-dessous du min (la protection
+   du fil) ; −55 et 125 °C, les deux bouts des courbes, par défaut — le cas le plus pessimiste des deux côtés. */
+const HYPOTHESES = { longueur: 5, courant: 2, tension: 28, ambiante: 95, tconducteur: 20, regime: 'continu', cosphi: 0.8, reactance: 0, conditions: ['faisceau'], charge: 60, altitude: 0, retour: 'structure', tableauMin: -55, tableauMax: 125 };
+const RETOURS = { structure: 'par la structure (aller seul)', fil: 'par un fil identique (aller et retour)' };
+const kRetour = H => H && H.retour === 'fil' ? 2 : 1;
 const GROS_CABLE = 10;   // mm² de conducteur : au-delà, la réactance compte en alternatif
 const REGIMES = { continu: 'continu', mono: 'alternatif monophasé', tri: 'alternatif triphasé' };
 /* Les fils d'un bornier : ce que le faisceau compte pour le déclassement. */
@@ -801,16 +839,19 @@ function simulerBornier(Q, norme, hyp) {
     const cosphi = regime === 'continu' ? 1 : Math.min(1, Math.max(0, +H.cosphi || 0.8)), sinphi = Math.sqrt(Math.max(0, 1 - cosphi * cosphi));
     // la section du conducteur (la ligne Fils : le toron de cuivre), pas celle, hors-tout, du câble
     const section = fil && fil.section != null ? fil.section : null, gros = regime !== 'continu' && section != null && section >= GROS_CABLE;
-    const X = regime === 'continu' ? 0 : (+H.reactance || 0) / 1000 * Lf, xRequis = gros && !(X > 0), kReg = regime === 'tri' ? Math.sqrt(3) : 1;
-    const R = rFil == null ? null : rFil + rContact, dU = R == null || xRequis ? null : kReg * (R * cosphi + X * sinphi) * H.courant, pct = dU == null || !H.tension ? null : dU / H.tension * 100;
+    const X = regime === 'continu' ? 0 : (+H.reactance || 0) / 1000 * Lf, xRequis = gros && !(X > 0), kReg = regime === 'tri' ? Math.sqrt(3) : 1, kR = kRetour(H);
+    // le retour par un fil identique double la résistance (le fil et ses contacts, deux fois)
+    const R = rFil == null ? null : (rFil + rContact) * kR, dU = R == null || xRequis ? null : kReg * (R * cosphi + X * kR * sinphi) * H.courant, pct = dU == null || !H.tension ? null : dU / H.tension * 100;
     const verdict = f.jaugeOk === false ? 'jauge' : (iFil != null && H.courant > iFil + 1e-9) ? 'fil' : (iContact != null && H.courant > iContact + 1e-9) ? 'contact'
       : xRequis ? 'reactance' : (dU != null && chute && chute.chuteMax != null && dU > chute.chuteMax + 1e-9) ? 'chute' : !fil || rd.refuse ? 'inconnu' : 'ok';
+    // ce qui se dit en plus du verdict : la tenue du câble à l'ambiante (T max de sa famille contre Tu + 40), l'estimation de X quand il est à saisir
+    const tenue = tenueEnTemperature(norme, f.type, H.ambiante), xEstime = xRequis ? reactanceEstimee(section) : null;
     lignes.push({ borne: m.borne, sens, trou: k + 1, surcharge: k >= Q.filsParCote, cable: f.cable, type: f.type, jauge: f.jauge, jaugeOk: f.jaugeOk, fil, approx: !!(fil && fil.approx),
                   iFil, iContact, rFil, rContact, R, dU, pct, verdict, kT, kConducteur: rd.kConducteur, conducteur: rd.conducteur, rho: rd.rho, rho20: rd.rho20, kTemperature: rd.k, rhoSource: rd.source, cab: rd.cab, section,
-                  sectionHorsTout: rd.cab && rd.cab.section != null ? rd.cab.section : null, regime, cosphi, X, xRequis, longueur: Lf, reelle, vers: f.vers, borneVers: f.borne, l: f.l }); })));
+                  sectionHorsTout: rd.cab && rd.cab.section != null ? rd.cab.section : null, regime, cosphi, X, xRequis, xEstime, kRetour: kR, tenue, longueur: Lf, reelle, vers: f.vers, borneVers: f.borne, l: f.l }); })));
   const compte = {}; lignes.forEach(x => { compte[x.verdict] = (compte[x.verdict] || 0) + 1; });
   const rContact = lignes.length ? lignes[0].rContact : (rFamille != null ? rFamille : 0);
-  return { hyp: H, facteur, declassement, chute, iContact, rContact, famille: F, lignes, compte, regime, fils: filsDuBornier(Q), sansNorme: !F && !(norme && norme.fils.length) };
+  return { hyp: H, facteur, declassement, chute, iContact, rContact, famille: F, lignes, compte, regime, retour: H.retour === 'fil' ? 'fil' : 'structure', fils: filsDuBornier(Q), sansNorme: !F && !(norme && norme.fils.length) };
 }
 const COLONNES_SUIVI = [['contrat', 'Contrat'], ['repere', 'Repère'], ['nature', 'Nature'], ['reference', 'Référence retenue'], ['fichier', 'Référence du fichier'],
   ['nBornes', 'Bornes utilisées'], ['bornes', 'Bornes'], ['shunts', 'Shunts'], ['jauge', 'Jauge'], ['fils', 'Fils'], ['routes', 'Routes'], ['plans', 'Folios']];
@@ -899,8 +940,11 @@ const tailleDe = (norme, famille, taille) => { const T = normeDesModules(norme).
 const contactsDeTaille = (norme, famille, taille) => (normeDesModules(norme).contacts || []).filter(c => c.famille === famille && c.taille === taille);
 const rangDeContact = c => (c.typeFil !== '*' ? 2 : 0) + (c.jauge != null ? 1 : 0);   // 3 : type et jauge exacts … 0 : la ligne « * * »
 function contactDuFil(norme, famille, taille, sexe, type, jauge) { const t = typeDuFil(type);
-  return contactsDeTaille(norme, famille, taille).filter(c => (!sexe || c.sexe === sexe) && (c.typeFil === '*' || c.typeFil === t) && (c.jauge == null || c.jauge === jauge))
-    .sort((a, b) => rangDeContact(b) - rangDeContact(a))[0] || null; }
+  const c = contactsDeTaille(norme, famille, taille).filter(c => (!sexe || c.sexe === sexe) && (c.typeFil === '*' || c.typeFil === t) && (c.jauge == null || c.jauge === jauge))
+    .sort((a, b) => rangDeContact(b) - rangDeContact(a))[0] || null;
+  // la ligne « * * » (tout type, toute jauge : le contact par défaut d'une taille, souvent un coaxial) ne reçoit un fil ordinaire que dans la plage de jauges de la taille (table Tailles) : un 6 AWG n'entre pas dans un contact 12
+  if (c && rangDeContact(c) === 0 && jauge != null) { const T = tailleDe(norme, famille, taille); if (T && T.jaugeMin != null && T.jaugeMax != null && !(jauge <= T.jaugeMin && jauge >= T.jaugeMax)) return null; }
+  return c; }
 /* Ce qu'un arrangement coûte en ACCOMMODATIONS pour ces fils : un fil sur une ligne « * * » (le contact par défaut de
    la taille, pour un fil que la table ne nomme pas) ou sur une ligne à jauge « * » compte 2, un accessoire (un fourreau
    de réduction : le contact est trop gros pour le fil) compte 1. Entre deux arrangements qui logent tout, le moins

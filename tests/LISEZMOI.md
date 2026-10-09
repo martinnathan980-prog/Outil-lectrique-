@@ -41,9 +41,20 @@ node tests/barrettes.js        la bible des barrettes se lit, la référence se 
                                sur la ligne 200 V) ; la résistance des contacts par taille (une fois par prise, deux par barrette) ; les
                                raccords (la table du tutoriel, les gaines par rôle, les colliers et tyraps, la taille du boîtier lue dans
                                le part number, les filetages, les codes d'entrée, la table EN 3660, les manchons VG 95343, l'habillage
-                               d'un connecteur) et la chute en triphasé ; la chute en chaîne (à travers les prises et les barrettes,
-                               longueur réelle) ; les contrats déjà faits (ranger, reconnaître, comparer, reprendre) — 222 contrôles
-                               (sans navigateur)
+                               d'un connecteur — aucun pour un EN 4165, ni pour un EN 3645, à confirmer) et la chute en triphasé ; la
+                               chute en chaîne (à travers les prises et les barrettes, longueur réelle) ; les contrats déjà faits (ranger,
+                               reconnaître, comparer, reprendre) — 223 contrôles (sans navigateur)
+node tests/couverture.js       CE QUE L'OUTIL VÉRIFIE, ET S'IL VÉRIFIE TOUT : sur l'exemple embarqué et sur un contrat inventé plus riche
+                               (huit disjoncteurs dont un sans profil, un sans part number, un tripolaire ; EN 2997, EN 3645, EN 3646,
+                               EN 4165, ASNE0059 ; E0599 et NSA937901 ; deux prises en chaîne ; AD16, AM6, un fil sans type, un type
+                               inconnu, des longueurs réelles), chaque repère et chaque fil passent devant chaque règle — le moteur sans
+                               navigateur (le verdict de chaque disjoncteur, ses fils jusqu'au bout des chemins, la chute en ligne ; chaque
+                               connecteur, prise, barrette, fil), trois cas rejoués à la main (un DR20 sous un 10 A, un MLB24 à travers deux
+                               prises, un AD16), les règles nouvelles (la table 11-3 de l'AC 43.13-1B, le courant du contact, l'ambiante du
+                               tableau de disjoncteurs, la tenue en température, le retour, les pointes contre l'intermittent, la réactance
+                               estimée, la ligne « * * » bornée à sa plage) ; puis le contrôle au navigateur (chaque défaut une fois, au bon
+                               niveau, sur le bon repère), et à la fin LE TABLEAU DE COUVERTURE règle × nature (vérifiée / pas vérifiée /
+                               impossible, et pourquoi) ; --sans-navigateur saute la seconde partie
 node tests/references.js       les contrats déjà faits et le FWD (sans navigateur) : la lecture garde le dessin et les descriptions ;
                                un repère ELEC se décode (zone, nature, ordre, variante) et se dit en mots, une borne de barrette aussi ;
                                la base s'indexe par harness et par dessin ; la comparaison d'un dessin entier et d'un voisinage, la

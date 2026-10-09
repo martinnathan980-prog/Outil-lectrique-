@@ -24,7 +24,14 @@
      · LE FIL : ce que le disjoncteur LAISSE PASSER se lit sur la courbe la
        plus lente — à −55 °C un 5 A laisse 2 In pendant 43 s, 1,47 In pour
        toujours —, et le fil aval doit le tenir à chaque palier de l'EN 2853
-       (2 s, 10 s, 1 min, continu), déclassé comme la simulation.
+       (2 s, 10 s, 1 min, continu), déclassé comme la simulation (faisceau,
+       ambiante sur le continu, conducteur CCA). Deux garde-fous de plus :
+       le calibre maximal par jauge de l'AC 43.13-1B (table Protection) et
+       le courant du contact de la taille du fil.
+     · L'AMBIANTE DU TABLEAU (hypothèses `tableauMin` / `tableauMax`) choisit
+       les courbes qui jugent : la première au-dessus du max pour
+       l'intempestif, la première au-dessous du min pour la protection ;
+       par défaut −55 et 125 °C, les deux bouts — le plus pessimiste.
    L'IDÉAL : le plus petit calibre qui (a) tient la charge avec sa marge —
    10 % de courant en plus, et au plus 75 % du temps de déclenchement
    consommé —, (b) protège chaque fil sur la courbe lente, (c) reste sous ce
@@ -74,13 +81,24 @@ const estDisjoncteur = r => { const q = lireRepere(r); return !!(q && q.num && q
 /* Les courbes d'une famille, de la plus rapide (le premier multiple le plus bas) à la plus lente. Chaque courbe : ses
    points tels que lus (`brut`, pour mémoire) et son ENVELOPPE (`points`) : par multiple croissant, le temps ne remonte
    jamais — les points lus sur une figure tremblent un peu, et l'outil ne doit jamais croire le disjoncteur plus lent
-   qu'il n'est. */
-function courbesDeDisjonction(norme, famille) { const src = norme && norme.disjoncteurs && norme.disjoncteurs.length ? norme : normeDesModules(norme);
+   qu'il n'est. Avec les hypothèses (`hyp.tableauMin`, `hyp.tableauMax` : l'ambiante du tableau de disjoncteurs), on
+   ne garde que les courbes qui ENCADRENT cette ambiante : celles dans la fenêtre, plus la première au-dessus du max
+   (c'est elle qui juge l'intempestif) et la première au-dessous du min (c'est elle qui dit ce qui passe) — par défaut
+   −55 à 125 °C, tout reste. Une courbe sans température reste toujours. */
+function courbesDeDisjonction(norme, famille, hyp) { const src = norme && norme.disjoncteurs && norme.disjoncteurs.length ? norme : normeDesModules(norme);
   const rows = (src.disjoncteurs || []).filter(d => !famille || d.famille === famille), m = new Map();
   rows.forEach(d => (m.get(d.courbe) || m.set(d.courbe, { nom: d.courbe, famille: d.famille, temperature: d.temperature, brut: [] }).get(d.courbe)).brut.push({ m: d.multiple, t: d.temps }));
-  return [...m.values()].map(c => { const brut = c.brut.slice().sort((a, b) => a.m - b.m || b.t - a.t); let mn = Infinity;
+  const cs = [...m.values()].map(c => { const brut = c.brut.slice().sort((a, b) => a.m - b.m || b.t - a.t); let mn = Infinity;
     const points = brut.map(p => { mn = Math.min(mn, p.t); return { m: p.m, t: mn }; }); return { ...c, brut, points }; })
-    .filter(c => c.points.length).sort((a, b) => a.points[0].m - b.points[0].m || a.nom.localeCompare(b.nom)); }
+    .filter(c => c.points.length).sort((a, b) => a.points[0].m - b.points[0].m || a.nom.localeCompare(b.nom));
+  const tmin = hyp && hyp.tableauMin != null ? +hyp.tableauMin : null, tmax = hyp && hyp.tableauMax != null ? +hyp.tableauMax : null; if (tmin == null && tmax == null) return cs;
+  const T = cs.filter(c => c.temperature != null), lo = tmin == null ? -Infinity : tmin, hi = tmax == null ? Infinity : tmax;
+  const dessus = T.filter(c => c.temperature >= hi).sort((a, b) => a.temperature - b.temperature)[0], dessous = T.filter(c => c.temperature <= lo).sort((a, b) => b.temperature - a.temperature)[0];
+  return cs.filter(c => c.temperature == null || (c.temperature >= lo && c.temperature <= hi) || c === dessus || c === dessous); }
+/* LA PROTECTION PAR JAUGE (table Protection, AC 43.13-1B table 11-3) : le calibre maximal du disjoncteur et du fusible
+   pour cette jauge de fil, la taille de contact usuelle et son courant. Rien pour une jauge que la table ignore (elle
+   commence au 22 AWG) : on ne l'invente pas. */
+function protectionDeJauge(norme, jauge) { if (jauge == null) return null; return (normeDesModules(norme).protections || []).find(p => p.jauge === jauge) || null; }
 /* Le temps que le disjoncteur tient à ce multiple : sous le premier point, toujours (Infinity) ; entre deux points, une
    interpolation en log-log (la courbe d'un thermique est une droite par morceaux sur papier log-log : c'est ce que la
    figure du constructeur dessine) ; au-delà du dernier, la pente du dernier segment. Le graphique de la fiche
@@ -131,7 +149,7 @@ function bilanThermique(courbe, calibre, phases, k) { let somme = 0, permOk = tr
    aucun calibre avec marge ne les satisfait, 'serre' quand aucun n'a la marge). `contexte` : { fils, hyp, autres } —
    les fils aval (pour b, c) et les calibres des disjoncteurs voisins (pour d). */
 function verdictDisjonction(norme, famille, calibre, profil, contexte) { contexte = contexte || {};
-  const courbes = courbesDeDisjonction(norme, famille), pts = pointsDuProfil(profil), phases = phasesDuProfil(profil), fils = contexte.fils || [], autres = (contexte.autres || []).filter(c => c > 0);
+  const courbes = courbesDeDisjonction(norme, famille, contexte.hyp), pts = pointsDuProfil(profil), phases = phasesDuProfil(profil), fils = contexte.fils || [], autres = (contexte.autres || []).filter(c => c > 0);
   const juger = cal => { const bilans = courbes.map(c => bilanThermique(c, cal, phases, 1)), marges = courbes.map(c => bilanThermique(c, cal, phases, MARGE_DISJONCTION));
     const points = pts.map(p => { const multiple = p.i / cal, duree = phases.filter(q => q.i === p.i && q.t !== Infinity).reduce((s, q) => s + q.t, 0);
       const m = courbes.map((c, k) => { const temps = tempsDeDeclenchement(c, multiple), admis = multipleAdmis(c, p.t) * cal, fraction = p.t === Infinity || temps === Infinity ? 0 : duree / temps;
@@ -152,7 +170,7 @@ function verdictDisjonction(norme, famille, calibre, profil, contexte) { context
   const calibres = [...new Set(CALIBRES.concat(calibre > 0 ? [calibre] : []))].sort((a, b) => a - b);
   const gamme = calibres.map(c => { if (!(courbes.length && pts.length)) return { calibre: c, valide: null, serre: false, marge: null, somme: null, fils: null, selectif: null, ideal: false };
     const j = juger(c), pf = fils.length ? protectionDesFils(norme, c, profil, fils, contexte.hyp) : [];
-    return { calibre: c, valide: j.valide, serre: j.serre, marge: j.avecMarge, somme: j.somme, fils: fils.length ? pf.every(f => f.protege !== false && f.verdict !== 'calibre') : null,
+    return { calibre: c, valide: j.valide, serre: j.serre, marge: j.avecMarge, somme: j.somme, fils: fils.length ? pf.every(f => f.protege !== false && f.verdict !== 'calibre' && !f.horsTable && !f.contactSurcharge) : null,
       selectif: autres.length ? autres.every(a => Math.max(a, c) >= SELECTIVITE * Math.min(a, c) - 1e-9) : null, ideal: false }; });
   const candidats = gamme.filter(g => g.marge), complets = candidats.filter(g => g.fils !== false && g.selectif !== false);
   const calibreMini = (gamme.find(g => g.valide) || {}).calibre || null, choisi = complets[0] || candidats[0] || gamme.find(g => g.valide) || null, calibreIdeal = choisi ? choisi.calibre : null;
@@ -176,15 +194,32 @@ const PALIERS_EN2853 = [[2, '2 s'], [10, '10 s'], [60, '1 min'], [Infinity, 'con
        n'est pas protégé en surcharge brève.
    Le déclassement : le faisceau s'applique à tout ; l'ambiante (EN 2853 note 2, √((Tr − Tu)/40)) seulement au CONTINU
    — les paliers 2 s, 10 s, 1 min sont adiabatiques (un 24 AWG à 19,5 A pendant 2 s monte à ~220 °C, la loi du régime
-   permanent n'y vaut rien). `facteur` est celui du continu, `facteurCourt` celui des paliers. `fils` : [{ cable, type, … }]. */
+   permanent n'y vaut rien) ; un conducteur qui n'est pas du cuivre (AD, VN : aluminium cuivré) se déclasse encore de
+   √(R cuivre / R câble), partout — il chauffe plus pour le même courant, en continu comme en bref (comme la
+   simulation : `kConducteur`) ; sans la résistance du câble, son intensité est inconnue, rien n'est inventé.
+   `facteur` est celui du continu, `facteurCourt` celui des paliers. Deux garde-fous de plus, par fil :
+     · LA TABLE 11-3 de l'AC 43.13-1B (table Protection) : le calibre ne dépasse pas le maximum de la jauge
+       (`calibreMax`, `horsTable`) — rien pour une jauge qu'elle ignore (24, 26 AWG) ;
+     · LE CONTACT : le courant du contact de la taille du fil (`f.taille` si l'appelant la connaît — le contact du plan —,
+       sinon la taille usuelle de la jauge ; table Résistance des contacts, sinon Protection) : le permanent doit rester
+       dessous (`contactDepasse`), et le calibre aussi (`contactSurcharge`), sans quoi une surcharge que le
+       disjoncteur laisse passer cuit le contact.
+   `fils` : [{ cable, type, taille?, … }] ; `hyp` : les hypothèses de la simulation (l'ambiante du tableau choisit la
+   courbe lente). La tenue du câble à l'ambiante est dite aussi (`tenue`). */
 function protectionDesFils(norme, calibre, profil, fils, hyp) { const H = { ...HYPOTHESES, ...(hyp || {}) }, pts = pointsDuProfil(profil), k = facteurDeclassement(norme, H.conditions);
-  const courbes = courbesDeDisjonction(norme, ''), lente = courbes[courbes.length - 1] || null;
-  return (fils || []).map(f => { const jauge = jaugeDuType(f.type), fil = filDeNorme(norme, f.type, jauge);
-    if (!fil || fil.intensite == null) return { ...f, fil: fil || null, jauge, continu: null, facteur: 1, facteurCourt: 1, phases: [], pire: null, laisse: [], pireLaisse: null, protege: null, courbeLente: '', verdict: 'inconnu' };
-    const facteur = k * facteurAmbiante(fil, H.ambiante), facteurDe = t => t === Infinity ? facteur : k, continu = fil.intensite * facteur;
+  const courbes = courbesDeDisjonction(norme, '', H), lente = courbes[courbes.length - 1] || null;
+  return (fils || []).map(f => { const jauge = jaugeDuType(f.type), fil = filDeNorme(norme, f.type, jauge), rd = resistanceDuFil(norme, f.type, jauge, H.tconducteur), tenue = tenueEnTemperature(norme, f.type, H.ambiante);
+    const protection = protectionDeJauge(norme, jauge), calibreMax = protection ? protection.disjoncteurMax : null, horsTable = !!(calibre > 0 && calibreMax != null && calibre > calibreMax + 1e-9);
+    // le contact : celui du plan si l'appelant le donne, sinon la taille usuelle de la jauge (table Protection, sinon la plus petite qui l'admet) — et la ligne de la table des contacts qui lui répond
+    const taille = f.taille || (protection && protection.tailleContact) || tailleDeJauge(norme, f.famille || '', jauge), ic = intensiteDeContact(norme, taille), contact = ic ? { ...ic, taille: f.taille || ic.taille, parLePlan: !!f.taille } : null;
+    const permanent = pts.filter(p => p.t === Infinity).reduce((m, p) => Math.max(m, p.i), 0);
+    const contactSurcharge = !!(contact && calibre > 0 && calibre > contact.intensite + 1e-9), contactDepasse = !!(contact && permanent > contact.intensite + 1e-9);
+    const commun = { fil: fil || null, jauge, conducteur: rd.conducteur, kConducteur: rd.kConducteur, tenue, calibreMax, horsTable, contact, contactSurcharge, contactDepasse, permanent, courbeLente: lente ? lente.nom : '' };
+    if (!fil || fil.intensite == null || rd.refuse) return { ...f, ...commun, continu: null, facteur: 1, facteurCourt: 1, phases: [], pire: null, laisse: [], pireLaisse: null, protege: null, verdict: 'inconnu', refuse: !!rd.refuse };
+    const kc = rd.kConducteur || 1, facteur = k * facteurAmbiante(fil, H.ambiante) * kc, facteurCourt = k * kc, facteurDe = t => t === Infinity ? facteur : facteurCourt, continu = fil.intensite * facteur;
     const phases = pts.map(p => { const admise = intensiteAdmise(fil, p.t) * facteurDe(p.t); return { ...p, admise, palier: palierDe(p.t), ok: p.i <= admise + 1e-9 }; });
     const pire = phases.filter(p => !p.ok).sort((a, b) => b.i / b.admise - a.i / a.admise)[0] || null;
     const laisse = lente && calibre > 0 ? PALIERS_EN2853.map(([t, mot]) => { const multiple = multipleAdmis(lente, t), courant = multiple * calibre, admise = intensiteAdmise(fil, t) * facteurDe(t); return { palier: t, mot, multiple, courant, admise, ok: courant <= admise + 1e-9 }; }) : [];
     const pireLaisse = laisse.filter(x => !x.ok).sort((a, b) => b.courant / b.admise - a.courant / a.admise)[0] || null;
-    return { ...f, fil, jauge, continu, facteur, facteurCourt: k, phases, pire, laisse, pireLaisse, protege: laisse.length ? !pireLaisse : null, courbeLente: lente ? lente.nom : '', approx: !!fil.approx,
+    return { ...f, ...commun, continu, facteur, facteurCourt, phases, pire, laisse, pireLaisse, protege: laisse.length ? !pireLaisse : null, approx: !!fil.approx, refuse: false,
       verdict: pire ? 'fil' : (calibre > 0 && calibre > continu + 1e-9) ? 'calibre' : 'ok' }; }); }
