@@ -140,8 +140,12 @@ calculs : on les laisse, on n'en parle plus.
 **Les contrats déjà faits et l'outil**
 - La plage des numéros de fil neufs (les fils repris sont « à numéroter »).
 - Ton extrait de base porte-t-il les choix de fiche (raccords, sexes des
-  contacts, calibres, profils) ou seulement les liaisons ? La route et la
-  longueur de l'autre machine se reprennent-elles ?
+  contacts, calibres, profils) ou seulement les liaisons ? À la reprise,
+  l'outil garde la route de l'autre machine et laisse sa longueur (une
+  mesure d'un autre aéronef) : est-ce la bonne règle ?
+- Les folios se placent d'avance en arrière-plan (plusieurs minutes de
+  processeur sur un gros contrat, en plus de l'affinage) : acceptable sur ton
+  poste ?
 - Le format réel de l'extrait : une feuille par harness ? un classeur ?
 - Les tables que tu as déjà en Excel, par domaine (barrettes, prises,
   raccords, disjoncteurs) — la page Normes les importe ; « Exporter mes

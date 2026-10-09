@@ -241,7 +241,8 @@ function autourHtml(cle, fils, pn, nomen, titre, ref) { if (!fils.length) return
     ['band-it', bandit, 'La bande EN 3660-033 serre la tresse sur la plateforme ØBB du code d’entrée retenu (sinon le toron) ; l’E0805 d’atelier en équivalent, par le toron'],
     ['manchon', manchon, 'L’étanchéité demande un manchon précollé : Ja > ce qui sort du raccord > Jb, et Ha > ØCC de l’entrée > Hb (VG 95343)'],
     ['gaine', gaine, G && G.role === 'surblindage' ? 'La plus petite tresse dont l’intérieur passe le toron : elle se reprend sur le raccord par la bande' : 'La gaine dont la plage encadre le toron : une protection finit sous le manchon ou par un collier'],
-    ['manque', h.manquants.length ? h.manquants.map(m => `<i class="fi-avenir fi-long">${esc(m)}</i>`).join('<br>') : '', 'Ce que la norme ne dit pas encore : à compléter dans la table']]);
+    // ce qui manque, sans redire ce qu'une ligne au-dessus dit déjà (l'absence d'un manchon est sur la ligne manchon)
+    ['manque', (() => { const xs = h.manquants.filter(m => !(h.manchon && !h.manchonRef && /^aucun manchon/.test(m))); return xs.length ? xs.map(m => `<i class="fi-avenir fi-long">${esc(m)}</i>`).join('<br>') : ''; })(), 'Ce que la norme ne dit pas encore : à compléter dans la table']]);
   const choix = [MOTS_BLINDAGE[c.blindage] || MOTS_BLINDAGE.NO, c.etanche ? 'zone étanche' : 'pas d’étanchéité', c.orientation === 'coudé' ? 'coudé' : 'droit', c.gaine ? 'gaine ' + c.gaine : 'sans gaine'].join(' · ');
   const segments = PUCES_RACCORD.map(([champ, t, opts]) => `<div class="fi-seg">${voletT(t)}<div class="fi-puces">${opts.map(([v, m]) => `<button class="fi-chip" data-raccord="${escA(cle)}" data-champ="${champ}" data-v="${escA(v)}" aria-pressed="${String(c[champ]) === v}">${esc(m)}</button>`).join('')}</div></div>`).join('');
   const k = 'rac|' + cle;
