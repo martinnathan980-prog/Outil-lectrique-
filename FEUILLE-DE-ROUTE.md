@@ -102,11 +102,9 @@ page de norme suffit toujours : je la transcris.
    prises de coupure et les barrettes, comme la feuille Chute_en_ligne.
    Sans longueur, l'hypothèse de la simulation sert, et c'est dit. ✔ La
    résistance des contacts (AS39029, par taille) compte pour chaque prise
-   et deux fois par barrette. Reste : **les 0,90 V et 2,10 V « par prise »
-   de votre feuille** — ce n'est pas R × I (une paire de contacts à 10 A
-   fait 0,1 à 0,2 V) : ouvrez la cellule et dites si c'est une constante,
-   une formule (laquelle) ou une recherche dans un onglet ; si 2,10 − 0,90
-   = la chute du câble entre les deux, c'est un cumul.
+   et deux fois par barrette. Les 0,90 V et 2,10 V « par prise » de votre
+   feuille sont vos propres calculs d'après vos exemples (votre réponse) :
+   l'outil ne les reprend pas et on n'en parle plus.
 
 ### C. Les disjoncteurs
 
