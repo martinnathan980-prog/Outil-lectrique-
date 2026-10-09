@@ -180,7 +180,7 @@ async function deposer(page, chemin) { const b64 = fs.readFileSync(chemin).toStr
     window.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true })); }, [b64, nom]); }
 const toast = page => page.evaluate(() => ({ texte: $('toast').textContent, erreur: $('toast').classList.contains('erreur'), on: $('toast').classList.contains('on') }));
 const telecharger = async (page, action) => { const [d] = await Promise.all([page.waitForEvent('download', { timeout: 15000 }), action()]); return { nom: d.suggestedFilename(), chemin: await d.path() }; };
-/* l'état du contrat en mots (« 3 problèmes · 10 à voir »), tel que le contrôle le compte — la barre du haut ne le porte
+/* l'état du contrat en mots (« 4 problèmes · 9 à voir »), tel que le contrôle le compte — la barre du haut ne le porte
    plus : le bouton des repères porte le compte, l'index la liste */
 const ETAT_DU_CONTROLE = `window.etatDuControle = function () { const xs = CONTROLE.items, k = xs.filter(x => x.niveau === 'ko').length, a = xs.length - k;
   return k ? k + (k > 1 ? ' problèmes' : ' problème') + (a ? ' · ' + a + ' à voir' : '') : a ? a + ' à voir' : 'rien à reprendre'; };`;
@@ -364,7 +364,7 @@ function baseEssaiDansLaPage() {
   /* ================================================================ C. LE CONTRÔLE D'UN CONTRAT ============== */
   await parcours('C. Le contrôle d’un contrat — l’en-tête, l’index « à reprendre », trois corrections, une hypothèse, un choix de fiche', async () => {
     const ctx = await nav.newContext(grand), page = await ouvrirPage(ctx); await page.waitForTimeout(300);
-    let e = await etat(page); const enEtat0 = e.enEtat; ok(e.nom === 'Contrat d’exemple' && /^3 problèmes · \d+ à voir$/.test(e.enEtat), 'l’exemple : « 3 problèmes · n à voir » (le compte des « à voir » suit les règles du contrôle)', e.enEtat);
+    let e = await etat(page); const enEtat0 = e.enEtat; ok(e.nom === 'Contrat d’exemple' && /^4 problèmes · \d+ à voir$/.test(e.enEtat), 'l’exemple : « 4 problèmes · n à voir » (W-012 et W-015 dépassés par la charge, le contact 23 du DR24 W-015 sous son permanent, 300XC1 B sans arrangement ; le compte des « à voir » suit les règles du contrôle)', e.enEtat);
     let t0 = Date.now(); await page.click('#btnIndex'); await page.waitForFunction(() => app.insp.index && document.querySelector('#ba-equip .co-item')); mesure('le bouton des repères → l’index « à reprendre »', Date.now() - t0, SEUIL_GESTE);
     const items = await page.evaluate(() => [...document.querySelectorAll('#ba-equip .co-item')].map(b => { const x = CONTROLE.items[+b.dataset.k]; return { k: +b.dataset.k, nom: x.nom, plan: x.plan, tableau: x.tableau != null, texte: x.texte }; }));
     ok(items.length === 6 && await page.evaluate(() => !document.querySelector('#ba-equip .ix-controle').open), 'l’index s’ouvre, « à reprendre » replié en tête (le lecteur : on clique si on veut) : six lignes derrière (102CB1 deux fois, 300XC1, VT1, VT2, VT3)', items.map(x => x.nom).join(' '));
