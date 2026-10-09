@@ -78,6 +78,21 @@ node tests/fwd.js              à la vraie souris : « Déjà fait » dit le des
                                (équipement, voisinage à un ou deux pas, dessin entier), reprendre à l'échelle du dessin, Ctrl+Z ; le calque
                                du dessin (le FWD dessiné par le moteur, l'équipement comparé encadré, la colonne qui explique, la
                                recherche, un clic, Échap, « Comparer ») ; la bible qui cherche un repère et ouvre son dessin ; au téléphone
+node tests/parcours.js         LES PARCOURS DU LECTEUR, de bout en bout, à la vraie souris, chronométrés (grand écran, puis téléphone) :
+                               A. un contrat neuf (l'accueil, un retest Excel au vrai format déposé, le plan, les folios au clavier et à la
+                               barre du bas, la recherche, une correction dans le tableau que le plan suit, Ctrl+Z, fermer et rouvrir, les
+                               exports SVG / PNG / CSV, la nomenclature, le relief) ; B. je pars d'un contrat déjà fait (une base de quatre
+                               machines, « Déjà fait » sur chaque fiche, le FWD à trois échelles, cocher et reprendre, le contrôle refait,
+                               Ctrl+Z, les repères proposés en « ? », renommer un repris — repart-on de zéro ? copie-t-on à l'aveugle ?) ;
+                               C. le contrôle (l'en-tête, l'index « à reprendre » qui mène à chaque point, trois corrections, une hypothèse,
+                               un choix de fiche qui change la nomenclature) ; D. le téléphone (A et C : tout reste-t-il atteignable ?) ;
+                               E. les cas limites (vide, une ligne, sans part numbers, codes inconnus, deux feuilles, deux harness, un
+                               retest de 1 500 lignes et 20 folios avec ses temps). Les jeux d'essai se génèrent (Excel, CSV).
+                               Deux sortes de contrôles : `ok` (un échec rend 1) et `frottement` (un FROTTEMENT CONNU, noté « ~~ », qui ne
+                               fait pas échouer la batterie et passe « réglé » quand une correction le résout) ; une mesure au-delà de
+                               son seuil (une fiche 200 ms, un folio 3 s, un geste 1 s) est un frottement. --captures=dossier : une
+                               capture par pas et parcours-mesures.json ; --sans-gros saute le gros retest ; --parcours=C,E ne rejoue
+                               que ceux-là
 ```
 
 Tous acceptent `--fichier=chemin` pour mesurer un autre fichier que
