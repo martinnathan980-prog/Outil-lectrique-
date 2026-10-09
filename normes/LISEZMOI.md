@@ -164,21 +164,40 @@ L'Excel du lecteur (feuille Base_de_données), transcrit point par point :
 quatre **courbes de disjonction à tension nominale** d'un disjoncteur
 thermique — le temps de déclenchement en secondes selon le **multiple du
 courant nominal In** — à **125 °C** (46 points), **23 °C** la plus rapide
-(51) et la plus lente (45), **−55 °C** (47). La famille `disjoncteur` vaut
-pour tous les calibres, la courbe étant en multiples de In ; une autre
-famille s'ajoute avec son nom.
+(51) et la plus lente (45), **−55 °C** (47). La recherche R5 (octobre 2026)
+les a identifiées : ce sont, à 1-4 % près, les courbes typiques du
+disjoncteur **E-T-A 483** (monopolaire compensé −55/+125 °C, approuvé
+MS 3320 / prEN 2995) — la famille s'appelle donc **ETA483**. Cinq familles
+de plus viennent des tracés vectoriels des fiches constructeur (±3 % sur le
+multiple, ±5 % sur le temps) : **2TC** (Klixon 2TC / 3TC : MS3320, MS14105),
+**6TC** (6TC / 9TC tripolaires : MS14154, MS14153), **5TC** (20-50 A),
+**7274** (non compensé : MS22073, MS26574) et **EN2495** (Crouzet 84 406 /
+84 417 : EN 2495, EN 2995, EN 2592, EN 2996). La courbe est en multiples de
+In : une famille vaut pour tous ses calibres.
 
-Trois tables de plus (octobre 2026) : la **Calibration** (les points
-normalisés par famille et par ambiante : ce qu'un disjoncteur tient une
-heure, ce qui le déclenche, les temps à 200, 500 et 1000 % de In — Sensata
-2TC/3TC/7274, Safran 170), les **Familles de disjoncteurs** (MS3320 / 2TC,
-AS33201, 3TC, 6TC, 9TC, 7274 / MS22073 / MS26574, EN 2495 / EN 2995, MS33201,
-EN 3661, EN 2592 / EN 2996, EN 3662 : norme, pôles, gamme de calibres,
-tension, compensation en température, ambiante admise, masse, courbe à
-prendre) et la **Protection** par jauge de fil (AC 43.13-1B table 11-3 : le
-calibre maximal du disjoncteur et du fusible, la taille de contact et son
-courant). Le calibre ne se lit en queue d'un part number que pour une
-famille connue : **MS3320-10 → 10 A** ; NSA935401-10 est un collier.
+Quatre tables de plus : la **Calibration** (les points normalisés par
+famille et par ambiante : ce qu'un disjoncteur tient une heure, ce qui le
+déclenche, les temps à 200, 500 et 1000 % de In — les fiches Sensata, et
+les feuilles militaires MS3320N, MS22073M, MS14153C / MS14154D, qui sont les
+valeurs contractuelles ; la ligne « préchargé à 60 % » dit ce que le
+préchauffage fait : le temps divisé par 1,6 à 3,7), les **Familles de
+disjoncteurs** (MS3320, 2TC, AS33201, 3TC, MS14105, 6TC, 9TC, 5TC, 7274,
+ETA483, EN 2495 / 2995, MS33201, EN 3773, EN 3661, EN 2794, EN 2592 / 2996,
+EN 3774, EN 3662, Safran 170 : norme, pôles, gamme de calibres, tension,
+compensation, ambiante admise, masse, **la courbe à prendre** et les
+**motifs** de part number qui nomment la famille — c'est cette table que le
+moteur lit : `MS3320` reconnaît MS3320-10 et MS3320L-5, `2TC` reconnaît
+2TC2-10 ; le calibre se lit en queue s'il est de la gamme ; un part number
+inconnu prend les courbes ETA483), la **Protection** par jauge de fil
+(AC 43.13-1B table 11-3 : le calibre maximal du disjoncteur et du fusible —
+rien en 1 et 0 AWG pour le disjoncteur —, la taille de contact et son
+courant ; la fiche et le contrôle d'un disjoncteur la confrontent à chaque
+fil nourri) et la **Chute disjoncteur** (la chute propre aux bornes à In :
+1,1 V à 1 A, 0,25 V à 15-25 A — montrée sur la fiche, pas encore comptée
+dans la chute en ligne : à trancher avec le lecteur). Les MS3320 /
+AS33201 prennent les courbes ETA483 parce que la feuille du lecteur les
+trace ainsi — un Klixon 2TC2 prendrait 2TC (plus lent à −54 °C) : à
+confirmer. NSA935401-10 reste un collier.
 
 Ce que l'outil en fait, sur la fiche de chaque disjoncteur (code CB) : le
 **calibre** (lu en queue du part number d'une famille connue, ou écrit), le
@@ -198,11 +217,11 @@ petit calibre de la gamme (1, 2, 2,5, 3, 4, 5, 7,5, 10, 15, 20, 25, 30, 35,
 contrôle relève chaque disjoncteur qui déclenche, sans calibre ou sans
 profil.
 
-À confirmer : de quel disjoncteur sont ces courbes (une seule famille pour
-l'instant), la gamme des calibres, et la marge qu'on s'impose (l'outil
-demande seulement que le disjoncteur tienne plus longtemps que la phase).
-Il manque encore, pour la protection du fil, l'intensité admissible et le
-I²t des fils (§ B de la feuille de route).
+À confirmer : la référence réelle des disjoncteurs du lecteur (E-T-A 483,
+Klixon 2TC2 ou Crouzet 84 406 : les courbes à −55 °C diffèrent, de 23 à
+66 s à 2 In), l'ambiante du tableau (hypothèses « tableau min / max » : seules
+les courbes qui l'encadrent jugent), la marge qu'on s'impose, et où commence
+le « bus » de sa règle de chute (la chute propre du disjoncteur compte-t-elle).
 
 ## `contacts.csv` : le contact à sertir sur chaque fil
 
@@ -330,12 +349,17 @@ figures 13 à 15 : 43 codes d'arrangement — taille 22D (EN 3155, câble
 cuivre 26–22) et taille 22 (ABS1493/ABS1380, 24–22, aluminium) en 21
 contacts, codes 01 à 07 ; taille 20 (24–18) en 10 contacts, codes 01 à 12 ;
 taille 16 (20–16) en 8 contacts, codes 01 à 06 ; taille 12 (14–12) en 6
-contacts, codes 03 à 06 et 12 ; les mixtes M12-02, 07, 08, 09, 10, 11. Les
-codes marqués (*) par la norme sont d'**usage normal** : le remplissage les
-préfère. Les codes A350 (AD12) et M12-07 (liaisons internes illisibles sur
-la figure) ne sont jamais choisis seuls. La règle de désignation n'était pas
-sur les pages lues : l'outil écrit `NSA937901-<taille>-<code>`
-(`NSA937901-20-04`) en attendant.
+contacts, codes 03 à 06 et 12 ; les mixtes M12-02, 07, 08, 09, 10, 11 ; et
+deux **modules de masse** NSA937916-20 / -16 (10 contacts #20, 8 contacts
+#16 reliés à la masse par l'étrier ; usage « masse » : jamais choisis
+d'office). Les codes marqués (*) par la norme sont d'**usage normal** : le
+remplissage les préfère. Les codes A350 (AD12) et M12-07 (liaisons internes
+illisibles sur la figure) ne sont jamais choisis seuls. La désignation
+réelle est **`NSA937901M<taille>-<code>`** (`NSA937901M20-04` — vérifiée au
+catalogue Amphenol Air LB et chez Boeing, recherche R3) ; l'outil relit
+encore l'ancienne forme `NSA937901-20-04`. La table **Accessoires** donne
+les références annexes (butées SC/SD, séparateurs, bloc à tige, shunt SH05,
+étiquettes, étriers NSA937915) et leur équivalent Air LB — informatives.
 
 Une barrette prend la norme de son part number (le fichier dit
 `E0599-…` ou `NSA937901-…`), sinon la mieux taillée des deux ; la carte
@@ -466,7 +490,7 @@ conducteur qui n'est pas du cuivre (table Familles de câbles).
 | colonne | obligatoire | sens |
 |---|---|---|
 | Condition | oui | un mot (`faisceau`, `altitude`) : chaque condition devient une case à cocher dans la simulation |
-| Fils, Charge | non | le point d'une courbe de faisceau : le nombre de fils et la charge en % ; l'outil prend le point le plus proche du faisceau simulé |
+| Fils, Charge | non | le point d'une courbe de faisceau : le nombre de fils et la charge en % ; l'outil prend la colonne de charge la plus proche de l'hypothèse, puis le point exact du nombre de fils, sinon interpole en log(fils) entre les deux points qui l'encadrent (un fil vaut 1,0) — les 43 points de la figure 11-5 de l'AC sont dans `norme-exemple.csv` |
 | Altitude | non | le point d'une courbe d'altitude (pieds) ; l'outil interpole |
 | Facteur | oui | multiplie l'intensité admissible du fil ; plusieurs conditions cochées se multiplient |
 
@@ -488,25 +512,59 @@ conducteur qui n'est pas du cuivre (table Familles de câbles).
 | Conducteur | oui | cuivre, CCA (aluminium cuivré), aluminium : décide si la ligne cuivre de l'EN 2853 vaut |
 | Norme, Placage, T min, T max, Tension, Fréquence max, Isolant, Blindage, Rayon de courbure, Marquage, Note | non | informatif (la fiche d'un fil les dira) |
 
-### Résistance des contacts — une ligne par taille
+### Résistance des contacts — une ligne par taille (et par emploi)
 
 | colonne | obligatoire | sens |
 |---|---|---|
 | Taille | oui | 22D, 22, 20, 16, 12, 10, 8 |
 | Résistance | oui | mΩ, la paire sertie et accouplée, à neuf |
+| Emploi | non | `connecteur` (prises, connecteurs : les limites AS39029) ou `jonction` (les modules des barrettes : les valeurs Amphenol Air LB, 5 / 4 / 3 / 2 mΩ) ; vide = vaut pour les deux. L'outil prend la ligne de l'emploi, sinon la première de la taille |
 | Intensité, Chute max, Résistance fin de vie, Note | non | le courant nominal, la chute max aux bornes (mV), la résistance de conception |
+
+### Courant des contacts — une ligne par couple (fût, jauge)
+
+| colonne | obligatoire | sens |
+|---|---|---|
+| Taille, Jauge, Intensité | oui | le contact, la jauge du fil serti, ce qu'il porte avec ce fil (A) : un 24 AWG dans un contact 20 porte 3 A, pas 7,5 — I contact = min(nominal de la taille, ligne (fût, jauge)) |
+| Fût, Intensité hermétique, Note | non | le fût de sertissage (AWG), la version hermétique, la source |
+
+### Chute disjoncteur — une ligne par famille et calibre(s)
+
+| colonne | obligatoire | sens |
+|---|---|---|
+| Famille, Calibre, Chute max | oui | la famille (MS3320, 2TC, ETA483…), le calibre ou une liste (« 15 20 25 ») qui vaut pour chacun, la chute aux bornes à In (V) |
+
+### Accessoires — une ligne par référence annexe
+
+| colonne | obligatoire | sens |
+|---|---|---|
+| Famille, Référence, Équivalent, Rôle | oui | la famille (NSA937901), la référence de la norme, l'équivalent catalogue, à quoi il sert |
+| Masse, Note | non | g, la page |
+
+### Familles de disjoncteurs — la colonne Motifs
+
+`Motifs` : les débuts de part number qui nomment la famille, séparés par des
+espaces (« MS3320 », « 2TC », « 483 ETA483 ») ; vide = le nom de la famille.
+Un motif qui finit par un chiffre admet une lettre de variante (MS3320L),
+un motif qui finit par une lettre admet des chiffres (2TC27). `Calibres` :
+une liste (« 1 2 2,5 3 5 ») ou une plage (« 1 à 25 »). `Courbe` : la famille
+de la table Courbes à prendre.
 
 ## Ce que la simulation calcule, fil par fil
 
 Les hypothèses (longueur du fil, courant, tension, ambiante, température du
-conducteur, régime, cos φ, réactance, conditions de déclassement, charge du
-faisceau, altitude) sont affichées dans la carte et se changent sur place :
-le retest ne porte ni longueur ni courant, l'outil ne les invente pas.
+conducteur, retour par la structure ou par un fil identique, régime, cos φ,
+réactance, conditions de déclassement, charge du faisceau, altitude,
+ambiante du tableau de disjoncteurs min / max) se changent dans la fiche
+Hypothèses (le menu, ou le mot « hypothèse » d'une fiche) : le retest ne
+porte ni longueur ni courant, l'outil ne les invente pas. Chaque ligne dit
+en plus si le câble tient l'ambiante (T max de sa famille contre Tu + 40 °C)
+et, quand X est à saisir, une estimation (fil seul à 20 mm de la structure).
 
     I fil     = intensité du fil (table Fils) × déclassement (faisceau, altitude) × √((T conducteur − ambiante)/40) × √(R cuivre / R câble) si le conducteur n'est pas du cuivre
-    I contact = intensité du contact (table Familles)
+    I contact = intensité du contact (table Familles, sinon Résistance des contacts par emploi, bornée par la ligne (fût, jauge) de Courant des contacts)
     ρ(T)      = Résistance 20 (Ω/km) × (234,5 + T conducteur)/254,5   (aluminium : (238,1 + T)/258,1)
-    R         = ρ(T) / 1000 × longueur (m) + Résistance du contact (mΩ) / 1000   (la famille, sinon la taille du contact ; deux fois sur une barrette)
+    R         = (ρ(T) / 1000 × longueur (m) + Résistance du contact (mΩ) / 1000) × 2 si le retour se fait par un fil identique   (la résistance de contact : la famille, sinon la taille du contact et l'emploi — jonction sur une barrette, deux fois ; connecteur sur une prise)
     ΔU        = R × courant, en V et en % de la tension (mono : I (R cos φ + X sin φ) ; tri : √3 × …, comparée à la ligne 200 V)
 
 Le verdict, dans l'ordre : jauge hors plage · le courant dépasse le fil ·

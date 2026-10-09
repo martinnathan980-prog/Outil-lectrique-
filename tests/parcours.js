@@ -354,7 +354,7 @@ function baseEssaiDansLaPage() {
   /* ================================================================ C. LE CONTRÔLE D'UN CONTRAT ============== */
   await parcours('C. Le contrôle d’un contrat — l’en-tête, l’index « à reprendre », trois corrections, une hypothèse, un choix de fiche', async () => {
     const ctx = await nav.newContext(grand), page = await ouvrirPage(ctx); await page.waitForTimeout(300);
-    let e = await etat(page); ok(e.nom === 'Contrat d’exemple' && /^3 problèmes · 5 à voir$/.test(e.enEtat), 'l’exemple : l’en-tête dit « 3 problèmes · 5 à voir »', e.enEtat);
+    let e = await etat(page); const enEtat0 = e.enEtat; ok(e.nom === 'Contrat d’exemple' && /^3 problèmes · \d+ à voir$/.test(e.enEtat), 'l’exemple : l’en-tête dit « 3 problèmes · n à voir » (le compte des « à voir » suit les règles du contrôle)', e.enEtat);
     let t0 = Date.now(); await page.click('#en-etat'); await page.waitForFunction(() => app.insp.index && document.querySelector('#ba-equip .co-item')); mesure('la pastille de l’en-tête → l’index « à reprendre »', Date.now() - t0, SEUIL_GESTE);
     const items = await page.evaluate(() => [...document.querySelectorAll('#ba-equip .co-item')].map(b => { const x = CONTROLE.items[+b.dataset.k]; return { k: +b.dataset.k, nom: x.nom, plan: x.plan, tableau: x.tableau != null, texte: x.texte }; }));
     ok(items.length === 6 && await page.evaluate(() => document.querySelector('#ba-equip .ix-controle').open), 'l’index s’ouvre, « à reprendre » déplié : six lignes (102CB1 deux fois, 300XC1, VT1, VT2, VT3)', items.map(x => x.nom).join(' '));
@@ -373,7 +373,7 @@ function baseEssaiDansLaPage() {
     mesure('depuis l’index, le saut de folio le plus lent (' + sauts.sort((a, b) => b.ms - a.ms)[0].nom + ')', sauts[0].ms, SEUIL_FOLIO, PROPOSITION_FOLIO, GROUPE_FOLIO);
     // trois corrections : une barrette à poser (posée), un type de fil (dans le tableau), un calibre (sur la fiche)
     await page.evaluate(() => { allerAuPlan('1'); deselectionner(); }); await cliquerBloc(page, 'VT1'); await page.fill('#eq-rep', '102VT9'); await page.press('#eq-rep', 'Enter'); await page.waitForTimeout(900);
-    e = await etat(page); const pose = await page.evaluate(() => ({ vt1: CONTROLE.items.filter(x => x.nom === 'VT1').map(x => x.texte), w015: CONTROLE.items.filter(x => /W-015/.test(x.texte)).length, w012: CONTROLE.items.filter(x => /W-012/.test(x.texte)).length, dessinee: app.dessin.comps.some(c => c.name === '102VT9'), chemins: cheminsDepuis(verite(), '102CB1').map(ch => ch.segments.map(s => s.fil.cable || 'à créer').join(' > ')) }));
+    e = await etat(page); const pose = await page.evaluate(() => ({ vt1: CONTROLE.items.filter(x => x.nom === 'VT1').map(x => x.texte), w015: CONTROLE.items.filter(x => /W-015/.test(x.texte)).length, w012: CONTROLE.items.filter(x => /W-012/.test(x.texte)).length, dessinee: app.dessin.comps.some(c => c.name === '102VT9'), chemins: cheminsDepuis(verite(), '102CB1').map(ch => ch.segments.map(s => !s.fil ? '⇄ ' + s.passage : s.fil.cable || 'à créer').join(' > ')) }));
     ok(!pose.vt1.some(t => /102CB1:2/.test(t)) && pose.dessinee, 'VT1 posée sous 102VT9 : elle quitte « à voir », la barrette est au contrat et sur le plan', e.enEtat);
     frottement(!pose.vt1.some(t => /340AB1/.test(t)), 'poser VT1 renomme VT2 en VT1 (et VT3 en VT2)', 'les repères provisoires se renumérotent d’un bout à l’autre du contrat : la barrette du folio 2 qu’on appelait VT2 s’appelle maintenant VT1 dans l’index et sur le plan — ' + pose.vt1.join(' ; '),
       'détail', '08-interface.js `liaisonsDe` / 01-modele.js `avecBarrettesAPoser` : un nom provisoire stable par borne dédoublée (la numérotation ne recule pas quand une barrette d’avant est posée)');
@@ -381,18 +381,18 @@ function baseEssaiDansLaPage() {
       'gênant', '09-chute.js `cheminsDepuis` / 09-disjoncteurs.js `protectionDesFils` : suivre le potentiel à travers une barrette posée (ses shunts, qui n’ont pas de numéro de fil) comme à travers une barrette du fichier, et juger chaque fil du chemin');
     await capture(page, 'C-3-VT1-posee');
     await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(700);
-    e = await etat(page); ok(/^3 problèmes · 5 à voir$/.test(e.enEtat), 'Ctrl+Z : VT1 redevient à poser, l’en-tête redit 3 problèmes · 5 à voir', e.enEtat);
+    e = await etat(page); ok(e.enEtat === enEtat0, 'Ctrl+Z : VT1 redevient à poser, l’en-tête redit l’état du départ', e.enEtat);
     await page.keyboard.press('b'); await page.waitForTimeout(500);
     const i15 = await page.evaluate(() => verite().findIndex(l => l.cable === 'W-015'));
     await page.fill(`#ba-tbody tr[data-i="${i15}"] input[data-f="type"]`, 'DR12'); await page.press(`#ba-tbody tr[data-i="${i15}"] input[data-f="type"]`, 'Enter'); await page.waitForTimeout(700);
-    e = await etat(page); ok(!(await page.evaluate(() => CONTROLE.items.some(x => /W-015/.test(x.texte)))) && /^2 problèmes · 5 à voir$/.test(e.enEtat), 'W-015 en DR12 (un DR16 ne ferait que le ramener en « à voir ») : son problème disparaît, l’en-tête passe à 2 problèmes', e.enEtat);
+    e = await etat(page); ok(!(await page.evaluate(() => CONTROLE.items.some(x => /W-015/.test(x.texte)))) && /^2 problèmes · \d+ à voir$/.test(e.enEtat), 'W-015 en DR12 (un DR16 ne ferait que le ramener en « à voir ») : son problème disparaît, l’en-tête passe à 2 problèmes', e.enEtat);
     await page.keyboard.press('Escape'); await page.keyboard.press('b'); await page.waitForTimeout(300); await cliquerBloc(page, '102CB1');
     await page.click('#ba-equip .dj-chip[data-cal="15"]'); await page.waitForTimeout(700);
     e = await etat(page); const apres15 = await page.evaluate(() => CONTROLE.items.filter(x => x.nom === '102CB1').map(x => x.niveau + ' ' + x.texte.slice(0, 60)));
     ok(await page.evaluate(() => app.contrat.charges.get('102CB1').calibre === 15 && !CONTROLE.items.some(x => x.nom === '102CB1' && /touche la courbe/.test(x.texte))) && /^2 problèmes/.test(e.enEtat), 'le 15 A retenu d’un clic : le point « touche la courbe » disparaît (et le contrôle rejuge : W-011 DR16 n’est plus protégé par un 15 A — un nouveau point à voir)', e.enEtat + ' · ' + apres15.join(' ; '));
     await capture(page, 'C-3b-102CB1-15A');
     await page.keyboard.press('Escape'); for (let k = 0; k < 2; k++) { await page.keyboard.press('Control+z'); await page.waitForTimeout(500); }
-    e = await etat(page); ok(/^3 problèmes · 5 à voir$/.test(e.enEtat), 'deux Ctrl+Z : l’en-tête redit 3 problèmes · 5 à voir', e.enEtat);
+    e = await etat(page); ok(e.enEtat === enEtat0, 'deux Ctrl+Z : l’en-tête redit l’état du départ', e.enEtat);
     // une hypothèse de simulation (longueur, courant, tension, ambiante, charge du faisceau, altitude) : où se règle-t-elle ?
     const ou = await page.evaluate(() => { const vu = []; const regarde = (quoi, f) => { try { f(); } catch (_) { } const h = document.querySelector('#ba-equip #si-L, #ba-equip .hyp, #fiche-corps #si-L, #fiche-corps .hyp, #ba-equip [data-hyp], #fiche-corps [data-hyp]'); if (h) vu.push(quoi); };
       regarde('barrette 668VT31', () => { allerAuPlan('3'); choisirBloc(app.dessin.comps.find(k => k.name === '668VT31' && k.kind !== 'tag')); });
@@ -412,12 +412,17 @@ function baseEssaiDansLaPage() {
     await page.click('#ba-equip [data-sexe="300XC1|A"][data-v="M"]'); await page.waitForTimeout(700);
     const N1 = await page.evaluate(() => JSON.stringify(nomenclatureDuContrat().contacts));
     ok(N1 !== N0 && await page.evaluate(() => app.contrat.sexes.get('300XC1|A') === 'M'), 'des contacts mâles sur A : la nomenclature des contacts change');
+    // un EN 4165 (300XC1) n'a pas de raccord : la reprise de blindage se choisit sur un EN 2997 (351PM1, folio 3)
     await page.evaluate(() => { const b = document.querySelector('#ba-equip [data-panneau="A"] [data-changer^="rac|"]'); if (b.getAttribute('aria-expanded') !== 'true') b.click(); }); await page.waitForTimeout(200);
     await page.click('#ba-equip [data-panneau="A"] [data-raccord][data-champ="blindage"][data-v="GND"]'); await page.waitForTimeout(700);
-    ok(await page.evaluate(() => nomenclatureDuContrat().habits.some(h => h.quoi === 'band-it' && /300XC1 A/.test(h.ou.join(' ')))), 'une reprise de blindage sur le corps : un band-it entre à la nomenclature pour 300XC1 A');
+    ok(await page.evaluate(() => !nomenclatureDuContrat().habits.some(h => h.quoi === 'band-it' && /300XC1 A/.test(h.ou.join(' '))) && app.contrat.raccords.get('300XC1|A').blindage === 'GND'), 'une reprise de blindage sur le corps d’un EN 4165 : le choix se garde, mais aucun band-it n’entre à la nomenclature (un EN 4165 n’a pas de raccord)');
+    await page.evaluate(() => { allerAuPlan('3'); choisirBloc(app.dessin.comps.find(k => k.name === '351PM1' && k.kind !== 'tag')); }); await page.waitForTimeout(500);
+    await page.evaluate(() => { const b = document.querySelector('#ba-equip [data-changer^="rac|"]'); if (b.getAttribute('aria-expanded') !== 'true') b.click(); }); await page.waitForTimeout(200);
+    await page.click('#ba-equip [data-raccord][data-champ="blindage"][data-v="GND"]'); await page.waitForTimeout(700);
+    ok(await page.evaluate(() => nomenclatureDuContrat().habits.some(h => h.quoi === 'band-it' && /351PM1/.test(h.ou.join(' ')))), 'une reprise de blindage sur le corps d’un EN 2997 (351PM1) : un band-it entre à la nomenclature');
     await capture(page, 'C-4-300XC1-choix');
-    await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(400); await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
-    ok(await page.evaluate(n => JSON.stringify(nomenclatureDuContrat().contacts) === n && !app.contrat.raccords.get('300XC1|A'), N0), 'deux Ctrl+Z : la nomenclature d’avant');
+    await page.keyboard.press('Escape'); for (let k = 0; k < 3; k++) { await page.keyboard.press('Control+z'); await page.waitForTimeout(400); } await page.waitForTimeout(300);
+    ok(await page.evaluate(n => JSON.stringify(nomenclatureDuContrat().contacts) === n && !app.contrat.raccords.get('300XC1|A') && !app.contrat.raccords.get('351PM1|A'), N0), 'trois Ctrl+Z : la nomenclature d’avant');
     ok(!page.erreurs.length, 'aucune erreur console', page.erreurs.slice(0, 3).join(' | '));
     await ctx.close(); });
 

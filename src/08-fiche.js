@@ -176,10 +176,9 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   if (neuf) att.push('fil à créer : donne-lui son numéro en posant ' + l.aPoser + ' au contrat');
   [st.de, st.vers].forEach((s, k) => { if (s && s.ko) ko.push('aucun contact n’accepte ce fil côté ' + (k ? l.vers : l.de)); });
   const H = app.simu || HYPOTHESES, fn = l.type ? filDeNorme(app.norme, l.type, jauge) : null, cab = l.type ? cableDuType(app.norme, l.type) : null;
-  // le déclassement : le faisceau est celui du repère de départ (ses fils), la charge et l'altitude de la simulation ; un conducteur qui n'est pas du cuivre déclasse encore
+  // le déclassement : le faisceau, la charge et l'altitude des hypothèses (le retest ne dit pas dans quel toron court le fil : la même règle que pour les fils d'un disjoncteur) ; un conducteur qui n'est pas du cuivre déclasse encore
   const rd = l.type ? resistanceDuFil(app.norme, l.type, jauge, H.tconducteur) : { rho: null, kConducteur: 1, conducteur: 'cuivre' };
-  const faisceau = neuf ? null : verite().filter(x => x.type && x.de !== x.vers && (x.de === l.de || x.vers === l.de)).length;
-  const fac = fn ? facteurDeclassement(app.norme, H.conditions, { fils: faisceau, charge: H.charge, altitude: H.altitude }) * facteurAmbiante(fn, H.ambiante) * (rd.kConducteur || 1) : 1;
+  const fac = fn ? facteurDeclassement(app.norme, H.conditions, { fils: H.fils, charge: H.charge, altitude: H.altitude }) * facteurAmbiante(fn, H.ambiante) * (rd.kConducteur || 1) : 1;
   if (rd.refuse) att.push('conducteur ' + rd.conducteur + ' sans résistance dans la base : la ligne cuivre de l’EN 2853 ne vaut pas, la chute n’est pas calculée');
   const adm = fn && fn.intensite != null ? [['continu', fn.intensite], ['2 s', fn.i2s], ['10 s', fn.i10s], ['1 min', fn.i1min]].filter(x => x[1] != null).map(x => [x[0], x[1] * fac]) : [];
   // le courant : celui du disjoncteur en amont, sinon l'hypothèse de la simulation

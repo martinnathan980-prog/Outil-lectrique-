@@ -1093,7 +1093,7 @@ function remplirSelonNorme(P, norme) {
    le double) — ; et l'AMBIANTE DU TABLEAU de disjoncteurs (min / max) : la courbe de disjonction qui juge est celle de
    la température juste au-dessus du max (l'intempestif), la courbe lente celle juste au-dessous du min (la protection
    du fil) ; −55 et 125 °C, les deux bouts des courbes, par défaut — le cas le plus pessimiste des deux côtés. */
-const HYPOTHESES = { longueur: 5, courant: 2, tension: 28, ambiante: 95, tconducteur: 20, regime: 'continu', cosphi: 0.8, reactance: 0, conditions: ['faisceau'], charge: 60, altitude: 0, retour: 'structure', tableauMin: -55, tableauMax: 125 };
+const HYPOTHESES = { longueur: 5, courant: 2, tension: 28, ambiante: 95, tconducteur: 20, regime: 'continu', cosphi: 0.8, reactance: 0, conditions: ['faisceau'], fils: 8, charge: 60, altitude: 0, retour: 'structure', tableauMin: -55, tableauMax: 125 };
 const RETOURS = { structure: 'par la structure (aller seul)', fil: 'par un fil identique (aller et retour)' };
 const kRetour = H => H && H.retour === 'fil' ? 2 : 1;
 const GROS_CABLE = 10;   // mm² de conducteur : au-delà, la réactance compte en alternatif

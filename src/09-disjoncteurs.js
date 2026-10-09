@@ -225,7 +225,7 @@ const PALIERS_EN2853 = [[2, '2 s'], [10, '10 s'], [60, '1 min'], [Infinity, 'con
        disjoncteur laisse passer cuit le contact.
    `fils` : [{ cable, type, taille?, … }] ; `hyp` : les hypothèses de la simulation (l'ambiante du tableau choisit la
    courbe lente). La tenue du câble à l'ambiante est dite aussi (`tenue`). */
-function protectionDesFils(norme, calibre, profil, fils, hyp) { const H = { ...HYPOTHESES, ...(hyp || {}) }, pts = pointsDuProfil(profil), k = facteurDeclassement(norme, H.conditions);
+function protectionDesFils(norme, calibre, profil, fils, hyp) { const H = { ...HYPOTHESES, ...(hyp || {}) }, pts = pointsDuProfil(profil), k = facteurDeclassement(norme, H.conditions, { fils: H.fils, charge: H.charge, altitude: H.altitude });
   const courbes = courbesDeDisjonction(norme, H.courbe || '', H), lente = courbes[courbes.length - 1] || null;
   return (fils || []).map(f => { const jauge = jaugeDuType(f.type), fil = filDeNorme(norme, f.type, jauge), rd = resistanceDuFil(norme, f.type, jauge, H.tconducteur), tenue = tenueEnTemperature(norme, f.type, H.ambiante);
     const protection = protectionDeJauge(norme, jauge), calibreMax = protection ? protection.disjoncteurMax : null, horsTable = !!(calibre > 0 && calibreMax != null && calibre > calibreMax + 1e-9);

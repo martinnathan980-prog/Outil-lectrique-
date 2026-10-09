@@ -41,6 +41,114 @@ le même principe :
 
 ---
 
+## 0. Les questions ouvertes — ce que les recherches d'octobre 2026 n'ont pas trouvé, à demander
+
+Une ligne chacune, ce qu'on attend. Les 0,90 / 2,10 V de ta feuille sont tes
+calculs : on les laisse, on n'en parle plus.
+
+**Les disjoncteurs**
+- Quel disjoncteur réel ? Les quatre courbes de ta feuille sont celles de
+  l'E-T-A 483 (MS 3320 / prEN 2995) : est-ce le modèle monté (référence
+  complète, ex. 483-G533-J1M1-B2S0ZN-5A) ? Un Klixon 2TC2 ou un Crouzet
+  84 406 n'a pas les mêmes courbes à −55 °C (23 à 66 s à 2 In). → la référence.
+- L'ambiante du tableau de disjoncteurs (min / max) et l'altitude par
+  programme : seules les courbes qui l'encadrent jugent. → deux températures.
+- La règle de protection du programme (calibre max par jauge : ABD0100.1.8 ?)
+  et le déclassement « fil seul ». → la table, avec son indice.
+- La sélectivité : 2:1 (Klixon la déclare ; E-T-A et Crouzet non) ou une
+  étude de courbes ? → la règle écrite.
+- Le facteur « préchauffé » (charge à 60 % puis surcharge : MS3320N divise
+  les temps par 1,6 à 3,7) : on le compte ou on l'ignore ? → oui / non.
+- La chute propre du disjoncteur (0,25 à 2 V à In) : la compter dans la chute
+  en ligne, ou ta règle part-elle du bus aval ? → oui / non.
+- Les fusibles (FU) : part numbers et courbes — rien n'est jugé aujourd'hui.
+- La famille réelle de tes disjoncteurs (une liste de part numbers) et la
+  marge que tu t'imposes.
+
+**Les fils, la chute, le réseau**
+- La règle Airbus de chute admise (ABD0100, indice, continu / intermittent,
+  puissance / signal) : un tableau comme la table Réseau. → le tableau.
+- L'enveloppe de tension aux bornes (MIL-STD-704 : 108-118 V, 22-29 V ; EN
+  2282 ?) → confirmation.
+- Le retour par défaut (structure, fil de retour, ESN) par programme, et les
+  fils de retour désignés. → un mot par programme.
+- L'intensité admissible : l'EN 2853 telle quelle, ou les courbes faisceau /
+  altitude / zone du programme (ABD0100.1.x) ? et le nombre de fils du
+  faisceau par défaut (8 à 60 % aujourd'hui). → les courbes, ou l'accord.
+- Les températures de zone (cockpit, cabine, soute, mât…) par équipement, et
+  les paliers courts des câbles 180 °C (AD / VN : les 2 s / 10 s de l'EN 2853
+  supposent 260 °C). → une table Zone ; T ambiante.
+- Le CCA / aluminium : l'intensité retenue pour AD / VN / YV (règle EN 4681 ?
+  table ABS 0949 ?) et le contact qualifié (ABS1493 / ABS1380 ? autre ?).
+- Les codes de câbles manquants : AM, XD, XY, LE, WC, WG, WH, WK, WP (la
+  norme et la fiche) ; DW24, GPB24, MLA12 à relire dans l'Excel (copies de
+  la ligne voisine) ; XS coaxial et YH thermocouple : d'accord pour corriger ?
+- La pose des gros câbles (seul / trèfle, hauteur) pour X à 400 Hz. → une
+  valeur ; sinon tu saisis X.
+- Le bonding (classe, mΩ) — de mémoire 2,5 mΩ.
+
+**Les connecteurs et les contacts**
+- Les tables SEE des contacts NSA937901, ASNE 0599, ASNE0059 (une capture
+  de l'onglet) : sans elles, aucun contact à sertir sur les barrettes.
+- La liste des familles de connecteurs de tes équipements avec leur norme
+  (ABS0864, E0836, E0644, NSA937802, NSA936501, MS3470, E0656…) : 58
+  connecteurs sur 84 de l'exemple ne sont pas vérifiables ; des part numbers
+  EN 3545, EN 4644 / EPX, ARINC 600, D-sub, splices, cosses, BJT tels que les
+  retests les écrivent.
+- Les pages de désignation : EN 2997-002 (classes, styles, codes contact,
+  clés et les classes par défaut du programme), EN 3646-001/-002, EN 3645-001,
+  EN 4165 (boîtiers et modules : l'ordre des champs, la référence EN d'un
+  module), ASNE 0059 (désignation, page 7), ASNE 0599 (tableau 2, masses des
+  B2xx, variantes au-delà de A106 / B209), NSA937901 (M / MA / MB / MC, le
+  code 07, les figures M12-07 et M12-02).
+- Les deux lignes SEE tronquées (EN3646 F 20 KE, EN3645 M/F 20 YY), les
+  fiches E0848, E0718 (table des diamètres), ABS1493, 21-33321-5.
+- Le document qui fixe « douilles côté … » et « fiche côté amont » ; le taux
+  de contacts de réserve ; la règle de bouchonnage.
+- Les joints arrière (grommets) par famille et taille (Ø min / max), ou la
+  règle pour poser un manchon E0718 / EN 4530.
+- EN 3155-001 : la limite de résistance de contact et le courant par taille ;
+  EN 3155-002 : les fûts par taille.
+
+**Les raccords et l'habillage**
+- La lettre de classe de tes approvisionnements pour l'alu nickelé : N (norme
+  2022) ou F (TE/Polamco) ? et les classes de tes connecteurs (W, nickel, K,
+  composite) avec la position de la lettre dans le part number.
+- ASNE 0059 : son filetage d'accessoire et les raccords prescrits.
+- EN 3646 : quel durci (les −064 / −065 « pour EN 2997 » par filetage commun,
+  ou autre) ? EN 3645 : vraiment sans raccord (la norme nomme −020 / −021 /
+  −062 / −063 ; Amphenol ABS2216 est la pratique Airbus) ?
+- Les tyraps EN 3660 : −013 / −014 / −015 ou −017 / −018 / −019 pour l'EN 2997,
+  et lesquels pour l'EN 3645.
+- Le catalogue ou dessin de tes −063 et −065 (tables 2 et 4 : entrée maximale
+  par taille, ØBB / ØCC, masses) ; la longueur de chambre (A / B / C / D)
+  par défaut.
+- Nomex contre tresse : la Nomex EN 6049 ne demande ni raccord blindé ni
+  band-it ? comment la termines-tu ?
+- DHS754-160 (Ø et masses, le sens de « HFA »), E0805-01/-02 (largeur,
+  longueur, Ø serré, outil, le seuil de 15 mm), NSA935401 (−08, −10 ;
+  NSA935402 / 403 ?).
+- Les cosses de reprise (BLI) : références (SolderSleeve AS83519, cosse
+  sertie) et sous quelle vis. Tes manchons coudés : série 1100, 1150 ou
+  1133-1136 ? et le 45° ?
+- Les zones (pressurisée, SWAMP, feu, Tmax, vibration) par équipement, les
+  catégories de route (P / M / S / R / G) et les distances de ségrégation, la
+  longueur de chaque liaison ou segment : sans elles ni clamps, ni slack, ni
+  repères tous les 381 mm, ni masse totale.
+- Les masses des manchons et des raccords durcis (devis de masse).
+
+**Les contrats déjà faits et l'outil**
+- La plage des numéros de fil neufs (les fils repris sont « à numéroter »).
+- Ton extrait de base porte-t-il les choix de fiche (raccords, sexes des
+  contacts, calibres, profils) ou seulement les liaisons ? La route et la
+  longueur de l'autre machine se reprennent-elles ?
+- Le format réel de l'extrait : une feuille par harness ? un classeur ?
+- Les tables que tu as déjà en Excel, par domaine (barrettes, prises,
+  raccords, disjoncteurs) — la page Normes les importe ; « Exporter mes
+  modifications » te rend un seul CSV à me renvoyer.
+
+---
+
 ## 1. Ce qu'il me faut — la liste complète
 
 Rangée par ce que ça débloque, du plus utile au plus lointain. Pour chaque
