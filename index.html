@@ -289,7 +289,7 @@ table.tab{width:max-content;min-width:100%;border-collapse:separate;border-spaci
 .tab td.fil input{width:88px;font-weight:600}
 .tab td.type input{width:72px;color:var(--t-2)}
 .tab td.pn input{width:136px;color:var(--t-2)}
-.tab td.route input{width:88px;color:var(--t-2);font-family:var(--sans);font-size:var(--f-11);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.tab td.route input{width:104px;color:var(--t-2);font-family:var(--sans);font-size:var(--f-11);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
 /* une cellule : un champ qui ne se voit qu'au survol et à l'écriture */
 .tab input{width:100%;height:28px;border:1px solid transparent;border-radius:4px;padding:0 7px;background:none;font-family:var(--mono);font-size:var(--f-12);color:var(--t-1);transition:border-color var(--rapide),background var(--rapide);text-overflow:ellipsis}
 .tab input:hover{border-color:var(--s-line-2);background:var(--s-surface)}
@@ -520,13 +520,6 @@ table.simu-tab{border-collapse:separate;border-spacing:0;font-size:var(--f-12);m
 .cand[aria-pressed="true"] span,.cand[aria-pressed="true"] .ok{color:#fff}
 .cand[aria-pressed="true"]:hover{background:var(--accent-2)}
 
-/* ─── LE CONTRÔLE dans l'index : la liste « à reprendre », un code par genre ─── */
-.ix-item.co-item{grid-template-columns:28px minmax(0,1fr) auto}
-.ix-item.co-item small{white-space:normal;line-height:1.35}
-.ix-item.co-item b em{font:600 var(--f-11) var(--sans);color:var(--t-2);margin-left:4px}
-.ix-groupe.ko b{background:var(--ko-soft);color:var(--ko)}
-.ix-groupe.att b{background:var(--warn-soft);color:var(--warn)}
-
 /* ─── L'ACCUEIL : la table vide, une page d'entrée ─────────────────────── */
 .vide{position:absolute;inset:0;overflow:auto;display:grid;place-items:center;padding:24px 24px 24px calc(var(--rail) + 24px);z-index:5}
 .vd{width:min(760px,100%);background:var(--s-surface);border:1px solid var(--s-line);border-radius:var(--r-3);box-shadow:var(--sh-2);padding:36px 40px 28px}
@@ -589,8 +582,9 @@ body.fiche-ouverte #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--f
   #rail{top:auto;left:0;right:0;bottom:0;width:auto;height:48px;border-right:none;border-top:1px solid var(--s-line);flex-direction:row;justify-content:space-around;padding:0 4px;gap:0;transition:bottom var(--moyen)}
   #rail hr{display:none}
   .bulle{display:none}
-  /* la barre du bas au-dessus du rail : les folios et le cadrage, sans le zoom (on pince) */
-  #folios{left:0;right:0;bottom:48px;padding:0 6px;transition:bottom var(--moyen)}
+  /* la barre du bas au-dessus du rail : les folios et le cadrage, sans le zoom (on pince) ; d'un bord à l'autre, même
+     quand un document est ouvert (sur grand écran elle s'arrête au document) */
+  #folios,body.fiche-ouverte #folios{left:0;right:0;bottom:48px;padding:0 6px;transition:bottom var(--moyen)}
   #zin,#zout,#zlbl,#fo-prev,#fo-next,#folios hr,.affinage span,.rd.auto span:not(.bulle){display:none}
   .fo-strip{max-width:calc(100vw - 150px)}
   .rd.auto{padding:0 8px}
@@ -882,6 +876,9 @@ details.fi-etat .fi-chevron{width:14px;height:14px;transition:transform var(--ra
 details.fi-etat[open] .fi-chevron{transform:rotate(180deg)}
 details.fi-etat ul{margin:0;padding:0 12px 9px 32px;font-weight:500;font-size:var(--f-12);line-height:1.45;display:flex;flex-direction:column;gap:3px}
 details.fi-etat.ko ul{color:#7a1f1b}details.fi-etat.att ul{color:#7a3f08}
+/* dans une carte rouge, les points à voir restent lisibles, en ambre, après les problèmes */
+details.fi-etat.ko li.fi-att{color:#7a3f08}
+details.fi-etat.ko li.fi-att::marker{color:var(--warn)}
 
 /* ─── LE RÉSUMÉ : des tuiles, un chiffre et ce qu'il compte ─── */
 .fi-tuiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:var(--sp-2)}
@@ -892,16 +889,15 @@ details.fi-etat.ko ul{color:#7a1f1b}details.fi-etat.att ul{color:#7a3f08}
 button.fi-tuile{cursor:pointer;transition:background var(--rapide),border-color var(--rapide)}
 button.fi-tuile:hover{background:var(--s-hover);border-color:var(--s-line-2)}
 
-/* ─── LES ONGLETS : les connecteurs d'un équipement, un à la fois ─── */
-.fi-onglets{display:flex;gap:2px;padding:3px;background:var(--s-sunken);border-radius:var(--r-2);overflow-x:auto;scrollbar-width:none}
-.fi-onglets::-webkit-scrollbar{display:none}
-.fi-onglets button{flex:1 0 auto;min-width:48px;height:30px;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;background:none;padding:0 12px;border-radius:8px;color:var(--t-2);cursor:pointer;transition:background var(--rapide),color var(--rapide)}
-.fi-onglets button b{font:700 var(--f-13) var(--mono)}
-.fi-onglets button span{font:500 var(--f-11) var(--mono);color:var(--t-3)}
-.fi-onglets button:hover{color:var(--t-1)}
-.fi-onglets button[aria-selected="true"]{background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-1)}
-.fi-onglets button[aria-selected="true"] span{color:var(--t-2)}
-.fi-onglets button.ko b::after{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ko);margin-left:5px;vertical-align:2px}
+/* ─── LES ONGLETS : les connecteurs d'un équipement, un à la fois — chaque onglet est une tuile du résumé (le
+   connecteur, ses contacts, son toron, son raccord) ; l'ouvert se marque en cuivre pâle, comme le folio courant ─── */
+.fi-onglets{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:var(--sp-2)}
+.fi-onglets .fi-tuile{cursor:pointer;transition:background var(--rapide),border-color var(--rapide),box-shadow var(--rapide)}
+.fi-onglets .fi-tuile:hover{background:var(--s-hover);border-color:var(--s-line-2)}
+.fi-onglets .fi-tuile[aria-selected="true"]{background:var(--accent-soft);border-color:rgba(181,84,28,.3)}
+.fi-onglets .fi-tuile[aria-selected="true"] b{color:var(--accent-2)}
+.fi-onglets .fi-tuile[aria-selected="true"]:hover{background:#f6e2d2}
+.fi-onglets .fi-tuile.ko b::after{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ko);margin-left:7px;vertical-align:3px}
 .fi-panneau{display:flex;flex-direction:column;gap:var(--sp-3)}
 
 /* ─── LE CADRE : la référence, la face, autour, les fils ─── */
@@ -951,7 +947,8 @@ button.fi-tuile:hover{background:var(--s-hover);border-color:var(--s-line-2)}
 .fi-autour{display:flex;flex-direction:column;gap:var(--sp-2);padding:9px 12px 10px;border-radius:var(--r-2);background:var(--s-sunken)}
 .fi-autour .fi-habillage{min-height:22px}
 .fi-autour .fi-nomen-t{white-space:nowrap}
-.fi-choix{font-size:var(--f-11);color:var(--t-3);min-width:0;line-height:1.3}
+/* les choix du tutoriel, en une ligne : coupés s'il le faut, entiers au survol */
+.fi-choix{flex:1 1 auto;min-width:0;font-size:var(--f-11);color:var(--t-3);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fi-autour .fi-changer{background:var(--s-surface);border:1px solid var(--s-line)}
 .fi-avenir{font-style:normal;font-size:var(--f-11);font-weight:600;color:var(--t-3);background:var(--s-surface);border:1px dashed var(--s-line-2);border-radius:999px;padding:0 7px;white-space:nowrap}
 .fi-avenir.fi-long{display:inline-block;white-space:normal;line-height:1.35;border-radius:var(--r-1);padding:2px 7px;margin:1px 0}
@@ -1031,15 +1028,12 @@ button.fi-tuile:hover{background:var(--s-hover);border-color:var(--s-line-2)}
 .fi-menu button:hover{background:var(--s-sunken)}
 .fi-menu button.danger{color:var(--ko)}
 .fi .equip{margin:0}
-/* ce que d'autres modules posent dans la fiche (hypothèses de la simulation, verdict de réactance) */
-.hyp-n select{height:28px;border:1px solid var(--s-line-2);border-radius:7px;padding:0 4px;background:var(--s-surface);color:var(--t-1);font-family:var(--sans);font-size:var(--f-12)}
-.verdict.v-reactance{background:var(--warn-soft);color:var(--warn)}
 
 /* ─── L'INDEX : les repères du contrat, dans l'inspecteur ─── */
 .fi.ix{gap:var(--sp-2)}
-.ix-tete{display:flex;align-items:center;gap:10px;min-height:34px;margin-bottom:2px}
-.ix-tete h2{margin:0;font:700 var(--f-20)/1.2 var(--sans);letter-spacing:-.01em}
-.ix-tete .fi-sous{flex:1}
+.ix-tete{display:flex;align-items:center;gap:6px;min-height:34px;margin-bottom:2px}
+.ix-tete h2{margin:0;font:700 var(--f-20)/1.2 var(--sans);letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+.ix-tete .ix-n{font:600 var(--f-11)/1.7 var(--mono);letter-spacing:0;color:var(--t-2);background:var(--s-sunken);border-radius:999px;padding:0 8px}
 .ix-tete .fi-x.plus{color:var(--accent)}
 .ix-filtre{display:flex;align-items:center;gap:8px;height:36px;border:1px solid var(--s-line);background:var(--s-sunken);border-radius:999px;padding:0 8px 0 12px;transition:border-color var(--rapide),box-shadow var(--rapide),background var(--rapide)}
 .ix-filtre:focus-within{border-color:var(--accent);background:var(--s-surface);box-shadow:0 0 0 3px var(--accent-soft)}
@@ -1065,9 +1059,12 @@ button.fi-tuile:hover{background:var(--s-hover);border-color:var(--s-line-2)}
 .ix-etat.att{background:var(--warn);box-shadow:none}.ix-etat.ko{background:var(--ko);box-shadow:none}
 .ix-item b{font:700 var(--f-13) var(--mono);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ix-item small{display:block;color:var(--t-2);font-size:var(--f-11);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.35}
-.ix-item.co-item{grid-template-columns:30px minmax(0,1fr) auto}
-.ix-item.co-item small{white-space:normal}
+/* une ligne « à reprendre » : le code du repère (CB, XC, VT…) en pastille, le repère et son premier point, le folio */
+.ix-item.co-item{grid-template-columns:30px minmax(0,1fr) auto;align-items:start}
+.ix-item.co-item small{white-space:normal;line-height:1.35}
 .ix-item.co-item b em{font:600 var(--f-11) var(--sans);color:var(--t-2);margin-left:4px}
+.co-code{display:grid;place-items:center;height:20px;margin-top:2px;border-radius:6px;background:var(--s-sunken);font:700 10px var(--mono);letter-spacing:.04em;color:var(--t-2)}
+.co-code svg.ico{width:13px;height:13px}
 .ix-folio{font:600 var(--f-11) var(--mono);color:var(--t-2);background:var(--s-sunken);border-radius:999px;padding:2px 8px;white-space:nowrap}
 .ix-vide{color:var(--t-2);font-size:var(--f-12);padding:12px 6px;margin:0}
 
@@ -1076,7 +1073,7 @@ button.fi-tuile:hover{background:var(--s-hover);border-color:var(--s-line-2)}
   .fi{padding:12px 12px 12px}
   .fi-nom{font-size:20px}
   .fi-faces.deux{grid-template-columns:1fr}
-  .fi-face svg{max-height:280px}
+  .fi-face svg{max-height:220px}
   .fi-tuiles{grid-template-columns:repeat(auto-fit,minmax(88px,1fr))}
 }
 
@@ -1268,21 +1265,25 @@ button.fi-tuile:hover{background:var(--s-hover);border-color:var(--s-line-2)}
 /* ═══════════════════════════════════════════════════════════════════════════
    LA VUE EN RELIEF (08-relief) et LES FACES des modules (08-modules)
    Les jetons (couleurs, typo, espacements) sont dans style.css ; ici, seulement ce qui est propre à ce domaine.
+   La fenêtre du relief est un panneau comme les autres (rayon --r-3, ombre --sh-2, un segment pour les vues, une table
+   comme celles de la norme) ; seule la pièce est en perspective, posée sur une surface en retrait, à plat.
    ═══════════════════════════════════════════════════════════════════════ */
-/* ── la VUE EN RELIEF (08-relief) : une feuille blanche posée sur la table assombrie ── */
-.relief{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(14,19,26,.55)}
+/* ── la VUE EN RELIEF (08-relief) : un panneau blanc posé sur la table assombrie ── */
+.relief{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(17,24,39,.55)}
 .relief[hidden]{display:none}
-.re-boite{background:var(--papier);color:var(--encre);border-radius:16px;width:min(1180px,100%);max-height:100%;overflow:auto;box-shadow:0 18px 60px rgba(0,0,0,.35);padding:18px 20px 20px}
-.re-tete{display:flex;align-items:flex-start;gap:14px}
+.re-boite{background:var(--s-surface);color:var(--t-1);border-radius:var(--r-3);width:min(1180px,100%);max-height:100%;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;box-shadow:var(--sh-2);padding:16px 20px 20px}
+.re-tete{display:flex;align-items:flex-start;gap:12px}
 .re-tete .min0{flex:1;min-width:0}
-.re-tete .titre{font-family:var(--mono);font-size:22px;margin:2px 0 0}
-.re-compte{color:var(--encre-2);font-size:13px;margin-top:4px}
-.re-compte .ko,.re-tab .ko{color:var(--danger);font-weight:600}
-.re-vues{display:flex;gap:2px;background:var(--papier-2);border-radius:18px;padding:3px}
-.re-vues button{border:0;background:transparent;color:var(--encre-2);font:inherit;font-size:13px;padding:6px 12px;border-radius:15px;cursor:pointer}
-.re-vues button:hover{background:var(--papier-3)}
-.re-vues button.on{background:var(--papier);color:var(--encre);box-shadow:0 1px 3px rgba(0,0,0,.12)}
-.re-scene{margin:12px 0 4px;background:radial-gradient(ellipse at 50% 40%,#f7f9fb,#e9edf2);border-radius:12px;height:min(56vh,520px);cursor:grab;touch-action:none;user-select:none}
+.re-tete .titre{font-family:var(--mono);font-size:22px;margin:2px 0 0;letter-spacing:.01em}
+.re-compte{color:var(--t-2);font-size:var(--f-12);margin-top:4px}
+.re-compte .ko,.re-tab .ko{color:var(--ko);font-weight:600}
+/* les trois vues : un segment, comme « ce folio / tout » */
+.re-vues{display:inline-flex;gap:2px;padding:2px;background:var(--s-sunken);border-radius:var(--r-1);flex:none}
+.re-vues button{border:none;background:none;height:26px;padding:0 10px;border-radius:4px;font-size:var(--f-12);font-weight:600;color:var(--t-2);cursor:pointer;transition:background var(--rapide),color var(--rapide)}
+.re-vues button:hover{color:var(--t-1)}
+.re-vues button.on{background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-1)}
+/* la scène : une surface en retrait, à plat ; on la fait tourner à la main */
+.re-scene{margin:12px 0 4px;background:var(--s-sunken);border:1px solid var(--s-line);border-radius:var(--r-2);height:min(56vh,520px);cursor:grab;touch-action:none;user-select:none}
 .re-scene.tourne{cursor:grabbing}
 .re-scene svg{width:100%;height:100%;display:block}
 .re-gaine{fill:none;stroke:#18212c;stroke-opacity:.28;stroke-width:4.4;stroke-linecap:round;stroke-linejoin:round}
@@ -1291,7 +1292,7 @@ button.fi-tuile:hover{background:var(--s-hover);border-color:var(--s-line-2)}
 .re-fil.on .re-gaine{stroke-width:6.5}
 .re-trou{fill:#ffffff;stroke:#7a8796;stroke-width:1.2}
 .re-trou.plein{fill:#18212c;stroke-width:2.2}
-.re-trou.ko{stroke:var(--danger)!important;stroke-width:2.6}
+.re-trou.ko{stroke:var(--ko)!important;stroke-width:2.6}
 .re-trou.on{stroke-width:3.4}
 .re-num{font-family:var(--mono);font-size:13px;font-weight:600;fill:#ffffff}
 .re-num.libre{fill:#5b6875;font-weight:500}
@@ -1303,19 +1304,29 @@ button.fi-tuile:hover{background:var(--s-hover);border-color:var(--s-line-2)}
 .re-trait{fill:none;stroke-width:.8;stroke-opacity:.55}
 .re-etiq.on .re-trait{stroke-width:1.6;stroke-opacity:1}
 .re-emboite{stroke:#7a8796;stroke-width:1.4;stroke-dasharray:5 4;fill:none}
-.re-note{color:var(--encre-2);font-size:12.5px;margin:6px 2px 12px}
+.re-note{color:var(--t-2);font-size:var(--f-12);line-height:1.5;margin:6px 2px 12px}
 svg .re-note{fill:#5b6875;font-size:10px}
-.re-tab{width:100%;border-collapse:collapse;font-size:12.5px}
-.re-tab th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--encre-2);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--filet)}
-.re-tab td{padding:5px 8px;border-bottom:1px solid var(--filet);vertical-align:top}
+/* le tableau trou par trou : comme une table de la norme ; trop large (téléphone), il défile de côté */
+.re-tableau{overflow-x:auto;overscroll-behavior-x:contain}
+.re-tab{width:100%;border-collapse:separate;border-spacing:0;font-size:var(--f-12)}
+.re-tab th{text-align:left;font:700 10.5px var(--sans);text-transform:uppercase;letter-spacing:.05em;color:var(--t-2);padding:6px 8px;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
+.re-tab td{padding:5px 8px;border-bottom:1px solid var(--s-line);vertical-align:top}
 .re-tab td.n{font-family:var(--mono);font-weight:600;width:64px}
-.re-tab tr.libre td{color:var(--encre-2)}
-.re-tab .re-libre{font-style:italic}
-.re-f{display:inline-flex;align-items:center;gap:6px;margin:0 12px 2px 0;font-family:var(--mono);cursor:pointer;border-radius:6px;padding:1px 4px}
+.re-tab tr.libre td{color:var(--t-2)}
+.re-tab .re-libre{font-style:italic;color:var(--t-3)}
+.re-f{display:inline-flex;align-items:center;gap:6px;margin:0 12px 2px 0;font-family:var(--mono);cursor:pointer;border-radius:var(--r-1);padding:1px 4px;white-space:nowrap}
 .re-f i{width:14px;height:3px;border-radius:2px;display:inline-block}
-.re-f em{color:var(--encre-2);font-style:normal}
-.re-f.on,.re-f:hover{background:var(--papier-2)}
-@media (max-width:700px){.re-boite{padding:14px}.re-tete{flex-wrap:wrap}.re-scene{height:46vh}}
+.re-f em{color:var(--t-2);font-style:normal}
+.re-f.on,.re-f:hover{background:var(--accent-soft)}
+/* téléphone : le titre sur toute la largeur, les vues dessous, la scène moins haute */
+@media (max-width:700px){
+  .re-boite{padding:14px 14px 16px}
+  .re-tete{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 10px;align-items:start}
+  .re-tete .min0{grid-column:1}
+  .re-tete .rond{grid-column:2;grid-row:1}
+  .re-vues{grid-column:1/-1;justify-self:start}
+  .re-scene{height:46vh}
+}
 
 /* ── LES FACES des modules et des inserts (08-modules) : un dessin technique à plat ──
    Deux traits pour le corps (le contour, l'insert en retrait), un contour par groupe de contacts reliés, un cercle
@@ -7732,7 +7743,7 @@ function rendreControle() { const V = verite();
   p.hidden = !xs.length; p.className = 'rd-point ' + (nko ? 'ko' : 'att'); p.textContent = String(nko || natt);
   b.setAttribute('aria-label', 'Repères du contrat (R)' + (nko ? ' — ' + pluriel(nko, 'problème') : natt ? ' — ' + natt + ' à voir' : ''));
   // la barre du haut, si la page en a une : l'état du contrat en une pastille, qui ouvre l'index
-  const e = $('en-etat'); if (e) { e.hidden = !V.length; e.className = 'fi-etat en-etat ' + (nko ? 'ko' : natt ? 'att' : 'ok');
+  const e = $('en-etat'); if (e) { e.hidden = !V.length; e.className = 'fi-etat en-etat ' + (nko ? 'ko' : natt ? 'att' : 'ok'); e.title = xs.length ? 'La liste de ce qu’il y a à reprendre' : 'Rien à reprendre : tout est jugé bon';
     e.innerHTML = `<i aria-hidden="true">${nko ? '✕' : natt ? '!' : '✓'}</i>${nko ? pluriel(nko, 'problème') + (natt ? ' · ' + natt + ' à voir' : '') : natt ? natt + ' à voir' : 'rien à reprendre'}`; e.onclick = () => { if (!(app.insp.index && !$('inspecteur').hidden)) basculerIndex(); }; }
   if (app.insp.index && !$('inspecteur').hidden && !app.cible) rendreIndex($('ba-equip')); }
 /* La liste « à reprendre », en tête de l'index : les problèmes, puis les points à voir ; une ligne y mène. */
@@ -7808,7 +7819,7 @@ const chargeDe = nom => (app.contrat.charges && app.contrat.charges.get(nom)) ||
 function pnDuRepere(nom) { for (const l of verite()) { if (l.de === nom && l.pnDe) return l.pnDe; if (l.vers === nom && l.pnVers) return l.pnVers; } return ''; }
 /* Les fils d'un disjoncteur, des deux côtés, avec la borne et l'autre bout. */
 const filsDuDisjoncteur = nom => verite().filter(l => (l.de === nom || l.vers === nom) && l.de !== l.vers)
-  .map(l => ({ cable: l.cable, type: l.type, borne: l.de === nom ? l.borneDe : l.borneVers, autre: l.de === nom ? l.vers + (l.borneVers ? ':' + l.borneVers : '') : l.de + (l.borneDe ? ':' + l.borneDe : ''), l }));
+  .map(l => ({ cable: l.cable, type: l.type, borne: l.de === nom ? l.borneDe : l.borneVers, autre: l.de === nom ? l.vers + (l.borneVers ? ':' + l.borneVers : '') : l.de + (l.borneDe ? ':' + l.borneDe : ''), amont: l.vers === nom, l }));
 /* Les disjoncteurs VOISINS d'un repère : ceux où aboutit un chemin de fils depuis lui (bus → sous-bus) ; leur calibre
    nominal (écrit, sinon le part number) sert à la sélectivité 2:1 — sans passer par l'idéal, qui dépendrait du nôtre. */
 const calibreNominal = nom => { const p = chargeDe(nom); return p && p.calibre > 0 ? p.calibre : calibreDuPn(pnDuRepere(nom)); };
@@ -7888,8 +7899,9 @@ function etatsHtml(d) { const E = etatsDuProfil(d.profil), parI = new Map(d.poin
    continu seulement), la case que la charge dépasse en rouge avec l'état qui la dépasse ; en ambre, la case que le
    disjoncteur laisse dépasser sur la courbe lente, avec ce qu'il laisse passer, et le continu sous le calibre. */
 const PALIERS_FIL = [[2, 'i2s', '2 s'], [10, 'i10s', '10 s'], [60, 'i1min', '1 min'], [Infinity, 'intensite', 'continu']];
-function filsHtml(d) { if (!d.fils.length) return '';
-  const li = d.fils.map(f => { const k = f.l ? cleFil(f.l) : '';
+/* `vt` : borne → barrette à poser sur cette borne (un dédoublement), étiquetée comme sur la fiche d'un équipement. */
+function filsHtml(d, vt) { if (!d.fils.length) return '';
+  const li = d.fils.map(f => { const k = f.l ? cleFil(f.l) : '', tag = vt && vt.get(String(f.borne));
     // chaque palier : ce que le fil admet ; en ambre ce que le disjoncteur laisse dépasser, le chiffre sur la case la pire
     const cases = f.fil ? PALIERS_FIL.filter(([, q]) => f.fil[q] != null).map(([pal, q, mot]) => { const ko = f.phases.some(p => !p.ok && p.palier === pal), lp = f.laisse.find(x => x.palier === pal), att = (lp && !lp.ok) || (pal === Infinity && f.verdict === 'calibre');
       return `<span class="dj-pal${ko ? ' ko' : att ? ' att' : ''}" title="${escA('admis ' + pourPalier(pal) + (lp ? ' · le ' + amperes(d.calibre) + ' laisse passer ' + amperes1(lp.courant) + ' à ' + f.courbeLente : ''))}"><b>${esc(amperes(f.fil[q] * (pal === Infinity ? f.facteur : f.facteurCourt)))}</b><i>${mot}</i>${lp && !lp.ok && f.pireLaisse && lp.palier === f.pireLaisse.palier ? `<em>laisse ${esc(amperes1(lp.courant))}</em>` : ''}</span>`; }).join('') : '';
@@ -7897,12 +7909,12 @@ function filsHtml(d) { if (!d.fils.length) return '';
       : f.verdict === 'calibre' ? `<span class="dj-dep att">sous le calibre ${esc(amperes(d.calibre))} : pas protégé en surcharge</span>` : f.protege === false ? `<span class="dj-dep att">pas protégé en surcharge brève (${esc(f.courbeLente)})</span>` : f.verdict === 'inconnu' ? '<span class="dj-dep att">fil inconnu de la norme</span>' : '';
     const titre = (f.cable || 'fil') + (f.type ? ' · ' + f.type : '') + (f.fil ? ' · ' + amperes(f.continu) + ' en continu' + motFacteur(f.facteur) : '') + ' — voir sur le plan';
     return `<li class="fi-fil${f.verdict === 'fil' ? ' ko' : ''}"${k ? ` data-i="${k}" tabindex="0" role="button" title="${escA(titre)}"` : ''}><span class="fi-ct"><b>${esc(f.borne)}</b></span>${puceFil(f)}<span class="fi-type">${esc(f.type || '—')}</span>`
-      + `<span class="fi-dest">${ico('fleche')}<span>${esc(f.autre)}</span></span><span class="fi-w">${esc(f.cable || '')}</span><div class="dj-admet">${cases}${dep}</div></li>`; }).join('');
+      + `<span class="fi-dest${f.amont ? ' amont' : ''}">${ico('fleche')}<span>${esc(f.autre)}</span>${tag ? `<span class="fi-tag" title="Barrette à poser sur cette borne">${esc(tag)}</span>` : ''}</span><span class="fi-w">${esc(f.cable || '')}</span><div class="dj-admet">${cases}${dep}</div></li>`; }).join('');
   const courts = [...new Set(d.fils.map(f => motFacteur(f.facteurCourt)))], continus = [...new Set(d.fils.map(f => motFacteur(f.facteur)))];
   const declasse = courts.length === 1 && courts[0] ? ', déclassés' + courts[0] + (continus.length === 1 && continus[0] !== courts[0] ? ', le continu' + continus[0] : '') : courts.some(Boolean) || continus.some(Boolean) ? ', déclassés' : '';
   return `<ul class="fi-liste dj-fils"><li class="fi-groupe">ses fils · ce qu’ils admettent${declasse}</li>${li}</ul>`; }
-function ficheDisjonction(nom) { const d = disjonctionDe(nom);
-  return `<section class="fi-cadre fi-dj">${gammeHtml(nom, d)}${d.courbes.length ? graphiqueDisjonction(d) : '<p class="fi-note">Aucune courbe de disjonction dans la norme.</p>'}${etatsHtml(d)}${filsHtml(d)}${chutesHtml(nom, d)}</section>`; }
+function ficheDisjonction(nom, vt) { const d = disjonctionDe(nom);
+  return `<section class="fi-cadre fi-dj">${gammeHtml(nom, d)}${d.courbes.length ? graphiqueDisjonction(d) : '<p class="fi-note">Aucune courbe de disjonction dans la norme.</p>'}${etatsHtml(d)}${filsHtml(d, vt)}${chutesHtml(nom, d)}</section>`; }
 /* LA CHUTE EN LIGNE depuis le disjoncteur, comme la feuille du lecteur : chaque chemin jusqu'à un équipement, à
    travers les prises de coupure et les barrettes, au courant permanent du profil (sinon le calibre, sinon l'hypothèse) :
    la chute en volts et en pourcentage, une jauge contre la chute admise. */
@@ -8004,13 +8016,17 @@ function lierDisjonction(nom) { const box = $('ba-equip'), sec = box.querySelect
     sec.querySelectorAll('.dj-etat[data-k^="plus"]').forEach(el => { const k = el.dataset.k, n = el.querySelector('[data-q="nom"]'); c.plus.push({ nom: n ? n.value.trim() : '', i: num(k, 'i'), t: num(k, 't') }); });
     return c; };
   const remplacer = (cls, html, apres) => { const el = sec.querySelector('.' + cls); if (el) { if (html) el.outerHTML = html; else el.remove(); } else if (html) apres.insertAdjacentHTML('afterend', html); };
+  // les barrettes à poser sur ses bornes, pour étiqueter ses fils comme la fiche d'un équipement
+  const vt = () => { const m = new Map(); liaisonsDuPlan().forEach(l => { if (l.origine === null && l.de === nom && l.vers === l.aPoser && l.borneVers === '1') m.set(String(l.borneDe), l.aPoser); }); return m; };
   const rafraichir = () => { E.d = disjonctionDe(nom);
     remplacer('dj-gamme', gammeHtml(nom, E.d)); if (E.d.courbes.length) remplacer('dj-graphe', graphiqueDisjonction(E.d));
     const parI = new Map(E.d.points.map(p => [p.i, p])); etatsDuProfil(E.d.profil).forEach(e => { const el = sec.querySelector(`.dj-etat[data-k="${e.k}"] .dj-verdict`), p = e.i > 0 ? parI.get(e.i) : null; if (el) { el.className = 'dj-verdict' + classeVerdict(p); el.title = motVerdict(p); } });
-    remplacer('dj-fils', filsHtml(E.d), sec.querySelector('.dj-etats')); remplacer('dj-chutes', chutesHtml(nom, E.d), sec.querySelector('.dj-fils') || sec.querySelector('.dj-etats'));
+    remplacer('dj-fils', filsHtml(E.d, vt()), sec.querySelector('.dj-etats')); remplacer('dj-chutes', chutesHtml(nom, E.d), sec.querySelector('.dj-fils') || sec.querySelector('.dj-etats'));
     lierPuces(); lierGraphique(sec, nom, E, lire, ecrire); };
+  // on écrit au contrat ; la fiche se refait (`rafraichirCarte`, 08) sauf si l'on est dans un champ de la fiche : alors
+  // seulement ce qui change, en place, les champs restant sous les doigts
   const ecrire = (quoi, c) => setTimeout(() => { histPush(quoi); app.contrat.charges.set(nom, c); apresEdition();
-    const a = document.activeElement; if (a && a.tagName === 'INPUT' && box.contains(a)) rafraichir(); else if (box.contains(a)) rendreFiche(); }, 0);
+    const a = document.activeElement; if (a && a.tagName === 'INPUT' && box.contains(a)) rafraichir(); }, 0);
   // les segments : retenir un calibre ; presser celui qui l'est déjà rend celui du part number (ou l'idéal) ; en
   // survoler un montre sa courbe
   const retenir = cal => { const d = E.d, c = lire(); c.calibre = cal === d.calibre ? null : cal; if (c.calibre === (d.ecrit || null)) return;
@@ -8163,12 +8179,14 @@ function fiTete(o) {
     + `<div class="fi-ligne">${o.sous ? `<span class="fi-sous">${o.sous}</span>` : ''}`
     + (o.designation != null ? `<input class="fi-des" id="eq-des" value="${escA(o.designation)}"${o.designation ? '' : ' hidden'} placeholder="désignation" aria-label="Désignation, écrite sous le repère" spellcheck="false" autocomplete="off">` : '') + '</div>'
     + (o.etat || ''); }
-/* L'état — seulement s'il y a quelque chose à dire (le lecteur : « conforme, tu peux l'enlever ») : une carte, les
-   problèmes dépliés d'office, les points à voir derrière un clic quand ils sont plusieurs. */
+/* L'état — seulement s'il y a quelque chose à dire (le lecteur : « conforme, tu peux l'enlever ») : une carte, rouge
+   dès qu'il y a un problème, les problèmes d'abord puis les points à voir (en ambre, jamais cachés) ; dépliée d'office
+   s'il y a un problème ou un seul point, derrière un clic quand les points à voir sont plusieurs. */
 function fiEtat(ko, att) {
   if (!ko.length && !att.length) return '';
-  const cls = ko.length ? 'ko' : 'att', xs = ko.length ? ko : att, titre = ko.length ? (ko.length > 1 ? ko.length + ' problèmes' : '1 problème') : (att.length > 1 ? att.length + ' points à voir' : '1 point à voir');
-  return `<details class="fi-etat ${cls}"${ko.length || att.length === 1 ? ' open' : ''}><summary><i aria-hidden="true">${cls === 'ko' ? '✕' : '!'}</i><span>${titre}</span>${ico('bas', 'fi-chevron')}</summary><ul>${xs.map(t => `<li>${esc(t)}</li>`).join('')}</ul></details>`; }
+  const cls = ko.length ? 'ko' : 'att', titre = [ko.length ? (ko.length > 1 ? ko.length + ' problèmes' : '1 problème') : '', att.length ? (att.length > 1 ? att.length + ' à voir' : '1 point à voir') : ''].filter(Boolean).join(' · ');
+  return `<details class="fi-etat ${cls}"${ko.length || att.length === 1 ? ' open' : ''}><summary><i aria-hidden="true">${cls === 'ko' ? '✕' : '!'}</i><span>${titre}</span>${ico('bas', 'fi-chevron')}</summary>`
+    + `<ul>${ko.map(t => `<li>${esc(t)}</li>`).join('')}${att.map(t => `<li${ko.length ? ' class="fi-att"' : ''}>${esc(t)}</li>`).join('')}</ul></details>`; }
 /* La référence retenue (sa norme se lit dedans : on ne la répète pas), pourquoi en une ligne, et « Changer » qui
    déplie les autres. */
 function fiRef(ref, famille, cle, changer, titre) {
@@ -8209,10 +8227,12 @@ function ligneFil(ct, f, o) { o = o || {}; const k = cleFil(f.l), neuf = !!(f.l 
     + `<span class="fi-dest${f.amont ? ' amont' : ''}">${ico('fleche')}<span>${esc(o.dest != null ? o.dest : destination(f))}</span>${o.tag ? `<span class="fi-tag" title="Barrette à poser sur cette borne">${esc(o.tag)}</span>` : ''}</span>`
     + `<span class="fi-w${neuf ? ' neuf' : ''}">${neuf ? 'à créer' : esc(f.cable || '')}</span>` + (o.ko ? `<span class="fi-ko">${esc(o.ko)}</span>` : '') + '</li>'; }
 const fiListe = lignes => lignes ? `<ul class="fi-liste">${lignes}</ul>` : '';
-/* Les onglets : un panneau à la fois ; l'onglet ouvert se garde par bloc. items [{ id, titre, compte, ko, corps }] */
+/* Les onglets : un panneau à la fois ; l'onglet ouvert se garde par bloc. Chaque onglet est une TUILE du résumé — le
+   connecteur, ses contacts, son toron et son raccord — : une seule rangée dit ce qu'il y a et y mène (avant : les
+   tuiles, puis une seconde rangée d'onglets pour la même chose). items [{ id, titre, compte, sous, ko, corps }] */
 function fiOnglets(cle, items) { if (items.length === 1) return items[0].corps;
   const actif = items.some(x => x.id === FI.onglet[cle]) ? FI.onglet[cle] : (items.find(x => x.ko) || items[0]).id;
-  return `<div class="fi-onglets" role="tablist" data-cle="${escA(cle)}">${items.map(x => `<button role="tab" data-onglet="${escA(x.id)}" aria-selected="${x.id === actif}"${x.ko ? ' class="ko"' : ''}><b>${esc(x.titre)}</b><span>${esc(x.compte)}</span></button>`).join('')}</div>`
+  return `<div class="fi-onglets fi-tuiles" role="tablist" data-cle="${escA(cle)}">${items.map(x => `<button role="tab" class="fi-tuile${x.ko ? ' ko' : ''}" data-onglet="${escA(x.id)}" data-onglet-vers="${escA(x.id)}" aria-selected="${x.id === actif}" title="${escA((x.ko ? 'À reprendre · ' : '') + 'voir ' + (x.titre === 'Autres' || x.titre === 'Fils' ? 'les fils sans connecteur' : 'le connecteur ' + x.titre))}"><b>${esc(x.titre)}</b><span>${esc(x.compte)}</span>${x.sous ? `<small>${insecable(esc(x.sous))}</small>` : ''}</button>`).join('')}</div>`
     + items.map(x => `<div class="fi-panneau" role="tabpanel" data-panneau="${escA(x.id)}"${x.id === actif ? '' : ' hidden'}>${x.corps}</div>`).join(''); }
 /* Le pied : le tableau, « + fil » (une liaison de plus depuis ce repère, dans le tableau), le relief, « voir », et sous
    « ··· » ce qu'on fait rarement. */
@@ -8222,20 +8242,24 @@ function fiPied(o) { o = o || {};
     o.relief ? `<button class="fi-bouton" id="eq-relief" title="La pièce en perspective (ou double-clic sur le bloc)">${ico('relief')}<span>Relief</span></button>` : '',
     o.voir ? `<button class="fi-bouton" data-choisir-bloc="${escA(o.voir)}">${ico('voir')}<span>${esc(o.voir)}</span></button>` : ''].join('');
   const menu = (o.menu || []).map(([id, t, cls]) => `<button role="menuitem" id="${id}"${cls ? ` class="${cls}"` : ''}>${esc(t)}</button>`).join('');
-  return `<footer class="fi-pied">${boutons}<span class="espace"></span>${menu ? `<div class="fi-plus"><button class="fi-x" id="fi-menu" aria-haspopup="true" aria-expanded="false" aria-label="Plus">${ico('points')}</button><div class="fi-menu" id="fi-menu-liste" role="menu" hidden>${menu}</div></div>` : ''}</footer>`; }
+  return `<footer class="fi-pied">${boutons}<span class="espace"></span>${menu ? `<div class="fi-plus"><button class="fi-x" id="fi-menu" aria-haspopup="true" aria-expanded="false" aria-label="Plus d’actions" title="Renommer, désigner, supprimer…">${ico('points')}</button><div class="fi-menu" id="fi-menu-liste" role="menu" hidden>${menu}</div></div>` : ''}</footer>`; }
 const MENU_BLOC = [['fi-renommer', 'Renommer'], ['fi-designer', 'Désignation'], ['eq-del', 'Supprimer', 'danger']];
 const MENU_FIL = [['fil-tableau', 'Corriger dans le tableau'], ['fil-del', 'Supprimer ce fil', 'danger']];
 
 /* ---- la fiche ------------------------------------------------------------------ */
+// ce qui identifie un bouton de la fiche d'un rendu à l'autre : ses données et son identifiant (pas son texte, qui change)
+const empreinteBouton = b => b.id + '|' + JSON.stringify(Object.entries(b.dataset).sort());
 function rendreFiche() { const box = $('ba-equip'), c = app.cible; if ($('inspecteur').hidden) return;
   if (!c) { if (typeof rendreIndex === 'function') rendreIndex(box); else { box.innerHTML = ''; box.dataset.cle = ''; } return; }
   const cle = c.type + '|' + (c.nom || (c.l && (c.l.cable || cleDe(c.l))) || '');
   let html; try { html = c.type === 'fil' ? ficheFil(c.l) : c.type === 'ref' ? ficheComparaison(c) : ficheBloc(c.nom); }
   catch (e) { html = fiTete({ nom: c.nom || '—', sous: 'élément' }) + `<p class="fi-note">${esc(String(e && e.message || e))}</p>`; }
-  const meme = box.dataset.cle === cle, haut = box.scrollTop;
+  // la même fiche refaite (un choix cliqué) : le défilement reste, et le bouton qu'on vient de presser garde le focus
+  const meme = box.dataset.cle === cle, haut = box.scrollTop, a = document.activeElement, presse = meme && a && a.tagName === 'BUTTON' && box.contains(a) ? empreinteBouton(a) : null;
   box.innerHTML = html; box.dataset.cle = cle; box.className = 'fi';
   if (meme) box.scrollTop = haut; else { box.scrollTop = 0; box.classList.remove('fondu'); void box.offsetWidth; box.classList.add('fondu'); }
-  if (c.type === 'ref') lierComparaison(c); else lierFiche(c); }
+  if (c.type === 'ref') lierComparaison(c); else lierFiche(c);
+  if (presse) { const b = [...box.querySelectorAll('button')].find(x => empreinteBouton(x) === presse); if (b) { try { b.focus({ preventScroll: true }); } catch (_) { b.focus(); } } } }
 function ficheBloc(nom) {
   if (VT_A_POSER.test(nom) || barretteEnModules(nom)) return ficheBarrette(nom);
   if (coupureEnModules(nom)) return ficheCoupure(nom);
@@ -8315,7 +8339,8 @@ function autourHtml(cle, fils, pn, nomen, titre, ref) { if (!fils.length) return
   const choix = [MOTS_BLINDAGE[c.blindage] || MOTS_BLINDAGE.NO, c.etanche ? 'zone étanche' : 'pas d’étanchéité', c.orientation === 'coudé' ? 'coudé' : 'droit', c.gaine ? 'gaine ' + c.gaine : 'sans gaine'].join(' · ');
   const segments = PUCES_RACCORD.map(([champ, t, opts]) => `<div class="fi-seg">${voletT(t)}<div class="fi-puces">${opts.map(([v, m]) => `<button class="fi-chip" data-raccord="${escA(cle)}" data-champ="${champ}" data-v="${escA(v)}" aria-pressed="${String(c[champ]) === v}">${esc(m)}</button>`).join('')}</div></div>`).join('');
   const k = 'rac|' + cle;
-  return `<div class="fi-autour"><div class="fi-ref-ligne fi-habillage"><span class="fi-nomen-t">${esc(titre || 'autour')}</span><span class="fi-choix" title="${escA(h.pourquoi)}">${esc(choix)}</span><span class="espace"></span><button class="fi-lien" data-changer="${escA(k)}" aria-expanded="${!!FI.change[k]}">Changer${ico('bas', 'fi-chevron')}</button></div>`
+  // la ligne de titre : le mot, les choix du tutoriel en une ligne (coupée s'il le faut, entière au survol), « Changer »
+  return `<div class="fi-autour"><div class="fi-ref-ligne fi-habillage"><span class="fi-nomen-t">${esc(titre || 'autour')}</span><span class="fi-choix" title="${escA(choix + ' — ' + h.pourquoi)}">${esc(choix)}</span><button class="fi-lien" data-changer="${escA(k)}" aria-expanded="${!!FI.change[k]}">Changer${ico('bas', 'fi-chevron')}</button></div>`
     + `<div class="fi-changer" data-volet="${escA(k)}"${FI.change[k] ? '' : ' hidden'}>${segments}<p class="fi-note">${esc(h.pourquoi[0].toUpperCase() + h.pourquoi.slice(1))}.</p></div>${faits(lignes, 'serre')}</div>`; }
 
 /* ---- une barrette (et une barrette à poser) ------------------------------------- */
@@ -8325,7 +8350,7 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
   const ko = [...Q.verdicts.filter(v => v.niveau === 'ko').map(v => v.texte), ...refuses.map(x => `${x.f.cable || 'fil à créer'} (${x.f.type}) : jauge refusée par le contact ${x.contact.lettre}`)];
   // la barrette à poser : la borne qu'elle dédouble
   const raccord = aPoser ? L.find(l => l.aPoser === nom && l.origine === null && l.vers === nom && l.borneVers === '1') : null, sur = raccord ? raccord.de + ':' + raccord.borneDe : '';
-  const etat = aPoser ? fiEtat(ko, [`à poser sur ${sur} — repère provisoire : écris le vrai repère en tête de fiche, la barrette entre au contrat`]) : fiEtat(ko, []);
+  const etat = aPoser ? fiEtat(ko, ['repère provisoire : écris le vrai repère en tête de fiche, la barrette entre au contrat']) : fiEtat(ko, []);
   const sous = aPoser ? `barrette à poser sur <b>${esc(sur)}</b>` : ['barrette', Q.reference ? `<b>${esc(Q.reference)}</b>` : '', pluriel(Q.potentiels, 'potentiel'), pluriel(Q.fils.length, 'fil')].filter(Boolean).join(' · ');
   const pnNorme = b.pn && familleDeReference(app.norme, b.pn);
   const pourquoi = main ? 'choisi à la main' : !Q.modules.length ? 'aucun module ne loge ces fils' : (Q.main ? 'norme choisie à la main · ' : pnNorme ? 'la norme du part number · ' : '')
@@ -8399,7 +8424,8 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
   const filsDe = c => c.bornes.flatMap(bo => b.parBorne.get(bo) || []), refDe = c => { const k = parNom.get(c.nom); return k && k.plan && k.plan.modules[0] ? k.plan.modules[0].reference : ''; }, habits = new Map(C.map(c => [c.nom, habitDe(nom + '|' + c.nom, filsDe(c).filter(f => f.l), c.pn, refDe(c))]));
   const onglets = C.map(c => { const k = parNom.get(c.nom), Q = k && k.plan, M = Q && Q.modules[0], cle = 'arr|' + nom + '|' + c.nom, h = habits.get(c.nom);
     const sertir = new Map(Q ? Q.fils.map(x => [x.f.l, x.sertir]) : []), seul = Q && Q.nomenclature && Q.nomenclature.length === 1 ? motSertir(Q.nomenclature[0]) : '';
-    const fils = c.bornes.slice().sort(triNaturel).flatMap(bo => (b.parBorne.get(bo) || []).map(f => { const st = sertir.get(f.l); return ligne(bo, f, st && motSertir(st) === seul ? null : st); })).join('');
+    // un disjoncteur a déjà ses fils, jugés, dans sa disjonction : son connecteur ne les répète pas
+    const fils = dj ? '' : c.bornes.slice().sort(triNaturel).flatMap(bo => (b.parBorne.get(bo) || []).map(f => { const st = sertir.get(f.l); return ligne(bo, f, st && motSertir(st) === seul ? null : st); })).join('');
     let corps = '';
     if (M) { const pourquoi = (c.pn ? c.pn + ' — ' : '') + (Q.main ? 'choisi à la main' : Q.nomme ? 'le part number le nomme' : 'le plus petit qui a ces contacts et ces jauges'), refuses = Q.fils.some(x => x.jaugeOk === false);
       const par = new Map(Q.fils.map(x => [x.contact.lettre, x])), vs = arrangementsQuiLogent(k.points, app.norme, Q.famille).slice(0, 5);
@@ -8409,26 +8435,21 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
     else if (Q) { // une cavité d'une norme connue, mais aucun arrangement ne loge ces bornes : on le dit, et on laisse changer la norme ou le sexe
       const table = (normeDesModules(app.norme).contacts || []).some(x => x.famille === Q.famille);   // la norme juge par sa table de contacts : le sexe compte
       const changer = (table ? pucesSexe(nom + '|' + c.nom, Q.sexe, false) : '') + `<p class="fi-note">${esc(Q.verdicts.filter(v => v.niveau === 'ko').map(v => v.texte).join(' ; ') || 'Aucun arrangement ne convient.')}</p>` + liens([Q.main ? `<button class="fi-lien" data-auto="${escA(nom + '|' + c.nom)}">Choix automatique</button>` : '']);
-      corps = fiRef('aucun arrangement', Q.famille, cle, changer, (c.pn ? c.pn + ' — ' : '') + 'aucun arrangement ' + (nomDeFamille(app.norme, Q.famille) || 'de la norme') + ' ne loge ces bornes avec ces jauges'); }
-    else corps = `<div class="fi-ref-ligne"><span class="fi-ct"><b>${esc(c.nom)}</b></span><div class="min0"><b class="fi-ref${c.pn ? '' : ' vide'}">${esc(c.pn || 'sans part number')}</b>${c.pn && !dj ? '<small class="fi-pourquoi">hors des normes de connecteurs embarquées : pas de face à dessiner</small>' : ''}</div></div>`;
+      corps = fiRef('aucun arrangement', Q.famille, cle, changer, c.pn || ''); }   // l'état en tête dit déjà pourquoi : on ne le répète pas
+    else corps = `<div class="fi-ref-ligne"><span class="fi-ct"><b>${esc(c.nom)}</b></span><div class="min0"><b class="fi-ref${c.pn ? '' : ' vide'}">${esc(c.pn || 'sans part number')}</b>${c.pn && !dj ? '<small class="fi-pourquoi">connecteur hors des normes embarquées — pas de face</small>' : ''}</div></div>`;
     const fsc = autourHtml(nom + '|' + c.nom, filsDe(c), c.pn, Q ? Q.nomenclature : null, '', refDe(c));
-    return { id: c.nom, titre: c.nom, compte: String(c.bornes.length), ko: ko.some(t => t.startsWith(c.nom + ' · ')), corps: `<section class="fi-cadre">${corps}${fsc}${fiListe(fils)}</section>` }; });
+    // l'onglet est une tuile : le connecteur, ses contacts, son toron et son raccord
+    return { id: c.nom, titre: c.nom, compte: pluriel(c.bornes.length, 'contact'), sous: h ? [h.toron, h.raccord].filter(Boolean).join(' · ') : (c.pn || ''), ko: ko.some(t => t.startsWith(c.nom + ' · ')), corps: `<section class="fi-cadre">${corps}${fsc}${fiListe(fils)}</section>` }; });
   // les bornes sans connecteur
   const sans = [...b.parBorne].filter(([bo]) => !C.some(c => c.bornes.includes(bo))).sort((u, v) => triNaturel(u[0], v[0])).flatMap(([bo, fs]) => fs.map(f => ligne(bo, f))).join('');
   const nSans = b.parBorne.size - C.reduce((n, c) => n + c.bornes.length, 0);
-  if (sans) onglets.push({ id: '—', titre: C.length ? 'Autres' : 'Fils', compte: String(nSans), corps: `<section class="fi-cadre">${fiListe(sans)}</section>` });
+  if (sans) onglets.push({ id: '—', titre: C.length ? 'Autres' : 'Fils', compte: pluriel(nSans, 'fil'), sous: C.length ? 'sans connecteur' : '', corps: `<section class="fi-cadre">${fiListe(sans)}</section>` });
   const nFils = V.filter(l => l.de === nom || l.vers === nom).length, pns = [...new Set(C.map(c => c.pn).filter(Boolean))], cal = dj ? calibreDe(nom) : null;
-  // le résumé : les contacts occupés par connecteur, le toron, le raccord — un disjoncteur a sa disjonction pour ça
-  let resume = '';
-  if (!dj && C.length > 1) resume = tuiles([...C.map(c => { const h = habits.get(c.nom); return [esc(c.nom), pluriel(c.bornes.length, 'contact'), h ? [h.toron, h.raccord].filter(Boolean).join(' · ') : (c.pn || ''), `data-onglet-vers="${escA(c.nom)}" title="Voir le connecteur ${escA(c.nom)}"`]; }),
-    sans ? ['—', pluriel(nSans, 'fil'), 'sans connecteur', 'data-onglet-vers="—"'] : null]);
-  else if (!dj && C.length === 1) { const c = C[0], h = habits.get(c.nom), Q = parNom.get(c.nom) && parNom.get(c.nom).plan, M = Q && Q.modules[0];
-    resume = tuiles([[String(c.bornes.length), pluriel(c.bornes.length, 'contact').replace(/^\d+ /, ''), M ? `sur ${M.module.contacts.length} · ${c.nom}` : c.nom !== 'A' || !c.deduite ? 'connecteur ' + c.nom : ''],
-      h && h.toron ? [h.toron.replace(/^Ø /, 'Ø '), 'toron', pluriel(h.h.faisceau.n, 'câble')] : null, h ? [esc(h.raccord), 'raccord', h.h.bandit ? 'avec band-it' : h.h.manchon ? 'avec manchon' : ''] : null]); }
   const sous = dj ? ['disjoncteur', cal ? `<b>${esc(amperes(cal))}</b>` : '', pns.length === 1 ? esc(pns[0]) : '', pluriel(nFils, 'fil')].filter(Boolean).join(' · ')
     : ['équipement', pluriel(nFils, 'fil'), C.length > 1 ? pluriel(C.length, 'connecteur') : '', pns.length === 1 ? `<b>${esc(pns[0])}</b>` : ''].filter(Boolean).join(' · ');
+  // un seul connecteur : son cadre est là, sous les yeux — pas de résumé qui le répète ; plusieurs : les onglets-tuiles
   return fiTete({ nom, renommer: true, etat: fiEtat(ko, att), sous, designation: app.contrat.designations.get(nom) || '' })
-    + (dj ? ficheDisjonction(nom) : resume) + (onglets.length ? fiOnglets('eq|' + nom, onglets) : '') + dejaFaitHtml(nom)
+    + (dj ? ficheDisjonction(nom, vt) : '') + (onglets.length ? fiOnglets('eq|' + nom, onglets) : '') + dejaFaitHtml(nom)
     + fiPied({ tableau: nom, fil: nom, relief: cav.length > 0, menu: MENU_BLOC }); }
 
 /* ---- un bornier hors modules (une bible importée sans modules) ------------------- */
@@ -8481,7 +8502,8 @@ function lierFiche(c) { const box = $('ba-equip'), nom = c.type === 'fil' ? '' :
   box.querySelectorAll('[data-norme-prise]').forEach(b => b.onclick = () => choisir(nom, b.dataset.normePrise, 'norme de ' + nom));
   box.querySelectorAll('.cand[data-cle]').forEach(b => b.onclick = () => { if (b.getAttribute('aria-pressed') !== 'true') choisir(b.dataset.cle, b.dataset.ref, 'choix de ' + b.dataset.cle, b.dataset.ref + ' retenu.'); });
   box.querySelectorAll('[data-auto]').forEach(b => b.onclick = () => choisir(b.dataset.auto, '', 'choix automatique', 'Choix automatique rétabli.'));
-  box.querySelectorAll('[data-ref]').forEach(b => { const aller = () => { app.cible = { type: 'ref', nom, harness: b.dataset.ref, repere: b.dataset.rep }; rendreFiche(); }; b.onclick = aller; b.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); aller(); } }; });
+  // « Déjà fait » : une ligne ouvre la comparaison (seulement elles : une variante `.cand` porte aussi un data-ref)
+  box.querySelectorAll('.fi-cand[data-ref]').forEach(b => { const aller = () => { app.cible = { type: 'ref', nom, harness: b.dataset.ref, repere: b.dataset.rep }; rendreFiche(); }; b.onclick = aller; b.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); aller(); } }; });
   box.querySelectorAll('[data-raccord]').forEach(b => b.onclick = () => { if (b.getAttribute('aria-pressed') === 'true') return; const k = b.dataset.raccord, v = b.dataset.v;
     histPush('raccord de ' + k); const o = { ...(app.contrat.raccords.get(k) || {}) }; o[b.dataset.champ] = v === 'true' ? true : v === 'false' ? false : v; app.contrat.raccords.set(k, o); FI.change['rac|' + k] = true; apresEdition(); });
   box.querySelectorAll('[data-sexe]').forEach(b => b.onclick = () => { if (b.getAttribute('aria-pressed') === 'true') return;
@@ -9023,7 +9045,7 @@ function rendreIndex(box) { const etats = new Map();
       + (r.plans.length ? `<span class="ix-folio" title="Folio">${esc(r.plans.length > 3 ? r.plans.length + ' folios' : 'f. ' + r.plans.join(' · '))}</span>` : '') + '</button></li>').join('') + '</ul>'; }).join('');
   const meme = box.dataset.cle === 'index', haut = box.scrollTop, nko = (CONTROLE.items || []).filter(x => x.niveau === 'ko').length, natt = (CONTROLE.items || []).length - nko;
   box.className = 'fi ix'; box.dataset.cle = 'index';
-  box.innerHTML = `<header class="ix-tete"><h2>Repères</h2><span class="fi-sous">${pluriel(items.length, 'repère')}</span><button class="fi-x plus" id="ix-plus" title="Ajouter un équipement : son repère, puis ses fils dans le tableau" aria-label="Ajouter un équipement">${ico('plus')}</button><button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)">${ico('fermer')}</button></header>`
+  box.innerHTML = `<header class="ix-tete"><h2>Repères<b class="ix-n" title="${escA(pluriel(items.length, 'repère'))}">${items.length}</b></h2><span class="espace"></span><button class="fi-x plus" id="ix-plus" title="Ajouter un équipement : son repère, puis ses fils dans le tableau" aria-label="Ajouter un équipement">${ico('plus')}</button><button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)">${ico('fermer')}</button></header>`
     + `<div class="ix-filtre">${ico('loupe')}<input id="ix-q" value="${escA(app.insp.filtre)}" placeholder="Chercher un repère, une désignation" aria-label="Chercher un repère" autocomplete="off" spellcheck="false"></div>`
     + (f ? '' : `<details class="ix-controle"${nko ? ' open' : ''}><summary><span class="fi-etat ${nko ? 'ko' : natt ? 'att' : 'ok'}"><i aria-hidden="true">${nko ? '✕' : natt ? '!' : '✓'}</i>${nko ? pluriel(nko, 'problème') + (natt ? ' · ' + natt + ' à voir' : '') : natt ? natt + ' à voir' : 'rien à reprendre'}</span>${(nko || natt) ? ico('bas', 'fi-chevron') : ''}</summary>${listeControleHtml()}</details>`)
     + (groupes || '<p class="ix-vide">Aucun repère ne correspond.</p>');
@@ -9055,7 +9077,8 @@ function allerAuFolio(pas) { const P = plans(); let i = P.indexOf(app.plan);
 function plansDuRepere(nom) { return [...new Set(app.contrat.liaisons.filter(l => l.de === nom || l.vers === nom).map(l => l.plan).filter(Boolean))]; }
 function plansDuFil(cable) { return [...new Set(app.contrat.liaisons.filter(l => l.cable === cable).map(l => l.plan).filter(Boolean))]; }
 function synchroniserFolios() { const P = plans(), strip = $('fo-strip');
-  // la barre du bas reste (cadrage, zoom) ; la partie folios ne se montre qu'à plusieurs feuilles
+  // la barre du bas reste (cadrage, zoom) ; la partie folios ne se montre qu'à plusieurs feuilles ; sans contrat (l'accueil), rien
+  $('folios').hidden = !app.contrat.liaisons.length;
   $('fo-part').hidden = P.length < 2;
   if (app.plan !== '*' && !P.includes(app.plan)) app.plan = P.length > 1 ? P[0] : '*';
   const i = P.indexOf(app.plan);
@@ -9184,9 +9207,10 @@ function marquerLignes() { if ($('base').hidden) return;
 const natureDe = nom => { const q = lireRepere(nom); return (q && q.num && CODES[q.code]) ? CODES[q.code].nom : 'équipement'; };
 const triNaturel = (a, b) => String(a).localeCompare(String(b), 'fr', { numeric: true });
 const pluriel = (n, mot) => n + ' ' + mot + (n > 1 ? 's' : '');
-/* La carte se redessine quand la place change (fenêtre, poignée), jamais
-   sous les doigts de qui y écrit. */
-function rafraichirCarte() { const box = $('ba-equip'); if ($('inspecteur').hidden || box.contains(document.activeElement)) return; rendreFiche(); }
+/* La fiche se refait après chaque correction et quand la place change (fenêtre, poignée) — jamais sous les doigts de
+   qui y ÉCRIT (un champ de la fiche a le focus). Un bouton de la fiche qu'on vient de presser (une puce, une variante)
+   a le focus lui aussi : la fiche se refait quand même, et `rendreFiche` lui rend le focus. */
+function rafraichirCarte() { const box = $('ba-equip'), a = document.activeElement; if ($('inspecteur').hidden || (box.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return; rendreFiche(); }
 const jaugeTexte = b => b.jaugeFine === b.jaugeGrosse ? String(b.jaugeFine) : b.jaugeFine + ' à ' + b.jaugeGrosse;
 const jaugeEntree = e => e.jaugeMin == null ? '—' : (e.jaugeMax != null && e.jaugeMax !== e.jaugeMin ? e.jaugeMin + '–' + e.jaugeMax : String(e.jaugeMin));
 const nombre = x => x == null ? '—' : String(x).replace('.', ',');
