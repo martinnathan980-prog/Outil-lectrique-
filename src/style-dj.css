@@ -164,7 +164,8 @@ button.dj-leg:focus-visible{background:var(--s-hover);color:var(--t-1);outline:2
 .dj-pal.ko b,.dj-pal.ko i,.dj-ctc.ko b,.dj-ctc.ko i{color:var(--ko)}
 .dj-pal.att,.dj-ctc.att{background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 28%,var(--s-surface))}
 .dj-pal.att b,.dj-pal.att i,.dj-ctc.att b,.dj-ctc.att i{color:var(--warn)}
-.dj-pal em{font:600 10px var(--sans);font-style:normal;color:var(--warn);white-space:nowrap}
+.dj-pal em{font:600 10px var(--sans);font-style:normal;color:var(--warn);text-align:right}   /* « laisse » passe à la ligne plutôt que de sortir de la tuile */
+.dj-pal em span{white-space:nowrap}
 /* sur une ligne rouge, une case neutre se pose sur la surface ; une case jugée garde son fond */
 .fi-fil.ko .dj-pal,.fi-fil.ko .dj-ctc{background:var(--s-surface)}
 .fi-fil.ko .dj-pal.ko,.fi-fil.ko .dj-ctc.ko{background:var(--ko-soft)}
