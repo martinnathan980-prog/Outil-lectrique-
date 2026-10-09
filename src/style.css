@@ -218,6 +218,13 @@ body.fiche-ouverte #folios{right:var(--fiche-l)}
 .affinage i{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:respire 1.6s ease-in-out infinite}
 .affinage.ailleurs i{background:var(--t-3)}
 @keyframes respire{0%,100%{transform:scale(.6);opacity:.35}50%{transform:scale(1);opacity:1}}
+/* le folio qu'on attend : le moteur le place au loin (un Worker, 08) ; au milieu de la place libre du plan, le point qui
+   respire et un mot, rien de plus — l'écran reste libre dessous ; la puce du folio qui se calcule respire aussi */
+.attente{position:absolute;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:0 24px;text-align:center;pointer-events:none;color:var(--t-1);font-size:var(--f-14);font-weight:500;line-height:1.35}
+.attente i{width:10px;height:10px;border-radius:50%;background:var(--accent);margin-bottom:6px;animation:respire 1.6s ease-in-out infinite}
+.attente b{font-weight:500}
+.attente small{font-size:var(--f-12);font-weight:400;color:var(--t-3);font-variant-numeric:tabular-nums}
+.chip.attend::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin:0 6px 1px 0;vertical-align:middle;animation:respire 1.6s ease-in-out infinite}
 /* le folio retouché à la main : un mot en cuivre, le bouton rend la main au moteur */
 .rd.auto{width:auto;display:inline-flex;align-items:center;gap:6px;padding:0 10px 0 8px;color:var(--accent-2);background:var(--accent-soft);font-size:var(--f-12);font-weight:600}
 .rd.auto:hover:not(:disabled){background:#f6e2d2;color:var(--accent-2)}
