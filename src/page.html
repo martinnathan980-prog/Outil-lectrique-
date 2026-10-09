@@ -21,6 +21,8 @@
       <input id="q" type="search" placeholder="Repère ou n° de fil" aria-label="Chercher un repère ou un numéro de fil" autocomplete="off" spellcheck="false">
       <kbd class="raccourci rc-ouvrir" aria-hidden="true">/</kbd>
       <kbd class="raccourci rc-fermer" aria-hidden="true">Échap</kbd>
+      <!-- au doigt (pas de touche Échap) : une croix ferme la recherche -->
+      <button type="button" class="rc-x" id="rc-x" aria-label="Fermer la recherche"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
       <div id="q-liste" class="q-liste" role="listbox" hidden></div>
     </div>
 
@@ -69,7 +71,7 @@
     <div id="vide" class="vide" hidden>
       <!-- La page d'entrée est elle-même une feuille de folio : le cadre gradué (1 à 6, A à D), un petit schéma qui se trace,
            et en bas à droite le cartouche — les routes, le réseau (aucun), le format, le folio. -->
-      <div class="vd">
+      <div class="vd ilot-clair">
         <div class="vd-reg vd-reg-h" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span></div>
         <div class="vd-reg vd-reg-g" aria-hidden="true"><span>A</span><span>B</span><span>C</span><span>D</span></div>
         <div class="vd-feuille">
@@ -133,11 +135,11 @@
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M3 14h18M9 5v14"/></svg>
       <span class="bulle" aria-hidden="true">Tableau des liaisons<kbd>B</kbd></span>
     </button>
-    <button class="rd" id="btnIndex" aria-label="Repères du contrat (R)">
+    <button class="rd bascule" id="btnIndex" aria-pressed="false" aria-label="Repères du contrat (R)">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1.2" fill="currentColor"/><circle cx="4" cy="12" r="1.2" fill="currentColor"/><circle cx="4" cy="18" r="1.2" fill="currentColor"/></svg>
       <span class="bulle" aria-hidden="true">Repères<kbd>R</kbd></span>
     </button>
-    <button class="rd" id="btnCherche" aria-label="Rechercher un repère ou un fil (/)">
+    <button class="rd bascule" id="btnCherche" aria-pressed="false" aria-label="Rechercher un repère ou un fil (/)">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <span class="bulle" aria-hidden="true">Rechercher<kbd>/</kbd></span>
     </button>
@@ -150,7 +152,7 @@
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 16h6"/><circle cx="11" cy="16" r="2"/><path d="M13 16h8"/><path d="M17 3v7M13.5 6.5h7"/></svg>
       <span class="bulle" aria-hidden="true">Ajouter une liaison</span>
     </button>
-    <button class="rd" id="btnBible" aria-label="Bible des barrettes">
+    <button class="rd bascule" id="btnBible" aria-pressed="false" aria-label="Bible des barrettes">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v16H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v4H6.5A2.5 2.5 0 0 1 4 20.5"/><path d="M9 7h7M9 10.5h5"/></svg>
       <span class="bulle" aria-hidden="true">Bible des barrettes</span>
     </button>

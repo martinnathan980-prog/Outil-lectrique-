@@ -18,13 +18,16 @@ const modules = fs.readdirSync(SRC).filter(f => /^\d\d-.*\.js$/.test(f)).sort();
 // les feuilles de style : style.css (les jetons et le site) d'abord, puis style-*.css (un domaine chacune), dans l'ordre des noms
 const css  = ['style.css', ...fs.readdirSync(SRC).filter(f => /^style-.*\.css$/.test(f)).sort()].map(f => `/* ───────── ${f} ───────── */\n` + fs.readFileSync(path.join(SRC, f), 'utf8')).join('\n');
 const page = fs.readFileSync(path.join(SRC, 'page.html'), 'utf8');
-/* LES POLICES, embarquées : polices/<famille>-latin-<graisse>-<style>.woff2 devient une @font-face en data: URI — aucune
-   police réseau, l'outil reste un fichier hors ligne (polices/LISEZMOI.md). B612 : la police des écrans de cockpit
-   Airbus, pour les titres et les étiquettes ; IBM Plex Sans pour le texte, IBM Plex Mono pour les données. */
+/* LES POLICES, embarquées : polices/<famille>-<sous-ensemble>-<graisse>-<style>.woff2 devient une @font-face en data:
+   URI — aucune police réseau, l'outil reste un fichier hors ligne (polices/LISEZMOI.md). B612 : la police des écrans de
+   cockpit Airbus, pour les titres et les étiquettes ; IBM Plex Sans pour le texte, IBM Plex Mono pour les données. Le
+   sous-ensemble « latin » porte le texte ; « symboles » (flèches, √ ≤ ≥ ≈ ∞…) et « grec » (Ω Δ φ ρ…) ne se chargent
+   que pour leurs caractères (unicode-range) : un mΩ/m ou un √3 reste dans la police de la phrase. */
 const POLICES = path.join(ICI, 'polices'), FAMILLES = { 'b612': 'B612', 'ibm-plex-sans': 'IBM Plex Sans', 'ibm-plex-mono': 'IBM Plex Mono' };
+const PLAGES = { latin: '', symboles: 'U+2190-2194,U+21B6,U+21C4,U+2212,U+221A,U+221E,U+2248,U+2260,U+2264-2265,U+2713', grec: 'U+0394,U+03A3,U+03A6,U+03A9,U+03BB,U+03C0,U+03C1,U+03C6' };
 const polices = fs.existsSync(POLICES) ? fs.readdirSync(POLICES).filter(f => /\.woff2$/.test(f)).sort().map(f => {
-  const m = /^(.+)-latin-(\d{3})-(normal|italic)\.woff2$/.exec(f); if (!m || !FAMILLES[m[1]]) return '';
-  return `@font-face{font-family:"${FAMILLES[m[1]]}";font-style:${m[3]};font-weight:${m[2]};font-display:swap;src:url(data:font/woff2;base64,${fs.readFileSync(path.join(POLICES, f)).toString('base64')}) format("woff2")}`;
+  const m = /^(.+)-(latin|symboles|grec)-(\d{3})-(normal|italic)\.woff2$/.exec(f); if (!m || !FAMILLES[m[1]]) return '';
+  return `@font-face{font-family:"${FAMILLES[m[1]]}";font-style:${m[4]};font-weight:${m[3]};font-display:swap;src:url(data:font/woff2;base64,${fs.readFileSync(path.join(POLICES, f)).toString('base64')}) format("woff2")${PLAGES[m[2]] ? ';unicode-range:' + PLAGES[m[2]] : ''}}`;
 }).filter(Boolean).join('\n') : '';
 const xlsx = fs.readFileSync(path.join(ICI, 'lib', 'xlsx.min.js'), 'utf8');
 // les normes embarquées : tous les CSV de normes/, à la suite — la norme livrée est un exemple (normes/LISEZMOI.md)

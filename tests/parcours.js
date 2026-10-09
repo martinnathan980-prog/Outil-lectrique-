@@ -219,8 +219,9 @@ function baseEssaiDansLaPage() {
     frottement(!herite.charges.length && !herite.designations && !herite.sexes && !herite.raccords, 'les choix du contrat d’avant survivent à l’ouverture d’un nouveau fichier', 'le profil de charge de l’exemple (102CB1 : 9,31 A pendant 2 min) s’applique au 102CB1 du nouveau retest, qui n’en a pas : l’en-tête lui compte des problèmes qui ne sont pas les siens ; désignations, sexes des contacts et raccords survivraient de même (ici : charges ' + herite.charges.join(',') + ')',
       'bloquant', '08-interface.js `chargerContrat` (et l’action « vider ») : repartir de `nouveauContrat()` en gardant le cartouche — designations, sexes, charges, raccords vides ; `relire()` les rend quand on rouvre SON contrat');
     const T = await toast(page); ok(/format retest/.test(T.texte) && /3 folios/.test(T.texte) && !T.erreur, 'le message dit le format reconnu et les folios', T.texte);
-    const enTete = await page.evaluate(() => ({ sous: $('en-sous').textContent, reperes: reperesDe(verite()).filter(r => !estRenvoi(r)).length }));
-    ok(new RegExp('^' + X.neufL.length + ' liaisons · ' + X.neufReperes.length + ' repères · 3 folios$').test(enTete.sous), 'l’en-tête compte juste : liaisons, repères, folios', enTete.sous + ' (attendu ' + X.neufReperes.length + ' repères)');
+    // l'en-tête compte les repères comme l'index (sans renvois, masses ni rails ; avec les barrettes à poser) : un seul nombre pour un même mot
+    const enTete = await page.evaluate(() => ({ sous: $('en-sous').textContent, reperes: reperesDuContrat().length }));
+    ok(new RegExp('^' + X.neufL.length + ' liaisons · ' + enTete.reperes + ' repères · 3 folios$').test(enTete.sous) && enTete.reperes > 0 && enTete.reperes <= X.neufReperes.length, 'l’en-tête compte juste : liaisons, repères (ceux de l’index), folios', enTete.sous + ' (l’index : ' + enTete.reperes + ' repères)');
     frottement(/neuf/.test(e.enNom), 'l’en-tête ne dit pas quel fichier est ouvert', 'il écrit « ' + e.enNom + ' » (le titre par défaut du cartouche) ; le nom du fichier n’est que dans le menu',
       'détail', '08-interface.js `synchroniserContexte` : quand le titre du cartouche est celui par défaut, écrire app.nom dans #en-nom (ou le nom du fichier en #en-sous)');
     const blocs = await page.evaluate(() => app.dessin.comps.filter(c => c.kind !== 'tag').map(c => c.name).sort());
@@ -461,7 +462,7 @@ function baseEssaiDansLaPage() {
     ok(e.plan === FWD(6) && e.cible === '610LP3' && e.insp, 'toucher le résultat ouvre la fiche de 610LP3 sur son folio', e.plan);
     ok(cad.dedans, 'le bloc est cadré au-dessus de la fiche', cad.detail);
     const insp = await page.evaluate(() => { const r = $('inspecteur').getBoundingClientRect(), rail = $('rail').getBoundingClientRect(); return { h: r.height, bas: r.bottom, rail: rail.top, folios: getComputedStyle($('folios')).display }; });
-    ok(insp.h <= 844 * 0.62 + 1 && insp.bas <= insp.rail + 1, 'la fiche monte en tiroir (≤ 62 % de l’écran), le rail reste au-dessous', Math.round(insp.h) + ' px');
+    ok(insp.h <= 844 * 0.62 + 1 && insp.bas <= insp.rail + 1, 'la fiche monte en tiroir (≤ 62 % de l’écran), le rail reste au-dessous', Math.round(insp.h) + ' px, bas ' + Math.round(insp.bas) + ', rail ' + Math.round(insp.rail));
     frottement(insp.folios !== 'none', 'fiche ouverte, la barre des folios disparaît', 'pour changer de folio il faut d’abord fermer la fiche : un geste de plus à chaque va-et-vient', 'détail', 'style.css `body.insp-ouvert #folios{display:none}` : garder la bande des puces au-dessus du tiroir (elle ne fait que 40 px), ou un geste de balayage sur le plan');
     await tous(['#in-fermer', '#fi-tableau', '#fi-fil-plus', '#fi-menu'], 'dans la fiche : fermer, Tableau, + Fil, « ··· » sont atteignables');
     await capture(page, 'D-4-fiche-610LP3');
@@ -474,7 +475,9 @@ function baseEssaiDansLaPage() {
     await capture(page, 'D-5-tableau'); await page.click('#ba-fermer'); await page.waitForTimeout(300);
     const d = await telecharger(page, async () => { await page.click('#btnMenu'); await page.click('#menu [data-act="svg"]'); }); ok(/\.svg$/.test(d.nom), 'le menu enregistre le folio en SVG', d.nom);
     await page.click('#btnMenu'); await page.click('#menu [data-act="nomenclature"]'); await page.waitForTimeout(600);
-    ok(await page.evaluate(() => app.fiche && app.fiche.mode === 'nomenclature' && $('fiche').getBoundingClientRect().height <= 844 * 0.72 + 1), 'la nomenclature monte en tiroir (≤ 72 %)');
+    // un document est une page au téléphone : de la barre du haut au rail (qui reste en bas, sous le pouce)
+    ok(await page.evaluate(() => { const f = $('fiche').getBoundingClientRect(), h = $('entete').getBoundingClientRect(), r = $('rail').getBoundingClientRect();
+      return app.fiche && app.fiche.mode === 'nomenclature' && Math.abs(f.top - h.bottom) <= 2 && Math.abs(f.bottom - r.top) <= 2; }), 'la nomenclature s’ouvre en page, entre la barre du haut et le rail');
     await tous(['#no-csv', '#fi-fermer'], 'dans la nomenclature : Enregistrer en CSV et fermer'); await capture(page, 'D-6-nomenclature'); await page.click('#fi-fermer'); await page.waitForTimeout(300);
     // C au téléphone : l'exemple, l'index, une ligne → folio et fiche, le 15 A d'un doigt
     await page.click('#btnMenu'); await page.click('#menu [data-act="exemple"]'); await page.waitForFunction(() => app.nom === 'Contrat d’exemple'); await page.waitForTimeout(400);

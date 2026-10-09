@@ -43,9 +43,10 @@
    =========================================================================== */
 'use strict';
 
-// les courbes, de la plus chaude à la plus froide : rouge, orange (les deux 23 °C, la plus lente en tirets), bleu
-const RAMPE_COURBES = ['#c62828', '#d4870f', '#1f5fbf'];
-const styleCourbe = (k, n) => n === 4 ? { couleur: ['#c62828', '#d4870f', '#d4870f', '#1f5fbf'][k], tirets: k === 2 }
+// les courbes, de la plus chaude à la plus froide : rouge, orange (les deux 23 °C, la plus lente en tirets), bleu — des
+// jetons (style.css), qui ont leur valeur dans chaque thème : le graphique est sur la surface, pas sur papier
+const RAMPE_COURBES = ['var(--courbe-chaud)', 'var(--courbe-tiede)', 'var(--courbe-froid)'];
+const styleCourbe = (k, n) => n === 4 ? { couleur: [RAMPE_COURBES[0], RAMPE_COURBES[1], RAMPE_COURBES[1], RAMPE_COURBES[2]][k], tirets: k === 2 }
   : { couleur: RAMPE_COURBES[Math.round(k / Math.max(1, n - 1) * (RAMPE_COURBES.length - 1))], tirets: false };
 const chargeDe = nom => (app.contrat.charges && app.contrat.charges.get(nom)) || null;
 /* Le part number d'un repère : celui que ses liaisons portent. */
@@ -125,10 +126,10 @@ const motVerdict = p => !p || p.ok == null ? 'pas jugé' : p.ok === false ? 'dé
 const RESERVES = { fils: 'les fils ne suivent pas', selectivite: 'sans sélectivité', serre: 'serré' };
 function gammeHtml(nom, d) {
   const mot = g => g.valide == null ? '' : g.valide ? (g.ideal ? 'l’idéal' + (d.reserve ? ' pour la charge' : '') + (g.serre ? ', en touchant la courbe' : ' — tient sans toucher la courbe') : g.serre ? 'tient, mais touche la courbe' : 'tient') + (g.fils === false ? ' · ne protège pas tous les fils' : '') + (g.selectif === false ? ' · pas 2:1 avec le voisin' : '') : 'déclenche';
-  const segs = d.gamme.map(g => `<button class="dj-chip${g.valide === true ? ' ok' : g.valide === false ? ' ko' : ''}${g.serre ? ' serre' : ''}${g.ideal ? ' ideal' : ''}" data-cal="${g.calibre}" aria-pressed="${g.calibre === d.calibre}" title="${escA(amperes(g.calibre) + (mot(g) ? ' : ' + mot(g) : '') + (g.somme != null ? ' · ' + motFraction(g.somme) + ' du temps de déclenchement consommé' : '') + (g.calibre === d.calibre ? ' · retenu' : ' · cliquer pour le retenir'))}">${g.ideal ? '<i aria-label="idéal">★</i>' : ''}<b>${nombre(g.calibre)}</b></button>`).join('');
-  const dou = d.origine === 'pn' ? `part number <b>${esc(pnDuRepere(nom))}</b>${d.famille ? ` · <span title="${escA(d.famille.norme + (d.famille.compense ? ' · compensé en température' : ' · non compensé') + ' · ' + d.famille.tmin + ' à ' + d.famille.tmax + ' °C')}">${esc(d.famille.famille)}</span>` : ''}` : d.origine === 'main' ? 'choisi à la main' : d.origine === 'ideal' ? 'l’idéal, trouvé par l’outil' : 'à choisir';
+  const segs = d.gamme.map(g => `<button class="dj-chip${g.valide === true ? ' ok' : g.valide === false ? ' ko' : ''}${g.serre ? ' serre' : ''}${g.ideal ? ' ideal' : ''}" data-cal="${g.calibre}" aria-pressed="${g.calibre === d.calibre}" title="${escA(amperes(g.calibre) + (mot(g) ? ' : ' + mot(g) : '') + (g.somme != null ? ' · ' + motFraction(g.somme) + ' du temps de déclenchement consommé' : '') + (g.calibre === d.calibre ? ' · retenu' : ' · cliquer pour le retenir'))}">${g.ideal ? `<i class="dj-etoile" aria-label="idéal">${ico('etoile')}</i>` : ''}<b>${nombre(g.calibre)}</b></button>`).join('');
+  const dou = d.origine === 'pn' ? `part number <b class="id">${esc(pnDuRepere(nom))}</b>${d.famille ? ` · <span title="${escA(d.famille.norme + (d.famille.compense ? ' · compensé en température' : ' · non compensé') + ' · ' + d.famille.tmin + ' à ' + d.famille.tmax + ' °C')}">${esc(d.famille.famille)}</span>` : ''}` : d.origine === 'main' ? 'choisi à la main' : d.origine === 'ideal' ? 'l’idéal, trouvé par l’outil' : 'à choisir';
   const titreIdeal = d.reserve === 'fils' ? 'Le plus petit calibre qui tient la charge avec sa marge ; aucun ne protège aussi tous les fils : c’est le fil qu’il faut changer' : d.reserve === 'selectivite' ? 'Le plus petit calibre qui tient la charge avec sa marge ; aucun n’est aussi à 2:1 avec le disjoncteur voisin' : d.reserve === 'serre' ? 'Aucun calibre ne tient avec la marge (10 % de courant, 75 % du temps de déclenchement) : le plus petit qui tient' : 'Le plus petit calibre qui tient la charge avec sa marge, protège les fils et reste sélectif';
-  const ideal = d.sansCourbe ? '' : d.calibreIdeal ? `<span title="${escA(titreIdeal)}"><i>★</i> ${d.calibre === d.calibreIdeal ? 'l’idéal' : 'l’idéal : <b>' + esc(amperes(d.calibreIdeal)) + '</b>'}${d.reserve ? ' · <em>' + RESERVES[d.reserve] + '</em>' : ''}</span>` : d.sansProfil ? '' : 'aucun calibre ne tient';
+  const ideal = d.sansCourbe ? '' : d.calibreIdeal ? `<span title="${escA(titreIdeal)}"><i class="dj-etoile">${ico('etoile')}</i> ${d.calibre === d.calibreIdeal ? 'l’idéal' : 'l’idéal : <b>' + esc(amperes(d.calibreIdeal)) + '</b>'}${d.reserve ? ' · <em>' + RESERVES[d.reserve] + '</em>' : ''}</span>` : d.sansProfil ? '' : 'aucun calibre ne tient';
   return `<div class="dj-gamme"><div class="dj-gamme-t"><span class="fi-nomen-t">calibre (A)</span><span class="dj-ideal">${ideal}</span></div>`
     + `<div class="dj-chips" role="group" aria-label="Calibre, en ampères">${segs}</div><div class="dj-dou">${d.calibre ? `<b>${esc(amperes(d.calibre))}</b> · ` : ''}${dou}</div></div>`; }
 /* LES ÉTATS : une table — la pastille (le sort du point sur la courbe), le nom, le courant, la durée ; le permanent
@@ -138,10 +139,10 @@ function etatsHtml(d) { const E = etatsDuProfil(d.profil), parI = new Map(d.poin
     return `<div class="dj-etat${e.k === 'perm' ? ' perm' : ''}" data-k="${e.k}" role="row"><i class="dj-verdict${classeVerdict(p)}" title="${escA(motVerdict(p))}"></i>`
       + (plus ? `<input class="dj-nom" data-dj="${e.k}" data-q="nom" value="${escA(e.nom)}" aria-label="Nom de l’état" spellcheck="false">` : `<span class="dj-nom">${esc(majuscule(e.nom))}</span>`)
       + `<label class="dj-champ"><input data-dj="${e.k}" data-q="i" value="${escA(val('i'))}" inputmode="decimal" placeholder="—" aria-label="${escA(e.nom + ' : courant en ampères')}"><i>A</i></label>`
-      + (e.k === 'perm' ? '<span class="dj-inf" title="pour toujours">∞</span>' : `<label class="dj-champ"><input data-dj="${e.k}" data-q="t" value="${escA(val('t'))}" inputmode="decimal" placeholder="—" aria-label="${escA(e.nom + ' : durée en secondes')}"><i>s</i></label>`)
+      + (e.k === 'perm' ? `<span class="dj-inf" title="pour toujours" aria-label="pour toujours">${ico('infini')}</span>` : `<label class="dj-champ"><input data-dj="${e.k}" data-q="t" value="${escA(val('t'))}" inputmode="decimal" placeholder="—" aria-label="${escA(e.nom + ' : durée en secondes')}"><i>s</i></label>`)
       + (plus ? `<button class="dj-x" data-x="${e.k}" aria-label="Retirer cet état" title="Retirer cet état">×</button>` : '<span></span>') + '</div>'; };
   return `<div class="dj-etats" role="table" aria-label="Profil de charge"><div class="dj-entete" role="row"><span class="fi-nomen-t">profil de charge</span><span>courant</span><span>durée</span><span></span></div>${E.map(ligne).join('')}`
-    + `<button class="fi-lien dj-plus" id="dj-plus">+ un état</button></div>`; }
+    + `<button class="fi-lien dj-plus" id="dj-plus">${ico('plus')}un état</button></div>`; }
 /* SES FILS : ce que chacun admet par palier (la norme des fils, déclassée comme la simulation — l'ambiante sur le
    continu seulement), la case que la charge dépasse en rouge avec l'état qui la dépasse ; en ambre, la case que le
    disjoncteur laisse dépasser sur la courbe lente, avec ce qu'il laisse passer, et le continu sous le calibre. */
@@ -317,10 +318,12 @@ function lierGraphique(sec, nom, E, lire, ecrire) { const d = E.d, fig = sec.que
     DJ_ANIM.set(nom, { tx, cal, geo }); }
   const local = e => { const r = svg.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H }; };
   const dansLeCadre = p => p.x >= L && p.x <= W - R && p.y >= T && p.y <= H - B;
-  // la carte se pose à droite du pointeur, à gauche quand elle déborderait, et reste dans la figure
+  // la carte se pose à droite du pointeur, à gauche quand elle déborderait ; quand aucun côté n'a la place, au-dessous
+  // (ou au-dessus) du point — jamais dessus : elle ne cache pas ce qu'elle décrit
   const montrer = (p, html) => { const rs = svg.getBoundingClientRect(), rf = fig.getBoundingClientRect(), px = p.x / W * rs.width + rs.left - rf.left, py = p.y / H * rs.height + rs.top - rf.top;
-    tip.innerHTML = html; tip.hidden = false; tip.style.right = ''; const w = tip.offsetWidth, h = tip.offsetHeight, gauche = px + 16 + w > rf.width - 2 && px - 16 - w >= 2;
-    tip.style.left = Math.max(2, Math.min(gauche ? px - 16 - w : px + 16, rf.width - w - 2)) + 'px'; tip.style.top = Math.max(2, Math.min(py - 16, rf.height - h - 2)) + 'px'; };
+    tip.innerHTML = html; tip.hidden = false; tip.style.right = ''; const w = tip.offsetWidth, h = tip.offsetHeight, droite = px + 16 + w <= rf.width - 2, gauche = px - 16 - w >= 2;
+    if (droite || gauche) { tip.style.left = (droite ? px + 16 : px - 16 - w) + 'px'; tip.style.top = Math.max(2, Math.min(py - 16, rf.height - h - 2)) + 'px'; return; }
+    const bas = py + 16 + h <= rf.height - 2; tip.style.left = Math.max(2, Math.min(px - w / 2, rf.width - w - 2)) + 'px'; tip.style.top = (bas ? py + 16 : Math.max(2, py - 16 - h)) + 'px'; };
   const cacher = () => { tip.hidden = true; vise.hidden = true; };
   const croix = p => { const [a, b] = vise.querySelectorAll('line'); a.setAttribute('x1', f1(p.x)); a.setAttribute('x2', f1(p.x)); a.setAttribute('y1', T); a.setAttribute('y2', H - B); b.setAttribute('x1', L); b.setAttribute('x2', W - R); b.setAttribute('y1', f1(p.y)); b.setAttribute('y2', f1(p.y)); vise.hidden = false; };
   const ligneCourbe = (k, tient, marge, cls) => ({ ...styleCourbe(k, n), nom: d.courbes[k].nom, tient, marge, cls });

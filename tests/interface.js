@@ -107,7 +107,7 @@ const FICHIER = P.fichierDemande();
   await page.keyboard.press('Escape'); await page.keyboard.press('r'); await page.waitForTimeout(400);
   ok(await page.evaluate(() => !$('btnIndex').querySelector('.rd-point').hidden && /problème/.test($('ba-equip').querySelector('.ix-controle').textContent) && $('ba-equip').querySelectorAll('.co-item').length === new Set(CONTROLE.items.map(x => x.niveau + '|' + (x.nom || x.texte))).size && CONTROLE.items.some(x => x.nom === 'VT1') && /102CB1 2 problèmes/.test($('ba-equip').querySelector('.co-item').textContent) && !document.getElementById('controle')),
     'plus de pastille sur le plan : le bouton des repères porte le compte, l’index liste ce qu’il y a à reprendre, une ligne par repère (102CB1 : 2 problèmes), les barrettes à poser comprises');
-  ok(await page.evaluate(() => [...$('ba-equip').querySelectorAll('.ix-groupe')].some(g => /Disjoncteurs/.test(g.textContent)) && /10 A/.test($('ba-equip').textContent)), 'l’index range les disjoncteurs à part, avec leur calibre');
+  ok(await page.evaluate(() => [...$('ba-equip').querySelectorAll('.ix-groupe')].some(g => /Disjoncteurs/.test(g.textContent)) && /10\sA/.test($('ba-equip').textContent)), 'l’index range les disjoncteurs à part, avec leur calibre');
   await page.locator('#ba-equip .co-item', { hasText: '300XC1' }).click(); await page.waitForTimeout(600);
   ok(await page.evaluate(() => app.plan === '3' && app.cible && app.cible.nom === '300XC1' && !$('inspecteur').hidden), 'une ligne mène au folio 3 et à la fiche de 300XC1');
   ok(await page.evaluate(() => !$('ba-equip').querySelector('.fi-norme') && !/Conforme/.test($('ba-equip').textContent)), 'la fiche ne répète pas la norme à côté de la référence, et ne dit pas « conforme »');
@@ -176,8 +176,11 @@ const FICHIER = P.fichierDemande();
   ok(await page.evaluate(n => verite().length === n - 1 && !verite().some(l => l.cable === 'W-013') && !app.dessin.fils.some(w => w.cable === 'W-013'), n0), 'supprimer W-013 depuis sa fiche : il quitte le contrat et le plan');
   await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
   ok(await page.evaluate(n => verite().length === n && verite().some(l => l.cable === 'W-013'), n0), 'Ctrl+Z le rend');
-  await page.keyboard.press('r'); await page.waitForTimeout(400); page.once('dialog', d => d.accept('105RL2')); await page.click('#ix-plus'); await page.waitForTimeout(600);
-  ok(await page.evaluate(n => app.base.ouvert && verite().length === n + 1 && verite()[n].de === '105RL2', n0), '« + » dans l’index : un équipement 105RL2, sa première ligne dans le tableau');
+  // « + » ouvre un champ en ligne sous le titre (plus de boîte du navigateur) : on écrit le repère, Entrée l'ajoute
+  await page.keyboard.press('r'); await page.waitForTimeout(400); await page.click('#ix-plus'); await page.waitForTimeout(200);
+  ok(await page.evaluate(() => !!$('ix-nouveau') && document.activeElement === $('ix-nouveau')), '« + » dans l’index : un champ en ligne, le curseur dedans');
+  await page.keyboard.type('105RL2'); await page.keyboard.press('Enter'); await page.waitForTimeout(600);
+  ok(await page.evaluate(n => app.base.ouvert && verite().length === n + 1 && verite()[n].de === '105RL2' && !$('ix-nouveau'), n0), '« + » dans l’index : un équipement 105RL2, sa première ligne dans le tableau');
   await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
   // R depuis une fiche venue de l'index ramène à la liste (il ne ferme plus le panneau)
   await page.evaluate(() => { app.cible = null; fermerInspecteur(); }); await page.keyboard.press('r'); await page.waitForTimeout(400);
@@ -210,7 +213,7 @@ const FICHIER = P.fichierDemande();
     for (let k = 7; k <= 10; k++) { const z = r => r.replace(/^(\d+)/, d => String(+d + 1000 * k)); E.filter(l => l.plan === '1').forEach(l => L.push(liaison({ ...l, de: z(l.de), vers: z(l.vers), cable: l.cable + '-' + k, plan: F(k) }))); }
     chargerContrat(L, 'essai', 'fwd.xlsx'); }); await page.waitForTimeout(800);
   ok(await page.evaluate(() => { const cs = [...document.querySelectorAll('#fo-strip .chip')], on = document.querySelector('#fo-strip .chip.on'), sel = $('fo-select'), r = $('fo-strip').getBoundingClientRect(), o = on && on.getBoundingClientRect();
-    return cs.length === 10 && cs.every(c => c.classList.contains('abrege') && c.scrollWidth <= c.clientWidth + 1 && c.title === 'Folio ' + c.dataset.plan && c.textContent === c.dataset.plan) && on && on.dataset.plan === 'MEE256A7815001A' && getComputedStyle(on.querySelector('.chip-pre')).display !== 'none' && cs.filter(c => c !== on).every(c => getComputedStyle(c.querySelector('.chip-pre')).display === 'none') && o.left >= r.left - 1 && o.right <= r.right + 1 && !sel.hidden && sel.options.length === 10 && sel.value === 'MEE256A7815001A'; }),
+    return cs.length === 10 && cs.every(c => c.classList.contains('abrege') && c.scrollWidth <= c.clientWidth + 1 && c.dataset.nom === 'Folio ' + c.dataset.plan && !c.title && c.textContent === c.dataset.plan) && on && on.dataset.plan === 'MEE256A7815001A' && getComputedStyle(on.querySelector('.chip-pre')).display !== 'none' && cs.filter(c => c !== on).every(c => getComputedStyle(c.querySelector('.chip-pre')).display === 'none') && o.left >= r.left - 1 && o.right <= r.right + 1 && !sel.hidden && sel.options.length === 10 && sel.value === 'MEE256A7815001A'; }),
     'dix folios aux noms de dessin (MEE256A7815001A…) : les puces abrégées (« …01A », le nom entier dedans et en bulle), aucune ne déborde, la courante en entier et dans la bande, une liste déroulante en plus');
   await page.selectOption('#fo-select', 'MEE256A7815009A'); await page.waitForTimeout(700);
   ok(await page.evaluate(() => app.plan === 'MEE256A7815009A' && $('fo-lbl').textContent === '9 / 10' && document.querySelector('#fo-strip .chip.on').dataset.plan === 'MEE256A7815009A'), 'la liste déroulante va au folio 9');

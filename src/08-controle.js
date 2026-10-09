@@ -98,7 +98,9 @@ function rendreControle() { const V = verite();
   b.setAttribute('aria-label', 'Repères du contrat (R)' + (nko ? ' — ' + pluriel(nko, 'problème') : natt ? ' — ' + natt + ' à voir' : ''));
   // la barre du haut, si la page en a une : l'état du contrat en une pastille, qui ouvre l'index
   const e = $('en-etat'); if (e) { e.hidden = !V.length; e.className = 'fi-etat en-etat ' + (nko ? 'ko' : natt ? 'att' : 'ok'); e.title = xs.length ? 'La liste de ce qu’il y a à reprendre' : 'Rien à reprendre : tout est jugé bon';
-    e.innerHTML = `<i aria-hidden="true">${nko ? '✕' : natt ? '!' : '✓'}</i>${nko ? pluriel(nko, 'problème') + (natt ? ' · ' + natt + ' à voir' : '') : natt ? natt + ' à voir' : 'rien à reprendre'}`; e.onclick = () => { if (!(app.insp.index && !$('inspecteur').hidden)) basculerIndex(); }; }
+    // les mots se rangent quand la barre manque de place (il reste « 3 · 10 », le voyant dit le reste) ; le texte lu est le même
+    const mot = t => `<span class="en-mot">${t}</span>`;
+    e.innerHTML = `<i aria-hidden="true">${nko ? '✕' : natt ? '!' : '✓'}</i><span>${nko ? nko + mot(nko > 1 ? ' problèmes' : ' problème') + (natt ? ' · ' + natt + mot(' à voir') : '') : natt ? natt + mot(' à voir') : 'rien à reprendre'}</span>`; e.onclick = () => { if (!(app.insp.index && !$('inspecteur').hidden)) basculerIndex(); }; }
   if (app.insp.index && !$('inspecteur').hidden && !app.cible) rendreIndex($('ba-equip')); }
 /* La liste « à reprendre », en tête de l'index : les problèmes, puis les points à voir ; une ligne y mène. */
 function listeControleHtml() { const xs = CONTROLE.items; if (!xs.length) return '';
@@ -108,7 +110,7 @@ function listeControleHtml() { const xs = CONTROLE.items; if (!xs.length) return
     return `<div class="ix-groupe ${n}"><span>${t}</span><b>${ys.length}</b></div><ul class="ix-liste co-liste">` + [...par.values()].map(g => { const x = g[0];
       return `<li><button class="ix-item co-item" data-k="${xs.indexOf(x)}" title="${escA(g.map(y => y.texte).join('\n'))}">`
       + `<span class="co-code ${x.nom ? genreDe(x.nom) : 'tab'}" aria-hidden="true">${x.nom ? esc(codeDe(x.nom)) : ico('tableau')}</span>`
-      + `<span class="min0"><b>${esc(x.nom || 'Tableau')}${g.length > 1 ? ` <em>${g.length} ${n === 'ko' ? 'problèmes' : 'points'}</em>` : ''}</b><small>${esc(x.texte)}${g.length > 1 ? ' …' : ''}</small></span>`
+      + `<span class="min0"><b>${esc(x.nom || 'Tableau')}${g.length > 1 ? ` <em>${g.length} ${n === 'ko' ? 'problèmes' : 'points'}</em>` : ''}</b><small>${(typeof insecable === 'function' ? insecable : t => t)(esc(x.texte))}${g.length > 1 ? ' …' : ''}</small></span>`
       + (x.plan && x.plan !== '*' ? `<span class="ix-folio">f. ${esc(x.plan)}</span>` : '') + '</button></li>'; }).join('') + '</ul>'; }).join(''); }
 // une ligne : son folio, son bloc et sa fiche — ou le tableau, filtré sur ce qu'il faut reprendre
 function allerAuControle(x) {

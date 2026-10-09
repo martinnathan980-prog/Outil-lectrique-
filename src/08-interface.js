@@ -35,7 +35,7 @@ const app = {
   bible: [], bibleNom: '', norme: null, normeNom: '', simu: null,   // simu : les hypothèses, posées au démarrage (relireSimu)
   base: { ouvert: false, portee: 'folio', filtre: '', filtreAuto: false, tri: null, hauteur: 0, sale: true, defiler: false, enSaisie: false, choixOuvert: false, normeOuverte: false },
   retouches: new Map(),  // folio (sa clé de placement) -> le dessin retouché à la souris (la retouche)
-  insp: { index: false, filtre: '' }   // l'inspecteur : ouvert sur l'INDEX des repères (une fiche y revient par la flèche), ce qu'on y cherche
+  insp: { index: false, filtre: '', ajout: false }   // l'inspecteur : ouvert sur l'INDEX des repères (une fiche y revient par la flèche), ce qu'on y cherche, le champ « ajouter » ouvert
 };
 const $ = id => document.getElementById(id);
 const CLE_CONTRAT = 'atelier.contrat.v2';
@@ -586,9 +586,12 @@ const retourIndex = () => deselectionner();
 /* L'inspecteur : s'ouvre sur ce qu'on choisit, se ferme quand on ne choisit plus rien ; le plan se recadre à côté
    (sans bouger si ce qu'on vient de choisir est déjà en vue). */
 function ouvrirInspecteur() { const el = $('inspecteur'), etait = !el.hidden; if (app.fiche) fermerFiche();
-  el.hidden = false; document.body.classList.add('insp-ouvert'); rendreFiche();
+  el.hidden = false; document.body.classList.add('insp-ouvert'); rendreFiche(); synchroniserRail();
   if (!etait) { el.classList.remove('entre'); void el.offsetWidth; el.classList.add('entre'); recadrerSiCache(); } }
-function fermerInspecteur() { const el = $('inspecteur'); app.insp.index = false; if (el.hidden) return; el.hidden = true; document.body.classList.remove('insp-ouvert'); recadrerSiCache(); }
+function fermerInspecteur() { const el = $('inspecteur'); app.insp.index = false; synchroniserRail(); if (el.hidden) return; el.hidden = true; document.body.classList.remove('insp-ouvert'); recadrerSiCache(); }
+/* Le rail dit ce qui est ouvert : l'outil dont le panneau est là se marque pressé (le trait cyan contre le bord). */
+function synchroniserRail() { const p = (id, on) => { const b = $(id); if (b) b.setAttribute('aria-pressed', on ? 'true' : 'false'); };
+  p('btnIndex', app.insp.index && !$('inspecteur').hidden); p('btnCherche', document.body.classList.contains('cherche')); p('btnBible', !!(app.fiche && app.fiche.mode === 'bible')); }
 
 /* ---- l'INDEX : les repères du contrat ---------------------------------- */
 /* Le lecteur : « on se repère pas, on est perdu ». Un bouton du rail (R) ouvre l'inspecteur sur la liste de tous les
@@ -615,23 +618,33 @@ function reperesDuContrat() { const V = verite(), out = [];
 function rendreIndex(box) { const etats = new Map();
   (CONTROLE.items || []).forEach(x => { if (!x.nom) return; if (x.niveau === 'ko' || !etats.has(x.nom)) etats.set(x.nom, x.niveau); });
   const f = app.insp.filtre.trim().toLowerCase(), items = reperesDuContrat().filter(r => !f || r.nom.toLowerCase().includes(f) || r.sous.toLowerCase().includes(f));
+  // ce que le filtre a trouvé, surligné dans le repère et sa ligne
+  const marque = t => { const h = esc(t); if (!f) return h; const i = String(t).toLowerCase().indexOf(f); return i < 0 ? h : esc(t.slice(0, i)) + '<mark>' + esc(t.slice(i, i + f.length)) + '</mark>' + esc(t.slice(i + f.length)); };
   const groupes = [['cb', 'Disjoncteurs'], ['eqpt', 'Équipements'], ['barrette', 'Barrettes'], ['coupure', 'Prises de coupure']].map(([g, t]) => { const xs = items.filter(r => r.genre === g); if (!xs.length) return '';
     return `<div class="ix-groupe"><span>${t}</span><b>${xs.length}</b></div><ul class="ix-liste">` + xs.map(r => `<li><button class="ix-item" data-nom="${escA(r.nom)}"${r.plan ? ` data-plan="${escA(r.plan)}"` : ''}>`
-      + `<span class="ix-etat ${etats.get(r.nom) || 'ok'}" aria-hidden="true"></span><span class="min0"><b>${esc(r.nom)}</b><small>${esc(r.sous)}</small></span>`
+      + `<span class="ix-etat ${etats.get(r.nom) || 'ok'}" aria-hidden="true"></span><span class="min0"><b>${marque(r.nom)}</b><small>${insecable(marque(r.sous))}</small></span>`
       + (r.plans.length ? `<span class="ix-folio" title="Folio">${esc(r.plans.length > 3 ? r.plans.length + ' folios' : 'f. ' + r.plans.join(' · '))}</span>` : '') + '</button></li>').join('') + '</ul>'; }).join('');
   const meme = box.dataset.cle === 'index', haut = box.scrollTop, nko = (CONTROLE.items || []).filter(x => x.niveau === 'ko').length, natt = (CONTROLE.items || []).length - nko;
   box.className = 'fi ix'; box.dataset.cle = 'index';
-  box.innerHTML = `<header class="ix-tete"><h2>Repères<b class="ix-n" title="${escA(pluriel(items.length, 'repère'))}">${items.length}</b></h2><span class="espace"></span><button class="fi-x plus" id="ix-plus" title="Ajouter un équipement : son repère, puis ses fils dans le tableau" aria-label="Ajouter un équipement">${ico('plus')}</button><button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)">${ico('fermer')}</button></header>`
-    + `<div class="ix-filtre">${ico('loupe')}<input id="ix-q" value="${escA(app.insp.filtre)}" placeholder="Chercher un repère, une désignation" aria-label="Chercher un repère" autocomplete="off" spellcheck="false"></div>`
+  box.innerHTML = `<header class="ix-tete"><h2>Repères<b class="ix-n" title="${escA(pluriel(items.length, 'repère') + ' — hors renvois, masses et rails')}">${items.length}</b></h2><span class="espace"></span><button class="fi-x plus" id="ix-plus" title="Ajouter un équipement : son repère, puis ses fils dans le tableau" aria-label="Ajouter un équipement" aria-expanded="${!!app.insp.ajout}">${ico('plus')}</button><button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)">${ico('fermer')}</button></header>`
+    // ajouter un équipement : un champ en ligne, sous le titre (pas une boîte du navigateur)
+    + (app.insp.ajout ? `<form class="ix-ajout" id="ix-ajout"><div class="filtre">${ico('plus')}<input id="ix-nouveau" placeholder="Repère du nouvel équipement, par exemple 105RL2" aria-label="Repère du nouvel équipement" autocomplete="off" spellcheck="false"></div><button class="btn cuivre" type="submit">Ajouter</button><button class="btn lien" type="button" id="ix-annuler">Annuler</button></form>` : '')
+    + `<div class="filtre ix-filtre">${ico('loupe')}<input id="ix-q" value="${escA(app.insp.filtre)}" placeholder="Chercher un repère, une désignation" aria-label="Chercher un repère" autocomplete="off" spellcheck="false"><button class="vider" id="ix-vider"${f ? '' : ' hidden'} aria-label="Effacer la recherche">×</button></div>`
     + (f ? '' : `<details class="ix-controle"${nko ? ' open' : ''}><summary><span class="fi-etat ${nko ? 'ko' : natt ? 'att' : 'ok'}"><i aria-hidden="true">${nko ? '✕' : natt ? '!' : '✓'}</i>${nko ? pluriel(nko, 'problème') + (natt ? ' · ' + natt + ' à voir' : '') : natt ? natt + ' à voir' : 'rien à reprendre'}</span>${(nko || natt) ? ico('bas', 'fi-chevron') : ''}</summary>${listeControleHtml()}</details>`)
-    + (groupes || '<p class="ix-vide">Aucun repère ne correspond.</p>');
-  if (meme) box.scrollTop = haut;
+    + (groupes || `<p class="ix-vide">Aucun repère ne contient « ${esc(app.insp.filtre.trim())} ». <button class="btn lien" id="ix-effacer">Effacer</button></p>`);
+  // la même liste refaite (un filtre tapé) garde sa place ; l'index qu'on ouvre commence en haut, titre et recherche en vue
+  box.scrollTop = meme ? haut : 0;
   $('in-fermer').onclick = () => fermerInspecteur();
   const q = $('ix-q'); q.addEventListener('input', () => { app.insp.filtre = q.value; const pos = q.selectionStart; rendreIndex(box); const q2 = $('ix-q'); q2.focus(); q2.setSelectionRange(pos, pos); });
   q.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); if (q.value) { q.value = ''; q.dispatchEvent(new Event('input')); } else fermerInspecteur(); }
     else if (e.key === 'Enter') { const b = box.querySelector('.ix-item[data-nom]'); if (b) b.click(); } });
-  $('ix-plus').onclick = () => { const r = (prompt('Repère du nouvel équipement (par exemple 105RL2) :') || '').trim(); if (!r) return;
-    if (!app.base.ouvert) ouvrirBase(); ajouterLiaison(r); dire(r + ' : écris ses fils dans le tableau, le plan suit.'); };
+  const effacer = () => { app.insp.filtre = ''; rendreIndex(box); const q2 = $('ix-q'); if (q2) q2.focus(); };
+  ['ix-vider', 'ix-effacer'].forEach(id => { const b = $(id); if (b) b.onclick = effacer; });
+  $('ix-plus').onclick = () => { app.insp.ajout = !app.insp.ajout; rendreIndex(box); const n = $('ix-nouveau'); if (n) n.focus(); };
+  const aj = $('ix-ajout'); if (aj) { const n = $('ix-nouveau'), fin = () => { app.insp.ajout = false; rendreIndex(box); };
+    aj.addEventListener('submit', e => { e.preventDefault(); const r = n.value.trim(); if (!r) { n.focus(); return; } fin();
+      if (!app.base.ouvert) ouvrirBase(); ajouterLiaison(r); dire(r + ' : écris ses fils dans le tableau, le plan suit.'); });
+    $('ix-annuler').onclick = fin; n.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); fin(); } }); }
   const det = box.querySelector('.ix-controle'); if (det) det.addEventListener('toggle', () => { CONTROLE.ouvert = det.open; });
   if (det && CONTROLE.ouvert != null && !nko) det.open = !!CONTROLE.ouvert;
   box.querySelectorAll('.ix-item.co-item').forEach(b => b.onclick = () => allerAuControle(CONTROLE.items[+b.dataset.k]));
@@ -665,7 +678,7 @@ function synchroniserFolios() { const P = plans(), strip = $('fo-strip'), sel = 
   $('fo-part').hidden = P.length < 2;
   if (app.plan !== '*' && !P.includes(app.plan)) app.plan = P.length > 1 ? P[0] : '*';
   const i = P.indexOf(app.plan), k = coupureDesFolios(P);
-  strip.innerHTML = P.length < 2 ? '' : P.map(p => `<button class="chip${p === app.plan ? ' on' : ''}${k ? ' abrege' : ''}" data-plan="${escA(p)}" title="${escA('Folio ' + p)}" aria-label="Folio ${escA(p)}"${p === app.plan ? ' aria-current="page"' : ''}>${k ? `<span class="chip-pre">${esc(p.slice(0, k))}</span>${esc(p.slice(k))}` : esc(p)}</button>`).join('');
+  strip.innerHTML = P.length < 2 ? '' : P.map(p => `<button class="chip${p === app.plan ? ' on' : ''}${k ? ' abrege' : ''}" data-plan="${escA(p)}" data-nom="${escA('Folio ' + p)}" aria-label="Folio ${escA(p)}"${p === app.plan ? ' aria-current="page"' : ''}>${k ? `<span class="chip-pre">${esc(p.slice(0, k))}</span>${esc(p.slice(k))}` : esc(p)}</button>`).join('');
   if (sel) { sel.hidden = P.length <= FOLIOS_EN_LISTE; sel.innerHTML = sel.hidden ? '' : P.map((p, j) => `<option value="${escA(p)}"${p === app.plan ? ' selected' : ''}>${j + 1} · ${esc(p)}</option>`).join(''); }
   $('fo-lbl').textContent = i < 0 ? (P.length > 1 ? 'tout' : '1 / 1') : (i + 1) + ' / ' + P.length;
   // une seule feuille : les flèches n'ont nulle part où aller
@@ -697,16 +710,17 @@ let qSel = 0, qCands = [];
 function montrerCandidats() { const box = $('q-liste'), q = $('q').value; qCands = candidats(q);
   if (!q.trim()) { box.hidden = true; return; } box.hidden = false; qSel = Math.min(qSel, Math.max(0, qCands.length - 1));
   box.innerHTML = qCands.length ? qCands.map((c, i) => `<button class="q-item${i === qSel ? ' on' : ''}" role="option" data-i="${i}" aria-selected="${i === qSel}">
-      <span class="genre">${c.type === 'fil' ? 'fil' : 'repère'}</span><span class="nom">${esc(c.nom)}</span><span class="des">${esc(c.des)}</span>${c.n ? `<span class="cpt">${c.n} fil${c.n > 1 ? 's' : ''}</span>` : ''}</button>`).join('')
+      <span class="genre">${c.type === 'fil' ? 'fil' : 'repère'}</span><span class="nom">${esc(c.nom)}</span><span class="des${c.type === 'fil' ? ' mono' : ''}">${esc(c.des)}</span>${c.n ? `<span class="cpt">${c.n} fil${c.n > 1 ? 's' : ''}</span>` : ''}</button>`).join('')
     : '<div class="q-rien">Rien qui corresponde.</div>'; }
 /* La fenêtre de recherche s'ouvre à côté du rail, par le bouton ou « / »,
    et disparaît sitôt qu'on a trouvé ou qu'on regarde ailleurs. */
-function ouvrirRecherche() { document.body.classList.add('cherche'); const q = $('q'); q.focus(); q.select(); if (q.value.trim()) montrerCandidats(); }
-function fermerRecherche() { $('q-liste').hidden = true; document.body.classList.remove('cherche'); }
+function ouvrirRecherche() { document.body.classList.add('cherche'); synchroniserRail(); const q = $('q'); q.focus(); q.select(); if (q.value.trim()) montrerCandidats(); }
+function fermerRecherche() { $('q-liste').hidden = true; document.body.classList.remove('cherche'); synchroniserRail(); }
 const rechercheOuverte = () => document.body.classList.contains('cherche');
 function lierRecherche() { const q = $('q'), box = $('q-liste');
   q.addEventListener('input', () => { qSel = 0; montrerCandidats(); });
-  q.addEventListener('focus', () => { document.body.classList.add('cherche'); if (q.value.trim()) montrerCandidats(); });
+  q.addEventListener('focus', () => { document.body.classList.add('cherche'); synchroniserRail(); if (q.value.trim()) montrerCandidats(); });
+  const x = $('rc-x'); if (x) x.addEventListener('click', () => { q.blur(); fermerRecherche(); });
   q.addEventListener('keydown', e => {
     if (e.key === 'ArrowDown') { e.preventDefault(); qSel = Math.min(qSel + 1, qCands.length - 1); montrerCandidats(); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); qSel = Math.max(qSel - 1, 0); montrerCandidats(); }
@@ -1170,7 +1184,7 @@ function lierPoignee() { const p = $('ba-poignee'), b = $('base'); let actif = f
   p.addEventListener('pointerdown', e => { actif = true; b.classList.add('redim'); try { p.setPointerCapture(e.pointerId); } catch (_) { } e.preventDefault(); });
   p.addEventListener('pointermove', e => { if (!actif) return;
     // le tiroir se règle en hauteur, à la poignée du haut (sur téléphone comme sur grand écran)
-    app.base.hauteur = Math.round(Math.max(150, Math.min(window.innerHeight * 0.75, window.innerHeight - 12 - e.clientY)));
+    app.base.hauteur = Math.round(Math.max(150, Math.min(window.innerHeight * 0.75, b.getBoundingClientRect().bottom - e.clientY)));
     appliquerTailleBase(); });
   const fin = () => { if (!actif) return; actif = false; b.classList.remove('redim'); memoriserBase(); ajuster(true); };
   p.addEventListener('pointerup', fin); p.addEventListener('pointercancel', fin); }
@@ -1200,13 +1214,13 @@ function ouvrirFiche(mode, corps, pied) { const f = $('fiche'); fermerBase(); if
   const r = document.documentElement.style; r.setProperty('--fiche-l', (mode.large ? 560 : 400) + 'px');
   f.hidden = false; if (nouveau) { f.classList.remove('entre'); void f.offsetWidth; f.classList.add('entre'); }
   app.fiche = mode; $('fiche-corps').scrollTop = 0;
-  // sur téléphone la fiche monte en tiroir : le rail et les folios se posent au-dessus d'elle
-  document.body.classList.add('fiche-ouverte'); r.setProperty('--fiche-h', f.offsetHeight + 'px');
-  $('fi-fermer').onclick = () => fermerFiche(true); if (nouveau) ajuster(true); }
+  // sur téléphone un document est une page, de la barre du haut au rail : la bande des folios se range (style.css)
+  document.body.classList.add('fiche-ouverte');
+  $('fi-fermer').onclick = () => fermerFiche(true); synchroniserRail(); if (nouveau) ajuster(true); }
 /* `recadrer` : quand on ferme la fiche pour elle-même, ce qu'on avait choisi revient dans l'inspecteur (le document
    l'avait remplacé), sinon le plan reprend la place. */
 function fermerFiche(recadrer) { const f = $('fiche'); if (f.hidden && !app.fiche) return; f.hidden = true; app.fiche = null;
-  document.body.classList.remove('fiche-ouverte'); if (!recadrer) return;
+  document.body.classList.remove('fiche-ouverte'); synchroniserRail(); if (!recadrer) return;
   if (app.cible && $('inspecteur').hidden) ouvrirInspecteur(); else ajuster(true); }
 const tete = (sur, titre, sans) => `<div class="fiche-tete"><div class="min0"><div class="sur">${esc(sur)}</div><h2 class="titre${sans ? ' sans' : ''}">${esc(titre)}</h2></div>
   <button class="rond fermer" id="fi-fermer" aria-label="Fermer la fiche"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`;
@@ -1407,13 +1421,13 @@ const TITRE_CARTOUCHE_DEFAUT = nouveauContrat().cartouche.titre, NOM_EXEMPLE = '
 /* L'en-tête dit QUEL contrat est ouvert : le titre du cartouche si on en a écrit un, sinon le nom du fichier ; et que
    c'est l'exemple embarqué quand c'est lui (à la première ouverture, il s'affiche sans qu'on l'ait demandé). */
 function synchroniserContexte() { const n = app.contrat.liaisons.length, P = plans(), nom = n ? (app.nom || 'Sans nom') : 'Aucun contrat', exemple = n && app.nom === NOM_EXEMPLE;
-  const sous = n ? (exemple ? 'l’exemple embarqué · ' : '') + `${n} liaison${n > 1 ? 's' : ''} · ${reperesDe(verite()).filter(r => !estRenvoi(r)).length} repères` + (P.length > 1 ? ` · ${P.length} folios` : '') : '';
-  $('ctx-nom').textContent = nom; $('ctx-txt').textContent = sous;
+  const sous = n ? (exemple ? 'l’exemple embarqué · ' : '') + `${n} liaison${n > 1 ? 's' : ''} · ${reperesDuContrat().length} repères` + (P.length > 1 ? ` · ${P.length} folios` : '') : '';
+  $('ctx-nom').textContent = nom; $('ctx-txt').textContent = sous; $('ctx-nom').title = nom;
   // la barre du haut, si la page en a une : le nom du contrat et ses comptes (l'état est posé par rendreControle)
   const titre = app.contrat.cartouche && app.contrat.cartouche.titre, en = $('en-nom');
-  if (en) { en.textContent = n ? (titre && titre !== TITRE_CARTOUCHE_DEFAUT ? titre : nom) : 'Atelier Schéma'; const es = $('en-sous'); if (es) es.textContent = sous; }
+  if (en) { en.textContent = n ? (titre && titre !== TITRE_CARTOUCHE_DEFAUT ? titre : nom) : 'Atelier Schéma'; en.title = en.textContent; const es = $('en-sous'); if (es) { es.textContent = sous; es.title = sous; } }
   // l'accueil : « reprendre » si le dernier geste a vidé la table
-  const rep = $('vd-reprendre'); if (rep) { const d = app.hist[app.hist.length - 1]; rep.hidden = !(!n && d && d.liaisons && d.liaisons.length); if (!rep.hidden) rep.textContent = 'Reprendre ' + (d.nom || 'le contrat'); }
+  const rep = $('vd-reprendre'); if (rep) { const d = app.hist[app.hist.length - 1]; rep.hidden = !(!n && d && d.liaisons && d.liaisons.length); if (!rep.hidden) rep.textContent = d.nom ? 'Reprendre « ' + d.nom + ' »' : 'Reprendre le contrat'; }
   if (typeof rendreAccueil === 'function') rendreAccueil(); }
 /* Annuler reste à sa place, éteint quand il n'y a rien à annuler ; sa bulle
    dit ce qu'il déferait. */
@@ -1452,6 +1466,14 @@ function lierPanneau() {
   o('btnAuto', revenirAutomatique);
   o('fo-prev', () => allerAuFolio(-1)); o('fo-next', () => allerAuFolio(+1));
   const strip = $('fo-strip'); strip.addEventListener('click', e => { const c = e.target.closest('.chip'); if (c) allerAuPlan(c.dataset.plan); });
+  // le nom entier d'un folio, dans la bulle de la planche (pas l'infobulle du système) : une bulle pour toute la bande,
+  // posée au-dessus de la puce survolée — dans la puce, elle serait rognée par la bande qui défile
+  const bulle = document.createElement('span'); bulle.className = 'bulle fo-bulle'; bulle.setAttribute('aria-hidden', 'true'); $('folios').appendChild(bulle);
+  let tempo = 0; const cacher = () => { clearTimeout(tempo); bulle.classList.remove('on'); };
+  strip.addEventListener('pointerover', e => { const c = e.target.closest('.chip'); if (!c || e.pointerType === 'touch') return; clearTimeout(tempo);
+    tempo = setTimeout(() => { const r = c.getBoundingClientRect(), f = $('folios').getBoundingClientRect(); bulle.textContent = c.dataset.nom;
+      bulle.style.left = Math.max(4, Math.min(r.left + r.width / 2 - f.left, f.width - 4)) + 'px'; bulle.classList.add('on'); }, bulle.classList.contains('on') ? 0 : 450); });
+  strip.addEventListener('pointerleave', cacher); strip.addEventListener('scroll', cacher, { passive: true });
   // la bande des folios défile à la molette (elle n'a pas de barre), la liste déroulante y va d'un choix
   strip.addEventListener('wheel', e => { if (!e.deltaY || e.deltaX || strip.scrollWidth <= strip.clientWidth) return; e.preventDefault(); strip.scrollLeft += e.deltaY; }, { passive: false });
   const sel = $('fo-select'); if (sel) sel.addEventListener('change', () => allerAuPlan(sel.value));

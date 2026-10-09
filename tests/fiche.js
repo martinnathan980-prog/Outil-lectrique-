@@ -58,7 +58,7 @@ const FICHIER = P.fichierDemande();
   ok(/aucun arrangement/.test(await texte('[data-panneau="B"] .fi-ref')) && await q('[data-panneau="B"] .fi-changer [data-sexe]') === 2, 'le connecteur B, qu’aucun arrangement ne loge, le dit et laisse changer le sexe des contacts');
   ok((await texte('.fi-etat')).split('aucun arrangement').length === 2, 'le problème de B n’est écrit qu’une fois (l’état), pas répété sous la référence');
   // un EN 4165 n'a pas de raccord : la ligne le dit, et rien ne se calcule au-dessous (ni band-it, ni manchon, ni gaine)
-  ok(await page.evaluate(() => { const a = document.querySelector('#ba-equip [data-panneau="A"] .fi-autour'); const t = a ? a.textContent.slice(a.textContent.indexOf('à sertir')) : ''; return !!a && /raccordsans raccord : un EN 4165 n’en a pas/.test(t) && !/band-it|manchon|gaine/.test(t); }), 'le connecteur A (EN 4165) : « sans raccord : un EN 4165 n’en a pas », pas de ligne band-it, manchon ni gaine', await texte('[data-panneau="A"] .fi-autour'));
+  ok(await page.evaluate(() => { const a = document.querySelector('#ba-equip [data-panneau="A"] .fi-autour'); const t = a ? a.textContent.slice(a.textContent.indexOf('à sertir')) : ''; return !!a && /raccordsans\sraccord\s:\sun EN 4165 n’en a pas/.test(t) && !/band-it|manchon|gaine/.test(t); }), 'le connecteur A (EN 4165) : « sans raccord : un EN 4165 n’en a pas », pas de ligne band-it, manchon ni gaine', await texte('[data-panneau="A"] .fi-autour'));
   // à la vraie souris : la reprise de blindage sur le corps d'un EN 2997 — le contrat change, la fiche se refait, la puce garde le focus
   await bloc('3', '351PM1'); await page.waitForTimeout(400);
   await page.click('#ba-equip [data-changer^="rac|"]'); await page.waitForTimeout(200);
