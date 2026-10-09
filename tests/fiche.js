@@ -111,6 +111,19 @@ const FICHIER = P.fichierDemande();
   ok(await q('.fi-trajet .fi-bout') === 2 && /^de\s*102CB1/i.test(await texte('.fi-trajet .fi-bout')) && await q('.fi-cadre > .fi-faits') === 1, 'ses deux bouts, puis les faits dans un cadre', await texte('.fi-trajet .fi-bout'));
   ok(await q('.fi-faits dt', 'xs => xs.map(x => x.textContent).join(" ")') === 'câble admet courant chute longueur où', 'les faits : câble, admet, courant, chute, longueur, où');
 
+  // les hypothèses de la simulation : le mot « hypothèse » de la fiche mène à leur fiche ; une tension changée rejuge la chute admise ; pas de Ctrl+Z (une hypothèse n'est pas le contrat), « Revenir aux valeurs de l'outil » les rend
+  console.log('\nles hypothèses de la simulation, depuis la fiche du fil');
+  const admis28 = await texte('.fi-faits');
+  ok(await q('.fi-hyp[data-hyp]') >= 1 && /1 V admis/.test(admis28), 'la fiche de W-012 écrit « hypothèse » en lien, et 1 V admis sous 28 V');
+  await page.click('#ba-equip .fi-hyp'); await page.waitForTimeout(400);
+  ok(await page.evaluate(() => app.fiche && app.fiche.mode === 'hypotheses' && !!document.querySelector('#fiche-corps #si-U') && document.querySelectorAll('#fiche-corps .hy-groupe').length >= 4 && document.querySelectorAll('#fiche-corps .hy-sert').length >= 8 && !!document.querySelector('#menu [data-act="hypotheses"]')), 'le mot ouvre la fiche des hypothèses : les champs par groupe, chacun avec ce qu’il sert ; le menu y mène aussi');
+  await page.fill('#fiche-corps #si-U', '115'); await page.press('#fiche-corps #si-U', 'Enter'); await page.waitForTimeout(500);
+  ok(await page.evaluate(() => app.simu.tension === 115 && document.activeElement && document.activeElement.id === 'si-U' && !$('hy-defaut').disabled), '115 V : l’hypothèse est prise, le champ garde la main, « Revenir aux valeurs de l’outil » s’allume');
+  await page.click('#fi-fermer'); await page.waitForTimeout(400);
+  ok(await page.evaluate(() => !$('inspecteur').hidden && app.cible && app.cible.type === 'fil') && /4 V admis/.test(await texte('.fi-faits')), 'fermer la fiche des hypothèses rend celle de W-012, rejugée : 4 V admis sous 115 V', await texte('.fi-faits'));
+  await page.evaluate(() => ficheHypotheses()); await page.waitForTimeout(300); await page.click('#hy-defaut'); await page.waitForTimeout(400); await page.click('#fi-fermer'); await page.waitForTimeout(400);
+  ok(await page.evaluate(() => app.simu.tension === 28 && JSON.stringify(app.simu.conditions) === JSON.stringify(HYPOTHESES.conditions)) && /1 V admis/.test(await texte('.fi-faits')), '« Revenir aux valeurs de l’outil » : 28 V, 1 V admis de nouveau');
+
   console.log('\nl’index');
   await page.keyboard.press('Escape'); await page.keyboard.press('r'); await page.waitForTimeout(400);
   ok(await q('.ix-controle .fi-etat.ko') === 1 && await q('.ix-groupe') >= 5 && await q('.ix-item[data-nom]') > 50, 'l’index : « à reprendre » en tête, les groupes, les repères');

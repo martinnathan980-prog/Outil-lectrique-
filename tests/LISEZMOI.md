@@ -4,7 +4,8 @@
 
 ```
 node tests/controle.js         les invariants, le contrat d'essai, la base de retest, les pièges déjà tombés
-node tests/memoire.js          le travail survit-il à la fermeture de l'onglet
+node tests/memoire.js          le travail survit-il à la fermeture de l'onglet (les liaisons et les choix : une désignation) ; rouvert
+                               sur le plan seul, le tableau fermé
 node tests/format-retest.js    les seize colonnes sont lues par leur nom ; harness, longueur (mm → m), appareil, date gardés ;
                                « 677VT2 51 » + « B » → 677VT2:51B
 node tests/banc-placement.js   combien de fils sortent droits, et sur quelle feuille ; les six folios de l'exemple relus
@@ -26,7 +27,18 @@ node tests/interface.js        à la vraie souris (grand écran, téléphone) : 
                                admet, courant par le disjoncteur amont, chute en ligne) ; une ligne de fil (type, contact à sertir, où,
                                numéro en retrait) ; autour du connecteur (à sertir, toron, tyrap → durci + band-it, Ctrl+Z) ; la chute en
                                ligne depuis un disjoncteur ; une base de contrats faits, « Déjà fait », la comparaison, reprendre, Ctrl+Z ;
-                               « + fil » depuis une fiche, supprimer un fil depuis la sienne, « + » un équipement dans l'index, Ctrl+Z
+                               « + fil » depuis une fiche, supprimer un fil depuis la sienne, « + » un équipement dans l'index, Ctrl+Z ;
+                               R depuis une fiche venue de l'index ramène à la liste ; au téléphone, la bande des folios reste au-dessus
+                               de la fiche et un bloc haut visé depuis l'index se cadre lisible (≥ 100 px) ; l'accueil à la vraie souris
+                               (Ouvrir, la zone de dépôt, Reprendre, Voir l'exemple — l'en-tête dit « l'exemple embarqué ») ; un autre
+                               fichier ouvert ne garde rien du contrat d'avant (profils, désignations, sexes, raccords), l'en-tête dit son
+                               nom, Ctrl+Z rend l'exemple et ses choix ; dix folios aux noms de dessin (FWD) : puces abrégées, aucune ne
+                               déborde, la courante en entier, la liste déroulante ; « 2 harness » ; les noms de fichier en ASCII ; un
+                               fichier à deux harness demande lequel ouvrir
+node tests/fiche.js            la fiche de chaque sorte de bloc (équipement à trois connecteurs, barrette, disjoncteur, barrette à poser,
+                               prise de coupure, fil) dit les choses dans l'ordre voulu, les faces à plat, autour avant les fils ; les
+                               hypothèses de la simulation depuis le mot « hypothèse » de la fiche d'un fil (115 V → 4 V admis, puis
+                               « Revenir aux valeurs de l'outil ») ; l'index
 node tests/barrettes.js        la bible des barrettes se lit, la référence se choisit, les connecteurs se lisent ; la norme se lit,
                                chaque fil va dans son trou, la simulation donne des valeurs connues à la main ; les catalogues ASNE 0599
                                (29 variantes) et NSA937901 (43 codes), les jauges de chaque norme, le choix de la norme et le

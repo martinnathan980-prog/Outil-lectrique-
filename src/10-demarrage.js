@@ -23,11 +23,10 @@ const atelier = {
 
 function demarrer() {
   relireBible(); lierPanneau(); lierPlanche();
-  const baseOuverte = relireBase();
-  // on retrouve son contrat ; à défaut l'exemple — jamais un écran vide
+  // le tableau garde sa taille et sa portée, jamais son état ouvert : on rouvre sur le plan seul, le tableau à la demande (B)
+  relireBase();
+  // on retrouve son contrat (avec ses choix) ; à défaut l'exemple embarqué, que l'en-tête nomme — jamais un écran vide
   if (!relire()) { chargerContrat(contratExemple(), 'contrat d’exemple', 'Contrat d’exemple'); app.contrat.charges = chargesExemple(); rendreControle(); app.hist = []; synchroniserHistorique(); }
-  // la base se montre à côté du plan : c'est elle qu'on corrige
-  if (baseOuverte) ouvrirBase();
   requestAnimationFrame(() => ajuster());
   // les folios déjà affinés dans ce navigateur reviennent ; les autres s'affinent en arrière-plan ; les retouches aussi
   relireAffines(); relireRetouches(); relireReferences();

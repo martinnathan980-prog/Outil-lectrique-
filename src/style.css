@@ -207,12 +207,21 @@ body.fiche-ouverte #folios{right:var(--fiche-l)}
 #folios .bulle::before{right:auto;top:100%;left:50%;margin:0 0 0 -4px;border-color:transparent;border-top-color:var(--t-1)}
 .fo-part,.fo-milieu,.fo-zoom{display:flex;align-items:center;gap:2px;min-width:0}
 .fo-milieu{flex:1;justify-content:center}
-.fo-strip{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;max-width:min(50vw,640px);padding:2px}
+/* la bande des folios défile (à la molette, au doigt) ; une puce ne rétrécit jamais : sa largeur est bornée, son nom
+   entier en bulle. Des noms de dessin longs (FWD) s'abrègent à ce qui les distingue — le début est dans la puce
+   (`.chip-pre`), caché, sauf sur le folio courant où le nom se lit en entier */
+.fo-strip{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;max-width:min(50vw,640px);padding:2px;scroll-behavior:smooth}
 .fo-strip::-webkit-scrollbar{display:none}
-.chip{height:26px;min-width:28px;padding:0 9px;border-radius:var(--r-1);border:none;background:none;color:var(--t-2);font-family:var(--mono);font-weight:600;font-size:var(--f-12);transition:background var(--rapide),color var(--rapide)}
+.chip{flex:none;height:26px;min-width:28px;max-width:180px;padding:0 9px;border-radius:var(--r-1);border:none;background:none;color:var(--t-2);font-family:var(--mono);font-weight:600;font-size:var(--f-12);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background var(--rapide),color var(--rapide)}
 .chip:hover{background:var(--s-hover);color:var(--t-1)}
 .chip.on{background:var(--accent-soft);color:var(--accent-2);box-shadow:inset 0 0 0 1px rgba(181,84,28,.3)}
+.chip-pre{display:none}
+.chip.abrege:not(.on)::before{content:"…";color:var(--t-3);margin-right:1px}
+.chip.on .chip-pre{display:inline;color:var(--t-3);font-weight:500}
 .fo-lbl{color:var(--t-3);font-size:var(--f-11);padding:0 8px 0 6px;white-space:nowrap;font-family:var(--mono)}
+/* au-delà de huit folios, une liste déroulante double la bande */
+.fo-select{height:26px;max-width:220px;margin-left:2px;padding:0 4px;border:1px solid var(--s-line-2);border-radius:var(--r-1);background:var(--s-surface);color:var(--t-1);font:600 var(--f-11) var(--mono)}
+.fo-select:hover{border-color:#b4bdc8}
 /* l'affinage en cours : un point qui respire, ce qu'il fait, discret */
 .affinage{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:var(--f-11);color:var(--t-3);padding:0 8px;white-space:nowrap}
 .affinage i{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:respire 1.6s ease-in-out infinite}
@@ -374,6 +383,30 @@ table.norme{border-collapse:separate;border-spacing:0;font-size:var(--f-11);whit
 .bible-zoom .phy{margin-top:8px}
 .bar-faits{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin-top:8px;font-size:var(--f-12);color:var(--t-2)}
 .bar-faits span:nth-child(2n){font-family:var(--mono);color:var(--t-1)}
+/* les HYPOTHÈSES de la simulation : un groupe par thème, une ligne par hypothèse — le champ (celui du bandeau des
+   cartes, .hyp-n / .hyp-c, habillé en ligne), puis à quoi elle sert */
+.hy-groupe{margin-top:14px;padding:10px 12px 2px;border:1px solid var(--s-line);border-radius:var(--r-2)}
+.hy-groupe>.sur{margin-bottom:2px}
+.hy-ligne{padding:9px 0 10px;border-top:1px solid var(--s-line)}
+.hy-groupe>.sur+.hy-ligne{border-top:none}
+.hy-champ .hyp-n,.hy-champ .hyp-c{display:flex;align-items:center;gap:10px;width:100%;white-space:normal}
+.hy-champ .hyp-n>span:first-child,.hy-champ .hyp-c>span{flex:1;min-width:0;font:700 10px/1.6 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-1)}
+.hy-champ .hyp-c{flex-direction:row-reverse}
+.hy-champ .hyp-n input{width:84px;height:30px}
+.hy-champ .hyp-n select{height:30px;max-width:230px}
+.hy-champ .hyp-n .u{min-width:40px;color:var(--t-2)}
+.hy-sert{margin:5px 0 0;font-size:var(--f-12);color:var(--t-2);line-height:1.45}
+.hy-sert i{font-style:normal;color:var(--t-3)}
+/* le mot « hypothèse » sur une fiche : un lien discret vers la fiche des hypothèses */
+.fi-hyp{border:none;background:none;padding:0 2px;margin:0 -2px;font:inherit;color:var(--accent-2);text-decoration:underline dotted;text-underline-offset:3px;border-radius:3px;cursor:pointer}
+.fi-hyp:hover{background:var(--accent-soft)}
+/* un fichier à plusieurs harness : lequel ouvrir ? */
+.ch-liste{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.ch-harness{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-surface);color:var(--t-1);text-align:left;cursor:pointer;transition:background var(--rapide),border-color var(--rapide)}
+.ch-harness:hover{background:var(--s-sunken);border-color:var(--s-line-2)}
+.ch-harness b{font:700 var(--f-14) var(--mono);white-space:nowrap}
+.ch-harness span{flex:1;min-width:0;font-size:var(--f-12);color:var(--t-2)}
+.ch-harness svg.ico{color:var(--t-3)}
 
 /* ─── LA CARTE D'UNE BARRETTE OU D'UNE PRISE (dans l'inspecteur) : la réglette de face, la simulation, le choix ── */
 .equip{margin:0;padding:10px 12px 12px;border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-surface);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:start;grid-auto-rows:max-content;min-width:0}
@@ -583,7 +616,8 @@ body.fiche-ouverte #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--f
   /* les panneaux montent en tiroir depuis le bas ; le tableau garde la hauteur qu'on lui donne */
   #base,#fiche{top:auto;left:0;right:0;bottom:0;width:auto;min-width:0;max-width:none;border:none;border-top:1px solid var(--s-line);border-radius:var(--r-3) var(--r-3) 0 0;box-shadow:0 -8px 24px rgba(16,24,40,.10)}
   #inspecteur{top:auto;left:0;right:0;bottom:48px;width:auto;max-width:none;max-height:62vh;border:none;border-top:1px solid var(--s-line);border-radius:var(--r-3) var(--r-3) 0 0;box-shadow:0 -8px 24px rgba(16,24,40,.10)}
-  body.insp-ouvert #folios{display:none}
+  /* fiche ouverte, la bande des folios reste : posée au-dessus du tiroir (sa hauteur, --insp-h, est mesurée par l'interface) */
+  body.insp-ouvert #folios{bottom:calc(var(--insp-h,62vh) + 48px)}
   body.insp-ouvert #base{right:0}
   #fiche{max-height:72vh}
   #base{height:var(--base-h);max-height:85vh;min-height:160px;z-index:26}

@@ -163,6 +163,9 @@ function ficheBloc(nom) {
 const boutDeFil = (rep, borne, pn, via, st, sens) => `<button class="fi-bout" data-choisir-bloc="${escA(rep)}"><i class="fi-bout-k">${sens}</i><b>${esc(rep)}</b><span>borne ${esc(borne || '—')}</span>`
   + (pn ? `<small>${esc(pn)}</small>` : '') + (st ? (st.sertir ? `<small class="fi-bout-ct" title="Le contact à sertir sur ce fil, et son accessoire">${esc(motSertir(st.sertir))}</small>` : st.ko ? '<small class="fi-bout-ct ko">aucun contact pour ce fil</small>' : '') : '')
   + (via ? `<em>par ${esc(via)}</em>` : '') + '</button>';
+/* Le mot « hypothèse » sur une fiche : un lien vers la fiche des hypothèses de la simulation (08, `ficheHypotheses`),
+   où la valeur se règle. `lierFils` le fait agir (il survit à un rendu en place). */
+const motHypothese = '<button class="fi-hyp" data-hyp="1" title="Une hypothèse de la simulation — cliquer pour la régler">hypothèse</button>';
 /* LA FICHE D'UN FIL, pour celui qui le pose : d'où à où (ses deux bouts, le contact à sertir à chaque bout), puis les
    faits — le câble, ce qu'il admet, le courant qui le traverse (celui du disjoncteur en amont), la chute en ligne,
    sa longueur, son folio. Le numéro du fil est en tête : la ligne dessous dit ce qu'il est. */
@@ -193,9 +196,9 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   const lignes = [
     ['câble', l.type ? `<b>${esc(l.type)}</b>${jauge != null ? ` <i>${jauge} AWG</i>` : ''}${cab ? ' · ' + esc([brins, cab.nature, cab.diametre != null ? 'Ø ' + nombre(cab.diametre) + ' mm' : '', cab.section != null ? nombre(cab.section) + ' mm²' : '', cab.resistance != null ? nombre(cab.resistance) + ' mΩ/m' : '', cab.masse != null ? nombre(cab.masse) + ' g/m' : ''].filter(Boolean).join(' · ')) : (fn && fn.resistance != null ? ' · ' + esc(nombre(fn.resistance)) + ' mΩ/m' : '')}` : '', cab ? 'La base des câbles' : 'La norme des fils (EN 2853)'],
     ['admet', adm.length ? adm.map(([q, i], k) => `${k ? '' : '<b>'}${esc(amperes(i))}${k ? '' : '</b>'} <i>${esc(q)}</i>`).join(' · ') : (l.type ? '<i>fil inconnu de la norme</i>' : ''), adm.length ? 'EN 2853, déclassé' + motFacteur(fac) + ' : ' + (H.conditions || []).join(', ') + ', ' + nombre(H.ambiante) + ' °C' + (rd.kConducteur && rd.kConducteur !== 1 ? ', conducteur ' + rd.conducteur : '') : ''],
-    ['courant', I ? `<b>${esc(amperes(I))}</b> <i>${al ? 'permanent' : 'hypothèse'}</i>${al ? ` · sous ${esc(al.nom)}${al.calibre ? ' <i>(' + esc(amperes(al.calibre)) + ')</i>' : ''}` : ''}${al && al.pointe ? ` · pointe <b>${esc(amperes(al.pointe.i))}</b> <i>pendant ${esc(secondes(al.pointe.t))}</i>` : ''}${charge != null ? ` · <span class="${charge > 1 ? 'fi-ko' : ''}">${Math.round(charge * 100)} % du continu</span>` : ''}` : '', al ? 'Le profil de charge de ' + al.nom : 'Le courant de la simulation (bible → hypothèses)'],
+    ['courant', I ? `<b>${esc(amperes(I))}</b> <i>${al ? 'permanent' : motHypothese}</i>${al ? ` · sous ${esc(al.nom)}${al.calibre ? ' <i>(' + esc(amperes(al.calibre)) + ')</i>' : ''}` : ''}${al && al.pointe ? ` · pointe <b>${esc(amperes(al.pointe.i))}</b> <i>pendant ${esc(secondes(al.pointe.t))}</i>` : ''}${charge != null ? ` · <span class="${charge > 1 ? 'fi-ko' : ''}">${Math.round(charge * 100)} % du continu</span>` : ''}` : '', al ? 'Le profil de charge de ' + al.nom : 'Le courant d’hypothèse de la simulation (menu → Hypothèses)'],
     ['chute', dU != null ? `<b>${volts(dU)}</b> <i>sur ce fil</i>${total ? ` · ${volts(total.dU)} <i>en ligne depuis ${esc(al.nom)}${H.tension ? ', ' + nombre(Math.round(total.dU / H.tension * 1000) / 10) + ' %' : ''}${admise && admise.chuteMax != null ? ', ' + volts(admise.chuteMax) + ' admis' : ''}</i>` : ''}` : '', dU != null ? 'ΔU = ' + nombre(arrondi(rd.rho, 1)) + ' Ω/km à ' + nombre(rd.T) + ' °C × ' + nombre(arrondi(L, 2)) + ' m × ' + nombre(I) + ' A' + (rd.source === 'câble' ? ' (la résistance du câble ' + rd.cab.cable + ')' : rd.source === 'jauge' ? ' (la jauge seule, EN 2853)' : '') : ''],
-    ['longueur', `${esc(nombre(arrondi(L, 2)))} m <i>${l.longueur > 0 ? 'retest' : 'hypothèse'}</i>`],
+    ['longueur', `${esc(nombre(arrondi(L, 2)))} m <i>${l.longueur > 0 ? 'retest' : motHypothese}</i>`],
     ['où', [folios.length ? 'folio ' + esc(folios.join(', ')) : '', l.harness ? esc(l.harness) : ''].filter(Boolean).join(' · ')]];
   const sous = ['fil', l.type ? `<b>${esc(l.type)}</b>${jauge != null ? ' · ' + jauge + ' AWG' : ''}` : '', l.route ? `<i class="fi-route" style="--c:${coul}"></i>${esc(l.route)}` : '', l.longueur > 0 ? insecable(nombre(arrondi(l.longueur, 2)) + ' m') : ''].filter(Boolean).join(' · ');
   return fiTete({ nom: neuf ? 'à créer' : (l.cable || 'sans numéro'), etat: fiEtat(ko, att), sous })
@@ -416,5 +419,6 @@ function lierFils(box) { let dernier = null;
     const w = filDeCle(k); if (w) { allumerFil(w); viserFil(w); } else { const l = liaisonsDuPlan()[+k.slice(1)]; if (l && l.aPoser) viser(l.aPoser); } };
   box.onmouseover = e => { const el = cible(e.target); if (!el || el === dernier) return; dernier = el; marquer(el); };
   box.onmouseout = e => { if (!dernier) return; const vers = cible(e.relatedTarget); if (vers) return; lacher(); };
-  box.onclick = e => { const el = cible(e.target); if (el) voir(el); };
+  // le mot « hypothèse » (fiche d'un fil, chutes d'un disjoncteur) ouvre la fiche des hypothèses
+  box.onclick = e => { if (e.target.closest && e.target.closest('[data-hyp]')) { ficheHypotheses(); return; } const el = cible(e.target); if (el) voir(el); };
   box.onkeydown = e => { const el = cible(e.target); if (el && (e.key === 'Enter' || e.key === ' ') && !e.target.matches('input')) { e.preventDefault(); voir(el); } }; }
