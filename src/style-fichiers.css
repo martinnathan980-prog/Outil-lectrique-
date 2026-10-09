@@ -118,6 +118,8 @@ body.depot-actif:has(#fiche [data-depot]) .depot{display:none}
 .bandeau-exemple button:hover{background:var(--p-hover);text-decoration-color:var(--p-t1)}
 body.insp-ouvert .bandeau-exemple{left:calc(var(--rail) + (100vw - var(--rail) - var(--insp-l)) / 2)}
 body.fiche-ouverte .bandeau-exemple{left:calc(var(--rail) + (100vw - var(--rail) - var(--fiche-l)) / 2)}
+/* le récapitulatif en page couvre le plan : son en-tête prend la place, le bandeau se retire (il revient en moitié) */
+body.base-ouverte:has(#base.page) .bandeau-exemple{display:none}
 /* le mot qui passe se pose sous le bandeau, pas dessus */
 body.exemple-vu #toast{top:calc(var(--entete) + var(--sur-h) + 36px)}
 @media (max-width:700px){ .bandeau-exemple{left:50%} body.insp-ouvert .bandeau-exemple,body.fiche-ouverte .bandeau-exemple{display:none} }
