@@ -1,52 +1,92 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   LE SITE — la feuille blanche sur une table gris très clair (DESIGN.md)
+   LE SITE — un calque sur la table lumineuse, des instruments de cockpit autour (DESIGN.md)
 
-   Le plan est l'objet ; tout le reste est un instrument autour de lui, net
-   et calme. L'écran est une grille : une BARRE DU HAUT (le contrat ouvert,
-   son état, la recherche, ouvrir, le menu), un RAIL à gauche (les outils de
-   tous les instants), une BARRE DU BAS (les folios, l'affinage, le zoom),
-   et à droite ou en bas les PANNEAUX (l'inspecteur, le tableau, les
-   documents) — tous blancs, posés sur la table, séparés par un filet d'un
-   pixel, jamais devant la feuille : le plan se recadre dans ce qui reste.
-   Un seul accent, le cuivre du fil (actions, sélection) ; trois couleurs
-   d'état ; des ombres courtes ; pas de verre fumé, pas de dégradé. Le
-   langage est en linéale, toute donnée (repère, borne, n° de fil,
-   référence) en chasse fixe, les chiffres tabulaires. Module 4 px, trois
-   rayons (6, 10, 14), transitions de 120 à 200 ms. Aucune image, aucune
-   police réseau. Sur téléphone, le rail passe en bas et les panneaux
-   montent en tiroir.
+   Le plan est l'objet : une feuille blanche posée sur une table lumineuse
+   quadrillée comme un papier millimétré. Autour, la PLANCHE DE BORD — la
+   barre du haut (le contrat, son état, la recherche, ouvrir, le menu), le
+   rail à gauche, la barre du bas (les folios, le zoom) — est sombre dans les
+   deux thèmes, comme l'auvent d'un cockpit : elle cadre la table et s'efface.
+   À droite ou en bas, les PANNEAUX (l'inspecteur, le tableau, les documents)
+   sont des feuilles posées à côté, séparées de la table par un filet.
+   L'IDENTITÉ vient du cockpit : les titres et les étiquettes sont en B612, la
+   police dessinée pour les écrans Airbus ; le texte courant en IBM Plex Sans,
+   les données (repères, part numbers, numéros de fil, valeurs) en IBM Plex
+   Mono. Les COULEURS suivent la logique des écrans d'alarme : le cyan dit ce
+   qu'on peut faire (actions, sélection, focus), l'ambre ce qui est à voir, le
+   rouge ce qui est un problème, le vert ce qui est bon ; sur la planche de
+   bord, l'état s'allume comme un voyant. Pas de dégradé, pas de verre fumé,
+   des ombres courtes ; le gras est rare.
+   Deux thèmes : le clair (le jour, l'atelier) et le sombre (le cockpit de
+   nuit) ; les dessins techniques (faces, courbes, reliefs) restent sur
+   papier dans les deux. Module 4 px, trois rayons (4, 8, 12), transitions de
+   120 à 200 ms. Aucune image, aucune police réseau (polices/ est embarqué).
    Ce fichier porte les JETONS (pour tout le monde) et le SITE ; les fiches,
-   la disjonction, les contrats faits, le relief et la nomenclature ont
-   chacun leur style-*.css, écrit avec les mêmes jetons.
+   la disjonction, les contrats faits, le relief, la nomenclature et les
+   normes ont chacun leur style-*.css, écrit avec les mêmes jetons.
    ═══════════════════════════════════════════════════════════════════════ */
 :root{
-  /* ── LES JETONS COMMUNS (DESIGN.md) : le thème clair, les surfaces, le texte, l'accent, les états ── */
-  --s-app:#eef1f5; --s-surface:#ffffff; --s-sunken:#f5f7fa; --s-hover:#eceff3; --s-line:#e2e6eb; --s-line-2:#c8cfd8;
-  --t-1:#111827; --t-2:#4b5563; --t-3:#8a93a0;
-  --accent:#b5541c; --accent-2:#9a4617; --accent-soft:#fbeee4;
-  --ok:#1a7f4b; --ok-soft:#e8f5ee; --warn:#b45309; --warn-soft:#fdf3e4; --ko:#c62828; --ko-soft:#fdecec; --info:#1f5fbf; --info-soft:#e9f0fb;
+  /* ── LES JETONS (DESIGN.md) : le thème clair — la table, les surfaces, l'encre, l'accent cyan, les états ── */
+  --s-app:#e6ebef; --s-grille:#dbe2e8; --s-grille-2:#cfd8e0;
+  --s-surface:#ffffff; --s-sunken:#f3f5f7; --s-hover:#edf1f4; --s-line:#e1e6eb; --s-line-2:#c9d2da;
+  --s-papier:#ffffff; --t-papier:#0e1621; --s-papier-grille:#eef2f5;                 /* les dessins techniques : toujours sur papier */
+  --t-1:#0e1621; --t-2:#4a5868; --t-3:#86939f; --t-inverse:#ffffff;
+  --accent:#08798f; --accent-2:#05637a; --accent-soft:#e2f2f5; --accent-line:#a9d9e2; --on-accent:#ffffff;
+  --ok:#15804a; --ok-soft:#e5f3eb; --warn:#a96300; --warn-soft:#fcf1df; --ko:#c92a2a; --ko-soft:#fbeaea; --info:#2456c4; --info-soft:#e8eefb;
+  --bulle:#0e1621; --bulle-t:#f2f5f8;                    /* les bulles et le toast : de l'encre */
+  --voile:rgba(14,22,33,.32);                            /* derrière un calque plein écran */
+  --voile-fort:rgba(8,13,19,.6);                         /* derrière une fenêtre (le relief, le dessin d'un contrat fait) */
+  --route-a:#c0392b; --route-b:#1e8449;                   /* deux routes du dessin (puissance, signal), hors du papier */
+  /* la planche de bord (barre du haut, rail, barre du bas) : sombre dans les deux thèmes, ses voyants allumés */
+  --p-fond:#101922; --p-fond-2:#19242f; --p-ligne:#26323e; --p-hover:#1d2935;
+  --p-t1:#eef3f7; --p-t2:#a6b4c1; --p-t3:#6c7d8d;
+  --p-accent:#3fd0e6; --p-ok:#46d98f; --p-warn:#ffb224; --p-ko:#ff6767;
   --f-11:11px; --f-12:12px; --f-13:13px; --f-14:14px; --f-16:16px; --f-20:20px; --f-28:28px;
   --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px;
-  --r-1:6px; --r-2:10px; --r-3:14px;
-  --sh-1:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08); --sh-2:0 8px 24px rgba(16,24,40,.12),0 2px 6px rgba(16,24,40,.06);
-  --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono","DejaVu Sans Mono",monospace;
+  --r-1:4px; --r-2:8px; --r-3:12px;
+  --sh-1:0 1px 2px rgba(14,22,33,.06); --sh-2:0 10px 30px rgba(14,22,33,.12),0 2px 6px rgba(14,22,33,.06);
+  --sans:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --titre:"B612","IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
   --rapide:.12s ease; --moyen:.2s ease;
+  color-scheme:light;
   /* ── la géométrie de la page : le plan se recadre dans ce que les barres et les panneaux laissent ── */
   --entete:48px;             /* la barre du haut ; le plan commence dessous                  */
   --rail:48px;               /* le rail de gauche ; le plan commence après                    */
   --pied:40px;               /* la barre du bas (folios, zoom)                                */
   --insp-l:min(440px,36vw);  /* l'inspecteur, à droite                                        */
-  --fiche-l:400px;           /* les documents, à droite ; 560 px pour la bible et la nomenclature */
+  --fiche-l:400px;           /* les documents, à droite ; plus large pour la bible et la nomenclature */
   --base-h:30vh;             /* le tableau des liaisons, en tiroir en bas                     */
   --fiche-h:60vh;            /* la hauteur du document en tiroir (téléphone), mesurée         */
-  /* ── les anciens noms, lus encore par les autres feuilles de style : des alias des jetons, qui partiront avec elles ── */
+  /* ── les anciens noms, lus encore par les autres feuilles de style : des alias des jetons ── */
   --papier:var(--s-surface); --papier-2:var(--s-sunken); --papier-3:var(--s-hover);
   --encre:var(--t-1); --encre-2:var(--t-2); --filet:var(--s-line);
-  --cuivre:var(--accent); --cuivre-2:var(--accent-2); --cuivre-pale:var(--accent-soft); --cuivre-clair:#f0a36f;
-  --danger:var(--ko); --craie:#ffffff; --verre-plein:var(--t-1); --ombre-1:var(--sh-2);
+  --cuivre:var(--accent); --cuivre-2:var(--accent-2); --cuivre-pale:var(--accent-soft); --cuivre-clair:var(--accent-line);
+  --danger:var(--ko); --craie:var(--s-surface); --verre-plein:var(--t-1); --ombre-1:var(--sh-2);
   --t0:var(--f-11); --t1:var(--f-12); --t2:var(--f-13); --t3:var(--f-14); --t4:var(--f-16); --t5:var(--f-20); --t6:var(--f-28);
 }
+/* ── le thème sombre : le cockpit de nuit — la table noire bleutée, l'encre claire, le cyan des écrans ── */
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --s-app:#0b1016; --s-grille:#121922; --s-grille-2:#17202a;
+  --s-surface:#121920; --s-sunken:#0e141a; --s-hover:#1a232c; --s-line:#232d38; --s-line-2:#34414e;
+  --t-1:#e6ecf2; --t-2:#a2afbd; --t-3:#6f7d8b; --t-inverse:#0b1016;
+  --accent:#34c6dc; --accent-2:#6ad8e8; --accent-soft:#12303a; --accent-line:#1f5866; --on-accent:#05222a;
+  --ok:#3fd18a; --ok-soft:#10291e; --warn:#ffb224; --warn-soft:#2d2310; --ko:#ff5f5f; --ko-soft:#341719; --info:#7aa7ff; --info-soft:#152238;
+  --bulle:#e6ecf2; --bulle-t:#0b1016; --voile:rgba(0,0,0,.55); --voile-fort:rgba(0,0,0,.68);
+  --p-fond:#070b10; --p-fond-2:#111921; --p-ligne:#1b242e; --p-hover:#141d26;
+  --route-a:#ff6b5e; --route-b:#3fd18a;
+  --sh-1:0 1px 2px rgba(0,0,0,.4); --sh-2:0 12px 32px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.35);
+  color-scheme:dark } }
+:root[data-theme="dark"]{
+  --s-app:#0b1016; --s-grille:#121922; --s-grille-2:#17202a;
+  --s-surface:#121920; --s-sunken:#0e141a; --s-hover:#1a232c; --s-line:#232d38; --s-line-2:#34414e;
+  --t-1:#e6ecf2; --t-2:#a2afbd; --t-3:#6f7d8b; --t-inverse:#0b1016;
+  --accent:#34c6dc; --accent-2:#6ad8e8; --accent-soft:#12303a; --accent-line:#1f5866; --on-accent:#05222a;
+  --ok:#3fd18a; --ok-soft:#10291e; --warn:#ffb224; --warn-soft:#2d2310; --ko:#ff5f5f; --ko-soft:#341719; --info:#7aa7ff; --info-soft:#152238;
+  --bulle:#e6ecf2; --bulle-t:#0b1016; --voile:rgba(0,0,0,.55); --voile-fort:rgba(0,0,0,.68);
+  --p-fond:#070b10; --p-fond-2:#111921; --p-ligne:#1b242e; --p-hover:#141d26;
+  --route-a:#ff6b5e; --route-b:#3fd18a;
+  --sh-1:0 1px 2px rgba(0,0,0,.4); --sh-2:0 12px 32px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.35);
+  color-scheme:dark }
 
 /* ─── LE SOCLE ──────────────────────────────────────────────────────────── */
 *{box-sizing:border-box}
@@ -64,7 +104,7 @@ kbd{font-family:var(--mono)}
 .espace{flex:1}
 svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
 /* un titre de section : petites capitales espacées, texte secondaire */
-.sur{font-size:var(--f-11);text-transform:uppercase;letter-spacing:.08em;color:var(--t-2);font-weight:700}
+.sur{font:400 10px/1.6 var(--titre);text-transform:uppercase;letter-spacing:.12em;color:var(--t-3)}
 
 /* ─── LES COMPOSANTS COMMUNS ────────────────────────────────────────────── */
 /* le bouton : plein cuivre pour l'action principale (une par écran), papier pour le reste, lien pour ce qui s'efface */
@@ -72,10 +112,10 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
   font-size:var(--f-13);font-weight:600;white-space:nowrap;background:none;transition:background var(--rapide),border-color var(--rapide),color var(--rapide)}
 .btn svg.ico{width:16px;height:16px}
 .btn:active{transform:translateY(1px)}
-.btn.cuivre{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.cuivre{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .btn.cuivre:hover{background:var(--accent-2);border-color:var(--accent-2)}
 .btn.papier{background:var(--s-surface);border-color:var(--s-line-2);color:var(--t-1)}
-.btn.papier:hover{background:var(--s-sunken);border-color:#b4bdc8}
+.btn.papier:hover{background:var(--s-sunken);border-color:var(--t-3)}
 .btn.lien{color:var(--accent-2);padding:0 8px;font-weight:600}
 .btn.lien:hover{background:var(--accent-soft)}
 .btn.lien.danger{color:var(--ko)}
@@ -86,7 +126,7 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
 .rond:hover{background:var(--s-hover);color:var(--t-1)}
 .rond svg.ico{width:18px;height:18px}
 .fermer{color:var(--t-2)}
-/* le bouton d'outil : carré arrondi de 40 px, une icône, une bulle au survol ; pressé, il se marque en cuivre pâle */
+/* le bouton d'outil : carré arrondi de 40 px, une icône, une bulle au survol ; pressé, il se marque en cyan */
 .rd{position:relative;width:40px;height:40px;border-radius:var(--r-2);border:none;background:none;color:var(--t-2);
   display:grid;place-items:center;padding:0;flex:none;transition:background var(--rapide),color var(--rapide)}
 .rd svg.ico{width:20px;height:20px}
@@ -95,13 +135,13 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
 .rd:disabled{opacity:.35;cursor:default}
 .rd.sobre{color:var(--t-3)}
 .bascule[aria-pressed="true"],.rd[aria-expanded="true"]{background:var(--accent-soft);color:var(--accent-2)}
-.bascule[aria-pressed="true"]:hover:not(:disabled){background:#f6e2d2;color:var(--accent-2)}
+.bascule[aria-pressed="true"]:hover:not(:disabled){background:color-mix(in srgb,var(--accent) 20%,var(--s-surface));color:var(--accent-2)}
 /* la bulle : le nom et le raccourci, à côté de l'icône, après un instant de survol ou au clavier */
 .bulle{position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);white-space:nowrap;pointer-events:none;z-index:5;
-  background:var(--t-1);color:#fff;border-radius:var(--r-1);padding:5px 9px;font-size:var(--f-12);font-weight:500;line-height:1.3;
+  background:var(--bulle);color:var(--bulle-t);border-radius:var(--r-1);padding:5px 9px;font-size:var(--f-12);font-weight:500;line-height:1.3;
   display:flex;align-items:center;gap:8px;opacity:0;transition:opacity var(--rapide)}
-.bulle::before{content:"";position:absolute;right:100%;top:50%;margin-top:-4px;border:4px solid transparent;border-right-color:var(--t-1)}
-.bulle kbd{font-size:var(--f-11);color:#d4d8de;border:1px solid rgba(255,255,255,.28);border-radius:4px;padding:0 5px;line-height:1.5}
+.bulle::before{content:"";position:absolute;right:100%;top:50%;margin-top:-4px;border:4px solid transparent;border-right-color:var(--bulle)}
+.bulle kbd{font-size:var(--f-11);color:var(--bulle-t);opacity:.75;border:1px solid currentColor;border-radius:3px;padding:0 5px;line-height:1.5}
 .rd:hover .bulle{opacity:1;transition-delay:.45s}
 .rd:focus-visible .bulle{opacity:1}
 .rd:disabled .bulle{display:none}
@@ -122,89 +162,108 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
 
 /* ─── LA TABLE ET LA FEUILLE ────────────────────────────────────────────── */
 #planche{position:fixed;top:var(--entete);left:0;right:0;bottom:0;overflow:hidden;touch-action:none;cursor:grab;
-  background:var(--s-app) radial-gradient(circle,#dde2e8 .9px,transparent 1.3px) 0 0/24px 24px}
+  background-color:var(--s-app);background-image:linear-gradient(var(--s-grille-2) 1px,transparent 1px),linear-gradient(90deg,var(--s-grille-2) 1px,transparent 1px),linear-gradient(var(--s-grille) 1px,transparent 1px),linear-gradient(90deg,var(--s-grille) 1px,transparent 1px);background-size:120px 120px,120px 120px,24px 24px,24px 24px}
 #planche.tient{cursor:grabbing}
 #svg{position:absolute;inset:0;width:100%;height:100%;display:block}
 /* la feuille est dessinée par le moteur ; sous elle, une ombre courte et un filet */
 #ombre{position:absolute;left:0;top:0;pointer-events:none;display:none;
-  box-shadow:0 0 0 1px var(--s-line-2),0 12px 32px rgba(16,24,40,.10),0 2px 6px rgba(16,24,40,.06)}
+  box-shadow:0 0 0 1px var(--s-line-2),0 14px 40px rgba(14,22,33,.14),0 2px 6px rgba(14,22,33,.08)}
 #svg .comp,#svg .cab{cursor:pointer}
 #svg .comp{cursor:grab}
 #planche.deplace,#planche.deplace *{cursor:grabbing!important}
 
-/* ─── LA BARRE DU HAUT : le contrat, la recherche, ouvrir, le menu ──────── */
-#entete{position:fixed;top:0;left:0;right:0;height:var(--entete);z-index:30;background:var(--s-surface);border-bottom:1px solid var(--s-line);
-  display:grid;grid-template-columns:minmax(0,1.4fr) auto minmax(0,1fr);align-items:center;gap:16px;padding:0 10px 0 12px}
-.en-contrat{display:flex;align-items:center;gap:10px;min-width:0}
-.en-marque{flex:none;width:28px;height:28px;border-radius:8px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center}
-.en-marque svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.en-nom{font-size:var(--f-14);font-weight:600;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.en-sous{font-size:var(--f-11);color:var(--t-2);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+/* ─── LA BARRE DU HAUT : le contrat, son voyant, la recherche, ouvrir, le menu — sur la planche de bord ─── */
+#entete{position:fixed;top:0;left:0;right:0;height:var(--entete);z-index:30;background:var(--p-fond);color:var(--p-t1);border-bottom:1px solid var(--p-ligne);
+  display:grid;grid-template-columns:minmax(0,1.4fr) auto minmax(0,1fr);align-items:center;gap:16px;padding:0 10px 0 10px}
+.en-contrat{display:flex;align-items:center;gap:12px;min-width:0}
+/* la marque : deux blocs et leur fil, en cyan sur la planche */
+.en-marque{flex:none;width:28px;height:28px;border-radius:var(--r-1);background:var(--p-accent);color:var(--p-fond);display:grid;place-items:center}
+.en-marque svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.en-nom{font:700 var(--f-14)/1.2 var(--titre);letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--p-t1)}
+.en-sous{font-size:var(--f-11);line-height:1.35;color:var(--p-t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 .en-sous:empty{display:none}
-/* l'état du contrat : la pastille de la fiche (style-fiche), pressable — elle ouvre la liste à reprendre */
-.en-etat{border:none;cursor:pointer;flex:none;margin-left:4px;transition:filter var(--rapide)}
-.en-etat:hover{filter:brightness(.96)}
-.en-actions{display:flex;align-items:center;justify-content:flex-end;gap:4px}
+/* l'état du contrat : un voyant de la planche de bord (la pastille .fi-etat, rallumée ici) — pressé, il ouvre la liste à reprendre */
+.en-etat{border:none;cursor:pointer;flex:none;margin-left:4px;transition:background var(--rapide)}
+#entete .fi-etat{background:transparent;color:var(--p-ok);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--p-ok) 40%,transparent);font:700 var(--f-11)/1 var(--titre);letter-spacing:.06em;text-transform:uppercase;height:26px}
+#entete .fi-etat i{background:var(--p-ok);box-shadow:0 0 6px color-mix(in srgb,var(--p-ok) 70%,transparent)}
+#entete .fi-etat.att{color:var(--p-warn);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--p-warn) 45%,transparent)}
+#entete .fi-etat.att i{background:var(--p-warn);box-shadow:0 0 6px color-mix(in srgb,var(--p-warn) 70%,transparent)}
+#entete .fi-etat.ko{color:var(--p-ko);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--p-ko) 45%,transparent)}
+#entete .fi-etat.ko i{background:var(--p-ko);box-shadow:0 0 7px color-mix(in srgb,var(--p-ko) 75%,transparent)}
+#entete .fi-etat:hover{background:var(--p-hover)}
+.en-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px}
 .en-actions .btn{height:32px;padding:0 12px}
+#entete .btn.papier{background:var(--p-fond-2);border-color:var(--p-ligne);color:var(--p-t1)}
+#entete .btn.papier:hover{background:var(--p-hover);border-color:var(--p-t3)}
+#entete .btn.papier svg.ico{color:var(--p-accent)}
 .en-actions .rd{width:36px;height:36px}
 .en-actions .rd svg.ico{width:18px;height:18px}
 #menuBoite{position:relative}
 #entete .bulle{left:50%;top:calc(100% + 8px);transform:translateX(-50%)}
-#entete .bulle::before{right:auto;top:auto;bottom:100%;left:50%;margin:0 0 0 -4px;border-color:transparent;border-bottom-color:var(--t-1)}
-/* la recherche : un champ au milieu de la barre ; la liste des trouvailles tombe dessous */
+#entete .bulle::before{right:auto;top:auto;bottom:100%;left:50%;margin:0 0 0 -4px;border-color:transparent;border-bottom-color:var(--bulle)}
+/* les boutons d'outil de la planche de bord (barre du haut, rail, barre du bas) : l'encre claire, le cyan quand c'est pressé */
+#entete .rd,#rail .rd,#folios .rd{color:var(--p-t2)}
+#entete .rd:hover:not(:disabled),#rail .rd:hover:not(:disabled),#folios .rd:hover:not(:disabled){background:var(--p-hover);color:var(--p-t1)}
+#entete .rd:active:not(:disabled),#rail .rd:active:not(:disabled),#folios .rd:active:not(:disabled){background:var(--p-ligne)}
+#entete .rd[aria-expanded="true"],#rail .bascule[aria-pressed="true"]{background:color-mix(in srgb,var(--p-accent) 15%,var(--p-fond));color:var(--p-accent)}
+#rail .bascule[aria-pressed="true"]:hover:not(:disabled){background:color-mix(in srgb,var(--p-accent) 22%,var(--p-fond));color:var(--p-accent)}
+/* la recherche : un champ creusé au milieu de la barre ; la liste des trouvailles tombe dessous, sur papier */
 .recherche{position:relative;width:min(380px,28vw);height:32px;display:flex;align-items:center;gap:8px;padding:0 6px 0 10px;
-  background:var(--s-sunken);border:1px solid var(--s-line);border-radius:var(--r-1);transition:border-color var(--rapide),box-shadow var(--rapide),background var(--rapide)}
-.recherche:hover{border-color:var(--s-line-2)}
-body.cherche .recherche{background:var(--s-surface);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-.recherche svg.ico{width:16px;height:16px;color:var(--t-3)}
-.recherche input{flex:1;min-width:0;background:none;border:none;outline:none;color:var(--t-1);font-family:var(--mono);font-size:var(--f-13);height:100%}
-.recherche input::placeholder{color:var(--t-3);font-family:var(--sans)}
+  background:var(--p-fond-2);border:1px solid var(--p-ligne);border-radius:var(--r-1);transition:border-color var(--rapide),box-shadow var(--rapide),background var(--rapide)}
+.recherche:hover{border-color:var(--p-t3)}
+body.cherche .recherche{border-color:var(--p-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--p-accent) 22%,transparent)}
+.recherche svg.ico{width:16px;height:16px;color:var(--p-t3)}
+.recherche input{flex:1;min-width:0;background:none;border:none;outline:none;color:var(--p-t1);font-family:var(--mono);font-size:var(--f-13);height:100%}
+.recherche input::placeholder{color:var(--p-t3);font-family:var(--sans)}
 .recherche input::-webkit-search-cancel-button{-webkit-appearance:none}
-.recherche .raccourci{color:var(--t-3);font-size:var(--f-11);border:1px solid var(--s-line-2);border-radius:4px;padding:0 5px;line-height:1.6;white-space:nowrap}
+.recherche .raccourci{color:var(--p-t3);font-size:var(--f-11);border:1px solid var(--p-ligne);border-radius:4px;padding:0 5px;line-height:1.6;white-space:nowrap}
 .recherche .rc-fermer,body.cherche .recherche .rc-ouvrir{display:none}
 body.cherche .recherche .rc-fermer{display:inline}
-.q-liste{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--s-surface);border:1px solid var(--s-line);border-radius:var(--r-2);box-shadow:var(--sh-2);padding:4px;max-height:min(60vh,420px);overflow:auto;z-index:40}
+.q-liste{position:absolute;top:calc(100% + 8px);left:0;right:0;background:var(--s-surface);border:1px solid var(--s-line);border-radius:var(--r-2);box-shadow:var(--sh-2);padding:4px;max-height:min(60vh,420px);overflow:auto;z-index:40;color:var(--t-1)}
 .q-item{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;border-radius:var(--r-1);width:100%;background:none;border:none;text-align:left;color:var(--t-1)}
 .q-item.on,.q-item:hover{background:var(--s-sunken)}
-.q-item .genre{font-size:var(--f-11);color:var(--accent-2);text-transform:uppercase;letter-spacing:.06em;font-weight:700;min-width:50px}
-.q-item .nom{font-family:var(--mono);font-weight:700;white-space:nowrap}
+.q-item.on{box-shadow:inset 2px 0 0 var(--accent)}
+.q-item .genre{font:400 10px var(--titre);color:var(--accent-2);text-transform:uppercase;letter-spacing:.12em;min-width:56px}
+.q-item .nom{font-family:var(--mono);font-weight:600;white-space:nowrap}
 .q-item .des{color:var(--t-2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--f-12)}
-.q-item .cpt{color:var(--t-3);font-size:var(--f-11);white-space:nowrap}
+.q-item .cpt{color:var(--t-3);font:400 var(--f-11) var(--mono);white-space:nowrap}
 .q-rien{padding:10px 12px;color:var(--t-2);font-size:var(--f-12)}
 /* le menu : sous son bouton, ce qu'on fait une fois ; en tête, ce qui est ouvert (à lire) */
-.menu{position:absolute;top:calc(100% + 6px);right:0;width:272px;background:var(--s-surface);border:1px solid var(--s-line);border-radius:var(--r-2);box-shadow:var(--sh-2);padding:4px;z-index:40}
-.menu button{display:flex;width:100%;align-items:center;gap:10px;height:32px;padding:0 10px;border-radius:var(--r-1);background:none;border:none;text-align:left;color:var(--t-1);font-size:var(--f-13);font-weight:500}
+.menu{position:absolute;top:calc(100% + 8px);right:0;width:272px;color:var(--t-1);background:var(--s-surface);border:1px solid var(--s-line);border-radius:var(--r-2);box-shadow:var(--sh-2);padding:4px;z-index:40}
+.menu button{display:flex;width:100%;align-items:center;gap:10px;height:32px;padding:0 10px;border-radius:var(--r-1);background:none;border:none;text-align:left;color:var(--t-1);font-size:var(--f-13);font-weight:400}
 .menu button:hover,.menu button:focus-visible{background:var(--s-sunken);outline:none}
 .menu button.danger{color:var(--ko)}
 .menu button.danger:hover{background:var(--ko-soft)}
 .menu hr{border:none;border-top:1px solid var(--s-line);margin:4px 6px}
 .menu .raccourci{margin-left:auto;color:var(--t-3);font-size:var(--f-11);font-family:var(--mono)}
 .menu .ctx{padding:6px 10px 4px;min-width:0}
-#ctx-nom{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#ctx-nom{font:700 var(--f-13)/1.3 var(--titre);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #ctx-txt{color:var(--t-2);font-size:var(--f-12);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sauve{color:var(--t-3);font-size:var(--f-11);white-space:nowrap;display:flex;align-items:center;gap:6px;margin-top:3px}
 .sauve:not(:empty)::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ok)}
 .sauve.ko::before{background:var(--warn)}
 
-/* ─── LE RAIL : à gauche, les outils de tous les instants ──────────────── */
-#rail{position:fixed;top:var(--entete);left:0;bottom:0;width:var(--rail);z-index:20;background:var(--s-surface);border-right:1px solid var(--s-line);
+/* ─── LE RAIL : à gauche, les outils de tous les instants, sur la planche de bord ─── */
+#rail{position:fixed;top:var(--entete);left:0;bottom:0;width:var(--rail);z-index:20;background:var(--p-fond);border-right:1px solid var(--p-ligne);
   display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0}
-#rail hr{width:24px;border:none;border-top:1px solid var(--s-line);margin:4px 0}
-/* le compte de ce qu'il y a à reprendre, sur le bouton des repères */
-.rd-point{position:absolute;top:3px;right:2px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;font:700 10px/16px var(--mono);font-style:normal;color:#fff;background:var(--warn);box-shadow:0 0 0 2px var(--s-surface);pointer-events:none}
-.rd-point.ko{background:var(--ko)}
+#rail hr{width:24px;border:none;border-top:1px solid var(--p-ligne);margin:4px 0}
+/* l'outil pressé : un trait cyan contre le bord, comme l'onglet actif d'un écran de bord */
+#rail .bascule[aria-pressed="true"]::before{content:"";position:absolute;left:-4px;top:9px;bottom:9px;width:2px;border-radius:0 2px 2px 0;background:var(--p-accent)}
+/* le compte de ce qu'il y a à reprendre, sur le bouton des repères : un voyant */
+.rd-point{position:absolute;top:3px;right:2px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;font:600 10px/16px var(--mono);font-style:normal;color:#10161d;background:var(--p-warn);box-shadow:0 0 0 2px var(--p-fond);pointer-events:none}
+.rd-point.ko{background:var(--p-ko)}
 
 /* ─── LA BARRE DU BAS : les folios, l'affinage, le cadrage et le zoom ───── */
-#folios{position:fixed;left:var(--rail);right:0;bottom:0;height:var(--pied);z-index:20;background:var(--s-surface);border-top:1px solid var(--s-line);
+#folios{position:fixed;left:var(--rail);right:0;bottom:0;height:var(--pied);z-index:20;background:var(--p-fond);color:var(--p-t2);border-top:1px solid var(--p-ligne);
   display:flex;align-items:center;gap:2px;padding:0 6px 0 8px;transition:right var(--moyen)}
 body.insp-ouvert #folios{right:var(--insp-l)}
 body.fiche-ouverte #folios{right:var(--fiche-l)}
 #folios .rd{width:30px;height:30px;border-radius:var(--r-1)}
 #folios .rd svg.ico{width:18px;height:18px}
-#folios hr{width:0;height:18px;border:none;border-left:1px solid var(--s-line);margin:0 4px}
+#folios hr{width:0;height:18px;border:none;border-left:1px solid var(--p-ligne);margin:0 4px}
 /* dans la barre du bas, la bulle se lit au-dessus du bouton */
 #folios .bulle{left:50%;top:auto;bottom:calc(100% + 8px);transform:translateX(-50%)}
-#folios .bulle::before{right:auto;top:100%;left:50%;margin:0 0 0 -4px;border-color:transparent;border-top-color:var(--t-1)}
+#folios .bulle::before{right:auto;top:100%;left:50%;margin:0 0 0 -4px;border-color:transparent;border-top-color:var(--bulle)}
 .fo-part,.fo-milieu,.fo-zoom{display:flex;align-items:center;gap:2px;min-width:0}
 .fo-milieu{flex:1;justify-content:center}
 /* la bande des folios défile (à la molette, au doigt) ; une puce ne rétrécit jamais : sa largeur est bornée, son nom
@@ -212,20 +271,20 @@ body.fiche-ouverte #folios{right:var(--fiche-l)}
    (`.chip-pre`), caché, sauf sur le folio courant où le nom se lit en entier */
 .fo-strip{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;max-width:min(50vw,640px);padding:2px;scroll-behavior:smooth}
 .fo-strip::-webkit-scrollbar{display:none}
-.chip{flex:none;height:26px;min-width:28px;max-width:180px;padding:0 9px;border-radius:var(--r-1);border:none;background:none;color:var(--t-2);font-family:var(--mono);font-weight:600;font-size:var(--f-12);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background var(--rapide),color var(--rapide)}
-.chip:hover{background:var(--s-hover);color:var(--t-1)}
-.chip.on{background:var(--accent-soft);color:var(--accent-2);box-shadow:inset 0 0 0 1px rgba(181,84,28,.3)}
+.chip{flex:none;height:26px;min-width:28px;max-width:180px;padding:0 9px;border-radius:var(--r-1);border:none;background:none;color:var(--p-t2);font-family:var(--mono);font-weight:500;font-size:var(--f-12);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background var(--rapide),color var(--rapide)}
+.chip:hover{background:var(--p-hover);color:var(--p-t1)}
+.chip.on{background:color-mix(in srgb,var(--p-accent) 15%,var(--p-fond));color:var(--p-accent);font-weight:600;box-shadow:inset 0 -2px 0 var(--p-accent)}
 .chip-pre{display:none}
-.chip.abrege:not(.on)::before{content:"…";color:var(--t-3);margin-right:1px}
-.chip.on .chip-pre{display:inline;color:var(--t-3);font-weight:500}
-.fo-lbl{color:var(--t-3);font-size:var(--f-11);padding:0 8px 0 6px;white-space:nowrap;font-family:var(--mono)}
+.chip.abrege:not(.on)::before{content:"…";color:var(--p-t3);margin-right:1px}
+.chip.on .chip-pre{display:inline;color:color-mix(in srgb,var(--p-accent) 60%,var(--p-t3));font-weight:500}
+.fo-lbl{color:var(--p-t3);font-size:var(--f-11);padding:0 8px 0 6px;white-space:nowrap;font-family:var(--mono)}
 /* au-delà de huit folios, une liste déroulante double la bande */
-.fo-select{height:26px;max-width:220px;margin-left:2px;padding:0 4px;border:1px solid var(--s-line-2);border-radius:var(--r-1);background:var(--s-surface);color:var(--t-1);font:600 var(--f-11) var(--mono)}
-.fo-select:hover{border-color:#b4bdc8}
+.fo-select{height:26px;max-width:220px;margin-left:2px;padding:0 4px;border:1px solid var(--p-ligne);border-radius:var(--r-1);background:var(--p-fond-2);color:var(--p-t1);font:500 var(--f-11) var(--mono);color-scheme:dark}
+.fo-select:hover{border-color:var(--p-t3)}
 /* l'affinage en cours : un point qui respire, ce qu'il fait, discret */
-.affinage{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:var(--f-11);color:var(--t-3);padding:0 8px;white-space:nowrap}
-.affinage i{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:respire 1.6s ease-in-out infinite}
-.affinage.ailleurs i{background:var(--t-3)}
+.affinage{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:var(--f-11);color:var(--p-t3);padding:0 8px;white-space:nowrap}
+.affinage i{width:7px;height:7px;border-radius:50%;background:var(--p-accent);box-shadow:0 0 6px var(--p-accent);animation:respire 1.6s ease-in-out infinite}
+.affinage.ailleurs i{background:var(--p-t3);box-shadow:none}
 @keyframes respire{0%,100%{transform:scale(.6);opacity:.35}50%{transform:scale(1);opacity:1}}
 /* le folio qu'on attend : le moteur le place au loin (un Worker, 08) ; au milieu de la place libre du plan, le point qui
    respire et un mot, rien de plus — l'écran reste libre dessous ; la puce du folio qui se calcule respire aussi */
@@ -233,13 +292,13 @@ body.fiche-ouverte #folios{right:var(--fiche-l)}
 .attente i{width:10px;height:10px;border-radius:50%;background:var(--accent);margin-bottom:6px;animation:respire 1.6s ease-in-out infinite}
 .attente b{font-weight:500}
 .attente small{font-size:var(--f-12);font-weight:400;color:var(--t-3);font-variant-numeric:tabular-nums}
-.chip.attend::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin:0 6px 1px 0;vertical-align:middle;animation:respire 1.6s ease-in-out infinite}
-/* le folio retouché à la main : un mot en cuivre, le bouton rend la main au moteur */
-.rd.auto{width:auto;display:inline-flex;align-items:center;gap:6px;padding:0 10px 0 8px;color:var(--accent-2);background:var(--accent-soft);font-size:var(--f-12);font-weight:600}
-.rd.auto:hover:not(:disabled){background:#f6e2d2;color:var(--accent-2)}
+.chip.attend::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--p-accent);margin:0 6px 1px 0;vertical-align:middle;animation:respire 1.6s ease-in-out infinite}
+/* le folio retouché à la main : un mot en cyan, le bouton rend la main au moteur */
+#folios .rd.auto{width:auto;display:inline-flex;align-items:center;gap:6px;padding:0 10px 0 8px;color:var(--p-accent);background:color-mix(in srgb,var(--p-accent) 14%,var(--p-fond));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--p-accent) 35%,transparent);font:700 var(--f-11) var(--titre);letter-spacing:.06em;text-transform:uppercase}
+#folios .rd.auto:hover:not(:disabled){background:color-mix(in srgb,var(--p-accent) 22%,var(--p-fond));color:var(--p-accent)}
 .rd.auto svg.ico{width:16px;height:16px}
-.rd.zl{width:auto;min-width:52px;padding:0 6px;font-family:var(--mono);font-size:var(--f-11);color:var(--t-2);height:26px;border-radius:4px}
-.rd.zl:hover:not(:disabled){color:var(--t-1)}
+#folios .rd.zl{width:auto;min-width:52px;padding:0 6px;font-family:var(--mono);font-size:var(--f-11);color:var(--p-t2);height:26px;border-radius:4px}
+#folios .rd.zl:hover:not(:disabled){color:var(--p-t1)}
 
 /* ─── LES PANNEAUX : l'inspecteur et les documents à droite, le tableau en bas ─── */
 #inspecteur,#fiche{position:fixed;top:var(--entete);right:0;bottom:0;max-width:calc(100vw - var(--rail));background:var(--s-surface);color:var(--t-1);
@@ -276,7 +335,7 @@ body.insp-ouvert #base{right:var(--insp-l)}
 .ba-corps{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:0 8px 8px;scrollbar-width:thin}
 /* la table prend la largeur de ses colonnes ; trop large, elle défile — jamais elle n'écrase une valeur */
 table.tab{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;font-family:var(--mono);font-size:var(--f-12);table-layout:auto}
-.tab th{position:sticky;top:0;z-index:1;height:32px;background:var(--s-surface);text-align:left;font:700 10.5px var(--sans);color:var(--t-2);letter-spacing:.06em;text-transform:uppercase;padding:0 8px;border-bottom:1px solid var(--s-line-2);white-space:nowrap;cursor:pointer;user-select:none}
+.tab th{position:sticky;top:0;z-index:1;height:32px;background:var(--s-surface);text-align:left;font:400 10px var(--titre);color:var(--t-3);letter-spacing:.12em;text-transform:uppercase;padding:0 8px;border-bottom:1px solid var(--s-line-2);white-space:nowrap;cursor:pointer;user-select:none}
 .tab th:hover{color:var(--t-1)}
 .tab th.g,.tab th.fl,.tab th:last-child{cursor:default}
 .tab th.tri{color:var(--accent-2)}
@@ -284,7 +343,7 @@ table.tab{width:max-content;min-width:100%;border-collapse:separate;border-spaci
 .tab td{height:32px;padding:0 1px;border-bottom:1px solid var(--s-line);white-space:nowrap}
 .tab tr:hover td{background:var(--s-sunken)}
 .tab tr.on td{background:var(--accent-soft)}
-.tab tr.vise td{background:#f6dccb}
+.tab tr.vise td{background:color-mix(in srgb,var(--accent) 22%,var(--s-surface))}
 /* le numéro de ligne porte, en liseré, la couleur de la route du fil */
 .tab td.g{width:44px;padding:0;box-shadow:inset 3px 0 0 var(--route,transparent)}
 .tab td.g button{width:100%;height:31px;border:none;background:none;color:var(--t-3);font-size:var(--f-11);text-align:right;padding:0 8px 0 10px;font-family:var(--mono)}
@@ -297,7 +356,7 @@ table.tab{width:max-content;min-width:100%;border-collapse:separate;border-spaci
 .tab td.fil input{width:88px;font-weight:600}
 .tab td.type input{width:72px;color:var(--t-2)}
 .tab td.pn input{width:136px;color:var(--t-2)}
-.tab td.route input{width:104px;color:var(--t-2);font-family:var(--sans);font-size:var(--f-11);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.tab td.route input{width:104px;color:var(--t-2);font-family:var(--titre);font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;font-weight:400}
 /* une cellule : un champ qui ne se voit qu'au survol et à l'écriture */
 .tab input{width:100%;height:28px;border:1px solid transparent;border-radius:4px;padding:0 7px;background:none;font-family:var(--mono);font-size:var(--f-12);color:var(--t-1);transition:border-color var(--rapide),background var(--rapide);text-overflow:ellipsis}
 .tab input:hover{border-color:var(--s-line-2);background:var(--s-surface)}
@@ -307,13 +366,13 @@ table.tab{width:max-content;min-width:100%;border-collapse:separate;border-spaci
 .tab tr.hors td.rep input,.tab tr.hors td.fil input{font-weight:500}
 .tab .f{display:inline-block;font-size:var(--f-11);color:var(--accent-2);font-weight:700;background:var(--accent-soft);border-radius:4px;padding:1px 7px;border:none;font-family:var(--mono);margin:0 2px;line-height:1.5}
 button.f{cursor:pointer}
-button.f:hover{background:var(--accent);color:#fff}
+button.f:hover{background:var(--accent);color:var(--on-accent)}
 /* l'intercalaire d'un folio, dans « Tout » */
 .tab tr.groupe td{height:auto;background:var(--s-surface);padding:14px 6px 6px;border-bottom:1px solid var(--s-line);font-family:var(--sans)}
 .tab tr.groupe:hover td{background:var(--s-surface)}
 .tab tr.groupe .f{font-family:var(--sans);font-size:var(--f-12);padding:3px 10px;margin:0 8px 0 0;background:var(--s-sunken);color:var(--t-1);border-radius:var(--r-1)}
-.tab tr.groupe .f:hover{background:var(--t-1);color:#fff}
-.tab tr.groupe.ici .f{background:var(--accent);color:#fff}
+.tab tr.groupe .f:hover{background:var(--t-1);color:var(--t-inverse)}
+.tab tr.groupe.ici .f{background:var(--accent);color:var(--on-accent)}
 .tab tr.groupe span{font-size:var(--f-11);color:var(--t-2)}
 .tab .x{width:32px;text-align:center}
 /* supprimer se découvre au survol de la ligne ; au doigt, il reste visible */
@@ -327,11 +386,11 @@ button.f:hover{background:var(--accent);color:#fff}
 .fiche-corps{overflow:auto;padding:16px 20px 16px;flex:1;overscroll-behavior:contain;scrollbar-width:thin}
 .fiche-tete{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
 /* le titre d'un document est du langage : en linéale (un repère en tête du relief repasse en chasse fixe chez lui) */
-.titre{font-family:var(--sans);font-size:var(--f-20);font-weight:700;line-height:1.2;margin:2px 0 0;color:var(--t-1);letter-spacing:-.01em}
+.titre{font-family:var(--titre);font-size:var(--f-20);font-weight:700;line-height:1.2;margin:2px 0 0;color:var(--t-1);letter-spacing:.01em;text-wrap:balance}
 .champ{display:block;margin:12px 0 0}
-.champ>span{display:block;font-size:var(--f-11);color:var(--t-2);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:4px}
+.champ>span{display:block;font:400 10px/1.6 var(--titre);color:var(--t-3);text-transform:uppercase;letter-spacing:.12em;margin-bottom:5px}
 .champ input,.champ textarea{width:100%;height:36px;border:1px solid var(--s-line-2);border-radius:var(--r-1);padding:0 10px;background:var(--s-surface);color:var(--t-1);font-family:var(--mono);transition:border-color var(--rapide),box-shadow var(--rapide)}
-.champ input:hover,.champ textarea:hover{border-color:#b4bdc8}
+.champ input:hover,.champ textarea:hover{border-color:var(--t-3)}
 .champ input:focus,.champ textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
 .champ input::placeholder,.champ textarea::placeholder{color:var(--t-3);font-family:var(--sans)}
 .champ textarea{height:180px;padding:10px;resize:vertical;font-size:var(--f-12);line-height:1.5}
@@ -340,14 +399,14 @@ button.f:hover{background:var(--accent);color:#fff}
 .fiche-pied{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 20px;border-top:1px solid var(--s-line);background:var(--s-surface);flex:none}
 .note{font-size:var(--f-12);color:var(--t-2);margin:10px 0 0;line-height:1.5}
 .note b{color:var(--t-1)}
-.sous-titre{font-size:var(--f-14);font-weight:700;margin:20px 0 8px;letter-spacing:-.005em}
+.sous-titre{font:700 var(--f-14)/1.3 var(--titre);margin:22px 0 8px;letter-spacing:.01em}
 /* la bible : d'où elle vient, puis la liste des références, chaque donnée en chasse fixe */
 .bible-etat{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r-2);background:var(--s-sunken);border:1px solid var(--s-line);margin-bottom:12px;font-size:var(--f-12);color:var(--t-2);line-height:1.45}
 .bible-etat b{color:var(--t-1);font-weight:600}
 .bible-etat.exemple{box-shadow:inset 3px 0 0 var(--accent)}
 .bible-etat.exemple b{color:var(--accent-2)}
 table.bible{width:100%;border-collapse:separate;border-spacing:0;font-size:var(--f-12)}
-.bible th{position:sticky;top:0;z-index:1;background:var(--s-surface);text-align:left;font:700 10.5px var(--sans);color:var(--t-2);letter-spacing:.05em;text-transform:uppercase;padding:6px 5px 6px 0;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
+.bible th{position:sticky;top:0;z-index:1;background:var(--s-surface);text-align:left;font:400 10px var(--titre);color:var(--t-3);letter-spacing:.12em;text-transform:uppercase;padding:6px 5px 6px 0;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
 .bible td{padding:6px 5px 6px 0;border-bottom:1px solid var(--s-line);vertical-align:top;font-family:var(--mono);white-space:nowrap}
 .bible td.ref{font-weight:700}
 .bible td.sans{font-family:var(--sans);color:var(--t-2);white-space:normal;min-width:80px}
@@ -360,10 +419,10 @@ table.bible{width:100%;border-collapse:separate;border-spacing:0;font-size:var(-
 .picto{display:block}
 .picto .p-cell rect{fill:var(--s-surface);stroke:var(--t-1);stroke-width:.7}
 .picto .p-blind rect{fill:var(--s-line)}
-.picto .p-rail{fill:#a7b1bd}
+.picto .p-rail{fill:var(--t-3)}
 .picto .p-bande rect{fill:var(--s-surface);stroke:var(--t-1);stroke-width:.7}
 .picto .p-bande circle{fill:var(--t-1)}
-.ref-btn{border:none;background:none;padding:2px 6px;margin:-2px -6px;border-radius:4px;font-family:var(--mono);font-weight:700;color:var(--t-1);text-align:left;text-decoration:underline dotted rgba(17,24,39,.35);text-underline-offset:3px}
+.ref-btn{border:none;background:none;padding:2px 6px;margin:-2px -6px;border-radius:4px;font-family:var(--mono);font-weight:700;color:var(--t-1);text-align:left;text-decoration:underline dotted color-mix(in srgb,var(--t-1) 35%,transparent);text-underline-offset:3px}
 .ref-btn:hover{color:var(--accent-2);background:var(--accent-soft)}
 .ref-btn[aria-pressed="true"]{color:var(--accent-2)}
 /* la norme dans la fiche de la bible : repliée, ses tables défilent en largeur */
@@ -376,14 +435,14 @@ details.norme[open] summary svg.ico{transform:rotate(180deg)}
 .norme-defile{overflow-x:auto;overscroll-behavior-x:contain;padding-bottom:4px}
 .norme-defile .sur{margin:10px 0 4px}
 table.norme{border-collapse:separate;border-spacing:0;font-size:var(--f-11);white-space:nowrap;min-width:100%}
-.norme th{text-align:left;font-size:10.5px;color:var(--t-2);font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:4px 8px 4px 0;border-bottom:1px solid var(--s-line-2)}
+.norme th{text-align:left;font:400 10px var(--titre);color:var(--t-3);letter-spacing:.12em;text-transform:uppercase;padding:4px 8px 4px 0;border-bottom:1px solid var(--s-line-2)}
 .norme td{padding:4px 8px 4px 0;border-bottom:1px solid var(--s-line);font-family:var(--mono);vertical-align:top}
 .norme td.ref{font-weight:700}
 .norme td.sans{font-family:var(--sans);color:var(--t-2)}
 .norme td.d{text-align:right}
 .norme td.note-c{white-space:normal;min-width:120px;max-width:260px}
 /* une référence en grand, au-dessus de la table */
-.bible-zoom{padding:12px 12px 14px;border-radius:var(--r-2);background:var(--accent-soft);border:1px solid #f3d9c6;margin-bottom:14px}
+.bible-zoom{padding:12px 12px 14px;border-radius:var(--r-2);background:var(--accent-soft);border:1px solid var(--accent-line);margin-bottom:14px}
 .bz-tete{display:flex;align-items:flex-start;gap:10px}
 .bz-tete .sur{color:var(--accent-2)}
 .bz-ref{font-family:var(--mono);font-size:var(--f-20);font-weight:700;letter-spacing:.01em;line-height:1.2}
@@ -397,7 +456,7 @@ table.norme{border-collapse:separate;border-spacing:0;font-size:var(--f-11);whit
 .hy-ligne{padding:9px 0 10px;border-top:1px solid var(--s-line)}
 .hy-groupe>.sur+.hy-ligne{border-top:none}
 .hy-champ .hyp-n,.hy-champ .hyp-c{display:flex;align-items:center;gap:10px;width:100%;white-space:normal}
-.hy-champ .hyp-n>span:first-child,.hy-champ .hyp-c>span{flex:1;min-width:0;font:700 10px/1.6 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-1)}
+.hy-champ .hyp-n>span:first-child,.hy-champ .hyp-c>span{flex:1;min-width:0;font:600 var(--f-13)/1.4 var(--sans);color:var(--t-1)}
 .hy-champ .hyp-c{flex-direction:row-reverse}
 .hy-champ .hyp-n input{width:84px;height:30px}
 .hy-champ .hyp-n select{height:30px;max-width:230px}
@@ -452,7 +511,7 @@ table.norme{border-collapse:separate;border-spacing:0;font-size:var(--f-11);whit
 .hyp{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:var(--f-12);color:var(--t-2);align-items:center}
 .hyp-n{display:inline-flex;align-items:baseline;gap:4px;white-space:nowrap}
 .hyp-n input{width:56px;height:28px;border:1px solid var(--s-line-2);border-radius:4px;padding:0 6px;background:var(--s-surface);color:var(--t-1);font-family:var(--mono);font-size:var(--f-12);text-align:right;margin:0}
-.hyp-n input:hover{border-color:#b4bdc8}
+.hyp-n input:hover{border-color:var(--t-3)}
 .hyp-n input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .hyp-n .u{font-family:var(--mono);color:var(--t-1)}
 .hyp-n select{height:28px;border:1px solid var(--s-line-2);border-radius:4px;padding:0 4px;background:var(--s-surface);color:var(--t-1);font-family:var(--sans);font-size:var(--f-12)}
@@ -462,7 +521,7 @@ table.norme{border-collapse:separate;border-spacing:0;font-size:var(--f-11);whit
 .simu-vide{font-size:var(--f-12);color:var(--t-2);margin:6px 0 0}
 .simu-defile{overflow-x:auto;overscroll-behavior-x:contain;margin-top:6px}
 table.simu-tab{border-collapse:separate;border-spacing:0;font-size:var(--f-12);min-width:100%;white-space:nowrap}
-.simu-tab th{text-align:left;font-size:10.5px;color:var(--t-2);font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:4px 8px 4px 0;border-bottom:1px solid var(--s-line-2)}
+.simu-tab th{text-align:left;font:400 10px var(--titre);color:var(--t-3);letter-spacing:.12em;text-transform:uppercase;padding:4px 8px 4px 0;border-bottom:1px solid var(--s-line-2)}
 .simu-tab td{padding:4px 8px 4px 0;border-bottom:1px solid var(--s-line);vertical-align:top;font-family:var(--mono)}
 .simu-tab td.c{color:var(--t-1);font-weight:700}
 .simu-tab td .sens{display:block;font-family:var(--sans);font-size:var(--f-11);color:var(--t-2);font-weight:500}
@@ -488,13 +547,15 @@ table.simu-tab{border-collapse:separate;border-spacing:0;font-size:var(--f-12);m
 .phy svg{display:block}
 .phy text{font-family:var(--mono)}
 .phy .cell{fill:var(--s-surface);stroke:var(--t-1);stroke-width:1}
-.phy .libre .cell,.phy .cell.vide{fill:url(#phy-hachure);stroke:#8a96a2}
+.phy .libre .cell,.phy .cell.vide{fill:url(#phy-hachure);stroke:var(--t-3)}
+.phy .phy-h-fond{fill:var(--s-sunken)}
+.phy .phy-h-trait{stroke:var(--s-line-2)}
 .phy .neutre .cell{fill:var(--s-surface);stroke:var(--t-2)}
 .phy .hors .cell{stroke:var(--ko);stroke-dasharray:3 2}
 .phy .num{fill:var(--t-1);font-size:10.5px;font-weight:700}
-.phy .libre .num{fill:var(--t-2);font-weight:500;paint-order:stroke;stroke:#eef1f5;stroke-width:3px;stroke-linejoin:round}
+.phy .libre .num{fill:var(--t-2);font-weight:500;paint-order:stroke;stroke:var(--s-surface);stroke-width:3px;stroke-linejoin:round}
 .phy .hors .num{fill:var(--ko)}
-.phy .rail{fill:#a7b1bd}
+.phy .rail{fill:var(--t-3)}
 .phy .coupe{fill:none;stroke:var(--t-2);stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round}
 .phy .peigne{stroke:var(--accent);stroke-width:4;stroke-linecap:round}
 .phy .dent{fill:var(--accent);stroke:var(--s-surface);stroke-width:1}
@@ -509,13 +570,13 @@ table.simu-tab{border-collapse:separate;border-spacing:0;font-size:var(--f-12);m
 .phy .trou-fil.sur{stroke:var(--ko);stroke-dasharray:2 1.5}
 .phy .mod.surcharge .cell{stroke:var(--ko)}
 .phy .fil.surcharge .zone{fill:var(--ko-soft);stroke:var(--ko);stroke-width:1;stroke-dasharray:3 2}
-.phy .badge{fill:var(--s-surface);stroke:#e4cdbd;stroke-width:.8}
+.phy .badge{fill:var(--s-surface);stroke:var(--accent-line);stroke-width:.8}
 .phy .badge-t{fill:var(--accent-2);font-size:8px;font-weight:700}
 .phy .mobile{fill:var(--s-surface);stroke:var(--t-1);stroke-width:1}
 .phy .fixe{fill:var(--s-hover);stroke:var(--t-1);stroke-width:1.2}
 .phy .part{fill:var(--t-2);font-size:7.5px;font-weight:700;letter-spacing:.08em}
 .phy .trou{fill:var(--s-surface);stroke:var(--t-2);stroke-width:.9}
-.phy .axe{stroke:#8a96a2;stroke-width:1;stroke-dasharray:2 2.5}
+.phy .axe{stroke:var(--t-3);stroke-width:1;stroke-dasharray:2 2.5}
 .phy .douille{stroke-width:1.8}
 .phy .mod,.phy .fil,.phy .trous{cursor:pointer}
 .phy .fil .zone{fill:transparent}
@@ -532,7 +593,7 @@ table.simu-tab{border-collapse:separate;border-spacing:0;font-size:var(--f-12);m
 .legende .l-peigne{width:16px;height:4px;border-radius:2px;background:var(--accent)}
 .legende .l-trou{width:8px;height:8px;border-radius:50%;border:1px solid var(--t-2);background:var(--s-surface)}
 .legende .l-trou.occ{background:var(--t-1);border-color:var(--t-1)}
-.legende .l-libre{width:12px;height:10px;border:1px solid #8a96a2;background:repeating-linear-gradient(45deg,#eef1f5 0 2px,#c9d1d9 2px 3.5px)}
+.legende .l-libre{width:12px;height:10px;border:1px solid var(--t-3);background:repeating-linear-gradient(45deg,var(--s-sunken) 0 2px,var(--s-line-2) 2px 3.5px)}
 /* la référence, repliée sous le dessin : pourquoi, et les autres qui conviennent */
 .choix{margin-top:8px;border-top:1px solid var(--s-line);padding-top:2px}
 .choix summary{display:flex;align-items:center;gap:6px;list-style:none;cursor:pointer;font-size:var(--f-12);color:var(--accent-2);font-weight:600;padding:6px 0;border-radius:4px}
@@ -547,45 +608,83 @@ table.simu-tab{border-collapse:separate;border-spacing:0;font-size:var(--f-12);m
 .cand:hover{background:var(--s-sunken)}
 .cand b{font-family:var(--mono);font-weight:700;white-space:nowrap}
 .cand span{font-family:var(--mono);color:var(--t-2);white-space:nowrap}
-.cand .ok{margin-left:auto;font-family:var(--sans);font-size:var(--f-11);text-transform:uppercase;letter-spacing:.06em;font-weight:700;color:var(--accent-2)}
-.cand[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
-.cand[aria-pressed="true"] span,.cand[aria-pressed="true"] .ok{color:#fff}
+.cand .ok{margin-left:auto;font:400 10px var(--titre);text-transform:uppercase;letter-spacing:.12em;color:var(--accent-2)}
+.cand[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.cand[aria-pressed="true"] span,.cand[aria-pressed="true"] .ok{color:var(--on-accent)}
 .cand[aria-pressed="true"]:hover{background:var(--accent-2)}
 
-/* ─── L'ACCUEIL : la table vide, une page d'entrée ─────────────────────── */
+/* ─── L'ACCUEIL : la table vide, et dessus une feuille de garde ─────────────
+   La page d'entrée est un folio : le cadre gradué (1 à 6, A à D) comme sur les plans, un petit schéma qui se trace
+   à l'ouverture, les trois gestes, et le cartouche en bas à droite, collé au cadre. */
 .vide{position:absolute;inset:0;overflow:auto;display:grid;place-items:center;padding:24px 24px 24px calc(var(--rail) + 24px);z-index:5}
-.vd{width:min(760px,100%);background:var(--s-surface);border:1px solid var(--s-line);border-radius:var(--r-3);box-shadow:var(--sh-2);padding:36px 40px 28px}
-.vd-tete{margin-bottom:24px}
-.vd-titre{display:flex;align-items:center;gap:12px}
-.en-marque.grand{width:36px;height:36px;border-radius:10px}
-.en-marque.grand svg{width:24px;height:24px}
-.vd h1{font-size:var(--f-28);font-weight:700;margin:0;letter-spacing:-.015em;line-height:1.1}
-.vd-tete p{color:var(--t-2);margin:12px 0 0;font-size:var(--f-14);line-height:1.5;max-width:60ch}
+.vd{width:min(820px,100%);display:grid;grid-template-columns:18px minmax(0,1fr) 18px;grid-template-rows:18px auto 18px;
+  background:var(--s-surface);border:1px solid var(--s-line-2);border-radius:var(--r-1);box-shadow:var(--sh-2);animation:vd-pose .35s ease-out both}
+@keyframes vd-pose{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* la graduation du cadre : des chiffres en haut et en bas, des lettres à gauche et à droite */
+.vd-reg{display:flex;justify-content:space-around;align-items:center;font:400 9px/1 var(--titre);color:var(--t-3);letter-spacing:.08em}
+.vd-reg-h{grid-area:1/2}.vd-reg-b{grid-area:3/2}
+.vd-reg-g,.vd-reg-d{flex-direction:column}
+.vd-reg-g{grid-area:2/1}.vd-reg-d{grid-area:2/3}
+.vd-feuille{grid-area:2/2;border:1px solid var(--t-1);padding:32px 36px 0;display:flex;flex-direction:column;min-width:0}
+/* le titre et le schéma */
+.vd-tete{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:28px;align-items:center;margin-bottom:26px}
+.vd-sur{display:flex;align-items:center;gap:10px;font:400 10px/1 var(--titre);text-transform:uppercase;letter-spacing:.16em;color:var(--accent-2)}
+.vd-sur .en-marque{width:26px;height:26px;background:var(--t-1);color:var(--t-inverse)}
+.vd-sur .en-marque svg{width:18px;height:18px}
+.vd h1{font:700 40px/1.05 var(--titre);margin:14px 0 0;letter-spacing:-.01em;color:var(--t-1);text-wrap:balance}
+.vd-titre p{color:var(--t-2);margin:14px 0 0;font-size:var(--f-14);line-height:1.55;max-width:52ch}
+.vd-dessin{width:100%;height:auto;display:block;overflow:visible}
+.vd-dessin rect{fill:var(--s-surface);stroke:var(--t-1);stroke-width:1}
+.vd-dessin rect.bornes{stroke-width:.75}
+.vd-dessin path{fill:none;stroke:var(--t-1);stroke-width:.75}
+.vd-dessin text{font:500 10.5px var(--mono);letter-spacing:1.1px;fill:var(--t-1);text-anchor:middle}
+.vd-dessin text.pin{font-size:7px;letter-spacing:0;fill:var(--t-2)}
+.vd-dessin .fil{stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:0;animation:vd-trace .7s cubic-bezier(.5,0,.2,1) both}
+.vd-dessin .fil.puissance{stroke:var(--route-a);animation-delay:.3s}
+.vd-dessin .fil.signal{stroke:var(--route-b);animation-delay:.45s}
+.vd-dessin .fil.f3{animation-delay:.75s}
+.vd-dessin .noeud{fill:var(--t-1);animation:vd-paraitre .2s .7s both}
+.vd-dessin .etiq text{font-size:7.5px;letter-spacing:.3px;fill:var(--t-2);animation:vd-paraitre .3s 1.1s both}
+.vd-dessin .bloc{animation:vd-paraitre .3s .15s both}
+.vd-dessin .bloc.b2{animation-delay:.25s}.vd-dessin .bloc.b3{animation-delay:.35s}
+@keyframes vd-trace{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes vd-paraitre{from{opacity:0}to{opacity:1}}
 /* la zone de dépôt : un cadre en pointillé, un geste clair */
-.vd-zone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:112px;padding:16px;border:1.5px dashed var(--s-line-2);border-radius:var(--r-2);background:var(--s-sunken);color:var(--t-2);text-align:center;cursor:pointer;transition:border-color var(--rapide),background var(--rapide),color var(--rapide)}
+.vd-zone{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:104px;padding:16px;border:1.5px dashed var(--s-line-2);border-radius:var(--r-2);background:var(--s-sunken);color:var(--t-2);text-align:center;cursor:pointer;transition:border-color var(--rapide),background var(--rapide),color var(--rapide)}
 .vd-zone svg.ico{width:22px;height:22px;color:var(--accent);margin-bottom:4px}
-.vd-zone b{font-size:var(--f-14);color:var(--t-1)}
+.vd-zone b{font-size:var(--f-14);color:var(--t-1);font-weight:600}
 .vd-zone span{font-size:var(--f-12)}
 .vd-zone:hover,.vd-zone:focus-visible,body.depot-actif .vd-zone{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-2)}
-.vd-gestes{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
-/* reprendre le contrat que le dernier geste a vidé : une ligne à part, en cuivre */
-.vd-reprendre{display:flex;align-items:center;gap:10px;width:100%;margin-top:12px;height:40px;padding:0 14px;border:1px solid #f3d9c6;border-radius:var(--r-1);background:var(--accent-soft);color:var(--accent-2);font-weight:600;text-align:left;transition:background var(--rapide)}
+.vd-gestes{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+/* reprendre le contrat que le dernier geste a vidé : une ligne à part, en cyan */
+.vd-reprendre{display:flex;align-items:center;gap:10px;width:100%;margin-top:12px;height:40px;padding:0 14px;border:1px solid var(--accent-line);border-radius:var(--r-1);background:var(--accent-soft);color:var(--accent-2);font-weight:600;text-align:left;transition:background var(--rapide)}
 .vd-reprendre::before{content:"↶";font-size:var(--f-16);line-height:1}
-.vd-reprendre:hover{background:#f6e2d2}
-/* ce que l'outil fait, en trois cartes */
-.vd-cartes{list-style:none;margin:28px 0 0;padding:24px 0 0;border-top:1px solid var(--s-line);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.vd-reprendre:hover{background:color-mix(in srgb,var(--accent) 20%,var(--s-surface))}
+/* ce que l'outil fait, en trois temps numérotés */
+.vd-cartes{list-style:none;margin:28px 0 0;padding:22px 0 0;border-top:1px solid var(--s-line);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
 .vd-cartes li{display:flex;flex-direction:column;gap:6px;min-width:0}
-.vd-cartes svg.ico{width:24px;height:24px;color:var(--accent);margin-bottom:4px}
-.vd-cartes b{font-size:var(--f-13);font-weight:700}
-.vd-cartes span{font-size:var(--f-12);color:var(--t-2);line-height:1.5}
-.vd-note{margin:20px 0 0;font-size:var(--f-11);color:var(--t-3)}
+.vd-num{font:600 var(--f-12)/1 var(--mono);font-style:normal;color:var(--accent);letter-spacing:.04em;padding-bottom:6px;border-bottom:2px solid var(--accent);align-self:flex-start;margin-bottom:6px}
+.vd-cartes b{font:700 var(--f-14)/1.3 var(--titre);letter-spacing:.01em}
+.vd-cartes span{font-size:var(--f-12);color:var(--t-2);line-height:1.55}
+/* le cartouche : collé au coin bas-droit du cadre, des cases à filet d'encre, une étiquette en petites capitales */
+.vd-cartouche{align-self:flex-end;margin:28px -36px 0 0;width:min(560px,100%);display:grid;gap:1px;background:var(--t-1);border-top:1px solid var(--t-1);border-left:1px solid var(--t-1);
+  grid-template-columns:auto minmax(0,1fr) auto auto;grid-template-areas:"routes reseau format folio"}
+.vd-case{display:flex;flex-direction:column;gap:3px;padding:6px 10px 7px;background:var(--s-surface);min-width:0}
+.vd-routes{grid-area:routes}.vd-reseau{grid-area:reseau}.vd-format{grid-area:format}.vd-folio{grid-area:folio}
+.vd-case small{font:400 8px/1.2 var(--titre);text-transform:uppercase;letter-spacing:.14em;color:var(--t-3)}
+.vd-case b{font:600 var(--f-12)/1.3 var(--mono);white-space:nowrap}
+.vd-folio b{font-size:var(--f-14)}
+.vd-routes span{display:flex;align-items:center;gap:6px;font:400 9px/1.3 var(--titre);text-transform:uppercase;letter-spacing:.1em;color:var(--t-1);white-space:nowrap}
+.vd-routes i{width:16px;height:0;border-top:2px solid var(--route-a)}
+.vd-routes i.signal{border-color:var(--route-b)}
+.vd-note{margin:0;font-size:var(--f-11);line-height:1.4;color:var(--t-2)}
 /* le dépôt : la fenêtre entière devient la cible */
-.depot{position:fixed;inset:12px;z-index:40;display:none;place-items:center;background:rgba(238,241,245,.88);border:2px dashed var(--accent);border-radius:var(--r-3);color:var(--accent-2);font-size:var(--f-20);font-weight:600;pointer-events:none}
+.depot{position:fixed;inset:12px;z-index:40;display:none;place-items:center;background:color-mix(in srgb,var(--s-app) 88%,transparent);border:2px dashed var(--accent);border-radius:var(--r-3);color:var(--accent-2);font-size:var(--f-20);font-weight:600;pointer-events:none}
 body.depot-actif .depot{display:grid}
 
 /* ─── LE MOT QUI PASSE : sous la barre du haut, au milieu de ce qui reste du plan ─── */
 #toast{position:fixed;left:calc(var(--rail) + (100vw - var(--rail)) / 2);top:calc(var(--entete) + 12px);transform:translateX(-50%) translateY(-6px);padding:9px 14px;border-radius:var(--r-2);z-index:35;max-width:min(60vw,560px);
-  background:var(--t-1);color:#fff;box-shadow:var(--sh-2);font-size:var(--f-13);font-weight:500;line-height:1.4;opacity:0;pointer-events:none;transition:opacity var(--moyen),transform var(--moyen)}
+  background:var(--bulle);color:var(--bulle-t);box-shadow:var(--sh-2);font-size:var(--f-13);font-weight:500;line-height:1.4;opacity:0;pointer-events:none;transition:opacity var(--moyen),transform var(--moyen)}
 #toast.on{opacity:1;transform:translateX(-50%)}
 body.insp-ouvert #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--insp-l)) / 2)}
 body.fiche-ouverte #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--fiche-l)) / 2)}
@@ -611,20 +710,21 @@ body.fiche-ouverte #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--f
   body.cherche .recherche{display:flex}
   .menu{width:min(280px,calc(100vw - 12px))}
   /* le rail passe en bas, sous le pouce ; ce que le geste fait déjà (pincer pour zoomer, toucher un folio) n'y est pas */
-  #rail{top:auto;left:0;right:0;bottom:0;width:auto;height:48px;border-right:none;border-top:1px solid var(--s-line);flex-direction:row;justify-content:space-around;padding:0 4px;gap:0;transition:bottom var(--moyen)}
+  #rail{top:auto;left:0;right:0;bottom:0;width:auto;height:48px;border-right:none;border-top:1px solid var(--p-ligne);flex-direction:row;justify-content:space-around;padding:0 4px;gap:0;transition:bottom var(--moyen)}
   #rail hr{display:none}
+  #rail .bascule[aria-pressed="true"]::before{left:9px;right:9px;top:-4px;bottom:auto;width:auto;height:2px;border-radius:0 0 2px 2px}
   .bulle{display:none}
   /* la barre du bas au-dessus du rail : les folios et le cadrage, sans le zoom (on pince) ; d'un bord à l'autre, même
      quand un document est ouvert (sur grand écran elle s'arrête au document) */
   #folios,body.fiche-ouverte #folios{left:0;right:0;bottom:48px;padding:0 6px;transition:bottom var(--moyen)}
   #zin,#zout,#zlbl,#fo-prev,#fo-next,#folios hr,.affinage span,.rd.auto span:not(.bulle){display:none}
   .fo-strip{max-width:calc(100vw - 150px)}
-  .rd.auto{padding:0 8px}
+  #folios .rd.auto{padding:0 8px}
   /* les panneaux montent en tiroir depuis le bas ; le tableau garde la hauteur qu'on lui donne */
   #base,#fiche{top:auto;left:0;right:0;bottom:0;width:auto;min-width:0;max-width:none;border:none;border-top:1px solid var(--s-line);border-radius:var(--r-3) var(--r-3) 0 0;box-shadow:0 -8px 24px rgba(16,24,40,.10)}
   #inspecteur{top:auto;left:0;right:0;bottom:48px;width:auto;max-width:none;max-height:62vh;border:none;border-top:1px solid var(--s-line);border-radius:var(--r-3) var(--r-3) 0 0;box-shadow:0 -8px 24px rgba(16,24,40,.10)}
   /* fiche ouverte, la bande des folios reste : posée au-dessus du tiroir (sa hauteur, --insp-h, est mesurée par l'interface) */
-  body.insp-ouvert #folios{bottom:calc(var(--insp-h,62vh) + 48px)}
+  body.insp-ouvert #folios{right:0;bottom:calc(var(--insp-h,62vh) + 48px)}
   body.insp-ouvert #base{right:0}
   #fiche{max-height:72vh}
   #base{height:var(--base-h);max-height:85vh;min-height:160px;z-index:26}
@@ -658,11 +758,16 @@ body.fiche-ouverte #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--f
   .verdict{white-space:normal;line-height:1.3}
   /* l'accueil : une colonne */
   .vide{padding:12px 12px 100px;align-items:start}
-  .vd{padding:24px 20px 20px}
-  .vd h1{font-size:var(--f-20)}
-  .vd-tete p{font-size:var(--f-13)}
+  .vd{grid-template-columns:10px minmax(0,1fr) 10px;grid-template-rows:10px auto 10px}
+  .vd-reg{font-size:0}
+  .vd-feuille{padding:22px 18px 0}
+  .vd-tete{grid-template-columns:1fr;gap:18px;margin-bottom:20px}
+  .vd h1{font-size:30px}
+  .vd-titre p{font-size:var(--f-13)}
+  .vd-dessin{max-width:300px}
   .vd-gestes .btn{flex:1 1 auto;justify-content:center}
-  .vd-cartes{grid-template-columns:1fr;gap:16px;margin-top:20px;padding-top:20px}
+  .vd-cartes{grid-template-columns:1fr;gap:18px;margin-top:22px;padding-top:20px}
+  .vd-cartouche{margin:22px -18px 0;width:auto;border-left:none;grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"reseau reseau reseau" "routes format folio"}
   .depot{inset:8px}
   #toast,body.insp-ouvert #toast,body.fiche-ouverte #toast{left:50%;max-width:calc(100vw - 16px)}
 }

@@ -1,12 +1,14 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    LA FICHE d'un bloc ou d'un fil (08 bis) et L'INDEX des repères (08) — tout ce qui vit dans l'inspecteur
    Les jetons (couleurs, typo, espacements) sont dans style.css ; ici, seulement ce qui est propre à ce domaine.
-   La fiche se lit de haut en bas : l'en-tête (le repère, la ligne de nature, l'état), le résumé en tuiles, puis
-   un cadre par connecteur ou module (la référence, la face à plat, autour, les fils), le pied. Un seul langage :
-   linéale pour les mots, chasse fixe pour les données ; des filets d'un pixel et des surfaces en retrait, jamais
-   d'ombre lourde ; le cuivre pour ce qui se presse, les trois couleurs d'état pour ce qui est jugé.
+   La fiche se lit comme une page de documentation d'avion : en tête le repère (B612, la police des cockpits),
+   la ligne de nature, l'état en voyants ; puis le résumé, un cadre par connecteur ou module (la référence, la
+   face à plat, autour, les fils), le pied. Les étiquettes sont petites et effacées (B612), les identifiants en
+   Plex Mono, les lectures chiffrées en B612, le texte en Plex Sans ; des filets d'un pixel, des angles nets
+   (4 px), presque pas de fond coloré : la couleur est réservée à ce qui est jugé — le rouge d'un problème,
+   l'ambre d'un point à voir — et au cyan de ce qu'on peut faire.
    ═══════════════════════════════════════════════════════════════════════ */
-.fi{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;padding:var(--sp-4) var(--sp-4) var(--sp-5);display:flex;flex-direction:column;gap:var(--sp-3);scrollbar-width:thin;color:var(--t-1);font-size:var(--f-13);line-height:1.4}
+.fi{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;padding:var(--sp-5) var(--sp-5) var(--sp-5);display:flex;flex-direction:column;gap:var(--sp-4);scrollbar-width:thin;color:var(--t-1);font-size:var(--f-13);line-height:1.45}
 .fi>*{flex-shrink:0}
 .fi.fondu>*{animation:fi-monte var(--moyen) cubic-bezier(.2,.75,.25,1) both}
 .fi.fondu>*:nth-child(2){animation-delay:.03s}.fi.fondu>*:nth-child(3){animation-delay:.06s}.fi.fondu>*:nth-child(n+4){animation-delay:.09s}
@@ -16,152 +18,159 @@
 .fi .min0{min-width:0}
 
 /* ─── L'EN-TÊTE : le repère, dessous la ligne de nature, la désignation, l'état ─── */
-.fi-tete{display:flex;align-items:center;gap:var(--sp-2);min-height:34px;margin-bottom:-6px}
-.fi-nom{display:block;width:100%;border:none;background:none;padding:2px 0;margin:0;font:700 22px/1.2 var(--mono);letter-spacing:.01em;color:var(--t-1);border-bottom:1.5px solid transparent;border-radius:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-tete{display:flex;align-items:center;gap:var(--sp-2);min-height:34px;margin-bottom:-8px}
+.fi-nom{display:block;width:100%;border:none;background:none;padding:2px 0;margin:0;font:700 24px/1.15 var(--titre);letter-spacing:.02em;color:var(--t-1);border-bottom:1px solid transparent;border-radius:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 input.fi-nom{cursor:text}
 input.fi-nom:hover{border-bottom-color:var(--s-line-2)}
 input.fi-nom:focus{outline:none;border-bottom-color:var(--accent)}
-.fi-x{flex:none;width:32px;height:32px;border-radius:50%;border:none;background:none;color:var(--t-2);display:grid;place-items:center;cursor:pointer;transition:background var(--rapide),color var(--rapide)}
+.fi-x{flex:none;width:32px;height:32px;border-radius:var(--r-1);border:none;background:none;color:var(--t-3);display:grid;place-items:center;cursor:pointer;transition:background var(--rapide),color var(--rapide)}
 .fi-x:hover{background:var(--s-hover);color:var(--t-1)}
 .fi-x svg.ico{width:17px;height:17px}
 .fi-ligne{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;min-height:0}
 .fi-ligne:empty{display:none}
 .fi-sous{color:var(--t-2);font-size:var(--f-12);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.fi-sous b{font:600 var(--f-12) var(--mono);color:var(--t-1)}
+.fi-sous b{font-weight:600;color:var(--t-1)}
 .fi-sous .fi-route{margin-right:5px}
-.fi-des{flex-basis:100%;border:none;background:none;padding:0;margin:0;font-size:var(--f-13);color:var(--t-1);border-bottom:1.5px dashed transparent;border-radius:0}
+.fi-des{flex-basis:100%;border:none;background:none;padding:0;margin:0;font-size:var(--f-13);color:var(--t-1);border-bottom:1px dashed transparent;border-radius:0}
 .fi-des::placeholder{color:var(--t-3)}
 .fi-des:hover{border-bottom-color:var(--s-line-2)}
 .fi-des:focus{outline:none;border-bottom-color:var(--accent)}
-/* la route d'un fil : un trait, comme la légende du plan — la pastille ronde est l'état */
-.fi-route,.fi-puce{display:inline-block;width:14px;height:3px;border-radius:2px;background:var(--c,#26323f);vertical-align:2px;flex:none}
-/* l'état : une pastille (en ligne, dans la barre du haut ou l'index) ou, sur la fiche, une carte dépliée */
-.fi-etat{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px 0 5px;border-radius:999px;font-size:var(--f-12);font-weight:700;white-space:nowrap;background:var(--ok-soft);color:var(--ok)}
-.fi-etat i{flex:none;min-width:14px;height:14px;padding:0 3px;border-radius:7px;display:grid;place-items:center;font:800 9px/1 var(--sans);font-style:normal;color:#fff;background:var(--ok)}
-.fi-etat.att{background:var(--warn-soft);color:var(--warn)}.fi-etat.att i{background:var(--warn)}
-.fi-etat.ko{background:var(--ko-soft);color:var(--ko)}.fi-etat.ko i{background:var(--ko)}
-details.fi-etat{display:block;height:auto;padding:0;border-radius:var(--r-2);white-space:normal}
-details.fi-etat>summary{display:flex;align-items:center;gap:8px;padding:7px 10px 7px 10px;list-style:none;cursor:pointer;border-radius:var(--r-2);font-size:var(--f-12);font-weight:700}
+/* la route d'un fil : un trait, comme la légende du plan — le voyant est l'état */
+.fi-route,.fi-puce{display:inline-block;width:14px;height:3px;border-radius:1px;background:var(--c,var(--t-1));vertical-align:2px;flex:none}
+/* l'ÉTAT : un voyant d'alarme. En ligne (la barre du haut, l'index) : une étiquette au filet de sa couleur, le voyant
+   carré devant ; sur la fiche, une carte dépliée dont la ligne de tête porte la couleur, la liste restant à l'encre */
+.fi-etat{display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 10px 0 8px;border-radius:var(--r-1);font:600 var(--f-12)/1 var(--sans);white-space:nowrap;background:var(--ok-soft);color:var(--ok);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ok) 30%,transparent)}
+.fi-etat i{flex:none;min-width:8px;height:8px;border-radius:1px;display:block;font-size:0;color:transparent;background:var(--ok)}
+.fi-etat.att{background:var(--warn-soft);color:var(--warn);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--warn) 32%,transparent)}.fi-etat.att i{background:var(--warn)}
+.fi-etat.ko{background:var(--ko-soft);color:var(--ko);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ko) 30%,transparent)}.fi-etat.ko i{background:var(--ko);box-shadow:0 0 0 3px color-mix(in srgb,var(--ko) 18%,transparent)}
+details.fi-etat,details.fi-etat.att,details.fi-etat.ko{display:block;height:auto;padding:0;border-radius:var(--r-2);white-space:normal;background:var(--s-surface);border:1px solid var(--s-line);box-shadow:inset 3px 0 0 var(--ok)}
+details.fi-etat.att{box-shadow:inset 3px 0 0 var(--warn)}
+details.fi-etat.ko{box-shadow:inset 3px 0 0 var(--ko)}
+details.fi-etat>summary{display:flex;align-items:center;gap:9px;padding:10px 12px;list-style:none;cursor:pointer;border-radius:var(--r-2);font:600 var(--f-13)/1.3 var(--sans)}
 details.fi-etat>summary::-webkit-details-marker{display:none}
+details.fi-etat>summary:hover{background:var(--s-sunken)}
 details.fi-etat>summary span{flex:1}
-details.fi-etat .fi-chevron{width:14px;height:14px;transition:transform var(--rapide);opacity:.7}
+details.fi-etat .fi-chevron{width:14px;height:14px;transition:transform var(--rapide);color:var(--t-3)}
 details.fi-etat[open] .fi-chevron{transform:rotate(180deg)}
-details.fi-etat ul{margin:0;padding:0 12px 9px 32px;font-weight:500;font-size:var(--f-12);line-height:1.45;display:flex;flex-direction:column;gap:3px}
-details.fi-etat.ko ul{color:#7a1f1b}details.fi-etat.att ul{color:#7a3f08}
-/* dans une carte rouge, les points à voir restent lisibles, en ambre, après les problèmes */
-details.fi-etat.ko li.fi-att{color:#7a3f08}
-details.fi-etat.ko li.fi-att::marker{color:var(--warn)}
+details.fi-etat[open]>summary{border-bottom-left-radius:0;border-bottom-right-radius:0}
+details.fi-etat ul{margin:0;padding:2px 12px 12px 12px;list-style:none;font-weight:400;font-size:var(--f-12);line-height:1.5;display:flex;flex-direction:column;gap:6px;color:var(--t-1)}
+details.fi-etat li{position:relative;padding-left:17px}
+details.fi-etat li::before{content:"";position:absolute;left:1px;top:.55em;width:7px;height:7px;border-radius:1px;background:var(--ko)}
+details.fi-etat.att li::before,details.fi-etat li.fi-att::before{background:var(--warn)}
+details.fi-etat.ok li::before{background:var(--ok)}
 
 /* ─── LE RÉSUMÉ : des tuiles, un chiffre et ce qu'il compte ─── */
 .fi-tuiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:var(--sp-2)}
-.fi-tuile{display:flex;flex-direction:column;gap:1px;min-width:0;padding:9px 11px 8px;border-radius:var(--r-2);background:var(--s-sunken);border:1px solid transparent;text-align:left;color:inherit;font:inherit}
-.fi-tuile b{font:700 var(--f-16)/1.25 var(--mono);font-variant-numeric:tabular-nums;color:var(--t-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fi-tuile span{font:700 10px/1.4 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-2)}
-.fi-tuile small{font-size:var(--f-11);color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.fi-tuile{display:flex;flex-direction:column;gap:2px;min-width:0;padding:10px 12px 9px;border-radius:var(--r-2);background:var(--s-surface);border:1px solid var(--s-line);text-align:left;color:inherit;font:inherit}
+.fi-tuile b{font:700 18px/1.2 var(--titre);font-variant-numeric:tabular-nums;color:var(--t-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-tuile span{font:400 var(--f-12)/1.35 var(--sans);color:var(--t-2)}
+.fi-tuile small{font:400 var(--f-11)/1.35 var(--sans);color:var(--t-3);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-top:2px}
 button.fi-tuile{cursor:pointer;transition:background var(--rapide),border-color var(--rapide)}
-button.fi-tuile:hover{background:var(--s-hover);border-color:var(--s-line-2)}
+button.fi-tuile:hover{background:var(--s-sunken);border-color:var(--s-line-2)}
 
 /* ─── LES ONGLETS : les connecteurs d'un équipement, un à la fois — chaque onglet est une tuile du résumé (le
-   connecteur, ses contacts, son toron, son raccord) ; l'ouvert se marque en cuivre pâle, comme le folio courant ─── */
+   connecteur, ses contacts, son toron, son raccord) ; l'ouvert porte le cyan de la sélection ─── */
 .fi-onglets{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:var(--sp-2)}
 .fi-onglets .fi-tuile{cursor:pointer;transition:background var(--rapide),border-color var(--rapide),box-shadow var(--rapide)}
-.fi-onglets .fi-tuile:hover{background:var(--s-hover);border-color:var(--s-line-2)}
-.fi-onglets .fi-tuile[aria-selected="true"]{background:var(--accent-soft);border-color:rgba(181,84,28,.3)}
+.fi-onglets .fi-tuile:hover{background:var(--s-sunken);border-color:var(--s-line-2)}
+.fi-onglets .fi-tuile[aria-selected="true"]{background:var(--accent-soft);border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .fi-onglets .fi-tuile[aria-selected="true"] b{color:var(--accent-2)}
-.fi-onglets .fi-tuile[aria-selected="true"]:hover{background:#f6e2d2}
-.fi-onglets .fi-tuile.ko b::after{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ko);margin-left:7px;vertical-align:3px}
-.fi-panneau{display:flex;flex-direction:column;gap:var(--sp-3)}
+.fi-onglets .fi-tuile[aria-selected="true"]:hover{background:var(--accent-soft)}
+.fi-onglets .fi-tuile.ko b::after{content:"";display:inline-block;width:7px;height:7px;border-radius:1px;background:var(--ko);margin-left:8px;vertical-align:3px}
+.fi-panneau{display:flex;flex-direction:column;gap:var(--sp-4)}
 
 /* ─── LE CADRE : la référence, la face, autour, les fils ─── */
-.fi-cadre{border:1px solid var(--s-line);border-radius:var(--r-2);padding:var(--sp-3);display:flex;flex-direction:column;gap:var(--sp-3);min-width:0;background:var(--s-surface)}
+.fi-cadre{border:1px solid var(--s-line);border-radius:var(--r-2);padding:var(--sp-4);display:flex;flex-direction:column;gap:var(--sp-4);min-width:0;background:var(--s-surface)}
 .fi-ref-ligne{display:flex;align-items:center;gap:var(--sp-2);min-height:26px;min-width:0}
 .fi-ref{display:block;font:700 var(--f-14)/1.3 var(--mono);color:var(--t-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.fi-ref.vide{color:var(--t-3);font-weight:500;font-family:var(--sans)}
-.fi-pourquoi{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-size:var(--f-11);line-height:1.35;color:var(--t-3);overflow:hidden}
-.fi-norme{flex:none;display:inline-flex;align-items:center;font:700 var(--f-11) var(--sans);padding:2px 9px;border-radius:999px;background:var(--s-sunken);color:var(--t-2);white-space:nowrap}
-.fi-lien{flex:none;display:inline-flex;align-items:center;gap:3px;border:none;background:none;color:var(--accent);font-weight:600;font-size:var(--f-12);padding:4px 8px;margin:0 -6px 0 0;border-radius:var(--r-1);cursor:pointer;transition:background var(--rapide)}
+.fi-ref.fi-ref-mot{font:600 var(--f-14)/1.3 var(--sans);color:var(--t-2)}
+.fi-ref.vide{color:var(--t-3);font-weight:400;font-family:var(--sans)}
+.fi-pourquoi{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-size:var(--f-11);line-height:1.4;color:var(--t-3);overflow:hidden;margin-top:2px}
+.fi-norme{flex:none;display:inline-flex;align-items:center;font:400 var(--f-11) var(--mono);padding:2px 7px;border-radius:var(--r-1);border:1px solid var(--s-line);color:var(--t-2);white-space:nowrap}
+.fi-lien{flex:none;display:inline-flex;align-items:center;gap:3px;border:none;background:none;color:var(--accent);font:600 var(--f-12) var(--sans);padding:4px 8px;margin:0 -6px 0 0;border-radius:var(--r-1);cursor:pointer;transition:background var(--rapide),color var(--rapide)}
 .fi-lien:hover{background:var(--accent-soft);color:var(--accent-2)}
 .fi-lien .fi-chevron{width:14px;height:14px;transition:transform var(--rapide)}
 .fi-lien[aria-expanded="true"] .fi-chevron{transform:rotate(180deg)}
 .fi-liens{display:flex;flex-wrap:wrap;gap:2px 8px}
 .fi-liens .fi-lien{margin:0 0 0 -8px}
-/* le volet « Changer » : en retrait, ses titres en petites capitales, ses puces, ses candidats */
-.fi-changer{display:flex;flex-direction:column;gap:var(--sp-2);padding:10px 12px;border-radius:var(--r-2);background:var(--s-sunken)}
+/* le volet « Changer » : en retrait, ses titres en étiquettes, ses puces, ses candidats */
+.fi-changer{display:flex;flex-direction:column;gap:var(--sp-3);padding:12px;border-radius:var(--r-2);background:var(--s-sunken);border:1px solid var(--s-line)}
 .fi-puces{display:flex;flex-wrap:wrap;gap:6px}
-.fi-chip{height:30px;display:inline-flex;align-items:center;border:1px solid var(--s-line-2);background:var(--s-surface);border-radius:999px;padding:0 12px;font-size:var(--f-12);font-weight:600;cursor:pointer;color:var(--t-1);transition:background var(--rapide),border-color var(--rapide),color var(--rapide)}
-.fi-chip:hover{background:var(--s-hover)}
-.fi-chip[aria-pressed="true"]{background:var(--t-1);border-color:var(--t-1);color:#fff}
-.fi-note{margin:0;color:var(--t-2);font-size:var(--f-12);line-height:1.45}
-.fi-rac-t,.fi-nomen-t{margin:0;font:700 10px/1.6 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-2)}
-.fi-seg{display:flex;flex-direction:column;gap:3px}
+.fi-chip{height:30px;display:inline-flex;align-items:center;border:1px solid var(--s-line-2);background:var(--s-surface);border-radius:var(--r-1);padding:0 12px;font:500 var(--f-12) var(--sans);cursor:pointer;color:var(--t-1);transition:background var(--rapide),border-color var(--rapide),color var(--rapide)}
+.fi-chip:hover{border-color:var(--t-3)}
+.fi-chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
+.fi-note{margin:0;color:var(--t-2);font-size:var(--f-12);line-height:1.5}
+.fi-rac-t,.fi-nomen-t{margin:0;font:400 10px/1.6 var(--titre);letter-spacing:.12em;text-transform:uppercase;color:var(--t-3)}
+.fi-seg{display:flex;flex-direction:column;gap:5px}
 .fi-cands{display:flex;flex-direction:column;gap:4px}
-.fi .cand{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:10px;align-items:center;width:100%;margin:0;border:1px solid var(--s-line);background:var(--s-surface);color:var(--t-1);border-radius:var(--r-1);padding:5px 10px 5px 8px;text-align:left;cursor:pointer;transition:background var(--rapide),border-color var(--rapide)}
+.fi .cand{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:10px;align-items:center;width:100%;margin:0;border:1px solid var(--s-line);background:var(--s-surface);color:var(--t-1);border-radius:var(--r-1);padding:6px 10px 6px 8px;text-align:left;cursor:pointer;transition:background var(--rapide),border-color var(--rapide)}
 .fi .cand svg.picto{grid-row:1/3;flex:none}
 .fi .cand b{font:700 var(--f-12)/1.3 var(--mono);white-space:nowrap}
-.fi .cand span{font:var(--f-11)/1.3 var(--sans);color:var(--t-2);white-space:normal}
-.fi .cand:hover{background:var(--s-hover)}
+.fi .cand span{font:var(--f-11)/1.35 var(--sans);color:var(--t-2);white-space:normal}
+.fi .cand:hover{border-color:var(--s-line-2);background:var(--s-sunken)}
 .fi .cand[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--t-1)}
 .fi .cand[aria-pressed="true"] span{color:var(--accent-2)}
 .fi .cand[aria-pressed="true"]:hover{background:var(--accent-soft)}
 
-/* ─── LA FACE : un dessin à plat, sur une surface en retrait, à l'échelle de la fiche, et sa légende ─── */
+/* ─── LA FACE : un dessin à plat, sur sa planche de papier (dans les deux thèmes), et sa légende ─── */
 .fi-faces{display:flex;flex-direction:column;gap:var(--sp-2)}
 .fi-faces.deux{display:grid;grid-template-columns:1fr 1fr}
-.fi-face{margin:0;padding:10px 8px 6px;background:var(--s-sunken);border-radius:var(--r-2);display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.fi-face{margin:0;padding:12px 10px 8px;background:var(--s-papier);color:var(--t-papier);border:1px solid var(--s-line);border-radius:var(--r-2);display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;
+  background-image:linear-gradient(var(--s-papier-grille,#eef2f5) 1px,transparent 1px),linear-gradient(90deg,var(--s-papier-grille,#eef2f5) 1px,transparent 1px);background-size:12px 12px;background-position:-1px -1px}
 .fi-face svg{width:100%;height:auto;max-height:340px;display:block}
-.fi-face figcaption{font:600 10px/1.4 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--t-2);text-align:center}
-.fi-legende{display:flex;flex-wrap:wrap;justify-content:center;gap:3px 14px;margin-top:-6px;font-size:var(--f-11);color:var(--t-2)}
-.fi-legende i{display:inline-block;width:10px;height:10px;border-radius:50%;border:1.3px solid var(--t-1);background:#fff;vertical-align:-1px;margin-right:5px;box-sizing:border-box}
+.fi-face figcaption{font:400 10px/1.4 var(--titre);letter-spacing:.12em;text-transform:uppercase;color:#5b6876;text-align:center}
+.fi-legende{display:flex;flex-wrap:wrap;justify-content:center;gap:3px 14px;margin-top:-8px;font-size:var(--f-11);color:var(--t-2)}
+.fi-legende i{display:inline-block;width:10px;height:10px;border-radius:50%;border:1.3px solid var(--t-1);background:var(--s-surface);vertical-align:-1px;margin-right:5px;box-sizing:border-box}
 .fi-legende i.plein{background:var(--accent);border-color:var(--t-1)}
 .fi-legende i.ko{border:2px solid var(--ko)}
 
 /* ─── AUTOUR du connecteur : ce qu'on sertit, le toron, ce qui l'englobe ─── */
-.fi-autour{display:flex;flex-direction:column;gap:var(--sp-2);padding:9px 12px 10px;border-radius:var(--r-2);background:var(--s-sunken)}
+.fi-autour{display:flex;flex-direction:column;gap:var(--sp-3);padding:12px 14px 13px;border-radius:var(--r-2);background:var(--s-sunken);border:1px solid var(--s-line)}
 .fi-autour .fi-habillage{min-height:22px}
 .fi-autour .fi-nomen-t{white-space:nowrap}
 /* les choix du tutoriel, en une ligne : coupés s'il le faut, entiers au survol */
 .fi-choix{flex:1 1 auto;min-width:0;font-size:var(--f-11);color:var(--t-3);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fi-autour .fi-changer{background:var(--s-surface);border:1px solid var(--s-line)}
-.fi-avenir{font-style:normal;font-size:var(--f-11);font-weight:600;color:var(--t-3);background:var(--s-surface);border:1px dashed var(--s-line-2);border-radius:999px;padding:0 7px;white-space:nowrap}
-.fi-avenir.fi-long{display:inline-block;white-space:normal;line-height:1.35;border-radius:var(--r-1);padding:2px 7px;margin:1px 0}
-/* des faits : la clé en petites capitales, la valeur en linéale, les identifiants en chasse fixe */
-.fi-faits{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:7px 12px;margin:0;font-size:var(--f-12)}
-.fi-faits dt{font:700 10px/1.75 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-2);white-space:nowrap}
-.fi-faits dd{margin:0;color:var(--t-1);line-height:1.5;min-width:0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
-.fi-faits dd b{font:600 var(--f-12) var(--mono)}
+.fi-autour .fi-changer{background:var(--s-surface)}
+.fi-avenir{font-style:normal;font-size:var(--f-11);font-weight:500;color:var(--warn);background:none;border:1px dashed color-mix(in srgb,var(--warn) 45%,transparent);border-radius:var(--r-1);padding:0 6px;white-space:nowrap}
+.fi-avenir.fi-long{display:inline-block;white-space:normal;line-height:1.4;padding:2px 7px;margin:1px 0}
+/* des faits : la clé en étiquette, la valeur en linéale, les identifiants en chasse fixe */
+.fi-faits{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:8px 16px;margin:0;font-size:var(--f-12)}
+.fi-faits dt{font:400 10px/1.9 var(--titre);letter-spacing:.12em;text-transform:uppercase;color:var(--t-3);white-space:nowrap}
+.fi-faits dd{margin:0;color:var(--t-1);line-height:1.55;min-width:0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.fi-faits dd b{font:600 var(--f-12) var(--sans);font-variant-numeric:tabular-nums}
 .fi-faits dd i{font-style:normal;color:var(--t-2)}
 .fi-faits dd .fi-ko{font-family:var(--sans)}
-.fi-faits.serre{gap:4px 12px}
+.fi-faits.serre{gap:5px 16px}
 
 /* ─── LES FILS : une ligne chacun — le contact, la route, le type, le contact à sertir, où il va, le numéro ─── */
-.fi-liste{list-style:none;margin:0 -6px;padding:0;display:flex;flex-direction:column}
-.fi-fil{display:grid;grid-template-columns:auto 14px auto minmax(0,1fr) auto auto;align-items:center;column-gap:8px;min-height:32px;padding:4px 6px;border-radius:var(--r-1);font-size:var(--f-12);transition:background var(--rapide)}
+.fi-liste{list-style:none;margin:0 -8px;padding:0;display:flex;flex-direction:column}
+.fi-fil{display:grid;grid-template-columns:auto 14px auto minmax(0,1fr) auto auto;align-items:center;column-gap:10px;min-height:34px;padding:4px 8px;border-radius:var(--r-1);font-size:var(--f-12);transition:background var(--rapide)}
 .fi-fil+.fi-fil{box-shadow:0 -1px 0 var(--s-line)}
 .fi-fil[data-i]{cursor:pointer}
 .fi-fil[data-i]:hover,.fi-fil.vise,.fi-fil[data-i]:focus-visible{background:var(--accent-soft);box-shadow:none}
 .fi-fil[data-i]:hover+.fi-fil,.fi-fil.vise+.fi-fil{box-shadow:none}
 .fi-fil.ko{background:var(--ko-soft)}
-.fi-ct{min-width:30px;height:22px;display:inline-flex;align-items:baseline;justify-content:center;gap:3px;padding:2px 7px;border-radius:6px;background:var(--s-sunken);font-family:var(--mono);line-height:1.4}
+.fi-ct{min-width:28px;height:22px;display:inline-flex;align-items:center;justify-content:center;gap:3px;padding:0 6px;border-radius:var(--r-1);border:1px solid var(--s-line);font-family:var(--mono);line-height:1}
 .fi-ct b{font-weight:700;color:var(--t-1)}
-.fi-ct i{font-style:normal;font-weight:500;font-size:var(--f-11);color:var(--t-2)}
+.fi-ct i{font-style:normal;font-weight:400;font-size:var(--f-11);color:var(--t-3)}
 .fi-type{font:700 var(--f-12) var(--mono);white-space:nowrap}
-.fi-sertir{font:500 var(--f-11) var(--mono);color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.fi-dest{display:flex;align-items:center;justify-content:flex-end;gap:4px;min-width:0;font-family:var(--mono);color:var(--t-1);white-space:nowrap}
+.fi-sertir{font:400 var(--f-11) var(--mono);color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.fi-dest{display:flex;align-items:center;justify-content:flex-end;gap:5px;min-width:0;font-family:var(--mono);color:var(--t-1);white-space:nowrap}
 .fi-dest>span{overflow:hidden;text-overflow:ellipsis}
 .fi-dest svg.ico{width:12px;height:12px;color:var(--t-3);flex:none}
 .fi-dest.amont svg.ico{transform:scaleX(-1)}
-.fi-w{font:500 var(--f-11) var(--mono);color:var(--t-3);white-space:nowrap;text-align:right;min-width:44px}
+.fi-w{font:400 var(--f-11) var(--mono);color:var(--t-3);white-space:nowrap;text-align:right;min-width:44px}
 .fi-w.neuf{color:var(--accent-2);font-style:italic;font-family:var(--sans)}
 .fi-t{font-family:var(--mono);color:var(--t-3);font-size:var(--f-11);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fi-t em{font-style:normal;color:var(--t-2);margin-left:7px}
-.fi-tag{font:700 var(--f-11) var(--mono);color:var(--accent-2);background:var(--accent-soft);border:1px dashed rgba(181,84,28,.5);border-radius:6px;padding:0 5px;margin-left:4px}
-.fi-ko{grid-column:3/-1;color:var(--ko);font-size:var(--f-11);font-weight:600;line-height:1.35}
+.fi-tag{font:400 var(--f-11) var(--mono);color:var(--accent-2);background:var(--accent-soft);border:1px dashed var(--accent-line);border-radius:var(--r-1);padding:0 5px;margin-left:4px}
+.fi-ko{grid-column:3/-1;color:var(--ko);font-size:var(--f-11);font-weight:500;line-height:1.4}
 .fi-ko.fi-att{color:var(--warn)}
-.fi-groupe{display:flex;align-items:baseline;gap:4px;font:700 10px/1.6 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-2);padding:10px 6px 3px}
+.fi-groupe{display:flex;align-items:baseline;gap:6px;font:400 10px/1.6 var(--titre);letter-spacing:.12em;text-transform:uppercase;color:var(--t-3);padding:12px 8px 4px}
 .fi-groupe:first-child{padding-top:0}
-.fi-groupe i{font:500 var(--f-11) var(--mono);letter-spacing:0;text-transform:none;color:var(--t-3)}
+.fi-groupe i{font:400 var(--f-11) var(--mono);letter-spacing:0;text-transform:none;color:var(--t-3)}
 /* une prise : chaque contact, la fiche à gauche, l'embase à droite */
-.fi-paires-tete{display:grid;grid-template-columns:36px minmax(0,1fr) 16px minmax(0,1fr);gap:6px;font:700 10px/1.6 var(--sans);color:var(--t-2);letter-spacing:.07em;text-transform:uppercase;margin-bottom:-8px}
+.fi-paires-tete{display:grid;grid-template-columns:36px minmax(0,1fr) 16px minmax(0,1fr);gap:6px;font:400 10px/1.6 var(--titre);color:var(--t-3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:-8px}
 .fi-paire{display:grid;grid-template-columns:36px minmax(0,1fr) 16px minmax(0,1fr);align-items:center;gap:6px;padding:4px 0;font-size:var(--f-12)}
 .fi-paire+.fi-paire{box-shadow:0 -1px 0 var(--s-line)}
 .fi-paire.ko{background:var(--ko-soft);border-radius:var(--r-1)}
@@ -176,75 +185,79 @@ button.fi-tuile:hover{background:var(--s-hover);border-color:var(--s-line-2)}
 /* ─── UN FIL : son trajet, d'un bout à l'autre ─── */
 .fi-trajet{display:grid;grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr);align-items:stretch;gap:6px}
 .fi-trajet .fi-fleche{align-self:center}
-.fi-bout{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:10px 12px;border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-surface);cursor:pointer;text-align:left;min-width:0;color:inherit;transition:background var(--rapide),border-color var(--rapide)}
+.fi-bout{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:11px 13px;border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-surface);cursor:pointer;text-align:left;min-width:0;color:inherit;transition:background var(--rapide),border-color var(--rapide)}
 .fi-bout:hover{background:var(--s-sunken);border-color:var(--s-line-2)}
-.fi-bout .fi-bout-k{font:700 10px/1.4 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-3);font-style:normal}
+.fi-bout .fi-bout-k{font:400 10px/1.5 var(--titre);letter-spacing:.12em;text-transform:uppercase;color:var(--t-3);font-style:normal}
 .fi-bout b{font:700 var(--f-14) var(--mono);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fi-bout span{font-size:var(--f-12);color:var(--t-2)}
 .fi-bout small{font:var(--f-11) var(--mono);color:var(--t-3);overflow:hidden;text-overflow:ellipsis;max-width:100%;white-space:nowrap}
 .fi-bout .fi-bout-ct{color:var(--t-2)}
 .fi-bout .fi-bout-ct.ko{color:var(--ko);font-weight:600}
-.fi-bout em{font-style:normal;font:700 var(--f-11)/1.5 var(--mono);color:var(--accent-2);background:var(--accent-soft);border-radius:6px;padding:0 5px;margin-top:3px;max-width:100%}
-.fi-fleche{height:3px;border-radius:2px;position:relative;background:var(--c,#26323f);color:var(--c,#26323f)}
-.fi-fleche::after{content:"";position:absolute;right:-1px;top:-4px;border:5.5px solid transparent;border-left:7px solid currentColor;border-right:0}
+.fi-bout em{font:400 var(--f-11)/1.45 var(--sans);font-style:normal;color:var(--accent-2);margin-top:4px;padding-top:4px;border-top:1px dashed var(--s-line-2);max-width:100%;align-self:stretch}
+.fi-fleche{height:2px;border-radius:1px;position:relative;background:var(--c,var(--t-1));color:var(--c,var(--t-1))}
+.fi-fleche::after{content:"";position:absolute;right:-1px;top:-4px;border:5px solid transparent;border-left:7px solid currentColor;border-right:0}
 
 /* ─── LE PIED : le tableau, + fil, le relief, et « ··· » pour le reste ─── */
 .fi-pied{display:flex;align-items:center;gap:6px;margin-top:auto;padding-top:4px}
-.fi-bouton{flex:none;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--s-line);background:var(--s-surface);color:var(--t-1);font-size:var(--f-12);font-weight:600;cursor:pointer;transition:background var(--rapide),border-color var(--rapide);max-width:100%}
+.fi-bouton{flex:none;display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 12px;border-radius:var(--r-1);border:1px solid var(--s-line-2);background:var(--s-surface);color:var(--t-1);font:500 var(--f-12) var(--sans);cursor:pointer;transition:background var(--rapide),border-color var(--rapide);max-width:100%}
 .fi-bouton span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.fi-bouton:hover{background:var(--s-sunken);border-color:var(--s-line-2)}
+.fi-bouton:hover{background:var(--s-sunken);border-color:var(--t-3)}
 .fi-bouton svg.ico{width:16px;height:16px;color:var(--t-2)}
 .fi-plus{position:relative}
 .fi-menu{position:absolute;right:0;bottom:calc(100% + 6px);min-width:190px;background:var(--s-surface);border:1px solid var(--s-line);border-radius:var(--r-2);box-shadow:var(--sh-2);padding:4px;display:flex;flex-direction:column;z-index:3}
 .fi-menu button{border:none;background:none;text-align:left;padding:8px 10px;border-radius:var(--r-1);font-size:var(--f-12);color:var(--t-1);cursor:pointer}
-.fi-menu button:hover{background:var(--s-sunken)}
+.fi-menu button:hover{background:var(--s-hover)}
 .fi-menu button.danger{color:var(--ko)}
 .fi .equip{margin:0}
 
 /* ─── L'INDEX : les repères du contrat, dans l'inspecteur ─── */
-.fi.ix{gap:var(--sp-2)}
+.fi.ix{gap:var(--sp-3)}
 .ix-tete{display:flex;align-items:center;gap:6px;min-height:34px;margin-bottom:2px}
-.ix-tete h2{margin:0;font:700 var(--f-20)/1.2 var(--sans);letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
-.ix-tete .ix-n{font:600 var(--f-11)/1.7 var(--mono);letter-spacing:0;color:var(--t-2);background:var(--s-sunken);border-radius:999px;padding:0 8px}
+.ix-tete h2{margin:0;font:700 var(--f-20)/1.2 var(--titre);letter-spacing:.01em;display:flex;align-items:baseline;gap:10px}
+.ix-tete .ix-n{font:400 var(--f-12)/1 var(--mono);letter-spacing:0;color:var(--t-3);background:none;padding:0}
 .ix-tete .fi-x.plus{color:var(--accent)}
-.ix-filtre{display:flex;align-items:center;gap:8px;height:36px;border:1px solid var(--s-line);background:var(--s-sunken);border-radius:999px;padding:0 8px 0 12px;transition:border-color var(--rapide),box-shadow var(--rapide),background var(--rapide)}
-.ix-filtre:focus-within{border-color:var(--accent);background:var(--s-surface);box-shadow:0 0 0 3px var(--accent-soft)}
+.ix-filtre{display:flex;align-items:center;gap:8px;height:36px;border:1px solid var(--s-line-2);background:var(--s-surface);border-radius:var(--r-1);padding:0 8px 0 11px;transition:border-color var(--rapide),box-shadow var(--rapide)}
+.ix-filtre:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .ix-filtre svg.ico{width:16px;height:16px;color:var(--t-3)}
 .ix-filtre input{flex:1;min-width:0;border:none;background:none;outline:none;font-family:var(--mono);font-size:var(--f-12);color:var(--t-1)}
 .ix-filtre input::placeholder{font-family:var(--sans);color:var(--t-3)}
-/* « à reprendre » : une carte en tête, la pastille en résumé, les lignes dedans */
-.ix-controle{margin:2px 0 0;border:1px solid var(--s-line);border-radius:var(--r-2);padding:4px 8px}
-.ix-controle>summary{display:flex;align-items:center;gap:8px;list-style:none;cursor:pointer;padding:4px 0;border-radius:var(--r-1)}
+/* « à reprendre » : une carte en tête, l'état en résumé, les lignes dedans */
+.ix-controle{margin:2px 0 0;border:1px solid var(--s-line);border-radius:var(--r-2);padding:6px 10px 6px 13px;box-shadow:inset 3px 0 0 var(--ok)}
+.ix-controle:has(>summary .fi-etat.att){box-shadow:inset 3px 0 0 var(--warn)}
+.ix-controle:has(>summary .fi-etat.ko){box-shadow:inset 3px 0 0 var(--ko)}
+.ix-controle>summary .fi-etat{background:none;box-shadow:none;padding:0;height:auto;font:600 var(--f-13)/1.3 var(--sans)}
+.ix-controle>summary{display:flex;align-items:center;gap:8px;list-style:none;cursor:pointer;padding:3px 0;border-radius:var(--r-1)}
 .ix-controle>summary::-webkit-details-marker{display:none}
 .ix-controle>summary .fi-chevron{width:14px;height:14px;color:var(--t-3);transition:transform var(--rapide);margin-left:auto}
 .ix-controle[open]>summary .fi-chevron{transform:rotate(180deg)}
-.ix-controle .ix-groupe{padding:8px 0 2px}
-.ix-controle .ix-liste{margin:0 -4px}
-.ix-groupe{display:flex;align-items:center;gap:8px;padding:12px 4px 2px;font:700 10px/1.6 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--t-2)}
-.ix-groupe b{font:600 var(--f-11) var(--mono);letter-spacing:0;background:var(--s-sunken);border-radius:999px;padding:0 7px;color:var(--t-2)}
-.ix-groupe.ko b{background:var(--ko-soft);color:var(--ko)}
-.ix-groupe.att b{background:var(--warn-soft);color:var(--warn)}
-.ix-liste{list-style:none;margin:0 -6px;padding:0;display:flex;flex-direction:column}
-.ix-item{display:grid;grid-template-columns:8px minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;min-height:38px;padding:5px 8px;border:none;background:none;border-radius:var(--r-1);text-align:left;color:var(--t-1);cursor:pointer;transition:background var(--rapide)}
-.ix-item:hover,.ix-item:focus-visible{background:var(--s-sunken)}
-.ix-etat{width:8px;height:8px;border-radius:50%;background:none;box-shadow:inset 0 0 0 1.5px var(--s-line-2)}
+.ix-controle .ix-groupe{padding:10px 0 2px}
+.ix-controle .ix-liste{margin:0 -6px}
+.ix-groupe{display:flex;align-items:baseline;gap:8px;padding:14px 4px 4px;font:400 10px/1.6 var(--titre);letter-spacing:.12em;text-transform:uppercase;color:var(--t-3)}
+.ix-groupe b{font:400 var(--f-11) var(--mono);letter-spacing:0;background:none;padding:0;color:var(--t-3)}
+.ix-groupe.ko,.ix-groupe.ko b{color:var(--ko)}
+.ix-groupe.att,.ix-groupe.att b{color:var(--warn)}
+.ix-liste{list-style:none;margin:0 -8px;padding:0;display:flex;flex-direction:column}
+.ix-item{display:grid;grid-template-columns:8px minmax(0,1fr) auto;align-items:center;gap:11px;width:100%;min-height:40px;padding:6px 8px;border:none;background:none;border-radius:var(--r-1);text-align:left;color:var(--t-1);cursor:pointer;transition:background var(--rapide)}
+.ix-item:hover,.ix-item:focus-visible{background:var(--s-hover)}
+.ix-etat{width:7px;height:7px;border-radius:1px;background:none;box-shadow:inset 0 0 0 1px var(--s-line-2)}
 .ix-etat.att{background:var(--warn);box-shadow:none}.ix-etat.ko{background:var(--ko);box-shadow:none}
 .ix-item b{font:700 var(--f-13) var(--mono);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ix-item small{display:block;color:var(--t-2);font-size:var(--f-11);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.35}
-/* une ligne « à reprendre » : le code du repère (CB, XC, VT…) en pastille, le repère et son premier point, le folio */
-.ix-item.co-item{grid-template-columns:30px minmax(0,1fr) auto;align-items:start}
-.ix-item.co-item small{white-space:normal;line-height:1.35}
-.ix-item.co-item b em{font:600 var(--f-11) var(--sans);color:var(--t-2);margin-left:4px}
-.co-code{display:grid;place-items:center;height:20px;margin-top:2px;border-radius:6px;background:var(--s-sunken);font:700 10px var(--mono);letter-spacing:.04em;color:var(--t-2)}
+.ix-item small{display:block;color:var(--t-2);font-size:var(--f-11);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
+/* une ligne « à reprendre » : le code du repère (CB, XC, VT…) en étiquette, le repère et son premier point, le folio */
+.ix-item.co-item{grid-template-columns:28px minmax(0,1fr) auto;align-items:start}
+.ix-item.co-item small{white-space:normal;line-height:1.4}
+.ix-item.co-item b em{font:500 var(--f-11) var(--sans);color:var(--t-2);margin-left:6px}
+.co-code{display:grid;place-items:center;height:20px;margin-top:1px;border-radius:var(--r-1);border:1px solid var(--s-line-2);font:400 10px var(--mono);letter-spacing:.04em;color:var(--t-2)}
 .co-code svg.ico{width:13px;height:13px}
-.ix-folio{font:600 var(--f-11) var(--mono);color:var(--t-2);background:var(--s-sunken);border-radius:999px;padding:2px 8px;white-space:nowrap}
+.ix-folio{font:400 var(--f-11) var(--mono);color:var(--t-3);background:none;padding:2px 0 2px 6px;white-space:nowrap}
 .ix-vide{color:var(--t-2);font-size:var(--f-12);padding:12px 6px;margin:0}
 
 /* ─── TÉLÉPHONE ─── */
 @media (max-width:700px){
-  .fi{padding:12px 12px 12px}
-  .fi-nom{font-size:20px}
+  .fi{padding:16px 16px 14px;gap:var(--sp-3)}
+  .fi-nom{font-size:21px}
   .fi-faces.deux{grid-template-columns:1fr}
   .fi-face svg{max-height:220px}
   .fi-tuiles{grid-template-columns:repeat(auto-fit,minmax(88px,1fr))}
+  .fi-cadre{padding:var(--sp-3)}
 }

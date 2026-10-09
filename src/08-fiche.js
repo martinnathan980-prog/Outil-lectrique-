@@ -83,7 +83,8 @@ function fiEtat(ko, att) {
 /* La référence retenue (sa norme se lit dedans : on ne la répète pas), pourquoi en une ligne, et « Changer » qui
    déplie les autres. */
 function fiRef(ref, famille, cle, changer, titre) {
-  return `<div class="fi-ref-ligne"><div class="min0"><b class="fi-ref">${esc(ref || '—')}</b>${titre ? `<small class="fi-pourquoi">${esc(titre)}</small>` : ''}</div>`
+  // une référence s'écrit en chasse fixe ; un mot à sa place (« aucun arrangement ») en linéale
+  return `<div class="fi-ref-ligne"><div class="min0"><b class="fi-ref${/^aucun/.test(ref || '') ? ' fi-ref-mot' : ''}">${esc(ref || '—')}</b>${titre ? `<small class="fi-pourquoi">${esc(titre)}</small>` : ''}</div>`
     + (changer ? `<button class="fi-lien" data-changer="${escA(cle)}" aria-expanded="${!!FI.change[cle]}">Changer${ico('bas', 'fi-chevron')}</button>` : '') + '</div>'
     + (changer ? `<div class="fi-changer" data-volet="${escA(cle)}"${FI.change[cle] ? '' : ' hidden'}>${changer}</div>` : ''); }
 /* Des faits, en grille : la clé en petit, la valeur en linéale, les identifiants en chasse fixe. rows : [[clé, html, titre?]] */

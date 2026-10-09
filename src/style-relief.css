@@ -5,7 +5,7 @@
    comme celles de la norme) ; seule la pièce est en perspective, posée sur une surface en retrait, à plat.
    ═══════════════════════════════════════════════════════════════════════ */
 /* ── la VUE EN RELIEF (08-relief) : un panneau blanc posé sur la table assombrie ── */
-.relief{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(17,24,39,.55)}
+.relief{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:16px;background:var(--voile-fort)}
 .relief[hidden]{display:none}
 .re-boite{background:var(--s-surface);color:var(--t-1);border-radius:var(--r-3);width:min(1180px,100%);max-height:100%;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;box-shadow:var(--sh-2);padding:16px 20px 20px}
 .re-tete{display:flex;align-items:flex-start;gap:12px}
@@ -17,9 +17,9 @@
 .re-vues{display:inline-flex;gap:2px;padding:2px;background:var(--s-sunken);border-radius:var(--r-1);flex:none}
 .re-vues button{border:none;background:none;height:26px;padding:0 10px;border-radius:4px;font-size:var(--f-12);font-weight:600;color:var(--t-2);cursor:pointer;transition:background var(--rapide),color var(--rapide)}
 .re-vues button:hover{color:var(--t-1)}
-.re-vues button.on{background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-1)}
-/* la scène : une surface en retrait, à plat ; on la fait tourner à la main */
-.re-scene{margin:12px 0 4px;background:var(--s-sunken);border:1px solid var(--s-line);border-radius:var(--r-2);height:min(56vh,520px);cursor:grab;touch-action:none;user-select:none}
+.re-vues button.on{background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-1),inset 0 0 0 1px var(--s-line)}
+/* la scène : du papier quadrillé, dans les deux thèmes (la pièce est dessinée à l'encre) ; on la fait tourner à la main */
+.re-scene{margin:12px 0 4px;background-color:var(--s-papier);background-image:linear-gradient(var(--s-papier-grille) 1px,transparent 1px),linear-gradient(90deg,var(--s-papier-grille) 1px,transparent 1px);background-size:16px 16px;border:1px solid var(--s-line);border-radius:var(--r-2);height:min(56vh,520px);cursor:grab;touch-action:none;user-select:none}
 .re-scene.tourne{cursor:grabbing}
 .re-scene svg{width:100%;height:100%;display:block}
 .re-gaine{fill:none;stroke:#18212c;stroke-opacity:.28;stroke-width:4.4;stroke-linecap:round;stroke-linejoin:round}
@@ -45,7 +45,7 @@ svg .re-note{fill:#5b6875;font-size:10px}
 /* le tableau trou par trou : comme une table de la norme ; trop large (téléphone), il défile de côté */
 .re-tableau{overflow-x:auto;overscroll-behavior-x:contain}
 .re-tab{width:100%;border-collapse:separate;border-spacing:0;font-size:var(--f-12)}
-.re-tab th{text-align:left;font:700 10.5px var(--sans);text-transform:uppercase;letter-spacing:.05em;color:var(--t-2);padding:6px 8px;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
+.re-tab th{text-align:left;font:400 10px var(--titre);text-transform:uppercase;letter-spacing:.12em;color:var(--t-3);padding:6px 8px;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
 .re-tab td{padding:5px 8px;border-bottom:1px solid var(--s-line);vertical-align:top}
 .re-tab td.n{font-family:var(--mono);font-weight:600;width:64px}
 .re-tab tr.libre td{color:var(--t-2)}
@@ -93,9 +93,9 @@ svg .re-note{fill:#5b6875;font-size:10px}
 .mj .mj-diode{fill:#2b3440;stroke:#2b3440;stroke-width:1.2}
 .mj-faces{display:flex;justify-content:center;padding:8px 0 4px}
 /* la bible : le filtre par norme (des puces), chaque variante en picto */
-.mj-norme{border:1px solid var(--s-line-2);background:var(--s-surface);color:var(--t-1);border-radius:999px;padding:3px 11px;font-size:var(--f-12);font-weight:600;cursor:pointer;transition:background var(--rapide)}
+.mj-norme{border:1px solid var(--s-line-2);background:var(--s-surface);color:var(--t-1);border-radius:var(--r-1);padding:3px 10px;font-size:var(--f-12);font-weight:500;cursor:pointer;transition:background var(--rapide)}
 .mj-norme:hover{background:var(--s-hover)}
-.mj-norme[aria-pressed="true"]{background:var(--t-1);border-color:var(--t-1);color:#fff}
+.mj-norme[aria-pressed="true"]{background:var(--t-1);border-color:var(--t-1);color:var(--t-inverse)}
 .cand svg.picto{flex-shrink:0}
 .bible-filtres{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
 .picto.mj-picto .p-corps{fill:#fbfcfd;stroke:#2b3440;stroke-width:.9}

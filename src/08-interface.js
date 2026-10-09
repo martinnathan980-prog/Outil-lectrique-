@@ -1032,7 +1032,7 @@ function dessinPhysique(nom, P, largeur, opts) { opts = opts || {};
   const titre = `${P.nature}${P.reference ? ' ' + P.reference : ''} : ${pluriel(P.modules.length, forme === 'reglette' ? 'module' : 'contact')}`;
   // le conteneur dit sa hauteur : dans une carte à hauteur bornée, une grille rognerait sinon un conteneur qui défile
   return `<div class="phy" style="min-height:${y + 10 + (W + 6 > largeur ? 14 : 0)}px"><svg class="phy-svg" width="${W + 6}" height="${y + 4}" viewBox="-3 -2 ${W + 6} ${y + 4}" role="img" aria-label="${escA(titre)}">${defsPhysique()}${s}</svg></div>`; }
-function defsPhysique() { return '<defs><pattern id="phy-hachure" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#eef1f5"/><line x1="0" y1="0" x2="0" y2="6" stroke="#c9d1d9" stroke-width="2"/></pattern></defs>'; }
+function defsPhysique() { return '<defs><pattern id="phy-hachure" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect class="phy-h-fond" width="6" height="6"/><line class="phy-h-trait" x1="0" y1="0" x2="0" y2="6" stroke-width="2"/></pattern></defs>'; }
 /* Le début du groupe d'un module ou d'un contact — on le referme après ses
    formes : sa classe dit s'il est utilisé, libre, hors de la référence, ou
    en surcharge ; ses données disent ses fils, pour le survol. */

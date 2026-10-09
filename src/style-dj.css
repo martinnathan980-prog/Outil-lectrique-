@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   LA DISJONCTION (08 quinquies) : la gamme en segments, le graphique d'ingénieur, les états en table,
-   les fils par palier, la chute en jauge — sur la fiche d'un disjoncteur.
+   LA DISJONCTION (08 quinquies) : la gamme en sélecteur à sept crans, le graphique d'ingénieur, les états
+   en table, les fils par palier, la chute en jauge — sur la fiche d'un disjoncteur. Le cran retenu est à
+   l'encre ; sous chaque chiffre, son voyant (vert tient, ambre touche, rouge déclenche).
    Les jetons (couleurs, typo, espacements) sont dans style.css ; ici, seulement ce qui est propre à ce domaine.
    Le graphique est un SVG à plat : traits de 1 à 2 px, texte avec halo, aucun dégradé ; ce qui se survole répond,
    ce qui se glisse se saisit, ce qui change glisse (200 ms).
@@ -11,9 +12,9 @@
 .dj-gamme-t{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 .dj-ideal{font-size:var(--f-11);color:var(--t-2);white-space:nowrap}
 .dj-ideal i,.dj-chip i,.dj-dou i{font-style:normal;color:var(--warn)}
-.dj-ideal b,.dj-dou b{font:700 var(--f-11) var(--mono);color:var(--t-1)}
+.dj-ideal b,.dj-dou b{font:700 var(--f-11) var(--titre);color:var(--t-1)}
 .dj-chips{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--s-line-2);border-radius:var(--r-1);overflow:hidden;background:var(--s-surface)}
-.dj-chip{position:relative;height:36px;border:none;border-right:1px solid var(--s-line);background:var(--s-surface);font:700 var(--f-13) var(--mono);color:var(--t-2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:3px;padding:0 3px 5px;transition:background var(--rapide),color var(--rapide)}
+.dj-chip{position:relative;height:38px;border:none;border-right:1px solid var(--s-line);background:var(--s-surface);font:700 var(--f-14) var(--titre);color:var(--t-2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:3px;padding:0 3px 5px;transition:background var(--rapide),color var(--rapide)}
 .dj-chip:last-child{border-right:none}
 .dj-chip::after{content:"";position:absolute;left:7px;right:7px;bottom:4px;height:3px;border-radius:2px;background:var(--s-line);transition:background var(--rapide)}
 .dj-chip i{font-size:9px;line-height:1}
@@ -22,12 +23,9 @@
 .dj-chip.ko{color:var(--ko)} .dj-chip.ko::after{background:var(--ko)}
 .dj-chip:hover{background:var(--s-hover)}
 .dj-chip:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;z-index:1}
-.dj-chip[aria-pressed="true"]{background:var(--t-1);color:#fff}
-.dj-chip.ok[aria-pressed="true"]{background:var(--ok)}
-.dj-chip.serre[aria-pressed="true"]{background:var(--warn)}
-.dj-chip.ko[aria-pressed="true"]{background:var(--ko)}
-.dj-chip[aria-pressed="true"]::after{background:rgba(255,255,255,.55)}
-.dj-chip[aria-pressed="true"] i{color:#ffe08a}
+.dj-chip[aria-pressed="true"]{background:var(--t-1);color:var(--t-inverse)}
+.dj-chip[aria-pressed="true"]:hover{background:var(--t-1)}
+.dj-chip[aria-pressed="true"] i{color:var(--p-warn)}
 .dj-dou{font-size:var(--f-11);color:var(--t-2)}
 /* ── le graphique ── */
 .dj-graphe{position:relative;margin:0 -12px;padding:0}
@@ -77,7 +75,7 @@
 .dj-graphe .dj-halo{fill:transparent}
 .dj-graphe .dj-aura{fill:var(--t-1);opacity:0;transition:opacity var(--rapide)}
 .dj-graphe .dj-pt:hover .dj-aura,.dj-graphe .dj-pt:focus-visible .dj-aura{opacity:.16}
-.dj-graphe .dj-point{fill:var(--t-1);stroke:#fff;stroke-width:1.75;transition:fill var(--rapide)}
+.dj-graphe .dj-point{fill:var(--t-1);stroke:var(--s-surface);stroke-width:1.75;transition:fill var(--rapide)}
 .dj-graphe .dj-pt.ko .dj-point,.dj-graphe .dj-pt.ko .dj-aura{fill:var(--ko)}
 .dj-graphe .dj-pt.ko .dj-aura{opacity:.16}
 .dj-graphe .dj-pt.ko:hover .dj-aura{opacity:.28}
@@ -89,7 +87,7 @@
 /* la carte du survol */
 .dj-tip{position:absolute;z-index:3;pointer-events:none;width:max-content;min-width:150px;max-width:300px;background:var(--s-surface);color:var(--t-1);border:1px solid var(--s-line);border-radius:var(--r-2);box-shadow:var(--sh-2);padding:7px 10px 6px;font:500 var(--f-11)/1.4 var(--sans)}
 .dj-tip-t{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding-bottom:4px;margin-bottom:3px;border-bottom:1px solid var(--s-line)}
-.dj-tip-t b{font:700 var(--f-13) var(--mono);white-space:nowrap;font-variant-numeric:tabular-nums}
+.dj-tip-t b{font:700 var(--f-13) var(--titre);white-space:nowrap;font-variant-numeric:tabular-nums}
 .dj-tip-t span{color:var(--t-2);text-align:right;line-height:1.25}
 .dj-tip-l{display:grid;grid-template-columns:14px auto minmax(max-content,1fr) auto;align-items:center;column-gap:7px;padding:1px 0}
 .dj-tip-l i{height:0;border-top:2px solid var(--c);border-radius:1px}
@@ -111,15 +109,15 @@ button.dj-leg:hover,button.dj-leg:focus-visible{background:var(--s-hover);color:
 .dj-leg i{display:inline-block;width:14px;height:0;border-top:2px solid var(--c);border-radius:1px}
 .dj-leg i.tirets{border-top-style:dashed}
 .dj-leg i.zone{height:9px;width:12px;border:1px solid transparent;border-radius:2px}
-.dj-leg i.zone.ok{background:var(--ok-soft);border-color:#cfe8d9}
-.dj-leg i.zone.bande{background:var(--warn-soft);border-color:#f3dcb8}
+.dj-leg i.zone.ok{background:var(--ok-soft);border-color:color-mix(in srgb,var(--ok) 30%,var(--s-surface))}
+.dj-leg i.zone.bande{background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 30%,var(--s-surface))}
 .dj-leg i.prof{border-top:2px solid var(--t-1)}
 .dj-leg i.fant{border-top:1px solid var(--t-3)}
 /* ── les états : une table ── */
 .dj-etats{display:flex;flex-direction:column;gap:5px}
 .dj-entete,.dj-etat{display:grid;grid-template-columns:12px minmax(0,1fr) 82px 82px 22px;align-items:center;column-gap:6px}
 .dj-entete{margin-bottom:1px}
-.dj-entete span{font:700 10px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-3);text-align:right;padding-right:22px}
+.dj-entete span{font:400 10px var(--titre);letter-spacing:.12em;text-transform:uppercase;color:var(--t-3);text-align:right;padding-right:22px}
 .dj-entete .fi-nomen-t{grid-column:1/3;text-align:left;padding-right:0;color:var(--t-2)}
 .dj-verdict{width:8px;height:8px;border-radius:50%;background:var(--s-line-2);justify-self:center;transition:background var(--rapide),box-shadow var(--rapide)}
 .dj-verdict.ok{background:var(--t-1)}
@@ -143,12 +141,12 @@ button.dj-leg:hover,button.dj-leg:focus-visible{background:var(--s-hover);color:
 .dj-fils .fi-fil{grid-template-columns:auto 14px auto minmax(0,1fr) auto;row-gap:6px}
 .dj-fils .fi-dest{justify-content:flex-start}
 .dj-admet{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:0 0 1px}
-.dj-pal,.dj-ctc{display:flex;flex-direction:column;align-items:flex-end;min-width:58px;padding:3px 7px 2px;border-radius:var(--r-1);background:var(--s-sunken);border:1px solid transparent;line-height:1.2}
-.dj-pal b,.dj-ctc b{font:700 var(--f-12) var(--mono);color:var(--t-1);font-variant-numeric:tabular-nums}
-.dj-pal i,.dj-ctc i{font:500 10px var(--sans);color:var(--t-3);font-style:normal;letter-spacing:.02em}
-.dj-pal.ko,.dj-ctc.ko{background:var(--ko-soft);border-color:#f0c4c4}
+.dj-pal,.dj-ctc{display:flex;flex-direction:column;align-items:flex-end;min-width:58px;padding:3px 7px 2px;border-radius:var(--r-1);background:var(--s-sunken);border:1px solid var(--s-line);line-height:1.2}
+.dj-pal b,.dj-ctc b{font:700 var(--f-12) var(--titre);color:var(--t-1);font-variant-numeric:tabular-nums}
+.dj-pal i,.dj-ctc i{font:400 9px var(--titre);color:var(--t-3);font-style:normal;letter-spacing:.08em;text-transform:uppercase}
+.dj-pal.ko,.dj-ctc.ko{background:var(--ko-soft);border-color:color-mix(in srgb,var(--ko) 28%,var(--s-surface))}
 .dj-pal.ko b,.dj-pal.ko i,.dj-ctc.ko b,.dj-ctc.ko i{color:var(--ko)}
-.dj-pal.att,.dj-ctc.att{background:var(--warn-soft);border-color:#f0d9b0}
+.dj-pal.att,.dj-ctc.att{background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 28%,var(--s-surface))}
 .dj-pal.att b,.dj-pal.att i,.dj-ctc.att b,.dj-ctc.att i{color:var(--warn)}
 .dj-pal em{font:600 10px var(--sans);font-style:normal;color:var(--warn);white-space:nowrap}
 .dj-ideal em{font-style:normal;color:var(--warn)}
@@ -162,11 +160,11 @@ button.dj-leg:hover,button.dj-leg:focus-visible{background:var(--s-hover);color:
 .dj-chutes .fi-fil{grid-template-columns:auto minmax(48px,1fr) auto auto;row-gap:3px}
 .dj-jauge{height:6px;border-radius:3px;background:var(--s-line);position:relative;overflow:hidden;margin:0 2px}
 .dj-jauge i{position:absolute;left:0;top:0;bottom:0;background:var(--ok);border-radius:3px;transition:width var(--moyen)}
-.fi-fil.ko .dj-jauge{background:#f0c4c4}
+.fi-fil.ko .dj-jauge{background:color-mix(in srgb,var(--ko) 22%,var(--s-surface))}
 .fi-fil.ko .dj-jauge i{background:var(--ko)}
-.dj-du{font:700 var(--f-13) var(--mono);white-space:nowrap;font-variant-numeric:tabular-nums}
+.dj-du{font:700 var(--f-13) var(--titre);white-space:nowrap;font-variant-numeric:tabular-nums}
 .fi-fil.ko .dj-du{color:var(--ko)}
-.dj-pct{font:500 var(--f-11) var(--mono);color:var(--t-3);white-space:nowrap;min-width:44px;text-align:right;font-variant-numeric:tabular-nums}
+.dj-pct{font:400 var(--f-11) var(--titre);color:var(--t-3);white-space:nowrap;min-width:44px;text-align:right;font-variant-numeric:tabular-nums}
 .dj-chemin{grid-column:1/-1;font:500 var(--f-11) var(--mono);color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dj-chemin em{font-style:normal;font-family:var(--sans);color:var(--warn)}
 .dj-chemin em.ko{color:var(--ko);font-weight:600}

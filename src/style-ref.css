@@ -2,7 +2,7 @@
    LES CONTRATS DÉJÀ FAITS (08 sexies) : « Déjà fait », la comparaison, le dessin (FWD), la bible
    Les jetons (couleurs, typo, espacements) sont dans style.css ; ici, seulement ce qui est propre à ce domaine.
    Trois couleurs d'état, celles de tout l'outil : vert = la machine l'a et nous pas (à reprendre), ambre = ça diffère ou
-   c'est proposé à confirmer, bleu = nous l'avons en plus ; le gris est ce qui est pareil ; le cuivre, l'équipement comparé.
+   c'est proposé à confirmer, bleu = nous l'avons en plus ; le gris est ce qui est pareil ; le cyan, l'équipement comparé.
    ═══════════════════════════════════════════════════════════════════════ */
 /* ─── le repère décodé : zone · code · ordre · variante, en chasse fixe, la nature au survol ─── */
 .rp{font:700 var(--f-12) var(--mono);color:var(--t-1);white-space:nowrap;letter-spacing:.01em}
@@ -12,11 +12,12 @@
 .rp .rp-var{color:var(--info)}
 
 /* ─── « Déjà fait » sur la fiche : une ligne par machine, le taux, le repère en mots, la machine, le dessin ─── */
+.fi-deja .fi-ref{font:700 var(--f-16)/1.25 var(--titre);letter-spacing:.01em}
 .fi-deja .cd-compte{margin-left:auto;font-size:var(--f-11);color:var(--t-3);white-space:nowrap}
 .cd-liste{gap:2px}
 .fi-cand{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;column-gap:10px;padding:8px;border-radius:var(--r-1);cursor:pointer;transition:background var(--rapide)}
 .fi-cand:hover,.fi-cand:focus-visible{background:var(--s-hover);outline:none}
-.cd-taux{display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:24px;padding:0 7px;border-radius:999px;font:700 var(--f-12) var(--sans);font-variant-numeric:tabular-nums;background:var(--s-sunken);color:var(--t-2)}
+.cd-taux{display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:24px;padding:0 7px;border-radius:var(--r-1);font:600 var(--f-12) var(--mono);font-variant-numeric:tabular-nums;background:var(--s-sunken);color:var(--t-2)}
 .fi-cand.cd-ok .cd-taux{background:var(--ok-soft);color:var(--ok)}
 .fi-cand.cd-att .cd-taux{background:var(--warn-soft);color:var(--warn)}
 .cd-corps{display:flex;flex-direction:column;gap:2px;min-width:0}
@@ -65,17 +66,17 @@
 .cp-eq-propose .cp-eq-vers{color:var(--warn)}
 .fi-chip.cp-corr-nouveau{border-style:dashed}
 .fi-chip.cp-corr-code,.fi-chip.cp-corr-voisins{border-color:var(--warn);color:var(--warn)}
-.fi-bouton.cuivre{background:var(--accent);border-color:var(--accent);color:#fff}
-.fi-bouton.cuivre svg.ico{color:#fff}
+.fi-bouton.cuivre{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.fi-bouton.cuivre svg.ico{color:var(--on-accent)}
 .fi-bouton.cuivre:hover{background:var(--accent-2);border-color:var(--accent-2)}
 .fi-bouton.cuivre:disabled{opacity:.45;cursor:default}
 
 /* ─── LE DESSIN (FWD) : un calque plein écran — la feuille dessinée par le moteur à gauche, la colonne qui l'explique ─── */
-.fwd{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(17,24,39,.55)}
+.fwd{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:16px;background:var(--voile-fort)}
 .fwd[hidden]{display:none}
 .fw-boite{display:flex;flex-direction:column;width:100%;height:100%;max-width:1680px;overflow:hidden;background:var(--s-surface);color:var(--t-1);border-radius:var(--r-3);box-shadow:var(--sh-2)}
 .fw-tete{display:flex;align-items:center;gap:12px;padding:12px 16px 12px 20px;border-bottom:1px solid var(--s-line)}
-.fw-tete .sur{font:700 10px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fw-tete .sur{font:400 10px var(--titre);letter-spacing:.12em;text-transform:uppercase;color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fw-tete .titre{margin:1px 0 0;font:700 var(--f-20) var(--mono);letter-spacing:.01em;line-height:1.2}
 .fw-compte{margin-top:2px;font-size:var(--f-12);color:var(--t-2)}
 .fw-outils{display:flex;gap:6px;flex:none}
@@ -93,13 +94,13 @@
 .fw-chiffres b{font-size:var(--f-16);color:var(--t-1);font-variant-numeric:tabular-nums;margin-right:2px}
 .fw-natures{margin:0;font-size:var(--f-11);color:var(--t-2);line-height:1.45}
 .fw-bilan{display:flex;flex-wrap:wrap;gap:4px}
-.fw-pastille{display:inline-flex;align-items:center;gap:3px;height:22px;padding:0 8px;border-radius:999px;font-size:var(--f-11);font-weight:600;background:var(--s-sunken);color:var(--t-1);white-space:nowrap}
+.fw-pastille{display:inline-flex;align-items:center;gap:3px;height:22px;padding:0 8px;border-radius:var(--r-1);font-size:var(--f-11);font-weight:600;background:var(--s-sunken);color:var(--t-1);white-space:nowrap}
 .fw-pastille.manque,.fw-pastille.fil-manque{background:var(--ok-soft);color:var(--ok)}
 .fw-pastille.propose,.fw-pastille.differe{background:var(--warn-soft);color:var(--warn)}
 .fw-pastille.enplus{background:var(--info-soft);color:var(--info)}
 .fw-legende{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:3px 12px;font-size:var(--f-11);color:var(--t-2)}
 .fw-legende li{display:inline-flex;align-items:center;gap:5px}
-.fw-legende i{width:14px;height:10px;border:1.5px solid var(--t-1);border-radius:2px;background:#fff}
+.fw-legende i{width:14px;height:10px;border:1.5px solid var(--t-1);border-radius:2px;background:var(--s-surface)}
 .fw-legende i.cible{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .fw-legende i.chez{background:var(--s-sunken)}
 .fw-legende i.propose{border-color:var(--warn);border-style:dashed;background:var(--warn-soft)}
@@ -140,8 +141,8 @@
 #fw-vue .fw-chez .body,#fw-vue .fw-chez .bstrip,#fw-vue .fw-chez .fiche,#fw-vue .fw-chez .embase{fill:#f2f4f7}
 #fw-vue .fw-manque .body,#fw-vue .fw-manque .bstrip,#fw-vue .fw-manque .fiche,#fw-vue .fw-manque .embase{fill:#e8f5ee;stroke:#1a7f4b;stroke-width:1.3;stroke-dasharray:4 2.5}
 #fw-vue .fw-propose .body,#fw-vue .fw-propose .bstrip,#fw-vue .fw-propose .fiche,#fw-vue .fw-propose .embase{fill:#fdf3e4;stroke:#b45309;stroke-width:1.3;stroke-dasharray:4 2.5}
-#fw-vue .fw-cible .body,#fw-vue .fw-cible .bstrip,#fw-vue .fw-cible .fiche,#fw-vue .fw-cible .embase{stroke:#b5541c;stroke-width:2}
-#fw-vue .fw-on .body,#fw-vue .fw-on .bstrip,#fw-vue .fw-on .fiche,#fw-vue .fw-on .embase{stroke:#b5541c;stroke-width:2.4;stroke-dasharray:none}
+#fw-vue .fw-cible .body,#fw-vue .fw-cible .bstrip,#fw-vue .fw-cible .fiche,#fw-vue .fw-cible .embase{stroke:#08798f;stroke-width:2}
+#fw-vue .fw-on .body,#fw-vue .fw-on .bstrip,#fw-vue .fw-on .fiche,#fw-vue .fw-on .embase{stroke:#08798f;stroke-width:2.4;stroke-dasharray:none}
 #fw-vue .fw-vise .body,#fw-vue .fw-vise .bstrip,#fw-vue .fw-vise .fiche,#fw-vue .fw-vise .embase{stroke:#1f5fbf;stroke-width:2}
 #fw-vue .cab.fw-l-manque{stroke-dasharray:5 3;stroke-width:1.7}
 #fw-vue .cab.fw-l-differe{stroke-dasharray:2 2.4;stroke-width:1.7}
@@ -154,8 +155,8 @@
 }
 
 /* ─── la bible : la recherche, les tables par harness, par dessin, par repère ─── */
-.rf-cherche{display:flex;align-items:center;gap:8px;margin:0 0 10px;padding:4px 12px;border:1px solid var(--s-line);border-radius:999px;background:var(--s-surface);transition:border-color var(--rapide)}
-.rf-cherche:focus-within{border-color:var(--accent)}
+.rf-cherche{display:flex;align-items:center;gap:8px;margin:0 0 10px;padding:4px 12px;border:1px solid var(--s-line-2);border-radius:var(--r-1);background:var(--s-surface);transition:border-color var(--rapide)}
+.rf-cherche:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .rf-cherche svg.ico{width:16px;height:16px;color:var(--t-3);flex:none}
 .rf-cherche input{flex:1;min-width:0;border:none;background:none;font:inherit;font-size:var(--f-13);color:var(--t-1);padding:5px 0}
 .rf-cherche input:focus{outline:none}
@@ -164,6 +165,6 @@
 .rf-tab td{vertical-align:middle}
 .rf-tab td .rp{font-size:var(--f-11)}
 .rf-sous{font:400 var(--f-11) var(--sans);color:var(--t-3);margin:1px 0 0 6px}
-.rf-voir{display:inline-flex;align-items:center;gap:5px;margin:-2px 0;border:1px solid transparent;background:none;border-radius:999px;padding:2px 8px 2px 5px;font:700 var(--f-11) var(--mono);color:var(--accent);cursor:pointer;white-space:nowrap;transition:background var(--rapide),border-color var(--rapide)}
+.rf-voir{display:inline-flex;align-items:center;gap:5px;margin:-2px 0;border:1px solid transparent;background:none;border-radius:var(--r-1);padding:2px 8px 2px 5px;font:600 var(--f-11) var(--mono);color:var(--accent-2);cursor:pointer;white-space:nowrap;transition:background var(--rapide),border-color var(--rapide)}
 .rf-voir:hover{background:var(--accent-soft);border-color:var(--accent)}
 .rf-voir svg.ico{width:14px;height:14px;flex:none}

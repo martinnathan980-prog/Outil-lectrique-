@@ -67,46 +67,61 @@
     <!-- L'ACCUEIL : la table vide. Une page d'entrée d'outil : ce qu'il fait, par où l'on commence. « Reprendre » est caché ;
          l'interface le montre (et y écrit le nom) quand le dernier geste a vidé la table. -->
     <div id="vide" class="vide" hidden>
+      <!-- La page d'entrée est elle-même une feuille de folio : le cadre gradué (1 à 6, A à D), un petit schéma qui se trace,
+           et en bas à droite le cartouche — les routes, le réseau (aucun), le format, le folio. -->
       <div class="vd">
-        <header class="vd-tete">
-          <div class="vd-titre">
-            <span class="en-marque grand" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="7.5" width="7" height="9" rx="1.5"/><rect x="14.5" y="7.5" width="7" height="9" rx="1.5"/><path d="M9.5 12h5"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg></span>
-            <h1>Atelier Schéma</h1>
+        <div class="vd-reg vd-reg-h" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span></div>
+        <div class="vd-reg vd-reg-g" aria-hidden="true"><span>A</span><span>B</span><span>C</span><span>D</span></div>
+        <div class="vd-feuille">
+          <header class="vd-tete">
+            <div class="vd-titre">
+              <div class="vd-sur"><span class="en-marque" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="7.5" width="7" height="9" rx="1.5"/><rect x="14.5" y="7.5" width="7" height="9" rx="1.5"/><path d="M9.5 12h5"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg></span>Retest · folios · normes</div>
+              <h1>Atelier Schéma</h1>
+              <p>Un retest Excel entre, les folios de schéma sortent : chaque liaison devient un fil, chaque repère un équipement — et tout est jugé contre les normes, du fil au contact.</p>
+            </div>
+            <svg class="vd-dessin" viewBox="0 0 300 130" aria-hidden="true">
+              <g class="bloc"><rect x="8" y="14" width="84" height="44"/><text x="50" y="40">102CB1</text></g>
+              <g class="bloc"><rect class="bornes" x="92" y="18" width="11" height="36"/><path d="M92 36h11"/><text class="pin" x="97.5" y="30">1</text><text class="pin" x="97.5" y="48">2</text></g>
+              <g class="bloc b2"><rect x="218" y="14" width="74" height="44"/><text x="255" y="40">101BT1</text></g>
+              <g class="bloc b2"><rect class="bornes" x="207" y="18" width="11" height="36"/><path d="M207 36h11"/><text class="pin" x="212.5" y="30">1</text><text class="pin" x="212.5" y="48">2</text></g>
+              <g class="bloc b3"><rect x="218" y="86" width="74" height="36"/><text x="255" y="108">103RL1</text></g>
+              <g class="bloc b3"><rect class="bornes" x="207" y="95" width="11" height="18"/><text class="pin" x="212.5" y="107">1</text></g>
+              <path class="fil puissance" pathLength="1" d="M103 27H207"/>
+              <path class="fil signal" pathLength="1" d="M103 45H207"/>
+              <path class="fil signal f3" pathLength="1" d="M150 45V104H207"/>
+              <circle class="noeud" cx="150" cy="45" r="2.4"/>
+              <g class="etiq"><text x="155" y="22">W-011</text><text x="126" y="40">W-012</text><text x="180" y="99">W-013</text></g>
+            </svg>
+          </header>
+
+          <div class="vd-zone" id="vd-zone" role="button" tabindex="0" aria-label="Déposer un retest Excel ici, ou cliquer pour choisir un fichier">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+            <b>Glisser un retest Excel ici</b>
+            <span>.xlsx, .xlsm, .xls ou .csv — ou cliquer pour choisir le fichier</span>
           </div>
-          <p>Un retest Excel entre, les folios de schéma sortent : chaque liaison devient un fil, chaque repère un équipement — et tout est jugé contre les normes, du fil au contact.</p>
-        </header>
 
-        <div class="vd-zone" id="vd-zone" role="button" tabindex="0" aria-label="Déposer un retest Excel ici, ou cliquer pour choisir un fichier">
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
-          <b>Glisser un retest Excel ici</b>
-          <span>.xlsx, .xlsm, .xls ou .csv — ou cliquer pour choisir le fichier</span>
+          <div class="vd-gestes">
+            <button class="btn cuivre grand" id="vd-ouvrir">Ouvrir un fichier</button>
+            <button class="btn papier grand" id="vd-coller">Coller des liaisons</button>
+            <button class="btn papier grand" id="vd-exemple">Voir l’exemple</button>
+          </div>
+          <button class="vd-reprendre" id="vd-reprendre" hidden>Reprendre le contrat</button>
+
+          <ol class="vd-cartes">
+            <li><i class="vd-num" aria-hidden="true">01</i><b>Dessiner les folios</b><span>Un folio par plan, A3 paysage : les équipements placés, chaque fil droit et numéroté, le cartouche et la légende des routes.</span></li>
+            <li><i class="vd-num" aria-hidden="true">02</i><b>Vérifier</b><span>Contacts à sertir, câbles et intensités, disjoncteurs et profils de charge, raccords : chaque élément jugé contre les normes embarquées.</span></li>
+            <li><i class="vd-num" aria-hidden="true">03</i><b>Comparer</b><span>Avec les contrats déjà faits : ce qui est pareil, ce qui diffère, ce qui manque — et reprendre ce qu’on coche.</span></li>
+          </ol>
+
+          <div class="vd-cartouche">
+            <div class="vd-case vd-routes"><small>Routes</small><span><i class="puissance"></i>Puissance</span><span><i class="signal"></i>Signal</span></div>
+            <div class="vd-case vd-reseau"><small>Réseau</small><p class="vd-note">Aucun : tout se passe dans ce navigateur, hors ligne — rien ne part sur le réseau.</p></div>
+            <div class="vd-case vd-format"><small>Format</small><b>A3 paysage</b></div>
+            <div class="vd-case vd-folio"><small>Folio</small><b>— / —</b></div>
+          </div>
         </div>
-
-        <div class="vd-gestes">
-          <button class="btn cuivre grand" id="vd-ouvrir">Ouvrir un fichier</button>
-          <button class="btn papier grand" id="vd-coller">Coller des liaisons</button>
-          <button class="btn papier grand" id="vd-exemple">Voir l’exemple</button>
-        </div>
-        <button class="vd-reprendre" id="vd-reprendre" hidden>Reprendre le contrat</button>
-
-        <ul class="vd-cartes">
-          <li>
-            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M6.5 9.5h3v5h5v-2h3"/><circle cx="9.5" cy="9.5" r="1" fill="currentColor" stroke="none"/><circle cx="17.5" cy="12.5" r="1" fill="currentColor" stroke="none"/></svg>
-            <b>Dessiner les folios</b>
-            <span>Un folio par plan, A3 paysage : les équipements placés, chaque fil droit et numéroté, le cartouche et la légende des routes.</span>
-          </li>
-          <li>
-            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v6c0 4.2 3.2 7.6 7.5 9 4.3-1.4 7.5-4.8 7.5-9V6z"/><path d="m8.8 12.2 2.2 2.2 4.2-4.6"/></svg>
-            <b>Vérifier</b>
-            <span>Contacts à sertir, câbles et intensités, disjoncteurs et profils de charge, raccords : chaque élément jugé contre les normes embarquées.</span>
-          </li>
-          <li>
-            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="8" height="16" rx="1.5"/><rect x="13" y="4" width="8" height="16" rx="1.5"/><path d="M6 9h2M6 12h2M6 15h2M16 9h2M16 12h2M16 15h2"/></svg>
-            <b>Comparer</b>
-            <span>Avec les contrats déjà faits : ce qui est pareil, ce qui diffère, ce qui manque — et reprendre ce qu'on coche.</span>
-          </li>
-        </ul>
-        <p class="vd-note">Tout se passe dans ce navigateur, hors ligne : rien ne part sur le réseau.</p>
+        <div class="vd-reg vd-reg-d" aria-hidden="true"><span>A</span><span>B</span><span>C</span><span>D</span></div>
+        <div class="vd-reg vd-reg-b" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span></div>
       </div>
     </div>
   </main>

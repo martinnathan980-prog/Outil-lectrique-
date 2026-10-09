@@ -18,6 +18,14 @@ const modules = fs.readdirSync(SRC).filter(f => /^\d\d-.*\.js$/.test(f)).sort();
 // les feuilles de style : style.css (les jetons et le site) d'abord, puis style-*.css (un domaine chacune), dans l'ordre des noms
 const css  = ['style.css', ...fs.readdirSync(SRC).filter(f => /^style-.*\.css$/.test(f)).sort()].map(f => `/* ───────── ${f} ───────── */\n` + fs.readFileSync(path.join(SRC, f), 'utf8')).join('\n');
 const page = fs.readFileSync(path.join(SRC, 'page.html'), 'utf8');
+/* LES POLICES, embarquées : polices/<famille>-latin-<graisse>-<style>.woff2 devient une @font-face en data: URI — aucune
+   police réseau, l'outil reste un fichier hors ligne (polices/LISEZMOI.md). B612 : la police des écrans de cockpit
+   Airbus, pour les titres et les étiquettes ; IBM Plex Sans pour le texte, IBM Plex Mono pour les données. */
+const POLICES = path.join(ICI, 'polices'), FAMILLES = { 'b612': 'B612', 'ibm-plex-sans': 'IBM Plex Sans', 'ibm-plex-mono': 'IBM Plex Mono' };
+const polices = fs.existsSync(POLICES) ? fs.readdirSync(POLICES).filter(f => /\.woff2$/.test(f)).sort().map(f => {
+  const m = /^(.+)-latin-(\d{3})-(normal|italic)\.woff2$/.exec(f); if (!m || !FAMILLES[m[1]]) return '';
+  return `@font-face{font-family:"${FAMILLES[m[1]]}";font-style:${m[3]};font-weight:${m[2]};font-display:swap;src:url(data:font/woff2;base64,${fs.readFileSync(path.join(POLICES, f)).toString('base64')}) format("woff2")}`;
+}).filter(Boolean).join('\n') : '';
 const xlsx = fs.readFileSync(path.join(ICI, 'lib', 'xlsx.min.js'), 'utf8');
 // les normes embarquées : tous les CSV de normes/, à la suite — la norme livrée est un exemple (normes/LISEZMOI.md)
 const NORMES = path.join(ICI, 'normes');
@@ -40,6 +48,8 @@ const html = `<!doctype html>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Atelier Schéma</title>
 <style>
+/* ───────── polices/ (embarquées) ───────── */
+${polices}
 ${css}
 </style>
 </head>
