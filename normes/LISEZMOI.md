@@ -16,43 +16,74 @@ ligne — sur des hypothèses dites et modifiables.
 
 Le **tutoriel Raccords** de l'Excel du lecteur, en sept pas : le matériau,
 le diamètre du toron (plus 10 %), le connecteur, le raccord, la gaine,
-le manchon, le collier band-it — complété en octobre 2026 par une recherche
-sur les documents publics (EN 3660, Glenair, HellermannTyton, VG 95343).
-Le fichier porte six tables :
+le manchon, le collier band-it — complété en octobre 2026 par deux
+recherches sur les documents publics (R2 : Glenair, HellermannTyton, VG
+95343 ; R4 : les dessins TE/Polamco de l'EN 3660, l'index BSI de la série,
+iTeh, l'AC 43.13-1B). Le fichier porte sept tables :
 
 | Table | Ce qu'elle dit | Source |
 |---|---|---|
-| **Gaines** | par famille et référence, le **rôle** — `surblindage` (tresse cuivre HFA DHS754-160 : Ø intérieur, Ø extérieur) ou `protection` (Nomex EN 6049-003, hydrofuge EN 6049-004 : la plage de toron Dmin–Dmax) —, la masse | HellermannTyton |
-| **Colliers** | les band-it E0805-01 (jusqu'à 15 mm) et -02, et les **tyraps NSA935401-03…-13** (longueur, toron maximal, tenue, température) — NSA935401 est un collier, pas un disjoncteur | HellermannTyton, Arrow |
+| **Gaines** | par famille et référence, le **rôle** — `surblindage` (tresse cuivre HFA DHS754-160 : Ø intérieur, Ø extérieur) ou `protection` (Nomex EN 6049-003, hydrofuge EN 6049-004 : la plage de toron Dmin–Dmax) —, la masse. C'est le rôle qui décide du raccord | HellermannTyton |
+| **Colliers** | douze colonnes : les **bandes de reprise de blindage** EN 3660-033 (AF standard 6,22 × 0,48 mm, 360,42 mm à plat, boucle 8,89, Ø serré ≤ 47,8 mm, 10,6 g, outil M81306/1-01 ; CF et DF micro-bandes) et leurs équivalentes Glenair 600-052/-090/-057/-083 (tension de pose 150 lb, 75 lb la micro), les band-it d'atelier **E0805-01** (toron < 15 mm) et **-02**, et les **tyraps NSA935401-03…-13** (largeur, longueur, toron maximal : −03 Ø 22 / 100 mm, −04 Ø 35, −05 Ø 50 / 305 mm) — NSA935401 est un collier, pas un disjoncteur | TE P42936, Glenair, HellermannTyton, Octopart, Arrow |
 | **Filetages** | par famille de connecteur et **taille de boîtier** (EN 3645 : 09 à 25, M12x1 à M37x1 ; EN 2997 : 08 à 28, UNEF ; EN 3646 : 08 à 24), le filetage d'accessoire et le Ø du boîtier | EN 3645-002, EN 2997-002, EN 3646-002 |
-| **Entrées** | les codes d'entrée de câble d'un serre-câble (03 : 3,2–6,4 mm … 32) et les tailles de boîtier qui les admettent | Glenair |
-| **Raccords** | par famille, type (durci, pour manchon, serre-câble, cheminée) et orientation, la **norme EN 3660** du style (-004, -009, -062, -064, -065…), le matériau, le fini, et quand on l'aura la désignation complète et les cotes A, B, C, D — aujourd'hui `à confirmer` | EN 3660 (titres), catalogues |
-| **Manchons** | 39 manchons **VG 95343 T06 / T18** (droits, coudés, sortie longue) : Ha/Hb (côté raccord), Ja/Jb (côté toron), longueurs P, R, la lèvre Jo, la référence HellermannTyton | VG 95343 |
+| **Classes** | par famille, les lettres de **classe du connecteur** lues dans son part number juste après le nom de la famille (EN2997 **SE** 6 28 42 F N ; EN3645 **F** 0 C N 26 M N ; EN3646 **A** 6 08 3A A N — rapport R3), son matériau et son fini, la **lettre de classe EN 3660** du raccord qui va avec (W cadmium ↔ W, nickel ↔ N, inox ↔ K, zinc-nickel ↔ Z — jamais A, anodisé non conducteur), sa température | EN 2997, EN 3646, EN 3645 (R3) ; EN 3660-001 (R4) |
+| **Entrées** | les codes d'entrée de câble, par **Système** : `EN 3660` — les codes lettrés **A à M** des raccords à bande EN 3660-064 (et, à confirmer, -063/-065) : ØAA l'alésage (le toron maximal), ØBB la **plateforme de bande** (le band-it serre la tresse dessus), ØCC l'**épaulement** (le manchon vient dessus : la cote C), DD la lèvre, et la plus petite taille de boîtier qui admet le code (08 → D, 10 → F, 12 → H, 14 → J, 16/18 → K, 20 → L, 22 à 28 → M) ; `Glenair` — les codes 03 à 32 du serre-câble série 36 | TE/Polamco P20027 (table 4), Glenair 360A*001 |
+| **Raccords** | 145 lignes, par famille, **taille de boîtier**, type (durci = style K, pour manchon = J, serre-câble et tyrap = A, cheminée) et orientation : la partie EN 3660 (-064 / -065 pour l'EN 2997 et, déduit du filetage commun, l'EN 3646 et l'ASNE 0059 ; **-063 / -062 pour l'EN 3645** ; -004 / -005 serre-câble ; -020 / -021 ; -025 / -026 tyraps EN 3646 ; -009, -010, -013…), les cotes A (toron admis : du premier au dernier code d'entrée de la taille, ou l'ouverture M min–max du serre-câble), B (plateforme ØBB du code maximal), C (épaulement ØCC du code maximal), la masse, et le **modèle de désignation** `EN3660-064N12<L><E>` ; le **Statut** : `vérifié (P20027)` cotes lues sur un dessin, `structure` désignation vérifiée sans les cotes de cette taille, `déduit` même filetage mais la norme ne nomme pas la famille, `à confirmer` | TE/Polamco P20027 (-064), TE c-2275010 (-004), iTeh EN 3660-063/-064:2022, prEN 3660-065:2026, index BSI |
+| **Manchons** | 82 manchons **VG 95343 T06 / T08 / T18 / T19** par forme — droit à lèvre, coudé (à nervure, séries 1100 et 1150), **coudé à lèvre** (1133 à 1136), sortie longue (130, 170), 45°, transitions en T, 2 / 3 / 4 sorties — : Ha/Hb (côté raccord), Ja/Jb (côté toron), longueurs P, R, la lèvre Jo, la référence HellermannTyton ; T18 et T19 sont **précollés** | HellermannTyton, guide 2024 |
 
-La **table de décision** est dans l'outil (09 ter, `regleRaccord`) :
-reprise de blindage (GND sur le corps, BLI par cosse, NO, CONTACT) ×
-étanchéité × gaine, et l'orientation pour le cas sans reprise en zone
-étanche (droit : raccord pour manchon ; coudé : durci). « L'EN 3645
-s'utilise sans raccord » est la règle d'atelier du lecteur (l'EN 3660-020
-existe) : elle reste, en le disant.
+La **table de décision**, corrigée par R4, est dans l'outil (09 ter,
+`regleRaccord`) : reprise de blindage (GND sur le corps, BLI par cosse, NO,
+CONTACT) × étanchéité × **le rôle de la gaine**. Une tresse de
+**surblindage** (HFA) demande un raccord blindé (durci) et un band-it,
+obligatoires, + un manchon si étanche — comme une reprise sur le corps. Une
+gaine de **protection** (Nomex) ne demande rien de plus : elle finit sous le
+manchon ou par un collier sur le raccord. Sans tresse : étanche → droit un
+raccord pour manchon + son manchon, coudé un durci + un manchon ; sinon un
+tyrap (un raccord à collier, style A), ou un serre-câble pour une reprise par
+cosse (les cosses sous ses deux vis, au plus 4). L'étanchéité demande un
+manchon **précollé** (T18/T19), ou un T06 collé (VG 95343 T15, V9500).
+« L'EN 3645 s'utilise sans raccord » reste la règle d'atelier du lecteur
+(`SANS_RACCORD`, à confirmer) : les lignes -063 / -062 sont dans la table,
+prêtes pour le jour où il la retire.
 
 Ce que l'outil en fait (`habillage`), sur la fiche de chaque connecteur et
 de chaque côté d'une prise de coupure, la ligne **« autour »** : la **taille
 du boîtier** lue dans le part number (EN3646-002-12-08 → 12) et son
-filetage ; le **raccord** (son type, la norme EN 3660 du style, la
-désignation quand la table l'a, le **code d'entrée** d'un serre-câble par le
-toron) ; le **band-it** par le toron ; le **tyrap** le plus court qui passe ;
-la **gaine** par son rôle (un surblindage dont l'intérieur passe le toron,
-une protection dont la plage l'encadre) ; le **manchon** par ce qui sort du
-raccord — Ja > D > Jb, et Ha > C > Hb quand la cote C du raccord est connue ;
-et une ligne **« manque »** : ce que la norme ne dit pas encore. « Changer »
-déplie les quatre choix, gardés avec le contrat (Ctrl+Z). Le toron est celui
-de la ligne « faisceau » : Seq, Deq, plus 10 %, comme la feuille de calcul.
+filetage ; la **classe** du connecteur (table Classes : `EN2997W…` → W) ;
+le **raccord** — son type, sa ligne Raccords, et sa **désignation
+construite** : la partie, la classe du connecteur à la place du N (N par
+défaut), la taille, `<L>` la longueur de chambre (**A** par défaut, 27,5 mm :
+à demander au lecteur ; B 35,5, C 40,5, D 50,5) et `<E>` le **code d'entrée**
+que le toron choisit dans la table Entrées EN 3660, borné au code maximal de
+la taille — au-delà, « toron trop gros pour ce boîtier » ; un serre-câble
+EN 3660-004 n'a pas de code, son ouverture M min–max juge le toron (dessous :
+bourrage de ruban silicone) ; le code Glenair ne sert qu'à un serre-câble
+dont la ligne n'a pas de plage — ; la **bande** EN 3660-033AF par le Ø
+serré, la **plateforme ØBB** du code retenu (sinon le toron), avec l'E0805
+d'atelier en équivalent par le toron ; le **tyrap** au toron maximal le plus
+serré qui passe, puis le plus court ; la **gaine** par son rôle (un
+surblindage dont l'intérieur passe le toron, une protection dont la plage
+l'encadre) ; le **manchon** par ce qui sort du raccord — Ja > D > Jb — et
+par l'épaulement — Ha > C > Hb, **C = le ØCC du code d'entrée retenu**
+(sinon la cote C de la ligne) —, droit ou coudé (à nervure ou à lèvre)
+selon l'orientation, les autres formes à la main ; précollé, ou « à coller
+(VG 95343 T15) ou T18 précollé » ; et une ligne **« manque »** : la taille
+non lue, le toron trop gros, la ligne sans modèle, la cote C absente, le
+manchon ou la gaine introuvables. Le statut de la ligne (structure, déduit,
+à confirmer) est une pastille sur la fiche et une note dans la nomenclature ;
+« vérifié » n'en a pas. « Changer » déplie les quatre choix, gardés avec le
+contrat (Ctrl+Z). Le toron est celui de la ligne « faisceau » : Seq, Deq,
+plus 10 %, comme la feuille de calcul.
 
-Ce qui manque : les **désignations complètes** des raccords (la table dit la
-norme du style, pas la référence commandable), leurs cotes A, B, C, D (le
-manchon est choisi par le toron seul tant que C manque), et le rôle du
-**matériau** dans le choix.
+Ce qui manque encore : les cotes des **-063 et -065 par taille** (tables 2
+et 4 non lues : le code d'entrée maximal et les ØBB/ØCC sont pris à la
+-064), les suffixes de désignation des -005, -009, -010, -020/-021,
+-025/-026, la famille des tyraps -013 à -019, tout l'**ASNE 0059** (déduit
+de l'EN 3646), la **longueur de chambre** que l'atelier prend, la lettre
+**N ou F** de l'alu nickelé (TE/Polamco écrit F), et un manchon droit à
+lèvre pour les petits codes d'entrée (A à C : les T06 de la table ont un Hb
+de 14 ou un Jb de 6, trop grands pour un épaulement de 12 à 15 mm et un
+toron de 4 mm).
 
 ## `cables.csv` : la base des câbles
 

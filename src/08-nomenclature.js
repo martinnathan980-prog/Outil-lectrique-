@@ -18,12 +18,21 @@ function compteur() { const m = new Map();
 /* La nomenclature : relue depuis le contrat, les normes et les choix (références, sexes, raccords). */
 function nomenclatureDuContrat() { const V = verite(), H = app.simu || HYPOTHESES, contacts = compteur(), modules = compteur(), connecteurs = compteur(), habits = compteur(), cables = compteur();
   const sertir = (xs, ou) => nomenclatureDe(xs).forEach(x => contacts.plus(x.reference + '|' + x.accessoire, { reference: x.reference, accessoire: x.accessoire }, ou, x.n));
+  /* Le raccord entre par sa désignation construite (classe du connecteur, taille, chambre, code d'entrée) quand elle est
+     entière, sinon par la partie EN 3660 du style ; la note dit le statut de la ligne (sauf « vérifié »), la chambre prise
+     par défaut, la classe lue ; la bande par sa référence, l'E0805 d'atelier en note ; le manchon, précollé ou à coller. */
   const habiller = (cle, fils, pn, ou, ref) => { if (!fils.length) return; const h = habillage(app.norme, fils, app.contrat.raccords.get(cle), pn, ref);
-    const R = h.reference, M = h.manchonRef, G = h.gaine;
+    const R = h.reference, M = h.manchonRef, G = h.gaine, B = h.collier;
+    // un « tyrap » est un raccord à collier (style A) : sa ligne quand la table l'a, puis le tyrap lui-même
+    if (h.raccord !== 'aucun' && (h.raccord !== 'tyrap' || R)) { const des = h.designation || (R ? R.norme : ''), notes = [];
+      if (!R) notes.push('référence à venir'); else if (h.statut !== 'vérifié') notes.push(h.statut);
+      if (R && !h.designation && h.manquants.length && h.raccord !== 'tyrap') notes.push(h.manquants[0]);
+      if (h.designation && h.longueur) notes.push('chambre ' + h.longueur + ' par défaut');
+      if (h.designation) notes.push(h.classe.lettre ? 'classe ' + h.classe.raccord + ' du connecteur ' + h.classe.lettre : 'classe N par défaut');
+      habits.plus('raccord|' + h.raccord + '|' + des, { quoi: 'raccord ' + (h.raccord === 'tyrap' ? 'à collier' : h.raccord) + (h.entree ? ', entrée ' + h.entree.code : ''), reference: des || h.raccord, note: notes.join(' · ') }, ou); }
     if (h.raccord === 'tyrap') habits.plus('tyrap|' + (h.tyrap ? h.tyrap.reference : '?'), { quoi: 'tyrap', reference: h.tyrap ? h.tyrap.reference : 'aucun dans la table', note: '' }, ou);
-    else if (h.raccord !== 'aucun') habits.plus('raccord|' + h.raccord + '|' + (R ? R.reference || R.norme : ''), { quoi: 'raccord ' + h.raccord + (h.entree ? ', entrée ' + h.entree.code : ''), reference: R ? (R.reference || R.norme) : h.raccord, note: R && R.reference ? '' : R ? (R.statut || 'à confirmer') : 'référence à venir' }, ou);
-    if (h.bandit) habits.plus('collier|' + (h.collier ? h.collier.reference : '?'), { quoi: 'band-it', reference: h.collier ? h.collier.reference : 'aucun ne va au toron', note: '' }, ou);
-    if (h.manchon) habits.plus('manchon|' + (M ? M.designation : '?'), { quoi: 'manchon', reference: M ? M.designation : 'aucun ne va au toron', note: M && M.reference ? M.reference : '' }, ou);
+    if (h.bandit) habits.plus('collier|' + (B ? B.reference : '?'), { quoi: 'band-it', reference: B ? B.reference : 'aucun ne va au toron', note: B && B.equivalent ? '≈ ' + B.equivalent.reference : '' }, ou);
+    if (h.manchon) habits.plus('manchon|' + (M ? M.designation : '?'), { quoi: 'manchon' + (h.colle === 'précollé' ? ' précollé' : ''), reference: M ? M.designation : 'aucun ne va au toron', note: M ? [M.reference, h.colle && h.colle !== 'précollé' ? h.colle : ''].filter(Boolean).join(' — ') : '' }, ou);
     if (h.choix.gaine) habits.plus('gaine|' + (G ? G.reference : h.choix.gaine), { quoi: 'gaine ' + h.choix.gaine + (G ? ' (' + G.role + ')' : ''), reference: G ? G.reference : 'aucune ne va au toron', note: G ? (G.role === 'surblindage' ? 'Ø int. ' + nombre(G.dint) + ' mm' : 'toron ' + nombre(G.dmin) + '–' + nombre(G.dmax) + ' mm') : '' }, ou); };
   reperesDe(V).forEach(r => { if (estMasse(r) || estRenvoi(r) || estRail(r)) return;
     try {
