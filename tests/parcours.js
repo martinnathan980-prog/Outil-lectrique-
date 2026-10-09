@@ -140,7 +140,9 @@ const cadrage = (page, nom) => page.evaluate(nom => { const d = app.dessin; if (
   const insp = vu('inspecteur') || vu('fiche'), base = vu('base'), fol = vu('folios'), rail = vu('rail');
   if (insp) { if (tel) B = Math.min(B, insp.top); else R = Math.min(R, insp.left); } if (base) B = Math.min(B, base.top); if (fol) B = Math.min(B, fol.top); if (rail) { if (tel) B = Math.min(B, rail.top); else L = Math.max(L, rail.right); }
   const dedans = X0 >= L - 1 && X1 <= R + 1 && Y0 >= T - 1 && Y1 <= B + 1, visible = X1 > L && X0 < R && Y1 > T && Y0 < B;
-  return { dedans, visible, w: Math.round(X1 - X0), h: Math.round(Y1 - Y0), detail: `bloc ${Math.round(X0)}–${Math.round(X1)} × ${Math.round(Y0)}–${Math.round(Y1)}, place libre ${Math.round(L)}–${Math.round(R)} × ${Math.round(T)}–${Math.round(B)}` }; }, nom);
+  // un bloc plus haut que la place (un calculateur au téléphone) : cadré sur sa largeur, son haut (le repère) dans la place
+  const parLeHaut = !dedans && X0 >= L - 1 && X1 <= R + 1 && Y0 >= T - 1 && Y0 < B - 24 && (Y1 - Y0) > (B - T);
+  return { dedans, parLeHaut, visible, w: Math.round(X1 - X0), h: Math.round(Y1 - Y0), detail: `bloc ${Math.round(X0)}–${Math.round(X1)} × ${Math.round(Y0)}–${Math.round(Y1)}, place libre ${Math.round(L)}–${Math.round(R)} × ${Math.round(T)}–${Math.round(B)}` }; }, nom);
 /* La barre des folios : combien de puces, combien entières dans la bande, combien se recouvrent, la bande défile-t-elle ? */
 const barreFolios = page => page.evaluate(() => { const s = $('fo-strip'), puces = [...s.querySelectorAll('.chip')], cs = puces.map(c => c.getBoundingClientRect()), r = s.getBoundingClientRect();
   const visibles = cs.filter(c => c.left >= r.left - 1 && c.right <= r.right + 1).length, large = Math.round(cs.reduce((n, c) => n + c.width, 0));
@@ -480,7 +482,7 @@ function baseEssaiDansLaPage() {
     await tous(['#ba-equip .co-item', '#ix-plus', '#ix-q'], 'dans l’index : une ligne, « + », le filtre'); await capture(page, 'D-7-index');
     await page.locator('#ba-equip .co-item', { hasText: '300XC1' }).click(); await page.waitForFunction(() => app.cible && app.cible.nom === '300XC1'); await page.waitForTimeout(500);
     e = await etat(page); const cad3 = await cadrage(page, '300XC1');
-    ok(e.plan === '3' && e.cible === '300XC1' && cad3.dedans, '« 300XC1 » → folio 3, sa fiche, le bloc cadré au-dessus du tiroir', cad3.detail);
+    ok(e.plan === '3' && e.cible === '300XC1' && (cad3.dedans || (cad3.parLeHaut && cad3.w >= 80)), '« 300XC1 » → folio 3, sa fiche, le bloc cadré au-dessus du tiroir (un bloc plus haut que la place : sur sa largeur, lisible, par le haut)', cad3.detail);
     frottement(cad3.w >= 80, 'au téléphone, « aller à un bloc » montre la feuille entière en vignette', `le calculateur 300XC1 visé fait ${cad3.w} × ${cad3.h} px à l’écran : son repère ne se lit pas, ses bornes encore moins (le cadrage veut faire tenir toute la hauteur du bloc dans les ${cad3.detail.replace(/.*place libre /, '')})`,
       'gênant', '08-interface.js `centrerSur` : au téléphone, cadrer sur la largeur du bloc et garantir une échelle lisible (le repère ≥ 100 px), quitte à ne montrer qu’une partie d’un bloc haut — on fait défiler au doigt');
     await capture(page, 'D-8-300XC1');

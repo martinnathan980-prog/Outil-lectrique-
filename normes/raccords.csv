@@ -1,6 +1,6 @@
 Raccords — ce qui englobe un connecteur, d'après le tutoriel Raccords de l'Excel du lecteur (octobre 2026), complété par la recherche d'octobre 2026 (Glenair série 36, HellermannTyton, Airbus Helicopters via Aeroval, EN 3660, VG 95343). Sept pas : 1 le matériau (nickelage alu, cadmiage vert olive, passivation acier inox, anodisation alu noir), 2 le diamètre du toron (compter une petite marge, 10 %), 3 le connecteur (sa famille donne le filetage d'accessoire, sa taille de boîtier le raccord), 4 le raccord (EN 3660 : style A = serre-câble ou tyrap, J = étanche pour manchon, K = blindé étanche pour manchon « durci », C = blindé à cône) — SIMPLE droit souvent dans une boîte, TYRAP quand pas de reprise de blindage, SERRE-CÂBLE pour une reprise de blindage par cosse (au plus 4 cosses, 2 par vis) et seulement si la place interdit un raccord durci, DURCI par défaut, POUR MANCHON droit si pas de reprise de blindage et zone étanche ; « l'EN 3645 s'utilise sans raccord » est une règle d'atelier du lecteur (l'EN 3660-020 existe pour l'EN 3645), 5 la gaine : « HFA » DHS754-160 est en réalité une TRESSE CUIVRE ÉTAMÉ (un surblindage, repris par le band-it sur un raccord blindé), la Nomex EN 6049-003 une gaine textile expansible (une plage de toron, pas un Ø intérieur), 6 le manchon thermorétractable (VG 95343 T06 droit à lèvre, T18 précollé ; Raychem 202K) si étanchéité requise : Ha > C > Hb côté raccord, Ja > D > Jb côté toron, 7 le collier band-it (E0805), en métal, qui tient la tresse de blindage seulement si elle est reprise sur le corps du connecteur, et n'implique pas forcément un manchon.
-La table de décision (reprise de blindage × étanchéité × gaine) est dans l'outil (09 ter, regleRaccord) : GND → durci + band-it, + manchon si étanche. BLI → étanche et gaine : durci + band-it + manchon, étanche sans gaine : durci + manchon, pas étanche avec gaine : durci + band-it, ni l'un ni l'autre : serre-câble. NO et CONTACT → étanche et gaine : durci + band-it + manchon, étanche sans gaine : droit = pour manchon + manchon, coudé = durci + manchon, pas étanche avec gaine : durci + band-it, ni l'un ni l'autre : tyrap.
-Les références des raccords (table Raccords) portent la norme EN 3660 du style, pas encore la désignation complète par taille : statut « à confirmer » tant que le lecteur n'a pas donné son catalogue ; les cotes B, C, D restent vides.
+La table de décision (reprise de blindage × étanchéité × gaine) est dans l'outil (09 ter, regleRaccord), corrigée en octobre 2026 (recherche R4) : ce qui compte dans la gaine, c'est son RÔLE — une tresse de SURBLINDAGE (HFA DHS754-160, EN 6049-008, EN 4674) demande un raccord blindé (durci, style K) et un band-it, obligatoires ; une gaine de PROTECTION (Nomex EN 6049-003/-004) ne demande rien de plus : elle finit sous le manchon ou par un collier sur le corps du raccord. GND (tresse reprise sur le corps) → durci + band-it, + manchon si étanche. NO, CONTACT (reprise sur un contact) et BLI (reprise par cosse) → surblindage : durci + band-it (+ manchon si étanche) ; étanche sans surblindage : droit = pour manchon + manchon, coudé = durci + manchon ; ni surblindage ni étanchéité : tyrap (NO, CONTACT) ou serre-câble (BLI : les cosses sous ses deux vis, au plus 4). L'étanchéité demande un manchon précollé (T18/T19), ou un T06 collé (VG 95343 T15, V9500).
+La référence d'un raccord EN 3660 se CONSTRUIT (09 ter, habillage) : la partie (EN3660-064…), la classe (lue dans le part number du connecteur par la table Classes : W cadmium ↔ W, nickel ↔ N, inox ↔ K ; N sinon), la taille du boîtier (lue dans le part number par la table Filetages), le code de longueur de chambre <L> (A par défaut, à demander au lecteur) et le code d'entrée <E> que le toron choisit dans la table Entrées EN 3660 (borné au code maximal de la taille : sinon « toron trop gros pour ce boîtier »). La cote C du manchon est le ØCC du code d'entrée retenu ; le band-it serre la tresse sur le ØBB.
 
 Gaines — ce qui habille le toron, par famille et référence. Rôle : surblindage (tresse cuivre étamé DHS754-160, Airbus Helicopters : Dint = Ø intérieur nominal, Dext = Ø extérieur ; le toron doit passer dans Dint) ou protection (Nomex EN 6049-003, hydrofuge EN 6049-004 : une tresse expansible qui habille un toron de Dmin à Dmax, HellermannTyton HEGMAN ; masses du lecteur, celles de HellermannTyton en note). On retient la gaine dont la plage encadre le toron (+ 10 %), le toron le plus près du milieu de la plage ; pour un surblindage, la plus petite dont l'intérieur passe le toron.
 Famille;Référence;Rôle;Dmin;Dmax;Dint;Dext;Masse;Note
@@ -30,16 +30,25 @@ NOMEX-WO;EN6049-004-20;protection;12;24;;;22;hydrofuge
 NOMEX-WO;EN6049-004-25;protection;15;30;;;32,5;hydrofuge
 NOMEX-WO;EN6049-004-30;protection;20;40;;;38;hydrofuge
 
-Colliers — le band-it E0805 (Airbus Helicopters : -01 « CLAMP » préformé, -02 « METALLIC CLAMPING STRIP » bande à couper ; le seuil de 15 mm est celui du tutoriel, à confirmer ; outil BAND-IT 600-058, serrage 150 lb pour une reprise de blindage) et les tyraps NSA 935401 (HellermannTyton, polyamide 6.6 ; dimensions vérifiées pour -05, -06, -13 ; les autres existent sans dimensions publiées)
-Référence;Type;Largeur;Longueur;Dmin;Dmax;Tenue;Température;Note
-E0805-01;band-it;;;;15;;;collier préformé — toron de moins de 15 mm
-E0805-02;band-it;;;15;;;;bande métallique à couper — toron de plus de 15 mm
-NSA935401-03;tyrap;;;;;;;existe (Boeing, Octopart), dimensions à donner
-NSA935401-04;tyrap;;;;;;;existe (Boeing, Bisco), dimensions à donner
-NSA935401-05;tyrap;;305;;50;225 N;105;polyamide noir (Arrow)
-NSA935401-06;tyrap;4,6;300;;;;;noir ou naturel (Aviatec)
-NSA935401-12;tyrap;;;;;;;existe (Proponent), dimensions à donner
-NSA935401-13;tyrap;3,5;290;;;;;« wrap strap », crantage intérieur (Boeing)
+Colliers — ce qui serre une tresse ou un toron : les band-it E0805 d'Airbus Helicopters (le tutoriel : -01 « CLAMP » préformé jusqu'à 15 mm, -02 « METALLIC CLAMPING STRIP » au-delà ; dimensions non publiées), les bandes de reprise de blindage EN 3660-033 (style Z, inox 300 passivé : variante A standard 6,22 mm, C micro 2,92 mm, D micro longue ; F plate, C préformée ; dessin TE P42936, 2020) et Glenair 600-0xx (BAND-IT ; double tour, tresse sur la plateforme ≥ 10,2 mm, outil réglé à 150 lb pour une reprise de blindage, 75 lb la micro-bande), et les tyraps NSA935401 (HellermannTyton, polyamide 6.6 : -03 ≈ T18R, -05 ≈ T50R ; jamais au-dessus de 120 °C, ni en zone SWAMP, ni en forte vibration : AC 43.13-1B § 11-158). Longueur = cote plate ; Dmax = Ø serré en double tour (bandes) ou toron maximal (tyraps). Octobre 2026 (recherche R2 et R4).
+Référence;Type;Largeur;Épaisseur;Longueur;Boucle;Dmin;Dmax;Masse;Outil;Tension;Note
+E0805-01;band-it préformé;;;;;;15;;;;collier préformé — toron de moins de 15 mm
+E0805-02;band-it bande à couper;;;;;15;;;;;bande métallique à couper — toron de plus de 15 mm
+EN3660-033AF;bande standard plate;6,22;0,48;360,42;8,89;;47,8;10,6;M81306/1-01;;EN3660-033AC = préformée (cote B 363,47) – sachet de 100 – TE vend EN3660-033AF
+EN3660-033CF;micro-bande plate;2,92;0,38;204,72;4,95;;22,4;2,5;M81306/1-02;;EN3660-033CC = préformée (207,77)
+EN3660-033DF;micro-bande longue plate;2,92;0,38;360,42;4,95;;47,8;4,25;M81306/1-02;;EN3660-033DC = préformée
+600-052;bande standard plate (Glenair);6,1;0,5;362,1;;;45,7;;600-058 (main) / 600-067 (pneumatique);150 lb ± 5 (reprise de blindage, outil 600-058, plage 100-180 lb);600-052-1 préformée – BAND-IT A10086 – inox 300 passivé AMS 2700
+600-090;bande standard longue (Glenair);6,1;0,5;457,2;;;63,5;;600-058 / 600-067;150 lb ± 5;600-090-1 préformée – BAND-IT A11086
+600-057;micro-bande (Glenair);3,0;0,4;206,4;;;22,4;;600-061 / 600-068;75 lb (plage 50-85);600-057-1 préformée – BAND-IT A31186
+600-083;micro-bande longue (Glenair);3,0;0,4;362,0;;;47,8;;600-061 / 600-068;75 lb;600-083-1 préformée – BAND-IT A31089
+NSA935401-03;tyrap;2,5;;100;;;22;;;;tenue 80 N – ≈ T18R (111-01909) – PA 6.6 noir
+NSA935401-04;tyrap;;;;;;35;;;;tenue 225 N – PA 6.6 noir (Octopart) – −04B existe (Boeing)
+NSA935401-05;tyrap;4,6;;305;;;50;;;;tenue 225 N – température -40 à 105 °C – ≈ T50R (111-01262) – PA 6.6 noir (Arrow)
+NSA935401-06;tyrap;4,6;;300;;;;;;;noir ou naturel (Aviatec) – Boeing : nylon
+NSA935401-08;tyrap;;;;;;;;;;noir (Aviatec), dimensions à donner
+NSA935401-10;tyrap;;;;;;;;;;PA66HS noir (Aviatec), dimensions à donner
+NSA935401-12;tyrap;;;;;;;;;;existe (Proponent), dimensions à donner
+NSA935401-13;tyrap;3,5;;290;;;;;;;« wrap strap », crantage intérieur, PA 6.6 noir (Boeing)
 
 Filetages — le filetage d'accessoire arrière et la lettre de taille, par famille de connecteur et taille de boîtier (Glenair AS85049/18 et 360A*001 ; EN 2997 et EN 3646 partagent le désignateur A de la famille MIL-DTL-26482 II / 83723 III ; EN 3645 = famille MIL-DTL-38999 III, lettres A à J). Dmax boîtier : le Ø B maximal du boîtier (Glenair), à confirmer dans l'EN 2997-001 / EN 3646-001.
 Famille;Taille;Lettre;Filetage;Dmax boîtier;Note
@@ -72,42 +81,209 @@ EN3646;20;;1,1875-18 UNEF;34,5;
 EN3646;22;;1,3125-18 UNEF;37,6;
 EN3646;24;;1,4375-18 UNEF;43,9;
 
-Entrées — le code d'entrée de câble d'un raccord à serre-câble et sa plage de toron (Glenair 360A*001, 2022 : la « cable range », une plage d'accommodation, pas un critère de contrôle), et les tailles de boîtier qui l'admettent sans adaptateur (la cote A du tutoriel)
-Code;Dmin;Dmax;Tailles min;Tailles max;Note
-03;3,2;6,4;08;40;
-04;3,2;7,9;10;40;
-06;6,4;11,1;12;40;
-08;7,9;14,3;14;40;
-10;8,9;15,9;16;40;
-12;12,7;19,1;18;40;
-16;15,9;23,8;22;40;
-20;22,2;31,8;28;40;
-24;25,4;34,9;28;40;
-28;31,8;41,3;32;40;
-32;36,5;47,6;40;40;
+Classes — la classe (matériau et fini) d'un connecteur, lue dans son part number juste après le nom de la famille (EN2997 SE 6 28 42 F N → SE ; EN3645 F 0 C N 26 M N → F ; EN3646 A 6 08 3A A N → A : rapport R3, § 1.1 à 1.3), et la lettre de classe EN 3660-001 du raccord qui va avec — le fini du raccord suit celui du connecteur (Glenair : « always use exact or nearly exact material finishes ») : cadmium ↔ W, nickel ↔ N (TE/Polamco écrit F : à confirmer avec l'approvisionnement du lecteur), inox ↔ K, zinc-nickel ↔ Z, jamais A (anodisé noir, non conducteur) pour une reprise de blindage. Sans classe lisible dans le part number : N. Température : celle du connecteur (°C).
+Famille;Classe;Matériau;Fini;Raccord;Température;Note
+EN2997;A;alu;anodisé noir;N;200;non conducteur : le raccord prend le nickel (jamais la classe A d'un raccord)
+EN2997;W;alu;cadmium vert olive;W;175;
+EN2997;WS;alu;cadmium vert olive;W;175;S = ressort de masse (RFI)
+EN2997;R;alu;nickel;N;200;
+EN2997;RS;alu;nickel;N;200;ressort de masse
+EN2997;K;inox;passivé;K;200;
+EN2997;S;inox;passivé;K;200;K + ressort de masse
+EN2997;KE;inox;passivé;K;260;haute température, coupe-feu
+EN2997;SE;inox;passivé;K;260;KE + ressort de masse
+EN2997;Y;inox;hermétique;K;200;
+EN2997;YE;inox;hermétique;K;260;haute température
+EN3646;A;alu;anodisé (déduit de l'EN 2997);N;200;sans ressort de masse (brochure Souriau)
+EN3646;W;alu;cadmium vert olive;W;175;déduit de l'EN 2997
+EN3646;WS;alu;cadmium vert olive;W;175;avec ressort de masse (brochure Souriau)
+EN3646;R;alu;nickel;N;200;déduit de l'EN 2997
+EN3646;RS;alu;nickel;N;200;brochure Souriau
+EN3646;K;inox;passivé;K;200;déduit de l'EN 2997
+EN3646;S;inox;passivé;K;200;déduit de l'EN 2997
+EN3646;KE;inox;passivé;K;260;déduit de l'EN 2997
+EN3646;SE;inox;passivé;K;260;déduit de l'EN 2997
+EN3646;Y;inox;hermétique;K;200;brochure Souriau
+EN3645;F;alu;nickel;N;200;TE/Polamco écrit aussi F pour le raccord alu nickel
+EN3645;W;alu;cadmium vert olive;W;175;
+EN3645;M;composite;nickel;N;200;
+EN3645;J;composite;cadmium vert olive;W;175;
+EN3645;K;inox;passivé;K;200;
+EN3645;Z;alu;zinc-nickel noir;Z;175;de mémoire (rapport R3)
 
-Raccords — la référence d'un raccord arrière selon la famille du connecteur, la taille du boîtier (vide : toutes), le type du tutoriel (durci = style K blindé étanche pour manchon ; pour manchon = style J ; serre-câble = style A à clamp ; tyrap = style A à cable tie), l'orientation, la norme EN 3660 du style, le matériau et le fini, les cotes A (toron min/max), B (gaine), C (plateforme du manchon), D (sortie), la masse, la référence complète. Statut : « à confirmer » tant que la désignation complète (EN 3660-0xx + taille + fini) n'est pas donnée par le lecteur.
-Famille;Taille;Type;Orientation;Norme raccord;Matériau;Fini;Amin;Amax;B;C;D;Masse;Référence;Statut
-EN3645;;durci;droit;EN3660-064 (ou -010, -031);alu;nickel;;;;;;;;à confirmer
-EN3645;;durci;coudé;EN3660-065 (ou -011, -035, -066);alu;nickel;;;;;;;;à confirmer
-EN3645;;pour manchon;droit;EN3660-009;alu;nickel;;;;;;;;à confirmer
-EN3645;;serre-câble;droit;EN3660-020;alu;nickel;;;;;;;;à confirmer
-EN3645;;tyrap;droit;EN3660-022 (composite) ou -013;composite;nickel;;;;;;;;à confirmer
-EN3645;;tyrap;coudé;EN3660-023 (composite) ou -014;composite;nickel;;;;;;;;à confirmer
-EN2997;;durci;droit;EN3660-064;alu;nickel;;;;;;;;à confirmer
-EN2997;;durci;coudé;EN3660-062 ou -065;alu;nickel;;;;;;;;à confirmer
-EN2997;;pour manchon;droit;EN3660-009;alu;nickel;;;;;;;;à confirmer
-EN2997;;serre-câble;droit;EN3660-004;alu;nickel;;;;;;;;à confirmer
-EN2997;;serre-câble;coudé;EN3660-005;alu;nickel;;;;;;;;à confirmer
-EN2997;;tyrap;droit;EN3660-013;alu;nickel;;;;;;;;à confirmer
-EN2997;;tyrap;coudé;EN3660-014;alu;nickel;;;;;;;;à confirmer
-EN3646;;durci;droit;EN3660-064;alu;nickel;;;;;;;;à confirmer
-EN3646;;durci;coudé;EN3660-065;alu;nickel;;;;;;;;à confirmer
-EN3646;;pour manchon;droit;EN3660-009;alu;nickel;;;;;;;;à confirmer
-EN3646;;serre-câble;droit;EN3660-004;alu;nickel;;;;;;;;à confirmer
-EN3646;;tyrap;droit;EN3660-025;alu;nickel;;;;;;;;à confirmer
-EN3646;;tyrap;coudé;EN3660-026;alu;nickel;;;;;;;;à confirmer
-EN4165;;cheminée;droit;EN4165-015 (ronde) / -016 (double ovale) / -017 (borgne) + corps EN4165-014;;;;;;;;;;à confirmer
+Entrées — le code d'entrée de câble d'un raccord, par SYSTÈME. « EN 3660 » : les codes lettrés A à M des raccords à bande EN 3660-064 (et, vraisemblablement, -063 et -065 : à confirmer), lus sur le dessin TE/Polamco P20027 (table 4) : ØAA = alésage d'entrée (le toron maximal), ØBB = Ø de la plateforme de bande (le band-it serre la tresse dessus), ØCC = Ø de l'épaulement à lèvre (le manchon vient dessus : la cote C), DD = épaisseur de la lèvre ; Dmin = ØAA du code précédent (règle pratique : le plus petit code qui passe le toron) ; Tailles min = la plus petite taille de boîtier EN 2997 qui admet le code (-064 : 08 → D, 10 → F, 12 → H, 14 → J, 16 et 18 → K, 20 → L, 22 à 28 → M). « Glenair » : les codes 03 à 32 du serre-câble Glenair série 36 (360A*001, 2022 : la « cable range », une plage d'accommodation, pas un critère de contrôle) et les tailles de boîtier qui les admettent sans adaptateur. Le raccord retenu dit le système : une désignation EN 3660 qui attend un code <E> → EN 3660.
+Système;Code;Dmin;Dmax;Tailles min;Tailles max;AA;BB;CC;DD;Note
+EN 3660;A;;4,7;08;28;4,7;7,7;12,2;1,12;
+EN 3660;B;4,7;6,4;08;28;6,4;9,4;14,0;1,12;
+EN 3660;C;6,4;7,9;08;28;7,9;11,0;15,5;1,12;
+EN 3660;D;7,9;9,5;08;28;9,5;12,6;17,1;1,12;
+EN 3660;E;9,5;11,1;10;28;11,1;14,1;18,7;1,12;
+EN 3660;F;11,1;12,7;10;28;12,7;15,7;20,3;1,12;
+EN 3660;G;12,7;15,9;12;28;15,9;18,9;23,5;1,12;
+EN 3660;H;15,9;19,1;12;28;19,1;22,0;26,7;1,12;
+EN 3660;J;19,1;22,2;14;28;22,2;25,2;29,8;1,75;
+EN 3660;K;22,2;25,5;16;28;25,5;28,4;33,0;1,75;
+EN 3660;L;25,5;28,6;20;28;28,6;31,5;36,2;1,75;
+EN 3660;M;28,6;31,8;22;28;31,8;34,7;39,4;1,75;
+Glenair;03;3,2;6,4;08;40;;;;;
+Glenair;04;3,2;7,9;10;40;;;;;
+Glenair;06;6,4;11,1;12;40;;;;;
+Glenair;08;7,9;14,3;14;40;;;;;
+Glenair;10;8,9;15,9;16;40;;;;;
+Glenair;12;12,7;19,1;18;40;;;;;
+Glenair;16;15,9;23,8;22;40;;;;;
+Glenair;20;22,2;31,8;28;40;;;;;
+Glenair;24;25,4;34,9;28;40;;;;;
+Glenair;28;31,8;41,3;32;40;;;;;
+Glenair;32;36,5;47,6;40;40;;;;;
+
+Raccords — la référence d’un raccord arrière par famille de connecteur, taille de boîtier, type du tutoriel (durci = style K blindé étanche pour manchon, auto-freiné – pour manchon = style J – serre-câble = style A à clamp – tyrap = style A à collier) et orientation : la partie EN 3660, le matériau et le fini (classe de l’EN 3660-001 : N alu nickel chimique −65/200 °C, W alu cadmium vert olive −65/175 °C, K inox passivé −65/260 °C, T alu nickel-PTFE, Z alu zinc-nickel noir, A alu anodisé noir non conducteur (−004 seulement) – TE/Polamco écrit F pour alu nickel), les cotes A (toron min/max admis : code d’entrée A… de l’EN 3660, ou plage M du serre-câble), B (Ø de la plateforme de bande ØBB du code d’entrée maximal), C (Ø de l’épaulement à lèvre ØCC du même code : c’est là que vient le manchon), D (vide : la sortie est le toron ou la gaine), la masse (g), la désignation. <E> = le code d’entrée choisi par le toron (table Entrées EN 3660) – <L> = code de longueur de chambre A (27,5 mm) / B (35,5) / C (40,5) / D (50,5) – la lettre de classe (N, W, K, T, Z) suit le fini du connecteur. Sources : TE/Polamco P20027 (EN3660-064, 2018), TE c-2275010 (EN3660-004, 2018), iTeh EN 3660-063/-064:2022, prEN 3660-065:2026, index BSI EN 3660. Statut « vérifié » = cotes lues sur un dessin – « structure » = désignation vérifiée, cotes de cette taille non lues – « déduit » = même filetage, la norme ne nomme pas la famille – « à confirmer » = ni l’un ni l’autre.
+Famille;Taille;Type;Orientation;Norme;Matériau;Fini;Amin;Amax;B;C;D;Masse;Référence;Statut;Note
+EN2997;08;durci;droit;EN3660-064;alu;nickel;4,7;9,5;12,6;17,1;;;EN3660-064N08<L><E>;vérifié (P20027);filetage 0,500-20 UNF – 12 dents – Ø ext. max 22,48 – codes d’entrée A à D – B et C donnés pour le code D (par code : table Entrées EN 3660) – TE écrit la classe F (ex. EN3660-064K08BA, -064W20CE, -064K12BB vendus)
+EN2997;10;durci;droit;EN3660-064;alu;nickel;4,7;12,7;15,7;20,3;;;EN3660-064N10<L><E>;vérifié (P20027);filetage 0,625-24 UNEF – 15 dents – Ø ext. max 25,65 – codes d’entrée A à F – B et C donnés pour le code F (par code : table Entrées EN 3660) – TE écrit la classe F (ex. EN3660-064K08BA, -064W20CE, -064K12BB vendus)
+EN2997;12;durci;droit;EN3660-064;alu;nickel;4,7;19,1;22,0;26,7;;;EN3660-064N12<L><E>;vérifié (P20027);filetage 0,750-20 UNEF – 21 dents – Ø ext. max 28,83 – codes d’entrée A à H – B et C donnés pour le code H (par code : table Entrées EN 3660) – TE écrit la classe F (ex. EN3660-064K08BA, -064W20CE, -064K12BB vendus)
+EN2997;14;durci;droit;EN3660-064;alu;nickel;4,7;22,2;25,2;29,8;;;EN3660-064N14<L><E>;vérifié (P20027);filetage 0,875-20 UNEF – 24 dents – Ø ext. max 32,0 – codes d’entrée A à J – B et C donnés pour le code J (par code : table Entrées EN 3660) – TE écrit la classe F (ex. EN3660-064K08BA, -064W20CE, -064K12BB vendus)
+EN2997;16;durci;droit;EN3660-064;alu;nickel;4,7;25,5;28,4;33,0;;;EN3660-064N16<L><E>;vérifié (P20027);filetage 1,000-20 UNEF – 30 dents – Ø ext. max 35,18 – codes d’entrée A à K – B et C donnés pour le code K (par code : table Entrées EN 3660) – TE écrit la classe F (ex. EN3660-064K08BA, -064W20CE, -064K12BB vendus)
+EN2997;18;durci;droit;EN3660-064;alu;nickel;4,7;25,5;28,4;33,0;;;EN3660-064N18<L><E>;vérifié (P20027);filetage 1,0625-18 UNEF – 33 dents – Ø ext. max 38,55 – codes d’entrée A à K – B et C donnés pour le code K (par code : table Entrées EN 3660) – TE écrit la classe F (ex. EN3660-064K08BA, -064W20CE, -064K12BB vendus)
+EN2997;20;durci;droit;EN3660-064;alu;nickel;4,7;28,6;31,5;36,2;;;EN3660-064N20<L><E>;vérifié (P20027);filetage 1,1875-18 UNEF – 36 dents – Ø ext. max 41,53 – codes d’entrée A à L – B et C donnés pour le code L (par code : table Entrées EN 3660) – TE écrit la classe F (ex. EN3660-064K08BA, -064W20CE, -064K12BB vendus)
+EN2997;22;durci;droit;EN3660-064;alu;nickel;4,7;31,8;34,7;39,4;;;EN3660-064N22<L><E>;vérifié (P20027);filetage 1,3125-18 UNEF – 39 dents – Ø ext. max 44,7 – codes d’entrée A à M – B et C donnés pour le code M (par code : table Entrées EN 3660) – TE écrit la classe F (ex. EN3660-064K08BA, -064W20CE, -064K12BB vendus)
+EN2997;24;durci;droit;EN3660-064;alu;nickel;4,7;31,8;34,7;39,4;;;EN3660-064N24<L><E>;vérifié (P20027);filetage 1,4375-18 UNEF – 42 dents – Ø ext. max 47,89 – codes d’entrée A à M – B et C donnés pour le code M (par code : table Entrées EN 3660) – TE écrit la classe F (ex. EN3660-064K08BA, -064W20CE, -064K12BB vendus)
+EN2997;28;durci;droit;EN3660-064;alu;nickel;4,7;31,8;34,7;39,4;;;EN3660-064N28<L><E>;vérifié (P20027);filetage 1,750-18 UNS – 54 dents – Ø ext. max 54,23 – codes d’entrée A à M – B et C donnés pour le code M (par code : table Entrées EN 3660) – TE écrit la classe F (ex. EN3660-064K08BA, -064W20CE, -064K12BB vendus)
+EN2997;08;durci;coudé;EN3660-065;alu;nickel;4,7;;;;;;EN3660-065N08<E>;structure;90°, auto-freiné – filetage 0,500-20 UNF – codes d’entrée A à M, le maximum par taille non lu – pas de code de longueur (ex. vendus EN3660-065F10D, -065W14C, -065W14A, -065W10B) – masse taille 08 : 15,3 à 17,8 g (N/T/W/Z), 38,9 à 50,7 g (K) (prEN 3660-065:2026)
+EN2997;10;durci;coudé;EN3660-065;alu;nickel;4,7;;;;;;EN3660-065N10<E>;structure;90°, auto-freiné – filetage 0,625-24 UNEF – codes d’entrée A à M, le maximum par taille non lu – pas de code de longueur (ex. vendus EN3660-065F10D, -065W14C, -065W14A, -065W10B) – masse taille 08 : 15,3 à 17,8 g (N/T/W/Z), 38,9 à 50,7 g (K) (prEN 3660-065:2026)
+EN2997;12;durci;coudé;EN3660-065;alu;nickel;4,7;;;;;;EN3660-065N12<E>;structure;90°, auto-freiné – filetage 0,750-20 UNEF – codes d’entrée A à M, le maximum par taille non lu – pas de code de longueur (ex. vendus EN3660-065F10D, -065W14C, -065W14A, -065W10B) – masse taille 08 : 15,3 à 17,8 g (N/T/W/Z), 38,9 à 50,7 g (K) (prEN 3660-065:2026)
+EN2997;14;durci;coudé;EN3660-065;alu;nickel;4,7;;;;;;EN3660-065N14<E>;structure;90°, auto-freiné – filetage 0,875-20 UNEF – codes d’entrée A à M, le maximum par taille non lu – pas de code de longueur (ex. vendus EN3660-065F10D, -065W14C, -065W14A, -065W10B) – masse taille 08 : 15,3 à 17,8 g (N/T/W/Z), 38,9 à 50,7 g (K) (prEN 3660-065:2026)
+EN2997;16;durci;coudé;EN3660-065;alu;nickel;4,7;;;;;;EN3660-065N16<E>;structure;90°, auto-freiné – filetage 1,000-20 UNEF – codes d’entrée A à M, le maximum par taille non lu – pas de code de longueur (ex. vendus EN3660-065F10D, -065W14C, -065W14A, -065W10B) – masse taille 08 : 15,3 à 17,8 g (N/T/W/Z), 38,9 à 50,7 g (K) (prEN 3660-065:2026)
+EN2997;18;durci;coudé;EN3660-065;alu;nickel;4,7;;;;;;EN3660-065N18<E>;structure;90°, auto-freiné – filetage 1,0625-18 UNEF – codes d’entrée A à M, le maximum par taille non lu – pas de code de longueur (ex. vendus EN3660-065F10D, -065W14C, -065W14A, -065W10B) – masse taille 08 : 15,3 à 17,8 g (N/T/W/Z), 38,9 à 50,7 g (K) (prEN 3660-065:2026)
+EN2997;20;durci;coudé;EN3660-065;alu;nickel;4,7;;;;;;EN3660-065N20<E>;structure;90°, auto-freiné – filetage 1,1875-18 UNEF – codes d’entrée A à M, le maximum par taille non lu – pas de code de longueur (ex. vendus EN3660-065F10D, -065W14C, -065W14A, -065W10B) – masse taille 08 : 15,3 à 17,8 g (N/T/W/Z), 38,9 à 50,7 g (K) (prEN 3660-065:2026)
+EN2997;22;durci;coudé;EN3660-065;alu;nickel;4,7;;;;;;EN3660-065N22<E>;structure;90°, auto-freiné – filetage 1,3125-18 UNEF – codes d’entrée A à M, le maximum par taille non lu – pas de code de longueur (ex. vendus EN3660-065F10D, -065W14C, -065W14A, -065W10B) – masse taille 08 : 15,3 à 17,8 g (N/T/W/Z), 38,9 à 50,7 g (K) (prEN 3660-065:2026)
+EN2997;24;durci;coudé;EN3660-065;alu;nickel;4,7;;;;;;EN3660-065N24<E>;structure;90°, auto-freiné – filetage 1,4375-18 UNEF – codes d’entrée A à M, le maximum par taille non lu – pas de code de longueur (ex. vendus EN3660-065F10D, -065W14C, -065W14A, -065W10B) – masse taille 08 : 15,3 à 17,8 g (N/T/W/Z), 38,9 à 50,7 g (K) (prEN 3660-065:2026)
+EN2997;28;durci;coudé;EN3660-065;alu;nickel;4,7;;;;;;EN3660-065N28<E>;structure;90°, auto-freiné – filetage 1,750-18 UNS – codes d’entrée A à M, le maximum par taille non lu – pas de code de longueur (ex. vendus EN3660-065F10D, -065W14C, -065W14A, -065W10B) – masse taille 08 : 15,3 à 17,8 g (N/T/W/Z), 38,9 à 50,7 g (K) (prEN 3660-065:2026)
+EN2997;08;serre-câble;droit;EN3660-004;alu;nickel;3,2;5,2;;;;10,16;EN3660-004N08A;vérifié (c-2275010);non étanche, non blindé – filetage 0,500-20 UNF – Amin/Amax = ouverture M du serre-câble (dessin TE c-2275010, lu comme plage de toron) – 2 vis 6-32 UNC (au plus 4 cosses, 2 par vis) – classes A (anodisé noir), W, N sur le dessin TE, + K, T, Z dans l’EN 3660-004:2023 – Souriau vend EN3660-004K08A, -004K20A
+EN2997;08;serre-câble;coudé;EN3660-005;alu;nickel;;;;;;;EN3660-005N08A;à confirmer;90°, serre-câble, non étanche – même filetage – dessin non lu (suffixe A supposé comme le −004)
+EN2997;10;serre-câble;droit;EN3660-004;alu;nickel;4,8;7,3;;;;13,73;EN3660-004N10A;vérifié (c-2275010);non étanche, non blindé – filetage 0,625-24 UNEF – Amin/Amax = ouverture M du serre-câble (dessin TE c-2275010, lu comme plage de toron) – 2 vis 6-32 UNC (au plus 4 cosses, 2 par vis) – classes A (anodisé noir), W, N sur le dessin TE, + K, T, Z dans l’EN 3660-004:2023 – Souriau vend EN3660-004K08A, -004K20A
+EN2997;10;serre-câble;coudé;EN3660-005;alu;nickel;;;;;;;EN3660-005N10A;à confirmer;90°, serre-câble, non étanche – même filetage – dessin non lu (suffixe A supposé comme le −004)
+EN2997;12;serre-câble;droit;EN3660-004;alu;nickel;7,4;9,8;;;;15,09;EN3660-004N12A;vérifié (c-2275010);non étanche, non blindé – filetage 0,750-20 UNEF – Amin/Amax = ouverture M du serre-câble (dessin TE c-2275010, lu comme plage de toron) – 2 vis 6-32 UNC (au plus 4 cosses, 2 par vis) – classes A (anodisé noir), W, N sur le dessin TE, + K, T, Z dans l’EN 3660-004:2023 – Souriau vend EN3660-004K08A, -004K20A
+EN2997;12;serre-câble;coudé;EN3660-005;alu;nickel;;;;;;;EN3660-005N12A;à confirmer;90°, serre-câble, non étanche – même filetage – dessin non lu (suffixe A supposé comme le −004)
+EN2997;14;serre-câble;droit;EN3660-004;alu;nickel;9,0;11,3;;;;17,62;EN3660-004N14A;vérifié (c-2275010);non étanche, non blindé – filetage 0,875-20 UNEF – Amin/Amax = ouverture M du serre-câble (dessin TE c-2275010, lu comme plage de toron) – 2 vis 6-32 UNC (au plus 4 cosses, 2 par vis) – classes A (anodisé noir), W, N sur le dessin TE, + K, T, Z dans l’EN 3660-004:2023 – Souriau vend EN3660-004K08A, -004K20A
+EN2997;14;serre-câble;coudé;EN3660-005;alu;nickel;;;;;;;EN3660-005N14A;à confirmer;90°, serre-câble, non étanche – même filetage – dessin non lu (suffixe A supposé comme le −004)
+EN2997;16;serre-câble;droit;EN3660-004;alu;nickel;12,8;15,1;;;;21,25;EN3660-004N16A;vérifié (c-2275010);non étanche, non blindé – filetage 1,000-20 UNEF – Amin/Amax = ouverture M du serre-câble (dessin TE c-2275010, lu comme plage de toron) – 2 vis 6-32 UNC (au plus 4 cosses, 2 par vis) – classes A (anodisé noir), W, N sur le dessin TE, + K, T, Z dans l’EN 3660-004:2023 – Souriau vend EN3660-004K08A, -004K20A
+EN2997;16;serre-câble;coudé;EN3660-005;alu;nickel;;;;;;;EN3660-005N16A;à confirmer;90°, serre-câble, non étanche – même filetage – dessin non lu (suffixe A supposé comme le −004)
+EN2997;18;serre-câble;droit;EN3660-004;alu;nickel;13,2;16,3;;;;27,48;EN3660-004N18A;vérifié (c-2275010);non étanche, non blindé – filetage 1,0625-18 UNEF – Amin/Amax = ouverture M du serre-câble (dessin TE c-2275010, lu comme plage de toron) – 2 vis 8-32 UNC (au plus 4 cosses, 2 par vis) – classes A (anodisé noir), W, N sur le dessin TE, + K, T, Z dans l’EN 3660-004:2023 – Souriau vend EN3660-004K08A, -004K20A
+EN2997;18;serre-câble;coudé;EN3660-005;alu;nickel;;;;;;;EN3660-005N18A;à confirmer;90°, serre-câble, non étanche – même filetage – dessin non lu (suffixe A supposé comme le −004)
+EN2997;20;serre-câble;droit;EN3660-004;alu;nickel;15,0;17,9;;;;31,42;EN3660-004N20A;vérifié (c-2275010);non étanche, non blindé – filetage 1,1875-18 UNEF – Amin/Amax = ouverture M du serre-câble (dessin TE c-2275010, lu comme plage de toron) – 2 vis 8-32 UNC (au plus 4 cosses, 2 par vis) – classes A (anodisé noir), W, N sur le dessin TE, + K, T, Z dans l’EN 3660-004:2023 – Souriau vend EN3660-004K08A, -004K20A
+EN2997;20;serre-câble;coudé;EN3660-005;alu;nickel;;;;;;;EN3660-005N20A;à confirmer;90°, serre-câble, non étanche – même filetage – dessin non lu (suffixe A supposé comme le −004)
+EN2997;22;serre-câble;droit;EN3660-004;alu;nickel;16,3;19,5;;;;33,86;EN3660-004N22A;vérifié (c-2275010);non étanche, non blindé – filetage 1,3125-18 UNEF – Amin/Amax = ouverture M du serre-câble (dessin TE c-2275010, lu comme plage de toron) – 2 vis 8-32 UNC (au plus 4 cosses, 2 par vis) – classes A (anodisé noir), W, N sur le dessin TE, + K, T, Z dans l’EN 3660-004:2023 – Souriau vend EN3660-004K08A, -004K20A
+EN2997;22;serre-câble;coudé;EN3660-005;alu;nickel;;;;;;;EN3660-005N22A;à confirmer;90°, serre-câble, non étanche – même filetage – dessin non lu (suffixe A supposé comme le −004)
+EN2997;24;serre-câble;droit;EN3660-004;alu;nickel;18,0;20,3;;;;38,17;EN3660-004N24A;vérifié (c-2275010);non étanche, non blindé – filetage 1,4375-18 UNEF – Amin/Amax = ouverture M du serre-câble (dessin TE c-2275010, lu comme plage de toron) – 2 vis 8-32 UNC (au plus 4 cosses, 2 par vis) – classes A (anodisé noir), W, N sur le dessin TE, + K, T, Z dans l’EN 3660-004:2023 – Souriau vend EN3660-004K08A, -004K20A
+EN2997;24;serre-câble;coudé;EN3660-005;alu;nickel;;;;;;;EN3660-005N24A;à confirmer;90°, serre-câble, non étanche – même filetage – dessin non lu (suffixe A supposé comme le −004)
+EN2997;28;serre-câble;droit;EN3660-004;alu;nickel;19,0;20,7;;;;62,0;EN3660-004N28A;vérifié (c-2275010);non étanche, non blindé – filetage 1,750-18 UNS – Amin/Amax = ouverture M du serre-câble (dessin TE c-2275010, lu comme plage de toron) – 2 vis 8-32 UNC (au plus 4 cosses, 2 par vis) – classes A (anodisé noir), W, N sur le dessin TE, + K, T, Z dans l’EN 3660-004:2023 – Souriau vend EN3660-004K08A, -004K20A
+EN2997;28;serre-câble;coudé;EN3660-005;alu;nickel;;;;;;;EN3660-005N28A;à confirmer;90°, serre-câble, non étanche – même filetage – dessin non lu (suffixe A supposé comme le −004)
+EN2997;;durci;droit;EN3660-010;alu;nickel;;;;;;;;à confirmer;style K droit sans auto-freinage (l’index EN 3660 ne nomme pas la famille) – variantes −031/−032
+EN2997;;durci;coudé;EN3660-011;alu;nickel;;;;;;;;à confirmer;style K 90° sans auto-freinage – variante −035, −066 (bague à mémoire de forme)
+EN2997;;pour manchon;droit;EN3660-009;alu;nickel;;;;;;;;à confirmer;style J droit étanche non blindé pour manchon : la famille n’est pas nommée dans l’index
+EN2997;;tyrap;droit;EN3660-013;alu;nickel;;;;;;;;à confirmer;style A collier – −013/−014/−015 et −017/−018/−019 existent sans famille nommée dans l’index BSI : demander au lecteur lesquels vont sur l’EN 2997
+EN2997;;tyrap;coudé;EN3660-014;alu;nickel;;;;;;;;à confirmer;90° – −015 = 45°
+EN3645;09;durci;droit;EN3660-063;alu;nickel;4,7;;;;;;EN3660-063N09<L><E>;structure;auto-freiné, pour EN 3645 – filetage M12x1-6H – 12 à 44 dents – codes d’entrée A à M et longueurs A à D (iTeh), le maximum par taille et les ØBB/ØCC non lus (vraisemblablement ceux de la table Entrées EN 3660) – ex. vendus EN3660-063F09BA/BB, -063F13BC/BD/BE, -063K11AB, -063F23BG, -063W19CJ, -063F25BK
+EN3645;09;durci;coudé;EN3660-062;alu;nickel;4,7;;;;;;EN3660-062N09<E>;structure;90°, auto-freiné, pour EN 3645 – ex. vendu EN3660-062F09A – en révision (prEN 3660-062:2025)
+EN3645;09;serre-câble;droit;EN3660-020;alu;nickel;;;;;;;EN3660-020N09;à confirmer;style A droit, auto-freiné, serre-câble, pour EN 3645 – classes N, W, K (−65 à 260 °C) – suffixe de désignation non lu
+EN3645;09;serre-câble;coudé;EN3660-021;alu;nickel;;;;;;;EN3660-021N09;à confirmer;style A 90°, auto-freiné, serre-câble, pour EN 3645
+EN3645;11;durci;droit;EN3660-063;alu;nickel;4,7;;;;;;EN3660-063N11<L><E>;structure;auto-freiné, pour EN 3645 – filetage M15x1-6H – 12 à 44 dents – codes d’entrée A à M et longueurs A à D (iTeh), le maximum par taille et les ØBB/ØCC non lus (vraisemblablement ceux de la table Entrées EN 3660) – ex. vendus EN3660-063F09BA/BB, -063F13BC/BD/BE, -063K11AB, -063F23BG, -063W19CJ, -063F25BK
+EN3645;11;durci;coudé;EN3660-062;alu;nickel;4,7;;;;;;EN3660-062N11<E>;structure;90°, auto-freiné, pour EN 3645 – ex. vendu EN3660-062F09A – en révision (prEN 3660-062:2025)
+EN3645;11;serre-câble;droit;EN3660-020;alu;nickel;;;;;;;EN3660-020N11;à confirmer;style A droit, auto-freiné, serre-câble, pour EN 3645 – classes N, W, K (−65 à 260 °C) – suffixe de désignation non lu
+EN3645;11;serre-câble;coudé;EN3660-021;alu;nickel;;;;;;;EN3660-021N11;à confirmer;style A 90°, auto-freiné, serre-câble, pour EN 3645
+EN3645;13;durci;droit;EN3660-063;alu;nickel;4,7;;;;;;EN3660-063N13<L><E>;structure;auto-freiné, pour EN 3645 – filetage M18x1-6H – 12 à 44 dents – codes d’entrée A à M et longueurs A à D (iTeh), le maximum par taille et les ØBB/ØCC non lus (vraisemblablement ceux de la table Entrées EN 3660) – ex. vendus EN3660-063F09BA/BB, -063F13BC/BD/BE, -063K11AB, -063F23BG, -063W19CJ, -063F25BK
+EN3645;13;durci;coudé;EN3660-062;alu;nickel;4,7;;;;;;EN3660-062N13<E>;structure;90°, auto-freiné, pour EN 3645 – ex. vendu EN3660-062F09A – en révision (prEN 3660-062:2025)
+EN3645;13;serre-câble;droit;EN3660-020;alu;nickel;;;;;;;EN3660-020N13;à confirmer;style A droit, auto-freiné, serre-câble, pour EN 3645 – classes N, W, K (−65 à 260 °C) – suffixe de désignation non lu
+EN3645;13;serre-câble;coudé;EN3660-021;alu;nickel;;;;;;;EN3660-021N13;à confirmer;style A 90°, auto-freiné, serre-câble, pour EN 3645
+EN3645;15;durci;droit;EN3660-063;alu;nickel;4,7;;;;;;EN3660-063N15<L><E>;structure;auto-freiné, pour EN 3645 – filetage M22x1-6H – 12 à 44 dents – codes d’entrée A à M et longueurs A à D (iTeh), le maximum par taille et les ØBB/ØCC non lus (vraisemblablement ceux de la table Entrées EN 3660) – ex. vendus EN3660-063F09BA/BB, -063F13BC/BD/BE, -063K11AB, -063F23BG, -063W19CJ, -063F25BK
+EN3645;15;durci;coudé;EN3660-062;alu;nickel;4,7;;;;;;EN3660-062N15<E>;structure;90°, auto-freiné, pour EN 3645 – ex. vendu EN3660-062F09A – en révision (prEN 3660-062:2025)
+EN3645;15;serre-câble;droit;EN3660-020;alu;nickel;;;;;;;EN3660-020N15;à confirmer;style A droit, auto-freiné, serre-câble, pour EN 3645 – classes N, W, K (−65 à 260 °C) – suffixe de désignation non lu
+EN3645;15;serre-câble;coudé;EN3660-021;alu;nickel;;;;;;;EN3660-021N15;à confirmer;style A 90°, auto-freiné, serre-câble, pour EN 3645
+EN3645;17;durci;droit;EN3660-063;alu;nickel;4,7;;;;;;EN3660-063N17<L><E>;structure;auto-freiné, pour EN 3645 – filetage M25x1-6H – 12 à 44 dents – codes d’entrée A à M et longueurs A à D (iTeh), le maximum par taille et les ØBB/ØCC non lus (vraisemblablement ceux de la table Entrées EN 3660) – ex. vendus EN3660-063F09BA/BB, -063F13BC/BD/BE, -063K11AB, -063F23BG, -063W19CJ, -063F25BK
+EN3645;17;durci;coudé;EN3660-062;alu;nickel;4,7;;;;;;EN3660-062N17<E>;structure;90°, auto-freiné, pour EN 3645 – ex. vendu EN3660-062F09A – en révision (prEN 3660-062:2025)
+EN3645;17;serre-câble;droit;EN3660-020;alu;nickel;;;;;;;EN3660-020N17;à confirmer;style A droit, auto-freiné, serre-câble, pour EN 3645 – classes N, W, K (−65 à 260 °C) – suffixe de désignation non lu
+EN3645;17;serre-câble;coudé;EN3660-021;alu;nickel;;;;;;;EN3660-021N17;à confirmer;style A 90°, auto-freiné, serre-câble, pour EN 3645
+EN3645;19;durci;droit;EN3660-063;alu;nickel;4,7;;;;;;EN3660-063N19<L><E>;structure;auto-freiné, pour EN 3645 – filetage M28x1-6H – 12 à 44 dents – codes d’entrée A à M et longueurs A à D (iTeh), le maximum par taille et les ØBB/ØCC non lus (vraisemblablement ceux de la table Entrées EN 3660) – ex. vendus EN3660-063F09BA/BB, -063F13BC/BD/BE, -063K11AB, -063F23BG, -063W19CJ, -063F25BK
+EN3645;19;durci;coudé;EN3660-062;alu;nickel;4,7;;;;;;EN3660-062N19<E>;structure;90°, auto-freiné, pour EN 3645 – ex. vendu EN3660-062F09A – en révision (prEN 3660-062:2025)
+EN3645;19;serre-câble;droit;EN3660-020;alu;nickel;;;;;;;EN3660-020N19;à confirmer;style A droit, auto-freiné, serre-câble, pour EN 3645 – classes N, W, K (−65 à 260 °C) – suffixe de désignation non lu
+EN3645;19;serre-câble;coudé;EN3660-021;alu;nickel;;;;;;;EN3660-021N19;à confirmer;style A 90°, auto-freiné, serre-câble, pour EN 3645
+EN3645;21;durci;droit;EN3660-063;alu;nickel;4,7;;;;;;EN3660-063N21<L><E>;structure;auto-freiné, pour EN 3645 – filetage M31x1-6H – 12 à 44 dents – codes d’entrée A à M et longueurs A à D (iTeh), le maximum par taille et les ØBB/ØCC non lus (vraisemblablement ceux de la table Entrées EN 3660) – ex. vendus EN3660-063F09BA/BB, -063F13BC/BD/BE, -063K11AB, -063F23BG, -063W19CJ, -063F25BK
+EN3645;21;durci;coudé;EN3660-062;alu;nickel;4,7;;;;;;EN3660-062N21<E>;structure;90°, auto-freiné, pour EN 3645 – ex. vendu EN3660-062F09A – en révision (prEN 3660-062:2025)
+EN3645;21;serre-câble;droit;EN3660-020;alu;nickel;;;;;;;EN3660-020N21;à confirmer;style A droit, auto-freiné, serre-câble, pour EN 3645 – classes N, W, K (−65 à 260 °C) – suffixe de désignation non lu
+EN3645;21;serre-câble;coudé;EN3660-021;alu;nickel;;;;;;;EN3660-021N21;à confirmer;style A 90°, auto-freiné, serre-câble, pour EN 3645
+EN3645;23;durci;droit;EN3660-063;alu;nickel;4,7;;;;;;EN3660-063N23<L><E>;structure;auto-freiné, pour EN 3645 – filetage M34x1-6H – 12 à 44 dents – codes d’entrée A à M et longueurs A à D (iTeh), le maximum par taille et les ØBB/ØCC non lus (vraisemblablement ceux de la table Entrées EN 3660) – ex. vendus EN3660-063F09BA/BB, -063F13BC/BD/BE, -063K11AB, -063F23BG, -063W19CJ, -063F25BK
+EN3645;23;durci;coudé;EN3660-062;alu;nickel;4,7;;;;;;EN3660-062N23<E>;structure;90°, auto-freiné, pour EN 3645 – ex. vendu EN3660-062F09A – en révision (prEN 3660-062:2025)
+EN3645;23;serre-câble;droit;EN3660-020;alu;nickel;;;;;;;EN3660-020N23;à confirmer;style A droit, auto-freiné, serre-câble, pour EN 3645 – classes N, W, K (−65 à 260 °C) – suffixe de désignation non lu
+EN3645;23;serre-câble;coudé;EN3660-021;alu;nickel;;;;;;;EN3660-021N23;à confirmer;style A 90°, auto-freiné, serre-câble, pour EN 3645
+EN3645;25;durci;droit;EN3660-063;alu;nickel;4,7;;;;;;EN3660-063N25<L><E>;structure;auto-freiné, pour EN 3645 – filetage M37x1-6H – 12 à 44 dents – codes d’entrée A à M et longueurs A à D (iTeh), le maximum par taille et les ØBB/ØCC non lus (vraisemblablement ceux de la table Entrées EN 3660) – ex. vendus EN3660-063F09BA/BB, -063F13BC/BD/BE, -063K11AB, -063F23BG, -063W19CJ, -063F25BK
+EN3645;25;durci;coudé;EN3660-062;alu;nickel;4,7;;;;;;EN3660-062N25<E>;structure;90°, auto-freiné, pour EN 3645 – ex. vendu EN3660-062F09A – en révision (prEN 3660-062:2025)
+EN3645;25;serre-câble;droit;EN3660-020;alu;nickel;;;;;;;EN3660-020N25;à confirmer;style A droit, auto-freiné, serre-câble, pour EN 3645 – classes N, W, K (−65 à 260 °C) – suffixe de désignation non lu
+EN3645;25;serre-câble;coudé;EN3660-021;alu;nickel;;;;;;;EN3660-021N25;à confirmer;style A 90°, auto-freiné, serre-câble, pour EN 3645
+EN3645;;pour manchon;droit;EN3660-009;alu;nickel;;;;;;;;à confirmer;style J : famille non nommée
+EN3645;;tyrap;droit;EN3660-022;composite;nickel;;;;;;;;à confirmer;composite, collier – ou −017 (famille non nommée) – Amphenol ABS2216 A xx P/W (droit, tailles 9 à 25) est l’équivalent Airbus
+EN3645;;tyrap;coudé;EN3660-023;composite;nickel;;;;;;;;à confirmer;composite 90° – ou −018 – ABS2216 C xx P/W (90°), B xx (45°)
+EN3646;08;tyrap;droit;EN3660-025;alu;nickel;;;;;;;EN3660-025N08;à confirmer;style A droit, collier, pour EN 3646 – suffixe non lu
+EN3646;08;tyrap;coudé;EN3660-026;alu;nickel;;;;;;;EN3660-026N08;à confirmer;90° – −027 = 45°
+EN3646;10;tyrap;droit;EN3660-025;alu;nickel;;;;;;;EN3660-025N10;à confirmer;style A droit, collier, pour EN 3646 – suffixe non lu
+EN3646;10;tyrap;coudé;EN3660-026;alu;nickel;;;;;;;EN3660-026N10;à confirmer;90° – −027 = 45°
+EN3646;12;tyrap;droit;EN3660-025;alu;nickel;;;;;;;EN3660-025N12;à confirmer;style A droit, collier, pour EN 3646 – suffixe non lu
+EN3646;12;tyrap;coudé;EN3660-026;alu;nickel;;;;;;;EN3660-026N12;à confirmer;90° – −027 = 45°
+EN3646;14;tyrap;droit;EN3660-025;alu;nickel;;;;;;;EN3660-025N14;à confirmer;style A droit, collier, pour EN 3646 – suffixe non lu
+EN3646;14;tyrap;coudé;EN3660-026;alu;nickel;;;;;;;EN3660-026N14;à confirmer;90° – −027 = 45°
+EN3646;16;tyrap;droit;EN3660-025;alu;nickel;;;;;;;EN3660-025N16;à confirmer;style A droit, collier, pour EN 3646 – suffixe non lu
+EN3646;16;tyrap;coudé;EN3660-026;alu;nickel;;;;;;;EN3660-026N16;à confirmer;90° – −027 = 45°
+EN3646;18;tyrap;droit;EN3660-025;alu;nickel;;;;;;;EN3660-025N18;à confirmer;style A droit, collier, pour EN 3646 – suffixe non lu
+EN3646;18;tyrap;coudé;EN3660-026;alu;nickel;;;;;;;EN3660-026N18;à confirmer;90° – −027 = 45°
+EN3646;20;tyrap;droit;EN3660-025;alu;nickel;;;;;;;EN3660-025N20;à confirmer;style A droit, collier, pour EN 3646 – suffixe non lu
+EN3646;20;tyrap;coudé;EN3660-026;alu;nickel;;;;;;;EN3660-026N20;à confirmer;90° – −027 = 45°
+EN3646;22;tyrap;droit;EN3660-025;alu;nickel;;;;;;;EN3660-025N22;à confirmer;style A droit, collier, pour EN 3646 – suffixe non lu
+EN3646;22;tyrap;coudé;EN3660-026;alu;nickel;;;;;;;EN3660-026N22;à confirmer;90° – −027 = 45°
+EN3646;24;tyrap;droit;EN3660-025;alu;nickel;;;;;;;EN3660-025N24;à confirmer;style A droit, collier, pour EN 3646 – suffixe non lu
+EN3646;24;tyrap;coudé;EN3660-026;alu;nickel;;;;;;;EN3660-026N24;à confirmer;90° – −027 = 45°
+EN3646;08;durci;droit;EN3660-064;alu;nickel;4,7;9,5;12,6;17,1;;;EN3660-064N08<L><E>;déduit;filetage 0,500-20 UNF – 12 dents – Ø ext. max 22,48 – codes d’entrée A à D – B et C donnés pour le code D (par code : table Entrées EN 3660) – TE écrit la classe F (ex. EN3660-064K08BA, -064W20CE, -064K12BB vendus) – la norme nomme EN 2997 et EN 4067, pas l’EN 3646 : déduit du filetage commun (Glenair, désignateur A)
+EN3646;10;durci;droit;EN3660-064;alu;nickel;4,7;12,7;15,7;20,3;;;EN3660-064N10<L><E>;déduit;filetage 0,625-24 UNEF – 15 dents – Ø ext. max 25,65 – codes d’entrée A à F – B et C donnés pour le code F (par code : table Entrées EN 3660) – TE écrit la classe F (ex. EN3660-064K08BA, -064W20CE, -064K12BB vendus) – la norme nomme EN 2997 et EN 4067, pas l’EN 3646 : déduit du filetage commun (Glenair, désignateur A)
+EN3646;12;durci;droit;EN3660-064;alu;nickel;4,7;19,1;22,0;26,7;;;EN3660-064N12<L><E>;déduit;filetage 0,750-20 UNEF – 21 dents – Ø ext. max 28,83 – codes d’entrée A à H – B et C donnés pour le code H (par code : table Entrées EN 3660) – TE écrit la classe F (ex. EN3660-064K08BA, -064W20CE, -064K12BB vendus) – la norme nomme EN 2997 et EN 4067, pas l’EN 3646 : déduit du filetage commun (Glenair, désignateur A)
+EN3646;14;durci;droit;EN3660-064;alu;nickel;4,7;22,2;25,2;29,8;;;EN3660-064N14<L><E>;déduit;filetage 0,875-20 UNEF – 24 dents – Ø ext. max 32,0 – codes d’entrée A à J – B et C donnés pour le code J (par code : table Entrées EN 3660) – TE écrit la classe F (ex. EN3660-064K08BA, -064W20CE, -064K12BB vendus) – la norme nomme EN 2997 et EN 4067, pas l’EN 3646 : déduit du filetage commun (Glenair, désignateur A)
+EN3646;16;durci;droit;EN3660-064;alu;nickel;4,7;25,5;28,4;33,0;;;EN3660-064N16<L><E>;déduit;filetage 1,000-20 UNEF – 30 dents – Ø ext. max 35,18 – codes d’entrée A à K – B et C donnés pour le code K (par code : table Entrées EN 3660) – TE écrit la classe F (ex. EN3660-064K08BA, -064W20CE, -064K12BB vendus) – la norme nomme EN 2997 et EN 4067, pas l’EN 3646 : déduit du filetage commun (Glenair, désignateur A)
+EN3646;18;durci;droit;EN3660-064;alu;nickel;4,7;25,5;28,4;33,0;;;EN3660-064N18<L><E>;déduit;filetage 1,0625-18 UNEF – 33 dents – Ø ext. max 38,55 – codes d’entrée A à K – B et C donnés pour le code K (par code : table Entrées EN 3660) – TE écrit la classe F (ex. EN3660-064K08BA, -064W20CE, -064K12BB vendus) – la norme nomme EN 2997 et EN 4067, pas l’EN 3646 : déduit du filetage commun (Glenair, désignateur A)
+EN3646;20;durci;droit;EN3660-064;alu;nickel;4,7;28,6;31,5;36,2;;;EN3660-064N20<L><E>;déduit;filetage 1,1875-18 UNEF – 36 dents – Ø ext. max 41,53 – codes d’entrée A à L – B et C donnés pour le code L (par code : table Entrées EN 3660) – TE écrit la classe F (ex. EN3660-064K08BA, -064W20CE, -064K12BB vendus) – la norme nomme EN 2997 et EN 4067, pas l’EN 3646 : déduit du filetage commun (Glenair, désignateur A)
+EN3646;22;durci;droit;EN3660-064;alu;nickel;4,7;31,8;34,7;39,4;;;EN3660-064N22<L><E>;déduit;filetage 1,3125-18 UNEF – 39 dents – Ø ext. max 44,7 – codes d’entrée A à M – B et C donnés pour le code M (par code : table Entrées EN 3660) – TE écrit la classe F (ex. EN3660-064K08BA, -064W20CE, -064K12BB vendus) – la norme nomme EN 2997 et EN 4067, pas l’EN 3646 : déduit du filetage commun (Glenair, désignateur A)
+EN3646;24;durci;droit;EN3660-064;alu;nickel;4,7;31,8;34,7;39,4;;;EN3660-064N24<L><E>;déduit;filetage 1,4375-18 UNEF – 42 dents – Ø ext. max 47,89 – codes d’entrée A à M – B et C donnés pour le code M (par code : table Entrées EN 3660) – TE écrit la classe F (ex. EN3660-064K08BA, -064W20CE, -064K12BB vendus) – la norme nomme EN 2997 et EN 4067, pas l’EN 3646 : déduit du filetage commun (Glenair, désignateur A)
+EN3646;08;durci;coudé;EN3660-065;alu;nickel;4,7;;;;;;EN3660-065N08<E>;déduit;90°, auto-freiné – filetage 0,500-20 UNF – codes d’entrée A à M, le maximum par taille non lu – pas de code de longueur (ex. vendus EN3660-065F10D, -065W14C, -065W14A, -065W10B) – masse taille 08 : 15,3 à 17,8 g (N/T/W/Z), 38,9 à 50,7 g (K) (prEN 3660-065:2026) – déduit du filetage commun
+EN3646;10;durci;coudé;EN3660-065;alu;nickel;4,7;;;;;;EN3660-065N10<E>;déduit;90°, auto-freiné – filetage 0,625-24 UNEF – codes d’entrée A à M, le maximum par taille non lu – pas de code de longueur (ex. vendus EN3660-065F10D, -065W14C, -065W14A, -065W10B) – masse taille 08 : 15,3 à 17,8 g (N/T/W/Z), 38,9 à 50,7 g (K) (prEN 3660-065:2026) – déduit du filetage commun
+EN3646;12;durci;coudé;EN3660-065;alu;nickel;4,7;;;;;;EN3660-065N12<E>;déduit;90°, auto-freiné – filetage 0,750-20 UNEF – codes d’entrée A à M, le maximum par taille non lu – pas de code de longueur (ex. vendus EN3660-065F10D, -065W14C, -065W14A, -065W10B) – masse taille 08 : 15,3 à 17,8 g (N/T/W/Z), 38,9 à 50,7 g (K) (prEN 3660-065:2026) – déduit du filetage commun
+EN3646;14;durci;coudé;EN3660-065;alu;nickel;4,7;;;;;;EN3660-065N14<E>;déduit;90°, auto-freiné – filetage 0,875-20 UNEF – codes d’entrée A à M, le maximum par taille non lu – pas de code de longueur (ex. vendus EN3660-065F10D, -065W14C, -065W14A, -065W10B) – masse taille 08 : 15,3 à 17,8 g (N/T/W/Z), 38,9 à 50,7 g (K) (prEN 3660-065:2026) – déduit du filetage commun
+EN3646;16;durci;coudé;EN3660-065;alu;nickel;4,7;;;;;;EN3660-065N16<E>;déduit;90°, auto-freiné – filetage 1,000-20 UNEF – codes d’entrée A à M, le maximum par taille non lu – pas de code de longueur (ex. vendus EN3660-065F10D, -065W14C, -065W14A, -065W10B) – masse taille 08 : 15,3 à 17,8 g (N/T/W/Z), 38,9 à 50,7 g (K) (prEN 3660-065:2026) – déduit du filetage commun
+EN3646;18;durci;coudé;EN3660-065;alu;nickel;4,7;;;;;;EN3660-065N18<E>;déduit;90°, auto-freiné – filetage 1,0625-18 UNEF – codes d’entrée A à M, le maximum par taille non lu – pas de code de longueur (ex. vendus EN3660-065F10D, -065W14C, -065W14A, -065W10B) – masse taille 08 : 15,3 à 17,8 g (N/T/W/Z), 38,9 à 50,7 g (K) (prEN 3660-065:2026) – déduit du filetage commun
+EN3646;20;durci;coudé;EN3660-065;alu;nickel;4,7;;;;;;EN3660-065N20<E>;déduit;90°, auto-freiné – filetage 1,1875-18 UNEF – codes d’entrée A à M, le maximum par taille non lu – pas de code de longueur (ex. vendus EN3660-065F10D, -065W14C, -065W14A, -065W10B) – masse taille 08 : 15,3 à 17,8 g (N/T/W/Z), 38,9 à 50,7 g (K) (prEN 3660-065:2026) – déduit du filetage commun
+EN3646;22;durci;coudé;EN3660-065;alu;nickel;4,7;;;;;;EN3660-065N22<E>;déduit;90°, auto-freiné – filetage 1,3125-18 UNEF – codes d’entrée A à M, le maximum par taille non lu – pas de code de longueur (ex. vendus EN3660-065F10D, -065W14C, -065W14A, -065W10B) – masse taille 08 : 15,3 à 17,8 g (N/T/W/Z), 38,9 à 50,7 g (K) (prEN 3660-065:2026) – déduit du filetage commun
+EN3646;24;durci;coudé;EN3660-065;alu;nickel;4,7;;;;;;EN3660-065N24<E>;déduit;90°, auto-freiné – filetage 1,4375-18 UNEF – codes d’entrée A à M, le maximum par taille non lu – pas de code de longueur (ex. vendus EN3660-065F10D, -065W14C, -065W14A, -065W10B) – masse taille 08 : 15,3 à 17,8 g (N/T/W/Z), 38,9 à 50,7 g (K) (prEN 3660-065:2026) – déduit du filetage commun
+EN3646;08;serre-câble;droit;EN3660-004;alu;nickel;3,2;5,2;;;;10,16;EN3660-004N08A;déduit;non étanche, non blindé – filetage 0,500-20 UNF – Amin/Amax = ouverture M du serre-câble (dessin TE c-2275010, lu comme plage de toron) – 2 vis 6-32 UNC (au plus 4 cosses, 2 par vis) – classes A (anodisé noir), W, N sur le dessin TE, + K, T, Z dans l’EN 3660-004:2023 – Souriau vend EN3660-004K08A, -004K20A – déduit du filetage commun
+EN3646;08;serre-câble;coudé;EN3660-005;alu;nickel;;;;;;;EN3660-005N08A;à confirmer;90°, serre-câble, non étanche – même filetage – dessin non lu (suffixe A supposé comme le −004) – déduit du filetage commun
+EN3646;10;serre-câble;droit;EN3660-004;alu;nickel;4,8;7,3;;;;13,73;EN3660-004N10A;déduit;non étanche, non blindé – filetage 0,625-24 UNEF – Amin/Amax = ouverture M du serre-câble (dessin TE c-2275010, lu comme plage de toron) – 2 vis 6-32 UNC (au plus 4 cosses, 2 par vis) – classes A (anodisé noir), W, N sur le dessin TE, + K, T, Z dans l’EN 3660-004:2023 – Souriau vend EN3660-004K08A, -004K20A – déduit du filetage commun
+EN3646;10;serre-câble;coudé;EN3660-005;alu;nickel;;;;;;;EN3660-005N10A;à confirmer;90°, serre-câble, non étanche – même filetage – dessin non lu (suffixe A supposé comme le −004) – déduit du filetage commun
+EN3646;12;serre-câble;droit;EN3660-004;alu;nickel;7,4;9,8;;;;15,09;EN3660-004N12A;déduit;non étanche, non blindé – filetage 0,750-20 UNEF – Amin/Amax = ouverture M du serre-câble (dessin TE c-2275010, lu comme plage de toron) – 2 vis 6-32 UNC (au plus 4 cosses, 2 par vis) – classes A (anodisé noir), W, N sur le dessin TE, + K, T, Z dans l’EN 3660-004:2023 – Souriau vend EN3660-004K08A, -004K20A – déduit du filetage commun
+EN3646;12;serre-câble;coudé;EN3660-005;alu;nickel;;;;;;;EN3660-005N12A;à confirmer;90°, serre-câble, non étanche – même filetage – dessin non lu (suffixe A supposé comme le −004) – déduit du filetage commun
+EN3646;14;serre-câble;droit;EN3660-004;alu;nickel;9,0;11,3;;;;17,62;EN3660-004N14A;déduit;non étanche, non blindé – filetage 0,875-20 UNEF – Amin/Amax = ouverture M du serre-câble (dessin TE c-2275010, lu comme plage de toron) – 2 vis 6-32 UNC (au plus 4 cosses, 2 par vis) – classes A (anodisé noir), W, N sur le dessin TE, + K, T, Z dans l’EN 3660-004:2023 – Souriau vend EN3660-004K08A, -004K20A – déduit du filetage commun
+EN3646;14;serre-câble;coudé;EN3660-005;alu;nickel;;;;;;;EN3660-005N14A;à confirmer;90°, serre-câble, non étanche – même filetage – dessin non lu (suffixe A supposé comme le −004) – déduit du filetage commun
+EN3646;16;serre-câble;droit;EN3660-004;alu;nickel;12,8;15,1;;;;21,25;EN3660-004N16A;déduit;non étanche, non blindé – filetage 1,000-20 UNEF – Amin/Amax = ouverture M du serre-câble (dessin TE c-2275010, lu comme plage de toron) – 2 vis 6-32 UNC (au plus 4 cosses, 2 par vis) – classes A (anodisé noir), W, N sur le dessin TE, + K, T, Z dans l’EN 3660-004:2023 – Souriau vend EN3660-004K08A, -004K20A – déduit du filetage commun
+EN3646;16;serre-câble;coudé;EN3660-005;alu;nickel;;;;;;;EN3660-005N16A;à confirmer;90°, serre-câble, non étanche – même filetage – dessin non lu (suffixe A supposé comme le −004) – déduit du filetage commun
+EN3646;18;serre-câble;droit;EN3660-004;alu;nickel;13,2;16,3;;;;27,48;EN3660-004N18A;déduit;non étanche, non blindé – filetage 1,0625-18 UNEF – Amin/Amax = ouverture M du serre-câble (dessin TE c-2275010, lu comme plage de toron) – 2 vis 8-32 UNC (au plus 4 cosses, 2 par vis) – classes A (anodisé noir), W, N sur le dessin TE, + K, T, Z dans l’EN 3660-004:2023 – Souriau vend EN3660-004K08A, -004K20A – déduit du filetage commun
+EN3646;18;serre-câble;coudé;EN3660-005;alu;nickel;;;;;;;EN3660-005N18A;à confirmer;90°, serre-câble, non étanche – même filetage – dessin non lu (suffixe A supposé comme le −004) – déduit du filetage commun
+EN3646;20;serre-câble;droit;EN3660-004;alu;nickel;15,0;17,9;;;;31,42;EN3660-004N20A;déduit;non étanche, non blindé – filetage 1,1875-18 UNEF – Amin/Amax = ouverture M du serre-câble (dessin TE c-2275010, lu comme plage de toron) – 2 vis 8-32 UNC (au plus 4 cosses, 2 par vis) – classes A (anodisé noir), W, N sur le dessin TE, + K, T, Z dans l’EN 3660-004:2023 – Souriau vend EN3660-004K08A, -004K20A – déduit du filetage commun
+EN3646;20;serre-câble;coudé;EN3660-005;alu;nickel;;;;;;;EN3660-005N20A;à confirmer;90°, serre-câble, non étanche – même filetage – dessin non lu (suffixe A supposé comme le −004) – déduit du filetage commun
+EN3646;22;serre-câble;droit;EN3660-004;alu;nickel;16,3;19,5;;;;33,86;EN3660-004N22A;déduit;non étanche, non blindé – filetage 1,3125-18 UNEF – Amin/Amax = ouverture M du serre-câble (dessin TE c-2275010, lu comme plage de toron) – 2 vis 8-32 UNC (au plus 4 cosses, 2 par vis) – classes A (anodisé noir), W, N sur le dessin TE, + K, T, Z dans l’EN 3660-004:2023 – Souriau vend EN3660-004K08A, -004K20A – déduit du filetage commun
+EN3646;22;serre-câble;coudé;EN3660-005;alu;nickel;;;;;;;EN3660-005N22A;à confirmer;90°, serre-câble, non étanche – même filetage – dessin non lu (suffixe A supposé comme le −004) – déduit du filetage commun
+EN3646;24;serre-câble;droit;EN3660-004;alu;nickel;18,0;20,3;;;;38,17;EN3660-004N24A;déduit;non étanche, non blindé – filetage 1,4375-18 UNEF – Amin/Amax = ouverture M du serre-câble (dessin TE c-2275010, lu comme plage de toron) – 2 vis 8-32 UNC (au plus 4 cosses, 2 par vis) – classes A (anodisé noir), W, N sur le dessin TE, + K, T, Z dans l’EN 3660-004:2023 – Souriau vend EN3660-004K08A, -004K20A – déduit du filetage commun
+EN3646;24;serre-câble;coudé;EN3660-005;alu;nickel;;;;;;;EN3660-005N24A;à confirmer;90°, serre-câble, non étanche – même filetage – dessin non lu (suffixe A supposé comme le −004) – déduit du filetage commun
+EN3646;;pour manchon;droit;EN3660-009;alu;nickel;;;;;;;;à confirmer;style J droit étanche non blindé pour manchon : la famille n’est pas nommée dans l’index – déduit du filetage commun avec l’EN 2997
+ASNE0059;;durci;droit;EN3660-064;alu;nickel;;;;;;;;déduit;ASNE0059 = connecteurs circulaires Airbus aux arrangements de l’EN 3646 (normes/asne0059.csv) – les ASNE0052/0053/0054 sont de la famille MIL-DTL-26482 série II (Souriau 8525) : même filetage d’accessoire que l’EN 3646 → mêmes raccords, à confirmer par le lecteur
+ASNE0059;;durci;coudé;EN3660-065;alu;nickel;;;;;;;;déduit;voir EN3646
+ASNE0059;;pour manchon;droit;EN3660-009;alu;nickel;;;;;;;;déduit;voir EN3646
+ASNE0059;;serre-câble;droit;EN3660-004;alu;nickel;;;;;;;;déduit;voir EN3646
+ASNE0059;;tyrap;droit;EN3660-025;alu;nickel;;;;;;;;déduit;voir EN3646
+EN4165;;cheminée;droit;EN4165-015 (ronde) / -016 (double ovale) / -017 (borgne) + corps EN4165-014;;;;;;;;;;à confirmer;pas de raccord (le lecteur) : les cheminées sont les accessoires de l’EN 4165 (rapport R2)
 
 Manchons — les manchons thermorétractables de connecteur, par désignation VG 95343 (HellermannTyton série 150 : droit à lèvre, T06 A court / B long / C très long, T18 précollé ; série 130 : T06 D sortie longue ; série 1100 : T06 F coudé 90° ; catalogue 2022 p. 280-282 ; équivalents Raychem 202K). Ha / Hb : grand bout (côté raccord) avant / après rétreint ; Ja / Jb : petit bout (côté toron) ; P longueur totale ; R longueur sur le toron ; JO la lèvre (mm). Choix : Ha > C > Hb (C = plateforme du raccord) et Ja > D > Jb (D = Ø de ce qui sort : gaine ou toron).
 Forme;Désignation;Référence;Ha;Hb;Ja;Jb;P;R;JO;Masse;Note
@@ -150,3 +326,46 @@ coudé;VG 95343 T06 F 005 A;HT 1125-1-G (411-25180);37;30;37;11;108;24;;;
 coudé;VG 95343 T06 F 006 A;HT 1126-1-G (411-26180);43,5;34;43,5;12;121;27;;;
 coudé;VG 95343 T06 F 007 A;HT 1127-1-G (411-27180);50;41,5;50;14,5;132;30;;;
 coudé;VG 95343 T06 F 008 A;HT 1128-1-G (411-28180);62,5;47;62,5;18;133;33;;;
+coudé;VG 95343 T06 F 009 A;HT 1129-1-G (411-29180);69;60;69;20;137;35;;;série 1100 à nervure, profil bas
+coudé à lèvre;VG 95343 T06 F 011 A;HT 1133-1-G;19;13;6;2;44;16,3;21,8;;90° à lèvre (AS85049/14119HU)
+coudé à lèvre;VG 95343 T18 H 001 A;HT 1134-1-G;26;19;7,5;2,5;67;18;29,2;;90° à lèvre (AS85049/14120HU) – T18 = version à revêtement intérieur
+coudé à lèvre;VG 95343 T06 F 013 A;HT 1135-1-G;34;26;9,5;3;81;18,8;35,3;;AS85049/14121HU
+coudé à lèvre;VG 95343 T06 F 014 A;HT 1136-1-G;43,5;34;11,5;3,5;116;21,3;47;;AS85049/14122HU
+coudé;VG 95343 T06 E 001 A;HT 1152-4-G;24;10,5;24;6;26;25;;;série 1150, 90° à nervure
+coudé;VG 95343 T06 E 002 A;HT 1154-4-G;30;15,5;30;6;32;27;;;
+coudé;VG 95343 T06 E 003 A;HT 1155-4-G;31;18;31;7;40;31;;;
+coudé;VG 95343 T06 E 004 A;HT 1156-4-G (411-56480);36;22,5;36;8,5;46;38;;;
+coudé;VG 95343 T06 E 005 A;HT 1157-4-G;43;28,5;43;10;55;45;;;
+coudé;VG 95343 T06 E 006 A;HT 1158-4-G;60;35;60;16;80;54;;;
+coudé;VG 95343 T06 E 007 A;HT 1159-4-G;66;45;66;17;108;68;;;
+coudé;VG 95343 T06 E 008 A;HT 1160-4-G;82;61;82;25;118;84;;;
+sortie longue;VG 95343 T06 D 011 A;HT 176-1-G (401-76180);19,3;13;6,3;2,1;60;11,7;;;série 170 « bottle », à nervure
+sortie longue;VG 95343 T06 D 012 A;HT 177-1-G;26,1;19,1;7,6;2,6;74,2;12,2;;;AS85049/14020HU
+sortie longue;VG 95343 T06 D 013 A;HT 178-1-G (401-78180);34,2;26;9,6;3,1;84;12,2;;;AS85049/14021HU
+sortie longue;VG 95343 T06 D 014 A;HT 179-1-G (401-79180);43,6;34,1;11,4;3,6;100;12,2;;;AS85049/14022HU
+droit;VG 95343 T06 A 010 A;HT 199-4-G;17,5;14;7;4,3;70;35;;;série 190 à nervures extérieures
+45°;VG 95343 T06 B 010 A;HT 1306-1-G;13;6;6,5;3;45;23;;;série 1300, 45°, deux sorties 6,5/3
+45°;VG 95343 T19 B 011 A;HT 1307-1-G;27;12,5;13;6;90;;;;45° précollé (T19), deux sorties 13/6
+45° (T);VG 95343 T08 B 001 A;HT 1301-1-G;13;7;13;7;50;23;;;pièce en T 45° – 3e sortie 7/3,5
+45° (T);VG 95343 T08 B 002 A;HT 1303-1-G;27;14;27;14;145;70;;;3e sortie 13/7,5
+45° (T);VG 95343 T08 B 004 A;HT 1302-1-G;27;13;27;13;93;41;;;3e sortie 7/3,5
+transition (T);VG 95343 T08 A 001 A;HT 1203-1-G (412-03180);13,2;6;6,5;3;52;26;;;série 1200 en T – 3e sortie = Ja/Jb
+transition (T);VG 95343 T08 A 002 A;HT 1209-1-G (412-09180);27;12,4;13,2;6;108;54;;;
+transition (T);VG 95343 T08 A 007 A;HT 1201-1-G (412-01180);17,7;8,9;10,1;5,1;47,5;23,6;;;
+transition (T);VG 95343 T08 A 009 A;HT 1206-1-G (412-06180);6,6;3;6,6;3;29,7;14,7;;;AS85049/14201HU
+transition (T);VG 95343 T08 A 010 A;HT 1202-1-G (412-02180);13,2;6,1;13,2;6,1;58,7;29,2;;;AS85049/14202HU
+transition (T);VG 95343 T08 A 011 A;HT 1207-1-G (412-07180);26,9;12,4;26,9;12,4;120,1;55,9;;;AS85049/14203HU
+transition (T déporté);VG 95343 T08 A 016 A;HT 1204-1-G (412-04180);13;7,5;6,5;4;56;33;;;sorties 6,5/4 et 6,5/4
+transition (T déporté);VG 95343 T08 A 017 A;HT 1216-1-G (412-16180);33;13;16,5;6,5;97;54;;;sorties 16,5/6,5 et 16,5/6,5
+2 sorties (Y);VG 95343 T08 C 001 A;HT 206-1-G (402-06180);13;6;7;3;41;19;;;AS85049/14205HU
+2 sorties (Y);VG 95343 T08 C 002 A;HT 203-1-G;27;12;13;6;80;43;;;AS85049/14206HU
+2 sorties (Y);VG 95343 T08 C 003 A;HT 204-1-G;39;18;27;12;66;81;;;AS85049/14207HU
+2 sorties (Y);VG 95343 T08 C 005 A;HT 212-1-G;14,5;8;8,5;5,5;82,6;83;;;
+3 sorties;VG 95343 T08 D 001 A;HT 306-1-G;13;6,5;6,5;3,5;46;25,4;;;AS85049/14209HU
+3 sorties;VG 95343 T08 D 002 A;HT 304-1-G;27;13,5;13;7;93;50,3;;;AS85049/14210HU
+3 sorties;VG 95343 T08 D 003 A;HT 310-1-G;38,5;19;19;10;135;73,7;;;AS85049/14211HU
+3 sorties;VG 95343 T08 D 004 A;HT 311-1-G;55,5;25,5;27;12,5;192;103,1;;;AS85049/14212HU
+4 sorties;VG 95343 T08 E 002 A;HT 411-1-G;19;10;9,5;5,5;36,1;35,6;;;
+4 sorties;VG 95343 T08 E 004 A;HT 403-1-G (404-03180);27;13;13;7;51,8;49;;;
+4 sorties;VG 95343 T08 E 005 A;HT 413-1-G;38,6;19;19;10;;;;;
+4 sorties;VG 95343 T19 E 001 A;HT 410-1-G;12;7;6,6;3,5;65;24;;;précollé (T19)
