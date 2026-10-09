@@ -212,8 +212,10 @@ Pour une norme de connecteurs, une **taille** de cavité (22, 20, 16, 12, 8),
 un **sexe** (M broche, F douille), un **type de fil** (`*` : tous, ou un code
 comme HS, CF, WL, XM…) et une **jauge** (`*` : toutes), le **contact** à
 sertir (EN3155-003F2020, M39029/87-476, NSA938172SL1600…) et son
-**accessoire** (un fourreau de réduction E0718-20-30 quand le fil est plus
-fin que le contact, une bague EN4530-004, un 21-33321-5).
+**accessoire** (un manchon thermorétractable d'étanchéité E0718-20-30 sur
+l'isolant quand le fil est plus fin que la cavité — c'est pour le joint
+arrière, pas un réducteur de fût (recherche R3) —, une bague d'étanchéité
+EN4530-004, un 21-33321-5).
 
 La ligne la plus précise gagne : le type de fil exact avant `*`, la jauge
 exacte avant `*`. Le type d'un fil est en tête de son code (DR24 → DR, HS22
@@ -228,9 +230,9 @@ confirmer : **femelles** (douilles) face à une embase d'équipement à broches,
 **femelles côté fiche** (ce qui arrive) et **mâles côté embase** d'une prise
 de coupure. Chaque fiche permet de l'inverser (« Changer »), et le choix se
 garde avec le contrat. Entre deux arrangements qui logent tout, l'outil
-préfère celui qui **accommode le moins** : pas de fourreau, pas de ligne
+préfère celui qui **accommode le moins** : pas de manchon, pas de ligne
 `* *` (le contact par défaut d'une taille) — un 24 AWG va sur un contact 20,
-pas sur un 12 avec fourreau.
+pas sur un 12 avec manchon.
 
 Deux accessoires sont lus tronqués sur les captures (EN3646 KE 20, EN3645 YY
 20 : « EN3155-019F… », « EN3155-008M… ») ; la note le dit, 2020 supposé.
