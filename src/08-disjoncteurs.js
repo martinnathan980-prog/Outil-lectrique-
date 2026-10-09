@@ -50,9 +50,20 @@ const styleCourbe = (k, n) => n === 4 ? { couleur: ['#c62828', '#d4870f', '#d487
 const chargeDe = nom => (app.contrat.charges && app.contrat.charges.get(nom)) || null;
 /* Le part number d'un repère : celui que ses liaisons portent. */
 function pnDuRepere(nom) { for (const l of verite()) { if (l.de === nom && l.pnDe) return l.pnDe; if (l.vers === nom && l.pnVers) return l.pnVers; } return ''; }
-/* Les fils d'un disjoncteur, des deux côtés, avec la borne et l'autre bout. */
-const filsDuDisjoncteur = nom => verite().filter(l => (l.de === nom || l.vers === nom) && l.de !== l.vers)
-  .map(l => ({ cable: l.cable, type: l.type, borne: l.de === nom ? l.borneDe : l.borneVers, autre: l.de === nom ? l.vers + (l.borneVers ? ':' + l.borneVers : '') : l.de + (l.borneDe ? ':' + l.borneDe : ''), amont: l.vers === nom, l }));
+/* Les fils d'un disjoncteur : ceux qui le touchent, des deux côtés (la borne, l'autre bout, `amont`), puis tout ce qu'il
+   nourrit au-delà des prises de coupure et des barrettes (`via` : le passage), chacun avec le contact du plan quand les
+   fiches le connaissent (`taille`, le plus faible des deux bouts — le courant du contact en dépend). */
+function filsDuDisjoncteur(nom) { const V = verite(), directs = V.filter(l => (l.de === nom || l.vers === nom) && l.de !== l.vers)
+    .map(l => ({ cable: l.cable, type: l.type, borne: l.de === nom ? l.borneDe : l.borneVers, autre: l.de === nom ? l.vers + (l.borneVers ? ':' + l.borneVers : '') : l.de + (l.borneDe ? ':' + l.borneDe : ''), amont: l.vers === nom, direct: true, via: '', l }));
+  const vus = new Set(directs.map(f => f.l)), suite = filsDepuis(V, nom).filter(f => !vus.has(f.l)).map(f => ({ ...f, amont: false }));
+  return directs.concat(suite).map(f => ({ ...f, ...contactDuPlan(f.l) })); }
+/* Le contact d'un fil par les plans de ses deux bouts (barrette, prise, cavité d'un connecteur) : la taille la plus faible
+   en courant, et le repère qui la porte. Rien quand aucun plan ne le connaît. */
+function contactDuPlan(l) { const xs = [];
+  [l.de, l.vers].forEach(r => { if (!r || estMasse(r) || estRenvoi(r) || estDisjoncteur(r)) return;
+    try { const fils = barretteEnModules(r) ? planDeBarrette(r).plan.fils : coupureEnModules(r) ? planDeCoupure(r).plan.fils : estBornier(r) ? [] : cavitesDe(r).flatMap(c => c.plan.fils);
+      fils.forEach(x => { if (x.f && x.f.l === l && x.taille) { const i = intensiteDeContact(app.norme, x.taille); if (i) xs.push({ taille: x.taille, repere: r, i: i.intensite }); } }); } catch (_) { } });
+  if (!xs.length) return {}; xs.sort((a, b) => a.i - b.i); return { taille: xs[0].taille, contactRepere: xs[0].repere }; }
 /* Les disjoncteurs VOISINS d'un repère : ceux où aboutit un chemin de fils depuis lui (bus → sous-bus) ; leur calibre
    nominal (écrit, sinon le part number) sert à la sélectivité 2:1 — sans passer par l'idéal, qui dépendrait du nôtre. */
 const calibreNominal = nom => { const p = chargeDe(nom); return p && p.calibre > 0 ? p.calibre : calibreDuPn(pnDuRepere(nom)); };
@@ -139,27 +150,36 @@ function filsHtml(d, vt) { if (!d.fils.length) return '';
     const cases = f.fil ? PALIERS_FIL.filter(([, q]) => f.fil[q] != null).map(([pal, q, mot]) => { const ko = f.phases.some(p => !p.ok && p.palier === pal), lp = f.laisse.find(x => x.palier === pal), att = (lp && !lp.ok) || (pal === Infinity && f.verdict === 'calibre');
       return `<span class="dj-pal${ko ? ' ko' : att ? ' att' : ''}" title="${escA('admis ' + pourPalier(pal) + (lp ? ' · le ' + amperes(d.calibre) + ' laisse passer ' + amperes1(lp.courant) + ' à ' + f.courbeLente : ''))}"><b>${esc(amperes(f.fil[q] * (pal === Infinity ? f.facteur : f.facteurCourt)))}</b><i>${mot}</i>${lp && !lp.ok && f.pireLaisse && lp.palier === f.pireLaisse.palier ? `<em>laisse ${esc(amperes1(lp.courant))}</em>` : ''}</span>`; }).join('') : '';
     const dep = f.verdict === 'fil' ? `<span class="dj-dep ko">${esc(f.pire.nom)} ${esc(amperes(f.pire.i))}${f.pire.t === Infinity ? '' : ' · ' + esc(secondes(f.pire.t))}</span>`
-      : f.verdict === 'calibre' ? `<span class="dj-dep att">sous le calibre ${esc(amperes(d.calibre))} : pas protégé en surcharge</span>` : f.protege === false ? `<span class="dj-dep att">pas protégé en surcharge brève (${esc(f.courbeLente)})</span>` : f.verdict === 'inconnu' ? '<span class="dj-dep att">fil inconnu de la norme</span>' : '';
+      : f.verdict === 'calibre' ? `<span class="dj-dep att">sous le calibre ${esc(amperes(d.calibre))} : pas protégé en surcharge</span>` : f.protege === false ? `<span class="dj-dep att">pas protégé en surcharge brève (${esc(f.courbeLente)})</span>` : f.verdict === 'inconnu' ? `<span class="dj-dep att">${f.refuse ? 'conducteur ' + esc(f.conducteur) + ' sans résistance dans la base' : 'fil inconnu de la norme'}</span>` : '';
+    // le contact (du plan, sinon par la jauge) : son courant, en rouge si le permanent le dépasse, en ambre si le calibre le dépasse ; la table 11-3 quand le calibre la déborde
+    const contact = f.contact ? `<span class="dj-ctc${f.contactDepasse ? ' ko' : f.contactSurcharge ? ' att' : ''}" title="${escA('le contact taille ' + f.contact.taille + ' admet ' + amperes(f.contact.intensite) + (f.contact.parLePlan ? ' — celui du plan (' + f.contactRepere + ')' : ' — la taille usuelle de la jauge, aucun plan ne le connaît') + (f.contactDepasse ? ' : le permanent ' + amperes(f.permanent) + ' le dépasse' : f.contactSurcharge ? ' : sous le calibre ' + amperes(d.calibre) + ', pas protégé en surcharge' : ''))}"><b>${esc(amperes(f.contact.intensite))}</b><i>contact ${esc(f.contact.taille)}${f.contact.parLePlan ? '' : ' ?'}</i></span>` : '';
+    const table = f.horsTable ? `<span class="dj-dep att" title="L’AC 43.13-1B, table 11-3 : le calibre maximal par jauge de fil">calibre &gt; ${esc(amperes(f.calibreMax))}, le maximum de la table 11-3 pour du ${esc(f.jauge)} AWG</span>` : '';
     const titre = (f.cable || 'fil') + (f.type ? ' · ' + f.type : '') + (f.fil ? ' · ' + amperes(f.continu) + ' en continu' + motFacteur(f.facteur) : '') + ' — voir sur le plan';
     return `<li class="fi-fil${f.verdict === 'fil' ? ' ko' : ''}"${k ? ` data-i="${k}" tabindex="0" role="button" title="${escA(titre)}"` : ''}><span class="fi-ct"><b>${esc(f.borne)}</b></span>${puceFil(f)}<span class="fi-type">${esc(f.type || '—')}</span>`
-      + `<span class="fi-dest${f.amont ? ' amont' : ''}">${ico('fleche')}<span>${esc(f.autre)}</span>${tag ? `<span class="fi-tag" title="Barrette à poser sur cette borne">${esc(tag)}</span>` : ''}</span><span class="fi-w">${esc(f.cable || '')}</span><div class="dj-admet">${cases}${dep}</div></li>`; }).join('');
+      + `<span class="fi-dest${f.amont ? ' amont' : ''}">${ico('fleche')}<span>${esc(f.autre)}</span>${tag ? `<span class="fi-tag" title="Barrette à poser sur cette borne">${esc(tag)}</span>` : ''}${f.via ? `<span class="fi-via" title="${escA('Nourri à travers ' + f.via)}">par ${esc(f.via)}</span>` : ''}</span><span class="fi-w">${esc(f.cable || '')}</span><div class="dj-admet">${cases}${contact}${dep}${table}</div></li>`; }).join('');
   const courts = [...new Set(d.fils.map(f => motFacteur(f.facteurCourt)))], continus = [...new Set(d.fils.map(f => motFacteur(f.facteur)))];
   const declasse = courts.length === 1 && courts[0] ? ', déclassés' + courts[0] + (continus.length === 1 && continus[0] !== courts[0] ? ', le continu' + continus[0] : '') : courts.some(Boolean) || continus.some(Boolean) ? ', déclassés' : '';
-  return `<ul class="fi-liste dj-fils"><li class="fi-groupe">ses fils · ce qu’ils admettent${declasse}</li>${li}</ul>`; }
+  const nVia = d.fils.filter(f => f.via).length;
+  return `<ul class="fi-liste dj-fils"><li class="fi-groupe">ses fils · ce qu’ils admettent${declasse}${nVia ? ` · ${nVia} au-delà d’un passage` : ''}</li>${li}</ul>`; }
 function ficheDisjonction(nom, vt) { const d = disjonctionDe(nom);
   return `<section class="fi-cadre fi-dj">${gammeHtml(nom, d)}${d.courbes.length ? graphiqueDisjonction(d) : '<p class="fi-note">Aucune courbe de disjonction dans la norme.</p>'}${etatsHtml(d)}${filsHtml(d, vt)}${chutesHtml(nom, d)}</section>`; }
 /* LA CHUTE EN LIGNE depuis le disjoncteur, comme la feuille du lecteur : chaque chemin jusqu'à un équipement, à
    travers les prises de coupure et les barrettes, au courant permanent du profil (sinon le calibre, sinon l'hypothèse) :
    la chute en volts et en pourcentage, une jauge contre la chute admise. */
 function chutesHtml(nom, d) { const H = app.simu || HYPOTHESES, I = d.profil && d.profil.perm && d.profil.perm.i > 0 ? d.profil.perm.i : d.calibre > 0 ? d.calibre : H.courant;
-  const cs = chutesDepuis(app.norme, verite(), nom, I, H); if (!cs.length) return ''; const admis = cs[0].admis, mV = u => nombre(Math.round(u * 1000) / 1000) + ' V';
+  const courts = (d.points || []).filter(p => p.t !== Infinity && p.i > 0);
+  const cs = chutesDepuis(app.norme, verite(), nom, I, H, courts); if (!cs.length) return ''; const admis = cs[0].admis, mV = u => nombre(Math.round(u * 1000) / 1000) + ' V', tousHyp = cs.every(c => !c.reel);
   const li = cs.map(c => { const detail = c.segments.map(s => s.fil ? `${s.fil.cable || 'fil'} : ${s.dU != null ? mV(s.dU) : '?'} (${nombre(Math.round(s.longueur * 100) / 100)} m${s.reelle ? '' : ', hypothèse'})` : `${s.passage} : ${s.dU != null ? mV(s.dU) : 'contact inconnu'}`).join(' · ');
     const part = c.dU != null && admis ? Math.min(1, c.dU / admis) : 0, chemin = c.mots.replace(/ → [^→]*$/, '');
-    const notes = (c.inconnus.length ? [`<em>${c.inconnus.length} inconnu${c.inconnus.length > 1 ? 's' : ''}</em>`] : []).concat(c.trop ? [`<em class="ko">dépasse ${esc(volts(admis))}</em>`] : !c.fini ? ['<em>chemin sans fin</em>'] : []);
-    return `<li class="fi-fil${c.trop ? ' ko' : ''}" title="${escA(detail + (c.inconnus.length ? ' — ' + c.inconnus.join(' ; ') : ''))}"><span class="fi-ct"><b>${esc(c.bout[0])}</b>${c.bout[1] ? `<i>${esc(c.bout[1])}</i>` : ''}</span>`
+    // la pointe la pire : la chute à chaque état court du profil contre l'admis en intermittent (≤ 2 min), sinon le continu
+    const pointe = (c.pointes || []).filter(p => p.trop).sort((a, b) => b.dU / b.admis - a.dU / a.admis)[0] || null;
+    const notes = (c.inconnus.length ? [`<em>${c.inconnus.length} inconnu${c.inconnus.length > 1 ? 's' : ''}</em>`] : []).concat(c.trop ? [`<em class="ko">dépasse ${esc(volts(admis))}</em>`] : !c.fini ? ['<em>chemin sans fin</em>'] : [])
+      .concat(pointe ? [`<em class="${c.reel ? 'ko' : 'att'}" title="${escA('À ' + amperes(pointe.i) + ' pendant ' + secondes(pointe.t) + (pointe.nom ? ' (' + pointe.nom + ')' : '') + ' : ' + volts(pointe.dU) + ' contre ' + volts(pointe.admis) + ' admis' + (pointe.intermittent ? ' en intermittent' : ''))}">en pointe ${esc(volts(pointe.dU))} &gt; ${esc(volts(pointe.admis))}</em>`] : [])
+      .concat(c.reel || tousHyp ? [] : ['<em title="Le retest ne porte pas toutes les longueurs : l’hypothèse de la simulation les remplace">longueurs d’hypothèse</em>']);
+    return `<li class="fi-fil${c.trop || (pointe && c.reel) ? ' ko' : ''}" title="${escA(detail + (c.inconnus.length ? ' — ' + c.inconnus.join(' ; ') : ''))}"><span class="fi-ct"><b>${esc(c.bout[0])}</b>${c.bout[1] ? `<i>${esc(c.bout[1])}</i>` : ''}</span>`
       + `<span class="dj-jauge"${admis ? '' : ' hidden'} aria-hidden="true"><i style="width:${(part * 100).toFixed(1)}%"></i></span><b class="dj-du">${c.dU != null ? esc(volts(c.dU)) : '—'}</b><span class="dj-pct">${c.pct != null ? esc(nombre(Math.round(c.pct * 10) / 10)) + ' %' : ''}</span>`
       + `<span class="dj-chemin">${esc(chemin)}${notes.length ? ' · ' + notes.join(' · ') : ''}</span></li>`; }).join('');
-  return `<ul class="fi-liste dj-chutes"><li class="fi-groupe">chute en ligne · ${esc(nombre(I))} A${H.tension ? ' sous ' + esc(nombre(H.tension)) + ' V' : ''}${admis != null ? ' · admise ' + esc(volts(admis)) : ''}</li>${li}</ul>`; }
+  return `<ul class="fi-liste dj-chutes"><li class="fi-groupe">chute en ligne · ${esc(nombre(I))} A${H.tension ? ' sous ' + esc(nombre(H.tension)) + ' V' : ''}${admis != null ? ' · admise ' + esc(volts(admis)) : ''}</li>${tousHyp ? `<li class="fi-note dj-hyp" title="Le retest ne porte pas de longueur : l’hypothèse de la simulation les remplace">longueurs d’hypothèse : ${esc(nombre(H.longueur))} m par fil</li>` : ''}${li}</ul>`; }
 
 /* ---- le graphique ------------------------------------------------------------------- */
 /* La géométrie : ampères en abscisse (log), secondes en ordonnée (log, 10 ms à 10 000 s). L'abscisse couvre toute la

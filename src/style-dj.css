@@ -143,18 +143,18 @@ button.dj-leg:hover,button.dj-leg:focus-visible{background:var(--s-hover);color:
 .dj-fils .fi-fil{grid-template-columns:auto 14px auto minmax(0,1fr) auto;row-gap:6px}
 .dj-fils .fi-dest{justify-content:flex-start}
 .dj-admet{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:0 0 1px}
-.dj-pal{display:flex;flex-direction:column;align-items:flex-end;min-width:58px;padding:3px 7px 2px;border-radius:var(--r-1);background:var(--s-sunken);border:1px solid transparent;line-height:1.2}
-.dj-pal b{font:700 var(--f-12) var(--mono);color:var(--t-1);font-variant-numeric:tabular-nums}
-.dj-pal i{font:500 10px var(--sans);color:var(--t-3);font-style:normal;letter-spacing:.02em}
-.dj-pal.ko{background:var(--ko-soft);border-color:#f0c4c4}
-.dj-pal.ko b,.dj-pal.ko i{color:var(--ko)}
-.dj-pal.att{background:var(--warn-soft);border-color:#f0d9b0}
-.dj-pal.att b,.dj-pal.att i{color:var(--warn)}
+.dj-pal,.dj-ctc{display:flex;flex-direction:column;align-items:flex-end;min-width:58px;padding:3px 7px 2px;border-radius:var(--r-1);background:var(--s-sunken);border:1px solid transparent;line-height:1.2}
+.dj-pal b,.dj-ctc b{font:700 var(--f-12) var(--mono);color:var(--t-1);font-variant-numeric:tabular-nums}
+.dj-pal i,.dj-ctc i{font:500 10px var(--sans);color:var(--t-3);font-style:normal;letter-spacing:.02em}
+.dj-pal.ko,.dj-ctc.ko{background:var(--ko-soft);border-color:#f0c4c4}
+.dj-pal.ko b,.dj-pal.ko i,.dj-ctc.ko b,.dj-ctc.ko i{color:var(--ko)}
+.dj-pal.att,.dj-ctc.att{background:var(--warn-soft);border-color:#f0d9b0}
+.dj-pal.att b,.dj-pal.att i,.dj-ctc.att b,.dj-ctc.att i{color:var(--warn)}
 .dj-pal em{font:600 10px var(--sans);font-style:normal;color:var(--warn);white-space:nowrap}
 .dj-ideal em{font-style:normal;color:var(--warn)}
 .dj-dou span{color:var(--t-3)}
-.fi-fil.ko .dj-pal{background:var(--s-surface)}
-.fi-fil.ko .dj-pal.ko{background:var(--ko-soft)}
+.fi-fil.ko .dj-pal,.fi-fil.ko .dj-ctc{background:var(--s-surface)}
+.fi-fil.ko .dj-pal.ko,.dj-ctc.ko{background:var(--ko-soft)}
 .dj-dep{font:600 var(--f-11) var(--sans);padding:0 2px 0 4px;line-height:1.3}
 .dj-dep.ko{color:var(--ko)} .dj-dep.att{color:var(--warn)}
 .dj-dep.ko::before{content:"›";margin-right:5px;font-weight:700}
@@ -171,3 +171,9 @@ button.dj-leg:hover,button.dj-leg:focus-visible{background:var(--s-hover);color:
 .dj-chemin em{font-style:normal;font-family:var(--sans);color:var(--warn)}
 .dj-chemin em.ko{color:var(--ko);font-weight:600}
 @media (max-width:700px){.dj-graphe{margin:0 -8px}.dj-entete,.dj-etat{grid-template-columns:12px minmax(0,1fr) 72px 72px 22px}.dj-entete span{padding-right:14px}}
+/* un fil nourri au-delà d'un passage (prise, barrette) : le passage en petit, à côté de l'autre bout */
+.fi-via{font:500 10px var(--sans);color:var(--t-3);margin-left:6px;white-space:nowrap}
+/* la réactance estimée, proposée sous le verdict « X à saisir » */
+.sim-x{display:block;font:500 10px var(--mono);color:var(--t-3);white-space:nowrap;margin-top:2px}
+/* sous le titre des chutes : l'hypothèse de longueur, une fois */
+.dj-chutes .dj-hyp{font:500 var(--f-11) var(--sans);color:var(--t-3);padding:0 0 4px 2px;margin:0;list-style:none}
