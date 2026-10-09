@@ -335,7 +335,7 @@ function baseEssaiDansLaPage() {
     // les repères proposés en « ? » : H-4 relie 303RL7 (sans part number) à notre 103RL1 par les voisins — peut-on le confirmer, le changer ?
     await cliquerBloc(page, '102CB1'); await page.click('#ba-equip .fi-cand[data-ref="H-4"]'); await page.waitForTimeout(500);
     const Q = await page.evaluate(() => { const xs = [...document.querySelectorAll('#ba-equip .fi-chip.cp-corr-voisins, #ba-equip .fi-chip.cp-corr-code')]; return { n: xs.length, textes: xs.map(x => x.textContent), cliquables: xs.filter(x => x.tagName === 'BUTTON' || x.onclick || x.getAttribute('role') === 'button' || x.tabIndex >= 0).length, lignes: [...document.querySelectorAll('#ba-equip .cp-liste .fi-corr')].map(x => x.textContent) }; });
-    ok(Q.n >= 1 && Q.textes.some(t => /303RL7 → 103RL1 \?/.test(t)), 'contre H-4, l’outil propose 303RL7 → 103RL1 avec un « ? » (même code, mêmes voisins, à confirmer)', Q.textes.join(' · '));
+    ok(Q.n >= 1 && Q.textes.some(t => /303RL7 → 103RL1\s\?/.test(t)), 'contre H-4, l’outil propose 303RL7 → 103RL1 avec un « ? » (même code, mêmes voisins, à confirmer)', Q.textes.join(' · '));
     frottement(Q.cliquables === Q.n && Q.n > 0, 'un repère proposé en « ? » ne se confirme ni ne se corrige', 'les puces « 303RL7 → 103RL1 ? » sont inertes : on ne peut ni valider la correspondance ni la changer avant de reprendre (la feuille de route dit « l’outil propose, vous validez »)',
       'gênant', '08-references.js `ficheComparaison`/`lierComparaison` : rendre les puces `.cp-corr-voisins/.cp-corr-code` actives — un clic ouvre la liste de nos repères de même code, le choix se garde dans REF (une Map repèreRef → nôtre) et passe à `correspondre` par `fixes`');
     await capture(page, 'B-5-proposes');

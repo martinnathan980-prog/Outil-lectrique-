@@ -38,6 +38,20 @@ const app = {
   insp: { index: false, filtre: '', ajout: false }   // l'inspecteur : ouvert sur l'INDEX des repères (une fiche y revient par la flèche), ce qu'on y cherche, le champ « ajouter » ouvert
 };
 const $ = id => document.getElementById(id);
+/* La typographie française, une fois pour toutes, sur le texte affiché : une espace insécable avant « ; : ? ! » et le
+   guillemet fermant, après l'ouvrant ; l'apostrophe courbe. Aucun signe ne tombe seul en début de ligne, quel que soit
+   le texte (le nôtre, celui d'une table de normes, d'un retest). Jamais dans le dessin des folios (svg) ni dans un champ :
+   ce qu'on y lit reste ce qu'on y a écrit. Un observateur la pose sur ce qui s'ajoute ou change. */
+const TYPO_HORS = 'svg,script,style,textarea,input,select,code,pre,[contenteditable]';
+const typo = t => t.replace(/ ([:;?!»])/g, '\u00a0$1').replace(/« /g, '«\u00a0').replace(/([A-Za-zÀ-ÿ])'(?=[A-Za-zÀ-ÿ])/g, '$1’');
+function typographier(n) {
+  if (n.nodeType === 3) { const el = n.parentElement; if (!el || el.closest(TYPO_HORS)) return; const t = typo(n.nodeValue); if (t !== n.nodeValue) n.nodeValue = t; return; }
+  if (n.nodeType !== 1 || n.closest(TYPO_HORS)) return;
+  const w = document.createTreeWalker(n, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, { acceptNode: x => x.nodeType === 1 ? (x.matches(TYPO_HORS) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_SKIP) : NodeFilter.FILTER_ACCEPT });
+  for (let x; (x = w.nextNode());) { const t = typo(x.nodeValue); if (t !== x.nodeValue) x.nodeValue = t; } }
+function typographieVivante() { typographier(document.body);
+  new MutationObserver(ms => { for (const m of ms) { if (m.type === 'characterData') typographier(m.target); else m.addedNodes.forEach(typographier); } })
+    .observe(document.body, { childList: true, subtree: true, characterData: true }); }
 const CLE_CONTRAT = 'atelier.contrat.v2';
 const CLE_BASE = 'atelier.base.v2';
 const ZMIN = 0.06, ZMAX = 8;

@@ -8,7 +8,7 @@
    masqué ; le cyan pour ce qui se presse. Les tables larges défilent de côté, jamais elles n'écrasent une valeur ; les
    longues défilent dans leur boîte, l'en-tête en haut ; les gestes d'une ligne restent collés au bord droit.
    ═══════════════════════════════════════════════════════════════════════ */
-.nm{display:flex;flex-direction:column;gap:var(--sp-3);min-width:0}
+.nm{display:flex;flex-direction:column;gap:var(--sp-3);min-width:0;container-type:inline-size}   /* la bible se règle sur sa largeur */
 .nm .fiche-tete{margin-bottom:0}
 .nm-nav{align-self:flex-start}
 .nm-etat{margin-bottom:0}

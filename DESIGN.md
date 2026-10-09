@@ -49,7 +49,9 @@ embarqués (`polices/*-symboles-*`, `*-grec-*`, déclarés avec `unicode-range` 
 la même famille, pour qu'aucun glyphe ne tombe sur la police du système. Le gras est 600 (Plex) ou 700 (B612) ;
 jamais 700 sur Plex. Le dessin des folios garde sa propre police à chasse fixe (celle du système), indépendante de ces
 jetons. Corps : `--f-11 --f-12 --f-13 --f-14 --f-16 --f-20 --f-24 --f-28` ; les chiffres sont tabulaires partout où
-ils s'alignent. Les espaces insécables précèdent `: ; ? ! »` et suivent `«` (`insecable()` dans 08-fiche).
+ils s'alignent. La typographie française est posée une fois pour toutes sur le texte affiché (`typographieVivante()`,
+08-interface) : espace insécable avant `: ; ? ! »` et après `«`, apostrophe courbe — jamais dans le dessin des folios
+(svg) ni dans un champ ; `insecable()` (08-fiche) lie en plus un nombre à son unité.
 
 ## 4. Les jetons (dans `src/style.css`, `:root`) — on les utilise, on ne les redéfinit pas ailleurs
 
@@ -83,7 +85,8 @@ plus de 36vw), `--fiche-l` 400 px, `--base-h` la hauteur du tiroir du tableau. L
 **Les tailles d'écran.** Au-dessus de 1100 px : la table, le rail, l'inspecteur à droite. Tablette : l'inspecteur se
 resserre. **Téléphone (≤ 700 px)** : le rail passe en barre du bas (`--rail-tel`), les tiroirs (tableau, inspecteur)
 montent au-dessus de lui, un document (fiche, bible, normes, nomenclature) prend toute la page avec sa tête collée en
-haut ; au doigt (`pointer: coarse`) les champs sont à 16 px (pas de zoom forcé) et les cibles à 40 px, et ce qui ne
+haut ; les normes et la bible laissent toujours 320 px au plan à côté d'elles, et la table de la bible range ses
+colonnes secondaires (note, puis nature et blindage) quand la page se resserre (container query) ; au doigt (`pointer: coarse`) les champs sont à 16 px (pas de zoom forcé) et les cibles à 40 px, et ce qui ne
 s'ouvrait qu'au survol (`hover: none`) est montré d'office.
 
 ## 5. Les composants communs (noms de classes, à réutiliser tels quels)

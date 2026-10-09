@@ -107,7 +107,7 @@ function ajouterH4() {
   await page.evaluate(() => { REF.portee = 'equipement'; allerAuPlan('1'); choisirBloc(app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag')); }); await page.waitForTimeout(400);
   await page.click('#ba-equip .fi-cand[data-ref="H-4"]'); await page.waitForTimeout(400);
   const Q0 = await page.evaluate(() => [...document.querySelectorAll('#ba-equip .cp-corr')].map(b => b.tagName + ':' + b.textContent));
-  ok(Q0.includes('BUTTON:303RL7 → 103RL1 ?') && Q0.includes('BUTTON:301BT1 → 101BT1') && Q0.length === 3, 'contre H-4 : « 303RL7 → 103RL1 ? » (même code, mêmes voisins) ; chaque puce « ses repères, chez nous » est un bouton', Q0.join(' · '));
+  ok(Q0.includes('BUTTON:303RL7 → 103RL1\u00a0?') && Q0.includes('BUTTON:301BT1 → 101BT1') && Q0.length === 3, 'contre H-4 : « 303RL7 → 103RL1 ? » (même code, mêmes voisins) ; chaque puce « ses repères, chez nous » est un bouton', Q0.join(' · '));
   await page.click('#ba-equip .cp-corr[data-corr="303RL7"]'); await page.waitForTimeout(300);
   const CH = await page.evaluate(() => ({ note: document.querySelector('#ba-equip .cp-choix .fi-note').textContent, cands: [...document.querySelectorAll('#ba-equip .cp-cand')].map(b => b.dataset.vers), presse: (document.querySelector('#ba-equip .cp-cand[aria-pressed="true"]') || { dataset: {} }).dataset.vers, tous: !!$('cp-corr-tous'), defaire: !!$('cp-corr-defaire'), ouverte: document.querySelector('#ba-equip .cp-corr[data-corr="303RL7"]').getAttribute('aria-expanded') }));
   ok(/303RL7 · relais n° 7 · zone 303/.test(CH.note) && CH.cands[0] === '103RL1' && CH.presse === '103RL1' && CH.cands.includes('381RL1') && !CH.cands.includes('102CB1') && CH.cands[CH.cands.length - 1] === '' && CH.tous && !CH.defaire && CH.ouverte === 'true', 'la puce ouvre le choix : nos relais, la proposition 103RL1 en tête et pressée, « nouveau chez nous », « tous les repères »', JSON.stringify(CH));
@@ -124,7 +124,7 @@ function ajouterH4() {
   ok(await page.evaluate(() => !!document.querySelector('#fw-vue .comp[data-name="303RL7"].fw-chez') && !!document.querySelector('#fw-vue .comp[data-name="304LP5"].fw-manque') && /votre choix/.test(document.querySelector('#fw-liste .fw-eq[data-nom="303RL7"]').textContent)), 'le calque suit les choix : 303RL7 chez nous (votre choix), 304LP5 en manque');
   await page.keyboard.press('Escape'); await page.waitForTimeout(300);
   await page.click('#ba-equip .cp-corr[data-corr="304LP5"]'); await page.waitForTimeout(300); await page.click('#cp-corr-defaire'); await page.waitForTimeout(400);
-  ok(await page.evaluate(() => document.querySelector('#ba-equip .cp-corr[data-corr="304LP5"]').textContent === '304LP5 → 104LP1 ?' && REF.fixes.size === 1), '« revenir à la proposition de l’outil » rend 304LP5 → 104LP1 ?');
+  ok(await page.evaluate(() => document.querySelector('#ba-equip .cp-corr[data-corr="304LP5"]').textContent === '304LP5 → 104LP1\u00a0?' && REF.fixes.size === 1), '« revenir à la proposition de l’outil » rend 304LP5 → 104LP1 ?');
   ok(await page.evaluate(() => { const n = app.nom; app.nom = 'autre.xlsx'; const k = fixesPour('H-4').size; app.nom = n; return k === 0 && fixesPour('H-4').size === 1; }), 'les choix sont à ce contrat : un autre fichier n’en hérite pas');
   await page.evaluate(() => { REF.portee = 'equipement'; REF.fixes.clear(); deselectionner(); });
   ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));

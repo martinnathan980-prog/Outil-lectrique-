@@ -25,7 +25,7 @@ const atelier = {
 };
 
 function demarrer() {
-  relireBible(); lierPanneau(); lierPlanche();
+  typographieVivante(); relireBible(); lierPanneau(); lierPlanche();
   // le tableau garde sa taille et sa portée, jamais son état ouvert : on rouvre sur le plan seul, le tableau à la demande (B)
   relireBase();
   // on retrouve son contrat (avec ses choix) ; à défaut l'exemple embarqué, que l'en-tête nomme — jamais un écran vide

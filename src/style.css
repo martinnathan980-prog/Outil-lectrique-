@@ -491,6 +491,10 @@ table.bible{width:100%;border-collapse:separate;border-spacing:0;font-size:var(-
 .bible tr.on td,.bible tr.on:hover td{background:var(--accent-soft)}
 /* la note tient sur une ligne (entière au survol) : une ligne de la table, une hauteur */
 .bible td.bible-note{color:var(--t-2);font-family:var(--sans);font-size:var(--f-11);white-space:nowrap;max-width:240px;overflow:hidden;text-overflow:ellipsis;padding-right:0}
+/* la page se resserre (tablette, téléphone) : plutôt que de faire glisser tout le document de côté, la table range ses
+   colonnes secondaires — la note d'abord, puis la nature et le blindage ; la référence en grand les dit toutes */
+@container (max-width:760px){ .bible th:nth-child(8),.bible tr:not(.bz-ligne)>td:nth-child(8){display:none} }
+@container (max-width:520px){ .bible th:is(:nth-child(3),:nth-child(7)),.bible tr:not(.bz-ligne)>td:is(:nth-child(3),:nth-child(7)){display:none} }
 /* chaque référence porte sa physique en petit, en haut de sa ligne ; son nom s'ouvre en grand, sous elle */
 .bible td.pict{width:56px;padding:6px 12px 6px 0;vertical-align:top}
 .ref-btn{border:none;background:none;padding:2px 6px;margin:-2px -6px;border-radius:var(--r-1);font-family:var(--mono);font-weight:600;color:var(--t-1);text-align:left;text-decoration:underline dotted color-mix(in srgb,var(--t-1) 35%,transparent);text-underline-offset:3px}
@@ -535,8 +539,10 @@ table.norme{border-collapse:separate;border-spacing:0;font-size:var(--f-11);whit
 .bz-ref{font-family:var(--titre);font-size:var(--f-20);font-weight:700;letter-spacing:.01em;line-height:1.2}
 .bible-zoom .mj-faces{margin-top:8px;padding:12px 8px 8px}
 .bible-zoom .phy{margin-top:8px;padding:8px}
-.bar-faits{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin-top:8px;font-size:var(--f-12);color:var(--t-2)}
-.bar-faits span:nth-child(2n){font-family:var(--mono);color:var(--t-1)}
+/* ses caractéristiques : comme les faits d'une fiche (.fi-faits) — la clé en étiquette, la valeur en linéale */
+.bar-faits{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 16px;margin-top:12px;font-size:var(--f-12);color:var(--t-1);font-variant-numeric:tabular-nums}
+.bar-faits span:nth-child(2n+1){font:400 10px/1.9 var(--titre);letter-spacing:.12em;text-transform:uppercase;color:var(--t-3);white-space:nowrap}
+.bar-faits span:nth-child(2n){line-height:1.55;min-width:0;overflow-wrap:anywhere}
 /* les HYPOTHÈSES de la simulation : un groupe par thème, une ligne par hypothèse — le champ (celui du bandeau des
    cartes, .hyp-n / .hyp-c, habillé en ligne), puis à quoi elle sert. Les contrôles finissent tous au même bord : une
    liste et une case à cocher gardent la place de l'unité (40 px + 10 px d'écart) que portent les champs chiffrés */
@@ -908,10 +914,9 @@ body.fiche-ouverte #toast{left:max(calc(var(--rail) + 16px + min(60vw,560px) / 2
   /* le mot qui passe : toute la largeur s'il le faut, sur une ligne si possible */
   #toast,body.insp-ouvert #toast,body.fiche-ouverte #toast{left:50%;width:max-content;max-width:calc(100vw - 16px)}
   .depot{inset:8px}
-  /* les documents : l'en-tête de la bible colle au bord du tiroir (son rembourrage y est de 16 px) ; la table y est plus
-     large que l'écran : la référence en grand, dépliée sous sa ligne, garde la largeur de l'écran et reste à gauche */
-  .bible th{top:-16px}
-  .bible-zoom{position:sticky;left:0;width:calc(100vw - 32px)}
+  /* les documents : c'est la tête du document qui reste collée en haut (son titre, sa croix) ; l'en-tête de la bible
+     défile avec la table, qui tient dans l'écran (ses colonnes secondaires rangées) */
+  .bible th{position:static}
   /* le tableau : chaque colonne à la largeur de son champ resserré (+ 8 px) */
   .tab th.rep{width:92px}.tab th.n{width:52px}.tab th.fil{width:96px}.tab th.type{width:80px}.tab th.pn{width:144px}.tab th.route{width:112px}
 }
