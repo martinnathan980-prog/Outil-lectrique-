@@ -204,7 +204,8 @@ function baseEssaiDansLaPage() {
     const ctx = await nav.newContext(grand); let page = await ouvrirPage(ctx);
     let e = await etat(page);
     ok(e.n > 0 && !e.insp, 'l’outil s’ouvre, sans fiche ouverte', e.nom + ' · ' + e.enSous);
-    frottement(await page.evaluate(() => !$('vide').hidden), 'à la première ouverture, c’est l’exemple qui s’affiche, pas l’accueil', 'le technicien qui ouvre l’outil pour un contrat neuf arrive sur un contrat qui n’est pas le sien ; il doit « Tout effacer » pour voir la page d’entrée',
+    // la proposition retenue : l'exemple reste (il montre tout), et l'en-tête dit que c'est l'exemple embarqué
+    frottement(await page.evaluate(() => !$('vide').hidden || /exemple embarqué/.test($('en-sous').textContent)), 'à la première ouverture, c’est l’exemple qui s’affiche, pas l’accueil', 'le technicien qui ouvre l’outil pour un contrat neuf arrive sur un contrat qui n’est pas le sien ; il doit « Tout effacer » pour voir la page d’entrée',
       'détail', '10-demarrage.js `demarrer` : sans contrat gardé, montrer l’accueil (#vide) avec « Voir l’exemple » plutôt que charger l’exemple d’office — ou garder l’exemple mais dire dans l’en-tête qu’il s’agit de l’exemple');
     // tout effacer : l'accueil
     await page.click('#btnMenu'); accepter(page); await page.click('#menu [data-act="vider"]'); await page.waitForTimeout(400);
