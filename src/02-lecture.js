@@ -4,8 +4,11 @@
 
    Le format qui compte est le RETEST : seize colonnes nommées, en-têtes en
    ligne 4 sous une date et un mémo. On le lit exactement, par le nom des
-   colonnes. Un tableau qui n'est pas du retest — un export bricolé, un
-   collage — passe par le rattrapage, qui devine l'ordre des colonnes.
+   colonnes. Un classeur Excel se lit feuille par feuille (une par harness :
+   chaque feuille qui porte les en-têtes est lue, les autres sont nommées
+   pour qu'on dise qu'elles sont ignorées). Un tableau qui n'est pas du
+   retest — un export bricolé, un collage — passe par le rattrapage, qui
+   devine l'ordre des colonnes.
    =========================================================================== */
 'use strict';
 
@@ -38,6 +41,15 @@ function decouperLigne(ligne) {
 }
 const cellules = ligne => decouperLigne(ligne).map(x => String(x).trim());
 
+/* Une ligne est-elle un en-tête du retest ? Ses colonnes, si elle nomme au
+   moins les quatre qui font une liaison : { col, trouvees } ; sinon null. */
+function colonnesRetest(row) {
+  const col = {}; let n = 0;
+  row.forEach((cell, c) => { const k = NORM(cell); if (!k) return;
+    for (const [nom, alias] of COLONNES) {
+      if (col[nom] == null && alias.includes(k)) { col[nom] = c; n++; break; } } });
+  return col.device1 != null && col.device2 != null && col.pin1 != null && col.pin2 != null ? { col, trouvees: n } : null;
+}
 /* Où sont les en-têtes ? On prend, dans les trente premières lignes, celle
    qui reconnaît le plus de colonnes — à condition d'y trouver les quatre qui
    font une liaison. Un fichier réorganisé demain continuera de marcher. */
@@ -46,12 +58,8 @@ function trouverEnteteRetest(lignes) {
   for (let r = 0; r < Math.min(lignes.length, 30); r++) {
     // une ligne est un texte à découper, ou déjà un tableau de cellules (Excel)
     const row = Array.isArray(lignes[r]) ? lignes[r].map(x => String(x == null ? '' : x).trim()) : cellules(lignes[r] || '');
-    const col = {}; let n = 0;
-    row.forEach((cell, c) => { const k = NORM(cell); if (!k) return;
-      for (const [nom, alias] of COLONNES) {
-        if (col[nom] == null && alias.includes(k)) { col[nom] = c; n++; break; } } });
-    const complete = col.device1 != null && col.device2 != null && col.pin1 != null && col.pin2 != null;
-    if (complete && (!meilleure || n > meilleure.trouvees)) meilleure = { ligne: r, col, trouvees: n };
+    const e = colonnesRetest(row);
+    if (e && (!meilleure || e.trouvees > meilleure.trouvees)) meilleure = { ligne: r, col: e.col, trouvees: e.trouvees };
   }
   return meilleure;
 }
@@ -90,7 +98,9 @@ function devinerColonnes(cells) {
 }
 
 /* Le point d'entrée : du texte, des liaisons.
-   Rend { liaisons, format:'retest'|'libre', entete (n° de ligne Excel) }. */
+   Rend { liaisons, format:'retest'|'libre', entete (n° de ligne Excel),
+   entetes (combien de lignes d'en-tête : les feuilles d'un classeur, ou des
+   extraits collés à la suite — chacune reprend ses colonnes), harnais }. */
 function lireTexte(texte) {
   const brutes = String(texte || '').split(/\r?\n/);   // lignes vides gardées : numérotation Excel
   const pleines = brutes.filter(l => l.trim());
@@ -98,13 +108,16 @@ function lireTexte(texte) {
 
   const rt = trouverEnteteRetest(brutes);
   if (rt) {
-    const c = rt.col, g = (row, i) => (i != null && row[i] != null) ? row[i] : '';
+    let c = rt.col, entetes = 1; const g = (row, i) => (i != null && row[i] != null) ? row[i] : '';
     // la longueur : des mm quand l'en-tête le dit (« Cable length (mm) »)
-    const entete = cellules(brutes[rt.ligne] || ''), enMm = c.length != null && /mm/i.test(entete[c.length] || '');
+    const mm = entete => c.length != null && /mm/i.test(entete[c.length] || '');
+    let enMm = mm(cellules(brutes[rt.ligne] || ''));
     const liaisons = [];
     for (let r = rt.ligne + 1; r < brutes.length; r++) {
       if (!brutes[r].trim()) continue;
       const row = cellules(brutes[r]);
+      // une autre ligne d'en-tête (la feuille suivante d'un classeur, un extrait collé à la suite) : ses colonnes prennent le relais
+      const e = colonnesRetest(row); if (e) { c = e.col; enMm = mm(row); entetes++; continue; }
       const l = liaison({ de: g(row, c.device1), borneDe: g(row, c.pin1), pnDe: g(row, c.pn1),
                           vers: g(row, c.device2), borneVers: g(row, c.pin2), pnVers: g(row, c.pn2),
                           cable: g(row, c.cabletag), type: g(row, c.cabletg),
@@ -115,7 +128,7 @@ function lireTexte(texte) {
                           harness: g(row, c.harness), appareil: g(row, c.appareil), retest: g(row, c.retest) });
       if (liaisonComplete(l)) liaisons.push(l);
     }
-    return { liaisons, format: 'retest', entete: rt.ligne + 1, colonnes: rt.trouvees, harnais: [...new Set(liaisons.map(l => l.harness).filter(Boolean))] };
+    return { liaisons, format: 'retest', entete: rt.ligne + 1, entetes, colonnes: rt.trouvees, harnais: [...new Set(liaisons.map(l => l.harness).filter(Boolean))] };
   }
 
   let map = null, debut = 0; const premiere = cellules(pleines[0]);
@@ -132,16 +145,28 @@ function lireTexte(texte) {
   return { liaisons, format: 'libre' };
 }
 
-/* Un fichier (Excel ou texte) → texte tabulé. Excel passe par SheetJS,
+/* Un fichier (Excel ou texte) → son texte tabulé, et ce qu'on en a lu : les
+   FEUILLES d'un classeur (nom, est-ce un retest, combien de lignes). Un
+   classeur à plusieurs feuilles — une par harness, le format naturel d'un
+   extrait de base — s'enchaîne feuille après feuille : celles qui portent les
+   en-têtes du retest (`lireTexte` reprend ses colonnes à chaque en-tête
+   rencontré), les autres sont IGNORÉES et nommées (`ignorees`) pour qu'on le
+   dise. Sans aucune feuille de retest (une bible, une norme, un tableau
+   libre) : la première feuille seule, comme avant. Excel passe par SheetJS,
    embarqué dans la page : rien ne part sur le réseau. */
-async function texteDuFichier(fichier) {
+async function lectureDuFichier(fichier) {
   const nom = (fichier.name || '').toLowerCase();
   const excel = /\.xls[xm]?$/.test(nom) || /sheet|excel/.test(fichier.type || '');
-  if (!excel) return fichier.text();
+  if (!excel) return { texte: await fichier.text(), feuilles: [], lues: [], ignorees: [] };
   if (typeof XLSX === 'undefined') throw new Error('bibliothèque Excel absente');
   const wb = XLSX.read(await fichier.arrayBuffer(), { type: 'array' });
-  const ws = wb.Sheets[wb.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: true, defval: '' });
-  return rows.map(r => (Array.isArray(r) ? r : [r]).map(c => c == null ? '' : String(c)).join('\t')).join('\n');
+  const feuilles = wb.SheetNames.map(n => {
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, blankrows: true, defval: '' }).map(r => (Array.isArray(r) ? r : [r]).map(c => c == null ? '' : String(c)));
+    return { nom: n, retest: !!trouverEnteteRetest(rows), lignes: rows.filter(r => r.some(Boolean)).length, texte: rows.map(r => r.join('\t')).join('\n') }; });
+  const retests = feuilles.filter(f => f.retest), lues = retests.length ? retests : feuilles.slice(0, 1);
+  return { texte: lues.map(f => f.texte).join('\n'), feuilles: feuilles.map(({ nom, retest, lignes }) => ({ nom, retest, lignes })),
+           lues: lues.map(f => f.nom), ignorees: feuilles.filter(f => !lues.includes(f)).map(f => f.nom) };
 }
-async function lireFichier(fichier) { return lireTexte(await texteDuFichier(fichier)); }
+async function texteDuFichier(fichier) { return (await lectureDuFichier(fichier)).texte; }
+/* Un fichier lu : les liaisons, et les feuilles lues ou ignorées, pour le dire. */
+async function lireFichier(fichier) { const f = await lectureDuFichier(fichier); return { ...lireTexte(f.texte), feuilles: f.feuilles, lues: f.lues, ignorees: f.ignorees }; }

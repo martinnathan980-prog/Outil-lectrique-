@@ -9,8 +9,12 @@
        comparé encadré, la colonne qui explique chaque repère, la recherche, un
        clic qui choisit, Échap qui ferme ; « Comparer » revient à la comparaison
        du dessin entier ;
-     · reprendre à l'échelle du dessin ajoute les lignes cochées, Ctrl+Z les rend ;
-     · la bible cherche un repère et ouvre son dessin.
+     · reprendre à l'échelle du dessin ajoute les lignes cochées (avec la route,
+       sans la longueur de l'autre machine), Ctrl+Z les rend ;
+     · la bible cherche un repère et ouvre son dessin ;
+     · un repère proposé « ? » se confirme ou se corrige d'un clic sur sa puce
+       (nos repères de même code, tous, « nouveau chez nous », revenir à la
+       proposition) ; le choix vaut à toutes les échelles et sur le calque.
    Rend 1 au premier échec.
    =========================================================================== */
 const { chromium } = require('playwright');
@@ -20,13 +24,20 @@ const FICHIER = P.fichierDemande();
 // soixante lignes de l'exemple (H-2), le folio 2 avec une barrette écrite « module 51, contact B » (H-3)
 function baseEssai() {
   const d = r => /G$/.test(r) ? r : r.replace(/^(\d)(\d\d)([A-Z]+)(\d*)/, (m, a, b, c, e) => String(+a + 2) + b + c + e), E = contratExemple(), F = (p, v) => 'MEE256A78150' + String(p).padStart(2, '0') + v;
-  const H1 = E.map(l => liaison({ ...l, de: d(l.de), vers: d(l.vers), fwd: F(l.plan, 'A'), harness: 'H-1', appareil: 'H160', retest: '08/07/2024' })).filter(l => l.cable !== 'W-014').map(l => l.cable === 'W-012' ? liaison({ ...l, type: 'DR16' }) : l);
-  H1.push(liaison({ de: '302CB1', borneDe: '3', pnDe: 'MS3320-10', vers: '305XX9', borneVers: '1', pnVers: 'ZZZ', cable: 'W-099', type: 'DR20', plan: '1', fwd: F(1, 'A'), harness: 'H-1', appareil: 'H160' }));
-  H1.push(liaison({ de: '305XX9', borneDe: '2', pnDe: 'ZZZ', vers: '901G', borneVers: '', cable: 'W-098', type: 'DR20', plan: '1', fwd: F(1, 'A'), harness: 'H-1', appareil: 'H160' }));
+  const H1 = E.map(l => liaison({ ...l, de: d(l.de), vers: d(l.vers), fwd: F(l.plan, 'A'), harness: 'H-1', appareil: 'H160', retest: '08/07/2024', longueur: 2500 })).filter(l => l.cable !== 'W-014').map(l => l.cable === 'W-012' ? liaison({ ...l, type: 'DR16' }) : l);
+  H1.push(liaison({ de: '302CB1', borneDe: '3', pnDe: 'MS3320-10', vers: '305XX9', borneVers: '1', pnVers: 'ZZZ', cable: 'W-099', type: 'DR20', plan: '1', fwd: F(1, 'A'), harness: 'H-1', appareil: 'H160', longueur: 2500 }));
+  H1.push(liaison({ de: '305XX9', borneDe: '2', pnDe: 'ZZZ', vers: '901G', borneVers: '', cable: 'W-098', type: 'DR20', plan: '1', fwd: F(1, 'A'), harness: 'H-1', appareil: 'H160', longueur: 2500 }));
   const H2 = E.slice(0, 60).map(l => liaison({ ...l, fwd: F(l.plan, 'B'), harness: 'H-2', appareil: 'H175', retest: '27/10/2025' }));
   const H3 = E.filter(l => l.plan === '2').map(l => { const m = r => r === '667VT21' ? '677VT2' : r, b = (r, bo) => r === '667VT21' ? '5' + bo + 'B' : bo;
     return liaison({ ...l, de: m(l.de), borneDe: b(l.de, l.borneDe), vers: m(l.vers), borneVers: b(l.vers, l.borneVers), fwd: F(2, 'C'), harness: 'H-3', appareil: 'H160', retest: '12/03/2025', descriptionDe: l.de === '210SP1' ? 'CALCULATEUR' : '' }); });
   adopterReferences([...H1, ...H2, ...H3], 'essai');
+}
+// H-4, ajoutée plus tard : le folio 1 décalé dont le relais et la lampe n'ont ni le même repère ni de part number — l'outil ne peut les relier que par les voisins (« ? »)
+function ajouterH4() {
+  const d = r => /G$/.test(r) ? r : r.replace(/^(\d)(\d\d)([A-Z]+)(\d*)/, (m, a, b, c, e) => String(+a + 2) + b + c + e), E = contratExemple(), F = (p, v) => 'MEE256A78150' + String(p).padStart(2, '0') + v;
+  const m4 = r => ({ '303RL1': '303RL7', '304LP1': '304LP5' })[r] || r, sansPn = r => r === '303RL7' || r === '304LP5';
+  const H4 = E.filter(l => l.plan === '1').map(l => { const de = m4(d(l.de)), vers = m4(d(l.vers)); return liaison({ ...l, de, vers, pnDe: sansPn(de) ? '' : l.pnDe, pnVers: sansPn(vers) ? '' : l.pnVers, fwd: F(1, 'D'), harness: 'H-4', appareil: 'H160', retest: '02/02/2023' }); });
+  adopterReferences([...app.references.liaisons, ...H4], 'essai');
 }
 (async () => {
   const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
@@ -58,6 +69,7 @@ function baseEssai() {
   ok(await page.evaluate(() => /Reprendre 3/.test($('cp-reprendre').textContent) && !$('cp-reprendre').disabled), 'tout cocher : trois lignes uniques à reprendre');
   await page.click('#cp-reprendre'); await page.waitForTimeout(1200);
   ok(await page.evaluate(n => verite().length === n + 3 && verite().some(l => l.de === '102CB1' && l.borneDe === '3' && l.vers === '305XX9' && l.pnDe === 'MS3320-10' && !l.cable) && verite().some(l => l.de === '305XX9' && l.vers === '901G') && app.dessin.comps.some(c => c.name === '305XX9'), avant), 'reprendre : 102CB1:3 → 305XX9, 305XX9 → 901G et le fil qui différait entrent au contrat, recâblés sur nos repères, sans numéro');
+  ok(await page.evaluate(n => verite().slice(n).every(l => l.longueur === undefined) && verite().slice(n).some(l => l.route === 'PUISSANCE'), avant), 'les lignes reprises ne portent pas les 2,5 m mesurés sur H-1 (l’hypothèse sert, la fiche le dit) mais gardent la route');
   await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(800);
   ok(await page.evaluate(n => verite().length === n, avant), 'Ctrl+Z défait la reprise');
   // le calque du dessin, depuis la comparaison
@@ -90,6 +102,31 @@ function baseEssai() {
   ok(FB.titre === 'MEE256A7815002C' && FB.choisi && FB.comparer && FB.chez && /→ 667VT21 · même part number/.test(FB.mots) && /4 diffèrent/.test(FB.mots) && FB.differe === 4 && FB.desc, 'depuis la bible : le dessin de H-3 s’ouvre sur 677VT2 (choisi), qui est notre 667VT21 par le part number, ses quatre fils aux bornes « module 51, contact B » diffèrent ; la description du retest se lit (CALCULATEUR)', JSON.stringify(FB));
   await page.keyboard.press('Escape'); await page.waitForTimeout(300);
   ok(await page.evaluate(() => $('fwd').hidden && app.fiche && app.fiche.mode === 'bible'), 'Échap ferme le calque, la bible reste');
+  // les repères proposés « ? » se confirment ou se corrigent : H-4 (relais et lampe sans part number, reliés par les voisins)
+  await page.evaluate(() => { fermerFiche(true); }); await page.evaluate(ajouterH4); await page.waitForTimeout(300);
+  await page.evaluate(() => { REF.portee = 'equipement'; allerAuPlan('1'); choisirBloc(app.dessin.comps.find(k => k.name === '102CB1' && k.kind !== 'tag')); }); await page.waitForTimeout(400);
+  await page.click('#ba-equip .fi-cand[data-ref="H-4"]'); await page.waitForTimeout(400);
+  const Q0 = await page.evaluate(() => [...document.querySelectorAll('#ba-equip .cp-corr')].map(b => b.tagName + ':' + b.textContent));
+  ok(Q0.includes('BUTTON:303RL7 → 103RL1 ?') && Q0.includes('BUTTON:301BT1 → 101BT1') && Q0.length === 3, 'contre H-4 : « 303RL7 → 103RL1 ? » (même code, mêmes voisins) ; chaque puce « ses repères, chez nous » est un bouton', Q0.join(' · '));
+  await page.click('#ba-equip .cp-corr[data-corr="303RL7"]'); await page.waitForTimeout(300);
+  const CH = await page.evaluate(() => ({ note: document.querySelector('#ba-equip .cp-choix .fi-note').textContent, cands: [...document.querySelectorAll('#ba-equip .cp-cand')].map(b => b.dataset.vers), presse: (document.querySelector('#ba-equip .cp-cand[aria-pressed="true"]') || { dataset: {} }).dataset.vers, tous: !!$('cp-corr-tous'), defaire: !!$('cp-corr-defaire'), ouverte: document.querySelector('#ba-equip .cp-corr[data-corr="303RL7"]').getAttribute('aria-expanded') }));
+  ok(/303RL7 · relais n° 7 · zone 303/.test(CH.note) && CH.cands[0] === '103RL1' && CH.presse === '103RL1' && CH.cands.includes('381RL1') && !CH.cands.includes('102CB1') && CH.cands[CH.cands.length - 1] === '' && CH.tous && !CH.defaire && CH.ouverte === 'true', 'la puce ouvre le choix : nos relais, la proposition 103RL1 en tête et pressée, « nouveau chez nous », « tous les repères »', JSON.stringify(CH));
+  await page.click('#cp-corr-tous'); await page.waitForTimeout(300);
+  ok(await page.evaluate(() => document.querySelectorAll('#ba-equip .cp-cand').length > 40 && document.querySelector('#ba-equip .cp-cand').dataset.vers === '103RL1' && $('cp-corr-tous').getAttribute('aria-pressed') === 'true'), '« tous les repères » ouvre à tout le contrat, la proposition toujours en tête');
+  await page.click('#ba-equip .cp-cand[data-vers="103RL1"]'); await page.waitForTimeout(400);
+  ok(await page.evaluate(() => { const b = document.querySelector('#ba-equip .cp-corr[data-corr="303RL7"]'); return b && b.classList.contains('cp-corr-choisi') && b.textContent === '303RL7 → 103RL1 ✓' && !document.querySelector('#ba-equip .cp-choix') && REF.fixes.size === 1 && !/303RL7 \?/.test(document.querySelector('#ba-equip .cp-liste').textContent); }), 'un clic sur la proposition la confirme : le « ? » s’en va de la puce et de la ligne, la puce dit ✓, le choix est gardé');
+  await page.click('#ba-equip .cp-portee [data-portee="dessin"]'); await page.waitForTimeout(400);
+  ok(await page.evaluate(() => /5 chez nous · 1 proposé à confirmer/.test(document.querySelector('#ba-equip .cp-bilan').textContent) && !!document.querySelector('#ba-equip .cp-corr[data-corr="304LP5"].cp-corr-voisins') && [...document.querySelectorAll('#ba-equip .cp-eq-vers')].some(x => /103RL1 · votre choix/.test(x.textContent))), 'à l’échelle du dessin, le choix vaut aussi : 303RL7 → 103RL1 « votre choix », reste 304LP5 → 104LP1 ? à confirmer');
+  await page.click('#ba-equip .cp-corr[data-corr="304LP5"]'); await page.waitForTimeout(300); await page.click('#ba-equip .cp-cand[data-vers=""]'); await page.waitForTimeout(400);
+  const NV = await page.evaluate(() => ({ bilan: document.querySelector('#ba-equip .cp-bilan').textContent, puce: document.querySelector('#ba-equip .cp-corr[data-corr="304LP5"]').textContent, manque: document.querySelectorAll('#ba-equip .cp-eq-manque').length, lignes: document.querySelectorAll('#ba-equip .cp-liste .fi-fil.cp-manque').length }));
+  ok(/4 chez nous · il manque 304LP5 voyant/.test(NV.bilan) && !/à confirmer/.test(NV.bilan) && NV.puce === '304LP5 → 304LP5 (nouveau)' && NV.manque === 1 && NV.lignes >= 1, '« nouveau chez nous » pour 304LP5 : il manque chez nous, plus rien à confirmer, ses lignes manquent', JSON.stringify(NV));
+  await page.click('#cp-dessin'); await page.waitForFunction(() => document.querySelector('#fw-vue .comp[data-name]')); await page.waitForTimeout(400);
+  ok(await page.evaluate(() => !!document.querySelector('#fw-vue .comp[data-name="303RL7"].fw-chez') && !!document.querySelector('#fw-vue .comp[data-name="304LP5"].fw-manque') && /votre choix/.test(document.querySelector('#fw-liste .fw-eq[data-nom="303RL7"]').textContent)), 'le calque suit les choix : 303RL7 chez nous (votre choix), 304LP5 en manque');
+  await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+  await page.click('#ba-equip .cp-corr[data-corr="304LP5"]'); await page.waitForTimeout(300); await page.click('#cp-corr-defaire'); await page.waitForTimeout(400);
+  ok(await page.evaluate(() => document.querySelector('#ba-equip .cp-corr[data-corr="304LP5"]').textContent === '304LP5 → 104LP1 ?' && REF.fixes.size === 1), '« revenir à la proposition de l’outil » rend 304LP5 → 104LP1 ?');
+  ok(await page.evaluate(() => { const n = app.nom; app.nom = 'autre.xlsx'; const k = fixesPour('H-4').size; app.nom = n; return k === 0 && fixesPour('H-4').size === 1; }), 'les choix sont à ce contrat : un autre fichier n’en hérite pas');
+  await page.evaluate(() => { REF.portee = 'equipement'; REF.fixes.clear(); deselectionner(); });
   ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
   // au téléphone : le calque se montre, en pile
   const tel = await nav.newPage({ viewport: { width: 390, height: 844 } }); const err2 = []; tel.on('pageerror', e => err2.push(e.message));

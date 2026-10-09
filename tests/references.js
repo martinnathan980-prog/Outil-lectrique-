@@ -10,8 +10,13 @@
        voisins, leurs masses ; un candidat dit son dessin ;
      · la comparaison d'un dessin entier et d'un voisinage : les repères se
        correspondent d'un bloc (repère, part number, voisins, code), chaque fil
-       est jugé une fois, le bilan par équipement ; la reprise recâble ;
-     · la recherche de la bible ; cinquante mille lignes s'indexent vite.
+       est jugé une fois, le bilan par équipement ; les choix de l'utilisateur
+       (confirmer, corriger, « nouveau ») passent par `fixes` ; à ressemblance
+       égale, le même repère puis le même appareil passent devant ; la reprise
+       recâble, avec la route, sans la longueur de l'autre machine ;
+     · la recherche de la bible ; cinquante mille lignes s'indexent vite ;
+     · les repères provisoires (01, `avecBarrettesAPoser` avec la mémoire du
+       contrat) : poser VT1 ne fait pas reculer VT2.
    ========================================================================= */
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const SRC = path.join(__dirname, '..', 'src'), NORMES = path.join(__dirname, '..', 'normes');
@@ -19,7 +24,8 @@ const code = ['01-modele.js', '02-lecture.js', '09-barrettes.js', '09-disjoncteu
 const normes = fs.readdirSync(NORMES).filter(f => /\.csv$/i.test(f)).sort().map(f => fs.readFileSync(path.join(NORMES, f), 'utf8')).join('\n\n');
 const bac = { console }; vm.createContext(bac);
 vm.runInContext('const NORME_EMBARQUEE = ' + JSON.stringify(normes) + ';\n' + code + '\nthis.X = { liaison, lireTexte, contratExemple, CODES, decoderRepere, direRepere, lireBorne, direBorne, fwdDe, indexerReferences, dessinDe, dessinPrincipal, resumeDessin, chercherReferences, candidatsDeReference, flotteDe,'
-  + ' correspondre, correspondanceDesReperes, voisinsDe, voisinageDe, differentiel, comparerEnsemble, comparerDessin, comparerVoisinage, liaisonsAReprendre, liaisonsDEnsembleAReprendre, lignesDeRepere, cleRef };', bac);
+  + ' correspondre, correspondanceDesReperes, voisinsDe, voisinageDe, differentiel, comparerEnsemble, comparerDessin, comparerVoisinage, liaisonsAReprendre, liaisonsDEnsembleAReprendre, lignesDeRepere, cleRef, ecartDeReperes, fixesDe,'
+  + ' avecBarrettesAPoser, dedoublements, nouveauContrat };', bac);
 const X = bac.X;
 let total = 0, echecs = 0;
 const ok = (nom, cond, mesure) => { total++; if (!cond) echecs++; console.log('  ' + (cond ? 'OK    ' : 'ÉCHEC ') + nom + (mesure ? '   — ' + mesure : '')); };
@@ -72,6 +78,13 @@ console.log('\n4. RECONNAÎTRE, COMME AVANT, AVEC LE DESSIN EN PLUS');
 const L = E, CR = X.candidatsDeReference(IR, L, '102CB1', 3);
 ok('102CB1 : H-2/102CB1 (même part number, 100 %) puis H-1/302CB1 (75 % : une ligne de plus chez lui), chacun avec son dessin', CR.length === 2 && CR[0].harness === 'H-2' && CR[0].taux === 1 && CR[0].fwd === F(1, 'B') && CR[1].repere === '302CB1' && Math.abs(CR[1].taux - 0.75) < 1e-9 && CR[1].fwd === F(1, 'A') && CR[1].par === 'pn', JSON.stringify(CR.map(c => [c.harness, c.repere, c.taux, c.fwd])));
 ok('667VT21 (barrette) se reconnaît en 677VT2 de H-3 par son code, bornes déplacées : taux libre élevé', (() => { const c = X.candidatsDeReference(IR, L, '667VT21', 5).find(x => x.harness === 'H-3'); return c && c.repere === '677VT2' && c.libre >= 0.9 && c.fwd === F(2, 'C'); })());
+// à ressemblance égale, le même repère passe devant (H-2/101BT1 avant H-1/301BT1, tous deux à 100 %), puis le même appareil
+const CB = X.candidatsDeReference(IR, L, '101BT1', 3);
+ok('101BT1 : H-2/101BT1 (le même repère) passe devant H-1/301BT1 à ressemblance égale (100 % toutes deux, même part number)', CB.length === 2 && CB[0].harness === 'H-2' && CB[0].repere === '101BT1' && CB[1].repere === '301BT1' && CB[0].taux === 1 && CB[1].taux === 1, JSON.stringify(CB.map(c => [c.harness, c.repere, c.taux])));
+{ const F1 = E.filter(l => l.plan === '1'), dz = (l, k) => X.liaison({ ...l, de: decale(l.de), vers: decale(l.vers), harness: 'HZ-' + k, appareil: k === 'A' ? 'H160' : 'H175' }), IZ = X.indexerReferences([...F1.map(l => dz(l, 'A')), ...F1.map(l => dz(l, 'B'))]);
+  const notre = ap => F1.map(l => X.liaison({ ...l, de: l.de.replace(/^1/, '2'), vers: l.vers.replace(/^1/, '2'), appareil: ap }));
+  const sans = X.candidatsDeReference(IZ, notre(''), '202CB1', 2), avec = X.candidatsDeReference(IZ, notre('H175'), '202CB1', 2);
+  ok('deux machines à 100 % sans le même repère : sans appareil chez nous, l’ordre de la base (HZ-A) ; notre retest dit H175 → HZ-B (H175) passe devant', sans[0].harness === 'HZ-A' && sans[0].taux === 1 && sans[1].taux === 1 && avec[0].harness === 'HZ-B' && avec[0].appareil === 'H175', sans.map(c => c.harness).join() + ' / ' + avec.map(c => c.harness).join()); }
 const DF = X.differentiel(L, '102CB1', IR.harnais.get('H-1').liaisons, '302CB1');
 ok('le différentiel de 102CB1 contre 302CB1 : 3 pareilles, 1 manque ; 301BT1 → 101BT1 par le part number ; 305XX9 nouveau', DF.compte.identique === 3 && DF.compte.manque === 1 && DF.compte.differe === 0 && DF.correspondance.get('301BT1').vers === '101BT1' && DF.correspondance.get('301BT1').sur === 'pn' && DF.correspondance.get('305XX9').sur === 'nouveau' && DF.correspondance.get('303RL1').vers === '103RL1', JSON.stringify([...DF.correspondance]));
 ok('la flotte de 102CB1 : deux machines, chacune avec son dessin', X.flotteDe(IR, L, '102CB1').length === 2 && X.flotteDe(IR, L, '102CB1').every(x => x.fwd));
@@ -100,12 +113,22 @@ const Mr = [X.liaison({ de: '2CB1', borneDe: '1', pnDe: 'P-CB', vers: '2RL7', bo
 const CM = X.correspondre(Mn, Mr, ['2CB1', '2RL7', '8RL1', '5LP1'], new Map());
 ok('2CB1 → 1CB1 (part number) ; 2RL7 sans part number → 1RL1 par les voisins (proposé) ; 8RL1 → 9RL4 par le seul code (à confirmer) ; 5LP1 nouveau', CM.get('2CB1').vers === '1CB1' && CM.get('2CB1').sur === 'pn' && CM.get('2RL7').vers === '1RL1' && CM.get('2RL7').sur === 'voisins' && CM.get('8RL1').vers === '9RL4' && CM.get('8RL1').sur === 'code' && CM.get('5LP1').sur === 'nouveau', JSON.stringify([...CM]));
 ok('la correspondance à l’échelle de l’équipement rend les mêmes verdicts qu’avant (cible, repère, pn, code, nouveau)', (() => { const B = X.lignesDeRepere(Mr, '2CB1'), c = X.correspondanceDesReperes(Mn, B, '2CB1', '1CB1'); return c.get('2CB1').sur === 'cible' && c.get('2RL7').vers === '1RL1'; })());
+// les CHOIX de l'utilisateur (`fixes`) : confirmer ou corriger une proposition, dire « nouveau » — ils passent devant tout, sauf devant la cible
+const CM2 = X.correspondre(Mn, Mr, ['2CB1', '2RL7', '8RL1', '5LP1'], new Map([['8RL1', { vers: '1RL1', sur: 'choisi' }], ['5LP1', { vers: '5LP1', sur: 'nouveau' }]]));
+ok('8RL1 → 1RL1 choisi par l’utilisateur : 1RL1 est pris, 2RL7 va sur 9RL4 par ses voisins ; 5LP1 dit nouveau reste nouveau', CM2.get('8RL1').vers === '1RL1' && CM2.get('8RL1').sur === 'choisi' && CM2.get('2RL7').vers === '9RL4' && CM2.get('2RL7').sur === 'voisins' && CM2.get('5LP1').sur === 'nouveau', JSON.stringify([...CM2]));
+const C4 = X.comparerDessin(L, D1, '302CB1', '102CB1', new Map([['303RL1', { vers: '303RL1', sur: 'nouveau' }], ['301BT1', { vers: '102CB1', sur: 'choisi' }]]));
+ok('sur le dessin 1 : 303RL1 dit « nouveau chez nous » manque et ses lignes avec ; un choix qui vise la cible (301BT1 → 102CB1) est ignoré, 301BT1 reste 101BT1 par le part number ; plus rien à confirmer', C4.manquent.map(e => e.repere).sort().join() === '303RL1,305XX9' && C4.chezNous === 4 && C4.correspondance.get('303RL1').sur === 'nouveau' && C4.correspondance.get('301BT1').vers === '101BT1' && C4.correspondance.get('301BT1').sur === 'pn' && C4.compte.identique < C1.compte.identique && C4.proposes.length === 0, JSON.stringify([C4.compte, [...C4.correspondance]]));
+ok('le différentiel d’un équipement prend les choix aussi : 303RL1 → 381RL1 choisi se lit sur la ligne de 302CB1:2', X.differentiel(L, '102CB1', IR.harnais.get('H-1').liaisons, '302CB1', new Map([['303RL1', { vers: '381RL1', sur: 'choisi' }]])).lignes.find(x => x.ref && x.ref.autre === '303RL1').vers.vers === '381RL1' && X.fixesDe('302CB1', '102CB1', new Map([['302CB1', { vers: '999', sur: 'choisi' }]])).get('302CB1').sur === 'cible');
+ok('l’écart entre deux repères départage : 303RL7 est plus près de 381RL1 (même ordre ? non : 7 ≠ 1) que… l’ordre d’abord (RL1 ↔ RL1), la variante, puis la zone', X.ecartDeReperes('303RL7', '103RL7') < X.ecartDeReperes('303RL7', '381RL1') && X.ecartDeReperes('303RL7', '381RL1') < X.ecartDeReperes('303RL7', '103RL1') && X.ecartDeReperes('412VC3B', '412VC3A') < X.ecartDeReperes('412VC3B', '412VC4B'));
 
 console.log('\n6. REPRENDRE UN ENSEMBLE, CHERCHER DANS LA BASE');
 const NV = X.liaisonsDEnsembleAReprendre(C1, C1.lignes.filter(x => x.etat === 'manque'), L, '1');
 ok('les deux lignes manquantes reprises : 102CB1:3 → 305XX9:1 avec notre part number, 305XX9:2 → 901G ; sans numéro, folio 1', NV.length === 2 && NV[0].de === '102CB1' && NV[0].borneDe === '3' && NV[0].pnDe === 'MS3320-10' && NV[0].vers === '305XX9' && NV[0].pnVers === 'ZZZ' && NV[0].cable === '' && NV[0].plan === '1' && NV[1].de === '305XX9' && NV[1].vers === '901G', JSON.stringify(NV));
 const NA = X.liaisonsAReprendre(DF, '102CB1', DF.lignes.filter(x => x.etat === 'manque'), '1');
 ok('la reprise à l’échelle de l’équipement tient toujours : 102CB1:3 → 305XX9:1, DR20, nos part numbers', NA.length === 1 && NA[0].de === '102CB1' && NA[0].vers === '305XX9' && NA[0].type === 'DR20' && NA[0].pnDe === 'MS3320-10');
+// ce qu'une ligne reprise garde de l'autre machine : la route, le type, les descriptions — pas la longueur (2,5 m mesurés sur H-1), pas le numéro
+const NR = X.liaisonsDEnsembleAReprendre(C2, C2.lignes.filter(x => x.etat === 'manque' || x.etat === 'differe'), LM, '1');
+ok('les lignes reprises ne portent pas la longueur de H-1 (l’hypothèse servira, et c’est dit) mais gardent sa route (W-016 : SIGNAL, W-012 : PUISSANCE) et son type (le DR20 de H-1 remplace notre DR16), sans numéro', [...NV, ...NA, ...NR].every(l => l.longueur === undefined && l.cable === '') && NR.find(l => l.de === '104LP1' && l.borneDe === '2').route === 'SIGNAL' && NR.find(l => l.vers === '103RL1').route === 'PUISSANCE' && NR.find(l => l.vers === '103RL1').type === 'DR20', JSON.stringify(NR.map(l => [l.de, l.vers, l.type, l.route, l.longueur])));
 const Q1 = X.chercherReferences(IR, '677VT'), Q2 = X.chercherReferences(IR, 'H175'), Q3 = X.chercherReferences(IR, '');
 ok('chercher « 677VT » : l’équipement 677VT2 de H-3, sur son dessin ; « H175 » : le harness H-2 et ses trois dessins ; rien : tout', Q1.equipements.length === 1 && Q1.equipements[0].e.repere === '677VT2' && Q1.equipements[0].fwd === F(2, 'C') && Q2.harnais.length === 1 && Q2.dessins.length === 3 && Q3.harnais.length === 3 && Q3.dessins.length === 10 && Q3.equipements.length === 0, JSON.stringify([Q1.total, Q2.total, Q3.total]));
 
@@ -120,6 +143,18 @@ t0 = Date.now(); const QG = X.chercherReferences(IG, 'HX-12'); const tQ = Date.n
 ok(GROS.length + ' liaisons, 250 harness, 1500 dessins indexés en moins d’une seconde et demie', IG.harnais.size === 250 && IG.dessins.size === 1500 && tIndex < 1500, tIndex + ' ms');
 ok('reconnaître 102CB1 parmi 250 machines : les trois meilleurs en moins de 100 ms', CG.length === 3 && tCand < 100, tCand + ' ms');
 ok('comparer un dessin entier (67 fils, 20 équipements) en moins de 100 ms ; chercher en moins de 100 ms', CDG.nEquipements === 20 && tCmp < 100 && QG.harnais.some(h => h.harness === 'HX-12') && tQ < 100, tCmp + ' ms / ' + tQ + ' ms');
+
+console.log('\n8. LES REPÈRES PROVISOIRES (01) : UN NOM QUI TIENT QUAND UNE BARRETTE EST POSÉE');
+// les barrettes à poser de l'exemple : VT1 sur 102CB1:2 (folio 1), VT2 sur 340AB1:4 (folio 2), VT3 sur 600XC4:A11 (folio 6) — `depart` = celles des folios d'avant
+const folio = p => E.filter(l => l.plan === p), nomsVT = L => [...new Set(L.filter(l => l.aPoser).map(l => l.aPoser))].join(), sur = L => L.filter(l => l.origine === null && l.borneVers === '1').map(l => l.aPoser + ' sur ' + l.de + ':' + l.borneDe).join();
+ok('sans mémoire, comme toujours : VT1 sur 102CB1:2, VT2 sur 340AB1:4, VT3 sur 600XC4:A11 (depart 0, 1, 2) ; le folio 3 n’en a pas', nomsVT(X.avecBarrettesAPoser(folio('1'), 0)) === 'VT1' && nomsVT(X.avecBarrettesAPoser(folio('2'), 1)) === 'VT2' && nomsVT(X.avecBarrettesAPoser(folio('6'), 2)) === 'VT3' && X.dedoublements(folio('3')).length === 0 && sur(X.avecBarrettesAPoser(folio('2'), 1)) === 'VT2 sur 340AB1:4');
+const M = X.nouveauContrat().provisoires;
+ok('avec la mémoire du contrat (vide), les mêmes noms, dans n’importe quel ordre de calcul (le folio 6 d’abord) ; chaque borne retient son numéro', typeof M.get === 'function' && M.size === 0 && nomsVT(X.avecBarrettesAPoser(folio('6'), 2, M)) === 'VT3' && nomsVT(X.avecBarrettesAPoser(folio('1'), 0, M)) === 'VT1' && nomsVT(X.avecBarrettesAPoser(folio('2'), 1, M)) === 'VT2' && M.get('102CB1\u00012') === 1 && M.get('340AB1\u00014') === 2 && M.get('600XC4\u0001A11') === 3, JSON.stringify([...M]));
+// VT1 posée au contrat : le folio 1 n'a plus de dédoublement, depart tombe à 0 pour le folio 2 et à 1 pour le folio 6 — sans mémoire ils reculent, avec elle ils tiennent
+ok('VT1 posée : sans mémoire VT2 devient VT1 (le frottement) ; avec la mémoire, le folio 2 garde VT2 et le folio 6 VT3', nomsVT(X.avecBarrettesAPoser(folio('2'), 0)) === 'VT1' && nomsVT(X.avecBarrettesAPoser(folio('2'), 0, M)) === 'VT2' && nomsVT(X.avecBarrettesAPoser(folio('6'), 1, M)) === 'VT3');
+const F1b = [...folio('1'), X.liaison({ de: '104LP1', borneDe: '1', vers: '901G', borneVers: '', cable: 'W-019', type: 'DR22', plan: '1' })];   // 104LP1:1 reçoit un second fil : une borne dédoublée nouvelle
+ok('une borne dédoublée nouvelle au folio 1 (104LP1:1) prend le premier numéro libre au-delà de tous, VT4 — jamais le VT1 de 102CB1:2, même posée ; sans mémoire elle serait VT1', nomsVT(X.avecBarrettesAPoser(F1b.filter(l => l.cable !== 'W-015'), 0, M)) === 'VT4' && M.get('104LP1\u00011') === 4 && nomsVT(X.avecBarrettesAPoser(F1b.filter(l => l.cable !== 'W-015'), 0)) === 'VT1' && M.get('102CB1\u00012') === 1, JSON.stringify([...M]));
+ok('Ctrl+Z de la pose : 102CB1:2 redevient VT1, 104LP1:1 reste VT4 (deux barrettes, deux noms)', nomsVT(X.avecBarrettesAPoser(F1b, 0, M)) === 'VT1,VT4' && M.size === 4);
 
 console.log('\n  ' + (total - echecs) + ' / ' + total + ' contrôles passés' + (echecs ? '  —  ' + echecs + ' ÉCHEC(S)' : '  —  tout est vert'));
 process.exit(echecs ? 1 : 0);
