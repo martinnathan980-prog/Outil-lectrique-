@@ -104,6 +104,11 @@ node tests/vba.js              LES MACROS DU PILOTE SEE (see/vba/*.bas), sans Ex
                                d'arguments, ByRef du bon type, Set juste ; les clés de réglage et les huit natures de
                                FORMAT-PAQUET ; la sonde n'écrit rien dans SEE, chaque procédure du pilote qui écrit teste la
                                simulation ; et le contrôleur lui-même, éprouvé par vingt-six fautes injectées une à une
+tests/banc-vba/lancer.sh       LES MÊMES MACROS EXÉCUTÉES, dans LibreOffice (Basic en mode VBASupport) face à un FAUX SEE qui imite
+                               l'API COM et trace chaque appel : vingt-neuf scénarios (V5 et V4, folios complets, reprise après
+                               panne, Remplacer, sauvegardes, simulation sans aucune écriture, variantes de paquet) ; hors de
+                               tests/toutes.js (il demande LibreOffice et python3-uno, environ sept minutes) ; voir son LISEZMOI :
+                               il prouve la cohérence du code, pas le comportement du vrai SEE ni d'Excel
 node tests/couverture.js       CE QUE L'OUTIL VÉRIFIE, ET S'IL VÉRIFIE TOUT : sur l'exemple embarqué et sur un contrat inventé plus riche
                                (huit disjoncteurs dont un sans profil, un sans part number, un tripolaire ; EN 2997, EN 3645, EN 3646,
                                EN 4165, ASNE0059 ; E0599 et NSA937901 ; deux prises en chaîne ; AD16, AM6, un fil sans type, un type
