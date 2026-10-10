@@ -880,9 +880,13 @@ const pluriel = (n, mot) => n + ' ' + mot + (n > 1 && !/[sxz]$/.test(mot) ? 's' 
    (« 3 potentiels » → « potentiels », 08-fiche). */
 const INSECABLE = '\u00a0', plurielLie = (n, mot) => pluriel(n, mot).replace(' ', INSECABLE);
 /* La fiche se refait après chaque correction et quand la place change (fenêtre, poignée) — jamais sous les doigts de
-   qui y ÉCRIT (un champ de la fiche a le focus). Un bouton de la fiche qu'on vient de presser (une puce, une variante)
-   a le focus lui aussi : la fiche se refait quand même, et `rendreFiche` lui rend le focus. */
-function rafraichirCarte() { const box = $('ba-equip'), a = document.activeElement; if ($('inspecteur').hidden || (box.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return; rendreFiche(); }
+   qui y ÉCRIT : quand un champ de la fiche a le focus, elle se refait EN PLACE autour de lui (08 bis,
+   `rafraichirFicheEnPlace` : l'en-tête, les problèmes, les autres sections suivent ; le champ et sa saisie restent).
+   Un bouton de la fiche qu'on vient de presser (une puce, une variante) a le focus lui aussi : la fiche se refait
+   quand même, et `rendreFiche` lui rend le focus. */
+function rafraichirCarte() { const box = $('ba-equip'), a = document.activeElement; if ($('inspecteur').hidden) return;
+  if (box.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) { if (app.cible && typeof rafraichirFicheEnPlace === 'function') rafraichirFicheEnPlace(); return; }
+  rendreFiche(); }
 const jaugeTexte = b => b.jaugeFine === b.jaugeGrosse ? String(b.jaugeFine) : b.jaugeFine + ' à ' + b.jaugeGrosse;
 const jaugeEntree = e => e.jaugeMin == null ? '—' : (e.jaugeMax != null && e.jaugeMax !== e.jaugeMin ? e.jaugeMin + '–' + e.jaugeMax : String(e.jaugeMin));
 const nombre = x => x == null ? '—' : String(x).replace('.', ',');

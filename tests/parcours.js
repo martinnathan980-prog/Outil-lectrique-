@@ -359,7 +359,7 @@ function baseEssaiDansLaPage() {
     await capture(page, 'B-5-proposes');
     // reprendre puis RENOMMER le repris : 305XX9 devient 105XX9 par la tête de sa fiche
     await cliquerBloc(page, '102CB1'); await page.evaluate(() => { const d = document.querySelector('#ba-equip details[data-section="dejafait"]'); if (d) d.open = true; }); await page.click('#ba-equip .fi-cand[data-ref="H-1"]'); await page.waitForTimeout(400); await page.click('#cp-tout'); await page.waitForTimeout(200); await page.click('#cp-reprendre'); await page.waitForFunction(n => verite().length === n + 3, avant.n); await page.waitForTimeout(500);
-    await cliquerBloc(page, '305XX9'); ok(await page.evaluate(() => app.cible && app.cible.nom === '305XX9' && /équipement/.test(document.querySelector('#ba-equip .fi-sous').textContent)), 'la fiche du repris 305XX9 s’ouvre d’un clic sur le plan');
+    await cliquerBloc(page, '305XX9'); ok(await page.evaluate(() => app.cible && app.cible.nom === '305XX9' && /équipement/i.test(document.querySelector('#ba-equip .fi-genre').textContent)), 'la fiche du repris 305XX9 s’ouvre d’un clic sur le plan');
     await page.fill('#eq-rep', '105XX9'); await page.press('#eq-rep', 'Enter'); await page.waitForTimeout(700);
     ok(await page.evaluate(() => verite().some(l => l.vers === '105XX9' || l.de === '105XX9') && !verite().some(l => l.vers === '305XX9' || l.de === '305XX9') && app.dessin.comps.some(c => c.name === '105XX9')), 'écrire 105XX9 en tête de fiche renomme le repris : chaque fil suit, le plan aussi');
     await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(500); await page.keyboard.press('Control+z'); await page.waitForTimeout(700);
@@ -437,11 +437,11 @@ function baseEssaiDansLaPage() {
     const N1 = await page.evaluate(() => JSON.stringify(nomenclatureDuContrat().contacts));
     ok(N1 !== N0 && await page.evaluate(() => app.contrat.sexes.get('300XC1|A') === 'M'), 'des contacts mâles sur A : la nomenclature des contacts change');
     // un EN 4165 (300XC1) n'a pas de raccord : la reprise de blindage se choisit sur un EN 2997 (351PM1, folio 3)
-    await page.evaluate(() => { document.querySelector('#ba-equip details[data-section="habillage"]').open = true; const b = document.querySelector('#ba-equip [data-hab="300XC1|A"] [data-changer^="rac|"]'); if (b.getAttribute('aria-expanded') !== 'true') b.click(); }); await page.waitForTimeout(200);
+    await page.evaluate(() => { document.querySelector('#ba-equip details[data-section="connecteur"]').open = true; const b = document.querySelector('#ba-equip [data-hab="300XC1|A"] [data-changer^="rac|"]'); if (b.getAttribute('aria-expanded') !== 'true') b.click(); }); await page.waitForTimeout(200);
     await page.click('#ba-equip [data-hab="300XC1|A"] [data-raccord][data-champ="blindage"][data-v="GND"]'); await page.waitForTimeout(700);
     ok(await page.evaluate(() => !nomenclatureDuContrat().habits.some(h => h.quoi === 'band-it' && /300XC1 A/.test(h.ou.join(' '))) && app.contrat.raccords.get('300XC1|A').blindage === 'GND'), 'une reprise de blindage sur le corps d’un EN 4165 : le choix se garde, mais aucun band-it n’entre à la nomenclature (un EN 4165 n’a pas de raccord)');
     await page.evaluate(() => { allerAuPlan('3'); choisirBloc(app.dessin.comps.find(k => k.name === '351PM1' && k.kind !== 'tag')); }); await page.waitForTimeout(500);
-    await page.evaluate(() => { document.querySelector('#ba-equip details[data-section="habillage"]').open = true; const b = document.querySelector('#ba-equip [data-changer^="rac|"]'); if (b.getAttribute('aria-expanded') !== 'true') b.click(); }); await page.waitForTimeout(200);
+    await page.evaluate(() => { document.querySelector('#ba-equip details[data-section="connecteur"]').open = true; const b = document.querySelector('#ba-equip [data-changer^="rac|"]'); if (b.getAttribute('aria-expanded') !== 'true') b.click(); }); await page.waitForTimeout(200);
     await page.click('#ba-equip [data-raccord][data-champ="blindage"][data-v="GND"]'); await page.waitForTimeout(700);
     ok(await page.evaluate(() => nomenclatureDuContrat().habits.some(h => h.quoi === 'band-it' && /351PM1/.test(h.ou.join(' ')))), 'une reprise de blindage sur le corps d’un EN 2997 (351PM1) : un band-it entre à la nomenclature');
     await capture(page, 'C-4-300XC1-choix');
@@ -533,8 +533,8 @@ function baseEssaiDansLaPage() {
     await capture(page, 'E-1-une-ligne');
     // sans part numbers
     await deposerParEntree(page, X.sansPN); await page.waitForFunction(() => app.nom === 'sans-pn.csv'); await cliquerBloc(page, '102CB1');
-    const SP = await page.evaluate(() => ({ sous: document.querySelector('#ba-equip .fi-sous').textContent, ref: [...document.querySelectorAll('#ba-equip .fi-ref')].map(x => x.textContent).join(' | '), etat: etatDuControle(), items: CONTROLE.items.map(x => (x.nom || 'tableau') + ' : ' + x.texte), charges: [...app.contrat.charges.keys()], dj: !!document.querySelector('#ba-equip .fi-dj') }));
-    ok(/disjoncteur/.test(SP.sous) && SP.dj && (/sans part number/.test(SP.ref) || !SP.ref), 'sans part numbers : la fiche de 102CB1 s’ouvre, disjoncteur sans part number, rien ne casse', SP.sous + ' · ' + SP.ref + ' · ' + SP.etat);
+    const SP = await page.evaluate(() => ({ sous: [document.querySelector('#ba-equip .fi-genre').textContent, ...[...document.querySelectorAll('#ba-equip .fi-tuile')].map(t => t.querySelector('.fi-tuile-k').textContent + ' ' + t.querySelector('.fi-tuile-v').textContent)].join(' · '), ref: [...document.querySelectorAll('#ba-equip .fi-ref')].map(x => x.textContent).join(' | '), etat: etatDuControle(), items: CONTROLE.items.map(x => (x.nom || 'tableau') + ' : ' + x.texte), charges: [...app.contrat.charges.keys()], dj: !!document.querySelector('#ba-equip .fi-dj') }));
+    ok(/disjoncteur/i.test(SP.sous) && SP.dj && (/sans part number/.test(SP.ref) || !SP.ref), 'sans part numbers : la fiche de 102CB1 s’ouvre, disjoncteur sans part number, rien ne casse', SP.sous + ' · ' + SP.ref + ' · ' + SP.etat);
     frottement(!SP.charges.length && !/\d+ A/.test(SP.sous), 'un disjoncteur sans part number ni profil se voit prêter le profil de l’exemple', 'la ligne de nature dit « ' + SP.sous + ' » et le contrôle juge ses fils sur 9,31 A pendant 2 min : le profil de charge du contrat d’avant (102CB1 de l’exemple) n’a pas été effacé à l’ouverture du fichier', 'bloquant', 'le même point que « les choix du contrat d’avant survivent » (chargerContrat)');
     note('sans part number, le contrôle dit : ' + SP.items.join(' ; '));
     await page.keyboard.press('Escape');
@@ -544,7 +544,7 @@ function baseEssaiDansLaPage() {
     ok(['305XX9', '410ZQ2B', 'K7', 'RELAIS-1', '102CB1'].every(r => IN.blocs.includes(r)) && e.n === 5, 'des codes inconnus se dessinent en équipements, sans nature inventée', IN.blocs.join(' ') + ' · ' + IN.mots.join(' · '));
     await page.keyboard.press('r'); await page.waitForTimeout(400);
     ok(await page.evaluate(() => [...document.querySelectorAll('#ba-equip .ix-item[data-nom]')].map(b => b.dataset.nom).filter(n => /XX9|ZQ2B|^K7$|RELAIS/.test(n)).length === 4), 'l’index les range parmi les équipements');
-    await cliquerBloc(page, '410ZQ2B'); ok(await page.evaluate(() => app.cible && app.cible.nom === '410ZQ2B' && /équipement/.test(document.querySelector('#ba-equip .fi-sous').textContent)), 'la fiche de 410ZQ2B s’ouvre'); await capture(page, 'E-2-inconnus'); await page.keyboard.press('Escape');
+    await cliquerBloc(page, '410ZQ2B'); ok(await page.evaluate(() => app.cible && app.cible.nom === '410ZQ2B' && /équipement/i.test(document.querySelector('#ba-equip .fi-genre').textContent)), 'la fiche de 410ZQ2B s’ouvre'); await capture(page, 'E-2-inconnus'); await page.keyboard.press('Escape');
     // un Excel à plusieurs feuilles : une feuille par harness
     await deposerParEntree(page, X.feuilles); await page.waitForTimeout(600); e = await etat(page); T = await toast(page);
     const F2 = await page.evaluate(() => ({ harnais: [...new Set(verite().map(l => l.harness))], refs: app.references ? app.references.index.harnais.size : 0 }));

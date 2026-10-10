@@ -38,21 +38,26 @@ calculé automatiquement, mais tout modifiable ». Il a écarté le style « fut
 
 ## 2. Les principes
 
-1. **Le fil conducteur.** Chaque fiche a le **même squelette** (08-sections.js) : l'en-tête, puis des sections dans
-   un ordre fixe, qui se lisent encore fermées (un titre, une ligne de résumé, une pastille d'état). On ouvre d'office
-   ce qui définit l'objet ; le reste attend un clic, et l'outil se souvient de ce que l'ingénieur ouvre, par type.
-   Naviguer d'un objet à l'autre ne le perd jamais : la barre collée en haut de la fiche (‹ ›, Alt+← / Alt+→, une pile
-   de 30) et le fil d'Ariane (Contrat › Folio › Repère › connecteur › Fil) ; ouvrir une fiche ne déplace pas le plan
-   si l'objet est déjà en vue.
-2. **Un coup d'œil, puis un geste.** Chaque écran dit d'abord l'essentiel (une ligne, un chiffre, un état — « le
-   meilleur calibre : 15 A »), puis donne le détail à qui le demande. Les problèmes ne sont jamais déroulés d'office :
-   une pastille dit combien.
-3. **Tout est calculé, tout est modifiable.** Une valeur porte son **origine** (auto, retest, main, hyp., norme) ;
-   forcée à la main, « ↺ automatique (la valeur calculée) » la rend. Ctrl+Z défait tout.
+1. **Le fil conducteur.** Chaque fiche a le **même squelette** (la fiche v3, 08-sections.js) : l'en-tête et ses
+   tuiles, la barre des problèmes repliée, puis **peu de sections**, des cartes dans un ordre fixe, qui se lisent encore
+   fermées (une icône, un titre, une ligne de résumé, une pastille d'état). On ouvre d'office ce qui définit l'objet ;
+   « Déjà fait » attend un clic, et l'outil se souvient de ce que l'ingénieur ouvre, par type. Naviguer d'un objet à
+   l'autre ne le perd jamais : la barre collée en haut de la fiche (‹ ›, Alt+← / Alt+→, une pile de 30 ; le repère s'y
+   écrit quand l'en-tête passe dessous) — plus de fil d'Ariane (le folio se lit en bas, on ne se répète pas) ; ouvrir
+   une fiche ne déplace pas le plan si l'objet est déjà en vue.
+2. **Un coup d'œil, puis un geste.** Chaque écran dit d'abord l'essentiel (une tuile, un chiffre, un état — « Calibre
+   10 A », bordée d'ambre quand le meilleur est ailleurs), puis donne le détail à qui le demande : le pourquoi d'un
+   chiffre se lit dans la **bulle du survol**, pas dans des phrases. Les problèmes ne sont jamais déroulés d'office :
+   une barre dit combien, sous l'en-tête, et se déplie en place.
+3. **Tout est calculé, tout est modifiable.** Un clic sur une valeur l'écrit. L'origine reste discrète : une pastille
+   « main » seulement quand la valeur a été changée ici (« hyp. » pour une hypothèse de la simulation) ; « ↺ » (la
+   valeur qu'il rend, en petit) rend le calcul ou le fichier. Ctrl+Z défait tout.
 4. **Un langage visuel, pas deux.** Mêmes coins (6, 8, 10, 14), mêmes espacements (grille de 4), mêmes couleurs
    d'état, mêmes composants partout.
-5. **Calme et net.** Pas de dégradé décoratif, pas de lueur, pas de capitales espacées : les étiquettes sont des mots
-   en minuscules, comme une phrase. Le demi-gras pour les titres, le gras est rare.
+5. **Calme et net, pas gris.** Pas de dégradé décoratif, pas de lueur, pas de capitales espacées. Les étiquettes ont
+   leur majuscule (« Part number », « Emplacement ») et l'encre seconde (`--t-2`, jamais `--t-3` pour ce qu'on doit
+   lire) ; les valeurs l'encre (`--t-1`), nettes ; les titres de section affirmés (demi-gras 15 px) ; les groupes
+   cadrés (une carte, un filet) et espacés (12 à 16 px). Le demi-gras pour les titres, le gras est rare.
 6. **Précis comme un plan.** Les dessins techniques (folios, faces de connecteur et de module, reliefs, courbes) sont
    **sur papier blanc dans les deux thèmes** et gardent leur encre ; à plat, exacts, lisibles à 100 %. Une courbe est
    lisse et monotone ; une légende ne se sépare pas de ce qu'elle nomme. Le numéro d'un fil s'écrit **pile sur son
@@ -68,7 +73,7 @@ calculé automatiquement, mais tout modifiable ». Il a écarté le style « fut
 
 | jeton | police | pour |
 |---|---|---|
-| `--sans` (et `--titre`, son alias) | **Inter** (400, 500, 600, 700, 400 italique) | tout le texte : titres en 600 serrés (`letter-spacing:-.01em` à `-.02em`), étiquettes en 500 12 px `--t-3`, valeurs, chiffres tabulaires |
+| `--sans` (et `--titre`, son alias) | **Inter** (400, 500, 600, 700, 400 italique) | tout le texte : titres en 600 serrés (`letter-spacing:-.01em` à `-.02em`), étiquettes en 500 12-13 px `--t-2`, avec leur majuscule, valeurs, chiffres tabulaires |
 | `--mono` | **JetBrains Mono** (400, 500, 600) | les identifiants : repères, numéros de fil, part numbers, types de câble ; dans une phrase, un identifiant porte la classe `.id` |
 
 Le grec (Ω Δ φ…) vient des sous-ensembles grecs d'Inter et de JetBrains Mono ; les flèches et les signes (→ ⇄ √ ∞ ≤ ✓)
@@ -108,15 +113,44 @@ normes et la bible : jusqu'à 1040 px, en laissant toujours 320 px au plan), `--
 
 ## 5. Les composants communs (noms de classes, à réutiliser tels quels)
 
+- **La fiche v3** (`08-fiche.js`, `style-fiche.css`), de haut en bas, pour toutes les fiches :
+  · la **barre** `.fi-nav` (‹ `#fi-prec`, › `#fi-suiv`, `.fi-nav-nom` qui paraît quand `.fi.defile`, × `#in-fermer`) ;
+  · l'**en-tête** `.fi-entete` : `.fi-symbole`, `.fi-genre` (le type, la désignation), le repère `input.fi-nom`
+  (`#eq-rep` / `#fil-num`, F2) et `#fi-crayon`, puis les **tuiles** `.fi-tuiles > .fi-tuile[.ko|.att][data-aller]`
+  (`tuile(étiquette, valeur, { aller, etat, mono })` : une étiquette `.fi-tuile-k`, une valeur forte `.fi-tuile-v`,
+  le bord et la valeur de la couleur d'état ; un clic ouvre et allume sa section) ;
+  · les **problèmes** `details.fi-alerte#fi-pbs` (repliée : `summary#fi-pb` « 3 problèmes · 7 à voir ») ; dépliée,
+  une ligne `.fi-pb-l[data-voir][data-connecteur][data-viser]` par point, la section en petit (`.fi-pb-s`) ;
+  · les **sections** (ci-dessous), puis le **pied** `.fi-pied`.
+  Dans une section : des **champs** `.fs-champs > .fc` (`.fc-k` l'étiquette, `.fc-v` la valeur ou son champ `.fc-in`
+  qui a l'air d'une valeur et s'écrit d'un clic, `.fc-aide` une précision courte, `.fc-o` « main » et ↺), des **groupes**
+  `groupeSection(titre, contenu, { droite })` (un petit titre `.fs-st`, un filet au-dessus du suivant), des **tableaux**
+  sobres aux en-têtes collés (`.fi-entetes`) : les contacts `.fi-contacts` (Borne · Contact · Jauge ✓/✗, « ″ » pour le
+  même contact qu'au-dessus), les fils `.fi-ias` (une ligne `.fi-ia` de ≈ 32 px : numéro, AWG, barre `.fi-barre` de
+  l'intensité contre l'admis, chute `.fi-u` en volts de la couleur d'état ; les fils en défaut en tête), les paires
+  d'une prise `.fi-paires`, l'habillage `.fi-nomen` (une `.fi-piece[data-role]` par pièce, dans l'ordre de montage du moteur
+  `h.pieces` : rôle, référence, quantité, état ; « vérifié » ne s'écrit pas, « à confirmer » en ambre, « manque » en rouge).
+  La **bulle** : tout `[data-bulle]` dit son pourquoi au survol (`.fi-bulle`, texte sur plusieurs lignes).
 - **La fiche à sections** (`08-sections.js`, `style-sections.css`) : `ficheSections(type, [{ cle, titre?, resume?,
-  badge?: { t, etat }, contenu, vide? }])` rend les sections dans l'ordre `ORDRE_SECTIONS` (identité, meilleur
-  calibre, courbe, profil, connecteur, contacts, fils et intensité, chute, habillage, déjà fait, détail du calcul,
-  problèmes) ; `OUVERTES_D_OFFICE` par type ; la mémoire par type (`atelier.fiche.sections`) ; `ouvrirSection(box,
-  cle)` pour un lien « voir ». Une section sans donnée garde sa place, grise, et dit ce qui manque (`vide`).
-- **La fiche du disjoncteur** (`08-disjoncteurs.js`, `style-dj.css`) : `sectionsDisjoncteur(nom, vt)` rend ses sections
-  (le meilleur calibre, la courbe, le profil, les fils, la chute, le détail), que la fiche insère parmi les communes ;
-  chaque contenu dans un `.fi-dj[data-disj][data-part]` que `lierDisjonction` retrouve. Une courbe : Fritsch-Carlson en
-  log-log, trois décimales, une seule bande par défaut, chaque trait nommé à son bout.
+  badge?: { t, etat }, contenu, vide? }])` rend des **cartes** (`details.fs`, une icône `.fs-ico` par section) dans
+  l'ordre `ORDRE_SECTIONS` : identité (repère, zone, désignation, emplacement), disjoncteur, connecteur (ou module), de →
+  vers (un fil), fils (l'intensité ET la chute), déjà fait ; `OUVERTES_D_OFFICE` par type ; la mémoire par type
+  (`atelier.fiche.sections.v3`) ; `ouvrirSection(box, cle)` l'ouvre, l'amène et l'allume (`.fs-allume`). Une section sans
+  donnée garde sa place, en pointillé, et dit ce qui manque (`vide`). Plus de « Problèmes » en bas, plus de « Détail du
+  calcul », plus de « Chute » ni d'« Habillage » à part. `rafraichirFicheEnPlace()` refait la fiche autour du champ
+  qu'on écrit (la main y reste).
+- **Le connecteur** d'un équipement : les segments `.fi-segs .seg[data-connecteur]` (A · B · C, le fautif marqué), puis
+  pour le montré : le part number (toutes ses liaisons d'un geste), la norme en puce `.fi-norme-puce[data-face]` (un clic
+  montre la face ; « Changer » les autres arrangements), les bornes en plages (« A1 à A11 »), les contacts (le sexe en
+  puces jointes à droite), l'habillage. Une barrette et une prise : la même section (« Module », « Connecteur »), la
+  **face vivante** (survoler un contact allume son fil et sa ligne, un clic le choisit : `.choisi`).
+- **La fiche du disjoncteur** (`08-disjoncteurs.js`, `style-dj.css`) : UNE section, `sectionDisjoncteur(nom, d, o,
+  probs)` — le part number, la gamme en segments `.dj-chips .dj-chip[data-cal]` (ceux de `d.gamme`, jamais une liste
+  écrite ; le retenu pressé, le meilleur étoilé), la ligne du meilleur `.dj-meilleur` quand il diffère ou que des fils
+  sont à grossir (Retenir, Changer les fils, « Lesquels » replié, le pourquoi au survol), la courbe, le profil
+  (démarrage, transition, permanent, puis les états ajoutés). Chaque groupe dans un `.fi-dj[data-disj][data-part]` que
+  `lierDisjonction` retrouve ; ses fils dans la section commune (`lignesFilsDisjoncteur`). Une courbe : Fritsch-Carlson
+  en log-log, trois décimales, une seule bande par défaut, chaque trait nommé à son bout.
 - **Le récapitulatif** (`08-recap.js`, `style-recap.css`) : `ouvrirBase('moitie'|'page')`, `recapitulatifDe(c)` ; une case
   se corrige au double-clic (Tab pour la suivante, Échap annule) ; une case calculée retouchée passe « main », ↺ la rend.
 - **Vos fichiers** (`08-fichiers.js`, `style-fichiers.css`) : `ficheFichiers(focus?)`, une carte par entrée (état, ce qui
@@ -129,18 +163,18 @@ normes et la bible : jusqu'à 1040 px, en laissant toujours 320 px au plan), `--
   (une action) ou `data-sous` (un sous-menu, ouvert en place), une icône au trait, `.menu-l` (son mot ; `small` dessous),
   `.raccourci` ; `[data-retour]` ramène au menu.
 - **Une valeur écrite à la main sur une liaison** passe par `changerLiaison` / `changerLiaisons` (08-sections) : une
-  entrée d'historique, `l.avant` garde ce que portait le fichier. Le contact à sertir choisi à la main vit sur la
-  liaison (`contactDe`, `contactVers`) ; la fiche, le récapitulatif, la nomenclature et le contrôle le lisent par
-  `contactMain` (08-modules).
-- **L'origine d'une valeur** : `origine('auto'|'retest'|'main'|'hyp'|'norme')` ; **le retour au calcul** :
-  `retourAuto(cle, valeurAuto)` → `button.fs-auto[data-auto]`.
-- **État** `.fi-etat.ok|.att|.ko` : un point de sa couleur et un mot ; une carte d'état repliée en tête de fiche.
+  entrée d'historique, `l.avant` garde ce que portait le fichier. Le contact choisi à la main vit sur la liaison
+  (`contactDe`, `contactVers`) ; la fiche, le récapitulatif, la nomenclature et le contrôle le lisent par
+  `contactMain` (08-modules). L'emplacement d'un repère se garde dans les désignations (« repère|emplacement »).
+- **L'origine d'une valeur** : `origine('main'|'hyp')` (la fiche ne pose que celles-là) ; **le retour au calcul** :
+  `retourAuto(cle, valeurAuto)` → `button.fs-auto[data-auto]` (« ↺ » et la valeur rendue).
+- **État** `.fi-etat.ok|.att|.ko` : un point de sa couleur et un mot (l'index, la comparaison).
   La **route** d'un fil est un trait de sa couleur (`.fi-puce`, `.fi-route`).
 - **Puce** `.fi-chip` (un choix ; pressée : filet d'encre, fond blanc) ; **segment** `.segment` (le pressé en relief).
-- **Carte** `.fi-cadre` ; **tuile** `.fi-tuile` (un chiffre, ce qu'il compte) ; **étiquette** `.sur`, `th` (Inter 500
-  12 px, `--t-3`, en minuscules).
-- **Faits** `.fi-faits` (`dl` : clé en étiquette, valeur en linéale, identifiants en chasse fixe).
-- **Ligne de fil** `.fi-fil` dans une liste `.fi-liste` (colonnes portées par la liste, `subgrid`).
+- **Carte** `.fi-cadre` ; **tuile** `.fi-tuile` (une étiquette, une valeur forte) ; **étiquette** `.fc-k`, `.fi-tuile-k`
+  (Inter 500, `--t-2`, avec sa majuscule) ; `.sur`, `th` ailleurs.
+- **Ligne de fil** `.fi-fil` (un contact, une ligne de la comparaison) ou `.fi-ia` (un fil et ses mesures) dans une liste
+  `.fi-liste` (colonnes portées par la liste, `subgrid` ; en-têtes `.fi-entetes` collés sous la barre).
 - **Boutons** : `.btn.cuivre` (plein, à l'encre : l'action principale, une par écran), `.btn.papier` (secondaire),
   `.btn.lien`, `.fi-bouton` (pied de fiche), `.fi-lien`, `.rd` (icône seule, carré gris quand il est pressé).
 - **Bulles** : `.bulle` (le nom d'un outil) ; `data-aide` sur une ligne du menu (ce qu'elle fait, en une ou deux

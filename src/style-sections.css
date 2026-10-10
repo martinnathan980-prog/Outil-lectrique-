@@ -1,34 +1,45 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   LA FICHE À SECTIONS (08-sections.js) — le squelette commun des cinq fiches.
-   Une section est une bande : son titre (Inter demi-gras 14 px), dessous une ligne de résumé (12 px, encre douce,
-   coupée par « … »), à droite une pastille d'état et le chevron. Ouverte, son corps se pose dessous, sur la même
-   surface ; un filet sépare deux sections. Fermée, elle se lit encore : on parcourt la fiche sans rien ouvrir.
+   LA FICHE À SECTIONS (08-sections.js) — le squelette commun des cinq fiches, v3.
+   Une section est une CARTE posée sur le fond de la fiche : en tête, son icône dans un carré doux, son titre (Inter
+   demi-gras 15 px, à l'encre), une ligne de résumé (12 px, l'encre seconde — pas de gris pâle), une pastille d'état et
+   le chevron. Ouverte, son corps se pose dessous, séparé par un filet ; ses GROUPES (un petit titre, un contenu) sont
+   espacés et séparés par un filet. Une carte qu'un lien ouvre s'allume un instant (un anneau qui s'efface).
    ═══════════════════════════════════════════════════════════════════════ */
-details.fs{border-bottom:1px solid var(--s-line)}
-details.fs:first-of-type{border-top:1px solid var(--s-line)}
-.fs-tete{display:flex;align-items:center;gap:12px;min-height:52px;padding:10px 4px;cursor:pointer;list-style:none;border-radius:var(--r-1);
+details.fs{background:var(--s-surface);border:1px solid var(--s-line);border-radius:var(--r-3);box-shadow:var(--sh-1);margin:0 0 12px;scroll-margin-top:52px;
+  transition:box-shadow var(--moyen),border-color var(--moyen)}
+.fs-tete{display:flex;align-items:center;gap:12px;min-height:56px;padding:10px 14px 10px 12px;cursor:pointer;list-style:none;border-radius:calc(var(--r-3) - 1px);
   transition:background var(--rapide)}
+details.fs[open]>.fs-tete{border-radius:calc(var(--r-3) - 1px) calc(var(--r-3) - 1px) 0 0}
 .fs-tete::-webkit-details-marker{display:none}
 .fs-tete:hover{background:var(--s-hover)}
 .fs-tete:focus-visible{outline-offset:-2px}
-.fs-titres{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
-.fs-titre{font:600 var(--f-14)/1.3 var(--titre);letter-spacing:-.01em;color:var(--t-1)}
-.fs-resume{font-size:var(--f-12);line-height:1.4;color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-details.fs[open] .fs-resume{white-space:normal}
+.fs-ico{flex:none;width:30px;height:30px;display:grid;place-items:center;border-radius:var(--r-btn);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);color:var(--t-1)}
+.fs-ico svg.ico{width:17px;height:17px}
+.fs-titres{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
+.fs-titre{font:600 var(--f-14)/1.3 var(--titre);font-size:15px;letter-spacing:-.012em;color:var(--t-1)}
+.fs-resume{font-size:var(--f-12);line-height:1.4;color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fs-resume .id{font:500 var(--f-12) var(--mono)}
 /* la pastille : un nombre, ✓, ★ ou « — », de la couleur d'état de ce que la section contient */
-.fs-badge{flex:none;min-width:22px;height:22px;padding:0 7px;border-radius:999px;display:inline-grid;place-items:center;
-  font:600 var(--f-12)/1 var(--sans);color:var(--t-2);background:var(--s-sunken);font-variant-numeric:tabular-nums}
-.fs-badge.ok{color:var(--ok);background:var(--ok-soft)}
-.fs-badge.att{color:var(--warn);background:var(--warn-soft)}
-.fs-badge.ko{color:var(--ko);background:var(--ko-soft)}
-.fs-chevron{width:16px;height:16px;color:var(--t-3);transition:transform var(--rapide)}
+.fs-badge{flex:none;min-width:24px;height:22px;padding:0 7px;border-radius:999px;display:inline-grid;place-items:center;
+  font:600 var(--f-12)/1 var(--sans);color:var(--t-2);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);font-variant-numeric:tabular-nums}
+.fs-badge.ok{color:var(--ok);background:var(--ok-soft);box-shadow:none}
+.fs-badge.att{color:var(--warn);background:var(--warn-soft);box-shadow:none}
+.fs-badge.ko{color:var(--ko);background:var(--ko-soft);box-shadow:none}
+.fs-badge svg.ico{width:12px;height:12px;stroke:none}
+.fs-chevron{width:16px;height:16px;color:var(--t-2);transition:transform var(--rapide)}
 details.fs[open]>.fs-tete .fs-chevron{transform:rotate(180deg)}
-.fs-corps{padding:4px 4px 20px;display:flex;flex-direction:column;gap:var(--sp-3)}
-/* une section dont la donnée manque : à sa place, fermée, grise ; son résumé dit ce qui manque — en entier — et, s'il le
-   faut, où l'envoyer (`.fs-action`) ; elle ne s'ouvre que si elle a quelque chose à montrer */
+.fs-corps{padding:14px 16px 18px;border-top:1px solid var(--s-line);display:flex;flex-direction:column;gap:14px;min-width:0}
+/* une carte qu'un lien vient d'ouvrir : un anneau d'encre qui s'efface */
+details.fs.fs-allume{animation:fs-allume 1.4s ease-out}
+@keyframes fs-allume{0%,35%{box-shadow:0 0 0 3px var(--accent-line),var(--sh-1);border-color:var(--accent)}100%{box-shadow:var(--sh-1)}}
+@media (prefers-reduced-motion:reduce){details.fs.fs-allume{animation:none}}
+/* une section dont la donnée manque : à sa place, fermée ; son résumé dit ce qui manque — en entier — et, s'il le faut,
+   où l'envoyer (`.fs-action`) ; elle ne s'ouvre que si elle a quelque chose à montrer */
 details.fs.fs-clos>.fs-tete{cursor:default}
 details.fs.fs-clos>.fs-tete:hover{background:none}
-details.fs.fs-vide .fs-titre{color:var(--t-3)}
+details.fs.fs-vide{box-shadow:none;background:transparent;border-style:dashed}
+details.fs.fs-vide .fs-titre{color:var(--t-2)}
+details.fs.fs-vide .fs-ico{background:none}
 details.fs.fs-vide .fs-resume{white-space:normal}
 details.fs.fs-clos .fs-chevron{visibility:hidden}
 .fs-action{border:none;background:none;padding:0 2px;margin:0 -2px;font:500 var(--f-12)/1.4 var(--sans);color:var(--accent-2);text-decoration:underline;text-decoration-color:var(--accent-line);text-underline-offset:3px;border-radius:3px;cursor:pointer}
@@ -36,13 +47,23 @@ details.fs.fs-clos .fs-chevron{visibility:hidden}
 /* un lien posé dans un résumé (le mot « hypothèse ») : il agit sans ouvrir la section */
 .fs-resume .fi-hyp{font-size:inherit}
 
-/* l'ORIGINE d'une valeur, en petit à côté d'elle */
-.orig{font:500 10.5px/1 var(--sans);font-style:normal;padding:2px 6px;border-radius:999px;margin-left:6px;vertical-align:1px;white-space:nowrap;
-  color:var(--t-3);background:var(--s-sunken)}
-.orig-main{color:var(--warn);background:var(--warn-soft)}
-.orig-hyp{font-style:italic}
-/* « ↺ automatique » : un lien discret, à droite de la valeur forcée */
-.fs-auto{border:none;background:none;padding:2px 4px;border-radius:var(--r-1);color:var(--t-2);font:500 var(--f-12) var(--sans);white-space:nowrap;
-  text-decoration:underline;text-decoration-color:var(--s-line-2);text-underline-offset:3px}
-.fs-auto:hover{color:var(--t-1);background:var(--s-hover);text-decoration-color:var(--t-1)}
-.fs-auto span{color:var(--t-3)}
+/* LES GROUPES d'une section : un petit titre (et ce qu'on y fait, à droite), espacés, séparés par un filet */
+.fs-groupe{display:flex;flex-direction:column;gap:10px;min-width:0}
+.fs-groupe:not(:first-child){border-top:1px solid var(--s-line);padding-top:16px;margin-top:2px}
+.fs-st{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;min-height:24px;font:600 var(--f-13)/1.3 var(--sans);color:var(--t-1);letter-spacing:-.005em}
+.fs-st>span:first-child{flex:1 0 auto;min-width:0;white-space:nowrap}
+.fs-st>span:first-child i{font:500 var(--f-12) var(--sans);color:var(--t-2);margin-left:4px}
+.fs-st .fi-lien{margin:0 -6px 0 0}
+
+/* l'ORIGINE d'une valeur : une pastille seulement quand elle compte — « main » (changée ici), « hyp. » */
+.orig{font:600 10.5px/1 var(--sans);font-style:normal;padding:3px 7px;border-radius:999px;margin-left:2px;vertical-align:1px;white-space:nowrap;border:none;
+  color:var(--t-2);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line)}
+.orig-main{color:var(--warn);background:var(--warn-soft);box-shadow:none}
+.orig-hyp{color:var(--t-2);font-style:italic}
+button.orig{cursor:pointer;text-decoration:none}
+button.orig:hover{color:var(--t-1);box-shadow:inset 0 0 0 1px var(--t-3)}
+/* « ↺ » : rend la valeur calculée (ou celle du fichier), qu'il nomme en petit */
+.fs-auto{display:inline-flex;align-items:center;gap:4px;height:24px;border:1px solid var(--s-line-2);background:var(--s-surface);padding:0 8px;border-radius:999px;color:var(--t-1);
+  font:600 var(--f-12) var(--sans);white-space:nowrap;cursor:pointer;transition:background var(--rapide),border-color var(--rapide)}
+.fs-auto:hover{background:var(--s-hover);border-color:var(--t-3)}
+.fs-auto span{font-weight:500;color:var(--t-2);font-family:var(--mono);font-size:var(--f-11);max-width:16ch;overflow:hidden;text-overflow:ellipsis}

@@ -20,10 +20,11 @@
    détrompeur, l'insert circulaire et sa clé), et l'insert en retrait. Les
    contacts sont cerclés et lettrés comme sur la figure de la norme ; les
    contacts reliés (un shunt, une plaque) sont cernés d'un même contour ; un
-   contact occupé est PLEIN, à la couleur de la route de son fil, le numéro du
-   fil dessous ; un contact qui refuse son fil est cerclé de rouge. Ni biseau,
+   contact occupé est PLEIN, à la couleur de la route de son fil (son numéro
+   se lit au survol) ; un contact qui refuse son fil est cerclé de rouge. Ni biseau,
    ni épaisseur, ni ombre : ce qui distingue une famille, c'est sa forme.
-   La fiche (08 bis) montre la face et sa légende ; la bible dessine chaque
+   La fiche (08 bis) montre la face, vivante : survoler un contact allume son
+   fil sur le plan et sa ligne dans la fiche, un clic le choisit ; la bible dessine chaque
    variante en petit (`pictoModule`) et en grand (`zoomModule`) ; la vue en
    relief (08-relief) pose les modules sur leur rail (`sceneModules`) et liste
    leurs contacts (`tableauModules`).
@@ -71,16 +72,12 @@ function corpsSvg(m, W, H, T, bout) { const forme = formeDuCorps(m);
 // un groupe dont les contacts remplissent tout le rectangle de grille qu'ils couvrent
 const blocPlein = g => { const rs = g.contacts.map(c => c.r), cs = g.contacts.map(c => c.c);
   return (Math.max(...rs) - Math.min(...rs) + 1) * (Math.max(...cs) - Math.min(...cs) + 1) === g.contacts.length; };
-/* La face : `occupe(contact)` rend le fil d'un contact — { i, cable, couleur, couleurClaire, ko } — ou rien.
-   `opts.etiquettes` : le numéro du fil sous chaque contact pris (`opts.lignes` numéros par contact, 1 par défaut).
+/* La face : `occupe(contact)` rend le fil d'un contact — { i, couleur, couleurClaire, ko, bulle } — ou rien.
    Rend { svg, w, h }, le dessin dans un repère de (0, 0) à (w, h). */
-function faceModuleSvg(m, occupe, opts) { opts = opts || {};
-  // avec les numéros de fil sous les contacts, les rangées s'écartent d'une ligne de texte ; une face ronde n'a pas de
-  // rangée où les loger : elle s'élargit (deux numéros, fiche et embase : davantage)
-  const nl = opts.etiquettes ? opts.lignes || 1 : 0, rond = formeDuCorps(m) === 'circulaire', forme = formeDuCorps(m);
-  const pas = pasDuModule(m) * (rond && nl ? 1.15 + 0.25 * (nl - 1) : 1), pasY = pas + (rond ? 0 : 11 * nl), bout = forme === 'etanche' ? 14 : 0, M = MJ.marge + (rond ? 4 : 0);
-  const W = m.colonnes * pas + 2 * M + bout, H = m.rangs * pasY + 2 * M, T = rond ? 8 : 2;
-  const pos = c => ({ x: M + (c.c + 0.5) * pas, y: T + M + (c.r + 0.5) * pasY - 4.5 * nl });
+function faceModuleSvg(m, occupe) { const forme = formeDuCorps(m), rond = forme === 'circulaire';
+  const pas = pasDuModule(m), bout = forme === 'etanche' ? 14 : 0, M = MJ.marge + (rond ? 4 : 0);
+  const W = m.colonnes * pas + 2 * M + bout, H = m.rangs * pas + 2 * M, T = rond ? 8 : 2;
+  const pos = c => ({ x: M + (c.c + 0.5) * pas, y: T + M + (c.r + 0.5) * pas });
   let s = `<g class="mj-module ${classeFamille(m.famille)} corps-${forme}">${corpsSvg(m, W, H, T, bout)}`;
   // les groupes : le contour qui cerne les contacts reliés — une plaque (ASNE 0599) ou un shunt (NSA937901) ; un groupe
   // qui porte un potentiel se teinte à la couleur de la route. Un contact seul n'a pas de contour.
@@ -97,14 +94,15 @@ function faceModuleSvg(m, occupe, opts) { opts = opts || {};
   (m.diodes || []).forEach(([a, k]) => { const ga = m.groupes.find(g => g.contacts[0].lettre.startsWith(a)), gk = m.groupes.find(g => g.contacts[0].lettre.startsWith(k)); if (!ga || !gk) return;
     const pa = pos(ga.contacts[0]), pk = pos(gk.contacts[gk.contacts.length - 1]), mx = (pa.x + pk.x) / 2, my = (pa.y + pk.y) / 2, sens = pk.y < pa.y ? -1 : 1;
     s += `<path class="mj-diode" d="M${f1(mx)} ${f1(pa.y)}V${f1(pk.y)}M${f1(mx - 6)} ${f1(my - 4 * sens)}h12l-6 ${8 * sens}zM${f1(mx - 6)} ${f1(my + 4 * sens)}h12"/>`; });
-  // les contacts : un cercle, sa lettre ; occupé, le trou plein à la couleur de la route, le numéro du fil dessous ;
-  // un fil refusé cercle le contact de rouge
+  // les contacts : un cercle, sa lettre ; occupé, le trou plein à la couleur de la route ; un fil refusé cercle le
+  // contact de rouge. Le halo (invisible d'office) dit le survol et le choix dans la fiche ; la bulle (`data-bulle`) y
+  // dit le fil.
   m.contacts.forEach(c => { const p = pos(c), r = rayonDe(c), o = occupe ? occupe(c) : null;
-    s += `<g class="mj-contact${o ? ' plein' : ''}${o && o.ko ? ' ko' : ''}"${o ? ` data-i="${o.i}" data-fils="${o.fils || o.i}"` : ''}>`
+    s += `<g class="mj-contact${o ? ' plein' : ''}${o && o.ko ? ' ko' : ''}" data-lettre="${escA(c.lettre)}"${o ? ` data-i="${o.i}" data-fils="${o.fils || o.i}"${o.bulle ? ` data-bulle="${escA(o.bulle)}"` : ''}` : ''}>`
+      + `<circle class="mj-halo" cx="${f1(p.x)}" cy="${f1(p.y)}" r="${f1(r + 4.5)}" fill="transparent"/>`
       + `<circle class="mj-bague" cx="${f1(p.x)}" cy="${f1(p.y)}" r="${f1(r)}"/>`
       + `<circle class="mj-trou" cx="${f1(p.x)}" cy="${f1(p.y)}" r="${f1(o ? r * 0.62 : r * 0.3)}"${o ? ` style="fill:${o.couleur}"` : ''}/>`
-      + `<text class="mj-lettre" x="${f1(p.x - r - 1.5)}" y="${f1(p.y - r + 2.5)}" text-anchor="end">${esc(c.lettre)}</text>`
-      + (o && opts.etiquettes ? (o.cables || [o.cable]).slice(0, nl).map((t, i) => `<text class="mj-cable" x="${f1(p.x)}" y="${f1(p.y + r + 9 + 9.5 * i)}" text-anchor="middle">${esc(clip(t, 7))}</text>`).join('') : '') + '</g>'; });
+      + `<text class="mj-lettre" x="${f1(p.x - r - 1.5)}" y="${f1(p.y - r + 2.5)}" text-anchor="end">${esc(c.lettre)}</text></g>`; });
   return { svg: s + '</g>', w: W, h: T + H + (forme === 'module' ? 6 : 2) }; }
 // « 18 × 2 », « 2 × 8 + 2 × 10 » : les groupes d'un module, comptés par taille
 const tailleDesGroupes = m => { const n = new Map(); m.groupes.forEach(g => n.set(g.contacts.length, (n.get(g.contacts.length) || 0) + 1));
@@ -128,7 +126,7 @@ function pictoModule(m) { const k = 30 / Math.max(m.colonnes * 6, m.rangs * 6), 
     + m.contacts.map(c => { const p = pos(c); return `<circle class="p-contact" cx="${f1(p.x)}" cy="${f1(p.y)}" r="${f1((c.calibre <= 12 ? 2 : c.calibre <= 16 ? 1.7 : 1.3) * k)}"/>`; }).join('') + '</svg>'; }
 function zoomModule(e) { const m = moduleDeReference(app.norme, e.reference); if (!m) return '';
   const tailles = [...new Set(m.contacts.map(c => c.taille))].map(t => { const T = tailleDe(app.norme, m.famille, t); return '#' + t + (T ? (T.jaugeMin != null ? ' : ' + T.jaugeMin + '–' + T.jaugeMax + ' AWG' : ' : câble spécial') : ''); });
-  const f = faceModuleSvg(m, null, {}), E = m.famille === 'E0599', C = m.emploi === 'connecteur';
+  const f = faceModuleSvg(m, null), E = m.famille === 'E0599', C = m.emploi === 'connecteur';
   const type = m.type === 'mixte' ? 'mixte (tailles de contact variables)' : m.type === 'diodes' ? 'à diodes incorporées' : m.type === 'obturateur' ? 'module neutre, sans contact' : m.type === 'spécial' ? 'contact spécial à clé' : E ? 'type ' + m.type : 'contacts taille ' + m.type.toUpperCase();
   const carac = [['norme', nomDeFamille(app.norme, m.famille) + (E ? ' · NF L 53-105' : C ? ' · 2023' : ' · mars 2021')], [E ? 'variante' : 'arrangement', m.variante], ['type', type],
     ['contacts', taillesDe(m)], ['groupes', seulsDe(m) ? 'aucun : chaque contact seul' : tailleDesGroupes(m)], ['tailles', tailles.join(' ; ') || '—'], ['usage', motUsage(m.usage)],
