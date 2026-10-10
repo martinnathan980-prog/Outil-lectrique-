@@ -276,31 +276,56 @@ function placementAilleurs(on) { placement.ailleurs = !!on; if (on && app.contra
 function etatPlacement() { const plan = cle => { const a = placement.attentes.get(cle); return a ? a.plan : null; };
   return { ailleurs: placement.ailleurs, worker: placement.worker === false ? 'refusé' : placement.worker ? 'oui' : 'pas encore', encours: placement.encours ? plan(placement.encours.cle) : null,
     file: placement.file.map(plan), attentes: [...placement.attentes.values()].map(a => a.plan), faits: placement.faits, relus: placement.relus, gardes: placements.size, erreur: placement.erreur }; }
-/* ---- la RETOUCHE : déplacer un bloc à la souris, tout suit ------------- */
-/* Le dessin automatique est le point de départ ; on en a la MAÎTRISE TOTALE. Un bloc (équipement, barrette, prise) se
-   prend et glisse OÙ L'ON VEUT, en x comme en y : il suit la souris au pas du CARREAU de la feuille (le quadrillage fin
-   du papier), et Alt le laisse libre. Des AIMANTS, pas des rails : la hauteur où un de ses fils devient droit (dans
-   toutes les colonnes), un bord aligné sur celui d'un voisin (haut, bas ; gauche, droite, milieu), sa colonne de bornes
-   contre la paroi d'une goulotte — un guide fin pointillé le montre. Les colonnes se relisent sur les blocs posés (05,
-   `preparerPose`) : le bloc rejoint une colonne, l'élargit, ou en devient une à lui ; les colonnes voisines s'écartent
-   quand il mord sur une goulotte. Ses masses collées le suivent, ses fils se reroutent en direct.
-   Pendant le geste, un FANTÔME du contour est à la place visée, rouge quand elle est prise (sur un bloc, ou à côté d'un
-   bloc de la colonne, à sa hauteur) ; le bloc, lui, est déjà à la place libre la plus proche, où il tombera, et le mot
-   le dit quand on lâche (« 101BT1 posé 64 px plus haut : la place était prise »). Un bloc choisi se pousse aux
-   flèches, d'un carreau (Maj : cinq). Lâché, le folio est RETOUCHÉ : l'automatique ne repasse plus dessus (rien ne
-   bouge sans qu'on l'ait voulu) ; son dessin se garde dans ce navigateur (IndexedDB), Ctrl+Z défait le geste,
-   « Dessin retouché · rendre au moteur » rend la main au moteur. Au doigt, un appui long prend le bloc (un glissé
-   simple déplace la vue). */
+/* ---- la RETOUCHE : tout se prend à la souris, tout suit ----------------- */
+/* Le dessin automatique est le point de départ ; on en a la MAÎTRISE TOTALE (le lecteur : « tout doit bouger — bornier,
+   fil, borne, tout »). Ce qui se prend, et comment :
+   · un BLOC — équipement, disjoncteur, bornier, barrette, prise, renvoi, et la PASTILLE d'une masse, d'un morceau de
+     barrette, d'un rail — glisse OÙ L'ON VEUT, en x comme en y, au pas du CARREAU de la feuille (le quadrillage fin du
+     papier) ; les colonnes se relisent sur les blocs posés (05, `preparerPose`) ;
+   · une BORNE glisse le long de son bloc (là où elle se dessine : le bout de fil entre le flanc et le corps, la pastille
+     numérotée d'une barrette), au demi-pas des bornes ; sur une autre, elles échangent leurs places (05, `preparerBorne`) ;
+   · un TRONÇON DE FIL : vertical, il glisse à gauche ou à droite, de piste en piste, jusque dans une autre goulotte ;
+     horizontal — un couloir qui traverse une colonne —, il monte ou descend (05, les consignes) ;
+   · une BARRETTE À POSER glisse dans sa goulotte, au ras de sa borne ou plus loin.
+   Au survol, ce qui se prendrait s'allume et le curseur dit dans quel sens ça va. Des AIMANTS, pas des rails : la hauteur
+   où un fil devient droit, les bords alignés sur un voisin, la paroi d'une goulotte, la place que le moteur donnait — un
+   guide fin pointillé le montre ; Alt laisse libre. Pendant le geste, un FANTÔME est à la place visée, rouge quand elle
+   est prise ; l'objet, lui, est déjà à la place libre la plus proche, où il tombera, et le mot le dit quand on lâche. Le
+   routeur garde ses règles : pas d'oblique, pas de fil dans un bloc, pas de fil partagé — une pose qui en romprait une est
+   refusée. Lâché, le folio est RETOUCHÉ : l'automatique ne repasse plus dessus ; son dessin se garde dans ce navigateur
+   (IndexedDB), Ctrl+Z défait le geste, ↺ (ou un double-clic) rend au moteur ce qu'on a changé — un fil, une borne, un
+   bloc —, « Dessin retouché · rendre au moteur » le folio entier. Un bloc choisi se pousse aux flèches, d'un carreau
+   (Maj : cinq). Au doigt, un appui long prend ce qui est dessous (un glissé simple déplace la vue). */
 const PAS_PAPIER = 25;   // le carreau du papier (06, le motif `gfine`), en unités de la feuille : × k en unités du dessin
+const PAS_BORNE = PRH / 2;   // une borne glisse au demi-pas des bornes ; un couloir aussi
 const surLeBloc = (c, nom, e) => String(nom) === String(c.name) && e.x >= c.x - 1 && e.x <= c.x + c.w + 1 && e.y >= c.y - 1 && e.y <= c.y + c.h + 1;
+/* Le dessin que le moteur donne au folio, sans la main : celui qu'on rend. `connu` : seulement s'il est déjà là (affiné,
+   ou placé dans cette session) — sinon le moteur le recalcule, ce qui prend quelques secondes sur un gros folio. */
+function placementAuto(L, connu) { const cle = clePlacement(L);
+  if (affinage.profonds.has(cle)) return affinage.profonds.get(cle); if (placements.has(cle)) return placements.get(cle); if (connu) return null;
+  const P = meilleurPlacement(L); if (P) garderPlacement(cle, P); return P; }
+// les consignes d'un dessin (05), toujours de la même forme
+const consignesDe = P => ({ fils: ((P.geom && P.geom.consignes && P.geom.consignes.fils) || []).slice(), barrettes: ((P.geom && P.geom.consignes && P.geom.consignes.barrettes) || []).slice() });
+// le dessin retouché, recomposé pour l'interface ; il porte la poussée du geste
+function dessinRetouche(P, r) { const compDe = new Map(); r.comps.forEach(k => { if (k.id != null) compDe.set(k.id, k); if (!compDe.has(k.name)) compDe.set(k.name, k); });
+  return { ...P, comps: r.comps, links: r.links, geom: r.geom, compDe, routage: r.routage, retouche: true, poussee: r.poussee || 0 }; }
+/* Un dessin retouché où la main n'a plus rien laissé — ni bloc posé, ni borne déplacée, ni consigne — et dont les blocs
+   sont là où le moteur les met : c'est le dessin du moteur. */
+function retoucheVide(P, auto) { const C = consignesDe(P);
+  if (C.fils.length || C.barrettes.length || P.comps.some(c => c.main || Object.values(c.rangs || {}).some(ps => ps.some(p => p.ya != null)))) return false;
+  if (!auto) return false; const parId = new Map(auto.comps.map(c => [c.id, c]));
+  return P.comps.every(c => { const a = parId.get(c.id); return a && Math.abs(a.x - c.x) < 0.5 && Math.abs(a.y - c.y) < 0.5 && Math.abs(a.h - c.h) < 0.5; }); }
+
+/* ---- les BLOCS ---- */
 /* Prendre un bloc du dessin P (un geste à la souris, une poussée aux flèches) : la pose préparée par le moteur, le carreau,
    ce que la feuille laisse au bloc, ses aimants. La feuille : sa zone utile (cartouche ôté) au début du geste, et de quoi
    en sortir de la taille du bloc — le dessin grandit, la feuille se recale dessus ; plus loin, il se perdrait. */
-function preparerPrise(P, c) { const pose = preparerPose(P, c), bb = (app.dessin && app.dessin.bbox) || null, k = (bb && bb.k) || 1, [flo, fhi] = pose.etendue;
-  const m = (PAGE_CADRE + PAGE_MARGE) * k, lx = fhi - flo, ly = c.h;
-  const bornes = bb ? { x0: Math.min(0, bb.x + m - lx - flo), x1: Math.max(0, bb.x + bb.w - m + lx - fhi), y0: Math.min(0, bb.y + m - ly - c.y), y1: Math.max(0, bb.y + bb.h - (m + PAGE_CARTOUCHE * k) + ly - (c.y + c.h)) }
-    : { x0: -Infinity, x1: Infinity, y0: -Infinity, y1: Infinity };
-  return { P, c, pose, pas: PAS_PAPIER * k, bornes, aimants: aimantsDuBloc(P, c, pose) }; }
+function bornesDeLaFeuille(lo, hi, haut, bas) { const bb = (app.dessin && app.dessin.bbox) || null, k = (bb && bb.k) || 1;
+  if (!bb) return { x0: -Infinity, x1: Infinity, y0: -Infinity, y1: Infinity };
+  const m = (PAGE_CADRE + PAGE_MARGE) * k, lx = hi - lo, ly = bas - haut;
+  return { x0: Math.min(0, bb.x + m - lx - lo), x1: Math.max(0, bb.x + bb.w - m + lx - hi), y0: Math.min(0, bb.y + m - ly - haut), y1: Math.max(0, bb.y + bb.h - (m + PAGE_CARTOUCHE * k) + ly - bas) }; }
+function preparerPrise(P, c) { const pose = preparerPose(P, c), k = (app.dessin && app.dessin.bbox && app.dessin.bbox.k) || 1, [flo, fhi] = pose.etendue;
+  return { P, c, pose, pas: PAS_PAPIER * k, bornes: bornesDeLaFeuille(flo, fhi, c.y, c.y + c.h), aimants: aimantsDuBloc(P, c, pose) }; }
 // une pose juste : sur la feuille, et acceptée par le moteur (ni sur un bloc, ni à côté d'un bloc de sa colonne)
 const poseJuste = (pr, dx, dy) => { const B = pr.bornes;
   return dx >= B.x0 - 0.01 && dx <= B.x1 + 0.01 && dy >= B.y0 - 0.01 && dy <= B.y1 + 0.01 && !pr.pose.examiner(dx, dy).refus; };
@@ -324,7 +349,7 @@ function placeLibre(pr, dx, dy) { const B = pr.bornes, c = pr.c, [flo, fhi] = pr
   return { dx: 0, dy: 0, pourquoi: 'prise' }; }
 /* Les AIMANTS du bloc : les décalages où un de ses fils devient droit (l'autre bout sur un bloc qui ne bouge pas, dans
    n'importe quelle colonne), où un de ses bords s'aligne sur celui d'un voisin, où sa colonne de bornes vient contre la
-   paroi d'une goulotte. Chacun sait tracer son guide pour une pose (dx, dy). */
+   paroi d'une goulotte ; pour une pastille, sa place collée contre sa borne. Chacun sait tracer son guide pour une pose. */
 function aimantsDuBloc(P, c, pose) { const x = [], y = [], suit = new Set([c, ...pose.tags]), [flo, fhi] = pose.etendue;
   const H = (Y, o) => dx => ({ x1: Math.min(o.x, c.x + dx) - 6, y1: Y, x2: Math.max(o.x + o.w, c.x + dx + c.w) + 6, y2: Y });
   const V = (X, o) => (dx, dy) => ({ x1: X, y1: Math.min(o.y, c.y + dy) - 6, x2: X, y2: Math.max(o.y + o.h, c.y + dy + c.h) + 6 });
@@ -337,18 +362,85 @@ function aimantsDuBloc(P, c, pose) { const x = [], y = [], suit = new Set([c, ..
     x.push({ d: o.x - c.x, guide: V(o.x, o) }, { d: o.x + o.w - c.x - c.w, guide: V(o.x + o.w, o) }, { d: o.x + o.w / 2 - c.x - c.w / 2, guide: V(o.x + o.w / 2, o) }); });
   const g = P.geom; if (g && g.colX) g.colX.forEach((a, k) => { const z = a + g.colW[k], paroi = X => () => ({ x1: X, y1: g.yMin - 12, x2: X, y2: g.yMax + 12 });
     x.push({ d: a - flo, guide: paroi(a) }, { d: z - fhi, guide: paroi(z) }); });
+  // une pastille : sa place collée, au bout d'un fil court, du côté de sa borne
+  const k = pose.colle, e = pose.partenaire && pose.partenaire.ep; if (k && e) {
+    const ici = () => ({ x1: Math.min(e.x, k.x), y1: e.y, x2: Math.max(e.x, k.x + c.w), y2: e.y });
+    x.push({ d: k.x - c.x, fort: true, guide: ici }); y.push({ d: k.y - c.y, fort: true, guide: ici }); }
   return { x, y }; }
-// le dessin avec le bloc déplacé de (dx, dy), ses pastilles avec lui, les colonnes relues et rerouté (05) ; nul si la pose est refusée
-function deplacerBloc(P, c, dx, dy, pose) { const r = (pose || preparerPose(P, c)).poser(dx, dy); if (r.refus) return null;
-  const compDe = new Map(); r.comps.forEach(k => { if (k.id != null) compDe.set(k.id, k); if (!compDe.has(k.name)) compDe.set(k.name, k); });
-  return { ...P, comps: r.comps, links: r.links, geom: r.geom, compDe, routage: r.routage, retouche: true, poussee: r.poussee }; }
+/* le dessin avec le bloc déplacé de (dx, dy), ses pastilles avec lui, les colonnes relues et rerouté (05) ; nul si la pose
+   est refusée — sur un bloc, à côté d'un bloc de sa colonne — ou si le dessin romprait une règle (un numéro de plus qui
+   ne s'écrit pas, un fil dans un bloc, partagé, rompu) */
+function deplacerBloc(P, c, dx, dy, pose) { const r = (pose || preparerPose(P, c)).poser(dx, dy);
+  if (r.refus || r.muets > r.muetsAvant || !routageSain(r.comps, r.routage)) return null; return dessinRetouche(P, r); }
+
+/* ---- les BORNES ---- */
+/* Les aimants d'une borne : les hauteurs où un de ses fils devient droit (l'autre bout sur un autre bloc), la place que le
+   moteur lui donnait, celles des autres bornes de son flanc (elles échangent leurs places). */
+function aimantsDeBorne(P, c, y0) { const y = [], ici = { x: c.x, w: c.w };
+  P.links.forEach(l => { if (l.shunt || l.boucle || !l.epA || !l.epB) return;
+    [[l.de, l.epA, l.epB], [l.vers, l.epB, l.epA]].forEach(([n, e, e2]) => { if (!surLeBloc(c, n, e) || Math.abs(e.y - y0) > 0.5 || surLeBloc(c, n, e2)) return;
+      y.push({ y: e2.y, fort: true, guide: () => ({ x1: Math.min(e.x, e2.x), y1: e2.y, x2: Math.max(e.x, e2.x), y2: e2.y }) }); }); });
+  Object.values(c.rangs || {}).flat().forEach(p => { if (Math.abs(p.y - y0) < 0.5) { if (p.ya != null) y.push({ y: p.ya, fort: true, guide: () => ({ x1: ici.x - 8, y1: p.ya, x2: ici.x + ici.w + 8, y2: p.ya }) }); return; }
+    y.push({ y: p.y, guide: () => ({ x1: ici.x - 8, y1: p.y, x2: ici.x + ici.w + 8, y2: p.y }) }); });
+  return y; }
+
+/* ---- les FILS et les BARRETTES À POSER ---- */
+/* Les bouts d'un fil, rangés comme le routeur les range : `g` celui de la goulotte de gauche. */
+const boutsDuFil = l => { const A = l.epA, B = l.epB; return A.ch > B.ch || (A.ch === B.ch && A.stub === 'R' && B.stub === 'L') ? [B, A] : [A, B]; };
+/* La consigne d'un fil après un geste sur un de ses tronçons (05, les consignes) : `k0` celle d'avant ; un tronçon
+   VERTICAL de la goulotte ch0 posé à l'abscisse X (dans la goulotte ch1) ; un tronçon HORIZONTAL posé à la hauteur Y.
+   Une verticale qui passe dans la goulotte de l'autre bout du fil : il part droit de ce bout (un couloir à sa hauteur) ;
+   dans une goulotte où aucun de ses bouts ne regarde, il y passe (le couloir s'oublie). Un couloir posé : les verticales
+   ailleurs que dans ses deux goulottes s'oublient. */
+function consigneDuGeste(l, k0, geste, G) { const [g, d] = boutsDuFil(l), xs0 = (k0 && k0.xs) || [];
+  if (geste.y != null) return { li: l.i, y: geste.y, xs: xs0.filter(x => [g.ch, d.ch].includes(G.chDe(x))) };
+  const ch0 = geste.ch0, ch1 = G.chDe(geste.x), xs = [...xs0.filter(x => { const ch = G.chDe(x); return ch !== ch0 && ch !== ch1; }), geste.x];
+  if (ch1 === ch0) return { li: l.i, ...(k0 && k0.y != null ? { y: k0.y } : {}), xs };
+  if (ch0 === g.ch && ch1 === d.ch && g.ch !== d.ch) return { li: l.i, y: g.y, xs: [geste.x] };
+  if (ch0 === d.ch && ch1 === g.ch && g.ch !== d.ch) return { li: l.i, y: d.y, xs: [geste.x] };
+  return { li: l.i, xs }; }
+// la goulotte d'un dessin, comme le routeur la voit
+const goulottesDe = P => goulottes({ comps: P.comps, geom: P.geom });
+/* Le dessin avec ces consignes, routé (05) ; nul s'il ne tient pas ses règles — une oblique, un fil dans un bloc ou
+   partagé, un fil rompu, un numéro de plus qui ne s'écrit pas. */
+function avecConsignes(P, consignes) { const r = poserConsignes(P, consignes);
+  if (!routageSain(r.comps, r.routage) || r.muets > r.muetsAvant) return null; return dessinRetouche(P, r); }
+// un dessin où une borne a glissé (05) ; nul si la pose est refusée ou si elle romprait une règle
+function deplacerBorne(P, pb, y) { const r = pb.poser(y); if (!r || r.refus || r.rien) return null;
+  if (!routageSain(r.comps, r.routage) || r.muets > r.muetsAvant) return null; return dessinRetouche(P, r); }
+
+/* ---- la garde, le retour au moteur ---- */
 // la retouche se garde (IndexedDB) ; une clé sans retouche s'efface
 function garderRetouche(cle) { const P = app.retouches.get(cle);
   ouvrirIDB().then(db => { const st = db.transaction(IDB_RETOUCHES, 'readwrite').objectStore(IDB_RETOUCHES); if (P) st.put({ P, t: Date.now() }, cle); else st.delete(cle); }).catch(() => { }); }
 function relireRetouches() { ouvrirIDB().then(db => { const req = db.transaction(IDB_RETOUCHES, 'readonly').objectStore(IDB_RETOUCHES).openCursor(); let vu = false;
   req.onsuccess = () => { const c = req.result; if (!c) { if (vu) rafraichirDessin(); return; } if (c.value && c.value.P && !app.retouches.has(String(c.key))) { app.retouches.set(String(c.key), c.value.P); vu = true; } c.continue(); }; }).catch(() => { }); }
 function revenirAutomatique() { const cle = cleCourante(); if (!cle || !app.retouches.has(cle)) return;
-  histPush('retouche de ce folio'); app.retouches.delete(cle); garderRetouche(cle); rafraichirDessin(); dire('Le moteur reprend la main : dessin automatique rétabli · Ctrl+Z pour retrouver vos retouches.'); }
+  histPush('retouche de ce folio', true); app.retouches.delete(cle); garderRetouche(cle); rafraichirDessin(); dire('Le moteur reprend la main : dessin automatique rétabli · Ctrl+Z pour retrouver vos retouches.'); }
+/* Rendre au moteur UN objet retouché (↺, ou un double-clic) : un fil perd sa consigne, une barrette à poser aussi ; une
+   borne revient à la hauteur que le moteur lui donnait (elle échange au besoin sa place avec celle qui l'a prise) ; un
+   bloc revient à la place que le moteur lui donnait, si elle est libre. Quand la main n'a plus rien laissé, le folio
+   redevient celui du moteur. */
+function rendreAuMoteur(objet) { const L = liaisonsDuPlan(), cle = L.length ? clePlacement(L) : null, P = cle && app.retouches.get(cle); if (!P) return false;
+  let P2 = null, nom = '', refus = '';
+  if (objet.genre === 'fil') { const l = P.links[objet.li], C = consignesDe(P); C.fils = C.fils.filter(k => k.li !== objet.li); P2 = avecConsignes(P, C); nom = String((l && l.cable) || 'le fil'); }
+  else if (objet.genre === 'vt') { const C = consignesDe(P); C.barrettes = C.barrettes.filter(k => k.cle !== objet.cle); P2 = avecConsignes(P, C); nom = objet.nom; }
+  else if (objet.genre === 'borne') { const c = P.comps.find(k => k === objet.c), p = c && Object.values(c.rangs).flat().find(q => Math.abs(q.y - objet.y) < 0.5);
+    if (c && p && p.ya != null) { const pb = preparerBorne(P, c, p.y), r = pb && pb.examiner(p.ya); P2 = r && !r.refus ? deplacerBorne(P, pb, p.ya) : null;
+      if (!P2) refus = r && r.refus === 'serre' ? 'une autre borne est trop près de sa place' : 'son bloc grandirait sur un voisin'; }
+    nom = 'la borne ' + (p ? p.etiq : '') + ' de ' + objet.c.name; }
+  else if (objet.genre === 'bloc') { const c = P.comps.find(k => k === objet.c), auto = placementAuto(L), a = auto && c && auto.comps.find(k => k.id === c.id);
+    if (a) { const pose = preparerPose(P, c), r = pose.examiner(a.x - c.x, a.y - c.y);
+      P2 = r.refus ? null : deplacerBloc(P, c, a.x - c.x, a.y - c.y, pose);
+      if (!P2) refus = 'la place que le moteur lui donnait est prise' + (r.avec ? ' (' + r.avec.name + ')' : '');
+      else { const i = P2.comps.findIndex(k => k.id === c.id); if (i >= 0) { const { main, ...sans } = P2.comps[i], comps = P2.comps.slice(); comps[i] = sans; P2 = dessinRetouche(P, { ...P2, comps }); } } }
+    nom = c ? c.name : ''; }
+  if (!P2) { dire(refus ? 'Impossible de rendre ' + nom + ' au moteur : ' + refus + '.' : 'Rien à rendre au moteur ici.', !!refus); return false; }
+  histPush('rendre ' + nom + ' au moteur', true);
+  if (retoucheVide(P2, placementAuto(L, true))) app.retouches.delete(cle); else app.retouches.set(cle, P2);
+  garderRetouche(cle); rafraichirDessin();
+  dire((nom.charAt(0).toUpperCase() + nom.slice(1)) + ' rendu' + (objet.genre === 'borne' || objet.genre === 'vt' ? 'e' : '') + ' au moteur · Ctrl+Z pour défaire.');
+  return true; }
 /* Le bouton du bas, sur un folio retouché : il dit ce qu'il fait — rendre le dessin au moteur — et sa bulle, que les
    retouches de ce folio se gardent dans ce navigateur. */
 const MOT_RETOUCHE = 'Dessin retouché · rendre au moteur', BULLE_RETOUCHE = 'Les retouches de ce folio se gardent dans ce navigateur · revenir au dessin du moteur';
@@ -457,8 +549,6 @@ function zoomer(k, mx, my) { const r = cadre(); if (mx == null) { mx = r.width /
   const ns = Math.max(ZMIN, Math.min(ZMAX, app.vue.s * k));
   app.vue = { s: ns, tx: mx - wx * ns, ty: my - wy * ns }; appliquerVue(); }
 const versMonde = (cx, cy) => { const r = cadre(); return { x: (cx - r.left - app.vue.tx) / app.vue.s, y: (cy - r.top - app.vue.ty) / app.vue.s }; };
-function blocSous(w) { if (!app.dessin) return null; const cs = app.dessin.comps;
-  for (let i = cs.length - 1; i >= 0; i--) { const c = cs[i]; if (w.x >= c.x - 5 && w.x <= c.x + c.w + 5 && w.y >= c.y - 5 && w.y <= c.y + c.h + 5) return c; } return null; }
 function filSous(w) { if (!app.dessin) return null; const tol = Math.max(4, 7 / app.vue.s); let best = null, bd = tol;
   const d = (px, py, a, b) => { const dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy; let t = L2 ? ((px - a.x) * dx + (py - a.y) * dy) / L2 : 0; t = Math.max(0, Math.min(1, t)); return Math.hypot(px - (a.x + t * dx), py - (a.y + t * dy)); };
   for (const f of app.dessin.fils) for (let i = 0; i < f.pts.length - 1; i++) { const dd = d(w.x, w.y, f.pts[i], f.pts[i + 1]); if (dd < bd) { bd = dd; best = f; } }
@@ -509,9 +599,70 @@ function rallumer() { const c = app.cible, w = app.actif && filDe(app.actif);
 function filDe(l) { if (!app.dessin) return null; const L = liaisonsDuPlan();
   return app.dessin.fils.find(w => L[w.i] === l || sourceDe(L[w.i]) === l) || null; }
 
-/* ---- la planche : pan, pinch, molette, clic, survol -------------------- */
+/* ---- la planche : pan, pinch, molette, clic, survol, et la prise ------- */
+/* Ce que la souris prend sous elle (w : un point du dessin) — d'abord ce qui est dessous au point près : une BORNE (là
+   où elle se dessine, 06 `bornesPrenables`), un BLOC (le reste de son corps ; une pastille entière) ; puis, à quelques
+   pixels, une BARRETTE À POSER, un TRONÇON DE FIL ; enfin un bloc à quelques unités près. Un tronçon se prend s'il est
+   vertical dans une goulotte (`sens` 'V') ou s'il traverse une colonne d'un fil dont les bouts sont dans deux goulottes
+   ('H') ; sinon il se clique seulement. Rend { genre: 'borne' | 'bloc' | 'vt' | 'fil', … } ou null. */
+function blocA(w, m) { const cs = app.dessin.comps;
+  for (let i = cs.length - 1; i >= 0; i--) { const c = cs[i]; if (w.x >= c.x - m && w.x <= c.x + c.w + m && w.y >= c.y - m && w.y <= c.y + c.h + m) return c; } return null; }
+function blocSous(w) { return app.dessin ? blocA(w, 5) : null; }
+function priseSous(w) { const d = app.dessin; if (!d) return null;
+  const tol = Math.max(2.5, 6 / app.vue.s), surBloc = c => { if (c.kind === 'tag') return { genre: 'bloc', c };
+    const z = bornesPrenables(c).find(z => w.x >= z.x0 - 1 && w.x <= z.x1 + 1 && w.y >= z.y0 && w.y <= z.y1);
+    return z ? { genre: 'borne', c, y: z.y, etiq: z.etiq, zone: z } : { genre: 'bloc', c }; };
+  const c = blocA(w, 0); if (c) return surBloc(c);
+  const vt = barretteAPoserSous(w); if (vt) return { genre: 'vt', b: vt };
+  const s = segmentSous(w, tol); if (s) return s;
+  const c2 = blocA(w, 5); return c2 ? surBloc(c2) : null; }
+// le tronçon de fil le plus proche, à `tol` près ; prenable ou non (`sens`)
+function segmentSous(w, tol) { const d = app.dessin; let best = null, bd = tol;
+  for (const f of d.fils) { if (f.shunt) continue; for (let i = 0; i + 1 < f.pts.length; i++) { const a = f.pts[i], b = f.pts[i + 1];
+    const dd = Math.abs(a.x - b.x) < 0.5 ? (w.y < Math.min(a.y, b.y) || w.y > Math.max(a.y, b.y) ? Infinity : Math.abs(w.x - a.x))
+      : (w.x < Math.min(a.x, b.x) || w.x > Math.max(a.x, b.x) ? Infinity : Math.abs(w.y - a.y));
+    if (dd < bd) { bd = dd; best = { f, i, a, b }; } } }
+  if (!best) return null;
+  const { f, a, b } = best, l = d.links[f.i], g = d.geom, G = goulottes({ comps: d.comps, geom: g }); let sens = null;
+  if (Math.abs(a.x - b.x) < 0.5) { if (G.chDe(a.x) >= 0) sens = 'V'; }
+  else if (l && l.epA && l.epB) { const [bg, bd2] = boutsDuFil(l), xa = Math.min(a.x, b.x), xb = Math.max(a.x, b.x);
+    if (bg.ch !== bd2.ch && g.colX.some((x, k) => x >= xa - 1 && x + g.colW[k] <= xb + 1)) sens = 'H'; }
+  return { genre: 'fil', ...best, sens }; }
+// les fils d'une borne : ceux dont un bout est sur ce bloc, à cette hauteur
+const filsDeLaBorne = (c, y) => ((app.dessin && app.dessin.fils) || []).filter(w => !w.shunt && [[w.de, w.epA], [w.vers, w.epB]].some(([n, e]) => e && surLeBloc(c, n, e) && Math.abs(e.y - y) < 0.5));
+// ce qu'un objet pris a de retouché (de quoi le rendre au moteur), et cet objet pour `rendreAuMoteur`
+function objetDe(p) { if (!p) return null;
+  if (p.genre === 'fil') return { genre: 'fil', li: p.f.i };
+  if (p.genre === 'vt') return { genre: 'vt', cle: cleDeBarrette(p.b), nom: p.b.nomVT || 'la barrette' };
+  if (p.genre === 'borne') return { genre: 'borne', c: p.c, y: p.y };
+  return { genre: 'bloc', c: p.c }; }
+function estRetouche(p) { const d = app.dessin; if (!p || !d) return false; const C = (d.geom && d.geom.consignes) || {};
+  if (p.genre === 'fil') return (C.fils || []).some(k => k.li === p.f.i);
+  if (p.genre === 'vt') return (C.barrettes || []).some(k => k.cle === cleDeBarrette(p.b));
+  if (p.genre === 'borne') return Object.values(p.c.rangs || {}).flat().some(q => Math.abs(q.y - p.y) < 0.5 && q.ya != null);
+  return !!p.c.main; }
+const cleDePrise = p => !p ? '' : p.genre === 'fil' ? 'f' + p.f.i + ':' + p.i : p.genre === 'vt' ? 'v' + cleDeBarrette(p.b) : p.genre === 'borne' ? 'p' + app.dessin.comps.indexOf(p.c) + ':' + p.y : 'b' + app.dessin.comps.indexOf(p.c);
+const sensDePrise = p => !p ? '' : p.genre === 'fil' ? (p.sens ? 'fil-' + p.sens.toLowerCase() : 'fil') : p.genre;
+const prenable = p => !!p && (p.genre !== 'fil' || !!p.sens);
+const n3 = x => x.toFixed(3);
+/* Le SURVOL : ce qui se prendrait s'allume — la zone d'une borne, un tronçon de fil, la ligne d'une barrette à poser,
+   en gris d'encre à travers le papier — et, sur un objet retouché, le ↺ qui le rend au moteur. */
+function dessinSurvol(p, u) { if (!p) return { h: '', rendre: null };
+  let h = '', rx = 0, ry = 0; const trait = (x1, y1, x2, y2) => `<line class="rt-allume" x1="${f1(x1)}" y1="${f1(y1)}" x2="${f1(x2)}" y2="${f1(y2)}" stroke-width="${n3(10 * u)}"/>`;
+  if (p.genre === 'borne') { const z = p.zone; h = `<rect class="rt-zone" x="${f1(z.x0 - 1.5)}" y="${f1(z.y0)}" width="${f1(z.x1 - z.x0 + 3)}" height="${f1(z.y1 - z.y0)}" rx="${n3(3 * u)}" stroke-width="${n3(u)}"/>`;
+    const gauche = (z.x0 + z.x1) / 2 < p.c.x + p.c.w / 2; rx = gauche ? z.x0 - 14 * u : z.x1 + 14 * u; ry = z.y - 15 * u; }
+  else if (p.genre === 'fil') { if (p.sens) h = trait(p.a.x, p.a.y, p.b.x, p.b.y);   // un tronçon qui ne se prend pas ne s'allume pas : le fil se clique
+    if (Math.abs(p.a.x - p.b.x) < 0.5) { rx = p.a.x + 13 * u; ry = (p.a.y + p.b.y) / 2; } else { rx = (p.a.x + p.b.x) / 2; ry = p.a.y - 13 * u; } }
+  else if (p.genre === 'vt') { const bs = bornesDePiquage(p.b); h = trait(p.b.x, bs[0].y, p.b.x, bs[bs.length - 1].y); rx = p.b.x + 13 * u; ry = bs[0].y - 4 * u; }
+  else { rx = p.c.x + p.c.w + 9 * u; ry = p.c.y - 9 * u; }
+  if (!estRetouche(p)) return { h, rendre: null };
+  const r = 10 * u, k = 0.6 * u;
+  h += `<g class="rt-rendre" role="button" aria-label="Rendre au moteur"><circle cx="${f1(rx)}" cy="${f1(ry)}" r="${n3(r)}" stroke-width="${n3(u)}"/>`
+    + `<path transform="translate(${n3(rx - 12 * k)} ${n3(ry - 12 * k)}) scale(${n3(k)})" d="M4 12a8 8 0 1 0 2.3-5.7M4 4v4h4" stroke-width="2"/><title>Rendre au moteur</title></g>`;
+  return { h, rendre: { x: rx, y: ry } }; }
+
 function lierPlanche() {
-  const stage = $('planche'); const pointeurs = new Map(); let mode = null, pan = null, pinch = null, bouge = false, origine = null, survole = null;
+  const stage = $('planche'); const pointeurs = new Map(); let mode = null, pan = null, pinch = null, bouge = false, origine = null;
   const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
   const debutPinch = () => { mode = 'pinch'; pan = null; const r = cadre(); const p = [...pointeurs.values()];
     const mx = (p[0].x + p[1].x) / 2 - r.left, my = (p[0].y + p[1].y) / 2 - r.top;
@@ -520,86 +671,210 @@ function lierPlanche() {
     const ns = Math.max(ZMIN, Math.min(ZMAX, pinch.s0 * dist(p[0], p[1]) / pinch.d));
     const mx = (p[0].x + p[1].x) / 2 - r.left, my = (p[0].y + p[1].y) / 2 - r.top;
     app.vue = { s: ns, tx: mx - pinch.wx * ns, ty: my - pinch.wy * ns }; appliquerVue(); };
-  /* la PRISE d'un bloc (la retouche) : à la souris, appuyer sur un bloc et glisser le déplace, où l'on veut ; au doigt,
-     un appui long le prend, un glissé simple déplace la vue. `prise` : le bloc, le point de départ ; le geste commencé,
-     la prise préparée (`preparerPrise`), le dessin d'avant, la visée (`vise`) et la place où il tombe (dx, dy) */
+  /* la PRISE (la retouche) : à la souris, appuyer sur ce qui se prend et glisser le déplace ; au doigt, un appui long le
+     prend, un glissé simple déplace la vue. `prise` : ce qu'on a pris (priseSous) et le point de départ ; le geste
+     commencé, sa préparation (GESTES[genre].preparer), le dessin d'avant (`avant`), la visée (`vise`), la place où il
+     tombe (`place`) et s'il y est posé (`posee`) */
   let prise = null, long = null, image = 0, dernierBloc = null, dernierAppui = null, clavier = null, dernierPris = null;
-  const prenable = c => c && c.kind !== 'tag' && !c.rail && !estRenvoi(c.name);
-  const commencerPrise = () => { const L = liaisonsDuPlan(), cle = L.length ? clePlacement(L) : null; if (!cle) return false;
-    const P = placementDe(L), c = (P && P.comps.find(k => k === prise.c)) || null; if (!c) return false;
-    Object.assign(prise, preparerPrise(P, c), { cle, avant: app.retouches.get(cle) || null, dx: 0, dy: 0, vise: null, poussee: 0, pourquoi: null });
-    const mot = $('toast'); if (mot) mot.classList.remove('on');   // le mot du geste d'avant s'en va : celui-ci aura le sien, s'il bouge
-    histPush('déplacer ' + c.name); mode = 'bloc'; stage.classList.add('deplace'); eteindre(); return true; };
-  // la visée : la souris au pas du carreau, ou sur l'aimant à portée (un fil droit d'abord) ; Alt : libre, au demi-point
-  const viser = (rx, ry, libre) => { if (libre) return { dx: Math.round(rx * 2) / 2, dy: Math.round(ry * 2) / 2 };
-    const tol = Math.max(2, Math.min(20, 7 / app.vue.s)), A = prise.aimants, pas = prise.pas;
-    const proche = (L, v) => { const pres = L.filter(a => Math.abs(a.d - v) <= tol); if (!pres.length) return null; const forts = pres.filter(a => a.fort);
-      return (forts.length ? forts : pres).reduce((m, a) => Math.abs(a.d - v) < Math.abs(m.d - v) ? a : m); };
-    const ax = proche(A.x, rx), ay = proche(A.y, ry);
-    return { dx: ax ? ax.d : Math.round(rx / pas) * pas, dy: ay ? ay.d : Math.round(ry / pas) * pas }; };
-  // le dessin du geste : le bloc où il tombe, rerouté ; revenu à sa place, le dessin d'avant
-  const poserPrise = () => { const { cle, P, c, dx, dy } = prise;
-    if (!dx && !dy) { if (prise.avant) app.retouches.set(cle, prise.avant); else app.retouches.delete(cle); prise.poussee = 0; return; }
-    const P2 = deplacerBloc(P, c, dx, dy, prise.pose); if (P2) { app.retouches.set(cle, P2); prise.poussee = P2.poussee || 0; } };
-  /* le CALQUE du geste, par-dessus le dessin : le fantôme du contour à la place visée (à l’encre ; rouge quand elle est prise,
-     et alors le contour plein de la place où il tombe), les guides des aimants que la pose touche. Les épaisseurs se
-     tiennent à l'écran, quelle que soit l'échelle. */
-  const calque = () => { const sc = $('scene'); if (!sc || !prise || mode !== 'bloc' || !prise.vise) return;
-    let g = sc.querySelector('#rt-calque'); if (!g) { g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); g.id = 'rt-calque'; g.setAttribute('class', 'rt-calque'); sc.appendChild(g); }
-    const u = 1 / app.vue.s, c = prise.c, v = prise.vise, m = 3 * u, pris = Math.abs(v.dx - prise.dx) > 0.01 || Math.abs(v.dy - prise.dy) > 0.01, n = x => x.toFixed(3);
-    const cadreDe = (cls, dx, dy, tirets) => `<rect class="${cls}" x="${f1(c.x + dx - m)}" y="${f1(c.y + dy - m)}" width="${f1(c.w + 2 * m)}" height="${f1(c.h + 2 * m)}" rx="${n(2 * u)}" stroke-width="${n(1.5 * u)}"${tirets ? ` stroke-dasharray="${n(5 * u)} ${n(3 * u)}"` : ''}/>`;
-    // les guides : un trait par ligne d'alignement (deux aimants sur la même ligne n'en font qu'un, d'un bout à l'autre)
-    let h = ''; const lignes = new Map();
-    [['x', prise.dx], ['y', prise.dy]].forEach(([axe, d]) => prise.aimants[axe].forEach(a => { if (Math.abs(a.d - d) > 0.26) return;
-      const t = a.guide(prise.dx, prise.dy), vert = Math.abs(t.x1 - t.x2) < 0.01, k = (vert ? 'x' : 'y') + Math.round((vert ? t.x1 : t.y1) * 2), l = lignes.get(k);
-      if (!l) { lignes.set(k, { ...t }); return; }
-      if (vert) { l.y1 = Math.min(l.y1, t.y1, t.y2); l.y2 = Math.max(l.y2, t.y1, t.y2); } else { l.x1 = Math.min(l.x1, t.x1, t.x2); l.x2 = Math.max(l.x2, t.x1, t.x2); } }));
-    lignes.forEach(t => { h += `<line class="rt-guide" x1="${f1(t.x1)}" y1="${f1(t.y1)}" x2="${f1(t.x2)}" y2="${f1(t.y2)}" stroke-width="${n(u)}" stroke-dasharray="${n(4 * u)} ${n(3 * u)}"/>`; });
-    if (pris) h += cadreDe('rt-pose', prise.dx, prise.dy, false);
-    h += cadreDe('rt-fantome' + (pris ? ' pris' : ''), v.dx, v.dy, true);
-    g.innerHTML = h; g.dataset.pris = pris ? '1' : ''; };
-  const suitPrise = e => { prise.souris = { clientX: e.clientX, clientY: e.clientY };
-    const w = versMonde(e.clientX, e.clientY), v = viser(w.x - prise.wx, w.y - prise.wy, !!e.altKey), p = placeLibre(prise, v.dx, v.dy);
-    prise.vise = v; prise.pourquoi = p.pourquoi;
-    if (p.dx === prise.dx && p.dy === prise.dy) { calque(); return; }
-    prise.dx = p.dx; prise.dy = p.dy;
-    cancelAnimationFrame(image); image = requestAnimationFrame(() => { if (!prise || mode !== 'bloc') return; poserPrise(); calculer(); peindre(); calque(); }); };
-  // Alt pressé ou lâché pendant le geste : la visée se refait sur place
-  const altPendant = e => { if (e.key !== 'Alt' || mode !== 'bloc' || !prise || !prise.souris) return; e.preventDefault(); suitPrise({ ...prise.souris, altKey: e.type === 'keydown' }); };
-  window.addEventListener('keydown', altPendant); window.addEventListener('keyup', altPendant);
-  // le geste abandonné (Échap, un second doigt) : le dessin d'avant revient, l'historique n'en garde rien
-  const annulerPrise = () => { if (mode !== 'bloc' || !prise) return; cancelAnimationFrame(image); stage.classList.remove('deplace');
-    if (prise.avant) app.retouches.set(prise.cle, prise.avant); else app.retouches.delete(prise.cle); app.hist.pop(); synchroniserHistorique();
-    calculer(); peindre(); synchroniser(); rallumer(); prise = null; mode = null; };
-  window.addEventListener('keydown', e => { if (e.key !== 'Escape' || mode !== 'bloc') return; e.preventDefault(); e.stopPropagation(); annulerPrise(); }, true);
-  // l'écart entre la visée et la place, en pixels d'écran et en mots
+  // la visée sur un aimant à portée (les forts d'abord), sinon au pas
+  const tolAimant = () => Math.max(2, Math.min(20, 7 / app.vue.s));
+  const aimante = (L, v) => { const tol = tolAimant(), pres = L.filter(a => Math.abs(a.d - v) <= tol); if (!pres.length) return null; const forts = pres.filter(a => a.fort);
+    return (forts.length ? forts : pres).reduce((m, a) => Math.abs(a.d - v) < Math.abs(m.d - v) ? a : m); };
   const ecartDit = (ex, ey) => { const px = v => Math.round(Math.abs(v) * app.vue.s), mots = [];
     if (px(ex)) mots.push(px(ex) + ' px plus à ' + (ex > 0 ? 'droite' : 'gauche')); if (px(ey)) mots.push(px(ey) + ' px plus ' + (ey > 0 ? 'bas' : 'haut'));
     return mots.join(' et '); };
-  /* lâché : un mot seulement si le bloc a bougé — déplacé, ou posé ailleurs que visé (et pourquoi) — ou si la place visée
+  const lignesDeGuides = (L, u) => { let h = ''; const lignes = new Map();
+    L.forEach(t => { const vert = Math.abs(t.x1 - t.x2) < 0.01, k = (vert ? 'x' : 'y') + Math.round((vert ? t.x1 : t.y1) * 2), l = lignes.get(k);
+      if (!l) { lignes.set(k, { ...t }); return; }
+      if (vert) { l.y1 = Math.min(l.y1, t.y1, t.y2); l.y2 = Math.max(l.y2, t.y1, t.y2); } else { l.x1 = Math.min(l.x1, t.x1, t.x2); l.x2 = Math.max(l.x2, t.x1, t.x2); } });
+    lignes.forEach(t => { h += `<line class="rt-guide" x1="${f1(t.x1)}" y1="${f1(t.y1)}" x2="${f1(t.x2)}" y2="${f1(t.y2)}" stroke-width="${n3(u)}" stroke-dasharray="${n3(4 * u)} ${n3(3 * u)}"/>`; });
+    return h; };
+  const ligne = (cls, x1, y1, x2, y2, u, tirets) => `<line class="${cls}" x1="${f1(x1)}" y1="${f1(y1)}" x2="${f1(x2)}" y2="${f1(y2)}" stroke-width="${n3(2 * u)}"${tirets ? ` stroke-dasharray="${n3(5 * u)} ${n3(3 * u)}"` : ''}/>`;
+  // où l'objet est vraiment pendant le geste : la dernière place qui a tenu (null : où il était avant le geste)
+  const ici = pr => pr.posee ? pr.tenu : null;
+  /* LES GESTES, un par genre : préparer (le dessin, les aimants ; rend ce que l'historique en dira), viser (le pas, les
+     aimants, Alt), placer (la place juste la plus proche de la visée, et pourquoi elle diffère), poser (le dessin routé ;
+     'retour' : à sa place d'avant ; null : la pose romprait une règle), calque (le fantôme, les guides), et le mot. */
+  const GESTES = {
+    bloc: {
+      preparer(pr, P) { const c = P.comps.find(k => k === pr.c); if (!c) return null; Object.assign(pr, preparerPrise(P, c)); return 'déplacer ' + c.name; },
+      viser(pr, rx, ry, libre) { if (libre) return { dx: Math.round(rx * 2) / 2, dy: Math.round(ry * 2) / 2 };
+        const ax = aimante(pr.aimants.x, rx), ay = aimante(pr.aimants.y, ry);
+        return { dx: ax ? ax.d : Math.round(rx / pr.pas) * pr.pas, dy: ay ? ay.d : Math.round(ry / pr.pas) * pr.pas }; },
+      placer: (pr, v) => placeLibre(pr, v.dx, v.dy),
+      meme: (a, b) => a.dx === b.dx && a.dy === b.dy,
+      immobile: p => !p.dx && !p.dy,
+      poser: (pr, p) => deplacerBloc(pr.P, pr.c, p.dx, p.dy, pr.pose),
+      pris: pr => { const p = ici(pr) || { dx: 0, dy: 0 }; return Math.abs(pr.vise.dx - p.dx) > 0.01 || Math.abs(pr.vise.dy - p.dy) > 0.01; },
+      calque(pr, u) { const c = pr.c, v = pr.vise, p = ici(pr) || { dx: 0, dy: 0 }, m = 3 * u, pris = GESTES.bloc.pris(pr);
+        const cadreDe = (cls, dx, dy, tirets) => `<rect class="${cls}" x="${f1(c.x + dx - m)}" y="${f1(c.y + dy - m)}" width="${f1(c.w + 2 * m)}" height="${f1(c.h + 2 * m)}" rx="${n3(2 * u)}" stroke-width="${n3(1.5 * u)}"${tirets ? ` stroke-dasharray="${n3(5 * u)} ${n3(3 * u)}"` : ''}/>`;
+        const guides = []; [['x', p.dx], ['y', p.dy]].forEach(([axe, d]) => pr.aimants[axe].forEach(a => { if (Math.abs(a.d - d) <= 0.26) guides.push(a.guide(p.dx, p.dy)); }));
+        return lignesDeGuides(guides, u) + (pris ? cadreDe('rt-pose', p.dx, p.dy, false) : '') + cadreDe('rt-fantome' + (pris ? ' pris' : ''), v.dx, v.dy, true); },
+      mot(pr) { const { c, vise: v, place: p } = pr, feuille = p.pourquoi === 'feuille';
+        if (!pr.posee) return v && (v.dx || v.dy) ? (feuille ? 'La feuille s’arrête là : ' : 'Pas de place ici : ') + c.name + ' reste où il était.' : '';
+        dernierPris = { nom: c.name, x: c.x + p.dx, y: c.y + p.dy };
+        const ecart = v ? ecartDit(p.dx - v.dx, p.dy - v.dy) : '', pousse = Math.round(((pr.P2 && pr.P2.poussee) || 0) * app.vue.s);
+        return ecart ? c.name + ' posé ' + ecart + (feuille ? ' : la feuille s’arrête là.' : ' : la place était prise.')
+          : c.name + ' déplacé' + (pousse ? ' · les colonnes voisines s’écartent de ' + pousse + ' px' : '') + ' · Ctrl+Z pour défaire.'; } },
+    borne: {
+      preparer(pr, P) { const c = P.comps.find(k => k === pr.c); if (!c) return null; const pb = preparerBorne(P, c, pr.y); if (!pb) return null;
+        const bb = app.dessin && app.dessin.bbox, k = (bb && bb.k) || 1, m = (PAGE_CADRE + PAGE_MARGE) * k;
+        Object.assign(pr, { c, pb, y0: pr.y, aimants: aimantsDeBorne(P, c, pr.y), lim: bb ? [bb.y + m + MARGE_BORNE, bb.y + bb.h - m - PAGE_CARTOUCHE * k - MARGE_BORNE] : [-Infinity, Infinity] });
+        return 'déplacer la borne ' + pr.etiq + ' de ' + c.name; },
+      // l'aimant le plus proche — un fil droit l'emporte de peu : une autre borne visée en plein, c'est l'échange qu'on veut
+      viser(pr, rx, ry, libre) { const y = pr.y0 + ry; if (libre) return { y: Math.round(y * 2) / 2 };
+        const tol = tolAimant(), a = pr.aimants.filter(a => Math.abs(a.y - y) <= tol).reduce((m, a) => !m || Math.abs(a.y - y) - (a.fort ? 2 : 0) < Math.abs(m.y - y) - (m.fort ? 2 : 0) ? a : m, null);
+        return { y: a ? a.y : pr.y0 + Math.round(ry / PAS_BORNE) * PAS_BORNE }; },
+      // la visée si la borne peut y aller (sur une autre : l'échange) ; sinon, de demi-pas en demi-pas, la place juste la plus proche
+      placer(pr, v) { const [a, b] = pr.lim, y = Math.max(a, Math.min(b, v.y)), feuille = Math.abs(y - v.y) > 0.01, r = pr.pb.examiner(y);
+        if (!r.refus) return { y: r.y, echange: r.echange, pourquoi: feuille ? 'feuille' : null };
+        for (let n = 1; n <= 80; n++) for (const s of [1, -1]) { const yy = y + s * n * PAS_BORNE; if (yy < a || yy > b) continue; const q = pr.pb.examiner(yy); if (!q.refus) return { y: q.y, echange: q.echange, pourquoi: 'prise', refus: r }; }
+        return { y: pr.y0, pourquoi: 'prise', refus: r }; },
+      meme: (a, b) => Math.abs(a.y - b.y) < 0.01,
+      immobile: (p, pr) => Math.abs(p.y - pr.y0) < 0.5,
+      poser: (pr, p) => deplacerBorne(pr.P, pr.pb, p.y),
+      pris: pr => Math.abs(pr.vise.y - (ici(pr) || { y: pr.y0 }).y) > 0.01,
+      // les places justes autour d'une place que le routage ne tient pas : de demi-pas en demi-pas, la plus proche d'abord
+      voisines(pr, p) { const out = [], [a, b] = pr.lim; for (let n = 1; n <= 12; n++) for (const s of [1, -1]) { const y = p.y + s * n * PAS_BORNE; if (y < a || y > b) continue;
+        const q = pr.pb.examiner(y); if (!q.refus) out.push(q.rien ? { y: pr.y0 } : { y: q.y, echange: q.echange }); } return out; },
+      calque(pr, u) { const z = pr.zone, pris = GESTES.borne.pris(pr), y = (ici(pr) || { y: pr.y0 }).y, cadre = (cls, y, tirets) => `<rect class="${cls}" x="${f1(z.x0 - 1.5)}" y="${f1(y - (z.y1 - z.y0) / 2)}" width="${f1(z.x1 - z.x0 + 3)}" height="${f1(z.y1 - z.y0)}" rx="${n3(3 * u)}" stroke-width="${n3(1.5 * u)}"${tirets ? ` stroke-dasharray="${n3(4 * u)} ${n3(2.5 * u)}"` : ''}/>`;
+        const guides = pr.aimants.filter(a => Math.abs(a.y - y) <= 0.26).map(a => a.guide());
+        return lignesDeGuides(guides, u) + (pris ? cadre('rt-pose', y, false) : '') + cadre('rt-fantome' + (pris ? ' pris' : ''), pr.vise.y, true); },
+      mot(pr) { const { c, place: p } = pr, nom = 'la borne ' + pr.etiq + ' de ' + c.name;
+        if (!pr.posee) { if (!pr.vise || Math.abs(pr.vise.y - pr.y0) < 0.5) return '';
+          const r = p.refus || {}; return 'Pas de place ici pour ' + nom + (r.refus === 'serre' && r.avec ? ' : la borne ' + r.avec.etiq + (r.deux ? ', d’un autre connecteur, est à moins de deux pas' : ' est à moins d’un pas') : r.refus === 'bloc' && r.avec ? ' : ' + c.name + ' grandirait sur ' + r.avec.name : pr.refuse ? ' : un fil y romprait une règle' : '') + ' — elle reste où elle était.'; }
+        const q = p.echange != null ? Object.values(c.rangs).flat().find(x => Math.abs(x.y - p.y) < 0.5) : null;
+        return (q ? c.name + ' : les bornes ' + pr.etiq + ' et ' + q.etiq + ' échangent leurs places' : (nom.charAt(0).toUpperCase() + nom.slice(1)) + ' glisse' + (p.pourquoi === 'prise' ? ' au plus près : la place visée était prise' : ''))
+          + ' · double-clic pour la rendre au moteur · Ctrl+Z pour défaire.'; } },
+    vt: {
+      preparer(pr, P) { const b = pr.b, G = goulottesDe(P), ch = G.chDe(b.x); if (ch < 0 || !(P.routage.barrettes || []).includes(b)) return null;
+        const a = G.x0(ch) + RETRAIT, z = G.x1(ch) - RETRAIT, grille = [];
+        for (let x = a; x <= z + 0.01; x += PISTE) grille.push(x); for (let x = z; x >= a - 0.01; x -= PISTE) grille.push(x);
+        Object.assign(pr, { x0: b.x, lim: [a, Math.max(a, z)], grille, cleVT: cleDeBarrette(b) }); return 'déplacer ' + (b.nomVT || 'la barrette à poser'); },
+      viser(pr, rx, ry, libre) { const x = pr.x0 + rx; if (libre) return { x: Math.round(x * 2) / 2, ry };
+        const g = pr.grille.reduce((m, v) => Math.abs(v - x) < Math.abs(m - x) ? v : m, pr.grille[0]); return { x: g != null ? g : x, ry }; },
+      placer(pr, v) { const x = Math.max(pr.lim[0], Math.min(pr.lim[1], v.x)); return { x, pourquoi: Math.abs(x - v.x) > 0.01 ? 'goulotte' : null }; },
+      meme: (a, b) => Math.abs(a.x - b.x) < 0.01,
+      immobile: (p, pr) => Math.abs(p.x - pr.x0) < 0.5,
+      poser(pr, p) { const C = consignesDe(pr.P); C.barrettes = C.barrettes.filter(k => k.cle !== pr.cleVT).concat({ cle: pr.cleVT, d: (p.x - pr.b.px) * pr.b.dir }); return avecConsignes(pr.P, C); },
+      pris: pr => Math.abs(pr.vise.x - (ici(pr) || { x: pr.x0 }).x) > 0.01,
+      voisines: (pr, p) => pr.grille.filter((x, i, a) => a.indexOf(x) === i && Math.abs(x - p.x) > 0.01).sort((u, v) => Math.abs(u - p.x) - Math.abs(v - p.x)).map(x => ({ x })),
+      calque(pr, u) { const bs = bornesDePiquage(pr.b), y0 = bs[0].y - 4, y1 = bs[bs.length - 1].y + 4, pris = GESTES.vt.pris(pr), x = (ici(pr) || { x: pr.x0 }).x;
+        return (pris ? ligne('rt-pose', x, y0, x, y1, u) : '') + ligne('rt-fantome' + (pris ? ' pris' : ''), pr.vise.x, y0, pr.vise.x, y1, u, true); },
+      mot(pr) { const nom = pr.b.nomVT || 'La barrette à poser', haut = pr.vise && Math.abs(pr.vise.ry || 0) > 3 * PRH;
+        if (!pr.posee) return haut ? nom + ' reste au ras de sa borne : elle glisse dans sa goulotte, à gauche ou à droite.' : pr.refuse ? 'Pas de place ici pour ' + nom + ' : elle reste où elle était.' : '';
+        const pres = pr.place.pourquoi === 'goulotte' ? ' jusqu’à sa paroi' : pr.place.pourquoi ? ' — au plus près : la place visée était prise' : '';
+        return nom + ' glisse dans sa goulotte' + pres + (haut ? ' (elle reste à la hauteur de sa borne)' : '') + ' · double-clic pour la rendre au moteur · Ctrl+Z pour défaire.'; } },
+    fil: {
+      preparer(pr, P) { const l = P.links[pr.f.i]; if (!l || l.shunt || !P.routage.fils.includes(pr.f)) return null; const G = goulottesDe(P);
+        Object.assign(pr, { l, G, k0: consignesDe(P).fils.find(k => k.li === l.i) || null });
+        if (pr.sens === 'V') { pr.x0 = pr.a.x; pr.ch0 = G.chDe(pr.a.x); if (pr.ch0 < 0) return null; pr.grille = [];
+          for (let ch = 0; ch < G.n; ch++) { const a = G.x0(ch) + RETRAIT, z = G.x1(ch) - RETRAIT; for (let x = a; x <= z + 0.01; x += PISTE) pr.grille.push(x); for (let x = z; x >= a - 0.01; x -= PISTE) pr.grille.push(x); } }
+        else { const [g, d] = boutsDuFil(l), xa = Math.min(pr.a.x, pr.b.x), xb = Math.max(pr.a.x, pr.b.x); pr.y0 = pr.a.y;
+          // à la hauteur d'une de ses bornes, le fil en part droit : un guide le dit, de la borne au bout du tronçon
+          const borne = e => () => ({ x1: Math.min(e.x, xa), y1: e.y, x2: Math.max(e.x, xb), y2: e.y });
+          pr.aimants = [{ d: g.y, fort: true, guide: borne(g) }, { d: d.y, fort: true, guide: borne(d) }, { d: pr.y0, fort: true }]; }
+        return 'déplacer ' + (l.cable || 'le fil'); },
+      viser(pr, rx, ry, libre) {
+        if (pr.sens === 'V') { const x = pr.x0 + rx; if (libre) return { x: Math.round(x * 2) / 2 };
+          const tol = Math.max(PISTE / 2, tolAimant()), g = pr.grille.filter(v => Math.abs(v - x) <= tol).reduce((m, v) => m == null || Math.abs(v - x) < Math.abs(m - x) ? v : m, null);
+          return { x: g != null ? g : Math.round(x) }; }
+        const y = pr.y0 + ry; if (libre) return { y: Math.round(y * 2) / 2 };
+        const a = aimante(pr.aimants, y); return { y: a ? a.d : pr.y0 + Math.round(ry / PAS_BORNE) * PAS_BORNE }; },
+      // une verticale tombe dans une goulotte : visée dans une colonne, elle va à la piste la plus proche
+      placer(pr, v) { if (pr.sens !== 'V') return { y: v.y };
+        if (pr.G.chDe(v.x) >= 0) return { x: v.x }; const g = pr.grille.reduce((m, x) => Math.abs(x - v.x) < Math.abs(m - v.x) ? x : m, pr.grille[0]); return { x: g, pourquoi: 'colonne' }; },
+      meme: (a, b) => a.x === b.x && a.y === b.y,
+      immobile: (p, pr) => pr.sens === 'V' ? Math.abs(p.x - pr.x0) < 0.5 : Math.abs(p.y - pr.y0) < 0.5,
+      poser(pr, p) { const k = consigneDuGeste(pr.l, pr.k0, pr.sens === 'V' ? { ch0: pr.ch0, x: p.x } : { y: p.y }, pr.G);
+        const C = consignesDe(pr.P); C.fils = C.fils.filter(q => q.li !== pr.l.i).concat(k);
+        const P2 = avecConsignes(pr.P, C), w = P2 && P2.routage.fils.find(q => q.i === pr.l.i); if (!w || w.retouche !== 'tenue') return null;
+        if (pr.sens === 'V') { const G2 = goulottesDe(P2), ch = pr.G.chDe(p.x), xs = [];
+          w.pts.forEach((q, i) => { if (i && Math.abs(q.x - w.pts[i - 1].x) < 0.5 && Math.abs(q.y - w.pts[i - 1].y) > 0.5 && G2.chDe(q.x) === ch) xs.push(q.x); });
+          if (!xs.length) return null; p.reel = xs.reduce((m, x) => Math.abs(x - p.x) < Math.abs(m - p.x) ? x : m); }
+        else if (!w.pts.some((q, i) => i && Math.abs(q.y - p.y) < 0.5 && Math.abs(w.pts[i - 1].y - p.y) < 0.5)) return null;
+        return P2; },
+      pris: pr => { const q = ici(pr); if (pr.sens !== 'V') return Math.abs(pr.vise.y - (q ? q.y : pr.y0)) > 0.01;
+        return Math.abs(pr.vise.x - (!q ? pr.x0 : q.reel != null ? q.reel : q.x)) > PISTE / 2; },
+      // autour d'une place que le routage ne tient pas : les pistes de la même goulotte, ou les hauteurs de demi-pas en demi-pas, les plus proches d'abord
+      voisines(pr, p) { if (pr.sens !== 'V') { const out = []; for (let n = 1; n <= 12; n++) for (const s of [1, -1]) out.push({ y: p.y + s * n * PAS_BORNE }); return out; }
+        const ch = pr.G.chDe(p.x); return pr.grille.filter((x, i, a) => a.indexOf(x) === i && Math.abs(x - p.x) > 0.01 && pr.G.chDe(x) === ch).sort((u, v) => Math.abs(u - p.x) - Math.abs(v - p.x)).map(x => ({ x })); },
+      calque(pr, u) { const pris = GESTES.fil.pris(pr), a = pr.a, b = pr.b, q = ici(pr);
+        if (pr.sens === 'V') { const y0 = Math.min(a.y, b.y), y1 = Math.max(a.y, b.y), xp = !q ? pr.x0 : q.reel != null ? q.reel : q.x;
+          return (pris ? ligne('rt-pose', xp, y0, xp, y1, u) : '') + ligne('rt-fantome' + (pris ? ' pris' : ''), pr.vise.x, y0, pr.vise.x, y1, u, true); }
+        const x0 = Math.min(a.x, b.x), x1 = Math.max(a.x, b.x);
+        const yp = q ? q.y : pr.y0, guides = pr.aimants.filter(m => m.guide && Math.abs(m.d - yp) < 0.26).map(m => m.guide());
+        return lignesDeGuides(guides, u) + (pris ? ligne('rt-pose', x0, yp, x1, yp, u) : '') + ligne('rt-fantome' + (pris ? ' pris' : ''), x0, pr.vise.y, x1, pr.vise.y, u, true); },
+      mot(pr) { const nom = String(pr.l.cable || 'Le fil'), p = pr.place;
+        if (!pr.posee) return pr.vise && !GESTES.fil.immobile(pr.vise, pr) ? 'Pas de passage ici pour ' + nom + ' : il y croiserait un bloc, une borne ou un autre fil — il reste où il était.' : '';
+        let quoi;
+        if (pr.sens === 'V') { const x = p.reel != null ? p.reel : p.x, n = Math.round((x - pr.x0) / PISTE);
+          quoi = pr.G.chDe(p.x) !== pr.ch0 ? nom + ' passe par une autre goulotte' : n ? nom + ' glisse de ' + Math.abs(n) + ' piste' + (Math.abs(n) > 1 ? 's' : '') + ' à ' + (n > 0 ? 'droite' : 'gauche') : nom + ' glisse dans sa goulotte'; }
+        else { const px = Math.round(Math.abs(p.y - pr.y0) * app.vue.s); quoi = nom + ' : son couloir ' + (p.y < pr.y0 ? 'monte' : 'descend') + ' de ' + px + ' px'; }
+        const pres = p.pourquoi === 'colonne' ? ' — dans la goulotte la plus proche : un fil ne passe pas dans une colonne' : p.pourquoi ? ' — au plus près : la place visée croisait un bloc, une borne ou un autre fil' : '';
+        return quoi + pres + ' · double-clic sur le fil pour le rendre au moteur · Ctrl+Z pour défaire.'; } } };
+  const commencerPrise = () => { const L = liaisonsDuPlan(), cle = L.length ? clePlacement(L) : null; if (!cle) return false;
+    const P = placementDe(L), G = prise && GESTES[prise.genre]; if (!P || !G) return false;
+    Object.assign(prise, { cle, P, avant: app.retouches.get(cle) || null, vise: null, place: null, posee: false, refuse: false, P2: null });
+    const quoi = G.preparer(prise, P); if (!quoi) return false;
+    const mot = $('toast'); if (mot) mot.classList.remove('on');   // le mot du geste d'avant s'en va : celui-ci aura le sien, s'il bouge
+    histPush(quoi, true); mode = 'retouche'; stage.classList.add('deplace'); stage.dataset.prise = sensDePrise(prise); eteindre(); effacerSurvol(); return true; };
+  // revenu à sa place : le dessin d'avant le geste
+  const remettre = () => { if (prise.avant) app.retouches.set(prise.cle, prise.avant); else app.retouches.delete(prise.cle); prise.posee = false; prise.P2 = null; prise.tenu = null; };
+  /* le dessin du geste : là où il tombe, rerouté. Une place que le routage ne tient pas sans rompre une règle : la plus
+     proche qui la tient, parmi quelques voisines (`voisines`) ; revenu à sa place d'avant, il y reste ; sinon le dernier
+     dessin juste demeure */
+  const ESSAIS = 8;
+  const poserPrise = () => { const G = GESTES[prise.genre], p = prise.place; if (!p) return;
+    prise.tente = p; if (G.immobile(p, prise)) { remettre(); prise.refuse = false; return; }
+    let P2 = G.poser(prise, p), q = p;
+    if (!P2 && G.voisines) for (const v of G.voisines(prise, p).slice(0, ESSAIS)) { if (G.immobile(v, prise)) { remettre(); prise.refuse = true; return; }
+      const P3 = G.poser(prise, v); if (P3) { P2 = P3; q = { ...v, pourquoi: 'prise' }; break; } }
+    prise.refuse = !P2;
+    if (P2) { app.retouches.set(prise.cle, P2); prise.P2 = P2; prise.posee = true; prise.tenu = q; } };
+  /* le CALQUE du geste, par-dessus le dessin : le fantôme à la place visée (à l’encre ; rouge quand elle est prise, et
+     alors le contour plein de la place où il tombe), les guides des aimants que la pose touche. Les épaisseurs se
+     tiennent à l'écran, quelle que soit l'échelle. */
+  const calque = () => { const sc = $('scene'); if (!sc || !prise || mode !== 'retouche' || !prise.vise || !prise.place) return;
+    let g = sc.querySelector('#rt-calque'); if (!g) { g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); g.id = 'rt-calque'; g.setAttribute('class', 'rt-calque'); sc.appendChild(g); }
+    const G = GESTES[prise.genre]; g.innerHTML = G.calque(prise, 1 / app.vue.s); g.dataset.pris = G.pris(prise) ? '1' : ''; };
+  const suitPrise = e => { prise.souris = { clientX: e.clientX, clientY: e.clientY };
+    const G = GESTES[prise.genre], w = versMonde(e.clientX, e.clientY), v = G.viser(prise, w.x - prise.wx, w.y - prise.wy, !!e.altKey), p = G.placer(prise, v);
+    prise.vise = v;
+    if (prise.place && G.meme(p, prise.place)) { prise.place.pourquoi = p.pourquoi; prise.place.refus = p.refus; calque(); return; }   // la même place — peut-être plus pour la même raison
+    prise.place = p;
+    cancelAnimationFrame(image); image = requestAnimationFrame(() => { if (!prise || mode !== 'retouche') return; poserPrise(); calculer(); peindre(); calque(); }); };
+  // Alt pressé ou lâché pendant le geste : la visée se refait sur place
+  const altPendant = e => { if (e.key !== 'Alt' || mode !== 'retouche' || !prise || !prise.souris) return; e.preventDefault(); suitPrise({ ...prise.souris, altKey: e.type === 'keydown' }); };
+  window.addEventListener('keydown', altPendant); window.addEventListener('keyup', altPendant);
+  // le geste abandonné (Échap, un second doigt) : le dessin d'avant revient, l'historique n'en garde rien
+  const annulerPrise = () => { if (mode !== 'retouche' || !prise) return; cancelAnimationFrame(image); stage.classList.remove('deplace');
+    remettre(); app.hist.pop(); synchroniserHistorique();
+    calculer(); peindre(); synchroniser(); rallumer(); prise = null; mode = null; };
+  window.addEventListener('keydown', e => { if (e.key !== 'Escape' || mode !== 'retouche') return; e.preventDefault(); e.stopPropagation(); annulerPrise(); }, true);
+  /* lâché : un mot seulement si l'objet a bougé — déplacé, ou posé ailleurs que visé (et pourquoi) — ou si la place visée
      était prise et qu'il reste où il était */
   const finPrise = () => { cancelAnimationFrame(image); stage.classList.remove('deplace');
-    const { c, dx, dy, vise, cle } = prise, feuille = prise.pourquoi === 'feuille';
-    if (!dx && !dy) { if (prise.avant) app.retouches.set(cle, prise.avant); else app.retouches.delete(cle); app.hist.pop(); synchroniserHistorique();
-      if (vise && (vise.dx || vise.dy)) dire((feuille ? 'La feuille s’arrête là : ' : 'Pas de place ici : ') + c.name + ' reste où il était.'); }
-    else { poserPrise(); garderRetouche(cle); dernierPris = { nom: c.name, x: c.x + dx, y: c.y + dy };
-      const ecart = vise ? ecartDit(dx - vise.dx, dy - vise.dy) : '', pousse = Math.round((prise.poussee || 0) * app.vue.s);
-      dire(ecart ? c.name + ' posé ' + ecart + (feuille ? ' : la feuille s’arrête là.' : ' : la place était prise.')
-        : c.name + ' déplacé' + (pousse ? ' · les colonnes voisines s’écartent de ' + pousse + ' px' : '') + ' · Ctrl+Z pour défaire.'); }
+    const G = GESTES[prise.genre];
+    if (prise.place && prise.tente !== prise.place) poserPrise();   // la dernière visée, pas encore posée
+    if (!prise.place || G.immobile(prise.place, prise) || !prise.posee) remettre();
+    if (!prise.posee) { app.hist.pop(); synchroniserHistorique(); } else garderRetouche(prise.cle);
+    if (prise.posee && prise.tenu) prise.place = prise.tenu;
+    const m = G.mot(prise); if (m) dire(m);
     calculer(); peindre(); synchroniser(); rallumer(); prise = null; };
   /* Un bloc CHOISI se pousse aux flèches : d'un carreau, de cinq avec Maj — à la place exacte, ou pas du tout (le mot dit
      pourquoi). Une série de poussées sur le même bloc fait une seule entrée d'historique. Les flèches gauche et droite
      changent de folio quand aucun bloc n'est choisi (lierPanneau) : ce gardien, posé avant, passe la main. */
   const blocChoisi = () => { const ci = app.cible; if (!ci || ci.type !== 'bloc' || !app.dessin || String(app.choisi) !== String(ci.nom)) return null;
-    const cs = app.dessin.comps.filter(k => String(k.name) === String(ci.nom) && prenable(k)); if (cs.length < 2 || !dernierPris || dernierPris.nom !== ci.nom) return cs[0] || null;
+    const cs = app.dessin.comps.filter(k => String(k.name) === String(ci.nom)); if (cs.length < 2 || !dernierPris || dernierPris.nom !== ci.nom) return cs[0] || null;
     const loin = k => Math.hypot(k.x - dernierPris.x, k.y - dernierPris.y); return cs.reduce((a, k) => loin(k) < loin(a) ? k : a); };
   const pousser = (c, nx, ny) => { const L = liaisonsDuPlan(), cle = L.length ? clePlacement(L) : null; if (!cle) return;
     const P = placementDe(L); if (!P || !P.comps.includes(c)) return;
     const pr = preparerPrise(P, c), dx = nx * pr.pas, dy = ny * pr.pas;
-    if (!poseJuste(pr, dx, dy)) { dire('Pas de place ' + (nx < 0 ? 'à gauche' : nx > 0 ? 'à droite' : ny < 0 ? 'au-dessus' : 'au-dessous') + ' : ' + c.name + ' reste où il était.'); return; }
+    const P2 = poseJuste(pr, dx, dy) ? deplacerBloc(P, c, dx, dy, pr.pose) : null;
+    if (!P2) { dire('Pas de place ' + (nx < 0 ? 'à gauche' : nx > 0 ? 'à droite' : ny < 0 ? 'au-dessus' : 'au-dessous') + ' : ' + c.name + ' reste où il était.'); return; }
     const t = Date.now(), suite = !!clavier && clavier.cle === cle && clavier.nom === c.name && t - clavier.t < 1500 && app.hist.length === clavier.n;
-    if (!suite) histPush('pousser ' + c.name);
-    const P2 = deplacerBloc(P, c, dx, dy, pr.pose); if (!P2) return;
+    if (!suite) histPush('pousser ' + c.name, true);
     app.retouches.set(cle, P2); garderRetouche(cle); clavier = { cle, nom: c.name, t, n: app.hist.length }; dernierPris = { nom: c.name, x: c.x + dx, y: c.y + dy };
     calculer(); peindre(); synchroniser(); rallumer();
     if (!suite) dire(c.name + ' poussé d’un carreau · Maj : cinq carreaux · Ctrl+Z pour défaire.'); };
@@ -608,38 +883,63 @@ function lierPlanche() {
     const t = e.target; if (t && t.closest && t.closest('input,textarea,select,[contenteditable],[role="listbox"],[role="menu"],#menu')) return;
     const c = blocChoisi(); if (!c) return;
     e.preventDefault(); e.stopPropagation(); const k = e.shiftKey ? 5 : 1; pousser(c, sens[0] * k, sens[1] * k); }, true);
+  /* Le SURVOL : ce qui se prendrait s'allume, le curseur dit dans quel sens ça va (`data-prise` sur la planche : bloc,
+     borne, vt, fil-v, fil-h, fil), et le ↺ d'un objet retouché attend qu'on le clique — on peut aller jusqu'à lui sans
+     que le survol ne s'en aille. */
+  let survol = null, survolCle = '', survolRendre = null;
+  function effacerSurvol() { const g = document.getElementById('rt-survol'); if (g) g.remove(); survol = null; survolCle = ''; survolRendre = null; if (!mode) stage.dataset.prise = ''; }
+  const peindreSurvol = p => { const sc = $('scene'); let g = sc && sc.querySelector('#rt-survol');
+    if (!sc) return; if (!g) { g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); g.id = 'rt-survol'; g.setAttribute('class', 'rt-survol'); sc.appendChild(g); }
+    const u = 1 / app.vue.s, d = dessinSurvol(p, u); g.innerHTML = d.h; g.dataset.genre = sensDePrise(p);
+    const r = cadre(); survolRendre = d.rendre ? { x: r.left + app.vue.tx + d.rendre.x * app.vue.s, y: r.top + app.vue.ty + d.rendre.y * app.vue.s } : null; };
+  const survoler = e => { if (mode || pointeurs.size || !app.dessin) return;
+    if (e.target && e.target.closest && e.target.closest('.rt-rendre')) { stage.dataset.prise = 'rendre'; return; }
+    if (survolRendre && survol && Math.hypot(e.clientX - survolRendre.x, e.clientY - survolRendre.y) < 22 && document.getElementById('rt-survol')) return;   // en chemin vers le ↺
+    const p = priseSous(versMonde(e.clientX, e.clientY)), k = cleDePrise(p);
+    if (k === survolCle && (!p || document.getElementById('rt-survol'))) { stage.dataset.prise = sensDePrise(p); return; }
+    survolCle = k; survol = p; stage.dataset.prise = sensDePrise(p);
+    if (!p) { const g = document.getElementById('rt-survol'); if (g) g.remove(); survolRendre = null; rallumer(); return; }
+    if (p.genre === 'bloc') allumerBloc(p.c.name); else if (p.genre === 'borne') allumerFils(filsDeLaBorne(p.c, p.y));
+    else if (p.genre === 'vt') allumerBarretteAPoser(p.b.nomVT); else allumerFil(p.f);
+    peindreSurvol(p); };
   // l'ACCUEIL (#vide) vit sur la planche : un appui qui en part est un clic sur ses boutons, pas une prise de la vue — ni
   // capture du pointeur (elle volerait le « click » au bouton), ni pan
   const surLAccueil = e => !!(e.target && e.target.closest && e.target.closest('#vide'));
   stage.addEventListener('pointerdown', e => { if (e.button && e.button !== 0) return; fermerMenu(); fermerRecherche(); if (surLAccueil(e)) return;
+    // le ↺ d'un objet retouché : il est rendu au moteur, rien d'autre
+    if (e.target && e.target.closest && e.target.closest('.rt-rendre') && survol) { e.preventDefault(); const o = objetDe(survol); effacerSurvol(); rendreAuMoteur(o); return; }
     try { stage.setPointerCapture(e.pointerId); } catch (_) { }
     stage.classList.add('appui');   // pendant l'appui, le texte du folio ne se sélectionne pas
     pointeurs.set(e.pointerId, { x: e.clientX, y: e.clientY }); clearTimeout(long);
     if (pointeurs.size >= 2) { annulerPrise(); prise = null; debutPinch(); return; }
     bouge = false; origine = [e.clientX, e.clientY]; mode = 'pan'; pan = { tx: app.vue.tx, ty: app.vue.ty, x: e.clientX, y: e.clientY };
-    const w = versMonde(e.clientX, e.clientY), c = blocSous(w), vt = c ? null : barretteAPoserSous(w); prise = prenable(c) ? { c, wy: w.y, wx: w.x } : null;
+    const w = versMonde(e.clientX, e.clientY), p = app.dessin ? priseSous(w) : null, c = p && p.c, vt = p && p.genre === 'vt' ? p.b : null;
+    prise = prenable(p) ? { ...p, wx: w.x, wy: w.y } : null;
     if (!dernierBloc || Date.now() - dernierBloc.t > 800) dernierBloc = c ? { nom: c.name, t: Date.now() } : vt ? { nom: vt.nomVT, t: Date.now() } : null;   // le premier appui d'un double-clic fait foi
     if (prise && e.pointerType !== 'touch') mode = 'prise';
     else if (prise) long = setTimeout(() => { if (mode === 'pan' && !bouge && prise && commencerPrise()) { if (navigator.vibrate) navigator.vibrate(12); } }, 380); });
   stage.addEventListener('pointermove', e => { if (pointeurs.has(e.pointerId)) pointeurs.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (mode === 'pinch') { suitPinch(); return; } if (!mode) return;
     if (origine && (Math.abs(e.clientX - origine[0]) > 3 || Math.abs(e.clientY - origine[1]) > 3)) { if (!bouge && mode === 'prise' && !commencerPrise()) mode = 'pan'; bouge = true; clearTimeout(long); if (mode === 'pan') stage.classList.add('tient'); }
-    if (mode === 'bloc') { suitPrise(e); return; }
+    if (mode === 'retouche') { suitPrise(e); return; }
     if (mode === 'pan') { app.vue.tx = pan.tx + (e.clientX - pan.x); app.vue.ty = pan.ty + (e.clientY - pan.y); appliquerVue(); } });
   const fin = e => { try { stage.releasePointerCapture(e.pointerId); } catch (_) { } stage.classList.remove('tient'); clearTimeout(long);
     const etaitPinch = mode === 'pinch'; pointeurs.delete(e.pointerId); if (!pointeurs.size) stage.classList.remove('appui');
-    if (prise && prise.c && !bouge) dernierPris = { nom: prise.c.name, x: prise.c.x, y: prise.c.y };   // le morceau cliqué (une barrette en a plusieurs) : les flèches le poussent
+    if (prise && prise.genre === 'bloc' && !bouge) dernierPris = { nom: prise.c.name, x: prise.c.x, y: prise.c.y };   // le morceau cliqué (une barrette en a plusieurs) : les flèches le poussent
     if (etaitPinch) { if (pointeurs.size < 2) { mode = null; pinch = null; } return; }
-    if (mode === 'bloc') { finPrise(); mode = null; pan = null; return; }
+    if (mode === 'retouche') { finPrise(); mode = null; pan = null; survolCle = ''; return; }
     if ((mode === 'pan' || mode === 'prise') && !bouge) {
       /* le DOUBLE appui se reconnaît ici : le premier clic choisit le bloc et redessine la page, et le navigateur
          n'émet alors ni « click » ni « dblclick » — deux appuis à moins de 400 ms, au même endroit */
       const t = Date.now(), d = dernierAppui; dernierAppui = { t, x: e.clientX, y: e.clientY }; appuiDuPlan = { ...dernierAppui, nom: dernierBloc && dernierBloc.nom };
       if (d && t - d.t < 400 && Math.abs(e.clientX - d.x) < 8 && Math.abs(e.clientY - d.y) < 8) { dernierAppui = null; doubleAppui(e); }
-      else cliquer(versMonde(e.clientX, e.clientY)); }
+      else cliquer(versMonde(e.clientX, e.clientY)); survolCle = ''; }
     mode = null; pan = null; prise = null; };
-  // double appui : sur une barrette ou une prise, sa vue en relief ; ailleurs, on zoome
-  const doubleAppui = e => { const w = versMonde(e.clientX, e.clientY), c = blocSous(w), vt = c ? null : barretteAPoserSous(w);
+  /* double appui : sur une borne, un fil, une barrette à poser que la main a retouchés, ils sont rendus au moteur ; sur une
+     barrette ou une prise, sa vue en relief ; ailleurs, on zoome */
+  const doubleAppui = e => { const w = versMonde(e.clientX, e.clientY), p = app.dessin ? priseSous(w) : null;
+    if (p && p.genre !== 'bloc' && estRetouche(p)) { rendreAuMoteur(objetDe(p)); return; }
+    const c = blocSous(w), vt = c ? null : barretteAPoserSous(w);
     const nom = dernierBloc && Date.now() - dernierBloc.t < 800 ? dernierBloc.nom : (c && c.name) || (vt && vt.nomVT);
     if (nom && reliefPossible(nom)) { ouvrirRelief(nom); return; }
     const r = cadre(); zoomer(1.6, e.clientX - r.left, e.clientY - r.top); };
@@ -651,10 +951,8 @@ function lierPlanche() {
     if (!d || Date.now() - d.t > 400 || Math.abs(e.clientX - d.x) > 8 || Math.abs(e.clientY - d.y) > 8 || !d.nom || !reliefPossible(d.nom)) return;
     avale = Date.now(); e.preventDefault(); e.stopPropagation(); ouvrirRelief(d.nom); }, true);
   insp.addEventListener('click', e => { if (Date.now() - avale < 400) { e.preventDefault(); e.stopPropagation(); } }, true);
-  stage.addEventListener('mousemove', e => { if (mode || pointeurs.size) return;
-    const c = blocSous(versMonde(e.clientX, e.clientY)); const nm = c ? c.name : null;
-    if (nm !== survole) { survole = nm; if (nm) allumerBloc(nm); else rallumer(); } });
-  stage.addEventListener('mouseleave', () => { if (!mode) { survole = null; rallumer(); } });
+  stage.addEventListener('mousemove', survoler);
+  stage.addEventListener('mouseleave', () => { if (!mode) { effacerSurvol(); rallumer(); } });
   stage.addEventListener('wheel', e => { if (surLAccueil(e)) return;   // l'accueil défile, il ne zoome pas
     e.preventDefault(); const r = cadre(); zoomer(Math.exp(-e.deltaY * 0.0014), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
 
@@ -1336,17 +1634,18 @@ function ajusterFolios() { if (app.nFolios) return 0;
 /* ---- historique et enregistrement ------------------------------------- */
 /* L'historique photographie le contrat entier — les liaisons, les choix (désignations, sexes, raccords, profils de
    charge), le cartouche — : défaire un chargement rend aussi les choix et le cartouche d'avant. */
-function histPush(quoi) { app.hist.push({ quoi, liaisons: app.contrat.liaisons.map(l => ({ ...l })), source: app.source ? app.source.map(l => ({ ...l })) : null,
+function histPush(quoi, retouche) { app.hist.push({ quoi, retouche: !!retouche, liaisons: app.contrat.liaisons.map(l => ({ ...l })), source: app.source ? app.source.map(l => ({ ...l })) : null,
   nFolios: app.nFolios, budget: app.budget, plan: app.plan, nom: app.nom, designations: new Map(app.contrat.designations), sexes: new Map(app.contrat.sexes || []), raccords: new Map([...(app.contrat.raccords || [])].map(([k, v]) => [k, { ...v }])), charges: new Map([...(app.contrat.charges || [])].map(([k, v]) => [k, JSON.parse(JSON.stringify(v))])), cartouche: { ...app.contrat.cartouche }, retouches: new Map(app.retouches) });
   if (app.hist.length > 40) app.hist.shift(); synchroniserHistorique(); }
-function annuler() { const p = app.hist.pop(); if (!p) return null;
+function annuler() { const p = app.hist.pop(); if (!p) return null; const plan = app.plan;
   app.contrat.liaisons = p.liaisons; app.source = p.source; app.nFolios = p.nFolios; app.budget = p.budget || 16; app.plan = p.plan; app.nom = p.nom || ''; app.contrat.designations = p.designations; app.contrat.sexes = p.sexes || new Map(); app.contrat.charges = p.charges || new Map(); app.contrat.raccords = p.raccords || new Map();
   if (p.cartouche) app.contrat.cartouche = { ...p.cartouche };
   // les retouches d'avant reviennent, et se gardent comme elles étaient
   if (p.retouches) { const cles = new Set([...app.retouches.keys(), ...p.retouches.keys()]); app.retouches = p.retouches; cles.forEach(garderRetouche); }
   app.choisi = null; app.cible = null; app.actif = null; app.base.enSaisie = false; fermerFiche();
   if (document.activeElement && $('ba-tab').contains(document.activeElement)) document.activeElement.blur();
-  redessiner(); ajuster(true); sauver(); return p.quoi; }
+  // défaire une retouche ne recadre pas la vue : on regardait ce qu'on retouchait
+  redessiner(); if (!(p.retouche && p.plan === plan)) ajuster(true); sauver(); return p.quoi; }
 let sauveT = null;
 function sauver() { clearTimeout(sauveT); sauveT = setTimeout(() => { try {
     localStorage.setItem(CLE_CONTRAT, JSON.stringify({ liaisons: app.contrat.liaisons, source: app.source, nFolios: app.nFolios, budget: app.budget, plan: app.plan, nom: app.nom,

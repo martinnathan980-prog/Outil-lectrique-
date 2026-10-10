@@ -222,6 +222,23 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
 .rt-calque .rt-pose{fill:none;stroke:#1d1d1f}
 .rt-calque .rt-fantome{fill:rgba(29,29,31,.04);stroke:#1d1d1f}
 .rt-calque .rt-fantome.pris{fill:rgba(201,42,42,.07);stroke:#c92a2a}
+/* le survol : ce qui se prendrait s'allume, en gris d'encre à travers le papier — la zone d'une borne, un tronçon de
+   fil, la ligne d'une barrette à poser — et le ↺ d'un objet retouché, seul à recevoir la souris */
+.rt-survol{pointer-events:none}
+.rt-survol .rt-allume{fill:none;stroke:rgba(29,29,31,.2);stroke-linecap:round}
+.rt-survol .rt-zone{fill:rgba(29,29,31,.07);stroke:#1d1d1f}
+.rt-survol .rt-rendre{pointer-events:all;cursor:pointer}
+.rt-survol .rt-rendre circle{fill:#fff;stroke:#1d1d1f}
+.rt-survol .rt-rendre path{fill:none;stroke:#1d1d1f;stroke-linecap:round;stroke-linejoin:round}
+.rt-survol .rt-rendre:hover circle{fill:#1d1d1f}
+.rt-survol .rt-rendre:hover path{stroke:#fff}
+/* le curseur dit dans quel sens ce qui est sous la souris se déplace — au survol comme pendant le geste */
+#planche[data-prise="bloc"] #svg *{cursor:grab}
+#planche[data-prise="borne"] #svg,#planche[data-prise="borne"] #svg *,#planche[data-prise="fil-h"] #svg,#planche[data-prise="fil-h"] #svg *{cursor:ns-resize}
+#planche[data-prise="fil-v"] #svg,#planche[data-prise="fil-v"] #svg *,#planche[data-prise="vt"] #svg,#planche[data-prise="vt"] #svg *{cursor:ew-resize}
+#planche[data-prise="rendre"] #svg .rt-rendre,#planche[data-prise="rendre"] #svg .rt-rendre *{cursor:pointer}
+#planche.deplace[data-prise="borne"],#planche.deplace[data-prise="borne"] *,#planche.deplace[data-prise="fil-h"],#planche.deplace[data-prise="fil-h"] *{cursor:ns-resize!important}
+#planche.deplace[data-prise="fil-v"],#planche.deplace[data-prise="fil-v"] *,#planche.deplace[data-prise="vt"],#planche.deplace[data-prise="vt"] *{cursor:ew-resize!important}
 
 /* ─── LA BARRE DU HAUT : la marque, la recherche, le menu — blanche, un filet dessous ─── */
 #entete{position:fixed;top:0;left:0;right:0;height:calc(var(--entete) + var(--sur-h));z-index:36;background:var(--p-fond);color:var(--p-t1);border-bottom:1px solid var(--p-ligne);

@@ -21,7 +21,11 @@ node tests/placement.js        un gros folio jamais vu se place au loin (Worker)
 node tests/retouche.js         un bloc se déplace à la vraie souris dans tous les sens (hors de toute colonne : une colonne à lui,
                                un petit pas de côté : les voisines s'écartent), au carreau, Alt libre, aux flèches ; le routage
                                reste propre ; la place prise se voit (fantôme rouge) et se dit ; Ctrl+Z, « rendre au moteur »,
-                               et ça se garde
+                               et ça se garde. TOUT BOUGE : une masse, un morceau de barrette, un renvoi se prennent comme un
+                               bloc ; une borne glisse le long du sien (sur une autre, elles échangent leurs places) ; la barrette
+                               à poser glisse dans sa goulotte ; un fil : sa verticale de piste en piste, jusque dans une autre
+                               goulotte, son couloir de haut en bas (à travers un bloc : rouge, puis au plus près) — chaque prise
+                               annoncée au survol (curseur, ce qui s'allume), ↺ ou double-clic la rend au moteur, Ctrl+Z la défait
 node tests/relief.js           la vue en relief de chaque barrette (modules E0599) et prise de l'exemple : un fil par contact pris, aucune étiquette
                                sur une autre, tourner, survoler, Échap, double-clic
 node tests/interface.js        à la vraie souris (grand écran, téléphone) : la fiche épurée dans l'inspecteur, le tableau en

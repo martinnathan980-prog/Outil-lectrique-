@@ -805,3 +805,26 @@ function svgAutonome(dessin, cartouche, folio, designationDe, fond, disjoncteurD
     + `<rect x="${x0}" y="${y0}" width="${f1(vw)}" height="${f1(vh)}" fill="${fond || '#fbfbf7'}"/>` + styleDessin() + sceneSvg(dessin, cartouche, folio, designationDe, null, disjoncteurDe) + '</svg>';
   return { w: W, h: H, txt };
 }
+
+/* ---- les PRISES : où une borne se prend à la souris ------------------------------------------------------
+   La retouche (08, `lierPlanche`) fait glisser une borne le long de son bloc ; elle se prend LÀ OÙ ELLE SE DESSINE :
+   le bout de fil d'un équipement, entre son flanc et son corps, avec son numéro écrit contre le bord ; la pastille
+   numérotée d'une barrette, sur sa ligne ; le départ d'un contact de prise, de part et d'autre de la fiche. Le reste du
+   corps prend le bloc entier. Rend une zone par borne et par côté, en absolu : { y, etiq, x0, x1, y0, y1 } — à un pas
+   de borne près (PRH), deux zones ne se touchent pas. */
+function bornesPrenables(c) {
+  if (!c || c.kind === 'tag') return [];
+  const out = [], h = PRH / 2 - 1, bw = c.w - c.lw - c.rw, mid = c.x + c.lw + bw / 2;
+  const zone = (p, x0, x1) => out.push({ y: p.y, etiq: p.etiq, x0, x1, y0: p.y - h, y1: p.y + h });
+  if (c.kind === 'strip' && estCoupure(c.name)) {
+    const xm0 = mid - 7.5, xe1 = mid + 7.5;
+    (c.rangs.S || []).forEach(p => { if ((p.dir || 0) <= 0) zone(p, c.x, xm0); if ((p.dir || 0) >= 0) zone(p, xe1, c.x + c.w); });
+    return out; }
+  if (c.kind === 'strip') { (c.rangs.S || []).forEach(p => zone(p, mid - 7, mid + 7)); return out; }
+  // le numéro d'une borne hors connecteur s'écrit dans le corps, contre le bord : il se prend avec elle (pas sur un disjoncteur, dont les bornes sont au milieu)
+  const sym = estDisjoncteur(c.name), conn = etiq => c.connecteurs && c.connecteurs.get(String(etiq));
+  const numero = p => sym || conn(p.etiq) || p.etiq == null ? 0 : 4 + largeurTexte(Math.min(5, String(p.etiq).length), 7.5, 0.2) + 2;
+  (c.rangs.L || []).forEach(p => zone(p, c.x, c.x + c.lw + numero(p)));
+  (c.rangs.R || []).forEach(p => zone(p, c.x + c.w - c.rw - numero(p), c.x + c.w));
+  return out;
+}
