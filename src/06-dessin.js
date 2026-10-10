@@ -279,11 +279,12 @@ function occupationDe(fils, barrettes, comps) {
   const O = { H, V, boites, corps };
   // `sauf` : le bloc dont on pose le repère ne se gêne pas lui-même ; sans `sauf`, TOUT compte (les textes déjà posés n'ont pas d'id)
   const autre = (o, sauf) => sauf == null || o.id == null || o.id !== sauf;
-  // `sien` : la hauteur du fil qu'un numéro chevauche de plein droit (il s'écrit DANS le fil, qui le traverse)
-  O.libre = (b, mV, sauf, sien) => !boites.some(o => autre(o, sauf) && b.x1 > o.x0 - 3 && b.x0 < o.x1 + 3 && b.y1 > o.y0 - 1.5 && b.y0 < o.y1 + 1.5)
+  // `sien` : la hauteur du fil qu'un numéro chevauche de plein droit (il s'écrit DANS le fil, qui le traverse) ; `sienX` :
+  // l'abscisse du vertical où un numéro debout s'écrit de même
+  O.libre = (b, mV, sauf, sien, sienX) => !boites.some(o => autre(o, sauf) && b.x1 > o.x0 - 3 && b.x0 < o.x1 + 3 && b.y1 > o.y0 - 1.5 && b.y0 < o.y1 + 1.5)
     && !corps.some(o => autre(o, sauf) && b.x1 > o.x0 && b.x0 < o.x1 && b.y1 > o.y0 && b.y0 < o.y1)
     && !H.some(s => s.y > b.y0 - 0.5 && s.y < b.y1 + 0.5 && s.x1 > b.x0 && s.x0 < b.x1 && !(sien != null && Math.abs(s.y - sien) < 0.6))
-    && !V.some(s => s.x > b.x0 - mV && s.x < b.x1 + mV && s.y1 > b.y0 && s.y0 < b.y1);
+    && !V.some(s => s.x > b.x0 - mV && s.x < b.x1 + mV && s.y1 > b.y0 && s.y0 < b.y1 && !(sienX != null && Math.abs(s.x - sienX) < 0.6));
   O.poser = b => { boites.push(b); return b; };
   return O;
 }
@@ -357,9 +358,16 @@ const repereTexte = r => `<text class="${r.cls}" x="${f1(r.x)}" y="${f1(r.y)}" t
    on la bâtit des fils seuls (c'est ainsi que le placement compte les fils
    muets). Le plus long segment seul laissait muet un fil dont l'horizontale
    passait sous une masse et la verticale entre deux ponts (folio 5,
-   W-526). */
+   W-526).
+   Le numéro s'écrit PILE SUR SON FIL : son milieu sur l'axe du trait (le
+   lecteur : « il est un peu au-dessus »). Un numéro en capitales et en
+   chiffres a pour milieu la moitié de la hauteur d'une capitale (0,73 corps
+   en chasse fixe) au-dessus de sa ligne de base : la ligne de base tombe donc
+   AXE sous le trait. Un fond de papier, à peine plus large que le texte,
+   coupe le trait derrière lui ; le fil repart de part et d'autre. De même
+   pour un numéro debout, sur son vertical. */
 function reperesDeFil(fils, verticaux, barrettes, occ) {
-  const H = 5.6, fs = FS_FIL;
+  const H = 5.6, fs = FS_FIL, AXE = 0.365 * fs, HALO = 2.3;
   occ = occ || occupationDe(fils, barrettes || [], []);
   const cands = [];
   fils.forEach(w => { const nom = String(w.cable || '').trim(); if (!nom) return;
@@ -368,7 +376,7 @@ function reperesDeFil(fils, verticaux, barrettes, occ) {
       if (Math.abs(a.y - b.y) < 0.6) hs.push({ L: Math.abs(b.x - a.x), x0: Math.min(a.x, b.x), x1: Math.max(a.x, b.x), y: a.y });
       else if (Math.abs(a.x - b.x) < 0.6) vs.push({ L: Math.abs(b.y - a.y), x: a.x, y0: Math.min(a.y, b.y), y1: Math.max(a.y, b.y) }); }
     // un fil qui n'est qu'un raccord vers un piquage a, sur la verticale du piquage, un tronçon à lui seul
-    if (!vs.length && w.pts.length) { const t = tronconDePiquage(w, barrettes || []); if (t) vs.push({ L: t.vL, x: t.vx, y0: t.vy0, y1: t.vy1 }); }
+    if (!vs.length && w.pts.length) { const t = tronconDePiquage(w, barrettes || []); if (t) vs.push({ L: t.vL, x: t.vx, y0: t.vy0, y1: t.vy1, piquage: true }); }
     hs.sort((u, v) => v.L - u.L); vs.sort((u, v) => v.L - u.L);
     cands.push({ nom, L: hs.length ? hs[0].L : 0, hs, vs }); });
   cands.sort((a, b) => b.L - a.L);
@@ -378,11 +386,11 @@ function reperesDeFil(fils, verticaux, barrettes, occ) {
      repousse vers l'équipement, où le flanc est vide */
   cands.forEach(c => { const larg = largeurTexte(c.nom.length, fs, 0.1);
     let pose = null;
-    /* le numéro s'écrit DANS le fil, qui le traverse (un halo blanc l'isole) : c'est ainsi qu'on sait que c'est le bon
-       fil ; s'il n'y a pas la place à cette hauteur, au-dessus. `ecart` : où va la ligne de base par rapport au fil ;
-       [écart au fil, débord permis à chaque bout] : sur un fil court, un numéro trop long monte d'une ligne et déborde
-       davantage — au-dessus du symbole, jamais sur le corps de l'équipement (l'occupation l'y repousse) */
-    const dans = -(H / 2 - 0.35 * fs) - 0.3;   // ligne de base pour que le texte soit centré sur le fil
+    /* le numéro s'écrit DANS le fil, centré sur son axe (un fond de papier l'isole) : c'est ainsi qu'on sait que c'est le
+       bon fil ; s'il n'y a pas la place à cette hauteur, au-dessus. `ecart` : où va le bas de la boîte du texte par rapport
+       au fil ; [écart au fil, débord permis à chaque bout] : sur un fil court, un numéro trop long monte d'une ligne et
+       déborde davantage — au-dessus du symbole, jamais sur le corps de l'équipement (l'occupation l'y repousse) */
+    const dans = -H / 2;   // la boîte du texte à cheval sur le fil, son milieu sur l'axe
     for (const g of c.hs) { if (pose) break; const court = g.L < 40;
       for (const [ecart, marge] of (court ? [[dans, -4], [2.2, -4], [-(H + 1.4), -30], [7.5, -30]] : [[dans, 5], [2.2, 5]])) { if (pose || !g.L || larg + 2 * marge > g.L) continue;
         const mid = (g.x0 + g.x1) / 2, dmax = Math.max(0, (g.L - larg) / 2 - marge), sien = ecart === dans ? g.y : null;
@@ -391,16 +399,20 @@ function reperesDeFil(fils, verticaux, barrettes, occ) {
             const x0 = cx - larg / 2, x1 = cx + larg / 2, y1 = g.y - ecart, y0 = y1 - H;
             if (x0 < g.x0 + marge || x1 > g.x1 - marge) continue;
             if (occ.libre({ x0, y0, x1, y1 }, R_PONT + 1, null, sien)) { pose = { cx, x0, y0, x1, y1, dedans: sien != null }; break; } } } } }
-    if (pose) { occ.poser(pose);
-      // dans le fil : un fond blanc coupe le trait sous le numéro, le fil repart de part et d'autre
-      if (pose.dedans) out += `<rect class="halo" x="${f1(pose.x0 - 1.2)}" y="${f1(pose.y0 + 0.5)}" width="${f1(pose.x1 - pose.x0 + 2.4)}" height="${f1(pose.y1 - pose.y0 - 1)}"/>`;
-      out += `<text class="filnum" x="${f1(pose.cx)}" y="${f1(pose.y0 + 0.78 * fs)}" text-anchor="middle">${esc(c.nom)}</text>`; return; }
-    // pas de place à l'horizontale : le numéro se lit debout, le long d'un vertical
-    for (const v of c.vs) { if (larg + 10 > v.L) continue; const mid = (v.y0 + v.y1) / 2, dmax = (v.L - larg) / 2 - 5, x1 = v.x - 2.2, x0 = x1 - H;
+    if (pose) { occ.poser(pose); const ym = (pose.y0 + pose.y1) / 2;   // le milieu de la boîte : l'axe du fil quand il est dedans
+      // dans le fil : un fond de papier coupe le trait sous le numéro, le fil repart de part et d'autre
+      if (pose.dedans) out += `<rect class="halo" x="${f1(pose.x0 - 1.2)}" y="${f1(ym - HALO)}" width="${f1(pose.x1 - pose.x0 + 2.4)}" height="${f1(2 * HALO)}"/>`;
+      out += `<text class="filnum" x="${f1(pose.cx)}" y="${f1(ym + AXE)}" text-anchor="middle">${esc(c.nom)}</text>`; return; }
+    /* pas de place à l'horizontale : le numéro se lit debout, sur un vertical — centré sur son axe, le trait coupé derrière
+       lui de même (tourné d'un quart de tour, sa ligne de base est à droite du trait, à AXE). Le pointillé d'une barrette
+       n'est pas le fil : sur le tronçon d'un piquage, le numéro se lit à côté, à gauche du pointillé */
+    for (const v of c.vs) { if (larg + 10 > v.L) continue; const sur = !v.piquage, mid = (v.y0 + v.y1) / 2, dmax = (v.L - larg) / 2 - 5;
+      const x0 = sur ? v.x - H / 2 : v.x - 2.2 - H, x1 = x0 + H, xb = (x0 + x1) / 2 + AXE;
       for (let d = 0; d <= dmax + 0.01; d += 3) for (const cy of (d === 0 ? [mid] : [mid - d, mid + d])) {
-        const y0 = cy - larg / 2, y1 = cy + larg / 2; if (!occ.libre({ x0, y0, x1, y1 }, 0.5)) continue;
+        const y0 = cy - larg / 2, y1 = cy + larg / 2; if (!occ.libre({ x0, y0, x1, y1 }, 0.5, null, null, sur ? v.x : null)) continue;
         occ.poser({ x0, y0, x1, y1 });
-        out += `<text class="filnum" transform="rotate(-90 ${f1(x1)} ${f1(cy)})" x="${f1(x1)}" y="${f1(cy)}" text-anchor="middle">${esc(c.nom)}</text>`; return; } } });
+        if (sur) out += `<rect class="halo" x="${f1(v.x - HALO)}" y="${f1(y0 - 1.2)}" width="${f1(2 * HALO)}" height="${f1(larg + 2.4)}"/>`;
+        out += `<text class="filnum" transform="rotate(-90 ${f1(xb)} ${f1(cy)})" x="${f1(xb)}" y="${f1(cy)}" text-anchor="middle">${esc(c.nom)}</text>`; return; } } });
   return out;
 }
 /* Sur la verticale d'un piquage, le tronçon entre la borne d'un fil et le

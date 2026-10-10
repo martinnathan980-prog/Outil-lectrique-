@@ -31,8 +31,8 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    LE SITE — « Graphite » : un logiciel d'atelier haut de gamme (DESIGN.md)
 
-   Le plan est l'objet : une feuille blanche posée sur une table grise semée
-   de points. Autour, tout est du blanc des panneaux — la barre du haut (la
+   Le plan est l'objet : une feuille blanche posée sur une table noire semée
+   de points, dans les deux thèmes. Autour, tout est du blanc des panneaux — la barre du haut (la
    marque, la recherche, le menu), le rail à gauche, la barre des folios en
    bas — séparé de la table par un filet : rien ne brille, rien ne cadre.
    L'interface est à l'ENCRE : graphite pour le texte et les actions (le
@@ -54,7 +54,12 @@
    ═══════════════════════════════════════════════════════════════════════ */
 :root{
   /* ── LES JETONS (DESIGN.md) : le thème clair. Chaque encre passe l'AA (4,5:1) sur chaque fond où elle se pose ── */
-  --s-app:#ececef; --s-grille:#d3d3d9; --s-grille-2:#d3d3d9;          /* la table, et ses points */
+  /* LA TABLE est noire dans les deux thèmes (le lecteur : « au lieu de le mettre blanc, tu pouvais le mettre noir… c'était
+     incroyable ») : un graphite presque noir semé de points discrets, la feuille blanche posée dessus par une ombre
+     profonde. Ce qui s'écrit à même la table prend son encre (--t-table) ; les panneaux, eux, suivent le thème */
+  --s-app:#0f0f11; --s-grille:#2b2b31; --s-grille-2:#2b2b31;
+  --t-table:#ececf0; --t-table-2:#a3a3ab;                /* sur la table : 16:1 et 7:1 */
+  --sh-feuille:0 0 0 1px rgba(0,0,0,.55),0 28px 70px rgba(0,0,0,.65),0 8px 20px rgba(0,0,0,.5);
   --s-surface:#ffffff; --s-sunken:#f5f5f7; --s-hover:#f0f0f3; --s-line:#e6e6ea; --s-line-2:#d2d2d7;
   --s-flottant:#ffffff;                                  /* ce qui flotte au-dessus d'un panneau : menus, listes, bulles de graphique */
   --s-papier:#ffffff; --t-papier:#1d1d1f; --t-papier-2:#5c5c61; --s-papier-grille:#f1f1f4;   /* les dessins : toujours sur papier */
@@ -65,6 +70,7 @@
   --ok:#1d7a3c; --ok-soft:#e8f5ec; --warn:#965800; --warn-soft:#fdf2df; --ko:#c3271f; --ko-soft:#fdeceb; --info:#47474c; --info-soft:#f0f0f3;
   --courbe-chaud:#d1372e; --courbe-tiede:#c27800; --courbe-froid:#2f6fd0;   /* les courbes de disjonction, sur la surface */
   --bulle:#1d1d1f; --bulle-t:#f5f5f7;                    /* les bulles et le mot qui passe : de l'encre */
+  --sh-bulle:0 0 0 1px rgba(255,255,255,.14),0 8px 24px rgba(0,0,0,.35);   /* un filet clair la détache de la table noire */
   --voile:rgba(29,29,31,.22);                            /* derrière un calque plein écran */
   --voile-fort:rgba(29,29,31,.5);                        /* derrière une fenêtre (le relief, le dessin d'un contrat fait) */
   --route-a:#c0392b; --route-b:#1e8449;                  /* deux routes du dessin (puissance, signal) */
@@ -78,7 +84,6 @@
   --r-1:6px; --r-btn:8px; --r-2:10px; --r-3:14px;
   --sh-1:0 1px 2px rgba(0,0,0,.06),0 0 0 .5px rgba(0,0,0,.04);
   --sh-2:0 0 0 .5px rgba(0,0,0,.08),0 14px 36px rgba(0,0,0,.12),0 3px 8px rgba(0,0,0,.05);
-  --sh-feuille:0 0 0 .5px rgba(0,0,0,.08),0 22px 54px rgba(0,0,0,.09),0 4px 10px rgba(0,0,0,.04);
   --sh-panneau:-1px 0 0 var(--s-line),-12px 0 32px rgba(0,0,0,.05);
   --anneau:0 0 0 3px rgba(0,0,0,.07);                    /* l'anneau d'un champ qui a le clavier */
   --sans:"Inter","IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
@@ -103,38 +108,35 @@
   --t0:var(--f-11); --t1:var(--f-12); --t2:var(--f-13); --t3:var(--f-14); --t4:var(--f-16); --t5:var(--f-20); --t6:var(--f-28);
 }
 /* ── le thème sombre : le graphite de nuit — des surfaces charbon, l'encre claire, l'action en blanc. Les mêmes valeurs
-   deux fois : pour le réglage du système, et pour un choix explicite (data-theme) ── */
+   deux fois : pour le réglage du système, et pour un choix explicite (data-theme). La table et l'ombre de la feuille ne
+   changent pas : elles sont les mêmes dans les deux thèmes (:root) ── */
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --s-app:#111113; --s-grille:#2c2c30; --s-grille-2:#2c2c30;
   --s-surface:#1c1c1e; --s-sunken:#161618; --s-hover:#2a2a2d; --s-line:#2e2e32; --s-line-2:#3d3d42; --s-flottant:#242427;
   --t-1:#f2f2f5; --t-2:#b7b7bd; --t-3:#96969d; --t-inverse:#1d1d1f;
   --accent:#f2f2f5; --accent-2:#ffffff; --accent-soft:#2f2f33; --accent-line:#4a4a50; --on-accent:#1d1d1f;
   --ok:#3ccf6e; --ok-soft:#16271c; --warn:#f0a53a; --warn-soft:#2e2413; --ko:#ff6b5f; --ko-soft:#351a18; --info:#b7b7bd; --info-soft:#26262a;
   --courbe-chaud:#ff6b6b; --courbe-tiede:#ffb224; --courbe-froid:#7aa7ff;
-  --bulle:#f2f2f5; --bulle-t:#1d1d1f; --voile:rgba(0,0,0,.5); --voile-fort:rgba(0,0,0,.65);
+  --bulle:#f2f2f5; --bulle-t:#1d1d1f; --sh-bulle:0 0 0 .5px rgba(0,0,0,.25),0 8px 24px rgba(0,0,0,.5); --voile:rgba(0,0,0,.5); --voile-fort:rgba(0,0,0,.65);
   --p-fond:#1c1c1e; --p-fond-2:#2a2a2d; --p-ligne:#2e2e32; --p-hover:#2a2a2d;
   --p-t1:#f2f2f5; --p-t2:#b7b7bd; --p-t3:#96969d;
   --p-accent:#f2f2f5; --p-ok:#3ccf6e; --p-warn:#f0a53a; --p-ko:#ff6b5f;
   --route-a:#ff6b5e; --route-b:#3fd18a; --route-voile:rgba(255,255,255,.3);
   --sh-1:0 1px 2px rgba(0,0,0,.4); --sh-2:0 0 0 .5px rgba(255,255,255,.06),0 14px 36px rgba(0,0,0,.5),0 3px 8px rgba(0,0,0,.35);
-  --sh-feuille:0 0 0 .5px rgba(0,0,0,.4),0 22px 54px rgba(0,0,0,.5),0 4px 10px rgba(0,0,0,.35);
   --sh-panneau:-1px 0 0 var(--s-line),-12px 0 32px rgba(0,0,0,.3);
   --anneau:0 0 0 3px rgba(255,255,255,.12);
   color-scheme:dark } }
 :root[data-theme="dark"]{
-  --s-app:#111113; --s-grille:#2c2c30; --s-grille-2:#2c2c30;
   --s-surface:#1c1c1e; --s-sunken:#161618; --s-hover:#2a2a2d; --s-line:#2e2e32; --s-line-2:#3d3d42; --s-flottant:#242427;
   --t-1:#f2f2f5; --t-2:#b7b7bd; --t-3:#96969d; --t-inverse:#1d1d1f;
   --accent:#f2f2f5; --accent-2:#ffffff; --accent-soft:#2f2f33; --accent-line:#4a4a50; --on-accent:#1d1d1f;
   --ok:#3ccf6e; --ok-soft:#16271c; --warn:#f0a53a; --warn-soft:#2e2413; --ko:#ff6b5f; --ko-soft:#351a18; --info:#b7b7bd; --info-soft:#26262a;
   --courbe-chaud:#ff6b6b; --courbe-tiede:#ffb224; --courbe-froid:#7aa7ff;
-  --bulle:#f2f2f5; --bulle-t:#1d1d1f; --voile:rgba(0,0,0,.5); --voile-fort:rgba(0,0,0,.65);
+  --bulle:#f2f2f5; --bulle-t:#1d1d1f; --sh-bulle:0 0 0 .5px rgba(0,0,0,.25),0 8px 24px rgba(0,0,0,.5); --voile:rgba(0,0,0,.5); --voile-fort:rgba(0,0,0,.65);
   --p-fond:#1c1c1e; --p-fond-2:#2a2a2d; --p-ligne:#2e2e32; --p-hover:#2a2a2d;
   --p-t1:#f2f2f5; --p-t2:#b7b7bd; --p-t3:#96969d;
   --p-accent:#f2f2f5; --p-ok:#3ccf6e; --p-warn:#f0a53a; --p-ko:#ff6b5f;
   --route-a:#ff6b5e; --route-b:#3fd18a; --route-voile:rgba(255,255,255,.3);
   --sh-1:0 1px 2px rgba(0,0,0,.4); --sh-2:0 0 0 .5px rgba(255,255,255,.06),0 14px 36px rgba(0,0,0,.5),0 3px 8px rgba(0,0,0,.35);
-  --sh-feuille:0 0 0 .5px rgba(0,0,0,.4),0 22px 54px rgba(0,0,0,.5),0 4px 10px rgba(0,0,0,.35);
   --sh-panneau:-1px 0 0 var(--s-line),-12px 0 32px rgba(0,0,0,.3);
   --anneau:0 0 0 3px rgba(255,255,255,.12);
   color-scheme:dark }
@@ -206,7 +208,7 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
 .bascule[aria-pressed="true"]:hover:not(:disabled){background:color-mix(in srgb,var(--t-1) 12%,var(--s-surface));color:var(--t-1)}
 /* la bulle : le nom et le raccourci, à côté de l'icône, après un instant de survol ou au clavier */
 .bulle{position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);white-space:nowrap;pointer-events:none;z-index:5;
-  background:var(--bulle);color:var(--bulle-t);border-radius:var(--r-1);padding:4px 9px;font-size:var(--f-12);font-weight:500;line-height:1.5;letter-spacing:0;text-transform:none;font-family:var(--sans);
+  background:var(--bulle);color:var(--bulle-t);box-shadow:var(--sh-bulle);border-radius:var(--r-1);padding:4px 9px;font-size:var(--f-12);font-weight:500;line-height:1.5;letter-spacing:0;text-transform:none;font-family:var(--sans);
   display:flex;align-items:center;gap:8px;opacity:0;transition:opacity var(--rapide)}
 .bulle::before{content:"";position:absolute;right:100%;top:50%;margin-top:-4px;border:4px solid transparent;border-right-color:var(--bulle)}
 .bulle kbd{font-size:var(--f-11);color:var(--bulle-t);opacity:.75;border:1px solid currentColor;border-radius:3px;padding:0 4px;line-height:1.25}
@@ -228,12 +230,14 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
 .segment button:hover{color:var(--t-1)}
 .segment button[aria-pressed="true"]{background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-1)}
 
-/* ─── LA TABLE ET LA FEUILLE ────────────────────────────────────────────── */
-#planche{position:fixed;top:calc(var(--entete) + var(--sur-h));left:0;right:0;bottom:0;overflow:hidden;touch-action:none;cursor:grab;
+/* ─── LA TABLE ET LA FEUILLE ──────────────────────────────────────────────
+   La table est noire dans les deux thèmes, semée d'un point tous les 24 px ; ce qui défile à même la table (l'accueil
+   trop haut) a ses barres sombres */
+#planche{position:fixed;top:calc(var(--entete) + var(--sur-h));left:0;right:0;bottom:0;overflow:hidden;touch-action:none;cursor:grab;color-scheme:dark;
   background-color:var(--s-app);background-image:radial-gradient(circle at 1px 1px,var(--s-grille) 1px,transparent 1.4px);background-size:24px 24px}
 #planche.tient{cursor:grabbing}
 #svg{position:absolute;inset:0;width:100%;height:100%;display:block}
-/* la feuille est dessinée par le moteur ; sous elle, une ombre large et légère */
+/* la feuille est dessinée par le moteur ; sous elle, une ombre profonde qui la pose sur la table noire */
 #ombre{position:absolute;left:0;top:0;pointer-events:none;display:none;box-shadow:var(--sh-feuille)}
 #svg .comp,#svg .cab{cursor:pointer}
 #svg .comp{cursor:grab}
@@ -296,29 +300,40 @@ body.cherche .recherche .rc-fermer{display:inline}
 .q-item .des{color:var(--t-2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--f-12)}
 .q-item .cpt{color:var(--t-3);font:400 var(--f-11) var(--mono);white-space:nowrap}
 .q-rien{padding:10px 12px;color:var(--t-2);font-size:var(--f-12)}
-/* le menu : sous son bouton, ce qu'on fait une fois ; en tête, ce qui est ouvert (à lire) */
-/* plus haut que l'écran (un portable de 768 px, un téléphone), il défile ; ses bulles sont posées sur la page, pas dedans */
-.menu{position:absolute;top:calc(100% + 8px);right:0;width:288px;color:var(--t-1);background:var(--s-flottant);border:1px solid var(--s-line);border-radius:12px;box-shadow:var(--sh-2);padding:6px;z-index:40;
+/* LE MENU ⋮ : sous son bouton, peu de lignes. En tête, ce qui est ouvert (à lire) ; puis l'essentiel, une icône au trait
+   et un mot par ligne ; deux sous-menus (Exporter, Plus) s'ouvrent EN PLACE — le panneau glisse, une ligne « ‹ » ramène —,
+   si bien que le menu garde sa largeur et ne déborde jamais de l'écran */
+.menu{position:absolute;top:calc(100% + 8px);right:0;width:272px;color:var(--t-1);background:var(--s-flottant);border:1px solid var(--s-line);border-radius:12px;box-shadow:var(--sh-2);padding:5px;z-index:40;
   max-height:calc(100vh - var(--entete) - var(--sur-h) - 16px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
-.menu button{display:flex;width:100%;align-items:center;gap:12px;height:32px;padding:0 12px;border-radius:var(--r-1);background:none;border:none;text-align:left;color:var(--t-1);font-size:var(--f-13);font-weight:400}
+.menu-panneau{animation:menu-glisse var(--rapide) ease-out}
+.menu-panneau#mp-principal{animation-name:menu-revient}
+@keyframes menu-glisse{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+@keyframes menu-revient{from{opacity:.4;transform:translateX(-6px)}to{opacity:1;transform:none}}
+.menu button{display:flex;width:100%;align-items:center;gap:10px;min-height:32px;padding:0 10px;border-radius:var(--r-1);background:none;border:none;text-align:left;color:var(--t-1);font-size:var(--f-13);font-weight:400;line-height:1.3}
 .menu button:hover,.menu button:focus-visible{background:var(--s-hover);outline:none}
-/* ses quatre blocs (le contrat · vos fichiers · sortir · le reste), chacun nommé d'un mot, séparés d'un filet */
-.menu-bloc+.menu-bloc{border-top:1px solid var(--s-line);margin-top:4px;padding-top:2px}
-.menu .ctx+.menu-bloc{border-top:1px solid var(--s-line);margin-top:4px;padding-top:2px}
-.menu-t{padding:8px 12px 3px;font:500 var(--f-11)/1.3 var(--sans);color:var(--t-3)}
-/* sa bulle, en trois temps : ce que la ligne fait, ce qu'elle attend, ce qui se passe ensuite — UNE bulle sur la page
-   (08-accueil, `lierBullesDuMenu`), à gauche du menu, à la hauteur de la ligne, après un temps de survol, tout de suite au
-   clavier ; 320 px */
-.menu-bulle{position:fixed;top:0;right:0;z-index:45;width:320px;padding:10px 12px;border-radius:var(--r-2);background:var(--bulle);color:var(--bulle-t);
-  font:400 var(--f-12)/1.5 var(--sans);text-align:left;box-shadow:var(--sh-2);pointer-events:none;opacity:0;transform:translateX(4px);visibility:hidden;
+.menu button>svg.ico{width:16px;height:16px;color:var(--t-2)}
+.menu-l{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* « Vos fichiers » dit, en petit, tout ce qu'on y dépose — la base des contrats déjà faits comprise */
+.menu button.menu-2l{min-height:44px;padding-top:5px;padding-bottom:5px}
+.menu-l small{display:block;margin-top:1px;font-size:var(--f-11);color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.menu .menu-chevron{width:14px;height:14px;color:var(--t-3)}
+.menu button[aria-expanded="true"]{background:var(--accent-soft)}
+/* la ligne qui ramène au menu : le nom du sous-menu, en tête, un filet dessous */
+.menu button.menu-retour{font-weight:600;color:var(--t-1);margin-bottom:2px}
+.menu button.menu-retour>svg.ico{color:var(--t-1)}
+/* les blocs, séparés d'un filet */
+.menu-bloc+.menu-bloc,.menu .ctx+.menu-bloc,.menu-retour+.menu-bloc{border-top:1px solid var(--s-line);margin-top:4px;padding-top:4px}
+/* sa bulle : ce que la ligne fait, en une ou deux phrases — UNE bulle sur la page (08-accueil, `lierBullesDuMenu`), à
+   gauche du menu, à la hauteur de la ligne, après un temps de survol, tout de suite au clavier */
+.menu-bulle{position:fixed;top:0;right:0;z-index:45;width:max-content;max-width:280px;padding:8px 11px;border-radius:var(--r-2);background:var(--bulle);color:var(--bulle-t);
+  font:400 var(--f-12)/1.5 var(--sans);text-align:left;box-shadow:var(--sh-bulle);pointer-events:none;opacity:0;transform:translateX(4px);visibility:hidden;
   transition:opacity var(--rapide),transform var(--rapide),visibility 0s linear var(--rapide)}
 .menu-bulle.on{opacity:1;transform:none;visibility:visible;transition:opacity var(--rapide),transform var(--rapide)}
 @media (max-width:700px){ .menu-bulle{display:none} }
-.menu button.danger{color:var(--ko)}
-.menu button.danger:hover{background:var(--ko-soft)}
-.menu hr{border:none;border-top:1px solid var(--s-line);margin:4px 8px}
+.menu button.danger,.menu button.danger>svg.ico{color:var(--ko)}
+.menu button.danger:hover,.menu button.danger:focus-visible{background:var(--ko-soft)}
 .menu .raccourci{margin-left:auto;color:var(--t-3);font-size:var(--f-11);font-family:var(--mono)}
-.menu .ctx{padding:8px 12px 4px;min-width:0}
+.menu .ctx{padding:7px 10px 6px;min-width:0}
 #ctx-nom{font:600 var(--f-14)/1.3 var(--titre);letter-spacing:-.01em;overflow-wrap:anywhere}
 #ctx-txt{color:var(--t-2);font-size:var(--f-12);line-height:1.4;margin-top:2px}
 .sauve{color:var(--t-3);font-size:var(--f-11);white-space:nowrap;display:flex;align-items:center;gap:6px;margin-top:3px}
@@ -384,10 +399,10 @@ body.fiche-ouverte #folios{right:var(--fiche-l)}
 /* le folio qu'on attend : le moteur le place au loin (un Worker, 08) ; au milieu de la place libre du plan, le point qui
    respire et un mot, rien de plus — l'écran reste libre dessous ; la puce du folio qui se calcule respire aussi (un point
    sous son chiffre, qui ne la fait pas grandir) */
-.attente{position:absolute;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:0 24px;text-align:center;pointer-events:none;color:var(--t-1);font-size:var(--f-14);font-weight:500;line-height:1.35}
-.attente i{width:10px;height:10px;border-radius:50%;background:var(--accent);margin-bottom:6px;animation:respire 1.6s ease-in-out infinite}
+.attente{position:absolute;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:0 24px;text-align:center;pointer-events:none;color:var(--t-table);font-size:var(--f-14);font-weight:500;line-height:1.35}
+.attente i{width:10px;height:10px;border-radius:50%;background:var(--t-table);margin-bottom:6px;animation:respire 1.6s ease-in-out infinite}
 .attente b{font-weight:500}
-.attente small{font-size:var(--f-12);font-weight:400;color:var(--t-2);font-variant-numeric:tabular-nums}
+.attente small{font-size:var(--f-12);font-weight:400;color:var(--t-table-2);font-variant-numeric:tabular-nums}
 .chip.attend::after{content:'';position:absolute;left:50%;bottom:3px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--p-accent);animation:respire 1.6s ease-in-out infinite}
 /* le folio retouché à la main : un mot, le bouton rend la main au moteur */
 #folios .rd.auto{width:auto;display:inline-flex;align-items:center;gap:6px;padding:0 10px 0 8px;color:var(--p-t1);background:var(--accent-soft);font:500 var(--f-12) var(--sans)}
@@ -674,15 +689,16 @@ table.simu-tab{border-collapse:separate;border-spacing:0;font-size:var(--f-12);m
 
 /* ─── L'ACCUEIL : la table vide, et dessus une feuille de garde qui prend la main ─────────────
    Le premier lancement montre l'accueil, pas l'exemple. La page est un folio — le cadre gradué (1 à 6, A à D), un petit
-   schéma qui se trace — qui dit ce que l'outil attend, dans l'ordre : 1. VOTRE RETEST, indispensable (le cadre à
-   l'encre ; les quatre colonnes obligatoires soulignées dans un aperçu de trois lignes ; la zone de dépôt ; un modèle à
-   télécharger) ; 2. VOS CONTRATS DÉJÀ FAITS, une fois ; 3. BIBLE ET NORMES, embarquées. En bas, l'exemple et le
-   collage pour qui n'a pas de fichier. Une feuille claire dans les deux thèmes (`.ilot-clair`), comme un folio. */
+   schéma qui se trace — qui dit ce que l'outil attend, en peu de mots : 1. VOTRE RETEST, indispensable (le cadre à
+   l'encre ; les quatre colonnes obligatoires soulignées dans un aperçu de trois lignes ; la zone de dépôt) et 2. VOS
+   CONTRATS DÉJÀ FAITS, la grande base, côte à côte et de même taille (ce qu'elle attend en une ligne, sa zone de dépôt) ;
+   3. BIBLE ET NORMES, embarquées, en une ligne. En bas, l'exemple et le collage pour qui n'a pas de fichier. Une feuille
+   claire dans les deux thèmes (`.ilot-clair`), posée sur la table noire comme un folio, avec son ombre. */
 .vide{position:absolute;inset:0;overflow:auto;display:grid;place-items:center;padding:24px 24px 24px calc(var(--rail) + 24px);z-index:5;container:accueil/inline-size}
 /* un document ouvert à côté (« Vos fichiers », le collage) : l'accueil se centre dans la place qui reste, il ne passe pas dessous */
 body.fiche-ouverte .vide{right:var(--fiche-l)}
-.vd{width:min(1100px,100%);display:grid;grid-template-columns:18px minmax(0,1fr) 18px;grid-template-rows:18px auto 18px;
-  background:var(--s-surface);border:1px solid var(--s-line-2);border-radius:var(--r-1);box-shadow:var(--sh-2);animation:vd-pose .35s ease-out both}
+.vd{width:min(1060px,100%);display:grid;grid-template-columns:18px minmax(0,1fr) 18px;grid-template-rows:18px auto 18px;
+  background:var(--s-surface);border-radius:var(--r-1);box-shadow:var(--sh-feuille);animation:vd-pose .35s ease-out both}
 @keyframes vd-pose{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 /* la graduation du cadre : des chiffres en haut et en bas, des lettres à gauche et à droite */
 .vd-reg{display:flex;justify-content:space-around;align-items:center;font:500 var(--f-12)/1 var(--sans);color:var(--t-3);letter-spacing:.08em}
@@ -720,21 +736,22 @@ body.fiche-ouverte .vide{right:var(--fiche-l)}
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 14 4 9l5-5'/%3E%3Cpath d='M4 9h10a6 6 0 0 1 0 12h-3'/%3E%3C/svg%3E") center/contain no-repeat;
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 14 4 9l5-5'/%3E%3Cpath d='M4 9h10a6 6 0 0 1 0 12h-3'/%3E%3C/svg%3E") center/contain no-repeat}
 .vd-reprendre:hover{background:color-mix(in srgb,var(--accent) 12%,var(--s-surface))}
-/* les trois étapes : la première, indispensable, plus large et cadrée à l'encre */
-.vd-etapes{display:grid;grid-template-columns:minmax(0,1.42fr) minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:stretch}
+/* les étapes : le retest et la base côte à côte, de même taille (le retest, indispensable, cadré à l'encre) ; la bible et
+   les normes en une ligne dessous */
+.vd-etapes{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:stretch}
 .vd-etape{display:flex;flex-direction:column;gap:10px;min-width:0;padding:16px 18px 18px;border:1px solid var(--s-line-2);border-radius:var(--r-2);background:var(--s-surface);transition:border-color var(--rapide),box-shadow var(--rapide)}
 .vd-etape.vd-un{border-color:var(--t-1);box-shadow:0 0 0 3px var(--accent-soft)}
+.vd-etape.vd-deux{border-color:var(--t-3)}
 /* une étape survolée par un fichier qu'on glisse : c'est elle qui le recevra */
 .vd-etape.survol-depot{border-color:var(--t-1);box-shadow:0 0 0 4px color-mix(in srgb,var(--t-1) 14%,transparent)}
 .vd-num{display:flex;align-items:center;gap:8px;font:500 var(--f-12)/1 var(--sans);color:var(--t-3)}
 .vd-num i{width:22px;height:22px;flex:none;border-radius:50%;display:grid;place-items:center;font:600 var(--f-12)/1 var(--sans);font-style:normal;border:1px solid var(--s-line-2);color:var(--t-1)}
-.vd-un .vd-num i{background:var(--t-1);border-color:var(--t-1);color:var(--t-inverse)}
+.vd-un .vd-num i,.vd-deux .vd-num i{background:var(--t-1);border-color:var(--t-1);color:var(--t-inverse)}
 .vd-etape h2{margin:0;font:600 var(--f-16)/1.25 var(--titre);letter-spacing:-.01em;color:var(--t-1)}
 .vd-etape p{margin:0;font-size:var(--f-13);line-height:1.5;color:var(--t-2)}
 .vd-etape p b{color:var(--t-1);font-weight:600}
 /* les colonnes obligatoires, nommées dans la phrase : un identifiant à l'encre, sur un fond doux */
 .vd-req{font:600 var(--f-12)/1 var(--mono);color:var(--t-1);background:var(--accent-soft);border-radius:4px;padding:2px 5px;white-space:nowrap}
-.vd-id{font:500 var(--f-12)/1 var(--mono);color:var(--t-1)}
 /* l'aperçu : trois lignes d'un retest, les quatre colonnes obligatoires à l'encre et soulignées, les autres en retrait */
 .vd-apercu{border:1px solid var(--s-line);border-radius:var(--r-1);overflow:hidden}
 .vd-apercu table{border-collapse:collapse;width:100%;font:400 var(--f-11)/1.5 var(--mono)}
@@ -743,12 +760,20 @@ body.fiche-ouverte .vide{right:var(--fiche-l)}
 .vd-apercu td{padding:2px 7px;border-bottom:1px solid var(--s-line);white-space:nowrap;color:var(--t-3)}
 .vd-apercu td.req{color:var(--t-1)}
 .vd-apercu tbody tr:last-child td{border-bottom:none}
-.vd-etape .vd-facult{margin:0;padding:6px 8px;border-top:1px solid var(--s-line);background:var(--s-sunken);font:400 var(--f-11)/1.45 var(--sans);color:var(--t-3)}
-/* la zone de dépôt : un cadre en pointillé, une ligne ; elle s'allume quand un fichier arrive */
-.vd-zone{display:flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:10px 12px;border:1.5px dashed var(--s-line-2);border-radius:var(--r-2);background:var(--s-sunken);color:var(--t-2);text-align:center;font-size:var(--f-12);cursor:pointer;transition:border-color var(--rapide),background var(--rapide),color var(--rapide)}
+/* la base : les trois colonnes qui rangent tout, chacune avec ce qu'elle dit — trois cases de même largeur, la colonne
+   en chasse fixe soulignée à l'encre, son sens dessous */
+.vd-cles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0;border:1px solid var(--s-line);border-radius:var(--r-1);overflow:hidden}
+.vd-cles div{padding:8px 10px 9px;min-width:0}
+.vd-cles div+div{border-left:1px solid var(--s-line)}
+.vd-cles dt{display:inline-block;padding-bottom:2px;font:600 var(--f-12)/1.3 var(--mono);color:var(--t-1);box-shadow:inset 0 -2px 0 var(--t-1)}
+.vd-cles dd{margin:5px 0 0;font-size:var(--f-13);line-height:1.3;color:var(--t-1)}
+.vd-etape .vd-ensuite{font-size:var(--f-12);color:var(--t-3)}
+/* la zone de dépôt : un cadre en pointillé, une ligne ; un fichier qui arrive les éclaire, celle qu'il survole s'allume */
+.vd-zone{display:flex;align-items:center;justify-content:center;gap:10px;min-height:52px;margin-top:auto;padding:10px 12px;border:1.5px dashed var(--s-line-2);border-radius:var(--r-2);background:var(--s-sunken);color:var(--t-2);text-align:center;font-size:var(--f-12);cursor:pointer;transition:border-color var(--rapide),background var(--rapide),color var(--rapide)}
 .vd-zone svg.ico{width:20px;height:20px;color:var(--t-1)}
 .vd-zone b{font-size:var(--f-13);color:var(--t-1);font-weight:600}
-.vd-zone:hover,.vd-zone:focus-visible,body.depot-actif .vd-un .vd-zone,.vd-un.survol-depot .vd-zone{border-color:var(--t-1);background:var(--accent-soft);color:var(--t-1)}
+body.depot-actif .vd-zone{border-color:var(--t-3)}
+.vd-zone:hover,.vd-zone:focus-visible,.survol-depot .vd-zone{border-color:var(--t-1);background:var(--accent-soft);color:var(--t-1)}
 /* l'état d'une entrée : un point de sa couleur (vert : reçu, ambre : rien, rouge : une erreur) et ce qu'il dit */
 .vd-etat{display:flex;align-items:baseline;gap:8px;font-size:var(--f-12);line-height:1.45;color:var(--t-2)}
 .vd-etat i{width:8px;height:8px;flex:none;border-radius:50%;background:var(--warn);transform:translateY(-1px)}
@@ -759,10 +784,13 @@ body.fiche-ouverte .vide{right:var(--fiche-l)}
 .vd-etape .vd-erreur p{margin:0 0 2px;font-size:var(--f-12);color:var(--t-1)}
 .vd-erreur .id{font-family:var(--mono);font-size:var(--f-11)}
 .vd-erreur .btn{height:26px;padding:0 4px;font-size:var(--f-12)}
-/* les gestes au pied de l'étape ; l'état d'une entrée juste au-dessus d'eux (ils descendent ensemble) */
-.vd-actions{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-top:auto;padding-top:4px}
-.vd-etape .vd-etat{margin-top:auto;padding-top:4px}
-.vd-etat~.vd-actions{margin-top:0}
+/* les gestes au pied de l'étape */
+.vd-actions{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding-top:2px}
+/* 3. la bible et les normes : une ligne — le numéro, le titre, l'état, le geste */
+.vd-etape.vd-trois{grid-column:1/-1;flex-direction:row;align-items:center;gap:12px;padding:8px 10px 8px 18px}
+.vd-trois h2{font-size:var(--f-14);white-space:nowrap}
+.vd-trois .vd-etat{flex:1;min-width:0}
+.vd-trois .btn{height:30px;font-size:var(--f-12)}
 /* le bas : pour qui n'a pas de fichier, l'exemple et le collage ; et où tout se retrouve ensuite */
 .vd-bas{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:18px;padding-top:16px;border-top:1px solid var(--s-line);font-size:var(--f-13);color:var(--t-2)}
 .vd-ex-n{color:var(--t-3);font-weight:400}
@@ -778,18 +806,18 @@ body.fiche-ouverte .vide{right:var(--fiche-l)}
   .vd-etape{padding:14px 16px 16px;gap:9px}
   .vd-bas{margin-top:14px;padding-top:12px}
 }
-/* moins de place (une fenêtre étroite, un document ouvert à côté) : les deux étapes facultatives passent sous la
-   première ; plus étroit encore, une colonne, et le schéma s'efface */
-@container accueil (max-width:1000px){
-  .vd-etapes{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-  .vd-un{grid-column:1/-1}
+/* un document ouvert à côté : l'aperçu du retest garde ses quatre colonnes obligatoires */
+@container accueil (max-width:960px){
+  .vd-apercu th:is(:nth-child(3),:nth-child(4)),.vd-apercu td:is(:nth-child(3),:nth-child(4)){display:none}
 }
-@container accueil (max-width:620px){
+/* plus étroit (une fenêtre étroite) : une colonne, et le schéma s'efface */
+@container accueil (max-width:720px){
   .vd-etapes{grid-template-columns:minmax(0,1fr)}
   .vd-tete{grid-template-columns:minmax(0,1fr)}
   .vd-dessin{display:none}
   .vd-apercu{overflow-x:auto}
   .vd-plus{margin-left:0}
+  .vd-etape.vd-trois{flex-wrap:wrap}
 }
 
 /* le dépôt : la fenêtre entière devient la cible — un voile, et au milieu une carte en pointillé qui dit quoi faire ;
@@ -804,7 +832,7 @@ body.depot-actif:has(#vide:not([hidden])) .depot{display:none}
 
 /* ─── LE MOT QUI PASSE : sous la barre du haut, au milieu de ce qui reste du plan ─── */
 #toast{position:fixed;left:calc(var(--rail) + (100vw - var(--rail)) / 2);top:calc(var(--entete) + var(--sur-h) + 12px);transform:translateX(-50%) translateY(-6px);padding:9px 14px;border-radius:var(--r-2);z-index:35;max-width:min(60vw,560px);
-  background:var(--bulle);color:var(--bulle-t);box-shadow:var(--sh-2);font-size:var(--f-13);font-weight:500;line-height:1.4;opacity:0;pointer-events:none;transition:opacity var(--moyen),transform var(--moyen)}
+  background:var(--bulle);color:var(--bulle-t);box-shadow:var(--sh-bulle);font-size:var(--f-13);font-weight:500;line-height:1.4;opacity:0;pointer-events:none;transition:opacity var(--moyen),transform var(--moyen)}
 #toast.on{opacity:1;transform:translateX(-50%)}
 body.insp-ouvert #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--insp-l)) / 2)}
 body.fiche-ouverte #toast{left:max(calc(var(--rail) + 16px + min(60vw,560px) / 2),calc(var(--rail) + (100vw - var(--rail) - var(--fiche-l)) / 2))}
@@ -905,7 +933,7 @@ body.fiche-ouverte #toast{left:max(calc(var(--rail) + 16px + min(60vw,560px) / 2
   /* la barre étroite au doigt : les puces suffisent à changer de folio, les flèches laissent leur place à la bande */
   @container (max-width:480px){ #fo-prev,#fo-next{display:none} }
   .rond{width:40px;height:40px}
-  .menu button{height:44px}
+  .menu button{min-height:44px}
   .segment button,.re-vues button{height:36px}
   .btn{min-height:40px}
   #entete .fi-etat{height:36px}
@@ -1557,21 +1585,18 @@ details.fs:last-of-type{margin-bottom:var(--sp-5)}
    petit tableau en chasse fixe, les colonnes obligatoires à l'encre et soulignées.
    ═══════════════════════════════════════════════════════════════════════ */
 
-/* ─── « VOS FICHIERS » : cinq cartes ─────────────────────────────────────────────────────────────────────────────── */
+/* ─── « VOS FICHIERS » : cinq cartes, peu de mots ────────────────────────────────────────────────────────────────── */
 .vf-lead{margin:0 0 12px;font-size:var(--f-13);line-height:1.5;color:var(--t-2)}
-/* le sommaire : les cinq entrées d'un coup d'œil, chacune son voyant ; un clic y va */
-.vf-sommaire{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
-.vf-puce{display:inline-flex;align-items:center;gap:7px;height:28px;padding:0 11px 0 9px;border:1px solid var(--s-line);border-radius:999px;background:var(--s-surface);font:500 var(--f-12)/1 var(--sans);color:var(--t-2);transition:background var(--rapide),border-color var(--rapide),color var(--rapide)}
-.vf-puce:hover{background:var(--s-sunken);border-color:var(--s-line-2);color:var(--t-1)}
-.vf-puce i,.vf-etat i{width:8px;height:8px;flex:none;border-radius:50%;background:var(--ok)}
-.vf-puce.e-vide i,.vf-puce.e-att i,.vf-carte.e-vide .vf-etat i,.vf-carte.e-att .vf-etat i{background:var(--warn)}
-.vf-puce.e-ko i,.vf-carte.e-ko .vf-etat i{background:var(--ko)}
 .vf-cartes{display:flex;flex-direction:column;gap:10px}
-/* une carte : la tête (l'icône, le titre, l'état, l'action), ce qui est arrivé (une erreur, une attente, un succès), puis
-   « Ce que j'attends », replié quand l'entrée est servie */
+/* une carte : la tête (l'icône, le titre, l'état, l'action) ; pour le retest et la base, ce qu'elle attend en une ligne et
+   sa zone de dépôt ; ce qui est arrivé (une erreur, une attente, un succès) ; puis « Ce que j'attends », replié quand
+   l'entrée est servie */
 .vf-carte{border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-surface);scroll-margin-top:8px;transition:border-color var(--rapide),box-shadow var(--rapide)}
+/* le retest et la base, les deux fichiers qu'on dépose : un cadre plus franc, l'icône à l'encre */
+.vf-carte.vf-grande{border-color:var(--s-line-2)}
+.vf-grande .vf-ic{background:var(--t-1);color:var(--t-inverse)}
 .vf-carte.e-ko{border-color:color-mix(in srgb,var(--ko) 40%,var(--s-line))}
-.vf-carte.vf-vise{border-color:var(--s-line-2);box-shadow:var(--sh-1)}
+.vf-carte.vf-vise{border-color:var(--t-3);box-shadow:var(--sh-1)}
 .vf-carte.vf-montre,.vf-carte.survol-depot{border-color:var(--t-1);box-shadow:0 0 0 3px var(--accent-soft)}
 .vf-tete{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px}
 .vf-ic{width:36px;height:36px;border-radius:var(--r-1);background:var(--s-sunken);display:grid;place-items:center;color:var(--t-2)}
@@ -1579,8 +1604,27 @@ details.fs:last-of-type{margin-bottom:var(--sp-5)}
 .vf-titres{min-width:0}
 .vf-titres h3{margin:0;font:600 var(--f-14)/1.3 var(--titre);letter-spacing:-.01em;color:var(--t-1)}
 .vf-etat{display:flex;align-items:baseline;gap:7px;margin-top:3px;font-size:var(--f-12);line-height:1.45;color:var(--t-2);overflow-wrap:anywhere}
-.vf-etat i{transform:translateY(-1px)}
+.vf-etat i{width:8px;height:8px;flex:none;border-radius:50%;background:var(--ok);transform:translateY(-1px)}
+.vf-carte.e-vide .vf-etat i,.vf-carte.e-att .vf-etat i{background:var(--warn)}
+.vf-carte.e-ko .vf-etat i{background:var(--ko)}
 .vf-action{flex:none}
+/* ce qu'elle attend, en une ligne, sous la tête (aligné sur le titre) */
+.vf-une{display:flex;flex-direction:column;gap:8px;padding:0 14px 12px 62px;font-size:var(--f-13);line-height:1.5;color:var(--t-2)}
+.vf-une p{margin:0}
+.vf-une b{color:var(--t-1);font-weight:600}
+.vf-une .id{font:600 var(--f-12)/1 var(--mono);color:var(--t-1);background:var(--accent-soft);border-radius:4px;padding:2px 5px;white-space:nowrap}
+/* les trois colonnes qui rangent la base (comme sur l'accueil) : la colonne soulignée à l'encre, son sens dessous */
+.vf-cles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0;border:1px solid var(--s-line);border-radius:var(--r-1);overflow:hidden}
+.vf-cles div{padding:7px 10px 8px;min-width:0}
+.vf-cles div+div{border-left:1px solid var(--s-line)}
+.vf-cles dt{display:inline-block;padding-bottom:2px;font:600 var(--f-12)/1.3 var(--mono);color:var(--t-1);box-shadow:inset 0 -2px 0 var(--t-1)}
+.vf-cles dd{margin:4px 0 0;font-size:var(--f-13);line-height:1.3;color:var(--t-1)}
+/* la zone de dépôt, tant que l'entrée est vide : un cadre en pointillé, une ligne ; la carte survolée par un fichier l'allume */
+.vf-zone{display:flex;align-items:center;justify-content:center;gap:10px;width:calc(100% - 76px);min-height:48px;margin:0 14px 12px 62px;padding:8px 12px;border:1.5px dashed var(--s-line-2);border-radius:var(--r-2);background:var(--s-sunken);color:var(--t-2);font-size:var(--f-12);cursor:pointer;transition:border-color var(--rapide),background var(--rapide),color var(--rapide)}
+.vf-zone svg.ico{width:18px;height:18px;color:var(--t-1)}
+.vf-zone b{font-size:var(--f-13);color:var(--t-1);font-weight:600}
+body.depot-actif .vf-zone{border-color:var(--t-3)}
+.vf-zone:hover,.vf-zone:focus-visible,.survol-depot .vf-zone{border-color:var(--t-1);background:var(--accent-soft);color:var(--t-1);outline:none}
 .vf-liens{display:flex;flex-wrap:wrap;gap:2px 4px;padding:0 12px 10px 58px;margin-top:-4px}
 .vf-liens .btn{height:26px;padding:0 6px;font-size:var(--f-12)}
 /* ce qui est arrivé : une boîte, sa couleur d'état en trait à gauche ; elle reste jusqu'au prochain dépôt */
@@ -1606,9 +1650,9 @@ details.fs:last-of-type{margin-bottom:var(--sp-5)}
 .vf-col-nom{font:500 var(--f-12)/1.3 var(--mono);color:var(--t-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vf-col-ex{color:var(--t-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vf-col select{height:28px;border:1px solid var(--s-line-2);border-radius:var(--r-1);background:var(--s-surface);color:var(--t-1);font-size:var(--f-12);padding:0 6px}
-/* « Ce que j'attends » : le format, trois lignes d'exemple, ce qui se passe ensuite, l'erreur dite en clair */
+/* « Ce que j'attends » : trois lignes d'exemple, ce qui se passe ensuite en une phrase, le modèle */
 details.vf-attend{border-top:1px solid var(--s-line)}
-.vf-attend>summary{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;list-style:none;border-radius:0 0 var(--r-2) var(--r-2)}
+.vf-attend>summary{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;list-style:none;border-radius:0 0 var(--r-2) var(--r-2)}
 .vf-attend>summary::-webkit-details-marker{display:none}
 .vf-attend>summary:hover{background:var(--s-sunken)}
 .vf-attend[open]>summary{border-radius:0}
@@ -1616,14 +1660,11 @@ details.vf-attend{border-top:1px solid var(--s-line)}
 .vf-attend-s{flex:1;min-width:0;font-size:var(--f-12);color:var(--t-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vf-chevron{width:16px;height:16px;color:var(--t-3);transition:transform var(--rapide)}
 .vf-attend[open] .vf-chevron{transform:rotate(180deg)}
-.vf-corps{padding:2px 14px 14px;display:flex;flex-direction:column;gap:12px;font-size:var(--f-13);line-height:1.55;color:var(--t-2)}
-.vf-format{margin:0}
+.vf-corps{padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;font-size:var(--f-13);line-height:1.55;color:var(--t-2)}
+.vf-format,.vf-ensuite{margin:0}
 .vf-format b{color:var(--t-1);font-weight:600}
 .vf-format .id{font-family:var(--mono);font-size:var(--f-12);white-space:nowrap}
-.vf-st{font:600 var(--f-12)/1.3 var(--sans);color:var(--t-1);margin-bottom:4px}
-.vf-ensuite ol{margin:0;padding-left:18px}
-.vf-ensuite li{margin:2px 0}
-.vf-si p{margin:0;font-size:var(--f-12);color:var(--t-2)}
+.vf-ensuite{font-size:var(--f-12);color:var(--t-3)}
 .vf-corps .vf-gestes{margin-top:0}
 .vf-corps .vf-gestes .btn{height:32px;font-size:var(--f-12)}
 /* l'aperçu : un petit tableau, en chasse fixe ; les colonnes obligatoires à l'encre et soulignées ; il défile de côté */
@@ -2510,38 +2551,61 @@ details.fs.fs-clos .fs-chevron{visibility:hidden}
 
     <div class="en-actions">
       <div id="menuBoite">
-        <button class="rd" id="btnMenu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
+        <button class="rd" id="btnMenu" aria-label="Menu" aria-haspopup="menu" aria-expanded="false">
           <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="19" r="1.4" fill="currentColor"/></svg>
           <span class="bulle" aria-hidden="true">Menu</span>
         </button>
         <div id="menu" class="menu" hidden role="menu" aria-label="Menu">
-          <!-- Ce qui est ouvert et son enregistrement : à lire, pas à presser. Puis quatre blocs : le contrat, vos fichiers,
-               sortir, le reste. Chaque ligne porte sa bulle (data-aide), en trois temps — ce qu'elle fait, ce qu'elle attend,
-               ce qui se passe ensuite — lue à gauche du menu, au survol ou au clavier (08-accueil, `lierBullesDuMenu`). -->
-          <div class="ctx"><div id="ctx-nom">—</div><div id="ctx-txt"></div><div id="ctx-sauve" class="sauve"></div></div>
-          <div class="menu-bloc" role="group" aria-labelledby="mb-contrat"><div class="menu-t" id="mb-contrat">Le contrat</div>
-            <button role="menuitem" data-act="ouvrir" data-aide="Charge votre retest, Excel ou CSV : une ligne par fil, avec au moins Device1, Pin1, Device2 et Pin2 (les 16 colonnes du retest sont reconnues par leur nom). Il remplace le contrat ouvert ; Ctrl+Z le rend. S’il porte plusieurs harness, on vous demande lequel ouvrir. Les autres deviennent des contrats déjà faits.">Ouvrir un retest… <span class="raccourci">Ctrl+O</span></button>
-            <button role="menuitem" data-act="coller" data-aide="Sans fichier : collez quelques lignes copiées d’Excel, une par fil, dans l’ordre Équip.1 ; Borne ; PN ; Équip.2 ; Borne ; PN ; Fil ; Type ; Route ; Folio. Exemple : 102CB1;2;MS3320-10;103RL1;A1;;W-012;DR20;PUISSANCE;1. Vous choisissez ensuite : ajouter au contrat, ou le remplacer.">Coller des lignes…</button>
-            <button role="menuitem" data-act="exemple" data-aide="Un contrat fictif, 201 fils sur 6 folios, pour essayer l’outil sans fichier. Votre contrat est mis de côté : Ctrl+Z ou « Reprendre » le rend.">Ouvrir l’exemple</button>
+          <!-- LE MENU tient en peu de lignes (le lecteur : « il y a tellement de choses qu'on n'en utilise que 10-20 % »).
+               En tête, ce qui est ouvert et son enregistrement : à lire, pas à presser. Puis l'essentiel — ouvrir un retest,
+               vos fichiers (où l'on dépose AUSSI la base des contrats déjà faits), le récapitulatif, la nomenclature —, et
+               deux sous-menus qui s'ouvrent EN PLACE (le menu ne s'élargit jamais) : Exporter, Plus. Chaque ligne porte sa
+               bulle courte (data-aide), lue à gauche du menu, au survol ou au clavier (08-accueil, `lierBullesDuMenu`).
+               Au clavier : ↑ ↓, Entrée, → ouvre un sous-menu, ← ou Échap y revient (08-interface, `lierMenu`). -->
+          <div class="menu-panneau" id="mp-principal" role="none">
+            <div class="ctx"><div id="ctx-nom">—</div><div id="ctx-txt"></div><div id="ctx-sauve" class="sauve"></div></div>
+            <div class="menu-bloc" role="group" aria-label="Le contrat">
+              <button role="menuitem" data-act="ouvrir" data-aide="Votre retest, Excel ou CSV : une ligne par fil, avec au moins Device1, Pin1, Device2 et Pin2. Il remplace le contrat ouvert ; Ctrl+Z le rend."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M12 18v-6M9.5 14.5 12 12l2.5 2.5"/></svg><span class="menu-l">Ouvrir un retest…</span><span class="raccourci">Ctrl+O</span></button>
+              <button role="menuitem" data-act="fichiers" class="menu-2l" data-aide="Où déposer chaque fichier : votre retest, la base des contrats déjà faits (un seul Excel, Harness rempli), la bible, les normes. Chacun dit ce qu’il attend."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H9l2 2h8.5A1.5 1.5 0 0 1 21 9.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg><span class="menu-l">Vos fichiers…<small>retest · contrats déjà faits · bible · normes</small></span></button>
+            </div>
+            <div class="menu-bloc" role="group" aria-label="Lire et sortir">
+              <button role="menuitem" data-act="recapitulatif" data-aide="Tout le contrat en tableaux : liaisons, équipements, disjoncteurs, câbles, contacts, problèmes… On y corrige comme sur la fiche."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M3 14h18M9 5v14"/></svg><span class="menu-l">Récapitulatif</span><span class="raccourci">B</span></button>
+              <button role="menuitem" data-act="nomenclature" data-aide="Ce qu’il faut commander, compté sur tout le contrat : contacts, modules, connecteurs, câbles. S’enregistre en CSV."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10"/><path d="m3.5 6 1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17"/></svg><span class="menu-l">Nomenclature</span><span class="raccourci">N</span></button>
+              <button role="menuitem" data-sous="exporter" aria-haspopup="menu" aria-expanded="false" aria-controls="mp-exporter" data-aide="Le folio affiché en SVG ou en PNG, son impression sur un A3, le suivi de fabrication en CSV."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19.5h14"/></svg><span class="menu-l">Exporter</span><svg class="ico menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
+            </div>
+            <div class="menu-bloc" role="group" aria-label="Le reste">
+              <button role="menuitem" data-sous="plus" aria-haspopup="menu" aria-expanded="false" aria-controls="mp-plus" data-aide="Coller des lignes, l’exemple, la bible, les normes, les hypothèses, le cartouche, tout effacer."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="18" cy="12" r="1.3" fill="currentColor"/></svg><span class="menu-l">Plus</span><svg class="ico menu-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6 6 6-6 6"/></svg></button>
+            </div>
           </div>
-          <div class="menu-bloc" role="group" aria-labelledby="mb-fichiers"><div class="menu-t" id="mb-fichiers">Vos fichiers</div>
-            <button role="menuitem" data-act="fichiers" data-aide="Ce que l’outil a reçu (retest, contrats déjà faits, bible, normes, hypothèses), quand, ce qu’il en a fait, et ce qu’il attend pour chacun, avec un exemple.">Vos fichiers…</button>
-            <button role="menuitem" data-act="references" data-aide="Votre base d’anciennes machines : un Excel aux mêmes colonnes que le retest, avec Harness rempli (une machine par harness). Déposée une fois, gardée dans ce navigateur. Ensuite, la fiche de chaque équipement dit « déjà fait sur H175, 92 % pareil » et propose de reprendre ce qu’on coche.">Contrats déjà faits…</button>
-            <button role="menuitem" data-act="bible" data-aide="Les références que l’outil choisit pour chaque barrette, prise et connecteur (306 embarquées : ASNE 0599, NSA937901, EN 4165…). Pour importer la vôtre, il faut au moins Référence et Bornes.">Bible des barrettes</button>
-            <button role="menuitem" data-act="normes" data-aide="Les 24 tables qui jugent : câbles et intensités (EN 2853), contacts, arrangements, raccords (EN 3660), disjoncteurs, chute admise (AC 43.13-1B). On y cherche, on corrige une ligne, on importe une table (un gabarit par table).">Normes</button>
-            <button role="menuitem" data-act="hypotheses" data-aide="Ce que le retest ne dit pas et que l’outil suppose : 5 m par fil sans longueur, 2 A pour un fil sans disjoncteur, 28 V, 95 °C ambiants… Les changer refait tous les calculs.">Hypothèses</button>
+          <!-- EXPORTER : le folio affiché (vectoriel, image, papier), puis le suivi du contrat -->
+          <div class="menu-panneau" id="mp-exporter" role="group" aria-label="Exporter" hidden>
+            <button role="menuitem" class="menu-retour" data-retour><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg><span class="menu-l">Exporter</span></button>
+            <div class="menu-bloc" role="group" aria-label="Le folio affiché">
+              <button role="menuitem" data-act="svg" data-aide="Le folio affiché et son cartouche, en vectoriel : net à toute échelle."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 18.5C6 11 11 6 18.5 5.5"/><rect x="3" y="17" width="4" height="4" rx="1"/><rect x="17" y="3" width="4" height="4" rx="1"/></svg><span class="menu-l">Folio en SVG</span></button>
+              <button role="menuitem" data-act="png" data-aide="Le folio affiché et son cartouche, en image : pour un mail ou une présentation."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 15.5-5-5-9 9"/></svg><span class="menu-l">Folio en PNG</span></button>
+              <button role="menuitem" data-act="imprimer" data-aide="Le folio affiché, seul, sur une feuille A3 paysage."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3.5h10V9"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v6.5H7z"/></svg><span class="menu-l">Imprimer</span><span class="raccourci">Ctrl+P</span></button>
+            </div>
+            <div class="menu-bloc" role="group" aria-label="Le contrat">
+              <button role="menuitem" data-act="suivi" data-aide="Une ligne par pièce posée — barrette, prise, connecteur — avec sa référence, ses contacts et ses fils."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 12.5h7M8.5 16h7"/></svg><span class="menu-l">Suivi de fabrication (CSV)</span></button>
+            </div>
           </div>
-          <div class="menu-bloc" role="group" aria-labelledby="mb-sortir"><div class="menu-t" id="mb-sortir">Sortir</div>
-            <button role="menuitem" data-act="recapitulatif" data-aide="Tout le contrat en tableaux, par onglet : liaisons, équipements, disjoncteurs, barrettes, prises, câbles, contacts, raccords, problèmes, normes. On y corrige comme sur la fiche.">Récapitulatif <span class="raccourci">B</span></button>
-            <button role="menuitem" data-act="nomenclature" data-aide="Ce qu’il faut commander, compté sur tout le contrat : contacts à sertir, modules de jonction, connecteurs et prises, câbles (longueur et masse). S’enregistre en CSV.">Nomenclature <span class="raccourci">N</span></button>
-            <button role="menuitem" data-act="suivi" data-aide="Un CSV pour le suivi de fabrication : chaque barrette, prise et connecteur avec sa référence, ses contacts et ses fils. Ce n’est pas la nomenclature : une ligne par pièce posée, pas par référence.">Exporter le suivi (CSV)</button>
-            <button role="menuitem" data-act="svg" data-aide="Le folio affiché avec son cartouche, en dessin vectoriel : net à toute échelle, pour un logiciel de dessin ou un document.">Enregistrer le folio (SVG)</button>
-            <button role="menuitem" data-act="png" data-aide="Le folio affiché avec son cartouche, en image : pour un mail ou une présentation.">Enregistrer le folio (PNG)</button>
-            <button role="menuitem" data-act="imprimer" data-aide="Le folio affiché, seul, sur une feuille A3 paysage.">Imprimer <span class="raccourci">Ctrl+P</span></button>
-          </div>
-          <div class="menu-bloc" role="group" aria-labelledby="mb-reste"><div class="menu-t" id="mb-reste">Le reste</div>
-            <button role="menuitem" data-act="cartouche" data-aide="Le titre, le dessinateur, la date, l’indice et l’échelle, écrits en bas à droite de chaque folio. Le numéro de folio s’écrit tout seul.">Cartouche</button>
-            <button role="menuitem" data-act="vider" class="danger" data-aide="Vide la table : le contrat, ses choix, ses retouches. La base des contrats déjà faits, la bible et les normes restent. Ctrl+Z rend tout tant que l’onglet est ouvert.">Tout effacer</button>
+          <!-- PLUS : sans fichier (coller, l'exemple), ce qui juge (la bible, les normes, les hypothèses), le cartouche, et
+               tout effacer, seul en bas -->
+          <div class="menu-panneau" id="mp-plus" role="group" aria-label="Plus" hidden>
+            <button role="menuitem" class="menu-retour" data-retour><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg><span class="menu-l">Plus</span></button>
+            <div class="menu-bloc" role="group" aria-label="Sans fichier">
+              <button role="menuitem" data-act="coller" data-aide="Sans fichier : quelques lignes copiées d’Excel, une par fil. Un aperçu, puis ajouter au contrat ou le remplacer."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5.5" y="4.5" width="13" height="16.5" rx="2"/><path d="M9 4.5V3h6v1.5M9 10h6M9 14h6"/></svg><span class="menu-l">Coller des lignes…</span></button>
+              <button role="menuitem" data-act="exemple" data-aide="Un contrat fictif, 201 fils sur 6 folios, pour essayer. Le vôtre est mis de côté : Ctrl+Z le rend."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="7.5" width="7" height="9" rx="1.5"/><rect x="14.5" y="7.5" width="7" height="9" rx="1.5"/><path d="M9.5 12h5"/></svg><span class="menu-l">Ouvrir l’exemple</span></button>
+            </div>
+            <div class="menu-bloc" role="group" aria-label="Ce qui juge">
+              <button role="menuitem" data-act="bible" data-aide="Les références que l’outil choisit pour chaque barrette, prise et connecteur. On peut importer la vôtre."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v16H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v4H6.5A2.5 2.5 0 0 1 4 20.5"/></svg><span class="menu-l">Bible des barrettes</span></button>
+              <button role="menuitem" data-act="normes" data-aide="Les tables qui jugent chaque fil : câbles, contacts, raccords, disjoncteurs, chute. On y cherche, on corrige une ligne."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 10h16M4 15h9M4 20h6"/><path d="m15 18 2 2 4-4"/></svg><span class="menu-l">Normes</span></button>
+              <button role="menuitem" data-act="hypotheses" data-aide="Ce que le retest ne dit pas : 5 m par fil sans longueur, 2 A sans disjoncteur, 28 V… Les changer refait les calculs."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span class="menu-l">Hypothèses</span></button>
+              <button role="menuitem" data-act="cartouche" data-aide="Le titre, le dessinateur, la date et l’indice, écrits en bas à droite de chaque folio."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M10 14h11M10 14v6M15.5 14v6"/></svg><span class="menu-l">Cartouche…</span></button>
+            </div>
+            <div class="menu-bloc" role="group" aria-label="Effacer">
+              <button role="menuitem" data-act="vider" class="danger" data-aide="Vide la table. La base des contrats déjà faits, la bible et les normes restent. Ctrl+Z rend tout."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg><span class="menu-l">Tout effacer</span></button>
+            </div>
           </div>
         </div>
       </div>
@@ -2557,11 +2621,13 @@ details.fs.fs-clos .fs-chevron{visibility:hidden}
     <svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg>
 
     <!-- L'ACCUEIL : la table vide — au premier lancement, et après « Tout effacer ». Une feuille de folio (le cadre gradué,
-         un petit schéma qui se trace) qui dit ce que l'outil attend, dans l'ordre : 1. votre retest (indispensable),
-         2. vos contrats déjà faits (une fois), 3. la bible et les normes (embarquées). En bas, l'exemple et le collage pour
-         qui n'a pas de fichier. Ce qui change (l'état de la base, ce qui est embarqué, l'erreur du dernier dépôt, les
-         comptes) est écrit par 08-accueil (`rendreAccueil`) ; « Reprendre » est montré par l'interface quand le dernier
-         geste a vidé la table. Une étape qui porte data-depot reçoit le fichier qu'on glisse dessus. -->
+         un petit schéma qui se trace) qui dit ce que l'outil attend, en peu de mots (le lecteur : « il y a tellement de
+         choses, je n'ai pas envie de lire ») : 1. votre retest (indispensable) et 2. vos contrats déjà faits (la grande
+         base, une fois), côte à côte, chacun avec sa zone de dépôt ; 3. la bible et les normes, embarquées, en une ligne.
+         En bas, l'exemple et le collage pour qui n'a pas de fichier. Ce qui change (l'état de la base, ce qui est embarqué,
+         l'erreur du dernier dépôt, les comptes) est écrit par 08-accueil (`rendreAccueil`) ; « Reprendre » est montré par
+         l'interface quand le dernier geste a vidé la table. Une étape qui porte data-depot reçoit le fichier qu'on glisse
+         dessus. -->
     <div id="vide" class="vide" hidden>
       <div class="vd ilot-clair">
         <div class="vd-reg vd-reg-h" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span></div>
@@ -2571,7 +2637,7 @@ details.fs.fs-clos .fs-chevron{visibility:hidden}
             <div class="vd-titre">
               <div class="vd-sur"><span class="en-marque" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="7.5" width="7" height="9" rx="1.5"/><rect x="14.5" y="7.5" width="7" height="9" rx="1.5"/><path d="M9.5 12h5"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg></span>Premier pas · rien n’est encore chargé</div>
               <h1>Atelier Schéma</h1>
-              <p>Donnez-lui votre retest : il dessine les folios, trouve contacts, modules, raccords et calibres, et juge chaque fil contre les normes. Rien ne quitte ce navigateur.</p>
+              <p>Votre retest devient des folios, des fiches et des contrôles. Rien ne quitte ce navigateur.</p>
             </div>
             <svg class="vd-dessin" viewBox="0 0 300 130" aria-hidden="true">
               <g class="bloc"><rect x="8" y="14" width="84" height="44"/><text x="50" y="40">102CB1</text></g>
@@ -2590,11 +2656,11 @@ details.fs.fs-clos .fs-chevron{visibility:hidden}
           <button class="vd-reprendre" id="vd-reprendre" hidden>Reprendre le contrat</button>
 
           <div class="vd-etapes">
-            <!-- 1. le retest : ce qu'on attend (une ligne par fil, les quatre colonnes obligatoires), un aperçu, le dépôt -->
+            <!-- 1. le retest : une ligne par fil, les quatre colonnes obligatoires, trois lignes d'aperçu, le dépôt -->
             <section class="vd-etape vd-un" data-depot="retest" aria-labelledby="vd-t1">
               <div class="vd-num"><i aria-hidden="true">1</i>indispensable</div>
               <h2 id="vd-t1">Votre retest</h2>
-              <p>Un Excel (.xlsx, .xls) ou un CSV, <b>une ligne par fil</b>. Les en-têtes sont reconnus par leur nom, où qu’ils soient dans les 30 premières lignes. Il en faut quatre : <span class="vd-req">Device1</span> · <span class="vd-req">Pin1</span> · <span class="vd-req">Device2</span> · <span class="vd-req">Pin2</span>.</p>
+              <p>Un Excel ou un CSV, <b>une ligne par fil</b>, avec au moins <span class="vd-req">Device1</span> <span class="vd-req">Pin1</span> <span class="vd-req">Device2</span> <span class="vd-req">Pin2</span>.</p>
               <div class="vd-apercu">
                 <table aria-label="Trois lignes d’un retest : les quatre colonnes obligatoires et deux facultatives">
                   <thead><tr><th class="req">Device1</th><th class="req">Pin1</th><th>Cable TG</th><th>Cable Tag</th><th class="req">Device2</th><th class="req">Pin2</th></tr></thead>
@@ -2604,32 +2670,40 @@ details.fs.fs-clos .fs-chevron{visibility:hidden}
                     <tr><td class="req">101BT1</td><td class="req">1</td><td>DR16</td><td>W-011</td><td class="req">102CB1</td><td class="req">1</td></tr>
                   </tbody>
                 </table>
-                <p class="vd-facult">et, si vous les avez : Harness · PN1 · Description1 · Route · PN2 · Description2 · FWD · Cable length (mm) · Appareil · Date retest</p>
               </div>
               <div class="vd-zone" id="vd-zone" role="button" tabindex="0" aria-label="Déposer votre retest ici, ou cliquer pour choisir le fichier">
                 <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
-                <span><b>Glissez le fichier ici</b> ou cliquez pour le choisir</span>
+                <span><b>Glissez le retest ici</b> ou cliquez</span>
               </div>
               <div class="vd-erreur" id="vd-erreur" hidden></div>
-              <div class="vd-actions"><button class="btn cuivre" id="vd-ouvrir">Ouvrir mon retest…</button><button class="btn lien" id="vd-modele">Télécharger un modèle (CSV)</button></div>
+              <div class="vd-actions"><button class="btn cuivre" id="vd-ouvrir">Ouvrir mon retest…</button><button class="btn lien" id="vd-modele">Modèle (CSV)</button></div>
             </section>
-            <!-- 2. les contrats déjà faits : la grande base, déposée une fois ; ce qu'elle fait ensuite ; son état -->
-            <section class="vd-etape" data-depot="base" aria-labelledby="vd-t2">
-              <div class="vd-num"><i aria-hidden="true">2</i>une fois, si vous l’avez</div>
+            <!-- 2. les contrats déjà faits : la grande base (tous les contrats, un seul Excel), déposée une fois — ce qu'elle
+                 attend en une ligne, sa zone de dépôt, son état -->
+            <section class="vd-etape vd-deux" data-depot="base" aria-labelledby="vd-t2">
+              <div class="vd-num"><i aria-hidden="true">2</i>une fois · le retest de tous vos contrats</div>
               <h2 id="vd-t2">Vos contrats déjà faits</h2>
-              <p>Votre grande base, téléchargée une fois : <b>un seul Excel, une ligne par liaison, aux colonnes du retest</b>. <span class="vd-id">Harness</span> dit de quelle machine vient la ligne, <span class="vd-id">FWD</span> de quel dessin, <span class="vd-id">Appareil</span> de quel contrat.</p>
-              <p>Ensuite, la fiche de chaque équipement dit « déjà fait sur H175, 92 % pareil », compare, et reprend ce que vous cochez.</p>
+              <p>Un seul Excel, <b>une ligne par liaison</b>, aux colonnes du retest, et&nbsp;:</p>
+              <dl class="vd-cles">
+                <div><dt>Harness</dt><dd>la machine</dd></div>
+                <div><dt>FWD</dt><dd>le dessin</dd></div>
+                <div><dt>Appareil</dt><dd>le contrat</dd></div>
+              </dl>
+              <p class="vd-ensuite">Chaque fiche dira « déjà fait sur H175 » et reprendra ce que vous cochez.</p>
               <div class="vd-etat e-vide" id="vd-etat-base"><i aria-hidden="true"></i><span>aucune base pour l’instant</span></div>
+              <div class="vd-zone" id="vd-zone-base" role="button" tabindex="0" aria-label="Déposer la base des contrats déjà faits ici, ou cliquer pour choisir le fichier">
+                <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/></svg>
+                <span><b>Glissez la base ici</b> ou cliquez</span>
+              </div>
               <div class="vd-erreur" id="vd-erreur-base" hidden></div>
-              <div class="vd-actions"><button class="btn papier" id="vd-base">Déposer la base…</button><button class="btn lien" id="vd-base-aide">Comment ça marche</button></div>
+              <div class="vd-actions"><button class="btn papier" id="vd-base">Déposer la base…</button><button class="btn lien" id="vd-base-aide">Ce qu’elle attend</button></div>
             </section>
-            <!-- 3. la bible et les normes : embarquées ; on commence sans -->
-            <section class="vd-etape" aria-labelledby="vd-t3">
-              <div class="vd-num"><i aria-hidden="true">3</i>si vous avez les vôtres</div>
+            <!-- 3. la bible et les normes : embarquées ; on commence sans — une ligne -->
+            <section class="vd-etape vd-trois" aria-labelledby="vd-t3">
+              <div class="vd-num"><i aria-hidden="true">3</i></div>
               <h2 id="vd-t3">Bible et normes</h2>
-              <p>L’outil embarque déjà la bible (<span id="vd-n-bible">306 références</span> : ASNE 0599, NSA937901, EN 4165…) et <span id="vd-n-tables">24 tables</span> de normes (EN 2853, EN 3660, AC 43.13-1B…). Vous pouvez commencer sans rien changer.</p>
-              <div class="vd-etat e-ok" id="vd-etat-embarque"><i aria-hidden="true"></i><span>bible embarquée · normes embarquées</span></div>
-              <div class="vd-actions"><button class="btn papier" id="vd-embarque">Voir ce qui est embarqué</button></div>
+              <div class="vd-etat e-ok" id="vd-etat-embarque"><i aria-hidden="true"></i><span>embarquées : <span id="vd-n-bible">306 références</span>, <span id="vd-n-tables">32 tables</span> — rien à faire pour commencer</span></div>
+              <button class="btn lien" id="vd-embarque">Voir ce qui est embarqué</button>
             </section>
           </div>
 
@@ -2637,7 +2711,7 @@ details.fs.fs-clos .fs-chevron{visibility:hidden}
             <span class="vd-bas-q">Pas de fichier sous la main ?</span>
             <button class="btn papier" id="vd-exemple">Ouvrir l’exemple <span class="vd-ex-n" id="vd-ex-n">(201 liaisons, 6 folios)</span></button>
             <button class="btn lien" id="vd-coller">Coller quelques lignes</button>
-            <span class="vd-plus">Tout se retrouve ensuite dans ⋮ → <button class="btn lien" id="vd-fichiers">Vos fichiers</button></span>
+            <span class="vd-plus">Tout se retrouve dans ⋮ → <button class="btn lien" id="vd-fichiers">Vos fichiers</button></span>
           </footer>
         </div>
         <div class="vd-reg vd-reg-d" aria-hidden="true"><span>A</span><span>B</span><span>C</span><span>D</span></div>
@@ -2797,7 +2871,7 @@ details.fs.fs-clos .fs-chevron{visibility:hidden}
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = '4bbb25aa7fc8';
+const VERSION_MOTEUR = 'f98f4836ad55';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -6973,11 +7047,12 @@ function occupationDe(fils, barrettes, comps) {
   const O = { H, V, boites, corps };
   // `sauf` : le bloc dont on pose le repère ne se gêne pas lui-même ; sans `sauf`, TOUT compte (les textes déjà posés n'ont pas d'id)
   const autre = (o, sauf) => sauf == null || o.id == null || o.id !== sauf;
-  // `sien` : la hauteur du fil qu'un numéro chevauche de plein droit (il s'écrit DANS le fil, qui le traverse)
-  O.libre = (b, mV, sauf, sien) => !boites.some(o => autre(o, sauf) && b.x1 > o.x0 - 3 && b.x0 < o.x1 + 3 && b.y1 > o.y0 - 1.5 && b.y0 < o.y1 + 1.5)
+  // `sien` : la hauteur du fil qu'un numéro chevauche de plein droit (il s'écrit DANS le fil, qui le traverse) ; `sienX` :
+  // l'abscisse du vertical où un numéro debout s'écrit de même
+  O.libre = (b, mV, sauf, sien, sienX) => !boites.some(o => autre(o, sauf) && b.x1 > o.x0 - 3 && b.x0 < o.x1 + 3 && b.y1 > o.y0 - 1.5 && b.y0 < o.y1 + 1.5)
     && !corps.some(o => autre(o, sauf) && b.x1 > o.x0 && b.x0 < o.x1 && b.y1 > o.y0 && b.y0 < o.y1)
     && !H.some(s => s.y > b.y0 - 0.5 && s.y < b.y1 + 0.5 && s.x1 > b.x0 && s.x0 < b.x1 && !(sien != null && Math.abs(s.y - sien) < 0.6))
-    && !V.some(s => s.x > b.x0 - mV && s.x < b.x1 + mV && s.y1 > b.y0 && s.y0 < b.y1);
+    && !V.some(s => s.x > b.x0 - mV && s.x < b.x1 + mV && s.y1 > b.y0 && s.y0 < b.y1 && !(sienX != null && Math.abs(s.x - sienX) < 0.6));
   O.poser = b => { boites.push(b); return b; };
   return O;
 }
@@ -7051,9 +7126,16 @@ const repereTexte = r => `<text class="${r.cls}" x="${f1(r.x)}" y="${f1(r.y)}" t
    on la bâtit des fils seuls (c'est ainsi que le placement compte les fils
    muets). Le plus long segment seul laissait muet un fil dont l'horizontale
    passait sous une masse et la verticale entre deux ponts (folio 5,
-   W-526). */
+   W-526).
+   Le numéro s'écrit PILE SUR SON FIL : son milieu sur l'axe du trait (le
+   lecteur : « il est un peu au-dessus »). Un numéro en capitales et en
+   chiffres a pour milieu la moitié de la hauteur d'une capitale (0,73 corps
+   en chasse fixe) au-dessus de sa ligne de base : la ligne de base tombe donc
+   AXE sous le trait. Un fond de papier, à peine plus large que le texte,
+   coupe le trait derrière lui ; le fil repart de part et d'autre. De même
+   pour un numéro debout, sur son vertical. */
 function reperesDeFil(fils, verticaux, barrettes, occ) {
-  const H = 5.6, fs = FS_FIL;
+  const H = 5.6, fs = FS_FIL, AXE = 0.365 * fs, HALO = 2.3;
   occ = occ || occupationDe(fils, barrettes || [], []);
   const cands = [];
   fils.forEach(w => { const nom = String(w.cable || '').trim(); if (!nom) return;
@@ -7062,7 +7144,7 @@ function reperesDeFil(fils, verticaux, barrettes, occ) {
       if (Math.abs(a.y - b.y) < 0.6) hs.push({ L: Math.abs(b.x - a.x), x0: Math.min(a.x, b.x), x1: Math.max(a.x, b.x), y: a.y });
       else if (Math.abs(a.x - b.x) < 0.6) vs.push({ L: Math.abs(b.y - a.y), x: a.x, y0: Math.min(a.y, b.y), y1: Math.max(a.y, b.y) }); }
     // un fil qui n'est qu'un raccord vers un piquage a, sur la verticale du piquage, un tronçon à lui seul
-    if (!vs.length && w.pts.length) { const t = tronconDePiquage(w, barrettes || []); if (t) vs.push({ L: t.vL, x: t.vx, y0: t.vy0, y1: t.vy1 }); }
+    if (!vs.length && w.pts.length) { const t = tronconDePiquage(w, barrettes || []); if (t) vs.push({ L: t.vL, x: t.vx, y0: t.vy0, y1: t.vy1, piquage: true }); }
     hs.sort((u, v) => v.L - u.L); vs.sort((u, v) => v.L - u.L);
     cands.push({ nom, L: hs.length ? hs[0].L : 0, hs, vs }); });
   cands.sort((a, b) => b.L - a.L);
@@ -7072,11 +7154,11 @@ function reperesDeFil(fils, verticaux, barrettes, occ) {
      repousse vers l'équipement, où le flanc est vide */
   cands.forEach(c => { const larg = largeurTexte(c.nom.length, fs, 0.1);
     let pose = null;
-    /* le numéro s'écrit DANS le fil, qui le traverse (un halo blanc l'isole) : c'est ainsi qu'on sait que c'est le bon
-       fil ; s'il n'y a pas la place à cette hauteur, au-dessus. `ecart` : où va la ligne de base par rapport au fil ;
-       [écart au fil, débord permis à chaque bout] : sur un fil court, un numéro trop long monte d'une ligne et déborde
-       davantage — au-dessus du symbole, jamais sur le corps de l'équipement (l'occupation l'y repousse) */
-    const dans = -(H / 2 - 0.35 * fs) - 0.3;   // ligne de base pour que le texte soit centré sur le fil
+    /* le numéro s'écrit DANS le fil, centré sur son axe (un fond de papier l'isole) : c'est ainsi qu'on sait que c'est le
+       bon fil ; s'il n'y a pas la place à cette hauteur, au-dessus. `ecart` : où va le bas de la boîte du texte par rapport
+       au fil ; [écart au fil, débord permis à chaque bout] : sur un fil court, un numéro trop long monte d'une ligne et
+       déborde davantage — au-dessus du symbole, jamais sur le corps de l'équipement (l'occupation l'y repousse) */
+    const dans = -H / 2;   // la boîte du texte à cheval sur le fil, son milieu sur l'axe
     for (const g of c.hs) { if (pose) break; const court = g.L < 40;
       for (const [ecart, marge] of (court ? [[dans, -4], [2.2, -4], [-(H + 1.4), -30], [7.5, -30]] : [[dans, 5], [2.2, 5]])) { if (pose || !g.L || larg + 2 * marge > g.L) continue;
         const mid = (g.x0 + g.x1) / 2, dmax = Math.max(0, (g.L - larg) / 2 - marge), sien = ecart === dans ? g.y : null;
@@ -7085,16 +7167,20 @@ function reperesDeFil(fils, verticaux, barrettes, occ) {
             const x0 = cx - larg / 2, x1 = cx + larg / 2, y1 = g.y - ecart, y0 = y1 - H;
             if (x0 < g.x0 + marge || x1 > g.x1 - marge) continue;
             if (occ.libre({ x0, y0, x1, y1 }, R_PONT + 1, null, sien)) { pose = { cx, x0, y0, x1, y1, dedans: sien != null }; break; } } } } }
-    if (pose) { occ.poser(pose);
-      // dans le fil : un fond blanc coupe le trait sous le numéro, le fil repart de part et d'autre
-      if (pose.dedans) out += `<rect class="halo" x="${f1(pose.x0 - 1.2)}" y="${f1(pose.y0 + 0.5)}" width="${f1(pose.x1 - pose.x0 + 2.4)}" height="${f1(pose.y1 - pose.y0 - 1)}"/>`;
-      out += `<text class="filnum" x="${f1(pose.cx)}" y="${f1(pose.y0 + 0.78 * fs)}" text-anchor="middle">${esc(c.nom)}</text>`; return; }
-    // pas de place à l'horizontale : le numéro se lit debout, le long d'un vertical
-    for (const v of c.vs) { if (larg + 10 > v.L) continue; const mid = (v.y0 + v.y1) / 2, dmax = (v.L - larg) / 2 - 5, x1 = v.x - 2.2, x0 = x1 - H;
+    if (pose) { occ.poser(pose); const ym = (pose.y0 + pose.y1) / 2;   // le milieu de la boîte : l'axe du fil quand il est dedans
+      // dans le fil : un fond de papier coupe le trait sous le numéro, le fil repart de part et d'autre
+      if (pose.dedans) out += `<rect class="halo" x="${f1(pose.x0 - 1.2)}" y="${f1(ym - HALO)}" width="${f1(pose.x1 - pose.x0 + 2.4)}" height="${f1(2 * HALO)}"/>`;
+      out += `<text class="filnum" x="${f1(pose.cx)}" y="${f1(ym + AXE)}" text-anchor="middle">${esc(c.nom)}</text>`; return; }
+    /* pas de place à l'horizontale : le numéro se lit debout, sur un vertical — centré sur son axe, le trait coupé derrière
+       lui de même (tourné d'un quart de tour, sa ligne de base est à droite du trait, à AXE). Le pointillé d'une barrette
+       n'est pas le fil : sur le tronçon d'un piquage, le numéro se lit à côté, à gauche du pointillé */
+    for (const v of c.vs) { if (larg + 10 > v.L) continue; const sur = !v.piquage, mid = (v.y0 + v.y1) / 2, dmax = (v.L - larg) / 2 - 5;
+      const x0 = sur ? v.x - H / 2 : v.x - 2.2 - H, x1 = x0 + H, xb = (x0 + x1) / 2 + AXE;
       for (let d = 0; d <= dmax + 0.01; d += 3) for (const cy of (d === 0 ? [mid] : [mid - d, mid + d])) {
-        const y0 = cy - larg / 2, y1 = cy + larg / 2; if (!occ.libre({ x0, y0, x1, y1 }, 0.5)) continue;
+        const y0 = cy - larg / 2, y1 = cy + larg / 2; if (!occ.libre({ x0, y0, x1, y1 }, 0.5, null, null, sur ? v.x : null)) continue;
         occ.poser({ x0, y0, x1, y1 });
-        out += `<text class="filnum" transform="rotate(-90 ${f1(x1)} ${f1(cy)})" x="${f1(x1)}" y="${f1(cy)}" text-anchor="middle">${esc(c.nom)}</text>`; return; } } });
+        if (sur) out += `<rect class="halo" x="${f1(v.x - HALO)}" y="${f1(y0 - 1.2)}" width="${f1(2 * HALO)}" height="${f1(larg + 2.4)}"/>`;
+        out += `<text class="filnum" transform="rotate(-90 ${f1(xb)} ${f1(cy)})" x="${f1(xb)}" y="${f1(cy)}" text-anchor="middle">${esc(c.nom)}</text>`; return; } } });
   return out;
 }
 /* Sur la verticale d'un piquage, le tronçon entre la borne d'un fil et le
@@ -10607,14 +10693,17 @@ function formatDuDessin(dessin) {
 /* ===========================================================================
    08 octies — L'ACCUEIL, LE BANDEAU DE L'EXEMPLE, LES BULLES DU MENU
    Le premier lancement montre l'accueil (`#vide`), plus l'exemple : une
-   feuille de folio qui dit ce que l'outil attend, dans l'ordre —
+   feuille de folio posée sur la table noire, qui dit ce que l'outil attend,
+   en peu de mots (le lecteur : « il y a tellement de choses, je n'ai pas
+   envie de lire ») —
      1. VOTRE RETEST (indispensable) : une ligne par fil, les quatre colonnes
         obligatoires, un aperçu de trois lignes, la zone de dépôt, « Ouvrir mon
-        retest… », « Télécharger un modèle (CSV) » ;
-     2. VOS CONTRATS DÉJÀ FAITS (une fois) : ce que c'est, ce que ça fait
-        ensuite, l'état, « Déposer la base… » (un fichier glissé sur cette
-        étape y entre aussi) ;
-     3. BIBLE ET NORMES : embarquées, on peut commencer sans.
+        retest… », le modèle ;
+     2. VOS CONTRATS DÉJÀ FAITS, à côté, de même taille (le lecteur : « mon gros
+        retest de tous les contrats, je ne sais pas où le mettre ») : un seul
+        Excel, une ligne par liaison, Harness = la machine, FWD = le dessin,
+        Appareil = le contrat ; sa zone de dépôt, son état ;
+     3. BIBLE ET NORMES : embarquées, en une ligne.
    En bas, pour qui n'a pas de fichier : l'exemple, le collage. La page est
    écrite dans page.html ; ici, ce qui change : l'état de la base et de ce qui
    est embarqué, l'erreur du dernier dépôt (elle reste écrite dans l'étape),
@@ -10626,7 +10715,8 @@ function formatDuDessin(dessin) {
    le prenne pas pour son contrat.
    Les BULLES du menu ⋮ sont écrites dans page.html (`data-aide`) ; ici, la
    typographie française qu'un attribut n'a pas d'office, la description pour
-   un lecteur d'écran, et les flèches du clavier dans le menu.
+   un lecteur d'écran, et la bulle posée à gauche du menu (le clavier du menu
+   et ses sous-menus : 08-interface, `lierMenu`).
    =========================================================================== */
 
 const ACCUEIL = { lie: false, exemple: '' };
@@ -10639,22 +10729,25 @@ function rendreAccueil() { lierAccueil();
   const v = $('vide'); if (!v || v.hidden) return;
   const E = etatsDesFichiers(), poser = (id, niveau, html) => { const el = $(id); if (!el) return; el.className = 'vd-etat e-' + niveau; el.querySelector('span').innerHTML = html; };
   poser('vd-etat-base', E.base.niveau, esc(E.base.niveau === 'vide' ? 'aucune base pour l’instant' : E.base.dit));
-  const mod = TABLES_NORME.filter(tableModifiee).length;
-  poser('vd-etat-embarque', E.bible.niveau === 'ko' || E.normes.niveau === 'ko' ? 'ko' : 'ok', esc(lies([app.bibleNom ? 'bible : ' + app.bibleNom : 'bible embarquée', mod ? pluriel(mod, 'table') + ' de normes modifiée' + (mod > 1 ? 's' : '') : 'normes embarquées'])));
-  const nb = $('vd-n-bible'); if (nb) nb.textContent = pluriel((app.bible || []).length, 'référence');
-  const nt = $('vd-n-tables'); if (nt) nt.textContent = pluriel(TABLES_NORME.length, 'table');
+  // la bible et les normes : embarquées (ou les vôtres), comptées
+  const mod = TABLES_NORME.filter(tableModifiee).length, nb = pluriel((app.bible || []).length, 'référence'), nt = pluriel(TABLES_NORME.length, 'table');
+  poser('vd-etat-embarque', E.bible.niveau === 'ko' || E.normes.niveau === 'ko' ? 'ko' : 'ok',
+    app.bibleNom || mod ? esc(lies([app.bibleNom ? 'bible : ' + app.bibleNom + ' (' + nb + ')' : 'bible embarquée (' + nb + ')', mod ? pluriel(mod, 'table') + ' de normes modifiée' + (mod > 1 ? 's' : '') : 'normes embarquées (' + nt + ')']))
+      : `embarquées : <span id="vd-n-bible">${nb}</span>, <span id="vd-n-tables">${nt}</span> — rien à faire pour commencer`);
   const ne = $('vd-ex-n'); if (ne) ne.textContent = '(' + compteExemple() + ')';
   // l'erreur du dernier dépôt reste écrite dans son étape (en une phrase), avec de quoi la lire en entier
   const dit = (id, entree, html) => { const el = $(id); if (!el) return; el.hidden = !html; if (html) el.innerHTML = `<p>${html}</p><button class="btn lien" data-voir="${entree}">Voir ce qu’il faut</button>`; };
   const er = FICHIERS.erreurs.retest, at = FICHIERS.attente, eb = FICHIERS.erreurs.base, court = e => esc(e.court || texteBrut(e.texte));
-  dit('vd-erreur', 'retest', er ? court(er) : at ? esc(at.nom) + ' n’a pas les en-têtes du retest : j’ai deviné ses colonnes, rien n’est chargé avant «\u00a0Charger\u00a0».' : '');
+  dit('vd-erreur', 'retest', er ? court(er) : at ? esc(at.nom) + ' n’a pas les en-têtes du retest : j’ai deviné ses colonnes, rien n’est chargé avant « Charger ».' : '');
   const el = $('vd-erreur'); if (el) el.classList.toggle('att', !er && !!at);
   dit('vd-erreur-base', 'base', eb ? court(eb) : ''); }
 
 function lierAccueil() { if (ACCUEIL.lie) return; ACCUEIL.lie = true;
   const o = (id, fn) => { const e = $(id); if (e) e.addEventListener('click', fn); }, choisir = () => $('fichier').click();
-  // la zone de dépôt : un clic, ou Entrée au clavier, ouvre le choix de fichier (le dépôt lui-même est pris par `lierDepot`)
-  const zone = $('vd-zone'); if (zone) { zone.addEventListener('click', choisir); zone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choisir(); } }); }
+  // les deux zones de dépôt : un clic, ou Entrée au clavier, ouvre le choix de fichier (le dépôt lui-même est pris par
+  // `lierDepot`, qui lit le data-depot de l'étape survolée)
+  const zone = (id, fn) => { const z = $(id); if (!z) return; z.addEventListener('click', fn); z.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); } }); };
+  zone('vd-zone', choisir); zone('vd-zone-base', choisirBase);
   o('vd-modele', () => telechargerModele('retest')); o('vd-base', choisirBase); o('vd-base-aide', () => ficheFichiers('base'));
   o('vd-embarque', () => ficheFichiers('bible')); o('vd-fichiers', () => ficheFichiers()); o('be-ouvrir', choisir);
   const v = $('vide'); if (v) v.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-voir]'); if (b) ficheFichiers(b.dataset.voir); });
@@ -10662,27 +10755,25 @@ function lierAccueil() { if (ACCUEIL.lie) return; ACCUEIL.lie = true;
 
 /* Les bulles du menu : la typographie française (une espace insécable avant « : ; ? ! » — un attribut n'est pas du texte,
    `typographieVivante` ne le voit pas), et la même phrase pour un lecteur d'écran (`aria-describedby`). La bulle est UNE
-   (`#menu-bulle`, posée sur la page, pas dans le menu) : le menu peut défiler quand il ne tient pas dans l'écran (un
-   portable de 768 px, un téléphone) sans la rogner. Elle se pose à gauche du menu, à la hauteur de la ligne, après
-   300 ms de survol (on traverse le menu sans qu'elle clignote ; d'une ligne à l'autre, elle suit aussitôt), tout de suite
-   au clavier ; les flèches vont d'une ligne à l'autre. */
+   (`#menu-bulle`, posée sur la page, pas dans le menu) : le menu peut défiler quand il ne tient pas dans l'écran sans la
+   rogner. Elle se pose à gauche du menu, à la hauteur de la ligne — dans un sous-menu comme dans le menu —, après 300 ms
+   de survol (on traverse le menu sans qu'elle clignote ; d'une ligne à l'autre, elle suit aussitôt), tout de suite au
+   clavier. */
 function lierBullesDuMenu() { const m = $('menu'); if (!m) return; const boite = document.createElement('div'); boite.hidden = true; boite.id = 'menu-aides'; m.after(boite);
-  m.querySelectorAll('button[data-aide]').forEach(b => { b.dataset.aide = typo(b.dataset.aide); const s = document.createElement('span'), id = 'aide-' + b.dataset.act;
+  m.querySelectorAll('button[data-aide]').forEach(b => { b.dataset.aide = typo(b.dataset.aide); const s = document.createElement('span'), id = 'aide-' + (b.dataset.act || b.dataset.sous);
     s.id = id; s.textContent = b.dataset.aide; boite.appendChild(s); b.setAttribute('aria-describedby', id); });
   const bulle = document.createElement('div'); bulle.id = 'menu-bulle'; bulle.className = 'menu-bulle'; bulle.setAttribute('aria-hidden', 'true'); document.body.appendChild(bulle);
   let tempo = 0;
   const cacher = () => { clearTimeout(tempo); bulle.classList.remove('on'); };
-  const montrer = (b, vite) => { clearTimeout(tempo); tempo = setTimeout(() => { if (m.hidden || !b.isConnected) return;
+  const montrer = (b, vite) => { clearTimeout(tempo); tempo = setTimeout(() => { if (m.hidden || !b.isConnected || !b.offsetParent) return;
     bulle.textContent = b.dataset.aide; bulle.classList.add('on'); const r = b.getBoundingClientRect(), g = m.getBoundingClientRect(), h = bulle.offsetHeight;
-    bulle.style.right = Math.round(innerWidth - g.left + 12) + 'px'; bulle.style.top = Math.round(Math.max(8, Math.min(r.top - 4, innerHeight - h - 8))) + 'px'; }, vite ? 0 : 300); };
-  m.addEventListener('pointerover', e => { const b = e.target.closest && e.target.closest('button[data-aide]'); if (!b || e.pointerType === 'touch') return; montrer(b, bulle.classList.contains('on')); });
+    bulle.style.right = Math.round(innerWidth - g.left + 12) + 'px'; bulle.style.top = Math.round(Math.max(8, Math.min(r.top + r.height / 2 - 16, innerHeight - h - 8))) + 'px'; }, vite ? 0 : 300); };
+  m.addEventListener('pointerover', e => { const b = e.target.closest && e.target.closest('button'); if (e.pointerType === 'touch') return;
+    if (!b || !b.dataset.aide) { cacher(); return; } montrer(b, bulle.classList.contains('on')); });
   m.addEventListener('pointerleave', cacher); m.addEventListener('scroll', cacher, { passive: true });
-  m.addEventListener('focusin', e => { const b = e.target.closest && e.target.closest('button[data-aide]'); if (b && b.matches(':focus-visible')) montrer(b, true); });
+  m.addEventListener('focusin', e => { const b = e.target.closest && e.target.closest('button[data-aide]'); if (b && b.matches(':focus-visible')) montrer(b, true); else if (!b) cacher(); });
   m.addEventListener('focusout', e => { if (!m.contains(e.relatedTarget)) cacher(); });
-  new MutationObserver(() => { if (m.hidden) cacher(); }).observe(m, { attributes: true, attributeFilter: ['hidden'] });
-  m.addEventListener('keydown', e => { const xs = [...m.querySelectorAll('button[role="menuitem"]')], i = xs.indexOf(document.activeElement); if (!xs.length) return;
-    const aller = k => { e.preventDefault(); xs[(k + xs.length) % xs.length].focus(); };
-    if (e.key === 'ArrowDown') aller(i + 1); else if (e.key === 'ArrowUp') aller(i < 0 ? xs.length - 1 : i - 1); else if (e.key === 'Home') aller(0); else if (e.key === 'End') aller(xs.length - 1); }); }
+  new MutationObserver(() => { if (m.hidden) cacher(); }).observe(m, { attributes: true, attributeFilter: ['hidden'] }); }
 
 /* ───────── 08-controle.js ───────── */
 /* ===========================================================================
@@ -12452,15 +12543,21 @@ function garderLaFiche() { const I = pileInsp(), e = I.pile[I.pos], insp = $('in
    fichier tu attends. Les contrats déjà faits : je ne vois même pas où est la
    base. […] Il faut suivre l'utilisateur, le porter, lui prendre la main. »
 
-   UN SEUL ENDROIT (menu ⋮ → Vos fichiers ; « Comment ça marche » et « Voir ce
+   UN SEUL ENDROIT (menu ⋮ → Vos fichiers ; « Ce qu'elle attend » et « Voir ce
    qui est embarqué » sur l'accueil ; « Voir » dans le mot qui signale une
    erreur) pour les cinq entrées de l'outil — le retest, les contrats déjà
-   faits, la bible, les normes, les hypothèses. Chaque carte dit :
+   faits, la bible, les normes, les hypothèses. Peu de mots (le lecteur : « il
+   y a tellement de choses, je n'ai pas envie de lire ») ; chaque carte dit :
      · son ÉTAT, en un voyant : reçu et lu (vert), rien (ambre), erreur (rouge) ;
      · ce qui a été REÇU : le nom, la date, les comptes ;
      · l'ACTION : Remplacer…, Déposer…, Importer…, Régler… ;
-     · « CE QUE J'ATTENDS » : le format, TROIS LIGNES D'EXEMPLE, ce qui se passe
-       ensuite, l'erreur dite en clair — ouvert d'office quand l'entrée est vide.
+     · pour le retest et la base, ce qu'elle attend EN UNE LIGNE (la base :
+       un seul Excel, une ligne par liaison, Harness = la machine, FWD = le
+       dessin, Appareil = le contrat) et, tant qu'elle est vide, sa ZONE DE
+       DÉPÔT ;
+     · « CE QUE J'ATTENDS », replié (ouvert sur la carte qu'on vient
+       chercher) : TROIS LIGNES D'EXEMPLE, ce qui se passe ensuite en une
+       phrase, le modèle.
    Une carte reçoit aussi un fichier déposé dessus (`data-depot`).
 
    LES ERREURS ne sont plus un mot de six secondes : elles s'écrivent dans la
@@ -12739,10 +12836,13 @@ const ICONES_VF = {
   base: '<ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/>',
   bible: '<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v16H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v4H6.5A2.5 2.5 0 0 1 4 20.5M9 7h7M9 10.5h5"/>',
   normes: '<path d="M4 5h16M4 10h16M4 15h10M4 20h7"/><path d="m16 18 2 2 4-4"/>',
-  hypotheses: '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>'
+  hypotheses: '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
+  depot: '<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>'
 };
 const icoVf = k => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONES_VF[k]}</svg>`;
-const ENTREES = [['retest', 'Le retest'], ['base', 'Contrats déjà faits'], ['bible', 'Bible'], ['normes', 'Normes'], ['hypotheses', 'Hypothèses']];
+/* Les trois colonnes qui rangent la base, chacune avec ce qu'elle dit (comme sur l'accueil) */
+const CLES_BASE = [['Harness', 'la machine'], ['FWD', 'le dessin'], ['Appareil', 'le contrat']];
+const clesBaseHtml = () => `<dl class="vf-cles">${CLES_BASE.map(([k, d]) => `<div><dt>${k}</dt><dd>${d}</dd></div>`).join('')}</dl>`;
 /* L'état de chaque entrée : 'ok' (reçu et lu), 'vide' (rien : ambre), 'ko' (une erreur), et la ligne qui le dit. */
 function etatsDesFichiers() { const E = {}, V = verite(), err = k => FICHIERS.erreurs[k];
   // le retest : le contrat ouvert, l'exemple, rien
@@ -12758,25 +12858,29 @@ function etatsDesFichiers() { const E = {}, V = verite(), err = k => FICHIERS.er
     : { niveau: 'ok', dit: lies([B.nom || 'base', B.t ? 'déposée ' + quand(B.t) : '', plurielLie(I.harnais.size, 'harness'), plurielLie(I.dessins.size, 'dessin'), plurielLie(B.liaisons.length, 'liaison')]) };
   const nb = (app.bible || []).length; let tb = 0; try { const o = JSON.parse(localStorage.getItem(CLE_BIBLE) || 'null'); tb = o && o.t || 0; } catch (_) { }
   E.bible = err('bible') ? { niveau: 'ko', dit: 'le dernier fichier n’est pas une bible — ' + (app.bibleNom ? app.bibleNom : 'l’embarquée') + ' reste' }
-    : { niveau: 'ok', dit: app.bibleNom ? lies([app.bibleNom, tb ? 'importée ' + quand(tb) : '', pluriel(nb, 'référence')]) : lies(['embarquée', pluriel(nb, 'référence'), 'Référence et Bornes au minimum']) };
+    : { niveau: 'ok', dit: app.bibleNom ? lies([app.bibleNom, tb ? 'importée ' + quand(tb) : '', pluriel(nb, 'référence')]) : lies(['embarquée', pluriel(nb, 'référence')]) };
   const N = app.norme || normeVide(), lignes = TABLES_NORME.reduce((k, t) => k + (N[t] || []).length, 0), mod = typeof tableModifiee === 'function' ? TABLES_NORME.filter(tableModifiee).length : 0;
   E.normes = err('normes') ? { niveau: 'ko', dit: 'le dernier fichier n’a pas été lu comme une norme' }
-    : { niveau: 'ok', dit: mod ? lies([pluriel(mod, 'table') + ' modifiée' + (mod > 1 ? 's' : '') + ' dans ce navigateur', app.normeNom, pluriel(lignes, 'ligne')]) : lies(['embarquées', pluriel(lignes, 'ligne'), 'rien de modifié', 'un gabarit par table']) };
+    : { niveau: 'ok', dit: mod ? lies([pluriel(mod, 'table') + ' modifiée' + (mod > 1 ? 's' : '') + ' dans ce navigateur', app.normeNom, pluriel(lignes, 'ligne')]) : lies(['embarquées', pluriel(TABLES_NORME.length, 'table'), 'rien de modifié']) };
   const H = app.simu || HYPOTHESES, d = ['longueur', 'courant', 'tension', 'ambiante'].some(k => H[k] !== HYPOTHESES[k]);
   E.hypotheses = { niveau: 'ok', dit: lies([nombre(H.longueur) + ' m par fil sans longueur', nombre(H.courant) + ' A sans disjoncteur', nombre(H.tension) + ' V', nombre(H.ambiante) + ' °C', d ? 'réglées ici' : 'les valeurs de l’outil']) };
   return E; }
-/* Une carte. `o` : { cle, titre, action: [vf, libelle], liens: [[vf, libelle]], boites (html), attend: { format, apercu, ensuite: [], si, gestes: [[vf, libelle]] } } */
-function carteHtml(o, etat, focus, primaire) { const ouvert = FICHIERS.volets.has(o.cle) ? FICHIERS.volets.get(o.cle) : (etat.niveau !== 'ok' || focus === o.cle);
+/* Une carte. `o` : { cle, titre, une (html : ce qu'elle attend, en une ligne), action: [vf, libelle], zone: [vf, mot] (la zone
+   de dépôt, tant que l'entrée est vide), liens: [[vf, libelle]], boites (html), attend: { sous, format, apercu, ensuite,
+   gestes: [[vf, libelle]] } } — « Ce que j'attends » se déplie : replié d'office (la ligne et la zone de dépôt disent
+   l'essentiel), ouvert sur la carte qu'on vient chercher ; l'outil se souvient de ce qu'on ouvre ou ferme à la main */
+function carteHtml(o, etat, focus, primaire) { const ouvert = FICHIERS.volets.has(o.cle) ? FICHIERS.volets.get(o.cle) : focus === o.cle;
   const A = o.attend;
-  return `<section class="vf-carte e-${etat.niveau}${focus === o.cle ? ' vf-vise' : ''}" id="vf-${o.cle}" data-entree="${o.cle}"${o.depot ? ` data-depot="${o.depot}"` : ''} aria-labelledby="vf-t-${o.cle}">`
+  return `<section class="vf-carte e-${etat.niveau}${o.grande ? ' vf-grande' : ''}${focus === o.cle ? ' vf-vise' : ''}" id="vf-${o.cle}" data-entree="${o.cle}"${o.depot ? ` data-depot="${o.depot}"` : ''} aria-labelledby="vf-t-${o.cle}">`
     + `<div class="vf-tete"><span class="vf-ic">${icoVf(o.cle)}</span><div class="vf-titres"><h3 id="vf-t-${o.cle}">${esc(o.titre)}</h3><div class="vf-etat"><i aria-hidden="true"></i><span class="sr">${{ ok: 'reçu et lu', vide: 'rien', att: 'en attente', ko: 'erreur' }[etat.niveau]} : </span><span>${esc(etat.dit)}</span></div></div>`
     + (o.action ? `<button class="btn ${primaire ? 'cuivre' : 'papier'} vf-action" data-vf="${o.action[0]}">${esc(o.action[1])}</button>` : '') + '</div>'
+    + (o.une ? `<div class="vf-une">${o.une}</div>` : '')
+    + (o.zone && etat.niveau !== 'ok' ? `<button type="button" class="vf-zone" data-vf="${o.zone[0]}">${icoVf('depot')}<span><b>Glissez ${o.zone[1]} ici</b> ou cliquez</span></button>` : '')
     + (o.liens && o.liens.length ? `<div class="vf-liens">${o.liens.map(([vf, t]) => `<button class="btn lien" data-vf="${vf}">${esc(t)}</button>`).join('')}</div>` : '')
     + (o.boites || '')
-    + (A ? `<details class="vf-attend" data-volet="${o.cle}"${ouvert ? ' open' : ''}><summary><span class="vf-attend-t">Ce que j’attends</span><span class="vf-attend-s">${esc(A.sous || 'le format, trois lignes d’exemple, la suite')}</span>${ico('bas', 'vf-chevron')}</summary><div class="vf-corps">`
-      + `<p class="vf-format">${A.format}</p>${A.apercu || ''}${A.apres || ''}`
-      + (A.ensuite && A.ensuite.length ? `<div class="vf-ensuite"><div class="vf-st">Ensuite</div><ol>${A.ensuite.map(x => `<li>${x}</li>`).join('')}</ol></div>` : '')
-      + (A.si ? `<div class="vf-si"><div class="vf-st">Si le fichier ne convient pas</div><p>${A.si}</p></div>` : '')
+    + (A ? `<details class="vf-attend" data-volet="${o.cle}"${ouvert ? ' open' : ''}><summary><span class="vf-attend-t">Ce que j’attends</span><span class="vf-attend-s">${esc(A.sous || 'trois lignes d’exemple, un modèle')}</span>${ico('bas', 'vf-chevron')}</summary><div class="vf-corps">`
+      + (A.format ? `<p class="vf-format">${A.format}</p>` : '') + (A.apercu || '')
+      + (A.ensuite ? `<p class="vf-ensuite">${A.ensuite}</p>` : '')
       + (A.gestes && A.gestes.length ? `<div class="vf-gestes">${A.gestes.map(([vf, t]) => `<button class="btn papier" data-vf="${vf}">${esc(t)}</button>`).join('')}</div>` : '')
       + '</div></details>' : '') + '</section>'; }
 function erreurHtml(k) { const e = FICHIERS.erreurs[k]; if (!e) return '';
@@ -12785,8 +12889,7 @@ function erreurHtml(k) { const e = FICHIERS.erreurs[k]; if (!e) return '';
 function avisHtml(k) { const a = FICHIERS.avis[k]; return a ? `<div class="vf-boite vf-avis"><p>${a.texte}</p><ul>${a.liste.map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''; }
 /* Le succès d'un dépôt de base : les comptes, ce qui se passe maintenant, et la main qu'on tend. */
 function succesBaseHtml() { if (FICHIERS.succes !== 'base' || !app.references) return ''; const I = indexReferences(), R = app.references, V = verite(), p = V.length ? premierDejaFait() : null;
-  return `<div class="vf-boite vf-succes"><p><b>${esc(R.nom || 'La base')}</b> est rangée : ${lies([plurielLie(I.harnais.size, 'harness'), plurielLie(I.dessins.size, 'dessin'), plurielLie(R.liaisons.length, 'liaison')])}.</p>`
-    + `<ol><li>La base est rangée par harness et par dessin. Elle reste dans ce navigateur.</li><li>Sur la fiche de chaque équipement, «\u00a0Déjà fait\u00a0» donne les trois machines les plus proches.</li><li>Un clic compare : l’équipement, son voisinage, le dessin. On coche, on reprend, et Ctrl+Z défait.</li></ol>`
+  return `<div class="vf-boite vf-succes"><p><b>${esc(R.nom || 'La base')}</b> est rangée : ${lies([plurielLie(I.harnais.size, 'harness'), plurielLie(I.dessins.size, 'dessin'), plurielLie(R.liaisons.length, 'liaison')])}. Chaque fiche dit maintenant ce qui a déjà été fait.</p>`
     + (p ? `<div class="vf-gestes"><button class="btn cuivre" data-vf="deja-fait">Voir un équipement déjà fait</button><span class="vf-note">${esc(p.nom)} : ${Math.round(p.c.taux * 100)}\u00a0% pareil sur ${esc(p.c.harness)}</span></div>`
       : V.length ? '<p class="vf-note">Aucun équipement du contrat ouvert n’a de correspondance dans cette base (ni même part number, ni même code).</p>'
       : '<div class="vf-gestes"><button class="btn cuivre" data-vf="ouvrir">Ouvrir mon retest…</button><span class="vf-note">chaque fiche dira ce qui a déjà été fait</span></div>') + '</div>'; }
@@ -12795,45 +12898,38 @@ function baseSansHarnessHtml() { const B = FICHIERS.base; if (!B) return '';
 /* Les cinq cartes. */
 function cartesFichiers(focus) { const E = etatsDesFichiers(), V = verite(), contrat = V.length && app.nom !== NOM_EXEMPLE;
   const primaire = focus && E[focus] && E[focus].niveau !== 'ok' ? focus : E.retest.niveau !== 'ok' ? 'retest' : E.base.niveau !== 'ok' ? 'base' : '';
-  const nm = TABLES_NORME.length, nb = (app.bible || []).length;
+  const nm = TABLES_NORME.length, nb = (app.bible || []).length, id = h => `<b class="id">${h}</b>`;
+  // les aperçus : sept colonnes, celles qui comptent — le reste du retest est lu s'il est là
+  const colonnes = (M, noms) => noms.map(n => M.entetes.indexOf(n)).filter(i => i >= 0);
   const C = [
-    { cle: 'retest', titre: 'Le contrat — votre retest', depot: 'retest', action: ['ouvrir', contrat ? 'Remplacer…' : 'Ouvrir mon retest…'], liens: V.length ? [] : [['exemple', 'Pas de fichier sous la main ? Ouvrir l’exemple']],
+    { cle: 'retest', titre: 'Votre retest', depot: 'retest', grande: true, action: ['ouvrir', contrat ? 'Remplacer…' : 'Ouvrir mon retest…'], zone: ['ouvrir', 'le retest'],
+      une: `<p>Un Excel ou un CSV, <b>une ligne par fil</b>, avec au moins ${MODELE_RETEST.requises.map(id).join(POINT)}.</p>`,
+      liens: V.length ? [] : [['exemple', 'Pas de fichier sous la main ? Ouvrir l’exemple']],
       boites: attenteHtml() + erreurHtml('retest') + avisHtml('retest'),
-      attend: { format: 'Un Excel (<span class="id">.xlsx</span>, <span class="id">.xlsm</span>, <span class="id">.xls</span>) ou un CSV (séparateur <b>;</b> <b>,</b> ou tabulation), <b>une ligne par fil</b>. Les colonnes sont reconnues par leur nom et leurs alias, en-têtes dans les 30 premières lignes : '
-          + MODELE_RETEST.entetes.map(h => MODELE_RETEST.requises.includes(h) ? `<b class="id">${h}</b>` : `<span class="id">${h}</span>`).join(POINT) + '. En gras, le minimum.',
-        apercu: apercuHtml(MODELE_RETEST, { label: 'Trois lignes d’exemple du retest' }),
-        ensuite: ['Les folios se dessinent (un par FWD), chaque fil est jugé, et les fiches se remplissent.', 'Plusieurs harness dans le fichier : on vous demande lequel ouvrir ; les autres deviennent la base des contrats déjà faits.', 'Le contrat ouvert est remplacé ; Ctrl+Z le rend.'],
-        si: 'L’outil le dit ici et ne touche pas au contrat ouvert : un fichier vide, des en-têtes introuvables (il dit ce qu’il a lu et ce qu’il lui faut), des colonnes devinées (il montre ce qu’il a compris et attend «\u00a0Charger\u00a0»), des feuilles ignorées, un fichier qui n’est pas un tableau.',
-        gestes: [['modele-retest', 'Télécharger un modèle (CSV)'], ['coller', 'Coller des lignes…']] } },
-    { cle: 'base', titre: 'Les contrats déjà faits — la base', depot: 'base', action: ['base', app.references ? 'Remplacer…' : 'Déposer la base…'],
+      attend: { format: 'Les en-têtes sont reconnus par leur nom ; les autres colonnes du retest (Harness, PN, Route, FWD, longueur…) sont lues si elles sont là.',
+        apercu: apercuHtml(MODELE_RETEST, { label: 'Trois lignes d’exemple du retest', colonnes: colonnes(MODELE_RETEST, ['Device1', 'Pin1', 'Cable TG', 'Cable Tag', 'Device2', 'Pin2', 'FWD']) }),
+        ensuite: 'Ensuite, les folios se dessinent et chaque fil est jugé. Plusieurs harness : on vous demande lequel ouvrir.',
+        gestes: [['modele-retest', 'Modèle (CSV)'], ['coller', 'Coller des lignes…']] } },
+    { cle: 'base', titre: 'Contrats déjà faits', depot: 'base', grande: true, action: ['base', app.references ? 'Remplacer…' : 'Déposer la base…'], zone: ['base', 'la base'],
+      une: `<p>Le retest de tous vos contrats : un seul Excel, <b>une ligne par liaison</b>, et :</p>${clesBaseHtml()}`,
       liens: app.references ? [...(V.length && FICHIERS.succes !== 'base' ? [['deja-fait', 'Voir un équipement déjà fait']] : []), ['chercher-base', 'Chercher dans la base'], ['oublier-base', 'Oublier la base']] : [],
       boites: succesBaseHtml() + erreurHtml('base') + baseSansHarnessHtml() + avisHtml('base'),
-      attend: { format: 'Votre grande base, téléchargée une fois : un Excel ou un CSV, <b>une ligne par liaison</b>, aux <b>mêmes colonnes que le retest</b>, avec <b class="id">Harness</b> rempli (une machine = un harness). <span class="id">FWD</span> (le dessin), <span class="id">Appareil</span> (le contrat) et <span class="id">Date retest</span> sont fortement conseillés. Une feuille par harness, ou tout à la suite.',
-        apercu: apercuHtml(MODELE_BASE, { label: 'Trois lignes d’exemple de la base' }),
-        ensuite: ['La base est rangée par harness et par dessin. Elle reste dans ce navigateur.', 'Sur la fiche de chaque équipement, «\u00a0Déjà fait\u00a0» donne les trois machines les plus proches.', 'Un clic compare : l’équipement, son voisinage, le dessin. On coche, on reprend, et Ctrl+Z défait.'],
-        si: '«\u00a0base-2024.xlsx : aucune colonne Harness. Sans elle, je ne sais pas séparer les machines. Ajoutez-la, ou ouvrez ce fichier comme contrat.\u00a0» L’outil le dit ici et garde la base d’avant.',
-        gestes: [['modele-base', 'Télécharger un modèle (CSV)']] } },
-    { cle: 'bible', titre: 'La bible — barrettes, modules, connecteurs', depot: 'bible', action: ['bible', 'Importer la vôtre…'], liens: [['voir-bible', 'Voir la bible'], ...(app.bibleNom ? [['bible-outil', 'Revenir à la bible de l’outil']] : [])],
+      attend: { apercu: apercuHtml(MODELE_BASE, { label: 'Trois lignes d’exemple de la base', colonnes: colonnes(MODELE_BASE, ['Harness', 'FWD', 'Appareil', 'Device1', 'Pin1', 'Device2', 'Pin2']) }),
+        ensuite: 'Ensuite, chaque fiche dit « déjà fait sur H175, 92 % pareil » et reprend ce que vous cochez. Gardée dans ce navigateur.',
+        gestes: [['modele-base', 'Modèle (CSV)']] } },
+    { cle: 'bible', titre: 'Bible des barrettes', depot: 'bible', action: ['bible', 'Importer la vôtre…'], liens: [['voir-bible', 'Voir la bible'], ...(app.bibleNom ? [['bible-outil', 'Revenir à la bible de l’outil']] : [])],
       boites: erreurHtml('bible'),
-      attend: { sous: 'facultatif : ' + pluriel(nb, 'référence') + ' embarquées', format: `<b class="id">Référence</b> ; <b class="id">Bornes</b> au minimum, puis Famille ; Nature ; Jauge min ; Jauge max ; Intensité ; Blindage ; Note ; Mobile — dans n’importe quel ordre, reconnus à leur nom. L’outil embarque déjà ${pluriel(nb, 'référence')} (ASNE 0599, NSA937901, EN 4165…).`,
-        apercu: apercuHtml(MODELE_BIBLE, { label: 'Trois lignes d’exemple de la bible' }),
-        ensuite: ['Chaque barrette et chaque prise rechoisit sa référence, et les fiches le disent.'],
-        si: 'Sans les colonnes Référence et Bornes, l’outil dit ce qu’il a lu et garde la bible d’avant.', gestes: [['modele-bible', 'Télécharger un modèle (CSV)']] } },
-    { cle: 'normes', titre: 'Les normes — ' + pluriel(nm, 'table'), depot: 'normes', action: ['normes', 'Importer une table…'], liens: [['voir-normes', 'Voir les normes'], ...(app.normeNom ? [['normes-outil', 'Revenir à la norme embarquée']] : [])],
+      attend: { sous: 'facultatif : ' + pluriel(nb, 'référence') + ' embarquées', format: `${id('Référence')} et ${id('Bornes')} au minimum ; les autres colonnes sont reconnues à leur nom.`,
+        apercu: apercuHtml(MODELE_BIBLE, { label: 'Trois lignes d’exemple de la bible' }), gestes: [['modele-bible', 'Modèle (CSV)']] } },
+    { cle: 'normes', titre: 'Normes', depot: 'normes', action: ['normes', 'Importer une table…'], liens: [['voir-normes', 'Voir les normes'], ...(app.normeNom ? [['normes-outil', 'Revenir à la norme embarquée']] : [])],
       boites: erreurHtml('normes'),
-      attend: { sous: 'facultatif : ' + pluriel(nm, 'table') + ' embarquées', format: `Une table par bloc : une ligne de titre libre, la ligne d’en-têtes de la table (${nm} tables, un gabarit par table dans la page Normes), puis une ligne par entrée. Une ligne de même clé remplace la ligne embarquée. Un Excel peut porter plusieurs tables.`,
-        apercu: apercuHtml(MODELE_NORME, { label: 'Un exemple : la table Réseau' }),
-        ensuite: ['Chaque table reconnue est montrée avant d’être adoptée : les lignes nouvelles, celles qui remplacent.', 'Tout est rejugé, et la page Normes marque la table «\u00a0modifiée dans ce navigateur\u00a0».'],
-        si: 'Sans en-têtes reconnus, l’outil le dit et ne touche à rien : il faut les en-têtes de l’outil (les gabarits les donnent tous).', gestes: [['gabarit-reseau', 'Gabarit Réseau (CSV)'], ['gabarits', 'Tous les gabarits']] } },
-    { cle: 'hypotheses', titre: 'Les hypothèses — ce que le retest ne dit pas', action: ['hypotheses', 'Régler…'],
-      attend: { sous: 'pas un fichier : des valeurs', format: 'Rien à déposer : ce que l’outil suppose quand le retest ne le dit pas — la longueur d’un fil sans longueur, le courant d’un fil sans disjoncteur, la tension du réseau, les températures, le déclassement.',
-        ensuite: ['Les changer refait tous les calculs : chutes, intensités, disjonction, contrôle.'] } }];
+      attend: { sous: 'facultatif : ' + pluriel(nm, 'table') + ' embarquées', format: 'Une table par bloc : une ligne de titre, ses en-têtes (un gabarit par table), une ligne par entrée.',
+        apercu: apercuHtml(MODELE_NORME, { label: 'Un exemple : la table Réseau' }), gestes: [['gabarit-reseau', 'Gabarit Réseau (CSV)'], ['gabarits', 'Tous les gabarits']] } },
+    { cle: 'hypotheses', titre: 'Hypothèses', action: ['hypotheses', 'Régler…'] }];
   return C.map(o => carteHtml(o, E[o.cle], focus, primaire === o.cle)).join(''); }
-function sommaireHtml() { const E = etatsDesFichiers();
-  return `<nav class="vf-sommaire" aria-label="Les cinq entrées">${ENTREES.map(([k, t]) => `<button class="vf-puce e-${E[k].niveau}" data-vf="aller" data-entree="${k}"><i aria-hidden="true"></i>${t}</button>`).join('')}</nav>`; }
 function fichiersHtml(focus) { return tete('Ce que l’outil a reçu', 'Vos fichiers')
-  + '<p class="vf-lead">Cinq entrées. Une seule est indispensable : le retest. Les autres ont une version embarquée ou sont facultatives. Tout reste dans ce navigateur ; on peut aussi déposer un fichier sur sa carte.</p>'
-  + sommaireHtml() + `<div class="vf-cartes">${cartesFichiers(focus)}</div>`; }
+  + '<p class="vf-lead">Le retest suffit pour commencer. Glissez un fichier sur sa carte.</p>'
+  + `<div class="vf-cartes">${cartesFichiers(focus)}</div>`; }
 /* Ouvrir « Vos fichiers », sur une carte (`focus`) s'il y a lieu : elle vient sous les yeux, son volet ouvert. */
 function ficheFichiers(focus) { const deja = app.fiche && app.fiche.mode === 'fichiers', y = deja ? $('fiche-corps').scrollTop : 0;
   if (focus) FICHIERS.volets.delete(focus);
@@ -12864,10 +12960,7 @@ function lierFichiers() { if (FICHIERS.lie) return; FICHIERS.lie = true; const c
       abandonner: () => { FICHIERS.attente = null; FICHIERS.corriger = false; rendreFichiers(); },
       'oublier-erreur': () => { effacerErreur(b.dataset.entree); rendreFichiers(); },
       'base-contrat': () => { const B = FICHIERS.base; if (!B) return; FICHIERS.base = null; effacerErreur('base'); chargerContrat(B.liaisons, 'ouverture de ' + B.nom, B.nom); contratRecu(B.nom, 'retest');
-        dire(pluriel(B.liaisons.length, 'liaison') + ' de ' + guillemets(B.nom) + ', ouvert comme contrat.'); },
-      // le sommaire : la carte vient sous les yeux ; son volet s'ouvre si l'entrée attend quelque chose
-      aller: () => { const el = $('vf-' + b.dataset.entree); if (!el) return; const d = el.querySelector('details.vf-attend'); if (d && !el.classList.contains('e-ok')) d.open = true;
-        try { el.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (_) { el.scrollIntoView(); } el.classList.add('vf-montre'); setTimeout(() => el.classList.remove('vf-montre'), 1200); }
+        dire(pluriel(B.liaisons.length, 'liaison') + ' de ' + guillemets(B.nom) + ', ouvert comme contrat.'); }
     }[k];
     if (faire) { e.preventDefault(); faire(); } }); }
 // les entrées cachées de « Vos fichiers » (et de l'accueil) : la base, une norme ; la bible a la sienne (page.html)
@@ -12903,8 +12996,9 @@ function lierEntreesFichiers() { const f = (id, fn) => { const el = $(id); if (e
    (Maj+B), est le contrat en onglets : on le corrige, le plan suit. Le plan se recadre
    à côté de l'un, au-dessus de l'autre, jamais dessous. Les documents rares
    (cartouche, collage, bible) s'ouvrent dans une fiche à part.
-   Les commandes sont dans la barre de gauche (le rail) ; le menu, en bas
-   d'elle, porte ce qu'on fait une fois et ce qui se lit (le dossier ouvert).
+   Les commandes sont dans la barre de gauche (le rail) ; le menu ⋮, en haut
+   à droite, porte en peu de lignes ce qu'on fait une fois (ouvrir, vos
+   fichiers, exporter…) et dit ce qui est ouvert.
    =========================================================================== */
 
 const app = {
@@ -14312,8 +14406,36 @@ let toastT = null;
 // le mot qui passe ; `signaler` (08-fichiers) y ajoute « Voir » quand ce qu'il dit s'écrit dans « Vos fichiers »
 function dire(msg, erreur) { const t = $('toast'); t.textContent = msg; t.classList.toggle('erreur', !!erreur); t.classList.remove('action'); t.classList.add('on');
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), erreur ? 6000 : 2800); }
-function ouvrirMenu() { $('menu').hidden = false; $('btnMenu').setAttribute('aria-expanded', 'true'); const b = $('menu').querySelector('button[role="menuitem"]'); if (b) b.focus(); }
-function fermerMenu() { $('menu').hidden = true; $('btnMenu').setAttribute('aria-expanded', 'false'); }
+/* ---- le menu ⋮ : peu de lignes ; Exporter et Plus s'ouvrent EN PLACE (page.html) -----------------------------------
+   `montrerPanneau(nom)` : '' le menu, sinon un sous-menu, qui prend sa place (le menu garde sa largeur). Le clavier va à la
+   première ligne du panneau montré — au retour, à la ligne qui avait ouvert le sous-menu. */
+function ouvrirMenu() { $('menu').hidden = false; $('btnMenu').setAttribute('aria-expanded', 'true'); montrerPanneau(''); }
+// fermé, le menu revient à son panneau principal : il se rouvrira sur lui, le clavier sur sa première ligne
+function fermerMenu() { const m = $('menu'); m.hidden = true; $('btnMenu').setAttribute('aria-expanded', 'false');
+  m.querySelectorAll('.menu-panneau').forEach(p => { p.hidden = p.id !== 'mp-principal'; }); m.querySelectorAll('[data-sous]').forEach(b => b.setAttribute('aria-expanded', 'false')); }
+const panneauDuMenu = () => [...$('menu').querySelectorAll('.menu-panneau')].find(p => !p.hidden);
+function montrerPanneau(nom) { const m = $('menu'), avant = panneauDuMenu(), vise = $(nom ? 'mp-' + nom : 'mp-principal'); if (!vise) return;
+  m.querySelectorAll('.menu-panneau').forEach(p => { p.hidden = p !== vise; });
+  m.querySelectorAll('[data-sous]').forEach(b => b.setAttribute('aria-expanded', String(b.dataset.sous === nom)));
+  const bulle = $('menu-bulle'); if (bulle) bulle.classList.remove('on');
+  const ouvreur = !nom && avant && avant !== vise ? m.querySelector(`[data-sous="${avant.id.slice(3)}"]`) : null;
+  const b = ouvreur || vise.querySelector('button[role="menuitem"]:not([data-retour])'); if (b) b.focus(); }
+/* Le menu se lie une fois : le bouton ⋮, un clic sur une ligne (une action, un sous-menu, le retour), un clic ailleurs qui
+   le ferme ; au clavier, ↑ ↓ Début Fin dans le panneau montré, → ouvre un sous-menu, ← ou Échap y revient (Échap sur le
+   menu lui-même le ferme : 08, la touche globale). Tant que le menu a le clavier, les flèches ne changent pas de folio. */
+function lierMenu(actions) { const m = $('menu');
+  $('btnMenu').onclick = e => { e.stopPropagation(); m.hidden ? ouvrirMenu() : fermerMenu(); };
+  m.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button'); if (!b) return;
+    if (b.dataset.sous) montrerPanneau(b.dataset.sous);
+    else if (b.hasAttribute('data-retour')) montrerPanneau('');
+    else if (b.dataset.act) { fermerMenu(); actions[b.dataset.act](); } });
+  m.addEventListener('keydown', e => { const p = panneauDuMenu(); if (!p) return; const sous = p.id !== 'mp-principal', ici = document.activeElement;
+    const xs = [...p.querySelectorAll('button[role="menuitem"]')], i = xs.indexOf(ici), aller = k => xs[(k + xs.length) % xs.length].focus();
+    const fait = { ArrowDown: () => aller(i + 1), ArrowUp: () => aller(i < 0 ? xs.length - 1 : i - 1), Home: () => aller(0), End: () => aller(xs.length - 1),
+      ArrowRight: () => { if (ici && ici.dataset.sous) montrerPanneau(ici.dataset.sous); }, ArrowLeft: () => { if (sous) montrerPanneau(''); },
+      Escape: sous ? () => montrerPanneau('') : null }[e.key];
+    if (!fait) return; e.preventDefault(); e.stopPropagation(); fait(); });
+  document.addEventListener('click', e => { if (!e.target.closest('#menuBoite')) fermerMenu(); }); }
 function basculerBible() { if (app.fiche && app.fiche.mode === 'bible') fermerFiche(true); else ficheBible(); }
 
 /* ---- tout relier -------------------------------------------------------- */
@@ -14326,16 +14448,15 @@ function lierPanneau() {
   o('vd-ouvrir', choisirFichier); o('vd-coller', ficheColler); o('vd-exemple', exemple); o('vd-reprendre', () => { const q = annuler(); if (q) dire('Repris : ' + q + '.'); });
   o('btnBase', basculerBase); o('btnIndex', basculerIndex); o('btnCherche', () => { if (rechercheOuverte()) fermerRecherche(); else ouvrirRecherche(); });
   o('btnLiaison', nouvelleLiaison); o('btnBible', basculerBible);
-  o('btnMenu', e => { e.stopPropagation(); $('menu').hidden ? ouvrirMenu() : fermerMenu(); });
-  // le menu, en quatre blocs (page.html) : le contrat · vos fichiers · sortir · le reste. « Contrats déjà faits » mène à
-  // leur carte dans « Vos fichiers » : ce qu'on attend, l'état, le dépôt (08-fichiers)
-  const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple, fichiers: () => ficheFichiers(), references: () => ficheFichiers('base'), bible: ficheBible, normes: () => ficheNormes(), hypotheses: ficheHypotheses,
-    recapitulatif: basculerBase, nomenclature: ficheNomenclature, suivi: exporterSuivi, svg: exporterSVG, png: exporterPNG, imprimer, cartouche: ficheCartouche,
+  // le menu (page.html) : ouvrir un retest, vos fichiers (la base des contrats déjà faits y a sa carte), le récapitulatif, la
+  // nomenclature ; Exporter (SVG, PNG, imprimer, le suivi) ; Plus (coller, l'exemple, la bible, les normes, les hypothèses,
+  // le cartouche, tout effacer)
+  lierMenu({ ouvrir: choisirFichier, fichiers: () => ficheFichiers(), recapitulatif: basculerBase, nomenclature: ficheNomenclature,
+    svg: exporterSVG, png: exporterPNG, imprimer, suivi: exporterSuivi,
+    coller: ficheColler, exemple, bible: ficheBible, normes: () => ficheNormes(), hypotheses: ficheHypotheses, cartouche: ficheCartouche,
     // tout effacer : la table vide (l'accueil), et un contrat neuf — les choix de celui-ci ne survivent pas (Ctrl+Z, ou « Reprendre », rend tout)
     vider: () => { if (!confirm('Effacer tout le contrat ?')) return; histPush('tout effacer'); app.contrat = contratNeuf(); app.source = null; app.nFolios = 0; app.plan = '*'; app.nom = ''; app.cible = null; app.choisi = null;
-      fermerFiche(); fermerInspecteur(); fermerBase(); redessiner(); ajuster(); sauver(); } };
-  $('menu').addEventListener('click', e => { const b = e.target.closest('button[data-act]'); if (!b) return; fermerMenu(); actions[b.dataset.act](); });
-  document.addEventListener('click', e => { if (!e.target.closest('#menuBoite')) fermerMenu(); });
+      fermerFiche(); fermerInspecteur(); fermerBase(); redessiner(); ajuster(); sauver(); } });
   o('btnUndo', () => { const q = annuler(); if (q) dire('Annulé : ' + q + '.'); });
   o('btnAuto', revenirAutomatique);
   o('fo-prev', () => allerAuFolio(-1)); o('fo-next', () => allerAuFolio(+1));

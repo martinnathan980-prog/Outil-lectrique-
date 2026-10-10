@@ -5,21 +5,18 @@
    petit tableau en chasse fixe, les colonnes obligatoires à l'encre et soulignées.
    ═══════════════════════════════════════════════════════════════════════ */
 
-/* ─── « VOS FICHIERS » : cinq cartes ─────────────────────────────────────────────────────────────────────────────── */
+/* ─── « VOS FICHIERS » : cinq cartes, peu de mots ────────────────────────────────────────────────────────────────── */
 .vf-lead{margin:0 0 12px;font-size:var(--f-13);line-height:1.5;color:var(--t-2)}
-/* le sommaire : les cinq entrées d'un coup d'œil, chacune son voyant ; un clic y va */
-.vf-sommaire{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
-.vf-puce{display:inline-flex;align-items:center;gap:7px;height:28px;padding:0 11px 0 9px;border:1px solid var(--s-line);border-radius:999px;background:var(--s-surface);font:500 var(--f-12)/1 var(--sans);color:var(--t-2);transition:background var(--rapide),border-color var(--rapide),color var(--rapide)}
-.vf-puce:hover{background:var(--s-sunken);border-color:var(--s-line-2);color:var(--t-1)}
-.vf-puce i,.vf-etat i{width:8px;height:8px;flex:none;border-radius:50%;background:var(--ok)}
-.vf-puce.e-vide i,.vf-puce.e-att i,.vf-carte.e-vide .vf-etat i,.vf-carte.e-att .vf-etat i{background:var(--warn)}
-.vf-puce.e-ko i,.vf-carte.e-ko .vf-etat i{background:var(--ko)}
 .vf-cartes{display:flex;flex-direction:column;gap:10px}
-/* une carte : la tête (l'icône, le titre, l'état, l'action), ce qui est arrivé (une erreur, une attente, un succès), puis
-   « Ce que j'attends », replié quand l'entrée est servie */
+/* une carte : la tête (l'icône, le titre, l'état, l'action) ; pour le retest et la base, ce qu'elle attend en une ligne et
+   sa zone de dépôt ; ce qui est arrivé (une erreur, une attente, un succès) ; puis « Ce que j'attends », replié quand
+   l'entrée est servie */
 .vf-carte{border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-surface);scroll-margin-top:8px;transition:border-color var(--rapide),box-shadow var(--rapide)}
+/* le retest et la base, les deux fichiers qu'on dépose : un cadre plus franc, l'icône à l'encre */
+.vf-carte.vf-grande{border-color:var(--s-line-2)}
+.vf-grande .vf-ic{background:var(--t-1);color:var(--t-inverse)}
 .vf-carte.e-ko{border-color:color-mix(in srgb,var(--ko) 40%,var(--s-line))}
-.vf-carte.vf-vise{border-color:var(--s-line-2);box-shadow:var(--sh-1)}
+.vf-carte.vf-vise{border-color:var(--t-3);box-shadow:var(--sh-1)}
 .vf-carte.vf-montre,.vf-carte.survol-depot{border-color:var(--t-1);box-shadow:0 0 0 3px var(--accent-soft)}
 .vf-tete{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px}
 .vf-ic{width:36px;height:36px;border-radius:var(--r-1);background:var(--s-sunken);display:grid;place-items:center;color:var(--t-2)}
@@ -27,8 +24,27 @@
 .vf-titres{min-width:0}
 .vf-titres h3{margin:0;font:600 var(--f-14)/1.3 var(--titre);letter-spacing:-.01em;color:var(--t-1)}
 .vf-etat{display:flex;align-items:baseline;gap:7px;margin-top:3px;font-size:var(--f-12);line-height:1.45;color:var(--t-2);overflow-wrap:anywhere}
-.vf-etat i{transform:translateY(-1px)}
+.vf-etat i{width:8px;height:8px;flex:none;border-radius:50%;background:var(--ok);transform:translateY(-1px)}
+.vf-carte.e-vide .vf-etat i,.vf-carte.e-att .vf-etat i{background:var(--warn)}
+.vf-carte.e-ko .vf-etat i{background:var(--ko)}
 .vf-action{flex:none}
+/* ce qu'elle attend, en une ligne, sous la tête (aligné sur le titre) */
+.vf-une{display:flex;flex-direction:column;gap:8px;padding:0 14px 12px 62px;font-size:var(--f-13);line-height:1.5;color:var(--t-2)}
+.vf-une p{margin:0}
+.vf-une b{color:var(--t-1);font-weight:600}
+.vf-une .id{font:600 var(--f-12)/1 var(--mono);color:var(--t-1);background:var(--accent-soft);border-radius:4px;padding:2px 5px;white-space:nowrap}
+/* les trois colonnes qui rangent la base (comme sur l'accueil) : la colonne soulignée à l'encre, son sens dessous */
+.vf-cles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0;border:1px solid var(--s-line);border-radius:var(--r-1);overflow:hidden}
+.vf-cles div{padding:7px 10px 8px;min-width:0}
+.vf-cles div+div{border-left:1px solid var(--s-line)}
+.vf-cles dt{display:inline-block;padding-bottom:2px;font:600 var(--f-12)/1.3 var(--mono);color:var(--t-1);box-shadow:inset 0 -2px 0 var(--t-1)}
+.vf-cles dd{margin:4px 0 0;font-size:var(--f-13);line-height:1.3;color:var(--t-1)}
+/* la zone de dépôt, tant que l'entrée est vide : un cadre en pointillé, une ligne ; la carte survolée par un fichier l'allume */
+.vf-zone{display:flex;align-items:center;justify-content:center;gap:10px;width:calc(100% - 76px);min-height:48px;margin:0 14px 12px 62px;padding:8px 12px;border:1.5px dashed var(--s-line-2);border-radius:var(--r-2);background:var(--s-sunken);color:var(--t-2);font-size:var(--f-12);cursor:pointer;transition:border-color var(--rapide),background var(--rapide),color var(--rapide)}
+.vf-zone svg.ico{width:18px;height:18px;color:var(--t-1)}
+.vf-zone b{font-size:var(--f-13);color:var(--t-1);font-weight:600}
+body.depot-actif .vf-zone{border-color:var(--t-3)}
+.vf-zone:hover,.vf-zone:focus-visible,.survol-depot .vf-zone{border-color:var(--t-1);background:var(--accent-soft);color:var(--t-1);outline:none}
 .vf-liens{display:flex;flex-wrap:wrap;gap:2px 4px;padding:0 12px 10px 58px;margin-top:-4px}
 .vf-liens .btn{height:26px;padding:0 6px;font-size:var(--f-12)}
 /* ce qui est arrivé : une boîte, sa couleur d'état en trait à gauche ; elle reste jusqu'au prochain dépôt */
@@ -54,9 +70,9 @@
 .vf-col-nom{font:500 var(--f-12)/1.3 var(--mono);color:var(--t-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vf-col-ex{color:var(--t-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vf-col select{height:28px;border:1px solid var(--s-line-2);border-radius:var(--r-1);background:var(--s-surface);color:var(--t-1);font-size:var(--f-12);padding:0 6px}
-/* « Ce que j'attends » : le format, trois lignes d'exemple, ce qui se passe ensuite, l'erreur dite en clair */
+/* « Ce que j'attends » : trois lignes d'exemple, ce qui se passe ensuite en une phrase, le modèle */
 details.vf-attend{border-top:1px solid var(--s-line)}
-.vf-attend>summary{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;list-style:none;border-radius:0 0 var(--r-2) var(--r-2)}
+.vf-attend>summary{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;list-style:none;border-radius:0 0 var(--r-2) var(--r-2)}
 .vf-attend>summary::-webkit-details-marker{display:none}
 .vf-attend>summary:hover{background:var(--s-sunken)}
 .vf-attend[open]>summary{border-radius:0}
@@ -64,14 +80,11 @@ details.vf-attend{border-top:1px solid var(--s-line)}
 .vf-attend-s{flex:1;min-width:0;font-size:var(--f-12);color:var(--t-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vf-chevron{width:16px;height:16px;color:var(--t-3);transition:transform var(--rapide)}
 .vf-attend[open] .vf-chevron{transform:rotate(180deg)}
-.vf-corps{padding:2px 14px 14px;display:flex;flex-direction:column;gap:12px;font-size:var(--f-13);line-height:1.55;color:var(--t-2)}
-.vf-format{margin:0}
+.vf-corps{padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;font-size:var(--f-13);line-height:1.55;color:var(--t-2)}
+.vf-format,.vf-ensuite{margin:0}
 .vf-format b{color:var(--t-1);font-weight:600}
 .vf-format .id{font-family:var(--mono);font-size:var(--f-12);white-space:nowrap}
-.vf-st{font:600 var(--f-12)/1.3 var(--sans);color:var(--t-1);margin-bottom:4px}
-.vf-ensuite ol{margin:0;padding-left:18px}
-.vf-ensuite li{margin:2px 0}
-.vf-si p{margin:0;font-size:var(--f-12);color:var(--t-2)}
+.vf-ensuite{font-size:var(--f-12);color:var(--t-3)}
 .vf-corps .vf-gestes{margin-top:0}
 .vf-corps .vf-gestes .btn{height:32px;font-size:var(--f-12)}
 /* l'aperçu : un petit tableau, en chasse fixe ; les colonnes obligatoires à l'encre et soulignées ; il défile de côté */

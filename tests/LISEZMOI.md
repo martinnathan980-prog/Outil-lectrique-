@@ -42,8 +42,9 @@ node tests/interface.js        à la vraie souris (grand écran, téléphone) : 
                                fichier ouvert ne garde rien du contrat d'avant (profils, désignations, sexes, raccords), l'en-tête dit son
                                nom, Ctrl+Z rend l'exemple et ses choix ; dix folios aux noms de dessin (FWD) : puces abrégées, aucune ne
                                déborde, la courante en entier, la liste déroulante ; « 2 harness » ; les noms de fichier en ASCII ; un
-                               fichier à deux harness demande lequel ouvrir ; LA PRISE EN MAIN : le menu en quatre blocs et ses bulles
-                               (au clavier aussi), « Vos fichiers » (cinq cartes, leur état, trois lignes d'exemple), une erreur d'import
+                               fichier à deux harness demande lequel ouvrir ; LA PRISE EN MAIN : le menu en six lignes, Exporter et Plus
+                               en place, ses bulles (au clavier : ↓ → ← Échap), « Vos fichiers » (cinq cartes, leur état, la base en une
+                               ligne et sa zone de dépôt, trois lignes d’exemple), une erreur d’import
                                écrite dans sa carte (une compta, un fichier vide, une image), le rattrapage qui attend « Charger »
                                (« Corriger »), la base sans Harness, la base déposée et « Voir un équipement déjà fait », le collage et
                                son aperçu (ajouter au contrat), le modèle CSV — le même que modeles/modele-retest.csv

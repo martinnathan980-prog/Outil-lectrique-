@@ -1,8 +1,8 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    LE SITE — « Graphite » : un logiciel d'atelier haut de gamme (DESIGN.md)
 
-   Le plan est l'objet : une feuille blanche posée sur une table grise semée
-   de points. Autour, tout est du blanc des panneaux — la barre du haut (la
+   Le plan est l'objet : une feuille blanche posée sur une table noire semée
+   de points, dans les deux thèmes. Autour, tout est du blanc des panneaux — la barre du haut (la
    marque, la recherche, le menu), le rail à gauche, la barre des folios en
    bas — séparé de la table par un filet : rien ne brille, rien ne cadre.
    L'interface est à l'ENCRE : graphite pour le texte et les actions (le
@@ -24,7 +24,12 @@
    ═══════════════════════════════════════════════════════════════════════ */
 :root{
   /* ── LES JETONS (DESIGN.md) : le thème clair. Chaque encre passe l'AA (4,5:1) sur chaque fond où elle se pose ── */
-  --s-app:#ececef; --s-grille:#d3d3d9; --s-grille-2:#d3d3d9;          /* la table, et ses points */
+  /* LA TABLE est noire dans les deux thèmes (le lecteur : « au lieu de le mettre blanc, tu pouvais le mettre noir… c'était
+     incroyable ») : un graphite presque noir semé de points discrets, la feuille blanche posée dessus par une ombre
+     profonde. Ce qui s'écrit à même la table prend son encre (--t-table) ; les panneaux, eux, suivent le thème */
+  --s-app:#0f0f11; --s-grille:#2b2b31; --s-grille-2:#2b2b31;
+  --t-table:#ececf0; --t-table-2:#a3a3ab;                /* sur la table : 16:1 et 7:1 */
+  --sh-feuille:0 0 0 1px rgba(0,0,0,.55),0 28px 70px rgba(0,0,0,.65),0 8px 20px rgba(0,0,0,.5);
   --s-surface:#ffffff; --s-sunken:#f5f5f7; --s-hover:#f0f0f3; --s-line:#e6e6ea; --s-line-2:#d2d2d7;
   --s-flottant:#ffffff;                                  /* ce qui flotte au-dessus d'un panneau : menus, listes, bulles de graphique */
   --s-papier:#ffffff; --t-papier:#1d1d1f; --t-papier-2:#5c5c61; --s-papier-grille:#f1f1f4;   /* les dessins : toujours sur papier */
@@ -35,6 +40,7 @@
   --ok:#1d7a3c; --ok-soft:#e8f5ec; --warn:#965800; --warn-soft:#fdf2df; --ko:#c3271f; --ko-soft:#fdeceb; --info:#47474c; --info-soft:#f0f0f3;
   --courbe-chaud:#d1372e; --courbe-tiede:#c27800; --courbe-froid:#2f6fd0;   /* les courbes de disjonction, sur la surface */
   --bulle:#1d1d1f; --bulle-t:#f5f5f7;                    /* les bulles et le mot qui passe : de l'encre */
+  --sh-bulle:0 0 0 1px rgba(255,255,255,.14),0 8px 24px rgba(0,0,0,.35);   /* un filet clair la détache de la table noire */
   --voile:rgba(29,29,31,.22);                            /* derrière un calque plein écran */
   --voile-fort:rgba(29,29,31,.5);                        /* derrière une fenêtre (le relief, le dessin d'un contrat fait) */
   --route-a:#c0392b; --route-b:#1e8449;                  /* deux routes du dessin (puissance, signal) */
@@ -48,7 +54,6 @@
   --r-1:6px; --r-btn:8px; --r-2:10px; --r-3:14px;
   --sh-1:0 1px 2px rgba(0,0,0,.06),0 0 0 .5px rgba(0,0,0,.04);
   --sh-2:0 0 0 .5px rgba(0,0,0,.08),0 14px 36px rgba(0,0,0,.12),0 3px 8px rgba(0,0,0,.05);
-  --sh-feuille:0 0 0 .5px rgba(0,0,0,.08),0 22px 54px rgba(0,0,0,.09),0 4px 10px rgba(0,0,0,.04);
   --sh-panneau:-1px 0 0 var(--s-line),-12px 0 32px rgba(0,0,0,.05);
   --anneau:0 0 0 3px rgba(0,0,0,.07);                    /* l'anneau d'un champ qui a le clavier */
   --sans:"Inter","IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
@@ -73,38 +78,35 @@
   --t0:var(--f-11); --t1:var(--f-12); --t2:var(--f-13); --t3:var(--f-14); --t4:var(--f-16); --t5:var(--f-20); --t6:var(--f-28);
 }
 /* ── le thème sombre : le graphite de nuit — des surfaces charbon, l'encre claire, l'action en blanc. Les mêmes valeurs
-   deux fois : pour le réglage du système, et pour un choix explicite (data-theme) ── */
+   deux fois : pour le réglage du système, et pour un choix explicite (data-theme). La table et l'ombre de la feuille ne
+   changent pas : elles sont les mêmes dans les deux thèmes (:root) ── */
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --s-app:#111113; --s-grille:#2c2c30; --s-grille-2:#2c2c30;
   --s-surface:#1c1c1e; --s-sunken:#161618; --s-hover:#2a2a2d; --s-line:#2e2e32; --s-line-2:#3d3d42; --s-flottant:#242427;
   --t-1:#f2f2f5; --t-2:#b7b7bd; --t-3:#96969d; --t-inverse:#1d1d1f;
   --accent:#f2f2f5; --accent-2:#ffffff; --accent-soft:#2f2f33; --accent-line:#4a4a50; --on-accent:#1d1d1f;
   --ok:#3ccf6e; --ok-soft:#16271c; --warn:#f0a53a; --warn-soft:#2e2413; --ko:#ff6b5f; --ko-soft:#351a18; --info:#b7b7bd; --info-soft:#26262a;
   --courbe-chaud:#ff6b6b; --courbe-tiede:#ffb224; --courbe-froid:#7aa7ff;
-  --bulle:#f2f2f5; --bulle-t:#1d1d1f; --voile:rgba(0,0,0,.5); --voile-fort:rgba(0,0,0,.65);
+  --bulle:#f2f2f5; --bulle-t:#1d1d1f; --sh-bulle:0 0 0 .5px rgba(0,0,0,.25),0 8px 24px rgba(0,0,0,.5); --voile:rgba(0,0,0,.5); --voile-fort:rgba(0,0,0,.65);
   --p-fond:#1c1c1e; --p-fond-2:#2a2a2d; --p-ligne:#2e2e32; --p-hover:#2a2a2d;
   --p-t1:#f2f2f5; --p-t2:#b7b7bd; --p-t3:#96969d;
   --p-accent:#f2f2f5; --p-ok:#3ccf6e; --p-warn:#f0a53a; --p-ko:#ff6b5f;
   --route-a:#ff6b5e; --route-b:#3fd18a; --route-voile:rgba(255,255,255,.3);
   --sh-1:0 1px 2px rgba(0,0,0,.4); --sh-2:0 0 0 .5px rgba(255,255,255,.06),0 14px 36px rgba(0,0,0,.5),0 3px 8px rgba(0,0,0,.35);
-  --sh-feuille:0 0 0 .5px rgba(0,0,0,.4),0 22px 54px rgba(0,0,0,.5),0 4px 10px rgba(0,0,0,.35);
   --sh-panneau:-1px 0 0 var(--s-line),-12px 0 32px rgba(0,0,0,.3);
   --anneau:0 0 0 3px rgba(255,255,255,.12);
   color-scheme:dark } }
 :root[data-theme="dark"]{
-  --s-app:#111113; --s-grille:#2c2c30; --s-grille-2:#2c2c30;
   --s-surface:#1c1c1e; --s-sunken:#161618; --s-hover:#2a2a2d; --s-line:#2e2e32; --s-line-2:#3d3d42; --s-flottant:#242427;
   --t-1:#f2f2f5; --t-2:#b7b7bd; --t-3:#96969d; --t-inverse:#1d1d1f;
   --accent:#f2f2f5; --accent-2:#ffffff; --accent-soft:#2f2f33; --accent-line:#4a4a50; --on-accent:#1d1d1f;
   --ok:#3ccf6e; --ok-soft:#16271c; --warn:#f0a53a; --warn-soft:#2e2413; --ko:#ff6b5f; --ko-soft:#351a18; --info:#b7b7bd; --info-soft:#26262a;
   --courbe-chaud:#ff6b6b; --courbe-tiede:#ffb224; --courbe-froid:#7aa7ff;
-  --bulle:#f2f2f5; --bulle-t:#1d1d1f; --voile:rgba(0,0,0,.5); --voile-fort:rgba(0,0,0,.65);
+  --bulle:#f2f2f5; --bulle-t:#1d1d1f; --sh-bulle:0 0 0 .5px rgba(0,0,0,.25),0 8px 24px rgba(0,0,0,.5); --voile:rgba(0,0,0,.5); --voile-fort:rgba(0,0,0,.65);
   --p-fond:#1c1c1e; --p-fond-2:#2a2a2d; --p-ligne:#2e2e32; --p-hover:#2a2a2d;
   --p-t1:#f2f2f5; --p-t2:#b7b7bd; --p-t3:#96969d;
   --p-accent:#f2f2f5; --p-ok:#3ccf6e; --p-warn:#f0a53a; --p-ko:#ff6b5f;
   --route-a:#ff6b5e; --route-b:#3fd18a; --route-voile:rgba(255,255,255,.3);
   --sh-1:0 1px 2px rgba(0,0,0,.4); --sh-2:0 0 0 .5px rgba(255,255,255,.06),0 14px 36px rgba(0,0,0,.5),0 3px 8px rgba(0,0,0,.35);
-  --sh-feuille:0 0 0 .5px rgba(0,0,0,.4),0 22px 54px rgba(0,0,0,.5),0 4px 10px rgba(0,0,0,.35);
   --sh-panneau:-1px 0 0 var(--s-line),-12px 0 32px rgba(0,0,0,.3);
   --anneau:0 0 0 3px rgba(255,255,255,.12);
   color-scheme:dark }
@@ -176,7 +178,7 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
 .bascule[aria-pressed="true"]:hover:not(:disabled){background:color-mix(in srgb,var(--t-1) 12%,var(--s-surface));color:var(--t-1)}
 /* la bulle : le nom et le raccourci, à côté de l'icône, après un instant de survol ou au clavier */
 .bulle{position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);white-space:nowrap;pointer-events:none;z-index:5;
-  background:var(--bulle);color:var(--bulle-t);border-radius:var(--r-1);padding:4px 9px;font-size:var(--f-12);font-weight:500;line-height:1.5;letter-spacing:0;text-transform:none;font-family:var(--sans);
+  background:var(--bulle);color:var(--bulle-t);box-shadow:var(--sh-bulle);border-radius:var(--r-1);padding:4px 9px;font-size:var(--f-12);font-weight:500;line-height:1.5;letter-spacing:0;text-transform:none;font-family:var(--sans);
   display:flex;align-items:center;gap:8px;opacity:0;transition:opacity var(--rapide)}
 .bulle::before{content:"";position:absolute;right:100%;top:50%;margin-top:-4px;border:4px solid transparent;border-right-color:var(--bulle)}
 .bulle kbd{font-size:var(--f-11);color:var(--bulle-t);opacity:.75;border:1px solid currentColor;border-radius:3px;padding:0 4px;line-height:1.25}
@@ -198,12 +200,14 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
 .segment button:hover{color:var(--t-1)}
 .segment button[aria-pressed="true"]{background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-1)}
 
-/* ─── LA TABLE ET LA FEUILLE ────────────────────────────────────────────── */
-#planche{position:fixed;top:calc(var(--entete) + var(--sur-h));left:0;right:0;bottom:0;overflow:hidden;touch-action:none;cursor:grab;
+/* ─── LA TABLE ET LA FEUILLE ──────────────────────────────────────────────
+   La table est noire dans les deux thèmes, semée d'un point tous les 24 px ; ce qui défile à même la table (l'accueil
+   trop haut) a ses barres sombres */
+#planche{position:fixed;top:calc(var(--entete) + var(--sur-h));left:0;right:0;bottom:0;overflow:hidden;touch-action:none;cursor:grab;color-scheme:dark;
   background-color:var(--s-app);background-image:radial-gradient(circle at 1px 1px,var(--s-grille) 1px,transparent 1.4px);background-size:24px 24px}
 #planche.tient{cursor:grabbing}
 #svg{position:absolute;inset:0;width:100%;height:100%;display:block}
-/* la feuille est dessinée par le moteur ; sous elle, une ombre large et légère */
+/* la feuille est dessinée par le moteur ; sous elle, une ombre profonde qui la pose sur la table noire */
 #ombre{position:absolute;left:0;top:0;pointer-events:none;display:none;box-shadow:var(--sh-feuille)}
 #svg .comp,#svg .cab{cursor:pointer}
 #svg .comp{cursor:grab}
@@ -266,29 +270,40 @@ body.cherche .recherche .rc-fermer{display:inline}
 .q-item .des{color:var(--t-2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--f-12)}
 .q-item .cpt{color:var(--t-3);font:400 var(--f-11) var(--mono);white-space:nowrap}
 .q-rien{padding:10px 12px;color:var(--t-2);font-size:var(--f-12)}
-/* le menu : sous son bouton, ce qu'on fait une fois ; en tête, ce qui est ouvert (à lire) */
-/* plus haut que l'écran (un portable de 768 px, un téléphone), il défile ; ses bulles sont posées sur la page, pas dedans */
-.menu{position:absolute;top:calc(100% + 8px);right:0;width:288px;color:var(--t-1);background:var(--s-flottant);border:1px solid var(--s-line);border-radius:12px;box-shadow:var(--sh-2);padding:6px;z-index:40;
+/* LE MENU ⋮ : sous son bouton, peu de lignes. En tête, ce qui est ouvert (à lire) ; puis l'essentiel, une icône au trait
+   et un mot par ligne ; deux sous-menus (Exporter, Plus) s'ouvrent EN PLACE — le panneau glisse, une ligne « ‹ » ramène —,
+   si bien que le menu garde sa largeur et ne déborde jamais de l'écran */
+.menu{position:absolute;top:calc(100% + 8px);right:0;width:272px;color:var(--t-1);background:var(--s-flottant);border:1px solid var(--s-line);border-radius:12px;box-shadow:var(--sh-2);padding:5px;z-index:40;
   max-height:calc(100vh - var(--entete) - var(--sur-h) - 16px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
-.menu button{display:flex;width:100%;align-items:center;gap:12px;height:32px;padding:0 12px;border-radius:var(--r-1);background:none;border:none;text-align:left;color:var(--t-1);font-size:var(--f-13);font-weight:400}
+.menu-panneau{animation:menu-glisse var(--rapide) ease-out}
+.menu-panneau#mp-principal{animation-name:menu-revient}
+@keyframes menu-glisse{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+@keyframes menu-revient{from{opacity:.4;transform:translateX(-6px)}to{opacity:1;transform:none}}
+.menu button{display:flex;width:100%;align-items:center;gap:10px;min-height:32px;padding:0 10px;border-radius:var(--r-1);background:none;border:none;text-align:left;color:var(--t-1);font-size:var(--f-13);font-weight:400;line-height:1.3}
 .menu button:hover,.menu button:focus-visible{background:var(--s-hover);outline:none}
-/* ses quatre blocs (le contrat · vos fichiers · sortir · le reste), chacun nommé d'un mot, séparés d'un filet */
-.menu-bloc+.menu-bloc{border-top:1px solid var(--s-line);margin-top:4px;padding-top:2px}
-.menu .ctx+.menu-bloc{border-top:1px solid var(--s-line);margin-top:4px;padding-top:2px}
-.menu-t{padding:8px 12px 3px;font:500 var(--f-11)/1.3 var(--sans);color:var(--t-3)}
-/* sa bulle, en trois temps : ce que la ligne fait, ce qu'elle attend, ce qui se passe ensuite — UNE bulle sur la page
-   (08-accueil, `lierBullesDuMenu`), à gauche du menu, à la hauteur de la ligne, après un temps de survol, tout de suite au
-   clavier ; 320 px */
-.menu-bulle{position:fixed;top:0;right:0;z-index:45;width:320px;padding:10px 12px;border-radius:var(--r-2);background:var(--bulle);color:var(--bulle-t);
-  font:400 var(--f-12)/1.5 var(--sans);text-align:left;box-shadow:var(--sh-2);pointer-events:none;opacity:0;transform:translateX(4px);visibility:hidden;
+.menu button>svg.ico{width:16px;height:16px;color:var(--t-2)}
+.menu-l{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* « Vos fichiers » dit, en petit, tout ce qu'on y dépose — la base des contrats déjà faits comprise */
+.menu button.menu-2l{min-height:44px;padding-top:5px;padding-bottom:5px}
+.menu-l small{display:block;margin-top:1px;font-size:var(--f-11);color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.menu .menu-chevron{width:14px;height:14px;color:var(--t-3)}
+.menu button[aria-expanded="true"]{background:var(--accent-soft)}
+/* la ligne qui ramène au menu : le nom du sous-menu, en tête, un filet dessous */
+.menu button.menu-retour{font-weight:600;color:var(--t-1);margin-bottom:2px}
+.menu button.menu-retour>svg.ico{color:var(--t-1)}
+/* les blocs, séparés d'un filet */
+.menu-bloc+.menu-bloc,.menu .ctx+.menu-bloc,.menu-retour+.menu-bloc{border-top:1px solid var(--s-line);margin-top:4px;padding-top:4px}
+/* sa bulle : ce que la ligne fait, en une ou deux phrases — UNE bulle sur la page (08-accueil, `lierBullesDuMenu`), à
+   gauche du menu, à la hauteur de la ligne, après un temps de survol, tout de suite au clavier */
+.menu-bulle{position:fixed;top:0;right:0;z-index:45;width:max-content;max-width:280px;padding:8px 11px;border-radius:var(--r-2);background:var(--bulle);color:var(--bulle-t);
+  font:400 var(--f-12)/1.5 var(--sans);text-align:left;box-shadow:var(--sh-bulle);pointer-events:none;opacity:0;transform:translateX(4px);visibility:hidden;
   transition:opacity var(--rapide),transform var(--rapide),visibility 0s linear var(--rapide)}
 .menu-bulle.on{opacity:1;transform:none;visibility:visible;transition:opacity var(--rapide),transform var(--rapide)}
 @media (max-width:700px){ .menu-bulle{display:none} }
-.menu button.danger{color:var(--ko)}
-.menu button.danger:hover{background:var(--ko-soft)}
-.menu hr{border:none;border-top:1px solid var(--s-line);margin:4px 8px}
+.menu button.danger,.menu button.danger>svg.ico{color:var(--ko)}
+.menu button.danger:hover,.menu button.danger:focus-visible{background:var(--ko-soft)}
 .menu .raccourci{margin-left:auto;color:var(--t-3);font-size:var(--f-11);font-family:var(--mono)}
-.menu .ctx{padding:8px 12px 4px;min-width:0}
+.menu .ctx{padding:7px 10px 6px;min-width:0}
 #ctx-nom{font:600 var(--f-14)/1.3 var(--titre);letter-spacing:-.01em;overflow-wrap:anywhere}
 #ctx-txt{color:var(--t-2);font-size:var(--f-12);line-height:1.4;margin-top:2px}
 .sauve{color:var(--t-3);font-size:var(--f-11);white-space:nowrap;display:flex;align-items:center;gap:6px;margin-top:3px}
@@ -354,10 +369,10 @@ body.fiche-ouverte #folios{right:var(--fiche-l)}
 /* le folio qu'on attend : le moteur le place au loin (un Worker, 08) ; au milieu de la place libre du plan, le point qui
    respire et un mot, rien de plus — l'écran reste libre dessous ; la puce du folio qui se calcule respire aussi (un point
    sous son chiffre, qui ne la fait pas grandir) */
-.attente{position:absolute;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:0 24px;text-align:center;pointer-events:none;color:var(--t-1);font-size:var(--f-14);font-weight:500;line-height:1.35}
-.attente i{width:10px;height:10px;border-radius:50%;background:var(--accent);margin-bottom:6px;animation:respire 1.6s ease-in-out infinite}
+.attente{position:absolute;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:0 24px;text-align:center;pointer-events:none;color:var(--t-table);font-size:var(--f-14);font-weight:500;line-height:1.35}
+.attente i{width:10px;height:10px;border-radius:50%;background:var(--t-table);margin-bottom:6px;animation:respire 1.6s ease-in-out infinite}
 .attente b{font-weight:500}
-.attente small{font-size:var(--f-12);font-weight:400;color:var(--t-2);font-variant-numeric:tabular-nums}
+.attente small{font-size:var(--f-12);font-weight:400;color:var(--t-table-2);font-variant-numeric:tabular-nums}
 .chip.attend::after{content:'';position:absolute;left:50%;bottom:3px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--p-accent);animation:respire 1.6s ease-in-out infinite}
 /* le folio retouché à la main : un mot, le bouton rend la main au moteur */
 #folios .rd.auto{width:auto;display:inline-flex;align-items:center;gap:6px;padding:0 10px 0 8px;color:var(--p-t1);background:var(--accent-soft);font:500 var(--f-12) var(--sans)}
@@ -644,15 +659,16 @@ table.simu-tab{border-collapse:separate;border-spacing:0;font-size:var(--f-12);m
 
 /* ─── L'ACCUEIL : la table vide, et dessus une feuille de garde qui prend la main ─────────────
    Le premier lancement montre l'accueil, pas l'exemple. La page est un folio — le cadre gradué (1 à 6, A à D), un petit
-   schéma qui se trace — qui dit ce que l'outil attend, dans l'ordre : 1. VOTRE RETEST, indispensable (le cadre à
-   l'encre ; les quatre colonnes obligatoires soulignées dans un aperçu de trois lignes ; la zone de dépôt ; un modèle à
-   télécharger) ; 2. VOS CONTRATS DÉJÀ FAITS, une fois ; 3. BIBLE ET NORMES, embarquées. En bas, l'exemple et le
-   collage pour qui n'a pas de fichier. Une feuille claire dans les deux thèmes (`.ilot-clair`), comme un folio. */
+   schéma qui se trace — qui dit ce que l'outil attend, en peu de mots : 1. VOTRE RETEST, indispensable (le cadre à
+   l'encre ; les quatre colonnes obligatoires soulignées dans un aperçu de trois lignes ; la zone de dépôt) et 2. VOS
+   CONTRATS DÉJÀ FAITS, la grande base, côte à côte et de même taille (ce qu'elle attend en une ligne, sa zone de dépôt) ;
+   3. BIBLE ET NORMES, embarquées, en une ligne. En bas, l'exemple et le collage pour qui n'a pas de fichier. Une feuille
+   claire dans les deux thèmes (`.ilot-clair`), posée sur la table noire comme un folio, avec son ombre. */
 .vide{position:absolute;inset:0;overflow:auto;display:grid;place-items:center;padding:24px 24px 24px calc(var(--rail) + 24px);z-index:5;container:accueil/inline-size}
 /* un document ouvert à côté (« Vos fichiers », le collage) : l'accueil se centre dans la place qui reste, il ne passe pas dessous */
 body.fiche-ouverte .vide{right:var(--fiche-l)}
-.vd{width:min(1100px,100%);display:grid;grid-template-columns:18px minmax(0,1fr) 18px;grid-template-rows:18px auto 18px;
-  background:var(--s-surface);border:1px solid var(--s-line-2);border-radius:var(--r-1);box-shadow:var(--sh-2);animation:vd-pose .35s ease-out both}
+.vd{width:min(1060px,100%);display:grid;grid-template-columns:18px minmax(0,1fr) 18px;grid-template-rows:18px auto 18px;
+  background:var(--s-surface);border-radius:var(--r-1);box-shadow:var(--sh-feuille);animation:vd-pose .35s ease-out both}
 @keyframes vd-pose{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 /* la graduation du cadre : des chiffres en haut et en bas, des lettres à gauche et à droite */
 .vd-reg{display:flex;justify-content:space-around;align-items:center;font:500 var(--f-12)/1 var(--sans);color:var(--t-3);letter-spacing:.08em}
@@ -690,21 +706,22 @@ body.fiche-ouverte .vide{right:var(--fiche-l)}
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 14 4 9l5-5'/%3E%3Cpath d='M4 9h10a6 6 0 0 1 0 12h-3'/%3E%3C/svg%3E") center/contain no-repeat;
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 14 4 9l5-5'/%3E%3Cpath d='M4 9h10a6 6 0 0 1 0 12h-3'/%3E%3C/svg%3E") center/contain no-repeat}
 .vd-reprendre:hover{background:color-mix(in srgb,var(--accent) 12%,var(--s-surface))}
-/* les trois étapes : la première, indispensable, plus large et cadrée à l'encre */
-.vd-etapes{display:grid;grid-template-columns:minmax(0,1.42fr) minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:stretch}
+/* les étapes : le retest et la base côte à côte, de même taille (le retest, indispensable, cadré à l'encre) ; la bible et
+   les normes en une ligne dessous */
+.vd-etapes{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:stretch}
 .vd-etape{display:flex;flex-direction:column;gap:10px;min-width:0;padding:16px 18px 18px;border:1px solid var(--s-line-2);border-radius:var(--r-2);background:var(--s-surface);transition:border-color var(--rapide),box-shadow var(--rapide)}
 .vd-etape.vd-un{border-color:var(--t-1);box-shadow:0 0 0 3px var(--accent-soft)}
+.vd-etape.vd-deux{border-color:var(--t-3)}
 /* une étape survolée par un fichier qu'on glisse : c'est elle qui le recevra */
 .vd-etape.survol-depot{border-color:var(--t-1);box-shadow:0 0 0 4px color-mix(in srgb,var(--t-1) 14%,transparent)}
 .vd-num{display:flex;align-items:center;gap:8px;font:500 var(--f-12)/1 var(--sans);color:var(--t-3)}
 .vd-num i{width:22px;height:22px;flex:none;border-radius:50%;display:grid;place-items:center;font:600 var(--f-12)/1 var(--sans);font-style:normal;border:1px solid var(--s-line-2);color:var(--t-1)}
-.vd-un .vd-num i{background:var(--t-1);border-color:var(--t-1);color:var(--t-inverse)}
+.vd-un .vd-num i,.vd-deux .vd-num i{background:var(--t-1);border-color:var(--t-1);color:var(--t-inverse)}
 .vd-etape h2{margin:0;font:600 var(--f-16)/1.25 var(--titre);letter-spacing:-.01em;color:var(--t-1)}
 .vd-etape p{margin:0;font-size:var(--f-13);line-height:1.5;color:var(--t-2)}
 .vd-etape p b{color:var(--t-1);font-weight:600}
 /* les colonnes obligatoires, nommées dans la phrase : un identifiant à l'encre, sur un fond doux */
 .vd-req{font:600 var(--f-12)/1 var(--mono);color:var(--t-1);background:var(--accent-soft);border-radius:4px;padding:2px 5px;white-space:nowrap}
-.vd-id{font:500 var(--f-12)/1 var(--mono);color:var(--t-1)}
 /* l'aperçu : trois lignes d'un retest, les quatre colonnes obligatoires à l'encre et soulignées, les autres en retrait */
 .vd-apercu{border:1px solid var(--s-line);border-radius:var(--r-1);overflow:hidden}
 .vd-apercu table{border-collapse:collapse;width:100%;font:400 var(--f-11)/1.5 var(--mono)}
@@ -713,12 +730,20 @@ body.fiche-ouverte .vide{right:var(--fiche-l)}
 .vd-apercu td{padding:2px 7px;border-bottom:1px solid var(--s-line);white-space:nowrap;color:var(--t-3)}
 .vd-apercu td.req{color:var(--t-1)}
 .vd-apercu tbody tr:last-child td{border-bottom:none}
-.vd-etape .vd-facult{margin:0;padding:6px 8px;border-top:1px solid var(--s-line);background:var(--s-sunken);font:400 var(--f-11)/1.45 var(--sans);color:var(--t-3)}
-/* la zone de dépôt : un cadre en pointillé, une ligne ; elle s'allume quand un fichier arrive */
-.vd-zone{display:flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:10px 12px;border:1.5px dashed var(--s-line-2);border-radius:var(--r-2);background:var(--s-sunken);color:var(--t-2);text-align:center;font-size:var(--f-12);cursor:pointer;transition:border-color var(--rapide),background var(--rapide),color var(--rapide)}
+/* la base : les trois colonnes qui rangent tout, chacune avec ce qu'elle dit — trois cases de même largeur, la colonne
+   en chasse fixe soulignée à l'encre, son sens dessous */
+.vd-cles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0;border:1px solid var(--s-line);border-radius:var(--r-1);overflow:hidden}
+.vd-cles div{padding:8px 10px 9px;min-width:0}
+.vd-cles div+div{border-left:1px solid var(--s-line)}
+.vd-cles dt{display:inline-block;padding-bottom:2px;font:600 var(--f-12)/1.3 var(--mono);color:var(--t-1);box-shadow:inset 0 -2px 0 var(--t-1)}
+.vd-cles dd{margin:5px 0 0;font-size:var(--f-13);line-height:1.3;color:var(--t-1)}
+.vd-etape .vd-ensuite{font-size:var(--f-12);color:var(--t-3)}
+/* la zone de dépôt : un cadre en pointillé, une ligne ; un fichier qui arrive les éclaire, celle qu'il survole s'allume */
+.vd-zone{display:flex;align-items:center;justify-content:center;gap:10px;min-height:52px;margin-top:auto;padding:10px 12px;border:1.5px dashed var(--s-line-2);border-radius:var(--r-2);background:var(--s-sunken);color:var(--t-2);text-align:center;font-size:var(--f-12);cursor:pointer;transition:border-color var(--rapide),background var(--rapide),color var(--rapide)}
 .vd-zone svg.ico{width:20px;height:20px;color:var(--t-1)}
 .vd-zone b{font-size:var(--f-13);color:var(--t-1);font-weight:600}
-.vd-zone:hover,.vd-zone:focus-visible,body.depot-actif .vd-un .vd-zone,.vd-un.survol-depot .vd-zone{border-color:var(--t-1);background:var(--accent-soft);color:var(--t-1)}
+body.depot-actif .vd-zone{border-color:var(--t-3)}
+.vd-zone:hover,.vd-zone:focus-visible,.survol-depot .vd-zone{border-color:var(--t-1);background:var(--accent-soft);color:var(--t-1)}
 /* l'état d'une entrée : un point de sa couleur (vert : reçu, ambre : rien, rouge : une erreur) et ce qu'il dit */
 .vd-etat{display:flex;align-items:baseline;gap:8px;font-size:var(--f-12);line-height:1.45;color:var(--t-2)}
 .vd-etat i{width:8px;height:8px;flex:none;border-radius:50%;background:var(--warn);transform:translateY(-1px)}
@@ -729,10 +754,13 @@ body.fiche-ouverte .vide{right:var(--fiche-l)}
 .vd-etape .vd-erreur p{margin:0 0 2px;font-size:var(--f-12);color:var(--t-1)}
 .vd-erreur .id{font-family:var(--mono);font-size:var(--f-11)}
 .vd-erreur .btn{height:26px;padding:0 4px;font-size:var(--f-12)}
-/* les gestes au pied de l'étape ; l'état d'une entrée juste au-dessus d'eux (ils descendent ensemble) */
-.vd-actions{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-top:auto;padding-top:4px}
-.vd-etape .vd-etat{margin-top:auto;padding-top:4px}
-.vd-etat~.vd-actions{margin-top:0}
+/* les gestes au pied de l'étape */
+.vd-actions{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding-top:2px}
+/* 3. la bible et les normes : une ligne — le numéro, le titre, l'état, le geste */
+.vd-etape.vd-trois{grid-column:1/-1;flex-direction:row;align-items:center;gap:12px;padding:8px 10px 8px 18px}
+.vd-trois h2{font-size:var(--f-14);white-space:nowrap}
+.vd-trois .vd-etat{flex:1;min-width:0}
+.vd-trois .btn{height:30px;font-size:var(--f-12)}
 /* le bas : pour qui n'a pas de fichier, l'exemple et le collage ; et où tout se retrouve ensuite */
 .vd-bas{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:18px;padding-top:16px;border-top:1px solid var(--s-line);font-size:var(--f-13);color:var(--t-2)}
 .vd-ex-n{color:var(--t-3);font-weight:400}
@@ -748,18 +776,18 @@ body.fiche-ouverte .vide{right:var(--fiche-l)}
   .vd-etape{padding:14px 16px 16px;gap:9px}
   .vd-bas{margin-top:14px;padding-top:12px}
 }
-/* moins de place (une fenêtre étroite, un document ouvert à côté) : les deux étapes facultatives passent sous la
-   première ; plus étroit encore, une colonne, et le schéma s'efface */
-@container accueil (max-width:1000px){
-  .vd-etapes{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-  .vd-un{grid-column:1/-1}
+/* un document ouvert à côté : l'aperçu du retest garde ses quatre colonnes obligatoires */
+@container accueil (max-width:960px){
+  .vd-apercu th:is(:nth-child(3),:nth-child(4)),.vd-apercu td:is(:nth-child(3),:nth-child(4)){display:none}
 }
-@container accueil (max-width:620px){
+/* plus étroit (une fenêtre étroite) : une colonne, et le schéma s'efface */
+@container accueil (max-width:720px){
   .vd-etapes{grid-template-columns:minmax(0,1fr)}
   .vd-tete{grid-template-columns:minmax(0,1fr)}
   .vd-dessin{display:none}
   .vd-apercu{overflow-x:auto}
   .vd-plus{margin-left:0}
+  .vd-etape.vd-trois{flex-wrap:wrap}
 }
 
 /* le dépôt : la fenêtre entière devient la cible — un voile, et au milieu une carte en pointillé qui dit quoi faire ;
@@ -774,7 +802,7 @@ body.depot-actif:has(#vide:not([hidden])) .depot{display:none}
 
 /* ─── LE MOT QUI PASSE : sous la barre du haut, au milieu de ce qui reste du plan ─── */
 #toast{position:fixed;left:calc(var(--rail) + (100vw - var(--rail)) / 2);top:calc(var(--entete) + var(--sur-h) + 12px);transform:translateX(-50%) translateY(-6px);padding:9px 14px;border-radius:var(--r-2);z-index:35;max-width:min(60vw,560px);
-  background:var(--bulle);color:var(--bulle-t);box-shadow:var(--sh-2);font-size:var(--f-13);font-weight:500;line-height:1.4;opacity:0;pointer-events:none;transition:opacity var(--moyen),transform var(--moyen)}
+  background:var(--bulle);color:var(--bulle-t);box-shadow:var(--sh-bulle);font-size:var(--f-13);font-weight:500;line-height:1.4;opacity:0;pointer-events:none;transition:opacity var(--moyen),transform var(--moyen)}
 #toast.on{opacity:1;transform:translateX(-50%)}
 body.insp-ouvert #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--insp-l)) / 2)}
 body.fiche-ouverte #toast{left:max(calc(var(--rail) + 16px + min(60vw,560px) / 2),calc(var(--rail) + (100vw - var(--rail) - var(--fiche-l)) / 2))}
@@ -875,7 +903,7 @@ body.fiche-ouverte #toast{left:max(calc(var(--rail) + 16px + min(60vw,560px) / 2
   /* la barre étroite au doigt : les puces suffisent à changer de folio, les flèches laissent leur place à la bande */
   @container (max-width:480px){ #fo-prev,#fo-next{display:none} }
   .rond{width:40px;height:40px}
-  .menu button{height:44px}
+  .menu button{min-height:44px}
   .segment button,.re-vues button{height:36px}
   .btn{min-height:40px}
   #entete .fi-etat{height:36px}

@@ -109,16 +109,19 @@ function titre(t) { console.log('\n' + t); }
   ok('ses deux dédoublements sont deux barrettes à poser', essai.barrettes === 2, essai.barrettes + ' trouvée(s)');
   ok('aucun croisement évitable', essai.ev === 0, essai.cr + ' croisement(s), dont ' + essai.ev + ' évitable(s)');
   /* Le numéro de fil est l'information numéro un d'un câbleur : il doit être
-     écrit, et jamais barré par un fil ni collé à un voisin. Un numéro
-     debout (le long d'un vertical) occupe une boîte tournée. */
+     écrit, et jamais barré par un fil ni collé à un voisin. Il s'écrit pile
+     sur son fil (son milieu sur l'axe du trait) : la ligne de base tombe sous
+     le trait, et la boîte se mesure depuis elle. Un numéro debout (sur un
+     vertical) occupe une boîte tournée, et son propre vertical passe derrière
+     lui : ce n'est pas une barre. */
   const nums = await page.evaluate(() => { atelier.essai(); peindre(); const W = app.dessin.fils;
     const avecNom = W.filter(w => !w.shunt && String(w.cable || '').trim()).length;   // un shunt n'a pas de segment où écrire
     const el = Array.from(document.querySelectorAll('#svg .filnum'));
     const boites = el.map(t => { const x = +t.getAttribute('x'), y = +t.getAttribute('y'); const l = t.textContent.length * 0.60 * 6;
       return t.getAttribute('transform') ? { x0: x - 5.6, x1: x, y0: y - l / 2, y1: y + l / 2 } : { x0: x - l / 2, x1: x + l / 2, y0: y - 5.6, y1: y }; });
     let chevauche = 0; for (let i = 0; i < boites.length; i++) for (let j = i + 1; j < boites.length; j++) { const a = boites[i], b = boites[j]; if (a.x1 > b.x0 && a.x0 < b.x1 && a.y1 > b.y0 && a.y0 < b.y1) chevauche++; }
-    const vert = []; W.forEach(w => { for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1]; if (Math.abs(a.x - b.x) < 0.6 && Math.abs(a.y - b.y) > 1) vert.push({ x: a.x, y0: Math.min(a.y, b.y), y1: Math.max(a.y, b.y) }); } });
-    let barres = 0; boites.forEach(b => { if (vert.some(v => v.x > b.x0 && v.x < b.x1 && v.y1 > b.y0 && v.y0 < b.y1)) barres++; });
+    const vert = []; W.forEach(w => { for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1]; if (Math.abs(a.x - b.x) < 0.6 && Math.abs(a.y - b.y) > 1) vert.push({ n: w.cable, x: a.x, y0: Math.min(a.y, b.y), y1: Math.max(a.y, b.y) }); } });
+    let barres = 0; boites.forEach((b, i) => { if (vert.some(v => v.n !== el[i].textContent && v.x > b.x0 && v.x < b.x1 && v.y1 > b.y0 && v.y0 < b.y1)) barres++; });
     return { avecNom, poses: el.length, chevauche, barres }; });
   ok('les numéros de fil sont écrits sur le dessin', nums.poses >= nums.avecNom * 0.9, nums.poses + ' / ' + nums.avecNom + ' fils étiquetés');
   ok('aucune étiquette n’en chevauche une autre', nums.chevauche === 0, nums.chevauche + ' chevauchement(s)');
@@ -143,8 +146,9 @@ function titre(t) { console.log('\n' + t); }
       const S = []; D.fils.forEach(w => { for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1]; S.push({ n: w.cable, x0: Math.min(a.x, b.x), x1: Math.max(a.x, b.x), y0: Math.min(a.y, b.y), y1: Math.max(a.y, b.y), h: Math.abs(a.y - b.y) < 0.6 }); } });
       (D.barrettes || []).forEach(b => { S.push({ n: 'piquage', x0: b.x, x1: b.x, y0: b.y1 + 3, y1: b.y2 - 3, h: false }); });
       for (let i = 0; i < T.length; i++) for (let j = i + 1; j < T.length; j++) { const a = T[i], b = T[j]; if (a.x1 > b.x0 && a.x0 < b.x1 && a.y1 > b.y0 && a.y0 < b.y1) out.chev.push(plan + ' : ' + a.txt + ' × ' + b.txt); }
-      // un numéro de fil s'écrit DANS son fil (le fil le traverse) : le segment de ce fil à sa hauteur n'est pas une barre
-      T.forEach(t => S.forEach(s => { if (t.cls === 'filnum' && s.h && s.n === t.txt) return;
+      // un numéro de fil s'écrit DANS son fil, centré sur son axe (le fil passe derrière lui, à l'horizontale comme debout) :
+      // un segment de ce fil n'est pas une barre
+      T.forEach(t => S.forEach(s => { if (t.cls === 'filnum' && s.n === t.txt) return;
         const dedans = s.h ? (s.y0 > t.y0 + 0.4 && s.y0 < t.y1 - 0.4 && s.x1 > t.x0 + 0.4 && s.x0 < t.x1 - 0.4) : (s.x0 > t.x0 + 0.4 && s.x0 < t.x1 - 0.4 && s.y1 > t.y0 + 0.4 && s.y0 < t.y1 - 0.4);
         if (dedans) out.barres.push(plan + ' : ' + s.n + ' barre ' + t.txt); }));
       const nommes = D.fils.filter(w => !w.shunt && String(w.cable || '').trim()); out.fils += nommes.length;

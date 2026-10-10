@@ -25,8 +25,9 @@
    (Maj+B), est le contrat en onglets : on le corrige, le plan suit. Le plan se recadre
    à côté de l'un, au-dessus de l'autre, jamais dessous. Les documents rares
    (cartouche, collage, bible) s'ouvrent dans une fiche à part.
-   Les commandes sont dans la barre de gauche (le rail) ; le menu, en bas
-   d'elle, porte ce qu'on fait une fois et ce qui se lit (le dossier ouvert).
+   Les commandes sont dans la barre de gauche (le rail) ; le menu ⋮, en haut
+   à droite, porte en peu de lignes ce qu'on fait une fois (ouvrir, vos
+   fichiers, exporter…) et dit ce qui est ouvert.
    =========================================================================== */
 'use strict';
 
@@ -1435,8 +1436,36 @@ let toastT = null;
 // le mot qui passe ; `signaler` (08-fichiers) y ajoute « Voir » quand ce qu'il dit s'écrit dans « Vos fichiers »
 function dire(msg, erreur) { const t = $('toast'); t.textContent = msg; t.classList.toggle('erreur', !!erreur); t.classList.remove('action'); t.classList.add('on');
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), erreur ? 6000 : 2800); }
-function ouvrirMenu() { $('menu').hidden = false; $('btnMenu').setAttribute('aria-expanded', 'true'); const b = $('menu').querySelector('button[role="menuitem"]'); if (b) b.focus(); }
-function fermerMenu() { $('menu').hidden = true; $('btnMenu').setAttribute('aria-expanded', 'false'); }
+/* ---- le menu ⋮ : peu de lignes ; Exporter et Plus s'ouvrent EN PLACE (page.html) -----------------------------------
+   `montrerPanneau(nom)` : '' le menu, sinon un sous-menu, qui prend sa place (le menu garde sa largeur). Le clavier va à la
+   première ligne du panneau montré — au retour, à la ligne qui avait ouvert le sous-menu. */
+function ouvrirMenu() { $('menu').hidden = false; $('btnMenu').setAttribute('aria-expanded', 'true'); montrerPanneau(''); }
+// fermé, le menu revient à son panneau principal : il se rouvrira sur lui, le clavier sur sa première ligne
+function fermerMenu() { const m = $('menu'); m.hidden = true; $('btnMenu').setAttribute('aria-expanded', 'false');
+  m.querySelectorAll('.menu-panneau').forEach(p => { p.hidden = p.id !== 'mp-principal'; }); m.querySelectorAll('[data-sous]').forEach(b => b.setAttribute('aria-expanded', 'false')); }
+const panneauDuMenu = () => [...$('menu').querySelectorAll('.menu-panneau')].find(p => !p.hidden);
+function montrerPanneau(nom) { const m = $('menu'), avant = panneauDuMenu(), vise = $(nom ? 'mp-' + nom : 'mp-principal'); if (!vise) return;
+  m.querySelectorAll('.menu-panneau').forEach(p => { p.hidden = p !== vise; });
+  m.querySelectorAll('[data-sous]').forEach(b => b.setAttribute('aria-expanded', String(b.dataset.sous === nom)));
+  const bulle = $('menu-bulle'); if (bulle) bulle.classList.remove('on');
+  const ouvreur = !nom && avant && avant !== vise ? m.querySelector(`[data-sous="${avant.id.slice(3)}"]`) : null;
+  const b = ouvreur || vise.querySelector('button[role="menuitem"]:not([data-retour])'); if (b) b.focus(); }
+/* Le menu se lie une fois : le bouton ⋮, un clic sur une ligne (une action, un sous-menu, le retour), un clic ailleurs qui
+   le ferme ; au clavier, ↑ ↓ Début Fin dans le panneau montré, → ouvre un sous-menu, ← ou Échap y revient (Échap sur le
+   menu lui-même le ferme : 08, la touche globale). Tant que le menu a le clavier, les flèches ne changent pas de folio. */
+function lierMenu(actions) { const m = $('menu');
+  $('btnMenu').onclick = e => { e.stopPropagation(); m.hidden ? ouvrirMenu() : fermerMenu(); };
+  m.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button'); if (!b) return;
+    if (b.dataset.sous) montrerPanneau(b.dataset.sous);
+    else if (b.hasAttribute('data-retour')) montrerPanneau('');
+    else if (b.dataset.act) { fermerMenu(); actions[b.dataset.act](); } });
+  m.addEventListener('keydown', e => { const p = panneauDuMenu(); if (!p) return; const sous = p.id !== 'mp-principal', ici = document.activeElement;
+    const xs = [...p.querySelectorAll('button[role="menuitem"]')], i = xs.indexOf(ici), aller = k => xs[(k + xs.length) % xs.length].focus();
+    const fait = { ArrowDown: () => aller(i + 1), ArrowUp: () => aller(i < 0 ? xs.length - 1 : i - 1), Home: () => aller(0), End: () => aller(xs.length - 1),
+      ArrowRight: () => { if (ici && ici.dataset.sous) montrerPanneau(ici.dataset.sous); }, ArrowLeft: () => { if (sous) montrerPanneau(''); },
+      Escape: sous ? () => montrerPanneau('') : null }[e.key];
+    if (!fait) return; e.preventDefault(); e.stopPropagation(); fait(); });
+  document.addEventListener('click', e => { if (!e.target.closest('#menuBoite')) fermerMenu(); }); }
 function basculerBible() { if (app.fiche && app.fiche.mode === 'bible') fermerFiche(true); else ficheBible(); }
 
 /* ---- tout relier -------------------------------------------------------- */
@@ -1449,16 +1478,15 @@ function lierPanneau() {
   o('vd-ouvrir', choisirFichier); o('vd-coller', ficheColler); o('vd-exemple', exemple); o('vd-reprendre', () => { const q = annuler(); if (q) dire('Repris : ' + q + '.'); });
   o('btnBase', basculerBase); o('btnIndex', basculerIndex); o('btnCherche', () => { if (rechercheOuverte()) fermerRecherche(); else ouvrirRecherche(); });
   o('btnLiaison', nouvelleLiaison); o('btnBible', basculerBible);
-  o('btnMenu', e => { e.stopPropagation(); $('menu').hidden ? ouvrirMenu() : fermerMenu(); });
-  // le menu, en quatre blocs (page.html) : le contrat · vos fichiers · sortir · le reste. « Contrats déjà faits » mène à
-  // leur carte dans « Vos fichiers » : ce qu'on attend, l'état, le dépôt (08-fichiers)
-  const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple, fichiers: () => ficheFichiers(), references: () => ficheFichiers('base'), bible: ficheBible, normes: () => ficheNormes(), hypotheses: ficheHypotheses,
-    recapitulatif: basculerBase, nomenclature: ficheNomenclature, suivi: exporterSuivi, svg: exporterSVG, png: exporterPNG, imprimer, cartouche: ficheCartouche,
+  // le menu (page.html) : ouvrir un retest, vos fichiers (la base des contrats déjà faits y a sa carte), le récapitulatif, la
+  // nomenclature ; Exporter (SVG, PNG, imprimer, le suivi) ; Plus (coller, l'exemple, la bible, les normes, les hypothèses,
+  // le cartouche, tout effacer)
+  lierMenu({ ouvrir: choisirFichier, fichiers: () => ficheFichiers(), recapitulatif: basculerBase, nomenclature: ficheNomenclature,
+    svg: exporterSVG, png: exporterPNG, imprimer, suivi: exporterSuivi,
+    coller: ficheColler, exemple, bible: ficheBible, normes: () => ficheNormes(), hypotheses: ficheHypotheses, cartouche: ficheCartouche,
     // tout effacer : la table vide (l'accueil), et un contrat neuf — les choix de celui-ci ne survivent pas (Ctrl+Z, ou « Reprendre », rend tout)
     vider: () => { if (!confirm('Effacer tout le contrat ?')) return; histPush('tout effacer'); app.contrat = contratNeuf(); app.source = null; app.nFolios = 0; app.plan = '*'; app.nom = ''; app.cible = null; app.choisi = null;
-      fermerFiche(); fermerInspecteur(); fermerBase(); redessiner(); ajuster(); sauver(); } };
-  $('menu').addEventListener('click', e => { const b = e.target.closest('button[data-act]'); if (!b) return; fermerMenu(); actions[b.dataset.act](); });
-  document.addEventListener('click', e => { if (!e.target.closest('#menuBoite')) fermerMenu(); });
+      fermerFiche(); fermerInspecteur(); fermerBase(); redessiner(); ajuster(); sauver(); } });
   o('btnUndo', () => { const q = annuler(); if (q) dire('Annulé : ' + q + '.'); });
   o('btnAuto', revenirAutomatique);
   o('fo-prev', () => allerAuFolio(-1)); o('fo-next', () => allerAuFolio(+1));

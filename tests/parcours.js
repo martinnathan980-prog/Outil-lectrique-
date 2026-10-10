@@ -155,8 +155,12 @@ const barreFolios = page => page.evaluate(() => { const s = $('fo-strip'), puces
   return { n: cs.length, visibles, chevauchent, debordent, largeStrip: Math.round(r.width), largePuces: large, defile: getComputedStyle(s).overflowX, lbl: $('fo-lbl').textContent }; });
 const PROPOSITION_BARRE = 'style.css `.fo-strip` / 08-interface.js `synchroniserFolios` : des puces à largeur bornée (le dessin abrégé « …01A », le nom entier en bulle), une bande qui défile pour de vrai (overflow-x:auto, la molette), la puce courante centrée — ou une liste déroulante au-delà de huit folios';
 /* Ouvrir un fichier comme le technicien : un bouton qui ouvre le choix de fichier, puis le fichier. Rend le temps jusqu'au plan. */
-/* « Ouvrir un retest… » du menu : le menu, puis sa ligne (la barre du haut n'a plus de bouton « Ouvrir ») */
-const parLeMenu = async page => { await page.click('#btnMenu'); await page.click('#menu [data-act="ouvrir"]'); };
+/* Une ligne du menu ⋮ : le menu, puis le sous-menu qui la porte s'il y a lieu (Exporter, Plus : ils s'ouvrent en place),
+   puis elle. « Ouvrir un retest… » est en tête du menu (la barre du haut n'a plus de bouton « Ouvrir ») */
+const ligneDuMenu = async (page, act) => { await page.click('#btnMenu');
+  const sous = await page.evaluate(a => { const p = document.querySelector(`#menu [data-act="${a}"]`).closest('.menu-panneau'); return p.id === 'mp-principal' ? '' : p.id.slice(3); }, act);
+  if (sous) await page.click(`#menu [data-sous="${sous}"]`); await page.click(`#menu [data-act="${act}"]`); };
+const parLeMenu = page => ligneDuMenu(page, 'ouvrir');
 async function ouvrirParBouton(page, bouton, chemin) { const nom = path.basename(chemin), t0 = Date.now();
   const [fc] = await Promise.all([page.waitForEvent('filechooser'), bouton === 'menu' ? parLeMenu(page) : page.click(bouton)]); await fc.setFiles(chemin);
   await page.waitForFunction(n => app.nom === n && !!app.dessin, nom); return Date.now() - t0; }
@@ -223,7 +227,7 @@ function baseEssaiDansLaPage() {
     // l'exemple, à la demande : un bandeau sous la barre du haut dit qu'on le regarde ; tout effacer : l'accueil, et « Reprendre »
     await page.click('#vd-exemple'); await page.waitForFunction(() => app.nom === 'Contrat d’exemple' && !!app.dessin); await page.waitForTimeout(300);
     ok(await page.evaluate(() => $('vide').hidden && !$('bandeau-exemple').hidden && /Vous regardez l’exemple/.test($('bandeau-exemple').textContent) && /Ouvrir mon retest/.test($('bandeau-exemple').textContent)), 'l’exemple ouvert d’un clic : « Vous regardez l’exemple · Ouvrir mon retest », collé sous la barre du haut');
-    await page.click('#btnMenu'); accepter(page); await page.click('#menu [data-act="vider"]'); await page.waitForTimeout(400);
+    accepter(page); await ligneDuMenu(page, 'vider'); await page.waitForTimeout(400);
     ok(await page.evaluate(() => !$('vide').hidden && $('bandeau-exemple').hidden && !$('vd-reprendre').hidden && /Reprendre/.test($('vd-reprendre').textContent)), 'tout effacer : l’accueil, le bandeau s’en va, « Reprendre le contrat »');
     await capture(page, 'A-1-accueil');
     // le retest, par « Ouvrir un fichier » de l'accueil (sinon glissé sur la fenêtre)
@@ -282,9 +286,9 @@ function baseEssaiDansLaPage() {
     ok(e.nom === 'neuf.xlsx' && e.n === X.neufL.length && e.plan === planAvant && e.folios === 3, 'rouvert : le même contrat, le même folio, 64 liaisons', e.nom + ' · ' + e.plan + ' · ' + sauve);
     frottement(!e.base, 'rouvert, le tableau revient ouvert, devant le plan', 'le tiroir ouvert avant la fermeture s’ouvre d’office à la réouverture (`relireBase`) : le plan n’a plus toute la place quand on « scanne »', 'détail', '10-demarrage.js / 08-interface.js `relireBase` : rouvrir sur le plan seul, le tableau à la demande (B), ou ne garder que sa hauteur');
     // les exports : SVG, PNG, la nomenclature et son CSV
-    let d = await telecharger(page, async () => { await page.click('#btnMenu'); await page.click('#menu [data-act="svg"]'); });
+    let d = await telecharger(page, async () => { await ligneDuMenu(page, 'svg'); });
     ok(/^neuf-folio-MEE256A78150\d\dA\.svg$/.test(d.nom) && fs.statSync(d.chemin).size > 5000 && /<svg/.test(fs.readFileSync(d.chemin, 'utf8').slice(0, 300)), 'le folio s’enregistre en SVG, nommé par le contrat et le dessin', d.nom + ' · ' + fs.statSync(d.chemin).size + ' o');
-    d = await telecharger(page, async () => { await page.click('#btnMenu'); await page.click('#menu [data-act="png"]'); });
+    d = await telecharger(page, async () => { await ligneDuMenu(page, 'png'); });
     ok(/\.png$/.test(d.nom) && fs.statSync(d.chemin).size > 5000, 'et en PNG', d.nom + ' · ' + fs.statSync(d.chemin).size + ' o');
     t0 = Date.now(); await page.keyboard.press('n'); await page.waitForFunction(() => app.fiche && app.fiche.mode === 'nomenclature'); mesure('N → la nomenclature', Date.now() - t0, SEUIL_GESTE);
     const nomen = await page.evaluate(() => ({ tuiles: [...document.querySelectorAll('.no-resume .no-tuile')].map(t => t.textContent.replace(/\s+/g, ' ').trim()), tables: document.querySelectorAll('.no-table').length }));
@@ -459,7 +463,7 @@ function baseEssaiDansLaPage() {
     ok(await page.evaluate(() => !$('en-etat') && !$('btnIndex').querySelector('.rd-point').hidden), 'l’état du contrat est sur le bouton des repères (la barre du haut ne le porte plus)');
     await capture(page, 'D-1-exemple');
     // A : l'accueil, le retest, le plan, les folios
-    await page.click('#btnMenu'); accepter(page); await page.click('#menu [data-act="vider"]'); await page.waitForTimeout(400);
+    accepter(page); await ligneDuMenu(page, 'vider'); await page.waitForTimeout(400);
     await tous(['#vd-zone', '#vd-ouvrir', '#vd-coller', '#vd-exemple', '#vd-reprendre'], 'l’accueil : la zone de dépôt et les quatre gestes'); await capture(page, 'D-2-accueil');
     const tOuvrir = await ouvrirDepuisAccueil(page, X.neuf, 'bouton'); mesure('ouvrir neuf.xlsx au téléphone', tOuvrir, SEUIL_FOLIO);
     let e = await etat(page); ok(e.folios === 3 && e.n === X.neufL.length, 'le plan se dessine, trois folios', e.enSous);
@@ -489,14 +493,14 @@ function baseEssaiDansLaPage() {
     ok(await page.evaluate(() => app.base.ouvert && $('ba-tbody').querySelectorAll('tr[data-i]').length > 0), 'le bouton du tableau ouvre le tiroir des liaisons');
     await tous(['#ba-fermer', '#ba-ajouter', '#ba-filtre', '#ba-portee [data-portee="tout"]', '#ba-tbody tr[data-i] [data-f="type"]'], 'dans le tableau : fermer, ajouter, filtrer, « tout », une cellule');
     await capture(page, 'D-5-tableau'); await page.click('#ba-fermer'); await page.waitForTimeout(300);
-    const d = await telecharger(page, async () => { await page.click('#btnMenu'); await page.click('#menu [data-act="svg"]'); }); ok(/\.svg$/.test(d.nom), 'le menu enregistre le folio en SVG', d.nom);
-    await page.click('#btnMenu'); await page.click('#menu [data-act="nomenclature"]'); await page.waitForTimeout(600);
+    const d = await telecharger(page, async () => { await ligneDuMenu(page, 'svg'); }); ok(/\.svg$/.test(d.nom), 'le menu enregistre le folio en SVG', d.nom);
+    await ligneDuMenu(page, 'nomenclature'); await page.waitForTimeout(600);
     // un document est une page au téléphone : de la barre du haut au rail (qui reste en bas, sous le pouce)
     ok(await page.evaluate(() => { const f = $('fiche').getBoundingClientRect(), h = $('entete').getBoundingClientRect(), r = $('rail').getBoundingClientRect();
       return app.fiche && app.fiche.mode === 'nomenclature' && Math.abs(f.top - h.bottom) <= 2 && Math.abs(f.bottom - r.top) <= 2; }), 'la nomenclature s’ouvre en page, entre la barre du haut et le rail');
     await tous(['#no-csv', '#fi-fermer'], 'dans la nomenclature : Enregistrer en CSV et fermer'); await capture(page, 'D-6-nomenclature'); await page.click('#fi-fermer'); await page.waitForTimeout(300);
     // C au téléphone : l'exemple, l'index, une ligne → folio et fiche, le 15 A d'un doigt
-    await page.click('#btnMenu'); await page.click('#menu [data-act="exemple"]'); await page.waitForFunction(() => app.nom === 'Contrat d’exemple'); await page.waitForTimeout(400);
+    await ligneDuMenu(page, 'exemple'); await page.waitForFunction(() => app.nom === 'Contrat d’exemple'); await page.waitForTimeout(400);
     await page.click('#btnIndex'); await page.waitForFunction(() => app.insp.index && document.querySelector('#ba-equip .co-item'));
     ok(await page.evaluate(() => document.querySelectorAll('#ba-equip .co-item').length === 6 && document.activeElement !== $('ix-q')), 'le bouton des repères ouvre l’index : six lignes à reprendre, sans voler le clavier');
     await page.click('#ba-equip .ix-controle > summary'); await page.waitForTimeout(200);   // « à reprendre » se déplie d'un toucher
