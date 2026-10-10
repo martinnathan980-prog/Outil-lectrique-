@@ -409,7 +409,7 @@ function baseEssaiDansLaPage() {
     await page.keyboard.press('Escape'); await page.keyboard.press('b'); await page.waitForTimeout(300); await cliquerBloc(page, '102CB1');
     await page.click('#ba-equip .dj-chip[data-cal="15"]'); await page.waitForTimeout(700);
     e = await etat(page); const apres15 = await page.evaluate(() => CONTROLE.items.filter(x => x.nom === '102CB1').map(x => x.niveau + ' ' + x.texte.slice(0, 60)));
-    ok(await page.evaluate(() => app.contrat.charges.get('102CB1').calibre === 15 && !CONTROLE.items.some(x => x.nom === '102CB1' && /touche la courbe/.test(x.texte))) && /^2 problèmes/.test(e.enEtat), 'le 15 A retenu d’un clic : le point « touche la courbe » disparaît (et le contrôle rejuge : W-011 DR16 n’est plus protégé par un 15 A — un nouveau point à voir)', e.enEtat + ' · ' + apres15.join(' ; '));
+    ok(await page.evaluate(() => calibreDe('102CB1') === 15 && pnDuRepere('102CB1') === 'MS3320-15' && !CONTROLE.items.some(x => x.nom === '102CB1' && /touche la courbe/.test(x.texte))) && /^2 problèmes/.test(e.enEtat), 'le 15 A retenu d’un clic : le part number devient MS3320-15, le point « touche la courbe » disparaît (et le contrôle rejuge : W-011 DR16 n’est plus protégé par un 15 A — un nouveau point à voir)', e.enEtat + ' · ' + apres15.join(' ; '));
     await capture(page, 'C-3b-102CB1-15A');
     await page.keyboard.press('Escape'); for (let k = 0; k < 2; k++) { await page.keyboard.press('Control+z'); await page.waitForTimeout(500); }
     e = await etat(page); ok(e.enEtat === enEtat0, 'deux Ctrl+Z : l’en-tête redit l’état du départ', e.enEtat);
@@ -511,7 +511,7 @@ function baseEssaiDansLaPage() {
     await page.click('#in-fermer'); await page.waitForTimeout(300); if (await page.evaluate(() => $('inspecteur').hidden)) await page.click('#btnIndex');
     await page.waitForFunction(() => !$('inspecteur').hidden && app.insp.index && document.querySelector('#ba-equip .co-item')); await page.locator('#ba-equip .co-item', { hasText: '102CB1' }).first().click(); await page.waitForFunction(() => app.cible && app.cible.nom === '102CB1'); await page.waitForTimeout(400);
     await tous(['#ba-equip .dj-chip[data-cal="15"]'], 'la puce 15 A du disjoncteur est atteignable'); await page.click('#ba-equip .dj-chip[data-cal="15"]'); await page.waitForTimeout(600);
-    ok(await page.evaluate(() => app.contrat.charges.get('102CB1').calibre === 15), 'un doigt sur 15 A le retient'); await capture(page, 'D-9-102CB1-15A');
+    ok(await page.evaluate(() => calibreDe('102CB1') === 15 && pnDuRepere('102CB1') === 'MS3320-15'), 'un doigt sur 15 A le retient (MS3320-15)'); await capture(page, 'D-9-102CB1-15A');
     await page.click('#btnUndo'); await page.waitForTimeout(500); ok(await page.evaluate(() => app.contrat.charges.get('102CB1').calibre === null), 'le bouton Annuler du rail le rend');
     ok(!page.erreurs.length, 'aucune erreur console', page.erreurs.slice(0, 3).join(' | '));
     await ctx.close(); });

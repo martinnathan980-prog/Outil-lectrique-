@@ -144,7 +144,7 @@ const FICHIER = P.fichierDemande();
   console.log('\nun disjoncteur (102CB1, folio 1)');
   await bloc('1', '102CB1'); await page.waitForTimeout(400);
   ok(/^3 problèmes · \d+ à voir$/.test(await texte('.fi-pb')) && await q(sec('problemes') + ' .fi-pb-l') === await page.evaluate(() => { const n = document.querySelector('#ba-equip .fi-pb').textContent.match(/\d+/g).map(Number); return n[0] + n[1]; }), 'la pastille dit les problèmes (trois : W-012 et W-015 dépassés par la charge, le contact 23 du DR24 sous son permanent) et les points à voir ; la section Problèmes les liste tous', await texte('.fi-pb'));
-  ok(/^identite calibre\+ connecteur contacts habillage dejafait problemes$/.test(await sections()) && await q(sec('calibre') + ' .fi-dj') === 1 && await q('.dj-fils .fi-fil') === 3 && await q('.dj-fils .fi-tag') === 2, 'ses sections propres (08 quinquies) parmi les communes ; ses trois fils, l’étiquette VT1 des deux de la borne dédoublée', await sections());
+  ok(/^identite calibre\+ courbe\+ profil\+ connecteur contacts fils chute habillage dejafait detail problemes$/.test(await sections()) && await q(sec('calibre') + ' .fi-dj') === 1 && await q('.dj-fils .fi-fil') === 3 && await q('.dj-fils .fi-tag') === 2, 'ses sections propres (08 quinquies) parmi les communes ; ses trois fils, l’étiquette VT1 des deux de la borne dédoublée', await sections());
   ok(/disjoncteur de tableau/.test(await texte(sec('habillage'))) && !/tyrap|band-it/.test(await texte(sec('habillage'))), 'l’habillage d’un disjoncteur de tableau : le toron, sans raccord');
 
   console.log('\nune barrette à poser (VT1, folio 1)');

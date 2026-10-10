@@ -19,14 +19,21 @@ calculé automatiquement, mais tout modifiable ». Il a écarté le style « fut
   dans le récapitulatif) ; c'est la seule autre couleur.
 - **Les panneaux** (l'inspecteur, le récapitulatif, les documents) sont des feuilles blanches posées à côté de la
   table, avec une ombre large et légère.
-- **L'accueil est un folio** : le cadre gradué, un petit schéma, les gestes, le cartouche.
+- **L'accueil est un folio** : le cadre gradué, un petit schéma, et les trois entrées qu'on attend (votre retest,
+  vos contrats déjà faits, la bible et les normes), chacune avec ce qu'elle attend ; l'exemple s'ouvre d'un clic, et
+  un bandeau le rappelle tant qu'on le regarde. Tout se retrouve ensuite dans « Vos fichiers ».
+- **Le récapitulatif** est le tiroir du bas (B), en moitié ou en page : dix onglets (liaisons, équipements,
+  disjoncteurs, barrettes, prises, fils et câbles, contacts, raccords, problèmes, normes). Une liaison s'y lit comme
+  une phrase : de → le trait du fil à la couleur de sa route, épais selon sa jauge → vers.
 
 ## 2. Les principes
 
 1. **Le fil conducteur.** Chaque fiche a le **même squelette** (08-sections.js) : l'en-tête, puis des sections dans
    un ordre fixe, qui se lisent encore fermées (un titre, une ligne de résumé, une pastille d'état). On ouvre d'office
    ce qui définit l'objet ; le reste attend un clic, et l'outil se souvient de ce que l'ingénieur ouvre, par type.
-   Naviguer d'un objet à l'autre ne le perd jamais (‹ › et le fil d'Ariane).
+   Naviguer d'un objet à l'autre ne le perd jamais : la barre collée en haut de la fiche (‹ ›, Alt+← / Alt+→, une pile
+   de 30) et le fil d'Ariane (Contrat › Folio › Repère › connecteur › Fil) ; ouvrir une fiche ne déplace pas le plan
+   si l'objet est déjà en vue.
 2. **Un coup d'œil, puis un geste.** Chaque écran dit d'abord l'essentiel (une ligne, un chiffre, un état — « le
    meilleur calibre : 15 A »), puis donne le détail à qui le demande. Les problèmes ne sont jamais déroulés d'office :
    une pastille dit combien.
@@ -92,6 +99,18 @@ normes et la bible : jusqu'à 1040 px, en laissant toujours 320 px au plan), `--
   calibre, courbe, profil, connecteur, contacts, fils et intensité, chute, habillage, déjà fait, détail du calcul,
   problèmes) ; `OUVERTES_D_OFFICE` par type ; la mémoire par type (`atelier.fiche.sections`) ; `ouvrirSection(box,
   cle)` pour un lien « voir ». Une section sans donnée garde sa place, grise, et dit ce qui manque (`vide`).
+- **La fiche du disjoncteur** (`08-disjoncteurs.js`, `style-dj.css`) : `sectionsDisjoncteur(nom, vt)` rend ses sections
+  (le meilleur calibre, la courbe, le profil, les fils, la chute, le détail), que la fiche insère parmi les communes ;
+  chaque contenu dans un `.fi-dj[data-disj][data-part]` que `lierDisjonction` retrouve. Une courbe : Fritsch-Carlson en
+  log-log, trois décimales, une seule bande par défaut, chaque trait nommé à son bout.
+- **Le récapitulatif** (`08-recap.js`, `style-recap.css`) : `ouvrirBase('moitie'|'page')`, `recapitulatifDe(c)` ; une case
+  se corrige au double-clic (Tab pour la suivante, Échap annule) ; une case calculée retouchée passe « main », ↺ la rend.
+- **Vos fichiers** (`08-fichiers.js`, `style-fichiers.css`) : `ficheFichiers()`, une carte par entrée (état, ce qui a été
+  reçu, l'action, « Ce que j'attends » : le format, trois lignes d'exemple, la suite) ; une erreur s'écrit dans sa carte.
+- **Une valeur écrite à la main sur une liaison** passe par `changerLiaison` / `changerLiaisons` (08-sections) : une
+  entrée d'historique, `l.avant` garde ce que portait le fichier. Le contact à sertir choisi à la main vit sur la
+  liaison (`contactDe`, `contactVers`) ; la fiche, le récapitulatif, la nomenclature et le contrôle le lisent par
+  `contactMain` (08-modules).
 - **L'origine d'une valeur** : `origine('auto'|'retest'|'main'|'hyp'|'norme')` ; **le retour au calcul** :
   `retourAuto(cle, valeurAuto)` → `button.fs-auto[data-auto]`.
 - **État** `.fi-etat.ok|.att|.ko` : un point de sa couleur et un mot ; une carte d'état repliée en tête de fiche.
