@@ -76,13 +76,13 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
    voir sur des longueurs d'hypothèse. Rend [{ niveau, texte }]. */
 function controleProtection(nom, contacts, V, N, H) { const d = disjonctionDe(nom), out = [], cal = d.calibre, pn = pnDuRepere(nom);
   if (pn && !d.famille && !d.ecrit) out.push({ niveau: 'att', texte: `part number ${pn} : famille de disjoncteur inconnue, le calibre ne s’y lit pas${cal ? ' — ' + amperes(cal) + ' (l’idéal) retenu' : ''}` });
-  const fils = filsDepuis(V, nom).map(f => { const xs = (contacts.get(f.l) || []).map(x => ({ x, i: intensiteDeContact(N, x.taille) })).filter(y => y.i).sort((a, b) => a.i.intensite - b.i.intensite);
+  const fils = filsDepuis(V, nom).map(f => { const xs = (contacts.get(f.l) || []).map(x => ({ x, i: intensiteDuContactPose(N, x) }))   // le courant du contact, borné par la jauge du fil serti (R1).filter(y => y.i).sort((a, b) => a.i.intensite - b.i.intensite);
     return xs.length ? { ...f, taille: xs[0].x.taille, contactRepere: xs[0].x.repere } : f; });
   protectionDesFils(N, cal, d.profil, fils, H).forEach(f => { const nomF = (f.cable || 'fil sans numéro') + (f.type ? ' (' + f.type + ')' : '') + (f.direct ? '' : ' (par ' + f.via + ')');
     if (!f.direct) {
       if (f.verdict === 'fil') out.push({ niveau: 'ko', texte: `${nomF} : ${f.pire.nom} ${amperes(f.pire.i)}${f.pire.t === Infinity ? '' : ' / ' + secondes(f.pire.t)} > ${amperes(f.pire.admise)} admis ${pourPalier(f.pire.palier)}${motFacteur(f.pire.palier === Infinity ? f.facteur : f.facteurCourt)}` });
       else if (f.verdict === 'calibre') out.push({ niveau: 'att', texte: `${nomF} : ${amperes(f.continu)} admis en continu${motFacteur(f.facteur)} < calibre ${amperes(cal)} — pas protégé en surcharge` });
-      else if (f.protege === false) { const x = f.pireLaisse; out.push({ niveau: 'att', texte: `${nomF} : pas protégé en surcharge brève — le ${amperes(cal)} laisse passer ${amperes(x.courant)} ${pourPalier(x.palier)} à ${f.courbeLente}, le fil admet ${amperes(x.admise)}` }); } }
+      else if (f.protege === false) { const x = f.pireLaisse; out.push({ niveau: 'att', texte: `${nomF} : pas protégé en surcharge brève — le ${amperes(cal)} laisse passer ${amperes(x.courant)} ${pourPalier(x.palier)} à ${f.courbeLente}, ${limiteDuFil(f, x)}` }); } }
     if (f.refuse) out.push({ niveau: 'att', texte: `${nomF} : conducteur ${f.conducteur} sans résistance dans la base, son intensité admissible est inconnue` });
     if (f.horsTable) out.push({ niveau: 'att', texte: `${nomF} : calibre ${amperes(cal)} > ${amperes(f.calibreMax)}, le maximum de l’AC 43.13-1B (table 11-3) pour du ${f.jauge} AWG` });
     if (f.contactDepasse) out.push({ niveau: 'ko', texte: `${nomF} : le permanent (${amperes(f.permanent)}) dépasse le contact taille ${f.contact.taille} (${amperes(f.contact.intensite)}${f.contact.parLePlan ? ', ' + f.contactRepere : ', par la jauge'})` });

@@ -931,7 +931,9 @@ const dec = (x, n) => x == null ? '—' : x.toFixed(n).replace('.', ',');
    (« hypothèse ») et mène à la fiche des hypothèses ; un changement rejuge tout (le contrôle, la fiche ouverte).
    `hypothesesDe` : la liste des champs, dans l'ordre, chacun avec ce qu'il sert et quelle règle le lit — une seule
    définition pour le bandeau d'une carte (`carteSimulation`) et la fiche (`ficheHypotheses`). `ctx.fils` : le faisceau
-   simulé (le facteur de déclassement en dépend ; sans lui, le faisceau de référence de la table). */
+   simulé (le facteur de déclassement en dépend ; sans lui, le faisceau de référence de la table). `ctx.fiche` : la fiche
+   entière — avec ce qui ne vaut que pour la chute en ligne et le choix du calibre d'un disjoncteur (recherche R2) ;
+   chacun dit ce qu'il change et d'où vient sa valeur par défaut. */
 function hypothesesDe(N, H, ctx) { ctx = ctx || {}; const regime = REGIMES[H.regime] ? H.regime : 'continu';
   const nb = (id, k, lib, unite, pas, groupe, sert, o) => ({ genre: 'nombre', id, k, lib, unite, pas, groupe, sert, min: o && o.negatif ? null : 0, titre: (o && o.titre) || '' });
   // les conditions de déclassement, une case par condition, avec le facteur que la table donne pour ce faisceau (le point FAA le plus proche, l'altitude interpolée)
@@ -956,27 +958,45 @@ function hypothesesDe(N, H, ctx) { ctx = ctx || {}; const regime = REGIMES[H.reg
     faisceau ? nb('si-P', 'charge', 'charge du faisceau', '%', '10', 'declassement', 'La part de ce que les fils du faisceau admettent ensemble qui circule vraiment : le point de la figure 11-5.') : null,
     altitude ? nb('si-A', 'altitude', 'altitude', 'ft', '5000', 'declassement', 'L’altitude de vol, pour le déclassement de la figure 11-6.') : null,
     N.disjoncteurs && N.disjoncteurs.length ? nb('si-Tmin', 'tableauMin', 'tableau min', '°C', '5', 'tableau', 'L’ambiante la plus basse du tableau de disjoncteurs : la courbe de disjonction juste au-dessous (la lente) juge la protection du fil.', { negatif: true, titre: TABLEAU }) : null,
-    N.disjoncteurs && N.disjoncteurs.length ? nb('si-Tmax', 'tableauMax', 'tableau max', '°C', '5', 'tableau', 'L’ambiante la plus haute du tableau : la courbe juste au-dessus (la rapide) juge le déclenchement intempestif.', { negatif: true, titre: TABLEAU }) : null
+    N.disjoncteurs && N.disjoncteurs.length ? nb('si-Tmax', 'tableauMax', 'tableau max', '°C', '5', 'tableau', 'L’ambiante la plus haute du tableau : la courbe juste au-dessus (la rapide) juge le déclenchement intempestif.', { negatif: true, titre: TABLEAU }) : null,
+    ...(ctx.fiche ? hypothesesR2(N, H, nb) : [])
   ].filter(Boolean); }
+/* Les hypothèses de la recherche R2 (09-barrettes, HYPOTHESES), pour la fiche : la chute en ligne (la température des
+   conducteurs, la chute propre du disjoncteur), la fréquence du réseau, et le choix du meilleur calibre (les deux marges,
+   le préchauffage, les calibres qu'on s'impose). */
+function hypothesesR2(N, H, nb) { const dj = !!(N.disjoncteurs && N.disjoncteurs.length);
+  return [
+    { genre: 'choix', id: 'si-Cc', k: 'chuteConducteur', lib: 'température des conducteurs', aria: 'Température des conducteurs pour la chute', options: [['estimee', 'estimée sous le courant'], ['fixe', 'fixe : « conducteur » (20 °C)']], valeur: H.chuteConducteur === 'fixe' ? 'fixe' : 'estimee', groupe: 'chute',
+      sert: 'Estimée (par défaut) : chaque fil à la température que son courant lui donne, ambiante + 40 °C × (I / I admise)², AC 43.13-1B § 11-66 d(6). Fixe : à l’hypothèse « conducteur », 20 °C comme l’Excel et les fiches constructeur.' },
+    dj ? { genre: 'case', id: 'si-Cd', k: 'chuteDisjoncteur', lib: 'compter la chute du disjoncteur', groupe: 'chute',
+      sert: 'Cochée (par défaut) : la chute propre du disjoncteur (table Chute disjoncteur, au prorata I / In) entre dans la chute en ligne — l’AC 43.13-1B la mesure du bus à la masse de l’équipement. Décoche si la règle du programme part du bus aval (ABD0100, à confirmer).' } : null,
+    nb('si-F', 'frequence', 'fréquence', 'Hz', '10', 'reseau', 'En alternatif, la réactance saisie (à 400 Hz) monte avec la fréquence (X = 2πfL) : 400 Hz par défaut, un réseau à fréquence fixe ; 800 en fréquence variable (MIL-STD-704F, 360 à 800 Hz). Sans effet en continu.'),
+    dj ? nb('si-M', 'marge', 'marge de courant', '%', '5', 'tableau', 'Le meilleur calibre tient chaque courant du profil majoré de ce pourcentage : 10 % par défaut, pour un profil estimé (R2 règle 13) ; 0 % pour un profil qui sort du bilan électrique au pire cas (NASA TM-102179).') : null,
+    dj ? nb('si-Mt', 'margeTemps', 'marge de temps', '%', '5', 'tableau', 'Ce qu’une pointe peut consommer, au plus, du temps de déclenchement du meilleur calibre : 75 % par défaut (R2 § 3.1, étape 2).') : null,
+    dj ? nb('si-Pc', 'prechauffage', 'préchauffage', '', '0.1', 'tableau', 'Un état ajouté au profil survient en service, le bilame chaud : son temps de déclenchement se divise par ce facteur. 1,6 par défaut, la borne basse de la feuille MS3320N (table VII : 1,6 à 3,7) ; 1 l’ôte.') : null,
+    dj ? { genre: 'liste', id: 'si-Cp', k: 'calibresPreferes', lib: 'calibres préférés', unite: 'A', groupe: 'tableau',
+      sert: 'Les calibres que tu t’imposes dans le catalogue de la famille (« 1 3 5 7,5 10 15 25 ») : le meilleur se choisit parmi eux. Vide par défaut : tout le catalogue de la famille du part number.' } : null]; }
 /* Un champ d'hypothèse, tel que le bandeau d'une carte le montre (compact) ; la fiche l'habille d'une ligne qui dit à
    quoi il sert. Les identifiants (si-L, si-I…) sont ceux que `lierHypotheses` lit. */
 function champHypotheseHtml(c, H) {
   if (c.genre === 'condition') return `<label class="hyp-c" title="${escA(c.titre)}"><input type="checkbox" data-cond="${escA(c.c)}"${H.conditions.includes(c.c) ? ' checked' : ''}><span>${esc(c.c)} ×${nombre(Math.round(c.facteur * 100) / 100)}</span></label>`;
+  if (c.genre === 'case') return `<label class="hyp-c"><input type="checkbox" id="${c.id}"${H[c.k] !== false ? ' checked' : ''} aria-label="${escA(c.lib + ' (hypothèse)')}"><span>${esc(c.lib)}</span></label>`;
+  if (c.genre === 'liste') return `<label class="hyp-n hyp-liste"><span>${esc(c.lib)}</span><input id="${c.id}" type="text" inputmode="decimal" value="${escA((H[c.k] || []).map(nombre).join(' '))}" placeholder="tout le catalogue" spellcheck="false" autocomplete="off" aria-label="${escA(c.lib + ' (hypothèse)')}"><span class="u">${esc(c.unite)}</span></label>`;
   if (c.genre === 'choix') return `<label class="hyp-n"><span>${esc(c.lib)}</span><select id="${c.id}" aria-label="${escA(c.aria + ' (hypothèse)')}">${c.options.map(([v, t]) => `<option value="${escA(v)}"${String(v) === String(c.valeur) ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
   return `<label class="hyp-n"${c.titre ? ` title="${escA(c.titre)}"` : ''}><span>${esc(c.lib)}</span><input id="${c.id}" type="number" inputmode="decimal" step="${c.pas}"${c.min != null ? ` min="${c.min}"` : ''} value="${H[c.k]}" aria-label="${escA(c.lib + ' (hypothèse)')}"><span class="u">${esc(c.unite)}</span></label>`; }
-const GROUPES_HYPOTHESES = [['fil', 'Le fil'], ['temperature', 'La température'], ['reseau', 'Le réseau'], ['declassement', 'Le déclassement'], ['tableau', 'Le tableau de disjoncteurs']];
+const GROUPES_HYPOTHESES = [['fil', 'Le fil'], ['temperature', 'La température'], ['chute', 'La chute en ligne'], ['reseau', 'Le réseau'], ['declassement', 'Le déclassement'], ['tableau', 'Les disjoncteurs']];
 const ligneHypotheseHtml = (c, H) => `<div class="hy-ligne"><div class="hy-champ">${champHypotheseHtml(c, H)}</div><p class="hy-sert">${esc(c.sert)}${c.genre === 'condition' && c.titre ? ` <i>· ${esc(c.titre)}</i>` : ''}</p></div>`;
 /* LA FICHE DES HYPOTHÈSES : un document à droite (mode `hypotheses`), un groupe par thème, chaque hypothèse avec son
    champ et ce qu'elle sert ; « Revenir aux valeurs de l'outil » rend `HYPOTHESES`. Atteignable du menu, du mot
    « hypothèse » de la fiche d'un fil, de « longueurs d'hypothèse » de la fiche d'un disjoncteur. */
-function ficheHypotheses() { const H = app.simu || (app.simu = { ...HYPOTHESES }), N = app.norme || normeVide(), cs = hypothesesDe(N, H);
+function ficheHypotheses() { const H = app.simu || (app.simu = { ...HYPOTHESES }), N = app.norme || normeVide(), cs = hypothesesDe(N, H, { fiche: true });
   const defaut = Object.keys(HYPOTHESES).every(k => JSON.stringify(H[k]) === JSON.stringify(HYPOTHESES[k]));
   const corps = tete('Simulation', 'Hypothèses') + `<p class="note">Ce que le retest ne porte pas, l’outil le suppose. Chaque fiche qui s’en sert le dit (<b>hypothèse</b>) ; ce qu’on règle ici rejuge tout — le contrôle, les fiches, la nomenclature — et se garde dans ce navigateur, pas avec le contrat.${defaut ? '' : ' <b>Réglées</b> : l’outil proposait d’autres valeurs.'}</p>`
     + GROUPES_HYPOTHESES.map(([g, t]) => { const xs = cs.filter(c => c.groupe === g); return xs.length ? `<section class="hy-groupe"><div class="sur">${esc(t)}</div>${xs.map(c => ligneHypotheseHtml(c, H)).join('')}</section>` : ''; }).join('');
   const deja = app.fiche && app.fiche.mode === 'hypotheses', y = deja ? $('fiche-corps').scrollTop : 0;
   ouvrirFiche({ mode: 'hypotheses' }, corps, `<button class="btn papier" id="hy-defaut"${defaut ? ' disabled' : ''}>Revenir aux valeurs de l’outil</button>`); if (deja) $('fiche-corps').scrollTop = y;
   lierHypotheses($('fiche-corps'), ficheHypotheses);
-  $('hy-defaut').onclick = () => { app.simu = { ...HYPOTHESES, conditions: [...HYPOTHESES.conditions] }; apresHypotheses(); ficheHypotheses(); dire('Les hypothèses de l’outil sont rétablies.'); }; }
+  $('hy-defaut').onclick = () => { app.simu = { ...HYPOTHESES, conditions: [...HYPOTHESES.conditions], calibresPreferes: [...HYPOTHESES.calibresPreferes] }; apresHypotheses(); ficheHypotheses(); dire('Les hypothèses de l’outil sont rétablies.'); }; }
 /* Une hypothèse a changé : gardée, le contrôle se refait (sa clé l'oublie), la fiche ouverte dans l'inspecteur aussi. */
 function apresHypotheses() { memoriserSimu(); if (typeof CONTROLE !== 'undefined') CONTROLE.cle = null; rendreControle(); rafraichirCarte(); }
 function carteSimulation(nom, P, S) { const H = S.hyp, V = verite(), N = app.norme || normeVide();
@@ -1052,13 +1072,20 @@ function lierCartePhysique(nom) { const box = $('ba-equip');
    conteneur des champs (les identifiants s'y cherchent : un bandeau de carte et la fiche peuvent coexister). */
 function lierHypotheses(box, refaireFiche) { const H = app.simu, el = id => box.querySelector('#' + id);
   const refaire = id => { apresHypotheses(); (refaireFiche || rendreFiche)(); const e = id && el(id); if (e) e.focus(); };
-  [['si-R', 'regime'], ['si-C', 'cosphi'], ['si-Ret', 'retour']].forEach(([id, k]) => { const e = el(id); if (!e) return; e.addEventListener('change', () => { H[k] = k === 'cosphi' ? parseFloat(e.value) : e.value; refaire(id); }); });
+  [['si-R', 'regime'], ['si-C', 'cosphi'], ['si-Ret', 'retour'], ['si-Cc', 'chuteConducteur']].forEach(([id, k]) => { const e = el(id); if (!e) return; e.addEventListener('change', () => { H[k] = k === 'cosphi' ? parseFloat(e.value) : e.value; refaire(id); }); });
   // l'ambiante du tableau : deux nombres, négatifs permis, le min sous le max
   [['si-Tmin', 'tableauMin'], ['si-Tmax', 'tableauMax']].forEach(([id, k]) => { const e = el(id); if (!e) return;
     e.addEventListener('change', () => { const v = parseFloat(String(e.value).replace(',', '.')); if (isNaN(v)) { e.value = H[k]; return; } if (v === H[k]) return; H[k] = v;
       if (H.tableauMin > H.tableauMax) { if (k === 'tableauMin') H.tableauMax = v; else H.tableauMin = v; } refaire(id); }); });
   [['si-L', 'longueur'], ['si-I', 'courant'], ['si-U', 'tension'], ['si-T', 'ambiante'], ['si-Tc', 'tconducteur'], ['si-X', 'reactance'], ['si-P', 'charge'], ['si-A', 'altitude']].forEach(([id, k]) => { const e = el(id); if (!e) return;
     e.addEventListener('change', () => { const v = parseFloat(String(e.value).replace(',', '.')); if (isNaN(v) || v < 0) { e.value = H[k]; return; } if (v === H[k]) return; H[k] = v; refaire(id); }); });
+  // les hypothèses R2 : la fréquence (> 0), les marges (la marge de temps : 1 à 100 %), le préchauffage (1 au moins), la chute
+  // du disjoncteur (une case), les calibres préférés (une liste libre : « 1 3 5 7,5 10 », vide pour tout le catalogue)
+  [['si-F', 'frequence', v => v > 0], ['si-M', 'marge', v => v >= 0], ['si-Mt', 'margeTemps', v => v > 0 && v <= 100], ['si-Pc', 'prechauffage', v => v >= 1]].forEach(([id, k, ok]) => { const e = el(id); if (!e) return;
+    e.addEventListener('change', () => { const v = parseFloat(String(e.value).replace(',', '.')); if (isNaN(v) || !ok(v)) { e.value = H[k]; return; } if (v === H[k]) return; H[k] = v; refaire(id); }); });
+  const cd = el('si-Cd'); if (cd) cd.addEventListener('change', () => { H.chuteDisjoncteur = cd.checked; refaire('si-Cd'); });
+  const cp = el('si-Cp'); if (cp) cp.addEventListener('change', () => { const xs = [...new Set(String(cp.value).split(/[\s;]+|,(?=\s)/).map(x => parseFloat(x.replace(',', '.'))).filter(x => x > 0))].sort((a, b) => a - b);
+    if (JSON.stringify(xs) === JSON.stringify(H.calibresPreferes || [])) { cp.value = xs.map(nombre).join(' '); return; } H.calibresPreferes = xs; refaire('si-Cp'); });
   box.querySelectorAll('input[data-cond]').forEach(e => e.addEventListener('change', () => { const c = e.dataset.cond;
     H.conditions = e.checked ? [...new Set([...H.conditions, c])] : H.conditions.filter(x => x !== c); refaire(); })); }
 /* Les lignes des fils qu'on survole dans le dessin, marquées dans la table. */

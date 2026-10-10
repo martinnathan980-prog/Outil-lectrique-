@@ -81,8 +81,8 @@ node tests/normes.js           les normes : importer, classer, modifier (08 octi
                                fusion et la comparaison (nouvelles, remplacées, identiques), la couche des apports (remplacer,
                                ajouter, masquer), les colonnes documentées, le gabarit de chacune des vingt tables qui se relit
                                comme sa table (vingt-trois tables), l'aller-retour export → import de chaque table embarquée — 25 contrôles
-                               (--sans-navigateur pour s'arrêter là). Puis, à la vraie souris : la page par domaines (huit domaines,
-                               vingt-trois vues), une table dépliée, filtrée, triée ; une ligne modifiée (double-clic, Entrée),
+                               (--sans-navigateur pour s’arrêter là). Puis, à la vraie souris : la page par domaines (huit domaines,
+                               vingt-huit vues, dont le Dommage des fils), une table dépliée, filtrée, triée ; une ligne modifiée (double-clic, Entrée),
                                reprise par le moteur, défaite (Ctrl+Z), gardée après rechargement ; une ligne ajoutée (refusée sans
                                jauge), une ligne embarquée masquée puis rétablie, dupliquée ; l'import d'un CSV collé (compte : lues,
                                nouvelle, remplace, identique, rejetée ; un bloc ignoré) et d'un Excel généré (deux feuilles, trois

@@ -103,7 +103,11 @@ function excelEssai() { const wb = XLSX.utils.book_new();
 
   console.log('\nla page des normes');
   await page.evaluate(() => ficheNormes()); await page.waitForTimeout(500);
-  okp(await page.evaluate(() => app.fiche && app.fiche.mode === 'normes') && await q('.nm-dom') === 8 && await q('.nm-table[data-vue]') === 35 && await q('.nm-table.nm-contrats') === 1, 'huit domaines, trente-cinq vues des trente-deux tables (la table Dommage des fils n’a pas encore sa vue ; modules, tailles, familles et accessoires coupés entre barrettes et connecteurs ; les sept tables d’octobre 2026 : toron, chambres, masses des raccords, joints, outillages, obturateurs, parties de l’EN 3155), la carte des contrats déjà faits', (await q('.nm-dom')) + ' domaines · ' + (await q('.nm-table[data-vue]')) + ' vues');
+  okp(await page.evaluate(() => app.fiche && app.fiche.mode === 'normes') && await q('.nm-dom') === 8 && await q('.nm-table[data-vue]') === 36 && await q('.nm-table.nm-contrats') === 1, 'huit domaines, trente-six vues des trente-deux tables (Dommage des fils a la sienne, sous Disjoncteurs ; modules, tailles, familles et accessoires coupés entre barrettes et connecteurs ; les sept tables d’octobre 2026 : toron, chambres, masses des raccords, joints, outillages, obturateurs, parties de l’EN 3155), la carte des contrats déjà faits', (await q('.nm-dom')) + ' domaines · ' + (await q('.nm-table[data-vue]')) + ' vues');
+  okp(await page.evaluate(() => { const t = document.querySelector('.nm-dom .nm-table[data-vue="dommages"]'), dom = t && t.closest('.nm-dom');
+    return !!t && /Disjoncteurs/.test(dom.textContent) && /s’abîmer/.test(FICHES_TABLES.dommages.sert) && /prorata I \/ In/.test(FICHES_TABLES.chutesDisjoncteurs.sert) && !/la compter dans la chute en ligne quand/.test(FICHES_TABLES.chutesDisjoncteurs.manque || '')
+      && /GARANTISSENT/.test(FICHES_TABLES.calibrations.sert) && !/personne encore/.test(FICHES_TABLES.calibrations.lue); }),
+    'la table Dommage des fils a sa vue sous Disjoncteurs et sa fiche (ce qu’un fil supporte avant de s’abîmer) ; la Calibration dit que le permanent reste sous ce qu’elle garantit, la Chute disjoncteur qu’elle compte dans la chute en ligne au prorata I / In');
   okp(/32 tables/.test(await texte('.nm-etat')) && /rien d’importé/.test(await texte('.nm-etat')), 'l’état : trente-deux tables, rien d’importé ni de modifié', await texte('.nm-etat'));
   okp(await page.evaluate(() => { const f = document.getElementById('fiche'); return f.offsetWidth > 800 && !f.hidden; }), 'la page est plus large que la bible (les tables ont jusqu’à seize colonnes)', await page.evaluate(() => document.getElementById('fiche').offsetWidth + ' px'));
   await page.click('#fiche .nm-table[data-vue="contacts"] .nm-t-tete'); await page.waitForTimeout(400);
@@ -201,7 +205,7 @@ function excelEssai() { const wb = XLSX.utils.book_new();
   console.log('\nau téléphone');
   await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(400);
   await page.evaluate(() => { fermerFiche(true); ficheNormes({ table: 'contacts' }); }); await page.waitForTimeout(600);
-  okp(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1 && !document.getElementById('fiche').hidden && document.querySelectorAll('#fiche .nm-table').length === 36), 'la page tient dans la largeur du téléphone, en tiroir');
+  okp(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1 && !document.getElementById('fiche').hidden && document.querySelectorAll('#fiche .nm-table').length === 37), 'la page tient dans la largeur du téléphone, en tiroir');
   okp(await page.evaluate(() => { const z = document.querySelector('#fiche .nm-table[data-vue="contacts"] .nm-defile'); return !!z && z.scrollWidth > z.clientWidth && getComputedStyle(z).overflowX === 'auto'; }), 'une table large défile de côté, sans écraser une valeur');
   okp(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
   console.log('\n  ' + (ko || echecs ? (ko + echecs) + ' échec(s)' : 'tout tient'));

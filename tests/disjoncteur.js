@@ -157,96 +157,170 @@ const FICHIER = P.fichierDemande();
   const F1 = await folioCb();
   ok(!F1.boite && !F1.conn && F1.bornes === 2 && F1.arcs === 1 && F1.bouton === 1 && F1.rep.join() === '102CB1' && F1.cal.join() === '10 A' && F1.ports && F1.largeur === 144 && F1.sel === 'rgb(29, 29, 31)',
     'le folio : 102CB1 n’est plus une boîte (ni corps, ni pièce de connecteur « A ») mais deux bornes, l’arc et le bouton en T, son repère et « 10 A » (le part number) ; chaque amenée part d’un port d’équipement (x = 0 ou 144, à la hauteur de sa borne) ; choisi, il est encadré à l’encre', JSON.stringify(F1));
-  const S = '#ba-equip .fi-dj ';
-  ok(await page.evaluate(() => { const s = document.querySelector('#ba-equip .fi-dj'), chips = [...s.querySelectorAll('.dj-chips .dj-chip')];
+  // LA FICHE : ses sections à elle, dans l'ordre commun ; le meilleur calibre, la courbe et le profil ouverts d'office
+  const F = '#ba-equip ';
+  const voir = async sel => { await page.evaluate(s => { const e = document.querySelector(s); if (e) e.scrollIntoView({ block: 'center' }); }, sel); await page.waitForTimeout(120); const b = await page.locator(sel).first().boundingBox(); return { x: b.x + b.width / 2, y: b.y + b.height / 2 }; };
+  const ouvrirSec = cle => page.evaluate(k => { const d = document.querySelector(`#ba-equip details.fs[data-section="${k}"]`); if (d && !d.open) d.querySelector('summary').click(); }, cle);
+  const tip = () => page.evaluate(() => { const t = document.querySelector('#ba-equip .dj-tip'); return t && !t.hidden ? t.textContent : ''; });
+  ok(await page.evaluate(() => { const ds = [...document.querySelectorAll('#ba-equip details.fs')].filter(d => d.querySelector('.fi-dj[data-disj="102CB1"]')), cles = ds.map(d => d.dataset.section), o = k => ds.find(d => d.dataset.section === k).open;
+    return cles.join() === 'calibre,courbe,profil,fils,chute,detail' && o('calibre') && o('courbe') && o('profil') && !o('fils') && !o('chute') && !o('detail') && ds.every(d => d.querySelector('.fs-resume').textContent.trim().length > 4) && !document.querySelector('#ba-equip .dj-legende, #ba-equip .dj-fantome'); }),
+    'six sections, dans l’ordre commun : le meilleur calibre, la courbe et le profil ouverts d’office ; les fils, la chute et le détail du calcul fermés, chacun avec sa ligne de résumé ; plus de légende, plus de fantômes');
+  // LE MEILLEUR CALIBRE, en un coup d'œil
+  ok(await page.evaluate(() => { const c = document.querySelector('#ba-equip .dj-meilleur'), t = c.textContent;
+    return c.classList.contains('att') && /^15\s*A$/.test(c.querySelector('.dj-m-cal').textContent.trim()) && c.querySelector('.dj-m-id .id').textContent === 'MS3320-15' && /famille MS3320/.test(t)
+      && /Le plus petit MS3320 qui tient tes 5\sA permanents et tes pointes avec 10\s% de marge à 125\s°C\s?; le 10\sA serait trop juste en pointe\./.test(c.querySelector('.dj-m-phrase').textContent)
+      && /Le plan porte 10\sA \(MS3320-10, du retest\)/.test(t) && /Mais 3 fils sont trop fins pour un 15\sA/.test(t) && /Retenir 15\sA/.test(document.getElementById('dj-retenir').textContent) && /Changer les 3 fils/.test(document.getElementById('dj-fils-changer').textContent)
+      && /15\sA au lieu de 10\sA · 3 fils à grossir/.test(document.querySelector('#ba-equip details.fs[data-section="calibre"] .fs-resume').textContent); }),
+    'le meilleur calibre en premier : « 15 A », MS3320-15, famille MS3320, une phrase d’homme (le plus petit MS3320 qui tient tes 5 A permanents et tes pointes avec 10 % de marge à 125 °C ; le 10 A serait trop juste en pointe), l’écart avec le plan (10 A, MS3320-10, du retest), « Retenir 15 A » et « Changer les 3 fils »');
+  ok(await page.evaluate(() => { const li = [...document.querySelectorAll('#ba-equip .dj-lesquels .fi-fil')], t = li.map(x => x.textContent);
+    return !document.querySelector('#ba-equip .dj-lesquels').open && li.length === 3 && /W-011/.test(t[0]) && /DR16/.test(t[0]) && /DR12/.test(t[0]) && /\+16,7\sg\/m/.test(t[0]) && /W-015/.test(t[2]) && /\+28,6\sg\/m/.test(t[2]) && /contact 23 → 12/.test(t[2]) && li.every(x => x.dataset.i); }),
+    '« lesquels et pourquoi », replié : W-011 DR16 → DR12 (+16,7 g/m), W-012, W-015 DR24 → DR12 (+28,6 g/m, le contact 23 — la plus petite taille qui admet le 24 AWG, R1 — passe en 12), chacun mène au fil sur le plan');
+  ok(await page.evaluate(() => { const s = document.querySelector('#ba-equip .fi-dj'), chips = [...document.querySelectorAll('#ba-equip .dj-chips .dj-chip')], r = document.querySelector('#ba-equip .dj-retenu');
     return chips.length === 14 && chips.map(c => c.dataset.cal).join() === '0.5,0.75,1,1.5,2,2.5,3,4,5,7.5,10,15,20,25' && chips.map(c => c.classList.contains('serre') ? 's' : c.classList.contains('ok') ? 'o' : c.classList.contains('ko') ? 'x' : '?').join('') === 'xxxxxxxxxxsooo'
-      && chips.filter(c => c.getAttribute('aria-pressed') === 'true').length === 1 && chips[10].getAttribute('aria-pressed') === 'true' && chips[11].classList.contains('ideal') && /part number MS3320-10/.test(s.querySelector('.dj-dou').textContent) && /MS3320/.test(s.querySelector('.dj-dou').textContent) && /l’idéal\s:\s15\sA · les fils ne suivent pas/.test(s.querySelector('.dj-ideal').textContent)
-      && /W-011 en DR12, W-012 en DR12, W-015 en DR12/.test(s.querySelector('.dj-ideal span').title); }),
-    'la gamme : le catalogue de la famille MS3320 (½ à 25 A, table Familles — R2 règle 3), quatorze segments jugés (rouge jusqu’au 7,5, ambre pour le 10 qui touche la courbe, vert dès le 15), le 10 du part number MS3320-10 pressé, l’étoile sur le 15, « ★ l’idéal : 15 A · les fils ne suivent pas » en titre, et son survol dit quels fils grossir (les trois en DR12)');
-  ok(await page.evaluate(() => { const svg = document.querySelector('#ba-equip .dj-graphe svg'), cal = svg.querySelector('.dj-cal'), f = [...svg.querySelectorAll('.dj-fantome')];
-    const kx = (400 - 44 - 12) / (+svg.closest('figure').dataset.xhi - +svg.closest('figure').dataset.xlo);
-    return !!cal && cal.querySelectorAll('.dj-courbe').length === 4 && !!cal.querySelector('.dj-zone') && !!cal.querySelector('.dj-bande') && Math.abs(+cal.dataset.tx - Math.log10(10) * kx) < 0.1 && /translate/.test(cal.style.transform)
-      && f.length === 14 && f.filter(g => g.classList.contains('retenu')).length === 1 && f.find(g => g.classList.contains('retenu')).dataset.cal === '10' && f.every(g => /translate/.test(g.style.transform))
-      && !!svg.querySelector('.dj-systeme') && svg.querySelectorAll('.dj-pt').length === 2 && svg.querySelector('.dj-courbe.tirets') && !document.querySelector('#ba-equip .dj-note'); }),
-    'le graphique : les quatre courbes, la zone et la bande dans un groupe décalé de log10(10) décades ; quatorze fantômes décalés (la famille), celui du 10 caché ; l’escalier et ses deux points ; le 23 °C max en tirets ; aucune phrase');
-  ok(await page.evaluate(() => { const svg = document.querySelector('#ba-equip .dj-graphe svg'); const xs = [...svg.querySelectorAll('text.dj-grad')].filter(t => +t.getAttribute('y') > 280).map(t => { const b = t.getBBox(); return [b.x, b.x + b.width]; }).sort((a, b) => a[0] - b[0]);
-    return xs.length >= 8 && xs.every((r, i) => !i || r[0] >= xs[i - 1][1] + 1); }), 'les graduations de l’abscisse ne se chevauchent pas (500 s’efface devant 1 000)');
-  ok(await page.evaluate(() => { const svg = document.querySelector('#ba-equip .dj-graphe svg'); const ts = [...svg.querySelectorAll('.dj-fantome text:not(.cache), .dj-cal-etiq')].map(t => { const b = t.getBBox(); const m = /translate\(([-\d.]+)px/.exec(t.closest('g').style.transform); return [b.x + (m ? +m[1] : 0), b.width]; }).sort((a, b) => a[0] - b[0]);
-    return ts.length >= 5 && ts.every((r, i) => !i || r[0] >= ts[i - 1][0] + ts[i - 1][1] - 1); }), 'les calibres en marge du haut ne se chevauchent pas (7,5 attend le survol)');
-  // survoler un segment montre son fantôme ; la légende isole une courbe
-  await page.hover(S + '.dj-chip[data-cal="5"]'); await page.waitForTimeout(200);
-  ok(await page.evaluate(() => { const g = document.querySelector('#ba-equip .dj-fantome[data-cal="5"]'); return g.classList.contains('vise') && getComputedStyle(g.querySelector('path:not(.dj-prise)')).stroke !== getComputedStyle(document.querySelector('#ba-equip .dj-fantome[data-cal="3"] path:not(.dj-prise)')).stroke; }), 'survoler le segment 5 A allume son fantôme sur le graphique');
-  await page.hover(S + '.dj-leg[data-courbe="3"]'); await page.waitForTimeout(200);
-  ok(await page.evaluate(() => { const svg = document.querySelector('#ba-equip .dj-graphe svg'); return svg.classList.contains('isole') && svg.querySelector('.dj-courbe[data-courbe="3"]').classList.contains('vise') && +getComputedStyle(svg.querySelector('.dj-courbe[data-courbe="0"]')).opacity < 0.5 && +getComputedStyle(svg.querySelector('.dj-courbe[data-courbe="3"]')).opacity === 1; }), 'survoler « −55 °C » dans la légende isole sa courbe (les autres s’estompent)');
-  await page.mouse.move(5, 5); await page.waitForTimeout(200);
-  ok(await page.evaluate(() => !document.querySelector('#ba-equip .dj-graphe svg').classList.contains('isole') && !document.querySelector('#ba-equip .dj-fantome.vise')), 'la souris partie, rien n’est plus isolé ni allumé');
-  // le réticule, la carte d'un point
-  // (à 1,9 A et 7 s passe maintenant le fantôme du 1,5 A, un calibre de la famille : le réticule se lit plus bas, sous les fantômes)
-  const g = await page.locator(S + '.dj-graphe svg').boundingBox(); await page.mouse.move(g.x + g.width * 0.3, g.y + g.height * 0.8); await page.waitForTimeout(200);
-  ok(await page.evaluate(() => { const t = document.querySelector('#ba-equip .dj-tip'), v = document.querySelector('#ba-equip .dj-vise'); return !t.hidden && !v.hidden && /\d A · [\d,]+ (s|ms|min)/.test(t.textContent) && t.querySelectorAll('.dj-tip-l').length === 4 && /le 10 A tient/.test(t.textContent) && /ne déclenche pas/.test(t.textContent); }), 'le réticule (à 1,9 A, 48 ms, sous les fantômes) : la carte lit le courant et la durée, et ce que le 10 A tient à chaque température (ici : ne déclenche pas)');
-  await page.mouse.move(g.x + g.width * 0.85, g.y + g.height * 0.3); await page.waitForTimeout(200);
-  ok(await page.evaluate(() => { const t = document.querySelector('#ba-equip .dj-tip'); return !t.hidden && /le 10 A tient/.test(t.textContent) && [...t.querySelectorAll('.dj-tip-l')].every(l => /(ms|s)$/.test(l.querySelector('b').textContent) && /> 1 000 %/.test(l.querySelector('em').textContent) && l.querySelector('em').classList.contains('ko')); }), 'le réticule loin à droite des courbes (≈ 300 A, 200 s) : à chaque température le temps de déclenchement (des millisecondes) et la part de la durée visée qu’il représente (« > 1 000 % », en rouge)');
-  let pt = await page.locator(S + '.dj-pt[data-k="perm"] .dj-point').boundingBox(); await page.mouse.move(pt.x + pt.width / 2, pt.y + pt.height / 2); await page.waitForTimeout(200);
-  ok(await page.evaluate(() => { const t = document.querySelector('#ba-equip .dj-tip'); return !t.hidden && /5 A · toujours/.test(t.textContent) && /permanent/.test(t.textContent) && /jusqu’à 8 A/.test(t.textContent) && /\+60 %/.test(t.textContent) && /jusqu’à 10,45 A/.test(t.textContent) && /ne déclenche jamais/.test(t.textContent) && document.querySelector('#ba-equip .dj-vise').hidden; }),
-    'la carte du permanent : 5 A pour toujours, jusqu’à 8 A à 125 °C (+60 % : ce que le MS3320-10 GARANTIT, 0,80 In, MS3320N table VII — la courbe typique dirait 9,24 A), 10,45 A à 23 °C, ne déclenche jamais ; le réticule s’efface');
-  pt = await page.locator(S + '.dj-pt[data-k="dem"] .dj-point').boundingBox(); await page.mouse.move(pt.x + pt.width / 2, pt.y + pt.height / 2); await page.waitForTimeout(200);
-  ok(await page.evaluate(() => { const t = document.querySelector('#ba-equip .dj-tip'); return !t.hidden && /9,31 A · 2,1 min/.test(t.textContent) && /démarrage et transition/.test(t.textContent) && /tient 36,3 min/.test(t.textContent) && /6 %/.test(t.textContent) && /touche la courbe · 6 % du temps consommé/.test(t.textContent) && t.querySelector('.dj-tip-v.serre'); }),
-    'la carte du démarrage : 9,31 A pendant 2,1 min, le 10 A tient 36,3 min à 125 °C, 6 % du temps de déclenchement consommé, touche la courbe');
-  ok(await page.evaluate(() => { const t = document.querySelector('#ba-equip .dj-tip'), f = t.closest('.dj-graphe').getBoundingClientRect(), r = t.getBoundingClientRect(); return r.left >= f.left && r.right <= f.right + 1 && r.top >= f.top && r.bottom <= f.bottom + 1; }), 'la carte reste dans la figure');
+      && chips.filter(c => c.getAttribute('aria-pressed') === 'true').map(c => c.dataset.cal).join() === '10' && chips.filter(c => c.classList.contains('ideal')).map(c => c.dataset.cal).join() === '15' && !!s
+      && /retenu 10\sA · MS3320-10/.test(r.textContent) && !!r.querySelector('.orig-retest') && !r.querySelector('[data-dj-geste="rendre"]'); }),
+    'la gamme de la famille MS3320 (½ à 25 A, R2 règle 3) en quatorze segments jugés — rouge jusqu’au 7,5, ambre le 10 qui touche la courbe, vert dès le 15 —, le 10 du retest pressé, le meilleur étoilé ; « retenu 10 A · MS3320-10 », origine retest, rien à rendre');
+  // LA COURBE, lisse et sobre, dessinée à sa largeur
+  ok(await page.evaluate(() => { const fig = document.querySelector('#ba-equip .dj-graphe'), svg = fig.querySelector('svg'), t = [...svg.querySelectorAll('text')].map(x => x.textContent);
+    return fig.classList.contains('ilot-clair') && Math.abs(+svg.getAttribute('width') - fig.clientWidth) <= 1 && Math.abs(svg.getBoundingClientRect().width - fig.clientWidth) <= 1 && svg.querySelectorAll('.dj-bord').length === 2 && !!svg.querySelector('.dj-bande') && !svg.querySelector('.dj-courbe') && !svg.querySelector('.dj-voisin')
+      && svg.querySelectorAll('.dj-pt').length === 2 && svg.querySelectorAll('.dj-tic-nom').length === 2 && ['125 °C', '−55 °C', 'W-015 · DR24', '1 A', '10 A', '100 A', '1 kA', '10 ms', '1 s', '1 min', '1 h'].every(m => t.includes(m))
+      && t.some(x => /^permanent/.test(x)) && t.some(x => /^démarrage et/.test(x)) && svg.querySelector('.dj-dommage').classList.contains('ko') && getComputedStyle(fig).backgroundColor === 'rgb(255, 255, 255)'; }),
+    'le graphique sur papier, à la largeur de l’inspecteur (1 unité = 1 pixel) : UNE bande et ses deux bords, nommés à leur bout en haut (125 °C, −55 °C, un trait court jusqu’au nom) ; les axes en clair (1 A, 10 A, 100 A, 1 kA ; 10 ms, 1 s, 1 min, 1 h) ; deux points nommés ; la limite de dommage de W-015 (DR24) en pointillé rouge — le 10 A ne le protège pas');
+  const lisse = () => page.evaluate(() => { const svg = document.querySelector('#ba-equip .dj-graphe svg'), cadre = svg.querySelector('.dj-cadre'), T = +cadre.getAttribute('y'), Bas = T + +cadre.getAttribute('height');
+    return [...svg.querySelectorAll('.dj-bord, .dj-courbe')].map(p => { const L = p.getTotalLength(), pts = []; for (let s = 0; s <= L; s += 2) { const q = p.getPointAtLength(s); if (q.y > T + 1 && q.y < Bas - 1) pts.push(q); }
+      // tous les 2 pixels, de combien la direction tourne (`tour`) ; une CASSURE est un tour qu'aucun voisin ne prépare (le tour d'un pas,
+      // moins le plus grand de ses deux voisins) — un coude lisse tourne peu à peu, une cassure d'un coup
+      const d = []; for (let k = 2; k < pts.length; k++) { const a = Math.atan2(pts[k - 1].y - pts[k - 2].y, pts[k - 1].x - pts[k - 2].x), b = Math.atan2(pts[k].y - pts[k - 1].y, pts[k].x - pts[k - 1].x); d.push(Math.abs(b - a) * 180 / Math.PI); }
+      let tour = 0, cassure = 0, recul = 0; d.forEach((x, k) => { tour = Math.max(tour, x); cassure = Math.max(cassure, x - Math.max(d[k - 1] || 0, d[k + 1] || 0)); });
+      for (let k = 1; k < pts.length; k++) recul = Math.max(recul, pts[k - 1].x - pts[k].x, pts[k - 1].y - pts[k].y);
+      return { tour, cassure, recul, n: pts.length }; }); });
+  const lisseOk = xs => xs.every(x => x.tour < 8 && x.cassure < 2.5 && x.recul < 0.05), motLisse = xs => xs.map(x => x.tour.toFixed(1) + '° / ' + x.cassure.toFixed(2) + '° ' + x.recul.toFixed(2)).join(' · ');
+  const L1 = await lisse();
+  ok(L1.length === 2 && L1.every(x => x.n > 60) && lisseOk(L1), 'les bords de la bande sont LISSES et MONOTONES : tous les 2 pixels la direction tourne peu à peu (moins de 8°), jamais d’un coup (aucune cassure de plus de 2,5° — la plus forte, ≈ 2,3°, est le raccord à l’asymptote verticale : même tangente, la courbure seule y change ; l’interpolation par morceaux d’hier cassait de 8 à 20°), et la courbe ne revient jamais en arrière', motLisse(L1));
+  ok(await page.evaluate(() => { const fams = ['ETA483', '2TC', '6TC', '7274', 'EN2495', '5TC', '3TC', '9TC']; let pire = 0;
+    fams.forEach(f => courbesDeDisjonction(app.norme, f).forEach(c => bezierMonotone(noeudsLisses(c), 0).forEach(s => { for (let k = 0; k <= 20; k++) { const t = k / 20, q = 1 - t, w = [q * q * q, 3 * q * q * t, 3 * q * t * t, t * t * t], u = w.reduce((a, x, j) => a + x * s[j][0], 0), v = w.reduce((a, x, j) => a + x * s[j][1], 0), tt = Math.pow(10, u);
+      if (tt > c.points[0].t || tt < Math.max(0.01, c.points[c.points.length - 1].t)) continue; pire = Math.max(pire, Math.abs(v - Math.log10(multipleAdmis(c, tt)))); } })));
+    return Math.pow(10, pire) - 1 < 0.025; }), 'le dessin lisse sans trahir le moteur : sur les huit familles de courbes, la courbe dessinée reste à moins de 2,5 % (en multiple) de celle qui juge, de 10 ms au premier point');
+  ok(await page.evaluate(() => { const svg = document.querySelector('#ba-equip .dj-graphe svg'), R = svg.getBoundingClientRect(), bs = [...svg.querySelectorAll('text')].map(t => t.getBoundingClientRect()).filter(b => b.width > 0);
+    let chev = 0; for (let i = 0; i < bs.length; i++) for (let j = i + 1; j < bs.length; j++) { const a = bs[i], b = bs[j]; if (a.left < b.right - 0.5 && a.right > b.left + 0.5 && a.top < b.bottom - 0.5 && a.bottom > b.top + 0.5) chev++; }
+    return chev === 0 && bs.every(b => b.left >= R.left - 0.5 && b.right <= R.right + 0.5 && b.top >= R.top - 0.5 && b.bottom <= R.bottom + 0.5); }), 'aucune étiquette n’en chevauche une autre, toutes restent dans le dessin');
+  // survoler un point : une bulle courte (la barre de navigation collée de la fiche : le point d'abord sous les yeux)
+  let c = await voir(F + '.dj-pt[data-k="dem"] .dj-point'); await page.mouse.move(c.x, c.y); await page.waitForTimeout(200);
+  let tx = await tip(); ok(/9,31\sA · 2,1\smin/.test(tx) && /démarrage et transition — le 10\sA tient 36,3\smin à 125\s°C/.test(tx) && /tient, mais touche la courbe · 6\s% du temps consommé/.test(tx) && await page.evaluate(() => !!document.querySelector('#ba-equip .dj-tip-v.serre') && !document.querySelector('#ba-equip .dj-tip-l')),
+    'survoler le démarrage : une bulle courte — 9,31 A pendant 2,1 min, le 10 A tient 36,3 min à 125 °C, touche la courbe (6 % du temps de déclenchement consommé)', tx);
+  ok(await page.evaluate(() => { const t = document.querySelector('#ba-equip .dj-tip'), f = t.closest('.dj-graphe').getBoundingClientRect(), r = t.getBoundingClientRect(); return r.left >= f.left && r.right <= f.right + 1 && r.top >= f.top && r.bottom <= f.bottom + 1; }), 'la bulle reste dans la figure');
+  c = await voir(F + '.dj-pt[data-k="perm"] .dj-point'); await page.mouse.move(c.x, c.y); await page.waitForTimeout(200); tx = await tip();
+  ok(/5\sA · toujours/.test(tx) && /le 10\sA garantit 8\sA à 125\s°C/.test(tx) && /ne déclenche jamais/.test(tx), 'le permanent : 5 A pour toujours, le MS3320-10 ne GARANTIT que 8 A à 125 °C (0,80 In, MS3320N table VII), il ne déclenche jamais', tx);
+  const g = await page.locator(F + '.dj-graphe svg').boundingBox(); await page.mouse.move(g.x + g.width * 0.86, g.y + g.height * 0.35); await page.waitForTimeout(200); tx = await tip();
+  ok(/A · [\d,]+\s(ms|s|min)/.test(tx) && /le 10\sA y tient [\d,]+\s(ms|s) à 125\s°C/.test(tx) && await page.evaluate(() => !document.querySelector('#ba-equip .dj-vise').hidden), 'ailleurs, le réticule lit le courant et la durée, et ce que le 10 A y tient', tx);
+  await page.mouse.move(5, 5); await page.waitForTimeout(150);
+  // toutes les températures : les quatre courbes, en couleur, nommées au bout ; la bulle dit chaque courbe
+  await page.click(F + '[data-vue="temperatures"]'); await page.waitForTimeout(400);
+  ok(await page.evaluate(() => { const svg = document.querySelector('#ba-equip .dj-graphe svg'), t = [...svg.querySelectorAll('text.dj-t')].map(x => x.textContent), cs = [...svg.querySelectorAll('.dj-courbe')];
+    return cs.length === 4 && cs.map(x => x.classList.contains('chaud') ? 'c' : x.classList.contains('froid') ? 'f' : 't' + (x.classList.contains('tirets') ? '-' : '')).join('') === 'ctt-f' && ['125 °C', '23 °C', '−55 °C'].every(m => t.includes(m)) && svg.querySelectorAll('.dj-tic-nom').length === 4
+      && document.querySelector('#ba-equip [data-vue="temperatures"]').getAttribute('aria-checked') === 'true'; }), '« toutes les températures » : les quatre courbes (125 °C chaude, les deux 23 °C tièdes — la plus lente en tirets —, −55 °C froide), chacune nommée à son bout — la paire de 23 °C une fois, au-dessus d’elle');
+  const L4 = await lisse(); ok(L4.length === 4 && lisseOk(L4), 'les quatre courbes sont lisses et monotones elles aussi', motLisse(L4));
+  c = await voir(F + '.dj-pt[data-k="perm"] .dj-point'); await page.mouse.move(c.x, c.y); await page.waitForTimeout(200); tx = await tip();
+  ok(await page.evaluate(() => document.querySelectorAll('#ba-equip .dj-tip-l').length === 4) && /jusqu’à 8\sA/.test(tx) && /\+60\s%/.test(tx) && /jusqu’à 10,45\sA/.test(tx), 'la bulle du permanent dit alors chaque courbe : jusqu’à 8 A à 125 °C (+60 %), 10,45 A à 23 °C…', tx);
+  await page.mouse.move(5, 5); await page.click(F + '[data-vue="temperatures"]'); await page.waitForTimeout(300);
+  // comparer les calibres : les voisins de la gamme en gris, un clic en retient un
+  await page.click(F + '[data-vue="comparer"]'); await page.waitForTimeout(400);
+  ok(await page.evaluate(() => { const v = [...document.querySelectorAll('#ba-equip .dj-voisin')]; return v.map(g => g.dataset.cal).join() === '7.5,15' && v[1].classList.contains('meilleur') && !!document.querySelector('#ba-equip .dj-v-t.meilleur') && /^15$/.test(document.querySelector('#ba-equip .dj-v-t.meilleur').textContent); }),
+    '« comparer les calibres » : le 7,5 et le 15 en bandes grises, nommés au-dessus (le 15, le meilleur, en vert)');
+  const p15 = await page.evaluate(() => { const g = document.querySelector('#ba-equip .dj-voisin[data-cal="15"]'); g.scrollIntoView({ block: 'center' }); const r = g.querySelector('.dj-v-bande').getBoundingClientRect(), s = document.querySelector('#ba-equip .dj-graphe svg').getBoundingClientRect();
+    for (let y = s.top + s.height * 0.45; y < s.bottom - 30; y += 4) for (let x = r.left; x < r.right; x += 2) { const e = document.elementFromPoint(x, y); if (e && e.closest && e.closest('.dj-voisin[data-cal="15"]')) return { x, y }; } return null; });
+  if (p15) { await page.mouse.move(p15.x, p15.y); await page.waitForTimeout(200); }
+  tx = await tip(); ok(!!p15 && /15\sA/.test(tx) && /tiendrait — le meilleur/.test(tx) && /cliquer pour le retenir/.test(tx), 'survoler la bande du 15 : « tiendrait — le meilleur · cliquer pour le retenir »', tx);
+  if (p15) { await page.mouse.click(p15.x, p15.y); await page.waitForTimeout(800); }
+  ok(await page.evaluate(() => pnDuRepere('102CB1') === 'MS3320-15' && calibreDe('102CB1') === 15 && document.querySelector('#ba-equip [data-vue="comparer"]').getAttribute('aria-checked') === 'true'), 'un clic la retient (MS3320-15) ; la vue reste en comparaison');
+  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(700); await ouvrir();
+  await page.click(F + '[data-vue="comparer"]'); await page.waitForTimeout(300);
+  ok(await page.evaluate(() => pnDuRepere('102CB1') === 'MS3320-10' && !document.querySelector('#ba-equip .dj-voisin')), 'Ctrl+Z rend le MS3320-10 ; l’interrupteur se ferme');
   // glisser le point du permanent vers la droite : le courant monte, le contrat s'écrit, Ctrl+Z le rend
-  pt = await page.locator(S + '.dj-pt[data-k="perm"] .dj-point').boundingBox(); const cx = pt.x + pt.width / 2, cy = pt.y + pt.height / 2;
-  await page.mouse.move(cx, cy); await page.mouse.down(); await page.mouse.move(cx + 20, cy, { steps: 4 }); await page.waitForTimeout(100);
-  ok(await page.evaluate(() => document.querySelector('#ba-equip .dj-graphe svg').classList.contains('tient') && !document.querySelector('#ba-equip .dj-tip').hidden), 'pendant le glisser, le graphique tient le point et la carte suit');
-  await page.mouse.move(cx + 28, cy, { steps: 4 }); await page.waitForTimeout(100);
-  ok(await page.evaluate(() => { const p = document.querySelector('#ba-equip .dj-pt[data-k="perm"]'); return p.classList.contains('ko') && document.querySelector('#ba-equip .dj-chip[data-cal="10"]').classList.contains('ko'); }), 'glissé à droite de la courbe (≈ 9,8 A), le point passe au rouge et le segment 10 A aussi, en direct');
+  c = await voir(F + '.dj-pt[data-k="perm"] .dj-point'); await page.mouse.move(c.x, c.y); await page.mouse.down(); await page.mouse.move(c.x + 20, c.y, { steps: 4 }); await page.waitForTimeout(100);
+  ok(await page.evaluate(() => document.querySelector('#ba-equip .dj-graphe svg').classList.contains('tient') && !document.querySelector('#ba-equip .dj-tip').hidden), 'pendant le glisser, le graphique tient le point et la bulle suit');
+  await page.mouse.move(c.x + 28, c.y, { steps: 4 }); await page.waitForTimeout(100);
+  ok(await page.evaluate(() => document.querySelector('#ba-equip .dj-pt[data-k="perm"]').classList.contains('ko') && document.querySelector('#ba-equip .dj-chip[data-cal="10"]').classList.contains('ko')), 'glissé à droite de ce que le 10 A garantit, le point passe au rouge, et le segment 10 A aussi, en direct');
   await page.mouse.up(); await page.waitForTimeout(800);
-  ok(await page.evaluate(() => { const c = app.contrat.charges.get('102CB1'); return c.perm.i > 9.24 && c.perm.i < 11 && document.querySelector('#ba-equip .dj-chip[aria-pressed="true"]').classList.contains('ko') && CONTROLE.items.some(x => x.nom === '102CB1' && x.niveau === 'ko' && /permanent/.test(x.texte)); }), 'lâché : le permanent est écrit au contrat, la fiche et le contrôle le relèvent', 'perm ' + await page.evaluate(() => app.contrat.charges.get('102CB1').perm.i));
+  ok(await page.evaluate(() => { const c = app.contrat.charges.get('102CB1'); return c.perm.i > 8 && c.perm.i < 12 && CONTROLE.items.some(x => x.nom === '102CB1' && x.niveau === 'ko' && /permanent/.test(x.texte)); }), 'lâché : le permanent est écrit au contrat, le contrôle le relève', 'perm ' + await page.evaluate(() => app.contrat.charges.get('102CB1').perm.i));
   await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
   ok(await page.evaluate(() => app.contrat.charges.get('102CB1').perm.i === 5), 'Ctrl+Z rend le profil de l’exemple');
   await ouvrir();
-  // changer de calibre : les courbes glissent (une transition sur le groupe), le fantôme du 10 reparaît
-  const tx10 = await page.evaluate(() => +document.querySelector('#ba-equip .dj-cal').dataset.tx);
-  await page.click(S + '.dj-chip[data-cal="15"]'); await page.waitForTimeout(60);
-  const pendant = await page.evaluate(() => { const g = document.querySelector('#ba-equip .dj-cal'); return { tx: +g.dataset.tx, mat: getComputedStyle(g).transform, duree: getComputedStyle(g).transitionDuration }; });
+  // « Retenir 15 A » : le part number du disjoncteur devient MS3320-15 (le retest gardé), le folio l'écrit, la bande glisse ; « ↺ retest » le rend
+  const tx10 = await page.evaluate(() => +document.querySelector('#ba-equip .dj-cal').dataset.glisse), nHist = await page.evaluate(() => app.hist.length);
+  await page.click('#dj-retenir'); await page.waitForTimeout(60);
+  const pendant = await page.evaluate(() => { const g = document.querySelector('#ba-equip .dj-cal'); return { tx: +g.dataset.glisse, mat: getComputedStyle(g).transform, duree: getComputedStyle(g).transitionDuration }; });
   await page.waitForTimeout(700);
-  const apres = await page.evaluate(() => { const g = document.querySelector('#ba-equip .dj-cal'); return { tx: +g.dataset.tx, mat: getComputedStyle(g).transform, retenu: document.querySelector('#ba-equip .dj-fantome.retenu').dataset.cal, dix: !document.querySelector('#ba-equip .dj-fantome[data-cal="10"]').classList.contains('retenu') }; });
-  const m = s => { const r = /matrix\(([^)]+)\)/.exec(s); return r ? +r[1].split(',')[4] : NaN; };
-  ok(pendant.tx > tx10 && Math.abs(pendant.tx - Math.log10(1.5) * (400 - 56) / 3.5 - tx10) < 0.5 && parseFloat(pendant.duree) > 0 && m(pendant.mat) < pendant.tx - 1 && Math.abs(m(apres.mat) - apres.tx) < 0.5 && apres.retenu === '15' && apres.dix,
-    'le 15 A retenu : le groupe glisse de log10(1,5) décade (en transition, pas d’un coup), le fantôme du 15 se cache, celui du 10 reparaît', JSON.stringify({ tx10, pendant, apres }));
-  ok((await folioCb()).cal.join() === '15 A', 'le folio écrit le calibre retenu : « 15 A » à côté du symbole');
-  ok(await page.evaluate(() => /choisi à la main/.test(document.querySelector('#ba-equip .dj-dou').textContent) && !!document.querySelector('#ba-equip .dj-ideal .dj-etoile svg') && /l’idéal · les fils ne suivent pas/.test(document.querySelector('#ba-equip .dj-ideal').textContent) && CONTROLE.items.some(x => x.nom === '102CB1' && x.niveau === 'att' && /W-011 \(DR16\) : 11,7 A admis en continu \(× 0,6\) < calibre 15 A — pas protégé en surcharge/.test(x.texte))),
-    '« choisi à la main », c’est l’idéal (avec sa réserve) ; le contrôle dit que le DR16 n’est pas protégé en surcharge par un 15 A (19,5 × 0,6 = 11,7 A admis en continu, le point FAA, moins que le calibre)', await page.evaluate(() => CONTROLE.items.filter(x => x.nom === '102CB1').map(x => x.niveau + ' ' + x.texte).join(' | ')));
-  ok(await page.evaluate(() => CONTROLE.items.filter(x => x.nom === '102CB1').map(x => x.niveau + ' ' + x.texte).every(t => !/W-012 \(DR20\) : pas protégé en surcharge brève/.test(t))), 'un fil déjà en problème (W-012 : la charge le dépasse) ne reçoit pas en plus l’avertissement de surcharge brève');
-  await page.click(S + '.dj-chip[data-cal="15"]'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => app.contrat.charges.get('102CB1').calibre === null && document.querySelector('#ba-equip .dj-cal').dataset.cal === '10'), 'presser de nouveau le 15 rend le 10 du part number');
-  ok((await folioCb()).cal.join() === '10 A', 'et le folio écrit de nouveau « 10 A »');
-  // la table des états, les paliers des fils, la jauge des chutes
-  ok(await page.evaluate(() => { const s = document.querySelector('#ba-equip .fi-dj'), E = [...s.querySelectorAll('.dj-etat')]; return !!s.querySelector('.dj-entete') && E.map(e => e.dataset.k).join() === 'dem,trans,perm' && E[0].querySelector('.dj-verdict.serre') && E[1].querySelector('.dj-verdict.serre') && E[2].querySelector('.dj-verdict.ok') && E[2].querySelector('.dj-inf') && !E[2].querySelector('[data-q="t"]') && s.querySelectorAll('.dj-champ input').length === 5 && !!s.querySelector('#dj-plus'); }),
-    'les états en table : démarrage, transition (pastilles ambre : leur point touche la courbe), permanent (pour toujours, sans durée, pastille sombre), cinq champs, « + un état »');
-  ok(await page.evaluate(() => { const li = [...document.querySelectorAll('#ba-equip .dj-fils .fi-fil')], w15 = li.find(x => /W-015/.test(x.textContent)), pal = [...w15.querySelectorAll('.dj-pal')];
-    const w11 = li[0], p11 = [...w11.querySelectorAll('.dj-pal')];
-    return li.length === 3 && pal.length === 4 && pal.map(p => p.querySelector('i').textContent).join() === '2 s,10 s,1 min,continu' && pal[3].classList.contains('ko') && /3,9 A/.test(pal[3].textContent) && !pal[2].classList.contains('ko') && /démarrage et transition 9,31 A · 2,1 min/.test(w15.querySelector('.dj-dep').textContent) && w15.classList.contains('ko')
-      && p11.filter(p => p.classList.contains('ko') || p.classList.contains('att')).length === 0 && /11,7 A/.test(p11[3].textContent) && !w11.querySelector('.dj-dep') && !w11.classList.contains('ko')
-      && pal.filter(p => p.classList.contains('att')).length === 3 && pal.filter(p => /laisse/.test(p.textContent)).length === 1 && /laisse 28,7 A/.test(pal[1].textContent); }),
-    'ses fils par palier : le DR24 (W-015) admet 6,5 × 0,6 = 3,9 A en continu (le point FAA), la case est rouge, l’état qui la dépasse est dit court, ses trois autres cases sont ambre et la pire (10 s : 28,7 A laissés, le fil s’abîme au-delà de 7,9 A) porte le chiffre ; le DR16 (W-011) n’a plus rien d’ambre : le 10 A le protège (1 min : 19,1 A laissés, 23,8 A avant dommage — R2 § 3.4)');
-  ok(await page.evaluate(() => { const li = [...document.querySelectorAll('#ba-equip .dj-chutes .fi-fil')], j = li.map(x => parseFloat(x.querySelector('.dj-jauge i').style.width)); return li.length === 3 && j[0] > 60 && j[0] < 64 && j[1] === 100 && j[2] === 100 && li[2].classList.contains('ko') && /4,57 V/.test(li[2].textContent) && /16,3 %/.test(li[2].textContent) && /dépasse 1 V/.test(li[2].textContent) && /W-015/.test(li[2].querySelector('.dj-chemin').textContent)
-      && /102CB1 : 0,14 V \(sa chute propre\)/.test(li[2].title) && /161 °C/.test(li[2].title); }),
-    'la chute en ligne : trois chemins, une jauge contre 1 V admis — conducteur chaud (AC 43.13-1B § 11-66 d(6)) et chute propre du MS3320-10 comptée (0,14 V à 5 A) : 62 %, pleine pour 103RL1 (1,28 V), pleine et rouge pour 395SW1 (4,57 V, 16,3 % : le DR24 à 161 °C)');
-  // un état de plus, en table ; sa carte dit qu'il déclenche ; retiré
-  await page.click('#dj-plus'); await page.waitForTimeout(500); await page.fill(S + '.dj-etat[data-k="plus0"] [data-q="i"]', '12'); await page.fill(S + '.dj-etat[data-k="plus0"] [data-q="t"]', '30'); await page.press(S + '.dj-etat[data-k="plus0"] [data-q="t"]', 'Enter'); await page.waitForTimeout(800);
+  const mx = s => { const r = /matrix\(([^)]+)\)/.exec(s); return r ? +r[1].split(',')[4] : NaN; };
+  ok(pendant.tx > tx10 && parseFloat(pendant.duree) > 0 && mx(pendant.mat) < pendant.tx - 1, 'retenir le 15 A : la bande glisse du 10 au 15 (en transition, pas d’un coup)', JSON.stringify({ tx10, pendant }));
+  ok(await page.evaluate(n => { const V = verite().filter(l => l.de === '102CB1' || l.vers === '102CB1'), r = document.querySelector('#ba-equip .dj-retenu');
+    return app.hist.length === n + 1 && pnDuRepere('102CB1') === 'MS3320-15' && V.filter(l => l.pnDe === 'MS3320-15' || l.pnVers === 'MS3320-15').every(l => l.avant && (l.avant.pnDe === 'MS3320-10' || l.avant.pnVers === 'MS3320-10')) && calibreDe('102CB1') === 15
+      && !(app.contrat.charges.get('102CB1') || {}).calibre && /retenu 15\sA · MS3320-15/.test(r.textContent) && !!r.querySelector('.orig-main') && /↺ retest \(10\sA\)/.test(r.querySelector('[data-dj-geste="rendre"]').textContent)
+      && !document.getElementById('dj-retenir') && /retenu/.test(document.querySelector('#ba-equip .dj-m-retenu').textContent); }, nHist),
+    '« Retenir 15 A » : une entrée d’historique ; le part number de 102CB1 devient MS3320-15 sur ses liaisons (le retest gardé), le calibre 15 A, origine « main », et « ↺ retest (10 A) » pour revenir ; la carte dit « retenu »');
+  ok((await folioCb()).cal.join() === '15 A', 'le folio écrit « 15 A » à côté du symbole');
+  ok(await page.evaluate(() => CONTROLE.items.some(x => x.nom === '102CB1' && x.niveau === 'att' && /W-011 \(DR16\) : 11,7 A admis en continu \(× 0,6\) < calibre 15 A — pas protégé en surcharge/.test(x.texte)) && CONTROLE.items.filter(x => x.nom === '102CB1').every(x => !/W-012 \(DR20\) : pas protégé en surcharge brève/.test(x.texte))),
+    'le contrôle dit que le DR16 n’est pas protégé en surcharge par un 15 A (11,7 A admis en continu, le point FAA) ; un fil déjà en problème n’a pas en plus l’avertissement de surcharge brève');
+  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(600); await ouvrir();
+  ok((await folioCb()).cal.join() === '10 A' && await page.evaluate(() => pnDuRepere('102CB1') === 'MS3320-10' && verite().every(l => !(l.avant && ('pnDe' in l.avant || 'pnVers' in l.avant)))), 'Ctrl+Z rend MS3320-10, sans trace, et « 10 A » au folio');
+  await page.click('#dj-retenir'); await page.waitForTimeout(700); await page.click(F + '[data-dj-geste="rendre"]'); await page.waitForTimeout(700);
+  ok(await page.evaluate(() => pnDuRepere('102CB1') === 'MS3320-10' && calibreDe('102CB1') === 10 && !!document.getElementById('dj-retenir') && !document.querySelector('#ba-equip [data-dj-geste="rendre"]') && verite().every(l => !(l.avant && ('pnDe' in l.avant || 'pnVers' in l.avant)))), '« ↺ retest » rend le part number du fichier, et « Retenir 15 A » revient');
+  // un calibre à la main par sa puce, puis rendu
+  await page.click(F + '.dj-chip[data-cal="20"]'); await page.waitForTimeout(700);
+  ok(await page.evaluate(() => pnDuRepere('102CB1') === 'MS3320-20' && /Retenir 15\sA/.test(document.getElementById('dj-retenir').textContent) && /Tu as retenu 20\sA à la main\s:\sun plus petit protège mieux les fils/.test(document.querySelector('#ba-equip .dj-m-ecart').textContent)), 'la puce 20 A le retient à la main (MS3320-20) : la carte dit qu’un plus petit protège mieux les fils et propose toujours le 15 A');
+  await page.click(F + '[data-dj-geste="rendre"]'); await page.waitForTimeout(700);
+  ok(await page.evaluate(() => pnDuRepere('102CB1') === 'MS3320-10'), '« ↺ » rend le 10 A du retest');
+  // « Changer les 3 fils » : chacun passe à la jauge proposée, une seule entrée d'historique
+  const nH = await page.evaluate(() => app.hist.length); await page.click('#dj-fils-changer'); await page.waitForTimeout(800);
+  ok(await page.evaluate(n => { const t = c => (verite().find(l => l.cable === c) || {}).type; return app.hist.length === n + 1 && ['W-011', 'W-012', 'W-015'].every(c => t(c) === 'DR12') && (verite().find(l => l.cable === 'W-015').avant || {}).type === 'DR24'
+      && !CONTROLE.items.some(x => x.nom === '102CB1' && /W-01[25]/.test(x.texte)) && !document.getElementById('dj-fils-changer') && !document.querySelector('#ba-equip .dj-m-note.att'); }, nH),
+    '« Changer les 3 fils » : W-011, W-012 et W-015 passent en DR12 (le retest gardé), en une seule entrée d’historique ; le contrôle n’a plus rien à dire d’eux, la carte non plus');
+  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(700); await ouvrir();
+  ok(await page.evaluate(() => ['DR16', 'DR20', 'DR24'].join() === ['W-011', 'W-012', 'W-015'].map(c => verite().find(l => l.cable === c).type).join()), 'Ctrl+Z rend les trois câbles du retest');
+  // LE PROFIL DE CHARGE : une ligne par état, le permanent en tête ; écrire sans perdre la main
+  ok(await page.evaluate(() => { const E = [...document.querySelectorAll('#ba-equip .dj-etat')]; return E.map(e => e.dataset.k).join() === 'perm,dem,trans' && E[0].querySelector('.dj-verdict.ok') && E[1].querySelector('.dj-verdict.serre') && E[2].querySelector('.dj-verdict.serre') && E[0].querySelector('.dj-inf') && !E[0].querySelector('[data-q="t"]') && document.querySelectorAll('#ba-equip .dj-champ input').length === 5 && !!document.getElementById('dj-plus'); }),
+    'le profil : le permanent en tête (pour toujours, sans durée, pastille verte), le démarrage et la transition (pastilles ambre : leur point touche la courbe), cinq champs, « + un état »');
+  await page.click(F + '[data-dj="perm"][data-q="i"]'); await page.fill(F + '[data-dj="perm"][data-q="i"]', '9,5'); await page.keyboard.press('Tab'); await page.waitForTimeout(800);
+  ok(await page.evaluate(() => { const a = document.activeElement; return app.contrat.charges.get('102CB1').perm.i === 9.5 && a && a.dataset.dj === 'dem' && a.dataset.q === 'i' && !!document.querySelector('#ba-equip .dj-etat[data-k="perm"] .dj-verdict.ko') && document.querySelector('#ba-equip .dj-chip[aria-pressed="true"]').classList.contains('ko')
+      && /le permanent le fait déclencher/.test(document.querySelector('#ba-equip details.fs[data-section="courbe"] .fs-resume').textContent) && !!document.querySelector('#ba-equip .dj-pt.ko[data-k="perm"]') && CONTROLE.items.some(x => x.nom === '102CB1' && x.niveau === 'ko' && /15 A/.test(x.texte)); }),
+    '9,5 A en permanence, puis Tab : écrit au contrat, la main reste dans le champ suivant, et tout se refait en place — la pastille et le point du permanent au rouge, le segment 10 A aussi, le résumé de la courbe le dit, le contrôle aussi');
+  await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(700); await ouvrir();
+  await page.click('#dj-plus'); await page.waitForTimeout(500); await page.fill(F + '.dj-etat[data-k="plus0"] [data-q="i"]', '12'); await page.fill(F + '.dj-etat[data-k="plus0"] [data-q="t"]', '30'); await page.press(F + '.dj-etat[data-k="plus0"] [data-q="t"]', 'Enter'); await page.waitForTimeout(800);
   ok(await page.evaluate(() => { const e = document.querySelector('#ba-equip .dj-etat[data-k="plus0"]'); return !!e && e.querySelector('.dj-verdict.ko') && e.querySelector('input.dj-nom').value === 'État 3' && document.querySelectorAll('#ba-equip .dj-pt').length === 3 && document.querySelector('#ba-equip .dj-pt[data-k="plus0"].ko'); }), 'un état de plus (12 A, 30 s) : sa ligne a une pastille rouge, son point aussi');
-  // la fiche a défilé jusqu'aux états : le graphique revient sous les yeux (sa barre de navigation, collée en haut, couvrirait son point)
-  await page.evaluate(() => document.querySelector('#ba-equip .dj-graphe').scrollIntoView({ block: 'center' })); await page.waitForTimeout(100);
-  pt = await page.locator(S + '.dj-pt[data-k="plus0"] .dj-point').boundingBox(); await page.mouse.move(pt.x + pt.width / 2, pt.y + pt.height / 2); await page.waitForTimeout(200);
-  ok(await page.evaluate(() => { const t = document.querySelector('#ba-equip .dj-tip'); return !t.hidden && /12 A · 30 s/.test(t.textContent) && /État 3/.test(t.textContent) && /tient 7,3 s/.test(t.textContent) && /410 %/.test(t.textContent) && /déclenche à 125 °C, 23 °C min · 416 % du temps consommé/.test(t.textContent) && t.querySelector('.dj-tip-v.ko'); }),
-    'sa carte : 12 A pendant 30 s, un état EN SERVICE trouve le bilame chaud (préchauffage, MS3320N table VII : ÷ 1,6 à 60 % de In, ici 5 A sur 10 → ÷ 1,42) : le 10 A tient 10,4 / 1,42 = 7,3 s à 125 °C (410 % consommés par cet état), déclenche à 125 °C et 23 °C min, 416 % en tout');
-  await page.click(S + '.dj-x[data-x="plus0"]'); await page.waitForTimeout(700);
+  c = await voir(F + '.dj-pt[data-k="plus0"] .dj-point'); await page.mouse.move(c.x, c.y); await page.waitForTimeout(200); tx = await tip();
+  ok(/12\sA · 30\ss/.test(tx) && /État 3 — le 10\sA tient 7,3\ss à 125\s°C/.test(tx) && /déclenche à 125\s°C, 23\s°C min · 416\s% du temps consommé/.test(tx), 'sa bulle : un état EN SERVICE trouve le bilame chaud (MS3320N table VII, ÷ 1,42 ici) : le 10 A tient 7,3 s à 125 °C, il déclenche (416 % du temps consommé)', tx);
+  await page.mouse.move(5, 5); await page.click(F + '.dj-x[data-x="plus0"]'); await page.waitForTimeout(700);
   ok(await page.evaluate(() => app.contrat.charges.get('102CB1').plus.length === 0 && document.querySelectorAll('#ba-equip .dj-pt').length === 2), 'retiré');
+  // SES FILS : une ligne chacun, l'intensité au pire contre ce qu'il admet, en barre
+  await ouvrirSec('fils'); await page.waitForTimeout(200);
+  ok(await page.evaluate(() => { const li = [...document.querySelectorAll('#ba-equip .dj-fils .fi-fil')], f = c => li.find(x => x.querySelector('.fi-w').textContent === c), w = x => parseFloat(x.querySelector('.dj-barre i').style.width);
+    return li.length === 3 && !document.querySelector('#ba-equip .dj-fils table, #ba-equip .dj-pal') && f('W-011').classList.contains('ok') && Math.abs(w(f('W-011')) - 79.6) < 0.5 && /9,31\sA sur 11,7\sA pendant 2,1\smin/.test(f('W-011').textContent) && !f('W-011').querySelector('.dj-dit')
+      && f('W-015').classList.contains('ko') && w(f('W-015')) === 100 && /9,31\sA sur 3,9\sA/.test(f('W-015').textContent) && /trop fin pour démarrage et transition/.test(f('W-015').querySelector('.dj-dit').textContent) && f('W-012').classList.contains('ko')
+      && document.querySelectorAll('#ba-equip .dj-fils .fi-tag').length === 2 && /3 fils · 2 trop fins \(W-012, W-015\)/.test(document.querySelector('#ba-equip details.fs[data-section="fils"] .fs-resume').textContent); }),
+    'ses fils, sans tableau : une ligne chacun et une barre — W-011 (DR16) porte au pire 9,31 A pour 11,7 A admis (80 %, vert) ; W-015 (DR24) 9,31 A pour 3,9 A (rouge, « trop fin pour démarrage et transition ») ; W-012 rouge aussi ; les deux de la borne dédoublée portent VT1');
+  // LA CHUTE : une ligne par bout, la pire en tête, la part du disjoncteur dite une fois
+  await ouvrirSec('chute'); await page.waitForTimeout(200);
+  ok(await page.evaluate(() => { const c = document.querySelector('#ba-equip .dj-chutes'), li = [...c.querySelectorAll('.fi-fil')], j = li.map(x => parseFloat(x.querySelector('.dj-jauge i').style.width));
+    return li.length === 3 && /395SW1/.test(li[0].querySelector('.fi-ct').textContent) && /4,57\sV/.test(li[0].textContent) && /16,3\s%/.test(li[0].textContent) && /DR24 à 161\s°C/.test(li[0].querySelector('.dj-chemin').textContent) && li[0].classList.contains('ko') && j[0] === 100
+      && /103RL1/.test(li[1].textContent) && /1,28\sV/.test(li[1].textContent) && /101BT1/.test(li[2].textContent) && j[2] > 60 && j[2] < 64 && /dont 0,14\sV dans le disjoncteur/.test(c.querySelector('.fi-groupe').textContent) && /102CB1 : 0,14 V \(sa chute propre\)/.test(li[0].title); }),
+    'la chute en ligne, la pire en tête : 395SW1 4,57 V (16,3 %, le DR24 à 161 °C), 103RL1 1,28 V, 101BT1 0,62 V (62 % du volt admis) — « dont 0,14 V dans le disjoncteur », dit une fois');
+  // LE DÉTAIL DU CALCUL : les seuls tableaux, fermés d'office
+  ok(await page.evaluate(() => !document.querySelector('#ba-equip details.fs[data-section="detail"]').open), 'le détail du calcul reste fermé d’office');
+  await ouvrirSec('detail'); await page.waitForTimeout(200);
+  ok(await page.evaluate(() => { const d = document.querySelector('#ba-equip details.fs[data-section="detail"]'), T = [...d.querySelectorAll('table')], rows = [...T[0].querySelectorAll('tbody tr')], r = c => rows.find(x => x.firstElementChild.textContent.replace(/\s/g, ' ') === c);
+    return T.length === 2 && rows.length === 14 && r('15 A').classList.contains('meilleur') && /le meilleur/.test(r('15 A').textContent) && r('10 A').classList.contains('retenu') && /405\s%/.test(r('10 A').textContent) && /8\sA/.test(r('10 A').textContent)
+      && T[1].querySelectorAll('tbody tr').length === 3 && /53 \/ 15,6/.test(T[1].textContent) && /MS3320N/.test(d.textContent) && /CEI 60949/.test(d.textContent) && /0,8 In à 125\s°C/.test(d.textContent); }),
+    'le détail : la phrase entière, la gamme jugée (14 calibres ; le 10 A retenu garantit 8 A, ses pointes consomment 405 % avec la marge ; le 15 A, le meilleur), les marges et ce que la famille garantit (0,8 In à 125 °C), les fils palier par palier (W-015 : 53 A laissés pour 15,6 A de dommage à 2 s), les sources');
+  // les hypothèses R2 : sans marge, le meilleur redevient le 10 A, avec deux fils en DR16 (R2 § 3.4)
+  await page.evaluate(() => { app.simu.marge = 0; apresHypotheses(); }); await page.waitForTimeout(500); await ouvrir();
+  ok(await page.evaluate(() => { const m = meilleurCalibre('102CB1'); return m.calibre === 10 && /10\sA · retenu · 2 fils à grossir/.test(document.querySelector('#ba-equip details.fs[data-section="calibre"] .fs-resume').textContent) && /sans marge/.test(document.querySelector('#ba-equip .dj-m-phrase').textContent); }),
+    'la marge de courant à 0 (fiche des hypothèses) : le meilleur est le 10 A retenu, et deux fils à grossir (W-012, W-015 en DR16) — la phrase dit « sans marge »');
+  await page.evaluate(() => { app.simu.marge = 10; apresHypotheses(); }); await page.waitForTimeout(400);
   // le calibre du folio suit l'historique : retenir le 15, Ctrl+Z
-  await page.click(S + '.dj-chip[data-cal="15"]'); await page.waitForTimeout(700); const avecQuinze = (await folioCb()).cal.join();
+  await ouvrir(); await page.click(F + '.dj-chip[data-cal="15"]'); await page.waitForTimeout(700); const avecQuinze = (await folioCb()).cal.join();
   await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(600);
   const defait = await folioCb();
-  ok(avecQuinze === '15 A' && defait.cal.join() === '10 A' && !defait.boite && await page.evaluate(() => app.contrat.charges.get('102CB1').calibre === null), 'retenir le 15 écrit « 15 A » sur le folio, Ctrl+Z y rend « 10 A »', avecQuinze + ' → ' + defait.cal.join());
+  ok(avecQuinze === '15 A' && defait.cal.join() === '10 A' && !defait.boite && await page.evaluate(() => pnDuRepere('102CB1') === 'MS3320-10'), 'retenir le 15 écrit « 15 A » sur le folio, Ctrl+Z y rend « 10 A »', avecQuinze + ' → ' + defait.cal.join());
 
   console.log('\nLE SYMBOLE, CAS PAR CAS');
   const C = await page.evaluate(symboleCasParCasDansLaPage);
