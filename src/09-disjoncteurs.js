@@ -53,13 +53,16 @@
        125 °C, les deux bouts — le plus pessimiste.
    LA GAMME : les calibres du catalogue de la FAMILLE du part number (table
    Familles de disjoncteurs : MS3320 0,5 à 25 A, ETA483 1 à 35 A, 3TC 15 à
-   35 A), filtrés par la liste préférée du lecteur s'il en garde une
-   (hypothèse `calibresPreferes`) ; sans famille, la gamme du lecteur.
+   35 A), filtrés par la liste préférée du lecteur (hypothèse
+   `calibresPreferes` : 1, 3, 5, 7,5, 10, 15, 20, 25 A — « 0,5, 0,75
+   n'existent pas » ; au-delà de 25 A, le catalogue reste) ; sans famille,
+   la gamme du lecteur, la même.
    LE MEILLEUR CALIBRE (`meilleur`, R2 § 3.1 ; NASA TM-102179 étapes 3 à 7) :
    le plus petit calibre de la gamme qui tient le permanent et les pointes
    avec la marge (hypothèses `marge` : 10 % de courant, `margeTemps` : 75 %
    du temps de déclenchement), à la température max du tableau, et qui reste
-   sélectif 2:1 avec ses voisins s'il en est un. Puis, pour chaque fil qui
+   sélectif 2:1 avec ses voisins s'il en est un — sans passer de l'autre côté
+   d'un voisin pour y arriver. Puis, pour chaque fil qui
    ne le suit pas, la plus petite jauge de sa famille (la base des câbles)
    qui tient la charge et que ce calibre protège — ON NE MONTE JAMAIS LE
    CALIBRE POUR SAUVER UN FIL : un disjoncteur plus gros protège moins ; et
@@ -70,8 +73,9 @@
    =========================================================================== */
 'use strict';
 
-// la gamme du lecteur (son Excel) : celle d'un disjoncteur dont le part number ne dit pas la famille
-const CALIBRES = [1, 3, 5, 7.5, 10, 15, 25];
+// la gamme du lecteur : celle d'un disjoncteur dont le part number ne dit pas la famille — la même que sa liste préférée
+// (HYPOTHESES.calibresPreferes, 09) : « c'est 1, 3, 5, 7,5, 10, 15, 20, 25 »
+const CALIBRES = [1, 3, 5, 7.5, 10, 15, 20, 25];
 // la série des calibres d'aéronef (MS3320N, MS22073M, MS14105, EN 3661 : la table Familles) — ce qu'une famille donnée en
 // plage (« 1 à 25 ») propose
 const SERIE_CALIBRES = [0.5, 0.75, 1, 1.5, 2, 2.5, 3, 4, 5, 7.5, 10, 15, 20, 25, 30, 35, 40, 50];
@@ -133,10 +137,12 @@ function chuteDuDisjoncteur(norme, famille, calibre) { if (!(calibre > 0)) retur
   for (const k of cles) { const r = T.find(x => x.famille === k && x.calibres.some(c => Math.abs(c - calibre) < 1e-9)); if (r) return { chute: r.chuteMax, nom: r.nom, note: r.note }; }
   return null; }
 /* LE CATALOGUE d'une famille : ses calibres (une plage « 1 à 25 » prend la série d'aéronef qu'elle couvre), filtrés par la
-   liste préférée du lecteur (`calibresPreferes`) quand elle en garde ; sans famille, la gamme du lecteur (CALIBRES). */
+   liste préférée du lecteur (`calibresPreferes` : 1, 3, 5, 7,5, 10, 15, 20, 25 A par défaut) — jusqu'au plus grand calibre
+   de la liste seulement : au-delà, elle ne dit rien, et une famille de 15 à 35 A (3TC) ou de 20 à 50 A (EN 3661) garde
+   ses 30, 35, 50 A ; vide, ou si rien n'en reste, tout le catalogue ; sans famille, la gamme du lecteur (CALIBRES). */
 function calibresDeLaFamille(F, H) { let cs = !F || !F.calibres || !F.calibres.length ? CALIBRES.slice() : F.plage ? SERIE_CALIBRES.filter(c => c >= F.calibres[0] - 1e-9 && c <= F.calibres[1] + 1e-9) : F.calibres.slice();
-  const pref = (H && Array.isArray(H.calibresPreferes) ? H.calibresPreferes : []).map(Number).filter(x => x > 0);
-  if (pref.length) { const f = cs.filter(c => pref.some(p => Math.abs(p - c) < 1e-9)); if (f.length) cs = f; }
+  const pref = (H && Array.isArray(H.calibresPreferes) ? H.calibresPreferes : []).map(Number).filter(x => x > 0), haut = Math.max(...pref);
+  if (pref.length) { const f = cs.filter(c => c > haut + 1e-9 || pref.some(p => Math.abs(p - c) < 1e-9)); if (f.length) cs = f; }
   return [...new Set(cs)].sort((a, b) => a - b); }
 /* CE QUE LE DISJONCTEUR GARANTIT DE TENIR à une température (table Calibration, « Tient » : le multiple de In tenu une
    heure) : les lignes de sa famille — son nom exact, sinon une ligne qui commence par lui (« MS3320 (2TC) »), sinon qui le
@@ -312,7 +318,7 @@ function verdictDisjonction(norme, famille, calibre, profil, contexte) { context
     return { calibre: c, catalogue: dans, valide: j.valide, serre: j.serre, marge: j.avecMarge, somme: j.somme, sommeMarge: j.sommeMarge, permanentOk: j.permanentOk, permanentMargeOk: j.permanentMargeOk, tenu: j.tenu,
       fils: fils.length ? pf.every(f => f.protege !== false && f.verdict !== 'calibre' && !f.horsTable && !f.contactSurcharge) : null,
       selectif: autres.length ? autres.every(a => Math.max(a, c) >= SELECTIVITE * Math.min(a, c) - 1e-9) : null, ideal: false }; });
-  const meilleur = meilleurDe(norme, { F, H, M, tenue, courbes, pts, fils, gamme, protCtx, pn: contexte.pn || (F && F.pn) || '' });
+  const meilleur = meilleurDe(norme, { F, H, M, tenue, courbes, pts, fils, gamme, protCtx, autres, pn: contexte.pn || (F && F.pn) || '' });
   const calibreMini = (gamme.find(g => g.valide) || {}).calibre || null, calibreIdeal = meilleur.calibre, reserve = meilleur.reserve;
   gamme.forEach(g => { g.ideal = g.calibre === calibreIdeal; });
   // le pire point : le fautif qui pèse le plus dans le bilan, sinon le plus près de la courbe
@@ -323,8 +329,9 @@ function verdictDisjonction(norme, famille, calibre, profil, contexte) { context
 /* LE MEILLEUR CALIBRE, et ses fils (R2 § 3.1 ; NASA TM-102179 étapes 3 à 7 ; AC 43.13-1B § 11-48, § 11-67) :
      1. le calibre : le plus petit du catalogue qui tient le permanent (courant majoré de la marge, sous ce qu'il garantit
         à la température max du tableau) et les pointes (courant majoré, au plus `margeTemps` de son temps de
-        déclenchement), et qui reste sélectif 2:1 avec ses voisins quand un calibre qui tient l'est ; sinon le plus petit
-        qui tient avec la marge (réserve 'selectivite') ; sinon le plus petit qui tient, serré (réserve 'serre') ;
+        déclenchement), et qui reste sélectif 2:1 avec ses voisins quand un calibre qui tient l'est, du même côté de chacun
+        que le plus petit qui tient (l'aval reste sous l'amont) ; sinon le plus petit qui tient avec la marge (réserve
+        'selectivite') ; sinon le plus petit qui tient, serré (réserve 'serre') ;
      2. chaque fil qu'il nourrit doit le SUIVRE (`filSuit`) : porter la charge, admettre le calibre en service, rester dans
         la table 11-3, avoir un contact qui l'admet, ne pas s'abîmer avant que le disjoncteur s'ouvre. Sinon on ne monte
         pas le calibre — un disjoncteur plus gros protège moins —, on grossit le fil : la plus petite jauge de sa famille
@@ -340,7 +347,11 @@ function meilleurDe(norme, o) { const { F, H, M, tenue, courbes, pts, fils, gamm
   const vide = { calibre: null, pn: null, famille: F ? F.famille : '', catalogue: cat.map(g => g.calibre), filsAChanger: [], contactsTouches: [], filsInconnus: [], selectif: null, serre: false, reserve: '', marge: null };
   if (!courbes.length) return { ...vide, pourquoi: 'aucune courbe de disjonction dans la norme : rien ne se choisit' };
   if (!pts.length) return { ...vide, pourquoi: 'le profil de charge est à renseigner : sans lui, aucun calibre ne se choisit' };
-  const avecMarge = cat.filter(g => g.marge), selectifs = avecMarge.filter(g => g.selectif !== false), g = selectifs[0] || avecMarge[0] || cat.find(x => x.valide) || null;
+  // sélectif, mais du même côté de chaque voisin que le plus petit calibre qui tient : sous un 5 A, un 1,5 A de charge ne
+  // passe pas au 10 A pour être à 2:1 (il deviendrait l'amont de son amont) — sans calibre à 2:1 de ce côté, la réserve le dit
+  const avecMarge = cat.filter(g => g.marge), c0 = avecMarge.length ? avecMarge[0].calibre : null, autres = o.autres || [];
+  const memeCote = x => autres.every(a => (x.calibre < a - 1e-9) === (c0 < a - 1e-9));
+  const selectifs = avecMarge.filter(x => x.selectif !== false && memeCote(x)), g = selectifs[0] || avecMarge[0] || cat.find(x => x.valide) || null;
   if (!g) return { ...vide, pourquoi: `aucun calibre ${nomF} (${cat.map(x => nombreFr(x.calibre)).join(', ')} A) ne tient ce profil à ${courbes[0].nom}` };
   const cal = g.calibre, perm = pts.filter(p => p.t === Infinity).reduce((m, p) => Math.max(m, p.i), 0), courts = pts.some(p => p.t !== Infinity);
   // les fils qui ne suivent pas ce calibre, et la jauge qui les suivrait

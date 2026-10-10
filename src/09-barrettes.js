@@ -1402,10 +1402,11 @@ function remplirSelonNorme(P, norme) {
        le démarrage ni la transition) trouve le bilame chaud : son temps de déclenchement se divise par ce facteur
        (MS3320N table VII, préchargé à 60 % de In : ÷ 1,6 à 3,7 — la borne basse), en plein dès que le permanent atteint
        60 % de In, en proportion du carré au-dessous — à confirmer ; 1 l'ôte ;
-     · `calibresPreferes` : [] (défaut) — la liste de calibres que le lecteur s'impose dans le catalogue de la famille
-       (vide : tout le catalogue). */
+     · `calibresPreferes` : 1, 3, 5, 7,5, 10, 15, 20, 25 A (défaut) — les calibres que le lecteur pose (« trop de
+       calibres : 0,5, 0,75 n'existent pas ; c'est 1, 3, 5, 7,5, 10, 15, 20, 25 ») : ils filtrent le catalogue de la
+       famille, au-delà de 25 A le catalogue reste (09 bis, `calibresDeLaFamille`) ; vide : tout le catalogue. */
 const HYPOTHESES = { longueur: 5, courant: 2, tension: 28, ambiante: 95, tconducteur: 20, regime: 'continu', cosphi: 0.8, reactance: 0, conditions: ['faisceau'], fils: 8, charge: 60, altitude: 0, retour: 'structure', tableauMin: -55, tableauMax: 125,
-  chuteConducteur: 'estimee', chuteDisjoncteur: true, frequence: 400, marge: 10, margeTemps: 75, prechauffage: 1.6, calibresPreferes: [] };
+  chuteConducteur: 'estimee', chuteDisjoncteur: true, frequence: 400, marge: 10, margeTemps: 75, prechauffage: 1.6, calibresPreferes: [1, 3, 5, 7.5, 10, 15, 20, 25] };
 const RETOURS = { structure: 'par la structure (aller seul)', fil: 'par un fil identique (aller et retour)' };
 const MODES_CONDUCTEUR = { estimee: 'estimée sous le courant (AC 43.13-1B § 11-66 d(6))', fixe: 'fixe : l’hypothèse « conducteur » (20 °C, comme l’Excel)' };
 /* Le RETOUR par un fil identique double la résistance — en continu et en monophasé ; en triphasé équilibré, aucun courant

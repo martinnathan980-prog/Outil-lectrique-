@@ -357,14 +357,18 @@ tremblent).
 
 La **gamme** est le catalogue de la famille du part number (colonne Calibres
 de la table Familles de disjoncteurs : MS3320 de ½ à 25 A ; une plage « 1 à
-25 » prend la série d'aéronef qu'elle couvre), filtré par la liste préférée
-du lecteur s'il en garde une (hypothèse `calibresPreferes`) ; sans famille,
-les sept calibres de son Excel (1, 3, 5, 7,5, 10, 15, 25 A). Le **meilleur
-calibre** (R2 § 3.1 ; NASA TM-102179 étapes 3 à 7) est le plus petit de la
-gamme qui tient le permanent et les pointes avec la marge (hypothèses
-`marge` : 10 % de courant, à 0 % si le profil sort du bilan électrique au
-pire cas ; `margeTemps` : au plus 75 % du temps de déclenchement), à la
-température max du tableau, et qui reste sélectif 2:1 avec ses voisins ;
+25 » prend la série d'aéronef qu'elle couvre), filtré par les calibres que
+le lecteur pose (hypothèse `calibresPreferes` : 1, 3, 5, 7,5, 10, 15, 20,
+25 A par défaut — « 0,5, 0,75 n'existent pas » ; au-delà de 25 A, la famille
+garde les siens : un 3TC propose encore 30 et 35 A) ; sans famille, ces
+mêmes huit calibres. Un part number hors de la liste reste jugé et montré.
+Le **meilleur calibre** (R2 § 3.1 ; NASA TM-102179 étapes 3 à 7) est le plus
+petit de la gamme qui tient le permanent et les pointes avec la marge
+(hypothèses `marge` : 10 % de courant, à 0 % si le profil sort du bilan
+électrique au pire cas ; `margeTemps` : au plus 75 % du temps de
+déclenchement), à la température max du tableau, et qui reste sélectif 2:1
+avec ses voisins — du même côté d'eux que le plus petit calibre qui tient
+(sous un 5 A, une charge de 1,5 A ne passe pas au 10 A pour être à 2:1) ;
 puis, pour chaque fil qui ne le suit pas (la charge, le service, la table
 11-3, le contact, la courbe de dommage), la plus petite jauge de sa famille
 dans la base des câbles qui le suit — on ne monte **jamais** le calibre pour

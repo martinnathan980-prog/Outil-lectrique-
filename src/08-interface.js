@@ -975,7 +975,7 @@ function hypothesesR2(N, H, nb) { const dj = !!(N.disjoncteurs && N.disjoncteurs
     dj ? nb('si-Mt', 'margeTemps', 'marge de temps', '%', '5', 'tableau', 'Ce qu’une pointe peut consommer, au plus, du temps de déclenchement du meilleur calibre : 75 % par défaut (R2 § 3.1, étape 2).') : null,
     dj ? nb('si-Pc', 'prechauffage', 'préchauffage', '', '0.1', 'tableau', 'Un état ajouté au profil survient en service, le bilame chaud : son temps de déclenchement se divise par ce facteur. 1,6 par défaut, la borne basse de la feuille MS3320N (table VII : 1,6 à 3,7) ; 1 l’ôte.') : null,
     dj ? { genre: 'liste', id: 'si-Cp', k: 'calibresPreferes', lib: 'calibres préférés', unite: 'A', groupe: 'tableau',
-      sert: 'Les calibres que tu t’imposes dans le catalogue de la famille (« 1 3 5 7,5 10 15 25 ») : le meilleur se choisit parmi eux. Vide par défaut : tout le catalogue de la famille du part number.' } : null]; }
+      sert: 'Les calibres que tu poses, dans le catalogue de la famille du part number : 1 3 5 7,5 10 15 20 25 par défaut (au-delà de 25 A, la famille garde les siens) ; le meilleur se choisit parmi eux. Vide : tout le catalogue de la famille.' } : null]; }
 /* Un champ d'hypothèse, tel que le bandeau d'une carte le montre (compact) ; la fiche l'habille d'une ligne qui dit à
    quoi il sert. Les identifiants (si-L, si-I…) sont ceux que `lierHypotheses` lit. */
 function champHypotheseHtml(c, H) {

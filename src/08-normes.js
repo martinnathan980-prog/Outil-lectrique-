@@ -87,8 +87,11 @@ function retirerApport(A, table, k) { const T = A.tables[table] || (A.tables[tab
 const nettoyerApports = A => { TABLES_NORME.forEach(t => { const T = A.tables[t]; if (T && !(T.lignes || []).length && !(T.supprimees || []).length) delete A.tables[t]; }); return A; };
 /* Les hypothèses de la simulation : une commodité de ce navigateur. */
 function relireSimu() { app.simu = { ...HYPOTHESES };
-  try { const o = JSON.parse(localStorage.getItem(CLE_SIMU) || 'null'); if (o && typeof o === 'object') app.simu = { ...HYPOTHESES, ...o, conditions: Array.isArray(o.conditions) ? o.conditions : HYPOTHESES.conditions }; } catch (_) { } }
-function memoriserSimu() { try { localStorage.setItem(CLE_SIMU, JSON.stringify(app.simu)); } catch (_) { } }
+  try { const o = JSON.parse(localStorage.getItem(CLE_SIMU) || 'null');
+    // la liste vide des calibres préférés était le défaut d'hier : gardée sans `gammeLue`, elle laisse place à la gamme du lecteur
+    if (o && Array.isArray(o.calibresPreferes) && !o.calibresPreferes.length && !o.gammeLue) delete o.calibresPreferes;
+    if (o && typeof o === 'object') app.simu = { ...HYPOTHESES, ...o, conditions: Array.isArray(o.conditions) ? o.conditions : HYPOTHESES.conditions }; } catch (_) { } }
+function memoriserSimu() { try { localStorage.setItem(CLE_SIMU, JSON.stringify({ ...app.simu, gammeLue: true })); } catch (_) { } }
 
 /* ---- ce que chaque table est, pour un bureau d'études ------------------------ */
 /* Par DOMAINE, les VUES : une vue est une table, parfois filtrée (les modules de barrette d'un côté, les arrangements
