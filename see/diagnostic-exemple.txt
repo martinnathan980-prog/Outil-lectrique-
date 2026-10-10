@@ -1,0 +1,144 @@
+﻿DIAGNOSTIC DU POSTE POUR LE PILOTE SEE - Atelier Schéma
+diagnostic.ps1 version 1.0 (2026-10-10) - lecture seule
+Relevé du 2026-10-10 11:32, durée 0.8 s
+Rapport : diagnostic-see.txt, à côté du script
+Rapport anonymisé : <UTILISATEUR>, <POSTE>, <DOMAINE>, <SERVEUR>, <ORGANISATION>, <COURRIEL>, <DOSSIER SEE n°k>.
+Aucune donnée de projet : seulement des logiciels, des clés de registre et des noms de fichiers techniques ;
+hors de Program Files, seuls les noms de dossiers techniques sont écrits ; emplacements approuvés décrits par leur nature.
+Vocabulaire : TROUVÉ = présent ; ABSENT / absent = cherché, pas là ; NON LISIBLE = présent mais refusé ou en erreur ;
+              NON DISPONIBLE ICI = impossible à vérifier sur ce poste (pas Windows, PowerShell verrouillé...).
+
+RÉSUMÉ
+  Windows ............ : non vérifiable ici (pas Windows : Ubuntu 24.04.5 LTS)
+  PowerShell ......... : 7.4.6, mode FullLanguage, processus sans objet hors Windows
+  Excel .............. : non vérifiable ici
+  Macros d'Excel ..... : non vérifiable ici
+  SEE installé ....... : non vérifiable ici
+  SEE.exe ............ : non trouvé
+  COM (CLSID connus) . : non vérifiable ici
+  SEE ouvert ......... : aucun (SEE n'est pas ouvert)
+  Python ............. : TROUVÉ : Python 3.13.16
+  Node / Java ........ : TROUVÉ v22.22.0 / TROUVÉ
+  SPM / SQL Server ... : non vérifiable ici / non vérifiable ici
+
+À REPORTER DANS LA FEUILLE « Reglages » DU CLASSEUR PILOTE
+  Rien à reporter : le registre de Windows n'a pas pu être lu ici.
+
+REMARQUES
+  - Ce rapport a été produit hors Windows : il ne montre que la forme du relevé.
+
+==============================================================================
+1. Windows
+   État : NON DISPONIBLE ICI (ce n'est pas Windows)
+------------------------------------------------------------------------------
+Système : Ubuntu 24.04.5 LTS
+
+==============================================================================
+2. PowerShell (version, mode du langage, stratégies d'exécution)
+   État : TROUVÉ
+------------------------------------------------------------------------------
+Version : 7.4.6 ; édition : Core
+Hôte : ConsoleHost
+Processus : sans objet hors Windows
+LanguageMode : FullLanguage
+    = langage complet : rien n'est verrouillé pour ce script.
+
+Stratégies d'exécution (par portée) :
+    MachinePolicy = Unrestricted
+    UserPolicy = Unrestricted
+    Process = Unrestricted
+    CurrentUser = Unrestricted
+    LocalMachine = Unrestricted
+    (MachinePolicy / UserPolicy viennent d'une GPO de l'entreprise : elles priment sur -ExecutionPolicy Bypass.)
+
+Verrouillage du poste :
+    AppLocker, SRP : non disponible ici (pas de registre Windows)
+    WDAC (Device Guard) : non disponible ici (Get-CimInstance absent)
+PowerShell 7 (pwsh) : TROUVÉ : <chemin de pwsh>
+
+==============================================================================
+3. Office et Excel (version, 32 ou 64 bits, sécurité des macros)
+   État : NON DISPONIBLE ICI (pas de registre Windows)
+------------------------------------------------------------------------------
+Office et Excel ne se cherchent que dans le registre Windows.
+
+==============================================================================
+4. SEE Electrical Expert : programmes installés (SEE, IGE+XAO, ETAP)
+   État : NON DISPONIBLE ICI (pas de registre Windows)
+------------------------------------------------------------------------------
+La liste des programmes installés se lit dans le registre Windows (clés Uninstall).
+
+==============================================================================
+5. Dossiers IGE+XAO et SEE (jusqu'à 3 niveaux, noms seulement)
+   État : NON DISPONIBLE ICI (variables ProgramFiles absentes : ce n'est pas Windows)
+------------------------------------------------------------------------------
+Les dossiers Program Files et Common Files ne se cherchent que sous Windows.
+
+==============================================================================
+6. SEE : fichiers techniques (SEE.exe, XSD, aide VBA, plugins, bibliothèques de types)
+   État : NON DISPONIBLE ICI (ce n'est pas Windows : aucun dossier SEE à parcourir)
+------------------------------------------------------------------------------
+Aucun SEE.exe, aucune bibliothèque de types, aucun plugin SEE cherchables.
+
+==============================================================================
+7. COM : les CLSID connus de SEE et sa bibliothèque de types
+   État : NON DISPONIBLE ICI (pas de registre Windows)
+------------------------------------------------------------------------------
+{829E4B3B-B128-4999-A66A-6E76F0B4B22F} - V5R2 Application : non vérifiable ici
+{29E25405-2755-42DA-A17D-C07EC1A16CCB} - V5R2 SeeAutomation : non vérifiable ici
+{A55015A3-0E82-4694-87D9-DB82B6620532} - V4R3 Application : non vérifiable ici
+{B0B9DD73-EE81-473F-9C3C-D8910C7E2D59} - V4R3 SeeAutomation : non vérifiable ici
+{3F068A71-6B82-4271-B830-DC790F3BB892} - ADG ExcelEntry (plugin SEEXmlSheetGenerator) : non vérifiable ici
+TypeLib {9956A56F-B14C-4007-B6CF-B89B4A7CD08D} : non vérifiable ici
+
+==============================================================================
+8. COM : recherche des ProgID et des serveurs qui mènent à SEE
+   État : NON DISPONIBLE ICI (pas de registre Windows)
+------------------------------------------------------------------------------
+La recherche des ProgID et des serveurs COM se fait dans le registre Windows.
+
+==============================================================================
+9. Processus SEE en cours
+   État : ABSENT (SEE n'est pas ouvert)
+------------------------------------------------------------------------------
+Processus lus : 77
+Aucun processus SEE en cours.
+Excel ouvert : 0 processus EXCEL
+
+==============================================================================
+10. Python, Node, Java
+   État : TROUVÉ : Java, Node v22.22.0, Python 3.13.16
+------------------------------------------------------------------------------
+Python - commandes (lancées avec --version) :
+    py : absent
+    python : /usr/bin/python : Python 3.13.16
+    python : /bin/python : Python 3.13.16
+    python3 : /usr/bin/python3 : Python 3.13.16
+    python3 : /bin/python3 : Python 3.13.16
+Python - registre (PEP 514) :
+    non disponible ici (pas de registre Windows)
+Python - modules COM (présence des dossiers, sans lancer Python) :
+    pywin32 (win32com) : non vu
+    comtypes : non vu
+Node : TROUVÉ : /opt/node22/bin/node : v22.22.0
+Java : TROUVÉ : /usr/bin/java : version non lue (pas un exécutable Windows) ; java non lancé : version lue dans l'en-tête du fichier
+JAVA_HOME = /usr/lib/jvm/java-21-openjdk-amd64
+
+==============================================================================
+11. SEE Project Manager (SPM) et SQL Server local
+   État : NON DISPONIBLE ICI (ni registre ni services Windows)
+------------------------------------------------------------------------------
+Programmes SPM : non disponible ici (pas de registre Windows)
+
+Services : non disponible ici (Get-Service absent)
+
+==============================================================================
+CE QUE CE DIAGNOSTIC NE VÉRIFIE PAS
+------------------------------------------------------------------------------
+- Il ne lance pas SEE et ne crée aucun objet COM : savoir si GetObject / CreateObject marchent vraiment,
+  c'est le rôle de la macro SondeApplication du classeur pilote, avec SEE ouvert.
+- Il ne lit pas la table des objets en cours d'exécution (ROT) : impossible sans COM.
+- Il ne lit aucun projet, aucun environnement SEE, aucun titre de fenêtre, aucune ligne de commande.
+
+Incidents pendant le relevé : aucun.
+Fin du rapport.

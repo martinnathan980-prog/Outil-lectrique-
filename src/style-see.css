@@ -1,0 +1,24 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   EXPORTER POUR SEE (08-see.js) : une petite fiche — le choix des folios, l'avancement folio par folio, le fichier
+   Les jetons (couleurs, typo, espacements) sont dans style.css ; ici, seulement ce qui est propre à cette fiche.
+   L'avancement se lit comme un tableau de voyants : une case de 10 px par folio — éteinte à faire, cyan qui respire en
+   cours, verte faite, ambre simplifiée, rouge pas dessinée — ; huit cents folios tiennent dans la fiche.
+   ═══════════════════════════════════════════════════════════════════════ */
+.se-portee{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin:var(--sp-3) 0 0}
+.se-portee .fi-chip:disabled{opacity:.55;cursor:default}
+.se-avance{display:flex;flex-direction:column;gap:var(--sp-3);margin-top:var(--sp-4)}
+.se-avance[hidden]{display:none}
+.se-cases{display:flex;flex-wrap:wrap;gap:3px;max-height:180px;overflow:auto;padding:var(--sp-2);border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-sunken)}
+.se-cases i{width:10px;height:10px;border-radius:1px;background:var(--s-line-2);flex:none}
+.se-cases i.encours{background:var(--accent);animation:respire 1.6s ease-in-out infinite}
+.se-cases i.ok{background:var(--ok)}
+.se-cases i.att{background:var(--warn)}
+.se-cases i.ko{background:var(--ko)}
+.se-cases i.vide{background:transparent;box-shadow:inset 0 0 0 1px var(--s-line-2)}
+.se-ligne{margin:0;font-size:var(--f-13);line-height:1.45;color:var(--t-1);font-variant-numeric:tabular-nums;min-height:1.45em}
+.se-ligne .id{font-family:var(--mono);font-size:var(--f-12);word-break:break-all}
+.se-avance .fi-tuile .se-sur{font:400 var(--f-13) var(--sans);color:var(--t-3)}
+.se-avance details.fi-etat ul{max-height:220px;overflow:auto}
+/* le nom du fichier, au bout du pied : il se rogne plutôt que de passer à la ligne */
+.se-nom{flex:1 1 0;min-width:0;text-align:right;font:400 var(--f-12) var(--mono);color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (prefers-reduced-motion: reduce){.se-cases i.encours{animation:none}}

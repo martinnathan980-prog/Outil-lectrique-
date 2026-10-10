@@ -77,6 +77,33 @@ node tests/normes.js           les normes : importer, classer, modifier (08 octi
                                tables, en-têtes avec unités), prévisualisés puis adoptés ; l'export d'une table, d'un gabarit, de
                                toutes les modifications ; la recherche dans toutes les tables et « Voir dans la table » ; le retour
                                à l'embarquée, table par table puis partout ; la bible depuis la page et retour ; le téléphone
+node tests/see.js              LE PAQUET SEE (see/FORMAT-PAQUET.md) ET SON REPLI DXF (see/FORMAT-DXF.md), sans navigateur : les
+                               feuilles et leurs colonnes sont celles du contrat, relues dans le document lui-même ; sur les six
+                               folios de l'exemple, sept câblages du corpus, un contrat découpé (renvois) et un collecteur, le
+                               classeur RELU : une ligne de Bornes unique (Bloc, Borne, Connecteur, Rond : les ronds d'une même
+                               borne de barrette numérotés de haut en bas), chaque bout de fil en cite exactement une et part de
+                               SON accroche (au centième de mm), le contact (CX, CY) sur la borne dessinée (pièce, corps, fiche,
+                               embase, masse, bord de la pastille côté fil), segments horizontaux ou verticaux, tout dans la
+                               feuille, chaque liaison du folio est un fil du paquet, un bloc unique par folio, de vrais nombres
+                               au centième ; le dessin ne change pas (le SVG au caractère près avant et après l'export), chaque
+                               numéro de fil relu ; un fil posé sur une jonction prolongé jusqu'à sa borne ; le lot (`node
+                               see/exporter.js --exemple`, une sélection de folios, puis en deux tâches) écrit le même paquet, la
+                               version du moteur est celle d'index.html. LE DXF de chaque folio relu par une lecture maison :
+                               paires code / valeur, R12, tables, blocs et ATTDEF, une insertion par borne au contact du paquet
+                               et ses quatre attributs, une LINE par segment, chaque fil d'une insertion de sa borne à l'autre,
+                               couleurs ACI, Windows-1252 ; le zip relu (CRC-32 recalculés bit à bit) ; `--dxf=dossier/` du lot.
+                               --navigateur : la fiche « Exporter pour SEE » à la vraie souris — le même paquet que le lot (à la
+                               date et aux contacts à sertir près), les folios jamais vus placés au loin, l'écran jamais figé plus
+                               d'une seconde, « ce folio » tel qu'on le voit (affiné, puis retouché) ; le zip et le DXF d'un folio
+                               téléchargés, octet pour octet ceux du lot ; le bilan d'un export montré seulement s'il dit ce que
+                               le bouton referait (même contrat, même fichier, mêmes folios) ; --captures=dossier ;
+                               --corpus-entier : les soixante-douze câblages du banc (une dizaine de minutes)
+node tests/vba.js              LES MACROS DU PILOTE SEE (see/vba/*.bas), sans Excel ni SEE : contrôle statique comme l'éditeur VBA
+                               les importera — Windows-1252 sans séquence UTF-8, CRLF, VB_Name, Option Explicit, lignes et
+                               continuations, blocs équilibrés, identifiants déclarés, Private appelée de son module, nombre
+                               d'arguments, ByRef du bon type, Set juste ; les clés de réglage et les huit natures de
+                               FORMAT-PAQUET ; la sonde n'écrit rien dans SEE, chaque procédure du pilote qui écrit teste la
+                               simulation ; et le contrôleur lui-même, éprouvé par vingt-six fautes injectées une à une
 node tests/couverture.js       CE QUE L'OUTIL VÉRIFIE, ET S'IL VÉRIFIE TOUT : sur l'exemple embarqué et sur un contrat inventé plus riche
                                (huit disjoncteurs dont un sans profil, un sans part number, un tripolaire ; EN 2997, EN 3645, EN 3646,
                                EN 4165, ASNE0059 ; E0599 et NSA937901 ; deux prises en chaîne ; AD16, AM6, un fil sans type, un type

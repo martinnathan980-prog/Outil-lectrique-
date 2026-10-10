@@ -1990,6 +1990,32 @@ svg .re-note{fill:#5b6875;font-size:calc(10px / var(--k,1))}
 .picto.mj-picto .p-contact{fill:var(--t-2)}
 .cand[aria-pressed="true"] .picto.mj-picto .p-corps{stroke:var(--accent)}
 
+/* ───────── style-see.css ───────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   EXPORTER POUR SEE (08-see.js) : une petite fiche — le choix des folios, l'avancement folio par folio, le fichier
+   Les jetons (couleurs, typo, espacements) sont dans style.css ; ici, seulement ce qui est propre à cette fiche.
+   L'avancement se lit comme un tableau de voyants : une case de 10 px par folio — éteinte à faire, cyan qui respire en
+   cours, verte faite, ambre simplifiée, rouge pas dessinée — ; huit cents folios tiennent dans la fiche.
+   ═══════════════════════════════════════════════════════════════════════ */
+.se-portee{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin:var(--sp-3) 0 0}
+.se-portee .fi-chip:disabled{opacity:.55;cursor:default}
+.se-avance{display:flex;flex-direction:column;gap:var(--sp-3);margin-top:var(--sp-4)}
+.se-avance[hidden]{display:none}
+.se-cases{display:flex;flex-wrap:wrap;gap:3px;max-height:180px;overflow:auto;padding:var(--sp-2);border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-sunken)}
+.se-cases i{width:10px;height:10px;border-radius:1px;background:var(--s-line-2);flex:none}
+.se-cases i.encours{background:var(--accent);animation:respire 1.6s ease-in-out infinite}
+.se-cases i.ok{background:var(--ok)}
+.se-cases i.att{background:var(--warn)}
+.se-cases i.ko{background:var(--ko)}
+.se-cases i.vide{background:transparent;box-shadow:inset 0 0 0 1px var(--s-line-2)}
+.se-ligne{margin:0;font-size:var(--f-13);line-height:1.45;color:var(--t-1);font-variant-numeric:tabular-nums;min-height:1.45em}
+.se-ligne .id{font-family:var(--mono);font-size:var(--f-12);word-break:break-all}
+.se-avance .fi-tuile .se-sur{font:400 var(--f-13) var(--sans);color:var(--t-3)}
+.se-avance details.fi-etat ul{max-height:220px;overflow:auto}
+/* le nom du fichier, au bout du pied : il se rogne plutôt que de passer à la ligne */
+.se-nom{flex:1 1 0;min-width:0;text-align:right;font:400 var(--f-12) var(--mono);color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (prefers-reduced-motion: reduce){.se-cases i.encours{animation:none}}
+
 </style>
 </head>
 <body>
@@ -2048,6 +2074,7 @@ svg .re-note{fill:#5b6875;font-size:calc(10px / var(--k,1))}
           <hr>
           <button role="menuitem" data-act="svg">Enregistrer le folio en SVG</button>
           <button role="menuitem" data-act="png">Enregistrer le folio en PNG</button>
+          <button role="menuitem" data-act="see">Exporter pour SEE…</button>
           <button role="menuitem" data-act="imprimer">Imprimer <span class="raccourci">Ctrl+P</span></button>
           <hr>
           <button role="menuitem" data-act="vider" class="danger">Tout effacer</button>
@@ -9416,6 +9443,423 @@ function lierGraphique(sec, nom, E, lire, ecrire) { const d = E.d, fig = sec.que
   svg.querySelectorAll('.dj-pt').forEach(g => { g.addEventListener('focus', () => { const pt = d.points.find(x => x.k === g.dataset.k), c = g.querySelector('.dj-point'); if (pt && c) montrer({ x: +c.getAttribute('cx'), y: +c.getAttribute('cy') }, cartePoint(pt)); });
     g.addEventListener('blur', cacher); }); }
 
+/* ───────── 08-dxf.js ───────── */
+/* ===========================================================================
+   08 — LE DXF : chaque folio en dessin DXF, le repli du paquet SEE
+   ---------------------------------------------------------------------------
+   Si le pilote (see/vba) ne peut pas commander SEE Electrical Expert au
+   bureau, SEE sait importer un DOSSIER de DXF d'un coup : un folio par
+   fichier, le folio nommé d'après le fichier (« 01.Power.DWG »), les blocs
+   convertis en symboles électriques par leur nom (attribut « DXF/DWG Block
+   Name » des symboles, jokers * acceptés), les attributs repris, les lignes
+   importées comme connexions (depuis le correctif V4R3 SP3). Le réglage
+   exact se fera là-bas : le DXF doit être PROPRE, SIMPLE, et ses noms de
+   calques et de blocs STABLES. Ils sont décrits dans see/FORMAT-DXF.md, qui
+   fait foi comme FORMAT-PAQUET.md pour le paquet.
+
+   Le DXF se lit dans le MODÈLE du paquet (`modeleSEE`, 08-see) : ce qui
+   s'exporte, c'est le dessin de l'Atelier, en millimètres sur la feuille A3,
+   rien de recalculé. Il est écrit à la main, sans dépendance :
+   · DXF ASCII R12 (AC1009), le plus ancien et le plus lu ; fins de ligne
+     CRLF ; textes en Windows-1252 ($DWGCODEPAGE = ANSI_1252, le code page
+     d'un Windows français) ; pas de handles (R12 n'en exige pas) ;
+   · en mm, Y VERS LE HAUT : y_dxf = 297 − y_mm (le paquet a y vers le bas) ;
+   · dix calques (DXF_CALQUES) ; les fils en LINE, un segment droit par
+     LINE, à la couleur ACI la plus proche de leur route (sans route :
+     BYLAYER) ; les corps en polylignes fermées ; chaque borne en INSERT d'un
+     bloc nommé (DXF_BLOCS) qui porte quatre ATTRIB : REPERE, CONNECTEUR,
+     BORNE, NUMERO ; les textes en TEXT (un numéro de fil juste AU-DESSUS de
+     son fil : R12 n'a pas de masque pour le fond blanc de l'Atelier) ; le
+     cadre et un cartouche simple.
+
+   LE POINT D'INSERTION D'UNE BORNE EST LE BOUT DU FIL. Dans l'Atelier, le
+   bout de fil qui entre dans un bloc (le raccord jusqu'à la pièce de
+   connecteur, l'amorce d'une masse, d'un rond de barrette, d'une prise) EST
+   du fil, à la couleur de sa route. Le fil du DXF est donc le tracé du
+   paquet (`Points`) prolongé de cette amorce jusqu'au CONTACT du paquet
+   (`CX`, `CY` : le bord extérieur de la pièce de connecteur, ou du corps
+   sans connecteur, le bord de la fiche ou de l'embase, le bord de la
+   pastille du côté du fil, le premier trait de la masse — calculé une fois,
+   dans `modeleSEE` ; une pastille du DXF a un rayon fixe : elle s'insère au
+   bord de son cercle, à 0,6 unité au plus). Le bloc de la borne est posé là,
+   si bien qu'un
+   symbole SEE dont le point de connexion est à son origine se branche sur
+   le fil. Un bloc ne dessine que la borne elle-même (une pastille, les trois
+   traits d'une masse) : rien qui dépende de la longueur d'une amorce.
+
+   L'ÉCHELLE. Un folio chargé est dessiné plus petit (k grand). Les blocs
+   sont définis une fois pour toutes à k = 1 (une unité de l'Atelier =
+   0,25 mm), identiques dans tous les fichiers, et chaque INSERT porte
+   l'échelle du folio (41 = 42 = 43 = 1/k) : SEE peut fusionner des blocs de
+   même nom d'un fichier à l'autre sans les fausser. Ce que SEE fait de
+   l'échelle d'un INSERT n'est pas établi : le réglage `blocs: 'folio'` les
+   dessine à l'échelle de chaque folio, posés à l'échelle 1.
+
+   Puis le ZIP : un DXF par folio, « NN.<nom du folio>.dxf », en un seul
+   téléchargement — un zip « stocké » (sans compression), écrit à la main
+   lui aussi, CRC-32 compris.
+   =========================================================================== */
+
+/* Les calques : [nom, couleur ACI, ce qu'il porte]. L'ordre est celui de la table LAYER. */
+const DXF_CALQUES = [
+  ['CADRE', 8, 'le cadre, ses zones, le cartouche et la légende des routes'],
+  ['EQUIPEMENTS', 7, 'les corps des équipements, renvois et rails'],
+  ['CONNECTEURS', 7, 'les pièces de connecteur et leurs lettres'],
+  ['BORNES', 7, 'les bornes des équipements (SEE_BORNE_G / _D) et leurs pontages'],
+  ['FILS', 7, 'les fils (LINE) et les points de jonction (SEE_JONCTION)'],
+  ['REPERES', 7, 'les repères des blocs'],
+  ['NUMEROS', 7, 'les numéros de fil'],
+  ['MASSES', 7, 'les masses (SEE_MASSE_G / _D) et les collecteurs de masse'],
+  ['BARRETTES', 7, 'les barrettes : ligne pointillée, point de départ, pastilles (SEE_PASTILLE…)'],
+  ['PRISES', 7, 'les prises de coupure : fiche, embase, contacts (SEE_CONTACT_FICHE / _EMBASE)']
+];
+const DXF_LTYPE_POINTILLE = 'POINTILLE';
+const R_PASTILLE_DXF = 4;   // le rayon d'une pastille dans le DXF, en unités de l'Atelier (06 : 3,4 à 4,6 selon le numéro)
+/* Les blocs, en unités de l'Atelier (× 0,25 mm à k = 1). « G » : le fil arrive par la GAUCHE du point d'insertion (le
+   bloc s'étend vers la droite) ; « D » : par la droite. `numero` : où l'attribut NUMERO s'écrit par défaut [x, y, corps
+   de texte], `null` s'il reste caché ; `dessin` : ce que le bloc trace. */
+const DXF_BLOCS = {
+  SEE_BORNE_G: { aide: 'borne d’équipement, flanc gauche : le bord extérieur de sa pièce de connecteur (ou du corps)', numero: [CONN_W / 2, 0, 5.6], dessin: [['point', 0, 0]] },
+  SEE_BORNE_D: { aide: 'borne d’équipement, flanc droit', numero: [-CONN_W / 2, 0, 5.6], dessin: [['point', 0, 0]] },
+  SEE_CONTACT_FICHE: { aide: 'contact de prise, côté fiche (amont, le fil à gauche) : le bord gauche de la fiche', numero: [4.5, 0, 5.4], dessin: [['point', 0, 0]] },
+  SEE_CONTACT_EMBASE: { aide: 'contact de prise, côté embase (aval, le fil à droite) : le bord droit de l’embase', numero: null, dessin: [['point', 0, 0]] },
+  SEE_PASTILLE_G: { aide: 'pastille de barrette, le fil arrive par la gauche : le bord gauche de la pastille', numero: [R_PASTILLE_DXF, 0, 4], dessin: [['cercle', R_PASTILLE_DXF, 0, R_PASTILLE_DXF]] },
+  SEE_PASTILLE_D: { aide: 'pastille de barrette, le fil arrive par la droite : le bord droit de la pastille', numero: [-R_PASTILLE_DXF, 0, 4], dessin: [['cercle', -R_PASTILLE_DXF, 0, R_PASTILLE_DXF]] },
+  SEE_PASTILLE: { aide: 'pastille de barrette, le fil arrive d’en haut ou d’en bas : son centre', numero: [0, 0, 4], dessin: [['cercle', 0, 0, R_PASTILLE_DXF]] },
+  SEE_MASSE_G: { aide: 'masse, le fil arrive par la gauche : le premier trait du symbole (CEI 60617)', numero: null, dessin: [['ligne', 0, -6, 0, 6], ['ligne', 3.2, -4, 3.2, 4], ['ligne', 6.4, -2, 6.4, 2]] },
+  SEE_MASSE_D: { aide: 'masse, le fil arrive par la droite', numero: null, dessin: [['ligne', 0, -6, 0, 6], ['ligne', -3.2, -4, -3.2, 4], ['ligne', -6.4, -2, -6.4, 2]] },
+  SEE_JONCTION: { aide: 'point de jonction, là où un fil se partage (sans attribut)', sans: true, dessin: [['disque', 0, 0, 1.9]] }
+};
+const DXF_ATTRIBUTS = ['REPERE', 'CONNECTEUR', 'BORNE', 'NUMERO'];
+const DXF_HAUTEUR = 0.7;    // la hauteur d'une capitale, en part du corps de texte (celui du SVG, en unités)
+
+/* ---- la palette ACI (AutoCAD Color Index) -------------------------------
+   1 à 9 fixes ; 10 à 249 : vingt-quatre teintes de 15° × cinq valeurs (255, 165, 127, 76, 38), pleines puis à demi
+   saturées (à une unité près de la table d'AutoCAD) ; 250 à 255 : les gris. Une couleur de route prend l'index le plus
+   proche (distance « redmean »), hors 7 (noir ou blanc selon le fond) et des gris : une route est une couleur. Deux
+   routes d'un folio ne prennent jamais le même index : la seconde prend le plus proche qui reste (`aciDesRoutes`). */
+const PALETTE_ACI = (() => { const p = [[0, 0, 0], [255, 0, 0], [255, 255, 0], [0, 255, 0], [0, 255, 255], [0, 0, 255], [255, 0, 255], [255, 255, 255], [128, 128, 128], [192, 192, 192]];
+  const V = [255, 255, 165, 165, 127, 127, 76, 76, 38, 38];
+  for (let i = 10; i < 250; i++) { const h = Math.floor((i - 10) / 10) * 15, v = V[(i - 10) % 10], s = (i - 10) % 2 ? 0.5 : 1;
+    const c = x => { const k = (x + h / 60) % 6, f = Math.max(0, Math.min(k, 4 - k, 1)); return Math.floor(v * (1 - s * f)); };
+    p.push([c(5), c(3), c(1)]); }
+  [51, 91, 132, 173, 214, 255].forEach(g => p.push([g, g, g]));
+  return p; })();
+function aciDe(hex, exclus) { const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(hex || '')); if (!m) return null;
+  const [r, g, b] = [m[1], m[2], m[3]].map(x => parseInt(x, 16)); let best = null, dmin = Infinity;
+  PALETTE_ACI.forEach(([R, G, B], i) => { if (i < 1 || i === 7 || i === 8 || i === 9 || i >= 250 || (exclus && exclus.has(i))) return; const rm = (r + R) / 2;
+    const d = (2 + rm / 256) * (r - R) ** 2 + 4 * (g - G) ** 2 + (2 + (255 - rm) / 256) * (b - B) ** 2; if (d < dmin) { dmin = d; best = i; } });
+  return best; }
+// les routes d'un folio, dans l'ordre de sa légende → leur index ACI, tous différents
+function aciDesRoutes(m) { const out = new Map(), pris = new Set();
+  (m.legende || []).forEach(r => { if (!r.Route || out.has(r.Route)) return; const i = aciDe(r.Couleur, pris); if (i != null) { out.set(r.Route, i); pris.add(i); } });
+  return out; }
+
+/* ---- l'écriture : des paires code / valeur ------------------------------
+   Le code sur trois caractères calé à droite, la valeur sur la ligne suivante, comme AutoCAD les écrit. Un nombre au
+   dix-millième au plus, jamais en notation exponentielle ; un texte en une ligne, sans caractère de contrôle, réduit
+   à Windows-1252 : quelques signes de l'Atelier s'écrivent en ASCII (▷F3 d'un renvoi → >F3, Ω → Ohm), une lettre
+   accentuée hors de la page perd son accent, le reste devient « ? ». */
+const CP1252_HAUT = '€\u0081‚ƒ„…†‡ˆ‰Š‹Œ\u008dŽ\u008f\u0090‘’“”•–—˜™š›œ\u009džŸ';
+// les codes de groupe dont la valeur est un entier (couleur 62, drapeaux 66 et 70, justifications 72 à 74…) ; les autres nombres sont réels
+const codeEntier = c => (c >= 60 && c <= 99) || (c >= 170 && c <= 179) || (c >= 270 && c <= 289) || (c >= 370 && c <= 389) || (c >= 400 && c <= 409) || (c >= 1060 && c <= 1071);
+const dxfNb = v => { const r = Math.round((+v || 0) * 10000) / 10000; if (r === 0) return '0.0'; const s = Number.isInteger(r) ? r.toFixed(1) : r.toFixed(4).replace(/0+$/, ''); return s; };
+const dansCp1252 = ch => { const c = ch.charCodeAt(0); return (c >= 0x20 && c < 0x7f) || (c >= 0xa0 && c <= 0xff) || (CP1252_HAUT.includes(ch) && !/[\u0080-\u009f]/.test(ch)); };
+const HORS_CP1252 = { '▷': '>', '▶': '>', '►': '>', '◁': '<', '◀': '<', '→': '->', '←': '<-', '⇄': '<->', 'Ω': 'Ohm', '≤': '<=', '≥': '>=', '≈': '~', '√': 'V', '∞': 'inf', 'Δ': 'D', '✓': 'v' };
+function dxfChaine(s) {
+  let t = String(s == null ? '' : s).replace(/[\x00-\x1f\x7f-\x9f]+/g, ' ').replace(/[▷▶►◁◀→←⇄Ω≤≥≈√∞Δ✓]/g, c => HORS_CP1252[c]);
+  const sansAccent = ch => ch.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  t = [...t].map(ch => dansCp1252(ch) ? ch : [...sansAccent(ch)].every(dansCp1252) ? sansAccent(ch) : '?').join('');
+  return t.replace(/%%/g, '%%%%%%').slice(0, 250);   // « %%% » écrit un « % » : « %% » ne doit pas devenir un code de contrôle (%%d, %%c…)
+}
+function octetsCp1252(texte) { const o = new Uint8Array(texte.length);
+  for (let i = 0; i < texte.length; i++) { const c = texte.charCodeAt(i); if (c < 0x80 || (c >= 0xa0 && c <= 0xff)) o[i] = c; else { const j = CP1252_HAUT.indexOf(texte[i]); o[i] = j >= 0 ? 0x80 + j : 0x3f; } }
+  return o; }
+function ecrivainDxf() { const L = [];
+  const g = (code, v) => { L.push(code < 10 ? '  ' + code : code < 100 ? ' ' + code : String(code), typeof v !== 'number' ? String(v) : codeEntier(code) ? String(Math.round(v)) : dxfNb(v)); };
+  const pt = (x, y, n) => { g(10 + (n || 0), x); g(20 + (n || 0), y); g(30 + (n || 0), 0); };
+  const tete = (type, calque, couleur, ltype) => { g(0, type); g(8, calque); if (ltype) g(6, ltype); if (couleur != null && couleur !== 256) g(62, couleur); };
+  const W = {
+    g, fin: () => L.join('\r\n') + '\r\n',
+    ligne: (calque, x1, y1, x2, y2, couleur, ltype) => { tete('LINE', calque, couleur, ltype); pt(x1, y1); pt(x2, y2, 1); },
+    point: (calque, x, y) => { tete('POINT', calque); pt(x, y); },
+    cercle: (calque, x, y, r) => { tete('CIRCLE', calque); pt(x, y); g(40, r); },
+    // une polyligne : [{ x, y, b }] (b : le renflement vers le sommet suivant, 1 pour un demi-cercle), fermée ou non, d'une largeur
+    polyligne: (calque, pts, fermee, largeur, couleur) => { tete('POLYLINE', calque, couleur); g(66, 1); pt(0, 0); g(70, fermee ? 1 : 0); if (largeur) { g(40, largeur); g(41, largeur); }
+      pts.forEach(p => { g(0, 'VERTEX'); g(8, calque); pt(p.x, p.y); if (p.b) g(42, p.b); }); g(0, 'SEQEND'); g(8, calque); },
+    // un disque plein : deux demi-cercles d'une largeur égale au rayon (le DONUT de R12)
+    disque: (calque, x, y, r) => W.polyligne(calque, [{ x: x - r / 2, y, b: 1 }, { x: x + r / 2, y, b: 1 }], true, r),
+    rectangle: (calque, x0, y0, x1, y1) => W.polyligne(calque, [{ x: x0, y: y0 }, { x: x1, y: y0 }, { x: x1, y: y1 }, { x: x0, y: y1 }], true),
+    /* un texte : `j` G (à gauche), C (centré), D (à droite) ; `v` 'base' (sur la ligne de base) ou 'milieu' ; `angle` en degrés.
+       `attrib` : { tag, cache } en fait un ATTRIB (dans une insertion), `attdef` : { tag, cache } un ATTDEF (dans un bloc). */
+    texte: (calque, valeur, x, y, h, o) => { o = o || {}; const j = { G: 0, C: 1, D: 2 }[o.j || 'G'], v = o.v === 'milieu' ? 2 : 0, A = o.attrib || o.attdef;
+      g(0, o.attrib ? 'ATTRIB' : o.attdef ? 'ATTDEF' : 'TEXT'); g(8, calque); pt(x, y); g(40, h); g(1, dxfChaine(valeur));
+      if (o.attdef) g(3, A.tag); if (A) { g(2, A.tag); g(70, A.cache ? 1 : 0); }
+      if (o.angle) g(50, o.angle); g(7, 'STANDARD');
+      if (j || v) { g(72, j); pt(x, y, 1); g(A ? 74 : 73, v); } },
+    // une insertion de bloc, à l'échelle s, et ses attributs : [{ tag, valeur, x, y, h, j, v, cache }]
+    insertion: (calque, bloc, x, y, s, attributs) => { g(0, 'INSERT'); g(8, calque); if (attributs && attributs.length) g(66, 1); g(2, bloc); pt(x, y);
+      if (s !== 1) { g(41, s); g(42, s); g(43, s); }
+      if (attributs && attributs.length) { attributs.forEach(a => W.texte(calque, a.valeur, a.x, a.y, a.h, { j: a.j, v: a.v, attrib: { tag: a.tag, cache: a.cache } })); g(0, 'SEQEND'); g(8, calque); } }
+  };
+  return W; }
+
+/* ---- l'en-tête, les tables, les blocs ------------------------------------ */
+function enteteDxf(W, ltscale, commentaire) { const g = W.g;
+  if (commentaire) g(999, dxfChaine(commentaire));
+  g(0, 'SECTION'); g(2, 'HEADER');
+  const v = (nom, f) => { g(9, nom); f(); };
+  v('$ACADVER', () => g(1, 'AC1009')); v('$DWGCODEPAGE', () => g(3, 'ANSI_1252'));
+  v('$INSBASE', () => { g(10, 0); g(20, 0); g(30, 0); });
+  v('$EXTMIN', () => { g(10, 0); g(20, 0); g(30, 0); }); v('$EXTMAX', () => { g(10, 420); g(20, 297); g(30, 0); });
+  v('$LIMMIN', () => { g(10, 0); g(20, 0); }); v('$LIMMAX', () => { g(10, 420); g(20, 297); });
+  v('$LTSCALE', () => g(40, ltscale)); v('$ATTMODE', () => g(70, 1)); v('$TEXTSIZE', () => g(40, 2.5));
+  v('$TEXTSTYLE', () => g(7, 'STANDARD')); v('$CLAYER', () => g(8, '0')); v('$CELTYPE', () => g(6, 'BYLAYER')); v('$CECOLOR', () => g(62, 256));
+  v('$LUNITS', () => g(70, 2)); v('$LUPREC', () => g(70, 2)); v('$PDMODE', () => g(70, 0)); v('$PDSIZE', () => g(40, 0));
+  g(0, 'ENDSEC');
+  g(0, 'SECTION'); g(2, 'TABLES');
+  const table = (nom, n, f) => { g(0, 'TABLE'); g(2, nom); g(70, n); f(); g(0, 'ENDTAB'); };
+  // la vue d'ouverture : toute la feuille
+  table('VPORT', 1, () => { g(0, 'VPORT'); g(2, '*ACTIVE'); g(70, 0); g(10, 0); g(20, 0); g(11, 1); g(21, 1); g(12, 210); g(22, 148.5); g(13, 0); g(23, 0);
+    g(14, 1); g(24, 1); g(15, 10); g(25, 10); g(16, 0); g(26, 0); g(36, 1); g(17, 0); g(27, 0); g(37, 0); g(40, 310); g(41, 1.414); g(42, 50); g(43, 0); g(44, 0);
+    g(50, 0); g(51, 0); g(71, 0); g(72, 100); g(73, 1); g(74, 3); g(75, 0); g(76, 0); g(77, 0); g(78, 0); });
+  // le trait plein, et le pointillé d'une barrette (06 : 3 pleins, 2,2 vides, en unités de l'Atelier ; à k = 1, × 0,25 mm)
+  table('LTYPE', 2, () => {
+    g(0, 'LTYPE'); g(2, 'CONTINUOUS'); g(70, 0); g(3, 'Solid line'); g(72, 65); g(73, 0); g(40, 0);
+    g(0, 'LTYPE'); g(2, DXF_LTYPE_POINTILLE); g(70, 0); g(3, 'Barrette __ __ __'); g(72, 65); g(73, 2); g(40, 1.3); g(49, 0.75); g(49, -0.55); });
+  table('LAYER', DXF_CALQUES.length + 1, () => [['0', 7], ...DXF_CALQUES].forEach(([nom, c]) => { g(0, 'LAYER'); g(2, nom); g(70, 0); g(62, c); g(6, 'CONTINUOUS'); }));
+  table('STYLE', 1, () => { g(0, 'STYLE'); g(2, 'STANDARD'); g(70, 0); g(40, 0); g(41, 1); g(50, 0); g(71, 0); g(42, 2.5); g(3, 'txt'); g(4, ''); });
+  table('VIEW', 0, () => { }); table('UCS', 0, () => { });
+  table('APPID', 1, () => { g(0, 'APPID'); g(2, 'ACAD'); g(70, 0); });
+  table('DIMSTYLE', 0, () => { });
+  g(0, 'ENDSEC'); }
+/* Les blocs, `u` millimètres par unité de l'Atelier : 0,25 (k = 1, le défaut) ou celle du folio (`blocs: 'folio'`). Les
+   traits sont sur le calque 0, en BYLAYER : ils prennent le calque de l'insertion. */
+function blocsDxf(W, u) { const g = W.g;
+  g(0, 'SECTION'); g(2, 'BLOCKS');
+  Object.entries(DXF_BLOCS).forEach(([nom, B]) => {
+    g(0, 'BLOCK'); g(8, '0'); g(2, nom); g(70, B.sans ? 0 : 2); g(10, 0); g(20, 0); g(30, 0); g(3, nom);
+    B.dessin.forEach(([t, ...a]) => { if (t === 'point') W.point('0', a[0] * u, a[1] * u); else if (t === 'ligne') W.ligne('0', a[0] * u, a[1] * u, a[2] * u, a[3] * u);
+      else if (t === 'cercle') W.cercle('0', a[0] * u, a[1] * u, a[2] * u); else if (t === 'disque') W.disque('0', a[0] * u, a[1] * u, a[2] * u); });
+    if (!B.sans) DXF_ATTRIBUTS.forEach(tag => { const n = tag === 'NUMERO' && B.numero;
+      W.texte('0', '', n ? n[0] * u : 0, n ? n[1] * u : 0, (n ? n[2] : 4) * DXF_HAUTEUR * u, { j: n ? 'C' : 'G', v: n ? 'milieu' : 'base', attdef: { tag, cache: !n } }); });
+    g(0, 'ENDBLK'); g(8, '0'); });
+  g(0, 'ENDSEC'); }
+
+/* ---- les bornes et les fils du DXF ----------------------------------------
+   bornesDxf(modele) → pour chaque rangée de `Bornes`, dans son ordre : { r (la rangée), bloc (son nom DXF), calque, x, y
+   (le CONTACT du paquet, `CX`, `CY` : en mm, y vers le bas), numero ({ x, y, fs, j, max } où s'écrit le numéro visible,
+   ou null ; `max` : les caractères que l'Atelier y écrit au plus) }. Le contact n'est pas recalculé ici : c'est celui du
+   paquet (08-see, `modeleSEE`), une seule vérité pour les deux fichiers — à un détail près, la pastille (plus bas).
+   filsDxf(modele) → pour chaque fil tracé : { f (la rangée), points ([{ x, y }], mm, y vers le bas) } : le tracé du paquet
+   prolongé de son amorce jusqu'au contact de chaque bout (raccourci quand le contact est sur le fil : la pastille d'une
+   barrette à poser, où le fil arrive au centre), les points alignés fondus : un segment droit, une LINE. */
+const EPS_DXF = 0.005;
+const memePoint = (a, b) => Math.abs(a.x - b.x) < EPS_DXF && Math.abs(a.y - b.y) < EPS_DXF;
+const surSegment = (c, a, b) => (Math.abs(a.y - b.y) < EPS_DXF && Math.abs(c.y - a.y) < EPS_DXF && c.x >= Math.min(a.x, b.x) - EPS_DXF && c.x <= Math.max(a.x, b.x) + EPS_DXF)
+  || (Math.abs(a.x - b.x) < EPS_DXF && Math.abs(c.x - a.x) < EPS_DXF && c.y >= Math.min(a.y, b.y) - EPS_DXF && c.y <= Math.max(a.y, b.y) + EPS_DXF);
+const cleBout = (bloc, x, y) => bloc + '|' + centieme(x) + '|' + centieme(y);
+function bornesDxf(m) {
+  const u = SEE_UNITE / (m.folio.Echelle || 1), R = R_PASTILLE_DXF * u;
+  const blocs = new Map(m.blocs.map(b => [b.Bloc, b])), pieces = new Map();
+  m.connecteurs.forEach(c => { (pieces.get(c.Bloc) || pieces.set(c.Bloc, []).get(c.Bloc)).push(c); });
+  return m.bornes.map(r => { const N = (blocs.get(r.Bloc) || {}).Nature, x = r.CX != null ? r.CX : r.X, y = r.CY != null ? r.CY : r.Y;
+    if (N === 'PRISE') { const fiche = r.Connecteur !== 'EMBASE';
+      return { r, bloc: fiche ? 'SEE_CONTACT_FICHE' : 'SEE_CONTACT_EMBASE', calque: 'PRISES', x, y,
+        numero: fiche ? { x: r.PX, y: r.PY, fs: String(r.Numero || '').length > 1 ? 4.4 : 5.4, j: 'C', max: 2 } : null }; }
+    if (r.Cote === 'G' || r.Cote === 'D') {
+      // une borne d'équipement : le numéro dans sa pièce de connecteur ; sans pièce, dans le corps, contre le bord
+      const G = r.Cote === 'G', p = r.Connecteur ? (pieces.get(r.Bloc) || []).find(c => c.Lettre === r.Connecteur && c.Cote === r.Cote && r.PY >= c.Haut - 0.01 && r.PY <= c.Bas + 0.01) : null;
+      return { r, bloc: G ? 'SEE_BORNE_G' : 'SEE_BORNE_D', calque: 'BORNES', x, y,
+        numero: p ? { x: r.PX, y: r.PY, fs: 5.6, j: 'C', max: 4 } : { x: r.PX + (G ? 4 : -4) * u, y: r.PY, fs: 7.5, j: G ? 'G' : 'D', max: 5 } }; }
+    if (N === 'MASSE') return { r, bloc: r.X <= r.PX ? 'SEE_MASSE_G' : 'SEE_MASSE_D', calque: 'MASSES', x, y, numero: null };
+    if (N === 'BARRETTE' || N === 'BARRETTE_A_POSER') {
+      /* la pastille s'ouvre du côté du fil, celui de son contact dans le paquet ; au centre (un fil qui n'arrive pas couché),
+         elle est centrée. Le cercle du bloc a un rayon fixe (R_PASTILLE_DXF, 4 unités) et reste centré sur la pastille de
+         l'Atelier (PX), sur la ligne de la barrette : la borne s'insère au bord de CE cercle, à 0,6 unité au plus du contact
+         du paquet (06 : un rayon de 3,4 à 4,6 unités selon le numéro). */
+      const cote = x < r.PX - EPS_DXF ? 'G' : x > r.PX + EPS_DXF ? 'D' : null;
+      return { r, bloc: cote ? 'SEE_PASTILLE_' + cote : 'SEE_PASTILLE', calque: 'BARRETTES', x: centieme(cote === 'G' ? r.PX - R : cote === 'D' ? r.PX + R : r.PX), y,
+        numero: { x: r.PX, y: r.PY, fs: String(r.Numero || '').length > 2 ? 3.2 : 4, j: 'C', max: 3 } }; }
+    // un rail en pastille, un collecteur de masse : la borne est au bord du bloc, là où le fil s'accroche
+    return { r, bloc: r.X <= r.PX ? 'SEE_BORNE_G' : 'SEE_BORNE_D', calque: N === 'COLLECTEUR' ? 'MASSES' : 'BORNES', x, y, numero: null }; }); }
+/* Le tracé commence au contact c : déjà au bout, sur le premier segment (raccourci), ou plus loin dans l'axe (prolongé). */
+function depuisContact(pts, c) { const p = pts[0];
+  if (memePoint(c, p)) return pts;
+  if (pts.length > 1 && surSegment(c, p, pts[1])) return [c, ...pts.slice(1)];
+  if (Math.abs(c.y - p.y) < EPS_DXF || Math.abs(c.x - p.x) < EPS_DXF) return [c, ...pts];
+  return [c, { x: p.x, y: c.y }, ...pts]; }   // jamais vu : le contact est toujours dans l'axe de l'accroche
+function fondreAlignes(pts) { const q = [];
+  pts.forEach(p => { if (q.length && memePoint(q[q.length - 1], p)) return;
+    if (q.length >= 2) { const a = q[q.length - 2], b = q[q.length - 1];
+      const aligne = (Math.abs(a.y - b.y) < EPS_DXF && Math.abs(b.y - p.y) < EPS_DXF && (b.x - a.x) * (p.x - b.x) > 0) || (Math.abs(a.x - b.x) < EPS_DXF && Math.abs(b.x - p.x) < EPS_DXF && (b.y - a.y) * (p.y - b.y) > 0);
+      if (aligne) q.pop(); }
+    q.push(p); });
+  return q; }
+function filsDxf(m, bornes) { bornes = bornes || bornesDxf(m);
+  const contact = new Map(); bornes.forEach(d => contact.set(cleBout(d.r.Bloc, d.r.X, d.r.Y), d));
+  return m.fils.filter(f => f.Points && f.Points.length >= 2).map(f => { let p = f.Points.map(([x, y]) => ({ x, y }));
+    const a = contact.get(cleBout(f.DeBloc, p[0].x, p[0].y)), b = contact.get(cleBout(f.VersBloc, p[p.length - 1].x, p[p.length - 1].y));
+    if (a) p = depuisContact(p, { x: a.x, y: a.y });
+    if (b) p = depuisContact(p.slice().reverse(), { x: b.x, y: b.y }).reverse();
+    return { f, points: fondreAlignes(p), de: a || null, vers: b || null }; }); }
+
+/* ---- LE DXF D'UN FOLIO ------------------------------------------------------
+   dxfDuFolio(modele, options) → le texte du DXF (une chaîne ; `octetsCp1252` en fait le fichier).
+   options : total (folios du contrat, pour « 2 / 6 » au cartouche), rang (le rang du folio dans le contrat), echelle (le
+   texte ÉCHELLE du cartouche), cadre (false : ni cadre ni cartouche, SEE a les siens), couleurs (false : les fils en
+   BYLAYER), blocs ('echelle' le défaut ; 'folio' : voir l'en-tête), numeros ('dessus' le défaut ; 'dedans' : voir
+   plus bas). */
+function dxfDuFolio(m, options) {
+  const o = Object.assign({ cadre: true, couleurs: true, blocs: 'echelle', numeros: 'dessus' }, options || {});
+  const F = m.folio, k = F.Echelle || 1, u = SEE_UNITE / k, H = PAGE_H * SEE_UNITE;
+  const s = o.blocs === 'folio' ? 1 : 1 / k, ub = o.blocs === 'folio' ? u : SEE_UNITE;
+  const y = v => H - v, h = fs => DXF_HAUTEUR * fs * u;
+  const W = ecrivainDxf(), aci = aciDesRoutes(m);
+  const couleurDe = f => !o.couleurs ? null : f.Route && aci.has(f.Route) ? aci.get(f.Route) : f.Couleur ? aciDe(f.Couleur) : null;
+  enteteDxf(W, 1 / k, 'Atelier Schema - folio ' + (F.Nom || F.Folio) + ' - ' + SEE_FORMAT + ' - mm, y vers le haut');
+  blocsDxf(W, ub);
+  W.g(0, 'SECTION'); W.g(2, 'ENTITIES');
+  if (o.cadre) cadreDxf(W, m, o, aci);
+  const bornes = bornesDxf(m), blocs = new Map(m.blocs.map(b => [b.Bloc, b])), parBloc = new Map();
+  bornes.forEach(d => { (parBloc.get(d.r.Bloc) || parBloc.set(d.r.Bloc, []).get(d.r.Bloc)).push(d); });
+
+  /* les corps */
+  m.blocs.forEach(b => { if (b.X == null || b.L == null) return; const N = b.Nature, x0 = b.X, x1 = b.X + b.L, y0 = y(b.Y), y1 = y(b.Y + b.H), bs = parBloc.get(b.Bloc) || [];
+    if (N === 'EQUIPEMENT' || N === 'RENVOI' || (N === 'RAIL' && bs.some(d => d.r.Cote !== 'C'))) W.rectangle('EQUIPEMENTS', x0, y1, x1, y0);
+    else if (N === 'RAIL') { const r = Math.min(b.H, b.L) / 2;   // la pastille de potentiel : un rectangle aux bouts ronds
+      W.polyligne('EQUIPEMENTS', [{ x: x0 + r, y: y1 }, { x: x1 - r, y: y1, b: 1 }, { x: x1 - r, y: y0 }, { x: x0 + r, y: y0, b: 1 }], true); }
+    else if (N === 'BARRETTE' || N === 'BARRETTE_A_POSER') {
+      // la ligne pointillée, coupée à chaque pastille (06 la cache sous un point noir ; ici la pastille est un rond)
+      const xm = x0 + b.L / 2, R = R_PASTILLE_DXF * u, ys = [...new Set(bs.map(d => d.r.PY))].sort((p, q) => p - q);
+      let haut = b.Y; ys.forEach(py => { if (py - R - haut > 0.05) W.ligne('BARRETTES', xm, y(haut), xm, y(py - R), null, DXF_LTYPE_POINTILLE); haut = Math.max(haut, py + R); });
+      if (b.Y + b.H - haut > 0.05) W.ligne('BARRETTES', xm, y(haut), xm, y1, null, DXF_LTYPE_POINTILLE);
+      if (N === 'BARRETTE') W.disque('BARRETTES', xm, y1, (b.H / u < 15 ? 1.5 : 2.1) * u); }   // le point de départ, en bas (un morceau collé : plus petit)
+    else if (N === 'COLLECTEUR') {
+      // le collecteur : un trait de chaque borne à l'axe, l'axe, trois barres décroissantes ; un point sur l'axe à chaque borne
+      const xa = x0 + b.L / 2, bas = b.Y + b.H;
+      bs.forEach(d => { W.ligne('MASSES', d.r.X, y(d.r.Y), xa, y(d.r.Y)); if (bs.length > 1) W.disque('MASSES', xa, y(d.r.Y), 1.5 * u); });
+      W.ligne('MASSES', xa, y0, xa, y(bas - 6.4 * u));
+      [[7, 6.4], [4.5, 3.2], [2, 0]].forEach(([l, dy]) => W.ligne('MASSES', xa - l * u, y(bas - dy * u), xa + l * u, y(bas - dy * u))); } });
+  /* les pièces de connecteur : angles vifs contre le corps, arrondis du côté du fil ; la fiche et l'embase d'une prise */
+  const rb = 1.8 * u, quart = Math.tan(Math.PI / 8);
+  m.connecteurs.forEach(c => { const x0 = c.X0, x1 = c.X1, yh = y(c.Haut), yb = y(c.Bas);
+    if (c.Lettre === 'FICHE' || c.Lettre === 'EMBASE') { W.rectangle('PRISES', x0, yb, x1, yh); return; }
+    W.polyligne('CONNECTEURS', c.Cote === 'G'
+      ? [{ x: x1, y: yb }, { x: x1, y: yh }, { x: x0 + rb, y: yh, b: quart }, { x: x0, y: yh - rb }, { x: x0, y: yb + rb, b: quart }, { x: x0 + rb, y: yb }]
+      : [{ x: x0, y: yb }, { x: x1 - rb, y: yb, b: quart }, { x: x1, y: yb + rb }, { x: x1, y: yh - rb, b: quart }, { x: x1 - rb, y: yh }, { x: x0, y: yh }], true);
+    if (c.LettreX != null) W.texte('CONNECTEURS', clip(c.Lettre, 3), c.LettreX, y(c.LettreY), h(6.5), { j: 'C' }); });
+
+  /* les fils : un segment, une LINE, à la couleur de la route ; les jonctions */
+  const traces = filsDxf(m, bornes);
+  traces.forEach(({ f, points }) => { const c = couleurDe(f);
+    for (let i = 0; i + 1 < points.length; i++) W.ligne('FILS', points[i].x, y(points[i].y), points[i + 1].x, y(points[i + 1].y), c); });
+  m.jonctions.forEach(j => W.insertion('FILS', 'SEE_JONCTION', j.X, y(j.Y), s, null));
+  /* les pontages d'un équipement (des shunts entre bornes d'un même flanc) : un trait fin devant la pièce, un point sur
+     chaque borne pontée — comme 06 */
+  const ponts = new Map();
+  m.fils.forEach(f => { if (f.Shunt !== 'O' || f.DeBloc !== f.VersBloc) return; const b = blocs.get(f.DeBloc); if (!b || !(b.Nature === 'EQUIPEMENT' || b.Nature === 'RENVOI')) return;
+    const de = bornes.find(d => d.r.Bloc === f.DeBloc && d.r.Borne === String(f.DeBorne == null ? '' : f.DeBorne)), vers = bornes.find(d => d.r.Bloc === f.VersBloc && d.r.Borne === String(f.VersBorne == null ? '' : f.VersBorne));
+    if (!de || !vers || de.r.Cote !== vers.r.Cote || (de.r.Cote !== 'G' && de.r.Cote !== 'D')) return;
+    const k2 = f.DeBloc + '|' + de.r.Cote; (ponts.get(k2) || ponts.set(k2, []).get(k2)).push([Math.min(de.r.Y, vers.r.Y), Math.max(de.r.Y, vers.r.Y), de.r.X]); });
+  ponts.forEach((ivs, k2) => { const [bloc, cote] = k2.split('|'), dx = (cote === 'G' ? 3.5 : -3.5) * u, paquets = [];
+    ivs.sort((p, q) => p[0] - q[0]).forEach(iv => { const d = paquets[paquets.length - 1]; if (d && iv[0] <= d[1] + 0.15) d[1] = Math.max(d[1], iv[1]); else paquets.push(iv.slice()); });
+    paquets.forEach(([y1, y2, xa]) => { const xs = xa + dx; W.ligne('BORNES', xs, y(y1), xs, y(y2));
+      (parBloc.get(bloc) || []).filter(d => d.r.Cote === cote && d.r.Y >= y1 - 0.01 && d.r.Y <= y2 + 0.01).forEach(d => W.disque('BORNES', xs, y(d.r.Y), 1.6 * u)); }); });
+
+  /* les bornes : un INSERT au contact, ses quatre attributs. Un numéro plus long que ce que l'Atelier écrit à sa place (la
+     borne d'un renvoi : « 661VT22 1 ») garde sa valeur entière dans l'attribut, caché, et s'écrit rogné à côté, comme 06. */
+  bornes.forEach(d => { const r = d.r, b = blocs.get(r.Bloc) || {}, n = d.numero && r.Numero ? d.numero : null, long = n && String(r.Numero).length > n.max;
+    const cache = (tag, valeur) => ({ tag, valeur, x: d.x, y: y(d.y), h: h(4), cache: true });
+    W.insertion(d.calque, d.bloc, d.x, y(d.y), s, [cache('REPERE', b.Repere || ''), cache('CONNECTEUR', r.Connecteur || ''), cache('BORNE', r.Borne == null ? '' : r.Borne),
+      n && !long ? { tag: 'NUMERO', valeur: r.Numero, x: n.x, y: y(n.y), h: h(n.fs), j: n.j, v: 'milieu' } : cache('NUMERO', r.Numero || '')]);
+    if (long) W.texte(d.calque, clip(r.Numero, n.max), n.x, y(n.y), h(n.fs), { j: n.j, v: 'milieu' }); });
+
+  /* les textes : les repères (là où l'Atelier les écrit : centrés, sur la ligne de base), les numéros de fil */
+  m.blocs.forEach(b => { if (b.RepereX == null || !b.Repere) return; const N = b.Nature, bs = parBloc.get(b.Bloc) || [];
+    const [fs, n] = N === 'EQUIPEMENT' || N === 'RENVOI' || (N === 'RAIL' && bs.some(d => d.r.Cote !== 'C'))
+      ? (() => { const nom = clip(b.Repere, 14); return [Math.max(7, Math.min(10.5, (b.L / u - 28) / (0.66 * nom.length))), nom]; })()
+      : N === 'COLLECTEUR' ? [10, clip(b.Repere, 10)] : N === 'RAIL' ? [7.5, clip(b.Repere, 7)] : [6, clip(b.Repere, N === 'MASSE' ? 10 : 14)];
+    W.texte('REPERES', n, b.RepereX, y(b.RepereY), h(fs), { j: 'C' });
+    // un équipement très haut rappelle son repère en pied, comme 06
+    if (N === 'EQUIPEMENT' && b.H / u > 380) W.texte('REPERES', clip(b.Repere, 12), b.X + b.L / 2, y(b.Y + b.H - 9 * u), h(6.5), { j: 'C' }); });
+  /* Un numéro couché que l'Atelier écrit DANS son fil (sur un fond blanc qui coupe le trait : son centre est à moins de
+     trois unités au-dessus du trait) se pose ici juste AU-DESSUS, la ligne de base à 1,5 unité du trait : un DXF R12 n'a
+     pas de masque, le trait le barrerait. `numeros: 'dedans'` le laisse là où l'Atelier l'écrit. */
+  m.fils.forEach(f => { if (f.NumeroX == null || !f.Fil) return;
+    const x = f.NumeroX; let yy = f.NumeroY, v = 'milieu';
+    if (o.numeros === 'dessus' && !f.NumeroAngle) { const p = f.Points || [];
+      for (let i = 0; i + 1 < p.length; i++) { const d = (yy - p[i][1]) / u;
+        if (Math.abs(p[i][1] - p[i + 1][1]) < EPS_DXF && d > -3 && d < 1 && x >= Math.min(p[i][0], p[i + 1][0]) - 0.01 && x <= Math.max(p[i][0], p[i + 1][0]) + 0.01) { yy = p[i][1] - 1.5 * u; v = 'base'; break; } } }
+    W.texte('NUMEROS', f.Fil, x, y(yy), h(FS_FIL), { j: 'C', v, angle: f.NumeroAngle || 0 }); });
+  W.g(0, 'ENDSEC'); W.g(0, 'EOF');
+  return W.fin(); }
+
+/* ---- la feuille : le cadre, ses zones, le cartouche (06, `feuilleDeReference`, en mm) ------------------------------ */
+function cadreDxf(W, m, o, aci) {
+  const q = SEE_UNITE, H = PAGE_H * q, X = v => v * q, Y = v => H - v * q, ht = fs => DXF_HAUTEUR * fs * q, F = m.folio;
+  const ix = PAGE_CADRE, iy = PAGE_CADRE, iw = PAGE_W - 2 * PAGE_CADRE, ih = PAGE_H - 2 * PAGE_CADRE;
+  W.rectangle('CADRE', X(ix), Y(iy + ih), X(ix + iw), Y(iy));
+  const ncol = Math.max(2, Math.round(iw / 150)), nrow = Math.max(2, Math.round(ih / 150));
+  for (let i = 1; i < ncol; i++) { const xx = ix + iw * i / ncol; W.ligne('CADRE', X(xx), Y(iy), X(xx), Y(iy - 6)); W.ligne('CADRE', X(xx), Y(iy + ih), X(xx), Y(iy + ih + 6)); }
+  for (let i = 0; i < ncol; i++) { const cx = ix + iw * (i + 0.5) / ncol; W.texte('CADRE', String(i + 1), X(cx), Y(iy - 7), ht(8), { j: 'C' }); W.texte('CADRE', String(i + 1), X(cx), Y(iy + ih + 13), ht(8), { j: 'C' }); }
+  for (let i = 1; i < nrow; i++) { const yy = iy + ih * i / nrow; W.ligne('CADRE', X(ix), Y(yy), X(ix - 6), Y(yy)); W.ligne('CADRE', X(ix + iw), Y(yy), X(ix + iw + 6), Y(yy)); }
+  for (let i = 0; i < nrow; i++) { const cy = iy + ih * (i + 0.5) / nrow, L = String.fromCharCode(65 + i);
+    W.texte('CADRE', L, X(ix - 10), Y(cy + 3), ht(8), { j: 'C' }); W.texte('CADRE', L, X(ix + iw + 10), Y(cy + 3), ht(8), { j: 'C' }); }
+  // le cartouche, en bas à droite contre le cadre : FOLIO, TITRE, DESSINÉ / DATE / ÉCHELLE / INDICE, la légende des routes à gauche
+  const rx = ix + iw, by = iy + ih, routes = m.legende || [], nCol = Math.ceil(routes.length / LEG_PAR_COLONNE);
+  const Wc = CART_FOLIO + CART_TITRE + nCol * LEG_COLONNE, x = rx - Wc, yc = by - CART_H, xT = rx - CART_FOLIO - CART_TITRE, xF = rx - CART_FOLIO, yB = yc + CART_HAUT;
+  const trait = (a, b, c, d) => W.ligne('CADRE', X(a), Y(b), X(c), Y(d));
+  trait(xT, yB, rx, yB); trait(xF, yc, xF, by); trait(xT + 88, yB, xT + 88, by); trait(xT + 176, yB, xT + 176, by);
+  for (let k = 0; k < nCol; k++) trait(xT - k * LEG_COLONNE, yc, xT - k * LEG_COLONNE, by);
+  const champ = (cx, cy, t, v, n) => { W.texte('CADRE', t, X(cx), Y(cy), ht(6)); W.texte('CADRE', clip(v || '—', n), X(cx), Y(cy + 15), ht(8.5)); };
+  const folio = o.total ? (F.Plan || o.rang || F.Folio) + ' / ' + o.total : (F.Plan || String(F.Folio));
+  champ(xT + 10, yB + 12, 'DESSINÉ', F.Dessine, 12); champ(xT + 98, yB + 12, 'DATE', F.Date, 12); champ(xT + 186, yB + 12, 'ÉCHELLE', o.echelle, 11); champ(xF + 10, yB + 12, 'INDICE', F.Indice, 11);
+  W.texte('CADRE', 'TITRE', X(xT + 10), Y(yc + 13), ht(6)); W.texte('CADRE', 'ATELIER·SCHÉMA', X(xF - 10), Y(yc + 13), ht(6.5), { j: 'D' });
+  W.texte('CADRE', clip(F.Titre || '—', 30), X(xT + 10), Y(yc + 36), ht(13));
+  W.texte('CADRE', 'FOLIO', X(xF + 10), Y(yc + 13), ht(6)); W.texte('CADRE', clip(folio, 9), X(xF + CART_FOLIO / 2), Y(yc + 39), ht(18), { j: 'C' });
+  routes.forEach((r, i) => { const k = Math.floor(i / LEG_PAR_COLONNE), cx = xT - (nCol - k) * LEG_COLONNE + 10, cy = yc + 30 + (i % LEG_PAR_COLONNE) * LEG_LIGNE;
+    W.polyligne('CADRE', [{ x: X(cx), y: Y(cy - 3) }, { x: X(cx + 24), y: Y(cy - 3) }], false, 3.2 * q, (o.couleurs && (aci.get(r.Route) || aciDe(r.Couleur))) || null);
+    W.texte('CADRE', clip(r.Route || 'sans route', 15), X(cx + 32), Y(cy), ht(8)); W.texte('CADRE', r.NbFils + ' fil' + (r.NbFils > 1 ? 's' : ''), X(cx + LEG_COLONNE - 20), Y(cy), ht(7), { j: 'D' }); });
+  if (nCol) W.texte('CADRE', 'ROUTES', X(x + 10), Y(yc + 13), ht(6));
+  W.rectangle('CADRE', X(x), Y(by), X(rx), Y(yc)); }
+
+/* ---- les noms : « NN.<nom du folio>.dxf » --------------------------------
+   SEE nomme le folio d'après le fichier quand le nom contient un point (« 01.Power.DWG ») : NN est le rang du folio dans
+   le contrat (le même fichier d'un export à l'autre), sur au moins deux chiffres ; le nom est celui du paquet (`Nom`,
+   le plan nettoyé), réduit à l'ASCII, sans point (le seul point sépare le rang du nom). */
+function nomDuDxf(m, rang, total) { const n = rang || m.folio.Folio, l = Math.max(2, String(Math.max(total || 0, n)).length);
+  const nom = nomAscii(String(m.folio.Nom || '')).replace(/\./g, '-').replace(/-{2,}/g, '-').replace(/^-+|-+$/g, '').slice(0, 60).replace(/-+$/, '') || 'Folio';
+  return String(n).padStart(l, '0') + '.' + nom + '.dxf'; }
+
+/* ---- le ZIP « stocké » ------------------------------------------------------
+   partiesZip(fichiers, date) → les morceaux du zip, à mettre bout à bout (un Blob les prend tels quels : huit cents
+   folios ne se recopient pas) ; zipDe(fichiers, date) → le zip en un Uint8Array. `fichiers` : [{ nom (ASCII), octets
+   (Uint8Array), crc (facultatif : calculé sinon) }]. Méthode 0 (stocké), sans descripteur ni zip64 : au plus 65 535
+   fichiers et 4 Go. La date est celle de l'export (heure locale, au format DOS). */
+const TABLE_CRC32 = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(octets) { let c = 0xFFFFFFFF; for (let i = 0; i < octets.length; i++) c = TABLE_CRC32[(c ^ octets[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function partiesZip(fichiers, date) {
+  if (fichiers.length > 0xFFFF) throw new Error('zip : plus de 65 535 fichiers');
+  const d = date || new Date(), heure = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1), jour = ((Math.max(1980, d.getFullYear()) - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  const parts = [], centrale = []; let decalage = 0;
+  fichiers.forEach(f => { const nom = Uint8Array.from(String(f.nom), c => { const x = c.charCodeAt(0); if (x > 0x7e || x < 0x20) throw new Error('zip : nom non ASCII ' + f.nom); return x; });
+    const data = f.octets, crc = f.crc != null ? f.crc : crc32(data);
+    if (decalage + 30 + nom.length + data.length > 0xFFFFFFFF) throw new Error('zip : plus de 4 Go');
+    const local = new Uint8Array(30 + nom.length), l = new DataView(local.buffer);
+    l.setUint32(0, 0x04034b50, true); l.setUint16(4, 10, true); l.setUint16(6, 0, true); l.setUint16(8, 0, true); l.setUint16(10, heure, true); l.setUint16(12, jour, true);
+    l.setUint32(14, crc, true); l.setUint32(18, data.length, true); l.setUint32(22, data.length, true); l.setUint16(26, nom.length, true); l.setUint16(28, 0, true); local.set(nom, 30);
+    const ent = new Uint8Array(46 + nom.length), c = new DataView(ent.buffer);
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 10, true); c.setUint16(8, 0, true); c.setUint16(10, 0, true); c.setUint16(12, heure, true); c.setUint16(14, jour, true);
+    c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true); c.setUint16(28, nom.length, true);
+    c.setUint16(30, 0, true); c.setUint16(32, 0, true); c.setUint16(34, 0, true); c.setUint16(36, 0, true); c.setUint32(38, 0, true); c.setUint32(42, decalage, true); ent.set(nom, 46);
+    parts.push(local, data); centrale.push(ent); decalage += local.length + data.length; });
+  const taille = centrale.reduce((t, e) => t + e.length, 0), fin = new Uint8Array(22), e = new DataView(fin.buffer);
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, fichiers.length, true); e.setUint16(10, fichiers.length, true); e.setUint32(12, taille, true); e.setUint32(16, decalage, true);
+  return [...parts, ...centrale, fin]; }
+function zipDe(fichiers, date) { const parts = partiesZip(fichiers, date), out = new Uint8Array(parts.reduce((t, p) => t + p.length, 0)); let i = 0;
+  parts.forEach(p => { out.set(p, i); i += p.length; }); return out; }
+
 /* ───────── 08-fiche.js ───────── */
 /* ===========================================================================
    08 bis — LA FICHE : ce qu'on voit quand on clique un bloc ou un fil
@@ -9930,8 +10374,16 @@ const telephone = () => window.innerWidth <= 700;
    Le numéro TIENT (`app.contrat.provisoires`, gardée avec le contrat) : poser VT1 ne renomme pas VT2 en VT1. */
 const folios = new Map();
 const signature = L => JSON.stringify(L.map(l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable, l.type, l.pnDe, l.pnVers, l.route]));
-function liaisonsDe(plan) { const L0 = app.contrat.liaisons.filter(liaisonComplete), L = plan === '*' ? L0 : L0.filter(l => l.plan === plan);
-  const P = plans(), depart = plan === '*' ? 0 : P.slice(0, Math.max(0, P.indexOf(plan))).reduce((n, p) => n + dedoublements(L0.filter(l => l.plan === p)).length, 0);
+/* Les liaisons d'un folio telles que le contrat les porte (complètes, de ce plan ; '*' : toutes) et le rang de départ de
+   ses barrettes à poser (le nombre de celles des folios d'avant). Pur : le lot (see/exporter.js) le partage avec la page.
+   Les folios d'avant se comptent en un passage (un contrat de huit cents folios : un appel par folio, pas huit cents). */
+function folioDuContrat(liaisons, plan) { const L0 = liaisons.filter(liaisonComplete), L = plan === '*' ? L0 : L0.filter(l => l.plan === plan);
+  if (plan === '*') return { L, depart: 0 };
+  const P = plansDe(liaisons), avant = new Set(P.slice(0, Math.max(0, P.indexOf(plan)))), parPlan = new Map();
+  L0.forEach(l => { if (avant.has(l.plan)) (parPlan.get(l.plan) || parPlan.set(l.plan, []).get(l.plan)).push(l); });
+  let depart = 0; parPlan.forEach(Lp => { depart += dedoublements(Lp).length; });
+  return { L, depart }; }
+function liaisonsDe(plan) { const { L, depart } = folioDuContrat(app.contrat.liaisons, plan);
   const g = folios.get(plan), sig = depart + '|' + signature(L);
   if (g && g.sig === sig && g.L.length === L.length && g.L.every((l, i) => l === L[i])) return g.sortie;
   if (!app.contrat.provisoires) app.contrat.provisoires = new Map();
@@ -10191,14 +10643,19 @@ function synchroniserRetouche() { const b = $('btnAuto'); if (!b) return; const 
 function calculer() {
   const L = liaisonsDuPlan(); if (!L.length) { app.dessin = null; return null; }
   const P = placementDe(L); affinerTout();
-  // la feuille : la même pour tous les folios (A3 paysage), le dessin calé dedans
-  app.dessin = P ? { comps: P.comps, links: P.links, bbox: pageDe(P.comps, P.routage.fils), geom: P.geom, compDe: P.compDe,
-                     fils: P.routage.fils, points: P.routage.points, barrettes: P.routage.barrettes, piquages: P.routage.piquages } : null;
-  if (app.dessin) { const routes = couleursDesRoutes(), routeDe = w => (L[w.i] && L[w.i].route) || '';
-    app.dessin.couleurDe = w => routes.get(routeDe(w)) || null; app.dessin.legende = legendeDesRoutes(app.dessin.fils.filter(w => !w.shunt && String(w.de) !== String(w.vers)), routeDe, routes);
-    nommerBarrettesAPoser(app.dessin.barrettes, L); }
+  app.dessin = P ? dessinDuPlacement(P, L, couleursDesRoutes()) : null;
   return app.dessin;
 }
+/* Le dessin d'un folio, de son placement : la feuille — la même pour tous les folios (A3 paysage), le dessin calé dedans —,
+   la couleur de chaque fil (celle de sa route), la légende, le nom de chaque barrette à poser (posé sur les barrettes du
+   placement). `routes` : route → couleur (`couleursDeRoutes`). La page et le lot (see/exporter.js) dessinent ainsi. */
+function dessinDuPlacement(P, L, routes) {
+  const d = { comps: P.comps, links: P.links, bbox: pageDe(P.comps, P.routage.fils), geom: P.geom, compDe: P.compDe,
+              fils: P.routage.fils, points: P.routage.points, barrettes: P.routage.barrettes, piquages: P.routage.piquages };
+  const routeDe = w => (L[w.i] && L[w.i].route) || '';
+  d.couleurDe = w => routes.get(routeDe(w)) || null; d.legende = legendeDesRoutes(d.fils.filter(w => !w.shunt && String(w.de) !== String(w.vers)), routeDe, routes);
+  nommerBarrettesAPoser(d.barrettes, L);
+  return d; }
 /* Les BARRETTES À POSER du folio (01) : le routage les a posées au ras de leur borne (05, les `barrettes` du dessin) ;
    chacune reçoit ici son repère provisoire (VT1, VT2…) et, pour chaque borne, le numéro que le folio lui donne — la
    borne 1 pour le fil à créer, la borne du contrat pour chaque fil : la fiche et le plan disent la même chose. */
@@ -10213,8 +10670,10 @@ const filsDeBarretteAPoser = nom => { const L = liaisonsDuPlan(); return ((app.d
    sa couleur sur tous les folios du contrat — l'ordre naturel de leurs noms, dans une palette de dix teintes franches,
    lisibles sur le blanc et à l'impression ; une couleur choisie au contrat (`couleursRoutes`) passe devant. */
 const PALETTE_ROUTES = ['#1f5fbf', '#c0392b', '#1e8449', '#d35400', '#7d3c98', '#117a8b', '#9a6324', '#c2185b', '#5d6d1e', '#34495e'];
-function couleursDesRoutes() { const choisies = app.contrat.couleursRoutes || {}, m = new Map();
-  [...new Set(app.contrat.liaisons.map(l => l.route).filter(Boolean))].sort(triNaturel).forEach((r, i) => m.set(r, choisies[r] || PALETTE_ROUTES[i % PALETTE_ROUTES.length]));
+function couleursDesRoutes() { return couleursDeRoutes(app.contrat.liaisons, app.contrat.couleursRoutes); }
+// la même chose pour des liaisons quelconques (le lot, see/exporter.js) : route → couleur
+function couleursDeRoutes(liaisons, choisies) { choisies = choisies || {}; const m = new Map();
+  [...new Set(liaisons.map(l => l.route).filter(Boolean))].sort(triNaturel).forEach((r, i) => m.set(r, choisies[r] || PALETTE_ROUTES[i % PALETTE_ROUTES.length]));
   return m; }
 // la légende d'un folio : ses routes, chacune avec son nombre de fils ; « sans route » quand d'autres en ont une
 function legendeDesRoutes(fils, routeDe, routes) { const n = new Map(); fils.forEach(w => { const r = routeDe(w); n.set(r, (n.get(r) || 0) + 1); });
@@ -11351,7 +11810,7 @@ function lierPanneau() {
   o('btnBase', basculerBase); o('btnIndex', basculerIndex); o('btnCherche', () => { if (rechercheOuverte()) fermerRecherche(); else ouvrirRecherche(); });
   o('btnLiaison', nouvelleLiaison); o('btnBible', basculerBible); o('btnOuvrir', choisirFichier);
   o('btnMenu', e => { e.stopPropagation(); $('menu').hidden ? ouvrirMenu() : fermerMenu(); });
-  const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple, cartouche: ficheCartouche, bible: ficheBible, normes: () => ficheNormes(), hypotheses: ficheHypotheses, nomenclature: ficheNomenclature, suivi: exporterSuivi, svg: exporterSVG, png: exporterPNG, imprimer,
+  const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple, cartouche: ficheCartouche, bible: ficheBible, normes: () => ficheNormes(), hypotheses: ficheHypotheses, nomenclature: ficheNomenclature, suivi: exporterSuivi, svg: exporterSVG, png: exporterPNG, see: ficheSEE, imprimer,
     // tout effacer : la table vide (l'accueil), et un contrat neuf — les choix de celui-ci ne survivent pas (Ctrl+Z, ou « Reprendre », rend tout)
     vider: () => { if (!confirm('Effacer tout le contrat ?')) return; histPush('tout effacer'); app.contrat = contratNeuf(); app.source = null; app.nFolios = 0; app.plan = '*'; app.nom = ''; app.cible = null; app.choisi = null;
       fermerFiche(); fermerInspecteur(); fermerBase(); redessiner(); ajuster(); sauver(); } };
@@ -12784,6 +13243,467 @@ function lierRelief() { if (reliefLie) return; reliefLie = true; const d = $('re
   d.addEventListener('mouseover', e => { const el = e.target.closest('[data-i]'); allumerRelief(el ? el.dataset.i : ''); });
   d.addEventListener('click', e => { const el = e.target.closest('[data-i]'); if (!el || RELIEF.glisse) return; const f = filDeCle(el.dataset.i);
     if (f) { fermerRelief(); choisirFil(f); viserFil(f); } }); }
+
+/* ───────── 08-see.js ───────── */
+/* ===========================================================================
+   08 — LE PAQUET SEE : chaque folio tel que l'Atelier le dessine, pour SEE
+   ---------------------------------------------------------------------------
+   Le technicien doit saisir ses folios dans SEE Electrical Expert. L'Atelier
+   sait les placer et les router ; un classeur pilote (see/vba/*.bas) sait
+   dessiner dans SEE. Entre les deux, un fichier : le PAQUET SEE, un classeur
+   .xlsx dont see/FORMAT-PAQUET.md est le contrat (il fait foi : on ne change
+   pas une colonne sans l'y changer d'abord).
+
+   Deux parties ici :
+   · LE MODÈLE, pur, sans DOM — le même code sert la page et le lot
+     (see/exporter.js le charge sous Node, dans un bac vm, dans l'ordre de
+     construire.js). `modeleSEE` lit un folio dessiné (l'objet de
+     `dessinDuPlacement`, 08) et le rend en millimètres sur la feuille A3 ;
+     `classeurSEE` range les folios dans le classeur. Le modèle parle la
+     langue du contrat : chaque rangée porte les noms ASCII de ses colonnes.
+   · L'INTERFACE : la fiche « Exporter pour SEE » (menu), l'avancement folio
+     par folio, le téléchargement.
+
+   CE QUI EST EXPORTÉ, C'EST LE DESSIN. Le folio passe par `sceneSvg` (06),
+   comme à l'écran, sur une COPIE de ses blocs : les repères qui cherchent
+   leur place (barrettes, prises, masses, barrettes à poser) et les numéros
+   de fil sont lus là où le dessin les a posés ; les corps, pastilles,
+   pièces et lettres sont relus dans le SVG de chaque bloc. Le dessin n'est
+   pas touché, et 06 non plus : le moteur garde sa version (VERSION_MOTEUR),
+   les dessins affinés gardés dans le navigateur restent valables.
+
+   UNE BORNE, TROIS POINTS. L'ACCROCHE (X, Y) : le bout du tracé du fil, au
+   bord du bloc du moteur. LE CONTACT (CX, CY) : là où le fil touche la borne
+   dessinée — le bord de la pièce de connecteur (ou du corps), de la fiche ou
+   de l'embase, de la pastille du côté du fil, le premier trait de la masse ;
+   entre les deux, l'AMORCE, que 06 trace à la couleur du fil. LE CENTRE
+   (PX, PY) : la pastille, le numéro dans la pièce. Le DXF (08-dxf) pose ses
+   bornes au contact : une seule vérité. Une borne de barrette qui reçoit
+   plusieurs fils a un rond par fil, donc plusieurs lignes : `Rond` les
+   numérote de haut en bas, et chaque fil cite le sien (`DeRond`, `VersRond`).
+
+   Les coordonnées : la feuille fait PAGE_W × PAGE_H = 1680 × 1188 unités à
+   un quart de millimètre (A3 paysage, 420 × 297 mm) ; le dessin s'y cale à
+   l'échelle k (pageDe) : x_mm = (x − bb.x) / k × 0,25, y_mm = (y − bb.y) / k
+   × 0,25, origine en haut à gauche, y vers le bas, au centième.
+   =========================================================================== */
+
+const SEE_FORMAT = 'paquet-see/1';
+const SEE_UNITE = 0.25;   // une unité de feuille, en mm
+/* Les colonnes de chaque feuille, dans l'ordre de FORMAT-PAQUET.md (tests/see.js les relit dans le document). */
+const SEE_COLONNES = {
+  Folios: ['Folio', 'Plan', 'Nom', 'Harness', 'Titre', 'Indice', 'Dessine', 'Date', 'Echelle', 'Pas', 'CadreX', 'CadreY', 'CadreL', 'CadreH', 'NbBlocs', 'NbBornes', 'NbFils', 'Droits', 'Croisements', 'Remarque'],
+  Blocs: ['Folio', 'Bloc', 'Repere', 'Nature', 'Code', 'PN', 'Description', 'X', 'Y', 'L', 'H', 'RepereX', 'RepereY', 'Sens', 'Morceau'],
+  Connecteurs: ['Folio', 'Bloc', 'Repere', 'Lettre', 'PN', 'Cote', 'X0', 'X1', 'Haut', 'Bas', 'LettreX', 'LettreY'],
+  Bornes: ['Folio', 'Bloc', 'Repere', 'Connecteur', 'Borne', 'Numero', 'Cote', 'X', 'Y', 'PX', 'PY', 'Contact', 'Sexe', 'Rond', 'CX', 'CY'],
+  Fils: ['Folio', 'Ordre', 'Fil', 'DeBloc', 'DeRepere', 'DeBorne', 'VersBloc', 'VersRepere', 'VersBorne', 'DeCote', 'VersCote', 'Type', 'Jauge', 'Blinde', 'Route', 'Couleur', 'Longueur', 'Shunt', 'Points', 'NumeroX', 'NumeroY', 'NumeroAngle', 'DeRond', 'VersRond'],
+  Jonctions: ['Folio', 'X', 'Y'],
+  Legende: ['Folio', 'Route', 'Couleur', 'NbFils']
+};
+const centieme = v => (Math.round(v * 100) / 100) || 0;   // || 0 : jamais de « -0 »
+const nomDeFolioSEE = (plan, rang) => String(plan || '').replace(/[\\/:*?"<>|]+/g, '-').trim() || 'Folio ' + rang;
+
+/* ---- relire le SVG d'un bloc ------------------------------------------
+   `sceneSvg` peint chaque bloc dans un groupe `<g class="comp" … transform=
+   "translate(x,y)">`, dans l'ordre de `dessin.comps`. On en relit les
+   éléments (rectangle, trait, rond, texte) en absolu : ce que la page montre,
+   sans refaire ses calculs. */
+const ATTRS_SVG = /([\w-]+)="([^"]*)"/g;
+const sansEntites = s => String(s).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+function elementsSvg(fragment, dx, dy) { const out = [], re = /<(rect|line|circle|text|path)\b([^>]*?)\/?>(?:([^<]*)<\/text>)?/g; let m;
+  while ((m = re.exec(fragment))) { const a = {}; let q; ATTRS_SVG.lastIndex = 0; while ((q = ATTRS_SVG.exec(m[2]))) a[q[1]] = q[2];
+    const n = k => a[k] != null ? +a[k] : null, e = { tag: m[1], cls: a.class || '', a };
+    if (e.tag === 'rect') Object.assign(e, { x: n('x') + dx, y: n('y') + dy, w: n('width'), h: n('height') });
+    else if (e.tag === 'line') Object.assign(e, { x1: n('x1') + dx, y1: n('y1') + dy, x2: n('x2') + dx, y2: n('y2') + dy });
+    else if (e.tag === 'circle') Object.assign(e, { cx: n('cx') + dx, cy: n('cy') + dy, r: n('r') });
+    else if (e.tag === 'text') Object.assign(e, { x: n('x') + dx, y: n('y') + dy, ancre: a['text-anchor'] || 'start', texte: sansEntites(m[3] || '') });
+    out.push(e); }
+  return out; }
+function groupesDesBlocs(svg) { const parts = svg.split('<g class="comp" ').slice(1);
+  return parts.map(p => { const t = /transform="translate\(([-\d.]+),([-\d.]+)\)"/.exec(p), fin = p.indexOf('</g>');
+    return elementsSvg(p.slice(p.indexOf('>') + 1, fin < 0 ? p.length : fin), t ? +t[1] : 0, t ? +t[2] : 0); }); }
+const boiteDe = es => { const xs = [], ys = [];
+  es.forEach(e => { if (e.tag === 'line') { xs.push(e.x1, e.x2); ys.push(e.y1, e.y2); } else if (e.tag === 'rect') { xs.push(e.x, e.x + e.w); ys.push(e.y, e.y + e.h); } else if (e.tag === 'circle') { xs.push(e.cx - e.r, e.cx + e.r); ys.push(e.cy - e.r, e.cy + e.r); } });
+  return xs.length ? { x: Math.min(...xs), y: Math.min(...ys), w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys) } : null; };
+/* Un texte ancré au début ou à la fin, ramené à son milieu (sa largeur : celle que le dessin lui compte, 06). */
+const ancreAuMilieu = (x, a, n, fs, ls) => a === 'start' ? x + largeurTexte(n, fs, ls) / 2 : a === 'end' ? x - largeurTexte(n, fs, ls) / 2 : x;
+const distanceAuTrace = (p, pts) => { let d = Infinity;
+  for (let i = 0; i + 1 < pts.length; i++) { const a = pts[i], b = pts[i + 1], L2 = (b.x - a.x) ** 2 + (b.y - a.y) ** 2, t = L2 ? Math.max(0, Math.min(1, ((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / L2)) : 0;
+    d = Math.min(d, Math.hypot(p.x - a.x - t * (b.x - a.x), p.y - a.y - t * (b.y - a.y))); }
+  return d; };
+/* Les numéros de fil tels que `reperesDeFil` (06) les a écrits : le centre du texte (sa boîte, comptée comme le dessin
+   la compte), couché (0) ou debout le long d'un vertical (90 : tourné de −90°, il se lit de bas en haut). */
+function numerosDuSvg(svg) { const out = [], re = /<text class="filnum"((?: [\w-]+="[^"]*")*)>([^<]*)<\/text>/g; let m;
+  while ((m = re.exec(svg))) { const a = {}; let q; ATTRS_SVG.lastIndex = 0; while ((q = ATTRS_SVG.exec(m[1]))) a[q[1]] = q[2];
+    const x = +a.x, y = +a.y, nom = sansEntites(m[2]), b = boiteDeTexte(x, y, 'middle', nom.length, FS_FIL, 0.1), dy = (b.y0 + b.y1) / 2 - y;
+    // debout : la boîte tourne de −90° autour de l'ancre, son milieu passe à gauche du point d'ancrage
+    out.push(/rotate\(-90/.test(a.transform || '') ? { nom, x: x + dy, y, angle: 90 } : { nom, x, y: y + dy, angle: 0 }); }
+  return out; }
+
+/* ---- LE MODÈLE D'UN FOLIO -------------------------------------------------
+   modeleSEE(dessin, L, infos) → le folio en mm, rangées aux noms du contrat :
+     { folio: <rangée Folios>, blocs, connecteurs, bornes, fils, jonctions, legende }
+   `dessin` : `dessinDuPlacement(P, L, routes)` (08) — comps, fils, points, barrettes à poser nommées, bbox, couleurDe,
+              legende ; il n'est pas modifié.
+   `L`      : les liaisons du folio telles que le moteur les a reçues (avecBarrettesAPoser) : le fil n° i du dessin est L[i].
+   `infos`  : { folio (rang dans le paquet), plan, cartouche, designations (Map repère → texte saisi), contactDe(l) → { de, vers }
+              ({ contact, sexe } ou null : le contact à sertir de chaque bout, s'il est connu) }.
+   Dans les rangées, `Points` d'un fil est un tableau de [x, y] (mm) ; le classeur l'écrit en texte « x y|x y ». */
+function modeleSEE(dessin, L, infos) {
+  infos = infos || {};
+  const bb = dessin.bbox, k = bb.k || bb.w / PAGE_W, F = infos.folio || 1, remarques = [];
+  const X = x => centieme((x - bb.x) / k * SEE_UNITE), Y = y => centieme((y - bb.y) / k * SEE_UNITE), D = v => centieme(v / k * SEE_UNITE);
+  // le dessin, peint sur une copie : les repères qui cherchent leur place s'y posent (c.repere, b.repere), les numéros aussi
+  const comps = dessin.comps.map(c => ({ ...c })), barrettes = Object.assign((dessin.barrettes || []).map(b => ({ ...b })), { raccords: (dessin.barrettes || []).raccords || [] });
+  const svg = sceneSvg({ ...dessin, comps, barrettes }, infos.cartouche || nouveauContrat().cartouche, '', () => '', null);
+  const groupes = groupesDesBlocs(svg);
+  if (groupes.length !== comps.length) remarques.push('le dessin des blocs n’a pas pu être relu en entier');
+  const descriptions = descriptionsDe({ liaisons: L }), saisies = infos.designations || new Map();
+  const pnDe = nom => { const s = new Set(); L.forEach(l => { if (l.de === nom && l.pnDe) s.add(l.pnDe); if (l.vers === nom && l.pnVers) s.add(l.pnVers); }); return s.size === 1 ? [...s][0] : null; };
+  const codeDe = nom => { const q = lireRepere(nom); return q && q.num ? q.code : VT_A_POSER.test(String(nom)) ? 'VT' : null; };
+
+  /* ---- les blocs, et les bornes de chacun : `accroches` garde, en unités du dessin, le point où un fil s'y accroche
+     (ux, uy) et le contact (cx, sur la même horizontale ; null : à lire dans le fil qui arrive, `rayon` plus loin) */
+  const cle = (x, y) => Math.round(x * 100) + ',' + Math.round(y * 100), bouts = new Set();
+  dessin.fils.forEach(w => { if (w.pts && w.pts.length) { bouts.add(cle(w.pts[0].x, w.pts[0].y)); bouts.add(cle(w.pts[w.pts.length - 1].x, w.pts[w.pts.length - 1].y)); } });
+  const blocs = [], connecteurs = [], bornes = [], accroches = [];
+  const borne = (bloc, rangee, ux, uy, px, py, cx, rayon) => { const r = { Folio: F, Bloc: bloc.Bloc, Repere: bloc.Repere, Connecteur: null, Borne: '', Numero: null, Cote: 'C', X: X(ux), Y: Y(uy), PX: X(px), PY: Y(py), Contact: null, Sexe: null, Rond: null, CX: null, CY: null, ...rangee };
+    const a = { r, bloc, ux, uy, cx, rayon }; bornes.push(r); accroches.push(a); return a; };
+  // le bord d'une pastille de rayon r posée en xc, du côté d'où vient le fil (s < 0 : de la gauche)
+  const bordDePastille = (xc, r, s) => xc + Math.sign(s) * (r || 0);
+  const rect = (b, r) => { if (!r) { remarques.push('corps de ' + b.Repere + ' non relu'); return; } b.X = X(r.x); b.Y = Y(r.y); b.L = D(r.w); b.H = D(r.h); };
+  const repere = (b, x, y) => { b.RepereX = X(x); b.RepereY = Y(y); };
+  const parNom = new Map(); comps.forEach(c => parNom.set(c.name, (parNom.get(c.name) || 0) + 1));
+  comps.forEach((c, ic) => { const es = groupes[ic] || [], nom = String(c.name), de = cls => es.filter(e => e.cls === cls);
+    const nature = c.kind === 'tag' ? (estMasse(nom) ? 'MASSE' : estBarrette(nom) ? 'BARRETTE' : 'RAIL')
+      : c.kind === 'strip' ? (estCoupure(nom) ? 'PRISE' : 'BARRETTE')
+      : estRenvoi(nom) ? 'RENVOI' : estMasse(nom) ? 'COLLECTEUR' : c.rail || estRail(nom) ? 'RAIL' : 'EQUIPEMENT';
+    const b = { Folio: F, Bloc: 'B' + (blocs.length + 1), Repere: nom, Nature: nature, Code: codeDe(nom), PN: nature === 'MASSE' || nature === 'RAIL' ? null : pnDe(nom),
+      Description: saisies.get(nom) || descriptions.get(nom) || null, X: null, Y: null, L: null, H: null, RepereX: null, RepereY: null, Sens: null, Morceau: null };
+    blocs.push(b); b._c = c;
+    const rangs = c.rangs || {}, bx = c.x + c.lw, bw = c.w - c.lw - c.rw;
+    if (c.kind === 'tag') {
+      // une pastille (masse, morceau de barrette, rail) : un fil, une borne ; son symbole tout de suite après le bout du fil
+      const p = (rangs.S || [])[0] || { etiq: '', y: c.y + c.h / 2, dir: -1 }, gauche = (p.dir || -1) < 0, M = symboleDePastille(c);
+      b.Sens = nature === 'BARRETTE' ? null : (gauche ? 'G' : 'D');
+      if (nature === 'MASSE') rect(b, boiteDe(de('earth').filter(e => Math.abs(e.x1 - e.x2) < 1e-6)));
+      else if (nature === 'BARRETTE') { const r = Math.max(0, ...de('bpast').map(e => e.r)), l = de('barre')[0]; rect(b, l ? { x: l.x1 - r, y: Math.min(l.y1, l.y2), w: 2 * r, h: Math.abs(l.y2 - l.y1) } : null); }
+      else rect(b, boiteDe(de('rpill')));
+      const t = es.find(e => e.tag === 'text' && /^(rep-petit|rname)$/.test(e.cls));
+      if (c.repere) { const R = reperesCandidats(c); repere(b, ancreAuMilieu(c.repere.x, c.repere.a, c.repere.nom.length, R.fs, R.ls), c.repere.y); }
+      else if (t) repere(b, t.x, t.y);
+      // le contact : le premier trait de la masse, le bord de la pastille du morceau ; la pilule d'un rail commence à l'accroche
+      const xa = gauche ? c.x : c.x + c.w, rp = (de('bpast')[0] || {}).r;
+      borne(b, { Borne: String(p.etiq == null ? '' : p.etiq), Numero: p.etiq ? String(p.etiq) : null }, xa, p.y, M ? M.xs : c.x + c.w / 2, p.y,
+        !M ? xa : M.genre === 'masse' ? M.xs : bordDePastille(M.xs, rp, gauche ? -1 : 1));
+      return; }
+    if (c.kind === 'strip' && nature === 'PRISE') {
+      // une prise de coupure : la fiche (mobile, à gauche, l'amont), l'embase (fixe, à droite, l'aval) ; un contact, deux accroches
+      const fi = de('fiche')[0], em = de('embase')[0];
+      rect(b, boiteDe([fi, em].filter(Boolean)));
+      if (c.repere) { const R = reperesCandidats(c); repere(b, ancreAuMilieu(c.repere.x, c.repere.a, c.repere.nom.length, R.fs, R.ls), c.repere.y); }
+      [['FICHE', 'G', fi], ['EMBASE', 'D', em]].forEach(([lettre, cote, e]) => { if (e) connecteurs.push({ Folio: F, Bloc: b.Bloc, Repere: nom, Lettre: lettre, PN: b.PN, Cote: cote, X0: X(e.x), X1: X(e.x + e.w), Haut: Y(e.y), Bas: Y(e.y + e.h), LettreX: null, LettreY: null }); });
+      // le contact : le bord gauche de la fiche, le bord droit de l'embase (06 y arrête l'amorce)
+      (rangs.S || []).forEach(p => { const n = p.etiq ? String(p.etiq) : '';
+        borne(b, { Connecteur: 'FICHE', Borne: n, Numero: n || null, Cote: 'G' }, c.x, p.y, fi ? fi.x + fi.w / 2 : bx, p.y, fi ? fi.x : c.x);
+        borne(b, { Connecteur: 'EMBASE', Borne: n, Numero: n || null, Cote: 'D' }, c.x + c.w, p.y, em ? em.x + em.w / 2 : c.x + c.w - c.rw, p.y, em ? em.x + em.w : c.x + c.w); });
+      return; }
+    if (c.kind === 'strip') {
+      // une barrette (ou un de ses morceaux) : la colonne pointillée, une pastille par rond ; le fil s'accroche au bord du bloc
+      const l = de('barre')[0], r = Math.max(0, ...de('bpast').map(e => e.r)), mid = l ? l.x1 : bx + bw / 2;
+      rect(b, l ? { x: mid - r, y: Math.min(l.y1, l.y2), w: 2 * r, h: Math.abs(l.y2 - l.y1) } : null);
+      if (c.repere) { const R = reperesCandidats(c); repere(b, ancreAuMilieu(c.repere.x, c.repere.a, c.repere.nom.length, R.fs, R.ls), c.repere.y); }
+      // un rond porte un fil au plus : il s'accroche du côté où ce fil arrive ; sans fil (un pontage seul), du côté de son départ.
+      // Le contact : le bord de sa pastille, de ce côté.
+      (rangs.S || []).forEach(p => { const n = p.etiq ? String(p.etiq) : '', d = bouts.has(cle(c.x + c.w, p.y)) ? 1 : bouts.has(cle(c.x, p.y)) ? -1 : (p.dir || 0);
+        borne(b, { Borne: n, Numero: n || null }, d > 0 ? c.x + c.w : c.x, p.y, mid, p.y, bordDePastille(mid, r, d > 0 ? 1 : -1)); });
+      return; }
+    // un équipement (un renvoi, un rail, un collecteur de masse dessinés en bloc) : le corps, ses pièces de connecteur, ses bornes sur les flancs
+    const corps = de('body')[0];
+    if (nature === 'COLLECTEUR') rect(b, boiteDe(de('earth').filter(e => ![e.x1, e.x2].some(x => Math.abs(x - c.x) < 1e-6 || Math.abs(x - c.x - c.w) < 1e-6))));
+    else rect(b, corps || null);
+    const t = es.find(e => e.tag === 'text' && /^(rep-big|rep)$/.test(e.cls)); if (t) repere(b, t.x, t.y);
+    const pieces = c.connecteurs ? piecesDeConnecteur(c) : [], lettres = de('connnom'), cn = c.connecteurs || new Map();
+    pieces.forEach((p, i) => { const g = [...cn.values()].find(x => x.nom === p.nom), lt = lettres[i];
+      connecteurs.push({ Folio: F, Bloc: b.Bloc, Repere: nom, Lettre: p.nom, PN: g && g.pn ? g.pn : null, Cote: p.x0 < bx ? 'G' : 'D', X0: X(p.x0), X1: X(p.x1), Haut: Y(p.t), Bas: Y(p.b), LettreX: lt ? X(lt.x) : null, LettreY: lt ? Y(lt.y) : null }); });
+    const axe = nature === 'COLLECTEUR' ? (de('earth').find(e => Math.abs(e.x1 - e.x2) < 1e-6) || {}).x1 : null;
+    /* le contact, comme 06 (`bornesSvg`) arrête le raccord : dans un connecteur, au bord extérieur de la pièce ; sinon, au
+       bord du corps. Le collecteur commence à l'accroche (son trait jusqu'à l'axe est le symbole, pas du fil). */
+    [['L', 'G', c.x, bx, -1], ['R', 'D', c.x + c.w, bx + bw, 1]].forEach(([lid, cote, xa, xc, s]) => (rangs[lid] || []).forEach(p => {
+      const n = String(p.etiq == null ? '' : p.etiq), g = cn.get(n), pc = g && pieces.find(q => q.nom === g.nom && (cote === 'G' ? q.x0 < bx : q.x0 >= bx) && p.y >= q.t - 0.01 && p.y <= q.b + 0.01);
+      borne(b, { Connecteur: g ? g.nom : null, Borne: n, Numero: n ? (g ? etiquetteDansConnecteur(n, g.nom) : n) : null, Cote: nature === 'COLLECTEUR' ? 'C' : cote },
+        xa, p.y, axe != null ? axe : pc ? (pc.x0 + pc.x1) / 2 : xc, p.y, nature === 'COLLECTEUR' ? xa : g ? xc + s * CONN_W : xc); })); });
+  // les morceaux d'un même repère (une barrette coupée, une masse posée à chaque fil), numérotés de haut en bas
+  blocs.filter(b => parNom.get(b.Repere) > 1).sort((u, v) => u._c.y - v._c.y || u._c.x - v._c.x)
+    .forEach(b => { b.Morceau = blocs.filter(o => o.Repere === b.Repere && (o._c.y < b._c.y || (o._c.y === b._c.y && o._c.x < b._c.x))).length + 1; });
+  /* les barrettes à poser (05 les pose au ras de leur borne, 08 les nomme) : une pastille par borne, le fil s'y accroche en son
+     centre ; son contact, le bord de la pastille du côté d'où vient le fil, se lit dans ce fil (plus bas) */
+  const vts = new Map();
+  barrettes.forEach(v => { const bs = bornesDePiquage(v), r = Math.max(...bs.map(p => R_PASTILLE(String(p.n))));
+    const b = { Folio: F, Bloc: 'B' + (blocs.length + 1), Repere: v.nomVT || null, Nature: 'BARRETTE_A_POSER', Code: 'VT', PN: null, Description: null,
+      X: X(v.x - r), Y: Y(bs[0].y), L: D(2 * r), H: D(bs[bs.length - 1].y - bs[0].y), RepereX: null, RepereY: null, Sens: null, Morceau: null };
+    if (v.repere && v.nomVT) repere(b, ancreAuMilieu(v.repere.x, v.repere.a, v.nomVT.length, 6, 0.3), v.repere.y);   // 6 et 0,3 : le corps du repère d'une barrette à poser (poserReperesVT)
+    if (!v.nomVT) remarques.push('une barrette à poser sans repère');
+    blocs.push(b); if (v.nomVT) vts.set(v.nomVT, { b, v });
+    bs.forEach(p => borne(b, { Borne: String(p.n), Numero: String(p.n) }, v.x, p.y, v.x, p.y, null, R_PASTILLE(String(p.n)))); });
+
+  /* ---- les fils : chaque liaison du folio, dans son ordre ---------------------------------------------------------- */
+  const ici = new Map();
+  accroches.forEach(a => { const k2 = cle(a.ux, a.uy); (ici.get(k2) || ici.set(k2, []).get(k2)).push(a); });
+  const aPoint = (p, rep) => { const xs = ici.get(cle(p.x, p.y)) || []; return xs.find(a => a.r.Repere === rep) || xs[0] || null; };
+  // un bout sans tracé (un pontage) : la borne de ce repère et de cette étiquette, à la hauteur du bout
+  const aBorne = (rep, etiq, ep) => { const xs = accroches.filter(a => a.r.Repere === rep && a.r.Borne === String(etiq == null ? '' : etiq)); if (!ep) return xs[0] || null;
+    return xs.find(a => Math.abs(a.uy - ep.y) < 0.01 && a.bloc._c && ep.x >= a.bloc._c.x - 0.01 && ep.x <= a.bloc._c.x + a.bloc._c.w + 0.01) || xs.find(a => Math.abs(a.uy - ep.y) < 0.01) || xs[0] || null; };
+  const parI = new Map(); dessin.fils.forEach(w => parI.set(w.i, w));
+  const numeros = numerosDuSvg(svg), pris = new Set();
+  const numeroDe = (nom, pts) => { let best = null, dmin = Infinity;
+    numeros.forEach((n, j) => { if (pris.has(j) || n.nom !== nom) return; const d = distanceAuTrace(n, pts); if (d < dmin) { dmin = d; best = j; } });
+    if (best == null) return null; pris.add(best); return numeros[best]; };
+  const contacts = typeof infos.contactDe === 'function' ? infos.contactDe : null;
+  const fils = [], liens = [];   // liens : chaque bout de fil posé, et l'accroche (la ligne de Bornes) qu'il cite
+  L.forEach((l, i) => { const w = parI.get(i), num = String(l.cable || '').trim();
+    const f = { Folio: F, Ordre: fils.length + 1, Fil: num || null, DeBloc: null, DeRepere: l.de, DeBorne: l.borneDe, VersBloc: null, VersRepere: l.vers, VersBorne: l.borneVers,
+      DeCote: null, VersCote: null, Type: l.type || null, Jauge: jaugeDuType(l.type), Blinde: blindeDuType(l.type) ? 'O' : 'N', Route: l.route || null,
+      Couleur: (dessin.couleurDe && dessin.couleurDe({ i })) || null, Longueur: l.longueur > 0 ? Math.round(l.longueur * 1000) / 1000 : null, Shunt: 'N', Points: [], NumeroX: null, NumeroY: null, NumeroAngle: null, DeRond: null, VersRond: null };
+    fils.push(f); let sertir;   // le contact à sertir des deux bouts, demandé une fois
+    const poser = (bout, a, attendu) => { if (!a) { remarques.push('fil ' + (num || f.Ordre) + ' : borne ' + attendu + ' introuvable'); return; }
+      f[bout + 'Bloc'] = a.r.Bloc; f[bout + 'Repere'] = a.r.Repere; f[bout + 'Borne'] = a.r.Borne; liens.push({ f, bout, a });
+      if (a.r.Connecteur === 'FICHE' || a.r.Connecteur === 'EMBASE') f[bout + 'Cote'] = a.r.Connecteur;
+      if (a.r.Repere !== attendu) remarques.push('fil ' + (num || f.Ordre) + ' : accroché à ' + a.r.Repere + ' au lieu de ' + attendu);
+      const voulu = String((bout === 'De' ? l.borneDe : l.borneVers) || '');
+      if (a.r.Borne !== voulu && a.r.Repere === attendu) { if (a.bloc.Nature === 'RAIL' || a.bloc.Nature === 'MASSE') { a.r.Borne = voulu; a.r.Numero = voulu || null; f[bout + 'Borne'] = voulu; }
+        else remarques.push('fil ' + (num || f.Ordre) + ' : part de la borne ' + a.r.Borne + ' de ' + a.r.Repere + ' (le contrat dit ' + voulu + ')'); }
+      if (contacts) { if (sertir === undefined) sertir = contacts(l) || null; const x = sertir && sertir[bout === 'De' ? 'de' : 'vers']; if (x && (x.contact || x.sexe)) { a.r.Contact = x.contact || a.r.Contact; a.r.Sexe = x.sexe || a.r.Sexe; } } };
+    const vt = !w && VT_A_POSER.test(l.vers) && l.borneVers === '1' && !VT_A_POSER.test(l.de) ? vts.get(l.vers) : null;
+    if (w && w.pts && w.pts.length >= 2) {
+      // un fil tracé : ses deux bouts sont des accroches ; un bout posé sur un autre fil (une jonction) est prolongé jusqu'à sa borne
+      let pts = w.pts.map(p => ({ x: p.x, y: p.y }));
+      const bout = (p, ep, rep, etiq) => { const a = aPoint(p, rep); if (a) return { a };
+        const b = aBorne(rep, etiq, ep) || aPoint(ep, rep); if (!b) return { a: null };
+        remarques.push('fil ' + (num || f.Ordre) + ' : tracé prolongé de sa jonction jusqu’à ' + rep + ':' + b.r.Borne);
+        const q = { x: b.ux, y: b.uy }; return { a: b, ajout: q.x === p.x || q.y === p.y ? [q] : [q, { x: p.x, y: q.y }] }; };
+      const A = bout(pts[0], w.epA, l.de, l.borneDe), B = bout(pts[pts.length - 1], w.epB, l.vers, l.borneVers);
+      if (A.ajout) pts = [...A.ajout, ...pts]; if (B.ajout) pts = [...pts, ...B.ajout.slice().reverse()];
+      poser('De', A.a, l.de); poser('Vers', B.a, l.vers);
+      f.Points = pts.map(p => [X(p.x), Y(p.y)]);
+      if (num) { const n = numeroDe(num, w.pts); if (n) { f.NumeroX = X(n.x); f.NumeroY = Y(n.y); f.NumeroAngle = n.angle; } } }
+    else if (w && w.shunt) { f.Shunt = 'O'; poser('De', aBorne(w.de, w.borneDe, w.epA), l.de); poser('Vers', aBorne(w.vers, w.borneVers, w.epB), l.vers); }
+    else if (vt && (dessin.barrettes || []).raccords) {
+      // le fil À CRÉER, de la borne dédoublée à la borne 1 de sa barrette à poser : le raccord que 05 trace
+      const r = vt.v.raccord, a = r ? aPoint({ x: r.x0, y: r.y }, l.de) : null, b2 = r ? aPoint({ x: r.x1, y: r.y }, l.vers) : null;
+      poser('De', a, l.de); poser('Vers', b2, l.vers); if (r) f.Points = [[X(r.x0), Y(r.y)], [X(r.x1), Y(r.y)]]; }
+    else if (l.de === l.vers && vts.has(l.de)) {
+      // les bornes d'une barrette à poser sont pontées : des pontages, sans tracé
+      f.Shunt = 'O'; const { b } = vts.get(l.de), ab = e => accroches.find(a => a.bloc === b && a.r.Borne === String(e)) || borneManquante(b, e);
+      poser('De', ab(l.borneDe), l.de); poser('Vers', ab(l.borneVers), l.vers); }
+    else { f.Shunt = l.de === l.vers ? 'O' : 'N'; remarques.push('liaison ' + (num || f.Ordre) + ' (' + l.de + ':' + l.borneDe + ' → ' + l.vers + ':' + l.borneVers + ') non dessinée'); } });
+  // une borne de barrette à poser que le dessin a fondue dans une autre (deux bornes à la même hauteur) : elle existe au contrat
+  function borneManquante(b, etiq) { const v = [...vts.values()].find(x => x.b === b).v, a1 = accroches.find(a => a.bloc === b && a.r.Borne === '1');
+    const a = borne(b, { Borne: String(etiq), Numero: String(etiq) }, v.x, a1 ? a1.uy : v.py, v.x, a1 ? a1.uy : v.py, null, R_PASTILLE(String(etiq)));
+    remarques.push('borne ' + etiq + ' de ' + b.Repere + ' confondue avec la borne 1 sur le dessin'); return a; }
+  blocs.forEach(b => { delete b._c; });
+  /* Les contacts qui restaient à lire dans le fil : une pastille de barrette à poser, où le tracé finit en son centre. Le
+     contact est au bord, du côté d'où vient le fil (son avant-dernier point, s'il arrive couché et de plus loin que le
+     bord) ; sinon, au centre. */
+  liens.forEach(({ f, bout, a }) => { if (a.cx != null || !a.rayon || f.Points.length < 2) return;
+    const P = f.Points, [p, q] = bout === 'De' ? [P[0], P[1]] : [P[P.length - 1], P[P.length - 2]];
+    if (Math.abs(q[1] - p[1]) < 0.011 && Math.abs(q[0] - p[0]) > D(a.rayon)) a.cx = bordDePastille(a.ux, a.rayon, q[0] - p[0]); });
+  accroches.forEach(a => { a.r.CX = X(a.cx != null ? a.cx : a.ux); a.r.CY = Y(a.uy); });
+  // les ronds d'une même borne (une borne de barrette qui reçoit plusieurs fils : un rond par fil), numérotés de haut en bas ; chaque fil cite le sien
+  const memes = new Map();
+  bornes.forEach(r => { const k = r.Bloc + '|' + r.Borne + '|' + (r.Connecteur || ''); (memes.get(k) || memes.set(k, []).get(k)).push(r); });
+  memes.forEach(rs => { if (rs.length > 1) rs.slice().sort((u, v) => u.Y - v.Y || u.X - v.X).forEach((r, i) => { r.Rond = i + 1; }); });
+  liens.forEach(({ f, bout, a }) => { f[bout + 'Rond'] = a.r.Rond; });
+
+  const fl = dessin.fils.filter(w => !w.shunt);
+  const cadre = PAGE_CADRE + PAGE_MARGE;
+  const harness = [...new Set(L.map(l => l.harness).filter(Boolean))], c = infos.cartouche || {};
+  const folio = { Folio: F, Plan: infos.plan == null || infos.plan === '*' ? null : String(infos.plan), Nom: nomDeFolioSEE(infos.plan === '*' ? '' : infos.plan, F), Harness: harness.length === 1 ? harness[0] : null,
+    Titre: c.titre || null, Indice: c.indice || null, Dessine: c.auteur || null, Date: c.date || null, Echelle: Math.round(k * 10000) / 10000, Pas: D(PRH),
+    CadreX: centieme(cadre * SEE_UNITE), CadreY: centieme(cadre * SEE_UNITE), CadreL: centieme((PAGE_W - 2 * cadre) * SEE_UNITE), CadreH: centieme((PAGE_H - 2 * cadre - PAGE_CARTOUCHE) * SEE_UNITE),
+    NbBlocs: blocs.length, NbBornes: bornes.length, NbFils: fils.length, Droits: compterDroits(fl), Croisements: compterCroisements(fl, dessin.barrettes || []),
+    Remarque: [...new Set(remarques)].join(' ; ') || null };
+  return { folio, blocs, connecteurs, bornes, fils,
+    jonctions: (dessin.points || []).map(p => ({ Folio: F, X: X(p.x), Y: Y(p.y) })),
+    legende: (dessin.legende || []).map(r => ({ Folio: F, Route: r.route || null, Couleur: r.couleur || null, NbFils: r.n })) };
+}
+
+/* ---- LE CLASSEUR ----------------------------------------------------------
+   classeurSEE(modeles, meta) → un classeur SheetJS (global XLSX) : Paquet, puis une feuille par sorte de rangée, les
+   colonnes du contrat dans son ordre, l'en-tête en ASCII. Une cellule vide dit « inconnu » ; les nombres sont de vrais
+   nombres. `meta` : { fichier, contrat (le titre du cartouche), date (ISO), version (du moteur) }. */
+function lignesSEE(modeles) { const out = { Folios: [], Blocs: [], Connecteurs: [], Bornes: [], Fils: [], Jonctions: [], Legende: [] };
+  modeles.forEach(m => { out.Folios.push(m.folio); out.Blocs.push(...m.blocs); out.Connecteurs.push(...m.connecteurs); out.Bornes.push(...m.bornes);
+    out.Fils.push(...m.fils.map(f => ({ ...f, Points: f.Points.length ? f.Points.map(p => p[0] + ' ' + p[1]).join('|') : null }))); out.Jonctions.push(...m.jonctions); out.Legende.push(...m.legende); });
+  return out; }
+function enteteSEE(modeles, meta) { meta = meta || {};
+  return [['format', SEE_FORMAT], ['outil', 'Atelier Schéma'], ['version_moteur', meta.version || (typeof VERSION_MOTEUR !== 'undefined' ? VERSION_MOTEUR : '')],
+    ['date', meta.date || new Date().toISOString()], ['fichier', meta.fichier || ''], ['contrat', meta.contrat || ''], ['folios', modeles.length],
+    ['unite', 'mm'], ['origine', 'haut-gauche'], ['axe_y', 'bas'], ['feuille_l', PAGE_W * SEE_UNITE], ['feuille_h', PAGE_H * SEE_UNITE]]; }
+function classeurSEE(modeles, meta) {
+  const wb = XLSX.utils.book_new(), lignes = lignesSEE(modeles);
+  const feuille = (nom, aoa) => { const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = aoa[0].map((_, j) => ({ wch: Math.min(48, Math.max(6, ...aoa.slice(0, 200).map(r => r[j] == null ? 0 : String(r[j]).length + 1))) }));
+    XLSX.utils.book_append_sheet(wb, ws, nom); };
+  feuille('Paquet', [['Cle', 'Valeur'], ...enteteSEE(modeles, meta)]);
+  Object.keys(SEE_COLONNES).forEach(nom => { const cols = SEE_COLONNES[nom];
+    feuille(nom, [cols, ...lignes[nom].map(r => cols.map(c => r[c] == null || r[c] === '' ? null : r[c]))]); });
+  return wb; }
+
+/* ===========================================================================
+   L'INTERFACE : « Exporter pour SEE » (menu)
+   ---------------------------------------------------------------------------
+   Une fiche sobre : le paquet SEE (.xlsx, pour le classeur pilote) ou le DXF
+   (le repli, 08-dxf : un dessin par folio, en un zip) ; tous les folios ou
+   celui-ci ; l'avancement folio par
+   folio — une case par folio, qui s'allume quand il est fait (ambre s'il a
+   fallu simplifier, rouge s'il n'a pas pu se dessiner) — ; puis le
+   téléchargement « paquet-see-<nom>.xlsx ». Chaque folio part tel qu'on le
+   voit : la retouche gardée, sinon le dessin affiné, sinon celui du
+   concours. Un folio jamais placé se place par le mécanisme de la page —
+   au loin, dans le Worker, quand la page le fait (08, `demanderPlacement`),
+   ici sinon (un petit folio : bien moins d'une seconde) — ; la main revient
+   à l'écran entre deux folios.
+   =========================================================================== */
+const EXPORT_SEE = { encours: null, portee: 'tous', format: 'paquet', dernier: null };
+const pauseSEE = ms => new Promise(ok => setTimeout(ok, ms || 0));
+/* CE QUE LE BOUTON FERAIT. La portée choisie reste celle du technicien ; un contrat d'un seul folio n'a que « ce folio »
+   (sans toucher au choix : le contrat suivant le retrouve). Le bilan d'un export (`dernier`) ne se montre que s'il dit
+   ce que le bouton referait : le même contrat, le même fichier, les mêmes folios — sinon la fiche annonce l'export à
+   venir, pas un fichier d'un autre contrat ou d'un autre folio. */
+const porteeSEE = () => plans().length > 1 ? EXPORT_SEE.portee : 'folio';
+const cibleSEE = (format, liste) => [app.nom || '', format, ...liste.map(f => f.cle)].join('\u0001');
+const bilanSEE = () => { const d = EXPORT_SEE.dernier;
+  return d && d.contrat === app.contrat && d.cible === cibleSEE(EXPORT_SEE.format, foliosPourSEE(porteeSEE())) ? d : null; };
+// le dessin qu'on voit d'un folio, s'il existe déjà : la retouche, sinon l'affiné, sinon le placement gardé (comme placementDe)
+function placementVu(L) { const cle = clePlacement(L); return app.retouches.get(cle) || affinage.profonds.get(cle) || placements.get(cle) || null; }
+async function placementPourSEE(plan, L, x) { let P = placementVu(L); if (P) return P;
+  const cle = clePlacement(L);
+  if (plan !== '*' && placement.ailleurs && placement.worker !== false && L.length > SEUIL_ICI && (placement.attentes.has(cle) || demanderPlacement(cle, L, plan))) {
+    x.etape = 'le moteur le place au loin'; montrerExportSEE();
+    while (placement.attentes.has(cle)) { await pauseSEE(150); if (x.arret) return null; P = placementVu(L); if (P) return P; }
+    P = placementVu(L); if (P) return P; }
+  x.etape = 'placement'; montrerExportSEE(); await pauseSEE(30);
+  P = meilleurPlacement(L); garderPlacement(cle, P); return P; }
+/* Le contact à sertir de chaque bout d'un fil, tel que les fiches le donnent (08 sexies, `sertirDuFil`) — les plans d'un
+   repère se calculent une fois par export. */
+function contactsPourSEE() { const parRepere = new Map();
+  const plansDe = rep => { if (parRepere.has(rep)) return parRepere.get(rep); let Q = [];
+    try { Q = coupureEnModules(rep) ? [planDeCoupure(rep).plan] : barretteEnModules(rep) ? [planDeBarrette(rep).plan] : cavitesDe(rep).map(c => c.plan); } catch (_) { Q = []; }
+    parRepere.set(rep, Q); return Q; };
+  const bout = (rep, l) => { if (!rep || VT_A_POSER.test(rep) || estMasse(rep) || estRenvoi(rep)) return null;
+    for (const Q of plansDe(rep)) { const x = (Q.fils || []).find(y => y.f.l === l); if (x) return { contact: x.sertir ? motSertir(x.sertir) : '', sexe: x.sexe || '' }; }
+    return null; };
+  return l => { const o = l.origine || l; return { de: l.de === o.de ? bout(o.de, o) : null, vers: l.vers === o.vers ? bout(o.vers, o) : null }; }; }
+/* Les folios à exporter : { cle, plan, rang } — `cle` celle de `liaisonsDe` ('*' : le contrat d'un seul dessin, tel que la
+   page l'affiche), `plan` la valeur FWD qui nomme le folio, `rang` sa place dans le contrat (le nom d'un DXF la porte). */
+function foliosPourSEE(portee) { const P = plans();
+  if (portee === 'folio' || P.length <= 1) { const cle = P.length ? app.plan : '*'; return [{ cle, plan: cle === '*' ? (P.length === 1 ? P[0] : null) : cle, rang: Math.max(1, P.indexOf(cle) + 1) }]; }
+  return P.map((p, i) => ({ cle: p, plan: p, rang: i + 1 })); }
+/* LE CLASSEUR S'ÉCRIT AU LOIN : huit cents folios font un classeur de quinze mégaoctets, une quinzaine de secondes de
+   calcul (mesurées sous Node) qui figeraient l'écran. Un Worker reçoit chaque folio dès qu'il est relu et écrit le
+   classeur à la fin : SheetJS (relu dans son <script> de la page) et les trois fonctions du classeur, telles quelles.
+   Sans Worker, le classeur s'écrit ici. */
+function ecrivainSEE() { try {
+    const lib = [...document.scripts].find(s => s.textContent.trimStart().startsWith('/*! xlsx.js'));
+    if (!lib || typeof Worker === 'undefined') return null;
+    const code = lib.textContent + `\nconst SEE_FORMAT = ${JSON.stringify(SEE_FORMAT)}, SEE_UNITE = ${SEE_UNITE}, SEE_COLONNES = ${JSON.stringify(SEE_COLONNES)}, PAGE_W = ${PAGE_W}, PAGE_H = ${PAGE_H};\n${lignesSEE}\n${enteteSEE}\n${classeurSEE}\n`
+      + `const modeles = []; self.onmessage = e => { const d = e.data; if (d.modele) { modeles.push(d.modele); return; }
+        try { const octets = XLSX.write(classeurSEE(modeles, d.meta), { type: 'array', bookType: 'xlsx', compression: true }); postMessage({ octets }, [octets]); }
+        catch (err) { postMessage({ erreur: String((err && err.message) || err) }); } };`;
+    const url = URL.createObjectURL(new Blob([code], { type: 'text/javascript' })), w = new Worker(url);
+    return { w, url, envoyer: m => { try { w.postMessage({ modele: m }); } catch (_) { w.casse = true; } }, fin: () => { w.terminate(); URL.revokeObjectURL(url); } }; }
+  catch (_) { return null; } }
+const metaSEE = () => ({ fichier: app.nom || '', contrat: app.contrat.cartouche.titre || '', version: VERSION_MOTEUR, date: new Date().toISOString() });
+async function octetsSEE(x, ecrivain) { const meta = metaSEE();
+  if (ecrivain && !ecrivain.w.casse) { const r = await new Promise(ok => { ecrivain.w.onmessage = e => ok(e.data); ecrivain.w.onerror = () => ok({ erreur: 'Worker' }); ecrivain.w.postMessage({ ecrire: true, meta }); });
+    if (r.octets) return r.octets; }
+  return XLSX.write(classeurSEE(x.modeles, meta), { type: 'array', bookType: 'xlsx', compression: true }); }
+async function exporterSEE(portee, format) { if (EXPORT_SEE.encours) return;
+  if (!verite().length) { dire('Rien à exporter : dépose d’abord un fichier.'); return; }
+  const liste = foliosPourSEE(portee), dxf = (format || EXPORT_SEE.format) === 'dxf';
+  const x = EXPORT_SEE.encours = { liste, portee: liste.length > 1 ? 'tous' : 'folio', format: dxf ? 'dxf' : 'paquet', total: Math.max(1, plans().length), dxf: [],
+    contrat: app.contrat, cible: cibleSEE(dxf ? 'dxf' : 'paquet', liste),
+    i: 0, etats: liste.map(() => ''), modeles: [], fils: 0, t0: performance.now(), etape: '', arret: false, fin: null };
+  // le DXF d'un folio s'écrit dès qu'il est relu (au plus quelques dizaines de millisecondes) ; le classeur, lui, au loin (`ecrivainSEE`)
+  const routes = couleursDesRoutes(), cartouche = { ...app.contrat.cartouche }, designations = new Map(app.contrat.designations), contactDe = contactsPourSEE(), ecrivain = dxf ? null : ecrivainSEE();
+  try { montrerExportSEE();
+    for (; x.i < liste.length && !x.arret; x.i++) { const { cle, plan } = liste[x.i]; x.etats[x.i] = 'encours'; x.etape = ''; montrerExportSEE(); await pauseSEE();
+      try { const L = liaisonsDe(cle); if (!L.length) { x.etats[x.i] = 'vide'; continue; }
+        const Pl = await placementPourSEE(cle, L, x); if (!Pl) { x.etats[x.i] = x.arret ? '' : 'ko'; continue; }
+        x.etape = 'relecture du dessin'; montrerExportSEE(); await pauseSEE();
+        const m = modeleSEE(dessinDuPlacement(Pl, L, routes), L, { folio: x.modeles.length + 1, plan, cartouche, designations, contactDe });
+        x.modeles.push(m); x.fils += m.fils.length; x.etats[x.i] = m.folio.Remarque ? 'att' : 'ok';
+        // le DXF du folio tout de suite, son CRC aussi : le zip de la fin ne fait plus que les mettre bout à bout
+        if (dxf) { const rang = x.liste[x.i].rang, octets = octetsCp1252(dxfDuFolio(m, { total: x.total, rang, echelle: cartouche.echelle })); x.dxf.push({ nom: nomDuDxf(m, rang, x.total), octets, crc: crc32(octets) }); }
+        else if (ecrivain) ecrivain.envoyer(m); }
+      catch (e) { x.etats[x.i] = 'ko'; x.erreur = String((e && e.message) || e); } }
+    x.etape = ''; x.fin = performance.now();
+    if (!x.arret && x.modeles.length && dxf) {
+      // un folio : son DXF ; plusieurs : un zip « stocké », assemblé morceau par morceau (le Blob ne recopie rien)
+      x.etape = 'écriture du zip'; montrerExportSEE(); await pauseSEE(30);
+      telecharger(x.dxf.length === 1 ? new Blob([x.dxf[0].octets], { type: 'application/dxf' }) : new Blob(partiesZip(x.dxf, new Date()), { type: 'application/zip' }), x.nom = nomDuPaquetSEE(x));
+      dire((x.dxf.length > 1 ? 'DXF enregistrés : ' : 'DXF enregistré : ') + pluriel(x.dxf.length, 'folio') + ', ' + pluriel(x.fils, 'fil') + '.'); }
+    else if (!x.arret && x.modeles.length) { x.etape = 'écriture du classeur'; montrerExportSEE(); await pauseSEE(30);
+      const octets = await octetsSEE(x, ecrivain);
+      telecharger(new Blob([octets], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), x.nom = nomDuPaquetSEE(x));
+      dire('Paquet SEE enregistré : ' + pluriel(x.modeles.length, 'folio') + ', ' + pluriel(x.fils, 'fil') + '.'); }
+    else if (x.arret) dire('Export pour SEE arrêté : rien n’est enregistré.'); }
+  catch (e) { x.erreur = String((e && e.message) || e); dire((dxf ? 'Les DXF n’ont' : 'Le paquet SEE n’a') + ' pas pu s’écrire : ' + x.erreur, true); }
+  finally { if (ecrivain) ecrivain.fin(); x.etape = ''; x.fin = x.fin || performance.now(); EXPORT_SEE.dernier = x; EXPORT_SEE.encours = null; montrerExportSEE(); } }
+/* Le fichier : « paquet-see-<contrat>[-folio-<plan>].xlsx » ; en DXF, « NN.<nom du folio>.dxf » pour un seul folio (le nom
+   que SEE lit), « dxf-see-<contrat>.zip » pour plusieurs. */
+function nomDuPaquetSEE(x) { const p = x.liste[0].plan;
+  if (x.format === 'dxf') { if (x.dxf && x.dxf.length === 1) return x.dxf[0].nom; const f = x.liste[0];
+    return x.liste.length === 1 ? nomDuDxf({ folio: { Folio: f.rang, Nom: nomDeFolioSEE(f.plan, f.rang) } }, f.rang, x.total || plans().length) : 'dxf-see-' + nomContrat() + '.zip'; }
+  return 'paquet-see-' + nomContrat() + (x.portee === 'folio' && p && plans().length > 1 ? '-folio-' + nomAscii(String(p)) : '') + '.xlsx'; }
+const nomPrevuSEE = () => { const liste = foliosPourSEE(porteeSEE()); return nomDuPaquetSEE({ liste, portee: liste.length > 1 ? 'tous' : 'folio', format: EXPORT_SEE.format, total: plans().length }); };
+function ficheSEE() { if (!verite().length) { dire('Rien à exporter : dépose d’abord un fichier.'); return; }
+  const P = plans(), n = Math.max(1, P.length), ici = !P.length || app.plan === '*' ? '' : app.plan, portee = porteeSEE();
+  const puce = (v, t) => `<button class="fi-chip" data-portee="${v}" aria-pressed="${portee === v}">${t}</button>`;
+  const sorte = (v, t) => `<button class="fi-chip" data-format="${v}" aria-pressed="${EXPORT_SEE.format === v}">${t}</button>`;
+  const corps = tete('Le dessin', 'Exporter pour SEE', true)
+    + (EXPORT_SEE.format === 'dxf'
+      ? `<p class="note">Le <b>DXF</b> : un dessin par folio, tel qu’il est dessiné ici — fils, bornes, connecteurs, repères, en millimètres sur la feuille A3, rangés sur dix calques, chaque borne un bloc nommé qui porte son repère et son numéro. SEE Electrical Expert importe un dossier de DXF d’un coup : c’est le repli quand le classeur pilote ne peut pas le commander.</p>`
+      : `<p class="note">Le <b>paquet SEE</b> : un classeur qui décrit chaque folio tel qu’il est dessiné ici — blocs, connecteurs, bornes, fils et leur tracé, en millimètres sur la feuille A3. Le classeur pilote le dessine dans SEE Electrical Expert.</p>`)
+    + `<div class="se-portee" role="group" aria-label="Quel fichier">${sorte('paquet', 'Paquet SEE · .xlsx')}${sorte('dxf', 'DXF · un fichier par folio')}</div>`
+    + `<div class="se-portee" role="group" aria-label="Quels folios">${n > 1 ? puce('tous', 'Tous les folios · ' + n) : ''}${puce('folio', ici ? 'Ce folio · ' + esc(clip(ici, 18)) : 'Le folio')}</div>`
+    + `<div id="se-avance" class="se-avance"></div>`;
+  ouvrirFiche({ mode: 'see' }, corps, '<button class="btn cuivre" id="se-go">Exporter</button><span class="se-nom" id="se-nom"></span>');
+  // changer de portée ou de fichier : la fiche annonce le nouvel export (le bilan du précédent ne se montre plus, `bilanSEE`)
+  $('fiche-corps').querySelectorAll('[data-portee]').forEach(b => b.onclick = () => { if (EXPORT_SEE.encours || n <= 1 || EXPORT_SEE.portee === b.dataset.portee) return; EXPORT_SEE.portee = b.dataset.portee; ficheSEE(); });
+  $('fiche-corps').querySelectorAll('[data-format]').forEach(b => b.onclick = () => { if (EXPORT_SEE.encours || EXPORT_SEE.format === b.dataset.format) return; EXPORT_SEE.format = b.dataset.format; ficheSEE(); });
+  $('se-go').onclick = () => { if (EXPORT_SEE.encours) { EXPORT_SEE.encours.arret = true; montrerExportSEE(); } else exporterSEE(porteeSEE(), EXPORT_SEE.format); };
+  montrerExportSEE(); }
+/* L'avancement : une case par folio (à faire, en cours qui respire, fait, simplifié, pas dessiné), la ligne du folio en
+   cours, trois chiffres, et ce qu'il a fallu simplifier. Le squelette se pose une fois par export ; chaque pas ne touche
+   que ce qui change (huit cents cases ne se refont pas à chaque folio, une liste dépliée le reste). */
+const ETATS_SEE = { ok: 'exporté', att: 'exporté, simplifié', ko: 'pas dessiné', vide: 'vide', encours: 'en cours' };
+function montrerExportSEE() { const el = $('se-avance'); if (!el || !app.fiche || app.fiche.mode !== 'see') return;
+  const x = EXPORT_SEE.encours || bilanSEE(), go = $('se-go'), nom = $('se-nom');
+  if (go) { go.textContent = EXPORT_SEE.encours ? (EXPORT_SEE.encours.arret ? 'Arrêt…' : 'Arrêter') : x && x.nom ? 'Exporter à nouveau' : 'Exporter'; go.className = 'btn ' + (EXPORT_SEE.encours ? 'papier' : 'cuivre'); }
+  $('fiche-corps').querySelectorAll('[data-portee], [data-format]').forEach(b => { b.disabled = !!EXPORT_SEE.encours; });
+  if (!x) { el.hidden = true; if (nom) nom.textContent = nomPrevuSEE(); return; }
+  el.hidden = false; if (nom) nom.textContent = x.nom || nomDuPaquetSEE(x);
+  const nomF = f => f.plan ? 'Folio ' + f.plan : 'Le dessin';
+  if (el.__x !== x) { el.__x = x;
+    el.innerHTML = `<div class="se-cases" role="img">${x.liste.map(f => `<i class="afaire" title="${escA(nomF(f) + ' — à faire')}"></i>`).join('')}</div>`
+      + '<p class="se-ligne" aria-live="polite"></p><div class="fi-tuiles"></div><div class="se-bilan"></div>'; }
+  const faits = x.etats.filter(e => e === 'ok' || e === 'att').length, att = x.etats.filter(e => e === 'att').length, ko = x.etats.filter(e => e === 'ko').length;
+  const boite = el.querySelector('.se-cases'), cases = boite.children;
+  x.etats.forEach((e, i) => { const c = e || 'afaire'; if (cases[i] && cases[i].className !== c) { cases[i].className = c; cases[i].title = nomF(x.liste[i]) + ' — ' + (ETATS_SEE[e] || 'à faire'); } });
+  boite.setAttribute('aria-label', faits + ' folio' + (faits > 1 ? 's' : '') + ' exporté' + (faits > 1 ? 's' : '') + ' sur ' + x.liste.length);
+  // la durée tient dans sa tuile : « 42 s », « 3 min 07 s », « 1 h 05 min » (le reste en petit)
+  const s = Math.round(((x.fin || performance.now()) - x.t0) / 1000), sur = t => '<span class="se-sur">\u00a0' + t + '</span>';
+  const duree = s < 60 ? s + '\u00a0s' : s < 3600 ? Math.floor(s / 60) + '\u00a0min' + sur(String(s % 60).padStart(2, '0') + '\u00a0s') : Math.floor(s / 3600) + '\u00a0h' + sur(String(Math.floor(s / 60) % 60).padStart(2, '0') + '\u00a0min');
+  const cour = EXPORT_SEE.encours ? x.liste[Math.min(x.i, x.liste.length - 1)] : null;
+  el.querySelector('.se-ligne').innerHTML = EXPORT_SEE.encours ? (x.arret ? 'Arrêt après ce folio…' : `${esc(clip(nomF(cour), 30))} · ${Math.min(x.i + 1, x.liste.length)} / ${x.liste.length}${x.etape ? ' — ' + esc(x.etape) : ''}`)
+    : x.arret ? 'Arrêté : rien n’est enregistré.' : x.nom ? `Enregistré : <span class="id">${esc(x.nom)}</span>` : x.modeles.length ? (x.format === 'dxf' ? 'Les DXF n’ont pas pu s’écrire.' : 'Le classeur n’a pas pu s’écrire.') : 'Aucun folio n’a pu se dessiner.';
+  const tuile = (v, t) => `<div class="fi-tuile"><b>${v}</b><span>${t}</span></div>`;
+  el.querySelector('.fi-tuiles').innerHTML = tuile(faits + (x.liste.length > 1 ? '<span class="se-sur">\u00a0/\u00a0' + x.liste.length + '</span>' : ''), x.liste.length > 1 ? 'folios' : 'folio') + tuile(x.fils, 'fils') + tuile(duree, 'de calcul');
+  const remarques = x.modeles.filter(m => m.folio.Remarque).map(m => `<li class="fi-att"><b>${esc(m.folio.Nom)}</b> · ${esc(m.folio.Remarque)}</li>`).join('');
+  const bilan = att || ko || x.erreur ? `<details class="fi-etat ${ko || x.erreur ? 'ko' : 'att'}"><summary><i></i><span>${[att ? pluriel(att, 'folio') + ' simplifié' + (att > 1 ? 's' : '') : '', ko ? pluriel(ko, 'folio') + ' pas dessiné' + (ko > 1 ? 's' : '') : '', x.erreur && !ko ? 'une erreur' : ''].filter(Boolean).join(' · ')}</span></summary><ul>${remarques}${x.erreur ? `<li>${esc(x.erreur)}</li>` : ''}</ul></details>` : '';
+  const b = el.querySelector('.se-bilan'); if (b.__html !== bilan) { const ouvert = !!(b.querySelector('details') || {}).open; b.innerHTML = b.__html = bilan; if (ouvert && b.querySelector('details')) b.querySelector('details').open = true; } }
 
 /* ───────── 10-demarrage.js ───────── */
 /* ===========================================================================

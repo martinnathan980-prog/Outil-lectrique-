@@ -28,7 +28,11 @@ L'outil sait aujourd'hui :
   contrat d'un geste ;
 - établir la nomenclature du contrat (contacts, modules, connecteurs,
   habillage, câbles) et l'enregistrer en CSV ;
-- dire l'état de tout le contrat dans l'en-tête et dans l'index des repères.
+- dire l'état de tout le contrat dans l'en-tête et dans l'index des repères ;
+- exporter chaque folio pour SEE Electrical Expert : le **paquet SEE** (un
+  classeur qui décrit chaque folio en millimètres, lu par le classeur pilote
+  qui commande SEE par COM) et, en repli, un **DXF par folio** (voir
+  `see/LISEZMOI.md`).
 
 Ce qui suit se branche dessus, une couche après l'autre. Chaque couche suit
 le même principe :
@@ -275,6 +279,20 @@ page de norme suffit toujours : je la transcris.
     - le sens de lecture des folios ;
     - ce qui va sur quel folio.
 
+### E bis. SEE Electrical Expert (voir `see/LISEZMOI.md`)
+
+Le pont est construit (paquet SEE, classeur pilote, diagnostic, DXF de repli),
+mais rien n'a encore touché SEE. Il me faut, du bureau, sans rien de
+confidentiel :
+- le rapport `diagnostic-see.txt` (double-clic sur `see/diagnostic.cmd`) ;
+- les feuilles `Sonde_…` du classeur pilote, lancées sur un **projet d'essai**
+  où tu as dessiné à la main un petit folio comme le bureau les dessine
+  (deux équipements, deux broches, un fil, une masse, une barrette) ;
+- la version de SEE (*Aide > À propos*) et le bundle (Launch, Grow, Scale) ;
+- si l'informatique permet à Excel de commander SEE (macros, COM).
+Avec ça, je règle le pilote (unité, origine, symboles du bureau, type de
+connexion, repères) et on dessine un premier folio, puis les 800 par lots.
+
 ### F. Les contrats déjà faits (voir § 2)
 
 15. **Un extrait de la grande base**, dans son format réel : deux ou trois
@@ -387,3 +405,6 @@ exceptions, qui méritent une question.
 4. Les raccords, cheminées et colliers (§ 1 D).
 5. L'historique : ranger, reconnaître, reprendre, revérifier (§ 2).
 6. Les documents de sortie au gabarit maison (§ 1 E).
+
+En parallèle, et d'abord pour les 800 folios : le premier essai au bureau du
+pont vers SEE (§ 1 E bis, `see/LISEZMOI.md`).

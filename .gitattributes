@@ -1,0 +1,6 @@
+# Fichiers pour Windows : gardés tels quels (fins de ligne CRLF ; les .bas en Windows-1252,
+# le .ps1 en UTF-8 avec BOM), sans conversion de fins de ligne par git.
+see/vba/*.bas -text
+see/*.ps1 -text
+see/*.cmd -text
+see/diagnostic-exemple.txt -text

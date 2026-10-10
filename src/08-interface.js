@@ -68,8 +68,16 @@ const telephone = () => window.innerWidth <= 700;
    Le numéro TIENT (`app.contrat.provisoires`, gardée avec le contrat) : poser VT1 ne renomme pas VT2 en VT1. */
 const folios = new Map();
 const signature = L => JSON.stringify(L.map(l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable, l.type, l.pnDe, l.pnVers, l.route]));
-function liaisonsDe(plan) { const L0 = app.contrat.liaisons.filter(liaisonComplete), L = plan === '*' ? L0 : L0.filter(l => l.plan === plan);
-  const P = plans(), depart = plan === '*' ? 0 : P.slice(0, Math.max(0, P.indexOf(plan))).reduce((n, p) => n + dedoublements(L0.filter(l => l.plan === p)).length, 0);
+/* Les liaisons d'un folio telles que le contrat les porte (complètes, de ce plan ; '*' : toutes) et le rang de départ de
+   ses barrettes à poser (le nombre de celles des folios d'avant). Pur : le lot (see/exporter.js) le partage avec la page.
+   Les folios d'avant se comptent en un passage (un contrat de huit cents folios : un appel par folio, pas huit cents). */
+function folioDuContrat(liaisons, plan) { const L0 = liaisons.filter(liaisonComplete), L = plan === '*' ? L0 : L0.filter(l => l.plan === plan);
+  if (plan === '*') return { L, depart: 0 };
+  const P = plansDe(liaisons), avant = new Set(P.slice(0, Math.max(0, P.indexOf(plan)))), parPlan = new Map();
+  L0.forEach(l => { if (avant.has(l.plan)) (parPlan.get(l.plan) || parPlan.set(l.plan, []).get(l.plan)).push(l); });
+  let depart = 0; parPlan.forEach(Lp => { depart += dedoublements(Lp).length; });
+  return { L, depart }; }
+function liaisonsDe(plan) { const { L, depart } = folioDuContrat(app.contrat.liaisons, plan);
   const g = folios.get(plan), sig = depart + '|' + signature(L);
   if (g && g.sig === sig && g.L.length === L.length && g.L.every((l, i) => l === L[i])) return g.sortie;
   if (!app.contrat.provisoires) app.contrat.provisoires = new Map();
@@ -329,14 +337,19 @@ function synchroniserRetouche() { const b = $('btnAuto'); if (!b) return; const 
 function calculer() {
   const L = liaisonsDuPlan(); if (!L.length) { app.dessin = null; return null; }
   const P = placementDe(L); affinerTout();
-  // la feuille : la même pour tous les folios (A3 paysage), le dessin calé dedans
-  app.dessin = P ? { comps: P.comps, links: P.links, bbox: pageDe(P.comps, P.routage.fils), geom: P.geom, compDe: P.compDe,
-                     fils: P.routage.fils, points: P.routage.points, barrettes: P.routage.barrettes, piquages: P.routage.piquages } : null;
-  if (app.dessin) { const routes = couleursDesRoutes(), routeDe = w => (L[w.i] && L[w.i].route) || '';
-    app.dessin.couleurDe = w => routes.get(routeDe(w)) || null; app.dessin.legende = legendeDesRoutes(app.dessin.fils.filter(w => !w.shunt && String(w.de) !== String(w.vers)), routeDe, routes);
-    nommerBarrettesAPoser(app.dessin.barrettes, L); }
+  app.dessin = P ? dessinDuPlacement(P, L, couleursDesRoutes()) : null;
   return app.dessin;
 }
+/* Le dessin d'un folio, de son placement : la feuille — la même pour tous les folios (A3 paysage), le dessin calé dedans —,
+   la couleur de chaque fil (celle de sa route), la légende, le nom de chaque barrette à poser (posé sur les barrettes du
+   placement). `routes` : route → couleur (`couleursDeRoutes`). La page et le lot (see/exporter.js) dessinent ainsi. */
+function dessinDuPlacement(P, L, routes) {
+  const d = { comps: P.comps, links: P.links, bbox: pageDe(P.comps, P.routage.fils), geom: P.geom, compDe: P.compDe,
+              fils: P.routage.fils, points: P.routage.points, barrettes: P.routage.barrettes, piquages: P.routage.piquages };
+  const routeDe = w => (L[w.i] && L[w.i].route) || '';
+  d.couleurDe = w => routes.get(routeDe(w)) || null; d.legende = legendeDesRoutes(d.fils.filter(w => !w.shunt && String(w.de) !== String(w.vers)), routeDe, routes);
+  nommerBarrettesAPoser(d.barrettes, L);
+  return d; }
 /* Les BARRETTES À POSER du folio (01) : le routage les a posées au ras de leur borne (05, les `barrettes` du dessin) ;
    chacune reçoit ici son repère provisoire (VT1, VT2…) et, pour chaque borne, le numéro que le folio lui donne — la
    borne 1 pour le fil à créer, la borne du contrat pour chaque fil : la fiche et le plan disent la même chose. */
@@ -351,8 +364,10 @@ const filsDeBarretteAPoser = nom => { const L = liaisonsDuPlan(); return ((app.d
    sa couleur sur tous les folios du contrat — l'ordre naturel de leurs noms, dans une palette de dix teintes franches,
    lisibles sur le blanc et à l'impression ; une couleur choisie au contrat (`couleursRoutes`) passe devant. */
 const PALETTE_ROUTES = ['#1f5fbf', '#c0392b', '#1e8449', '#d35400', '#7d3c98', '#117a8b', '#9a6324', '#c2185b', '#5d6d1e', '#34495e'];
-function couleursDesRoutes() { const choisies = app.contrat.couleursRoutes || {}, m = new Map();
-  [...new Set(app.contrat.liaisons.map(l => l.route).filter(Boolean))].sort(triNaturel).forEach((r, i) => m.set(r, choisies[r] || PALETTE_ROUTES[i % PALETTE_ROUTES.length]));
+function couleursDesRoutes() { return couleursDeRoutes(app.contrat.liaisons, app.contrat.couleursRoutes); }
+// la même chose pour des liaisons quelconques (le lot, see/exporter.js) : route → couleur
+function couleursDeRoutes(liaisons, choisies) { choisies = choisies || {}; const m = new Map();
+  [...new Set(liaisons.map(l => l.route).filter(Boolean))].sort(triNaturel).forEach((r, i) => m.set(r, choisies[r] || PALETTE_ROUTES[i % PALETTE_ROUTES.length]));
   return m; }
 // la légende d'un folio : ses routes, chacune avec son nombre de fils ; « sans route » quand d'autres en ont une
 function legendeDesRoutes(fils, routeDe, routes) { const n = new Map(); fils.forEach(w => { const r = routeDe(w); n.set(r, (n.get(r) || 0) + 1); });
@@ -1489,7 +1504,7 @@ function lierPanneau() {
   o('btnBase', basculerBase); o('btnIndex', basculerIndex); o('btnCherche', () => { if (rechercheOuverte()) fermerRecherche(); else ouvrirRecherche(); });
   o('btnLiaison', nouvelleLiaison); o('btnBible', basculerBible); o('btnOuvrir', choisirFichier);
   o('btnMenu', e => { e.stopPropagation(); $('menu').hidden ? ouvrirMenu() : fermerMenu(); });
-  const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple, cartouche: ficheCartouche, bible: ficheBible, normes: () => ficheNormes(), hypotheses: ficheHypotheses, nomenclature: ficheNomenclature, suivi: exporterSuivi, svg: exporterSVG, png: exporterPNG, imprimer,
+  const actions = { ouvrir: choisirFichier, coller: ficheColler, exemple, cartouche: ficheCartouche, bible: ficheBible, normes: () => ficheNormes(), hypotheses: ficheHypotheses, nomenclature: ficheNomenclature, suivi: exporterSuivi, svg: exporterSVG, png: exporterPNG, see: ficheSEE, imprimer,
     // tout effacer : la table vide (l'accueil), et un contrat neuf — les choix de celui-ci ne survivent pas (Ctrl+Z, ou « Reprendre », rend tout)
     vider: () => { if (!confirm('Effacer tout le contrat ?')) return; histPush('tout effacer'); app.contrat = contratNeuf(); app.source = null; app.nFolios = 0; app.plan = '*'; app.nom = ''; app.cible = null; app.choisi = null;
       fermerFiche(); fermerInspecteur(); fermerBase(); redessiner(); ajuster(); sauver(); } };
