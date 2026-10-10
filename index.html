@@ -1064,7 +1064,8 @@ body.fiche-ouverte #toast{left:max(calc(var(--rail) + 16px + min(60vw,560px) / 2
 /* ── 1. la gamme : une rangée de segments, un trait d'état sous chaque chiffre ; le retenu à l'encre, le meilleur étoilé ── */
 .dj-gamme .fc-v{flex-wrap:nowrap}
 /* une grille de cases égales : la gamme tient sur une rangée ; plus longue, elle passe à la ligne sans étirer la dernière */
-.dj-chips{flex:1;min-width:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(34px,1fr));border:1px solid var(--s-line-2);border-radius:var(--r-btn);overflow:hidden;background:var(--s-surface)}
+/* les calibres sur UNE rangée (la gamme du lecteur : 8 puces) : chacune prend sa part de la largeur */
+.dj-chips{flex:1;min-width:0;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);border:1px solid var(--s-line-2);border-radius:var(--r-btn);overflow:hidden;background:var(--s-surface)}
 .dj-chip{position:relative;height:34px;border:none;box-shadow:1px 0 0 var(--s-line),0 1px 0 var(--s-line);background:none;font:600 var(--f-13) var(--sans);color:var(--t-1);cursor:pointer;
   display:inline-flex;align-items:center;justify-content:center;gap:2px;padding:0 0 5px;white-space:nowrap;font-variant-numeric:tabular-nums;transition:background var(--rapide),color var(--rapide)}
 .dj-chip::after{content:"";position:absolute;left:30%;right:30%;bottom:4px;height:2px;border-radius:1px;background:var(--s-line-2)}
