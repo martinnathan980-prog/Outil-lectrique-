@@ -21,21 +21,26 @@ documents publics (R2 : Glenair, HellermannTyton, VG 95343 ; R4 : les
 dessins TE/Polamco de l'EN 3660, l'index BSI de la série, iTeh, l'AC
 43.13-1B ; **R3** : les aperçus iTeh des EN 3660-005, -017/-018, -025 à
 -027, -062 à -065, l'EN 3660-033, le guide HellermannTyton 2024, les titres
-EN 4165). Chaque ligne ajoutée ou corrigée garde sa **Source** et son
-**Statut** (vérifié, déduit, à confirmer). Le fichier porte dix tables :
+EN 4165 ; **vérification D** : chaque ligne relue contre ces documents
+et l'index EN 3660-002:2016, les fiches Glenair des bandes, la fiche
+HellermannTyton HEGMAN, les tableaux de cotes du guide HellermannTyton
+2024 ligne à ligne). **Chaque ligne** des tables d'habillage a désormais
+sa **Source** et son **Statut** (vérifié, déduit, à confirmer) — les
+Gaines et les Classes ont gagné ces deux colonnes. Le fichier porte dix
+tables :
 
 | Table | Ce qu'elle dit | Source |
 |---|---|---|
 | **Toron** | le diamètre d'un toron : Ø = facteur × √(Σ Ø²), le **facteur TE/Polamco selon le nombre de câbles** (1 ; 1,415 pour deux ; 1,242 ; 1,205 ; 1,208 ; 1,225 pour six ; **1,15 dès sept** — l'empilement exact de cercles égaux), la ligne « Excel » (+ 10 % quel que soit le nombre, un remplissage de 83 %), la table Glenair (× le Ø moyen) gardée pour contrôle, et la règle de remplissage Micro-D | TE/Polamco « Circular Backshells » p. 11 (vérifié), Glenair (R3) |
-| **Gaines** | par famille et référence, le **rôle** — `surblindage` (tresse cuivre HFA DHS754-160 : Ø intérieur, Ø extérieur) ou `protection` (Nomex EN 6049-003, hydrofuge EN 6049-004 : la plage de toron Dmin–Dmax) —, la masse. C'est le rôle qui décide du raccord | HellermannTyton |
-| **Colliers** | les **bandes de reprise de blindage EN 3660-033** — AF standard 6,22 × 0,48 mm (9 g), **BF** longue (442 mm, Ø serré ≤ 63,5 mm, 11,5 g), CF et DF micro-bandes, **EF**, **FF** (R3 : variantes manquantes ajoutées, masses corrigées) — et leurs équivalentes Glenair 600-052/-090/-057/-083 (tension de pose 150 lb, 75 lb la micro), les band-it d'atelier **E0805-01** (toron < 15 mm) et **-02**, et les **tyraps NSA935401-03…-13** (largeur, longueur, toron maximal : −03 Ø 22 / 100 mm, −04 Ø 35, **−05 Ø 50 / 200 mm** — la table disait 305 mm, ce qui ne tient pas avec Ø 50 : corrigé sur l'équivalent T50R, **à confirmer**) — NSA935401 est un collier, pas un disjoncteur | TE P42936, EN 3660-033 (R3), Glenair, HellermannTyton, Octopart, Arrow |
-| **Filetages** | par famille de connecteur et **taille de boîtier** (EN 3645 : 09 à 25, M12x1 à M37x1 ; EN 2997 : 08 à 28, UNEF ; EN 3646 : 08 à 24), le filetage d'accessoire et le Ø du boîtier | EN 3645-002, EN 2997-002, EN 3646-002, EN 3660-063 (R3) |
-| **Classes** | par famille, les lettres de **classe du connecteur** lues dans son part number juste après le nom de la famille (EN2997 **SE** 6 28 42 F N ; EN3645 **F** 0 C N 26 M N ; EN3646 **A** 6 08 3A A N — rapport R3), son matériau et son fini, la **lettre de classe EN 3660** du raccord qui va avec (W cadmium ↔ W, **nickel ↔ N** — la lettre de l'EN 3660-001:2019, qui ne liste plus F ; TE/Polamco imprime encore F sur ses références vendues —, inox ↔ K, zinc-nickel ↔ Z — jamais A, anodisé non conducteur), sa température | EN 2997, EN 3646, EN 3645 (R3) ; EN 3660-001 (R4, R3) |
-| **Entrées** | les codes d'entrée de câble, par **Système** : `EN 3660` — les codes lettrés **A à M** des raccords à bande EN 3660-062 à -065 : **Dmin–Dmax la plage de toron** que la norme donne pour chaque code (A 2–4 … D 7,4–9 … M 28,4–31 : « the cable entry shall be selected in accordance with the maximum diameter of the cable bundle », R3 — avant, l'alésage ØAA servait de maximum, optimiste de 0,4 à 0,9 mm), ØAA l'alésage, ØBB la **plateforme de bande**, ØCC l'**épaulement** (la cote C du manchon), DD la lèvre, et la plus petite taille de boîtier qui admet le code ; `Glenair` — les codes 03 à 32 du serre-câble série 36 | TE/Polamco P20027 (table 4), EN 3660-062/-065:2022 (R3), Glenair 360A*001 |
-| **Raccords** | 175 lignes, par famille, **taille de boîtier**, type (durci = style K, pour manchon = J, serre-câble et tyrap = A, **cheminée** de l'EN 4165) et orientation : la partie EN 3660 — -064 / -065 pour l'EN 2997 et (déduit du filetage commun) l'EN 3646 et l'ASNE 0059 ; **-063 / -062 pour l'EN 3645** ; **-004 / -005** serre-câble ; -020 / -021 ; **-017 / -018** tyraps de l'EN 3645 (déduit : la norme ne nomme pas la famille, filetage et interface sont ceux de l'EN 3645) ; **-025 / -026 / -027** tyraps de l'EN 2997 et l'EN 3646 ; -009, -010, -011, -013… —, les cotes A (toron admis), B, C, la masse, le **couple de pose** (N·m : les -017/-018, -025 à -027), et le **modèle de désignation** `EN3660-064N12<L><E>` ; une ligne **EN4165-015** (cheminée, à confirmer) ; le **Statut** : `vérifié` (cotes lues sur un dessin ou un aperçu de la norme), `structure`, `déduit`, `à confirmer` | TE/Polamco P20027 (-064), TE c-2275010 (-004), iTeh EN 3660-005, -017/-018, -025 à -027, -062 à -065 (R3), index BSI |
+| **Gaines** | par famille et référence, le **rôle** — `surblindage` (tresse cuivre HFA DHS754-160 : Ø intérieur, Ø extérieur) ou `protection` (Nomex EN 6049-003, hydrofuge EN 6049-004 : la plage de toron Dmin–Dmax) —, la masse. C'est le rôle qui décide du raccord. Les plages Nomex sont **toutes vérifiées** sur la fiche HellermannTyton HEGMAN / HEGMANWO (02/2010, qui écrit EN6049-003-04-**5**) ; cinq masses -003 de l'Excel diffèrent de 0,3 à 1,5 g/m (dites au statut) ; la tresse HFA DHS754-160 (Airbus Helicopters) n'a aucune donnée publique : à confirmer | HellermannTyton HEGMAN 2010 |
+| **Colliers** | **le band-it par défaut**, dit une fois (colonne **Défaut** : « oui ») : l'**EN3660-033AF**, la bande standard plate de 6,22 mm posée en double tour, Ø serré ≤ 47,8 mm — toutes les plateformes ØBB des codes A à M (7,7 à 34,7 mm) —, outil normalisé **EN 3660-038** (manuel, style Z), équivalents Glenair 600-052 (outil 600-058 réglé à 150 ± 5 lb), M81306/1-01 ; l'outil la prend tant qu'elle serre, puis la BF ; le « Band-It Jr. » n'en est pas un (un collier préformé du commerce). Puis les **bandes de reprise de blindage EN 3660-033** — AF standard 6,22 × 0,48 mm (9 g), **BF** longue (442 mm, Ø serré ≤ 63,5 mm, 11,5 g), CF et DF micro-bandes, **EF**, **FF** (R3 : variantes manquantes ajoutées, masses corrigées) — et leurs équivalentes Glenair 600-052/-090/-057/-083 (tension de pose 150 lb, 75 lb la micro), les band-it d'atelier **E0805-01** (toron < 15 mm) et **-02**, et les **tyraps NSA935401-03…-13** (largeur, longueur, toron maximal : −03 Ø 22 / 100 mm, −04 Ø 35, **−05 Ø 50 / 200 mm** — la table disait 305 mm, ce qui ne tient pas avec Ø 50 : corrigé sur l'équivalent T50R, **à confirmer**) — NSA935401 est un collier, pas un disjoncteur ; les Glenair sont relues sur leurs fiches (H-52, F-20 : 6,10 × 0,5 mm, 362,1 / 457,2 mm), les -06 et -13 chez Aviatec et Boeing ; les E0805 et les autres NSA935401 n'ont aucune donnée publique | TE P42936, EN 3660-033 (R3), Glenair H-52 / F-20, HellermannTyton, Aviatec, Boeing Distribution |
+| **Filetages** | par famille de connecteur et **taille de boîtier** (EN 3645 : 09 à 25, M12x1 à M37x1 ; EN 2997 : 08 à 28, UNEF ; EN 3646 : 08 à 24), le filetage d'accessoire et le Ø du boîtier, et la **lettre** de taille de l'EN 3645 (A = 09 … J = 25 : c'est elle que son part number porte, EN3645 F 0 **C** N 26 M N → 13) ; le Dmax boîtier de l'EN 2997 (Glenair) a un pas irrégulier : à confirmer | EN 3660-063/-064/-005 (R3), Glenair |
+| **Classes** | par famille, les lettres de **classe du connecteur** lues dans son part number juste après le nom de la famille (EN2997 **SE** 6 28 42 F N ; EN3645 **F** 0 C N 26 M N ; EN3646 **A** 6 08 3A A N — rapport R3), son matériau et son fini, la **lettre de classe EN 3660** du raccord qui va avec (W cadmium ↔ W, **nickel ↔ N** — la lettre de l'EN 3660-001:2019, qui ne liste plus F ; TE/Polamco imprime encore F sur ses références vendues —, inox ↔ K, zinc-nickel ↔ Z — jamais A, anodisé non conducteur), sa température, sa **Source** et son **Statut** (EN 2997 : TE/Deutsch ; EN 3646 A, WS, RS, Y : Souriau, les autres déduites ; EN 3645 : Amphenol, Z à confirmer) | EN 2997, EN 3646, EN 3645 (R3) ; EN 3660-001:2019 tableau 2 |
+| **Entrées** | les codes d'entrée de câble, par **Système** : `EN 3660` — les codes lettrés **A à M** des raccords à bande EN 3660-062 à -065 : **Dmin–Dmax la plage de toron** que la norme donne pour chaque code (A 2–4 … D 7,4–9 … M 28,4–31 : « the cable entry shall be selected in accordance with the maximum diameter of the cable bundle », R3 — avant, l'alésage ØAA servait de maximum, optimiste de 0,4 à 0,9 mm), ØAA l'alésage, ØBB la **plateforme de bande**, ØCC l'**épaulement** (la cote C du manchon), DD la lèvre, et la plus petite taille de boîtier qui admet le code ; `Glenair` — les codes 03 à 32 du serre-câble série 36 (maxima recoupés sur la fiche 360-001, minimums à confirmer) | TE/Polamco P20027 (table 4), EN 3660-062/-065:2022 (R3), Glenair 360-001 |
+| **Raccords** | 175 lignes, par famille, **taille de boîtier**, type (durci = style K, pour manchon = J, serre-câble et tyrap = A, **cheminée** de l'EN 4165) et orientation : la partie EN 3660 — -064 / -065 pour l'EN 2997 et (déduit du filetage commun) l'EN 3646 et l'ASNE 0059 ; **-063 / -062 pour l'EN 3645** ; **-004 / -005** serre-câble ; -020 / -021 ; **-017 / -018** tyraps de l'EN 3645 (déduit : la norme ne nomme pas la famille, filetage et interface sont ceux de l'EN 3645) ; **-025 / -026 / -027** tyraps de l'EN 2997 et l'EN 3646 ; -009, -010, -011, -013… —, les cotes A (toron admis), B, C, la masse, le **couple de pose** (N·m : les -017/-018, -025 à -027), et le **modèle de désignation** `EN3660-064N12<L><E>`, les **Classes** dans lesquelles la partie existe (vérification D, lues dans le domaine des aperçus : -004/-005 A K N T W Z, -017/-018 et -025 à -027 **A N W** seulement, -062 à -065 K N T W Z — un EN 3646 inox, classe K, sur un -025 : la fiche le dit) ; les titres des -009 à -014 et -020 à -023 vérifiés dans l'index EN 3660-002:2016 (le -020/-021 « for EN 3645 » ; les autres sans famille nommée) ; une ligne **EN4165-015** (cheminée, à confirmer) ; le **Statut** : `vérifié` (cotes lues sur un dessin ou un aperçu de la norme), `structure`, `déduit`, `à confirmer` | TE/Polamco P20027 (-064), TE c-2275010 (-004), iTeh EN 3660-005, -017/-018, -025 à -027, -062 à -065 (R3), index BSI |
 | **Chambres** | la longueur de chambre des raccords droits à bande, par partie et code (le `<L>` de la désignation) : -064 A 27,5 · B 35,5 · C 40,5 · D 50,5 mm ; -063 A 27,1 · B 35,1 · C 40,1 · D 50,1 mm | EN 3660-063/-064:2022 tableaux 1 à 4 (R3) |
 | **Masses des raccords** | 1 384 masses nominales (g) des raccords à bande EN 3660-062, -063, -064 et -065, par taille, chambre (les droits) et code d'entrée, pour les classes N W T Z ensemble et K (l'inox) à part ; deux coquilles de la norme laissées « à confirmer » | aperçus iTeh EN 3660-062 à -065:2022 (R3) |
-| **Manchons** | 112 manchons **VG 95343 T06 / T08 / T18 / T19** par forme — droit à lèvre, coudé (à nervure, séries 1100 et 1150), **coudé à lèvre** (1133 à 1136), sortie longue (130, 170), 45°, transitions en T, 2 / 3 / 4 sorties — : Ha/Hb (côté raccord), Ja/Jb (côté toron), longueurs P, R, la lèvre Jo, la référence HellermannTyton ; T18 et T19 sont **précollés** — R3 : la T18 est la même pièce que la T06, précollée (29 T18 ajoutées), et **T18 C 003 A = HT 159-43-GW24** (159-43-G est la T06 C 003 A, sans colle) | HellermannTyton, guide 2024 (R3) |
+| **Manchons** | 112 manchons **VG 95343 T06 / T08 / T18 / T19** par forme — droit à lèvre, coudé (à nervure, séries 1100 et 1150), **coudé à lèvre** (1133 à 1136), sortie longue (130, 170), 45°, transitions en T, 2 / 3 / 4 sorties — : Ha/Hb (côté raccord), Ja/Jb (côté toron), longueurs P, R, la lèvre Jo, la référence HellermannTyton ; T18 et T19 sont **précollés** — R3 : la T18 est la même pièce que la T06, précollée (29 T18 ajoutées), et **T18 C 003 A = HT 159-43-GW24** (159-43-G est la T06 C 003 A, sans colle). **Les 112 lignes relues** contre les tableaux de cotes du guide 2024 : 108 aux cotes identiques, la **T19 B 011 A est la 1307-1-GW24** (précollée ; la table disait 1307-1-G), la T18 H 001 A reste à trancher (le guide se contredit), les 157-41 et 158-42 ne sont que dans son index : déduites | HellermannTyton, guide 2024 (R3, vérification D) |
 
 La **table de décision**, corrigée par R4, est dans l'outil (09 ter,
 `regleRaccord`) : reprise de blindage (GND sur le corps, BLI par cosse, NO,
@@ -67,8 +72,9 @@ nomenclature :
   (`HYPOTHESES.toron`, « TE » par défaut) le remet **« comme l'Excel »**
   (`Excel` : + 10 %) ; sans table Toron, + 10 % et c'est dit. Le résultat
   porte sa règle en mots (`foisonnement.regle`) ;
-- la **taille du boîtier** lue dans le part number (EN3646-002-12-08 → 12),
-  son filetage ; la **classe** du connecteur (`EN2997W…` → W) ;
+- la **taille du boîtier** lue dans le part number (EN3646-002-12-08 → 12 ;
+  la lettre pour l'EN 3645 : EN3645F0**G**N11MN → 21, pas 11), son
+  filetage ; la **classe** du connecteur (`EN2997W…` → W) ;
 - le **raccord** : son type, sa ligne Raccords, et sa **désignation
   construite** — la partie, la classe du connecteur (N par défaut), la
   taille, `<L>` la **longueur de chambre** et `<E>` le **code d'entrée** :
@@ -87,17 +93,37 @@ nomenclature :
   pas la chambre ;
 - la **masse** de la pièce désignée (table Masses des raccords) et le
   **couple de pose** quand la ligne le donne ;
-- la **bande** EN 3660-033 par la plateforme ØBB du code retenu (sinon le
-  toron), avec l'E0805 d'atelier en équivalent ; le **tyrap** au toron
-  maximal le plus serré qui passe, puis le plus court ; la **gaine** par son
-  rôle ; le **manchon** par ce qui sort du raccord — Ja > D > Jb — et par
-  l'épaulement — Ha > C > Hb, C = le ØCC du code retenu —, droit d'abord
-  (la sortie longue quand aucun droit ne va), ou coudé ; le **précollé**
-  d'abord à cotes égales ;
+- la **bande** : le **band-it par défaut** de la table (l'EN3660-033AF)
+  tant qu'il serre la plateforme ØBB du code retenu (sinon le toron), puis
+  la bande EN 3660-033 qui serre (la BF au-delà de 47,8 mm), avec l'E0805
+  d'atelier en équivalent ; le **tyrap** au toron maximal le plus serré qui
+  passe, puis le plus court ; la **gaine** par son rôle ; le **manchon** par
+  ce qui sort du raccord — Ja > D > Jb — et par l'épaulement — Ha > C > Hb,
+  C = le ØCC du code retenu —, droit d'abord (la sortie longue quand aucun
+  droit ne va) ; **droit sur un raccord coudé** (-065, -062 : il fait déjà
+  l'angle), **coudé** seulement pour donner l'angle à un raccord droit ou à
+  une cheminée (AC 43.13-1B § 11-138 — avant, un raccord coudé recevait un
+  manchon coudé, un second angle) ; le **précollé** d'abord à cotes égales ;
+- un **raccord à collier** de la table se juge comme les autres : sa
+  désignation (l'EN3660-013 de l'EN 2997 n'en a pas : sa famille n'est pas
+  nommée) et son **passage** — un toron plus gros que l'alésage de
+  l'EN 3660-025 / -026 « ne passe pas » ; et pour tout raccord, la
+  **classe** que le connecteur demande doit exister pour la partie
+  (colonne Classes), sinon c'est dit et la pièce reste à confirmer ;
 - une ligne **« manque »** : la taille non lue, le toron trop gros, le
   bourrage, la ligne sans modèle, la clause de désignation non lue (les
   -005, -017/-018, -025 à -027 : la référence construite est un modèle), la
-  cote C absente, le Ø de la cheminée, le manchon ou la gaine introuvables.
+  cote C absente, le Ø de la cheminée, le manchon ou la gaine introuvables ;
+- **la nomenclature d'habillage** (`pieces`) : une ligne par pièce à
+  commander pour ce connecteur, de la face vers le toron — le raccord (ou
+  la cheminée, une par module câblé, ou « Aucun raccord » pour l'EN 3645),
+  la bande, le manchon, le tyrap, la gaine (au mètre), le bourrage, les
+  obturateurs des cavités libres (quand le plan de contacts est donné) —,
+  chacune `{ role, libelle, reference, quantite, statut, note }` : le
+  statut vaut « vérifié » (la ligne est lue sur le document et la
+  référence est entière), « à confirmer » (déduite, modèle, donnée non
+  relue) ou « manque » (la pièce est due, l'outil ne sait pas laquelle :
+  la note dit pourquoi). La fiche du connecteur l'affiche telle quelle.
 
 Le statut de la ligne (structure, déduit, à confirmer) est une pastille sur
 la fiche et une note dans la nomenclature ; « vérifié » n'en a pas. La
@@ -111,8 +137,13 @@ Ce qui manque encore : les clauses de désignation des -005, -009, -010,
 modèles), la famille des tyraps -013 et -014, tout l'**ASNE 0059** (déduit
 de l'EN 3646), le Ø intérieur des **cheminées EN 4165**, la **longueur de
 chambre** que l'atelier prend vraiment, l'épaisseur de tresse et de gaine
-qu'un serre-câble ou un tyrap serrent en plus du toron (TE l'ajoute), et un
-manchon droit à lèvre pour les petits codes d'entrée (A à C).
+qu'un serre-câble ou un tyrap serrent en plus du toron (TE l'ajoute), un
+manchon droit à lèvre pour les petits codes d'entrée (A à C), les cotes
+des E0805, DHS754-160 et de la plupart des NSA935401 (normes Airbus non
+publiées), les obturateurs de l'EN 2997, de l'EN 3646 et de l'EN 4165, et
+les classes des parties dont l'aperçu ne les donne pas (-009 à -014,
+-020 à -023). Le détail, ligne à ligne, est dans le rapport de la
+vérification D.
 
 ## `cables.csv` : la base des câbles
 
