@@ -68,6 +68,73 @@ const FICHIER = P.fichierDemande();
     ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
     await page.close();
   }
+  /* LE RÉCAPITULATIF, pratique au quotidien (v58) : neuf onglets, chaque objet dans un seul ; peu de colonnes d'office,
+     le reste au choix ; les mots du lecteur (câble, gauge, raccord) ; un état en un point et un mot, son pourquoi dans la
+     bulle, la chute admise lue au moteur ; tout s'écrit d'un double-clic (Tab la suivante), ↺ rend le calcul ; le clic
+     ouvre la fiche, l'onglet se garde, le CSV suit les colonnes. */
+  console.log('\nle récapitulatif');
+  { const page = await nav.newPage({ viewport: { width: 1440, height: 900 } }); const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
+    await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => atelier.exemple());
+    await page.evaluate(() => { app.plan = '1'; redessiner(); ajuster(); }); await page.keyboard.press('b'); await page.waitForTimeout(500);
+    const entetes = () => page.evaluate(() => [...document.querySelectorAll('#ba-thead th')].map(t => t.textContent.replace(/[▲▼]/g, '').trim()).filter(Boolean).join(' · '));
+    const onglets = await page.evaluate(() => [...document.querySelectorAll('#ba-onglets .rc-onglet span')].map(s => s.textContent).join(' · '));
+    ok(onglets === 'Liaisons · Équipements · Disjoncteurs · Barrettes · Prises · Câbles · Raccords · Problèmes · Normes', 'neuf onglets, chaque objet dans un seul (plus de « Contacts » : la nomenclature les compte)', onglets);
+    ok(await entetes() === 'De · Câble · Vers · Longueur · État', 'Liaisons, d’office : de, le câble, vers, la longueur, l’état', await entetes());
+    // les mots du lecteur : partout où le récapitulatif parle (les phrases du contrôle et les titres des normes viennent d'ailleurs)
+    const mots = await page.evaluate(() => { const vus = []; for (const [k] of ONGLETS) { changerOnglet(k); ouvrirMenuColonnes();
+        const t = [$('ba-onglets').innerText, $('ba-thead').innerText, $('ba-puces').innerText, $('ba-filtre').placeholder, $('ba-ajouter').hidden ? '' : $('ba-ajouter').innerText, $('ba-colonnes-menu').innerText, k === 'problemes' || k === 'normes' ? '' : $('ba-tbody').innerText].join(' ');
+        fermerMenuColonnes(); const m = t.match(/(^|[^\p{L}])(fils?|jauges?|habillages?)(?![\p{L}])/giu); if (m) vus.push(k + ' : ' + [...new Set(m.map(x => x.trim()))].join(', ')); }
+      changerOnglet('liaisons'); return vus; });
+    ok(!mots.length, 'le récapitulatif dit « câble », « gauge », « raccord » — plus « fil », « jauge », « habillage »', mots.join(' | '));
+    const E = await page.evaluate(() => { const tr = [...document.querySelectorAll('#ba-tbody tr[data-i]')], ligne = c => tr.find(t => verite()[+t.dataset.i].cable === c), etat = t => t && t.querySelector('td.rc-c-etat .rc-etat');
+      const w12 = etat(ligne('W-012')), l = verite().find(l => l.cable === 'W-012'), c = chuteDuFil(l, intensiteCalculee(l));
+      return { w12: w12 ? w12.className + '|' + w12.textContent : '', bulle: w12 ? w12.dataset.bulle : '', admise: volts(c.max), w11: (etat(ligne('W-011')) || {}).textContent, mots: [...new Set(tr.map(t => (etat(t) || {}).textContent).filter(Boolean))].sort().join(',') }; });
+    ok(/ko\|problème$/.test(E.w12) && /Intensité/.test(E.bulle) && new RegExp('Chute en ligne : .* (sur|>) ' + E.admise + ' admis').test(E.bulle) && E.w11 === 'ok' && E.mots.split(',').every(m => ['ok', 'à voir', 'problème'].includes(m)),
+      'un état par liaison, un point et un mot (ok, à voir, problème) ; W-012 : problème, l’intensité et la chute dans sa bulle, contre la chute admise du moteur', JSON.stringify(E));
+    // Équipements : les équipements seuls, d'office le repère, le type, la norme, les problèmes
+    await page.evaluate(() => { app.base.portee = 'tout'; changerOnglet('equipements'); }); await page.waitForTimeout(200);
+    const Q = await page.evaluate(() => { const tr = [...document.querySelectorAll('#ba-tbody tr[data-k]')], ligne = n => tr.find(t => t.dataset.k === n), cases = t => t ? [...t.querySelectorAll('td')].map(x => x.textContent.trim()).filter(Boolean).join(' | ') : '';
+      return { genres: [...new Set(tr.map(t => genreDuRepere(t.dataset.k)))].join(','), entetes: [...document.querySelectorAll('#ba-thead th')].map(t => t.textContent).filter(Boolean).join(' · '), xc: cases(ligne('300XC1')), bt: cases(ligne('101BT1')) }; });
+    ok(Q.genres === 'eqpt' && Q.entetes === 'Repère · Type · Norme · Problèmes' && /^300XC1 \| Connecteur \| EN 4165-002 \| \d+ problèmes?$/.test(Q.xc) && /^101BT1 \| Batterie \| — \| ok$/.test(Q.bt),
+      'Équipements : les équipements seuls (disjoncteurs, barrettes, prises ont leur onglet) — le repère, le type, la norme, les problèmes ; ni part number ni nombre de câbles', JSON.stringify(Q));
+    await page.click('#ba-tbody tr[data-k="103RL1"] td.rc-c-norme'); await page.waitForTimeout(500);
+    ok(await page.evaluate(() => app.cible && app.cible.nom === '103RL1' && !$('inspecteur').hidden && app.choisi === '103RL1' && document.querySelector('#ba-tbody tr[data-k="103RL1"]').classList.contains('on')), 'un clic sur une ligne ouvre sa fiche et l’allume sur le plan');
+    // Disjoncteurs : le calibre retenu, son verdict (celui du moteur), le meilleur ; en retenir un autre d'ici, Ctrl+Z le rend
+    await page.evaluate(() => changerOnglet('disjoncteurs')); await page.waitForTimeout(200);
+    const D = await page.evaluate(() => { const d = disjonctionDe('102CB1'), tr = document.querySelector('#ba-tbody tr[data-k="102CB1"]');
+      return { entetes: [...document.querySelectorAll('#ba-thead th')].map(t => t.textContent).filter(Boolean).join(' · '), cal: tr.querySelector('[data-f="calibre"]').textContent, calibre: d.calibre, attendu: nombre(d.calibre), pn: pnDuRepere('102CB1'),
+        verdict: tr.querySelector('td.rc-c-etat .rc-etat').textContent, juge: !d.valide ? 'déclenche' : d.serre ? 'touche la courbe' : 'tient', ideal: d.calibreIdeal, retenir: !!tr.querySelector('[data-retenir]'), gamme: d.gamme.map(g => g.calibre) }; });
+    ok(D.entetes === 'Repère · Calibre · Verdict · Meilleur · Problèmes' && D.cal === D.attendu && D.verdict === D.juge && D.retenir === (D.ideal !== D.calibre), 'Disjoncteurs : le calibre retenu, son verdict tel que le moteur le rend, le meilleur (« Retenir » quand il diffère)', JSON.stringify(D));
+    const autre = D.retenir ? D.ideal : D.gamme.find(c => c !== D.calibre);
+    if (D.retenir) await page.click('#ba-tbody tr[data-k="102CB1"] [data-retenir]');
+    else { await page.dblclick('#ba-tbody tr[data-k="102CB1"] [data-f="calibre"]'); await page.selectOption('#ba-tbody select[data-f="calibre"]', String(autre)); }
+    await page.waitForTimeout(700);
+    ok(await page.evaluate(a => calibreDe('102CB1') === a && document.querySelector('#ba-tbody tr[data-k="102CB1"] [data-f="calibre"]').textContent === nombre(a), autre), 'retenir un autre calibre d’ici : ' + autre + ' A, comme dans la fiche');
+    await page.evaluate(() => annuler()); await page.waitForTimeout(500);
+    ok(await page.evaluate(d => calibreDe('102CB1') === d.calibre && pnDuRepere('102CB1') === d.pn, D), 'Ctrl+Z rend le calibre d’avant');
+    // les colonnes : en ajouter une, revenir à celles d'office
+    await page.evaluate(() => { changerOnglet('liaisons'); app.base.portee = 'folio'; rendreBase(true); }); await page.waitForTimeout(200);
+    await page.click('#ba-colonnes'); await page.click('#ba-colonnes-menu input[data-col="jauge"]'); await page.waitForTimeout(300); const avec = await entetes();
+    await page.click('#ba-colonnes-defaut'); await page.waitForTimeout(300); await page.keyboard.press('Escape'); const sans = await entetes();
+    ok(avec === 'De · Câble · Vers · Longueur · État · Gauge' && sans === 'De · Câble · Vers · Longueur · État', '« Colonnes » : la gauge s’ajoute, « Revenir aux colonnes d’office » la retire', avec);
+    // écrire d'un double-clic : au survol, la valeur a l'air d'un champ ; Tab passe à la suivante ; ↺ rend le calcul
+    const k = await page.evaluate(() => [...document.querySelectorAll('#ba-tbody tr[data-i]')].find(t => verite()[+t.dataset.i].cable === 'W-013').dataset.k), sel = `#ba-tbody tr[data-k="${k}"]`;
+    await page.hover(`${sel} [data-f="longueur"]`); await page.waitForTimeout(250);
+    const air = await page.evaluate(s => { const v = document.querySelector(s + ' [data-f="longueur"]'), t = getComputedStyle(document.querySelector(s + ' [data-f="type"]'));
+      return { champ: getComputedStyle(v).boxShadow !== 'none', souligne: t.textDecorationStyle === 'dotted' && t.textDecorationColor !== 'rgba(0, 0, 0, 0)', titre: v.title }; }, sel);
+    ok(air.champ && air.souligne && /double-clic/i.test(air.titre), 'au survol, la valeur modifiable a l’air d’un champ et les autres de sa ligne se soulignent', JSON.stringify(air));
+    await page.dblclick(`${sel} [data-f="longueur"]`); await page.fill(`${sel} input[data-f="longueur"]`, '3,25'); await page.press(`${sel} input[data-f="longueur"]`, 'Tab'); await page.waitForTimeout(500);
+    const L1 = await page.evaluate(s => { const a = document.activeElement; return { L: verite().find(l => l.cable === 'W-013').longueur, main: !!document.querySelector(s + ' .rc-o.main'), rond: !!document.querySelector(s + ' .rc-auto[data-auto="longueur"]'), suite: a && a.tagName === 'INPUT' ? a.dataset.f : '' }; }, sel);
+    ok(L1.L === 3.25 && L1.main && L1.rond && L1.suite === 'de', 'double-clic sur la longueur, 3,25, Tab : écrite (« main » et ↺), le curseur dans la case suivante', JSON.stringify(L1));
+    await page.keyboard.press('Escape'); await page.waitForTimeout(200); await page.click(`${sel} .rc-auto[data-auto="longueur"]`); await page.waitForTimeout(400);
+    ok(await page.evaluate(() => !(verite().find(l => l.cable === 'W-013').longueur > 0)), '↺ rend la longueur du retest (ici, l’hypothèse)');
+    // la mémoire de l'onglet, l'export de ce qu'on voit
+    ok(await page.evaluate(() => { changerOnglet('cables'); const o = JSON.parse(localStorage.getItem('atelier.recap.v2') || '{}'); changerOnglet('liaisons'); return o.onglet === 'cables'; }), 'l’onglet ouvert se garde dans ce navigateur');
+    const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#ba-csv')]);
+    const csv = require('fs').readFileSync(await dl.path(), 'utf8').replace(/^﻿/, '').split('\n');
+    ok(csv[0] === 'De;Câble;Vers;Longueur;État' && csv.length === 9, 'le CSV de l’onglet : ses colonnes, ses lignes (les huit du folio 1)', csv[0] + ' · ' + (csv.length - 1) + ' lignes');
+    ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
+    await page.close(); }
   // chaque dédoublement : une vraie barrette, une borne par fil, jamais deux fils au même niveau
   console.log('\nbarrettes à poser');
   const page = await nav.newPage({ viewport: { width: 1600, height: 950 } }); const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));

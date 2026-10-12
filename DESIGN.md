@@ -32,9 +32,10 @@ calculé automatiquement, mais tout modifiable ». Il a écarté le style « fut
   qu'il attend en une ligne (la base : un seul Excel, une ligne par liaison — Harness la machine, FWD le dessin,
   Appareil le contrat) ; la bible et les normes, embarquées, en une ligne. L'exemple s'ouvre d'un clic, et un bandeau
   le rappelle tant qu'on le regarde. Tout se retrouve ensuite dans « Vos fichiers ».
-- **Le récapitulatif** est le tiroir du bas (B), en moitié ou en page : dix onglets (liaisons, équipements,
-  disjoncteurs, barrettes, prises, fils et câbles, contacts, raccords, problèmes, normes). Une liaison s'y lit comme
-  une phrase : de → le trait du fil à la couleur de sa route, épais selon sa jauge → vers.
+- **Le récapitulatif** est le tiroir du bas (B), en moitié ou en page : neuf onglets, chaque objet dans un seul
+  (liaisons, équipements, disjoncteurs, barrettes, prises, câbles, raccords, problèmes, normes), peu de colonnes
+  d'office — celles du quotidien —, le reste dans « Colonnes ». Une liaison s'y lit comme une phrase : de → le câble
+  (numéro, type, gauge, une flèche à la couleur de sa route) → vers, sa longueur, un état (un point et un mot).
 
 ## 2. Les principes
 
@@ -151,8 +152,10 @@ normes et la bible : jusqu'à 1040 px, en laissant toujours 320 px au plan), `--
   (démarrage, transition, permanent, puis les états ajoutés). Chaque groupe dans un `.fi-dj[data-disj][data-part]` que
   `lierDisjonction` retrouve ; ses fils dans la section commune (`lignesFilsDisjoncteur`). Une courbe : Fritsch-Carlson
   en log-log, trois décimales, une seule bande par défaut, chaque trait nommé à son bout.
-- **Le récapitulatif** (`08-recap.js`, `style-recap.css`) : `ouvrirBase('moitie'|'page')`, `recapitulatifDe(c)` ; une case
-  se corrige au double-clic (Tab pour la suivante, Échap annule) ; une case calculée retouchée passe « main », ↺ la rend.
+- **Le récapitulatif** (`08-recap.js`, `style-recap.css`) : `ouvrirBase('moitie'|'page')`, `recapitulatifDe(c)` (l'onglet
+  de l'objet, filtré sur lui) ; une colonne `{ k, t, html, tri, texte, option }` (`option` : au choix, pas d'office) ;
+  l'état `etatHtml(niveau, mot, bulle)` (`.rc-etat.ok|.att|.ko`) ; une case modifiable `.rc-v[data-f]` a l'air d'un champ
+  au survol, se corrige au double-clic (Tab pour la suivante, Échap annule) ; retouchée, elle passe « main », ↺ la rend.
 - **Vos fichiers** (`08-fichiers.js`, `style-fichiers.css`) : `ficheFichiers(focus?)`, une carte par entrée (état, ce qui
   a été reçu, l'action) ; le retest et la base disent en une ligne ce qu'ils attendent (`.vf-une`, la base avec ses trois
   colonnes `.vf-cles`) et gardent leur zone de dépôt (`.vf-zone`) tant qu'ils sont vides ; « Ce que j'attends » (trois
