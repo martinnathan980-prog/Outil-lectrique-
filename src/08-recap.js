@@ -625,7 +625,7 @@ const RACCORDS = { colonnes: COLONNES_RACCORDS, portee: true, lignes: raccords, 
 /* Ce qu'il faut faire, et où la fiche le montre : lu dans la phrase du verdict (le contrôle ne le dit pas encore). Les
    phrases du contrôle disent « câble » et « gauge » (elles disaient « fil » et « jauge ») : on lit les deux. */
 function remede(x) { const t = x.texte, ideal = /l’idéal est un ([\d,.]+ A)/.exec(t) || /un ([\d,.]+ A) suffirait/.exec(t);
-  if (/^à poser sur/.test(t)) return ['Poser la barrette au contrat : lui donner son vrai repère (onglet Barrettes, « Poser »)', 'identite'];
+  if (/^à poser sur/.test(t)) return ['Poser la barrette au contrat : lui donner son vrai repère (onglet Barrettes, « Poser »)', 'connecteur'];
   if (/profil de charge est à renseigner/.test(t)) return ['Renseigner le profil de charge du disjoncteur : l’outil trouve le calibre', 'profil'];
   if (/déclenche|aucun calibre/.test(t)) return [ideal ? 'Retenir ' + ideal[1] + ' (onglet Disjoncteurs, « Retenir »)' : 'Alléger le profil ou changer de famille de disjoncteur', 'calibre'];
   if (/suffirait|touche la courbe|l’idéal est/.test(t)) return [ideal ? 'Retenir ' + ideal[1] : 'Retenir le meilleur calibre', 'calibre'];
@@ -636,7 +636,7 @@ function remede(x) { const t = x.texte, ideal = /l’idéal est un ([\d,.]+ A)/.
   if (/contact taille|dépasse le contact/.test(t)) return ['Un contact plus gros, ou un courant moindre', 'contacts'];
   if (/refusé|aucun contact|jauge|gauge/.test(t)) return ['Changer le type du câble, ou l’arrangement du connecteur (sa fiche, « Changer »)', 'contacts'];
   if (/aucun arrangement|aucun module|ne loge/.test(t)) return ['Choisir un autre arrangement ou une autre norme (sa fiche, « Changer »)', 'connecteur'];
-  if (/famille de disjoncteur inconnue/.test(t)) return ['Ajouter la famille du part number (Normes › Familles de disjoncteurs)', 'identite'];
+  if (/famille de disjoncteur inconnue/.test(t)) return ['Ajouter la famille du part number (Normes › Familles de disjoncteurs)', 'disjoncteur'];
   if (/types? de (fil|câble)s? inconnus?/.test(t)) return ['Corriger le type, ou ajouter le câble à la base (Normes › Câbles)', ''];
   if (/sans type/.test(t)) return ['Écrire le type de chaque câble (onglet Liaisons)', ''];
   if (/incomplète/.test(t)) return ['Écrire « de » et « vers » (onglet Liaisons)', ''];
