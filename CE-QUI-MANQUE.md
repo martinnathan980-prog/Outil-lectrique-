@@ -296,28 +296,34 @@ accessoire pour quel connecteur et quel câble).
   EN3660-033AF;bande standard plate;6,22;0,48;361;47,8;
   ```
 
-### 18. La tresse HFA DHS754-160
+### 18. Ta table CHOIX : ce qui reste à préciser
 
-- **Ce que c'est.** Le Ø intérieur et extérieur de chaque taille de la tresse de surblindage DHS754-160.
-- **Pourquoi.** La tresse choisie dépend du toron qu'elle doit couvrir.
-- **En attendant.** Les valeurs de ton Excel, « à confirmer » (aucune donnée publique).
-- **Comment me la donner.**
+Tes photos de l'onglet Raccord sont dans Volta (octobre 2026) : la table CHOIX décide maintenant du raccord de
+l'EN 3645, de l'EN 2997 et de l'EN 3646, avec tes lettres de matériau (F pour le nickelé des -062 à -065), ta table
+de compatibilité, les cotes de l'IC1320 et de l'E0120, ta gamme de manchons T18. L'EN 3645 n'est plus « sans
+raccord ». Les tresses HFA et les gaines Nomex étaient déjà celles de ton Excel, à l'identique.
 
-  ```
-  Famille;Référence;Rôle;Dint;Dext;Masse
-  HFA;DHS754-160.10;surblindage;4;4,5;15
-  HFA;DHS754-160.20;surblindage;6;6,5;22
-  ```
+- **Le « serre-câble (A) » de l'EN 3646** (NSA938150-03 droit, -01 coudé) : à quoi sert-il, à côté du serre-câble
+  EN 3660-004/-005 ? *En attendant : Volta prend l'EN 3660-004/-005, comme pour l'EN 2997.*
+- **L'EN 2997 sans raccord à collier ni raccord pour manchon** dans ta table : Volta prend alors le serre-câble, ou
+  le durci et son manchon. Est-ce votre pratique ?
+- **Les références complètes** : E0617B, E0618B, E0080-01 et -02 (une taille à ajouter ?), l'E0120 (ta table écrit
+  « E0120- » : Volta écrit E0120-12 pour un boîtier 12), l'IC1320 (comment s'écrivent la taille avant, la taille
+  arrière et la lettre C ou B ?). *En attendant : « référence complète à confirmer » sur la pièce.*
+- **Les cotes de l'E0120** : Volta lit A comme l'avant, B comme le passage du toron et C comme l'épaulement du
+  manchon. C'est bien ça ?
+- **L'usage des matériaux** : ta table de compatibilité dit « cargo only » pour l'anodisé noir, ta codification des
+  connecteurs dit « cargo + extérieur ». Lequel est juste ?
+- **Trois cotes de manchon** diffèrent de 0,5 à 1 mm entre ta table et le guide HellermannTyton (B003A : 14,5 contre
+  14 ; C001A : 28,5 contre 28 ; D002A : 14,5 contre 15,5). Volta garde celles du guide.
+- **Comment me les donner.** Une réponse par ligne suffit.
 
 ### 19. Les questions de raccord qui restent
 
-- **Le raccord à collier de l'EN 2997.** L'EN 3660-013 existe mais ne nomme pas sa famille ; l'EN 3660-025 (faite pour
-  l'EN 3646) irait physiquement. Lequel prenez-vous ? *En attendant : l'EN 3660-013, sans désignation.*
-- **« L'EN 3645 s'utilise sans raccord » tient-il toujours ?** *En attendant : oui (ta règle d'atelier) ; les
-  EN 3660-063 et -062 sont prêts dans la table.*
 - **La chambre des raccords (A, B, C, D).** *En attendant : A par défaut, et un conseil « B ou plus » quand on reprend
   des blindages un à un.* Dis-moi votre pratique.
-- **Un manchon droit pour le code d'entrée A** (épaulement Ø 12,2 mm) : aucun manchon droit de la table n'y va.
+- **Un manchon pour un petit toron** : sous 6 mm, aucun manchon de ta gamme T18 ne serre (leur petit bout rétreint
+  fait 6 mm ou plus) ; Volta prend alors un manchon du guide, et sur l'épaulement du code A (12,2 mm) aucun ne va.
   *En attendant : « manque » sur la fiche.*
 - **Les obturateurs de cavité de l'EN 2997, de l'EN 3646 et de l'EN 4165.** *En attendant : « manque » dans la liste des
   pièces.*

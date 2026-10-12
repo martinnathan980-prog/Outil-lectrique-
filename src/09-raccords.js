@@ -77,11 +77,10 @@ const MATERIAUX = ['nickelage alu', 'cadmiage vert olive', 'passivation acier in
 // `chambre` : un code de longueur de chambre choisi pour ce connecteur (vide : l'hypothèse)
 const CHOIX_RACCORD = { blindage: 'NO', etanche: false, orientation: 'droit', gaine: '', surblindage: false, materiau: '', chambre: '' };
 /* Les familles SANS RACCORD, et pourquoi : rien ne se calcule pour elles — ni raccord, ni band-it, ni manchon, ni gaine,
-   ni tyrap. L'EN 3645 : la règle d'atelier lue dans le tutoriel, que le lecteur n'a pas redite — à confirmer (la norme
-   lui nomme les EN 3660-063 droit, -062 coudé, -020/-021 serre-câble, et par le filetage les -017/-018 à collier : les
-   lignes sont dans la table, le jour où le lecteur retire l'EN 3645 d'ici, tout se calcule). L'EN 4165 n'en est plus :
+   ni tyrap. Aucune aujourd'hui : l'EN 3645 en était (« il s'utilise sans raccord », lu dans le tutoriel) jusqu'à ce que la
+   table CHOIX de l'onglet Raccord du lecteur lui donne ses quatre raccords (octobre 2026) ; l'EN 4165 n'en est plus :
    sa CHEMINÉE est son raccord (recherche R3 : c'est le mot de la norme). */
-const SANS_RACCORD = { EN3645: 'sans raccord : un EN 3645 s’utilise sans raccord (la règle d’atelier du tutoriel, à confirmer — l’EN 3660-063 droit et le -062 coudé existent pour lui)' };
+const SANS_RACCORD = {};
 const sansRaccord = famille => Object.prototype.hasOwnProperty.call(SANS_RACCORD, famille || '');
 /* La classe EN 3660 d'un raccord sans classe lue dans le connecteur, et le code de longueur de chambre par défaut (A =
    27,5 mm sur le -064, 27,1 sur le -063 : table Chambres ; B 35,5, C 40,5, D 50,5 — `LONGUEURS_CHAMBRE`, celles du -064,
@@ -188,11 +187,30 @@ function entreePour(norme, d, taille, systeme) { if (d == null) return null; con
 /* Le plus gros code d'entrée qu'une taille de boîtier admet (08/09 → D, 10/11 → F, 12/13 → H… pour l'EN 3660). */
 function entreeMaximale(norme, taille, systeme) { const t = taille ? parseInt(taille, 10) : null; if (t == null || isNaN(t)) return null;
   return tableNorme(norme, 'entrees').filter(e => (!systeme || e.systeme === systeme) && (!e.tailleMin || (t >= parseInt(e.tailleMin, 10) && t <= parseInt(e.tailleMax || '99', 10)))).sort((a, b) => b.dmax - a.dmax)[0] || null; }
+/* LA TABLE DE L'ATELIER (la table CHOIX de l'onglet Raccord du lecteur : colonne Atelier de la table Raccords) : quand
+   une famille y est, ses lignes seules comptent — le raccord que l'atelier pose, pas les autres parties que la norme
+   permettrait. Un type que la table n'a pas pour la famille (l'EN 2997 n'a ni raccord à collier ni raccord pour manchon)
+   prend son REPLI : le serre-câble pour le collier (ni reprise ni étanchéité, l'un comme l'autre), le durci pour le
+   raccord pour manchon (il porte aussi l'épaulement du manchon). */
+const atelierA = (norme, famille) => tableNorme(norme, 'raccords').some(r => r.famille === famille && r.atelier);
+const REPLI_RACCORD = { tyrap: 'serre-câble', 'pour manchon': 'durci' };
+const MOTS_RACCORD = { durci: 'blindé (durci)', 'pour manchon': 'pour manchon', 'serre-câble': 'à serre-câble', tyrap: 'à collier' };
+/* LE MATÉRIAU DU RACCORD (l'onglet Raccord du lecteur) : celui du connecteur quand la partie existe dans ce matériau (la
+   colonne Matériaux de sa ligne : sa lettre, F pour le nickelé des -062 à -065, C pour celui de l'IC1320…) ; sinon le
+   premier que sa table de COMPATIBILITÉ admet. Une ligne sans colonne Matériaux garde la lettre de la table Classes. */
+const COMPATIBLES = { 'nickelé': ['nickelé', 'inox', 'anodisé'], 'cadmié': ['cadmié', 'anodisé'], inox: ['inox', 'nickelé', 'anodisé'], 'anodisé': ['anodisé', 'nickelé', 'inox', 'cadmié'] };
+const matiereDeClasse = k => { const u = MOT((k && k.materiau || '') + ' ' + (k && k.fini || '')); return /anodis/.test(u) ? 'anodisé' : /cadmi/.test(u) ? 'cadmié' : /inox/.test(u) ? 'inox' : /nickel/.test(u) ? 'nickelé' : ''; };
+function matiereDuRaccord(ref, classe) { const L = ref && ref.materiaux; if (!L) return null;
+  const voulu = matiereDeClasse(classe) || 'nickelé', pris = (COMPATIBLES[voulu] || [voulu]).find(m => L[m]);
+  return pris ? { lettre: L[pris], matiere: pris, voulu, repli: pris !== voulu } : { lettre: '', matiere: '', voulu, repli: false, aucune: true }; }
+// la lettre de la classe EN 3660-001 pour les masses et les classes d'une partie : le F de TE/Polamco (et de ta table) est le N de la norme
+const CLASSE_NORMEE = l => l === 'F' ? 'N' : l;
 /* La ligne de la table Raccords : la taille exacte d'abord ; sinon, quand la famille a des lignes par taille pour ce
    type et cette orientation, la mieux établie d'entre elles SANS sa taille (la désignation restera incomplète :
    `tailleInconnue`) ; sinon la ligne valable pour toutes les tailles. */
 const CONFIANCES = { 'vérifié': 0, structure: 1, 'déduit': 2, 'à confirmer': 3 };
-function raccordDeTable(norme, famille, taille, type, orientation) { const R = tableNorme(norme, 'raccords').filter(r => r.famille === famille && r.type === type && r.orientation === orientation); if (!R.length) return null;
+function raccordDeTable(norme, famille, taille, type, orientation) { const atelier = atelierA(norme, famille);
+  const R = tableNorme(norme, 'raccords').filter(r => r.famille === famille && r.type === type && r.orientation === orientation && (!atelier || r.atelier)); if (!R.length) return null;
   const exact = taille ? R.find(r => r.taille === taille) : null; if (exact) return exact;
   const parTaille = R.filter(r => r.taille).sort((a, b) => (CONFIANCES[a.confiance] || 9) - (CONFIANCES[b.confiance] || 9));
   if (parTaille.length) { const m = parTaille[0]; return { ...m, taille: '', amin: null, amax: null, b: null, c: null, masse: null, couple: null, reference: m.reference.replace(/^(EN ?3660-\d{3}[A-Z]{1,2})\d{2}/i, '$1<T>'), tailleInconnue: true }; }
@@ -222,8 +240,8 @@ function masseDeRaccord(norme, partie, taille, chambre, code, classe) { const p 
    à cotes égales — l'étanchéité le demande. */
 function manchonPour(norme, d, c, forme) { if (d == null) return null; const coude = forme === 'coudé', formes = coude ? ['coudé', 'coudé à lèvre'] : ['droit', 'sortie longue'];
   const M = tableNorme(norme, 'manchons').filter(m => formes.includes(m.forme) && m.ja > d && (m.jb == null || m.jb < d) && (c == null || (m.ha > c && (m.hb == null || m.hb < c))));
-  const rang = m => coude ? 0 : formes.indexOf(m.forme);
-  return M.sort((a, b) => rang(a) - rang(b) || a.ja - b.ja || (b.precolle ? 1 : 0) - (a.precolle ? 1 : 0) || (a.p || 0) - (b.p || 0))[0] || null; }
+  const rang = m => coude ? 0 : formes.indexOf(m.forme), A = M.filter(m => m.atelier);
+  return (A.length ? A : M).sort((a, b) => rang(a) - rang(b) || a.ja - b.ja || (b.precolle ? 1 : 0) - (a.precolle ? 1 : 0) || (a.p || 0) - (b.p || 0))[0] || null; }
 /* LA FORME DU MANCHON. Un manchon coudé DONNE l'angle à un raccord droit — une cheminée, un raccord droit (AC 43.13-1B
    § 11-138 ; R4 ; R3 : « un manchon coudé peut donner l'angle sur un raccord droit ») : la pièce moulée se rétreint en
    équerre sur l'épaulement du raccord. Un raccord COUDÉ (EN 3660-065, -062) fait déjà l'angle : son manchon, posé sur
@@ -261,10 +279,15 @@ function piecesDHabillage(norme, h, opts, fils) { const P = [], mm = mmTexte, c 
     else if (!h.designation) piece('raccord', libelle, R.norme, 1, bloque ? 'manque' : 'à confirmer', bloque || 'désignation complète non lue (ligne ' + R.confiance + ')');
     else { const modele = h.manquants.some(m => /est un modèle/.test(m)), horsClasse = h.manquants.find(m => /n’existe qu’en classes/.test(m)), mots = [];
       if (h.entree && h.entree.systeme === 'EN 3660') mots.push('entrée ' + h.entree.code + ' (' + mm(h.entree.dmin) + '–' + mm(h.entree.dmax) + ' mm)');
+      // une partie à tailles avant et arrière (l'IC1320) : les deux tailles et sa lettre de matériau, que sa référence ne porte pas
+      else if (h.entree && h.entree.systeme === R.norme) mots.push('avant ' + h.taille + ', arrière ' + h.entree.code + ' (' + mm(h.entree.dmin) + '–' + mm(h.entree.dmax) + ' mm)');
+      // le matériau de ta table : sa lettre quand la référence ne la porte pas (E0617B, IC1320…), et pourquoi pas celui du connecteur
+      const Mt = h.classe && h.classe.matiere, dansRef = /^EN ?3660-\d{3}/i.test(h.designation);
+      if (Mt && Mt.matiere && (!dansRef || Mt.repli)) mots.push((dansRef ? '' : Mt.lettre + ' ') + Mt.matiere + (Mt.repli ? ' (pas en ' + Mt.voulu + ' dans ta table)' : ''));
       if (h.chambre) mots.push('chambre ' + h.longueur + (h.chambre.source === 'choix' ? '' : h.chambre.source === 'défaut' ? ' par défaut' : ' (hypothèse)'));
       if (h.masse && h.masse.masse != null) mots.push(mm(h.masse.masse) + ' g');
       if (h.couple != null) mots.push('couple ' + mm(h.couple) + ' N·m');
-      if (modele) mots.push('suffixes à confirmer'); else if (R.confiance !== 'vérifié') mots.push('ligne ' + R.confiance);
+      if (modele) mots.push('suffixes à confirmer'); else if (R.atelier && R.confiance !== 'vérifié') mots.push(/^E0120/i.test(R.norme) ? 'ta table (la taille après le tiret, à confirmer)' : !R.taille ? 'ta table (référence complète à confirmer)' : 'ta table'); else if (R.confiance !== 'vérifié') mots.push('ligne ' + R.confiance);
       if (horsClasse) mots.push(horsClasse.replace(/ — .*$/, ''));
       if (bloque) mots.push(bloque);
       piece('raccord', libelle, h.designation, 1, bloque ? 'manque' : R.confiance === 'vérifié' && !modele && !horsClasse ? 'vérifié' : 'à confirmer', mots.join(', ')); } }
@@ -337,13 +360,19 @@ function habillage(norme, fils, choix, pn, reference, hyp, opts) { const c = { .
     return avecPieces({ ...vide, classe: null, raccord: 'cheminée', cheminee: true, sansRaccord: '', reference: ref, statut: ref ? ref.confiance : '', manchon: r.manchon, manchonRef: manchon, formeManchon: r.manchon ? formeManchon : '', colle, tyrap, gaine, roleGaine, sortie,
              regle: 'cheminée', pourquoi: 'un EN 4165 prend une cheminée par module câblé (EN 4165-015 ronde ; -016 double ovale pour deux modules voisins ; -017 obturateur sur une cavité vide), le toron tenu par ' + (r.manchon ? 'un manchon (étanchéité)' : 'un tyrap') + (r.bandit ? ' — la reprise de blindage n’y est pas décrite' : ''),
              aConfirmer: true, manquants }); }
-  const raccord = r.raccord, ref = raccordDeTable(norme, famille, taille, raccord, c.orientation), modele = ref ? ref.reference : '', attendE = /<E>/.test(modele), attendL = /<L>/.test(modele);
+  let raccord = r.raccord, repli = '';
+  if (atelierA(norme, famille) && !raccordDeTable(norme, famille, taille, raccord, c.orientation) && REPLI_RACCORD[raccord] && raccordDeTable(norme, famille, taille, REPLI_RACCORD[raccord], c.orientation)) {
+    repli = 'ta table n’a pas de raccord ' + MOTS_RACCORD[raccord] + ' pour l’' + nomDeFamille(norme, famille) + ' : un raccord ' + MOTS_RACCORD[REPLI_RACCORD[raccord]]; raccord = REPLI_RACCORD[raccord]; }
+  const ref = raccordDeTable(norme, famille, taille, raccord, c.orientation), modele = ref ? ref.reference : '', attendE = /<E>/.test(modele), attendL = /<L>/.test(modele);
+  // une partie qui a ses tailles arrière dans la table Entrées (l'IC1320 : système « IC1320 ») les choisit au toron, comme un code d'entrée
+  const systemePropre = ref && !attendE && tableNorme(norme, 'entrees').some(e => e.systeme === ref.norme) ? ref.norme : '';
+  const mat = matiereDuRaccord(ref, classe), lettre = mat && mat.lettre ? mat.lettre : classe.raccord, classeR = mat && mat.lettre ? { ...classe, raccord: lettre, matiere: mat } : classe;
   // le code d'entrée : lettré EN 3660 quand la désignation l'attend ; Glenair pour un serre-câble dont la ligne n'a pas de cotes ; rien sinon
-  const entree = f.diametre == null ? null : attendE ? entreePour(norme, f.diametre, taille, 'EN 3660') : raccord === 'serre-câble' && !(ref && ref.amax != null) ? entreePour(norme, f.diametre, taille, 'Glenair') : null;
-  const designation = designationRaccord(modele, classe.raccord, chambreCode, entree && attendE ? entree.code : '');
+  const entree = f.diametre == null ? null : attendE ? entreePour(norme, f.diametre, taille, 'EN 3660') : systemePropre ? entreePour(norme, f.diametre, taille, systemePropre) : raccord === 'serre-câble' && !(ref && ref.amax != null) ? entreePour(norme, f.diametre, taille, 'Glenair') : null;
+  const designation = designationRaccord(modele, lettre, chambreCode, entree && attendE ? entree.code : '');
   const chambre = attendL ? { ...(chambreDe(norme, ref.norme, chambreCode) || { code: chambreCode, hmax: null, derriere: null }), source: chambreSource } : null;
   const chambreConseil = attendL && chambreCode === LONGUEUR_CHAMBRE && (c.blindage === 'GND' || r.regle === 'surblindage') && blindesUnAUn(f) > 0 ? 'chambre B ou plus conseillée : ' + blindesUnAUn(f) + ' câble' + (blindesUnAUn(f) > 1 ? 's' : '') + ' blindé' + (blindesUnAUn(f) > 1 ? 's' : '') + ' un à un (' + PRATIQUE_CHAMBRE + ')' : '';
-  const masse = designation && ref ? masseDeRaccord(norme, ref.norme, taille, attendL ? chambreCode : '', entree && attendE ? entree.code : '', classe.raccord) : null;
+  const masse = designation && ref ? masseDeRaccord(norme, ref.norme, taille, attendL ? chambreCode : '', entree && attendE ? entree.code : '', CLASSE_NORMEE(lettre)) : null;
   // la bande serre la tresse sur la plateforme ØBB du code retenu (sinon le toron) ; l'E0805 d'atelier se choisit par le toron
   const serre = r.bandit ? (entree && entree.bb != null ? entree.bb : f.diametre) : null, collier = r.bandit ? collierPour(norme, serre, f.diametre) : null, tyrap = raccord === 'tyrap' ? tyrapPour(norme, f.diametre) : null;
   // la cote C : le ØCC du code retenu, sinon celle de la ligne ; le manchon est droit sur un raccord coudé (il fait l'angle)
@@ -357,20 +386,21 @@ function habillage(norme, fils, choix, pn, reference, hyp, opts) { const c = { .
     if (!ref) manquants.push('la référence du raccord (table à compléter' + (famille ? ' pour ' + nomDeFamille(norme, famille) : '') + ')');
     else if (!modele) manquants.push('la désignation complète du raccord (' + ref.norme + ', ' + ref.confiance + ')');
     else if (ref.tailleInconnue) manquants.push('la taille du boîtier ne se lit pas dans le part number' + (pn ? ' ' + pn : '') + ' : la désignation ' + ref.norme + ' reste incomplète');
-    else if (attendE && !entree) { const max = entreeMaximale(norme, taille, 'EN 3660');
-      manquants.push(f.diametre == null ? 'le code d’entrée du raccord : toron inconnu' : 'toron Ø ' + mm(f.diametre) + ' mm trop gros pour ce boîtier' + (taille ? ' ' + taille : '') + (max ? ' (code ' + max.code + ' au plus : ' + mm(max.dmax) + ' mm)' : '')); }
+    else if ((attendE || systemePropre) && !entree) { const max = entreeMaximale(norme, taille, attendE ? 'EN 3660' : systemePropre);
+      manquants.push(f.diametre == null ? 'le code d’entrée du raccord : toron inconnu' : 'toron Ø ' + mm(f.diametre) + ' mm trop gros pour ce boîtier' + (taille ? ' ' + taille : '') + (max ? ' (' + (attendE ? 'code ' : 'arrière ') + max.code + ' au plus : ' + mm(max.dmax) + ' mm)' : '')); }
     // les cotes M d'un serre-câble sont les limites de son collier (EN 3660-005, note b), pas une plage de toron
     else if (f.diametre != null && ref.amax != null && f.diametre > ref.amax) manquants.push(raccord === 'serre-câble' ? 'toron Ø ' + mm(f.diametre) + ' mm : le collier du serre-câble ne s’ouvre pas au-delà de ' + mm(ref.amax) + ' mm (cotes M ' + mm(ref.amin) + '–' + mm(ref.amax) + ' : les limites du collier, pas une plage de toron)'
       : raccord === 'tyrap' ? 'toron Ø ' + mm(f.diametre) + ' mm : il ne passe pas dans le raccord à collier ' + ref.norme + ' (passage ' + mm(ref.amax) + ' mm)' : 'toron Ø ' + mm(f.diametre) + ' mm trop gros pour ce raccord (' + mm(ref.amax) + ' mm au plus)');
     else if (f.diametre != null && ref.amin != null && raccord === 'serre-câble' && f.diametre < ref.amin) manquants.push('toron Ø ' + mm(f.diametre) + ' mm : le collier du serre-câble ne se ferme pas sous ' + mm(ref.amin) + ' mm (cotes M ' + mm(ref.amin) + '–' + mm(ref.amax) + ' : les limites du collier, pas une plage de toron) : bourrage de ruban silicone');
-    if (entree && entree.bourrage && attendE) manquants.push('toron Ø ' + mm(f.diametre) + ' mm sous la plage du code ' + entree.code + ' (' + mm(entree.dmin) + '–' + mm(entree.dmax) + ' mm) : bourrage de ruban silicone'); }
+    if (entree && entree.bourrage && (attendE || systemePropre)) manquants.push('toron Ø ' + mm(f.diametre) + ' mm sous la plage du code ' + entree.code + ' (' + mm(entree.dmin) + '–' + mm(entree.dmax) + ' mm) : bourrage de ruban silicone'); }
   // une ligne dont la clause de désignation n'est pas lue (les -005, -017/-018, -025 à -027 : R3) : la référence construite est un modèle
   // la classe que le connecteur demande doit exister pour la partie (colonne Classes : l'EN 3660-025 n'a que A, N, W ; un connecteur inox demande K)
-  if (designation && ref && ref.classes && ref.classes.length && !ref.classes.includes(classe.raccord)) manquants.push('classe ' + classe.raccord + (classe.lettre ? ' (le connecteur est ' + classe.lettre + ', ' + [classe.materiau, classe.fini].filter(Boolean).join(' ') + ')' : '') + ' : l’' + ref.norme.replace(/^EN ?3660/, 'EN 3660') + ' n’existe qu’en classes ' + ref.classes.join(', ') + ' — le fini du raccord est à choisir');
+  if (mat && mat.aucune) manquants.push('ta table n’a pas l’' + ref.norme + ' dans un matériau compatible avec un connecteur ' + mat.voulu);
+  if (designation && ref && !mat && ref.classes && ref.classes.length && !ref.classes.includes(CLASSE_NORMEE(classe.raccord))) manquants.push('classe ' + classe.raccord + (classe.lettre ? ' (le connecteur est ' + classe.lettre + ', ' + [classe.materiau, classe.fini].filter(Boolean).join(' ') + ')' : '') + ' : l’' + ref.norme.replace(/^EN ?3660/, 'EN 3660') + ' n’existe qu’en classes ' + ref.classes.join(', ') + ' — le fini du raccord est à choisir');
   if (designation && ref && MODELE_SEUL.test((ref.statut || '') + ' ' + (ref.note || ''))) manquants.push('la clause de désignation de l’' + ref.norme.replace(/^EN ?3660/, 'EN 3660') + ' n’est pas lue : ' + designation + ' est un modèle (suffixes à confirmer)');
   if (r.manchon && !manchon) manquants.push('aucun manchon ' + formeManchon + ' de la table ne va à Ø ' + (sortie != null ? mm(sortie) + ' mm' : '?') + (cote != null ? ' sur un épaulement Ø ' + mm(cote) + ' mm' : ''));
   if (r.manchon && manchon && cote == null) manquants.push('la cote C du raccord : le manchon est choisi par le toron seulement');
   if (c.gaine && !gaine) manquants.push('aucune gaine ' + c.gaine + ' ne va à ce toron');
   if (r.bandit && !collier) manquants.push('aucun collier ne va à ce toron');
   return avecPieces({ ...vide, raccord, sansRaccord: '', reference: ref, designation, longueur: attendL ? chambreCode : '', chambre, chambreConseil, entree, cote, bandit: r.bandit, manchon: r.manchon, manchonRef: manchon, formeManchon: r.manchon ? formeManchon : '', colle, collier, serre, tyrap, gaine, roleGaine, sortie,
-           statut: ref ? ref.confiance : '', masse, couple: ref && ref.couple != null ? ref.couple : null, regle: r.regle, pourquoi: r.pourquoi, aConfirmer: false, bourrage: manquants.find(m => /bourrage/.test(m)) || '', manquants }); }
+           statut: ref ? ref.confiance : '', masse, couple: ref && ref.couple != null ? ref.couple : null, regle: r.regle, pourquoi: r.pourquoi + (repli ? ' — ' + repli : ''), repli, atelier: !!(ref && ref.atelier), classe: classeR, aConfirmer: false, bourrage: manquants.find(m => /bourrage/.test(m)) || '', manquants }); }
