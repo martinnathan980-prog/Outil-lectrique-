@@ -85,7 +85,8 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
 const limiteDuCable = (f, x) => f.jugeSur === 'dommage' ? `il s’abîme au-delà de ${amperes(x.admise)}` : `le câble admet ${amperes(x.admise)} en service`;
 function controleProtection(nom, contacts, V, N, H) { const d = disjonctionDe(nom), out = [], cal = d.calibre, pn = pnDuRepere(nom);
   if (pn && !d.famille && !d.ecrit) out.push({ niveau: 'att', texte: `part number ${pn} : famille de disjoncteur inconnue, le calibre ne s’y lit pas${cal ? ' — ' + amperes(cal) + ' (l’idéal) retenu' : ''}` });
-  const fils = filsDepuis(V, nom).map(f => { const xs = (contacts.get(f.l) || []).map(x => ({ x, i: intensiteDuContactPose(N, x) }))   // le courant du contact, borné par la jauge du fil serti (R1).filter(y => y.i).sort((a, b) => a.i.intensite - b.i.intensite);
+  // le courant de chaque contact du câble, borné par la gauge du câble serti (R1) ; le plus faible des deux bouts juge
+  const fils = filsDepuis(V, nom).map(f => { const xs = (contacts.get(f.l) || []).map(x => ({ x, i: intensiteDuContactPose(N, x) })).filter(y => y.i).sort((a, b) => a.i.intensite - b.i.intensite);
     return xs.length ? { ...f, taille: xs[0].x.taille, contactRepere: xs[0].x.repere } : f; });
   protectionDesFils(N, cal, d.profil, fils, H).forEach(f => { const nomF = (f.cable || 'câble sans numéro') + (f.type ? ' (' + f.type + ')' : '') + (f.direct ? '' : ' (par ' + f.via + ')');
     if (!f.direct) {
