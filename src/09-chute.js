@@ -70,14 +70,16 @@ function chuteDuChemin(norme, chemin, courant, hyp, disjoncteur) { const H = { .
       if (d == null) inconnus.push((l.cable || 'câble') + ' : type ' + (l.type || 'inconnu') + ', résistance inconnue' + (rd.refuse ? ' (conducteur ' + rd.conducteur + ' : la ligne cuivre ne vaut pas)' : '')); else dU += d; longueur += L;
       segs.push({ ...s, longueur: L, reelle: l.longueur > 0, rho: rd.rho, rho20: rd.rho20, T: rd.T, tEstimee: tc.estimee, rhoSource: rd.source, conducteur: rd.conducteur, R: r, X, dU: d }); }
     else { const pn = pnDuPassage(norme, chemin, s.passage), coupure = estCoupure(s.passage), F = coupure ? familleDeNorme(norme, null, pn) : null;
-      const taille = tailleDeJauge(norme, F ? F.famille : '', filPrecedent ? jaugeDuType(filPrecedent.type) : null), rTaille = resistanceDeContact(norme, taille);
-      const r0 = F && F.resistance != null ? F.resistance / 1000 : rTaille != null ? rTaille * (coupure ? 1 : 2) : (coupure ? null : 0), r = r0 == null ? null : r0 * kR;
+      // la résistance de l'atelier par la gauge du câble qui arrive (l'Excel du lecteur) d'abord ; sinon celle de la famille de la prise, sinon celle de la taille
+      const jauge = filPrecedent ? jaugeDuType(filPrecedent.type) : null, rAtelier = resistanceAtelier(norme, jauge), taille = tailleDeJauge(norme, F ? F.famille : '', jauge), rTaille = resistanceDeContact(norme, taille);
+      const r0 = rAtelier != null ? rAtelier * (coupure ? 1 : 2) : F && F.resistance != null ? F.resistance / 1000 : rTaille != null ? rTaille * (coupure ? 1 : 2) : (coupure ? null : 0), r = r0 == null ? null : r0 * kR;
       const d = r == null ? null : kReg * r * cosphi * courant; if (d == null) inconnus.push(s.passage + ' : résistance de contact inconnue'); else dU += d;
-      segs.push({ ...s, R: r, dU: d, famille: F ? F.famille : '', taille: F && F.resistance != null ? '' : taille, contacts: coupure ? 1 : 2 }); } });
+      segs.push({ ...s, R: r, dU: d, famille: F ? F.famille : '', taille: rAtelier == null && F && F.resistance != null ? '' : taille, atelier: rAtelier != null, contacts: coupure ? 1 : 2 }); } });
   // le disjoncteur de tête : sa chute propre, sur l'aller seul (le retour ne le traverse pas)
   const cb = disjoncteurDuChemin(norme, chemin, H, disjoncteur);
   if (cb && cb.R == null) inconnus.push(cb.nom + ' : chute propre du disjoncteur inconnue (' + cb.raison + ')');
-  const dCb = cb && cb.R != null ? kReg * cb.R * cosphi * courant : null; if (dCb != null) dU += dCb;
+  // la chute de la table de l'atelier est une chute MAX : elle compte entière dès qu'un courant passe ; les autres, à I / In
+  const dCb = cb && cb.R != null ? (cb.fixe ? (courant > 0 ? cb.chuteIn : 0) : kReg * cb.R * cosphi * courant) : null; if (dCb != null) dU += dCb;
   return { segments: segs, disjoncteur: cb ? { ...cb, dU: dCb } : null, dU, longueur, inconnus, reel, regime, kRetour: kR, conducteur: H.chuteConducteur === 'fixe' ? 'fixe' : 'estimee', bout: chemin.bout, fini: chemin.fini }; }
 /* LE DISJONCTEUR D'OÙ PART un chemin, pour sa chute propre : le repère du premier fil, s'il est un disjoncteur ; sa famille et
    son calibre — ceux que l'appelant donne (le calibre retenu sur la fiche), sinon ceux de son part number ; sa chute à In
@@ -89,7 +91,7 @@ function disjoncteurDuChemin(norme, chemin, H, donne) { const s0 = chemin.segmen
   if (!calibre) return { nom, famille: F ? F.famille : '', calibre: null, chuteIn: null, R: null, raison: 'calibre inconnu' };
   const c = chuteDuDisjoncteur(norme, F, calibre);
   if (!c) return { nom, famille: F ? F.famille : '', calibre, chuteIn: null, R: null, raison: 'famille ' + (F ? F.famille : 'inconnue') + ', ' + String(calibre).replace('.', ',') + ' A : absent de la table Chute disjoncteur' };
-  return { nom, famille: F ? F.famille : '', calibre, chuteIn: c.chute, R: c.chute / calibre, ligne: c.nom, note: c.note }; }
+  return { nom, famille: F ? F.famille : '', calibre, chuteIn: c.chute, R: c.chute / calibre, ligne: c.nom, note: c.note, fixe: !!c.atelier }; }
 // le part number d'un passage, lu sur un fil du chemin qui y arrive
 const pnDuPassage = (norme, chemin, repere) => { for (const s of chemin.segments) { if (!s.fil) continue; if (s.fil.de === repere && s.fil.pnDe) return s.fil.pnDe; if (s.fil.vers === repere && s.fil.pnVers) return s.fil.pnVers; } return ''; };
 /* L'INTERMITTENT de l'AC 43.13-1B (table 11-6) : une charge qui ne dure pas plus de deux minutes a droit au double de
@@ -110,7 +112,8 @@ function chutesDepuis(norme, liaisons, repere, courant, hyp, pointes, disjoncteu
   const admis = chute && chute.chuteMax != null ? chute.chuteMax : null, inter = chute ? (chute.chuteInter != null ? chute.chuteInter : chute.chuteMax) : null;
   const P = (pointes || []).filter(p => p && p.i > 0 && p.t > 0 && isFinite(p.t));
   return cheminsDepuis(liaisons, repere).map(ch => { const c = chuteDuChemin(norme, ch, courant, H, disjoncteur), pct = H.tension ? c.dU / H.tension * 100 : null;
-    const ps = P.map(p => { const dU = courant > 0 ? c.dU * p.i / courant : chuteDuChemin(norme, ch, p.i, H, disjoncteur).dU, intermittent = p.t <= INTERMITTENT_MAX, a = intermittent ? inter : admis;
+    const fixe = c.disjoncteur && c.disjoncteur.fixe && c.disjoncteur.dU != null ? c.disjoncteur.dU : 0;
+    const ps = P.map(p => { const dU = courant > 0 ? (c.dU - fixe) * p.i / courant + fixe : chuteDuChemin(norme, ch, p.i, H, disjoncteur).dU, intermittent = p.t <= INTERMITTENT_MAX, a = intermittent ? inter : admis;
       return { i: p.i, t: p.t, nom: p.nom || '', dU, admis: a, intermittent, trop: !!(a != null && dU > a + 1e-9) }; });
     return { ...c, pct, admis, trop: !!(admis != null && c.dU > admis + 1e-9), tension: chute ? chute.tension : H.tension, regle: chute ? chute.regle : '', pointes: ps, tropPointe: ps.some(p => p.trop),
              mots: c.segments.map(s => s.fil ? (s.fil.cable || 'câble') : '⇄ ' + s.passage).join(' → ') + ' → ' + c.bout[0] + (c.bout[1] ? ':' + c.bout[1] : '') }; }); }

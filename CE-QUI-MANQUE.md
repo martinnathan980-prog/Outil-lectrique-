@@ -31,20 +31,19 @@ accessoire pour quel connecteur et quel câble).
 
 ## Priorité 1 — ce qui change les verdicts partout
 
-### 1. La courbe de la norme des disjoncteurs (celle que tu m'as promise)
+### 1. La courbe de la norme des disjoncteurs
 
-- **Ce que c'est.** Pour chaque température, le temps de déclenchement selon le courant (en multiples du calibre).
-- **Pourquoi.** C'est la courbe qui choisit le calibre et qui dit si le câble est protégé. Tu veux que tout se
-  justifie sur elle.
-- **En attendant.** Volta prend les quatre courbes de ton Excel (125 °C, 23 °C rapide et lente, −55 °C). La
-  recherche les a reconnues : ce sont celles d'un E-T-A 483, à 1-4 % près. Pour un Klixon 2TC, un 6TC, un 7274 ou un
-  Crouzet, il prend leurs fiches constructeur.
-- **Comment me la donner.** Une ligne par point lu sur la courbe :
+- **Ce que tu m'as envoyé.** La fiche E-T-A 4120 (homologuée MS 3320, EN 2495, EN 2995, EN 3773), en photo d'écran :
+  trois courbes (125 °C, 23 °C en bande, −55 °C), la même forme que les quatre courbes de ton Excel. Posées l'une sur
+  l'autre, elles se suivent ; sur une photo d'écran, je ne peux pas relire la fiche au point près (±15 %).
+- **Ce que Volta en fait.** La famille ETA4120 existe (sa gamme 1-25 A, −55/+125 °C, ses chutes typiques) ; ses
+  courbes sont celles de ton Excel en attendant.
+- **Comment me la donner.** Le PDF de la fiche 4120 (la courbe est vectorielle : je la relis au point près), ou une
+  ligne par point lu :
 
   ```
   Famille;Courbe;Température;Multiple;Temps
-  MS3320;125 °C;125;1,15;3600
-  MS3320;125 °C;125;2;5,2
+  ETA4120;125 °C;125;1,15;3600
   ```
 
 ### 2. La nomenclature des disjoncteurs
@@ -82,25 +81,18 @@ accessoire pour quel connecteur et quel câble).
 
 ### 4. Les règles du programme (ABD0100)
 
-- **Ce que c'est.** La règle Airbus : la chute de tension admise, le déclassement des câbles en faisceau, la règle
-  de protection, la réserve de contacts dans un connecteur.
-- **Pourquoi.** Volta suit aujourd'hui la FAA (AC 43.13-1B) et ta règle orale de chute. Le programme peut dire
-  autre chose.
-- **En attendant.**
-  - La chute admise est ta règle : **2 V en continu et en monophasé, 4 V en triphasé**, quelle que soit la tension.
-    Ce sont des hypothèses, modifiables (⋮ → Plus → Hypothèses → « chute admise »). Vidées, la table de la FAA
-    reprend (1 V sous 28 V, le double pour une pointe de moins de 2 min).
-  - Questions sur ta règle : vaut-elle pour le 14 V et le 270 V continu ? Une pointe brève a-t-elle droit à plus ?
-    Mesure-t-on depuis le bus amont (le disjoncteur compris, comme aujourd'hui) ou depuis le bus aval ?
-  - Le déclassement en faisceau suit la figure 11-5 de la FAA (8 câbles chargés à 60 % → × 0,6).
-  - La réserve de contacts n'est pas vérifiée.
-- **Comment me la donner.** Le document et son indice, ou les tables :
-
-  ```
-  Tension;Nature;Chute max;Chute max intermittent;Note
-  28;continu;2;…;ABD0100 indice … § …
-  200;alternatif entre phases 400 Hz;4;…;ABD0100 indice … § …
-  ```
+- **Ce que tu m'as envoyé.** Ton guide (« Définir le type de câble pour garantir une chute en ligne max de 2 V ; la
+  résistance de ligne est fonction du type de câble, de la taille des contacts, des composants électriques »), ta
+  table des chutes (disjoncteurs « Du max », contacteur, diode, relais) et ta table des contacts par gauge. Volta les
+  applique : la chute du disjoncteur est celle de ta table, comptée entière ; chaque contact traversé, celle de sa
+  gauge ; la génération est négligée (elle garantit 28 V en sortie des panneaux).
+- **Ce qui reste.**
+  - Une **pointe brève** (60 A pendant 3 s) a-t-elle droit à plus que 2 V ? Aujourd'hui, non : 207CB7 dépasse en pointe.
+  - Les **composants traversés** (relais, contacteur, diode) : Volta a leur chute, mais ne sait pas quand le courant
+    les traverse. Il lui faut, pour chaque équipement de puissance, les bornes du contact (A1 → A2 ?).
+  - Les **calibres 30 et 35 A** sont dans ta table des chutes, pas dans ta gamme (1 à 25 A) : les ajoute-t-on ?
+  - Ta règle vaut-elle pour le 14 V et le 270 V continu ? Le déclassement en faisceau suit la FAA (8 câbles à 60 %
+    → × 0,6) ; la réserve de contacts n'est pas vérifiée.
 
 ### 5. Le profil de charge de chaque disjoncteur
 
@@ -242,13 +234,13 @@ accessoire pour quel connecteur et quel câble).
   EN2997;F;22;*;24;EN3155-079F22…
   ```
 
-### 14. Le sexe des contacts côté source
+### 14. Le sexe des contacts
 
-- **Ce que c'est.** Quel côté prend les douilles : Volta suppose des douilles face à une embase d'équipement, la
-  fiche d'une prise femelle et son embase mâle.
-- **Pourquoi.** Le sexe choisit le contact à sertir de chaque câble.
-- **En attendant.** Cette hypothèse ; « Changer » l'inverse sur chaque fiche.
-- **Comment me le donner.** Une phrase suffit : « côté sous tension, toujours des douilles », ou la règle du programme.
+- **Réglé en grande partie.** Ta codification des connecteurs : Volta lit le sexe dans le part number (A mâle, B
+  femelle pour l'EN 2997, l'EN 3645 et l'EN 3646 ; P mâle, S femelle pour l'E0053/E0052) et, pour une prise, sa
+  partie (0 embase carrée, 6 prise mobile). Sur l'exemple, la prise 408VC1A (EN3646A6083AAN) devient une fiche mâle.
+- **En attendant, pour un part number qui ne le dit pas.** Des douilles face à une embase d'équipement, la fiche
+  femelle d'une prise ; « Fiche mâle / femelle » l'inverse sur la fiche.
 
 ---
 
@@ -284,17 +276,9 @@ accessoire pour quel connecteur et quel câble).
 
 ### 17. Ton band-it réel
 
-- **Ce que c'est.** La bande que l'atelier pose vraiment : l'EN3660-033AF (la bande normalisée) ou l'E0805-01
-  d'Airbus Helicopters ? Et les cotes de l'E0805 (largeur, longueur, Ø maximal).
-- **Pourquoi.** Volta prend une bande « par défaut » partout où elle serre.
-- **En attendant.** L'EN3660-033AF par défaut, l'E0805 en équivalent.
-- **Comment me le donner.** La colonne « Défaut » dit laquelle est la vôtre :
-
-  ```
-  Référence;Type;Largeur;Épaisseur;Longueur;Dmax;Défaut
-  E0805-01;band-it;…;…;…;15;oui
-  EN3660-033AF;bande standard plate;6,22;0,48;361;47,8;
-  ```
+- **Réglé.** Ton guide : l'E0805-01 quand le toron fait moins de 15 mm, l'E0805-02 au-delà. C'est le band-it par
+  défaut ; la bande normalisée qui serre la plateforme (EN3660-033AF) est donnée en équivalent.
+- **Ce qui reste.** Les cotes de l'E0805 (largeur, longueur), pour la nomenclature et la masse.
 
 ### 18. Ta table CHOIX : ce qui reste à préciser
 
@@ -327,6 +311,13 @@ raccord ». Les tresses HFA et les gaines Nomex étaient déjà celles de ton Ex
   *En attendant : « manque » sur la fiche.*
 - **Les obturateurs de cavité de l'EN 2997, de l'EN 3646 et de l'EN 4165.** *En attendant : « manque » dans la liste des
   pièces.*
+- **La marge du toron** : ton tutoriel dit 10 %, ton guide 20 %, et Volta prend le facteur TE (1,15 dès sept câbles,
+  plus pour deux à six). Lequel retient-on ? *En attendant : TE ; « comme le tutoriel » et « comme le guide » sont
+  dans les hypothèses.*
+- **Le raccord simple en boîte** : ton tutoriel (« SIMPLE droit, souvent dans boîte, sauf l'EN 3645 qui s'utilise
+  sans raccord »). Volta a l'option « dans une boîte » ; il y met, pour l'EN 3646, le « serre-câble (A) » de ta table
+  CHOIX (NSA938150-03 droit, -01 coudé) : est-ce bien lui ? Et pour l'EN 2997 ?
+- **Le Z de l'EN 3645** : ta codification dit aluminium nickelé ; chez Amphenol, Z est un zinc-nickel noir.
 - **Comment me les donner.** Une réponse par ligne, ou les lignes des tables :
 
   ```
@@ -396,6 +387,22 @@ raccord ». Les tresses HFA et les gaines Nomex étaient déjà celles de ton Ex
 - **Le 270 V continu et le 230 V** : aucune règle de chute publique par circuit. *En attendant : ta règle, 2 V (4 V en
   triphasé), quelle que soit la tension.*
 - **Comment me les donner.** Une phrase par point, ou le document.
+
+### 24. L'atténuation des lignes coaxiales
+
+- **Ce que c'est.** Ton guide : « Définir le type de câble d'une ligne coaxiale qui garantisse une atténuation
+  inférieure à la valeur donnée pour l'équipement — la somme des atténuations en dB de chaque élément de la ligne
+  (coupures, connecteurs, composants) à la fréquence d'utilisation de l'équipement ».
+- **Pourquoi.** Volta ne le calcule pas encore : il lui manque les données.
+- **Comment me les donner.** L'atténuation de chaque câble coaxial par fréquence (dB/m), celle d'une coupure et d'un
+  connecteur (dB), et pour chaque équipement sa fréquence et l'atténuation maximale :
+
+  ```
+  Câble;Fréquence (MHz);Atténuation (dB/m)
+  KX;400;0,25
+  Équipement;Fréquence (MHz);Atténuation max (dB)
+  110AN1;118;3
+  ```
 
 ---
 

@@ -34,7 +34,7 @@ tables :
 |---|---|---|
 | **Toron** | le diamètre d'un toron : Ø = facteur × √(Σ Ø²), le **facteur TE/Polamco selon le nombre de câbles** (1 ; 1,415 pour deux ; 1,242 ; 1,205 ; 1,208 ; 1,225 pour six ; **1,15 dès sept** — l'empilement exact de cercles égaux), la ligne « Excel » (+ 10 % quel que soit le nombre, un remplissage de 83 %), la table Glenair (× le Ø moyen) gardée pour contrôle, et la règle de remplissage Micro-D | TE/Polamco « Circular Backshells » p. 11 (vérifié), Glenair (R3) |
 | **Gaines** | par famille et référence, le **rôle** — `surblindage` (tresse cuivre HFA DHS754-160 : Ø intérieur, Ø extérieur) ou `protection` (Nomex EN 6049-003, hydrofuge EN 6049-004 : la plage de toron Dmin–Dmax) —, la masse. C'est le rôle qui décide du raccord. Les plages Nomex sont **toutes vérifiées** sur la fiche HellermannTyton HEGMAN / HEGMANWO (02/2010, qui écrit EN6049-003-04-**5**) ; cinq masses -003 de l'Excel diffèrent de 0,3 à 1,5 g/m (dites au statut) ; la tresse HFA DHS754-160 (Airbus Helicopters) n'a aucune donnée publique : à confirmer | HellermannTyton HEGMAN 2010 |
-| **Colliers** | **le band-it par défaut**, dit une fois (colonne **Défaut** : « oui ») : l'**EN3660-033AF**, la bande standard plate de 6,22 mm posée en double tour, Ø serré ≤ 47,8 mm — toutes les plateformes ØBB des codes A à M (7,7 à 34,7 mm) —, outil normalisé **EN 3660-038** (manuel, style Z), équivalents Glenair 600-052 (outil 600-058 réglé à 150 ± 5 lb), M81306/1-01 ; l'outil la prend tant qu'elle serre, puis la BF ; le « Band-It Jr. » n'en est pas un (un collier préformé du commerce). Puis les **bandes de reprise de blindage EN 3660-033** — AF standard 6,22 × 0,48 mm (9 g), **BF** longue (442 mm, Ø serré ≤ 63,5 mm, 11,5 g), CF et DF micro-bandes, **EF**, **FF** (R3 : variantes manquantes ajoutées, masses corrigées) — et leurs équivalentes Glenair 600-052/-090/-057/-083 (tension de pose 150 lb, 75 lb la micro), les band-it d'atelier **E0805-01** (toron < 15 mm) et **-02**, et les **tyraps NSA935401-03…-13** (largeur, longueur, toron maximal : −03 Ø 22 / 100 mm, −04 Ø 35, **−05 Ø 50 / 200 mm** — la table disait 305 mm, ce qui ne tient pas avec Ø 50 : corrigé sur l'équivalent T50R, **à confirmer**) — NSA935401 est un collier, pas un disjoncteur ; les Glenair sont relues sur leurs fiches (H-52, F-20 : 6,10 × 0,5 mm, 362,1 / 457,2 mm), les -06 et -13 chez Aviatec et Boeing ; les E0805 et les autres NSA935401 n'ont aucune donnée publique | TE P42936, EN 3660-033 (R3), Glenair H-52 / F-20, HellermannTyton, Aviatec, Boeing Distribution |
+| **Colliers** | **les band-it par défaut** (colonne **Défaut** : « oui ») : ceux du guide du lecteur, l'**E0805-01** quand le toron fait moins de 15 mm, l'**E0805-02** au-delà ; en équivalent normalisé, l'**EN3660-033AF**, la bande standard plate de 6,22 mm posée en double tour, Ø serré ≤ 47,8 mm — toutes les plateformes ØBB des codes A à M (7,7 à 34,7 mm) —, outil normalisé **EN 3660-038** (manuel, style Z), équivalents Glenair 600-052 (outil 600-058 réglé à 150 ± 5 lb), M81306/1-01 ; l'outil la prend tant qu'elle serre, puis la BF ; le « Band-It Jr. » n'en est pas un (un collier préformé du commerce). Puis les **bandes de reprise de blindage EN 3660-033** — AF standard 6,22 × 0,48 mm (9 g), **BF** longue (442 mm, Ø serré ≤ 63,5 mm, 11,5 g), CF et DF micro-bandes, **EF**, **FF** (R3 : variantes manquantes ajoutées, masses corrigées) — et leurs équivalentes Glenair 600-052/-090/-057/-083 (tension de pose 150 lb, 75 lb la micro), les band-it d'atelier **E0805-01** (toron < 15 mm) et **-02**, et les **tyraps NSA935401-03…-13** (largeur, longueur, toron maximal : −03 Ø 22 / 100 mm, −04 Ø 35, **−05 Ø 50 / 200 mm** — la table disait 305 mm, ce qui ne tient pas avec Ø 50 : corrigé sur l'équivalent T50R, **à confirmer**) — NSA935401 est un collier, pas un disjoncteur ; les Glenair sont relues sur leurs fiches (H-52, F-20 : 6,10 × 0,5 mm, 362,1 / 457,2 mm), les -06 et -13 chez Aviatec et Boeing ; les E0805 et les autres NSA935401 n'ont aucune donnée publique | TE P42936, EN 3660-033 (R3), Glenair H-52 / F-20, HellermannTyton, Aviatec, Boeing Distribution |
 | **Filetages** | par famille de connecteur et **taille de boîtier** (EN 3645 : 09 à 25, M12x1 à M37x1 ; EN 2997 : 08 à 28, UNEF ; EN 3646 : 08 à 24), le filetage d'accessoire et le Ø du boîtier, et la **lettre** de taille de l'EN 3645 (A = 09 … J = 25 : c'est elle que son part number porte, EN3645 F 0 **C** N 26 M N → 13) ; le Dmax boîtier de l'EN 2997 (Glenair) a un pas irrégulier : à confirmer | EN 3660-063/-064/-005 (R3), Glenair |
 | **Classes** | par famille, les lettres de **classe du connecteur** lues dans son part number juste après le nom de la famille (EN2997 **SE** 6 28 42 F N ; EN3645 **F** 0 C N 26 M N ; EN3646 **A** 6 08 3A A N — rapport R3), son matériau et son fini, la **lettre de classe EN 3660** du raccord qui va avec (W cadmium ↔ W, **nickel ↔ N** — la lettre de l'EN 3660-001:2019, qui ne liste plus F ; TE/Polamco imprime encore F sur ses références vendues —, inox ↔ K, zinc-nickel ↔ Z — jamais A, anodisé non conducteur), sa température, sa **Source** et son **Statut** (EN 2997 : TE/Deutsch ; EN 3646 A, WS, RS, Y : Souriau, les autres déduites ; EN 3645 : Amphenol, Z à confirmer) | EN 2997, EN 3646, EN 3645 (R3) ; EN 3660-001:2019 tableau 2 |
 | **Entrées** | les codes d'entrée de câble, par **Système** : `EN 3660` — les codes lettrés **A à M** des raccords à bande EN 3660-062 à -065 : **Dmin–Dmax la plage de toron** que la norme donne pour chaque code (A 2–4 … D 7,4–9 … M 28,4–31 : « the cable entry shall be selected in accordance with the maximum diameter of the cable bundle », R3 — avant, l'alésage ØAA servait de maximum, optimiste de 0,4 à 0,9 mm), ØAA l'alésage, ØBB la **plateforme de bande**, ØCC l'**épaulement** (la cote C du manchon), DD la lèvre, et la plus petite taille de boîtier qui admet le code ; `Glenair` — les codes 03 à 32 du serre-câble série 36 (maxima recoupés sur la fiche 360-001, minimums à confirmer) | TE/Polamco P20027 (table 4), EN 3660-062/-065:2022 (R3), Glenair 360-001 |
@@ -61,7 +61,14 @@ connecteur, sinon la table de compatibilité du lecteur ; la lettre est celle
 de sa colonne Matériaux. L'IC1320 prend sa taille arrière dans la table
 Entrées (système `IC1320`) comme un code d'entrée ; le manchon, dans la gamme
 T18 de l'atelier d'abord (colonne Atelier des Manchons). L'EN 3645 n'est plus
-« sans raccord » (`SANS_RACCORD` est vide). L'**EN 4165** n'est plus
+« sans raccord » (`SANS_RACCORD` est vide). Dans une **boîte** (l'option du raccord), un raccord
+simple — aucun pour un EN 3645 (le tutoriel) ; une reprise par cosse en zone
+étanche prend un durci et son manchon (la table du tutoriel). L'**E0053** et
+l'**E0052** prennent les raccords de l'EN 3646 (« EN3646 = E0053 », le guide).
+La **tresse HFA** se choisit par la plateforme B du raccord (« D(HFA int) >
+D(B) »), entre deux gaines Nomex (le guide). Le **sexe** des contacts se lit
+dans le part number (A mâle, B femelle ; P/S pour l'E0053 ; 0 embase, 6 prise
+mobile). L'**EN 4165** n'est plus
 « sans raccord » : il prend une **cheminée** (R3) — une ronde EN 4165-015
 par module câblé (une double ovale -016 pour deux modules voisins, un
 obturateur -017 sur une cavité vide), le toron tenu par un tyrap, ou par un
@@ -99,13 +106,15 @@ nomenclature :
   pas la chambre ;
 - la **masse** de la pièce désignée (table Masses des raccords) et le
   **couple de pose** quand la ligne le donne ;
-- la **bande** : le **band-it par défaut** de la table (l'EN3660-033AF)
-  tant qu'il serre la plateforme ØBB du code retenu (sinon le toron), puis
-  la bande EN 3660-033 qui serre (la BF au-delà de 47,8 mm), avec l'E0805
-  d'atelier en équivalent ; le **tyrap** au toron maximal le plus serré qui
+- la **bande** : le **band-it du guide du lecteur**, par le toron —
+  l'E0805-01 sous 15 mm, l'E0805-02 au-delà —, avec en équivalent la bande
+  EN 3660-033 qui serre la plateforme ØBB du code retenu (l'AF, la BF
+  au-delà de 47,8 mm) ; le **tyrap** au toron maximal le plus serré qui
   passe, puis le plus court ; la **gaine** par son rôle ; le **manchon** par
-  ce qui sort du raccord — Ja > D > Jb — et par l'épaulement — Ha > C > Hb,
-  C = le ØCC du code retenu —, droit d'abord (la sortie longue quand aucun
+  ce qui sort du raccord — Ja > D > Jb — et par l'épaulement — Ha > C et
+  Hb < C − 2 × DD (le guide du lecteur : rétreint, le grand bout serre
+  derrière la lèvre), C = le ØCC du code retenu —, dans la gamme T18 de
+  l'atelier d'abord, droit d'abord (la sortie longue quand aucun
   droit ne va) ; **droit sur un raccord coudé** (-065, -062 : il fait déjà
   l'angle), **coudé** seulement pour donner l'angle à un raccord droit ou à
   une cheminée (AC 43.13-1B § 11-138 — avant, un raccord coudé recevait un
@@ -466,7 +475,7 @@ Le fichier porte aussi, depuis R1 :
 
 | Table | Ce qu'elle dit | Source |
 |---|---|---|
-| **Résistance des contacts** | par taille (et par emploi), le courant nominal, la chute max aux bornes et la **résistance max à neuf** d'une paire sertie et accouplée : 22 → 14,6 mΩ, 20 → 7,3, 16 → 3,8, 12 → 1,8, 10 → 1,0, **8 → 0,57** (26 mV / 46 A : l'ancienne valeur 0,7 était extrapolée), et **23 (14,6), 4 (0,29), 0 (0,14)** ajoutées ; les lignes « jonction » des modules de barrettes (Air LB) | AS39029, Amphenol 38999 p. 18 (R1), Amphenol Air LB |
+| **Résistance des contacts** | par taille (et par emploi) — et, emploi **atelier**, par **gauge** du câble serti (la table du lecteur : 24 et 22 → 11 mΩ, 20 → 7, 18 → 6, 16 → 5, 14 → 4, 12 à 8 → 3, 6 → 1, 4 → 0,5 ; la chute en ligne la prend d'abord) —, le courant nominal, la chute max aux bornes et la **résistance max à neuf** d'une paire sertie et accouplée : 22 → 14,6 mΩ, 20 → 7,3, 16 → 3,8, 12 → 1,8, 10 → 1,0, **8 → 0,57** (26 mV / 46 A : l'ancienne valeur 0,7 était extrapolée), et **23 (14,6), 4 (0,29), 0 (0,14)** ajoutées ; les lignes « jonction » des modules de barrettes (Air LB) | AS39029, Amphenol 38999 p. 18 (R1), Amphenol Air LB |
 | **Courant des contacts** | ce qu'un contact porte avec la **jauge** du fil serti, et par **fût** quand il compte : un 26 AWG sur un contact 20 porte **2 A** ; un contact 16 à fût 18 avec du 22 ou du 24 AWG, 5 et 3 A ; un contact 12 à fût 18 (EN 2997) avec du 18 AWG **7,5 A**, à fût 14 (EN 3645) **10 A** — le « 5 A hermétique » est remis sur la taille 20 | Amphenol p. 7 et 9, Milnec (R1) |
 | **Joints arrière** | par famille, taille (et fût), la plage de Ø d'isolant que le joint arrière serre : un fil plus fin demande son manchon E0718 (la table Contacts le porte déjà), un fil plus gros n'entre pas | Souriau 8D p. 65, Milnec, TE 983 (R1 ; la plage EN 2997 « à confirmer ») |
 | **Outillages** | par contact EN 3155 (et les familles qui le prennent) : la pince M22520, le positionneur, l'outil d'insertion et d'extraction M81969, la longueur de dénudage, les bagues de couleur | Amphenol p. 10, Souriau 8D p. 69-71, TE DMC-M, Air LB (R1) |
@@ -766,7 +775,7 @@ conducteur qui n'est pas du cuivre (table Familles de câbles).
 
 | colonne | obligatoire | sens |
 |---|---|---|
-| Famille, Calibre, Chute max | oui | la famille (MS3320, 2TC, ETA483…), le calibre (« 2,5 » est un calibre) ou une liste (« 15 20 25 ») qui vaut pour chacun, la chute aux bornes à In (V) — comptée dans la chute en ligne à I / In |
+| Famille, Calibre, Chute max | oui | la famille (MS3320, 2TC, ETA483, ETA4120…), le calibre (« 2,5 » est un calibre) ou une liste (« 15 20 25 ») qui vaut pour chacun, la chute aux bornes à In (V) — comptée dans la chute en ligne à I / In ; la famille **ATELIER** (la table du lecteur, « Du max », 3 à 35 A) passe devant toutes les autres et compte **entière** ; une ligne sans calibre est un **composant** traversé (CONTACTEUR 0,12 V, DIODE 0,7 V, RELAIS 0,2 V, SIMPLE 0) |
 
 ### Dommage des fils — une ligne par jauge et par tenue
 
@@ -867,7 +876,10 @@ et, quand X est à saisir, une estimation (fil seul à 20 mm de la structure).
     ΔU        = R × courant, en V et en % de la tension (mono : I (R cos φ + X sin φ) ; tri : √3 × …, comparée aux 4 V du triphasé ; X saisie à 400 Hz, × fréquence / 400 — 800 Hz en fréquence variable, MIL-STD-704F)
 
 La **chute en ligne** depuis un disjoncteur ajoute, en tête, sa chute propre
-(table Chute disjoncteur, × courant / In) ; une pointe du profil y prend la
+(la table de l'atelier, entière ; sinon la table Chute disjoncteur, × courant
+/ In — la génération est négligée : elle garantit 28 V en sortie des
+panneaux) ; chaque contact traversé prend d'abord la résistance de l'atelier
+par la gauge du câble serti (Résistance des contacts, emploi « atelier ») ; une pointe du profil y prend la
 résistance du permanent (un état court ne chauffe pas le fil plus que lui).
 
 Le verdict, dans l'ordre : jauge hors plage · le courant dépasse le fil ·

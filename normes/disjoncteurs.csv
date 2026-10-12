@@ -516,6 +516,7 @@ MS14153 / MS14154;idem;71;1,00;1,45;3;20;0,33;1,7;0,06;0,40;MS14153C (MS14154D :
 5TC;idem;70;1,05;1,45;1,5;;0,15;2,5;0,045;0,6;Sensata — 1,5 s min à 200 %
 5TC;idem;125;0,90;1,45;1,5;;0,15;2,5;0,045;0,6;Sensata
 ETA483;E-T-A 483, caractéristique M1 — les temps viennent de la courbe typique (table Courbes ETA483), pas d'une table de calibration publiée;23;1,15;1,38;3,2;15,8;0,40;1,29;0,10;0,33;E-T-A fiche 483 + courbe extraite (bande +23 °C)
+ETA4120;E-T-A 4120 — disjoncteur thermique de puissance, monopolaire, homologué EN 2495, EN 3773, EN 2995, MS 3320, VG 95345 T06, UL 1077 (la fiche que tu m'as envoyée);1;1 2 2,5 3 4 5 7,5 10 15 20 25;115 V AC 400 Hz / 28 V DC;;-55;125;;ETA483;4120;pouvoir de coupure 6000 A à 28 V DC, 1000 A (1-4 A) ou 2000 A (5-25 A) à 115 V AC — sa courbe (125 °C, 23 °C, −55 °C) a la forme des quatre courbes de ton Excel : relue sur une photo d'écran, elle n'est pas lisible au point près — les courbes ETA483 en attendant le PDF
 ETA483;courbe typique ;125;0,93 (asymptote lue);;1,98;;0,24;;0,064;;courbe extraite +125 °C (minimum)
 ETA483;courbe typique ;-55;;1,47 (asymptote lue);;42,9;;2,29;;0,46;courbe extraite −55 °C (maximum)
 Crouzet 84406 (EN 2495 / EN 2995), 1,5-5 A;tableau Crouzet + courbe extraite;25;1,15;1,40;2 (table) / 3,9 (courbe);15 (table) / 12,6 (courbe);0,39;1,34;0,11;0,43;Crouzet catalogue FrogLeg p. 27
@@ -566,7 +567,7 @@ Jauge;Disjoncteur max;Fusible max;Taille contact;I contact;Note;Source;Statut
 1;;150;;;la table 11-3 ne donne pas de disjoncteur pour le 1 AWG (case vide), fusible 150 A;AC 43.13-1B chg 1, table 11-3, page 11-15 (faa.gov);vérifié
 0;;150;0;;"la table 11-3 ne donne pas de disjoncteur pour le 0 AWG (case vide), fusible 150 A ; courant du contact taille 0 non trouvé";AC 43.13-1B chg 1, table 11-3, page 11-15 (faa.gov);vérifié (calibres) / à confirmer (contact)
 
-Chute disjoncteur — la chute maximale aux bornes du disjoncteur à son courant nominal, en V (feuilles MS3320N / MS22073M / MS14154D / MS14153C table I, Sensata, E-T-A — Crouzet non publié). Une liste de calibres (« 15 20 25 30 35 ») vaut pour chacun. À 1 A un disjoncteur fait 1,1 V : du même ordre que la chute admise d'un réseau 28 V — l'outil la COMPTE dans la chute en ligne, à I / In de sa chute à In (prudent : sous In le bilame est plus froid), parce que l'AC 43.13-1B (table 11-6) mesure la chute « entre le bus et la masse de l'équipement » et que le disjoncteur est entre les deux (recherche R2, règle 7), l'hypothèse `chuteDisjoncteur` l'ôte si la règle du programme part du bus aval (ABD0100 : à confirmer).
+Chute disjoncteur — la chute maximale aux bornes du disjoncteur à son courant nominal, en V (feuilles MS3320N / MS22073M / MS14154D / MS14153C table I, Sensata, E-T-A — Crouzet non publié). Une liste de calibres (« 15 20 25 30 35 ») vaut pour chacun. À 1 A un disjoncteur fait 1,1 V : du même ordre que la chute admise d'un réseau 28 V — l'outil la COMPTE dans la chute en ligne, à I / In de sa chute à In (prudent : sous In le bilame est plus froid), parce que l'AC 43.13-1B (table 11-6) mesure la chute « entre le bus et la masse de l'équipement » et que le disjoncteur est entre les deux (recherche R2, règle 7), l'hypothèse `chuteDisjoncteur` l'ôte si la règle du programme part du bus aval (ABD0100 : à confirmer). — Octobre 2026, LA TABLE DE L'ATELIER (l'Excel du lecteur, « Breaker / Du max (V) ») : la famille ATELIER, de 3 à 35 A, passe devant les autres et compte ENTIÈRE, quel que soit le courant (c'est une chute max) ; sa note : la génération est à négliger, elle garantit un 28 V stabilisé en sortie des panneaux de disjoncteurs — la chute se compte donc depuis le disjoncteur. Les mêmes lignes donnent la chute des COMPOSANTS (contacteur 0,12 V, diode 0,7 V, relais 0,2 V, « simple » 0), sans calibre. La famille ETA4120 : la fiche E-T-A 4120 (chutes typiques).
 Famille;Calibre;Chute max;Note
 MS3320;0,5;1,90;MS3320N (Sensata 2TC14-1 : 1,10 V pour 1 A)
 2TC;0,5;1,90;MS3320N (Sensata 2TC14-1 : 1,10 V pour 1 A)
@@ -637,3 +638,27 @@ ETA483;20;0,200;E-T-A (mV typiques)
 ETA483;25;0,170;E-T-A (mV typiques)
 ETA483;30;0,160;E-T-A (mV typiques)
 ETA483;35;0,150;E-T-A (mV typiques)
+ATELIER;3;0,35;l’Excel du lecteur (12 octobre 2026) — Du max
+ATELIER;5;0,25;l’Excel du lecteur (12 octobre 2026) — Du max
+ATELIER;7,5;0,2;l’Excel du lecteur (12 octobre 2026) — Du max
+ATELIER;10;0,2;l’Excel du lecteur (12 octobre 2026) — Du max
+ATELIER;15;0,15;l’Excel du lecteur (12 octobre 2026) — Du max
+ATELIER;20;0,15;l’Excel du lecteur (12 octobre 2026) — Du max
+ATELIER;25;0,15;l’Excel du lecteur (12 octobre 2026) — Du max
+ATELIER;30;0,25;l’Excel du lecteur (12 octobre 2026) — Du max
+ATELIER;35;0,25;l’Excel du lecteur (12 octobre 2026) — Du max
+CONTACTEUR;;0,12;l’Excel du lecteur (12 octobre 2026) — chute d'un composant traversé (un contacteur)
+DIODE;;0,7;l’Excel du lecteur (12 octobre 2026) — chute d'un composant traversé (une diode)
+SIMPLE;;0;l’Excel du lecteur (12 octobre 2026) — chute d'un composant traversé (« simple »)
+RELAIS;;0,2;l’Excel du lecteur (12 octobre 2026) — chute d'un composant traversé (un relais)
+ETA4120;1;1,100;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (1 100 mV)
+ETA4120;2;0,550;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (550 mV)
+ETA4120;2,5;0,460;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (460 mV)
+ETA4120;3;0,440;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (440 mV)
+ETA4120;4;0,380;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (380 mV)
+ETA4120;5;0,260;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (260 mV)
+ETA4120;7,5;0,250;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (250 mV)
+ETA4120;10;0,230;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (230 mV)
+ETA4120;15;0,200;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (200 mV)
+ETA4120;20;0,190;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (190 mV)
+ETA4120;25;0,190;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (190 mV)

@@ -404,7 +404,8 @@ function partNumberPetit(nom, cle, bornes, pn) { const xs = liaisonsDuConnecteur
    blindage, étanchéité, orientation, gaine) dans « Options ». Le moteur donne la liste toute faite, dans l'ordre de
    montage (`h.pieces` : rôle, libellé, référence, quantité, statut, note) ; sinon on la lit dans ses champs. */
 const PUCES_RACCORD = [['blindage', 'Reprise de blindage', [['NO', 'aucune'], ['GND', 'sur le corps'], ['BLI', 'par cosse'], ['CONTACT', 'sur un contact']]],
-  ['etanche', 'Étanchéité', [['false', 'pas requise'], ['true', 'requise']]], ['orientation', 'Raccord', [['droit', 'droit'], ['coudé', 'coudé']]], ['gaine', 'Gaine', [['', 'aucune'], ['HFA', 'HFA'], ['NOMEX', 'Nomex']]]];
+  ['etanche', 'Étanchéité', [['false', 'pas requise'], ['true', 'requise']]], ['orientation', 'Raccord', [['droit', 'droit'], ['coudé', 'coudé']]], ['gaine', 'Gaine', [['', 'aucune'], ['HFA', 'HFA'], ['NOMEX', 'Nomex']]],
+  ['boite', 'Emplacement', [['false', 'à l’air'], ['true', 'dans une boîte']]]];
 const SENS_STATUT_RACCORD = { structure: 'La désignation EN 3660 est vérifiée ; les cotes de cette taille ne sont pas lues (recherche R4)', 'déduit': 'La norme ne nomme pas cette famille : déduit du filetage commun avec l’EN 2997 (recherche R4)', 'à confirmer': 'Ni dessin ni désignation lus : à confirmer' };
 // le « ? » de chaque pièce
 const AIDE_PIECE = { raccord: 'raccord', cheminee: 'cheminee', bande: 'bande', manchon: 'manchon', tyrap: 'tyrap', gaine: 'raccord' };
@@ -439,7 +440,7 @@ function raccordHtml(it) { const { cle } = it, h = habillageDe(it), c = h.choix,
       + `${p.statut ? `<span class="fi-piece-st">${esc(p.statut)}</span>` : '<span></span>'}${refH || p.quantite > 1 ? `<span class="fi-piece-ref">${refH}${p.quantite > 1 ? `<i class="fi-qte">× ${p.quantite}</i>` : ''}</span>` : ''}</li>`; }).join('');
   const k = 'rac|' + cle, segments = PUCES_RACCORD.map(([champ, t, opts]) => `<div class="fi-seg">${voletT(t)}<div class="fi-puces">${opts.map(([v, m]) => `<button type="button" class="fi-chip" data-raccord="${escA(cle)}" data-champ="${champ}" data-v="${escA(v)}" aria-pressed="${String(c[champ]) === v}">${esc(m)}</button>`).join('')}</div></div>`).join('');
   const toron = h.faisceau && h.faisceau.diametre != null ? `toron Ø ${mm(h.faisceau.diametre)} mm` : '';
-  const choix = [c.blindage && c.blindage !== 'NO' ? 'blindage repris' : '', c.etanche ? 'étanche' : '', c.orientation === 'coudé' ? 'coudé' : '', c.gaine ? 'gaine ' + c.gaine : ''].filter(Boolean).join(' · ');
+  const choix = [c.blindage && c.blindage !== 'NO' ? 'blindage repris' : '', c.etanche ? 'étanche' : '', c.orientation === 'coudé' ? 'coudé' : '', c.gaine ? 'gaine ' + c.gaine : '', c.boite ? 'en boîte' : ''].filter(Boolean).join(' · ');
   return `<div class="fi-hab" data-hab="${escA(cle)}"${it.titre ? ` data-titre="${escA(it.titre)}"` : ''}><div class="fi-hab-tete">${it.titre ? `<span class="fi-hab-t">${esc(it.titre)}</span>` : ''}<span class="fi-hab-mots">${insecable(esc([toron, choix].filter(Boolean).join(' · ')))}${toron ? aide('toron', { habillage: h }) : ''}</span>${h.tableau ? '' : boutonChanger(k, 'Reprise de blindage, étanchéité, orientation, gaine', 'Options')}</div>`
     + (h.tableau ? '' : listeChoix(k, segments, { titre: 'Les options du raccord' }))
     + (lignes ? `<ul class="fi-nomen">${lignes}</ul>` : `<p class="fi-note">${h.tableau ? 'Disjoncteur de tableau : ni raccord ni band-it.' : 'Rien à poser.'}</p>`) + '</div>'; }

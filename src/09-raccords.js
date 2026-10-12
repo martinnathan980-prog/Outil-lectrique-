@@ -74,8 +74,11 @@
 
 const BLINDAGES = { NO: 'aucune reprise de blindage', GND: 'reprise sur le corps du connecteur', BLI: 'reprise par cosse', CONTACT: 'reprise sur un contact' };
 const MATERIAUX = ['nickelage alu', 'cadmiage vert olive', 'passivation acier inox', 'anodisation alu noir'];
-// `chambre` : un code de longueur de chambre choisi pour ce connecteur (vide : l'hypothèse)
-const CHOIX_RACCORD = { blindage: 'NO', etanche: false, orientation: 'droit', gaine: '', surblindage: false, materiau: '', chambre: '' };
+// `chambre` : un code de longueur de chambre choisi pour ce connecteur (vide : l'hypothèse) ; `boite` : le connecteur est dans une boîte (le raccord simple droit du tutoriel)
+const CHOIX_RACCORD = { blindage: 'NO', etanche: false, orientation: 'droit', gaine: '', surblindage: false, materiau: '', chambre: '', boite: false };
+/* DANS UNE BOÎTE (le tutoriel du lecteur : « SIMPLE droit — souvent dans boîte, sauf pour l'EN 3645 qui s'utilise sans
+   raccord ») : un raccord simple, sans reprise ni étanchéité ; les familles qui n'en prennent pas, et pourquoi. */
+const SANS_RACCORD_EN_BOITE = { EN3645: 'dans une boîte, un EN 3645 s’utilise sans raccord (ton tutoriel)' };
 /* Les familles SANS RACCORD, et pourquoi : rien ne se calcule pour elles — ni raccord, ni band-it, ni manchon, ni gaine,
    ni tyrap. Aucune aujourd'hui : l'EN 3645 en était (« il s'utilise sans raccord », lu dans le tutoriel) jusqu'à ce que la
    table CHOIX de l'onglet Raccord du lecteur lui donne ses quatre raccords (octobre 2026) ; l'EN 4165 n'en est plus :
@@ -97,7 +100,7 @@ const NOM_DE_TRESSE = /hfa|dhs|tresse|blind|cem|braid|shield/i;
        plus 10 %, comme la feuille de calcul du lecteur (un remplissage de 83 %, au-dessus des 80 % de Glenair) ;
      · `chambre` — le code de longueur de chambre <L> des raccords droits à bande : A par défaut. La norme ne dit pas
        comment le choisir ; la pratique que R3 propose (déduite, à confirmer par l'atelier) est dite en conseil. */
-const TORONS = { TE: 'TE/Polamco : le facteur selon le nombre de câbles × √(Σ Ø²)', Excel: 'comme l’Excel : √(Σ Ø²) + 10 %' };
+const TORONS = { TE: 'TE/Polamco : le facteur selon le nombre de câbles × √(Σ Ø²)', Excel: 'comme le tutoriel : √(Σ Ø²) + 10 %', Guide: 'comme le guide des règles d’utilisation : √(Σ Ø²) + 20 %' };
 const PRATIQUE_CHAMBRE = 'A pour une tresse globale seule ; B ou plus quand on reprend des blindages individuels dans la chambre, ou avec des contacts taille 8 à botte d’étanchéité (« expanded clearance » chez Glenair) — pratique proposée par la recherche R3, déduite, à confirmer par l’atelier';
 Object.assign(HYPOTHESES, { toron: 'TE', chambre: LONGUEUR_CHAMBRE });
 
@@ -110,8 +113,11 @@ function regleRaccord(c) { const b = BLINDAGES[c.blindage] ? c.blindage : 'NO', 
   const manchonMot = e ? ', et l’étanchéité demande un manchon précollé' : '', cosseMot = b === 'BLI' ? ' — la reprise par cosse ne touche pas au raccord' : '';
   if (b === 'GND') return { raccord: 'durci', bandit: true, manchon: e, regle: 'corps', pourquoi: 'la tresse est reprise sur le corps : un raccord blindé et un band-it la tiennent' + manchonMot + gaineMot };
   if (tresse) return { raccord: 'durci', bandit: true, manchon: e, regle: 'surblindage', pourquoi: 'une tresse de surblindage (' + c.gaine + ') : un raccord blindé et un band-it, obligatoires' + manchonMot + cosseMot };
+  // ta table : une reprise par cosse en zone étanche prend un durci et son manchon, droit ou coudé
+  if (e && b === 'BLI') return { raccord: 'durci', bandit: false, manchon: true, regle: 'cosse étanche', pourquoi: 'reprise par cosse en zone étanche : un durci et un manchon précollé (ta table)' + gaineMot };
   if (e) { if (coude) return { raccord: 'durci', bandit: false, manchon: true, regle: 'étanche coudé', pourquoi: 'zone étanche, coudé : un durci et un manchon précollé' + gaineMot + cosseMot };
     return { raccord: 'pour manchon', bandit: false, manchon: true, regle: 'étanche droit', pourquoi: 'zone étanche, droit : un raccord pour manchon et son manchon précollé' + gaineMot + cosseMot }; }
+  if (c.boite && b !== 'BLI') return { raccord: 'simple', bandit: false, manchon: false, regle: 'boîte', pourquoi: 'dans une boîte, sans reprise ni étanchéité : un raccord simple droit (ton tutoriel)' + gaineMot };
   if (b === 'BLI') return { raccord: 'serre-câble', bandit: false, manchon: false, regle: 'cosse', pourquoi: 'reprise par cosse, pas d’étanchéité : un serre-câble, les cosses sous ses deux vis (au plus 4, 2 par vis)' + gaineMot };
   return { raccord: 'tyrap', bandit: false, manchon: false, regle: 'rien', pourquoi: (b === 'CONTACT' ? 'reprise sur un contact : rien pour le raccord — ' : '') + 'ni reprise sur le corps, ni surblindage, ni étanchéité : un tyrap' + gaineMot }; }
 
@@ -124,9 +130,9 @@ const mmTexte = x => String(Math.round(x * 10) / 10).replace('.', ',');
    « TE » : la ligne du nombre de câbles (1 ; 1,415 pour 2… ; « 7 et plus » 1,15), « Excel » : la ligne du tutoriel (1,10).
    Sans table Toron, + 10 % (FOISONNEMENT), et c'est dit. Rend { diametre, facteur, methode, n, regle, ligne }. */
 function toronDe(norme, f, methode) { const m = TORONS[methode] ? methode : 'TE', n = f ? f.n : 0, T = tableNorme(norme, 'torons').filter(x => x.cle === m && x.facteur != null);
-  const ligne = m === 'Excel' ? T[0] || null : (T.find(x => x.fils === n && !x.etPlus) || T.filter(x => x.etPlus && x.fils != null && n >= x.fils).sort((a, b) => b.fils - a.fils)[0] || null);
+  const ligne = m === 'Excel' || m === 'Guide' ? T[0] || null : (T.find(x => x.fils === n && !x.etPlus) || T.filter(x => x.etPlus && x.fils != null && n >= x.fils).sort((a, b) => b.fils - a.fils)[0] || null);
   const facteur = ligne ? ligne.facteur : FOISONNEMENT, nom = ligne ? m : 'Excel', virg = x => String(x).replace('.', ',');
-  const regle = !f || f.deq == null ? '' : nom === 'TE' ? `√(Σ Ø²) × ${virg(facteur)} — le facteur TE/Polamco pour ${n} câble${n > 1 ? 's' : ''} (Circular Backshells p. 11)` : `√(Σ Ø²) + ${Math.round((facteur - 1) * 100)} % — comme l’Excel du lecteur${ligne || m === 'Excel' ? '' : ' (pas de table Toron)'}`;
+  const regle = !f || f.deq == null ? '' : nom === 'TE' ? `√(Σ Ø²) × ${virg(facteur)} — le facteur TE/Polamco pour ${n} câble${n > 1 ? 's' : ''} (Circular Backshells p. 11)` : `√(Σ Ø²) + ${Math.round((facteur - 1) * 100)} % — comme ${nom === 'Guide' ? 'ton guide des règles d’utilisation' : 'ton tutoriel'}${ligne || m === 'Excel' ? '' : ' (pas de table Toron)'}`;
   return { diametre: f && f.deq != null ? f.deq * facteur : null, facteur, methode: nom, n, regle, ligne }; }
 /* Le RÔLE d'une famille de gaine : ce que la table dit (surblindage / protection), sinon son nom. */
 function roleDeGaine(norme, famille) { const g = tableNorme(norme, 'gaines').find(x => x.famille === cleNorme(famille)); return g ? g.role : NOM_DE_TRESSE.test(String(famille || '')) ? 'surblindage' : 'protection'; }
@@ -192,9 +198,14 @@ function entreeMaximale(norme, taille, systeme) { const t = taille ? parseInt(ta
    permettrait. Un type que la table n'a pas pour la famille (l'EN 2997 n'a ni raccord à collier ni raccord pour manchon)
    prend son REPLI : le serre-câble pour le collier (ni reprise ni étanchéité, l'un comme l'autre), le durci pour le
    raccord pour manchon (il porte aussi l'épaulement du manchon). */
+/* L'E0053 (embase carrée) et l'E0052 (prise mobile) d'Airbus Helicopters SONT l'EN 3646 pour le raccord (le guide du
+   lecteur : « EN3646 = E0053 ») : leurs raccords sont ceux de l'EN 3646, leur matériau se lit dans leur propre
+   codification (table Classes : R anodisé noir, N nickelé, W cadmié vert olive). */
+const ALIAS_RACCORD = [[/^E005[23]/, 'EN3646']];
+const aliasDeRaccord = ref => { const r = cleNorme(ref), a = r ? ALIAS_RACCORD.find(([re]) => re.test(r)) : null; return a ? { famille: a[1], propre: r.slice(0, 5) } : null; };
 const atelierA = (norme, famille) => tableNorme(norme, 'raccords').some(r => r.famille === famille && r.atelier);
 const REPLI_RACCORD = { tyrap: 'serre-câble', 'pour manchon': 'durci' };
-const MOTS_RACCORD = { durci: 'blindé (durci)', 'pour manchon': 'pour manchon', 'serre-câble': 'à serre-câble', tyrap: 'à collier' };
+const MOTS_RACCORD = { durci: 'blindé (durci)', 'pour manchon': 'pour manchon', 'serre-câble': 'à serre-câble', tyrap: 'à collier', simple: 'simple' };
 /* LE MATÉRIAU DU RACCORD (l'onglet Raccord du lecteur) : celui du connecteur quand la partie existe dans ce matériau (la
    colonne Matériaux de sa ligne : sa lettre, F pour le nickelé des -062 à -065, C pour celui de l'IC1320…) ; sinon le
    premier que sa table de COMPATIBILITÉ admet. Une ligne sans colonne Matériaux garde la lettre de la table Classes. */
@@ -234,12 +245,15 @@ function chambreDe(norme, partie, code) { const p = cleNorme(partie), c = String
 function masseDeRaccord(norme, partie, taille, chambre, code, classe) { const p = cleNorme(partie), t = TAILLE_BOITIER(taille), c = String(code || '').toUpperCase(), k = String(classe || CLASSE_DEFAUT).toUpperCase(), l = String(chambre || '').toUpperCase();
   return tableNorme(norme, 'massesRaccords').find(x => x.norme === p && x.taille === t && x.code === c && (x.longueur ? x.longueur === l : true) && x.classes.includes(k)) || null; }
 /* Le manchon : Ja > D > Jb côté toron (D : ce qui sort du raccord, gaine ou toron) et, si la cote C du raccord est
-   connue, Ha > C > Hb côté raccord. `forme` : la forme du MANCHON — droit (ou à sortie longue, la « bouteille » sur un
+   connue, Ha > C et Hb < C − 2 × DD côté raccord (le guide du lecteur : rétreint, le grand bout serre derrière la lèvre DD ;
+   sans lèvre connue, Hb < C). `forme` : la forme du MANCHON — droit (ou à sortie longue, la « bouteille » sur un
    petit épaulement, seulement quand aucun droit ne va) ou coudé (à nervure ou à lèvre) ; les autres formes (45°,
    transitions, 2 à 4 sorties) restent dans la table, à la main. Le plus petit qui passe, le PRÉCOLLÉ (T18/T19) d'abord
    à cotes égales — l'étanchéité le demande. */
-function manchonPour(norme, d, c, forme) { if (d == null) return null; const coude = forme === 'coudé', formes = coude ? ['coudé', 'coudé à lèvre'] : ['droit', 'sortie longue'];
-  const M = tableNorme(norme, 'manchons').filter(m => formes.includes(m.forme) && m.ja > d && (m.jb == null || m.jb < d) && (c == null || (m.ha > c && (m.hb == null || m.hb < c))));
+function manchonPour(norme, d, c, forme, levre) { if (d == null) return null; const coude = forme === 'coudé', formes = coude ? ['coudé', 'coudé à lèvre'] : ['droit', 'sortie longue'];
+  // le guide du lecteur : D(AV) > D(C) et D(AP) < D(C) − 2 × D(D) — rétreint, le grand bout serre derrière la lèvre D(D) de l'épaulement
+  const sous = c == null ? null : c - 2 * (levre > 0 ? levre : 0);
+  const M = tableNorme(norme, 'manchons').filter(m => formes.includes(m.forme) && m.ja > d && (m.jb == null || m.jb < d) && (c == null || (m.ha > c && (m.hb == null || m.hb < sous))));
   const rang = m => coude ? 0 : formes.indexOf(m.forme), A = M.filter(m => m.atelier);
   return (A.length ? A : M).sort((a, b) => rang(a) - rang(b) || a.ja - b.ja || (b.precolle ? 1 : 0) - (a.precolle ? 1 : 0) || (a.p || 0) - (b.p || 0))[0] || null; }
 /* LA FORME DU MANCHON. Un manchon coudé DONNE l'angle à un raccord droit — une cheminée, un raccord droit (AC 43.13-1B
@@ -265,14 +279,14 @@ const MODELE_SEUL = /d[ée]signation non lue|d[ée]signation non lus|suppos[ée]
 const ROLES_PIECE = ['raccord', 'cheminee', 'bande', 'manchon', 'tyrap', 'gaine', 'autre', 'obturateur'];
 const STATUTS_PIECE = ['vérifié', 'à confirmer', 'manque'];
 const statutDePiece = x => x && x.confiance === 'vérifié' ? 'vérifié' : 'à confirmer';
-const NOMS_RACCORD = { durci: 'Raccord blindé étanche (durci)', 'pour manchon': 'Raccord pour manchon', 'serre-câble': 'Raccord à serre-câble', tyrap: 'Raccord à collier' };
+const NOMS_RACCORD = { durci: 'Raccord blindé étanche (durci)', 'pour manchon': 'Raccord pour manchon', 'serre-câble': 'Raccord à serre-câble', tyrap: 'Raccord à collier', simple: 'Raccord simple' };
 // les manques qui empêchent de commander le raccord retenu (sa référence, sa taille, un toron qui n'y passe pas)
 const MANQUE_RACCORD = /^la référence du raccord|^la taille du boîtier|trop gros|ne passe pas|ne s’ouvre pas/;
 function piecesDHabillage(norme, h, opts, fils) { const P = [], mm = mmTexte, c = h.choix, R = h.reference, O = opts || {};
   const piece = (role, libelle, reference, quantite, statut, note) => P.push({ role, libelle, reference: reference || '', quantite, statut, note: note || '' });
   const nModules = Math.max(1, Math.round(O.modules || 1)), toron = h.toron != null ? 'Ø ' + mm(h.toron) + ' mm' : 'Ø inconnu';
   // 1. le raccord — ou la cheminée d'un EN 4165, une par module câblé — ou rien (l'EN 3645 de la règle d'atelier)
-  if (h.sansRaccord) piece('raccord', 'Aucun raccord', '', 0, 'à confirmer', 'un ' + nomDeFamille(norme, h.sansRaccord) + ' s’utilise sans raccord : la règle d’atelier du tutoriel');
+  if (h.sansRaccord) piece('raccord', 'Aucun raccord', '', 0, h.aConfirmer ? 'à confirmer' : 'vérifié', h.pourquoi || 'un ' + nomDeFamille(norme, h.sansRaccord) + ' s’utilise sans raccord');
   else if (h.cheminee) piece('cheminee', 'Cheminée ronde', R ? R.reference || R.norme : 'EN4165-015', nModules, 'à confirmer', 'une par module câblé ; son Ø intérieur n’est pas public : le passage du toron (' + toron + ') reste à confirmer');
   else if (h.raccord !== 'tyrap' || R) { const libelle = NOMS_RACCORD[h.raccord] + (c.orientation === 'coudé' ? ' 90°' : ' droit'), bloque = h.manquants.find(m => MANQUE_RACCORD.test(m));
     if (!R) piece('raccord', libelle, '', 1, 'manque', 'la table Raccords n’a pas ' + (h.famille ? 'de ligne ' + h.raccord + ' pour l’' + nomDeFamille(norme, h.famille) : 'ce connecteur (famille hors des normes)'));
@@ -295,7 +309,7 @@ function piecesDHabillage(norme, h, opts, fils) { const P = [], mm = mmTexte, c 
   if (h.bandit) { const B = h.collier, defaut = bandeParDefaut(norme), serre = h.serre != null ? 'Ø ' + mm(h.serre) + ' mm' : toron;
     if (!B) piece('bande', 'Bande de blindage (band-it)', '', 1, 'manque', 'aucune bande de la table ne serre ' + serre);
     else { const outil = ((/^[^(–;/]+/.exec(B.outil || '') || [''])[0]).trim();
-      piece('bande', 'Bande de blindage (band-it)', B.reference, 1, statutDePiece(B), 'double tour sur ' + serre + (outil ? ', outil ' + outil : '') + (B.equivalent ? ', ≈ ' + B.equivalent.reference : '')
+      piece('bande', 'Bande de blindage (band-it)', B.reference, 1, statutDePiece(B), (/^E0805/.test(B.reference) ? 'toron ' + toron + (/-01$/.test(B.reference) ? ' : moins de 15 mm' : ' : plus de 15 mm') + ' (ton guide)' : 'double tour sur ' + serre + (outil ? ', outil ' + outil : '')) + (B.equivalent ? ', ≈ ' + B.equivalent.reference : '')
         + (defaut && !B.parDefaut && B !== defaut ? ' (la bande par défaut ' + defaut.reference + ' ne serre pas ce Ø)' : '')); } }
   // 3. le manchon thermorétractable : précollé pour l'étanchéité, droit sur un raccord coudé
   if (h.manchon) { const M = h.manchonRef, coude = h.formeManchon === 'coudé';
@@ -307,10 +321,12 @@ function piecesDHabillage(norme, h, opts, fils) { const P = [], mm = mmTexte, c 
     if (!T) piece('tyrap', 'Tyrap', '', q, 'manque', 'aucun tyrap de la table ne serre ' + toron);
     else piece('tyrap', 'Tyrap', T.reference, q, statutDePiece(T), 'serre le toron ' + toron + (T.dmax != null ? ' (Ø ' + mm(T.dmax) + ' mm au plus)' : '') + (h.raccord === 'tyrap' && R ? ' sur le bras du raccord' : '')); }
   // 5. la gaine (au mètre) : une tresse de surblindage ou une protection — rien pour une famille sans raccord (rien ne s'y calcule)
-  if (c.gaine && !h.sansRaccord) { const G = h.gaine;
+  if (c.gaine && !h.sansRaccord) { const G = h.gaine, X = h.nomex, nomexP = (N, ou, sur) => N ? piece('gaine', 'Gaine Nomex ' + ou + ' la tresse (au mètre)', N.reference, 1, statutDePiece(N), 'sur ' + sur + ' (plage ' + mm(N.dmin) + '–' + mm(N.dmax) + ' mm), ton guide') : piece('gaine', 'Gaine Nomex ' + ou + ' la tresse', '', 1, 'manque', 'aucune Nomex ne va à ' + sur);
+    if (X) nomexP(X.dessous, 'sous', toron);
     if (!G) piece('gaine', 'Gaine ' + c.gaine, '', 1, 'manque', 'aucune gaine ' + c.gaine + ' ne va à ' + toron);
     else piece('gaine', (G.role === 'surblindage' ? 'Tresse de surblindage' : 'Gaine de protection') + ' (au mètre)', G.reference, 1, statutDePiece(G),
-      G.role === 'surblindage' ? 'Ø intérieur ' + mm(G.dint) + ' mm' + (h.bandit ? ', reprise par la bande sur le raccord' : '') : 'toron ' + mm(G.dmin) + '–' + mm(G.dmax) + ' mm, finit ' + (h.manchon ? 'sous le manchon' : 'par un collier')); }
+      G.role === 'surblindage' ? 'Ø intérieur ' + mm(G.dint) + ' mm' + (h.plateforme != null ? ', plus grand que la plateforme B du raccord (' + mm(h.plateforme) + ' mm)' : '') + (h.bandit ? ', reprise par la bande sur le raccord' : '') : 'toron ' + mm(G.dmin) + '–' + mm(G.dmax) + ' mm, finit ' + (h.manchon ? 'sous le manchon' : 'par un collier'));
+    if (X && G && G.dext != null) nomexP(X.dessus, 'sur', 'la tresse Ø ' + mm(G.dext) + ' mm'); }
   // 6. le bourrage : un toron sous la plage du code d'entrée (ou sous le collier du serre-câble)
   if (h.bourrage) piece('autre', 'Bourrage', 'ruban silicone', 1, 'à confirmer', h.bourrage);
   // 7. les obturateurs : un par cavité libre du plan de contacts, par taille (table Obturateurs)
@@ -331,15 +347,16 @@ function piecesDHabillage(norme, h, opts, fils) { const P = [], mm = mmTexte, c 
    module) ; `plan`, le plan de contacts du connecteur (`remplirContacts`) — chaque cavité libre y demande un obturateur. */
 function habillage(norme, fils, choix, pn, reference, hyp, opts) { const c = { ...CHOIX_RACCORD, ...(choix || {}) }, H = { ...HYPOTHESES, ...(hyp || {}) }, avecPieces = h => ({ ...h, pieces: piecesDHabillage(norme, h, opts, fils) });
   const f0 = faisceauDe(norme, fils), foisonnement = toronDe(norme, f0, H.toron), f = { ...f0, diametre: foisonnement.diametre, foisonnement };
-  const famille = familleDeReference(norme, pn, 'connecteur') || familleDeReference(norme, reference, 'connecteur');
-  // la taille : dans le part number du fichier, sinon dans la référence retenue (l'arrangement choisi, EN3646-002-12-08) ; la classe, dans le part number
-  const taille = tailleDuPn(norme, famille, pn) || tailleDuPn(norme, famille, reference), filetage = taille ? filetageDe(norme, famille, taille) : null, classe = classeDeRaccord(norme, famille, pn, reference);
+  const lue = familleDeReference(norme, pn, 'connecteur') || familleDeReference(norme, reference, 'connecteur'), alias = lue ? null : aliasDeRaccord(pn) || aliasDeRaccord(reference), famille = lue || (alias ? alias.famille : '');
+  // la taille : dans le part number du fichier, sinon dans la référence retenue (l'arrangement choisi, EN3646-002-12-08) ; la classe, dans le part number (celle de sa propre codification pour un E0053)
+  const taille = tailleDuPn(norme, famille, pn) || tailleDuPn(norme, famille, reference), filetage = taille ? filetageDe(norme, famille, taille) : null, classe = classeDeRaccord(norme, alias ? alias.propre : famille, pn, reference);
   // la chambre : celle choisie pour ce connecteur, sinon l'hypothèse (A par défaut)
   const chambreCode = CODES_CHAMBRE.includes(c.chambre) ? c.chambre : CODES_CHAMBRE.includes(H.chambre) ? H.chambre : LONGUEUR_CHAMBRE, chambreSource = CODES_CHAMBRE.includes(c.chambre) ? 'choix' : chambreCode === LONGUEUR_CHAMBRE ? 'défaut' : 'hypothèse';
-  const vide = { choix: c, toron: f.diametre, deq: f.deq, faisceau: f, foisonnement, famille, taille, filetage, classe, reference: null, designation: '', longueur: '', chambre: null, chambreConseil: '', entree: null, cote: null, bandit: false, manchon: false, manchonRef: null, formeManchon: '', colle: '', collier: null, serre: null, tyrap: null, gaine: null, roleGaine: '', sortie: null, statut: '', masse: null, couple: null, cheminee: false, bourrage: '' };
+  const vide = { choix: c, toron: f.diametre, deq: f.deq, faisceau: f, foisonnement, famille, alias: alias ? alias.propre : '', taille, filetage, classe, reference: null, designation: '', longueur: '', chambre: null, chambreConseil: '', entree: null, cote: null, bandit: false, manchon: false, manchonRef: null, formeManchon: '', colle: '', collier: null, serre: null, tyrap: null, gaine: null, roleGaine: '', sortie: null, statut: '', masse: null, couple: null, cheminee: false, bourrage: '' };
   // une famille sans raccord : le toron et le boîtier se disent, rien d'autre ne se calcule
   if (sansRaccord(famille)) return avecPieces({ ...vide, raccord: 'aucun', sansRaccord: famille, regle: 'sans raccord', pourquoi: SANS_RACCORD[famille], aConfirmer: famille === 'EN3645', manquants: [] });
   const roleGaine = c.gaine ? roleDeGaine(norme, c.gaine) : '', r = regleRaccord({ ...c, surblindage: c.gaine ? roleGaine === 'surblindage' : false }), mm = mmTexte;
+  if (r.raccord === 'simple' && SANS_RACCORD_EN_BOITE[famille]) return avecPieces({ ...vide, raccord: 'aucun', sansRaccord: famille, regle: 'boîte', pourquoi: SANS_RACCORD_EN_BOITE[famille], aConfirmer: false, manquants: [] });
   const gaine = c.gaine ? gainePour(norme, c.gaine, f.diametre) : null;
   // ce qui sort du raccord : la gaine (son extérieur), sinon le toron
   const sortie = gaine ? (gaine.dext != null ? gaine.dext : gaine.dmax != null ? Math.min(gaine.dmax, (f.diametre || 0) * 1.3) : f.diametre) : f.diametre;
@@ -376,7 +393,17 @@ function habillage(norme, fils, choix, pn, reference, hyp, opts) { const c = { .
   // la bande serre la tresse sur la plateforme ØBB du code retenu (sinon le toron) ; l'E0805 d'atelier se choisit par le toron
   const serre = r.bandit ? (entree && entree.bb != null ? entree.bb : f.diametre) : null, collier = r.bandit ? collierPour(norme, serre, f.diametre) : null, tyrap = raccord === 'tyrap' ? tyrapPour(norme, f.diametre) : null;
   // la cote C : le ØCC du code retenu, sinon celle de la ligne ; le manchon est droit sur un raccord coudé (il fait l'angle)
-  const cote = entree && entree.cc != null ? entree.cc : ref && ref.c != null ? ref.c : null, formeManchon = formeDuManchon(c.orientation, ref), manchon = r.manchon ? manchonPour(norme, sortie, cote, formeManchon) : null;
+  /* LA TRESSE DE SURBLINDAGE se choisit par le RACCORD (le guide du lecteur : « la reprise de blindage se fait sur le corps
+     du connecteur, le diamètre de la gaine HFA est déterminé en fonction de la taille de l'extrémité du raccord :
+     D(HFA int) > D(B raccord) ») — la plateforme ØBB du code retenu, sinon la cote B de la ligne, sinon le toron —, et
+     elle se pose entre deux gaines Nomex (« une gaine textile Nomex, une gaine métallique HFA, et enfin une gaine
+     textile Nomex à nouveau ») : la première sur le toron, la seconde sur la tresse. */
+  const plateforme = entree && entree.bb != null ? entree.bb : ref && ref.b != null ? ref.b : null, surblindage = roleGaine === 'surblindage';
+  const tresse = c.gaine && surblindage && plateforme != null ? gainePour(norme, c.gaine, Math.max(plateforme, f.diametre || 0)) || gaine : gaine;
+  const nomex = surblindage && tresse ? { dessous: gainePour(norme, 'NOMEX', f.diametre), dessus: tresse.dext != null ? gainePour(norme, 'NOMEX', tresse.dext) : null } : null;
+  const sortieR = tresse && tresse !== gaine ? (tresse.dext != null ? tresse.dext : sortie) : sortie;
+  // le manchon : sur l'épaulement C du code retenu (sinon celui de la ligne), son grand bout rétreint sous la lèvre DD ; droit sur un raccord coudé (il fait l'angle)
+  const cote = entree && entree.cc != null ? entree.cc : ref && ref.c != null ? ref.c : null, levre = entree && entree.dd != null ? entree.dd : null, formeManchon = formeDuManchon(c.orientation, ref), manchon = r.manchon ? manchonPour(norme, sortieR, cote, formeManchon, levre) : null;
   const colle = manchon ? (manchon.precolle ? 'précollé' : 'à coller : VG 95343 T15 (V9500), ou sa version T18 précollée') : '';
   /* Ce qui manque. Un raccord à collier (« tyrap ») de la table se juge comme les autres : sa désignation (l'EN 3660-013 de
      l'EN 2997 n'a pas de modèle : la norme ne nomme pas sa famille) et son PASSAGE — le toron doit passer dans son alésage
@@ -398,9 +425,9 @@ function habillage(norme, fils, choix, pn, reference, hyp, opts) { const c = { .
   if (mat && mat.aucune) manquants.push('ta table n’a pas l’' + ref.norme + ' dans un matériau compatible avec un connecteur ' + mat.voulu);
   if (designation && ref && !mat && ref.classes && ref.classes.length && !ref.classes.includes(CLASSE_NORMEE(classe.raccord))) manquants.push('classe ' + classe.raccord + (classe.lettre ? ' (le connecteur est ' + classe.lettre + ', ' + [classe.materiau, classe.fini].filter(Boolean).join(' ') + ')' : '') + ' : l’' + ref.norme.replace(/^EN ?3660/, 'EN 3660') + ' n’existe qu’en classes ' + ref.classes.join(', ') + ' — le fini du raccord est à choisir');
   if (designation && ref && MODELE_SEUL.test((ref.statut || '') + ' ' + (ref.note || ''))) manquants.push('la clause de désignation de l’' + ref.norme.replace(/^EN ?3660/, 'EN 3660') + ' n’est pas lue : ' + designation + ' est un modèle (suffixes à confirmer)');
-  if (r.manchon && !manchon) manquants.push('aucun manchon ' + formeManchon + ' de la table ne va à Ø ' + (sortie != null ? mm(sortie) + ' mm' : '?') + (cote != null ? ' sur un épaulement Ø ' + mm(cote) + ' mm' : ''));
+  if (r.manchon && !manchon) manquants.push('aucun manchon ' + formeManchon + ' de la table ne va à Ø ' + (sortieR != null ? mm(sortieR) + ' mm' : '?') + (cote != null ? ' sur un épaulement Ø ' + mm(cote) + ' mm' + (levre ? ' (lèvre ' + mm(levre) + ' mm)' : '') : ''));
   if (r.manchon && manchon && cote == null) manquants.push('la cote C du raccord : le manchon est choisi par le toron seulement');
-  if (c.gaine && !gaine) manquants.push('aucune gaine ' + c.gaine + ' ne va à ce toron');
+  if (c.gaine && !tresse) manquants.push('aucune gaine ' + c.gaine + ' ne va à ce toron');
   if (r.bandit && !collier) manquants.push('aucun collier ne va à ce toron');
-  return avecPieces({ ...vide, raccord, sansRaccord: '', reference: ref, designation, longueur: attendL ? chambreCode : '', chambre, chambreConseil, entree, cote, bandit: r.bandit, manchon: r.manchon, manchonRef: manchon, formeManchon: r.manchon ? formeManchon : '', colle, collier, serre, tyrap, gaine, roleGaine, sortie,
+  return avecPieces({ ...vide, raccord, sansRaccord: '', reference: ref, designation, longueur: attendL ? chambreCode : '', chambre, chambreConseil, entree, cote, bandit: r.bandit, manchon: r.manchon, manchonRef: manchon, formeManchon: r.manchon ? formeManchon : '', colle, collier, serre, tyrap, gaine: tresse, nomex, plateforme, levre, roleGaine, sortie: sortieR,
            statut: ref ? ref.confiance : '', masse, couple: ref && ref.couple != null ? ref.couple : null, regle: r.regle, pourquoi: r.pourquoi + (repli ? ' — ' + repli : ''), repli, atelier: !!(ref && ref.atelier), classe: classeR, aConfirmer: false, bourrage: manquants.find(m => /bourrage/.test(m)) || '', manquants }); }

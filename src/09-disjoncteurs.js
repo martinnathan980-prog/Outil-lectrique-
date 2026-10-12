@@ -129,9 +129,12 @@ function famillesDisjoncteurs(norme) { const src = norme && norme.disjoncteursFa
 function familleDuPn(pn, norme) { pn = String(pn || '').trim(); if (!pn) return null; const F = famillesDisjoncteurs(norme).find(f => (f.regex || f.motifs).some(r => r.test(pn))); if (!F) return null;
   const dans = c => F.plage ? c >= F.calibres[0] - 1e-9 && c <= F.calibres[1] + 1e-9 : F.calibres.some(x => Math.abs(x - c) < 1e-9);
   const c = calibresEnQueue(pn).find(dans); return { ...F, pn, calibre: c != null ? c : null }; }
-/* LA CHUTE PROPRE D'UN DISJONCTEUR à In (table Chute disjoncteur) : la ligne de sa famille et de son calibre — la famille
-   par son nom, sinon par la famille de courbes qu'elle prend ; rien quand la table l'ignore. Rend { chute, nom, note } en V. */
+/* LA CHUTE PROPRE D'UN DISJONCTEUR à In (table Chute disjoncteur) : d'abord la table de l'ATELIER (l'Excel du lecteur, « Du
+   max » de 3 à 35 A, quelle que soit la famille : `atelier`, elle compte entière) ; sinon la ligne de sa famille et de son
+   calibre — la famille par son nom, sinon par la famille de courbes qu'elle prend ; rien quand la table l'ignore. Rend
+   { chute, nom, note, atelier } en V. */
 function chuteDuDisjoncteur(norme, famille, calibre) { if (!(calibre > 0)) return null; const T = normeDesModules(norme).chutesDisjoncteurs || []; if (!T.length) return null;
+  const at = T.find(x => x.famille === 'ATELIER' && x.calibres.some(c => Math.abs(c - calibre) < 1e-9)); if (at) return { chute: at.chuteMax, nom: at.nom, note: at.note, atelier: true };
   const F = famille && typeof famille === 'object' ? famille : (famille ? familleDuPn(String(famille), norme) || { famille: cleNorme(famille), courbe: '' } : null);
   const cles = F ? [cleNorme(F.famille), cleNorme(F.nom || ''), cleNorme(F.courbe || '')].filter(Boolean) : [FAMILLE_COURBES_DEFAUT];
   for (const k of cles) { const r = T.find(x => x.famille === k && x.calibres.some(c => Math.abs(c - calibre) < 1e-9)); if (r) return { chute: r.chuteMax, nom: r.nom, note: r.note }; }

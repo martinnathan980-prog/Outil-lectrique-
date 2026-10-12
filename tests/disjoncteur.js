@@ -312,9 +312,9 @@ const FICHIER = P.fichierDemande();
     'ses câbles, sans tableau, ceux en défaut en tête : W-011 (DR16) porte au pire 9,31 A pour 11,7 A admis (80 %, vert) ; W-015 (DR24) 9,31 A pour 3,9 A (rouge, « trop fin pour démarrage et transition » dans sa bulle) ; W-012 rouge aussi');
   // LA CHUTE EN LIGNE : sur la ligne de chaque fil, la plus longue de ses chemins ; le détail (le pourcentage, la part du disjoncteur) dans la bulle
   ok(await page.evaluate(() => { const li = [...document.querySelectorAll('#ba-equip .dj-fils .fi-ia')], f = c => li.find(x => x.querySelector('.fi-num').textContent === c), u = c => f(c).querySelector('.fi-u');
-    return /^4,57\sV$/.test(u('W-015').textContent) && u('W-015').classList.contains('att') && /vers 395SW1:1 : 4,57\sV \(16,3 %\)/.test(f('W-015').dataset.bulle) && /dont 0,14 V dans le disjoncteur/.test(f('W-015').dataset.bulle)
-      && /^1,28\sV$/.test(u('W-012').textContent) && /vers 103RL1/.test(f('W-012').dataset.bulle) && /^0,62\sV$/.test(u('W-011').textContent) && /vers 101BT1/.test(f('W-011').dataset.bulle); }),
-    'la chute en ligne, sur la ligne de chaque fil : W-015 4,57 V vers 395SW1 (ambre : des longueurs d’hypothèse ; 16,3 %, « dont 0,14 V dans le disjoncteur » dans sa bulle), W-012 1,28 V vers 103RL1, W-011 0,62 V vers 101BT1');
+    return /^4,63\sV$/.test(u('W-015').textContent) && u('W-015').classList.contains('att') && /vers 395SW1:1 : 4,63\sV \(16,5 %\)/.test(f('W-015').dataset.bulle) && /dont 0,2 V dans le disjoncteur/.test(f('W-015').dataset.bulle)
+      && /^1,34\sV$/.test(u('W-012').textContent) && /vers 103RL1/.test(f('W-012').dataset.bulle) && /^0,68\sV$/.test(u('W-011').textContent) && /vers 101BT1/.test(f('W-011').dataset.bulle); }),
+    'la chute en ligne, sur la ligne de chaque fil : W-015 4,63 V vers 395SW1 (ambre : des longueurs d’hypothèse ; 16,5 %, « dont 0,2 V dans le disjoncteur » — ta table, « Du max » du 10 A, comptée entière — dans sa bulle), W-012 1,34 V vers 103RL1, W-011 0,68 V vers 101BT1');
   // LE DÉTAIL DU CALCUL n'est plus une section (le lecteur : « on s'en fout ») : ni tableau, ni section « détail »
   ok(await page.evaluate(() => !document.querySelector('#ba-equip details.fs[data-section="detail"], #ba-equip details.fs[data-section="chute"], #ba-equip .dj-table')), 'plus de « Détail du calcul » ni de « Chute » à part, plus aucun tableau');
   // les hypothèses R2 : sans marge, le meilleur redevient le 10 A, avec deux fils en DR16 (R2 § 3.4)
