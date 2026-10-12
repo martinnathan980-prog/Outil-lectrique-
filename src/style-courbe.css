@@ -1,14 +1,23 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    LA COURBE DE DÉCLENCHEMENT (08-courbe-dj.js) : le dessin du disjoncteur, comme la figure d'une fiche de constructeur.
    Un dessin technique sur papier blanc dans les deux thèmes (`.ilot-clair` rend les jetons clairs à la figure), sans
-   cadre de carte autour : le papier, puis une grille log-log — les décades en filet plein, les sous-divisions 2 à 9 en
-   filet plus pâle —, les courbes en traits fins (1,25 à 1,5 px), la bande d'un ton très léger, le profil en escalier à
-   l'encre, la limite du fil en tirets. La couleur ne dit que l'état : le sort d'un point, le fil qui n'est pas protégé.
+   cadre de carte autour : trois fonds très légers qui disent le verdict (à gauche de la courbe la plus rapide, le
+   disjoncteur ne déclenche pas ; entre les courbes, la bande ; à droite de la plus lente, il déclenche), puis une grille
+   log-log — les décades en filet plein, les sous-divisions 2 à 9 en filet plus pâle —, les quatre courbes en traits fins
+   (1,25 à 1,5 px), le profil en escalier, la limite du câble en tirets. La couleur ne dit que l'état : les deux fonds, le
+   sort d'un point, le câble qui n'est pas protégé ; les mots restent à l'encre.
    ═══════════════════════════════════════════════════════════════════════ */
 .dj-graphe{position:relative;margin:0;background:var(--s-papier);color:var(--t-papier)}
 .dj-graphe svg{display:block;width:100%;height:auto;touch-action:none;overflow:visible}
 .dj-graphe svg.tient,.dj-graphe svg.tient *{cursor:grabbing}
 .dj-graphe text{font-family:var(--sans);font-variant-numeric:tabular-nums;pointer-events:none}
+
+/* ── les fonds du verdict : un voile de la couleur d'état, sous la grille ; la bande d'un gris très léger ── */
+.dj-graphe .dj-fonds{transition:transform var(--moyen)}
+.dj-graphe .dj-fond{stroke:none;pointer-events:none}
+.dj-graphe .dj-fond.sur{fill:var(--ok);fill-opacity:.075}
+.dj-graphe .dj-fond.declenche{fill:var(--ko);fill-opacity:.06}
+.dj-graphe .dj-bande{fill:var(--t-papier);fill-opacity:.045;stroke:none;pointer-events:none}
 
 /* ── le papier : le cadre, la grille, les décades nommées, les titres ── */
 .dj-graphe .dj-filet{fill:none;stroke:var(--t-papier);stroke-opacity:.13;stroke-width:1;shape-rendering:crispEdges}
@@ -19,21 +28,14 @@
 .dj-graphe .dj-tic-in{stroke:var(--t-papier-2);stroke-opacity:.7;stroke-width:1;shape-rendering:crispEdges}
 .dj-graphe .dj-axe{font-size:11px;font-weight:500;fill:var(--t-papier-2)}
 
-/* ── les courbes du calibre retenu : la bande, ses bords à l'encre, la paire d'entre eux plus douce ── */
+/* ── les quatre courbes du calibre retenu : les bords à l'encre, la paire d'entre eux plus douce ── */
 .dj-graphe .dj-cal,.dj-graphe .dj-cal-t{transition:transform var(--moyen)}
-.dj-graphe .dj-bande{fill:var(--t-papier);fill-opacity:.05;stroke:none;pointer-events:none}
-.dj-graphe .dj-bord,.dj-graphe .dj-courbe{fill:none;stroke:var(--t-papier);stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round;pointer-events:none}
+.dj-graphe .dj-courbe{fill:none;stroke:var(--t-papier);stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round;pointer-events:none}
 .dj-graphe .dj-courbe.milieu{stroke-width:1.25;stroke-opacity:.5}
 /* un trait nommé dans la marge du haut y monte jusqu'à son nom, dans le prolongement de son asymptote */
 .dj-graphe .dj-tic-nom{stroke:var(--t-papier);stroke-width:1.5;stroke-linecap:butt}
 .dj-graphe .dj-tic-nom.milieu{stroke-width:1.25;stroke-opacity:.5}
-/* les calibres voisins (comparer) : en gris très clair, un clic en retient un */
-.dj-graphe .dj-voisin{cursor:pointer;transition:opacity var(--rapide)}
-.dj-graphe .dj-v-bande{fill:var(--t-papier);fill-opacity:.03;stroke:none}
-.dj-graphe .dj-v-bord{fill:none;stroke:var(--t-papier);stroke-opacity:.2;stroke-width:1;pointer-events:stroke}
-.dj-graphe .dj-voisin.vise .dj-v-bande{fill-opacity:.07}
-.dj-graphe .dj-voisin.vise .dj-v-bord{stroke-opacity:.55}
-/* la limite de dommage du fil le plus faible : des tirets fins ; rouges quand le disjoncteur ne le protège pas */
+/* la limite de dommage du câble le plus faible : des tirets fins ; rouges quand le disjoncteur ne le protège pas */
 .dj-graphe .dj-dommage{fill:none;stroke:var(--t-papier-2);stroke-width:1.1;stroke-dasharray:4 3;pointer-events:none}
 .dj-graphe .dj-dommage.ko{stroke:var(--ko)}
 
@@ -41,15 +43,13 @@
 .dj-graphe .dj-etiq{font-size:11px;font-weight:500;fill:var(--t-papier);paint-order:stroke;stroke:var(--s-papier);stroke-width:3px;stroke-linejoin:round}
 .dj-graphe .dj-etiq .v{font-weight:400;fill:var(--t-papier-2)}
 .dj-graphe .dj-etiq.dj-t.milieu{fill:var(--t-papier-2)}
+.dj-graphe .dj-etiq.dj-calibre{font-size:12.5px;font-weight:600;letter-spacing:-.01em}
+.dj-graphe .dj-etiq.dj-zone{font-size:10.5px;font-weight:500;fill:var(--t-papier-2);stroke-width:0}
 .dj-graphe .dj-etiq.dj-dom{font-size:10.5px;fill:var(--t-papier-2)}
 .dj-graphe .dj-etiq.dj-dom.ko,.dj-graphe .dj-etiq.dj-nomme.ko{fill:var(--ko)}
 .dj-graphe .dj-etiq.dj-nomme.serre{fill:var(--warn)}
-.dj-graphe .dj-etiq.dj-zone{font-size:10.5px;font-weight:400;fill:var(--t-papier-2)}
-.dj-graphe .dj-etiq.dj-v-t{font-size:10.5px;font-weight:600;fill:var(--t-papier-2)}
-.dj-graphe .dj-etiq.dj-v-t.retenu{fill:var(--t-papier)}
-.dj-graphe .dj-etiq.dj-v-t.meilleur{fill:var(--ok)}
 
-/* ── le profil de charge : l'escalier à l'encre ; un point se saisit, sa couleur dit son sort ── */
+/* ── le profil de charge : l'escalier ; un point se saisit, sa couleur dit son sort ── */
 .dj-graphe .dj-escalier{fill:none;stroke:var(--t-papier);stroke-width:1.75;stroke-linejoin:miter;stroke-linecap:square;pointer-events:none}
 .dj-graphe .dj-escalier.ok{stroke:var(--ok)} .dj-graphe .dj-escalier.serre{stroke:var(--warn)} .dj-graphe .dj-escalier.ko{stroke:var(--ko)}
 .dj-graphe .dj-escalier.fin{stroke:var(--t-papier-2);stroke-width:1.25}
@@ -70,13 +70,3 @@
 .dj-tip-v.ko{color:var(--ko)} .dj-tip-v.serre{color:var(--warn)} .dj-tip-v.info{color:var(--t-2);font-weight:500}
 .dj-tip-v em{font-style:normal}
 .dj-tip-t:only-child{border-bottom:none;padding-bottom:0;margin-bottom:0}
-
-/* ── deux interrupteurs discrets sous le dessin ── */
-.dj-bascules{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:-4px}
-.dj-bascule{display:inline-flex;align-items:center;gap:8px;min-height:28px;border:none;background:none;padding:2px 4px;margin-left:-4px;border-radius:var(--r-1);font:500 var(--f-12) var(--sans);color:var(--t-2);cursor:pointer;transition:color var(--rapide),background var(--rapide)}
-.dj-bascule:hover{color:var(--t-1);background:var(--s-hover)}
-.dj-bascule i{position:relative;width:26px;height:14px;border-radius:7px;background:var(--s-line-2);flex:none;transition:background var(--rapide)}
-.dj-bascule i::after{content:"";position:absolute;left:2px;top:2px;width:10px;height:10px;border-radius:50%;background:var(--s-surface);box-shadow:0 1px 1px rgba(0,0,0,.18);transition:transform var(--rapide)}
-.dj-bascule[aria-checked="true"]{color:var(--t-1)}
-.dj-bascule[aria-checked="true"] i{background:var(--t-1)}
-.dj-bascule[aria-checked="true"] i::after{transform:translateX(12px)}
