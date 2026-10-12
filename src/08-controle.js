@@ -10,8 +10,9 @@
        arrangement de la norme ne loge ; un fil que son contact refuse ; un
        disjoncteur qui déclenche, un fil qu'il nourrit — serti sur lui ou
        au-delà d'une prise ou d'une barrette — que la charge dépasse ; un
-       permanent qui dépasse le contact ; une chute en ligne qui dépasse le
-       réseau sur des longueurs du retest ;
+       permanent qui dépasse le contact ; une chute en ligne qui dépasse la
+       chute admise (la règle du lecteur : 2 V, 4 V en triphasé) sur des
+       longueurs du retest ;
      · les POINTS À VOIR : chaque barrette à poser (un dédoublement), ce
        qu'une prise a de bancal, les fils sans type (leur jauge ne se vérifie
        pas), les liaisons incomplètes (ni dessinées, ni vérifiées), un calibre
@@ -21,7 +22,9 @@
        trop sur des longueurs d'hypothèse, un conducteur CCA sur un contact
        cuivre ordinaire, un câble qui ne tient pas l'ambiante.
    Chaque défaut une fois, sur son repère ; ce qui vaut pour tout le contrat
-   (les types inconnus, l'ambiante) va sur le tableau. Chaque point porte la
+   (les types inconnus, l'ambiante) va sur le tableau. Les phrases montrées
+   au lecteur disent « câble » et « gauge » (ses mots), le code garde les
+   siens (`fil`, `jauge`). Chaque point porte la
    section de la fiche qui le démontre (la fiche v3 en a peu : Identité,
    Disjoncteur, Connecteur, Fils) : une ligne de l'index ouvre la fiche sur
    elle, allumée.
@@ -43,15 +46,15 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
     try {
       if (estDisjoncteur(r)) controleDisjonction(r).forEach(x => (x.niveau === 'ko' ? ko : att)(r, x.texte));
       if (barretteEnModules(r)) { const Q = planDeBarrette(r).plan, n = Q.fils.filter(x => x.jaugeOk === false).length; noter(r, Q.fils);
-        Q.verdicts.filter(v => v.niveau === 'ko').forEach(v => ko(r, v.texte)); if (n) ko(r, pluriel(n, 'fil') + ' refusé' + (n > 1 ? 's' : '') + ' par son contact'); }
+        Q.verdicts.filter(v => v.niveau === 'ko').forEach(v => ko(r, v.texte)); if (n) ko(r, pluriel(n, 'câble') + ' refusé' + (n > 1 ? 's' : '') + ' par son contact'); }
       else if (coupureEnModules(r)) { const Q = planDeCoupure(r).plan; noter(r, Q.fils);
         Q.verdicts.forEach(v => { if (v.niveau === 'ko') ko(r, v.texte); else if (v.niveau === 'attention') att(r, v.texte); }); }
       // une cavité : ses problèmes, et ses remarques — sauf les deux fils sur un contact, que la barrette à poser dit déjà
-      else if (!estBornier(r)) cavitesDe(r).forEach(c => { noter(r, c.plan.fils); c.plan.verdicts.forEach(v => { if (v.niveau === 'ko') ko(r, c.nom + ' · ' + v.texte); else if (v.niveau === 'attention' && !/^contact \S+ : \d+ fils/.test(v.texte)) att(r, c.nom + ' · ' + v.texte); }); });
+      else if (!estBornier(r)) cavitesDe(r).forEach(c => { noter(r, c.plan.fils); c.plan.verdicts.forEach(v => { if (v.niveau === 'ko') ko(r, c.nom + ' · ' + v.texte); else if (v.niveau === 'attention' && !/^contact \S+ : \d+ câbles/.test(v.texte)) att(r, c.nom + ' · ' + v.texte); }); });
     } catch (_) { } });
   // un conducteur qui n'est pas du cuivre (AD, VN : aluminium cuivré) serti sur un contact cuivre ordinaire : à qualifier
   contacts.forEach((xs, l) => { const fam = cableFamilleDe(N, l.type); if (!fam || !fam.conducteur || fam.conducteur === 'cuivre') return;
-    xs.forEach(x => { if (x.sertir && x.sertir.reference && !contactPourCca(x.sertir.reference)) att(x.repere, `${l.cable || 'fil sans numéro'} (${l.type}) : conducteur ${fam.conducteur} sur un contact ${x.sertir.reference} — qualification CCA à confirmer`); }); });
+    xs.forEach(x => { if (x.sertir && x.sertir.reference && !contactPourCca(x.sertir.reference)) att(x.repere, `${l.cable || 'câble sans numéro'} (${l.type}) : conducteur ${fam.conducteur} sur un contact ${x.sertir.reference} — qualification CCA à confirmer`); }); });
   // les disjoncteurs : tout ce qu'ils nourrissent, la table 11-3, les contacts, la chute en ligne
   reperes.filter(estDisjoncteur).forEach(r => { try { controleProtection(r, contacts, V, N, H).forEach(x => (x.niveau === 'ko' ? ko : att)(r, x.texte)); } catch (_) { } });
   // les barrettes à poser, folio par folio
@@ -59,9 +62,9 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
     if (l.origine === null && l.vers === l.aPoser && l.borneVers === '1') att(l.aPoser, `à poser sur ${l.de}:${l.borneDe}`, { plan: p }); }));
   // les types de fil que la base des câbles ne connaît pas (une faute de frappe, un câble à ajouter)
   if (cablesDe(N).length) { const inc = [...new Set(V.filter(l => liaisonComplete(l) && l.de !== l.vers && l.type && !cableDuType(N, l.type)).map(l => l.type))].sort(triNaturel);
-    if (inc.length) att('', (inc.length > 1 ? inc.length + ' types de fil inconnus' : 'un type de fil inconnu') + ' de la base des câbles : ' + inc.slice(0, 5).join(', ') + (inc.length > 5 ? '…' : ''), { tableau: '' }); }
+    if (inc.length) att('', (inc.length > 1 ? inc.length + ' types de câble inconnus' : 'un type de câble inconnu') + ' de la base des câbles : ' + inc.slice(0, 5).join(', ') + (inc.length > 5 ? '…' : ''), { tableau: '' }); }
   const sansType = V.filter(l => liaisonComplete(l) && l.de !== l.vers && !l.type).length;
-  if (sansType) att('', pluriel(sansType, 'fil') + ' sans type : leur jauge ne se vérifie pas', { tableau: '' });
+  if (sansType) att('', pluriel(sansType, 'câble') + ' sans type : ' + (sansType > 1 ? 'leur' : 'sa') + ' gauge ne se vérifie pas', { tableau: '' });
   const inc = V.filter(l => !liaisonComplete(l) && (l.de || l.vers || l.cable)).length;
   if (inc) att('', pluriel(inc, 'liaison') + ' incomplète' + (inc > 1 ? 's' : '') + ' : ni dessinée' + (inc > 1 ? 's' : '') + ', ni vérifiée' + (inc > 1 ? 's' : ''), { tableau: '' });
   // les câbles qui ne tiennent pas l'ambiante de la simulation (l'EN 2853 les échauffe de 40 °C) : une fois par famille
@@ -73,27 +76,31 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
    la sélectivité) : un part number d'une famille inconnue (le calibre ne s'y lit pas) ; chaque fil qu'il nourrit à
    travers les prises et les barrettes, jugé comme les fils directs (la charge, le continu, la surcharge brève) ; pour
    tous, le maximum de l'AC 43.13-1B par jauge et le contact — le contact du plan quand on le connaît, le plus faible
-   des deux bouts, sinon la taille usuelle de la jauge ; enfin la chute en ligne de chaque chemin, au permanent contre
-   le continu du réseau, à chaque pointe contre l'intermittent (≤ 2 min) — un problème sur des longueurs du retest, à
-   voir sur des longueurs d'hypothèse. Rend [{ niveau, texte }]. */
+   des deux bouts, sinon la taille usuelle de la jauge ; enfin la chute en ligne de chaque chemin, au permanent et à
+   chaque pointe, contre la chute admise (`chuteAdmise` : la règle du lecteur, 2 V en continu et en monophasé, 4 V en
+   triphasé ; sinon la table Réseau, dont l'intermittent ≤ 2 min a droit au double) — un problème sur des longueurs du
+   retest, à voir sur des longueurs d'hypothèse. Les phrases disent « câble » et « gauge », les mots du lecteur.
+   Rend [{ niveau, texte }]. */
+// ce qu'un câble supporte, en mots : avant de s'abîmer (sa courbe de dommage), sinon en service
+const limiteDuCable = (f, x) => f.jugeSur === 'dommage' ? `il s’abîme au-delà de ${amperes(x.admise)}` : `le câble admet ${amperes(x.admise)} en service`;
 function controleProtection(nom, contacts, V, N, H) { const d = disjonctionDe(nom), out = [], cal = d.calibre, pn = pnDuRepere(nom);
   if (pn && !d.famille && !d.ecrit) out.push({ niveau: 'att', texte: `part number ${pn} : famille de disjoncteur inconnue, le calibre ne s’y lit pas${cal ? ' — ' + amperes(cal) + ' (l’idéal) retenu' : ''}` });
   const fils = filsDepuis(V, nom).map(f => { const xs = (contacts.get(f.l) || []).map(x => ({ x, i: intensiteDuContactPose(N, x) }))   // le courant du contact, borné par la jauge du fil serti (R1).filter(y => y.i).sort((a, b) => a.i.intensite - b.i.intensite);
     return xs.length ? { ...f, taille: xs[0].x.taille, contactRepere: xs[0].x.repere } : f; });
-  protectionDesFils(N, cal, d.profil, fils, H).forEach(f => { const nomF = (f.cable || 'fil sans numéro') + (f.type ? ' (' + f.type + ')' : '') + (f.direct ? '' : ' (par ' + f.via + ')');
+  protectionDesFils(N, cal, d.profil, fils, H).forEach(f => { const nomF = (f.cable || 'câble sans numéro') + (f.type ? ' (' + f.type + ')' : '') + (f.direct ? '' : ' (par ' + f.via + ')');
     if (!f.direct) {
       if (f.verdict === 'fil') out.push({ niveau: 'ko', texte: `${nomF} : ${f.pire.nom} ${amperes(f.pire.i)}${f.pire.t === Infinity ? '' : ' / ' + secondes(f.pire.t)} > ${amperes(f.pire.admise)} admis ${pourPalier(f.pire.palier)}${motFacteur(f.pire.palier === Infinity ? f.facteur : f.facteurCourt)}` });
       else if (f.verdict === 'calibre') out.push({ niveau: 'att', texte: `${nomF} : ${amperes(f.continu)} admis en continu${motFacteur(f.facteur)} < calibre ${amperes(cal)} — pas protégé en surcharge` });
-      else if (f.protege === false) { const x = f.pireLaisse; out.push({ niveau: 'att', texte: `${nomF} : pas protégé en surcharge brève — le ${amperes(cal)} laisse passer ${amperes(x.courant)} ${pourPalier(x.palier)} à ${f.courbeLente}, ${limiteDuFil(f, x)}` }); } }
+      else if (f.protege === false) { const x = f.pireLaisse; out.push({ niveau: 'att', texte: `${nomF} : pas protégé en surcharge brève — le ${amperes(cal)} laisse passer ${amperes(x.courant)} ${pourPalier(x.palier)} à ${f.courbeLente}, ${limiteDuCable(f, x)}` }); } }
     if (f.refuse) out.push({ niveau: 'att', texte: `${nomF} : conducteur ${f.conducteur} sans résistance dans la base, son intensité admissible est inconnue` });
     if (f.horsTable) out.push({ niveau: 'att', texte: `${nomF} : calibre ${amperes(cal)} > ${amperes(f.calibreMax)}, le maximum de l’AC 43.13-1B (table 11-3) pour du ${f.jauge} AWG` });
-    if (f.contactDepasse) out.push({ niveau: 'ko', texte: `${nomF} : le permanent (${amperes(f.permanent)}) dépasse le contact taille ${f.contact.taille} (${amperes(f.contact.intensite)}${f.contact.parLePlan ? ', ' + f.contactRepere : ', par la jauge'})` });
-    else if (f.contactSurcharge) out.push({ niveau: 'att', texte: `${nomF} : contact taille ${f.contact.taille} (${amperes(f.contact.intensite)}${f.contact.parLePlan ? ', ' + f.contactRepere : ', par la jauge'}) < calibre ${amperes(cal)} — pas protégé en surcharge` }); });
+    if (f.contactDepasse) out.push({ niveau: 'ko', texte: `${nomF} : le permanent (${amperes(f.permanent)}) dépasse le contact taille ${f.contact.taille} (${amperes(f.contact.intensite)}${f.contact.parLePlan ? ', ' + f.contactRepere : ', par la gauge'})` });
+    else if (f.contactSurcharge) out.push({ niveau: 'att', texte: `${nomF} : contact taille ${f.contact.taille} (${amperes(f.contact.intensite)}${f.contact.parLePlan ? ', ' + f.contactRepere : ', par la gauge'}) < calibre ${amperes(cal)} — pas protégé en surcharge` }); });
   // la chute en ligne : au permanent du profil (sinon le calibre, sinon l'hypothèse), et à chaque état court
   const I = d.profil && d.profil.perm && d.profil.perm.i > 0 ? d.profil.perm.i : cal > 0 ? cal : H.courant, courts = d.points.filter(p => p.t !== Infinity && p.i > 0);
   chutesDepuis(N, V, nom, I, H, courts).forEach(c => { const ou = c.bout[0] + (c.bout[1] ? ':' + c.bout[1] : ''), hyp = c.reel ? '' : ' (longueurs d’hypothèse)', niveau = c.reel ? 'ko' : 'att';
     if (c.trop) out.push({ niveau, texte: `chute en ligne vers ${ou} : ${volts(c.dU)} à ${amperes(I)} > ${volts(c.admis)} admis sous ${nombre(c.tension)} V${hyp}` });
-    else { const p = (c.pointes || []).find(x => x.trop); if (p) out.push({ niveau, texte: `chute en ligne vers ${ou} en pointe : ${volts(p.dU)} à ${amperes(p.i)} pendant ${secondes(p.t)} > ${volts(p.admis)} admis${p.intermittent ? ' en intermittent' : ''}${hyp}` }); } });
+    else { const p = (c.pointes || []).find(x => x.trop); if (p) out.push({ niveau, texte: `chute en ligne vers ${ou} en pointe : ${volts(p.dU)} à ${amperes(p.i)} pendant ${secondes(p.t)} > ${volts(p.admis)} admis${p.intermittent && p.admis !== c.admis ? ' en intermittent' : ''}${hyp}` }); } });
   return out; }
 /* Le contrôle se relit si le contrat a changé ; le bouton des repères porte le compte ; l'index ouvert se refait. */
 function rendreControle() { const V = verite();

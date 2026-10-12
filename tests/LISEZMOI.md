@@ -105,8 +105,10 @@ node tests/couverture.js       CE QUE L'OUTIL VÉRIFIE, ET S'IL VÉRIFIE TOUT : 
                                navigateur (le verdict de chaque disjoncteur, ses fils jusqu'au bout des chemins, la chute en ligne ; chaque
                                connecteur, prise, barrette, fil), trois cas rejoués à la main (un DR20 sous un 10 A, un MLB24 à travers deux
                                prises, un AD16), les règles nouvelles (la table 11-3 de l'AC 43.13-1B, le courant du contact, l'ambiante du
-                               tableau de disjoncteurs, la tenue en température, le retour, les pointes contre l'intermittent, la réactance
-                               estimée, la ligne « * * » bornée à sa plage) ; puis le contrôle au navigateur (chaque défaut une fois, au bon
+                               tableau de disjoncteurs, la tenue en température, le retour, la chute admise — la règle du lecteur, 2 V et
+                               4 V en triphasé, la table Réseau quand on la vide —, la réactance estimée, la ligne « * * » bornée à sa
+                               plage), les explications du « ? » (08-explications : chaque clé, avec la valeur concrète de chaque objet des
+                               deux contrats) ; puis le contrôle au navigateur (chaque défaut une fois, au bon
                                niveau, sur le bon repère), et à la fin LE TABLEAU DE COUVERTURE règle × nature (vérifiée / pas vérifiée /
                                impossible, et pourquoi) ; --sans-navigateur saute la seconde partie
 node tests/references.js       les contrats déjà faits et le FWD (sans navigateur) : la lecture garde le dessin et les descriptions ;

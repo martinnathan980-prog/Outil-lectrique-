@@ -207,12 +207,17 @@ const FICHIER = P.fichierDemande();
   // les hypothèses de la simulation : la pastille « hyp. » de la fiche mène à leur fiche ; une tension changée rejuge la chute admise
   console.log('\nles hypothèses de la simulation, depuis la fiche du fil');
   const chute = () => page.evaluate(() => [...document.querySelectorAll('#ba-equip .fi-mes')].find(m => /Chute/.test(m.textContent)).querySelector('.fi-mes-v').textContent.replace(/\s+/g, ' '));
-  ok(await q('.fi-hyp[data-hyp]') >= 1 && /\/ 1 V$/.test(await chute()), 'la fiche de W-012 a la pastille « hyp. » en lien, et 1 V admis sous 28 V', await chute());
+  // la chute admise : la règle du lecteur (octobre 2026), 2 V en continu et en monophasé, 4 V en triphasé — avant, la table Réseau (1 V sous 28 V)
+  ok(await q('.fi-hyp[data-hyp]') >= 1 && /\/ 2 V$/.test(await chute()), 'la fiche de W-012 a la pastille « hyp. » en lien, et 2 V admis (la règle du lecteur)', await chute());
   await page.click('#ba-equip ' + sec('identite') + ' .fi-hyp'); await page.waitForTimeout(400);
-  ok(await page.evaluate(() => app.fiche && app.fiche.mode === 'hypotheses' && !!document.querySelector('#fiche-corps #si-U') && document.querySelectorAll('#fiche-corps .hy-groupe').length >= 4), 'la pastille ouvre la fiche des hypothèses');
+  ok(await page.evaluate(() => app.fiche && app.fiche.mode === 'hypotheses' && !!document.querySelector('#fiche-corps #si-U') && document.querySelectorAll('#fiche-corps .hy-groupe').length >= 4
+    && $('si-Cm').value === '2' && $('si-Ct').value === '4' && $('si-Cm').placeholder === 'table Réseau'), 'la pastille ouvre la fiche des hypothèses ; la chute admise y est : 2 V (continu et monophasé), 4 V (triphasé), la table Réseau si on la vide');
   await page.fill('#fiche-corps #si-U', '115'); await page.press('#fiche-corps #si-U', 'Enter'); await page.waitForTimeout(500);
   await page.click('#fi-fermer'); await page.waitForTimeout(400);
-  ok(await page.evaluate(() => !$('inspecteur').hidden && app.cible && app.cible.type === 'fil') && /\/ 4 V$/.test(await chute()), 'fermer la fiche des hypothèses rend celle de W-012, rejugée : 4 V admis sous 115 V', await chute());
+  ok(await page.evaluate(() => !$('inspecteur').hidden && app.cible && app.cible.type === 'fil') && /\/ 2 V$/.test(await chute()), 'fermer la fiche des hypothèses rend celle de W-012, rejugée : sous 115 V, la règle du lecteur admet toujours 2 V (elle ne dépend pas de la tension)', await chute());
+  // vider la chute admise : la table Réseau reprend (la règle d’un câble se lit au contrôle, qui passe les hypothèses)
+  await page.evaluate(() => ficheHypotheses()); await page.waitForTimeout(300); await page.fill('#fiche-corps #si-Cm', ''); await page.dispatchEvent('#fiche-corps #si-Cm', 'change'); await page.waitForTimeout(400);
+  ok(await page.evaluate(() => app.simu.chuteMono === null && chuteAdmise(app.norme, 28, 'continu', app.simu).regle === 'table' && chuteAdmise(app.norme, 28, 'continu', app.simu).chuteMax === 1 && $('si-Cm').value === ''), 'vidée, la chute admise rend la parole à la table Réseau (1 V sous 28 V) ; « Revenir aux valeurs de l’outil » la rend');
   await page.evaluate(() => ficheHypotheses()); await page.waitForTimeout(300); await page.click('#hy-defaut'); await page.waitForTimeout(400); await page.click('#fi-fermer'); await page.waitForTimeout(400);
 
   console.log('\nl’identité d’un repère : l’emplacement, la zone (103RL1)');

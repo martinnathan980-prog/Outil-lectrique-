@@ -360,7 +360,7 @@ function meilleurDe(norme, o) { const { F, H, M, tenue, courbes, pts, fils, gamm
     const prop = jaugeQuiSuit(norme, cal, f, H, protCtx), bouts = f.l ? [f.l.de, f.l.vers].filter(r => r && !estMasse(r) && !estDisjoncteur(r)) : [], cabA = cableDuType(norme, f.type);
     filsAChanger.push({ cable: f.cable || '', actuel: f.type, propose: prop ? prop.type : null, raison: raisonsDuFil(p, cal).join(' ; '), jaugeActuelle: p.jauge, jaugeProposee: prop ? prop.cable.jauge : null,
       masseActuelle: cabA && cabA.masse != null ? cabA.masse : null, masseProposee: prop && prop.cable.masse != null ? prop.cable.masse : null, direct: f.direct !== false, via: f.via || '', bouts,
-      aucune: prop ? '' : 'aucune jauge de la famille ' + typeDuFil(f.type) + ' de la base des câbles ne suit le ' + motA(cal) });
+      aucune: prop ? '' : 'aucune gauge de la famille ' + typeDuFil(f.type) + ' de la base des câbles ne suit le ' + motA(cal) });
     const avant = p.contact ? p.contact.taille : '', apres = prop && prop.p.contact ? prop.p.contact.taille : '';
     if (prop && apres && apres !== avant) contactsTouches.push({ cable: f.cable || '', actuel: avant, propose: apres, intensite: prop.p.contact.intensite, repere: f.contactRepere || '', bouts,
       raison: `le ${prop.type} se sertit sur un contact taille ${apres} (${motA(prop.p.contact.intensite)})${avant ? ', le ' + f.type + ' était sur un ' + avant + (f.contactRepere ? ' (' + f.contactRepere + ')' : '') : ''} : la cavité change${bouts.length ? ' — ' + bouts.join(', ') : ''}` }); });
@@ -379,8 +379,8 @@ function meilleurDe(norme, o) { const { F, H, M, tenue, courbes, pts, fils, gamm
   const phrases = [`${motA(cal)} : le plus petit calibre ${nomF} qui tient ${tient}${g.marge ? '' : ' — sans la marge : aucun ne l’a'}`];
   if (pourquoiPas) phrases.push(pourquoiPas);
   if (g.selectif === false) phrases.push('pas à 2:1 avec le disjoncteur voisin : aucun calibre qui tient ne l’est');
-  if (filsAChanger.length) phrases.push(filsAChanger.map(x => (x.cable || 'un fil') + ' ' + (x.propose ? 'en ' + x.propose : '— ' + x.aucune)).join(', ') + (contactsTouches.length ? ' (' + (contactsTouches.length > 1 ? contactsTouches.length + ' contacts changent' : 'un contact change') + ' de taille)' : ''));
-  else if (fils.length) phrases.push('ses fils le suivent');
+  if (filsAChanger.length) phrases.push(filsAChanger.map(x => (x.cable || 'un câble') + ' ' + (x.propose ? 'en ' + x.propose : '— ' + x.aucune)).join(', ') + (contactsTouches.length ? ' (' + (contactsTouches.length > 1 ? contactsTouches.length + ' contacts changent' : 'un contact change') + ' de taille)' : ''));
+  else if (fils.length) phrases.push('ses câbles le suivent');
   return { calibre: cal, pn: F ? pnAvecCalibre(o.pn, F, cal) : null, famille: F ? F.famille : '', catalogue: cat.map(x => x.calibre), pourquoi: phrases.join(' ; '), marge, filsAChanger, contactsTouches, filsInconnus, selectif: g.selectif, serre: !g.marge, reserve }; }
 /* UN FIL SUIT un calibre : il porte la charge, admet le calibre en service, reste dans la table 11-3, son contact admet le
    calibre et porte le permanent, et ce que le disjoncteur laisse passer reste sous sa courbe de dommage. */

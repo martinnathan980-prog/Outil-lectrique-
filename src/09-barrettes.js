@@ -176,10 +176,10 @@ function choisirReference(besoins, bible, natures) {
   if (besoins.jaugeFine != null) {
     const ok = cands.filter(e => (e.jaugeMin == null || e.jaugeMin >= besoins.jaugeFine) && (e.jaugeMax == null || e.jaugeMax <= besoins.jaugeGrosse));
     if (ok.length) cands = ok;
-    raisons.push(besoins.jaugeFine === besoins.jaugeGrosse ? `fils de jauge ${besoins.jaugeFine}` : `fils de jauge ${besoins.jaugeFine} à ${besoins.jaugeGrosse}`);
+    raisons.push(besoins.jaugeFine === besoins.jaugeGrosse ? `câbles de gauge ${besoins.jaugeFine}` : `câbles de gauge ${besoins.jaugeFine} à ${besoins.jaugeGrosse}`);
   }
   if (besoins.blindes && natures.includes('blindage')) { const ok = cands.filter(e => e.blindage || e.nature === 'blindage'); if (ok.length) cands = ok;
-    raisons.push(`${besoins.blindes} fil${besoins.blindes > 1 ? 's' : ''} blindé${besoins.blindes > 1 ? 's' : ''}`); }
+    raisons.push(`${besoins.blindes} câble${besoins.blindes > 1 ? 's' : ''} blindé${besoins.blindes > 1 ? 's' : ''}`); }
   else if (natures.includes('blindage')) { const ok = cands.filter(e => e.nature !== 'blindage'); if (ok.length) cands = ok; }
   const famille = besoins.pn ? (bible.find(e => e.reference === besoins.pn) || {}).famille || besoins.pn.replace(/[-\s].*$/, '') : '';
   if (famille) { const ok = cands.filter(e => e.famille === famille); if (ok.length) { cands = ok; raisons.push(`famille ${famille} déjà employée`); } }
@@ -211,7 +211,7 @@ function barretteInfos(repere, liaisons, bible, norme, retenue) { const B = bibl
   const nom = plan.famille ? nomDeFamille(norme, plan.famille) : 'ASNE 0599 ou NSA937901';
   const choix = plan.modules.length ? B.find(e => e.reference === plan.modules[0].reference) || null : null;
   const candidats = variantesQuiLogent(besoins, norme, plan.famille).map(m => B.find(e => e.reference === m.reference)).filter(Boolean);
-  const raisons = [`${plan.potentiels} potentiel${s(plan.potentiels)} à loger`, ...(besoins.jaugeFine != null ? [besoins.jaugeFine === besoins.jaugeGrosse ? `fils de jauge ${besoins.jaugeFine}` : `fils de jauge ${besoins.jaugeFine} à ${besoins.jaugeGrosse}`] : []),
+  const raisons = [`${plan.potentiels} potentiel${s(plan.potentiels)} à loger`, ...(besoins.jaugeFine != null ? [besoins.jaugeFine === besoins.jaugeGrosse ? `câbles de gauge ${besoins.jaugeFine}` : `câbles de gauge ${besoins.jaugeFine} à ${besoins.jaugeGrosse}`] : []),
     plan.modules.length ? `${plan.modules.length} module${s(plan.modules.length)} ${nom}, ${plan.contacts - plan.utilises} contact${s(plan.contacts - plan.utilises)} libre${s(plan.contacts - plan.utilises)}` : 'aucun module ' + nom + ' ne convient',
     ...plan.verdicts.map(v => v.texte)];
   return { ...besoins, choix, nature: 'jonction', raisons, candidats: candidats.slice(0, 6), enPlus: Math.max(0, candidats.length - 6), deja: B.find(e => e.reference === besoins.pn) || null, plan,
@@ -1072,7 +1072,7 @@ const SENS_NORME = {
   familles: { norme: 'le nom du document (« ASNE 0599 ») ; s’il contient « exemple », la famille est marquée telle', famille: 'le début commun des références (ASNE0500 pour ASNE0500-04) : c’est par là qu’une barrette ou une prise retrouve sa norme', nature: 'jonction ou blindage (barrettes), coupure (prises), connecteur', variantes: 'les nombres de modules ou de contacts des références de la famille (« 2 4 8 12 20 »), informatif', pas: 'le pas des modules ou des contacts, en mm', jaugeMin: 'la plus fine jauge AWG qu’un contact admet ; un fil hors plage est refusé', jaugeMax: 'la plus grosse jauge AWG admise', intensite: 'ampères admissibles par contact', resistance: 'la résistance d’un contact, en mΩ (elle entre dans la chute de tension)', filsParCote: 'combien de fils un module reçoit de chaque côté : le nombre de trous dessinés ; au-delà, c’est une surcharge', ordre: '« croissant » : les modules se prennent dans l’ordre, un module libre avant un module utilisé est signalé ; « libre » sinon', paquets: '« contigus » : un peigne de pontage ne saute pas un module ; « libres » sinon', reserves: 'les modules que la norme réserve (« 1 », « 1 12 ») : utilisés, c’est un défaut', masse: '« par paquet » : chaque paquet doit se fermer sur une masse (barrettes de blindage)', note: 'libre' },
   fils: { type: 'le début du code du retest (DR pour DR24, MLB pour MLB24) ; vide ou « * » : vaut pour tous les types de cette jauge', jauge: 'AWG', code: 'le code EN 2083 du conducteur', brins: 'le toronnage (« 19 × 0,20 »)', section: 'mm² du conducteur (le toron de cuivre, pas le hors-tout du câble)', resistance20: 'Ω/km à 20 °C : c’est elle que la chute en ligne prend, corrigée par la température du conducteur', resistance: 'Ω/km à la température du conducteur de la table ; sans Résistance 20, l’outil la ramène à 20 °C', intensite: 'ampères admissibles en continu, câble seul à l’air libre, avant déclassement', i2s: 'ampères admis pendant 2 s', i10s: 'ampères admis pendant 10 s', i1min: 'ampères admis pendant 1 min', chute10m: 'la chute pour 10 m au courant continu, en V (informatif)', tr: 'la température du conducteur de la table, en °C (135 pour l’EN 2853) : l’ambiante se compte depuis elle', note: 'libre' },
   declassements: { condition: 'un mot (faisceau, altitude) : chaque condition devient une case à cocher dans la simulation', fils: 'le nombre de fils du faisceau d’un point de la courbe (fig. 11-5 de l’AC 43.13-1B)', charge: 'la charge du faisceau en % de ce que ses fils admettent, pour ce point', altitude: 'un point d’une courbe d’altitude, en pieds (l’outil interpole)', facteur: 'multiplie l’intensité admissible du fil ; plusieurs conditions cochées se multiplient', note: 'la source du point' },
-  reseau: { tension: 'volts (14, 28, 115, 200) ; la simulation prend la ligne de la tension d’hypothèse, sinon la plus proche ; en triphasé, celle de la tension composée (115 → 200)', nature: 'continu, alternatif phase-neutre, entre phases', chuteMax: 'la chute de tension admise en ligne, en V, en continu', chuteInter: 'la même pour une charge intermittente (≤ 2 min), en V', chutePct: 'la même, en % (informatif)', note: 'la source' },
+  reseau: { tension: 'volts (14, 28, 115, 200) ; quand la règle du lecteur (2 V, 4 V en triphasé : les hypothèses « chute admise ») est vidée, la simulation prend la ligne de la tension d’hypothèse, sinon la plus proche ; en triphasé, celle de la tension composée (115 → 200)', nature: 'continu, alternatif phase-neutre, entre phases', chuteMax: 'la chute de tension admise en ligne, en V, en continu', chuteInter: 'la même pour une charge intermittente (≤ 2 min), en V', chutePct: 'la même, en % (informatif)', note: 'la source' },
   cablesFamilles: { famille: 'les familles couvertes par la ligne (« DRB DRC DRD »)', norme: 'la norme du câble (EN 2267-010, ABS 0949…)', conducteur: 'cuivre, CCA (aluminium cuivré) ou aluminium : décide si la ligne cuivre de l’EN 2853 vaut pour ce câble', placage: 'le placage du conducteur', tmin: 'température admise, minimale, °C', tmax: 'température admise, maximale, °C', tension: 'tension admise, V', frequence: 'fréquence maximale, Hz', isolant: 'l’isolant', blindage: 'le blindage', rayon: 'le rayon de courbure, en × Ø', marquage: 'le marquage', note: 'libre' },
   resistancesContacts: { taille: '22D, 22, 20, 16, 12, 10, 8', intensite: 'le courant nominal du contact, A', chuteMax: 'la chute max aux bornes de la paire, mV', resistance: 'mΩ : la paire sertie et accouplée, à neuf', resistanceFin: 'mΩ : la résistance de conception (fin de vie)', emploi: '« connecteur » (prises, connecteurs : AS39029) ou « jonction » (les modules des barrettes : Air LB) ; vide = les deux', note: 'la source', origine: SENS_ORIGINE, statut: SENS_STATUT },
   courantsContacts: { taille: 'la taille du contact (22, 22D, 20, 16, 12, 8)', fut: 'le fût de sertissage, en AWG (le contact 20 existe en fût 20 et 18)', jauge: 'la jauge du fil serti, AWG', intensite: 'A : ce que le contact porte avec ce fil (AS39029 courant d’essai)', intensiteHermetique: 'A : la version hermétique, quand elle diffère', note: 'la source', origine: SENS_ORIGINE, statut: SENS_STATUT },
@@ -1320,10 +1320,22 @@ function detailDeclassement(norme, conditions, ctx) { const c = { ...CTX_DECLASS
       const a = pts[j - 1], b = pts[j], t = Math.log(n / a.fils) / Math.log(b.fils / a.fils); return { condition: rows[0].condition, facteur: a.facteur + t * (b.facteur - a.facteur), point: b, interpole: true, entre: a }; }
     return { condition: rows[0].condition, facteur: rows[0].facteur, point: rows[0] }; }).filter(Boolean); }
 function facteurDeclassement(norme, conditions, ctx) { return detailDeclassement(norme, conditions, ctx).reduce((k, d) => k * d.facteur, 1); }
-/* La chute admise pour la tension du réseau : la ligne de cette tension, sinon la plus proche. En triphasé la chute
-   calculée est composée (entre deux phases) : on la compare à la ligne de la tension composée (115 V → 200 V). */
-function chuteAdmise(norme, tension, regime) { if (!norme || !norme.reseau.length) return null; const u = regime === 'tri' ? tension * Math.sqrt(3) : tension;
-  return norme.reseau.slice().sort((a, b) => Math.abs(a.tension - u) - Math.abs(b.tension - u))[0]; }
+/* LA CHUTE ADMISE EN LIGNE. Par défaut, LA RÈGLE DU LECTEUR (octobre 2026) : « 2 V au maximum en monophasé, 4 V en
+   triphasé » — 2 V en continu (le 28 V) et en monophasé, 4 V en triphasé (la chute calculée y est composée, entre deux
+   phases), quelle que soit la tension ; un maximum : une pointe n'a pas droit au double (hypothèses `chuteMono`,
+   `chuteTri`). Une hypothèse vidée rend la parole à la table Réseau de la norme (AC 43.13-1B table 11-6, en attendant
+   l'ABD0100) : la ligne de la tension d'hypothèse, sinon la plus proche ; en triphasé, celle de la tension composée
+   (115 V → 200 V) ; le double en intermittent (≤ 2 min). `regime` : celui de l'hypothèse quand l'appelant ne le dit
+   pas ; `hyp` : les hypothèses (celles de l'outil sans elles). Rend { tension, nature, chuteMax, chuteInter, chutePct,
+   note, regle: 'lecteur' | 'table', source } ou null. */
+const REGLE_CHUTE_LECTEUR = 'règle du lecteur (octobre 2026)';
+function chuteAdmise(norme, tension, regime, hyp) { const H = { ...HYPOTHESES, ...(hyp || {}) }, r = REGIMES[regime] ? regime : REGIMES[H.regime] ? H.regime : 'continu';
+  const U = tension != null && isFinite(+tension) ? +tension : +H.tension, u = r === 'tri' ? U * Math.sqrt(3) : U;
+  const ligne = norme && norme.reseau && norme.reseau.length ? norme.reseau.slice().sort((a, b) => Math.abs(a.tension - u) - Math.abs(b.tension - u))[0] : null;
+  const k = r === 'tri' ? 'chuteTri' : 'chuteMono', v = H[k] == null || H[k] === '' ? NaN : +H[k];
+  if (v > 0) return { tension: ligne && Math.abs(ligne.tension - u) < 1 ? ligne.tension : Math.round(u), nature: r === 'tri' ? 'alternatif triphasé, chute composée' : REGIMES[r],
+    chuteMax: v, chuteInter: v, chutePct: u > 0 ? v / u * 100 : null, note: '', regle: 'lecteur', source: REGLE_CHUTE_LECTEUR };
+  return ligne ? { ...ligne, regle: 'table', source: 'table Réseau' } : null; }
 
 /* ---- le remplissage : chaque fil dans son trou, selon la norme ------------ */
 /* Un module (un contact) a un côté AMONT et un côté AVAL, chacun avec autant
@@ -1344,7 +1356,7 @@ function remplirSelonNorme(P, norme) {
     return { ...m, fils, trous, surcharge }; });
   const verdicts = [], s = k => k > 1 ? 's' : '', modDe = b => modules.find(m => m.borne === String(b));
   if (F) {
-    modules.forEach(m => ['amont', 'aval'].forEach(k => { const c = m.trous[k].filter(Boolean).length; if (c > n) verdicts.push({ niveau: 'ko', texte: `${mot} ${m.borne} : ${c} fils côté ${cote[k]} pour ${n} trou${s(n)}`, bornes: [m.borne] }); }));
+    modules.forEach(m => ['amont', 'aval'].forEach(k => { const c = m.trous[k].filter(Boolean).length; if (c > n) verdicts.push({ niveau: 'ko', texte: `${mot} ${m.borne} : ${c} câbles côté ${cote[k]} pour ${n} trou${s(n)}`, bornes: [m.borne] }); }));
     F.reserves.forEach(r => { const m = modDe(r); if (m && m.utilisee) verdicts.push({ niveau: 'ko', texte: `${mot} ${r} réservé par la norme, et pourtant utilisé`, bornes: [m.borne] }); });
     if (F.paquets === 'contigus') P.paquets.forEach(p => { if (!p.ponte) return; const nums = p.bornes.map(Number); if (nums.some(isNaN)) return; nums.sort((a, b) => a - b);
       if (nums.some((v, i) => i && v !== nums[i - 1] + 1)) verdicts.push({ niveau: 'ko', texte: `paquet ${p.bornes.join('-')} : le peigne de pontage ne saute pas un ${mot}`, bornes: p.bornes }); });
@@ -1353,7 +1365,7 @@ function remplirSelonNorme(P, norme) {
       if (creux.length) verdicts.push({ niveau: 'attention', texte: `${mot}${s(creux.length)} ${creux.join(', ')} libre${s(creux.length)} avant le ${max} : la norme remplit dans l’ordre`, bornes: creux }); } }
     if (F.masse === 'par paquet') P.paquets.forEach(p => { const fils = p.bornes.flatMap(b => (modDe(b) || { fils: [] }).fils); if (!fils.length) return;
       if (!fils.some(f => estMasse(f.vers))) verdicts.push({ niveau: 'ko', texte: `paquet ${p.bornes.join('-')} sans retour de masse`, bornes: p.bornes }); });
-    modules.forEach(m => m.fils.forEach(f => { if (f.jaugeOk === false) verdicts.push({ niveau: 'ko', texte: `${f.cable} (${f.type}) : jauge ${f.jauge} hors de ${F.jaugeMin}–${F.jaugeMax} AWG sur le ${mot} ${m.borne}`, bornes: [m.borne] }); }));
+    modules.forEach(m => m.fils.forEach(f => { if (f.jaugeOk === false) verdicts.push({ niveau: 'ko', texte: `${f.cable} (${f.type}) : gauge ${f.jauge} hors de ${F.jaugeMin}–${F.jaugeMax} AWG sur le ${mot} ${m.borne}`, bornes: [m.borne] }); }));
   }
   return { ...P, famille: F, filsParCote: n, cotes: cote, modules, verdicts };
 }
@@ -1367,8 +1379,9 @@ function remplirSelonNorme(P, norme) {
      R         = ρ (Ω/km) / 1000 × L (m) + R contact (mΩ) / 1000   (× 2 si le retour se fait par un fil identique)
      ΔU        = R × I, en V, et en % de la tension
    Le verdict, dans l'ordre : jauge hors plage · le courant dépasse le fil ·
-   dépasse le contact · la chute dépasse ce que le réseau admet · fil
-   inconnu de la norme · ok. Chaque ligne dit en plus la tenue du câble à
+   dépasse le contact · la chute dépasse ce qui est admis (la règle du
+   lecteur, sinon la table Réseau : `chuteAdmise`) · fil inconnu de la
+   norme · ok. Chaque ligne dit en plus la tenue du câble à
    l'ambiante (`tenue`) et, quand X est à saisir, son estimation (`xEstime`). */
 /* Les hypothèses de la simulation : la longueur simple du câble, le courant (par phase), la tension du réseau,
    l'ambiante, la TEMPÉRATURE DU CONDUCTEUR (20 °C : la convention des fiches et de la base des câbles ; 135 °C : la
@@ -1404,10 +1417,15 @@ function remplirSelonNorme(P, norme) {
        60 % de In, en proportion du carré au-dessous — à confirmer ; 1 l'ôte ;
      · `calibresPreferes` : 1, 3, 5, 7,5, 10, 15, 20, 25 A (défaut) — les calibres que le lecteur pose (« trop de
        calibres : 0,5, 0,75 n'existent pas ; c'est 1, 3, 5, 7,5, 10, 15, 20, 25 ») : ils filtrent le catalogue de la
-       famille, au-delà de 25 A le catalogue reste (09 bis, `calibresDeLaFamille`) ; vide : tout le catalogue. */
+       famille, au-delà de 25 A le catalogue reste (09 bis, `calibresDeLaFamille`) ; vide : tout le catalogue.
+   Et la RÈGLE DU LECTEUR (octobre 2026), pour la chute admise en ligne (`chuteAdmise`) :
+     · `chuteMono` : 2 V (défaut) — « 2 V au maximum en monophasé » ; le continu (le 28 V) la prend aussi ;
+     · `chuteTri` : 4 V (défaut) — « 4 V en triphasé », contre la chute composée (entre deux phases).
+       Des maxima : une pointe n'a pas droit au double. Vide (null) : la table Réseau de la norme (AC 43.13-1B table 11-6 :
+       1 V sous 28 V, 4 V sous 115 V, 7 V entre phases, le double en intermittent). */
 const HYPOTHESES = { longueur: 5, courant: 2, tension: 28, ambiante: 95, tconducteur: 20, regime: 'continu', cosphi: 0.8, reactance: 0, conditions: ['faisceau'], fils: 8, charge: 60, altitude: 0, retour: 'structure', tableauMin: -55, tableauMax: 125,
-  chuteConducteur: 'estimee', chuteDisjoncteur: true, frequence: 400, marge: 10, margeTemps: 75, prechauffage: 1.6, calibresPreferes: [1, 3, 5, 7.5, 10, 15, 20, 25] };
-const RETOURS = { structure: 'par la structure (aller seul)', fil: 'par un fil identique (aller et retour)' };
+  chuteConducteur: 'estimee', chuteDisjoncteur: true, frequence: 400, marge: 10, margeTemps: 75, prechauffage: 1.6, calibresPreferes: [1, 3, 5, 7.5, 10, 15, 20, 25], chuteMono: 2, chuteTri: 4 };
+const RETOURS = { structure: 'par la structure (aller seul)', fil: 'par un câble identique (aller et retour)' };
 const MODES_CONDUCTEUR = { estimee: 'estimée sous le courant (AC 43.13-1B § 11-66 d(6))', fixe: 'fixe : l’hypothèse « conducteur » (20 °C, comme l’Excel)' };
 /* Le RETOUR par un fil identique double la résistance — en continu et en monophasé ; en triphasé équilibré, aucun courant
    ne revient (CEI 60364-5-52 annexe G : b = 1 en triphasé, 2 en monophasé) : le retour ne double rien (R2 règle 9). */
@@ -1421,7 +1439,7 @@ const filsDuBornier = Q => Q.modules.reduce((s, m) => s + m.fils.filter(f => f.t
 function simulerBornier(Q, norme, hyp) {
   if (!Q.modules.every(m => m.trous)) Q = remplirSelonNorme(Q, norme);
   const H = { ...HYPOTHESES, ...(hyp || {}) }, F = Q.famille, regime = REGIMES[H.regime] ? H.regime : 'continu';
-  const declassement = detailDeclassement(norme, H.conditions, { fils: filsDuBornier(Q), charge: H.charge, altitude: H.altitude }), facteur = declassement.reduce((k, d) => k * d.facteur, 1), chute = chuteAdmise(norme, H.tension, regime);
+  const declassement = detailDeclassement(norme, H.conditions, { fils: filsDuBornier(Q), charge: H.charge, altitude: H.altitude }), facteur = declassement.reduce((k, d) => k * d.facteur, 1), chute = chuteAdmise(norme, H.tension, regime, H);
   const iContact = F && F.intensite != null ? F.intensite : (Q.entree && Q.entree.intensite != null ? Q.entree.intensite : null);
   // la résistance de contact : celle de la famille (table Familles) ; sinon celle de la taille de contact de chaque fil (table Résistance des contacts), deux fois sur une barrette (deux sertissages et la barre)
   const prise = Q.nature === 'prise de coupure', rFamille = F && F.resistance != null ? F.resistance / 1000 : null, lignes = [];
@@ -1681,7 +1699,7 @@ function remplirModules(besoins, norme, choix) { const N = normeDesModules(norme
     restants = restants.filter(p => !mieux.pl.some(x => x.potentiel === p)); }
   const s = k => k > 1 ? 's' : '', verdicts = [], ou = V.module ? 'de ' + V.module.variante : V.famille ? 'de la norme ' + nomDeFamille(N, V.famille) : 'des deux normes';
   restants.forEach(p => { const js = [...new Set(p.fils.map(f => f.jauge).filter(j => j != null))];
-    verdicts.push({ niveau: 'ko', texte: `borne${s(p.bornes.length)} ${p.bornes.join('-')} : ${p.fils.length} fil${s(p.fils.length)}${js.length ? ' de jauge ' + js.join(', ') : ''} — aucun groupe ${ou} ne les reçoit`, bornes: p.bornes }); });
+    verdicts.push({ niveau: 'ko', texte: `borne${s(p.bornes.length)} ${p.bornes.join('-')} : ${p.fils.length} câble${s(p.fils.length)}${js.length ? ' de gauge ' + js.join(', ') : ''} — aucun groupe ${ou} ne les reçoit`, bornes: p.bornes }); });
   // chaque fil, son contact à sertir quand la table Contacts connaît la famille (NSA937901, E0599 : les broches EN 3155-016, recherche R1)
   const fils = modules.flatMap((M, k) => M.places.flatMap(pl => pl.fils.map(([f, c]) => { const st = f.jauge == null ? null : contactDuFil(N, M.module.famille, c.taille, '', f.type, f.jauge);
     return { f, contact: c, module: k, groupe: pl.groupe, potentiel: pl.potentiel, taille: c.taille, sexe: st ? st.sexe : '',
@@ -1752,16 +1770,16 @@ function remplirContacts(points, norme, opts) { opts = opts || {}; const N = nor
         jaugeOk: f.jauge == null ? null : contactAccepte(N, m.famille, x.c.taille, f.jauge, sx, f.type), sertir, joint }); }));
     // le fil contre le joint arrière (table Joint arrière) : trop gros, il n'entre pas ; trop fin sans manchon d'étanchéité, l'eau passe
     fils.forEach(x => { const j = x.joint; if (!j || !j.verdict || j.verdict === 'dans' || (j.verdict === 'sous' && j.manchon)) return; const J = j.joint, plage = (J.dmin != null ? nombreFr(J.dmin) : '?') + '–' + (J.dmax != null ? nombreFr(J.dmax) : '?') + ' mm';
-      verdicts.push({ niveau: 'attention', texte: `borne ${x.potentiel.bornes[0]} : ${x.f.cable || 'fil'} (${x.f.type}, Ø ${nombreFr(j.d)} mm) ${j.verdict === 'dessus' ? 'plus gros que le joint arrière du contact ' + x.contact.lettre + ' n’admet (' + plage + ') : il n’entre pas' : 'sous la plage du joint arrière du contact ' + x.contact.lettre + ' (' + plage + ') et sans manchon d’étanchéité : l’eau passe'}${J.confiance && J.confiance !== 'vérifié' ? ' (plage ' + J.confiance + ')' : ''}`, bornes: x.potentiel.bornes }); });
+      verdicts.push({ niveau: 'attention', texte: `borne ${x.potentiel.bornes[0]} : ${x.f.cable || 'câble'} (${x.f.type}, Ø ${nombreFr(j.d)} mm) ${j.verdict === 'dessus' ? 'plus gros que le joint arrière du contact ' + x.contact.lettre + ' n’admet (' + plage + ') : il n’entre pas' : 'sous la plage du joint arrière du contact ' + x.contact.lettre + ' (' + plage + ') et sans manchon d’étanchéité : l’eau passe'}${J.confiance && J.confiance !== 'vérifié' ? ' (plage ' + J.confiance + ')' : ''}`, bornes: x.potentiel.bornes }); });
     mieux.r.manque.forEach(p => verdicts.push({ niveau: 'ko', texte: `borne ${p.borne} : l'arrangement ${m.variante} n'a pas de contact ${p.num}`, bornes: [p.borne] }));
     if (mieux.r.pl.some(x => x.c.lettre !== x.p.num)) verdicts.push({ niveau: 'info', texte: `contacts lettrés : chaque borne numérotée prend la lettre de même rang (${mieux.r.pl.slice(0, 4).map(x => x.p.num + ' → ' + x.c.lettre).join(', ')}${mieux.r.pl.length > 4 ? '…' : ''})`, bornes: [] });
     mieux.r.refus.forEach(({ p, c, ko }) => { const table = contactsDeTaille(N, m.famille, c.taille).length;
-      verdicts.push({ niveau: 'ko', texte: `borne ${p.borne} : ${ko.map(f => (f.cable || '?') + ' (' + f.type + ')').join(', ')} — ` + (table ? `aucun contact ${nomDuSexe(sexeFil(ko[0]))} de taille ${c.taille} (${nomDeFamille(N, m.famille)}) pour ce fil` : `jauge refusée par le contact ${c.lettre} (taille ${c.taille})`), bornes: [p.borne] }); });
+      verdicts.push({ niveau: 'ko', texte: `borne ${p.borne} : ${ko.map(f => (f.cable || '?') + ' (' + f.type + ')').join(', ')} — ` + (table ? `aucun contact ${nomDuSexe(sexeFil(ko[0]))} de taille ${c.taille} (${nomDeFamille(N, m.famille)}) pour ce câble` : `gauge refusée par le contact ${c.lettre} (taille ${c.taille})`), bornes: [p.borne] }); });
     mieux.r.pl.forEach(({ p, c }) => { const cotes = opts.prise ? [p.fils.filter(f => f.amont), p.fils.filter(f => !f.amont)] : [p.fils];
-      if (cotes.some(x => x.length > 1)) verdicts.push({ niveau: 'attention', texte: `contact ${c.lettre} : ${p.fils.length} fils${opts.prise ? ', plus d’un d’un même côté' : ''} — un contact reçoit un fil${opts.prise ? ' de chaque côté' : ''}`, bornes: [p.borne] }); });
+      if (cotes.some(x => x.length > 1)) verdicts.push({ niveau: 'attention', texte: `contact ${c.lettre} : ${p.fils.length} câbles${opts.prise ? ', plus d’un d’un même côté' : ''} — un contact reçoit un câble${opts.prise ? ' de chaque côté' : ''}`, bornes: [p.borne] }); });
     // les contacts shuntés d'un module retenu à la main relient des bornes qui ne le sont peut-être pas
     if (m.groupes.some(g => g.contacts.length > 1)) verdicts.push({ niveau: 'attention', texte: `l'arrangement ${m.variante} relie des contacts entre eux (module shunté) : à n'employer que si le contrat le veut`, bornes: [] }); }
-  else if (points.length) verdicts.push({ niveau: 'ko', texte: `aucun arrangement ${famille ? nomDeFamille(N, famille) : 'des normes de connecteurs'} ne loge les bornes ${points.map(p => p.borne).join(', ')} avec ces jauges`, bornes: points.map(p => p.borne) });
+  else if (points.length) verdicts.push({ niveau: 'ko', texte: `aucun arrangement ${famille ? nomDeFamille(N, famille) : 'des normes de connecteurs'} ne loge les bornes ${points.map(p => p.borne).join(', ')} avec ces gauges`, bornes: points.map(p => p.borne) });
   const posees = new Set(mieux ? mieux.r.pl.map(x => x.p) : []), restants = points.filter(p => !posees.has(p));
   return { modules, fils, verdicts, potentiels: points.length, places: points.length - restants.length, restants, contacts: mieux ? mieux.m.contacts.length : 0,
            utilises: new Set(fils.map(x => x.contact.lettre)).size, reference: mieux ? mieux.m.reference : '', famille: famille || (mieux ? mieux.m.famille : ''), visee,

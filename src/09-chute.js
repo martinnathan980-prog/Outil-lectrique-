@@ -12,8 +12,10 @@
    retest quand il la porte, sinon l'hypothèse — fois la résistance de son
    type (la base des câbles) fois le courant ; chaque prise traversée compte
    la résistance de contact de sa famille (table Familles) si on la connaît.
-   Le régime et le retour de la simulation valent aussi en chaîne ; la pointe
-   du profil se compare à la chute intermittente (≤ 2 min, AC 43.13-1B) ; et
+   Le régime et le retour de la simulation valent aussi en chaîne ; le total
+   se compare à la chute admise (`chuteAdmise` : la règle du lecteur, 2 V en
+   continu et en monophasé, 4 V en triphasé — sinon la table Réseau, dont la
+   pointe de 2 min au plus a droit au double, AC 43.13-1B) ; et
    `filsDepuis` liste tout ce qu'un disjoncteur nourrit, à travers les
    passages, pour que la protection juge chaque fil et pas seulement les
    fils sertis sur lui.
@@ -65,7 +67,7 @@ function chuteDuChemin(norme, chemin, courant, hyp, disjoncteur) { const H = { .
   const kReg = regime === 'tri' ? Math.sqrt(3) : 1, kR = kRetour(H, regime), xParM = regime === 'continu' ? 0 : (+H.reactance || 0) / 1000 * facteurFrequence(H);
   chemin.segments.forEach(s => { if (s.fil) { const l = s.fil, L = l.longueur > 0 ? l.longueur : H.longueur, tc = temperatureDuConducteur(norme, l.type, courant, H), rd = resistanceDuFil(norme, l.type, jaugeDuType(l.type), tc.T); filPrecedent = l; if (!(l.longueur > 0)) reel = false;
       const r = rd.rho != null ? rd.rho / 1000 * L * kR : null, X = xParM * L * kR, d = r == null ? null : kReg * (r * cosphi + X * sinphi) * courant;
-      if (d == null) inconnus.push((l.cable || 'fil') + ' : type ' + (l.type || 'inconnu') + ', résistance inconnue' + (rd.refuse ? ' (conducteur ' + rd.conducteur + ' : la ligne cuivre ne vaut pas)' : '')); else dU += d; longueur += L;
+      if (d == null) inconnus.push((l.cable || 'câble') + ' : type ' + (l.type || 'inconnu') + ', résistance inconnue' + (rd.refuse ? ' (conducteur ' + rd.conducteur + ' : la ligne cuivre ne vaut pas)' : '')); else dU += d; longueur += L;
       segs.push({ ...s, longueur: L, reelle: l.longueur > 0, rho: rd.rho, rho20: rd.rho20, T: rd.T, tEstimee: tc.estimee, rhoSource: rd.source, conducteur: rd.conducteur, R: r, X, dU: d }); }
     else { const pn = pnDuPassage(norme, chemin, s.passage), coupure = estCoupure(s.passage), F = coupure ? familleDeNorme(norme, null, pn) : null;
       const taille = tailleDeJauge(norme, F ? F.famille : '', filPrecedent ? jaugeDuType(filPrecedent.type) : null), rTaille = resistanceDeContact(norme, taille);
@@ -91,24 +93,27 @@ function disjoncteurDuChemin(norme, chemin, H, donne) { const s0 = chemin.segmen
 // le part number d'un passage, lu sur un fil du chemin qui y arrive
 const pnDuPassage = (norme, chemin, repere) => { for (const s of chemin.segments) { if (!s.fil) continue; if (s.fil.de === repere && s.fil.pnDe) return s.fil.pnDe; if (s.fil.vers === repere && s.fil.pnVers) return s.fil.pnVers; } return ''; };
 /* L'INTERMITTENT de l'AC 43.13-1B (table 11-6) : une charge qui ne dure pas plus de deux minutes a droit au double de
-   chute ; au-delà, c'est du continu. */
+   chute ; au-delà, c'est du continu. La règle du lecteur (2 V, 4 V : des maxima) ne le connaît pas : sa chute admise
+   en intermittent est la même. */
 const INTERMITTENT_MAX = 120;
 /* Toutes les chutes depuis un repère, prêtes à lire : la destination, le chemin en mots, le total — au courant
-   permanent `courant`, comparé à la chute admise en continu ; et, si on donne les POINTES du profil ([{ i, t }] : les
-   états courts, en points cumulés), la chute à chacun de ces courants — linéaire en courant : un état court ne laisse
-   pas au conducteur le temps de chauffer au-delà de ce que le permanent lui donne, sa résistance est celle du
-   permanent (sans permanent, celle de la pointe, à l'équilibre : prudent) —, comparée à la chute admise en
-   intermittent quand l'état dure deux minutes au plus, sinon au continu. `trop` et `tropPointe` disent le
-   dépassement ; `reel` que toutes les longueurs sont celles du retest (sans quoi c'est l'hypothèse qui parle).
-   `disjoncteur` : { famille, calibre } du repère quand l'appelant les connaît (sa chute propre, `chuteDuChemin`). */
-function chutesDepuis(norme, liaisons, repere, courant, hyp, pointes, disjoncteur) { const H = { ...HYPOTHESES, ...(hyp || {}) }, regime = REGIMES[H.regime] ? H.regime : 'continu', chute = chuteAdmise(norme, H.tension, regime);
+   permanent `courant`, comparé à la chute admise (`chuteAdmise` : la règle du lecteur, sinon la table Réseau) ; et, si
+   on donne les POINTES du profil ([{ i, t }] : les états courts, en points cumulés), la chute à chacun de ces courants
+   — linéaire en courant : un état court ne laisse pas au conducteur le temps de chauffer au-delà de ce que le permanent
+   lui donne, sa résistance est celle du permanent (sans permanent, celle de la pointe, à l'équilibre : prudent) —,
+   comparée à la chute admise en intermittent quand l'état dure deux minutes au plus (la même que le continu sous la
+   règle du lecteur), sinon au continu. `trop` et `tropPointe` disent le dépassement ; `reel` que toutes les longueurs
+   sont celles du retest (sans quoi c'est l'hypothèse qui parle) ; `regle` d'où vient la chute admise ('lecteur',
+   'table'). `disjoncteur` : { famille, calibre } du repère quand l'appelant les connaît (sa chute propre,
+   `chuteDuChemin`). */
+function chutesDepuis(norme, liaisons, repere, courant, hyp, pointes, disjoncteur) { const H = { ...HYPOTHESES, ...(hyp || {}) }, regime = REGIMES[H.regime] ? H.regime : 'continu', chute = chuteAdmise(norme, H.tension, regime, H);
   const admis = chute && chute.chuteMax != null ? chute.chuteMax : null, inter = chute ? (chute.chuteInter != null ? chute.chuteInter : chute.chuteMax) : null;
   const P = (pointes || []).filter(p => p && p.i > 0 && p.t > 0 && isFinite(p.t));
   return cheminsDepuis(liaisons, repere).map(ch => { const c = chuteDuChemin(norme, ch, courant, H, disjoncteur), pct = H.tension ? c.dU / H.tension * 100 : null;
     const ps = P.map(p => { const dU = courant > 0 ? c.dU * p.i / courant : chuteDuChemin(norme, ch, p.i, H, disjoncteur).dU, intermittent = p.t <= INTERMITTENT_MAX, a = intermittent ? inter : admis;
       return { i: p.i, t: p.t, nom: p.nom || '', dU, admis: a, intermittent, trop: !!(a != null && dU > a + 1e-9) }; });
-    return { ...c, pct, admis, trop: !!(admis != null && c.dU > admis + 1e-9), tension: chute ? chute.tension : H.tension, pointes: ps, tropPointe: ps.some(p => p.trop),
-             mots: c.segments.map(s => s.fil ? (s.fil.cable || 'fil') : '⇄ ' + s.passage).join(' → ') + ' → ' + c.bout[0] + (c.bout[1] ? ':' + c.bout[1] : '') }; }); }
+    return { ...c, pct, admis, trop: !!(admis != null && c.dU > admis + 1e-9), tension: chute ? chute.tension : H.tension, regle: chute ? chute.regle : '', pointes: ps, tropPointe: ps.some(p => p.trop),
+             mots: c.segments.map(s => s.fil ? (s.fil.cable || 'câble') : '⇄ ' + s.passage).join(' → ') + ' → ' + c.bout[0] + (c.bout[1] ? ':' + c.bout[1] : '') }; }); }
 /* LES FILS QU'UN DISJONCTEUR ALIMENTE : ceux qui le touchent (`direct`), et ceux de la suite de chaque chemin, à travers
    les prises de coupure et les barrettes — chacun une fois, avec sa borne de départ, l'autre bout et le passage par
    lequel il vient (`via`). C'est la liste que la protection doit juger : le disjoncteur protège tout ce qu'il nourrit,

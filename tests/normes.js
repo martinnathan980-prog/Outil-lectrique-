@@ -183,7 +183,7 @@ function excelEssai() { const wb = XLSX.utils.book_new();
   okp(await q('#nm-import .nm-bloc') === 3 && await q('#nm-import .nm-bloc select[data-cible]', 'xs => xs.map(s => s.value).join(",")') === 'fils,reseau,colliers' && /Feuille Colliers/.test(await texte('#nm-import .nm-bloc[data-bloc="2"] b')), 'un Excel : deux feuilles, trois tables reconnues (une feuille en porte deux), nommées par leur titre ou leur feuille', await q('#nm-import .nm-bloc select[data-cible]', 'xs => xs.map(s => s.value).join(",")'));
   okp(/Jauge \(AWG\) → Jauge/.test(await texte('#nm-import .nm-bloc[data-bloc="0"] .nm-bloc-cols')), 'les en-têtes de l’Excel, avec leurs unités, sont lus comme les colonnes de l’outil');
   await page.click('#fiche #nm-adopter'); await page.waitForTimeout(600);
-  okp(await page.evaluate(() => filDeNorme(app.norme, 'XL24', 24).intensite === 4 && app.norme.colliers.some(c => c.reference === 'ESSAI-COL-2' && c.dmax === 30) && chuteAdmise(app.norme, 28).chuteMax === 1.2), 'l’Excel adopté : le fil XL24 (4 A), le collier ESSAI-COL-2, la chute admise à 28 V (1,2 V) sont lus par le moteur');
+  okp(await page.evaluate(() => filDeNorme(app.norme, 'XL24', 24).intensite === 4 && app.norme.colliers.some(c => c.reference === 'ESSAI-COL-2' && c.dmax === 30) && chuteAdmise(app.norme, 28, 'continu', { chuteMono: null }).chuteMax === 1.2 && chuteAdmise(app.norme, 28).chuteMax === 2), 'l’Excel adopté : le fil XL24 (4 A), le collier ESSAI-COL-2, la chute admise à 28 V de sa table Réseau (1,2 V : elle juge quand la règle du lecteur, 2 V, est vidée) sont lus par le moteur');
 
   console.log('\nexporter, chercher, revenir');
   const ex = await telechargement(() => page.click('#fiche .nm-table[data-vue="fils"] [data-exporter="fils"]'));

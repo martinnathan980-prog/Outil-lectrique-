@@ -5,7 +5,8 @@ bible ne portent : pour une **famille** de barrettes ou de prises de coupure,
 le pas, ce que chaque contact admet (jauges, intensité, résistance), combien
 de fils par côté, la règle de remplissage ; pour les **fils**, par type et
 jauge, la section, la résistance et l'intensité admissible ; les
-**déclassements** ; le **réseau** (la chute de tension admise).
+**déclassements** ; le **réseau** (la chute de tension admise, quand la
+règle du lecteur — 2 V, 4 V en triphasé — est vidée).
 
 Avec une norme, la carte d'une barrette ou d'une prise (clic sur le bloc)
 dessine chaque **trou** et le fil qui y est placé, juge le remplissage, et
@@ -270,11 +271,28 @@ La simulation connaît trois **régimes** (la notice du calculateur de
 chute triphasé) : continu (ΔU = R × I), alternatif monophasé (ΔU = I × (R
 cos φ + X sin φ)) et triphasé (ΔU composée, entre deux phases : √3 × I ×
 (R cos φ + X sin φ), I par phase, jamais la somme des phases, L la distance
-simple — comparée à la ligne **200 V** du réseau, pas à la ligne 115 V
-phase-neutre). cos φ vaut 0,8 en régime permanent, 0,35 au démarrage d'un
+simple — comparée aux 4 V du triphasé, pas aux 2 V du monophasé). cos φ
+vaut 0,8 en régime permanent, 0,35 au démarrage d'un
 moteur ; la réactance X est négligée sous **10 mm² de cuivre** et à saisir
 au-delà (à 400 Hz, X vaut l'ordre de R dès le 6–8 AWG pour un fil seul ; le
 calcul est suspendu, comme dans l'Excel).
+
+**La chute admise : la règle du lecteur (octobre 2026).** « La chute de
+tension, c'est 2 V au maximum en monophasé, 4 V en triphasé. » C'est la
+règle par défaut (`chuteAdmise`, 09) : **2 V en continu** (le 28 V) **et en
+monophasé**, **4 V en triphasé** — la chute composée, entre deux phases —,
+quelle que soit la tension ; ce sont des maxima, une pointe n'a pas droit
+au double. Deux hypothèses la portent, modifiables dans la fiche des
+hypothèses (« chute admise, continu et monophasé », « chute admise,
+triphasé » : `chuteMono`, `chuteTri`). Vidée, la **table Réseau** de la
+norme reprend : la ligne de la tension d'hypothèse, sinon la plus proche,
+le double en intermittent. Ce que ça change sur l'exemple et le contrat
+d'essai (`tests/couverture.js`) : la chute de 102CB1 vers 103RL1 (1,28 V)
+et sa pointe vers 101BT1 (1,15 V), celle de 202CB2 vers 340SW1 (1,21 V) et
+de 206CB6 vers 380CP1 (1,18 V) passent ; vers 395SW1 (4,57 V), 310RL1
+(2,04 V), 320PM1 (2,13 V) et 580ST1 (2,18 V), elles dépassent toujours ;
+vers 103RL1, c'est la pointe de 102CB1 (2,39 V à 9,31 A) que le contrôle
+relève désormais, le permanent passant.
 
 Le **déclassement** et le **réseau** de `norme-exemple.csv` sont les points
 publics de l'**AC 43.13-1B** (FAA, chapitre 11), en attendant les règles du
@@ -283,7 +301,8 @@ programme (ABD0100, non public) : le faisceau par points « fils × charge »
 × 0,52 ; l'outil prend le point le plus proche du faisceau simulé),
 l'altitude interpolée (fig. 11-6 : 20 000 ft → 0,91, 60 000 → 0,79) ; la
 chute admise du bus à la masse de l'équipement (table 11-6 : 14 V 0,5 V,
-28 V 1 V, 115 V 4 V, 200 V 7 V ; le double en intermittent ≤ 2 min).
+28 V 1 V, 115 V 4 V, 200 V 7 V ; le double en intermittent ≤ 2 min) — elle
+ne juge plus que si la règle du lecteur est vidée.
 
 ## `disjoncteurs.csv` : les courbes de disjonction
 
@@ -425,7 +444,7 @@ exacte avant `*`. Le type d'un fil est en tête de son code (DR24 → DR, HS22
 → HS) ; un type que la table ne nomme pas prend les lignes `*`. Quand la
 table connaît la taille, **c'est elle qui juge la jauge** : un fil sans ligne
 est refusé, et la fiche dit « aucun contact femelle de taille 16 pour ce
-fil ». Les tables **Tailles** des normes ne servent plus qu'aux tailles
+câble ». Les tables **Tailles** des normes ne servent plus qu'aux tailles
 qu'elle ignore (EN 3645 8T, NSA937901 22 aluminium).
 
 Le **sexe** des contacts qu'on sertit est une hypothèse de l'outil, à
@@ -606,6 +625,8 @@ contact sont du bon ordre pour une taille 20, mais inventés : la famille est
 nommée « (exemple) » et l'outil le répète partout où il s'en sert), et deux
 tables qui ne sont plus inventées : le **déclassement** et le **réseau**,
 pris dans l'AC 43.13-1B (FAA, chapitre 11) — voir `en2853.csv` ci-dessus.
+Le réseau ne juge la chute que si la règle du lecteur (2 V en continu et en
+monophasé, 4 V en triphasé : les hypothèses « chute admise ») est vidée.
 Les règles du programme (ABD0100, les courbes Airbus) les remplaceront quand
 le lecteur les donnera : mêmes colonnes.
 
@@ -704,7 +725,7 @@ conducteur qui n'est pas du cuivre (table Familles de câbles).
 
 | colonne | obligatoire | sens |
 |---|---|---|
-| Tension | oui | volts (14, 28, 115, 200) ; la simulation prend la ligne de la tension d'hypothèse, sinon la plus proche ; en triphasé, celle de la tension composée (115 → 200) |
+| Tension | oui | volts (14, 28, 115, 200) ; quand la règle du lecteur est vidée (hypothèses « chute admise »), la simulation prend la ligne de la tension d'hypothèse, sinon la plus proche ; en triphasé, celle de la tension composée (115 → 200) |
 | Nature | non | continu, alternatif phase-neutre, entre phases |
 | Chute max | oui | la chute de tension admise en ligne, en V, en continu |
 | Chute max intermittent | non | la même pour une charge intermittente (≤ 2 min) |
@@ -825,7 +846,8 @@ de la table Courbes à prendre.
 Les hypothèses (longueur du fil, courant, tension, ambiante, température du
 conducteur, retour par la structure ou par un fil identique, régime, cos φ,
 réactance, conditions de déclassement, charge du faisceau, altitude,
-ambiante du tableau de disjoncteurs min / max) se changent dans la fiche
+ambiante du tableau de disjoncteurs min / max, chute admise — la règle du
+lecteur, 2 V et 4 V en triphasé) se changent dans la fiche
 Hypothèses (le menu, ou le mot « hypothèse » d'une fiche) : le retest ne
 porte ni longueur ni courant, l'outil ne les invente pas. Chaque ligne dit
 en plus si le câble tient l'ambiante (T max de sa famille contre Tu + 40 °C)
@@ -836,14 +858,15 @@ et, quand X est à saisir, une estimation (fil seul à 20 mm de la structure).
     T         = ambiante + 40 × (courant / I EN 2853 déclassée)², bornée par la T max du câble (AC 43.13-1B § 11-66 d(6)) — ou l'hypothèse « conducteur » (20 °C) en mode « fixe »
     ρ(T)      = Résistance 20 (Ω/km) × (234,5 + T)/254,5   (aluminium : (238,1 + T)/258,1)
     R         = (ρ(T) / 1000 × longueur (m) + Résistance du contact (mΩ) / 1000) × 2 si le retour se fait par un fil identique, sauf en triphasé (aucun courant ne revient)   (la résistance de contact : la famille, sinon la taille du contact et l'emploi — jonction sur une barrette, deux fois ; connecteur sur une prise)
-    ΔU        = R × courant, en V et en % de la tension (mono : I (R cos φ + X sin φ) ; tri : √3 × …, comparée à la ligne 200 V ; X saisie à 400 Hz, × fréquence / 400 — 800 Hz en fréquence variable, MIL-STD-704F)
+    ΔU        = R × courant, en V et en % de la tension (mono : I (R cos φ + X sin φ) ; tri : √3 × …, comparée aux 4 V du triphasé ; X saisie à 400 Hz, × fréquence / 400 — 800 Hz en fréquence variable, MIL-STD-704F)
 
 La **chute en ligne** depuis un disjoncteur ajoute, en tête, sa chute propre
 (table Chute disjoncteur, × courant / In) ; une pointe du profil y prend la
 résistance du permanent (un état court ne chauffe pas le fil plus que lui).
 
 Le verdict, dans l'ordre : jauge hors plage · le courant dépasse le fil ·
-dépasse le contact · la chute dépasse ce que le réseau admet · fil inconnu
+dépasse le contact · la chute dépasse ce qui est admis (la règle du
+lecteur, sinon la table Réseau) · fil inconnu
 de la norme · ok. Les ponts (shunts) ne sont pas des fils dans un trou : ils
 ne sont pas simulés.
 
