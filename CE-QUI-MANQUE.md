@@ -22,10 +22,22 @@ accessoire pour quel connecteur et quel câble).
 - **Ce que ça remplacerait.** Les points 2 (la nomenclature des disjoncteurs), 9, 10 et 13 (les contacts), 12 (la bible
   des connecteurs et des prises) et 22 (les câbles douteux) d'un coup, avec tes références à toi.
 - **Ce que j'en ai déjà tiré.** Le DH4 (ECS0844 : 0,27 kg/m, Ø 8,8 mm, −65 / +260 °C), qui n'est pas dans ton Excel.
-- **Comment me la donner.** Si SEE sait exporter une grille vers Excel (souvent un clic droit sur la liste, ou un menu
-  Exporter), trois exports avec toutes leurs colonnes : Cables and Wires, Equipments (au moins les connecteurs et les
-  disjoncteurs), End Fitting Rules. S'il ne sait pas, trois captures de fiches, « General attributes » déroulés, me
-  suffisent pour voir les champs : un connecteur, une règle d'end fitting (*ECS0852 par exemple), un disjoncteur.
+- **Ce qu'elle ne remplacera pas.** Les courbes des disjoncteurs, les profils de charge, les températures des zones,
+  les longueurs des câbles et ta règle des 2 V : ils restent dans tes Excel et tes retests.
+- **Comment l'extraire, du plus simple au plus sûr.**
+  1. *Copier la grille.* Dans la liste (Cables and Wires, Equipments, End Fitting Rules) : tout sélectionner (Ctrl+A),
+     copier (Ctrl+C), coller dans un Excel vide. Beaucoup de grilles le permettent ; regarde si les colonnes suivent.
+  2. *L'export de SEE.* SEE Electrical Expert exporte ses listes en XLS et en XML, et son module Data Extractor fait des
+     exports sur mesure (selon votre licence et tes droits) : un clic droit sur la liste, ou un menu Exporter.
+  3. *Le référent SEE.* Derrière SEE, il y a une base de données : celui qui l'administre chez vous peut en tirer les
+     trois tables en Excel, avec toutes leurs colonnes. C'est la voie la plus propre si les deux premières échouent.
+  4. *Pas en photos.* Des milliers de lignes en photo, ce sont des erreurs de lecture et des jours de travail.
+- **Où la mettre.** Jamais dans le dépôt GitHub : il est **public**. L'export reste sur ton PC, et tu le déposes dans
+  Volta (⋮ → Vos fichiers → Normes) : Volta le lit sur place, hors ligne, rien ne sort. Demande d'abord à ta hiérarchie
+  si tu as le droit d'en faire un export : c'est la base de ton programme.
+- **Ce qu'il me faut pour apprendre à Volta à la lire.** Pas la base : la ligne des en-têtes de chacun des trois exports
+  et deux ou trois lignes, dont tu peux changer les valeurs. Sinon, trois captures de fiches, « General attributes »
+  déroulés : un connecteur, une règle d'end fitting (*ECS0852 par exemple), un disjoncteur.
 
 ---
 
@@ -38,6 +50,14 @@ accessoire pour quel connecteur et quel câble).
   l'autre, elles se suivent ; sur une photo d'écran, je ne peux pas relire la fiche au point près (±15 %).
 - **Ce que Volta en fait.** La famille ETA4120 existe (sa gamme 1-25 A, −55/+125 °C, ses chutes typiques) ; ses
   courbes sont celles de ton Excel en attendant.
+- **Ton Excel « 01 - Calibre disjoncteur »** (feuille Base_de_données), relu sur tes photos : ses 189 points sont ceux
+  de Volta, au chiffre près. C'est un relevé à la main d'une courbe E-T-A : trois points où le multiple recule (lignes
+  4 et 8 de la 125 °C, ligne 5 de la −55 °C), sans effet. Dans la partie verticale, un pixel de relevé vaut 2 % de
+  multiple : la bande 23 °C y déclenche dès 1,05 In, là où une MS 3320 tient 1,15 In une heure. Sans effet non plus :
+  Volta juge sur la 125 °C, plus rapide.
+- **Ce qui reste.** L'onglet **Programme** du même Excel, en photo : sur quelle courbe choisissez-vous le calibre ?
+  Volta prend la plus rapide (125 °C). Et tes disjoncteurs sont-ils tous des 4120 ? Si oui, la 4120 devient la famille
+  par défaut (à 1 A : 1,1 V au lieu des 0,75 V de la 483).
 - **Comment me la donner.** Le PDF de la fiche 4120 (la courbe est vectorielle : je la relis au point près), ou une
   ligne par point lu :
 
@@ -90,7 +110,22 @@ accessoire pour quel connecteur et quel câble).
   - Une **pointe brève** (60 A pendant 3 s) a-t-elle droit à plus que 2 V ? Aujourd'hui, non : 207CB7 dépasse en pointe.
   - Les **composants traversés** (relais, contacteur, diode) : Volta a leur chute, mais ne sait pas quand le courant
     les traverse. Il lui faut, pour chaque équipement de puissance, les bornes du contact (A1 → A2 ?).
-  - Les **calibres 30 et 35 A** sont dans ta table des chutes, pas dans ta gamme (1 à 25 A) : les ajoute-t-on ?
+  - Ta table **« Du max »** est plus basse que la chute *typique* de la fiche E-T-A 4120, et plus encore que la chute
+    *maximale* de la MS 3320. Un maximum sous le typique, c'est un maximum qui n'en est pas un. Volta prend ta table ;
+    l'écart est de 0,01 à 0,09 V par disjoncteur (0,20 V à 3 A contre la MS 3320). D'où vient-elle ?
+
+    | Calibre (A) | 3 | 5 | 7,5 | 10 | 15 | 20 | 25 |
+    |---|---|---|---|---|---|---|---|
+    | Ta table « Du max » (V) | 0,35 | 0,25 | 0,20 | 0,20 | 0,15 | 0,15 | 0,15 |
+    | E-T-A 4120, typique (V) | 0,44 | 0,26 | 0,25 | 0,23 | 0,20 | 0,19 | 0,19 |
+    | MS 3320, maximum (V) | 0,55 | 0,35 | 0,30 | 0,28 | 0,25 | 0,25 | 0,20 |
+
+    Elle n'a pas non plus de 1 A, le calibre qui chute le plus : 1,1 V, la moitié de tes 2 V.
+  - Les **calibres 30 et 35 A** sont dans ta table des chutes, pas dans ta gamme (1 à 25 A) ni dans celle de la 4120 :
+    quel disjoncteur est-ce ? Les ajoute-t-on ?
+  - Ta règle des **2 V** en 28 V continu est le double de la FAA en service continu (AC 43.13-1B, table 11-6 : 1 V,
+    2 V en intermittent de moins de 2 min) ; en triphasé, tes 4 V sont plus stricts que ses 7 V. Ta règle prime :
+    Volta la garde. C'est à savoir si un client vous oppose la FAA.
   - Ta règle vaut-elle pour le 14 V et le 270 V continu ? Le déclassement en faisceau suit la FAA (8 câbles à 60 %
     → × 0,6) ; la réserve de contacts n'est pas vérifiée.
 
