@@ -79,7 +79,7 @@ node tests/barrettes.js        la bible des barrettes se lit, la référence se 
                                connecteurs et les prises de coupure ; les contacts à sertir des tables SEE (428 lignes, la ligne la plus précise,
                                le sexe, le fourreau, la nomenclature) ; les courbes de disjonction (quatre courbes, l'enveloppe,
                                l'interpolation log-log, le profil en points cumulés, le verdict et le calibre mini) ; l'EN 2853 (l'intensité
-                               par durée, l'ambiante, la protection des fils d'un disjoncteur) ; la base des câbles (223 câbles, le
+                               par durée, l'ambiante, la protection des fils d'un disjoncteur) ; la base des câbles (226 câbles, le
                                câble d'un type, la résistance à 20 °C et d'où elle vient, la température du conducteur, les familles
                                de câbles et le conducteur CCA refusé sur la ligne cuivre, le faisceau d'un connecteur) ; le déclassement
                                par les points FAA (faisceau fils × charge, altitude) et le réseau (continu, intermittent, le triphasé

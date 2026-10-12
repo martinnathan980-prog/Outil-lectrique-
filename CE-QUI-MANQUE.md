@@ -12,6 +12,23 @@ Rien de ce qui suit n'est inventé dans Volta : ce qu'il ne sait pas, il le dit 
 
 ---
 
+## Le raccourci : ta base SEE
+
+Tes captures de SEE Electrical Equipment Definition (12 octobre 2026) montrent que la base de ton programme contient
+déjà l'essentiel de cette liste : **748 câbles** (Cables and Wires), **7 091 équipements** (Equipments : connecteurs,
+disjoncteurs comme le 21708F, barrettes) et **1 297 règles d'end fitting** (End Fitting Rules : quel contact, quel
+accessoire pour quel connecteur et quel câble).
+
+- **Ce que ça remplacerait.** Les points 2 (la nomenclature des disjoncteurs), 9, 10 et 13 (les contacts), 12 (la bible
+  des connecteurs et des prises) et 22 (les câbles douteux) d'un coup, avec tes références à toi.
+- **Ce que j'en ai déjà tiré.** Le DH4 (ECS0844 : 0,27 kg/m, Ø 8,8 mm, −65 / +260 °C), qui n'est pas dans ton Excel.
+- **Comment me la donner.** Si SEE sait exporter une grille vers Excel (souvent un clic droit sur la liste, ou un menu
+  Exporter), trois exports avec toutes leurs colonnes : Cables and Wires, Equipments (au moins les connecteurs et les
+  disjoncteurs), End Fitting Rules. S'il ne sait pas, trois captures de fiches, « General attributes » déroulés, me
+  suffisent pour voir les champs : un connecteur, une règle d'end fitting (*ECS0852 par exemple), un disjoncteur.
+
+---
+
 ## Priorité 1 — ce qui change les verdicts partout
 
 ### 1. La courbe de la norme des disjoncteurs (celle que tu m'as promise)
@@ -345,16 +362,21 @@ Rien de ce qui suit n'est inventé dans Volta : ce qu'il ne sait pas, il le dit 
 
 ### 22. Les lignes douteuses de la base des câbles
 
-- **Ce que c'est.** DW24 (copie du DW22), GPB24 (copie du GPB22), MLA12 (même Ø que le MLA14), AM et YV (mêmes
-  résistances et masses), LE (fibre ou coaxial ?).
+- **Ce que c'est.** Relues sur tes photos de l'Excel : elles y sont bien telles quelles, ce sont des copies dans
+  l'Excel. DW24 (masse et résistance du DW22), GPB24 (du GPB22), MLA12 (même Ø que le MLA14), AM et YV (mêmes
+  résistances et masses), LE (fibre ou coaxial ?). S'y ajoutent les deux lignes qui manquaient à Volta et qu'il a
+  maintenant : **KQ24** (un twinax noté sans blindage, sans nombre de liaisons — est-ce juste ?) et **KR24** (un octax :
+  quelle norme ?). Et le **DH4** de SEE, sans résistance.
 - **Pourquoi.** Leur résistance et leur Ø entrent dans la chute et dans le toron.
-- **En attendant.** Tes valeurs, telles quelles.
-- **Comment me les donner.**
+- **En attendant.** Tes valeurs, telles quelles. Les familles **DK, DL et DM** que SEE connaît ne sont pas dans ton
+  Excel : un retest qui en porte un est signalé « type de câble inconnu ».
+- **Comment me les donner.** L'export Cables and Wires de SEE (voir « Le raccourci »), ou :
 
   ```
-  Câble;Brins;Résistance;Diamètre;Masse
-  DW24;1;…;…;…
-  GPB24;1;…;…;…
+  Câble;Brins;Blindage;Résistance;Diamètre;Masse
+  DW24;1;0;…;…;…
+  KQ24;2;…;145;3,56;21
+  DH4;1;0;…;8,8;270
   ```
 
 ### 23. Ce qui manque pour l'aluminium et le réseau

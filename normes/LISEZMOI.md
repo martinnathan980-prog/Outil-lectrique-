@@ -148,8 +148,9 @@ vérification D.
 
 ## `cables.csv` : la base des câbles
 
-L'onglet **Câbles** de l'Excel du lecteur, transcrit : 223 câbles de 55
-familles (AD, ADB…, AM, BN, DG, DH, DR, DRB…, DW, GPB, HE, HJ, KC, KD, KL,
+L'onglet **Câbles** de l'Excel du lecteur, transcrit (relu sur ses photos le
+12 octobre 2026), et le DH4 de sa base SEE : 226 câbles de 57 familles (AD,
+ADB…, AM, BN, DG, DH, DR, DRB…, DW, GPB, HE, HJ, KC, KD, KL, KQ, KR,
 KW, KX, LE, MLA, MLB, MLC, MLD, VNA…VND, WC…WX, XD…XY, YH, YV). Pour chaque
 **type de câble tel que le retest l'écrit** (DR24, MLB22, KD24, WC…) : sa
 famille, sa jauge, ses **brins**, s'il est **blindé**, sa **nature**
