@@ -1,34 +1,45 @@
 /* ===========================================================================
-   08 — LA FICHE À SECTIONS : le squelette commun des cinq fiches
-   (équipement, disjoncteur, barrette, prise de coupure, fil), version 3.
+   08 — LA FICHE À SECTIONS : le squelette commun des fiches (équipement,
+   disjoncteur, barrette, prise de coupure, masse, câble), version 4.
 
-   Le lecteur : « trop d'écrit, trop de gris, trop de sections, rien de
-   carré ». Sous l'en-tête et la barre des problèmes, PEU de sections, chacune
-   une CARTE (une icône, un titre affirmé, une ligne de résumé, une pastille
-   d'état, le chevron), dans un ordre fixe (ORDRE_SECTIONS) :
-     Identité · Disjoncteur (un disjoncteur) · Connecteur (ou Module) ·
-     De → vers (un fil) · Fils (intensité et chute ensemble) · Déjà fait.
+   Le lecteur (la v3) : « les tuiles, dégage ; l'identité, avec du recul, ça
+   dégage partout ; « fil », dis « câble » ; « habillage », ce n'est pas ça :
+   c'est le raccord ». Sous l'en-tête (le type et le repère, modifiables) et
+   la barre des problèmes, PEU de sections, chacune une CARTE (une icône, un
+   titre affirmé, une ligne de résumé, une pastille d'état, le chevron), dans
+   un ordre fixe (ORDRE_SECTIONS) :
+     Calibre (un disjoncteur) · Connecteur (ou Module) · Raccord ·
+     De → vers (un câble) · Câbles (intensité et chute ensemble) · Déjà fait.
    Fermée, une carte se lit encore ; ouverte, ses groupes sont cadrés et
    espacés. Ce que l'ingénieur ouvre ou ferme se garde, par type d'objet.
-   Une section dont la donnée manque reste à sa place, grise, et dit ce qui
-   manque. Un lien qui y mène (une ligne des problèmes, une tuile de l'en-tête)
-   l'ouvre, la fait venir sous les yeux et l'allume un instant.
+   Une section dont la donnée manque reste à sa place, en pointillé, et dit ce
+   qui manque. Un lien qui y mène (une ligne des problèmes) l'ouvre, la fait
+   venir sous les yeux et l'allume un instant.
 
    Une valeur se change sur place ; changée à la main, elle porte la pastille
    « main » et « ↺ » qui rend ce que portait le fichier ou le calcul.
+
+   LE « ? » (le lecteur : « explique, avec un petit point d'interrogation,
+   comment tu choisis tout ») : à côté de chaque valeur que l'outil choisit,
+   un petit rond discret ; un clic (ou Entrée) ouvre une bulle de deux ou
+   trois phrases — comment l'outil l'a choisie, d'où vient la donnée —, une
+   seule à la fois ; Échap, un autre clic ou un clic ailleurs la ferme. Les
+   textes viennent de `explication(cle, contexte)` (08-explications) ; des
+   textes provisoires courts les remplacent si elle manque.
    =========================================================================== */
 'use strict';
 
-const SECTIONS = { identite: 'Identité', disjoncteur: 'Disjoncteur', connecteur: 'Connecteur', trajet: 'De → vers', fils: 'Fils', dejafait: 'Déjà fait' };
+const SECTIONS = { disjoncteur: 'Calibre', connecteur: 'Connecteur', raccord: 'Raccord', trajet: 'De → vers', fils: 'Câbles', dejafait: 'Déjà fait' };
 const ORDRE_SECTIONS = Object.keys(SECTIONS);
 // ouvertes d'office : tout ce qui définit l'objet — « Déjà fait » attend un clic
-const OUVERTES_D_OFFICE = { equipement: ['identite', 'connecteur', 'fils'], disjoncteur: ['identite', 'disjoncteur', 'fils'], barrette: ['identite', 'connecteur', 'fils'],
-  prise: ['identite', 'connecteur', 'fils'], fil: ['identite', 'trajet', 'fils'] };
+const OUVERTES_D_OFFICE = { equipement: ['connecteur', 'raccord', 'fils'], disjoncteur: ['disjoncteur', 'fils'], barrette: ['connecteur', 'fils'],
+  prise: ['connecteur', 'raccord', 'fils'], masse: ['fils'], fil: ['trajet', 'fils'] };
 /* L'icône de chaque section : SVG 24 × 24 au trait de 1,5 px (comme ICONES, 08-fiche). */
 const ICONES_SECTIONS = {
-  identite: '<rect x="3.5" y="5" width="17" height="14" rx="2.5"/><circle cx="9" cy="11" r="2.2"/><path d="M5.8 16.2c.7-1.6 1.9-2.4 3.2-2.4s2.5.8 3.2 2.4M14.5 10h3.5M14.5 13.5h2.5"/>',
   disjoncteur: '<path d="M3 16h3.5M17.5 16H21"/><circle cx="8" cy="16" r="1.5"/><circle cx="16" cy="16" r="1.5"/><path d="M9 15.2 15.4 10.2"/><path d="M12.2 4.5v6M9.6 4.5h5.2"/>',
   connecteur: '<rect x="3.5" y="6.5" width="12" height="11" rx="2"/><path d="M15.5 9.5h3.5M15.5 14.5h3.5"/><circle cx="7.5" cy="10.5" r=".9" fill="currentColor"/><circle cx="11.5" cy="10.5" r=".9" fill="currentColor"/><circle cx="7.5" cy="13.5" r=".9" fill="currentColor"/><circle cx="11.5" cy="13.5" r=".9" fill="currentColor"/>',
+  // le raccord : un écrou à collier sur le toron
+  raccord: '<path d="M3 12h4M17 12h4"/><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M10 7v10M14 7v10"/>',
   trajet: '<circle cx="5" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/><path d="M7.2 12h9.6M13.8 9l3 3-3 3"/>',
   fils: '<path d="M3 7.5h7c3 0 4 9 7 9h4M3 16.5h4c3 0 4-9 7-9h7"/>',
   dejafait: '<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4.5v3.7h3.7"/><path d="M12 8.2V12l2.6 1.8"/>'
@@ -36,9 +47,9 @@ const ICONES_SECTIONS = {
 const icoSection = cle => ICONES_SECTIONS[cle] ? `<span class="fs-ico" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24">${ICONES_SECTIONS[cle]}</svg></span>` : '';
 
 /* La mémoire des sections, par type : ce que l'ingénieur a ouvert ou fermé (dans ce navigateur ; une mémoire
-   indisponible — navigation privée — n'empêche rien : on garde les valeurs d'office). La clé change avec la v3 : les
-   sections d'hier (« Contacts », « Chute »…) n'existent plus. */
-const CLE_SECTIONS = 'atelier.fiche.sections.v3';
+   indisponible — navigation privée — n'empêche rien : on garde les valeurs d'office). La clé change avec la v4 :
+   l'identité n'existe plus, le raccord a sa carte. */
+const CLE_SECTIONS = 'atelier.fiche.sections.v4';
 const MEMOIRE_SECTIONS = (() => { try { return JSON.parse(localStorage.getItem(CLE_SECTIONS) || '{}') || {}; } catch (_) { return {}; } })();
 function sectionOuverte(type, cle) { const m = MEMOIRE_SECTIONS[type]; return m && cle in m ? !!m[cle] : (OUVERTES_D_OFFICE[type] || []).includes(cle); }
 function retenirSection(type, cle, ouvert) { (MEMOIRE_SECTIONS[type] = MEMOIRE_SECTIONS[type] || {})[cle] = !!ouvert;
@@ -58,20 +69,21 @@ function ficheSection(type, s) { const titre = s.titre || SECTIONS[s.cle] || s.c
 /* Les sections d'une fiche, dans l'ordre fixe ; une clé hors de l'ordre se met à la fin. */
 function ficheSections(type, liste) { const xs = liste.filter(Boolean), rang = s => { const k = ORDRE_SECTIONS.indexOf(s.cle); return k < 0 ? 99 : k; };
   return xs.slice().sort((a, b) => rang(a) - rang(b)).map(s => ficheSection(type, s)).join(''); }
-/* Un GROUPE dans une section : un petit titre (et, à sa droite, ce qu'on y fait), puis son contenu — cadré par l'espace
-   et un filet au-dessus du suivant. */
+/* Un GROUPE dans une section : un petit titre (son « ? » à côté, et, à sa droite, ce qu'on y fait), puis son contenu —
+   cadré par l'espace et un filet au-dessus du suivant. o : { cls, attrs, droite, compte, aide: [cle, contexte] } */
 const groupeSection = (titre, contenu, o) => { o = o || {}; if (!contenu) return '';
-  return `<div class="fs-groupe${o.cls ? ' ' + o.cls : ''}"${o.attrs ? ' ' + o.attrs : ''}>${titre || o.droite ? `<div class="fs-st"><span>${titre ? esc(titre) : ''}${o.compte != null ? ` <i>${o.compte}</i>` : ''}</span>${o.droite || ''}</div>` : ''}${contenu}</div>`; };
-/* Ouvrir une section par programme (une ligne des problèmes, une tuile, un lien « voir ») : elle s'ouvre, vient sous les
-   yeux et s'allume un instant ; ce n'est pas un choix de l'ingénieur, on ne le retient pas. */
+  const q = o.aide ? aide(o.aide[0], o.aide[1]) : '';
+  return `<div class="fs-groupe${o.cls ? ' ' + o.cls : ''}"${o.attrs ? ' ' + o.attrs : ''}>${titre || o.droite ? `<div class="fs-st"><span>${titre ? esc(titre) : ''}${o.compte != null ? ` <i>${o.compte}</i>` : ''}${q}</span>${o.droite || ''}</div>` : ''}${contenu}</div>`; };
+/* Ouvrir une section par programme (une ligne des problèmes, un lien « voir ») : elle s'ouvre, vient sous les yeux et
+   s'allume un instant ; ce n'est pas un choix de l'ingénieur, on ne le retient pas. */
 function ouvrirSection(box, cle, allumer) { const d = box && box.querySelector(`details.fs[data-section="${CSS.escape(cle)}"]`); if (!d) return null;
   d.open = true; try { d.scrollIntoView({ block: 'start', behavior: mouvementReduit() ? 'auto' : 'smooth' }); } catch (_) { d.scrollIntoView(); }
   if (allumer !== false) { d.classList.remove('fs-allume'); void d.offsetWidth; d.classList.add('fs-allume'); setTimeout(() => d.classList.remove('fs-allume'), 1400); }
   return d; }
 // ce que l'ingénieur ouvre ou ferme à la main (un clic, ou Entrée / Espace sur le titre), on le retient pour ce type ; une
-// action posée dans le résumé (`.fs-action`) agit sans ouvrir ni fermer ; une section vide sans contenu ne s'ouvre pas
+// action posée dans le résumé (`.fs-action`, un « ? ») agit sans ouvrir ni fermer ; une section vide sans contenu ne s'ouvre pas
 document.addEventListener('click', e => { const t = e.target && e.target.closest && e.target.closest('summary.fs-tete'); if (!t) return;
-  if (e.target.closest('.fs-action')) { e.preventDefault(); return; }
+  if (e.target.closest('.fs-action, .fi-q')) { e.preventDefault(); return; }
   const d = t.parentElement; if (!d) return; if (d.classList.contains('fs-clos')) { e.preventDefault(); return; }
   if (d.classList.contains('fs-vide')) return; setTimeout(() => retenirSection(d.dataset.type, d.dataset.section, d.open), 0); });
 
@@ -86,8 +98,8 @@ function badgeProblemes(probs, cle) { const xs = (probs || []).filter(p => p.sec
 const ORIGINES = { auto: 'auto', retest: 'retest', main: 'main', hyp: 'hyp.', norme: 'norme' };
 const origine = (o, titre) => `<i class="orig orig-${escA(o)}"${titre ? ` title="${escA(titre)}"` : ''}>${esc(ORIGINES[o] || o)}</i>`;
 /* « ↺ » : rend le calcul (ou le fichier) à une valeur forcée à la main. `cle` dit quoi rendre ; la fiche lie le bouton
-   par [data-auto] ; la valeur rendue se lit au survol et à côté, en petit. */
-const retourAuto = (cle, valeurAuto) => `<button type="button" class="fs-auto" data-auto="${escA(cle)}" title="${escA('Rendre la valeur calculée' + (valeurAuto != null && valeurAuto !== '' ? ' : ' + valeurAuto : ''))}">↺${valeurAuto != null && valeurAuto !== '' ? ' <span>' + esc(valeurAuto) + '</span>' : ''}</button>`;
+   par [data-auto] ; la valeur rendue se lit au survol et à côté, en petit. `attrs` : d'autres attributs (la ligne). */
+const retourAuto = (cle, valeurAuto, attrs) => `<button type="button" class="fs-auto" data-auto="${escA(cle)}"${attrs ? ' ' + attrs : ''} title="${escA('Rendre la valeur calculée' + (valeurAuto != null && valeurAuto !== '' ? ' : ' + valeurAuto : ''))}">↺${valeurAuto != null && valeurAuto !== '' ? ' <span>' + esc(valeurAuto) + '</span>' : ''}</button>`;
 
 /* CHANGER UNE LIAISON, d'où qu'on la change (sa fiche, le récapitulatif) : une entrée d'historique (Ctrl+Z), la vérité
    change, le plan et le contrôle suivent. Ce que la liaison portait avant la première retouche de ce champ (le retest,
@@ -115,3 +127,62 @@ function changerLiaisons(xs, quoi) { const ys = xs.filter(([l, c, v]) => l && l[
 function rendreChamps(xs, quoi) { const ys = xs.filter(([l, c]) => l && l.avant && c in l.avant); if (!ys.length) return false; histPush(quoi || 'retour au fichier');
   ys.forEach(([l, c]) => { const v = l.avant[c], av = { ...l.avant }; delete av[c]; if (Object.keys(av).length) l.avant = av; else delete l.avant; if (v == null) delete l[c]; else l[c] = v; });
   apresEdition(); return true; }
+
+/* ---- LE « ? » : comment l'outil a choisi -------------------------------------------------------------------------- */
+/* Les textes provisoires, courts : ceux de `explication` (08-explications) les remplacent dès qu'elle est là. */
+const AIDES_PROVISOIRES = {
+  calibre: ['Le calibre', 'L’outil essaie chaque calibre de la gamme du part number, du plus petit au plus grand, et garde le premier dont la courbe tient tout le profil de charge, avec la marge des hypothèses. Les courbes viennent de la norme de la famille du disjoncteur.'],
+  courbe: ['La courbe de déclenchement', 'Le temps que met le disjoncteur à couper selon le courant, à chaque température de la norme. Un point du profil à gauche des courbes ne déclenche pas.'],
+  profil: ['Le profil de charge', 'Ce que l’équipement tire : le démarrage, la transition, le permanent, et les états qu’on ajoute. Chaque état se juge sur la courbe.'],
+  module: ['Le module', 'L’outil prend le plus petit module de la norme qui loge tous les potentiels de la barrette, chaque câble dans un contact qui admet sa gauge. Les modules viennent de la bible des barrettes.'],
+  arrangement: ['L’arrangement', 'Celui que le part number nomme, sinon le plus petit arrangement de la norme qui a toutes les bornes et dont les contacts admettent les gauges des câbles.'],
+  prise: ['L’arrangement de la prise', 'Le plus petit arrangement de la norme qui loge tous les contacts de la prise, côté fiche et côté embase, avec les gauges de leurs câbles.'],
+  contact: ['Le contact à sertir', 'La table Contacts de la norme donne, pour la taille du contact, son sexe et la gauge du câble, la référence à sertir.'],
+  gauge: ['La gauge acceptée', 'La gauge du câble se lit dans son type (DR20 : 20 AWG) ; la norme dit quelles gauges la taille du contact accepte.'],
+  raccord: ['Le raccord', 'Choisi dans la table des raccords selon la norme du connecteur, sa taille, la reprise de blindage, l’étanchéité et l’orientation.'],
+  bande: ['Le band-it', 'Le collier qui reprend le blindage sur le raccord : le plus petit dont le diamètre admis couvre le toron.'],
+  manchon: ['Le manchon', 'Le manchon thermorétractable dont la plage de diamètre couvre le toron à la sortie du raccord.'],
+  tyrap: ['Le tyrap', 'Le collier qui tient le toron : le plus petit dont le diamètre admis couvre le toron.'],
+  cheminee: ['La cheminée', 'Un connecteur EN 4165 prend une cheminée par module, à la place d’un raccord.'],
+  toron: ['Le toron', 'Le diamètre du faisceau de câbles du connecteur, calculé depuis le diamètre de chaque câble (la base des câbles).'],
+  intensite: ['L’intensité admise', 'Ce que le câble admet selon l’EN 2853, déclassé comme la simulation : le faisceau, l’altitude, l’ambiante. Le courant vient du profil du disjoncteur en amont, sinon de l’hypothèse.'],
+  chute: ['La chute de tension', 'La résistance du câble × sa longueur × le courant, en ligne depuis le disjoncteur. Le seuil vient du réseau : la tension et le régime de la simulation.'],
+  masse: ['La masse', 'Un point de retour au corps de l’appareil : les câbles qui y vont n’ont ni connecteur ni contact.']
+};
+/* Le texte d'un « ? » : celui de `explication`, sinon le provisoire. */
+function explicationDe(cle, ctx) { let e = null;
+  try { e = typeof explication === 'function' ? explication(cle, ctx || {}) : null; } catch (_) { e = null; }
+  const p = AIDES_PROVISOIRES[cle] || ['', ''];
+  return { titre: (e && e.titre) || p[0], texte: (e && e.texte) || p[1] }; }
+/* Le bouton « ? » d'une valeur : `cle` dit laquelle, `ctx` ce qui la précise — les objets mêmes du moteur (le verdict d'un
+   disjoncteur, le plan d'un module, l'habillage d'un connecteur : ce que 08-explications sait lire). Ils se gardent le
+   temps d'un rendu, sous un numéro que le bouton porte (`data-q-id`) ; le rendu suivant repart de zéro, dans le même
+   ordre (un rendu en place retrouve les mêmes numéros). */
+const AIDE_CTX = { n: 0, m: new Map() };
+const remettreAides = () => { AIDE_CTX.n = 0; AIDE_CTX.m.clear(); };
+const aide = (cle, ctx) => { const t = (AIDES_PROVISOIRES[cle] || [cle])[0]; let id = '';
+  if (ctx) { id = String(++AIDE_CTX.n); AIDE_CTX.m.set(id, ctx); }
+  return `<button type="button" class="fi-q" data-q="${escA(cle)}"${id ? ` data-q-id="${id}"` : ''} aria-label="${escA('Comment l’outil le choisit — ' + t)}" aria-expanded="false" aria-haspopup="dialog">?</button>`; };
+/* LA BULLE du « ? » : une seule à la fois, sous le bouton (au-dessus s'il n'y a pas la place), qui suit le défilement. */
+const AIDE = { el: null, bouton: null };
+function fermerAide(rendreFocus) { const b = AIDE.bouton; AIDE.bouton = null; if (AIDE.el) AIDE.el.hidden = true;
+  if (b) { b.setAttribute('aria-expanded', 'false'); b.removeAttribute('aria-describedby'); b.classList.remove('ouvert'); if (rendreFocus && b.isConnected) b.focus(); } }
+function placerAide() { const b = AIDE.bouton, el = AIDE.el; if (!b || !el) return;
+  if (!b.isConnected) { fermerAide(); return; } const r = b.getBoundingClientRect();
+  if (r.bottom < 0 || r.top > window.innerHeight || (r.width === 0 && r.height === 0)) { fermerAide(); return; }
+  const w = el.offsetWidth, h = el.offsetHeight, W = window.innerWidth, H = window.innerHeight;
+  const x = Math.max(8, Math.min(r.left + r.width / 2 - 24, W - w - 8)), y = r.bottom + 8 + h <= H - 8 ? r.bottom + 8 : Math.max(8, r.top - 8 - h);
+  el.style.left = x + 'px'; el.style.top = y + 'px'; }
+function ouvrirAide(b) { if (AIDE.bouton === b) { fermerAide(); return; } fermerAide();
+  if (typeof cacherBulle === 'function') cacherBulle();
+  const e = explicationDe(b.dataset.q, (b.dataset.qId && AIDE_CTX.m.get(b.dataset.qId)) || {});
+  if (!AIDE.el) { AIDE.el = document.createElement('div'); AIDE.el.id = 'fi-q-bulle'; AIDE.el.className = 'fi-q-bulle'; AIDE.el.setAttribute('role', 'dialog'); AIDE.el.setAttribute('aria-modal', 'false'); AIDE.el.setAttribute('aria-labelledby', 'fi-q-titre'); document.body.appendChild(AIDE.el); }
+  AIDE.el.innerHTML = `<b id="fi-q-titre">${esc(e.titre || 'Comment l’outil choisit')}</b><p>${esc(e.texte || 'L’explication arrive.')}</p>`;
+  AIDE.el.hidden = false; AIDE.bouton = b; b.setAttribute('aria-expanded', 'true'); b.setAttribute('aria-describedby', 'fi-q-bulle'); b.classList.add('ouvert'); placerAide(); }
+// un clic sur un « ? » l'ouvre (ou le ferme) ; ailleurs, la bulle se ferme ; Échap la ferme et rend le clavier au bouton
+document.addEventListener('click', e => { const b = e.target && e.target.closest && e.target.closest('.fi-q');
+  if (b) { e.preventDefault(); e.stopPropagation(); ouvrirAide(b); return; }
+  if (AIDE.bouton && !(e.target.closest && e.target.closest('.fi-q-bulle'))) fermerAide(); }, true);
+window.addEventListener('keydown', e => { if (e.key === 'Escape' && AIDE.bouton) { e.preventDefault(); e.stopPropagation(); fermerAide(true); } }, true);
+window.addEventListener('scroll', () => { if (AIDE.bouton) placerAide(); }, true);
+window.addEventListener('resize', () => { if (AIDE.bouton) placerAide(); });

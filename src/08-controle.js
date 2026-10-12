@@ -24,20 +24,19 @@
    Chaque défaut une fois, sur son repère ; ce qui vaut pour tout le contrat
    (les types inconnus, l'ambiante) va sur le tableau. Les phrases montrées
    au lecteur disent « câble » et « gauge » (ses mots), le code garde les
-   siens (`fil`, `jauge`). Chaque point porte la
-   section de la fiche qui le démontre (la fiche v3 en a peu : Identité,
-   Disjoncteur, Connecteur, Fils) : une ligne de l'index ouvre la fiche sur
-   elle, allumée.
+   siens (`fil`, `jauge`). Chaque point porte la section de la fiche qui le
+   démontre (la fiche v4 en a peu : Calibre, Connecteur — ou Module —,
+   Raccord, Câbles) : une ligne de l'index ouvre la fiche sur elle, allumée.
    =========================================================================== */
 'use strict';
 
 const CONTROLE = { cle: null, items: [], ouvert: false };
 const genreDe = nom => VT_A_POSER.test(nom) ? 'aposer' : estCoupure(nom) ? 'coupure' : estBarrette(nom) ? 'barrette' : 'eqpt';
 /* La SECTION de la fiche qui démontre un point (08-sections) : la ligne de l'index y mène, ouverte. Un disjoncteur dit
-   la sienne (`sectionDj`, 08 bis : lui, ou ses fils) ; une barrette à poser se pose depuis son « Identité » ; le reste
-   — un arrangement qui ne loge pas, un contact ou une jauge refusés, un conducteur CCA — se voit dans « Connecteur »
-   (ses contacts y sont). */
-const sectionDuPoint = (nom, texte) => !nom ? '' : estDisjoncteur(nom) ? sectionDj(texte) : /^à poser sur/.test(texte) ? 'identite' : 'connecteur';
+   la sienne (`sectionDj`, 08 bis : son calibre, ou ses câbles) ; un câble qu'un repère nourrit se voit dans « Câbles » ;
+   le reste — un arrangement qui ne loge pas, une barrette à poser, un contact ou une gauge refusés, un conducteur CCA —
+   se voit dans « Connecteur » (ou « Module » : ses contacts y sont). */
+const sectionDuPoint = (nom, texte) => !nom ? '' : estDisjoncteur(nom) ? sectionDj(texte) : estMasse(nom) ? 'fils' : 'connecteur';
 function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu || HYPOTHESES, items = [], ko = (nom, texte) => items.push({ niveau: 'ko', nom, texte, section: sectionDuPoint(nom, texte) }), att = (nom, texte, plus) => items.push({ niveau: 'att', nom, texte, section: sectionDuPoint(nom, texte), ...plus });
   // le contact de chaque bout d'un fil, par les plans (la taille, la référence à sertir) : la protection et le CCA s'en servent
   const contacts = new Map(), noter = (r, fils) => (fils || []).forEach(x => { if (!x.f || !x.f.l) return; (contacts.get(x.f.l) || contacts.set(x.f.l, []).get(x.f.l)).push({ repere: r, taille: x.taille, sertir: x.sertir || null }); });

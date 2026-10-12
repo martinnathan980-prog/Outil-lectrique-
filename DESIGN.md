@@ -47,17 +47,20 @@ calculé automatiquement, mais tout modifiable ». Il a écarté le style « fut
 
 ## 2. Les principes
 
-1. **Le fil conducteur.** Chaque fiche a le **même squelette** (la fiche v3, 08-sections.js) : l'en-tête et ses
-   tuiles, la barre des problèmes repliée, puis **peu de sections**, des cartes dans un ordre fixe, qui se lisent encore
+1. **Le fil conducteur.** Chaque fiche a le **même squelette** (la fiche v4, 08-sections.js) : l'en-tête (le type et
+   le repère, sans tuiles — sauf un câble), la barre des problèmes repliée, puis **peu de sections**, des cartes dans un
+   ordre fixe, qui se lisent encore
    fermées (une icône, un titre, une ligne de résumé, une pastille d'état). On ouvre d'office ce qui définit l'objet ;
    « Déjà fait » attend un clic, et l'outil se souvient de ce que l'ingénieur ouvre, par type. Naviguer d'un objet à
    l'autre ne le perd jamais : la barre collée en haut de la fiche (‹ ›, Alt+← / Alt+→, une pile de 30 ; le repère s'y
    écrit quand l'en-tête passe dessous) — plus de fil d'Ariane (le folio se lit en bas, on ne se répète pas) ; ouvrir
    une fiche ne déplace pas le plan si l'objet est déjà en vue.
-2. **Un coup d'œil, puis un geste.** Chaque écran dit d'abord l'essentiel (une tuile, un chiffre, un état — « Calibre
-   10 A », bordée d'ambre quand le meilleur est ailleurs), puis donne le détail à qui le demande : le pourquoi d'un
-   chiffre se lit dans la **bulle du survol**, pas dans des phrases. Les problèmes ne sont jamais déroulés d'office :
-   une barre dit combien, sous l'en-tête, et se déplie en place.
+2. **Un coup d'œil, puis un geste.** Chaque écran dit d'abord l'essentiel (un chiffre et son état — le calibre retenu
+   en grand, sa pastille verte, ambre ou rouge), puis donne le détail à qui le demande : le pourquoi d'un chiffre se lit
+   dans la **bulle du survol**, pas dans des phrases ; comment l'outil a choisi une valeur, dans son **« ? »** (une
+   bulle de deux ou trois phrases, au clic). Les problèmes ne sont jamais déroulés d'office : une barre dit combien,
+   sous l'en-tête, et se déplie en place. Les mots sont ceux du lecteur : « câble » (jamais « fil » à l'écran),
+   « gauge », « raccord ».
 3. **Tout est calculé, tout est modifiable.** Un clic sur une valeur l'écrit. L'origine reste discrète : une pastille
    « main » seulement quand la valeur a été changée ici (« hyp. » pour une hypothèse de la simulation) ; « ↺ » (la
    valeur qu'il rend, en petit) rend le calcul ou le fichier. Ctrl+Z défait tout.
@@ -122,44 +125,75 @@ normes et la bible : jusqu'à 1040 px, en laissant toujours 320 px au plan), `--
 
 ## 5. Les composants communs (noms de classes, à réutiliser tels quels)
 
-- **La fiche v3** (`08-fiche.js`, `style-fiche.css`), de haut en bas, pour toutes les fiches :
+- **La fiche v4** (`08-fiche.js`, `style-fiche.css`), de haut en bas, pour toutes les fiches :
   · la **barre** `.fi-nav` (‹ `#fi-prec`, › `#fi-suiv`, `.fi-nav-nom` qui paraît quand `.fi.defile`, × `#in-fermer`) ;
-  · l'**en-tête** `.fi-entete` : `.fi-symbole`, `.fi-genre` (le type, la désignation), le repère `input.fi-nom`
-  (`#eq-rep` / `#fil-num`, F2) et `#fi-crayon`, puis les **tuiles** `.fi-tuiles > .fi-tuile[.ko|.att][data-aller]`
-  (`tuile(étiquette, valeur, { aller, etat, mono })` : une étiquette `.fi-tuile-k`, une valeur forte `.fi-tuile-v`,
-  le bord et la valeur de la couleur d'état ; un clic ouvre et allume sa section) ;
+  · l'**en-tête** `.fi-entete` : `.fi-symbole`, `.fi-genre` — le type (`#eq-nature`, une liste qui a l'air d'un mot :
+  celui du code du repère, une autre nature à la main, ↺ ; la même que la colonne Nature du récapitulatif) et la
+  désignation (`#eq-des`, invisible vide hors du survol) —, le repère `input.fi-nom` (`#eq-rep` / `#fil-num`, F2) et
+  `#fi-crayon`. **Plus de tuiles ni d'identité**, sauf pour un câble : ses tuiles `.fi-tuiles > .fi-tuile[.edit][.ko|.att]`
+  (`tuile(étiquette, valeur, { etat, mono, edit })`) portent le type et la longueur — qui s'y écrivent —, la gauge,
+  l'intensité ;
   · les **problèmes** `details.fi-alerte#fi-pbs` (repliée : `summary#fi-pb` « 3 problèmes · 7 à voir ») ; dépliée,
-  une ligne `.fi-pb-l[data-voir][data-connecteur][data-viser]` par point, la section en petit (`.fi-pb-s`) ;
-  · les **sections** (ci-dessous), puis le **pied** `.fi-pied`.
+  une ligne `.fi-pb-l[data-voir][data-connecteur][data-viser]` par point, la section en petit (`.fi-pb-s`) ; une
+  barrette à poser met dessous `.fi-poser` (« Poser au contrat sous 102VT1 ») ;
+  · les **sections** (ci-dessous), puis le **pied** `.fi-pied` (Récapitulatif → `recapitulatifDe(cible)`, « + Câble »,
+  Relief, « ··· »).
   Dans une section : des **champs** `.fs-champs > .fc` (`.fc-k` l'étiquette, `.fc-v` la valeur ou son champ `.fc-in`
-  qui a l'air d'une valeur et s'écrit d'un clic, `.fc-aide` une précision courte, `.fc-o` « main » et ↺), des **groupes**
-  `groupeSection(titre, contenu, { droite })` (un petit titre `.fs-st`, un filet au-dessus du suivant), des **tableaux**
-  sobres aux en-têtes collés (`.fi-entetes`) : les contacts `.fi-contacts` (Borne · Contact · Jauge ✓/✗, « ″ » pour le
-  même contact qu'au-dessus), les fils `.fi-ias` (une ligne `.fi-ia` de ≈ 32 px : numéro, AWG, barre `.fi-barre` de
-  l'intensité contre l'admis, chute `.fi-u` en volts de la couleur d'état ; les fils en défaut en tête), les paires
-  d'une prise `.fi-paires`, l'habillage `.fi-nomen` (une `.fi-piece[data-role]` par pièce, dans l'ordre de montage du moteur
-  `h.pieces` : rôle, référence, quantité, état ; « vérifié » ne s'écrit pas, « à confirmer » en ambre, « manque » en rouge).
-  La **bulle** : tout `[data-bulle]` dit son pourquoi au survol (`.fi-bulle`, texte sur plusieurs lignes).
+  qui a l'air d'une valeur et s'écrit d'un clic, `.fc-sous` une valeur seconde en petit, `.fc-o` « main » et ↺), des
+  **groupes** `groupeSection(titre, contenu, { droite, aide })` (un petit titre `.fs-st` et son « ? », un filet
+  au-dessus du suivant), des **tableaux** sobres aux en-têtes collés (`.fi-entetes`, avec leur « ? ») : les contacts
+  `.fi-contacts` (Borne · Contact · Gauge ✓/✗ · Câble en petit `.fi-cab-n`, « ″ » pour le même contact qu'au-dessus),
+  les **câbles** `.fi-ias.fi-cables` (une ligne `.fi-ia` sur deux rangs : en haut le numéro `.fi-num-b` qui ouvre sa
+  fiche, la barre `.fi-barre` de l'intensité contre l'admis — elle se remplit à l'entrée —, la chute `.fi-u` de la couleur
+  d'état, son seuil — celui que le moteur rend, `chuteAdmise(…, H)` — une fois dans l'en-tête ; en bas `.fi-cab-ed` ce
+  qui s'écrit DANS la ligne : le type `[data-cable][data-champ=type]` (la liste `#fi-cables` de la base), la longueur
+  (« hyp. » tant que le retest ne la porte pas), « → » le bout où il arrive et son contact en puce `.fi-ct-puce[data-sertir]`
+  — « ↺ » `[data-auto="cable:…"]` rend le fichier), les paires d'une prise `.fi-paires`, le raccord `.fi-nomen` (une
+  `.fi-piece[data-role]` par pièce sur deux rangs — son rôle et son « ? », sa référence ; « vérifié » ne s'écrit pas,
+  « à confirmer » en ambre, « manque » en rouge ; ce qu'on ne sait pas ne s'écrit pas).
+  La **bulle** : tout `[data-bulle]` dit son pourquoi au survol (`.fi-bulle`, texte sur plusieurs lignes) — pas sur ce
+  qu'on écrit (un champ, une puce de contact).
+- **Le « ? »** (`08-sections`, `aide(cle, contexte)`) : un rond `.fi-q[data-q]` de 17 px à côté de chaque valeur que
+  l'outil choisit (calibre, courbe, profil, module, arrangement, prise, contact, gauge, raccord, bande, manchon, tyrap,
+  cheminée, toron, intensité, chute, masse) ; un clic ou Entrée ouvre sa bulle `#fi-q-bulle.fi-q-bulle` (un titre, deux
+  ou trois phrases : comment l'outil choisit, d'où vient la donnée), une seule à la fois ; Échap la ferme et rend le
+  clavier au « ? », un clic ailleurs aussi. Les textes : `explication(cle, contexte)` (08-explications) ; le contexte
+  (les objets du moteur : le verdict d'un disjoncteur, le plan d'un module, l'habillage d'un connecteur) se garde le
+  temps d'un rendu sous `data-q-id`.
 - **La fiche à sections** (`08-sections.js`, `style-sections.css`) : `ficheSections(type, [{ cle, titre?, resume?,
   badge?: { t, etat }, contenu, vide? }])` rend des **cartes** (`details.fs`, une icône `.fs-ico` par section) dans
-  l'ordre `ORDRE_SECTIONS` : identité (repère, zone, désignation, emplacement), disjoncteur, connecteur (ou module), de →
-  vers (un fil), fils (l'intensité ET la chute), déjà fait ; `OUVERTES_D_OFFICE` par type ; la mémoire par type
-  (`atelier.fiche.sections.v3`) ; `ouvrirSection(box, cle)` l'ouvre, l'amène et l'allume (`.fs-allume`). Une section sans
-  donnée garde sa place, en pointillé, et dit ce qui manque (`vide`). Plus de « Problèmes » en bas, plus de « Détail du
-  calcul », plus de « Chute » ni d'« Habillage » à part. `rafraichirFicheEnPlace()` refait la fiche autour du champ
-  qu'on écrit (la main y reste).
+  l'ordre `ORDRE_SECTIONS` : Calibre (`disjoncteur`), Connecteur ou Module (`connecteur`), Raccord (`raccord`), De →
+  vers (`trajet`, un câble), Câbles (`fils` : l'intensité ET la chute), Déjà fait — plus d'Identité ;
+  `OUVERTES_D_OFFICE` par type (`equipement`, `disjoncteur`, `barrette`, `prise`, `masse`, `fil`) ; la mémoire par type
+  (`atelier.fiche.sections.v4`) ; `ouvrirSection(box, cle)` l'ouvre, l'amène et l'allume (`.fs-allume`). Une section sans
+  donnée garde sa place, en pointillé, et dit ce qui manque (`vide`). `rafraichirFicheEnPlace()` refait la fiche autour
+  du champ qu'on écrit (la main y reste).
 - **Le connecteur** d'un équipement : les segments `.fi-segs .seg[data-connecteur]` (A · B · C, le fautif marqué), puis
-  pour le montré : le part number (toutes ses liaisons d'un geste), la norme en puce `.fi-norme-puce[data-face]` (un clic
-  montre la face ; « Changer » les autres arrangements), les bornes en plages (« A1 à A11 »), les contacts (le sexe en
-  puces jointes à droite), l'habillage. Une barrette et une prise : la même section (« Module », « Connecteur »), la
-  **face vivante** (survoler un contact allume son fil et sa ligne, un clic le choisit : `.choisi`).
-- **La fiche du disjoncteur** (`08-disjoncteurs.js`, `style-dj.css`) : UNE section, `sectionDisjoncteur(nom, d, o,
-  probs)` — le part number, la gamme en segments `.dj-chips .dj-chip[data-cal]` (ceux de `d.gamme`, jamais une liste
-  écrite ; le retenu pressé, le meilleur étoilé), la ligne du meilleur `.dj-meilleur` quand il diffère ou que des fils
-  sont à grossir (Retenir, Changer les fils, « Lesquels » replié, le pourquoi au survol), la courbe, le profil
-  (démarrage, transition, permanent, puis les états ajoutés). Chaque groupe dans un `.fi-dj[data-disj][data-part]` que
-  `lierDisjonction` retrouve ; ses fils dans la section commune (`lignesFilsDisjoncteur`). Une courbe : Fritsch-Carlson
-  en log-log, trois décimales, une seule bande par défaut, chaque trait nommé à son bout.
+  pour le montré : la **norme d'abord** — l'arrangement en puce `.fi-norme-puce[data-face]` (un clic montre la face ;
+  « Changer » les autres arrangements ; son « ? ») —, dessous en petit la famille `.fi-fam` et le part number `.fi-pn`
+  (modifiable : toutes ses liaisons d'un geste) ; plus de « Bornes 1 à 2 » ; les contacts (le sexe en puces jointes à
+  droite). Le **Raccord** du connecteur montré a sa carte. Une **barrette** : le module (sa référence et son « ? »), sa
+  norme en puce `.fi-norme-gal[data-changer="bar|…"]` qui ouvre sous elle la **galerie** `.fi-galerie` des assemblages de
+  la norme (`.cand.cand-g` : chaque variante dessinée avec ses contacts pris, ce qu'elle laisse de libre, la retenue
+  pressée, la mieux taillée étoilée ; un onglet par norme `[data-gal-famille]`, « Automatique » `.fi-gal-auto`), la
+  **face vivante** (survoler un contact allume son câble et sa ligne, un clic le choisit : `.choisi`), les contacts par
+  potentiel. Une **prise** : la norme, **une seule face** `.fi-faces[data-face-montree]` (la fiche, ou celle qui porte le
+  problème ; l'autre d'un clic, `[data-voir-face]`), les paires, un raccord par côté. Une **masse** : une seule carte,
+  ses câbles `.fi-masse` (le numéro, d'où il vient, la gauge ; leur nombre dans le titre). Un **câble** : ses tuiles, De →
+  vers (deux cartes `.fi-bout` : `[data-bout]` ouvre l'équipement le contact allumé, le contact du bout en puce ; la
+  route dessous), l'intensité et la chute (`.fi-mes`, leur « ? »).
+- **La fiche du disjoncteur** (`08-disjoncteurs.js`, `style-dj.css`) : UNE section, « Calibre », `sectionDisjoncteur(nom,
+  d, o, probs)` — le calibre retenu en grand `.dj-heros` (`.dj-h-cal`, sa pastille `.dj-verdict-pastille.ok|.att|.ko` :
+  « Valide — ne déclenche pas », « Juste — touche la courbe », « Déclenche » ; d'où il vient — automatique (le meilleur),
+  à la main (↺ `[data-dj-geste="rendre"]`, le retest), le retest — ; le meilleur `.dj-m-mot`, son pourquoi au survol),
+  « Automatique (15 A) » `#dj-retenir` quand il est ailleurs, « Autre calibre » `[data-changer="dj|…"]` qui ouvre la gamme
+  `.dj-chips .dj-chip[data-cal]` (ceux de `d.gamme` ; le retenu pressé, le meilleur étoilé) ; le part number suit
+  (`retenirCalibre` / `rendreCalibre`), il ne s'affiche plus ; en une ligne `.dj-grossir` les câbles que le meilleur
+  demande (« Lesquels » replié, « Changer les câbles » `#dj-fils-changer`) ; puis la courbe (08-courbe-dj, sans
+  bascule), puis le profil `.dj-etats` (les unités dans l'en-tête ; chaque état, démarrage, transition et permanent
+  compris, a son × `.dj-x` — supprimé, il vaut `null` au profil ; « + État » `#dj-plus` en ajoute, ou rend l'un des
+  trois). Chaque groupe dans un `.fi-dj[data-disj][data-part]` que `lierDisjonction` retrouve ; ses câbles dans la
+  section commune (`lignesFilsDisjoncteur`).
 - **Le récapitulatif** (`08-recap.js`, `style-recap.css`) : `ouvrirBase('moitie'|'page')`, `recapitulatifDe(c)` (l'onglet
   de l'objet, filtré sur lui) ; une colonne `{ k, t, html, tri, texte, option }` (`option` : au choix, pas d'office) ;
   l'état `etatHtml(niveau, mot, bulle)` (`.rc-etat.ok|.att|.ko`) ; une case modifiable `.rc-v[data-f]` a l'air d'un champ
@@ -192,9 +226,9 @@ normes et la bible : jusqu'à 1040 px, en laissant toujours 320 px au plan), `--
 - **État** `.fi-etat.ok|.att|.ko` : un point de sa couleur et un mot (l'index, la comparaison).
   La **route** d'un fil est un trait de sa couleur (`.fi-puce`, `.fi-route`).
 - **Puce** `.fi-chip` (un choix ; pressée : filet d'encre, fond blanc) ; **segment** `.segment` (le pressé en relief).
-- **Carte** `.fi-cadre` ; **tuile** `.fi-tuile` (une étiquette, une valeur forte) ; **étiquette** `.fc-k`, `.fi-tuile-k`
+- **Carte** `.fi-cadre` ; **tuile** `.fi-tuile` (une étiquette, une valeur forte ; le câble seulement) ; **étiquette** `.fc-k`, `.fi-tuile-k`
   (Inter 500, `--t-2`, avec sa majuscule) ; `.sur`, `th` ailleurs.
-- **Ligne de fil** `.fi-fil` (un contact, une ligne de la comparaison) ou `.fi-ia` (un fil et ses mesures) dans une liste
+- **Ligne de câble** `.fi-fil` (un contact, une ligne de la comparaison, un câble d'une masse) ou `.fi-ia` (un câble et ses mesures) dans une liste
   `.fi-liste` (colonnes portées par la liste, `subgrid` ; en-têtes `.fi-entetes` collés sous la barre).
 - **Boutons** : `.btn.cuivre` (plein, à l'encre : l'action principale, une par écran), `.btn.papier` (secondaire),
   `.btn.lien`, `.fi-bouton` (pied de fiche), `.fi-lien`, `.rd` (icône seule, carré gris quand il est pressé).

@@ -1,12 +1,12 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   LA FICHE v3 (08 bis) et L'INDEX des repères (08) — tout ce qui vit dans l'inspecteur, en « Graphite » (DESIGN.md)
-   Le lecteur : « trop de gris, rien de carré ». Une fiche se lit d'un coup d'œil, de haut en bas : la barre collée en
-   haut (‹ ›, ×), l'en-tête (le symbole, le type, le repère en grand, des TUILES nettes : une étiquette, une valeur
-   forte, un bord d'état), la barre des problèmes (repliée), puis des CARTES posées sur le fond doux de la fiche
-   (style-sections.css), puis le pied collé en bas. Les étiquettes ont leur majuscule et l'encre seconde (--t-2), les
-   valeurs l'encre (--t-1) ; les identifiants en chasse fixe. Dans une carte : des champs qui ont l'air de valeurs et
-   s'écrivent d'un clic, des tableaux sobres aux en-têtes collés, des barres d'état. La couleur ne dit que l'état ; les
-   routes gardent la leur ; les faces sont sur papier. Les composants communs (.fi-chip, .fi-liste, .fi-fil, .fi-bouton,
+   LA FICHE v4 (08 bis) et L'INDEX des repères (08) — tout ce qui vit dans l'inspecteur, en « Graphite » (DESIGN.md)
+   Le lecteur : « moins de texte, moins de gris, tout modifiable très facilement ». Une fiche se lit d'un coup d'œil,
+   de haut en bas : la barre collée en haut (‹ ›, ×), l'en-tête (le symbole, le type et la désignation en petit, le
+   repère en grand — les TUILES ne restent qu'au câble), la barre des problèmes (repliée), puis des CARTES posées sur le
+   fond doux de la fiche (style-sections.css), puis le pied collé en bas. Les étiquettes ont leur majuscule et l'encre
+   seconde (--t-2), les valeurs l'encre (--t-1) ; les identifiants en chasse fixe. Dans une carte : des champs qui ont
+   l'air de valeurs et s'écrivent d'un clic, des tableaux sobres aux en-têtes collés, des barres d'état qui se
+   remplissent. La couleur ne dit que l'état ; les routes gardent la leur ; les faces sont sur papier. Les composants communs (.fi-chip, .fi-liste, .fi-fil, .fi-bouton,
    .fi-cadre…) servent aussi à la comparaison des contrats déjà faits (style-ref.css).
    ═══════════════════════════════════════════════════════════════════════ */
 .fi{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;position:relative;scroll-padding:60px 0 72px;padding:0 var(--sp-4);display:flex;flex-direction:column;scrollbar-width:thin;
@@ -48,8 +48,24 @@
 .fi-symbole svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .fi-symbole .fi-sym-route{stroke:var(--c,currentColor);stroke-width:2.6}
 .fi-ident{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px}
-.fi-genre{display:flex;align-items:center;gap:6px;max-width:100%;font:500 var(--f-12)/1.3 var(--sans);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fi-genre span{color:var(--t-2);overflow:hidden;text-overflow:ellipsis}
+.fi-genre{display:flex;align-items:center;gap:2px;max-width:100%;min-height:22px;font:500 var(--f-13)/1.3 var(--sans);color:var(--t-2);white-space:nowrap;overflow:hidden}
+.fi-genre>span:not(.fi-nature){color:var(--t-2);overflow:hidden;text-overflow:ellipsis}
+.fi-genre .fi-q{margin-left:6px}
+.fi-genre .fs-auto{height:20px;margin-left:4px}
+/* le type : une liste qui a l'air d'un mot ; un chevron discret dit qu'elle s'ouvre */
+.fi-nature{position:relative;display:inline-flex;align-items:center;flex:none;margin-left:-6px;border-radius:var(--r-1);transition:background var(--rapide)}
+.fi-nature:hover{background:var(--s-hover)}
+.fi-nature select{appearance:none;-webkit-appearance:none;field-sizing:content;min-width:0;height:22px;margin:0;padding:0 20px 0 6px;border:none;background:none;color:var(--t-1);font:500 var(--f-13)/22px var(--sans);cursor:pointer}
+.fi-nature select:focus-visible{outline:2px solid var(--accent);outline-offset:0;border-radius:var(--r-1)}
+.fi-nature option{color:var(--t-1);background:var(--s-flottant)}
+.fi-nature-v{position:absolute;right:4px;top:4px;width:14px;height:14px;color:var(--t-2);pointer-events:none}
+/* la désignation : un texte libre, à côté du type ; vide, elle ne se voit qu'au survol */
+.fi-des{flex:1 1 auto;min-width:3ch;max-width:100%;field-sizing:content;height:22px;margin:0 0 0 2px;padding:0 6px;border:1px solid transparent;border-radius:var(--r-1);background:none;color:var(--t-2);font:400 var(--f-13)/1 var(--sans);text-overflow:ellipsis;transition:background var(--rapide),border-color var(--rapide)}
+.fi-des.plein::before{content:"·"}
+.fi-des::placeholder{color:transparent}
+.fi-entete:hover .fi-des::placeholder,.fi-des:focus::placeholder{color:var(--t-3)}
+.fi-des:hover{background:var(--s-hover)}
+.fi-des:focus{outline:none;background:var(--s-surface);border-color:var(--accent);box-shadow:var(--anneau);color:var(--t-1)}
 .fi-genre-route{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono)}
 .fi-nom-ligne{display:flex;align-items:center;gap:2px;max-width:100%;min-width:0}
 .fi-nom{display:block;min-width:0;max-width:100%;border:none;background:none;margin:0 0 0 -6px;padding:1px 6px;font:600 var(--f-24)/1.2 var(--mono);letter-spacing:-.02em;color:var(--t-1);border-radius:var(--r-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -66,9 +82,22 @@ input.fi-nom:focus{outline:none;background:var(--s-surface);box-shadow:inset 0 0
 button.fi-tuile{cursor:pointer}
 button.fi-tuile:hover{border-color:var(--s-line-2);box-shadow:var(--sh-1),0 0 0 3px var(--s-hover)}
 .fi-tuile-k{font:500 11.5px/1.2 var(--sans);color:var(--t-2);white-space:nowrap}
-.fi-tuile-v{max-width:100%;font:600 15px/1.25 var(--sans);letter-spacing:-.01em;color:var(--t-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.fi-tuile-v{max-width:100%;min-height:22px;font:600 15px/1.25 var(--sans);letter-spacing:-.01em;color:var(--t-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 .fi-tuile.mono .fi-tuile-v{font:600 var(--f-14)/1.3 var(--mono);letter-spacing:-.01em}
 .fi-tuile-v i{font:500 var(--f-11) var(--sans);color:var(--t-2);margin-left:2px}
+/* une tuile qui s'écrit (le type, la longueur d'un câble) : le champ a l'air de la valeur */
+.fi-tuile.edit{cursor:text}
+.fi-tuile.edit:hover{border-color:var(--s-line-2)}
+.fi-tuile.edit:focus-within{border-color:var(--accent);box-shadow:var(--anneau)}
+.fi-tuile-v{display:flex;align-items:center;gap:2px}
+.fi-tuile .fc-in{height:22px;margin:0 0 0 -4px;padding:0 4px;border:none;font:600 15px/1.25 var(--sans);letter-spacing:-.01em;min-width:3ch;text-align:left}
+.fi-tuile .fc-in::placeholder{color:var(--t-1);font:inherit}
+.fi-tuile .fc-in.court{min-width:2ch;text-align:left}
+.fi-tuile.mono .fc-in{font:600 var(--f-14)/1.3 var(--mono)}
+.fi-tuile .fc-in:focus{box-shadow:none;border:none;background:none}
+.fi-tuile .fs-auto{height:20px;padding:0 6px;margin-left:4px}
+.fi-tuile .fs-auto span,.fi-tuile .orig{display:none}
+.fi-tuile .orig-hyp{display:inline-block;margin-left:4px;padding:2px 6px}
 .fi-tuile-v .fi-sep{margin:0 5px;color:var(--t-3);font:inherit}
 .fi-tuile.att{border-color:color-mix(in srgb,var(--warn) 45%,var(--s-line));box-shadow:inset 3px 0 0 var(--warn),var(--sh-1)}
 .fi-tuile.att .fi-tuile-v{color:var(--warn)}
@@ -106,7 +135,18 @@ button.fi-tuile:hover{border-color:var(--s-line-2);box-shadow:var(--sh-1),0 0 0 
 .fc-v .id{font-size:var(--f-13)}
 .fc-o{flex:none;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .fc-aide{font:500 var(--f-12) var(--sans);color:var(--t-2);white-space:nowrap}
-.fc-sous{grid-column:2/-1;margin:-6px 0 6px;font-size:var(--f-12);line-height:1.45;color:var(--t-2)}
+.fc-sous{grid-column:2/-1;margin:-6px 0 6px;font-size:var(--f-12);line-height:1.45;color:var(--t-2);display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px}
+.fc-v .fi-q{margin-left:2px}
+/* la famille d'une norme, et le part number en petit, sous elle : un champ qui a l'air d'une valeur seconde */
+.fi-fam{font:500 var(--f-12) var(--sans);color:var(--t-2)}
+.fi-pn{display:inline-flex;align-items:center;gap:6px;min-width:0}
+.fi-pn-k{font:500 var(--f-11) var(--sans);color:var(--t-2)}
+.fi-pn .fc-in{height:24px;margin:0 0 0 -6px;padding:0 6px;font:500 var(--f-12) var(--mono);color:var(--t-2)}
+.fi-pn .fc-in:focus{color:var(--t-1)}
+.fi-pn .orig{margin:0}
+.fi-pn .fs-auto{height:22px}
+.fi-ecart{display:inline-flex;align-items:center;flex-wrap:wrap;gap:2px 6px}
+.fi-ecart .id{font-size:var(--f-12)}
 .fc>.fi-choix{grid-column:1/-1}
 .fc-in{flex:0 1 22ch;min-width:0;height:30px;margin:0 0 0 -8px;padding:0 8px;border:1px solid transparent;border-radius:var(--r-1);background:transparent;color:var(--t-1);font:inherit;transition:background var(--rapide),border-color var(--rapide),box-shadow var(--rapide)}
 .fc-in.mono{font-family:var(--mono);font-weight:500}
@@ -198,8 +238,40 @@ button.fi-tuile:hover{border-color:var(--s-line-2);box-shadow:var(--sh-1),0 0 0 
 .fi-face .mj .mj-contact.vise .mj-bague,.fi-face .mj .mj-contact.plein:hover .mj-bague{stroke:#1d1d1f;stroke-width:2.2}
 .fi-face .mj .mj-contact.choisi .mj-halo{fill:rgba(29,29,31,.18);stroke:#1d1d1f;stroke-width:1.2}
 .fi-face .mj .mj-contact.choisi .mj-bague{stroke:#1d1d1f;stroke-width:2.6}
+/* la face montrée d'une prise : son nom, et l'autre d'un clic */
+.fi-face-tete{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:26px;font:600 var(--f-12) var(--sans);color:var(--t-1)}
+.fi-face-tete .fi-lien svg.ico{width:14px;height:14px}
+/* LA GALERIE des assemblages d'une norme (une barrette) : chaque variante dessinée en petit, ses contacts pris ; la
+   retenue à l'encre, la mieux taillée étoilée ; un clic en retient une */
+.fi-norme-gal{gap:6px;padding:0 8px 0 10px;font-family:var(--sans);font-weight:600}
+.fi-norme-gal svg.fi-chevron{width:14px;height:14px;color:var(--t-2);transition:transform var(--rapide)}
+.fi-norme-gal[aria-expanded="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.fi-norme-gal[aria-expanded="true"] svg.fi-chevron{transform:rotate(180deg)}
+.fi-galerie-choix .fi-choix-corps{max-height:none}
+.fi-gal-tete{display:flex;align-items:center;gap:8px;min-height:30px}
+.fi-gal-onglets{display:flex;gap:6px;flex-wrap:wrap}
+.fi-gal-mot{font:500 var(--f-12) var(--sans);color:var(--t-2);display:inline-flex;align-items:center;gap:6px}
+.fi-gal-mot::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok)}
+.fi-gal-auto{height:28px;padding:0 12px;font-size:var(--f-12)}
+.fi-galerie{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+.fi .cand.cand-g{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 6px 7px;text-align:center;position:relative}
+.cand-face{display:grid;place-items:center;width:100%;height:84px;padding:4px;border-radius:var(--r-1);background:var(--s-papier);
+  background-image:linear-gradient(var(--s-papier-grille) 1px,transparent 1px),linear-gradient(90deg,var(--s-papier-grille) 1px,transparent 1px);background-size:8px 8px}
+.cand-face svg{max-width:100%;max-height:76px;width:auto;height:auto;display:block}
+.cand-face .mj .mj-corps{fill:#f4f5f7;stroke:#2b3440;stroke-width:1.6}
+.cand-face .mj .mj-insert{fill:#eceef2;stroke:#a7b0ba;stroke-width:1}
+.cand-face .mj .mj-bague{fill:#fff;stroke:#3a4350;stroke-width:1.4}
+.cand-face .mj .mj-trou{fill:#cdd3da}
+.cand-face .mj .ko .mj-bague{stroke:#c3271f;stroke-width:2.6}
+.cand-face .mj .mj-lettre{display:none}
+.fi .cand.cand-g .cand-nom{display:inline-flex;align-items:center;gap:4px;font:600 var(--f-12)/1.2 var(--mono);color:var(--t-1)}
+.fi .cand.cand-g .cand-nom b{font:inherit}
+.fi .cand.cand-g .cand-mot{font:500 var(--f-11)/1.3 var(--sans);color:var(--t-2)}
+.cand-etoile{display:inline-flex;color:var(--ok)}
+.cand-etoile svg.ico{width:11px;height:11px;stroke:none}
+.fi .cand.cand-g[aria-pressed="true"] .cand-mot{color:var(--t-1);font-weight:600}
 /* poser une barrette au contrat : le repère proposé, un bouton */
-.fi-poser{display:flex;align-items:center;gap:10px;margin-top:4px;padding:10px 12px;border:1px dashed color-mix(in srgb,var(--warn) 50%,transparent);border-radius:var(--r-2);background:var(--warn-soft);font:500 var(--f-12) var(--sans);color:var(--t-1)}
+.fi-poser{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:10px 12px;border:1px dashed color-mix(in srgb,var(--warn) 50%,transparent);border-radius:var(--r-2);background:var(--warn-soft);font:500 var(--f-12) var(--sans);color:var(--t-1)}
 .fi-poser .fc-in{background:var(--s-surface);border-color:var(--s-line-2);margin:0;width:12ch;flex:none}
 .fi-poser .btn{height:30px}
 
@@ -231,11 +303,16 @@ button.fi-tuile:hover{border-color:var(--s-line-2);box-shadow:var(--sh-1),0 0 0 
 .fi-groupe:first-child{padding-top:0}
 .fi-groupe i{font:400 var(--f-11) var(--mono);color:var(--t-2)}
 /* les en-têtes d'un tableau : collés sous la barre quand la liste défile */
-.fi-entetes{position:sticky;top:44px;z-index:2;display:grid;grid-template-columns:subgrid;column-gap:12px;align-items:center;min-height:28px;padding:0 8px;margin-bottom:2px;
+.fi-entetes{position:sticky;top:44px;z-index:2;display:grid;grid-template-columns:subgrid;column-gap:12px;align-items:center;min-height:30px;padding:0 8px;margin-bottom:2px;
   font:600 var(--f-11)/1.2 var(--sans);color:var(--t-2);background:var(--s-surface);border-bottom:1px solid var(--s-line)}
+.fi-entetes>span{display:inline-flex;align-items:center;white-space:nowrap}
+.fi-entetes em{font-style:normal;font-weight:500;margin-left:4px;color:var(--t-2)}
 /* LES CONTACTS : Borne · Contact · Jauge */
-.fi-liste.fi-contacts{grid-template-columns:minmax(52px,auto) minmax(0,1fr) 56px}
-.fi-contacts .fi-entetes span:last-child,.fi-contacts .fi-jg{justify-self:end}
+.fi-liste.fi-contacts{grid-template-columns:minmax(52px,auto) minmax(0,1fr) 54px minmax(48px,auto)}
+.fi-contacts .fi-entetes span:nth-child(3),.fi-contacts .fi-jg{justify-self:end}
+.fi-contacts .fi-entetes span:last-child,.fi-cab-n{justify-self:end;text-align:right}
+.fi-cab-n{font:500 var(--f-11) var(--mono);color:var(--t-2);white-space:nowrap}
+.fi-entetes .fi-q{width:15px;height:15px;font-size:9.5px;margin-left:5px;vertical-align:0}
 .fi-contacts .fi-fil.ko{background:var(--ko-soft)}
 .fi-sertir{min-width:0;justify-self:start;max-width:100%;border:none;background:none;padding:2px 6px;margin-left:-6px;border-radius:var(--r-1);font:500 var(--f-12) var(--mono);color:var(--t-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
 button.fi-sertir{cursor:pointer;transition:background var(--rapide)}
@@ -250,33 +327,70 @@ button.fi-sertir:hover{background:var(--s-hover)}
 .fi-num{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;min-width:0}
 .fi-num b{font:600 var(--f-12) var(--mono);color:var(--t-1);overflow:hidden;text-overflow:ellipsis}
 .fi-num b.neuf{color:var(--accent-2);font-family:var(--sans);font-weight:500}
-/* LES FILS : Fil · AWG · Intensité / admis · Chute — une ligne compacte chacun */
-.fi-liste.fi-ias{grid-template-columns:minmax(72px,auto) 34px minmax(120px,1fr) 62px}
+/* LES CÂBLES : une ligne sur deux rangs — en haut ce qu'on lit (le numéro, l'intensité contre l'admis, la chute), en bas ce
+   qu'on écrit (le type, la longueur, le contact au bout où il arrive) */
+.fi-liste.fi-ias{grid-template-columns:minmax(74px,auto) minmax(110px,1fr) minmax(52px,auto)}
 .fi-ias>.fi-ia{grid-template-columns:subgrid}
-.fi-ia{position:relative;display:grid;align-items:center;column-gap:12px;min-height:32px;padding:2px 8px;border-radius:var(--r-1);font-size:var(--f-12);transition:background var(--rapide)}
-.fi-ia .fi-jg{justify-self:center;font-weight:500}
-.fi-ias .fi-entetes span:nth-child(2){justify-self:center}
+.fi-ia{position:relative;display:grid;align-items:center;column-gap:12px;row-gap:1px;min-height:32px;padding:5px 8px 6px;border-radius:var(--r-1);font-size:var(--f-12);transition:background var(--rapide)}
 .fi-ias .fi-entetes span:last-child,.fi-u{justify-self:end;text-align:right}
 .fi-ia.ko{background:color-mix(in srgb,var(--ko-soft) 70%,transparent);box-shadow:inset 3px 0 0 var(--ko)}
 .fi-ia.att{box-shadow:inset 3px 0 0 var(--warn)}
+.fi-num-b{min-width:0;border:none;background:none;padding:2px 4px;margin:-2px -4px;border-radius:var(--r-1);font:600 var(--f-12) var(--mono);color:var(--t-1);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-num-b:hover{background:var(--s-hover);text-decoration:underline;text-decoration-color:var(--t-3);text-underline-offset:3px}
+.fi-num-b.neuf{color:var(--accent-2);font-family:var(--sans);font-weight:500}
 .fi-mesure{display:flex;align-items:center;gap:10px;min-width:0}
 .fi-mesure .fi-barre{flex:1}
-.fi-v{flex:none;min-width:76px;text-align:right;font:500 var(--f-12) var(--sans);color:var(--t-1);white-space:nowrap;font-variant-numeric:tabular-nums}
+.fi-v{flex:none;min-width:72px;text-align:right;font:500 var(--f-12) var(--sans);color:var(--t-1);white-space:nowrap;font-variant-numeric:tabular-nums}
 .fi-u{font:600 var(--f-12) var(--sans);color:var(--t-2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.fi-u i{font-weight:500;color:var(--t-2)}
 .fi-u.ok{color:var(--t-1)}
 .fi-u.att{color:var(--warn)}
 .fi-u.ko{color:var(--ko)}
+/* le rang du bas : ce qu'on écrit, là où on le voit — un clic sur la valeur l'écrit ; « ↺ » quand elle a été changée */
+.fi-cab-ed{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:2px 12px;min-width:0;padding-left:21px;cursor:default}
+.fi-ed{display:inline-flex;align-items:center;gap:2px;min-width:0}
+.fi-cab-ed .fc-in{height:24px;margin:0 0 0 -6px;padding:0 6px;font:500 var(--f-12) var(--sans);color:var(--t-2);min-width:4ch;border-color:transparent;background:none}
+.fi-cab-ed .fc-in.mono{font:500 var(--f-12) var(--mono);min-width:6ch}
+/* une liste de la base (le type d'un câble) : sans la flèche du navigateur, qui mange la valeur ; elle s'ouvre en écrivant */
+.fi .fc-in[list]::-webkit-calendar-picker-indicator{display:none!important}
+.fi-cab-ed .fc-in:hover{background:var(--s-hover);color:var(--t-1)}
+.fi-cab-ed .fc-in:focus{color:var(--t-1);background:var(--s-surface)}
+.fi-ed.main .fc-in{color:var(--warn);font-weight:600}
+.fi-ed-u{font:500 var(--f-12) var(--sans);color:var(--t-2);margin-left:-2px}
+.fi-ed-hyp{font:italic 500 var(--f-11) var(--sans);color:var(--t-2);margin-left:5px}
+.fi-cab-ed .fs-auto{height:20px;padding:0 6px;margin-left:4px;font-size:var(--f-11)}
+.fi-ed-bout{display:inline-flex;align-items:center;gap:6px;min-width:0}
+.fi-ed-vers{font:500 var(--f-12) var(--mono);color:var(--t-2);white-space:nowrap}
+.fi-ed-lu{font-size:var(--f-12);color:var(--t-2)}
+/* le contact d'un bout, en puce : un clic ouvre les contacts que la table accepte */
+.fi-sertir.fi-ct-puce{display:inline-flex;align-items:center;gap:4px;height:22px;margin:0;padding:0 7px;border:1px solid var(--s-line);border-radius:var(--r-1);background:var(--s-surface);font:500 var(--f-11) var(--mono);color:var(--t-1);max-width:100%}
+.fi-sertir.fi-ct-puce:hover{border-color:var(--t-3);background:var(--s-surface)}
+.fi-sertir.fi-ct-puce.main{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,var(--s-line))}
+.fi-sertir.fi-ct-puce.ko{color:var(--ko);border-color:color-mix(in srgb,var(--ko) 40%,var(--s-line));background:var(--ko-soft)}
+.fi-sertir.fi-ct-puce i{font:700 var(--f-11) var(--sans);color:var(--ko)}
 .fi-pied-liste{padding-top:2px}
 .fi-barre{display:block;height:6px;border-radius:3px;background:var(--s-line);overflow:hidden;min-width:40px}
-.fi-barre i{display:block;height:100%;border-radius:3px;background:var(--t-2);transition:width var(--moyen)}
+.fi-barre i{display:block;height:100%;border-radius:3px;background:var(--t-2);transform-origin:left center;transition:width var(--moyen)}
 .fi-barre.ok i{background:var(--ok)}
 .fi-barre.att i{background:var(--warn)}
 .fi-barre.ko i{background:var(--ko)}
+/* une fiche qui entre : ses barres se remplissent, d'un trait */
+.fi.fondu .fi-barre i{animation:fi-remplit 560ms cubic-bezier(.2,.75,.25,1) both;animation-delay:80ms}
+@keyframes fi-remplit{from{transform:scaleX(0)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){.fi.fondu .fi-barre i{animation:none}}
+/* UNE MASSE : ses câbles — le numéro, d'où il vient, sa gauge */
+.fi-liste.fi-masse{grid-template-columns:minmax(80px,auto) minmax(0,1fr) auto}
+.fi-masse>.fi-fil{grid-template-columns:subgrid}
+.fi-masse .fi-dest{justify-content:flex-start}
+.fi-masse .fi-dest i{color:var(--t-2);font-style:normal}
+.fi-masse .fi-jg small{font:500 var(--f-11) var(--sans);color:var(--t-2)}
+.fi-masse .fi-entetes span:last-child,.fi-masse .fi-jg{justify-self:end}
 /* L'INTENSITÉ ET LA CHUTE d'un fil : une ligne chacune, une barre contre l'admis */
 .fi-mesures{display:flex;flex-direction:column}
 .fi-mes{display:grid;grid-template-columns:minmax(96px,max-content) minmax(80px,1fr) auto;align-items:center;column-gap:14px;min-height:46px;padding:4px 0}
 .fi-mes+.fi-mes{border-top:1px solid var(--s-line)}
 .fi-mes-k{display:flex;flex-direction:column;align-items:flex-start;font:500 var(--f-13)/1.3 var(--sans);color:var(--t-2)}
+.fi-mes-k>span{display:inline-flex;align-items:center}
 .fi-mes-k small{font:500 var(--f-11)/1.3 var(--sans);color:var(--t-2)}
 .fi-mes-k small .fi-lien,.fi-mes-k small .fi-hyp{min-height:0;padding:0 3px;margin:0 -3px;font-size:var(--f-11)}
 .fi-mes .fi-barre{height:8px;border-radius:4px}
@@ -286,40 +400,46 @@ button.fi-sertir:hover{background:var(--s-hover)}
 .fi-mes.att .fi-mes-v b{color:var(--warn)}
 .fi-mes-v em{font-style:normal;font-size:var(--f-11);margin-left:4px}
 
-/* ─── L'HABILLAGE : une nomenclature nette par connecteur (ou par côté d'une prise) ─── */
+/* ─── LE RACCORD : une nomenclature nette par connecteur (ou par côté d'une prise) ─── */
 .fi-hab{display:flex;flex-direction:column;gap:8px}
-.fi-hab+.fi-hab{border-top:1px solid var(--s-line);padding-top:12px;margin-top:4px}
+.fi-hab+.fi-hab{border-top:1px solid var(--s-line);padding-top:14px;margin-top:4px}
 .fi-hab-tete{display:flex;align-items:center;gap:10px;min-height:26px}
 .fi-hab-t{flex:none;height:22px;display:inline-grid;place-items:center;padding:0 8px;border-radius:var(--r-1);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);font:600 var(--f-11) var(--sans);color:var(--t-1)}
-.fi-hab-mots{flex:1;min-width:0;font:500 var(--f-12) var(--sans);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-hab-mots{flex:1;min-width:0;display:inline-flex;align-items:center;font:500 var(--f-12) var(--sans);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fi-nomen{list-style:none;margin:0;padding:0;border:1px solid var(--s-line);border-radius:var(--r-2)}
-.fi-piece{display:grid;grid-template-columns:84px minmax(0,1fr) auto;align-items:center;column-gap:12px;min-height:40px;padding:4px 12px}
+/* une pièce : son rôle en petit (et son « ? »), son état à droite ; dessous, sa référence et sa quantité */
+.fi-piece{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"r st" "ref ref";align-items:center;column-gap:12px;row-gap:2px;padding:8px 12px 9px}
 .fi-piece+.fi-piece{border-top:1px solid var(--s-line)}
-.fi-piece-r{font:500 var(--f-13) var(--sans);color:var(--t-2);white-space:nowrap}
-.fi-piece-ref{min-width:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font:600 var(--f-13) var(--mono);color:var(--t-1)}
+.fi-piece-r{grid-area:r;min-width:0;display:inline-flex;align-items:center;font:500 var(--f-12)/1.3 var(--sans);color:var(--t-2)}
+.fi-piece-st{grid-area:st}
+.fi-piece-ref{grid-area:ref;min-width:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font:600 var(--f-13) var(--mono);color:var(--t-1)}
 .fi-piece-ref .id{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fi-piece-ref .fc-in{font-weight:600;margin-left:-9px;height:28px}
 .fi-qte{font:600 var(--f-12) var(--sans);font-style:normal;color:var(--t-2);white-space:nowrap}
 .fi-piece-st{font:600 var(--f-11)/1 var(--sans);padding:4px 8px;border-radius:999px;white-space:nowrap;color:var(--t-2);background:var(--s-sunken)}
+.fi-piece-st:empty{display:none}
 .fi-piece.att .fi-piece-st{color:var(--warn);background:var(--warn-soft)}
 .fi-piece.ko .fi-piece-st{color:var(--ko);background:var(--ko-soft)}
 .fi-avenir{font-style:normal;font-family:var(--sans);font-size:var(--f-11);font-weight:500;color:var(--warn);background:none;border:1px dashed color-mix(in srgb,var(--warn) 45%,transparent);border-radius:var(--r-1);padding:0 6px;white-space:nowrap}
 .fi-avenir.fi-long{display:inline-block;white-space:normal;line-height:1.4;padding:2px 8px;margin:1px 0}
 
-/* ─── UN FIL : de → vers, deux cartes ─── */
+/* ─── UN CÂBLE : de → vers, deux cartes (un clic ouvre l'équipement ; le contact du bout se change d'un clic) ─── */
 .fi-trajet{display:grid;grid-template-columns:minmax(0,1fr) 26px minmax(0,1fr);align-items:stretch;gap:6px}
 .fi-trajet .fi-fleche{align-self:center}
-.fi-bout{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:10px 26px 11px 12px;border:1px solid var(--s-line-2);border-radius:var(--r-2);background:var(--s-surface);cursor:pointer;text-align:left;min-width:0;color:inherit;font:inherit;transition:background var(--rapide),border-color var(--rapide)}
-.fi-bout:hover{background:var(--s-hover);border-color:var(--t-3)}
+.fi-trajet+.fs-champs,.fi-trajet~.fs-champs{margin-top:2px}
+.fi-bout{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:0 0 10px;border:1px solid var(--s-line-2);border-radius:var(--r-2);background:var(--s-surface);min-width:0;transition:border-color var(--rapide)}
+.fi-bout:hover{border-color:var(--t-3)}
+.fi-bout.ko{border-color:color-mix(in srgb,var(--ko) 40%,var(--s-line))}
+.fi-bout-va{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:10px 26px 0 12px;border:none;background:none;border-radius:var(--r-2) var(--r-2) 0 0;cursor:pointer;text-align:left;min-width:0;color:inherit;font:inherit}
+.fi-bout-va:hover .fi-bout-rep b{text-decoration:underline;text-decoration-color:var(--t-3);text-underline-offset:3px}
 .fi-bout-k{font:600 var(--f-11)/1.25 var(--sans);color:var(--t-2)}
 .fi-bout-rep{display:flex;align-items:baseline;gap:2px;max-width:100%;min-width:0}
 .fi-bout-rep b{font:600 17px var(--mono);letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fi-bout-rep span{font:500 var(--f-13) var(--mono);color:var(--t-2)}
 .fi-bout small{font:500 var(--f-11)/1.45 var(--sans);color:var(--t-2);overflow:hidden;text-overflow:ellipsis;max-width:100%;white-space:nowrap}
-.fi-bout .fi-bout-ct{color:var(--t-1)}
-.fi-bout .fi-bout-ct.id{font-family:var(--mono)}
-.fi-bout .fi-bout-ct.ko{color:var(--ko);font-family:var(--sans);font-weight:600}
-.fi-bout-va{position:absolute;right:8px;top:11px;width:14px;height:14px;color:var(--t-2)}
+.fi-bout-fl{position:absolute;right:8px;top:11px;width:14px;height:14px;color:var(--t-2)}
+.fi-bout .fi-ct-puce{align-self:flex-start;margin:0 0 0 12px}
+.fi-bout-ko{margin:0 12px;color:var(--ko)!important;font-weight:600!important}
 .fi-fleche{height:2px;border-radius:1px;position:relative;background:linear-gradient(var(--route-voile),var(--route-voile)),var(--c,var(--t-1));color:var(--c,var(--t-1))}
 .fi-fleche::after{content:"";position:absolute;right:-1px;top:-4px;border:5px solid transparent;border-left:7px solid currentColor;border-right:0}
 

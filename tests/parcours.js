@@ -414,7 +414,7 @@ function baseEssaiDansLaPage() {
     await page.dblclick(`#ba-tbody tr[data-i="${i15}"] [data-f="type"]`); await page.fill(`#ba-tbody tr[data-i="${i15}"] input[data-f="type"]`, 'DR12'); await page.press(`#ba-tbody tr[data-i="${i15}"] input[data-f="type"]`, 'Enter'); await page.waitForTimeout(700);
     e = await etat(page); ok(!(await page.evaluate(() => CONTROLE.items.some(x => /W-015/.test(x.texte)))) && /^2 problèmes · \d+ à voir$/.test(e.enEtat), 'W-015 en DR12 (un DR16 ne ferait que le ramener en « à voir ») : son problème disparaît, l’en-tête passe à 2 problèmes', e.enEtat);
     await page.keyboard.press('Escape'); await page.keyboard.press('b'); await page.waitForTimeout(300); await cliquerBloc(page, '102CB1');
-    await page.click('#ba-equip .dj-chip[data-cal="15"]'); await page.waitForTimeout(700);
+    await page.click('#dj-retenir'); await page.waitForTimeout(700);   // « Automatique (15 A) » : le meilleur (la gamme ne se montre plus d'office)
     e = await etat(page); const apres15 = await page.evaluate(() => CONTROLE.items.filter(x => x.nom === '102CB1').map(x => x.niveau + ' ' + x.texte.slice(0, 60)));
     ok(await page.evaluate(() => calibreDe('102CB1') === 15 && pnDuRepere('102CB1') === 'MS3320-15' && !CONTROLE.items.some(x => x.nom === '102CB1' && /touche la courbe/.test(x.texte))) && /^2 problèmes/.test(e.enEtat), 'le 15 A retenu d’un clic : le part number devient MS3320-15, le point « touche la courbe » disparaît (et le contrôle rejuge : W-011 DR16 n’est plus protégé par un 15 A — un nouveau point à voir)', e.enEtat + ' · ' + apres15.join(' ; '));
     await capture(page, 'C-3b-102CB1-15A');
@@ -440,11 +440,11 @@ function baseEssaiDansLaPage() {
     const N1 = await page.evaluate(() => JSON.stringify(nomenclatureDuContrat().contacts));
     ok(N1 !== N0 && await page.evaluate(() => app.contrat.sexes.get('300XC1|A') === 'M'), 'des contacts mâles sur A : la nomenclature des contacts change');
     // un EN 4165 (300XC1) n'a pas de raccord : la reprise de blindage se choisit sur un EN 2997 (351PM1, folio 3)
-    await page.evaluate(() => { document.querySelector('#ba-equip details[data-section="connecteur"]').open = true; const b = document.querySelector('#ba-equip [data-hab="300XC1|A"] [data-changer^="rac|"]'); if (b.getAttribute('aria-expanded') !== 'true') b.click(); }); await page.waitForTimeout(200);
+    await page.evaluate(() => { document.querySelector('#ba-equip details[data-section="raccord"]').open = true; const b = document.querySelector('#ba-equip [data-hab="300XC1|A"] [data-changer^="rac|"]'); if (b.getAttribute('aria-expanded') !== 'true') b.click(); }); await page.waitForTimeout(200);
     await page.click('#ba-equip [data-hab="300XC1|A"] [data-raccord][data-champ="blindage"][data-v="GND"]'); await page.waitForTimeout(700);
     ok(await page.evaluate(() => !nomenclatureDuContrat().habits.some(h => h.quoi === 'band-it' && /300XC1 A/.test(h.ou.join(' '))) && app.contrat.raccords.get('300XC1|A').blindage === 'GND'), 'une reprise de blindage sur le corps d’un EN 4165 : le choix se garde, mais aucun band-it n’entre à la nomenclature (un EN 4165 n’a pas de raccord)');
     await page.evaluate(() => { allerAuPlan('3'); choisirBloc(app.dessin.comps.find(k => k.name === '351PM1' && k.kind !== 'tag')); }); await page.waitForTimeout(500);
-    await page.evaluate(() => { document.querySelector('#ba-equip details[data-section="connecteur"]').open = true; const b = document.querySelector('#ba-equip [data-changer^="rac|"]'); if (b.getAttribute('aria-expanded') !== 'true') b.click(); }); await page.waitForTimeout(200);
+    await page.evaluate(() => { document.querySelector('#ba-equip details[data-section="raccord"]').open = true; const b = document.querySelector('#ba-equip [data-changer^="rac|"]'); if (b.getAttribute('aria-expanded') !== 'true') b.click(); }); await page.waitForTimeout(200);
     await page.click('#ba-equip [data-raccord][data-champ="blindage"][data-v="GND"]'); await page.waitForTimeout(700);
     ok(await page.evaluate(() => nomenclatureDuContrat().habits.some(h => h.quoi === 'band-it' && /351PM1/.test(h.ou.join(' ')))), 'une reprise de blindage sur le corps d’un EN 2997 (351PM1) : un band-it entre à la nomenclature');
     await capture(page, 'C-4-300XC1-choix');
@@ -517,7 +517,7 @@ function baseEssaiDansLaPage() {
     // la croix d'une fiche venue de l'index ramène à l'index (elle ne ferme pas) ; le bouton des repères ne sert que si le panneau est fermé
     await page.click('#in-fermer'); await page.waitForTimeout(300); if (await page.evaluate(() => $('inspecteur').hidden)) await page.click('#btnIndex');
     await page.waitForFunction(() => !$('inspecteur').hidden && app.insp.index && document.querySelector('#ba-equip .co-item')); await page.locator('#ba-equip .co-item', { hasText: '102CB1' }).first().click(); await page.waitForFunction(() => app.cible && app.cible.nom === '102CB1'); await page.waitForTimeout(400);
-    await tous(['#ba-equip .dj-chip[data-cal="15"]'], 'la puce 15 A du disjoncteur est atteignable'); await page.click('#ba-equip .dj-chip[data-cal="15"]'); await page.waitForTimeout(600);
+    await tous(['#dj-retenir'], '« Automatique (15 A) » du disjoncteur est atteignable'); await page.click('#dj-retenir'); await page.waitForTimeout(600);
     ok(await page.evaluate(() => calibreDe('102CB1') === 15 && pnDuRepere('102CB1') === 'MS3320-15'), 'un doigt sur 15 A le retient (MS3320-15)'); await capture(page, 'D-9-102CB1-15A');
     await page.click('#btnUndo'); await page.waitForTimeout(500); ok(await page.evaluate(() => app.contrat.charges.get('102CB1').calibre === null), 'le bouton Annuler du rail le rend');
     ok(!page.erreurs.length, 'aucune erreur console', page.erreurs.slice(0, 3).join(' | '));
