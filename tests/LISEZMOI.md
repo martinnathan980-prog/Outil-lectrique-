@@ -5,7 +5,14 @@
 ```
 node tests/controle.js         les invariants, le contrat d'essai, la base de retest, les pièges déjà tombés
 node tests/memoire.js          le travail survit-il à la fermeture de l'onglet (les liaisons et les choix : une désignation) ; rouvert
-                               sur le plan seul, le tableau fermé
+                               sur la bibliothèque, « Reprendre » rend le plan seul, le tableau fermé
+node tests/bibliotheque.js     L'OUVERTURE, LA BIBLIOTHÈQUE, à la vraie souris : le lancement (vide, l'Exemple discret, « Volta » partout),
+                               une install neuve au clavier, des plans par des fichiers (plusieurs à la fois ; un fichier à deux harness :
+                               un plan chacun ; une compta le dit dans sa ligne), un plan ouvert d'un clic (le fil de la barre du haut),
+                               revenir (le fil, la marque, Échap, « Reprendre »), renommer (le plan sur la table suit), déplacer un plan,
+                               supprimer — la confirmation écrite dans la page, jamais une boîte du navigateur — et « Rétablir », la
+                               recherche, l'Exemple et `atelier.exemple()`, la base des contrats déjà faits qui crée les installs (une
+                               colonne Install) ou propose de les ranger, un fichier glissé dessus, la mémoire après rechargement
 node tests/format-retest.js    les seize colonnes sont lues par leur nom ; harness, longueur (mm → m), appareil, date gardés ;
                                « 677VT2 51 » + « B » → 677VT2:51B
 node tests/banc-placement.js   combien de fils sortent droits, et sur quelle feuille ; les six folios de l'exemple relus
@@ -41,13 +48,13 @@ node tests/interface.js        à la vraie souris (grand écran, téléphone) : 
                                ligne depuis un disjoncteur ; une base de contrats faits, « Déjà fait », la comparaison, reprendre, Ctrl+Z ;
                                « + fil » depuis une fiche, supprimer un fil depuis la sienne, « + » un équipement dans l'index, Ctrl+Z ;
                                R depuis une fiche venue de l'index ramène à la liste ; au téléphone, la bande des folios reste au-dessus
-                               de la fiche et un bloc haut visé depuis l'index se cadre lisible (≥ 100 px) ; l'accueil à la vraie souris
-                               (Ouvrir, la zone de dépôt, Reprendre, Voir l'exemple — l'en-tête dit « l'exemple embarqué ») ; un autre
+                               de la fiche et un bloc haut visé depuis l'index se cadre lisible (≥ 100 px) ; la bibliothèque à la vraie souris
+                               (le menu, « Déposer la base », l'Exemple d'un clic — le menu dit « l'exemple embarqué ») ; un autre
                                fichier ouvert ne garde rien du contrat d'avant (profils, désignations, sexes, raccords), l'en-tête dit son
                                nom, Ctrl+Z rend l'exemple et ses choix ; dix folios aux noms de dessin (FWD) : puces abrégées, aucune ne
                                déborde, la courante en entier, la liste déroulante ; « 2 harness » ; les noms de fichier en ASCII ; un
-                               fichier à deux harness demande lequel ouvrir ; LA PRISE EN MAIN : le menu en six lignes, Exporter et Plus
-                               en place, ses bulles (au clavier : ↓ → ← Échap), « Vos fichiers » (cinq cartes, leur état, la base en une
+                               fichier à deux harness demande lequel ouvrir ; LA PRISE EN MAIN : le menu en sept lignes, Exporter et Plus
+                               en place, ses bulles (au clavier : ↓ → ← Échap), « Vos fichiers » (six cartes, la bibliothèque en tête, leur état, la base en une
                                ligne et sa zone de dépôt, trois lignes d’exemple), une erreur d’import
                                écrite dans sa carte (une compta, un fichier vide, une image), le rattrapage qui attend « Charger »
                                (« Corriger »), la base sans Harness, la base déposée et « Voir un équipement déjà fait », le collage et
@@ -121,8 +128,8 @@ node tests/fwd.js              à la vraie souris : « Déjà fait » dit le des
                                du dessin (le FWD dessiné par le moteur, l'équipement comparé encadré, la colonne qui explique, la
                                recherche, un clic, Échap, « Comparer ») ; la bible qui cherche un repère et ouvre son dessin ; au téléphone
 node tests/parcours.js         LES PARCOURS DU LECTEUR, de bout en bout, à la vraie souris, chronométrés (grand écran, puis téléphone) :
-                               A. un contrat neuf (le premier lancement sur l'accueil, l'exemple à la demande et son bandeau, un retest
-                               Excel au vrai format déposé, le plan, les folios au clavier et à la
+                               A. un contrat neuf (le premier lancement sur la bibliothèque, l'exemple d'un clic et le fil de la barre du
+                               haut, une install neuve, un retest Excel au vrai format ajouté comme plan et ouvert d'un clic, les folios au clavier et à la
                                barre du bas, la recherche, une correction dans le tableau que le plan suit, Ctrl+Z, fermer et rouvrir, les
                                exports SVG / PNG / CSV, la nomenclature, le relief) ; B. je pars d'un contrat déjà fait (une base de quatre
                                machines, « Déjà fait » sur chaque fiche, le FWD à trois échelles, cocher et reprendre, le contrôle refait,
@@ -138,9 +145,10 @@ node tests/parcours.js         LES PARCOURS DU LECTEUR, de bout en bout, à la v
                                que ceux-là
 ```
 
-L'outil s'ouvre sur l'accueil (le premier lancement ne charge plus l'exemple) : une batterie qui lit
-l'exemple le demande, `atelier.exemple()` — l'exemple et son profil de charge, sans historique, comme
-l'ouverture d'avant.
+L'outil s'ouvre sur la BIBLIOTHÈQUE (ni l'exemple, ni une page qui explique) : une batterie qui lit
+l'exemple le demande, `atelier.exemple()` — l'exemple tel qu'il est livré et son profil de charge, sans
+historique, sur la table ; après un rechargement, le plan resté sur la table est dessous, et
+`atelier.reprendre()` le remet devant (comme « Reprendre » ; `atelier.bibliotheque()` fait l'inverse).
 
 Tous acceptent `--fichier=chemin` pour mesurer un autre fichier que
 `index.html` (c'est ainsi qu'on a tenu la parité avec l'ancien moteur pendant

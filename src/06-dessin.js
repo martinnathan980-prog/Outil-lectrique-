@@ -166,7 +166,7 @@ function cartoucheSvg(rx, by, c, folio, legende) {
   for (let k = 0; k < nCol; k++) s += trait(xT - k * LEG_COLONNE, y, xT - k * LEG_COLONNE, by);
   const champ = (cx, cy, h, v, n) => `<text class="carth" x="${f1(cx)}" y="${f1(cy)}">${h}</text><text class="cartx" x="${f1(cx)}" y="${f1(cy + 15)}">${esc(clip(v || '—', n))}</text>`;
   s += champ(xT + 10, yB + 12, 'DESSINÉ', c.auteur, 12) + champ(xT + 98, yB + 12, 'DATE', c.date, 12) + champ(xT + 186, yB + 12, 'ÉCHELLE', c.echelle, 11) + champ(xF + 10, yB + 12, 'INDICE', c.indice, 11);
-  s += `<text class="carth" x="${f1(xT + 10)}" y="${f1(y + 13)}">TITRE</text><text class="cartA" x="${f1(xF - 10)}" y="${f1(y + 13)}" text-anchor="end">ATELIER·SCHÉMA</text>`;
+  s += `<text class="carth" x="${f1(xT + 10)}" y="${f1(y + 13)}">TITRE</text><text class="cartA" x="${f1(xF - 10)}" y="${f1(y + 13)}" text-anchor="end">VOLTA</text>`;
   s += `<text class="cartT" x="${f1(xT + 10)}" y="${f1(y + 36)}">${esc(clip(c.titre || '—', 30))}</text>`;
   s += `<text class="carth" x="${f1(xF + 10)}" y="${f1(y + 13)}">FOLIO</text><text class="cartF" x="${f1(xF + CART_FOLIO / 2)}" y="${f1(y + 39)}" text-anchor="middle">${esc(folio || '1 / 1')}</text>`;
   // la légende des routes, colonne après colonne vers la gauche

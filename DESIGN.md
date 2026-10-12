@@ -1,6 +1,6 @@
 # DESIGN — la direction du site, pour tout le monde (humain ou agent)
 
-Atelier Schéma est un **outil de conception électrique aéronautique**, hors ligne, dans un seul fichier HTML, utilisé
+**Volta** (deux syllabes : le volt, l'électricité) est un **outil de conception électrique aéronautique**, hors ligne, dans un seul fichier HTML, utilisé
 **sur ordinateur** (la tablette et le téléphone ne sont pas des cibles : le code qui les sert reste, on ne le soigne
 plus). Le lecteur (ingénieur câblage) veut « quelque chose de fluide, de classe, d'épuré, de beau, de compréhensible —
 une très belle expérience utilisateur ; toujours penser à l'utilisateur, ne jamais le perdre, un fil conducteur ; tout
@@ -13,25 +13,33 @@ calculé automatiquement, mais tout modifiable ». Il a écarté le style « fut
   les deux thèmes, semé de points discrets (un tous les 24 px) — par une ombre profonde (le lecteur : « au lieu de le
   mettre blanc, tu pouvais le mettre noir… c'était incroyable »). Ce qui s'écrit à même la table prend l'encre de la
   table (`--t-table`) ; ce qui flotte dessus (le mot qui passe, les bulles) porte un filet clair qui l'en détache.
-- **Autour, rien ne brille.** La barre du haut (la marque, la recherche, le menu ⋮ — rien d'autre), le rail de gauche
-  et la barre des folios sont du **blanc des panneaux**, séparés de la table par un filet. L'outil pressé se pose dans
-  un carré gris ; le folio courant est une pastille à l'encre.
-- **Le menu ⋮ tient en six lignes** (le lecteur : « on n'en utilise que 10-20 % ») : Ouvrir un retest · Vos fichiers
-  (« retest · contrats déjà faits · bible · normes » écrit dessous : c'est là qu'on dépose la grande base) ·
-  Récapitulatif · Nomenclature · Exporter › (SVG, PNG, imprimer, le suivi) · Plus › (coller, l'exemple, la bible, les
-  normes, les hypothèses, le cartouche, tout effacer). Un sous-menu s'ouvre **en place** : le menu garde sa largeur, une
-  ligne « ‹ » ramène. Chaque ligne a sa bulle courte ; au clavier ↑ ↓, Entrée, → ouvre, ← ou Échap revient.
+- **Autour, rien ne brille.** La barre du haut (la marque « Volta », qui mène à la bibliothèque, et à côté un **fil
+  discret** — l'install, le plan —, la recherche, le menu ⋮ — rien d'autre), le rail de gauche et la barre des folios
+  sont du **blanc des panneaux**, séparés de la table par un filet. L'outil pressé se pose dans un carré gris ; le folio
+  courant est une pastille à l'encre.
+- **Le menu ⋮ tient en sept lignes** (le lecteur : « on n'en utilise que 10-20 % ») : Bibliothèque (l'entrée
+  principale) · Ouvrir un retest (il devient un plan de l'install ouverte) · Vos fichiers (« retests · contrats déjà
+  faits · bible · normes » écrit dessous : c'est là qu'on dépose la grande base) · Récapitulatif · Nomenclature ·
+  Exporter › (SVG, PNG, imprimer, le suivi) · Plus › (coller, l'exemple, la bible, les normes, les hypothèses, le
+  cartouche). Plus de « Tout effacer » : on supprime un plan dans la bibliothèque. Un sous-menu s'ouvre **en place** :
+  le menu garde sa largeur, une ligne « ‹ » ramène. Chaque ligne a sa bulle courte ; au clavier ↑ ↓, Entrée, → ouvre,
+  ← ou Échap revient. Ce qui porte sur le plan (le récapitulatif, les exports…) le remet sur la table.
 - **L'interface est à l'encre.** Le texte et les actions sont graphite : le bouton principal est noir, la sélection en
   gris doux, le focus cerclé d'encre. **La couleur ne dit que l'état** : vert ce qui est bon, ambre ce qui est à voir,
   rouge ce qui est un problème. Les routes des fils gardent leurs couleurs (sur le dessin, et pour le trait d'un fil
   dans le récapitulatif) ; c'est la seule autre couleur.
 - **Les panneaux** (l'inspecteur, le récapitulatif, les documents) sont des feuilles blanches posées à côté de la
   table, avec une ombre large et légère.
-- **L'accueil est un folio** posé sur la table : le cadre gradué, un petit schéma, et peu de mots (« je n'ai pas envie
-  de lire »). Votre retest et vos contrats déjà faits **côte à côte, de même taille**, chacun sa zone de dépôt et ce
-  qu'il attend en une ligne (la base : un seul Excel, une ligne par liaison — Harness la machine, FWD le dessin,
-  Appareil le contrat) ; la bible et les normes, embarquées, en une ligne. L'exemple s'ouvre d'un clic, et un bandeau
-  le rappelle tant qu'on le regarde. Tout se retrouve ensuite dans « Vos fichiers ».
+- **L'ouverture est la bibliothèque**, posée sur la table noire (le lecteur : « on choisit notre install et on a
+  directement ses plans » ; plus de page d'exemple qui explique). Une **install** (une installation : telle antenne,
+  tel cockpit) est une **pile de feuilles** — son nom, combien de plans, sa dernière ouverture, ses premiers plans ;
+  ses **plans** (un plan = un retest) se lisent sur une feuille, une ligne chacun (nom, harness et dessins, liaisons,
+  folios, dernière ouverture) ; un clic ouvre le plan sur la table, avec ses folios. Le plan resté sur la table se
+  reprend d'un clic (« Reprendre », Échap). Rien encore : ce qu'est une install en une phrase, « Nouvelle install »,
+  « Déposer la base des contrats déjà faits » (une colonne Install range chaque install et ses plans). L'**Exemple** est
+  une install de démonstration, discrète (un cadre au trait), en dernier. Renommer sur place, supprimer avec une
+  **confirmation écrite dans la carte** (jamais une boîte du navigateur) puis « Rétablir », déplacer un plan : le « ⋯ ».
+  Tout reste dans le navigateur (IndexedDB). Le reste des fichiers se retrouve dans « Vos fichiers ».
 - **Le récapitulatif** est le tiroir du bas (B), en moitié ou en page : neuf onglets, chaque objet dans un seul
   (liaisons, équipements, disjoncteurs, barrettes, prises, câbles, raccords, problèmes, normes), peu de colonnes
   d'office — celles du quotidien —, le reste dans « Colonnes ». Une liaison s'y lit comme une phrase : de → le câble
@@ -92,7 +100,7 @@ ne vaut que dans un thème ; les seules couleurs littérales sont dans les dessi
 
 | famille | jetons (clair → sombre) |
 |---|---|
-| la table (la même dans les deux thèmes) | `--s-app` #0f0f11 · `--s-grille` #2b2b31 (les points) · `--t-table` #ececf0 / `--t-table-2` (ce qui s'écrit à même la table : l'attente d'un folio) |
+| la table (la même dans les deux thèmes) | `--s-app` #0f0f11 · `--s-grille` #2b2b31 (les points) · `--t-table` #ececf0 / `--t-table-2` / `--t-table-warn` (ce qui s'écrit à même la table : l'attente d'un folio, la bibliothèque) · `--l-table` / `--l-table-2` (ses filets) · `--s-table-champ` / `--s-table-survol` (un champ, un survol posés sur elle) |
 | les surfaces | `--s-surface` #fff → #1c1c1e · `--s-sunken` · `--s-hover` · `--s-line` · `--s-line-2` · `--s-flottant` (menus, listes, bulles) |
 | le papier (les deux thèmes) | `--s-papier` #fff · `--s-papier-grille` · `--t-papier` #1d1d1f · `--t-papier-2` ; `.ilot-clair` rend tous les jetons clairs à un îlot |
 | l'encre | `--t-1` #1d1d1f → #f2f2f5 · `--t-2` #47474c · `--t-3` #636369 → #96969d · `--t-inverse` |
@@ -104,7 +112,7 @@ ne vaut que dans un thème ; les seules couleurs littérales sont dans les dessi
 
 Espacements sur une grille de 4 px : `--sp-1` 4 … `--sp-6` 32. Coins : `--r-1` 6 px (puces, champs), `--r-btn` 8 px
 (boutons, segments, recherche), `--r-2` 10 px (cartes), `--r-3` 14 px (fenêtres). Ombres : `--sh-1`, `--sh-2`,
-`--sh-feuille` (la feuille sur la table noire : profonde, la même dans les deux thèmes — le folio, l'accueil),
+`--sh-feuille` (la feuille sur la table noire : profonde, la même dans les deux thèmes — le folio, la feuille des plans),
 `--sh-panneau` (un panneau contre la table). Transitions : `--rapide`
 120 ms, `--moyen` 200 ms. Les anciens noms (`--cuivre`, `--papier`, `--encre`…) sont des alias des jetons.
 
@@ -156,12 +164,22 @@ normes et la bible : jusqu'à 1040 px, en laissant toujours 320 px au plan), `--
   de l'objet, filtré sur lui) ; une colonne `{ k, t, html, tri, texte, option }` (`option` : au choix, pas d'office) ;
   l'état `etatHtml(niveau, mot, bulle)` (`.rc-etat.ok|.att|.ko`) ; une case modifiable `.rc-v[data-f]` a l'air d'un champ
   au survol, se corrige au double-clic (Tab pour la suivante, Échap annule) ; retouchée, elle passe « main », ↺ la rend.
+- **La bibliothèque** (`08-bibliotheque.js`, `style-bibliotheque.css`) : `#bibliotheque` couvre la table, le rail et les
+  folios (le plan reste dessous) ; un document s'ouvre à côté. `BIB.vue` dit ce qu'on voit (`'racine'`, `'install'`,
+  `'plan'`) ; `montrerBibliotheque(vue, id)`, `montrerLePlan()`, `ouvrirPlan(id)`, `ajouterPlans(fichiers)`. Une carte
+  `.bi-carte[data-install]` (`.pile-2`, `.pile-3` : les feuilles dessous ; `.bi-demo` : l'Exemple), une ligne
+  `.bi-plan[data-plan]` (`.sur-table`, `.nouveau`), le « ⋯ » `.bi-plus` et sa liste `.bi-pop`, la confirmation
+  `.bi-confirme`, le nom qu'on écrit `.bi-nommer`, la zone de dépôt `.bi-zone`, le geste clair sur la table `.bi-btn`
+  (`.bi-btn-2` au trait). Le fil de la barre du haut : `#en-biblio` (la marque), `#en-install`, `#en-plan`. Chaque plan
+  garde son contrat (`etatDuContrat`, 08-interface) dans IndexedDB (`volta-bibliotheque`) ; `chargerContrat(…, { nouveau
+  | planId })` dit quel plan devient le contrat chargé. `atelier.exemple()`, `atelier.bibliotheque()`,
+  `atelier.reprendre()`.
 - **Vos fichiers** (`08-fichiers.js`, `style-fichiers.css`) : `ficheFichiers(focus?)`, une carte par entrée (état, ce qui
-  a été reçu, l'action) ; le retest et la base disent en une ligne ce qu'ils attendent (`.vf-une`, la base avec ses trois
-  colonnes `.vf-cles`) et gardent leur zone de dépôt (`.vf-zone`) tant qu'ils sont vides ; « Ce que j'attends » (trois
-  lignes d'exemple, la suite en une phrase, le modèle) est replié, ouvert sur la carte qu'on vient chercher ; une erreur
-  s'écrit dans sa carte.
-- **Le menu ⋮** (`page.html`, 08-interface `lierMenu` / `montrerPanneau`, 08-accueil `lierBullesDuMenu`) : des panneaux
+  a été reçu, l'action), la bibliothèque en tête ; elle, le retest et la base disent en une ligne ce qu'ils attendent
+  (`.vf-une`, la base avec ses trois colonnes `.vf-cles`) et gardent leur zone de dépôt (`.vf-zone`) tant qu'ils sont
+  vides ; « Ce que j'attends » (trois lignes d'exemple, la suite en une phrase, le modèle) est replié, ouvert sur la
+  carte qu'on vient chercher ; une erreur s'écrit dans sa carte, une confirmation aussi (« Oublier la base »).
+- **Le menu ⋮** (`page.html`, 08-interface `lierMenu` / `montrerPanneau`, 08-menu `lierBullesDuMenu`) : des panneaux
   `.menu-panneau` (`#mp-principal`, `#mp-exporter`, `#mp-plus`) ; une ligne `button[role=menuitem]` porte `data-act`
   (une action) ou `data-sous` (un sous-menu, ouvert en place), une icône au trait, `.menu-l` (son mot ; `small` dessous),
   `.raccourci` ; `[data-retour]` ramène au menu.

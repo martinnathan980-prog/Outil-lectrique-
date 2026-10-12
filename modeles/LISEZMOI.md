@@ -1,17 +1,19 @@
 # Modèles de tables
 
 Trois lignes d'exemple par fichier, les en-têtes que l'outil reconnaît. Les deux premiers sont exactement ce que
-« Télécharger un modèle (CSV) » écrit (l'accueil, « Vos fichiers ») — les mêmes lignes que `08-fichiers.js`
+« Télécharger un modèle (CSV) » écrit (« Vos fichiers ») — les mêmes lignes que `08-fichiers.js`
 (`MODELE_RETEST`, `MODELE_BASE`) ; `tests/interface.js` vérifie qu'ils ne divergent pas.
 
 `modele-retest.csv` — le retest, le contrat qu'on ouvre : une ligne par fil, les seize colonnes reconnues par leur nom
 (et leurs alias, `COLONNES` de 02-lecture), en-têtes dans les trente premières lignes. Le minimum : **Device1, Pin1,
-Device2, Pin2**. Plusieurs harness dans le fichier : l'outil demande lequel ouvrir, les autres deviennent des contrats
-déjà faits.
+Device2, Pin2**. Chaque retest devient un **plan** de la bibliothèque, dans son install. Plusieurs harness dans le
+fichier : un plan par harness (ajouté dans la bibliothèque), ou l'outil demande lequel ouvrir (ouvert sur la table).
 
 `modele-contrats-deja-faits.csv` — la base des contrats déjà faits : les mêmes colonnes que le retest, **Harness**
 rempli (une machine = un harness), FWD, Appareil et Date retest fortement conseillés ; une feuille par harness, ou
-tout à la suite. Elle se dépose une fois (⋮ → Vos fichiers → Contrats déjà faits) et reste dans le navigateur.
+tout à la suite. Elle se dépose une fois (⋮ → Vos fichiers → Contrats déjà faits) et reste dans le navigateur. Une
+colonne **Install** (ou Installation, Système) en plus : chaque install est créée dans la bibliothèque avec ses plans,
+un par harness ; sans elle, la bibliothèque propose de ranger les harness dans une install.
 
 `bible-barrettes.csv` — la forme que l'outil sait lire pour la bible :
 barrettes, prises de coupure et connecteurs dans une seule table (menu

@@ -1,6 +1,6 @@
-# Atelier Schéma — ce que je veux, pour l'IA qui reprend l'outil
+# Volta — ce que je veux, pour l'IA qui reprend l'outil
 
-Tu reprends **Atelier Schéma**, mon outil de schémas électriques aéronautiques. Lis ce texte en entier avant de toucher au code. Il dit ce que je veux, comment je juge ton travail et comment me le livrer. Tu me tutoies, tu me parles en français, simplement : je connais le câblage avion, pas forcément le code.
+Tu reprends **Volta** (il s'appelait Atelier Schéma), mon outil de schémas électriques aéronautiques. Lis ce texte en entier avant de toucher au code. Il dit ce que je veux, comment je juge ton travail et comment me le livrer. Tu me tutoies, tu me parles en français, simplement : je connais le câblage avion, pas forcément le code.
 
 ## 1. L'outil en une phrase
 

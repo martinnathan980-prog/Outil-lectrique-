@@ -1,13 +1,21 @@
 <div id="app">
   <!-- LA BARRE DU HAUT : la marque, la recherche, le menu — rien d'autre (le lecteur : le contrat, ses comptes et son
-       état « ne servent à rien » ici ; ils sont dans le menu, et l'état sur le bouton des repères du rail). Sa hauteur est
-       le jeton --entete : le plan commence dessous. -->
+       état « ne servent à rien » ici ; ils sont dans le menu, et l'état sur le bouton des repères du rail). La marque mène
+       à la bibliothèque ; à côté, un fil discret dit où l'on est — l'install (un clic : ses plans), le plan —, rien de plus
+       (08-bibliotheque, `synchroniserFil`). Sa hauteur est le jeton --entete : le plan commence dessous. -->
   <header id="entete" aria-label="Recherche et menu">
     <div class="en-contrat">
-      <span class="en-marque" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><rect x="2.5" y="7.5" width="7" height="9" rx="1.5"/><rect x="14.5" y="7.5" width="7" height="9" rx="1.5"/><path d="M9.5 12h5"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>
-      </span>
-      <div class="en-nom">Atelier Schéma</div>
+      <button type="button" class="en-volta" id="en-biblio" aria-label="Volta : la bibliothèque des installs">
+        <span class="en-marque" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M5.5 7 12 17.5 18.5 7"/><circle cx="5.5" cy="5.6" r="1.9"/><circle cx="18.5" cy="5.6" r="1.9"/><circle cx="12" cy="18.6" r="1.25" fill="currentColor" stroke="none"/></svg>
+        </span>
+        <span class="en-nom">Volta</span>
+        <span class="bulle" aria-hidden="true">Bibliothèque</span>
+      </button>
+      <nav class="en-fil" id="en-fil" aria-label="Où l’on est" hidden>
+        <button type="button" class="en-install" id="en-install" title="Les plans de cette install"></button>
+        <span class="en-plan" id="en-plan"></span>
+      </nav>
     </div>
 
     <!-- La recherche : toujours là, au milieu de la barre ; « / » y va, Échap en sort, la liste tombe dessous. -->
@@ -29,16 +37,18 @@
         </button>
         <div id="menu" class="menu" hidden role="menu" aria-label="Menu">
           <!-- LE MENU tient en peu de lignes (le lecteur : « il y a tellement de choses qu'on n'en utilise que 10-20 % »).
-               En tête, ce qui est ouvert et son enregistrement : à lire, pas à presser. Puis l'essentiel — ouvrir un retest,
-               vos fichiers (où l'on dépose AUSSI la base des contrats déjà faits), le récapitulatif, la nomenclature —, et
-               deux sous-menus qui s'ouvrent EN PLACE (le menu ne s'élargit jamais) : Exporter, Plus. Chaque ligne porte sa
-               bulle courte (data-aide), lue à gauche du menu, au survol ou au clavier (08-accueil, `lierBullesDuMenu`).
-               Au clavier : ↑ ↓, Entrée, → ouvre un sous-menu, ← ou Échap y revient (08-interface, `lierMenu`). -->
+               En tête, ce qui est ouvert et son enregistrement : à lire, pas à presser. Puis l'essentiel — la bibliothèque
+               (l'entrée principale : les installs et leurs plans), ouvrir un retest, vos fichiers (où l'on dépose AUSSI la
+               base des contrats déjà faits), le récapitulatif, la nomenclature —, et deux sous-menus qui s'ouvrent EN PLACE
+               (le menu ne s'élargit jamais) : Exporter, Plus. Chaque ligne porte sa bulle courte (data-aide), lue à gauche du
+               menu, au survol ou au clavier (08-menu, `lierBullesDuMenu`). Au clavier : ↑ ↓, Entrée, → ouvre un sous-menu,
+               ← ou Échap y revient (08-interface, `lierMenu`). -->
           <div class="menu-panneau" id="mp-principal" role="none">
             <div class="ctx"><div id="ctx-nom">—</div><div id="ctx-txt"></div><div id="ctx-sauve" class="sauve"></div></div>
-            <div class="menu-bloc" role="group" aria-label="Le contrat">
-              <button role="menuitem" data-act="ouvrir" data-aide="Votre retest, Excel ou CSV : une ligne par fil, avec au moins Device1, Pin1, Device2 et Pin2. Il remplace le contrat ouvert ; Ctrl+Z le rend."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M12 18v-6M9.5 14.5 12 12l2.5 2.5"/></svg><span class="menu-l">Ouvrir un retest…</span><span class="raccourci">Ctrl+O</span></button>
-              <button role="menuitem" data-act="fichiers" class="menu-2l" data-aide="Où déposer chaque fichier : votre retest, la base des contrats déjà faits (un seul Excel, Harness rempli), la bible, les normes. Chacun dit ce qu’il attend."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H9l2 2h8.5A1.5 1.5 0 0 1 21 9.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg><span class="menu-l">Vos fichiers…<small>retest · contrats déjà faits · bible · normes</small></span></button>
+            <div class="menu-bloc" role="group" aria-label="Les plans">
+              <button role="menuitem" data-act="bibliotheque" class="menu-2l" data-aide="Vos installs et leurs plans : on choisit l’install, puis le plan à ouvrir. Tout reste dans ce navigateur."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span class="menu-l">Bibliothèque<small id="mn-biblio">installs · plans</small></span></button>
+              <button role="menuitem" data-act="ouvrir" data-aide="Un retest Excel ou CSV, une ligne par fil (Device1, Pin1, Device2, Pin2 au moins). Il devient un plan de l’install ouverte ; Ctrl+Z revient en arrière."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M12 18v-6M9.5 14.5 12 12l2.5 2.5"/></svg><span class="menu-l">Ouvrir un retest…</span><span class="raccourci">Ctrl+O</span></button>
+              <button role="menuitem" data-act="fichiers" class="menu-2l" data-aide="Où déposer chaque fichier : vos retests (des plans), la base des contrats déjà faits (un seul Excel, Harness rempli), la bible, les normes."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H9l2 2h8.5A1.5 1.5 0 0 1 21 9.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg><span class="menu-l">Vos fichiers…<small>retests · contrats déjà faits · bible · normes</small></span></button>
             </div>
             <div class="menu-bloc" role="group" aria-label="Lire et sortir">
               <button role="menuitem" data-act="recapitulatif" data-aide="Tout le contrat en tableaux : liaisons, équipements, disjoncteurs, câbles, contacts, problèmes… On y corrige comme sur la fiche."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M3 14h18M9 5v14"/></svg><span class="menu-l">Récapitulatif</span><span class="raccourci">B</span></button>
@@ -61,13 +71,13 @@
               <button role="menuitem" data-act="suivi" data-aide="Une ligne par pièce posée — barrette, prise, connecteur — avec sa référence, ses contacts et ses fils."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 12.5h7M8.5 16h7"/></svg><span class="menu-l">Suivi de fabrication (CSV)</span></button>
             </div>
           </div>
-          <!-- PLUS : sans fichier (coller, l'exemple), ce qui juge (la bible, les normes, les hypothèses), le cartouche, et
-               tout effacer, seul en bas -->
+          <!-- PLUS : sans fichier (coller, l'exemple), ce qui juge (la bible, les normes, les hypothèses), le cartouche. Plus
+               de « Tout effacer » : on range, on renomme, on supprime un plan dans la bibliothèque -->
           <div class="menu-panneau" id="mp-plus" role="group" aria-label="Plus" hidden>
             <button role="menuitem" class="menu-retour" data-retour><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6-6 6 6 6"/></svg><span class="menu-l">Plus</span></button>
             <div class="menu-bloc" role="group" aria-label="Sans fichier">
-              <button role="menuitem" data-act="coller" data-aide="Sans fichier : quelques lignes copiées d’Excel, une par fil. Un aperçu, puis ajouter au contrat ou le remplacer."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5.5" y="4.5" width="13" height="16.5" rx="2"/><path d="M9 4.5V3h6v1.5M9 10h6M9 14h6"/></svg><span class="menu-l">Coller des lignes…</span></button>
-              <button role="menuitem" data-act="exemple" data-aide="Un contrat fictif, 201 fils sur 6 folios, pour essayer. Le vôtre est mis de côté : Ctrl+Z le rend."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="7.5" width="7" height="9" rx="1.5"/><rect x="14.5" y="7.5" width="7" height="9" rx="1.5"/><path d="M9.5 12h5"/></svg><span class="menu-l">Ouvrir l’exemple</span></button>
+              <button role="menuitem" data-act="coller" data-aide="Sans fichier : quelques lignes copiées d’Excel, une par fil. Un aperçu, puis ajouter au plan ou le remplacer."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5.5" y="4.5" width="13" height="16.5" rx="2"/><path d="M9 4.5V3h6v1.5M9 10h6M9 14h6"/></svg><span class="menu-l">Coller des lignes…</span></button>
+              <button role="menuitem" data-act="exemple" data-aide="Le plan de démonstration, 201 fils sur 6 folios, tel qu’il est livré. Le vôtre reste dans la bibliothèque : Ctrl+Z le rend."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 7 12 17.5 18.5 7"/><circle cx="5.5" cy="5.6" r="1.9"/><circle cx="18.5" cy="5.6" r="1.9"/></svg><span class="menu-l">Ouvrir l’exemple</span></button>
             </div>
             <div class="menu-bloc" role="group" aria-label="Ce qui juge">
               <button role="menuitem" data-act="bible" data-aide="Les références que l’outil choisit pour chaque barrette, prise et connecteur. On peut importer la vôtre."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v16H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v4H6.5A2.5 2.5 0 0 1 4 20.5"/></svg><span class="menu-l">Bible des barrettes</span></button>
@@ -75,119 +85,25 @@
               <button role="menuitem" data-act="hypotheses" data-aide="Ce que le retest ne dit pas : 5 m par fil sans longueur, 2 A sans disjoncteur, 28 V… Les changer refait les calculs."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span class="menu-l">Hypothèses</span></button>
               <button role="menuitem" data-act="cartouche" data-aide="Le titre, le dessinateur, la date et l’indice, écrits en bas à droite de chaque folio."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M10 14h11M10 14v6M15.5 14v6"/></svg><span class="menu-l">Cartouche…</span></button>
             </div>
-            <div class="menu-bloc" role="group" aria-label="Effacer">
-              <button role="menuitem" data-act="vider" class="danger" data-aide="Vide la table. La base des contrats déjà faits, la bible et les normes restent. Ctrl+Z rend tout."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg><span class="menu-l">Tout effacer</span></button>
-            </div>
           </div>
         </div>
       </div>
     </div>
   </header>
-  <!-- LE BANDEAU DE L'EXEMPLE : collé sous la barre du haut, seulement quand c'est l'exemple qui est sur la table — pour
-       qu'on ne le prenne pas pour son contrat (08-accueil, `rendreAccueil`). -->
-  <div id="bandeau-exemple" class="bandeau-exemple" hidden role="note"><i aria-hidden="true"></i><span>Vous regardez l’exemple</span><button type="button" id="be-ouvrir">Ouvrir mon retest</button></div>
-
   <!-- LA TABLE : le plan, et rien d'autre. La feuille (le SVG du moteur) est posée dessus, son ombre dessous. -->
   <main id="planche" aria-label="Le plan">
     <div id="ombre" aria-hidden="true"></div>
     <svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg>
 
-    <!-- L'ACCUEIL : la table vide — au premier lancement, et après « Tout effacer ». Une feuille de folio (le cadre gradué,
-         un petit schéma qui se trace) qui dit ce que l'outil attend, en peu de mots (le lecteur : « il y a tellement de
-         choses, je n'ai pas envie de lire ») : 1. votre retest (indispensable) et 2. vos contrats déjà faits (la grande
-         base, une fois), côte à côte, chacun avec sa zone de dépôt ; 3. la bible et les normes, embarquées, en une ligne.
-         En bas, l'exemple et le collage pour qui n'a pas de fichier. Ce qui change (l'état de la base, ce qui est embarqué,
-         l'erreur du dernier dépôt, les comptes) est écrit par 08-accueil (`rendreAccueil`) ; « Reprendre » est montré par
-         l'interface quand le dernier geste a vidé la table. Une étape qui porte data-depot reçoit le fichier qu'on glisse
-         dessus. -->
+    <!-- LE PLAN VIDE : un plan de la bibliothèque sans liaison (ses lignes effacées : Ctrl+Z, ou « Reprendre », les rend).
+         Une carte posée sur la table, peu de mots, trois gestes : un retest, des lignes collées, la bibliothèque.
+         08-bibliotheque relie ses boutons et dit « Reprendre » quand le dernier geste a vidé le plan. -->
     <div id="vide" class="vide" hidden>
-      <div class="vd ilot-clair">
-        <div class="vd-reg vd-reg-h" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span></div>
-        <div class="vd-reg vd-reg-g" aria-hidden="true"><span>A</span><span>B</span><span>C</span><span>D</span></div>
-        <div class="vd-feuille">
-          <header class="vd-tete">
-            <div class="vd-titre">
-              <div class="vd-sur"><span class="en-marque" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2.5" y="7.5" width="7" height="9" rx="1.5"/><rect x="14.5" y="7.5" width="7" height="9" rx="1.5"/><path d="M9.5 12h5"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg></span>Premier pas · rien n’est encore chargé</div>
-              <h1>Atelier Schéma</h1>
-              <p>Votre retest devient des folios, des fiches et des contrôles. Rien ne quitte ce navigateur.</p>
-            </div>
-            <svg class="vd-dessin" viewBox="0 0 300 130" aria-hidden="true">
-              <g class="bloc"><rect x="8" y="14" width="84" height="44"/><text x="50" y="40">102CB1</text></g>
-              <g class="bloc"><rect class="bornes" x="92" y="18" width="11" height="36"/><path d="M92 36h11"/><text class="pin" x="97.5" y="30">1</text><text class="pin" x="97.5" y="48">2</text></g>
-              <g class="bloc b2"><rect x="218" y="14" width="74" height="44"/><text x="255" y="40">101BT1</text></g>
-              <g class="bloc b2"><rect class="bornes" x="207" y="18" width="11" height="36"/><path d="M207 36h11"/><text class="pin" x="212.5" y="30">1</text><text class="pin" x="212.5" y="48">2</text></g>
-              <g class="bloc b3"><rect x="218" y="86" width="74" height="36"/><text x="255" y="108">103RL1</text></g>
-              <g class="bloc b3"><rect class="bornes" x="207" y="95" width="11" height="18"/><text class="pin" x="212.5" y="107">1</text></g>
-              <path class="fil puissance" pathLength="1" d="M103 27H207"/>
-              <path class="fil signal" pathLength="1" d="M103 45H207"/>
-              <path class="fil signal f3" pathLength="1" d="M150 45V104H207"/>
-              <circle class="noeud" cx="150" cy="45" r="2.4"/>
-              <g class="etiq"><text x="155" y="22">W-011</text><text x="126" y="40">W-012</text><text x="180" y="99">W-013</text></g>
-            </svg>
-          </header>
-          <button class="vd-reprendre" id="vd-reprendre" hidden>Reprendre le contrat</button>
-
-          <div class="vd-etapes">
-            <!-- 1. le retest : une ligne par fil, les quatre colonnes obligatoires, trois lignes d'aperçu, le dépôt -->
-            <section class="vd-etape vd-un" data-depot="retest" aria-labelledby="vd-t1">
-              <div class="vd-num"><i aria-hidden="true">1</i>indispensable</div>
-              <h2 id="vd-t1">Votre retest</h2>
-              <p>Un Excel ou un CSV, <b>une ligne par fil</b>, avec au moins <span class="vd-req">Device1</span> <span class="vd-req">Pin1</span> <span class="vd-req">Device2</span> <span class="vd-req">Pin2</span>.</p>
-              <div class="vd-apercu">
-                <table aria-label="Trois lignes d’un retest : les quatre colonnes obligatoires et deux facultatives">
-                  <thead><tr><th class="req">Device1</th><th class="req">Pin1</th><th>Cable TG</th><th>Cable Tag</th><th class="req">Device2</th><th class="req">Pin2</th></tr></thead>
-                  <tbody>
-                    <tr><td class="req">102CB1</td><td class="req">2</td><td>DR20</td><td>W-012</td><td class="req">103RL1</td><td class="req">A1</td></tr>
-                    <tr><td class="req">103RL1</td><td class="req">A2</td><td>DR22</td><td>W-013</td><td class="req">104LP1</td><td class="req">1</td></tr>
-                    <tr><td class="req">101BT1</td><td class="req">1</td><td>DR16</td><td>W-011</td><td class="req">102CB1</td><td class="req">1</td></tr>
-                  </tbody>
-                </table>
-              </div>
-              <div class="vd-zone" id="vd-zone" role="button" tabindex="0" aria-label="Déposer votre retest ici, ou cliquer pour choisir le fichier">
-                <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
-                <span><b>Glissez le retest ici</b> ou cliquez</span>
-              </div>
-              <div class="vd-erreur" id="vd-erreur" hidden></div>
-              <div class="vd-actions"><button class="btn cuivre" id="vd-ouvrir">Ouvrir mon retest…</button><button class="btn lien" id="vd-modele">Modèle (CSV)</button></div>
-            </section>
-            <!-- 2. les contrats déjà faits : la grande base (tous les contrats, un seul Excel), déposée une fois — ce qu'elle
-                 attend en une ligne, sa zone de dépôt, son état -->
-            <section class="vd-etape vd-deux" data-depot="base" aria-labelledby="vd-t2">
-              <div class="vd-num"><i aria-hidden="true">2</i>une fois · le retest de tous vos contrats</div>
-              <h2 id="vd-t2">Vos contrats déjà faits</h2>
-              <p>Un seul Excel, <b>une ligne par liaison</b>, aux colonnes du retest, et&nbsp;:</p>
-              <dl class="vd-cles">
-                <div><dt>Harness</dt><dd>la machine</dd></div>
-                <div><dt>FWD</dt><dd>le dessin</dd></div>
-                <div><dt>Appareil</dt><dd>le contrat</dd></div>
-              </dl>
-              <p class="vd-ensuite">Chaque fiche dira « déjà fait sur H175 » et reprendra ce que vous cochez.</p>
-              <div class="vd-etat e-vide" id="vd-etat-base"><i aria-hidden="true"></i><span>aucune base pour l’instant</span></div>
-              <div class="vd-zone" id="vd-zone-base" role="button" tabindex="0" aria-label="Déposer la base des contrats déjà faits ici, ou cliquer pour choisir le fichier">
-                <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"/></svg>
-                <span><b>Glissez la base ici</b> ou cliquez</span>
-              </div>
-              <div class="vd-erreur" id="vd-erreur-base" hidden></div>
-              <div class="vd-actions"><button class="btn papier" id="vd-base">Déposer la base…</button><button class="btn lien" id="vd-base-aide">Ce qu’elle attend</button></div>
-            </section>
-            <!-- 3. la bible et les normes : embarquées ; on commence sans — une ligne -->
-            <section class="vd-etape vd-trois" aria-labelledby="vd-t3">
-              <div class="vd-num"><i aria-hidden="true">3</i></div>
-              <h2 id="vd-t3">Bible et normes</h2>
-              <div class="vd-etat e-ok" id="vd-etat-embarque"><i aria-hidden="true"></i><span>embarquées : <span id="vd-n-bible">306 références</span>, <span id="vd-n-tables">32 tables</span> — rien à faire pour commencer</span></div>
-              <button class="btn lien" id="vd-embarque">Voir ce qui est embarqué</button>
-            </section>
-          </div>
-
-          <footer class="vd-bas">
-            <span class="vd-bas-q">Pas de fichier sous la main ?</span>
-            <button class="btn papier" id="vd-exemple">Ouvrir l’exemple <span class="vd-ex-n" id="vd-ex-n">(201 liaisons, 6 folios)</span></button>
-            <button class="btn lien" id="vd-coller">Coller quelques lignes</button>
-            <span class="vd-plus">Tout se retrouve dans ⋮ → <button class="btn lien" id="vd-fichiers">Vos fichiers</button></span>
-          </footer>
-        </div>
-        <div class="vd-reg vd-reg-d" aria-hidden="true"><span>A</span><span>B</span><span>C</span><span>D</span></div>
-        <div class="vd-reg vd-reg-b" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span></div>
+      <div class="vd-carte" role="note" aria-labelledby="vd-titre">
+        <h2 id="vd-titre">Ce plan est vide</h2>
+        <p>Collez-y quelques lignes, ou ouvrez un retest : il deviendra un plan de l’install.</p>
+        <button type="button" class="vd-reprendre" id="vd-reprendre" hidden>Reprendre</button>
+        <div class="vd-actions"><button class="btn cuivre" id="vd-coller">Coller des lignes</button><button class="btn papier" id="vd-ouvrir">Ouvrir un retest…</button><button class="btn lien" id="vd-bibliotheque">La bibliothèque</button></div>
       </div>
     </div>
   </main>
@@ -264,6 +180,15 @@
     </span>
   </nav>
 
+  <!-- LA BIBLIOTHÈQUE : l'ouverture de Volta, sur la table noire. Les installs (une installation : telle antenne, tel
+       cockpit…) et, dans chacune, ses plans (un plan = un retest) ; on choisit l'install, puis le plan, qui s'ouvre sur la
+       table. Elle couvre la table, le rail et les folios (le plan reste dessous, tel qu'on l'a laissé) ; les documents (vos
+       fichiers, la bible, les normes) s'ouvrent à côté d'elle. 08-bibliotheque écrit tout (`rendreBibliotheque`) ; un
+       fichier déposé ici devient un plan (data-depot). -->
+  <section id="bibliotheque" class="biblio" data-depot="plans" aria-label="La bibliothèque des installs">
+    <div class="bi-page" id="bi-page"></div>
+  </section>
+
   <!-- L'INSPECTEUR : la fiche de ce qu'on a cliqué (un équipement, une barrette, une prise, un fil), à droite, du haut en bas ;
        le plan se recadre à côté, jamais dessous. Son contenu (08 bis) est fait avec les mêmes jetons. -->
   <aside id="inspecteur" hidden aria-label="Fiche de l’élément choisi">
@@ -335,8 +260,10 @@
   <div id="toast" role="status" aria-live="polite"></div>
   <input type="file" id="fichier" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
   <input type="file" id="fichier-bible" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
-  <!-- la base des contrats déjà faits et une norme, depuis l'accueil et « Vos fichiers » (08-fichiers) -->
+  <!-- la base des contrats déjà faits et une norme, depuis la bibliothèque et « Vos fichiers » (08-fichiers) ; des retests,
+       plusieurs à la fois, qui deviennent des plans (08-bibliotheque) -->
   <input type="file" id="fichier-base" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
   <input type="file" id="fichier-normes" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
+  <input type="file" id="fichier-plans" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" multiple hidden>
 </div>
 <div id="printroot"></div>

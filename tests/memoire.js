@@ -6,8 +6,9 @@
    Séparé de controle.js parce qu'il lui faut DEUX pages dans le MÊME contexte
    de navigateur — `browser.newPage()` crée un stockage neuf à chaque fois.
      1. une correction faite à la main est enregistrée, et un choix (une désignation) ;
-     2. ils sont retrouvés à la réouverture, avec l'heure — et l'outil rouvre sur le
-        plan seul (le tableau, ouvert avant de fermer, ne revient pas devant le plan) ;
+     2. ils sont retrouvés à la réouverture, avec l'heure — l'outil rouvre sur la
+        BIBLIOTHÈQUE, le plan resté sur la table dessous : « Reprendre » le rend, seul
+        (le tableau, ouvert avant de fermer, ne revient pas devant le plan) ;
      3. « Annuler » rend l'état d'avant, et dit quoi ;
      4. Ctrl+Z fait la même chose ;
      5. si le navigateur REFUSE d'écrire, l'outil continue et le dit.
@@ -22,7 +23,7 @@ const FICHIER = fichierDemande();
   const e = []; p.on('pageerror', x => e.push(x.message));
   const R = []; const ok = (n, c, d) => R.push((c ? '  ok   ' : '  KO   ') + n.padEnd(46) + (d || ''));
 
-  // l’outil s’ouvre sur l’accueil : le contrat à garder est l’exemple, qu’on demande
+  // l’outil s’ouvre sur la bibliothèque : le plan à garder est l’exemple, qu’on demande
   await p.goto(FICHIER); await p.waitForTimeout(1600); await p.evaluate(() => atelier.exemple()); await p.waitForTimeout(600);
   const a = await p.evaluate(() => { histPush('essai'); app.contrat.liaisons.push(liaison({ de: 'MA-CORRECTION', borneDe: '1', vers: '210SP1', borneVers: '9' })); app.contrat.designations.set('210SP1', 'calculateur d’essai');
     redessiner(); ouvrirBase(); sauver(); return app.contrat.liaisons.length; });
@@ -31,10 +32,14 @@ const FICHIER = fichierDemande();
 
   const p2 = await ctx.newPage(); p2.setDefaultTimeout(120000); p2.on('pageerror', x => e.push(x.message));
   await p2.goto(FICHIER); await p2.waitForTimeout(1800);
-  const r = await p2.evaluate(() => ({ n: app.contrat.liaisons.length, survit: app.contrat.liaisons.some(l => l.de === 'MA-CORRECTION'), designation: app.contrat.designations.get('210SP1') || '', base: app.base.ouvert, heure: document.getElementById('ctx-sauve').textContent }));
+  // l'outil s'ouvre sur la bibliothèque ; le plan resté sur la table est dessous, et se reprend d'un clic
+  const ou = await p2.evaluate(() => ({ biblio: BIB.vue === 'racine' && !document.getElementById('bibliotheque').hidden, reprendre: !!document.getElementById('bi-reprendre'), plan: app.planId }));
+  ok('rouvert sur la bibliothèque, « Reprendre »', ou.biblio && ou.reprendre && ou.plan === 'exemple', JSON.stringify(ou));
+  await p2.click('#bi-reprendre'); await p2.waitForTimeout(300);
+  const r = await p2.evaluate(() => ({ n: app.contrat.liaisons.length, survit: app.contrat.liaisons.some(l => l.de === 'MA-CORRECTION'), designation: app.contrat.designations.get('210SP1') || '', base: app.base.ouvert, heure: document.getElementById('ctx-sauve').textContent, biblio: !document.getElementById('bibliotheque').hidden }));
   ok('elle survit à la réouverture', r.survit, r.n + ' liaisons · «' + r.heure + '»');
   ok('le choix aussi (une désignation)', r.designation === 'calculateur d’essai', '«' + r.designation + '»');
-  ok('rouvert sur le plan seul, tableau fermé', !r.base);
+  ok('repris sur le plan seul, tableau fermé', !r.base && !r.biblio);
 
   const u = await p2.evaluate(() => { const n0 = app.contrat.liaisons.length; histPush('suppression d’essai'); app.contrat.liaisons.splice(0, 3); redessiner();
     const n1 = app.contrat.liaisons.length; const q = annuler(); return { n0, n1, n2: app.contrat.liaisons.length, q }; });

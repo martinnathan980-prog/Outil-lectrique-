@@ -26,13 +26,17 @@
    à côté de l'un, au-dessus de l'autre, jamais dessous. Les documents rares
    (cartouche, collage, bible) s'ouvrent dans une fiche à part.
    Les commandes sont dans la barre de gauche (le rail) ; le menu ⋮, en haut
-   à droite, porte en peu de lignes ce qu'on fait une fois (ouvrir, vos
-   fichiers, exporter…) et dit ce qui est ouvert.
+   à droite, porte en peu de lignes ce qu'on fait une fois (la bibliothèque,
+   ouvrir, vos fichiers, exporter…) et dit ce qui est ouvert.
+   On arrive par la BIBLIOTHÈQUE (08-bibliotheque) : une install, ses plans ;
+   le plan qu'on ouvre est le contrat sur la table (app.planId).
    =========================================================================== */
 'use strict';
 
 const app = {
   contrat: nouveauContrat(), source: null, nFolios: 0, budget: 16, plan: '*', nom: '',
+  planId: '',   // le plan de la bibliothèque qui est sur la table (08-bibliotheque) : ce qu'on fait s'y garde
+
   vue: { s: 1, tx: 0, ty: 0 }, choisi: null, cible: null, actif: null, dessin: null, hist: [], fiche: null,
   bible: [], bibleNom: '', norme: null, normeNom: '', simu: null,   // simu : les hypothèses, posées au démarrage (relireSimu)
   base: { ouvert: false, portee: 'folio', filtre: '', filtreAuto: false, tri: null, hauteur: 0, sale: true, defiler: false, enSaisie: false, choixOuvert: false, normeOuverte: false },
@@ -495,7 +499,7 @@ function designationDe(n) { const d = app.contrat.designations.get(n);
 /* La bible, la norme et les hypothèses de simulation (leur persistance, leur adoption) vivent dans 08-normes.js : relireBible, adopterBible, relireNorme, adopterNorme, relireSimu, memoriserSimu. */
 function peindre() {
   const svg = $('svg');
-  $('vide').hidden = app.contrat.liaisons.length > 0;
+  $('vide').hidden = app.contrat.liaisons.length > 0 || !app.planId;   // un plan de la bibliothèque, vide : il le dit
   // pas de dessin : la table vide — ou, si le folio se place au loin, l'attente à sa place
   if (!app.dessin) { svg.innerHTML = ''; appliquerVue(); montrerAttente(); return; }
   svg.innerHTML = styleDessin() + `<g id="scene" transform="translate(${app.vue.tx},${app.vue.ty}) scale(${app.vue.s})">`
@@ -902,7 +906,7 @@ function lierPlanche() {
     if (p.genre === 'bloc') allumerBloc(p.c.name); else if (p.genre === 'borne') allumerFils(filsDeLaBorne(p.c, p.y));
     else if (p.genre === 'vt') allumerBarretteAPoser(p.b.nomVT); else allumerFil(p.f);
     peindreSurvol(p); };
-  // l'ACCUEIL (#vide) vit sur la planche : un appui qui en part est un clic sur ses boutons, pas une prise de la vue — ni
+  // LE PLAN VIDE (#vide) vit sur la planche : un appui qui en part est un clic sur ses boutons, pas une prise de la vue — ni
   // capture du pointeur (elle volerait le « click » au bouton), ni pan
   const surLAccueil = e => !!(e.target && e.target.closest && e.target.closest('#vide'));
   stage.addEventListener('pointerdown', e => { if (e.button && e.button !== 0) return; fermerMenu(); fermerRecherche(); if (surLAccueil(e)) return;
@@ -953,7 +957,7 @@ function lierPlanche() {
   insp.addEventListener('click', e => { if (Date.now() - avale < 400) { e.preventDefault(); e.stopPropagation(); } }, true);
   stage.addEventListener('mousemove', survoler);
   stage.addEventListener('mouseleave', () => { if (!mode) { effacerSurvol(); rallumer(); } });
-  stage.addEventListener('wheel', e => { if (surLAccueil(e)) return;   // l'accueil défile, il ne zoome pas
+  stage.addEventListener('wheel', e => { if (surLAccueil(e)) return;   // le plan vide ne zoome pas
     e.preventDefault(); const r = cadre(); zoomer(Math.exp(-e.deltaY * 0.0014), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
 
 }
@@ -1100,7 +1104,7 @@ function coupureDesFolios(P) { if (P.length < 2 || P.some(p => p.length < 10)) r
   n = Math.min(n, Math.min(...P.map(p => p.length)) - 3); return n >= 5 ? n : null; }
 const FOLIOS_EN_LISTE = 8;   // au-delà, une liste déroulante double la bande
 function synchroniserFolios() { const P = plans(), strip = $('fo-strip'), sel = $('fo-select');
-  // la barre du bas reste (cadrage, zoom) ; la partie folios ne se montre qu'à plusieurs feuilles ; sans contrat (l'accueil), rien
+  // la barre du bas reste (cadrage, zoom) ; la partie folios ne se montre qu'à plusieurs feuilles ; sans contrat (la bibliothèque, un plan vide), rien
   $('folios').hidden = !app.contrat.liaisons.length;
   $('fo-part').hidden = P.length < 2;
   if (app.plan !== '*' && !P.includes(app.plan)) app.plan = P.length > 1 ? P[0] : '*';
@@ -1640,11 +1644,14 @@ function ajusterFolios() { if (app.nFolios) return 0;
 
 /* ---- historique et enregistrement ------------------------------------- */
 /* L'historique photographie le contrat entier — les liaisons, les choix (désignations, sexes, raccords, profils de
-   charge), le cartouche — : défaire un chargement rend aussi les choix et le cartouche d'avant. */
-function histPush(quoi, retouche) { app.hist.push({ quoi, retouche: !!retouche, liaisons: app.contrat.liaisons.map(l => ({ ...l })), source: app.source ? app.source.map(l => ({ ...l })) : null,
+   charge), le cartouche — et le PLAN de la bibliothèque qui était sur la table : défaire un chargement rend aussi les
+   choix, le cartouche et le plan d'avant (le plan ouvert entre-temps reste dans la bibliothèque). */
+function histPush(quoi, retouche) { app.hist.push({ quoi, retouche: !!retouche, planId: app.planId, liaisons: app.contrat.liaisons.map(l => ({ ...l })), source: app.source ? app.source.map(l => ({ ...l })) : null,
   nFolios: app.nFolios, budget: app.budget, plan: app.plan, nom: app.nom, designations: new Map(app.contrat.designations), sexes: new Map(app.contrat.sexes || []), raccords: new Map([...(app.contrat.raccords || [])].map(([k, v]) => [k, { ...v }])), charges: new Map([...(app.contrat.charges || [])].map(([k, v]) => [k, JSON.parse(JSON.stringify(v))])), cartouche: { ...app.contrat.cartouche }, retouches: new Map(app.retouches) });
   if (app.hist.length > 40) app.hist.shift(); synchroniserHistorique(); }
 function annuler() { const p = app.hist.pop(); if (!p) return null; const plan = app.plan;
+  // un autre plan était sur la table : ce qu'on vient d'y faire se garde d'abord, puis il revient
+  if (p.planId !== undefined && p.planId !== app.planId) { sauverMaintenant(); app.planId = p.planId; }
   app.contrat.liaisons = p.liaisons; app.source = p.source; app.nFolios = p.nFolios; app.budget = p.budget || 16; app.plan = p.plan; app.nom = p.nom || ''; app.contrat.designations = p.designations; app.contrat.sexes = p.sexes || new Map(); app.contrat.charges = p.charges || new Map(); app.contrat.raccords = p.raccords || new Map();
   if (p.cartouche) app.contrat.cartouche = { ...p.cartouche };
   // les retouches d'avant reviennent, et se gardent comme elles étaient
@@ -1653,41 +1660,56 @@ function annuler() { const p = app.hist.pop(); if (!p) return null; const plan =
   if (document.activeElement && $('ba-tab').contains(document.activeElement)) document.activeElement.blur();
   // défaire une retouche ne recadre pas la vue : on regardait ce qu'on retouchait
   redessiner(); if (!(p.retouche && p.plan === plan)) ajuster(true); sauver(); return p.quoi; }
+/* LA MÉMOIRE DU CONTRAT. Ce qui se garde d'un contrat (`etatDuContrat`) : ses liaisons, ses folios, ses choix, son
+   cartouche, le plan de la bibliothèque qu'il est. Il se garde 400 ms après le dernier geste, à deux endroits : ce
+   navigateur (localStorage : le plan qui est sur la table, relu au lancement, derrière la bibliothèque) et la
+   bibliothèque (IndexedDB, `garderLePlan` : chaque plan garde le sien). `sauverMaintenant` n'attend pas — avant de
+   changer de plan, ce qu'on vient de faire part. `poserEtat` remet un état gardé sur la table. */
 let sauveT = null;
-function sauver() { clearTimeout(sauveT); sauveT = setTimeout(() => { try {
-    localStorage.setItem(CLE_CONTRAT, JSON.stringify({ liaisons: app.contrat.liaisons, source: app.source, nFolios: app.nFolios, budget: app.budget, plan: app.plan, nom: app.nom,
-      designations: [...app.contrat.designations], sexes: [...(app.contrat.sexes || [])], charges: [...(app.contrat.charges || [])], raccords: [...(app.contrat.raccords || [])], provisoires: [...(app.contrat.provisoires || [])], cartouche: app.contrat.cartouche, t: Date.now() }));
-    heureSauve(Date.now()); } catch (_) { heureSauve(null); } }, 400); }
+const etatDuContrat = () => ({ planId: app.planId, liaisons: app.contrat.liaisons, source: app.source, nFolios: app.nFolios, budget: app.budget, plan: app.plan, nom: app.nom,
+  designations: [...app.contrat.designations], sexes: [...(app.contrat.sexes || [])], charges: [...(app.contrat.charges || [])], raccords: [...(app.contrat.raccords || [])], provisoires: [...(app.contrat.provisoires || [])], cartouche: app.contrat.cartouche, t: Date.now() });
+function ecrireContrat() { sauveT = null; const o = etatDuContrat();
+  try { localStorage.setItem(CLE_CONTRAT, JSON.stringify(o)); heureSauve(o.t); } catch (_) { heureSauve(null); }
+  if (typeof garderLePlan === 'function') garderLePlan(o); }
+function sauver() { clearTimeout(sauveT); sauveT = setTimeout(ecrireContrat, 400); }
+function sauverMaintenant() { if (sauveT) { clearTimeout(sauveT); ecrireContrat(); } }
 function heureSauve(t) { const el = $('ctx-sauve');
   if (!t) { el.textContent = 'non enregistré'; el.classList.add('ko'); el.title = 'Le navigateur refuse d’enregistrer (navigation privée ?). Le travail tient tant que l’onglet est ouvert.'; return; }
   const d = new Date(t); el.textContent = 'enregistré ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); el.classList.remove('ko');
   el.title = 'Gardé dans ce navigateur. Rien n’est parti sur le réseau.'; }
+function poserEtat(o) { app.contrat = contratNeuf(); app.planId = o.planId || '';
+  app.contrat.liaisons = o.liaisons.map(liaison); app.source = o.source ? o.source.map(liaison) : null; app.nFolios = o.nFolios || 0; app.budget = o.budget || 16; app.plan = o.plan || '*'; app.nom = o.nom || '';
+  app.contrat.designations = new Map(o.designations || []); app.contrat.sexes = new Map(o.sexes || []); app.contrat.charges = new Map(o.charges || []); app.contrat.raccords = new Map(o.raccords || []); app.contrat.provisoires = new Map(o.provisoires || []); if (o.cartouche) Object.assign(app.contrat.cartouche, o.cartouche);
+  const P = plans(); if (app.plan === '*' && P.length > 1) app.plan = P[0];
+  app.choisi = null; app.cible = null; app.actif = null; }
+// le plan qui était sur la table à la fermeture revient (derrière la bibliothèque, qui s'ouvre au lancement)
 function relire() { try { const j = localStorage.getItem(CLE_CONTRAT); if (!j) return false; const o = JSON.parse(j);
     if (!o || !o.liaisons || !o.liaisons.length) return false;
-    app.contrat.liaisons = o.liaisons.map(liaison); app.source = o.source ? o.source.map(liaison) : null; app.nFolios = o.nFolios || 0; app.budget = o.budget || 16; app.plan = o.plan || '*'; app.nom = o.nom || '';
-    app.contrat.designations = new Map(o.designations || []); app.contrat.sexes = new Map(o.sexes || []); app.contrat.charges = new Map(o.charges || []); app.contrat.raccords = new Map(o.raccords || []); app.contrat.provisoires = new Map(o.provisoires || []); if (o.cartouche) Object.assign(app.contrat.cartouche, o.cartouche);
-    const P = plans(); if (app.plan === '*' && P.length > 1) app.plan = P[0];
-    redessiner(); ajuster(); heureSauve(o.t || Date.now()); return true; } catch (_) { return false; } }
+    poserEtat(o); redessiner(); ajuster(); heureSauve(o.t || Date.now()); return true; } catch (_) { return false; } }
 
 /* ---- charger un contrat ----------------------------------------------- */
 /* Un contrat NEUF : rien du contrat d'avant ne survit — ni désignations, ni sexes des contacts, ni profils de charge,
    ni raccords (les repères se répètent d'une machine à l'autre : le 102CB1 d'un retest prendrait le profil du 102CB1 de
    l'autre) ; le cartouche repart à neuf, sauf qui dessine et à quelle échelle, qui sont ceux du bureau. `relire()` rend
-   les choix du contrat gardé ; Ctrl+Z rend ceux d'avant le chargement. */
+   les choix du contrat gardé ; Ctrl+Z rend ceux d'avant le chargement.
+   LE PLAN qu'il devient (08-bibliotheque, `planPour`) : `o.planId` un plan nommé (l'exemple, un plan qu'on ouvre),
+   `o.nouveau` un plan neuf de l'install ouverte (un fichier ouvert) ; sans rien, le plan sur la table (le collage qui le
+   remplace) — ou un plan neuf s'il n'y en a pas. La bibliothèque s'efface : le contrat est sur la table. */
 function contratNeuf() { const d = app.contrat.cartouche, c = nouveauContrat(); c.cartouche.auteur = d.auteur; c.cartouche.echelle = d.echelle; return c; }
-function chargerContrat(liaisons, quoi, nom) { histPush(quoi || 'chargement d’un contrat'); app.contrat = contratNeuf();
+function chargerContrat(liaisons, quoi, nom, o) { sauverMaintenant(); histPush(quoi || 'chargement d’un contrat'); app.contrat = contratNeuf();
   app.contrat.liaisons = liaisons.map(liaison); app.source = null; app.nFolios = 0; app.choisi = null; app.cible = null; app.actif = null; app.nom = nom || app.nom;
+  if (typeof planPour === 'function') app.planId = planPour(o || {}, app.nom, app.contrat.liaisons);
   app.base.filtre = ''; app.base.tri = null; app.base.enSaisie = false;
   if (document.activeElement && $('ba-tab').contains(document.activeElement)) document.activeElement.blur();
   const P = plans(); app.plan = P.length > 1 ? P[0] : '*';
-  fermerFiche(); fermerMenu(); $('q').value = '';
+  fermerFiche(); fermerMenu(); $('q').value = ''; if (typeof montrerLePlan === 'function') montrerLePlan();
   redessiner(); ajuster(); if (P.length <= 1) ajusterFolios(); sauver(); }
 /* Ouvrir un fichier (ouvrirFichier : le retest, ou ce qu'il est — une bible, une norme, une base, un tableau à
    deviner — et l'erreur dite dans « Vos fichiers »), ficheHarnais (plusieurs harness : lequel ouvrir ?) vivent dans
    08-fichiers.js. */
-/* Le dépôt : toute la fenêtre est la cible ; une étape de l'accueil ou une carte de « Vos fichiers » qui porte
-   data-depot dit ce qu'on y dépose (la base des contrats déjà faits, la bible, une norme) — ailleurs, un retest (ou ce
-   que le fichier se révèle être). La cible survolée s'allume. */
+/* Le dépôt : toute la fenêtre est la cible ; la bibliothèque ou une carte de « Vos fichiers » qui porte data-depot dit
+   ce qu'on y dépose (des retests qui deviennent des plans — plusieurs à la fois —, la base des contrats déjà faits, la
+   bible, une norme) — ailleurs, un retest (ou ce que le fichier se révèle être). La cible survolée s'allume. */
 function lierDepot() { let n = 0, vise = null;
   const cible = e => e.target && e.target.closest ? e.target.closest('[data-depot]') : null;
   const viser = el => { if (vise === el) return; if (vise) vise.classList.remove('survol-depot'); vise = el; if (el) el.classList.add('survol-depot'); };
@@ -1695,11 +1717,11 @@ function lierDepot() { let n = 0, vise = null;
   window.addEventListener('dragover', e => { e.preventDefault(); viser(cible(e)); });
   window.addEventListener('dragleave', e => { e.preventDefault(); if (--n <= 0) { n = 0; document.body.classList.remove('depot-actif'); viser(null); } });
   window.addEventListener('drop', e => { e.preventDefault(); n = 0; document.body.classList.remove('depot-actif'); const c = cible(e), ou = c && c.dataset.depot; viser(null);
-    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (!f) return;
-    if (ou === 'base') importerReferences(f); else if (ou === 'bible') importerBible(f); else if (ou === 'normes') importerNorme(f); else ouvrirFichier(f); }); }
+    const fs = e.dataTransfer && e.dataTransfer.files ? [...e.dataTransfer.files] : [], f = fs[0]; if (!f) return;
+    if (ou === 'plans') ajouterPlans(fs); else if (ou === 'base') importerReferences(f); else if (ou === 'bible') importerBible(f); else if (ou === 'normes') importerNorme(f); else ouvrirFichier(f); }); }
 
 /* ---- sortir le dessin : SVG, PNG, impression -------------------------- */
-function nomFolio() { const base = (app.nom || 'atelier-schema').replace(/\.[^.]+$/, '').replace(/[^\w.-]+/g, '_');
+function nomFolio() { const base = (app.nom || 'volta').replace(/\.[^.]+$/, '').replace(/[^\w.-]+/g, '_');
   return base + (app.plan !== '*' ? '-folio-' + String(app.plan).replace(/[^\w.-]+/g, '_') : ''); }
 /* Un nom de fichier en ASCII : ouvert depuis file://, Chromium remplace par « download » tout nom qui porte un accent,
    une apostrophe ou un tiret cadratin. Les accents tombent, tout le reste devient un tiret. */
@@ -1729,13 +1751,12 @@ function imprimer() { if (!app.dessin) return; const S = svgAutonome(app.dessin,
 /* ---- ce que le menu et le rail affichent ------------------------------ */
 const NOM_EXEMPLE = 'Contrat d’exemple';
 /* L'en-tête du menu dit QUEL contrat est ouvert : le titre du cartouche si on en a écrit un, sinon le nom du fichier ;
-   et que c'est l'exemple embarqué quand c'est lui (il ne s'ouvre qu'à la demande ; le bandeau sous la barre le dit aussi). */
-function synchroniserContexte() { const n = app.contrat.liaisons.length, P = plans(), nom = n ? (app.nom || 'Sans nom') : 'Aucun contrat', exemple = n && app.nom === NOM_EXEMPLE;
+   et que c'est l'exemple embarqué quand c'est lui (il ne s'ouvre qu'à la demande ; le fil de la barre du haut dit
+   « Exemple »). La barre du haut et la bibliothèque suivent (08-bibliotheque). */
+function synchroniserContexte() { const n = app.contrat.liaisons.length, P = plans(), nom = n ? (app.nom || 'Sans nom') : (app.planId ? 'Plan vide' : 'Aucun plan ouvert'), exemple = n && app.nom === NOM_EXEMPLE;
   const sous = n ? (exemple ? 'l’exemple embarqué · ' : '') + `${n} liaison${n > 1 ? 's' : ''} · ${reperesDuContrat().length} repères` + (P.length > 1 ? ` · ${P.length} folios` : '') : '';
   $('ctx-nom').textContent = nom; $('ctx-txt').textContent = sous; $('ctx-nom').title = nom;
-  // l'accueil : « reprendre » si le dernier geste a vidé la table
-  const rep = $('vd-reprendre'); if (rep) { const d = app.hist[app.hist.length - 1]; rep.hidden = !(!n && d && d.liaisons && d.liaisons.length); if (!rep.hidden) rep.textContent = d.nom ? 'Reprendre « ' + d.nom + ' »' : 'Reprendre le contrat'; }
-  if (typeof rendreAccueil === 'function') rendreAccueil(); }
+  if (typeof synchroniserBibliotheque === 'function') synchroniserBibliotheque(); }
 /* Annuler reste à sa place, éteint quand il n'y a rien à annuler ; sa bulle
    dit ce qu'il déferait. */
 function synchroniserHistorique() { const b = $('btnUndo'), d = app.hist[app.hist.length - 1]; b.disabled = !d;
@@ -1785,18 +1806,16 @@ function lierPanneau() {
   const exemple = () => ouvrirExemple();   // l'exemple embarqué, à la demande (08-fichiers)
   $('fichier').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) ouvrirFichier(f); e.target.value = ''; });
   $('fichier-bible').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) importerBible(f); e.target.value = ''; });
-  o('vd-ouvrir', choisirFichier); o('vd-coller', ficheColler); o('vd-exemple', exemple); o('vd-reprendre', () => { const q = annuler(); if (q) dire('Repris : ' + q + '.'); });
   o('btnBase', basculerBase); o('btnIndex', basculerIndex); o('btnCherche', () => { if (rechercheOuverte()) fermerRecherche(); else ouvrirRecherche(); });
   o('btnLiaison', nouvelleLiaison); o('btnBible', basculerBible);
-  // le menu (page.html) : ouvrir un retest, vos fichiers (la base des contrats déjà faits y a sa carte), le récapitulatif, la
-  // nomenclature ; Exporter (SVG, PNG, imprimer, le suivi) ; Plus (coller, l'exemple, la bible, les normes, les hypothèses,
-  // le cartouche, tout effacer)
-  lierMenu({ ouvrir: choisirFichier, fichiers: () => ficheFichiers(), recapitulatif: basculerBase, nomenclature: ficheNomenclature,
-    svg: exporterSVG, png: exporterPNG, imprimer, suivi: exporterSuivi,
-    coller: ficheColler, exemple, bible: ficheBible, normes: () => ficheNormes(), hypotheses: ficheHypotheses, cartouche: ficheCartouche,
-    // tout effacer : la table vide (l'accueil), et un contrat neuf — les choix de celui-ci ne survivent pas (Ctrl+Z, ou « Reprendre », rend tout)
-    vider: () => { if (!confirm('Effacer tout le contrat ?')) return; histPush('tout effacer'); app.contrat = contratNeuf(); app.source = null; app.nFolios = 0; app.plan = '*'; app.nom = ''; app.cible = null; app.choisi = null;
-      fermerFiche(); fermerInspecteur(); fermerBase(); redessiner(); ajuster(); sauver(); } });
+  // le menu (page.html) : la bibliothèque (l'entrée principale), ouvrir un retest (il devient un plan de l'install ouverte),
+  // vos fichiers (la base des contrats déjà faits y a sa carte), le récapitulatif, la nomenclature ; Exporter (SVG, PNG,
+  // imprimer, le suivi) ; Plus (coller, l'exemple, la bible, les normes, les hypothèses, le cartouche). Ce qui porte sur le
+  // plan le remet sur la table quand la bibliothèque le cache (08-bibliotheque, `surLePlan`).
+  lierMenu({ bibliotheque: () => montrerBibliotheque(), ouvrir: choisirFichier, fichiers: () => ficheFichiers(),
+    recapitulatif: surLePlan(basculerBase), nomenclature: surLePlan(ficheNomenclature),
+    svg: surLePlan(exporterSVG), png: surLePlan(exporterPNG), imprimer: surLePlan(imprimer), suivi: surLePlan(exporterSuivi),
+    coller: ficheColler, exemple, bible: ficheBible, normes: () => ficheNormes(), hypotheses: ficheHypotheses, cartouche: surLePlan(ficheCartouche) });
   o('btnUndo', () => { const q = annuler(); if (q) dire('Annulé : ' + q + '.'); });
   o('btnAuto', revenirAutomatique);
   o('fo-prev', () => allerAuFolio(-1)); o('fo-next', () => allerAuFolio(+1));
@@ -1820,6 +1839,8 @@ function lierPanneau() {
     // la vue en relief ouverte : Échap la ferme, le reste lui appartient
     if (!$('relief').hidden) { if (e.key === 'Escape') fermerRelief(); return; }
     const dansChamp = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '');
+    // la bibliothèque ouverte : ses touches (Échap remonte, « / » cherche) ; celles du plan, caché dessous, se taisent
+    if (toucheBibliotheque(e, dansChamp)) return;
     if (e.key === 'Escape') { if (!$('menu').hidden) { fermerMenu(); $('btnMenu').focus(); } else if (rechercheOuverte()) { fermerRecherche(); $('q').blur(); }
       else if (dansChamp) e.target.blur();   // dans un champ, Échap ne fait que le quitter
       else if (app.fiche) fermerFiche(true); else if (app.cible || !$('inspecteur').hidden) deselectionner(); else fermerBase(); return; }

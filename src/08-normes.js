@@ -379,12 +379,12 @@ function revenirEmbarqueeTable(T) { const A = JSON.parse(JSON.stringify(NORMES.a
 // un nom de fichier en ASCII : ouvert depuis file://, Chromium remplace par « download » un nom qui porte un accent ou un tiret cadratin
 const nomDeFichierNorme = t => String(t).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '');
 function exporterTableNorme(v) { const V = vueDe(v), L = lignesDeVue(v); if (!L.lignes.length) { dire('Rien à exporter.'); return; }
-  telecharger(new Blob(['﻿' + csvDeTable(L.table, L.lignes, V.titre + ' — ' + (FICHES_TABLES[L.table] || {}).source + ' — exporté d’Atelier Schéma')], { type: 'text/csv;charset=utf-8' }), 'normes-' + nomDeFichierNorme(V.titre) + '.csv'); dire(pluriel(L.lignes.length, 'ligne') + ' exportée' + (L.lignes.length > 1 ? 's' : '') + '.'); }
+  telecharger(new Blob(['﻿' + csvDeTable(L.table, L.lignes, V.titre + ' — ' + (FICHES_TABLES[L.table] || {}).source + ' — exporté de Volta')], { type: 'text/csv;charset=utf-8' }), 'normes-' + nomDeFichierNorme(V.titre) + '.csv'); dire(pluriel(L.lignes.length, 'ligne') + ' exportée' + (L.lignes.length > 1 ? 's' : '') + '.'); }
 function telechargerGabaritNorme(T) { telecharger(new Blob(['﻿' + gabaritCsv(T)], { type: 'text/csv;charset=utf-8' }), 'gabarit-' + nomDeFichierNorme(TITRES_NORME[T]) + '.csv'); dire('Gabarit ' + TITRES_NORME[T] + ' enregistré : remplis-le, dépose-le sur la table.'); }
 /* Toutes les modifications du navigateur en un fichier : un bloc par table (ses lignes importées ou modifiées), et en
    tête, les lignes embarquées masquées. Il se relit tel quel. */
 function csvDesApports(A) { const blocs = []; TABLES_NORME.forEach(t => { const T = apportsDeTable(A, t), N = normeDesApports({ tables: { [t]: T } });
-    if (N[t].length) blocs.push(csvDeTable(t, N[t], TITRES_NORME[t] + ' — lignes importées ou modifiées dans Atelier Schéma'));
+    if (N[t].length) blocs.push(csvDeTable(t, N[t], TITRES_NORME[t] + ' — lignes importées ou modifiées dans Volta'));
     if ((T.supprimees || []).length) blocs.push('Lignes embarquées masquées dans ' + TITRES_NORME[t] + ' (clés) : ' + T.supprimees.join(' | ') + '\n'); });
   return blocs.join('\n'); }
 function exporterApportsNormes() { const csv = csvDesApports(NORMES.apports); if (!csv) { dire('Rien de modifié.'); return; }

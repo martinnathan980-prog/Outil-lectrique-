@@ -8,8 +8,9 @@
    qu'on copie ? » On rejoue donc les gestes d'un technicien, dans l'ordre où il
    les fait, et on chronomètre chaque pas (performance.now() dans la page,
    Date.now() autour du geste) :
-     A. UN CONTRAT NEUF : l'accueil, un retest Excel déposé (au vrai format :
-        seize colonnes, en-têtes ligne 4), le plan qui se dessine, les folios
+     A. UN CONTRAT NEUF : la bibliothèque (l'ouverture), une install neuve, un
+        retest Excel ajouté comme plan (au vrai format : seize colonnes,
+        en-têtes ligne 4), le plan qui se dessine d'un clic, les folios
         au clavier et à la barre du bas, la recherche (/), une correction dans
         le tableau que le plan suit, Ctrl+Z, fermer et rouvrir (la mémoire),
         les exports (SVG, PNG, CSV), la nomenclature, le relief ;
@@ -109,11 +110,11 @@ function fixtures(M) {
 }
 
 /* ---- parler à la page ---------------------------------------------------------------------------------------- */
-/* `exemple` : l'outil s'ouvre sur l'accueil (plus sur l'exemple) ; un parcours qui part de l'exemple le demande, comme le
-   technicien d'un clic sur « Ouvrir l'exemple ». */
+/* `exemple` : l'outil s'ouvre sur la bibliothèque (plus sur l'exemple) ; un parcours qui part de l'exemple le demande, comme
+   le technicien d'un clic sur l'install « Exemple ». */
 async function ouvrirPage(ctx, exemple) { const page = await ctx.newPage(); page.setDefaultTimeout(120000); page.erreurs = []; page.on('pageerror', e => page.erreurs.push(e.message));
   await page.addInitScript(ETAT_DU_CONTROLE);
-  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); if (exemple) await page.evaluate(() => atelier.exemple()); await instrumenter(page); return page; }
+  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined' && BIB.pret); if (exemple) await page.evaluate(() => atelier.exemple()); await instrumenter(page); return page; }
 /* Les chronomètres dans la page : le placement d'un folio et le rendu d'une fiche (les fonctions globales du module 08 se
    remplacent par une version qui les mesure — rien d'autre ne change). */
 const instrumenter = page => page.evaluate(() => { if (window.__mes) return; window.__mes = { placement: [], fiche: [] };
@@ -121,7 +122,6 @@ const instrumenter = page => page.evaluate(() => { if (window.__mes) return; win
   const f0 = rendreFiche; window.rendreFiche = () => { const t = performance.now(); f0(); __mes.fiche.push(performance.now() - t); }; });
 const derniere = (page, k) => page.evaluate(k => { const xs = __mes[k]; return xs.length ? xs[xs.length - 1] : 0; }, k);
 const capture = async (page, nom) => { if (!CAPTURES) return; try { await page.screenshot({ path: path.join(CAPTURES, nom + '.png') }); } catch (_) { } };
-const accepter = (page, reponse) => page.once('dialog', d => d.accept(reponse));
 // le centre d'un bloc (ou d'une barrette à poser) à l'écran
 const ecranDe = (page, nom) => page.evaluate(nom => { const r = $('planche').getBoundingClientRect(), E = (x, y) => ({ x: r.left + app.vue.tx + x * app.vue.s, y: r.top + app.vue.ty + y * app.vue.s });
   const c = app.dessin.comps.find(k => k.name === nom && k.kind !== 'tag'); if (c) return E(c.x + c.w / 2, c.y + Math.min(c.h / 2, 12));
@@ -164,18 +164,17 @@ const parLeMenu = page => ligneDuMenu(page, 'ouvrir');
 async function ouvrirParBouton(page, bouton, chemin) { const nom = path.basename(chemin), t0 = Date.now();
   const [fc] = await Promise.all([page.waitForEvent('filechooser'), bouton === 'menu' ? parLeMenu(page) : page.click(bouton)]); await fc.setFiles(chemin);
   await page.waitForFunction(n => app.nom === n && !!app.dessin, nom); return Date.now() - t0; }
-/* Depuis l'ACCUEIL : « Ouvrir un fichier » d'un vrai clic de souris. S'il ne répond pas (frottement connu : le pointerdown
-   de la planche prend la capture du pointeur, le clic n'atteint plus le bouton), on continue par `repli` — ce que ferait
-   le technicien : « Ouvrir un retest… » dans le menu, ou glisser le fichier. */
-async function ouvrirDepuisAccueil(page, chemin, repli) { const nom = path.basename(chemin); let fc = null;
-  try { [fc] = await Promise.all([page.waitForEvent('filechooser', { timeout: 3000 }), page.click('#vd-ouvrir')]); } catch (_) { fc = null; }
-  frottement(!!fc, 'les boutons de l’accueil ne répondent pas à la souris', 'un vrai clic sur « Ouvrir un fichier » (comme sur la zone de dépôt, « Voir l’exemple », « Reprendre ») n’ouvre rien : le pointerdown de #planche prend la capture du pointeur (`lierPlanche`, `setPointerCapture`) et le clic est délivré à la planche, pas au bouton ; au clavier (Entrée) ça marche',
-    'bloquant', '08-interface.js `lierPlanche`, pointerdown : ne rien faire (ni capture, ni mode pan) quand l’appui part de l’accueil (`e.target.closest(\'#vide\')`), ou sortir #vide de #planche dans page.html');
-  const t0 = Date.now();
-  if (fc) await fc.setFiles(chemin);
-  else if (repli === 'glisser') await deposer(page, chemin);
-  else { const [fc2] = await Promise.all([page.waitForEvent('filechooser'), parLeMenu(page)]); await fc2.setFiles(chemin); }
-  await page.waitForFunction(n => app.nom === n && !!app.dessin, nom); return Date.now() - t0; }
+/* Depuis la BIBLIOTHÈQUE, comme le technicien : une install neuve (au clavier), « Ajouter un plan » d'un vrai clic de
+   souris, le fichier, puis un clic sur la ligne du plan, qui s'ouvre sur la table. Rend le temps du choix du fichier au
+   plan dessiné, et le mot qui a dit l'ajout. */
+async function ouvrirDepuisBibliotheque(page, chemin, install) { const nom = path.basename(chemin);
+  if (!(await page.evaluate(() => BIB.vue === 'install' && !estDemo(BIB.install)))) { if (await page.evaluate(() => BIB.vue === 'plan')) await page.click('#en-biblio');
+    await page.click('#bibliotheque [data-bi="nouvelle"]'); await page.keyboard.type(install || 'Antenne VHF'); await page.keyboard.press('Enter'); await page.waitForTimeout(250); }
+  const t0 = Date.now(); const [fc] = await Promise.all([page.waitForEvent('filechooser'), page.click('#bi-ajouter')]); await fc.setFiles(chemin);
+  await page.waitForFunction(n => [...BIB.plans.values()].some(p => p.nom === n), nom); const ajout = (await toast(page)).texte;
+  const id = await page.evaluate(n => [...BIB.plans.values()].find(p => p.nom === n).id, nom);
+  await page.click(`#bibliotheque .bi-plan[data-plan="${id}"] .bi-plan-ouvrir`);
+  await page.waitForFunction(n => app.nom === n && !!app.dessin, nom); return { t: Date.now() - t0, ajout }; }
 // la même chose en choisissant par l'entrée cachée (pour les fichiers qui ne dessinent rien : on attend le message)
 async function deposerParEntree(page, chemin) { await page.setInputFiles('#fichier', chemin); await page.waitForTimeout(900); }
 /* Déposer un fichier sur la fenêtre, comme on le glisse depuis l'explorateur : un vrai événement drop avec le fichier. */
@@ -213,31 +212,33 @@ function baseEssaiDansLaPage() {
   const grand = { viewport: { width: 1600, height: 950 } }, tel = { viewport: { width: 390, height: 844 }, hasTouch: true, deviceScaleFactor: 2 };
 
   /* ================================================================ A. UN CONTRAT NEUF ======================= */
-  await parcours('A. Un contrat neuf — l’accueil, le retest déposé, le plan, les folios, la recherche, une correction, la mémoire, les exports', async () => {
+  await parcours('A. Un contrat neuf — la bibliothèque, une install, le retest ajouté et ouvert, les folios, la recherche, une correction, la mémoire, les exports', async () => {
     const ctx = await nav.newContext(grand); let page = await ouvrirPage(ctx);
     let e = await etat(page);
-    // le premier lancement montre l'ACCUEIL, plus l'exemple : trois étapes (le retest, les contrats déjà faits, la bible et
-    // les normes), les quatre colonnes obligatoires, trois lignes d'aperçu, le dépôt, le modèle ; l'exemple à un clic
-    const A0 = await page.evaluate(() => ({ vide: !$('vide').hidden, etapes: document.querySelectorAll('#vide .vd-etape').length, req: [...document.querySelectorAll('#vide .vd-apercu th.req')].map(t => t.textContent).join(' '),
-      lignes: document.querySelectorAll('#vide .vd-apercu tbody tr').length, bandeau: !$('bandeau-exemple').hidden, gestes: ['vd-zone', 'vd-ouvrir', 'vd-modele', 'vd-base', 'vd-embarque', 'vd-exemple', 'vd-coller'].filter(id => !$(id)) }));
-    ok(e.n === 0 && !e.insp && A0.vide && A0.etapes === 3 && A0.req === 'Device1 Pin1 Device2 Pin2' && A0.lignes === 3 && !A0.bandeau && !A0.gestes.length, 'le premier lancement montre l’accueil, pas l’exemple : trois étapes, les quatre colonnes obligatoires, trois lignes d’aperçu, le dépôt, le modèle, l’exemple à un clic', JSON.stringify(A0));
-    frottement(A0.vide && !e.n, 'à la première ouverture, c’est l’exemple qui s’affiche, pas l’accueil', 'le technicien qui ouvre l’outil pour un contrat neuf arrive sur un contrat qui n’est pas le sien ; il doit « Tout effacer » pour voir la page d’entrée',
+    // le premier lancement montre la BIBLIOTHÈQUE, plus l'exemple ni une page qui explique : vide, ce qu'est une install, deux
+    // façons de commencer (une install neuve, la base des contrats déjà faits) ; l'Exemple, discret, en dernier
+    const A0 = await page.evaluate(() => ({ biblio: BIB.vue === 'racine' && !$('bibliotheque').hidden, vide: !!document.querySelector('#bibliotheque .bi-vide'), demo: !!document.querySelector('#bibliotheque .bi-carte.bi-demo'),
+      gestes: ['nouvelle', 'base'].filter(k => !document.querySelector(`#bibliotheque .bi-vide [data-bi="${k}"]`)), titre: document.title }));
+    ok(e.n === 0 && !e.insp && A0.biblio && A0.vide && A0.demo && !A0.gestes.length && A0.titre === 'Volta', 'le premier lancement montre la bibliothèque, pas l’exemple : vide, ce qu’est une install, « Nouvelle install », « Déposer la base », l’Exemple discret en dernier', JSON.stringify(A0));
+    frottement(A0.biblio && !e.n, 'à la première ouverture, c’est l’exemple qui s’affiche, pas l’accueil', 'le technicien qui ouvre l’outil pour un contrat neuf arrive sur un contrat qui n’est pas le sien ; il doit « Tout effacer » pour voir la page d’entrée',
       'détail', '10-demarrage.js `demarrer` : sans contrat gardé, montrer l’accueil (#vide) avec « Voir l’exemple » plutôt que charger l’exemple d’office — ou garder l’exemple mais dire dans l’en-tête qu’il s’agit de l’exemple');
     await capture(page, 'A-0-premier-lancement');
-    // l'exemple, à la demande : un bandeau sous la barre du haut dit qu'on le regarde ; tout effacer : l'accueil, et « Reprendre »
-    await page.click('#vd-exemple'); await page.waitForFunction(() => app.nom === 'Contrat d’exemple' && !!app.dessin); await page.waitForTimeout(300);
-    ok(await page.evaluate(() => $('vide').hidden && !$('bandeau-exemple').hidden && /Vous regardez l’exemple/.test($('bandeau-exemple').textContent) && /Ouvrir mon retest/.test($('bandeau-exemple').textContent)), 'l’exemple ouvert d’un clic : « Vous regardez l’exemple · Ouvrir mon retest », collé sous la barre du haut');
-    accepter(page); await ligneDuMenu(page, 'vider'); await page.waitForTimeout(400);
-    ok(await page.evaluate(() => !$('vide').hidden && $('bandeau-exemple').hidden && !$('vd-reprendre').hidden && /Reprendre/.test($('vd-reprendre').textContent)), 'tout effacer : l’accueil, le bandeau s’en va, « Reprendre le contrat »');
-    await capture(page, 'A-1-accueil');
-    // le retest, par « Ouvrir un fichier » de l'accueil (sinon glissé sur la fenêtre)
-    const tOuvrir = await ouvrirDepuisAccueil(page, X.neuf, 'glisser'); const tPlacement = await derniere(page, 'placement');
-    e = await etat(page); mesure('ouvrir neuf.xlsx (64 lignes) jusqu’au plan dessiné', tOuvrir, SEUIL_FOLIO); mesure('dont le placement du premier folio', tPlacement);
+    // l'exemple, à la demande : sa carte, son plan ; le fil de la barre du haut le dit ; la marque ramène à la bibliothèque
+    await page.click('#bibliotheque .bi-carte.bi-demo .bi-carte-corps'); await page.click('#bibliotheque .bi-plan[data-plan="exemple"] .bi-plan-ouvrir');
+    await page.waitForFunction(() => app.nom === 'Contrat d’exemple' && !!app.dessin); await page.waitForTimeout(300);
+    ok(await page.evaluate(() => $('vide').hidden && $('bibliotheque').hidden && $('en-install').textContent === 'Exemple' && $('en-plan').textContent === 'Contrat d’exemple'), 'l’exemple ouvert de sa carte : le fil de la barre du haut dit « Exemple / Contrat d’exemple »');
+    await page.click('#en-biblio'); await page.waitForTimeout(300);
+    ok(await page.evaluate(() => BIB.vue === 'racine' && !!$('bi-reprendre') && /Contrat d’exemple/.test($('bi-reprendre').textContent)), 'la marque ramène à la bibliothèque : « Reprendre » l’exemple, resté sur la table');
+    await capture(page, 'A-1-bibliotheque');
+    // le retest : une install neuve, « Ajouter un plan », le fichier, un clic sur sa ligne
+    const O = await ouvrirDepuisBibliotheque(page, X.neuf, 'Antenne VHF'), tOuvrir = O.t; const tPlacement = await derniere(page, 'placement');
+    e = await etat(page); mesure('ajouter neuf.xlsx (64 lignes) à une install, l’ouvrir, jusqu’au plan dessiné', tOuvrir, SEUIL_FOLIO); mesure('dont le placement du premier folio', tPlacement);
     ok(e.folios === 3 && e.plan === FWD(1) && e.n === X.neufL.length, 'trois folios, le premier affiché, 64 liaisons', e.plan + ' · ' + e.lbl);
     const herite = await page.evaluate(() => ({ charges: [...app.contrat.charges.keys()], designations: app.contrat.designations.size, sexes: app.contrat.sexes.size, raccords: app.contrat.raccords.size }));
     frottement(!herite.charges.length && !herite.designations && !herite.sexes && !herite.raccords, 'les choix du contrat d’avant survivent à l’ouverture d’un nouveau fichier', 'le profil de charge de l’exemple (102CB1 : 9,31 A pendant 2 min) s’applique au 102CB1 du nouveau retest, qui n’en a pas : l’en-tête lui compte des problèmes qui ne sont pas les siens ; désignations, sexes des contacts et raccords survivraient de même (ici : charges ' + herite.charges.join(',') + ')',
       'bloquant', '08-interface.js `chargerContrat` (et l’action « vider ») : repartir de `nouveauContrat()` en gardant le cartouche — designations, sexes, charges, raccords vides ; `relire()` les rend quand on rouvre SON contrat');
-    const T = await toast(page); ok(/format retest/.test(T.texte) && /3 folios/.test(T.texte) && !T.erreur, 'le message dit le format reconnu et les folios', T.texte);
+    ok(/«\s?neuf\s?» ajouté à «\s?Antenne VHF\s?»/.test(O.ajout) && /64\sliaisons/.test(O.ajout) && /3\sfolios/.test(O.ajout), 'le message de l’ajout dit le plan, son install, ses liaisons et ses folios', O.ajout);
+    ok(await page.evaluate(() => $('en-install').textContent === 'Antenne VHF' && $('en-plan').textContent === 'neuf'), 'le fil de la barre du haut : « Antenne VHF / neuf »');
     // le menu compte les repères comme l'index (sans renvois, masses ni rails ; avec les barrettes à poser) : un seul nombre pour un même mot
     const enTete = await page.evaluate(() => ({ sous: $('ctx-txt').textContent, reperes: reperesDuContrat().length }));
     ok(new RegExp('^' + X.neufL.length + ' liaisons · ' + enTete.reperes + ' repères · 3 folios$').test(enTete.sous) && enTete.reperes > 0 && enTete.reperes <= X.neufReperes.length, 'le menu compte juste : liaisons, repères (ceux de l’index), folios', enTete.sous + ' (l’index : ' + enTete.reperes + ' repères)');
@@ -280,8 +281,10 @@ function baseEssaiDansLaPage() {
     await page.keyboard.press('Escape'); await page.keyboard.press('Control+z'); await page.waitForTimeout(700);
     ok(await page.evaluate(i => verite()[i].vers === '104LP1' && !app.dessin.comps.some(c => c.name === '104LP9'), i13), 'Ctrl+Z rend la liaison et le plan d’avant');
     const planAvant = (await etat(page)).plan; await page.waitForTimeout(800);   // l'enregistrement attend 400 ms après le dernier geste
-    // fermer et rouvrir : le contrat est repris tel quel
+    // fermer et rouvrir : la bibliothèque, et le plan resté sur la table se reprend tel quel
     await page.close(); page = await ouvrirPage(ctx); await page.waitForTimeout(500);
+    ok(await page.evaluate(() => BIB.vue === 'racine' && installsVraies().some(i => i.nom === 'Antenne VHF') && /neuf/.test(($('bi-reprendre') || {}).textContent || '')), 'rouvert : la bibliothèque (l’install Antenne VHF y est), « Reprendre » neuf');
+    await page.click('#bi-reprendre'); await page.waitForTimeout(300);
     e = await etat(page); const sauve = await page.evaluate(() => $('ctx-sauve').textContent);
     ok(e.nom === 'neuf.xlsx' && e.n === X.neufL.length && e.plan === planAvant && e.folios === 3, 'rouvert : le même contrat, le même folio, 64 liaisons', e.nom + ' · ' + e.plan + ' · ' + sauve);
     frottement(!e.base, 'rouvert, le tableau revient ouvert, devant le plan', 'le tiroir ouvert avant la fermeture s’ouvre d’office à la réouverture (`relireBase`) : le plan n’a plus toute la place quand on « scanne »', 'détail', '10-demarrage.js / 08-interface.js `relireBase` : rouvrir sur le plan seul, le tableau à la demande (B), ou ne garder que sa hauteur');
@@ -462,10 +465,10 @@ function baseEssaiDansLaPage() {
     await tous(['#btnBase', '#btnIndex', '#btnCherche', '#btnUndo', '#btnLiaison', '#btnBible', '#btnMenu', '#zfit', '#fo-strip .chip.on'], 'au téléphone, le rail (en bas), la barre du haut et les folios sont atteignables');
     ok(await page.evaluate(() => !$('en-etat') && !$('btnIndex').querySelector('.rd-point').hidden), 'l’état du contrat est sur le bouton des repères (la barre du haut ne le porte plus)');
     await capture(page, 'D-1-exemple');
-    // A : l'accueil, le retest, le plan, les folios
-    accepter(page); await ligneDuMenu(page, 'vider'); await page.waitForTimeout(400);
-    await tous(['#vd-zone', '#vd-ouvrir', '#vd-coller', '#vd-exemple', '#vd-reprendre'], 'l’accueil : la zone de dépôt et les quatre gestes'); await capture(page, 'D-2-accueil');
-    const tOuvrir = await ouvrirDepuisAccueil(page, X.neuf, 'bouton'); mesure('ouvrir neuf.xlsx au téléphone', tOuvrir, SEUIL_FOLIO);
+    // A : la bibliothèque, le retest, le plan, les folios
+    await ligneDuMenu(page, 'bibliotheque'); await page.waitForTimeout(400);
+    await tous(['#en-biblio', '#bibliotheque .bi-vide [data-bi="nouvelle"]', '#bibliotheque .bi-vide [data-bi="base"]', '#bi-reprendre'], 'la bibliothèque : la marque, « Nouvelle install », « Déposer la base », « Reprendre »'); await capture(page, 'D-2-bibliotheque');
+    const tOuvrir = (await ouvrirDepuisBibliotheque(page, X.neuf, 'Antenne VHF')).t; mesure('ajouter neuf.xlsx à une install et l’ouvrir, au téléphone', tOuvrir, SEUIL_FOLIO);
     let e = await etat(page); ok(e.folios === 3 && e.n === X.neufL.length, 'le plan se dessine, trois folios', e.enSous);
     const vue = await page.evaluate(() => { const bb = app.dessin.bbox, r = $('planche').getBoundingClientRect(), s = app.vue.s; return { x0: r.left + app.vue.tx + bb.x * s, y0: r.top + app.vue.ty + bb.y * s, x1: r.left + app.vue.tx + (bb.x + bb.w) * s, y1: r.top + app.vue.ty + (bb.y + bb.h) * s, haut: $('entete').getBoundingClientRect().bottom, bas: $('folios').getBoundingClientRect().top }; });
     ok(vue.x0 >= 0 && vue.x1 <= 390 && vue.y0 >= vue.haut - 1 && vue.y1 <= vue.bas + 1, 'la feuille entière tient entre la barre du haut et celle du bas', JSON.stringify(vue));
@@ -601,7 +604,8 @@ function baseEssaiDansLaPage() {
     await p2.keyboard.press('b'); await p2.waitForTimeout(300);
     // la mémoire d'un gros contrat : rouvrir
     await p2.waitForTimeout(800); t0 = Date.now(); await p2.reload(); await p2.waitForFunction(() => typeof atelier !== 'undefined' && app.dessin); mesure('rouvrir l’outil sur le gros contrat gardé (le placement du folio n’est pas gardé entre deux sessions, seul l’affinage l’est)', Date.now() - t0, SEUIL_FOLIO, PROPOSITION_FOLIO, GROUPE_FOLIO);
-    e = await etat(p2); ok(e.nom === 'gros.xlsx' && e.n === X.grosN && e.plan === FWD(20), 'le gros contrat est repris tel quel, sur son dernier folio', e.nom + ' · ' + e.plan);
+    await p2.waitForFunction(() => BIB.pret); await p2.click('#bi-reprendre'); await p2.waitForTimeout(200);   // l'outil rouvre sur la bibliothèque : « Reprendre »
+    e = await etat(p2); ok(e.nom === 'gros.xlsx' && e.n === X.grosN && e.plan === FWD(20) && await p2.evaluate(() => $('bibliotheque').hidden), 'le gros contrat est repris tel quel (« Reprendre »), sur son dernier folio', e.nom + ' · ' + e.plan);
     // l'affinage en arrière-plan : l'écran répond pendant que le Worker travaille
     await p2.evaluate(() => atelier.affinage(true)); await p2.waitForTimeout(3000);
     const A = await p2.evaluate(() => ({ ...atelier.etatAffinage(), visible: !$('affinage').hidden, texte: $('af-txt').textContent }));

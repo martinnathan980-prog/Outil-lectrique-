@@ -12,10 +12,15 @@
    =========================================================================== */
 'use strict';
 
-const NORM = t => String(t == null ? '' : t).toLowerCase().replace(/[^a-z0-9]/g, '');
+// un en-tête réduit à ses lettres et chiffres, sans accents : « Système » se lit « systeme », « Câble Tag » « cabletag »
+const NORM = t => String(t == null ? '' : t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
 /* Les colonnes du retest, et les noms sous lesquels on les accepte. Cette
-   table sert aussi à lire la base de retest (09) : un seul vocabulaire. */
+   table sert aussi à lire la base de retest (09) : un seul vocabulaire.
+   L'INSTALL (une installation : telle antenne, tel cockpit) range les plans
+   dans la bibliothèque (08-bibliotheque) : la base des contrats déjà faits qui
+   la porte crée chaque install avec ses plans. */
 const COLONNES = [
+  ['install',  ['install', 'installation', 'systeme', 'system']],
   ['harness',  ['harness', 'faisceau']],
   ['device1',  ['device1']],
   ['pin1',     ['pin1']],
@@ -126,9 +131,11 @@ function lireTexte(texte) {
                           fwd: g(row, c.fwd), descriptionDe: g(row, c.desc1), descriptionVers: g(row, c.desc2),
                           longueur: c.length != null && g(row, c.length) !== '' ? g(row, c.length) + (enMm ? ' mm' : '') : '',
                           harness: g(row, c.harness), appareil: g(row, c.appareil), retest: g(row, c.retest) });
+      // l'install, quand la ligne la dit : la bibliothèque y range le plan (le moteur ne la lit pas)
+      const ins = String(g(row, c.install)).trim(); if (ins) l.install = ins;
       if (liaisonComplete(l)) liaisons.push(l);
     }
-    return { liaisons, format: 'retest', entete: rt.ligne + 1, entetes, colonnes: rt.trouvees, harnais: [...new Set(liaisons.map(l => l.harness).filter(Boolean))] };
+    return { liaisons, format: 'retest', entete: rt.ligne + 1, entetes, colonnes: rt.trouvees, harnais: [...new Set(liaisons.map(l => l.harness).filter(Boolean))], installs: [...new Set(liaisons.map(l => l.install).filter(Boolean))] };
   }
 
   let map = null, debut = 0; const premiere = cellules(pleines[0]);

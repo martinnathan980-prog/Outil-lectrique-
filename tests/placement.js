@@ -52,8 +52,8 @@ const cadreDansLaPage = nom => { const d = app.dessin, c = d && d.comps.find(k =
      gros folio s'y recalculerait dans la page avant tout réveil ; on enregistre donc d'abord le plus petit folio. */
   const ouvrir = async petit => { if (petit) { await page.evaluate(p => { allerAuPlan(p); sauver(); }, petit); await page.waitForTimeout(600); }
     await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined');
-    // l’outil s’ouvre sur l’accueil : la première fois, l’exemple se demande ; ensuite le contrat gardé revient
-    await page.evaluate(() => app.contrat.liaisons.length || atelier.exemple()); };
+    // l’outil s’ouvre sur la bibliothèque : la première fois, l’exemple se demande ; ensuite le plan gardé se reprend (il est dessous)
+    await page.evaluate(() => app.contrat.liaisons.length ? atelier.reprendre() : atelier.exemple()); };
   await ouvrir();
   // — sous pilote, sans réveil : synchrone, comme toutes les autres batteries l'attendent
   const dort = await page.evaluate(() => etatPlacement().ailleurs === false);

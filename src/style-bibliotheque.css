@@ -1,0 +1,254 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LA BIBLIOTHÈQUE (08-bibliotheque) — l'ouverture de Volta, posée sur la table noire.
+   Ce qui s'écrit à même la table prend son encre (--t-table, --t-table-2) et ses filets (--l-table) : la table est la
+   même dans les deux thèmes, si bien que la bibliothèque aussi. Une install est une PILE DE FEUILLES (deux ou trois selon
+   ses plans) : une carte du blanc des panneaux, son nom, ses comptes, ses premiers plans. Ses plans se lisent sur une
+   feuille posée sur la table, une ligne chacun. L'Exemple est discret : un cadre au trait, sans feuille. Le geste qui
+   compte est clair sur noir (« Nouvelle install », « Ajouter un plan ») ; le reste est au trait.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── la table, sous la barre du haut : elle couvre le rail et les folios ; un document ouvert (vos fichiers, la bible)
+   se pose à droite et la bibliothèque se resserre ─── */
+.biblio{position:fixed;top:calc(var(--entete) + var(--sur-h));left:0;right:0;bottom:0;z-index:22;overflow-y:auto;overscroll-behavior:contain;color:var(--t-table);color-scheme:dark;
+  background-color:var(--s-app);background-image:radial-gradient(circle at 1px 1px,var(--s-grille) 1px,transparent 1.4px);background-size:24px 24px;
+  scrollbar-width:thin;scrollbar-color:var(--l-table-2) transparent}
+body.fiche-ouverte .biblio{right:var(--fiche-l)}
+/* la barre du haut, sur la bibliothèque : la marque et le menu ; la recherche des repères attend le plan */
+body.biblio #recherche{visibility:hidden}
+.bi-page{width:min(1240px,100%);margin:0 auto;padding:44px 40px 72px}
+@media (min-width:1700px){ .bi-page{width:min(1480px,100%);padding-top:60px} }
+.biblio :focus-visible{outline-color:var(--t-table)}
+.biblio .bi-feuille :focus-visible,.biblio .bi-carte:not(.bi-demo) :focus-visible{outline-color:var(--accent)}
+
+/* ─── la tête : le titre, les comptes ; la recherche et le geste qui compte ─── */
+.bi-tete{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:32px}
+.bi-titres{min-width:0}
+.bi-titre{margin:0;font:600 34px/1.1 var(--titre);letter-spacing:-.025em;color:var(--t-table);overflow-wrap:anywhere}
+.bi-compte{margin:10px 0 0;font-size:var(--f-14);color:var(--t-table-2)}
+.bi-pas-garde{color:var(--t-table-warn)}
+.bi-outils{display:flex;align-items:center;gap:10px;flex:none}
+.bi-cherche{display:flex;align-items:center;gap:8px;width:300px;height:38px;padding:0 8px 0 12px;border:1px solid var(--l-table);border-radius:var(--r-btn);background:var(--s-table-champ);color:var(--t-table-2);transition:border-color var(--rapide),box-shadow var(--rapide)}
+.bi-cherche:focus-within{border-color:var(--l-table-2);box-shadow:0 0 0 3px rgba(255,255,255,.06)}
+.bi-cherche .ico{width:16px;height:16px}
+.bi-cherche input{flex:1;min-width:0;height:100%;border:none;background:none;outline:none;color:var(--t-table);font-size:var(--f-13)}
+.bi-cherche input::placeholder{color:var(--t-table-2)}
+.bi-cherche input::-webkit-search-cancel-button{filter:invert(1) grayscale(1) opacity(.6)}
+.bi-cherche kbd{font:500 var(--f-11)/1 var(--mono);color:var(--t-table-2);border:1px solid var(--l-table-2);border-radius:4px;padding:2px 5px}
+.bi-cherche:focus-within kbd{display:none}
+/* le geste clair sur la table noire (la même dans les deux thèmes) ; le second, au trait */
+.bi-btn{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 16px 0 12px;border:1px solid var(--t-table);border-radius:var(--r-btn);background:var(--t-table);color:var(--s-app);font:600 var(--f-13)/1 var(--sans);white-space:nowrap;transition:background var(--rapide),border-color var(--rapide)}
+.bi-btn:hover{background:var(--s-papier);border-color:var(--s-papier)}
+.bi-btn:active{transform:translateY(1px)}
+.bi-btn .ico{width:16px;height:16px;stroke-width:1.8}
+.bi-btn.bi-btn-2{background:transparent;color:var(--t-table);border-color:var(--l-table-2)}
+.bi-btn.bi-btn-2:hover{background:var(--s-table-survol);border-color:var(--t-table-2)}
+.bi-lien-table{height:32px;padding:0 6px;border:none;background:none;color:var(--t-table-2);font-size:var(--f-13);text-decoration:underline;text-decoration-color:var(--l-table-2);text-underline-offset:3px;border-radius:var(--r-1)}
+.bi-lien-table:hover{color:var(--t-table)}
+/* une install : le retour (discret), son nom (un clic le renomme), le « ⋯ » de la tête */
+.bi-retour{display:inline-flex;align-items:center;gap:2px;height:28px;margin:0 0 12px -8px;padding:0 10px 0 2px;border:none;border-radius:var(--r-1);background:none;color:var(--t-table-2);font:500 var(--f-13)/1 var(--sans);transition:color var(--rapide),background var(--rapide)}
+.bi-retour .ico{width:18px;height:18px}
+.bi-retour:hover{color:var(--t-table);background:var(--s-table-survol)}
+.bi-titre-nom{padding:0;margin:0;border:none;background:none;font:inherit;color:inherit;letter-spacing:inherit;text-align:left;border-radius:var(--r-1);cursor:text}
+.bi-titre-nom:not(:disabled):hover{text-decoration:underline;text-decoration-color:var(--l-table-2);text-decoration-thickness:2px;text-underline-offset:7px}
+.bi-titre-nom:disabled{cursor:default}
+.bi-pop-ancre{position:relative;display:flex}
+.bi-plus.bi-plus-tete{position:static;opacity:1;width:38px;height:38px;transform:none;color:var(--t-table-2);border:1px solid var(--l-table)}
+.bi-plus.bi-plus-tete:hover{background:var(--s-table-survol);color:var(--t-table)}
+.bi-pop-ancre .bi-pop{top:calc(100% + 6px);right:0}
+.bi-note{margin:-16px 0 20px;font-size:var(--f-13);color:var(--t-table-2)}
+
+/* ─── reprendre le plan resté sur la table : une ligne à même la table ─── */
+.bi-reprendre{display:flex;align-items:center;gap:12px;width:100%;height:52px;margin:-8px 0 32px;padding:0 12px 0 16px;border:1px solid var(--l-table);border-radius:var(--r-2);background:var(--s-table-champ);color:var(--t-table);text-align:left;transition:border-color var(--rapide),background var(--rapide)}
+.bi-reprendre:hover{border-color:var(--l-table-2);background:var(--s-table-survol)}
+.bi-reprendre .ico{width:18px;height:18px}
+.bi-rep-mot{font-weight:600;font-size:var(--f-13)}
+.bi-rep-nom{display:flex;align-items:baseline;gap:6px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;color:var(--t-table-2);font-size:var(--f-13)}
+.bi-rep-nom i{font-style:normal;color:var(--l-table-2)}
+.bi-rep-nom b{font-weight:500;color:var(--t-table);overflow:hidden;text-overflow:ellipsis}
+.bi-rep-n{flex:none;font-size:var(--f-12);color:var(--t-table-2)}
+.bi-reprendre kbd{flex:none;font:500 var(--f-11)/1 var(--mono);color:var(--t-table-2);border:1px solid var(--l-table-2);border-radius:4px;padding:3px 5px}
+
+/* ─── la base à ranger : une ligne au trait, puis, sur demande, une feuille (cocher, choisir l'install) ─── */
+.bi-bandeau{display:flex;align-items:center;gap:12px;margin:-8px 0 32px;padding:10px 12px 10px 16px;border:1px solid var(--l-table);border-radius:var(--r-2);background:var(--s-table-champ);color:var(--t-table-2);font-size:var(--f-13);line-height:1.45}
+.bi-bandeau>.ico{width:18px;height:18px;color:var(--t-table)}
+.bi-bandeau>span{flex:1;min-width:0}
+.bi-bandeau b{color:var(--t-table);font-weight:500}
+.bi-bandeau .bi-btn{height:32px;padding:0 12px}
+.bi-feuille.bi-ranger{margin:-8px 0 32px;padding:20px 20px 16px}
+.bi-ranger-tete h2{margin:0;font:600 var(--f-16)/1.3 var(--titre);letter-spacing:-.01em}
+.bi-ranger-tete p{margin:4px 0 0;font-size:var(--f-13);color:var(--t-2)}
+.bi-ranger-liste{list-style:none;margin:14px 0 0;padding:0;max-height:300px;overflow:auto;border:1px solid var(--s-line);border-radius:var(--r-2)}
+.bi-ranger-liste li+li{border-top:1px solid var(--s-line)}
+.bi-ranger-liste label{display:flex;align-items:center;gap:10px;min-height:40px;padding:0 12px;cursor:pointer;font-size:var(--f-13)}
+.bi-ranger-liste label:hover{background:var(--s-hover)}
+.bi-ranger-liste .id{font:600 var(--f-12)/1 var(--mono);color:var(--t-1)}
+.bi-ranger-liste span{flex:1;min-width:0;color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bi-ranger-liste em,.bi-ranger-liste input{flex:none}
+.bi-ranger-liste em{font:500 var(--f-11)/1 var(--sans);font-style:normal;color:var(--ok);background:var(--ok-soft);padding:3px 7px;border-radius:999px}
+.bi-ranger-pied{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:14px}
+.bi-ranger-vers{display:flex;align-items:center;gap:8px;font-size:var(--f-13);color:var(--t-2)}
+.bi-ranger-vers select,.bi-ranger-nom{height:34px;border:1px solid var(--s-line-2);border-radius:var(--r-btn);background:var(--s-surface);color:var(--t-1);padding:0 10px;font-size:var(--f-13)}
+.bi-ranger-nom{width:220px}
+.bi-ranger-nom:focus,.bi-ranger-vers select:focus{outline:none;border-color:var(--t-1);box-shadow:var(--anneau)}
+
+/* ─── les installs : une grille de piles de feuilles ─── */
+.bi-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:30px 26px;padding-right:8px}
+.bi-grille-demo{margin-top:44px;grid-template-columns:minmax(0,340px)}
+/* une install : la carte du blanc des panneaux ; dessous, une ou deux feuilles décalées disent qu'elle porte des plans */
+.bi-carte{--pile:color-mix(in srgb,var(--s-surface) 90%,var(--t-1));--pile-2:color-mix(in srgb,var(--s-surface) 80%,var(--t-1));
+  position:relative;display:flex;min-width:0;border-radius:var(--r-2);background:var(--s-surface);color:var(--t-1);
+  box-shadow:0 0 0 1px rgba(0,0,0,.5),0 18px 40px rgba(0,0,0,.5);transition:transform var(--moyen),box-shadow var(--moyen)}
+.bi-carte.pile-2{box-shadow:0 0 0 1px rgba(0,0,0,.5),5px 5px 0 -1px var(--pile),5px 5px 0 0 rgba(0,0,0,.6),0 18px 40px rgba(0,0,0,.5)}
+.bi-carte.pile-3{box-shadow:0 0 0 1px rgba(0,0,0,.5),5px 5px 0 -1px var(--pile),5px 5px 0 0 rgba(0,0,0,.6),10px 10px 0 -2px var(--pile-2),10px 10px 0 -1px rgba(0,0,0,.6),0 18px 40px rgba(0,0,0,.5)}
+.bi-carte:not(.bi-demo):not(.bi-confirmant):not(.bi-carte-neuve):hover{transform:translateY(-3px)}
+.bi-carte.bi-pop-ouvert{z-index:4}
+.bi-carte-corps{flex:1;display:flex;flex-direction:column;align-items:flex-start;min-width:0;min-height:176px;padding:18px 18px 16px;border:none;border-radius:inherit;background:none;color:inherit;text-align:left}
+button.bi-carte-corps{cursor:pointer}
+.bi-carte-ico{width:36px;height:36px;flex:none;border-radius:var(--r-1);display:grid;place-items:center;background:var(--s-sunken);color:var(--t-2);margin-bottom:20px}
+.bi-carte-ico .ico{width:19px;height:19px}
+.bi-carte-nom{max-width:calc(100% - 24px);font:600 var(--f-16)/1.3 var(--titre);letter-spacing:-.015em;color:var(--t-1);overflow-wrap:anywhere}
+.bi-carte-meta{margin-top:4px;font-size:var(--f-12);line-height:1.45;color:var(--t-2)}
+/* ses premiers plans, en bas, sous un filet pointillé — la suite comptée */
+.bi-carte-plans{display:flex;flex-wrap:wrap;gap:4px;width:100%;margin-top:auto;padding-top:14px;border-top:1px dashed var(--s-line-2)}
+.bi-carte-meta+.bi-carte-plans{margin-top:auto}
+.bi-carte-corps .bi-carte-meta{margin-bottom:16px}
+.bi-pn{max-width:100%;padding:4px 6px;border-radius:4px;background:var(--s-sunken);font:500 var(--f-11)/1 var(--mono);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bi-pn-plus{padding:4px 2px;font:500 var(--f-11)/1 var(--sans);color:var(--t-3)}
+.bi-carte-plans-vide{font-size:var(--f-12);color:var(--t-3)}
+/* le « ⋯ » d'une carte, d'une ligne : il paraît au survol, au clavier, ouvert */
+.bi-plus{position:absolute;top:12px;right:12px;width:30px;height:30px;padding:0;border:none;border-radius:var(--r-1);background:none;color:var(--t-2);display:grid;place-items:center;opacity:0;transition:opacity var(--rapide),background var(--rapide),color var(--rapide)}
+.bi-plus .ico{width:18px;height:18px}
+.bi-carte:hover .bi-plus,.bi-carte:focus-within .bi-plus,.bi-plan:hover .bi-plus,.bi-plan:focus-within .bi-plus,.bi-plus[aria-expanded="true"]{opacity:1}
+.bi-plus:hover,.bi-plus[aria-expanded="true"]{background:var(--s-hover);color:var(--t-1)}
+/* l'install qu'on nomme (une neuve, ou renommée) : la carte au trait, le champ à l'encre */
+.bi-carte.bi-carte-neuve{box-shadow:0 0 0 2px var(--t-table),0 18px 40px rgba(0,0,0,.5)}
+.bi-nommer{display:block;width:100%}
+.bi-nommer input{width:100%;height:38px;padding:0 10px;border:1px solid var(--t-1);border-radius:var(--r-1);background:var(--s-surface);color:var(--t-1);font:600 var(--f-16)/1 var(--titre);letter-spacing:-.01em;box-shadow:var(--anneau);outline:none}
+.bi-carte .bi-nommer{margin-top:56px}
+.bi-titre .bi-nommer input{height:46px;font:600 30px/1 var(--titre);letter-spacing:-.025em;background:var(--s-table-champ);color:var(--t-table);border-color:var(--l-table-2);box-shadow:0 0 0 3px rgba(255,255,255,.06);width:min(560px,100%)}
+/* l'Exemple : discret — un cadre au trait sur la table, sans feuille */
+.bi-carte.bi-demo{background:transparent;color:var(--t-table);box-shadow:inset 0 0 0 1px var(--l-table-2)}
+.bi-carte.bi-demo:hover{box-shadow:inset 0 0 0 1px var(--t-table-2)}
+.bi-demo .bi-carte-corps{display:grid;grid-template-columns:36px minmax(0,1fr);align-content:center;column-gap:12px;row-gap:2px;min-height:0;padding:14px 44px 14px 14px}
+.bi-demo .bi-carte-ico{grid-row:span 2;margin:0;background:var(--s-table-champ);color:var(--t-table-2)}
+.bi-demo .bi-carte-nom{font-size:var(--f-14);color:var(--t-table)}
+.bi-demo .bi-carte-meta{margin:0;color:var(--t-table-2)}
+.bi-demo .bi-plus{top:50%;transform:translateY(-50%);color:var(--t-table-2)}
+.bi-demo .bi-plus:hover,.bi-demo .bi-plus[aria-expanded="true"]{background:var(--s-table-survol);color:var(--t-table)}
+
+/* ─── le « ⋯ » ouvert : une petite liste flottante ─── */
+.bi-pop{position:absolute;top:46px;right:10px;z-index:6;min-width:208px;padding:5px;background:var(--s-flottant);color:var(--t-1);border:1px solid var(--s-line);border-radius:12px;box-shadow:var(--sh-2);animation:menu-glisse var(--rapide) ease-out}
+.bi-pop button{display:flex;align-items:center;gap:10px;width:100%;min-height:32px;padding:0 10px;border:none;border-radius:var(--r-1);background:none;color:var(--t-1);font-size:var(--f-13);text-align:left;white-space:nowrap}
+.bi-pop button span{overflow:hidden;text-overflow:ellipsis}
+.bi-pop button:hover,.bi-pop button:focus-visible{background:var(--s-hover);outline:none}
+.bi-pop .ico{width:16px;height:16px;color:var(--t-2)}
+.bi-pop .danger,.bi-pop .danger .ico{color:var(--ko)}
+.bi-pop .danger:hover,.bi-pop .danger:focus-visible{background:var(--ko-soft)}
+.bi-pop .bi-pop-retour{font-weight:600;margin-bottom:4px;border-radius:var(--r-1) var(--r-1) 0 0;box-shadow:0 1px 0 var(--s-line)}
+.bi-pop .bi-pop-retour .ico{color:var(--t-1)}
+
+/* ─── supprimer : la confirmation s'écrit dans la carte, la ligne ─── */
+.bi-confirme{display:flex;flex-direction:column;justify-content:space-between;gap:14px;width:100%;min-height:176px;padding:18px}
+.bi-confirme p{margin:0;font-size:var(--f-13);line-height:1.5;color:var(--t-2)}
+.bi-confirme p b{display:block;margin-bottom:4px;font:600 var(--f-14)/1.35 var(--sans);color:var(--t-1)}
+.bi-confirme-gestes{display:flex;align-items:center;gap:6px}
+.bi-danger{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px 0 10px;border:1px solid var(--ko);border-radius:var(--r-btn);background:var(--ko);color:var(--t-inverse);font:600 var(--f-13)/1 var(--sans)}
+.bi-danger .ico{width:15px;height:15px}
+.bi-danger:hover{filter:brightness(1.08)}
+.bi-non{height:32px;padding:0 8px;border:none;border-radius:var(--r-1);background:none;color:var(--t-1);font-size:var(--f-13);text-decoration:underline;text-decoration-color:var(--s-line-2);text-underline-offset:3px}
+.bi-non:hover{background:var(--s-hover)}
+.bi-carte.bi-confirmant{box-shadow:0 0 0 2px var(--ko),0 18px 40px rgba(0,0,0,.5)}
+.bi-confirme-tete{margin:-16px 0 24px}
+.bi-confirme-tete .bi-confirme,.bi-plan.bi-confirmant .bi-confirme{flex-direction:row;align-items:center;min-height:0;padding:12px 14px;border-radius:var(--r-2);background:var(--ko-soft)}
+.bi-confirme-tete .bi-confirme p,.bi-plan.bi-confirmant .bi-confirme p{flex:1}
+.bi-confirme-tete .bi-confirme p b,.bi-plan.bi-confirmant .bi-confirme p b{display:inline;margin:0 4px 0 0}
+
+/* ─── la feuille des plans : posée sur la table, une ligne par plan ─── */
+.bi-feuille{position:relative;padding:6px 6px 8px;border-radius:var(--r-3);background:var(--s-surface);color:var(--t-1);box-shadow:0 0 0 1px rgba(0,0,0,.5),var(--sh-feuille)}
+.bi-ligne{display:grid;grid-template-columns:32px minmax(0,1.25fr) minmax(0,1.5fr) 80px 60px 160px;align-items:center;column-gap:18px;width:100%;min-height:58px;padding:0 54px 0 12px;border:none;border-radius:var(--r-2);background:none;color:inherit;text-align:left;font-size:var(--f-13)}
+.bi-ligne .d{text-align:right;font-variant-numeric:tabular-nums;color:var(--t-1)}
+.bi-entetes{min-height:38px;border-radius:0;border-bottom:1px solid var(--s-line);margin-bottom:4px;font:500 var(--f-12)/1 var(--sans);color:var(--t-2)}
+.bi-entetes .d{color:var(--t-2)}
+.bi-plans{list-style:none;margin:0;padding:0}
+.bi-plan{position:relative}
+.bi-plan+.bi-plan::before{content:"";position:absolute;left:62px;right:14px;top:0;border-top:1px solid var(--s-line)}
+.bi-plan:hover::before,.bi-plan:hover+.bi-plan::before{border-color:transparent}
+button.bi-plan-ouvrir{cursor:pointer;transition:background var(--rapide)}
+button.bi-plan-ouvrir:hover{background:var(--s-hover)}
+.bi-plan-ico{width:32px;height:32px;border-radius:var(--r-1);display:grid;place-items:center;background:var(--s-sunken);color:var(--t-2)}
+.bi-plan-ico .ico{width:17px;height:17px}
+.bi-plan-nom{display:flex;align-items:center;gap:8px;min-width:0}
+.bi-plan-nom b{font:600 var(--f-14)/1.3 var(--sans);color:var(--t-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bi-plan-sous,.bi-plan-vu{font-size:var(--f-12);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bi-jamais{color:var(--t-3)}
+.bi-table,.bi-neuf{flex:none;padding:3px 7px;border-radius:999px;font:500 var(--f-11)/1 var(--sans);font-style:normal;white-space:nowrap}
+.bi-table{color:var(--t-1);background:var(--accent-soft)}
+.bi-neuf{color:var(--ok);background:var(--ok-soft)}
+.bi-plan.sur-table .bi-plan-ico{background:var(--t-1);color:var(--t-inverse)}
+.bi-plan .bi-plus{top:50%;right:12px;transform:translateY(-50%)}
+.bi-plan .bi-pop{top:calc(50% + 20px);right:12px}
+.bi-plan.bi-pop-ouvert{z-index:4}
+.bi-plan .bi-ligne .bi-nommer input{height:34px;font:600 var(--f-14)/1 var(--sans)}
+.bi-plan.nouveau button.bi-plan-ouvrir{animation:bi-neuf 1.4s ease-out}
+@keyframes bi-neuf{from{background:var(--ok-soft)}to{background:transparent}}
+/* un fichier qui se lit, ou qui ne passe pas : sa ligne, en tête */
+.bi-ajouts{margin-bottom:4px}
+.bi-ajout{display:flex;align-items:center;gap:12px;min-height:48px;padding:0 8px 0 20px;border-radius:var(--r-2);font-size:var(--f-13);color:var(--t-2)}
+.bi-ajout+.bi-ajout{margin-top:4px}
+.bi-ajout::before{display:none}
+.bi-ajout-ico{flex:none;width:14px;height:14px;border-radius:50%}
+.bi-ajout.lecture .bi-ajout-ico{border:2px solid var(--s-line-2);border-top-color:var(--t-1);animation:bi-tourne .8s linear infinite}
+@keyframes bi-tourne{to{transform:rotate(360deg)}}
+.bi-ajout.ko{background:var(--ko-soft);box-shadow:inset 3px 0 0 var(--ko);color:var(--t-1)}
+.bi-ajout.ko .bi-ajout-ico{width:8px;height:8px;background:var(--ko)}
+.bi-ajout-t{flex:1;min-width:0;line-height:1.45;padding:8px 0}
+.bi-lien{flex:none;height:30px;padding:0 8px;border:none;border-radius:var(--r-1);background:none;color:var(--t-1);font:600 var(--f-12)/1 var(--sans);text-decoration:underline;text-underline-offset:3px}
+.bi-lien:hover{background:var(--s-hover)}
+.bi-oublier{flex:none;width:30px;height:30px;padding:0;border:none;border-radius:50%;background:none;color:var(--t-2);display:grid;place-items:center}
+.bi-oublier:hover{background:var(--s-hover);color:var(--t-1)}
+.bi-oublier .ico{width:16px;height:16px}
+/* la zone de dépôt, en bas de la feuille ; seule, et grande, quand l'install est vide (avec ce qu'elle attend en une ligne) */
+.bi-zone{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 10px;width:calc(100% - 12px);min-height:54px;margin:8px 6px 0;padding:10px 16px;border:1.5px dashed var(--s-line-2);border-radius:var(--r-2);background:var(--s-sunken);color:var(--t-2);font-size:var(--f-13);text-align:center;cursor:pointer;transition:border-color var(--rapide),background var(--rapide),color var(--rapide)}
+.bi-zone b{color:var(--t-1);font-weight:600}
+.bi-zone .ico{width:18px;height:18px;color:var(--t-1)}
+.bi-zone small{flex-basis:100%;font-size:var(--f-12);color:var(--t-3)}
+.bi-zone small .id{font:500 var(--f-11)/1 var(--mono);color:var(--t-1)}
+.bi-zone:hover,.bi-zone:focus-visible,.biblio.survol-depot .bi-zone,.bi-feuille.survol-depot .bi-zone{border-color:var(--t-1);background:var(--accent-soft);color:var(--t-1);outline:none}
+.bi-feuille-vide{padding:8px}
+.bi-zone.bi-zone-grande{flex-direction:column;gap:8px;min-height:220px;margin:0;width:100%;font-size:var(--f-14)}
+.bi-zone-grande .ico{width:30px;height:30px}
+.bi-zone-grande small{flex-basis:auto;max-width:56ch;line-height:1.5}
+/* un fichier glissé au-dessus de la bibliothèque : elle le dit au milieu de l'écran, ce qui le recevra s'allume */
+.biblio.survol-depot::after{content:attr(data-depot-dit);position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:8;padding:26px 36px;max-width:min(560px,80vw);border:2px dashed var(--t-table);border-radius:var(--r-3);background:var(--s-app);color:var(--t-table);font:600 var(--f-20)/1.3 var(--titre);text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.6);pointer-events:none}
+
+/* ─── la recherche de la racine : les plans qui répondent, sous les installs ─── */
+.bi-sous{margin:44px 0 14px;font:600 var(--f-14)/1.3 var(--sans);color:var(--t-table-2)}
+.bi-rien{margin:8px 0 0;font-size:var(--f-14);color:var(--t-table-2)}
+.bi-rien-feuille{margin:0;padding:18px 14px;color:var(--t-2)}
+
+/* ─── rien encore : ce qu'est une install, deux façons de commencer ─── */
+.bi-vide{max-width:600px;margin:40px auto 8px;text-align:center;color:var(--t-table)}
+.bi-vide-ico{display:inline-grid;place-items:center;width:60px;height:60px;border-radius:var(--r-3);border:1px solid var(--l-table-2);color:var(--t-table)}
+.bi-vide-ico .ico{width:28px;height:28px;stroke-width:1.4}
+.bi-vide h2{margin:20px 0 0;font:600 var(--f-24)/1.2 var(--titre);letter-spacing:-.02em}
+.bi-vide p{margin:10px auto 0;max-width:48ch;font-size:var(--f-14);line-height:1.55;color:var(--t-table-2)}
+.bi-vide-gestes{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:26px}
+.bi-vide .bi-vide-note{margin-top:18px;font-size:var(--f-12)}
+
+/* ─── l'arrivée : les cartes et la feuille se posent, l'une après l'autre (une fois, pas à chaque lettre cherchée) ─── */
+.bi-entre .bi-carte,.bi-entre .bi-feuille,.bi-entre .bi-vide{animation:bi-pose .34s cubic-bezier(.2,.7,.2,1) both}
+.bi-entre .bi-carte:nth-child(2){animation-delay:.03s}.bi-entre .bi-carte:nth-child(3){animation-delay:.06s}.bi-entre .bi-carte:nth-child(4){animation-delay:.09s}
+.bi-entre .bi-carte:nth-child(5){animation-delay:.12s}.bi-entre .bi-carte:nth-child(n+6){animation-delay:.15s}
+@keyframes bi-pose{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* ─── une fenêtre étroite (la tablette, le téléphone : le code reste, on ne le soigne plus) ─── */
+@media (max-width:900px){
+  .bi-page{padding:24px 16px 48px}
+  .bi-tete{flex-direction:column;align-items:stretch;gap:16px}
+  .bi-outils{flex-wrap:wrap}
+  .bi-cherche{flex:1;width:auto}
+  .bi-titre{font-size:28px}
+  .bi-ligne{grid-template-columns:32px minmax(0,1fr) 64px;padding-right:48px}
+  .bi-ligne>:nth-child(3),.bi-ligne>:nth-child(5),.bi-ligne>:nth-child(6){display:none}
+  .bi-rep-n,.bi-reprendre kbd{display:none}
+}

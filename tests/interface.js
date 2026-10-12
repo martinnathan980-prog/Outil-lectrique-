@@ -28,7 +28,7 @@ const FICHIER = P.fichierDemande();
     console.log('\n' + titre);
     const page = await nav.newPage({ viewport: vp }); page.setDefaultTimeout(300000);
     const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
-    await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => atelier.exemple());   // l’outil s’ouvre sur l’accueil (plus sur l’exemple) : la batterie, qui lit l’exemple, le demande
+    await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => atelier.exemple());   // l’outil s’ouvre sur la bibliothèque : la batterie, qui lit l’exemple, le demande
     await page.evaluate(() => { app.plan = '1'; if (app.base.ouvert) fermerBase(); redessiner(); ajuster(); }); await page.waitForTimeout(400);
     // la feuille à l'écran, et ce qui la recouvre
     const recouvre = () => page.evaluate(() => { const bb = app.dessin.bbox, r = $('planche').getBoundingClientRect(), s = app.vue.s;
@@ -138,7 +138,7 @@ const FICHIER = P.fichierDemande();
   // chaque dédoublement : une vraie barrette, une borne par fil, jamais deux fils au même niveau
   console.log('\nbarrettes à poser');
   const page = await nav.newPage({ viewport: { width: 1600, height: 950 } }); const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
-  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => atelier.exemple());   // l’outil s’ouvre sur l’accueil (plus sur l’exemple) : la batterie, qui lit l’exemple, le demande
+  await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => atelier.exemple());   // l’outil s’ouvre sur la bibliothèque : la batterie, qui lit l’exemple, le demande
   // une ligne du menu ⋮ : le menu, puis le sous-menu qui la porte s'il y a lieu (Exporter, Plus s'ouvrent en place), puis elle
   const parLeMenu = async act => { await page.click('#btnMenu');
     const sous = await page.evaluate(a => { const p = document.querySelector(`#menu [data-act="${a}"]`).closest('.menu-panneau'); return p.id === 'mp-principal' ? '' : p.id.slice(3); }, act);
@@ -269,20 +269,19 @@ const FICHIER = P.fichierDemande();
   ok(await page.evaluate(() => !$('inspecteur').hidden && app.insp.index && !app.cible && !!document.querySelector('#ba-equip .co-item')), 'R depuis la fiche de 102CB1 (venue de l’index) ramène à la liste des repères');
   await page.keyboard.press('Escape'); await page.waitForTimeout(200);
 
-  /* L'ACCUEIL à la vraie souris, le contrat neuf, les folios aux noms longs, les mots au pluriel, les noms de fichier */
-  console.log('\nl’accueil à la vraie souris, le contrat neuf, les folios aux noms de dessin');
-  page.once('dialog', d => d.accept()); await parLeMenu('vider'); await page.waitForTimeout(400);
-  ok(await page.evaluate(() => !$('vide').hidden && !app.contrat.liaisons.length && !app.contrat.charges.size && $('inspecteur').hidden), '« Tout effacer » : l’accueil, un contrat neuf (plus de profil de charge), rien d’ouvert');
-  // chaque geste de l'accueil répond à un clic de souris (la planche ne prend plus la capture du pointeur sur l'accueil)
-  let fc = null; try { [fc] = await Promise.all([page.waitForEvent('filechooser', { timeout: 3000 }), page.click('#vd-ouvrir')]); } catch (_) { }
-  ok(!!fc, 'un clic de souris sur « Ouvrir un fichier » ouvre le choix de fichier');
-  fc = null; try { [fc] = await Promise.all([page.waitForEvent('filechooser', { timeout: 3000 }), page.click('#vd-zone')]); } catch (_) { }
-  ok(!!fc, 'un clic sur la zone de dépôt aussi');
-  await page.click('#vd-reprendre'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => app.contrat.liaisons.length === 201 && app.contrat.charges.has('102CB1') && $('vide').hidden), '« Reprendre » rend l’exemple, avec son profil de charge');
-  page.once('dialog', d => d.accept()); await parLeMenu('vider'); await page.waitForTimeout(400);
-  await page.click('#vd-exemple'); await page.waitForTimeout(800);
-  ok(await page.evaluate(() => app.contrat.liaisons.length === 201 && app.nom === 'Contrat d’exemple' && $('ctx-nom').textContent === 'Contrat d’exemple' && /^l’exemple embarqué · 201 liaisons · \d+ repères · 6 folios$/.test($('ctx-txt').textContent)), '« Voir l’exemple » le charge ; le menu dit que c’est l’exemple embarqué (la barre du haut ne porte plus le contrat)', await page.evaluate(() => $('ctx-txt').textContent));
+  /* LA BIBLIOTHÈQUE à la vraie souris (l'accueil d'avant : l'outil s'ouvre maintenant sur elle — tests/bibliotheque.js la
+     passe en entier), le contrat neuf, les folios aux noms longs, les mots au pluriel, les noms de fichier */
+  console.log('\nla bibliothèque à la vraie souris, le contrat neuf, les folios aux noms de dessin');
+  await parLeMenu('bibliotheque'); await page.waitForTimeout(400);
+  ok(await page.evaluate(() => BIB.vue === 'racine' && !$('bibliotheque').hidden && $('inspecteur').hidden && !!$('bi-reprendre') && app.contrat.liaisons.length === 201 && !!document.querySelector('#bibliotheque .bi-vide')),
+    '« Bibliothèque » (le menu) : la bibliothèque, aucune install encore ; l’exemple reste sur la table, dessous (« Reprendre »)');
+  // chaque geste de la bibliothèque répond à un clic de souris
+  let fc = null; try { [fc] = await Promise.all([page.waitForEvent('filechooser', { timeout: 3000 }), page.click('#bibliotheque .bi-vide [data-bi="base"]')]); } catch (_) { }
+  ok(!!fc, 'un clic de souris sur « Déposer la base des contrats déjà faits » ouvre le choix de fichier');
+  await page.click('#bibliotheque .bi-carte.bi-demo .bi-carte-corps'); await page.waitForTimeout(300);
+  await page.click('#bibliotheque .bi-plan[data-plan="exemple"] .bi-plan-ouvrir'); await page.waitForTimeout(700);
+  ok(await page.evaluate(() => app.contrat.liaisons.length === 201 && app.contrat.charges.has('102CB1') && $('bibliotheque').hidden && $('vide').hidden), 'l’Exemple, d’un clic (sa carte, son plan) : l’exemple sur la table, avec son profil de charge');
+  ok(await page.evaluate(() => app.nom === 'Contrat d’exemple' && $('ctx-nom').textContent === 'Contrat d’exemple' && /^l’exemple embarqué · 201 liaisons · \d+ repères · 6 folios$/.test($('ctx-txt').textContent) && $('en-install').textContent === 'Exemple'), 'le menu dit que c’est l’exemple embarqué ; le fil de la barre du haut, « Exemple »', await page.evaluate(() => $('ctx-txt').textContent));
   // un autre fichier : rien du contrat d'avant ne survit ; le menu dit son nom ; Ctrl+Z rend l'exemple et ses choix
   await page.evaluate(() => chargerContrat(contratExemple().filter(l => l.plan === '1'), 'ouverture de neuf.xlsx', 'neuf.xlsx')); await page.waitForTimeout(500);
   ok(await page.evaluate(() => !app.contrat.charges.size && !app.contrat.designations.size && !app.contrat.sexes.size && !app.contrat.raccords.size && $('ctx-nom').textContent === 'neuf.xlsx' && !/exemple/.test($('ctx-txt').textContent) && !CONTROLE.items.some(x => x.nom === '102CB1' && /9,31/.test(x.texte))),
@@ -324,14 +323,14 @@ const FICHIER = P.fichierDemande();
   const M = await page.evaluate(() => { const lignes = p => [...$(p).querySelectorAll('button[role="menuitem"]:not([data-retour])')].map(b => b.dataset.act || '›' + b.dataset.sous).join(',');
     return { principal: lignes('mp-principal'), exporter: lignes('mp-exporter'), plus: lignes('mp-plus'), fichiers: $('mp-principal').querySelector('[data-act="fichiers"]').textContent,
       bulles: [...document.querySelectorAll('#menu button[role="menuitem"]:not([data-retour])')].every(b => { const a = b.dataset.aide || ''; return a.length > 30 && a.length <= 160 && !!$(b.getAttribute('aria-describedby')); }) }; });
-  ok(M.principal === 'ouvrir,fichiers,recapitulatif,nomenclature,›exporter,›plus' && M.exporter === 'svg,png,imprimer,suivi' && M.plus === 'coller,exemple,bible,normes,hypotheses,cartouche,vider' && M.bulles && /contrats déjà faits/.test(M.fichiers),
-    'le menu en six lignes (ouvrir, vos fichiers — « contrats déjà faits » écrit dessous —, récapitulatif, nomenclature, Exporter ›, Plus ›), le reste dans ses deux sous-menus ; chaque ligne a sa bulle courte, dite aussi au lecteur d’écran', JSON.stringify(M));
-  // au clavier : ↓ jusqu'à « Vos fichiers… », sa bulle tout de suite, à gauche du menu ; → n'y fait rien (ni folio suivant)
+  ok(M.principal === 'bibliotheque,ouvrir,fichiers,recapitulatif,nomenclature,›exporter,›plus' && M.exporter === 'svg,png,imprimer,suivi' && M.plus === 'coller,exemple,bible,normes,hypotheses,cartouche' && M.bulles && /contrats déjà faits/.test(M.fichiers),
+    'le menu en sept lignes (la bibliothèque, ouvrir, vos fichiers — « contrats déjà faits » écrit dessous —, récapitulatif, nomenclature, Exporter ›, Plus ›), le reste dans ses deux sous-menus — plus de « Tout effacer » : on supprime dans la bibliothèque ; chaque ligne a sa bulle courte, dite aussi au lecteur d’écran', JSON.stringify(M));
+  // au clavier : ↓ ↓ jusqu'à « Vos fichiers… », sa bulle tout de suite, à gauche du menu ; → n'y fait rien (ni folio suivant)
   const plan0 = await page.evaluate(() => app.plan), montre = () => page.evaluate(() => [...document.querySelectorAll('#menu .menu-panneau')].filter(p => !p.hidden).map(p => p.id).join());
-  await page.click('#btnMenu'); await page.keyboard.press('ArrowDown'); await page.waitForTimeout(350);
+  await page.click('#btnMenu'); await page.keyboard.press('ArrowDown'); await page.keyboard.press('ArrowDown'); await page.waitForTimeout(350);
   ok(await page.evaluate(() => { const b = document.activeElement, u = $('menu-bulle'), r = u.getBoundingClientRect(), m = $('menu').getBoundingClientRect();
     return !!b && b.dataset.act === 'fichiers' && u.classList.contains('on') && u.textContent === b.dataset.aide && /contrats déjà faits/.test(u.textContent) && r.right <= m.left && r.width <= 300 && r.top >= 0 && r.bottom <= innerHeight; }),
-    'au clavier (↓), la bulle de « Vos fichiers… » se lit tout de suite, à gauche du menu, entière à l’écran : on y dépose aussi les contrats déjà faits');
+    'au clavier (↓ ↓), la bulle de « Vos fichiers… » se lit tout de suite, à gauche du menu, entière à l’écran : on y dépose aussi les contrats déjà faits');
   const large0 = await page.evaluate(() => Math.round($('menu').getBoundingClientRect().width));
   await page.keyboard.press('ArrowRight'); for (let k = 0; k < 3; k++) await page.keyboard.press('ArrowDown');
   await page.keyboard.press('ArrowRight'); await page.waitForTimeout(250);
@@ -344,13 +343,14 @@ const FICHIER = P.fichierDemande();
   await page.keyboard.press('Escape'); await page.waitForTimeout(200);
   ok(m3 === 'mp-principal' && await page.evaluate(() => $('menu').hidden && document.activeElement === $('btnMenu')), 'Échap dans un sous-menu y revient ; Échap encore ferme le menu, le clavier sur ⋮');
   // à la souris : « Plus » s'ouvre d'un clic, ses bulles au survol ; « ‹ Plus » ramène ; « Vos fichiers… »
-  await page.click('#btnMenu'); await page.click('#menu [data-sous="plus"]'); await page.hover('#menu [data-act="vider"]'); await page.waitForTimeout(450);
-  ok(await page.evaluate(() => !$('mp-plus').hidden && $('mp-principal').hidden && $('menu-bulle').classList.contains('on') && /Ctrl\+Z rend tout/.test($('menu-bulle').textContent)), 'à la souris, « Plus » s’ouvre d’un clic à la place du menu ; au survol, la bulle de « Tout effacer » (la base, la bible et les normes restent, Ctrl+Z rend tout)');
+  await page.click('#btnMenu'); await page.click('#menu [data-sous="plus"]'); await page.hover('#menu [data-act="exemple"]'); await page.waitForTimeout(450);
+  ok(await page.evaluate(() => !$('mp-plus').hidden && $('mp-principal').hidden && $('menu-bulle').classList.contains('on') && /reste dans la bibliothèque/.test($('menu-bulle').textContent) && /Ctrl\+Z le rend/.test($('menu-bulle').textContent)), 'à la souris, « Plus » s’ouvre d’un clic à la place du menu ; au survol, la bulle de « Ouvrir l’exemple » (votre plan reste dans la bibliothèque, Ctrl+Z le rend)');
   await page.click('#mp-plus [data-retour]'); await page.waitForTimeout(200); await page.click('#menu [data-act="fichiers"]'); await page.waitForTimeout(500);
   const VF = await page.evaluate(() => ({ mode: app.fiche && app.fiche.mode, cartes: [...document.querySelectorAll('#fiche-corps .vf-carte')].map(c => c.dataset.entree + ':' + (c.className.match(/e-(\w+)/) || [])[1]).join(' '), apercus: [...document.querySelectorAll('#fiche-corps .vf-carte')].filter(c => c.querySelectorAll('.vf-apercu tbody tr').length === 3).length, ouverts: [...document.querySelectorAll('#fiche-corps details.vf-attend[open]')].map(d => d.dataset.volet).join(' '),
     zones: [...document.querySelectorAll('#fiche-corps .vf-zone')].map(z => z.closest('.vf-carte').dataset.entree).join(' '), cles: [...document.querySelectorAll('#vf-base .vf-cles div')].map(d => d.textContent).join(' · ') }));
-  ok(VF.mode === 'fichiers' && VF.cartes === 'retest:vide base:vide bible:ok normes:ok hypotheses:ok' && VF.apercus === 4 && VF.ouverts === '' && VF.zones === 'retest base' && VF.cles === 'Harnessla machine · FWDle dessin · Appareille contrat',
-    '« Vos fichiers » : cinq cartes et leur état ; le retest et la base disent en une ligne ce qu’ils attendent (la base : Harness la machine, FWD le dessin, Appareil le contrat) et ont leur zone de dépôt ; trois lignes d’exemple (retest, base, bible, une norme) repliées dans « Ce que j’attends »', JSON.stringify(VF));
+  // (la bibliothèque a déjà une install : « À ranger », où sont allés les fichiers ouverts plus haut hors de toute install)
+  ok(VF.mode === 'fichiers' && VF.cartes === 'bibliotheque:ok retest:vide base:vide bible:ok normes:ok hypotheses:ok' && VF.apercus === 4 && VF.ouverts === '' && VF.zones === 'retest base' && VF.cles === 'Harnessla machine · FWDle dessin · Appareille contrat',
+    '« Vos fichiers » : six cartes et leur état, la bibliothèque en tête ; le retest et la base disent en une ligne ce qu’ils attendent (la base : Harness la machine, FWD le dessin, Appareil le contrat) et ont leur zone de dépôt ; trois lignes d’exemple (retest, base, bible, une norme) repliées dans « Ce que j’attends »', JSON.stringify(VF));
   const nEx = await page.evaluate(() => verite().length);
   await depot('#fichier', 'compta.csv', 'Date;Montant;Libellé\n03/10/2026;1250,00;Fournitures\n05/10/2026;318,40;Câbles\n');
   const E1 = await page.evaluate(() => ({ toast: $('toast').textContent, erreur: $('toast').classList.contains('erreur'), voir: !!document.querySelector('#toast .toast-voir'), n: verite().length, nom: app.nom }));

@@ -1,11 +1,11 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   PRENDRE LA MAIN — « Vos fichiers », le collage, le bandeau de l'exemple, le mot qui passe et son « Voir » (08-fichiers,
-   08-accueil). Les jetons de style.css, rien d'autre : un état est un point de sa couleur (vert reçu, ambre rien ou en
+   PRENDRE LA MAIN — « Vos fichiers », le collage, le mot qui passe et son geste (« Voir », « Rétablir ») (08-fichiers,
+   08-bibliotheque). Les jetons de style.css, rien d'autre : un état est un point de sa couleur (vert reçu, ambre rien ou en
    attente, rouge une erreur) ; une erreur écrite dans sa carte est une boîte au trait rouge qui reste ; un aperçu est un
    petit tableau en chasse fixe, les colonnes obligatoires à l'encre et soulignées.
    ═══════════════════════════════════════════════════════════════════════ */
 
-/* ─── « VOS FICHIERS » : cinq cartes, peu de mots ────────────────────────────────────────────────────────────────── */
+/* ─── « VOS FICHIERS » : six cartes, peu de mots ─────────────────────────────────────────────────────────────────── */
 .vf-lead{margin:0 0 12px;font-size:var(--f-13);line-height:1.5;color:var(--t-2)}
 .vf-cartes{display:flex;flex-direction:column;gap:10px}
 /* une carte : la tête (l'icône, le titre, l'état, l'action) ; pour le retest et la base, ce qu'elle attend en une ligne et
@@ -33,7 +33,7 @@
 .vf-une p{margin:0}
 .vf-une b{color:var(--t-1);font-weight:600}
 .vf-une .id{font:600 var(--f-12)/1 var(--mono);color:var(--t-1);background:var(--accent-soft);border-radius:4px;padding:2px 5px;white-space:nowrap}
-/* les trois colonnes qui rangent la base (comme sur l'accueil) : la colonne soulignée à l'encre, son sens dessous */
+/* les trois colonnes qui rangent la base : la colonne soulignée à l'encre, son sens dessous */
 .vf-cles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0;border:1px solid var(--s-line);border-radius:var(--r-1);overflow:hidden}
 .vf-cles div{padding:7px 10px 8px;min-width:0}
 .vf-cles div+div{border-left:1px solid var(--s-line)}
@@ -120,24 +120,7 @@ body.depot-actif:has(#fiche [data-depot]) .depot{display:none}
 .co-rejet{color:var(--warn)}
 .co-apercu .vf-boite{margin:0}
 
-/* ─── LE BANDEAU DE L'EXEMPLE : une languette collée sous la barre du haut, au milieu de la place du plan ─────────── */
-.bandeau-exemple{position:fixed;top:calc(var(--entete) + var(--sur-h) - 1px);left:calc(var(--rail) + (100vw - var(--rail)) / 2);transform:translateX(-50%);z-index:30;
-  display:flex;align-items:center;gap:8px;height:26px;padding:0 6px 0 12px;white-space:nowrap;
-  background:var(--p-fond);border:1px solid var(--p-ligne);border-top:none;border-radius:0 0 var(--r-2) var(--r-2);box-shadow:var(--sh-1);
-  font:500 var(--f-12)/1 var(--sans);color:var(--p-t2);transition:left var(--moyen)}
-.bandeau-exemple i{width:7px;height:7px;border-radius:50%;background:var(--p-warn);flex:none}
-.bandeau-exemple span::after{content:"\00a0·";color:var(--p-t3)}
-.bandeau-exemple button{height:20px;padding:0 6px;border:none;border-radius:var(--r-1);background:none;color:var(--p-t1);font:600 var(--f-12)/1 var(--sans);text-decoration:underline;text-decoration-color:var(--s-line-2);text-underline-offset:3px}
-.bandeau-exemple button:hover{background:var(--p-hover);text-decoration-color:var(--p-t1)}
-body.insp-ouvert .bandeau-exemple{left:calc(var(--rail) + (100vw - var(--rail) - var(--insp-l)) / 2)}
-body.fiche-ouverte .bandeau-exemple{left:calc(var(--rail) + (100vw - var(--rail) - var(--fiche-l)) / 2)}
-/* le récapitulatif en page couvre le plan : son en-tête prend la place, le bandeau se retire (il revient en moitié) */
-body.base-ouverte:has(#base.page) .bandeau-exemple{display:none}
-/* le mot qui passe se pose sous le bandeau, pas dessus */
-body.exemple-vu #toast{top:calc(var(--entete) + var(--sur-h) + 36px)}
-@media (max-width:700px){ .bandeau-exemple{left:50%} body.insp-ouvert .bandeau-exemple,body.fiche-ouverte .bandeau-exemple{display:none} }
-
-/* ─── LE MOT QUI PASSE ET SON « VOIR » : ce qu'il signale est écrit dans « Vos fichiers » ─────────────────────────── */
+/* ─── LE MOT QUI PASSE ET SON GESTE : « Voir » (ce qui est écrit dans « Vos fichiers »), « Rétablir » ─────────────────────────── */
 #toast.on.action{pointer-events:auto}
 #toast.action{display:flex;align-items:baseline;gap:14px}
 .toast-voir{flex:none;padding:0;border:none;background:none;color:var(--bulle-t);font:600 var(--f-13)/1.4 var(--sans);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
