@@ -320,6 +320,8 @@ function tableContacts(xs, o) { o = o || {}; let prec = '';
       + (ks && FI.liste === 'sertir:' + ks ? `<li class="fi-choix-ligne">${choixSertir(ks, x.plan, f, st)}</li>` : ''); }).join('');
   return `<ul class="fi-liste fi-contacts"><li class="fi-entetes"><span>${esc(o.borne || 'Borne')}</span><span>Contact${aide('contact')}</span><span>Gauge${aide('gauge')}</span><span>Câble</span></li>${rows}</ul>`; }
 /* Le sexe des contacts d'un connecteur, en deux puces. */
+const sexeDeLaFiche = (cle, sexe) => { const m = sexe === 'M', autre = m ? 'F' : 'M';
+  return `<span class="fi-seg-mini"><button type="button" class="fi-chip fi-sexe-un" data-sexe="${escA(cle)}" data-v="${autre}" aria-pressed="false" title="${escA(m ? 'La fiche (ce qui arrive) en broches, l’embase en douilles — un clic : fiche femelle' : 'La fiche (ce qui arrive) en douilles, l’embase en broches — un clic : fiche mâle')}">${esc(m ? 'Fiche mâle' : 'Fiche femelle')}${ico('echange')}</button>${sexeChoisi(cle) ? retourAuto('sexe:' + cle, 'fiche femelle') : ''}</span>`; };
 const pucesSexe = (cle, sexe, mots) => `<span class="fi-seg-mini" role="group" aria-label="Sexe des contacts">${(mots || [['F', 'Femelles'], ['M', 'Mâles']]).map(([v, t, tt]) => `<button type="button" class="fi-chip" data-sexe="${escA(cle)}" data-v="${v}" aria-pressed="${sexe === v}"${tt ? ` title="${escA(tt)}"` : ''}>${esc(t)}</button>`).join('')}${sexeChoisi(cle) ? retourAuto('sexe:' + cle, (mots || [['F', 'femelles']])[0][1].toLowerCase()) : ''}</span>`;
 
 /* ---- LES CÂBLES : l'intensité ET la chute, d'un coup d'œil ; le type, la longueur, le contact, d'un clic ---------- */
@@ -621,7 +623,9 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
   const nP = (lignes.match(/class="fi-paire/g) || []).length;
   const paires = lignes ? `<ul class="fi-liste fi-paires"><li class="fi-entetes"><span>Contact</span><span>Fiche · arrive</span><span>Embase · repart</span></li>${lignes}</ul>` : '<p class="fi-note">Aucun contact posé.</p>';
   const fils = filsDuRepere(nom); probs.push(...problemesDesFils(fils));
-  const sexe = Q.tableContacts ? pucesSexe(nom, Q.sexe, [['F', 'Fiche femelle', 'La fiche (ce qui arrive) en douilles, l’embase en broches'], ['M', 'Fiche mâle', 'La fiche (ce qui arrive) en broches, l’embase en douilles']]) : '';
+  // le sexe de la fiche : UN bouton, qui dit celui qui est retenu et l'inverse d'un clic (deux puces côte à côte se lisaient
+  // comme un doublon) ; ↺ rend le choix de l'outil
+  const sexe = Q.tableContacts ? sexeDeLaFiche(nom, Q.sexe) : '';
   const raccord = sectionRaccord([['Fiche', amont], ['Embase', aval]].map(([t, xs]) => ({ cle: nom + '|' + t.toLowerCase(), titre: t, fils: xs.map(x => x.f), pn: b.pn, ref: Q.reference, plan: M ? Q : null })), probs);
   const sections = [{ cle: 'connecteur', resume: `${M ? ident(M.reference) : '<span class="fi-ko-t">aucun arrangement</span>'} · ${pluriel(points.length, 'contact')}${Q.tableContacts ? ' · fiche ' + (Q.sexe === 'M' ? 'mâle' : 'femelle') : ''}`, badge: badgeProblemes(probs, 'connecteur'),
       contenu: tete + face + groupeSection('Contacts', paires, { droite: sexe, compte: nP || null, aide: ['contact', null] }) },
