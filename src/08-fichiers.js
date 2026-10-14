@@ -6,7 +6,7 @@
    base. […] Il faut suivre l'utilisateur, le porter, lui prendre la main. »
 
    UN SEUL ENDROIT (menu ⋮ → Vos fichiers ; « Voir » dans le mot qui signale
-   une erreur) pour les six entrées de l'outil — la bibliothèque (les installs
+   une erreur) pour les six entrées de l'outil — la bibliothèque (les installations
    et leurs plans, 08-bibliotheque : l'entrée principale), le retest, les
    contrats déjà faits, la bible, les normes, les hypothèses. Peu de mots (le
    lecteur : « il y a tellement de choses, je n'ai pas envie de lire ») ;
@@ -42,12 +42,12 @@
    LES CONTRATS DÉJÀ FAITS : un dépôt réussi ramène ici, sur leur carte, avec
    les comptes (« 2 harness · 9 dessins · 261 liaisons ») et « Voir un
    équipement déjà fait » — la fiche du premier équipement du contrat qui a une
-   correspondance, la section Déjà fait ouverte. Une base qui dit l'install de
+   correspondance, la section Déjà fait ouverte. Une base qui dit l'installation de
    ses lignes range aussi ses plans dans la bibliothèque ; sinon on propose de
    les y ranger.
 
    UN FICHIER OUVERT (Ctrl+O, le menu, glissé sur la table) devient un PLAN
-   NEUF de l'install ouverte, sur la table ; Ctrl+Z revient au plan d'avant.
+   NEUF de l'installation ouverte, sur la table ; Ctrl+Z revient au plan d'avant.
 
    Tout reste dans ce navigateur. Les modèles téléchargeables sont écrits ici
    (une seule source) et dans modeles/ (les mêmes lignes).
@@ -168,9 +168,9 @@ async function rangerAilleurs(L, nom, fichier) { const b = lireBible(L.texte);
   if (b.entrees.length) { adopterBible(b.entrees, nom); effacerErreur('bible'); rendreFichiers(); signaler('Bible : ' + pluriel(b.entrees.length, 'référence') + ' lue' + (b.entrees.length > 1 ? 's' : '') + ' dans ' + guillemets(nom) + ' ; les barrettes suivent.', 'bible'); return true; }
   if (normeLue(lireNorme(L.texte))) { await importerNorme(fichier); return true; }   // une norme : reconnue à ses tables
   return false; }
-/* Un fichier ouvert ou déposé sur la table : un retest (reconnu à ses en-têtes) devient un plan neuf de l'install ouverte,
+/* Un fichier ouvert ou déposé sur la table : un retest (reconnu à ses en-têtes) devient un plan neuf de l'installation ouverte,
    sur la table ; plusieurs harness : la base des contrats déjà faits (rangée dans la bibliothèque si elle dit ses
-   installs), et l'on demande lequel ouvrir ; une bible ou une norme vont à leur place ; un tableau sans les en-têtes du
+   installations), et l'on demande lequel ouvrir ; une bible ou une norme vont à leur place ; un tableau sans les en-têtes du
    retest attend « Charger » ; le reste est une erreur dite dans la carte du retest. */
 async function ouvrirFichier(fichier) { if (!fichier) return; const nom = fichier.name || 'le fichier';
   dire('Lecture de ' + guillemets(nom) + '…');
@@ -256,7 +256,7 @@ function lireCollage(texte) { const brutes = String(texte || '').split(/\r?\n/),
   return { ...lu, comment: D.entete && D.devine ? 'colonnes devinées à leurs en-têtes : ' + comprisHtml(D) : 'lues dans l’ordre ci-dessus' }; }
 /* Le plan sur la table reçoit les lignes (« Ajouter au plan ») ou les prend à la place des siennes (« Remplacer le plan » :
    il garde son nom ; l'exemple, lui, ne se remplace pas : un plan neuf « Collage ») ; depuis la bibliothèque, ou sans
-   plan, elles font un plan neuf de l'install ouverte (« Charger »). */
+   plan, elles font un plan neuf de l'installation ouverte (« Charger »). */
 function ficheColler() { const ouvert = verite().length > 0 && !bibliothequeOuverte();
   const corps = tete('Sans fichier', 'Coller des lignes')
     + '<p class="note">Quelques lignes copiées d’Excel, ou tapées : <b>une liaison par ligne</b>, les colonnes séparées par une tabulation, <b>;</b> ou <b>,</b>. Avec les en-têtes du retest, elles sont reconnues à leurs noms ; sans en-têtes, dans cet ordre (seuls les deux équipements sont obligatoires) :</p>'
@@ -290,7 +290,7 @@ function ajouterAuContrat(L, quoi) { histPush(quoi); const V = verite(), plan = 
   L.forEach(l => V.push(liaison({ ...l, plan: l.plan || plan }))); apresEdition(); return L.length; }
 
 /* ---- l'exemple ----------------------------------------------------------------------------------------------------- */
-/* L'exemple embarqué, tel qu'il est livré, avec son profil de charge : le plan de l'install de démonstration
+/* L'exemple embarqué, tel qu'il est livré, avec son profil de charge : le plan de l'installation de démonstration
    (08-bibliotheque), à la demande (le menu Plus, la bibliothèque), jamais d'office. `neuf` : sans historique (l'API de
    contrôle, `atelier.exemple()`, le pose comme si on venait de l'ouvrir). */
 function ouvrirExemple(neuf) { chargerContrat(contratExemple(), 'contrat d’exemple', NOM_EXEMPLE, { planId: ID_EXEMPLE }); app.contrat.charges = chargesExemple(); rendreControle();
@@ -325,9 +325,9 @@ const CLES_BASE = [['Harness', 'la machine'], ['FWD', 'le dessin'], ['Appareil',
 const clesBaseHtml = () => `<dl class="vf-cles">${CLES_BASE.map(([k, d]) => `<div><dt>${k}</dt><dd>${d}</dd></div>`).join('')}</dl>`;
 /* L'état de chaque entrée : 'ok' (reçu et lu), 'vide' (rien : ambre), 'ko' (une erreur), et la ligne qui le dit. */
 function etatsDesFichiers() { const E = {}, V = verite(), err = k => FICHIERS.erreurs[k];
-  // la bibliothèque : ses installs et ses plans (l'Exemple n'en est pas)
+  // la bibliothèque : ses installations et ses plans (l'Exemple n'en est pas)
   const nI = installsVraies().length, nP = plansVrais().length;
-  E.bibliotheque = nI ? { niveau: 'ok', dit: lies([plurielLie(nI, 'install'), plurielLie(nP, 'plan'), BIB.garde ? 'gardés dans ce navigateur' : 'pas gardés dans ce navigateur']) } : { niveau: 'vide', dit: 'aucune install pour l’instant' };
+  E.bibliotheque = nI ? { niveau: 'ok', dit: lies([plurielLie(nI, 'installation'), plurielLie(nP, 'plan'), BIB.garde ? 'gardés dans ce navigateur' : 'pas gardés dans ce navigateur']) } : { niveau: 'vide', dit: 'aucune installation pour l’instant' };
   // le retest : le plan sur la table, l'exemple, rien
   const n = V.length, exemple = n && app.nom === NOM_EXEMPLE, R = FICHIERS.retest && FICHIERS.retest.nom === app.nom ? FICHIERS.retest : null, P = plans().length;
   E.retest = err('retest') ? { niveau: 'ko', dit: 'le dernier fichier n’a pas pu être ouvert' + (n && !exemple ? ' — ' + (app.nom || 'le plan') + ' reste ouvert' : '') }
@@ -373,7 +373,7 @@ function avisHtml(k) { const a = FICHIERS.avis[k]; return a ? `<div class="vf-bo
 /* Le succès d'un dépôt de base : les comptes, ce qui se passe maintenant (et ce qui est rangé dans la bibliothèque), et la
    main qu'on tend. */
 function succesBaseHtml() { if (FICHIERS.succes !== 'base' || !app.references) return ''; const I = indexReferences(), R = app.references, V = verite(), p = V.length ? premierDejaFait() : null, G = FICHIERS.rangee;
-  return `<div class="vf-boite vf-succes"><p><b>${esc(R.nom || 'La base')}</b> est rangée : ${lies([plurielLie(I.harnais.size, 'harness'), plurielLie(I.dessins.size, 'dessin'), plurielLie(R.liaisons.length, 'liaison')])}. Chaque fiche dit maintenant ce qui a déjà été fait.${G ? ` La bibliothèque compte ${esc(lies([plurielLie(G.installs, 'install'), plurielLie(G.plans, 'plan')]))} venus d’elle.` : ''}</p>`
+  return `<div class="vf-boite vf-succes"><p><b>${esc(R.nom || 'La base')}</b> est rangée : ${lies([plurielLie(I.harnais.size, 'harness'), plurielLie(I.dessins.size, 'dessin'), plurielLie(R.liaisons.length, 'liaison')])}. Chaque fiche dit maintenant ce qui a déjà été fait.${G ? ` La bibliothèque compte ${esc(lies([plurielLie(G.installs, 'installation'), plurielLie(G.plans, 'plan')]))} venus d’elle.` : ''}</p>`
     + (p ? `<div class="vf-gestes"><button class="btn cuivre" data-vf="deja-fait">Voir un équipement déjà fait</button><span class="vf-note">${esc(p.nom)} : ${Math.round(p.c.taux * 100)}\u00a0% pareil sur ${esc(p.c.harness)}</span></div>`
       : V.length ? '<p class="vf-note">Aucun équipement du plan ouvert n’a de correspondance dans cette base (ni même part number, ni même code).</p>'
       : '<div class="vf-gestes"><button class="btn cuivre" data-vf="bibliotheque">Voir la bibliothèque</button><span class="vf-note">chaque fiche dira ce qui a déjà été fait</span></div>') + '</div>'; }
@@ -390,9 +390,9 @@ function cartesFichiers(focus) { const E = etatsDesFichiers(), V = verite();
   const nonRanges = app.references ? aRanger().length : 0;
   const C = [
     { cle: 'bibliotheque', titre: 'Bibliothèque', depot: 'plans', grande: true, action: ['bibliotheque', 'Ouvrir la bibliothèque'], zone: ['ajouter-plans', 'vos retests'],
-      une: `<p>Une install, c’est une installation — une antenne, un cockpit — et ses plans : <b>un plan par retest</b>. Ceux qu’on glisse ici vont dans ${esc(guillemets(nomInstallCible()))}.</p>` },
+      une: `<p><b>Un plan par retest</b>. Ceux qu’on glisse ici vont dans ${esc(guillemets(nomInstallCible()))}.</p>` },
     { cle: 'retest', titre: 'Votre retest', depot: 'retest', grande: true, action: ['ouvrir', 'Ouvrir un retest…'], zone: ['ouvrir', 'le retest'],
-      une: `<p>Un Excel ou un CSV, <b>une ligne par fil</b>, avec au moins ${MODELE_RETEST.requises.map(id).join(POINT)}. Il devient un plan de l’install ouverte.</p>`,
+      une: `<p>Un Excel ou un CSV, <b>une ligne par fil</b>, avec au moins ${MODELE_RETEST.requises.map(id).join(POINT)}. Il devient un plan de l’installation ouverte.</p>`,
       liens: V.length ? [] : [['exemple', 'Pas de fichier sous la main ? Ouvrir l’exemple']],
       boites: attenteHtml() + erreurHtml('retest') + avisHtml('retest'),
       attend: { format: 'Les en-têtes sont reconnus par leur nom ; les autres colonnes du retest (Harness, PN, Route, FWD, longueur…) sont lues si elles sont là.',
@@ -404,7 +404,7 @@ function cartesFichiers(focus) { const E = etatsDesFichiers(), V = verite();
       liens: app.references ? [...(V.length && FICHIERS.succes !== 'base' ? [['deja-fait', 'Voir un équipement déjà fait']] : []), ...(nonRanges ? [['ranger', 'Ranger ses ' + pluriel(nonRanges, 'harness') + ' dans la bibliothèque']] : []), ['chercher-base', 'Chercher dans la base'], ['oublier-base', 'Oublier la base']] : [],
       boites: oubliBaseHtml() + succesBaseHtml() + erreurHtml('base') + baseSansHarnessHtml() + avisHtml('base'),
       attend: { apercu: apercuHtml(MODELE_BASE, { label: 'Trois lignes d’exemple de la base', colonnes: colonnes(MODELE_BASE, ['Harness', 'FWD', 'Appareil', 'Device1', 'Pin1', 'Device2', 'Pin2']) }),
-        ensuite: 'Ensuite, chaque fiche dit « déjà fait sur H175, 92 % pareil » et reprend ce que vous cochez. Une colonne Install range aussi chaque install et ses plans dans la bibliothèque. Gardée dans ce navigateur.',
+        ensuite: 'Ensuite, chaque fiche dit « déjà fait sur H175, 92 % pareil » et reprend ce que vous cochez. Une colonne Installation (et ECP) range aussi chaque installation et ses plans dans la bibliothèque. Gardée dans ce navigateur.',
         gestes: [['modele-base', 'Modèle (CSV)']] } },
     { cle: 'bible', titre: 'Bible des barrettes', depot: 'bible', action: ['bible', 'Importer la vôtre…'], liens: [['voir-bible', 'Voir la bible'], ...(app.bibleNom ? [['bible-outil', 'Revenir à la bible de l’outil']] : [])],
       boites: erreurHtml('bible'),

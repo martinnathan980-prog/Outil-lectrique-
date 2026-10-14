@@ -16,7 +16,7 @@
 .dj-graphe .dj-fonds{transition:transform var(--moyen)}
 .dj-graphe .dj-fond{stroke:none;pointer-events:none}
 .dj-graphe .dj-fond.sur{fill:var(--ok);fill-opacity:.075}
-.dj-graphe .dj-fond.declenche{fill:var(--ko);fill-opacity:.06}
+.dj-graphe .dj-fond.declenche{fill:var(--ko);fill-opacity:.1}
 .dj-graphe .dj-bande{fill:var(--t-papier);fill-opacity:.045;stroke:none;pointer-events:none}
 
 /* ── le papier : le cadre, la grille, les décades nommées, les titres ── */

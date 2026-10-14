@@ -596,7 +596,12 @@ réelle est **`NSA937901M<taille>-<code>`** (`NSA937901M20-04` — vérifiée au
 catalogue Amphenol Air LB et chez Boeing, recherche R3) ; l'outil relit
 encore l'ancienne forme `NSA937901-20-04`. La table **Accessoires** donne
 les références annexes (butées SC/SD, séparateurs, bloc à tige, shunt SH05,
-étiquettes, étriers NSA937915) et leur équivalent Air LB — informatives.
+étiquettes, étriers NSA937915) et leur équivalent Air LB — informatives —,
+et le **rail** : NSA937901RB2000 (2 m à couper, Souriau 8559RB2000A,
+catalogue 8559 p. 184), que la fiche d'une barrette montre sous ses modules.
+L'ASNE 0599 a la même ligne, prise au catalogue Amphenol Air LB (05/12,
+p. 97 : `001751 1NN 00`, NN = le nombre de modules) tant que la norme n'est
+pas relue sur ce point.
 
 Une barrette prend la norme de son part number (le fichier dit
 `E0599-…` ou `NSA937901-…`), sinon la mieux taillée des deux ; la carte
@@ -789,8 +794,8 @@ conducteur qui n'est pas du cuivre (table Familles de câbles).
 
 | colonne | obligatoire | sens |
 |---|---|---|
-| Famille, Référence, Équivalent, Rôle | oui | la famille (NSA937901), la référence de la norme, l'équivalent catalogue, à quoi il sert |
-| Masse, Note | non | g, la page |
+| Famille, Référence, Équivalent, Rôle | oui | la famille (NSA937901), la référence de la norme, l'équivalent catalogue, à quoi il sert — un rôle qui commence par « rail » fait le rail de la barrette (NN dans la référence : le nombre de modules ; « pas 14 mm » dans le rôle : la longueur) |
+| Masse, Note, Source, Statut | non | g, la page, d'où vient la ligne |
 
 ### Toron — une ligne par méthode et nombre de câbles
 

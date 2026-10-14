@@ -246,7 +246,7 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
 /* ─── LA BARRE DU HAUT : la marque, la recherche, le menu — blanche, un filet dessous ─── */
 #entete{position:fixed;top:0;left:0;right:0;height:calc(var(--entete) + var(--sur-h));z-index:36;background:var(--p-fond);color:var(--p-t1);border-bottom:1px solid var(--p-ligne);
   display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:16px;padding:var(--sur-h) max(12px,var(--sur-d)) 0 max(12px,var(--sur-g))}
-/* la marque et le nom de l'outil — un bouton : la bibliothèque —, puis le fil discret (l'install, le plan) */
+/* la marque et le nom de l'outil — un bouton : la bibliothèque —, puis le fil discret (l'installation, le plan) */
 .en-contrat{display:flex;align-items:center;gap:6px;min-width:0}
 .en-volta{position:relative;flex:none;display:flex;align-items:center;gap:10px;height:36px;margin-left:-6px;padding:0 10px 0 6px;border:none;border-radius:var(--r-btn);background:none;color:var(--p-t1);transition:background var(--rapide)}
 .en-volta:hover{background:var(--p-hover)}
@@ -256,10 +256,12 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
 .en-marque{flex:none;width:28px;height:28px;border-radius:7px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center}
 .en-marque svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .en-nom{font:600 var(--f-16)/1.2 var(--titre);letter-spacing:-.02em;white-space:nowrap;color:var(--p-t1)}
-/* le fil : « / Antenne VHF / H-1 » — l'install mène à ses plans, le plan se lit ; rien de plus */
+/* le fil : « / Antenne VHF / H-1 » — l'installation mène à ses plans, le plan se lit ; rien de plus */
 .en-fil{display:flex;align-items:center;min-width:0;gap:0;font-size:var(--f-13);color:var(--p-t2)}
 .en-fil>*::before{content:"/";margin:0 8px 0 2px;color:var(--p-t3);font-weight:400}
-.en-install{flex:none;max-width:240px;height:28px;padding:0 6px 0 0;border:none;background:none;color:var(--p-t2);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:var(--r-1)}
+.en-install{flex:none;max-width:300px;height:28px;padding:0 6px 0 0;border:none;background:none;color:var(--p-t2);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:var(--r-1)}
+/* l'ECP de l'installation, devant son nom : cinq chiffres à la machine, un ton plus bas */
+.en-ecp{margin-right:7px;font:600 var(--f-12)/1 var(--mono);letter-spacing:.04em;color:var(--p-t3);font-variant-numeric:tabular-nums}
 .en-install:not(:disabled):hover{color:var(--p-t1);text-decoration:underline;text-decoration-color:var(--p-t3);text-underline-offset:3px}
 .en-install:disabled{cursor:default;color:var(--p-t1)}
 .en-plan{min-width:0;color:var(--p-t1);font:500 var(--f-13)/1.2 var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

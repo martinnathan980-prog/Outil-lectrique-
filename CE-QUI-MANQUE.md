@@ -32,7 +32,7 @@ accessoire pour quel connecteur et quel câble).
   3. *Le référent SEE.* Derrière SEE, il y a une base de données : celui qui l'administre chez vous peut en tirer les
      trois tables en Excel, avec toutes leurs colonnes. C'est la voie la plus propre si les deux premières échouent.
   4. *Pas en photos.* Des milliers de lignes en photo, ce sont des erreurs de lecture et des jours de travail.
-- **Où la mettre.** Jamais dans le dépôt GitHub : il est **public**. L'export reste sur ton PC, et tu le déposes dans
+- **Où la mettre.** Jamais dans le dépôt GitHub, même passé en privé : c'est la base de ton programme. L'export reste sur ton PC, et tu le déposes dans
   Volta (⋮ → Vos fichiers → Normes) : Volta le lit sur place, hors ligne, rien ne sort. Demande d'abord à ta hiérarchie
   si tu as le droit d'en faire un export : c'est la base de ton programme.
 - **Tu peux le faire tout de suite, sans moi (version 61).** Dans SEE, tout sélectionner dans la liste (Ctrl+A), copier
@@ -45,6 +45,24 @@ accessoire pour quel connecteur et quel câble).
   disjoncteurs (la référence, la famille, le nombre de contacts) : pour la construire, la ligne des en-têtes de
   l'export Equipments et deux ou trois lignes, dont tu peux changer les valeurs. Sinon, trois captures de fiches,
   « General attributes » déroulés : un connecteur, une règle d'end fitting (*ECS0852 par exemple), un disjoncteur.
+
+---
+
+## Ce que la version 63 attend de toi
+
+- **La référence du rail des barrettes ASNE 0599.** Chaque barrette dit maintenant la référence de chacun de ses modules
+  et celle du rail qui les porte. Pour la NSA937901, c'est sourcé : **NSA937901RB2000**, rail aluminium de 2 m à couper
+  à la longueur (équivalent Souriau 8559RB2000A, catalogue 8559 p. 184 ; Amphenol 001101 042 10), un étrier
+  NSA937901S à chaque bout. Pour l'ASNE 0599, je n'ai pas la norme sur ce point : Volta prend en attendant le rail du
+  catalogue Amphenol Air LB des modules au pas de 14 mm, **001751 1NN 00** (NN = le nombre de modules, 00 = anodisé ;
+  catalogue 05/12 p. 97). Donne-moi la référence que ton atelier commande, ou dépose la ligne dans la table
+  Accessoires (Famille, Référence, Équivalent, Rôle — un rôle qui commence par « rail »).
+- **Les autres équipements : relais, prolongateurs, voyants…** Chacun a sa norme. Plutôt que de tous les faire d'un coup,
+  Volta les traitera comme les connecteurs : une famille (le préfixe de la référence), sa norme, son arrangement de
+  contacts. La voie la plus courte reste la table Equipments de SEE (sa ligne d'en-têtes et deux ou trois lignes) :
+  je construirai la table « Familles d'équipements » sur ses colonnes.
+- **L'ECP de chaque installation.** Volta range maintenant les installations par leur numéro d'ECP (cinq chiffres). Une
+  base des contrats déjà faits qui porte une colonne ECP (ou des installations nommées « 40217 … ») les numérote d'elle-même.
 
 ---
 

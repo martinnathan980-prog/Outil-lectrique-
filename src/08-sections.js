@@ -11,13 +11,17 @@
      Calibre (un disjoncteur) · Connecteur (ou Module) · Raccord ·
      De → vers (un câble) · Câbles (intensité et chute ensemble) · Déjà fait.
    Fermée, une carte se lit encore ; ouverte, ses groupes sont cadrés et
-   espacés. Ce que l'ingénieur ouvre ou ferme se garde, par type d'objet.
+   espacés. Toutes sont PLIÉES d'office (le lecteur, version 62 : « toutes les
+   sections doivent être pliées : c'est beaucoup plus propre ») ; ce que
+   l'ingénieur ouvre ou ferme se garde, par type d'objet.
    Une section dont la donnée manque reste à sa place, en pointillé, et dit ce
    qui manque. Un lien qui y mène (une ligne des problèmes) l'ouvre, la fait
    venir sous les yeux et l'allume un instant.
 
-   Une valeur se change sur place ; changée à la main, elle porte la pastille
-   « main » et « ↺ » qui rend ce que portait le fichier ou le calcul.
+   Une valeur se change sur place, d'un champ qui se voit. Plus de « ↺ » ni de
+   pastille « main » (le lecteur : « le bouton revenir en arrière, ça ne sert
+   à rien : si on veut, on retapera ») : ce que l'outil choisit, la liste de
+   choix le rend — sa ligne « Automatique ».
 
    LE « ? » (le lecteur : « explique, avec un petit point d'interrogation,
    comment tu choisis tout » ; puis : « pas une grosse pâte de texte :
@@ -35,9 +39,8 @@
 
 const SECTIONS = { disjoncteur: 'Calibre', connecteur: 'Connecteur', raccord: 'Raccord', trajet: 'De → vers', fils: 'Câbles', dejafait: 'Déjà fait' };
 const ORDRE_SECTIONS = Object.keys(SECTIONS);
-// ouvertes d'office : tout ce qui définit l'objet — « Déjà fait » attend un clic
-const OUVERTES_D_OFFICE = { equipement: ['connecteur', 'raccord', 'fils'], disjoncteur: ['disjoncteur', 'fils'], barrette: ['connecteur', 'fils'],
-  prise: ['connecteur', 'raccord', 'fils'], masse: ['fils'], fil: ['trajet', 'fils'] };
+// ouvertes d'office : aucune — une fiche s'ouvre pliée, chaque carte dit l'essentiel dans son résumé
+const OUVERTES_D_OFFICE = {};
 /* L'icône de chaque section : SVG 24 × 24 au trait de 1,5 px (comme ICONES, 08-fiche). */
 const ICONES_SECTIONS = {
   disjoncteur: '<path d="M3 16h3.5M17.5 16H21"/><circle cx="8" cy="16" r="1.5"/><circle cx="16" cy="16" r="1.5"/><path d="M9 15.2 15.4 10.2"/><path d="M12.2 4.5v6M9.6 4.5h5.2"/>',
@@ -51,9 +54,9 @@ const ICONES_SECTIONS = {
 const icoSection = cle => ICONES_SECTIONS[cle] ? `<span class="fs-ico" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24">${ICONES_SECTIONS[cle]}</svg></span>` : '';
 
 /* La mémoire des sections, par type : ce que l'ingénieur a ouvert ou fermé (dans ce navigateur ; une mémoire
-   indisponible — navigation privée — n'empêche rien : on garde les valeurs d'office). La clé change avec la v4 :
-   l'identité n'existe plus, le raccord a sa carte. */
-const CLE_SECTIONS = 'atelier.fiche.sections.v4';
+   indisponible — navigation privée — n'empêche rien : on garde les valeurs d'office). La clé change avec la v5 :
+   tout se plie d'office, ce qu'on avait ouvert avant ne compte plus. */
+const CLE_SECTIONS = 'atelier.fiche.sections.v5';
 const MEMOIRE_SECTIONS = (() => { try { return JSON.parse(localStorage.getItem(CLE_SECTIONS) || '{}') || {}; } catch (_) { return {}; } })();
 function sectionOuverte(type, cle) { const m = MEMOIRE_SECTIONS[type]; return m && cle in m ? !!m[cle] : (OUVERTES_D_OFFICE[type] || []).includes(cle); }
 function retenirSection(type, cle, ouvert) { (MEMOIRE_SECTIONS[type] = MEMOIRE_SECTIONS[type] || {})[cle] = !!ouvert;
@@ -101,9 +104,6 @@ function badgeProblemes(probs, cle) { const xs = (probs || []).filter(p => p.sec
    « hyp. » (une hypothèse de la simulation) ; ce que le retest ou le calcul donnent se lit sans pastille. */
 const ORIGINES = { auto: 'auto', retest: 'retest', main: 'main', hyp: 'hyp.', norme: 'norme' };
 const origine = (o, titre) => `<i class="orig orig-${escA(o)}"${titre ? ` title="${escA(titre)}"` : ''}>${esc(ORIGINES[o] || o)}</i>`;
-/* « ↺ » : rend le calcul (ou le fichier) à une valeur forcée à la main. `cle` dit quoi rendre ; la fiche lie le bouton
-   par [data-auto] ; la valeur rendue se lit au survol et à côté, en petit. `attrs` : d'autres attributs (la ligne). */
-const retourAuto = (cle, valeurAuto, attrs) => `<button type="button" class="fs-auto" data-auto="${escA(cle)}"${attrs ? ' ' + attrs : ''} title="${escA('Rendre la valeur calculée' + (valeurAuto != null && valeurAuto !== '' ? ' : ' + valeurAuto : ''))}">↺${valeurAuto != null && valeurAuto !== '' ? ' <span>' + esc(valeurAuto) + '</span>' : ''}</button>`;
 
 /* CHANGER UNE LIAISON, d'où qu'on la change (sa fiche, le récapitulatif) : une entrée d'historique (Ctrl+Z), la vérité
    change, le plan et le contrôle suivent. Ce que la liaison portait avant la première retouche de ce champ (le retest,
@@ -138,6 +138,7 @@ const AIDES_PROVISOIRES = {
   calibre: ['Le calibre', 'L’outil essaie chaque calibre de la gamme du part number, du plus petit au plus grand, et garde le premier dont la courbe tient tout le profil de charge, avec la marge des hypothèses. Les courbes viennent de la norme de la famille du disjoncteur.'],
   courbe: ['La courbe de déclenchement', 'Le temps que met le disjoncteur à couper selon le courant, à chaque température de la norme. Un point du profil à gauche des courbes ne déclenche pas.'],
   profil: ['Le profil de charge', 'Ce que l’équipement tire : le démarrage, la transition, le permanent, et les états qu’on ajoute. Chaque état se juge sur la courbe.'],
+  rail: ['Le rail', 'Le profilé qui porte tous les modules de la barrette, coupé à leur longueur. Sa référence vient de la table Accessoires de la norme ; quand la norme ne le nomme pas, celle du catalogue du fabricant.'],
   module: ['Le module', 'L’outil prend le plus petit module de la norme qui loge tous les potentiels de la barrette, chaque câble dans un contact qui admet sa gauge. Les modules viennent de la bible des barrettes.'],
   arrangement: ['L’arrangement', 'Celui que le part number nomme, sinon le plus petit arrangement de la norme qui a toutes les bornes et dont les contacts admettent les gauges des câbles.'],
   prise: ['L’arrangement de la prise', 'Le plus petit arrangement de la norme qui loge tous les contacts de la prise, côté fiche et côté embase, avec les gauges de leurs câbles.'],

@@ -11,13 +11,17 @@
 .fs-badge svg.dj-badge-etoile{width:12px;height:12px;stroke:none}
 
 /* ── 1. le calibre retenu, en grand, et son verdict en deux mots : passe (vert) ou ne passe pas (rouge) ── */
-.dj-heros{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 18px;padding:14px 16px;border-radius:var(--r-2);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line)}
+.dj-heros{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 18px;padding:14px 16px;border-radius:var(--r-2);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line)}
 .dj-heros.ok{background:color-mix(in srgb,var(--ok-soft) 55%,var(--s-surface));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ok) 22%,transparent)}
 .dj-heros.ko{background:color-mix(in srgb,var(--ko-soft) 60%,var(--s-surface));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ko) 24%,transparent)}
 .dj-h-valeur{display:flex;align-items:flex-start;gap:2px}
 /* la valeur et son unité dans la même police, la même graisse, la même encre : l'unité seulement plus petite */
 .dj-h-cal{display:inline-flex;align-items:baseline;gap:4px;font:600 42px/1 var(--sans);letter-spacing:-.02em;color:var(--t-1);font-variant-numeric:tabular-nums}
-.dj-h-u{font:inherit;font-size:.6em;letter-spacing:0;color:inherit}
+/* l'unité à la taille du nombre (le lecteur : « mets-moi le A de ampère à la même taille ») */
+.dj-h-u{font:inherit;letter-spacing:0;color:inherit}
+/* ne passe pas : dit en clair, à droite du calibre (pas de pastille quand il passe : « on comprend que ça passe ») */
+.dj-h-ko{font:600 var(--f-13)/1.3 var(--sans);color:var(--ko);text-align:right}
+.dj-resume{font-weight:700;color:var(--t-1);font-variant-numeric:tabular-nums}
 .dj-h-valeur .fi-q{margin:2px 0 0 4px}
 .dj-verdict-pastille{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 16px 0 12px;border-radius:999px;font:700 var(--f-14)/1 var(--sans);white-space:nowrap;color:var(--t-2);background:var(--s-surface);box-shadow:inset 0 0 0 1px var(--s-line)}
 .dj-verdict-pastille svg.ico{width:17px;height:17px;stroke-width:2.4}
@@ -56,15 +60,16 @@
 .dj-g-titre b{font-weight:700;color:var(--warn)}
 .dj-grossir .btn{flex:none;height:30px;padding:0 12px;font-size:var(--f-12)}
 .dj-g-liste{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
-.dj-g-ligne{display:grid;grid-template-columns:minmax(58px,auto) minmax(0,1fr) auto;align-items:center;column-gap:14px;row-gap:1px;padding:6px 8px;border-radius:var(--r-1);background:color-mix(in srgb,var(--s-surface) 70%,transparent);cursor:pointer;transition:background var(--rapide)}
+.dj-g-ligne{display:grid;grid-template-columns:minmax(58px,auto) minmax(0,1fr);align-items:center;column-gap:14px;row-gap:1px;padding:6px 8px;border-radius:var(--r-1);background:color-mix(in srgb,var(--s-surface) 70%,transparent);cursor:pointer;transition:background var(--rapide)}
 .dj-g-ligne:hover,.dj-g-ligne.vise{background:var(--s-surface)}
 .dj-g-ligne:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-.dj-g-num{font:600 var(--f-12) var(--mono);color:var(--t-1);white-space:nowrap}
+.dj-g-num{justify-self:start;font:600 var(--f-12) var(--mono);color:var(--t-1);white-space:nowrap}
+/* un câble sans numéro : il manque une information — en ambre, pour qu'on le voie */
+.dj-g-num.manque{padding:2px 7px;border-radius:999px;background:var(--s-surface);box-shadow:inset 0 0 0 1px var(--warn);color:var(--warn);font:700 var(--f-11) var(--sans)}
 .dj-g-de-a{display:inline-flex;align-items:center;gap:6px;min-width:0;font:500 var(--f-12) var(--mono);color:var(--t-2);white-space:nowrap}
 .dj-g-de-a b.id{font-weight:700;color:var(--t-1)}
 .dj-g-de-a b.manque{color:var(--ko)}
 .dj-g-de-a svg.ico,.dj-g-ct svg.ico{width:12px;height:12px;color:var(--t-2);flex:none}
-.dj-g-masse{justify-self:end;font:600 var(--f-12) var(--sans);color:var(--warn);font-variant-numeric:tabular-nums;white-space:nowrap}
 .dj-g-ct{grid-column:2/-1;display:inline-flex;align-items:center;gap:5px;font:500 var(--f-11) var(--sans);color:var(--t-2)}
 
 /* la courbe déborde un peu dans la marge de la carte : le papier garde la largeur qu'il avait (le dessin se fait à sa

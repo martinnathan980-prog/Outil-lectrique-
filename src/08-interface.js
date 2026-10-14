@@ -28,7 +28,7 @@
    Les commandes sont dans la barre de gauche (le rail) ; le menu ⋮, en haut
    à droite, porte en peu de lignes ce qu'on fait une fois (la bibliothèque,
    ouvrir, vos fichiers, exporter…) et dit ce qui est ouvert.
-   On arrive par la BIBLIOTHÈQUE (08-bibliotheque) : une install, ses plans ;
+   On arrive par la BIBLIOTHÈQUE (08-bibliotheque) : une installation, ses plans ;
    le plan qu'on ouvre est le contrat sur la table (app.planId).
    =========================================================================== */
 'use strict';
@@ -503,7 +503,7 @@ function peindre() {
   // pas de dessin : la table vide — ou, si le folio se place au loin, l'attente à sa place
   if (!app.dessin) { svg.innerHTML = ''; appliquerVue(); montrerAttente(); return; }
   svg.innerHTML = styleDessin() + `<g id="scene" transform="translate(${app.vue.tx},${app.vue.ty}) scale(${app.vue.s})">`
-    + sceneSvg(app.dessin, app.contrat.cartouche, folioCourant(), designationDe, app.choisi, n => ({ calibre: calibreNominal(n) })) + '</g>';
+    + sceneSvg(app.dessin, app.contrat.cartouche, folioCourant(), designationDe, app.choisi, n => ({ calibre: calibreAuFolio(n) })) + '</g>';
   appliquerVue(); montrerAttente();
 }
 function redessiner() { calculer(); peindre(); synchroniser(); rallumer(); }
@@ -1693,7 +1693,7 @@ function relire() { try { const j = localStorage.getItem(CLE_CONTRAT); if (!j) r
    l'autre) ; le cartouche repart à neuf, sauf qui dessine et à quelle échelle, qui sont ceux du bureau. `relire()` rend
    les choix du contrat gardé ; Ctrl+Z rend ceux d'avant le chargement.
    LE PLAN qu'il devient (08-bibliotheque, `planPour`) : `o.planId` un plan nommé (l'exemple, un plan qu'on ouvre),
-   `o.nouveau` un plan neuf de l'install ouverte (un fichier ouvert) ; sans rien, le plan sur la table (le collage qui le
+   `o.nouveau` un plan neuf de l'installation ouverte (un fichier ouvert) ; sans rien, le plan sur la table (le collage qui le
    remplace) — ou un plan neuf s'il n'y en a pas. La bibliothèque s'efface : le contrat est sur la table. */
 function contratNeuf() { const d = app.contrat.cartouche, c = nouveauContrat(); c.cartouche.auteur = d.auteur; c.cartouche.echelle = d.echelle; return c; }
 function chargerContrat(liaisons, quoi, nom, o) { sauverMaintenant(); histPush(quoi || 'chargement d’un contrat'); app.contrat = contratNeuf();
@@ -1729,7 +1729,7 @@ const nomAscii = nom => String(nom).normalize('NFD').replace(/[̀-ͯ]/g, '').rep
 const nomContrat = () => nomAscii((app.nom || 'contrat').replace(/\.[^.]+$/, '')) || 'contrat';
 function telecharger(blob, nom) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nomAscii(nom);
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); }
-function svgDuFolio() { return app.dessin ? svgAutonome(app.dessin, app.contrat.cartouche, folioCourant(), designationDe, null, n => ({ calibre: calibreNominal(n) })) : null; }
+function svgDuFolio() { return app.dessin ? svgAutonome(app.dessin, app.contrat.cartouche, folioCourant(), designationDe, null, n => ({ calibre: calibreAuFolio(n) })) : null; }
 /* Le suivi : tout ce que le contrat pose (barrettes, prises, connecteurs),
    en CSV, pour le garder d'un contrat à l'autre. */
 function exporterSuivi() { const L = suiviDuContrat(verite(), app.bible, app.nom || 'contrat', n => app.contrat.designations.get(n) || '');
@@ -1745,7 +1745,7 @@ function exporterPNG() { const S = svgDuFolio(); if (!S) return;
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(S.txt); }
 /* Imprimer : la planche seule, sur fond blanc, sur un A3 paysage — la
    feuille de tous les folios. */
-function imprimer() { if (!app.dessin) return; const S = svgAutonome(app.dessin, app.contrat.cartouche, folioCourant(), designationDe, '#ffffff', n => ({ calibre: calibreNominal(n) }));
+function imprimer() { if (!app.dessin) return; const S = svgAutonome(app.dessin, app.contrat.cartouche, folioCourant(), designationDe, '#ffffff', n => ({ calibre: calibreAuFolio(n) }));
   $('printroot').innerHTML = `<style>@page{size:A3 landscape;margin:8mm}</style>` + S.txt.replace(/^<\?xml[^>]*\?>\s*/, ''); window.print(); }
 
 /* ---- ce que le menu et le rail affichent ------------------------------ */
@@ -1808,7 +1808,7 @@ function lierPanneau() {
   $('fichier-bible').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) importerBible(f); e.target.value = ''; });
   o('btnBase', basculerBase); o('btnIndex', basculerIndex); o('btnCherche', () => { if (rechercheOuverte()) fermerRecherche(); else ouvrirRecherche(); });
   o('btnLiaison', nouvelleLiaison); o('btnBible', basculerBible);
-  // le menu (page.html) : la bibliothèque (l'entrée principale), ouvrir un retest (il devient un plan de l'install ouverte),
+  // le menu (page.html) : la bibliothèque (l'entrée principale), ouvrir un retest (il devient un plan de l'installation ouverte),
   // vos fichiers (la base des contrats déjà faits y a sa carte), le récapitulatif, la nomenclature ; Exporter (SVG, PNG,
   // imprimer, le suivi) ; Plus (coller, l'exemple, la bible, les normes, les hypothèses, le cartouche). Ce qui porte sur le
   // plan le remet sur la table quand la bibliothèque le cache (08-bibliotheque, `surLePlan`).

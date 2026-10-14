@@ -1,11 +1,11 @@
 <div id="app">
   <!-- LA BARRE DU HAUT : la marque, la recherche, le menu — rien d'autre (le lecteur : le contrat, ses comptes et son
        état « ne servent à rien » ici ; ils sont dans le menu, et l'état sur le bouton des repères du rail). La marque mène
-       à la bibliothèque ; à côté, un fil discret dit où l'on est — l'install (un clic : ses plans), le plan —, rien de plus
+       à la bibliothèque ; à côté, un fil discret dit où l'on est — l'installation (un clic : ses plans), le plan —, rien de plus
        (08-bibliotheque, `synchroniserFil`). Sa hauteur est le jeton --entete : le plan commence dessous. -->
   <header id="entete" aria-label="Recherche et menu">
     <div class="en-contrat">
-      <button type="button" class="en-volta" id="en-biblio" aria-label="Volta : la bibliothèque des installs">
+      <button type="button" class="en-volta" id="en-biblio" aria-label="Volta : la bibliothèque des installations">
         <span class="en-marque" aria-hidden="true">
           <svg viewBox="0 0 24 24"><path d="M5.5 7 12 17.5 18.5 7"/><circle cx="5.5" cy="5.6" r="1.9"/><circle cx="18.5" cy="5.6" r="1.9"/><circle cx="12" cy="18.6" r="1.25" fill="currentColor" stroke="none"/></svg>
         </span>
@@ -13,7 +13,7 @@
         <span class="bulle" aria-hidden="true">Bibliothèque</span>
       </button>
       <nav class="en-fil" id="en-fil" aria-label="Où l’on est" hidden>
-        <button type="button" class="en-install" id="en-install" title="Les plans de cette install"></button>
+        <button type="button" class="en-install" id="en-install" title="Les plans de cette installation"></button>
         <span class="en-plan" id="en-plan"></span>
       </nav>
     </div>
@@ -38,7 +38,7 @@
         <div id="menu" class="menu" hidden role="menu" aria-label="Menu">
           <!-- LE MENU tient en peu de lignes (le lecteur : « il y a tellement de choses qu'on n'en utilise que 10-20 % »).
                En tête, ce qui est ouvert et son enregistrement : à lire, pas à presser. Puis l'essentiel — la bibliothèque
-               (l'entrée principale : les installs et leurs plans), ouvrir un retest, vos fichiers (où l'on dépose AUSSI la
+               (l'entrée principale : les installations et leurs plans), ouvrir un retest, vos fichiers (où l'on dépose AUSSI la
                base des contrats déjà faits), le récapitulatif, la nomenclature —, et deux sous-menus qui s'ouvrent EN PLACE
                (le menu ne s'élargit jamais) : Exporter, Plus. Chaque ligne porte sa bulle courte (data-aide), lue à gauche du
                menu, au survol ou au clavier (08-menu, `lierBullesDuMenu`). Au clavier : ↑ ↓, Entrée, → ouvre un sous-menu,
@@ -46,8 +46,8 @@
           <div class="menu-panneau" id="mp-principal" role="none">
             <div class="ctx"><div id="ctx-nom">—</div><div id="ctx-txt"></div><div id="ctx-sauve" class="sauve"></div></div>
             <div class="menu-bloc" role="group" aria-label="Les plans">
-              <button role="menuitem" data-act="bibliotheque" class="menu-2l" data-aide="Vos installs et leurs plans : on choisit l’install, puis le plan à ouvrir. Tout reste dans ce navigateur."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span class="menu-l">Bibliothèque<small id="mn-biblio">installs · plans</small></span></button>
-              <button role="menuitem" data-act="ouvrir" data-aide="Un retest Excel ou CSV, une ligne par fil (Device1, Pin1, Device2, Pin2 au moins). Il devient un plan de l’install ouverte ; Ctrl+Z revient en arrière."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M12 18v-6M9.5 14.5 12 12l2.5 2.5"/></svg><span class="menu-l">Ouvrir un retest…</span><span class="raccourci">Ctrl+O</span></button>
+              <button role="menuitem" data-act="bibliotheque" class="menu-2l" data-aide="Vos installations et leurs plans : on choisit l’installation, puis le plan à ouvrir. Tout reste dans ce navigateur."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg><span class="menu-l">Bibliothèque<small id="mn-biblio">installations · plans</small></span></button>
+              <button role="menuitem" data-act="ouvrir" data-aide="Un retest Excel ou CSV, une ligne par fil (Device1, Pin1, Device2, Pin2 au moins). Il devient un plan de l’installation ouverte ; Ctrl+Z revient en arrière."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M12 18v-6M9.5 14.5 12 12l2.5 2.5"/></svg><span class="menu-l">Ouvrir un retest…</span><span class="raccourci">Ctrl+O</span></button>
               <button role="menuitem" data-act="fichiers" class="menu-2l" data-aide="Où déposer chaque fichier : vos retests (des plans), la base des contrats déjà faits (un seul Excel, Harness rempli), la bible, les normes."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H9l2 2h8.5A1.5 1.5 0 0 1 21 9.5v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg><span class="menu-l">Vos fichiers…<small>retests · contrats déjà faits · bible · normes</small></span></button>
             </div>
             <div class="menu-bloc" role="group" aria-label="Lire et sortir">
@@ -101,7 +101,7 @@
     <div id="vide" class="vide" hidden>
       <div class="vd-carte" role="note" aria-labelledby="vd-titre">
         <h2 id="vd-titre">Ce plan est vide</h2>
-        <p>Collez-y quelques lignes, ou ouvrez un retest : il deviendra un plan de l’install.</p>
+        <p>Collez-y quelques lignes, ou ouvrez un retest : il deviendra un plan de l’installation.</p>
         <button type="button" class="vd-reprendre" id="vd-reprendre" hidden>Reprendre</button>
         <div class="vd-actions"><button class="btn cuivre" id="vd-coller">Coller des lignes</button><button class="btn papier" id="vd-ouvrir">Ouvrir un retest…</button><button class="btn lien" id="vd-bibliotheque">La bibliothèque</button></div>
       </div>
@@ -180,12 +180,12 @@
     </span>
   </nav>
 
-  <!-- LA BIBLIOTHÈQUE : l'ouverture de Volta, sur la table noire. Les installs (une installation : telle antenne, tel
-       cockpit…) et, dans chacune, ses plans (un plan = un retest) ; on choisit l'install, puis le plan, qui s'ouvre sur la
+  <!-- LA BIBLIOTHÈQUE : l'ouverture de Volta, sur la table noire. Les installations (une installation : telle antenne, tel
+       cockpit…) et, dans chacune, ses plans (un plan = un retest) ; on choisit l'installation, puis le plan, qui s'ouvre sur la
        table. Elle couvre la table, le rail et les folios (le plan reste dessous, tel qu'on l'a laissé) ; les documents (vos
        fichiers, la bible, les normes) s'ouvrent à côté d'elle. 08-bibliotheque écrit tout (`rendreBibliotheque`) ; un
        fichier déposé ici devient un plan (data-depot). -->
-  <section id="bibliotheque" class="biblio" data-depot="plans" aria-label="La bibliothèque des installs">
+  <section id="bibliotheque" class="biblio" data-depot="plans" aria-label="La bibliothèque des installations">
     <div class="bi-page" id="bi-page"></div>
   </section>
 

@@ -57,19 +57,38 @@ function contactDuPlan(l) { const xs = [];
 /* Les disjoncteurs VOISINS d'un repère : ceux où aboutit un chemin de fils depuis lui (bus → sous-bus) ; leur calibre
    nominal (écrit, sinon le part number) sert à la sélectivité 2:1 — sans passer par l'idéal, qui dépendrait du nôtre. */
 const calibreNominal = nom => { const p = chargeDe(nom); if (p && p.calibre > 0) return p.calibre; const f = familleDuPn(pnDuRepere(nom), app.norme); return f ? f.calibre : null; };
-const disjoncteursVoisins = nom => [...new Set(cheminsDepuis(verite(), nom).map(ch => ch.bout[0]).filter(r => r && r !== nom && estDisjoncteur(r)))].map(r => ({ nom: r, calibre: calibreNominal(r) }));
-/* Le calibre RETENU : celui qu'on a écrit à la main, sinon celui du part number (MS3320-10 → 10 A, si la famille est un
-   disjoncteur), sinon le meilleur que le moteur trouve. Rend le verdict complet (09 bis, jugé avec ses fils et ses
-   voisins), le profil, la famille du part number, d'où vient le calibre, et ses fils jugés. */
-function disjonctionDe(nom) { const profil = chargeDe(nom), ecrit = profil && profil.calibre > 0 ? profil.calibre : null, famille = familleDuPn(pnDuRepere(nom), app.norme), pn = famille ? famille.calibre : null, voisins = disjoncteursVoisins(nom);
+/* Le calibre que le FOLIO écrit à côté du symbole : le retenu (l'automatique d'office, comme la fiche — le lecteur : « commence
+   directement par l'automatique »), sinon, si le moteur ne sait pas trancher, le nominal. */
+const calibreAuFolio = nom => { try { const d = disjonctionDe(nom); return d && d.calibre > 0 ? d.calibre : calibreNominal(nom); } catch (e) { return calibreNominal(nom); } };
+/* Le calibre d'un VOISIN, pour la sélectivité : celui que l'outil lui retient (l'automatique, comme sa fiche et son folio)
+   — jugé sur un seul niveau : ses propres voisins, eux, comptent pour leur calibre nominal (pas de ricochet sans fin). */
+let VOISINS_NOMINAUX = 0;
+const calibreDuVoisin = r => { if (VOISINS_NOMINAUX) return calibreNominal(r); VOISINS_NOMINAUX++;
+  try { const d = disjonctionDe(r); return d && d.calibre > 0 ? d.calibre : calibreNominal(r); } catch (_) { return calibreNominal(r); } finally { VOISINS_NOMINAUX--; } };
+const disjoncteursVoisins = nom => [...new Set(cheminsDepuis(verite(), nom).map(ch => ch.bout[0]).filter(r => r && r !== nom && estDisjoncteur(r)))].map(r => ({ nom: r, calibre: calibreDuVoisin(r) }));
+/* Le calibre RETENU (le lecteur, version 62 : « commence directement par l'automatique — mais uniquement le calibre qui
+   passe, en tout premier lieu ») : celui qu'on a choisi à la main (écrit au profil, ou le part number changé ici),
+   sinon LE MEILLEUR que le moteur trouve — le plus petit de la gamme qui passe —, sinon (aucun ne passe, ou pas de profil)
+   celui du part number du retest. Le part number du retest reste lu (`pn`) : le contrôle dit quand il diffère. Rend le
+   verdict complet (09 bis, jugé avec ses fils et ses voisins), le profil, la famille du part number, d'où vient le
+   calibre, et ses fils jugés. */
+// le part number d'un disjoncteur changé ici (le calibre choisi à la main dans la gamme le réécrit, le retest gardé dans `avant`)
+const pnChangeIci = nom => verite().some(l => [['de', 'pnDe'], ['vers', 'pnVers']].some(([b, ch]) => l[b] === nom && l.avant && ch in l.avant && l.avant[ch] !== (l[ch] == null ? null : l[ch])));
+function disjonctionDe(nom) { const profil = chargeDe(nom), ecrit0 = profil && profil.calibre > 0 ? profil.calibre : null, famille = familleDuPn(pnDuRepere(nom), app.norme), pn = famille ? famille.calibre : null, voisins = disjoncteursVoisins(nom);
+  // à la main : le calibre écrit, ou celui du part number changé ici
+  const ecrit = ecrit0 || (pn && pnChangeIci(nom) ? pn : null);
   // la famille de courbes : celle que la famille du part number dit (table Familles de disjoncteurs), sinon celle par défaut (la feuille du lecteur)
   const courbe = famille && famille.courbe ? famille.courbe : '', hyp = { ...(app.simu || HYPOTHESES), courbe };
   // la famille du part number donne au moteur son catalogue (la gamme), sa calibration (ce qu'il garantit) et le part number du meilleur
   const contexte = { fils: filsDuDisjoncteur(nom), hyp, autres: voisins.map(v => v.calibre).filter(c => c > 0), famille, pn: pnDuRepere(nom) };
   let d = verdictDisjonction(app.norme, courbe, ecrit || pn || 0, profil, contexte);
-  const calibre = ecrit || pn || d.calibreIdeal || null; if (calibre && calibre !== d.calibre) d = verdictDisjonction(app.norme, courbe, calibre, profil, contexte);
+  // le meilleur, s'il PASSE (le lecteur : « si ça touche la courbe, c'est mort ») : un meilleur « serré » ne passe pas
+  const m0 = d.meilleur || {}, passe = !d.sansProfil && m0.calibre && !m0.serre ? m0.calibre : null;
+  const calibre = ecrit || passe || pn || d.calibreIdeal || null; if (calibre && calibre !== d.calibre) d = verdictDisjonction(app.norme, courbe, calibre, profil, contexte);
   const chutePropre = chuteDuDisjoncteur(app.norme, famille, calibre);
-  return { ...d, profil, ecrit, pn, famille, courbe, chutePropre, voisins, contexte, origine: ecrit ? 'main' : pn ? 'pn' : calibre ? 'ideal' : '', fils: protectionDesFils(app.norme, calibre, profil, contexte.fils, hyp) }; }
+  // le part number du retest jugé à son tour (passe-t-il ?) quand l'outil en retient un autre
+  const gPn = pn && pn !== calibre ? (d.gamme || []).find(g => g.calibre === pn) || null : null;
+  return { ...d, profil, ecrit, pn, gPn, famille, courbe, chutePropre, voisins, contexte, passe, origine: ecrit ? 'main' : calibre && calibre === passe ? 'ideal' : pn && calibre === pn ? 'pn' : calibre ? 'ideal' : '', fils: protectionDesFils(app.norme, calibre, profil, contexte.fils, hyp) }; }
 const calibreDe = nom => disjonctionDe(nom).calibre;
 /* LE MEILLEUR CALIBRE d'un disjoncteur, avec ses fils (09 bis, `meilleurDe`) : { calibre, pn, famille, catalogue, pourquoi,
    marge, filsAChanger: [{ cable, actuel, propose, raison, … }], contactsTouches: [{ cable, actuel, propose, raison, … }],
@@ -116,6 +135,9 @@ function controleDisjonction(nom) { const d = disjonctionDe(nom), out = [], pnMo
     else if (d.calibreIdeal && d.calibre !== d.calibreIdeal) out.push({ niveau: d.calibre < d.calibreIdeal && !d.avecMarge ? 'ko' : 'att', texte: d.calibre > d.calibreIdeal ? `${amperes(d.calibre)}${pnMot} : un ${amperes(d.calibreIdeal)} suffirait`
       : !d.avecMarge ? `${amperes(d.calibre)}${pnMot} ne passe pas : il touche la courbe (${d.somme > d.marges.fraction ? motFraction(d.somme) + ' du temps de déclenchement consommé' : 'sans ' + nombre(d.marges.marge) + ' % de marge de courant'}) : l’idéal est un ${amperes(d.calibreIdeal)}`
       : `${amperes(d.calibre)}${pnMot} tient ; l’idéal est un ${amperes(d.calibreIdeal)} (sélectivité avec le voisin)` }); }
+  // le retest porte un autre calibre que celui que l'outil retient : il ne passe pas (à changer), ou il est plus gros qu'il ne faut
+  if (d.gPn && d.origine !== 'main' && !d.sansProfil && !d.sansCourbe && d.calibre > 0) { const ok = d.gPn.valide === true && !!d.gPn.marge, m = d.meilleur || {};
+    out.push({ niveau: ok ? 'att' : 'ko', texte: ok ? `le retest porte un ${amperes(d.pn)} (${pnDuRepere(nom)}) : ${d.calibre < d.pn ? 'le ' + amperes(d.calibre) + ' suffit' : 'l’outil retient le ' + amperes(d.calibre) + (d.voisins.some(v => v.calibre > 0 && Math.max(v.calibre, d.pn) < SELECTIVITE * Math.min(v.calibre, d.pn) - 1e-9) ? ' (sélectivité avec le voisin)' : '')}` : `le retest porte un ${amperes(d.pn)} (${pnDuRepere(nom)}) qui ne passe pas : l’outil retient le ${amperes(d.calibre)}${m.pn && m.calibre === d.calibre ? ' (' + m.pn + ')' : ''}` }); }
   d.voisins.forEach(v => { if (v.calibre > 0 && d.calibre > 0 && Math.max(v.calibre, d.calibre) < SELECTIVITE * Math.min(v.calibre, d.calibre) - 1e-9) out.push({ niveau: 'att', texte: `sélectivité avec ${v.nom} (${amperes(v.calibre)}) : l’amont devrait faire au moins le double de l’aval` }); });
   d.fils.forEach(f => { const nomF = (f.cable || 'câble sans numéro') + (f.type ? ' (' + f.type + ')' : '');
     if (f.verdict === 'fil') out.push({ niveau: 'ko', texte: `${nomF} : ${f.pire.nom} ${amperes(f.pire.i)}${f.pire.t === Infinity ? '' : ' / ' + secondes(f.pire.t)} > ${amperes(f.pire.admise)} admis ${pourPalier(f.pire.palier)}${motFacteur(f.pire.palier === Infinity ? f.facteur : f.facteurCourt)}` });
@@ -133,21 +155,24 @@ function poserChamp(l, champ, valeur) { if (!(l.avant && champ in l.avant)) l.av
    s'il garde un état supprimé (`null` à la place du démarrage, de la transition ou du permanent : l'état n'est plus là). */
 function poserCharge(nom, c) { const vide = !(c.calibre > 0) && !['dem', 'trans', 'perm'].some(k => (c[k] && c[k].i != null) || c[k] === null) && !(c.plus && c.plus.length);
   if (vide) app.contrat.charges.delete(nom); else app.contrat.charges.set(nom, c); }
-/* RETENIR UN CALIBRE : là où l'outil le lit. Un disjoncteur dont le part number dit la famille change de part number
-   (MS3320-10 → MS3320-15, sur chacune de ses liaisons, le retest gardé dans `avant`) ; sans famille, le calibre s'écrit
-   au profil de charge. Une entrée d'historique : Ctrl+Z le défait. */
-function retenirCalibre(nom, cal) { const d = disjonctionDe(nom), pn = pnDuRepere(nom), F = d.famille, nouveau = F && pn ? pnAvecCalibre(pn, F, cal) : null;
-  if (!(cal > 0) || (nouveau ? nouveau === pn && !d.ecrit : d.ecrit === cal)) return false;
-  histPush('calibre de ' + nom + ' : ' + amperes(cal)); const c = { ...(chargeDe(nom) || {}) };
-  if (nouveau) { verite().forEach(l => [['de', 'pnDe'], ['vers', 'pnVers']].forEach(([b, ch]) => { if (l[b] === nom && l[ch]) poserChamp(l, ch, nouveau); })); c.calibre = null; }
-  else c.calibre = cal;
-  poserCharge(nom, c); apresEdition(); dire(nom + ' : ' + amperes(cal) + ' retenu' + (nouveau ? ' (' + nouveau + ')' : '') + '. Ctrl+Z le défait.'); return true; }
-/* « ↺ » : rendre ce que portait le retest — le part number d'origine sur chaque liaison, et plus de calibre écrit ;
-   le calibre redevient celui du part number, sinon le meilleur que l'outil trouve. */
-function rendreCalibre(nom) { histPush('calibre de ' + nom + ' : retour');
+/* RETENIR UN CALIBRE À LA MAIN : il s'écrit au profil de charge, et un disjoncteur dont le part number dit la famille
+   change aussi de part number (MS3320-10 → MS3320-15, sur chacune de ses liaisons, le retest gardé dans `avant`).
+   Retenir l'automatique (le meilleur qui passe), c'est rendre le choix à l'outil. Une entrée d'historique : Ctrl+Z le
+   défait. */
+function retenirCalibre(nom, cal) { const d = disjonctionDe(nom); if (!(cal > 0)) return false;
+  if (d.passe && cal === d.passe && !d.ecrit) return false;
+  if (d.passe && cal === d.passe) { rendreCalibre(nom); return true; }
+  if (d.ecrit === cal) return false;
+  const pn = pnDuRepere(nom), F = d.famille, nouveau = F && pn ? pnAvecCalibre(pn, F, cal) : null;
+  histPush('calibre de ' + nom + ' : ' + amperes(cal)); const c = { ...(chargeDe(nom) || {}), calibre: cal };
+  if (nouveau && nouveau !== pn) verite().forEach(l => [['de', 'pnDe'], ['vers', 'pnVers']].forEach(([b, ch]) => { if (l[b] === nom && l[ch]) poserChamp(l, ch, nouveau); }));
+  poserCharge(nom, c); apresEdition(); dire(nom + ' : ' + amperes(cal) + ' retenu à la main' + (nouveau ? ' (' + nouveau + ')' : '') + '. « Automatique » rend le choix de l’outil.'); return true; }
+/* « Automatique » : rendre le choix à l'outil — le part number du retest sur chaque liaison, plus de calibre écrit ; le
+   calibre redevient le meilleur qui passe (sinon celui du part number). */
+function rendreCalibre(nom) { histPush('calibre de ' + nom + ' : automatique');
   verite().forEach(l => [['de', 'pnDe'], ['vers', 'pnVers']].forEach(([b, ch]) => { if (l[b] === nom && l.avant && ch in l.avant) poserChamp(l, ch, l.avant[ch]); }));
   const c = chargeDe(nom); if (c && c.calibre != null) poserCharge(nom, { ...c, calibre: null });
-  apresEdition(); const d = disjonctionDe(nom); dire(nom + ' : ' + (d.calibre ? amperes(d.calibre) : 'calibre') + ' rendu.'); }
+  apresEdition(); const d = disjonctionDe(nom); dire(nom + ' : automatique' + (d.calibre ? ', ' + amperes(d.calibre) : '') + '.'); }
 /* CHANGER LES FILS que le meilleur calibre demande : chacun passe au câble proposé (la jauge qui le suit), le fichier gardé
    dans `avant` ; une seule entrée d'historique pour le lot. */
 function filsDuMeilleur(d) { const fs = d.contexte.fils, memes = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -177,8 +202,9 @@ function sectionDisjoncteur(nom, d, o, probs) { d = d || disjonctionDe(nom); o =
     : `<button type="button" class="fi-lien dj-plus" id="dj-plus" title="Un état de plus : un courant, une durée">${ico('plus')}État</button>`;
   const ajouts = supprimes.length ? listeChoix(cleP, `<div class="fi-puces">${supprimes.map(k => `<button type="button" class="fi-chip" data-dj-ajout="${k}">${esc(majuscule(NOMS_PHASES[k] || k))}</button>`).join('')}<button type="button" class="fi-chip" data-dj-ajout="plus">Autre état</button></div>`, { titre: 'Ajouter un état' }) : '';
   const profil = part('profil', 'Profil de charge', tableauProfil(d) + ajouts, plus, 'profil');
-  // ni résumé ni pastille (le lecteur : « 10 A retenu, meilleur 15 A, ça sert à rien ; le petit 1 en jaune, ça sert à rien »)
-  return { cle: 'disjoncteur', contenu: tete + courbe + profil }; }
+  // pas de pastille (le lecteur : « le petit 1 en jaune, ça sert à rien ») ; pliée, la carte dit le calibre — et s'il ne passe pas
+  const resume = cal ? `<b class="dj-resume">${esc(nombre(Math.round(cal * 100) / 100))} A</b>${v.etat === 'ko' ? ' · <span class="fi-ko-t">ne passe pas</span>' : ''}` : '';
+  return { cle: 'disjoncteur', resume, contenu: tete + courbe + profil }; }
 // ce que le « ? » de la courbe et du profil lit (08-explications) : la famille de courbes ; le permanent, la pointe, la part consommée
 function contexteAide(cle, d) { if (cle === 'courbe') return { famille: d.famille || d.courbe || '' };
   const perm = (d.points || []).find(p => p.t === Infinity), pointe = (d.points || []).find(p => p.t !== Infinity && p.i > 0);
@@ -193,31 +219,33 @@ function verdictDuRetenu(d) { const cal = d.calibre, g = (d.gamme || []).find(x 
   if (valide === false) return { etat: 'ko', mot: 'Ne passe pas', raison: 'Il déclenche.' };
   if (!marge) return { etat: 'ko', mot: 'Ne passe pas', raison: 'Il touche la courbe : sans la marge.' };
   return { etat: 'ok', mot: 'Passe', raison: 'Il ne déclenche pas, avec la marge.' }; }
-/* LE CALIBRE, en grand (le lecteur : « le calibre qui marche, c'est lequel ? le meilleur, c'est lequel ? — le reste, ça
-   m'intéresse pas ») : le retenu et son verdict, passe ou ne passe pas ; « Automatique (15 A) » retient le meilleur de la
-   gamme ; « Autre calibre » ouvre la gamme, chaque calibre de la couleur de son verdict, pour un choix à la main. Puis,
-   en une ligne, les câbles que le meilleur demande. */
-function heroCalibre(nom, d, o) { const m = d.meilleur || {}, cal = d.calibre, best = m.calibre, auto = !!best && best === cal, v = verdictDuRetenu(d);
-  const cleL = 'dj|' + nom, gamme = (d.gamme || []).map(g => { const passe = g.valide === true && !!g.marge, cls = g.valide == null ? '' : passe ? ' ok' : ' ko', mot = g.valide == null ? '' : passe ? 'passe' : 'ne passe pas';
-    return `<button type="button" class="dj-chip${cls}${g.calibre === best ? ' ideal' : ''}" data-cal="${g.calibre}" aria-pressed="${g.calibre === cal}" title="${escA(amperes(g.calibre) + (mot ? ' : ' + mot : '') + (g.calibre === best ? ' — le meilleur' : '') + (g.calibre === cal ? ' · retenu' : ' · cliquer pour le retenir à la main'))}">${g.calibre === best ? `<i class="dj-etoile" aria-hidden="true">${ico('etoile')}</i>` : ''}${esc(nombre(g.calibre))}<small>A</small></button>`; }).join('');
+/* LE CALIBRE, en grand (le lecteur, version 62 : « commence directement par l'automatique — uniquement le calibre qui
+   passe ; le A à la même taille ; passe ou passe pas, pas besoin : on comprend que ça passe ») : le calibre retenu — d'office
+   le meilleur qui passe —, l'unité à la taille du nombre, sans pastille ; teinté vert quand il passe, rouge (et dit) quand
+   il ne passe pas. « Automatique » (pressé, étoilé, quand c'est lui) rend le choix de l'outil ; « Autre calibre » ouvre
+   les calibres de la gamme QUI PASSENT, pour un choix à la main. Puis, en une carte, les câbles que le calibre demande. */
+function heroCalibre(nom, d, o) { const m = d.meilleur || {}, cal = d.calibre, best = d.passe, auto = !!best && best === cal && d.origine !== 'main', v = verdictDuRetenu(d);
+  const passants = (d.gamme || []).filter(g => g.valide === true && !!g.marge), cleL = 'dj|' + nom;
+  const gamme = passants.map(g => `<button type="button" class="dj-chip ok${g.calibre === best ? ' ideal' : ''}" data-cal="${g.calibre}" aria-pressed="${g.calibre === cal}" title="${escA(amperes(g.calibre) + (g.calibre === best ? ' — l’automatique, le plus petit qui passe' : '') + (g.calibre === cal ? ' · retenu' : ' · cliquer pour le retenir à la main'))}">${g.calibre === best ? `<i class="dj-etoile" aria-hidden="true">${ico('etoile')}</i>` : ''}${esc(nombre(g.calibre))}<small>A</small></button>`).join('');
   const actions = d.sansProfil ? `<button type="button" class="btn papier" data-dj-geste="voir-profil">Écrire le profil</button>`
-    : (best ? `<button type="button" class="btn ${auto ? 'papier dj-auto-pris' : 'cuivre'}" id="dj-retenir" data-dj-geste="retenir" data-cal="${best}"${auto ? ' aria-pressed="true"' : ''} title="${escA(phraseMeilleur(d) + (auto ? ' Il est retenu.' : ' Un clic le retient' + (m.pn ? ' (part number ' + m.pn + ', une désignation construite : à vérifier au catalogue)' : '') + ' — Ctrl+Z le défait.'))}">${auto ? ico('etoile', 'dj-auto-etoile') : ''}Automatique (${esc(amperes(best))})</button>` : '')
-      + (gamme ? boutonChanger(cleL, 'Choisir à la main un calibre de la gamme', 'Autre calibre') : '');
-  const liste = gamme ? listeChoix(cleL, `<div class="dj-chips" role="group" aria-label="Retenir un calibre de la gamme, à la main">${gamme}</div>`, { titre: 'Les calibres de la gamme', cls: 'dj-gamme-choix' }) : '';
-  const heros = `<div class="dj-heros ${v.etat || 'neutre'}"><div class="dj-h-valeur"><b class="dj-h-cal">${cal ? esc(nombre(Math.round(cal * 100) / 100)) + '<span class="dj-h-u">A</span>' : '—'}</b>${aide('calibre', { verdict: d, calibre: cal || null, origine: o.origine === 'main' ? 'main' : d.origine, meilleur: best || null })}</div>`
-    + `<span class="dj-verdict-pastille ${v.etat || 'neutre'}" title="${escA(v.raison || '')}">${v.etat === 'ok' ? ico('coche') : v.etat === 'ko' ? ico('fermer') : '<i aria-hidden="true"></i>'}${esc(v.mot)}</span></div>`;
+    : (best ? `<button type="button" class="btn ${auto ? 'papier dj-auto-pris' : 'cuivre'}" id="dj-retenir" data-dj-geste="retenir" data-cal="${best}"${auto ? ' aria-pressed="true"' : ''} title="${escA(phraseMeilleur(d) + (auto ? ' Il est retenu.' : ' Un clic rend ce choix à l’outil — Ctrl+Z le défait.') + (m.pn ? ' Part number ' + m.pn + ' : une désignation construite, à vérifier au catalogue.' : ''))}">${auto ? ico('etoile', 'dj-auto-etoile') : ''}Automatique${auto ? '' : ` (${esc(amperes(best))})`}</button>` : '')
+      + (passants.length > 1 || (passants.length && !auto) ? boutonChanger(cleL, 'Retenir à la main un autre calibre de la gamme qui passe', 'Autre calibre') : '');
+  const liste = gamme ? listeChoix(cleL, `<div class="dj-chips" role="group" aria-label="Retenir à la main un calibre qui passe">${gamme}</div>`, { titre: 'Les calibres de la gamme qui passent', cls: 'dj-gamme-choix' }) : '';
+  const ko = v.etat === 'ko' ? `<span class="dj-h-ko">${esc(!(cal > 0) || (!best && !d.sansProfil) ? 'aucun calibre de la gamme ne passe' : 'ne passe pas — ' + v.raison.replace(/\.$/, '').toLowerCase())}</span>` : '';
+  const heros = `<div class="dj-heros ${v.etat || 'neutre'}"${v.raison ? ` title="${escA(v.raison)}"` : ''}><div class="dj-h-valeur"><b class="dj-h-cal">${cal ? esc(nombre(Math.round(cal * 100) / 100)) + '<span class="dj-h-u">A</span>' : '—'}</b>${aide('calibre', { verdict: d, calibre: cal || null, origine: o.origine === 'main' ? 'main' : d.origine, meilleur: best || null })}</div>${ko}</div>`;
   return heros + (actions ? `<div class="dj-h-actions">${actions}</div>` : '') + liste + ligneCablesAGrossir(nom, d); }
 /* LES CÂBLES QUE LE MEILLEUR DEMANDE (le lecteur : « trois câbles à grossir : sur ordi on ne voit pas, les écritures se
-   chevauchent ») : une carte, toujours ouverte — en tête combien, avec quel calibre, et « Changer les câbles » ; puis une
-   ligne par câble, sur une grille qui ne se chevauche pas : son numéro, son type et celui qu'il lui faut, ce que ça pèse
-   de plus ; dessous, en petit, le contact qui change avec lui. Un clic sur une ligne ouvre le câble. Sans profil : rien. */
+   chevauchent » ; puis : « le + 7,7 g/m, on s'en fout ; des fois il y a marqué câble et pas le numéro : il manque une
+   information, il faut le faire ressortir ») : une carte, toujours ouverte — en tête combien, avec quel calibre, et
+   « Changer les câbles » ; puis une ligne par câble : son numéro (sans numéro : « sans n° », en ambre, il manque), son type
+   et celui qu'il lui faut ; dessous, en petit, le contact qui change avec lui. Un clic sur une ligne ouvre le câble. */
 function ligneCablesAGrossir(nom, d) { const m = d.meilleur || {}; if (d.sansProfil || !m.calibre) return '';
   const aChanger = filsDuMeilleur(d), proposes = aChanger.filter(p => p.x.propose); if (!aChanger.length) return '';
-  const lignes = aChanger.map(({ x, f }) => { const k = f && f.l ? cleFil(f.l) : '', dm = x.masseProposee != null && x.masseActuelle != null ? x.masseProposee - x.masseActuelle : null;
+  const lignes = aChanger.map(({ x, f }) => { const k = f && f.l ? cleFil(f.l) : '';
     const ct = (m.contactsTouches || []).find(c => c.cable === x.cable && JSON.stringify(c.bouts) === JSON.stringify(x.bouts));
     return `<li class="dj-g-ligne"${k ? ` data-i="${k}" tabindex="0" role="button"` : ''} data-bulle="${escA(majuscule(x.propose ? x.raison : x.aucune || x.raison) + (ct ? '\n' + majuscule(ct.raison) : ''))}">`
-      + `<span class="dj-g-num">${esc(x.cable || 'câble')}</span><span class="dj-g-de-a"><span class="id">${esc(x.actuel)}</span>${ico('fleche')}<b class="id${x.propose ? '' : ' manque'}">${esc(x.propose || 'aucun')}</b></span>`
-      + `<span class="dj-g-masse">${dm != null ? esc((dm >= 0 ? '+' : '−') + nombre(Math.round(Math.abs(dm) * 10) / 10) + ' g/m') : ''}</span>`
+      + (x.cable ? `<span class="dj-g-num">${esc(x.cable)}</span>` : `<span class="dj-g-num manque" title="Ce câble n’a pas de numéro dans le retest : il manque une information">sans n°</span>`)
+      + `<span class="dj-g-de-a"><span class="id">${esc(x.actuel)}</span>${ico('fleche')}<b class="id${x.propose ? '' : ' manque'}">${esc(x.propose || 'aucun')}</b></span>`
       + (ct ? `<span class="dj-g-ct">contact ${esc(ct.actuel)} ${ico('fleche')} ${esc(ct.propose)}</span>` : '') + '</li>'; }).join('');
   return `<div class="dj-grossir"><div class="dj-g-tete">${ico('alerte', 'dj-g-ico')}<span class="dj-g-titre"><b>${pluriel2(aChanger.length, 'câble')} à grossir</b> <span>avec le ${esc(amperes(m.calibre))}</span></span>`
     + (proposes.length ? `<button type="button" class="btn papier" id="dj-fils-changer" data-dj-geste="fils" title="Chaque câble passe au type proposé — une seule entrée d’historique, Ctrl+Z les rend">Changer les câbles</button>` : '') + `</div><ul class="dj-g-liste">${lignes}</ul></div>`; }

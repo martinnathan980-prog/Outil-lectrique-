@@ -36,8 +36,8 @@ function demarrer() {
   typographieVivante(); relireBible(); lierPanneau(); lierPlanche(); lierBullesDuMenu(); lierEntreesFichiers(); lierBibliotheque();
   // le tableau garde sa taille et sa portée, jamais son état ouvert : on rouvre sur le plan seul, le tableau à la demande (B)
   relireBase();
-  // le plan resté sur la table à la fermeture revient, derrière : l'outil s'ouvre sur la BIBLIOTHÈQUE (les installs, leurs
-  // plans), jamais sur un contrat qu'on n'a pas choisi — l'exemple est une install de démonstration, en dernier. Un contrat
+  // le plan resté sur la table à la fermeture revient, derrière : l'outil s'ouvre sur la BIBLIOTHÈQUE (les installations, leurs
+  // plans), jamais sur un contrat qu'on n'a pas choisi — l'exemple est une installation de démonstration, en dernier. Un contrat
   // gardé par une version d'avant la bibliothèque y est rangé dès qu'elle est lue (`chargerBibliotheque`).
   const relu = relire(); if (!relu) redessiner(); BIB.aAdopter = relu;
   montrerBibliotheque('racine'); chargerBibliotheque();

@@ -63,6 +63,7 @@ NSA937901;G16;NSA937916-16;16;16;E F G H / A B C D;A,B,C,D,E,F,G,H;17,5;27;;mass
 
 Accessoires — les références annexes de la norme et leurs équivalents Amphenol Air LB (catalogue 01/19, pages 39, 41, 44-45, 49-50, 57-58 — R3) : butées, séparateurs, blocs à tige, shunts, étiquettes, étriers
 Famille;Référence;Équivalent;Rôle;Masse;Note
+NSA937901;NSA937901RB2000;8559RB2000A (Souriau), 001101 042 10 (Amphenol, rail type I 2 m);rail profilé aluminium anodisé, 2 m, à couper à la longueur des modules — un étrier NSA937901S (Souriau 8559S) à chaque bout;;catalogue Souriau 8559 p. 184 (table de correspondance NSA 937 901 RB 2000 / 8559 RB 2000 A) ; Amphenol Air LB 05/12 p. 98
 NSA937901;NSA937901SC;001102 004 60;butée d’extrémité montée à droite (0.138-32 UNC);8,5;page 57
 NSA937901;NSA937901SD;001102 007 60;butée d’extrémité montée à gauche;8,5;page 57
 NSA937901;NSA937901P;001121 000 37;séparateur de capot (BJT);5,1;pages 44-45

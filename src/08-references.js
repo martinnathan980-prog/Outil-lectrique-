@@ -53,7 +53,7 @@ function viderCachesReferences() { REF.dessins.clear(); REF.cmp.clear(); }
 function adopterReferences(liaisons, nom) { app.references = liaisons && liaisons.length ? { nom: nom || '', liaisons, index: indexerReferences(liaisons), t: Date.now() } : null; viderCachesReferences();
   ouvrirIDB().then(db => { const st = db.transaction(IDB_REFERENCES, 'readwrite').objectStore(IDB_REFERENCES); if (app.references) st.put({ nom: app.references.nom, liaisons, t: app.references.t }, 'base'); else st.delete('base'); }).catch(() => { });
   CONTROLE.cle = null; if (app.cible) rendreFiche(); if (app.fiche && app.fiche.mode === 'bible') ficheBible(app.fiche.ref); if (typeof rendreFichiers === 'function') rendreFichiers(); suivreLaBase(); }
-// la bibliothèque dit les harness de la base qu'aucune install ne range encore
+// la bibliothèque dit les harness de la base qu'aucune installation ne range encore
 const suivreLaBase = () => { if (typeof bibliothequeOuverte === 'function' && bibliothequeOuverte() && !BIB.edition) rendreContenuBibliotheque(); };
 function relireReferences() { ouvrirIDB().then(db => { const req = db.transaction(IDB_REFERENCES).objectStore(IDB_REFERENCES).get('base');
   req.onsuccess = () => { const o = req.result; if (!o || !o.liaisons || !o.liaisons.length) return; app.references = { nom: o.nom || '', liaisons: o.liaisons.map(liaison), t: o.t || 0 }; app.references.index = indexerReferences(app.references.liaisons); viderCachesReferences();
@@ -63,7 +63,7 @@ function relireReferences() { ouvrirIDB().then(db => { const req = db.transactio
    reste : un fichier illisible ou vide, des en-têtes introuvables (ce que l'outil a lu, ce qu'il lui faut), aucune
    colonne Harness (« Sans elle, je ne sais pas séparer les machines » — et l'ouvrir comme un plan), des feuilles
    ignorées (en liste). Un dépôt réussi ramène sur la carte, avec les comptes et « Voir un équipement déjà fait ». Une
-   colonne d'install (Install, Installation, Système) range en plus chaque install et ses plans dans la bibliothèque
+   colonne d'installation (Install, Installation, Système) range en plus chaque installation et ses plans dans la bibliothèque
    (08-bibliotheque, `rangerLaBase`) ; sans elle, la bibliothèque propose de les ranger. */
 async function importerReferences(fichier) { if (!fichier) return; const nom = fichier.name || 'la base';
   dire('Lecture de « ' + nom + ' »…'); const L = await lireLeFichier(fichier); FICHIERS.base = null;
@@ -73,13 +73,13 @@ async function importerReferences(fichier) { if (!fichier) return; const nom = f
       nom + ' : je ne trouve pas les en-têtes du retest dans les 30 premières lignes.'); return; }
     if (!r.liaisons.length) { echecImport('base', { texte: `«\u00a0${esc(nom)}\u00a0» : les en-têtes du retest sont là (ligne ${r.entete}), mais aucune liaison dessous.`, liste }); return; }
     if (!r.harnais.length) { const e = trouverEnteteRetest(L.brutes), sans = !e || e.col.harness == null, G = rangerLaBase(r.liaisons, nom);
-      // sans harness, pas de comparaison ; ses installs, si elle les dit, entrent quand même dans la bibliothèque (un plan par dessin)
-      echecImport('base', { texte: `${esc(nom)} : ${sans ? 'aucune colonne <span class="id">Harness</span>' : 'la colonne <span class="id">Harness</span> est vide'}. Sans elle, je ne sais pas séparer les machines. Ajoutez-la, ou ouvrez ce fichier comme un plan.${G ? ` Ses ${esc(lies([plurielLie(G.installs, 'install'), plurielLie(G.plans, 'plan')]))} sont rangés dans la bibliothèque.` : ''}`, liste },
+      // sans harness, pas de comparaison ; ses installations, si elle les dit, entrent quand même dans la bibliothèque (un plan par dessin)
+      echecImport('base', { texte: `${esc(nom)} : ${sans ? 'aucune colonne <span class="id">Harness</span>' : 'la colonne <span class="id">Harness</span> est vide'}. Sans elle, je ne sais pas séparer les machines. Ajoutez-la, ou ouvrez ce fichier comme un plan.${G ? ` Ses ${esc(lies([plurielLie(G.installs, 'installation'), plurielLie(G.plans, 'plan')]))} sont rangés dans la bibliothèque.` : ''}`, liste },
         nom + ' : aucune colonne Harness — sans elle, je ne sais pas séparer les machines.');
       FICHIERS.base = { nom, liaisons: r.liaisons }; rendreFichiers(); return; }
     adopterReferences(r.liaisons, nom); const G = rangerLaBase(r.liaisons, nom);
     baseRecue(nom, ig.length ? { texte: 'Feuilles ignorées (pas les en-têtes du retest) :', liste: ig } : null, G); ficheFichiers('base');
-    const I = app.references.index; dire(lies([plurielLie(I.harnais.size, 'harness'), plurielLie(I.dessins.size, 'dessin'), plurielLie(r.liaisons.length, 'liaison')]) + ' gardés dans ce navigateur : les fiches disent ce qui a déjà été fait' + (G ? ', et la bibliothèque range ' + plurielLie(G.installs, 'install') + '.' : '.'));
+    const I = app.references.index; dire(lies([plurielLie(I.harnais.size, 'harness'), plurielLie(I.dessins.size, 'dessin'), plurielLie(r.liaisons.length, 'liaison')]) + ' gardés dans ce navigateur : les fiches disent ce qui a déjà été fait' + (G ? ', et la bibliothèque range ' + plurielLie(G.installs, 'installation') + '.' : '.'));
   } catch (e) { echecImport('base', { texte: `${esc(nom)} n’a pas pu être lu : ${esc(String(e && e.message || e))}.` }); } }
 const indexReferences = () => app.references && app.references.index || null;
 /* Une empreinte courte du contrat (ce que la comparaison lit) : les comparaisons gardées se périment quand il change. */
