@@ -24,14 +24,24 @@ accessoire pour quel connecteur et quel câble).
 - **Ce que j'en ai déjà tiré.** Le DH4 (ECS0844 : 0,27 kg/m, Ø 8,8 mm, −65 / +260 °C), qui n'est pas dans ton Excel.
 - **Ce qu'elle ne remplacera pas.** Les courbes des disjoncteurs, les profils de charge, les températures des zones,
   les longueurs des câbles et ta règle des 2 V : ils restent dans tes Excel et tes retests.
-- **Comment l'extraire, du plus simple au plus sûr.**
-  1. *Copier la grille.* Dans la liste (Cables and Wires, Equipments, End Fitting Rules) : tout sélectionner (Ctrl+A),
-     copier (Ctrl+C), coller dans un Excel vide. Beaucoup de grilles le permettent ; regarde si les colonnes suivent.
-  2. *L'export de SEE.* SEE Electrical Expert exporte ses listes en XLS et en XML, et son module Data Extractor fait des
-     exports sur mesure (selon votre licence et tes droits) : un clic droit sur la liste, ou un menu Exporter.
-  3. *Le référent SEE.* Derrière SEE, il y a une base de données : celui qui l'administre chez vous peut en tirer les
-     trois tables en Excel, avec toutes leurs colonnes. C'est la voie la plus propre si les deux premières échouent.
-  4. *Pas en photos.* Des milliers de lignes en photo, ce sont des erreurs de lecture et des jours de travail.
+- **Le pont qui marche (octobre 2026) : Excel lit la base SEE directement.** SEE Equipment Definition se connecte à une
+  base SQL Server (son fichier `SEE_EED.UDL`, ouvert au Bloc-notes, donne le serveur et la base). Avec l'accord de ta
+  hiérarchie :
+  1. *Excel → Données → Obtenir des données → À partir d'une base de données → SQL Server* : le serveur et la base du
+     `.UDL`, mode Importer, authentification Windows (« mes informations d'identification actuelles ») ; s'il dit qu'il
+     ne peut pas chiffrer, OK. Excel ne fait que lire.
+  2. Dans le Navigateur, « Sélectionner plusieurs éléments », les six vues : **EED_ViewEndFittingRules**,
+     **EED_ViewCablesAndWires**, **EED_ViewConnectiveEquipments**, **EED_ViewContactLayouts**, **EED_ViewAccessories**,
+     **EED_ViewEquipments** ; Charger ; enregistrer le classeur sur ton PC. Pas les « fx » (des fonctions, une pièce à
+     la fois), pas « Sélectionner les tables associées ».
+  3. Ce classeur se dépose dans Volta (n'importe où, ou ⋮ → Vos fichiers → Normes → « Lire la base SEE… ») : Volta le
+     reconnaît à ses feuilles EED_View…, le lit sur place sans rien en garder, et montre une feuille par écran — ses
+     lignes, ses colonnes remplies (taux, deux exemples, masquables), les vides à part. **Une photo par feuille** me
+     suffit pour apprendre à Volta à prendre ces colonnes ; « Copier le résumé » le donne aussi en texte.
+  4. Quand la base SEE bouge : Données → Actualiser tout dans l'Excel, et le redéposer.
+- **Les autres voies, si celle-ci est fermée.** *Copier la grille* de SEE (Ctrl+A, Ctrl+C, coller dans le Bloc-notes
+  pour voir si le texte suit) ; *le référent SEE*, qui peut tirer les mêmes vues en Excel. *Pas en photos* des lignes
+  elles-mêmes : des milliers de lignes en photo, ce sont des erreurs de lecture et des jours de travail.
 - **Où la mettre.** Jamais dans le dépôt GitHub, même passé en privé : c'est la base de ton programme. L'export reste sur ton PC, et tu le déposes dans
   Volta (⋮ → Vos fichiers → Normes) : Volta le lit sur place, hors ligne, rien ne sort. Demande d'abord à ta hiérarchie
   si tu as le droit d'en faire un export : c'est la base de ton programme.
@@ -42,9 +52,8 @@ accessoire pour quel connecteur et quel câble).
   et tu adoptes. Il retient cette correspondance dans ton navigateur : la fois suivante, le même export se lit d'un
   coup (« correspondance retenue »). Rien ne sort de ton PC.
 - **Ce qu'il me faut pour les Equipments.** Volta n'a pas encore de table où ranger tes connecteurs et tes
-  disjoncteurs (la référence, la famille, le nombre de contacts) : pour la construire, la ligne des en-têtes de
-  l'export Equipments et deux ou trois lignes, dont tu peux changer les valeurs. Sinon, trois captures de fiches,
-  « General attributes » déroulés : un connecteur, une règle d'end fitting (*ECS0852 par exemple), un disjoncteur.
+  disjoncteurs (la référence, la famille, le nombre de contacts) : pour la construire, la photo de la feuille
+  EED_ViewEquipments dans « Lire la base SEE » (ci-dessus) suffit.
 
 ---
 

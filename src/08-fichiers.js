@@ -173,6 +173,7 @@ async function rangerAilleurs(L, nom, fichier) { const b = lireBible(L.texte);
    installations), et l'on demande lequel ouvrir ; une bible ou une norme vont à leur place ; un tableau sans les en-têtes du
    retest attend « Charger » ; le reste est une erreur dite dans la carte du retest. */
 async function ouvrirFichier(fichier) { if (!fichier) return; const nom = fichier.name || 'le fichier';
+  if (await routerBaseSEE(fichier)) return;   // l'Excel des vues de SEE (EED_View…) : il se résume, il ne s'ouvre pas comme un retest (08-see)
   dire('Lecture de ' + guillemets(nom) + '…');
   const L = await lireLeFichier(fichier);
   if (L.erreur) { echecImport('retest', L.erreur); return; }
@@ -410,7 +411,7 @@ function cartesFichiers(focus) { const E = etatsDesFichiers(), V = verite();
       boites: erreurHtml('bible'),
       attend: { sous: 'facultatif : ' + pluriel(nb, 'référence') + ' embarquées', format: `${id('Référence')} et ${id('Bornes')} au minimum ; les autres colonnes sont reconnues à leur nom.`,
         apercu: apercuHtml(MODELE_BIBLE, { label: 'Trois lignes d’exemple de la bible' }), gestes: [['modele-bible', 'Modèle (CSV)']] } },
-    { cle: 'normes', titre: 'Normes', depot: 'normes', action: ['normes', 'Importer une table…'], liens: [['voir-normes', 'Voir les normes'], ...(app.normeNom ? [['normes-outil', 'Revenir à la norme embarquée']] : [])],
+    { cle: 'normes', titre: 'Normes', depot: 'normes', action: ['normes', 'Importer une table…'], liens: [['voir-normes', 'Voir les normes'], ['see', 'Lire la base SEE…'], ...(app.normeNom ? [['normes-outil', 'Revenir à la norme embarquée']] : [])],
       boites: erreurHtml('normes'),
       attend: { sous: 'facultatif : ' + pluriel(nm, 'table') + ' embarquées', format: 'Une table par bloc : une ligne de titre, ses en-têtes (un gabarit par table), une ligne par entrée.',
         apercu: apercuHtml(MODELE_NORME, { label: 'Un exemple : la table Réseau' }), gestes: [['gabarit-reseau', 'Gabarit Réseau (CSV)'], ['gabarits', 'Tous les gabarits']] } },
@@ -438,7 +439,7 @@ function lierFichiers() { if (FICHIERS.lie) return; FICHIERS.lie = true; const c
     ROLES.forEach(([k]) => { if (A.map[k] !== '' && A.map[k] != null && +A.map[k] === i) A.map[k] = ''; }); if (s.value) A.map[s.value] = i; A.devine = true; rendreFichiers(); });
   c.addEventListener('click', e => { if (!(app.fiche && app.fiche.mode === 'fichiers')) return; const b = e.target.closest && e.target.closest('[data-vf]'); if (!b) return; const k = b.dataset.vf;
     const faire = {
-      ouvrir: () => $('fichier').click(), coller: ficheColler, exemple: () => ouvrirExemple(), base: choisirBase, bible: () => $('fichier-bible').click(), normes: () => $('fichier-normes').click(), hypotheses: ficheHypotheses,
+      ouvrir: () => $('fichier').click(), coller: ficheColler, exemple: () => ouvrirExemple(), base: choisirBase, bible: () => $('fichier-bible').click(), normes: () => $('fichier-normes').click(), see: () => $('fichier-see').click(), hypotheses: ficheHypotheses,
       'modele-retest': () => telechargerModele('retest'), 'modele-base': () => telechargerModele('base'), 'modele-bible': () => telechargerModele('bible'),
       'gabarit-reseau': () => telechargerGabaritNorme('reseau'), gabarits: () => { NORMES.guide = true; ficheNormes(); },
       'voir-bible': () => ficheBible(''), 'voir-normes': () => ficheNormes(), 'chercher-base': () => { ficheBible(''); const t = [...$('fiche-corps').querySelectorAll('h3.sous-titre')].find(h => /contrats déjà faits/i.test(h.textContent)); if (t) t.scrollIntoView({ block: 'start' }); },
@@ -457,5 +458,5 @@ function lierFichiers() { if (FICHIERS.lie) return; FICHIERS.lie = true; const c
     if (faire) { e.preventDefault(); faire(); } }); }
 // les entrées cachées de « Vos fichiers » (et de la bibliothèque) : la base, une norme ; la bible a la sienne (page.html), les plans aussi (08-bibliotheque)
 function lierEntreesFichiers() { const f = (id, fn) => { const el = $(id); if (el && !el.dataset.lie) { el.dataset.lie = '1'; el.addEventListener('change', e => { const x = e.target.files && e.target.files[0]; if (x) fn(x); e.target.value = ''; }); } };
-  f('fichier-base', importerReferences); f('fichier-normes', importerNorme);
+  f('fichier-base', importerReferences); f('fichier-normes', importerNorme); f('fichier-see', lireBaseSEE);
   const t = $('toast'); if (t && !t.dataset.lie) { t.dataset.lie = '1'; t.addEventListener('mouseenter', () => clearTimeout(toastT)); t.addEventListener('mouseleave', () => { if (t.classList.contains('on')) toastT = setTimeout(() => t.classList.remove('on', 'action'), 2500); }); } }

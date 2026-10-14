@@ -3079,6 +3079,52 @@ button.orig:hover{color:var(--t-1);box-shadow:inset 0 0 0 1px var(--t-3)}
 @media (prefers-reduced-motion:reduce){.q-etapes li{animation:none}}
 @media (prefers-reduced-motion:reduce){.fi-q-bulle{animation:none}}
 
+/* ───────── style-see.css ───────── */
+/* ═════════════════════════════════════════════════════════════════════════════════════════════════════
+   LA BASE SEE (08 nonies) : le résumé d'un Excel des vues de SEE, feuille par feuille
+   Une page qui se photographie : une feuille par écran, ses colonnes remplies en colonnes de journal (le nom en chasse
+   fixe, net, jamais coupé ; le taux en petit ; l'exemple en gris, coupé s'il est long), les vides repliées à part.
+   Les jetons (couleurs, typo, espacements) sont dans style.css.
+   ═════════════════════════════════════════════════════════════════════════════════════════════════════ */
+.see{display:flex;flex-direction:column;gap:var(--sp-3);min-width:0}
+.see .fiche-tete{margin-bottom:0}
+.see-mode{margin:0;font-size:var(--f-13);line-height:1.5;color:var(--t-2);max-width:78ch}
+.see-mode b{color:var(--t-1)}
+/* les feuilles : des onglets qui défilent de côté s'ils sont nombreux ; à droite, les exemples */
+.see-barre{display:flex;align-items:center;gap:var(--sp-3);min-width:0}
+.see-onglets{display:flex;gap:2px;padding:2px;background:var(--s-sunken);border-radius:var(--r-btn);overflow-x:auto;min-width:0;flex:0 1 auto;scrollbar-width:thin}
+.see-onglets button{flex:none;border:none;background:none;height:30px;padding:0 10px;border-radius:var(--r-1);display:inline-flex;align-items:center;gap:6px;font-size:var(--f-12);color:var(--t-2);white-space:nowrap}
+.see-onglets button b{font-weight:600}
+.see-onglets button span{font:500 var(--f-11)/1 var(--mono);color:var(--t-3);font-variant-numeric:tabular-nums}
+.see-onglets button:hover{color:var(--t-1)}
+.see-onglets button[aria-selected="true"]{background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-1)}
+.see-ex{margin-left:auto;flex:none;display:inline-flex;align-items:center;gap:6px;font-size:var(--f-12);color:var(--t-2);cursor:pointer}
+/* la feuille */
+.see-feuille{border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-surface);padding:var(--sp-3) var(--sp-4) var(--sp-4);min-width:0}
+.see-tete{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid var(--s-line)}
+.see-nom{font:600 var(--f-16)/1.3 var(--mono);color:var(--t-1);overflow-wrap:anywhere}
+.see-compte{font-size:var(--f-13);color:var(--t-2);font-variant-numeric:tabular-nums}
+.see-compte b{color:var(--t-1)}
+.see-pos{margin-left:auto;font-size:var(--f-12);color:var(--t-3)}
+/* les colonnes remplies : en colonnes de journal, une ligne chacune */
+.see-cols{list-style:none;margin:0;padding:0;columns:300px;column-gap:28px;column-rule:1px solid var(--s-line)}
+.see-col{break-inside:avoid;display:flex;align-items:baseline;gap:8px;min-width:0;padding:2px 0;line-height:1.4}
+.see-c{flex:0 1 auto;min-width:0;font:600 var(--f-12)/1.4 var(--mono);color:var(--t-1);overflow-wrap:anywhere}
+.see-t{flex:none;font:500 var(--f-11)/1.4 var(--mono);color:var(--t-3);font-variant-numeric:tabular-nums}
+.see-e{flex:1 1 0;min-width:0;font:400 var(--f-11)/1.4 var(--mono);color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.see-e i{font-style:normal;font-family:var(--sans)}
+.see-col.rare .see-c{color:var(--t-2);font-weight:500}
+.see-rien{margin:0;font-size:var(--f-13);color:var(--t-3)}
+/* les vides, à part */
+.see-vides{margin-top:12px;padding-top:10px;border-top:1px dashed var(--s-line)}
+.see-vides summary{cursor:pointer;font-size:var(--f-12);color:var(--t-3)}
+.see-vides p{margin:8px 0 0;font:400 var(--f-11)/1.6 var(--mono);color:var(--t-3);overflow-wrap:anywhere}
+@media (max-width:720px){
+  .see-barre{flex-wrap:wrap}
+  .see-ex{margin-left:0}
+  .see-cols{columns:1}
+}
+
 </style>
 </head>
 <body>
@@ -3348,6 +3394,8 @@ button.orig:hover{color:var(--t-1);box-shadow:inset 0 0 0 1px var(--t-3)}
        plusieurs à la fois, qui deviennent des plans (08-bibliotheque) -->
   <input type="file" id="fichier-base" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
   <input type="file" id="fichier-normes" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
+  <!-- l'Excel des vues de la base SEE : résumé sur place, rien n'est gardé (08-see) -->
+  <input type="file" id="fichier-see" accept=".xlsx,.xlsm,.xls,.xlsb" hidden>
   <input type="file" id="fichier-plans" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" multiple hidden>
 </div>
 <div id="printroot"></div>
@@ -14489,6 +14537,7 @@ async function rangerAilleurs(L, nom, fichier) { const b = lireBible(L.texte);
    installations), et l'on demande lequel ouvrir ; une bible ou une norme vont à leur place ; un tableau sans les en-têtes du
    retest attend « Charger » ; le reste est une erreur dite dans la carte du retest. */
 async function ouvrirFichier(fichier) { if (!fichier) return; const nom = fichier.name || 'le fichier';
+  if (await routerBaseSEE(fichier)) return;   // l'Excel des vues de SEE (EED_View…) : il se résume, il ne s'ouvre pas comme un retest (08-see)
   dire('Lecture de ' + guillemets(nom) + '…');
   const L = await lireLeFichier(fichier);
   if (L.erreur) { echecImport('retest', L.erreur); return; }
@@ -14726,7 +14775,7 @@ function cartesFichiers(focus) { const E = etatsDesFichiers(), V = verite();
       boites: erreurHtml('bible'),
       attend: { sous: 'facultatif : ' + pluriel(nb, 'référence') + ' embarquées', format: `${id('Référence')} et ${id('Bornes')} au minimum ; les autres colonnes sont reconnues à leur nom.`,
         apercu: apercuHtml(MODELE_BIBLE, { label: 'Trois lignes d’exemple de la bible' }), gestes: [['modele-bible', 'Modèle (CSV)']] } },
-    { cle: 'normes', titre: 'Normes', depot: 'normes', action: ['normes', 'Importer une table…'], liens: [['voir-normes', 'Voir les normes'], ...(app.normeNom ? [['normes-outil', 'Revenir à la norme embarquée']] : [])],
+    { cle: 'normes', titre: 'Normes', depot: 'normes', action: ['normes', 'Importer une table…'], liens: [['voir-normes', 'Voir les normes'], ['see', 'Lire la base SEE…'], ...(app.normeNom ? [['normes-outil', 'Revenir à la norme embarquée']] : [])],
       boites: erreurHtml('normes'),
       attend: { sous: 'facultatif : ' + pluriel(nm, 'table') + ' embarquées', format: 'Une table par bloc : une ligne de titre, ses en-têtes (un gabarit par table), une ligne par entrée.',
         apercu: apercuHtml(MODELE_NORME, { label: 'Un exemple : la table Réseau' }), gestes: [['gabarit-reseau', 'Gabarit Réseau (CSV)'], ['gabarits', 'Tous les gabarits']] } },
@@ -14754,7 +14803,7 @@ function lierFichiers() { if (FICHIERS.lie) return; FICHIERS.lie = true; const c
     ROLES.forEach(([k]) => { if (A.map[k] !== '' && A.map[k] != null && +A.map[k] === i) A.map[k] = ''; }); if (s.value) A.map[s.value] = i; A.devine = true; rendreFichiers(); });
   c.addEventListener('click', e => { if (!(app.fiche && app.fiche.mode === 'fichiers')) return; const b = e.target.closest && e.target.closest('[data-vf]'); if (!b) return; const k = b.dataset.vf;
     const faire = {
-      ouvrir: () => $('fichier').click(), coller: ficheColler, exemple: () => ouvrirExemple(), base: choisirBase, bible: () => $('fichier-bible').click(), normes: () => $('fichier-normes').click(), hypotheses: ficheHypotheses,
+      ouvrir: () => $('fichier').click(), coller: ficheColler, exemple: () => ouvrirExemple(), base: choisirBase, bible: () => $('fichier-bible').click(), normes: () => $('fichier-normes').click(), see: () => $('fichier-see').click(), hypotheses: ficheHypotheses,
       'modele-retest': () => telechargerModele('retest'), 'modele-base': () => telechargerModele('base'), 'modele-bible': () => telechargerModele('bible'),
       'gabarit-reseau': () => telechargerGabaritNorme('reseau'), gabarits: () => { NORMES.guide = true; ficheNormes(); },
       'voir-bible': () => ficheBible(''), 'voir-normes': () => ficheNormes(), 'chercher-base': () => { ficheBible(''); const t = [...$('fiche-corps').querySelectorAll('h3.sous-titre')].find(h => /contrats déjà faits/i.test(h.textContent)); if (t) t.scrollIntoView({ block: 'start' }); },
@@ -14773,7 +14822,7 @@ function lierFichiers() { if (FICHIERS.lie) return; FICHIERS.lie = true; const c
     if (faire) { e.preventDefault(); faire(); } }); }
 // les entrées cachées de « Vos fichiers » (et de la bibliothèque) : la base, une norme ; la bible a la sienne (page.html), les plans aussi (08-bibliotheque)
 function lierEntreesFichiers() { const f = (id, fn) => { const el = $(id); if (el && !el.dataset.lie) { el.dataset.lie = '1'; el.addEventListener('change', e => { const x = e.target.files && e.target.files[0]; if (x) fn(x); e.target.value = ''; }); } };
-  f('fichier-base', importerReferences); f('fichier-normes', importerNorme);
+  f('fichier-base', importerReferences); f('fichier-normes', importerNorme); f('fichier-see', lireBaseSEE);
   const t = $('toast'); if (t && !t.dataset.lie) { t.dataset.lie = '1'; t.addEventListener('mouseenter', () => clearTimeout(toastT)); t.addEventListener('mouseleave', () => { if (t.classList.contains('on')) toastT = setTimeout(() => t.classList.remove('on', 'action'), 2500); }); } }
 
 /* ───────── 08-interface.js ───────── */
@@ -17236,7 +17285,7 @@ function normesHtml() { const N = normeActive(), E = normeEmbarqueeLue(), total 
     + (NORMES.ancienne ? ' · <i>une norme importée par l’ancien mécanisme a été oubliée : réimporte-la, elle se verra ligne par ligne</i>' : '') + '</span></div>';
   // la recherche (son nom dit déjà « toutes les tables »), puis l'action principale de la page — importer — et les autres
   const outils = `<div class="nm-outils"><div class="filtre nm-cherche"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="nm-q" value="${escA(NORMES.q)}" placeholder="Une référence, un part number, une jauge…" aria-label="Chercher dans toutes les tables" autocomplete="off" spellcheck="false"><button class="vider" id="nm-q-vider"${NORMES.q ? '' : ' hidden'} aria-label="Effacer la recherche">×</button></div>`
-    + `<div class="nm-gestes"><button class="btn cuivre" id="nm-importer" title="Un Excel (une feuille = une ou plusieurs tables), un CSV">Importer une norme</button><button class="btn papier" id="nm-coller">Coller des lignes</button><button class="btn papier" id="nm-guide" aria-expanded="${NORMES.guide}">Ajouter une norme, les gabarits</button>`
+    + `<div class="nm-gestes"><button class="btn cuivre" id="nm-importer" title="Un Excel (une feuille = une ou plusieurs tables), un CSV">Importer une norme</button><button class="btn papier" id="nm-coller">Coller des lignes</button><button class="btn papier" id="nm-see" title="L’Excel des vues de SEE (EED_View…) : Volta résume ses colonnes, sans rien garder">Lire la base SEE</button><button class="btn papier" id="nm-guide" aria-expanded="${NORMES.guide}">Ajouter une norme, les gabarits</button>`
     + (modifiees.length ? `<button class="btn papier" id="nm-exporter-tout" title="Toutes les lignes importées ou modifiées, en un CSV à me renvoyer">Exporter mes modifications</button>` : '') + `<input type="file" id="fichier-norme" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden></div></div>`;
   return `<div class="nm">${nmTitre('Ce que l’outil vérifie, table par table', 'Normes')}${nmNav('normes')}${etat}${outils}${NORMES.guide ? guideHtml() : ''}${NORMES.import ? importHtmlOuColler() : ''}${NORMES.q ? rechercheHtml() : ''}`
     + DOMAINES_NORMES.map(domaineHtml).join('') + '</div>'; }
@@ -17312,7 +17361,7 @@ function guideHtml() { return `<section class="nm-guide"><div class="sur">Ajoute
 /* ---- l'import : lire, prévisualiser, adopter ----------------------------------- */
 /* Un fichier déposé ou choisi : lu, découpé en blocs, montré dans la page avant d'être adopté. Ce qui ne se lit pas
    s'écrit aussi dans la carte des normes de « Vos fichiers » (08-fichiers), le mot qui passe propose « Voir ». */
-async function importerNorme(fichier) { if (!fichier) return;
+async function importerNorme(fichier) { if (!fichier) return; if (await routerBaseSEE(fichier)) return;   // l'Excel des vues de SEE : résumé, pas importé (08-see)
   try { dire('Lecture de « ' + fichier.name + ' »…'); importerNormeTexte(await texteDeNormeFichier(fichier), fichier.name); }
   catch (e) { echecImport('normes', { texte: `${esc(fichier.name)} n’a pas pu être lu : ${esc(String(e && e.message || e))}.` }); } }
 /* LA CORRESPONDANCE RETENUE (le lecteur : « tout est dans SEE, je ne peux pas tout prendre en photo — comment on
@@ -17412,6 +17461,7 @@ function exporterApportsNormes() { const csv = csvDesApports(NORMES.apports); if
 function lierNormes() { const c = $('fiche-corps'); if (!c) return;
   const q = $('nm-q'); if (q) { let t; q.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { NORMES.q = q.value.trim(); const pos = q.selectionStart; rendreNormes(); const q2 = $('nm-q'); if (q2) { q2.focus(); try { q2.setSelectionRange(pos, pos); } catch (_) { } } }, 220); }); }
   if ($('nm-q-vider')) $('nm-q-vider').onclick = () => { NORMES.q = ''; rendreNormes(); const q2 = $('nm-q'); if (q2) q2.focus(); };
+  if ($('nm-see')) $('nm-see').onclick = () => $('fichier-see').click();
   if ($('nm-importer')) $('nm-importer').onclick = () => $('fichier-norme').click(); if ($('no-importer')) $('no-importer').onclick = () => $('fichier-norme').click();
   if ($('fichier-norme')) $('fichier-norme').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) importerNorme(f); e.target.value = ''; });
   if ($('nm-coller')) $('nm-coller').onclick = () => { NORMES.import = { nom: 'texte collé', blocs: [], coller: true, vide: false }; rendreNormes(); };
@@ -19359,6 +19409,106 @@ document.addEventListener('click', e => { const b = e.target && e.target.closest
 window.addEventListener('keydown', e => { if (e.key === 'Escape' && AIDE.bouton) { e.preventDefault(); e.stopPropagation(); fermerAide(true); } }, true);
 window.addEventListener('scroll', () => { if (AIDE.bouton) placerAide(); }, true);
 window.addEventListener('resize', () => { if (AIDE.bouton) placerAide(); });
+
+/* ───────── 08-see.js ───────── */
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+   LA BASE SEE (08 nonies) — l'Excel des vues de SEE Electrical Equipment Definition, lu sur place
+   Le lecteur (octobre 2026) a tiré les vues de la base SEE dans Excel (Données → SQL Server → EED_View…) : « il y a
+   trop de colonnes, 200 ; les photos, c'est beaucoup trop ; le fichier est sur le bureau, je ne peux pas l'envoyer ».
+   Volta lit donc ce classeur SUR LE POSTE, sans rien en garder (ni dans le navigateur, ni ailleurs : fermer la page
+   l'oublie), et montre, feuille par feuille, sur un écran qui tient en une photo : son nombre de lignes, ses colonnes
+   REMPLIES (le taux de remplissage, deux valeurs d'exemple qu'on peut masquer), les colonnes vides à part. C'est tout
+   ce qu'il faut pour apprendre à Volta à prendre les contacts, les câbles, les connecteurs et les accessoires de SEE.
+   Le résumé se copie aussi en texte, ou s'enregistre (.txt), pour qui peut le faire passer autrement qu'en photo.
+   ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+const SEE = { lu: null, feuille: 0, exemples: true };
+const LIGNES_SONDEES = 2000;                 // les colonnes se jugent sur les 2 000 premières lignes de chaque feuille
+const LARGEUR_SEE = 'min(1480px, calc(100vw - var(--rail) - 320px))';   // large (la page se photographie) ; le plan garde 320 px à côté, comme pour les normes
+const estExcel = f => /\.xls[xmb]?$/i.test((f && f.name) || '') || /sheet|excel/i.test((f && f.type) || '');
+// une feuille de la base SEE : nommée d'après sa vue (EED_ViewCablesAndWires…) ou une fonction d'export de SEE
+const estFeuilleSEE = n => /^(EED_|Export_)/i.test(String(n || ''));
+const nomCourtSEE = n => String(n).replace(/^EED_(e?Cat_)?View_?/i, '').replace(/^EED_/i, '') || String(n);
+
+/* Un Excel déposé ou ouvert n'importe où (la fenêtre, « Vos fichiers », la page des normes) : si ses feuilles portent
+   les noms des vues de SEE, c'est la base SEE — elle se lit ici, et rend vrai ; sinon rien n'est fait. */
+async function routerBaseSEE(fichier) { if (!estExcel(fichier) || typeof XLSX === 'undefined') return false;
+  let buf; try { buf = await fichier.arrayBuffer(); const wb = XLSX.read(buf, { type: 'array', bookSheets: true }); if (!(wb.SheetNames || []).some(estFeuilleSEE)) return false; }
+  catch (_) { return false; }
+  await lireBaseSEE(fichier, buf); return true; }
+
+/* Lire le classeur : chaque feuille résumée. Une grosse base (7 000 lignes de 200 colonnes) prend quelques secondes. */
+async function lireBaseSEE(fichier, buf) { if (!fichier) return; const nom = fichier.name || 'la base SEE';
+  if (typeof XLSX === 'undefined') { dire('La bibliothèque Excel manque : la base SEE ne peut pas se lire.', true); return; }
+  dire('Lecture de ' + guillemets(nom) + '… (une grosse base prend quelques secondes)');
+  await new Promise(r => setTimeout(r, 40));   // le mot s'affiche avant le calcul
+  try { buf = buf || await fichier.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array', sheetRows: LIGNES_SONDEES + 1, cellHTML: false, cellStyles: false });
+    const feuilles = wb.SheetNames.map(n => resumerFeuilleSEE(n, wb.Sheets[n])).filter(f => f.colonnes.length || f.vides.length);
+    if (!feuilles.length) { echecImport('normes', { texte: `${esc(nom)} : aucune feuille avec une ligne d’en-têtes.` }); return; }
+    SEE.lu = { nom, feuilles, quand: new Date() }; SEE.feuille = 0; ficheBaseSEE();
+    dire(guillemets(nom) + ' : ' + pluriel(feuilles.length, 'feuille') + ' lue' + (feuilles.length > 1 ? 's' : '') + ', rien n’est gardé. Une photo par feuille suffit.'); }
+  catch (e) { echecImport('normes', { texte: `${esc(nom)} n’a pas pu être lu : ${esc(String(e && e.message || e))}.` }); } }
+
+/* Une feuille : sa ligne d'en-têtes (la première qui a plusieurs cellules), son nombre de lignes (toute la feuille, pas
+   seulement les lignes sondées), et pour chaque colonne : combien de lignes la remplissent, deux valeurs différentes,
+   si ce sont des nombres, des identifiants internes (GUID) ou des oui/non. */
+function resumerFeuilleSEE(nom, ws) { const vide = { nom, lignes: 0, sondees: 0, colonnes: [], vides: [] }; if (!ws) return vide;
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '', blankrows: false });
+  const k = rows.findIndex(r => Array.isArray(r) && r.filter(c => String(c).trim()).length > 1); if (k < 0) return vide;
+  const entete = rows[k].map(c => String(c == null ? '' : c).trim()), corps = rows.slice(k + 1);
+  const ref = ws['!fullref'] || ws['!ref']; let total = corps.length;
+  if (ref) { try { const d = XLSX.utils.decode_range(ref); total = Math.max(corps.length, d.e.r - d.s.r - k); } catch (_) { } }
+  const cols = entete.map((t, i) => { let n = 0, nombres = 0, guids = 0, bools = 0; const ex = [], vus = new Set();
+    corps.forEach(r => { const v = r[i]; if (v === '' || v == null) return; n++; const s = String(v).trim();
+      if (typeof v === 'number') nombres++; else if (typeof v === 'boolean' || /^(true|false|vrai|faux|yes|no|oui|non)$/i.test(s)) bools++; else if (/^\{?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-/i.test(s)) guids++;
+      if (ex.length < 2 && s && !vus.has(s)) { vus.add(s); ex.push(s); } });
+    const genre = !n ? '' : guids === n ? 'id' : bools === n ? 'oui/non' : nombres === n ? 'nombre' : '';
+    return { nom: t || 'colonne ' + (i + 1), n, taux: corps.length ? n / corps.length : 0, exemples: ex, genre }; });
+  return { nom, lignes: total, sondees: corps.length, colonnes: cols.filter(c => c.n), vides: cols.filter(c => !c.n).map(c => c.nom) }; }
+
+/* ---- la page ------------------------------------------------------------------------------------------------- */
+function ficheBaseSEE() { if (!SEE.lu) return; const deja = app.fiche && app.fiche.mode === 'see';
+  ouvrirFiche({ mode: 'see', large: true }, baseSEEHtml(), baseSEEPiedHtml()); document.documentElement.style.setProperty('--fiche-l', LARGEUR_SEE);
+  if (!deja) ajuster(true); lierBaseSEE(); }
+function rendreBaseSEE() { if (!(app.fiche && app.fiche.mode === 'see') || !SEE.lu) return; const c = $('fiche-corps'), p = $('fiche-pied');
+  c.innerHTML = baseSEEHtml(); p.innerHTML = baseSEEPiedHtml(); p.hidden = !p.innerHTML; c.scrollTop = 0; lierBaseSEE(); }
+const tauxSEE = t => t >= 0.995 ? '100 %' : t < 0.01 ? '< 1 %' : Math.round(t * 100) + ' %';
+const exempleSEE = s => s.length > 34 ? s.slice(0, 33) + '…' : s;
+function baseSEEHtml() { const L = SEE.lu, F = L.feuilles[SEE.feuille] || L.feuilles[0], n = L.feuilles.length;
+  const onglets = n > 1 ? `<div class="see-onglets" role="tablist" aria-label="Feuilles du classeur">${L.feuilles.map((f, i) => `<button type="button" role="tab" data-see-feuille="${i}" aria-selected="${i === SEE.feuille}" title="${escA(f.nom)}"><b>${esc(nomCourtSEE(f.nom))}</b><span>${esc(milliers(f.lignes))}</span></button>`).join('')}</div>` : '';
+  const ligne = c => `<li class="see-col${c.taux < 0.05 ? ' rare' : ''}"><span class="see-c">${esc(c.nom)}</span><span class="see-t">${esc(tauxSEE(c.taux))}</span>`
+    + `<span class="see-e">${c.genre === 'id' ? '<i>identifiant</i>' : SEE.exemples ? esc(c.exemples.map(exempleSEE).join(' · ')) : c.genre ? '<i>' + esc(c.genre) + '</i>' : ''}</span></li>`;
+  const vides = F.vides.length ? `<details class="see-vides"><summary>${esc(pluriel(F.vides.length, 'colonne'))} vide${F.vides.length > 1 ? 's' : ''} dans les ${esc(milliers(F.sondees))} premières lignes</summary><p>${F.vides.map(esc).join(' · ')}</p></details>` : '';
+  return `<div class="see">${nmTitre('Base SEE · lue sur ce poste, rien n’en sort', L.nom)}`
+    + `<p class="see-mode">Volta a lu ton Excel ici, sans le garder. <b>Fais une photo de cet écran pour chaque feuille</b> et envoie-la-moi : avec les noms des colonnes, j’apprends à Volta à prendre tes contacts, tes câbles, tes connecteurs et tes accessoires.</p>`
+    + `<div class="see-barre">${onglets}<label class="see-ex"><input type="checkbox" id="see-ex"${SEE.exemples ? ' checked' : ''}> Exemples de valeurs</label></div>`
+    + `<section class="see-feuille" aria-label="${escA(F.nom)}"><div class="see-tete"><b class="see-nom">${esc(F.nom)}</b>`
+    + `<span class="see-compte">${esc(milliers(F.lignes))} ligne${F.lignes > 1 ? 's' : ''} · ${esc(pluriel(F.colonnes.length + F.vides.length, 'colonne'))} : <b>${esc(String(F.colonnes.length))} remplie${F.colonnes.length > 1 ? 's' : ''}</b>${F.vides.length ? ', ' + esc(String(F.vides.length)) + ' vide' + (F.vides.length > 1 ? 's' : '') : ''}</span>`
+    + `${n > 1 ? `<span class="see-pos">feuille ${SEE.feuille + 1} / ${n}</span>` : ''}</div>`
+    + (F.colonnes.length ? `<ol class="see-cols">${F.colonnes.map(ligne).join('')}</ol>` : '<p class="see-rien">Aucune colonne remplie.</p>') + vides + '</section></div>'; }
+function baseSEEPiedHtml() { const n = SEE.lu ? SEE.lu.feuilles.length : 0;
+  return (n > 1 ? `<button class="btn papier" id="see-prec"${SEE.feuille ? '' : ' disabled'}>‹ Feuille précédente</button><button class="btn cuivre" id="see-suiv"${SEE.feuille < n - 1 ? '' : ' disabled'}>Feuille suivante ›</button>` : '')
+    + `<span class="espace"></span><button class="btn lien" id="see-copier" title="Le résumé de toutes les feuilles, en texte : à coller dans un message">Copier le résumé</button><button class="btn papier" id="see-enregistrer" title="Le résumé de toutes les feuilles, dans un fichier texte">Enregistrer le résumé</button>`; }
+function changerFeuilleSEE(i) { if (!SEE.lu) return; SEE.feuille = Math.max(0, Math.min(SEE.lu.feuilles.length - 1, i)); rendreBaseSEE();
+  const b = $('fiche-corps').querySelector(`[data-see-feuille="${SEE.feuille}"]`); if (b && b.scrollIntoView) { try { b.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (_) { } } }
+function lierBaseSEE() { const c = $('fiche-corps'); if (!c) return;
+  c.querySelectorAll('[data-see-feuille]').forEach(b => b.onclick = () => changerFeuilleSEE(+b.dataset.seeFeuille));
+  const ex = $('see-ex'); if (ex) ex.onchange = () => { SEE.exemples = ex.checked; rendreBaseSEE(); };
+  if ($('see-prec')) $('see-prec').onclick = () => changerFeuilleSEE(SEE.feuille - 1);
+  if ($('see-suiv')) $('see-suiv').onclick = () => changerFeuilleSEE(SEE.feuille + 1);
+  if ($('see-copier')) $('see-copier').onclick = copierResumeSEE;
+  if ($('see-enregistrer')) $('see-enregistrer').onclick = () => { telecharger(new Blob(['﻿' + resumeSEE()], { type: 'text/plain;charset=utf-8' }), 'resume-base-SEE.txt'); dire('Le résumé de la base SEE est enregistré.'); }; }
+
+/* ---- le résumé en texte : les noms des colonnes (et, si on les montre, les exemples), feuille par feuille ---------- */
+function resumeSEE() { const L = SEE.lu; if (!L) return '';
+  return [`Base SEE — ${L.nom} — résumé par Volta le ${L.quand.toLocaleDateString('fr-FR')}${SEE.exemples ? '' : ' (sans exemples)'}`, ...L.feuilles.map(F =>
+    `\n== ${F.nom} — ${F.lignes} lignes — ${F.colonnes.length + F.vides.length} colonnes, ${F.colonnes.length} remplies ==\n`
+    + F.colonnes.map(c => c.nom + ' | ' + tauxSEE(c.taux) + (c.genre === 'id' ? ' | identifiant' : SEE.exemples && c.exemples.length ? ' | ' + c.exemples.join(' ; ') : c.genre ? ' | ' + c.genre : '')).join('\n')
+    + (F.vides.length ? '\nColonnes vides : ' + F.vides.join(', ') : ''))].join('\n') + '\n'; }
+function copierResumeSEE() { const t = resumeSEE(), ok = () => dire('Résumé copié : colle-le dans un message.');
+  const repli = () => { const a = document.createElement('textarea'); a.value = t; a.setAttribute('readonly', ''); a.style.position = 'fixed'; a.style.opacity = '0'; document.body.appendChild(a); a.select();
+    let r = false; try { r = document.execCommand('copy'); } catch (_) { } a.remove(); if (r) ok(); else dire('La copie est refusée ici : « Enregistrer le résumé » le met dans un fichier.', true); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(ok, repli); else repli(); }
 
 /* ───────── 10-demarrage.js ───────── */
 /* ===========================================================================

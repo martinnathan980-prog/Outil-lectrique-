@@ -240,7 +240,7 @@ function normesHtml() { const N = normeActive(), E = normeEmbarqueeLue(), total 
     + (NORMES.ancienne ? ' · <i>une norme importée par l’ancien mécanisme a été oubliée : réimporte-la, elle se verra ligne par ligne</i>' : '') + '</span></div>';
   // la recherche (son nom dit déjà « toutes les tables »), puis l'action principale de la page — importer — et les autres
   const outils = `<div class="nm-outils"><div class="filtre nm-cherche"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="nm-q" value="${escA(NORMES.q)}" placeholder="Une référence, un part number, une jauge…" aria-label="Chercher dans toutes les tables" autocomplete="off" spellcheck="false"><button class="vider" id="nm-q-vider"${NORMES.q ? '' : ' hidden'} aria-label="Effacer la recherche">×</button></div>`
-    + `<div class="nm-gestes"><button class="btn cuivre" id="nm-importer" title="Un Excel (une feuille = une ou plusieurs tables), un CSV">Importer une norme</button><button class="btn papier" id="nm-coller">Coller des lignes</button><button class="btn papier" id="nm-guide" aria-expanded="${NORMES.guide}">Ajouter une norme, les gabarits</button>`
+    + `<div class="nm-gestes"><button class="btn cuivre" id="nm-importer" title="Un Excel (une feuille = une ou plusieurs tables), un CSV">Importer une norme</button><button class="btn papier" id="nm-coller">Coller des lignes</button><button class="btn papier" id="nm-see" title="L’Excel des vues de SEE (EED_View…) : Volta résume ses colonnes, sans rien garder">Lire la base SEE</button><button class="btn papier" id="nm-guide" aria-expanded="${NORMES.guide}">Ajouter une norme, les gabarits</button>`
     + (modifiees.length ? `<button class="btn papier" id="nm-exporter-tout" title="Toutes les lignes importées ou modifiées, en un CSV à me renvoyer">Exporter mes modifications</button>` : '') + `<input type="file" id="fichier-norme" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden></div></div>`;
   return `<div class="nm">${nmTitre('Ce que l’outil vérifie, table par table', 'Normes')}${nmNav('normes')}${etat}${outils}${NORMES.guide ? guideHtml() : ''}${NORMES.import ? importHtmlOuColler() : ''}${NORMES.q ? rechercheHtml() : ''}`
     + DOMAINES_NORMES.map(domaineHtml).join('') + '</div>'; }
@@ -316,7 +316,7 @@ function guideHtml() { return `<section class="nm-guide"><div class="sur">Ajoute
 /* ---- l'import : lire, prévisualiser, adopter ----------------------------------- */
 /* Un fichier déposé ou choisi : lu, découpé en blocs, montré dans la page avant d'être adopté. Ce qui ne se lit pas
    s'écrit aussi dans la carte des normes de « Vos fichiers » (08-fichiers), le mot qui passe propose « Voir ». */
-async function importerNorme(fichier) { if (!fichier) return;
+async function importerNorme(fichier) { if (!fichier) return; if (await routerBaseSEE(fichier)) return;   // l'Excel des vues de SEE : résumé, pas importé (08-see)
   try { dire('Lecture de « ' + fichier.name + ' »…'); importerNormeTexte(await texteDeNormeFichier(fichier), fichier.name); }
   catch (e) { echecImport('normes', { texte: `${esc(fichier.name)} n’a pas pu être lu : ${esc(String(e && e.message || e))}.` }); } }
 /* LA CORRESPONDANCE RETENUE (le lecteur : « tout est dans SEE, je ne peux pas tout prendre en photo — comment on
@@ -416,6 +416,7 @@ function exporterApportsNormes() { const csv = csvDesApports(NORMES.apports); if
 function lierNormes() { const c = $('fiche-corps'); if (!c) return;
   const q = $('nm-q'); if (q) { let t; q.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { NORMES.q = q.value.trim(); const pos = q.selectionStart; rendreNormes(); const q2 = $('nm-q'); if (q2) { q2.focus(); try { q2.setSelectionRange(pos, pos); } catch (_) { } } }, 220); }); }
   if ($('nm-q-vider')) $('nm-q-vider').onclick = () => { NORMES.q = ''; rendreNormes(); const q2 = $('nm-q'); if (q2) q2.focus(); };
+  if ($('nm-see')) $('nm-see').onclick = () => $('fichier-see').click();
   if ($('nm-importer')) $('nm-importer').onclick = () => $('fichier-norme').click(); if ($('no-importer')) $('no-importer').onclick = () => $('fichier-norme').click();
   if ($('fichier-norme')) $('fichier-norme').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) importerNorme(f); e.target.value = ''; });
   if ($('nm-coller')) $('nm-coller').onclick = () => { NORMES.import = { nom: 'texte collé', blocs: [], coller: true, vide: false }; rendreNormes(); };
