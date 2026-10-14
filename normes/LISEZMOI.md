@@ -888,6 +888,18 @@ lecteur, sinon la table Réseau) · fil inconnu
 de la norme · ok. Les ponts (shunts) ne sont pas des fils dans un trou : ils
 ne sont pas simulés.
 
+## Coller un export de SEE (ou d'un autre logiciel)
+
+Une liste copiée dans SEE (Ctrl+A, Ctrl+C) se colle dans la page Normes
+(« Coller des lignes ») avec SES en-têtes, que l'outil ne connaît pas : le
+tableau n'est plus refusé. L'outil le montre et demande la table qu'il
+remplit, puis le champ de chaque colonne qu'il ne reconnaît pas (« Gender »
+→ Sexe) ; les autres se lisent seules (« AWG » → Jauge, « Part Number » →
+Contact). Le sexe se lit aussi en anglais et en lettres : M, mâle, pin, P ;
+F, femelle, socket, S. À l'adoption, la **correspondance est retenue** dans
+le navigateur, par la ligne d'en-tête (ses cellules, dans l'ordre) : le même
+export, collé plus tard, se lit d'un coup. Rien ne quitte le poste.
+
 ## Déposer une vraie norme
 
 1. Garde le PDF de la norme ici (`normes/ASNE0599.pdf`, par exemple) : il

@@ -208,6 +208,20 @@ function excelEssai() { const wb = XLSX.utils.book_new();
   await page.evaluate(() => ficheNormes({ table: 'familles:barrette', filtre: 'E0599' })); await page.waitForTimeout(400);
   okp(await q('.nm-table[data-vue="familles:barrette"].ouvert') === 1 && await q('.nm-table[data-vue="familles:barrette"] tbody tr[data-cle]') === 1, 'ouvrir la page sur une table, filtrée (ce que « Voir la norme » fait depuis une carte)');
 
+  console.log('\nun export de SEE, collé tel quel : des en-têtes inconnus, décrits une fois, retenus');
+  { const tsv = ['Std\tGender\tCavity\tWire Family\tAWG\tPart Number\tAccessory', 'EN2997\tS\t20\tZZ\t22\tEN3155-079F2022\t', 'EN2997\tP\t20\tZZ\t22\tEN3155-078M2022\t'].join('\n');
+    await page.evaluate(() => { try { localStorage.removeItem('volta.normes.correspondances.v1'); } catch (_) { } ficheNormes(); }); await page.waitForTimeout(400);
+    await page.evaluate(t => importerNormeTexte(t, 'export SEE'), tsv); await page.waitForTimeout(400);
+    okp(await page.evaluate(() => { const b = NORMES.import.blocs; return b.length === 1 && b[0].brut && !b[0].cible && b[0].entete.length === 7 && b[0].lignes.length === 2 && /choisis la table/.test(document.querySelector('#nm-import .nm-bloc-compte').textContent); }), 'un tableau aux en-têtes inconnus n’est plus refusé : Volta le montre et demande quelle table c’est');
+    await page.selectOption('#fiche-corps select[data-cible="0"]', 'contacts'); await page.waitForTimeout(300);
+    for (const [i, ch] of [[0, 'famille'], [1, 'sexe'], [2, 'taille'], [3, 'typeFil'], [6, 'accessoire']]) { await page.selectOption(`#fiche-corps select[data-colonne="0"][data-indice="${i}"]`, ch); await page.waitForTimeout(150); }
+    okp(await page.evaluate(() => { const b = NORMES.import.blocs[0]; return b.lecture.lues.length === 2 && !b.lecture.rejets.length && b.lecture.lues.map(x => x.sexe).join() === 'F,M' && b.col.jauge === 4 && b.col.reference === 5; }), 'Contacts : AWG et Part Number reconnus d’eux-mêmes, Std, Gender, Cavity, Wire Family, Accessory dits à la main — les deux lignes lues, S et P compris comme douille et broche');
+    await page.click('#nm-adopter'); await page.waitForTimeout(400);
+    okp(await page.evaluate(() => { const m = JSON.parse(localStorage.getItem('volta.normes.correspondances.v1') || '{}'), k = Object.keys(m)[0]; return Object.keys(m).length === 1 && k === 'std|gender|cavity|wirefamily|awg|partnumber|accessory' && m[k].cible === 'contacts' && m[k].manuel[1] === 'sexe' && (app.norme.contacts || []).some(x => x.reference === 'EN3155-079F2022'); }), 'adopté : la correspondance est retenue (dans ce navigateur), par la ligne d’en-tête ; les contacts entrent dans la norme');
+    await page.evaluate(t => importerNormeTexte(t.replace('F2022', 'F2024'), 'export SEE, une semaine après'), tsv); await page.waitForTimeout(400);
+    okp(await page.evaluate(() => { const b = NORMES.import.blocs[0]; return b.cible === 'contacts' && !!b.retenue && b.lecture.lues.length === 2 && !!document.querySelector('#nm-import .nm-badge') && /correspondance retenue/.test(document.querySelector('#nm-import').textContent); }), 'le même export, collé une semaine après : lu d’un coup, « correspondance retenue »');
+    await page.evaluate(() => { annulerImportNorme(); defaireNormes(); try { localStorage.removeItem('volta.normes.correspondances.v1'); } catch (_) { } }); await page.waitForTimeout(300); }
+
   console.log('\nau téléphone');
   await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(400);
   await page.evaluate(() => { fermerFiche(true); ficheNormes({ table: 'contacts' }); }); await page.waitForTimeout(600);

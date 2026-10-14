@@ -20,12 +20,16 @@
    « main » et « ↺ » qui rend ce que portait le fichier ou le calcul.
 
    LE « ? » (le lecteur : « explique, avec un petit point d'interrogation,
-   comment tu choisis tout ») : à côté de chaque valeur que l'outil choisit,
-   un petit rond discret ; un clic (ou Entrée) ouvre une bulle de deux ou
-   trois phrases — comment l'outil l'a choisie, d'où vient la donnée —, une
-   seule à la fois ; Échap, un autre clic ou un clic ailleurs la ferme. Les
-   textes viennent de `explication(cle, contexte)` (08-explications) ; des
-   textes provisoires courts les remplacent si elle manque.
+   comment tu choisis tout » ; puis : « pas une grosse pâte de texte :
+   moins, avec des couleurs, plus interactif ») : à côté de chaque valeur que
+   l'outil choisit, un petit rond discret ; un clic (ou Entrée) ouvre une
+   bulle courte — UNE phrase (ce que l'outil a pris, ici), des pastilles de
+   couleur (les chiffres qui comptent), et deux volets qu'on déplie d'un clic :
+   « Comment » (la règle en quelques étapes numérotées) et « D'où ça vient »
+   (les sources) ; une seule bulle à la fois ; Échap, un autre clic ou un
+   clic ailleurs la ferme. Les mots viennent de `explication(cle, contexte)`
+   (08-explications) ; des textes provisoires courts les remplacent si elle
+   manque.
    =========================================================================== */
 'use strict';
 
@@ -83,7 +87,7 @@ function ouvrirSection(box, cle, allumer) { const d = box && box.querySelector(`
 // ce que l'ingénieur ouvre ou ferme à la main (un clic, ou Entrée / Espace sur le titre), on le retient pour ce type ; une
 // action posée dans le résumé (`.fs-action`, un « ? ») agit sans ouvrir ni fermer ; une section vide sans contenu ne s'ouvre pas
 document.addEventListener('click', e => { const t = e.target && e.target.closest && e.target.closest('summary.fs-tete'); if (!t) return;
-  if (e.target.closest('.fs-action, .fi-q')) { e.preventDefault(); return; }
+  if (e.target.closest('.fs-action, .fi-q, .ct-bulle')) { e.preventDefault(); return; }
   const d = t.parentElement; if (!d) return; if (d.classList.contains('fs-clos')) { e.preventDefault(); return; }
   if (d.classList.contains('fs-vide')) return; setTimeout(() => retenirSection(d.dataset.type, d.dataset.section, d.open), 0); });
 
@@ -149,11 +153,20 @@ const AIDES_PROVISOIRES = {
   chute: ['La chute de tension', 'La résistance du câble × sa longueur × le courant, en ligne depuis le disjoncteur. Le seuil vient du réseau : la tension et le régime de la simulation.'],
   masse: ['La masse', 'Un point de retour au corps de l’appareil : les câbles qui y vont n’ont ni connecteur ni contact.']
 };
-/* Le texte d'un « ? » : celui de `explication`, sinon le provisoire. */
+/* Les mots d'un « ? » : ceux de `explication`, sinon le provisoire (une phrase seule). */
 function explicationDe(cle, ctx) { let e = null;
   try { e = typeof explication === 'function' ? explication(cle, ctx || {}) : null; } catch (_) { e = null; }
   const p = AIDES_PROVISOIRES[cle] || ['', ''];
-  return { titre: (e && e.titre) || p[0], texte: (e && e.texte) || p[1] }; }
+  return { titre: (e && e.titre) || p[0], phrase: (e && (e.phrase || e.texte)) || p[1], chiffres: (e && e.chiffres) || [], etapes: (e && e.etapes) || [], sources: (e && e.sources) || '', texte: (e && e.texte) || p[1] }; }
+/* LA BULLE en HTML : la phrase, les pastilles, puis les deux volets — « Comment » ouvert d'office quand il n'y a pas de
+   pastille (le « ? » d'un en-tête de colonne : la règle est tout ce qu'on a à dire). */
+function bulleAideHtml(e) { const comment = e.etapes.length && !e.chiffres.length;
+  const pastilles = e.chiffres.length ? `<div class="q-chiffres">${e.chiffres.map(([k, v, ton]) => `<span class="q-c${ton ? ' ' + ton : ''}"><i>${esc(k)}</i><b>${esc(v)}</b></span>`).join('')}</div>` : '';
+  const volet = (cle, mot, html, ouvert) => `<button type="button" class="q-plier" data-q-volet="${cle}" aria-expanded="${ouvert}">${esc(mot)}<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="q-volet" data-q-corps="${cle}"${ouvert ? '' : ' hidden'}>${html}</div>`;
+  const etapes = e.etapes.length ? volet('comment', 'Comment', `<ol class="q-etapes">${e.etapes.map((t, k) => `<li style="--k:${k}"><span>${k + 1}</span>${esc(t)}</li>`).join('')}</ol>`, comment) : '';
+  const sources = e.sources ? volet('sources', 'D’où ça vient', `<p class="q-sources">${esc(e.sources)}</p>`, false) : '';
+  return `<div class="q-tete"><span class="q-ico" aria-hidden="true">?</span><b id="fi-q-titre">${esc(e.titre || 'Comment l’outil choisit')}</b></div>`
+    + `<p class="q-phrase">${esc(e.phrase || 'L’explication arrive.')}</p>${pastilles}${etapes || sources ? `<div class="q-volets">${etapes}${sources}</div>` : ''}`; }
 /* Le bouton « ? » d'une valeur : `cle` dit laquelle, `ctx` ce qui la précise — les objets mêmes du moteur (le verdict d'un
    disjoncteur, le plan d'un module, l'habillage d'un connecteur : ce que 08-explications sait lire). Ils se gardent le
    temps d'un rendu, sous un numéro que le bouton porte (`data-q-id`) ; le rendu suivant repart de zéro, dans le même
@@ -176,8 +189,11 @@ function placerAide() { const b = AIDE.bouton, el = AIDE.el; if (!b || !el) retu
 function ouvrirAide(b) { if (AIDE.bouton === b) { fermerAide(); return; } fermerAide();
   if (typeof cacherBulle === 'function') cacherBulle();
   const e = explicationDe(b.dataset.q, (b.dataset.qId && AIDE_CTX.m.get(b.dataset.qId)) || {});
-  if (!AIDE.el) { AIDE.el = document.createElement('div'); AIDE.el.id = 'fi-q-bulle'; AIDE.el.className = 'fi-q-bulle'; AIDE.el.setAttribute('role', 'dialog'); AIDE.el.setAttribute('aria-modal', 'false'); AIDE.el.setAttribute('aria-labelledby', 'fi-q-titre'); document.body.appendChild(AIDE.el); }
-  AIDE.el.innerHTML = `<b id="fi-q-titre">${esc(e.titre || 'Comment l’outil choisit')}</b><p>${esc(e.texte || 'L’explication arrive.')}</p>`;
+  if (!AIDE.el) { AIDE.el = document.createElement('div'); AIDE.el.id = 'fi-q-bulle'; AIDE.el.className = 'fi-q-bulle'; AIDE.el.setAttribute('role', 'dialog'); AIDE.el.setAttribute('aria-modal', 'false'); AIDE.el.setAttribute('aria-labelledby', 'fi-q-titre'); document.body.appendChild(AIDE.el);
+    // un volet s'ouvre ou se ferme d'un clic, la bulle se replace (elle a grandi)
+    AIDE.el.addEventListener('click', ev => { const v = ev.target.closest && ev.target.closest('.q-plier'); if (!v) return; const corps = AIDE.el.querySelector(`[data-q-corps="${v.dataset.qVolet}"]`); if (!corps) return;
+      const ouvert = corps.hidden; corps.hidden = !ouvert; v.setAttribute('aria-expanded', String(ouvert)); placerAide(); }); }
+  AIDE.el.innerHTML = bulleAideHtml(e);
   AIDE.el.hidden = false; AIDE.bouton = b; b.setAttribute('aria-expanded', 'true'); b.setAttribute('aria-describedby', 'fi-q-bulle'); b.classList.add('ouvert'); placerAide(); }
 // un clic sur un « ? » l'ouvre (ou le ferme) ; ailleurs, la bulle se ferme ; Échap la ferme et rend le clavier au bouton
 document.addEventListener('click', e => { const b = e.target && e.target.closest && e.target.closest('.fi-q');

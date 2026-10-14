@@ -9,24 +9,25 @@
    valide ou pas, je déclenche ou pas. »
    Le dessin, comme la figure d'une fiche de constructeur (E-T-A, Sensata) :
      · LE PAPIER : une vraie grille log-log — les décades en trait plein
-       léger, les sous-divisions 2 à 9 plus fines —, les décades nommées
-       (0,01 s à 10 000 s ; 1 A, 10 A, 100 A…), le titre du temps le long de
-       son axe, et sous les ampères un second rang discret, les multiples du
-       calibre (In, 2 In, 5 In…) ;
+       léger, les sous-divisions 2 à 9 plus fines —, les secondes nommées
+       à gauche (0,01 s à 10 000 s) et, en bas, les MULTIPLES DU COURANT
+       NOMINAL (0,5 · 1 · 2 · 5 · 10… In : le lecteur, version 61, « le
+       graphique n'est pas en ampères, il est en courants nominaux ») ;
      · LES QUATRE COURBES de la famille du part number, toujours (MS3320 :
        ETA483, les 125 °C, 23 °C min et max, −55 °C de l'Excel), LISSES :
        une spline de lissage monotone et convexe ajustée aux points lus — la
        courbe ne passe plus par chacun, elle les résume (`lissage`) ; la plus
        rapide et la plus lente à l'encre, celles d'entre elles plus douces ;
-       chacune nommée à son bout du haut par sa température, et le calibre
-       retenu (« 10 A ») au-dessus d'elles ;
+       chacune nommée juste au-dessus de sa sortie du cadre par sa
+       température — sans trait qui dépasse du cadre (version 61) ;
      · LE VERDICT DANS LE DESSIN : trois fonds très légers — à gauche de la
        courbe la plus rapide, le disjoncteur « ne déclenche pas » (vert) ;
        entre les courbes, la bande où cela dépend de la température (gris) ;
        à droite de la plus lente, il « déclenche » (rouge) — ; le profil de
        charge en escalier, chaque marche et chaque point de la couleur de son
-       sort, nommés court ; la limite de dommage du câble le plus faible, en
-       tirets fins (rouges quand le disjoncteur ne le protège pas) ;
+       sort (passe en vert, ne passe pas en rouge), nommés court ; plus de
+       limite de dommage du câble (version 61 : elle se juge, elle ne se
+       dessine plus) ;
      · aucune légende à part, aucune étiquette sur une autre, pas de carte
        autour : le dessin est sur papier blanc dans les deux thèmes.
    La fiche l'appelle par deux portes, et seulement par elles :
@@ -45,16 +46,16 @@
 const DJ_VUE = Object.freeze({});
 
 /* ---- la géométrie --------------------------------------------------------------------- */
-/* Ampères en abscisse, secondes en ordonnée, en log-log : six décades de temps, 10 ms en bas, 10 000 s en haut (le
-   permanent dure toujours : il se pose sur le bord du haut). L'abscisse prend les décades qui couvrent le profil, la bande
-   du calibre retenu et le câble le plus faible. Les marges : à gauche le titre du temps et ses décades, en haut trois rangs
-   (les températures au bout des courbes, sur deux ; le calibre au-dessus), en bas les ampères, les multiples de In, le
-   titre du courant. */
+/* Le calcul est en ampères (le profil s'écrit en ampères), le dessin en log-log : six décades de temps, 10 ms en bas,
+   10 000 s en haut (le permanent dure toujours : il se pose sur le bord du haut). L'abscisse prend les décades qui
+   couvrent le profil et la bande du calibre retenu ; elle se lit en multiples de In (`grapheIn`). Les marges : à gauche
+   le titre du temps et ses décades, en haut les températures au-dessus de la sortie des courbes, en bas les multiples de
+   In et le titre du courant. */
 const DJG = { L: 64, R: 16, T: 50, B: 50, ylo: -2, yhi: 4, ubas: -2.4, uhaut: 4.4 };
 function largeurGrapheEstimee() { const b = typeof $ === 'function' ? $('ba-equip') : null; return b && b.clientWidth > 200 ? b.clientWidth - 48 : 392; }
-function geometrieGraphe(d, W, faible) { W = Math.max(300, Math.round(W || 392)); const { L, R, T, B, ylo, yhi } = DJG;
+function geometrieGraphe(d, W) { W = Math.max(300, Math.round(W || 392)); const { L, R, T, B, ylo, yhi } = DJG;
   const hp = Math.round(Math.max(240, Math.min(380, (W - L - R) * 0.86))), H = T + hp + B, rapide = d.courbes[0], cal = d.calibre, I = d.points.map(p => p.i).filter(i => i > 0);
-  const bas = [...I, cal ? cal * rapide.points[0].m : Infinity, faible ? faible.continu : Infinity].filter(x => x > 0 && isFinite(x));
+  const bas = [...I, cal ? cal * rapide.points[0].m : Infinity].filter(x => x > 0 && isFinite(x));
   const hauts = [...I.map(i => i * 1.5), cal ? cal * multipleAdmis(rapide, 0.02) : 0];
   let xlo = Math.floor(Math.log10((bas.length ? Math.min(...bas) : 1) / 1.4) + 1e-9), xhi = Math.ceil(Math.log10(Math.max(...hauts, 1e-9)) - 1e-9); if (xhi - xlo < 2) xhi = xlo + 2;
   const kx = (W - L - R) / (xhi - xlo), ky = hp / (yhi - ylo), xv = v => L + (v - xlo) * kx, yu = u => T + (yhi - u) * ky;
@@ -144,18 +145,6 @@ function traceSpline(F, G) { if (!F) return null; const uS = Math.min(F.u1, DJG.
     segs.push([[a, va], [a + h / 3, va + da * h / 3], [b - h / 3, vb - db * h / 3], [b, vb]].map(([u, v]) => [G.xv(v), G.yu(u)])); }
   const x0 = G.xv(F.val(uS)); return { haut: [x0, G.yu(DJG.uhaut)], coude: [x0, G.yu(uS)], segs, fin: segs.length ? segs[segs.length - 1][3] : [x0, G.yu(uS)] }; }
 const traceLisse = (c, G) => traceSpline(courbeLisse(c), G);
-/* LA LIMITE DE DOMMAGE d'un câble (09 bis, `dommageDuFil`) : en bref l'adiabatique √(I²t / t) — une droite en log-log —,
-   en long son continu porté à la tenue — une verticale —, le coude arrondi sur ±0,14 décade (2 % au plus) ; sans courbe de
-   dommage, ses intensités de service aux paliers (2 s, 10 s, 1 min, le continu posé à 10 min), lissées comme une courbe
-   de la norme. Même forme que `traceSpline`, en ampères. */
-function traceDommage(f, G) { const D = f.dommage;
-  if (D && D.i2t > 0 && D.continu > 0) { const vc = Math.log10(D.continu), us = Math.log10(D.i2t / (D.continu * D.continu)), h = 0.14, adia = u => 0.5 * Math.log10(D.i2t) - 0.5 * u;
-    const P = (u, v) => [G.xv(v), G.yu(u)], A = { u: us - h, v: adia(us - h) }, Bn = { u: us + h, v: vc }, k = Bn.u - A.u;
-    const coude = [[Bn.u, Bn.v], [Bn.u - k / 3, Bn.v], [A.u + k / 3, A.v - 0.5 * k / 3], [A.u, A.v]].map(([u, v]) => P(u, v));
-    const bas = P(DJG.ubas, adia(DJG.ubas)); return { haut: P(DJG.uhaut, vc), coude: P(Bn.u, vc), segs: [coude, [coude[3], coude[3], bas, bas]], fin: bas }; }
-  const L = (f.laisse || []).filter(x => x.service > 0); if (L.length < 2) return null;
-  const pts = L.map(x => ({ u: Math.log10(x.palier === Infinity ? 600 : x.palier), v: Math.log10(x.admise) })), cont = L.find(x => x.palier === Infinity);
-  return traceSpline(lissage(pts, cont ? Math.log10(cont.admise) : NaN), G); }
 const f2 = n => String(Math.round(n * 1000) / 1000);   // trois décimales : arrondir au centième faisait trembler la tangente
 const pt2 = p => f2(p[0]) + ' ' + f2(p[1]);
 // un filet d'un pixel tombe sur la grille des pixels : net à 100 % comme à 200 %
@@ -204,10 +193,6 @@ function lelong(lignes, ech, G, cotes, sens, ecart) { const out = [], hs = [], b
     out.push(etiquette(lignes, (c < 0 ? Math.min(...xs) : Math.max(...xs)) + c * (ecart || 6), y, c < 0 ? 'end' : 'start')); })); return out; }
 
 /* ---- ce que le dessin nomme ------------------------------------------------------------ */
-/* Le câble le plus faible du disjoncteur : celui qui supporte le moins à 10 s (sa courbe de dommage, sinon son service). */
-function filLePlusFaible(d) { const lim = f => f.dommage ? Math.max(f.dommage.continu, Math.sqrt(f.dommage.i2t / 10)) : ((f.laisse || []).find(x => x.palier === 10) || {}).admise || Infinity;
-  const xs = d.fils.filter(f => f.dommage || (f.laisse || []).length).sort((a, b) => lim(a) - lim(b)); const f = xs[0]; if (!f) return null;
-  return { f, continu: f.dommage ? f.dommage.continu : ((f.laisse.find(x => x.palier === Infinity) || {}).admise || null) }; }
 /* Le rôle d'une courbe dans le dessin : un BORD de la bande (la plus rapide, qui juge l'intempestif ; la plus lente, qui dit
    ce qui passe jusqu'au câble), à l'encre ; une courbe d'entre elles (la paire de 23 °C de l'Excel), plus douce. */
 const roleDe = (k, C) => k === 0 || k === C.length - 1 ? 'bord' : 'milieu';
@@ -221,40 +206,48 @@ let DJ_CLIP = 0;
 
 /* ---- le graphique ---------------------------------------------------------------------- */
 /* LE PAPIER : les décades (traits pleins légers) et leurs sous-divisions 2 à 9 (plus fines), nommées — les secondes à
-   gauche, les ampères en bas —, le titre du temps le long de son axe, celui du courant sous les deux rangs du bas (les
-   ampères ; les multiples de In, qui suivent la bande : `grapheIn`). Les fonds passent dessous, le cadre par-dessus. */
-function papierSvg(G) { const { L, R, T, B, H, W } = G, x0 = net(L), x1 = net(W - R - 1), y0 = net(T), y1 = net(H - B - 1);
+   gauche —, le titre du temps le long de son axe, celui du courant sous le cadre. L'abscisse est en MULTIPLES DU COURANT
+   NOMINAL (le lecteur : « le graphique n'est pas en ampères, il est en courants nominaux : ne mets que les In ») : ses
+   filets verticaux sont ceux des multiples de In (`filetsIn`, qui glissent avec la bande quand le calibre change) et ses
+   chiffres aussi (`grapheIn`) ; sans calibre seulement, les ampères. Les fonds passent dessous, le cadre par-dessus. */
+function papierSvg(G, cal) { const { L, R, T, B, H, W } = G, x0 = net(L), x1 = net(W - R - 1), y0 = net(T), y1 = net(H - B - 1);
   let fins = '', decades = '', mots = '';
   for (let e = G.ylo; e <= G.yhi; e++) { const y = G.yu(e);
     if (e > G.ylo && e < G.yhi) decades += `M${x0} ${f2(net(y))}H${x1}`;
     if (e < G.yhi) for (let k = 2; k <= 9; k++) fins += `M${x0} ${f2(net(G.yu(e + Math.log10(k))))}H${x1}`;
     mots += `<text class="dj-grad" x="${L - 7}" y="${f2(y + 3.5)}" text-anchor="end">${motTemps(e)}</text>`; }
-  for (let e = G.xlo; e <= G.xhi; e++) { const x = G.xv(e);
+  if (!cal) for (let e = G.xlo; e <= G.xhi; e++) { const x = G.xv(e);
     if (e > G.xlo && e < G.xhi) decades += `M${f2(net(x))} ${y0}V${y1}`;
     if (e < G.xhi) for (let k = 2; k <= 9; k++) fins += `M${f2(net(G.xv(e + Math.log10(k))))} ${y0}V${y1}`;
     mots += `<text class="dj-grad" x="${f2(x)}" y="${H - B + 17}" text-anchor="middle">${motCourant(e)}</text>`; }
   return `<path class="dj-filet fin" d="${fins}"/><path class="dj-filet" d="${decades}"/>`
     + mots + `<text class="dj-axe" transform="translate(13 ${f2(T + (H - B - T) / 2)}) rotate(-90)" text-anchor="middle">Temps de déclenchement</text>`
-    + `<text class="dj-axe" x="${f2(L + (W - R - L) / 2)}" y="${H - 6}" text-anchor="middle">Courant</text>`; }
-/* LES MULTIPLES DE In, sous les ampères : In, 2 In, 5 In, 10 In… du calibre retenu — dessinés au calibre 1 A et décalés
-   avec la bande (ils glissent avec elle quand le calibre change) ; seuls ceux qui tombent sous le cadre se nomment, et
-   sans se toucher. */
+    + `<text class="dj-axe" x="${f2(L + (W - R - L) / 2)}" y="${H - 12}" text-anchor="middle">${cal ? 'Multiples du courant nominal (In)' : 'Courant'}</text>`; }
+/* LES FILETS DES MULTIPLES DE In : les décades (0,1 · 1 · 10 · 100 In) et leurs sous-divisions, dessinés au calibre 1 A
+   (le multiple vaut l'ampère) — le groupe qui les porte glisse avec la bande ; le cadre les coupe. */
+function filetsIn(G, cal) { if (!cal) return ''; const lc = Math.log10(cal), y0 = net(G.T), y1 = net(G.H - G.B - 1); let fins = '', decades = '';
+  for (let e = Math.floor(G.xlo - lc) - 1; e <= Math.ceil(G.xhi - lc) + 1; e++) { decades += `M${f2(G.xv(e))} ${y0}V${y1}`;
+    for (let k = 2; k <= 9; k++) fins += `M${f2(G.xv(e + Math.log10(k)))} ${y0}V${y1}`; }
+  return `<path class="dj-filet fin" d="${fins}"/><path class="dj-filet" d="${decades}"/>`; }
+/* LES CHIFFRES DES MULTIPLES DE In, sous le cadre : 0,5 · 1 · 2 · 5 · 10 · 20 · 50 · 100 (comme la figure du
+   constructeur : « multiples du courant nominal ») — décalés avec la bande ; seuls ceux qui tombent sous le cadre se
+   nomment, et sans se toucher. */
 function grapheIn(G, cal, dx) { if (!cal) return ''; let s = '', avant = -Infinity;
-  [1, 2, 5, 10, 20, 50, 100, 200, 500].forEach(m => { const x = G.xv(Math.log10(m)) + dx; if (x < G.L - 0.5 || x > G.W - G.R + 0.5) return;
-    const mot = m === 1 ? 'In' : m + '\u00a0In', w = largeurEtiquette(mot, 10); if (x - w / 2 < avant + 6) return; avant = x + w / 2;
-    s += `<line class="dj-tic-in" x1="${f2(net(x - dx))}" y1="${G.H - G.B}" x2="${f2(net(x - dx))}" y2="${G.H - G.B + 3}"/><text class="dj-grad in" x="${f2(x - dx)}" y="${G.H - G.B + 30}" text-anchor="middle">${mot}</text>`; });
+  [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000].forEach(m => { const x = G.xv(Math.log10(m)) + dx; if (x < G.L - 0.5 || x > G.W - G.R + 0.5) return;
+    const mot = nombre(m), w = largeurEtiquette(mot, 10.5); if (x - w / 2 < avant + 8) return; avant = x + w / 2;
+    s += `<line class="dj-tic-in" x1="${f2(net(x - dx))}" y1="${G.H - G.B}" x2="${f2(net(x - dx))}" y2="${G.H - G.B + 4}"/><text class="dj-grad in" x="${f2(x - dx)}" y="${G.H - G.B + 17}" text-anchor="middle">${mot}</text>`; });
   return s; }
-/* LE GRAPHIQUE : les fonds du verdict (ne déclenche pas · la bande · déclenche), le papier, les quatre courbes du calibre
-   retenu et la limite de dommage du câble le plus faible, le cadre, puis le profil en escalier et ses points, et les noms :
-   au bout des courbes (les températures, le calibre au-dessus), dans les fonds, au bout des tirets. Rend le SVG ; `vue` :
+/* LE GRAPHIQUE : les fonds du verdict (ne déclenche pas · la bande · déclenche), le papier et ses filets en multiples de
+   In, les quatre courbes du calibre retenu, le cadre, puis le profil en escalier et ses points, et les noms : au-dessus de
+   la sortie des courbes (les températures), dans les fonds. Rend le SVG ; `vue` :
    plus rien à choisir ; `W` : la largeur en pixels. */
-function grapheSvg(d, vue, W) { const faible = filLePlusFaible(d), G = geometrieGraphe(d, W, faible), { L, R, T, B, H } = G, Wd = G.W, cal = d.calibre, C = d.courbes, clip = 'dj-clip-' + (++DJ_CLIP);
+function grapheSvg(d, vue, W) { const G = geometrieGraphe(d, W), { L, R, T, B, H } = G, Wd = G.W, cal = d.calibre, C = d.courbes, clip = 'dj-clip-' + (++DJ_CLIP);
   const tr = C.map(c => traceLisse(c, G)), rapide = tr[0], lente = tr[tr.length - 1], dx = G.dx(cal), P = poseur(G), avecBande = !!(cal && rapide && lente);
   // ce que les étiquettes doivent éviter : chaque trait dessiné
-  const ech = tr.map(t => t ? echantillons(t, dx, T) : []), dom = faible ? traceDommage(faible.f, G) : null, echDom = dom ? echantillons(dom, 0, T) : [];
+  const ech = tr.map(t => t ? echantillons(t, dx, T) : []);
   if (avecBande) ech.forEach(e => P.traits(e, 2));
-  // le profil et ses points, d'abord : ce sont eux qu'on lit (leur nom peut passer sur les tirets du dommage : son halo le détache)
-  const pts = pointsSvg(d.points, G, P); P.traits(echDom, 2);
+  // le profil et ses points, d'abord : ce sont eux qu'on lit
+  const pts = pointsSvg(d.points, G, P);
   let fonds = '', courbes = '', noms = '', tics = '', zones = '';
   if (avecBande) {
     // les fonds : à gauche de la plus rapide, la bande entre les deux bords, à droite de la plus lente
@@ -264,9 +257,10 @@ function grapheSvg(d, vue, W) { const faible = filLePlusFaible(d), G = geometrie
     // droite, la paire d'entre elles (une même température, min et max) au-dessus d'elle ; un trait nommé là y monte jusqu'à son
     // nom — un trait court, dans le prolongement de son asymptote ; puis le calibre, au-dessus de la bande, au premier rang libre
     const rangs = [T - 9, T - 23, T - 37], traitsNoms = [];
-    const marge = (l, x, ancre, ts, ys) => (ys || rangs).map(y => { const e = etiquette(l, x, y, ancre, true); e.tics = ts || []; e.ext = e.tics.map(tx => ({ x0: tx - 2, x1: tx + 2, y0: y + 3, y1: T - 3 })); return e; });
-    const nommer = (e, cls, role) => { if (!e) return ''; (e.tics || []).forEach(tx => traitsNoms.push(`<line class="dj-tic-nom ${role}" x1="${f2(tx - dx)}" y1="${T}" x2="${f2(tx - dx)}" y2="${f2(e.y + 3)}"/>`));
-      return etiquetteSvg(e, cls, dx); };
+    const marge = (l, x, ancre, ts, ys) => (ys || rangs).map(y => { const e = etiquette(l, x, y, ancre, true); e.tics = []; e.ext = []; return e; });
+    // (plus de trait du cadre jusqu'au nom : le lecteur, « des traits noirs qui sortent du cadre, ça ne va pas du tout » —
+    // le nom se pose juste au-dessus de la sortie de sa courbe, et rien ne dépasse le cadre)
+    const nommer = (e, cls) => e ? etiquetteSvg(e, cls, dx) : '';
     // entre deux courbes d'une même température, au besoin : au milieu, à une hauteur où elles s'écartent assez, du bas vers le haut
     const entre = (l, a, b) => { const out = [], w = largeurEtiquette(l[0][0], 11);
       for (let y = H - B - 6; y >= T + 12; y -= 6) { const xa = Math.max(...[y - 9, y - 3, y + 3].map(z => xA(a, z))), xb = Math.min(...[y - 9, y - 3, y + 3].map(z => xA(b, z)));
@@ -279,15 +273,10 @@ function grapheSvg(d, vue, W) { const faible = filLePlusFaible(d), G = geometrie
         : dernier && !premier ? [...marge(l, xb + 4, 'start', [xb], temps), ...lelong(l, b, G, [1], 1), ...lelong(l, b, G, [-1], -1)]
         : [...marge(l, (xa + xb) / 2, 'middle', ks.length > 1 ? [xa, xb] : [xa], temps), ...entre(l, a, b), ...lelong(l, b, G, [1], 1)];
       noms += nommer(P.essayer(cands), 'dj-t ' + role, role); });
-    const xc = (rapide.coude[0] + lente.coude[0]) / 2 + dx, motCal = [[amperes(cal), '', 12.5]];
-    noms += nommer(P.essayer([...marge(motCal, xc, 'middle', [], [T - 23, T - 37]), ...lelong(motCal, ech[0], G, [-1], 1)]), 'dj-calibre', '');
     tics = traitsNoms.join(''); }
-  // la limite de dommage du câble le plus faible : des tirets fins, nommés à leur bout — rouges quand le disjoncteur ne le protège pas
-  let dommage = '', etiqDom = '';
-  if (dom) { const f = faible.f, ko = f.protege === false, mot = (f.cable || 'câble') + ' · ' + (f.type || '?');
-    dommage = `<path class="dj-dommage${ko ? ' ko' : ''}" d="${descente(dom)}"><title>${esc('Limite de dommage de ' + mot + (f.jugeSur === 'dommage' ? ' (table Dommage des fils)' : ' (ses intensités de service)') + (ko ? ' : le ' + (cal ? amperes(cal) : 'disjoncteur') + ' ne le protège pas' : ''))}</title></path>`;
-    // nommée le long de sa pente d'abord (sous le coude), sinon le long de sa verticale
-    const cands = lelong([[mot, '', 10.5]], echDom, G, [-1, 1], 1, 5), sous = c => c.y > dom.coude[1] + 8, e = P.essayer([...cands.filter(sous), ...cands.filter(c => !sous(c))]); if (e) etiqDom = etiquetteSvg(e, 'dj-dom' + (ko ? ' ko' : ''), 0); }
+  // plus de limite de dommage dessinée (le lecteur : « un fil rouge en pointillé, W-015 DR24 : on ne sait pas à quoi il sert,
+  // c'est chiant ») : la protection de chaque câble se juge toujours, et se lit dans la section Câbles et les problèmes
+  
   // LES FONDS NOMMÉS sobrement, à l'encre seconde, contre la courbe qui borne leur fond : « ne déclenche pas » à gauche de la
   // plus rapide, en bas d'abord ; « déclenche » à droite de la plus lente, en haut d'abord — de 8 en 8 pixels vers le coin tant
   // que la place est prise —, en dernier et loin de tout autre nom (deux mots voisins se liraient comme une phrase)
@@ -300,10 +289,10 @@ function grapheSvg(d, vue, W) { const faible = filLePlusFaible(d), G = geometrie
     zones = mot('ne déclenche pas', -1) + mot('déclenche', 1); }
   const glisse = `data-glisse="${f2(dx)}" style="transform:translate(${f2(dx)}px,0)"`, cadre = `<rect x="${L}" y="${T}" width="${Wd - L - R}" height="${H - T - B}"/>`;
   const s = `<defs><clipPath id="${clip}">${cadre}</clipPath></defs>`
-    + (avecBande ? `<g clip-path="url(#${clip})"><g class="dj-fonds" ${glisse}>${fonds}</g></g>` : '') + papierSvg(G)
-    + `<g clip-path="url(#${clip})">${avecBande ? `<g class="dj-cal" data-cal="${cal}" ${glisse}>${courbes}</g>` : ''}${dommage}</g>`
+    + (avecBande ? `<g clip-path="url(#${clip})"><g class="dj-fonds" ${glisse}>${fonds}</g><g class="dj-papier-in" ${glisse}>${filetsIn(G, cal)}</g></g>` : '') + papierSvg(G, avecBande ? cal : 0)
+    + `<g clip-path="url(#${clip})">${avecBande ? `<g class="dj-cal" data-cal="${cal}" ${glisse}>${courbes}</g>` : ''}</g>`
     + `<rect class="dj-cadre" x="${net(L)}" y="${net(T)}" width="${Wd - L - R - 1}" height="${H - T - B - 1}"/>`
-    + `<g class="dj-etiquettes">${zones}${avecBande ? `<g class="dj-cal-t" ${glisse}>${tics}${noms}${grapheIn(G, cal, dx)}</g>` : ''}${etiqDom}</g>`
+    + `<g class="dj-etiquettes">${zones}${avecBande ? `<g class="dj-cal-t" ${glisse}>${tics}${noms}${grapheIn(G, cal, dx)}</g>` : ''}</g>`
     + `<g class="dj-prof">${pts}</g><g class="dj-vise" hidden><line class="dj-croix" x1="0" y1="0" x2="0" y2="0"/><line class="dj-croix" x1="0" y1="0" x2="0" y2="0"/></g>`;
   return `<svg class="dj-svg" viewBox="0 0 ${Wd} ${H}" width="${Wd}" height="${H}" data-xlo="${G.xlo}" data-xhi="${G.xhi}" data-w="${Wd}" role="img" aria-label="${escA('Courbe de déclenchement' + (cal ? ' du ' + amperes(cal) : '') + ' aux quatre températures, le profil de charge en escalier')}">${s}</svg>`; }
 /* LE PROFIL EN ESCALIER : du bas du cadre, au courant le plus fort, le trait monte jusqu'à la fin de ce qu'il dure, recule
@@ -346,7 +335,7 @@ const motIn = (i, cal) => cal > 0 ? nombre(Math.round(i / cal * 100) / 100) + '\
    suivent en direct, le contrat s'écrit quand on lâche. Quand le calibre a changé depuis le dernier dessin, la bande glisse
    (`DJ_ANIM`, 08-disjoncteurs : le dernier décalage dessiné par repère). `retenir` : la porte garde sa forme. */
 function lierGraphique(fig, nom, E, lire, ecrire, retenir) { const d = E.d, svg = fig.querySelector('svg'), tip = fig.querySelector('.dj-tip'); if (!svg || !d.courbes.length) return;
-  const faible = filLePlusFaible(d), G = geometrieGraphe(d, +svg.dataset.w, faible), { L, R, T, B, H } = G, W = G.W, cal = d.calibre, C = d.courbes, vise = svg.querySelector('.dj-vise');
+  const G = geometrieGraphe(d, +svg.dataset.w), { L, R, T, B, H } = G, W = G.W, cal = d.calibre, C = d.courbes, vise = svg.querySelector('.dj-vise');
   // la bande glisse : du décalage dessiné la dernière fois pour ce repère à celui d'aujourd'hui (à géométrie égale)
   const grps = [...svg.querySelectorAll('[data-glisse]')], geo = G.xlo + '|' + G.xhi + '|' + W, avant = DJ_ANIM.get(nom);
   if (grps.length) { const tx = +grps[0].dataset.glisse;
@@ -365,11 +354,12 @@ function lierGraphique(fig, nom, E, lire, ecrire, retenir) { const d = E.d, svg 
   const cartePoint = pt => { const m0 = pt.marges[0], titre = esc(amperes(pt.i)) + (pt.t === Infinity ? ' · toujours' : ' · ' + esc(secondes(pt.t))); if (!m0) return carteTip(titre, esc(pt.nom), 'pas jugé', 'info');
     const rates = pt.marges.filter(m => !m.ok).map(m => m.courbe), bilan = pt.t === Infinity ? '' : ' · ' + esc(motFraction(m0.somme)) + ' du temps consommé';
     const sous = esc(pt.nom) + (!cal ? '' : ' — le ' + esc(amperes(cal)) + (pt.t === Infinity ? ' garantit ' + esc(amperes(m0.admis)) : m0.temps === Infinity ? ' ne déclenche pas' : ' tient ' + esc(secondes(m0.temps))) + ' à ' + esc(m0.courbe));
-    const verdict = pt.ok === false ? `<em>déclenche</em> à ${rates.length === pt.marges.length ? 'toute température' : esc(rates.join(', '))}${bilan}` : pt.serre ? (pt.t === Infinity ? 'tient, sans ' + esc(nombre(d.marges.marge)) + ' % de marge' : 'tient, mais touche la courbe' + bilan) : (pt.t === Infinity ? 'ne déclenche jamais' : 'tient à toute température' + bilan);
-    return carteTip(titre, sous, verdict, pt.ok === false ? 'ko' : pt.serre ? 'serre' : 'ok'); };
+    // deux mots, comme le calibre (le lecteur : « soit ça passe, soit ça passe pas ») : toucher la courbe ne passe pas
+    const verdict = pt.ok === false ? `<em>ne passe pas</em> : déclenche à ${rates.length === pt.marges.length ? 'toute température' : esc(rates.join(', '))}${bilan}` : pt.serre ? (pt.t === Infinity ? '<em>ne passe pas</em> : sans ' + esc(nombre(d.marges.marge)) + ' % de marge' : '<em>ne passe pas</em> : touche la courbe' + bilan) : (pt.t === Infinity ? 'passe : ne déclenche jamais' : 'passe à toute température' + bilan);
+    return carteTip(titre, sous, verdict, pt.ok === false || pt.serre ? 'ko' : 'ok'); };
   // le réticule : à ce courant (et ce multiple de In), ce que le calibre retenu tient à la courbe qui juge
-  const carteReticule = (i, t) => { const titre = esc(amperes(i)) + ' · ' + esc(secondes(t)); if (!cal) return carteTip(titre, '', '', '');
-    const tt = tempsDeDeclenchement(C[0], i / cal); return carteTip(titre, esc(motIn(i, cal)) + ' — le ' + esc(amperes(cal)) + (tt === Infinity ? ' n’y déclenche jamais' : ' y tient ' + esc(secondes(tt))) + ' à ' + esc(C[0].nom), '', ''); };
+  const carteReticule = (i, t) => { if (!cal) return carteTip(esc(amperes(i)) + ' · ' + esc(secondes(t)), '', '', '');
+    const tt = tempsDeDeclenchement(C[0], i / cal); return carteTip(esc(motIn(i, cal)) + ' · ' + esc(secondes(t)), 'soit ' + esc(amperes(i)) + ' — le ' + esc(amperes(cal)) + (tt === Infinity ? ' n’y déclenche jamais' : ' y tient ' + esc(secondes(tt))) + ' à ' + esc(C[0].nom), '', ''); };
   // glisser un point : le profil se rejuge en direct (l'escalier, les points et la gamme), le contrat s'écrit au lâcher ; les noms
   // des points évitent les traits des courbes et les étiquettes déjà posées (le poseur du dessin, refait une fois)
   let prise = null, base = null;
@@ -378,7 +368,7 @@ function lierGraphique(fig, nom, E, lire, ecrire, retenir) { const d = E.d, svg 
     return P; };
   const juger = profil => { const dd = { ...d, ...verdictDisjonction(app.norme, d.courbe, cal, profil, d.contexte) }; base = base || traitsDeBase(); const P = poseur(G); base.pris.forEach(b => P.boite(b));
     svg.querySelector('.dj-prof').innerHTML = pointsSvg(dd.points, G, P);
-    document.querySelectorAll(`.fi-dj[data-disj="${CSS.escape(nom)}"] .dj-chip`).forEach(b => { const g = dd.gamme.find(x => x.calibre === +b.dataset.cal); if (g) { b.classList.toggle('ok', g.valide === true && !!g.marge); b.classList.toggle('serre', g.valide === true && !g.marge); b.classList.toggle('ko', g.valide === false); } });
+    document.querySelectorAll(`.fi-dj[data-disj="${CSS.escape(nom)}"] .dj-chip`).forEach(b => { const g = dd.gamme.find(x => x.calibre === +b.dataset.cal); if (g) { b.classList.toggle('ok', g.valide === true && !!g.marge); b.classList.toggle('ko', g.valide != null && !(g.valide === true && !!g.marge)); } });
     return dd; };
   svg.onpointermove = e => { const p = local(e);
     if (prise) { const i = Math.max(0.01, G.iDe(Math.min(W - R, Math.max(L, p.x)))), t = G.tDe(Math.min(H - B, Math.max(T, p.y))), el = prise.etat, ri = +i.toPrecision(3), rt = +t.toPrecision(2);

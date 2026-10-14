@@ -51,7 +51,8 @@ const ICONES = {
   etoile: '<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" fill="currentColor"/>',
   infini: '<path d="M12 12c-2-2.6-3.6-4-5.5-4a4 4 0 0 0 0 8c1.9 0 3.5-1.4 5.5-4zm0 0c2 2.6 3.6 4 5.5 4a4 4 0 0 0 0-8c-1.9 0-3.5 1.4-5.5 4z"/>',
   poubelle: '<path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/>',
-  echange: '<path d="M7 7h11l-3-3M17 17H6l3 3"/>'
+  echange: '<path d="M7 7h11l-3-3M17 17H6l3 3"/>',
+  coche: '<path d="m5 12.5 4.5 4.5L19 7.5"/>'
 };
 const ico = (k, cls) => `<svg class="ico${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" aria-hidden="true">${ICONES[k]}</svg>`;
 const coulDeFil = f => couleursDesRoutes().get((f.l && f.l.route) || '') || '#26323f';
@@ -171,25 +172,20 @@ const symbole = (type, coul) => `<div class="fi-symbole" aria-hidden="true"${cou
    l'écrit ; un état (son bord et sa valeur) quand la valeur pose problème. La valeur est du HTML déjà échappé. */
 const tuile = (k, v, o) => { o = o || {};
   return `<div class="fi-tuile${o.etat ? ' ' + o.etat : ''}${o.mono ? ' mono' : ''}${o.edit ? ' edit' : ''}"${o.titre ? ` title="${escA(o.titre)}"` : ''}><span class="fi-tuile-k">${esc(k)}</span><span class="fi-tuile-v">${v}</span></div>`; };
-/* LE TYPE d'un équipement, en tête : celui que le code du repère dit (BT → batterie), qu'une liste change (le même choix
-   que la colonne Nature du récapitulatif : `natureDite`, 08-recap) ; « ↺ » rend celui du code. */
-function natureChoix(nom) { const auto = typeof natureAuto === 'function' ? natureAuto(nom) : natureDe(nom), dite = typeof natureDite === 'function' ? natureDite(nom) : '';
-  if (typeof CLE_NATURE !== 'function') return esc(majuscule(natureDe(nom)));
-  const q = lireRepere(nom), codeAuto = q && (q.codeLu || q.code), xs = Object.entries(CODES).filter(([k, c]) => c.forme === 'equipement' && k !== codeAuto);
-  const noms = xs.map(([, c]) => c.nom), opts = [['', majuscule(auto)], ...xs.sort((a, b) => a[1].nom.localeCompare(b[1].nom, 'fr')).map(([k, c]) => [k, majuscule(c.nom) + (noms.filter(n => n === c.nom).length > 1 ? ' (' + k + ')' : '')]), ['EQ', 'Équipement']];
-  return `<span class="fi-nature"><select id="eq-nature" aria-label="${escA('Le type de ' + nom + ' : lu dans le code du repère, une liste le change')}" title="Le type, lu dans le code du repère — changer">${opts.map(([v, t]) => `<option value="${escA(v)}"${v === dite ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>${ico('bas', 'fi-nature-v')}</span>`
-    + (dite ? retourAuto('nature:' + nom, majuscule(auto)) : ''); }
-/* L'en-tête : le symbole ; le type en petit (et la désignation, qui s'écrit à côté) ; le repère — un champ qui a l'air
-   d'un titre, son crayon (clic ou F2), qu'on renomme en écrivant dedans ; les tuiles d'un câble.
-   o : { type, genre (HTML), nom, champ (l'id du champ), aide, designation (le repère dont on écrit la désignation),
+/* L'en-tête (le lecteur : « pas besoin de mettre disjoncteur ni batterie, ni de liste déroulante — personne ne s'en
+   servira ; juste un texte qu'on tape à la main, qu'on peut modifier ; le repère élec en priorité ») : le symbole ; le
+   REPÈRE d'abord — un champ qui a l'air d'un titre, son crayon (clic ou F2), qu'on renomme en écrivant dedans — ; dessous,
+   le NOM, un texte libre qu'on tape (la désignation du contrat), et, quand il dit quelque chose, un mot de contexte (« à
+   poser · sur 102CB1:2 ») ; les tuiles d'un câble. Le type se lit toujours dans le code du repère : il ne s'affiche plus.
+   o : { type, genre (HTML, le contexte), nom, champ (l'id du champ), aide, designation (le repère dont on écrit le nom),
    tuiles, coul } */
 function enTete(o) {
   const nom = o.champ ? `<input class="fi-nom" id="${o.champ}" value="${escA(o.nom)}" aria-label="${escA(o.aide || 'Repère — écrire pour renommer')}" title="${escA(o.aide || 'Écrire ici renomme partout : chaque câble suit')}" spellcheck="false" autocomplete="off">`
     + `<button type="button" class="fi-crayon" id="fi-crayon" aria-label="Renommer (F2)" title="Renommer (F2)">${ico('crayon')}</button>` : `<div class="fi-nom">${esc(o.nom)}</div>`;
   const des = o.designation ? app.contrat.designations.get(o.designation) || '' : null;
-  const desH = des != null ? `<input class="fi-des${des ? ' plein' : ''}" id="eq-des" value="${escA(des)}" placeholder="désignation" aria-label="Désignation" title="La désignation : un texte libre" spellcheck="false" autocomplete="off">` : '';
+  const desH = des != null ? `<input class="fi-des${des ? ' plein' : ''}" id="eq-des" value="${escA(des)}" placeholder="Nom — à taper" aria-label="Nom (un texte libre)" title="Un nom, en texte libre : il se garde avec le contrat" spellcheck="false" autocomplete="off">` : '';
   const tuiles = (o.tuiles || []).filter(Boolean);
-  return `<header class="fi-entete">${symbole(o.type, o.coul)}<div class="fi-ident">${o.genre || desH ? `<div class="fi-genre">${o.genre || ''}${desH}</div>` : ''}<div class="fi-nom-ligne">${nom}</div></div>`
+  return `<header class="fi-entete">${symbole(o.type, o.coul)}<div class="fi-ident"><div class="fi-nom-ligne">${nom}</div>${o.genre || desH ? `<div class="fi-genre">${o.genre ? `<span class="fi-genre-mot">${o.genre}</span>` : ''}${desH}</div>` : ''}</div>`
     + (tuiles.length ? `<div class="fi-tuiles">${tuiles.join('')}</div>` : '') + '</header>'; }
 /* L'ancienne tête (la comparaison des contrats déjà faits s'en sert encore, quand sa référence a disparu). */
 const fiTete = o => `<header class="fi-tete"><div class="min0"><div class="fi-nom">${esc(o.nom)}</div></div></header><div class="fi-ligne">${o.sous ? `<span class="fi-sous">${o.sous}</span>` : ''}</div>`;
@@ -301,56 +297,72 @@ function contactAuBout(l, rep, borne) { if (!l || !rep || estMasse(rep) || estRe
 // le contact d'un bout, en puce : un clic ouvre les contacts que la table accepte pour ce câble
 const boutonContact = (ct, cls) => `<button type="button" class="fi-sertir fi-ct-puce${cls ? ' ' + cls : ''}${ct.st.main ? ' main' : ''}${ct.ko ? ' ko' : ''}" data-sertir="${escA(ct.ks)}" title="${escA('Contact côté ' + ct.rep + (ct.borne ? ', borne ' + ct.borne : '') + (ct.st.main ? ' — choisi ici' : ' — la table de la norme') + (ct.ko ? ' ; la gauge du câble est refusée' : '') + ' : cliquer pour en choisir un autre')}">${esc(motSertir(ct.st))}${ct.ko ? '<i>✗</i>' : ''}</button>`;
 
-/* ---- LES CONTACTS : Borne · Contact · Gauge · Câble ------------------------------------------------------------- */
-/* LES CONTACTS d'un connecteur (ou d'un module) : une ligne par câble posé — la borne (et la lettre du contact d'un
-   module), le contact de la table de la norme (un clic en choisit un autre ; « ″ » quand c'est le même qu'au-dessus),
-   la gauge du câble, acceptée ✓ ou refusée ✗, le numéro du câble en petit. Le câble s'allume au survol de la ligne et
-   s'ouvre d'un clic. Rien quand on ne sait pas. xs : [{ ct, f, sertir, rep, borne, plan, ko, groupe }] */
+/* ---- LES CONTACTS : une broche par câble -------------------------------------------------------------------------- */
+/* LES CONTACTS d'un connecteur (ou d'un module) — le lecteur : « bien, mais pas hyper sexy » ; « H1 J2 K3, c'est le
+   bordel » : une ligne par câble posé, sur une grille fixe. À gauche, la BROCHE : un rond qui porte la borne (ou, pour un
+   module, la lettre du contact, et la borne en petit à côté) ; puis le contact de la table de la norme, en clair (un clic
+   en choisit un autre ; le même qu'au-dessus s'écrit plus pâle, jamais « ″ ») ; la gauge du câble en pastille, acceptée
+   (verte, ✓) ou refusée (rouge, ✕) ; le câble, à la couleur de sa route. Le câble s'allume au survol de la ligne et
+   s'ouvre d'un clic. xs : [{ ct (le HTML de la broche), f, sertir, rep, borne, plan, ko, groupe }] */
 function tableContacts(xs, o) { o = o || {}; let prec = '';
-  const rows = xs.map(x => { if (x.groupe) { prec = ''; return `<li class="fi-groupe">${x.groupe}</li>`; }
+  const rows = xs.map(x => { if (x.groupe) { prec = ''; return `<li class="ct-groupe">${x.groupe}</li>`; }
     const f = x.f, k = f && f.l ? cleFil(f.l) : '', st = x.sertir, mot = motSertir(st), meme = !!mot && mot === prec; prec = mot;
     const ks = x.rep && x.borne != null && x.plan ? cleSertir(x.rep, x.borne) : '';
     const tit = (mot ? 'Contact ' + mot + (st.main ? ' (choisi ici)' : ' (la table de la norme)') : 'La table de la norme ne le dit pas') + (ks ? ' — cliquer pour en choisir un autre' : '');
-    const sertir = ks ? `<button type="button" class="fi-sertir${st && st.main ? ' main' : ''}${meme ? ' meme' : ''}" data-sertir="${escA(ks)}" aria-label="${escA(tit)}">${mot ? (meme ? '″' : esc(mot)) : ''}</button>`
-      : `<span class="fi-sertir${meme ? ' meme' : ''}">${mot ? (meme ? '″' : esc(mot)) : ''}</span>`;
+    const sertir = ks ? `<button type="button" class="fi-sertir ct-ref${st && st.main ? ' main' : ''}${meme ? ' meme' : ''}" data-sertir="${escA(ks)}" aria-label="${escA(tit)}">${mot ? esc(mot) : '<i>choisir</i>'}</button>`
+      : `<span class="fi-sertir ct-ref${meme ? ' meme' : ''}">${mot ? esc(mot) : '<i>—</i>'}</span>`;
     const j = f && f.type ? jaugeDuType(f.type) : null, ok = x.ko ? false : x.plan && st ? true : null;
-    const jauge = `<span class="fi-jg${ok === false ? ' ko' : ok ? ' ok' : ''}">${j != null ? j : ''}${ok === false ? '<i>✗</i>' : ok ? '<i>✓</i>' : ''}</span>`;
+    const jauge = `<span class="fi-jg ct-jg${ok === false ? ' ko' : ok ? ' ok' : ''}">${j != null ? `${j}<small>AWG</small>` : '—'}${ok === false ? ico('fermer') : ok ? ico('coche') : ''}</span>`;
     const bulle = [nomDuFil(f || {}), f && f.type ? f.type : '', j != null ? j + ' AWG' + (ok === false ? ' refusée par le contact' : ok ? ' acceptée' : '') : ''].filter(Boolean).join(' · ') + (x.ko && x.ko !== 'gauge refusée par le contact' ? '\n' + x.ko : '') + '\n' + tit;
-    return `<li class="fi-fil${x.ko ? ' ko' : ''}${f && f.l && f.l.origine === null ? ' neuf' : ''}"${k ? ` data-i="${k}" tabindex="0" role="button"` : ''} data-bulle="${escA(bulle)}"><span class="fi-ct">${x.ct}</span>${sertir}${jauge}<span class="fi-cab-n">${esc(f ? nomDuFil(f) : '')}</span></li>`
+    return `<li class="fi-fil ct-ligne${x.ko ? ' ko' : ''}${f && f.l && f.l.origine === null ? ' neuf' : ''}"${k ? ` data-i="${k}" tabindex="0" role="button"` : ''} data-bulle="${escA(bulle)}"><span class="fi-ct ct-pin">${x.ct}</span>${sertir}${jauge}<span class="ct-cab">${f ? puceFil(f) : ''}<span class="fi-cab-n">${esc(f ? nomDuFil(f) : '')}</span></span></li>`
       + (ks && FI.liste === 'sertir:' + ks ? `<li class="fi-choix-ligne">${choixSertir(ks, x.plan, f, st)}</li>` : ''); }).join('');
-  return `<ul class="fi-liste fi-contacts"><li class="fi-entetes"><span>${esc(o.borne || 'Borne')}</span><span>Contact${aide('contact')}</span><span>Gauge${aide('gauge')}</span><span>Câble</span></li>${rows}</ul>`; }
+  return `<ul class="ct-liste fi-contacts"><li class="ct-legende"><span></span><span>Contact à sertir${aide('contact')}</span><span>Gauge${aide('gauge')}</span><span>Câble</span></li>${rows}</ul>`; }
 /* Le sexe des contacts d'un connecteur, en deux puces. */
 const sexeDeLaFiche = (cle, sexe) => { const m = sexe === 'M', autre = m ? 'F' : 'M';
   return `<span class="fi-seg-mini"><button type="button" class="fi-chip fi-sexe-un" data-sexe="${escA(cle)}" data-v="${autre}" aria-pressed="false" title="${escA(m ? 'La fiche (ce qui arrive) en broches, l’embase en douilles — un clic : fiche femelle' : 'La fiche (ce qui arrive) en douilles, l’embase en broches — un clic : fiche mâle')}">${esc(m ? 'Fiche mâle' : 'Fiche femelle')}${ico('echange')}</button>${sexeChoisi(cle) ? retourAuto('sexe:' + cle, 'fiche femelle') : ''}</span>`; };
 const pucesSexe = (cle, sexe, mots) => `<span class="fi-seg-mini" role="group" aria-label="Sexe des contacts">${(mots || [['F', 'Femelles'], ['M', 'Mâles']]).map(([v, t, tt]) => `<button type="button" class="fi-chip" data-sexe="${escA(cle)}" data-v="${v}" aria-pressed="${sexe === v}"${tt ? ` title="${escA(tt)}"` : ''}>${esc(t)}</button>`).join('')}${sexeChoisi(cle) ? retourAuto('sexe:' + cle, (mots || [['F', 'femelles']])[0][1].toLowerCase()) : ''}</span>`;
 
 /* ---- LES CÂBLES : l'intensité ET la chute, d'un coup d'œil ; le type, la longueur, le contact, d'un clic ---------- */
-/* Une ligne par câble, sur deux rangs. En haut ce qu'on lit : son numéro (un clic ouvre sa fiche), une barre de
-   l'intensité contre ce qu'il admet, la chute en volts de la couleur de son état (le seuil, celui que le moteur rend,
-   dans l'en-tête de colonne). En bas ce qu'on écrit, là où on le voit : son type (une liste de la base des câbles), sa
-   longueur (« hyp. » tant que le retest ne la porte pas), et, au bout où il arrive, le contact qu'on y sertit. « ↺ »
+/* Une CARTE par câble (le lecteur : « l'intensité, c'est juste une barre rouge — plus sexy, plus joli ; le nom et le type à
+   gauche, pas ouf ; tout n'est pas centré, la chute bloquée à droite ; « 5 m hyp. → 103RL1 », on n'y comprend rien »).
+   En tête : son numéro (un clic ouvre sa fiche), son type, et où il va, en clair (« vers 103RL1 · borne A1 »). Au milieu,
+   deux JAUGES rondes côte à côte, chacune centrée dans sa moitié : l'intensité (la part de ce qu'il admet, en %, au pire
+   du permanent et de la pointe) et la chute en ligne (la part de ce qui est admis) — l'anneau se remplit de la couleur de
+   l'état, déborde en rouge au-delà de 100 % ; les chiffres en clair à côté. En bas, ce qu'on écrit, chaque champ nommé :
+   le type (la base des câbles), la longueur (« supposée » tant que le retest ne la porte pas), le contact au bout. « ↺ »
    rend ce que portait le fichier. Les câbles en défaut en tête ; le pourquoi des chiffres dans la bulle du survol.
-   rows : [{ l, k, num, neuf, puce, type, charge: { r, mot, etat }, chute: { mot, etat, max }, etat, bulle, bout: { rep, borne } }] */
+   rows : [{ l, k, num, neuf, puce, type, charge: { r, mot, i, admis, etat }, chute: { mot, u, etat, max }, etat, bulle,
+   bout: { rep, borne } }] */
 const datalistCables = () => `<datalist id="fi-cables">${cablesDe(app.norme).slice(0, 400).map(c => `<option value="${escA(c.cable)}">${escA([c.nature, c.diametre != null ? 'Ø ' + nombre(c.diametre) + ' mm' : ''].filter(Boolean).join(' · '))}</option>`).join('')}</datalist>`;
+/* L'ANNEAU d'une jauge : la part `r` (0 à 1, au-delà : plein et débordant), de la couleur de son état ; le pourcentage au
+   centre. Sans valeur, un anneau vide et « — ». */
+function anneau(r, etat) { const ok = r != null && isFinite(r), p = ok ? Math.max(0, Math.min(1, r)) * 100 : 0, pct = ok ? (r > 9.995 ? '>999' : String(Math.round(r * 100))) : '—';
+  return `<span class="cb-anneau${ok && r > 1 + 1e-9 ? ' deborde' : ''}" aria-hidden="true"><svg viewBox="0 0 44 44"><circle class="cb-a-fond" cx="22" cy="22" r="18"/>`
+    + `<circle class="cb-a-arc ${etat || ''}" cx="22" cy="22" r="18" pathLength="100" stroke-dasharray="${p.toFixed(1)} 100" transform="rotate(-90 22 22)"/></svg><b>${pct}${ok ? '<small>%</small>' : ''}</b></span>`; }
+// une jauge : l'anneau, le nom de la mesure, la valeur forte, ce qui est admis en petit
+const jauge = (k, r, etat, v, sur, q) => `<div class="cb-j ${etat || 'neutre'}">${anneau(r, etat)}<span class="cb-j-t"><span class="cb-j-k">${esc(k)}${q || ''}</span><span class="cb-j-v">${v}</span>${sur ? `<span class="cb-j-s">${sur}</span>` : ''}</span></div>`;
 function editionsDuCable(r) { const l = r.l, k = r.k, H = app.simu || HYPOTHESES, main = c => origineChamp(l, c) === 'main', L = l.longueur > 0 ? l.longueur : null;
   const ret = (c, mot) => main(c) ? retourAuto('cable:' + c, mot, `data-k="${escA(k)}"`) : '';
-  const type = `<span class="fi-ed${main('type') ? ' main' : ''}">${saisie(`data-cable="${escA(k)}" data-champ="type"`, l.type, { mono: true, ph: 'type', liste: 'fi-cables', label: 'Type du câble ' + r.num })}${ret('type', avantDe(l, 'type'))}</span>`;
-  const lon = `<span class="fi-ed${main('longueur') ? ' main' : ''}">${saisie(`data-cable="${escA(k)}" data-champ="longueur"`, L != null ? nombre(arrondi(L, 2)) : '', { court: true, ph: nombre(H.longueur), mode: 'decimal', label: 'Longueur du câble ' + r.num + ', en mètres' })}<span class="fi-ed-u">m</span>`
-    + `${L == null ? '<i class="fi-ed-hyp" title="Le retest ne porte pas la longueur : celle de l’hypothèse">hyp.</i>' : ''}${ret('longueur', avantDe(l, 'longueur') === 'rien' ? 'hypothèse' : avantDe(l, 'longueur') ? nombre(arrondi(+l.avant.longueur, 2)) + ' m' : '')}</span>`;
+  const type = `<span class="cb-type-ed fi-ed${main('type') ? ' main' : ''}" title="Le type du câble : écrire pour le changer (la base des câbles le propose)">${saisie(`data-cable="${escA(k)}" data-champ="type"`, l.type, { mono: true, ph: 'type', liste: 'fi-cables', label: 'Type du câble ' + r.num })}${ret('type', avantDe(l, 'type'))}</span>`;
+  const lon = `<label class="cb-champ fi-ed${main('longueur') ? ' main' : ''}"><span class="cb-champ-k">Longueur</span>${saisie(`data-cable="${escA(k)}" data-champ="longueur"`, L != null ? nombre(arrondi(L, 2)) : '', { court: true, ph: nombre(H.longueur), mode: 'decimal', label: 'Longueur du câble ' + r.num + ', en mètres' })}<span class="fi-ed-u">m</span>`
+    + `${L == null ? '<i class="fi-ed-hyp" title="Le retest ne porte pas la longueur : Volta suppose celle des hypothèses — écris la vraie ici">supposée</i>' : ''}${ret('longueur', avantDe(l, 'longueur') === 'rien' ? 'supposée' : avantDe(l, 'longueur') ? nombre(arrondi(+l.avant.longueur, 2)) + ' m' : '')}</label>`;
   const b = r.bout, ct = b && b.rep ? contactAuBout(l, b.rep, b.borne) : null;
-  return { html: `<span class="fi-cab-ed">${type}${lon}${b && b.rep ? `<span class="fi-ed-bout"><span class="fi-ed-vers" title="${escA('Il arrive à ' + b.rep + (b.borne ? ', borne ' + b.borne : ''))}">→ ${esc(b.rep)}</span>${ct ? boutonContact(ct) : ''}</span>` : ''}</span>`,
+  return { type, html: `<span class="fi-cab-ed">${lon}${ct ? `<span class="cb-champ fi-ed-bout"><span class="cb-champ-k">Contact</span>${boutonContact(ct)}</span>` : ''}</span>`,
     choix: ct && FI.liste === 'sertir:' + ct.ks ? `<li class="fi-choix-ligne">${choixSertir(ct.ks, ct.plan, { type: l.type }, ct.st)}</li>` : '' }; }
 function listeCables(rows, o) { o = o || {}; const rang = r => r.etat === 'ko' ? 0 : r.etat === 'att' ? 1 : 2;
   const maxs = [...new Set(rows.map(r => r.chute.max).filter(m => m != null))], seuil = maxs.length === 1 ? maxs[0] : null, regles = [...new Set(rows.map(r => r.chute.regle).filter(Boolean))];
-  const li = rows.slice().sort((a, b) => rang(a) - rang(b) || triNaturel(a.num, b.num)).map(r => {
-    const ed = r.l && r.l.origine !== null && r.k && r.k[0] !== 'p' ? editionsDuCable(r) : { html: r.type ? `<span class="fi-cab-ed"><span class="fi-ed-lu">${ident(r.type)}</span></span>` : '', choix: '' };
-    return `<li class="fi-ia fi-cab${r.etat ? ' ' + r.etat : ''}"${r.k ? ` data-i="${r.k}"` : ''}${r.bulle ? ` data-bulle="${escA(r.bulle)}"` : ''}>`
-      + `<span class="fi-num">${r.puce || ''}${r.k ? `<button type="button" class="fi-num-b${r.neuf ? ' neuf' : ''}" data-ouvrir-cable="${escA(r.k)}" title="${escA('Ouvrir le câble ' + r.num)}">${esc(r.num)}</button>` : `<b>${esc(r.num)}</b>`}</span>`
-      + `<span class="fi-mesure"><span class="fi-barre ${r.charge.etat || ''}" aria-hidden="true"><i style="width:${(Math.min(1, r.charge.r || 0) * 100).toFixed(1)}%"></i></span><span class="fi-v">${r.charge.mot}</span></span>`
-      + `<span class="fi-u ${r.chute.etat || ''}">${esc(r.chute.mot)}${seuil == null && r.chute.max != null ? `<i> / ${esc(volts(r.chute.max))}</i>` : ''}</span>`
+  const qI = aide('intensite'), qU = aide('chute', seuil != null ? { admis: seuil, regle: regles.length === 1 ? regles[0] : '' } : null);
+  const li = rows.slice().sort((a, b) => rang(a) - rang(b) || triNaturel(a.num, b.num)).map((r, n) => {
+    const ed = r.l && r.l.origine !== null && r.k && r.k[0] !== 'p' ? editionsDuCable(r) : { type: '', html: '', choix: '' };
+    const ch = r.charge, cu = r.chute, rU = cu.u != null && cu.max ? cu.u / cu.max : null;
+    const vers = r.bout && r.bout.rep ? `<span class="cb-vers" title="${escA('Il arrive à ' + r.bout.rep + (r.bout.borne ? ', borne ' + r.bout.borne : ''))}">vers <b>${esc(r.bout.rep)}</b>${r.bout.borne ? `<i>borne ${esc(r.bout.borne)}</i>` : ''}</span>` : '';
+    const typeLu = ed.type || (r.type ? `<span class="cb-type id">${esc(r.type)}</span>` : '');
+    return `<li class="fi-ia fi-cab cb-carte${r.etat ? ' ' + r.etat : ''}"${r.k ? ` data-i="${r.k}"` : ''}${r.bulle ? ` data-bulle="${escA(r.bulle)}"` : ''} style="--n:${n}">`
+      + `<div class="cb-tete"><span class="fi-num">${r.puce || ''}${r.k ? `<button type="button" class="fi-num-b${r.neuf ? ' neuf' : ''}" data-ouvrir-cable="${escA(r.k)}" title="${escA('Ouvrir le câble ' + r.num)}">${esc(r.num)}</button>` : `<b>${esc(r.num)}</b>`}</span>${typeLu}${vers}</div>`
+      + `<div class="cb-jauges">${jauge('Intensité', ch.r != null && (ch.i != null || ch.r > 0) ? ch.r : null, ch.etat, ch.i != null ? esc(nombreA(ch.i)) + '<small> A</small>' : esc(ch.mot || '—'), ch.admis != null ? 'sur ' + esc(nombreA(ch.admis)) + ' A admis' : '', n === 0 ? qI : '')}`
+      + `${jauge('Chute', rU, cu.etat, `<span class="fi-u ${cu.etat || ''}">${esc(cu.mot)}</span>`, cu.max != null ? 'sur ' + esc(volts(cu.max)) + ' admis' : '', n === 0 ? qU : '')}</div>`
       + ed.html + '</li>' + ed.choix; }).join('');
-  const entetes = `<li class="fi-entetes"><span>Câble</span><span>Intensité / admis${aide('intensite')}</span><span>Chute${seuil != null ? ` <em>≤ ${esc(volts(seuil))}</em>` : ''}${aide('chute', seuil != null ? { admis: seuil, regle: regles.length === 1 ? regles[0] : '' } : null)}</span></li>`;
-  return `<ul class="fi-liste fi-ias fi-cables${o.cls ? ' ' + o.cls : ''}">${entetes}${li}</ul>${datalistCables()}`; }
+  return `<ul class="fi-cables cb-liste${o.cls ? ' ' + o.cls : ''}">${li}</ul>${datalistCables()}`; }
 const nombreA = i => nombre(arrondi(i, i < 10 ? 2 : 1));
 /* La ligne d'un câble d'un repère : son intensité contre ce qu'il admet (au pire du permanent et de la pointe), sa chute
    en ligne depuis le disjoncteur en amont (sinon sur le câble seul), et la bulle qui dit d'où viennent les chiffres. */
@@ -364,8 +376,9 @@ function ligneDeFil(f) { const l = f.l, x = intensiteDuFil(l), c = chuteDuFil(l,
     c.total ? `chute en ligne depuis ${x.al.nom} : ${volts(c.total.dU)}${c.max != null ? ' (' + volts(c.max) + ' admis)' : ''}${c.reel ? '' : ', longueurs d’hypothèse'}` : c.dU != null ? `chute sur ce câble : ${volts(c.dU)} (${nombre(arrondi(c.L, 2))} m${c.hyp ? ' d’hypothèse' : ''})` : ''].filter(Boolean).join('\n');
   return { l, k: cleFil(l), num: nomDuFil({ ...f, cable: l.cable }), neuf: l.origine === null, puce: puceFil(f), jauge: x.jauge, type: l.type, bout: { rep: f.vers, borne: f.borneVers },
     // les chiffres de la barre : au pire, comme elle — la pointe quand c'est elle qui serre le plus
-    charge: { r, mot: rT != null && rT > (rP || 0) ? `${nombreA(x.pointe.i)} / ${nombreA(x.pointe.admis)} A` : x.continu ? `${nombreA(x.I)} / ${nombreA(x.continu)} A` : `${nombreA(x.I)} A`, etat: etatI },
-    chute: { mot: volts(u), etat: etatU, max: c.max, regle: c.regle }, etat: trop || (c.trop && c.reel) ? 'ko' : c.trop ? 'att' : '', bulle }; }
+    charge: { r: x.fn ? r : null, mot: rT != null && rT > (rP || 0) ? `${nombreA(x.pointe.i)} / ${nombreA(x.pointe.admis)} A` : x.continu ? `${nombreA(x.I)} / ${nombreA(x.continu)} A` : `${nombreA(x.I)} A`,
+      i: rT != null && rT > (rP || 0) ? x.pointe.i : x.I, admis: rT != null && rT > (rP || 0) ? x.pointe.admis : x.continu || null, etat: etatI },
+    chute: { mot: volts(u), u, etat: etatU, max: c.max, regle: c.regle }, etat: trop || (c.trop && c.reel) ? 'ko' : c.trop ? 'att' : '', bulle }; }
 /* LA SECTION DES CÂBLES : la liste, son résumé (combien, combien en défaut), sa pastille. `o.note` : une ligne sous la
    liste (le courant d'hypothèse quand aucun disjoncteur n'alimente ces câbles). */
 function sectionFils(rows, probs, o) { o = o || {}; if (!rows.length) return { cle: 'fils', titre: o.titre, vide: 'aucun câble' };
@@ -392,9 +405,10 @@ const liaisonsDuConnecteur = (nom, bornes) => { const tout = bornes === '*', B =
   verite().forEach(l => { if (l.de === nom && (tout || B.has(String(l.borneDe)))) xs.push([l, 'pnDe']); if (l.vers === nom && (tout || B.has(String(l.borneVers)))) xs.push([l, 'pnVers']); }); return xs; };
 const pnModifie = xs => xs.some(([l, c]) => origineChamp(l, c) === 'main');
 const pnAvant = xs => { const x = xs.find(([l, c]) => l.avant && c in l.avant); return x ? x[0].avant[x[1]] || '' : ''; };
-/* Le part number en PETIT, sous la norme : un champ qui a l'air d'une valeur seconde ; « main » et ↺ quand on l'a changé. */
-function partNumberPetit(nom, cle, bornes, pn) { const xs = liaisonsDuConnecteur(nom, bornes), main = pnModifie(xs);
-  return `<span class="fi-pn"><span class="fi-pn-k">part number</span>${saisie(`data-pn="${escA(cle)}" data-bornes="${escA(bornes === '*' ? '*' : JSON.stringify(bornes.map(String)))}"`, pn, { mono: true, ph: 'à écrire', label: 'Part number' + (cle === '*' ? '' : ' du connecteur ' + cle) })}`
+/* LA RÉFÉRENCE d'un connecteur (le lecteur : « part number, on s'en tape : on veut juste le repère électrique et les
+   références ») : un champ qui a l'air d'une valeur, en chasse fixe ; « main » et ↺ quand on l'a changée. */
+function referenceConnecteur(nom, cle, bornes, pn) { const xs = liaisonsDuConnecteur(nom, bornes), main = pnModifie(xs);
+  return `<span class="fi-pn">${saisie(`data-pn="${escA(cle)}" data-bornes="${escA(bornes === '*' ? '*' : JSON.stringify(bornes.map(String)))}"`, pn, { mono: true, ph: 'à écrire', label: 'Référence' + (cle === '*' ? '' : ' du connecteur ' + cle) })}`
     + `${main ? pastilleMain(pnAvant(xs)) + retourAuto('pn:' + cle, pnAvant(xs) || 'rien') : ''}</span>`; }
 
 /* ---- LE RACCORD : ce qui englobe un connecteur (le raccord, le band-it, le manchon, le tyrap, la cheminée, la gaine) -- */
@@ -444,13 +458,6 @@ function raccordHtml(it) { const { cle } = it, h = habillageDe(it), c = h.choix,
   return `<div class="fi-hab" data-hab="${escA(cle)}"${it.titre ? ` data-titre="${escA(it.titre)}"` : ''}><div class="fi-hab-tete">${it.titre ? `<span class="fi-hab-t">${esc(it.titre)}</span>` : ''}<span class="fi-hab-mots">${insecable(esc([toron, choix].filter(Boolean).join(' · ')))}${toron ? aide('toron', { habillage: h }) : ''}</span>${h.tableau ? '' : boutonChanger(k, 'Reprise de blindage, étanchéité, orientation, gaine', 'Options')}</div>`
     + (h.tableau ? '' : listeChoix(k, segments, { titre: 'Les options du raccord' }))
     + (lignes ? `<ul class="fi-nomen">${lignes}</ul>` : `<p class="fi-note">${h.tableau ? 'Disjoncteur de tableau : ni raccord ni band-it.' : 'Rien à poser.'}</p>`) + '</div>'; }
-/* La SECTION « Raccord » : un bloc par connecteur (ou par côté d'une prise) ; son résumé dit les références. */
-function sectionRaccord(items, probs, o) { o = o || {}; const xs = items.filter(it => it && it.fils && it.fils.length); if (!xs.length) return o.vide ? { cle: 'raccord', titre: o.titre, vide: o.vide } : null;
-  const P = xs.flatMap(it => piecesHabillage(habillageDe(it)));
-  const princ = [...new Set(P.filter(p => p.role === 'raccord' || p.role === 'cheminee').map(p => p.reference).filter(Boolean))], autres = [...new Set(P.filter(p => ['bande', 'manchon', 'tyrap', 'gaine'].includes(p.role)).map(p => ({ bande: 'band-it', manchon: 'manchon', tyrap: 'tyrap', gaine: 'gaine' })[p.role]))];
-  const resume = [princ.length ? princ.map(ident).join(' · ') : P.some(p => p.role === 'raccord' && !p.reference) ? 'sans raccord' : '', autres.join(' · ')].filter(Boolean).join(' · ');
-  return { cle: 'raccord', titre: o.titre, resume, badge: badgeProblemes(probs, 'raccord'), contenu: xs.map(raccordHtml).join('') }; }
-
 /* ---- UN ÉQUIPEMENT ------------------------------------------------------------------------------------------------ */
 // la section qu'un point du disjoncteur démontre : ses câbles (la charge, la protection, la chute en ligne), sinon lui
 const sectionDj = t => /^chute en ligne/.test(t) || /^(?![\d])\S+ \(|^(fil|câble) sans numéro|^borne /.test(t) ? 'fils' : 'disjoncteur';
@@ -473,37 +480,38 @@ function ficheEquipement(nom) { const V = verite(), b = besoinsDeBarrette(nom, V
   // le connecteur montré : celui qu'on a choisi, sinon celui qui porte un problème, sinon le premier
   const ids = C.map(c => c.nom).concat(sans.length ? ['—'] : []), fautif = id => probs.some(p => p.connecteur === id && p.niveau === 'ko');
   const sel = ids.includes(FI.connecteur[nom]) ? FI.connecteur[nom] : ids.find(fautif) || ids[0] || ''; FI.connecteur[nom] = sel;
-  const segs = ids.length > 1 ? `<div class="fi-segs" role="group" aria-label="Connecteur montré">${ids.map(id => { const x = C.find(y => y.nom === id), kx = x && parNom.get(id), n = x ? x.bornes.length : sans.length;
-    const compte = kx && kx.plan.modules[0] ? `${kx.plan.utilises}/${kx.plan.modules[0].module.contacts.length}` : String(n), raison = probs.filter(p => p.connecteur === id && p.niveau === 'ko').map(p => p.texte).join(' ; ');
-    return `<button type="button" class="seg${fautif(id) ? ' ko' : ''}" data-connecteur="${escA(id)}" aria-pressed="${id === sel}" title="${escA(raison || (id === '—' ? 'Les bornes sans connecteur' : 'Le connecteur ' + id))}">${fautif(id) ? '<i aria-hidden="true"></i>' : ''}<b>${id === '—' ? 'sans' : esc(id)}</b><small>${esc(compte)}</small></button>`; }).join('')}</div>` : '';
+  /* LES BULLES des connecteurs, sous le titre « Connecteur » (le lecteur : « tu mets juste connecteur, et en dessous A,
+     comme une bulle — B, C ; on appuie sur l'une, ça passe d'un connecteur à l'autre ») : une bulle par connecteur, même
+     seul ; rouge s'il porte un problème ; le nombre de contacts pris dans la bulle du survol. */
+  const bulles = ids.length ? `<span class="ct-bulles" role="group" aria-label="Le connecteur montré">${ids.map(id => { const x = C.find(y => y.nom === id), kx = x && parNom.get(id), n = x ? x.bornes.length : sans.length;
+    const compte = kx && kx.plan.modules[0] ? `${kx.plan.utilises} contacts pris sur ${kx.plan.modules[0].module.contacts.length}` : pluriel(n, 'borne'), raison = probs.filter(p => p.connecteur === id && p.niveau === 'ko').map(p => p.texte).join(' ; ');
+    return `<button type="button" class="seg ct-bulle${fautif(id) ? ' ko' : ''}" data-connecteur="${escA(id)}" aria-pressed="${id === sel}" title="${escA((id === '—' ? 'Les bornes sans connecteur' : 'Le connecteur ' + id) + ' · ' + compte + (raison ? ' — ' + raison : ''))}">${id === '—' ? 'sans' : esc(id)}</button>`; }).join('')}</span>` : '';
   const c = C.find(k => k.nom === sel) || null, k = c ? parNom.get(c.nom) || null : null;
   const corps = c ? corpsConnecteur(nom, c, k, b, vt) : sel === '—' ? corpsSansConnecteur(nom, sans, b, vt) : '';
-  const familles = [...new Set(C.map(x => { const kx = parNom.get(x.nom); return kx ? nomDeFamille(app.norme, kx.plan.famille) || kx.plan.famille : ''; }).filter(Boolean))];
-  const resumeC = !C.length ? (sans.length ? 'des bornes au corps' : 'aucun connecteur') : `${C.map(x => esc(x.nom)).join(' · ')}${familles.length ? ' — ' + familles.map(esc).join(', ') : ''}`;
-  // le raccord du connecteur montré
+  // le RACCORD du connecteur montré, dans la même section (le lecteur : « le raccord, je l'aurais mis avec le connecteur :
+  // tout ce qui est connecteur, tyrap, etc., c'est le même »)
   const filsC = c ? c.bornes.flatMap(bo => b.parBorne.get(bo) || []).filter(f => f.l) : [], M = k && k.plan.modules[0];
-  const raccord = c ? sectionRaccord([{ cle: nom + '|' + c.nom, fils: filsC, pn: c.pn, ref: M ? M.reference : '', plan: M ? k.plan : null }], probs, { titre: C.length > 1 ? 'Raccord · ' + c.nom : 'Raccord', vide: 'aucun câble sur ce connecteur' }) : null;
-  const sections = [{ cle: 'connecteur', titre: C.length > 1 ? 'Connecteurs' : 'Connecteur', resume: resumeC, badge: badgeProblemes(probs, 'connecteur'), contenu: segs + `<div class="fi-panneau" data-panneau="${escA(sel)}">${corps}</div>`, vide: ids.length ? '' : 'aucune borne' },
-    raccord, sectionFilsDuRepere(fils, probs), sectionDejaFait(nom)];
-  return enTete({ type: 'equipement', genre: natureChoix(nom), designation: nom, nom, champ: 'eq-rep' }) + barreProblemes(probs, sections) + ficheSections('equipement', sections)
+  const raccord = c && filsC.length ? groupeSection('Raccord', raccordHtml({ cle: nom + '|' + c.nom, fils: filsC, pn: c.pn, ref: M ? M.reference : '', plan: M ? k.plan : null }), { cls: 'fi-groupe-raccord' }) : '';
+  const sections = [{ cle: 'connecteur', titre: 'Connecteur', resume: bulles || (ids.length ? '' : 'aucune borne'), badge: badgeProblemes(probs, 'connecteur'), contenu: `<div class="fi-panneau" data-panneau="${escA(sel)}">${corps}${raccord}</div>`, vide: ids.length ? '' : 'aucune borne' },
+    sectionFilsDuRepere(fils, probs), sectionDejaFait(nom)];
+  return enTete({ type: 'equipement', designation: nom, nom, champ: 'eq-rep' }) + barreProblemes(probs, sections) + ficheSections('equipement', sections)
     + fiPied({ tableau: nom, fil: nom, relief: cav.length > 0, menu: MENU_BLOC }); }
-/* LE CONNECTEUR montré : la NORME d'abord (l'arrangement en puce — un clic montre la face — et son « ? » ; « Changer »
-   ouvre les autres arrangements), la famille et le part number en petit (modifiable) ; puis ses contacts (le sexe à
-   droite). Plus de « Bornes 1 à 2 » : les contacts les disent. */
+/* LE CONNECTEUR montré : sa RÉFÉRENCE d'abord (un champ ; plus de « part number » ni de « norme » à compléter) ; quand
+   la norme est connue, l'ARRANGEMENT que Volta retient (en puce — un clic montre la face — et son « ? » ; « Changer »
+   ouvre les autres) ; puis ses contacts (le sexe à droite). */
 function corpsConnecteur(nom, c, k, b, vt) { const cle = nom + '|' + c.nom, Q = k && k.plan, M = Q && Q.modules[0];
-  const pn = partNumberPetit(nom, c.nom, c.bornes, c.pn), fam = Q ? nomDeFamille(app.norme, Q.famille) || Q.famille || '' : '';
-  let norme = '', face = '';
+  const ref = ligneChamp('Référence', referenceConnecteur(nom, c.nom, c.bornes, c.pn));
+  let arr = '', face = '';
   if (M) { const vs = arrangementsQuiLogent(k.points, app.norme, Q.famille).slice(0, 8), auto = Q.main ? remplirContacts(k.points, app.norme, { pn: c.pn, sexe: sexeChoisi(cle) }).reference : '', par = new Map(Q.fils.map(x => [x.contact.lettre, x]));
-    const pourquoi = Q.main ? 'Choisi ici' : Q.nomme ? 'Le part number le nomme' : `Le plus petit qui a ces ${pluriel(Q.potentiels, 'contact')} et accepte ${typesDe(Q.fils.map(x => x.f)) || 'ces câbles'}`;
+    const pourquoi = Q.main ? 'Choisi ici' : Q.nomme ? 'La référence le nomme' : `Le plus petit qui a ces ${pluriel(Q.potentiels, 'contact')} et accepte ${typesDe(Q.fils.map(x => x.f)) || 'ces câbles'}`;
     const liste = listeChoix('arr|' + cle, vs.length ? vs.map(m => candidat(cle, m, M.reference)).join('') : '<p class="fi-note">Aucun autre arrangement de cette norme ne loge ces bornes.</p>', { titre: 'Arrangements qui logent ces bornes' });
-    norme = ligneChamp('Norme', `<button type="button" class="fi-norme-puce" data-face="${escA(cle)}" aria-pressed="${!!FI.face[cle]}" title="${escA(pourquoi + ' · ' + (fam || '') + ' — un clic montre la face')}">${esc(M.reference)}${ico('voir')}</button>${aide('arrangement', { plan: Q })}`,
-      { origine: Q.main ? pastilleMain(null) : '', auto: Q.main ? retourAuto('arr:' + cle, auto) : '', changer: boutonChanger('arr|' + cle, 'Choisir un autre arrangement'), liste, sous: `${fam ? `<span class="fi-fam">${esc(fam)}</span>` : ''}${pn}` });
+    arr = ligneChamp('Arrangement', `<button type="button" class="fi-norme-puce" data-face="${escA(cle)}" aria-pressed="${!!FI.face[cle]}" title="${escA(pourquoi + ' — un clic montre la face')}">${esc(M.reference)}${ico('voir')}</button>${aide('arrangement', { plan: Q })}`,
+      { origine: Q.main ? pastilleMain(null) : '', auto: Q.main ? retourAuto('arr:' + cle, auto) : '', changer: boutonChanger('arr|' + cle, 'Choisir un autre arrangement'), liste });
     if (FI.face[cle]) face = `<div class="fi-faces">${faceAjustee(faceModuleSvg(M.module, ct => { const x = par.get(ct.lettre); return x ? occupant(x.f, x.jaugeOk === false, ct.lettre) : null; }), 'Face côté contacts · ' + M.module.variante)}</div>`; }
-  // aucun arrangement ne loge : le mot, la norme ; la phrase du moteur dans la bulle (la barre des problèmes la porte aussi)
-  else if (Q) norme = ligneChamp('Norme', `<b class="fi-ko-t" data-bulle="${escA(majuscule(Q.verdicts.filter(v => v.niveau === 'ko').map(v => v.texte).join(' ; ') || 'aucun arrangement ne convient'))}">Aucun arrangement</b>${aide('arrangement', { plan: Q })}`,
-    { origine: Q.main ? pastilleMain(null) : '', auto: Q.main ? retourAuto('arr:' + cle, 'le plus petit qui loge') : '', sous: `${fam ? `<span class="fi-fam">${esc(fam)}</span>` : ''}${pn}` });
-  // hors des normes chargées : on ne dit rien de ce qu'on ne sait pas — le part number, et où compléter
-  else norme = ligneChamp('Norme', `<span class="fi-muet">—</span>${c.pn ? '<button type="button" class="fi-lien" data-action="normes">compléter les normes</button>' : ''}`, { sous: pn });
+  // aucun arrangement ne loge : le mot ; la phrase du moteur dans la bulle (la barre des problèmes la porte aussi)
+  else if (Q) arr = ligneChamp('Arrangement', `<b class="fi-ko-t" data-bulle="${escA(majuscule(Q.verdicts.filter(v => v.niveau === 'ko').map(v => v.texte).join(' ; ') || 'aucun arrangement ne convient'))}">Aucun ne loge ces bornes</b>${aide('arrangement', { plan: Q })}`,
+    { origine: Q.main ? pastilleMain(null) : '', auto: Q.main ? retourAuto('arr:' + cle, 'le plus petit qui loge') : '' });
+  // hors des normes chargées : on ne dit rien de ce qu'on ne sait pas — la référence seule
   // les contacts : une ligne par câble posé, borne par borne
   const sertirs = new Map(Q ? Q.fils.map(x => [x.f.l, x]) : []);
   const xs = c.bornes.slice().sort(triNaturel).flatMap(bo => (b.parBorne.get(bo) || []).map(f => { const x = sertirs.get(f.l), st = x ? sertirAuBout(nom, bo, x) : null;
@@ -511,7 +519,7 @@ function corpsConnecteur(nom, c, k, b, vt) { const cle = nom + '|' + c.nom, Q = 
   const contacts = xs.length ? tableContacts(xs) : '<p class="fi-note">Aucun câble sur ce connecteur.</p>';
   // le sexe des contacts se choisit dès que la norme a sa table de contacts (même quand aucun arrangement ne loge)
   const table = Q && (M ? Q.tableContacts : (normeDesModules(app.norme).contacts || []).some(x => x.famille === Q.famille));
-  return champs([norme]) + face + groupeSection('Contacts', contacts, { droite: table ? pucesSexe(cle, Q.sexe) : '', compte: xs.length || null }); }
+  return champs([ref, arr]) + face + groupeSection('Contacts', contacts, { droite: table ? pucesSexe(cle, Q.sexe) : '', compte: xs.length || null }); }
 // les bornes qui ne sont sur aucun connecteur (CNT, GND…) : elles se raccordent au corps
 function corpsSansConnecteur(nom, sans, b, vt) { const xs = sans.flatMap(bo => (b.parBorne.get(bo) || []).map(f => ({ ct: `<b>${esc(bo)}</b>`, f, sertir: null, rep: nom, borne: bo, plan: null })));
   return `<p class="fi-note">Des bornes au corps : ni connecteur ni contact.</p>` + groupeSection('Contacts', tableContacts(xs), { compte: xs.length }); }
@@ -522,13 +530,14 @@ function corpsSansConnecteur(nom, sans, b, vt) { const xs = sans.flatMap(bo => (
    · Déjà fait. Un disjoncteur de tableau a des bornes à vis : ni contacts ni raccord, pas de section Connecteur. */
 function ficheDisjoncteur(nom, probs) { const d = disjonctionDe(nom), o = origineDuCalibre(nom, d);
   const rows = lignesFilsDisjoncteur(nom, d), sections = [sectionDisjoncteur(nom, d, o, probs), sectionFils(rows, probs, { cls: 'dj-fils' }), sectionDejaFait(nom)];
-  return enTete({ type: 'disjoncteur', genre: natureChoix(nom), designation: nom, nom, champ: 'eq-rep' }) + barreProblemes(probs, sections) + ficheSections('disjoncteur', sections)
+  return enTete({ type: 'disjoncteur', designation: nom, nom, champ: 'eq-rep' }) + barreProblemes(probs, sections) + ficheSections('disjoncteur', sections)
     + fiPied({ tableau: nom, fil: nom, relief: false, menu: MENU_BLOC }); }
 
 /* ---- UNE BARRETTE (et une barrette à poser) ------------------------------------------------------------------------ */
-/* Module (sa référence et son « ? » ; sa norme — un clic ouvre, sous elle, la GALERIE des assemblages de la norme ;
-   l'écart avec le retest ; la face, vivante ; les contacts par potentiel) · Câbles · Déjà fait. Une barrette à poser se
-   pose depuis la barre sous l'en-tête. */
+/* Module (sa référence en puce et son « ? » — un clic ouvre, sous elle, la GALERIE des assemblages de la norme ; l'écart
+   avec le retest ; la face, vivante ; les contacts, une broche par câble) · Câbles · Déjà fait. Le lecteur (version 61) :
+   « la norme, on s'en fout, elle est dans le module » ; « un potentiel, je ne comprends pas — on le voit sur le dessin » :
+   plus de ligne Norme, plus de potentiel. Une barrette à poser se pose depuis la barre sous l'en-tête. */
 function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsDeRepere(nom);
   const { besoins: b, plan: Q, main } = planDeBarrette(nom), M0 = Q.modules[0], N = app.norme;
   const refuses = Q.fils.filter(x => x.jaugeOk === false);
@@ -544,26 +553,23 @@ function ficheBarrette(nom) { const aPoser = VT_A_POSER.test(nom), L = liaisonsD
   const ecart = !aPoser && b.pn && Q.reference && cleNorme(b.pn) !== cleNorme(Q.reference) && moduleDeReference(N, b.pn) ? `<span class="fi-ecart">le retest dit ${ident(b.pn)} <button type="button" class="fi-lien" data-garder="${escA(b.pn)}">garder le retest</button></span>` : '';
   const valeur = Q.reference ? `<span class="fi-norme-puce statique" title="${escA(main ? 'Choisi ici' : Q.modules.length > 1 ? `${Q.potentiels} potentiels sur ${Q.modules.length} modules` : `Le plus petit module qui loge ${pluriel(Q.potentiels, 'potentiel')}`)}">${esc(Q.reference)}</span>` : '<b class="fi-ko-t">Aucun module</b>';
   const galerie = aPoser ? '' : listeChoix('bar|' + nom, galerieModules(nom, b, Q, main), { titre: 'Les assemblages de la norme qui logent ces potentiels', cls: 'fi-galerie-choix', pied: M0 ? `<button type="button" class="fi-lien" data-bible="${escA(M0.reference)}">voir dans la bible</button>` : '' });
-  const normeV = aPoser || !famNom ? `<span>${esc(famNom || '—')}</span>` : `<button type="button" class="fi-norme-puce fi-norme-gal" data-changer="${escA('bar|' + nom)}" aria-expanded="${FI.liste === 'bar|' + nom}" title="Voir tous les assemblages de la norme qui logent ces potentiels, et en choisir un">${esc(famNom)}${ico('bas', 'fi-chevron')}</button>`;
+  // le module en puce : un clic ouvre la galerie des assemblages de la norme, sous lui (la norme ne s'écrit plus à part)
+  const moduleV = aPoser || !Q.reference ? valeur : `<button type="button" class="fi-norme-puce fi-norme-gal" data-changer="${escA('bar|' + nom)}" aria-expanded="${FI.liste === 'bar|' + nom}" title="${escA((main ? 'Choisi ici' : 'Le plus petit module qui loge ces câbles') + ' — un clic montre tous les assemblages de la norme, pour en choisir un autre')}">${esc(Q.reference)}${ico('bas', 'fi-chevron')}</button>`;
   const tete = aPoser && !M0 ? '<p class="fi-note">Le module se choisit quand la barrette est posée au contrat.</p>' : champs([
-    ligneChamp('Module', valeur + aide('module', { plan: Q }), { origine: main || Q.main ? pastilleMain(null) : '', auto: main || Q.main ? retourAuto('arr:' + nom, autoRef) : '', sous: ecart }),
-    ligneChamp('Norme', normeV + `<span class="fc-aide">${pluriel(Q.potentiels, 'potentiel')}${M0 ? ' · ' + plurielLie(libres, 'contact') + ' libre' + s_(libres) : ''}</span>`, { liste: galerie, cls: 'fc-norme' })]);
-  /* les CONTACTS, par potentiel */
+    ligneChamp('Module', moduleV + aide('module', { plan: Q }), { origine: main || Q.main ? pastilleMain(null) : '', auto: main || Q.main ? retourAuto('arr:' + nom, autoRef) : '', sous: ecart, liste: galerie, cls: 'fc-norme' })]);
+  /* les CONTACTS : une broche par câble — la lettre du contact du module dans le rond, la borne du retest en petit à côté */
   const borneDe = f => f.borneBarrette || (f.l && (f.l.de === nom ? f.l.borneDe : f.l.borneVers)) || '';
   const tri = Q.fils.slice().sort((a, c) => a.module - c.module || a.groupe.k - c.groupe.k || triBornes(borneDe(a.f), borneDe(c.f)));
-  let dernier = null, kPot = 0; const xsC = [];
-  tri.forEach(x => { const pot = x.potentiel.bornes.join(', ');
-    if (!aPoser && pot !== dernier) { kPot++; xsC.push({ groupe: `Potentiel ${kPot} — ${x.potentiel.bornes.length > 1 ? 'bornes' : 'borne'} ${esc(pot)}` }); dernier = pot; }
-    xsC.push({ ct: `<b>${esc((Q.modules.length > 1 ? (x.module + 1) + '·' : '') + x.contact.lettre)}</b><i>${esc(borneDe(x.f))}</i>`, f: x.f, sertir: x.sertir || null, plan: x.sertir ? { Q } : null, ko: x.jaugeOk === false ? 'gauge refusée par le contact' : '' }); });
-  (Q.restants || []).forEach(p => p.fils.forEach(f => xsC.push({ ct: `<b>${esc(borneDe(f))}</b>`, f, ko: 'sans place dans le module' })));
+  const xsC = tri.map(x => ({ ct: `<b>${esc((Q.modules.length > 1 ? (x.module + 1) + '·' : '') + x.contact.lettre)}</b>${borneDe(x.f) ? `<small>borne ${esc(borneDe(x.f))}</small>` : ''}`, f: x.f, sertir: x.sertir || null, plan: x.sertir ? { Q } : null, ko: x.jaugeOk === false ? 'gauge refusée par le contact' : '' }));
+  (Q.restants || []).forEach(p => p.fils.forEach(f => xsC.push({ ct: `<b>?</b><small>borne ${esc(borneDe(f))}</small>`, f, ko: 'sans place dans le module' })));
   const nf = xsC.filter(x => x.f).length, sansTable = M0 && !Q.fils.some(x => x.sertir);
-  const contacts = nf ? tableContacts(xsC, { borne: 'Contact · borne' }) + (sansTable ? `<p class="fi-note">La table des contacts de la ${esc(famNom)} manque : <button type="button" class="fi-lien" data-action="normes">l’envoyer</button>.</p>` : '') : '<p class="fi-note">Aucun câble.</p>';
+  const contacts = nf ? tableContacts(xsC) + (sansTable ? `<p class="fi-note">La table des contacts de la ${esc(famNom)} manque : <button type="button" class="fi-lien" data-action="normes">l’envoyer</button>.</p>` : '') : '<p class="fi-note">Aucun câble.</p>';
   const fils = filsDuRepere(nom); probs.push(...problemesDesFils(fils));
   const poser = aPoser ? `<div class="fi-poser"><span>Poser au contrat sous</span>${saisie('id="vt-repere"', repereLibre(raccord ? raccord.de : '', 'VT'), { mono: true, label: 'Le vrai repère de la barrette', court: true })}<button type="button" class="btn cuivre" id="vt-poser">Poser</button></div>` : '';
-  const sections = [{ cle: 'connecteur', titre: 'Module', resume: aPoser && !M0 ? 'se choisit quand la barrette est posée' : `${Q.reference ? ident(Q.reference) : '<span class="fi-ko-t">aucun module</span>'} · ${pluriel(Q.potentiels, 'potentiel')} · ${plurielLie(libres, 'libre')}`,
+  const sections = [{ cle: 'connecteur', titre: 'Module', resume: aPoser && !M0 ? 'se choisit quand la barrette est posée' : Q.reference ? ident(Q.reference) : '<span class="fi-ko-t">aucun module</span>',
       badge: badgeProblemes(probs, 'connecteur'), contenu: tete + (faces ? `<div class="fi-faces">${faces}</div>` : '') + groupeSection('Contacts', contacts, { compte: nf || null }) },
     sectionFilsDuRepere(fils, probs), aPoser ? null : sectionDejaFait(nom)];
-  return enTete({ type: 'barrette', genre: aPoser ? `Barrette à poser${sur ? ` <span>· sur ${esc(sur)}</span>` : ''}` : 'Barrette', designation: aPoser ? '' : nom, nom, champ: 'eq-rep', aide: aPoser ? 'Écrire le vrai repère : la barrette entre au contrat' : '' })
+  return enTete({ type: 'barrette', genre: aPoser ? `À poser${sur ? ` · sur ${esc(sur)}` : ''}` : '', designation: aPoser ? '' : nom, nom, champ: 'eq-rep', aide: aPoser ? 'Écrire le vrai repère : la barrette entre au contrat' : '' })
     + barreProblemes(probs, sections) + poser + ficheSections('barrette', sections)
     + fiPied(aPoser ? { voir: raccord && raccord.de, relief: !!M0, menu: [['fi-renommer', 'Nommer et poser au contrat']] } : { tableau: nom, fil: nom, relief: true, menu: MENU_BLOC }); }
 /* LA GALERIE des assemblages d'une norme (le lecteur : « quand on clique sur la norme, on voit tous les assemblages de
@@ -590,9 +596,9 @@ function repereLibre(voisin, code) { const q = lireRepere(voisin), zone = q && q
   for (let n = 1; n < 1000; n++) { const r = zone + code + n; if (!pris.has(r)) return r; } return zone + code + '1'; }
 
 /* ---- UNE PRISE DE COUPURE ------------------------------------------------------------------------------------------ */
-/* Connecteur (la norme en puce et son « ? » ; UNE face — celle de la fiche, ou celle qui porte le problème —, l'autre
-   d'un clic ; chaque contact, ce qui arrive et ce qui repart) · Raccord (un bloc par côté) · Câbles · Déjà fait. Plus
-   de part number : la norme le dit. */
+/* Connecteur (la référence — l'arrangement — en puce et son « ? » ; UNE face — celle de la fiche, ou celle qui porte le
+   problème —, l'autre d'un clic ; chaque contact, ce qui arrive et ce qui repart ; le raccord de chaque moitié) · Câbles
+   · Déjà fait. */
 function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupure(nom), M = Q.modules[0], N = app.norme;
   const probs = Q.verdicts.filter(v => v.niveau === 'ko' || v.niveau === 'attention').map(v => ({ niveau: v.niveau === 'ko' ? 'ko' : 'att', texte: v.texte, section: 'connecteur' }));
   ((typeof CONTROLE !== 'undefined' && CONTROLE.items) || []).filter(x => x.nom === nom && !probs.some(p => p.texte === x.texte)).forEach(x => probs.push({ niveau: x.niveau === 'ko' ? 'ko' : 'att', texte: x.texte, section: 'connecteur' }));
@@ -611,27 +617,30 @@ function ficheCoupure(nom) { const { besoins: b, points, plan: Q } = planDeCoupu
   const liste = listeChoix('cou|' + nom, voletT('Norme') + puces('data-norme-prise', [['', 'automatique'], ...famillesDeModules(N, 'connecteur').map(f => [f, nomDeFamille(N, f)])], Q.main ? null : (Q.visee || ''))
     + voletT('Arrangement') + (vs.length ? `<div class="fi-cands">${vs.map(m => candidat(nom, m, retenu)).join('')}</div>` : '<p class="fi-note">Aucun arrangement de cette norme ne convient.</p>'), { titre: 'Arrangements qui logent ces contacts', pied: M ? `<button type="button" class="fi-lien" data-bible="${escA(M.reference)}">voir dans la bible</button>` : '' });
   const autoRef = Q.main || Q.visee ? coupureEnModule(nom, verite(), N, '', sexeChoisi(nom)).plan.reference : '';
-  const tete = champs([ligneChamp('Norme', (M ? `<span class="fi-norme-puce statique" title="${escA(pourquoi)}">${esc(M.reference)}</span>` : '<b class="fi-ko-t">Aucun arrangement</b>') + aide('prise', { plan: Q }),
+  const tete = champs([ligneChamp('Référence', (M ? `<span class="fi-norme-puce statique" title="${escA(pourquoi)}">${esc(M.reference)}</span>` : '<b class="fi-ko-t">Aucun arrangement</b>') + aide('prise', { plan: Q }),
     { origine: Q.main || Q.visee ? pastilleMain(null) : '', auto: Q.main || Q.visee ? retourAuto('arr:' + nom, autoRef) : '', changer: boutonChanger('cou|' + nom, 'Choisir une autre norme ou un autre arrangement'), liste,
-      sous: `${fam ? `<span class="fi-fam">${esc(fam)}</span>` : ''}<span>${pluriel(points.length, 'contact')}${Q.tableContacts ? ' · fiche ' + (Q.sexe === 'M' ? 'mâle' : 'femelle') : ''}</span>` })]);
-  /* les PAIRES : chaque contact, son contact de la table côté fiche et côté embase, la gauge de chacun */
-  // chaque côté : le contact de la table (« ″ » quand c'est le même qu'au-dessus, dans sa colonne), la gauge acceptée ✓ ou ✗
+      sous: `<span>${pluriel(points.length, 'contact')}${Q.tableContacts ? ' · fiche ' + (Q.sexe === 'M' ? 'mâle' : 'femelle') : ''}</span>` })]);
+  /* les PAIRES, en broches (comme les contacts d'un connecteur) : le rond porte la lettre du contact ; à côté, ce qui arrive
+     (la fiche) et ce qui repart (l'embase) — chacun son contact de la table (le même qu'au-dessus plus pâle), la gauge de
+     son câble en pastille (acceptée ✓, refusée ✕), le câble à la couleur de sa route */
   const prec = { am: '', av: '' };
-  const cote = (x, k) => { if (!x) { prec[k] = ''; return '<span class="fi-cote vide"></span>'; } const st = x.sertir, mot = st ? motSertir(st) : '', meme = !!mot && mot === prec[k], j = jaugeDuType(x.f.type), ok = x.jaugeOk === false ? false : st ? true : null; prec[k] = mot;
-    return `<span class="fi-cote" data-i="${cleFil(x.f.l)}" tabindex="0" role="button" data-bulle="${escA([nomDuFil(x.f), x.f.type || '', mot].filter(Boolean).join(' · '))}"><span class="fi-sertir${meme ? ' meme' : ''}">${mot ? (meme ? '″' : esc(mot)) : ''}</span><span class="fi-jg${ok === false ? ' ko' : ok ? ' ok' : ''}">${j != null ? j : ''}${ok === false ? '<i>✗</i>' : ok ? '<i>✓</i>' : ''}</span></span>`; };
+  const cote = (x, k) => { if (!x) { prec[k] = ''; return '<span class="fi-cote vide"><i>—</i></span>'; } const st = x.sertir, mot = st ? motSertir(st) : '', meme = !!mot && mot === prec[k], j = jaugeDuType(x.f.type), ok = x.jaugeOk === false ? false : st ? true : null; prec[k] = mot;
+    return `<span class="fi-cote" data-i="${cleFil(x.f.l)}" tabindex="0" role="button" data-bulle="${escA([nomDuFil(x.f), x.f.type || '', mot].filter(Boolean).join(' · '))}"><span class="fi-sertir ct-ref${meme ? ' meme' : ''}">${mot ? esc(mot) : '<i>—</i>'}</span>`
+      + `<span class="ct-cote-bas">${puceFil(x.f)}<b class="fi-cab-n">${esc(nomDuFil(x.f))}</b><span class="fi-jg ct-jg${ok === false ? ' ko' : ok ? ' ok' : ''}">${j != null ? `${j}<small>AWG</small>` : '—'}${ok === false ? ico('fermer') : ok ? ico('coche') : ''}</span></span></span>`; };
   const lignes = (M ? M.module.contacts : []).map(ct => { const am = Q.fils.find(x => x.contact === ct && x.f.amont), av = Q.fils.find(x => x.contact === ct && !x.f.amont); if (!am && !av) return '';
-    return `<li class="fi-paire${[am, av].some(x => x && x.jaugeOk === false) ? ' ko' : ''}"><span class="fi-ct"><b>${esc(ct.lettre)}</b></span>${cote(am, 'am')}${cote(av, 'av')}</li>`; }).join('');
+    return `<li class="fi-paire ct-paire${[am, av].some(x => x && x.jaugeOk === false) ? ' ko' : ''}"><span class="fi-ct ct-pin"><b>${esc(ct.lettre)}</b></span>${cote(am, 'am')}${cote(av, 'av')}</li>`; }).join('');
   const nP = (lignes.match(/class="fi-paire/g) || []).length;
-  const paires = lignes ? `<ul class="fi-liste fi-paires"><li class="fi-entetes"><span>Contact</span><span>Fiche · arrive</span><span>Embase · repart</span></li>${lignes}</ul>` : '<p class="fi-note">Aucun contact posé.</p>';
+  const paires = lignes ? `<ul class="ct-liste fi-paires"><li class="ct-legende ct-legende-paire"><span></span><span>Fiche · ce qui arrive</span><span>Embase · ce qui repart</span></li>${lignes}</ul>` : '<p class="fi-note">Aucun contact posé.</p>';
   const fils = filsDuRepere(nom); probs.push(...problemesDesFils(fils));
   // le sexe de la fiche : UN bouton, qui dit celui qui est retenu et l'inverse d'un clic (deux puces côte à côte se lisaient
   // comme un doublon) ; ↺ rend le choix de l'outil
   const sexe = Q.tableContacts ? sexeDeLaFiche(nom, Q.sexe) : '';
-  const raccord = sectionRaccord([['Fiche', amont], ['Embase', aval]].map(([t, xs]) => ({ cle: nom + '|' + t.toLowerCase(), titre: t, fils: xs.map(x => x.f), pn: b.pn, ref: Q.reference, plan: M ? Q : null })), probs);
-  const sections = [{ cle: 'connecteur', resume: `${M ? ident(M.reference) : '<span class="fi-ko-t">aucun arrangement</span>'} · ${pluriel(points.length, 'contact')}${Q.tableContacts ? ' · fiche ' + (Q.sexe === 'M' ? 'mâle' : 'femelle') : ''}`, badge: badgeProblemes(probs, 'connecteur'),
-      contenu: tete + face + groupeSection('Contacts', paires, { droite: sexe, compte: nP || null, aide: ['contact', null] }) },
-    raccord, sectionFilsDuRepere(fils, probs), sectionDejaFait(nom)];
-  return enTete({ type: 'prise', genre: 'Prise de coupure', designation: nom, nom, champ: 'eq-rep' }) + barreProblemes(probs, sections) + ficheSections('prise', sections) + fiPied({ tableau: nom, fil: nom, relief: true, menu: MENU_BLOC }); }
+  // le raccord de chaque moitié, dans la même section que la prise (le lecteur : « tout ce qui est connecteur, tyrap, etc. »)
+  const raccords = [['Fiche', amont], ['Embase', aval]].filter(([, xs]) => xs.length).map(([t, xs]) => raccordHtml({ cle: nom + '|' + t.toLowerCase(), titre: t, fils: xs.map(x => x.f), pn: b.pn, ref: Q.reference, plan: M ? Q : null })).join('');
+  const sections = [{ cle: 'connecteur', resume: M ? ident(M.reference) : '<span class="fi-ko-t">aucun arrangement</span>', badge: badgeProblemes(probs, 'connecteur'),
+      contenu: tete + face + groupeSection('Contacts', paires, { droite: sexe, compte: nP || null, aide: ['contact', null] }) + (raccords ? groupeSection('Raccord', raccords, { cls: 'fi-groupe-raccord' }) : '') },
+    sectionFilsDuRepere(fils, probs), sectionDejaFait(nom)];
+  return enTete({ type: 'prise', designation: nom, nom, champ: 'eq-rep' }) + barreProblemes(probs, sections) + ficheSections('prise', sections) + fiPied({ tableau: nom, fil: nom, relief: true, menu: MENU_BLOC }); }
 
 /* ---- UNE MASSE ------------------------------------------------------------------------------------------------------ */
 /* Le lecteur : « une masse : dis-moi la quantité de câbles, mais pas en tuile ; pas d'identité ; mets directement les
@@ -915,7 +924,6 @@ function lierFiche(c) { const box = $('ba-equip'), nom = c.type === 'fil' ? '' :
   const rep = $('eq-rep'); if (rep) ecouter(rep, 'change', () => { if (!renommerDepuisFiche(nom, rep.value)) rep.value = nom; else { const r = $('fi-crayon'); if (r) r.focus(); } });
   const vtp = $('vt-poser'); if (vtp) vtp.onclick = () => { const v = $('vt-repere'); renommerDepuisFiche(nom, v ? v.value : ''); };
   const des = $('eq-des'); if (des) ecouter(des, 'change', () => { const v = des.value.trim(); if (v === (app.contrat.designations.get(nom) || '')) return; histPush('désignation de ' + nom); designer(nom, v); apresEdition(); });
-  const nat = $('eq-nature'); if (nat) ecouter(nat, 'change', () => { const v = nat.value; if (typeof natureDite === 'function' && v === natureDite(nom)) return; histPush('nature de ' + nom); designer(CLE_NATURE(nom), v); apresEdition(); dire(nom + ' : ' + natureDe(nom) + (v ? ', dit à la main.' : ', comme le code le dit.')); });
   if ($('fi-renommer')) $('fi-renommer').onclick = () => { if (rep) { rep.focus(); rep.select(); } };
   if ($('fi-designer')) $('fi-designer').onclick = () => { const d = $('eq-des'); if (d) { d.focus(); d.select(); } };
   if ($('eq-del')) $('eq-del').onclick = () => { const n = verite().filter(x => x.de === nom || x.vers === nom).length; if (!confirm('Supprimer « ' + nom + ' » et ses ' + n + ' liaison(s) ?')) return;
@@ -940,7 +948,7 @@ function lierChoix(box, c) { const nom = c.type === 'bloc' ? c.nom : '';
   box.querySelectorAll('[data-sertir-ref]').forEach(b => b.onclick = () => { const k = b.dataset.sertirRef; if (b.getAttribute('aria-pressed') === 'true') { FI.liste = ''; rendreFiche(); return; }
     const { rep, borne } = deCleSertir(k); FI.liste = ''; app.contrat.designations.delete(k); changerLiaisons(boutsSur(rep, borne).map(([l, ch]) => [l, ch, b.dataset.v]), 'contact à sertir'); });
   box.querySelectorAll('[data-pn]').forEach(el => ecouter(el, 'change', () => { const v = el.value.trim(), bornes = el.dataset.bornes === '*' ? '*' : JSON.parse(el.dataset.bornes), xs = liaisonsDuConnecteur(nom, bornes);
-    if (!xs.length) return; changerLiaisons(xs.map(([x, ch]) => [x, ch, v]), 'part number de ' + nom + (el.dataset.pn === '*' ? '' : ' ' + el.dataset.pn)); }));
+    if (!xs.length) return; changerLiaisons(xs.map(([x, ch]) => [x, ch, v]), 'référence de ' + nom + (el.dataset.pn === '*' ? '' : ' ' + el.dataset.pn)); }));
   box.querySelectorAll('.fi-cand[data-ref]').forEach(b => { const aller = () => allerA({ type: 'ref', c: { type: 'ref', nom, harness: b.dataset.ref, repere: b.dataset.rep, fwd: b.dataset.fwd || undefined } });
     b.onclick = aller; b.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); aller(); } }; }); }
 /* Les câbles de la fiche et le plan : survoler une ligne (ou un contact d'une face) allume le câble sur le plan et marque
@@ -948,7 +956,7 @@ function lierChoix(box, c) { const nom = c.type === 'bloc' ? c.nom : '';
    ramène ici ; un clic sur un contact d'une face le CHOISIT (sa ligne reste allumée, vient sous les yeux), un double
    clic ouvre sa fiche. */
 function lierFils(box) { let dernier = null;
-  const cible = t => t && t.closest && t.closest('.fi-fil[data-i], .fi-ia[data-i], .fi-cote[data-i], .mj-contact.plein');
+  const cible = t => t && t.closest && t.closest('.fi-fil[data-i], .fi-ia[data-i], .fi-cote[data-i], .dj-g-ligne[data-i], .mj-contact.plein');
   const marquer = el => { const k = el.dataset.i; box.querySelectorAll('.vise').forEach(x => x.classList.remove('vise'));
     if (!k) return; box.querySelectorAll(`[data-i="${CSS.escape(k)}"]`).forEach(x => x.classList.add('vise')); allumerCle(k); };
   const lacher = () => { dernier = null; box.querySelectorAll('.vise').forEach(x => x.classList.remove('vise')); rallumer(); if (FI.choisi) allumerCle(FI.choisi); };

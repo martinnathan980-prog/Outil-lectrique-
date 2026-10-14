@@ -319,13 +319,35 @@ function guideHtml() { return `<section class="nm-guide"><div class="sur">Ajoute
 async function importerNorme(fichier) { if (!fichier) return;
   try { dire('Lecture de « ' + fichier.name + ' »…'); importerNormeTexte(await texteDeNormeFichier(fichier), fichier.name); }
   catch (e) { echecImport('normes', { texte: `${esc(fichier.name)} n’a pas pu être lu : ${esc(String(e && e.message || e))}.` }); } }
-/* Un texte (un CSV, des lignes collées, les feuilles d'un Excel) : les blocs reconnus, prévisualisés. Rend l'import. */
-function importerNormeTexte(texte, nom) { const blocs = decouperTables(texte);
-  NORMES.import = { nom: nom || 'texte collé', blocs: blocs.map(b => ({ ...b, cible: b.table, manuel: {} })), vide: !blocs.length };
+/* LA CORRESPONDANCE RETENUE (le lecteur : « tout est dans SEE, je ne peux pas tout prendre en photo — comment on
+   automatise ? ») : un tableau collé tel que SEE (ou un autre logiciel) l'exporte, avec SES en-têtes, que l'outil ne
+   reconnaît pas. On dit une fois à l'outil quelle table c'est et quelle colonne est quel champ ; à l'adoption, il retient
+   cette correspondance, par la signature de la ligne d'en-tête (ses cellules, dans l'ordre) — dans ce navigateur
+   seulement : la base reste sur le poste. La fois suivante, le même export se lit d'un coup. */
+const CLE_CORRESPONDANCES = 'volta.normes.correspondances.v1';
+const signatureEntete = row => row.map(c => NORMA(c)).join('|');
+function correspondances() { try { return JSON.parse(localStorage.getItem(CLE_CORRESPONDANCES) || '{}') || {}; } catch (_) { return {}; } }
+function retenirCorrespondance(b) { if (!b.cible || !b.entete) return; const m = correspondances(), manuel = Object.fromEntries(Object.entries(b.manuel || {}).filter(([, v]) => v));
+  if (b.cible === b.table && !Object.keys(manuel).length) return;   // reconnue telle quelle : rien à retenir
+  m[signatureEntete(b.entete)] = { cible: b.cible, manuel, quand: new Date().toISOString().slice(0, 10) };
+  try { localStorage.setItem(CLE_CORRESPONDANCES, JSON.stringify(m)); } catch (_) { } }
+/* Un tableau dont AUCUN en-tête n'est reconnu : sa première ligne de plusieurs cellules est son en-tête, les lignes qui
+   suivent (jusqu'à une ligne vide) ses lignes ; la table, à dire. */
+function blocBrut(texte) { const ls = String(texte || '').split(/\r?\n/); let k = ls.findIndex(l => cellulesDeNorme(l).length > 1); if (k < 0) return [];
+  const sep = separateurDe(ls[k]), entete = cellulesDeNorme(ls[k], sep), lignes = [];
+  for (let j = k + 1; j < ls.length && ls[j].trim(); j++) lignes.push(cellulesDeNorme(ls[j], sep));
+  return [{ ligne: k, titre: 'Tableau collé', entete, separateur: sep, candidats: [], hesite: false, table: '', col: {}, inconnues: entete.map((_, i) => i), lignes, brut: true }]; }
+/* Un texte (un CSV, des lignes collées, les feuilles d'un Excel) : les blocs reconnus — sinon le tableau brut —,
+   chacun lu selon la correspondance retenue s'il y en a une, prévisualisés. Rend l'import. */
+function importerNormeTexte(texte, nom) { let blocs = decouperTables(texte); const brut = !blocs.length; if (brut) blocs = blocBrut(texte);
+  const M = correspondances();
+  NORMES.import = { nom: nom || 'texte collé', blocs: blocs.map(b => { const m = M[signatureEntete(b.entete)];
+    return m && TABLES_NORME.includes(m.cible) ? { ...b, cible: m.cible, manuel: { ...m.manuel }, retenue: m.quand || true } : { ...b, cible: b.table, manuel: {} }; }), vide: !blocs.length };
   NORMES.import.blocs.forEach(preparerBloc);
   if (!blocs.length) echecImport('normes', { texte: `«\u00a0${esc(nom || 'le texte')}\u00a0» : aucune ligne d’en-tête reconnue. Il faut les en-têtes de l’outil, une table par bloc (un gabarit par table, dans la page Normes).`, gestes: [['gabarits', 'Les gabarits']] },
     '« ' + (nom || 'le texte') + ' » : aucune ligne d’en-tête reconnue — il faut les en-têtes de l’outil (voir les gabarits).');
-  else { effacerErreur('normes'); dire(pluriel(blocs.length, 'table') + ' reconnue' + (blocs.length > 1 ? 's' : '') + ' dans « ' + (nom || 'le texte') + ' » : vérifie, puis adopte.'); }
+  else if (brut && !NORMES.import.blocs[0].retenue) { effacerErreur('normes'); dire('« ' + (nom || 'le texte') + ' » : un tableau aux en-têtes inconnus — dis quelle table c’est et ce que dit chaque colonne ; la correspondance sera retenue.'); }
+  else { effacerErreur('normes'); dire(pluriel(blocs.length, 'table') + ' reconnue' + (blocs.length > 1 ? 's' : '') + ' dans « ' + (nom || 'le texte') + ' »' + (NORMES.import.blocs.some(b => b.retenue) ? ' (correspondance retenue)' : '') + ' : vérifie, puis adopte.'); }
   ficheNormes(); const imp = $('nm-import'); if (imp && imp.scrollIntoView) { try { imp.scrollIntoView({ block: 'start' }); } catch (_) { } }
   return NORMES.import; }
 /* Ce qu'un bloc donne pour sa cible : les colonnes (reconnues, puis celles attribuées à la main), les lignes lues et
@@ -339,16 +361,16 @@ function importHtml() { const I = NORMES.import, n = I.blocs.filter(b => b.cible
     const reconnues = b.cible ? Object.entries(b.col).map(([champ, i]) => `<span class="nm-col-ok" title="${escA('colonne « ' + b.entete[i] + ' » lue comme ' + lib(champ))}">${esc(b.entete[i])}${NORMA(b.entete[i]) !== NORMA(lib(champ)) ? ' → ' + esc(lib(champ)) : ''}</span>`).join('') : '';
     const inconnues = b.cible ? b.inconnues.map(i => `<label class="nm-col-ko"><span>${esc(b.entete[i])}</span><select data-colonne="${k}" data-indice="${i}" aria-label="${escA('Lire la colonne « ' + b.entete[i] + ' » comme')}"><option value="">ignorer</option>${cols.filter(c => b.col[c.champ] == null).map(c => `<option value="${escA(c.champ)}">${esc(c.libelle)}</option>`).join('')}</select></label>`).join('') : '';
     const c = b.cmp, lus = b.lecture ? b.lecture.lues.length : 0, rej = b.lecture ? b.lecture.rejets.length : 0;
-    const compte = !b.cible ? 'ignorée' : `${pluriel(lus, 'ligne')} lue${lus > 1 ? 's' : ''} · <b class="nm-ajo">${c.nouvelles.length} nouvelle${c.nouvelles.length > 1 ? 's' : ''}</b> · <b class="nm-mod">${c.remplacees.length} remplace${c.remplacees.length > 1 ? 'nt' : ''}</b> une ligne · ${c.identiques.length} identique${c.identiques.length > 1 ? 's' : ''}${rej ? ` · <b class="nm-ko">${rej} rejetée${rej > 1 ? 's' : ''}</b> (incomplètes : ${esc((OBLIGATOIRES_NORME[b.cible] || {}).entete || '')})` : ''}`;
+    const compte = !b.cible ? (b.brut ? 'des en-têtes que l’outil ne connaît pas : choisis la table qu’ils remplissent, puis le champ de chaque colonne — Volta retiendra la correspondance' : 'ignorée') : `${pluriel(lus, 'ligne')} lue${lus > 1 ? 's' : ''} · <b class="nm-ajo">${c.nouvelles.length} nouvelle${c.nouvelles.length > 1 ? 's' : ''}</b> · <b class="nm-mod">${c.remplacees.length} remplace${c.remplacees.length > 1 ? 'nt' : ''}</b> une ligne · ${c.identiques.length} identique${c.identiques.length > 1 ? 's' : ''}${rej ? ` · <b class="nm-ko">${rej} rejetée${rej > 1 ? 's' : ''}</b> (incomplètes : ${esc((OBLIGATOIRES_NORME[b.cible] || {}).entete || '')})` : ''}`;
     const apercu = b.cible && lus ? `<div class="nm-defile"><table class="nm-tab nm-apercu"><thead><tr><th></th>${cols.filter(cc => b.col[cc.champ] != null).map(cc => `<th>${esc(cc.libelle)}</th>`).join('')}</tr></thead><tbody>${b.lecture.lues.slice(0, 4).map(x => `<tr><td class="nm-etat">${badge(c.parLigne.get(x) === 'ajoutée' ? 'ajo' : c.parLigne.get(x) === 'modifiée' ? 'mod' : 'emb', c.parLigne.get(x))}</td>${cols.filter(cc => b.col[cc.champ] != null).map(cc => `<td>${esc(x.brut[cc.champ] || '')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : '';
     return `<div class="nm-bloc${b.hesite ? ' hesite' : ''}" data-bloc="${k}"><div class="nm-bloc-tete"><div class="min0"><b>${esc(b.titre || 'Bloc ' + (k + 1))}</b><span class="nm-bloc-ou">ligne ${b.ligne + 1} · ${pluriel(b.lignes.length, 'ligne')}</span></div>`
-      + `<label class="nm-cible">${b.hesite ? badge('conf', 'l’outil hésite') : ''}<span>lire comme</span><select data-cible="${k}" aria-label="Table cible"><optgroup label="Reconnue">${cands.map(t => option(b, t, true)).join('')}</optgroup><optgroup label="Autre table">${autres.map(t => option(b, t, false)).join('')}</optgroup><option value=""${b.cible ? '' : ' selected'}>— ne pas importer</option></select></label></div>`
+      + `<label class="nm-cible">${b.hesite ? badge('conf', 'l’outil hésite') : ''}${b.retenue ? badge('ajo', 'correspondance retenue') : ''}<span>lire comme</span><select data-cible="${k}" aria-label="Table cible">${cands.length ? `<optgroup label="Reconnue">${cands.map(t => option(b, t, true)).join('')}</optgroup>` : ''}<optgroup label="${cands.length ? 'Autre table' : 'La table'}">${autres.map(t => option(b, t, false)).join('')}</optgroup><option value=""${b.cible ? '' : ' selected'}>${b.brut ? '— choisir la table' : '— ne pas importer'}</option></select></label></div>`
       + `<div class="nm-bloc-compte">${compte}</div>${b.cible ? `<div class="nm-bloc-cols"><span class="nm-cols-t">colonnes</span>${reconnues}${inconnues ? `<span class="nm-cols-t">non reconnues</span>${inconnues}` : ''}</div>` : ''}${apercu}</div>`; };
-  return `<section class="nm-import" id="nm-import"><div class="nm-imp-tete"><div class="min0"><div class="sur">Import — à vérifier avant d’adopter</div><b>${esc(I.nom)}</b> · ${pluriel(I.blocs.length, 'table')} reconnue${I.blocs.length > 1 ? 's' : ''}</div><button class="btn cuivre" id="nm-adopter"${n ? '' : ' disabled'}>Adopter ${n ? pluriel(n, 'table') : ''}</button><button class="btn lien" id="nm-imp-annuler">Annuler</button></div>`
-    + (I.vide ? `<p class="nm-vide">Aucune ligne d’en-tête reconnue. Il faut les en-têtes de l’outil, dans n’importe quel ordre : par exemple ${esc(colonnesDeTable('fils').slice(0, 5).map(c => c.libelle).join(' ; '))}. Les gabarits les donnent tous.</p>` : I.blocs.map(bloc).join('')) + '</section>'; }
+  return `<section class="nm-import" id="nm-import"><div class="nm-imp-tete"><div class="min0"><div class="sur">Import — à vérifier avant d’adopter</div><b>${esc(I.nom)}</b> · ${I.blocs.length === 1 && I.blocs[0].brut && !I.blocs[0].retenue ? 'un tableau à décrire' : pluriel(I.blocs.length, 'table') + ' reconnue' + (I.blocs.length > 1 ? 's' : '')}</div><button class="btn cuivre" id="nm-adopter"${n ? '' : ' disabled'}>Adopter ${n ? pluriel(n, 'table') : ''}</button><button class="btn lien" id="nm-imp-annuler">Annuler</button></div>`
+    + (I.vide ? `<p class="nm-vide">Aucun tableau dans ce texte. Il faut les en-têtes de l’outil, dans n’importe quel ordre : par exemple ${esc(colonnesDeTable('fils').slice(0, 5).map(c => c.libelle).join(' ; '))}. Les gabarits les donnent tous.</p>` : I.blocs.map(bloc).join('')) + '</section>'; }
 /* Adopter l'import : les lignes de chaque bloc ciblé deviennent des apports sous le nom du fichier. */
 function adopterImportNorme() { const I = NORMES.import; if (!I) return; const A = JSON.parse(JSON.stringify(NORMES.apports)); let n = 0, tables = new Set();
-  I.blocs.forEach(b => { if (!b.cible || !b.lecture) return; b.lecture.lues.forEach(x => { if (poserApport(A, b.cible, x.brut, I.nom)) n++; }); if (b.lecture.lues.length) tables.add(b.cible); });
+  I.blocs.forEach(b => { if (!b.cible || !b.lecture) return; b.lecture.lues.forEach(x => { if (poserApport(A, b.cible, x.brut, I.nom)) n++; }); if (b.lecture.lues.length) { tables.add(b.cible); retenirCorrespondance(b); } });
   NORMES.import = null; tables.forEach(t => { vuesNorme().forEach(v => { if (vueDe(v).table === t) NORMES.ouverts.add(v); }); });
   adopterApports(nettoyerApports(A), 'import de ' + I.nom); effacerErreur('normes'); dire(pluriel(n, 'ligne') + ' adoptée' + (n > 1 ? 's' : '') + ' de « ' + I.nom + ' » : les fiches et le contrôle suivent.'); }
 function annulerImportNorme() { NORMES.import = null; rendreNormes(); }
@@ -438,7 +460,7 @@ function lierNormes() { const c = $('fiche-corps'); if (!c) return;
   // Ctrl+Z dans la page : l'historique des normes, pas celui du contrat (le gestionnaire de la fenêtre ne le voit pas)
   $('fiche').addEventListener('keydown', e => { if (!(app.fiche && app.fiche.mode === 'normes')) return; if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !(e.target.classList && e.target.classList.contains('nm-champ'))) { e.preventDefault(); e.stopPropagation(); const quoi = defaireNormes(); dire(quoi ? 'Défait : ' + quoi + '.' : 'Rien à défaire dans les normes.'); } }); }
 // le mode « coller » de l'import : une zone de texte à la place des blocs
-const importCollerHtml = () => `<section class="nm-import" id="nm-import"><div class="nm-imp-tete"><div class="min0"><div class="sur">Coller des lignes</div><b>Une ligne d’en-tête, puis les lignes</b> — colonnes séparées par ; , ou une tabulation (copiées d’un Excel)</div><button class="btn cuivre" id="nm-coller-ok">Lire</button><button class="btn lien" id="nm-imp-annuler">Annuler</button></div><label class="champ"><span>Lignes</span><textarea id="nm-coller-txt" placeholder="Type;Jauge;Section;Résistance 20;Intensité&#10;DR;24;0,24;85;3,5" spellcheck="false"></textarea></label></section>`;
+const importCollerHtml = () => `<section class="nm-import" id="nm-import"><div class="nm-imp-tete"><div class="min0"><div class="sur">Coller des lignes</div><b>Une ligne d’en-tête, puis les lignes</b> — colonnes séparées par ; , ou une tabulation (copiées d’un Excel, ou d’une liste de SEE : Ctrl+A, Ctrl+C). Des en-têtes que Volta ne connaît pas ? Il te demande une fois ce que dit chaque colonne, et le retient.</div><button class="btn cuivre" id="nm-coller-ok">Lire</button><button class="btn lien" id="nm-imp-annuler">Annuler</button></div><label class="champ"><span>Lignes</span><textarea id="nm-coller-txt" placeholder="Type;Jauge;Section;Résistance 20;Intensité&#10;DR;24;0,24;85;3,5" spellcheck="false"></textarea></label></section>`;
 const importHtmlOuColler = () => NORMES.import.coller && !NORMES.import.blocs.length ? importCollerHtml() : importHtml();
 
 /* ---- la bible des barrettes (venue de 08) ------------------------------------------------- */

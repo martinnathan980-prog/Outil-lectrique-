@@ -97,9 +97,10 @@ const majuscule = s => s ? s[0].toUpperCase() + s.slice(1) : s;
 const classeFraction = x => x < MARGE_FRACTION - 1e-9 ? 'ok' : x < 1 - 1e-9 ? 'serre' : 'ko';
 const motFraction = x => x > 9.995 ? '> 1 000 %' : pourcent(x);
 const motMarge = m => (m >= 1 ? '+' : '−') + nombre(Math.round(Math.abs(m - 1) * 100)) + ' %';
-// le sort d'un point du profil : sa classe (ok, serre, ko — rien s'il n'est pas jugé) et son mot
-const classeVerdict = p => !p || p.ok == null ? '' : p.ok === false ? 'ko' : p.serre ? 'serre' : 'ok';
-const motVerdict = p => !p || p.ok == null ? 'pas jugé' : p.ok === false ? 'déclenche' : p.serre ? 'tient, mais touche la courbe' : 'tient';
+// le sort d'un point du profil, en deux mots (le lecteur : « soit ça passe, soit ça passe pas ; touche la courbe, non :
+// ça passe pas ») : sa classe (ok, ko — rien s'il n'est pas jugé) et son mot ; toucher la courbe, sans la marge, ne passe pas
+const classeVerdict = p => !p || p.ok == null ? '' : p.ok === false || p.serre ? 'ko' : 'ok';
+const motVerdict = p => !p || p.ok == null ? 'pas jugé' : p.ok === false ? 'ne passe pas : déclenche' : p.serre ? 'ne passe pas : touche la courbe' : 'passe';
 const pluriel2 = (n, mot, mots) => n + ' ' + (n > 1 ? mots || mot + 's' : mot);
 
 /* Ce que le contrôle en dit : un problème si une phase fait déclencher (le bilan thermique déborde), ou si un fil ne
@@ -112,8 +113,8 @@ function controleDisjonction(nom) { const d = disjonctionDe(nom), out = [], pnMo
     else if (!d.valide) { const p = d.pire, m = p.marges[0], mini = d.calibreIdeal ? ` — l’idéal est un ${amperes(d.calibreIdeal)}` : ' — aucun calibre de la gamme ne tient';
       out.push({ niveau: 'ko', texte: (p.t === Infinity ? `le permanent (${amperes(p.i)}) fait déclencher le ${amperes(d.calibre)} à ${m.courbe} (il tient jusqu'à ${amperes(m.admis)})`
         : `${p.nom} ${amperes(p.i)} pendant ${secondes(p.t)} : le ${amperes(d.calibre)} déclenche à ${m.courbe} (${motFraction(d.somme)} du temps de déclenchement consommé, il tient ${secondes(m.temps)} à ce courant)`) + mini }); }
-    else if (d.calibreIdeal && d.calibre !== d.calibreIdeal) out.push({ niveau: 'att', texte: d.calibre > d.calibreIdeal ? `${amperes(d.calibre)}${pnMot} : un ${amperes(d.calibreIdeal)} suffirait`
-      : !d.avecMarge ? `${amperes(d.calibre)}${pnMot} tient mais touche la courbe (${d.somme > d.marges.fraction ? motFraction(d.somme) + ' du temps de déclenchement consommé' : 'sans ' + nombre(d.marges.marge) + ' % de marge de courant'}) : l’idéal est un ${amperes(d.calibreIdeal)}`
+    else if (d.calibreIdeal && d.calibre !== d.calibreIdeal) out.push({ niveau: d.calibre < d.calibreIdeal && !d.avecMarge ? 'ko' : 'att', texte: d.calibre > d.calibreIdeal ? `${amperes(d.calibre)}${pnMot} : un ${amperes(d.calibreIdeal)} suffirait`
+      : !d.avecMarge ? `${amperes(d.calibre)}${pnMot} ne passe pas : il touche la courbe (${d.somme > d.marges.fraction ? motFraction(d.somme) + ' du temps de déclenchement consommé' : 'sans ' + nombre(d.marges.marge) + ' % de marge de courant'}) : l’idéal est un ${amperes(d.calibreIdeal)}`
       : `${amperes(d.calibre)}${pnMot} tient ; l’idéal est un ${amperes(d.calibreIdeal)} (sélectivité avec le voisin)` }); }
   d.voisins.forEach(v => { if (v.calibre > 0 && d.calibre > 0 && Math.max(v.calibre, d.calibre) < SELECTIVITE * Math.min(v.calibre, d.calibre) - 1e-9) out.push({ niveau: 'att', texte: `sélectivité avec ${v.nom} (${amperes(v.calibre)}) : l’amont devrait faire au moins le double de l’aval` }); });
   d.fils.forEach(f => { const nomF = (f.cable || 'câble sans numéro') + (f.type ? ' (' + f.type + ')' : '');
@@ -176,53 +177,51 @@ function sectionDisjoncteur(nom, d, o, probs) { d = d || disjonctionDe(nom); o =
     : `<button type="button" class="fi-lien dj-plus" id="dj-plus" title="Un état de plus : un courant, une durée">${ico('plus')}État</button>`;
   const ajouts = supprimes.length ? listeChoix(cleP, `<div class="fi-puces">${supprimes.map(k => `<button type="button" class="fi-chip" data-dj-ajout="${k}">${esc(majuscule(NOMS_PHASES[k] || k))}</button>`).join('')}<button type="button" class="fi-chip" data-dj-ajout="plus">Autre état</button></div>`, { titre: 'Ajouter un état' }) : '';
   const profil = part('profil', 'Profil de charge', tableauProfil(d) + ajouts, plus, 'profil');
-  const resume = !cal ? '<span class="fi-ko-t">aucun calibre ne tient</span>' : d.sansProfil ? `${esc(amperes(cal))} · profil à écrire`
-    : `${esc(amperes(cal))} retenu${m.calibre === cal ? ' · le meilleur' : m.calibre ? ` · <span class="fi-att-t">meilleur ${esc(amperes(m.calibre))}</span>` : ''}${v.etat === 'ko' ? ' · <span class="fi-ko-t">déclenche</span>' : ''}`;
-  const badge = badgeProblemes(probs, 'disjoncteur') || (v.etat === 'ko' ? { t: '✕', etat: 'ko' } : v.etat === 'att' ? { t: '!', etat: 'att' } : v.etat === 'ok' ? { t: '✓', etat: 'ok' } : null);
-  return { cle: 'disjoncteur', resume: insecable(resume), badge, contenu: tete + courbe + profil }; }
+  // ni résumé ni pastille (le lecteur : « 10 A retenu, meilleur 15 A, ça sert à rien ; le petit 1 en jaune, ça sert à rien »)
+  return { cle: 'disjoncteur', contenu: tete + courbe + profil }; }
 // ce que le « ? » de la courbe et du profil lit (08-explications) : la famille de courbes ; le permanent, la pointe, la part consommée
 function contexteAide(cle, d) { if (cle === 'courbe') return { famille: d.famille || d.courbe || '' };
   const perm = (d.points || []).find(p => p.t === Infinity), pointe = (d.points || []).find(p => p.t !== Infinity && p.i > 0);
   return { permanent: perm ? perm.i : null, pointe: pointe ? { i: pointe.i, t: pointe.t } : null, somme: d.somme != null ? d.somme : null }; }
-/* LE VERDICT du calibre retenu, en un mot et une couleur : valide (il ne déclenche pas, avec la marge), juste (il tient
-   mais touche la courbe), déclenche — lu dans le jugement du moteur (la gamme jugée, sinon le verdict d'ensemble). */
+/* LE VERDICT du calibre retenu, en deux mots (le lecteur : « soit ça passe, soit ça passe pas — c'est A ou B ») : il
+   PASSE s'il ne déclenche pas avec la marge ; sinon il NE PASSE PAS — qu'il déclenche ou qu'il touche la courbe. Lu dans le
+   jugement du moteur (la gamme jugée, sinon le verdict d'ensemble) ; le pourquoi en clair dans `raison`, pour la bulle. */
 function verdictDuRetenu(d) { const cal = d.calibre, g = (d.gamme || []).find(x => x.calibre === cal);
-  if (d.sansProfil) return { etat: '', mot: 'Profil à écrire' };
-  if (!(cal > 0)) return { etat: 'ko', mot: 'Aucun calibre ne tient' };
+  if (d.sansProfil) return { etat: '', mot: 'Profil à écrire', raison: 'Sans profil de charge, rien ne se juge.' };
+  if (!(cal > 0)) return { etat: 'ko', mot: 'Aucun ne passe', raison: 'Aucun calibre de la gamme ne tient ce profil.' };
   const valide = g && g.valide != null ? g.valide : d.valide, marge = g && g.marge != null ? g.marge : d.avecMarge;
-  if (valide === false) return { etat: 'ko', mot: 'Déclenche' };
-  if (!marge) return { etat: 'att', mot: 'Juste — touche la courbe' };
-  return { etat: 'ok', mot: 'Valide — ne déclenche pas' }; }
-/* LE CALIBRE, en grand (le lecteur : « n'importe qui doit comprendre en un coup d'œil — je suis dans la zone, valide ou
-   pas, je déclenche ou pas, donc le meilleur calibre c'est ça ») : le retenu et son verdict ; d'où il vient (le choix
-   automatique — le meilleur —, la main, le retest) ; le meilleur s'il est ailleurs, et « Automatique (15 A) » qui le
-   retient ; « Autre calibre » ouvre la gamme, discrète, pour un choix à la main. Plus de part number : le calibre se
-   retient sur lui (`retenirCalibre`), ↺ rend celui du retest. Puis, en une ligne, les câbles que le meilleur demande. */
+  if (valide === false) return { etat: 'ko', mot: 'Ne passe pas', raison: 'Il déclenche.' };
+  if (!marge) return { etat: 'ko', mot: 'Ne passe pas', raison: 'Il touche la courbe : sans la marge.' };
+  return { etat: 'ok', mot: 'Passe', raison: 'Il ne déclenche pas, avec la marge.' }; }
+/* LE CALIBRE, en grand (le lecteur : « le calibre qui marche, c'est lequel ? le meilleur, c'est lequel ? — le reste, ça
+   m'intéresse pas ») : le retenu et son verdict, passe ou ne passe pas ; « Automatique (15 A) » retient le meilleur de la
+   gamme ; « Autre calibre » ouvre la gamme, chaque calibre de la couleur de son verdict, pour un choix à la main. Puis,
+   en une ligne, les câbles que le meilleur demande. */
 function heroCalibre(nom, d, o) { const m = d.meilleur || {}, cal = d.calibre, best = m.calibre, auto = !!best && best === cal, v = verdictDuRetenu(d);
-  const rendre = o.origine === 'main' ? `<button type="button" class="fs-auto" data-dj-geste="rendre" title="${escA('Rendre ce que portait le retest' + (o.pnRetest ? ' (' + o.pnRetest + ')' : '') + ' — Ctrl+Z le défait')}">↺ <span>${esc(o.calRetest ? amperes(o.calRetest) : o.pnRetest != null ? (o.pnRetest || 'rien') : d.pn > 0 ? amperes(d.pn) : 'retest')}</span></button>` : '';
-  const ou = auto ? `<span class="dj-m-mot" data-bulle="${escA(phraseMeilleur(d))}">${ico('etoile', 'dj-m-etoile')}Automatique : le meilleur de la gamme</span>`
-    : [o.origine === 'main' ? `<span>Choisi à la main</span>${rendre}` : d.origine === 'pn' ? '<span>Du retest</span>' : '',
-      best ? `<span class="dj-m-mot" data-bulle="${escA(phraseMeilleur(d))}">${ico('etoile', 'dj-m-etoile')}le meilleur : <b>${esc(amperes(best))}</b></span>` : ''].filter(Boolean).join('<i class="dj-h-sep" aria-hidden="true">·</i>');
-  const cleL = 'dj|' + nom, gamme = (d.gamme || []).map(g => { const cls = g.valide === true ? (g.marge ? ' ok' : ' serre') : g.valide === false ? ' ko' : '', mot = g.valide == null ? '' : g.valide ? (g.marge ? 'valide' : 'juste, touche la courbe') : 'déclenche';
+  const cleL = 'dj|' + nom, gamme = (d.gamme || []).map(g => { const passe = g.valide === true && !!g.marge, cls = g.valide == null ? '' : passe ? ' ok' : ' ko', mot = g.valide == null ? '' : passe ? 'passe' : 'ne passe pas';
     return `<button type="button" class="dj-chip${cls}${g.calibre === best ? ' ideal' : ''}" data-cal="${g.calibre}" aria-pressed="${g.calibre === cal}" title="${escA(amperes(g.calibre) + (mot ? ' : ' + mot : '') + (g.calibre === best ? ' — le meilleur' : '') + (g.calibre === cal ? ' · retenu' : ' · cliquer pour le retenir à la main'))}">${g.calibre === best ? `<i class="dj-etoile" aria-hidden="true">${ico('etoile')}</i>` : ''}${esc(nombre(g.calibre))}<small>A</small></button>`; }).join('');
   const actions = d.sansProfil ? `<button type="button" class="btn papier" data-dj-geste="voir-profil">Écrire le profil</button>`
-    : (!auto && best ? `<button type="button" class="btn cuivre" id="dj-retenir" data-dj-geste="retenir" data-cal="${best}" title="${escA('Retenir le meilleur calibre, ' + amperes(best) + (m.pn ? ' (part number ' + m.pn + ', une désignation construite : à vérifier au catalogue)' : '') + ' — Ctrl+Z le défait')}">Automatique (${esc(amperes(best))})</button>` : '')
+    : (best ? `<button type="button" class="btn ${auto ? 'papier dj-auto-pris' : 'cuivre'}" id="dj-retenir" data-dj-geste="retenir" data-cal="${best}"${auto ? ' aria-pressed="true"' : ''} title="${escA(phraseMeilleur(d) + (auto ? ' Il est retenu.' : ' Un clic le retient' + (m.pn ? ' (part number ' + m.pn + ', une désignation construite : à vérifier au catalogue)' : '') + ' — Ctrl+Z le défait.'))}">${auto ? ico('etoile', 'dj-auto-etoile') : ''}Automatique (${esc(amperes(best))})</button>` : '')
       + (gamme ? boutonChanger(cleL, 'Choisir à la main un calibre de la gamme', 'Autre calibre') : '');
   const liste = gamme ? listeChoix(cleL, `<div class="dj-chips" role="group" aria-label="Retenir un calibre de la gamme, à la main">${gamme}</div>`, { titre: 'Les calibres de la gamme', cls: 'dj-gamme-choix' }) : '';
-  const heros = `<div class="dj-heros ${v.etat || 'neutre'}"><div class="dj-h-valeur"><b class="dj-h-cal">${cal ? esc(nombre(Math.round(cal * 100) / 100)) : '—'}${cal ? '<small>A</small>' : ''}</b>${aide('calibre', { verdict: d, calibre: cal || null, origine: o.origine === 'main' ? 'main' : d.origine, meilleur: best || null })}</div>`
-    + `<div class="dj-h-droite"><span class="dj-verdict-pastille ${v.etat || 'neutre'}"><i aria-hidden="true"></i>${esc(v.mot)}</span><span class="dj-h-ou">${ou}</span></div></div>`;
+  const heros = `<div class="dj-heros ${v.etat || 'neutre'}"><div class="dj-h-valeur"><b class="dj-h-cal">${cal ? esc(nombre(Math.round(cal * 100) / 100)) + '<span class="dj-h-u">A</span>' : '—'}</b>${aide('calibre', { verdict: d, calibre: cal || null, origine: o.origine === 'main' ? 'main' : d.origine, meilleur: best || null })}</div>`
+    + `<span class="dj-verdict-pastille ${v.etat || 'neutre'}" title="${escA(v.raison || '')}">${v.etat === 'ok' ? ico('coche') : v.etat === 'ko' ? ico('fermer') : '<i aria-hidden="true"></i>'}${esc(v.mot)}</span></div>`;
   return heros + (actions ? `<div class="dj-h-actions">${actions}</div>` : '') + liste + ligneCablesAGrossir(nom, d); }
-/* LES CÂBLES QUE LE MEILLEUR DEMANDE, en une ligne : combien, « lesquels » replié (chacun : son type, celui qu'il lui
-   faut, ce que ça pèse), « Changer les câbles ». Sans profil : rien (le calibre attend le permanent). */
+/* LES CÂBLES QUE LE MEILLEUR DEMANDE (le lecteur : « trois câbles à grossir : sur ordi on ne voit pas, les écritures se
+   chevauchent ») : une carte, toujours ouverte — en tête combien, avec quel calibre, et « Changer les câbles » ; puis une
+   ligne par câble, sur une grille qui ne se chevauche pas : son numéro, son type et celui qu'il lui faut, ce que ça pèse
+   de plus ; dessous, en petit, le contact qui change avec lui. Un clic sur une ligne ouvre le câble. Sans profil : rien. */
 function ligneCablesAGrossir(nom, d) { const m = d.meilleur || {}; if (d.sansProfil || !m.calibre) return '';
   const aChanger = filsDuMeilleur(d), proposes = aChanger.filter(p => p.x.propose); if (!aChanger.length) return '';
-  const lesquels = `<ul class="fi-liste dj-changer">${aChanger.map(({ x, f }) => { const k = f && f.l ? cleFil(f.l) : '', dm = x.masseProposee != null && x.masseActuelle != null ? x.masseProposee - x.masseActuelle : null;
-      const ct = (m.contactsTouches || []).find(c => c.cable === x.cable && JSON.stringify(c.bouts) === JSON.stringify(x.bouts));
-      return `<li class="fi-fil"${k ? ` data-i="${k}" tabindex="0" role="button"` : ''} data-bulle="${escA(majuscule(x.propose ? x.raison : x.aucune || x.raison) + (ct ? '\n' + majuscule(ct.raison) : ''))}"><span class="fi-w dj-w">${esc(x.cable || 'câble')}</span><span class="dj-de-a"><span class="id">${esc(x.actuel)}</span>${ico('fleche')}<b class="id">${esc(x.propose || '—')}</b></span>`
-        + `<span class="dj-masse">${dm != null ? esc((dm >= 0 ? '+' : '−') + nombre(Math.round(Math.abs(dm) * 10) / 10) + ' g/m') : ''}${ct ? ` · contact ${esc(ct.actuel)} → ${esc(ct.propose)}` : ''}</span></li>`; }).join('')}</ul>`;
-  return `<div class="dj-grossir"><details class="dj-lesquels"><summary title="${escA('Avec le ' + amperes(m.calibre) + (m.calibre !== d.calibre ? ', le meilleur' : '') + ' : lesquels, et ce qu’il leur faut')}">${ico('alerte', 'dj-g-ico')}<span><b>${pluriel2(aChanger.length, 'câble')} à grossir</b></span>${ico('bas', 'fs-chevron')}</summary>${lesquels}</details>`
-    + (proposes.length ? `<button type="button" class="btn papier" id="dj-fils-changer" data-dj-geste="fils" title="Chaque câble passe au type proposé — une seule entrée d’historique, Ctrl+Z les rend">Changer les câbles</button>` : '') + '</div>'; }
-/* Le pourquoi du meilleur, en une phrase d'homme : la bulle de sa ligne. */
+  const lignes = aChanger.map(({ x, f }) => { const k = f && f.l ? cleFil(f.l) : '', dm = x.masseProposee != null && x.masseActuelle != null ? x.masseProposee - x.masseActuelle : null;
+    const ct = (m.contactsTouches || []).find(c => c.cable === x.cable && JSON.stringify(c.bouts) === JSON.stringify(x.bouts));
+    return `<li class="dj-g-ligne"${k ? ` data-i="${k}" tabindex="0" role="button"` : ''} data-bulle="${escA(majuscule(x.propose ? x.raison : x.aucune || x.raison) + (ct ? '\n' + majuscule(ct.raison) : ''))}">`
+      + `<span class="dj-g-num">${esc(x.cable || 'câble')}</span><span class="dj-g-de-a"><span class="id">${esc(x.actuel)}</span>${ico('fleche')}<b class="id${x.propose ? '' : ' manque'}">${esc(x.propose || 'aucun')}</b></span>`
+      + `<span class="dj-g-masse">${dm != null ? esc((dm >= 0 ? '+' : '−') + nombre(Math.round(Math.abs(dm) * 10) / 10) + ' g/m') : ''}</span>`
+      + (ct ? `<span class="dj-g-ct">contact ${esc(ct.actuel)} ${ico('fleche')} ${esc(ct.propose)}</span>` : '') + '</li>'; }).join('');
+  return `<div class="dj-grossir"><div class="dj-g-tete">${ico('alerte', 'dj-g-ico')}<span class="dj-g-titre"><b>${pluriel2(aChanger.length, 'câble')} à grossir</b> <span>avec le ${esc(amperes(m.calibre))}</span></span>`
+    + (proposes.length ? `<button type="button" class="btn papier" id="dj-fils-changer" data-dj-geste="fils" title="Chaque câble passe au type proposé — une seule entrée d’historique, Ctrl+Z les rend">Changer les câbles</button>` : '') + `</div><ul class="dj-g-liste">${lignes}</ul></div>`; }
+/* Le pourquoi du meilleur, en une phrase d'homme : la bulle du bouton « Automatique ». */
 function phraseMeilleur(d) { const m = d.meilleur, cal = m.calibre, fam = m.famille ? m.famille : 'calibre de la gamme', T = nombre(m.marge.temperature);
   const perm = m.marge.permanent, courts = d.points.some(p => p.t !== Infinity && p.i > 0);
   const tes = [perm > 0 ? (perm < 2 ? `ton ${amperes(perm)} permanent` : `tes ${amperes(perm)} permanents`) : '', courts ? 'tes pointes' : ''].filter(Boolean).join(' et ');
@@ -272,8 +271,8 @@ function lignesFilsDisjoncteur(nom, d) { d = d || disjonctionDe(nom); const cal 
       pointe ? `en pointe : ${volts(pointe.dU)} > ${volts(pointe.admis)} admis${pointe.intermittent ? ' en intermittent' : ''}` : ''].filter(Boolean).join('\n');
     const [rep, ...b] = String(f.autre || '').split(':');
     return { l: f.l, k: f.l ? cleFil(f.l) : '', num: f.cable || '—', puce: puceFil(f), jauge: jaugeDuType(f.type), type: f.type, bout: rep ? { rep, borne: b.join(':') } : null,
-      charge: j.charge ? { r: j.charge.r, mot: `${nombreA(j.charge.i)} / ${nombreA(j.charge.admise)} A`, etat: j.etat } : { r: 0, mot: '—', etat: '' },
-      chute: { mot: c && c.dU != null ? volts(c.dU) : '—', etat: etatU, max: c && c.admis != null ? c.admis : null }, etat, bulle }; }); }
+      charge: j.charge ? { r: j.charge.r, mot: `${nombreA(j.charge.i)} / ${nombreA(j.charge.admise)} A`, i: j.charge.i, admis: j.charge.admise, etat: j.etat } : { r: null, mot: '—', etat: '' },
+      chute: { mot: c && c.dU != null ? volts(c.dU) : '—', u: c && c.dU != null ? c.dU : null, etat: etatU, max: c && c.admis != null ? c.admis : null }, etat, bulle }; }); }
 /* Le jugement d'un câble, en mots : son état (ko : la charge le dépasse ou dépasse son contact ; att : pas protégé, sous le
    calibre, hors de la table 11-3, contact sous le calibre ; ok), la charge au pire (le courant d'une phase contre ce qu'il
    admet pour cette durée) et ce qui ne va pas, en une ligne. */

@@ -35,9 +35,16 @@ accessoire pour quel connecteur et quel câble).
 - **Où la mettre.** Jamais dans le dépôt GitHub : il est **public**. L'export reste sur ton PC, et tu le déposes dans
   Volta (⋮ → Vos fichiers → Normes) : Volta le lit sur place, hors ligne, rien ne sort. Demande d'abord à ta hiérarchie
   si tu as le droit d'en faire un export : c'est la base de ton programme.
-- **Ce qu'il me faut pour apprendre à Volta à la lire.** Pas la base : la ligne des en-têtes de chacun des trois exports
-  et deux ou trois lignes, dont tu peux changer les valeurs. Sinon, trois captures de fiches, « General attributes »
-  déroulés : un connecteur, une règle d'end fitting (*ECS0852 par exemple), un disjoncteur.
+- **Tu peux le faire tout de suite, sans moi (version 61).** Dans SEE, tout sélectionner dans la liste (Ctrl+A), copier
+  (Ctrl+C) ; dans Volta, ⋮ → Vos fichiers → Normes → « Coller des lignes », coller, « Lire ». Volta ne connaît pas les
+  en-têtes de SEE : il te demande UNE fois quelle table c'est (Contacts pour les End Fitting Rules, Câbles pour les
+  Cables and Wires) et ce que dit chaque colonne (« Gender » → Sexe, « Cavity » → Taille…), te montre ce qu'il lit,
+  et tu adoptes. Il retient cette correspondance dans ton navigateur : la fois suivante, le même export se lit d'un
+  coup (« correspondance retenue »). Rien ne sort de ton PC.
+- **Ce qu'il me faut pour les Equipments.** Volta n'a pas encore de table où ranger tes connecteurs et tes
+  disjoncteurs (la référence, la famille, le nombre de contacts) : pour la construire, la ligne des en-têtes de
+  l'export Equipments et deux ou trois lignes, dont tu peux changer les valeurs. Sinon, trois captures de fiches,
+  « General attributes » déroulés : un connecteur, une règle d'end fitting (*ECS0852 par exemple), un disjoncteur.
 
 ---
 

@@ -1517,7 +1517,9 @@ function tailleNorme(o) { const taille = tailleCle(o.taille), calibre = NUMERO(t
 /* Une ligne de la table CONTACTS (normes/contacts.csv, transcrite des tables SEE) : pour une norme de connecteurs, une
    taille de cavité, un sexe (M broche, F douille), un type de fil (« * » : tous) et une jauge (« * » : toutes), le contact
    à sertir et son accessoire (un fourreau de réduction E0718 pour un fil plus fin que le contact, une bague EN4530…). */
-const sexeDe = t => { const u = MOT(t); return /^m|^male|broche|pin/.test(u) ? 'M' : /^f|douille|socket/.test(u) ? 'F' : ''; };
+// le sexe d'un contact, comme l'écrivent les tables : M, mâle, broche, pin, P (pin, la codification E0053) ; F, femelle,
+// douille, socket, S (socket) — un export de SEE en anglais se lit tel quel
+const sexeDe = t => { const u = MOT(t); return /^m|^male|broche|pin|^p$|^plug/.test(u) ? 'M' : /^f|douille|socket|^s$|^recep/.test(u) ? 'F' : ''; };
 function contactNorme(o) { const famille = cleNorme(o.famille), taille = tailleCle(o.taille), sexe = sexeDe(o.sexe), reference = String(o.reference || '').trim();
   if (!famille || !taille || !sexe || !reference) return null;
   const typeFil = String(o.typeFil || '').trim().toUpperCase().replace(/[^A-Z0-9*]/g, '') || '*', j = String(o.jauge == null ? '' : o.jauge).trim();

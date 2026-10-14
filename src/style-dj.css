@@ -2,7 +2,7 @@
    LE DISJONCTEUR (08-disjoncteurs.js) : sa section « Calibre » dans la fiche v4 — le calibre retenu en grand et son
    verdict en une pastille, le meilleur et « Automatique », la gamme discrète pour un choix à la main, les câbles à
    grossir en une ligne, la courbe sur papier, le profil de charge en petit tableau. Ses câbles sont dans la section
-   commune « Câbles » (style-fiche.css, `.fi-ias`).
+   commune « Câbles » (style-fiche.css, `.cb-liste`).
    « Graphite » : l'interface à l'encre, la couleur ne dit que l'état. Le graphique est un dessin technique : sur papier
    blanc dans les deux thèmes (son dessin : style-courbe.css). Les jetons sont ceux de style.css.
    ═══════════════════════════════════════════════════════════════════════ */
@@ -10,36 +10,26 @@
 /* la pastille d'une étoile (les polices embarquées n'ont pas le glyphe) */
 .fs-badge svg.dj-badge-etoile{width:12px;height:12px;stroke:none}
 
-/* ── 1. le calibre retenu, en grand : la valeur, son verdict, d'où il vient ── */
-.dj-heros{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;column-gap:18px;padding:14px 16px;border-radius:var(--r-2);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line)}
+/* ── 1. le calibre retenu, en grand, et son verdict en deux mots : passe (vert) ou ne passe pas (rouge) ── */
+.dj-heros{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 18px;padding:14px 16px;border-radius:var(--r-2);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line)}
 .dj-heros.ok{background:color-mix(in srgb,var(--ok-soft) 55%,var(--s-surface));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ok) 22%,transparent)}
-.dj-heros.att{background:color-mix(in srgb,var(--warn-soft) 60%,var(--s-surface));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--warn) 24%,transparent)}
 .dj-heros.ko{background:color-mix(in srgb,var(--ko-soft) 60%,var(--s-surface));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ko) 24%,transparent)}
 .dj-h-valeur{display:flex;align-items:flex-start;gap:2px}
-.dj-h-cal{display:inline-flex;align-items:baseline;gap:3px;font:600 42px/1 var(--sans);letter-spacing:-.035em;color:var(--t-1);font-variant-numeric:tabular-nums}
-.dj-h-cal small{font:600 20px/1 var(--sans);letter-spacing:0;color:var(--t-2)}
+/* la valeur et son unité dans la même police, la même graisse, la même encre : l'unité seulement plus petite */
+.dj-h-cal{display:inline-flex;align-items:baseline;gap:4px;font:600 42px/1 var(--sans);letter-spacing:-.02em;color:var(--t-1);font-variant-numeric:tabular-nums}
+.dj-h-u{font:inherit;font-size:.6em;letter-spacing:0;color:inherit}
 .dj-h-valeur .fi-q{margin:2px 0 0 4px}
-.dj-h-droite{display:flex;flex-direction:column;align-items:flex-start;gap:7px;min-width:0}
-/* le verdict : une pastille de sa couleur — vert « Valide », ambre « Juste », rouge « Déclenche » */
-.dj-verdict-pastille{display:inline-flex;align-items:center;gap:8px;height:28px;padding:0 12px 0 10px;border-radius:999px;font:600 var(--f-13)/1 var(--sans);white-space:nowrap;color:var(--t-2);background:var(--s-surface);box-shadow:inset 0 0 0 1px var(--s-line)}
+.dj-verdict-pastille{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 16px 0 12px;border-radius:999px;font:700 var(--f-14)/1 var(--sans);white-space:nowrap;color:var(--t-2);background:var(--s-surface);box-shadow:inset 0 0 0 1px var(--s-line)}
+.dj-verdict-pastille svg.ico{width:17px;height:17px;stroke-width:2.4}
 .dj-verdict-pastille i{width:9px;height:9px;border-radius:50%;background:var(--t-3)}
-.dj-verdict-pastille.ok{color:var(--ok);background:var(--ok-soft);box-shadow:none}
-.dj-verdict-pastille.ok i{background:var(--ok)}
-.dj-verdict-pastille.att{color:var(--warn);background:var(--warn-soft);box-shadow:none}
-.dj-verdict-pastille.att i{background:var(--warn)}
-.dj-verdict-pastille.ko{color:var(--ko);background:var(--ko-soft);box-shadow:none}
-.dj-verdict-pastille.ko i{background:var(--ko)}
-.dj-h-ou{display:inline-flex;align-items:center;flex-wrap:wrap;gap:4px 8px;min-width:0;font:500 var(--f-12)/1.35 var(--sans);color:var(--t-2)}
-.dj-h-ou svg.dj-h-etoile{width:13px;height:13px;stroke:none;color:var(--ok);margin-right:-3px}
-.dj-h-ou .fs-auto{height:22px}
-/* le meilleur, et ce qu'on fait : « Automatique (15 A) », « Autre calibre » */
+.dj-verdict-pastille.ok{color:#fff;background:var(--ok);box-shadow:none}
+.dj-verdict-pastille.ko{color:#fff;background:var(--ko);box-shadow:none}
+/* ce qu'on fait : « Automatique (15 A) » — à l'encre quand il reste à prendre, étoilé quand il est pris —, « Autre calibre » */
 .dj-h-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px 6px;min-height:32px}
 .dj-h-actions .btn{height:32px;padding:0 14px;font-size:var(--f-12)}
 .dj-h-actions .fi-lien{min-height:32px;padding:0 10px}
-.dj-h-sep{font-style:normal;color:var(--t-3)}
-.dj-m-mot{display:inline-flex;align-items:center;gap:5px;color:var(--t-2)}
-.dj-m-mot b{font-weight:700;color:var(--t-1);font-variant-numeric:tabular-nums}
-.dj-m-mot svg.dj-m-etoile{width:13px;height:13px;stroke:none;color:var(--ok)}
+.dj-auto-pris{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 35%,transparent)}
+.dj-auto-pris svg.dj-auto-etoile{width:13px;height:13px;stroke:none;margin-right:6px;color:var(--ok)}
 /* la gamme, discrète, sous « Autre calibre » : une puce par calibre, un trait d'état dessous, le retenu à l'encre, le meilleur étoilé */
 .dj-gamme-choix{margin:0}
 .dj-chips{display:flex;flex-wrap:wrap;gap:6px}
@@ -47,7 +37,7 @@
   font:600 var(--f-13) var(--sans);color:var(--t-1);cursor:pointer;white-space:nowrap;font-variant-numeric:tabular-nums;transition:background var(--rapide),border-color var(--rapide)}
 .dj-chip small{font:500 var(--f-11) var(--sans);color:var(--t-2);margin-left:1px}
 .dj-chip::after{content:"";position:absolute;left:30%;right:30%;bottom:5px;height:2px;border-radius:1px;background:var(--s-line-2)}
-.dj-chip.ok::after{background:var(--ok)} .dj-chip.serre::after{background:var(--warn)} .dj-chip.ko::after{background:var(--ko)}
+.dj-chip.ok::after{background:var(--ok)} .dj-chip.ko::after{background:var(--ko)}
 .dj-chip.ko{color:var(--t-2)}
 .dj-chip:hover{border-color:var(--t-3)}
 .dj-chip:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
@@ -56,25 +46,26 @@
 .dj-etoile{display:inline-flex;font-style:normal;color:var(--ok)}
 .dj-etoile svg.ico{width:10px;height:10px;stroke:none}
 
-/* ── les câbles que le meilleur demande, en une ligne : combien (« lesquels » replié), « Changer les câbles » ── */
-.dj-grossir{display:flex;align-items:flex-start;gap:8px 12px;padding:6px 6px 6px 12px;border-radius:var(--r-2);background:var(--warn-soft);border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
+/* ── les câbles que le meilleur demande : une carte ambre, toujours ouverte — en tête combien et « Changer les câbles »,
+   puis une ligne par câble sur une grille fixe (le numéro · son type → celui qu'il lui faut · le poids en plus ; le contact
+   qui change dessous) : rien ne se chevauche, à toute largeur ── */
+.dj-grossir{display:flex;flex-direction:column;gap:6px;padding:8px 8px 8px 12px;border-radius:var(--r-2);background:var(--warn-soft);border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
+.dj-g-tete{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;min-height:32px}
+.dj-g-tete svg.dj-g-ico{width:17px;height:17px;color:var(--warn);flex:none}
+.dj-g-titre{flex:1;min-width:0;display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px;font:500 var(--f-13)/1.3 var(--sans);color:var(--t-2)}
+.dj-g-titre b{font-weight:700;color:var(--warn)}
 .dj-grossir .btn{flex:none;height:30px;padding:0 12px;font-size:var(--f-12)}
-.dj-lesquels{flex:1;min-width:0}
-.dj-lesquels>summary{display:flex;align-items:center;gap:8px;min-height:30px;list-style:none;cursor:pointer;font:500 var(--f-13) var(--sans);color:var(--t-1);border-radius:var(--r-1)}
-.dj-lesquels>summary::-webkit-details-marker{display:none}
-.dj-lesquels>summary b{font-weight:600;color:var(--warn)}
-.dj-lesquels>summary svg.dj-g-ico{width:16px;height:16px;color:var(--warn);flex:none}
-.dj-lesquels>summary .fs-chevron{width:14px;height:14px;margin-left:2px}
-.dj-lesquels[open]>summary .fs-chevron{transform:rotate(180deg)}
-.fi-liste.dj-changer{margin:4px 0 6px;display:flex;flex-direction:column}
-.dj-changer .fi-fil{display:grid;grid-template-columns:64px auto minmax(0,1fr);align-items:center;column-gap:12px;min-height:30px;padding:3px 6px;border-radius:var(--r-1)}
-.dj-changer .fi-fil+.fi-fil::before{display:none}
-.dj-changer .fi-fil[data-i]:hover,.dj-changer .fi-fil.vise{background:color-mix(in srgb,var(--t-1) 6%,transparent)}
-.dj-changer .dj-w{font:600 var(--f-12) var(--mono);color:var(--t-1);text-align:left;min-width:0}
-.dj-de-a{display:inline-flex;align-items:center;gap:6px;font:500 var(--f-12) var(--mono);color:var(--t-2);white-space:nowrap}
-.dj-de-a b.id{color:var(--t-1)}
-.dj-de-a svg.ico{width:12px;height:12px;color:var(--t-2)}
-.dj-masse{justify-self:end;font:500 var(--f-12) var(--sans);color:var(--t-2);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dj-g-liste{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.dj-g-ligne{display:grid;grid-template-columns:minmax(58px,auto) minmax(0,1fr) auto;align-items:center;column-gap:14px;row-gap:1px;padding:6px 8px;border-radius:var(--r-1);background:color-mix(in srgb,var(--s-surface) 70%,transparent);cursor:pointer;transition:background var(--rapide)}
+.dj-g-ligne:hover,.dj-g-ligne.vise{background:var(--s-surface)}
+.dj-g-ligne:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.dj-g-num{font:600 var(--f-12) var(--mono);color:var(--t-1);white-space:nowrap}
+.dj-g-de-a{display:inline-flex;align-items:center;gap:6px;min-width:0;font:500 var(--f-12) var(--mono);color:var(--t-2);white-space:nowrap}
+.dj-g-de-a b.id{font-weight:700;color:var(--t-1)}
+.dj-g-de-a b.manque{color:var(--ko)}
+.dj-g-de-a svg.ico,.dj-g-ct svg.ico{width:12px;height:12px;color:var(--t-2);flex:none}
+.dj-g-masse{justify-self:end;font:600 var(--f-12) var(--sans);color:var(--warn);font-variant-numeric:tabular-nums;white-space:nowrap}
+.dj-g-ct{grid-column:2/-1;display:inline-flex;align-items:center;gap:5px;font:500 var(--f-11) var(--sans);color:var(--t-2)}
 
 /* la courbe déborde un peu dans la marge de la carte : le papier garde la largeur qu'il avait (le dessin se fait à sa
    largeur, au pixel près) */
@@ -92,7 +83,6 @@
 .dj-aucun{padding:12px}
 .dj-verdict{width:8px;height:8px;border-radius:50%;background:var(--s-line-2);justify-self:center;transition:background var(--rapide),box-shadow var(--rapide)}
 .dj-verdict.ok{background:var(--ok)}
-.dj-verdict.serre{background:var(--warn);box-shadow:0 0 0 3px var(--warn-soft)}
 .dj-verdict.ko{background:var(--ko);box-shadow:0 0 0 3px var(--ko-soft)}
 .dj-etat .dj-nom{font-size:var(--f-13);color:var(--t-1);font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dj-etat input.dj-nom{width:calc(100% + 8px);margin-left:-8px;border:1px solid transparent;border-radius:var(--r-1);padding:5px 8px;font:500 var(--f-13) var(--sans);background:none;color:var(--t-1);transition:border-color var(--rapide),background var(--rapide),box-shadow var(--rapide)}
