@@ -4,3 +4,4 @@ see/vba/*.bas -text
 see/*.ps1 -text
 see/*.cmd -text
 see/diagnostic-exemple.txt -text
+see/kit/*.txt -text
