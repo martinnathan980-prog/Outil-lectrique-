@@ -32,6 +32,7 @@
 .see-e{flex:1 1 0;min-width:0;font:400 var(--f-11)/1.4 var(--mono);color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .see-e i{font-style:normal;font-family:var(--sans)}
 .see-col.rare .see-c{color:var(--t-2);font-weight:500}
+.see-col.id .see-e{white-space:normal;overflow-wrap:anywhere}   /* un identifiant dit toutes les feuilles où il mène */
 .see-rien{margin:0;font-size:var(--f-13);color:var(--t-3)}
 /* les vides, à part */
 .see-vides{margin-top:12px;padding-top:10px;border-top:1px dashed var(--s-line)}
@@ -64,6 +65,17 @@
 .see-code p{margin:2px 0 0;font:400 var(--f-11)/1.6 var(--mono);color:var(--t-1);overflow-wrap:anywhere}
 .see-code p i{font-style:normal;color:var(--t-3);margin-left:4px}
 .see-sep{flex:none;width:1px;align-self:stretch;margin:4px 4px;background:var(--s-line-2)}
+/* la gauge AWG d'une section en mm², en pastille à côté de la valeur de SEE */
+.see-nw{white-space:nowrap}
+.see-awg{margin-left:2px;padding:0 4px;border-radius:3px;background:var(--accent-soft);color:var(--accent);font:600 var(--f-11)/1.5 var(--sans);white-space:nowrap}
+/* sous les liens, les petites tables qui relient, colonne par colonne */
+.see-lien .see-c .see-t{font-weight:500;margin-left:4px}
+.see-petites{margin-top:14px;padding-top:12px;border-top:1px solid var(--s-line)}
+.see-petites-t{margin:0 0 10px;font:600 var(--f-13)/1.4 var(--sans);color:var(--t-1)}
+.see-petite{break-inside:avoid;margin:0 0 14px}
+.see-petite h4{margin:0 0 4px;font:600 var(--f-13)/1.4 var(--mono);color:var(--t-1)}
+.see-petite h4 .see-t{font-weight:500;margin-left:6px}
+.see-petite-l{list-style:none;margin:0;padding:0 0 0 12px}
 @media (max-width:720px){
   .see-groupes,.see-codes-l{columns:1}
   .see-barre{flex-wrap:wrap}

@@ -47,6 +47,17 @@ accessoire pour quel connecteur et quel câble).
      diamètres en m, masses en kg/m. Depuis la version 65, Volta lit chaque feuille en entier, relie lui-même les
      identifiants d'une feuille à l'autre (onglet « Liens ») et liste les codes (onglet « Codes », avec le plan ouvert
      confronté à SEE) : c'est ce qu'il faut pour écrire l'import.
+  6. *Ce que le vrai classeur a dit (version 65, 22 feuilles).* Se relient d'eux-mêmes, à 100 % : les contacts à leur
+     règle (le contact à sertir est PartNo1), les broches et les arrangements (un arrangement de SEE est un
+     ContactLayout), le câble à ses conducteurs (EED_LNK_Wires_Equi), la fiche à son embase, les accessoires et les
+     additifs à leur pièce. Trois surprises : le renvoi d'un connecteur vers son arrangement (IDPlugMap) n'est rempli
+     que sur moins de 1 % des connecteurs — Volta le retrouvera par la référence (sa codification) et par Capacity
+     (« 61#0.518 » : 61 cavités de taille 20) ; les calibres des disjoncteurs ne sont pas dans SEE (Intensity_Nominal
+     sur trois équipements) — la gamme et les courbes restent celles de Volta ; IDConnector d'EED_LNK_Connector_Additive
+     ne mène à aucune feuille — une table manque. Reste à voir ce qui relie une règle de contacts à ses connecteurs :
+     EED_LNK_EndFitting_ProductFamilies mène aux connecteurs et aux équipements, et la version 66 montre ses autres
+     colonnes sous les liens (les tables LNK_ et SET_ colonne par colonne), une cible par feuille, la gauge AWG des
+     sections en mm², et fond en une les deux écritures d'un même flottant (0.32574322630000002 = 0.3257432).
 - **Les autres voies, si celle-ci est fermée.** *Copier la grille* de SEE (Ctrl+A, Ctrl+C, coller dans le Bloc-notes
   pour voir si le texte suit) ; *le référent SEE*, qui peut tirer les mêmes vues en Excel. *Pas en photos* des lignes
   elles-mêmes : des milliers de lignes en photo, ce sont des erreurs de lecture et des jours de travail.

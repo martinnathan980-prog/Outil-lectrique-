@@ -31,6 +31,20 @@ const TEXTE_SEE = /partno|^type$|wire_?type|family|caption|notation|standard|cab
 // les codes qui comptent pour la suite, montrés d'abord ; les autres se déplient
 const CODES_D_ABORD_SEE = /^(wiretype|type|wire_type|contacttype|contactfamily|contactgauge|wiregauge|gender|classname|family|cabletypelist|connectivitytype|accessoriestype|accessoriessubcategory|backshelltype|shield|cablefamily|typeofcontactlayout|equipmenttype|equipment|modulartype|epflist|lcstatusname|unit1|form_type|notation|typeofrelay|suppliedwithcontact|view|prefered)$/i;
 const MAX_CODES_SEE = 300;
+/* Le bruit des flottants : SEE écrit 0.32574322630000002 (en texte), 0.0140000004 ou 0.0099999998 (un réel simple) là
+   où il pense 0.3257432263, 0.014, 0.01 ; deux écritures d'une même valeur faisaient deux codes. Un nombre s'écrit au
+   plus court à 2·10⁻⁷ près ; un texte qui a sept décimales ou plus est un nombre ; « 09 » ou « 1.5 » restent tels quels. */
+const NOMBRE_LONG_SEE = /^-?\d+\.\d{7,}$/;
+function nombreSEE(x) { if (!isFinite(x) || Number.isInteger(x)) return String(x);
+  for (let p = 1; p < 16; p++) { const y = Number(x.toPrecision(p)); if (Math.abs(y - x) <= Math.abs(x) * 2e-7) return String(y); } return String(x); }
+const valeurSEE = v => typeof v === 'number' ? nombreSEE(v) : (s => NOMBRE_LONG_SEE.test(s) ? nombreSEE(+s) : s)(String(v).trim());
+/* SEE écrit la gauge en mm² (0.517952 = 20) : la gauge AWG d'une section, quand elle tombe juste (0000 à 40). */
+function awgSEE(mm2) { const a = +mm2; if (!(a > 0)) return '';
+  const n = 36 - 39 * Math.log(Math.sqrt(4 * a / Math.PI) / 0.127) / Math.log(92), r = Math.round(n);
+  return Math.abs(n - r) > 0.05 || r > 40 || r < -3 ? '' : r > 0 ? String(r) : '0'.repeat(1 - r); }
+const estGaugeSEE = c => /gauge/i.test(c.nom);
+// à nombre de lignes égal, les nombres par valeur (0.3257 avant 0.5179), le reste dans l'ordre naturel
+const triCodeSEE = (a, b) => { const x = +a, y = +b; return a.trim() && b.trim() && !isNaN(x) && !isNaN(y) ? x - y : triNaturel(a, b); };
 
 /* Un Excel déposé ou ouvert n'importe où (la fenêtre, « Vos fichiers », la page des normes) : si ses feuilles portent
    les noms de la base SEE, il se lit ici, et rend vrai ; sinon rien n'est fait. */
@@ -65,7 +79,7 @@ function resumerFeuilleSEE(nom, ws) { const vide = { nom, lignes: 0, colonnes: [
   const entete = rows[k].map(c => String(c == null ? '' : c).trim()), corps = rows.slice(k + 1), N = corps.length;
   const cols = entete.map((t, i) => { const c = { nom: t || 'colonne ' + (i + 1), n: 0, exemples: [], genre: '' }; let nombres = 0, guids = 0, bools = 0, virgules = 0, longueur = 0, trop = false;
     const vus = new Set(), comptes = new Map();
-    for (const r of corps) { const v = r[i]; if (v === '' || v == null) continue; const s = typeof v === 'number' ? String(Number(v.toPrecision(12))) : String(v).trim(); if (!s) continue; c.n++;   // 0.0014999999999999998 se lit 0.0015
+    for (const r of corps) { const v = r[i]; if (v === '' || v == null) continue; const s = valeurSEE(v); if (!s) continue; c.n++;   // 0.32574322630000002 se lit 0.3257432
       if (typeof v === 'number') nombres++; else if (typeof v === 'boolean' || OUI_NON_SEE.test(s)) bools++; else if (GUID_SEE.test(s)) guids++;
       if (s.includes(',')) virgules++; longueur += s.length;
       if (c.exemples.length < 2 && !vus.has(s)) { vus.add(s); c.exemples.push(s); }
@@ -77,23 +91,30 @@ function resumerFeuilleSEE(nom, ws) { const vide = { nom, lignes: 0, colonnes: [
     const liste = c.genre === '' && virgules >= c.n * 0.3;
     if (TEXTE_SEE.test(c.nom)) { c.textes = new Set(); for (const r of corps) { const v = r[i]; if (v === '' || v == null) continue; c.textes.add(cleTexteSEE(v)); if (liste) String(v).split(',').forEach(x => { if (x.trim()) c.textes.add(cleTexteSEE(x)); }); } }
     if (liste) { const jetons = new Map(); for (const r of corps) { const v = r[i]; if (v === '' || v == null) continue; String(v).split(',').forEach(x => { x = x.trim(); if (x) jetons.set(x, (jetons.get(x) || 0) + 1); }); }
-      if (jetons.size >= 2 && jetons.size <= MAX_CODES_SEE) { c.codes = [...jetons].sort((a, b) => b[1] - a[1] || triNaturel(a[0], b[0])); c.liste = true; } }
-    else if (!trop && comptes.size >= 2 && longueur / c.n <= 28 && !PAS_CODE_SEE.test(c.nom) && (c.genre !== 'nombre' || comptes.size <= 30)) c.codes = [...comptes].sort((a, b) => b[1] - a[1] || triNaturel(a[0], b[0]));
+      if (jetons.size >= 2 && jetons.size <= MAX_CODES_SEE) { c.codes = [...jetons].sort((a, b) => b[1] - a[1] || triCodeSEE(a[0], b[0])); c.liste = true; } }
+    else if (!trop && comptes.size >= 2 && longueur / c.n <= 28 && !PAS_CODE_SEE.test(c.nom) && (c.genre !== 'nombre' || comptes.size <= 30)) c.codes = [...comptes].sort((a, b) => b[1] - a[1] || triCodeSEE(a[0], b[0]));
     return c; });
   return { nom, lignes: N, colonnes: cols.filter(c => c.n), vides: cols.filter(c => !c.n).map(c => c.nom) }; }
 
 /* LES LIENS : les CLÉS — l'« ID » de chaque feuille, et l'« IDEquipment » d'une vue (la pièce elle-même) — et les
    RENVOIS — toute autre colonne d'identifiants (IDPlugMap, IDCable, l'IDEquipment d'une table de règles…). Chaque
-   renvoi cherche ses valeurs dans les clés des AUTRES feuilles : la part retrouvée dit le lien (« IDPlugMap →
-   ContactLayouts.IDEquipment, 229 sur 229 ») ; un renvoi qui ne retrouve rien dit qu'une table manque. Un index
+   renvoi cherche ses valeurs dans les clés de toutes les feuilles, la sienne comprise (IDParentCategory désigne une
+   autre ligne d'OBJ_Categories) : la part retrouvée dit le lien (« IDPlugMap → ContactLayouts, 229 sur 229 ») ; un
+   renvoi qui ne retrouve rien dit qu'une table manque. Une cible par feuille (l'ID et l'IDEquipment d'une vue sont la
+   même pièce), quatre au plus : un renvoi partagé entre connecteurs, équipements et règles les montre tous. Un index
    valeur → clés : chaque valeur n'est vue qu'une fois. */
 const estCleSEE = (f, c) => /^id$/i.test(c.nom) || (/^idequipment$/i.test(c.nom) && /^EED_(e?Cat_)?View/i.test(f.nom));
 function liensSEE(F) { const cles = [], renvois = [];
   F.forEach((f, fi) => f.colonnes.forEach(c => { if (c.ids) (estCleSEE(f, c) ? cles : renvois).push({ fi, c }); }));
   const index = new Map(); cles.forEach((x, k) => x.c.ids.forEach(v => { const a = index.get(v); if (a) a.push(k); else index.set(v, [k]); }));
-  return renvois.map(x => { const n = new Map(); x.c.ids.forEach(v => (index.get(v) || []).forEach(k => { if (cles[k].fi !== x.fi) n.set(k, (n.get(k) || 0) + 1); }));
-    const cibles = [...n].map(([k, m]) => ({ fi: cles[k].fi, col: cles[k].c.nom, n: m, part: m / x.c.ids.size })).sort((u, v) => v.part - u.part || v.n - u.n).slice(0, 3);
-    return { fi: x.fi, col: x.c.nom, distinct: x.c.ids.size, lignes: x.c.n, cibles }; }); }
+  return renvois.map(x => { const n = new Map(); x.c.ids.forEach(v => (index.get(v) || []).forEach(k => n.set(k, (n.get(k) || 0) + 1)));
+    const parFeuille = new Map(); n.forEach((m, k) => { const fi = cles[k].fi, d = parFeuille.get(fi);
+      if (!d || m > d.n || (m === d.n && /^id$/i.test(cles[k].c.nom))) parFeuille.set(fi, { fi, col: cles[k].c.nom, n: m, part: m / x.c.ids.size }); });
+    const cibles = [...parFeuille.values()].sort((u, v) => v.part - u.part || v.n - u.n).slice(0, 4);
+    return { fi: x.fi, col: x.c.nom, distinct: x.c.ids.size, lignes: x.c.n, taux: x.c.taux, cibles }; }); }
+// les petites tables qui relient (EED_LNK_…, EED_SET_…) : montrées colonne par colonne sous les liens, pour qu'une photo
+// des Liens dise aussi ce qu'elles portent à côté de leurs identifiants (un nom de famille, une quantité…)
+const estLiaisonSEE = f => /^(EED_)?(LNK|SET)_/i.test(f.nom);
 
 /* LE PLAN OUVERT FACE À SEE : ses types de câble (DR24…), leurs familles (DR…) et ses références (part numbers des
    équipements), cherchés dans les colonnes de texte de toutes les feuilles. Des références, seulement le compte et les
@@ -114,7 +135,7 @@ function ficheBaseSEE() { if (!SEE.lu) return; const deja = app.fiche && app.fic
   if (!deja) ajuster(true); lierBaseSEE(); }
 function rendreBaseSEE() { if (!(app.fiche && app.fiche.mode === 'see') || !SEE.lu) return; const c = $('fiche-corps'), p = $('fiche-pied');
   c.innerHTML = baseSEEHtml(); p.innerHTML = baseSEEPiedHtml(); p.hidden = !p.innerHTML; c.scrollTop = 0; lierBaseSEE(); }
-const tauxSEE = t => t >= 0.995 ? '100 %' : t < 0.01 ? '< 1 %' : Math.round(t * 100) + ' %';
+const tauxSEE = t => t >= 0.995 ? '100\u00a0%' : t < 0.01 ? '<\u00a01\u00a0%' : Math.round(t * 100) + '\u00a0%';   // « (100 %) » ne se coupe pas
 const exempleSEE = s => s.length > 34 ? s.slice(0, 33) + '…' : s;
 const partSEE = (n, sur) => `${milliers(n)} / ${milliers(sur)} (${tauxSEE(sur ? n / sur : 0)})`;
 function baseSEEHtml() { const L = SEE.lu, v = SEE.vue, nl = L.liens.filter(x => x.cibles.length).length;
@@ -125,10 +146,16 @@ function baseSEEHtml() { const L = SEE.lu, v = SEE.vue, nl = L.liens.filter(x =>
   return `<div class="see">${nmTitre('Base SEE · lue sur ce poste, rien n’en sort', L.nom)}`
     + `<p class="see-mode">Volta a lu ton Excel ici, en entier, sans le garder. <b>Fais une photo de chaque onglet</b> — Liens, Codes, puis les feuilles — et envoie-les-moi ; si un onglet dépasse l’écran, fais défiler et prends-en deux.</p>`
     + `<div class="see-barre">${onglets}<label class="see-ex"><input type="checkbox" id="see-ex"${SEE.exemples ? ' checked' : ''}> Exemples de valeurs</label></div>${corps}</div>`; }
+/* Une colonne d'une feuille, sur une ligne : son nom, son taux, deux exemples (la gauge AWG d'une section en mm²) ; un
+   identifiant dit où il mène. */
+function versSEE(fi, c) { const L = SEE.lu, F = L.feuilles; if (estCleSEE(F[fi], c)) return '<i>identifiant</i>';
+  const x = L.liens.find(y => y.fi === fi && y.col === c.nom);
+  return '<i>identifiant</i> ' + (x && x.cibles.length ? '→ ' + esc(x.cibles.map(k => nomCourtSEE(F[k.fi].nom)).join(', ')) : '<i>— ne se relie à rien</i>'); }
+const exemplesSEE = c => c.exemples.map(v => exempleSEE(v) + (estGaugeSEE(c) && awgSEE(v) ? ' = AWG ' + awgSEE(v) : '')).join(' · ');
+const colonneSEEHtml = (fi, c) => `<li class="see-col${c.taux < 0.05 ? ' rare' : ''}${c.genre === 'id' ? ' id' : ''}"><span class="see-c">${esc(c.nom)}</span><span class="see-t">${esc(tauxSEE(c.taux))}</span>`
+  + `<span class="see-e">${c.genre === 'id' ? versSEE(fi, c) : SEE.exemples && !PERSONNEL_SEE.test(c.nom) ? esc(exemplesSEE(c)) : c.genre ? '<i>' + esc(c.genre) + '</i>' : ''}</span></li>`;
 /* Une feuille : ses colonnes remplies, les vides à part. */
-function feuilleSEEHtml(F) { const L = SEE.lu, i = L.feuilles.indexOf(F);
-  const ligne = c => `<li class="see-col${c.taux < 0.05 ? ' rare' : ''}"><span class="see-c">${esc(c.nom)}</span><span class="see-t">${esc(tauxSEE(c.taux))}</span>`
-    + `<span class="see-e">${c.genre === 'id' ? '<i>identifiant</i>' : SEE.exemples && !PERSONNEL_SEE.test(c.nom) ? esc(c.exemples.map(exempleSEE).join(' · ')) : c.genre ? '<i>' + esc(c.genre) + '</i>' : ''}</span></li>`;
+function feuilleSEEHtml(F) { const L = SEE.lu, i = L.feuilles.indexOf(F), ligne = c => colonneSEEHtml(i, c);
   const vides = F.vides.length ? `<details class="see-vides"><summary>${esc(pluriel(F.vides.length, 'colonne'))} vide${F.vides.length > 1 ? 's' : ''} sur toutes les lignes</summary><p>${F.vides.map(esc).join(' · ')}</p></details>` : '';
   return `<section class="see-feuille" aria-label="${escA(F.nom)}"><div class="see-tete"><b class="see-nom">${esc(F.nom)}</b>`
     + `<span class="see-compte">${esc(milliers(F.lignes))} ligne${F.lignes > 1 ? 's' : ''} · ${esc(pluriel(F.colonnes.length + F.vides.length, 'colonne'))} : <b>${esc(String(F.colonnes.length))} remplie${F.colonnes.length > 1 ? 's' : ''}</b>${F.vides.length ? ', ' + esc(String(F.vides.length)) + ' vide' + (F.vides.length > 1 ? 's' : '') : ''}</span>`
@@ -137,19 +164,31 @@ function feuilleSEEHtml(F) { const L = SEE.lu, i = L.feuilles.indexOf(F);
 /* Les liens : par feuille, chaque renvoi et la clé où ses valeurs se retrouvent ; ceux qui ne se relient à rien (une
    table qui manque). */
 function liensSEEHtml() { const L = SEE.lu, F = L.feuilles, Ls = L.liens, nl = Ls.filter(x => x.cibles.length).length;
+  // le renvoi, et son taux s'il n'est pas rempli partout (IDPlugMap des connecteurs : < 1 %, presque jamais rempli)
+  const renvoi = x => `<span class="see-c">${esc(x.col)}${x.taux < 0.995 ? ` <span class="see-t" title="${escA('rempli sur ' + milliers(x.lignes) + ' des ' + milliers(F[x.fi].lignes) + ' lignes')}">${esc(tauxSEE(x.taux))}</span>` : ''}</span>`;
+  const cible = (x, c) => `<b>${esc(nomCourtSEE(F[c.fi].nom))}.${esc(c.col)}</b> <span class="see-t">${esc(partSEE(c.n, x.distinct))}${c.fi === x.fi ? ' · sa propre feuille' : ''}</span>`;
   const groupes = F.map((f, fi) => { const xs = Ls.filter(x => x.fi === fi); if (!xs.length) return '';
     return `<div class="see-groupe"><h4>${esc(nomCourtSEE(f.nom))}</h4><ul>${xs.map(x => x.cibles.length
-      ? `<li class="see-lien"><span class="see-c">${esc(x.col)}</span><span class="see-fl">→</span><span class="see-cible">${x.cibles.map((c, k) => `<b>${esc(nomCourtSEE(F[c.fi].nom))}.${esc(c.col)}</b> <span class="see-t">${esc(partSEE(c.n, x.distinct))}</span>`).join('<br>')}</span></li>`
-      : `<li class="see-lien rien"><span class="see-c">${esc(x.col)}</span><span class="see-fl">→</span><span class="see-cible"><i>ne se relie à aucune feuille</i> <span class="see-t">${esc(milliers(x.distinct))} valeur${x.distinct > 1 ? 's' : ''}</span></span></li>`).join('')}</ul></div>`; }).join('');
+      ? `<li class="see-lien">${renvoi(x)}<span class="see-fl">→</span><span class="see-cible">${x.cibles.map(c => cible(x, c)).join('<br>')}</span></li>`
+      : `<li class="see-lien rien">${renvoi(x)}<span class="see-fl">→</span><span class="see-cible"><i>ne se relie à aucune feuille</i> <span class="see-t">${esc(milliers(x.distinct))} valeur${x.distinct > 1 ? 's' : ''}</span></span></li>`).join('')}</ul></div>`; }).join('');
   return `<section class="see-feuille see-liens" aria-label="Liens entre feuilles"><div class="see-tete"><b class="see-nom">Liens entre feuilles</b><span class="see-compte">${esc(pluriel(Ls.length, 'renvoi'))} d’une feuille à l’autre · <b>${nl} relié${nl > 1 ? 's' : ''}</b>${Ls.length - nl ? ', ' + (Ls.length - nl) + ' sans cible' : ''}</span></div>`
     + (groupes ? `<div class="see-groupes">${groupes}</div>` : '<p class="see-rien">Aucune colonne d’identifiants.</p>')
-    + '<p class="see-note">Un renvoi, c’est une colonne d’identifiants qui désigne une pièce d’une autre feuille ; la part dit combien de ses valeurs s’y retrouvent. « Ne se relie à aucune feuille » : la table qui porte ces identifiants n’est pas dans le classeur.</p></section>'; }
+    + '<p class="see-note">Un renvoi, c’est une colonne d’identifiants qui désigne une pièce d’une autre feuille (ou une autre ligne de la sienne) ; la part dit combien de ses valeurs s’y retrouvent. « Ne se relie à aucune feuille » : la table qui porte ces identifiants n’est pas dans le classeur.</p>'
+    + petitesSEEHtml() + '</section>'; }
+/* Sous les liens, les petites tables qui relient (LNK_, SET_), colonne par colonne : ce qu'elles portent à côté de leurs
+   identifiants (une famille de produits, une quantité, un ordre de préférence). */
+function petitesSEEHtml() { const F = SEE.lu.feuilles, ts = F.map((f, fi) => ({ f, fi })).filter(x => estLiaisonSEE(x.f)); if (!ts.length) return '';
+  return `<div class="see-petites"><h4 class="see-petites-t">Les tables qui relient, colonne par colonne</h4><div class="see-groupes">`
+    + ts.map(({ f, fi }) => `<div class="see-petite"><h4>${esc(nomCourtSEE(f.nom))} <span class="see-t">${esc(milliers(f.lignes))} ligne${f.lignes > 1 ? 's' : ''}</span></h4><ul class="see-petite-l">`
+      + f.colonnes.map(c => colonneSEEHtml(fi, c)).join('') + f.vides.map(v => `<li class="see-col rare"><span class="see-c">${esc(v)}</span><span class="see-t">vide</span></li>`).join('') + '</ul></div>').join('')
+    + '</div></div>'; }
 /* Les codes : d'abord le plan ouvert face à SEE, puis les colonnes de codes qui comptent, les autres repliées. */
 function codesSEEHtml() { const L = SEE.lu, P = L.plan, codes = [];
   L.feuilles.forEach(f => f.colonnes.forEach(c => { if (c.codes) codes.push({ f, c }); }));
   const d_abord = codes.filter(x => CODES_D_ABORD_SEE.test(x.c.nom)), autres = codes.filter(x => !CODES_D_ABORD_SEE.test(x.c.nom));
   const code = x => `<div class="see-code"><div class="see-code-t"><b>${esc(nomCourtSEE(x.f.nom))} · ${esc(x.c.nom)}</b><span>${esc(pluriel(x.c.codes.length, 'valeur'))}${x.c.liste ? ' (liste)' : ''}</span></div>`
-    + `<p>${x.c.codes.map(([v, n]) => `${esc(v)}<i>(${esc(milliers(n))})</i>`).join(' · ')}</p></div>`;
+    + `<p>${x.c.codes.map(([v, n]) => { const a = estGaugeSEE(x.c) && awgSEE(v);   // la valeur, sa gauge et son compte ne se séparent pas
+      return a ? `<span class="see-nw">${esc(v)} <span class="see-awg">AWG ${a}</span><i>(${esc(milliers(n))})</i></span>` : `${esc(v)}<i>(${esc(milliers(n))})</i>`; }).join(' · ')}</p></div>`;
   const cherche = (t, R, montrer) => !R.total ? '' : `<li><b>${esc(t)}</b> <span class="see-t">${esc(partSEE(R.trouves, R.total))} retrouvé${R.trouves > 1 ? 's' : ''}</span>`
     + (R.ou.length ? ` — dans ${R.ou.slice(0, 4).map(([k, n]) => `<span class="mono">${esc(k)}</span> (${n})`).join(', ')}` : '')
     + (montrer && R.manque.length ? `<br><span class="see-manque">pas trouvés : ${R.manque.slice(0, 24).map(esc).join(' · ')}${R.manque.length > 24 ? ' …' : ''}</span>` : '') + '</li>';
@@ -175,10 +214,11 @@ function lierBaseSEE() { const c = $('fiche-corps'); if (!c) return;
 /* ---- le résumé en texte : les liens, les codes, le plan face à SEE, puis chaque feuille ------------------------- */
 function resumeSEE() { const L = SEE.lu; if (!L) return ''; const F = L.feuilles, P = L.plan, out = [`Base SEE — ${L.nom} — résumé par Volta le ${L.quand.toLocaleDateString('fr-FR')}${SEE.exemples ? '' : ' (sans exemples)'}`];
   out.push('\n== Liens entre feuilles ==', ...L.liens.map(x => nomCourtSEE(F[x.fi].nom) + '.' + x.col + ' → '
-    + (x.cibles.length ? x.cibles.map(c => nomCourtSEE(F[c.fi].nom) + '.' + c.col + ' ' + c.n + '/' + x.distinct).join(' ; ') : 'aucune feuille (' + x.distinct + ' valeurs)')));
+    + (x.cibles.length ? x.cibles.map(c => nomCourtSEE(F[c.fi].nom) + '.' + c.col + ' ' + c.n + '/' + x.distinct + (c.fi === x.fi ? ' (sa propre feuille)' : '')).join(' ; ') : 'aucune feuille (' + x.distinct + ' valeurs)')
+    + (x.taux < 0.995 ? ' — rempli sur ' + x.lignes + ' des ' + F[x.fi].lignes + ' lignes' : '')));
   if (P) { const r = (t, R, montrer) => R.total ? `${t} : ${R.trouves}/${R.total} retrouvés${R.ou.length ? ' — ' + R.ou.slice(0, 4).map(([k, n]) => k + ' (' + n + ')').join(', ') : ''}${montrer && R.manque.length ? ' — pas trouvés : ' + R.manque.join(', ') : ''}` : '';
     out.push(`\n== Le plan ouvert face à SEE : ${P.nom} ==`, r('Types de câble', P.types, true), r('Familles de câble', P.familles, true), r('Références des équipements', P.pns, false)); }
-  out.push('\n== Codes ==', ...F.flatMap(f => f.colonnes.filter(c => c.codes).map(c => nomCourtSEE(f.nom) + '.' + c.nom + (c.liste ? ' (liste)' : '') + ' : ' + c.codes.map(([v, n]) => v + ' ' + n).join(' · '))));
+  out.push('\n== Codes ==', ...F.flatMap(f => f.colonnes.filter(c => c.codes).map(c => nomCourtSEE(f.nom) + '.' + c.nom + (c.liste ? ' (liste)' : '') + ' : ' + c.codes.map(([v, n]) => v + (estGaugeSEE(c) && awgSEE(v) ? ' (AWG ' + awgSEE(v) + ')' : '') + ' ' + n).join(' · '))));
   F.forEach(f => out.push(`\n== ${f.nom} — ${f.lignes} lignes — ${f.colonnes.length + f.vides.length} colonnes, ${f.colonnes.length} remplies ==`,
     f.colonnes.map(c => c.nom + ' | ' + tauxSEE(c.taux) + (c.genre === 'id' ? ' | identifiant' : SEE.exemples && c.exemples.length && !PERSONNEL_SEE.test(c.nom) ? ' | ' + c.exemples.join(' ; ') : c.genre ? ' | ' + c.genre : '')).join('\n')
     + (f.vides.length ? '\nColonnes vides : ' + f.vides.join(', ') : '')));
