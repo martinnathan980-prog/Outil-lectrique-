@@ -50,7 +50,10 @@ function adopterBible(entrees, nom) { app.bible = avecModules(entrees, app.norme
 function relireNorme() { NORMES.embarquee = normeEmbarquee(); let A = null;
   try { const o = JSON.parse(localStorage.getItem(CLE_APPORTS) || 'null'); if (o && o.tables) A = o; } catch (_) { }
   try { if (localStorage.getItem(CLE_NORME)) { localStorage.removeItem(CLE_NORME); NORMES.ancienne = true; } } catch (_) { }
-  NORMES.apports = A || apportsVides(); app.norme = normeAvecApports(NORMES.embarquee, NORMES.apports); app.normeNom = nomDesApports(NORMES.apports); return !!A; }
+  NORMES.apports = A || apportsVides(); app.norme = normeComposee(NORMES.embarquee, NORMES.apports); app.normeNom = nomDesApports(NORMES.apports); return !!A; }
+/* LA NORME ACTIVE : l'embarquée, ce qui a été importé ou modifié ici par-dessus, et la base SEE gardée sur ce PC par-dessus
+   encore (08 nonies : SEE gagne, sauf sur ce qui a été corrigé à la main). */
+const normeComposee = (emb, A) => { const N0 = normeAvecApports(emb, A); return typeof avecBaseSEE === 'function' ? avecBaseSEE(N0, A) : N0; };
 const normeEmbarqueeLue = () => NORMES.embarquee || (NORMES.embarquee = normeEmbarquee());
 /* Le nom de ce qui est importé ou modifié : les fichiers, et « modifiée ici » pour ce qui l'a été à la main. */
 function nomDesApports(A) { const sources = new Set(), tables = []; let main = false;
@@ -64,7 +67,7 @@ function adopterNorme(norme, nom) { const A = JSON.parse(JSON.stringify(NORMES.a
    modules), le plan (les références sous les barrettes), le tableau, le contrôle (sa clé oublie la norme : on la
    vide), la fiche ouverte, et la page des normes. `quoi` : ce que Ctrl+Z défera. */
 function adopterApports(A, quoi, sansHistorique) { if (!sansHistorique) { NORMES.hist.push({ quoi: quoi || 'modification des normes', apports: JSON.stringify(NORMES.apports) }); if (NORMES.hist.length > MAX_HIST_NORMES) NORMES.hist.shift(); }
-  NORMES.apports = A; A.t = Date.now(); app.norme = normeAvecApports(normeEmbarqueeLue(), A); app.normeNom = nomDesApports(A);
+  NORMES.apports = A; A.t = Date.now(); app.norme = normeComposee(normeEmbarqueeLue(), A); app.normeNom = nomDesApports(A);
   try { if (app.normeNom) localStorage.setItem(CLE_APPORTS, JSON.stringify(A)); else localStorage.removeItem(CLE_APPORTS); } catch (_) { dire('Le navigateur refuse d’enregistrer les normes (navigation privée ?) : elles tiennent tant que l’onglet est ouvert.', true); }
   rafraichirApresNorme(); }
 function rafraichirApresNorme() { if (typeof document === 'undefined') return;
@@ -240,7 +243,7 @@ function normesHtml() { const N = normeActive(), E = normeEmbarqueeLue(), total 
     + (NORMES.ancienne ? ' · <i>une norme importée par l’ancien mécanisme a été oubliée : réimporte-la, elle se verra ligne par ligne</i>' : '') + '</span></div>';
   // la recherche (son nom dit déjà « toutes les tables »), puis l'action principale de la page — importer — et les autres
   const outils = `<div class="nm-outils"><div class="filtre nm-cherche"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="nm-q" value="${escA(NORMES.q)}" placeholder="Une référence, un part number, une jauge…" aria-label="Chercher dans toutes les tables" autocomplete="off" spellcheck="false"><button class="vider" id="nm-q-vider"${NORMES.q ? '' : ' hidden'} aria-label="Effacer la recherche">×</button></div>`
-    + `<div class="nm-gestes"><button class="btn cuivre" id="nm-importer" title="Un Excel (une feuille = une ou plusieurs tables), un CSV">Importer une norme</button><button class="btn papier" id="nm-coller">Coller des lignes</button><button class="btn papier" id="nm-see" title="L’Excel des vues de SEE (EED_View…) : Volta résume ses colonnes, sans rien garder">Lire la base SEE</button><button class="btn papier" id="nm-guide" aria-expanded="${NORMES.guide}">Ajouter une norme, les gabarits</button>`
+    + `<div class="nm-gestes"><button class="btn cuivre" id="nm-importer" title="Un Excel (une feuille = une ou plusieurs tables), un CSV">Importer une norme</button><button class="btn papier" id="nm-coller">Coller des lignes</button><button class="btn papier" id="nm-see" title="L’Excel de la base SEE (EED_View…, EED_OBJ_…, EED_LNK_…) : Volta dit ce qu’il en prend, et le garde sur ce PC si tu le veux — rien ne sort">Lire la base SEE</button>${typeof BASE_SEE !== 'undefined' && BASE_SEE.base ? '<button class="btn papier" id="nm-see-gardee" title="Ce que Volta prend de la base SEE gardée sur ce PC, et ce qui change dans ses tables">Base SEE gardée</button>' : ''}<button class="btn papier" id="nm-guide" aria-expanded="${NORMES.guide}">Ajouter une norme, les gabarits</button>`
     + (modifiees.length ? `<button class="btn papier" id="nm-exporter-tout" title="Toutes les lignes importées ou modifiées, en un CSV à me renvoyer">Exporter mes modifications</button>` : '') + `<input type="file" id="fichier-norme" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden></div></div>`;
   return `<div class="nm">${nmTitre('Ce que l’outil vérifie, table par table', 'Normes')}${nmNav('normes')}${etat}${outils}${NORMES.guide ? guideHtml() : ''}${NORMES.import ? importHtmlOuColler() : ''}${NORMES.q ? rechercheHtml() : ''}`
     + DOMAINES_NORMES.map(domaineHtml).join('') + '</div>'; }
@@ -417,6 +420,7 @@ function lierNormes() { const c = $('fiche-corps'); if (!c) return;
   const q = $('nm-q'); if (q) { let t; q.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { NORMES.q = q.value.trim(); const pos = q.selectionStart; rendreNormes(); const q2 = $('nm-q'); if (q2) { q2.focus(); try { q2.setSelectionRange(pos, pos); } catch (_) { } } }, 220); }); }
   if ($('nm-q-vider')) $('nm-q-vider').onclick = () => { NORMES.q = ''; rendreNormes(); const q2 = $('nm-q'); if (q2) q2.focus(); };
   if ($('nm-see')) $('nm-see').onclick = () => $('fichier-see').click();
+  if ($('nm-see-gardee')) $('nm-see-gardee').onclick = () => ficheBaseSEE();
   if ($('nm-importer')) $('nm-importer').onclick = () => $('fichier-norme').click(); if ($('no-importer')) $('no-importer').onclick = () => $('fichier-norme').click();
   if ($('fichier-norme')) $('fichier-norme').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; if (f) importerNorme(f); e.target.value = ''; });
   if ($('nm-coller')) $('nm-coller').onclick = () => { NORMES.import = { nom: 'texte collé', blocs: [], coller: true, vide: false }; rendreNormes(); };

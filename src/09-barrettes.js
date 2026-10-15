@@ -1632,7 +1632,11 @@ const tailleDe = (norme, famille, taille) => { const T = normeDesModules(norme).
    taille de la cavité, le sexe du contact, le type et la jauge du fil, le contact et son accessoire. La ligne la plus
    précise gagne : le type de fil exact avant « * », la jauge exacte avant « * ». Sans sexe, n'importe lequel. Quand la
    table connaît la taille, c'est elle qui juge la jauge (un fil sans ligne est refusé) ; sinon la plage de Tailles. */
-const contactsDeTaille = (norme, famille, taille) => (normeDesModules(norme).contacts || []).filter(c => c.famille === famille && c.taille === taille);
+// un index famille|taille par table (une base SEE en porte quinze mille lignes : la chercher ligne à ligne à chaque fil ralentit tout)
+const INDEX_CONTACTS = new WeakMap();
+const contactsDeTaille = (norme, famille, taille) => { const C = normeDesModules(norme).contacts || []; let m = INDEX_CONTACTS.get(C);
+  if (!m) { m = new Map(); C.forEach(c => { const k = c.famille + '|' + c.taille; (m.get(k) || m.set(k, []).get(k)).push(c); }); INDEX_CONTACTS.set(C, m); }
+  return m.get(famille + '|' + taille) || []; };
 const rangDeContact = c => (c.typeFil !== '*' ? 2 : 0) + (c.jauge != null ? 1 : 0);   // 3 : type et jauge exacts … 0 : la ligne « * * »
 function contactDuFil(norme, famille, taille, sexe, type, jauge) { const t = typeDuFil(type);
   const c = contactsDeTaille(norme, famille, taille).filter(c => (!sexe || c.sexe === sexe) && (c.typeFil === '*' || c.typeFil === t) && (c.jauge == null || c.jauge === jauge))

@@ -44,5 +44,7 @@ function demarrer() {
   requestAnimationFrame(() => ajuster());
   // les folios déjà affinés dans ce navigateur reviennent ; les autres s'affinent en arrière-plan ; les retouches aussi
   relireAffines(); relireRetouches(); relireReferences();
+  // la base SEE gardée sur ce PC (08 nonies) : elle revient et passe devant les tables de Volta
+  relireBaseSEE();
 }
 demarrer();

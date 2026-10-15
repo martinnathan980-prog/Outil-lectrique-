@@ -2,8 +2,9 @@
    LA BASE SEE (08 nonies) — l'Excel des vues et des tables de SEE Electrical Equipment Definition, lu sur place
    Le lecteur (octobre 2026) a tiré la base SEE dans Excel (Données → SQL Server → EED_View…, EED_OBJ_…, EED_LNK_…) :
    « il y a trop de colonnes, 200 ; les photos, c'est beaucoup trop ; le fichier est sur le bureau, je ne peux pas
-   l'envoyer ». Volta lit donc ce classeur SUR LE POSTE, sans rien en garder (ni dans le navigateur, ni ailleurs :
-   fermer la page l'oublie), et montre, sur des écrans qui tiennent chacun en une photo :
+   l'envoyer ». Volta lit donc ce classeur SUR LE POSTE, et montre, sur des écrans qui tiennent chacun en une photo :
+     · IMPORT — ce que Volta en prend (contacts, câbles, faces, équipements : 08-see-import) et ce qui change dans ses
+       tables ; « Garder dans Volta » le garde sur ce PC (IndexedDB, rien ne sort), sinon fermer la page l'oublie ;
      · LIENS — les identifiants (GUID) d'une feuille retrouvés dans une autre : ce qui se relie à quoi, et ce qui ne se
        relie à rien (une table qui manque) ;
      · CODES — les valeurs des colonnes de codes (WireType, Gender, ContactFamily, les listes à virgules…), et le plan
@@ -13,7 +14,7 @@
    Les colonnes qui disent qui a fait quoi (utilisateurs, postes, rôles) ne sont ni montrées comme codes ni gardées.
    Le résumé se copie aussi en texte, ou s'enregistre (.txt), pour qui peut le faire passer autrement qu'en photo.
    ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
-const SEE = { lu: null, vue: 'liens', exemples: true };
+const SEE = { lu: null, vue: 'import', exemples: true, import: null };
 const LARGEUR_SEE = 'min(1480px, calc(100vw - var(--rail) - 320px))';   // large (la page se photographie) ; le plan garde 320 px à côté, comme pour les normes
 const estExcel = f => /\.xls[xmb]?$/i.test((f && f.name) || '') || /sheet|excel/i.test((f && f.type) || '');
 // une feuille de la base SEE : nommée d'après sa vue ou sa table (EED_ViewCablesAndWires, EED_OBJ_Wires…) ou une fonction d'export
@@ -60,21 +61,26 @@ async function lireBaseSEE(fichier, buf) { if (!fichier) return; const nom = fic
   dire('Lecture de ' + guillemets(nom) + '…'); await new Promise(r => setTimeout(r, 40));   // le mot s'affiche avant le calcul
   try { buf = buf || await fichier.arrayBuffer();
     const noms = XLSX.read(buf, { type: 'array', bookSheets: true }).SheetNames || [], feuilles = [];
+    const lignes = {};   // les feuilles que l'import lit (08-see-import), en lignes, le temps de les prendre
     for (let i = 0; i < noms.length; i++) {
       dire(`Lecture de ${guillemets(nom)} : feuille ${i + 1} / ${noms.length}, ${noms[i]}…`); await new Promise(r => setTimeout(r, 0));
-      const wb = XLSX.read(buf, { type: 'array', sheets: noms[i], cellHTML: false, cellStyles: false, cellText: false });
-      const F = resumerFeuilleSEE(noms[i], wb.Sheets[noms[i]]); if (F.colonnes.length || F.vides.length) feuilles.push(F); }
+      const wb = XLSX.read(buf, { type: 'array', sheets: noms[i], cellHTML: false, cellStyles: false, cellText: false }), ws = wb.Sheets[noms[i]];
+      const rows = ws ? XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '', blankrows: false }) : [], k = cleFeuilleImportSEE(noms[i]);
+      if (k && !lignes[k]) lignes[k] = rows;
+      const F = resumerFeuilleSEE(noms[i], ws, rows); if (F.colonnes.length || F.vides.length) feuilles.push(F); }
     if (!feuilles.length) { echecImport('normes', { texte: `${esc(nom)} : aucune feuille avec une ligne d’en-têtes.` }); return; }
-    SEE.lu = { nom, feuilles, quand: new Date(), liens: liensSEE(feuilles), plan: planFaceASEE(feuilles) }; SEE.vue = 'liens'; ficheBaseSEE();
-    dire(guillemets(nom) + ' : ' + pluriel(feuilles.length, 'feuille') + ' lue' + (feuilles.length > 1 ? 's' : '') + ' en entier, rien n’est gardé. Une photo par onglet suffit.'); }
+    dire(`${guillemets(nom)} : Volta prend les contacts, les câbles, les faces et les équipements…`); await new Promise(r => setTimeout(r, 0));
+    SEE.import = importerSEE(lignes, nom);
+    SEE.lu = { nom, feuilles, quand: new Date(), liens: liensSEE(feuilles), plan: planFaceASEE(feuilles) }; SEE.vue = 'import'; ficheBaseSEE();
+    dire(guillemets(nom) + ' : ' + pluriel(feuilles.length, 'feuille') + ' lue' + (feuilles.length > 1 ? 's' : '') + ' en entier. L’onglet Import dit ce que Volta en prend ; « Garder dans Volta » le garde sur ce PC.'); }
   catch (e) { echecImport('normes', { texte: `${esc(nom)} n’a pas pu être lu : ${esc(String(e && e.message || e))}.` }); } }
 
 /* Une feuille, sur TOUTES ses lignes : sa ligne d'en-têtes (la première qui a plusieurs cellules), et pour chaque
    colonne : combien de lignes la remplissent, deux valeurs différentes, son genre (nombre, oui/non, identifiant) ; les
    identifiants (pour relier les feuilles), les textes où chercher le plan, et les codes (2 à 300 valeurs courtes ; une
    liste à virgules compte valeur par valeur). */
-function resumerFeuilleSEE(nom, ws) { const vide = { nom, lignes: 0, colonnes: [], vides: [] }; if (!ws) return vide;
-  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '', blankrows: false });
+function resumerFeuilleSEE(nom, ws, rows) { const vide = { nom, lignes: 0, colonnes: [], vides: [] }; if (!ws && !rows) return vide;
+  rows = rows || XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '', blankrows: false });
   const k = rows.findIndex(r => Array.isArray(r) && r.filter(c => String(c).trim()).length > 1); if (k < 0) return vide;
   const entete = rows[k].map(c => String(c == null ? '' : c).trim()), corps = rows.slice(k + 1), N = corps.length;
   const cols = entete.map((t, i) => { const c = { nom: t || 'colonne ' + (i + 1), n: 0, exemples: [], genre: '' }; let nombres = 0, guids = 0, bools = 0, virgules = 0, longueur = 0, trop = false;
@@ -129,23 +135,31 @@ function planFaceASEE(F) { const V = typeof verite === 'function' ? verite() : [
   return { nom: app.nom || 'le plan ouvert', types: chercher(types), familles: chercher(familles), pns: chercher(pns) }; }
 
 /* ---- la page ------------------------------------------------------------------------------------------------- */
-const ORDRE_SEE = () => ['liens', 'codes', ...SEE.lu.feuilles.map((_, i) => i)];
-function ficheBaseSEE() { if (!SEE.lu) return; const deja = app.fiche && app.fiche.mode === 'see';
+// les onglets : l'import d'abord (ce que Volta prend), puis les liens, les codes, les feuilles — l'import seul quand
+// aucun classeur n'est lu dans cette séance mais qu'une base est gardée sur ce PC
+const ORDRE_SEE = () => SEE.lu ? ['import', 'liens', 'codes', ...SEE.lu.feuilles.map((_, i) => i)] : ['import'];
+function ficheBaseSEE() { if (!SEE.lu && !BASE_SEE.base) return; if (!SEE.lu) SEE.vue = 'import'; const deja = app.fiche && app.fiche.mode === 'see';
   ouvrirFiche({ mode: 'see', large: true }, baseSEEHtml(), baseSEEPiedHtml()); document.documentElement.style.setProperty('--fiche-l', LARGEUR_SEE);
   if (!deja) ajuster(true); lierBaseSEE(); }
-function rendreBaseSEE() { if (!(app.fiche && app.fiche.mode === 'see') || !SEE.lu) return; const c = $('fiche-corps'), p = $('fiche-pied');
-  c.innerHTML = baseSEEHtml(); p.innerHTML = baseSEEPiedHtml(); p.hidden = !p.innerHTML; c.scrollTop = 0; lierBaseSEE(); }
+function rendreBaseSEE() { if (!(app.fiche && app.fiche.mode === 'see')) return; if (!SEE.lu && !BASE_SEE.base) { fermerFiche(true); return; } if (!SEE.lu) SEE.vue = 'import';
+  const c = $('fiche-corps'), p = $('fiche-pied'), y = c.scrollTop;
+  c.innerHTML = baseSEEHtml(); p.innerHTML = baseSEEPiedHtml(); p.hidden = !p.innerHTML; c.scrollTop = SEE.garderDefilement ? y : 0; SEE.garderDefilement = false; lierBaseSEE(); }
 const tauxSEE = t => t >= 0.995 ? '100\u00a0%' : t < 0.01 ? '<\u00a01\u00a0%' : Math.round(t * 100) + '\u00a0%';   // « (100 %) » ne se coupe pas
 const exempleSEE = s => s.length > 34 ? s.slice(0, 33) + '…' : s;
 const partSEE = (n, sur) => `${milliers(n)} / ${milliers(sur)} (${tauxSEE(sur ? n / sur : 0)})`;
-function baseSEEHtml() { const L = SEE.lu, v = SEE.vue, nl = L.liens.filter(x => x.cibles.length).length;
+function baseSEEHtml() { const L = SEE.lu, v = SEE.vue, I = baseMontreeSEE();
   const onglet = (cle, b, s, titre) => `<button type="button" role="tab" data-see-vue="${cle}" aria-selected="${String(v) === String(cle)}" title="${escA(titre || b)}"><b>${esc(b)}</b>${s != null ? `<span>${esc(s)}</span>` : ''}</button>`;
-  const onglets = `<div class="see-onglets" role="tablist" aria-label="Le classeur">${onglet('liens', 'Liens', String(nl), 'Ce qui se relie à quoi, d’une feuille à l’autre')}${onglet('codes', 'Codes', null, 'Les valeurs des colonnes de codes, et le plan ouvert face à SEE')}<span class="see-sep" aria-hidden="true"></span>`
+  const imp = onglet('import', 'Import', null, 'Ce que Volta prend de la base, et ce qui change dans ses tables');
+  if (!L) return `<div class="see">${nmTitre('Base SEE · gardée sur ce PC, rien n’en sort', I.nom)}`
+    + `<p class="see-mode">Volta se sert de cette base à la place de ses tables. Pour la mettre à jour, dépose le nouvel Excel de SEE (Données → Actualiser tout, puis enregistrer).</p>`
+    + `<div class="see-barre"><div class="see-onglets" role="tablist" aria-label="La base">${imp}</div></div>${importSEEHtml()}</div>`;
+  const nl = L.liens.filter(x => x.cibles.length).length;
+  const onglets = `<div class="see-onglets" role="tablist" aria-label="Le classeur">${imp}${onglet('liens', 'Liens', String(nl), 'Ce qui se relie à quoi, d’une feuille à l’autre')}${onglet('codes', 'Codes', null, 'Les valeurs des colonnes de codes, et le plan ouvert face à SEE')}<span class="see-sep" aria-hidden="true"></span>`
     + L.feuilles.map((f, i) => onglet(i, nomCourtSEE(f.nom), milliers(f.lignes), f.nom)).join('') + '</div>';
-  const corps = v === 'liens' ? liensSEEHtml() : v === 'codes' ? codesSEEHtml() : feuilleSEEHtml(L.feuilles[v] || L.feuilles[0]);
+  const corps = v === 'import' ? importSEEHtml() : v === 'liens' ? liensSEEHtml() : v === 'codes' ? codesSEEHtml() : feuilleSEEHtml(L.feuilles[v] || L.feuilles[0]);
   return `<div class="see">${nmTitre('Base SEE · lue sur ce poste, rien n’en sort', L.nom)}`
-    + `<p class="see-mode">Volta a lu ton Excel ici, en entier, sans le garder. <b>Fais une photo de chaque onglet</b> — Liens, Codes, puis les feuilles — et envoie-les-moi ; si un onglet dépasse l’écran, fais défiler et prends-en deux.</p>`
-    + `<div class="see-barre">${onglets}<label class="see-ex"><input type="checkbox" id="see-ex"${SEE.exemples ? ' checked' : ''}> Exemples de valeurs</label></div>${corps}</div>`; }
+    + `<p class="see-mode">Volta a lu ton Excel ici, en entier. <b>Import</b> dit ce qu’il en prend et ce qui change dans ses tables : « Garder dans Volta » le garde sur ce PC, et rien ne sort. Les autres onglets montrent le classeur tel quel.</p>`
+    + `<div class="see-barre">${onglets}${v === 'import' ? '' : `<label class="see-ex"><input type="checkbox" id="see-ex"${SEE.exemples ? ' checked' : ''}> Exemples de valeurs</label>`}</div>${corps}</div>`; }
 /* Une colonne d'une feuille, sur une ligne : son nom, son taux, deux exemples (la gauge AWG d'une section en mm²) ; un
    identifiant dit où il mène. */
 function versSEE(fi, c) { const L = SEE.lu, F = L.feuilles; if (estCleSEE(F[fi], c)) return '<i>identifiant</i>';
@@ -197,10 +211,10 @@ function codesSEEHtml() { const L = SEE.lu, P = L.plan, codes = [];
   return `<section class="see-feuille see-codes" aria-label="Codes"><div class="see-tete"><b class="see-nom">Codes</b><span class="see-compte">${esc(pluriel(codes.length, 'colonne'))} de codes · les valeurs et leur nombre de lignes</span></div>${plan}`
     + (d_abord.length ? `<div class="see-codes-l">${d_abord.map(code).join('')}</div>` : '')
     + (autres.length ? `<details class="see-vides"><summary>${autres.length} autre${autres.length > 1 ? 's' : ''} colonne${autres.length > 1 ? 's' : ''} de codes</summary><div class="see-codes-l">${autres.map(code).join('')}</div></details>` : '') + '</section>'; }
-function baseSEEPiedHtml() { const o = SEE.lu ? ORDRE_SEE() : [], k = o.findIndex(x => String(x) === String(SEE.vue));
+function baseSEEPiedHtml() { if (!SEE.lu) return ''; const o = ORDRE_SEE(), k = o.findIndex(x => String(x) === String(SEE.vue));
   return (o.length > 1 ? `<button class="btn papier" id="see-prec"${k > 0 ? '' : ' disabled'}>‹ Précédent</button><button class="btn cuivre" id="see-suiv"${k < o.length - 1 ? '' : ' disabled'}>Suivant ›</button>` : '')
     + `<span class="espace"></span><button class="btn lien" id="see-copier" title="Tout le résumé, en texte : à coller dans un message">Copier le résumé</button><button class="btn papier" id="see-enregistrer" title="Tout le résumé, dans un fichier texte">Enregistrer le résumé</button>`; }
-function changerVueSEE(cle) { if (!SEE.lu) return; SEE.vue = cle; rendreBaseSEE();
+function changerVueSEE(cle) { if (!SEE.lu && cle !== 'import') return; SEE.vue = cle; rendreBaseSEE();
   const b = $('fiche-corps').querySelector(`[data-see-vue="${cle}"]`); if (b && b.scrollIntoView) { try { b.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (_) { } } }
 function pasSEE(d) { const o = ORDRE_SEE(), k = o.findIndex(x => String(x) === String(SEE.vue)); changerVueSEE(o[Math.max(0, Math.min(o.length - 1, k + d))]); }
 function lierBaseSEE() { const c = $('fiche-corps'); if (!c) return;
@@ -209,10 +223,14 @@ function lierBaseSEE() { const c = $('fiche-corps'); if (!c) return;
   if ($('see-prec')) $('see-prec').onclick = () => pasSEE(-1);
   if ($('see-suiv')) $('see-suiv').onclick = () => pasSEE(1);
   if ($('see-copier')) $('see-copier').onclick = copierResumeSEE;
+  if ($('see-garder')) $('see-garder').onclick = adopterBaseSEE;
+  if ($('see-oublier')) $('see-oublier').onclick = oublierBaseSEE;
+  if ($('see-prog')) $('see-prog').onchange = e => { SEE.garderDefilement = true; choisirProgrammeSEE(e.target.value); };
   if ($('see-enregistrer')) $('see-enregistrer').onclick = () => { telecharger(new Blob(['﻿' + resumeSEE()], { type: 'text/plain;charset=utf-8' }), 'resume-base-SEE.txt'); dire('Le résumé de la base SEE est enregistré.'); }; }
 
 /* ---- le résumé en texte : les liens, les codes, le plan face à SEE, puis chaque feuille ------------------------- */
 function resumeSEE() { const L = SEE.lu; if (!L) return ''; const F = L.feuilles, P = L.plan, out = [`Base SEE — ${L.nom} — résumé par Volta le ${L.quand.toLocaleDateString('fr-FR')}${SEE.exemples ? '' : ' (sans exemples)'}`];
+  const imp = resumeImportSEE(); if (imp) out.push(imp);
   out.push('\n== Liens entre feuilles ==', ...L.liens.map(x => nomCourtSEE(F[x.fi].nom) + '.' + x.col + ' → '
     + (x.cibles.length ? x.cibles.map(c => nomCourtSEE(F[c.fi].nom) + '.' + c.col + ' ' + c.n + '/' + x.distinct + (c.fi === x.fi ? ' (sa propre feuille)' : '')).join(' ; ') : 'aucune feuille (' + x.distinct + ' valeurs)')
     + (x.taux < 0.995 ? ' — rempli sur ' + x.lignes + ' des ' + F[x.fi].lignes + ' lignes' : '')));

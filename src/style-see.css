@@ -76,9 +76,49 @@
 .see-petite h4{margin:0 0 4px;font:600 var(--f-13)/1.4 var(--mono);color:var(--t-1)}
 .see-petite h4 .see-t{font-weight:500;margin-left:6px}
 .see-petite-l{list-style:none;margin:0;padding:0 0 0 12px}
+/* l'IMPORT : ce que Volta prend, les gestes (garder, oublier, le programme), les tuiles, la différence avec Volta */
+.see-import{display:flex;flex-direction:column;gap:14px}
+.see-import .see-tete{margin-bottom:0}
+.see-gestes{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px}
+.see-etat{font-size:var(--f-13);color:var(--t-2);line-height:1.45;flex:1 1 280px;min-width:0}
+.see-etat.ok{color:var(--ok)}
+.see-prog{display:inline-flex;align-items:center;gap:8px;font-size:var(--f-12);color:var(--t-2)}
+.see-prog select{height:32px;border:1px solid var(--s-line-2);border-radius:var(--r-1);background:var(--s-surface);color:var(--t-1);font:500 var(--f-13) var(--sans);padding:0 8px;max-width:240px}
+.see-tuiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.see-tuile{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:var(--r-1);background:var(--s-sunken);min-width:0}
+.see-tuile b{font:600 var(--f-24)/1.15 var(--sans);color:var(--t-1);font-variant-numeric:tabular-nums}
+.see-tuile span{font-size:var(--f-13);color:var(--t-1)}
+.see-tuile i{font-style:normal;font-size:var(--f-11);color:var(--t-3);line-height:1.4}
+.see-bloc{display:flex;flex-direction:column;gap:8px;padding-top:12px;border-top:1px solid var(--s-line)}
+.see-bloc h3{margin:0;font:600 var(--f-14)/1.4 var(--sans);color:var(--t-1);display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}
+.see-bloc h3 span{font:400 var(--f-12)/1.4 var(--sans);color:var(--t-3)}
+.see-diffs h4{margin:0 0 4px;font:600 var(--f-13)/1.4 var(--sans);color:var(--t-1)}
+.see-diffs h4 .see-t{font-family:var(--sans);margin-left:6px}
+.see-diffs ul{list-style:none;margin:0;padding:0;columns:520px;column-gap:28px;column-rule:1px solid var(--s-line)}
+.see-diff{break-inside:avoid;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px;padding:3px 0;font-size:var(--f-12);line-height:1.45;border-bottom:1px dashed var(--s-line)}
+.see-diff-t{font:600 var(--f-12)/1.45 var(--mono);color:var(--t-1);min-width:0;overflow-wrap:anywhere}
+.see-diff-e{display:inline-flex;align-items:baseline;gap:5px;min-width:0;flex-wrap:wrap}
+.see-diff-e i{font-style:normal;color:var(--t-3)}
+.see-diff-e s{color:var(--t-3);font-family:var(--mono);text-decoration-thickness:1px}
+.see-diff-e b{color:var(--t-1);font:600 var(--f-12)/1.45 var(--mono)}
+.see-dehors{margin:0;padding-left:18px;font-size:var(--f-12);line-height:1.6;color:var(--t-2)}
+.see-table{width:auto;align-self:flex-start;border-collapse:collapse;font-size:var(--f-12);font-variant-numeric:tabular-nums;max-width:100%}
+.see-table th{text-align:left;font-weight:600;color:var(--t-3);padding:4px 16px 4px 0;border-bottom:1px solid var(--s-line)}
+.see-table td{padding:3px 16px 3px 0;color:var(--t-1);border-bottom:1px dashed var(--s-line)}
+.see-table td.mono{font-family:var(--mono)}
+.see-table td.att{color:var(--warn);font-weight:600}
+/* sur une fiche : la ligne « SEE » d'une référence, et la marque d'une valeur que SEE a changée */
+.fi-see{margin:10px 0 0;font-size:var(--f-12);line-height:1.55;color:var(--t-2)}
+.fi-see .id{font-family:var(--mono);font-weight:600;color:var(--t-1)}
+.fi-see-k{display:inline-block;margin-right:6px;font:700 var(--f-11)/1.6 var(--sans);letter-spacing:.04em;padding:0 5px;border-radius:3px;background:var(--accent-soft);color:var(--t-1)}
+.fi-see-al{margin-left:8px;font-weight:600;color:var(--warn)}
+.fi-see.att .fi-see-k{background:var(--warn-soft);color:var(--warn)}
+.ct-see{font-style:normal;margin-left:5px;padding:0 4px;border-radius:3px;background:var(--accent-soft);color:var(--t-2);font:700 9px/1.6 var(--sans);letter-spacing:.04em;vertical-align:middle}
 @media (max-width:720px){
   .see-groupes,.see-codes-l{columns:1}
   .see-barre{flex-wrap:wrap}
   .see-ex{margin-left:0}
   .see-cols{columns:1}
+  .see-diffs ul{columns:1}
+  .see-gestes .btn{flex:1 1 auto}
 }

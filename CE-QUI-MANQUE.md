@@ -93,6 +93,17 @@ accessoire pour quel connecteur et quel câble).
 - **Où la mettre.** Jamais dans le dépôt GitHub, même passé en privé : c'est la base de ton programme. L'export reste sur ton PC, et tu le déposes dans
   Volta (⋮ → Vos fichiers → Normes) : Volta le lit sur place, hors ligne, rien ne sort. Demande d'abord à ta hiérarchie
   si tu as le droit d'en faire un export : c'est la base de ton programme.
+- **Fait (version 67) : l'import.** Dépose l'Excel de SEE (n'importe où dans Volta, ou ⋮ → Vos fichiers → Normes →
+  « Lire la base SEE… ») : l'onglet **Import** s'ouvre et dit ce que Volta prend — les contacts des règles validées
+  (celles « In Work » à confirmer, les obsolètes ignorées), les câbles et la résistance de leurs conducteurs, les faces
+  des arrangements à l'échelle, chaque référence de connecteur et d'équipement (désignation, fiche ou embase, ce qui
+  s'y accouple, programmes, statut) —, puis **ce qui change dans Volta**, ligne par ligne (ce que disait Volta barré, ce
+  que dit SEE en gras), ce qui n'est pas pris et pourquoi, et le plan ouvert face à la base (par famille, en nombre).
+  « **Garder dans Volta** » la garde sur ce PC ; elle revient à chaque ouverture ; « Oublier la base SEE » l'efface.
+  **Mon programme** (EC225, NH90…, ou tous) : la fiche d'un équipement dit ce que SEE sait de sa référence, et si elle
+  est absente de SEE, obsolète, ou pas déclarée pour ton programme ; un contact ou un câble que SEE a changé porte la
+  marque « SEE » et, dans sa bulle, ce que disait Volta. **La première fois sur ta vraie base, photographie l'onglet
+  Import** : c'est lui qui dira si les familles des règles et les noms des arrangements se rattachent bien.
 - **Décidé (octobre 2026).** Volta peut garder la base SEE sur le PC (dans ce navigateur, jamais ailleurs, avec un
   bouton pour l'oublier). SEE gagne toujours sur les tables de Volta, et chaque différence se voit : ce que disait
   Volta, ce que dit SEE, côte à côte. Les tables tirées des photos (contacts EN2997, EN3645, EN3646, EN4165) et

@@ -309,11 +309,15 @@ const boutonContact = (ct, cls) => `<button type="button" class="fi-sertir fi-ct
 function tableContacts(xs, o) { o = o || {}; let prec = '';
   const rows = xs.map(x => { if (x.groupe) { prec = ''; return `<li class="ct-groupe">${x.groupe}</li>`; }
     const f = x.f, k = f && f.l ? cleFil(f.l) : '', st = x.sertir, mot = motSertir(st), meme = !!mot && mot === prec; prec = mot;
-    const ks = x.rep && x.borne != null && x.plan ? cleSertir(x.rep, x.borne) : '';
-    const tit = (mot ? 'Contact ' + mot + (st.main ? ' (choisi ici)' : ' (la table de la norme)') : 'La table de la norme ne le dit pas') + (ks ? ' — cliquer pour en choisir un autre' : '');
-    const sertir = ks ? `<button type="button" class="fi-sertir ct-ref${st && st.main ? ' main' : ''}${meme ? ' meme' : ''}" data-sertir="${escA(ks)}" aria-label="${escA(tit)}">${mot ? esc(mot) : '<i>choisir</i>'}</button>`
-      : `<span class="fi-sertir ct-ref${meme ? ' meme' : ''}">${mot ? esc(mot) : '<i>—</i>'}</span>`;
-    const j = f && f.type ? jaugeDuType(f.type) : null, ok = x.ko ? false : x.plan && st ? true : null;
+    const ks = x.rep && x.borne != null && x.plan ? cleSertir(x.rep, x.borne) : '', j = f && f.type ? jaugeDuType(f.type) : null;
+    // le contact que la base SEE a mis à la place de celui de Volta : une marque, la différence dans la bulle
+    const P = x.plan, ligneSee = st && !st.main && P && P.Q && typeof differenceSEEMots === 'function' ? contactDuFil(app.norme, P.Q.famille || (P.Q.modules[0] ? P.Q.modules[0].module.famille : ''), P.taille, P.sexe, f && f.type, j) : null;
+    const dSee = ligneSee && ligneSee.reference === (st.reference || '') ? differenceSEEMots('contacts', ligneSee) : '';
+    const tit = (mot ? 'Contact ' + mot + (st.main ? ' (choisi ici)' : ligneSee && ligneSee.source === 'SEE' ? ' (la base SEE)' : ' (la table de la norme)') : 'La table de la norme ne le dit pas') + (dSee ? ' — ' + dSee : '') + (ks ? ' — cliquer pour en choisir un autre' : '');
+    const marque = dSee ? '<i class="ct-see" aria-hidden="true">SEE</i>' : '';
+    const sertir = ks ? `<button type="button" class="fi-sertir ct-ref${st && st.main ? ' main' : ''}${meme ? ' meme' : ''}" data-sertir="${escA(ks)}" aria-label="${escA(tit)}">${mot ? esc(mot) : '<i>choisir</i>'}${marque}</button>`
+      : `<span class="fi-sertir ct-ref${meme ? ' meme' : ''}">${mot ? esc(mot) : '<i>—</i>'}${marque}</span>`;
+    const ok = x.ko ? false : x.plan && st ? true : null;
     const jauge = `<span class="fi-jg ct-jg${ok === false ? ' ko' : ok ? ' ok' : ''}">${j != null ? `${j}<small>AWG</small>` : '—'}${ok === false ? ico('fermer') : ok ? ico('coche') : ''}</span>`;
     const bulle = [nomDuFil(f || {}), f && f.type ? f.type : '', j != null ? j + ' AWG' + (ok === false ? ' refusée par le contact' : ok ? ' acceptée' : '') : ''].filter(Boolean).join(' · ') + (x.ko && x.ko !== 'gauge refusée par le contact' ? '\n' + x.ko : '') + '\n' + tit;
     return `<li class="fi-fil ct-ligne${x.ko ? ' ko' : ''}${f && f.l && f.l.origine === null ? ' neuf' : ''}"${k ? ` data-i="${k}" tabindex="0" role="button"` : ''} data-bulle="${escA(bulle)}"><span class="fi-ct ct-pin">${x.ct}</span>${sertir}${jauge}<span class="ct-cab">${f ? puceFil(f) : ''}<span class="fi-cab-n">${esc(f ? nomDuFil(f) : '')}</span></span></li>`
@@ -558,10 +562,14 @@ function corpsConnecteur(nom, c, k, b, vt) { const cle = nom + '|' + c.nom, Q = 
   const contacts = xs.length ? tableContacts(xs) : '<p class="fi-note">Aucun câble sur ce connecteur.</p>';
   // le sexe des contacts se choisit dès que la norme a sa table de contacts (même quand aucun arrangement ne loge)
   const table = Q && (M ? Q.tableContacts : (normeDesModules(app.norme).contacts || []).some(x => x.famille === Q.famille));
-  return champs([ref, arr]) + face + groupeSection('Contacts', contacts, { droite: table ? pucesSexe(cle, Q.sexe) : '', compte: xs.length || null }); }
+  // ce que la base SEE dit de cette référence (08 nonies) : sa désignation, fiche ou embase, ce qui s'y accouple ; absente, obsolète, hors programme
+  const see = typeof ligneSEEHtml === 'function' ? ligneSEEHtml(c.pn) : '';
+  return champs([ref, arr]) + see + face + groupeSection('Contacts', contacts, { droite: table ? pucesSexe(cle, Q.sexe) : '', compte: xs.length || null }); }
 // les bornes qui ne sont sur aucun connecteur (CNT, GND…) : elles se raccordent au corps
 function corpsSansConnecteur(nom, sans, b, vt) { const xs = sans.flatMap(bo => (b.parBorne.get(bo) || []).map(f => ({ ct: `<b>${esc(bo)}</b>`, f, sertir: null, rep: nom, borne: bo, plan: null })));
-  return `<p class="fi-note">Des bornes au corps : ni connecteur ni contact.</p>` + groupeSection('Contacts', tableContacts(xs), { compte: xs.length }); }
+  // la référence de l'équipement (celle de ses liaisons), et ce que la base SEE en dit (08 nonies)
+  const pn = (liaisonsDuConnecteur(nom, sans).map(([l, ch]) => l[ch]).find(Boolean)) || '', see = pn && typeof ligneSEEHtml === 'function' ? ligneSEEHtml(pn) : '';
+  return `<p class="fi-note">Des bornes au corps : ni connecteur ni contact.</p>` + see + groupeSection('Contacts', tableContacts(xs), { compte: xs.length }); }
 
 /* ---- UN DISJONCTEUR ------------------------------------------------------------------------------------------------- */
 /* Calibre (le calibre retenu en grand et son verdict, le meilleur, la courbe, le profil : `sectionDisjoncteur`, 08
@@ -746,8 +754,10 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   const brins = cab ? [(cab.brins > 1 ? cab.brins + ' brins' : '1 brin') + (cab.blindage ? ' + blindage' : ''), cab.nature, cab.diametre != null ? 'Ø ' + nombre(cab.diametre) + ' mm' : '', cab.section != null ? nombre(cab.section) + ' mm² hors-tout' : '', cab.resistance != null ? nombre(cab.resistance) + ' mΩ/m' : '', cab.masse != null ? nombre(cab.masse) + ' g/m' : ''].filter(Boolean).join(' · ') : '';
   // sous la gauge, la section du CONDUCTEUR (EN 2853) — pas celle de la base des câbles, hors-tout (isolant et gaine compris)
   const cuivre = T.p && T.p.jauge != null ? filDeNorme(app.norme, l.type, +T.p.jauge) : null;
+  // le câble que la base SEE a mis à la place de celui de Volta (08 nonies) : la différence dans la bulle du type
+  const dCab = cab && typeof differenceSEEMots === 'function' ? differenceSEEMots('cables', cab) : '';
   const tuiles = neuf ? [tuile('Type', l.type ? esc(T.p.famille) : '—', { mono: true }), tuile('Gauge', jauge != null ? jauge + '<i>AWG</i>' : '—')] : [
-    tuile('Type', T.fam, { mono: true, edit: true, etat: l.type ? (cab ? '' : 'att') : 'att', titre: brins || (l.type ? 'Inconnu de la base des câbles' : 'Sans type'), sous: cab && cab.nature ? esc(cab.nature) : l.type ? (cab ? '' : 'hors de la base') : 'à écrire' }),
+    tuile('Type', T.fam, { mono: true, edit: true, etat: l.type ? (cab ? '' : 'att') : 'att', titre: [brins || (l.type ? 'Inconnu de la base des câbles' : 'Sans type'), dCab].filter(Boolean).join('\n'), sous: [cab && cab.nature ? esc(cab.nature) : l.type ? (cab ? '' : 'hors de la base') : 'à écrire', dCab ? '<i class="ct-see">SEE</i>' : ''].filter(Boolean).join(' ') }),
     tuile('Gauge', T.jauge, { edit: true, sous: 'AWG' + (cuivre && cuivre.section != null ? ' · ' + esc(nombre(arrondi(cuivre.section, 2))) + ' mm²' : '') }),
     tuile('Longueur', `${saisie('data-edit="longueur"', L != null ? nombre(arrondi(L, 3)) : '', { ph: nombre(H.longueur), label: 'Longueur en mètres', mode: 'decimal', court: true })}<i>m</i>`, { edit: true, sous: hyp }),
     tuile('Intensité', iV != null ? `${esc(nombreA(iV))}<i>A</i>` : '—', { etat: x.trop.length ? 'ko' : '', titre: pointeI ? 'Au pire : la pointe' : '', sous: iA != null ? 'sur ' + esc(nombreA(iA)) + ' A' : '' })];
