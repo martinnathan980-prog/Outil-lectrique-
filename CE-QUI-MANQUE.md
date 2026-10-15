@@ -39,6 +39,14 @@ accessoire pour quel connecteur et quel câble).
      lignes, ses colonnes remplies (taux, deux exemples, masquables), les vides à part. **Une photo par feuille** me
      suffit pour apprendre à Volta à prendre ces colonnes ; « Copier le résumé » le donne aussi en texte.
   4. Quand la base SEE bouge : Données → Actualiser tout dans l'Excel, et le redéposer.
+  5. *Ce que les tables apportent (octobre 2026).* Les vues ne sont que l'onglet « Attributes » de chaque pièce ; le
+     reste est dans des tables reliées par des identifiants (GUID) : **EED_OBJ_END_Fitting_Rules_Contact** (le contact à
+     sertir par sexe, taille de cavité, type de câble et gauge), **EED_OBJ_PlugMapPin** (les broches des arrangements :
+     nom, X/Y en mètres, taille, coax), **EED_OBJ_Wires** (les conducteurs, leur résistance en Ω/m),
+     **EED_LNK_Equi_Mating** (fiche ↔ embase). SEE écrit en unités SI : gauge et taille de cavité en mm² (0,5179 = 20),
+     diamètres en m, masses en kg/m. Depuis la version 65, Volta lit chaque feuille en entier, relie lui-même les
+     identifiants d'une feuille à l'autre (onglet « Liens ») et liste les codes (onglet « Codes », avec le plan ouvert
+     confronté à SEE) : c'est ce qu'il faut pour écrire l'import.
 - **Les autres voies, si celle-ci est fermée.** *Copier la grille* de SEE (Ctrl+A, Ctrl+C, coller dans le Bloc-notes
   pour voir si le texte suit) ; *le référent SEE*, qui peut tirer les mêmes vues en Excel. *Pas en photos* des lignes
   elles-mêmes : des milliers de lignes en photo, ce sont des erreurs de lecture et des jours de travail.
