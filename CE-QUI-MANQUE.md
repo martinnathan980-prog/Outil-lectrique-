@@ -68,6 +68,25 @@ accessoire pour quel connecteur et quel câble).
      câbles portent Alpha (0,004 : le coefficient de température de la résistance) et leurs conducteurs Resistivity
      (Ω/m) et SectionInMM (en m²). L'import est donc écrivable ; il ne reste qu'à décider où Volta range ce qu'il
      prend (voir la question de la hiérarchie).
+  8. *Le plan de l'import, table par table (colonnes vues sur le vrai classeur).*
+     - Contacts : une ligne d'EED_OBJ_END_Fitting_Rules_Contact = IDEquipment (la règle) · ContactType (Male/Female) ·
+       ContactGauge (la cavité, en mm²) · WireType (« * » = tout type) · WireGauge (en mm² ; −1 = toute gauge) ·
+       PartNo1 (le contact, EN3155-…) et sa Quantity1 · PartNo2 à 5 (ce qui va avec) et leurs quantités. La règle
+       (EED_ViewEndFittingRules) donne PartNo (la norme du connecteur), ClassName, CableTypeList, LCStatusName.
+     - Faces : EED_OBJ_PlugMapPin = IDPlugMap (l'arrangement) · Name · X, Y (en m) · ContactGauge · ContactFamily
+       (Standard/Coax/Triax) · CablingOrder ; EED_OBJ_DEF_PlugMap = Type, View, DesiredPinsCount ; le nom de
+       l'arrangement est le PartNo d'EED_ViewContactLayouts (EN3645_23N55).
+     - Câbles : EED_ViewCablesAndWires = PartNo · Type · Wire_Type · Gauge · ExternalMaxDiameter (m) · LineicWeight ·
+       Shield · Twisted · TotalNumberOfWires · Alpha · TemperatureMini/Maxi ; leurs conducteurs par EED_LNK_Wires_Equi
+       (IDEquipment → IDWire ; l'IDCable d'EED_OBJ_Wires n'est rempli qu'à 6 %) : Gauge · SectionInMM · Resistivity ·
+       Color · WirePosition.
+     - Connecteurs : EED_ViewConnectiveEquipments = PartNo · PartNoStandard1 · ConnectivityType (Plug/Receptacle) ·
+       Gender · Type · ModularType · DesiredPinsCount · Capacity · SuppliedWithContact · ShuntCount ·
+       TemperatureMini/Maxi ; la paire fiche ↔ embase par EED_LNK_Equi_Mating (IDSemiEqu, IDConnectedSemiEqu, Prefered).
+     - Accessoires : EED_ViewAccessories = PartNo · AccessoriesType · AccessoriesSubcategory · BackshellType ·
+       BackshellSize · Material · SurfaceTreatment : le catalogue y est ; le lien à un connecteur précis est rare
+       (26 lignes d'EED_LNK_Equi_AccessoryMating).
+     - Jamais pris : qui a fait quoi (CreatorUser, LastUser, …Workstation, …Role, …By), les dates.
 - **Les autres voies, si celle-ci est fermée.** *Copier la grille* de SEE (Ctrl+A, Ctrl+C, coller dans le Bloc-notes
   pour voir si le texte suit) ; *le référent SEE*, qui peut tirer les mêmes vues en Excel. *Pas en photos* des lignes
   elles-mêmes : des milliers de lignes en photo, ce sont des erreurs de lecture et des jours de travail.
