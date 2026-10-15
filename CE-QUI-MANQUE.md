@@ -93,6 +93,10 @@ accessoire pour quel connecteur et quel câble).
 - **Où la mettre.** Jamais dans le dépôt GitHub, même passé en privé : c'est la base de ton programme. L'export reste sur ton PC, et tu le déposes dans
   Volta (⋮ → Vos fichiers → Normes) : Volta le lit sur place, hors ligne, rien ne sort. Demande d'abord à ta hiérarchie
   si tu as le droit d'en faire un export : c'est la base de ton programme.
+- **Décidé (octobre 2026).** Volta peut garder la base SEE sur le PC (dans ce navigateur, jamais ailleurs, avec un
+  bouton pour l'oublier). SEE gagne toujours sur les tables de Volta, et chaque différence se voit : ce que disait
+  Volta, ce que dit SEE, côte à côte. Les tables tirées des photos (contacts EN2997, EN3645, EN3646, EN4165) et
+  cables.csv restent en secours quand aucune base SEE n'est déposée.
 - **Tu peux le faire tout de suite, sans moi (version 61).** Dans SEE, tout sélectionner dans la liste (Ctrl+A), copier
   (Ctrl+C) ; dans Volta, ⋮ → Vos fichiers → Normes → « Coller des lignes », coller, « Lire ». Volta ne connaît pas les
   en-têtes de SEE : il te demande UNE fois quelle table c'est (Contacts pour les End Fitting Rules, Câbles pour les
