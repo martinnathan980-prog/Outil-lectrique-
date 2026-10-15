@@ -54,10 +54,20 @@ accessoire pour quel connecteur et quel câble).
      que sur moins de 1 % des connecteurs — Volta le retrouvera par la référence (sa codification) et par Capacity
      (« 61#0.518 » : 61 cavités de taille 20) ; les calibres des disjoncteurs ne sont pas dans SEE (Intensity_Nominal
      sur trois équipements) — la gamme et les courbes restent celles de Volta ; IDConnector d'EED_LNK_Connector_Additive
-     ne mène à aucune feuille — une table manque. Reste à voir ce qui relie une règle de contacts à ses connecteurs :
-     EED_LNK_EndFitting_ProductFamilies mène aux connecteurs et aux équipements, et la version 66 montre ses autres
-     colonnes sous les liens (les tables LNK_ et SET_ colonne par colonne), une cible par feuille, la gauge AWG des
-     sections en mm², et fond en une les deux écritures d'un même flottant (0.32574322630000002 = 0.3257432).
+     ne mène à aucune feuille — une table manque. La version 66 montre les tables LNK_ et SET_ colonne par colonne sous
+     les liens, une cible par feuille, la gauge AWG des sections en mm², et fond en une les deux écritures d'un même
+     flottant (0.32574322630000002 = 0.3257432).
+  7. *Ce que les feuilles une à une ont dit.* Les « ProductFamilies » de SEE sont les programmes (NH90COTS, EC225… :
+     19 lignes), pas des familles de connecteurs : EED_LNK_EndFitting_ProductFamilies (ID, IDEquipment, une colonne
+     vide) dit quelle pièce sert quel programme, comme la colonne EPFList des vues. Aucun identifiant ne relie une règle
+     de contacts à ses connecteurs : c'est le NOM qui les relie — la règle porte la norme du connecteur
+     (« E0710 - Plug/Square Receptacle », ASNE…), le connecteur la porte en tête de sa référence (EN2997SE62041AN). De
+     même un connecteur rejoint son arrangement par sa codification (EN2997SE62041AN → l'arrangement EN2997 20-41 ;
+     les ContactLayouts s'appellent EN3645_23N55, EN3646_18-11), que Volta sait déjà lire. Les calibres des
+     disjoncteurs ne sont pas dans SEE (Intensity_Nominal et Intensity_Maximum sur moins de 1 % des équipements) ; les
+     câbles portent Alpha (0,004 : le coefficient de température de la résistance) et leurs conducteurs Resistivity
+     (Ω/m) et SectionInMM (en m²). L'import est donc écrivable ; il ne reste qu'à décider où Volta range ce qu'il
+     prend (voir la question de la hiérarchie).
 - **Les autres voies, si celle-ci est fermée.** *Copier la grille* de SEE (Ctrl+A, Ctrl+C, coller dans le Bloc-notes
   pour voir si le texte suit) ; *le référent SEE*, qui peut tirer les mêmes vues en Excel. *Pas en photos* des lignes
   elles-mêmes : des milliers de lignes en photo, ce sont des erreurs de lecture et des jours de travail.
