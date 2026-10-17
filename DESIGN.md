@@ -5,18 +5,27 @@
 plus). Le lecteur (ingénieur câblage) veut « quelque chose de fluide, de classe, d'épuré, de beau, de compréhensible —
 une très belle expérience utilisateur ; toujours penser à l'utilisateur, ne jamais le perdre, un fil conducteur ; tout
 calculé automatiquement, mais tout modifiable ». Il a écarté le style « futuriste IA » (cyan, chrome noir) et choisi
-**« Graphite »**. Ce document fixe la direction commune ; chaque domaine la décline dans son propre fichier de style.
+**« Graphite »**, puis (v68) **« Graphite 2027 : l'atelier »** — le lecteur : « le plus beau, le plus expérience
+utilisateur pour un outil électrique de 2027 ; pas trop futuriste, les trucs qui viennent de partout, ça sert à rien ;
+pas trop ancien ; quelque chose de classe ; très fluide, très naturel, intuitif ». Ce document fixe la direction
+commune ; chaque domaine la décline dans son propre fichier de style.
 
-## 1. L'idée : « Graphite », un logiciel d'atelier haut de gamme
+## 1. L'idée : « Graphite 2027 », l'atelier — tout est posé sur la table
 
 - **Le plan est l'objet.** Une feuille blanche posée sur une **table noire** — un graphite presque noir, le même dans
   les deux thèmes, semé de points discrets (un tous les 24 px) — par une ombre profonde (le lecteur : « au lieu de le
   mettre blanc, tu pouvais le mettre noir… c'était incroyable »). Ce qui s'écrit à même la table prend l'encre de la
   table (`--t-table`) ; ce qui flotte dessus (le mot qui passe, les bulles) porte un filet clair qui l'en détache.
-- **Autour, rien ne brille.** La barre du haut (la marque « Volta », qui mène à la bibliothèque, et à côté un **fil
-  discret** — l'install, le plan —, la recherche, le menu ⋮ — rien d'autre), le rail de gauche et la barre des folios
-  sont du **blanc des panneaux**, séparés de la table par un filet. L'outil pressé se pose dans un carré gris ; le folio
-  courant est une pastille à l'encre.
+- **La table va d'un bord à l'autre.** Ses points sont fixés à l'écran (`background-attachment: fixed`) : ils tombent
+  juste d'une pièce à l'autre (la planche, la bibliothèque). La **barre du haut** est à même la table (la marque
+  « Volta », qui mène à la bibliothèque, un **fil discret** — l'installation, le plan —, la recherche en creux, le menu
+  ⋮ — rien d'autre), un filet à peine et une ombre douce dessous : la feuille qu'on fait glisser passe sous elle.
+- **Les outils sont des PALETS** : de petites pièces sombres et arrondies posées sur la table, **les mêmes dans les deux
+  thèmes** (l'**îlot sombre** : `#entete`, `#rail`, `#folios`, `#toast`, `.ilot-sombre` prennent les jetons du thème
+  sombre). Le **rail** flotte à gauche (44 px, à 10 px du bord) ; en bas, le palet des **folios** (‹, la bande, ›, le
+  compte) à gauche et celui de la **vue** (cadrer, zoomer) à droite ; l'affinage en cours et le folio retouché, chacun
+  sa petite pilule au milieu. Un outil pressé s'allume d'un voile clair ; le folio courant est une pièce claire. Le
+  **menu ⋮** et la liste de la recherche tombent de la barre : sombres aussi.
 - **Le menu ⋮ tient en sept lignes** (le lecteur : « on n'en utilise que 10-20 % ») : Bibliothèque (l'entrée
   principale) · Ouvrir un retest (il devient un plan de l'install ouverte) · Vos fichiers (« retests · contrats déjà
   faits · bible · normes » écrit dessous : c'est là qu'on dépose la grande base) · Récapitulatif · Nomenclature ·
@@ -28,8 +37,9 @@ calculé automatiquement, mais tout modifiable ». Il a écarté le style « fut
   gris doux, le focus cerclé d'encre. **La couleur ne dit que l'état** : vert ce qui est bon, ambre ce qui est à voir,
   rouge ce qui est un problème. Les routes des fils gardent leurs couleurs (sur le dessin, et pour le trait d'un fil
   dans le récapitulatif) ; c'est la seule autre couleur.
-- **Les panneaux** (l'inspecteur, le récapitulatif, les documents) sont des feuilles blanches posées à côté de la
-  table, avec une ombre large et légère.
+- **Ce qu'on lit est une FEUILLE** (l'inspecteur, le récapitulatif, les documents) : posée sur la table, détachée des
+  bords par le même **jeu de 10 px** (`--jeu`), arrondie (16 px), une ombre longue — blanche le jour, charbon la nuit
+  (un filet clair l'en détache). Elle entre en glissant d'un rien et se pose (`--lent`).
 - **L'ouverture est la bibliothèque**, posée sur la table noire (le lecteur : « on choisit notre install et on a
   directement ses plans » ; plus de page d'exemple qui explique). Une **install** (une installation : telle antenne,
   tel cockpit) est une **pile de feuilles** — son nom, combien de plans, sa dernière ouverture, ses premiers plans ;
@@ -64,19 +74,25 @@ calculé automatiquement, mais tout modifiable ». Il a écarté le style « fut
 3. **Tout est calculé, tout est modifiable.** Un clic sur une valeur l'écrit. L'origine reste discrète : une pastille
    « main » seulement quand la valeur a été changée ici (« hyp. » pour une hypothèse de la simulation) ; « ↺ » (la
    valeur qu'il rend, en petit) rend le calcul ou le fichier. Ctrl+Z défait tout.
-4. **Un langage visuel, pas deux.** Mêmes coins (6, 8, 10, 14), mêmes espacements (grille de 4), mêmes couleurs
-   d'état, mêmes composants partout.
+4. **Un langage visuel, pas deux.** Mêmes coins (6 une puce, 10 un bouton ou un champ, 12 un groupe, 16 une feuille,
+   14 un palet), mêmes espacements (grille de 4), mêmes couleurs d'état, mêmes composants partout. **Pas de carte dans
+   une carte** : dans une feuille, on groupe par l'espace et un filet, on ne recadre pas ; un cadre se réserve à ce
+   qu'on prend en main (une ligne qu'on clique, une zone où l'on dépose). **Une action principale par écran** (pleine),
+   le reste en feuille au filet ou en lien.
 5. **Calme et net, pas gris.** Pas de dégradé décoratif, pas de lueur, pas de capitales espacées. Les étiquettes ont
    leur majuscule (« Part number », « Emplacement ») et l'encre seconde (`--t-2`, jamais `--t-3` pour ce qu'on doit
    lire) ; les valeurs l'encre (`--t-1`), nettes ; les titres de section affirmés (demi-gras 15 px) ; les groupes
-   cadrés (une carte, un filet) et espacés (12 à 16 px). Le demi-gras pour les titres, le gras est rare.
+   espacés (16 à 24 px) et séparés d'un filet, pas recadrés. Le demi-gras pour les titres, le gras est rare.
 6. **Précis comme un plan.** Les dessins techniques (folios, faces de connecteur et de module, reliefs, courbes) sont
    **sur papier blanc dans les deux thèmes** et gardent leur encre ; à plat, exacts, lisibles à 100 %. Une courbe est
    lisse et monotone ; une légende ne se sépare pas de ce qu'elle nomme. Le numéro d'un fil s'écrit **pile sur son
    fil** — son milieu sur l'axe du trait, qui s'interrompt derrière lui (un fond de papier) —, debout de même sur un
    vertical ; à côté seulement quand la place manque (un fil court, le pointillé d'une barrette).
-7. **Réactif.** Survoler montre, cliquer fait, glisser règle. Les transitions durent 120 à 200 ms ; le mouvement
-   réduit les coupe.
+7. **Réactif et fluide.** Survoler montre, cliquer fait, glisser règle. Le mouvement est vif au départ et freine en
+   arrivant (`--courbe`, cubic-bezier(.2,.8,.2,1)) : `--rapide` 140 ms (un survol, une couleur), `--moyen` 220 ms (un menu
+   qui tombe, un panneau de menu qui glisse), `--lent` 340 ms (une feuille qui entre). Un bouton pressé s'enfonce à
+   peine (`scale(.98)`), une bulle glisse de 3 px en paraissant. Rien ne rebondit, rien ne clignote ; le mouvement réduit
+   coupe tout.
 8. **Prendre la main, en peu de mots.** Chaque import dit ce qu'il attend en une ligne (les colonnes qui comptent),
    montre trois lignes d'exemple à qui les demande, dit ce qui se passe ensuite en une phrase ; une erreur se dit en
    clair, dans sa carte. Chaque ligne du menu a sa bulle, une ou deux phrases. On n'écrit que l'utile.
@@ -103,25 +119,29 @@ ne vaut que dans un thème ; les seules couleurs littérales sont dans les dessi
 
 | famille | jetons (clair → sombre) |
 |---|---|
-| la table (la même dans les deux thèmes) | `--s-app` #0f0f11 · `--s-grille` #2b2b31 (les points) · `--t-table` #ececf0 / `--t-table-2` / `--t-table-warn` (ce qui s'écrit à même la table : l'attente d'un folio, la bibliothèque) · `--l-table` / `--l-table-2` (ses filets) · `--s-table-champ` / `--s-table-survol` (un champ, un survol posés sur elle) |
+| la table (la même dans les deux thèmes) | `--s-app` #0f0f11 · `--s-grille` #2a2a30 (les points) · `--points` (le motif, 24 px) · `--t-table` #ececf0 / `--t-table-2` / `--t-table-warn` (ce qui s'écrit à même la table : l'attente d'un folio, la bibliothèque) · `--l-table` / `--l-table-2` (ses filets) · `--s-table-champ` / `--s-table-survol` (un champ, un survol posés sur elle) |
 | les surfaces | `--s-surface` #fff → #1c1c1e · `--s-sunken` · `--s-hover` · `--s-line` · `--s-line-2` · `--s-flottant` (menus, listes, bulles) |
 | le papier (les deux thèmes) | `--s-papier` #fff · `--s-papier-grille` · `--t-papier` #1d1d1f · `--t-papier-2` ; `.ilot-clair` rend tous les jetons clairs à un îlot |
 | l'encre | `--t-1` #1d1d1f → #f2f2f5 · `--t-2` #47474c · `--t-3` #636369 → #96969d · `--t-inverse` |
 | l'action (à l'encre) | `--accent` #1d1d1f → #f2f2f5 (le bouton principal, le folio courant, le focus) · `--accent-2` (survol) · `--accent-soft` (fond de ce qui est choisi ou pressé) · `--accent-line` · `--on-accent` |
 | les états | `--ok` / `--ok-soft` · `--warn` / `--warn-soft` · `--ko` / `--ko-soft` · `--info` / `--info-soft` (neutre) |
-| les barres | `--p-fond` (blanc) · `--p-fond-2` (un champ) · `--p-ligne` · `--p-hover` · `--p-t1` `--p-t2` `--p-t3` · `--p-accent` `--p-ok` `--p-warn` `--p-ko` |
+| les palets (les mêmes dans les deux thèmes) | `--palet` #1b1b1f · `--palet-2` (survol) · `--sh-palet` · les voiles clairs posés dessus `--voile-1` 5 % · `--voile-2` 8 % · `--voile-3` 13 % · `--voile-4` 20 % ; les anciens `--p-*` en sont les alias. Dans l'îlot sombre, les jetons ordinaires (`--t-1`, `--s-hover`, `--accent`…) sont ceux du sombre |
 | les courbes | `--courbe-chaud` · `--courbe-tiede` · `--courbe-froid` |
 | le reste | `--bulle` / `--bulle-t` / `--sh-bulle` (un filet clair la détache de la table noire) · `--voile` / `--voile-fort` · `--route-a` / `--route-b` · `--route-voile` · `--anneau` (l'anneau d'un champ qui a le clavier) |
 
-Espacements sur une grille de 4 px : `--sp-1` 4 … `--sp-6` 32. Coins : `--r-1` 6 px (puces, champs), `--r-btn` 8 px
-(boutons, segments, recherche), `--r-2` 10 px (cartes), `--r-3` 14 px (fenêtres). Ombres : `--sh-1`, `--sh-2`,
-`--sh-feuille` (la feuille sur la table noire : profonde, la même dans les deux thèmes — le folio, la feuille des plans),
-`--sh-panneau` (un panneau contre la table). Transitions : `--rapide`
-120 ms, `--moyen` 200 ms. Les anciens noms (`--cuivre`, `--papier`, `--encre`…) sont des alias des jetons.
+Espacements sur une grille de 4 px : `--sp-1` 4 … `--sp-6` 32. Coins : `--r-1` 6 px (puces), `--r-btn` 10 px
+(boutons, champs, segments, recherche), `--r-2` 12 px (groupes, lignes cliquables), `--r-3` 16 px (feuilles,
+fenêtres), `--r-palet` 14 px (palets, menus). Ombres : `--sh-1`, `--sh-2` (ce qui flotte au-dessus d'une feuille),
+`--sh-feuille` (le folio sur la table : profonde, la même dans les deux thèmes), `--sh-panneau` (une feuille posée sur
+la table : son bord net, une ombre longue), `--sh-palet`. Mouvement : `--courbe`, `--rapide` 140 ms, `--moyen` 220 ms,
+`--lent` 340 ms. Les anciens noms (`--cuivre`, `--papier`, `--encre`…) sont des alias des jetons.
 
-Géométrie de la page (le plan se recadre dans ce qui reste ; les tests la mesurent) : `--entete` 48 px, `--rail` 48 px,
-`--pied` 40 px, `--insp-l` 440 px (jusqu'à 560 sur un grand écran, jamais plus de 36vw), `--fiche-l` 400 px (les
-normes et la bible : jusqu'à 1040 px, en laissant toujours 320 px au plan), `--base-h` la hauteur du tiroir du bas.
+Géométrie de la page (le plan se recadre dans ce qui reste ; les tests la mesurent) : `--jeu` 10 px (l'écart des palets
+et des feuilles aux bords et entre eux), `--entete` 52 px, `--rail` 64 px (le palet de 44 px et ses deux jeux),
+`--pied` 50 px (les palets du bas, 40 px, et leur jeu), `--insp-l` 440 px (jusqu'à 560 sur un grand écran, jamais
+plus de 36vw), `--fiche-l` 400 px (les normes et la bible : jusqu'à 1040 px, en laissant toujours 320 px au plan),
+`--base-h` la hauteur du récapitulatif en moitié. Une feuille à droite : `top: --entete`, `right` et `bottom: --jeu` ;
+ce qui doit lui laisser la place s'arrête à `largeur + 2 × --jeu` du bord.
 
 ## 5. Les composants communs (noms de classes, à réutiliser tels quels)
 

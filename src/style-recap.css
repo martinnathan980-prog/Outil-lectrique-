@@ -9,10 +9,10 @@
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* ─── le panneau : Moitié (en bas, le plan au-dessus), Page (toute la place du plan) ─── */
-#base{position:fixed;left:var(--rail);right:0;bottom:var(--pied);height:var(--base-h);min-height:160px;max-height:calc(100% - var(--entete) - var(--pied) - 96px);
-  background:var(--s-surface);color:var(--t-1);box-shadow:0 -1px 0 var(--s-line),0 -16px 40px rgba(0,0,0,.06);z-index:24;display:flex;flex-direction:column;overflow:hidden}
-body.insp-ouvert #base{right:var(--insp-l)}
-#base.page{top:calc(var(--entete) + var(--sur-h));height:auto;max-height:none;box-shadow:inset 0 1px 0 var(--s-line)}
+#base{position:fixed;left:var(--rail);right:calc(var(--jeu) + var(--sur-d));bottom:calc(var(--pied) + var(--jeu) + var(--sur-b));height:var(--base-h);min-height:160px;max-height:calc(100% - var(--entete) - var(--pied) - 96px);
+  background:var(--s-surface);color:var(--t-1);border-radius:var(--r-3);box-shadow:var(--sh-panneau);z-index:24;display:flex;flex-direction:column;overflow:hidden}
+body.insp-ouvert #base{right:calc(var(--insp-l) + 2 * var(--jeu) + var(--sur-d))}
+#base.page{top:calc(var(--entete) + var(--sur-h));height:auto;max-height:none}
 #base.entre{animation-name:doc-monte}
 #base.page.entre{animation:doc-fondu var(--moyen)}
 @keyframes doc-fondu{from{opacity:0}to{opacity:1}}
@@ -259,7 +259,7 @@ b.rc-n{font-weight:500}
 
 /* ─── la tablette et le téléphone (le code reste, on ne le soigne plus) ─── */
 @media (max-width:700px){
-  #base{left:0;right:0;bottom:var(--rail-tel);height:var(--base-h);max-height:calc(100% - var(--entete) - var(--rail-tel) - 120px);min-height:160px;z-index:26;box-shadow:none;border-top:1px solid var(--p-ligne)}
+  #base{left:0;right:0;bottom:var(--rail-tel);height:var(--base-h);max-height:calc(100% - var(--entete) - var(--rail-tel) - 120px);min-height:160px;z-index:26;border-radius:0;box-shadow:none;border-top:1px solid var(--p-ligne)}
   body.insp-ouvert #base{right:0}
   #base.page{top:calc(var(--entete) + var(--sur-h));height:auto;max-height:none}
   .poignee{height:16px;top:0}

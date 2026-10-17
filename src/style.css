@@ -1,73 +1,73 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   LE SITE — « Graphite » : un logiciel d'atelier haut de gamme (DESIGN.md)
+   LE SITE — « Graphite 2027 : l'atelier » (DESIGN.md)
 
-   Le plan est l'objet : une feuille blanche posée sur une table noire semée
-   de points, dans les deux thèmes. Autour, tout est du blanc des panneaux — la barre du haut (la
-   marque, la recherche, le menu), le rail à gauche, la barre des folios en
-   bas — séparé de la table par un filet : rien ne brille, rien ne cadre.
-   L'interface est à l'ENCRE : graphite pour le texte et les actions (le
-   bouton principal est noir, l'outil pressé dans un carré gris), et la
-   couleur ne dit QUE l'état — le vert ce qui est bon, l'ambre ce qui est à
-   voir, le rouge ce qui est un problème. Les routes des fils gardent leurs
-   couleurs, sur le dessin et dans le récapitulatif.
-   La typographie : Inter pour tout le texte et les titres (demi-gras, serrés),
-   JetBrains Mono pour les identifiants (repères, numéros de fil, part
-   numbers) — zéro pointé, l et 1 distincts. Les étiquettes sont des mots
-   en minuscules, comme une phrase, pas des capitales espacées.
-   Des coins adoucis (6, 10, 14), des ombres larges et légères, des
-   transitions de 120 à 200 ms. Deux thèmes : le clair (le jour) et le
-   sombre ; les dessins techniques (folios, faces, courbes, reliefs) restent
-   sur papier blanc dans les deux. Aucune police réseau (polices/ embarqué).
-   Ce fichier porte les JETONS (pour tout le monde) et le SITE ; les fiches,
-   la disjonction, les contrats faits, le relief, la nomenclature et les
-   normes ont chacun leur style-*.css, écrit avec les mêmes jetons.
+   Tout est posé sur LA TABLE : un graphite presque noir semé de points, le même dans les deux thèmes, d'un bord à
+   l'autre de l'écran. Les outils s'y posent en PALETS — la barre du haut à même la table, le rail et les folios en
+   petites pièces arrondies qui flottent, sombres dans les deux thèmes (l'îlot sombre) ; le plan y est une feuille
+   blanche ; ce qu'on lit (la fiche, le récapitulatif, un document) est une FEUILLE posée à côté, arrondie, détachée
+   des bords par le même jeu de 10 px, blanche le jour, charbon la nuit.
+   L'interface est à l'ENCRE : le bouton principal est plein, la sélection en gris doux, et la couleur ne dit QUE
+   l'état — le vert ce qui est bon, l'ambre ce qui est à voir, le rouge ce qui est un problème. Les routes des fils
+   gardent leurs couleurs. Inter pour le texte, JetBrains Mono pour les identifiants ; les étiquettes en minuscules
+   avec leur majuscule. Les coins 6 · 10 · 12 · 16, des ombres profondes et douces, un mouvement qui freine en
+   arrivant (140 à 340 ms). Les dessins techniques restent sur papier blanc dans les deux thèmes.
+   Ce fichier porte les JETONS (pour tout le monde) et le SITE ; chaque domaine a son style-*.css, écrit avec eux.
    ═══════════════════════════════════════════════════════════════════════ */
 :root{
-  /* ── LES JETONS (DESIGN.md) : le thème clair. Chaque encre passe l'AA (4,5:1) sur chaque fond où elle se pose ── */
-  /* LA TABLE est noire dans les deux thèmes (le lecteur : « au lieu de le mettre blanc, tu pouvais le mettre noir… c'était
-     incroyable ») : un graphite presque noir semé de points discrets, la feuille blanche posée dessus par une ombre
-     profonde. Ce qui s'écrit à même la table prend son encre (--t-table) ; les panneaux, eux, suivent le thème */
-  --s-app:#0f0f11; --s-grille:#2b2b31; --s-grille-2:#2b2b31;
+  /* ── LA TABLE : la même dans les deux thèmes (le lecteur : « le fond noir avec les points où on peut déplacer le
+     schéma »). Ce qui s'écrit à même la table prend son encre (--t-table) ── */
+  --s-app:#0f0f11; --s-grille:#2a2a30; --s-grille-2:#2a2a30;
+  --points:radial-gradient(circle at 1px 1px,var(--s-grille) 1px,transparent 1.4px);   /* un point tous les 24 px */
   --t-table:#ececf0; --t-table-2:#a3a3ab;                /* sur la table : 16:1 et 7:1 */
-  --l-table:#2c2c33; --l-table-2:#4a4a54;                /* les filets à même la table (la bibliothèque) : discret, appuyé */
+  --l-table:#2c2c33; --l-table-2:#4a4a54;                /* les filets à même la table : discret, appuyé */
   --s-table-champ:#18181c; --s-table-survol:#1f1f24;     /* un champ, un survol posés sur la table */
   --t-table-warn:#f0a53a;                                /* ce qui est à voir, écrit sur la table : 9:1 */
+  /* ── LES PALETS : les pièces sombres posées sur la table (rail, folios, mot qui passe), les voiles clairs dessus ── */
+  --palet:#1b1b1f; --palet-2:#25252a;
+  --voile-1:rgba(255,255,255,.05); --voile-2:rgba(255,255,255,.08); --voile-3:rgba(255,255,255,.13); --voile-4:rgba(255,255,255,.2);
+  --sh-palet:0 0 0 1px rgba(255,255,255,.065),0 12px 32px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.35);
   --sh-feuille:0 0 0 1px rgba(0,0,0,.55),0 28px 70px rgba(0,0,0,.65),0 8px 20px rgba(0,0,0,.5);
-  --s-surface:#ffffff; --s-sunken:#f5f5f7; --s-hover:#f0f0f3; --s-line:#e6e6ea; --s-line-2:#d2d2d7;
-  --s-flottant:#ffffff;                                  /* ce qui flotte au-dessus d'un panneau : menus, listes, bulles de graphique */
+  /* ── LES FEUILLES (le thème clair) : ce qu'on lit. Chaque encre passe l'AA (4,5:1) sur chaque fond où elle se pose ── */
+  --s-surface:#ffffff; --s-sunken:#f5f5f7; --s-hover:#f0f0f3; --s-line:#e8e8ec; --s-line-2:#d4d4da;
+  --s-flottant:#ffffff;                                  /* ce qui flotte au-dessus d'une feuille : listes, bulles de graphique */
   --s-papier:#ffffff; --t-papier:#1d1d1f; --t-papier-2:#5c5c61; --s-papier-grille:#f1f1f4;   /* les dessins : toujours sur papier */
   --t-1:#1d1d1f; --t-2:#47474c; --t-3:#636369; --t-inverse:#ffffff;
-  /* l'action et la sélection sont à l'encre : le noir dit ce qu'on fait, le gris doux ce qu'on a choisi */
-  --accent:#1d1d1f; --accent-2:#000000; --accent-soft:#ebebef; --accent-line:#c7c7cd; --on-accent:#ffffff;
+  /* l'action et la sélection sont à l'encre : le plein dit ce qu'on fait, le gris doux ce qu'on a choisi */
+  --accent:#1d1d1f; --accent-2:#000000; --accent-soft:#ececf0; --accent-line:#c7c7cd; --on-accent:#ffffff;
   /* les états : la seule couleur de l'interface */
   --ok:#1d7a3c; --ok-soft:#e8f5ec; --warn:#965800; --warn-soft:#fdf2df; --ko:#c3271f; --ko-soft:#fdeceb; --info:#47474c; --info-soft:#f0f0f3;
   --courbe-chaud:#d1372e; --courbe-tiede:#c27800; --courbe-froid:#2f6fd0;   /* les courbes de disjonction, sur la surface */
-  --bulle:#1d1d1f; --bulle-t:#f5f5f7;                    /* les bulles et le mot qui passe : de l'encre */
-  --sh-bulle:0 0 0 1px rgba(255,255,255,.14),0 8px 24px rgba(0,0,0,.35);   /* un filet clair la détache de la table noire */
-  --voile:rgba(29,29,31,.22);                            /* derrière un calque plein écran */
-  --voile-fort:rgba(29,29,31,.5);                        /* derrière une fenêtre (le relief, le dessin d'un contrat fait) */
+  --bulle:#1d1d1f; --bulle-t:#f5f5f7;                    /* les bulles : de l'encre, un filet clair qui la détache de la table */
+  --sh-bulle:0 0 0 1px rgba(255,255,255,.12),0 8px 24px rgba(0,0,0,.32);
+  --voile:rgba(15,15,17,.28);                            /* derrière un calque plein écran */
+  --voile-fort:rgba(15,15,17,.55);                       /* derrière une fenêtre (le relief, le dessin d'un contrat fait) */
   --route-a:#c0392b; --route-b:#1e8449;                  /* deux routes du dessin (puissance, signal) */
   --route-voile:transparent;                             /* posé sur une couleur de route hors du papier : l'éclaircit en sombre */
-  /* les barres (haut, rail, folios) : le blanc des panneaux, un filet ; leurs voyants sont les états */
-  --p-fond:#ffffff; --p-fond-2:#f0f0f3; --p-ligne:#e6e6ea; --p-hover:#f0f0f3;
-  --p-t1:#1d1d1f; --p-t2:#47474c; --p-t3:#636369;
-  --p-accent:#1d1d1f; --p-ok:#1d7a3c; --p-warn:#965800; --p-ko:#c3271f;
+  /* les anciens jetons des barres : les palets, les mêmes dans les deux thèmes */
+  --p-fond:#1b1b1f; --p-fond-2:#25252a; --p-ligne:rgba(255,255,255,.08); --p-hover:rgba(255,255,255,.07);
+  --p-t1:#ececf0; --p-t2:#b0b0b8; --p-t3:#8a8a94;
+  --p-accent:#f2f2f5; --p-ok:#3ccf6e; --p-warn:#f0a53a; --p-ko:#ff6b5f;
   --f-11:11px; --f-12:12px; --f-13:13px; --f-14:14px; --f-16:16px; --f-20:20px; --f-24:24px; --f-28:28px;
   --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px;
-  --r-1:6px; --r-btn:8px; --r-2:10px; --r-3:14px;
-  --sh-1:0 1px 2px rgba(0,0,0,.06),0 0 0 .5px rgba(0,0,0,.04);
-  --sh-2:0 0 0 .5px rgba(0,0,0,.08),0 14px 36px rgba(0,0,0,.12),0 3px 8px rgba(0,0,0,.05);
-  --sh-panneau:-1px 0 0 var(--s-line),-12px 0 32px rgba(0,0,0,.05);
-  --anneau:0 0 0 3px rgba(0,0,0,.07);                    /* l'anneau d'un champ qui a le clavier */
+  /* les coins : une puce, un bouton, un groupe, une feuille ; un palet */
+  --r-1:6px; --r-btn:10px; --r-2:12px; --r-3:16px; --r-palet:14px;
+  --sh-1:0 1px 2px rgba(0,0,0,.06),0 0 0 .5px rgba(0,0,0,.05);
+  --sh-2:0 0 0 .5px rgba(0,0,0,.08),0 16px 40px rgba(0,0,0,.14),0 3px 10px rgba(0,0,0,.06);
+  /* une feuille posée sur la table : son bord net, une ombre longue */
+  --sh-panneau:0 0 0 1px rgba(0,0,0,.5),0 24px 64px rgba(0,0,0,.55),0 6px 18px rgba(0,0,0,.35);
+  --anneau:0 0 0 3px rgba(0,0,0,.08);                    /* l'anneau d'un champ qui a le clavier */
   --sans:"Inter","IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   --titre:var(--sans);
   --mono:"JetBrains Mono","IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
-  --rapide:.12s ease; --moyen:.2s ease;
+  /* le mouvement : vif au départ, il freine en arrivant ; on ne le remarque pas, on le sent */
+  --courbe:cubic-bezier(.2,.8,.2,1);
+  --rapide:.14s var(--courbe); --moyen:.22s var(--courbe); --lent:.34s var(--courbe);
   color-scheme:light;
-  /* ── la géométrie de la page : le plan se recadre dans ce que les barres et les panneaux laissent ── */
-  --entete:48px;             /* la barre du haut ; le plan commence dessous                  */
-  --rail:48px;               /* le rail de gauche ; le plan commence après                    */
-  --pied:40px;               /* la barre du bas (folios, zoom)                                */
+  /* ── la géométrie de la page : le plan se recadre dans ce que les palets et les feuilles laissent ── */
+  --jeu:10px;                /* l'écart des palets et des feuilles aux bords de l'écran, et entre eux           */
+  --entete:52px;             /* la barre du haut ; le plan commence dessous                                      */
+  --rail:64px;               /* le rail flottant de gauche (44 px, posé à 10 px du bord) ; le plan commence après */
+  --pied:50px;               /* les palets du bas (folios, zoom : 40 px, à 10 px du bord)                         */
   --insp-l:min(36vw,clamp(440px,28vw,560px));  /* l'inspecteur, à droite : 440 px, plus large sur un grand écran */
   --fiche-l:400px;           /* les documents, à droite ; plus large pour la bible et la nomenclature */
   --base-h:50vh;             /* le récapitulatif en moitié : la moitié de la hauteur (style-recap.css) */
@@ -80,59 +80,65 @@
   --danger:var(--ko); --craie:var(--s-surface); --verre-plein:var(--t-1); --ombre-1:var(--sh-2);
   --t0:var(--f-11); --t1:var(--f-12); --t2:var(--f-13); --t3:var(--f-14); --t4:var(--f-16); --t5:var(--f-20); --t6:var(--f-28);
 }
-/* ── le thème sombre : le graphite de nuit — des surfaces charbon, l'encre claire, l'action en blanc. Les mêmes valeurs
-   deux fois : pour le réglage du système, et pour un choix explicite (data-theme). La table et l'ombre de la feuille ne
-   changent pas : elles sont les mêmes dans les deux thèmes (:root) ── */
+/* ── le thème sombre : des feuilles charbon, l'encre claire, l'action en blanc. Les mêmes valeurs deux fois : pour le
+   réglage du système, et pour un choix explicite (data-theme) — ce second bloc vaut aussi pour L'ÎLOT SOMBRE : la
+   barre du haut, le rail, les folios, le mot qui passe et tout `.ilot-sombre` sont sombres dans les deux thèmes (posés
+   sur la table, ils en prennent la nuit ; un menu qui tombe de la barre aussi) ── */
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --s-surface:#1c1c1e; --s-sunken:#161618; --s-hover:#2a2a2d; --s-line:#2e2e32; --s-line-2:#3d3d42; --s-flottant:#242427;
-  --t-1:#f2f2f5; --t-2:#b7b7bd; --t-3:#96969d; --t-inverse:#1d1d1f;
-  --accent:#f2f2f5; --accent-2:#ffffff; --accent-soft:#2f2f33; --accent-line:#4a4a50; --on-accent:#1d1d1f;
-  --ok:#3ccf6e; --ok-soft:#16271c; --warn:#f0a53a; --warn-soft:#2e2413; --ko:#ff6b5f; --ko-soft:#351a18; --info:#b7b7bd; --info-soft:#26262a;
+  --s-surface:#1c1c1f; --s-sunken:#161619; --s-hover:#29292d; --s-line:#2d2d32; --s-line-2:#3e3e44; --s-flottant:#232327;
+  --t-1:#f2f2f5; --t-2:#b9b9c0; --t-3:#96969e; --t-inverse:#1d1d1f;
+  --accent:#f2f2f5; --accent-2:#ffffff; --accent-soft:#303035; --accent-line:#4a4a51; --on-accent:#1d1d1f;
+  --ok:#3ccf6e; --ok-soft:#16271c; --warn:#f0a53a; --warn-soft:#2e2413; --ko:#ff6b5f; --ko-soft:#351a18; --info:#b9b9c0; --info-soft:#26262a;
   --courbe-chaud:#ff6b6b; --courbe-tiede:#ffb224; --courbe-froid:#7aa7ff;
-  --bulle:#f2f2f5; --bulle-t:#1d1d1f; --sh-bulle:0 0 0 .5px rgba(0,0,0,.25),0 8px 24px rgba(0,0,0,.5); --voile:rgba(0,0,0,.5); --voile-fort:rgba(0,0,0,.65);
-  --p-fond:#1c1c1e; --p-fond-2:#2a2a2d; --p-ligne:#2e2e32; --p-hover:#2a2a2d;
-  --p-t1:#f2f2f5; --p-t2:#b7b7bd; --p-t3:#96969d;
-  --p-accent:#f2f2f5; --p-ok:#3ccf6e; --p-warn:#f0a53a; --p-ko:#ff6b5f;
+  --bulle:#2c2c31; --bulle-t:#f2f2f5; --sh-bulle:0 0 0 1px rgba(255,255,255,.1),0 10px 28px rgba(0,0,0,.55); --voile:rgba(0,0,0,.5); --voile-fort:rgba(0,0,0,.65);
   --route-a:#ff6b5e; --route-b:#3fd18a; --route-voile:rgba(255,255,255,.3);
-  --sh-1:0 1px 2px rgba(0,0,0,.4); --sh-2:0 0 0 .5px rgba(255,255,255,.06),0 14px 36px rgba(0,0,0,.5),0 3px 8px rgba(0,0,0,.35);
-  --sh-panneau:-1px 0 0 var(--s-line),-12px 0 32px rgba(0,0,0,.3);
+  --sh-1:0 1px 2px rgba(0,0,0,.4); --sh-2:0 0 0 1px rgba(255,255,255,.07),0 16px 40px rgba(0,0,0,.55),0 3px 10px rgba(0,0,0,.35);
+  --sh-panneau:0 0 0 1px rgba(255,255,255,.07),0 24px 64px rgba(0,0,0,.6),0 6px 18px rgba(0,0,0,.4);
   --anneau:0 0 0 3px rgba(255,255,255,.12);
   color-scheme:dark } }
-:root[data-theme="dark"]{
-  --s-surface:#1c1c1e; --s-sunken:#161618; --s-hover:#2a2a2d; --s-line:#2e2e32; --s-line-2:#3d3d42; --s-flottant:#242427;
-  --t-1:#f2f2f5; --t-2:#b7b7bd; --t-3:#96969d; --t-inverse:#1d1d1f;
-  --accent:#f2f2f5; --accent-2:#ffffff; --accent-soft:#2f2f33; --accent-line:#4a4a50; --on-accent:#1d1d1f;
-  --ok:#3ccf6e; --ok-soft:#16271c; --warn:#f0a53a; --warn-soft:#2e2413; --ko:#ff6b5f; --ko-soft:#351a18; --info:#b7b7bd; --info-soft:#26262a;
+:root[data-theme="dark"],#entete,#rail,#folios,#toast,.ilot-sombre{
+  --s-surface:#1c1c1f; --s-sunken:#161619; --s-hover:#29292d; --s-line:#2d2d32; --s-line-2:#3e3e44; --s-flottant:#232327;
+  --t-1:#f2f2f5; --t-2:#b9b9c0; --t-3:#96969e; --t-inverse:#1d1d1f;
+  --accent:#f2f2f5; --accent-2:#ffffff; --accent-soft:#303035; --accent-line:#4a4a51; --on-accent:#1d1d1f;
+  --ok:#3ccf6e; --ok-soft:#16271c; --warn:#f0a53a; --warn-soft:#2e2413; --ko:#ff6b5f; --ko-soft:#351a18; --info:#b9b9c0; --info-soft:#26262a;
   --courbe-chaud:#ff6b6b; --courbe-tiede:#ffb224; --courbe-froid:#7aa7ff;
-  --bulle:#f2f2f5; --bulle-t:#1d1d1f; --sh-bulle:0 0 0 .5px rgba(0,0,0,.25),0 8px 24px rgba(0,0,0,.5); --voile:rgba(0,0,0,.5); --voile-fort:rgba(0,0,0,.65);
-  --p-fond:#1c1c1e; --p-fond-2:#2a2a2d; --p-ligne:#2e2e32; --p-hover:#2a2a2d;
-  --p-t1:#f2f2f5; --p-t2:#b7b7bd; --p-t3:#96969d;
-  --p-accent:#f2f2f5; --p-ok:#3ccf6e; --p-warn:#f0a53a; --p-ko:#ff6b5f;
+  --bulle:#2c2c31; --bulle-t:#f2f2f5; --sh-bulle:0 0 0 1px rgba(255,255,255,.1),0 10px 28px rgba(0,0,0,.55); --voile:rgba(0,0,0,.5); --voile-fort:rgba(0,0,0,.65);
   --route-a:#ff6b5e; --route-b:#3fd18a; --route-voile:rgba(255,255,255,.3);
-  --sh-1:0 1px 2px rgba(0,0,0,.4); --sh-2:0 0 0 .5px rgba(255,255,255,.06),0 14px 36px rgba(0,0,0,.5),0 3px 8px rgba(0,0,0,.35);
-  --sh-panneau:-1px 0 0 var(--s-line),-12px 0 32px rgba(0,0,0,.3);
+  --sh-1:0 1px 2px rgba(0,0,0,.4); --sh-2:0 0 0 1px rgba(255,255,255,.07),0 16px 40px rgba(0,0,0,.55),0 3px 10px rgba(0,0,0,.35);
+  --sh-panneau:0 0 0 1px rgba(255,255,255,.07),0 24px 64px rgba(0,0,0,.6),0 6px 18px rgba(0,0,0,.4);
   --anneau:0 0 0 3px rgba(255,255,255,.12);
   color-scheme:dark }
 /* ── l'îlot clair : une figure (la courbe d'un disjoncteur) garde l'encre du jour dans les deux thèmes, comme les folios.
    (Pas « .papier » : c'est déjà le bouton secondaire, .btn.papier) ── */
 .ilot-clair{
-  --s-surface:#ffffff; --s-sunken:#f5f5f7; --s-hover:#f0f0f3; --s-line:#e6e6ea; --s-line-2:#d2d2d7; --s-flottant:#ffffff;
+  --s-surface:#ffffff; --s-sunken:#f5f5f7; --s-hover:#f0f0f3; --s-line:#e8e8ec; --s-line-2:#d4d4da; --s-flottant:#ffffff;
   --t-1:#1d1d1f; --t-2:#47474c; --t-3:#636369; --t-inverse:#ffffff;
-  --accent:#1d1d1f; --accent-2:#000000; --accent-soft:#ebebef; --accent-line:#c7c7cd; --on-accent:#ffffff;
-  --route-a:#c0392b; --route-b:#1e8449; --route-voile:transparent; --anneau:0 0 0 3px rgba(0,0,0,.07);
+  --accent:#1d1d1f; --accent-2:#000000; --accent-soft:#ececf0; --accent-line:#c7c7cd; --on-accent:#ffffff;
+  --route-a:#c0392b; --route-b:#1e8449; --route-voile:transparent; --anneau:0 0 0 3px rgba(0,0,0,.08);
   --ok:#1d7a3c; --ok-soft:#e8f5ec; --warn:#965800; --warn-soft:#fdf2df; --ko:#c3271f; --ko-soft:#fdeceb; --info:#47474c; --info-soft:#f0f0f3;
   color-scheme:light; color:var(--t-1) }
 
 /* ─── LE SOCLE ──────────────────────────────────────────────────────────── */
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;overflow:hidden}
-body{font:var(--f-13)/1.45 var(--sans);background:var(--s-app);color:var(--t-1);letter-spacing:-.003em;
-  -webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;overscroll-behavior:none;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1,"cv05" 1}
+/* la table, sous tout : ses points sont fixés à l'écran, si bien qu'ils tombent juste d'une pièce à l'autre (la planche, la
+   bibliothèque) */
+body{font:var(--f-13)/1.45 var(--sans);color:var(--t-1);letter-spacing:-.003em;
+  background-color:var(--s-app);background-image:var(--points);background-size:24px 24px;background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;-webkit-text-size-adjust:100%;overscroll-behavior:none;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1,"cv05" 1}
 [hidden]{display:none!important}
 button,input,textarea,select{font:inherit;color:inherit;margin:0}
-button{cursor:pointer}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 kbd{font-family:var(--mono)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+::selection{background:color-mix(in srgb,var(--accent) 18%,transparent)}
+/* ce qui défile : une barre fine et arrondie, de l'encre de son fond, qui s'affirme au survol */
+*{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--t-1) 22%,transparent) transparent}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--t-1) 20%,transparent);border:3px solid transparent;border-radius:10px;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background-color:color-mix(in srgb,var(--t-1) 36%,transparent)}
+::-webkit-scrollbar-corner{background:transparent}
 /* ce qui défile garde de l'air sous le dernier élément atteint au clavier : son contour n'est pas rogné */
 .fi,.fiche-corps{scroll-padding-block:12px}
 mark{background:var(--warn-soft);color:inherit;border-radius:2px}
@@ -145,16 +151,17 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
 .sur{font:500 var(--f-12)/1.5 var(--sans);color:var(--t-3)}
 
 /* ─── LES COMPOSANTS COMMUNS ────────────────────────────────────────────── */
-/* le bouton : plein à l'encre pour l'action principale (une par écran ; .cuivre, l'ancien nom), blanc pour le reste,
-   lien pour ce qui s'efface */
-.btn{height:36px;padding:0 14px;border-radius:var(--r-btn);border:1px solid transparent;display:inline-flex;align-items:center;gap:8px;
-  font-size:var(--f-13);font-weight:500;white-space:nowrap;background:none;transition:background var(--rapide),border-color var(--rapide),color var(--rapide),box-shadow var(--rapide)}
+/* le bouton : plein à l'encre pour l'action principale (une par écran ; .cuivre, l'ancien nom), une feuille au filet pour
+   le reste, un lien pour ce qui s'efface. Pressé, il s'enfonce à peine */
+.btn{height:34px;padding:0 14px;border-radius:var(--r-btn);border:1px solid transparent;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  font-size:var(--f-13);font-weight:500;letter-spacing:-.005em;white-space:nowrap;background:none;
+  transition:background var(--rapide),border-color var(--rapide),color var(--rapide),box-shadow var(--rapide),transform var(--rapide)}
 .btn svg.ico{width:16px;height:16px}
-.btn:active{transform:translateY(1px)}
-.btn.cuivre{background:var(--accent);border-color:var(--accent);color:var(--on-accent);box-shadow:0 1px 2px rgba(0,0,0,.18)}
+.btn:active:not(:disabled){transform:scale(.98)}
+.btn.cuivre{background:var(--accent);border-color:var(--accent);color:var(--on-accent);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 1px 2px rgba(0,0,0,.2)}
 .btn.cuivre:hover{background:var(--accent-2);border-color:var(--accent-2)}
-.btn.papier{background:var(--s-surface);border-color:var(--s-line-2);color:var(--t-1);box-shadow:var(--sh-1)}
-.btn.papier:hover{background:var(--s-sunken);border-color:var(--t-3)}
+.btn.papier{background:var(--s-surface);border-color:var(--s-line-2);color:var(--t-1);box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.btn.papier:hover{background:var(--s-sunken);border-color:color-mix(in srgb,var(--t-1) 30%,var(--s-line-2))}
 .btn.lien{color:var(--t-1);padding:0 8px;font-weight:500;text-decoration:underline;text-decoration-color:var(--s-line-2);text-underline-offset:3px}
 .btn.lien:hover{background:var(--s-hover);text-decoration-color:var(--t-1)}
 .btn.lien.danger{color:var(--ko)}
@@ -164,50 +171,51 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
 .btn.cuivre:disabled:hover{background:var(--accent);border-color:var(--accent)}
 .btn.papier:disabled:hover{background:var(--s-surface);border-color:var(--s-line-2)}
 .btn.lien:disabled:hover{background:none}
-/* le bouton rond à icône seule (fermer un panneau, replier) */
-.rond{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;border:none;background:none;color:var(--t-2);padding:0;flex:none;transition:background var(--rapide),color var(--rapide)}
+/* le bouton à icône seule (fermer une feuille, replier) : un carré adouci qui paraît au survol */
+.rond{width:32px;height:32px;border-radius:var(--r-btn);display:grid;place-items:center;border:none;background:none;color:var(--t-2);padding:0;flex:none;transition:background var(--rapide),color var(--rapide),transform var(--rapide)}
 .rond:hover{background:var(--s-hover);color:var(--t-1)}
+.rond:active{transform:scale(.94)}
 .rond svg.ico{width:18px;height:18px}
 .fermer{color:var(--t-2)}
-/* le bouton d'outil : carré arrondi de 40 px, une icône, une bulle au survol ; pressé, il se pose dans un carré gris */
+/* le bouton d'outil : un carré adouci, une icône, une bulle au survol ; pressé, il s'allume d'un voile */
 .rd{position:relative;width:40px;height:40px;border-radius:var(--r-btn);border:none;background:none;color:var(--t-2);
-  display:grid;place-items:center;padding:0;flex:none;transition:background var(--rapide),color var(--rapide)}
+  display:grid;place-items:center;padding:0;flex:none;transition:background var(--rapide),color var(--rapide),transform var(--rapide)}
 .rd svg.ico{width:20px;height:20px}
 .rd:hover:not(:disabled){background:var(--s-hover);color:var(--t-1)}
-.rd:active:not(:disabled){background:var(--s-line)}
-.rd:disabled{opacity:.35;cursor:default}
+.rd:active:not(:disabled){transform:scale(.94)}
+.rd:disabled{opacity:.32;cursor:default}
 .rd.sobre{color:var(--t-3)}
 .bascule[aria-pressed="true"],.rd[aria-expanded="true"]{background:var(--accent-soft);color:var(--t-1)}
 .bascule[aria-pressed="true"]:hover:not(:disabled){background:color-mix(in srgb,var(--t-1) 12%,var(--s-surface));color:var(--t-1)}
-/* la bulle : le nom et le raccourci, à côté de l'icône, après un instant de survol ou au clavier */
-.bulle{position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);white-space:nowrap;pointer-events:none;z-index:5;
-  background:var(--bulle);color:var(--bulle-t);box-shadow:var(--sh-bulle);border-radius:var(--r-1);padding:4px 9px;font-size:var(--f-12);font-weight:500;line-height:1.5;letter-spacing:0;text-transform:none;font-family:var(--sans);
-  display:flex;align-items:center;gap:8px;opacity:0;transition:opacity var(--rapide)}
+/* la bulle : le nom et le raccourci, à côté de l'icône, après un instant de survol ou au clavier ; elle glisse d'un rien */
+.bulle{position:absolute;left:calc(100% + 12px);top:50%;transform:translate(-3px,-50%);white-space:nowrap;pointer-events:none;z-index:5;
+  background:var(--bulle);color:var(--bulle-t);box-shadow:var(--sh-bulle);border-radius:8px;padding:5px 10px;font-size:var(--f-12);font-weight:500;line-height:1.5;letter-spacing:0;text-transform:none;font-family:var(--sans);
+  display:flex;align-items:center;gap:8px;opacity:0;transition:opacity var(--rapide),transform var(--rapide)}
 .bulle::before{content:"";position:absolute;right:100%;top:50%;margin-top:-4px;border:4px solid transparent;border-right-color:var(--bulle)}
-.bulle kbd{font-size:var(--f-11);color:var(--bulle-t);opacity:.75;border:1px solid currentColor;border-radius:3px;padding:0 4px;line-height:1.25}
-.rd:hover .bulle{opacity:1;transition-delay:.45s}
-.rd:focus-visible .bulle{opacity:1}
+.bulle kbd{font-size:var(--f-11);color:var(--bulle-t);opacity:.7;background:rgba(255,255,255,.08);border-radius:4px;padding:0 5px;line-height:1.5}
+.rd:hover .bulle{opacity:1;transform:translate(0,-50%);transition-delay:.4s}
+.rd:focus-visible .bulle{opacity:1;transform:translate(0,-50%)}
 .rd:disabled .bulle{display:none}
 @media (hover:none){.bulle{display:none}}
 /* un champ de saisie encadré (le filtre du tableau, les champs d'un document) */
-.filtre{display:flex;align-items:center;gap:8px;height:32px;background:var(--s-surface);border:1px solid var(--s-line-2);border-radius:var(--r-btn);padding:0 4px 0 10px;transition:border-color var(--rapide),box-shadow var(--rapide)}
+.filtre{display:flex;align-items:center;gap:8px;height:34px;background:var(--s-surface);border:1px solid var(--s-line-2);border-radius:var(--r-btn);padding:0 4px 0 11px;transition:border-color var(--rapide),box-shadow var(--rapide),background var(--rapide)}
+.filtre:hover{border-color:color-mix(in srgb,var(--t-1) 28%,var(--s-line-2))}
 .filtre:focus-within{border-color:var(--t-1);box-shadow:var(--anneau)}
 .filtre svg.ico{width:16px;height:16px;color:var(--t-3)}
 .filtre input{flex:1;min-width:0;height:100%;border:none;background:none;outline:none;font-family:var(--mono);font-size:var(--f-12);color:var(--t-1);text-overflow:ellipsis}
 .filtre input::placeholder{font-family:var(--sans);color:var(--t-3)}
-.filtre .vider{width:24px;height:24px;border:none;background:none;border-radius:50%;color:var(--t-3);font-size:var(--f-16);line-height:1;padding:0}
+.filtre .vider{width:26px;height:26px;border:none;background:none;border-radius:var(--r-1);color:var(--t-3);font-size:var(--f-16);line-height:1;padding:0}
 .filtre .vider:hover{background:var(--s-hover);color:var(--t-1)}
-/* un segment : des boutons qui n'en font qu'un, le pressé en relief */
-.segment{display:inline-flex;gap:2px;padding:2px;background:var(--s-sunken);border-radius:var(--r-btn);flex:none}
-.segment button{border:none;background:none;height:26px;padding:0 10px;border-radius:var(--r-1);font-size:var(--f-12);font-weight:500;color:var(--t-2);display:inline-flex;align-items:center;gap:6px;transition:background var(--rapide),color var(--rapide)}
+/* un segment : des boutons qui n'en font qu'un ; le pressé, une pièce blanche qui s'y pose */
+.segment{display:inline-flex;gap:2px;padding:3px;background:var(--s-sunken);border-radius:var(--r-btn);flex:none;box-shadow:inset 0 0 0 1px var(--s-line)}
+.segment button{border:none;background:none;height:26px;padding:0 11px;border-radius:7px;font-size:var(--f-12);font-weight:500;color:var(--t-2);display:inline-flex;align-items:center;gap:6px;transition:background var(--rapide),color var(--rapide),box-shadow var(--rapide)}
 .segment button:hover{color:var(--t-1)}
-.segment button[aria-pressed="true"]{background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-1)}
+.segment button[aria-pressed="true"]{background:var(--s-surface);color:var(--t-1);box-shadow:0 0 0 1px var(--s-line),0 1px 3px rgba(0,0,0,.1)}
 
 /* ─── LA TABLE ET LA FEUILLE ──────────────────────────────────────────────
-   La table est noire dans les deux thèmes, semée d'un point tous les 24 px ; ce qui défile à même la table (la
-   bibliothèque) a ses barres sombres */
+   La planche est la table (ses points tombent juste avec ceux du reste de l'écran) ; les palets flottent dessus */
 #planche{position:fixed;top:calc(var(--entete) + var(--sur-h));left:0;right:0;bottom:0;overflow:hidden;touch-action:none;cursor:grab;color-scheme:dark;
-  background-color:var(--s-app);background-image:radial-gradient(circle at 1px 1px,var(--s-grille) 1px,transparent 1.4px);background-size:24px 24px}
+  background-color:var(--s-app);background-image:var(--points);background-size:24px 24px;background-attachment:fixed}
 #planche.tient{cursor:grabbing}
 #svg{position:absolute;inset:0;width:100%;height:100%;display:block}
 /* la feuille est dessinée par le moteur ; sous elle, une ombre profonde qui la pose sur la table noire */
@@ -243,94 +251,100 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
 #planche.deplace[data-prise="borne"],#planche.deplace[data-prise="borne"] *,#planche.deplace[data-prise="fil-h"],#planche.deplace[data-prise="fil-h"] *{cursor:ns-resize!important}
 #planche.deplace[data-prise="fil-v"],#planche.deplace[data-prise="fil-v"] *,#planche.deplace[data-prise="vt"],#planche.deplace[data-prise="vt"] *{cursor:ew-resize!important}
 
-/* ─── LA BARRE DU HAUT : la marque, la recherche, le menu — blanche, un filet dessous ─── */
-#entete{position:fixed;top:0;left:0;right:0;height:calc(var(--entete) + var(--sur-h));z-index:36;background:var(--p-fond);color:var(--p-t1);border-bottom:1px solid var(--p-ligne);
-  display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:16px;padding:var(--sur-h) max(12px,var(--sur-d)) 0 max(12px,var(--sur-g))}
+/* ─── LA BARRE DU HAUT : à même la table — la marque, le fil, la recherche, le menu. Un filet à peine, et une ombre douce
+   sous elle : la feuille qu'on fait glisser passe dessous ─── */
+#entete{position:fixed;top:0;left:0;right:0;height:calc(var(--entete) + var(--sur-h));z-index:36;background:var(--s-app);color:var(--t-1);
+  box-shadow:0 1px 0 rgba(255,255,255,.055),0 12px 24px -14px rgba(0,0,0,.9);
+  display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:16px;padding:var(--sur-h) max(var(--jeu),var(--sur-d)) 0 max(var(--jeu),var(--sur-g))}
 /* la marque et le nom de l'outil — un bouton : la bibliothèque —, puis le fil discret (l'installation, le plan) */
-.en-contrat{display:flex;align-items:center;gap:6px;min-width:0}
-.en-volta{position:relative;flex:none;display:flex;align-items:center;gap:10px;height:36px;margin-left:-6px;padding:0 10px 0 6px;border:none;border-radius:var(--r-btn);background:none;color:var(--p-t1);transition:background var(--rapide)}
-.en-volta:hover{background:var(--p-hover)}
-.en-volta:hover .bulle{opacity:1;transition-delay:.45s}
-.en-volta:focus-visible .bulle{opacity:1}
-/* la marque : un fil en V entre deux bornes, à l'encre */
-.en-marque{flex:none;width:28px;height:28px;border-radius:7px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center}
+.en-contrat{display:flex;align-items:center;gap:4px;min-width:0}
+.en-volta{position:relative;flex:none;display:flex;align-items:center;gap:10px;height:36px;padding:0 10px 0 4px;border:none;border-radius:var(--r-btn);background:none;color:var(--t-1);transition:background var(--rapide)}
+.en-volta:hover{background:var(--voile-1)}
+.en-volta:hover .bulle{opacity:1;transform:translate(-50%,0);transition-delay:.4s}
+.en-volta:focus-visible .bulle{opacity:1;transform:translate(-50%,0)}
+/* la marque : un fil en V entre deux bornes, gravé dans une pièce claire */
+.en-marque{flex:none;width:30px;height:30px;border-radius:9px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;
+  box-shadow:inset 0 -1px 0 rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.5);transition:transform var(--moyen)}
+.en-volta:hover .en-marque{transform:rotate(-4deg)}
 .en-marque svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.en-nom{font:600 var(--f-16)/1.2 var(--titre);letter-spacing:-.02em;white-space:nowrap;color:var(--p-t1)}
+.en-nom{font:600 var(--f-16)/1.2 var(--titre);letter-spacing:-.02em;white-space:nowrap;color:var(--t-1)}
 /* le fil : « / Antenne VHF / H-1 » — l'installation mène à ses plans, le plan se lit ; rien de plus */
-.en-fil{display:flex;align-items:center;min-width:0;gap:0;font-size:var(--f-13);color:var(--p-t2)}
-.en-fil>*::before{content:"/";margin:0 8px 0 2px;color:var(--p-t3);font-weight:400}
-.en-install{flex:none;max-width:300px;height:28px;padding:0 6px 0 0;border:none;background:none;color:var(--p-t2);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:var(--r-1)}
+.en-fil{display:flex;align-items:center;min-width:0;gap:0;font-size:var(--f-13);color:var(--t-2)}
+.en-fil>*::before{content:"/";margin:0 10px 0 2px;color:var(--l-table-2);font-weight:400}
+.en-install{flex:none;max-width:300px;height:30px;padding:0 8px 0 0;border:none;background:none;color:var(--t-2);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:var(--r-1);transition:color var(--rapide)}
 /* l'ECP de l'installation, devant son nom : cinq chiffres à la machine, un ton plus bas */
-.en-ecp{margin-right:7px;font:600 var(--f-12)/1 var(--mono);letter-spacing:.04em;color:var(--p-t3);font-variant-numeric:tabular-nums}
-.en-install:not(:disabled):hover{color:var(--p-t1);text-decoration:underline;text-decoration-color:var(--p-t3);text-underline-offset:3px}
-.en-install:disabled{cursor:default;color:var(--p-t1)}
-.en-plan{min-width:0;color:var(--p-t1);font:500 var(--f-13)/1.2 var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.en-ecp{margin-right:7px;font:600 var(--f-12)/1 var(--mono);letter-spacing:.04em;color:var(--t-3);font-variant-numeric:tabular-nums}
+.en-install:not(:disabled):hover{color:var(--t-1)}
+.en-install:disabled{cursor:default;color:var(--t-1)}
+.en-plan{min-width:0;color:var(--t-1);font:500 var(--f-13)/1.2 var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .en-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px}
 .en-actions .rd{width:36px;height:36px}
 .en-actions .rd svg.ico{width:18px;height:18px}
 #menuBoite{position:relative}
-#entete .bulle{left:50%;top:calc(100% + 8px);transform:translateX(-50%)}
+#entete .bulle{left:50%;top:calc(100% + 10px);transform:translate(-50%,-3px)}
+#entete .rd:hover .bulle,#entete .rd:focus-visible .bulle{transform:translate(-50%,0)}
 #entete .bulle::before{right:auto;top:auto;bottom:100%;left:50%;margin:0 0 0 -4px;border-color:transparent;border-bottom-color:var(--bulle)}
-/* les boutons d'outil des barres (haut, rail, bas) : l'encre douce ; pressés, l'encre dans un carré gris */
-#entete .rd,#rail .rd,#folios .rd{color:var(--p-t2)}
-#entete .rd:hover:not(:disabled),#rail .rd:hover:not(:disabled),#folios .rd:hover:not(:disabled){background:var(--p-hover);color:var(--p-t1)}
-#entete .rd:active:not(:disabled),#rail .rd:active:not(:disabled),#folios .rd:active:not(:disabled){background:var(--p-ligne)}
-#entete .rd[aria-expanded="true"],#rail .bascule[aria-pressed="true"]{background:var(--accent-soft);color:var(--p-t1)}
-#entete .rd[aria-expanded="true"]:hover:not(:disabled){background:color-mix(in srgb,var(--p-t1) 12%,var(--p-fond));color:var(--p-t1)}
+/* les outils posés sur la table (la barre du haut, le rail, les folios) : l'encre douce ; au survol un voile, pressés un
+   voile plus franc et l'encre pleine */
+#entete .rd,#rail .rd,#folios .rd{color:var(--t-2)}
+#entete .rd:hover:not(:disabled),#rail .rd:hover:not(:disabled),#folios .rd:hover:not(:disabled){background:var(--voile-2);color:var(--t-1)}
+#entete .rd[aria-expanded="true"],#rail .bascule[aria-pressed="true"]{background:var(--voile-3);color:var(--accent-2)}
+#entete .rd[aria-expanded="true"]:hover:not(:disabled),#rail .bascule[aria-pressed="true"]:hover:not(:disabled){background:var(--voile-4);color:var(--accent-2)}
 #btnMenu[aria-expanded="true"] .bulle{display:none}
-#rail .bascule[aria-pressed="true"]:hover:not(:disabled){background:color-mix(in srgb,var(--p-t1) 12%,var(--p-fond));color:var(--p-t1)}
-/* la recherche : un champ gris doux au milieu de la barre ; il s'éclaire quand on y écrit ; la liste tombe dessous */
-.recherche{position:relative;width:min(360px,26vw);height:32px;display:flex;align-items:center;gap:8px;padding:0 8px 0 12px;
-  background:var(--p-fond-2);border:1px solid transparent;border-radius:var(--r-btn);transition:border-color var(--rapide),box-shadow var(--rapide),background var(--rapide)}
-.recherche:hover{border-color:var(--s-line-2)}
-body.cherche .recherche{background:var(--s-surface);border-color:var(--s-line-2);box-shadow:var(--anneau)}
-.recherche svg.ico{width:16px;height:16px;color:var(--p-t3)}
-.recherche input{flex:1;min-width:0;background:none;border:none;outline:none;color:var(--p-t1);font-family:var(--mono);font-size:var(--f-13);height:100%}
-.recherche input::placeholder{color:var(--p-t3);font-family:var(--sans)}
+/* la recherche : un champ en creux au milieu de la barre ; il s'éclaire quand on y écrit ; la liste tombe dessous */
+.recherche{position:relative;width:min(420px,30vw);height:34px;display:flex;align-items:center;gap:8px;padding:0 6px 0 12px;
+  background:var(--voile-1);border:1px solid var(--voile-1);border-radius:var(--r-btn);transition:border-color var(--rapide),box-shadow var(--rapide),background var(--rapide)}
+.recherche:hover{background:var(--voile-2);border-color:var(--voile-2)}
+body.cherche .recherche{background:var(--palet);border-color:var(--voile-4);box-shadow:0 0 0 3px var(--voile-1)}
+.recherche svg.ico{width:16px;height:16px;color:var(--t-3)}
+.recherche input{flex:1;min-width:0;background:none;border:none;outline:none;color:var(--t-1);font-family:var(--mono);font-size:var(--f-13);height:100%}
+.recherche input::placeholder{color:var(--t-3);font-family:var(--sans)}
 .recherche input::-webkit-search-cancel-button{-webkit-appearance:none}
-.recherche .raccourci{color:var(--p-t3);font-size:var(--f-11);border:1px solid var(--s-line-2);background:var(--s-surface);border-radius:4px;padding:0 5px;line-height:1.6;white-space:nowrap}
+.recherche .raccourci{color:var(--t-3);font-size:var(--f-11);border:none;background:var(--voile-2);border-radius:5px;padding:1px 6px;line-height:1.6;white-space:nowrap}
 .recherche .rc-fermer,body.cherche .recherche .rc-ouvrir{display:none}
 body.cherche .recherche .rc-fermer{display:inline}
 /* la croix de la recherche : seulement au doigt (au clavier, Échap) */
-.rc-x{display:none;width:32px;height:32px;margin-right:-4px;border:none;background:none;border-radius:var(--r-1);color:var(--p-t2);place-items:center;padding:0;flex:none}
-.rc-x:hover{background:var(--p-hover);color:var(--p-t1)}
-.q-liste{position:absolute;top:calc(100% + 8px);left:0;width:max(100%,min(440px,calc(100vw - 24px)));background:var(--s-flottant);border:1px solid var(--s-line);border-radius:12px;box-shadow:var(--sh-2);padding:6px;max-height:min(60vh,420px);overflow:auto;z-index:40;color:var(--t-1)}
-.q-item{display:flex;align-items:center;gap:12px;height:36px;padding:0 12px;border-radius:var(--r-1);width:100%;background:none;border:none;text-align:left;color:var(--t-1)}
+.rc-x{display:none;width:32px;height:32px;margin-right:-4px;border:none;background:none;border-radius:var(--r-1);color:var(--t-2);place-items:center;padding:0;flex:none}
+.rc-x:hover{background:var(--voile-2);color:var(--t-1)}
+.q-liste{position:absolute;top:calc(100% + 8px);left:0;width:max(100%,min(460px,calc(100vw - 24px)));background:var(--s-flottant);border-radius:var(--r-palet);box-shadow:var(--sh-2);padding:6px;max-height:min(60vh,440px);overflow:auto;z-index:40;color:var(--t-1);
+  animation:tombe var(--moyen)}
+@keyframes tombe{from{opacity:0;transform:translateY(-4px) scale(.985)}to{opacity:1;transform:none}}
+.q-item{display:flex;align-items:center;gap:12px;height:38px;padding:0 12px;border-radius:8px;width:100%;background:none;border:none;text-align:left;color:var(--t-1)}
 .q-item:hover{background:var(--s-hover)}
-.q-item.on{background:var(--accent-soft)}
+.q-item.on{background:var(--voile-3)}
 .q-item .genre{font:500 var(--f-12) var(--sans);color:var(--t-3);flex:none;width:72px}
 .q-item .nom{font-family:var(--mono);font-weight:600;white-space:nowrap}
 .q-item .des{color:var(--t-2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--f-12)}
 .q-item .cpt{color:var(--t-3);font:400 var(--f-11) var(--mono);white-space:nowrap}
 .q-rien{padding:10px 12px;color:var(--t-2);font-size:var(--f-12)}
-/* LE MENU ⋮ : sous son bouton, peu de lignes. En tête, ce qui est ouvert (à lire) ; puis l'essentiel, une icône au trait
-   et un mot par ligne ; deux sous-menus (Exporter, Plus) s'ouvrent EN PLACE — le panneau glisse, une ligne « ‹ » ramène —,
-   si bien que le menu garde sa largeur et ne déborde jamais de l'écran */
-.menu{position:absolute;top:calc(100% + 8px);right:0;width:272px;color:var(--t-1);background:var(--s-flottant);border:1px solid var(--s-line);border-radius:12px;box-shadow:var(--sh-2);padding:5px;z-index:40;
-  max-height:calc(100vh - var(--entete) - var(--sur-h) - 16px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
-.menu-panneau{animation:menu-glisse var(--rapide) ease-out}
+/* LE MENU ⋮ : sous son bouton, sombre comme la barre d'où il tombe, peu de lignes. En tête, ce qui est ouvert (à lire) ;
+   puis l'essentiel, une icône au trait et un mot par ligne ; deux sous-menus (Exporter, Plus) s'ouvrent EN PLACE — le
+   panneau glisse, une ligne « ‹ » ramène —, si bien que le menu garde sa largeur et ne déborde jamais de l'écran */
+.menu{position:absolute;top:calc(100% + 8px);right:0;width:280px;color:var(--t-1);background:var(--s-flottant);border-radius:var(--r-palet);box-shadow:var(--sh-2);padding:6px;z-index:40;
+  max-height:calc(100vh - var(--entete) - var(--sur-h) - 16px);overflow-y:auto;overscroll-behavior:contain;transform-origin:top right;animation:tombe var(--moyen)}
+.menu-panneau{animation:menu-glisse var(--moyen)}
 .menu-panneau#mp-principal{animation-name:menu-revient}
-@keyframes menu-glisse{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
-@keyframes menu-revient{from{opacity:.4;transform:translateX(-6px)}to{opacity:1;transform:none}}
-.menu button{display:flex;width:100%;align-items:center;gap:10px;min-height:32px;padding:0 10px;border-radius:var(--r-1);background:none;border:none;text-align:left;color:var(--t-1);font-size:var(--f-13);font-weight:400;line-height:1.3}
-.menu button:hover,.menu button:focus-visible{background:var(--s-hover);outline:none}
+@keyframes menu-glisse{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+@keyframes menu-revient{from{opacity:.4;transform:translateX(-8px)}to{opacity:1;transform:none}}
+.menu button{display:flex;width:100%;align-items:center;gap:11px;min-height:34px;padding:0 10px;border-radius:8px;background:none;border:none;text-align:left;color:var(--t-1);font-size:var(--f-13);font-weight:400;line-height:1.3;transition:background var(--rapide)}
+.menu button:hover,.menu button:focus-visible{background:var(--voile-2);outline:none}
 .menu button>svg.ico{width:16px;height:16px;color:var(--t-2)}
 .menu-l{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* « Vos fichiers » dit, en petit, tout ce qu'on y dépose — la base des contrats déjà faits comprise */
-.menu button.menu-2l{min-height:44px;padding-top:5px;padding-bottom:5px}
+.menu button.menu-2l{min-height:46px;padding-top:5px;padding-bottom:5px}
 .menu-l small{display:block;margin-top:1px;font-size:var(--f-11);color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .menu .menu-chevron{width:14px;height:14px;color:var(--t-3)}
-.menu button[aria-expanded="true"]{background:var(--accent-soft)}
+.menu button[aria-expanded="true"]{background:var(--voile-2)}
 /* la ligne qui ramène au menu : le nom du sous-menu, en tête, un filet dessous */
 .menu button.menu-retour{font-weight:600;color:var(--t-1);margin-bottom:2px}
 .menu button.menu-retour>svg.ico{color:var(--t-1)}
 /* les blocs, séparés d'un filet */
-.menu-bloc+.menu-bloc,.menu .ctx+.menu-bloc,.menu-retour+.menu-bloc{border-top:1px solid var(--s-line);margin-top:4px;padding-top:4px}
+.menu-bloc+.menu-bloc,.menu .ctx+.menu-bloc,.menu-retour+.menu-bloc{border-top:1px solid var(--voile-2);margin-top:5px;padding-top:5px}
 /* sa bulle : ce que la ligne fait, en une ou deux phrases — UNE bulle sur la page (08-menu, `lierBullesDuMenu`), à
    gauche du menu, à la hauteur de la ligne, après un temps de survol, tout de suite au clavier */
-.menu-bulle{position:fixed;top:0;right:0;z-index:45;width:max-content;max-width:280px;padding:8px 11px;border-radius:var(--r-2);background:var(--bulle);color:var(--bulle-t);
+.menu-bulle{position:fixed;top:0;right:0;z-index:45;width:max-content;max-width:280px;padding:9px 12px;border-radius:var(--r-btn);background:var(--bulle);color:var(--bulle-t);
   font:400 var(--f-12)/1.5 var(--sans);text-align:left;box-shadow:var(--sh-bulle);pointer-events:none;opacity:0;transform:translateX(4px);visibility:hidden;
-  transition:opacity var(--rapide),transform var(--rapide),visibility 0s linear var(--rapide)}
+  transition:opacity var(--rapide),transform var(--rapide),visibility 0s linear .14s}
 .menu-bulle.on{opacity:1;transform:none;visibility:visible;transition:opacity var(--rapide),transform var(--rapide)}
 @media (max-width:700px){ .menu-bulle{display:none} }
 /* ce qui porte sur le plan, sans plan sur la table : éteint (un clic dit pourquoi) */
@@ -338,68 +352,78 @@ body.cherche .recherche .rc-fermer{display:inline}
 .menu button.danger,.menu button.danger>svg.ico{color:var(--ko)}
 .menu button.danger:hover,.menu button.danger:focus-visible{background:var(--ko-soft)}
 .menu .raccourci{margin-left:auto;color:var(--t-3);font-size:var(--f-11);font-family:var(--mono)}
-.menu .ctx{padding:7px 10px 6px;min-width:0}
+.menu .ctx{padding:8px 10px 7px;min-width:0}
 #ctx-nom{font:600 var(--f-14)/1.3 var(--titre);letter-spacing:-.01em;overflow-wrap:anywhere}
 #ctx-txt{color:var(--t-2);font-size:var(--f-12);line-height:1.4;margin-top:2px}
 .sauve{color:var(--t-3);font-size:var(--f-11);white-space:nowrap;display:flex;align-items:center;gap:6px;margin-top:3px}
-.sauve:not(:empty)::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ok)}
-.sauve.ko::before{background:var(--warn)}
+.sauve:not(:empty)::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 18%,transparent)}
+.sauve.ko::before{background:var(--warn);box-shadow:0 0 0 3px color-mix(in srgb,var(--warn) 18%,transparent)}
 
-/* ─── LE RAIL : à gauche, les outils de tous les instants — blanc, un filet ─── */
-#rail{position:fixed;top:calc(var(--entete) + var(--sur-h));left:0;bottom:0;width:calc(var(--rail) + var(--sur-g));z-index:20;background:var(--p-fond);border-right:1px solid var(--p-ligne);
-  display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 8px var(--sur-g)}
+/* ─── LE RAIL : un palet à gauche, posé sur la table — les outils de tous les instants ─── */
+#rail{position:fixed;top:calc(var(--entete) + var(--sur-h));left:calc(var(--jeu) + var(--sur-g));width:44px;z-index:20;
+  background:var(--palet);border-radius:var(--r-palet);box-shadow:var(--sh-palet);
+  display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px}
+#rail .rd{width:36px;height:36px;border-radius:var(--r-btn)}
+#rail .rd svg.ico{width:19px;height:19px}
 #rail .rd:focus-visible{outline-offset:-2px}
-#rail hr{width:24px;border:none;border-top:1px solid var(--p-ligne);margin:4px 0}
+#rail hr{width:20px;border:none;border-top:1px solid var(--voile-2);margin:4px 0}
 /* le compte de ce qu'il y a à reprendre, sur le bouton des repères : une pastille de sa couleur d'état */
-.rd-point{position:absolute;top:-2px;right:-2px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;font:600 10px/16px var(--sans);font-style:normal;text-align:center;color:#ffffff;background:var(--p-warn);box-shadow:0 0 0 2px var(--p-fond);pointer-events:none}
+.rd-point{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;font:600 10px/16px var(--sans);font-style:normal;text-align:center;color:#ffffff;background:var(--p-warn);box-shadow:0 0 0 2px var(--palet);pointer-events:none}
 .rd-point.ko{background:var(--p-ko)}
 
-/* ─── LA BARRE DU BAS : les folios, l'affinage, le cadrage et le zoom ─────
-   Une seule hauteur de cible (28 px) sur la grille de 4 ; la bande des folios prend la place qui reste et s'estompe à
-   ses bords quand elle défile ; trop étroite (un document large ouvert), la barre garde les folios et le cadrage. */
-#folios{position:fixed;left:var(--rail);right:0;bottom:0;height:calc(var(--pied) + var(--sur-b));z-index:20;background:var(--p-fond);color:var(--p-t2);border-top:1px solid var(--p-ligne);
-  display:flex;align-items:center;gap:2px;padding:0 max(8px,var(--sur-d)) var(--sur-b) 8px;transition:right var(--moyen);container-type:inline-size}
-body.insp-ouvert #folios{right:var(--insp-l)}
-body.fiche-ouverte #folios{right:var(--fiche-l)}
-#folios .rd{width:28px;height:28px;border-radius:var(--r-1)}
+/* ─── EN BAS : les folios et la vue, en palets sur la table ─────
+   Le palet des folios (‹, la bande, ›, le compte) à gauche, celui de la vue (cadrer, zoomer) à droite ; au milieu,
+   l'affinage en cours et le folio retouché, chacun son petit palet. La bande défile et s'estompe à ses bords ; trop
+   étroite (un document large ouvert), la barre garde les folios et le cadrage. */
+#folios{position:fixed;left:var(--rail);right:calc(var(--jeu) + var(--sur-d));bottom:calc(var(--jeu) + var(--sur-b));height:40px;z-index:20;color:var(--t-2);pointer-events:none;
+  display:flex;align-items:center;gap:8px;transition:right var(--moyen);container-type:inline-size}
+body.insp-ouvert #folios{right:calc(var(--insp-l) + 2 * var(--jeu) + var(--sur-d))}
+body.fiche-ouverte #folios{right:calc(var(--fiche-l) + 2 * var(--jeu) + var(--sur-d))}
+#folios .rd{width:32px;height:32px;border-radius:8px}
 #folios .rd svg.ico{width:18px;height:18px}
-#folios hr{width:0;height:16px;border:none;border-left:1px solid var(--p-ligne);margin:0 4px}
+#folios hr{width:0;height:16px;border:none;border-left:1px solid var(--voile-2);margin:0 4px}
+/* les palets */
+.fo-part,.fo-zoom{pointer-events:auto;height:40px;padding:0 4px;background:var(--palet);border-radius:12px;box-shadow:var(--sh-palet)}
 /* dans la barre du bas, la bulle se lit au-dessus du bouton ; aux deux bouts, elle s'aligne sur le bouton au lieu de déborder */
-#folios .bulle{left:50%;top:auto;bottom:calc(100% + 8px);transform:translateX(-50%)}
+#folios .bulle{left:50%;top:auto;bottom:calc(100% + 12px);transform:translate(-50%,3px)}
+#folios .rd:hover .bulle,#folios .rd:focus-visible .bulle{transform:translate(-50%,0)}
 #folios .bulle::before{right:auto;top:100%;left:50%;margin:0 0 0 -4px;border-color:transparent;border-top-color:var(--bulle)}
-#fo-prev .bulle{left:0;transform:none}
-#fo-prev .bulle::before{left:10px;margin:0}
-#zin .bulle{left:auto;right:0;transform:none}
-#zin .bulle::before{left:auto;right:10px;margin:0}
+#folios #fo-prev .bulle{left:-4px;transform:none}
+#fo-prev .bulle::before{left:14px;margin:0}
+#folios #zin .bulle{left:auto;right:-4px;transform:none}
+#zin .bulle::before{left:auto;right:14px;margin:0}
 /* la bulle d'une puce de folio : une pour toute la bande, posée par l'interface au-dessus de la puce survolée */
-#folios .fo-bulle{left:0;bottom:calc(100% + 8px)}
+#folios .fo-bulle{left:0;bottom:calc(100% + 12px);transform:none}
 #folios .fo-bulle.on{opacity:1}
 .fo-part{display:flex;align-items:center;gap:2px;flex:0 1 auto;min-width:0}
-.fo-milieu{display:flex;align-items:center;gap:2px;flex:1 0 auto;justify-content:center;min-width:0}
+.fo-milieu{display:flex;align-items:center;gap:8px;flex:1 0 auto;justify-content:center;min-width:0}
+.fo-milieu>*{pointer-events:auto}
 .fo-zoom{display:flex;align-items:center;gap:2px;flex:none}
 /* la bande des folios défile (à la molette, au doigt) ; une puce ne rétrécit jamais : sa largeur est bornée, son nom
    entier en bulle. Des noms de dessin longs (FWD) s'abrègent à ce qui les distingue — le début est dans la puce
    (`.chip-pre`), caché, sauf sur le folio courant où le nom se lit en entier */
-.fo-strip{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;min-width:0;padding:2px 12px;scroll-behavior:smooth;
-  -webkit-mask-image:linear-gradient(90deg,transparent,#000 12px,#000 calc(100% - 12px),transparent);mask-image:linear-gradient(90deg,transparent,#000 12px,#000 calc(100% - 12px),transparent)}
+.fo-strip{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;min-width:0;padding:2px 10px;scroll-behavior:smooth;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 10px,#000 calc(100% - 10px),transparent);mask-image:linear-gradient(90deg,transparent,#000 10px,#000 calc(100% - 10px),transparent)}
 .fo-strip::-webkit-scrollbar{display:none}
-.chip{position:relative;flex:none;height:28px;min-width:28px;max-width:180px;padding:0 8px;border-radius:var(--r-1);border:none;background:none;color:var(--p-t2);font-family:var(--sans);font-weight:500;font-size:var(--f-13);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background var(--rapide),color var(--rapide)}
-.chip:hover{background:var(--p-hover);color:var(--p-t1)}
+.chip{position:relative;flex:none;height:30px;min-width:30px;max-width:180px;padding:0 9px;border-radius:8px;border:none;background:none;color:var(--t-2);font-family:var(--sans);font-weight:500;font-size:var(--f-13);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:background var(--rapide),color var(--rapide),box-shadow var(--rapide)}
+.chip:hover{background:var(--voile-2);color:var(--t-1)}
 .chip:focus-visible{outline-offset:-2px}
-/* le folio courant : une pastille à l'encre */
-.chip.on{background:var(--accent);color:var(--on-accent);font-weight:600}
+/* le folio courant : une pièce claire */
+.chip.on{background:var(--accent);color:var(--on-accent);font-weight:600;box-shadow:inset 0 -1px 0 rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.4)}
 .chip-pre{display:none}
-.chip.abrege:not(.on)::before{content:"…";color:var(--p-t3);margin-right:1px}
-.chip.on .chip-pre{display:inline;color:color-mix(in srgb,var(--on-accent) 70%,transparent);font-weight:500}
-.fo-lbl{color:var(--p-t3);font-size:var(--f-12);padding:0 8px;white-space:nowrap}
+.chip.abrege:not(.on)::before{content:"…";color:var(--t-3);margin-right:1px}
+.chip.on .chip-pre{display:inline;color:color-mix(in srgb,var(--on-accent) 65%,transparent);font-weight:500}
+.fo-lbl{color:var(--t-3);font-size:var(--f-12);padding:0 10px 0 6px;white-space:nowrap}
 /* au-delà de huit folios, une liste déroulante double la bande — et dit déjà le rang : le compte se range */
-.fo-select{height:28px;max-width:220px;margin-left:2px;padding:0 4px;border:1px solid transparent;border-radius:var(--r-1);background:var(--p-fond-2);color:var(--p-t1);font:500 var(--f-12) var(--sans)}
-.fo-select:hover{border-color:var(--p-t3)}
+.fo-select{height:30px;max-width:220px;margin:0 2px;padding:0 6px;border:1px solid transparent;border-radius:8px;background:var(--voile-1);color:var(--t-1);font:500 var(--f-12) var(--sans)}
+.fo-select:hover{border-color:var(--voile-3)}
 #fo-lbl:has(+ .fo-select:not([hidden])){display:none}
-/* l'affinage en cours : un point qui respire, ce qu'il fait, en phrase */
-.affinage{display:inline-flex;align-items:center;gap:8px;font-family:var(--sans);font-size:var(--f-11);color:var(--p-t3);padding:0 8px;white-space:nowrap}
+/* l'affinage en cours : un petit palet, un point qui respire, ce qu'il fait, en phrase */
+.affinage{display:inline-flex;align-items:center;gap:8px;height:32px;font-family:var(--sans);font-size:var(--f-12);color:var(--t-2);padding:0 14px 0 12px;white-space:nowrap;
+  background:var(--palet);border-radius:999px;box-shadow:var(--sh-palet)}
 .affinage i{width:7px;height:7px;border-radius:50%;background:var(--p-accent);animation:respire 1.6s ease-in-out infinite}
-.affinage.ailleurs i{background:var(--p-t3);box-shadow:none}
+.affinage.ailleurs i{background:var(--t-3);box-shadow:none}
 @keyframes respire{0%,100%{transform:scale(.6);opacity:.35}50%{transform:scale(1);opacity:1}}
 /* le folio qu'on attend : le moteur le place au loin (un Worker, 08) ; au milieu de la place libre du plan, le point qui
    respire et un mot, rien de plus — l'écran reste libre dessous ; la puce du folio qui se calcule respire aussi (un point
@@ -408,25 +432,26 @@ body.fiche-ouverte #folios{right:var(--fiche-l)}
 .attente i{width:10px;height:10px;border-radius:50%;background:var(--t-table);margin-bottom:6px;animation:respire 1.6s ease-in-out infinite}
 .attente b{font-weight:500}
 .attente small{font-size:var(--f-12);font-weight:400;color:var(--t-table-2);font-variant-numeric:tabular-nums}
-.chip.attend::after{content:'';position:absolute;left:50%;bottom:3px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--p-accent);animation:respire 1.6s ease-in-out infinite}
-/* le folio retouché à la main : un mot, le bouton rend la main au moteur */
-#folios .rd.auto{width:auto;display:inline-flex;align-items:center;gap:6px;padding:0 10px 0 8px;color:var(--p-t1);background:var(--accent-soft);font:500 var(--f-12) var(--sans)}
-#folios .rd.auto:hover:not(:disabled){background:color-mix(in srgb,var(--p-t1) 12%,var(--p-fond));color:var(--p-t1)}
+.chip.attend::after{content:'';position:absolute;left:50%;bottom:3px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:currentColor;animation:respire 1.6s ease-in-out infinite}
+/* le folio retouché à la main : un petit palet, un mot ; le bouton rend la main au moteur */
+#folios .rd.auto{width:auto;height:32px;display:inline-flex;align-items:center;gap:6px;padding:0 12px 0 10px;border-radius:999px;color:var(--t-1);background:var(--palet);box-shadow:var(--sh-palet);font:500 var(--f-12) var(--sans)}
+#folios .rd.auto:hover:not(:disabled){background:var(--palet-2);color:var(--t-1)}
 .rd.auto svg.ico{width:16px;height:16px}
-#folios .rd.zl{width:auto;min-width:52px;padding:0 6px;font-family:var(--sans);font-size:var(--f-12);color:var(--p-t2);height:28px;border-radius:var(--r-1)}
-#folios .rd.zl:hover:not(:disabled){color:var(--p-t1)}
+#folios .rd.zl{width:auto;min-width:54px;padding:0 6px;font-family:var(--sans);font-size:var(--f-12);color:var(--t-2);height:32px;border-radius:8px}
+#folios .rd.zl:hover:not(:disabled){color:var(--t-1)}
 /* la barre étroite (un document large à côté, une tablette) : les folios et le cadrage, sans le zoom ni le compte */
 @container (max-width:480px){ #zin,#zout,#zlbl,.fo-zoom hr,#fo-lbl,.affinage span{display:none} }
 
-/* ─── LES PANNEAUX : l'inspecteur et les documents à droite (le récapitulatif : style-recap.css) ─── */
-#inspecteur,#fiche{position:fixed;top:calc(var(--entete) + var(--sur-h));right:0;bottom:0;max-width:calc(100vw - var(--rail));padding-right:var(--sur-d);background:var(--s-surface);color:var(--t-1);
-  box-shadow:var(--sh-panneau);z-index:25;display:flex;flex-direction:column;overflow:hidden}
+/* ─── LES FEUILLES : l'inspecteur et les documents, posés à droite sur la table, détachés des bords (le récapitulatif :
+   style-recap.css) ─── */
+#inspecteur,#fiche{position:fixed;top:calc(var(--entete) + var(--sur-h));right:calc(var(--jeu) + var(--sur-d));bottom:calc(var(--jeu) + var(--sur-b));max-width:calc(100vw - var(--rail) - var(--jeu));
+  background:var(--s-surface);color:var(--t-1);border-radius:var(--r-3);box-shadow:var(--sh-panneau);z-index:25;display:flex;flex-direction:column;overflow:hidden}
 #inspecteur{width:var(--insp-l);z-index:26}
 #fiche{width:var(--fiche-l)}
-/* un panneau qui s'ouvre glisse de son bord */
-.entre{animation:doc-entre var(--moyen)}
-@keyframes doc-entre{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
-@keyframes doc-monte{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+/* une feuille qui s'ouvre glisse de son bord, et se pose */
+.entre{animation:doc-entre var(--lent)}
+@keyframes doc-entre{from{opacity:0;transform:translateX(16px) scale(.995)}to{opacity:1;transform:none}}
+@keyframes doc-monte{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 
 /* ─── LES DOCUMENTS : cartouche, collage, bible, nomenclature, hypothèses ─── */
 .fiche-corps{overflow:auto;padding:16px 20px 16px;flex:1;overscroll-behavior:contain;scrollbar-width:thin}
@@ -692,16 +717,17 @@ table.simu-tab{border-collapse:separate;border-spacing:0;font-size:var(--f-12);m
 .cand[aria-pressed="true"] span,.cand[aria-pressed="true"] .ok{color:var(--on-accent)}
 .cand[aria-pressed="true"]:hover{background:var(--accent-2)}
 
+
 /* ─── LE PLAN VIDE : un plan sans liaison (ses lignes effacées) — une carte posée sur la table, trois gestes ─── */
 .vide{position:absolute;inset:0;display:grid;place-items:center;padding:24px 24px 24px calc(var(--rail) + 24px);z-index:5}
-body.fiche-ouverte .vide{right:var(--fiche-l)}
-.vd-carte{width:min(460px,100%);padding:24px 26px 22px;border-radius:var(--r-3);background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-feuille);animation:vd-pose .3s ease-out both}
-@keyframes vd-pose{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.vd-carte h2{margin:0;font:600 var(--f-20)/1.25 var(--titre);letter-spacing:-.02em}
-.vd-carte p{margin:8px 0 0;font-size:var(--f-13);line-height:1.5;color:var(--t-2)}
-.vd-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:18px}
+body.fiche-ouverte .vide{right:calc(var(--fiche-l) + 2 * var(--jeu))}
+.vd-carte{width:min(460px,100%);padding:26px 28px 24px;border-radius:var(--r-3);background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-feuille);animation:vd-pose var(--lent) both}
+@keyframes vd-pose{from{opacity:0;transform:translateY(8px) scale(.99)}to{opacity:1;transform:none}}
+.vd-carte h2{margin:0;font:600 var(--f-20)/1.25 var(--titre);letter-spacing:-.02em;text-wrap:balance}
+.vd-carte p{margin:8px 0 0;font-size:var(--f-13);line-height:1.55;color:var(--t-2)}
+.vd-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:20px}
 /* reprendre ce que le dernier geste a effacé : une ligne à l'encre, au-dessus des gestes */
-.vd-reprendre{display:flex;align-items:center;gap:8px;width:100%;margin-top:16px;height:38px;padding:0 14px 0 12px;border:1px solid var(--accent-line);border-radius:var(--r-btn);background:var(--accent-soft);color:var(--t-1);font-weight:600;text-align:left;transition:background var(--rapide)}
+.vd-reprendre{display:flex;align-items:center;gap:8px;width:100%;margin-top:16px;height:40px;padding:0 14px 0 12px;border:1px solid var(--accent-line);border-radius:var(--r-btn);background:var(--accent-soft);color:var(--t-1);font-weight:600;text-align:left;transition:background var(--rapide)}
 .vd-reprendre::before{content:"";flex:none;width:18px;height:18px;background:currentColor;
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 14 4 9l5-5'/%3E%3Cpath d='M4 9h10a6 6 0 0 1 0 12h-3'/%3E%3C/svg%3E") center/contain no-repeat;
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 14 4 9l5-5'/%3E%3Cpath d='M4 9h10a6 6 0 0 1 0 12h-3'/%3E%3C/svg%3E") center/contain no-repeat}
@@ -709,27 +735,27 @@ body.fiche-ouverte .vide{right:var(--fiche-l)}
 
 /* le dépôt : la fenêtre entière devient la cible — un voile, et au milieu une carte en pointillé qui dit quoi faire ;
    sur la bibliothèque, c'est elle qui s'allume (style-bibliotheque.css) */
-.depot{position:fixed;inset:0;z-index:40;display:none;place-items:center;background:var(--voile);pointer-events:none}
-.depot>div{display:flex;align-items:center;gap:12px;padding:28px 40px;border:2px dashed var(--accent);border-radius:var(--r-3);background:var(--s-surface);color:var(--t-1);font:600 var(--f-20)/1.2 var(--titre);box-shadow:var(--sh-2)}
+.depot{position:fixed;inset:0;z-index:40;display:none;place-items:center;background:var(--voile);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);pointer-events:none}
+.depot>div{display:flex;align-items:center;gap:12px;padding:30px 44px;border:2px dashed var(--accent-line);border-radius:var(--r-3);background:var(--s-surface);color:var(--t-1);font:600 var(--f-20)/1.2 var(--titre);letter-spacing:-.015em;box-shadow:var(--sh-panneau);animation:vd-pose var(--moyen) both}
 .depot>div::before{content:"";width:24px;height:24px;flex:none;background:var(--accent);
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 16V4M7 9l5-5 5 5'/%3E%3Cpath d='M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3'/%3E%3C/svg%3E") center/contain no-repeat;
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 16V4M7 9l5-5 5 5'/%3E%3Cpath d='M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3'/%3E%3C/svg%3E") center/contain no-repeat}
 body.depot-actif .depot{display:grid}
 body.depot-actif:has(#bibliotheque:not([hidden])) .depot{display:none}
 
-/* ─── LE MOT QUI PASSE : sous la barre du haut, au milieu de ce qui reste du plan ─── */
-#toast{position:fixed;left:calc(var(--rail) + (100vw - var(--rail)) / 2);top:calc(var(--entete) + var(--sur-h) + 12px);transform:translateX(-50%) translateY(-6px);padding:9px 14px;border-radius:var(--r-2);z-index:35;max-width:min(60vw,560px);
-  background:var(--bulle);color:var(--bulle-t);box-shadow:var(--sh-bulle);font-size:var(--f-13);font-weight:500;line-height:1.4;opacity:0;pointer-events:none;transition:opacity var(--moyen),transform var(--moyen)}
+/* ─── LE MOT QUI PASSE : un palet sous la barre du haut, au milieu de ce qui reste du plan ; il descend d'un rien ─── */
+#toast{position:fixed;left:calc(var(--rail) + (100vw - var(--rail)) / 2);top:calc(var(--entete) + var(--sur-h) + 12px);transform:translateX(-50%) translateY(-8px) scale(.98);padding:10px 16px;border-radius:12px;z-index:35;max-width:min(60vw,560px);
+  background:var(--palet);color:var(--t-1);box-shadow:var(--sh-palet);font-size:var(--f-13);font-weight:500;line-height:1.4;opacity:0;pointer-events:none;transition:opacity var(--moyen),transform var(--moyen)}
 #toast.on{opacity:1;transform:translateX(-50%)}
-body.insp-ouvert #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--insp-l)) / 2)}
-body.fiche-ouverte #toast{left:max(calc(var(--rail) + 16px + min(60vw,560px) / 2),calc(var(--rail) + (100vw - var(--rail) - var(--fiche-l)) / 2))}
+body.insp-ouvert #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--insp-l) - 2 * var(--jeu)) / 2)}
+body.fiche-ouverte #toast{left:max(calc(var(--rail) + 16px + min(60vw,560px) / 2),calc(var(--rail) + (100vw - var(--rail) - var(--fiche-l) - 2 * var(--jeu)) / 2))}
 #toast.erreur{padding-left:32px}
-#toast.erreur::before{content:"";position:absolute;left:14px;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:1px;background:var(--ko);box-shadow:0 0 6px color-mix(in srgb,var(--ko) 60%,transparent)}
+#toast.erreur::before{content:"";position:absolute;left:14px;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:var(--ko);box-shadow:0 0 0 3px color-mix(in srgb,var(--ko) 22%,transparent)}
 
 /* ─── ÉCRAN BAS : le rail se serre pour tenir (à la souris seulement : au doigt, les cibles gardent leurs 40 px) ─── */
 @media (max-height:660px) and (min-width:701px) and (pointer:fine){
-  #rail{gap:0;padding:4px 0}
-  #rail .rd{height:36px}
+  #rail{gap:0;padding:3px}
+  #rail .rd{height:34px}
   #rail hr{margin:2px 0}
 }
 
@@ -737,22 +763,23 @@ body.fiche-ouverte #toast{left:max(calc(var(--rail) + 16px + min(60vw,560px) / 2
 @media (min-width:701px) and (max-width:900px){
   :root{--insp-l:min(400px,calc(100vw - var(--rail) - 320px))}
   #fiche{width:min(var(--fiche-l),calc(100vw - var(--rail) - 320px))}
-  body.fiche-ouverte #folios{right:min(var(--fiche-l),calc(100vw - var(--rail) - 320px))}
+  body.fiche-ouverte #folios{right:calc(min(var(--fiche-l),calc(100vw - var(--rail) - 320px)) + 2 * var(--jeu))}
 }
 @media (min-width:701px) and (max-width:1100px){ .recherche{width:min(300px,26vw)} }
 /* le téléphone couché : la planche de bord se resserre pour laisser le plan respirer */
 @media (max-height:500px) and (min-width:701px) and (pointer:coarse){
-  :root{--entete:40px;--pied:36px;--base-h:62vh}
+  :root{--entete:40px;--pied:46px;--base-h:62vh}
   .recherche{width:min(240px,26vw)}
 }
 
 /* ─── TÉLÉPHONE : la planche de bord en haut et en bas ; un panneau à la fois, en tiroir posé sur le rail ─────
    Le rail ne bouge jamais (sous le pouce). Une fiche ou le tableau montent au-dessus de lui, la bande des folios
    au-dessus d'eux ; un document (normes, bible, nomenclature…) est une page : toute la hauteur, de la barre du haut
-   au rail. Les tiroirs s'emboîtent sous la planche de bord : un filet, ni arrondi ni ombre sous une barre. */
+   au rail. Les palets redeviennent des barres pleines, d'un bord à l'autre ; les tiroirs s'emboîtent dessous : un filet,
+   ni arrondi ni ombre sous une barre. */
 @media (max-width:700px){
-  :root{--rail:0px;--base-h:52vh;--rail-tel:calc(48px + var(--sur-b))}
-  #entete{gap:8px;padding:var(--sur-h) max(4px,var(--sur-d)) 0 max(12px,var(--sur-g));grid-template-columns:minmax(0,1fr) auto}
+  :root{--rail:0px;--jeu:0px;--base-h:52vh;--rail-tel:calc(48px + var(--sur-b))}
+  #entete{gap:8px;padding:var(--sur-h) max(4px,var(--sur-d)) 0 max(12px,var(--sur-g));grid-template-columns:minmax(0,1fr) auto;box-shadow:0 1px 0 var(--p-ligne)}
   .en-marque{display:none}
   /* deux boutons voisins, un seul traitement : nus, 40 px ; l'icône dit l'action */
   .en-actions .rd{width:40px;height:40px;padding:0;justify-content:center;background:none;border-color:transparent}
@@ -765,19 +792,21 @@ body.fiche-ouverte #toast{left:max(calc(var(--rail) + 16px + min(60vw,560px) / 2
   .q-liste{width:100%}
   .menu{width:min(280px,calc(100vw - 16px))}
   /* le rail : en bas, toujours au même endroit ; ce que le geste fait déjà (pincer, toucher un folio) n'y est pas */
-  #rail{top:auto;left:0;right:0;bottom:0;width:auto;height:var(--rail-tel);border-right:none;border-top:1px solid var(--p-ligne);flex-direction:row;justify-content:space-around;padding:0 max(4px,var(--sur-d)) var(--sur-b) max(4px,var(--sur-g));gap:0}
+  #rail{top:auto;left:0;right:0;bottom:0;width:auto;height:var(--rail-tel);border-radius:0;box-shadow:0 -1px 0 var(--p-ligne);flex-direction:row;justify-content:space-around;padding:0 max(4px,var(--sur-d)) var(--sur-b) max(4px,var(--sur-g));gap:0}
+  #rail .rd{width:40px;height:40px}
   #rail hr{display:none}
-  #rail .bascule[aria-pressed="true"]::before{left:9px;right:9px;top:-4px;bottom:auto;width:auto;height:2px;border-radius:0 0 2px 2px}
   .bulle{display:none}
   /* la bande des folios : au-dessus du rail, ou au-dessus du tiroir ouvert (sa hauteur, --insp-h, est mesurée ; le récapitulatif : --base-h) */
-  #folios,body.insp-ouvert #folios{left:0;right:0;height:44px;bottom:var(--rail-tel);padding:0 max(8px,var(--sur-d)) 0 max(8px,var(--sur-g));transition:bottom var(--moyen)}
+  #folios,body.insp-ouvert #folios{left:0;right:0;height:44px;bottom:var(--rail-tel);padding:0 max(8px,var(--sur-d)) 0 max(8px,var(--sur-g));background:var(--palet);box-shadow:0 -1px 0 var(--p-ligne);pointer-events:auto;gap:2px;transition:bottom var(--moyen)}
+  .fo-part,.fo-zoom{height:auto;padding:0;background:none;box-shadow:none;border-radius:0}
+  .affinage,#folios .rd.auto{background:none;box-shadow:none}
   #zin,#zout,#zlbl,#fo-prev,#fo-next,#folios hr,.affinage span,.rd.auto span:not(.bulle){display:none}
   #folios .rd.auto{padding:0 8px}
   body.insp-ouvert #folios{bottom:calc(var(--insp-h,62vh) + var(--rail-tel))}
   body.base-ouverte #folios{bottom:calc(var(--base-h) + var(--rail-tel))}
   body.fiche-ouverte #folios{display:none}
   /* les tiroirs */
-  #inspecteur,#fiche{left:0;right:0;bottom:var(--rail-tel);width:auto;min-width:0;max-width:none;padding-right:0;border:none;border-top:1px solid var(--p-ligne);border-radius:0;box-shadow:none}
+  #inspecteur,#fiche{left:0;right:0;bottom:var(--rail-tel);width:auto;min-width:0;max-width:none;border:none;border-top:1px solid var(--p-ligne);border-radius:0;box-shadow:none}
   #inspecteur{top:auto;max-height:62vh}
   #fiche{top:calc(var(--entete) + var(--sur-h));max-height:none}
   .entre{animation:doc-monte var(--moyen)}
@@ -817,9 +846,9 @@ body.fiche-ouverte #toast{left:max(calc(var(--rail) + 16px + min(60vw,560px) / 2
 }
 /* ─── SANS SURVOL (écran tactile) : un toucher ne laisse pas d'état « survolé » collé derrière lui ─── */
 @media (hover:none){
-  #entete .rd:hover:not(:disabled),#rail .rd:hover:not(:disabled),#folios .rd:hover:not(:disabled),.chip:hover{background:none;color:var(--p-t2)}
-  #rail .bascule[aria-pressed="true"]:hover:not(:disabled){background:color-mix(in srgb,var(--p-accent) 15%,var(--p-fond));color:var(--p-accent)}
-  .chip.on:hover{background:color-mix(in srgb,var(--p-accent) 15%,var(--p-fond));color:var(--p-accent)}
+  #entete .rd:hover:not(:disabled),#rail .rd:hover:not(:disabled),#folios .rd:hover:not(:disabled),.chip:hover{background:none;color:var(--t-2)}
+  #rail .bascule[aria-pressed="true"]:hover:not(:disabled){background:var(--voile-3);color:var(--accent-2)}
+  .chip.on:hover{background:var(--accent);color:var(--on-accent)}
   .rond:hover,.q-item:hover,.menu button:hover{background:none}
 }
 
@@ -836,5 +865,5 @@ body.fiche-ouverte #toast{left:max(calc(var(--rail) + 16px + min(60vw,560px) / 2
 /* ─── MOUVEMENT RÉDUIT ──────────────────────────────────────────────────── */
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{transition:none!important;animation:none!important}
-  .phy{scroll-behavior:auto}
+  .phy,.fo-strip{scroll-behavior:auto}
 }

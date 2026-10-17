@@ -11,9 +11,11 @@
 /* ─── la table, sous la barre du haut : elle couvre le rail et les folios ; un document ouvert (vos fichiers, la bible)
    se pose à droite et la bibliothèque se resserre ─── */
 .biblio{position:fixed;top:calc(var(--entete) + var(--sur-h));left:0;right:0;bottom:0;z-index:22;overflow-y:auto;overscroll-behavior:contain;color:var(--t-table);color-scheme:dark;
-  background-color:var(--s-app);background-image:radial-gradient(circle at 1px 1px,var(--s-grille) 1px,transparent 1.4px);background-size:24px 24px;
+  background-color:var(--s-app);background-image:var(--points);background-size:24px 24px;background-attachment:fixed;
   scrollbar-width:thin;scrollbar-color:var(--l-table-2) transparent}
-body.fiche-ouverte .biblio{right:var(--fiche-l)}
+body.fiche-ouverte .biblio{right:calc(var(--fiche-l) + var(--jeu))}
+/* sous la bibliothèque, le plan reste tel qu'on l'a laissé, mais ne se voit pas entre les feuilles : la table nue */
+body.biblio #svg,body.biblio #ombre{visibility:hidden}
 /* la barre du haut, sur la bibliothèque : la marque et le menu ; la recherche des repères attend le plan */
 body.biblio #recherche{visibility:hidden}
 .bi-page{width:min(1240px,100%);margin:0 auto;padding:44px 40px 72px}
