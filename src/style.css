@@ -457,126 +457,211 @@ body.fiche-ouverte #folios{right:calc(var(--fiche-l) + 2 * var(--jeu) + var(--su
 @keyframes doc-entre{from{opacity:0;transform:translateX(16px) scale(.995)}to{opacity:1;transform:none}}
 @keyframes doc-monte{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 
-/* ─── LES DOCUMENTS : cartouche, collage, bible, nomenclature, hypothèses ─── */
-.fiche-corps{overflow:auto;padding:16px 20px 16px;flex:1;overscroll-behavior:contain;scrollbar-width:thin}
-.fiche-tete{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}
-/* le titre d'un document, en B612 comme tous les titres — un repère en titre aussi (le relief, le dessin, la bible) */
-.titre{font-family:var(--titre);font-size:var(--f-20);font-weight:700;line-height:1.2;margin:2px 0 0;color:var(--t-1);letter-spacing:.01em;text-wrap:balance}
-.champ{display:block;margin:12px 0 0}
-.champ>span{display:block;font:500 var(--f-12)/1.33 var(--sans);color:var(--t-3);letter-spacing:0;margin-bottom:4px}
-.champ input,.champ textarea{width:100%;height:36px;border:1px solid var(--s-line-2);border-radius:var(--r-1);padding:0 12px;background:var(--s-surface);color:var(--t-1);font-family:var(--mono);transition:border-color var(--rapide),box-shadow var(--rapide)}
-.champ input:hover,.champ textarea:hover{border-color:var(--t-3)}
-.champ input:focus,.champ textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+/* ─── LES DOCUMENTS : cartouche, collage, bible, nomenclature, hypothèses ───
+   LA COQUILLE de tout document posé à droite (Vos fichiers, Coller, la nomenclature, les normes, la bible, la base SEE,
+   les hypothèses, le cartouche) : une tête qui reste en haut quand on descend — un sur-titre discret, le titre net, la
+   croix ; un filet paraît sous elle dès qu'on a défilé (`#fiche.defile`, 08-interface) —, un corps qui se lit de haut en
+   bas, groupé par l'espace et les filets (jamais une carte dans la feuille), et un pied qui porte UNE action pleine.
+   `--fi-tete` est la hauteur de la tête, mesurée à l'ouverture : ce qui colle sous elle (l'en-tête d'une table, la barre
+   des onglets de SEE) s'y range. */
+.fiche-corps{overflow:auto;padding:0 20px 28px;flex:1;overscroll-behavior:contain;scrollbar-width:thin;scroll-padding-top:calc(var(--fi-tete,0px) + 12px)}
+.fiche-corps>:first-child:not(.fiche-tete,.nm,.see){margin-top:16px}
+.fiche-tete{position:sticky;top:0;z-index:6;display:flex;align-items:flex-start;gap:12px;margin:0 -20px 4px;padding:18px 14px 12px 20px;background:var(--s-surface);transition:box-shadow var(--moyen)}
+#fiche.defile .fiche-tete{box-shadow:0 1px 0 var(--s-line),0 8px 16px -14px rgba(0,0,0,.35)}
+.fiche-tete>.min0{padding-top:1px}
+.fiche-tete .sur{font:500 var(--f-12)/1.4 var(--sans);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fiche-tete>.segment{align-self:center;margin-top:6px}
+.fiche-tete>.fermer{margin:-2px 0 0}
+/* le titre d'un document (le relief et le dessin d'un contrat fait le prennent aussi) : Inter demi-gras, serré */
+.titre{font:600 var(--f-20)/1.25 var(--titre);margin:2px 0 0;color:var(--t-1);letter-spacing:-.02em;text-wrap:balance;overflow-wrap:anywhere}
+/* le pied : l'action pleine d'abord, les autres au filet ou en lien, ce qui s'efface à droite */
+.fiche-pied{display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-height:60px;padding:12px 20px;border-top:1px solid var(--s-line);background:var(--s-surface);flex:none}
+.fiche-pied .btn.lien{padding:0 10px}
+/* le texte courant : la première note sous la tête est le chapeau (13 px) ; les autres, des notes (12 px) */
+.note{font-size:var(--f-12);color:var(--t-2);margin:12px 0 0;line-height:1.55;text-wrap:pretty}
+.note b{color:var(--t-1);font-weight:600}
+.fiche-tete+.note{font-size:var(--f-13);line-height:1.55;margin:2px 0 0;max-width:72ch}
+/* un titre de groupe : affirmé, un filet au-dessus — les groupes se séparent par l'espace et le filet */
+.sous-titre{font:600 var(--f-16)/1.3 var(--titre);letter-spacing:-.015em;margin:28px 0 10px;padding-top:20px;border-top:1px solid var(--s-line);color:var(--t-1)}
+/* un champ : son nom (l'étiquette, avec sa majuscule), le champ dessous — 34 px, comme un bouton */
+.champ{display:block;margin:16px 0 0}
+.champ>span{display:block;font:500 var(--f-12)/1.4 var(--sans);color:var(--t-2);margin-bottom:6px}
+.champ input,.champ textarea{width:100%;height:34px;border:1px solid var(--s-line-2);border-radius:var(--r-btn);padding:0 12px;background:var(--s-surface);color:var(--t-1);font:400 var(--f-13) var(--mono);transition:border-color var(--rapide),box-shadow var(--rapide)}
+.champ input:hover,.champ textarea:hover{border-color:color-mix(in srgb,var(--t-1) 28%,var(--s-line-2))}
+.champ input:focus,.champ textarea:focus{border-color:var(--t-1);outline:none;box-shadow:var(--anneau)}
 .champ input::placeholder,.champ textarea::placeholder{color:var(--t-3);font-family:var(--sans)}
-.champ textarea{height:180px;padding:12px;resize:vertical;font-size:var(--f-12);line-height:1.5}
+.champ textarea{height:180px;padding:10px 12px;resize:vertical;font-size:var(--f-12);line-height:1.55}
 .champ.sans input{font-family:var(--sans)}
 /* un champ refusé (« Coller des liaisons » : rien de reconnu) : son cadre et son nom en rouge, ce qu'il faut vérifier
    dessous — le mot qui passe s'efface, le champ le dit encore, jusqu'à ce qu'on y réécrive */
 .champ.erreur input,.champ.erreur textarea,.champ.erreur input:focus,.champ.erreur textarea:focus{border-color:var(--ko);box-shadow:0 0 0 3px var(--ko-soft)}
 .champ.erreur>span{color:var(--ko)}
-.champ-msg{display:block;margin-top:4px;font-size:var(--f-12);line-height:1.45;color:var(--ko)}
+.champ-msg{display:block;margin-top:6px;font-size:var(--f-12);line-height:1.45;color:var(--ko)}
 .grille{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
-.fiche-pied{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 20px;border-top:1px solid var(--s-line);background:var(--s-surface);flex:none}
-.note{font-size:var(--f-12);color:var(--t-2);margin:12px 0 0;line-height:1.5}
-.note b{color:var(--t-1)}
-.sous-titre{font:600 var(--f-14)/1.3 var(--titre);margin:24px 0 8px;letter-spacing:.01em}
-/* la bible : d'où elle vient, puis la liste des références, chaque donnée en chasse fixe. Elle a le gabarit de la page
-   des normes (.nm, ses blocs écartés par le gap) : leurs marges propres tombent */
-.bible-etat{display:flex;align-items:center;gap:12px;padding:12px;border-radius:var(--r-2);background:var(--s-sunken);border:1px solid var(--s-line);margin-bottom:12px;font-size:var(--f-12);color:var(--t-2);line-height:1.45}
+/* LE CARTOUCHE : son aperçu sur papier, tel qu'il s'imprime au bas de chaque folio (le dessin du moteur, cartoucheSvg ;
+   ses encres répétées ici pour qu'il se lise même sans folio sur la table), puis un petit formulaire */
+.ca-apercu{margin:8px 0 4px;padding:16px;border-radius:var(--r-2);background:var(--s-papier);box-shadow:inset 0 0 0 1px var(--s-line)}
+.ca-apercu svg{display:block;width:100%;height:auto}
+.ca-apercu text{font-family:var(--mono)}
+.ca-apercu .cbord{fill:none;stroke:#1b2430;stroke-width:1.2}
+.ca-apercu .cfond{fill:#f2f4f6;stroke:none}
+.ca-apercu .cdiv{stroke:#aab4be;stroke-width:.7}
+.ca-apercu .carth{fill:#7d8893;font-size:6px;font-weight:700;letter-spacing:.9px}
+.ca-apercu .cartx{fill:#111b25;font-size:8.5px;font-weight:600}
+.ca-apercu .cartT{fill:#0b1118;font-size:13px;font-weight:700;letter-spacing:.4px}
+.ca-apercu .cartF{fill:#0b1118;font-size:18px;font-weight:700;letter-spacing:.6px}
+.ca-apercu .cartA{fill:#7d8893;font-size:6.5px;font-weight:700;letter-spacing:1.6px}
+.ca-trois{grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr) minmax(0,1fr)}
+.ca-form{margin-top:4px}
+
+/* ─── la page des normes et la bible partagent leur gabarit (`.nm`, style-normes.css) : l'ÉTAT, en une ligne — un point,
+   ce qu'on a, d'où ça vient ; l'ambre quand quelque chose est modifié dans ce navigateur ─── */
+.bible-etat{display:flex;align-items:baseline;gap:10px;margin:0 0 12px;font-size:var(--f-12);color:var(--t-2);line-height:1.55}
+.bible-etat::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:var(--t-3);transform:translateY(-1px)}
+.bible-etat:has(.nm-mod)::before{background:var(--warn);box-shadow:0 0 0 3px var(--warn-soft)}
 .bible-etat b{color:var(--t-1);font-weight:600}
-/* ce qui est livré avec l'outil : une information, pas une action — un filet neutre */
-.bible-etat.exemple{box-shadow:inset 3px 0 0 var(--s-line-2)}
+.bible-etat .btn.lien{height:auto;padding:0 4px;margin:0 -2px;font-size:inherit;line-height:inherit;vertical-align:baseline}
 .nm>.bible-etat,.nm>.bible-filtres,.nm>.note{margin:0}
-.nm>.sous-titre{margin:12px 0 -4px}
+.nm>.sous-titre{margin:16px 0 0}
+/* LA BIBLE : une ligne par référence — sa physique en vignette, la référence en chasse fixe, les chiffres à droite ;
+   toute la ligne se presse (la référence s'ouvre en grand dessous) ; l'en-tête colle sous la tête du document */
 table.bible{width:100%;border-collapse:separate;border-spacing:0;font-size:var(--f-12)}
-/* l'en-tête colle au bord même du document (par-dessus son rembourrage de 16 px) : rien ne défile à vue au-dessus */
-.bible th{position:sticky;top:-16px;z-index:1;background:var(--s-surface);text-align:left;font:500 var(--f-12) var(--sans);color:var(--t-3);letter-spacing:0;padding:8px 12px 8px 0;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
-.bible td{padding:8px 12px 8px 0;border-bottom:1px solid var(--s-line);vertical-align:top;font-family:var(--mono);white-space:nowrap}
+.bible th{position:sticky;top:var(--fi-tete,0px);z-index:3;background:var(--s-surface);text-align:left;font:500 var(--f-12) var(--sans);color:var(--t-2);letter-spacing:0;padding:9px 12px 9px 0;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
+.bible td{padding:7px 12px 7px 0;border-bottom:1px solid var(--s-line);vertical-align:middle;font-family:var(--mono);white-space:nowrap;transition:background var(--rapide)}
+.bible th:first-child,.bible td:first-child{padding-left:6px}
 .bible td.ref{font-weight:600}
 .bible td.sans{font-family:var(--sans);color:var(--t-2);white-space:normal;min-width:80px}
-.bible td.d,.bible th.d{text-align:right}
-.bible tr:not(.bz-ligne):hover td{background:var(--s-sunken)}
-.bible tr.on td,.bible tr.on:hover td{background:var(--accent-soft)}
+.bible td.d,.bible th.d{text-align:right;font-variant-numeric:tabular-nums}
+.bible tbody tr:not(.bz-ligne){cursor:pointer}
+.bible tbody tr:not(.bz-ligne):hover td{background:var(--s-hover)}
+.bible tr.on td,.bible tr.on:hover td{background:var(--accent-soft);border-bottom-color:transparent}
 /* la note tient sur une ligne (entière au survol) : une ligne de la table, une hauteur */
-.bible td.bible-note{color:var(--t-2);font-family:var(--sans);font-size:var(--f-11);white-space:nowrap;max-width:240px;overflow:hidden;text-overflow:ellipsis;padding-right:0}
+.bible td.bible-note{color:var(--t-2);font-family:var(--sans);font-size:var(--f-12);white-space:nowrap;max-width:260px;overflow:hidden;text-overflow:ellipsis;padding-right:6px}
 /* la page se resserre (tablette, téléphone) : plutôt que de faire glisser tout le document de côté, la table range ses
    colonnes secondaires — la note d'abord, puis la nature et le blindage ; la référence en grand les dit toutes */
 @container (max-width:760px){ .bible th:nth-child(8),.bible tr:not(.bz-ligne)>td:nth-child(8){display:none} }
 @container (max-width:520px){ .bible th:is(:nth-child(3),:nth-child(7)),.bible tr:not(.bz-ligne)>td:is(:nth-child(3),:nth-child(7)){display:none} }
-/* chaque référence porte sa physique en petit, en haut de sa ligne ; son nom s'ouvre en grand, sous elle */
-.bible td.pict{width:56px;padding:6px 12px 6px 0;vertical-align:top}
-.ref-btn{border:none;background:none;padding:2px 6px;margin:-2px -6px;border-radius:var(--r-1);font-family:var(--mono);font-weight:600;color:var(--t-1);text-align:left;text-decoration:underline dotted color-mix(in srgb,var(--t-1) 35%,transparent);text-underline-offset:3px}
-.ref-btn:hover{color:var(--accent-2);background:var(--accent-soft)}
+.bible td.pict{width:58px;padding-top:6px;padding-bottom:6px}
+.ref-btn{border:none;background:none;padding:3px 6px;margin:-3px -6px;border-radius:var(--r-1);font-family:var(--mono);font-weight:600;color:var(--t-1);text-align:left;transition:background var(--rapide),color var(--rapide)}
+.ref-btn:hover{color:var(--accent-2)}
 .ref-btn[aria-pressed="true"]{color:var(--accent-2)}
 /* LE PAPIER : les dessins techniques de la bible (la face d'un module, la réglette d'une coupure) et les pictos sont sur
    papier dans les deux thèmes — sous eux, les jetons sont rendus à l'encre sur blanc (comme la face d'une fiche) */
 .picto,.bible-zoom .mj-faces,.bible-zoom .phy{--s-surface:#ffffff;--s-sunken:#f5f5f7;--s-hover:#f0f0f3;--s-line:#e6e6ea;--s-line-2:#d2d2d7;
   --t-1:#1d1d1f;--t-2:#47474c;--t-3:#636369;--accent:#1d1d1f;--accent-2:#000000;--accent-soft:#ebebef;--accent-line:#c7c7cd;--ko:#c3271f;--ko-soft:#fdeceb;color:var(--t-papier)}
-.bible-zoom .mj-faces,.bible-zoom .phy{background-color:var(--s-papier);background-image:linear-gradient(var(--s-papier-grille) 1px,transparent 1px),linear-gradient(90deg,var(--s-papier-grille) 1px,transparent 1px);background-size:12px 12px;background-position:-1px -1px;border:1px solid var(--s-line-2);border-radius:var(--r-2)}
-/* un picto : une vignette de papier quadrillé (les traits tous les 6 px), sa physique à l'encre */
-.picto{display:block;box-sizing:content-box;padding:4px;border-radius:3px;background-color:var(--s-papier);background-image:linear-gradient(var(--s-papier-grille) 1px,transparent 1px),linear-gradient(90deg,var(--s-papier-grille) 1px,transparent 1px);background-size:6px 6px;background-position:-1px -1px;box-shadow:inset 0 0 0 1px var(--s-line-2)}
+.bible-zoom .mj-faces,.bible-zoom .phy{background-color:var(--s-papier);background-image:linear-gradient(var(--s-papier-grille) 1px,transparent 1px),linear-gradient(90deg,var(--s-papier-grille) 1px,transparent 1px);background-size:12px 12px;background-position:-1px -1px;border-radius:var(--r-2);box-shadow:0 0 0 1px rgba(0,0,0,.06),0 1px 3px rgba(0,0,0,.08)}
+/* un picto : une vignette de papier quadrillé (les traits tous les 6 px), sa physique à l'encre — une planche de catalogue */
+.picto{display:block;box-sizing:content-box;padding:5px;border-radius:5px;background-color:var(--s-papier);background-image:linear-gradient(var(--s-papier-grille) 1px,transparent 1px),linear-gradient(90deg,var(--s-papier-grille) 1px,transparent 1px);background-size:6px 6px;background-position:-1px -1px;box-shadow:inset 0 0 0 1px var(--s-line-2)}
 .picto .p-cell rect{fill:var(--s-surface);stroke:var(--t-1);stroke-width:.7}
 .picto .p-blind rect{fill:var(--s-line)}
 .picto .p-rail{fill:var(--t-3)}
 .picto .p-bande rect{fill:var(--s-surface);stroke:var(--t-1);stroke-width:.7}
 .picto .p-bande circle{fill:var(--t-1)}
-/* la norme dans la fiche de la bible : repliée, ses tables défilent en largeur */
-details.norme{margin:-4px 0 4px}
-details.norme summary{display:flex;align-items:center;gap:8px;list-style:none;cursor:pointer;font-size:var(--f-12);color:var(--accent-2);font-weight:600;padding:8px 0;border-radius:var(--r-1)}
-details.norme summary::-webkit-details-marker{display:none}
-details.norme summary:hover{color:var(--t-1)}
-details.norme summary svg.ico{width:16px;height:16px;transition:transform var(--rapide);margin-left:auto}
-details.norme[open] summary svg.ico{transform:rotate(180deg)}
-/* une table de document (nomenclature, contrats déjà faits) : longue, elle défile dans sa boîte, l'en-tête collé en
-   haut ; large, elle défile de côté — jamais elle n'écrase une valeur */
+/* une référence en grand, dépliée sous sa ligne : elle prolonge la ligne choisie (le même fond), une planche — le dessin
+   sur papier à gauche, ses caractéristiques à droite, la note dessous ; à l'étroit, l'un sous l'autre */
+.bible tr.bz-ligne>td{padding:0 0 14px;white-space:normal;font-family:var(--sans);vertical-align:top;background:var(--accent-soft);border-bottom:1px solid var(--s-line)}
+.bible-zoom{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"tete tete" "fig faits" "note note";gap:14px 28px;align-items:start;padding:4px 16px 4px 16px;animation:bz-ouvre var(--moyen)}
+@keyframes bz-ouvre{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.bz-tete{grid-area:tete;display:flex;align-items:flex-start;gap:12px}
+.bz-tete .sur{color:var(--t-2)}
+.bz-tete>.fermer{margin:-2px -6px 0 auto}
+.bz-ref{font:600 var(--f-20)/1.2 var(--mono);letter-spacing:-.01em;color:var(--t-1)}
+.bible-zoom .mj-faces{grid-area:fig;margin:0;padding:18px 16px 14px;justify-self:start;min-width:180px}
+.bible-zoom .phy{grid-area:fig;margin:0;padding:10px;max-width:100%}
+.bible-zoom>.note{grid-area:note;margin:0;max-width:96ch}
+@container (max-width:640px){ .bible-zoom{grid-template-columns:minmax(0,1fr);grid-template-areas:"tete" "fig" "faits" "note"} }
+/* ses caractéristiques : la clé en étiquette (sa majuscule), la valeur à l'encre */
+.bar-faits{grid-area:faits;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:7px 18px;margin-top:0;font-size:var(--f-13);color:var(--t-1);font-variant-numeric:tabular-nums}
+.bar-faits span:nth-child(2n+1){font:500 var(--f-12)/1.6 var(--sans);letter-spacing:0;color:var(--t-2);white-space:nowrap}
+.bar-faits span:nth-child(2n+1)::first-letter{text-transform:uppercase}
+.bar-faits span:nth-child(2n){line-height:1.5;min-width:0;overflow-wrap:anywhere}
+/* UNE TABLE DE DOCUMENT (la nomenclature, les contrats déjà faits) : longue, elle défile dans sa boîte, l'en-tête collé en
+   haut ; large, elle défile de côté — jamais elle n'écrase une valeur. Les identifiants en chasse fixe, les chiffres à
+   droite, un survol doux qui suit la ligne */
 .norme-defile{max-height:min(70vh,640px);overflow:auto;overscroll-behavior-x:contain;padding-bottom:4px;scrollbar-width:thin}
 .norme-defile .sur{margin:12px 0 4px}
-table.norme{border-collapse:separate;border-spacing:0;font-size:var(--f-11);white-space:nowrap;min-width:100%}
-.norme th{position:sticky;top:0;z-index:1;background:var(--s-surface);text-align:left;font:500 var(--f-12) var(--sans);color:var(--t-3);letter-spacing:0;padding:4px 8px 4px 0;border-bottom:1px solid var(--s-line-2)}
-.norme td{padding:4px 8px 4px 0;border-bottom:1px solid var(--s-line);font-family:var(--mono);vertical-align:top}
+table.norme{border-collapse:separate;border-spacing:0;font-size:var(--f-12);white-space:nowrap;min-width:100%}
+.norme th{position:sticky;top:0;z-index:1;background:var(--s-surface);text-align:left;font:500 var(--f-12) var(--sans);color:var(--t-2);letter-spacing:0;padding:8px 12px 8px 0;border-bottom:1px solid var(--s-line-2)}
+.norme td{padding:7px 12px 7px 0;border-bottom:1px solid var(--s-line);font-family:var(--mono);vertical-align:top;transition:background var(--rapide)}
+.norme tbody tr:hover td{background:var(--s-hover)}
+.norme th:first-child,.norme td:first-child{padding-left:4px}
 .norme td.ref{font-weight:600}
 .norme td.sans{font-family:var(--sans);color:var(--t-2)}
 /* les colonnes de chiffres, en-tête compris, à droite : chaque en-tête au-dessus de ses valeurs */
-.norme td.d,.norme th.d{text-align:right}
+.norme td.d,.norme th.d{text-align:right;font-variant-numeric:tabular-nums}
 .norme td.note-c{white-space:normal;min-width:120px;max-width:260px}
-/* une référence en grand, dépliée sous sa ligne : elle prolonge la ligne choisie, sur toute la largeur de la table */
-.bible tr.bz-ligne>td{padding:0 0 12px;white-space:normal;font-family:var(--sans);vertical-align:top}
-.bible-zoom{padding:12px;border-radius:0 0 var(--r-2) var(--r-2);background:var(--accent-soft);border:1px solid var(--accent-line);border-top:none}
-.bz-tete{display:flex;align-items:flex-start;gap:12px}
-.bz-tete .sur{color:var(--accent-2)}
-.bz-ref{font-family:var(--titre);font-size:var(--f-20);font-weight:700;letter-spacing:.01em;line-height:1.2}
-.bible-zoom .mj-faces{margin-top:8px;padding:12px 8px 8px}
-.bible-zoom .phy{margin-top:8px;padding:8px}
-/* ses caractéristiques : comme les faits d'une fiche (.fi-faits) — la clé en étiquette, la valeur en linéale */
-.bar-faits{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 16px;margin-top:12px;font-size:var(--f-12);color:var(--t-1);font-variant-numeric:tabular-nums}
-.bar-faits span:nth-child(2n+1){font:500 var(--f-12)/1.58 var(--sans);letter-spacing:0;color:var(--t-3);white-space:nowrap}
-.bar-faits span:nth-child(2n){line-height:1.55;min-width:0;overflow-wrap:anywhere}
-/* les HYPOTHÈSES de la simulation : un groupe par thème, une ligne par hypothèse — le champ (celui du bandeau des
-   cartes, .hyp-n / .hyp-c, habillé en ligne), puis à quoi elle sert. Les contrôles finissent tous au même bord : une
-   liste et une case à cocher gardent la place de l'unité (40 px + 10 px d'écart) que portent les champs chiffrés */
-.hy-groupe{margin-top:12px;padding:12px 12px 4px;border:1px solid var(--s-line);border-radius:var(--r-2)}
-.hy-groupe>.sur{margin-bottom:4px}
-.hy-ligne{padding:8px 0 12px;border-top:1px solid var(--s-line)}
-.hy-groupe>.sur+.hy-ligne{border-top:none}
-.hy-champ .hyp-n,.hy-champ .hyp-c{display:flex;align-items:center;gap:10px;width:100%;white-space:normal}
-.hy-champ .hyp-n>span:first-child,.hy-champ .hyp-c>span{flex:1;min-width:0;font:600 var(--f-13)/1.4 var(--sans);color:var(--t-1)}
-.hy-champ .hyp-c{flex-direction:row-reverse}
-.hy-champ .hyp-n input{width:84px;height:30px}
-.hy-champ .hyp-n select{height:30px;max-width:230px;margin-right:50px}
-.hy-champ .hyp-c input{margin-right:50px}
-.hy-champ .hyp-n .u{min-width:40px;color:var(--t-2)}
-.hy-sert{margin:4px 0 0;font-size:var(--f-12);color:var(--t-2);line-height:1.45}
-.hy-sert i{font-style:normal;color:var(--t-3)}
+
+/* ─── LES HYPOTHÈSES de la simulation, comme des réglages : un groupe par thème (son titre, l'espace au-dessus) ; une ligne
+   par hypothèse — son nom à gauche (avec sa majuscule), son champ aligné à droite (le nombre, puis son unité ; une liste ;
+   un interrupteur pour ce qui se coche), ce qu'elle fait en petit dessous. Le champ est celui du bandeau des cartes
+   (.hyp-n / .hyp-c, 08-interface), mis à plat dans la ligne (display: contents) : les identifiants ne changent pas ─── */
+.hy-groupe{margin-top:26px}
+.hy-titre{margin:0 0 2px;font:600 var(--f-13)/1.4 var(--titre);letter-spacing:-.005em;color:var(--t-1)}
+.hy-ligne{display:grid;grid-template-columns:minmax(0,1fr) auto auto 38px;column-gap:8px;row-gap:4px;align-items:center;padding:12px 0 13px;border-top:1px solid var(--s-line)}
+.hy-titre+.hy-ligne{margin-top:2px;border-top:none}
+.hy-champ,.hy-champ>label{display:contents}
+.hy-champ .hyp-n>span:first-child,.hy-champ .hyp-c>span{grid-column:1;grid-row:1;min-width:0;padding-right:12px;font:500 var(--f-13)/1.4 var(--sans);color:var(--t-1);white-space:normal}
+.hy-champ .hyp-n>span:first-child::first-letter,.hy-champ .hyp-c>span::first-letter{text-transform:uppercase}
+.hy-champ .hyp-c>span{font-family:var(--sans)}
+.hy-champ .hyp-n input{grid-column:3;grid-row:1;justify-self:end;width:92px;height:30px;margin:0;padding:0 10px;border:1px solid var(--s-line-2);border-radius:var(--r-1);background:var(--s-surface);color:var(--t-1);font:500 var(--f-13) var(--mono);text-align:right;
+  transition:border-color var(--rapide),box-shadow var(--rapide)}
+.hy-champ .hyp-liste input{width:200px;text-align:left}
+.hy-champ .hyp-n input::-webkit-inner-spin-button,.hy-champ .hyp-n input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.hy-champ .hyp-n input[type=number]{-moz-appearance:textfield;appearance:textfield}
+.hy-champ .hyp-n input::placeholder{font:400 var(--f-12) var(--sans);color:var(--t-3)}
+.hy-champ .hyp-n select{grid-column:3/5;grid-row:1;justify-self:end;width:auto;max-width:300px;height:30px;margin:0;padding:0 8px;border:1px solid var(--s-line-2);border-radius:var(--r-1);background:var(--s-surface);color:var(--t-1);font:400 var(--f-13) var(--sans)}
+.hy-champ .hyp-n input:hover,.hy-champ .hyp-n select:hover{border-color:color-mix(in srgb,var(--t-1) 28%,var(--s-line-2))}
+.hy-champ .hyp-n input:focus,.hy-champ .hyp-n select:focus-visible{outline:none;border-color:var(--t-1);box-shadow:var(--anneau)}
+.hy-champ .hyp-n .u{grid-column:4;grid-row:1;min-width:0;font:400 var(--f-12) var(--mono);color:var(--t-2);text-align:left}
+/* ce qui se coche : un interrupteur à l'encre — à droite, comme un réglage */
+.hy-champ .hyp-c{cursor:pointer}
+.hy-champ .hyp-c input{grid-column:3/5;grid-row:1;justify-self:end;position:relative;width:36px;height:22px;margin:0;border-radius:999px;background:var(--s-line-2);cursor:pointer;-webkit-appearance:none;appearance:none;transition:background var(--moyen)}
+.hy-champ .hyp-c input::before{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#ffffff;box-shadow:0 1px 3px rgba(0,0,0,.3),0 0 0 .5px rgba(0,0,0,.06);transition:transform var(--moyen),background var(--moyen)}
+.hy-champ .hyp-c input:checked{background:var(--accent)}
+.hy-champ .hyp-c input:checked::before{transform:translateX(14px);background:var(--on-accent)}
+.hy-champ .hyp-c input:hover:not(:checked){background:color-mix(in srgb,var(--t-1) 22%,var(--s-line-2))}
+.hy-sert{grid-column:1/-1;grid-row:2;max-width:66ch;margin:0;font-size:var(--f-12);color:var(--t-2);line-height:1.5;text-wrap:pretty}
+.hy-sert i{font-style:normal;color:var(--t-2)}
+/* réglée ici : « ↺ » et la valeur de l'outil, devant le champ — un clic la rend */
+.hy-rendre{grid-column:2;grid-row:1;justify-self:end;height:26px;margin-right:4px;padding:0 8px;border:none;border-radius:var(--r-1);background:var(--warn-soft);color:var(--warn);font:500 var(--f-12) var(--sans);white-space:nowrap;transition:background var(--rapide),color var(--rapide),transform var(--rapide)}
+.hy-rendre:hover{background:var(--s-hover);color:var(--t-1)}
+.hy-rendre:active{transform:scale(.97)}
+/* le pied : où l'on en est (les valeurs de l'outil, ou combien sont réglées ici), et le retour aux valeurs de l'outil */
+.hy-etat{display:inline-flex;align-items:center;gap:8px;font-size:var(--f-12);color:var(--t-2)}
+.hy-etat::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px var(--ok-soft)}
+.hy-etat.regle::before{background:var(--warn);box-shadow:0 0 0 3px var(--warn-soft)}
+.hy-etat b{color:var(--t-1);font-weight:600}
 /* le mot « hypothèse » sur une fiche : un lien discret vers la fiche des hypothèses */
 .fi-hyp{border:none;background:none;padding:0 2px;margin:0 -2px;font:inherit;color:var(--accent-2);text-decoration:underline dotted;text-underline-offset:3px;border-radius:3px;cursor:pointer}
 .fi-hyp:hover{background:var(--accent-soft)}
-/* un fichier à plusieurs harness : lequel ouvrir ? */
-.ch-liste{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
-.ch-harness{display:flex;align-items:center;gap:12px;width:100%;padding:12px;border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-surface);color:var(--t-1);text-align:left;cursor:pointer;transition:background var(--rapide),border-color var(--rapide)}
-.ch-harness:hover{background:var(--s-sunken);border-color:var(--s-line-2)}
+
+/* ─── UN FICHIER À PLUSIEURS HARNESS : lequel ouvrir ? Une liste de lignes qu'on presse (le harness en chasse fixe, ce qu'il
+   porte en petit, la flèche), séparées d'un filet ; le survol suit la ligne entière ─── */
+.ch-liste{list-style:none;margin:16px 0 0;padding:0;display:flex;flex-direction:column;border-top:1px solid var(--s-line)}
+.ch-liste>li{border-bottom:1px solid var(--s-line)}
+.ch-harness{display:flex;align-items:center;gap:14px;width:100%;min-height:52px;margin:3px 0;padding:8px 10px;border:none;border-radius:var(--r-btn);background:none;color:var(--t-1);text-align:left;cursor:pointer;transition:background var(--rapide)}
+.ch-harness:hover{background:var(--s-hover)}
+.ch-harness:active{background:var(--accent-soft)}
 .ch-harness b{font:600 var(--f-14) var(--mono);white-space:nowrap}
 .ch-harness span{flex:1;min-width:0;font-size:var(--f-12);color:var(--t-2)}
-.ch-harness svg.ico{color:var(--t-3)}
+.ch-harness svg.ico{width:16px;height:16px;color:var(--t-3);transition:transform var(--rapide),color var(--rapide)}
+.ch-harness:hover svg.ico{color:var(--t-1);transform:translateX(2px)}
+
+/* ─── LE MENU « ··· » d'un document (les gestes secondaires : coller, lire la base SEE, les gabarits ; dans le pied de
+   la bible, importer une norme, revenir à l'exemple…) : un bouton carré, une liste qui tombe dessous — ou monte, dans le
+   pied —, une ligne par geste, son mot et, en petit, ce qu'il fait ─── */
+.doc-menu{position:relative;flex:none}
+.doc-menu>summary{list-style:none;width:34px;padding:0}
+.doc-menu>summary::-webkit-details-marker{display:none}
+.doc-menu>summary svg.ico{width:18px;height:18px}
+.doc-menu[open]>summary{background:var(--accent-soft);border-color:color-mix(in srgb,var(--t-1) 30%,var(--s-line-2))}
+.doc-menu-l{position:absolute;top:calc(100% + 6px);right:0;z-index:30;width:max-content;min-width:240px;max-width:340px;padding:6px;border-radius:var(--r-palet);background:var(--s-flottant);color:var(--t-1);box-shadow:var(--sh-2);animation:tombe var(--moyen);transform-origin:top right}
+.fiche-pied .doc-menu-l{top:auto;bottom:calc(100% + 8px);left:0;right:auto;transform-origin:bottom left}
+.doc-menu-l button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;min-height:34px;padding:7px 10px;border:none;border-radius:8px;background:none;color:var(--t-1);text-align:left;font:500 var(--f-13)/1.35 var(--sans);transition:background var(--rapide)}
+.doc-menu-l button:hover,.doc-menu-l button:focus-visible{background:var(--s-hover);outline:none}
+.doc-menu-l button small{font:400 var(--f-12)/1.4 var(--sans);color:var(--t-2)}
+.doc-menu-l button[aria-expanded="true"]{background:var(--accent-soft)}
+.doc-menu-l hr{border:none;border-top:1px solid var(--s-line);margin:5px 4px}
 
 /* ─── LA CARTE D'UNE BARRETTE OU D'UNE PRISE (dans l'inspecteur) : la réglette de face, la simulation, le choix ── */
 .equip{margin:0;padding:10px 12px 12px;border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-surface);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:start;grid-auto-rows:max-content;min-width:0}
