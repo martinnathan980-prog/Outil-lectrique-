@@ -147,7 +147,8 @@ ce qui doit lui laisser la place s'arrête à `largeur + 2 × --jeu` du bord.
 
 - **La fiche v4** (`08-fiche.js`, `style-fiche.css`), de haut en bas, pour toutes les fiches :
   · la **barre** `.fi-nav` (‹ `#fi-prec`, › `#fi-suiv`, `.fi-nav-nom` qui paraît quand `.fi.defile`, × `#in-fermer`) ;
-  · l'**en-tête** `.fi-entete` : `.fi-symbole`, `.fi-genre` — le type (`#eq-nature`, une liste qui a l'air d'un mot :
+  · l'**en-tête** `.fi-entete` : `.fi-symbole` (son icône dans un carré doux ; `[data-etat]` pose à son angle un point de
+  l'état de l'objet, `etatDesProblemes`), `.fi-genre` — le type (`#eq-nature`, une liste qui a l'air d'un mot :
   celui du code du repère, une autre nature à la main, ↺ ; la même que la colonne Nature du récapitulatif) et la
   désignation (`#eq-des`, invisible vide hors du survol) —, le repère `input.fi-nom` (`#eq-rep` / `#fil-num`, F2) et
   `#fi-crayon`. **Plus de tuiles ni d'identité**, sauf pour un câble : ses tuiles `.fi-tuiles > .fi-tuile[.edit][.ko|.att]`
@@ -156,15 +157,17 @@ ce qui doit lui laisser la place s'arrête à `largeur + 2 × --jeu` du bord.
   · les **problèmes** `details.fi-alerte#fi-pbs` (repliée : `summary#fi-pb` « 3 problèmes · 7 à voir ») ; dépliée,
   une ligne `.fi-pb-l[data-voir][data-connecteur][data-viser]` par point, la section en petit (`.fi-pb-s`) ; une
   barrette à poser met dessous `.fi-poser` (« Poser au contrat sous 102VT1 ») ;
-  · les **sections** (ci-dessous), puis le **pied** `.fi-pied` (Récapitulatif → `recapitulatifDe(cible)`, « + Câble »,
-  Relief, « ··· »).
+  · les **sections** (ci-dessous), puis le **pied** `.fi-pied` (Récapitulatif → `recapitulatifDe(cible)` au filet, le
+  geste principal ; « + Câble », Relief en clair `.fi-bouton.fantome` ; « ··· »).
+  Une fiche entre en fondu (`.fondu`, retiré après) ; une section qui s'ouvre aussi (`.fs-entre`) : jamais à chaque
+  rendu, pas à chaque frappe.
   Dans une section : des **champs** `.fs-champs > .fc` (`.fc-k` l'étiquette, `.fc-v` la valeur ou son champ `.fc-in`
   qui a l'air d'une valeur et s'écrit d'un clic, `.fc-sous` une valeur seconde en petit, `.fc-o` « main » et ↺), des
   **groupes** `groupeSection(titre, contenu, { droite, aide })` (un petit titre `.fs-st` et son « ? », un filet
   au-dessus du suivant), des **tableaux** sobres aux en-têtes collés (`.fi-entetes`, avec leur « ? ») : les contacts
   `.fi-contacts` (Borne · Contact · Gauge ✓/✗ · Câble en petit `.fi-cab-n`, « ″ » pour le même contact qu'au-dessus),
-  les **câbles** `.fi-ias.fi-cables` (une ligne `.fi-ia` sur deux rangs : en haut le numéro `.fi-num-b` qui ouvre sa
-  fiche, la barre `.fi-barre` de l'intensité contre l'admis — elle se remplit à l'entrée —, la chute `.fi-u` de la couleur
+  les **câbles** `.fi-ias.fi-cables` (une ligne `.fi-ia` au filet, sans carte, sur deux rangs ; un câble en défaut porte un
+  trait de son état dans la marge : en haut le numéro qui ouvre sa fiche, la barre `.fi-barre` de l'intensité contre l'admis — elle se remplit à l'entrée —, la chute `.fi-u` de la couleur
   d'état, son seuil — celui que le moteur rend, `chuteAdmise(…, H)` — une fois dans l'en-tête ; en bas `.fi-cab-ed` ce
   qui s'écrit DANS la ligne : le type `[data-cable][data-champ=type]` (la liste `#fi-cables` de la base), la longueur
   (« hyp. » tant que le retest ne la porte pas), « → » le bout où il arrive et son contact en puce `.fi-ct-puce[data-sertir]`
@@ -181,16 +184,18 @@ ce qui doit lui laisser la place s'arrête à `largeur + 2 × --jeu` du bord.
   (les objets du moteur : le verdict d'un disjoncteur, le plan d'un module, l'habillage d'un connecteur) se garde le
   temps d'un rendu sous `data-q-id`.
 - **La fiche à sections** (`08-sections.js`, `style-sections.css`) : `ficheSections(type, [{ cle, titre?, resume?,
-  badge?: { t, etat }, contenu, vide? }])` rend des **cartes** (`details.fs`, une icône `.fs-ico` par section) dans
+  badge?: { t, etat }, contenu, vide? }])` rend des **sections au filet** — pas des cartes : de l'espace et un filet entre
+  elles, toute leur tête réagit au survol, un simple compte s'écrit sans pastille (`details.fs`, une icône `.fs-ico` par
+  section, en pointillé quand elle est vide) dans
   l'ordre `ORDRE_SECTIONS` : Calibre (`disjoncteur`), Connecteur ou Module (`connecteur`), Raccord (`raccord`), De →
   vers (`trajet`, un câble), Câbles (`fils` : l'intensité ET la chute), Déjà fait — plus d'Identité ;
   `OUVERTES_D_OFFICE` par type (`equipement`, `disjoncteur`, `barrette`, `prise`, `masse`, `fil`) ; la mémoire par type
   (`atelier.fiche.sections.v4`) ; `ouvrirSection(box, cle)` l'ouvre, l'amène et l'allume (`.fs-allume`). Une section sans
   donnée garde sa place, en pointillé, et dit ce qui manque (`vide`). `rafraichirFicheEnPlace()` refait la fiche autour
   du champ qu'on écrit (la main y reste).
-- **Le connecteur** d'un équipement : les segments `.fi-segs .seg[data-connecteur]` (A · B · C, le fautif marqué), puis
+- **Le connecteur** d'un équipement : les bulles `.seg.ct-bulle[data-connecteur]` (A · B · C, le fautif marqué), puis
   pour le montré : la **norme d'abord** — l'arrangement en puce `.fi-norme-puce[data-face]` (un clic montre la face ;
-  « Changer » les autres arrangements ; son « ? ») —, dessous en petit la famille `.fi-fam` et le part number `.fi-pn`
+  « Changer » les autres arrangements ; son « ? ») —, dessous en petit le part number `.fi-pn`
   (modifiable : toutes ses liaisons d'un geste) ; plus de « Bornes 1 à 2 » ; les contacts (le sexe en puces jointes à
   droite). Le **Raccord** du connecteur montré a sa carte. Une **barrette** : le module (sa référence et son « ? »), sa
   norme en puce `.fi-norme-gal[data-changer="bar|…"]` qui ouvre sous elle la **galerie** `.fi-galerie` des assemblages de
@@ -203,8 +208,8 @@ ce qui doit lui laisser la place s'arrête à `largeur + 2 × --jeu` du bord.
   vers (deux cartes `.fi-bout` : `[data-bout]` ouvre l'équipement le contact allumé, le contact du bout en puce ; la
   route dessous), l'intensité et la chute (`.fi-mes`, leur « ? »).
 - **La fiche du disjoncteur** (`08-disjoncteurs.js`, `style-dj.css`) : UNE section, « Calibre », `sectionDisjoncteur(nom,
-  d, o, probs)` — le calibre retenu en grand `.dj-heros` (`.dj-h-cal`, sa pastille `.dj-verdict-pastille.ok|.att|.ko` :
-  « Valide — ne déclenche pas », « Juste — touche la courbe », « Déclenche » ; d'où il vient — automatique (le meilleur),
+  d, o, probs)` — le calibre retenu en grand `.dj-heros` (`.dj-h-cal`, l'unité plus douce `.dj-h-cote`, son verdict en
+  une coche ou une croix `.dj-h-etat` — le mot dans la bulle ; d'où il vient — automatique (le meilleur),
   à la main (↺ `[data-dj-geste="rendre"]`, le retest), le retest — ; le meilleur `.dj-m-mot`, son pourquoi au survol),
   « Automatique (15 A) » `#dj-retenir` quand il est ailleurs, « Autre calibre » `[data-changer="dj|…"]` qui ouvre la gamme
   `.dj-chips .dj-chip[data-cal]` (ceux de `d.gamme` ; le retenu pressé, le meilleur étoilé) ; le part number suit
@@ -217,9 +222,18 @@ ce qui doit lui laisser la place s'arrête à `largeur + 2 × --jeu` du bord.
 - **Le récapitulatif** (`08-recap.js`, `style-recap.css`) : `ouvrirBase('moitie'|'page')`, `recapitulatifDe(c)` (l'onglet
   de l'objet, filtré sur lui) ; une colonne `{ k, t, html, tri, texte, option }` (`option` : au choix, pas d'office) ;
   l'état `etatHtml(niveau, mot, bulle)` (`.rc-etat.ok|.att|.ko`) ; une case modifiable `.rc-v[data-f]` a l'air d'un champ
-  au survol, se corrige au double-clic (Tab pour la suivante, Échap annule) ; retouchée, elle passe « main », ↺ la rend.
+  au survol, se corrige au double-clic — le champ flotte sur la case, la colonne ne saute pas (Tab pour la suivante,
+  Échap annule) ; retouchée, elle passe « main », ↺ la rend. Une colonne peut fixer sa largeur (`w`). La barre des
+  filtres tient sur une hauteur : les puces d'une même famille se joignent (`.rc-puces-g` : les routes ; problèmes et à
+  voir), une puce à zéro s'efface (`.zero`), la rangée qui déborde défile et s'estompe à ses bords. Les lignes d'un repère
+  choisi sur le plan gardent un trait à gauche et son nom surligné (`.lie`, `.ici`), pas de fond lourd ; un onglet vide
+  a son état vide (`#ba-vide`).
 - **La bibliothèque** (`08-bibliotheque.js`, `style-bibliotheque.css`) : `#bibliotheque` couvre la table, le rail et les
-  folios (le plan reste dessous) ; un document s'ouvre à côté. `BIB.vue` dit ce qu'on voit (`'racine'`, `'install'`,
+  folios (le plan reste dessous, invisible ; les palets s'effacent) ; un document s'ouvre à côté. Au premier lancement,
+  l'accueil `.bi-accueil` est UNE composition au centre de la table : la vignette d'un plan `.bi-folio` (une petite
+  feuille, son cadre, son cartouche, deux fils aux couleurs des routes — la même sur l'Exemple et « Reprendre ») posée
+  sur sa pile, le titre, une phrase, deux gestes, puis l'Exemple sous « Pour essayer » (`.bi-essai`). Une carte
+  d'installation se soulève de 3 px au survol, ses feuilles s'écartent. `BIB.vue` dit ce qu'on voit (`'racine'`, `'install'`,
   `'plan'`) ; `montrerBibliotheque(vue, id)`, `montrerLePlan()`, `ouvrirPlan(id)`, `ajouterPlans(fichiers)`. Une carte
   `.bi-carte[data-install]` (`.pile-2`, `.pile-3` : les feuilles dessous ; `.bi-demo` : l'Exemple), une ligne
   `.bi-plan[data-plan]` (`.sur-table`, `.nouveau`), le « ⋯ » `.bi-plus` et sa liste `.bi-pop`, la confirmation
@@ -228,11 +242,18 @@ ce qui doit lui laisser la place s'arrête à `largeur + 2 × --jeu` du bord.
   garde son contrat (`etatDuContrat`, 08-interface) dans IndexedDB (`volta-bibliotheque`) ; `chargerContrat(…, { nouveau
   | planId })` dit quel plan devient le contrat chargé. `atelier.exemple()`, `atelier.bibliotheque()`,
   `atelier.reprendre()`.
-- **Vos fichiers** (`08-fichiers.js`, `style-fichiers.css`) : `ficheFichiers(focus?)`, une carte par entrée (état, ce qui
+- **Vos fichiers** (`08-fichiers.js`, `style-fichiers.css`) : `ficheFichiers(focus?)`, un groupe au filet par entrée
+  (`.vf-groupe` ; la bible, les normes et les hypothèses sous l'intertitre « Facultatif ») (état, ce qui
   a été reçu, l'action), la bibliothèque en tête ; elle, le retest et la base disent en une ligne ce qu'ils attendent
   (`.vf-une`, la base avec ses trois colonnes `.vf-cles`) et gardent leur zone de dépôt (`.vf-zone`) tant qu'ils sont
   vides ; « Ce que j'attends » (trois lignes d'exemple, la suite en une phrase, le modèle) est replié, ouvert sur la
   carte qu'on vient chercher ; une erreur s'écrit dans sa carte, une confirmation aussi (« Oublier la base »).
+- **La coquille d'un document** (`ouvrirFiche`, 08-interface ; style.css « LES DOCUMENTS ») : la tête reste collée en
+  haut quand on défile (un sur-titre, le titre, la croix ; un filet paraît dessous, `#fiche.defile` ; sa hauteur mesurée,
+  `--fi-tete`, colle dessous les en-têtes des tables), le premier paragraphe en chapeau 13 px, le pied qui porte UNE
+  action pleine ; les gestes secondaires dans un « ··· » `.doc-menu` (Échap, clic ailleurs, ↑ ↓). Les **hypothèses** se
+  règlent comme des réglages (un libellé, son champ aligné à droite avec son unité, ce qu'il fait en petit ; une valeur
+  changée montre « ↺ » et la valeur de l'outil) ; le **cartouche** se voit d'abord, sur papier, et suit la frappe.
 - **Le menu ⋮** (`page.html`, 08-interface `lierMenu` / `montrerPanneau`, 08-menu `lierBullesDuMenu`) : des panneaux
   `.menu-panneau` (`#mp-principal`, `#mp-exporter`, `#mp-plus`) ; une ligne `button[role=menuitem]` porte `data-act`
   (une action) ou `data-sous` (un sous-menu, ouvert en place), une icône au trait, `.menu-l` (son mot ; `small` dessous),
