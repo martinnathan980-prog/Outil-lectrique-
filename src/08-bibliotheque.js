@@ -23,6 +23,12 @@
        retest : son nom, ses folios, créé, modifié, ouvert), « Ajouter un plan »
        (un ou plusieurs retests, Excel ou CSV, choisis ou déposés) ; un clic
        ouvre le plan sur la table, avec ses folios.
+   L'ACCUEIL (rien encore) : une seule composition au milieu de la table — une
+   pile de feuilles, le titre, ce qu'est une installation en une phrase, deux
+   gestes (le premier clair sur noir) ; l'Exemple dessous, « Pour essayer ».
+   Ce qui est un plan se montre en VIGNETTE (une petite feuille blanche, son
+   dessin à l'encre, deux fils aux couleurs des routes) : l'Exemple,
+   « Reprendre », l'accueil.
    La barre du haut porte un fil discret : Volta (la bibliothèque) /
    l'installation (son ECP, son nom : ses plans) / le plan. Échap remonte d'un
    cran. Renommer (sur place), supprimer (une confirmation dans la page,
@@ -94,7 +100,6 @@ const ICONES_BI = {
   depot: '<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>',
   retour: '<path d="m14.5 6-6 6 6 6"/>',
   points: '<circle cx="5.5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="18.5" cy="12" r="1.4" fill="currentColor" stroke="none"/>',
-  reprendre: '<path d="M4 12a8 8 0 1 0 2.3-5.7M4 4v4h4"/>',
   ouvrir: '<path d="M5 12h13M13 7l5 5-5 5"/>',
   renommer: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>',
   deplacer: '<path d="M3.5 7.5A1.5 1.5 0 0 1 5 6h4l2 2h8a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/><path d="M10 13.5h6M13.5 11l2.5 2.5-2.5 2.5"/>',
@@ -103,6 +108,16 @@ const ICONES_BI = {
   fermer: '<path d="M6 6l12 12M18 6 6 18"/>'
 };
 const icoBi = (k, cls) => `<svg class="ico${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" aria-hidden="true">${ICONES_BI[k]}</svg>`;
+/* UN PLAN EN VIGNETTE : une petite feuille blanche (le papier, le même dans les deux thèmes : `.ilot-clair`), son cadre, son
+   cartouche, un disjoncteur, deux équipements et deux fils aux couleurs des routes — le folio tel que la table le montre.
+   Les traits gardent leur finesse à toute taille (`non-scaling-stroke`). */
+const DESSIN_FOLIO = '<rect class="bf-papier" x=".5" y=".5" width="63" height="43" rx="3"/><rect class="bf-cadre" x="3.5" y="3.5" width="57" height="37" rx="1"/>'
+  + '<path class="bf-cadre" d="M41 33.5h19.5M47.5 33.5v7"/><rect class="bf-bloc" x="8.5" y="10.5" width="9" height="11" rx="1"/><rect class="bf-bloc" x="42.5" y="8.5" width="12" height="9" rx="1"/><rect class="bf-bloc" x="42.5" y="21.5" width="12" height="9" rx="1"/>'
+  + '<path class="bf-fil bf-a" d="M17.5 13H42.5"/><path class="bf-fil bf-b" d="M17.5 18.5h11v7.5h14"/><circle class="bf-noeud" cx="28.5" cy="18.5" r="1.1"/>';
+const folioMini = cls => `<svg class="bi-folio ilot-clair${cls ? ' ' + cls : ''}" viewBox="0 0 64 44" aria-hidden="true">${DESSIN_FOLIO}</svg>`;
+/* L'accueil : une installation est une pile de feuilles — deux feuilles sombres dessous, la vignette d'un plan dessus. */
+const pileAccueil = () => `<svg class="bi-pile-dessin" viewBox="0 0 168 124" aria-hidden="true"><rect class="bp-3" x="26.5" y="17.5" width="115" height="103" rx="6"/><rect class="bp-2" x="17.5" y="10.5" width="133" height="103" rx="6"/>`
+  + `<svg class="ilot-clair" x="8" y="2" width="152" height="104.5" viewBox="0 0 64 44">${DESSIN_FOLIO}</svg></svg>`;
 
 /* ---- ce que la bibliothèque sait d'un plan -------------------------------------------------------------------------- */
 /* Le résumé d'un contrat (gardé ou neuf) : combien de liaisons, de folios, ses harness, ses dessins, son appareil — ce que
@@ -244,7 +259,7 @@ async function supprimer(quoi, id) { const ids = quoi === 'install' ? plansDeIns
   const contrats = await Promise.all(ids.map(k => lireBiblio('contrats', k)));
   ids.forEach(k => { ecrireBiblio('plans', k); ecrireBiblio('contrats', k); }); if (i) ecrireBiblio('installs', id);
   BIB.corbeille = { install: i, plans, contrats };
-  direAvecGeste(guillemets(nom) + (quoi !== 'install' ? ' supprimé.' : i && i.demo ? ' retiré : le menu Plus le rouvre.' : plans.length ? ' et ses ' + pluriel(plans.length, 'plan') + ' supprimés.' : ' supprimée.'), 'Rétablir', retablir); }
+  direAvecGeste(guillemets(nom) + (quoi !== 'install' ? ' supprimé.' : i && i.demo ? ' retiré : le menu Plus le rouvre.' : plans.length > 1 ? ' et ses ' + pluriel(plans.length, 'plan') + ' supprimés.' : plans.length ? ' et son plan supprimés.' : ' supprimée.'), 'Rétablir', retablir); }
 function retablir() { const C = BIB.corbeille; if (!C) return; BIB.corbeille = null;
   if (C.install) { BIB.installs.set(C.install.id, C.install); BIB.supprimes.delete(C.install.id); garderInstall(C.install); if (C.install.demo) { const pref = preferencesBiblio(); delete pref.exempleRetire; garderPreferences(pref); } }
   C.plans.forEach((p, k) => { if (!BIB.installs.has(p.install)) p.install = installARanger().id; BIB.plans.set(p.id, p); BIB.supprimes.delete(p.id); garderPlan(p); if (C.contrats[k]) ecrireBiblio('contrats', p.id, C.contrats[k]); });
@@ -347,7 +362,7 @@ function rendreBibliotheque() { const el = $('bi-page'); if (!el || BIB.vue === 
   if (!BIB.pret) { el.innerHTML = ''; return; }
   const corps = (BIB.vue === 'install' ? teteInstallHtml() : teteRacineHtml()) + `<div class="bi-contenu" id="bi-contenu">${contenuHtml()}</div>`;
   const rail = BIB.vue === 'install' ? railHtml() : '';
-  el.classList.toggle('bi-avec-rail', !!rail);
+  el.classList.toggle('bi-avec-rail', !!rail); el.classList.toggle('bi-accueil', accueil());
   el.innerHTML = rail ? rail + `<div class="bi-principal">${corps}</div>` : corps;
   // ce que dit la bibliothèque quand on y glisse un fichier : où il va
   $('bibliotheque').dataset.depotDit = 'Déposez vos retests : ils deviennent des plans de ' + guillemets(nomInstallCible());
@@ -368,46 +383,54 @@ const ecpHtml = (i, cls) => `<span class="bi-ecp${i.ecp ? '' : ' bi-ecp-vide'}${
 const aUnEcp = i => !i.demo && i.id !== ID_A_RANGER;
 
 /* LA RACINE : ses comptes, la recherche, « Nouvelle installation » ; le plan resté sur la table ; la base à ranger ; le
-   rangement (ECP, nom, récentes) ; les cartes ; les plans qui répondent à la recherche ; l'Exemple, discret. */
-function teteRacineHtml() { const V = installsVraies(), nP = plansVrais().length;
+   rangement (ECP, nom, récentes) ; les cartes ; les plans qui répondent à la recherche ; l'Exemple, discret. Rien encore :
+   l'accueil (`videHtml`) porte seul le titre, au milieu de la table. */
+const accueil = () => BIB.vue === 'racine' && !installsVraies().length && !BIB.q && !(BIB.edition && BIB.edition.quoi === 'nouvelle');
+const pasGardeHtml = () => BIB.garde ? '' : '<span class="bi-pas-garde">pas gardée dans ce navigateur</span>';
+function teteRacineHtml() { const V = installsVraies(), nP = plansVrais().length; if (accueil()) return '';
   return `<header class="bi-tete"><div class="bi-titres"><h1 class="bi-titre">Bibliothèque</h1>`
-    + `<p class="bi-compte">${V.length ? esc(lies([plurielLie(V.length, 'installation'), plurielLie(nP, 'plan')])) : 'Vos installations et leurs plans'}${BIB.garde ? '' : ' · <span class="bi-pas-garde">pas gardée dans ce navigateur</span>'}</p></div>`
-    // rien encore : la tête n'a que son titre, le vide dit comment commencer
+    + `<p class="bi-compte">${V.length ? esc(lies([plurielLie(V.length, 'installation'), plurielLie(nP, 'plan')])) : 'Vos installations et leurs plans'}${BIB.garde ? '' : POINT + pasGardeHtml()}</p></div>`
     + (V.length ? `<div class="bi-outils">${chercheBiHtml('Chercher un ECP, une installation…')}<button class="bi-btn" id="bi-nouvelle" data-bi="nouvelle">${icoBi('plus')}<span>Nouvelle installation</span></button></div>` : '') + '</header>'; }
-// ranger les installations : par ECP, par nom, les plus récentes d'abord (le choix se garde)
-const triHtml = () => `<div class="bi-tri" role="group" aria-label="Ranger les installations"><span>Rangées par</span>${TRIS.map(([k, mot]) => `<button data-bi="tri" data-tri="${k}" aria-pressed="${triChoisi() === k}">${mot}</button>`).join('')}</div>`;
+// ranger les installations : par ECP, par nom, les plus récentes d'abord (le choix se garde) — un segment posé sur la table
+const triHtml = () => `<div class="bi-tri" role="group" aria-label="Ranger les installations"><span>Rangées par</span><span class="bi-tri-seg">${TRIS.map(([k, mot]) => `<button data-bi="tri" data-tri="${k}" aria-pressed="${triChoisi() === k}">${mot}</button>`).join('')}</span></div>`;
 function racineHtml() { const t = cleTexte(BIB.q), toutes = installsTriees(), I = toutes.filter(i => installCorrespond(i, t)), vraies = I.filter(i => !i.demo), demo = I.filter(i => i.demo);
-  const rien = !installsVraies().length && !t;
   let h = reprendreHtml() + bandeauBaseHtml() + rangerHtml();
-  if (rien && !(BIB.edition && BIB.edition.quoi === 'nouvelle')) h += videHtml();
+  if (accueil()) h += videHtml();
   else { const nouvelle = BIB.edition && BIB.edition.quoi === 'nouvelle' ? carteNouvelleHtml() : '';
     if (installsVraies().length > 1 && !t) h += triHtml();
     h += vraies.length || nouvelle ? `<div class="bi-grille" role="list">${nouvelle}${vraies.map(carteInstallHtml).join('')}</div>` : t ? `<p class="bi-rien">Aucune installation ne répond à ${esc(guillemets(BIB.q))}.</p>` : '';
     if (t) { const P = [...BIB.plans.values()].filter(p => planCorrespond(p, t)).sort((a, b) => triNaturel(nomAffiche(a.nom), nomAffiche(b.nom)));
-      if (P.length) h += `<h2 class="bi-sous">Plans · ${P.length}</h2><div class="bi-feuille">${listePlansHtml(P.slice(0, 60), true)}</div>`; } }
-  if (demo.length) h += `<div class="bi-grille bi-grille-demo" role="list">${demo.map(carteInstallHtml).join('')}</div>`;
+      if (P.length) h += `<h2 class="bi-sous">Plans<span>${P.length}</span></h2><div class="bi-feuille">${listePlansHtml(P.slice(0, 60), true)}</div>`; } }
+  // l'Exemple ferme la marche, discret : « Pour essayer »
+  if (demo.length) h += `<section class="bi-essai"><h2 class="bi-sous">Pour essayer</h2><div class="bi-grille bi-grille-demo" role="list">${demo.map(carteInstallHtml).join('')}</div></section>`;
   return h; }
-// le plan resté sur la table : on le reprend d'un clic (Échap aussi)
+// le plan resté sur la table : sa vignette, « Reprendre », où il est rangé ; un clic le reprend (Échap aussi)
 function reprendreHtml() { if (!planSurLaTable()) return ''; const p = BIB.plans.get(app.planId), i = p && BIB.installs.get(p.install), P = plans().length;
-  return `<button class="bi-reprendre" id="bi-reprendre" data-bi="reprendre">${icoBi('reprendre')}<span class="bi-rep-mot">Reprendre</span><span class="bi-rep-nom">${i ? `<span>${i.ecp ? `<span class="bi-rep-ecp">${esc(i.ecp)}</span> ` : ''}${esc(i.nom)}</span><i>/</i>` : ''}<b>${esc(nomAffiche(app.nom))}</b></span><span class="bi-rep-n">${P > 1 ? esc(plurielLie(P, 'folio')) : ''}</span><kbd>Échap</kbd></button>`; }
-// rien encore : les deux façons de commencer, sans discours
-function videHtml() { return `<section class="bi-vide"><span class="bi-vide-ico">${icoBi('install')}</span>`
+  return `<button class="bi-reprendre" id="bi-reprendre" data-bi="reprendre">${folioMini()}<span class="bi-rep-textes"><span class="bi-rep-mot">Reprendre</span>`
+    + `<span class="bi-rep-nom"><b>${esc(nomAffiche(app.nom))}</b>${i ? `<i>dans</i><span>${i.ecp ? `<span class="bi-rep-ecp">${esc(i.ecp)}</span> ` : ''}${esc(i.nom)}</span>` : ''}</span></span>`
+    + `<span class="bi-rep-n">${P > 1 ? esc(plurielLie(P, 'folio')) : ''}</span><kbd>Échap</kbd>${icoBi('ouvrir', 'bi-rep-fleche')}</button>`; }
+/* RIEN ENCORE : l'accueil — la pile de feuilles, le titre, ce qu'est une installation en une phrase, et les deux façons de
+   commencer : une installation neuve (le geste clair), la base des contrats déjà faits (au trait). */
+function videHtml() { return `<section class="bi-vide">${pileAccueil()}<h1 class="bi-titre">Bibliothèque</h1>`
+  + `<p>Une installation par antenne, par cockpit ; dedans, vos retests — chacun devient un plan.</p>${BIB.garde ? '' : `<p class="bi-vide-note">${pasGardeHtml()}</p>`}`
   + `<div class="bi-vide-gestes"><button class="bi-btn" data-bi="nouvelle">${icoBi('plus')}<span>Nouvelle installation</span></button><button class="bi-btn bi-btn-2" data-bi="base">${icoBi('base')}<span>Déposer la base des contrats déjà faits</span></button></div></section>`; }
 /* Une carte d'installation : une pile de feuilles (deux ou trois selon ses plans), son ECP, son nom, ses comptes, ses
-   premiers plans ; le « ⋯ » (le nom et l'ECP, supprimer) ; modifiée sur place ; la confirmation d'une suppression s'écrit dedans. */
+   premiers plans, un par ligne ; le « ⋯ » (le nom et l'ECP, supprimer) ; modifiée sur place ; la confirmation d'une
+   suppression s'écrit dedans. L'Exemple : un palet, la vignette de son plan. */
 function carteInstallHtml(i) { const P = plansDeInstall(i.id), vu = vueLe(i), pile = P.length >= 3 ? 3 : P.length, t = cleTexte(BIB.q);
   const edite = BIB.edition && BIB.edition.quoi === 'install' && BIB.edition.id === i.id, confirme = BIB.confirme && BIB.confirme.quoi === 'install' && BIB.confirme.id === i.id;
   const meta = i.demo ? lies(['démonstration', nPlans(P.length)]) : lies([nPlans(P.length), vu ? 'ouverte ' + quand(vu) : 'créée ' + leJour(i.cree)]);
-  const montres = (t ? P.filter(p => planCorrespond(p, t)) : P).slice(0, 4);
-  const noms = P.length ? `<span class="bi-carte-plans">${montres.map(p => `<span class="bi-pn">${esc(nomAffiche(p.nom))}</span>`).join('')}${P.length > montres.length ? `<span class="bi-pn-plus">+${P.length - montres.length}</span>` : ''}</span>` : `<span class="bi-carte-plans bi-carte-plans-vide">aucun plan : un clic, puis déposez vos retests</span>`;
-  const haut = aUnEcp(i) ? ecpHtml(i, 'bi-carte-ecp') : `<span class="bi-carte-ico">${icoBi(i.demo ? 'plan' : 'install')}</span>`;
+  const montres = (t ? P.filter(p => planCorrespond(p, t)) : P).slice(0, 3), reste = P.length - montres.length;
+  const noms = P.length ? `<span class="bi-carte-plans">${montres.map(p => `<span class="bi-pn">${icoBi('plan')}<span>${esc(nomAffiche(p.nom))}</span></span>`).join('')}${reste > 0 ? `<span class="bi-pn-plus">+${INSECABLE}${esc(plurielLie(reste, 'autre'))}</span>` : ''}</span>`
+    : `<span class="bi-carte-plans bi-carte-plans-vide">Aucun plan : un clic, puis déposez vos retests.</span>`;
+  const haut = i.demo ? folioMini() : aUnEcp(i) ? ecpHtml(i, 'bi-carte-ecp') : `<span class="bi-carte-ico">${icoBi('install')}</span>`;
+  const plus = `<button class="bi-plus" data-bi="pop" data-quoi="install" data-id="${escA(i.id)}" aria-label="${escA('Gestes pour ' + i.nom)}" aria-haspopup="menu" aria-expanded="${!!(BIB.pop && BIB.pop.id === i.id)}">${icoBi('points')}</button>`;
   if (confirme) return `<article class="bi-carte bi-confirmant pile-${pile}" role="listitem" data-install="${escA(i.id)}">${confirmeInstallHtml(i, P)}</article>`;
   return `<article class="bi-carte${i.demo ? ' bi-demo' : ''} pile-${pile}${BIB.pop && BIB.pop.id === i.id ? ' bi-pop-ouvert' : ''}" role="listitem" data-install="${escA(i.id)}">`
     + (edite ? `<div class="bi-carte-corps">${nommerInstallHtml('install', i)}<span class="bi-carte-meta">${esc(meta)}</span></div>`
-      : `<button class="bi-carte-corps" data-bi="install" data-id="${escA(i.id)}" aria-label="${escA(lies([i.ecp ? 'ECP ' + i.ecp : '', i.nom, meta]))}">${haut}<span class="bi-carte-nom">${esc(i.nom)}</span><span class="bi-carte-meta">${esc(meta)}</span>${i.demo ? '' : noms}</button>`)
-    + (edite ? '' : `<button class="bi-plus" data-bi="pop" data-quoi="install" data-id="${escA(i.id)}" aria-label="${escA('Gestes pour ' + i.nom)}" aria-haspopup="menu" aria-expanded="${!!(BIB.pop && BIB.pop.id === i.id)}">${icoBi('points')}</button>`)
-    + popHtml('install', i) + '</article>'; }
-function carteNouvelleHtml() { return `<article class="bi-carte bi-carte-neuve" role="listitem"><div class="bi-carte-corps">${nommerInstallHtml('nouvelle', null)}<span class="bi-carte-meta">Entrée pour la créer · Échap pour renoncer</span></div></article>`; }
+      : `<button class="bi-carte-corps" data-bi="install" data-id="${escA(i.id)}" aria-label="${escA(lies([i.ecp ? 'ECP ' + i.ecp : '', i.nom, meta]))}">${haut}<span class="bi-carte-textes"><span class="bi-carte-nom">${esc(i.nom)}</span><span class="bi-carte-meta">${esc(meta)}</span></span>${i.demo ? icoBi('ouvrir', 'bi-demo-fleche') : noms}</button>`)
+    + (edite ? '' : plus) + popHtml('install', i) + '</article>'; }
+function carteNouvelleHtml() { return `<article class="bi-carte bi-carte-neuve" role="listitem"><div class="bi-carte-corps">${nommerInstallHtml('nouvelle', null)}<span class="bi-carte-meta bi-touches"><kbd>Entrée</kbd> la crée<kbd>Échap</kbd> renonce</span></div></article>`; }
 /* Ce qui s'écrit sur place. Un plan : son nom. Une installation (neuve ou modifiée) : son ECP — cinq chiffres, le clavier
    passe seul au nom quand ils y sont — et son nom. Entrée garde, Échap renonce ; quitter les deux champs garde aussi. */
 const nommerHtml = (quoi, id, val, ph) => `<span class="bi-nommer"><input id="bi-nom" data-nommer="${quoi}" data-champ="nom" data-id="${escA(id)}" value="${escA(val)}" placeholder="${escA(ph)}" aria-label="Nom du plan" autocomplete="off" spellcheck="false"></span>`;
@@ -417,17 +440,19 @@ function nommerInstallHtml(quoi, i) { const neuve = quoi === 'nouvelle', id = i 
     + `<input id="bi-nom${sfx}" data-nommer="${quoi}" data-champ="nom" data-id="${escA(id)}" value="${escA(i ? i.nom : '')}" placeholder="${neuve ? 'Antenne VHF, Cockpit…' : 'Nom de l’installation'}" aria-label="Nom de l’installation" autocomplete="off" spellcheck="false"${champ === 'nom' ? ' data-premier' : ''}></span>`; }
 // supprimer une installation : ses plans partent avec elle ; l'Exemple, lui, se retire (le menu Plus le rouvre)
 const confirmeInstallHtml = (i, P) => confirmeHtml('install', i.id, i.demo ? 'Retirer l’exemple ?' : 'Supprimer ' + guillemets(i.nom) + ' ?',
-  i.demo ? 'Le menu Plus le rouvre quand vous voulez.' : P.length ? 'Ses ' + pluriel(P.length, 'plan') + ' partent avec elle, et ce qu’on y a fait.' : 'Elle est vide.');
-// la confirmation d'une suppression, dans la carte ou la ligne : la phrase, « Supprimer », « Annuler »
-const confirmeHtml = (quoi, id, titre, sous) => `<div class="bi-confirme" role="alertdialog" aria-label="${escA(titre)}"><p><b>${esc(titre)}</b> ${esc(sous)}</p><div class="bi-confirme-gestes"><button class="bi-danger" data-bi="oui" data-quoi="${quoi}" data-id="${escA(id)}">${icoBi('supprimer')}<span>${quoi === 'install' && estDemo(id) ? 'Retirer' : 'Supprimer'}</span></button><button class="bi-non" data-bi="non">Annuler</button></div></div>`;
-/* Le « ⋯ » : une petite liste sous le bouton. Une installation : son nom et son ECP, supprimer. Un plan : ouvrir, renommer,
-   déplacer vers une autre installation (la liste, ou une neuve), supprimer. L'exemple : le retirer. */
+  i.demo ? 'Le menu Plus le rouvre quand vous voulez.' : P.length > 1 ? 'Ses ' + pluriel(P.length, 'plan') + ' partent avec elle, et ce qu’on y a fait.' : P.length ? 'Son plan part avec elle, et ce qu’on y a fait.' : 'Elle est vide.');
+// la confirmation d'une suppression, dans la carte ou la ligne : la corbeille, la phrase, « Supprimer », « Annuler »
+const confirmeHtml = (quoi, id, titre, sous) => `<div class="bi-confirme" role="alertdialog" aria-label="${escA(titre)}"><span class="bi-confirme-ico">${icoBi('supprimer')}</span><p><b>${esc(titre)}</b> ${esc(sous)}</p><div class="bi-confirme-gestes"><button class="bi-danger" data-bi="oui" data-quoi="${quoi}" data-id="${escA(id)}">${quoi === 'install' && estDemo(id) ? 'Retirer' : 'Supprimer'}</button><button class="bi-non" data-bi="non">Annuler</button></div></div>`;
+/* Le « ⋯ » : une petite liste sous le bouton, sombre comme le menu ⋮ (l'îlot sombre). Une installation : son nom et son ECP,
+   supprimer. Un plan : ouvrir, renommer, déplacer vers une autre installation (la liste, ou une neuve), supprimer.
+   L'exemple : le retirer. */
 function popHtml(quoi, x) { if (!(BIB.pop && BIB.pop.quoi === quoi && BIB.pop.id === x.id)) return '';
   const ligne = (bi, ico, mot, extra) => `<button role="menuitem" data-bi="${bi}" data-quoi="${quoi}" data-id="${escA(x.id)}"${extra || ''}>${icoBi(ico)}<span>${mot}</span></button>`;
-  if (quoi === 'install') return `<div class="bi-pop" role="menu">${x.demo ? ligne('supprimer', 'supprimer', 'Retirer l’exemple', ' class="danger"') : ligne('renommer', 'renommer', aUnEcp(x) ? 'Nom et ECP' : 'Renommer') + ligne('supprimer', 'supprimer', 'Supprimer…', ' class="danger"')}</div>`;
+  const pop = h => `<div class="bi-pop ilot-sombre" role="menu">${h}</div>`;
+  if (quoi === 'install') return pop(x.demo ? ligne('supprimer', 'supprimer', 'Retirer l’exemple', ' class="danger"') : ligne('renommer', 'renommer', aUnEcp(x) ? 'Nom et ECP' : 'Renommer') + '<hr>' + ligne('supprimer', 'supprimer', 'Supprimer…', ' class="danger"'));
   if (BIB.pop.sous === 'deplacer') { const autres = installsTriees().filter(i => !i.demo && i.id !== x.install);
-    return `<div class="bi-pop" role="menu"><button role="menuitem" class="bi-pop-retour" data-bi="pop-retour" data-quoi="plan" data-id="${escA(x.id)}">${icoBi('retour')}<span>Déplacer vers…</span></button>${autres.map(i => `<button role="menuitem" data-bi="deplacer-vers" data-id="${escA(x.id)}" data-vers="${escA(i.id)}">${icoBi('install')}<span>${i.ecp ? `<span class="bi-pop-ecp">${esc(i.ecp)}</span>` : ''}${esc(i.nom)}</span></button>`).join('')}<button role="menuitem" data-bi="deplacer-vers" data-id="${escA(x.id)}" data-vers="">${icoBi('plus')}<span>Une nouvelle installation</span></button></div>`; }
-  return `<div class="bi-pop" role="menu">${ligne('plan', 'ouvrir', 'Ouvrir')}${ligne('renommer', 'renommer', 'Renommer')}${ligne('deplacer', 'deplacer', 'Déplacer vers…')}${ligne('supprimer', 'supprimer', 'Supprimer…', ' class="danger"')}</div>`; }
+    return pop(`<button role="menuitem" class="bi-pop-retour" data-bi="pop-retour" data-quoi="plan" data-id="${escA(x.id)}">${icoBi('retour')}<span>Déplacer vers…</span></button>${autres.map(i => `<button role="menuitem" data-bi="deplacer-vers" data-id="${escA(x.id)}" data-vers="${escA(i.id)}">${icoBi('install')}<span>${i.ecp ? `<span class="bi-pop-ecp">${esc(i.ecp)}</span>` : ''}${esc(i.nom)}</span></button>`).join('')}<hr><button role="menuitem" data-bi="deplacer-vers" data-id="${escA(x.id)}" data-vers="">${icoBi('plus')}<span>Une nouvelle installation</span></button>`); }
+  return pop(`${ligne('plan', 'ouvrir', 'Ouvrir')}${ligne('renommer', 'renommer', 'Renommer')}${ligne('deplacer', 'deplacer', 'Déplacer vers…')}<hr>${ligne('supprimer', 'supprimer', 'Supprimer…', ' class="danger"')}`); }
 
 /* LE RAIL : toutes les installations, par ECP (ou par nom, si c'est le rangement choisi) — un clic passe de l'une à l'autre (Alt+↑, Alt+↓ aussi) ;
    celle qu'on regarde est marquée. L'Exemple ferme la liste, discret. */
@@ -450,27 +475,33 @@ function teteInstallHtml() { const i = BIB.installs.get(BIB.install), P = plansD
     + `<span class="bi-pop-ancre${BIB.pop && BIB.pop.id === i.id ? ' bi-pop-ouvert' : ''}"><button class="bi-plus bi-plus-tete" data-bi="pop" data-quoi="install" data-id="${escA(i.id)}" aria-label="${escA('Gestes pour ' + i.nom)}" aria-haspopup="menu">${icoBi('points')}</button>${popHtml('install', i)}</span></div></header>`
     + (BIB.confirme && BIB.confirme.quoi === 'install' && BIB.confirme.id === i.id ? `<div class="bi-feuille bi-confirme-tete">${confirmeInstallHtml(i, P)}</div>` : ''); }
 function installHtml() { const i = BIB.installs.get(BIB.install); if (!i) return ''; const t = cleTexte(BIB.q), P = plansDeInstall(i.id), montres = P.filter(p => planCorrespond(p, t));
-  const zone = i.demo ? '' : `<button type="button" class="bi-zone${P.length ? '' : ' bi-zone-grande'}" data-bi="choisir">${icoBi('depot')}<span><b>${P.length ? 'Glissez d’autres retests ici' : 'Glissez vos retests ici'}</b> ou cliquez — plusieurs à la fois</span>${P.length ? '' : '<small>Excel ou CSV, une ligne par fil : <span class="id">Device1</span> · <span class="id">Pin1</span> · <span class="id">Device2</span> · <span class="id">Pin2</span> au moins. Chaque fichier devient un plan.</small>'}</button>`;
+  // la zone de dépôt : une ligne au bas de la feuille ; l'installation vide, elle seule — une icône, une phrase, ce qu'elle attend
+  const zone = i.demo ? '' : P.length ? `<button type="button" class="bi-zone" data-bi="choisir">${icoBi('depot')}<span><b>Glissez d’autres retests ici</b> ou cliquez — plusieurs à la fois</span></button>`
+    : `<button type="button" class="bi-zone bi-zone-grande" data-bi="choisir"><span class="bi-zone-ico">${icoBi('depot')}</span><b>Glissez vos retests ici</b><span>ou cliquez pour les choisir — plusieurs à la fois</span>`
+      + '<small>Excel ou CSV, une ligne par fil : <span class="id">Device1</span> · <span class="id">Pin1</span> · <span class="id">Device2</span> · <span class="id">Pin2</span> au moins. Chaque fichier devient un plan.</small></button>';
   const ajouts = BIB.ajouts.map(a => `<li class="bi-plan bi-ajout ${a.etat}"><span class="bi-ajout-ico" aria-hidden="true"></span><span class="bi-ajout-t">${a.etat === 'lecture' ? 'Lecture de ' + esc(guillemets(a.nom)) + '…' : esc(a.texte)}</span>${a.etat === 'ko' ? `${a.lu ? `<button class="bi-lien" data-bi="deviner" data-a="${escA(a.id)}">Deviner ses colonnes</button>` : ''}<button class="bi-oublier" data-bi="oublier-ajout" data-a="${escA(a.id)}" aria-label="Effacer ce message">${icoBi('fermer')}</button>` : ''}</li>`).join('');
   if (!P.length && !ajouts) return `<div class="bi-feuille bi-feuille-vide">${zone}</div>`;
   return `<div class="bi-feuille" data-depot="plans">${ajouts ? `<ul class="bi-plans bi-ajouts">${ajouts}</ul>` : ''}${montres.length ? listePlansHtml(montres, false) : t ? `<p class="bi-rien bi-rien-feuille">Aucun plan ne répond à ${esc(guillemets(BIB.q))}.</p>` : ''}${zone}</div>`; }
-/* La liste des plans : l'en-tête des colonnes, puis une ligne par plan — sa feuille, son nom (« sur la table », « nouveau »),
-   ses folios, créé, modifié, sa dernière ouverture, le « ⋯ ». `avecInstall` : la recherche de la racine dit l'installation
-   de chacun (à la place de « créé »). */
+/* La liste des plans : l'en-tête des colonnes, puis une ligne par plan — sa feuille, son nom (« sur la table », « nouveau »)
+   et dessous ses harness et ses dessins, ses folios, ses liaisons, créé, modifié, sa dernière ouverture, le « ⋯ ».
+   `avecInstall` : la recherche de la racine dit l'installation de chacun (à la place de « créé »). */
 function listePlansHtml(P, avecInstall) {
-  return `<div class="bi-ligne bi-entetes${avecInstall ? ' avec-install' : ''}" aria-hidden="true"><span></span><span>Plan</span>${avecInstall ? '<span>Installation</span>' : ''}<span class="d">Folios</span>${avecInstall ? '' : '<span>Créé</span>'}<span>Modifié</span><span>Ouvert</span></div>`
+  return `<div class="bi-ligne bi-entetes${avecInstall ? ' avec-install' : ''}" aria-hidden="true"><span></span><span>Plan</span>${avecInstall ? '<span>Installation</span>' : ''}<span class="d">Folios</span><span class="d">Liaisons</span>${avecInstall ? '' : '<span>Créé</span>'}<span>Modifié</span><span>Ouvert</span></div>`
     + `<ul class="bi-plans" role="list">${P.map(p => lignePlanHtml(p, avecInstall)).join('')}</ul>`; }
+// sous le nom d'un plan : ses harness (quand ils ne sont pas son nom) et ses dessins — ce que la recherche lit aussi
+const sousPlan = p => { const h = (p.harness || []).filter(x => cleTexte(x) !== cleTexte(nomAffiche(p.nom)));
+  return lies([h.slice(0, 2).join(', ') + (h.length > 2 ? '…' : ''), p.dessins > 1 ? plurielLie(p.dessins, 'dessin') : '']); };
 function lignePlanHtml(p, avecInstall) { const i = BIB.installs.get(p.install), table = p.id === app.planId && planSurLaTable(), neuf = BIB.nouveaux.has(p.id);
   const edite = BIB.edition && BIB.edition.quoi === 'plan' && BIB.edition.id === p.id, confirme = BIB.confirme && BIB.confirme.quoi === 'plan' && BIB.confirme.id === p.id;
   if (confirme) return `<li class="bi-plan bi-confirmant" data-plan="${escA(p.id)}">${confirmeHtml('plan', p.id, 'Supprimer ' + guillemets(nomAffiche(p.nom)) + ' ?', 'Ses liaisons et ce qu’on y a fait partent avec lui.')}</li>`;
-  const etiquette = table ? '<em class="bi-table">sur la table</em>' : neuf ? '<em class="bi-neuf">nouveau</em>' : '';
+  const etiquette = table ? '<em class="bi-table">sur la table</em>' : neuf ? '<em class="bi-neuf">nouveau</em>' : '', sous = sousPlan(p);
   const ou = avecInstall ? `<span class="bi-plan-sous">${i ? `${i.ecp ? `<span class="bi-plan-ecp">${esc(i.ecp)}</span>` : ''}${esc(i.nom)}` : '—'}</span>` : '';
   // créé : une date ; modifié, ouvert : quand (« aujourd'hui à 9:12 ») — jamais ouvert, il le dit
   const dates = `${avecInstall ? '' : `<span class="bi-plan-date">${esc(laDate(p.cree))}</span>`}<span class="bi-plan-date">${esc(quand(p.modifie || p.cree))}</span>`;
-  const cellules = nom => `<span class="bi-plan-ico">${icoBi('plan')}</span>${nom}${ou}<span class="d">${p.folios || 0}</span>${dates}<span class="bi-plan-vu">${p.vu ? esc(quand(p.vu)) : '<span class="bi-jamais">jamais</span>'}</span>`;
+  const cellules = nom => `<span class="bi-plan-ico">${icoBi('plan')}</span>${nom}${ou}<span class="d">${p.folios || 0}</span><span class="d bi-plan-n">${p.n || 0}</span>${dates}<span class="bi-plan-vu">${p.vu ? esc(quand(p.vu)) : '<span class="bi-jamais">jamais</span>'}</span>`;
   return `<li class="bi-plan${table ? ' sur-table' : ''}${neuf ? ' nouveau' : ''}${BIB.pop && BIB.pop.id === p.id ? ' bi-pop-ouvert' : ''}" data-plan="${escA(p.id)}">`
     + (edite ? `<span class="bi-ligne${avecInstall ? ' avec-install' : ''}">${cellules(nommerHtml('plan', p.id, nomAffiche(p.nom), 'Nom du plan'))}</span>`
-      : `<button class="bi-ligne${avecInstall ? ' avec-install' : ''} bi-plan-ouvrir" data-bi="plan" data-id="${escA(p.id)}" aria-label="${escA('Ouvrir ' + nomAffiche(p.nom) + ' : ' + plurielLie(p.folios || 0, 'folio'))}">${cellules(`<span class="bi-plan-nom"><b>${esc(nomAffiche(p.nom))}</b>${etiquette}</span>`)}</button>`)
+      : `<button class="bi-ligne${avecInstall ? ' avec-install' : ''} bi-plan-ouvrir" data-bi="plan" data-id="${escA(p.id)}" aria-label="${escA('Ouvrir ' + nomAffiche(p.nom) + ' : ' + plurielLie(p.folios || 0, 'folio'))}">${cellules(`<span class="bi-plan-nom"><span class="bi-plan-l1"><b>${esc(nomAffiche(p.nom))}</b>${etiquette}</span>${sous ? `<span class="bi-plan-l2">${esc(sous)}</span>` : ''}</span>`)}</button>`)
     + (edite || p.id === ID_EXEMPLE ? '' : `<button class="bi-plus" data-bi="pop" data-quoi="plan" data-id="${escA(p.id)}" aria-label="${escA('Gestes pour ' + nomAffiche(p.nom))}" aria-haspopup="menu" aria-expanded="${!!(BIB.pop && BIB.pop.id === p.id)}">${icoBi('points')}</button>`)
     + popHtml('plan', p) + '</li>'; }
 
