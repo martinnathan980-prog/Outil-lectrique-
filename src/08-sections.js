@@ -5,13 +5,14 @@
    Le lecteur (la v3) : « les tuiles, dégage ; l'identité, avec du recul, ça
    dégage partout ; « fil », dis « câble » ; « habillage », ce n'est pas ça :
    c'est le raccord ». Sous l'en-tête (le type et le repère, modifiables) et
-   la barre des problèmes, PEU de sections, chacune une CARTE (une icône, un
-   titre affirmé, une ligne de résumé, une pastille d'état, le chevron), dans
-   un ordre fixe (ORDRE_SECTIONS) :
+   la barre des problèmes, PEU de sections — des chapitres posés à même la
+   feuille, séparés par un filet et de l'air, plus des cartes (v68 : « pas de
+   carte dans une carte ») : une icône, un titre affirmé, une ligne de résumé,
+   une pastille d'état, le chevron —, dans un ordre fixe (ORDRE_SECTIONS) :
      Calibre (un disjoncteur) · Connecteur (ou Module) · Raccord ·
      De → vers (un câble) · Câbles (intensité et chute ensemble) · Déjà fait.
-   Fermée, une carte se lit encore ; ouverte, ses groupes sont cadrés et
-   espacés. Toutes sont PLIÉES d'office (le lecteur, version 62 : « toutes les
+   Fermée, une section se lit encore ; ouverte, ses groupes sont séparés d'un
+   filet et espacés. Toutes sont PLIÉES d'office (le lecteur, version 62 : « toutes les
    sections doivent être pliées : c'est beaucoup plus propre ») ; ce que
    l'ingénieur ouvre ou ferme se garde, par type d'objet.
    Une section dont la donnée manque reste à sa place, en pointillé, et dit ce
@@ -92,6 +93,9 @@ function ouvrirSection(box, cle, allumer) { const d = box && box.querySelector(`
 document.addEventListener('click', e => { const t = e.target && e.target.closest && e.target.closest('summary.fs-tete'); if (!t) return;
   if (e.target.closest('.fs-action, .fi-q, .ct-bulle')) { e.preventDefault(); return; }
   const d = t.parentElement; if (!d) return; if (d.classList.contains('fs-clos')) { e.preventDefault(); return; }
+  // une section qu'on ouvre entre (son corps en fondu, ses lignes l'une après l'autre) ; la marque s'en va ensuite, pour
+  // qu'un rendu en place ne rejoue rien
+  if (!d.open) { d.classList.add('fs-entre'); clearTimeout(d._entre); d._entre = setTimeout(() => d.classList.remove('fs-entre'), 700); }
   if (d.classList.contains('fs-vide')) return; setTimeout(() => retenirSection(d.dataset.type, d.dataset.section, d.open), 0); });
 
 /* LA PASTILLE D'UNE SECTION par ses problèmes : chaque problème d'une fiche porte la section qui le démontre
@@ -200,6 +204,9 @@ function ouvrirAide(b) { if (AIDE.bouton === b) { fermerAide(); return; } fermer
 document.addEventListener('click', e => { const b = e.target && e.target.closest && e.target.closest('.fi-q');
   if (b) { e.preventDefault(); e.stopPropagation(); ouvrirAide(b); return; }
   if (AIDE.bouton && !(e.target.closest && e.target.closest('.fi-q-bulle'))) fermerAide(); }, true);
+// … et dès l'appui ailleurs : un appui sur le plan le redessine (il désélectionne), et le navigateur n'émet alors pas de
+// « click » — la bulle resterait ouverte au-dessus de la table
+document.addEventListener('pointerdown', e => { if (AIDE.bouton && !(e.target && e.target.closest && e.target.closest('.fi-q-bulle, .fi-q'))) fermerAide(); }, true);
 window.addEventListener('keydown', e => { if (e.key === 'Escape' && AIDE.bouton) { e.preventDefault(); e.stopPropagation(); fermerAide(true); } }, true);
 window.addEventListener('scroll', () => { if (AIDE.bouton) placerAide(); }, true);
 window.addEventListener('resize', () => { if (AIDE.bouton) placerAide(); });

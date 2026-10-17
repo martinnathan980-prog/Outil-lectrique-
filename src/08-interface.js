@@ -1047,9 +1047,9 @@ function rendreIndex(box) { const etats = new Map();
     + (app.insp.ajout ? `<form class="ix-ajout" id="ix-ajout"><div class="filtre">${ico('plus')}<input id="ix-nouveau" placeholder="Repère du nouvel équipement, par exemple 105RL2" aria-label="Repère du nouvel équipement" autocomplete="off" spellcheck="false"></div><button class="btn cuivre" type="submit">Ajouter</button><button class="btn lien" type="button" id="ix-annuler">Annuler</button></form>` : '')
     + `<div class="filtre ix-filtre">${ico('loupe')}<input id="ix-q" value="${escA(app.insp.filtre)}" placeholder="Chercher un repère, une désignation" aria-label="Chercher un repère" autocomplete="off" spellcheck="false"><button class="vider" id="ix-vider"${f ? '' : ' hidden'} aria-label="Effacer la recherche">×</button></div>`
     + (f ? '' : `<details class="ix-controle"${CONTROLE.ouvert ? ' open' : ''}><summary><span class="fi-etat ${nko ? 'ko' : natt ? 'att' : 'ok'}"><i aria-hidden="true">${nko ? '✕' : natt ? '!' : '✓'}</i>${nko ? pluriel(nko, 'problème') + (natt ? ' · ' + natt + ' à voir' : '') : natt ? natt + ' à voir' : 'rien à reprendre'}</span>${(nko || natt) ? ico('bas', 'fi-chevron') : ''}</summary>${listeControleHtml()}</details>`)
-    + (groupes || `<p class="ix-vide">Aucun repère ne contient « ${esc(app.insp.filtre.trim())} ». <button class="btn lien" id="ix-effacer">Effacer</button></p>`);
+    + (groupes || `<div class="ix-vide"><span class="ix-vide-ico" aria-hidden="true">${ico('loupe')}</span><p>Aucun repère ne contient « ${esc(app.insp.filtre.trim())} ».</p><button class="btn papier" id="ix-effacer">Effacer la recherche</button></div>`);
   // la même liste refaite (un filtre tapé) garde sa place ; l'index qu'on ouvre commence en haut, titre et recherche en vue
-  box.scrollTop = meme ? haut : 0;
+  box.scrollTop = meme ? haut : 0; survolQuiSuit(box);
   $('in-fermer').onclick = () => fermerInspecteur();
   if ($('fi-prec')) $('fi-prec').onclick = () => naviguer(-1);
   const q = $('ix-q'); q.addEventListener('input', () => { app.insp.filtre = q.value; const pos = q.selectionStart; rendreIndex(box); const q2 = $('ix-q'); q2.focus(); q2.setSelectionRange(pos, pos); });
@@ -1065,6 +1065,26 @@ function rendreIndex(box) { const etats = new Map();
   const det = box.querySelector('.ix-controle'); if (det) det.addEventListener('toggle', () => { CONTROLE.ouvert = det.open; });
   box.querySelectorAll('.ix-item.co-item').forEach(b => b.onclick = () => allerAuControle(CONTROLE.items[+b.dataset.k]));
   box.querySelectorAll('.ix-item[data-nom]').forEach(b => b.onclick = () => allerAuRepere(b.dataset.nom, b.dataset.plan)); }
+/* LE SURVOL QUI SUIT (v68 : « très fluide, très naturel ») : une seule teinte, posée sous la ligne que la souris survole
+   (ou qui a le clavier), qui GLISSE d'une ligne à l'autre au lieu de s'éteindre et de se rallumer ; elle s'efface quand on
+   quitte les lignes. Posée dans la fiche (elle défile avec la liste), refaite à chaque rendu de l'index ; les écouteurs, une
+   fois pour toutes sur l'inspecteur, ne valent que pour l'index (`.ix`). */
+function survolQuiSuit(box) { const s = document.createElement('span'); s.className = 'ix-survol'; s.setAttribute('aria-hidden', 'true'); box.prepend(s); box.classList.add('suit');
+  if (box.dataset.ixSuit) return; box.dataset.ixSuit = '1'; let pose = false;
+  const poser = b => { const t = box.querySelector(':scope > .ix-survol'); if (!t) return;
+    if (!b) { t.style.opacity = '0'; pose = false; return; }
+    const rb = box.getBoundingClientRect(), r = b.getBoundingClientRect();
+    // la première fois, elle paraît sur place (sans glisser depuis le coin) ; ensuite elle glisse
+    if (!pose || t.style.opacity !== '1') { t.style.transition = 'none'; }
+    t.style.transform = `translate(${r.left - rb.left + box.scrollLeft}px,${r.top - rb.top + box.scrollTop}px)`; t.style.width = r.width + 'px'; t.style.height = r.height + 'px';
+    if (t.style.transition === 'none') { void t.offsetWidth; t.style.transition = ''; }
+    t.style.opacity = '1'; pose = true; };
+  const ligne = e => box.classList.contains('ix') && e.target && e.target.closest ? e.target.closest('.ix-item') : null;
+  box.addEventListener('mouseover', e => { if (box.classList.contains('ix')) poser(ligne(e)); });
+  box.addEventListener('mouseleave', () => poser(null));
+  box.addEventListener('focusin', e => { const b = ligne(e); if (b && b.matches(':focus-visible')) poser(b); });
+  // « à reprendre » qui se plie ou se déplie déplace les lignes : la teinte s'efface, la souris la reposera
+  box.addEventListener('click', e => { if (ligne(e) === null && box.classList.contains('ix') && e.target.closest && e.target.closest('summary')) poser(null); }); }
 // depuis l'index : le folio du repère, son bloc choisi sur le plan, sa fiche
 function allerAuRepere(nom, plan) { const P = plans();
   if (plan && plan !== app.plan && P.includes(plan)) allerAuPlan(plan);
