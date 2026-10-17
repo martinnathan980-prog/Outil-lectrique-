@@ -360,7 +360,7 @@ body.cherche .recherche .rc-fermer{display:inline}
 .sauve.ko::before{background:var(--warn);box-shadow:0 0 0 3px color-mix(in srgb,var(--warn) 18%,transparent)}
 
 /* ─── LE RAIL : un palet à gauche, posé sur la table — les outils de tous les instants ─── */
-#rail{position:fixed;top:calc(var(--entete) + var(--sur-h));left:calc(var(--jeu) + var(--sur-g));width:44px;z-index:20;
+#rail{position:fixed;top:calc(var(--entete) + var(--sur-h));left:calc(var(--jeu) + var(--sur-g));width:44px;z-index:27;
   background:var(--palet);border-radius:var(--r-palet);box-shadow:var(--sh-palet);
   display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px}
 #rail .rd{width:36px;height:36px;border-radius:var(--r-btn)}
@@ -371,11 +371,15 @@ body.cherche .recherche .rc-fermer{display:inline}
 .rd-point{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;font:600 10px/16px var(--sans);font-style:normal;text-align:center;color:#ffffff;background:var(--p-warn);box-shadow:0 0 0 2px var(--palet);pointer-events:none}
 .rd-point.ko{background:var(--p-ko)}
 
+/* les palets passent au-dessus des feuilles (l'ombre d'une feuille ne les grise pas : ils ne se chevauchent jamais) ; la
+   bibliothèque, elle, couvre la table : ses palets s'effacent */
+body.biblio #rail,body.biblio #folios{visibility:hidden}
+
 /* ─── EN BAS : les folios et la vue, en palets sur la table ─────
    Le palet des folios (‹, la bande, ›, le compte) à gauche, celui de la vue (cadrer, zoomer) à droite ; au milieu,
    l'affinage en cours et le folio retouché, chacun son petit palet. La bande défile et s'estompe à ses bords ; trop
    étroite (un document large ouvert), la barre garde les folios et le cadrage. */
-#folios{position:fixed;left:var(--rail);right:calc(var(--jeu) + var(--sur-d));bottom:calc(var(--jeu) + var(--sur-b));height:40px;z-index:20;color:var(--t-2);pointer-events:none;
+#folios{position:fixed;left:var(--rail);right:calc(var(--jeu) + var(--sur-d));bottom:calc(var(--jeu) + var(--sur-b));height:40px;z-index:27;color:var(--t-2);pointer-events:none;
   display:flex;align-items:center;gap:8px;transition:right var(--moyen);container-type:inline-size}
 body.insp-ouvert #folios{right:calc(var(--insp-l) + 2 * var(--jeu) + var(--sur-d))}
 body.fiche-ouverte #folios{right:calc(var(--fiche-l) + 2 * var(--jeu) + var(--sur-d))}
