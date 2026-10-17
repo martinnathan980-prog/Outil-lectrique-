@@ -163,7 +163,7 @@
 .nm-gabarits.nm-tous .sur{margin-right:6px;color:var(--t-2)}
 /* ─── la bible : le filtre par norme (des puces de choix — la pressée à l'encre), le compte au pied ─── */
 .bible-filtres{display:flex;flex-wrap:wrap;gap:6px;margin:0}
-.bi-compte{font-size:var(--f-12);color:var(--t-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+#fiche .bi-compte{font-size:var(--f-12);color:var(--t-2);font-variant-numeric:tabular-nums;white-space:nowrap}
 /* ─── au téléphone : la page est un tiroir ; la fiche d'une table s'empile ─── */
 @media (max-width:700px){
   .nm-doc,.nm-cols,.nm-cas{grid-template-columns:1fr;gap:2px 0}
