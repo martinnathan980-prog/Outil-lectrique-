@@ -247,6 +247,7 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
 #planche{position:fixed;top:calc(var(--entete) + var(--sur-h));left:0;right:0;bottom:0;overflow:hidden;touch-action:none;cursor:grab;color-scheme:dark;
   background-color:var(--s-app);background-image:var(--points);background-size:24px 24px;background-attachment:fixed}
 #planche.tient{cursor:grabbing}
+#planche::after{content:"";position:absolute;left:0;right:0;top:0;height:16px;pointer-events:none;z-index:3;background:linear-gradient(rgba(0,0,0,.55),transparent)}
 #svg{position:absolute;inset:0;width:100%;height:100%;display:block}
 /* la feuille est dessinée par le moteur ; sous elle, une ombre profonde qui la pose sur la table noire */
 #ombre{position:absolute;left:0;top:0;pointer-events:none;display:none;box-shadow:var(--sh-feuille)}
@@ -281,10 +282,10 @@ svg.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;st
 #planche.deplace[data-prise="borne"],#planche.deplace[data-prise="borne"] *,#planche.deplace[data-prise="fil-h"],#planche.deplace[data-prise="fil-h"] *{cursor:ns-resize!important}
 #planche.deplace[data-prise="fil-v"],#planche.deplace[data-prise="fil-v"] *,#planche.deplace[data-prise="vt"],#planche.deplace[data-prise="vt"] *{cursor:ew-resize!important}
 
-/* ─── LA BARRE DU HAUT : à même la table — la marque, le fil, la recherche, le menu. Un filet à peine, et une ombre douce
-   sous elle : la feuille qu'on fait glisser passe dessous ─── */
+/* ─── LA BARRE DU HAUT : à même la table — la marque, le fil, la recherche, le menu. Un filet à peine ; l'ombre douce
+   qui dit que la feuille passe dessous est portée par la planche (#planche::after) : elle ne grise pas les feuilles ─── */
 #entete{position:fixed;top:0;left:0;right:0;height:calc(var(--entete) + var(--sur-h));z-index:36;background:var(--s-app);color:var(--t-1);
-  box-shadow:0 1px 0 rgba(255,255,255,.055),0 12px 24px -14px rgba(0,0,0,.9);
+  box-shadow:0 1px 0 rgba(255,255,255,.055);
   display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:16px;padding:var(--sur-h) max(var(--jeu),var(--sur-d)) 0 max(var(--jeu),var(--sur-g))}
 /* la marque et le nom de l'outil — un bouton : la bibliothèque —, puis le fil discret (l'installation, le plan) */
 .en-contrat{display:flex;align-items:center;gap:4px;min-width:0}
@@ -487,126 +488,211 @@ body.fiche-ouverte #folios{right:calc(var(--fiche-l) + 2 * var(--jeu) + var(--su
 @keyframes doc-entre{from{opacity:0;transform:translateX(16px) scale(.995)}to{opacity:1;transform:none}}
 @keyframes doc-monte{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 
-/* ─── LES DOCUMENTS : cartouche, collage, bible, nomenclature, hypothèses ─── */
-.fiche-corps{overflow:auto;padding:16px 20px 16px;flex:1;overscroll-behavior:contain;scrollbar-width:thin}
-.fiche-tete{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}
-/* le titre d'un document, en B612 comme tous les titres — un repère en titre aussi (le relief, le dessin, la bible) */
-.titre{font-family:var(--titre);font-size:var(--f-20);font-weight:700;line-height:1.2;margin:2px 0 0;color:var(--t-1);letter-spacing:.01em;text-wrap:balance}
-.champ{display:block;margin:12px 0 0}
-.champ>span{display:block;font:500 var(--f-12)/1.33 var(--sans);color:var(--t-3);letter-spacing:0;margin-bottom:4px}
-.champ input,.champ textarea{width:100%;height:36px;border:1px solid var(--s-line-2);border-radius:var(--r-1);padding:0 12px;background:var(--s-surface);color:var(--t-1);font-family:var(--mono);transition:border-color var(--rapide),box-shadow var(--rapide)}
-.champ input:hover,.champ textarea:hover{border-color:var(--t-3)}
-.champ input:focus,.champ textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+/* ─── LES DOCUMENTS : cartouche, collage, bible, nomenclature, hypothèses ───
+   LA COQUILLE de tout document posé à droite (Vos fichiers, Coller, la nomenclature, les normes, la bible, la base SEE,
+   les hypothèses, le cartouche) : une tête qui reste en haut quand on descend — un sur-titre discret, le titre net, la
+   croix ; un filet paraît sous elle dès qu'on a défilé (`#fiche.defile`, 08-interface) —, un corps qui se lit de haut en
+   bas, groupé par l'espace et les filets (jamais une carte dans la feuille), et un pied qui porte UNE action pleine.
+   `--fi-tete` est la hauteur de la tête, mesurée à l'ouverture : ce qui colle sous elle (l'en-tête d'une table, la barre
+   des onglets de SEE) s'y range. */
+.fiche-corps{overflow:auto;padding:0 20px 28px;flex:1;overscroll-behavior:contain;scrollbar-width:thin;scroll-padding-top:calc(var(--fi-tete,0px) + 12px)}
+.fiche-corps>:first-child:not(.fiche-tete,.nm,.see){margin-top:16px}
+.fiche-tete{position:sticky;top:0;z-index:6;display:flex;align-items:flex-start;gap:12px;margin:0 -20px 4px;padding:18px 14px 12px 20px;background:var(--s-surface);transition:box-shadow var(--moyen)}
+#fiche.defile .fiche-tete{box-shadow:0 1px 0 var(--s-line),0 8px 16px -14px rgba(0,0,0,.35)}
+.fiche-tete>.min0{padding-top:1px}
+.fiche-tete .sur{font:500 var(--f-12)/1.4 var(--sans);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fiche-tete>.segment{align-self:center;margin-top:6px}
+.fiche-tete>.fermer{margin:-2px 0 0}
+/* le titre d'un document (le relief et le dessin d'un contrat fait le prennent aussi) : Inter demi-gras, serré */
+.titre{font:600 var(--f-20)/1.25 var(--titre);margin:2px 0 0;color:var(--t-1);letter-spacing:-.02em;text-wrap:balance;overflow-wrap:anywhere}
+/* le pied : l'action pleine d'abord, les autres au filet ou en lien, ce qui s'efface à droite */
+.fiche-pied{display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-height:60px;padding:12px 20px;border-top:1px solid var(--s-line);background:var(--s-surface);flex:none}
+.fiche-pied .btn.lien{padding:0 10px}
+/* le texte courant : la première note sous la tête est le chapeau (13 px) ; les autres, des notes (12 px) */
+.note{font-size:var(--f-12);color:var(--t-2);margin:12px 0 0;line-height:1.55;text-wrap:pretty}
+.note b{color:var(--t-1);font-weight:600}
+.fiche-tete+.note{font-size:var(--f-13);line-height:1.55;margin:2px 0 0;max-width:72ch}
+/* un titre de groupe : affirmé, un filet au-dessus — les groupes se séparent par l'espace et le filet */
+.sous-titre{font:600 var(--f-16)/1.3 var(--titre);letter-spacing:-.015em;margin:28px 0 10px;padding-top:20px;border-top:1px solid var(--s-line);color:var(--t-1)}
+/* un champ : son nom (l'étiquette, avec sa majuscule), le champ dessous — 34 px, comme un bouton */
+.champ{display:block;margin:16px 0 0}
+.champ>span{display:block;font:500 var(--f-12)/1.4 var(--sans);color:var(--t-2);margin-bottom:6px}
+.champ input,.champ textarea{width:100%;height:34px;border:1px solid var(--s-line-2);border-radius:var(--r-btn);padding:0 12px;background:var(--s-surface);color:var(--t-1);font:400 var(--f-13) var(--mono);transition:border-color var(--rapide),box-shadow var(--rapide)}
+.champ input:hover,.champ textarea:hover{border-color:color-mix(in srgb,var(--t-1) 28%,var(--s-line-2))}
+.champ input:focus,.champ textarea:focus{border-color:var(--t-1);outline:none;box-shadow:var(--anneau)}
 .champ input::placeholder,.champ textarea::placeholder{color:var(--t-3);font-family:var(--sans)}
-.champ textarea{height:180px;padding:12px;resize:vertical;font-size:var(--f-12);line-height:1.5}
+.champ textarea{height:180px;padding:10px 12px;resize:vertical;font-size:var(--f-12);line-height:1.55}
 .champ.sans input{font-family:var(--sans)}
 /* un champ refusé (« Coller des liaisons » : rien de reconnu) : son cadre et son nom en rouge, ce qu'il faut vérifier
    dessous — le mot qui passe s'efface, le champ le dit encore, jusqu'à ce qu'on y réécrive */
 .champ.erreur input,.champ.erreur textarea,.champ.erreur input:focus,.champ.erreur textarea:focus{border-color:var(--ko);box-shadow:0 0 0 3px var(--ko-soft)}
 .champ.erreur>span{color:var(--ko)}
-.champ-msg{display:block;margin-top:4px;font-size:var(--f-12);line-height:1.45;color:var(--ko)}
+.champ-msg{display:block;margin-top:6px;font-size:var(--f-12);line-height:1.45;color:var(--ko)}
 .grille{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
-.fiche-pied{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 20px;border-top:1px solid var(--s-line);background:var(--s-surface);flex:none}
-.note{font-size:var(--f-12);color:var(--t-2);margin:12px 0 0;line-height:1.5}
-.note b{color:var(--t-1)}
-.sous-titre{font:600 var(--f-14)/1.3 var(--titre);margin:24px 0 8px;letter-spacing:.01em}
-/* la bible : d'où elle vient, puis la liste des références, chaque donnée en chasse fixe. Elle a le gabarit de la page
-   des normes (.nm, ses blocs écartés par le gap) : leurs marges propres tombent */
-.bible-etat{display:flex;align-items:center;gap:12px;padding:12px;border-radius:var(--r-2);background:var(--s-sunken);border:1px solid var(--s-line);margin-bottom:12px;font-size:var(--f-12);color:var(--t-2);line-height:1.45}
+/* LE CARTOUCHE : son aperçu sur papier, tel qu'il s'imprime au bas de chaque folio (le dessin du moteur, cartoucheSvg ;
+   ses encres répétées ici pour qu'il se lise même sans folio sur la table), puis un petit formulaire */
+.ca-apercu{margin:8px 0 4px;padding:16px;border-radius:var(--r-2);background:var(--s-papier);box-shadow:inset 0 0 0 1px var(--s-line)}
+.ca-apercu svg{display:block;width:100%;height:auto}
+.ca-apercu text{font-family:var(--mono)}
+.ca-apercu .cbord{fill:none;stroke:#1b2430;stroke-width:1.2}
+.ca-apercu .cfond{fill:#f2f4f6;stroke:none}
+.ca-apercu .cdiv{stroke:#aab4be;stroke-width:.7}
+.ca-apercu .carth{fill:#7d8893;font-size:6px;font-weight:700;letter-spacing:.9px}
+.ca-apercu .cartx{fill:#111b25;font-size:8.5px;font-weight:600}
+.ca-apercu .cartT{fill:#0b1118;font-size:13px;font-weight:700;letter-spacing:.4px}
+.ca-apercu .cartF{fill:#0b1118;font-size:18px;font-weight:700;letter-spacing:.6px}
+.ca-apercu .cartA{fill:#7d8893;font-size:6.5px;font-weight:700;letter-spacing:1.6px}
+.ca-trois{grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr) minmax(0,1fr)}
+.ca-form{margin-top:4px}
+
+/* ─── la page des normes et la bible partagent leur gabarit (`.nm`, style-normes.css) : l'ÉTAT, en une ligne — un point,
+   ce qu'on a, d'où ça vient ; l'ambre quand quelque chose est modifié dans ce navigateur ─── */
+.bible-etat{display:flex;align-items:baseline;gap:10px;margin:0 0 12px;font-size:var(--f-12);color:var(--t-2);line-height:1.55}
+.bible-etat::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:var(--t-3);transform:translateY(-1px)}
+.bible-etat:has(.nm-mod)::before{background:var(--warn);box-shadow:0 0 0 3px var(--warn-soft)}
 .bible-etat b{color:var(--t-1);font-weight:600}
-/* ce qui est livré avec l'outil : une information, pas une action — un filet neutre */
-.bible-etat.exemple{box-shadow:inset 3px 0 0 var(--s-line-2)}
+.bible-etat .btn.lien{height:auto;padding:0 4px;margin:0 -2px;font-size:inherit;line-height:inherit;vertical-align:baseline}
 .nm>.bible-etat,.nm>.bible-filtres,.nm>.note{margin:0}
-.nm>.sous-titre{margin:12px 0 -4px}
+.nm>.sous-titre{margin:16px 0 0}
+/* LA BIBLE : une ligne par référence — sa physique en vignette, la référence en chasse fixe, les chiffres à droite ;
+   toute la ligne se presse (la référence s'ouvre en grand dessous) ; l'en-tête colle sous la tête du document */
 table.bible{width:100%;border-collapse:separate;border-spacing:0;font-size:var(--f-12)}
-/* l'en-tête colle au bord même du document (par-dessus son rembourrage de 16 px) : rien ne défile à vue au-dessus */
-.bible th{position:sticky;top:-16px;z-index:1;background:var(--s-surface);text-align:left;font:500 var(--f-12) var(--sans);color:var(--t-3);letter-spacing:0;padding:8px 12px 8px 0;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
-.bible td{padding:8px 12px 8px 0;border-bottom:1px solid var(--s-line);vertical-align:top;font-family:var(--mono);white-space:nowrap}
+.bible th{position:sticky;top:var(--fi-tete,0px);z-index:3;background:var(--s-surface);text-align:left;font:500 var(--f-12) var(--sans);color:var(--t-2);letter-spacing:0;padding:9px 12px 9px 0;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
+.bible td{padding:7px 12px 7px 0;border-bottom:1px solid var(--s-line);vertical-align:middle;font-family:var(--mono);white-space:nowrap;transition:background var(--rapide)}
+.bible th:first-child,.bible td:first-child{padding-left:6px}
 .bible td.ref{font-weight:600}
 .bible td.sans{font-family:var(--sans);color:var(--t-2);white-space:normal;min-width:80px}
-.bible td.d,.bible th.d{text-align:right}
-.bible tr:not(.bz-ligne):hover td{background:var(--s-sunken)}
-.bible tr.on td,.bible tr.on:hover td{background:var(--accent-soft)}
+.bible td.d,.bible th.d{text-align:right;font-variant-numeric:tabular-nums}
+.bible tbody tr:not(.bz-ligne){cursor:pointer}
+.bible tbody tr:not(.bz-ligne):hover td{background:var(--s-hover)}
+.bible tr.on td,.bible tr.on:hover td{background:var(--accent-soft);border-bottom-color:transparent}
 /* la note tient sur une ligne (entière au survol) : une ligne de la table, une hauteur */
-.bible td.bible-note{color:var(--t-2);font-family:var(--sans);font-size:var(--f-11);white-space:nowrap;max-width:240px;overflow:hidden;text-overflow:ellipsis;padding-right:0}
+.bible td.bible-note{color:var(--t-2);font-family:var(--sans);font-size:var(--f-12);white-space:nowrap;max-width:260px;overflow:hidden;text-overflow:ellipsis;padding-right:6px}
 /* la page se resserre (tablette, téléphone) : plutôt que de faire glisser tout le document de côté, la table range ses
    colonnes secondaires — la note d'abord, puis la nature et le blindage ; la référence en grand les dit toutes */
 @container (max-width:760px){ .bible th:nth-child(8),.bible tr:not(.bz-ligne)>td:nth-child(8){display:none} }
 @container (max-width:520px){ .bible th:is(:nth-child(3),:nth-child(7)),.bible tr:not(.bz-ligne)>td:is(:nth-child(3),:nth-child(7)){display:none} }
-/* chaque référence porte sa physique en petit, en haut de sa ligne ; son nom s'ouvre en grand, sous elle */
-.bible td.pict{width:56px;padding:6px 12px 6px 0;vertical-align:top}
-.ref-btn{border:none;background:none;padding:2px 6px;margin:-2px -6px;border-radius:var(--r-1);font-family:var(--mono);font-weight:600;color:var(--t-1);text-align:left;text-decoration:underline dotted color-mix(in srgb,var(--t-1) 35%,transparent);text-underline-offset:3px}
-.ref-btn:hover{color:var(--accent-2);background:var(--accent-soft)}
+.bible td.pict{width:58px;padding-top:6px;padding-bottom:6px}
+.ref-btn{border:none;background:none;padding:3px 6px;margin:-3px -6px;border-radius:var(--r-1);font-family:var(--mono);font-weight:600;color:var(--t-1);text-align:left;transition:background var(--rapide),color var(--rapide)}
+.ref-btn:hover{color:var(--accent-2)}
 .ref-btn[aria-pressed="true"]{color:var(--accent-2)}
 /* LE PAPIER : les dessins techniques de la bible (la face d'un module, la réglette d'une coupure) et les pictos sont sur
    papier dans les deux thèmes — sous eux, les jetons sont rendus à l'encre sur blanc (comme la face d'une fiche) */
 .picto,.bible-zoom .mj-faces,.bible-zoom .phy{--s-surface:#ffffff;--s-sunken:#f5f5f7;--s-hover:#f0f0f3;--s-line:#e6e6ea;--s-line-2:#d2d2d7;
   --t-1:#1d1d1f;--t-2:#47474c;--t-3:#636369;--accent:#1d1d1f;--accent-2:#000000;--accent-soft:#ebebef;--accent-line:#c7c7cd;--ko:#c3271f;--ko-soft:#fdeceb;color:var(--t-papier)}
-.bible-zoom .mj-faces,.bible-zoom .phy{background-color:var(--s-papier);background-image:linear-gradient(var(--s-papier-grille) 1px,transparent 1px),linear-gradient(90deg,var(--s-papier-grille) 1px,transparent 1px);background-size:12px 12px;background-position:-1px -1px;border:1px solid var(--s-line-2);border-radius:var(--r-2)}
-/* un picto : une vignette de papier quadrillé (les traits tous les 6 px), sa physique à l'encre */
-.picto{display:block;box-sizing:content-box;padding:4px;border-radius:3px;background-color:var(--s-papier);background-image:linear-gradient(var(--s-papier-grille) 1px,transparent 1px),linear-gradient(90deg,var(--s-papier-grille) 1px,transparent 1px);background-size:6px 6px;background-position:-1px -1px;box-shadow:inset 0 0 0 1px var(--s-line-2)}
+.bible-zoom .mj-faces,.bible-zoom .phy{background-color:var(--s-papier);background-image:linear-gradient(var(--s-papier-grille) 1px,transparent 1px),linear-gradient(90deg,var(--s-papier-grille) 1px,transparent 1px);background-size:12px 12px;background-position:-1px -1px;border-radius:var(--r-2);box-shadow:0 0 0 1px rgba(0,0,0,.06),0 1px 3px rgba(0,0,0,.08)}
+/* un picto : une vignette de papier quadrillé (les traits tous les 6 px), sa physique à l'encre — une planche de catalogue */
+.picto{display:block;box-sizing:content-box;padding:5px;border-radius:5px;background-color:var(--s-papier);background-image:linear-gradient(var(--s-papier-grille) 1px,transparent 1px),linear-gradient(90deg,var(--s-papier-grille) 1px,transparent 1px);background-size:6px 6px;background-position:-1px -1px;box-shadow:inset 0 0 0 1px var(--s-line-2)}
 .picto .p-cell rect{fill:var(--s-surface);stroke:var(--t-1);stroke-width:.7}
 .picto .p-blind rect{fill:var(--s-line)}
 .picto .p-rail{fill:var(--t-3)}
 .picto .p-bande rect{fill:var(--s-surface);stroke:var(--t-1);stroke-width:.7}
 .picto .p-bande circle{fill:var(--t-1)}
-/* la norme dans la fiche de la bible : repliée, ses tables défilent en largeur */
-details.norme{margin:-4px 0 4px}
-details.norme summary{display:flex;align-items:center;gap:8px;list-style:none;cursor:pointer;font-size:var(--f-12);color:var(--accent-2);font-weight:600;padding:8px 0;border-radius:var(--r-1)}
-details.norme summary::-webkit-details-marker{display:none}
-details.norme summary:hover{color:var(--t-1)}
-details.norme summary svg.ico{width:16px;height:16px;transition:transform var(--rapide);margin-left:auto}
-details.norme[open] summary svg.ico{transform:rotate(180deg)}
-/* une table de document (nomenclature, contrats déjà faits) : longue, elle défile dans sa boîte, l'en-tête collé en
-   haut ; large, elle défile de côté — jamais elle n'écrase une valeur */
+/* une référence en grand, dépliée sous sa ligne : elle prolonge la ligne choisie (le même fond), une planche — le dessin
+   sur papier à gauche, ses caractéristiques à droite, la note dessous ; à l'étroit, l'un sous l'autre */
+.bible tr.bz-ligne>td{padding:0 0 14px;white-space:normal;font-family:var(--sans);vertical-align:top;background:var(--accent-soft);border-bottom:1px solid var(--s-line)}
+.bible-zoom{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"tete tete" "fig faits" "note note";gap:14px 28px;align-items:start;padding:4px 16px 4px 16px;animation:bz-ouvre var(--moyen)}
+@keyframes bz-ouvre{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.bz-tete{grid-area:tete;display:flex;align-items:flex-start;gap:12px}
+.bz-tete .sur{color:var(--t-2)}
+.bz-tete>.fermer{margin:-2px -6px 0 auto}
+.bz-ref{font:600 var(--f-20)/1.2 var(--mono);letter-spacing:-.01em;color:var(--t-1)}
+.bible-zoom .mj-faces{grid-area:fig;margin:0;padding:18px 16px 14px;justify-self:start;min-width:180px}
+.bible-zoom .phy{grid-area:fig;margin:0;padding:10px;max-width:100%}
+.bible-zoom>.note{grid-area:note;margin:0;max-width:96ch}
+@container (max-width:640px){ .bible-zoom{grid-template-columns:minmax(0,1fr);grid-template-areas:"tete" "fig" "faits" "note"} }
+/* ses caractéristiques : la clé en étiquette (sa majuscule), la valeur à l'encre */
+.bar-faits{grid-area:faits;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:7px 18px;margin-top:0;font-size:var(--f-13);color:var(--t-1);font-variant-numeric:tabular-nums}
+.bar-faits span:nth-child(2n+1){font:500 var(--f-12)/1.6 var(--sans);letter-spacing:0;color:var(--t-2);white-space:nowrap}
+.bar-faits span:nth-child(2n+1)::first-letter{text-transform:uppercase}
+.bar-faits span:nth-child(2n){line-height:1.5;min-width:0;overflow-wrap:anywhere}
+/* UNE TABLE DE DOCUMENT (la nomenclature, les contrats déjà faits) : longue, elle défile dans sa boîte, l'en-tête collé en
+   haut ; large, elle défile de côté — jamais elle n'écrase une valeur. Les identifiants en chasse fixe, les chiffres à
+   droite, un survol doux qui suit la ligne */
 .norme-defile{max-height:min(70vh,640px);overflow:auto;overscroll-behavior-x:contain;padding-bottom:4px;scrollbar-width:thin}
 .norme-defile .sur{margin:12px 0 4px}
-table.norme{border-collapse:separate;border-spacing:0;font-size:var(--f-11);white-space:nowrap;min-width:100%}
-.norme th{position:sticky;top:0;z-index:1;background:var(--s-surface);text-align:left;font:500 var(--f-12) var(--sans);color:var(--t-3);letter-spacing:0;padding:4px 8px 4px 0;border-bottom:1px solid var(--s-line-2)}
-.norme td{padding:4px 8px 4px 0;border-bottom:1px solid var(--s-line);font-family:var(--mono);vertical-align:top}
+table.norme{border-collapse:separate;border-spacing:0;font-size:var(--f-12);white-space:nowrap;min-width:100%}
+.norme th{position:sticky;top:0;z-index:1;background:var(--s-surface);text-align:left;font:500 var(--f-12) var(--sans);color:var(--t-2);letter-spacing:0;padding:8px 12px 8px 0;border-bottom:1px solid var(--s-line-2)}
+.norme td{padding:7px 12px 7px 0;border-bottom:1px solid var(--s-line);font-family:var(--mono);vertical-align:top;transition:background var(--rapide)}
+.norme tbody tr:hover td{background:var(--s-hover)}
+.norme th:first-child,.norme td:first-child{padding-left:4px}
 .norme td.ref{font-weight:600}
 .norme td.sans{font-family:var(--sans);color:var(--t-2)}
 /* les colonnes de chiffres, en-tête compris, à droite : chaque en-tête au-dessus de ses valeurs */
-.norme td.d,.norme th.d{text-align:right}
+.norme td.d,.norme th.d{text-align:right;font-variant-numeric:tabular-nums}
 .norme td.note-c{white-space:normal;min-width:120px;max-width:260px}
-/* une référence en grand, dépliée sous sa ligne : elle prolonge la ligne choisie, sur toute la largeur de la table */
-.bible tr.bz-ligne>td{padding:0 0 12px;white-space:normal;font-family:var(--sans);vertical-align:top}
-.bible-zoom{padding:12px;border-radius:0 0 var(--r-2) var(--r-2);background:var(--accent-soft);border:1px solid var(--accent-line);border-top:none}
-.bz-tete{display:flex;align-items:flex-start;gap:12px}
-.bz-tete .sur{color:var(--accent-2)}
-.bz-ref{font-family:var(--titre);font-size:var(--f-20);font-weight:700;letter-spacing:.01em;line-height:1.2}
-.bible-zoom .mj-faces{margin-top:8px;padding:12px 8px 8px}
-.bible-zoom .phy{margin-top:8px;padding:8px}
-/* ses caractéristiques : comme les faits d'une fiche (.fi-faits) — la clé en étiquette, la valeur en linéale */
-.bar-faits{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 16px;margin-top:12px;font-size:var(--f-12);color:var(--t-1);font-variant-numeric:tabular-nums}
-.bar-faits span:nth-child(2n+1){font:500 var(--f-12)/1.58 var(--sans);letter-spacing:0;color:var(--t-3);white-space:nowrap}
-.bar-faits span:nth-child(2n){line-height:1.55;min-width:0;overflow-wrap:anywhere}
-/* les HYPOTHÈSES de la simulation : un groupe par thème, une ligne par hypothèse — le champ (celui du bandeau des
-   cartes, .hyp-n / .hyp-c, habillé en ligne), puis à quoi elle sert. Les contrôles finissent tous au même bord : une
-   liste et une case à cocher gardent la place de l'unité (40 px + 10 px d'écart) que portent les champs chiffrés */
-.hy-groupe{margin-top:12px;padding:12px 12px 4px;border:1px solid var(--s-line);border-radius:var(--r-2)}
-.hy-groupe>.sur{margin-bottom:4px}
-.hy-ligne{padding:8px 0 12px;border-top:1px solid var(--s-line)}
-.hy-groupe>.sur+.hy-ligne{border-top:none}
-.hy-champ .hyp-n,.hy-champ .hyp-c{display:flex;align-items:center;gap:10px;width:100%;white-space:normal}
-.hy-champ .hyp-n>span:first-child,.hy-champ .hyp-c>span{flex:1;min-width:0;font:600 var(--f-13)/1.4 var(--sans);color:var(--t-1)}
-.hy-champ .hyp-c{flex-direction:row-reverse}
-.hy-champ .hyp-n input{width:84px;height:30px}
-.hy-champ .hyp-n select{height:30px;max-width:230px;margin-right:50px}
-.hy-champ .hyp-c input{margin-right:50px}
-.hy-champ .hyp-n .u{min-width:40px;color:var(--t-2)}
-.hy-sert{margin:4px 0 0;font-size:var(--f-12);color:var(--t-2);line-height:1.45}
-.hy-sert i{font-style:normal;color:var(--t-3)}
+
+/* ─── LES HYPOTHÈSES de la simulation, comme des réglages : un groupe par thème (son titre, l'espace au-dessus) ; une ligne
+   par hypothèse — son nom à gauche (avec sa majuscule), son champ aligné à droite (le nombre, puis son unité ; une liste ;
+   un interrupteur pour ce qui se coche), ce qu'elle fait en petit dessous. Le champ est celui du bandeau des cartes
+   (.hyp-n / .hyp-c, 08-interface), mis à plat dans la ligne (display: contents) : les identifiants ne changent pas ─── */
+.hy-groupe{margin-top:26px}
+.hy-titre{margin:0 0 2px;font:600 var(--f-13)/1.4 var(--titre);letter-spacing:-.005em;color:var(--t-1)}
+.hy-ligne{display:grid;grid-template-columns:minmax(0,1fr) auto auto 38px;column-gap:8px;row-gap:4px;align-items:center;padding:12px 0 13px;border-top:1px solid var(--s-line)}
+.hy-titre+.hy-ligne{margin-top:2px;border-top:none}
+.hy-champ,.hy-champ>label{display:contents}
+.hy-champ .hyp-n>span:first-child,.hy-champ .hyp-c>span{grid-column:1;grid-row:1;min-width:0;padding-right:12px;font:500 var(--f-13)/1.4 var(--sans);color:var(--t-1);white-space:normal}
+.hy-champ .hyp-n>span:first-child::first-letter,.hy-champ .hyp-c>span::first-letter{text-transform:uppercase}
+.hy-champ .hyp-c>span{font-family:var(--sans)}
+.hy-champ .hyp-n input{grid-column:3;grid-row:1;justify-self:end;width:92px;height:30px;margin:0;padding:0 10px;border:1px solid var(--s-line-2);border-radius:var(--r-1);background:var(--s-surface);color:var(--t-1);font:500 var(--f-13) var(--mono);text-align:right;
+  transition:border-color var(--rapide),box-shadow var(--rapide)}
+.hy-champ .hyp-liste input{width:200px;text-align:left}
+.hy-champ .hyp-n input::-webkit-inner-spin-button,.hy-champ .hyp-n input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.hy-champ .hyp-n input[type=number]{-moz-appearance:textfield;appearance:textfield}
+.hy-champ .hyp-n input::placeholder{font:400 var(--f-12) var(--sans);color:var(--t-3)}
+.hy-champ .hyp-n select{grid-column:3/5;grid-row:1;justify-self:end;width:auto;max-width:300px;height:30px;margin:0;padding:0 8px;border:1px solid var(--s-line-2);border-radius:var(--r-1);background:var(--s-surface);color:var(--t-1);font:400 var(--f-13) var(--sans)}
+.hy-champ .hyp-n input:hover,.hy-champ .hyp-n select:hover{border-color:color-mix(in srgb,var(--t-1) 28%,var(--s-line-2))}
+.hy-champ .hyp-n input:focus,.hy-champ .hyp-n select:focus-visible{outline:none;border-color:var(--t-1);box-shadow:var(--anneau)}
+.hy-champ .hyp-n .u{grid-column:4;grid-row:1;min-width:0;font:400 var(--f-12) var(--mono);color:var(--t-2);text-align:left}
+/* ce qui se coche : un interrupteur à l'encre — à droite, comme un réglage */
+.hy-champ .hyp-c{cursor:pointer}
+.hy-champ .hyp-c input{grid-column:3/5;grid-row:1;justify-self:end;position:relative;width:36px;height:22px;margin:0;border-radius:999px;background:var(--s-line-2);cursor:pointer;-webkit-appearance:none;appearance:none;transition:background var(--moyen)}
+.hy-champ .hyp-c input::before{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#ffffff;box-shadow:0 1px 3px rgba(0,0,0,.3),0 0 0 .5px rgba(0,0,0,.06);transition:transform var(--moyen),background var(--moyen)}
+.hy-champ .hyp-c input:checked{background:var(--accent)}
+.hy-champ .hyp-c input:checked::before{transform:translateX(14px);background:var(--on-accent)}
+.hy-champ .hyp-c input:hover:not(:checked){background:color-mix(in srgb,var(--t-1) 22%,var(--s-line-2))}
+.hy-sert{grid-column:1/-1;grid-row:2;max-width:66ch;margin:0;font-size:var(--f-12);color:var(--t-2);line-height:1.5;text-wrap:pretty}
+.hy-sert i{font-style:normal;color:var(--t-2)}
+/* réglée ici : « ↺ » et la valeur de l'outil, devant le champ — un clic la rend */
+.hy-rendre{grid-column:2;grid-row:1;justify-self:end;height:26px;margin-right:4px;padding:0 8px;border:none;border-radius:var(--r-1);background:var(--warn-soft);color:var(--warn);font:500 var(--f-12) var(--sans);white-space:nowrap;transition:background var(--rapide),color var(--rapide),transform var(--rapide)}
+.hy-rendre:hover{background:var(--s-hover);color:var(--t-1)}
+.hy-rendre:active{transform:scale(.97)}
+/* le pied : où l'on en est (les valeurs de l'outil, ou combien sont réglées ici), et le retour aux valeurs de l'outil */
+.hy-etat{display:inline-flex;align-items:center;gap:8px;font-size:var(--f-12);color:var(--t-2)}
+.hy-etat::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px var(--ok-soft)}
+.hy-etat.regle::before{background:var(--warn);box-shadow:0 0 0 3px var(--warn-soft)}
+.hy-etat b{color:var(--t-1);font-weight:600}
 /* le mot « hypothèse » sur une fiche : un lien discret vers la fiche des hypothèses */
 .fi-hyp{border:none;background:none;padding:0 2px;margin:0 -2px;font:inherit;color:var(--accent-2);text-decoration:underline dotted;text-underline-offset:3px;border-radius:3px;cursor:pointer}
 .fi-hyp:hover{background:var(--accent-soft)}
-/* un fichier à plusieurs harness : lequel ouvrir ? */
-.ch-liste{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
-.ch-harness{display:flex;align-items:center;gap:12px;width:100%;padding:12px;border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-surface);color:var(--t-1);text-align:left;cursor:pointer;transition:background var(--rapide),border-color var(--rapide)}
-.ch-harness:hover{background:var(--s-sunken);border-color:var(--s-line-2)}
+
+/* ─── UN FICHIER À PLUSIEURS HARNESS : lequel ouvrir ? Une liste de lignes qu'on presse (le harness en chasse fixe, ce qu'il
+   porte en petit, la flèche), séparées d'un filet ; le survol suit la ligne entière ─── */
+.ch-liste{list-style:none;margin:16px 0 0;padding:0;display:flex;flex-direction:column;border-top:1px solid var(--s-line)}
+.ch-liste>li{border-bottom:1px solid var(--s-line)}
+.ch-harness{display:flex;align-items:center;gap:14px;width:100%;min-height:52px;margin:3px 0;padding:8px 10px;border:none;border-radius:var(--r-btn);background:none;color:var(--t-1);text-align:left;cursor:pointer;transition:background var(--rapide)}
+.ch-harness:hover{background:var(--s-hover)}
+.ch-harness:active{background:var(--accent-soft)}
 .ch-harness b{font:600 var(--f-14) var(--mono);white-space:nowrap}
 .ch-harness span{flex:1;min-width:0;font-size:var(--f-12);color:var(--t-2)}
-.ch-harness svg.ico{color:var(--t-3)}
+.ch-harness svg.ico{width:16px;height:16px;color:var(--t-3);transition:transform var(--rapide),color var(--rapide)}
+.ch-harness:hover svg.ico{color:var(--t-1);transform:translateX(2px)}
+
+/* ─── LE MENU « ··· » d'un document (les gestes secondaires : coller, lire la base SEE, les gabarits ; dans le pied de
+   la bible, importer une norme, revenir à l'exemple…) : un bouton carré, une liste qui tombe dessous — ou monte, dans le
+   pied —, une ligne par geste, son mot et, en petit, ce qu'il fait ─── */
+.doc-menu{position:relative;flex:none}
+.doc-menu>summary{list-style:none;width:34px;padding:0}
+.doc-menu>summary::-webkit-details-marker{display:none}
+.doc-menu>summary svg.ico{width:18px;height:18px}
+.doc-menu[open]>summary{background:var(--accent-soft);border-color:color-mix(in srgb,var(--t-1) 30%,var(--s-line-2))}
+.doc-menu-l{position:absolute;top:calc(100% + 6px);right:0;z-index:30;width:max-content;min-width:240px;max-width:340px;padding:6px;border-radius:var(--r-palet);background:var(--s-flottant);color:var(--t-1);box-shadow:var(--sh-2);animation:tombe var(--moyen);transform-origin:top right}
+.fiche-pied .doc-menu-l{top:auto;bottom:calc(100% + 8px);left:0;right:auto;transform-origin:bottom left}
+.doc-menu-l button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;min-height:34px;padding:7px 10px;border:none;border-radius:8px;background:none;color:var(--t-1);text-align:left;font:500 var(--f-13)/1.35 var(--sans);transition:background var(--rapide)}
+.doc-menu-l button:hover,.doc-menu-l button:focus-visible{background:var(--s-hover);outline:none}
+.doc-menu-l button small{font:400 var(--f-12)/1.4 var(--sans);color:var(--t-2)}
+.doc-menu-l button[aria-expanded="true"]{background:var(--accent-soft)}
+.doc-menu-l hr{border:none;border-top:1px solid var(--s-line);margin:5px 4px}
 
 /* ─── LA CARTE D'UNE BARRETTE OU D'UNE PRISE (dans l'inspecteur) : la réglette de face, la simulation, le choix ── */
 .equip{margin:0;padding:10px 12px 12px;border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-surface);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:start;grid-auto-rows:max-content;min-width:0}
@@ -792,7 +878,8 @@ body.depot-actif:has(#bibliotheque:not([hidden])) .depot{display:none}
   background:var(--palet);color:var(--t-1);box-shadow:var(--sh-palet);font-size:var(--f-13);font-weight:500;line-height:1.4;opacity:0;pointer-events:none;transition:opacity var(--moyen),transform var(--moyen)}
 #toast.on{opacity:1;transform:translateX(-50%)}
 body.insp-ouvert #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--insp-l) - 2 * var(--jeu)) / 2)}
-body.fiche-ouverte #toast{left:max(calc(var(--rail) + 16px + min(60vw,560px) / 2),calc(var(--rail) + (100vw - var(--rail) - var(--fiche-l) - 2 * var(--jeu)) / 2))}
+/* un document ouvert : le mot reste dans la place libre à côté de lui (plus étroit s'il le faut), il ne couvre pas sa tête */
+body.fiche-ouverte #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--fiche-l) - 2 * var(--jeu)) / 2);max-width:min(560px,calc(100vw - var(--rail) - var(--fiche-l) - 2 * var(--jeu) - 32px))}
 #toast.erreur{padding-left:32px}
 #toast.erreur::before{content:"";position:absolute;left:14px;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:var(--ko);box-shadow:0 0 0 3px color-mix(in srgb,var(--ko) 22%,transparent)}
 
@@ -2446,157 +2533,176 @@ table.no-table{width:100%;font-size:var(--f-12)}
 /* ───────── style-normes.css ───────── */
 /* ═══════════════════════════════════════════════════════════════════════════
    LES NORMES (08 octies) : la page des normes — les domaines, les tables, l'import, l'édition d'une ligne
-   Les jetons (couleurs, typo, espacements) sont dans style.css ; ici, seulement ce qui est propre à ce domaine.
-   Une page qui se lit de haut en bas : l'état, la recherche et les gestes, l'import à vérifier, puis les domaines, chacun
-   ses tables repliées — une ligne chacune : le nom, la source, le compte, l'état — qui se déplient sur leur fiche
-   (sert à, lue par, choix, colonnes), leur barre et la table elle-même. Les données en chasse fixe, les mots en
-   linéale ; l'ambre pour ce qui est modifié ou à confirmer, le vert pour ce qui est ajouté, le gris pour ce qui est
-   masqué ; l'encre pour ce qui se presse. Les tables larges défilent de côté, jamais elles n'écrasent une valeur ; les
-   longues défilent dans leur boîte, l'en-tête en haut ; les gestes d'une ligne restent collés au bord droit.
+   Les jetons (couleurs, typo, espacements) et la coquille du document (la tête, le pied, l'état en une ligne, le menu
+   « ··· ») sont dans style.css ; ici, seulement ce qui est propre à ce domaine.
+   Une page qui se lit de haut en bas, comme un document : l'état en une ligne, la recherche en tête avec l'action
+   principale (importer) et les autres gestes rangés dans « ··· », l'import à vérifier, puis les domaines — des groupes
+   aérés, séparés d'un filet —, chacun une liste de tables : une ligne chacune (le nom, la source, le compte, ce qui fait
+   exception), qu'on presse pour la déplier sur sa fiche (sert à, lue par, choix, colonnes), sa barre et la table
+   elle-même — elle seule se pose alors en cadre : c'est elle qu'on a en main. Les données en chasse fixe, les mots en
+   linéale, les chiffres à droite ; l'ambre pour ce qui est modifié ou à confirmer, le vert pour ce qui est ajouté, le
+   gris pour ce qui est masqué. Les tables larges défilent de côté, jamais elles n'écrasent une valeur ; les longues
+   défilent dans leur boîte, l'en-tête en haut ; les gestes d'une ligne restent collés au bord droit.
    ═══════════════════════════════════════════════════════════════════════ */
-.nm{display:flex;flex-direction:column;gap:var(--sp-3);min-width:0;container-type:inline-size}   /* la bible se règle sur sa largeur */
-.nm .fiche-tete{margin-bottom:0}
-.nm-nav{align-self:flex-start}
-.nm-etat{margin-bottom:0}
+.nm{display:flex;flex-direction:column;gap:var(--sp-4);min-width:0;container-type:inline-size}   /* la bible se règle sur sa largeur */
+.nm .fiche-tete{margin-bottom:-4px}
 .nm-etat .nm-mod{color:var(--warn)}
-.nm-etat i{font-style:normal;color:var(--t-3)}
-/* la recherche et les gestes, sur une ligne qui se replie */
+.nm-etat i{font-style:normal;color:var(--t-2)}
+/* la recherche, l'action principale, « ··· » : une ligne */
 .nm-outils{display:flex;flex-wrap:wrap;gap:var(--sp-2);align-items:center}
-.nm-cherche{flex:1 1 320px;min-width:0;height:36px}
+.nm-cherche{flex:1 1 320px;min-width:0}
 .nm-cherche input{font-family:var(--sans);font-size:var(--f-13)}
-.nm-gestes{display:flex;flex-wrap:wrap;gap:var(--sp-2)}
-.nm-note{font-size:var(--f-12);color:var(--t-2);margin:0;line-height:1.5}
+.nm-gestes{display:flex;align-items:center;gap:var(--sp-2)}
+.nm-note{font-size:var(--f-12);color:var(--t-2);margin:0;line-height:1.55}
 .nm-vide{font-size:var(--f-12);color:var(--t-2);margin:8px 0;line-height:1.5}
-/* les badges d'état : modifiée, ajoutée, masquée, à confirmer, importée, vide — la recette de tout l'outil pour un mot
-   d'état dans sa case (.fw-pastille, .verdict) : B612 10 px, capitales espacées, 20 px de haut, rayon 4 */
-.nm-badge{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:var(--r-1);font:500 var(--f-12)/1 var(--sans);letter-spacing:0;white-space:nowrap;background:var(--s-sunken);color:var(--t-2);border:1px solid var(--s-line)}
-.nm-badge.mod{background:var(--warn-soft);color:var(--warn);border-color:transparent}
-.nm-badge.ajo{background:var(--ok-soft);color:var(--ok);border-color:transparent}
-.nm-badge.masq{background:var(--s-hover);color:var(--t-3);border-color:transparent;text-decoration:line-through}
-.nm-badge.conf{background:var(--warn-soft);color:var(--warn);border-color:transparent}
-.nm-badge.import{background:var(--accent-soft);color:var(--accent-2);border-color:transparent}
-.nm-badge.rien{color:var(--t-3)}
+/* les badges d'état : modifiée, ajoutée, masquée, à confirmer, importée, vide — un mot dans sa case, la couleur de l'état */
+.nm-badge{display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:var(--r-1);font:500 var(--f-11)/1 var(--sans);letter-spacing:0;white-space:nowrap;background:var(--s-hover);color:var(--t-2)}
+.nm-badge.mod,.nm-badge.conf{background:var(--warn-soft);color:var(--warn)}
+.nm-badge.ajo{background:var(--ok-soft);color:var(--ok)}
+.nm-badge.masq{color:var(--t-2);text-decoration:line-through}
+.nm-badge.import{background:var(--accent-soft);color:var(--t-1)}
+.nm-badge.rien{background:none;color:var(--t-2);box-shadow:inset 0 0 0 1px var(--s-line-2)}
 .nm-mod{color:var(--warn)}.nm-ajo{color:var(--ok)}.nm-ko{color:var(--ko)}
-/* ─── un domaine : son titre, à quoi il sert, ses tables ─── */
-.nm-dom{display:flex;flex-direction:column;gap:var(--sp-2);padding-top:var(--sp-2)}
-.nm-dom-t{font:600 var(--f-14)/1.3 var(--titre);margin:0;letter-spacing:.01em;padding-top:var(--sp-2);border-top:1px solid var(--s-line)}
-.nm-dom-sens{margin:0 0 4px;font-size:var(--f-12);color:var(--t-2);line-height:1.5}
-/* ─── une table : sa tête (une ligne), et dépliée, sa fiche, sa barre, la table ─── */
-.nm-table{border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-surface);min-width:0;transition:border-color var(--rapide)}
-.nm-table.ouvert{border-color:var(--s-line-2)}
-.nm-table.modifiee{box-shadow:inset 3px 0 0 var(--warn)}
-.nm-t-tete{display:flex;align-items:center;gap:var(--sp-3);width:100%;min-height:44px;padding:8px 12px;border:none;background:none;text-align:left;color:inherit;font:inherit;border-radius:var(--r-2);cursor:pointer;transition:background var(--rapide)}
-.nm-t-tete:hover{background:var(--s-sunken)}
+/* ─── un domaine : son titre, à quoi il sert, ses tables ; un filet le sépare du précédent ─── */
+.nm-dom{display:flex;flex-direction:column;gap:6px;padding-top:var(--sp-5);border-top:1px solid var(--s-line)}
+.nm-dom-t{font:600 var(--f-16)/1.3 var(--titre);margin:0;letter-spacing:-.015em;color:var(--t-1)}
+.nm-dom-sens{margin:0 0 6px;font-size:var(--f-13);color:var(--t-2);line-height:1.55;max-width:96ch;text-wrap:pretty}
+/* ─── la liste des tables : une ligne chacune, un filet entre elles ; dépliée, la table se pose en cadre ─── */
+.nm-liste{display:flex;flex-direction:column;margin:0 -12px}
+.nm-table{position:relative;min-width:0;border-radius:var(--r-2);transition:box-shadow var(--moyen),margin var(--moyen)}
+.nm-table+.nm-table::before{content:"";position:absolute;left:12px;right:12px;top:0;border-top:1px solid var(--s-line);transition:opacity var(--rapide)}
+.nm-table:hover::before,.nm-table:hover+.nm-table::before,.nm-table.ouvert::before,.nm-table.ouvert+.nm-table::before{opacity:0}
+.nm-table.ouvert{margin:10px 12px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line-2),0 6px 20px -8px rgba(0,0,0,.18)}
+.nm-t-tete{display:flex;align-items:center;gap:var(--sp-3);width:100%;min-height:52px;padding:9px 12px;border:none;background:none;text-align:left;color:inherit;font:inherit;border-radius:var(--r-2);cursor:pointer;transition:background var(--rapide)}
+.nm-t-tete:hover{background:var(--s-hover)}
+.nm-t-tete:focus-visible{outline-offset:-2px}
 .nm-t-tete.nm-t-fixe{cursor:default}.nm-t-tete.nm-t-fixe:hover{background:none}
 .nm-table.ouvert>.nm-t-tete{border-radius:var(--r-2) var(--r-2) 0 0;border-bottom:1px solid var(--s-line)}
-.nm-t-titre{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
+.nm-table.ouvert>.nm-t-tete:hover{background:var(--s-sunken)}
+.nm-t-titre{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
 .nm-t-titre b{font-size:var(--f-13);font-weight:600;color:var(--t-1)}
-/* la source sur deux lignes au plus ; la fiche dépliée la donne entière */
-.nm-t-source{font-size:var(--f-11);color:var(--t-3);white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+/* une table modifiée ici : un point d'ambre devant son nom (le badge dit combien) */
+.nm-table.modifiee .nm-t-titre b::before{content:"";display:inline-block;width:6px;height:6px;margin:0 7px 1px 0;border-radius:50%;background:var(--warn);vertical-align:middle}
+/* la source sur une ligne ; la fiche dépliée la donne entière */
+.nm-t-source{font-size:var(--f-12);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* le compte et les badges en colonnes de largeur fixe : d'une table à l'autre, les chiffres tombent l'un sous l'autre */
-.nm-t-compte{flex:none;min-width:88px;text-align:right;font:600 var(--f-12) var(--mono);color:var(--t-2);white-space:nowrap}
-.nm-t-badges{flex:none;width:208px;display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-start}
-.nm-chevron{width:16px;height:16px;color:var(--t-3);transition:transform var(--rapide)}
+.nm-t-compte{flex:none;min-width:84px;text-align:right;font:500 var(--f-12) var(--mono);color:var(--t-2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.nm-t-badges{flex:none;width:200px;display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-start}
+.nm-chevron{width:16px;height:16px;color:var(--t-3);transition:transform var(--moyen)}
 .nm-table.ouvert .nm-chevron{transform:rotate(180deg)}
-.nm-t-corps{display:flex;flex-direction:column;gap:var(--sp-3);padding:var(--sp-3)}
-/* la fiche d'une table : des faits, la clé en petites capitales */
-.nm-doc{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:var(--sp-1) var(--sp-3);margin:0;font-size:var(--f-12)}
-.nm-doc dt,.nm-cols dt{font:500 var(--f-12)/1.46 var(--sans);letter-spacing:0;color:var(--t-3);white-space:nowrap}
-.nm-doc dd,.nm-cols dd{margin:0;color:var(--t-1);line-height:1.5;min-width:0}
+.nm-contrats .fi-lien{flex:none}
+.nm-t-corps{display:flex;flex-direction:column;gap:var(--sp-4);padding:var(--sp-4) var(--sp-4) var(--sp-3);animation:nm-ouvre var(--moyen)}
+@keyframes nm-ouvre{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+/* la fiche d'une table : des faits — la clé en étiquette, la valeur à l'encre */
+.nm-doc{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px var(--sp-4);margin:0;font-size:var(--f-13)}
+.nm-doc dt,.nm-cols dt{font:500 var(--f-12)/1.6 var(--sans);letter-spacing:0;color:var(--t-2);white-space:nowrap}
+.nm-doc dt::first-letter{text-transform:uppercase}
+.nm-doc dd,.nm-cols dd{margin:0;color:var(--t-1);line-height:1.55;min-width:0;max-width:110ch}
 .nm-doc dd.nm-manque{color:var(--warn)}
 .nm-doc .fi-lien{margin:-4px 0 -4px -8px}
-.nm-cols{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:var(--sp-1) var(--sp-3);margin:0;padding:12px;border-radius:var(--r-1);background:var(--s-sunken);font-size:var(--f-12)}
-.nm-cols dt{font:600 var(--f-12) var(--mono);text-transform:none;letter-spacing:0;color:var(--t-1)}
-.nm-cols dt i{font-style:normal;color:var(--accent);margin-left:2px}
+/* les colonnes expliquées : entre deux filets, le nom en chasse fixe */
+.nm-cols{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px var(--sp-4);margin:0;padding:var(--sp-3) 0;border-top:1px solid var(--s-line);border-bottom:1px solid var(--s-line);font-size:var(--f-12)}
+.nm-cols dt{font:600 var(--f-12)/1.6 var(--mono);text-transform:none;letter-spacing:0;color:var(--t-1)}
+.nm-cols dt i{font-style:normal;color:var(--warn);margin-left:2px}
 .nm-cols dd{color:var(--t-2)}
-.nm-alias{display:block;font-size:var(--f-11);color:var(--t-3)}
+.nm-alias{display:block;font-size:var(--f-12);color:var(--t-2);opacity:.85}
 /* la barre : le filtre, ajouter, exporter, le gabarit, revenir à l'embarquée, les masquées */
 .nm-t-barre{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
-.nm-filtre{flex:1 1 200px;min-width:0;max-width:360px}
+.nm-filtre{flex:1 1 200px;min-width:0;max-width:360px;height:32px}
 .nm-t-barre .btn{height:32px}
 .nm-t-barre .btn.lien{padding:0 8px}
 /* ─── la table : en chasse fixe, triable à l'en-tête, les gestes au survol de la ligne ───
    Elle défile dans sa boîte, dans les deux sens : l'en-tête reste en haut (six colonnes de chiffres gardent leur nom),
    et la colonne des gestes reste au bord droit (modifier, dupliquer, supprimer, OK, Annuler toujours à portée) */
 .nm-defile{max-height:min(70vh,640px);overflow:auto;overscroll-behavior-x:contain;padding-bottom:4px;scrollbar-width:thin}
-.nm-tab{border-collapse:separate;border-spacing:0;font-size:var(--f-11);white-space:nowrap;min-width:100%}
-.nm-tab th{position:sticky;top:0;z-index:1;background:var(--s-surface);text-align:left;font:500 var(--f-12) var(--sans);color:var(--t-3);letter-spacing:0;padding:5px 8px 5px 0;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
-.nm-tab th[data-tri]{cursor:pointer;user-select:none}
+.nm-tab{border-collapse:separate;border-spacing:0;font-size:var(--f-12);white-space:nowrap;min-width:100%}
+.nm-tab th{position:sticky;top:0;z-index:1;background:var(--s-surface);text-align:left;font:500 var(--f-12) var(--sans);color:var(--t-2);letter-spacing:0;padding:8px 14px 8px 0;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
+.nm-tab th[data-tri]{cursor:pointer;user-select:none;transition:color var(--rapide)}
 .nm-tab th[data-tri]:hover{color:var(--t-1)}
-.nm-tab th[aria-sort="ascending"],.nm-tab th[aria-sort="descending"]{color:var(--accent-2)}
-.nm-tab td{padding:4px 8px 4px 0;border-bottom:1px solid var(--s-line);font-family:var(--mono);vertical-align:top;max-width:260px;overflow:hidden;text-overflow:ellipsis}
+.nm-tab th[aria-sort="ascending"],.nm-tab th[aria-sort="descending"]{color:var(--t-1);font-weight:600}
+.nm-tab td{padding:6px 14px 6px 0;border-bottom:1px solid var(--s-line);font-family:var(--mono);vertical-align:top;max-width:260px;overflow:hidden;text-overflow:ellipsis;transition:background var(--rapide)}
 .nm-tab td.d,.nm-tab th.d{text-align:right;font-variant-numeric:tabular-nums}
 .nm-tab td.nm-texte{font-family:var(--sans);color:var(--t-2);max-width:320px}
-.nm-tab tr.nm-l{transition:background var(--rapide)}
-.nm-tab tr.nm-l:hover td,.nm-tab tr.nm-l:focus-visible td{background:var(--s-sunken)}
+.nm-tab tr.nm-l{color:var(--t-1)}   /* une ligne modifiée ou ajoutée garde l'encre : son fond et son badge disent l'état */
+.nm-tab tr.nm-l:hover td,.nm-tab tr.nm-l:focus-visible td{background:var(--s-hover)}
 .nm-tab tr.nm-l:focus-visible{outline:none}
 .nm-tab tr.nm-l:focus-visible td:first-child{box-shadow:inset 2px 0 0 var(--accent)}
 .nm-tab tr.nm-mod td{background:var(--warn-soft)}
 .nm-tab tr.nm-ajo td{background:var(--ok-soft)}
-.nm-tab tr.nm-masquee td{color:var(--t-3);text-decoration:line-through;background:var(--s-sunken)}
+.nm-tab tr.nm-mod:hover td{background:color-mix(in srgb,var(--warn-soft),var(--warn) 8%)}
+.nm-tab tr.nm-ajo:hover td{background:color-mix(in srgb,var(--ok-soft),var(--ok) 8%)}
+.nm-tab tr.nm-masquee td{color:var(--t-2);text-decoration:line-through;background:var(--s-sunken)}
 .nm-tab tr.nm-masquee td.nm-gestes-l{text-decoration:none}
-.nm-tab td.nm-etat,.nm-tab th.nm-etat{width:1px;padding-right:6px;white-space:nowrap}
-.nm-src{display:block;font:500 10px var(--sans);color:var(--t-3);max-width:90px;overflow:hidden;text-overflow:ellipsis}
+.nm-tab td.nm-etat,.nm-tab th.nm-etat{width:1px;padding:6px 8px 6px 4px;white-space:nowrap}
+.nm-src{display:block;margin-top:2px;font:500 var(--f-11) var(--sans);color:var(--t-2);max-width:96px;overflow:hidden;text-overflow:ellipsis}
 /* les gestes d'une ligne : collés au bord droit (sur le fond de leur ligne : survolée, modifiée, en édition…), visibles
    au survol ou au clavier (au doigt, toujours) */
-.nm-tab td.nm-gestes-l,.nm-tab th.nm-gestes-l{position:sticky;right:0;width:1px;padding:2px 2px 2px 6px;white-space:nowrap;text-align:right;vertical-align:middle;background:var(--s-surface);box-shadow:-1px 0 0 var(--s-line)}
+.nm-tab td.nm-gestes-l,.nm-tab th.nm-gestes-l{position:sticky;right:0;width:1px;padding:2px 4px 2px 8px;white-space:nowrap;text-align:right;vertical-align:middle;background:var(--s-surface);box-shadow:-1px 0 0 var(--s-line)}
 .nm-tab th.nm-gestes-l{z-index:2}
-.nm-g{width:26px;height:26px;border:none;background:none;border-radius:50%;color:var(--t-2);display:inline-grid;place-items:center;padding:0;opacity:0;transition:opacity var(--rapide),background var(--rapide),color var(--rapide)}
+.nm-g{width:26px;height:26px;border:none;background:none;border-radius:var(--r-1);color:var(--t-2);display:inline-grid;place-items:center;padding:0;opacity:0;transition:opacity var(--rapide),background var(--rapide),color var(--rapide)}
 .nm-g svg.ico{width:14px;height:14px}
 .nm-tab tr:hover .nm-g,.nm-tab tr:focus-within .nm-g,.nm-g:focus-visible{opacity:1}
 @media (hover:none){.nm-g{opacity:1}}
-.nm-g:hover{background:var(--s-hover);color:var(--t-1)}
-.nm-g.danger:hover{background:var(--ko-soft);color:var(--ko)}
+.nm-g:hover{background:var(--s-surface);color:var(--t-1);box-shadow:0 0 0 1px var(--s-line-2)}
+.nm-g.danger:hover{background:var(--ko-soft);color:var(--ko);box-shadow:none}
 .nm-plus{margin:4px 0 0 -8px}
 /* ─── une ligne en édition : chaque cellule un champ, OK et Annuler au bout ─── */
-.nm-tab tr.nm-edition td{background:var(--accent-soft);padding:4px 6px 4px 0;vertical-align:middle}
-.nm-champ{width:100%;min-width:72px;height:28px;border:1px solid var(--s-line-2);border-radius:4px;padding:0 6px;background:var(--s-surface);color:var(--t-1);font:500 var(--f-12) var(--mono);transition:border-color var(--rapide),box-shadow var(--rapide)}
-.nm-champ[data-obligatoire]{border-color:var(--accent-line)}
-.nm-champ:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.nm-tab tr.nm-edition td{background:var(--accent-soft);padding:5px 6px 5px 0;vertical-align:middle}
+.nm-champ{width:100%;min-width:72px;height:28px;border:1px solid var(--s-line-2);border-radius:var(--r-1);padding:0 7px;background:var(--s-surface);color:var(--t-1);font:500 var(--f-12) var(--mono);transition:border-color var(--rapide),box-shadow var(--rapide)}
+.nm-champ[data-obligatoire]{border-color:color-mix(in srgb,var(--t-1) 30%,var(--s-line-2))}
+.nm-champ:focus{outline:none;border-color:var(--t-1);box-shadow:var(--anneau)}
 .nm-champ::placeholder{color:var(--t-3);font-family:var(--sans);font-weight:400}
-.nm-tab td.nm-valider{text-align:left;padding-left:6px}
+.nm-tab td.nm-valider{text-align:left;padding-left:8px}
 .nm-tab td.nm-valider .btn{height:28px;padding:0 12px;margin-right:2px;font-family:var(--sans)}
-/* ─── l'import : un bloc par table reconnue, la cible, les colonnes, le compte, l'aperçu ─── */
-.nm-import,.nm-resultats,.nm-guide{border:1px solid var(--s-line-2);border-radius:var(--r-2);padding:var(--sp-3);background:var(--s-surface);display:flex;flex-direction:column;gap:var(--sp-3);box-shadow:var(--sh-1)}
-.nm-import{box-shadow:inset 3px 0 0 var(--accent),var(--sh-1)}
+/* ─── l'import, les résultats de la recherche, le guide : ce qu'on a en main pour un moment, un cadre chacun ─── */
+.nm-import,.nm-resultats,.nm-guide{border-radius:var(--r-2);padding:var(--sp-4);background:var(--s-surface);display:flex;flex-direction:column;gap:var(--sp-3);box-shadow:0 0 0 1px var(--s-line-2),0 6px 20px -8px rgba(0,0,0,.18);animation:nm-ouvre var(--moyen)}
 .nm-imp-tete{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2) var(--sp-3)}
-.nm-imp-tete b{font-size:var(--f-14)}
+.nm-imp-tete .min0{font-size:var(--f-13);color:var(--t-2);line-height:1.5}
+.nm-imp-tete .sur{color:var(--t-2)}
+.nm-imp-tete b{font-size:var(--f-14);font-weight:600;color:var(--t-1)}
 .nm-imp-tete .btn.lien{margin-left:-6px}
-.nm-bloc{border:1px solid var(--s-line);border-radius:var(--r-1);padding:10px 12px;display:flex;flex-direction:column;gap:8px;background:var(--s-sunken)}
-.nm-bloc.hesite{border-color:var(--warn)}
+/* un bloc par table reconnue, séparés d'un filet ; celui où l'outil hésite, un trait d'ambre */
+.nm-bloc{padding:var(--sp-3) 0 0;border-top:1px solid var(--s-line);display:flex;flex-direction:column;gap:8px}
+.nm-bloc.hesite{box-shadow:inset 2px 0 0 var(--warn);padding-left:12px}
 .nm-bloc-tete{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
-.nm-bloc-tete b{display:block;font-size:var(--f-13);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nm-bloc-ou{font-size:var(--f-11);color:var(--t-3)}
+.nm-bloc-tete b{display:block;font-size:var(--f-13);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nm-bloc-ou{font-size:var(--f-12);color:var(--t-2)}
 .nm-cible{display:inline-flex;align-items:center;gap:8px;font-size:var(--f-12);color:var(--t-2)}
 .nm-cible select,.nm-col-ko select{height:30px;border:1px solid var(--s-line-2);border-radius:var(--r-1);background:var(--s-surface);color:var(--t-1);padding:0 6px;font-size:var(--f-12);max-width:220px}
 /* le focus d'une liste : celui des champs (filet d'encre et halo), pas l'anneau décalé du navigateur */
-.nm-cible select:focus-visible,.nm-col-ko select:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.nm-cible select:focus-visible,.nm-col-ko select:focus-visible{outline:none;border-color:var(--t-1);box-shadow:var(--anneau)}
 .nm-bloc-compte{font-size:var(--f-12);color:var(--t-2)}
 .nm-bloc-compte b{font-weight:600}
-.nm-bloc-cols{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;font-size:var(--f-11)}
-.nm-cols-t{font:500 var(--f-12) var(--sans);letter-spacing:0;color:var(--t-3);margin-right:2px}
-.nm-col-ok{font-family:var(--mono);background:var(--s-surface);border:1px solid var(--s-line);border-radius:var(--r-1);padding:1px 8px;color:var(--t-1)}
+.nm-bloc-cols{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;font-size:var(--f-12)}
+.nm-cols-t{font:500 var(--f-12) var(--sans);letter-spacing:0;color:var(--t-2);margin-right:2px}
+.nm-col-ok{font-family:var(--mono);background:var(--s-hover);border-radius:var(--r-1);padding:1px 8px;color:var(--t-1)}
 .nm-col-ko{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);background:var(--warn-soft);border-radius:var(--r-1);padding:1px 4px 1px 8px;color:var(--warn)}
 .nm-col-ko select{height:24px;font-size:var(--f-11);font-family:var(--sans)}
 .nm-apercu td{background:var(--s-surface)}
 /* ─── les résultats de la recherche : par table, les premières lignes, le chemin vers la table ─── */
-.nm-hit{display:flex;flex-direction:column;gap:4px}
+.nm-resultats>.sur{color:var(--t-2)}
+.nm-hit{display:flex;flex-direction:column;gap:4px;padding-top:var(--sp-3);border-top:1px solid var(--s-line)}
 .nm-hit-t{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:var(--f-12)}
-.nm-hit-t b{font-size:var(--f-13)}
-.nm-hit-t span{color:var(--t-3);font-family:var(--mono)}
+.nm-hit-t b{font-size:var(--f-13);font-weight:600}
+.nm-hit-t span{color:var(--t-2);font-family:var(--mono)}
 /* ─── le guide : ajouter une norme, les gabarits ─── */
-.nm-cas{display:grid;grid-template-columns:minmax(140px,max-content) minmax(0,1fr);gap:8px 14px;margin:0;font-size:var(--f-12)}
+.nm-guide>.sur{font:600 var(--f-14)/1.3 var(--titre);color:var(--t-1)}
+.nm-cas{display:grid;grid-template-columns:minmax(160px,300px) minmax(0,1fr);gap:12px 24px;margin:0;font-size:var(--f-12)}
 .nm-cas dt{font-weight:600;color:var(--t-1);line-height:1.5}
 .nm-cas dd{margin:0;color:var(--t-2);line-height:1.5}
 .nm-gabarits{display:flex;flex-wrap:wrap;gap:0 6px;margin-top:2px;align-items:center}
 .nm-gabarits .fi-lien{margin:0 0 0 -8px}
-.nm-gabarits.nm-tous{padding-top:6px;border-top:1px solid var(--s-line)}
-.nm-gabarits.nm-tous .sur{margin-right:6px}
+.nm-gabarits.nm-tous{padding-top:var(--sp-3);border-top:1px solid var(--s-line)}
+.nm-gabarits.nm-tous .sur{margin-right:6px;color:var(--t-2)}
+/* ─── la bible : le filtre par norme (des puces de choix — la pressée à l'encre), le compte au pied ─── */
+.bible-filtres{display:flex;flex-wrap:wrap;gap:6px;margin:0}
+.bi-compte{font-size:var(--f-12);color:var(--t-2);font-variant-numeric:tabular-nums;white-space:nowrap}
 /* ─── au téléphone : la page est un tiroir ; la fiche d'une table s'empile ─── */
 @media (max-width:700px){
   .nm-doc,.nm-cols,.nm-cas{grid-template-columns:1fr;gap:2px 0}
   .nm-doc dt,.nm-cols dt,.nm-cas dt{margin-top:6px}
-  .nm-t-tete{flex-wrap:wrap;gap:6px 10px}
+  .nm-liste{margin:0 -8px}
+  .nm-t-tete{flex-wrap:wrap;gap:6px 10px;padding:9px 8px}
   .nm-t-titre{flex-basis:calc(100% - 30px)}
   /* le compte et les badges passent sous le titre, à leur largeur */
   .nm-t-compte{min-width:0;text-align:left}
@@ -2605,6 +2711,10 @@ table.no-table{width:100%;font-size:var(--f-12)}
   /* la tête de l'import et le titre d'un bloc prennent toute la largeur : les boutons et la cible passent dessous */
   .nm-imp-tete .min0,.nm-bloc-tete .min0{flex:1 1 100%}
   .nm-bloc-tete b{white-space:normal}
+  /* la tête d'un document large : le passage normes ↔ bible passe sous le titre */
+  .fiche-tete:has(.nm-nav){flex-wrap:wrap}
+  .fiche-tete:has(.nm-nav)>.min0{flex:1 1 calc(100% - 52px)}
+  .fiche-tete .nm-nav{order:3;margin-top:2px}
 }
 
 /* ───────── style-recap.css ───────── */
@@ -3249,73 +3359,101 @@ table.rf-tab{width:auto;min-width:min(100%,600px);font-size:var(--f-12)}
 /* ═══════════════════════════════════════════════════════════════════════════
    LA VUE EN RELIEF (08-relief) et LES FACES des modules (08-modules)
    Les jetons (couleurs, typo, espacements) sont dans style.css ; ici, seulement ce qui est propre à ce domaine.
-   La fenêtre du relief est un panneau comme les autres (rayon --r-3, ombre --sh-2, le segment commun pour les vues, une
-   table comme celles de la norme) ; seule la pièce est en perspective, posée sur une surface en retrait, à plat. Les
-   écritures de la scène gardent leur taille à l'écran quelle que soit la vue (`--k`, l'échelle posée par 08-relief).
+   Le relief est une VISIONNEUSE posée au-dessus de la table assombrie : une fenêtre (la feuille du thème, rayon --r-3),
+   une barre d'outils sobre qui reste en haut — la pièce et son compte à gauche, les vues (le segment commun) et la
+   croix à droite —, la scène sur papier quadrillé dans les deux thèmes (la pièce est dessinée à l'encre), et collée
+   dessous sa LÉGENDE, sur le même papier : ce que dit la vue, la couleur de chaque route, ce que disent les trous, le
+   geste qui tourne la pièce. Puis le tableau, comme une table de document. Les écritures de la scène gardent leur
+   taille à l'écran quelle que soit la vue (`--k`, l'échelle posée par 08-relief).
    ═══════════════════════════════════════════════════════════════════════ */
-/* ── la VUE EN RELIEF (08-relief) : un panneau blanc posé sur la table assombrie ── */
-.relief{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:16px;background:var(--voile-fort)}
+/* ── la fenêtre ── */
+.relief{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--voile-fort);animation:re-voile var(--moyen)}
 .relief[hidden]{display:none}
-.re-boite{background:var(--s-surface);color:var(--t-1);border-radius:var(--r-3);width:min(1180px,100%);max-height:100%;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;box-shadow:var(--sh-2);padding:16px 20px 20px}
-/* la tête (le repère, les vues, fermer) reste en haut quand on descend vers la table : on peut toujours fermer ou
-   changer de vue ; elle colle au bord même de la fenêtre (par-dessus son rembourrage) */
-.re-tete{position:sticky;top:-16px;z-index:2;display:flex;align-items:flex-start;gap:12px;margin:-16px -20px 0;padding:16px 20px 8px;background:var(--s-surface)}
+@keyframes re-voile{from{opacity:0}to{opacity:1}}
+.re-boite{position:relative;background:var(--s-surface);color:var(--t-1);border-radius:var(--r-3);width:min(1180px,100%);max-height:100%;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;box-shadow:var(--sh-panneau);padding:0 20px 20px;animation:re-pose var(--lent)}
+@keyframes re-pose{from{opacity:0;transform:translateY(10px) scale(.99)}to{opacity:1;transform:none}}
+/* la barre d'outils : elle reste en haut quand on descend vers le tableau — on peut toujours fermer ou changer de vue */
+.re-tete{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:12px;margin:0 -20px;padding:16px 14px 14px 20px;background:var(--s-surface)}
 .re-tete .min0{flex:1;min-width:0}
-.re-compte{color:var(--t-2);font-size:var(--f-12);margin-top:4px}
+.re-tete .sur{font:500 var(--f-12)/1.4 var(--sans);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.re-tete .titre{font-family:var(--mono);letter-spacing:-.01em;margin-top:1px}
+.re-compte{color:var(--t-2);font-size:var(--f-12);margin-top:3px;font-variant-numeric:tabular-nums}
 .re-compte .ko,.re-tab .ko{color:var(--ko);font-weight:600}
-/* la scène : du papier quadrillé, dans les deux thèmes (la pièce est dessinée à l'encre) ; on la fait tourner à la main */
-.re-scene{margin:12px 0 4px;background-color:var(--s-papier);background-image:linear-gradient(var(--s-papier-grille) 1px,transparent 1px),linear-gradient(90deg,var(--s-papier-grille) 1px,transparent 1px);background-size:16px 16px;border:1px solid var(--s-line);border-radius:var(--r-2);height:min(56vh,520px);cursor:grab;touch-action:none;user-select:none}
+.re-vues{flex:none}
+.re-tete .fermer{margin-left:4px}
+/* ── la scène : du papier quadrillé, dans les deux thèmes ; on la fait tourner à la main ── */
+.re-scene{position:relative;margin:4px 0 0;background-color:var(--s-papier);background-image:linear-gradient(var(--s-papier-grille) 1px,transparent 1px),linear-gradient(90deg,var(--s-papier-grille) 1px,transparent 1px);background-size:16px 16px;background-position:-1px -1px;
+  border-radius:var(--r-2) var(--r-2) 0 0;box-shadow:inset 0 0 0 1px var(--s-line);height:min(56vh,520px);cursor:grab;touch-action:none;user-select:none}
 .re-scene.tourne{cursor:grabbing}
 .re-scene svg{width:100%;height:100%;display:block}
+/* ── la légende, collée sous la scène, sur le même papier : ce que dit la vue à gauche ; les routes, les trous, le geste
+   à droite ── */
+.re-boite>.re-note{display:flex;flex-wrap:wrap;align-items:center;gap:6px 20px;margin:0 0 20px;padding:10px 14px;border-radius:0 0 var(--r-2) var(--r-2);background:var(--s-papier);box-shadow:inset 0 0 0 1px var(--s-line);border-top:1px solid var(--s-papier-grille);
+  color:var(--t-papier-2);font-size:var(--f-12);line-height:1.5}
+.re-note-t{flex:1 1 320px;min-width:0;text-wrap:pretty}
+.re-legende{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;margin:0;padding:0;list-style:none;color:var(--t-papier-2);font-size:var(--f-12)}
+.re-legende li{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.re-legende .re-l-route{width:16px;height:3px;border-radius:2px}
+.re-legende .re-l-trou{width:9px;height:9px;border-radius:50%;box-sizing:border-box;border:1.4px solid #7a8796;background:#ffffff}
+.re-legende .re-l-trou.plein{background:#18212c;border-color:#18212c}
+.re-legende .re-l-trou.ko{border:2px solid #c3271f}
+.re-legende .re-l-geste{color:var(--t-papier-2);padding-left:14px;border-left:1px solid var(--s-papier-grille)}
+.re-legende svg.ico{width:14px;height:14px}
+/* les dessins de la scène : à l'encre du papier */
 .re-gaine{fill:none;stroke:#18212c;stroke-opacity:.28;stroke-width:4.4;stroke-linecap:round;stroke-linejoin:round}
-.re-ame{fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.re-ame{fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;transition:stroke-width var(--rapide)}
 .re-fil.on .re-ame{stroke-width:4}
 .re-fil.on .re-gaine{stroke-width:6.5}
 .re-trou{fill:#ffffff;stroke:#7a8796;stroke-width:1.2}
 .re-trou.plein{fill:#18212c;stroke-width:2.2}
-.re-trou.ko{stroke:var(--ko)!important;stroke-width:2.6}
+.re-trou.ko{stroke:#c3271f!important;stroke-width:2.6}
 .re-trou.on{stroke-width:3.4}
 /* les écritures : leur corps en pixels d'écran, divisé par l'échelle de la vue (--k) */
 .re-num{font-family:var(--mono);font-size:calc(13px / var(--k,1));font-weight:600;fill:#ffffff}
 .re-num.libre{fill:#5b6875;font-weight:500}
 .re-num.petit{fill:#18212c;font-size:calc(11px / var(--k,1))}
-.re-titre-piece{font-size:calc(12px / var(--k,1));letter-spacing:.08em;fill:#5b6875;font-weight:600}
+.re-titre-piece{font-family:var(--sans);font-size:calc(12px / var(--k,1));fill:#5b6875;font-weight:600}
 .re-cable{font-family:var(--mono);font-size:calc(13px / var(--k,1));font-weight:600}
 .re-dest{font-family:var(--mono);font-size:calc(11px / var(--k,1));fill:#5b6875}
+.re-etiq{cursor:pointer}
 .re-etiq.on .re-cable{text-decoration:underline}
 .re-trait{fill:none;stroke-width:.8;stroke-opacity:.55}
 .re-etiq.on .re-trait{stroke-width:1.6;stroke-opacity:1}
 .re-emboite{stroke:#7a8796;stroke-width:1.4;stroke-dasharray:5 4;fill:none}
-.re-note{color:var(--t-2);font-size:var(--f-12);line-height:1.5;margin:6px 2px 12px}
 svg .re-note{fill:#5b6875;font-size:calc(10px / var(--k,1))}
-/* le tableau trou par trou : comme une table de la norme ; trop large (téléphone), il défile de côté. Les cellules se
-   centrent en hauteur : le contact et le fil (une puce rembourrée) d'une ligne sont sur la même ligne de lecture */
+/* ── le tableau trou par trou : comme une table de document ; trop large (téléphone), il défile de côté. Les cellules se
+   centrent en hauteur : le contact et le fil (une puce) d'une ligne sont sur la même ligne de lecture ── */
 .re-tableau{overflow-x:auto;overscroll-behavior-x:contain}
 .re-tab{width:100%;border-collapse:separate;border-spacing:0;font-size:var(--f-12)}
-.re-tab th{text-align:left;font:500 var(--f-12) var(--sans);letter-spacing:0;color:var(--t-3);padding:8px;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
-.re-tab td{padding:4px 8px;border-bottom:1px solid var(--s-line);vertical-align:middle}
+.re-tab th{text-align:left;font:500 var(--f-12) var(--sans);letter-spacing:0;color:var(--t-2);padding:8px 12px 8px 0;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
+.re-tab th:first-child,.re-tab td:first-child{padding-left:6px}
+.re-tab td{padding:6px 12px 6px 0;border-bottom:1px solid var(--s-line);vertical-align:middle;transition:background var(--rapide)}
+.re-tab tbody tr:hover td{background:var(--s-hover)}
 .re-tab td.n{font-family:var(--mono);font-weight:600;width:64px}
 .re-tab tr.libre td{color:var(--t-2)}
-.re-tab .re-libre{font-style:italic;color:var(--t-3)}
-.re-f{display:inline-flex;align-items:center;gap:6px;margin:0 12px 2px 0;font-family:var(--mono);cursor:pointer;border-radius:var(--r-1);padding:1px 4px;white-space:nowrap}
+.re-tab .re-libre{color:var(--t-2)}
+.re-f{display:inline-flex;align-items:center;gap:7px;margin:1px 12px 1px -6px;padding:3px 6px;font-family:var(--mono);cursor:pointer;border-radius:var(--r-1);white-space:nowrap;transition:background var(--rapide)}
 .re-f i{width:14px;height:3px;border-radius:2px;display:inline-block}
+.re-f b{font-weight:600}
 .re-f em{color:var(--t-2);font-style:normal}
 .re-f.on,.re-f:hover{background:var(--accent-soft)}
 /* téléphone : le titre sur toute la largeur, les vues dessous, la scène moins haute */
 @media (max-width:700px){
-  .re-boite{padding:14px 14px 16px}
-  .re-tete{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 10px;align-items:start;top:-14px;margin:-14px -14px 0;padding:14px 14px 8px}
+  .relief{padding:8px}
+  .re-boite{padding:0 14px 16px}
+  .re-tete{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 10px;align-items:start;margin:0 -14px;padding:14px 10px 10px 14px}
   .re-tete .min0{grid-column:1}
   .re-tete .rond{grid-column:2;grid-row:1}
   .re-vues{grid-column:1/-1;justify-self:start}
   .re-scene{height:46vh}
+  .re-legende .re-l-geste{display:none}
 }
 
 /* ── LES FACES des modules et des inserts (08-modules) : un dessin technique à plat ──
    Deux traits pour le corps (le contour, l'insert en retrait), un contour par groupe de contacts reliés, un cercle
    par contact. Ce qui distingue une famille, c'est sa forme (rectangle, bouts ronds, étanche, module carré,
    circulaire) — pas une couleur. Un contact occupé est plein, à la couleur de la route de son fil (posée en ligne
-   par 08-modules) ; un contact qui refuse son fil est cerclé de rouge ; le survol le cercle de cuivre. */
+   par 08-modules) ; un contact qui refuse son fil est cerclé de rouge ; le survol le cercle d'encre. */
 .mj{display:block;color:var(--t-1)}
 .mj text{font-family:var(--mono)}
 .mj .mj-corps{fill:#fbfcfd;stroke:#2b3440;stroke-width:1.3}
@@ -3339,12 +3477,16 @@ svg .re-note{fill:#5b6875;font-size:calc(10px / var(--k,1))}
 .mj .mj-cable{fill:#111827;font-size:8px;font-weight:600;paint-order:stroke;stroke:#fbfcfd;stroke-width:2.5px;stroke-linejoin:round}
 .mj .mj-diode{fill:#2b3440;stroke:#2b3440;stroke-width:1.2}
 .mj-faces{display:flex;justify-content:center;padding:8px 0 4px}
-/* la bible : le filtre par norme — des puces de choix, celles de tout l'outil (.fi-chip) : pressée, à l'encre */
-.mj-norme{height:30px;display:inline-flex;align-items:center;border:1px solid var(--s-line-2);background:var(--s-surface);color:var(--t-1);border-radius:var(--r-1);padding:0 12px;font:500 var(--f-12) var(--sans);cursor:pointer;transition:background var(--rapide),border-color var(--rapide),color var(--rapide)}
-.mj-norme:hover{border-color:var(--t-3)}
+/* la bible : le filtre par norme — des puces de choix, celles de tout l'outil (.fi-chip) : 28 px, au filet ; pressée, à
+   l'encre ; leur compte en chasse fixe, un ton plus bas */
+.mj-norme{height:28px;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--s-line-2);background:var(--s-surface);color:var(--t-1);border-radius:var(--r-1);padding:0 11px;font:500 var(--f-12) var(--sans);cursor:pointer;
+  transition:background var(--rapide),border-color var(--rapide),color var(--rapide),transform var(--rapide)}
+.mj-norme:hover{background:var(--s-hover);border-color:color-mix(in srgb,var(--t-1) 25%,var(--s-line-2))}
+.mj-norme:active{transform:scale(.98)}
 .mj-norme[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
+.mj-norme .mj-n{font:500 var(--f-11) var(--mono);color:var(--t-2);font-variant-numeric:tabular-nums}
+.mj-norme[aria-pressed="true"] .mj-n{color:inherit;opacity:.7}
 .cand svg.picto{flex-shrink:0}
-.bible-filtres{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
 /* chaque variante en picto, sur sa vignette de papier (style.css, « le papier ») : dessinée avec les jetons du papier */
 .picto.mj-picto .p-corps{fill:var(--s-surface);stroke:var(--t-1);stroke-width:.9}
 .picto.mj-picto .p-groupe{fill:none;stroke:var(--s-line-2);stroke-linecap:round;stroke-linejoin:round}
@@ -3461,114 +3603,152 @@ button.orig:hover{color:var(--t-1);box-shadow:inset 0 0 0 1px var(--t-3)}
 
 /* ───────── style-see.css ───────── */
 /* ═════════════════════════════════════════════════════════════════════════════════════════════════════
-   LA BASE SEE (08 nonies) : le résumé d'un Excel des vues de SEE, feuille par feuille
-   Une page qui se photographie : une feuille par écran, ses colonnes remplies en colonnes de journal (le nom en chasse
-   fixe, net, jamais coupé ; le taux en petit ; l'exemple en gris, coupé s'il est long), les vides repliées à part.
-   Les jetons (couleurs, typo, espacements) sont dans style.css.
+   LA BASE SEE (08 nonies) : ce que Volta prend d'un Excel des vues de SEE, et le classeur feuille par feuille
+   Les jetons et la coquille du document (la tête, le pied) sont dans style.css. Une page sobre, qui se photographie :
+   sous la tête, une ligne qui dit ce qu'on regarde, puis la barre des ONGLETS — elle colle sous la tête quand on
+   descend : Import, Liens, Codes, puis une feuille par onglet (son nom court, ses lignes en chasse fixe) ; l'onglet
+   choisi souligné à l'encre. Le contenu se pose à même la feuille (pas de carte dans la feuille) : un titre de section
+   et son compte, des colonnes de journal (le nom en chasse fixe, net, jamais coupé ; le taux en petit ; l'exemple en
+   gris, coupé s'il est long). L'IMPORT : l'état et le geste (garder), quatre chiffres côte à côte séparés d'un filet,
+   puis la différence avec Volta — ce que disait Volta barré, ce que dit SEE en gras —, ce qui reste dehors, le plan.
    ═════════════════════════════════════════════════════════════════════════════════════════════════════ */
-.see{display:flex;flex-direction:column;gap:var(--sp-3);min-width:0}
-.see .fiche-tete{margin-bottom:0}
-.see-mode{margin:0;font-size:var(--f-13);line-height:1.5;color:var(--t-2);max-width:78ch}
-.see-mode b{color:var(--t-1)}
-/* les feuilles : des onglets qui défilent de côté s'ils sont nombreux ; à droite, les exemples */
-.see-barre{display:flex;align-items:center;gap:var(--sp-3);min-width:0}
-.see-onglets{display:flex;gap:2px;padding:2px;background:var(--s-sunken);border-radius:var(--r-btn);overflow-x:auto;min-width:0;flex:0 1 auto;scrollbar-width:thin}
-.see-onglets button{flex:none;border:none;background:none;height:30px;padding:0 10px;border-radius:var(--r-1);display:inline-flex;align-items:center;gap:6px;font-size:var(--f-12);color:var(--t-2);white-space:nowrap}
-.see-onglets button b{font-weight:600}
-.see-onglets button span{font:500 var(--f-11)/1 var(--mono);color:var(--t-3);font-variant-numeric:tabular-nums}
+.see{display:flex;flex-direction:column;gap:var(--sp-4);min-width:0}
+.see .fiche-tete{margin-bottom:-4px}
+.see-mode{margin:0;font-size:var(--f-13);line-height:1.55;color:var(--t-2);max-width:96ch;text-wrap:pretty}
+.see-mode b{color:var(--t-1);font-weight:600}
+/* ── les onglets : une barre soulignée, qui colle sous la tête ; elle défile de côté quand les feuilles sont nombreuses ;
+   à droite, les exemples ── */
+.see-barre{position:sticky;top:var(--fi-tete,0px);z-index:5;display:flex;align-items:center;gap:var(--sp-4);min-width:0;margin:0 -20px;padding:0 20px;background:var(--s-surface);box-shadow:inset 0 -1px 0 var(--s-line)}
+.see-onglets{display:flex;gap:2px;overflow-x:auto;min-width:0;flex:0 1 auto;scrollbar-width:none;
+  -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 24px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 24px),transparent);padding-right:24px}
+.see-onglets::-webkit-scrollbar{display:none}
+.see-onglets button{position:relative;flex:none;border:none;background:none;height:42px;padding:0 10px;border-radius:0;display:inline-flex;align-items:center;gap:7px;font-size:var(--f-13);color:var(--t-2);white-space:nowrap;transition:color var(--rapide)}
+.see-onglets button::after{content:"";position:absolute;left:8px;right:8px;bottom:0;height:2px;border-radius:2px 2px 0 0;background:transparent;transition:background var(--rapide)}
+.see-onglets button b{font-weight:500}
+.see-onglets button span{font:500 var(--f-11)/1 var(--mono);color:var(--t-2);font-variant-numeric:tabular-nums;padding:3px 5px;border-radius:5px;background:var(--s-hover)}
 .see-onglets button:hover{color:var(--t-1)}
-.see-onglets button[aria-selected="true"]{background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-1)}
-.see-ex{margin-left:auto;flex:none;display:inline-flex;align-items:center;gap:6px;font-size:var(--f-12);color:var(--t-2);cursor:pointer}
-/* la feuille */
-.see-feuille{border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-surface);padding:var(--sp-3) var(--sp-4) var(--sp-4);min-width:0}
-.see-tete{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid var(--s-line)}
-.see-nom{font:600 var(--f-16)/1.3 var(--mono);color:var(--t-1);overflow-wrap:anywhere}
+.see-onglets button:hover::after{background:var(--s-line-2)}
+.see-onglets button:focus-visible{outline-offset:-4px;border-radius:var(--r-1)}
+.see-onglets button[aria-selected="true"]{color:var(--t-1)}
+.see-onglets button[aria-selected="true"] b{font-weight:600}
+.see-onglets button[aria-selected="true"]::after{background:var(--t-1)}
+.see-sep{flex:none;width:1px;height:18px;align-self:center;margin:0 6px;background:var(--s-line-2)}
+/* les exemples de valeurs : un interrupteur, comme un réglage */
+.see-ex{margin-left:auto;flex:none;display:inline-flex;align-items:center;gap:8px;font-size:var(--f-12);color:var(--t-2);cursor:pointer;white-space:nowrap}
+.see-ex input{position:relative;width:30px;height:18px;margin:0;border-radius:999px;background:var(--s-line-2);cursor:pointer;-webkit-appearance:none;appearance:none;transition:background var(--moyen)}
+.see-ex input::before{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#ffffff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:transform var(--moyen),background var(--moyen)}
+.see-ex input:checked{background:var(--accent)}
+.see-ex input:checked::before{transform:translateX(12px);background:var(--on-accent)}
+/* ── une feuille, les liens, les codes : à même la feuille du document ── */
+.see-feuille{min-width:0;padding:4px 0 0;animation:see-entre var(--moyen)}
+@keyframes see-entre{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.see-tete{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;padding-bottom:12px;margin-bottom:14px;border-bottom:1px solid var(--s-line)}
+.see-nom{font:600 var(--f-16)/1.3 var(--mono);letter-spacing:-.01em;color:var(--t-1);overflow-wrap:anywhere}
+/* le nom d'une feuille est un identifiant (chasse fixe) ; Import, Liens, Codes sont des titres (linéale) */
+:is(.see-import,.see-liens,.see-codes) .see-nom{font-family:var(--titre);letter-spacing:-.015em}
 .see-compte{font-size:var(--f-13);color:var(--t-2);font-variant-numeric:tabular-nums}
-.see-compte b{color:var(--t-1)}
-.see-pos{margin-left:auto;font-size:var(--f-12);color:var(--t-3)}
+.see-compte b{color:var(--t-1);font-weight:600}
+.see-pos{margin-left:auto;font-size:var(--f-12);color:var(--t-2);font-variant-numeric:tabular-nums}
 /* les colonnes remplies : en colonnes de journal, une ligne chacune */
-.see-cols{list-style:none;margin:0;padding:0;columns:300px;column-gap:28px;column-rule:1px solid var(--s-line)}
-.see-col{break-inside:avoid;display:flex;align-items:baseline;gap:8px;min-width:0;padding:2px 0;line-height:1.4}
-.see-c{flex:0 1 auto;min-width:0;font:600 var(--f-12)/1.4 var(--mono);color:var(--t-1);overflow-wrap:anywhere}
-.see-t{flex:none;font:500 var(--f-11)/1.4 var(--mono);color:var(--t-3);font-variant-numeric:tabular-nums}
-.see-e{flex:1 1 0;min-width:0;font:400 var(--f-11)/1.4 var(--mono);color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.see-cols{list-style:none;margin:0;padding:0;columns:300px;column-gap:32px;column-rule:1px solid var(--s-line)}
+.see-col{break-inside:avoid;display:flex;align-items:baseline;gap:8px;min-width:0;padding:3px 0;line-height:1.45}
+.see-c{flex:0 1 auto;min-width:0;font:600 var(--f-12)/1.45 var(--mono);color:var(--t-1);overflow-wrap:anywhere}
+.see-t{flex:none;font:500 var(--f-11)/1.45 var(--mono);color:var(--t-2);font-variant-numeric:tabular-nums}
+.see-e{flex:1 1 0;min-width:0;font:400 var(--f-11)/1.45 var(--mono);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .see-e i{font-style:normal;font-family:var(--sans)}
 .see-col.rare .see-c{color:var(--t-2);font-weight:500}
 .see-col.id .see-e{white-space:normal;overflow-wrap:anywhere}   /* un identifiant dit toutes les feuilles où il mène */
-.see-rien{margin:0;font-size:var(--f-13);color:var(--t-3)}
-/* les vides, à part */
-.see-vides{margin-top:12px;padding-top:10px;border-top:1px dashed var(--s-line)}
-.see-vides summary{cursor:pointer;font-size:var(--f-12);color:var(--t-3)}
-.see-vides p{margin:8px 0 0;font:400 var(--f-11)/1.6 var(--mono);color:var(--t-3);overflow-wrap:anywhere}
+.see-rien{margin:0;font-size:var(--f-13);color:var(--t-2)}
+/* les vides, à part, repliées */
+.see-vides{margin-top:14px;padding-top:12px;border-top:1px solid var(--s-line)}
+.see-vides summary{cursor:pointer;font-size:var(--f-12);font-weight:500;color:var(--t-2);width:fit-content;border-radius:var(--r-1);transition:color var(--rapide)}
+.see-vides summary:hover{color:var(--t-1)}
+.see-vides p{margin:8px 0 0;font:400 var(--f-11)/1.6 var(--mono);color:var(--t-2);overflow-wrap:anywhere}
 /* les liens : par feuille, une colonne d'identifiants et sa cible ; ce qui ne se relie à rien, en ambre */
-.see-groupes{columns:420px;column-gap:28px;column-rule:1px solid var(--s-line)}
-.see-groupe{break-inside:avoid;margin:0 0 14px}
+.see-groupes{columns:420px;column-gap:32px;column-rule:1px solid var(--s-line)}
+.see-groupe{break-inside:avoid;margin:0 0 16px}
 .see-groupe h4{margin:0 0 4px;font:600 var(--f-13)/1.4 var(--mono);color:var(--t-1)}
 .see-groupe ul{list-style:none;margin:0;padding:0}
-.see-lien{display:grid;grid-template-columns:minmax(0,auto) auto minmax(0,1fr);gap:8px;align-items:baseline;padding:2px 0 2px 12px;font:400 var(--f-12)/1.45 var(--mono);color:var(--t-2)}
+.see-lien{display:grid;grid-template-columns:minmax(0,auto) auto minmax(0,1fr);gap:8px;align-items:baseline;padding:2px 0 2px 12px;font:400 var(--f-12)/1.5 var(--mono);color:var(--t-2)}
 .see-lien .see-c{font-weight:600}
-.see-fl{color:var(--t-3)}
+.see-fl{color:var(--t-2)}
 .see-cible{min-width:0;overflow-wrap:anywhere}
 .see-cible b{font-weight:600;color:var(--t-1)}
 .see-lien.rien .see-cible i{font-style:normal;font-family:var(--sans);color:var(--warn)}
-.see-note{margin:10px 0 0;font-size:var(--f-12);color:var(--t-3);line-height:1.5;max-width:90ch}
-/* les codes : le plan ouvert face à SEE, puis une colonne de codes par bloc */
-.see-plan{margin:0 0 14px;padding:10px 12px;border-radius:var(--r-1);background:var(--s-sunken)}
+.see-note{margin:12px 0 0;font-size:var(--f-12);color:var(--t-2);line-height:1.55;max-width:96ch}
+/* les codes : le plan ouvert face à SEE (un encart), puis une colonne de codes par bloc */
+.see-plan{margin:0 0 16px;padding:12px 14px;border-radius:var(--r-2);background:var(--s-sunken)}
 .see-plan h4{margin:0 0 6px;font:600 var(--f-13)/1.4 var(--sans);color:var(--t-1)}
-.see-plan ul{margin:0;padding-left:18px;font-size:var(--f-12);line-height:1.6;color:var(--t-2)}
+.see-plan ul{margin:0;padding-left:18px;font-size:var(--f-12);line-height:1.65;color:var(--t-2)}
 .see-plan b{color:var(--t-1)}
 .see-plan .mono{font-family:var(--mono)}
 .see-manque{color:var(--warn);font-family:var(--mono)}
-.see-codes-l{columns:440px;column-gap:28px;column-rule:1px solid var(--s-line)}
-.see-code{break-inside:avoid;margin:0 0 10px}
+.see-codes-l{columns:440px;column-gap:32px;column-rule:1px solid var(--s-line)}
+.see-code{break-inside:avoid;margin:0 0 12px}
 .see-code-t{display:flex;gap:10px;align-items:baseline}
-.see-code-t b{font:600 var(--f-12)/1.4 var(--mono);color:var(--t-1)}
-.see-code-t span{font-size:var(--f-11);color:var(--t-3)}
-.see-code p{margin:2px 0 0;font:400 var(--f-11)/1.6 var(--mono);color:var(--t-1);overflow-wrap:anywhere}
-.see-code p i{font-style:normal;color:var(--t-3);margin-left:4px}
-.see-sep{flex:none;width:1px;align-self:stretch;margin:4px 4px;background:var(--s-line-2)}
+.see-code-t b{font:600 var(--f-12)/1.45 var(--mono);color:var(--t-1)}
+.see-code-t span{font-size:var(--f-11);color:var(--t-2)}
+.see-code p{margin:2px 0 0;font:400 var(--f-11)/1.65 var(--mono);color:var(--t-1);overflow-wrap:anywhere}
+.see-code p i{font-style:normal;color:var(--t-2);margin-left:3px}
 /* la gauge AWG d'une section en mm², en pastille à côté de la valeur de SEE */
 .see-nw{white-space:nowrap}
-.see-awg{margin-left:2px;padding:0 4px;border-radius:3px;background:var(--accent-soft);color:var(--accent);font:600 var(--f-11)/1.5 var(--sans);white-space:nowrap}
+.see-awg{margin-left:3px;padding:0 5px;border-radius:4px;background:var(--accent-soft);color:var(--t-1);font:600 var(--f-11)/1.5 var(--sans);white-space:nowrap}
 /* sous les liens, les petites tables qui relient, colonne par colonne */
 .see-lien .see-c .see-t{font-weight:500;margin-left:4px}
-.see-petites{margin-top:14px;padding-top:12px;border-top:1px solid var(--s-line)}
+.see-petites{margin-top:16px;padding-top:14px;border-top:1px solid var(--s-line)}
 .see-petites-t{margin:0 0 10px;font:600 var(--f-13)/1.4 var(--sans);color:var(--t-1)}
-.see-petite{break-inside:avoid;margin:0 0 14px}
+.see-petite{break-inside:avoid;margin:0 0 16px}
 .see-petite h4{margin:0 0 4px;font:600 var(--f-13)/1.4 var(--mono);color:var(--t-1)}
 .see-petite h4 .see-t{font-weight:500;margin-left:6px}
 .see-petite-l{list-style:none;margin:0;padding:0 0 0 12px}
-/* l'IMPORT : ce que Volta prend, les gestes (garder, oublier, le programme), les tuiles, la différence avec Volta */
-.see-import{display:flex;flex-direction:column;gap:14px}
+/* ── L'IMPORT : ce que Volta prend, l'état et les gestes (garder, oublier, le programme), quatre chiffres, la différence ── */
+.see-import{display:flex;flex-direction:column;gap:20px}
 .see-import .see-tete{margin-bottom:0}
 .see-gestes{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px}
-.see-etat{font-size:var(--f-13);color:var(--t-2);line-height:1.45;flex:1 1 280px;min-width:0}
-.see-etat.ok{color:var(--ok)}
+/* l'état : un point (vert : gardée, elle passe devant ; neutre : pas encore gardée), une phrase */
+.see-etat{display:inline-flex;align-items:baseline;gap:9px;font-size:var(--f-13);color:var(--t-2);line-height:1.5;flex:1 1 280px;min-width:0}
+.see-etat::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:var(--t-3);transform:translateY(-1px)}
+.see-etat.ok{color:var(--t-1)}
+.see-etat.ok::before{background:var(--ok);box-shadow:0 0 0 3px var(--ok-soft)}
 .see-prog{display:inline-flex;align-items:center;gap:8px;font-size:var(--f-12);color:var(--t-2)}
-.see-prog select{height:32px;border:1px solid var(--s-line-2);border-radius:var(--r-1);background:var(--s-surface);color:var(--t-1);font:500 var(--f-13) var(--sans);padding:0 8px;max-width:240px}
-.see-tuiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
-.see-tuile{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:var(--r-1);background:var(--s-sunken);min-width:0}
-.see-tuile b{font:600 var(--f-24)/1.15 var(--sans);color:var(--t-1);font-variant-numeric:tabular-nums}
-.see-tuile span{font-size:var(--f-13);color:var(--t-1)}
-.see-tuile i{font-style:normal;font-size:var(--f-11);color:var(--t-3);line-height:1.4}
-.see-bloc{display:flex;flex-direction:column;gap:8px;padding-top:12px;border-top:1px solid var(--s-line)}
-.see-bloc h3{margin:0;font:600 var(--f-14)/1.4 var(--sans);color:var(--t-1);display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}
-.see-bloc h3 span{font:400 var(--f-12)/1.4 var(--sans);color:var(--t-3)}
-.see-diffs h4{margin:0 0 4px;font:600 var(--f-13)/1.4 var(--sans);color:var(--t-1)}
-.see-diffs h4 .see-t{font-family:var(--sans);margin-left:6px}
-.see-diffs ul{list-style:none;margin:0;padding:0;columns:520px;column-gap:28px;column-rule:1px solid var(--s-line)}
-.see-diff{break-inside:avoid;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px;padding:3px 0;font-size:var(--f-12);line-height:1.45;border-bottom:1px dashed var(--s-line)}
-.see-diff-t{font:600 var(--f-12)/1.45 var(--mono);color:var(--t-1);min-width:0;overflow-wrap:anywhere}
-.see-diff-e{display:inline-flex;align-items:baseline;gap:5px;min-width:0;flex-wrap:wrap}
-.see-diff-e i{font-style:normal;color:var(--t-3)}
-.see-diff-e s{color:var(--t-3);font-family:var(--mono);text-decoration-thickness:1px}
-.see-diff-e b{color:var(--t-1);font:600 var(--f-12)/1.45 var(--mono)}
-.see-dehors{margin:0;padding-left:18px;font-size:var(--f-12);line-height:1.6;color:var(--t-2)}
-.see-table{width:auto;align-self:flex-start;border-collapse:collapse;font-size:var(--f-12);font-variant-numeric:tabular-nums;max-width:100%}
-.see-table th{text-align:left;font-weight:600;color:var(--t-3);padding:4px 16px 4px 0;border-bottom:1px solid var(--s-line)}
-.see-table td{padding:3px 16px 3px 0;color:var(--t-1);border-bottom:1px dashed var(--s-line)}
-.see-table td.mono{font-family:var(--mono)}
+.see-prog select{height:34px;border:1px solid var(--s-line-2);border-radius:var(--r-btn);background:var(--s-surface);color:var(--t-1);font:500 var(--f-13) var(--sans);padding:0 10px;max-width:240px;transition:border-color var(--rapide),box-shadow var(--rapide)}
+.see-prog select:hover{border-color:color-mix(in srgb,var(--t-1) 28%,var(--s-line-2))}
+.see-prog select:focus-visible{outline:none;border-color:var(--t-1);box-shadow:var(--anneau)}
+/* quatre chiffres côte à côte, séparés d'un filet : le chiffre en grand, ce qu'il compte, d'où il vient en petit */
+.see-tuiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 0;padding:16px 0;border-top:1px solid var(--s-line);border-bottom:1px solid var(--s-line)}
+.see-tuile{display:flex;flex-direction:column;gap:2px;padding:0 20px;min-width:0;border-left:1px solid var(--s-line)}
+.see-tuile:first-child{padding-left:0;border-left:none}
+.see-tuile b{font:600 var(--f-28)/1.1 var(--sans);letter-spacing:-.025em;color:var(--t-1);font-variant-numeric:tabular-nums}
+.see-tuile span{margin-top:2px;font-size:var(--f-13);font-weight:500;color:var(--t-1)}
+.see-tuile i{font-style:normal;font-size:var(--f-12);color:var(--t-2);line-height:1.45}
+.see-bloc{display:flex;flex-direction:column;gap:12px}
+.see-bloc+.see-bloc{padding-top:20px;border-top:1px solid var(--s-line)}
+.see-bloc h3{margin:0;font:600 var(--f-16)/1.35 var(--titre);letter-spacing:-.015em;color:var(--t-1);display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}
+.see-bloc h3 span{font:400 var(--f-12)/1.4 var(--sans);letter-spacing:0;color:var(--t-2)}
+/* la différence : chaque table, son compte ; une ligne par ligne remplacée — ce qu'elle est, puis chaque écart : la clé
+   en petit, ce que disait Volta barré, → , ce que dit SEE en gras */
+.see-diffs{display:flex;flex-direction:column;gap:6px}
+.see-diffs h4{margin:0;font:600 var(--f-13)/1.4 var(--sans);color:var(--t-1)}
+.see-diffs h4 .see-t{font-family:var(--sans);font-size:var(--f-12);margin-left:8px}
+.see-diffs ul{list-style:none;margin:0;padding:0;columns:520px;column-gap:32px;column-rule:1px solid var(--s-line)}
+.see-diff{break-inside:avoid;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 14px;padding:6px 0;font-size:var(--f-12);line-height:1.5;border-bottom:1px solid var(--s-line)}
+.see-diff-t{font:600 var(--f-12)/1.5 var(--sans);color:var(--t-1);min-width:0;overflow-wrap:anywhere}
+.see-diff-e{display:inline-flex;align-items:baseline;gap:6px;min-width:0;flex-wrap:wrap}
+.see-diff-e i{font-style:normal;color:var(--t-2);font-size:var(--f-11)}
+.see-diff-e i::after{content:"\00a0:"}
+.see-diff-e s{color:var(--t-2);font-family:var(--mono);text-decoration-thickness:1px;text-decoration-color:color-mix(in srgb,var(--t-2) 70%,transparent)}
+.see-diff-e .see-fl{color:var(--t-3)}
+.see-diff-e b{color:var(--t-1);font:600 var(--f-12)/1.5 var(--mono)}
+.see-dehors{margin:0;padding-left:18px;font-size:var(--f-12);line-height:1.7;color:var(--t-2)}
+/* une petite table (le plan face à la base) : celle des documents */
+.see-table{width:auto;align-self:flex-start;border-collapse:separate;border-spacing:0;font-size:var(--f-12);font-variant-numeric:tabular-nums;max-width:100%}
+.see-table th{text-align:left;font-weight:500;color:var(--t-2);padding:7px 20px 7px 0;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
+.see-table td{padding:6px 20px 6px 0;color:var(--t-1);border-bottom:1px solid var(--s-line)}
+.see-table th:not(:first-child),.see-table td:not(:first-child){text-align:right}
+.see-table td.mono{font-family:var(--mono);font-weight:600}
 .see-table td.att{color:var(--warn);font-weight:600}
+/* le pied : l'onglet en cours sur combien */
+.see-rang{margin-left:4px;font:500 var(--f-12) var(--mono);color:var(--t-2);font-variant-numeric:tabular-nums}
 /* sur une fiche : la ligne « SEE » d'une référence, et la marque d'une valeur que SEE a changée */
 .fi-see{margin:10px 0 0;font-size:var(--f-12);line-height:1.55;color:var(--t-2)}
 .fi-see .id{font-family:var(--mono);font-weight:600;color:var(--t-1)}
@@ -3578,11 +3758,12 @@ button.orig:hover{color:var(--t-1);box-shadow:inset 0 0 0 1px var(--t-3)}
 .ct-see{font-style:normal;margin-left:5px;padding:0 4px;border-radius:3px;background:var(--accent-soft);color:var(--t-2);font:700 9px/1.6 var(--sans);letter-spacing:.04em;vertical-align:middle}
 @media (max-width:720px){
   .see-groupes,.see-codes-l{columns:1}
-  .see-barre{flex-wrap:wrap}
-  .see-ex{margin-left:0}
+  .see-barre{flex-wrap:wrap;margin:0 -16px;padding:0 16px;top:calc(var(--fi-tete,0px) - 16px)}   /* la tête du tiroir colle 16 px plus haut */
+  .see-ex{margin-left:0;padding-bottom:8px}
   .see-cols{columns:1}
   .see-diffs ul{columns:1}
   .see-gestes .btn{flex:1 1 auto}
+  .see-tuile{padding:0 12px}
 }
 
 </style>
@@ -16636,17 +16817,31 @@ function champHypotheseHtml(c, H) {
   if (c.genre === 'choix') return `<label class="hyp-n"><span>${esc(c.lib)}</span><select id="${c.id}" aria-label="${escA(c.aria + ' (hypothèse)')}">${c.options.map(([v, t]) => `<option value="${escA(v)}"${String(v) === String(c.valeur) ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
   return `<label class="hyp-n"${c.titre ? ` title="${escA(c.titre)}"` : ''}><span>${esc(c.lib)}</span><input id="${c.id}" type="number" inputmode="decimal" step="${c.pas}"${c.min != null ? ` min="${c.min}"` : ''} value="${H[c.k] == null ? '' : H[c.k]}"${c.vide ? ` placeholder="${escA(c.vide)}"` : ''} aria-label="${escA(c.lib + ' (hypothèse)')}"><span class="u">${esc(c.unite)}</span></label>`; }
 const GROUPES_HYPOTHESES = [['fil', 'Le câble'], ['temperature', 'La température'], ['chute', 'La chute en ligne'], ['reseau', 'Le réseau'], ['declassement', 'Le déclassement'], ['tableau', 'Les disjoncteurs']];
-const ligneHypotheseHtml = (c, H) => `<div class="hy-ligne"><div class="hy-champ">${champHypotheseHtml(c, H)}</div><p class="hy-sert">${esc(c.sert)}${c.genre === 'condition' && c.titre ? ` <i>· ${esc(c.titre)}</i>` : ''}</p></div>`;
-/* LA FICHE DES HYPOTHÈSES : un document à droite (mode `hypotheses`), un groupe par thème, chaque hypothèse avec son
-   champ et ce qu'elle sert ; « Revenir aux valeurs de l'outil » rend `HYPOTHESES`. Atteignable du menu, du mot
-   « hypothèse » de la fiche d'un fil, de « longueurs d'hypothèse » de la fiche d'un disjoncteur. */
+/* Une ligne de la fiche : le champ, ce qu'il fait ; réglée ici (autre que `HYPOTHESES`), « ↺ » et la valeur de l'outil
+   la rendent, d'un clic. */
+const valeurDeLOutil = c => { const v = HYPOTHESES[c.k]; if (c.genre === 'choix') { const o = c.options.find(([x]) => String(x) === String(v)); return o ? o[1] : String(v); }
+  if (c.genre === 'case') return v === false ? 'non' : 'oui'; if (c.genre === 'liste') return (v || []).map(nombre).join(' ') || 'tout le catalogue';
+  return v == null ? 'vide' : nombre(v) + (c.unite ? ' ' + c.unite : ''); };
+const ligneHypotheseHtml = (c, H) => { const reglee = c.k && c.k in HYPOTHESES && JSON.stringify(H[c.k]) !== JSON.stringify(HYPOTHESES[c.k]);
+  return `<div class="hy-ligne${reglee ? ' reglee' : ''}"><div class="hy-champ">${champHypotheseHtml(c, H)}</div>`
+    + (reglee ? `<button class="hy-rendre" data-hy-rendre="${escA(c.k)}" title="${escA('Revenir à la valeur de l’outil : ' + valeurDeLOutil(c))}">↺ ${esc(valeurDeLOutil(c))}</button>` : '')
+    + `<p class="hy-sert">${esc(c.sert)}${c.genre === 'condition' && c.titre ? ` <i>· ${esc(c.titre)}</i>` : ''}</p></div>`; };
+/* LA FICHE DES HYPOTHÈSES : un document à droite (mode `hypotheses`), comme des réglages — un groupe par thème, une ligne
+   par hypothèse : son nom, son champ aligné à droite, ce qu'elle fait en petit (style.css, `.hy-*`) ; le pied dit où l'on
+   en est (les valeurs de l'outil, ou combien sont réglées ici) et « Revenir aux valeurs de l'outil » rend `HYPOTHESES`.
+   Atteignable du menu, du mot « hypothèse » de la fiche d'un fil, de « longueurs d'hypothèse » de la fiche d'un
+   disjoncteur. */
 function ficheHypotheses() { const H = app.simu || (app.simu = { ...HYPOTHESES }), N = app.norme || normeVide(), cs = hypothesesDe(N, H, { fiche: true });
-  const defaut = Object.keys(HYPOTHESES).every(k => JSON.stringify(H[k]) === JSON.stringify(HYPOTHESES[k]));
-  const corps = tete('Simulation', 'Hypothèses') + `<p class="note">Ce que le retest ne porte pas, l’outil le suppose. Chaque fiche qui s’en sert le dit (<b>hypothèse</b>) ; ce qu’on règle ici rejuge tout — le contrôle, les fiches, la nomenclature — et se garde dans ce navigateur, pas avec le contrat.${defaut ? '' : ' <b>Réglées</b> : l’outil proposait d’autres valeurs.'}</p>`
-    + GROUPES_HYPOTHESES.map(([g, t]) => { const xs = cs.filter(c => c.groupe === g); return xs.length ? `<section class="hy-groupe"><div class="sur">${esc(t)}</div>${xs.map(c => ligneHypotheseHtml(c, H)).join('')}</section>` : ''; }).join('');
+  const reglees = Object.keys(HYPOTHESES).filter(k => JSON.stringify(H[k]) !== JSON.stringify(HYPOTHESES[k])).length, defaut = !reglees;
+  const corps = tete('Simulation', 'Hypothèses') + '<p class="note">Ce que le retest ne porte pas, l’outil le suppose. Chaque fiche qui s’en sert le dit (<b>hypothèse</b>) ; ce qu’on règle ici rejuge tout — le contrôle, les fiches, la nomenclature — et se garde dans ce navigateur, pas avec le contrat.</p>'
+    + GROUPES_HYPOTHESES.map(([g, t]) => { const xs = cs.filter(c => c.groupe === g); return xs.length ? `<section class="hy-groupe"><h3 class="hy-titre">${esc(t)}</h3>${xs.map(c => ligneHypotheseHtml(c, H)).join('')}</section>` : ''; }).join('');
+  const pied = `<span class="hy-etat${defaut ? '' : ' regle'}">${defaut ? 'Les valeurs de l’outil' : `<b>${pluriel(reglees, 'hypothèse')}</b> réglée${reglees > 1 ? 's' : ''} ici`}</span><span class="espace"></span>`
+    + `<button class="btn papier" id="hy-defaut"${defaut ? ' disabled' : ''}>Revenir aux valeurs de l’outil</button>`;
   const deja = app.fiche && app.fiche.mode === 'hypotheses', y = deja ? $('fiche-corps').scrollTop : 0;
-  ouvrirFiche({ mode: 'hypotheses' }, corps, `<button class="btn papier" id="hy-defaut"${defaut ? ' disabled' : ''}>Revenir aux valeurs de l’outil</button>`); if (deja) $('fiche-corps').scrollTop = y;
+  ouvrirFiche({ mode: 'hypotheses', large: true }, corps, pied); if (deja) $('fiche-corps').scrollTop = y;
   lierHypotheses($('fiche-corps'), ficheHypotheses);
+  $('fiche-corps').querySelectorAll('[data-hy-rendre]').forEach(b => b.onclick = () => { const k = b.dataset.hyRendre, v = HYPOTHESES[k];
+    app.simu[k] = Array.isArray(v) ? [...v] : v; apresHypotheses(); ficheHypotheses(); dire('La valeur de l’outil est rendue (' + b.textContent.replace('↺', '').trim() + ').'); });
   $('hy-defaut').onclick = () => { app.simu = { ...HYPOTHESES, conditions: [...HYPOTHESES.conditions], calibresPreferes: [...HYPOTHESES.calibresPreferes] }; apresHypotheses(); ficheHypotheses(); dire('Les hypothèses de l’outil sont rétablies.'); }; }
 /* Une hypothèse a changé : gardée, le contrôle se refait (sa clé l'oublie), la fiche ouverte dans l'inspecteur aussi. */
 function apresHypotheses() { memoriserSimu(); if (typeof CONTROLE !== 'undefined') CONTROLE.cle = null; rendreControle(); rafraichirCarte(); }
@@ -16896,10 +17091,18 @@ function ouvrirFiche(mode, corps, pied) { const f = $('fiche'); fermerBase(); if
   const nouveau = f.hidden || !app.fiche || app.fiche.mode !== mode.mode;
   const r = document.documentElement.style; r.setProperty('--fiche-l', (mode.large ? 560 : 400) + 'px');
   f.hidden = false; if (nouveau) { f.classList.remove('entre'); void f.offsetWidth; f.classList.add('entre'); }
-  app.fiche = mode; $('fiche-corps').scrollTop = 0;
+  app.fiche = mode; $('fiche-corps').scrollTop = 0; f.classList.remove('defile');
   // sur téléphone un document est une page, de la barre du haut au rail : la bande des folios se range (style.css)
   document.body.classList.add('fiche-ouverte');
-  $('fi-fermer').onclick = () => fermerFiche(true); synchroniserRail(); if (nouveau) ajuster(true); }
+  $('fi-fermer').onclick = () => fermerFiche(true); lierCoquille(); mesurerTeteFiche(); synchroniserRail(); if (nouveau) ajuster(true); }
+/* LA COQUILLE d'un document (style.css, « les documents ») : sa tête reste en haut quand on descend ; un filet paraît
+   sous elle dès qu'on a défilé (`#fiche.defile`), et ce qui colle sous elle (l'en-tête d'une table, les onglets de SEE)
+   lit sa hauteur, `--fi-tete`, remesurée quand la feuille change de taille. Posé une fois. */
+function mesurerTeteFiche() { const t = $('fiche-corps').querySelector('.fiche-tete'); $('fiche').style.setProperty('--fi-tete', (t ? t.offsetHeight : 0) + 'px'); }
+let coquilleLiee = false;
+function lierCoquille() { if (coquilleLiee) return; coquilleLiee = true; const f = $('fiche'), c = $('fiche-corps');
+  c.addEventListener('scroll', () => f.classList.toggle('defile', c.scrollTop > 2), { passive: true });
+  if (window.ResizeObserver) new ResizeObserver(() => { if (!f.hidden) mesurerTeteFiche(); }).observe(c); }
 /* `recadrer` : quand on ferme la fiche pour elle-même, ce qu'on avait choisi revient dans l'inspecteur (le document
    l'avait remplacé), sinon le plan reprend la place. */
 function fermerFiche(recadrer) { const f = $('fiche'); if (f.hidden && !app.fiche) return; f.hidden = true; app.fiche = null;
@@ -16909,12 +17112,17 @@ const tete = (sur, titre, sans) => `<div class="fiche-tete"><div class="min0"><d
   <button class="rond fermer" id="fi-fermer" aria-label="Fermer la fiche"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`;
 const champ = (id, lib, val, opt) => `<label class="champ${opt && opt.sans ? ' sans' : ''}"><span>${lib}</span><input id="${id}" value="${escA(val || '')}"${opt && opt.ph ? ` placeholder="${escA(opt.ph)}"` : ''} spellcheck="false"></label>`;
 const CHAMPS_CARTOUCHE = [['ca-titre', 'titre', 'Titre'], ['ca-auteur', 'auteur', 'Dessiné par'], ['ca-indice', 'indice', 'Indice'], ['ca-date', 'date', 'Date'], ['ca-echelle', 'echelle', 'Échelle']];
-function ficheCartouche() { const c = app.contrat.cartouche;
-  const corps = tete('Sur chaque folio', 'Cartouche') + champ('ca-titre', 'Titre', c.titre, { sans: true }) + champ('ca-auteur', 'Dessiné par', c.auteur, { sans: true })
-    + `<div class="grille">${champ('ca-indice', 'Indice', c.indice)}${champ('ca-date', 'Date', c.date)}</div>` + champ('ca-echelle', 'Échelle', c.echelle)
-    + '<p class="note">Le numéro de folio s’écrit tout seul. Ce cartouche part avec chaque planche enregistrée ou imprimée.</p>';
+/* LE CARTOUCHE : d'abord ce qu'il donne — son aperçu sur papier, le dessin même du folio (`cartoucheSvg`, 06), le folio
+   courant, qui suit chaque lettre tapée —, puis le petit formulaire : le titre, qui l'a dessiné, l'indice, la date,
+   l'échelle. Le plan se repeint quand un champ est quitté. */
+function ficheCartouche() { const c = app.contrat.cartouche, W = CART_FOLIO + CART_TITRE;
+  const apercu = () => `<svg viewBox="-1 -1 ${W + 2} ${CART_H + 2}" role="img" aria-label="Aperçu du cartouche">${cartoucheSvg(W, CART_H, c, folioCourant(), [])}</svg>`;
+  const corps = tete('Sur chaque folio', 'Cartouche') + '<p class="note">Il part avec chaque planche enregistrée ou imprimée ; le numéro de folio s’écrit tout seul.</p>'
+    + `<figure class="ca-apercu" id="ca-apercu">${apercu()}</figure><div class="ca-form">`
+    + champ('ca-titre', 'Titre', c.titre, { sans: true, ph: 'Le titre de la planche' }) + champ('ca-auteur', 'Dessiné par', c.auteur, { sans: true, ph: 'Initiales ou nom' })
+    + `<div class="grille ca-trois">${champ('ca-indice', 'Indice', c.indice, { ph: 'A' })}${champ('ca-date', 'Date', c.date, { ph: 'aaaa-mm-jj' })}${champ('ca-echelle', 'Échelle', c.echelle, { ph: '1:1' })}</div></div>`;
   ouvrirFiche({ mode: 'cartouche' }, corps, '');
-  CHAMPS_CARTOUCHE.forEach(([id, k]) => { $(id).addEventListener('input', e => { c[k] = e.target.value; }); $(id).addEventListener('change', () => { peindre(); rallumer(); sauver(); }); });
+  CHAMPS_CARTOUCHE.forEach(([id, k]) => { $(id).addEventListener('input', e => { c[k] = e.target.value; $('ca-apercu').innerHTML = apercu(); }); $(id).addEventListener('change', () => { peindre(); rallumer(); sauver(); }); });
 }
 /* Coller des lignes (ficheColler : l'ordre, un exemple, l'aperçu, ajouter ou remplacer) vit dans 08-fichiers.js. */
 /* La bible des barrettes (ficheBible, pictoBible, zoomBible, importerBible), la norme et son import (ficheNormes, importerNorme) vivent dans 08-normes.js. */
@@ -17785,9 +17993,30 @@ const aConfirmer = (T, x) => /confirm|provisoire/.test(MOT(texteDeLigne(T, x)));
 /* Les lignes masquées d'une table : les embarquées que la couche supprime. */
 const masqueesDe = T => { const sup = new Set(apportsDeTable(NORMES.apports, T).supprimees || []); return (normeEmbarqueeLue()[T] || []).filter(x => sup.has(cleDeLigne(T, x))); };
 const tableModifiee = T => { const A = apportsDeTable(NORMES.apports, T); return !!((A.lignes || []).length || (A.supprimees || []).length); };
-const nmTitre = (sur, titre) => `<div class="fiche-tete"><div class="min0"><div class="sur">${esc(sur)}</div><h2 class="titre sans">${esc(titre)}</h2></div><button class="rond fermer" id="fi-fermer" aria-label="Fermer la fiche"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`;
+/* La tête d'un document large (les normes, la bible, la base SEE) : le sur-titre, le titre, et — `nav` — le passage d'un
+   onglet à l'autre, à côté de la croix (la coquille : style.css). */
+const nmTitre = (sur, titre, nav) => `<div class="fiche-tete"><div class="min0"><div class="sur">${esc(sur)}</div><h2 class="titre sans">${esc(titre)}</h2></div>${nav || ''}<button class="rond fermer" id="fi-fermer" aria-label="Fermer la fiche"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`;
 /* Le passage d'un document à l'autre : les normes, la bible (et les contrats déjà faits). */
 const nmNav = actif => `<div class="segment nm-nav" role="group" aria-label="Documents"><button data-nm-vue="normes" aria-pressed="${actif === 'normes'}">Normes</button><button data-nm-vue="bible" aria-pressed="${actif === 'bible'}">Bible des barrettes</button></div>`;
+/* LE MENU « ··· » d'un document : les gestes secondaires, rangés derrière un bouton (la page des normes, le pied de la
+   bible) ; `gestes` : [id, le mot, ce qu'il fait en petit, des attributs] — null pose un filet, le reste (faux) se tait.
+   Une ligne garde l'identifiant du bouton qu'elle remplace : ses gestes ne changent pas. */
+const ICO_PLUS_DOC = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="12" r=".9"/><circle cx="12" cy="12" r=".9"/><circle cx="18.5" cy="12" r=".9"/></svg>';
+const menuDoc = (id, aria, gestes) => `<details class="doc-menu" id="${id}"><summary class="btn papier" aria-label="${escA(aria)}" title="${escA(aria)}">${ICO_PLUS_DOC}</summary><div class="doc-menu-l" role="menu">`
+  + gestes.filter(g => g || g === null).map(g => g === null ? '<hr>' : `<button role="menuitem" id="${g[0]}"${g[3] || ''}>${esc(g[1])}${g[2] ? `<small>${esc(g[2])}</small>` : ''}</button>`).join('').replace(/^<hr>|<hr>$/g, '') + '</div></details>';
+/* Ses gestes : il se ferme d'un clic ailleurs, d'un geste choisi, d'Échap (le clavier revient au bouton, le document reste
+   ouvert) ; ↑ ↓ passent d'une ligne à l'autre. */
+function lierMenusDoc(box) { if (!box) return;
+  box.querySelectorAll('details.doc-menu').forEach(d => { if (d.dataset.lie) return; d.dataset.lie = '1';
+    const fermer = () => { d.open = false; }, lignes = () => [...d.querySelectorAll('.doc-menu-l button')];
+    d.addEventListener('toggle', () => { if (!d.open) return; const l = lignes()[0]; if (l) l.focus();
+      const dehors = e => { if (d.contains(e.target)) return; fermer(); document.removeEventListener('pointerdown', dehors, true); };
+      document.addEventListener('pointerdown', dehors, true); });
+    d.addEventListener('keydown', e => { if (!d.open) return; const bs = lignes(), i = bs.indexOf(document.activeElement);
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fermer(); d.querySelector('summary').focus(); }
+      else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && bs.length) { e.preventDefault(); const bas = e.key === 'ArrowDown';
+        bs[i < 0 ? (bas ? 0 : bs.length - 1) : (i + (bas ? 1 : bs.length - 1)) % bs.length].focus(); } });
+    d.querySelector('.doc-menu-l').addEventListener('click', e => { if (e.target.closest('button')) fermer(); }); }); }
 const badge = (cls, t) => `<span class="nm-badge ${cls}">${esc(t)}</span>`;
 /* La largeur des deux onglets (Normes, Bible) : les tables ont jusqu'à seize colonnes ; le plan se recadre à côté.
    `ouvrirFiche` pose sa largeur à lui et recadre quand le document change : on reprend la nôtre aussitôt (dans la même
@@ -17810,22 +18039,29 @@ function normesHtml() { const N = normeActive(), E = normeEmbarqueeLue(), total 
   // ce que ce navigateur a importé ou modifié : les lignes de la couche (les lignes embarquées qui portent une source, comme
   // les calibrations, ne comptent pas)
   const nAjout = TABLES_NORME.reduce((n, t) => n + (apportsDeTable(NORMES.apports, t).lignes || []).length, 0), nMasque = TABLES_NORME.reduce((n, t) => n + masqueesDe(t).length, 0);
+  // l'état en une ligne : ce qu'on a, ce qui est modifié ici (et l'export qui va avec), la base SEE gardée qui passe devant
+  const seeGardee = typeof BASE_SEE !== 'undefined' && BASE_SEE.base;
   const etat = `<div class="bible-etat nm-etat"><span><b>${TABLES_NORME.length} tables</b> · ${plurielLie(total, 'ligne')} · ${E.tables} blocs embarqués (normes/*.csv)`
-    + (modifiees.length ? ` · <b class="nm-mod">${plurielLie(modifiees.length, 'table')} modifiée${modifiees.length > 1 ? 's' : ''}</b> dans ce navigateur (${plurielLie(nAjout, 'ligne')} importée${nAjout > 1 ? 's' : ''} ou modifiée${nAjout > 1 ? 's' : ''}${nMasque ? ', ' + plurielLie(nMasque, 'ligne') + ' masquée' + (nMasque > 1 ? 's' : '') : ''}) — ${esc(app.normeNom)}` : ' · rien d’importé ni de modifié : l’embarquée telle quelle')
+    + (modifiees.length ? ` · <b class="nm-mod">${plurielLie(modifiees.length, 'table')} modifiée${modifiees.length > 1 ? 's' : ''}</b> dans ce navigateur (${plurielLie(nAjout, 'ligne')} importée${nAjout > 1 ? 's' : ''} ou modifiée${nAjout > 1 ? 's' : ''}${nMasque ? ', ' + plurielLie(nMasque, 'ligne') + ' masquée' + (nMasque > 1 ? 's' : '') : ''}) — ${esc(app.normeNom)} · <button class="btn lien" id="nm-exporter-tout" title="Toutes les lignes importées ou modifiées, en un CSV à me renvoyer">Exporter mes modifications</button>` : ' · rien d’importé ni de modifié : l’embarquée telle quelle')
+    + (seeGardee ? ' · <button class="btn lien" id="nm-see-gardee" title="Ce que Volta prend de la base SEE gardée sur ce PC, et ce qui change dans ses tables">la base SEE gardée passe devant</button>' : '')
     + (NORMES.ancienne ? ' · <i>une norme importée par l’ancien mécanisme a été oubliée : réimporte-la, elle se verra ligne par ligne</i>' : '') + '</span></div>';
-  // la recherche (son nom dit déjà « toutes les tables »), puis l'action principale de la page — importer — et les autres
-  const outils = `<div class="nm-outils"><div class="filtre nm-cherche"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="nm-q" value="${escA(NORMES.q)}" placeholder="Une référence, un part number, une jauge…" aria-label="Chercher dans toutes les tables" autocomplete="off" spellcheck="false"><button class="vider" id="nm-q-vider"${NORMES.q ? '' : ' hidden'} aria-label="Effacer la recherche">×</button></div>`
-    + `<div class="nm-gestes"><button class="btn cuivre" id="nm-importer" title="Un Excel (une feuille = une ou plusieurs tables), un CSV">Importer une norme</button><button class="btn papier" id="nm-coller">Coller des lignes</button><button class="btn papier" id="nm-see" title="L’Excel de la base SEE (EED_View…, EED_OBJ_…, EED_LNK_…) : Volta dit ce qu’il en prend, et le garde sur ce PC si tu le veux — rien ne sort">Lire la base SEE</button>${typeof BASE_SEE !== 'undefined' && BASE_SEE.base ? '<button class="btn papier" id="nm-see-gardee" title="Ce que Volta prend de la base SEE gardée sur ce PC, et ce qui change dans ses tables">Base SEE gardée</button>' : ''}<button class="btn papier" id="nm-guide" aria-expanded="${NORMES.guide}">Ajouter une norme, les gabarits</button>`
-    + (modifiees.length ? `<button class="btn papier" id="nm-exporter-tout" title="Toutes les lignes importées ou modifiées, en un CSV à me renvoyer">Exporter mes modifications</button>` : '') + `<input type="file" id="fichier-norme" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden></div></div>`;
-  return `<div class="nm">${nmTitre('Ce que l’outil vérifie, table par table', 'Normes')}${nmNav('normes')}${etat}${outils}${NORMES.guide ? guideHtml() : ''}${NORMES.import ? importHtmlOuColler() : ''}${NORMES.q ? rechercheHtml() : ''}`
+  // la recherche en tête (son nom dit déjà « toutes les tables »), l'action principale — importer — pleine (au filet pendant
+  // qu'un import attend d'être adopté : c'est lui qu'on presse), les autres façons d'entrer une norme rangées dans « ··· »
+  const outils = `<div class="nm-outils"><div class="filtre nm-cherche"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="nm-q" value="${escA(NORMES.q)}" placeholder="Chercher dans les ${TABLES_NORME.length} tables : une référence, un part number, une jauge…" aria-label="Chercher dans toutes les tables" autocomplete="off" spellcheck="false"><button class="vider" id="nm-q-vider"${NORMES.q ? '' : ' hidden'} aria-label="Effacer la recherche">×</button></div>`
+    + `<div class="nm-gestes"><button class="btn ${NORMES.import ? 'papier' : 'cuivre'}" id="nm-importer" title="Un Excel (une feuille = une ou plusieurs tables), un CSV — l’Excel de la base SEE aussi"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>Importer une norme</button>`
+    + menuDoc('nm-plus', 'Autres façons d’entrer une norme', [['nm-coller', 'Coller des lignes', 'copiées d’un Excel, ou d’une liste de SEE'],
+      ['nm-see', 'Lire la base SEE', 'l’Excel des vues EED_… : Volta dit ce qu’il en prend, rien ne sort', ' title="L’Excel de la base SEE (EED_View…, EED_OBJ_…, EED_LNK_…) : Volta dit ce qu’il en prend, et le garde sur ce PC si tu le veux — rien ne sort"'],
+      null, ['nm-guide', 'Ajouter une norme, les gabarits', 'ce que chaque table attend, un gabarit par table', ` aria-expanded="${NORMES.guide}"`]])
+    + `<input type="file" id="fichier-norme" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden></div></div>`;
+  return `<div class="nm">${nmTitre('Ce que l’outil vérifie, table par table', 'Normes', nmNav('normes'))}${etat}${outils}${NORMES.guide ? guideHtml() : ''}${NORMES.import ? importHtmlOuColler() : ''}${NORMES.q ? rechercheHtml() : ''}`
     + DOMAINES_NORMES.map(domaineHtml).join('') + '</div>'; }
 /* Le pied : défaire, revenir à l'embarquée — rien quand il n'y a rien à défaire ni à rendre (importer est en tête). */
 function normesPiedHtml() { if (!NORMES.hist.length && !app.normeNom) return '';
   return `${NORMES.hist.length ? `<button class="btn papier" id="nm-defaire" title="${escA('Défaire : ' + NORMES.hist[NORMES.hist.length - 1].quoi + ' (Ctrl+Z)')}">Défaire</button>` : ''}<span class="espace"></span>`
   + (app.normeNom ? '<button class="btn lien" id="no-embarquee">Revenir à la norme embarquée</button>' : ''); }
-/* Un domaine : son titre, à quoi il sert, ses tables. */
+/* Un domaine : son titre, à quoi il sert, ses tables — une liste de lignes qu'on déplie. */
 function domaineHtml(d) { const corps = d.id === 'contrats' ? contratsHtml() : d.vues.map(tableHtml).join('');
-  return `<section class="nm-dom" id="nm-dom-${d.id}"><h3 class="nm-dom-t">${esc(d.titre)}</h3><p class="nm-dom-sens">${esc(d.sens)}</p>${corps}</section>`; }
+  return `<section class="nm-dom" id="nm-dom-${d.id}"><h3 class="nm-dom-t">${esc(d.titre)}</h3><p class="nm-dom-sens">${esc(d.sens)}</p><div class="nm-liste">${corps}</div></section>`; }
 function contratsHtml() { const R = app.references, I = typeof indexReferences === 'function' ? indexReferences() : null;
   return `<article class="nm-table nm-contrats"><div class="nm-t-tete nm-t-fixe"><div class="nm-t-titre"><b>Base déposée</b><span class="nm-t-source">${R ? esc(R.nom || 'base') + '\u00a0· ' + plurielLie(I.harnais.size, 'harness') + '\u00a0· ' + plurielLie(I.dessins.size, 'dessin') + '\u00a0· ' + plurielLie(R.liaisons.length, 'liaison') : 'aucune base déposée'}</span></div>`
     + `<div class="nm-t-badges">${R ? badge('import', 'gardée dans ce navigateur') : badge('rien', 'vide')}</div><button class="fi-lien" data-nm-vue="bible">Voir dans la bible</button></div></article>`; }
@@ -17854,7 +18090,7 @@ function barreTableHtml(v, L) { const T = L.table, masq = masqueesDe(T), modif =
    L'alignement se décide par COLONNE, sur toutes les lignes de la table (pas sur celles qu'un filtre laisse) : une
    colonne dont chaque valeur est un nombre (hors identifiants : référence, câble, code…) se range à droite, en-tête
    compris ; les textes longs (note, source…) en linéale. */
-const COLONNE_TEXTE = /note|source|statut|sens|disposition|groupes/, COLONNE_IDENTIFIANT = /reference|cable|famille|variante|code|taille|designation|contact|courbe|type|filetage|lettre/;
+const COLONNE_TEXTE = /note|source|origine|statut|sens|disposition|groupes/, COLONNE_IDENTIFIANT = /reference|cable|famille|variante|code|taille|designation|contact|courbe|type|filetage|lettre/;
 function corpsTableHtml(v, L, opts) { opts = opts || {}; const T = L.table, cols = colonnesDeTable(T), filtre = opts.filtre != null ? opts.filtre : (NORMES.filtres[v] || ''), tri = NORMES.tris[v];
   let rows = L.lignes.map(x => ({ x, b: brutDe(T, x), etat: L.etat(x) }));
   const droite = new Set(cols.filter(c => !COLONNE_TEXTE.test(c.champ) && !COLONNE_IDENTIFIANT.test(c.champ) && rows.some(r => r.b[c.champ]) && rows.every(r => !r.b[c.champ] || NUMERO(r.b[c.champ]) != null)).map(c => c.champ));
@@ -17988,7 +18224,7 @@ function exporterApportsNormes() { const csv = csvDesApports(NORMES.apports); if
   telecharger(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }), 'normes-mes-modifications.csv'); dire('Tes modifications sont enregistrées en un CSV.'); }
 
 /* ---- les gestes de la page, posés une fois ----------------------------------------------- */
-function lierNormes() { const c = $('fiche-corps'); if (!c) return;
+function lierNormes() { const c = $('fiche-corps'); if (!c) return; lierMenusDoc(c);
   const q = $('nm-q'); if (q) { let t; q.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { NORMES.q = q.value.trim(); const pos = q.selectionStart; rendreNormes(); const q2 = $('nm-q'); if (q2) { q2.focus(); try { q2.setSelectionRange(pos, pos); } catch (_) { } } }, 220); }); }
   if ($('nm-q-vider')) $('nm-q-vider').onclick = () => { NORMES.q = ''; rendreNormes(); const q2 = $('nm-q'); if (q2) q2.focus(); };
   if ($('nm-see')) $('nm-see').onclick = () => $('fichier-see').click();
@@ -18057,26 +18293,31 @@ function ficheBible(ref, ancre) { const B = app.bible || [], nom = app.bibleNom,
   // un filtre par norme : les modules d'une norme, ou le reste (coupures, connecteurs)
   const filtre = app.base.bibleFiltre || '', garde = e => !filtre || (filtre === '-' ? !e.module : e.module && e.famille === filtre), vus = B.filter(e => garde(e) || e === zoom);
   const filtres = B.some(e => e.module) ? `<div class="bible-filtres" role="group" aria-label="Filtrer la bible">` + [['', 'tout', n], ...familles.map(f => [f, nomDeFamille(app.norme, f), B.filter(e => e.module && e.famille === f).length]), ['-', 'coupures et connecteurs', B.filter(e => !e.module).length]]
-    .map(([f, t, k]) => `<button class="mj-norme ${f && f !== '-' ? classeFamille(f) : ''}" data-filtre="${escA(f)}" aria-pressed="${filtre === f}">${esc(t)}\u00a0· ${k}</button>`).join('') + '</div>' : '';
+    .map(([f, t, k]) => `<button class="mj-norme ${f && f !== '-' ? classeFamille(f) : ''}" data-filtre="${escA(f)}" aria-pressed="${filtre === f}">${esc(t)}<span class="mj-n">${k}</span></button>`).join('') + '</div>' : '';
   // une ligne, et sous la ligne choisie, la référence en grand ; la note tient sur une ligne (entière au survol)
   const ligne = e => `<tr class="${e === zoom ? 'on' : ''}"><td class="pict">${pictoBible(e)}</td><td class="ref"><button class="ref-btn" data-ref="${escA(e.reference)}" aria-pressed="${e === zoom}" title="${e === zoom ? 'Replier' : 'Voir la référence en grand'}">${esc(e.reference)}</button></td>
     <td class="sans">${esc(e.nature)}</td><td class="d">${nombre(e.bornes)}</td>
     <td class="d">${jaugeEntree(e)}</td><td class="d">${e.intensite != null ? nombre(e.intensite) + '\u00a0A' : '—'}</td><td>${e.blindage ? 'oui' : '—'}</td><td class="bible-note"${e.note ? ` title="${escA(e.note)}"` : ''}>${esc(e.note)}</td></tr>`
     + (e === zoom ? `<tr class="bz-ligne"><td colspan="8">${zoomBible(e)}</td></tr>` : '');
-  const corps = '<div class="nm">' + tete('Barrettes et connecteurs', 'Bible des barrettes', true) + nmNav('bible') + etat + filtres
+  const corps = '<div class="nm">' + nmTitre('Barrettes et connecteurs', 'Bible des barrettes', nmNav('bible')) + etat + filtres
     + (n ? `<table class="bible"><thead><tr><th></th><th>Référence</th><th>Nature</th><th class="d">Bornes</th><th class="d">Jauge</th><th class="d" title="Intensité">Int.</th><th title="Blindage">Blindé</th><th>Note</th></tr></thead><tbody>${vus.map(ligne).join('')}</tbody></table>` : '<p class="note">Aucune référence.</p>')
     + `<p class="note">Un Excel ou un CSV dont une ligne d’en-têtes nomme ${COLONNES_BIBLE_TEXTE}. La jauge s’écrit en AWG : «\u00a0min\u00a0» est la plus fine acceptée. Une bible se dépose aussi directement sur la table.</p>`
     + resumeNormeHtml() + ficheReferences() + '</div>';
-  const pied = '<button class="btn cuivre" id="bi-importer">Importer un Excel / CSV</button><button class="btn papier" id="no-importer">Importer une norme</button><button class="btn papier" id="re-importer">Contrats déjà faits</button><input type="file" id="fichier-norme" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden><input type="file" id="fichier-references" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden><span class="espace"></span>'
-    + (nom ? '<button class="btn lien" id="bi-exemple">Revenir à la bible d’exemple</button>' : '') + (app.normeNom ? '<button class="btn lien" id="no-embarquee">Revenir à la norme embarquée</button>' : '');
-  ouvrirFiche({ mode: 'bible', large: true, ref: zoom ? ref : '' }, corps, pied); elargirNormes(deja); lierNormes();
+  // le pied : importer une bible, pleine ; le reste (une norme, les contrats déjà faits, revenir à l'exemple) dans « ··· »
+  const pied = `<button class="btn cuivre" id="bi-importer"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>Importer une bible</button>`
+    + menuDoc('bi-plus', 'Autres gestes de la bible', [['no-importer', 'Importer une norme', 'un Excel ou un CSV aux en-têtes de l’outil'], ['re-importer', 'Déposer les contrats déjà faits', 'un Excel de plusieurs harness, la colonne Harness remplie'],
+      null, nom ? ['bi-exemple', 'Revenir à la bible d’exemple', 'celle de l’outil, à la place de ' + nom] : false, app.normeNom ? ['no-embarquee', 'Revenir à la norme embarquée', 'oublier ce qui a été importé ou modifié'] : false])
+    + '<input type="file" id="fichier-norme" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden><input type="file" id="fichier-references" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>'
+    + `<span class="espace"></span><span class="bi-compte">${filtre ? esc(milliers(B.filter(garde).length)) + ' sur ' : ''}${esc(pluriel(n, 'référence'))}</span>`;
+  ouvrirFiche({ mode: 'bible', large: true, ref: zoom ? ref : '' }, corps, pied); elargirNormes(deja); lierNormes(); lierMenusDoc($('fiche-pied'));
   // la position : la ligne cliquée reste en place ; sinon la lecture reprend où elle était ; une autre référence demandée
   // d'ailleurs (la carte d'une barrette) vient sous l'en-tête de la table
   const c = $('fiche-corps'), ligneDe = r => { const b = r && c.querySelector(`.ref-btn[data-ref="${CSS.escape(r)}"]`); return b ? b.closest('tr') : null; };
   c.scrollTop = y;
   const tr = ancre && ancre.ref ? ligneDe(ancre.ref) : null;
   if (tr) c.scrollTop += tr.getBoundingClientRect().top - ancre.top;
-  else if (zoom && zoom.reference !== avant) { const z = ligneDe(zoom.reference), h = c.querySelector('table.bible thead'); if (z) c.scrollTop += z.getBoundingClientRect().top - c.getBoundingClientRect().top - (h ? h.offsetHeight : 0); }
+  else if (zoom && zoom.reference !== avant) { const z = ligneDe(zoom.reference), h = c.querySelector('table.bible thead'), t = c.querySelector('.fiche-tete');   // sous la tête du document et l'en-tête de la table, qui collent
+    if (z) c.scrollTop += z.getBoundingClientRect().top - c.getBoundingClientRect().top - (h ? h.offsetHeight : 0) - (t && getComputedStyle(t).position === 'sticky' ? t.offsetHeight : 0) - 4; }
   const surPlace = b => ({ ref: b.dataset.ref, top: b.closest('tr').getBoundingClientRect().top });
   $('bi-importer').onclick = () => $('fichier-bible').click();
   $('re-importer').onclick = () => $('fichier-references').click();
@@ -18085,6 +18326,8 @@ function ficheBible(ref, ancre) { const B = app.bible || [], nom = app.bibleNom,
   if ($('no-embarquee')) $('no-embarquee').onclick = () => { adopterApports(apportsVides(), 'retour à la norme embarquée'); dire('Norme embarquée rétablie.'); };
   if ($('bi-normes')) $('bi-normes').onclick = () => ficheNormes();
   c.querySelectorAll('.ref-btn').forEach(b => b.onclick = () => ficheBible(b.getAttribute('aria-pressed') === 'true' ? '' : b.dataset.ref, surPlace(b)));
+  // toute la ligne se presse : elle ouvre (ou replie) sa référence en grand
+  c.querySelectorAll('table.bible tbody tr:not(.bz-ligne)').forEach(tr => tr.onclick = e => { const b = tr.querySelector('.ref-btn'); if (b && !e.target.closest('button, a, input')) b.click(); });
   if ($('bz-fermer') && zoom) $('bz-fermer').onclick = () => { const z = ligneDe(zoom.reference); ficheBible('', z ? surPlace(z.querySelector('.ref-btn')) : null); };
   c.querySelectorAll('.bible-filtres .mj-norme').forEach(b => b.onclick = () => { app.base.bibleFiltre = b.dataset.filtre; ficheBible(zoom ? ref : ''); });
 }
@@ -19574,7 +19817,9 @@ lierReferencesUneFois();
        disposition des contacts sur la face est indicative : elle dépend de
        l'arrangement de l'insert, que la bible ne donne pas encore.
 
-   Sous la pièce, le tableau module par module (ou contact par contact) :
+   Collée sous la scène, sa légende : ce que dit la vue, la couleur de
+   chaque route, les trous pris, libres, refusés, le geste qui tourne la
+   pièce. Puis le tableau module par module (ou contact par contact) :
    ce qui arrive, ce qui repart. Survoler un fil — dans la vue ou dans le
    tableau — l'allume sur le plan ; un clic y va.
 
@@ -19688,6 +19933,8 @@ function scenePrise(P, S, az, el) {
    en vue de face) ne s'écrit pas ; le nom d'une pièce caché par une autre (la fiche derrière l'embase) non plus. */
 function reliefSvg() { const { P, S, Q, az, el, prise } = RELIEF; if (!P && !Q) return '';
   const sc = Q ? sceneModules(Q) : prise ? scenePrise(P, S, az, el) : sceneBarrette(P, S, az, el), routes = couleursDesRoutes();
+  // ce que la légende dira : les routes des fils dessinés, et s'il y a un trou que la norme refuse
+  RELIEF.routes = new Set(sc.fils.map(w => (ligneRelief(w.f) || {}).route || '')); RELIEF.ko = sc.trous.some(t => t.mauvais);
   const pj = p => projeter(p, az, el), vues = facesVisibles(sc.faces, az, el);
   // le cadre de la pièce seule : ses faces, ses fils, ses écritures
   const B0 = { minx: Infinity, maxx: -Infinity, miny: Infinity, maxy: -Infinity }, etendre = (B, p) => { B.minx = Math.min(B.minx, p.x); B.maxx = Math.max(B.maxx, p.x); B.miny = Math.min(B.miny, p.y); B.maxy = Math.max(B.maxy, p.y); };
@@ -19759,8 +20006,8 @@ function ouvrirRelief(nom) { if (!reliefPossible(nom)) return; const V = verite(
     const ko = Q.fils.filter(x => x.jaugeOk === false).length;
     $('re-sur').textContent = E.sur; $('re-titre').textContent = nom;
     $('re-compte').innerHTML = [pluriel(Q.modules.length, 'module'), pluriel(Q.utilises, 'contact') + ' pris', pluriel(Q.contacts - Q.utilises, 'libre')].join(' · ') + (ko ? ` · <span class="ko">${pluriel(ko, 'fil')} hors taille</span>` : '');
-    $('re-tableau').innerHTML = tableauModules(Q); $('re-note').textContent = E.note;
-    const d = $('relief'); d.hidden = false; peindreRelief(); lierRelief(); $('re-fermer').focus(); return; }
+    $('re-tableau').innerHTML = tableauModules(Q);
+    montrerRelief(); $('re-note').innerHTML = legendeRelief(E.note); return; }
   RELIEF.P = remplirSelonNorme(physiqueDeBarrette(nom, V, app.bible, app.contrat.designations.get(nom) || ''), app.norme);
   RELIEF.S = simulerBornier(RELIEF.P, app.norme, app.simu);
   [RELIEF.az, RELIEF.el] = VUES_RELIEF['3/4'];
@@ -19770,8 +20017,18 @@ function ouvrirRelief(nom) { if (!reliefPossible(nom)) return; const V = verite(
   $('re-compte').innerHTML = [pluriel(P.modules.length, mot), pluriel(P.modules.length - P.libres, 'utilisé'), pluriel(P.libres, 'libre')].join(' · ')
     + (kos ? ` · <span class="ko">${pluriel(kos, 'fil')} hors norme</span>` : '');
   $('re-tableau').innerHTML = tableauRelief();
-  $('re-note').textContent = RELIEF.prise ? 'Disposition des contacts sur la face : indicative (l’arrangement de l’insert n’est pas encore dans la bible).' : 'En arrière, ce qui arrive (amont) ; en avant, ce qui repart (aval). Le cuivre relie les modules d’un même paquet.';
-  const d = $('relief'); d.hidden = false; peindreRelief(); lierRelief(); $('re-fermer').focus(); }
+  montrerRelief();
+  $('re-note').innerHTML = legendeRelief(RELIEF.prise ? 'Disposition des contacts sur la face : indicative (l’arrangement de l’insert n’est pas encore dans la bible).' : 'En arrière, ce qui arrive (amont) ; en avant, ce qui repart (aval). Le cuivre relie les modules d’un même paquet.'); }
+/* LA LÉGENDE, collée sous la scène sur le même papier (style-relief.css) : ce que dit la vue ; la couleur de chaque route
+   des fils dessinés ; les trous — pris, libres, refusés quand il y en a — ; le geste qui tourne la pièce. */
+function legendeRelief(note) { const couleurs = couleursDesRoutes(), rs = [...(RELIEF.routes || [])].sort((a, b) => (!a) - (!b) || triNaturel(a, b));
+  return `<span class="re-note-t">${esc(note)}</span><ul class="re-legende" aria-label="Légende">`
+    + rs.map(r => `<li><i class="re-l-route" style="background:${couleurs.get(r) || '#26323f'}"></i>${esc(r || 'sans route')}</li>`).join('')
+    + '<li><i class="re-l-trou plein"></i>pris</li><li><i class="re-l-trou"></i>libre</li>' + (RELIEF.ko ? '<li><i class="re-l-trou ko"></i>hors norme</li>' : '')
+    + '<li class="re-l-geste"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4.5V8h-3.5"/></svg>glisser pour tourner</li></ul>'; }
+/* La fenêtre paraît, en haut (une autre pièce ne s'ouvre pas là où on avait laissé la précédente : sa scène en vue), la
+   scène se peint à sa taille, la croix a le clavier. */
+function montrerRelief() { $('relief').hidden = false; const b = document.querySelector('#relief .re-boite'); if (b) b.scrollTop = 0; peindreRelief(); lierRelief(); $('re-fermer').focus(); }
 function fermerRelief() { $('relief').hidden = true; RELIEF.P = null; RELIEF.Q = null; rallumer(); }
 /* Peindre : la scène, l'échelle réelle relue (les écritures gardent leur taille à l'écran), la vue pressée dans le
    segment — aucune quand on a tourné la pièce à la main. */
@@ -20514,8 +20771,11 @@ function codesSEEHtml() { const L = SEE.lu, P = L.plan, codes = [];
   return `<section class="see-feuille see-codes" aria-label="Codes"><div class="see-tete"><b class="see-nom">Codes</b><span class="see-compte">${esc(pluriel(codes.length, 'colonne'))} de codes · les valeurs et leur nombre de lignes</span></div>${plan}`
     + (d_abord.length ? `<div class="see-codes-l">${d_abord.map(code).join('')}</div>` : '')
     + (autres.length ? `<details class="see-vides"><summary>${autres.length} autre${autres.length > 1 ? 's' : ''} colonne${autres.length > 1 ? 's' : ''} de codes</summary><div class="see-codes-l">${autres.map(code).join('')}</div></details>` : '') + '</section>'; }
+/* Le pied : d'un onglet à l'autre (au filet : l'action pleine de la page est « Garder dans Volta », dans l'onglet Import),
+   l'onglet en cours sur combien ; le résumé, à copier ou à enregistrer, à droite. */
 function baseSEEPiedHtml() { if (!SEE.lu) return ''; const o = ORDRE_SEE(), k = o.findIndex(x => String(x) === String(SEE.vue));
-  return (o.length > 1 ? `<button class="btn papier" id="see-prec"${k > 0 ? '' : ' disabled'}>‹ Précédent</button><button class="btn cuivre" id="see-suiv"${k < o.length - 1 ? '' : ' disabled'}>Suivant ›</button>` : '')
+  const fleche = d => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
+  return (o.length > 1 ? `<button class="btn papier" id="see-prec"${k > 0 ? '' : ' disabled'}>${fleche('m14.5 6-6 6 6 6')}Précédent</button><button class="btn papier" id="see-suiv"${k < o.length - 1 ? '' : ' disabled'}>Suivant${fleche('m9.5 6 6 6-6 6')}</button><span class="see-rang">${k + 1} / ${o.length}</span>` : '')
     + `<span class="espace"></span><button class="btn lien" id="see-copier" title="Tout le résumé, en texte : à coller dans un message">Copier le résumé</button><button class="btn papier" id="see-enregistrer" title="Tout le résumé, dans un fichier texte">Enregistrer le résumé</button>`; }
 function changerVueSEE(cle) { if (!SEE.lu && cle !== 'import') return; SEE.vue = cle; rendreBaseSEE();
   const b = $('fiche-corps').querySelector(`[data-see-vue="${cle}"]`); if (b && b.scrollIntoView) { try { b.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (_) { } } }
