@@ -1,11 +1,14 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    LE RÉCAPITULATIF (08-recap.js) — le contrat en onglets, corrigé sur place.
-   Une feuille blanche posée contre la table : en bas (Moitié), ou à la place du plan (Page) ; l'inspecteur reste à
-   droite. Des lignes aérées (50 px), peu de colonnes, serrées à gauche — la dernière prend la place qui reste. Tout
-   est à l'encre ; la couleur ne dit que l'état (un point et un mot, au bout de la ligne) et la route d'un câble (sa
-   flèche). Les identifiants en chasse fixe ; les étiquettes et les unités à l'encre seconde, jamais plus pâles.
-   Une valeur qu'on peut écrire se souligne d'un pointillé quand on survole sa ligne, et prend l'air d'un champ (un
-   fond blanc, un filet) sous le pointeur.
+   Une feuille posée sur la table : en bas (Moitié), ou à la place du plan (Page) ; l'inspecteur reste à droite. Il se
+   lit comme un tableur de 2027 : une tête (le titre, la taille, l'export), des onglets fins (le choisi souligné à
+   l'encre, les comptes à l'encre seconde), UNE barre d'outils sur une seule hauteur (la portée, la recherche, les puces
+   qui défilent et s'effacent aux bords, les colonnes, l'ajout), puis la table : des en-têtes nets collés en haut, des
+   lignes de 44 px séparées d'un filet, un survol à peine teinté, la ligne choisie posée sur le gris doux avec un filet
+   d'encre. Tout est à l'encre ; la couleur ne dit que l'état (un point et un mot) et la route d'un câble (sa flèche).
+   Les identifiants en chasse fixe, les chiffres tabulaires alignés à droite sous leur en-tête.
+   Une valeur qu'on peut écrire se souligne d'un pointillé quand on survole sa ligne et prend l'air d'un champ sous le
+   pointeur ; double-cliquée, son champ flotte à sa place sans bousculer la colonne.
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* ─── le panneau : Moitié (en bas, le plan au-dessus), Page (toute la place du plan) ─── */
@@ -16,86 +19,138 @@ body.insp-ouvert #base{right:calc(var(--insp-l) + 2 * var(--jeu) + var(--sur-d))
 #base.entre{animation-name:doc-monte}
 #base.page.entre{animation:doc-fondu var(--moyen)}
 @keyframes doc-fondu{from{opacity:0}to{opacity:1}}
+/* les teintes propres au récapitulatif, tirées des jetons (les mêmes recettes dans les deux thèmes) : le survol d'une
+   ligne, à peine ; la ligne d'un bloc choisi sur le plan ; la marge de gauche, celle du titre */
+.recap{--rc-survol:color-mix(in srgb,var(--t-1) 3.5%,var(--s-surface));--rc-lie:color-mix(in srgb,var(--t-1) 2%,var(--s-surface));--rc-g:20px}
 /* la poignée : un trait gris au repos (on voit qu'il se tire), à l'encre au survol et pendant le geste ; en page, rien */
 .poignee{position:absolute;left:0;right:0;top:-1px;height:10px;cursor:row-resize;z-index:3}
-.poignee::after{content:"";position:absolute;left:50%;top:3px;width:36px;height:3px;margin-left:-18px;border-radius:2px;background:var(--s-line-2);transition:background var(--rapide)}
-.poignee:hover::after,#base.redim .poignee::after{background:var(--accent)}
+.poignee::after{content:"";position:absolute;left:50%;top:4px;width:32px;height:4px;margin-left:-16px;border-radius:2px;background:var(--s-line-2);transition:background var(--rapide),width var(--rapide),margin var(--rapide)}
+.poignee:hover::after,#base.redim .poignee::after{background:var(--t-2);width:44px;margin-left:-22px}
 #base.redim{user-select:none}
 #base.page .poignee{display:none}
 
-/* ─── la tête : le titre, le contrat, la taille, l'export ─── */
-.rc-tete{display:flex;align-items:center;gap:12px;padding:12px 16px 0 20px;flex:none;min-width:0}
-.rc-titre{margin:0;font:600 var(--f-16)/1.2 var(--titre);letter-spacing:-.015em;color:var(--t-1);white-space:nowrap}
-.rc-contexte{font-size:var(--f-12);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.rc-tete .btn{height:30px;padding:0 12px;font-size:var(--f-12)}
-.rc-taille button{min-width:58px;justify-content:center}
+/* ─── la tête : le titre, le contrat, la taille, l'export — tout sur 32 px ─── */
+.rc-tete{display:flex;align-items:center;gap:12px;padding:14px 16px 0 var(--rc-g);flex:none;min-width:0}
+.rc-titre{margin:0;font:600 var(--f-16)/1.2 var(--titre);letter-spacing:-.018em;color:var(--t-1);white-space:nowrap}
+.rc-contexte{font-size:var(--f-12);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;font-variant-numeric:tabular-nums}
+.rc-tete .segment button{height:26px;min-width:58px;justify-content:center}
+.rc-tete .btn{height:32px;padding:0 12px;font-size:var(--f-12)}
+.rc-tete .btn svg.ico{width:15px;height:15px;color:var(--t-2)}
 
-/* ─── les onglets : un mot, son compte, un point d'état s'il y a lieu ; le choisi souligné à l'encre ─── */
-.rc-onglets{display:flex;gap:2px;padding:6px 12px 0;border-bottom:1px solid var(--s-line);flex:none;overflow-x:auto;scrollbar-width:none}
+/* ─── les onglets : un mot, son compte à l'encre seconde, le point d'état s'il y a lieu ; le choisi souligné ─── */
+.rc-onglets{display:flex;gap:0;padding:4px 10px 0;border-bottom:1px solid var(--s-line);flex:none;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain;container-type:inline-size}
 .rc-onglets::-webkit-scrollbar{display:none}
-.rc-onglet{position:relative;display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 12px;border:none;background:none;border-radius:var(--r-1) var(--r-1) 0 0;
-  font:500 var(--f-13) var(--sans);color:var(--t-2);white-space:nowrap;transition:color var(--rapide),background var(--rapide)}
-.rc-onglet:hover{color:var(--t-1);background:var(--s-hover)}
-.rc-onglet small{font:500 var(--f-11) var(--sans);color:var(--t-2);font-variant-numeric:tabular-nums}
+.rc-onglets.deborde{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 40px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 40px),transparent)}
+.rc-onglets.deborde-g{-webkit-mask-image:linear-gradient(90deg,transparent 4px,#000 36px);mask-image:linear-gradient(90deg,transparent 4px,#000 36px)}
+.rc-onglets.deborde.deborde-g{-webkit-mask-image:linear-gradient(90deg,transparent 4px,#000 36px,#000 calc(100% - 40px),transparent);mask-image:linear-gradient(90deg,transparent 4px,#000 36px,#000 calc(100% - 40px),transparent)}
+.rc-onglet{position:relative;display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 10px;border:none;background:none;border-radius:var(--r-1) var(--r-1) 0 0;
+  font:500 var(--f-13) var(--sans);letter-spacing:-.006em;color:var(--t-2);white-space:nowrap;flex:none;transition:color var(--rapide)}
+.rc-onglet:hover{color:var(--t-1)}
+.rc-onglet small{font:500 var(--f-12) var(--sans);color:var(--t-2);font-variant-numeric:tabular-nums;opacity:.85}
+.rc-onglet::after{content:"";position:absolute;left:10px;right:10px;bottom:-1px;height:2px;border-radius:2px 2px 0 0;background:var(--accent);transform:scaleX(0);transition:transform var(--moyen)}
+.rc-onglet:hover::after{transform:scaleX(1);background:var(--s-line-2)}
 .rc-onglet[aria-selected="true"]{color:var(--t-1);font-weight:600}
-.rc-onglet[aria-selected="true"]::after{content:"";position:absolute;left:10px;right:10px;bottom:-1px;height:2px;border-radius:2px 2px 0 0;background:var(--accent)}
-.rc-onglet[aria-selected="true"] small{color:var(--t-1)}
-.rc-onglet:focus-visible{outline-offset:-2px}
-.rc-carre{width:7px;height:7px;border-radius:50%;flex:none}
+.rc-onglet[aria-selected="true"]::after{transform:scaleX(1);background:var(--accent)}
+.rc-onglet[aria-selected="true"] small{color:var(--t-2);opacity:1}
+.rc-onglet:focus-visible{outline-offset:-4px;border-radius:var(--r-1)}
+/* la feuille étroite (l'inspecteur ouvert) : les onglets se serrent avant de défiler */
+@container (max-width:900px){ .rc-onglet{padding:0 7px;gap:5px} .rc-onglet::after{left:7px;right:7px} }
+/* le point d'état, après le compte : petit, il dit « il y a quelque chose ici » sans prendre le mot */
+.rc-carre{width:6px;height:6px;border-radius:50%;flex:none;margin-left:-1px}
 .rc-carre.ko{background:var(--ko)}
 .rc-carre.att{background:var(--warn)}
 
-/* ─── les outils : la portée, la recherche, les puces ; à droite les colonnes et l'ajout ─── */
-.rc-outils{display:flex;align-items:center;gap:8px;padding:10px 16px 10px 20px;border-bottom:1px solid var(--s-line);flex:none}
-.rc-outils .btn{height:30px;padding:0 12px;font-size:var(--f-12);flex:none}
+/* ─── la barre d'outils : la portée, la recherche, les puces ; à droite les colonnes et l'ajout. Une seule hauteur ─── */
+.rc-outils{display:flex;align-items:center;gap:8px;padding:10px 16px 10px var(--rc-g);border-bottom:1px solid var(--s-line);flex:none;container-type:inline-size;min-width:0}
+.rc-outils .btn{height:30px;padding:0 11px;font-size:var(--f-12);flex:none;gap:6px}
 .rc-outils .btn svg.ico{width:14px;height:14px}
+.rc-outils .segment{padding:2px}
+.rc-outils .segment button{height:24px;padding:0 10px}
 .ba-portee button i{font:500 var(--f-11) var(--sans);font-style:normal;color:var(--t-2);font-variant-numeric:tabular-nums}
 .ba-portee button[aria-pressed="true"] i{color:var(--t-1)}
-.rc-filtre{width:250px;height:30px;flex:none}
+/* la recherche : fine au repos, elle s'élargit quand on y écrit */
+.rc-filtre{width:220px;height:30px;flex:none;padding-left:10px;transition:width var(--moyen),border-color var(--rapide),box-shadow var(--rapide)}
+.rc-filtre:focus-within{width:280px}
+.rc-filtre svg.ico{width:15px;height:15px}
 .rc-filtre input{font-family:var(--sans);font-size:var(--f-13)}
-/* les puces prennent la place qui reste, sur une ligne : quand elles débordent, elles défilent et s'effacent au bord */
-.rc-puces{display:flex;flex-wrap:nowrap;gap:6px;min-width:0;flex:1 1 0;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain}
+.rc-filtre .vider{width:22px;height:22px;font-size:var(--f-14)}
+/* les puces prennent la place qui reste, sur une ligne, après un filet : quand elles débordent, elles défilent (la
+   molette aussi) et s'effacent au bord qui cache quelque chose */
+.rc-puces{display:flex;flex-wrap:nowrap;align-items:center;gap:6px;min-width:0;flex:1 1 0;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain;padding:1px 0 1px 10px;margin-left:2px;border-left:1px solid var(--s-line)}
+.rc-puces:empty{border-left:none}
 .rc-puces::-webkit-scrollbar{display:none}
-.rc-puces.deborde{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent)}
-/* une puce : un choix ; pressée, un filet d'encre et le fond blanc (la puce commune, .fi-chip) */
-.rc-chip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border:1px solid var(--s-line-2);border-radius:999px;background:var(--s-surface);
-  font:500 var(--f-12) var(--sans);color:var(--t-2);white-space:nowrap;flex:none;transition:border-color var(--rapide),color var(--rapide),background var(--rapide)}
-.rc-chip:hover{color:var(--t-1);border-color:var(--t-3)}
+.rc-puces.deborde{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 44px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 44px),transparent)}
+.rc-puces.deborde-g{-webkit-mask-image:linear-gradient(90deg,transparent 4px,#000 40px);mask-image:linear-gradient(90deg,transparent 4px,#000 40px)}
+.rc-puces.deborde.deborde-g{-webkit-mask-image:linear-gradient(90deg,transparent 4px,#000 40px,#000 calc(100% - 44px),transparent);mask-image:linear-gradient(90deg,transparent 4px,#000 40px,#000 calc(100% - 44px),transparent)}
+/* une puce : un choix posé en creux, à l'encre seconde ; pressée, une pièce claire cerclée d'encre — elle se voit sans
+   crier. Son compte à l'encre seconde ; à zéro, elle s'efface d'un cran */
+.rc-chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:none;border-radius:var(--r-1);background:var(--s-sunken);
+  font:500 var(--f-12) var(--sans);color:var(--t-2);white-space:nowrap;flex:none;transition:background var(--rapide),color var(--rapide),box-shadow var(--rapide),transform var(--rapide)}
+.rc-chip:hover{color:var(--t-1);background:var(--s-hover)}
+.rc-chip:active{transform:scale(.98)}
 .rc-chip small{font:500 var(--f-11) var(--sans);color:var(--t-2);font-variant-numeric:tabular-nums}
-.rc-chip[aria-pressed="true"]{border-color:var(--t-1);color:var(--t-1);box-shadow:inset 0 0 0 .5px var(--t-1)}
-.rc-chip .rc-trait{width:14px}
+.rc-chip.zero{color:var(--t-3)}
+.rc-chip.zero small{color:var(--t-3)}
+.rc-chip[aria-pressed="true"]{background:var(--s-surface);color:var(--t-1);box-shadow:inset 0 0 0 1px var(--t-1),var(--sh-1)}
+.rc-chip[aria-pressed="true"] small{color:var(--t-1)}
+.rc-chip:focus-visible{outline-offset:1px}
+.rc-chip .rc-trait{width:12px}
+/* les puces d'un même groupe (les routes, les niveaux) : jointes dans un seul creux, comme un segment */
+.rc-puces-g{display:inline-flex;align-items:center;gap:2px;padding:0;border-radius:var(--r-1);background:var(--s-sunken);flex:none}
+.rc-puces-g .rc-chip{background:none}
+.rc-puces-g .rc-chip:hover{background:var(--s-hover)}
+.rc-puces-g .rc-chip[aria-pressed="true"]{background:var(--s-surface)}
 .rc-colonnes{position:relative;flex:none}
-.rc-colonnes .btn svg.ico{transition:transform var(--rapide)}
+.rc-colonnes .btn svg.ico{transition:transform var(--rapide);color:var(--t-2)}
+.rc-colonnes .btn[aria-expanded="true"]{background:var(--s-sunken)}
 .rc-colonnes .btn[aria-expanded="true"] svg.ico{transform:rotate(180deg)}
-.rc-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;min-width:240px;max-height:min(60vh,460px);overflow:auto;padding:6px;background:var(--s-flottant);border-radius:var(--r-2);box-shadow:var(--sh-2)}
+/* la barre se resserre (l'inspecteur ouvert, un petit écran) : la recherche d'abord, puis le mot « Colonnes » */
+@container (max-width:880px){ .rc-filtre{width:168px} .rc-filtre:focus-within{width:220px} }
+@container (max-width:720px){ .rc-colonnes .rc-col-mot{display:none} .rc-colonnes .btn{padding:0 8px} .ba-portee button{padding:0 8px} }
+/* le menu des colonnes : une feuille qui flotte, qui tombe d'un rien */
+.rc-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;min-width:240px;max-height:min(60vh,460px);overflow:auto;padding:6px;background:var(--s-flottant);border-radius:var(--r-2);box-shadow:var(--sh-2);
+  animation:rc-tombe var(--moyen)}
+@keyframes rc-tombe{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 .rc-menu-t{font:600 var(--f-12) var(--sans);color:var(--t-2);padding:8px 8px 4px}
-.rc-menu-t~.rc-menu-t{margin-top:4px;border-top:1px solid var(--s-line);padding-top:10px}
-.rc-coche{display:flex;align-items:center;gap:8px;height:30px;padding:0 8px;border-radius:var(--r-1);font-size:var(--f-13);color:var(--t-1);cursor:pointer}
+.rc-menu-t~.rc-menu-t{margin-top:6px;border-top:1px solid var(--s-line);padding-top:10px}
+.rc-coche{display:flex;align-items:center;gap:10px;height:30px;padding:0 8px;border-radius:var(--r-1);font-size:var(--f-13);color:var(--t-1);cursor:pointer;transition:background var(--rapide)}
 .rc-coche:hover{background:var(--s-hover)}
-.rc-coche input{accent-color:var(--accent);margin:0}
-.rc-menu .rc-lien{margin:8px 8px 4px}
+.rc-coche input{accent-color:var(--accent);margin:0;width:14px;height:14px}
+.rc-menu .rc-lien{display:block;margin:6px 4px 2px;padding:6px 6px;font-size:var(--f-12);color:var(--t-2)}
 
-/* ─── la table : des lignes aérées, les colonnes serrées à gauche ─── */
-.ba-corps{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:0 12px 24px 12px;scrollbar-width:thin;scroll-padding-block:48px 12px}
-table.rc-tab{width:100%;min-width:max-content;border-collapse:separate;border-spacing:0;font:400 var(--f-14)/1.4 var(--sans);color:var(--t-1)}
-.rc-tab th{position:sticky;top:0;z-index:2;height:40px;padding:0 14px;background:var(--s-surface);border-bottom:1px solid var(--s-line-2);text-align:left;white-space:nowrap;
-  font:500 var(--f-12) var(--sans);color:var(--t-2);user-select:none}
+/* ─── la table : des lignes de 44 px, un filet entre elles, les colonnes serrées à gauche ─── */
+.ba-corps{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:0 0 24px;scrollbar-width:thin;scroll-padding-block:80px 12px}
+table.rc-tab{width:100%;min-width:max-content;border-collapse:separate;border-spacing:0;font:400 var(--f-13)/1.4 var(--sans);color:var(--t-1)}
+.rc-tab th{position:sticky;top:0;z-index:2;height:36px;padding:0 12px;background:var(--s-surface);border-bottom:1px solid var(--s-line);text-align:left;white-space:nowrap;
+  font:500 var(--f-12) var(--sans);color:var(--t-2);user-select:none;transition:color var(--rapide)}
+.rc-tab th:first-child,.rc-tab td:first-child{padding-left:var(--rc-g)}
 .rc-tab th[role="button"]{cursor:pointer}
 .rc-tab th[role="button"]:hover{color:var(--t-1)}
-.rc-tab th:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.rc-tab th:focus-visible{outline:2px solid var(--accent);outline-offset:-3px;border-radius:var(--r-1)}
 .rc-tab th.tri{color:var(--t-1)}
-.rc-tab th .sens{font-size:9px;margin-left:5px;vertical-align:1px}
-.rc-tab td{height:50px;padding:0 14px;border-bottom:1px solid var(--s-line);vertical-align:middle;white-space:nowrap}
+/* le sens du tri : une petite flèche à l'encre ; sur un en-tête qu'on survole, son fantôme dit qu'il se trie */
+.rc-th-l{position:relative;display:inline-flex;align-items:center;gap:4px}
+.rc-sens{width:12px;height:12px;flex:none;stroke-width:2;opacity:0;transition:opacity var(--rapide),transform var(--rapide)}
+.rc-tab th[role="button"]:hover .rc-sens{opacity:.45}
+.rc-tab th.tri .rc-sens{opacity:1}
+.rc-tab th.tri.desc .rc-sens{transform:rotate(180deg)}
+.rc-tab td{height:44px;padding:0 12px;border-bottom:1px solid var(--s-line);vertical-align:middle;white-space:nowrap;transition:background var(--rapide)}
 .rc-tab tr[data-k]{cursor:default}
-.rc-tab tbody tr[data-k]:hover td{background:var(--s-sunken)}
-/* la ligne choisie : un fond doux, un filet d'encre à gauche */
+.rc-tab tbody tr[data-k]:hover td{background:var(--rc-survol)}
+/* la ligne choisie : le gris doux, un filet d'encre à gauche ; celles d'un bloc choisi sur le plan (les liaisons de
+   102CB1) : le filet seul, et le repère surligné là où il paraît (de ou vers) */
 .rc-tab tr.on td,.rc-tab tbody tr.on[data-k]:hover td{background:var(--accent-soft)}
-.rc-tab tr.on td:first-child{box-shadow:inset 2px 0 0 var(--accent)}
+.rc-tab tr.on td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+.rc-tab tr.on.lie td{background:none}
+.rc-tab tbody tr.on.lie[data-k]:hover td{background:var(--rc-survol)}
+.rc-tab tr.on.lie td:first-child{box-shadow:inset 2px 0 0 var(--accent-line)}
+.rc-bout.ici .rc-r{background:var(--accent-soft);box-shadow:0 0 0 3px var(--accent-soft);border-radius:3px}
 .rc-tab tr.neuve td{background:color-mix(in srgb,var(--accent-soft) 55%,var(--s-surface))}
+.rc-tab tr.neuve td:first-child{box-shadow:inset 3px 0 0 var(--accent-line)}
 .rc-tab tr.rc-hors .rc-r{color:var(--t-2)}
 /* la dernière colonne prend ce qui reste (la croix d'une liaison, au survol) */
-.rc-tab th.rc-suppr,.rc-tab td.rc-suppr{width:100%;padding:0 8px;text-align:right}
-.rc-suppr button{width:28px;height:28px;display:inline-grid;place-items:center;border:none;background:none;border-radius:50%;color:var(--t-2);opacity:0;padding:0;transition:opacity var(--rapide),background var(--rapide),color var(--rapide)}
+.rc-tab th.rc-suppr,.rc-tab td.rc-suppr{width:100%;padding:0 12px 0 8px;text-align:right}
+.rc-suppr button{width:28px;height:28px;display:inline-grid;place-items:center;border:none;background:none;border-radius:var(--r-1);color:var(--t-2);opacity:0;padding:0;transition:opacity var(--rapide),background var(--rapide),color var(--rapide)}
 .rc-suppr button svg.ico{width:14px;height:14px}
 .rc-tab tr:hover .rc-suppr button,.rc-tab tr:focus-within .rc-suppr button,.rc-suppr button:focus-visible{opacity:1}
 .rc-suppr button:hover{background:var(--ko-soft);color:var(--ko)}
@@ -103,8 +158,8 @@ table.rc-tab{width:100%;min-width:max-content;border-collapse:separate;border-sp
 
 /* ─── une valeur qu'on corrige ───
    La ligne survolée souligne d'un pointillé ce qui s'écrit ; sous le pointeur, la valeur prend l'air d'un champ (le
-   fond blanc, un filet) ; un clic la choisit (le cercle d'encre), double-clic, Entrée ou F2 l'édite. Vide, elle dit ce
-   qu'on y écrirait — sur la ligne survolée, choisie ou neuve seulement. */
+   fond de la feuille, un filet) ; un clic la choisit (le cercle d'encre), double-clic, Entrée ou F2 l'édite. Vide, elle
+   dit ce qu'on y écrirait — sur la ligne survolée, choisie ou neuve seulement. */
 .rc-v{display:inline-block;min-width:14px;border-radius:5px;padding:2px 5px;margin:-2px -5px;outline:none;cursor:text;text-decoration:underline dotted transparent;text-underline-offset:4px;
   transition:background var(--rapide),box-shadow var(--rapide),text-decoration-color var(--rapide)}
 .rc-tab tbody tr:hover .rc-v{text-decoration-color:var(--t-3)}
@@ -115,46 +170,50 @@ table.rc-tab{width:100%;min-width:max-content;border-collapse:separate;border-sp
 .rc-v.rc-vide::before{content:attr(data-ph);color:var(--t-3);font:italic 400 var(--f-12) var(--sans);opacity:0;transition:opacity var(--rapide)}
 .rc-tab tr:hover .rc-v.rc-vide::before,.rc-tab tr.on .rc-v.rc-vide::before,.rc-tab tr.neuve .rc-v.rc-vide::before,.rc-v.rc-vide:focus::before{opacity:1}
 .rc-ct.rc-vide::before{opacity:1;font-style:normal}
-.rc-v.edite{padding:0;margin:0;background:none;box-shadow:none;text-decoration:none}
+/* en édition, la valeur reste dessous (invisible : elle tient la largeur de la colonne) et le champ flotte à sa place,
+   au-dessus de ce qui suit, comme dans un tableur */
+.rc-v.edite{position:relative;padding:2px 5px;background:none;box-shadow:none;text-decoration:none}
 .rc-v.edite::before{content:none}
-.rc-saisie{height:30px;min-width:64px;border:1px solid var(--accent);border-radius:var(--r-1);padding:0 8px;background:var(--s-surface);color:var(--t-1);
-  font:500 var(--f-13) var(--mono);box-shadow:var(--anneau);outline:none;vertical-align:middle}
+.rc-fantome{visibility:hidden}
+.rc-saisie{position:absolute;left:-4px;top:50%;transform:translateY(-50%);z-index:4;height:30px;min-width:64px;border:1px solid var(--accent);border-radius:var(--r-1);padding:0 8px;background:var(--s-surface);color:var(--t-1);
+  font:500 var(--f-13) var(--mono);box-shadow:var(--anneau),var(--sh-2);outline:none}
 select.rc-saisie{font-family:var(--sans);padding:0 4px;max-width:300px}
 .rc-saisie::placeholder{color:var(--t-3);font-family:var(--sans);font-weight:400}
 .rc-rien{color:var(--t-3)}
 /* l'origine, seulement quand ce n'est pas le calcul : « main » (ambre doux), « hyp. » (en italique) ; ↺ rend l'automatique */
-.rc-o{font:600 var(--f-11)/1 var(--sans);font-style:normal;color:var(--t-2);padding:3px 7px;border-radius:999px;background:var(--s-sunken);margin-left:6px;white-space:nowrap}
-.rc-o.rc-hyp{font-style:italic;font-weight:500;background:none;padding:0 2px;color:var(--t-2)}
+.rc-o{font:600 var(--f-11)/1 var(--sans);font-style:normal;color:var(--t-2);padding:3px 7px;border-radius:999px;background:var(--s-sunken);margin-left:8px;white-space:nowrap}
+.rc-o.rc-hyp{font-style:italic;font-weight:500;background:none;padding:0;color:var(--t-2)}
 .rc-o.main{color:var(--warn);background:var(--warn-soft)}
-.rc-auto{display:inline-grid;place-items:center;border:1px solid var(--s-line-2);background:var(--s-surface);width:22px;height:22px;padding:0;margin-left:4px;border-radius:50%;color:var(--t-1);
-  font:500 var(--f-12)/1 var(--sans);align-self:center;cursor:pointer;transition:background var(--rapide),border-color var(--rapide)}
-.rc-auto:hover{background:var(--s-hover);border-color:var(--t-3)}
+.rc-auto{display:inline-grid;place-items:center;border:none;background:var(--s-sunken);width:22px;height:22px;padding:0;margin-left:4px;border-radius:50%;color:var(--t-1);
+  font:500 var(--f-12)/1 var(--sans);align-self:center;cursor:pointer;transition:background var(--rapide),transform var(--rapide)}
+.rc-auto:hover{background:var(--accent-soft)}
+.rc-auto:active{transform:scale(.94)}
 
 /* ─── l'état : un point de sa couleur et un mot ─── */
 .rc-etat{display:inline-flex;align-items:center;gap:8px;font:500 var(--f-13) var(--sans);color:var(--t-2);white-space:nowrap}
-.rc-etat i{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none}
+.rc-etat i{width:7px;height:7px;border-radius:50%;background:var(--ok);flex:none}
 .rc-etat.att{color:var(--warn)}
 .rc-etat.att i{background:var(--warn)}
 .rc-etat.ko{color:var(--ko)}
 .rc-etat.ko i{background:var(--ko)}
 .rc-tab td.rc-c-etat{min-width:120px}
 
-/* ─── une liaison : de → le câble → vers ─── */
+/* ─── une liaison, comme une phrase : de → le câble → vers ─── */
 .rc-bout{display:inline-flex;align-items:baseline;white-space:nowrap;font:600 var(--f-13) var(--mono);color:var(--t-1);letter-spacing:-.01em}
-.rc-sep{font-style:normal;font-weight:400;color:var(--t-2);padding:0 1px}
+.rc-sep{font-style:normal;font-weight:400;color:var(--t-3);padding:0 1px}
 .rc-sep.rc-vide{visibility:hidden}
 .rc-b{font-weight:400}
-.rc-nat{font:400 var(--f-12) var(--sans);color:var(--t-2);margin-left:8px;letter-spacing:0}
+.rc-nat{font:400 var(--f-12) var(--sans);color:var(--t-2);margin-left:10px;letter-spacing:0}
 .rc-tab td.rc-c-bout{min-width:112px}
-/* le câble : le numéro, le type, la gauge, puis la flèche vers « vers », de la couleur de sa route, épaisse selon la
-   gauge (--e) — pointillée quand la gauge est inconnue */
-.rc-tab td.rc-c-cable{min-width:300px;padding-right:18px}
-.rc-cable{--c:var(--t-2);display:flex;align-items:center;gap:12px;min-width:290px}
+/* le câble : le numéro, le type (à l'encre seconde), la gauge, puis la flèche vers « vers », de la couleur de sa route,
+   épaisse selon la gauge (--e) — pointillée quand la gauge est inconnue */
+.rc-tab td.rc-c-cable{min-width:288px;padding-right:20px}
+.rc-cable{--c:var(--t-2);display:flex;align-items:center;gap:12px;min-width:276px}
 .rc-cable-id,.rc-cable-type{display:inline-flex;align-items:center;flex:none}
-.rc-cable-id{min-width:7.5ch}
-.rc-cable-type{min-width:6ch}
+.rc-cable-id{min-width:7ch}
+.rc-cable-type{min-width:5.5ch}
 .rc-no{font:600 var(--f-13) var(--mono);color:var(--t-1)}
-.rc-type{font:400 var(--f-13) var(--mono);color:var(--t-1)}
+.rc-type{font:400 var(--f-13) var(--mono);color:var(--t-2)}
 .rc-fleche{position:relative;flex:1 1 48px;min-width:40px;height:var(--e,2px);margin:0 10px 0 2px;border-radius:var(--e,2px);background:linear-gradient(var(--route-voile),var(--route-voile)),var(--c)}
 .rc-fleche::after{content:"";position:absolute;right:-8px;top:50%;width:9px;height:calc(var(--e,2px) * 1.6 + 6px);transform:translateY(-50%);
   background:linear-gradient(var(--route-voile),var(--route-voile)),var(--c);clip-path:polygon(0 0,100% 50%,0 100%)}
@@ -164,15 +223,19 @@ select.rc-saisie{font-family:var(--sans);padding:0 4px;max-width:300px}
 .rc-cable.sans-route{--c:var(--t-3)}
 /* la gauge en pastille : pleine à l'encre pour 16 AWG et moins (la puissance qu'on remarque), un filet épais pour 18 et
    20, un filet pour 22 et au-delà */
-.rc-jauge{display:inline-grid;place-items:center;min-width:28px;height:20px;padding:0 6px;border-radius:10px;font:600 var(--f-11)/1 var(--sans);font-variant-numeric:tabular-nums;flex:none;box-sizing:border-box}
+.rc-jauge{display:inline-grid;place-items:center;min-width:26px;height:20px;padding:0 6px;border-radius:10px;font:600 var(--f-11)/1 var(--sans);font-variant-numeric:tabular-nums;flex:none;box-sizing:border-box}
 .rc-jauge.forte{background:var(--t-1);color:var(--t-inverse)}
-.rc-jauge.moyenne{border:1.5px solid var(--t-1);color:var(--t-1)}
-.rc-jauge.fine{border:1px solid var(--s-line-2);color:var(--t-1)}
+.rc-jauge.moyenne{box-shadow:inset 0 0 0 1.5px var(--t-1);color:var(--t-1)}
+.rc-jauge.fine{box-shadow:inset 0 0 0 1px var(--s-line-2);color:var(--t-2)}
 .rc-jauge.inconnue{border:1px dashed var(--t-3);color:var(--t-2)}
-/* les nombres : alignés à droite dans leur place, en chiffres tabulaires ; l'unité à l'encre seconde ; l'origine derrière */
+/* les nombres : alignés à droite dans leur place (la largeur de leur en-tête, `--w`), en chiffres tabulaires ; l'unité
+   à l'encre seconde ; l'origine derrière. L'en-tête d'une colonne de mesures se range au-dessus de ses chiffres */
 .rc-mesure{display:inline-flex;align-items:baseline;white-space:nowrap}
 .rc-mesure .rc-auto,.rc-mesure .rc-etoile{align-self:center}
-.rc-chiffre{display:inline-flex;align-items:baseline;justify-content:flex-end;gap:3px;min-width:56px;font-variant-numeric:tabular-nums}
+.rc-chiffre{display:inline-flex;align-items:baseline;justify-content:flex-end;gap:3px;min-width:var(--w,60px);font-variant-numeric:tabular-nums}
+/* au-dessus de chiffres alignés à droite, la flèche du tri sort devant le mot : le mot tombe juste sur ses chiffres */
+.rc-tab th.rc-c-mesure .rc-th-l{min-width:var(--w,60px);justify-content:flex-end}
+.rc-tab th:is(.rc-c-mesure,.rc-c-n) .rc-sens{position:absolute;right:100%;margin-right:3px}
 .rc-chiffre .rc-v{margin-right:-2px}
 .rc-mesure.rc-suppose .rc-chiffre .rc-n{color:var(--t-2)}
 .rc-chiffre.ko .rc-n{color:var(--ko);font-weight:600}
@@ -186,8 +249,8 @@ b.rc-n{font-weight:500}
 /* l'intensité contre l'admis (en plus) : le chiffre, « / l'admis », la barre de la fiche */
 .rc-int{display:inline-flex;align-items:center;white-space:nowrap}
 .rc-int .rc-chiffre{min-width:44px}
-.rc-barre{position:relative;width:56px;height:5px;margin-left:10px;border-radius:3px;background:var(--s-line);overflow:hidden;flex:none}
-.rc-barre i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--ok)}
+.rc-barre{position:relative;width:56px;height:4px;margin-left:10px;border-radius:2px;background:var(--s-line);overflow:hidden;flex:none}
+.rc-barre i{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:var(--ok)}
 .rc-barre.att i{background:var(--warn)}
 .rc-barre.ko i{background:var(--ko)}
 /* le contact de chaque bout (en plus) : en chasse fixe ; refusé, en rouge */
@@ -198,16 +261,36 @@ b.rc-n{font-weight:500}
 /* la route : son trait, et son nom */
 .rc-route{display:inline-flex;align-items:center;gap:8px;font-size:var(--f-13)}
 .rc-trait{display:inline-block;width:18px;height:3px;border-radius:2px;flex:none;background:linear-gradient(var(--route-voile),var(--route-voile)),var(--c,var(--t-3))}
-.rc-f{display:inline-block;border:none;background:var(--s-sunken);color:var(--t-1);font:500 var(--f-12) var(--sans);border-radius:var(--r-1);padding:2px 9px;margin:0 2px;cursor:pointer}
+.rc-f{display:inline-block;border:none;background:var(--s-sunken);color:var(--t-1);font:500 var(--f-12) var(--sans);border-radius:var(--r-1);padding:2px 8px;margin:0 2px;cursor:pointer;transition:background var(--rapide),color var(--rapide)}
 .rc-f:hover{background:var(--accent);color:var(--on-accent)}
 .rc-texte{max-width:280px;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
 .rc-pn{font:400 var(--f-13) var(--mono);color:var(--t-1)}
-/* l'intercalaire d'un folio, quand « Tout » se lit sans tri ni recherche */
-.rc-tab tr.rc-groupe td{height:auto;padding:20px 8px 8px;border-bottom:1px solid var(--s-line-2);background:var(--s-surface);font:500 var(--f-12) var(--sans);color:var(--t-2)}
-.rc-tab tr.rc-groupe .rc-f{margin:0 10px 0 0;padding:3px 10px;font-weight:600;font-size:var(--f-13);background:var(--s-sunken)}
-.rc-tab tr.rc-groupe.ici .rc-f{background:var(--accent);color:var(--on-accent)}
-.rc-tab tr.rc-reste td{height:auto;padding:18px 12px;white-space:normal;color:var(--t-2);font-size:var(--f-13)}
-.rc-lien{border:none;background:none;padding:3px 6px;margin:-3px -6px;border-radius:var(--r-1);font:500 var(--f-13) var(--sans);color:var(--t-1);text-decoration:underline;text-decoration-color:var(--s-line-2);text-underline-offset:3px;cursor:pointer;white-space:nowrap}
+
+/* ─── l'intercalaire d'un folio, quand « Tout » se lit sans tri ni recherche : collé sous les en-têtes tant qu'on lit
+   ses lignes ; le folio affiché porte un point d'encre ; ses problèmes et ses points à voir, un point et un mot ─── */
+.rc-tab tr.rc-groupe td{position:sticky;top:36px;z-index:1;height:40px;padding:12px 12px 0 var(--rc-g);vertical-align:middle;border-bottom:1px solid var(--s-line);background:var(--s-surface);font:500 var(--f-12) var(--sans);color:var(--t-2)}
+.rc-groupe-l{display:flex;align-items:center;gap:12px}
+.rc-tab tr.rc-groupe .rc-f{display:inline-flex;align-items:center;gap:6px;margin:0;padding:0;background:none;font:600 var(--f-13) var(--sans);letter-spacing:-.01em;color:var(--t-1);border-radius:var(--r-1)}
+.rc-tab tr.rc-groupe .rc-f:hover{background:none;color:var(--t-1);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--s-line-2)}
+.rc-tab tr.rc-groupe.ici .rc-f::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.rc-groupe .rc-etat{font-size:var(--f-12);gap:6px}
+.rc-groupe .rc-etat i{width:6px;height:6px}
+.rc-groupe-n{font-variant-numeric:tabular-nums}
+
+/* ─── la suite, et les vides : une icône au trait dans un carré doux, une phrase, une action ─── */
+.rc-tab tr.rc-reste td{height:auto;padding:16px var(--rc-g);white-space:normal;color:var(--t-2);font-size:var(--f-13);border-bottom:none}
+.rc-suite{display:flex;align-items:center;gap:12px}
+.rc-suite .btn{height:30px;font-size:var(--f-12)}
+.rc-vide-zone{position:sticky;left:0;padding:48px var(--rc-g) 24px}
+.rc-vide-etat{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;max-width:420px;margin:0 auto;animation:rc-parait var(--moyen)}
+@keyframes rc-parait{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.rc-vide-ico{display:grid;place-items:center;width:44px;height:44px;margin-bottom:4px;border-radius:var(--r-2);background:var(--s-sunken);color:var(--t-2)}
+.rc-vide-ico svg.ico{width:22px;height:22px}
+.rc-vide-ico.ok{background:var(--ok-soft);color:var(--ok)}
+.rc-vide-etat b{font:600 var(--f-14)/1.35 var(--sans);color:var(--t-1);letter-spacing:-.01em;text-wrap:balance}
+.rc-vide-etat span{font-size:var(--f-13);line-height:1.5;color:var(--t-2);text-wrap:pretty}
+.rc-vide-etat .btn{margin-top:8px;height:30px;font-size:var(--f-12)}
+.rc-lien{border:none;background:none;padding:3px 6px;margin:-3px -6px;border-radius:var(--r-1);font:500 var(--f-13) var(--sans);color:var(--t-1);text-decoration:underline;text-decoration-color:var(--s-line-2);text-underline-offset:3px;cursor:pointer;white-space:nowrap;transition:background var(--rapide),text-decoration-color var(--rapide)}
 .rc-lien:hover{background:var(--s-hover);text-decoration-color:var(--t-1)}
 
 /* ─── les repères : équipements, disjoncteurs, barrettes, prises ─── */
@@ -216,13 +299,13 @@ b.rc-n{font-weight:500}
 .rc-aposer{display:inline-flex;align-items:center;gap:10px}
 .rc-aposer small{font-size:var(--f-12);color:var(--t-2)}
 .rc-r.aposer{font-style:italic;font-weight:500}
-.rc-poser{height:26px;padding:0 10px;border:1px solid var(--s-line-2);border-radius:var(--r-btn);background:var(--s-surface);color:var(--t-1);font:500 var(--f-12) var(--sans);cursor:pointer}
-.rc-poser:hover{border-color:var(--t-3);background:var(--s-hover)}
+.rc-poser{height:24px;padding:0 10px;border:none;border-radius:var(--r-1);background:var(--s-sunken);color:var(--t-1);font:500 var(--f-12) var(--sans);cursor:pointer;transition:background var(--rapide)}
+.rc-poser:hover{background:var(--accent-soft)}
 .rc-nature{display:inline-flex;align-items:center}
 .rc-tab td.rc-c-nature{min-width:120px}
 .rc-norme{font-weight:500;color:var(--t-1)}
 .rc-tab td.rc-c-norme{min-width:110px}
-.rc-pt{font-style:normal;color:var(--t-3);margin:0 8px}
+.rc-pt{font-style:normal;color:var(--t-3);margin:0 6px}
 .rc-id{font:400 var(--f-13) var(--mono);color:var(--t-1)}
 .rc-fort{font-weight:600}
 .rc-mot{color:var(--t-1)}
@@ -232,8 +315,8 @@ b.rc-n{font-weight:500}
 .rc-cn{font:600 var(--f-13) var(--mono);font-style:normal;color:var(--t-1)}
 .rc-pnl .rc-cn{font-size:var(--f-11);color:var(--t-2);min-width:12px}
 .rc-cnx{display:inline-flex;gap:4px}
-.rc-cnx i{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 4px;border:1px solid var(--s-line-2);border-radius:5px;font:600 var(--f-11) var(--mono);font-style:normal;color:var(--t-1)}
-.rc-cnx i.ko{color:var(--ko);border-color:color-mix(in srgb,var(--ko) 45%,var(--s-surface));background:var(--ko-soft)}
+.rc-cnx i{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 4px;border-radius:5px;background:var(--s-sunken);font:600 var(--f-11) var(--mono);font-style:normal;color:var(--t-1)}
+.rc-cnx i.ko{color:var(--ko);background:var(--ko-soft)}
 .rc-frac{display:inline-flex;align-items:baseline;gap:4px;white-space:nowrap}
 .rc-frac i{font-style:normal;font-size:var(--f-12);color:var(--t-2)}
 .rc-frac.ko .rc-n{color:var(--ko);font-weight:600}
@@ -242,20 +325,23 @@ b.rc-n{font-weight:500}
 .rc-deja i{font-style:normal;color:var(--t-2);font-size:var(--f-12)}
 .rc-etoile{display:inline-grid;align-self:center;color:var(--t-1);margin-right:2px}
 .rc-etoile svg.ico{width:13px;height:13px}
-.rc-mesure .rc-lien{margin-left:10px}
+.rc-mesure .rc-lien{margin-left:12px;font-size:var(--f-12)}
 .rc-pointe{font-size:var(--f-12);color:var(--t-2);margin-left:10px}
 .rc-choix{display:inline-flex;align-items:baseline;font-size:var(--f-13)}
-.rc-choix .rc-pt{margin:0 6px}
-.rc-table{display:inline-flex;flex-direction:column;line-height:1.3}
-.rc-table b{font-weight:600}
+.rc-choix .rc-pt{margin:0 5px}
+.rc-table{display:inline-flex;flex-direction:column;gap:1px;line-height:1.3}
+.rc-table b{font-weight:600;letter-spacing:-.006em}
 .rc-table small{font-size:var(--f-12);color:var(--t-2)}
-.rc-tab td.rc-c-phrase{white-space:normal;min-width:240px;padding-top:12px;padding-bottom:12px}
-/* les onglets de phrases n'ont pas de place à laisser : la largeur va aux phrases, qui se lisent en deux lignes */
+/* les onglets de phrases (Problèmes, Normes) : la largeur va aux phrases, qui se lisent sur deux lignes ; la table ne
+   déborde plus de côté */
+.rc-tab[data-onglet="problemes"]{min-width:0}
+.rc-tab td.rc-c-phrase{white-space:normal;min-width:220px;padding-top:11px;padding-bottom:11px}
 .rc-tab[data-onglet="problemes"] .rc-suppr{width:auto}
-.rc-phrase{display:block;font-size:var(--f-13);line-height:1.45;color:var(--t-1);text-wrap:pretty}
+.rc-tab[data-onglet="normes"] td{padding-top:8px;padding-bottom:8px}
+.rc-phrase{display:block;max-width:64ch;font-size:var(--f-13);line-height:1.45;color:var(--t-1);text-wrap:pretty}
 .rc-phrase.rc-fort{font-weight:500}
 .rc-tab td.rc-c-aller{text-align:left}
-.rc-tab[data-onglet="normes"] td{padding-top:10px;padding-bottom:10px}
+.rc-tab td.rc-c-aller .rc-lien{font-size:var(--f-12)}
 
 /* ─── la tablette et le téléphone (le code reste, on ne le soigne plus) ─── */
 @media (max-width:700px){
@@ -263,13 +349,13 @@ b.rc-n{font-weight:500}
   body.insp-ouvert #base{right:0}
   #base.page{top:calc(var(--entete) + var(--sur-h));height:auto;max-height:none}
   .poignee{height:16px;top:0}
+  .recap{--rc-g:12px}
   .rc-tete{padding:10px 8px 0 12px;gap:8px}
   .rc-contexte,#ba-csv{display:none}
   .rc-outils{padding:8px 8px 8px 12px;flex-wrap:wrap}
-  .rc-puces{flex:1 1 100%;order:5}
-  .rc-filtre{width:auto;flex:1 1 160px}
+  .rc-puces{flex:1 1 100%;order:5;border-left:none;padding-left:0;margin-left:0}
+  .rc-filtre,.rc-filtre:focus-within{width:auto;flex:1 1 160px}
   .rc-colonnes{display:none}
-  .ba-corps{padding:0 4px 8px}
 }
 @media (pointer:coarse){
   .rc-chip,.rc-onglet{height:36px}

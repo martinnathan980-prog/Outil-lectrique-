@@ -1,16 +1,47 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   LA NOMENCLATURE DU CONTRAT (08 septies) : un document, un résumé en tuiles, des tables
-   Les jetons (couleurs, typo, espacements) sont dans style.css ; ici, seulement ce qui est propre à ce domaine.
-   Le résumé : des tuiles comme celles de la fiche (.fi-tuile) — un chiffre en B612, ce qu'il compte — trois par rang.
-   Les tables : celles des documents (table.norme) ; une note « à confirmer » garde son ambre, la colonne « Où » sa place.
+   LA NOMENCLATURE DU CONTRAT (08 septies) : un document qu'on a envie d'imprimer
+   Les jetons (couleurs, typo, espacements) sont dans style.css ; ici, seulement ce qui est propre à ce domaine (la coquille
+   du document, sa tête et son pied, est celle de tous les documents).
+   Le résumé : six chiffres sur une grille de filets, comme le cartouche d'un plan — pas de cartes dans la feuille. Les
+   tables : un titre et ce qu'elle compte, des en-têtes nets, les références en chasse fixe demi-grasse, les quantités à
+   droite en chiffres tabulaires, les repères en petit à l'encre seconde ; une note « à confirmer » est un mot ambre
+   précédé d'un point. La table coule avec le document : la feuille défile, pas la table.
    ═══════════════════════════════════════════════════════════════════════ */
-.no-resume{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-2);margin:var(--sp-3) 0 var(--sp-2)}
-.no-tuile{display:flex;flex-direction:column;gap:2px;padding:12px;border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-surface);min-width:0}
-.no-tuile b{font:600 18px/1.2 var(--titre);color:var(--t-1);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* ─── le résumé : trois chiffres par rang, séparés d'un filet ─── */
+.no-resume{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:8px 0 0;border-top:1px solid var(--s-line-2);border-bottom:1px solid var(--s-line)}
+.no-tuile{display:flex;flex-direction:column;gap:3px;padding:14px 12px 14px 16px;min-width:0;border-left:1px solid var(--s-line)}
+.no-tuile:nth-child(3n+1){border-left:none;padding-left:0}
+.no-tuile:nth-child(n+4){border-top:1px solid var(--s-line)}
+.no-tuile b{font:600 var(--f-24)/1.1 var(--titre);letter-spacing:-.025em;color:var(--t-1);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.no-tuile b small{font:500 var(--f-14) var(--sans);letter-spacing:0;color:var(--t-2)}
 .no-tuile span{font-size:var(--f-12);color:var(--t-2);line-height:1.35}
-.no-table td.sans{color:var(--t-2);min-width:160px;max-width:260px;white-space:normal}
-.no-table td.d{font-variant-numeric:tabular-nums}
-/* un « ~ » (une longueur d'hypothèse) en retrait ; une note « à confirmer » (.fi-avenir) garde son ambre, en linéale,
-   sous la référence */
-.no-table td i:not(.fi-avenir){font-style:normal;color:var(--t-3)}
-.no-table .fi-avenir{display:block;width:fit-content;max-width:100%;margin-top:4px;white-space:normal;font-family:var(--sans)}
+.no-intro{margin:12px 0 4px;max-width:68ch}
+
+/* ─── une famille d'articles : son titre, ce qu'elle compte, sa table ─── */
+.no-section{margin-top:28px}
+.no-st{display:flex;align-items:baseline;gap:10px;margin:0 0 8px;font:600 var(--f-14)/1.3 var(--titre);letter-spacing:-.01em;color:var(--t-1)}
+.no-st small{font:500 var(--f-12) var(--sans);letter-spacing:0;color:var(--t-2);font-variant-numeric:tabular-nums}
+/* la table coule avec le document : elle ne défile que de côté, si elle est trop large */
+.no-defile{max-height:none;overflow-y:visible;overflow-x:auto;padding-bottom:0}
+table.no-table{width:100%;font-size:var(--f-12)}
+.no-table th{position:static;padding:0 12px 7px 0;border-bottom:1px solid var(--s-line-2);font:500 var(--f-12) var(--sans);color:var(--t-2);white-space:nowrap}
+.no-table td{padding:8px 12px 8px 0;border-bottom:1px solid var(--s-line);line-height:1.4;vertical-align:top}
+.no-table th:last-child,.no-table td:last-child{padding-right:0}
+.no-table tbody tr{transition:background var(--rapide)}
+.no-table tbody tr:hover td{background:color-mix(in srgb,var(--t-1) 3%,var(--s-surface))}
+.no-table td.ref{font:600 var(--f-12) var(--mono);color:var(--t-1);letter-spacing:-.005em}
+.no-table td.d{font:600 var(--f-12) var(--sans);color:var(--t-1);font-variant-numeric:tabular-nums;white-space:nowrap}
+.no-table td.sans{font-family:var(--sans);color:var(--t-2);min-width:120px;max-width:260px;white-space:normal}
+.no-table td.no-quoi{color:var(--t-1);min-width:0}
+/* où va la pièce : ses repères à l'encre seconde ; « +11 » dit le reste (entier au survol) */
+.no-ou{font:400 var(--f-12)/1.45 var(--sans);color:var(--t-2);font-variant-numeric:tabular-nums}
+.no-arr{display:block;font:500 var(--f-11)/1.4 var(--mono);color:var(--t-1);margin-top:1px}
+.no-plus{font:500 var(--f-11) var(--sans);font-style:normal;color:var(--t-1);background:var(--s-sunken);border-radius:4px;padding:1px 5px;margin-left:2px;white-space:nowrap}
+.no-ou[title]{cursor:help}
+/* une note sous la référence : « à confirmer », un statut, une cote — un mot ambre précédé d'un point */
+.no-note-l{display:flex;align-items:baseline;gap:6px;margin-top:3px;font:500 var(--f-11)/1.4 var(--sans);font-style:normal;color:var(--warn);letter-spacing:0;white-space:normal}
+.no-note-l::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor;flex:none;transform:translateY(-1px)}
+/* une longueur où l'hypothèse compte : « ≈ » devant elle, à l'encre seconde */
+.no-hyp{font-style:normal;font-weight:500;color:var(--t-2);margin-right:3px;cursor:help}
+.no-rien{color:var(--t-3);font-family:var(--sans);font-weight:400}
+.no-ko{color:var(--ko);font-weight:500}

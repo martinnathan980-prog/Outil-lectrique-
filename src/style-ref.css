@@ -1,117 +1,187 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   LES CONTRATS DÉJÀ FAITS (08 sexies) : « Déjà fait », la comparaison, le dessin (FWD), la bible
-   Les jetons (couleurs, typo, espacements) sont dans style.css ; ici, seulement ce qui est propre à ce domaine.
-   Les couleurs d'état, celles de tout l'outil : vert = la machine l'a et nous pas (à reprendre), ambre = ça diffère ou
-   c'est proposé à confirmer ; le neutre (un fond gris, un filet gris) = ce que nous avons en plus, ni à reprendre ni à
-   voir ; l'encre secondaire = ce qui est pareil ; l'encre, seulement ce qui se presse et l'équipement comparé (choisi).
+   LES CONTRATS DÉJÀ FAITS (08 sexies) : « Déjà fait », la comparaison, le dessin (FWD), la page des références
+   Les jetons (couleurs, typo, espacements) sont dans style.css ; ici, seulement ce qui est propre à ce domaine (le cadre
+   de la section « Déjà fait » est celui des fiches).
+   Les couleurs d'état, celles de tout l'outil, lues d'un coup d'œil : VERT ce que la machine a et que nous n'avons pas
+   (à reprendre), AMBRE ce qui diffère ou ce qui est proposé à confirmer ; GRIS ce qui est pareil ; HACHURÉ (un filet gris
+   en tirets) ce que nous avons en plus, ni à reprendre ni à voir. L'encre, seulement ce qui se presse et l'équipement
+   comparé. Chaque différence : une barre de sa couleur à gauche de sa ligne, et la teinte douce de son état.
    ═══════════════════════════════════════════════════════════════════════ */
-/* ─── le repère décodé : zone · code · ordre · variante, en chasse fixe, la nature au survol (aucune encre forte : il ne se
-   presse pas) ─── */
-.rp{font:600 var(--f-12) var(--mono);color:var(--t-1);white-space:nowrap;letter-spacing:.01em}
+/* ─── le repère décodé : zone · code · ordre · variante, en chasse fixe, la nature au survol ─── */
+.rp{font:600 var(--f-12) var(--mono);color:var(--t-1);white-space:nowrap;letter-spacing:-.005em}
 .rp .rp-zone{color:var(--t-2);font-weight:500}
 .rp .rp-code.inconnu{color:var(--t-3)}
 .rp .rp-var{color:var(--t-2)}
 
-/* ─── « Déjà fait » sur la fiche : une ligne par machine, le taux, le repère en mots, la machine, le dessin ─── */
-.fi-deja .fi-ref{font:600 var(--f-16)/1.25 var(--titre);letter-spacing:.01em}
-.fi-deja .cd-compte{margin-left:auto;font-size:var(--f-11);color:var(--t-3);white-space:nowrap}
-.cd-liste{gap:2px}
-.fi-cand{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;column-gap:10px;padding:8px;border-radius:var(--r-1);cursor:pointer;transition:background var(--rapide)}
-.fi-cand:hover{background:var(--s-hover)}
-/* le focus au clavier : l'anneau d'encre, distinct du gris du survol */
+/* ─── « Déjà fait » sur la fiche : une ligne par machine — le taux, le repère en mots, la machine, le dessin ─── */
+.fi-deja .fi-ref{font:600 var(--f-16)/1.25 var(--titre);letter-spacing:-.01em}
+.fi-deja .cd-compte{font-size:var(--f-12);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cd-liste{display:flex;flex-direction:column;gap:0;margin:4px -8px 0}
+/* une machine : une ligne qu'on prend en main — tout son survol réagit, la flèche avance d'un rien */
+.fi-cand{position:relative;display:grid;grid-template-columns:52px minmax(0,1fr) 16px;align-items:center;column-gap:12px;padding:10px 8px;border-radius:var(--r-2);cursor:pointer;transition:background var(--rapide)}
+.fi-cand+.fi-cand::before{content:"";position:absolute;left:8px;right:8px;top:0;border-top:1px solid var(--s-line);transition:opacity var(--rapide)}
+.fi-cand:hover,.fi-cand:focus-visible{background:var(--s-hover)}
+.fi-cand:hover::before,.fi-cand:hover+.fi-cand::before{opacity:0}
+.fi-cand:active{transform:scale(.995)}
 .fi-cand:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-/* le taux : une lecture d'instrument, en B612, dans sa case colorée selon ce qu'il vaut */
-.cd-taux{display:inline-flex;align-items:center;justify-content:center;min-width:48px;height:24px;padding:0 8px;border-radius:var(--r-1);font:600 var(--f-12)/1 var(--titre);font-variant-numeric:tabular-nums;white-space:nowrap;background:var(--s-sunken);color:var(--t-2)}
+/* le taux : une case de la couleur de ce qu'il vaut (vert ≥ 80 %, ambre ≥ 40 %, gris en deçà) */
+.cd-taux{display:inline-flex;align-items:center;justify-content:center;width:52px;height:26px;border-radius:var(--r-1);font:600 var(--f-12)/1 var(--sans);font-variant-numeric:tabular-nums;white-space:nowrap;background:var(--s-sunken);color:var(--t-2)}
 .cd-taux b{font-weight:inherit}
 .fi-cand.cd-ok .cd-taux{background:var(--ok-soft);color:var(--ok)}
 .fi-cand.cd-att .cd-taux{background:var(--warn-soft);color:var(--warn)}
-.cd-corps{display:flex;flex-direction:column;gap:2px;min-width:0}
+.cd-corps{display:flex;flex-direction:column;gap:3px;min-width:0}
 /* une ligne de texte qui coule : les « · » restent avec ce qui les précède, les chiffres avec leur mot (espaces insécables) */
-.cd-ligne{display:block;min-width:0;font-size:var(--f-12);line-height:1.4}
+.cd-ligne{display:block;min-width:0;font-size:var(--f-12);line-height:1.4;color:var(--t-2)}
+.cd-ligne .rp{font-size:var(--f-13);margin-right:4px}
 .cd-mots{color:var(--t-2)}
-.cd-ou{font-size:var(--f-11);color:var(--t-2)}
+.cd-ou{font-size:var(--f-12);color:var(--t-2)}
 .cd-ou b{font:600 var(--f-11) var(--mono);color:var(--t-1)}
-.cd-ou i{font-style:normal;color:var(--t-3)}
-.cd-dessin{font-size:var(--f-11);color:var(--t-2)}
-.cd-dessin b{color:var(--t-1)}
-.cd-dessin i{font-style:normal;color:var(--t-3)}
-.cd-fwd{font:600 var(--f-11) var(--mono);color:var(--t-1);background:var(--s-sunken);border-radius:4px;padding:0 5px}
-.cd-fleche{width:14px;height:14px;color:var(--t-3);flex:none}
+.cd-ou i{font-style:normal;color:var(--t-2)}
+.cd-dessin{font-size:var(--f-12);color:var(--t-2)}
+.cd-dessin b{color:var(--t-1);font-weight:600}
+.cd-dessin i{font-style:normal;color:var(--t-2)}
+.cd-fwd{font:500 var(--f-11) var(--mono);color:var(--t-1);background:var(--s-sunken);border-radius:4px;padding:1px 6px}
+.cd-fleche{width:16px;height:16px;color:var(--t-3);flex:none;transition:transform var(--rapide),color var(--rapide)}
+.fi-cand:hover .cd-fleche{transform:translateX(2px);color:var(--t-1)}
 
-/* ─── la comparaison : l'échelle, le bilan du dessin, les lignes à cocher ─── */
-.cp-portee{margin-top:-2px;align-items:center}
-.cp-saut{flex-basis:100%;height:0}
-.cp-pas-mot{font-size:var(--f-11);color:var(--t-2);margin-left:2px}
-.cp-portee .cp-pas{padding:2px 9px;font-size:var(--f-11)}
-.cp-bilan{margin:0;font-size:var(--f-12);color:var(--t-2);line-height:1.5}
-.cp-bilan b{color:var(--t-1)}
-.cp-bilan i{font-style:normal;color:var(--t-3)}
-.cp-liste .fi-fil{grid-template-columns:18px auto auto minmax(0,1fr) auto}
+/* ─── la comparaison ───
+   La tête (notre équipement contre celui de la machine), l'échelle en segment, le coup d'œil (le taux, la barre des
+   états, sa légende, le bilan du dessin), puis les lignes groupées par état, à cocher. */
+.cp-tete{display:flex;align-items:flex-start;gap:12px;padding-top:12px}
+.cp-sur{font-size:var(--f-12);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cp-nom{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px;margin-top:2px}
+.cp-retour{border:none;background:none;padding:1px 6px;margin:0 0 0 -6px;border-radius:var(--r-1);font:600 var(--f-24)/1.2 var(--mono);letter-spacing:-.02em;color:var(--t-1);cursor:pointer;transition:background var(--rapide)}
+.cp-retour:hover{background:var(--s-hover)}
+.cp-contre{font-size:var(--f-13);color:var(--t-2)}
+.cp-ref{font:600 var(--f-16)/1.2 var(--mono);letter-spacing:-.01em;color:var(--t-1)}
+.cp-tete .fi-x{margin-top:2px}
+/* l'échelle : un segment (le pressé, une pièce claire posée dans le creux) ; au voisinage, ses pas, un second segment */
+.cp-portee{align-items:center;gap:8px 10px;margin:14px 0 0}
+.cp-seg{display:inline-flex;gap:2px;padding:3px;background:var(--s-sunken);border-radius:var(--r-btn);box-shadow:inset 0 0 0 1px var(--s-line)}
+.cp-seg .fi-chip{height:26px;padding:0 12px;border:none;border-radius:7px;background:none;box-shadow:none;color:var(--t-2);font:500 var(--f-12) var(--sans);transition:background var(--rapide),color var(--rapide),box-shadow var(--rapide)}
+.cp-seg .fi-chip:hover{color:var(--t-1)}
+.cp-seg .fi-chip[aria-pressed="true"]{background:var(--s-surface);color:var(--t-1);font-weight:500;box-shadow:0 0 0 1px var(--s-line),0 1px 3px rgba(0,0,0,.1)}
+.cp-pas-mot{font-size:var(--f-12);color:var(--t-2)}
+.cp-portee .cp-pas{padding:0 10px}
+/* le coup d'œil : le taux en grand, la barre des états (chacun sa longueur), la légende comptée, le bilan dessous */
+.cp-resume{display:flex;flex-direction:column;gap:10px;margin:16px 0 4px;padding:0 0 16px;border-bottom:1px solid var(--s-line)}
+.cp-taux-l{display:flex;align-items:baseline;gap:8px}
+.cp-taux{font:600 var(--f-28)/1 var(--titre);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.cp-taux.ok{color:var(--ok)}
+.cp-taux.att{color:var(--warn)}
+.cp-taux.ko{color:var(--t-1)}
+.cp-taux-l span{font-size:var(--f-13);color:var(--t-2)}
+.cp-barre{display:flex;gap:2px;height:8px;border-radius:4px;overflow:hidden}
+.cp-barre i{display:block;min-width:4px;transform-origin:left;animation:cp-pousse var(--lent)}
+@keyframes cp-pousse{from{transform:scaleX(0)}to{transform:none}}
+.cp-b-manque{background:var(--ok)}
+.cp-b-differe{background:var(--warn)}
+.cp-b-identique{background:var(--s-line-2)}
+.cp-b-enplus{background:repeating-linear-gradient(135deg,var(--s-line-2) 0 2px,transparent 2px 5px);box-shadow:inset 0 0 0 1px var(--s-line-2);border-radius:2px}
+.cp-legende{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px 16px;font-size:var(--f-12);color:var(--t-2)}
+.cp-legende li{display:inline-flex;align-items:center;gap:6px}
+.cp-legende b{font-weight:600;color:var(--t-1);font-variant-numeric:tabular-nums}
+.cp-legende i{width:8px;height:8px;border-radius:50%;background:var(--s-line-2)}
+.cp-l-manque i{background:var(--ok)}
+.cp-l-differe i{background:var(--warn)}
+.cp-l-enplus i{background:none;box-shadow:inset 0 0 0 1.5px var(--s-line-2)}
+.cp-l-manque b{color:var(--ok)}
+.cp-l-differe b{color:var(--warn)}
+.cp-bilan{margin:0;font-size:var(--f-12);color:var(--t-2);line-height:1.55;text-wrap:pretty}
+.cp-bilan b{color:var(--t-1);font-weight:600}
+.cp-bilan i{font-style:normal;color:var(--t-2)}
+.cp-bilan .cd-fwd{font-weight:600}
+/* la liste : pas de cadre dans la fiche, des groupes par état ; chaque différence, une barre de sa couleur à gauche */
+.cp-cadre{border:none;padding:0;background:none;gap:16px;margin-top:8px}
+.cp-liste{margin:0 -8px}
+.cp-liste .fi-fil{grid-template-columns:18px auto auto minmax(0,1fr) auto;min-height:36px;border-radius:var(--r-1)}
 .cp-liste .fi-puce{display:none}
 .cp-liste .fi-groupe{grid-column:1/-1}
-.cp-coche{width:14px;height:14px;margin:0;accent-color:var(--accent)}
-.cp-manque{background:var(--ok-soft)}
-.cp-differe{background:var(--warn-soft)}
-.cp-identique{color:var(--t-2)}
-/* en plus chez nous : neutre — un fond gris et un filet gris, rien qui ressemble à une ligne choisie (gris doux) */
-.cp-enplus{background:var(--s-sunken);box-shadow:inset 3px 0 0 var(--s-line-2)}
-.fi-groupe.cp-manque,.fi-groupe.cp-differe,.fi-groupe.cp-identique,.fi-groupe.cp-enplus{background:none;box-shadow:none}
-.fi-groupe.cp-manque{color:var(--ok)}
-.fi-groupe.cp-differe{color:var(--warn)}
-.fi-groupe.cp-enplus{color:var(--t-2)}
+.cp-coche{width:15px;height:15px;margin:0;accent-color:var(--accent);cursor:pointer}
+.cp-liste .fi-fil.cp-manque{background:color-mix(in srgb,var(--ok-soft) 75%,transparent);box-shadow:inset 3px 0 0 var(--ok)}
+.cp-liste .fi-fil.cp-differe{background:color-mix(in srgb,var(--warn-soft) 75%,transparent);box-shadow:inset 3px 0 0 var(--warn)}
+.cp-liste .fi-fil.cp-identique{color:var(--t-2)}
+.cp-liste .fi-fil.cp-identique .fi-dest{color:var(--t-2)}
+/* en plus chez nous : neutre — un filet gris en tirets à gauche, rien qui ressemble à une ligne choisie */
+.cp-liste .fi-fil.cp-enplus{background:none;box-shadow:none;border-left:2px dashed var(--s-line-2);border-radius:0 var(--r-1) var(--r-1) 0;color:var(--t-2)}
+.cp-liste .fi-fil.cp-manque+.fi-fil::before,.cp-liste .fi-fil.cp-differe+.fi-fil::before,.cp-liste .fi-fil.cp-manque::before,.cp-liste .fi-fil.cp-differe::before{opacity:0}
+.cp-liste .fi-fil.cp-manque+.fi-fil.cp-manque,.cp-liste .fi-fil.cp-differe+.fi-fil.cp-differe{margin-top:2px}
+/* ce que nous avons, là où la machine diffère : en ambre, sous la ligne */
+.cp-liste .fi-ko{color:var(--warn);font-weight:500;padding-left:52px}
+/* le titre d'un groupe : un point de sa couleur, le mot, le compte */
+.fi-groupe.cp-manque,.fi-groupe.cp-differe,.fi-groupe.cp-identique,.fi-groupe.cp-enplus{align-items:center;background:none;box-shadow:none;border:none;font:600 var(--f-12)/1.33 var(--sans);color:var(--t-1);padding:14px 8px 6px}
+.fi-groupe.cp-manque:first-child,.fi-groupe.cp-differe:first-child,.fi-groupe.cp-identique:first-child,.fi-groupe.cp-enplus:first-child{padding-top:2px}
+.fi-groupe.cp-manque::before,.fi-groupe.cp-differe::before,.fi-groupe.cp-identique::before,.fi-groupe.cp-enplus::before{content:"";width:8px;height:8px;border-radius:50%;flex:none;background:var(--s-line-2)}
+.fi-groupe.cp-manque::before{background:var(--ok)}
+.fi-groupe.cp-differe::before{background:var(--warn)}
+.fi-groupe.cp-enplus::before{background:none;box-shadow:inset 0 0 0 1.5px var(--s-line-2)}
 .fi-corr{font-style:normal;color:var(--t-2);font-size:var(--f-11);margin-left:4px}
-/* à l'échelle d'un voisinage ou d'un dessin : une tête par équipement de la machine, puis ses lignes — une phrase, en
-   linéale (pas l'étiquette en B612 capitales d'un .fi-groupe) */
-.fi-groupe.cp-eq{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:8px;align-items:baseline;text-transform:none;letter-spacing:0;font-family:var(--sans);font-size:var(--f-12);font-weight:400;padding:12px 8px 4px;margin-top:4px;border-top:1px solid var(--s-line)}
-.fi-groupe.cp-eq:first-child{border-top:none;margin-top:0;padding-top:0}
+/* à l'échelle d'un voisinage ou d'un dessin : une tête par équipement de la machine — son repère et son point d'état,
+   ce qu'il devient chez nous, ses comptes — puis ses lignes */
+.fi-groupe.cp-eq{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:8px;row-gap:2px;align-items:baseline;text-transform:none;letter-spacing:0;font-family:var(--sans);font-size:var(--f-12);font-weight:400;padding:16px 8px 6px;margin-top:6px;border-top:1px solid var(--s-line)}
+.fi-groupe.cp-eq:first-child{border-top:none;margin-top:0;padding-top:2px}
+.cp-eq-rep{display:inline-flex;align-items:center;gap:8px}
+.cp-eq-rep::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--t-3);flex:none;transform:translateY(-1px)}
+.cp-eq-cible .cp-eq-rep::before{background:none;box-shadow:inset 0 0 0 2px var(--accent)}
+.cp-eq-manque .cp-eq-rep::before{background:var(--ok)}
+.cp-eq-propose .cp-eq-rep::before{background:var(--warn)}
 .cp-eq .rp{font-size:var(--f-13)}
-.cp-eq-mots{font-size:var(--f-11);color:var(--t-2)}
-.cp-eq-vers{grid-column:1/-1;font-size:var(--f-11);color:var(--t-2)}
+.cp-eq-mots{font-size:var(--f-12);color:var(--t-2)}
+.cp-eq-vers{grid-column:1/-1;font-size:var(--f-12);color:var(--t-2);padding-left:16px}
 .cp-eq-vers b{font-family:var(--mono);color:var(--t-1)}
-.cp-eq-n{grid-column:1/-1;font-size:var(--f-11);color:var(--t-2)}
-.cp-eq-cible .cp-eq-vers{color:var(--accent)}
+.cp-eq-n{grid-column:1/-1;font-size:var(--f-11);color:var(--t-2);padding-left:16px}
+.cp-eq-cible .cp-eq-vers{color:var(--t-1)}
 .cp-eq-manque .cp-eq-vers{color:var(--ok);font-weight:600}
 .cp-eq-propose .cp-eq-vers{color:var(--warn)}
+/* ses repères chez nous : des puces ; proposé (« ? ») en ambre au trait tireté, nouveau au trait tireté, confirmé ✓ */
+.cp-corrs{display:flex;flex-direction:column;gap:8px;padding-top:16px;border-top:1px solid var(--s-line)}
+.cp-corrs .fi-chip{height:28px}
 .fi-chip.cp-corr-nouveau{border-style:dashed}
-.fi-chip.cp-corr-code,.fi-chip.cp-corr-voisins{border-color:var(--warn);color:var(--warn)}
+.fi-chip.cp-corr-code,.fi-chip.cp-corr-voisins{border-color:color-mix(in srgb,var(--warn) 55%,var(--s-surface));border-style:dashed;color:var(--warn);background:var(--warn-soft)}
+.fi-chip.cp-corr-choisi{border-color:var(--t-1);color:var(--t-1)}
+/* le choix d'un repère proposé : posé en creux sous les puces */
+.cp-choix{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:var(--r-2);background:var(--s-sunken);animation:cp-ouvre var(--moyen)}
+@keyframes cp-ouvre{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.cp-choix .fi-chip{background:var(--s-surface)}
+.cp-note{margin-top:12px}
 .fi-bouton.cuivre{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .fi-bouton.cuivre svg.ico{color:var(--on-accent)}
 .fi-bouton.cuivre:hover{background:var(--accent-2);border-color:var(--accent-2)}
 .fi-bouton.cuivre:disabled{opacity:.45;cursor:default}
 
-/* ─── LE DESSIN (FWD) : un calque plein écran — la feuille dessinée par le moteur à gauche, la colonne qui l'explique ─── */
-.fwd{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:16px;background:var(--voile-fort)}
+/* ─── LE DESSIN (FWD) : une fenêtre sur la table — la feuille dessinée par le moteur à gauche, la colonne qui l'explique ─── */
+.fwd{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:16px;background:var(--voile-fort);animation:doc-fondu var(--moyen)}
 .fwd[hidden]{display:none}
-.fw-boite{display:flex;flex-direction:column;width:100%;height:100%;max-width:1680px;overflow:hidden;background:var(--s-surface);color:var(--t-1);border-radius:var(--r-3);box-shadow:var(--sh-2)}
+.fw-boite{display:flex;flex-direction:column;width:100%;height:100%;max-width:1680px;overflow:hidden;background:var(--s-surface);color:var(--t-1);border-radius:var(--r-3);box-shadow:var(--sh-panneau);animation:doc-monte var(--lent)}
 .fw-tete{display:flex;align-items:center;gap:12px;padding:12px 16px 12px 20px;border-bottom:1px solid var(--s-line)}
-.fw-tete .sur{font:500 var(--f-12) var(--sans);letter-spacing:0;color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-/* le nom du dessin en titre : en B612, comme tous les titres */
-.fw-tete .titre{margin:1px 0 0;font:600 var(--f-20)/1.2 var(--titre);letter-spacing:.01em}
+.fw-tete .sur{font:500 var(--f-12) var(--sans);letter-spacing:0;color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* le nom du dessin en titre : un identifiant, en chasse fixe */
+.fw-tete .titre{margin:2px 0 0;font:600 var(--f-20)/1.2 var(--mono);letter-spacing:-.02em}
 .fw-outils{display:flex;gap:6px;flex:none}
-.fw-tete .fi-x{flex:none;width:32px;height:32px;border-radius:50%;border:none;background:none;color:var(--t-2);display:grid;place-items:center;cursor:pointer}
+.fw-tete .fi-x{flex:none;width:32px;height:32px;border-radius:var(--r-btn);border:none;background:none;color:var(--t-2);display:grid;place-items:center;cursor:pointer;transition:background var(--rapide),color var(--rapide)}
 .fw-tete .fi-x:hover{background:var(--s-hover);color:var(--t-1)}
-.fw-tete .fi-x svg.ico{width:17px;height:17px}
+.fw-tete .fi-x svg.ico{width:18px;height:18px}
 .fw-corps{flex:1;min-height:0;display:flex}
-.fw-scene{flex:1;min-width:0;position:relative;overflow:hidden;background:var(--s-app);cursor:grab;touch-action:none;user-select:none}
+.fw-scene{flex:1;min-width:0;position:relative;overflow:hidden;background-color:var(--s-app);background-image:var(--points);background-size:24px 24px;cursor:grab;touch-action:none;user-select:none}
 .fw-scene.tient{cursor:grabbing}
 .fw-scene svg{display:block;width:100%;height:100%}
-.fw-attente{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--t-2);font-size:var(--f-13)}
+.fw-attente{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--t-table-2);font-size:var(--f-13)}
 .fw-colonne{flex:none;width:380px;min-height:0;display:flex;flex-direction:column;border-left:1px solid var(--s-line);background:var(--s-surface)}
-.fw-resume{display:flex;flex-direction:column;gap:8px;padding:12px 16px;border-bottom:1px solid var(--s-line)}
-/* les chiffres du dessin, dits une fois (la tête ne les répète pas) : des lectures d'instrument, en B612 */
-.fw-chiffres{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:var(--f-12);color:var(--t-2)}
-.fw-chiffres b{font:600 var(--f-16)/1.2 var(--titre);color:var(--t-1);font-variant-numeric:tabular-nums;margin-right:4px}
-.fw-natures{margin:0;font-size:var(--f-11);color:var(--t-2);line-height:1.45}
-.fw-bilan{display:flex;flex-wrap:wrap;gap:4px}
-/* une pastille : la recette de tout l'outil pour un mot d'état dans sa case (.nm-badge, .verdict) */
-.fw-pastille{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 8px;border-radius:var(--r-1);font:500 var(--f-12)/1 var(--sans);letter-spacing:0;background:var(--s-sunken);color:var(--t-1);white-space:nowrap}
-.fw-pastille b{font-weight:inherit}
+.fw-resume{display:flex;flex-direction:column;gap:10px;padding:16px 16px 14px;border-bottom:1px solid var(--s-line)}
+/* les chiffres du dessin, dits une fois (la tête ne les répète pas) */
+.fw-chiffres{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:var(--f-12);color:var(--t-2)}
+.fw-chiffres b{font:600 var(--f-20)/1.1 var(--titre);letter-spacing:-.02em;color:var(--t-1);font-variant-numeric:tabular-nums;margin-right:4px}
+.fw-natures{margin:0;font-size:var(--f-12);color:var(--t-2);line-height:1.45}
+.fw-bilan{display:flex;flex-wrap:wrap;gap:6px}
+/* une pastille : un mot d'état dans sa case, la teinte de son état */
+.fw-pastille{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:var(--r-1);font:500 var(--f-12)/1 var(--sans);letter-spacing:0;background:var(--s-sunken);color:var(--t-1);white-space:nowrap}
+.fw-pastille b{font-weight:600;font-variant-numeric:tabular-nums}
 .fw-pastille.manque,.fw-pastille.fil-manque{background:var(--ok-soft);color:var(--ok)}
 .fw-pastille.propose,.fw-pastille.differe{background:var(--warn-soft);color:var(--warn)}
-/* en plus chez nous : neutre */
-.fw-pastille.enplus{background:var(--s-sunken);color:var(--t-1);box-shadow:inset 0 0 0 1px var(--s-line-2)}
-.fw-legende{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:3px 12px;font-size:var(--f-11);color:var(--t-2)}
-.fw-legende li{display:inline-flex;align-items:center;gap:5px}
+/* en plus chez nous : neutre, un filet en tirets */
+.fw-pastille.enplus{background:none;color:var(--t-2);box-shadow:none;border:1px dashed var(--s-line-2)}
+.fw-legende{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:var(--f-11);color:var(--t-2)}
+.fw-legende li{display:inline-flex;align-items:center;gap:6px}
 .fw-legende i{width:14px;height:10px;border:1.5px solid var(--t-1);border-radius:2px;background:var(--s-surface)}
 .fw-legende i.cible{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .fw-legende i.chez{background:var(--s-sunken)}
@@ -121,38 +191,39 @@
 .fw-legende i.fil-manque{border-color:var(--ok)}
 .fw-legende i.fil-differe{border-color:var(--warn)}
 /* la recherche de la colonne : une bande (pas une boîte) ; on y écrit, un trait d'encre la souligne */
-.fw-cherche{display:flex;align-items:center;gap:8px;padding:4px 16px;border-bottom:1px solid var(--s-line);transition:box-shadow var(--rapide)}
+.fw-cherche{display:flex;align-items:center;gap:8px;padding:6px 16px;border-bottom:1px solid var(--s-line);transition:box-shadow var(--rapide)}
 .fw-cherche:focus-within{box-shadow:inset 0 -2px 0 var(--accent)}
 .fw-cherche svg.ico{width:16px;height:16px;color:var(--t-3);flex:none}
-.fw-cherche:focus-within svg.ico{color:var(--accent-2)}
+.fw-cherche:focus-within svg.ico{color:var(--t-1)}
 .fw-cherche input{flex:1;min-width:0;border:none;background:none;font:inherit;font-size:var(--f-13);color:var(--t-1);padding:6px 0}
+.fw-cherche input::placeholder{color:var(--t-3)}
 .fw-cherche input:focus{outline:none}
 .fw-liste{list-style:none;margin:0;padding:8px 8px 16px;flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
-/* un équipement : son voyant (le carré de 8 px de tout l'outil), puis ce qu'il est ; le focus au clavier, l'anneau d'encre */
-.fw-eq{display:grid;grid-template-columns:8px minmax(0,1fr);column-gap:8px;padding:8px;border-radius:var(--r-1);cursor:pointer;transition:background var(--rapide)}
+/* un équipement : son point d'état, puis ce qu'il est ; le focus au clavier, l'anneau d'encre */
+.fw-eq{display:grid;grid-template-columns:8px minmax(0,1fr);column-gap:10px;padding:10px 8px;border-radius:var(--r-2);cursor:pointer;transition:background var(--rapide)}
 .fw-eq:hover,.fw-eq.vise{background:var(--s-hover)}
 .fw-eq:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .fw-eq.on{background:var(--accent-soft)}
-.fw-eq-etat{width:8px;height:8px;margin-top:6px;border-radius:1px;background:var(--s-line-2)}
-.fw-eq.cible .fw-eq-etat{background:var(--accent)}
+.fw-eq-etat{width:8px;height:8px;margin-top:5px;border-radius:50%;background:var(--s-line-2)}
+.fw-eq.cible .fw-eq-etat{background:none;box-shadow:inset 0 0 0 2px var(--accent)}
 .fw-eq.chez .fw-eq-etat{background:var(--t-3)}
 .fw-eq.manque .fw-eq-etat{background:var(--ok)}
 .fw-eq.propose .fw-eq-etat{background:var(--warn)}
 .fw-eq-corps{display:flex;flex-direction:column;gap:2px;min-width:0}
 .fw-eq-tete{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 8px}
 .fw-eq-tete .rp{font-size:var(--f-13)}
-.fw-eq-mots{font-size:var(--f-11);color:var(--t-2)}
-.fw-eq-sous{font:500 var(--f-11) var(--mono);color:var(--t-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fw-eq-vers{font-size:var(--f-11);color:var(--t-2)}
+.fw-eq-mots{font-size:var(--f-12);color:var(--t-2)}
+.fw-eq-sous{font:400 var(--f-11) var(--mono);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fw-eq-vers{font-size:var(--f-12);color:var(--t-2)}
 .fw-eq-vers b{font-family:var(--mono);color:var(--t-1)}
-.fw-eq.cible .fw-eq-vers{color:var(--accent)}
+.fw-eq.cible .fw-eq-vers{color:var(--t-1)}
 .fw-eq.manque .fw-eq-vers{color:var(--ok);font-weight:600}
 .fw-eq.propose .fw-eq-vers{color:var(--warn)}
-.fw-eq-pos{font-size:var(--f-11);color:var(--t-2);line-height:1.45}
+.fw-eq-pos{font-size:var(--f-12);color:var(--t-2);line-height:1.45}
 .fw-eq-pos b{font:600 var(--f-11) var(--mono);color:var(--t-1)}
-.fw-eq-pos i{font-style:normal;color:var(--t-3)}
-.fw-eq-n{font-size:var(--f-11);color:var(--t-3)}
-.fw-vide{padding:16px 8px;color:var(--t-3);font-size:var(--f-12)}
+.fw-eq-pos i{font-style:normal;color:var(--t-2)}
+.fw-eq-n{font-size:var(--f-11);color:var(--t-2)}
+.fw-vide{padding:16px 8px;color:var(--t-2);font-size:var(--f-12)}
 /* sur la feuille (du papier : des couleurs d'encre, littérales) : chaque bloc selon ce qu'il devient chez nous, les fils
    qui manquent ou diffèrent en pointillé (la couleur de la route reste) ; le bloc choisi dans la colonne à l'encre pleine,
    celui qu'on survole en pointillé (la même encre : une seule couleur pour « ce qu'on vise ») */
@@ -180,13 +251,21 @@
   .fw-outils .fi-bouton span{display:none}
 }
 
-/* ─── la bible : la recherche (le champ .filtre de tout l'outil), les tables par harness, par dessin, par repère ─── */
-.rf-cherche{margin:0 0 12px;height:36px}
-.rf-sur{margin:12px 0 4px}
-#rf-base .norme-defile{padding-bottom:6px}
-.rf-tab td{vertical-align:middle}
-.rf-tab td .rp{font-size:var(--f-11)}
-.rf-sous{font:400 var(--f-11) var(--sans);color:var(--t-3);margin:1px 0 0 6px}
-.rf-voir{display:inline-flex;align-items:center;gap:5px;margin:-2px 0;border:1px solid transparent;background:none;border-radius:var(--r-1);padding:2px 8px 2px 5px;font:600 var(--f-11) var(--mono);color:var(--accent-2);cursor:pointer;white-space:nowrap;transition:background var(--rapide),border-color var(--rapide)}
-.rf-voir:hover{background:var(--accent-soft);border-color:var(--accent)}
-.rf-voir svg.ico{width:14px;height:14px;flex:none}
+/* ─── la page des références (au bas de la bible) : la recherche, les tables par harness, par dessin, par repère ─── */
+.rf-cherche{margin:4px 0 8px;height:34px}
+.rf-sur{display:flex;align-items:baseline;gap:8px;margin:20px 0 8px;font:600 var(--f-13)/1.3 var(--sans);letter-spacing:-.006em;color:var(--t-1)}
+#rf-base .norme-defile{padding-bottom:4px}
+table.rf-tab{width:auto;min-width:min(100%,600px);font-size:var(--f-12)}
+.rf-tab th{padding:0 12px 7px 0;border-bottom:1px solid var(--s-line-2);font:500 var(--f-12) var(--sans);color:var(--t-2);white-space:nowrap}
+.rf-tab td{padding:7px 12px 7px 0;border-bottom:1px solid var(--s-line);vertical-align:middle;line-height:1.4}
+.rf-tab tbody tr:hover td{background:color-mix(in srgb,var(--t-1) 3%,var(--s-surface))}
+.rf-tab td.ref{font:600 var(--f-12) var(--mono);color:var(--t-1)}
+.rf-tab td.sans{color:var(--t-2)}
+.rf-tab td.d{font-family:var(--sans);font-weight:500;color:var(--t-1);font-variant-numeric:tabular-nums}
+.rf-tab td .rp{font-size:var(--f-12)}
+.rf-sous{font:400 var(--f-11) var(--sans);color:var(--t-2);margin:2px 0 0 6px}
+/* le nom d'un dessin est le bouton qui l'ouvre : une puce douce, l'œil devant */
+.rf-voir{display:inline-flex;align-items:center;gap:6px;margin:-2px 0;border:none;background:var(--s-sunken);border-radius:var(--r-1);padding:3px 8px 3px 6px;font:600 var(--f-11) var(--mono);color:var(--t-1);cursor:pointer;white-space:nowrap;transition:background var(--rapide),transform var(--rapide)}
+.rf-voir:hover{background:var(--accent-soft)}
+.rf-voir:active{transform:scale(.98)}
+.rf-voir svg.ico{width:14px;height:14px;flex:none;color:var(--t-2)}
