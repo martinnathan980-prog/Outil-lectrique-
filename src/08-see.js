@@ -211,8 +211,11 @@ function codesSEEHtml() { const L = SEE.lu, P = L.plan, codes = [];
   return `<section class="see-feuille see-codes" aria-label="Codes"><div class="see-tete"><b class="see-nom">Codes</b><span class="see-compte">${esc(pluriel(codes.length, 'colonne'))} de codes · les valeurs et leur nombre de lignes</span></div>${plan}`
     + (d_abord.length ? `<div class="see-codes-l">${d_abord.map(code).join('')}</div>` : '')
     + (autres.length ? `<details class="see-vides"><summary>${autres.length} autre${autres.length > 1 ? 's' : ''} colonne${autres.length > 1 ? 's' : ''} de codes</summary><div class="see-codes-l">${autres.map(code).join('')}</div></details>` : '') + '</section>'; }
+/* Le pied : d'un onglet à l'autre (au filet : l'action pleine de la page est « Garder dans Volta », dans l'onglet Import),
+   l'onglet en cours sur combien ; le résumé, à copier ou à enregistrer, à droite. */
 function baseSEEPiedHtml() { if (!SEE.lu) return ''; const o = ORDRE_SEE(), k = o.findIndex(x => String(x) === String(SEE.vue));
-  return (o.length > 1 ? `<button class="btn papier" id="see-prec"${k > 0 ? '' : ' disabled'}>‹ Précédent</button><button class="btn cuivre" id="see-suiv"${k < o.length - 1 ? '' : ' disabled'}>Suivant ›</button>` : '')
+  const fleche = d => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
+  return (o.length > 1 ? `<button class="btn papier" id="see-prec"${k > 0 ? '' : ' disabled'}>${fleche('m14.5 6-6 6 6 6')}Précédent</button><button class="btn papier" id="see-suiv"${k < o.length - 1 ? '' : ' disabled'}>Suivant${fleche('m9.5 6 6 6-6 6')}</button><span class="see-rang">${k + 1} / ${o.length}</span>` : '')
     + `<span class="espace"></span><button class="btn lien" id="see-copier" title="Tout le résumé, en texte : à coller dans un message">Copier le résumé</button><button class="btn papier" id="see-enregistrer" title="Tout le résumé, dans un fichier texte">Enregistrer le résumé</button>`; }
 function changerVueSEE(cle) { if (!SEE.lu && cle !== 'import') return; SEE.vue = cle; rendreBaseSEE();
   const b = $('fiche-corps').querySelector(`[data-see-vue="${cle}"]`); if (b && b.scrollIntoView) { try { b.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (_) { } } }

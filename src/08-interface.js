@@ -1295,17 +1295,31 @@ function champHypotheseHtml(c, H) {
   if (c.genre === 'choix') return `<label class="hyp-n"><span>${esc(c.lib)}</span><select id="${c.id}" aria-label="${escA(c.aria + ' (hypothèse)')}">${c.options.map(([v, t]) => `<option value="${escA(v)}"${String(v) === String(c.valeur) ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
   return `<label class="hyp-n"${c.titre ? ` title="${escA(c.titre)}"` : ''}><span>${esc(c.lib)}</span><input id="${c.id}" type="number" inputmode="decimal" step="${c.pas}"${c.min != null ? ` min="${c.min}"` : ''} value="${H[c.k] == null ? '' : H[c.k]}"${c.vide ? ` placeholder="${escA(c.vide)}"` : ''} aria-label="${escA(c.lib + ' (hypothèse)')}"><span class="u">${esc(c.unite)}</span></label>`; }
 const GROUPES_HYPOTHESES = [['fil', 'Le câble'], ['temperature', 'La température'], ['chute', 'La chute en ligne'], ['reseau', 'Le réseau'], ['declassement', 'Le déclassement'], ['tableau', 'Les disjoncteurs']];
-const ligneHypotheseHtml = (c, H) => `<div class="hy-ligne"><div class="hy-champ">${champHypotheseHtml(c, H)}</div><p class="hy-sert">${esc(c.sert)}${c.genre === 'condition' && c.titre ? ` <i>· ${esc(c.titre)}</i>` : ''}</p></div>`;
-/* LA FICHE DES HYPOTHÈSES : un document à droite (mode `hypotheses`), un groupe par thème, chaque hypothèse avec son
-   champ et ce qu'elle sert ; « Revenir aux valeurs de l'outil » rend `HYPOTHESES`. Atteignable du menu, du mot
-   « hypothèse » de la fiche d'un fil, de « longueurs d'hypothèse » de la fiche d'un disjoncteur. */
+/* Une ligne de la fiche : le champ, ce qu'il fait ; réglée ici (autre que `HYPOTHESES`), « ↺ » et la valeur de l'outil
+   la rendent, d'un clic. */
+const valeurDeLOutil = c => { const v = HYPOTHESES[c.k]; if (c.genre === 'choix') { const o = c.options.find(([x]) => String(x) === String(v)); return o ? o[1] : String(v); }
+  if (c.genre === 'case') return v === false ? 'non' : 'oui'; if (c.genre === 'liste') return (v || []).map(nombre).join(' ') || 'tout le catalogue';
+  return v == null ? 'vide' : nombre(v) + (c.unite ? ' ' + c.unite : ''); };
+const ligneHypotheseHtml = (c, H) => { const reglee = c.k && c.k in HYPOTHESES && JSON.stringify(H[c.k]) !== JSON.stringify(HYPOTHESES[c.k]);
+  return `<div class="hy-ligne${reglee ? ' reglee' : ''}"><div class="hy-champ">${champHypotheseHtml(c, H)}</div>`
+    + (reglee ? `<button class="hy-rendre" data-hy-rendre="${escA(c.k)}" title="${escA('Revenir à la valeur de l’outil : ' + valeurDeLOutil(c))}">↺ ${esc(valeurDeLOutil(c))}</button>` : '')
+    + `<p class="hy-sert">${esc(c.sert)}${c.genre === 'condition' && c.titre ? ` <i>· ${esc(c.titre)}</i>` : ''}</p></div>`; };
+/* LA FICHE DES HYPOTHÈSES : un document à droite (mode `hypotheses`), comme des réglages — un groupe par thème, une ligne
+   par hypothèse : son nom, son champ aligné à droite, ce qu'elle fait en petit (style.css, `.hy-*`) ; le pied dit où l'on
+   en est (les valeurs de l'outil, ou combien sont réglées ici) et « Revenir aux valeurs de l'outil » rend `HYPOTHESES`.
+   Atteignable du menu, du mot « hypothèse » de la fiche d'un fil, de « longueurs d'hypothèse » de la fiche d'un
+   disjoncteur. */
 function ficheHypotheses() { const H = app.simu || (app.simu = { ...HYPOTHESES }), N = app.norme || normeVide(), cs = hypothesesDe(N, H, { fiche: true });
-  const defaut = Object.keys(HYPOTHESES).every(k => JSON.stringify(H[k]) === JSON.stringify(HYPOTHESES[k]));
-  const corps = tete('Simulation', 'Hypothèses') + `<p class="note">Ce que le retest ne porte pas, l’outil le suppose. Chaque fiche qui s’en sert le dit (<b>hypothèse</b>) ; ce qu’on règle ici rejuge tout — le contrôle, les fiches, la nomenclature — et se garde dans ce navigateur, pas avec le contrat.${defaut ? '' : ' <b>Réglées</b> : l’outil proposait d’autres valeurs.'}</p>`
-    + GROUPES_HYPOTHESES.map(([g, t]) => { const xs = cs.filter(c => c.groupe === g); return xs.length ? `<section class="hy-groupe"><div class="sur">${esc(t)}</div>${xs.map(c => ligneHypotheseHtml(c, H)).join('')}</section>` : ''; }).join('');
+  const reglees = Object.keys(HYPOTHESES).filter(k => JSON.stringify(H[k]) !== JSON.stringify(HYPOTHESES[k])).length, defaut = !reglees;
+  const corps = tete('Simulation', 'Hypothèses') + '<p class="note">Ce que le retest ne porte pas, l’outil le suppose. Chaque fiche qui s’en sert le dit (<b>hypothèse</b>) ; ce qu’on règle ici rejuge tout — le contrôle, les fiches, la nomenclature — et se garde dans ce navigateur, pas avec le contrat.</p>'
+    + GROUPES_HYPOTHESES.map(([g, t]) => { const xs = cs.filter(c => c.groupe === g); return xs.length ? `<section class="hy-groupe"><h3 class="hy-titre">${esc(t)}</h3>${xs.map(c => ligneHypotheseHtml(c, H)).join('')}</section>` : ''; }).join('');
+  const pied = `<span class="hy-etat${defaut ? '' : ' regle'}">${defaut ? 'Les valeurs de l’outil' : `<b>${pluriel(reglees, 'hypothèse')}</b> réglée${reglees > 1 ? 's' : ''} ici`}</span><span class="espace"></span>`
+    + `<button class="btn papier" id="hy-defaut"${defaut ? ' disabled' : ''}>Revenir aux valeurs de l’outil</button>`;
   const deja = app.fiche && app.fiche.mode === 'hypotheses', y = deja ? $('fiche-corps').scrollTop : 0;
-  ouvrirFiche({ mode: 'hypotheses' }, corps, `<button class="btn papier" id="hy-defaut"${defaut ? ' disabled' : ''}>Revenir aux valeurs de l’outil</button>`); if (deja) $('fiche-corps').scrollTop = y;
+  ouvrirFiche({ mode: 'hypotheses', large: true }, corps, pied); if (deja) $('fiche-corps').scrollTop = y;
   lierHypotheses($('fiche-corps'), ficheHypotheses);
+  $('fiche-corps').querySelectorAll('[data-hy-rendre]').forEach(b => b.onclick = () => { const k = b.dataset.hyRendre, v = HYPOTHESES[k];
+    app.simu[k] = Array.isArray(v) ? [...v] : v; apresHypotheses(); ficheHypotheses(); dire('La valeur de l’outil est rendue (' + b.textContent.replace('↺', '').trim() + ').'); });
   $('hy-defaut').onclick = () => { app.simu = { ...HYPOTHESES, conditions: [...HYPOTHESES.conditions], calibresPreferes: [...HYPOTHESES.calibresPreferes] }; apresHypotheses(); ficheHypotheses(); dire('Les hypothèses de l’outil sont rétablies.'); }; }
 /* Une hypothèse a changé : gardée, le contrôle se refait (sa clé l'oublie), la fiche ouverte dans l'inspecteur aussi. */
 function apresHypotheses() { memoriserSimu(); if (typeof CONTROLE !== 'undefined') CONTROLE.cle = null; rendreControle(); rafraichirCarte(); }
@@ -1555,10 +1569,18 @@ function ouvrirFiche(mode, corps, pied) { const f = $('fiche'); fermerBase(); if
   const nouveau = f.hidden || !app.fiche || app.fiche.mode !== mode.mode;
   const r = document.documentElement.style; r.setProperty('--fiche-l', (mode.large ? 560 : 400) + 'px');
   f.hidden = false; if (nouveau) { f.classList.remove('entre'); void f.offsetWidth; f.classList.add('entre'); }
-  app.fiche = mode; $('fiche-corps').scrollTop = 0;
+  app.fiche = mode; $('fiche-corps').scrollTop = 0; f.classList.remove('defile');
   // sur téléphone un document est une page, de la barre du haut au rail : la bande des folios se range (style.css)
   document.body.classList.add('fiche-ouverte');
-  $('fi-fermer').onclick = () => fermerFiche(true); synchroniserRail(); if (nouveau) ajuster(true); }
+  $('fi-fermer').onclick = () => fermerFiche(true); lierCoquille(); mesurerTeteFiche(); synchroniserRail(); if (nouveau) ajuster(true); }
+/* LA COQUILLE d'un document (style.css, « les documents ») : sa tête reste en haut quand on descend ; un filet paraît
+   sous elle dès qu'on a défilé (`#fiche.defile`), et ce qui colle sous elle (l'en-tête d'une table, les onglets de SEE)
+   lit sa hauteur, `--fi-tete`, remesurée quand la feuille change de taille. Posé une fois. */
+function mesurerTeteFiche() { const t = $('fiche-corps').querySelector('.fiche-tete'); $('fiche').style.setProperty('--fi-tete', (t ? t.offsetHeight : 0) + 'px'); }
+let coquilleLiee = false;
+function lierCoquille() { if (coquilleLiee) return; coquilleLiee = true; const f = $('fiche'), c = $('fiche-corps');
+  c.addEventListener('scroll', () => f.classList.toggle('defile', c.scrollTop > 2), { passive: true });
+  if (window.ResizeObserver) new ResizeObserver(() => { if (!f.hidden) mesurerTeteFiche(); }).observe(c); }
 /* `recadrer` : quand on ferme la fiche pour elle-même, ce qu'on avait choisi revient dans l'inspecteur (le document
    l'avait remplacé), sinon le plan reprend la place. */
 function fermerFiche(recadrer) { const f = $('fiche'); if (f.hidden && !app.fiche) return; f.hidden = true; app.fiche = null;
@@ -1568,12 +1590,17 @@ const tete = (sur, titre, sans) => `<div class="fiche-tete"><div class="min0"><d
   <button class="rond fermer" id="fi-fermer" aria-label="Fermer la fiche"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`;
 const champ = (id, lib, val, opt) => `<label class="champ${opt && opt.sans ? ' sans' : ''}"><span>${lib}</span><input id="${id}" value="${escA(val || '')}"${opt && opt.ph ? ` placeholder="${escA(opt.ph)}"` : ''} spellcheck="false"></label>`;
 const CHAMPS_CARTOUCHE = [['ca-titre', 'titre', 'Titre'], ['ca-auteur', 'auteur', 'Dessiné par'], ['ca-indice', 'indice', 'Indice'], ['ca-date', 'date', 'Date'], ['ca-echelle', 'echelle', 'Échelle']];
-function ficheCartouche() { const c = app.contrat.cartouche;
-  const corps = tete('Sur chaque folio', 'Cartouche') + champ('ca-titre', 'Titre', c.titre, { sans: true }) + champ('ca-auteur', 'Dessiné par', c.auteur, { sans: true })
-    + `<div class="grille">${champ('ca-indice', 'Indice', c.indice)}${champ('ca-date', 'Date', c.date)}</div>` + champ('ca-echelle', 'Échelle', c.echelle)
-    + '<p class="note">Le numéro de folio s’écrit tout seul. Ce cartouche part avec chaque planche enregistrée ou imprimée.</p>';
+/* LE CARTOUCHE : d'abord ce qu'il donne — son aperçu sur papier, le dessin même du folio (`cartoucheSvg`, 06), le folio
+   courant, qui suit chaque lettre tapée —, puis le petit formulaire : le titre, qui l'a dessiné, l'indice, la date,
+   l'échelle. Le plan se repeint quand un champ est quitté. */
+function ficheCartouche() { const c = app.contrat.cartouche, W = CART_FOLIO + CART_TITRE;
+  const apercu = () => `<svg viewBox="-1 -1 ${W + 2} ${CART_H + 2}" role="img" aria-label="Aperçu du cartouche">${cartoucheSvg(W, CART_H, c, folioCourant(), [])}</svg>`;
+  const corps = tete('Sur chaque folio', 'Cartouche') + '<p class="note">Il part avec chaque planche enregistrée ou imprimée ; le numéro de folio s’écrit tout seul.</p>'
+    + `<figure class="ca-apercu" id="ca-apercu">${apercu()}</figure><div class="ca-form">`
+    + champ('ca-titre', 'Titre', c.titre, { sans: true, ph: 'Le titre de la planche' }) + champ('ca-auteur', 'Dessiné par', c.auteur, { sans: true, ph: 'Initiales ou nom' })
+    + `<div class="grille ca-trois">${champ('ca-indice', 'Indice', c.indice, { ph: 'A' })}${champ('ca-date', 'Date', c.date, { ph: 'aaaa-mm-jj' })}${champ('ca-echelle', 'Échelle', c.echelle, { ph: '1:1' })}</div></div>`;
   ouvrirFiche({ mode: 'cartouche' }, corps, '');
-  CHAMPS_CARTOUCHE.forEach(([id, k]) => { $(id).addEventListener('input', e => { c[k] = e.target.value; }); $(id).addEventListener('change', () => { peindre(); rallumer(); sauver(); }); });
+  CHAMPS_CARTOUCHE.forEach(([id, k]) => { $(id).addEventListener('input', e => { c[k] = e.target.value; $('ca-apercu').innerHTML = apercu(); }); $(id).addEventListener('change', () => { peindre(); rallumer(); sauver(); }); });
 }
 /* Coller des lignes (ficheColler : l'ordre, un exemple, l'aperçu, ajouter ou remplacer) vit dans 08-fichiers.js. */
 /* La bible des barrettes (ficheBible, pictoBible, zoomBible, importerBible), la norme et son import (ficheNormes, importerNorme) vivent dans 08-normes.js. */

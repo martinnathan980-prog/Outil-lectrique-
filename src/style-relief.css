@@ -1,73 +1,101 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    LA VUE EN RELIEF (08-relief) et LES FACES des modules (08-modules)
    Les jetons (couleurs, typo, espacements) sont dans style.css ; ici, seulement ce qui est propre à ce domaine.
-   La fenêtre du relief est un panneau comme les autres (rayon --r-3, ombre --sh-2, le segment commun pour les vues, une
-   table comme celles de la norme) ; seule la pièce est en perspective, posée sur une surface en retrait, à plat. Les
-   écritures de la scène gardent leur taille à l'écran quelle que soit la vue (`--k`, l'échelle posée par 08-relief).
+   Le relief est une VISIONNEUSE posée au-dessus de la table assombrie : une fenêtre (la feuille du thème, rayon --r-3),
+   une barre d'outils sobre qui reste en haut — la pièce et son compte à gauche, les vues (le segment commun) et la
+   croix à droite —, la scène sur papier quadrillé dans les deux thèmes (la pièce est dessinée à l'encre), et collée
+   dessous sa LÉGENDE, sur le même papier : ce que dit la vue, la couleur de chaque route, ce que disent les trous, le
+   geste qui tourne la pièce. Puis le tableau, comme une table de document. Les écritures de la scène gardent leur
+   taille à l'écran quelle que soit la vue (`--k`, l'échelle posée par 08-relief).
    ═══════════════════════════════════════════════════════════════════════ */
-/* ── la VUE EN RELIEF (08-relief) : un panneau blanc posé sur la table assombrie ── */
-.relief{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:16px;background:var(--voile-fort)}
+/* ── la fenêtre ── */
+.relief{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--voile-fort);animation:re-voile var(--moyen)}
 .relief[hidden]{display:none}
-.re-boite{background:var(--s-surface);color:var(--t-1);border-radius:var(--r-3);width:min(1180px,100%);max-height:100%;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;box-shadow:var(--sh-2);padding:16px 20px 20px}
-/* la tête (le repère, les vues, fermer) reste en haut quand on descend vers la table : on peut toujours fermer ou
-   changer de vue ; elle colle au bord même de la fenêtre (par-dessus son rembourrage) */
-.re-tete{position:sticky;top:-16px;z-index:2;display:flex;align-items:flex-start;gap:12px;margin:-16px -20px 0;padding:16px 20px 8px;background:var(--s-surface)}
+@keyframes re-voile{from{opacity:0}to{opacity:1}}
+.re-boite{position:relative;background:var(--s-surface);color:var(--t-1);border-radius:var(--r-3);width:min(1180px,100%);max-height:100%;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;box-shadow:var(--sh-panneau);padding:0 20px 20px;animation:re-pose var(--lent)}
+@keyframes re-pose{from{opacity:0;transform:translateY(10px) scale(.99)}to{opacity:1;transform:none}}
+/* la barre d'outils : elle reste en haut quand on descend vers le tableau — on peut toujours fermer ou changer de vue */
+.re-tete{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:12px;margin:0 -20px;padding:16px 14px 14px 20px;background:var(--s-surface)}
 .re-tete .min0{flex:1;min-width:0}
-.re-compte{color:var(--t-2);font-size:var(--f-12);margin-top:4px}
+.re-tete .sur{font:500 var(--f-12)/1.4 var(--sans);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.re-tete .titre{font-family:var(--mono);letter-spacing:-.01em;margin-top:1px}
+.re-compte{color:var(--t-2);font-size:var(--f-12);margin-top:3px;font-variant-numeric:tabular-nums}
 .re-compte .ko,.re-tab .ko{color:var(--ko);font-weight:600}
-/* la scène : du papier quadrillé, dans les deux thèmes (la pièce est dessinée à l'encre) ; on la fait tourner à la main */
-.re-scene{margin:12px 0 4px;background-color:var(--s-papier);background-image:linear-gradient(var(--s-papier-grille) 1px,transparent 1px),linear-gradient(90deg,var(--s-papier-grille) 1px,transparent 1px);background-size:16px 16px;border:1px solid var(--s-line);border-radius:var(--r-2);height:min(56vh,520px);cursor:grab;touch-action:none;user-select:none}
+.re-vues{flex:none}
+.re-tete .fermer{margin-left:4px}
+/* ── la scène : du papier quadrillé, dans les deux thèmes ; on la fait tourner à la main ── */
+.re-scene{position:relative;margin:4px 0 0;background-color:var(--s-papier);background-image:linear-gradient(var(--s-papier-grille) 1px,transparent 1px),linear-gradient(90deg,var(--s-papier-grille) 1px,transparent 1px);background-size:16px 16px;background-position:-1px -1px;
+  border-radius:var(--r-2) var(--r-2) 0 0;box-shadow:inset 0 0 0 1px var(--s-line);height:min(56vh,520px);cursor:grab;touch-action:none;user-select:none}
 .re-scene.tourne{cursor:grabbing}
 .re-scene svg{width:100%;height:100%;display:block}
+/* ── la légende, collée sous la scène, sur le même papier : ce que dit la vue à gauche ; les routes, les trous, le geste
+   à droite ── */
+.re-boite>.re-note{display:flex;flex-wrap:wrap;align-items:center;gap:6px 20px;margin:0 0 20px;padding:10px 14px;border-radius:0 0 var(--r-2) var(--r-2);background:var(--s-papier);box-shadow:inset 0 0 0 1px var(--s-line);border-top:1px solid var(--s-papier-grille);
+  color:var(--t-papier-2);font-size:var(--f-12);line-height:1.5}
+.re-note-t{flex:1 1 320px;min-width:0;text-wrap:pretty}
+.re-legende{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;margin:0;padding:0;list-style:none;color:var(--t-papier-2);font-size:var(--f-12)}
+.re-legende li{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.re-legende .re-l-route{width:16px;height:3px;border-radius:2px}
+.re-legende .re-l-trou{width:9px;height:9px;border-radius:50%;box-sizing:border-box;border:1.4px solid #7a8796;background:#ffffff}
+.re-legende .re-l-trou.plein{background:#18212c;border-color:#18212c}
+.re-legende .re-l-trou.ko{border:2px solid #c3271f}
+.re-legende .re-l-geste{color:var(--t-papier-2);padding-left:14px;border-left:1px solid var(--s-papier-grille)}
+.re-legende svg.ico{width:14px;height:14px}
+/* les dessins de la scène : à l'encre du papier */
 .re-gaine{fill:none;stroke:#18212c;stroke-opacity:.28;stroke-width:4.4;stroke-linecap:round;stroke-linejoin:round}
-.re-ame{fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.re-ame{fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;transition:stroke-width var(--rapide)}
 .re-fil.on .re-ame{stroke-width:4}
 .re-fil.on .re-gaine{stroke-width:6.5}
 .re-trou{fill:#ffffff;stroke:#7a8796;stroke-width:1.2}
 .re-trou.plein{fill:#18212c;stroke-width:2.2}
-.re-trou.ko{stroke:var(--ko)!important;stroke-width:2.6}
+.re-trou.ko{stroke:#c3271f!important;stroke-width:2.6}
 .re-trou.on{stroke-width:3.4}
 /* les écritures : leur corps en pixels d'écran, divisé par l'échelle de la vue (--k) */
 .re-num{font-family:var(--mono);font-size:calc(13px / var(--k,1));font-weight:600;fill:#ffffff}
 .re-num.libre{fill:#5b6875;font-weight:500}
 .re-num.petit{fill:#18212c;font-size:calc(11px / var(--k,1))}
-.re-titre-piece{font-size:calc(12px / var(--k,1));letter-spacing:.08em;fill:#5b6875;font-weight:600}
+.re-titre-piece{font-family:var(--sans);font-size:calc(12px / var(--k,1));fill:#5b6875;font-weight:600}
 .re-cable{font-family:var(--mono);font-size:calc(13px / var(--k,1));font-weight:600}
 .re-dest{font-family:var(--mono);font-size:calc(11px / var(--k,1));fill:#5b6875}
+.re-etiq{cursor:pointer}
 .re-etiq.on .re-cable{text-decoration:underline}
 .re-trait{fill:none;stroke-width:.8;stroke-opacity:.55}
 .re-etiq.on .re-trait{stroke-width:1.6;stroke-opacity:1}
 .re-emboite{stroke:#7a8796;stroke-width:1.4;stroke-dasharray:5 4;fill:none}
-.re-note{color:var(--t-2);font-size:var(--f-12);line-height:1.5;margin:6px 2px 12px}
 svg .re-note{fill:#5b6875;font-size:calc(10px / var(--k,1))}
-/* le tableau trou par trou : comme une table de la norme ; trop large (téléphone), il défile de côté. Les cellules se
-   centrent en hauteur : le contact et le fil (une puce rembourrée) d'une ligne sont sur la même ligne de lecture */
+/* ── le tableau trou par trou : comme une table de document ; trop large (téléphone), il défile de côté. Les cellules se
+   centrent en hauteur : le contact et le fil (une puce) d'une ligne sont sur la même ligne de lecture ── */
 .re-tableau{overflow-x:auto;overscroll-behavior-x:contain}
 .re-tab{width:100%;border-collapse:separate;border-spacing:0;font-size:var(--f-12)}
-.re-tab th{text-align:left;font:500 var(--f-12) var(--sans);letter-spacing:0;color:var(--t-3);padding:8px;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
-.re-tab td{padding:4px 8px;border-bottom:1px solid var(--s-line);vertical-align:middle}
+.re-tab th{text-align:left;font:500 var(--f-12) var(--sans);letter-spacing:0;color:var(--t-2);padding:8px 12px 8px 0;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
+.re-tab th:first-child,.re-tab td:first-child{padding-left:6px}
+.re-tab td{padding:6px 12px 6px 0;border-bottom:1px solid var(--s-line);vertical-align:middle;transition:background var(--rapide)}
+.re-tab tbody tr:hover td{background:var(--s-hover)}
 .re-tab td.n{font-family:var(--mono);font-weight:600;width:64px}
 .re-tab tr.libre td{color:var(--t-2)}
-.re-tab .re-libre{font-style:italic;color:var(--t-3)}
-.re-f{display:inline-flex;align-items:center;gap:6px;margin:0 12px 2px 0;font-family:var(--mono);cursor:pointer;border-radius:var(--r-1);padding:1px 4px;white-space:nowrap}
+.re-tab .re-libre{color:var(--t-2)}
+.re-f{display:inline-flex;align-items:center;gap:7px;margin:1px 12px 1px -6px;padding:3px 6px;font-family:var(--mono);cursor:pointer;border-radius:var(--r-1);white-space:nowrap;transition:background var(--rapide)}
 .re-f i{width:14px;height:3px;border-radius:2px;display:inline-block}
+.re-f b{font-weight:600}
 .re-f em{color:var(--t-2);font-style:normal}
 .re-f.on,.re-f:hover{background:var(--accent-soft)}
 /* téléphone : le titre sur toute la largeur, les vues dessous, la scène moins haute */
 @media (max-width:700px){
-  .re-boite{padding:14px 14px 16px}
-  .re-tete{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 10px;align-items:start;top:-14px;margin:-14px -14px 0;padding:14px 14px 8px}
+  .relief{padding:8px}
+  .re-boite{padding:0 14px 16px}
+  .re-tete{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 10px;align-items:start;margin:0 -14px;padding:14px 10px 10px 14px}
   .re-tete .min0{grid-column:1}
   .re-tete .rond{grid-column:2;grid-row:1}
   .re-vues{grid-column:1/-1;justify-self:start}
   .re-scene{height:46vh}
+  .re-legende .re-l-geste{display:none}
 }
 
 /* ── LES FACES des modules et des inserts (08-modules) : un dessin technique à plat ──
    Deux traits pour le corps (le contour, l'insert en retrait), un contour par groupe de contacts reliés, un cercle
    par contact. Ce qui distingue une famille, c'est sa forme (rectangle, bouts ronds, étanche, module carré,
    circulaire) — pas une couleur. Un contact occupé est plein, à la couleur de la route de son fil (posée en ligne
-   par 08-modules) ; un contact qui refuse son fil est cerclé de rouge ; le survol le cercle de cuivre. */
+   par 08-modules) ; un contact qui refuse son fil est cerclé de rouge ; le survol le cercle d'encre. */
 .mj{display:block;color:var(--t-1)}
 .mj text{font-family:var(--mono)}
 .mj .mj-corps{fill:#fbfcfd;stroke:#2b3440;stroke-width:1.3}
@@ -91,12 +119,16 @@ svg .re-note{fill:#5b6875;font-size:calc(10px / var(--k,1))}
 .mj .mj-cable{fill:#111827;font-size:8px;font-weight:600;paint-order:stroke;stroke:#fbfcfd;stroke-width:2.5px;stroke-linejoin:round}
 .mj .mj-diode{fill:#2b3440;stroke:#2b3440;stroke-width:1.2}
 .mj-faces{display:flex;justify-content:center;padding:8px 0 4px}
-/* la bible : le filtre par norme — des puces de choix, celles de tout l'outil (.fi-chip) : pressée, à l'encre */
-.mj-norme{height:30px;display:inline-flex;align-items:center;border:1px solid var(--s-line-2);background:var(--s-surface);color:var(--t-1);border-radius:var(--r-1);padding:0 12px;font:500 var(--f-12) var(--sans);cursor:pointer;transition:background var(--rapide),border-color var(--rapide),color var(--rapide)}
-.mj-norme:hover{border-color:var(--t-3)}
+/* la bible : le filtre par norme — des puces de choix, celles de tout l'outil (.fi-chip) : 28 px, au filet ; pressée, à
+   l'encre ; leur compte en chasse fixe, un ton plus bas */
+.mj-norme{height:28px;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--s-line-2);background:var(--s-surface);color:var(--t-1);border-radius:var(--r-1);padding:0 11px;font:500 var(--f-12) var(--sans);cursor:pointer;
+  transition:background var(--rapide),border-color var(--rapide),color var(--rapide),transform var(--rapide)}
+.mj-norme:hover{background:var(--s-hover);border-color:color-mix(in srgb,var(--t-1) 25%,var(--s-line-2))}
+.mj-norme:active{transform:scale(.98)}
 .mj-norme[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
+.mj-norme .mj-n{font:500 var(--f-11) var(--mono);color:var(--t-2);font-variant-numeric:tabular-nums}
+.mj-norme[aria-pressed="true"] .mj-n{color:inherit;opacity:.7}
 .cand svg.picto{flex-shrink:0}
-.bible-filtres{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
 /* chaque variante en picto, sur sa vignette de papier (style.css, « le papier ») : dessinée avec les jetons du papier */
 .picto.mj-picto .p-corps{fill:var(--s-surface);stroke:var(--t-1);stroke-width:.9}
 .picto.mj-picto .p-groupe{fill:none;stroke:var(--s-line-2);stroke-linecap:round;stroke-linejoin:round}

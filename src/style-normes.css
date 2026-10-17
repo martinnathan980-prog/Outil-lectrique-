@@ -1,156 +1,175 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    LES NORMES (08 octies) : la page des normes — les domaines, les tables, l'import, l'édition d'une ligne
-   Les jetons (couleurs, typo, espacements) sont dans style.css ; ici, seulement ce qui est propre à ce domaine.
-   Une page qui se lit de haut en bas : l'état, la recherche et les gestes, l'import à vérifier, puis les domaines, chacun
-   ses tables repliées — une ligne chacune : le nom, la source, le compte, l'état — qui se déplient sur leur fiche
-   (sert à, lue par, choix, colonnes), leur barre et la table elle-même. Les données en chasse fixe, les mots en
-   linéale ; l'ambre pour ce qui est modifié ou à confirmer, le vert pour ce qui est ajouté, le gris pour ce qui est
-   masqué ; l'encre pour ce qui se presse. Les tables larges défilent de côté, jamais elles n'écrasent une valeur ; les
-   longues défilent dans leur boîte, l'en-tête en haut ; les gestes d'une ligne restent collés au bord droit.
+   Les jetons (couleurs, typo, espacements) et la coquille du document (la tête, le pied, l'état en une ligne, le menu
+   « ··· ») sont dans style.css ; ici, seulement ce qui est propre à ce domaine.
+   Une page qui se lit de haut en bas, comme un document : l'état en une ligne, la recherche en tête avec l'action
+   principale (importer) et les autres gestes rangés dans « ··· », l'import à vérifier, puis les domaines — des groupes
+   aérés, séparés d'un filet —, chacun une liste de tables : une ligne chacune (le nom, la source, le compte, ce qui fait
+   exception), qu'on presse pour la déplier sur sa fiche (sert à, lue par, choix, colonnes), sa barre et la table
+   elle-même — elle seule se pose alors en cadre : c'est elle qu'on a en main. Les données en chasse fixe, les mots en
+   linéale, les chiffres à droite ; l'ambre pour ce qui est modifié ou à confirmer, le vert pour ce qui est ajouté, le
+   gris pour ce qui est masqué. Les tables larges défilent de côté, jamais elles n'écrasent une valeur ; les longues
+   défilent dans leur boîte, l'en-tête en haut ; les gestes d'une ligne restent collés au bord droit.
    ═══════════════════════════════════════════════════════════════════════ */
-.nm{display:flex;flex-direction:column;gap:var(--sp-3);min-width:0;container-type:inline-size}   /* la bible se règle sur sa largeur */
-.nm .fiche-tete{margin-bottom:0}
-.nm-nav{align-self:flex-start}
-.nm-etat{margin-bottom:0}
+.nm{display:flex;flex-direction:column;gap:var(--sp-4);min-width:0;container-type:inline-size}   /* la bible se règle sur sa largeur */
+.nm .fiche-tete{margin-bottom:-4px}
 .nm-etat .nm-mod{color:var(--warn)}
-.nm-etat i{font-style:normal;color:var(--t-3)}
-/* la recherche et les gestes, sur une ligne qui se replie */
+.nm-etat i{font-style:normal;color:var(--t-2)}
+/* la recherche, l'action principale, « ··· » : une ligne */
 .nm-outils{display:flex;flex-wrap:wrap;gap:var(--sp-2);align-items:center}
-.nm-cherche{flex:1 1 320px;min-width:0;height:36px}
+.nm-cherche{flex:1 1 320px;min-width:0}
 .nm-cherche input{font-family:var(--sans);font-size:var(--f-13)}
-.nm-gestes{display:flex;flex-wrap:wrap;gap:var(--sp-2)}
-.nm-note{font-size:var(--f-12);color:var(--t-2);margin:0;line-height:1.5}
+.nm-gestes{display:flex;align-items:center;gap:var(--sp-2)}
+.nm-note{font-size:var(--f-12);color:var(--t-2);margin:0;line-height:1.55}
 .nm-vide{font-size:var(--f-12);color:var(--t-2);margin:8px 0;line-height:1.5}
-/* les badges d'état : modifiée, ajoutée, masquée, à confirmer, importée, vide — la recette de tout l'outil pour un mot
-   d'état dans sa case (.fw-pastille, .verdict) : B612 10 px, capitales espacées, 20 px de haut, rayon 4 */
-.nm-badge{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:var(--r-1);font:500 var(--f-12)/1 var(--sans);letter-spacing:0;white-space:nowrap;background:var(--s-sunken);color:var(--t-2);border:1px solid var(--s-line)}
-.nm-badge.mod{background:var(--warn-soft);color:var(--warn);border-color:transparent}
-.nm-badge.ajo{background:var(--ok-soft);color:var(--ok);border-color:transparent}
-.nm-badge.masq{background:var(--s-hover);color:var(--t-3);border-color:transparent;text-decoration:line-through}
-.nm-badge.conf{background:var(--warn-soft);color:var(--warn);border-color:transparent}
-.nm-badge.import{background:var(--accent-soft);color:var(--accent-2);border-color:transparent}
-.nm-badge.rien{color:var(--t-3)}
+/* les badges d'état : modifiée, ajoutée, masquée, à confirmer, importée, vide — un mot dans sa case, la couleur de l'état */
+.nm-badge{display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:var(--r-1);font:500 var(--f-11)/1 var(--sans);letter-spacing:0;white-space:nowrap;background:var(--s-hover);color:var(--t-2)}
+.nm-badge.mod,.nm-badge.conf{background:var(--warn-soft);color:var(--warn)}
+.nm-badge.ajo{background:var(--ok-soft);color:var(--ok)}
+.nm-badge.masq{color:var(--t-2);text-decoration:line-through}
+.nm-badge.import{background:var(--accent-soft);color:var(--t-1)}
+.nm-badge.rien{background:none;color:var(--t-2);box-shadow:inset 0 0 0 1px var(--s-line-2)}
 .nm-mod{color:var(--warn)}.nm-ajo{color:var(--ok)}.nm-ko{color:var(--ko)}
-/* ─── un domaine : son titre, à quoi il sert, ses tables ─── */
-.nm-dom{display:flex;flex-direction:column;gap:var(--sp-2);padding-top:var(--sp-2)}
-.nm-dom-t{font:600 var(--f-14)/1.3 var(--titre);margin:0;letter-spacing:.01em;padding-top:var(--sp-2);border-top:1px solid var(--s-line)}
-.nm-dom-sens{margin:0 0 4px;font-size:var(--f-12);color:var(--t-2);line-height:1.5}
-/* ─── une table : sa tête (une ligne), et dépliée, sa fiche, sa barre, la table ─── */
-.nm-table{border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-surface);min-width:0;transition:border-color var(--rapide)}
-.nm-table.ouvert{border-color:var(--s-line-2)}
-.nm-table.modifiee{box-shadow:inset 3px 0 0 var(--warn)}
-.nm-t-tete{display:flex;align-items:center;gap:var(--sp-3);width:100%;min-height:44px;padding:8px 12px;border:none;background:none;text-align:left;color:inherit;font:inherit;border-radius:var(--r-2);cursor:pointer;transition:background var(--rapide)}
-.nm-t-tete:hover{background:var(--s-sunken)}
+/* ─── un domaine : son titre, à quoi il sert, ses tables ; un filet le sépare du précédent ─── */
+.nm-dom{display:flex;flex-direction:column;gap:6px;padding-top:var(--sp-5);border-top:1px solid var(--s-line)}
+.nm-dom-t{font:600 var(--f-16)/1.3 var(--titre);margin:0;letter-spacing:-.015em;color:var(--t-1)}
+.nm-dom-sens{margin:0 0 6px;font-size:var(--f-13);color:var(--t-2);line-height:1.55;max-width:96ch;text-wrap:pretty}
+/* ─── la liste des tables : une ligne chacune, un filet entre elles ; dépliée, la table se pose en cadre ─── */
+.nm-liste{display:flex;flex-direction:column;margin:0 -12px}
+.nm-table{position:relative;min-width:0;border-radius:var(--r-2);transition:box-shadow var(--moyen),margin var(--moyen)}
+.nm-table+.nm-table::before{content:"";position:absolute;left:12px;right:12px;top:0;border-top:1px solid var(--s-line);transition:opacity var(--rapide)}
+.nm-table:hover::before,.nm-table:hover+.nm-table::before,.nm-table.ouvert::before,.nm-table.ouvert+.nm-table::before{opacity:0}
+.nm-table.ouvert{margin:10px 12px;background:var(--s-surface);box-shadow:0 0 0 1px var(--s-line-2),0 6px 20px -8px rgba(0,0,0,.18)}
+.nm-t-tete{display:flex;align-items:center;gap:var(--sp-3);width:100%;min-height:52px;padding:9px 12px;border:none;background:none;text-align:left;color:inherit;font:inherit;border-radius:var(--r-2);cursor:pointer;transition:background var(--rapide)}
+.nm-t-tete:hover{background:var(--s-hover)}
+.nm-t-tete:focus-visible{outline-offset:-2px}
 .nm-t-tete.nm-t-fixe{cursor:default}.nm-t-tete.nm-t-fixe:hover{background:none}
 .nm-table.ouvert>.nm-t-tete{border-radius:var(--r-2) var(--r-2) 0 0;border-bottom:1px solid var(--s-line)}
-.nm-t-titre{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
+.nm-table.ouvert>.nm-t-tete:hover{background:var(--s-sunken)}
+.nm-t-titre{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
 .nm-t-titre b{font-size:var(--f-13);font-weight:600;color:var(--t-1)}
-/* la source sur deux lignes au plus ; la fiche dépliée la donne entière */
-.nm-t-source{font-size:var(--f-11);color:var(--t-3);white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+/* une table modifiée ici : un point d'ambre devant son nom (le badge dit combien) */
+.nm-table.modifiee .nm-t-titre b::before{content:"";display:inline-block;width:6px;height:6px;margin:0 7px 1px 0;border-radius:50%;background:var(--warn);vertical-align:middle}
+/* la source sur une ligne ; la fiche dépliée la donne entière */
+.nm-t-source{font-size:var(--f-12);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* le compte et les badges en colonnes de largeur fixe : d'une table à l'autre, les chiffres tombent l'un sous l'autre */
-.nm-t-compte{flex:none;min-width:88px;text-align:right;font:600 var(--f-12) var(--mono);color:var(--t-2);white-space:nowrap}
-.nm-t-badges{flex:none;width:208px;display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-start}
-.nm-chevron{width:16px;height:16px;color:var(--t-3);transition:transform var(--rapide)}
+.nm-t-compte{flex:none;min-width:84px;text-align:right;font:500 var(--f-12) var(--mono);color:var(--t-2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.nm-t-badges{flex:none;width:200px;display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-start}
+.nm-chevron{width:16px;height:16px;color:var(--t-3);transition:transform var(--moyen)}
 .nm-table.ouvert .nm-chevron{transform:rotate(180deg)}
-.nm-t-corps{display:flex;flex-direction:column;gap:var(--sp-3);padding:var(--sp-3)}
-/* la fiche d'une table : des faits, la clé en petites capitales */
-.nm-doc{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:var(--sp-1) var(--sp-3);margin:0;font-size:var(--f-12)}
-.nm-doc dt,.nm-cols dt{font:500 var(--f-12)/1.46 var(--sans);letter-spacing:0;color:var(--t-3);white-space:nowrap}
-.nm-doc dd,.nm-cols dd{margin:0;color:var(--t-1);line-height:1.5;min-width:0}
+.nm-contrats .fi-lien{flex:none}
+.nm-t-corps{display:flex;flex-direction:column;gap:var(--sp-4);padding:var(--sp-4) var(--sp-4) var(--sp-3);animation:nm-ouvre var(--moyen)}
+@keyframes nm-ouvre{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+/* la fiche d'une table : des faits — la clé en étiquette, la valeur à l'encre */
+.nm-doc{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px var(--sp-4);margin:0;font-size:var(--f-13)}
+.nm-doc dt,.nm-cols dt{font:500 var(--f-12)/1.6 var(--sans);letter-spacing:0;color:var(--t-2);white-space:nowrap}
+.nm-doc dt::first-letter{text-transform:uppercase}
+.nm-doc dd,.nm-cols dd{margin:0;color:var(--t-1);line-height:1.55;min-width:0;max-width:110ch}
 .nm-doc dd.nm-manque{color:var(--warn)}
 .nm-doc .fi-lien{margin:-4px 0 -4px -8px}
-.nm-cols{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:var(--sp-1) var(--sp-3);margin:0;padding:12px;border-radius:var(--r-1);background:var(--s-sunken);font-size:var(--f-12)}
-.nm-cols dt{font:600 var(--f-12) var(--mono);text-transform:none;letter-spacing:0;color:var(--t-1)}
-.nm-cols dt i{font-style:normal;color:var(--accent);margin-left:2px}
+/* les colonnes expliquées : entre deux filets, le nom en chasse fixe */
+.nm-cols{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px var(--sp-4);margin:0;padding:var(--sp-3) 0;border-top:1px solid var(--s-line);border-bottom:1px solid var(--s-line);font-size:var(--f-12)}
+.nm-cols dt{font:600 var(--f-12)/1.6 var(--mono);text-transform:none;letter-spacing:0;color:var(--t-1)}
+.nm-cols dt i{font-style:normal;color:var(--warn);margin-left:2px}
 .nm-cols dd{color:var(--t-2)}
-.nm-alias{display:block;font-size:var(--f-11);color:var(--t-3)}
+.nm-alias{display:block;font-size:var(--f-12);color:var(--t-2);opacity:.85}
 /* la barre : le filtre, ajouter, exporter, le gabarit, revenir à l'embarquée, les masquées */
 .nm-t-barre{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
-.nm-filtre{flex:1 1 200px;min-width:0;max-width:360px}
+.nm-filtre{flex:1 1 200px;min-width:0;max-width:360px;height:32px}
 .nm-t-barre .btn{height:32px}
 .nm-t-barre .btn.lien{padding:0 8px}
 /* ─── la table : en chasse fixe, triable à l'en-tête, les gestes au survol de la ligne ───
    Elle défile dans sa boîte, dans les deux sens : l'en-tête reste en haut (six colonnes de chiffres gardent leur nom),
    et la colonne des gestes reste au bord droit (modifier, dupliquer, supprimer, OK, Annuler toujours à portée) */
 .nm-defile{max-height:min(70vh,640px);overflow:auto;overscroll-behavior-x:contain;padding-bottom:4px;scrollbar-width:thin}
-.nm-tab{border-collapse:separate;border-spacing:0;font-size:var(--f-11);white-space:nowrap;min-width:100%}
-.nm-tab th{position:sticky;top:0;z-index:1;background:var(--s-surface);text-align:left;font:500 var(--f-12) var(--sans);color:var(--t-3);letter-spacing:0;padding:5px 8px 5px 0;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
-.nm-tab th[data-tri]{cursor:pointer;user-select:none}
+.nm-tab{border-collapse:separate;border-spacing:0;font-size:var(--f-12);white-space:nowrap;min-width:100%}
+.nm-tab th{position:sticky;top:0;z-index:1;background:var(--s-surface);text-align:left;font:500 var(--f-12) var(--sans);color:var(--t-2);letter-spacing:0;padding:8px 14px 8px 0;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
+.nm-tab th[data-tri]{cursor:pointer;user-select:none;transition:color var(--rapide)}
 .nm-tab th[data-tri]:hover{color:var(--t-1)}
-.nm-tab th[aria-sort="ascending"],.nm-tab th[aria-sort="descending"]{color:var(--accent-2)}
-.nm-tab td{padding:4px 8px 4px 0;border-bottom:1px solid var(--s-line);font-family:var(--mono);vertical-align:top;max-width:260px;overflow:hidden;text-overflow:ellipsis}
+.nm-tab th[aria-sort="ascending"],.nm-tab th[aria-sort="descending"]{color:var(--t-1);font-weight:600}
+.nm-tab td{padding:6px 14px 6px 0;border-bottom:1px solid var(--s-line);font-family:var(--mono);vertical-align:top;max-width:260px;overflow:hidden;text-overflow:ellipsis;transition:background var(--rapide)}
 .nm-tab td.d,.nm-tab th.d{text-align:right;font-variant-numeric:tabular-nums}
 .nm-tab td.nm-texte{font-family:var(--sans);color:var(--t-2);max-width:320px}
-.nm-tab tr.nm-l{transition:background var(--rapide)}
-.nm-tab tr.nm-l:hover td,.nm-tab tr.nm-l:focus-visible td{background:var(--s-sunken)}
+.nm-tab tr.nm-l{color:var(--t-1)}   /* une ligne modifiée ou ajoutée garde l'encre : son fond et son badge disent l'état */
+.nm-tab tr.nm-l:hover td,.nm-tab tr.nm-l:focus-visible td{background:var(--s-hover)}
 .nm-tab tr.nm-l:focus-visible{outline:none}
 .nm-tab tr.nm-l:focus-visible td:first-child{box-shadow:inset 2px 0 0 var(--accent)}
 .nm-tab tr.nm-mod td{background:var(--warn-soft)}
 .nm-tab tr.nm-ajo td{background:var(--ok-soft)}
-.nm-tab tr.nm-masquee td{color:var(--t-3);text-decoration:line-through;background:var(--s-sunken)}
+.nm-tab tr.nm-mod:hover td{background:color-mix(in srgb,var(--warn-soft),var(--warn) 8%)}
+.nm-tab tr.nm-ajo:hover td{background:color-mix(in srgb,var(--ok-soft),var(--ok) 8%)}
+.nm-tab tr.nm-masquee td{color:var(--t-2);text-decoration:line-through;background:var(--s-sunken)}
 .nm-tab tr.nm-masquee td.nm-gestes-l{text-decoration:none}
-.nm-tab td.nm-etat,.nm-tab th.nm-etat{width:1px;padding-right:6px;white-space:nowrap}
-.nm-src{display:block;font:500 10px var(--sans);color:var(--t-3);max-width:90px;overflow:hidden;text-overflow:ellipsis}
+.nm-tab td.nm-etat,.nm-tab th.nm-etat{width:1px;padding:6px 8px 6px 4px;white-space:nowrap}
+.nm-src{display:block;margin-top:2px;font:500 var(--f-11) var(--sans);color:var(--t-2);max-width:96px;overflow:hidden;text-overflow:ellipsis}
 /* les gestes d'une ligne : collés au bord droit (sur le fond de leur ligne : survolée, modifiée, en édition…), visibles
    au survol ou au clavier (au doigt, toujours) */
-.nm-tab td.nm-gestes-l,.nm-tab th.nm-gestes-l{position:sticky;right:0;width:1px;padding:2px 2px 2px 6px;white-space:nowrap;text-align:right;vertical-align:middle;background:var(--s-surface);box-shadow:-1px 0 0 var(--s-line)}
+.nm-tab td.nm-gestes-l,.nm-tab th.nm-gestes-l{position:sticky;right:0;width:1px;padding:2px 4px 2px 8px;white-space:nowrap;text-align:right;vertical-align:middle;background:var(--s-surface);box-shadow:-1px 0 0 var(--s-line)}
 .nm-tab th.nm-gestes-l{z-index:2}
-.nm-g{width:26px;height:26px;border:none;background:none;border-radius:50%;color:var(--t-2);display:inline-grid;place-items:center;padding:0;opacity:0;transition:opacity var(--rapide),background var(--rapide),color var(--rapide)}
+.nm-g{width:26px;height:26px;border:none;background:none;border-radius:var(--r-1);color:var(--t-2);display:inline-grid;place-items:center;padding:0;opacity:0;transition:opacity var(--rapide),background var(--rapide),color var(--rapide)}
 .nm-g svg.ico{width:14px;height:14px}
 .nm-tab tr:hover .nm-g,.nm-tab tr:focus-within .nm-g,.nm-g:focus-visible{opacity:1}
 @media (hover:none){.nm-g{opacity:1}}
-.nm-g:hover{background:var(--s-hover);color:var(--t-1)}
-.nm-g.danger:hover{background:var(--ko-soft);color:var(--ko)}
+.nm-g:hover{background:var(--s-surface);color:var(--t-1);box-shadow:0 0 0 1px var(--s-line-2)}
+.nm-g.danger:hover{background:var(--ko-soft);color:var(--ko);box-shadow:none}
 .nm-plus{margin:4px 0 0 -8px}
 /* ─── une ligne en édition : chaque cellule un champ, OK et Annuler au bout ─── */
-.nm-tab tr.nm-edition td{background:var(--accent-soft);padding:4px 6px 4px 0;vertical-align:middle}
-.nm-champ{width:100%;min-width:72px;height:28px;border:1px solid var(--s-line-2);border-radius:4px;padding:0 6px;background:var(--s-surface);color:var(--t-1);font:500 var(--f-12) var(--mono);transition:border-color var(--rapide),box-shadow var(--rapide)}
-.nm-champ[data-obligatoire]{border-color:var(--accent-line)}
-.nm-champ:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.nm-tab tr.nm-edition td{background:var(--accent-soft);padding:5px 6px 5px 0;vertical-align:middle}
+.nm-champ{width:100%;min-width:72px;height:28px;border:1px solid var(--s-line-2);border-radius:var(--r-1);padding:0 7px;background:var(--s-surface);color:var(--t-1);font:500 var(--f-12) var(--mono);transition:border-color var(--rapide),box-shadow var(--rapide)}
+.nm-champ[data-obligatoire]{border-color:color-mix(in srgb,var(--t-1) 30%,var(--s-line-2))}
+.nm-champ:focus{outline:none;border-color:var(--t-1);box-shadow:var(--anneau)}
 .nm-champ::placeholder{color:var(--t-3);font-family:var(--sans);font-weight:400}
-.nm-tab td.nm-valider{text-align:left;padding-left:6px}
+.nm-tab td.nm-valider{text-align:left;padding-left:8px}
 .nm-tab td.nm-valider .btn{height:28px;padding:0 12px;margin-right:2px;font-family:var(--sans)}
-/* ─── l'import : un bloc par table reconnue, la cible, les colonnes, le compte, l'aperçu ─── */
-.nm-import,.nm-resultats,.nm-guide{border:1px solid var(--s-line-2);border-radius:var(--r-2);padding:var(--sp-3);background:var(--s-surface);display:flex;flex-direction:column;gap:var(--sp-3);box-shadow:var(--sh-1)}
-.nm-import{box-shadow:inset 3px 0 0 var(--accent),var(--sh-1)}
+/* ─── l'import, les résultats de la recherche, le guide : ce qu'on a en main pour un moment, un cadre chacun ─── */
+.nm-import,.nm-resultats,.nm-guide{border-radius:var(--r-2);padding:var(--sp-4);background:var(--s-surface);display:flex;flex-direction:column;gap:var(--sp-3);box-shadow:0 0 0 1px var(--s-line-2),0 6px 20px -8px rgba(0,0,0,.18);animation:nm-ouvre var(--moyen)}
 .nm-imp-tete{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2) var(--sp-3)}
-.nm-imp-tete b{font-size:var(--f-14)}
+.nm-imp-tete .min0{font-size:var(--f-13);color:var(--t-2);line-height:1.5}
+.nm-imp-tete .sur{color:var(--t-2)}
+.nm-imp-tete b{font-size:var(--f-14);font-weight:600;color:var(--t-1)}
 .nm-imp-tete .btn.lien{margin-left:-6px}
-.nm-bloc{border:1px solid var(--s-line);border-radius:var(--r-1);padding:10px 12px;display:flex;flex-direction:column;gap:8px;background:var(--s-sunken)}
-.nm-bloc.hesite{border-color:var(--warn)}
+/* un bloc par table reconnue, séparés d'un filet ; celui où l'outil hésite, un trait d'ambre */
+.nm-bloc{padding:var(--sp-3) 0 0;border-top:1px solid var(--s-line);display:flex;flex-direction:column;gap:8px}
+.nm-bloc.hesite{box-shadow:inset 2px 0 0 var(--warn);padding-left:12px}
 .nm-bloc-tete{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
-.nm-bloc-tete b{display:block;font-size:var(--f-13);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nm-bloc-ou{font-size:var(--f-11);color:var(--t-3)}
+.nm-bloc-tete b{display:block;font-size:var(--f-13);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nm-bloc-ou{font-size:var(--f-12);color:var(--t-2)}
 .nm-cible{display:inline-flex;align-items:center;gap:8px;font-size:var(--f-12);color:var(--t-2)}
 .nm-cible select,.nm-col-ko select{height:30px;border:1px solid var(--s-line-2);border-radius:var(--r-1);background:var(--s-surface);color:var(--t-1);padding:0 6px;font-size:var(--f-12);max-width:220px}
 /* le focus d'une liste : celui des champs (filet d'encre et halo), pas l'anneau décalé du navigateur */
-.nm-cible select:focus-visible,.nm-col-ko select:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.nm-cible select:focus-visible,.nm-col-ko select:focus-visible{outline:none;border-color:var(--t-1);box-shadow:var(--anneau)}
 .nm-bloc-compte{font-size:var(--f-12);color:var(--t-2)}
 .nm-bloc-compte b{font-weight:600}
-.nm-bloc-cols{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;font-size:var(--f-11)}
-.nm-cols-t{font:500 var(--f-12) var(--sans);letter-spacing:0;color:var(--t-3);margin-right:2px}
-.nm-col-ok{font-family:var(--mono);background:var(--s-surface);border:1px solid var(--s-line);border-radius:var(--r-1);padding:1px 8px;color:var(--t-1)}
+.nm-bloc-cols{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;font-size:var(--f-12)}
+.nm-cols-t{font:500 var(--f-12) var(--sans);letter-spacing:0;color:var(--t-2);margin-right:2px}
+.nm-col-ok{font-family:var(--mono);background:var(--s-hover);border-radius:var(--r-1);padding:1px 8px;color:var(--t-1)}
 .nm-col-ko{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);background:var(--warn-soft);border-radius:var(--r-1);padding:1px 4px 1px 8px;color:var(--warn)}
 .nm-col-ko select{height:24px;font-size:var(--f-11);font-family:var(--sans)}
 .nm-apercu td{background:var(--s-surface)}
 /* ─── les résultats de la recherche : par table, les premières lignes, le chemin vers la table ─── */
-.nm-hit{display:flex;flex-direction:column;gap:4px}
+.nm-resultats>.sur{color:var(--t-2)}
+.nm-hit{display:flex;flex-direction:column;gap:4px;padding-top:var(--sp-3);border-top:1px solid var(--s-line)}
 .nm-hit-t{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:var(--f-12)}
-.nm-hit-t b{font-size:var(--f-13)}
-.nm-hit-t span{color:var(--t-3);font-family:var(--mono)}
+.nm-hit-t b{font-size:var(--f-13);font-weight:600}
+.nm-hit-t span{color:var(--t-2);font-family:var(--mono)}
 /* ─── le guide : ajouter une norme, les gabarits ─── */
-.nm-cas{display:grid;grid-template-columns:minmax(140px,max-content) minmax(0,1fr);gap:8px 14px;margin:0;font-size:var(--f-12)}
+.nm-guide>.sur{font:600 var(--f-14)/1.3 var(--titre);color:var(--t-1)}
+.nm-cas{display:grid;grid-template-columns:minmax(160px,300px) minmax(0,1fr);gap:12px 24px;margin:0;font-size:var(--f-12)}
 .nm-cas dt{font-weight:600;color:var(--t-1);line-height:1.5}
 .nm-cas dd{margin:0;color:var(--t-2);line-height:1.5}
 .nm-gabarits{display:flex;flex-wrap:wrap;gap:0 6px;margin-top:2px;align-items:center}
 .nm-gabarits .fi-lien{margin:0 0 0 -8px}
-.nm-gabarits.nm-tous{padding-top:6px;border-top:1px solid var(--s-line)}
-.nm-gabarits.nm-tous .sur{margin-right:6px}
+.nm-gabarits.nm-tous{padding-top:var(--sp-3);border-top:1px solid var(--s-line)}
+.nm-gabarits.nm-tous .sur{margin-right:6px;color:var(--t-2)}
+/* ─── la bible : le filtre par norme (des puces de choix — la pressée à l'encre), le compte au pied ─── */
+.bible-filtres{display:flex;flex-wrap:wrap;gap:6px;margin:0}
+.bi-compte{font-size:var(--f-12);color:var(--t-2);font-variant-numeric:tabular-nums;white-space:nowrap}
 /* ─── au téléphone : la page est un tiroir ; la fiche d'une table s'empile ─── */
 @media (max-width:700px){
   .nm-doc,.nm-cols,.nm-cas{grid-template-columns:1fr;gap:2px 0}
   .nm-doc dt,.nm-cols dt,.nm-cas dt{margin-top:6px}
-  .nm-t-tete{flex-wrap:wrap;gap:6px 10px}
+  .nm-liste{margin:0 -8px}
+  .nm-t-tete{flex-wrap:wrap;gap:6px 10px;padding:9px 8px}
   .nm-t-titre{flex-basis:calc(100% - 30px)}
   /* le compte et les badges passent sous le titre, à leur largeur */
   .nm-t-compte{min-width:0;text-align:left}
@@ -159,4 +178,8 @@
   /* la tête de l'import et le titre d'un bloc prennent toute la largeur : les boutons et la cible passent dessous */
   .nm-imp-tete .min0,.nm-bloc-tete .min0{flex:1 1 100%}
   .nm-bloc-tete b{white-space:normal}
+  /* la tête d'un document large : le passage normes ↔ bible passe sous le titre */
+  .fiche-tete:has(.nm-nav){flex-wrap:wrap}
+  .fiche-tete:has(.nm-nav)>.min0{flex:1 1 calc(100% - 52px)}
+  .fiche-tete .nm-nav{order:3;margin-top:2px}
 }

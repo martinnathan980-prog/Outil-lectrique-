@@ -19,7 +19,9 @@
        disposition des contacts sur la face est indicative : elle dépend de
        l'arrangement de l'insert, que la bible ne donne pas encore.
 
-   Sous la pièce, le tableau module par module (ou contact par contact) :
+   Collée sous la scène, sa légende : ce que dit la vue, la couleur de
+   chaque route, les trous pris, libres, refusés, le geste qui tourne la
+   pièce. Puis le tableau module par module (ou contact par contact) :
    ce qui arrive, ce qui repart. Survoler un fil — dans la vue ou dans le
    tableau — l'allume sur le plan ; un clic y va.
 
@@ -134,6 +136,8 @@ function scenePrise(P, S, az, el) {
    en vue de face) ne s'écrit pas ; le nom d'une pièce caché par une autre (la fiche derrière l'embase) non plus. */
 function reliefSvg() { const { P, S, Q, az, el, prise } = RELIEF; if (!P && !Q) return '';
   const sc = Q ? sceneModules(Q) : prise ? scenePrise(P, S, az, el) : sceneBarrette(P, S, az, el), routes = couleursDesRoutes();
+  // ce que la légende dira : les routes des fils dessinés, et s'il y a un trou que la norme refuse
+  RELIEF.routes = new Set(sc.fils.map(w => (ligneRelief(w.f) || {}).route || '')); RELIEF.ko = sc.trous.some(t => t.mauvais);
   const pj = p => projeter(p, az, el), vues = facesVisibles(sc.faces, az, el);
   // le cadre de la pièce seule : ses faces, ses fils, ses écritures
   const B0 = { minx: Infinity, maxx: -Infinity, miny: Infinity, maxy: -Infinity }, etendre = (B, p) => { B.minx = Math.min(B.minx, p.x); B.maxx = Math.max(B.maxx, p.x); B.miny = Math.min(B.miny, p.y); B.maxy = Math.max(B.maxy, p.y); };
@@ -205,8 +209,8 @@ function ouvrirRelief(nom) { if (!reliefPossible(nom)) return; const V = verite(
     const ko = Q.fils.filter(x => x.jaugeOk === false).length;
     $('re-sur').textContent = E.sur; $('re-titre').textContent = nom;
     $('re-compte').innerHTML = [pluriel(Q.modules.length, 'module'), pluriel(Q.utilises, 'contact') + ' pris', pluriel(Q.contacts - Q.utilises, 'libre')].join(' · ') + (ko ? ` · <span class="ko">${pluriel(ko, 'fil')} hors taille</span>` : '');
-    $('re-tableau').innerHTML = tableauModules(Q); $('re-note').textContent = E.note;
-    const d = $('relief'); d.hidden = false; peindreRelief(); lierRelief(); $('re-fermer').focus(); return; }
+    $('re-tableau').innerHTML = tableauModules(Q);
+    montrerRelief(); $('re-note').innerHTML = legendeRelief(E.note); return; }
   RELIEF.P = remplirSelonNorme(physiqueDeBarrette(nom, V, app.bible, app.contrat.designations.get(nom) || ''), app.norme);
   RELIEF.S = simulerBornier(RELIEF.P, app.norme, app.simu);
   [RELIEF.az, RELIEF.el] = VUES_RELIEF['3/4'];
@@ -216,8 +220,18 @@ function ouvrirRelief(nom) { if (!reliefPossible(nom)) return; const V = verite(
   $('re-compte').innerHTML = [pluriel(P.modules.length, mot), pluriel(P.modules.length - P.libres, 'utilisé'), pluriel(P.libres, 'libre')].join(' · ')
     + (kos ? ` · <span class="ko">${pluriel(kos, 'fil')} hors norme</span>` : '');
   $('re-tableau').innerHTML = tableauRelief();
-  $('re-note').textContent = RELIEF.prise ? 'Disposition des contacts sur la face : indicative (l’arrangement de l’insert n’est pas encore dans la bible).' : 'En arrière, ce qui arrive (amont) ; en avant, ce qui repart (aval). Le cuivre relie les modules d’un même paquet.';
-  const d = $('relief'); d.hidden = false; peindreRelief(); lierRelief(); $('re-fermer').focus(); }
+  montrerRelief();
+  $('re-note').innerHTML = legendeRelief(RELIEF.prise ? 'Disposition des contacts sur la face : indicative (l’arrangement de l’insert n’est pas encore dans la bible).' : 'En arrière, ce qui arrive (amont) ; en avant, ce qui repart (aval). Le cuivre relie les modules d’un même paquet.'); }
+/* LA LÉGENDE, collée sous la scène sur le même papier (style-relief.css) : ce que dit la vue ; la couleur de chaque route
+   des fils dessinés ; les trous — pris, libres, refusés quand il y en a — ; le geste qui tourne la pièce. */
+function legendeRelief(note) { const couleurs = couleursDesRoutes(), rs = [...(RELIEF.routes || [])].sort((a, b) => (!a) - (!b) || triNaturel(a, b));
+  return `<span class="re-note-t">${esc(note)}</span><ul class="re-legende" aria-label="Légende">`
+    + rs.map(r => `<li><i class="re-l-route" style="background:${couleurs.get(r) || '#26323f'}"></i>${esc(r || 'sans route')}</li>`).join('')
+    + '<li><i class="re-l-trou plein"></i>pris</li><li><i class="re-l-trou"></i>libre</li>' + (RELIEF.ko ? '<li><i class="re-l-trou ko"></i>hors norme</li>' : '')
+    + '<li class="re-l-geste"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4.5V8h-3.5"/></svg>glisser pour tourner</li></ul>'; }
+/* La fenêtre paraît, en haut (une autre pièce ne s'ouvre pas là où on avait laissé la précédente : sa scène en vue), la
+   scène se peint à sa taille, la croix a le clavier. */
+function montrerRelief() { $('relief').hidden = false; const b = document.querySelector('#relief .re-boite'); if (b) b.scrollTop = 0; peindreRelief(); lierRelief(); $('re-fermer').focus(); }
 function fermerRelief() { $('relief').hidden = true; RELIEF.P = null; RELIEF.Q = null; rallumer(); }
 /* Peindre : la scène, l'échelle réelle relue (les écritures gardent leur taille à l'écran), la vue pressée dans le
    segment — aucune quand on a tourné la pièce à la main. */

@@ -213,9 +213,30 @@ const aConfirmer = (T, x) => /confirm|provisoire/.test(MOT(texteDeLigne(T, x)));
 /* Les lignes masquées d'une table : les embarquées que la couche supprime. */
 const masqueesDe = T => { const sup = new Set(apportsDeTable(NORMES.apports, T).supprimees || []); return (normeEmbarqueeLue()[T] || []).filter(x => sup.has(cleDeLigne(T, x))); };
 const tableModifiee = T => { const A = apportsDeTable(NORMES.apports, T); return !!((A.lignes || []).length || (A.supprimees || []).length); };
-const nmTitre = (sur, titre) => `<div class="fiche-tete"><div class="min0"><div class="sur">${esc(sur)}</div><h2 class="titre sans">${esc(titre)}</h2></div><button class="rond fermer" id="fi-fermer" aria-label="Fermer la fiche"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`;
+/* La tête d'un document large (les normes, la bible, la base SEE) : le sur-titre, le titre, et — `nav` — le passage d'un
+   onglet à l'autre, à côté de la croix (la coquille : style.css). */
+const nmTitre = (sur, titre, nav) => `<div class="fiche-tete"><div class="min0"><div class="sur">${esc(sur)}</div><h2 class="titre sans">${esc(titre)}</h2></div>${nav || ''}<button class="rond fermer" id="fi-fermer" aria-label="Fermer la fiche"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`;
 /* Le passage d'un document à l'autre : les normes, la bible (et les contrats déjà faits). */
 const nmNav = actif => `<div class="segment nm-nav" role="group" aria-label="Documents"><button data-nm-vue="normes" aria-pressed="${actif === 'normes'}">Normes</button><button data-nm-vue="bible" aria-pressed="${actif === 'bible'}">Bible des barrettes</button></div>`;
+/* LE MENU « ··· » d'un document : les gestes secondaires, rangés derrière un bouton (la page des normes, le pied de la
+   bible) ; `gestes` : [id, le mot, ce qu'il fait en petit, des attributs] — null pose un filet, le reste (faux) se tait.
+   Une ligne garde l'identifiant du bouton qu'elle remplace : ses gestes ne changent pas. */
+const ICO_PLUS_DOC = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="12" r=".9"/><circle cx="12" cy="12" r=".9"/><circle cx="18.5" cy="12" r=".9"/></svg>';
+const menuDoc = (id, aria, gestes) => `<details class="doc-menu" id="${id}"><summary class="btn papier" aria-label="${escA(aria)}" title="${escA(aria)}">${ICO_PLUS_DOC}</summary><div class="doc-menu-l" role="menu">`
+  + gestes.filter(g => g || g === null).map(g => g === null ? '<hr>' : `<button role="menuitem" id="${g[0]}"${g[3] || ''}>${esc(g[1])}${g[2] ? `<small>${esc(g[2])}</small>` : ''}</button>`).join('').replace(/^<hr>|<hr>$/g, '') + '</div></details>';
+/* Ses gestes : il se ferme d'un clic ailleurs, d'un geste choisi, d'Échap (le clavier revient au bouton, le document reste
+   ouvert) ; ↑ ↓ passent d'une ligne à l'autre. */
+function lierMenusDoc(box) { if (!box) return;
+  box.querySelectorAll('details.doc-menu').forEach(d => { if (d.dataset.lie) return; d.dataset.lie = '1';
+    const fermer = () => { d.open = false; }, lignes = () => [...d.querySelectorAll('.doc-menu-l button')];
+    d.addEventListener('toggle', () => { if (!d.open) return; const l = lignes()[0]; if (l) l.focus();
+      const dehors = e => { if (d.contains(e.target)) return; fermer(); document.removeEventListener('pointerdown', dehors, true); };
+      document.addEventListener('pointerdown', dehors, true); });
+    d.addEventListener('keydown', e => { if (!d.open) return; const bs = lignes(), i = bs.indexOf(document.activeElement);
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fermer(); d.querySelector('summary').focus(); }
+      else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && bs.length) { e.preventDefault(); const bas = e.key === 'ArrowDown';
+        bs[i < 0 ? (bas ? 0 : bs.length - 1) : (i + (bas ? 1 : bs.length - 1)) % bs.length].focus(); } });
+    d.querySelector('.doc-menu-l').addEventListener('click', e => { if (e.target.closest('button')) fermer(); }); }); }
 const badge = (cls, t) => `<span class="nm-badge ${cls}">${esc(t)}</span>`;
 /* La largeur des deux onglets (Normes, Bible) : les tables ont jusqu'à seize colonnes ; le plan se recadre à côté.
    `ouvrirFiche` pose sa largeur à lui et recadre quand le document change : on reprend la nôtre aussitôt (dans la même
@@ -238,22 +259,29 @@ function normesHtml() { const N = normeActive(), E = normeEmbarqueeLue(), total 
   // ce que ce navigateur a importé ou modifié : les lignes de la couche (les lignes embarquées qui portent une source, comme
   // les calibrations, ne comptent pas)
   const nAjout = TABLES_NORME.reduce((n, t) => n + (apportsDeTable(NORMES.apports, t).lignes || []).length, 0), nMasque = TABLES_NORME.reduce((n, t) => n + masqueesDe(t).length, 0);
+  // l'état en une ligne : ce qu'on a, ce qui est modifié ici (et l'export qui va avec), la base SEE gardée qui passe devant
+  const seeGardee = typeof BASE_SEE !== 'undefined' && BASE_SEE.base;
   const etat = `<div class="bible-etat nm-etat"><span><b>${TABLES_NORME.length} tables</b> · ${plurielLie(total, 'ligne')} · ${E.tables} blocs embarqués (normes/*.csv)`
-    + (modifiees.length ? ` · <b class="nm-mod">${plurielLie(modifiees.length, 'table')} modifiée${modifiees.length > 1 ? 's' : ''}</b> dans ce navigateur (${plurielLie(nAjout, 'ligne')} importée${nAjout > 1 ? 's' : ''} ou modifiée${nAjout > 1 ? 's' : ''}${nMasque ? ', ' + plurielLie(nMasque, 'ligne') + ' masquée' + (nMasque > 1 ? 's' : '') : ''}) — ${esc(app.normeNom)}` : ' · rien d’importé ni de modifié : l’embarquée telle quelle')
+    + (modifiees.length ? ` · <b class="nm-mod">${plurielLie(modifiees.length, 'table')} modifiée${modifiees.length > 1 ? 's' : ''}</b> dans ce navigateur (${plurielLie(nAjout, 'ligne')} importée${nAjout > 1 ? 's' : ''} ou modifiée${nAjout > 1 ? 's' : ''}${nMasque ? ', ' + plurielLie(nMasque, 'ligne') + ' masquée' + (nMasque > 1 ? 's' : '') : ''}) — ${esc(app.normeNom)} · <button class="btn lien" id="nm-exporter-tout" title="Toutes les lignes importées ou modifiées, en un CSV à me renvoyer">Exporter mes modifications</button>` : ' · rien d’importé ni de modifié : l’embarquée telle quelle')
+    + (seeGardee ? ' · <button class="btn lien" id="nm-see-gardee" title="Ce que Volta prend de la base SEE gardée sur ce PC, et ce qui change dans ses tables">la base SEE gardée passe devant</button>' : '')
     + (NORMES.ancienne ? ' · <i>une norme importée par l’ancien mécanisme a été oubliée : réimporte-la, elle se verra ligne par ligne</i>' : '') + '</span></div>';
-  // la recherche (son nom dit déjà « toutes les tables »), puis l'action principale de la page — importer — et les autres
-  const outils = `<div class="nm-outils"><div class="filtre nm-cherche"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="nm-q" value="${escA(NORMES.q)}" placeholder="Une référence, un part number, une jauge…" aria-label="Chercher dans toutes les tables" autocomplete="off" spellcheck="false"><button class="vider" id="nm-q-vider"${NORMES.q ? '' : ' hidden'} aria-label="Effacer la recherche">×</button></div>`
-    + `<div class="nm-gestes"><button class="btn cuivre" id="nm-importer" title="Un Excel (une feuille = une ou plusieurs tables), un CSV">Importer une norme</button><button class="btn papier" id="nm-coller">Coller des lignes</button><button class="btn papier" id="nm-see" title="L’Excel de la base SEE (EED_View…, EED_OBJ_…, EED_LNK_…) : Volta dit ce qu’il en prend, et le garde sur ce PC si tu le veux — rien ne sort">Lire la base SEE</button>${typeof BASE_SEE !== 'undefined' && BASE_SEE.base ? '<button class="btn papier" id="nm-see-gardee" title="Ce que Volta prend de la base SEE gardée sur ce PC, et ce qui change dans ses tables">Base SEE gardée</button>' : ''}<button class="btn papier" id="nm-guide" aria-expanded="${NORMES.guide}">Ajouter une norme, les gabarits</button>`
-    + (modifiees.length ? `<button class="btn papier" id="nm-exporter-tout" title="Toutes les lignes importées ou modifiées, en un CSV à me renvoyer">Exporter mes modifications</button>` : '') + `<input type="file" id="fichier-norme" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden></div></div>`;
-  return `<div class="nm">${nmTitre('Ce que l’outil vérifie, table par table', 'Normes')}${nmNav('normes')}${etat}${outils}${NORMES.guide ? guideHtml() : ''}${NORMES.import ? importHtmlOuColler() : ''}${NORMES.q ? rechercheHtml() : ''}`
+  // la recherche en tête (son nom dit déjà « toutes les tables »), l'action principale — importer — pleine (au filet pendant
+  // qu'un import attend d'être adopté : c'est lui qu'on presse), les autres façons d'entrer une norme rangées dans « ··· »
+  const outils = `<div class="nm-outils"><div class="filtre nm-cherche"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="nm-q" value="${escA(NORMES.q)}" placeholder="Chercher dans les ${TABLES_NORME.length} tables : une référence, un part number, une jauge…" aria-label="Chercher dans toutes les tables" autocomplete="off" spellcheck="false"><button class="vider" id="nm-q-vider"${NORMES.q ? '' : ' hidden'} aria-label="Effacer la recherche">×</button></div>`
+    + `<div class="nm-gestes"><button class="btn ${NORMES.import ? 'papier' : 'cuivre'}" id="nm-importer" title="Un Excel (une feuille = une ou plusieurs tables), un CSV — l’Excel de la base SEE aussi"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>Importer une norme</button>`
+    + menuDoc('nm-plus', 'Autres façons d’entrer une norme', [['nm-coller', 'Coller des lignes', 'copiées d’un Excel, ou d’une liste de SEE'],
+      ['nm-see', 'Lire la base SEE', 'l’Excel des vues EED_… : Volta dit ce qu’il en prend, rien ne sort', ' title="L’Excel de la base SEE (EED_View…, EED_OBJ_…, EED_LNK_…) : Volta dit ce qu’il en prend, et le garde sur ce PC si tu le veux — rien ne sort"'],
+      null, ['nm-guide', 'Ajouter une norme, les gabarits', 'ce que chaque table attend, un gabarit par table', ` aria-expanded="${NORMES.guide}"`]])
+    + `<input type="file" id="fichier-norme" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden></div></div>`;
+  return `<div class="nm">${nmTitre('Ce que l’outil vérifie, table par table', 'Normes', nmNav('normes'))}${etat}${outils}${NORMES.guide ? guideHtml() : ''}${NORMES.import ? importHtmlOuColler() : ''}${NORMES.q ? rechercheHtml() : ''}`
     + DOMAINES_NORMES.map(domaineHtml).join('') + '</div>'; }
 /* Le pied : défaire, revenir à l'embarquée — rien quand il n'y a rien à défaire ni à rendre (importer est en tête). */
 function normesPiedHtml() { if (!NORMES.hist.length && !app.normeNom) return '';
   return `${NORMES.hist.length ? `<button class="btn papier" id="nm-defaire" title="${escA('Défaire : ' + NORMES.hist[NORMES.hist.length - 1].quoi + ' (Ctrl+Z)')}">Défaire</button>` : ''}<span class="espace"></span>`
   + (app.normeNom ? '<button class="btn lien" id="no-embarquee">Revenir à la norme embarquée</button>' : ''); }
-/* Un domaine : son titre, à quoi il sert, ses tables. */
+/* Un domaine : son titre, à quoi il sert, ses tables — une liste de lignes qu'on déplie. */
 function domaineHtml(d) { const corps = d.id === 'contrats' ? contratsHtml() : d.vues.map(tableHtml).join('');
-  return `<section class="nm-dom" id="nm-dom-${d.id}"><h3 class="nm-dom-t">${esc(d.titre)}</h3><p class="nm-dom-sens">${esc(d.sens)}</p>${corps}</section>`; }
+  return `<section class="nm-dom" id="nm-dom-${d.id}"><h3 class="nm-dom-t">${esc(d.titre)}</h3><p class="nm-dom-sens">${esc(d.sens)}</p><div class="nm-liste">${corps}</div></section>`; }
 function contratsHtml() { const R = app.references, I = typeof indexReferences === 'function' ? indexReferences() : null;
   return `<article class="nm-table nm-contrats"><div class="nm-t-tete nm-t-fixe"><div class="nm-t-titre"><b>Base déposée</b><span class="nm-t-source">${R ? esc(R.nom || 'base') + '\u00a0· ' + plurielLie(I.harnais.size, 'harness') + '\u00a0· ' + plurielLie(I.dessins.size, 'dessin') + '\u00a0· ' + plurielLie(R.liaisons.length, 'liaison') : 'aucune base déposée'}</span></div>`
     + `<div class="nm-t-badges">${R ? badge('import', 'gardée dans ce navigateur') : badge('rien', 'vide')}</div><button class="fi-lien" data-nm-vue="bible">Voir dans la bible</button></div></article>`; }
@@ -282,7 +310,7 @@ function barreTableHtml(v, L) { const T = L.table, masq = masqueesDe(T), modif =
    L'alignement se décide par COLONNE, sur toutes les lignes de la table (pas sur celles qu'un filtre laisse) : une
    colonne dont chaque valeur est un nombre (hors identifiants : référence, câble, code…) se range à droite, en-tête
    compris ; les textes longs (note, source…) en linéale. */
-const COLONNE_TEXTE = /note|source|statut|sens|disposition|groupes/, COLONNE_IDENTIFIANT = /reference|cable|famille|variante|code|taille|designation|contact|courbe|type|filetage|lettre/;
+const COLONNE_TEXTE = /note|source|origine|statut|sens|disposition|groupes/, COLONNE_IDENTIFIANT = /reference|cable|famille|variante|code|taille|designation|contact|courbe|type|filetage|lettre/;
 function corpsTableHtml(v, L, opts) { opts = opts || {}; const T = L.table, cols = colonnesDeTable(T), filtre = opts.filtre != null ? opts.filtre : (NORMES.filtres[v] || ''), tri = NORMES.tris[v];
   let rows = L.lignes.map(x => ({ x, b: brutDe(T, x), etat: L.etat(x) }));
   const droite = new Set(cols.filter(c => !COLONNE_TEXTE.test(c.champ) && !COLONNE_IDENTIFIANT.test(c.champ) && rows.some(r => r.b[c.champ]) && rows.every(r => !r.b[c.champ] || NUMERO(r.b[c.champ]) != null)).map(c => c.champ));
@@ -416,7 +444,7 @@ function exporterApportsNormes() { const csv = csvDesApports(NORMES.apports); if
   telecharger(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }), 'normes-mes-modifications.csv'); dire('Tes modifications sont enregistrées en un CSV.'); }
 
 /* ---- les gestes de la page, posés une fois ----------------------------------------------- */
-function lierNormes() { const c = $('fiche-corps'); if (!c) return;
+function lierNormes() { const c = $('fiche-corps'); if (!c) return; lierMenusDoc(c);
   const q = $('nm-q'); if (q) { let t; q.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { NORMES.q = q.value.trim(); const pos = q.selectionStart; rendreNormes(); const q2 = $('nm-q'); if (q2) { q2.focus(); try { q2.setSelectionRange(pos, pos); } catch (_) { } } }, 220); }); }
   if ($('nm-q-vider')) $('nm-q-vider').onclick = () => { NORMES.q = ''; rendreNormes(); const q2 = $('nm-q'); if (q2) q2.focus(); };
   if ($('nm-see')) $('nm-see').onclick = () => $('fichier-see').click();
@@ -485,26 +513,31 @@ function ficheBible(ref, ancre) { const B = app.bible || [], nom = app.bibleNom,
   // un filtre par norme : les modules d'une norme, ou le reste (coupures, connecteurs)
   const filtre = app.base.bibleFiltre || '', garde = e => !filtre || (filtre === '-' ? !e.module : e.module && e.famille === filtre), vus = B.filter(e => garde(e) || e === zoom);
   const filtres = B.some(e => e.module) ? `<div class="bible-filtres" role="group" aria-label="Filtrer la bible">` + [['', 'tout', n], ...familles.map(f => [f, nomDeFamille(app.norme, f), B.filter(e => e.module && e.famille === f).length]), ['-', 'coupures et connecteurs', B.filter(e => !e.module).length]]
-    .map(([f, t, k]) => `<button class="mj-norme ${f && f !== '-' ? classeFamille(f) : ''}" data-filtre="${escA(f)}" aria-pressed="${filtre === f}">${esc(t)}\u00a0· ${k}</button>`).join('') + '</div>' : '';
+    .map(([f, t, k]) => `<button class="mj-norme ${f && f !== '-' ? classeFamille(f) : ''}" data-filtre="${escA(f)}" aria-pressed="${filtre === f}">${esc(t)}<span class="mj-n">${k}</span></button>`).join('') + '</div>' : '';
   // une ligne, et sous la ligne choisie, la référence en grand ; la note tient sur une ligne (entière au survol)
   const ligne = e => `<tr class="${e === zoom ? 'on' : ''}"><td class="pict">${pictoBible(e)}</td><td class="ref"><button class="ref-btn" data-ref="${escA(e.reference)}" aria-pressed="${e === zoom}" title="${e === zoom ? 'Replier' : 'Voir la référence en grand'}">${esc(e.reference)}</button></td>
     <td class="sans">${esc(e.nature)}</td><td class="d">${nombre(e.bornes)}</td>
     <td class="d">${jaugeEntree(e)}</td><td class="d">${e.intensite != null ? nombre(e.intensite) + '\u00a0A' : '—'}</td><td>${e.blindage ? 'oui' : '—'}</td><td class="bible-note"${e.note ? ` title="${escA(e.note)}"` : ''}>${esc(e.note)}</td></tr>`
     + (e === zoom ? `<tr class="bz-ligne"><td colspan="8">${zoomBible(e)}</td></tr>` : '');
-  const corps = '<div class="nm">' + tete('Barrettes et connecteurs', 'Bible des barrettes', true) + nmNav('bible') + etat + filtres
+  const corps = '<div class="nm">' + nmTitre('Barrettes et connecteurs', 'Bible des barrettes', nmNav('bible')) + etat + filtres
     + (n ? `<table class="bible"><thead><tr><th></th><th>Référence</th><th>Nature</th><th class="d">Bornes</th><th class="d">Jauge</th><th class="d" title="Intensité">Int.</th><th title="Blindage">Blindé</th><th>Note</th></tr></thead><tbody>${vus.map(ligne).join('')}</tbody></table>` : '<p class="note">Aucune référence.</p>')
     + `<p class="note">Un Excel ou un CSV dont une ligne d’en-têtes nomme ${COLONNES_BIBLE_TEXTE}. La jauge s’écrit en AWG : «\u00a0min\u00a0» est la plus fine acceptée. Une bible se dépose aussi directement sur la table.</p>`
     + resumeNormeHtml() + ficheReferences() + '</div>';
-  const pied = '<button class="btn cuivre" id="bi-importer">Importer un Excel / CSV</button><button class="btn papier" id="no-importer">Importer une norme</button><button class="btn papier" id="re-importer">Contrats déjà faits</button><input type="file" id="fichier-norme" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden><input type="file" id="fichier-references" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden><span class="espace"></span>'
-    + (nom ? '<button class="btn lien" id="bi-exemple">Revenir à la bible d’exemple</button>' : '') + (app.normeNom ? '<button class="btn lien" id="no-embarquee">Revenir à la norme embarquée</button>' : '');
-  ouvrirFiche({ mode: 'bible', large: true, ref: zoom ? ref : '' }, corps, pied); elargirNormes(deja); lierNormes();
+  // le pied : importer une bible, pleine ; le reste (une norme, les contrats déjà faits, revenir à l'exemple) dans « ··· »
+  const pied = `<button class="btn cuivre" id="bi-importer"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>Importer une bible</button>`
+    + menuDoc('bi-plus', 'Autres gestes de la bible', [['no-importer', 'Importer une norme', 'un Excel ou un CSV aux en-têtes de l’outil'], ['re-importer', 'Déposer les contrats déjà faits', 'un Excel de plusieurs harness, la colonne Harness remplie'],
+      null, nom ? ['bi-exemple', 'Revenir à la bible d’exemple', 'celle de l’outil, à la place de ' + nom] : false, app.normeNom ? ['no-embarquee', 'Revenir à la norme embarquée', 'oublier ce qui a été importé ou modifié'] : false])
+    + '<input type="file" id="fichier-norme" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden><input type="file" id="fichier-references" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>'
+    + `<span class="espace"></span><span class="bi-compte">${filtre ? esc(milliers(B.filter(garde).length)) + ' sur ' : ''}${esc(pluriel(n, 'référence'))}</span>`;
+  ouvrirFiche({ mode: 'bible', large: true, ref: zoom ? ref : '' }, corps, pied); elargirNormes(deja); lierNormes(); lierMenusDoc($('fiche-pied'));
   // la position : la ligne cliquée reste en place ; sinon la lecture reprend où elle était ; une autre référence demandée
   // d'ailleurs (la carte d'une barrette) vient sous l'en-tête de la table
   const c = $('fiche-corps'), ligneDe = r => { const b = r && c.querySelector(`.ref-btn[data-ref="${CSS.escape(r)}"]`); return b ? b.closest('tr') : null; };
   c.scrollTop = y;
   const tr = ancre && ancre.ref ? ligneDe(ancre.ref) : null;
   if (tr) c.scrollTop += tr.getBoundingClientRect().top - ancre.top;
-  else if (zoom && zoom.reference !== avant) { const z = ligneDe(zoom.reference), h = c.querySelector('table.bible thead'); if (z) c.scrollTop += z.getBoundingClientRect().top - c.getBoundingClientRect().top - (h ? h.offsetHeight : 0); }
+  else if (zoom && zoom.reference !== avant) { const z = ligneDe(zoom.reference), h = c.querySelector('table.bible thead'), t = c.querySelector('.fiche-tete');   // sous la tête du document et l'en-tête de la table, qui collent
+    if (z) c.scrollTop += z.getBoundingClientRect().top - c.getBoundingClientRect().top - (h ? h.offsetHeight : 0) - (t && getComputedStyle(t).position === 'sticky' ? t.offsetHeight : 0) - 4; }
   const surPlace = b => ({ ref: b.dataset.ref, top: b.closest('tr').getBoundingClientRect().top });
   $('bi-importer').onclick = () => $('fichier-bible').click();
   $('re-importer').onclick = () => $('fichier-references').click();
@@ -513,6 +546,8 @@ function ficheBible(ref, ancre) { const B = app.bible || [], nom = app.bibleNom,
   if ($('no-embarquee')) $('no-embarquee').onclick = () => { adopterApports(apportsVides(), 'retour à la norme embarquée'); dire('Norme embarquée rétablie.'); };
   if ($('bi-normes')) $('bi-normes').onclick = () => ficheNormes();
   c.querySelectorAll('.ref-btn').forEach(b => b.onclick = () => ficheBible(b.getAttribute('aria-pressed') === 'true' ? '' : b.dataset.ref, surPlace(b)));
+  // toute la ligne se presse : elle ouvre (ou replie) sa référence en grand
+  c.querySelectorAll('table.bible tbody tr:not(.bz-ligne)').forEach(tr => tr.onclick = e => { const b = tr.querySelector('.ref-btn'); if (b && !e.target.closest('button, a, input')) b.click(); });
   if ($('bz-fermer') && zoom) $('bz-fermer').onclick = () => { const z = ligneDe(zoom.reference); ficheBible('', z ? surPlace(z.querySelector('.ref-btn')) : null); };
   c.querySelectorAll('.bible-filtres .mj-norme').forEach(b => b.onclick = () => { app.base.bibleFiltre = b.dataset.filtre; ficheBible(zoom ? ref : ''); });
 }
