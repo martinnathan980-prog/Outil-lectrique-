@@ -10,9 +10,10 @@
    existants ; la durée en secondes, le courant en ampères. » Dans le
    squelette commun des fiches (08-sections), le disjoncteur a UNE section à
    lui, « Calibre » :
-     · LE CALIBRE RETENU en grand, son verdict en une pastille (vert « Valide
-       — ne déclenche pas », ambre « Juste », rouge « Déclenche »), d'où il
-       vient (automatique : le meilleur ; à la main ; le retest) et son « ? » ;
+     · LE CALIBRE RETENU en grand, son verdict d'une marque sans un mot (une
+       coche verte ; une croix rouge et, en clair, ce qui ne va pas), le fond à
+       peine teinté de l'état, et son « ? » (d'où il vient : automatique — le
+       meilleur —, à la main, le retest) ;
        le meilleur s'il est ailleurs, « Automatique (15 A) » qui le retient ;
        « Autre calibre » ouvre, discrète, la gamme (`d.gamme`) pour un choix à
        la main — le part number suit (`retenirCalibre`), ↺ rend le retest ;
@@ -232,7 +233,10 @@ function heroCalibre(nom, d, o) { const m = d.meilleur || {}, cal = d.calibre, b
       + (passants.length > 1 || (passants.length && !auto) ? boutonChanger(cleL, 'Retenir à la main un autre calibre de la gamme qui passe', 'Autre calibre') : '');
   const liste = gamme ? listeChoix(cleL, `<div class="dj-chips" role="group" aria-label="Retenir à la main un calibre qui passe">${gamme}</div>`, { titre: 'Les calibres de la gamme qui passent', cls: 'dj-gamme-choix' }) : '';
   const ko = v.etat === 'ko' ? `<span class="dj-h-ko">${esc(!(cal > 0) || (!best && !d.sansProfil) ? 'aucun calibre de la gamme ne passe' : 'ne passe pas — ' + v.raison.replace(/\.$/, '').toLowerCase())}</span>` : '';
-  const heros = `<div class="dj-heros ${v.etat || 'neutre'}"${v.raison ? ` title="${escA(v.raison)}"` : ''}><div class="dj-h-valeur"><b class="dj-h-cal">${cal ? esc(nombre(Math.round(cal * 100) / 100)) + '<span class="dj-h-u">A</span>' : '—'}</b>${aide('calibre', { verdict: d, calibre: cal || null, origine: o.origine === 'main' ? 'main' : d.origine, meilleur: best || null })}</div>${ko}</div>`;
+  // le verdict d'un coup d'œil, sans un mot (« on comprend que ça passe ») : une coche verte, ou une croix rouge
+  const marque = v.etat ? `<span class="dj-h-etat ${v.etat}" aria-hidden="true">${ico(v.etat === 'ko' ? 'fermer' : 'coche')}</span>` : '';
+  const heros = `<div class="dj-heros ${v.etat || 'neutre'}"${v.raison ? ` title="${escA(v.raison)}"` : ''}><div class="dj-h-valeur"><b class="dj-h-cal">${cal ? esc(nombre(Math.round(cal * 100) / 100)) + '<span class="dj-h-u">A</span>' : '—'}</b>${aide('calibre', { verdict: d, calibre: cal || null, origine: o.origine === 'main' ? 'main' : d.origine, meilleur: best || null })}</div>`
+    + (ko || marque ? `<div class="dj-h-cote">${ko}${marque}</div>` : '') + '</div>';
   return heros + (actions ? `<div class="dj-h-actions">${actions}</div>` : '') + liste + ligneCablesAGrossir(nom, d); }
 /* LES CÂBLES QUE LE MEILLEUR DEMANDE (le lecteur : « trois câbles à grossir : sur ordi on ne voit pas, les écritures se
    chevauchent » ; puis : « le + 7,7 g/m, on s'en fout ; des fois il y a marqué câble et pas le numéro : il manque une

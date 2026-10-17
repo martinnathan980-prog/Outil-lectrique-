@@ -1,13 +1,15 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    LA COURBE DE DÉCLENCHEMENT (08-courbe-dj.js) : le dessin du disjoncteur, comme la figure d'une fiche de constructeur.
-   Un dessin technique sur papier blanc dans les deux thèmes (`.ilot-clair` rend les jetons clairs à la figure), sans
-   cadre de carte autour : trois fonds très légers qui disent le verdict (à gauche de la courbe la plus rapide, le
+   Un dessin technique sur papier blanc dans les deux thèmes (`.ilot-clair` rend les jetons clairs à la figure), posé
+   comme une figure de catalogue : sans cadre de carte autour (le lecteur), des coins de 12 px — la plaque de papier se
+   voit sur la feuille charbon —, sans rembourrage (le dessin se fait à la largeur de la figure, au pixel près) ;
+   dedans, trois fonds très légers qui disent le verdict (à gauche de la courbe la plus rapide, le
    disjoncteur ne déclenche pas ; entre les courbes, la bande ; à droite de la plus lente, il déclenche), puis une grille
    log-log — les décades en filet plein, les sous-divisions 2 à 9 en filet plus pâle —, les quatre courbes en traits fins
    (1,25 à 1,5 px), le profil en escalier ; l'abscisse en multiples du courant nominal. La couleur ne dit que l'état : les
    deux fonds, le sort d'un point ; les mots restent à l'encre.
    ═══════════════════════════════════════════════════════════════════════ */
-.dj-graphe{position:relative;margin:0;background:var(--s-papier);color:var(--t-papier)}
+.dj-graphe{position:relative;margin:0;background:var(--s-papier);color:var(--t-papier);border-radius:var(--r-2)}
 .dj-graphe svg{display:block;width:100%;height:auto;touch-action:none;overflow:visible}
 .dj-graphe svg.tient,.dj-graphe svg.tient *{cursor:grabbing}
 .dj-graphe text{font-family:var(--sans);font-variant-numeric:tabular-nums;pointer-events:none}
