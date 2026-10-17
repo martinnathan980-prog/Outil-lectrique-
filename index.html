@@ -752,28 +752,38 @@ table.simu-tab{border-collapse:separate;border-spacing:0;font-size:var(--f-12);m
 .cand[aria-pressed="true"]:hover{background:var(--accent-2)}
 
 
-/* ─── LE PLAN VIDE : un plan sans liaison (ses lignes effacées) — une carte posée sur la table, trois gestes ─── */
+/* ─── LE PLAN VIDE : un plan sans liaison (ses lignes effacées) — l'état vide d'une feuille posée sur la table : une icône
+   au trait dans un carré doux, le titre, une phrase ; « Reprendre » si le dernier geste l'a vidé ; puis les trois gestes,
+   le premier plein ─── */
 .vide{position:absolute;inset:0;display:grid;place-items:center;padding:24px 24px 24px calc(var(--rail) + 24px);z-index:5}
 body.fiche-ouverte .vide{right:calc(var(--fiche-l) + 2 * var(--jeu))}
-.vd-carte{width:min(460px,100%);padding:26px 28px 24px;border-radius:var(--r-3);background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-feuille);animation:vd-pose var(--lent) both}
-@keyframes vd-pose{from{opacity:0;transform:translateY(8px) scale(.99)}to{opacity:1;transform:none}}
+.vd-carte{position:relative;width:min(464px,100%);padding:76px 28px 24px;border-radius:var(--r-3);background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-panneau);animation:vd-pose var(--lent) both}
+@keyframes vd-pose{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* le carré doux et son icône : une feuille blanche, rien dessus */
+.vd-carte::before{content:"";position:absolute;left:28px;top:24px;width:40px;height:40px;border-radius:var(--r-2);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line)}
+.vd-carte::after{content:"";position:absolute;left:38px;top:34px;width:20px;height:20px;background:var(--t-2);
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4.5' y='3.5' width='15' height='17' rx='1.5'/%3E%3Cpath d='M4.5 15.5h15M12 15.5v5'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4.5' y='3.5' width='15' height='17' rx='1.5'/%3E%3Cpath d='M4.5 15.5h15M12 15.5v5'/%3E%3C/svg%3E") center/contain no-repeat}
 .vd-carte h2{margin:0;font:600 var(--f-20)/1.25 var(--titre);letter-spacing:-.02em;text-wrap:balance}
-.vd-carte p{margin:8px 0 0;font-size:var(--f-13);line-height:1.55;color:var(--t-2)}
-.vd-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:20px}
-/* reprendre ce que le dernier geste a effacé : une ligne à l'encre, au-dessus des gestes */
-.vd-reprendre{display:flex;align-items:center;gap:8px;width:100%;margin-top:16px;height:40px;padding:0 14px 0 12px;border:1px solid var(--accent-line);border-radius:var(--r-btn);background:var(--accent-soft);color:var(--t-1);font-weight:600;text-align:left;transition:background var(--rapide)}
+.vd-carte p{margin:6px 0 0;font-size:var(--f-13);line-height:1.55;color:var(--t-2);text-wrap:pretty}
+.vd-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:22px}
+/* reprendre ce que le dernier geste a effacé : une ligne qu'on prend en main, au-dessus des gestes */
+.vd-reprendre{display:flex;align-items:center;gap:10px;width:100%;margin-top:18px;height:40px;padding:0 14px 0 12px;border:none;border-radius:var(--r-btn);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);color:var(--t-1);font-weight:600;text-align:left;transition:background var(--rapide),box-shadow var(--rapide),transform var(--rapide)}
 .vd-reprendre::before{content:"";flex:none;width:18px;height:18px;background:currentColor;
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 14 4 9l5-5'/%3E%3Cpath d='M4 9h10a6 6 0 0 1 0 12h-3'/%3E%3C/svg%3E") center/contain no-repeat;
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 14 4 9l5-5'/%3E%3Cpath d='M4 9h10a6 6 0 0 1 0 12h-3'/%3E%3C/svg%3E") center/contain no-repeat}
-.vd-reprendre:hover{background:color-mix(in srgb,var(--accent) 12%,var(--s-surface))}
+.vd-reprendre:hover{background:var(--s-hover);box-shadow:inset 0 0 0 1px var(--s-line-2)}
+.vd-reprendre:active{transform:scale(.99)}
 
-/* le dépôt : la fenêtre entière devient la cible — un voile, et au milieu une carte en pointillé qui dit quoi faire ;
-   sur la bibliothèque, c'est elle qui s'allume (style-bibliotheque.css) */
-.depot{position:fixed;inset:0;z-index:40;display:none;place-items:center;background:var(--voile);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);pointer-events:none}
-.depot>div{display:flex;align-items:center;gap:12px;padding:30px 44px;border:2px dashed var(--accent-line);border-radius:var(--r-3);background:var(--s-surface);color:var(--t-1);font:600 var(--f-20)/1.2 var(--titre);letter-spacing:-.015em;box-shadow:var(--sh-panneau);animation:vd-pose var(--moyen) both}
-.depot>div::before{content:"";width:24px;height:24px;flex:none;background:var(--accent);
+/* le dépôt : la fenêtre entière devient la cible — la table voilée, un cadre au trait à un jeu des bords, et au milieu un
+   palet qui dit quoi faire ; sur la bibliothèque, c'est elle qui s'allume (style-bibliotheque.css) */
+.depot{position:fixed;inset:0;z-index:40;display:none;place-items:center;background:var(--voile-fort);pointer-events:none;animation:depot-voile var(--moyen) both}
+.depot::before{content:"";position:absolute;inset:calc(var(--entete) + var(--sur-h) + var(--jeu)) var(--jeu) var(--jeu);border:1.5px dashed var(--t-table-2);border-radius:var(--r-3)}
+.depot>div{display:flex;align-items:center;gap:12px;padding:16px 24px 16px 18px;border-radius:var(--r-palet);background:var(--palet);color:var(--t-table);font:600 var(--f-16)/1.2 var(--titre);letter-spacing:-.01em;box-shadow:var(--sh-palet);animation:vd-pose var(--moyen) both}
+.depot>div::before{content:"";width:22px;height:22px;flex:none;background:var(--t-table);
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 16V4M7 9l5-5 5 5'/%3E%3Cpath d='M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3'/%3E%3C/svg%3E") center/contain no-repeat;
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 16V4M7 9l5-5 5 5'/%3E%3Cpath d='M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3'/%3E%3C/svg%3E") center/contain no-repeat}
+@keyframes depot-voile{from{opacity:0}to{opacity:1}}
 body.depot-actif .depot{display:grid}
 body.depot-actif:has(#bibliotheque:not([hidden])) .depot{display:none}
 
@@ -906,12 +916,24 @@ body.fiche-ouverte #toast{left:max(calc(var(--rail) + 16px + min(60vw,560px) / 2
 /* ═══════════════════════════════════════════════════════════════════════════
    LA BIBLIOTHÈQUE (08-bibliotheque) — l'ouverture de Volta, posée sur la table noire.
    Ce qui s'écrit à même la table prend son encre (--t-table, --t-table-2) et ses filets (--l-table) : la table est la
-   même dans les deux thèmes, si bien que la bibliothèque aussi. Une installation est une PILE DE FEUILLES (deux ou trois
-   selon ses plans) : une carte du blanc des panneaux, son ECP (cinq chiffres à la machine), son nom, ses comptes, ses
-   premiers plans. Ses plans se lisent sur une feuille posée sur la table, une ligne chacun ; à gauche, le RAIL de toutes
-   les installations, pour passer de l'une à l'autre. L'Exemple est discret : un cadre au trait, sans feuille. Le geste
-   qui compte est clair sur noir (« Nouvelle installation », « Ajouter un plan ») ; le reste est au trait.
+   même dans les deux thèmes, si bien que la bibliothèque aussi. Trois sortes de pièces, et rien d'autre :
+     · les FEUILLES (blanches le jour, charbon la nuit) : une installation est une PILE de feuilles — une carte, et dessous
+       une ou deux feuilles qui dépassent d'un rien, chacune son filet ; ses plans se lisent sur une feuille, une ligne
+       chacun ;
+     · les PALETS (sombres dans les deux thèmes, comme le rail) : ce qui accompagne — « Reprendre », la base à ranger,
+       l'Exemple, le « ⋯ » ouvert ;
+     · le PAPIER : la vignette d'un plan (une petite feuille blanche, son dessin à l'encre, deux fils aux couleurs des
+       routes) — sur l'Exemple, « Reprendre », l'accueil.
+   UNE action principale, claire sur noir (« Nouvelle installation », « Ajouter un plan ») ; le reste est au trait. Rien
+   encore : l'accueil, une seule composition au milieu de la table. Survoler une carte la soulève d'un rien et ses feuilles
+   s'écartent.
    ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── les jetons de la bibliothèque : le bord d'une carte et les feuilles de sa pile, dans les deux thèmes ─── */
+:root{--bi-bord:rgba(0,0,0,.6);--bi-pile-1:#ececef;--bi-pile-2:#dadade;--bi-pile-bord:rgba(0,0,0,.28);
+  --bi-ombre:0 14px 30px -10px rgba(0,0,0,.75),0 3px 8px rgba(0,0,0,.4);--bi-ombre-haute:0 24px 44px -12px rgba(0,0,0,.85),0 6px 14px rgba(0,0,0,.45)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--bi-bord:rgba(255,255,255,.085);--bi-pile-1:#19191c;--bi-pile-2:#151518;--bi-pile-bord:rgba(255,255,255,.13)} }
+:root[data-theme="dark"]{--bi-bord:rgba(255,255,255,.085);--bi-pile-1:#19191c;--bi-pile-2:#151518;--bi-pile-bord:rgba(255,255,255,.13)}
 
 /* ─── la table, sous la barre du haut : elle couvre le rail et les folios ; un document ouvert (vos fichiers, la bible)
    se pose à droite et la bibliothèque se resserre ─── */
@@ -923,294 +945,391 @@ body.fiche-ouverte .biblio{right:calc(var(--fiche-l) + var(--jeu))}
 body.biblio #svg,body.biblio #ombre{visibility:hidden}
 /* la barre du haut, sur la bibliothèque : la marque et le menu ; la recherche des repères attend le plan */
 body.biblio #recherche{visibility:hidden}
-.bi-page{width:min(1240px,100%);margin:0 auto;padding:44px 40px 72px}
-@media (min-width:1700px){ .bi-page{width:min(1480px,100%);padding-top:60px} }
-.biblio :focus-visible{outline-color:var(--t-table)}
-.biblio .bi-feuille :focus-visible,.biblio .bi-carte:not(.bi-demo) :focus-visible{outline-color:var(--accent)}
+.bi-page{width:min(1240px,100%);margin:0 auto;padding:48px 40px 80px}
+@media (min-width:1700px){ .bi-page{width:min(1480px,100%);padding-top:64px} }
+/* la largeur du contenu décide des colonnes d'une feuille de plans (un document ouvert à côté la resserre) */
+.bi-contenu{container-type:inline-size}
+.biblio :focus-visible{outline:2px solid var(--t-table);outline-offset:2px}
+.biblio .bi-feuille :focus-visible,.biblio .bi-carte:not(.bi-demo) .bi-plus:focus-visible{outline-color:var(--accent)}
+/* un champ a son propre focus (son cadre s'éclaire) : pas d'anneau en plus */
+.biblio input:not([type=checkbox]):focus-visible,.biblio select:focus-visible{outline:none}
 
 /* ─── la tête : le titre, les comptes ; la recherche et le geste qui compte ─── */
-.bi-tete{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:32px}
+.bi-tete{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:28px}
 .bi-titres{min-width:0}
-.bi-titre{margin:0;font:600 34px/1.1 var(--titre);letter-spacing:-.025em;color:var(--t-table);overflow-wrap:anywhere}
-.bi-compte{margin:10px 0 0;font-size:var(--f-14);color:var(--t-table-2)}
+.bi-titre{margin:0;font:600 34px/1.1 var(--titre);letter-spacing:-.028em;color:var(--t-table);overflow-wrap:anywhere;text-wrap:balance}
+.bi-compte{margin:8px 0 0;font-size:var(--f-14);color:var(--t-table-2);font-variant-numeric:tabular-nums}
 .bi-pas-garde{color:var(--t-table-warn)}
-.bi-outils{display:flex;align-items:center;gap:10px;flex:none}
-.bi-cherche{display:flex;align-items:center;gap:8px;width:320px;height:38px;padding:0 8px 0 12px;border:1px solid var(--l-table);border-radius:var(--r-btn);background:var(--s-table-champ);color:var(--t-table-2);transition:border-color var(--rapide),box-shadow var(--rapide)}
-.bi-cherche:focus-within{border-color:var(--l-table-2);box-shadow:0 0 0 3px rgba(255,255,255,.06)}
+.bi-outils{display:flex;align-items:center;gap:8px;flex:none}
+/* la recherche : un champ en creux sur la table */
+.bi-cherche{display:flex;align-items:center;gap:8px;width:320px;height:34px;padding:0 6px 0 11px;border:1px solid var(--l-table);border-radius:var(--r-btn);background:var(--s-table-champ);color:var(--t-table-2);cursor:text;transition:border-color var(--rapide),box-shadow var(--rapide)}
+.bi-cherche:hover{border-color:var(--l-table-2)}
+.bi-cherche:focus-within{border-color:var(--t-table-2);box-shadow:0 0 0 3px var(--voile-1)}
 .bi-cherche .ico{width:16px;height:16px}
 .bi-cherche input{flex:1;min-width:0;height:100%;border:none;background:none;outline:none;color:var(--t-table);font-size:var(--f-13)}
 .bi-cherche input::placeholder{color:var(--t-table-2)}
 .bi-cherche input::-webkit-search-cancel-button{filter:invert(1) grayscale(1) opacity(.6)}
-.bi-cherche kbd{font:500 var(--f-11)/1 var(--mono);color:var(--t-table-2);border:1px solid var(--l-table-2);border-radius:4px;padding:2px 5px}
+.bi-cherche kbd{font:500 var(--f-11)/1 var(--mono);color:var(--t-table-2);background:var(--voile-2);border-radius:5px;padding:3px 6px}
 .bi-cherche:focus-within kbd{display:none}
 /* le geste clair sur la table noire (la même dans les deux thèmes) ; le second, au trait */
-.bi-btn{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 16px 0 12px;border:1px solid var(--t-table);border-radius:var(--r-btn);background:var(--t-table);color:var(--s-app);font:600 var(--f-13)/1 var(--sans);white-space:nowrap;transition:background var(--rapide),border-color var(--rapide)}
+.bi-btn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 14px 0 11px;border:1px solid var(--t-table);border-radius:var(--r-btn);background:var(--t-table);color:var(--s-app);font:600 var(--f-13)/1 var(--sans);letter-spacing:-.005em;white-space:nowrap;
+  box-shadow:0 1px 2px rgba(0,0,0,.5),inset 0 -1px 0 rgba(0,0,0,.08);transition:background var(--rapide),border-color var(--rapide),transform var(--rapide)}
 .bi-btn:hover{background:var(--s-papier);border-color:var(--s-papier)}
-.bi-btn:active{transform:translateY(1px)}
+.bi-btn:active{transform:scale(.98)}
 .bi-btn .ico{width:16px;height:16px;stroke-width:1.8}
-.bi-btn.bi-btn-2{background:transparent;color:var(--t-table);border-color:var(--l-table-2)}
-.bi-btn.bi-btn-2:hover{background:var(--s-table-survol);border-color:var(--t-table-2)}
-.bi-lien-table{height:32px;padding:0 6px;border:none;background:none;color:var(--t-table-2);font-size:var(--f-13);text-decoration:underline;text-decoration-color:var(--l-table-2);text-underline-offset:3px;border-radius:var(--r-1)}
-.bi-lien-table:hover{color:var(--t-table)}
-/* une installation : le retour (discret), son nom (un clic le renomme), le « ⋯ » de la tête */
-.bi-retour{display:flex;width:max-content;align-items:center;gap:2px;height:28px;margin:0 0 12px -8px;padding:0 10px 0 2px;border:none;border-radius:var(--r-1);background:none;color:var(--t-table-2);font:500 var(--f-13)/1 var(--sans);transition:color var(--rapide),background var(--rapide)}
-.bi-retour .ico{width:18px;height:18px}
-.bi-retour:hover{color:var(--t-table);background:var(--s-table-survol)}
+.bi-btn.bi-btn-2{background:transparent;color:var(--t-table);border-color:var(--l-table-2);box-shadow:none}
+.bi-btn.bi-btn-2:hover{background:var(--voile-1);border-color:var(--t-table-2)}
+.bi-btn.bi-btn-2 .ico{stroke-width:1.5;color:var(--t-table-2)}
+.bi-lien-table{height:30px;padding:0 8px;border:none;background:none;color:var(--t-table-2);font-size:var(--f-13);border-radius:var(--r-1);transition:color var(--rapide),background var(--rapide)}
+.bi-lien-table:hover{color:var(--t-table);background:var(--voile-1)}
+/* une installation : le retour (discret), son ECP et son nom (un clic les modifie), le « ⋯ » de la tête */
+.bi-retour{display:flex;width:max-content;align-items:center;gap:2px;height:28px;margin:0 0 16px -8px;padding:0 10px 0 2px;border:none;border-radius:var(--r-1);background:none;color:var(--t-table-2);font:500 var(--f-13)/1 var(--sans);transition:color var(--rapide),background var(--rapide)}
+.bi-retour .ico{width:18px;height:18px;transition:transform var(--rapide)}
+.bi-retour:hover{color:var(--t-table);background:var(--voile-1)}
+.bi-retour:hover .ico{transform:translateX(-2px)}
 .bi-titre-nom{padding:0;margin:0;border:none;background:none;font:inherit;color:inherit;letter-spacing:inherit;text-align:left;border-radius:var(--r-1);cursor:text}
 .bi-titre-nom:not(:disabled):hover{text-decoration:underline;text-decoration-color:var(--l-table-2);text-decoration-thickness:2px;text-underline-offset:7px}
 .bi-titre-nom:disabled{cursor:default}
 .bi-pop-ancre{position:relative;display:flex}
-.bi-plus.bi-plus-tete{position:static;opacity:1;width:38px;height:38px;transform:none;color:var(--t-table-2);border:1px solid var(--l-table)}
-.bi-plus.bi-plus-tete:hover{background:var(--s-table-survol);color:var(--t-table)}
+.bi-plus.bi-plus-tete{position:static;opacity:1;width:34px;height:34px;transform:none;color:var(--t-table-2);border:1px solid var(--l-table-2);border-radius:var(--r-btn)}
+.bi-plus.bi-plus-tete:hover,.bi-plus.bi-plus-tete[aria-expanded="true"]{background:var(--voile-1);color:var(--t-table);border-color:var(--t-table-2)}
 .bi-pop-ancre .bi-pop{top:calc(100% + 6px);right:0}
-.bi-note{margin:-16px 0 20px;font-size:var(--f-13);color:var(--t-table-2)}
-/* l'ECP au-dessus du nom : un clic le modifie (ou le fait saisir) */
-.bi-ecp-tete{display:flex;width:max-content;margin:0 0 6px -6px;padding:4px 6px;border:none;border-radius:var(--r-1);background:none;color:var(--t-table-2);cursor:text;transition:background var(--rapide),color var(--rapide)}
-.bi-ecp-tete:hover{background:var(--s-table-survol);color:var(--t-table)}
+.bi-ecp-tete{display:flex;width:max-content;margin:0 0 6px -6px;padding:4px 6px;border:none;border-radius:var(--r-1);background:none;cursor:text;transition:background var(--rapide)}
+.bi-ecp-tete:hover{background:var(--voile-1)}
 .bi-ecp-tete .bi-ecp b{color:var(--t-table)}
 .bi-ecp-tete .bi-ecp small{color:var(--t-table-2)}
 .bi-ecp-tete .bi-ecp-vide b{color:var(--t-table-warn)}
 .bi-titre-edite{margin-top:2px}
 
-/* ─── reprendre le plan resté sur la table : une ligne à même la table ─── */
-.bi-reprendre{display:flex;align-items:center;gap:12px;width:100%;height:52px;margin:-8px 0 32px;padding:0 12px 0 16px;border:1px solid var(--l-table);border-radius:var(--r-2);background:var(--s-table-champ);color:var(--t-table);text-align:left;transition:border-color var(--rapide),background var(--rapide)}
-.bi-reprendre:hover{border-color:var(--l-table-2);background:var(--s-table-survol)}
-.bi-reprendre .ico{width:18px;height:18px}
-.bi-rep-mot{font-weight:600;font-size:var(--f-13)}
-.bi-rep-nom{display:flex;align-items:baseline;gap:6px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;color:var(--t-table-2);font-size:var(--f-13)}
-.bi-rep-nom i{font-style:normal;color:var(--l-table-2)}
-.bi-rep-nom b{font-weight:500;color:var(--t-table);overflow:hidden;text-overflow:ellipsis}
-.bi-rep-ecp{font:600 var(--f-12)/1 var(--mono);letter-spacing:.04em;font-variant-numeric:tabular-nums}
+/* ─── les palets de la racine : reprendre le plan resté sur la table, la base à ranger ─── */
+.bi-reprendre{display:flex;align-items:center;gap:14px;width:100%;min-height:64px;margin:0 0 32px;padding:9px 16px 9px 10px;border:none;border-radius:var(--r-palet);background:var(--palet);color:var(--t-table);box-shadow:var(--sh-palet);text-align:left;
+  transition:background var(--rapide),transform var(--rapide)}
+.bi-reprendre:hover{background:var(--palet-2)}
+.bi-reprendre:active{transform:scale(.995)}
+.bi-reprendre .bi-folio{width:64px}
+.bi-rep-textes{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.bi-rep-mot{font:500 var(--f-12)/1.2 var(--sans);color:var(--t-table-2)}
+.bi-rep-nom{display:flex;align-items:baseline;gap:7px;min-width:0;white-space:nowrap;overflow:hidden;font-size:var(--f-13);color:var(--t-table-2)}
+.bi-rep-nom b{flex:0 1 auto;min-width:0;font:600 var(--f-14)/1.3 var(--sans);letter-spacing:-.01em;color:var(--t-table);overflow:hidden;text-overflow:ellipsis}
+.bi-rep-nom i{font-style:normal}
+.bi-rep-nom>span{overflow:hidden;text-overflow:ellipsis}
+.bi-rep-ecp{font:500 var(--f-12)/1 var(--mono);letter-spacing:.03em;font-variant-numeric:tabular-nums}
 .bi-rep-n{flex:none;font-size:var(--f-12);color:var(--t-table-2)}
-.bi-reprendre kbd{flex:none;font:500 var(--f-11)/1 var(--mono);color:var(--t-table-2);border:1px solid var(--l-table-2);border-radius:4px;padding:3px 5px}
-
-/* ─── la base à ranger : une ligne au trait, puis, sur demande, une feuille (cocher, choisir l'installation) ─── */
-.bi-bandeau{display:flex;align-items:center;gap:12px;margin:-8px 0 32px;padding:10px 12px 10px 16px;border:1px solid var(--l-table);border-radius:var(--r-2);background:var(--s-table-champ);color:var(--t-table-2);font-size:var(--f-13);line-height:1.45}
+.bi-reprendre kbd,.bi-rail-titre kbd{flex:none;font:500 var(--f-11)/1 var(--mono);color:var(--t-table-2);background:var(--voile-2);border-radius:5px;padding:4px 6px}
+.bi-rep-fleche{width:18px;height:18px;color:var(--t-table-2);transition:transform var(--rapide),color var(--rapide)}
+.bi-reprendre:hover .bi-rep-fleche{transform:translateX(2px);color:var(--t-table)}
+.bi-bandeau{display:flex;align-items:center;gap:12px;margin:0 0 32px;padding:10px 10px 10px 16px;border-radius:var(--r-palet);background:var(--palet);box-shadow:var(--sh-palet);color:var(--t-table-2);font-size:var(--f-13);line-height:1.45}
+.bi-reprendre+.bi-bandeau{margin-top:-22px}
 .bi-bandeau>.ico{width:18px;height:18px;color:var(--t-table)}
 .bi-bandeau>span{flex:1;min-width:0}
 .bi-bandeau b{color:var(--t-table);font-weight:500}
-.bi-bandeau .bi-btn{height:32px;padding:0 12px}
-.bi-feuille.bi-ranger{margin:-8px 0 32px;padding:20px 20px 16px}
+.bi-bandeau .bi-btn{height:30px;padding:0 12px}
+/* ranger la base : une feuille — cocher les harness, choisir l'installation */
+.bi-feuille.bi-ranger{margin:0 0 32px;padding:20px 20px 16px}
 .bi-ranger-tete h2{margin:0;font:600 var(--f-16)/1.3 var(--titre);letter-spacing:-.01em}
 .bi-ranger-tete p{margin:4px 0 0;font-size:var(--f-13);color:var(--t-2)}
-.bi-ranger-liste{list-style:none;margin:14px 0 0;padding:0;max-height:300px;overflow:auto;border:1px solid var(--s-line);border-radius:var(--r-2)}
+.bi-ranger-liste{list-style:none;margin:14px 0 0;padding:0;max-height:300px;overflow:auto;border-top:1px solid var(--s-line);border-bottom:1px solid var(--s-line)}
 .bi-ranger-liste li+li{border-top:1px solid var(--s-line)}
-.bi-ranger-liste label{display:flex;align-items:center;gap:10px;min-height:40px;padding:0 12px;cursor:pointer;font-size:var(--f-13)}
+.bi-ranger-liste label{display:flex;align-items:center;gap:10px;min-height:40px;padding:0 8px;border-radius:var(--r-1);cursor:pointer;font-size:var(--f-13)}
 .bi-ranger-liste label:hover{background:var(--s-hover)}
+.bi-ranger-liste input{accent-color:var(--accent)}
 .bi-ranger-liste .id{font:600 var(--f-12)/1 var(--mono);color:var(--t-1)}
 .bi-ranger-liste span{flex:1;min-width:0;color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bi-ranger-liste em,.bi-ranger-liste input{flex:none}
-.bi-ranger-liste em{font:500 var(--f-11)/1 var(--sans);font-style:normal;color:var(--ok);background:var(--ok-soft);padding:3px 7px;border-radius:999px}
-.bi-ranger-pied{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:14px}
+.bi-ranger-liste em{font:500 var(--f-11)/1 var(--sans);font-style:normal;color:var(--ok);background:var(--ok-soft);padding:4px 8px;border-radius:999px}
+.bi-ranger-pied{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:16px}
 .bi-ranger-vers{display:flex;align-items:center;gap:8px;font-size:var(--f-13);color:var(--t-2)}
 .bi-ranger-vers select,.bi-ranger-nom{height:34px;border:1px solid var(--s-line-2);border-radius:var(--r-btn);background:var(--s-surface);color:var(--t-1);padding:0 10px;font-size:var(--f-13)}
 .bi-ranger-nom{width:220px}
 .bi-ranger-nom:focus,.bi-ranger-vers select:focus{outline:none;border-color:var(--t-1);box-shadow:var(--anneau)}
 
-/* ─── l'ECP : « ECP » en petit, les cinq chiffres à la machine ; pas encore saisi, « à saisir » ─── */
-.bi-ecp{display:inline-flex;align-items:baseline;gap:7px;white-space:nowrap}
-.bi-ecp small{font:600 var(--f-11)/1 var(--sans);letter-spacing:.09em;color:var(--t-3)}
-.bi-ecp b{font:600 var(--f-16)/1 var(--mono);letter-spacing:.06em;color:var(--t-1);font-variant-numeric:tabular-nums}
-.bi-ecp.bi-ecp-vide b{font:500 var(--f-12)/1 var(--sans);letter-spacing:0;color:var(--t-3)}
-.bi-carte-ecp{margin-bottom:18px;padding:8px 10px 7px;border-radius:var(--r-1);background:var(--s-sunken)}
-.bi-carte-ecp.bi-ecp-vide{padding:7px 9px 6px;background:none;box-shadow:inset 0 0 0 1px var(--s-line-2)}
+/* ─── l'ECP : « ECP » en petit, les cinq chiffres à la machine ; pas encore saisi, « à saisir », en ambre ─── */
+.bi-ecp{display:inline-flex;align-items:baseline;gap:6px;white-space:nowrap}
+.bi-ecp small{font:500 var(--f-11)/1 var(--sans);letter-spacing:.02em;color:var(--t-3)}
+.bi-ecp b{font:600 var(--f-13)/1 var(--mono);letter-spacing:.05em;color:var(--t-2);font-variant-numeric:tabular-nums}
+.bi-ecp.bi-ecp-vide b{font:500 var(--f-12)/1 var(--sans);letter-spacing:0;color:var(--warn)}
+.bi-ecp-tete .bi-ecp b{font-size:var(--f-14)}
 
-/* ─── le rangement des installations, au-dessus des cartes : ECP, nom, récentes ─── */
-.bi-tri{display:flex;align-items:center;gap:4px;margin:-10px 0 18px;font-size:var(--f-12);color:var(--t-table-2)}
-.bi-tri span{margin-right:6px}
-.bi-tri button{height:28px;padding:0 10px;border:1px solid transparent;border-radius:999px;background:none;color:var(--t-table-2);font:500 var(--f-12)/1 var(--sans);transition:color var(--rapide),background var(--rapide),border-color var(--rapide)}
-.bi-tri button:hover{color:var(--t-table);background:var(--s-table-survol)}
-.bi-tri button[aria-pressed="true"]{color:var(--t-table);border-color:var(--l-table-2);background:var(--s-table-champ)}
+/* ─── le rangement des installations, au-dessus des cartes : un segment posé sur la table ─── */
+.bi-tri{display:flex;align-items:center;gap:10px;margin:0 0 20px;font-size:var(--f-12);color:var(--t-table-2)}
+.bi-tri-seg{display:inline-flex;gap:2px;padding:3px;border-radius:var(--r-btn);background:var(--s-table-champ);box-shadow:inset 0 0 0 1px var(--l-table)}
+.bi-tri button{height:26px;padding:0 11px;border:none;border-radius:7px;background:none;color:var(--t-table-2);font:500 var(--f-12)/1 var(--sans);transition:color var(--rapide),background var(--rapide),box-shadow var(--rapide)}
+.bi-tri button:hover{color:var(--t-table)}
+.bi-tri button[aria-pressed="true"]{background:var(--palet-2);color:var(--t-table);box-shadow:0 0 0 1px var(--voile-2),0 1px 2px rgba(0,0,0,.5)}
 
-/* ─── les installations : une grille de piles de feuilles ─── */
-.bi-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:30px 26px;padding-right:8px}
-.bi-grille-demo{margin-top:44px;grid-template-columns:minmax(0,340px)}
-/* une installation : la carte du blanc des panneaux ; dessous, une ou deux feuilles décalées disent qu'elle porte des plans */
-.bi-carte{--pile:color-mix(in srgb,var(--s-surface) 90%,var(--t-1));--pile-2:color-mix(in srgb,var(--s-surface) 80%,var(--t-1));
+/* ─── LES INSTALLATIONS : une grille de piles de feuilles ───
+   La carte, et dessous ses feuilles (deux plans : une ; trois et plus : deux) qui dépassent de 4 px, chacune plus étroite,
+   chacune son filet — des ombres décalées, rien de plus. Au survol, la carte se soulève de 3 px et ses feuilles s'écartent. */
+.bi-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:36px 24px}
+.bi-carte{--bi-anneau:0 0 0 1px var(--bi-bord);--bi-pile:0 0 transparent;--bi-ombre-carte:var(--bi-ombre);
   position:relative;display:flex;min-width:0;border-radius:var(--r-2);background:var(--s-surface);color:var(--t-1);
-  box-shadow:0 0 0 1px rgba(0,0,0,.5),0 18px 40px rgba(0,0,0,.5);transition:transform var(--moyen),box-shadow var(--moyen)}
-.bi-carte.pile-2{box-shadow:0 0 0 1px rgba(0,0,0,.5),5px 5px 0 -1px var(--pile),5px 5px 0 0 rgba(0,0,0,.6),0 18px 40px rgba(0,0,0,.5)}
-.bi-carte.pile-3{box-shadow:0 0 0 1px rgba(0,0,0,.5),5px 5px 0 -1px var(--pile),5px 5px 0 0 rgba(0,0,0,.6),10px 10px 0 -2px var(--pile-2),10px 10px 0 -1px rgba(0,0,0,.6),0 18px 40px rgba(0,0,0,.5)}
-.bi-carte:not(.bi-demo):not(.bi-confirmant):not(.bi-carte-neuve):hover{transform:translateY(-3px)}
+  box-shadow:var(--bi-anneau),var(--bi-pile),var(--bi-ombre-carte);transition:transform var(--moyen),box-shadow var(--moyen)}
+.bi-carte.pile-2{--bi-pile:0 8px 0 -4px var(--bi-pile-1),0 8px 0 -3px var(--bi-pile-bord)}
+.bi-carte.pile-3{--bi-pile:0 8px 0 -4px var(--bi-pile-1),0 8px 0 -3px var(--bi-pile-bord),0 16px 0 -8px var(--bi-pile-2),0 16px 0 -7px var(--bi-pile-bord)}
+.bi-carte:not(.bi-demo):not(.bi-confirmant):not(.bi-carte-neuve):hover{transform:translateY(-3px);--bi-ombre-carte:var(--bi-ombre-haute)}
+.bi-carte.pile-2:not(.bi-confirmant):hover{--bi-pile:0 10px 0 -4px var(--bi-pile-1),0 10px 0 -3px var(--bi-pile-bord)}
+.bi-carte.pile-3:not(.bi-confirmant):hover{--bi-pile:0 10px 0 -4px var(--bi-pile-1),0 10px 0 -3px var(--bi-pile-bord),0 20px 0 -8px var(--bi-pile-2),0 20px 0 -7px var(--bi-pile-bord)}
+.bi-carte:not(.bi-demo):has(>button.bi-carte-corps:active){transform:translateY(-1px) scale(.995)}
 .bi-carte.bi-pop-ouvert{z-index:4}
-.bi-carte-corps{flex:1;display:flex;flex-direction:column;align-items:flex-start;min-width:0;min-height:176px;padding:18px 18px 16px;border:none;border-radius:inherit;background:none;color:inherit;text-align:left}
+.bi-carte-corps{flex:1;display:flex;flex-direction:column;align-items:stretch;min-width:0;min-height:180px;padding:16px 16px 14px 18px;border:none;border-radius:inherit;background:none;color:inherit;text-align:left}
 button.bi-carte-corps{cursor:pointer}
-.bi-carte-ico{width:36px;height:36px;flex:none;border-radius:var(--r-1);display:grid;place-items:center;background:var(--s-sunken);color:var(--t-2);margin-bottom:20px}
-.bi-carte-ico .ico{width:19px;height:19px}
-.bi-carte-nom{max-width:calc(100% - 24px);font:600 var(--f-16)/1.3 var(--titre);letter-spacing:-.015em;color:var(--t-1);overflow-wrap:anywhere}
-.bi-carte-meta{margin-top:4px;font-size:var(--f-12);line-height:1.45;color:var(--t-2)}
-/* ses premiers plans, en bas, sous un filet pointillé — la suite comptée */
-.bi-carte-plans{display:flex;flex-wrap:wrap;gap:4px;width:100%;margin-top:auto;padding-top:14px;border-top:1px dashed var(--s-line-2)}
-.bi-carte-meta+.bi-carte-plans{margin-top:auto}
-.bi-carte-corps .bi-carte-meta{margin-bottom:16px}
-.bi-pn{max-width:100%;padding:4px 6px;border-radius:4px;background:var(--s-sunken);font:500 var(--f-11)/1 var(--mono);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bi-pn-plus{padding:4px 2px;font:500 var(--f-11)/1 var(--sans);color:var(--t-3)}
-.bi-carte-plans-vide{font-size:var(--f-12);color:var(--t-3)}
+.bi-carte-corps:focus-visible{outline-offset:4px}
+.bi-carte-ecp{height:20px;align-items:center;margin-bottom:10px}
+.bi-carte-ico{width:32px;height:32px;flex:none;border-radius:var(--r-1);display:grid;place-items:center;background:var(--s-sunken);color:var(--t-2);margin-bottom:10px}
+.bi-carte-ico .ico{width:18px;height:18px}
+.bi-carte-textes{display:flex;flex-direction:column;gap:3px;min-width:0;padding-right:22px;margin-bottom:14px}
+.bi-carte-nom{font:600 var(--f-16)/1.3 var(--titre);letter-spacing:-.015em;color:var(--t-1);overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.bi-carte-meta{font-size:var(--f-12);line-height:1.45;color:var(--t-2)}
+/* ses premiers plans, un par ligne, sous un filet — la suite comptée ; d'une carte à l'autre, les filets s'alignent */
+.bi-carte-plans{display:flex;flex-direction:column;gap:1px;padding-top:10px;border-top:1px solid var(--s-line)}
+.bi-pn{display:flex;align-items:center;gap:8px;min-width:0;height:20px;font:500 var(--f-12)/1 var(--mono);color:var(--t-2)}
+.bi-pn .ico{width:14px;height:14px;color:var(--t-3)}
+.bi-pn span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bi-pn-plus{height:20px;padding-left:22px;font:500 var(--f-12)/20px var(--sans);color:var(--t-3)}
+.bi-carte-plans-vide{font-size:var(--f-12);line-height:1.45;color:var(--t-2);border-top-style:dashed;border-top-color:var(--s-line-2)}
 /* le « ⋯ » d'une carte, d'une ligne : il paraît au survol, au clavier, ouvert */
-.bi-plus{position:absolute;top:12px;right:12px;width:30px;height:30px;padding:0;border:none;border-radius:var(--r-1);background:none;color:var(--t-2);display:grid;place-items:center;opacity:0;transition:opacity var(--rapide),background var(--rapide),color var(--rapide)}
+.bi-plus{position:absolute;top:10px;right:10px;width:28px;height:28px;padding:0;border:none;border-radius:var(--r-1);background:none;color:var(--t-2);display:grid;place-items:center;opacity:0;transition:opacity var(--rapide),background var(--rapide),color var(--rapide)}
 .bi-plus .ico{width:18px;height:18px}
 .bi-carte:hover .bi-plus,.bi-carte:focus-within .bi-plus,.bi-plan:hover .bi-plus,.bi-plan:focus-within .bi-plus,.bi-plus[aria-expanded="true"]{opacity:1}
 .bi-plus:hover,.bi-plus[aria-expanded="true"]{background:var(--s-hover);color:var(--t-1)}
-/* l'installation qu'on nomme (une neuve, ou renommée) : la carte au trait, le champ à l'encre */
-.bi-carte.bi-carte-neuve{box-shadow:0 0 0 2px var(--t-table),0 18px 40px rgba(0,0,0,.5)}
+/* l'installation qu'on nomme (une neuve, ou renommée) : la carte cerclée de l'encre de la table, les champs à l'encre */
+.bi-carte.bi-carte-neuve{--bi-anneau:0 0 0 2px var(--t-table)}
 .bi-nommer{display:block;width:100%}
-/* une installation : l'ECP (cinq chiffres) et le nom, l'un sous l'autre */
-.bi-nommer.bi-nommer-install{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
-.bi-champ-ecp{display:flex;align-items:center;gap:8px;font:600 var(--f-11)/1 var(--sans);letter-spacing:.09em;color:var(--t-3)}
-.bi-nommer .bi-champ-ecp input{width:8.6ch;height:34px;padding:0 9px;font:600 var(--f-16)/1 var(--mono);letter-spacing:.08em;font-variant-numeric:tabular-nums;box-shadow:none;border-color:var(--s-line-2)}
+.bi-nommer.bi-nommer-install{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+.bi-champ-ecp{display:flex;align-items:center;gap:8px;font:500 var(--f-11)/1 var(--sans);letter-spacing:.02em;color:var(--t-3)}
+.bi-champ-ecp span{flex:none}
+.bi-nommer input{width:100%;height:36px;padding:0 10px;border:1px solid var(--t-1);border-radius:var(--r-1);background:var(--s-surface);color:var(--t-1);font:600 var(--f-16)/1 var(--titre);letter-spacing:-.01em;box-shadow:var(--anneau);outline:none;transition:border-color var(--rapide),box-shadow var(--rapide)}
+.bi-nommer .bi-champ-ecp input{width:92px;height:30px;padding:0 8px;font:600 var(--f-13)/1 var(--mono);letter-spacing:.06em;font-variant-numeric:tabular-nums;border-color:var(--s-line-2);box-shadow:none}
 .bi-nommer .bi-champ-ecp input:focus{border-color:var(--t-1);box-shadow:var(--anneau)}
 .bi-nommer .bi-champ-ecp input.complet{border-color:var(--ok)}
-.bi-nommer .bi-champ-ecp input.faux,.bi-titre .bi-nommer .bi-champ-ecp input.faux{border-color:var(--ko);box-shadow:0 0 0 3px var(--ko-soft)}
+.bi-nommer .bi-champ-ecp input.faux{border-color:var(--ko);box-shadow:0 0 0 3px var(--ko-soft)}
 .bi-nommer .bi-champ-ecp input::placeholder{font:500 var(--f-12)/1 var(--sans);letter-spacing:0;color:var(--t-3)}
-.bi-nommer input{width:100%;height:38px;padding:0 10px;border:1px solid var(--t-1);border-radius:var(--r-1);background:var(--s-surface);color:var(--t-1);font:600 var(--f-16)/1 var(--titre);letter-spacing:-.01em;box-shadow:var(--anneau);outline:none}
-.bi-carte .bi-nommer{margin-top:0}
+.bi-nommer input::placeholder{color:var(--t-3);font-weight:500}
 .bi-carte .bi-carte-corps>.bi-nommer+.bi-carte-meta{margin-top:12px}
-.bi-titre .bi-nommer input{height:46px;font:600 30px/1 var(--titre);letter-spacing:-.025em;background:var(--s-table-champ);color:var(--t-table);border-color:var(--l-table-2);box-shadow:0 0 0 3px rgba(255,255,255,.06);width:min(560px,100%)}
+.bi-touches{display:flex;align-items:center;gap:6px;padding-top:12px;color:var(--t-2)}
+.bi-carte-neuve .bi-carte-corps>.bi-nommer+.bi-touches{margin-top:auto}
+.bi-touches kbd{margin-left:6px;font:500 var(--f-11)/1 var(--mono);color:var(--t-1);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);border-radius:5px;padding:3px 6px}
+.bi-touches kbd:first-child{margin-left:0}
+/* le nom d'une installation qu'on modifie dans sa tête : à même la table */
+.bi-titre .bi-nommer input{height:46px;width:min(560px,100%);font:600 30px/1 var(--titre);letter-spacing:-.025em;background:var(--s-table-champ);color:var(--t-table);border-color:var(--l-table-2);box-shadow:0 0 0 3px var(--voile-1)}
 .bi-titre .bi-champ-ecp{color:var(--t-table-2)}
-.bi-titre .bi-nommer .bi-champ-ecp input{width:8.6ch;height:34px;font:600 var(--f-16)/1 var(--mono);letter-spacing:.08em;box-shadow:none}
-.bi-titre .bi-nommer .bi-champ-ecp input.complet{border-color:var(--ok)}
-.bi-nommer .bi-champ-ecp input.faux,.bi-titre .bi-nommer .bi-champ-ecp input.faux{border-color:var(--ko);box-shadow:0 0 0 3px var(--ko-soft)}
-/* l'Exemple : discret — un cadre au trait sur la table, sans feuille */
-.bi-carte.bi-demo{background:transparent;color:var(--t-table);box-shadow:inset 0 0 0 1px var(--l-table-2)}
-.bi-carte.bi-demo:hover{box-shadow:inset 0 0 0 1px var(--t-table-2)}
-.bi-demo .bi-carte-corps{display:grid;grid-template-columns:36px minmax(0,1fr);align-content:center;column-gap:12px;row-gap:2px;min-height:0;padding:14px 44px 14px 14px}
-.bi-demo .bi-carte-ico{grid-row:span 2;margin:0;background:var(--s-table-champ);color:var(--t-table-2)}
-.bi-demo .bi-carte-nom{font-size:var(--f-14);color:var(--t-table)}
-.bi-demo .bi-carte-meta{margin:0;color:var(--t-table-2)}
-.bi-demo .bi-plus{top:50%;transform:translateY(-50%);color:var(--t-table-2)}
-.bi-demo .bi-plus:hover,.bi-demo .bi-plus[aria-expanded="true"]{background:var(--s-table-survol);color:var(--t-table)}
+.bi-titre .bi-nommer .bi-champ-ecp input{width:104px;height:32px;font:600 var(--f-14)/1 var(--mono);letter-spacing:.06em;background:var(--s-table-champ);color:var(--t-table);border-color:var(--l-table-2);box-shadow:none}
+.bi-titre .bi-nommer .bi-champ-ecp input:focus{border-color:var(--t-table-2);box-shadow:0 0 0 3px var(--voile-1)}
+.bi-titre .bi-nommer .bi-champ-ecp input.complet{border-color:var(--p-ok)}
+.bi-titre .bi-nommer .bi-champ-ecp input.faux{border-color:var(--p-ko);box-shadow:0 0 0 3px color-mix(in srgb,var(--p-ko) 25%,transparent)}
 
-/* ─── le « ⋯ » ouvert : une petite liste flottante ─── */
-.bi-pop{position:absolute;top:46px;right:10px;z-index:6;min-width:208px;padding:5px;background:var(--s-flottant);color:var(--t-1);border:1px solid var(--s-line);border-radius:12px;box-shadow:var(--sh-2);animation:menu-glisse var(--rapide) ease-out}
-.bi-pop button{display:flex;align-items:center;gap:10px;width:100%;min-height:32px;padding:0 10px;border:none;border-radius:var(--r-1);background:none;color:var(--t-1);font-size:var(--f-13);text-align:left;white-space:nowrap}
+/* ─── L'EXEMPLE : un palet, discret, en dernier — la vignette de son plan, son nom ; la flèche au survol ─── */
+.bi-essai{margin-top:52px}
+.bi-grille-demo{grid-template-columns:minmax(0,360px)}
+.bi-carte.bi-demo{background:var(--palet);color:var(--t-table);border-radius:var(--r-palet);box-shadow:var(--sh-palet);transition:background var(--rapide),transform var(--rapide)}
+.bi-carte.bi-demo:hover{background:var(--palet-2)}
+.bi-carte.bi-demo:has(>button.bi-carte-corps:active){transform:scale(.99)}
+.bi-demo .bi-carte-corps{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;column-gap:14px;min-height:0;padding:9px 46px 9px 9px}
+.bi-demo .bi-folio{width:60px}
+.bi-demo .bi-carte-textes{padding:0;margin:0;gap:2px}
+.bi-demo .bi-carte-nom{font-size:var(--f-14);color:var(--t-table)}
+.bi-demo .bi-carte-meta{color:var(--t-table-2)}
+.bi-demo-fleche{width:16px;height:16px;color:var(--t-table-2);opacity:0;transform:translateX(-4px);transition:opacity var(--rapide),transform var(--rapide)}
+.bi-demo:hover .bi-demo-fleche,.bi-demo .bi-carte-corps:focus-visible .bi-demo-fleche{opacity:1;transform:none}
+.bi-demo .bi-plus{top:50%;right:8px;transform:translateY(-50%);color:var(--t-table-2)}
+.bi-demo .bi-plus:hover,.bi-demo .bi-plus[aria-expanded="true"]{background:var(--voile-2);color:var(--t-table)}
+.bi-demo .bi-pop{top:calc(50% + 20px)}
+
+/* ─── la VIGNETTE d'un plan : une petite feuille blanche, son dessin à l'encre (le papier, les deux thèmes) ─── */
+.bi-folio{display:block;flex:none;width:64px;height:auto;overflow:visible;filter:drop-shadow(0 2px 5px rgba(0,0,0,.55))}
+.bf-papier{fill:var(--s-papier)}
+.bf-cadre{fill:none;stroke:var(--s-line-2);stroke-width:.7;vector-effect:non-scaling-stroke}
+.bf-bloc{fill:var(--s-papier);stroke:var(--t-papier);stroke-width:.8;vector-effect:non-scaling-stroke}
+.bf-fil{fill:none;stroke-width:.9;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.bf-a{stroke:var(--route-a)}
+.bf-b{stroke:var(--route-b)}
+.bf-noeud{fill:var(--t-papier)}
+
+/* ─── le « ⋯ » ouvert : une petite liste sombre, comme le menu ⋮ (l'îlot sombre) ─── */
+.bi-pop{position:absolute;top:42px;right:8px;z-index:6;min-width:212px;padding:5px;background:var(--s-flottant);color:var(--t-1);border-radius:var(--r-palet);box-shadow:var(--sh-2);text-align:left;animation:tombe var(--moyen)}
+.bi-pop button{display:flex;align-items:center;gap:10px;width:100%;height:32px;padding:0 10px;border:none;border-radius:8px;background:none;color:var(--t-1);font-size:var(--f-13);text-align:left;white-space:nowrap;transition:background var(--rapide)}
 .bi-pop button span{overflow:hidden;text-overflow:ellipsis}
-.bi-pop .bi-pop-ecp{margin-right:8px;font:600 var(--f-12)/1 var(--mono);color:var(--t-2);font-variant-numeric:tabular-nums}
-.bi-pop button:hover,.bi-pop button:focus-visible{background:var(--s-hover);outline:none}
+.bi-pop .bi-pop-ecp{margin-right:8px;font:500 var(--f-12)/1 var(--mono);color:var(--t-2);font-variant-numeric:tabular-nums}
+.bi-pop button:hover,.bi-pop button:focus-visible{background:var(--voile-2);outline:none}
 .bi-pop .ico{width:16px;height:16px;color:var(--t-2)}
+.bi-pop hr{height:0;margin:5px 4px;border:none;border-top:1px solid var(--voile-2)}
 .bi-pop .danger,.bi-pop .danger .ico{color:var(--ko)}
 .bi-pop .danger:hover,.bi-pop .danger:focus-visible{background:var(--ko-soft)}
-.bi-pop .bi-pop-retour{font-weight:600;margin-bottom:4px;border-radius:var(--r-1) var(--r-1) 0 0;box-shadow:0 1px 0 var(--s-line)}
+.bi-pop .bi-pop-retour{font-weight:600}
 .bi-pop .bi-pop-retour .ico{color:var(--t-1)}
+.bi-pop .bi-pop-retour+button{margin-top:5px;position:relative}
+.bi-pop .bi-pop-retour+button::before{content:"";position:absolute;left:4px;right:4px;top:-3px;border-top:1px solid var(--voile-2)}
 
-/* ─── supprimer : la confirmation s'écrit dans la carte, la ligne ─── */
-.bi-confirme{display:flex;flex-direction:column;justify-content:space-between;gap:14px;width:100%;min-height:176px;padding:18px}
-.bi-confirme p{margin:0;font-size:var(--f-13);line-height:1.5;color:var(--t-2)}
-.bi-confirme p b{display:block;margin-bottom:4px;font:600 var(--f-14)/1.35 var(--sans);color:var(--t-1)}
-.bi-confirme-gestes{display:flex;align-items:center;gap:6px}
-.bi-danger{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px 0 10px;border:1px solid var(--ko);border-radius:var(--r-btn);background:var(--ko);color:var(--t-inverse);font:600 var(--f-13)/1 var(--sans)}
-.bi-danger .ico{width:15px;height:15px}
+/* ─── supprimer : la confirmation s'écrit dans la carte, la ligne — la corbeille, la phrase, les deux gestes ─── */
+.bi-confirme{display:flex;flex-direction:column;align-items:flex-start;gap:12px;width:100%;min-height:188px;padding:16px 18px}
+.bi-confirme-ico{display:grid;place-items:center;flex:none;width:32px;height:32px;border-radius:var(--r-1);background:var(--ko-soft);color:var(--ko)}
+.bi-confirme-ico .ico{width:17px;height:17px}
+.bi-confirme p{margin:0;font-size:var(--f-13);line-height:1.5;color:var(--t-2);text-wrap:pretty}
+.bi-confirme p b{display:block;margin-bottom:2px;font:600 var(--f-14)/1.35 var(--sans);color:var(--t-1);text-wrap:balance}
+.bi-confirme-gestes{display:flex;align-items:center;gap:6px;margin-top:auto}
+.bi-danger{height:30px;padding:0 12px;border:1px solid var(--ko);border-radius:var(--r-btn);background:var(--ko);color:var(--t-inverse);font:600 var(--f-13)/1 var(--sans);transition:filter var(--rapide),transform var(--rapide)}
 .bi-danger:hover{filter:brightness(1.08)}
-.bi-non{height:32px;padding:0 8px;border:none;border-radius:var(--r-1);background:none;color:var(--t-1);font-size:var(--f-13);text-decoration:underline;text-decoration-color:var(--s-line-2);text-underline-offset:3px}
+.bi-danger:active{transform:scale(.98)}
+.bi-non{height:30px;padding:0 10px;border:none;border-radius:var(--r-btn);background:none;color:var(--t-1);font:500 var(--f-13)/1 var(--sans);transition:background var(--rapide)}
 .bi-non:hover{background:var(--s-hover)}
-.bi-carte.bi-confirmant{box-shadow:0 0 0 2px var(--ko),0 18px 40px rgba(0,0,0,.5)}
-.bi-confirme-tete{margin:-16px 0 24px}
-.bi-confirme-tete .bi-confirme,.bi-plan.bi-confirmant .bi-confirme{flex-direction:row;align-items:center;min-height:0;padding:12px 14px;border-radius:var(--r-2);background:var(--ko-soft)}
-.bi-confirme-tete .bi-confirme p,.bi-plan.bi-confirmant .bi-confirme p{flex:1}
+.bi-carte.bi-confirmant{--bi-anneau:0 0 0 1.5px var(--ko)}
+.bi-confirme-tete{margin:-12px 0 24px;padding:6px}
+.bi-confirme-tete .bi-confirme,.bi-plan.bi-confirmant .bi-confirme{flex-direction:row;align-items:center;min-height:56px;padding:8px 10px 8px 12px;border-radius:var(--r-2);background:var(--ko-soft)}
+.bi-confirme-tete .bi-confirme p,.bi-plan.bi-confirmant .bi-confirme p{flex:1;min-width:0}
 .bi-confirme-tete .bi-confirme p b,.bi-plan.bi-confirmant .bi-confirme p b{display:inline;margin:0 4px 0 0}
+.bi-confirme-tete .bi-confirme-gestes,.bi-plan.bi-confirmant .bi-confirme-gestes{margin:0}
+.bi-confirme-tete .bi-confirme-ico,.bi-plan.bi-confirmant .bi-confirme-ico{width:32px;height:32px;background:var(--s-surface)}
+.bi-confirme-tete .bi-non:hover,.bi-plan.bi-confirmant .bi-non:hover{background:color-mix(in srgb,var(--ko) 10%,transparent)}
 
-/* ─── la feuille des plans : posée sur la table, une ligne par plan ─── */
-.bi-feuille{position:relative;padding:6px 6px 8px;border-radius:var(--r-3);background:var(--s-surface);color:var(--t-1);box-shadow:0 0 0 1px rgba(0,0,0,.5),var(--sh-feuille)}
-.bi-ligne{display:grid;grid-template-columns:32px minmax(0,1fr) 56px 96px 150px 150px;align-items:center;column-gap:18px;width:100%;min-height:58px;padding:0 54px 0 12px;border:none;border-radius:var(--r-2);background:none;color:inherit;text-align:left;font-size:var(--f-13)}
+/* ─── LA FEUILLE DES PLANS : posée sur la table, une ligne par plan ─── */
+.bi-feuille{position:relative;padding:6px;border-radius:var(--r-3);background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-panneau)}
+.bi-ligne{display:grid;grid-template-columns:32px minmax(0,1fr) 52px 64px 92px 150px 150px;align-items:center;column-gap:16px;width:100%;min-height:58px;padding:0 48px 0 12px;border:none;border-radius:var(--r-2);background:none;color:inherit;text-align:left;font-size:var(--f-13)}
 .bi-ligne .d{text-align:right;font-variant-numeric:tabular-nums;color:var(--t-1)}
+.bi-ligne .bi-plan-n{color:var(--t-2)}
 /* la recherche de la racine : l'installation de chaque plan prend la place de « créé » */
-.bi-ligne.avec-install{grid-template-columns:32px minmax(0,1fr) minmax(0,.8fr) 56px 96px 150px}
-.bi-plan-date{font-size:var(--f-12);color:var(--t-2);font-variant-numeric:tabular-nums;white-space:nowrap}
-.bi-plan-ecp{margin-right:7px;font:600 var(--f-12)/1 var(--mono);color:var(--t-1);font-variant-numeric:tabular-nums}
-.bi-entetes{min-height:38px;border-radius:0;border-bottom:1px solid var(--s-line);margin-bottom:4px;font:500 var(--f-12)/1 var(--sans);color:var(--t-2)}
+.bi-ligne.avec-install{grid-template-columns:32px minmax(0,1fr) minmax(0,.7fr) 52px 64px 150px 150px}
+.bi-entetes{min-height:38px;border-radius:0;font:500 var(--f-12)/1 var(--sans);color:var(--t-2);box-shadow:inset 0 -1px 0 var(--s-line);margin-bottom:4px}
 .bi-entetes .d{color:var(--t-2)}
 .bi-plans{list-style:none;margin:0;padding:0}
 .bi-plan{position:relative}
-.bi-plan+.bi-plan::before{content:"";position:absolute;left:62px;right:14px;top:0;border-top:1px solid var(--s-line)}
-.bi-plan:hover::before,.bi-plan:hover+.bi-plan::before{border-color:transparent}
+.bi-plan+.bi-plan::before{content:"";position:absolute;left:60px;right:12px;top:0;border-top:1px solid var(--s-line);transition:opacity var(--rapide)}
+.bi-plan:hover::before,.bi-plan:hover+.bi-plan::before,.bi-plan.bi-confirmant::before,.bi-plan.bi-confirmant+.bi-plan::before{opacity:0}
 button.bi-plan-ouvrir{cursor:pointer;transition:background var(--rapide)}
 button.bi-plan-ouvrir:hover{background:var(--s-hover)}
-.bi-plan-ico{width:32px;height:32px;border-radius:var(--r-1);display:grid;place-items:center;background:var(--s-sunken);color:var(--t-2)}
+button.bi-plan-ouvrir:active{background:var(--accent-soft)}
+.bi-plan-ouvrir:focus-visible{outline-offset:-2px}
+.bi-plan-ico{width:32px;height:32px;border-radius:var(--r-1);display:grid;place-items:center;background:var(--s-sunken);color:var(--t-2);box-shadow:inset 0 0 0 1px var(--s-line);transition:background var(--rapide),color var(--rapide)}
 .bi-plan-ico .ico{width:17px;height:17px}
-.bi-plan-nom{display:flex;align-items:center;gap:8px;min-width:0}
-.bi-plan-nom b{font:600 var(--f-14)/1.3 var(--sans);color:var(--t-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+button.bi-plan-ouvrir:hover .bi-plan-ico{background:var(--s-surface);color:var(--t-1)}
+.bi-plan-nom{display:flex;flex-direction:column;justify-content:center;gap:2px;min-width:0}
+.bi-plan-l1{display:flex;align-items:center;gap:8px;min-width:0}
+.bi-plan-l1 b{font:600 var(--f-14)/1.3 var(--sans);letter-spacing:-.008em;color:var(--t-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bi-plan-l2{font-size:var(--f-12);line-height:1.3;color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bi-plan-date{font-size:var(--f-12);color:var(--t-2);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bi-plan-ecp{margin-right:7px;font:500 var(--f-12)/1 var(--mono);color:var(--t-1);font-variant-numeric:tabular-nums}
 .bi-plan-sous,.bi-plan-vu{font-size:var(--f-12);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bi-jamais{color:var(--t-3)}
-.bi-table,.bi-neuf{flex:none;padding:3px 7px;border-radius:999px;font:500 var(--f-11)/1 var(--sans);font-style:normal;white-space:nowrap}
+/* « sur la table », « nouveau » : une pastille, un point et un mot */
+.bi-table,.bi-neuf{flex:none;display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 8px 0 7px;border-radius:999px;font:500 var(--f-11)/1 var(--sans);font-style:normal;white-space:nowrap}
+.bi-table::before,.bi-neuf::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
 .bi-table{color:var(--t-1);background:var(--accent-soft)}
 .bi-neuf{color:var(--ok);background:var(--ok-soft)}
-.bi-plan.sur-table .bi-plan-ico{background:var(--t-1);color:var(--t-inverse)}
-.bi-plan .bi-plus{top:50%;right:12px;transform:translateY(-50%)}
-.bi-plan .bi-pop{top:calc(50% + 20px);right:12px}
+.bi-plan.sur-table .bi-plan-ico{background:var(--accent);color:var(--on-accent);box-shadow:none}
+.bi-plan .bi-plus{top:50%;right:10px;transform:translateY(-50%)}
+.bi-plan .bi-pop{top:calc(50% + 18px);right:10px}
 .bi-plan.bi-pop-ouvert{z-index:4}
 .bi-plan .bi-ligne .bi-nommer input{height:34px;font:600 var(--f-14)/1 var(--sans)}
-.bi-plan.nouveau button.bi-plan-ouvrir{animation:bi-neuf 1.4s ease-out}
+.bi-plan.nouveau button.bi-plan-ouvrir{animation:bi-neuf 1.4s var(--courbe)}
 @keyframes bi-neuf{from{background:var(--ok-soft)}to{background:transparent}}
+/* la feuille se resserre (un document ouvert à côté) : « créé » et les liaisons d'abord, puis « modifié » */
+@container (max-width:860px){
+  .bi-ligne{grid-template-columns:32px minmax(0,1fr) 52px 140px 140px}
+  .bi-ligne>:nth-child(4),.bi-ligne>:nth-child(5){display:none}
+  .bi-ligne.avec-install{grid-template-columns:32px minmax(0,1fr) minmax(0,.7fr) 52px 140px}
+  .bi-ligne.avec-install>:nth-child(4){display:block}.bi-ligne.avec-install>:nth-child(5),.bi-ligne.avec-install>:nth-child(6){display:none}
+}
 /* un fichier qui se lit, ou qui ne passe pas : sa ligne, en tête */
 .bi-ajouts{margin-bottom:4px}
-.bi-ajout{display:flex;align-items:center;gap:12px;min-height:48px;padding:0 8px 0 20px;border-radius:var(--r-2);font-size:var(--f-13);color:var(--t-2)}
+.bi-ajout{display:flex;align-items:center;gap:12px;min-height:48px;padding:0 6px 0 23px;border-radius:var(--r-2);font-size:var(--f-13);color:var(--t-2)}
 .bi-ajout+.bi-ajout{margin-top:4px}
 .bi-ajout::before{display:none}
 .bi-ajout-ico{flex:none;width:14px;height:14px;border-radius:50%}
 .bi-ajout.lecture .bi-ajout-ico{border:2px solid var(--s-line-2);border-top-color:var(--t-1);animation:bi-tourne .8s linear infinite}
 @keyframes bi-tourne{to{transform:rotate(360deg)}}
-.bi-ajout.ko{background:var(--ko-soft);box-shadow:inset 3px 0 0 var(--ko);color:var(--t-1)}
-.bi-ajout.ko .bi-ajout-ico{width:8px;height:8px;background:var(--ko)}
+.bi-ajout.ko{background:var(--ko-soft);color:var(--t-1)}
+.bi-ajout.ko .bi-ajout-ico{width:8px;height:8px;margin:0 3px;background:var(--ko)}
 .bi-ajout-t{flex:1;min-width:0;line-height:1.45;padding:8px 0}
-.bi-lien{flex:none;height:30px;padding:0 8px;border:none;border-radius:var(--r-1);background:none;color:var(--t-1);font:600 var(--f-12)/1 var(--sans);text-decoration:underline;text-underline-offset:3px}
-.bi-lien:hover{background:var(--s-hover)}
-.bi-oublier{flex:none;width:30px;height:30px;padding:0;border:none;border-radius:50%;background:none;color:var(--t-2);display:grid;place-items:center}
-.bi-oublier:hover{background:var(--s-hover);color:var(--t-1)}
+.bi-lien{flex:none;height:30px;padding:0 10px;border:none;border-radius:var(--r-btn);background:none;color:var(--t-1);font:600 var(--f-12)/1 var(--sans);text-decoration:underline;text-decoration-color:var(--s-line-2);text-underline-offset:3px;transition:background var(--rapide)}
+.bi-lien:hover{background:color-mix(in srgb,var(--ko) 10%,transparent);text-decoration-color:var(--t-1)}
+.bi-oublier{flex:none;width:30px;height:30px;padding:0;border:none;border-radius:var(--r-btn);background:none;color:var(--t-2);display:grid;place-items:center;transition:background var(--rapide),color var(--rapide)}
+.bi-oublier:hover{background:color-mix(in srgb,var(--ko) 10%,transparent);color:var(--t-1)}
 .bi-oublier .ico{width:16px;height:16px}
-/* la zone de dépôt, en bas de la feuille ; seule, et grande, quand l'installation est vide (avec ce qu'elle attend en une ligne) */
-.bi-zone{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 10px;width:calc(100% - 12px);min-height:54px;margin:8px 6px 0;padding:10px 16px;border:1.5px dashed var(--s-line-2);border-radius:var(--r-2);background:var(--s-sunken);color:var(--t-2);font-size:var(--f-13);text-align:center;cursor:pointer;transition:border-color var(--rapide),background var(--rapide),color var(--rapide)}
+/* la zone de dépôt, au bas de la feuille ; seule quand l'installation est vide : l'état vide — une icône dans un carré
+   doux, une phrase, ce qu'elle attend */
+.bi-zone{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 10px;width:100%;min-height:48px;margin:6px 0 0;padding:8px 16px;border:1px dashed var(--s-line-2);border-radius:var(--r-2);background:none;color:var(--t-2);font-size:var(--f-13);text-align:center;cursor:pointer;transition:border-color var(--rapide),background var(--rapide),color var(--rapide)}
 .bi-zone b{color:var(--t-1);font-weight:600}
-.bi-zone .ico{width:18px;height:18px;color:var(--t-1)}
-.bi-zone small{flex-basis:100%;font-size:var(--f-12);color:var(--t-3)}
-.bi-zone small .id{font:500 var(--f-11)/1 var(--mono);color:var(--t-1)}
-.bi-zone:hover,.bi-zone:focus-visible,.biblio.survol-depot .bi-zone,.bi-feuille.survol-depot .bi-zone{border-color:var(--t-1);background:var(--accent-soft);color:var(--t-1);outline:none}
+.bi-zone>.ico{width:18px;height:18px;color:var(--t-1)}
+.bi-zone:hover,.bi-zone:focus-visible{border-color:var(--t-3);background:var(--s-sunken);color:var(--t-1);outline:none}
+.biblio.survol-depot .bi-zone,.bi-feuille.survol-depot .bi-zone{border-style:solid;border-color:var(--t-1);background:var(--accent-soft);color:var(--t-1)}
 .bi-feuille-vide{padding:8px}
-.bi-zone.bi-zone-grande{flex-direction:column;gap:8px;min-height:220px;margin:0;width:100%;font-size:var(--f-14)}
-.bi-zone-grande .ico{width:30px;height:30px}
-.bi-zone-grande small{flex-basis:auto;max-width:56ch;line-height:1.5}
-/* un fichier glissé au-dessus de la bibliothèque : elle le dit au milieu de l'écran, ce qui le recevra s'allume */
-.biblio.survol-depot::after{content:attr(data-depot-dit);position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:8;padding:26px 36px;max-width:min(560px,80vw);border:2px dashed var(--t-table);border-radius:var(--r-3);background:var(--s-app);color:var(--t-table);font:600 var(--f-20)/1.3 var(--titre);text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.6);pointer-events:none}
+.bi-zone.bi-zone-grande{flex-direction:column;flex-wrap:nowrap;gap:4px;min-height:300px;margin:0;padding:40px 32px;background:var(--s-sunken);border-color:var(--s-line-2)}
+.bi-zone-ico{display:grid;place-items:center;width:48px;height:48px;margin-bottom:12px;border-radius:var(--r-2);background:var(--s-surface);color:var(--t-1);box-shadow:0 0 0 1px var(--s-line),0 2px 6px rgba(0,0,0,.06);transition:transform var(--moyen)}
+.bi-zone-ico .ico{width:22px;height:22px}
+.bi-zone-grande:hover .bi-zone-ico,.biblio.survol-depot .bi-zone-grande .bi-zone-ico{transform:translateY(-2px)}
+.bi-zone-grande b{font:600 var(--f-16)/1.3 var(--titre);letter-spacing:-.01em}
+.bi-zone-grande>span:not(.bi-zone-ico){color:var(--t-2)}
+.bi-zone-grande small{max-width:54ch;margin-top:14px;font-size:var(--f-12);line-height:1.6;color:var(--t-2);text-wrap:balance}
+.bi-zone small .id{font:500 var(--f-11)/1 var(--mono);color:var(--t-1);background:var(--s-surface);box-shadow:inset 0 0 0 1px var(--s-line);border-radius:4px;padding:2px 5px}
+/* un fichier glissé au-dessus de la bibliothèque : un cadre au trait, la table voilée, et au milieu ce qui le recevra */
+.biblio.survol-depot .bi-page::after{content:"";position:fixed;top:calc(var(--entete) + var(--sur-h) + var(--jeu));left:var(--jeu);right:var(--jeu);bottom:var(--jeu);z-index:7;
+  border:1.5px dashed var(--t-table-2);border-radius:var(--r-3);background:color-mix(in srgb,var(--s-app) 84%,transparent);pointer-events:none;animation:bi-voile var(--moyen) both}
+body.fiche-ouverte .biblio.survol-depot .bi-page::after{right:calc(var(--fiche-l) + 2 * var(--jeu))}
+.biblio.survol-depot::before{content:"";position:fixed;left:50%;top:calc(50% - 60px);z-index:8;width:44px;height:44px;margin-left:-22px;border-radius:var(--r-2);background:var(--t-table);box-shadow:0 8px 24px rgba(0,0,0,.5);pointer-events:none;animation:bi-voile var(--moyen) both}
+.biblio.survol-depot::after{content:attr(data-depot-dit);position:fixed;left:50%;top:50%;transform:translateX(-50%);z-index:8;width:max-content;max-width:min(520px,80vw);padding:0 16px;color:var(--t-table);font:600 var(--f-20)/1.35 var(--titre);text-shadow:0 1px 12px rgba(0,0,0,.6);letter-spacing:-.015em;text-align:center;text-wrap:balance;pointer-events:none;animation:bi-voile var(--moyen) both}
+body.fiche-ouverte .biblio.survol-depot::before,body.fiche-ouverte .biblio.survol-depot::after{left:calc((100vw - var(--fiche-l) - var(--jeu)) / 2)}
+/* l'icône du dépôt, dans son palet : une flèche qui entre dans un bac — un masque à l'encre de la table */
+.biblio.survol-depot .bi-page::before{content:"";position:fixed;left:50%;top:calc(50% - 48px);z-index:9;width:20px;height:20px;margin-left:-10px;background:var(--s-app);pointer-events:none;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 16V4M7 9l5-5 5 5'/%3E%3Cpath d='M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 16V4M7 9l5-5 5 5'/%3E%3Cpath d='M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3'/%3E%3C/svg%3E") center/contain no-repeat}
+body.fiche-ouverte .biblio.survol-depot .bi-page::before{left:calc((100vw - var(--fiche-l) - var(--jeu)) / 2)}
+@keyframes bi-voile{from{opacity:0}to{opacity:1}}
 
-/* ─── la recherche de la racine : les plans qui répondent, sous les installations ─── */
-.bi-sous{margin:44px 0 14px;font:600 var(--f-14)/1.3 var(--sans);color:var(--t-table-2)}
+/* ─── la recherche de la racine, l'Exemple : un petit titre à même la table ─── */
+.bi-sous{display:flex;align-items:center;gap:8px;margin:44px 0 14px;font:500 var(--f-13)/1.3 var(--sans);color:var(--t-table-2)}
+.bi-essai .bi-sous{margin-top:0}
+.bi-sous span{font:500 var(--f-11)/1 var(--sans);color:var(--t-table-2);background:var(--voile-2);border-radius:999px;padding:3px 7px;font-variant-numeric:tabular-nums}
 .bi-rien{margin:8px 0 0;font-size:var(--f-14);color:var(--t-table-2)}
 .bi-rien-feuille{margin:0;padding:18px 14px;color:var(--t-2)}
 
-/* ─── rien encore : deux façons de commencer, sans discours ─── */
-.bi-vide{max-width:600px;margin:56px auto 8px;text-align:center;color:var(--t-table)}
-.bi-vide-ico{display:inline-grid;place-items:center;width:60px;height:60px;border-radius:var(--r-3);border:1px solid var(--l-table-2);color:var(--t-table)}
-.bi-vide-ico .ico{width:28px;height:28px;stroke-width:1.4}
-.bi-vide h2{margin:20px 0 0;font:600 var(--f-24)/1.2 var(--titre);letter-spacing:-.02em}
-.bi-vide p{margin:10px auto 0;max-width:48ch;font-size:var(--f-14);line-height:1.55;color:var(--t-table-2)}
-.bi-vide-gestes{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:24px}
-.bi-vide .bi-vide-note{margin-top:18px;font-size:var(--f-12)}
+/* ─── RIEN ENCORE : l'accueil — une seule composition au milieu de la table : la pile de feuilles, le titre, une phrase,
+   deux gestes ; l'Exemple dessous, entre deux filets ─── */
+.bi-page.bi-accueil{display:flex;flex-direction:column;justify-content:center;width:min(720px,100%);min-height:100%;padding-top:40px;padding-bottom:max(80px,12vh)}
+.bi-vide{display:flex;flex-direction:column;align-items:center;text-align:center;color:var(--t-table)}
+.bi-pile-dessin{display:block;width:168px;height:auto;margin-bottom:30px;overflow:visible;filter:drop-shadow(0 18px 26px rgba(0,0,0,.55))}
+.bi-pile-dessin .bp-2{fill:color-mix(in srgb,var(--s-papier) 90%,var(--s-app));stroke:color-mix(in srgb,var(--s-app) 45%,transparent);stroke-width:1}
+.bi-pile-dessin .bp-3{fill:color-mix(in srgb,var(--s-papier) 76%,var(--s-app));stroke:color-mix(in srgb,var(--s-app) 45%,transparent);stroke-width:1}
+.bi-pile-dessin .bf-cadre{stroke-width:1}
+.bi-pile-dessin .bf-bloc{stroke-width:1.3}
+.bi-pile-dessin .bf-fil{stroke-width:1.6}
+.bi-vide>p{margin:12px 0 0;max-width:46ch;font-size:var(--f-14);line-height:1.55;color:var(--t-table-2);text-wrap:balance}
+.bi-vide>p.bi-vide-note{margin-top:6px;font-size:var(--f-12)}
+.bi-vide-gestes{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:28px}
+.bi-accueil .bi-essai{display:flex;flex-direction:column;align-items:center;margin-top:64px}
+.bi-accueil .bi-essai .bi-sous{width:100%;max-width:440px;gap:14px}
+.bi-accueil .bi-essai .bi-sous::before,.bi-accueil .bi-essai .bi-sous::after{content:"";flex:1;border-top:1px solid var(--l-table)}
+.bi-accueil .bi-grille-demo{width:min(360px,100%);grid-template-columns:minmax(0,1fr)}
+.bi-accueil .bi-reprendre,.bi-accueil .bi-bandeau,.bi-accueil .bi-ranger{margin-bottom:48px}
 
 /* ─── LE RAIL : toutes les installations, à gauche d'une installation — un clic passe de l'une à l'autre ─── */
-.bi-page.bi-avec-rail{display:grid;grid-template-columns:232px minmax(0,1fr);column-gap:40px;align-items:start;width:min(1400px,100%)}
+.bi-page.bi-avec-rail{display:grid;grid-template-columns:224px minmax(0,1fr);column-gap:40px;align-items:start;width:min(1400px,100%)}
 @media (min-width:1700px){ .bi-page.bi-avec-rail{width:min(1620px,100%)} }
 .bi-principal{min-width:0}
-.bi-rail{position:sticky;top:20px;max-height:calc(100vh - var(--entete) - 60px);overflow-y:auto;margin-top:2px;padding:0 4px 12px 0;scrollbar-width:thin;scrollbar-color:var(--l-table-2) transparent}
-.bi-rail-titre{display:flex;align-items:center;justify-content:space-between;margin:6px 0 10px;padding:0 10px;font:600 var(--f-11)/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--t-table-2)}
-.bi-rail-titre kbd{font:500 var(--f-11)/1 var(--mono);letter-spacing:0;text-transform:none;color:var(--t-table-2);border:1px solid var(--l-table-2);border-radius:4px;padding:2px 5px}
+.bi-rail{position:sticky;top:0;max-height:calc(100vh - var(--entete) - 60px);overflow-y:auto;margin-top:0;padding:2px 4px 12px 0;scrollbar-width:thin;scrollbar-color:var(--l-table-2) transparent}
+.bi-rail-titre{display:flex;align-items:center;justify-content:space-between;height:28px;margin:0 0 10px;padding:0 6px 0 10px;font:500 var(--f-13)/1 var(--sans);color:var(--t-table-2)}
 .bi-rail ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
-.bi-rail-l{display:grid;grid-template-columns:6ch minmax(0,1fr) auto;align-items:center;column-gap:10px;width:100%;min-height:36px;padding:0 10px;border:none;border-radius:var(--r-1);background:none;color:var(--t-table-2);text-align:left;font-size:var(--f-13);transition:background var(--rapide),color var(--rapide)}
-.bi-rail-l:hover{background:var(--s-table-survol);color:var(--t-table)}
-.bi-rail-l[aria-current="page"]{background:var(--s-table-champ);color:var(--t-table);box-shadow:inset 2px 0 0 var(--t-table),inset 0 0 0 1px var(--l-table)}
-.bi-rail-ecp{font:600 var(--f-12)/1 var(--mono);letter-spacing:.03em;color:var(--t-table-2);font-variant-numeric:tabular-nums}
-.bi-rail-l[aria-current="page"] .bi-rail-ecp{color:var(--t-table)}
+.bi-rail-l{display:grid;grid-template-columns:5.6ch minmax(0,1fr) auto;align-items:center;column-gap:10px;width:100%;height:34px;padding:0 10px;border:none;border-radius:8px;background:none;color:var(--t-table-2);text-align:left;font-size:var(--f-13);transition:background var(--rapide),color var(--rapide)}
+.bi-rail-l:hover{background:var(--voile-1);color:var(--t-table)}
+.bi-rail-l[aria-current="page"]{background:var(--voile-2);color:var(--t-table)}
+.bi-rail-l:focus-visible{outline-offset:-2px}
+.bi-rail-ecp{font:500 var(--f-12)/1 var(--mono);letter-spacing:.02em;color:var(--t-table-2);font-variant-numeric:tabular-nums;opacity:.85}
+.bi-rail-l[aria-current="page"] .bi-rail-ecp{color:var(--t-table);opacity:1}
 .bi-rail-nom{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bi-rail-l[aria-current="page"] .bi-rail-nom{font-weight:600}
 .bi-rail-n{font-size:var(--f-11);color:var(--t-table-2);font-variant-numeric:tabular-nums}
-.bi-rail-demo{opacity:.75}
+.bi-rail-demo{color:var(--t-table-2)}
 .bi-rail li:has(.bi-rail-demo){margin-top:8px;padding-top:8px;border-top:1px solid var(--l-table)}
 
 /* ─── l'arrivée : les cartes et la feuille se posent, l'une après l'autre (une fois, pas à chaque lettre cherchée) ─── */
-.bi-entre .bi-carte,.bi-entre .bi-feuille,.bi-entre .bi-vide{animation:bi-pose .34s cubic-bezier(.2,.7,.2,1) both}
+.bi-entre .bi-carte,.bi-entre .bi-feuille,.bi-entre .bi-vide,.bi-entre .bi-reprendre,.bi-entre .bi-bandeau,.bi-entre .bi-essai,.bi-entre .bi-rail{animation:bi-pose var(--lent) both}
 .bi-entre .bi-carte:nth-child(2){animation-delay:.03s}.bi-entre .bi-carte:nth-child(3){animation-delay:.06s}.bi-entre .bi-carte:nth-child(4){animation-delay:.09s}
 .bi-entre .bi-carte:nth-child(5){animation-delay:.12s}.bi-entre .bi-carte:nth-child(n+6){animation-delay:.15s}
-@keyframes bi-pose{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.bi-entre .bi-essai{animation-delay:.12s}
+@keyframes bi-pose{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
 /* ─── une fenêtre étroite (la tablette, le téléphone : le code reste, on ne le soigne plus) ─── */
 @media (max-width:900px){
   .bi-page{padding:24px 16px 48px}
+  .bi-page.bi-accueil{padding-top:24px}
   .bi-tete{flex-direction:column;align-items:stretch;gap:16px}
   .bi-outils{flex-wrap:wrap}
   .bi-cherche{flex:1;width:auto}
@@ -1221,6 +1340,7 @@ button.bi-plan-ouvrir:hover{background:var(--s-hover)}
   .bi-page.bi-avec-rail{display:block}
   .bi-rail{display:none}
   .bi-rep-n,.bi-reprendre kbd{display:none}
+  .bi-reprendre .bi-folio{width:48px}
 }
 
 /* ───────── style-courbe.css ───────── */
@@ -2119,131 +2239,160 @@ details.fs:last-of-type{margin-bottom:var(--sp-5)}
 /* ───────── style-fichiers.css ───────── */
 /* ═══════════════════════════════════════════════════════════════════════════
    PRENDRE LA MAIN — « Vos fichiers », le collage, le mot qui passe et son geste (« Voir », « Rétablir ») (08-fichiers,
-   08-bibliotheque). Les jetons de style.css, rien d'autre : un état est un point de sa couleur (vert reçu, ambre rien ou en
-   attente, rouge une erreur) ; une erreur écrite dans sa carte est une boîte au trait rouge qui reste ; un aperçu est un
-   petit tableau en chasse fixe, les colonnes obligatoires à l'encre et soulignées.
+   08-bibliotheque). Le contenu d'un document (sa coquille, `.fiche-tete`, `.fiche-pied`, est celle de tous les documents).
+   Pas de carte dans la feuille : une ENTRÉE est un groupe aéré, séparé de la suivante par un filet — l'icône dans un carré
+   doux, le titre, son état en un point et un mot, son action ; dessous, alignés sur le titre, ce qu'elle attend en une
+   ligne, sa zone de dépôt, ce qui lui est arrivé, « Ce que j'attends ». Les trois entrées qui comptent d'abord, puis,
+   sous « Facultatif », ce que l'outil a déjà. Un état est un point de sa couleur (vert reçu, ambre rien ou en attente,
+   rouge une erreur) ; ce qui est arrivé (une erreur, une attente, un succès) est une boîte teintée, son point en tête ;
+   un aperçu est un petit tableau en chasse fixe, les colonnes obligatoires à l'encre et soulignées.
    ═══════════════════════════════════════════════════════════════════════ */
 
-/* ─── « VOS FICHIERS » : six cartes, peu de mots ─────────────────────────────────────────────────────────────────── */
-.vf-lead{margin:0 0 12px;font-size:var(--f-13);line-height:1.5;color:var(--t-2)}
-.vf-cartes{display:flex;flex-direction:column;gap:10px}
-/* une carte : la tête (l'icône, le titre, l'état, l'action) ; pour le retest et la base, ce qu'elle attend en une ligne et
-   sa zone de dépôt ; ce qui est arrivé (une erreur, une attente, un succès) ; puis « Ce que j'attends », replié quand
-   l'entrée est servie */
-.vf-carte{border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-surface);scroll-margin-top:8px;transition:border-color var(--rapide),box-shadow var(--rapide)}
-/* le retest et la base, les deux fichiers qu'on dépose : un cadre plus franc, l'icône à l'encre */
-.vf-carte.vf-grande{border-color:var(--s-line-2)}
-.vf-grande .vf-ic{background:var(--t-1);color:var(--t-inverse)}
-.vf-carte.e-ko{border-color:color-mix(in srgb,var(--ko) 40%,var(--s-line))}
-.vf-carte.vf-vise{border-color:var(--t-3);box-shadow:var(--sh-1)}
-.vf-carte.vf-montre,.vf-carte.survol-depot{border-color:var(--t-1);box-shadow:0 0 0 3px var(--accent-soft)}
-.vf-tete{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px}
-.vf-ic{width:36px;height:36px;border-radius:var(--r-1);background:var(--s-sunken);display:grid;place-items:center;color:var(--t-2)}
-.vf-ic svg.ico{width:19px;height:19px}
+/* ─── « VOS FICHIERS » : six entrées, peu de mots ─────────────────────────────────────────────────────────────────── */
+.vf-lead{margin:0 0 6px;font-size:var(--f-13);line-height:1.5;color:var(--t-2)}
+.vf-cartes{display:flex;flex-direction:column}
+/* une entrée : un groupe ; ce qui s'aligne sous le titre suit son retrait (l'icône et son écart) */
+.vf-carte{--vf-retrait:50px;position:relative;margin:0 -10px;padding:18px 10px;border-radius:var(--r-2);scroll-margin-top:8px;transition:background var(--moyen),box-shadow var(--moyen)}
+.vf-carte+.vf-carte::before{content:"";position:absolute;left:10px;right:10px;top:0;border-top:1px solid var(--s-line);transition:opacity var(--rapide)}
+/* l'entrée qu'on vient chercher, un instant teintée ; celle qu'un fichier survole, cerclée d'encre — ses filets s'effacent */
+.vf-carte.vf-vise{background:var(--s-sunken)}
+.vf-carte.vf-montre,.vf-carte.survol-depot{background:var(--accent-soft);box-shadow:inset 0 0 0 1.5px var(--t-1)}
+.vf-carte:is(.vf-vise,.vf-montre,.survol-depot)::before,.vf-carte:is(.vf-vise,.vf-montre,.survol-depot)+.vf-carte::before{opacity:0}
+.vf-tete{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:14px;align-items:center}
+.vf-ic{width:36px;height:36px;border-radius:var(--r-btn);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);display:grid;place-items:center;color:var(--t-1)}
+.vf-ic svg.ico{width:18px;height:18px}
 .vf-titres{min-width:0}
 .vf-titres h3{margin:0;font:600 var(--f-14)/1.3 var(--titre);letter-spacing:-.01em;color:var(--t-1)}
-.vf-etat{display:flex;align-items:baseline;gap:7px;margin-top:3px;font-size:var(--f-12);line-height:1.45;color:var(--t-2);overflow-wrap:anywhere}
-.vf-etat i{width:8px;height:8px;flex:none;border-radius:50%;background:var(--ok);transform:translateY(-1px)}
+.vf-etat{display:flex;align-items:baseline;gap:7px;margin-top:2px;font-size:var(--f-12);line-height:1.45;color:var(--t-2);overflow-wrap:anywhere}
+.vf-etat i{width:7px;height:7px;flex:none;border-radius:50%;background:var(--ok);transform:translateY(-1px)}
 .vf-carte.e-vide .vf-etat i,.vf-carte.e-att .vf-etat i{background:var(--warn)}
 .vf-carte.e-ko .vf-etat i{background:var(--ko)}
 .vf-action{flex:none}
-/* ce qu'elle attend, en une ligne, sous la tête (aligné sur le titre) */
-.vf-une{display:flex;flex-direction:column;gap:8px;padding:0 14px 12px 62px;font-size:var(--f-13);line-height:1.5;color:var(--t-2)}
+/* ce que l'outil a déjà (la bible, les normes, les hypothèses) : plus serré, plus petit — « Facultatif » au-dessus */
+.vf-groupe{display:flex;align-items:baseline;gap:8px;margin:6px 0 0;padding:20px 0 4px;border-top:1px solid var(--s-line);font:600 var(--f-13)/1.3 var(--sans);color:var(--t-1)}
+.vf-groupe span{font:400 var(--f-12)/1.3 var(--sans);color:var(--t-2)}
+.vf-carte:not(.vf-grande){--vf-retrait:46px;padding-top:12px;padding-bottom:12px}
+.vf-carte:not(.vf-grande) .vf-tete{grid-template-columns:32px minmax(0,1fr) auto}
+.vf-carte:not(.vf-grande) .vf-ic{width:32px;height:32px;border-radius:var(--r-1)}
+.vf-carte:not(.vf-grande) .vf-ic svg.ico{width:16px;height:16px}
+.vf-carte:not(.vf-grande) .vf-action{height:30px;padding:0 12px;font-size:var(--f-12)}
+/* ce qu'elle attend, en une ligne, alignée sur le titre */
+.vf-une{display:flex;flex-direction:column;gap:10px;padding:10px 0 0 var(--vf-retrait);font-size:var(--f-13);line-height:1.55;color:var(--t-2)}
 .vf-une p{margin:0}
 .vf-une b{color:var(--t-1);font-weight:600}
-.vf-une .id{font:600 var(--f-12)/1 var(--mono);color:var(--t-1);background:var(--accent-soft);border-radius:4px;padding:2px 5px;white-space:nowrap}
-/* les trois colonnes qui rangent la base : la colonne soulignée à l'encre, son sens dessous */
-.vf-cles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0;border:1px solid var(--s-line);border-radius:var(--r-1);overflow:hidden}
-.vf-cles div{padding:7px 10px 8px;min-width:0}
-.vf-cles div+div{border-left:1px solid var(--s-line)}
-.vf-cles dt{display:inline-block;padding-bottom:2px;font:600 var(--f-12)/1.3 var(--mono);color:var(--t-1);box-shadow:inset 0 -2px 0 var(--t-1)}
-.vf-cles dd{margin:4px 0 0;font-size:var(--f-13);line-height:1.3;color:var(--t-1)}
-/* la zone de dépôt, tant que l'entrée est vide : un cadre en pointillé, une ligne ; la carte survolée par un fichier l'allume */
-.vf-zone{display:flex;align-items:center;justify-content:center;gap:10px;width:calc(100% - 76px);min-height:48px;margin:0 14px 12px 62px;padding:8px 12px;border:1.5px dashed var(--s-line-2);border-radius:var(--r-2);background:var(--s-sunken);color:var(--t-2);font-size:var(--f-12);cursor:pointer;transition:border-color var(--rapide),background var(--rapide),color var(--rapide)}
-.vf-zone svg.ico{width:18px;height:18px;color:var(--t-1)}
+.vf-une .id{font:500 var(--f-12)/1 var(--mono);color:var(--t-1);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);border-radius:4px;padding:2px 5px;white-space:nowrap}
+/* les trois colonnes qui rangent la base : la colonne à l'encre, soulignée, son sens dessous ; un filet entre elles */
+.vf-cles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0}
+.vf-cles div{min-width:0;padding:2px 12px 2px 0}
+.vf-cles div+div{padding-left:14px;border-left:1px solid var(--s-line)}
+.vf-cles dt{display:inline-block;padding-bottom:3px;font:600 var(--f-12)/1.3 var(--mono);color:var(--t-1);box-shadow:inset 0 -2px 0 var(--t-1)}
+.vf-cles dd{margin:5px 0 0;font-size:var(--f-12);line-height:1.3;color:var(--t-2)}
+/* la zone de dépôt, tant que l'entrée est vide : un cadre en pointillé, une ligne ; l'entrée survolée par un fichier l'allume */
+.vf-zone{display:flex;align-items:center;justify-content:center;gap:10px;width:calc(100% - var(--vf-retrait));min-height:44px;margin:12px 0 0 var(--vf-retrait);padding:8px 12px;border:1px dashed var(--s-line-2);border-radius:var(--r-2);background:none;color:var(--t-2);font-size:var(--f-12);cursor:pointer;transition:border-color var(--rapide),background var(--rapide),color var(--rapide)}
+.vf-zone svg.ico{width:17px;height:17px;color:var(--t-1)}
 .vf-zone b{font-size:var(--f-13);color:var(--t-1);font-weight:600}
 body.depot-actif .vf-zone{border-color:var(--t-3)}
-.vf-zone:hover,.vf-zone:focus-visible,.survol-depot .vf-zone{border-color:var(--t-1);background:var(--accent-soft);color:var(--t-1);outline:none}
-.vf-liens{display:flex;flex-wrap:wrap;gap:2px 4px;padding:0 12px 10px 58px;margin-top:-4px}
-.vf-liens .btn{height:26px;padding:0 6px;font-size:var(--f-12)}
-/* ce qui est arrivé : une boîte, sa couleur d'état en trait à gauche ; elle reste jusqu'au prochain dépôt */
-.vf-boite{margin:0 14px 12px;padding:10px 12px;border-radius:var(--r-1);font-size:var(--f-12);line-height:1.5;color:var(--t-1);background:var(--s-sunken);box-shadow:inset 3px 0 0 var(--s-line-2)}
+.vf-zone:hover,.vf-zone:focus-visible{border-color:var(--t-3);background:var(--s-sunken);color:var(--t-1);outline:none}
+.survol-depot .vf-zone{border-style:solid;border-color:var(--t-1);background:var(--s-surface);color:var(--t-1)}
+.vf-liens{display:flex;flex-wrap:wrap;gap:2px 4px;padding:6px 0 0 calc(var(--vf-retrait) - 6px)}
+.vf-liens .btn{height:28px;padding:0 6px;font-size:var(--f-12)}
+/* ce qui est arrivé : une boîte teintée de son état, son point en tête ; elle reste jusqu'au prochain dépôt */
+.vf-boite{position:relative;margin:12px 0 0 var(--vf-retrait);padding:11px 14px 12px 30px;border-radius:var(--r-2);font-size:var(--f-12);line-height:1.55;color:var(--t-1);background:var(--s-sunken)}
+.vf-boite::before{content:"";position:absolute;left:13px;top:17px;width:7px;height:7px;border-radius:50%;background:var(--t-3)}
 .vf-boite p{margin:0}
+.vf-boite b{font-weight:600}
 .vf-boite ul,.vf-boite ol{margin:6px 0 0;padding-left:18px}
 .vf-boite li{margin:2px 0}
 .vf-boite .id{font-family:var(--mono);font-size:var(--f-11)}
-.vf-erreur{background:var(--ko-soft);box-shadow:inset 3px 0 0 var(--ko)}
-.vf-avis,.vf-attente{background:var(--warn-soft);box-shadow:inset 3px 0 0 var(--warn)}
-.vf-succes{background:var(--ok-soft);box-shadow:inset 3px 0 0 var(--ok)}
-.vf-boite .vf-apercu{margin-top:8px;background:var(--s-surface)}
+.vf-erreur{background:var(--ko-soft)}
+.vf-erreur::before{background:var(--ko)}
+.vf-avis,.vf-attente{background:var(--warn-soft)}
+.vf-avis::before,.vf-attente::before{background:var(--warn)}
+.vf-succes{background:var(--ok-soft)}
+.vf-succes::before{background:var(--ok)}
+.vf-boite .vf-apercu{margin-top:10px}
 .vf-gestes{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-top:10px}
 .vf-boite .vf-gestes .btn{height:30px;padding:0 12px;font-size:var(--f-12)}
 .vf-boite .vf-gestes .btn.lien{padding:0 6px}
-.vf-quand{margin-left:auto;color:var(--t-3);font-size:var(--f-11)}
-.vf-note{margin:6px 0 0;font-size:var(--f-12);color:var(--t-3)}
+.vf-boite .vf-gestes .btn.lien:hover{background:color-mix(in srgb,var(--t-1) 7%,transparent)}
+.btn.vf-danger{background:var(--ko);border-color:var(--ko);color:var(--t-inverse)}
+.btn.vf-danger:hover{filter:brightness(1.08)}
+.vf-quand{margin-left:auto;color:var(--t-2);font-size:var(--f-11);font-variant-numeric:tabular-nums}
+.vf-note{margin:6px 0 0;font-size:var(--f-12);color:var(--t-2)}
 .vf-gestes .vf-note{margin:0}
-.vf-base-contrat{margin:-4px 14px 12px}
+.vf-base-contrat{margin:10px 0 0 var(--vf-retrait)}
 /* « Corriger » : chaque colonne du fichier, ce qu'elle porte, le rôle qu'on lui donne */
 .vf-carte-cols{display:flex;flex-direction:column;gap:4px;margin-top:10px;padding:8px;border-radius:var(--r-1);background:var(--s-surface)}
 .vf-col{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 168px;gap:8px;align-items:center;font-size:var(--f-12)}
 .vf-col-nom{font:500 var(--f-12)/1.3 var(--mono);color:var(--t-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.vf-col-ex{color:var(--t-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vf-col-ex{color:var(--t-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vf-col select{height:28px;border:1px solid var(--s-line-2);border-radius:var(--r-1);background:var(--s-surface);color:var(--t-1);font-size:var(--f-12);padding:0 6px}
-/* « Ce que j'attends » : trois lignes d'exemple, ce qui se passe ensuite en une phrase, le modèle */
-details.vf-attend{border-top:1px solid var(--s-line)}
-.vf-attend>summary{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;list-style:none;border-radius:0 0 var(--r-2) var(--r-2)}
+.vf-col select:focus-visible{outline:none;border-color:var(--t-1);box-shadow:var(--anneau)}
+/* « Ce que j'attends » : un repli discret sous le titre — trois lignes d'exemple, ce qui se passe ensuite, le modèle */
+details.vf-attend{margin:8px 0 0 calc(var(--vf-retrait) - 8px)}
+.vf-attend>summary{display:flex;align-items:center;gap:8px;width:max-content;max-width:100%;height:30px;padding:0 8px;border-radius:var(--r-1);cursor:pointer;list-style:none;transition:background var(--rapide)}
 .vf-attend>summary::-webkit-details-marker{display:none}
-.vf-attend>summary:hover{background:var(--s-sunken)}
-.vf-attend[open]>summary{border-radius:0}
-.vf-attend-t{font:600 var(--f-13)/1.3 var(--sans);color:var(--t-1);white-space:nowrap}
-.vf-attend-s{flex:1;min-width:0;font-size:var(--f-12);color:var(--t-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.vf-chevron{width:16px;height:16px;color:var(--t-3);transition:transform var(--rapide)}
+.vf-attend>summary:hover{background:var(--s-hover)}
+.vf-attend>summary:focus-visible{outline-offset:0}
+.vf-attend-t{font:500 var(--f-13)/1.3 var(--sans);color:var(--t-1);white-space:nowrap}
+.vf-attend-s{min-width:0;font-size:var(--f-12);color:var(--t-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vf-chevron{width:14px;height:14px;color:var(--t-2);transition:transform var(--rapide)}
 .vf-attend[open] .vf-chevron{transform:rotate(180deg)}
-.vf-corps{padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;font-size:var(--f-13);line-height:1.55;color:var(--t-2)}
+.vf-corps{display:flex;flex-direction:column;gap:10px;padding:8px 0 2px 8px;font-size:var(--f-13);line-height:1.55;color:var(--t-2);animation:vf-ouvre var(--moyen) both}
+@keyframes vf-ouvre{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 .vf-format,.vf-ensuite{margin:0}
 .vf-format b{color:var(--t-1);font-weight:600}
 .vf-format .id{font-family:var(--mono);font-size:var(--f-12);white-space:nowrap}
-.vf-ensuite{font-size:var(--f-12);color:var(--t-3)}
+.vf-ensuite{font-size:var(--f-12);color:var(--t-2)}
 .vf-corps .vf-gestes{margin-top:0}
-.vf-corps .vf-gestes .btn{height:32px;font-size:var(--f-12)}
+.vf-corps .vf-gestes .btn{height:30px;padding:0 12px;font-size:var(--f-12)}
 /* l'aperçu : un petit tableau, en chasse fixe ; les colonnes obligatoires à l'encre et soulignées ; il défile de côté */
-.vf-apercu{border:1px solid var(--s-line);border-radius:var(--r-1);overflow-x:auto;scrollbar-width:thin}
+.vf-apercu{border:1px solid var(--s-line);border-radius:var(--r-1);background:var(--s-surface);overflow-x:auto;scrollbar-width:thin}
 .vf-apercu table{border-collapse:collapse;width:100%;font:400 var(--f-11)/1.5 var(--mono)}
-.vf-apercu th{background:var(--s-sunken);font-weight:500;text-align:left;padding:4px 8px;color:var(--t-3);border-bottom:1px solid var(--s-line);white-space:nowrap}
+.vf-apercu th{background:var(--s-sunken);font-weight:500;text-align:left;padding:5px 10px;color:var(--t-2);border-bottom:1px solid var(--s-line);white-space:nowrap}
 .vf-apercu th.req{color:var(--t-1);font-weight:600;box-shadow:inset 0 -2px 0 var(--t-1)}
-.vf-apercu td{padding:3px 8px;border-bottom:1px solid var(--s-line);white-space:nowrap;color:var(--t-3)}
-.vf-apercu td.req{color:var(--t-1)}
+.vf-apercu td{padding:4px 10px;border-bottom:1px solid var(--s-line);white-space:nowrap;color:var(--t-2)}
+.vf-apercu td.req{color:var(--t-1);font-weight:500}
 .vf-apercu tbody tr:last-child td{border-bottom:none}
-.vf-apercu .vf-ap-titre td{font:italic 400 var(--f-11)/1.5 var(--sans);color:var(--t-3);background:var(--s-surface)}
-/* un fichier glissé au-dessus de « Vos fichiers » : pas de voile, c'est la carte survolée qui s'allume */
+.vf-apercu .vf-ap-titre td{font:italic 400 var(--f-11)/1.5 var(--sans);color:var(--t-2);background:var(--s-surface)}
+/* un fichier glissé au-dessus de « Vos fichiers » : pas de voile, c'est l'entrée survolée qui s'allume */
 body.depot-actif:has(#fiche [data-depot]) .depot{display:none}
 /* la section « Déjà fait » qu'on vient d'ouvrir depuis la base : un instant soulignée */
 .fi-deja.vf-montre{box-shadow:0 0 0 3px var(--accent-soft);transition:box-shadow var(--moyen)}
 
-/* ─── COLLER DES LIGNES : l'ordre, un exemple, l'aperçu de ce qui est compris ─────────────────────────────────────── */
-.co-ordre{list-style:none;display:flex;flex-wrap:wrap;gap:4px;margin:8px 0 0;padding:0}
-.co-ordre li{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px 0 3px;border:1px solid var(--s-line);border-radius:var(--r-1);background:var(--s-surface);font:500 var(--f-12)/1 var(--mono);color:var(--t-2)}
-.co-ordre li i{min-width:16px;height:16px;border-radius:4px;display:grid;place-items:center;background:var(--s-sunken);font:600 10px/1 var(--sans);font-style:normal;color:var(--t-3)}
-.co-ordre li.req{border-color:var(--t-1);color:var(--t-1)}
-.co-ordre li.req i{background:var(--t-1);color:var(--t-inverse)}
-.co-exemple{margin-top:14px}
-.co-exemple .sur{margin-bottom:4px}
-.co-exemple .btn{margin-top:4px;height:28px;padding:0 4px;font-size:var(--f-12)}
-#co-champ textarea{height:150px}
-.co-apercu{margin-top:12px}
+/* ─── COLLER DES LIGNES : ce qu'on colle (l'ordre, un exemple), le champ, ce qui est compris ─────────────────────── */
+.co-lead{margin:0;font-size:var(--f-13);line-height:1.55;color:var(--t-2)}
+.co-lead b{color:var(--t-1);font-weight:600}
+.co-bloc{margin-top:22px}
+.co-etiquette{display:flex;align-items:center;gap:6px;margin:0 0 8px;font:500 var(--f-12)/1.4 var(--sans);color:var(--t-2)}
+.co-etiquette small{font-size:var(--f-12);font-weight:400;color:var(--t-2)}
+.co-etiquette small::before{content:"·";margin-right:6px}
+.co-exemple .co-etiquette .btn{margin-left:auto;height:26px;padding:0 6px;font-size:var(--f-12)}
+.co-ordre{list-style:none;display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0}
+.co-ordre li{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 9px 0 4px;border-radius:var(--r-1);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);font:500 var(--f-12)/1 var(--mono);color:var(--t-2)}
+.co-ordre li i{min-width:18px;height:18px;padding:0 3px;border-radius:4px;display:grid;place-items:center;background:var(--s-surface);box-shadow:inset 0 0 0 1px var(--s-line);font:600 10px/1 var(--sans);font-style:normal;color:var(--t-2);font-variant-numeric:tabular-nums}
+.co-ordre li.req{background:var(--s-surface);box-shadow:inset 0 0 0 1.5px var(--t-1);color:var(--t-1)}
+.co-ordre li.req i{background:var(--t-1);color:var(--t-inverse);box-shadow:none}
+#co-champ.co-champ{margin-top:22px}
+#co-champ>.co-etiquette{display:flex;margin:0 0 8px;font:500 var(--f-12)/1.4 var(--sans);color:var(--t-2)}
+#co-champ textarea{height:150px;padding:10px 12px;border-radius:var(--r-btn);font:400 var(--f-12)/1.6 var(--mono);background:var(--s-surface)}
+#co-champ.erreur>.co-etiquette{color:var(--ko)}
+.co-apercu{margin-top:22px;animation:vf-ouvre var(--moyen) both}
 .co-apercu:empty{display:none}
-.co-apercu .sur{margin-bottom:4px}
-.co-dit{margin:0 0 8px;font-size:var(--f-13);line-height:1.5;color:var(--t-2)}
+.co-dit{display:flex;align-items:baseline;gap:8px;margin:0 0 10px;font-size:var(--f-13);line-height:1.5;color:var(--t-2)}
+.co-point{width:7px;height:7px;flex:none;border-radius:50%;background:var(--ok);transform:translateY(-1px)}
 .co-dit b{color:var(--t-1);font-weight:600}
 .co-dit .id{font-family:var(--mono);font-size:var(--f-12);color:var(--t-1)}
 .co-rejet{color:var(--warn)}
 .co-apercu .vf-boite{margin:0}
 
-/* ─── LE MOT QUI PASSE ET SON GESTE : « Voir » (ce qui est écrit dans « Vos fichiers »), « Rétablir » ─────────────────────────── */
+/* ─── LE MOT QUI PASSE ET SON GESTE : « Voir » (ce qui est écrit dans « Vos fichiers »), « Rétablir » — une petite pièce
+   claire posée sur le palet ─────────────────────────────────────────────────────────────────────────────────────── */
 #toast.on.action{pointer-events:auto}
-#toast.action{display:flex;align-items:baseline;gap:14px}
-.toast-voir{flex:none;padding:0;border:none;background:none;color:var(--bulle-t);font:600 var(--f-13)/1.4 var(--sans);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
-.toast-voir:hover{opacity:.8}
+#toast.action{display:flex;align-items:center;gap:14px;padding-right:8px}
+.toast-voir{flex:none;height:26px;padding:0 10px;border:none;border-radius:var(--r-1);background:var(--voile-2);color:var(--t-1);font:600 var(--f-12)/1 var(--sans);cursor:pointer;transition:background var(--rapide),transform var(--rapide)}
+.toast-voir:hover{background:var(--voile-3)}
+.toast-voir:active{transform:scale(.97)}
 
 /* ───────── style-nomen.css ───────── */
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -11759,6 +11908,12 @@ function formatDuDessin(dessin) {
        retest : son nom, ses folios, créé, modifié, ouvert), « Ajouter un plan »
        (un ou plusieurs retests, Excel ou CSV, choisis ou déposés) ; un clic
        ouvre le plan sur la table, avec ses folios.
+   L'ACCUEIL (rien encore) : une seule composition au milieu de la table — une
+   pile de feuilles, le titre, ce qu'est une installation en une phrase, deux
+   gestes (le premier clair sur noir) ; l'Exemple dessous, « Pour essayer ».
+   Ce qui est un plan se montre en VIGNETTE (une petite feuille blanche, son
+   dessin à l'encre, deux fils aux couleurs des routes) : l'Exemple,
+   « Reprendre », l'accueil.
    La barre du haut porte un fil discret : Volta (la bibliothèque) /
    l'installation (son ECP, son nom : ses plans) / le plan. Échap remonte d'un
    cran. Renommer (sur place), supprimer (une confirmation dans la page,
@@ -11829,7 +11984,6 @@ const ICONES_BI = {
   depot: '<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>',
   retour: '<path d="m14.5 6-6 6 6 6"/>',
   points: '<circle cx="5.5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="18.5" cy="12" r="1.4" fill="currentColor" stroke="none"/>',
-  reprendre: '<path d="M4 12a8 8 0 1 0 2.3-5.7M4 4v4h4"/>',
   ouvrir: '<path d="M5 12h13M13 7l5 5-5 5"/>',
   renommer: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>',
   deplacer: '<path d="M3.5 7.5A1.5 1.5 0 0 1 5 6h4l2 2h8a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5z"/><path d="M10 13.5h6M13.5 11l2.5 2.5-2.5 2.5"/>',
@@ -11838,6 +11992,16 @@ const ICONES_BI = {
   fermer: '<path d="M6 6l12 12M18 6 6 18"/>'
 };
 const icoBi = (k, cls) => `<svg class="ico${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" aria-hidden="true">${ICONES_BI[k]}</svg>`;
+/* UN PLAN EN VIGNETTE : une petite feuille blanche (le papier, le même dans les deux thèmes : `.ilot-clair`), son cadre, son
+   cartouche, un disjoncteur, deux équipements et deux fils aux couleurs des routes — le folio tel que la table le montre.
+   Les traits gardent leur finesse à toute taille (`non-scaling-stroke`). */
+const DESSIN_FOLIO = '<rect class="bf-papier" x=".5" y=".5" width="63" height="43" rx="3"/><rect class="bf-cadre" x="3.5" y="3.5" width="57" height="37" rx="1"/>'
+  + '<path class="bf-cadre" d="M41 33.5h19.5M47.5 33.5v7"/><rect class="bf-bloc" x="8.5" y="10.5" width="9" height="11" rx="1"/><rect class="bf-bloc" x="42.5" y="8.5" width="12" height="9" rx="1"/><rect class="bf-bloc" x="42.5" y="21.5" width="12" height="9" rx="1"/>'
+  + '<path class="bf-fil bf-a" d="M17.5 13H42.5"/><path class="bf-fil bf-b" d="M17.5 18.5h11v7.5h14"/><circle class="bf-noeud" cx="28.5" cy="18.5" r="1.1"/>';
+const folioMini = cls => `<svg class="bi-folio ilot-clair${cls ? ' ' + cls : ''}" viewBox="0 0 64 44" aria-hidden="true">${DESSIN_FOLIO}</svg>`;
+/* L'accueil : une installation est une pile de feuilles — deux feuilles sombres dessous, la vignette d'un plan dessus. */
+const pileAccueil = () => `<svg class="bi-pile-dessin" viewBox="0 0 168 124" aria-hidden="true"><rect class="bp-3" x="26.5" y="17.5" width="115" height="103" rx="6"/><rect class="bp-2" x="17.5" y="10.5" width="133" height="103" rx="6"/>`
+  + `<svg class="ilot-clair" x="8" y="2" width="152" height="104.5" viewBox="0 0 64 44">${DESSIN_FOLIO}</svg></svg>`;
 
 /* ---- ce que la bibliothèque sait d'un plan -------------------------------------------------------------------------- */
 /* Le résumé d'un contrat (gardé ou neuf) : combien de liaisons, de folios, ses harness, ses dessins, son appareil — ce que
@@ -11979,7 +12143,7 @@ async function supprimer(quoi, id) { const ids = quoi === 'install' ? plansDeIns
   const contrats = await Promise.all(ids.map(k => lireBiblio('contrats', k)));
   ids.forEach(k => { ecrireBiblio('plans', k); ecrireBiblio('contrats', k); }); if (i) ecrireBiblio('installs', id);
   BIB.corbeille = { install: i, plans, contrats };
-  direAvecGeste(guillemets(nom) + (quoi !== 'install' ? ' supprimé.' : i && i.demo ? ' retiré : le menu Plus le rouvre.' : plans.length ? ' et ses ' + pluriel(plans.length, 'plan') + ' supprimés.' : ' supprimée.'), 'Rétablir', retablir); }
+  direAvecGeste(guillemets(nom) + (quoi !== 'install' ? ' supprimé.' : i && i.demo ? ' retiré : le menu Plus le rouvre.' : plans.length > 1 ? ' et ses ' + pluriel(plans.length, 'plan') + ' supprimés.' : plans.length ? ' et son plan supprimés.' : ' supprimée.'), 'Rétablir', retablir); }
 function retablir() { const C = BIB.corbeille; if (!C) return; BIB.corbeille = null;
   if (C.install) { BIB.installs.set(C.install.id, C.install); BIB.supprimes.delete(C.install.id); garderInstall(C.install); if (C.install.demo) { const pref = preferencesBiblio(); delete pref.exempleRetire; garderPreferences(pref); } }
   C.plans.forEach((p, k) => { if (!BIB.installs.has(p.install)) p.install = installARanger().id; BIB.plans.set(p.id, p); BIB.supprimes.delete(p.id); garderPlan(p); if (C.contrats[k]) ecrireBiblio('contrats', p.id, C.contrats[k]); });
@@ -12082,7 +12246,7 @@ function rendreBibliotheque() { const el = $('bi-page'); if (!el || BIB.vue === 
   if (!BIB.pret) { el.innerHTML = ''; return; }
   const corps = (BIB.vue === 'install' ? teteInstallHtml() : teteRacineHtml()) + `<div class="bi-contenu" id="bi-contenu">${contenuHtml()}</div>`;
   const rail = BIB.vue === 'install' ? railHtml() : '';
-  el.classList.toggle('bi-avec-rail', !!rail);
+  el.classList.toggle('bi-avec-rail', !!rail); el.classList.toggle('bi-accueil', accueil());
   el.innerHTML = rail ? rail + `<div class="bi-principal">${corps}</div>` : corps;
   // ce que dit la bibliothèque quand on y glisse un fichier : où il va
   $('bibliotheque').dataset.depotDit = 'Déposez vos retests : ils deviennent des plans de ' + guillemets(nomInstallCible());
@@ -12103,46 +12267,54 @@ const ecpHtml = (i, cls) => `<span class="bi-ecp${i.ecp ? '' : ' bi-ecp-vide'}${
 const aUnEcp = i => !i.demo && i.id !== ID_A_RANGER;
 
 /* LA RACINE : ses comptes, la recherche, « Nouvelle installation » ; le plan resté sur la table ; la base à ranger ; le
-   rangement (ECP, nom, récentes) ; les cartes ; les plans qui répondent à la recherche ; l'Exemple, discret. */
-function teteRacineHtml() { const V = installsVraies(), nP = plansVrais().length;
+   rangement (ECP, nom, récentes) ; les cartes ; les plans qui répondent à la recherche ; l'Exemple, discret. Rien encore :
+   l'accueil (`videHtml`) porte seul le titre, au milieu de la table. */
+const accueil = () => BIB.vue === 'racine' && !installsVraies().length && !BIB.q && !(BIB.edition && BIB.edition.quoi === 'nouvelle');
+const pasGardeHtml = () => BIB.garde ? '' : '<span class="bi-pas-garde">pas gardée dans ce navigateur</span>';
+function teteRacineHtml() { const V = installsVraies(), nP = plansVrais().length; if (accueil()) return '';
   return `<header class="bi-tete"><div class="bi-titres"><h1 class="bi-titre">Bibliothèque</h1>`
-    + `<p class="bi-compte">${V.length ? esc(lies([plurielLie(V.length, 'installation'), plurielLie(nP, 'plan')])) : 'Vos installations et leurs plans'}${BIB.garde ? '' : ' · <span class="bi-pas-garde">pas gardée dans ce navigateur</span>'}</p></div>`
-    // rien encore : la tête n'a que son titre, le vide dit comment commencer
+    + `<p class="bi-compte">${V.length ? esc(lies([plurielLie(V.length, 'installation'), plurielLie(nP, 'plan')])) : 'Vos installations et leurs plans'}${BIB.garde ? '' : POINT + pasGardeHtml()}</p></div>`
     + (V.length ? `<div class="bi-outils">${chercheBiHtml('Chercher un ECP, une installation…')}<button class="bi-btn" id="bi-nouvelle" data-bi="nouvelle">${icoBi('plus')}<span>Nouvelle installation</span></button></div>` : '') + '</header>'; }
-// ranger les installations : par ECP, par nom, les plus récentes d'abord (le choix se garde)
-const triHtml = () => `<div class="bi-tri" role="group" aria-label="Ranger les installations"><span>Rangées par</span>${TRIS.map(([k, mot]) => `<button data-bi="tri" data-tri="${k}" aria-pressed="${triChoisi() === k}">${mot}</button>`).join('')}</div>`;
+// ranger les installations : par ECP, par nom, les plus récentes d'abord (le choix se garde) — un segment posé sur la table
+const triHtml = () => `<div class="bi-tri" role="group" aria-label="Ranger les installations"><span>Rangées par</span><span class="bi-tri-seg">${TRIS.map(([k, mot]) => `<button data-bi="tri" data-tri="${k}" aria-pressed="${triChoisi() === k}">${mot}</button>`).join('')}</span></div>`;
 function racineHtml() { const t = cleTexte(BIB.q), toutes = installsTriees(), I = toutes.filter(i => installCorrespond(i, t)), vraies = I.filter(i => !i.demo), demo = I.filter(i => i.demo);
-  const rien = !installsVraies().length && !t;
   let h = reprendreHtml() + bandeauBaseHtml() + rangerHtml();
-  if (rien && !(BIB.edition && BIB.edition.quoi === 'nouvelle')) h += videHtml();
+  if (accueil()) h += videHtml();
   else { const nouvelle = BIB.edition && BIB.edition.quoi === 'nouvelle' ? carteNouvelleHtml() : '';
     if (installsVraies().length > 1 && !t) h += triHtml();
     h += vraies.length || nouvelle ? `<div class="bi-grille" role="list">${nouvelle}${vraies.map(carteInstallHtml).join('')}</div>` : t ? `<p class="bi-rien">Aucune installation ne répond à ${esc(guillemets(BIB.q))}.</p>` : '';
     if (t) { const P = [...BIB.plans.values()].filter(p => planCorrespond(p, t)).sort((a, b) => triNaturel(nomAffiche(a.nom), nomAffiche(b.nom)));
-      if (P.length) h += `<h2 class="bi-sous">Plans · ${P.length}</h2><div class="bi-feuille">${listePlansHtml(P.slice(0, 60), true)}</div>`; } }
-  if (demo.length) h += `<div class="bi-grille bi-grille-demo" role="list">${demo.map(carteInstallHtml).join('')}</div>`;
+      if (P.length) h += `<h2 class="bi-sous">Plans<span>${P.length}</span></h2><div class="bi-feuille">${listePlansHtml(P.slice(0, 60), true)}</div>`; } }
+  // l'Exemple ferme la marche, discret : « Pour essayer »
+  if (demo.length) h += `<section class="bi-essai"><h2 class="bi-sous">Pour essayer</h2><div class="bi-grille bi-grille-demo" role="list">${demo.map(carteInstallHtml).join('')}</div></section>`;
   return h; }
-// le plan resté sur la table : on le reprend d'un clic (Échap aussi)
+// le plan resté sur la table : sa vignette, « Reprendre », où il est rangé ; un clic le reprend (Échap aussi)
 function reprendreHtml() { if (!planSurLaTable()) return ''; const p = BIB.plans.get(app.planId), i = p && BIB.installs.get(p.install), P = plans().length;
-  return `<button class="bi-reprendre" id="bi-reprendre" data-bi="reprendre">${icoBi('reprendre')}<span class="bi-rep-mot">Reprendre</span><span class="bi-rep-nom">${i ? `<span>${i.ecp ? `<span class="bi-rep-ecp">${esc(i.ecp)}</span> ` : ''}${esc(i.nom)}</span><i>/</i>` : ''}<b>${esc(nomAffiche(app.nom))}</b></span><span class="bi-rep-n">${P > 1 ? esc(plurielLie(P, 'folio')) : ''}</span><kbd>Échap</kbd></button>`; }
-// rien encore : les deux façons de commencer, sans discours
-function videHtml() { return `<section class="bi-vide"><span class="bi-vide-ico">${icoBi('install')}</span>`
+  return `<button class="bi-reprendre" id="bi-reprendre" data-bi="reprendre">${folioMini()}<span class="bi-rep-textes"><span class="bi-rep-mot">Reprendre</span>`
+    + `<span class="bi-rep-nom"><b>${esc(nomAffiche(app.nom))}</b>${i ? `<i>dans</i><span>${i.ecp ? `<span class="bi-rep-ecp">${esc(i.ecp)}</span> ` : ''}${esc(i.nom)}</span>` : ''}</span></span>`
+    + `<span class="bi-rep-n">${P > 1 ? esc(plurielLie(P, 'folio')) : ''}</span><kbd>Échap</kbd>${icoBi('ouvrir', 'bi-rep-fleche')}</button>`; }
+/* RIEN ENCORE : l'accueil — la pile de feuilles, le titre, ce qu'est une installation en une phrase, et les deux façons de
+   commencer : une installation neuve (le geste clair), la base des contrats déjà faits (au trait). */
+function videHtml() { return `<section class="bi-vide">${pileAccueil()}<h1 class="bi-titre">Bibliothèque</h1>`
+  + `<p>Une installation par antenne, par cockpit ; dedans, vos retests — chacun devient un plan.</p>${BIB.garde ? '' : `<p class="bi-vide-note">${pasGardeHtml()}</p>`}`
   + `<div class="bi-vide-gestes"><button class="bi-btn" data-bi="nouvelle">${icoBi('plus')}<span>Nouvelle installation</span></button><button class="bi-btn bi-btn-2" data-bi="base">${icoBi('base')}<span>Déposer la base des contrats déjà faits</span></button></div></section>`; }
 /* Une carte d'installation : une pile de feuilles (deux ou trois selon ses plans), son ECP, son nom, ses comptes, ses
-   premiers plans ; le « ⋯ » (le nom et l'ECP, supprimer) ; modifiée sur place ; la confirmation d'une suppression s'écrit dedans. */
+   premiers plans, un par ligne ; le « ⋯ » (le nom et l'ECP, supprimer) ; modifiée sur place ; la confirmation d'une
+   suppression s'écrit dedans. L'Exemple : un palet, la vignette de son plan. */
 function carteInstallHtml(i) { const P = plansDeInstall(i.id), vu = vueLe(i), pile = P.length >= 3 ? 3 : P.length, t = cleTexte(BIB.q);
   const edite = BIB.edition && BIB.edition.quoi === 'install' && BIB.edition.id === i.id, confirme = BIB.confirme && BIB.confirme.quoi === 'install' && BIB.confirme.id === i.id;
   const meta = i.demo ? lies(['démonstration', nPlans(P.length)]) : lies([nPlans(P.length), vu ? 'ouverte ' + quand(vu) : 'créée ' + leJour(i.cree)]);
-  const montres = (t ? P.filter(p => planCorrespond(p, t)) : P).slice(0, 4);
-  const noms = P.length ? `<span class="bi-carte-plans">${montres.map(p => `<span class="bi-pn">${esc(nomAffiche(p.nom))}</span>`).join('')}${P.length > montres.length ? `<span class="bi-pn-plus">+${P.length - montres.length}</span>` : ''}</span>` : `<span class="bi-carte-plans bi-carte-plans-vide">aucun plan : un clic, puis déposez vos retests</span>`;
-  const haut = aUnEcp(i) ? ecpHtml(i, 'bi-carte-ecp') : `<span class="bi-carte-ico">${icoBi(i.demo ? 'plan' : 'install')}</span>`;
+  const montres = (t ? P.filter(p => planCorrespond(p, t)) : P).slice(0, 3), reste = P.length - montres.length;
+  const noms = P.length ? `<span class="bi-carte-plans">${montres.map(p => `<span class="bi-pn">${icoBi('plan')}<span>${esc(nomAffiche(p.nom))}</span></span>`).join('')}${reste > 0 ? `<span class="bi-pn-plus">+${INSECABLE}${esc(plurielLie(reste, 'autre'))}</span>` : ''}</span>`
+    : `<span class="bi-carte-plans bi-carte-plans-vide">Aucun plan : un clic, puis déposez vos retests.</span>`;
+  const haut = i.demo ? folioMini() : aUnEcp(i) ? ecpHtml(i, 'bi-carte-ecp') : `<span class="bi-carte-ico">${icoBi('install')}</span>`;
+  const plus = `<button class="bi-plus" data-bi="pop" data-quoi="install" data-id="${escA(i.id)}" aria-label="${escA('Gestes pour ' + i.nom)}" aria-haspopup="menu" aria-expanded="${!!(BIB.pop && BIB.pop.id === i.id)}">${icoBi('points')}</button>`;
   if (confirme) return `<article class="bi-carte bi-confirmant pile-${pile}" role="listitem" data-install="${escA(i.id)}">${confirmeInstallHtml(i, P)}</article>`;
   return `<article class="bi-carte${i.demo ? ' bi-demo' : ''} pile-${pile}${BIB.pop && BIB.pop.id === i.id ? ' bi-pop-ouvert' : ''}" role="listitem" data-install="${escA(i.id)}">`
     + (edite ? `<div class="bi-carte-corps">${nommerInstallHtml('install', i)}<span class="bi-carte-meta">${esc(meta)}</span></div>`
-      : `<button class="bi-carte-corps" data-bi="install" data-id="${escA(i.id)}" aria-label="${escA(lies([i.ecp ? 'ECP ' + i.ecp : '', i.nom, meta]))}">${haut}<span class="bi-carte-nom">${esc(i.nom)}</span><span class="bi-carte-meta">${esc(meta)}</span>${i.demo ? '' : noms}</button>`)
-    + (edite ? '' : `<button class="bi-plus" data-bi="pop" data-quoi="install" data-id="${escA(i.id)}" aria-label="${escA('Gestes pour ' + i.nom)}" aria-haspopup="menu" aria-expanded="${!!(BIB.pop && BIB.pop.id === i.id)}">${icoBi('points')}</button>`)
-    + popHtml('install', i) + '</article>'; }
-function carteNouvelleHtml() { return `<article class="bi-carte bi-carte-neuve" role="listitem"><div class="bi-carte-corps">${nommerInstallHtml('nouvelle', null)}<span class="bi-carte-meta">Entrée pour la créer · Échap pour renoncer</span></div></article>`; }
+      : `<button class="bi-carte-corps" data-bi="install" data-id="${escA(i.id)}" aria-label="${escA(lies([i.ecp ? 'ECP ' + i.ecp : '', i.nom, meta]))}">${haut}<span class="bi-carte-textes"><span class="bi-carte-nom">${esc(i.nom)}</span><span class="bi-carte-meta">${esc(meta)}</span></span>${i.demo ? icoBi('ouvrir', 'bi-demo-fleche') : noms}</button>`)
+    + (edite ? '' : plus) + popHtml('install', i) + '</article>'; }
+function carteNouvelleHtml() { return `<article class="bi-carte bi-carte-neuve" role="listitem"><div class="bi-carte-corps">${nommerInstallHtml('nouvelle', null)}<span class="bi-carte-meta bi-touches"><kbd>Entrée</kbd> la crée<kbd>Échap</kbd> renonce</span></div></article>`; }
 /* Ce qui s'écrit sur place. Un plan : son nom. Une installation (neuve ou modifiée) : son ECP — cinq chiffres, le clavier
    passe seul au nom quand ils y sont — et son nom. Entrée garde, Échap renonce ; quitter les deux champs garde aussi. */
 const nommerHtml = (quoi, id, val, ph) => `<span class="bi-nommer"><input id="bi-nom" data-nommer="${quoi}" data-champ="nom" data-id="${escA(id)}" value="${escA(val)}" placeholder="${escA(ph)}" aria-label="Nom du plan" autocomplete="off" spellcheck="false"></span>`;
@@ -12152,17 +12324,19 @@ function nommerInstallHtml(quoi, i) { const neuve = quoi === 'nouvelle', id = i 
     + `<input id="bi-nom${sfx}" data-nommer="${quoi}" data-champ="nom" data-id="${escA(id)}" value="${escA(i ? i.nom : '')}" placeholder="${neuve ? 'Antenne VHF, Cockpit…' : 'Nom de l’installation'}" aria-label="Nom de l’installation" autocomplete="off" spellcheck="false"${champ === 'nom' ? ' data-premier' : ''}></span>`; }
 // supprimer une installation : ses plans partent avec elle ; l'Exemple, lui, se retire (le menu Plus le rouvre)
 const confirmeInstallHtml = (i, P) => confirmeHtml('install', i.id, i.demo ? 'Retirer l’exemple ?' : 'Supprimer ' + guillemets(i.nom) + ' ?',
-  i.demo ? 'Le menu Plus le rouvre quand vous voulez.' : P.length ? 'Ses ' + pluriel(P.length, 'plan') + ' partent avec elle, et ce qu’on y a fait.' : 'Elle est vide.');
-// la confirmation d'une suppression, dans la carte ou la ligne : la phrase, « Supprimer », « Annuler »
-const confirmeHtml = (quoi, id, titre, sous) => `<div class="bi-confirme" role="alertdialog" aria-label="${escA(titre)}"><p><b>${esc(titre)}</b> ${esc(sous)}</p><div class="bi-confirme-gestes"><button class="bi-danger" data-bi="oui" data-quoi="${quoi}" data-id="${escA(id)}">${icoBi('supprimer')}<span>${quoi === 'install' && estDemo(id) ? 'Retirer' : 'Supprimer'}</span></button><button class="bi-non" data-bi="non">Annuler</button></div></div>`;
-/* Le « ⋯ » : une petite liste sous le bouton. Une installation : son nom et son ECP, supprimer. Un plan : ouvrir, renommer,
-   déplacer vers une autre installation (la liste, ou une neuve), supprimer. L'exemple : le retirer. */
+  i.demo ? 'Le menu Plus le rouvre quand vous voulez.' : P.length > 1 ? 'Ses ' + pluriel(P.length, 'plan') + ' partent avec elle, et ce qu’on y a fait.' : P.length ? 'Son plan part avec elle, et ce qu’on y a fait.' : 'Elle est vide.');
+// la confirmation d'une suppression, dans la carte ou la ligne : la corbeille, la phrase, « Supprimer », « Annuler »
+const confirmeHtml = (quoi, id, titre, sous) => `<div class="bi-confirme" role="alertdialog" aria-label="${escA(titre)}"><span class="bi-confirme-ico">${icoBi('supprimer')}</span><p><b>${esc(titre)}</b> ${esc(sous)}</p><div class="bi-confirme-gestes"><button class="bi-danger" data-bi="oui" data-quoi="${quoi}" data-id="${escA(id)}">${quoi === 'install' && estDemo(id) ? 'Retirer' : 'Supprimer'}</button><button class="bi-non" data-bi="non">Annuler</button></div></div>`;
+/* Le « ⋯ » : une petite liste sous le bouton, sombre comme le menu ⋮ (l'îlot sombre). Une installation : son nom et son ECP,
+   supprimer. Un plan : ouvrir, renommer, déplacer vers une autre installation (la liste, ou une neuve), supprimer.
+   L'exemple : le retirer. */
 function popHtml(quoi, x) { if (!(BIB.pop && BIB.pop.quoi === quoi && BIB.pop.id === x.id)) return '';
   const ligne = (bi, ico, mot, extra) => `<button role="menuitem" data-bi="${bi}" data-quoi="${quoi}" data-id="${escA(x.id)}"${extra || ''}>${icoBi(ico)}<span>${mot}</span></button>`;
-  if (quoi === 'install') return `<div class="bi-pop" role="menu">${x.demo ? ligne('supprimer', 'supprimer', 'Retirer l’exemple', ' class="danger"') : ligne('renommer', 'renommer', aUnEcp(x) ? 'Nom et ECP' : 'Renommer') + ligne('supprimer', 'supprimer', 'Supprimer…', ' class="danger"')}</div>`;
+  const pop = h => `<div class="bi-pop ilot-sombre" role="menu">${h}</div>`;
+  if (quoi === 'install') return pop(x.demo ? ligne('supprimer', 'supprimer', 'Retirer l’exemple', ' class="danger"') : ligne('renommer', 'renommer', aUnEcp(x) ? 'Nom et ECP' : 'Renommer') + '<hr>' + ligne('supprimer', 'supprimer', 'Supprimer…', ' class="danger"'));
   if (BIB.pop.sous === 'deplacer') { const autres = installsTriees().filter(i => !i.demo && i.id !== x.install);
-    return `<div class="bi-pop" role="menu"><button role="menuitem" class="bi-pop-retour" data-bi="pop-retour" data-quoi="plan" data-id="${escA(x.id)}">${icoBi('retour')}<span>Déplacer vers…</span></button>${autres.map(i => `<button role="menuitem" data-bi="deplacer-vers" data-id="${escA(x.id)}" data-vers="${escA(i.id)}">${icoBi('install')}<span>${i.ecp ? `<span class="bi-pop-ecp">${esc(i.ecp)}</span>` : ''}${esc(i.nom)}</span></button>`).join('')}<button role="menuitem" data-bi="deplacer-vers" data-id="${escA(x.id)}" data-vers="">${icoBi('plus')}<span>Une nouvelle installation</span></button></div>`; }
-  return `<div class="bi-pop" role="menu">${ligne('plan', 'ouvrir', 'Ouvrir')}${ligne('renommer', 'renommer', 'Renommer')}${ligne('deplacer', 'deplacer', 'Déplacer vers…')}${ligne('supprimer', 'supprimer', 'Supprimer…', ' class="danger"')}</div>`; }
+    return pop(`<button role="menuitem" class="bi-pop-retour" data-bi="pop-retour" data-quoi="plan" data-id="${escA(x.id)}">${icoBi('retour')}<span>Déplacer vers…</span></button>${autres.map(i => `<button role="menuitem" data-bi="deplacer-vers" data-id="${escA(x.id)}" data-vers="${escA(i.id)}">${icoBi('install')}<span>${i.ecp ? `<span class="bi-pop-ecp">${esc(i.ecp)}</span>` : ''}${esc(i.nom)}</span></button>`).join('')}<hr><button role="menuitem" data-bi="deplacer-vers" data-id="${escA(x.id)}" data-vers="">${icoBi('plus')}<span>Une nouvelle installation</span></button>`); }
+  return pop(`${ligne('plan', 'ouvrir', 'Ouvrir')}${ligne('renommer', 'renommer', 'Renommer')}${ligne('deplacer', 'deplacer', 'Déplacer vers…')}<hr>${ligne('supprimer', 'supprimer', 'Supprimer…', ' class="danger"')}`); }
 
 /* LE RAIL : toutes les installations, par ECP (ou par nom, si c'est le rangement choisi) — un clic passe de l'une à l'autre (Alt+↑, Alt+↓ aussi) ;
    celle qu'on regarde est marquée. L'Exemple ferme la liste, discret. */
@@ -12185,27 +12359,33 @@ function teteInstallHtml() { const i = BIB.installs.get(BIB.install), P = plansD
     + `<span class="bi-pop-ancre${BIB.pop && BIB.pop.id === i.id ? ' bi-pop-ouvert' : ''}"><button class="bi-plus bi-plus-tete" data-bi="pop" data-quoi="install" data-id="${escA(i.id)}" aria-label="${escA('Gestes pour ' + i.nom)}" aria-haspopup="menu">${icoBi('points')}</button>${popHtml('install', i)}</span></div></header>`
     + (BIB.confirme && BIB.confirme.quoi === 'install' && BIB.confirme.id === i.id ? `<div class="bi-feuille bi-confirme-tete">${confirmeInstallHtml(i, P)}</div>` : ''); }
 function installHtml() { const i = BIB.installs.get(BIB.install); if (!i) return ''; const t = cleTexte(BIB.q), P = plansDeInstall(i.id), montres = P.filter(p => planCorrespond(p, t));
-  const zone = i.demo ? '' : `<button type="button" class="bi-zone${P.length ? '' : ' bi-zone-grande'}" data-bi="choisir">${icoBi('depot')}<span><b>${P.length ? 'Glissez d’autres retests ici' : 'Glissez vos retests ici'}</b> ou cliquez — plusieurs à la fois</span>${P.length ? '' : '<small>Excel ou CSV, une ligne par fil : <span class="id">Device1</span> · <span class="id">Pin1</span> · <span class="id">Device2</span> · <span class="id">Pin2</span> au moins. Chaque fichier devient un plan.</small>'}</button>`;
+  // la zone de dépôt : une ligne au bas de la feuille ; l'installation vide, elle seule — une icône, une phrase, ce qu'elle attend
+  const zone = i.demo ? '' : P.length ? `<button type="button" class="bi-zone" data-bi="choisir">${icoBi('depot')}<span><b>Glissez d’autres retests ici</b> ou cliquez — plusieurs à la fois</span></button>`
+    : `<button type="button" class="bi-zone bi-zone-grande" data-bi="choisir"><span class="bi-zone-ico">${icoBi('depot')}</span><b>Glissez vos retests ici</b><span>ou cliquez pour les choisir — plusieurs à la fois</span>`
+      + '<small>Excel ou CSV, une ligne par fil : <span class="id">Device1</span> · <span class="id">Pin1</span> · <span class="id">Device2</span> · <span class="id">Pin2</span> au moins. Chaque fichier devient un plan.</small></button>';
   const ajouts = BIB.ajouts.map(a => `<li class="bi-plan bi-ajout ${a.etat}"><span class="bi-ajout-ico" aria-hidden="true"></span><span class="bi-ajout-t">${a.etat === 'lecture' ? 'Lecture de ' + esc(guillemets(a.nom)) + '…' : esc(a.texte)}</span>${a.etat === 'ko' ? `${a.lu ? `<button class="bi-lien" data-bi="deviner" data-a="${escA(a.id)}">Deviner ses colonnes</button>` : ''}<button class="bi-oublier" data-bi="oublier-ajout" data-a="${escA(a.id)}" aria-label="Effacer ce message">${icoBi('fermer')}</button>` : ''}</li>`).join('');
   if (!P.length && !ajouts) return `<div class="bi-feuille bi-feuille-vide">${zone}</div>`;
   return `<div class="bi-feuille" data-depot="plans">${ajouts ? `<ul class="bi-plans bi-ajouts">${ajouts}</ul>` : ''}${montres.length ? listePlansHtml(montres, false) : t ? `<p class="bi-rien bi-rien-feuille">Aucun plan ne répond à ${esc(guillemets(BIB.q))}.</p>` : ''}${zone}</div>`; }
-/* La liste des plans : l'en-tête des colonnes, puis une ligne par plan — sa feuille, son nom (« sur la table », « nouveau »),
-   ses folios, créé, modifié, sa dernière ouverture, le « ⋯ ». `avecInstall` : la recherche de la racine dit l'installation
-   de chacun (à la place de « créé »). */
+/* La liste des plans : l'en-tête des colonnes, puis une ligne par plan — sa feuille, son nom (« sur la table », « nouveau »)
+   et dessous ses harness et ses dessins, ses folios, ses liaisons, créé, modifié, sa dernière ouverture, le « ⋯ ».
+   `avecInstall` : la recherche de la racine dit l'installation de chacun (à la place de « créé »). */
 function listePlansHtml(P, avecInstall) {
-  return `<div class="bi-ligne bi-entetes${avecInstall ? ' avec-install' : ''}" aria-hidden="true"><span></span><span>Plan</span>${avecInstall ? '<span>Installation</span>' : ''}<span class="d">Folios</span>${avecInstall ? '' : '<span>Créé</span>'}<span>Modifié</span><span>Ouvert</span></div>`
+  return `<div class="bi-ligne bi-entetes${avecInstall ? ' avec-install' : ''}" aria-hidden="true"><span></span><span>Plan</span>${avecInstall ? '<span>Installation</span>' : ''}<span class="d">Folios</span><span class="d">Liaisons</span>${avecInstall ? '' : '<span>Créé</span>'}<span>Modifié</span><span>Ouvert</span></div>`
     + `<ul class="bi-plans" role="list">${P.map(p => lignePlanHtml(p, avecInstall)).join('')}</ul>`; }
+// sous le nom d'un plan : ses harness (quand ils ne sont pas son nom) et ses dessins — ce que la recherche lit aussi
+const sousPlan = p => { const h = (p.harness || []).filter(x => cleTexte(x) !== cleTexte(nomAffiche(p.nom)));
+  return lies([h.slice(0, 2).join(', ') + (h.length > 2 ? '…' : ''), p.dessins > 1 ? plurielLie(p.dessins, 'dessin') : '']); };
 function lignePlanHtml(p, avecInstall) { const i = BIB.installs.get(p.install), table = p.id === app.planId && planSurLaTable(), neuf = BIB.nouveaux.has(p.id);
   const edite = BIB.edition && BIB.edition.quoi === 'plan' && BIB.edition.id === p.id, confirme = BIB.confirme && BIB.confirme.quoi === 'plan' && BIB.confirme.id === p.id;
   if (confirme) return `<li class="bi-plan bi-confirmant" data-plan="${escA(p.id)}">${confirmeHtml('plan', p.id, 'Supprimer ' + guillemets(nomAffiche(p.nom)) + ' ?', 'Ses liaisons et ce qu’on y a fait partent avec lui.')}</li>`;
-  const etiquette = table ? '<em class="bi-table">sur la table</em>' : neuf ? '<em class="bi-neuf">nouveau</em>' : '';
+  const etiquette = table ? '<em class="bi-table">sur la table</em>' : neuf ? '<em class="bi-neuf">nouveau</em>' : '', sous = sousPlan(p);
   const ou = avecInstall ? `<span class="bi-plan-sous">${i ? `${i.ecp ? `<span class="bi-plan-ecp">${esc(i.ecp)}</span>` : ''}${esc(i.nom)}` : '—'}</span>` : '';
   // créé : une date ; modifié, ouvert : quand (« aujourd'hui à 9:12 ») — jamais ouvert, il le dit
   const dates = `${avecInstall ? '' : `<span class="bi-plan-date">${esc(laDate(p.cree))}</span>`}<span class="bi-plan-date">${esc(quand(p.modifie || p.cree))}</span>`;
-  const cellules = nom => `<span class="bi-plan-ico">${icoBi('plan')}</span>${nom}${ou}<span class="d">${p.folios || 0}</span>${dates}<span class="bi-plan-vu">${p.vu ? esc(quand(p.vu)) : '<span class="bi-jamais">jamais</span>'}</span>`;
+  const cellules = nom => `<span class="bi-plan-ico">${icoBi('plan')}</span>${nom}${ou}<span class="d">${p.folios || 0}</span><span class="d bi-plan-n">${p.n || 0}</span>${dates}<span class="bi-plan-vu">${p.vu ? esc(quand(p.vu)) : '<span class="bi-jamais">jamais</span>'}</span>`;
   return `<li class="bi-plan${table ? ' sur-table' : ''}${neuf ? ' nouveau' : ''}${BIB.pop && BIB.pop.id === p.id ? ' bi-pop-ouvert' : ''}" data-plan="${escA(p.id)}">`
     + (edite ? `<span class="bi-ligne${avecInstall ? ' avec-install' : ''}">${cellules(nommerHtml('plan', p.id, nomAffiche(p.nom), 'Nom du plan'))}</span>`
-      : `<button class="bi-ligne${avecInstall ? ' avec-install' : ''} bi-plan-ouvrir" data-bi="plan" data-id="${escA(p.id)}" aria-label="${escA('Ouvrir ' + nomAffiche(p.nom) + ' : ' + plurielLie(p.folios || 0, 'folio'))}">${cellules(`<span class="bi-plan-nom"><b>${esc(nomAffiche(p.nom))}</b>${etiquette}</span>`)}</button>`)
+      : `<button class="bi-ligne${avecInstall ? ' avec-install' : ''} bi-plan-ouvrir" data-bi="plan" data-id="${escA(p.id)}" aria-label="${escA('Ouvrir ' + nomAffiche(p.nom) + ' : ' + plurielLie(p.folios || 0, 'folio'))}">${cellules(`<span class="bi-plan-nom"><span class="bi-plan-l1"><b>${esc(nomAffiche(p.nom))}</b>${etiquette}</span>${sous ? `<span class="bi-plan-l2">${esc(sous)}</span>` : ''}</span>`)}</button>`)
     + (edite || p.id === ID_EXEMPLE ? '' : `<button class="bi-plus" data-bi="pop" data-quoi="plan" data-id="${escA(p.id)}" aria-label="${escA('Gestes pour ' + nomAffiche(p.nom))}" aria-haspopup="menu" aria-expanded="${!!(BIB.pop && BIB.pop.id === p.id)}">${icoBi('points')}</button>`)
     + popHtml('plan', p) + '</li>'; }
 
@@ -14504,7 +14684,8 @@ function garderLaFiche() { const I = pileInsp(), e = I.pile[I.pos], insp = $('in
    et leurs plans, 08-bibliotheque : l'entrée principale), le retest, les
    contrats déjà faits, la bible, les normes, les hypothèses. Peu de mots (le
    lecteur : « il y a tellement de choses, je n'ai pas envie de lire ») ;
-   chaque carte dit :
+   chaque entrée — un groupe aéré, séparé du suivant par un filet, pas une
+   carte dans la feuille (la classe garde son nom, `.vf-carte`) — dit :
      · son ÉTAT, en un voyant : reçu et lu (vert), rien (ambre), erreur (rouge) ;
      · ce qui a été REÇU : le nom, la date, les comptes ;
      · l'ACTION : Ouvrir…, Déposer…, Importer…, Régler… ;
@@ -14752,18 +14933,21 @@ function lireCollage(texte) { const brutes = String(texte || '').split(/\r?\n/),
    il garde son nom ; l'exemple, lui, ne se remplace pas : un plan neuf « Collage ») ; depuis la bibliothèque, ou sans
    plan, elles font un plan neuf de l'installation ouverte (« Charger »). */
 function ficheColler() { const ouvert = verite().length > 0 && !bibliothequeOuverte();
+  /* Trois temps, l'un sous l'autre, groupés par l'espace : ce qu'on colle (l'ordre des colonnes, un exemple qu'on peut
+     coller d'un clic), le champ, ce qui est compris. */
   const corps = tete('Sans fichier', 'Coller des lignes')
-    + '<p class="note">Quelques lignes copiées d’Excel, ou tapées : <b>une liaison par ligne</b>, les colonnes séparées par une tabulation, <b>;</b> ou <b>,</b>. Avec les en-têtes du retest, elles sont reconnues à leurs noms ; sans en-têtes, dans cet ordre (seuls les deux équipements sont obligatoires) :</p>'
-    + `<ol class="co-ordre">${MODELE_COLLAGE.entetes.map((t, i) => `<li${MODELE_COLLAGE.requises.includes(t) ? ' class="req"' : ''}><i>${i + 1}</i>${esc(t)}</li>`).join('')}</ol>`
-    + `<div class="co-exemple"><div class="sur">Par exemple</div>${apercuHtml(MODELE_COLLAGE)}<button class="btn lien" id="co-essai">Coller cet exemple</button></div>`
-    + '<label class="champ" id="co-champ"><span>Vos lignes</span><textarea id="co-txt" placeholder="102CB1;2;MS3320-10;103RL1;A1;;W-012;DR20;PUISSANCE;1" spellcheck="false" aria-describedby="co-apercu"></textarea></label>'
+    + '<p class="co-lead"><b>Une liaison par ligne</b>, copiée d’Excel ou tapée ; les colonnes séparées par une tabulation, <b>;</b> ou <b>,</b>. Sous les en-têtes du retest, elles sont reconnues à leur nom.</p>'
+    + `<section class="co-bloc"><h3 class="co-etiquette">Sans en-têtes, dans cet ordre<small>seuls les deux équipements sont obligatoires</small></h3>`
+    + `<ol class="co-ordre">${MODELE_COLLAGE.entetes.map((t, i) => `<li${MODELE_COLLAGE.requises.includes(t) ? ' class="req"' : ''}><i>${i + 1}</i>${esc(t)}</li>`).join('')}</ol></section>`
+    + `<section class="co-bloc co-exemple"><h3 class="co-etiquette">Par exemple<button class="btn lien" id="co-essai">Coller cet exemple</button></h3>${apercuHtml(MODELE_COLLAGE)}</section>`
+    + '<label class="champ co-champ" id="co-champ"><span class="co-etiquette">Vos lignes</span><textarea id="co-txt" placeholder="102CB1;2;MS3320-10;103RL1;A1;;W-012;DR20;PUISSANCE;1" spellcheck="false" aria-describedby="co-apercu"></textarea></label>'
     + '<section class="co-apercu" id="co-apercu" aria-live="polite"></section>';
   const pied = ouvert ? '<button class="btn cuivre" id="co-ajouter" disabled>Ajouter au plan</button><button class="btn papier" id="co-remplacer" disabled>Remplacer le plan</button><span class="espace"></span><button class="btn lien" id="co-fichier">…ou un fichier</button>'
     : '<button class="btn cuivre" id="co-remplacer" disabled>Charger</button><span class="espace"></span><button class="btn lien" id="co-fichier">…ou un fichier</button>';
   ouvrirFiche({ mode: 'coller', large: true }, corps, pied);
   const txt = $('co-txt'); let lu = { liaisons: [], rejets: [] }, t = 0;
   const voir = () => { lu = lireCollage(txt.value); const n = lu.liaisons.length, vide = !txt.value.trim(), box = $('co-apercu');
-    box.innerHTML = vide ? '' : n ? `<div class="sur">Ce que je comprends</div><p class="co-dit"><b>${pluriel(n, 'liaison')}</b>, ${lu.comment}${lu.rejets.length ? ` · <span class="co-rejet">${pluriel(lu.rejets.length, 'ligne')} sans ses deux bouts, laissée${lu.rejets.length > 1 ? 's' : ''} de côté</span>` : ''}.</p>${apercuLiaisonsHtml(lu.liaisons, 4)}`
+    box.innerHTML = vide ? '' : n ? `<h3 class="co-etiquette">Ce que je comprends</h3><p class="co-dit"><i class="co-point" aria-hidden="true"></i><span><b>${pluriel(n, 'liaison')}</b>, ${lu.comment}${lu.rejets.length ? ` · <span class="co-rejet">${pluriel(lu.rejets.length, 'ligne')} sans ses deux bouts, laissée${lu.rejets.length > 1 ? 's' : ''} de côté</span>` : ''}.</span></p>${apercuLiaisonsHtml(lu.liaisons, 4)}`
       : `<div class="vf-boite vf-erreur"><p>Aucune liaison reconnue : chaque ligne doit nommer ses deux équipements, dans l’ordre ci-dessus (ou sous les en-têtes du retest). Vérifiez le séparateur.</p></div>`;
     $('co-champ').classList.toggle('erreur', !vide && !n); txt.setAttribute('aria-invalid', String(!vide && !n));
     ['co-ajouter', 'co-remplacer'].forEach(id => { const b = $(id); if (b) b.disabled = !n; });
@@ -14863,7 +15047,7 @@ function carteHtml(o, etat, focus, primaire) { const ouvert = FICHIERS.volets.ha
       + '</div></details>' : '') + '</section>'; }
 function erreurHtml(k) { const e = FICHIERS.erreurs[k]; if (!e) return '';
   return `<div class="vf-boite vf-erreur"><p>${e.texte}</p>${e.liste && e.liste.length ? `<ul>${e.liste.map(x => `<li>${x}</li>`).join('')}</ul>` : ''}`
-    + `<div class="vf-gestes">${(e.gestes || []).map(([vf, t], i) => `<button class="btn ${i ? 'papier' : 'cuivre'}" data-vf="${vf}">${esc(t)}</button>`).join('')}<span class="vf-quand">${quand(e.t)}</span><button class="btn lien" data-vf="oublier-erreur" data-entree="${k}">Effacer ce message</button></div></div>`; }
+    + `<div class="vf-gestes">${(e.gestes || []).map(([vf, t]) => `<button class="btn papier" data-vf="${vf}">${esc(t)}</button>`).join('')}<span class="vf-quand">${quand(e.t)}</span><button class="btn lien" data-vf="oublier-erreur" data-entree="${k}">Effacer ce message</button></div></div>`; }
 function avisHtml(k) { const a = FICHIERS.avis[k]; return a ? `<div class="vf-boite vf-avis"><p>${a.texte}</p><ul>${a.liste.map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''; }
 /* Le succès d'un dépôt de base : les comptes, ce qui se passe maintenant (et ce qui est rangé dans la bibliothèque), et la
    main qu'on tend. */
@@ -14875,10 +15059,14 @@ function succesBaseHtml() { if (FICHIERS.succes !== 'base' || !app.references) r
 function baseSansHarnessHtml() { const B = FICHIERS.base; if (!B) return '';
   return `<div class="vf-gestes vf-base-contrat"><button class="btn papier" data-vf="base-contrat">Ouvrir ${esc(B.nom)} comme un plan (${pluriel(B.liaisons.length, 'liaison')})</button></div>`; }
 // oublier la base : la confirmation s'écrit dans la carte (pas une boîte du navigateur)
-const oubliBaseHtml = () => FICHIERS.oubli ? '<div class="vf-boite vf-erreur"><p><b>Oublier la base des contrats déjà faits ?</b> Les fiches ne diront plus ce qui a déjà été fait ; il faudra la redéposer. Les plans rangés dans la bibliothèque restent.</p><div class="vf-gestes"><button class="btn cuivre" data-vf="oublier-base-oui">Oublier la base</button><button class="btn lien" data-vf="oublier-base-non">Garder</button></div></div>' : '';
-/* Les six cartes : la bibliothèque d'abord (l'entrée principale), le retest, la base, la bible, les normes, les hypothèses. */
+const oubliBaseHtml = () => FICHIERS.oubli ? '<div class="vf-boite vf-erreur"><p><b>Oublier la base des contrats déjà faits ?</b> Les fiches ne diront plus ce qui a déjà été fait ; il faudra la redéposer. Les plans rangés dans la bibliothèque restent.</p><div class="vf-gestes"><button class="btn vf-danger" data-vf="oublier-base-oui">Oublier la base</button><button class="btn lien" data-vf="oublier-base-non">Garder</button></div></div>' : '';
+/* Les six entrées : la bibliothèque d'abord (l'entrée principale), le retest, la base ; puis, sous « Facultatif », ce que
+   l'outil embarque déjà — la bible, les normes, les hypothèses. */
 function cartesFichiers(focus) { const E = etatsDesFichiers(), V = verite();
-  const primaire = focus && E[focus] && E[focus].niveau !== 'ok' ? focus : E.bibliotheque.niveau !== 'ok' && !V.length ? 'bibliotheque' : E.retest.niveau !== 'ok' ? 'retest' : E.base.niveau !== 'ok' ? 'base' : '';
+  // l'action pleine : celle de l'entrée qu'on vient chercher, sinon de la première qui manque — pas la bibliothèque quand elle est
+  // déjà sous les yeux (son geste plein, « Nouvelle installation », y est)
+  const surBiblio = typeof bibliothequeOuverte === 'function' && bibliothequeOuverte();
+  const primaire = focus && E[focus] && E[focus].niveau !== 'ok' ? focus : E.bibliotheque.niveau !== 'ok' && !V.length ? (surBiblio ? '' : 'bibliotheque') : E.retest.niveau !== 'ok' ? 'retest' : E.base.niveau !== 'ok' ? 'base' : '';
   const nm = TABLES_NORME.length, nb = (app.bible || []).length, id = h => `<b class="id">${h}</b>`;
   // les aperçus : sept colonnes, celles qui comptent — le reste du retest est lu s'il est là
   const colonnes = (M, noms) => noms.map(n => M.entetes.indexOf(n)).filter(i => i >= 0);
@@ -14903,16 +15091,16 @@ function cartesFichiers(focus) { const E = etatsDesFichiers(), V = verite();
         gestes: [['modele-base', 'Modèle (CSV)']] } },
     { cle: 'bible', titre: 'Bible des barrettes', depot: 'bible', action: ['bible', 'Importer la vôtre…'], liens: [['voir-bible', 'Voir la bible'], ...(app.bibleNom ? [['bible-outil', 'Revenir à la bible de l’outil']] : [])],
       boites: erreurHtml('bible'),
-      attend: { sous: 'facultatif : ' + pluriel(nb, 'référence') + ' embarquées', format: `${id('Référence')} et ${id('Bornes')} au minimum ; les autres colonnes sont reconnues à leur nom.`,
+      attend: { sous: pluriel(nb, 'référence') + ' embarquées, un modèle', format: `${id('Référence')} et ${id('Bornes')} au minimum ; les autres colonnes sont reconnues à leur nom.`,
         apercu: apercuHtml(MODELE_BIBLE, { label: 'Trois lignes d’exemple de la bible' }), gestes: [['modele-bible', 'Modèle (CSV)']] } },
     { cle: 'normes', titre: 'Normes', depot: 'normes', action: ['normes', 'Importer une table…'], liens: [['voir-normes', 'Voir les normes'], ['see', 'Lire la base SEE…'], ...(typeof BASE_SEE !== 'undefined' && BASE_SEE.base ? [['see-gardee', 'La base SEE gardée']] : []), ...(app.normeNom ? [['normes-outil', 'Revenir à la norme embarquée']] : [])],
       boites: erreurHtml('normes'),
-      attend: { sous: 'facultatif : ' + pluriel(nm, 'table') + ' embarquées', format: 'Une table par bloc : une ligne de titre, ses en-têtes (un gabarit par table), une ligne par entrée.',
+      attend: { sous: 'une table par bloc, ses gabarits', format: 'Une table par bloc : une ligne de titre, ses en-têtes (un gabarit par table), une ligne par entrée.',
         apercu: apercuHtml(MODELE_NORME, { label: 'Un exemple : la table Réseau' }), gestes: [['gabarit-reseau', 'Gabarit Réseau (CSV)'], ['gabarits', 'Tous les gabarits']] } },
     { cle: 'hypotheses', titre: 'Hypothèses', action: ['hypotheses', 'Régler…'] }];
-  return C.map(o => carteHtml(o, E[o.cle], focus, primaire === o.cle)).join(''); }
+  return C.map(o => (o.cle === 'bible' ? '<h3 class="vf-groupe">Facultatif<span>l’outil a les siens</span></h3>' : '') + carteHtml(o, E[o.cle], focus, primaire === o.cle)).join(''); }
 function fichiersHtml(focus) { return tete('Ce que l’outil a reçu', 'Vos fichiers')
-  + '<p class="vf-lead">Vos retests suffisent pour commencer. Glissez un fichier sur sa carte.</p>'
+  + '<p class="vf-lead">Vos retests suffisent pour commencer : glissez chaque fichier sur son entrée.</p>'
   + `<div class="vf-cartes">${cartesFichiers(focus)}</div>`; }
 /* Ouvrir « Vos fichiers », sur une carte (`focus`) s'il y a lieu : elle vient sous les yeux, son volet ouvert. */
 function ficheFichiers(focus) { const deja = app.fiche && app.fiche.mode === 'fichiers', y = deja ? $('fiche-corps').scrollTop : 0;
