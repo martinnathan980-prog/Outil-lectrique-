@@ -1,127 +1,156 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    PRENDRE LA MAIN — « Vos fichiers », le collage, le mot qui passe et son geste (« Voir », « Rétablir ») (08-fichiers,
-   08-bibliotheque). Les jetons de style.css, rien d'autre : un état est un point de sa couleur (vert reçu, ambre rien ou en
-   attente, rouge une erreur) ; une erreur écrite dans sa carte est une boîte au trait rouge qui reste ; un aperçu est un
-   petit tableau en chasse fixe, les colonnes obligatoires à l'encre et soulignées.
+   08-bibliotheque). Le contenu d'un document (sa coquille, `.fiche-tete`, `.fiche-pied`, est celle de tous les documents).
+   Pas de carte dans la feuille : une ENTRÉE est un groupe aéré, séparé de la suivante par un filet — l'icône dans un carré
+   doux, le titre, son état en un point et un mot, son action ; dessous, alignés sur le titre, ce qu'elle attend en une
+   ligne, sa zone de dépôt, ce qui lui est arrivé, « Ce que j'attends ». Les trois entrées qui comptent d'abord, puis,
+   sous « Facultatif », ce que l'outil a déjà. Un état est un point de sa couleur (vert reçu, ambre rien ou en attente,
+   rouge une erreur) ; ce qui est arrivé (une erreur, une attente, un succès) est une boîte teintée, son point en tête ;
+   un aperçu est un petit tableau en chasse fixe, les colonnes obligatoires à l'encre et soulignées.
    ═══════════════════════════════════════════════════════════════════════ */
 
-/* ─── « VOS FICHIERS » : six cartes, peu de mots ─────────────────────────────────────────────────────────────────── */
-.vf-lead{margin:0 0 12px;font-size:var(--f-13);line-height:1.5;color:var(--t-2)}
-.vf-cartes{display:flex;flex-direction:column;gap:10px}
-/* une carte : la tête (l'icône, le titre, l'état, l'action) ; pour le retest et la base, ce qu'elle attend en une ligne et
-   sa zone de dépôt ; ce qui est arrivé (une erreur, une attente, un succès) ; puis « Ce que j'attends », replié quand
-   l'entrée est servie */
-.vf-carte{border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-surface);scroll-margin-top:8px;transition:border-color var(--rapide),box-shadow var(--rapide)}
-/* le retest et la base, les deux fichiers qu'on dépose : un cadre plus franc, l'icône à l'encre */
-.vf-carte.vf-grande{border-color:var(--s-line-2)}
-.vf-grande .vf-ic{background:var(--t-1);color:var(--t-inverse)}
-.vf-carte.e-ko{border-color:color-mix(in srgb,var(--ko) 40%,var(--s-line))}
-.vf-carte.vf-vise{border-color:var(--t-3);box-shadow:var(--sh-1)}
-.vf-carte.vf-montre,.vf-carte.survol-depot{border-color:var(--t-1);box-shadow:0 0 0 3px var(--accent-soft)}
-.vf-tete{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px}
-.vf-ic{width:36px;height:36px;border-radius:var(--r-1);background:var(--s-sunken);display:grid;place-items:center;color:var(--t-2)}
-.vf-ic svg.ico{width:19px;height:19px}
+/* ─── « VOS FICHIERS » : six entrées, peu de mots ─────────────────────────────────────────────────────────────────── */
+.vf-lead{margin:0 0 6px;font-size:var(--f-13);line-height:1.5;color:var(--t-2)}
+.vf-cartes{display:flex;flex-direction:column}
+/* une entrée : un groupe ; ce qui s'aligne sous le titre suit son retrait (l'icône et son écart) */
+.vf-carte{--vf-retrait:50px;position:relative;margin:0 -10px;padding:18px 10px;border-radius:var(--r-2);scroll-margin-top:8px;transition:background var(--moyen),box-shadow var(--moyen)}
+.vf-carte+.vf-carte::before{content:"";position:absolute;left:10px;right:10px;top:0;border-top:1px solid var(--s-line);transition:opacity var(--rapide)}
+/* l'entrée qu'on vient chercher, un instant teintée ; celle qu'un fichier survole, cerclée d'encre — ses filets s'effacent */
+.vf-carte.vf-vise{background:var(--s-sunken)}
+.vf-carte.vf-montre,.vf-carte.survol-depot{background:var(--accent-soft);box-shadow:inset 0 0 0 1.5px var(--t-1)}
+.vf-carte:is(.vf-vise,.vf-montre,.survol-depot)::before,.vf-carte:is(.vf-vise,.vf-montre,.survol-depot)+.vf-carte::before{opacity:0}
+.vf-tete{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:14px;align-items:center}
+.vf-ic{width:36px;height:36px;border-radius:var(--r-btn);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);display:grid;place-items:center;color:var(--t-1)}
+.vf-ic svg.ico{width:18px;height:18px}
 .vf-titres{min-width:0}
 .vf-titres h3{margin:0;font:600 var(--f-14)/1.3 var(--titre);letter-spacing:-.01em;color:var(--t-1)}
-.vf-etat{display:flex;align-items:baseline;gap:7px;margin-top:3px;font-size:var(--f-12);line-height:1.45;color:var(--t-2);overflow-wrap:anywhere}
-.vf-etat i{width:8px;height:8px;flex:none;border-radius:50%;background:var(--ok);transform:translateY(-1px)}
+.vf-etat{display:flex;align-items:baseline;gap:7px;margin-top:2px;font-size:var(--f-12);line-height:1.45;color:var(--t-2);overflow-wrap:anywhere}
+.vf-etat i{width:7px;height:7px;flex:none;border-radius:50%;background:var(--ok);transform:translateY(-1px)}
 .vf-carte.e-vide .vf-etat i,.vf-carte.e-att .vf-etat i{background:var(--warn)}
 .vf-carte.e-ko .vf-etat i{background:var(--ko)}
 .vf-action{flex:none}
-/* ce qu'elle attend, en une ligne, sous la tête (aligné sur le titre) */
-.vf-une{display:flex;flex-direction:column;gap:8px;padding:0 14px 12px 62px;font-size:var(--f-13);line-height:1.5;color:var(--t-2)}
+/* ce que l'outil a déjà (la bible, les normes, les hypothèses) : plus serré, plus petit — « Facultatif » au-dessus */
+.vf-groupe{display:flex;align-items:baseline;gap:8px;margin:6px 0 0;padding:20px 0 4px;border-top:1px solid var(--s-line);font:600 var(--f-13)/1.3 var(--sans);color:var(--t-1)}
+.vf-groupe span{font:400 var(--f-12)/1.3 var(--sans);color:var(--t-2)}
+.vf-carte:not(.vf-grande){--vf-retrait:46px;padding-top:12px;padding-bottom:12px}
+.vf-carte:not(.vf-grande) .vf-tete{grid-template-columns:32px minmax(0,1fr) auto}
+.vf-carte:not(.vf-grande) .vf-ic{width:32px;height:32px;border-radius:var(--r-1)}
+.vf-carte:not(.vf-grande) .vf-ic svg.ico{width:16px;height:16px}
+.vf-carte:not(.vf-grande) .vf-action{height:30px;padding:0 12px;font-size:var(--f-12)}
+/* ce qu'elle attend, en une ligne, alignée sur le titre */
+.vf-une{display:flex;flex-direction:column;gap:10px;padding:10px 0 0 var(--vf-retrait);font-size:var(--f-13);line-height:1.55;color:var(--t-2)}
 .vf-une p{margin:0}
 .vf-une b{color:var(--t-1);font-weight:600}
-.vf-une .id{font:600 var(--f-12)/1 var(--mono);color:var(--t-1);background:var(--accent-soft);border-radius:4px;padding:2px 5px;white-space:nowrap}
-/* les trois colonnes qui rangent la base : la colonne soulignée à l'encre, son sens dessous */
-.vf-cles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0;border:1px solid var(--s-line);border-radius:var(--r-1);overflow:hidden}
-.vf-cles div{padding:7px 10px 8px;min-width:0}
-.vf-cles div+div{border-left:1px solid var(--s-line)}
-.vf-cles dt{display:inline-block;padding-bottom:2px;font:600 var(--f-12)/1.3 var(--mono);color:var(--t-1);box-shadow:inset 0 -2px 0 var(--t-1)}
-.vf-cles dd{margin:4px 0 0;font-size:var(--f-13);line-height:1.3;color:var(--t-1)}
-/* la zone de dépôt, tant que l'entrée est vide : un cadre en pointillé, une ligne ; la carte survolée par un fichier l'allume */
-.vf-zone{display:flex;align-items:center;justify-content:center;gap:10px;width:calc(100% - 76px);min-height:48px;margin:0 14px 12px 62px;padding:8px 12px;border:1.5px dashed var(--s-line-2);border-radius:var(--r-2);background:var(--s-sunken);color:var(--t-2);font-size:var(--f-12);cursor:pointer;transition:border-color var(--rapide),background var(--rapide),color var(--rapide)}
-.vf-zone svg.ico{width:18px;height:18px;color:var(--t-1)}
+.vf-une .id{font:500 var(--f-12)/1 var(--mono);color:var(--t-1);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);border-radius:4px;padding:2px 5px;white-space:nowrap}
+/* les trois colonnes qui rangent la base : la colonne à l'encre, soulignée, son sens dessous ; un filet entre elles */
+.vf-cles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0}
+.vf-cles div{min-width:0;padding:2px 12px 2px 0}
+.vf-cles div+div{padding-left:14px;border-left:1px solid var(--s-line)}
+.vf-cles dt{display:inline-block;padding-bottom:3px;font:600 var(--f-12)/1.3 var(--mono);color:var(--t-1);box-shadow:inset 0 -2px 0 var(--t-1)}
+.vf-cles dd{margin:5px 0 0;font-size:var(--f-12);line-height:1.3;color:var(--t-2)}
+/* la zone de dépôt, tant que l'entrée est vide : un cadre en pointillé, une ligne ; l'entrée survolée par un fichier l'allume */
+.vf-zone{display:flex;align-items:center;justify-content:center;gap:10px;width:calc(100% - var(--vf-retrait));min-height:44px;margin:12px 0 0 var(--vf-retrait);padding:8px 12px;border:1px dashed var(--s-line-2);border-radius:var(--r-2);background:none;color:var(--t-2);font-size:var(--f-12);cursor:pointer;transition:border-color var(--rapide),background var(--rapide),color var(--rapide)}
+.vf-zone svg.ico{width:17px;height:17px;color:var(--t-1)}
 .vf-zone b{font-size:var(--f-13);color:var(--t-1);font-weight:600}
 body.depot-actif .vf-zone{border-color:var(--t-3)}
-.vf-zone:hover,.vf-zone:focus-visible,.survol-depot .vf-zone{border-color:var(--t-1);background:var(--accent-soft);color:var(--t-1);outline:none}
-.vf-liens{display:flex;flex-wrap:wrap;gap:2px 4px;padding:0 12px 10px 58px;margin-top:-4px}
-.vf-liens .btn{height:26px;padding:0 6px;font-size:var(--f-12)}
-/* ce qui est arrivé : une boîte, sa couleur d'état en trait à gauche ; elle reste jusqu'au prochain dépôt */
-.vf-boite{margin:0 14px 12px;padding:10px 12px;border-radius:var(--r-1);font-size:var(--f-12);line-height:1.5;color:var(--t-1);background:var(--s-sunken);box-shadow:inset 3px 0 0 var(--s-line-2)}
+.vf-zone:hover,.vf-zone:focus-visible{border-color:var(--t-3);background:var(--s-sunken);color:var(--t-1);outline:none}
+.survol-depot .vf-zone{border-style:solid;border-color:var(--t-1);background:var(--s-surface);color:var(--t-1)}
+.vf-liens{display:flex;flex-wrap:wrap;gap:2px 4px;padding:6px 0 0 calc(var(--vf-retrait) - 6px)}
+.vf-liens .btn{height:28px;padding:0 6px;font-size:var(--f-12)}
+/* ce qui est arrivé : une boîte teintée de son état, son point en tête ; elle reste jusqu'au prochain dépôt */
+.vf-boite{position:relative;margin:12px 0 0 var(--vf-retrait);padding:11px 14px 12px 30px;border-radius:var(--r-2);font-size:var(--f-12);line-height:1.55;color:var(--t-1);background:var(--s-sunken)}
+.vf-boite::before{content:"";position:absolute;left:13px;top:17px;width:7px;height:7px;border-radius:50%;background:var(--t-3)}
 .vf-boite p{margin:0}
+.vf-boite b{font-weight:600}
 .vf-boite ul,.vf-boite ol{margin:6px 0 0;padding-left:18px}
 .vf-boite li{margin:2px 0}
 .vf-boite .id{font-family:var(--mono);font-size:var(--f-11)}
-.vf-erreur{background:var(--ko-soft);box-shadow:inset 3px 0 0 var(--ko)}
-.vf-avis,.vf-attente{background:var(--warn-soft);box-shadow:inset 3px 0 0 var(--warn)}
-.vf-succes{background:var(--ok-soft);box-shadow:inset 3px 0 0 var(--ok)}
-.vf-boite .vf-apercu{margin-top:8px;background:var(--s-surface)}
+.vf-erreur{background:var(--ko-soft)}
+.vf-erreur::before{background:var(--ko)}
+.vf-avis,.vf-attente{background:var(--warn-soft)}
+.vf-avis::before,.vf-attente::before{background:var(--warn)}
+.vf-succes{background:var(--ok-soft)}
+.vf-succes::before{background:var(--ok)}
+.vf-boite .vf-apercu{margin-top:10px}
 .vf-gestes{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-top:10px}
 .vf-boite .vf-gestes .btn{height:30px;padding:0 12px;font-size:var(--f-12)}
 .vf-boite .vf-gestes .btn.lien{padding:0 6px}
-.vf-quand{margin-left:auto;color:var(--t-3);font-size:var(--f-11)}
-.vf-note{margin:6px 0 0;font-size:var(--f-12);color:var(--t-3)}
+.vf-boite .vf-gestes .btn.lien:hover{background:color-mix(in srgb,var(--t-1) 7%,transparent)}
+.btn.vf-danger{background:var(--ko);border-color:var(--ko);color:var(--t-inverse)}
+.btn.vf-danger:hover{filter:brightness(1.08)}
+.vf-quand{margin-left:auto;color:var(--t-2);font-size:var(--f-11);font-variant-numeric:tabular-nums}
+.vf-note{margin:6px 0 0;font-size:var(--f-12);color:var(--t-2)}
 .vf-gestes .vf-note{margin:0}
-.vf-base-contrat{margin:-4px 14px 12px}
+.vf-base-contrat{margin:10px 0 0 var(--vf-retrait)}
 /* « Corriger » : chaque colonne du fichier, ce qu'elle porte, le rôle qu'on lui donne */
 .vf-carte-cols{display:flex;flex-direction:column;gap:4px;margin-top:10px;padding:8px;border-radius:var(--r-1);background:var(--s-surface)}
 .vf-col{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 168px;gap:8px;align-items:center;font-size:var(--f-12)}
 .vf-col-nom{font:500 var(--f-12)/1.3 var(--mono);color:var(--t-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.vf-col-ex{color:var(--t-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vf-col-ex{color:var(--t-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vf-col select{height:28px;border:1px solid var(--s-line-2);border-radius:var(--r-1);background:var(--s-surface);color:var(--t-1);font-size:var(--f-12);padding:0 6px}
-/* « Ce que j'attends » : trois lignes d'exemple, ce qui se passe ensuite en une phrase, le modèle */
-details.vf-attend{border-top:1px solid var(--s-line)}
-.vf-attend>summary{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;list-style:none;border-radius:0 0 var(--r-2) var(--r-2)}
+.vf-col select:focus-visible{outline:none;border-color:var(--t-1);box-shadow:var(--anneau)}
+/* « Ce que j'attends » : un repli discret sous le titre — trois lignes d'exemple, ce qui se passe ensuite, le modèle */
+details.vf-attend{margin:8px 0 0 calc(var(--vf-retrait) - 8px)}
+.vf-attend>summary{display:flex;align-items:center;gap:8px;width:max-content;max-width:100%;height:30px;padding:0 8px;border-radius:var(--r-1);cursor:pointer;list-style:none;transition:background var(--rapide)}
 .vf-attend>summary::-webkit-details-marker{display:none}
-.vf-attend>summary:hover{background:var(--s-sunken)}
-.vf-attend[open]>summary{border-radius:0}
-.vf-attend-t{font:600 var(--f-13)/1.3 var(--sans);color:var(--t-1);white-space:nowrap}
-.vf-attend-s{flex:1;min-width:0;font-size:var(--f-12);color:var(--t-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.vf-chevron{width:16px;height:16px;color:var(--t-3);transition:transform var(--rapide)}
+.vf-attend>summary:hover{background:var(--s-hover)}
+.vf-attend>summary:focus-visible{outline-offset:0}
+.vf-attend-t{font:500 var(--f-13)/1.3 var(--sans);color:var(--t-1);white-space:nowrap}
+.vf-attend-s{min-width:0;font-size:var(--f-12);color:var(--t-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vf-chevron{width:14px;height:14px;color:var(--t-2);transition:transform var(--rapide)}
 .vf-attend[open] .vf-chevron{transform:rotate(180deg)}
-.vf-corps{padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;font-size:var(--f-13);line-height:1.55;color:var(--t-2)}
+.vf-corps{display:flex;flex-direction:column;gap:10px;padding:8px 0 2px 8px;font-size:var(--f-13);line-height:1.55;color:var(--t-2);animation:vf-ouvre var(--moyen) both}
+@keyframes vf-ouvre{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 .vf-format,.vf-ensuite{margin:0}
 .vf-format b{color:var(--t-1);font-weight:600}
 .vf-format .id{font-family:var(--mono);font-size:var(--f-12);white-space:nowrap}
-.vf-ensuite{font-size:var(--f-12);color:var(--t-3)}
+.vf-ensuite{font-size:var(--f-12);color:var(--t-2)}
 .vf-corps .vf-gestes{margin-top:0}
-.vf-corps .vf-gestes .btn{height:32px;font-size:var(--f-12)}
+.vf-corps .vf-gestes .btn{height:30px;padding:0 12px;font-size:var(--f-12)}
 /* l'aperçu : un petit tableau, en chasse fixe ; les colonnes obligatoires à l'encre et soulignées ; il défile de côté */
-.vf-apercu{border:1px solid var(--s-line);border-radius:var(--r-1);overflow-x:auto;scrollbar-width:thin}
+.vf-apercu{border:1px solid var(--s-line);border-radius:var(--r-1);background:var(--s-surface);overflow-x:auto;scrollbar-width:thin}
 .vf-apercu table{border-collapse:collapse;width:100%;font:400 var(--f-11)/1.5 var(--mono)}
-.vf-apercu th{background:var(--s-sunken);font-weight:500;text-align:left;padding:4px 8px;color:var(--t-3);border-bottom:1px solid var(--s-line);white-space:nowrap}
+.vf-apercu th{background:var(--s-sunken);font-weight:500;text-align:left;padding:5px 10px;color:var(--t-2);border-bottom:1px solid var(--s-line);white-space:nowrap}
 .vf-apercu th.req{color:var(--t-1);font-weight:600;box-shadow:inset 0 -2px 0 var(--t-1)}
-.vf-apercu td{padding:3px 8px;border-bottom:1px solid var(--s-line);white-space:nowrap;color:var(--t-3)}
-.vf-apercu td.req{color:var(--t-1)}
+.vf-apercu td{padding:4px 10px;border-bottom:1px solid var(--s-line);white-space:nowrap;color:var(--t-2)}
+.vf-apercu td.req{color:var(--t-1);font-weight:500}
 .vf-apercu tbody tr:last-child td{border-bottom:none}
-.vf-apercu .vf-ap-titre td{font:italic 400 var(--f-11)/1.5 var(--sans);color:var(--t-3);background:var(--s-surface)}
-/* un fichier glissé au-dessus de « Vos fichiers » : pas de voile, c'est la carte survolée qui s'allume */
+.vf-apercu .vf-ap-titre td{font:italic 400 var(--f-11)/1.5 var(--sans);color:var(--t-2);background:var(--s-surface)}
+/* un fichier glissé au-dessus de « Vos fichiers » : pas de voile, c'est l'entrée survolée qui s'allume */
 body.depot-actif:has(#fiche [data-depot]) .depot{display:none}
 /* la section « Déjà fait » qu'on vient d'ouvrir depuis la base : un instant soulignée */
 .fi-deja.vf-montre{box-shadow:0 0 0 3px var(--accent-soft);transition:box-shadow var(--moyen)}
 
-/* ─── COLLER DES LIGNES : l'ordre, un exemple, l'aperçu de ce qui est compris ─────────────────────────────────────── */
-.co-ordre{list-style:none;display:flex;flex-wrap:wrap;gap:4px;margin:8px 0 0;padding:0}
-.co-ordre li{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px 0 3px;border:1px solid var(--s-line);border-radius:var(--r-1);background:var(--s-surface);font:500 var(--f-12)/1 var(--mono);color:var(--t-2)}
-.co-ordre li i{min-width:16px;height:16px;border-radius:4px;display:grid;place-items:center;background:var(--s-sunken);font:600 10px/1 var(--sans);font-style:normal;color:var(--t-3)}
-.co-ordre li.req{border-color:var(--t-1);color:var(--t-1)}
-.co-ordre li.req i{background:var(--t-1);color:var(--t-inverse)}
-.co-exemple{margin-top:14px}
-.co-exemple .sur{margin-bottom:4px}
-.co-exemple .btn{margin-top:4px;height:28px;padding:0 4px;font-size:var(--f-12)}
-#co-champ textarea{height:150px}
-.co-apercu{margin-top:12px}
+/* ─── COLLER DES LIGNES : ce qu'on colle (l'ordre, un exemple), le champ, ce qui est compris ─────────────────────── */
+.co-lead{margin:0;font-size:var(--f-13);line-height:1.55;color:var(--t-2)}
+.co-lead b{color:var(--t-1);font-weight:600}
+.co-bloc{margin-top:22px}
+.co-etiquette{display:flex;align-items:center;gap:6px;margin:0 0 8px;font:500 var(--f-12)/1.4 var(--sans);color:var(--t-2)}
+.co-etiquette small{font-size:var(--f-12);font-weight:400;color:var(--t-2)}
+.co-etiquette small::before{content:"·";margin-right:6px}
+.co-exemple .co-etiquette .btn{margin-left:auto;height:26px;padding:0 6px;font-size:var(--f-12)}
+.co-ordre{list-style:none;display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0}
+.co-ordre li{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 9px 0 4px;border-radius:var(--r-1);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);font:500 var(--f-12)/1 var(--mono);color:var(--t-2)}
+.co-ordre li i{min-width:18px;height:18px;padding:0 3px;border-radius:4px;display:grid;place-items:center;background:var(--s-surface);box-shadow:inset 0 0 0 1px var(--s-line);font:600 10px/1 var(--sans);font-style:normal;color:var(--t-2);font-variant-numeric:tabular-nums}
+.co-ordre li.req{background:var(--s-surface);box-shadow:inset 0 0 0 1.5px var(--t-1);color:var(--t-1)}
+.co-ordre li.req i{background:var(--t-1);color:var(--t-inverse);box-shadow:none}
+#co-champ.co-champ{margin-top:22px}
+#co-champ>.co-etiquette{display:flex;margin:0 0 8px;font:500 var(--f-12)/1.4 var(--sans);color:var(--t-2)}
+#co-champ textarea{height:150px;padding:10px 12px;border-radius:var(--r-btn);font:400 var(--f-12)/1.6 var(--mono);background:var(--s-surface)}
+#co-champ.erreur>.co-etiquette{color:var(--ko)}
+.co-apercu{margin-top:22px;animation:vf-ouvre var(--moyen) both}
 .co-apercu:empty{display:none}
-.co-apercu .sur{margin-bottom:4px}
-.co-dit{margin:0 0 8px;font-size:var(--f-13);line-height:1.5;color:var(--t-2)}
+.co-dit{display:flex;align-items:baseline;gap:8px;margin:0 0 10px;font-size:var(--f-13);line-height:1.5;color:var(--t-2)}
+.co-point{width:7px;height:7px;flex:none;border-radius:50%;background:var(--ok);transform:translateY(-1px)}
 .co-dit b{color:var(--t-1);font-weight:600}
 .co-dit .id{font-family:var(--mono);font-size:var(--f-12);color:var(--t-1)}
 .co-rejet{color:var(--warn)}
 .co-apercu .vf-boite{margin:0}
 
-/* ─── LE MOT QUI PASSE ET SON GESTE : « Voir » (ce qui est écrit dans « Vos fichiers »), « Rétablir » ─────────────────────────── */
+/* ─── LE MOT QUI PASSE ET SON GESTE : « Voir » (ce qui est écrit dans « Vos fichiers »), « Rétablir » — une petite pièce
+   claire posée sur le palet ─────────────────────────────────────────────────────────────────────────────────────── */
 #toast.on.action{pointer-events:auto}
-#toast.action{display:flex;align-items:baseline;gap:14px}
-.toast-voir{flex:none;padding:0;border:none;background:none;color:var(--bulle-t);font:600 var(--f-13)/1.4 var(--sans);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
-.toast-voir:hover{opacity:.8}
+#toast.action{display:flex;align-items:center;gap:14px;padding-right:8px}
+.toast-voir{flex:none;height:26px;padding:0 10px;border:none;border-radius:var(--r-1);background:var(--voile-2);color:var(--t-1);font:600 var(--f-12)/1 var(--sans);cursor:pointer;transition:background var(--rapide),transform var(--rapide)}
+.toast-voir:hover{background:var(--voile-3)}
+.toast-voir:active{transform:scale(.97)}

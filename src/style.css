@@ -718,28 +718,38 @@ table.simu-tab{border-collapse:separate;border-spacing:0;font-size:var(--f-12);m
 .cand[aria-pressed="true"]:hover{background:var(--accent-2)}
 
 
-/* ─── LE PLAN VIDE : un plan sans liaison (ses lignes effacées) — une carte posée sur la table, trois gestes ─── */
+/* ─── LE PLAN VIDE : un plan sans liaison (ses lignes effacées) — l'état vide d'une feuille posée sur la table : une icône
+   au trait dans un carré doux, le titre, une phrase ; « Reprendre » si le dernier geste l'a vidé ; puis les trois gestes,
+   le premier plein ─── */
 .vide{position:absolute;inset:0;display:grid;place-items:center;padding:24px 24px 24px calc(var(--rail) + 24px);z-index:5}
 body.fiche-ouverte .vide{right:calc(var(--fiche-l) + 2 * var(--jeu))}
-.vd-carte{width:min(460px,100%);padding:26px 28px 24px;border-radius:var(--r-3);background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-feuille);animation:vd-pose var(--lent) both}
-@keyframes vd-pose{from{opacity:0;transform:translateY(8px) scale(.99)}to{opacity:1;transform:none}}
+.vd-carte{position:relative;width:min(464px,100%);padding:76px 28px 24px;border-radius:var(--r-3);background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-panneau);animation:vd-pose var(--lent) both}
+@keyframes vd-pose{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* le carré doux et son icône : une feuille blanche, rien dessus */
+.vd-carte::before{content:"";position:absolute;left:28px;top:24px;width:40px;height:40px;border-radius:var(--r-2);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line)}
+.vd-carte::after{content:"";position:absolute;left:38px;top:34px;width:20px;height:20px;background:var(--t-2);
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4.5' y='3.5' width='15' height='17' rx='1.5'/%3E%3Cpath d='M4.5 15.5h15M12 15.5v5'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4.5' y='3.5' width='15' height='17' rx='1.5'/%3E%3Cpath d='M4.5 15.5h15M12 15.5v5'/%3E%3C/svg%3E") center/contain no-repeat}
 .vd-carte h2{margin:0;font:600 var(--f-20)/1.25 var(--titre);letter-spacing:-.02em;text-wrap:balance}
-.vd-carte p{margin:8px 0 0;font-size:var(--f-13);line-height:1.55;color:var(--t-2)}
-.vd-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:20px}
-/* reprendre ce que le dernier geste a effacé : une ligne à l'encre, au-dessus des gestes */
-.vd-reprendre{display:flex;align-items:center;gap:8px;width:100%;margin-top:16px;height:40px;padding:0 14px 0 12px;border:1px solid var(--accent-line);border-radius:var(--r-btn);background:var(--accent-soft);color:var(--t-1);font-weight:600;text-align:left;transition:background var(--rapide)}
+.vd-carte p{margin:6px 0 0;font-size:var(--f-13);line-height:1.55;color:var(--t-2);text-wrap:pretty}
+.vd-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:22px}
+/* reprendre ce que le dernier geste a effacé : une ligne qu'on prend en main, au-dessus des gestes */
+.vd-reprendre{display:flex;align-items:center;gap:10px;width:100%;margin-top:18px;height:40px;padding:0 14px 0 12px;border:none;border-radius:var(--r-btn);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);color:var(--t-1);font-weight:600;text-align:left;transition:background var(--rapide),box-shadow var(--rapide),transform var(--rapide)}
 .vd-reprendre::before{content:"";flex:none;width:18px;height:18px;background:currentColor;
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 14 4 9l5-5'/%3E%3Cpath d='M4 9h10a6 6 0 0 1 0 12h-3'/%3E%3C/svg%3E") center/contain no-repeat;
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 14 4 9l5-5'/%3E%3Cpath d='M4 9h10a6 6 0 0 1 0 12h-3'/%3E%3C/svg%3E") center/contain no-repeat}
-.vd-reprendre:hover{background:color-mix(in srgb,var(--accent) 12%,var(--s-surface))}
+.vd-reprendre:hover{background:var(--s-hover);box-shadow:inset 0 0 0 1px var(--s-line-2)}
+.vd-reprendre:active{transform:scale(.99)}
 
-/* le dépôt : la fenêtre entière devient la cible — un voile, et au milieu une carte en pointillé qui dit quoi faire ;
-   sur la bibliothèque, c'est elle qui s'allume (style-bibliotheque.css) */
-.depot{position:fixed;inset:0;z-index:40;display:none;place-items:center;background:var(--voile);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);pointer-events:none}
-.depot>div{display:flex;align-items:center;gap:12px;padding:30px 44px;border:2px dashed var(--accent-line);border-radius:var(--r-3);background:var(--s-surface);color:var(--t-1);font:600 var(--f-20)/1.2 var(--titre);letter-spacing:-.015em;box-shadow:var(--sh-panneau);animation:vd-pose var(--moyen) both}
-.depot>div::before{content:"";width:24px;height:24px;flex:none;background:var(--accent);
+/* le dépôt : la fenêtre entière devient la cible — la table voilée, un cadre au trait à un jeu des bords, et au milieu un
+   palet qui dit quoi faire ; sur la bibliothèque, c'est elle qui s'allume (style-bibliotheque.css) */
+.depot{position:fixed;inset:0;z-index:40;display:none;place-items:center;background:var(--voile-fort);pointer-events:none;animation:depot-voile var(--moyen) both}
+.depot::before{content:"";position:absolute;inset:calc(var(--entete) + var(--sur-h) + var(--jeu)) var(--jeu) var(--jeu);border:1.5px dashed var(--t-table-2);border-radius:var(--r-3)}
+.depot>div{display:flex;align-items:center;gap:12px;padding:16px 24px 16px 18px;border-radius:var(--r-palet);background:var(--palet);color:var(--t-table);font:600 var(--f-16)/1.2 var(--titre);letter-spacing:-.01em;box-shadow:var(--sh-palet);animation:vd-pose var(--moyen) both}
+.depot>div::before{content:"";width:22px;height:22px;flex:none;background:var(--t-table);
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 16V4M7 9l5-5 5 5'/%3E%3Cpath d='M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3'/%3E%3C/svg%3E") center/contain no-repeat;
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 16V4M7 9l5-5 5 5'/%3E%3Cpath d='M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3'/%3E%3C/svg%3E") center/contain no-repeat}
+@keyframes depot-voile{from{opacity:0}to{opacity:1}}
 body.depot-actif .depot{display:grid}
 body.depot-actif:has(#bibliotheque:not([hidden])) .depot{display:none}
 
