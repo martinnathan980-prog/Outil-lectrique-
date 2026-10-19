@@ -1636,11 +1636,13 @@ const tailleDe = (norme, famille, taille) => { const T = normeDesModules(norme).
 const INDEX_CONTACTS = new WeakMap();
 const contactsDeTaille = (norme, famille, taille) => { const C = normeDesModules(norme).contacts || []; let m = INDEX_CONTACTS.get(C);
   if (!m) { m = new Map(); C.forEach(c => { const k = c.famille + '|' + c.taille; (m.get(k) || m.set(k, []).get(k)).push(c); }); INDEX_CONTACTS.set(C, m); }
-  return m.get(famille + '|' + taille) || []; };
+  // une ligne de taille « * » (SEE : ContactGauge −1, toute taille de cavité) vaut pour chaque taille de la famille, après
+  // celles de la taille exacte
+  const e = m.get(famille + '|' + taille) || [], tout = String(taille) !== '*' && m.get(famille + '|*'); return tout ? e.concat(tout) : e; };
 const rangDeContact = c => (c.typeFil !== '*' ? 2 : 0) + (c.jauge != null ? 1 : 0);   // 3 : type et jauge exacts … 0 : la ligne « * * »
 function contactDuFil(norme, famille, taille, sexe, type, jauge) { const t = typeDuFil(type);
   const c = contactsDeTaille(norme, famille, taille).filter(c => (!sexe || c.sexe === sexe) && (c.typeFil === '*' || c.typeFil === t) && (c.jauge == null || c.jauge === jauge))
-    .sort((a, b) => rangDeContact(b) - rangDeContact(a))[0] || null;
+    .sort((a, b) => (b.taille === '*' ? 0 : 4) + rangDeContact(b) - (a.taille === '*' ? 0 : 4) - rangDeContact(a))[0] || null;
   // la ligne « * * » (tout type, toute jauge : le contact par défaut d'une taille, souvent un coaxial) ne reçoit un fil ordinaire que dans la plage de jauges de la taille (table Tailles) : un 6 AWG n'entre pas dans un contact 12
   if (c && rangDeContact(c) === 0 && jauge != null) { const T = tailleDe(norme, famille, taille); if (T && T.jaugeMin != null && T.jaugeMax != null && !(jauge <= T.jaugeMin && jauge >= T.jaugeMax)) return null; }
   return c; }

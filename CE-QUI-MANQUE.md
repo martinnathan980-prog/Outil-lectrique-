@@ -127,9 +127,21 @@ accessoire pour quel connecteur et quel câble).
   · **431 lignes « à taille de cavité ou sexe illisible »** : Volta lit maintenant aussi « Pin » (mâle) et « Socket »
     (femelle), et montre les valeurs qu'il ne lit pas, les six plus fréquentes. **Re-photographie cette ligne** de
     « Ce qui n'est pas pris » : je saurai quoi lire.
+  **Relu sur la v69 (19 octobre 2026, tes photos) — corrigé en version 70.** Les noms : **SEE écrit un nom de contact
+  sans sa casse, la même pour toute la base — c, e, f, k, m, w, z en minuscules, toutes les autres lettres en
+  majuscules** (EN 3646 18-11 : « A B c D e f G H J k L » pour A…L ; sur une 23N55, C et c portent tous deux « c »).
+  SEE ne distingue donc pas C de c : Volta reprend les noms de la norme, aux places de SEE, et quand deux contacts
+  partagent la lettre (C et c), c'est la place qui tranche (C au bord, c au milieu). Une face où deux contacts gardent
+  quand même un même nom reste celle de Volta (dit dans l'onglet). Les vraies différences restent : EN 3645 25N07, 99
+  contacts numérotés 1 à 99 dans SEE (89 chez Volta, relevés sur la figure, avec A et B) ; 25N04 : KK et LL ; EN 2997
+  20-28 : des #22. Les tailles : **les 431 lignes « illisibles » ont toutes une cavité −1** — comme la gauge −1 (toute
+  gauge), c'est **toute taille** : la règle vaut pour chaque cavité de la famille, après celles de la taille exacte.
+  **Une question pour toi** : sur un de tes retests réels, un connecteur EN 3645 ou EN 3646 — la broche C est-elle
+  écrite « C » ou « c » ? Volta suit la norme (C) ; si tes retests suivent SEE (c), dis-le moi, il les lira tels
+  quels.
   Et une question tranchée par SEE : **LE** est un **coaxial** (ton Excel le donnait deux fois, fibre optique puis
-  coaxial ; Volta avait gardé fibre optique, à confirmer). **Ne clique pas encore « Garder dans Volta » sur la v68** :
-  ouvre la v69, redépose le classeur, relis l'onglet Import, puis garde-le.
+  coaxial ; Volta avait gardé fibre optique, à confirmer). **Ne clique « Garder dans Volta » que dans la v70** :
+  ouvre-la, redépose le classeur, relis l'onglet Import, puis garde-le.
 - **Décidé (octobre 2026).** Volta peut garder la base SEE sur le PC (dans ce navigateur, jamais ailleurs, avec un
   bouton pour l'oublier). SEE gagne toujours sur les tables de Volta, et chaque différence se voit : ce que disait
   Volta, ce que dit SEE, côte à côte. Les tables tirées des photos (contacts EN2997, EN3645, EN3646, EN4165) et
