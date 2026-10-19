@@ -31,7 +31,7 @@ sur ta base, ton programme ou ton appareil.
 - **Les faces** : relues sur les tables X/Y de MIL-STD-1560C (EN 3645), 1669A (EN 3646, ASNE 0059) et 1554A
   (EN 2997) — 72 lignes. La 25-7 a 99 contacts (1 à 99, les taille 8 en 25 et 75) ; la 25-4 va jusqu'à LL ; l'EN 2997 est
   numérotée comme MIL-STD-1554 (14-12 : les #16 en 4, 7, 10 ; 20-28 : les #12 en 15, 19, 23, 27…) ; l'EN 4165 99-10 a
-  8 contacts taille 20 (pas 22) et 2 taille 16 — le 300XC1 B de l'exemple y loge enfin.
+  8 contacts taille 20 (pas 22) et 2 taille 16.
 - **Les câbles** : DW24 / DW22, GPB24 / GPB22 (des copies de jauge), MLA12, AD6, DG6, DG00, YV3, les ADB à ADD et VNB à
   VND (1,03 × AD), WS, XE, XF, XK, WH, KC blindés (une tresse), XY est un **coaxial** 75 Ω (RG 179), WL, WM, WN, WF, WW,
   HE, KD, KL. La colonne Note de la base des câbles n'était pas lue : elle l'est.

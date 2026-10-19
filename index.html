@@ -4090,7 +4090,7 @@ button.orig:hover{color:var(--t-1);box-shadow:inset 0 0 0 1px var(--t-3)}
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = '377427a5ab5a';
+const VERSION_MOTEUR = '7f82858b5f4e';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -4429,7 +4429,8 @@ function contratExemple() {
   li('3', '382RL2', '4',   '909G',    '',   'W-358', 'DR24');
   li('3', '383RL3', '4',   '909G',    '',   'W-359', 'DR24');
   li('3', '300XC1', 'B10', '905G',    '',   'W-360', 'DR20');
-  li('3', '397TB1', '1',   '300XC1',  'B5', 'W-370', 'DR16');
+  // 300XC1 B : un 12 AWG parmi des 20 et 22 — aucun module EN 4165 ne les loge ensemble (le 99-10, relu en octobre 2026 : 8 contacts 20 et 2 contacts 16, pas de 12)
+  li('3', '397TB1', '1',   '300XC1',  'B5', 'W-370', 'DR12');
   li('3', '397TB1', '2',   '351PM1',  '3',  'W-371', 'DR16');
   li('3', '397TB1', '3',   '352PM2',  '3',  'W-372', 'DR16');
   li('3', '397TB1', '1',   '397TB1',  '2',  'W-373', 'DR16');
