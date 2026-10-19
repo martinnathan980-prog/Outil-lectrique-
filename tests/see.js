@@ -149,7 +149,8 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
   await p.evaluate(() => {
     const G = s => s + '-0000-4000-8000-000000000000', wb = XLSX.utils.book_new(), f = (rows, nom) => XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), nom);
     f([['ID', 'IDEquipment', 'PartNo', 'ClassName', 'LCStatusName', 'Version', 'CreatorUser'], [G('A0000001'), G('A0000001'), 'EN2997', 'Contact', 'Release', 7, 'x1'], [G('A0000002'), G('A0000002'), 'EN2997', 'Contact', 'Obsolete', 5, 'x1'],
-      [G('A0000003'), G('A0000003'), 'EN3545 - Rectangular', 'Contact', 'In Work', 1, 'x1'], [G('A0000004'), G('A0000004'), 'E0710 - Plug/Square Receptacle', 'Lug_WiresCombination', 'Release', 1, 'x1']], 'EED_ViewEndFittingRules');
+      [G('A0000003'), G('A0000003'), 'EN3545 - Rectangular', 'Contact', 'In Work', 1, 'x1'], [G('A0000004'), G('A0000004'), 'E0710 - Plug/Square Receptacle', 'Lug_WiresCombination', 'Release', 1, 'x1'],
+      [G('A0000005'), G('A0000005'), 'EN3645', 'Contact', 'Release', 2, 'x1']], 'EED_ViewEndFittingRules');
     f([['ID', 'IDEquipment', 'RuleNum', 'ContactType', 'ContactGauge', 'WireType', 'WireGauge', 'PartNo1', 'Quantity1', 'PartNo2', 'Quantity2'],
       [G('C0000001'), G('A0000001'), 100, 'Male', 0.5179520182, '*', 0.2048, 'EN3155-099M2020', 1],
       [G('C0000002'), G('A0000001'), 100, 'Male', 0.5179520182, '*', '0.32574322630000002', 'EN3155-018M2020', 1],
@@ -157,16 +158,23 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
       [G('C0000004'), G('A0000001'), 101, 'Female', 0.5179520182, 'DR', 0.5179520182, 'EN3155-019F2020', 1, 'E0718-20-30', 1],
       [G('C0000005'), G('A0000001'), 100, 'Female', 0.5179520182, '*', -2, 'EN3155-050F2020', 1],
       [G('C0000006'), G('A0000003'), 100, 'Male', 0.5179520182, '*', -1, 'EN3155-016M2020', 1],
-      [G('C0000007'), G('A0000004'), 100, 'Male', 3.3109, '*', -1, 'NSA936501TA1204', 1]], 'EED_OBJ_END_Fitting_Rules_Conta');
+      [G('C0000007'), G('A0000004'), 100, 'Male', 3.3109, '*', -1, 'NSA936501TA1204', 1],
+      [G('C0000008'), G('A0000001'), 102, 'Pin', 0.5179520182, 'DM', 0.2048, 'EN3155-099M2020', 1],
+      [G('C0000009'), G('A0000001'), 103, 'Male', 0.4, '*', -1, 'EN3155-001M2020', 1],
+      [G('C0000010'), G('A0000005'), 100, 'Male', 8.3656, 'WH', -1, 'E0613KB0800', 1]], 'EED_OBJ_END_Fitting_Rules_Conta');
     f([['ID', 'IDEquipment', 'PartNo', 'Type', 'Gauge', 'ExternalMaxDiameter', 'LineicWeight', 'Shield', 'CableFamily', 'LCStatusName', 'Version', 'EPFList'],
       [G('K0000001'), G('K0000001'), 'DR24', 'DR', 0.2048, 0.0011, 0.00175, 'UNSHIELDED', 'Wire', 'Release', 2, 'EC225,NH90'],
-      [G('K0000002'), G('K0000002'), 'ZZ20', 'ZZ', 0.5179520182, 0.0042, 0.0251, 'SHIELDED', 'Cable', 'Release', 1, 'EC225']], 'EED_ViewCablesAndWires');
+      [G('K0000002'), G('K0000002'), 'ZZ20', 'ZZ', 0.5179520182, 0.0042, 0.0251, 'SHIELDED', 'Cable', 'Release', 1, 'EC225'],
+      [G('K0000003'), G('K0000003'), 'DRB8', 'DRB', '', 0.0088, 0.1854, '', '', 'Release', 1, 'EC225'],
+      [G('K0000004'), G('K0000004'), 'DR6', 'DR', 13.3, 0.0057, 2.08, 'UNSHIELDED', 'Wire', 'Release', 1, 'EC225']], 'EED_ViewCablesAndWires');
     f([['ID', 'IDCable', 'Gauge', 'SectionInMM', 'Resistivity', 'CreatorUser'], [G('W0000001'), '', 0.2048, 0.0000002, 0.0912, 'x'], [G('W0000002'), '', 0.5179, 0.0000005, 0.0349, 'x'], [G('W0000003'), '', 0.5179, 0.0000005, 0.0351, 'x']], 'EED_OBJ_Wires');
     f([['ID', 'IDEquipment', 'IDWire'], [G('B0000001'), G('K0000001'), G('W0000001')], [G('B0000002'), G('K0000002'), G('W0000002')], [G('B0000003'), G('K0000002'), G('W0000003')]], 'EED_LNK_Wires_Equi');
-    f([['ID', 'IDEquipment', 'PartNo', 'Type', 'View', 'LCStatusName', 'CategoryFullPath'], [G('L0000001'), G('L0000001'), 'EN2997_14-12', 'Circular', 'Front', 'Release', 'prEN2997-001P2'], [G('L0000002'), G('L0000002'), 'EN3545_A10', 'Rectangular', 'Front', 'Release', 'prEN3545-001P2']], 'EED_ViewContactLayouts');
+    f([['ID', 'IDEquipment', 'PartNo', 'Type', 'View', 'LCStatusName', 'CategoryFullPath'], [G('L0000001'), G('L0000001'), 'EN2997_14-12', 'Circular', 'Front', 'Release', 'prEN2997-001P2'], [G('L0000002'), G('L0000002'), 'EN3545_A10', 'Rectangular', 'Front', 'Release', 'prEN3545-001P2'],
+      [G('L0000003'), G('L0000003'), 'EN2997_08-03', 'Circular', 'Front', 'Release', 'prEN2997-001P2']], 'EED_ViewContactLayouts');
     const pins = [['ID', 'IDPlugMap', 'Name', 'X', 'Y', 'ContactGauge', 'ContactFamily', 'CablingOrder']];
     for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6; pins.push([G('P' + String(i).padStart(7, '0')), G('L0000001'), String(i + 1), i < 3 ? 0.0012 * Math.sin(a * 4) : 0.004 * Math.sin(a), i < 3 ? 0.0012 * Math.cos(a * 4) : 0.004 * Math.cos(a), i < 3 ? 1.3095370853 : 0.5179520182, 'Standard', i + 1]); }
     for (let i = 0; i < 10; i++) pins.push([G('Q' + String(i).padStart(7, '0')), G('L0000002'), String(i + 1), (i % 5) * 0.0025, i < 5 ? 0 : -0.0025, 0.5179520182, 'Standard', i + 1]);
+    ['A', 'B', 'C'].forEach((n, i) => pins.push([G('R' + String(i).padStart(7, '0')), G('L0000003'), n, 0.0012 * Math.sin(i * 2.1), 0.0012 * Math.cos(i * 2.1), 0.5179520182, 'Standard', i + 1]));
     f(pins, 'EED_OBJ_PlugMapPin');
     const V = verite(), pn = r => (V.find(l => l.pnDe && l.pnDe.startsWith(r)) || V.find(l => l.pnVers && l.pnVers.startsWith(r)) || {}).pnDe || r;
     window.__pns = ['MS3470L14-5P', 'EN2997Y1A08P', 'EN3646A6083AAN'];
@@ -182,15 +190,22 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
   const I = await p.evaluate(() => { const I = SEE.import, C = comparaisonSEE(I), c = $('fiche-corps');
     return { contacts: I.contacts.map(x => [x.famille, x.sexe, x.taille, x.typeFil, x.jauge, x.reference, x.accessoire, x.statut].join('/')), cables: I.cables.map(x => [x.cable, x.diametre, x.masse, x.resistance, x.brins, x.blindage, x.liaisons].join('/')),
       modules: I.modules.map(x => x.famille + '/' + x.variante + '/' + x.taille + '/' + x.groupes.split('|').length + '/' + x.corps), eq: I.equipements.length, b: I.bilan.contacts, prog: I.programmes.map(x => x.join(' ')).join(', '),
-      diff: { c: [C.contacts.remplacees.length, C.contacts.nouvelles.length, C.contacts.identiques.length], k: [C.cables.remplacees.length, C.cables.nouvelles.length], m: [C.modules.remplacees.length, C.modules.nouvelles.length] },
+      diff: { c: [C.contacts.remplacees.length, C.contacts.nouvelles.length, C.contacts.identiques.length], k: [C.cables.remplacees.length, C.cables.nouvelles.length, C.cables.identiques.length], m: [C.modules.remplacees.length, C.modules.redessinees.length, C.modules.nouvelles.length] },
+      premiers: { k: C.cables.remplacees.map(r => r.apres.cable).join(','), c: C.contacts.remplacees.map(r => r.apres.reference).join(',') }, ill: I.bilan.contacts.illisibles,
       vue: SEE.vue, texte: c.querySelector('.see-import') ? c.querySelector('.see-import').textContent.replace(/\s+/g, ' ') : '', garder: !!$('see-garder'), base: !!BASE_SEE.base }; });
   ok('l’import prend les contacts des règles validées (la gauge en mm² lue en AWG, « * » et −1 : tout), « à confirmer » celles en cours ; ni l’obsolète, ni la règle de cosses, ni la ligne sans fil',
-    I.contacts.join('|') === 'EN2997/M/20/*/24/EN3155-099M2020//|EN2997/M/20/*/22/EN3155-018M2020//|EN2997/F/20/DR/20/EN3155-019F2020/E0718-20-30/|EN3545/M/20/*/*/EN3155-016M2020//à confirmer'
+    I.contacts.join('|') === 'EN2997/M/20/*/24/EN3155-099M2020//|EN2997/M/20/*/22/EN3155-018M2020//|EN2997/F/20/DR/20/EN3155-019F2020/E0718-20-30/|EN3545/M/20/*/*/EN3155-016M2020//à confirmer|EN2997/M/20/DM/24/EN3155-099M2020//|EN3645/M/8/WH/*/E0613KB0800//'
     && I.b.obsoletes === 1 && I.b.autres.Lug_WiresCombination === 1 && I.b.sansFil === 1, I.contacts.join(' | ') + ' · ' + JSON.stringify(I.b));
-  ok('les câbles : Ø et masse en mm et g/m, la résistance de leurs conducteurs reliés (mΩ/m), les brins, le blindage', I.cables.join('|') === 'DR24/1.1/1.75/91.2/1/0/1|ZZ20/4.2/25.1/35.1/2/1/3', I.cables.join(' | '));
-  ok('les faces : l’EN 2997 14-12 (douze contacts, trois de taille 16, ronde) et l’EN 3545 A10 que Volta ne connaissait pas (rectangulaire)', I.modules.join('|') === 'EN2997/14-12/20/12/circulaire|EN3545/A10/20/10/rectangle', I.modules.join(' | '));
+  ok('les câbles : Ø et masse en mm et g/m, la résistance de leurs conducteurs reliés (mΩ/m), les brins, le blindage', I.cables.join('|') === 'DR24/1.1/1.75/91.2/1/0/1|ZZ20/4.2/25.1/35.1/2/1/3|DRB8/8.8/185.4////1|DR6/5.7/2.08///0/1', I.cables.join(' | '));
+  ok('les faces : l’EN 2997 14-12 (douze contacts, trois de taille 16, ronde) et l’EN 3545 A10 que Volta ne connaissait pas (rectangulaire)', I.modules.join('|') === 'EN2997/14-12/20/12/circulaire|EN3545/A10/20/10/rectangle|EN2997/08-03/20/3/circulaire', I.modules.join(' | '));
   ok('les équipements et les programmes de SEE', I.eq === 5 && I.prog === 'EC225 4, NH90 2', I.eq + ' · ' + I.prog);
-  ok('la différence avec Volta : un contact remplace le sien, un pareil, deux nouveaux ; un câble remplace, un nouveau ; une face remplace, une nouvelle', JSON.stringify(I.diff) === '{"c":[1,2,1],"k":[1,1],"m":[1,1]}', JSON.stringify(I.diff));
+  ok('la différence avec Volta : deux contacts remplacent les leurs, un pareil, trois nouveaux ; deux câbles remplacent, un nouveau, un pareil ; une face remplace, une redessinée, une nouvelle', JSON.stringify(I.diff) === '{"c":[2,3,1],"k":[2,1,1],"m":[1,1,1]}', JSON.stringify(I.diff));
+  // la vraie base du lecteur (octobre 2026) : « nature : torsadé → — » sur des dizaines de câbles, une masse divisée par 65
+  ok('ce que SEE laisse vide, Volta le garde : DRB8 (ni conducteur, ni blindage, ni nature dans SEE) reste torsadé à deux brins — identique', I.premiers.k.split(',').indexOf('DRB8') < 0 && !/DRB8/.test(I.texte), I.premiers.k);
+  ok('un écart d’un facteur 2 ou plus se voit en tête, à vérifier dans SEE (DR6 : 135 g/m → 2,08 g/m)', I.premiers.k.split(',')[0] === 'DR6' && /1 écart à vérifier/.test(sp(I.texte)) && /DR6\s*masse\s*135 g\/m\s*→\s*2,08 g\/m\s*65 fois moins · à vérifier dans SEE/.test(sp(I.texte)), I.premiers.k + ' · ' + (sp(I.texte).match(/Câbles.{0,200}/) || [''])[0]);
+  ok('un nom écrit en entier par SEE (KB0800 → E0613KB0800) se dit tel, à la fin', I.premiers.c === 'EN3155-099M2020,E0613KB0800' && /dont 1 nom écrit en entier/.test(sp(I.texte)) && /nom complet\s*KB0800\s*→\s*E0613KB0800/.test(sp(I.texte)), I.premiers.c);
+  ok('les faces : le dessin ne compte plus (toute face de SEE est à l’échelle) ; les noms qui diffèrent se montrent', /1 face redessinée à l’échelle, mêmes contacts/.test(sp(I.texte)) && /08-03\s*noms\s*1 2 3\s*→\s*A B C/.test(sp(I.texte)) && !/relevée sur la figure/.test(I.texte), (sp(I.texte).match(/Faces des connecteurs.{0,160}/) || [''])[0]);
+  ok('« Pin » se lit mâle ; une cavité illisible se montre par sa valeur', I.contacts.includes('EN2997/M/20/DM/24/EN3155-099M2020//') && JSON.stringify(I.ill) === '{"cavité 0,4 mm²":1}' && /cavité 0,4 mm² \(1\)/.test(sp(I.texte)), JSON.stringify(I.ill));
   ok('l’onglet Import s’ouvre d’office : il dit ce que Volta prend, barre ce que disait Volta, propose « Garder dans Volta » — rien n’est encore gardé',
     I.vue === 'import' && I.garder && !I.base && /EN3155-018M2020\s*→\s*EN3155-099M2020/.test(I.texte) && /0,96 mm\s*→\s*1,1 mm/.test(sp(I.texte)) && /1 règle obsolète ignorée/.test(sp(I.texte)) && /Lug_WiresCombination/.test(I.texte), sp(I.texte).slice(300, 900));
   ok('tant qu’elle n’est pas gardée, Volta ne s’en sert pas', await p.evaluate(a => contactDuFil(app.norme, 'EN2997', '20', 'M', 'DR24', 24).reference === a, avant.c));
@@ -198,8 +213,9 @@ const FICHIER = fichierDemande(), CAPTURES = process.env.CAPTURES || '';
   await p.click('#see-garder'); await p.waitForFunction(() => !!BASE_SEE.base);
   const A = await p.evaluate(() => { const c = contactDuFil(app.norme, 'EN2997', '20', 'M', 'DR24', 24), k = cableDuType(app.norme, 'DR24'), m = moduleDeReference(app.norme, 'EN2997-002-14-12');
     return { c: c.reference, cs: c.source, dc: differenceSEEMots('contacts', c), k: k.diametre, dk: differenceSEEMots('cables', k), m: m && [m.reference, m.contacts.length, m.note.slice(0, 40), m.contacts.filter(x => x.taille === '16').length], n3545: normeDesModules(app.norme).modules.filter(x => x.famille === 'EN3545').length,
-      z: !!cableDuType(app.norme, 'ZZ20'), etat: ($('fiche-corps').querySelector('.see-etat') || {}).textContent || '', oublier: !!$('see-oublier') }; });
+      z: !!cableDuType(app.norme, 'ZZ20'), drb8: (x => x && [x.nature, x.brins, x.resistance, x.blindage, /de Volta : brins, nature, resistance/.test(x.note)].join('/'))(cableDuType(app.norme, 'DRB8')), dr6: cableDuType(app.norme, 'DR6').masse, etat: ($('fiche-corps').querySelector('.see-etat') || {}).textContent || '', oublier: !!$('see-oublier') }; });
   ok('gardée : SEE passe devant Volta — le contact, le câble, la face (qui garde la désignation de Volta), la famille nouvelle', A.c === 'EN3155-099M2020' && A.cs === 'SEE' && A.k === 1.1 && A.m[0] === 'EN2997-002-14-12' && A.m[1] === 12 && /^face SEE EN2997_14-12/.test(A.m[2]) && A.m[3] === 3 && A.n3545 === 1 && A.z && /Gardée sur ce PC/.test(A.etat) && A.oublier, JSON.stringify(A));
+  ok('gardée : la case vide de SEE prend la valeur de Volta (DRB8 torsadé, deux brins, sa résistance, la note le dit) ; l’écart suspect passe quand même (SEE gagne)', A.drb8 === 'torsadé/2/2.37/false/true' && A.dr6 === 2.08, A.drb8 + ' · ' + A.dr6);
   ok('ce que disait Volta reste dit, ligne par ligne (la fiche le montre en bulle)', /contact EN3155-018M2020 → EN3155-099M2020/.test(A.dc) && /Ø 0,96 → 1,1/.test(A.dk.replace(/ mm/g, '')), A.dc + ' · ' + A.dk);
   // le programme : EC225 ; le connecteur NH90 seul est « pas déclaré pour EC225 », l'obsolète l'est dit, l'absent aussi
   await p.selectOption('#see-prog', 'EC225'); await p.waitForTimeout(200);

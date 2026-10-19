@@ -3806,6 +3806,12 @@ button.orig:hover{color:var(--t-1);box-shadow:inset 0 0 0 1px var(--t-3)}
   .see-gestes .btn{flex:1 1 auto}
   .see-tuile{padding:0 12px}
 }
+/* un écart à vérifier : la ligne garde son trait d'ambre dans la marge, l'écart son facteur en pastille ; un nom écrit en
+   entier (même contact) recule ; le compte des écarts à vérifier dans le titre */
+.see-diff.suspect{box-shadow:inset 2px 0 0 var(--warn);padding-left:10px}
+.see-diff-e.complet s,.see-diff-e.complet b,.see-diff-e.complet i{color:var(--t-3);font-weight:500}
+.see-suspect{font-style:normal;font:600 var(--f-11)/1.6 var(--sans);color:var(--warn);background:var(--warn-soft);border-radius:var(--r-1);padding:0 7px;margin-left:4px;white-space:nowrap}
+.see-t-att{color:var(--warn);font-weight:600}
 
 </style>
 </head>
@@ -20427,8 +20433,9 @@ function contactsDeSEE(T, B) { const R = T.regles, C = T.contacts, b = B.contact
   const mieux = (a, b2) => { for (let i = 0; i < a.length; i++) if (a[i] !== b2[i]) return a[i] > b2[i]; return false; };
   C.lignes.forEach(r => { b.lignes++; const g = regles.get(idSEE(C, r, 'IDEquipment'));
     if (!g) { b.sansRegle++; return; } if (g.statut === 'obsolète' || !/^contact/i.test(g.classe)) { b.ignorees++; return; }
-    const sexe = /^m/i.test(String(valSEE(C, r, 'ContactType'))) ? 'M' : /^f/i.test(String(valSEE(C, r, 'ContactType'))) ? 'F' : '';
-    const taille = awgSEE(numSEE(valSEE(C, r, 'ContactGauge'))); if (!taille || !sexe) { b.tailleIllisible++; return; }
+    // le sexe : Male / Female, et aussi Pin (une broche : mâle) / Socket (une douille : femelle)
+    const ct = String(valSEE(C, r, 'ContactType') || ''), sexe = /^(m|pin|broche)/i.test(ct) ? 'M' : /^(f|socket|douille)/i.test(ct) ? 'F' : '';
+    const cg = valSEE(C, r, 'ContactGauge'), taille = awgSEE(numSEE(cg)); if (!taille || !sexe) { b.tailleIllisible++; illisibleSEE(b, (sexe ? '' : 'sexe « ' + (ct || 'vide') + ' » · ') + (taille ? 'taille ' + taille : 'cavité ' + (cg === '' ? 'vide' : numSEE(cg) != null ? nombre(numSEE(cg)) + ' mm²' : '« ' + cg + ' »'))); return; }
     const wg = numSEE(valSEE(C, r, 'WireGauge')); let jauge;
     if (wg === -2) { b.sansFil++; return; } if (wg == null || wg === -1) jauge = '*'; else { jauge = awgSEE(wg); if (!jauge) { b.jaugeIllisible++; return; } }
     const contact = String(valSEE(C, r, 'PartNo1') || '').trim(); if (!contact) { b.sansContact++; return; }
@@ -20437,9 +20444,12 @@ function contactsDeSEE(T, B) { const R = T.regles, C = T.contacts, b = B.contact
     g.familles.forEach(famille => { const brut = { famille, sexe, taille, typeFil: String(valSEE(C, r, 'WireType') || '*'), jauge, reference: contact, accessoire: avec,
         note: 'SEE · règle ' + g.pn + (g.version ? ' v' + g.version : '') + (n != null ? ' n° ' + n : '') + (q1 > 1 ? ' · ' + q1 + ' contacts' : '') + (g.statut === 'en cours' ? ' · règle en cours (In Work)' : ''),
         statut: g.statut === 'en cours' ? 'à confirmer' : '' };
-      const x = contactNorme(brut); if (!x) { b.tailleIllisible++; return; } const k = cleDeLigne('contacts', x), e = best.get(k), rg = rang(g, n);
+      const x = contactNorme(brut); if (!x) { b.tailleIllisible++; illisibleSEE(b, famille + ' · taille ' + taille); return; } const k = cleDeLigne('contacts', x), e = best.get(k), rg = rang(g, n);
       if (!e) best.set(k, { brut, rg }); else { if (e.brut.reference !== contact) b.conflits++; if (mieux(rg, e.rg)) best.set(k, { brut, rg }); } }); });
-  const out = [...best.values()].map(x => x.brut); out.forEach(x => { b.familles[x.famille] = (b.familles[x.famille] || 0) + 1; }); b.retenues = out.length; return out; }
+  const out = [...best.values()].map(x => x.brut); out.forEach(x => { b.familles[x.famille] = (b.familles[x.famille] || 0) + 1; }); b.retenues = out.length;
+  b.illisibles = Object.fromEntries(Object.entries(b.illisibles || {}).sort((u, v) => v[1] - u[1]).slice(0, 6)); return out; }
+// ce qui n'a pas pu se lire, compté par valeur brute : les six plus fréquentes se montrent (l'onglet Import, « Ce qui n'est pas pris »)
+function illisibleSEE(b, k) { const m = b.illisibles || (b.illisibles = {}); m[k] = (m[k] || 0) + 1; }
 
 /* LES CÂBLES : la vue, ses conducteurs (le lien câble ↔ conducteur, sinon l'IDCable du conducteur), la plus récente des
    versions validées d'une même référence. */
@@ -20455,15 +20465,30 @@ function cablesDeSEE(T, B) { const V = T.cables, b = B.cables = { lus: 0, retenu
     const type = String(valSEE(V, r, 'Type') || '').toUpperCase().replace(/[^A-Z0-9]/g, ''), cle = cleNorme(pn), famille = type && cle.startsWith(type) ? type : (cle.match(/^[A-Z]+/) || [''])[0];
     const jauge = awgSEE(numSEE(valSEE(V, r, 'Gauge'))) || (cle.match(/(\d+)$/) || ['', ''])[1];
     const d = mmSEE(numSEE(valSEE(V, r, 'ExternalMaxDiameter'))), m = masseCol ? numSEE(valSEE(V, r, masseCol)) : null, rs = conds.map(f => f.r).filter(x => x != null && x > 0);
-    const blinde = !/^unshield|^non|^no$/i.test(String(valSEE(V, r, 'Shield') || 'unshielded')), nf = String(valSEE(V, r, 'CableFamily') || '').toLowerCase();
-    const brins = conds.length || Math.max(1, numSEE(valSEE(V, r, 'TotalNumberOfWires')) || 1);
+    // le blindage : SHIELDED / UNSHIELDED ; une case vide ne dit rien (Volta garde le sien : cablesCompletesSEE)
+    const sh = String(valSEE(V, r, 'Shield') || '').trim(), blinde = sh ? !/^unshield|^non|^no$/i.test(sh) : null, nf = String(valSEE(V, r, 'CableFamily') || '').toLowerCase();
+    // les brins : les conducteurs reliés, sinon TotalNumberOfWires ; rien des deux : SEE ne le dit pas (Volta garde le sien)
+    const nw = numSEE(valSEE(V, r, 'TotalNumberOfWires')), brins = conds.length || (nw > 0 ? Math.round(nw) : null);
     const nature = /coax/.test(nf) ? 'coaxial' : /twinax/.test(nf) ? 'twinax' : /quadrax/.test(nf) ? 'quadrax' : /optic|fib/.test(nf + ' ' + String(valSEE(V, r, 'CategoryFullPath')).toLowerCase()) ? 'fibre optique' : '';
-    const brut = { cable: pn, famille, jauge, brins: String(brins), blindage: blinde ? '1' : '0', nature, masse: m != null && m > 0 ? arrondiSEE(m < 1 ? m * 1000 : m, 2) : '',
-      liaisons: String(brins + (blinde ? 1 : 0)), resistance: rs.length ? arrondiSEE(Math.max(...rs) * 1000, 2) : '', diametre: d != null && d > 0 ? arrondiSEE(d, 2) : '',
+    const brut = { cable: pn, famille, jauge, brins: brins == null ? '' : String(brins), blindage: blinde == null ? '' : blinde ? '1' : '0', nature, masse: m != null && m > 0 ? arrondiSEE(m < 1 ? m * 1000 : m, 2) : '',
+      liaisons: String((brins || 1) + (blinde ? 1 : 0)), resistance: rs.length ? arrondiSEE(Math.max(...rs) * 1000, 2) : '', diametre: d != null && d > 0 ? arrondiSEE(d, 2) : '',
       section: d != null && d > 0 ? arrondiSEE(Math.PI * d * d / 4, 2) : '', note: 'SEE' + (st === 'obsolète' ? ' · obsolète dans SEE' : st === 'en cours' ? ' · en cours (In Work)' : '') };
     const rg = [st === 'validée' ? 2 : st === 'en cours' ? 1 : 0, numSEE(valSEE(V, r, 'Version')) || 0], e = best.get(cle);
     if (!e || rg[0] > e.rg[0] || (rg[0] === e.rg[0] && rg[1] > e.rg[1])) best.set(cle, { brut, rg }); });
   const out = [...best.values()].map(x => x.brut); b.retenus = out.length; return out; }
+
+/* CE QUE SEE NE DIT PAS, VOLTA LE GARDE. SEE gagne sur ce qu'il dit ; une case vide de SEE n'efface rien : la nature
+   d'un câble (torsadé, blindé : SEE ne la nomme que pour un coaxial, un twinax, une fibre), son Ø, sa masse, sa
+   résistance, ses brins quand aucun conducteur n'est relié, son blindage quand la colonne est vide — Volta remplit la
+   case, la note le dit. */
+const CHAMPS_COMPLETES_SEE = ['brins', 'nature', 'masse', 'resistance', 'diametre', 'section', 'blindage'];
+function cablesCompletesSEE(bruts, voltas) { const V = new Map((voltas || []).map(c => [cleDeLigne('cables', c), c]));
+  return (bruts || []).map(b => { const v = V.get(cleNorme(b.cable)); if (!v) return b; const x = { ...b }, pris = [];
+    CHAMPS_COMPLETES_SEE.forEach(k => { if (String(x[k] == null ? '' : x[k]).trim() !== '') return; const w = v[k];
+      if (k === 'blindage') { x.blindage = w ? '1' : '0'; return; } if (w == null || w === '') return; x[k] = String(w); pris.push(k); });
+    if (b.blindage === '' || b.brins === '') x.liaisons = String((+x.brins || 1) + (x.blindage === '1' ? 1 : 0));
+    if (pris.length) x.note = (x.note || 'SEE') + ' · de Volta : ' + pris.join(', ');
+    return x; }); }
 
 /* LES FACES : chaque arrangement et ses broches, à l'échelle du plus petit écart entre deux broches (le « pas » de Volta) ;
    une face ronde autour de son centre (SEE place l'origine au centre de l'insert), une rectangulaire dans son cadre. */
@@ -20530,11 +20555,13 @@ function lignesSEE(table, bruts) { return (bruts || []).map(b => { const x = ENT
 /* Les lignes de la base lues par le moteur : contacts et câbles une fois ; les faces à chaque fois (elles gardent la
    désignation, l'usage et la note de l'arrangement de Volta qu'elles remplacent). */
 function normeSEE(N0) { const S = BASE_SEE.base; if (!S) return null;
-  if (!BASE_SEE.norme) BASE_SEE.norme = { contacts: lignesSEE('contacts', S.contacts), cables: lignesSEE('cables', S.cables) };
+  if (!BASE_SEE.norme) BASE_SEE.norme = { contacts: lignesSEE('contacts', S.contacts) };
+  // les câbles se complètent par ceux de Volta : refaits avec la norme qu'ils complètent
+  if (BASE_SEE.norme.n0 !== N0.cables) { BASE_SEE.norme.cables = lignesSEE('cables', cablesCompletesSEE(S.cables, N0.cables)); BASE_SEE.norme.n0 = N0.cables; }
   const parCle = new Map((N0.modules || []).map(m => [cleDeLigne('modules', m), m]));
   const modules = lignesSEE('modules', (S.modules || []).map(b => { const x = moduleNorme(b), e = x && parCle.get(cleDeLigne('modules', x));
     return e ? { ...b, reference: e.reference, usage: b.usage === 'normal' && e.usage !== 'normal' ? e.usage : b.usage, note: b.note + ' · Volta : ' + (e.note || e.variante) } : b; }));
-  return { ...BASE_SEE.norme, modules }; }
+  return { contacts: BASE_SEE.norme.contacts, cables: BASE_SEE.norme.cables, modules }; }
 /* LA NORME COMPOSÉE : celle de Volta (l'embarquée et ce qui a été importé), la base SEE par-dessus — SEE gagne —, puis
    ce que l'utilisateur a corrigé à la main sur la page des normes (son geste passe devant tout). */
 function avecBaseSEE(N0, A) { const S = normeSEE(N0); if (!S) return N0;
@@ -20577,10 +20604,16 @@ const COMPARAISONS_SEE = new WeakMap(), INDEX_SEE = new WeakMap();
 function comparaisonSEE(I) { if (COMPARAISONS_SEE.has(I)) return COMPARAISONS_SEE.get(I);
   const N0 = normeAvecApports(normeEmbarqueeLue(), NORMES.apports), R = {};
   R.contacts = comparerTable('contacts', N0.contacts, lignesSEE('contacts', I.contacts));
-  R.cables = comparerTable('cables', N0.cables, lignesSEE('cables', I.cables));
+  R.cables = comparerTable('cables', N0.cables, lignesSEE('cables', cablesCompletesSEE(I.cables, N0.cables)));
   R.modules = comparerTable('modules', N0.modules, lignesSEE('modules', I.modules));
   // une ligne qui ne change que sa note ou sa source (« SEE · règle EN2997 v7 ») dit la même chose : identique
   ['contacts', 'cables'].forEach(t => { const C = R[t], pareilles = C.remplacees.filter(r => !ecartsSEE(t, r.avant, r.apres).length); C.remplacees = C.remplacees.filter(r => !pareilles.includes(r)); C.identiques.push(...pareilles.map(r => r.apres)); });
+  // une face de SEE est toujours à l'échelle (celles de Volta étaient relevées sur les figures) : mêmes contacts, mêmes
+  // noms, mêmes tailles, elle n'est que redessinée
+  { const C = R.modules; C.redessinees = C.remplacees.filter(r => !ecartsSEE('modules', r.avant, r.apres).length); C.remplacees = C.remplacees.filter(r => !C.redessinees.includes(r)); }
+  // ce qui est à vérifier d'abord, ce qui ne fait qu'écrire un nom en entier à la fin
+  ['contacts', 'cables', 'modules'].forEach(t => { const poids = r => { const e = ecartsSEE(t, r.avant, r.apres); return e.some(x => x[3] && x[3].suspect) ? 0 : e.every(x => x[3] && x[3].complet) ? 2 : 1; };
+    R[t].remplacees = R[t].remplacees.map((r, i) => [poids(r), i, r]).sort((u, v) => u[0] - v[0] || u[1] - v[1]).map(x => x[2]); });
   COMPARAISONS_SEE.set(I, R); return R; }
 const indexDeBaseSEE = I => { if (I === BASE_SEE.base) return indexSEE(); if (INDEX_SEE.has(I)) return INDEX_SEE.get(I); const M = new Map();
   (I.equipements || []).forEach(e => { const k = cleNorme(e.p); if (k && !M.has(k)) M.set(k, e); }); (I.equipements || []).forEach(e => { const k = cleNorme(e.std); if (k && !M.has(k)) M.set(k, e); }); INDEX_SEE.set(I, M); return M; };
@@ -20588,16 +20621,32 @@ const indexDeBaseSEE = I => { if (I === BASE_SEE.base) return indexSEE(); if (IN
 const motsContactSEE = x => `${nomDeFamille(app.norme, x.famille) || x.famille} · ${x.sexe === 'M' ? 'mâle' : 'femelle'} · taille ${x.taille} · ${x.typeFil === '*' ? 'tout câble' : x.typeFil} · ${x.jauge == null ? 'toute gauge' : x.jauge + ' AWG'}`;
 const CHAMPS_CABLE_SEE = [['diametre', 'Ø', ' mm'], ['masse', 'masse', ' g/m'], ['resistance', 'R', ' mΩ/m'], ['brins', 'brins', ''], ['blindage', 'blindage', ''], ['jauge', 'gauge', ''], ['nature', 'nature', '']];
 const valeurMontree = v => v === true ? 'oui' : v === false ? 'non' : v == null || v === '' ? '—' : typeof v === 'number' ? nombre(v) : String(v);
+/* Un écart de SEE sur un chiffre d'un facteur 2 ou plus (une masse 65 fois plus faible) : à vérifier dans SEE avant de
+   s'y fier — SEE gagne quand même, l'écart se voit en tête. Le nom d'un contact que SEE écrit en entier (KB0800 →
+   E0613KB0800) n'est pas un autre contact : il se range à la fin. Une face : le compte, les tailles, et les noms que
+   l'une a et pas l'autre (les premiers), jamais le dessin — toute face de SEE est à l'échelle. */
+const ECART_SUSPECT_SEE = 2;
+const facteurSEE = (a, b) => { if (typeof a !== 'number' || typeof b !== 'number' || !(a > 0) || !(b > 0)) return ''; const r = Math.max(a / b, b / a);
+  return r >= ECART_SUSPECT_SEE ? nombre(Math.round(r * (r < 10 ? 10 : 1)) / (r < 10 ? 10 : 1)) + ' fois ' + (b > a ? 'plus' : 'moins') : ''; };
+const nomsSeulsSEE = (xs, ys) => { const Y = new Set(ys), d = [...new Set(xs)].filter(x => !Y.has(x)).sort(triNaturel); return d.length ? d.slice(0, 8).join(' ') + (d.length > 8 ? ` … (${d.length})` : '') : ''; };
 function ecartsSEE(table, a, b) {
-  if (table === 'contacts') return [a.reference !== b.reference ? [a.reference, b.reference, 'contact'] : null, (a.accessoire || '') !== (b.accessoire || '') ? [a.accessoire || 'rien', b.accessoire || 'rien', 'avec'] : null].filter(Boolean);
-  if (table === 'cables') return CHAMPS_CABLE_SEE.filter(([k]) => valeurMontree(a[k]) !== valeurMontree(b[k])).map(([k, t, u]) => [valeurMontree(a[k]) + (a[k] != null && a[k] !== '' && typeof a[k] === 'number' ? u : ''), valeurMontree(b[k]) + (b[k] != null && b[k] !== '' && typeof b[k] === 'number' ? u : ''), t]);
-  const ta = m => [...new Set(m.contacts.map(c => '#' + c.taille))].join(' '), noms = m => m.contacts.map(c => c.lettre).sort(triNaturel).join(' ');
+  if (table === 'contacts') { const ra = String(a.reference || ''), rb = String(b.reference || ''), complet = !!ra && !!rb && ra !== rb && (rb.endsWith(ra) || ra.endsWith(rb));
+    return [ra !== rb ? [ra, rb, complet ? 'nom complet' : 'contact', complet ? { complet: true } : null] : null, (a.accessoire || '') !== (b.accessoire || '') ? [a.accessoire || 'rien', b.accessoire || 'rien', 'avec'] : null].filter(Boolean); }
+  if (table === 'cables') return CHAMPS_CABLE_SEE.filter(([k]) => valeurMontree(a[k]) !== valeurMontree(b[k])).map(([k, t, u]) => { const f = ['diametre', 'masse', 'resistance'].includes(k) ? facteurSEE(a[k], b[k]) : '';
+    return [valeurMontree(a[k]) + (typeof a[k] === 'number' ? u : ''), valeurMontree(b[k]) + (typeof b[k] === 'number' ? u : ''), t, f ? { suspect: f } : null]; });
+  const ta = m => [...new Set(m.contacts.map(c => '#' + c.taille))].join(' '), la = a.contacts.map(c => c.lettre), lb = b.contacts.map(c => c.lettre), moins = nomsSeulsSEE(la, lb), plus = nomsSeulsSEE(lb, la);
   return [a.contacts.length !== b.contacts.length ? [a.contacts.length + ' contacts', b.contacts.length + ' contacts', 'contacts'] : null, ta(a) !== ta(b) ? [ta(a), ta(b), 'tailles'] : null,
-    a.contacts.length === b.contacts.length && noms(a) !== noms(b) ? ['autres noms', 'ceux de SEE', 'noms des contacts'] : null, ['relevée sur la figure', 'à l’échelle de SEE', 'face']].filter(Boolean); }
+    moins || plus ? [moins || 'aucun', plus || 'aucun', 'noms', { noms: true }] : null].filter(Boolean); }
 const titreLigneSEE = (table, x) => table === 'contacts' ? motsContactSEE(x) : table === 'cables' ? x.cable : (nomDeFamille(app.norme, x.famille) || x.famille) + ' · ' + x.variante;
-function differenceSEEHtml(table, titre, C) { const n = C.remplacees.length, MAX = 30;
-  const ligne = ({ avant, apres }) => `<li class="see-diff"><span class="see-diff-t">${esc(titreLigneSEE(table, apres))}</span>${ecartsSEE(table, avant, apres).map(([a, b, k]) => `<span class="see-diff-e"><i>${esc(k)}</i><s>${esc(a)}</s><span class="see-fl">→</span><b>${esc(b)}</b></span>`).join('')}</li>`;
-  return `<div class="see-diffs"><h4>${esc(titre)} <span class="see-t">${esc([n ? plurielLie(n, 'ligne') + ' remplace' + (n > 1 ? 'nt' : '') + ' Volta' : 'rien ne remplace Volta', plurielLie(C.nouvelles.length, 'nouvelle'), plurielLie(C.identiques.length, 'identique')].join(' · '))}</span></h4>`
+function differenceSEEHtml(table, titre, C) { const n = C.remplacees.length, MAX = 30, E = new Map(C.remplacees.map(r => [r, ecartsSEE(table, r.avant, r.apres)]));
+  const suspects = C.remplacees.filter(r => E.get(r).some(e => e[3] && e[3].suspect)).length, complets = C.remplacees.filter(r => E.get(r).every(e => e[3] && e[3].complet)).length, redessinees = (C.redessinees || []).length;
+  const ecart = ([a, b, k, o]) => `<span class="see-diff-e${o && o.suspect ? ' suspect' : ''}${o && o.complet ? ' complet' : ''}"${o && o.noms ? ' title="à gauche, les noms que seul Volta avait ; à droite, ceux que seul SEE a"' : ''}><i>${esc(k)}</i><s>${esc(a)}</s><span class="see-fl">→</span><b>${esc(b)}</b>`
+    + (o && o.suspect ? `<em class="see-suspect" title="SEE dit ${escA(b)} là où Volta disait ${escA(a)} : ${escA(o.suspect)}, c'est rare pour une même référence — une erreur de saisie ou d'unité dans SEE ? SEE gagne quand même.">${esc(o.suspect)} · à vérifier dans SEE</em>` : '') + '</span>';
+  const ligne = r => `<li class="see-diff${E.get(r).some(e => e[3] && e[3].suspect) ? ' suspect' : ''}"><span class="see-diff-t">${esc(titreLigneSEE(table, r.apres))}</span>${E.get(r).map(ecart).join('')}</li>`;
+  const compte = [n ? esc(plurielLie(n, 'ligne') + ' remplace' + (n > 1 ? 'nt' : '') + ' Volta') : 'rien ne remplace Volta', suspects ? `<b class="see-t-att">${esc(plurielLie(suspects, 'écart'))} à vérifier</b>` : '',
+    complets ? esc('dont ' + plurielLie(complets, 'nom') + ' écrit' + (complets > 1 ? 's' : '') + ' en entier') : '', redessinees ? esc(plurielLie(redessinees, 'face') + ' redessinée' + (redessinees > 1 ? 's' : '') + ' à l’échelle, mêmes contacts') : '',
+    esc(plurielLie(C.nouvelles.length, 'nouvelle')), esc(plurielLie(C.identiques.length, 'identique'))].filter(Boolean).join(' · ');
+  return `<div class="see-diffs"><h4>${esc(titre)} <span class="see-t">${compte}</span></h4>`
     + (n ? `<ul>${C.remplacees.slice(0, MAX).map(ligne).join('')}</ul>` + (n > MAX ? `<details class="see-vides"><summary>${n - MAX} autre${n - MAX > 1 ? 's' : ''}</summary><ul>${C.remplacees.slice(MAX).map(ligne).join('')}</ul></details>` : '') : '') + '</div>'; }
 /* Le plan ouvert face à la base : ses références (par famille, en nombre seulement : le retest ne s'affiche pas) et ses
    types de câble. */
@@ -20621,10 +20670,10 @@ function importSEEHtml() { const I = baseMontreeSEE(); if (!I) return '<p class=
     + `${tuile(I.cables.length, 'câbles', (bk.sansConducteur ? bk.sansConducteur + ' sans conducteur relié' : 'avec leurs conducteurs'))}${tuile(I.modules.length, 'faces d’arrangement', plurielLie(Object.keys(bf.familles || {}).length, 'famille'))}`
     + `${tuile((I.equipements || []).length, 'références', plurielLie(be.connecteurs || 0, 'connecteur') + ' · ' + plurielLie(be.equipements || 0, 'équipement') + ' · ' + plurielLie(be.accouplements || 0, 'paire') + ' fiche ↔ embase')}</div>`;
   const C = comparaisonSEE(I);
-  const diffs = `<div class="see-bloc"><h3>Ce qui change dans Volta <span>SEE gagne : ce que disait Volta est barré, ce que dit SEE en gras</span></h3>${differenceSEEHtml('contacts', 'Contacts à sertir', C.contacts)}${differenceSEEHtml('cables', 'Câbles', C.cables)}${differenceSEEHtml('modules', 'Faces des connecteurs', C.modules)}</div>`;
+  const diffs = `<div class="see-bloc"><h3>Ce qui change dans Volta <span>SEE gagne : ce que disait Volta est barré, ce que dit SEE en gras ; ce que SEE laisse vide, Volta le garde</span></h3>${differenceSEEHtml('contacts', 'Contacts à sertir', C.contacts)}${differenceSEEHtml('cables', 'Câbles', C.cables)}${differenceSEEHtml('modules', 'Faces des connecteurs', C.modules)}</div>`;
   const autres = Object.entries(bc.autres || {}).map(([k, n]) => n + ' ' + k).join(', ');
   const dehors = [bc.obsoletes ? plurielLie(bc.obsoletes, 'règle') + ' obsolète' + (bc.obsoletes > 1 ? 's' : '') + ' ignorée' + (bc.obsoletes > 1 ? 's' : '') : '', autres ? 'règles d’autres classes pas encore lues : ' + autres : '',
-    bc.sansFil ? plurielLie(bc.sansFil, 'ligne') + ' de contact sans fil (gauge −2)' : '', bc.jaugeIllisible ? plurielLie(bc.jaugeIllisible, 'ligne') + ' à gauge qui n’est pas une AWG' : '', bc.tailleIllisible ? plurielLie(bc.tailleIllisible, 'ligne') + ' à taille de cavité ou sexe illisible' : '',
+    bc.sansFil ? plurielLie(bc.sansFil, 'ligne') + ' de contact sans fil (gauge −2)' : '', bc.jaugeIllisible ? plurielLie(bc.jaugeIllisible, 'ligne') + ' à gauge qui n’est pas une AWG' : '', bc.tailleIllisible ? plurielLie(bc.tailleIllisible, 'ligne') + ' à taille de cavité ou sexe illisible' + (Object.keys(bc.illisibles || {}).length ? ' — le plus souvent : ' + Object.entries(bc.illisibles).map(([k, n]) => k + ' (' + milliers(n) + ')').join(' ; ') : '') : '',
     bc.sansRegle ? plurielLie(bc.sansRegle, 'ligne') + ' de contact sans règle' : '', bc.conflits ? plurielLie(bc.conflits, 'cas') + ' où deux règles donnent deux contacts : la validée, la plus récente, le plus petit numéro retenu' : '',
     bf.sansBroche ? plurielLie(bf.sansBroche, 'arrangement') + ' sans broche' : '', bf.illisibles ? plurielLie(bf.illisibles, 'nom') + ' d’arrangement illisible' : '', (B.feuilles || []).length ? 'feuilles absentes du classeur : ' + B.feuilles.join(', ') : ''].filter(Boolean);
   const P = planFaceABaseSEE(I);
@@ -20636,14 +20685,14 @@ function importSEEHtml() { const I = baseMontreeSEE(); if (!I) return '<p class=
     + (dehors.length ? `<div class="see-bloc"><h3>Ce qui n’est pas pris</h3><ul class="see-dehors">${dehors.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : '') + plan + '</section>'; }
 /* Le bilan en texte, pour le résumé. */
 function resumeImportSEE() { const I = baseMontreeSEE(); if (!I) return ''; const C = comparaisonSEE(I), B = I.bilan || {}, bc = B.contacts || {};
-  const t = (k, x) => `${k} : ${x.remplacees.length} remplacent Volta · ${x.nouvelles.length} nouvelles · ${x.identiques.length} identiques`;
+  const t = (k, x, tb) => `${k} : ${x.remplacees.length} remplacent Volta${tb ? ` (dont ${x.remplacees.filter(r => ecartsSEE(tb, r.avant, r.apres).some(e => e[3] && e[3].suspect)).length} à vérifier)` : ''}${x.redessinees ? ` · ${x.redessinees.length} redessinées` : ''} · ${x.nouvelles.length} nouvelles · ${x.identiques.length} identiques`;
   return ['\n== Import ==', `${I.contacts.length} contacts (${Object.keys(bc.familles || {}).length} familles : ${Object.entries(bc.familles || {}).map(([f, n]) => f + ' ' + n).join(', ')}), ${I.cables.length} câbles, ${I.modules.length} faces, ${(I.equipements || []).length} références`,
-    t('Contacts', C.contacts), t('Câbles', C.cables), t('Faces', C.modules), `Règles : ${bc.validees || 0} validées, ${bc.enCours || 0} en cours, ${bc.obsoletes || 0} obsolètes ignorées${Object.keys(bc.autres || {}).length ? ', autres classes ' + JSON.stringify(bc.autres) : ''}`,
-    `Lignes de contact écartées : sans fil ${bc.sansFil || 0}, gauge illisible ${bc.jaugeIllisible || 0}, taille illisible ${bc.tailleIllisible || 0}, sans règle ${bc.sansRegle || 0}, conflits ${bc.conflits || 0}`,
+    t('Contacts', C.contacts), t('Câbles', C.cables, 'cables'), t('Faces', C.modules), `Règles : ${bc.validees || 0} validées, ${bc.enCours || 0} en cours, ${bc.obsoletes || 0} obsolètes ignorées${Object.keys(bc.autres || {}).length ? ', autres classes ' + JSON.stringify(bc.autres) : ''}`,
+    `Lignes de contact écartées : sans fil ${bc.sansFil || 0}, gauge illisible ${bc.jaugeIllisible || 0}, taille illisible ${bc.tailleIllisible || 0}${Object.keys(bc.illisibles || {}).length ? ' (' + Object.entries(bc.illisibles).map(([k, n]) => k + ' ' + n).join(' ; ') + ')' : ''}, sans règle ${bc.sansRegle || 0}, conflits ${bc.conflits || 0}`,
     `Faces des familles : ${Object.entries((B.faces || {}).familles || {}).map(([f, n]) => f + ' ' + n).join(', ')}`, (B.feuilles || []).length ? 'Feuilles absentes : ' + B.feuilles.join(', ') : ''].filter(Boolean).join('\n'); }
 /* Sur une fiche : ce que disait Volta là où SEE l'a remplacé (« Volta disait : Ø 1,52 mm → 1,60 mm »), sinon rien. */
 function differenceSEEMots(table, x) { const a = avantSEE(x); if (!a) return ''; const e = ecartsSEE(table, a, x).filter(([, , k]) => k !== 'face');
-  return e.length ? 'SEE a remplacé ce que disait Volta : ' + e.map(([u, v, k]) => k + ' ' + u + ' → ' + v).join(' ; ') : ''; }
+  return e.length ? 'SEE a remplacé ce que disait Volta : ' + e.map(([u, v, k, o]) => k + ' ' + u + ' → ' + v + (o && o.suspect ? ' (' + o.suspect + ' : à vérifier dans SEE)' : '')).join(' ; ') : ''; }
 
 /* ───────── 08-see.js ───────── */
 /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════

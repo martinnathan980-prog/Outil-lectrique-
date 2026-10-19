@@ -104,6 +104,32 @@ accessoire pour quel connecteur et quel câble).
   est absente de SEE, obsolète, ou pas déclarée pour ton programme ; un contact ou un câble que SEE a changé porte la
   marque « SEE » et, dans sa bulle, ce que disait Volta. **La première fois sur ta vraie base, photographie l'onglet
   Import** : c'est lui qui dira si les familles des règles et les noms des arrangements se rattachent bien.
+- **Lu sur ta vraie base (19 octobre 2026, tes photos de l'onglet Import, v68).** Les rattachements tiennent : 4 216
+  contacts (278 familles, 439 règles validées, 24 en cours), 615 câbles, 225 faces (7 familles), 13 042 références
+  (5 950 connecteurs, 7 092 équipements, 5 803 paires fiche ↔ embase) ; 808 règles obsolètes écartées. Ce qui change
+  dans Volta est sain pour les contacts (34 lignes : des révisions EN3155-…AB → …AC, des noms écrits en entier
+  KB0800 → E0613KB0800, et ce qui va avec que Volta n'avait pas : E0718-20-30, EN4530-004S/L). Quatre défauts de
+  l'import, **corrigés en version 69** :
+  · **une case vide de SEE effaçait Volta** — « nature : torsadé → — » sur des dizaines de câbles (SEE ne nomme la
+    nature que d'un coaxial, d'un twinax, d'une fibre) ; de même les brins d'un câble sans conducteur relié (31 dans
+    ta base), le blindage quand la colonne est vide. Désormais SEE gagne sur ce qu'il dit, et ce qu'il laisse vide,
+    Volta le garde (la note de la ligne le dit) ;
+  · **un écart d'un facteur 2 ou plus se voit en tête, en ambre** (« 65 fois moins · à vérifier dans SEE ») :
+    **DR6 : 135 g/m chez Volta (vérifié sur la fiche Lynxeo), 2,08 g/m dans SEE** — c'est la masse d'un 26 AWG, pas
+    d'un 6 : une erreur de saisie dans SEE, à faire corriger par ton référent. SEE gagne quand même ;
+  · **les faces** : « relevée sur la figure → à l'échelle de SEE » s'écrivait sur les 145 lignes ; c'est vrai de toutes,
+    c'est dit une fois (« redessinée à l'échelle, mêmes contacts »). Restent les vraies différences : le compte (EN 3645
+    25N07 : 89 → 99 contacts), les tailles (EN 2997 20-28 : + #22), et surtout **les noms des contacts des EN 3645 et
+    EN 3646**, qui diffèrent sur presque toutes leurs faces (pas sur les EN 2997, numérotées) : l'onglet montre
+    maintenant LESQUELS (ceux que seul Volta a → ceux que seul SEE a). **Re-photographie cette partie** : si SEE
+    écrit autrement les minuscules (a, b… de la 38999) ou saute d'autres lettres, c'est lui qui a raison, et c'est ce
+    que tes retests écrivent ;
+  · **431 lignes « à taille de cavité ou sexe illisible »** : Volta lit maintenant aussi « Pin » (mâle) et « Socket »
+    (femelle), et montre les valeurs qu'il ne lit pas, les six plus fréquentes. **Re-photographie cette ligne** de
+    « Ce qui n'est pas pris » : je saurai quoi lire.
+  Et une question tranchée par SEE : **LE** est un **coaxial** (ton Excel le donnait deux fois, fibre optique puis
+  coaxial ; Volta avait gardé fibre optique, à confirmer). **Ne clique pas encore « Garder dans Volta » sur la v68** :
+  ouvre la v69, redépose le classeur, relis l'onglet Import, puis garde-le.
 - **Décidé (octobre 2026).** Volta peut garder la base SEE sur le PC (dans ce navigateur, jamais ailleurs, avec un
   bouton pour l'oublier). SEE gagne toujours sur les tables de Volta, et chaque différence se voit : ce que disait
   Volta, ce que dit SEE, côte à côte. Les tables tirées des photos (contacts EN2997, EN3645, EN3646, EN4165) et

@@ -161,3 +161,9 @@
   .see-gestes .btn{flex:1 1 auto}
   .see-tuile{padding:0 12px}
 }
+/* un écart à vérifier : la ligne garde son trait d'ambre dans la marge, l'écart son facteur en pastille ; un nom écrit en
+   entier (même contact) recule ; le compte des écarts à vérifier dans le titre */
+.see-diff.suspect{box-shadow:inset 2px 0 0 var(--warn);padding-left:10px}
+.see-diff-e.complet s,.see-diff-e.complet b,.see-diff-e.complet i{color:var(--t-3);font-weight:500}
+.see-suspect{font-style:normal;font:600 var(--f-11)/1.6 var(--sans);color:var(--warn);background:var(--warn-soft);border-radius:var(--r-1);padding:0 7px;margin-left:4px;white-space:nowrap}
+.see-t-att{color:var(--warn);font-weight:600}
