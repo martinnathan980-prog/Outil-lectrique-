@@ -384,6 +384,15 @@ ETA483;−55 °C;-55;93,07339;0,01181
 7274;71 °C min (partielle);71;1,10;7,88
 7274;71 °C min (partielle);71;1,15;5,91
 7274;71 °C min (partielle);71;1,20;4,66
+7274;71 °C min (partielle);71;1,292;3,28
+7274;71 °C min (partielle);71;1,409;2,17
+7274;71 °C min (partielle);71;1,566;1,45
+7274;71 °C min (partielle);71;1,958;0,697
+7274;71 °C min (partielle);71;2,349;0,422
+7274;71 °C min (partielle);71;3,132;0,221
+7274;71 °C min (partielle);71;3,915;0,138
+7274;71 °C min (partielle);71;4,698;0,0985
+7274;71 °C min (partielle);71;6,264;0,0615
 7274;25 °C min;25;1,11;999
 7274;25 °C min;25;1,15;88,9
 7274;25 °C min;25;1,20;45,3
@@ -418,6 +427,14 @@ ETA483;−55 °C;-55;93,07339;0,01181
 7274;−55 °C max (partielle);-55;2,00;82,1
 7274;−55 °C max (partielle);-55;2,50;27,1
 7274;−55 °C max (partielle);-55;3,00;14,4
+MS25244;25 °C min (partielle);25;1,15;3600
+MS25244;25 °C min (partielle);25;2,00;15
+MS25244;25 °C min (partielle);25;4,00;2
+MS25244;25 °C min (partielle);25;6,00;1,0
+MS25244;25 °C max (partielle);25;1,38;3600
+MS25244;25 °C max (partielle);25;2,00;55
+MS25244;25 °C max (partielle);25;4,00;7
+MS25244;25 °C max (partielle);25;6,00;3,5
 EN2495;125 °C min;125;1,01;983
 EN2495;125 °C min;125;1,05;79,3
 EN2495;125 °C min;125;1,10;36,3
@@ -516,7 +533,6 @@ MS14153 / MS14154;idem;71;1,00;1,45;3;20;0,33;1,7;0,06;0,40;MS14153C (MS14154D :
 5TC;idem;70;1,05;1,45;1,5;;0,15;2,5;0,045;0,6;Sensata — 1,5 s min à 200 %
 5TC;idem;125;0,90;1,45;1,5;;0,15;2,5;0,045;0,6;Sensata
 ETA483;E-T-A 483, caractéristique M1 — les temps viennent de la courbe typique (table Courbes ETA483), pas d'une table de calibration publiée;23;1,15;1,38;3,2;15,8;0,40;1,29;0,10;0,33;E-T-A fiche 483 + courbe extraite (bande +23 °C)
-ETA4120;E-T-A 4120 — disjoncteur thermique de puissance, monopolaire, homologué EN 2495, EN 3773, EN 2995, MS 3320, VG 95345 T06, UL 1077 (la fiche que tu m'as envoyée);1;1 2 2,5 3 4 5 7,5 10 15 20 25;115 V AC 400 Hz / 28 V DC;;-55;125;;ETA483;4120;pouvoir de coupure 6000 A à 28 V DC, 1000 A (1-4 A) ou 2000 A (5-25 A) à 115 V AC — sa courbe (125 °C, 23 °C, −55 °C) a la forme des quatre courbes de ton Excel : relue sur une photo d'écran, elle n'est pas lisible au point près — les courbes ETA483 en attendant le PDF
 ETA483;courbe typique ;125;0,93 (asymptote lue);;1,98;;0,24;;0,064;;courbe extraite +125 °C (minimum)
 ETA483;courbe typique ;-55;;1,47 (asymptote lue);;42,9;;2,29;;0,46;courbe extraite −55 °C (maximum)
 Crouzet 84406 (EN 2495 / EN 2995), 1,5-5 A;tableau Crouzet + courbe extraite;25;1,15;1,40;2 (table) / 3,9 (courbe);15 (table) / 12,6 (courbe);0,39;1,34;0,11;0,43;Crouzet catalogue FrogLeg p. 27
@@ -524,23 +540,28 @@ Crouzet 84406, 7,5-25 A;tableau Crouzet;25;1,15;1,40;4;20;;;;;Crouzet
 Crouzet 84406;tableau + courbe;125;1,00;;1,47 (courbe);;0,15;;0,062 (8 In);;Crouzet — « non tripping point at 125 °C : 1 × RC »
 Crouzet 84406;courbe;-55;;1,51 (asymptote lue) / 1,60 (étiquette du graphique tripolaire);;23,1;;2,15;;0,70;Crouzet
 Crouzet 84417 (EN 2592 / EN 2996), 3 pôles;tableau Crouzet (identique au monopolaire);25;1,15;1,40;2 / 4;15 / 20;;;;;Crouzet — étiquettes 1,10 / 1,40 / 1,60 sur le graphique
+MS25244;MS25244R table II (10-50 A), non compensé;25;1,15;1,38;15;55;;;;;MS25244R (everyspec) — 400 % : 2-7 s, 600 % : 1,0-3,5 s
+MS25244;MS25244R table II (10-50 A);-40;1,48;1,78;;;;;;;MS25244R — 5 et 7,5 A : tient 1,56
+MS25244;MS25244R table II (10-50 A);71;0,70;1,14;;;;;;;MS25244R — 5 et 7,5 A : tient 0,60, déclenche 1,08
+7277;Klixon 7277 (commercial, 7274-2 aux limites élargies);25;1,10;1,50;2;35;0,15;1,7;0,028;0,55;Sensata 7277 (fiche 2018)
 
 Familles de disjoncteurs — ce qu'une famille est : la norme, les pôles, la gamme de calibres, la tension, la compensation en température, l'ambiante admise, la masse (g), la COURBE à prendre (une famille de la table Courbes : ETA483 = la feuille du lecteur — 2TC, 6TC, 5TC, 7274, EN2495 = les fiches constructeur), les MOTIFS (les débuts de part number qui nomment la famille : « MS3320 » reconnaît MS3320-10 et MS3320L-5, « 2TC » reconnaît 2TC2-10 et 2TC27-5 — le calibre se lit en queue, s'il est de la gamme). Sources : Sensata (2TC, 3TC, 6TC, 9TC, 5TC, 7274), feuilles MS (MS3320N, MS22073M, MS14153C, MS14154D), Crouzet (84 406, 84 417), E-T-A (483), titres DIN/BSI pour les EN (R2, R5 — octobre 2026). Les MS3320 / AS33201 prennent les courbes ETA483 parce que la feuille du lecteur les trace ainsi — un Klixon 2TC2 prendrait 2TC (plus lent à −54 °C) : à confirmer par le lecteur.
 Famille;Norme;Pôles;Calibres;Tension;Compensé;Tmin;Tmax;Masse;Courbe;Motifs;Note
-MS3320;MS3320N / AS33201 / AS58091 — monopolaire compensé ½-25 A (Klixon 2TC2 — E-T-A 483-G533 approuvé MS 3320);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 120 V AC 400 Hz;oui;-55;121;25;ETA483;MS3320;feuille MS3320N : −55/+121 °C, 70 000 ft, diélectrique 1500 V (500 V à 121 °C et 70 000 ft), tient 0,80 In à chaud en altitude — pouvoir de coupure 6000 A à 28 V DC (1-20 A), 2500 A à 120 V AC (1-15 A), trip-free — les courbes de la feuille du lecteur (E-T-A 483) — un Klixon 2TC2 prendrait 2TC : à confirmer
-2TC;Klixon 2TC (2TC2 = MS3320, 2TC27 = MS3320L, 2TC63 = MS3320V) — monopolaire compensé;1;1 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 120 V AC 400 Hz;oui;-54;121;25;2TC;2TC;coordonné 2:1 jusqu’à 6000 A (déclaration Sensata) — la −54 °C max dessinée (66 s à 2 In) est plus lente que la calibration (35-40 s) : la protection du fil se juge sur la table
+MS3320;MS3320N / AS33201 / AS58091 — monopolaire compensé ½-20 A (Klixon 2TC2 — E-T-A 483-G533 approuvé MS 3320);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;oui;-55;121;25;ETA483;MS3320;courbes ETA483 (E-T-A 483 et 4120 qualifiés MS 3320 1-20 A — dans l’enveloppe MS3320N table II sauf −55 °C à 2 In : 43 s pour 40 s max) — la courbe 2TC −54 °C (66 s à 2 In) sort de la même enveloppe — MS3320N titre et table I (everyspec MS3320N_45287) : ½ à 20 A
+2TC;Klixon 2TC (2TC2 = MS3320, 2TC27 = MS3320L, 2TC63 = MS3320V) — monopolaire compensé;1;1 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 120 V AC 400 Hz;oui;-54;121;24;2TC;2TC;coordonné 2:1 jusqu’à 6000 A (déclaration Sensata) — la −54 °C max dessinée (66 s à 2 In) est plus lente que la calibration (35-40 s) : la protection du fil se juge sur la table — masse : Sensata 2TC « 24 gram maximum (2TC14) »
 AS33201;AS33201 (SAE, ex-MS3320);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 120 V AC 400 Hz;oui;-55;121;25;ETA483;AS33201;comme MS3320
 3TC;Klixon 3TC (MS14105 / AS14105) — monopolaire compensé 15-35 A;1;15 20 25 30 35;28 V DC / 120 V AC 400 Hz;oui;-54;121;36;2TC;3TC;la fiche Sensata trace 2TC et 3TC ensemble
 MS14105;MS14105 / AS14105 (Klixon 3TC);1;15 20 25 30 35;28 V DC / 120 V AC 400 Hz;oui;-54;121;36;2TC;MS14105 AS14105;
-6TC;Klixon 6TC (MS14154 / AS14154) — tripolaire compensé;3;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115/200 V AC 400 Hz;oui;-55;71;68;6TC;6TC;une phase déclenche les trois — 2000 A monophasé, 1200 A triphasé — la feuille MS14154D ne qualifie que −55/+71 °C (Sensata publie +90 et +121)
-MS14154;MS14154D / AS14154 (Klixon 6TC);3;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115/200 V AC 400 Hz;oui;-55;71;68;6TC;MS14154 AS14154;tripolaire
+6TC;Klixon 6TC (MS14154 / AS14154) — tripolaire compensé;3;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115/200 V AC 400 Hz;oui;-55;71;65;6TC;6TC;une phase déclenche les trois — 2000 A monophasé, 1200 A triphasé — la feuille MS14154D ne qualifie que −55/+71 °C (Sensata publie +90 et +121) — masse : Sensata 6TC « 65 gram maximum (6TC14) »
+MS14154;MS14154D / AS14154 (Klixon 6TC);3;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115/200 V AC 400 Hz;oui;-55;71;65;6TC;MS14154 AS14154;tripolaire — masse : Sensata 6TC « 65 gram maximum (6TC14) »
 9TC;Klixon 9TC (MS14153 / AS14153) — tripolaire compensé;3;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115/200 V AC 400 Hz;oui;-55;71;113;6TC;9TC;tripolaire — les courbes 6TC (même fiche)
 MS14153;MS14153C / AS14153 (Klixon 9TC);3;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115/200 V AC 400 Hz;oui;-55;71;113;6TC;MS14153 AS14153;tripolaire
 5TC;Klixon 5TC — monopolaire compensé 20-50 A (pas de MS);1;20 25 35 50;115 V AC 400 Hz / 28 V DC;oui;-54;125;55;5TC;5TC;coupure 4000 A à 28 V DC, 2000 A à 115 V AC — chute 0,150 V (20-35 A), 0,120 V (50 A) — coordonné 2:1 jusqu’à 600 A seulement
-7274;MIL-C-5809 · MS22073 (7274-11) · MS26574 (7274-2) — monopolaire NON compensé;1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;non;-55;71;38;7274;7274;non compensé : 90-130 % à 71 °C, 135-180 % à −55 °C — 80 000 ft — la fiche ne trace en entier que la bande +25 °C
-MS22073;MS22073M (Klixon 7274-11);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;non;-55;71;38;7274;MS22073;
-MS26574;MS26574 (Klixon 7274-2 — E-T-A 483-G533-J3M1 approuvé);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;non;-55;71;38;7274;MS26574;
+7274;MIL-C-5809 · MS22073 (7274-11) · MS26574 (7274-2) — monopolaire NON compensé;1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;non;-55;71;33;7274;7274;non compensé : 90-130 % à 71 °C, 135-180 % à −55 °C — 80 000 ft — la fiche ne trace en entier que la bande +25 °C — masse : Sensata 7274 : 7274-11 (MS22073) 33 g max, 7274-2 (MS26574) 28 g max
+MS22073;MS22073M (Klixon 7274-11);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;non;-55;71;33;7274;MS22073;masse : Sensata 7274-11 33 g max
+MS26574;MS26574 (Klixon 7274-2 — E-T-A 483-G533-J3M1 approuvé);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;non;-55;71;28;7274;MS26574;masse : Sensata 7274-2 28 g max
 ETA483;E-T-A 483 — approuvé MS 3320 (483-G533-J1M1-B2S0ZN), MS 3320-V (483-V533), MS26574 (483-G533-J3M1-C4S0Z), prEN 2995 (483-G814), VG 95345 T6, LN 29886 — EN 60934 type M;1;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115 V AC 400 Hz / 28 V DC;oui;-55;125;25;ETA483;483 ETA483;caractéristique M1 1,15-1,38 In — coupure 6000 A à 28 V DC (1-25 A), 4000 A (30-35 A), 1000 A (≤ 4 A) / 2000 A (5 A) / 2500 A (7,5-35 A) à 115 V AC — diélectrique 1500 V AC — altitude 25 000 m — 10 000 manœuvres à In (≤ 25 A) — chute à In 750 mV (1 A) à 150 mV (35 A) — LES QUATRE COURBES DE LA FEUILLE DU LECTEUR
+ETA4120;E-T-A 4120 — disjoncteur thermique monopolaire compensé en température, homologué UL 1077, VG 95345 partie 6, EN 2495, LN 29887 (5-25 A), EN 3773-004, MS 3320 (1-20 A), EN 2995-004;1;1 2 2,5 3 4 5 7,5 10 15 20 25;115 V AC 400 Hz / 28 V DC;oui;-55;125;;ETA483;4120;coupure 6000 A à 28 V DC (1-25 A), 1000 A (1-4 A) ou 2000 A (5-25 A) à 115 V AC — courbes relues sur la fiche vectorielle E-T-A 4120 Issue C (octobre 2026) : celles de l’ETA483 à ±2 % — les éditions récentes (4120 « 2034 », 483 « 1948 ») placent l’asymptote 125 °C à 1,00 In au lieu de 0,93 : Volta garde 0,93, plus prudent pour l’intempestif
 EN2495;EN 2495:1990 (0,5-25 A) / EN 2995-001:2023 (1-25 A) — Crouzet 84 406 (cosses 45°, MS26574) / 84 437 (60°);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 115 V AC 400 Hz;oui;-60;125;19;EN2495;EN2495 EN2995 84406 84437;Crouzet : coupure 6000 A à 28 V DC, 2500 A à 115 V AC — tient 1,15 × RC, déclenche 1,40 × RC à 25 °C, tient 1,0 × RC à 125 °C — 2 × RC : 2-15 s (1,5-5 A), 4-20 s (7,5-25 A) — 30 A : Tmax 90 °C
 MS33201;MS33201 (Crouzet, modèle EN 2495);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 115 V AC 400 Hz;oui;-55;125;20;EN2495;MS33201;
 EN3773;EN 3773-001:2024 / -004 (cosses UNC) / -006 (cosses plates 6,3 mm) — monopolaires compensés 1-25 A;1;1 à 25;28 V DC / 115 V AC 400 Hz;oui;-55;125;;EN2495;EN3773;titres DIN — courbes EN2495 à défaut (Crouzet)
@@ -549,6 +570,8 @@ EN2794;EN 2794-001:2024 / -004:2014 (cosses UNC, 20-25 A, 15 000 m) — monopola
 EN2592;EN 2592:1990 / EN 2996-001:2023 — tripolaires compensés 1-25 A (Crouzet 84 417);3;1 2 2,5 3 4 5 7,5 10 15 20 25;115/200 V AC 400 Hz;oui;-60;125;55;EN2495;EN2592 EN2996 84417;tripolaire — Crouzet : coupure 2000 A à 115/200 V AC, mêmes limites de déclenchement que le monopolaire
 EN3774;EN 3774-001 / -004 / -006:2023 (6,3 mm) — tripolaires compensés 1-25 A;3;1 à 25;115/200 V AC 400 Hz;oui;-55;125;;EN2495;EN3774;titres DIN — Tmax 90 °C au-delà de 15 A — courbes EN2495 à défaut
 EN3662;EN 3662-001:2024 — tripolaire compensé 20-50 A;3;20 25 30 35 40 50;115/200 V AC 400 Hz;oui;-55;125;;5TC;EN3662;tripolaire — courbes 5TC à défaut
+MS25244;MS25244R / AS25244 (Klixon 3TC7 5-35 A, 5TC7 40-50 A) — monopolaire NON compensé 5-50 A;1;5 7,5 10 15 20 25 30 35 50;28 V DC / 120 V AC 400 Hz;non;-40;71;;MS25244;MS25244 AS25244;aucune courbe publique : Volta juge sur l’enveloppe de la feuille MS25244R table II à 25 °C (200 % : 15-55 s, 400 % : 2-7 s, 600 % : 1,0-3,5 s), pas sur les courbes ETA483, plus rapides — la protection d’un fil derrière lui serait jugée trop favorablement
+7277;Klixon 7277 — monopolaire NON compensé ½-20 A, version commerciale du 7274-2 (« physically and electrically identical », limites plus larges);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;non;-55;71;28;7274;7277;les courbes 7274 à défaut — calibration 25 °C plus large : 2-35 s à 200 %, 0,028-0,55 s à 1000 % — −55 / +71 °C repris du 7274, à confirmer
 Safran 170;Safran 170 (MS25017 encombrement · MIL-C-5809) — fort calibre, non compensé;1;125 140 150 160 180 200;28 V DC / 115 V AC;non;-40;71;130;;170;3000 A à 28 V DC — aucune courbe
 
 Protection — relue par R2 (octobre 2026) sur l'AC 43.13-1B chg 1, table 11-3 page 11-15 : le calibre maximal du disjoncteur et du fusible par jauge de fil cuivre, pour des faisceaux à 57 °C (135 °F) jusqu'à 30 000 ft, de 15 fils ou plus chargés à 20 % au plus de leur capacité, des disjoncteurs à 24-29 °C (75-85 °F) au MIL-C-5809, « un fil seul à l'air libre peut être protégé par le calibre immédiatement supérieur » (§ 11-49), « le disjoncteur protège le fil, pas l'équipement » (§ 11-51). Le courant du contact : AS39029 pour les tailles 22D à 12 (Glenair 2011), taille 8 : 46 A (EN 3155-065, Amphenol, rapport R1), tailles 4 et 0 : NON TROUVÉ — l'ancienne valeur (80 A, 150 A) était de mémoire, la case est laissée vide (l'outil prendra la taille connue la plus proche, 8 : 46 A, ce qui est prudent).
@@ -595,7 +618,6 @@ MS3320;15;0,25;MS3320N
 2TC;15;0,25;MS3320N
 MS3320;20;0,25;MS3320N
 2TC;20;0,25;MS3320N
-MS3320;25;0,20;Sensata catalogue p. 7
 2TC;25;0,20;Sensata catalogue p. 7
 3TC;15 20 25 30 35;0,25;Sensata catalogue p. 7
 7274;0,5;2,00;MS22073M (Sensata idem)

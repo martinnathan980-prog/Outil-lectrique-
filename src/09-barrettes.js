@@ -1188,6 +1188,21 @@ function cableDuType(norme, type) { const t = cleNorme(type); if (!t) return nul
 /* LA FAMILLE D'UN CÂBLE (table Familles de câbles) : par le type du fil (DR24 → DR), la ligne qui couvre la famille. */
 function cableFamilleDe(norme, type) { const f = typeDuFil(type); if (!f) return null; const T = (normeDesModules(norme).cablesFamilles || []);
   return T.find(x => x.familles.includes(f)) || null; }
+/* LA PHYSIQUE D'UN CÂBLE : ce qu'une masse ou une résistance ne peut pas être pour sa jauge, d'où qu'elle vienne (la base
+   des câbles, une base SEE). La section AWG nominale, π/4 × (0,127 × 92^((36 − n)/39))² mm² ; une résistance sous celle
+   d'un cuivre pur de cette section (ρ 17,241 nΩ·m à 20 °C, 15 % de marge) est impossible quel que soit le métal ; une
+   masse sous celle du métal seul de ses conducteurs (cuivre 8,89, CCA 3,32, aluminium 2,70 g/cm³ — l'aluminium quand la
+   famille ne dit pas son métal — 10 % de marge) aussi. Le DR6 à 2,08 g/m (la masse du DR26) : 119 g/m de cuivre seul.
+   Passe de corroboration (octobre 2026). Rend [{ champ, valeur, borne, texte }], vide quand rien ne se juge (sans jauge :
+   un coaxial). */
+const sectionAwg = n => n == null || !isFinite(n) ? null : Math.PI / 4 * Math.pow(0.127 * Math.pow(92, (36 - n) / 39), 2);
+const DENSITES_CONDUCTEUR = { cuivre: 8.89, CCA: 3.32, aluminium: 2.70 };
+function physiqueDuCable(norme, c) { const S = sectionAwg(c && c.jauge), out = []; if (!S) return out;
+  const n = Math.max(1, Math.round(c.brins || 1)), F = cableFamilleDe(norme, c.cable || c.famille), metal = F && DENSITES_CONDUCTEUR[F.conducteur] ? F.conducteur : '';
+  const rMin = 17.241 / S, mMin = DENSITES_CONDUCTEUR[metal || 'aluminium'] * S * n, j = nombreFr(c.jauge) + ' AWG';
+  if (c.resistance > 0 && c.resistance < 0.85 * rMin) out.push({ champ: 'resistance', valeur: c.resistance, borne: rMin, texte: 'R ' + nombreFr(c.resistance) + ' mΩ/m : moins qu’un cuivre pur de ' + j + ' (' + nombreFr(Math.round(rMin * 10) / 10) + ' au moins)' });
+  if (c.masse > 0 && c.masse < 0.9 * mMin) out.push({ champ: 'masse', valeur: c.masse, borne: mMin, texte: 'masse ' + nombreFr(c.masse) + ' g/m : moins que le ' + (metal === 'CCA' ? 'métal (CCA)' : metal || 'métal') + ' seul de ' + (n > 1 ? n + ' conducteurs' : 'son conducteur') + ' de ' + j + ' (' + nombreFr(Math.round(mMin)) + ' g/m)' });
+  return out; }
 /* La résistance d'un conducteur à T °C depuis sa valeur à 20 °C : × (234,5 + T)/254,5 pour le cuivre (et le CCA, cuivre
    en surface), × (238,1 + T)/258,1 pour l'aluminium — la formule de l'AC 43.13-1B § 11-66 (α ≈ 0,00393/K) : 20 °C → 1,
    70 °C → 1,20, 95 °C → 1,29, 135 °C → 1,45. */

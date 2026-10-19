@@ -12,6 +12,57 @@ Rien de ce qui suit n'est inventé dans Volta : ce qu'il ne sait pas, il le dit 
 
 ---
 
+## La passe de corroboration (19 octobre 2026, version 71)
+
+Tu m'as demandé : « regarde sur Internet, avec d'autres sources, et prends la vraie — SEE peut se tromper, Volta aussi ».
+Les quelque 300 lignes douteuses de Volta ont été recoupées sur des sources **publiques** (les normes MIL qui reproduisent
+les EN, les catalogues Glenair, Amphenol, Souriau, TE, Sensata, E-T-A, Lynxeo/Nexans, Prysmian/Draka, la FAA), deux
+sources indépendantes quand il y en avait. Chaque ligne corrigée dit sa source dans sa note. Aucune recherche n'a porté
+sur ta base, ton programme ou ton appareil.
+
+**Où SEE se trompe (les sources le prouvent)**
+- **Les noms des contacts** : SEE perd la casse (C et c). MIL-STD-1560 / 1669 les distinguent — Volta 70 les remet.
+- **Le DR6 à 2,08 g/m** : c'est la masse du DR26 ; le cuivre seul d'un 6 AWG pèse 118 g/m. 135 g/m (Lynxeo et Prysmian).
+- **Un contact taille 20 dans une cavité 22** (EN 4165, câble YYBKW) : il n'y entre pas — EN3155-008M2222.
+- **La douille M39029/27-210 face à la broche /28-409** (KC, EN 4165) : elles ne s'accouplent pas ; la paire est /27-402.
+- **L'EN 3155-066** (douille taille 8, fût 10) est **retirée**, remplacée par l'EN 3155-083 (EN3155-083F0810).
+
+**Où Volta se trompait (corrigé en version 71)**
+- **Les faces** : relues sur les tables X/Y de MIL-STD-1560C (EN 3645), 1669A (EN 3646, ASNE 0059) et 1554A
+  (EN 2997) — 72 lignes. La 25-7 a 99 contacts (1 à 99, les taille 8 en 25 et 75) ; la 25-4 va jusqu'à LL ; l'EN 2997 est
+  numérotée comme MIL-STD-1554 (14-12 : les #16 en 4, 7, 10 ; 20-28 : les #12 en 15, 19, 23, 27…) ; l'EN 4165 99-10 a
+  8 contacts taille 20 (pas 22) et 2 taille 16 — le 300XC1 B de l'exemple y loge enfin.
+- **Les câbles** : DW24 / DW22, GPB24 / GPB22 (des copies de jauge), MLA12, AD6, DG6, DG00, YV3, les ADB à ADD et VNB à
+  VND (1,03 × AD), WS, XE, XF, XK, WH, KC blindés (une tresse), XY est un **coaxial** 75 Ω (RG 179), WL, WM, WN, WF, WW,
+  HE, KD, KL. La colonne Note de la base des câbles n'était pas lue : elle l'est.
+- **Les disjoncteurs** : la fiche E-T-A 4120 (enfin trouvée, PDF vectoriel) confirme les courbes ETA483 à ±2 % ; la ligne
+  4120 était rangée dans la mauvaise table ; le MS3320 s'arrête à 20 A (pas 25) ; les masses Sensata ; deux familles
+  ajoutées (MS25244 non compensé, jugé sur l'enveloppe de sa feuille MS, et 7277) ; une courbe partielle ne se
+  prolonge plus au-delà de ses points (la 7274 à 71 °C déclenchait en 0,27 s à 2 In).
+- **Les contacts** : les EN 2997 -018/-019 sont vérifiés (Souriau, TE), la taille 23 est publiée (EN 3155-003 et
+  -008:2026), l'outillage et les obturateurs EN 2997 / EN 3646 / EN 4165 sont renseignés (TE).
+- **Les raccords** : la cheminée EN 4165-015 a son passage (Ø 9,45 mm, TE) — Volta juge le toron ; les plages Glenair
+  série 36 et les cotes M85049/38 sont vérifiées ; « Dmax boîtier » est le Ø de l'écrou Glenair, pas du boîtier.
+- **111 lignes** perdaient la fin de leur note (un « ; » la coupait) : recollées, et un contrôle l'empêche désormais.
+
+**Ce que Volta fait de plus à l'import SEE** : un écart **impossible pour la jauge** (sous le métal seul, sous un cuivre
+pur) se signale même sur un câble que Volta ne connaît pas ; un contact que **Volta a vérifié** et que SEE remplace aussi
+(« Volta l'a vérifié · à revoir dans SEE », la source dans la bulle) ; une face qui change la **taille d'un contact** le
+dit contact par contact. SEE gagne toujours — ces signaux disent seulement où regarder.
+
+**Ce qui reste ouvert (aucune source publique)** : les références Airbus et Airbus Helicopters (ASNE 0613 KB/LB/KC/LC,
+E0546/E0547, E0824/E0825, E0848, ECS…, ABS1496, NSA938171/172), les familles de câbles AM, LE, WC, WG, WK, WP, XD, KQ,
+KR, ADE, BN, DH ; les faces propres aux EN (EN 3645 09-01, 11-12, 13-26, 17-20, 19-12, 21-12 ; EN 3646 10-02, 16-21,
+20-34, 22-36 ; EN 2997 08-06, 10-12, 12-21, 22-30) ; les paliers 2 s / 10 s / 1 min de l'EN 2853 ; la famille de
+connecteurs des EN 3660-009 à -023 ; les NSA935401 ; ta classe Z de l'EN 3645 (ta codification dit « nickelé », Amphenol
+et l'EN 3660-001 disent zinc-nickel noir 175 °C : à trancher).
+
+**Ce que toi seul peux trancher** : le sens de la cavité « −1 » de SEE ; la famille LE (fibre, pas coaxial à 2,84 g/m) ;
+si tes retests écrivent C et c différemment ; et, quand SEE et Volta divergent sur une ligne vérifiée, laquelle ton
+programme achète vraiment.
+
+---
+
 ## Le raccourci : ta base SEE
 
 Tes captures de SEE Electrical Equipment Definition (12 octobre 2026) montrent que la base de ton programme contient

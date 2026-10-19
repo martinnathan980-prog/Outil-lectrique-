@@ -178,12 +178,26 @@ en double ; LE (« fibre optique » puis « coaxial ») est gardé en fibre
 optique, à confirmer.
 
 Vérifié en octobre 2026 contre les fiches Lynxeo : DR 26→6 identiques, DRB
-à ±0,5 %, MLC, AD, VN identiques. Complété : les masses DRC/DRD, les
+à ±0,5 %, MLC identiques ; AD identiques (Draka et Nexans) ; VN identiques en
+masse et Ø, sauf les 16 AWG (+1,5 %). Complété : les masses DRC/DRD, les
 **résistances AD** (aluminium cuivré, 27 à 65 % de plus que le DR cuivre),
-les diamètres manquants ; ADB…ADE et VNA…VND prennent la résistance de l'AD
-de même jauge (hypothèse : les conducteurs VN sont des ABS 0949 AD). Douteux,
-à relire dans l'Excel : DW24 (= DW22), GPB24 (= GPB22), MLA12 (Ø = MLA14),
-AM et YV (mêmes R et masses).
+les diamètres manquants.
+
+**Passe de corroboration (19 octobre 2026)** : DR, DRB/DRC/DRD et MLA→MLD
+recoupés sur deux lignées de fabricant (Lynxeo/Nexans et Prysmian/Draka) ;
+corrigés, chacun avec sa source dans sa note : DW24 et DW22 (EN 2346-005 :
+131,0 / 80,9 Ω/km, conducteur plaqué nickel — l'Excel portait 60 pour les
+deux), GPB24 et GPB22 (EN 4608-005B / -004 : 135 / 82,5 Ω/km), MLA12 (Ø 3,20),
+AD6, DG6, DG00, YV3 ; les multiconducteurs ADB/ADC/ADD (ABS 1354) et VNB/VNC/VND
+(ABS 1356) prennent **1,03 × la résistance de l'AD** (torsadage) ; WS, XE, XF,
+XK, WH et KC sont blindés (une tresse), XY est un **coaxial** 75 Ω (RG 179,
+ASNE 0639), KC un triaxial ; WL, WM, WN, WF, WW, HE, KD, KL complétés. YV est
+confirmé ligne à ligne (ASNE 0438) ; AM, LE, WC, WG, WK, WP, XD, KQ, KR, ADE,
+BN et DH restent sans source publique. La colonne **Note** de la table est lue
+(elle ne l'était pas : l'en-tête n'avait que onze colonnes). Toute la table
+passe un **contrôle physique** (`physiqueDuCable` : aucune masse sous le métal
+seul de ses conducteurs, aucune résistance sous un cuivre pur de sa jauge) —
+le même qui juge une base SEE à l'import.
 
 Une seconde table, **Familles de câbles** : par famille, la norme (EN
 2267-010 pour DR, EN 2714-013 pour MLx, ABS 0949 pour AD, ABS 1356 pour VN,

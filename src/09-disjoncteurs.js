@@ -228,10 +228,13 @@ function interpolerCourbes(A, B, T) { const w = (T - A.temperature) / (B.tempera
 function protectionDeJauge(norme, jauge) { if (jauge == null) return null; return (normeDesModules(norme).protections || []).find(p => p.jauge === jauge) || null; }
 /* Le temps que le disjoncteur tient à ce multiple : sous le premier point, toujours (Infinity) ; entre deux points, une
    interpolation en log-log (la courbe d'un thermique est une droite par morceaux sur papier log-log : c'est ce que la
-   figure du constructeur dessine) ; au-delà du dernier, la pente du dernier segment. Le graphique de la fiche
-   échantillonne cette fonction-ci : ce qu'on voit est exactement ce qui juge. */
+   figure du constructeur dessine) ; au-delà du dernier, la pente du dernier segment — sauf sur une courbe PARTIELLE
+   (relue sur un bout de figure : 7274 à −55 °C, MS25244) : elle ne se prolonge pas, au-delà de son dernier point elle
+   garde son dernier temps (prolongée, la 7274 à 71 °C déclenchait en 0,27 s à 2 In et la −55 °C passait sous la 25 °C
+   max vers 7 In). Le graphique de la fiche échantillonne cette fonction-ci : ce qu'on voit est exactement ce qui juge. */
 function tempsDeDeclenchement(courbe, multiple) { const P = courbe.points; if (!P.length || !(multiple > 0)) return Infinity;
   if (multiple < P[0].m) return Infinity; if (P.length === 1) return P[0].t;
+  if (multiple > P[P.length - 1].m && /partielle/i.test(courbe.nom || '')) return P[P.length - 1].t;
   let i = 1; while (i < P.length - 1 && P[i].m < multiple) i++;
   const a = P[i - 1], b = P[i]; if (b.m === a.m) return Math.min(a.t, b.t);
   const k = (Math.log(multiple) - Math.log(a.m)) / (Math.log(b.m) - Math.log(a.m));

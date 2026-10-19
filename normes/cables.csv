@@ -1,7 +1,7 @@
 Câbles — la base des câbles du lecteur (l'onglet Câbles de son Excel, octobre 2026, vérifié contre les fiches Lynxeo : DR 26→6 identiques, DRB à ±0,5 %, MLC, AD, VN identiques) : pour chaque type de câble du retest (DR24, MLB22, KD24, WC…), sa famille, sa jauge, ses brins, s'il est blindé, sa nature, sa masse en g/m (valeur max), le nombre de liaisons qu'il porte (les brins, plus le blindage), sa résistance en mΩ/m à 20 °C (la même valeur en Ω/km ; valeur max des fiches — la chute en ligne la corrige par la température du conducteur), son diamètre extérieur en mm et sa section HORS-TOUT en mm² (π Ø²/4 : isolant, gaine et blindage compris — pour le toron, pas pour le cuivre ; la section du conducteur est dans en2853.csv).
-L'outil s'en sert pour la fiche d'un fil, pour la chute en ligne (la résistance de ce câble-là, avant celle de la jauge seule) et pour le faisceau de chaque connecteur (la section cumulée, le diamètre équivalent, la masse) — c'est de là que viendront les raccords. Un type sans ligne est signalé par la pastille de contrôle. 225 lignes dans l'Excel ; HJ y est en double (gardé une fois), LE aussi — « fibre optique » puis « coaxial », mêmes chiffres — gardé en fibre optique, à confirmer. Complété en octobre 2026 (fiches Lynxeo) : les masses DRC/DRD, les résistances AD (aluminium cuivré : 27 à 65 % de plus que le DR cuivre, le rapport n'est pas constant), les diamètres AD4 et VN manquants ; ADB…ADE et VNA…VND prennent la résistance de l'AD de même jauge (les conducteurs VN sont des ABS 0949 AD : hypothèse à confirmer sur les fiches). Relu le 12 octobre 2026 sur les photos de l'Excel (lignes 27 à 228) : chaque valeur est celle de l'Excel, sauf ce que les fiches Lynxeo ont complété ou corrigé (dit plus haut) ; KQ24 et KR24 manquaient depuis la première saisie, ils y sont. Ce que l'Excel porte tel quel et qui ressemble à une copie, à corriger chez toi : DW24 (masse et R de DW22), GPB24 (de GPB22), MLA12 (Ø de MLA14), AM et YV (mêmes R et masses, seuls les Ø diffèrent — leurs résistances, elles, sont justes : l'AC 43.13-1B table 11-10 donne 2,10 Ω/km au plus pour un 6 AWG aluminium, 2,2 est une valeur max de fiche, recherche R2). DH4 n'est pas dans l'Excel : sa ligne vient de SEE (ECS0844, la fiche Cables and Wires du lecteur), sans résistance.
+L'outil s'en sert pour la fiche d'un fil, pour la chute en ligne (la résistance de ce câble-là, avant celle de la jauge seule) et pour le faisceau de chaque connecteur (la section cumulée, le diamètre équivalent, la masse) — c'est de là que viendront les raccords. Un type sans ligne est signalé par la pastille de contrôle. 225 lignes dans l'Excel ; HJ y est en double (gardé une fois), LE aussi — « fibre optique » puis « coaxial », mêmes chiffres — gardé en fibre optique, à confirmer. Complété en octobre 2026 (fiches Lynxeo) : les masses DRC/DRD, les résistances AD (aluminium cuivré : 27 à 65 % de plus que le DR cuivre, le rapport n'est pas constant), les diamètres AD4 et VN manquants ; VNA prend la résistance de l'AD ; les multiconducteurs ADB/ADC/ADD (ABS 1354) et VNB/VNC/VND (ABS 1356) prennent 1,03 × AD (torsadage, tables du catalogue Nexans 2013) ; ADE n'est pas dans l'ABS 1354. Relu le 12 octobre 2026 sur les photos de l'Excel (lignes 27 à 228) : chaque valeur est celle de l'Excel, sauf ce que les fiches Lynxeo ont complété ou corrigé (dit plus haut) ; KQ24 et KR24 manquaient depuis la première saisie, ils y sont. Corrigé le 19 octobre 2026 (passe de corroboration, la source de chaque ligne dans sa note) : DW24 et DW22 (EN 2346-005, catalogue Nexans 2013), GPB24 et GPB22 (EN 4608-005B / -004), MLA12 (Ø 3,20), AD6, DG6, DG00, YV3, les ADB à ADD et VNB à VND, les coaxiaux WS, XE, XF, XK, WH et KC blindés, XY coaxial ; YV confirmé ligne à ligne par la table ASNE 0438 (catalogue Nexans 2013, et l'AC 43.13-1B table 11-10 : 2,10 Ω/km pour un 6 AWG aluminium) ; AM reste non identifié. DH4 n'est pas dans l'Excel : sa ligne vient de SEE (ECS0844, la fiche Cables and Wires du lecteur), sans résistance.
 
-Câble;Famille;Jauge;Brins;Blindage;Nature;Masse;Liaisons;Résistance;Diamètre;Section
+Câble;Famille;Jauge;Brins;Blindage;Nature;Masse;Liaisons;Résistance;Diamètre;Section;Note
 AD24;AD;24;1;0;;1,75;1;145;0,96;0,72
 AD22;AD;22;1;0;;2,50;1;90,2;1,10;0,95
 AD20;AD;20;1;0;;3,65;1;49,6;1,34;1,41
@@ -11,41 +11,41 @@ AD14;AD;14;1;0;;10,94;1;15,5;2,24;3,94
 AD12;AD;12;1;0;;15,50;1;10,9;2,70;5,73
 AD10;AD;10;1;0;;24,02;1;5,8;3,33;8,71
 AD8;AD;8;1;0;;39,00;1;3,8;4,40;15,21
-AD6;AD;6;1;0;;63,70;1;;5,70;25,52
+AD6;AD;6;1;0;;63,70;1;2,3;5,70;25,52;R max 2,3 Ω/km : fiche Draka AD (prEN 4681-003 / ABS 0949) et catalogue Nexans 2013 p. 29 — vérifié
 AD4;AD;4;1;0;;96,30;1;1,5;7,40;43,01
-ADB24;ADB;24;2;0;;3,61;2;145;1,92;2,90
-ADB22;ADB;22;2;0;;5,15;2;90,2;2,18;3,73
-ADB20;ADB;20;2;0;;7,52;2;49,6;2,68;5,64
-ADB18;ADB;18;2;0;;11,23;2;33,2;3,22;8,14
-ADB16;ADB;16;2;0;;15,97;2;23,0;3,84;11,58
-ADB14;ADB;14;2;0;;22,54;2;15,5;4,48;15,76
-ADB12;ADB;12;2;0;;31,93;2;10,9;5,40;22,90
-ADB10;ADB;10;2;0;;49,48;2;5,8;6,66;34,84
-ADB8;ADB;8;2;0;;80,34;2;3,8;8,80;60,82
-ADB6;ADB;6;2;0;;131,22;2;;11,40;102,07
-ADB4;ADB;4;2;0;;198,38;2;1,5;;
-ADC24;ADC;24;3;0;;5,41;3;145;2,06;3,35
-ADC22;ADC;22;3;0;;7,73;3;90,2;2,37;4,39
-ADC20;ADC;20;3;0;;11,28;3;49,6;2,88;6,52
-ADC18;ADC;18;3;0;;16,84;3;33,2;3,46;9,41
-ADC16;ADC;16;3;0;;23,95;3;23,0;4,13;13,38
-ADC14;ADC;14;3;0;;33,80;3;15,5;4,82;18,22
-ADC12;ADC;12;3;0;;47,90;3;10,9;5,81;26,47
-ADC10;ADC;10;3;0;;74,22;3;5,8;7,16;40,26
-ADC8;ADC;8;3;0;;120,51;3;3,8;9,46;70,29
-ADC6;ADC;6;3;0;;196,83;3;;12,26;117,96
-ADC4;ADC;4;3;0;;297,57;3;1,5;;
-ADD24;ADD;24;4;0;;7,21;4;145;2,30;4,17
-ADD22;ADD;22;4;0;;10,30;4;90,2;2,64;5,47
-ADD20;ADD;20;4;0;;15,04;4;49,6;3,22;8,12
-ADD18;ADD;18;4;0;;22,45;4;33,2;3,86;11,73
-ADD16;ADD;16;4;0;;31,93;4;23,0;4,61;16,68
-ADD14;ADD;14;4;0;;45,07;4;15,5;5,38;22,70
-ADD12;ADD;12;4;0;;63,86;4;10,9;6,48;32,98
-ADD10;ADD;10;4;0;;98,96;4;5,8;7,99;50,17
-ADD8;ADD;8;4;0;;160,68;4;3,8;10,56;87,58
-ADD6;ADD;6;4;0;;262,44;4;;13,68;146,98
-ADD4;ADD;4;4;0;;396,76;4;1,5;;
+ADB24;ADB;24;2;0;;3,70;2;149,4;1,90;2,84;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADB22;ADB;22;2;0;;5,27;2;92,9;2,16;3,66;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADB20;ADB;20;2;0;;7,53;2;51,1;2,75;5,94;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADB18;ADB;18;2;0;;10,91;2;34,2;3,25;8,30;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADB16;ADB;16;2;0;;15,63;2;23,7;3,85;11,64;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADB14;ADB;14;2;0;;21,03;2;16,0;4,47;15,69;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADB12;ADB;12;2;0;;30,07;2;11,2;5,31;22,15;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADB10;ADB;10;2;0;;51,94;2;6,0;6,98;38,26;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADB8;ADB;8;2;0;;80,50;2;3,91;8,92;62,49;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADB6;ADB;6;2;0;;132,64;2;2,37;11,44;102,79;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADB4;ADB;4;2;0;;198,37;2;1,55;13,96;153,06;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADC24;ADC;24;3;0;;5,55;3;149,4;2,04;3,27;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADC22;ADC;22;3;0;;7,91;3;92,9;2,33;4,26;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADC20;ADC;20;3;0;;11,29;3;51,1;2,96;6,88;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADC18;ADC;18;3;0;;16,36;3;34,2;3,49;9,57;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADC16;ADC;16;3;0;;23,45;3;23,7;4,15;13,53;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADC14;ADC;14;3;0;;31,54;3;16,0;4,83;18,32;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADC12;ADC;12;3;0;;45,10;3;11,2;5,73;25,79;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADC10;ADC;10;3;0;;77,91;3;6,0;7,53;44,53;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADC8;ADC;8;3;0;;120,74;3;3,91;9,61;72,53;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADC6;ADC;6;3;0;;198,96;3;2,37;12,32;119,21;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADC4;ADC;4;3;0;;297,55;3;1,55;15,04;177,66;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADD24;ADD;24;4;0;;7,41;4;149,4;2,28;4,08;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADD22;ADD;22;4;0;;10,54;4;92,9;2,61;5,35;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADD20;ADD;20;4;0;;15,06;4;51,1;3,32;8,66;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADD18;ADD;18;4;0;;21,81;4;34,2;3,92;12,07;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADD16;ADD;16;4;0;;31,27;4;23,7;4,65;16,98;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADD14;ADD;14;4;0;;42,05;4;16,0;5,40;22,90;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADD12;ADD;12;4;0;;60,13;4;11,2;6,42;32,37;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADD10;ADD;10;4;0;;103,89;4;6,0;8,43;55,81;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADD8;ADD;8;4;0;;160,99;4;3,91;10,77;91,10;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADD6;ADD;6;4;0;;265,28;4;2,37;13,81;149,79;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
+ADD4;ADD;4;4;0;;396,74;4;1,55;16,85;222,99;ABS 1354 (catalogue Nexans 2013 p. 33-34) : R par âme = 1,03 × AD (torsadage), masse et Ø max de la table — remplace les valeurs déduites (× 2,06 et Ø des DRB)
 ADE24;ADE;24;5;0;;9,01;5;145;;
 ADE22;ADE;22;5;0;;12,88;5;90,2;;
 ADE20;ADE;20;5;0;;18,80;5;49,6;;
@@ -68,12 +68,12 @@ BN24;BN;24;1;0;;2,67;1;;;
 BN22;BN;22;1;0;;3,90;1;;;
 BN20;BN;20;1;0;;6,52;1;;;
 BN18;BN;18;1;0;;9,78;1;;;
-DG6;DG;6;1;0;;160,00;1;;7,30;41,85
+DG6;DG;6;1;0;;160,00;1;1,60;7,30;41,85;NSA 935131 : R 1,60 Ω/km (Draka AIR1715 2010 et catalogue Nexans 2013 p. 141) — vérifié
 DG4;DG;4;1;0;;245,00;1;0,97;9,30;67,93
 DG2;DG;2;1;0;;396,00;1;0,61;10,90;93,31
 DG0;DG;0;1;0;;600,00;1;0,40;13,40;141,03
-DG00;DG;00;1;0;;750,00;1;;;
-DH4;DH;4;1;0;;270,00;1;;8,80;60,82;SEE (ECS0844) : 0,27 kg/m, Ø 8,8 mm, −65 / +260 °C — absent de l'Excel ; résistance à prendre sur la fiche
+DG00;DG;00;1;0;;750,00;1;0,31;14,50;165,13;NSA 935131 : R 0,31 Ω/km, Ø max 14,50 (Draka AIR1715 2010 et catalogue Nexans 2013 p. 141) — vérifié
+DH4;DH;4;1;0;;270,00;1;;8,80;60,82;SEE (ECS0844) : 0,27 kg/m, Ø 8,8 mm, −65 / +260 °C — absent de l'Excel — résistance à prendre sur la fiche
 DH2;DH;2;1;0;;413,00;1;0,61;10,60;88,25
 DH0;DH;0;1;0;;627,00;1;0,40;13,40;141,03
 DH00;DH;00;1;0;;788,00;1;0,32;14,70;169,72
@@ -87,10 +87,10 @@ DR14;DR;14;1;0;;19,78;1;10,90;2,24;3,94
 DR12;DR;12;1;0;;31,33;1;6,80;2,70;5,73
 DR10;DR;10;1;0;;49,85;1;4,10;3,33;8,71
 DR8;DR;8;1;0;;90,00;1;2,30;4,40;15,21
-DR6;DR;6;1;0;;135,00;1;1,58;5,70;25,52
+DR6;DR;6;1;0;;135,00;1;1,58;5,70;25,52;135 g/m max (Lynxeo, fiche EN 2267-010A 140 S — Prysmian FT 401) — le cuivre seul d’un 6 AWG pèse 119 g/m : une masse de 2,08 g/m (celle du DR26) est impossible — vérifié
 DRB26;DRB;26;2;0;torsadé;4,28;2;164,80;1,68;2,22
 DRB24;DRB;24;2;0;torsadé;5,60;2;117,50;1,92;2,90
-DRB22;DRB;22;2;0;torsadé;8,53;2;61,80;2,18;3,73
+DRB22;DRB;22;2;0;torsadé;8,53;2;61,80;2,20;3,80;Ø max 2,20 : Lynxeo EN 2267-009 et Prysmian FT 402 (2023) — vérifié
 DRB20;DRB;20;2;0;torsadé;14,11;2;34,20;2,68;5,64
 DRB18;DRB;18;2;0;torsadé;21,49;2;21,80;3,22;8,14
 DRB16;DRB;16;2;0;torsadé;30,10;2;15,00;3,84;11,58
@@ -99,7 +99,7 @@ DRB12;DRB;12;2;0;torsadé;64,54;2;7,00;5,40;22,90
 DRB10;DRB;10;2;0;torsadé;102,69;2;4,22;6,66;34,84
 DRB8;DRB;8;2;0;torsadé;185,40;2;2,37;8,80;60,82
 DRB6;DRB;6;2;0;torsadé;278,10;2;1,63;11,40;102,07
-DRC24;DRC;24;3;0;;8,40;3;117;2,06;3,35
+DRC24;DRC;24;3;0;torsadé;8,40;3;117;2,06;3,35;EN 2267-009C : 3 âmes torsadées (Prysmian FT 402) — vérifié
 DRC22;DRC;22;3;0;torsadé;12,79;3;61,7;2,37;4,41
 DRC20;DRC;20;3;0;torsadé;21,17;3;34,1;2,88;6,51
 DRC18;DRC;18;3;0;torsadé;32,23;3;21,7;3,46;9,40
@@ -119,15 +119,15 @@ DRD12;DRD;12;4;0;torsadé;129,08;4;6,99;6,48;32,98
 DRD10;DRD;10;4;0;torsadé;205,38;4;4,22;7,99;50,14
 DRD8;DRD;8;4;0;torsadé;370,80;4;2,37;10,56;87,58
 DRD6;DRD;6;4;0;torsadé;556,20;4;1,63;13,68;146,98
-DW24;DW;24;1;0;;3,90;1;60,00;1,65;2,14
-DW22;DW;22;1;0;;3,90;1;60,00;1,80;2,54
-GPB24;GPB;24;2;1;torsadé blindé;29,47;3;61,80;4,00;12,57
-GPB22;GPB;22;2;1;torsadé blindé;29,47;3;61,80;4,44;15,48
-HE;HE;;2;1;twinax;27,00;3;;4,50;15,90
+DW24;DW;24;1;0;;5,00;1;131,0;1,68;2,22;EN 2346-005A 002 : R 131,0 Ω/km, Ø 1,68, 5,00 g/m (catalogue Nexans 2013 p. 187 — R d’âme = FprEN 4608-004 tableau 1) — conducteur plaqué nickel — l’Excel portait 60 et 3,90, ceux du 22 (60 est sous le minimum physique d’un 24 AWG cuivre, 80)
+DW22;DW;22;1;0;;6,66;1;80,9;1,80;2,54;EN 2346-005A 004 : R 80,9 Ω/km, Ø 1,80, 6,66 g/m (catalogue Nexans 2013 p. 187 — R d’âme = FprEN 4608-004 tableau 1) — conducteur plaqué nickel
+GPB24;GPB;24;2;1;torsadé blindé;27,50;3;135,0;4,00;12,57;EN 4608-005B 002 : 135 Ω/km, Ø 4,00, 27,5 g/m (catalogue Nexans 2013 p. 275) — l’Excel copiait le GPB22 (61,8 est sous le minimum physique d’un 24 AWG cuivre)
+GPB22;GPB;22;2;1;torsadé blindé;29,66;3;82,5;4,30;14,52;EN 4608-004B 004 : 82,5 Ω/km, Ø 4,30, 29,66 g/m (FprEN 4608-004:2014 tableau 1 et catalogue Nexans 2013 p. 189) — vérifié
+HE;HE;;2;1;twinax;27,00;3;97,2;4,50;15,90;R max 97,2 Ω/km : ASNE 0259 (catalogue Nexans 2013 p. 279)
 HJ;HJ;;2;1;twinax;22,00;3;165,00;3,00;7,07
-KC;KC;;1;0;coaxial;27,00;1;;3,50;9,62
-KD24;KD;24;4;1;quadrax;41,00;5;;5,00;19,63
-KL24;KL;24;4;1;quadrax;32,00;5;;4,00;12,57
+KC;KC;;1;1;triaxial;27,00;3;;3,50;9,62;ECS 0745 : triaxial, double tresse et tresse séparées par une gaine (Lynxeo, catalogue Nexans 2013 p. 240) — vérifié
+KD24;KD;24;4;1;quadrax;41,00;5;96;5,00;19,63;boucle 19,2 Ω/100 m, soit 96 Ω/km par conducteur : ABS 1503 (catalogue Nexans 2013 p. 253)
+KL24;KL;24;4;1;quadrax;32,00;5;;4,50;15,90;Ø max 4,50 : EN 3375-011 (F 4704-19, catalogue Prysmian 2017)
 KQ24;KQ;24;2;0;twinax;21,00;;145,00;3,56;9,95;Excel : un twinax sans blindage (colonne E = 0) et sans nombre de liaisons — à confirmer
 KR24;KR;24;8;1;octax;75,00;9;106,00;6,60;34,21
 KW;KW;;1;1;coaxial;95,00;2;;7,80;47,78
@@ -140,7 +140,7 @@ MLA20;MLA;20;1;1;blindé;10,77;2;33,20;1,84;2,66
 MLA18;MLA;18;1;1;blindé;14,97;2;21,10;2,08;3,40
 MLA16;MLA;16;1;1;blindé;20,97;2;14,50;2,43;4,64
 MLA14;MLA;14;1;1;blindé;27,03;2;10,90;2,74;5,90
-MLA12;MLA;12;1;1;blindé;39,70;2;6,80;2,74;5,90
+MLA12;MLA;12;1;1;blindé;39,70;2;6,80;3,20;8,04;Ø max 3,20 : Prysmian FT 403 (2024) et fiche Draka EN2714-013 — l’Excel copiait le Ø du MLA14 — vérifié
 MLA10;MLA;10;1;1;blindé;61,94;2;4,10;3,89;11,88
 MLB26;MLB;26;2;1;torsadé blindé;8,17;3;165,00;2,13;3,56
 MLB24;MLB;24;2;1;torsadé blindé;10,23;3;117,00;2,40;4,52
@@ -174,56 +174,56 @@ VNA18;VNA;18;1;1;;10,40;2;33,2;2,11;3,50
 VNA16;VNA;16;1;1;;14,75;2;23,0;2,48;4,83
 VNA14;VNA;14;1;1;;17,96;2;15,5;2,79;6,11
 VNA12;VNA;12;1;1;;24,30;2;10,9;3,20;8,04
-VNA10;VNA;10;1;1;;36,07;2;5,8;;
-VNB24;VNB;24;2;1;;8,15;3;145;2,40;4,52
-VNB22;VNB;22;2;1;;10,16;3;90,2;2,70;5,73
-VNB20;VNB;20;2;1;;14,88;3;49,6;3,27;8,40
-VNB18;VNB;18;2;1;;20,20;3;33,2;3,75;11,04
-VNB16;VNB;16;2;1;;28,48;3;23,0;4,44;15,48
-VNB14;VNB;14;2;1;;37,27;3;15,5;5,13;20,67
-VNB12;VNB;12;2;1;;55,78;3;10,9;6,09;29,13
-VNB10;VNB;10;2;1;;78,19;3;5,8;7,39;42,89
-VNC24;VNC;24;3;1;;11,59;4;145;2,59;5,27
-VNC22;VNC;22;3;1;;14,52;4;90,2;2,91;6,65
-VNC20;VNC;20;3;1;;21,15;4;49,6;3,52;9,73
-VNC18;VNC;18;3;1;;28,80;4;33,2;4,05;12,88
-VNC16;VNC;16;3;1;;41,42;4;23,0;4,80;18,10
-VNC14;VNC;14;3;1;;50,80;4;15,5;5,47;23,50
-VNC12;VNC;12;3;1;;75,81;4;10,9;6,50;33,18
-VNC10;VNC;10;3;1;;107,60;4;5,8;7,90;49,02
-VND24;VND;24;4;1;;14,29;5;145;2,84;6,33
-VND22;VND;22;4;1;;18,06;5;90,2;3,19;7,99
-VND20;VND;20;4;1;;26,39;5;49,6;3,86;11,70
-VND18;VND;18;4;1;;36,22;5;33,2;4,46;15,62
-VND16;VND;16;4;1;;52,12;5;23,0;5,30;22,06
-VND14;VND;14;4;1;;70,00;5;15,5;6,16;29,80
+VNA10;VNA;10;1;1;;36,07;2;5,8;3,89;11,88;Ø max 3,89 : ABS 1356, catalogue Nexans 2013 p. 37
+VNB24;VNB;24;2;1;;8,15;3;149,4;2,40;4,52;ABS 1356 (catalogue Nexans 2013 p. 37) : R par âme = 1,03 × AD (torsadage)
+VNB22;VNB;22;2;1;;10,16;3;92,9;2,70;5,73;ABS 1356 (catalogue Nexans 2013 p. 37) : R par âme = 1,03 × AD (torsadage)
+VNB20;VNB;20;2;1;;14,88;3;51,1;3,27;8,40;ABS 1356 (catalogue Nexans 2013 p. 37) : R par âme = 1,03 × AD (torsadage)
+VNB18;VNB;18;2;1;;20,20;3;34,2;3,75;11,04;ABS 1356 (catalogue Nexans 2013 p. 37) : R par âme = 1,03 × AD (torsadage)
+VNB16;VNB;16;2;1;;28,48;3;23,7;4,44;15,48;ABS 1356 (catalogue Nexans 2013 p. 37) : R par âme = 1,03 × AD (torsadage)
+VNB14;VNB;14;2;1;;37,27;3;16,0;5,13;20,67;ABS 1356 (catalogue Nexans 2013 p. 37) : R par âme = 1,03 × AD (torsadage)
+VNB12;VNB;12;2;1;;55,78;3;11,2;6,09;29,13;ABS 1356 (catalogue Nexans 2013 p. 37) : R par âme = 1,03 × AD (torsadage)
+VNB10;VNB;10;2;1;;78,19;3;6,0;7,39;42,89;ABS 1356 (catalogue Nexans 2013 p. 37) : R par âme = 1,03 × AD (torsadage)
+VNC24;VNC;24;3;1;;11,59;4;149,4;2,59;5,27;ABS 1356 (catalogue Nexans 2013 p. 37) : R par âme = 1,03 × AD (torsadage)
+VNC22;VNC;22;3;1;;14,52;4;92,9;2,91;6,65;ABS 1356 (catalogue Nexans 2013 p. 37) : R par âme = 1,03 × AD (torsadage)
+VNC20;VNC;20;3;1;;21,15;4;51,1;3,52;9,73;ABS 1356 (catalogue Nexans 2013 p. 37) : R par âme = 1,03 × AD (torsadage)
+VNC18;VNC;18;3;1;;28,80;4;34,2;4,05;12,88;ABS 1356 (catalogue Nexans 2013 p. 37) : R par âme = 1,03 × AD (torsadage)
+VNC16;VNC;16;3;1;;41,42;4;23,7;4,80;18,10;ABS 1356 (catalogue Nexans 2013 p. 37) : R par âme = 1,03 × AD (torsadage)
+VNC14;VNC;14;3;1;;50,80;4;16,0;5,47;23,50;ABS 1356 (catalogue Nexans 2013 p. 37) : R par âme = 1,03 × AD (torsadage)
+VNC12;VNC;12;3;1;;75,81;4;11,2;6,50;33,18;ABS 1356 (catalogue Nexans 2013 p. 37) : R par âme = 1,03 × AD (torsadage)
+VNC10;VNC;10;3;1;;107,60;4;6,0;7,90;49,02;ABS 1356 (catalogue Nexans 2013 p. 37) : R par âme = 1,03 × AD (torsadage)
+VND24;VND;24;4;1;;14,29;5;149,4;2,84;6,33;ABS 1356 (catalogue Nexans 2013 p. 37) : R par âme = 1,03 × AD (torsadage)
+VND22;VND;22;4;1;;18,06;5;92,9;3,19;7,99;ABS 1356 (catalogue Nexans 2013 p. 37) : R par âme = 1,03 × AD (torsadage)
+VND20;VND;20;4;1;;26,39;5;51,1;3,86;11,70;ABS 1356 (catalogue Nexans 2013 p. 37) : R par âme = 1,03 × AD (torsadage)
+VND18;VND;18;4;1;;36,22;5;34,2;4,46;15,62;ABS 1356 (catalogue Nexans 2013 p. 37) : R par âme = 1,03 × AD (torsadage)
+VND16;VND;16;4;1;;52,12;5;23,7;5,30;22,06;ABS 1356 (catalogue Nexans 2013 p. 37) : R par âme = 1,03 × AD (torsadage)
+VND14;VND;14;4;1;;70,00;5;16,0;6,16;29,80;ABS 1356 (catalogue Nexans 2013 p. 37) : R par âme = 1,03 × AD (torsadage)
 WC;WC;;1;0;coaxial;105,00;1;;6,40;32,17
 WD;WD;;1;1;coaxial;137,00;2;;7,70;46,57
-WF24;WF;24;2;1;twinax;23,40;3;117,50;3,30;8,55
+WF24;WF;24;2;1;twinax;23,40;3;117,50;3,50;9,62;Ø max 3,50 (catalogue Nexans 2013 p. 289, Prysmian 2017) — 3,30 est le Ø nominal
 WG;WG;;1;0;coaxial;9,38;1;;1,80;2,54
-WH;WH;;1;0;coaxial;29,80;1;;3,58;10,07
+WH;WH;;1;1;coaxial;29,80;2;;3,58;10,07;ASNE 0634 (M17/137) : coaxial 95 Ω à tresse (catalogue court Draka)
 WJ;WJ;;2;1;twinax;37,00;3;109,00;3,90;11,95
 WK;WK;;1;0;coaxial;20,00;1;;2,50;4,91
-WL;WL;;1;1;coaxial;12,00;2;;2,35;4,34
-WM;WM;;1;1;coaxial;40,00;2;;4,00;12,57
-WN;WN;;1;1;coaxial;130,00;2;;8,00;50,27
+WL;WL;;1;1;coaxial;12,50;2;;2,35;4,34;masse max 12,5 g/m : EN 4604-005 (Lynxeo et catalogue Nexans 2013 p. 227)
+WM;WM;;1;1;coaxial;35,00;2;;4,00;12,57;masse max 35 g/m : EN 4604-006 (Lynxeo et catalogue Nexans 2013 p. 229)
+WN;WN;;1;1;coaxial;145,00;2;;8,00;50,27;masse max 145 g/m : EN 4604-007 (Lynxeo et catalogue Nexans 2013 p. 231)
 WP;WP;;1;0;coaxial;75,50;1;;4,95;19,24
-WS;WS;;1;0;coaxial;20,00;1;;2,50;4,91
+WS;WS;;1;1;coaxial;20,00;2;;2,50;4,91;EN 4604-004 : tresse + ruban haute perméabilité + tresse (Lynxeo, Draka) — blindé — vérifié
 WV;WV;;2;1;twinax;43,30;3;109,00;4,10;13,20
-WW26;WW;26;2;1;twinax;21,00;3;145,00;3,00;7,07
+WW26;WW;26;2;1;twinax;21,00;3;153,00;3,00;7,07;R ≤ 153 Ω/km : EN 3375-007C (catalogue Nexans 2013 p. 263) — 145 était la R du WX
 WX26;WX;26;2;1;twinax;18,00;3;145,00;2,90;6,61
 XD;XD;;1;0;;198,00;1;;10,80;91,61
-XE;XE;;1;0;coaxial;18,00;1;;2,70;5,73
-XF;XF;;1;0;coaxial;67,00;1;;4,95;19,24
-XK;XK;;1;0;coaxial;59,50;1;;5,13;20,67
+XE;XE;;1;1;coaxial;18,00;2;;2,70;5,73;NSA 935344 : coaxial à 1 tresse, conducteur extérieur (Lynxeo, Draka) — vérifié
+XF;XF;;1;1;coaxial;67,00;2;;5,08;20,27;ASNE 0293 (M17/128) : coaxial à 2 tresses — Ø max 5,08 (catalogue Nexans 2013 p. 244 — Prysmian 2017 : 5,10 — 4,95 est le nominal)
+XK;XK;;1;1;coaxial;59,50;2;;5,13;20,67;NSA 935348 (M17/110) : coaxial à 1 tresse (Prysmian 2017)
 XM24;XM;24;2;1;twinax;15,00;3;;3,10;7,55
 XS;XS;;1;1;coaxial;270,00;2;;10,90;93,31;NSA 935355 : coaxial 50 Ω 10 GHz, 1 conducteur (R5), pas un twinax
-XY;XY;;2;1;twinax;16,10;3;;2,54;5,07
+XY;XY;;1;1;coaxial;16,10;2;;2,54;5,07;ASNE 0639 = M17/94 RG 179 B/U : coaxial 75 Ω, pas un twinax (catalogue court Draka — RG 179 : RF Parts, Farnell) — vérifié
 YH22;YH;22;2;1;thermocouple;24,30;3;;4,00;12,57;MBBN 3320 : thermocouple NiCr/NiAl (R5) — ni chute en ligne ni intensité admissible, c’est une mesure
 YH20;YH;20;2;1;thermocouple;31,40;3;;4,55;16,26;MBBN 3320 : thermocouple NiCr/NiAl (R5) — ni chute en ligne ni intensité admissible, c’est une mesure
 YV6;YV;6;1;0;;55,00;1;2,20;6,40;32,17
 YV4;YV;4;1;0;;77,00;1;1,50;7,50;44,18
-YV3;YV;3;1;0;;;1;;8,40;55,42
+YV3;YV;3;1;0;;96,00;1;1,18;8,40;55,42;ASNE 0438 YV 03 : 1,18 Ω/km, 96 g/m max (catalogue Nexans 2013 p. 131)
 YV2;YV;2;1;0;;119,00;1;0,94;9,20;66,48
 YV1;YV;1;1;0;;149,00;1;0,75;10,10;80,12
 YV0;YV;0;1;0;;186,00;1;0,60;11,60;105,68
@@ -235,22 +235,22 @@ DR;EN 2267-010 (remplace ASNE0261…0269) — monoconducteur;cuivre (26/24 : all
 DRB DRC DRD;EN 2267-009 (2, 3, 4 conducteurs torsadés, non blindés);cuivre;nickel;-55;260;600;2000;PI + PTFE;;10;UV laser;vérifié Lynxeo
 MLA MLB MLC MLD;EN 2714-013 (1 à 4 conducteurs EN 2267-009A, blindage spiralé, gaine);cuivre;nickel;-55;260;600;2000;PI + PTFE;spirale cuivre nickelé;10;UV laser;vérifié Lynxeo, BSI
 AD;ABS 0949 (Airbus) ≈ EN 4681-003 famille AD;CCA (24/22 : 1 brin alliage cuivre + 6 CCA, 20 à 8 : CCA concentrique, 6/4 : CCA câblé);nickel;-60;180;600;2000;PI + PTFE;;10;UV laser;vérifié Lynxeo — pas de contact cuivre ordinaire sans qualification CCA — à confirmer
-ADB ADC ADD ADE;multiconducteurs d'AD (≈ EN 4681-004, famille ADA);CCA;nickel;-65;180;600;2000;PI + PTFE;;10;UV laser;déduit (masses cohérentes) — norme à confirmer
-VNA VNB VNC VND;ABS 1356 (Airbus) — conducteurs ABS 0949 AD, blindage spiralé, gaine;CCA;nickel;-65;180;600;2000;PI + PTFE;spirale cuivre nickelé;10;UV laser;vérifié Lynxeo
+ADB ADC ADD ADE;ABS 1354 (Airbus) — 2, 3 ou 4 âmes ABS 0949 ADA torsadées, non blindées (ADE, 5 âmes : absent des catalogues, à confirmer);CCA (24 à 4) / aluminium allié (3 à 000);nickel;-65;180;600;2000;PI + PTFE;;10;âmes ADA (non UV);catalogue Nexans 2013 p. 32-34 — R par âme = 1,03 × AD — vérifié
+VNA VNB VNC VND;ABS 1356 (Airbus) — conducteurs ABS 0949 AD, blindage spiralé, gaine;CCA;nickel;-65;180;600;2000;PI + PTFE;spirale cuivre nickelé;10;UV laser;vérifié Lynxeo, catalogue Nexans 2013 p. 37 — R par âme : VNA = AD, VNB/VNC/VND = 1,03 × AD
 WD WL WM WN WS;EN 4604-008 / -005 (75 Ω) / -006 / -007 / -004 (micro-coax) — 50 Ω sauf WL;cuivre;;;200;;;;tresse;6;;coaxial, vérifié (titres)
 KW KX;EN 4604-009 (WN allégé, 180 °C) / -010 (WD allégé, 200 °C);cuivre;;;200;;;;tresse;6;;coaxial, vérifié (titres)
-YV;ASNE 0438 (NSA 307110, NSA 935000) — monoconducteur de puissance, léger — multiconducteur = QP (ASNE 0471);aluminium toronné;nickel;-55;180 (200 en crête);600;2000;rubans polyimide + tresse aramide imprégnée d'un vernis ininflammable;;;;AWG 6 3 1 0 00 (000 et 0000 par extension, hors ASN) — R max Lynxeo (QP) : 06 2,27 / 04 1,55 / 03 1,22 / 02 0,97 / 01 0,77 / 0 0,62 / 00 0,44 Ω/km = les YV6…YV00 du CSV — vérifié Lynxeo
+YV;ASNE 0438 (NSA 307110, NSA 935000) — monoconducteur de puissance, léger — multiconducteur = QP (ASNE 0471);aluminium toronné;nickel;-55;180 (200 en crête);600;2000;rubans polyimide + tresse aramide imprégnée d'un vernis ininflammable;;;;AWG 6 4 3 2 1 0 00 (000 et 0000 par extension, hors ASN) — R max monoconducteur 2,20 / 1,50 / 1,18 / 0,94 / 0,75 / 0,60 / 0,43 Ω/km, masses 55 / 77 / 96 / 119 / 149 / 186 / 240 g/m, Ø max 6,4 … 13,2 = les YV du CSV (catalogue Nexans 2013 p. 131) — les QP (multiconducteur ASNE 0471, Lynxeo) valent 1,03 × ces R — vérifié
 AM;non identifiée — mêmes résistances et masses que YV, diamètres plus petits (6,0 contre 6,4 mm en 6 AWG);aluminium (déduit des R);;;;;;;;;;à demander : un ancien code ou un code constructeur du même aluminium ASNE 0438 ? (les R 2,20 / 1,50 / 0,94 / 0,75 / 0,60 / 0,43 sont celles de l'aluminium AD 3-000 Lynxeo à ±5 %)
 DG;NSA 935131 DG (10 → 0000 AWG) et EN 2854-003 DG (8 → 0000) — câble d'alimentation (feeder);cuivre;nickel;-55;260;115 V AC (réseau);;composite polyimide + fibre de verre + PTFE;;;UV laser;auto-extinguible, ininflammable — vérifié Draka Fileca (R des DG0/DH0 = code EN 2083 530, R1)
-DH;ECS 0844 (Airbus Helicopters) — feeder à faible rayon de courbure, 4 / 2 / 0 / 00 AWG;cuivre;nickel;-65;260;115 V AC;;PTFE composite, jaune clair;;;UV laser;vérifié Draka Fileca ; DH4 dans SEE (Cables and Wires : −65 / +260 °C, 0,27 kg/m, Ø 8,8 mm)
+DH;ECS 0844 (Airbus Helicopters) — feeder à faible rayon de courbure, 2 / 0 / 00 AWG aux catalogues Prysmian (2017) — DH4 seulement dans SEE;cuivre;nickel;-65;260;115 V AC;;PTFE composite, jaune clair;;;UV laser;vérifié Draka Fileca — aucune fiche ECS 0844 publique — R 0,61 / 0,40 = codes EN 2083 340 / 530 — DH4 dans SEE (−65 / +260 °C, 0,27 kg/m, Ø 8,8 mm), R 0,97 (code 220) à confirmer
 BN;ASNE 0719 — câble d'interconnexion d'équipement 600 V, 24 → 16 AWG;cuivre (24 : alliage argenté — 22-16 : cuivre étamé);argent / étain;-90;150;600;;ETFE;tresse cuivre argenté (option);;;vérifié Draka Fileca — pas un câble d'aérostructure 260 °C
-DW DWB DWC;EN 2346-005 (−65/+260 °C, famille DW, 1 à 3 conducteurs, léger) — résistant au feu, non blindé;cuivre (24/22 : alliage cuivre nickelé) ;nickel;-65;260;600;2000;polyimide + PTFE ignifuge;;;UV laser (mono) EN DW ++ FR F**;vérifié Lynxeo, BSI, DIN — existe en 24 ET en 22 AWG : DW24 ≠ DW22 (R attendu ≈ 114 mΩ/m, pas 60) — non démontré résistant à l'arc au-dessus de 200 V
-GPA GPB GPC;EN 4608-004 (1/2/3 conducteurs blindés tresse, gainés, résistants au feu, −65/+260 °C) — GPB 24 = EN 4608-005B (2 × 24 AWG, 120 Ω, bus) ;cuivre alliage nickelé (24 : 19 × 0,12);nickel;-65;260;600;125 kHz (-005);polyimide + PTFE ignifuge;tresse cuivre nickelé 0,12 mm;;EN GPB 24 FRF**;vérifié Lynxeo, DIN, BSI — GPB24 = -005B (R ≈ 117), GPB22 = -004 (R ≈ 61,8) : la ligne GPB24 du CSV copie GPB22
+DW DWB DWC;EN 2346-005 (−65/+260 °C, famille DW, 1 à 3 conducteurs, léger) — résistant au feu, non blindé;cuivre plaqué nickel (24/22 : alliage de cuivre plaqué nickel);nickel;-65;260;600;2000;polyimide + PTFE ignifuge;;;UV laser (mono) EN DW ++ FR F**;vérifié Lynxeo, BSI, DIN — existe en 24 ET en 22 AWG : R max 131,0 (24) / 80,9 (22) Ω/km, masse 5,00 / 6,66 g/m, Ø 1,68 / 1,80 mm (catalogue Nexans 2013 p. 187 — R d’âme = FprEN 4608-004 tableau 1) — non démontré résistant à l'arc au-dessus de 200 V
+GPA GPB GPC;EN 4608-004 (1/2/3 conducteurs blindés tresse, gainés, résistants au feu, −65/+260 °C) — GPB 24 = EN 4608-005B (2 × 24 AWG, 120 Ω, bus) ;cuivre alliage nickelé (24 : 19 × 0,12);nickel;-65;260;600;125 kHz (-005);polyimide + PTFE ignifuge;tresse cuivre nickelé 0,12 mm;;EN GPB 24 FRF**;vérifié Lynxeo, DIN, BSI — GPB24 = EN 4608-005B 002 : 135 Ω/km, Ø 4,00, 27,5 g/m (catalogue Nexans 2013 p. 275) — GPB22 = EN 4608-004B 004 : 82,5 Ω/km, Ø 4,30, 29,66 g/m (FprEN 4608-004:2014 tableau 1 — catalogue Nexans 2013 p. 189)
 YH;MBBN 3320 YH (ISO 8056, prEN 4049-004) — THERMOCOUPLE NiCr / NiAl, paire torsadée blindée gainée, sections 004 et 006 (+++ = code de section);NiCr (blanc) + NiAl (vert);;-55;260;600;;PTFE / polyimide / PTFE;tresse cuivre nickelé;;MBBN 3320 YH +++ FR F **;vérifié Lynxeo — f.e.m. 10,56 mV à 260 °C — ni chute en ligne ni intensité admissible : c'est une mesure — les lignes YH22/YH20 du CSV (2 brins blindés) sont ce câble, « 22 » et « 20 » valant sans doute la section codée
 WF;ABS 0386 (Draka F2703-37) — twinax 100 Ω, 24 AWG, 1 tresse, gaine polyimide (bus);cuivre alliage nickelé (19 × 0,12);nickel;-55;200;600;;PTFE;tresse cuivre nickelé 0,08;25 (installé);WF 24 FR F ** (sous gaine);vérifié Lynxeo, Draka (Ø 3,50 max, 23,4 g/m = CSV)
 WJ;EN 3375-004C (ASNE 0479 — Draka WJC) — twinax 77 Ω, 24 AWG, double tresse, haute température;cuivre alliage argenté (19 × 0,12);argent;-65;200;600;;fluoropolymère;2 tresses cuivre argenté 0,10;26 (statique);FILOTEX ET 69794 (étude) / EN WJ;vérifié Lynxeo, Draka (Ø 3,90, 37 g/m = CSV)
 XM;ASNE 0290 XM (EN 3375-006D — Draka F2703-30) — twinax 78 Ω, 24 AWG, 1 tresse, gaine polyimide;cuivre;;-55;200;;;;1 tresse;;;vérifié Draka (Ø 3,10, 15 g/m = CSV XM24)
-XF;ASNE 0293 (= M17/128, RG400U) — coaxial 50 Ω;cuivre argenté;argent;-55;200;;;PTFE;2 tresses cuivre argenté;;;vérifié Draka (Ø 5,10, FEP) — CSV XF 4,95 mm 67 g/m
+XF;ASNE 0293 (= M17/128, RG400U) — coaxial 50 Ω;cuivre argenté;argent;-55;200;;;PTFE;2 tresses cuivre argenté;;;Ø nominal 4,95, max 5,08 (catalogue Nexans 2013 p. 244 — Prysmian 2017 : 5,10) — 67 g/m nominal — vérifié
 XK;NSA 935348 (= M17/110, RG302) — coaxial 75 Ω;cuivre argenté;argent;-55;200;;;PTFE;1 tresse;;;vérifié Draka (Ø 5,20, FEP) — CSV XK 5,13 mm 59,5 g/m
 XE;NSA 935344 — coaxial 50 Ω, 1,8 GHz (page : 5 GHz);acier cuivré argenté (7 × 0,17);argent;;250;900;1,8 GHz;PTFE extrudé;1 tresse cuivre argenté 0,10;;XE FR F **;vérifié Lynxeo (Ø 2,70, 18 g/m = CSV)
 XS;NSA 935355 — COAXIAL 50 Ω, 10 GHz, 1 conducteur (pas un twinax) ;acier cuivré argenté (7 × 0,81, Ø 2,40);argent;-90;200;3700;10 GHz;PTFE extrudé Ø 7,25;double tresse cuivre argenté 0,16;;XS FR F **;vérifié Lynxeo (Ø 10,90, 270 g/m = CSV) — R conducteur 5,68 Ω/km → corriger la ligne XS : Brins 1, Liaisons 2, coaxial
@@ -267,7 +267,8 @@ KD;ABS 1503 (Draka F4704-5, ARINC 664) — quadrax 100 Ω, 24 AWG;cuivre argent�
 KL;EN 3375-011 (Draka F4704-19) — quadrax 100 Ω, 24 AWG, Ø 4,50;cuivre argenté;argent;-55;125;;;;Al/Mylar + tresse;;;vérifié Draka — complète R1
 KQ;non identifiée — twinax 24 AWG, Ø 3,56 mm, 21 g/m, 145 mΩ/m, non blindé d'après l'Excel ;;;;;;;;;;;à demander (un twinax est presque toujours blindé : la colonne E de l'Excel est-elle juste ?)
 KR;non identifiée — octax 24 AWG (8 brins + blindage), Ø 6,60 mm, 75 g/m, 106 mΩ/m ;;;;;;;;;;;à demander — ressemble à un câble Ethernet 4 paires (les Octax de Carlisle : 24-26 AWG, −55 / +200 °C), non confirmé
-WC WG WH WK WP;non identifiées — ATTENTION : WC WE WF WG WH WJ WK WL WM WN WP WR sont aussi les codes de fil de base du M27500 (NEMA WC 27500) ;;;;;;;;;;;à demander (CSV : WC 6,40 mm 105 g/m coax non blindé ? — WG 1,80 mm 9,4 g/m — WH 3,58 mm 29,8 — WK 2,50 mm 20 — WP 4,95 mm 75,5)
+WC WG WK WP;non identifiées — ATTENTION : WC WE WF WG WH WJ WK WL WM WN WP WR sont aussi les codes de fil de base du M27500 (NEMA WC 27500) ;;;;;;;;;;;à demander (CSV : WC 6,40 mm 105 g/m coax non blindé ? — WG 1,80 mm 9,4 g/m — WK 2,50 mm 20 — WP 4,95 mm 75,5)
+WH;ASNE 0634 (= M17/137) — coaxial 95 Ω;acier cuivré argenté;argent;;230;;;PTFE;tresse cuivre argenté (gaine PFA);;;catalogue court Draka (Ø 3,58 = CSV)
 XD;non identifiée (monoconducteur non blindé Ø 10,8 mm, 198 g/m) ;;;;;;;;;;;à demander
-XY;non identifiée (twinax Ø 2,54 mm, 16,1 g/m) ;;;;;;;;;;;à demander
-WX;EN 3375-009 — twinax 120 Ω (CAN bus);cuivre;;;;;;;tresse;;;twinax, vérifié (titre) ; WW et WV ont leur ligne
+XY;ASNE 0639 (= M17/94, RG 179 B/U) — COAXIAL 75 Ω (pas un twinax);acier cuivré argenté;argent;;200;;;PTFE;1 tresse cuivre argenté (gaine FEP);;;catalogue court Draka — RG 179 : Ø 2,54 ± 0,13, ≈ 14,6 kg/km (RF Parts, Farnell) — vérifié
+WX;EN 3375-009 — twinax 120 Ω (CAN bus);cuivre;;;;;;;tresse;;;twinax, vérifié (titre) — WW et WV ont leur ligne

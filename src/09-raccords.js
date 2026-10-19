@@ -287,7 +287,10 @@ function piecesDHabillage(norme, h, opts, fils) { const P = [], mm = mmTexte, c 
   const nModules = Math.max(1, Math.round(O.modules || 1)), toron = h.toron != null ? 'Ø ' + mm(h.toron) + ' mm' : 'Ø inconnu';
   // 1. le raccord — ou la cheminée d'un EN 4165, une par module câblé — ou rien (l'EN 3645 de la règle d'atelier)
   if (h.sansRaccord) piece('raccord', 'Aucun raccord', '', 0, h.aConfirmer ? 'à confirmer' : 'vérifié', h.pourquoi || 'un ' + nomDeFamille(norme, h.sansRaccord) + ' s’utilise sans raccord');
-  else if (h.cheminee) piece('cheminee', 'Cheminée ronde', R ? R.reference || R.norme : 'EN4165-015', nModules, 'à confirmer', 'une par module câblé ; son Ø intérieur n’est pas public : le passage du toron (' + toron + ') reste à confirmer');
+  else if (h.cheminee) { const pas = R && R.amax != null ? R.amax : null, passe = pas == null || h.toron == null ? null : h.toron <= pas + 1e-9;
+    piece('cheminee', 'Cheminée ronde', R ? R.reference || R.norme : 'EN4165-015', nModules, pas == null || passe == null ? 'à confirmer' : passe ? 'vérifié' : 'manque',
+      pas == null ? 'une par module câblé ; son Ø intérieur n’est pas public : le passage du toron (' + toron + ') reste à confirmer'
+        : 'une par module câblé ; passage Ø ' + mm(pas) + ' mm au moins : ' + (passe == null ? 'le toron (' + toron + ') reste à mesurer' : passe ? 'le toron (' + toron + ') passe' : 'le toron (' + toron + ') ne passe pas')); }
   else if (h.raccord !== 'tyrap' || R) { const libelle = NOMS_RACCORD[h.raccord] + (c.orientation === 'coudé' ? ' 90°' : ' droit'), bloque = h.manquants.find(m => MANQUE_RACCORD.test(m));
     if (!R) piece('raccord', libelle, '', 1, 'manque', 'la table Raccords n’a pas ' + (h.famille ? 'de ligne ' + h.raccord + ' pour l’' + nomDeFamille(norme, h.famille) : 'ce connecteur (famille hors des normes)'));
     else if (!h.designation) piece('raccord', libelle, R.norme, 1, bloque ? 'manque' : 'à confirmer', bloque || 'désignation complète non lue (ligne ' + R.confiance + ')');
@@ -362,13 +365,14 @@ function habillage(norme, fils, choix, pn, reference, hyp, opts) { const c = { .
   const sortie = gaine ? (gaine.dext != null ? gaine.dext : gaine.dmax != null ? Math.min(gaine.dmax, (f.diametre || 0) * 1.3) : f.diametre) : f.diametre;
   /* UNE CHEMINÉE (EN 4165) : une par module câblé — la ronde EN 4165-015 (une double ovale -016 pour deux modules voisins,
      un obturateur -017 sur une cavité vide) ; le toron tenu par un tyrap, ou par un manchon s'il faut l'étanchéité (un
-     manchon coudé quand on veut l'angle : la cheminée est droite). Son Ø intérieur n'est pas public (EN 4165-014/-015/-016,
-     payantes) : le passage du toron est à confirmer ; la reprise de blindage n'y est pas décrite (l'EN 4165-026 ne la
-     donne que pour les monomodules). Sa classe (W, F ou B selon l'accessoire, EN 4165-002 tableau 5) ne se lit pas dans le
-     part number : pas de classe EN 3660. */
+     manchon coudé quand on veut l'angle : la cheminée est droite). Son passage (Amax de la ligne : Ø 9,45 mm au moins pour
+     la ronde EN4165F15, catalogue TE DMC-M — la norme est payante) juge le toron ; sans lui, le passage est à confirmer.
+     La reprise de blindage n'y est pas décrite (l'EN 4165-026 ne la donne que pour les monomodules). Sa classe (W, F ou B
+     selon l'accessoire, EN 4165-002 tableau 5) ne se lit pas dans le part number : pas de classe EN 3660. */
   if (aCheminee(norme, famille)) { const ref = raccordDeTable(norme, famille, taille, 'cheminée', 'droit'), manquants = [], formeManchon = formeDuManchon(c.orientation, ref);
-    const manchon = r.manchon ? manchonPour(norme, sortie, null, formeManchon) : null, tyrap = r.manchon ? null : tyrapPour(norme, f.diametre);
-    manquants.push('le Ø intérieur de la cheminée ' + (ref ? ref.norme : 'EN 4165-015') + ' n’est pas public' + (f.diametre != null ? ' : le passage du toron (Ø ' + mm(f.diametre) + ' mm) est à confirmer' : ''));
+    const manchon = r.manchon ? manchonPour(norme, sortie, null, formeManchon) : null, tyrap = r.manchon ? null : tyrapPour(norme, f.diametre), pas = ref && ref.amax != null ? ref.amax : null;
+    if (pas == null) manquants.push('le Ø intérieur de la cheminée ' + (ref ? ref.norme : 'EN 4165-015') + ' n’est pas public' + (f.diametre != null ? ' : le passage du toron (Ø ' + mm(f.diametre) + ' mm) est à confirmer' : ''));
+    else if (f.diametre != null && f.diametre > pas + 1e-9) manquants.push('le toron (Ø ' + mm(f.diametre) + ' mm) ne passe pas la cheminée ' + ref.norme + ' (passage Ø ' + mm(pas) + ' mm au moins)');
     if (r.bandit) manquants.push('la reprise de blindage sur une cheminée EN 4165 : non décrite (l’EN 4165-026 ne la donne que pour les monomodules)');
     if (r.manchon && !manchon) manquants.push('aucun manchon ' + formeManchon + ' de la table ne va à Ø ' + (sortie != null ? mm(sortie) + ' mm' : '?'));
     if (r.manchon && manchon) manquants.push('la cote de la cheminée : le manchon est choisi par le toron seulement');
@@ -376,7 +380,7 @@ function habillage(norme, fils, choix, pn, reference, hyp, opts) { const c = { .
     const colle = manchon ? (manchon.precolle ? 'précollé' : 'à coller : VG 95343 T15 (V9500), ou sa version T18 précollée') : '';
     return avecPieces({ ...vide, classe: null, raccord: 'cheminée', cheminee: true, sansRaccord: '', reference: ref, statut: ref ? ref.confiance : '', manchon: r.manchon, manchonRef: manchon, formeManchon: r.manchon ? formeManchon : '', colle, tyrap, gaine, roleGaine, sortie,
              regle: 'cheminée', pourquoi: 'un EN 4165 prend une cheminée par module câblé (EN 4165-015 ronde ; -016 double ovale pour deux modules voisins ; -017 obturateur sur une cavité vide), le toron tenu par ' + (r.manchon ? 'un manchon (étanchéité)' : 'un tyrap') + (r.bandit ? ' — la reprise de blindage n’y est pas décrite' : ''),
-             aConfirmer: true, manquants }); }
+             aConfirmer: pas == null || !!r.bandit, manquants }); }
   let raccord = r.raccord, repli = '';
   if (atelierA(norme, famille) && !raccordDeTable(norme, famille, taille, raccord, c.orientation) && REPLI_RACCORD[raccord] && raccordDeTable(norme, famille, taille, REPLI_RACCORD[raccord], c.orientation)) {
     repli = 'ta table n’a pas de raccord ' + MOTS_RACCORD[raccord] + ' pour l’' + nomDeFamille(norme, famille) + ' : un raccord ' + MOTS_RACCORD[REPLI_RACCORD[raccord]]; raccord = REPLI_RACCORD[raccord]; }

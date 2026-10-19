@@ -46,4 +46,4 @@ E0599;E601;E0599-1E601Z;diodes;20;S2a S4a S6a / S2b S4b S6b / S1a S3a S5a / S1b 
 
 Accessoires — le rail qui porte les modules (catalogue Amphenol Air LB « Modules de distribution à jonction rapide » 05/12, page 97 : rail métallique des modules 1750, 1765 et 1767PA, qui se montent avec les modules à retour, tous au pas de 14 mm). La référence ASNE 0599 du rail n'est pas relue : celle du catalogue en attendant ; NN = le nombre de modules (01, 02…), 00 = anodisé (07 : cadmié bichromaté).
 Famille;Référence;Équivalent;Rôle;Masse;Note;Source;Statut
-E0599;001751 1NN 00;;rail métallique anodisé, coupé au nombre de modules (pas 14 mm, ressort de clipsage);;longueur 14 mm par module (18 mm pour un seul) ; existe aussi en composite (60 % plus léger);Amphenol Air LB 05/12 p. 97;catalogue (ASNE 0599 non relue)
+E0599;001751 1NN 00;;rail métallique anodisé, coupé au nombre de modules (pas 14 mm, ressort de clipsage);;longueur 14 mm par module (18 mm pour un seul) — existe aussi en composite (60 % plus léger);Amphenol Air LB 05/12 p. 97;catalogue (ASNE 0599 non relue)
