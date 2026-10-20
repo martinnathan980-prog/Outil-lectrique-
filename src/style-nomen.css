@@ -37,7 +37,7 @@ table.no-table{width:100%;font-size:var(--f-12)}
 .no-ou{font:400 var(--f-12)/1.45 var(--sans);color:var(--t-2);font-variant-numeric:tabular-nums}
 .no-arr{display:block;font:500 var(--f-11)/1.4 var(--mono);color:var(--t-1);margin-top:1px}
 .no-plus{font:500 var(--f-11) var(--sans);font-style:normal;color:var(--t-1);background:var(--s-sunken);border-radius:4px;padding:1px 5px;margin-left:2px;white-space:nowrap}
-.no-ou[title]{cursor:help}
+.no-ou[data-bulle]{cursor:help}
 /* une note sous la référence : « à confirmer », un statut, une cote — un mot ambre précédé d'un point */
 .no-note-l{display:flex;align-items:baseline;gap:6px;margin-top:3px;font:500 var(--f-11)/1.4 var(--sans);font-style:normal;color:var(--warn);letter-spacing:0;white-space:normal}
 .no-note-l::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor;flex:none;transform:translateY(-1px)}
