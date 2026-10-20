@@ -69,8 +69,25 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
   // les câbles qui ne tiennent pas l'ambiante de la simulation (l'EN 2853 les échauffe de 40 °C) : une fois par famille
   const tenues = new Map(); V.forEach(l => { if (!liaisonComplete(l) || l.de === l.vers || !l.type) return; const t = tenueEnTemperature(N, l.type, H.ambiante); if (t && !t.ok && !tenues.has(typeDuFil(l.type))) tenues.set(typeDuFil(l.type), t); });
   if (tenues.size) att('', `ambiante ${nombre(H.ambiante)} °C : ${[...tenues].map(([f, t]) => f + ' (' + nombre(t.tmax) + ' °C max)').join(', ')} ne ${tenues.size > 1 ? 'tiennent' : 'tient'} pas l’échauffement de 40 °C de l’EN 2853 (${nombre(H.ambiante + ECHAUFFEMENT_EN2853)} °C au conducteur)`, { tableau: '' });
-  items.forEach(x => { if (x.nom && x.plan == null) x.plan = plansDuRepere(x.nom).sort(triNaturel)[0] || ''; });
+  items.forEach(x => { if (x.nom && x.plan == null) x.plan = plansDuRepere(x.nom).sort(triNaturel)[0] || ''; x.genre = genreDuPoint(x); });
   return items; }
+/* LE GENRE D'UN POINT (audit v72 : sur un grand retest, 192 lignes une par repère, quand huit genres disent tout) :
+   chaque point se range dans un genre, que l'index et le récapitulatif montrent groupé, avec son compte et le geste qui
+   le traite. L'ordre de GENRES_CONTROLE est celui de la lecture : ce qui casse d'abord. */
+const GENRES_CONTROLE = [['arrangement', 'connecteurs qu’aucun arrangement ne loge'], ['contact', 'contacts qui refusent leur câble'], ['calibre', 'calibres à revoir'],
+  ['protection', 'câbles mal protégés par leur disjoncteur'], ['chute', 'chutes de tension trop fortes'], ['profil', 'disjoncteurs sans profil de charge'],
+  ['aposer', 'barrettes à poser'], ['cca', 'conducteurs CCA à qualifier'], ['retest', 'points du retest'], ['autre', 'autres points']];
+function genreDuPoint(x) { const t = x.texte || '';
+  if (x.tableau != null) return 'retest';
+  if (/^à poser sur/.test(t)) return 'aposer';
+  if (/qualification CCA/.test(t)) return 'cca';
+  if (/profil de charge est à renseigner/.test(t)) return 'profil';
+  if (/^chute en ligne/.test(t)) return 'chute';
+  if (/aucun arrangement|n['’]a pas de contact|ne loge /.test(t)) return 'arrangement';
+  if (/refusé|aucun contact|dépasse le contact|contact taille \S+ \(|joint arrière|contact \S+ : \d+ câbles/.test(t)) return 'contact';
+  if (/pas protégé|admis en continu|> [\d,]+ A admis|table 11-3|sans résistance dans la base/.test(t)) return 'protection';
+  if (x.nom && estDisjoncteur(x.nom)) return 'calibre';
+  return 'autre'; }
 /* CE QU'UN DISJONCTEUR PROTÈGE, au-delà de ce que sa fiche relève (`controleDisjonction` : le profil, ses fils directs,
    la sélectivité) : un part number d'une famille inconnue (le calibre ne s'y lit pas) ; chaque fil qu'il nourrit à
    travers les prises et les barrettes, jugé comme les fils directs (la charge, le continu, la surcharge brève) ; pour
