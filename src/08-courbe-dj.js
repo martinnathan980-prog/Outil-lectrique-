@@ -235,7 +235,7 @@ function filetsIn(G, cal) { if (!cal) return ''; const lc = Math.log10(cal), y0 
    nomment, et sans se toucher. */
 function grapheIn(G, cal, dx) { if (!cal) return ''; let s = '', avant = -Infinity;
   [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000].forEach(m => { const x = G.xv(Math.log10(m)) + dx; if (x < G.L - 0.5 || x > G.W - G.R + 0.5) return;
-    const mot = nombre(m), w = largeurEtiquette(mot, 10.5); if (x - w / 2 < avant + 8) return; avant = x + w / 2;
+    const mot = nombre(m), w = largeurEtiquette(mot, 11); if (x - w / 2 < avant + 8) return; avant = x + w / 2;
     s += `<line class="dj-tic-in" x1="${f2(net(x - dx))}" y1="${G.H - G.B}" x2="${f2(net(x - dx))}" y2="${G.H - G.B + 4}"/><text class="dj-grad in" x="${f2(x - dx)}" y="${G.H - G.B + 17}" text-anchor="middle">${mot}</text>`; });
   return s; }
 /* LE GRAPHIQUE : les fonds du verdict (ne déclenche pas · la bande · déclenche), le papier et ses filets en multiples de
@@ -272,7 +272,8 @@ function grapheSvg(d, vue, W) { const G = geometrieGraphe(d, W), { L, R, T, B, H
       const a = ech[ks[0]], b = ech[ks[ks.length - 1]], xa = tr[ks[0]].coude[0] + dx, xb = tr[ks[ks.length - 1]].coude[0] + dx, premier = ks[0] === 0, dernier = ks[ks.length - 1] === C.length - 1, role = premier || dernier ? 'bord' : 'milieu';
       const temps = rangs.slice(0, 2), cands = premier && !dernier ? [...marge(l, xa - 4, 'end', [xa], temps), ...lelong(l, a, G, [-1], 1), ...lelong(l, a, G, [1], -1)]
         : dernier && !premier ? [...marge(l, xb + 4, 'start', [xb], temps), ...lelong(l, b, G, [1], 1), ...lelong(l, b, G, [-1], -1)]
-        : [...marge(l, (xa + xb) / 2, 'middle', ks.length > 1 ? [xa, xb] : [xa], temps), ...entre(l, a, b), ...lelong(l, b, G, [1], 1)];
+        // la paire d'entre elles (23 °C) se nomme d'abord DANS le dessin, entre ses deux traits : les trois noms ne s'empilent plus dans la marge (l'audit v72)
+        : [...entre(l, a, b), ...lelong(l, b, G, [1], -1), ...marge(l, (xa + xb) / 2, 'middle', ks.length > 1 ? [xa, xb] : [xa], temps), ...lelong(l, b, G, [1], 1)];
       noms += nommer(P.essayer(cands), 'dj-t ' + role, role); });
     tics = traitsNoms.join(''); }
   // plus de limite de dommage dessinée (le lecteur : « un fil rouge en pointillé, W-015 DR24 : on ne sait pas à quoi il sert,
@@ -281,7 +282,7 @@ function grapheSvg(d, vue, W) { const G = geometrieGraphe(d, W), { L, R, T, B, H
   // LES FONDS NOMMÉS sobrement, à l'encre seconde, contre la courbe qui borne leur fond : « ne déclenche pas » à gauche de la
   // plus rapide, en bas d'abord ; « déclenche » à droite de la plus lente, en haut d'abord — de 8 en 8 pixels vers le coin tant
   // que la place est prise —, en dernier et loin de tout autre nom (deux mots voisins se liraient comme une phrase)
-  if (avecBande) { const mot = (texte, cote) => { const e = cote < 0 ? ech[0] : ech[ech.length - 1], l = [[texte, '', 10.5]], hs = [], cands = [], a = cote < 0 ? 'end' : 'start';
+  if (avecBande) { const mot = (texte, cote) => { const e = cote < 0 ? ech[0] : ech[ech.length - 1], l = [[texte, '', 11]], hs = [], cands = [], a = cote < 0 ? 'end' : 'start';
       for (let y = H - B - 8; y >= T + 14; y -= 12) hs.push(y); if (cote > 0) hs.reverse();
       hs.forEach(y => { const xs = [y - 9, y + 3].map(z => xA(e, z)).filter(x => x != null); if (!xs.length) return; let x = cote < 0 ? Math.min(...xs) - 8 : Math.max(...xs) + 8;
         for (let k = 0; k < 80; k++, x += 8 * cote) { const c = etiquette(l, x, y, a); if (cote < 0 ? c.b.x0 < L : c.b.x1 > Wd - R) break; if (c.b.x1 < L || c.b.x0 > Wd - R) continue;

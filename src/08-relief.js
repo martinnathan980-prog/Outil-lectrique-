@@ -208,7 +208,7 @@ function ouvrirRelief(nom) { if (!reliefPossible(nom)) return; const V = verite(
   if (E) { const Q = E.Q; RELIEF.Q = Q; RELIEF.P = null; RELIEF.S = null; [RELIEF.az, RELIEF.el] = VUES_RELIEF['3/4'];
     const ko = Q.fils.filter(x => x.jaugeOk === false).length;
     $('re-sur').textContent = E.sur; $('re-titre').textContent = nom;
-    $('re-compte').innerHTML = [pluriel(Q.modules.length, 'module'), pluriel(Q.utilises, 'contact') + ' pris', pluriel(Q.contacts - Q.utilises, 'libre')].join(' · ') + (ko ? ` · <span class="ko">${pluriel(ko, 'fil')} hors taille</span>` : '');
+    $('re-compte').innerHTML = [pluriel(Q.modules.length, 'module'), pluriel(Q.utilises, 'contact') + ' pris', pluriel(Q.contacts - Q.utilises, 'libre')].join(' · ') + (ko ? ` · <span class="ko">${pluriel(ko, 'câble')} hors taille</span>` : '');
     $('re-tableau').innerHTML = tableauModules(Q);
     montrerRelief(); $('re-note').innerHTML = legendeRelief(E.note); return; }
   RELIEF.P = remplirSelonNorme(physiqueDeBarrette(nom, V, app.bible, app.contrat.designations.get(nom) || ''), app.norme);
@@ -218,7 +218,7 @@ function ouvrirRelief(nom) { if (!reliefPossible(nom)) return; const V = verite(
   $('re-sur').textContent = (RELIEF.prise ? 'Prise de coupure' : P.nature.charAt(0).toUpperCase() + P.nature.slice(1)) + ' · ' + (P.reference || 'référence inconnue');
   $('re-titre').textContent = nom;
   $('re-compte').innerHTML = [pluriel(P.modules.length, mot), pluriel(P.modules.length - P.libres, 'utilisé'), pluriel(P.libres, 'libre')].join(' · ')
-    + (kos ? ` · <span class="ko">${pluriel(kos, 'fil')} hors norme</span>` : '');
+    + (kos ? ` · <span class="ko">${pluriel(kos, 'câble')} hors norme</span>` : '');
   $('re-tableau').innerHTML = tableauRelief();
   montrerRelief();
   $('re-note').innerHTML = legendeRelief(RELIEF.prise ? 'Disposition des contacts sur la face : indicative (l’arrangement de l’insert n’est pas encore dans la bible).' : 'En arrière, ce qui arrive (amont) ; en avant, ce qui repart (aval). Le cuivre relie les modules d’un même paquet.'); }

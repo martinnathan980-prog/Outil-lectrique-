@@ -19,17 +19,17 @@
 .dj-arc-passe{fill:none;stroke:var(--ok);stroke-width:5;stroke-linecap:round}
 .dj-arc-serre{fill:none;stroke:var(--warn);stroke-width:5;stroke-linecap:round}
 .dj-arc-fond{fill:none;stroke:var(--s-sunken);stroke-width:7;stroke-linecap:round}
-.dj-arc-pointe{fill:none;stroke:color-mix(in srgb,var(--charge) 35%,transparent);stroke-width:7;stroke-linecap:round}
+.dj-arc-pointe{fill:none;stroke:color-mix(in srgb,var(--charge) 45%,transparent);stroke-width:7;stroke-linecap:round}
 .dj-arc-perm{fill:none;stroke:var(--charge);stroke-width:7;stroke-linecap:round}
 .dj-arc-cran{stroke:var(--t-3);stroke-width:1.3;stroke-linecap:round}
 .dj-arc-cran.passe{stroke:var(--ok)} .dj-arc-cran.serre{stroke:var(--warn)}
-.dj-arc-n{font:500 10px var(--sans);fill:var(--t-3);text-anchor:middle;dominant-baseline:central;font-variant-numeric:tabular-nums}
+.dj-arc-n{font:500 var(--f-11) var(--sans);fill:var(--t-3);text-anchor:middle;dominant-baseline:central;font-variant-numeric:tabular-nums}
 .dj-arc-n.passe{fill:var(--t-2)} .dj-arc-n.serre{fill:var(--warn)}
-.dj-arc-n.retenu{fill:var(--t-1);font-weight:700;font-size:11px}
+.dj-arc-n.retenu{fill:var(--t-1);font-weight:700;font-size:var(--f-12)}
 .dj-arc-index{fill:var(--s-surface);stroke:var(--t-1);stroke-width:2.5;filter:drop-shadow(0 1px 3px rgba(0,10,30,.35))}
 .dj-heros.ko .dj-arc-index{stroke:var(--ko)}
 .dj-h-centre{position:absolute;left:0;right:0;top:67px;display:flex;justify-content:center;pointer-events:none}
-.dj-h-cal{display:inline-flex;align-items:baseline;gap:3px;font:600 32px/1 var(--sans);letter-spacing:-.045em;color:var(--t-1);font-variant-numeric:tabular-nums lining-nums}
+.dj-h-cal{display:inline-flex;align-items:baseline;gap:3px;font:600 var(--f-28)/1 var(--sans);letter-spacing:-.045em;color:var(--t-1);font-variant-numeric:tabular-nums lining-nums}
 .dj-h-u{font:inherit;font-weight:400;letter-spacing:-.02em;color:var(--t-2)}
 .dj-heros.ko .dj-h-cal{color:var(--ko)}
 .dj-h-cote{display:flex;flex-direction:column;align-items:flex-start;gap:14px;min-width:0}
@@ -43,11 +43,9 @@
 .dj-stat b small{font:500 14px/1 var(--sans);letter-spacing:0;color:var(--t-2);margin-left:3px}
 .dj-stat>span{display:inline-flex;align-items:center;gap:6px;font:500 var(--f-12)/1.2 var(--sans);color:var(--t-2);white-space:nowrap}
 .dj-stat i{display:inline-block;width:10px;height:3px;border-radius:2px;background:var(--charge)}
-.dj-stat.pointe i{background:color-mix(in srgb,var(--charge) 40%,transparent)}
+.dj-stat.pointe i{background:color-mix(in srgb,var(--charge) 50%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--charge) 70%,transparent)}
 .dj-h-pied{display:flex;align-items:center;gap:8px;font:500 var(--f-12)/1.35 var(--sans);color:var(--t-2)}
 .dj-h-pied .fi-q{margin:0}
-/* la section ouverte ne répète pas en petit le calibre qu'elle montre en grand (pliée, son résumé le dit) */
-details.fs[data-section="disjoncteur"][open] .fs-resume{display:none}
 /* l'index se pose à l'entrée de la fiche ou de la section, pas à chaque rendu */
 .fi.fondu .dj-arc-index,details.fs.fs-entre .dj-arc-index{animation:dj-index var(--lent) both;animation-delay:120ms;transform-box:fill-box;transform-origin:center}
 @keyframes dj-index{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:none}}
@@ -55,12 +53,30 @@ details.fs[data-section="disjoncteur"][open] .fs-resume{display:none}
 /* le téléphone : le cadran au-dessus, la charge dessous */
 @media (max-width:420px){ .dj-heros{grid-template-columns:1fr;justify-items:center} .dj-h-cote{align-items:center} }
 
-.dj-resume{font-weight:600;color:var(--t-1);font-variant-numeric:tabular-nums}
+/* la ligne « Calibre » de la fiche technique : le calibre en grand, sa gamme, et le retest quand il en porte un autre */
+.dj-resume{display:inline-flex;align-items:baseline;gap:2px;font:600 var(--f-20)/1 var(--sans);letter-spacing:-.02em;color:var(--t-1);font-variant-numeric:tabular-nums}
+.dj-resume small{font-size:inherit;font-weight:400;color:var(--t-2);margin-left:2px}
+.dj-resume-sous{font:400 var(--f-12)/1.3 var(--sans);color:var(--t-2)}
+.dj-resume-sous s{color:var(--t-2);text-decoration-color:var(--t-3)}
+.dj-resume-sous:empty{display:none}
+/* la clé du cadran, sous lui (hors du cadran, qui ne porte aucun mot) : ses couleurs, en mots */
+.dj-cle{display:flex;flex-wrap:wrap;gap:4px 14px;margin:-2px 0 0;font:400 var(--f-11)/1.4 var(--sans);color:var(--t-2)}
+.dj-cle span{display:inline-flex;align-items:center;gap:6px}
+.dj-cle i{display:inline-block;width:12px;height:4px;border-radius:2px;background:var(--ok)}
+.dj-cle i.serre{background:var(--warn)}
+.dj-cle i.charge{height:6px;background:var(--charge)}
+.dj-cle i.index{width:9px;height:9px;border-radius:50%;background:var(--s-surface);box-shadow:inset 0 0 0 2px var(--t-1)}
 /* ce qu'on fait : « Automatique (15 A) » — plein quand il reste à prendre, étoilé au filet quand il est pris —, « Autre calibre » */
 .dj-h-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px 6px;min-height:32px}
 .dj-h-actions .btn{height:32px;padding:0 14px;font-size:var(--f-13)}
-.dj-h-actions .fi-lien{min-height:32px;padding:0 10px;font-size:var(--f-13)}
-.dj-auto-pris{color:var(--t-1)}
+/* LE CHOIX DU CALIBRE : une commande, deux segments joints — « ★ Automatique » (pressé : un état) | « À la main ▾ » */
+.dj-choix{display:inline-flex;align-items:center;gap:2px;padding:2px;border-radius:var(--r-btn);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line)}
+.dj-seg{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border:none;border-radius:8px;background:none;color:var(--t-2);font:500 var(--f-13) var(--sans);cursor:pointer;white-space:nowrap;transition:background var(--rapide),color var(--rapide),box-shadow var(--rapide)}
+.dj-seg:hover{color:var(--t-1)}
+.dj-seg[aria-pressed="true"],.dj-seg[aria-expanded="true"]{background:var(--s-surface);color:var(--t-1);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.12),inset 0 0 0 1px var(--s-line)}
+.dj-seg[aria-pressed="true"]{cursor:default}
+.dj-seg svg.fi-chevron{width:14px;height:14px;color:var(--t-3);transition:transform var(--moyen)}
+.dj-seg[aria-expanded="true"] svg.fi-chevron{transform:rotate(180deg)}
 .dj-auto-pris svg.dj-auto-etoile{width:13px;height:13px;stroke:none;margin-right:-1px;color:var(--ok)}
 /* la gamme, discrète, sous « Autre calibre » : une puce par calibre, un trait d'état dessous, le retenu à l'encre, le meilleur étoilé */
 .dj-gamme-choix{margin:0}
@@ -82,7 +98,8 @@ details.fs[data-section="disjoncteur"][open] .fs-resume{display:none}
 /* ── les câbles que le meilleur demande : un encart ambre, toujours ouvert — en tête combien et « Changer les câbles »,
    puis une ligne par câble sur une grille fixe (le numéro · son type → celui qu'il lui faut ; le contact qui change
    dessous), séparées d'un filet : rien ne se chevauche, à toute largeur ; chaque ligne mène au câble ── */
-.dj-grossir{display:flex;flex-direction:column;gap:4px;padding:10px 10px 6px 14px;border-radius:var(--r-2);background:var(--warn-soft)}
+/* (pas de carte dans une carte : un groupe au filet ambre dans la marge) */
+.dj-grossir{display:flex;flex-direction:column;gap:4px;padding:4px 0 2px 14px;box-shadow:inset 3px 0 0 var(--warn)}
 .dj-g-tete{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;min-height:32px}
 .dj-g-tete svg.dj-g-ico{width:16px;height:16px;color:var(--warn);flex:none}
 .dj-g-titre{flex:1;min-width:0;display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px;font:500 var(--f-13)/1.3 var(--sans);color:var(--t-2)}
@@ -90,13 +107,13 @@ details.fs[data-section="disjoncteur"][open] .fs-resume{display:none}
 .dj-grossir .btn{flex:none;height:30px;padding:0 12px;font-size:var(--f-12)}
 .dj-g-liste{list-style:none;margin:0 0 0 -6px;padding:0;display:flex;flex-direction:column}
 .dj-g-ligne{position:relative;display:grid;grid-template-columns:minmax(58px,auto) minmax(0,1fr);align-items:center;column-gap:14px;row-gap:1px;padding:7px 6px;border-radius:var(--r-1);cursor:pointer;transition:background var(--rapide)}
-.dj-g-ligne+.dj-g-ligne::before{content:"";position:absolute;left:6px;right:6px;top:0;border-top:1px solid color-mix(in srgb,var(--warn) 16%,transparent)}
-.dj-g-ligne:hover,.dj-g-ligne.vise{background:color-mix(in srgb,var(--s-surface) 70%,transparent)}
+.dj-g-ligne+.dj-g-ligne::before{content:"";position:absolute;left:6px;right:6px;top:0;border-top:1px solid var(--s-line)}
+.dj-g-ligne:hover,.dj-g-ligne.vise{background:var(--s-hover)}
 .dj-g-ligne:hover::before,.dj-g-ligne:hover+.dj-g-ligne::before,.dj-g-ligne.vise::before,.dj-g-ligne.vise+.dj-g-ligne::before{display:none}
 .dj-g-ligne:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .dj-g-num{justify-self:start;font:600 var(--f-12) var(--mono);color:var(--t-1);white-space:nowrap}
 /* un câble sans numéro : il manque une information — en ambre, pour qu'on le voie */
-.dj-g-num.manque{padding:2px 7px;border-radius:999px;background:var(--s-surface);box-shadow:inset 0 0 0 1px var(--warn);color:var(--warn);font:600 var(--f-11) var(--sans)}
+.dj-g-num.manque{padding:2px 7px;border-radius:999px;background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn);color:var(--warn);font:600 var(--f-11) var(--sans)}
 .dj-g-de-a{display:inline-flex;align-items:center;gap:6px;min-width:0;font:500 var(--f-12) var(--mono);color:var(--t-2);white-space:nowrap}
 .dj-g-de-a b.id{font-weight:600;color:var(--t-1)}
 .dj-g-de-a b.manque{color:var(--ko)}
@@ -140,4 +157,27 @@ details.fs[data-section="disjoncteur"][open] .fs-resume{display:none}
 /* la fiche des hypothèses : les calibres préférés, une liste libre (« 1 3 5 7,5 10 ») — un champ plus large */
 .hy-champ .hyp-n.hyp-liste input{width:150px;text-align:left}
 /* la réactance estimée, proposée sous le verdict « X à saisir » (la simulation d'une barrette, 08-interface) */
-.sim-x{display:block;font:500 10px var(--mono);color:var(--t-3);white-space:nowrap;margin-top:2px}
+.sim-x{display:block;font:500 var(--f-11) var(--mono);color:var(--t-3);white-space:nowrap;margin-top:2px}
+
+/* ── LA CARTE DE DÉCISION, en tête de la fiche (le parcours v72) : quand l'outil retient un autre calibre que le retest — ce
+   que fait le retest, le calibre qui passe et ce qu'il demande, puis deux gestes : décider, garder le retest. Une feuille
+   teintée de l'état (ce qu'on prend en main), pas une carte dans une carte : un filet de son état à gauche ── */
+.fi-decision{display:flex;flex-direction:column;gap:10px;margin:0 0 16px;padding:14px 14px 12px 16px;border-radius:var(--r-2);background:var(--ko-soft);box-shadow:inset 3px 0 0 var(--ko)}
+.fi-decision.att{background:var(--warn-soft);box-shadow:inset 3px 0 0 var(--warn)}
+.fi-decision-t{display:flex;align-items:center;gap:8px;margin:0;font:600 var(--f-14)/1.3 var(--sans);letter-spacing:-.01em;color:var(--ko)}
+.fi-decision.att .fi-decision-t{color:var(--warn)}
+.fi-decision-t svg.ico{width:17px;height:17px;flex:none}
+.fi-decision-p{margin:0;font:400 var(--f-13)/1.5 var(--sans);color:var(--t-1);text-wrap:pretty}
+.fi-decision-p b{font-weight:600}
+.fi-decision-p .id{font:500 var(--f-12) var(--mono)}
+.fi-decision-cables{list-style:none;margin:0;padding:6px 0 0;display:flex;flex-direction:column;border-top:1px solid color-mix(in srgb,var(--t-1) 10%,transparent)}
+.fi-decision-cables li{display:grid;grid-template-columns:62px 52px 14px auto;align-items:center;column-gap:8px;min-height:26px;padding:0 6px;margin:0 -6px;border-radius:var(--r-1);font:500 var(--f-12) var(--mono);color:var(--t-2);cursor:pointer;transition:background var(--rapide)}
+.fi-decision-cables li:hover,.fi-decision-cables li.vise{background:color-mix(in srgb,var(--s-surface) 60%,transparent)}
+.fi-decision-cables li b{font-weight:600;color:var(--t-1)}
+.fi-decision-cables svg.ico{width:12px;height:12px;color:var(--t-3)}
+.fi-decision-gestes{display:flex;flex-wrap:wrap;gap:8px}
+.fi-decision-gestes .btn{height:32px;padding:0 14px;font-size:var(--f-13)}
+.fi-decision .fi-choix{margin:0;background:var(--s-surface)}
+.fi-decision .fi-choix .fi-puces{align-items:center}
+.fi-decision .fi-choix .btn{height:30px;padding:0 12px;font-size:var(--f-12)}
+.fi-decision-autres{align-self:flex-start;margin:-2px 0 0 -8px;color:var(--t-2);text-decoration:underline;text-decoration-color:var(--accent-line);text-underline-offset:3px}
