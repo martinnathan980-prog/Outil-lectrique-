@@ -162,7 +162,7 @@
 .fw-tete .fi-x:hover{background:var(--s-hover);color:var(--t-1)}
 .fw-tete .fi-x svg.ico{width:18px;height:18px}
 .fw-corps{flex:1;min-height:0;display:flex}
-.fw-scene{flex:1;min-width:0;position:relative;overflow:hidden;background-color:var(--s-app);background-image:var(--points);background-size:24px 24px;cursor:grab;touch-action:none;user-select:none}
+.fw-scene{flex:1;min-width:0;position:relative;overflow:hidden;background:var(--points) 0 0/24px 24px,var(--table-fond);background-color:var(--s-app);cursor:grab;touch-action:none;user-select:none}
 .fw-scene.tient{cursor:grabbing}
 .fw-scene svg{display:block;width:100%;height:100%}
 .fw-attente{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--t-table-2);font-size:var(--f-13)}

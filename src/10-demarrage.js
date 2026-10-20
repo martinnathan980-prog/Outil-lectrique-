@@ -33,7 +33,7 @@ const atelier = {
 const volta = atelier;
 
 function demarrer() {
-  typographieVivante(); relireBible(); lierPanneau(); lierPlanche(); lierBullesDuMenu(); lierEntreesFichiers(); lierBibliotheque();
+  typographieVivante(); relireBible(); lierPanneau(); lierPlanche(); lierTable(); lierCarte(); lierBullesDuMenu(); lierEntreesFichiers(); lierBibliotheque();
   // le tableau garde sa taille et sa portée, jamais son état ouvert : on rouvre sur le plan seul, le tableau à la demande (B)
   relireBase();
   // le plan resté sur la table à la fermeture revient, derrière : l'outil s'ouvre sur la BIBLIOTHÈQUE (les installations, leurs

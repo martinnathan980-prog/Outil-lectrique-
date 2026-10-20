@@ -930,11 +930,12 @@ function ouvrirBase(taille) { const b = app.base, t = taille === 'page' ? 'page'
     b.defiler = true; }
   const el = $('base'); el.hidden = false; el.classList.toggle('page', t === 'page'); if (!etait) { el.classList.remove('entre'); void el.offsetWidth; el.classList.add('entre'); }
   document.body.classList.add('base-ouverte'); $('btnBase').setAttribute('aria-pressed', 'true');
+  basculerModeCarte();   // la fiche ouverte se range en volet : le tableau s'arrête à côté d'elle (08-carte)
   rendreBase(true); memoriserBase(); if (t === 'moitie') ajuster(true); }
 function fermerBase() { const b = app.base; if (!b.ouvert) return; if (b.edition) finirEdition('annule', null);
   b.ouvert = false; b.neuves = []; b.neufs = []; b.nouveau = false; b.toutes = false; fermerMenuColonnes(); if (typeof cacherBulle === 'function') cacherBulle();
   const el = $('base'); el.hidden = true; el.classList.remove('page'); document.body.classList.remove('base-ouverte'); $('btnBase').setAttribute('aria-pressed', 'false');
-  memoriserBase(); ajuster(true); }
+  memoriserBase(); ajuster(true); basculerModeCarte(); }   // la fiche redevient une carte, près de son bloc
 /* B : ouvre en moitié, ou ferme ; Maj+B : passe en page, et de la page revient en moitié. */
 function basculerBase(taille) { const b = app.base;
   if (taille === 'page') { if (!(app.contrat.liaisons.length || verite().length)) { dire('Rien à montrer : dépose d’abord un fichier.'); return; } ouvrirBase(b.ouvert && b.taille === 'page' ? 'moitie' : 'page'); return; }

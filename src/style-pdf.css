@@ -3,7 +3,7 @@
    outils des palets sombres (l'îlot sombre), la relecture une feuille à droite, comme l'inspecteur. Tout est écrit avec
    les jetons de style.css ; les seules couleurs littérales sont celles du calque, posé sur le papier. */
 .pdf{position:fixed;top:calc(var(--entete) + var(--sur-h));left:0;right:0;bottom:0;z-index:30;color:var(--t-table);
-  background-color:var(--s-app);background-image:var(--points);background-size:24px 24px;background-attachment:fixed;
+  background:var(--points) 0 0/24px 24px,var(--table-fond);background-color:var(--s-app);background-attachment:fixed;
   --pdf-vig:132px;--pdf-rel:clamp(460px,34vw,600px)}
 .pdf.entre{animation:pdf-entre var(--lent)}
 @keyframes pdf-entre{from{opacity:0}to{opacity:1}}

@@ -9,7 +9,7 @@
    et aller d'une à l'autre très facilement — l'outil est partagé, chacun est
    sur la sienne. »
 
-   L'OUTIL S'OUVRE SUR ELLE, posée sur la table noire (`#bibliotheque`) :
+   L'OUTIL S'OUVRE SUR ELLE, posée sur la table bleu nuit (`#bibliotheque`) :
      · la RACINE : une carte par installation — son numéro d'ECP, son nom,
        combien de plans, la dernière ouverture, le nom de ses premiers plans —,
        rangées par ECP (ou par nom, ou les plus récentes d'abord : on choisit,

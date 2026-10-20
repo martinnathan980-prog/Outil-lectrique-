@@ -477,7 +477,10 @@ const filsDeBarretteAPoser = nom => { const L = liaisonsDuPlan(); return ((app.d
 /* LES ROUTES : un fil prend la couleur de sa route (la colonne « route » ou « cheminement » du fichier). Une route garde
    sa couleur sur tous les folios du contrat — l'ordre naturel de leurs noms, dans une palette de dix teintes franches,
    lisibles sur le blanc et à l'impression ; une couleur choisie au contrat (`couleursRoutes`) passe devant. */
-const PALETTE_ROUTES = ['#1f5fbf', '#c0392b', '#1e8449', '#d35400', '#7d3c98', '#117a8b', '#9a6324', '#c2185b', '#5d6d1e', '#34495e'];
+// les couleurs des routes, dans l'ordre où elles se donnent (les routes par leur nom) : ni le rouge ni le vert des ÉTATS
+// en tête (l'audit v72 : « une prise saine montre quatre contacts rouges ») — le bleu, le violet, la sarcelle, le brun,
+// l'ardoise, l'olive, le magenta ; l'orange, le rouge et le vert en dernier, pour un contrat à huit routes et plus
+const PALETTE_ROUTES = ['#1f5fbf', '#7d3c98', '#117a8b', '#9a6324', '#34495e', '#5d6d1e', '#c2185b', '#d35400', '#c0392b', '#1e8449'];
 function couleursDesRoutes() { const choisies = app.contrat.couleursRoutes || {}, m = new Map();
   [...new Set(app.contrat.liaisons.map(l => l.route).filter(Boolean))].sort(triNaturel).forEach((r, i) => m.set(r, choisies[r] || PALETTE_ROUTES[i % PALETTE_ROUTES.length]));
   return m; }
@@ -512,6 +515,8 @@ function redessiner() { calculer(); peindre(); synchroniser(); rallumer(); }
 const cadre = () => $('planche').getBoundingClientRect();
 function appliquerVue() {
   const sc = $('scene'); if (sc) sc.setAttribute('transform', `translate(${app.vue.tx},${app.vue.ty}) scale(${app.vue.s})`);
+  // la table glisse d'un rien sous la feuille (08-table), le fil de la carte suit son bloc (08-carte)
+  parallaxeTable(); dessinerLien();
   // le zoom se lit par rapport à la feuille : la même feuille, cadrée, affiche le même pourcentage sur tous les folios
   $('zlbl').textContent = Math.round(app.vue.s * (app.dessin && app.dessin.bbox.k || 1) * 100) + ' %';
   const o = $('ombre');
@@ -524,22 +529,24 @@ function appliquerVue() {
    ouvert : la feuille se cadre dedans. Sur téléphone tout est en bas, empilé
    au-dessus du tiroir : le rail (48), puis les folios (44) s'il y en a. */
 const RAIL = 52;   // la largeur du rail de gauche ; le plan commence après (et sous la barre du haut, --entete)
-/* La place du plan : ce que laissent l'inspecteur (à droite), le tableau (en bas), la fiche des documents (à droite).
-   Le plan se recadre dans ce qui reste : rien ne le recouvre. */
+/* La place du plan : ce que laissent le volet épinglé (à droite), le tableau (en bas), la fiche des documents (à droite).
+   Le plan se recadre dans ce qui reste : rien ne le recouvre. La CARTE flottante (08-carte) ne prend aucune place : elle
+   se pose à côté de son bloc, et s'écarte s'il passe dessous. */
 function marges() { const tel = telephone(), folios = !$('folios').hidden, vu = id => !$(id).hidden ? $(id) : null;
-  const droite = vu('fiche') || vu('inspecteur'), bas = vu('base'), jeton = n => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(n)) || 0;
+  const droite = vu('fiche') || (carteFlottante() ? null : vu('inspecteur')), bas = vu('base'), jeton = n => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(n)) || 0;
   const entete = jeton('--entete'), rail = jeton('--rail') || RAIL, pied = jeton('--pied') || 40;
   if (tel) { const d = vu('fiche') || vu('inspecteur') || bas; return { haut: 16 + entete, bas: (d ? d.offsetHeight + 8 : 8) + 56 + (folios ? 52 : 0), gauche: 12, droite: 12 }; }
   return { haut: 24 + entete, bas: (bas ? bas.offsetHeight + 16 : 0) + (folios ? pied + 24 : 24), gauche: rail + 24, droite: 24 + (droite ? droite.offsetWidth + 8 : 0) }; }
-let anim = null;
+let anim = null, vueVisee = null;   // l'animation de la vue en cours, et la vue où elle va (la carte s'y place d'avance : 08-carte)
 function animerVue(cible, doux) {
-  if (anim) { cancelAnimationFrame(anim); anim = null; }
-  if (!doux || mouvementReduit()) { app.vue = cible; appliquerVue(); return; }
+  if (anim) { cancelAnimationFrame(anim); anim = null; } vueVisee = cible;
+  if (!doux || mouvementReduit()) { app.vue = cible; appliquerVue(); planifierEcart(false); return; }
   const de = { ...app.vue }, t0 = performance.now(), D = 260;
   const pas = t => { const k = Math.min(1, (t - t0) / D), e = 1 - Math.pow(1 - k, 3);
     app.vue = { s: de.s + (cible.s - de.s) * e, tx: de.tx + (cible.tx - de.tx) * e, ty: de.ty + (cible.ty - de.ty) * e };
     appliquerVue(); anim = k < 1 ? requestAnimationFrame(pas) : null; };
   anim = requestAnimationFrame(pas);
+  planifierEcart(doux);
 }
 function ajuster(doux) {
   if (!app.dessin) { app.vue = { s: 1, tx: 40, ty: 40 }; appliquerVue(); return; }
@@ -993,16 +1000,22 @@ function deselectionner() { const c = app.cible;
   if (c) { app.cible = null; if (app.choisi) { app.choisi = null; peindre(); }
     if (c.type === 'bloc' && app.base.filtre && app.base.filtre === filtreDuBloc(c.nom)) { app.base.filtre = ''; app.base.filtreAuto = false; rendreBase(); }
     else marquerLignes(); eteindre();
-    if (app.insp.index && !$('inspecteur').hidden) { rendreFiche(); return; } }
+    if (app.insp.index && !$('inspecteur').hidden) { rendreFiche(); CARTE.origine = origineDeLaCible(); dessinerLien(); return; } }
   fermerInspecteur();
   if (app.fiche) fermerFiche(true); }
 const retourIndex = () => deselectionner();
-/* L'inspecteur : s'ouvre sur ce qu'on choisit, se ferme quand on ne choisit plus rien ; le plan se recadre à côté
-   (sans bouger si ce qu'on vient de choisir est déjà en vue). */
-function ouvrirInspecteur() { const el = $('inspecteur'), etait = !el.hidden; if (app.fiche) fermerFiche();
-  el.hidden = false; document.body.classList.add('insp-ouvert'); rendreFiche(); synchroniserRail();
+/* L'inspecteur : s'ouvre sur ce qu'on choisit, se ferme quand on ne choisit plus rien. Une CARTE (08-carte) : elle naît
+   de ce qu'on a cliqué et se pose à côté, le plan ne bouge pas ; épinglée (le volet), le plan se recadre à côté (sans
+   bouger si ce qu'on vient de choisir est déjà en vue). Au téléphone, le tiroir. */
+function ouvrirInspecteur() { const el = $('inspecteur'), etait = !el.hidden, avant = etait ? el.getBoundingClientRect() : null, vieille = CARTE.origine; if (app.fiche) fermerFiche();
+  CARTE.origine = origineDeLaCible();
+  el.hidden = false; document.body.classList.add('insp-ouvert'); modeCarte(); rendreFiche(); synchroniserRail();
+  if (carteFlottante()) { el.classList.remove('entre'); poserLaCarte(etait, avant, vieille); return; }
   if (!etait) { el.classList.remove('entre'); void el.offsetWidth; el.classList.add('entre'); recadrerSiCache(); } }
-function fermerInspecteur() { const el = $('inspecteur'); app.insp.index = false; synchroniserRail(); if (el.hidden) return; el.hidden = true; document.body.classList.remove('insp-ouvert'); recadrerSiCache(); }
+/* Fermer : la carte se résorbe dans son bloc (son double ; elle, elle est fermée tout de suite) ; le volet rend la place. */
+function fermerInspecteur() { const el = $('inspecteur'); app.insp.index = false; synchroniserRail(); if (el.hidden) return;
+  const volet = !carteFlottante(); if (!volet) resorberCarte(el);
+  el.hidden = true; document.body.classList.remove('insp-ouvert'); modeCarte(); CARTE.origine = null; dessinerLien(); if (volet) recadrerSiCache(); }
 /* Le rail dit ce qui est ouvert : l'outil dont le panneau est là se marque pressé (dans un carré gris). */
 function synchroniserRail() { const p = (id, on) => { const b = $(id); if (b) b.setAttribute('aria-pressed', on ? 'true' : 'false'); };
   p('btnIndex', app.insp.index && !$('inspecteur').hidden); p('btnCherche', document.body.classList.contains('cherche')); p('btnBible', !!(app.fiche && app.fiche.mode === 'bible')); }
@@ -1042,7 +1055,7 @@ function rendreIndex(box) { const etats = new Map();
   box.className = 'fi ix'; box.dataset.cle = 'index';
   // la fiche qu'on y a laissée : ‹ la rouvre (Alt+←), à la même place
   const I = typeof pileInsp === 'function' ? pileInsp() : null, laissee = I && I.pile[I.pos];
-  box.innerHTML = `<header class="ix-tete">${laissee ? `<button class="fi-pas" id="fi-prec" aria-label="${escA('Revenir à ' + nomDEntree(laissee) + ' (Alt+←)')}" title="${escA('Revenir à ' + nomDEntree(laissee) + ' (Alt+←)')}">${ico('gauche')}</button>` : ''}<h2>Repères<b class="ix-n" title="${escA(pluriel(items.length, 'repère') + ' — hors renvois, masses et rails')}">${items.length}</b></h2><span class="espace"></span><button class="fi-x plus" id="ix-plus" title="Ajouter un équipement : son repère, puis ses fils dans le tableau" aria-label="Ajouter un équipement" aria-expanded="${!!app.insp.ajout}">${ico('plus')}</button><button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)">${ico('fermer')}</button></header>`
+  box.innerHTML = `<header class="ix-tete">${laissee ? `<button class="fi-pas" id="fi-prec" aria-label="${escA('Revenir à ' + nomDEntree(laissee) + ' (Alt+←)')}" title="${escA('Revenir à ' + nomDEntree(laissee) + ' (Alt+←)')}">${ico('gauche')}</button>` : ''}<h2>Repères<b class="ix-n" title="${escA(pluriel(items.length, 'repère') + ' — hors renvois, masses et rails')}">${items.length}</b></h2><span class="espace"></span><button class="fi-x plus" id="ix-plus" title="Ajouter un équipement : son repère, puis ses fils dans le tableau" aria-label="Ajouter un équipement" aria-expanded="${!!app.insp.ajout}">${ico('plus')}</button>${boutonEpingle()}<button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)">${ico('fermer')}</button></header>`
     // ajouter un équipement : un champ en ligne, sous le titre (pas une boîte du navigateur)
     + (app.insp.ajout ? `<form class="ix-ajout" id="ix-ajout"><div class="filtre">${ico('plus')}<input id="ix-nouveau" placeholder="Repère du nouvel équipement, par exemple 105RL2" aria-label="Repère du nouvel équipement" autocomplete="off" spellcheck="false"></div><button class="btn cuivre" type="submit">Ajouter</button><button class="btn lien" type="button" id="ix-annuler">Annuler</button></form>` : '')
     + `<div class="filtre ix-filtre">${ico('loupe')}<input id="ix-q" value="${escA(app.insp.filtre)}" placeholder="Chercher un repère, une désignation" aria-label="Chercher un repère" autocomplete="off" spellcheck="false"><button class="vider" id="ix-vider"${f ? '' : ' hidden'} aria-label="Effacer la recherche">×</button></div>`
@@ -1051,6 +1064,7 @@ function rendreIndex(box) { const etats = new Map();
   // la même liste refaite (un filtre tapé) garde sa place ; l'index qu'on ouvre commence en haut, titre et recherche en vue
   box.scrollTop = meme ? haut : 0; survolQuiSuit(box);
   $('in-fermer').onclick = () => fermerInspecteur();
+  const ep = $('fi-epingle'); if (ep) ep.onclick = e => { e.stopPropagation(); epinglerCarte(!CARTE.epingle); };
   if ($('fi-prec')) $('fi-prec').onclick = () => naviguer(-1);
   const q = $('ix-q'); q.addEventListener('input', () => { app.insp.filtre = q.value; const pos = q.selectionStart; rendreIndex(box); const q2 = $('ix-q'); q2.focus(); q2.setSelectionRange(pos, pos); });
   q.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); if (q.value) { q.value = ''; q.dispatchEvent(new Event('input')); } else fermerInspecteur(); }
@@ -1584,11 +1598,11 @@ function voirFilDeCarte(i) { const l = verite()[i]; if (!l) return;
   if (app.plan !== '*' && ou.length && !ou.includes(app.plan)) { allerAuPlan(ou[0]); if (app.cible && app.cible.type === 'bloc') { app.choisi = app.cible.nom; peindre(); } }
   const w = filDe(l); if (w) { allumerFil(w); viserFil(w); } else if (!attenteCourante()) dire('Ce fil n’est pas dessiné sur ce folio.'); }
 /* ---- la fiche : cartouche, collage, bible — les documents rares --------- */
-function ouvrirFiche(mode, corps, pied) { const f = $('fiche'); fermerBase(); if (!$('inspecteur').hidden) { $('inspecteur').hidden = true; document.body.classList.remove('insp-ouvert'); }
+function ouvrirFiche(mode, corps, pied) { const f = $('fiche'); fermerBase(); if (!$('inspecteur').hidden) { $('inspecteur').hidden = true; document.body.classList.remove('insp-ouvert'); modeCarte(); dessinerLien(); }
   $('fiche-corps').innerHTML = corps; const p = $('fiche-pied'); p.innerHTML = pied || ''; p.hidden = !pied;
   const nouveau = f.hidden || !app.fiche || app.fiche.mode !== mode.mode;
   const r = document.documentElement.style; r.setProperty('--fiche-l', (mode.large ? 560 : 400) + 'px');
-  f.hidden = false; if (nouveau) { f.classList.remove('entre'); void f.offsetWidth; f.classList.add('entre'); }
+  f.hidden = false; f.dataset.mode = mode.mode || ''; if (nouveau) { f.classList.remove('entre'); void f.offsetWidth; f.classList.add('entre'); }
   app.fiche = mode; $('fiche-corps').scrollTop = 0; f.classList.remove('defile');
   // sur téléphone un document est une page, de la barre du haut au rail : la bande des folios se range (style.css)
   document.body.classList.add('fiche-ouverte');
@@ -1861,7 +1875,7 @@ function lierPanneau() {
   // plan le remet sur la table quand la bibliothèque le cache (08-bibliotheque, `surLePlan`).
   lierMenu({ bibliotheque: () => montrerBibliotheque(), ouvrir: choisirFichier, fichiers: () => ficheFichiers(),
     recapitulatif: surLePlan(basculerBase), nomenclature: surLePlan(ficheNomenclature),
-    svg: surLePlan(exporterSVG), png: surLePlan(exporterPNG), imprimer: surLePlan(imprimer), suivi: surLePlan(exporterSuivi),
+    svg: surLePlan(exporterSVG), png: surLePlan(exporterPNG), imprimer: surLePlan(imprimer), retestcorrige: surLePlan(exporterRetestCorrige), suivi: surLePlan(exporterSuivi),
     coller: ficheColler, exemple, bible: ficheBible, normes: () => ficheNormes(), hypotheses: ficheHypotheses, cartouche: surLePlan(ficheCartouche) });
   o('btnUndo', () => { const q = annuler(); if (q) dire('Annulé : ' + q + '.'); });
   o('btnAuto', revenirAutomatique);
@@ -1888,7 +1902,10 @@ function lierPanneau() {
     const dansChamp = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '');
     // la bibliothèque ouverte : ses touches (Échap remonte, « / » cherche) ; celles du plan, caché dessous, se taisent
     if (toucheBibliotheque(e, dansChamp)) return;
+    // Échap ferme d'abord ce qui est ouvert par-dessus : le menu ⋮, la recherche, le « ⋯ » d'une fiche (puis la fiche, au second appui)
+    const plusFiche = $('fi-menu-liste');
     if (e.key === 'Escape') { if (!$('menu').hidden) { fermerMenu(); $('btnMenu').focus(); } else if (rechercheOuverte()) { fermerRecherche(); $('q').blur(); }
+      else if (plusFiche && !plusFiche.hidden) { plusFiche.hidden = true; const m = $('fi-menu'); if (m) { m.setAttribute('aria-expanded', 'false'); m.focus(); } }
       else if (dansChamp) e.target.blur();   // dans un champ, Échap ne fait que le quitter
       else if (app.fiche) fermerFiche(true); else if (app.cible || !$('inspecteur').hidden) deselectionner(); else fermerBase(); return; }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !dansChamp) { e.preventDefault(); const q = annuler(); if (q) dire('Annulé : ' + q + '.'); return; }

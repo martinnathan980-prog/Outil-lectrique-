@@ -5,27 +5,33 @@
 plus). Le lecteur (ingénieur câblage) veut « quelque chose de fluide, de classe, d'épuré, de beau, de compréhensible —
 une très belle expérience utilisateur ; toujours penser à l'utilisateur, ne jamais le perdre, un fil conducteur ; tout
 calculé automatiquement, mais tout modifiable ». Il a écarté le style « futuriste IA » (cyan, chrome noir) et choisi
-**« Graphite »**, puis (v68) **« Graphite 2027 : l'atelier »** — le lecteur : « le plus beau, le plus expérience
-utilisateur pour un outil électrique de 2027 ; pas trop futuriste, les trucs qui viennent de partout, ça sert à rien ;
-pas trop ancien ; quelque chose de classe ; très fluide, très naturel, intuitif ». Ce document fixe la direction
+**« Graphite »**, puis (v68) **« Graphite 2027 : l'atelier »**, puis (v72) **« Nuit bleue »** — le lecteur : « c'est très
+bien comme c'est, mais il y a beaucoup de sombre ; les menus, ils sont noirs sur fond noir ; pourquoi pas un fond pas que
+noir, un peu dégradé, un petit peu interactif, qui bouge comme une application un peu futuriste — mais pas trop, pas
+m'as-tu-vu : classe, propre, interactif ; quand tu cliques, ça s'ouvre à partir de là où tu cliques, une pop-up que tu
+peux bouger ». Il l'a choisie parmi trois prototypes (Aube, Nuit bleue, Ardoise). Ce document fixe la direction
 commune ; chaque domaine la décline dans son propre fichier de style.
 
-## 1. L'idée : « Graphite 2027 », l'atelier — tout est posé sur la table
+## 1. L'idée : « Nuit bleue » — tout est posé sur la table, la nuit
 
-- **Le plan est l'objet.** Une feuille blanche posée sur une **table noire** — un graphite presque noir, le même dans
-  les deux thèmes, semé de points discrets (un tous les 24 px) — par une ombre profonde (le lecteur : « au lieu de le
-  mettre blanc, tu pouvais le mettre noir… c'était incroyable »). Ce qui s'écrit à même la table prend l'encre de la
-  table (`--t-table`) ; ce qui flotte dessus (le mot qui passe, les bulles) porte un filet clair qui l'en détache.
-- **La table va d'un bord à l'autre.** Ses points sont fixés à l'écran (`background-attachment: fixed`) : ils tombent
-  juste d'une pièce à l'autre (la planche, la bibliothèque). La **barre du haut** est à même la table (la marque
-  « Volta », qui mène à la bibliothèque, un **fil discret** — l'installation, le plan —, la recherche en creux, le menu
-  ⋮ — rien d'autre), un filet à peine et une ombre douce dessous : la feuille qu'on fait glisser passe sous elle.
-- **Les outils sont des PALETS** : de petites pièces sombres et arrondies posées sur la table, **les mêmes dans les deux
-  thèmes** (l'**îlot sombre** : `#entete`, `#rail`, `#folios`, `#toast`, `.ilot-sombre` prennent les jetons du thème
-  sombre). Le **rail** flotte à gauche (44 px, à 10 px du bord) ; en bas, le palet des **folios** (‹, la bande, ›, le
-  compte) à gauche et celui de la **vue** (cadrer, zoomer) à droite ; l'affinage en cours et le folio retouché, chacun
-  sa petite pilule au milieu. Un outil pressé s'allume d'un voile clair ; le folio courant est une pièce claire. Le
-  **menu ⋮** et la liste de la recherche tombent de la barre : sombres aussi.
+- **Le plan est l'objet.** Une feuille blanche posée sur une **table bleu nuit** — une encre dégradée, la même dans les
+  deux thèmes, une lumière froide qui tombe du coin haut-droit, une autre qui respire au coin bas-gauche, semée de points
+  discrets (un tous les 24 px) — par une ombre profonde. Ce qui s'écrit à même la table prend l'encre de la table
+  (`--t-table`) ; ce qui flotte dessus (le mot qui passe, les bulles) porte un filet qui l'en détache.
+- **La table vit, à peine** (page.html `#table`, `08-table.js`) : quatre couches sous tout, fixées à l'écran — le fond,
+  le souffle (16 s), les points, la **lueur** froide qui suit la souris de loin et s'arrête quand la main s'arrête. Quand
+  on déplace le plan, les points glissent d'un dixième : la feuille paraît posée au-dessus. Pas de néon, rien ne
+  clignote ; le mouvement réduit fige tout. La **barre du haut** est un voile de nuit sur la table (la marque « Volta »,
+  qui mène à la bibliothèque, un **fil discret** — l'installation, le plan —, la recherche de verre, le menu ⋮ — rien
+  d'autre), un filet de lumière dessous.
+- **Les outils sont des PALETS DE VERRE** : de petites pièces arrondies d'un bleu plus pâle que la nuit, floutées, un
+  filet de lumière en haut — **plus rien de noir sur noir** —, assez denses pour se lire aussi sur le papier, **les mêmes
+  dans les deux thèmes** (l'**îlot de verre** : `#entete`, `#rail`, `#folios`, `#toast`, `.ilot-sombre` prennent l'encre
+  claire de la nuit). Le **rail** flotte à gauche (44 px, à 10 px du bord) ; en bas, le palet des **folios** (‹, la
+  bande, ›, le compte) à gauche et celui de la **vue** (cadrer, zoomer) à droite ; l'affinage en cours et le folio
+  retouché, chacun sa petite pilule au milieu. Un outil pressé s'allume d'un voile de glace ; le folio courant est une
+  pièce de verre dépoli presque blanche. Le **menu ⋮** et la liste de la recherche tombent de la barre : un verre de nuit
+  dense, un filet de lumière ; leurs **bulles** sont claires.
 - **Le menu ⋮ tient en sept lignes** (le lecteur : « on n'en utilise que 10-20 % ») : Bibliothèque (l'entrée
   principale) · Ouvrir un retest (il devient un plan de l'install ouverte) · Vos fichiers (« retests · contrats déjà
   faits · bible · normes » écrit dessous : c'est là qu'on dépose la grande base) · Récapitulatif · Nomenclature ·
@@ -36,18 +42,42 @@ commune ; chaque domaine la décline dans son propre fichier de style.
 - **L'interface est à l'encre.** Le texte et les actions sont graphite : le bouton principal est noir, la sélection en
   gris doux, le focus cerclé d'encre. **La couleur ne dit que l'état** : vert ce qui est bon, ambre ce qui est à voir,
   rouge ce qui est un problème. Les routes des fils gardent leurs couleurs (sur le dessin, et pour le trait d'un fil
-  dans le récapitulatif) ; c'est la seule autre couleur.
-- **Ce qu'on lit est une FEUILLE** (l'inspecteur, le récapitulatif, les documents) : posée sur la table, détachée des
-  bords par le même **jeu de 10 px** (`--jeu`), arrondie (16 px), une ombre longue — blanche le jour, charbon la nuit
-  (un filet clair l'en détache). Elle entre en glissant d'un rien et se pose (`--lent`).
-- **L'ouverture est la bibliothèque**, posée sur la table noire (le lecteur : « on choisit notre install et on a
+  dans le récapitulatif) ; c'est la seule autre couleur — et jamais le rouge ni le vert des états en tête de leur palette
+  (`PALETTE_ROUTES`, 08-interface : le bleu, le violet, la sarcelle, le brun, l'ardoise, l'olive, le magenta ; l'orange,
+  le rouge, le vert en dernier) : une prise saine ne montre pas de contacts rouges.
+- **La fiche est une CARTE qui naît du clic** (`08-carte.js`) : un clic sur un bloc la fait grandir depuis la boîte même
+  du bloc (280 ms, vive puis freinée) ; elle se pose **là où elle cache le moins** (`placerPres`, `zonesAProteger`) : le
+  bloc jamais, le départ de ses câbles presque jamais — elle passe du côté qui n'en a pas —, puis le reste de ses câbles,
+  ce qui est dessiné d'autre, la feuille blanche ; la table libre à côté de la feuille d'abord quand elle en a la place ;
+  à droite du bloc de préférence, à gauche, dessous, dessus, plus courte s'il le faut. Un **fil** de glace l'y relie et le
+  suit ; on la **tient par sa barre** (la poignée en haut) ou son symbole ;
+  l'**épingle** de sa barre — ou la porter au bord droit, où le quai se dessine — en fait le **volet** de droite, qui
+  recadre le plan à côté ; Échap ou un clic dehors la **rendent au bloc**, où elle se résorbe. Le plan n'est plus rétréci
+  par elle ; s'il se centre de lui-même et amène le bloc dessous, elle s'écarte. Blanche le jour, encre bleue le soir.
+  Échap ferme d'abord ce qui est ouvert dessus (le « ⋯ » du pied, une liste), puis la carte ; la bulle d'un « ? » reste
+  dans sa boîte (sous le « ? », retournée au-dessus), jamais sur le plan.
+  Le **récapitulatif ouvert**, on travaille en tableaux : la fiche se range d'elle-même en volet et le tableau s'arrête
+  à côté d'elle (une carte posée dessus en cacherait les boutons) ; il se ferme, elle redevient une carte près de son
+  bloc. Au téléphone, c'est le tiroir.
+- **Ce qu'on lit d'autre est une FEUILLE** (le récapitulatif, les documents) : posée sur la table, détachée des bords
+  par le même **jeu de 10 px** (`--jeu`), arrondie (16 px), une ombre longue — blanche le jour ; le soir, elle prend la
+  matière des palets (`#18233a`, plus clair que la table), un anneau de lumière et un filet clair en haut : on voit où elle
+  commence. Elle entre en glissant d'un rien et se pose (`--lent`). Un document **large** (les normes, la bible) laisse
+  40 % de l'écran au plan (la barre des folios devient « ‹ › 3 / 6 ») ; la **base SEE** prend la page (la barre attend
+  dessous, le toast se pose au milieu de la feuille). Une table de feuille (le récapitulatif) a la largeur de sa feuille :
+  trop étroite, elle défile de côté juste de ce qui dépasse, jamais dans le vide.
+- **L'ouverture est la bibliothèque**, posée sur la table bleu nuit (le lecteur : « on choisit notre install et on a
   directement ses plans » ; plus de page d'exemple qui explique). Une **install** (une installation : telle antenne,
-  tel cockpit) est une **pile de feuilles** — son nom, combien de plans, sa dernière ouverture, ses premiers plans ;
+  tel cockpit) est une **pile de feuilles** — du **papier**, dans les deux thèmes, comme le folio : ce qu'on choisit est
+  une feuille blanche posée sur la nuit (« Reprendre » aussi) — son nom, combien de plans, sa dernière ouverture, ses
+  premiers plans ;
   ses **plans** (un plan = un retest) se lisent sur une feuille, une ligne chacun (nom, harness et dessins, liaisons,
   folios, dernière ouverture) ; un clic ouvre le plan sur la table, avec ses folios. Le plan resté sur la table se
   reprend d'un clic (« Reprendre », Échap). Rien encore : ce qu'est une install en une phrase, « Nouvelle install »,
   « Déposer la base des contrats déjà faits » (une colonne Install range chaque install et ses plans). L'**Exemple** est
-  une install de démonstration, discrète (un cadre au trait), en dernier. Renommer sur place, supprimer avec une
+  une install de démonstration, discrète (un cadre de lumière au trait, sur la table), en dernier. Renommer sur place,
+  supprimer avec une
+
   **confirmation écrite dans la carte** (jamais une boîte du navigateur) puis « Rétablir », déplacer un plan : le « ⋯ ».
   Tout reste dans le navigateur (IndexedDB). Le reste des fichiers se retrouve dans « Vos fichiers ».
 - **Le récapitulatif** est le tiroir du bas (B), en moitié ou en page : neuf onglets, chaque objet dans un seul
@@ -79,7 +109,8 @@ commune ; chaque domaine la décline dans son propre fichier de style.
    une carte** : dans une feuille, on groupe par l'espace et un filet, on ne recadre pas ; un cadre se réserve à ce
    qu'on prend en main (une ligne qu'on clique, une zone où l'on dépose). **Une action principale par écran** (pleine),
    le reste en feuille au filet ou en lien.
-5. **Calme et net, pas gris.** Pas de dégradé décoratif, pas de lueur, pas de capitales espacées. Les étiquettes ont
+5. **Calme et net, pas gris.** Pas de dégradé ni de lueur dans ce qu'on lit (la table seule a les siens), pas de
+   capitales espacées. Les étiquettes ont
    leur majuscule (« Part number », « Emplacement ») et l'encre seconde (`--t-2`, jamais `--t-3` pour ce qu'on doit
    lire) ; les valeurs l'encre (`--t-1`), nettes ; les titres de section affirmés (demi-gras 15 px) ; les groupes
    espacés (16 à 24 px) et séparés d'un filet, pas recadrés. Le demi-gras pour les titres, le gras est rare.
@@ -90,9 +121,13 @@ commune ; chaque domaine la décline dans son propre fichier de style.
    vertical ; à côté seulement quand la place manque (un fil court, le pointillé d'une barrette).
 7. **Réactif et fluide.** Survoler montre, cliquer fait, glisser règle. Le mouvement est vif au départ et freine en
    arrivant (`--courbe`, cubic-bezier(.2,.8,.2,1)) : `--rapide` 140 ms (un survol, une couleur), `--moyen` 220 ms (un menu
-   qui tombe, un panneau de menu qui glisse), `--lent` 340 ms (une feuille qui entre). Un bouton pressé s'enfonce à
-   peine (`scale(.98)`), une bulle glisse de 3 px en paraissant. Rien ne rebondit, rien ne clignote ; le mouvement réduit
-   coupe tout.
+   qui tombe, un panneau de menu qui glisse), `--lent` 340 ms (une feuille qui entre). La **carte** naît de son bloc en
+   280 ms (son contenu paraît dans la seconde moitié : on ne lit jamais un texte écrasé), glisse en 300 ms d'un bloc à
+   l'autre, se résorbe en 250 ms ; son fil se trace en 220 ms. La **table** vit lentement : un souffle de 16 s, une lueur
+   qui rattrape la souris d'un quinzième du chemin par image puis s'arrête, des points qui glissent d'un dixième du plan.
+   Un bouton pressé s'enfonce à peine (`scale(.98)`), une bulle glisse de 3 px en paraissant. Rien ne rebondit, rien ne
+   clignote, rien ne tourne quand la main ne bouge pas ; le mouvement réduit coupe tout (la carte paraît à sa place, la
+   table se fige).
 8. **Prendre la main, en peu de mots.** Chaque import dit ce qu'il attend en une ligne (les colonnes qui comptent),
    montre trois lignes d'exemple à qui les demande, dit ce qui se passe ensuite en une phrase ; une erreur se dit en
    clair, dans sa carte. Chaque ligne du menu a sa bulle, une ou deux phrases. On n'écrit que l'utile.
@@ -112,22 +147,26 @@ jamais dans le dessin des folios (svg) ni dans un champ ; `insecable()` (08-fich
 
 ## 4. Les jetons (dans `src/style.css`, `:root`) — on les utilise, on ne les redéfinit pas ailleurs
 
-Trois blocs : `:root` (le clair, complet), `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) }`
-et `:root[data-theme="dark"]` (le sombre, les mêmes valeurs). Un composant ne prend jamais une couleur littérale qui
-ne vaut que dans un thème ; les seules couleurs littérales sont dans les dessins sur papier. Chaque encre passe l'AA
-(4,5:1) sur chaque fond où elle se pose.
+Quatre blocs : `:root` (le clair, complet), `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) }`
+et `:root[data-theme="dark"]` (le sombre, les mêmes valeurs), puis **l'îlot de verre** (`#entete,#rail,#folios,#toast,
+.ilot-sombre` : l'encre claire de la nuit, dans les deux thèmes). Un composant ne prend jamais une couleur littérale qui
+ne vaut que dans un thème ; les seules couleurs littérales sont dans les dessins sur papier et dans les pièces de verre
+de la barre du haut (la marque, la recherche, le folio courant). Chaque encre passe l'AA (4,5:1) sur chaque fond où
+elle se pose — l'encre des palets aussi quand un palet passe sur le papier. **Ces noms sont stables** : les autres
+feuilles (et les modules à venir, le lecteur de PDF compris) les lisent ; on change une valeur, jamais un nom.
 
 | famille | jetons (clair → sombre) |
 |---|---|
-| la table (la même dans les deux thèmes) | `--s-app` #0f0f11 · `--s-grille` #2a2a30 (les points) · `--points` (le motif, 24 px) · `--t-table` #ececf0 / `--t-table-2` / `--t-table-warn` (ce qui s'écrit à même la table : l'attente d'un folio, la bibliothèque) · `--l-table` / `--l-table-2` (ses filets) · `--s-table-champ` / `--s-table-survol` (un champ, un survol posés sur elle) |
-| les surfaces | `--s-surface` #fff → #1c1c1e · `--s-sunken` · `--s-hover` · `--s-line` · `--s-line-2` · `--s-flottant` (menus, listes, bulles) |
+| la table (la même dans les deux thèmes) | `--s-app` #0e1626 (sa couleur moyenne) · ses couches : `--table-fond` (l'encre dégradée, la lumière du coin haut-droit), `--table-souffle` (la lumière qui respire), `--table-lueur` (ce qui suit la souris) · `--s-grille` (les points, un bleu à 22 %) · `--points` (le motif, 24 px) · `--t-table` #e9eef9 / `--t-table-2` #a9b8d4 / `--t-table-warn` (ce qui s'écrit à même la table : l'attente d'un folio, la bibliothèque) · `--l-table` / `--l-table-2` (ses filets) · `--s-table-champ` / `--s-table-survol` (un champ, un survol posés sur elle) · `--glace` #9fc2ff (l'accent froid, rare) |
+| les surfaces | `--s-surface` #fff → #18233a · `--s-sunken` · `--s-hover` · `--s-line` · `--s-line-2` · `--s-flottant` (menus, listes, bulles de graphique) |
 | le papier (les deux thèmes) | `--s-papier` #fff · `--s-papier-grille` · `--t-papier` #1d1d1f · `--t-papier-2` ; `.ilot-clair` rend tous les jetons clairs à un îlot |
-| l'encre | `--t-1` #1d1d1f → #f2f2f5 · `--t-2` #47474c · `--t-3` #636369 → #96969d · `--t-inverse` |
-| l'action (à l'encre) | `--accent` #1d1d1f → #f2f2f5 (le bouton principal, le folio courant, le focus) · `--accent-2` (survol) · `--accent-soft` (fond de ce qui est choisi ou pressé) · `--accent-line` · `--on-accent` |
+| l'encre | `--t-1` #1b1f27 → #eef3fd · `--t-2` #454b57 → #b6c4de · `--t-3` #5f6672 → #91a2c2 · `--t-inverse` |
+| l'action (à l'encre) | `--accent` #1b1f27 → #eef3fd (le bouton principal, le focus) · `--accent-2` (survol) · `--accent-soft` (fond de ce qui est choisi ou pressé) · `--accent-line` · `--on-accent` |
 | les états | `--ok` / `--ok-soft` · `--warn` / `--warn-soft` · `--ko` / `--ko-soft` · `--info` / `--info-soft` (neutre) |
-| les palets (les mêmes dans les deux thèmes) | `--palet` #1b1b1f · `--palet-2` (survol) · `--sh-palet` · les voiles clairs posés dessus `--voile-1` 5 % · `--voile-2` 8 % · `--voile-3` 13 % · `--voile-4` 20 % ; les anciens `--p-*` en sont les alias. Dans l'îlot sombre, les jetons ordinaires (`--t-1`, `--s-hover`, `--accent`…) sont ceux du sombre |
-| les courbes | `--courbe-chaud` · `--courbe-tiede` · `--courbe-froid` |
-| le reste | `--bulle` / `--bulle-t` / `--sh-bulle` (un filet clair la détache de la table noire) · `--voile` / `--voile-fort` · `--route-a` / `--route-b` · `--route-voile` · `--anneau` (l'anneau d'un champ qui a le clavier) |
+| les palets (les mêmes dans les deux thèmes) | `--palet` (un verre bleu presque opaque, 97 % : la feuille blanche passe dessous quand on zoome) · `--palet-2` (survol) · `--palet-flou` (le flou du verre) · `--sh-palet` (le filet de lumière, l'ombre) · les voiles de glace posés dessus `--voile-1` 6 % · `--voile-2` 11 % · `--voile-3` 17 % · `--voile-4` 25 % ; les anciens `--p-*` en sont les alias. Dans l'îlot de verre, les jetons ordinaires (`--t-1` #eef3fd, `--t-2` #cdd8eb, `--t-3` #b8c6e0, `--s-hover`, `--accent`…) sont ceux de la nuit |
+| la carte | `--sh-carte` / `--sh-carte-tenue` (posée, tenue : un filet de glace, une lueur froide) · `--r-carte` 18 px · `--lien` (son fil) ; sa place, posée par 08-carte sur `#inspecteur` : `--carte-x`, `--carte-y`, `--carte-l`, `--carte-hmax` |
+| les courbes | `--courbe-chaud` · `--courbe-tiede` · `--courbe-froid` · `--charge` (la charge d'un disjoncteur sur son cadran) |
+| le reste | `--bulle` #eef3fd / `--bulle-t` / `--sh-bulle` (claires sur la nuit, un filet qui les détache aussi du papier) · `--voile` / `--voile-fort` · `--route-a` / `--route-b` (la vignette d'un plan : violet et sarcelle) · `--route-voile` · `--anneau` (l'anneau d'un champ qui a le clavier) |
 
 Espacements sur une grille de 4 px : `--sp-1` 4 … `--sp-6` 32. Coins : `--r-1` 6 px (puces), `--r-btn` 10 px
 (boutons, champs, segments, recherche), `--r-2` 12 px (groupes, lignes cliquables), `--r-3` 16 px (feuilles,
@@ -138,15 +177,27 @@ la table : son bord net, une ombre longue), `--sh-palet`. Mouvement : `--courbe`
 
 Géométrie de la page (le plan se recadre dans ce qui reste ; les tests la mesurent) : `--jeu` 10 px (l'écart des palets
 et des feuilles aux bords et entre eux), `--entete` 52 px, `--rail` 64 px (le palet de 44 px et ses deux jeux),
-`--pied` 50 px (les palets du bas, 40 px, et leur jeu), `--insp-l` 440 px (jusqu'à 560 sur un grand écran, jamais
-plus de 36vw), `--fiche-l` 400 px (les normes et la bible : jusqu'à 1040 px, en laissant toujours 320 px au plan),
+`--pied` 50 px (les palets du bas, 40 px, et leur jeu), `--insp-l` 440 px (le volet ÉPINGLÉ : jusqu'à 560 sur un grand
+écran, jamais plus de 36vw ; la carte flottante fait 420 px, 440 à partir de 1800, au plus 620 de haut),
+`--fiche-l` 400 px (les normes et la bible : jusqu'à 1040 px, en laissant toujours 320 px au plan),
 `--base-h` la hauteur du récapitulatif en moitié. Une feuille à droite : `top: --entete`, `right` et `bottom: --jeu` ;
-ce qui doit lui laisser la place s'arrête à `largeur + 2 × --jeu` du bord.
+ce qui doit lui laisser la place s'arrête à `largeur + 2 × --jeu` du bord (`body.insp-epingle`, `body.fiche-ouverte`) ;
+la carte flottante (`body.insp-flotte`) ne prend aucune place.
 
 ## 5. Les composants communs (noms de classes, à réutiliser tels quels)
 
+- **La carte** (`08-carte.js` ; style.css « la carte ») : l'inspecteur `#inspecteur`, flottant (`body.insp-flotte`) ou
+  épinglé (`body.insp-epingle`, le volet). `CARTE` dit son état (`epingle`, gardée dans `volta.fiche.epinglee` ;
+  `origine` : le bloc, le point cliqué, ou le bouton des repères) ; `carteFlottante()`, `poserLaCarte()` (appelée par
+  `ouvrirInspecteur` : naître, glisser, rester), `resorberCarte()` (par `fermerInspecteur` : un double `.carte-double`,
+  sans identifiants, `aria-hidden`), `epinglerCarte(oui)` (le bouton `#fi-epingle` de la barre, `boutonEpingle()`),
+  `placerPres()`, `poserCarte(x, y)`, `eviterLeBloc()` (après `animerVue`, `planifierEcart`), le fil `#carte-lien`
+  (`dessinerLien()`, à chaque `appliquerVue`), le quai `#carte-quai` (`body.carte-quai`), la tenue `body.carte-tenue`.
+  La table : `08-table.js`, `#table` (`.ta-fond`, `.ta-souffle`, `.ta-points`, `.ta-lueur`), `lierTable()`,
+  `parallaxeTable()`.
 - **La fiche v4** (`08-fiche.js`, `style-fiche.css`), de haut en bas, pour toutes les fiches :
-  · la **barre** `.fi-nav` (‹ `#fi-prec`, › `#fi-suiv`, `.fi-nav-nom` qui paraît quand `.fi.defile`, × `#in-fermer`) ;
+  · la **barre** `.fi-nav` (‹ `#fi-prec`, › `#fi-suiv`, `.fi-nav-nom` qui paraît quand `.fi.defile`, l'épingle
+  `#fi-epingle`, × `#in-fermer` ; toute la barre se tient : on y déplace la carte) ;
   · l'**en-tête** `.fi-entete` : `.fi-symbole` (son icône dans un carré doux ; `[data-etat]` pose à son angle un point de
   l'état de l'objet, `etatDesProblemes`), `.fi-genre` — le type (`#eq-nature`, une liste qui a l'air d'un mot :
   celui du code du repère, une autre nature à la main, ↺ ; la même que la colonne Nature du récapitulatif) et la
@@ -208,9 +259,12 @@ ce qui doit lui laisser la place s'arrête à `largeur + 2 × --jeu` du bord.
   vers (deux cartes `.fi-bout` : `[data-bout]` ouvre l'équipement le contact allumé, le contact du bout en puce ; la
   route dessous), l'intensité et la chute (`.fi-mes`, leur « ? »).
 - **La fiche du disjoncteur** (`08-disjoncteurs.js`, `style-dj.css`) : UNE section, « Calibre », `sectionDisjoncteur(nom,
-  d, o, probs)` — le calibre retenu en grand `.dj-heros` (`.dj-h-cal`, l'unité plus douce `.dj-h-cote`, son verdict en
-  une coche ou une croix `.dj-h-etat` — le mot dans la bulle ; d'où il vient — automatique (le meilleur),
-  à la main (↺ `[data-dj-geste="rendre"]`, le retest), le retest — ; le meilleur `.dj-m-mot`, son pourquoi au survol),
+  d, o, probs)` — le calibre retenu sur son **cadran** `.dj-heros.ok|ko` (`cadranCalibre(d)` : la gamme sur un arc
+  `svg.dj-arc`, la part qui passe en vert `.dj-arc-passe`, le serré `.dj-arc-serre`, la charge dedans `.dj-arc-perm` /
+  `.dj-arc-pointe` à la couleur `--charge`, l'index du retenu `.dj-arc-index` ; le nombre au centre `.dj-h-cal`, l'unité
+  à sa taille `.dj-h-u` ; ni pastille ni mot quand il passe, `.dj-h-ko` « ne passe pas — … » sinon ; à côté `.dj-h-cote`,
+  la charge en chiffres `.dj-stats` et la gamme, son « ? » `.dj-h-pied`),
+
   « Automatique (15 A) » `#dj-retenir` quand il est ailleurs, « Autre calibre » `[data-changer="dj|…"]` qui ouvre la gamme
   `.dj-chips .dj-chip[data-cal]` (ceux de `d.gamme` ; le retenu pressé, le meilleur étoilé) ; le part number suit
   (`retenirCalibre` / `rendreCalibre`), il ne s'affiche plus ; en une ligne `.dj-grossir` les câbles que le meilleur

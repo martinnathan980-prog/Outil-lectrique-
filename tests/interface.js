@@ -3,12 +3,14 @@
        node tests/interface.js [--fichier=chemin]
 
    À la vraie souris, sur le grand écran puis sur un téléphone :
-     · un clic sur un équipement ouvre sa fiche dans l'INSPECTEUR, à droite ;
-       la feuille se recadre à côté : aucun coin de la feuille sous lui ;
+     · un clic sur un équipement ouvre sa fiche dans l'INSPECTEUR : sur grand écran une CARTE (v72) qui naît du bloc, se
+       pose à côté sans le cacher, reliée à lui par un fil, sans rétrécir le plan (il ne bouge pas) ; sa barre tenue la
+       déplace ; l'épingle en fait le volet de droite, la feuille se recadre à côté (aucun coin sous lui), puis elle
+       redevient une carte ; au téléphone, le tiroir, la feuille au-dessus ;
      · un clic sur un fil ouvre la fiche du fil ;
      · B ouvre le TABLEAU en tiroir en bas : la feuille se recadre au-dessus ;
        « Ce folio » n'y montre que les liaisons du folio affiché ;
-     · Échap ferme la fiche, puis le tableau.
+     · Échap ferme la fiche tout de suite (son double, sans identifiants, se résorbe dans le bloc), puis le tableau.
    Puis, sur chaque folio, chaque BARRETTE À POSER (plusieurs fils sur une même
    borne d'équipement) : posée par le routage au ras de la borne, une borne
    par fil — le fil à créer compris, borne 1 —, numérotées comme la fiche,
@@ -30,33 +32,79 @@ const FICHIER = P.fichierDemande();
     const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
     await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => ['equipement', 'disjoncteur', 'barrette', 'prise', 'masse', 'fil'].forEach(t => ['disjoncteur', 'connecteur', 'raccord', 'trajet', 'fils', 'dejafait'].forEach(k => retenirSection(t, k, true)))); await page.evaluate(() => atelier.exemple());   // l’outil s’ouvre sur la bibliothèque : la batterie, qui lit l’exemple, le demande ; les fiches s'ouvrent pliées : la batterie ouvre leurs sections
     await page.evaluate(() => { app.plan = '1'; if (app.base.ouvert) fermerBase(); redessiner(); ajuster(); }); await page.waitForTimeout(400);
-    // la feuille à l'écran, et ce qui la recouvre
-    const recouvre = () => page.evaluate(() => { const bb = app.dessin.bbox, r = $('planche').getBoundingClientRect(), s = app.vue.s;
+    /* la feuille à l'écran, et ce qui la recouvre : le tableau, le volet épinglé, le tiroir du téléphone. La CARTE (v72,
+       08-carte) flotte sur le plan sans lui prendre de place : elle ne doit cacher que du plan, jamais son bloc */
+    const recouvre = ids => page.evaluate(ids => { const bb = app.dessin.bbox, r = $('planche').getBoundingClientRect(), s = app.vue.s;
       const F = { x0: r.left + app.vue.tx + bb.x * s, y0: r.top + app.vue.ty + bb.y * s }; F.x1 = F.x0 + bb.w * s; F.y1 = F.y0 + bb.h * s;
-      return ['inspecteur', 'base'].filter(id => !$(id).hidden).map(id => { const q = $(id).getBoundingClientRect();
+      return ids.filter(id => !$(id).hidden && !(id === 'inspecteur' && document.body.classList.contains('insp-flotte'))).map(id => { const q = $(id).getBoundingClientRect();
         const dx = Math.min(F.x1, q.right) - Math.max(F.x0, q.left), dy = Math.min(F.y1, q.bottom) - Math.max(F.y0, q.top);
-        return dx > 2 && dy > 2 ? id + ' ' + Math.round(dx) + '×' + Math.round(dy) : null; }).filter(Boolean); });
+        return dx > 2 && dy > 2 ? id + ' ' + Math.round(dx) + '×' + Math.round(dy) : null; }).filter(Boolean); }, ids);
+    const tel = vp.width <= 700, couvrants = ['inspecteur', 'base'];   // l'inspecteur compte en volet (épinglé, ou le récapitulatif ouvert) et en tiroir, pas en carte
+    // le bloc et la carte : ce que la carte cache du bloc (rien, si elle est bien posée)
+    const cache = nom => page.evaluate(nom => { const k = app.dessin.compDe.get(nom), r = $('planche').getBoundingClientRect(), s = app.vue.s, q = $('inspecteur').getBoundingClientRect();
+      const X0 = r.left + app.vue.tx + k.x * s, Y0 = r.top + app.vue.ty + k.y * s, dx = Math.min(X0 + k.w * s, q.right) - Math.max(X0, q.left), dy = Math.min(Y0 + k.h * s, q.bottom) - Math.max(Y0, q.top);
+      return dx > 1 && dy > 1 ? Math.round(dx) + '×' + Math.round(dy) : ''; }, nom);
+    const boite = () => page.evaluate(() => { const q = $('inspecteur').getBoundingClientRect(); return { x: Math.round(q.left), y: Math.round(q.top), r: Math.round(q.right), b: Math.round(q.bottom) }; });
+    // la carte posée : son élan fini (naître, glisser, s'épingler), son double effacé — une fiche chargée met plus d'une image à paraître
+    const posee = () => page.waitForFunction(() => !$('inspecteur').getAnimations().length && !document.querySelector('.carte-double'), null, { timeout: 15000 }).then(() => page.waitForTimeout(60));
     const ecran = (x, y) => page.evaluate(([x, y]) => { const r = $('planche').getBoundingClientRect(); return { x: r.left + app.vue.tx + x * app.vue.s, y: r.top + app.vue.ty + y * app.vue.s }; }, [x, y]);
+    // un point d'un câble que la main peut toucher : le milieu d'un de ses tronçons, hors de la carte si elle est ouverte
+    const pointDuCable = cable => page.evaluate(cable => { const w = app.dessin.fils.find(w => w.cable === cable), r = $('planche').getBoundingClientRect(), q = $('inspecteur').hidden ? null : $('inspecteur').getBoundingClientRect();
+      const pts = w.pts.slice(1).map((b, i) => { const a = w.pts[i]; return { x: r.left + app.vue.tx + (a.x + b.x) / 2 * app.vue.s, y: r.top + app.vue.ty + (a.y + b.y) / 2 * app.vue.s }; });
+      return pts.find(p => !q || p.x < q.left - 2 || p.x > q.right + 2 || p.y < q.top - 2 || p.y > q.bottom + 2) || pts[0]; }, cable);
     const c = await page.evaluate(() => { const k = app.dessin.comps.find(c => c.name === '103RL1'); return [k.x + k.w / 2, k.y + k.h / 2]; });
-    let e = await ecran(...c); await page.mouse.click(e.x, e.y); await page.waitForTimeout(500);
+    const vue0 = await page.evaluate(() => JSON.stringify(app.vue));
+    let e = await ecran(...c); await page.mouse.click(e.x, e.y); await page.waitForTimeout(30);
+    const naissance = tel ? null : await page.evaluate(() => ({ anim: $('inspecteur').getAnimations().length, flotte: document.body.classList.contains('insp-flotte') }));
+    await page.waitForTimeout(470); await posee();
     ok(await page.evaluate(() => !$('inspecteur').hidden && $('eq-rep') && $('eq-rep').value === '103RL1'), 'un clic sur 103RL1 ouvre sa fiche');
-    let r = await recouvre(); ok(!r.length, 'la feuille n’est pas sous l’inspecteur', r.join(' '));
+    let r = await recouvre(couvrants); ok(!r.length, tel ? 'la feuille n’est pas sous le tiroir' : 'la feuille n’est sous aucun panneau (la carte flotte, elle ne prend pas de place)', r.join(' '));
+    if (!tel) {
+      // LA CARTE : elle naît du bloc (une animation la fait grandir depuis lui), se pose à côté sans le cacher, et le plan ne bouge pas
+      ok(naissance.flotte && naissance.anim > 0, 'la fiche est une carte qui naît du bloc cliqué (elle grandit depuis lui)', JSON.stringify(naissance));
+      const vue1 = await page.evaluate(() => JSON.stringify(app.vue)), m = await page.evaluate(() => marges());
+      ok(vue1 === vue0 && m.droite === 24, 'le plan n’est pas rétréci par la carte : il ne bouge pas, sa place reste entière', JSON.stringify({ vue0, vue1, droite: m.droite }));
+      let cc = await cache('103RL1'); ok(!cc, 'la carte ne cache pas son bloc', cc);
+      ok(await page.evaluate(() => $('carte-lien').classList.contains('on')), 'un fil relie la carte à son bloc');
+      // la barre tenue la déplace ; le fil suit
+      const b0 = await boite(), barre = await page.evaluate(() => { const n = document.querySelector('#ba-equip .fi-nav'), q = n.getBoundingClientRect(); return { x: q.left + q.width / 2 - 30, y: q.top + q.height / 2 }; });
+      await page.mouse.move(barre.x, barre.y); await page.mouse.down(); await page.mouse.move(barre.x + 60, barre.y + 40, { steps: 8 }); await page.mouse.up(); await page.waitForTimeout(200); await posee();
+      const b1 = await boite();
+      ok(Math.abs(b1.x - b0.x - 60) <= 2 && Math.abs(b1.y - b0.y - 40) <= 2 && await page.evaluate(() => CARTE.deplacee && !$('inspecteur').hidden && $('carte-lien').classList.contains('on')), 'la barre tenue déplace la carte, le fil suit, la fiche reste ouverte', JSON.stringify({ b0, b1 }));
+      // l'épingle : le volet d'hier, le plan recadré à côté ; puis la carte revient
+      await page.click('#fi-epingle'); await page.waitForTimeout(500); await posee();
+      const ep = await page.evaluate(() => ({ cls: document.body.className, droite: marges().droite, bord: Math.round(innerWidth - $('inspecteur').getBoundingClientRect().right), haut: Math.round($('inspecteur').getBoundingClientRect().top) }));
+      r = await recouvre(['inspecteur']);
+      ok(/insp-epingle/.test(ep.cls) && !/insp-flotte/.test(ep.cls) && ep.droite > 300 && ep.bord <= 12 && ep.haut === 52 && !r.length, 'l’épingle en fait le volet de droite, et la feuille se recadre à côté', JSON.stringify(ep) + ' ' + r.join(' '));
+      await page.click('#fi-epingle'); await page.waitForTimeout(500); await posee();
+      cc = await cache('103RL1');
+      ok(await page.evaluate(() => document.body.classList.contains('insp-flotte') && marges().droite === 24 && !CARTE.epingle) && !cc, 'détachée, elle redevient une carte à côté de son bloc, le plan reprend toute la place', cc);
+      // Échap la ferme tout de suite (les gestes n'attendent rien) ; c'est son double, sans identifiants, qui rentre dans le bloc
+      await page.keyboard.press('Escape'); await page.waitForTimeout(40);
+      const fermee = await page.evaluate(() => ({ cache: $('inspecteur').hidden, cible: !!app.cible, doubles: [...document.querySelectorAll('.carte-double')].map(d => d.getAttribute('aria-hidden') === 'true' && !d.querySelector('[id]')) }));
+      ok(fermee.cache && !fermee.cible && fermee.doubles.length === 1 && fermee.doubles[0], 'Échap ferme la carte tout de suite ; son double (aria-hidden, sans identifiants) se résorbe dans le bloc', JSON.stringify(fermee));
+      await posee(); ok(await page.evaluate(() => !document.querySelector('.carte-double') && !$('carte-lien').classList.contains('on')), 'le double s’efface, le fil aussi');
+    }
     ok(await page.evaluate(() => $('base').hidden), 'le tableau reste fermé');
-    const f = await page.evaluate(() => { const w = app.dessin.fils.find(w => w.cable === 'W-014'); const [a, b] = w.pts; return [(a.x + b.x) / 2, (a.y + b.y) / 2]; });
-    e = await ecran(...f); await page.mouse.click(e.x, e.y); await page.waitForTimeout(500);
+    const f = await pointDuCable('W-014'); await page.mouse.click(f.x, f.y); await page.waitForTimeout(500);
     ok(await page.evaluate(() => app.cible && app.cible.type === 'fil' && $('ba-equip').textContent.includes('W-014')), 'un clic sur W-014 ouvre la fiche du fil');
     await page.keyboard.press('b'); await page.waitForTimeout(600);
     ok(await page.evaluate(() => !$('base').hidden), 'B ouvre le tableau');
     ok(await page.evaluate(() => { app.base.filtre = ''; app.base.portee = 'folio'; rendreBase(); const n = $('ba-tbody').querySelectorAll('tr[data-i]').length;
       return n === verite().filter(l => l.plan === '1').length && n > 0; }), '« Ce folio » montre les liaisons du folio 1, rien d’autre');
-    r = await recouvre(); ok(!r.length, 'la feuille n’est ni sous l’inspecteur ni sous le tableau', r.join(' '));
+    if (!tel) ok(await page.evaluate(() => document.body.classList.contains('insp-epingle') && !CARTE.epingle && $('base').getBoundingClientRect().right <= $('inspecteur').getBoundingClientRect().left + 1), 'le récapitulatif ouvert, la fiche se range en volet : le tableau s’arrête à côté d’elle');
+    r = await recouvre(couvrants); ok(!r.length, 'la feuille n’est ni sous l’inspecteur ni sous le tableau', r.join(' '));
     await page.keyboard.press('Escape'); await page.waitForTimeout(400);
     ok(await page.evaluate(() => $('inspecteur').hidden && !app.cible), 'Échap ferme la fiche');
     await page.keyboard.press('Escape'); await page.waitForTimeout(400);
+
     ok(await page.evaluate(() => $('base').hidden), 'Échap encore ferme le tableau');
+
     if (vp.width <= 700) {
       // fiche ouverte, la bande des folios reste, posée au-dessus du tiroir (sa hauteur est dite au style par --insp-h)
       e = await ecran(...c); await page.mouse.click(e.x, e.y); await page.waitForTimeout(600);
+      // la bande glisse (220 ms) quand le tiroir a dit sa hauteur : on attend qu'elle soit posée (une page chargée est lente à peindre)
+      await page.waitForFunction(() => !$('inspecteur').hidden && Math.abs($('folios').getBoundingClientRect().bottom - $('inspecteur').getBoundingClientRect().top) <= 2, null, { timeout: 4000 }).catch(() => {});
       const b = await page.evaluate(() => { const f = $('folios').getBoundingClientRect(), i = $('inspecteur').getBoundingClientRect(); return { display: getComputedStyle($('folios')).display, bas: Math.round(f.bottom), haut: Math.round(i.top), chip: !!document.querySelector('#fo-strip .chip.on'), insp: !$('inspecteur').hidden }; });
       ok(b.insp && b.display !== 'none' && Math.abs(b.bas - b.haut) <= 2 && b.chip, 'au téléphone, fiche ouverte, la bande des folios reste, posée au-dessus du tiroir', JSON.stringify(b));
       // un bloc haut visé depuis l'index (300XC1, le calculateur du folio 3) : cadré sur sa largeur, lisible, le haut du bloc à l'écran
@@ -329,8 +377,8 @@ const FICHIER = P.fichierDemande();
   const M = await page.evaluate(() => { const lignes = p => [...$(p).querySelectorAll('button[role="menuitem"]:not([data-retour])')].map(b => b.dataset.act || '›' + b.dataset.sous).join(',');
     return { principal: lignes('mp-principal'), exporter: lignes('mp-exporter'), plus: lignes('mp-plus'), fichiers: $('mp-principal').querySelector('[data-act="fichiers"]').textContent,
       bulles: [...document.querySelectorAll('#menu button[role="menuitem"]:not([data-retour])')].every(b => { const a = b.dataset.aide || ''; return a.length > 30 && a.length <= 160 && !!$(b.getAttribute('aria-describedby')); }) }; });
-  ok(M.principal === 'bibliotheque,ouvrir,fichiers,recapitulatif,nomenclature,›exporter,›plus' && M.exporter === 'svg,png,imprimer,suivi' && M.plus === 'coller,exemple,pdf,bible,normes,hypotheses,cartouche' && M.bulles && /contrats déjà faits/.test(M.fichiers),
-    'le menu en sept lignes (la bibliothèque, ouvrir, vos fichiers — « contrats déjà faits » écrit dessous —, récapitulatif, nomenclature, Exporter ›, Plus ›), le reste dans ses deux sous-menus (Plus : « Lire un PDF de schéma… » après l’exemple) — plus de « Tout effacer » : on supprime dans la bibliothèque ; chaque ligne a sa bulle courte, dite aussi au lecteur d’écran', JSON.stringify(M));
+  ok(M.principal === 'bibliotheque,ouvrir,fichiers,recapitulatif,nomenclature,›exporter,›plus' && M.exporter === 'svg,png,imprimer,retestcorrige,suivi' && M.plus === 'coller,exemple,pdf,bible,normes,hypotheses,cartouche' && M.bulles && /contrats déjà faits/.test(M.fichiers),
+    'le menu en sept lignes (la bibliothèque, ouvrir, vos fichiers — « contrats déjà faits » écrit dessous —, récapitulatif, nomenclature, Exporter ›, Plus ›), le reste dans ses deux sous-menus (Exporter : le folio en SVG, en PNG, l’impression, le retest corrigé en Excel, le suivi ; Plus : « Lire un PDF de schéma… » après l’exemple) — plus de « Tout effacer » : on supprime dans la bibliothèque ; chaque ligne a sa bulle courte, dite aussi au lecteur d’écran', JSON.stringify(M));
   // au clavier : ↓ ↓ jusqu'à « Vos fichiers… », sa bulle tout de suite, à gauche du menu ; → n'y fait rien (ni folio suivant)
   const plan0 = await page.evaluate(() => app.plan), montre = () => page.evaluate(() => [...document.querySelectorAll('#menu .menu-panneau')].filter(p => !p.hidden).map(p => p.id).join());
   await page.click('#btnMenu'); await page.keyboard.press('ArrowDown'); await page.keyboard.press('ArrowDown'); await page.waitForTimeout(350);

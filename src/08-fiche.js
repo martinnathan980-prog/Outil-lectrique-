@@ -60,7 +60,10 @@ const ICONES = {
   coche: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
   // les réglages : deux curseurs
   reglages: '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>',
-  livre: '<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H19v14H5.5A1.5 1.5 0 0 0 4 19.5z"/><path d="M4 19.5A1.5 1.5 0 0 0 5.5 21H19v-3"/>'
+  livre: '<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H19v14H5.5A1.5 1.5 0 0 0 4 19.5z"/><path d="M4 19.5A1.5 1.5 0 0 0 5.5 21H19v-3"/>',
+  // la carte (08-carte) : l'épingler à droite (un volet), la détacher (une carte qu'on déplace)
+  epingler: '<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M14.5 4.5v15"/>',
+  detacher: '<rect x="3.5" y="7.5" width="12" height="12" rx="2"/><path d="M8.5 4.5h10a2 2 0 0 1 2 2v10"/>'
 };
 const ico = (k, cls) => `<svg class="ico${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" aria-hidden="true">${ICONES[k]}</svg>`;
 const coulDeFil = f => couleursDesRoutes().get((f.l && f.l.route) || '') || '#26323f';
@@ -151,13 +154,14 @@ const allerA = (e, but) => rouvrir(e, 'empiler', but);
 const allerAuBloc = (nom, but) => allerA({ type: 'bloc', nom }, but);
 const allerAuFil = l => l && allerA({ type: 'fil', l });
 
-/* LA BARRE : ‹ ›, discrets ; le repère en petit (il paraît quand l'en-tête passe dessous) ; ×. */
+/* LA BARRE : ‹ ›, discrets ; le repère en petit (il paraît quand l'en-tête passe dessous) ; l'épingle (la carte flottante
+   devient le volet de droite, ou l'inverse : 08-carte) ; ×. Toute la barre se tient : on y déplace la carte. */
 function barreNav(o) { o = o || {}; const I = pileInsp(), p = I.pile[I.pos - 1], n = I.pile[I.pos + 1];
   const prec = !!app.cible && (I.pos > 0 || app.insp.index), suiv = !!app.cible && I.pos < I.pile.length - 1;
   const tPrec = !prec ? 'Rien avant' : I.pos > 0 && p ? 'Revenir à ' + nomDEntree(p) : 'Revenir à la liste des repères', tSuiv = suiv && n ? 'Aller à ' + nomDEntree(n) : 'Rien après';
   return `<nav class="fi-nav" aria-label="Fiches vues"><button type="button" class="fi-pas" id="fi-prec"${prec ? '' : ' disabled'} aria-label="${escA(tPrec + ' (Alt+←)')}" title="${escA(tPrec + ' (Alt+←)')}">${ico('gauche')}</button>`
     + `<button type="button" class="fi-pas" id="fi-suiv"${suiv ? '' : ' disabled'} aria-label="${escA(tSuiv + ' (Alt+→)')}" title="${escA(tSuiv + ' (Alt+→)')}">${ico('droite')}</button>`
-    + `<span class="fi-nav-nom" aria-hidden="true">${esc(o.nom || '')}</span>${o.fermer === false ? '' : `<button type="button" class="fi-x" id="in-fermer" aria-label="Fermer (Échap)" title="Fermer (Échap)">${ico('fermer')}</button>`}</nav>`; }
+    + `<span class="fi-nav-nom" aria-hidden="true">${esc(o.nom || '')}</span>${boutonEpingle()}${o.fermer === false ? '' : `<button type="button" class="fi-x" id="in-fermer" aria-label="Fermer (Échap)" title="Fermer (Échap)">${ico('fermer')}</button>`}</nav>`; }
 /* Les câbles d'un repère que le courant dépasse : des problèmes de la fiche, montrés dans « Câbles ». */
 const problemesDesFils = fils => fils.flatMap(f => { const x = intensiteDuFil(f.l); if (!x.trop.length) return []; const p = x.trop[0];
   return [{ niveau: 'ko', texte: `${f.l.cable || 'câble sans numéro'} (${f.l.type}) : ${p.nom} ${amperes(p.i)}${p.t === Infinity ? '' : ' pendant ' + secondes(p.t)} > ${amperes(intensiteAdmise(x.fn, p.t) * x.fac)} admis${x.al ? ' — sous ' + x.al.nom : ''}`, section: 'fils', viser: cleFil(f.l) }]; });
@@ -923,7 +927,8 @@ const ecouter = (el, type, fn) => { const s = ECOUTES.get(el) || new Set(); if (
 /* La barre : ‹ ›, × */
 function lierNav(box) {
   const p = $('fi-prec'), s = $('fi-suiv'); if (p) p.onclick = () => naviguer(-1); if (s) s.onclick = () => naviguer(1);
-  const x = $('in-fermer'); if (x) x.onclick = () => deselectionner(); }
+  const x = $('in-fermer'); if (x) x.onclick = () => deselectionner();
+  const e = $('fi-epingle'); if (e) e.onclick = ev => { ev.stopPropagation(); epinglerCarte(!CARTE.epingle); }; }
 /* Retenir un autre choix (un arrangement, une variante, une norme) ou rendre le calcul : une entrée d'historique, le
    plan et le contrôle suivent. */
 const choisirDesignation = (cle, d, quoi, mot) => { histPush(quoi); designer(cle, d); apresEdition(); if (mot) dire(mot); };

@@ -188,9 +188,12 @@ function fermerAide(rendreFocus) { const b = AIDE.bouton; AIDE.bouton = null; if
 function placerAide() { const b = AIDE.bouton, el = AIDE.el; if (!b || !el) return;
   if (!b.isConnected) { fermerAide(); return; } const r = b.getBoundingClientRect();
   if (r.bottom < 0 || r.top > window.innerHeight || (r.width === 0 && r.height === 0)) { fermerAide(); return; }
-  const w = el.offsetWidth, h = el.offsetHeight, W = window.innerWidth, H = window.innerHeight;
-  const x = Math.max(8, Math.min(r.left + r.width / 2 - 24, W - w - 8)), y = r.bottom + 8 + h <= H - 8 ? r.bottom + 8 : Math.max(8, r.top - 8 - h);
-  el.style.left = x + 'px'; el.style.top = y + 'px'; }
+  // dans la fiche (la carte, le volet) : la bulle reste dans sa boîte — sous le « ? », retournée au-dessus s'il n'y a pas
+  // la place — et ne déborde jamais sur le plan (l'audit v72 : « elle sort de la carte et cache ce qu'on lit »)
+  const w = el.offsetWidth, h = el.offsetHeight, c = b.closest('#inspecteur'), q = c ? c.getBoundingClientRect() : null;
+  const L = q ? q.left + 8 : 8, R = (q ? q.right : window.innerWidth) - 8, T = q ? q.top + 8 : 8, B = (q ? q.bottom : window.innerHeight) - 8;
+  const x = Math.max(L, Math.min(r.left + r.width / 2 - 24, R - w)), y = r.bottom + 8 + h <= B ? r.bottom + 8 : r.top - 8 - h >= T ? r.top - 8 - h : Math.max(T, Math.min(r.bottom + 8, B - h));
+  el.style.left = Math.round(x) + 'px'; el.style.top = Math.round(y) + 'px'; }
 function ouvrirAide(b) { if (AIDE.bouton === b) { fermerAide(); return; } fermerAide();
   if (typeof cacherBulle === 'function') cacherBulle();
   const e = explicationDe(b.dataset.q, (b.dataset.qId && AIDE_CTX.m.get(b.dataset.qId)) || {});

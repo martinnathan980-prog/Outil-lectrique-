@@ -32,13 +32,16 @@ const empreinteDansLaPage = () => { const d = app.dessin; if (!d) return null;
 // l'attente telle qu'on la voit : l'élément, son texte, la puce du folio qui respire
 const attenteDansLaPage = () => { const el = $('attente'), chip = document.querySelector(`#fo-strip .chip[data-plan="${app.plan}"]`);
   return { visible: !!el && !el.hidden && el.getBoundingClientRect().height > 0, texte: el ? el.textContent : '', puce: !!chip && chip.classList.contains('attend'), dessin: !!app.dessin, etat: etatPlacement() }; };
-// le bloc est-il dans la place libre du plan (hors inspecteur, rail, barre du bas) ?
+/* le bloc est-il dans la place libre du plan (hors rail, barre du bas, volet épinglé) ? La CARTE flottante (v72, 08-carte)
+   ne prend pas de place au plan : elle ne doit seulement pas cacher le bloc */
 const cadreDansLaPage = nom => { const d = app.dessin, c = d && d.comps.find(k => k.name === nom && k.kind !== 'tag'); if (!c) return { dedans: false, detail: nom + ' absent' };
   const r = $('planche').getBoundingClientRect(), s = app.vue.s, X0 = r.left + app.vue.tx + c.x * s, Y0 = r.top + app.vue.ty + c.y * s, X1 = X0 + c.w * s, Y1 = Y0 + c.h * s;
   const vu = id => { const e = $(id); if (!e || e.hidden) return null; const q = e.getBoundingClientRect(); return q.width && q.height ? q : null; };
-  let L = r.left, T = r.top, R = r.right, B = r.bottom; const insp = vu('inspecteur'), fol = vu('folios'), rail = vu('rail');
-  if (insp) R = Math.min(R, insp.left); if (fol) B = Math.min(B, fol.top); if (rail) L = Math.max(L, rail.right);
-  return { dedans: X0 >= L - 1 && X1 <= R + 1 && Y0 >= T - 1 && Y1 <= B + 1, detail: `bloc ${Math.round(X0)}–${Math.round(X1)} × ${Math.round(Y0)}–${Math.round(Y1)}, place libre ${Math.round(L)}–${Math.round(R)} × ${Math.round(T)}–${Math.round(B)}` }; };
+  let L = r.left, T = r.top, R = r.right, B = r.bottom; const insp = vu('inspecteur'), fol = vu('folios'), rail = vu('rail'), carte = insp && document.body.classList.contains('insp-flotte');
+  if (insp && !carte) R = Math.min(R, insp.left); if (fol) B = Math.min(B, fol.top); if (rail) L = Math.max(L, rail.right);
+  const sousLaCarte = carte && Math.min(X1, insp.right) - Math.max(X0, insp.left) > 1 && Math.min(Y1, insp.bottom) - Math.max(Y0, insp.top) > 1;
+  return { dedans: X0 >= L - 1 && X1 <= R + 1 && Y0 >= T - 1 && Y1 <= B + 1 && !sousLaCarte, detail: `bloc ${Math.round(X0)}–${Math.round(X1)} × ${Math.round(Y0)}–${Math.round(Y1)}, place libre ${Math.round(L)}–${Math.round(R)} × ${Math.round(T)}–${Math.round(B)}${sousLaCarte ? ', sous la carte' : ''}` }; };
+
 
 (async () => {
   const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });

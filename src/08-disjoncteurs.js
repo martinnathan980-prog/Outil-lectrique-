@@ -220,11 +220,36 @@ function verdictDuRetenu(d) { const cal = d.calibre, g = (d.gamme || []).find(x 
   if (valide === false) return { etat: 'ko', mot: 'Ne passe pas', raison: 'Il déclenche.' };
   if (!marge) return { etat: 'ko', mot: 'Ne passe pas', raison: 'Il touche la courbe : sans la marge.' };
   return { etat: 'ok', mot: 'Passe', raison: 'Il ne déclenche pas, avec la marge.' }; }
-/* LE CALIBRE, en grand (le lecteur, version 62 : « commence directement par l'automatique — uniquement le calibre qui
-   passe ; le A à la même taille ; passe ou passe pas, pas besoin : on comprend que ça passe ») : le calibre retenu — d'office
-   le meilleur qui passe —, l'unité à la taille du nombre, sans pastille ; teinté vert quand il passe, rouge (et dit) quand
-   il ne passe pas. « Automatique » (pressé, étoilé, quand c'est lui) rend le choix de l'outil ; « Autre calibre » ouvre
-   les calibres de la gamme QUI PASSENT, pour un choix à la main. Puis, en une carte, les câbles que le calibre demande. */
+/* LE CALIBRE, sur son CADRAN (v72, « Nuit bleue » ; le lecteur, v62 : « commence directement par l'automatique —
+   uniquement le calibre qui passe ; le A à la même taille ; passe ou passe pas, pas besoin : on comprend que ça passe » ;
+   v72 : « le calibre du 15 A, la manière dont tu l'as créé, c'est horrible ») : comme un instrument de bord, la gamme
+   sur un arc, de 0 au plus gros calibre — la part qui passe en vert, le serré (il passe sans la marge) d'un trait ambre —
+   et, à l'intérieur, la charge (le permanent plein, la pointe en voile) ; le retenu est l'index, le nombre au centre, son
+   unité à sa taille. Ni pastille ni mot quand il passe : l'index est dans le vert, la charge loin derrière. Quand il ne
+   passe pas, le nombre rougit et la phrase le dit (`.dj-h-ko`). À côté, la charge en chiffres et la gamme, son « ? ».
+   « Automatique » (pressé, étoilé, quand c'est lui) rend le choix de l'outil ; « Autre calibre » ouvre les calibres de la
+   gamme QUI PASSENT, pour un choix à la main. Puis, en une carte, les câbles que le calibre demande. */
+const nombreCourt = x => esc(nombre(Math.round(x * 100) / 100));
+// la charge du profil : le permanent (l'état sans fin) et la plus forte pointe
+function chargeDuProfil(d) { const pts = d.points || [], perm = (pts.find(p => p.t === Infinity) || {}).i, pointes = pts.filter(p => p.t !== Infinity && p.i > 0).map(p => p.i);
+  return { perm: perm > 0 ? perm : null, pointe: pointes.length ? Math.max(...pointes) : null }; }
+/* Le cadran : 240° d'arc, de 0 (en bas à gauche) au plus gros calibre de la gamme (en bas à droite) ; un cran et son
+   nombre par calibre — le retenu en gras, l'index posé dessus. Tout est à l'échelle des ampères. */
+function cadranCalibre(d) { const cal = d.calibre, g = d.gamme || [], ch = chargeDuProfil(d);
+  const cat = [...new Set((d.catalogue && d.catalogue.length ? d.catalogue : g.map(x => x.calibre)).concat(cal > 0 ? [cal] : []))].filter(x => x > 0).sort((a, b) => a - b);
+  if (!cat.length) return '';
+  const etat = c => { const x = g.find(y => y.calibre === c); return !x || x.valide == null ? 'inconnu' : x.valide === true && x.marge ? 'passe' : x.valide === true ? 'serre' : 'non'; };
+  const max = cat[cat.length - 1], A0 = 150, BAL = 240, R = 62, R2 = 50, cx = 80, cy = 78;
+  const ang = x => (A0 + BAL * Math.max(0, Math.min(1, x / max))) * Math.PI / 180, P = (x, r) => [cx + r * Math.cos(ang(x)), cy + r * Math.sin(ang(x))].map(z => z.toFixed(2));
+  const arc = (a, b, r) => { if (b <= a) return ''; const [x1, y1] = P(a, r), [x2, y2] = P(b, r); return `M${x1} ${y1}A${r} ${r} 0 ${(b - a) / max * BAL > 180 ? 1 : 0} 1 ${x2} ${y2}`; };
+  const i0 = cat.find(c => etat(c) === 'passe'), serres = cat.filter(c => etat(c) === 'serre');
+  const crans = cat.map(c => { const [x1, y1] = P(c, R + 4), [x2, y2] = P(c, R - 4), [tx, ty] = P(c, R + 15), cls = etat(c) + (c === cal ? ' retenu' : '');
+    return `<line class="dj-arc-cran ${cls}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/><text class="dj-arc-n ${cls}" x="${tx}" y="${ty}">${nombreCourt(c)}</text>`; }).join('');
+  const [ix, iy] = cal > 0 ? P(cal, R) : [0, 0];
+  return `<svg class="dj-arc" viewBox="-4 -6 168 152" aria-hidden="true"><path class="dj-arc-piste" d="${arc(0, max, R)}"/>`
+    + (i0 ? `<path class="dj-arc-passe" d="${arc(i0, max, R)}"/>` : '') + serres.map(c => `<path class="dj-arc-serre" d="${arc(Math.max(0, c - max * .012), Math.min(max, c + max * .012), R)}"/>`).join('')
+    + `<path class="dj-arc-fond" d="${arc(0, max, R2)}"/>` + (ch.pointe ? `<path class="dj-arc-pointe" d="${arc(0, Math.min(max, ch.pointe), R2)}"/>` : '') + (ch.perm ? `<path class="dj-arc-perm" d="${arc(0, Math.min(max, ch.perm), R2)}"/>` : '')
+    + crans + (cal > 0 ? `<circle class="dj-arc-index" cx="${ix}" cy="${iy}" r="5.5"/>` : '') + '</svg>'; }
 function heroCalibre(nom, d, o) { const m = d.meilleur || {}, cal = d.calibre, best = d.passe, auto = !!best && best === cal && d.origine !== 'main', v = verdictDuRetenu(d);
   const passants = (d.gamme || []).filter(g => g.valide === true && !!g.marge), cleL = 'dj|' + nom;
   const gamme = passants.map(g => `<button type="button" class="dj-chip ok${g.calibre === best ? ' ideal' : ''}" data-cal="${g.calibre}" aria-pressed="${g.calibre === cal}" title="${escA(amperes(g.calibre) + (g.calibre === best ? ' — l’automatique, le plus petit qui passe' : '') + (g.calibre === cal ? ' · retenu' : ' · cliquer pour le retenir à la main'))}">${g.calibre === best ? `<i class="dj-etoile" aria-hidden="true">${ico('etoile')}</i>` : ''}${esc(nombre(g.calibre))}<small>A</small></button>`).join('');
@@ -233,10 +258,13 @@ function heroCalibre(nom, d, o) { const m = d.meilleur || {}, cal = d.calibre, b
       + (passants.length > 1 || (passants.length && !auto) ? boutonChanger(cleL, 'Retenir à la main un autre calibre de la gamme qui passe', 'Autre calibre') : '');
   const liste = gamme ? listeChoix(cleL, `<div class="dj-chips" role="group" aria-label="Retenir à la main un calibre qui passe">${gamme}</div>`, { titre: 'Les calibres de la gamme qui passent', cls: 'dj-gamme-choix' }) : '';
   const ko = v.etat === 'ko' ? `<span class="dj-h-ko">${esc(!(cal > 0) || (!best && !d.sansProfil) ? 'aucun calibre de la gamme ne passe' : 'ne passe pas — ' + v.raison.replace(/\.$/, '').toLowerCase())}</span>` : '';
-  // le verdict d'un coup d'œil, sans un mot (« on comprend que ça passe ») : une coche verte, ou une croix rouge
-  const marque = v.etat ? `<span class="dj-h-etat ${v.etat}" aria-hidden="true">${ico(v.etat === 'ko' ? 'fermer' : 'coche')}</span>` : '';
-  const heros = `<div class="dj-heros ${v.etat || 'neutre'}"${v.raison ? ` title="${escA(v.raison)}"` : ''}><div class="dj-h-valeur"><b class="dj-h-cal">${cal ? esc(nombre(Math.round(cal * 100) / 100)) + '<span class="dj-h-u">A</span>' : '—'}</b>${aide('calibre', { verdict: d, calibre: cal || null, origine: o.origine === 'main' ? 'main' : d.origine, meilleur: best || null })}</div>`
-    + (ko || marque ? `<div class="dj-h-cote">${ko}${marque}</div>` : '') + '</div>';
+  // la charge en chiffres, sa pastille de couleur la relie à son trait du cadran
+  const ch = chargeDuProfil(d), stat = (x, cls, mot) => x ? `<span class="dj-stat ${cls}"><b>${nombreCourt(x)}<small>A</small></b><span><i aria-hidden="true"></i>${mot}</span></span>` : '';
+  const famille = (d.famille && (d.famille.famille || d.famille.nom)) || d.courbe || '';
+  const heros = `<div class="dj-heros ${v.etat || 'neutre'}"${v.raison ? ` title="${escA(v.raison)}"` : ''}><div class="dj-cadran">${cadranCalibre(d)}<div class="dj-h-centre"><b class="dj-h-cal">${cal ? nombreCourt(cal) + '<span class="dj-h-u">A</span>' : '—'}</b></div></div>`
+    + `<div class="dj-h-cote">${ko}${ch.perm || ch.pointe ? `<div class="dj-stats">${stat(ch.perm, 'perm', 'permanent')}${stat(ch.pointe, 'pointe', 'en pointe')}</div>` : ''}`
+    + `<div class="dj-h-pied">${famille ? `<span>Gamme ${esc(famille)}</span>` : ''}${aide('calibre', { verdict: d, calibre: cal || null, origine: o.origine === 'main' ? 'main' : d.origine, meilleur: best || null })}</div></div></div>`;
+
   return heros + (actions ? `<div class="dj-h-actions">${actions}</div>` : '') + liste + ligneCablesAGrossir(nom, d); }
 /* LES CÂBLES QUE LE MEILLEUR DEMANDE (le lecteur : « trois câbles à grossir : sur ordi on ne voit pas, les écritures se
    chevauchent » ; puis : « le + 7,7 g/m, on s'en fout ; des fois il y a marqué câble et pas le numéro : il manque une

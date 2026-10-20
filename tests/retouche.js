@@ -184,7 +184,10 @@ const FICHIER = P.fichierDemande();
   /* ---- TOUT BOUGE : une masse, une borne, une barrette à poser, un fil (vertical, horizontal), un morceau de barrette ---- */
   // un point du dessin à l'écran ; la vue posée sur lui, à 160 %
   const ecran = (x, y) => page.evaluate(([x, y]) => { const r = $('planche').getBoundingClientRect(); return { x: r.left + app.vue.tx + x * app.vue.s, y: r.top + app.vue.ty + y * app.vue.s, s: app.vue.s }; }, [x, y]);
-  const cadrer = async (x, y) => { await page.evaluate(([x, y]) => { const r = cadre(); app.vue = { s: 1.6, tx: r.width / 2 - x * 1.6, ty: r.height / 2 - y * 1.6 }; appliquerVue(); }, [x, y]); await page.waitForTimeout(60); };
+  // viser un point au milieu de la planche : la fiche d'un clic précédent (v72 : une CARTE qui flotte sur le plan, là où
+  // le volet d'hier restait au bord) se referme d'abord — elle ne doit pas recevoir le geste qui suit
+  const cadrer = async (x, y) => { await page.evaluate(([x, y]) => { if (!$('inspecteur').hidden && document.body.classList.contains('insp-flotte')) deselectionner();
+    const r = cadre(); app.vue = { s: 1.6, tx: r.width / 2 - x * 1.6, ty: r.height / 2 - y * 1.6 }; appliquerVue(); }, [x, y]); await page.waitForTimeout(60); };
   // survoler un point : ce que la planche dit qu'on y prendrait, ce qui s'allume, le ↺, le curseur
   const survoler = async p => { await page.mouse.move(p.x + 60, p.y + 60); await page.waitForTimeout(40); await page.mouse.move(p.x, p.y); await page.waitForTimeout(150);
     return page.evaluate(([x, y]) => { const el = document.elementFromPoint(x, y); return { prise: $('planche').dataset.prise || '', allume: !!document.querySelector('#rt-survol .rt-allume, #rt-survol .rt-zone'),

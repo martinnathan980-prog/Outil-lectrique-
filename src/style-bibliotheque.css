@@ -1,29 +1,38 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   LA BIBLIOTHÈQUE (08-bibliotheque) — l'ouverture de Volta, posée sur la table noire.
+   LA BIBLIOTHÈQUE (08-bibliotheque) — l'ouverture de Volta, posée sur la table bleu nuit.
    Ce qui s'écrit à même la table prend son encre (--t-table, --t-table-2) et ses filets (--l-table) : la table est la
    même dans les deux thèmes, si bien que la bibliothèque aussi. Trois sortes de pièces, et rien d'autre :
-     · les FEUILLES (blanches le jour, charbon la nuit) : une installation est une PILE de feuilles — une carte, et dessous
-       une ou deux feuilles qui dépassent d'un rien, chacune son filet ; ses plans se lisent sur une feuille, une ligne
-       chacun ;
-     · les PALETS (sombres dans les deux thèmes, comme le rail) : ce qui accompagne — « Reprendre », la base à ranger,
-       l'Exemple, le « ⋯ » ouvert ;
+     · le PAPIER, dans les deux thèmes (v72 : l'audit voyait trois matières, et le soir les cartes fondues dans la table) :
+       ce qu'on choisit est une feuille blanche posée sur la nuit, comme le folio — une installation est une PILE de
+       feuilles (une carte, et dessous une ou deux feuilles qui dépassent d'un rien, chacune son filet), ses plans se lisent
+       sur une feuille, une ligne chacun ; « Reprendre » et la base à ranger aussi ;
+     · le TRAIT : l'Exemple, discret, un cadre de lumière sur la table ; le « ⋯ » ouvert, le verre des menus ;
      · le PAPIER : la vignette d'un plan (une petite feuille blanche, son dessin à l'encre, deux fils aux couleurs des
        routes) — sur l'Exemple, « Reprendre », l'accueil.
-   UNE action principale, claire sur noir (« Nouvelle installation », « Ajouter un plan ») ; le reste est au trait. Rien
+   UNE action principale, claire sur la nuit (« Nouvelle installation », « Ajouter un plan ») ; le reste est au trait. Rien
    encore : l'accueil, une seule composition au milieu de la table. Survoler une carte la soulève d'un rien et ses feuilles
    s'écartent.
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* ─── les jetons de la bibliothèque : le bord d'une carte et les feuilles de sa pile, dans les deux thèmes ─── */
-:root{--bi-bord:rgba(0,0,0,.6);--bi-pile-1:#ececef;--bi-pile-2:#dadade;--bi-pile-bord:rgba(0,0,0,.28);
-  --bi-ombre:0 14px 30px -10px rgba(0,0,0,.75),0 3px 8px rgba(0,0,0,.4);--bi-ombre-haute:0 24px 44px -12px rgba(0,0,0,.85),0 6px 14px rgba(0,0,0,.45)}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--bi-bord:rgba(255,255,255,.085);--bi-pile-1:#19191c;--bi-pile-2:#151518;--bi-pile-bord:rgba(255,255,255,.13)} }
-:root[data-theme="dark"]{--bi-bord:rgba(255,255,255,.085);--bi-pile-1:#19191c;--bi-pile-2:#151518;--bi-pile-bord:rgba(255,255,255,.13)}
+:root{--bi-bord:rgba(255,255,255,.55);--bi-pile-1:#e6eaf2;--bi-pile-2:#d3d9e6;--bi-pile-bord:rgba(15,26,46,.25);
+  --bi-ombre:0 16px 34px -12px rgba(0,6,18,.75),0 3px 8px rgba(0,6,18,.4);--bi-ombre-haute:0 26px 48px -14px rgba(0,6,18,.85),0 6px 14px rgba(0,6,18,.45)}
+/* le papier de la bibliothèque : les jetons du jour sur chaque pièce qu'on choisit, dans les deux thèmes (le « ⋯ » ouvert,
+   `.ilot-sombre`, reprend les siens) */
+.biblio :is(.bi-carte:not(.bi-demo),.bi-feuille,.bi-reprendre,.bi-bandeau){
+  --s-surface:#ffffff; --s-sunken:#f4f5f8; --s-hover:#eff1f6; --s-line:#e3e6ee; --s-line-2:#cfd4df; --s-flottant:#ffffff;
+  --t-1:#141c2c; --t-2:#465068; --t-3:#5d6780; --t-inverse:#ffffff;
+  --accent:#141c2c; --accent-2:#000000; --accent-soft:#e9edf6; --accent-line:#c3c9d4; --on-accent:#ffffff;
+  --ok:#1d7a3c; --ok-soft:#e8f5ec; --warn:#965800; --warn-soft:#fdf2df; --ko:#c3271f; --ko-soft:#fdeceb; --info:#465068; --info-soft:#eff1f6;
+  --t-table:#141c2c; --t-table-2:#465068; --t-table-warn:#965800; --voile-1:rgba(15,26,46,.035); --voile-2:rgba(15,26,46,.06); --voile-3:rgba(15,26,46,.09);
+  --sh-panneau:0 0 0 1px rgba(255,255,255,.5),0 24px 60px -18px rgba(0,6,18,.75),0 6px 16px rgba(0,6,18,.35); --anneau:0 0 0 3px rgba(27,31,39,.09);
+  color-scheme:light }
 
 /* ─── la table, sous la barre du haut : elle couvre le rail et les folios ; un document ouvert (vos fichiers, la bible)
    se pose à droite et la bibliothèque se resserre ─── */
 .biblio{position:fixed;top:calc(var(--entete) + var(--sur-h));left:0;right:0;bottom:0;z-index:22;overflow-y:auto;overscroll-behavior:contain;color:var(--t-table);color-scheme:dark;
-  background-color:var(--s-app);background-image:var(--points);background-size:24px 24px;background-attachment:fixed;
+  background:transparent;
+
   scrollbar-width:thin;scrollbar-color:var(--l-table-2) transparent}
 body.fiche-ouverte .biblio{right:calc(var(--fiche-l) + var(--jeu))}
 /* sous la bibliothèque, le plan reste tel qu'on l'a laissé, mais ne se voit pas entre les feuilles : la table nue */
@@ -56,7 +65,7 @@ body.biblio #recherche{visibility:hidden}
 .bi-cherche input::-webkit-search-cancel-button{filter:invert(1) grayscale(1) opacity(.6)}
 .bi-cherche kbd{font:500 var(--f-11)/1 var(--mono);color:var(--t-table-2);background:var(--voile-2);border-radius:5px;padding:3px 6px}
 .bi-cherche:focus-within kbd{display:none}
-/* le geste clair sur la table noire (la même dans les deux thèmes) ; le second, au trait */
+/* le geste clair sur la table (la même dans les deux thèmes) ; le second, au trait */
 .bi-btn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 14px 0 11px;border:1px solid var(--t-table);border-radius:var(--r-btn);background:var(--t-table);color:var(--s-app);font:600 var(--f-13)/1 var(--sans);letter-spacing:-.005em;white-space:nowrap;
   box-shadow:0 1px 2px rgba(0,0,0,.5),inset 0 -1px 0 rgba(0,0,0,.08);transition:background var(--rapide),border-color var(--rapide),transform var(--rapide)}
 .bi-btn:hover{background:var(--s-papier);border-color:var(--s-papier)}
@@ -87,9 +96,9 @@ body.biblio #recherche{visibility:hidden}
 .bi-titre-edite{margin-top:2px}
 
 /* ─── les palets de la racine : reprendre le plan resté sur la table, la base à ranger ─── */
-.bi-reprendre{display:flex;align-items:center;gap:14px;width:100%;min-height:64px;margin:0 0 32px;padding:9px 16px 9px 10px;border:none;border-radius:var(--r-palet);background:var(--palet);color:var(--t-table);box-shadow:var(--sh-palet);text-align:left;
+.bi-reprendre{display:flex;align-items:center;gap:14px;width:100%;min-height:64px;margin:0 0 32px;padding:9px 16px 9px 10px;border:none;border-radius:var(--r-palet);background:var(--s-surface);color:var(--t-table);box-shadow:var(--sh-panneau);text-align:left;
   transition:background var(--rapide),transform var(--rapide)}
-.bi-reprendre:hover{background:var(--palet-2)}
+.bi-reprendre:hover{background:#f6f8fb}
 .bi-reprendre:active{transform:scale(.995)}
 .bi-reprendre .bi-folio{width:64px}
 .bi-rep-textes{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
@@ -100,10 +109,10 @@ body.biblio #recherche{visibility:hidden}
 .bi-rep-nom>span{overflow:hidden;text-overflow:ellipsis}
 .bi-rep-ecp{font:500 var(--f-12)/1 var(--mono);letter-spacing:.03em;font-variant-numeric:tabular-nums}
 .bi-rep-n{flex:none;font-size:var(--f-12);color:var(--t-table-2)}
-.bi-reprendre kbd,.bi-rail-titre kbd{flex:none;font:500 var(--f-11)/1 var(--mono);color:var(--t-table-2);background:var(--voile-2);border-radius:5px;padding:4px 6px}
+.bi-reprendre kbd,.bi-rail-titre kbd{flex:none;font:500 var(--f-11)/1 var(--mono);color:var(--t-table);background:var(--voile-2);border-radius:5px;padding:4px 6px}
 .bi-rep-fleche{width:18px;height:18px;color:var(--t-table-2);transition:transform var(--rapide),color var(--rapide)}
 .bi-reprendre:hover .bi-rep-fleche{transform:translateX(2px);color:var(--t-table)}
-.bi-bandeau{display:flex;align-items:center;gap:12px;margin:0 0 32px;padding:10px 10px 10px 16px;border-radius:var(--r-palet);background:var(--palet);box-shadow:var(--sh-palet);color:var(--t-table-2);font-size:var(--f-13);line-height:1.45}
+.bi-bandeau{display:flex;align-items:center;gap:12px;margin:0 0 32px;padding:10px 10px 10px 16px;border-radius:var(--r-palet);background:var(--s-surface);box-shadow:var(--sh-panneau);color:var(--t-table-2);font-size:var(--f-13);line-height:1.45}
 .bi-reprendre+.bi-bandeau{margin-top:-22px}
 .bi-bandeau>.ico{width:18px;height:18px;color:var(--t-table)}
 .bi-bandeau>span{flex:1;min-width:0}
@@ -206,8 +215,9 @@ button.bi-carte-corps{cursor:pointer}
 /* ─── L'EXEMPLE : un palet, discret, en dernier — la vignette de son plan, son nom ; la flèche au survol ─── */
 .bi-essai{margin-top:52px}
 .bi-grille-demo{grid-template-columns:minmax(0,360px)}
-.bi-carte.bi-demo{background:var(--palet);color:var(--t-table);border-radius:var(--r-palet);box-shadow:var(--sh-palet);transition:background var(--rapide),transform var(--rapide)}
-.bi-carte.bi-demo:hover{background:var(--palet-2)}
+/* l'Exemple : discret, un cadre de lumière au trait sur la table (DESIGN : « un cadre au trait ») */
+.bi-carte.bi-demo{background:transparent;color:var(--t-table);border-radius:var(--r-palet);box-shadow:0 0 0 1px rgba(186,212,255,.3);transition:background var(--rapide),box-shadow var(--rapide),transform var(--rapide)}
+.bi-carte.bi-demo:hover{background:rgba(170,200,255,.07);box-shadow:0 0 0 1px rgba(186,212,255,.45)}
 .bi-carte.bi-demo:has(>button.bi-carte-corps:active){transform:scale(.99)}
 .bi-demo .bi-carte-corps{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;column-gap:14px;min-height:0;padding:9px 46px 9px 9px}
 .bi-demo .bi-folio{width:60px}
@@ -392,11 +402,11 @@ body.fiche-ouverte .biblio.survol-depot .bi-page::before{left:calc((100vw - var(
 .bi-rail{position:sticky;top:0;max-height:calc(100vh - var(--entete) - 60px);overflow-y:auto;margin-top:0;padding:2px 4px 12px 0;scrollbar-width:thin;scrollbar-color:var(--l-table-2) transparent}
 .bi-rail-titre{display:flex;align-items:center;justify-content:space-between;height:28px;margin:0 0 10px;padding:0 6px 0 10px;font:500 var(--f-13)/1 var(--sans);color:var(--t-table-2)}
 .bi-rail ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
-.bi-rail-l{display:grid;grid-template-columns:5.6ch minmax(0,1fr) auto;align-items:center;column-gap:10px;width:100%;height:34px;padding:0 10px;border:none;border-radius:8px;background:none;color:var(--t-table-2);text-align:left;font-size:var(--f-13);transition:background var(--rapide),color var(--rapide)}
+.bi-rail-l{display:grid;grid-template-columns:8.6ch minmax(0,1fr) auto;align-items:center;column-gap:10px;width:100%;height:34px;padding:0 10px;border:none;border-radius:8px;background:none;color:var(--t-table-2);text-align:left;font-size:var(--f-13);transition:background var(--rapide),color var(--rapide)}
 .bi-rail-l:hover{background:var(--voile-1);color:var(--t-table)}
 .bi-rail-l[aria-current="page"]{background:var(--voile-2);color:var(--t-table)}
 .bi-rail-l:focus-visible{outline-offset:-2px}
-.bi-rail-ecp{font:500 var(--f-12)/1 var(--mono);letter-spacing:.02em;color:var(--t-table-2);font-variant-numeric:tabular-nums;opacity:.85}
+.bi-rail-ecp{white-space:nowrap;font:500 var(--f-12)/1 var(--mono);letter-spacing:.02em;color:var(--t-table-2);font-variant-numeric:tabular-nums;opacity:.85}
 .bi-rail-l[aria-current="page"] .bi-rail-ecp{color:var(--t-table);opacity:1}
 .bi-rail-nom{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bi-rail-l[aria-current="page"] .bi-rail-nom{font-weight:600}

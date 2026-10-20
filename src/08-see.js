@@ -15,7 +15,9 @@
    Le résumé se copie aussi en texte, ou s'enregistre (.txt), pour qui peut le faire passer autrement qu'en photo.
    ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
 const SEE = { lu: null, vue: 'import', exemples: true, import: null };
-const LARGEUR_SEE = 'min(1480px, calc(100vw - var(--rail) - 320px))';   // large (la page se photographie) ; le plan garde 320 px à côté, comme pour les normes
+// la base SEE prend la page (elle se lit, se photographie ; l'audit v72 : à côté du plan, elle ne laissait qu'un timbre) :
+// de la fin du rail au bord ; le plan attend dessous, la barre des folios se range (style.css)
+const LARGEUR_SEE = 'calc(100vw - var(--rail) - var(--jeu))';
 const estExcel = f => /\.xls[xmb]?$/i.test((f && f.name) || '') || /sheet|excel/i.test((f && f.type) || '');
 // une feuille de la base SEE : nommée d'après sa vue ou sa table (EED_ViewCablesAndWires, EED_OBJ_Wires…) ou une fonction d'export
 const estFeuilleSEE = n => /^(EED_|Export_)/i.test(String(n || ''));

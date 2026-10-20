@@ -241,7 +241,8 @@ const badge = (cls, t) => `<span class="nm-badge ${cls}">${esc(t)}</span>`;
 /* La largeur des deux onglets (Normes, Bible) : les tables ont jusqu'à seize colonnes ; le plan se recadre à côté.
    `ouvrirFiche` pose sa largeur à lui et recadre quand le document change : on reprend la nôtre aussitôt (dans la même
    tâche, rien ne se peint entre les deux) et on recadre à nouveau — d'un onglet à l'autre, le cadre ne bouge pas. */
-const LARGEUR_NORMES = 'min(1040px, calc(100vw - var(--rail) - 320px))';   // le plan garde toujours 320 px à côté
+// le plan garde 40 % de l'écran à côté (l'audit v72 : à 320 px, il n'était plus qu'un timbre) ; la table qui déborde défile
+const LARGEUR_NORMES = 'min(1040px, calc(60vw - var(--rail)))';
 function elargirNormes(memeDocument) { document.documentElement.style.setProperty('--fiche-l', LARGEUR_NORMES); if (!memeDocument) ajuster(true); }
 /* La page : l'état, la recherche et les gestes, l'import en cours, les résultats de la recherche, les domaines. */
 function ficheNormes(opts) { opts = opts || {};

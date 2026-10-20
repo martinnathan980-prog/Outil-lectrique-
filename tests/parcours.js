@@ -134,15 +134,19 @@ const cliquerBloc = async (page, nom) => { await page.waitForTimeout(320);   // 
   if (touche.bon) return;
   note('le clic sur ' + nom + ' (' + Math.round(e.x) + ', ' + Math.round(e.y) + ') a touché ' + touche.quoi + (touche.relief ? ' et ouvert le relief' : '') + ' : on le choisit par l’API');
   await page.evaluate(nom => { if (!$('relief').hidden) fermerRelief(); const c = app.dessin.comps.find(k => k.name === nom && k.kind !== 'tag'); if (c) choisirBloc(c); else choisirBarretteAPoser(barretteAPoser(nom)); }, nom); await page.waitForTimeout(300); };
-/* Le bloc est-il CADRÉ : entier dans la place libre du plan (hors inspecteur, tableau, rail, barre du bas) ? */
+/* Le bloc est-il CADRÉ : entier dans la place libre du plan (hors volet épinglé ou tiroir, tableau, rail, barre du bas) ?
+   La CARTE flottante (v72, 08-carte) ne prend pas de place au plan : elle ne doit seulement pas cacher le bloc. */
 const cadrage = (page, nom) => page.evaluate(nom => { const d = app.dessin; if (!d) return { dedans: false, detail: 'pas de dessin' };
   const c = d.comps.find(k => k.name === nom && k.kind !== 'tag'); let x0, y0, x1, y1;
   if (c) { x0 = c.x; y0 = c.y; x1 = c.x + c.w; y1 = c.y + c.h; } else { const b = (d.barrettes || []).find(b => b.nomVT === nom); if (!b) return { dedans: false, detail: nom + ' absent du dessin' }; const bs = bornesDePiquage(b); x0 = b.x - 12; x1 = b.x + 12; y0 = bs[0].y - 10; y1 = bs[bs.length - 1].y + 10; }
   const r = $('planche').getBoundingClientRect(), s = app.vue.s, X0 = r.left + app.vue.tx + x0 * s, Y0 = r.top + app.vue.ty + y0 * s, X1 = r.left + app.vue.tx + x1 * s, Y1 = r.top + app.vue.ty + y1 * s;
   let L = r.left, T = r.top, R = r.right, B = r.bottom; const vu = id => { const e = $(id); if (!e || e.hidden) return null; const q = e.getBoundingClientRect(); return q.width && q.height ? q : null; }, tel = telephone();
-  const insp = vu('inspecteur') || vu('fiche'), base = vu('base'), fol = vu('folios'), rail = vu('rail');
+  const carte = !tel && !$('inspecteur').hidden && document.body.classList.contains('insp-flotte') ? vu('inspecteur') : null;
+  const insp = (carte ? null : vu('inspecteur')) || vu('fiche'), base = vu('base'), fol = vu('folios'), rail = vu('rail');
   if (insp) { if (tel) B = Math.min(B, insp.top); else R = Math.min(R, insp.left); } if (base) B = Math.min(B, base.top); if (fol) B = Math.min(B, fol.top); if (rail) { if (tel) B = Math.min(B, rail.top); else L = Math.max(L, rail.right); }
-  const dedans = X0 >= L - 1 && X1 <= R + 1 && Y0 >= T - 1 && Y1 <= B + 1, visible = X1 > L && X0 < R && Y1 > T && Y0 < B;
+  const sousLaCarte = !!carte && Math.min(X1, carte.right) - Math.max(X0, carte.left) > 1 && Math.min(Y1, carte.bottom) - Math.max(Y0, carte.top) > 1;
+  const dedans = X0 >= L - 1 && X1 <= R + 1 && Y0 >= T - 1 && Y1 <= B + 1 && !sousLaCarte, visible = X1 > L && X0 < R && Y1 > T && Y0 < B && !sousLaCarte;
+
   // un bloc plus haut que la place (un calculateur au téléphone) : cadré sur sa largeur, son haut (le repère) dans la place
   const parLeHaut = !dedans && X0 >= L - 1 && X1 <= R + 1 && Y0 >= T - 1 && Y0 < B - 24 && (Y1 - Y0) > (B - T);
   return { dedans, parLeHaut, visible, w: Math.round(X1 - X0), h: Math.round(Y1 - Y0), detail: `bloc ${Math.round(X0)}–${Math.round(X1)} × ${Math.round(Y0)}–${Math.round(Y1)}, place libre ${Math.round(L)}–${Math.round(R)} × ${Math.round(T)}–${Math.round(B)}` }; }, nom);

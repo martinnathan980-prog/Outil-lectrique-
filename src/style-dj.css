@@ -1,34 +1,60 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   LE DISJONCTEUR (08-disjoncteurs.js) : sa section « Calibre » dans la fiche v4 — le calibre retenu en HÉROS (grand,
-   sobre : le chiffre et son unité, une marque d'état, rien d'autre), « Automatique » et la gamme discrète pour un choix à
-   la main, les câbles à grossir en un encart ambre, la courbe comme la figure d'un catalogue (style-courbe.css), le profil
-   de charge en petite table au filet. Ses câbles sont dans la section commune « Câbles » (style-fiche.css, `.cb-liste`).
-   « Graphite 2027 » : l'interface à l'encre, la couleur ne dit que l'état. Les jetons sont ceux de style.css.
+   LE DISJONCTEUR (08-disjoncteurs.js) : sa section « Calibre » dans la fiche v4 — le calibre retenu sur son CADRAN (la
+   gamme sur un arc, la part qui passe en vert, la charge dedans, l'index du retenu, le nombre au centre ; ni pastille ni
+   mot quand il passe), la charge en chiffres à côté, « Automatique » et la gamme discrète pour un choix à la main, les
+   câbles à grossir en un encart ambre, la courbe comme la figure d'un catalogue (style-courbe.css), le profil de charge
+   en petite table au filet. Ses câbles sont dans la section commune « Câbles » (style-fiche.css, `.cb-liste`).
+   « Nuit bleue » : l'interface à l'encre, la couleur ne dit que l'état ; le bleu de la charge (--charge) est celui d'un
+   instrument. Les jetons sont ceux de style.css.
    ═══════════════════════════════════════════════════════════════════════ */
 .fi-dj{display:flex;flex-direction:column;gap:12px;min-width:0}
 
-/* ── 1. le calibre retenu, en grand : le chiffre et son unité (la même taille, l'unité plus douce), son « ? » ; à droite
-   la marque du verdict — une coche verte, ou une croix rouge et ce qui ne va pas, en clair. Le fond prend à peine la
-   teinte de l'état ── */
-.dj-heros{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 18px;min-height:84px;padding:16px 18px 16px 20px;border-radius:14px;
-  background:var(--fi-voile,var(--s-sunken))}
-.dj-heros.ok{background:color-mix(in srgb,var(--ok-soft) 75%,var(--s-surface))}
-.dj-heros.ko{background:color-mix(in srgb,var(--ko-soft) 80%,var(--s-surface))}
-.dj-h-valeur{display:flex;align-items:flex-start;gap:2px}
-.dj-h-cal{display:inline-flex;align-items:baseline;gap:5px;font:600 46px/1 var(--sans);letter-spacing:-.035em;color:var(--t-1);font-variant-numeric:tabular-nums}
-/* l'unité à la taille du nombre (le lecteur : « mets-moi le A de ampère à la même taille »), d'une encre plus douce */
-.dj-h-u{font:inherit;font-weight:500;letter-spacing:0;color:var(--t-2)}
-.dj-h-valeur .fi-q{margin:3px 0 0 6px}
-.dj-h-cote{display:flex;align-items:center;gap:12px;margin-left:auto}
-/* ne passe pas : dit en clair, à côté de la marque (rien quand il passe : « on comprend que ça passe ») */
-.dj-h-ko{font:500 var(--f-13)/1.35 var(--sans);color:var(--ko);text-align:right;max-width:24ch;text-wrap:balance}
-.dj-h-etat{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--ok);color:var(--s-surface)}
-.dj-h-etat.ko{background:var(--ko)}
-.dj-h-etat svg.ico{width:16px;height:16px;stroke-width:2.4}
-/* (elle se pose à l'entrée de la fiche ou de la section, pas à chaque rendu) */
-.fi.fondu .dj-h-etat,details.fs.fs-entre .dj-h-etat{animation:dj-marque var(--lent) both;animation-delay:120ms}
-@keyframes dj-marque{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){.fi.fondu .dj-h-etat,details.fs.fs-entre .dj-h-etat{animation:none}}
+/* ── 1. le calibre retenu, sur son cadran : à gauche l'instrument (168 × 152), le nombre au centre et son unité à sa
+   taille (le lecteur : « mets-moi le A de ampère à la même taille »), d'une encre plus douce ; à droite ce qui ne va pas
+   (en clair, s'il ne passe pas), la charge en chiffres, la gamme et son « ? ». Aucun fond : le cadran suffit ── */
+.dj-heros{display:grid;grid-template-columns:168px minmax(0,1fr);align-items:center;gap:4px 18px;padding:2px 0 0}
+.dj-cadran{position:relative;width:168px;height:152px;margin:-4px 0 -10px -4px}
+.dj-arc{display:block;width:100%;height:100%;overflow:visible}
+.dj-arc-piste{fill:none;stroke:var(--s-line-2);stroke-width:3;stroke-linecap:round}
+.dj-arc-passe{fill:none;stroke:var(--ok);stroke-width:5;stroke-linecap:round}
+.dj-arc-serre{fill:none;stroke:var(--warn);stroke-width:5;stroke-linecap:round}
+.dj-arc-fond{fill:none;stroke:var(--s-sunken);stroke-width:7;stroke-linecap:round}
+.dj-arc-pointe{fill:none;stroke:color-mix(in srgb,var(--charge) 35%,transparent);stroke-width:7;stroke-linecap:round}
+.dj-arc-perm{fill:none;stroke:var(--charge);stroke-width:7;stroke-linecap:round}
+.dj-arc-cran{stroke:var(--t-3);stroke-width:1.3;stroke-linecap:round}
+.dj-arc-cran.passe{stroke:var(--ok)} .dj-arc-cran.serre{stroke:var(--warn)}
+.dj-arc-n{font:500 10px var(--sans);fill:var(--t-3);text-anchor:middle;dominant-baseline:central;font-variant-numeric:tabular-nums}
+.dj-arc-n.passe{fill:var(--t-2)} .dj-arc-n.serre{fill:var(--warn)}
+.dj-arc-n.retenu{fill:var(--t-1);font-weight:700;font-size:11px}
+.dj-arc-index{fill:var(--s-surface);stroke:var(--t-1);stroke-width:2.5;filter:drop-shadow(0 1px 3px rgba(0,10,30,.35))}
+.dj-heros.ko .dj-arc-index{stroke:var(--ko)}
+.dj-h-centre{position:absolute;left:0;right:0;top:67px;display:flex;justify-content:center;pointer-events:none}
+.dj-h-cal{display:inline-flex;align-items:baseline;gap:3px;font:600 32px/1 var(--sans);letter-spacing:-.045em;color:var(--t-1);font-variant-numeric:tabular-nums lining-nums}
+.dj-h-u{font:inherit;font-weight:400;letter-spacing:-.02em;color:var(--t-2)}
+.dj-heros.ko .dj-h-cal{color:var(--ko)}
+.dj-h-cote{display:flex;flex-direction:column;align-items:flex-start;gap:14px;min-width:0}
+/* ne passe pas : dit en clair (rien quand il passe : « on comprend que ça passe ») */
+.dj-h-ko{display:block;font:500 var(--f-13)/1.35 var(--sans);color:var(--ko);text-wrap:pretty}
+.dj-h-ko::first-letter{text-transform:uppercase}
+/* la charge : deux valeurs, leur mot dessous, la pastille de couleur qui les relie à leur trait */
+.dj-stats{display:flex;gap:22px;min-width:0}
+.dj-stat{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0}
+.dj-stat b{font:600 20px/1 var(--sans);letter-spacing:-.02em;color:var(--t-1);font-variant-numeric:tabular-nums;white-space:nowrap}
+.dj-stat b small{font:500 14px/1 var(--sans);letter-spacing:0;color:var(--t-2);margin-left:3px}
+.dj-stat>span{display:inline-flex;align-items:center;gap:6px;font:500 var(--f-12)/1.2 var(--sans);color:var(--t-2);white-space:nowrap}
+.dj-stat i{display:inline-block;width:10px;height:3px;border-radius:2px;background:var(--charge)}
+.dj-stat.pointe i{background:color-mix(in srgb,var(--charge) 40%,transparent)}
+.dj-h-pied{display:flex;align-items:center;gap:8px;font:500 var(--f-12)/1.35 var(--sans);color:var(--t-2)}
+.dj-h-pied .fi-q{margin:0}
+/* la section ouverte ne répète pas en petit le calibre qu'elle montre en grand (pliée, son résumé le dit) */
+details.fs[data-section="disjoncteur"][open] .fs-resume{display:none}
+/* l'index se pose à l'entrée de la fiche ou de la section, pas à chaque rendu */
+.fi.fondu .dj-arc-index,details.fs.fs-entre .dj-arc-index{animation:dj-index var(--lent) both;animation-delay:120ms;transform-box:fill-box;transform-origin:center}
+@keyframes dj-index{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.fi.fondu .dj-arc-index,details.fs.fs-entre .dj-arc-index{animation:none}}
+/* le téléphone : le cadran au-dessus, la charge dessous */
+@media (max-width:420px){ .dj-heros{grid-template-columns:1fr;justify-items:center} .dj-h-cote{align-items:center} }
+
 .dj-resume{font-weight:600;color:var(--t-1);font-variant-numeric:tabular-nums}
 /* ce qu'on fait : « Automatique (15 A) » — plein quand il reste à prendre, étoilé au filet quand il est pris —, « Autre calibre » */
 .dj-h-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px 6px;min-height:32px}
