@@ -13,6 +13,10 @@
    ═══════════════════════════════════════════════════════════════════════ */
 .nm{display:flex;flex-direction:column;gap:var(--sp-4);min-width:0;container-type:inline-size}   /* la bible se règle sur sa largeur */
 .nm .fiche-tete{margin-bottom:-4px}
+/* les onglets du document (Normes, Bible des barrettes) : sous le titre, posés sur le bord bas de la tête — leur trait
+   court sur toute la largeur de la feuille */
+.fiche-tete.avec-onglets{padding-bottom:0;box-shadow:inset 0 -1px 0 var(--s-line)}
+.fiche-tete .nm-nav{margin:12px 0 0 -10px;box-shadow:none;padding-right:0}
 .nm-etat .nm-mod{color:var(--warn)}
 .nm-etat i{font-style:normal;color:var(--t-2)}
 /* la recherche, l'action principale, « ··· » : une ligne */
@@ -23,7 +27,7 @@
 .nm-note{font-size:var(--f-12);color:var(--t-2);margin:0;line-height:1.55}
 .nm-vide{font-size:var(--f-12);color:var(--t-2);margin:8px 0;line-height:1.5}
 /* les badges d'état : modifiée, ajoutée, masquée, à confirmer, importée, vide — un mot dans sa case, la couleur de l'état */
-.nm-badge{display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:var(--r-1);font:500 var(--f-11)/1 var(--sans);letter-spacing:0;white-space:nowrap;background:var(--s-hover);color:var(--t-2)}
+.nm-badge{display:inline-flex;align-items:center;height:var(--h-badge);padding:0 8px;border-radius:999px;font:500 var(--f-11)/1 var(--sans);letter-spacing:0;white-space:nowrap;background:var(--s-hover);color:var(--t-2)}
 .nm-badge.mod,.nm-badge.conf{background:var(--warn-soft);color:var(--warn)}
 .nm-badge.ajo{background:var(--ok-soft);color:var(--ok)}
 .nm-badge.masq{color:var(--t-2);text-decoration:line-through}
@@ -53,11 +57,11 @@
 /* la source sur une ligne ; la fiche dépliée la donne entière */
 .nm-t-source{font-size:var(--f-12);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* le compte et les badges en colonnes de largeur fixe : d'une table à l'autre, les chiffres tombent l'un sous l'autre */
-.nm-t-compte{flex:none;min-width:84px;text-align:right;font:500 var(--f-12) var(--mono);color:var(--t-2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.nm-t-compte{flex:none;min-width:84px;text-align:right;font:500 var(--f-12) var(--sans);color:var(--t-2);white-space:nowrap;font-variant-numeric:tabular-nums}
 .nm-t-badges{flex:none;width:200px;display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-start}
 .nm-chevron{width:16px;height:16px;color:var(--t-3);transition:transform var(--moyen)}
 .nm-table.ouvert .nm-chevron{transform:rotate(180deg)}
-.nm-contrats .fi-lien{flex:none}
+.nm-contrats .btn.lien{flex:none}
 .nm-t-corps{display:flex;flex-direction:column;gap:var(--sp-4);padding:var(--sp-4) var(--sp-4) var(--sp-3);animation:nm-ouvre var(--moyen)}
 @keyframes nm-ouvre{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 /* la fiche d'une table : des faits — la clé en étiquette, la valeur à l'encre */
@@ -66,7 +70,7 @@
 .nm-doc dt::first-letter{text-transform:uppercase}
 .nm-doc dd,.nm-cols dd{margin:0;color:var(--t-1);line-height:1.55;min-width:0;max-width:110ch}
 .nm-doc dd.nm-manque{color:var(--warn)}
-.nm-doc .fi-lien{margin:-4px 0 -4px -8px}
+.nm-doc .btn.lien{margin:-6px 0 -6px -8px}
 /* les colonnes expliquées : entre deux filets, le nom en chasse fixe */
 .nm-cols{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px var(--sp-4);margin:0;padding:var(--sp-3) 0;border-top:1px solid var(--s-line);border-bottom:1px solid var(--s-line);font-size:var(--f-12)}
 .nm-cols dt{font:600 var(--f-12)/1.6 var(--mono);text-transform:none;letter-spacing:0;color:var(--t-1)}
@@ -75,19 +79,18 @@
 .nm-alias{display:block;font-size:var(--f-12);color:var(--t-2);opacity:.85}
 /* la barre : le filtre, ajouter, exporter, le gabarit, revenir à l'embarquée, les masquées */
 .nm-t-barre{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
-.nm-filtre{flex:1 1 200px;min-width:0;max-width:360px;height:32px}
-.nm-t-barre .btn{height:32px}
+.nm-filtre{flex:1 1 200px;min-width:0;max-width:360px;height:var(--h-btn-dense)}
 .nm-t-barre .btn.lien{padding:0 8px}
 /* ─── la table : en chasse fixe, triable à l'en-tête, les gestes au survol de la ligne ───
    Elle défile dans sa boîte, dans les deux sens : l'en-tête reste en haut (six colonnes de chiffres gardent leur nom),
    et la colonne des gestes reste au bord droit (modifier, dupliquer, supprimer, OK, Annuler toujours à portée) */
 .nm-defile{max-height:min(70vh,640px);overflow:auto;overscroll-behavior-x:contain;padding-bottom:4px;scrollbar-width:thin}
 .nm-tab{border-collapse:separate;border-spacing:0;font-size:var(--f-12);white-space:nowrap;min-width:100%}
-.nm-tab th{position:sticky;top:0;z-index:1;background:var(--s-surface);text-align:left;font:500 var(--f-12) var(--sans);color:var(--t-2);letter-spacing:0;padding:8px 14px 8px 0;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
+.nm-tab th{position:sticky;top:0;z-index:1;background:var(--s-surface);text-align:left;font:500 var(--f-12) var(--sans);color:var(--t-2);letter-spacing:0;height:var(--h-tete-table);padding:0 14px 0 0;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
 .nm-tab th[data-tri]{cursor:pointer;user-select:none;transition:color var(--rapide)}
 .nm-tab th[data-tri]:hover{color:var(--t-1)}
 .nm-tab th[aria-sort="ascending"],.nm-tab th[aria-sort="descending"]{color:var(--t-1);font-weight:600}
-.nm-tab td{padding:6px 14px 6px 0;border-bottom:1px solid var(--s-line);font-family:var(--mono);vertical-align:top;max-width:260px;overflow:hidden;text-overflow:ellipsis;transition:background var(--rapide)}
+.nm-tab td{height:var(--h-ligne-dense);padding:4px 14px 4px 0;border-bottom:1px solid var(--s-line);font-family:var(--mono);vertical-align:middle;max-width:260px;overflow:hidden;text-overflow:ellipsis;transition:background var(--rapide)}
 .nm-tab td.d,.nm-tab th.d{text-align:right;font-variant-numeric:tabular-nums}
 .nm-tab td.nm-texte{font-family:var(--sans);color:var(--t-2);max-width:320px}
 .nm-tab tr.nm-l{color:var(--t-1)}   /* une ligne modifiée ou ajoutée garde l'encre : son fond et son badge disent l'état */
@@ -100,12 +103,18 @@
 .nm-tab tr.nm-ajo:hover td{background:color-mix(in srgb,var(--ok-soft),var(--ok) 8%)}
 .nm-tab tr.nm-masquee td{color:var(--t-2);text-decoration:line-through;background:var(--s-sunken)}
 .nm-tab tr.nm-masquee td.nm-gestes-l{text-decoration:none}
-.nm-tab td.nm-etat,.nm-tab th.nm-etat{width:1px;padding:6px 8px 6px 4px;white-space:nowrap}
+.nm-tab td.nm-etat,.nm-tab th.nm-etat{width:1px;padding:4px 8px 4px 4px;white-space:nowrap}
 .nm-src{display:block;margin-top:2px;font:500 var(--f-11) var(--sans);color:var(--t-2);max-width:96px;overflow:hidden;text-overflow:ellipsis}
 /* les gestes d'une ligne : collés au bord droit (sur le fond de leur ligne : survolée, modifiée, en édition…), visibles
    au survol ou au clavier (au doigt, toujours) */
-.nm-tab td.nm-gestes-l,.nm-tab th.nm-gestes-l{position:sticky;right:0;width:1px;padding:2px 4px 2px 8px;white-space:nowrap;text-align:right;vertical-align:middle;background:var(--s-surface);box-shadow:-1px 0 0 var(--s-line)}
-.nm-tab th.nm-gestes-l{z-index:2}
+/* au repos, la colonne collée est transparente (ses gestes sont cachés) : elle ne coupe plus la colonne qui passe dessous
+   (« Groupes » se lisait à moitié) ; la ligne survolée ou au clavier la remplit de son fond, gestes en vue. Son en-tête,
+   vide, défile avec la table */
+.nm-tab td.nm-gestes-l,.nm-tab th.nm-gestes-l{position:sticky;right:0;width:1px;padding:2px 4px 2px 8px;white-space:nowrap;text-align:right;vertical-align:middle;background:transparent}
+.nm-tab th.nm-gestes-l{right:auto;z-index:2;background:var(--s-surface)}
+.nm-tab tr.nm-l:is(:hover,:focus-within) td.nm-gestes-l{box-shadow:-1px 0 0 var(--s-line)}
+.nm-tab tr.nm-l:not(.nm-edition):focus-within td{background:var(--s-hover)}
+@media (hover:none){ .nm-tab td.nm-gestes-l{background:var(--s-surface);box-shadow:-1px 0 0 var(--s-line)} }
 .nm-g{width:26px;height:26px;border:none;background:none;border-radius:var(--r-1);color:var(--t-2);display:inline-grid;place-items:center;padding:0;opacity:0;transition:opacity var(--rapide),background var(--rapide),color var(--rapide)}
 .nm-g svg.ico{width:14px;height:14px}
 .nm-tab tr:hover .nm-g,.nm-tab tr:focus-within .nm-g,.nm-g:focus-visible{opacity:1}
@@ -158,7 +167,7 @@
 .nm-cas dt{font-weight:600;color:var(--t-1);line-height:1.5}
 .nm-cas dd{margin:0;color:var(--t-2);line-height:1.5}
 .nm-gabarits{display:flex;flex-wrap:wrap;gap:0 6px;margin-top:2px;align-items:center}
-.nm-gabarits .fi-lien{margin:0 0 0 -8px}
+.nm-gabarits .btn.lien{margin:0 0 0 -8px;font-size:var(--f-12)}
 .nm-gabarits.nm-tous{padding-top:var(--sp-3);border-top:1px solid var(--s-line)}
 .nm-gabarits.nm-tous .sur{margin-right:6px;color:var(--t-2)}
 /* ─── la bible : le filtre par norme (des puces de choix — la pressée à l'encre), le compte au pied ─── */
@@ -178,8 +187,7 @@
   /* la tête de l'import et le titre d'un bloc prennent toute la largeur : les boutons et la cible passent dessous */
   .nm-imp-tete .min0,.nm-bloc-tete .min0{flex:1 1 100%}
   .nm-bloc-tete b{white-space:normal}
-  /* la tête d'un document large : le passage normes ↔ bible passe sous le titre */
-  .fiche-tete:has(.nm-nav){flex-wrap:wrap}
-  .fiche-tete:has(.nm-nav)>.min0{flex:1 1 calc(100% - 52px)}
-  .fiche-tete .nm-nav{order:3;margin-top:2px}
+  /* la tête d'un document large : ses onglets restent posés sur son bord bas */
+  .fiche-tete.avec-onglets{padding-bottom:0;border-bottom:none}
+  .fiche-tete .nm-nav{margin-top:6px}
 }

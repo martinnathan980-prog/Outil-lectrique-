@@ -117,7 +117,7 @@ function excelEssai() { const wb = XLSX.utils.book_new();
   okp(/32 tables/.test(await texte('.nm-etat')) && /rien d’importé/.test(await texte('.nm-etat')), 'l’état : trente-deux tables, rien d’importé ni de modifié', await texte('.nm-etat'));
   okp(await page.evaluate(() => { const f = document.getElementById('fiche'); return f.offsetWidth > 800 && !f.hidden; }), 'la page est plus large que la bible (les tables ont jusqu’à seize colonnes)', await page.evaluate(() => document.getElementById('fiche').offsetWidth + ' px'));
   await page.click('#fiche .nm-table[data-vue="contacts"] .nm-t-tete'); await page.waitForTimeout(400);
-  okp(await q('.nm-table[data-vue="contacts"] .nm-doc dt') === 6 && /juge la jauge/.test(await texte('.nm-table[data-vue="contacts"] .nm-doc')) && /Changer/.test(await texte('.nm-table[data-vue="contacts"] .nm-doc')), 'la table dépliée dit d’où elle vient (la source entière), ce qu’elle sert, qui la lit, comment une ligne se choisit (automatique, et « Changer »), ce qui manque (les points à relire de R1)');
+  okp(await q('.nm-table[data-vue="contacts"] .nm-doc dt') === 6 && /juge la gauge/.test(await texte('.nm-table[data-vue="contacts"] .nm-doc')) && /Changer/.test(await texte('.nm-table[data-vue="contacts"] .nm-doc')), 'la table dépliée dit d’où elle vient (la source entière), ce qu’elle sert, qui la lit, comment une ligne se choisit (automatique, et « Changer »), ce qui manque (les points à relire de R1)');
   okp(await q('.nm-table[data-vue="contacts"] tbody tr[data-cle]') === 120 && /346 lignes restantes/.test(await texte('.nm-table[data-vue="contacts"] .nm-plus')), 'les 120 premières lignes, et les 346 restantes sur demande (466 contacts : les 32 de R1 et la taille 22 de l’EN 2997 en plus)');
   await page.click('#fiche .nm-table[data-vue="contacts"] .nm-voir-cols'); await page.waitForTimeout(300);
   okp(await q('.nm-table[data-vue="contacts"] .nm-cols dt') === 10 && /obligatoire/.test(await texte('.nm-table[data-vue="contacts"] .nm-note')), 'les colonnes expliquées : dix (Source et Statut de chaque ligne en plus), les obligatoires marquées');
@@ -212,7 +212,7 @@ function excelEssai() { const wb = XLSX.utils.book_new();
   { const tsv = ['Std\tGender\tCavity\tWire Family\tAWG\tPart Number\tAccessory', 'EN2997\tS\t20\tZZ\t22\tEN3155-079F2022\t', 'EN2997\tP\t20\tZZ\t22\tEN3155-078M2022\t'].join('\n');
     await page.evaluate(() => { try { localStorage.removeItem('volta.normes.correspondances.v1'); } catch (_) { } ficheNormes(); }); await page.waitForTimeout(400);
     await page.evaluate(t => importerNormeTexte(t, 'export SEE'), tsv); await page.waitForTimeout(400);
-    okp(await page.evaluate(() => { const b = NORMES.import.blocs; return b.length === 1 && b[0].brut && !b[0].cible && b[0].entete.length === 7 && b[0].lignes.length === 2 && /choisis la table/.test(document.querySelector('#nm-import .nm-bloc-compte').textContent); }), 'un tableau aux en-têtes inconnus n’est plus refusé : Volta le montre et demande quelle table c’est');
+    okp(await page.evaluate(() => { const b = NORMES.import.blocs; return b.length === 1 && b[0].brut && !b[0].cible && b[0].entete.length === 7 && b[0].lignes.length === 2 && /choisissez la table/.test(document.querySelector('#nm-import .nm-bloc-compte').textContent); }), 'un tableau aux en-têtes inconnus n’est plus refusé : Volta le montre et demande quelle table c’est');
     await page.selectOption('#fiche-corps select[data-cible="0"]', 'contacts'); await page.waitForTimeout(300);
     for (const [i, ch] of [[0, 'famille'], [1, 'sexe'], [2, 'taille'], [3, 'typeFil'], [6, 'accessoire']]) { await page.selectOption(`#fiche-corps select[data-colonne="0"][data-indice="${i}"]`, ch); await page.waitForTimeout(150); }
     okp(await page.evaluate(() => { const b = NORMES.import.blocs[0]; return b.lecture.lues.length === 2 && !b.lecture.rejets.length && b.lecture.lues.map(x => x.sexe).join() === 'F,M' && b.col.jauge === 4 && b.col.reference === 5; }), 'Contacts : AWG et Part Number reconnus d’eux-mêmes, Std, Gender, Cavity, Wire Family, Accessory dits à la main — les deux lignes lues, S et P compris comme douille et broche');
@@ -221,6 +221,42 @@ function excelEssai() { const wb = XLSX.utils.book_new();
     await page.evaluate(t => importerNormeTexte(t.replace('F2022', 'F2024'), 'export SEE, une semaine après'), tsv); await page.waitForTimeout(400);
     okp(await page.evaluate(() => { const b = NORMES.import.blocs[0]; return b.cible === 'contacts' && !!b.retenue && b.lecture.lues.length === 2 && !!document.querySelector('#nm-import .nm-badge') && /correspondance retenue/.test(document.querySelector('#nm-import').textContent); }), 'le même export, collé une semaine après : lu d’un coup, « correspondance retenue »');
     await page.evaluate(() => { annulerImportNorme(); defaireNormes(); try { localStorage.removeItem('volta.normes.correspondances.v1'); } catch (_) { } }); await page.waitForTimeout(300); }
+
+  console.log('\nles composants communs, les mots, les bulles (l’audit des pages, v72)');
+  await page.evaluate(() => { fermerFiche(true); ficheNormes({ table: 'contacts' }); }); await page.waitForTimeout(600);
+  okp(await page.evaluate(() => { const t = [...document.querySelectorAll('#fiche .fiche-tete .onglets [role=tab]')]; return t.length === 2 && t.every(b => b.classList.contains('onglet')) && t[0].getAttribute('aria-selected') === 'true' && !document.querySelector('#fiche .fiche-tete .segment'); }),
+    'Normes et Bible des barrettes : deux onglets soulignés sous le titre (le segment est pour les modes d’une même vue), « Normes » choisi');
+  const titres = await page.evaluate(() => [...document.querySelectorAll('#fiche :is(button, summary, th, input)[title]')].map(e => e.textContent.trim().slice(0, 20) || e.outerHTML.slice(0, 40)));
+  okp(!titres.length, 'plus de bulle du navigateur (title=) sur un bouton, un en-tête ou un champ de la page : la bulle de l’outil (data-bulle)', titres.slice(0, 3).join(' | '));
+  { const r = await page.$eval('#nm-importer', e => { $('fiche-corps').scrollTop = 0; const b = e.getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; }); await page.mouse.move(r[0], r[1]); await page.waitForTimeout(800); }
+  okp(await page.evaluate(() => { const b = document.querySelector('.fi-bulle'); return !!b && !b.hidden && /Excel/.test(b.textContent); }), 'au survol, « Importer une norme » dit ce qu’il prend, dans la bulle de l’outil');
+  await page.mouse.move(5, 300); await page.waitForTimeout(200);
+  okp(await page.evaluate(() => { const c = document.querySelector('#fiche .nm-t-compte'), b = document.querySelector('#fiche .nm-badge'); return /Inter/.test(getComputedStyle(c).fontFamily.split(',')[0]) && parseFloat(getComputedStyle(b).borderTopLeftRadius) >= 10; }),
+    'le compte d’une table (« 74 lignes ») en Inter, comme partout ; un badge d’état en pilule');
+  okp(await page.evaluate(() => { const s = [...document.querySelectorAll('#fiche .nm-dom-sens, #fiche .nm-doc dd')].map(e => e.textContent).join(' '), t = document.querySelector('#fiche-corps').textContent;
+    return !/(^|[^\p{L}])(fils?|jauges?)(?![\p{L}])/u.test(s) && !/\b(ta table|ta fiche|si tu |réimporte-la|dis quelle|choisis la|vérifie, puis|Il te demande)/.test(t); }),
+    'les mots : « câble » et « gauge » dans ce que disent les domaines et les tables, et la page vouvoie');
+  await page.click('#fiche #nm-plus summary'); await page.waitForTimeout(400);
+  okp(await page.evaluate(() => { const m = document.querySelector('#nm-plus .doc-menu-l'), c = getComputedStyle(m).backgroundColor.match(/[\d.]+/g).map(Number), lum = (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255, b = document.querySelector('.fi-bulle');
+    return lum < 0.3 && (c[3] == null || c[3] > 0.9) && parseFloat(getComputedStyle(m).borderTopLeftRadius) === 14 && (!b || b.hidden); }),
+    'le « ··· » d’un document tombe dans le verre dense des menus (sur la feuille blanche aussi), coin 14 ; ouvert, la bulle de son bouton se tait');
+  await page.keyboard.press('Escape'); await page.waitForTimeout(200);
+  await page.click('#fiche [data-nm-vue="bible"]'); await page.waitForTimeout(500);
+  okp(await page.evaluate(() => { const p = [...document.querySelectorAll('#fiche .bible-filtres .puce')], on = p.find(b => b.getAttribute('aria-pressed') === 'true'), c = on && getComputedStyle(on).backgroundColor.match(/[\d.]+/g).map(Number);
+    const th = [...document.querySelectorAll('#fiche table.bible thead th')].map(x => x.textContent.trim()), rows = [...document.querySelectorAll('#fiche table.bible tbody tr:not(.bz-ligne)')];
+    const vide = th.some((h, j) => h && rows.length && rows.every(r => { const td = r.children[j]; return !td || /^—?$/.test(td.textContent.trim()); }));
+    return p.length >= 3 && !!on && (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255 > 0.5 && th.includes('Gauge') && !th.includes('Jauge') && !th.includes('Blindé') && !vide && document.querySelector('#fiche [data-nm-vue="bible"]').getAttribute('aria-selected') === 'true'; }),
+    'la bible : ses filtres sont des puces (la pressée au fond doux, pas noire), la colonne « Gauge », plus de colonne vide à « — » (Blindé)');
+  await page.evaluate(() => { fermerFiche(true); atelier.exemple(); }); await page.waitForTimeout(800);
+  await page.evaluate(() => ficheNomenclature()); await page.waitForTimeout(600);
+  okp(await page.evaluate(() => { const t = [...document.querySelectorAll('#fiche .no-tuile span')].map(x => x.textContent); return t.includes('câbles') && !t.some(x => /\bfils?\b/.test(x)) && !/\bfils?\b/.test(document.querySelector('#fiche .no-intro').textContent)
+    && $('no-xlsx').classList.contains('cuivre') && $('no-csv').classList.contains('papier'); }), 'la nomenclature compte des « câbles » ; « Exporter Excel » plein, « Exporter CSV » au trait (sa forme partout)');
+  { const [d] = await Promise.all([page.waitForEvent('download'), page.click('#fiche #no-xlsx')]); const f = path.join(SCRATCH, 'nomenclature.xlsx'); await d.saveAs(f);
+    const wb = XLSX.read(fs.readFileSync(f)), ws = wb.Sheets[wb.SheetNames[0]], L = XLSX.utils.sheet_to_json(ws, { header: 1 });
+    const c = await telechargement(() => page.click('#fiche #no-csv')), nCsv = c.texte.trim().split('\n').length - 1;
+    okp(wb.SheetNames[0] === 'Nomenclature' && L[0].join('|') === 'Section|Référence|Détail|Quantité|Unité|Où' && L.length - 1 === nCsv && L.slice(1).every(l => typeof l[3] === 'number') && L.some(l => l[0] === 'Câbles' && /câbles?$/.test(l[2])) && !!ws['!autofilter'],
+      'la nomenclature s’enregistre aussi en Excel (SheetJS, embarqué) : la même table que le CSV, les quantités en nombres, l’en-tête filtrable', L.length - 1 + ' lignes · CSV ' + nCsv); }
+  await page.evaluate(() => fermerFiche(true)); await page.waitForTimeout(200);
 
   console.log('\nau téléphone');
   await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(400);

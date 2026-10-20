@@ -128,3 +128,28 @@ html body.pdf-ouvert #toast{left:calc((100vw + 132px - clamp(460px,34vw,600px)) 
 .pdf-saisie input:focus{border-color:var(--t-1);box-shadow:var(--anneau)}
 .pdf-saisie .btn{justify-self:end;height:30px}
 @media (prefers-reduced-motion:reduce){.pdf.entre,.pdf-saisie{animation:none}.pdf-respire{animation:none}}
+
+/* ─── AU TÉLÉPHONE (390 px) : la page en haut, la relecture en tiroir dessous (elle était hors de l'écran, à droite), les
+   outils posés sur le bord du tiroir ; les vignettes se rangent (une page à la fois : ‹ › dans les outils) ; le mot qui
+   passe au milieu, sur une ligne (il se tassait dans la colonne des vignettes) ─── */
+@media (max-width:700px){
+  .pdf{--pdf-rel:0px;--pdf-tiroir:46vh}
+  .pdf-vignettes{display:none}
+  .pdf-scene{bottom:var(--pdf-tiroir)}
+  .pdf-relecture{top:auto;left:0;right:0;bottom:0;width:auto;max-width:none;height:var(--pdf-tiroir);border-radius:0;box-shadow:0 -1px 0 var(--s-line-2),0 -12px 30px -18px rgba(0,6,18,.6)}
+  .pdf-haut{padding:0 16px 2px}
+  .pdf-haut .fiche-tete{margin:0 -16px;padding:12px 8px 4px 16px;position:static;border-bottom:none}
+  .pdf-liste{padding:0 16px 12px}
+  .pdf-filtres{margin:10px 0 6px}
+  .pdf-outils{left:8px;right:8px;bottom:calc(var(--pdf-tiroir) + 8px);height:auto;flex-wrap:wrap-reverse;justify-content:center;gap:6px}
+  .pdf-palet{flex:none}
+  .pdf-cherche input{width:96px}
+  .pdf-q-n{min-width:0}
+  .pdf-palet .bulle{display:none}
+  /* les colonnes de la relecture se resserrent : les repères, leurs bornes et la confiance gardent la place ; la référence
+     et le folio se rangent (un clic sur la ligne la surligne sur la page) */
+  .pdf-tab th:nth-child(2),.pdf-tab th:nth-child(4){width:40px}
+  .pdf-tab :is(th,td):is(:nth-child(5),:nth-child(6)){display:none}
+  .pdf-tab th:nth-child(7){width:64px}
+  html body.pdf-ouvert #toast{left:50%;top:auto;bottom:calc(var(--pdf-tiroir, 46vh) + 110px);max-width:calc(100vw - 16px)}
+}

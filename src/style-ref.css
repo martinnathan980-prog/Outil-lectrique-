@@ -147,7 +147,8 @@
 .fi-bouton.cuivre{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .fi-bouton.cuivre svg.ico{color:var(--on-accent)}
 .fi-bouton.cuivre:hover{background:var(--accent-2);border-color:var(--accent-2)}
-.fi-bouton.cuivre:disabled{opacity:.45;cursor:default}
+.fi-bouton.cuivre:disabled{cursor:default;background:var(--s-sunken);border-color:var(--s-line);color:var(--t-3);box-shadow:none}
+.fi-bouton.cuivre:disabled svg.ico{color:var(--t-3)}
 
 /* ─── LE DESSIN (FWD) : une fenêtre sur la table — la feuille dessinée par le moteur à gauche, la colonne qui l'explique ─── */
 .fwd{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:16px;background:var(--voile-fort);animation:doc-fondu var(--moyen)}
@@ -243,12 +244,26 @@
 #fw-vue .fw-vise .cb-zone{stroke:#1d1d1f;stroke-width:2.2;stroke-dasharray:4 2.5}
 #fw-vue .cab.fw-l-manque{stroke-dasharray:5 3;stroke-width:1.7}
 #fw-vue .cab.fw-l-differe{stroke-dasharray:2 2.4;stroke-width:1.7}
+/* le cadre épais du bloc comparé (ou choisi, ou survolé) passe sous son repère : un liseré de papier autour des lettres
+   l'interrompt — « 102CB1 » se lit entier, plus « 1|02CB1 » (le texte est dessiné après la zone, il la recouvre) */
+#fw-vue :is(.fw-cible,.fw-on,.fw-vise):has(.cb-zone) text{paint-order:stroke;stroke:#ffffff;stroke-width:5px;stroke-linejoin:round}
 @media (max-width:900px){
   .fwd{padding:0}
   .fw-boite{border-radius:0}
   .fw-corps{flex-direction:column}
-  .fw-colonne{width:auto;max-height:46%;border-left:none;border-top:1px solid var(--s-line)}
+  /* la scène a sa part fixe de la hauteur : le dessin s'y cadre entier, quelle que soit la longueur de la colonne (au
+     téléphone, la moitié du dessin passait sous elle) */
+  .fw-scene{flex:0 0 50%;min-height:0}
+  .fw-colonne{flex:1 1 0;width:auto;max-height:none;min-height:0;border-left:none;border-top:1px solid var(--s-line)}
+  .fw-colonne .fw-liste{min-height:0}
   .fw-outils .fi-bouton span{display:none}
+}
+@media (max-width:700px){
+  .fw-tete{padding:10px 8px 10px 16px;gap:8px}
+  .fw-tete .titre{font-size:var(--f-16);overflow-wrap:anywhere}
+  .fw-outils{gap:2px}
+  .fw-outils .fi-bouton{width:36px;padding:0;justify-content:center}
+  .fw-resume{padding:12px 16px 10px}
 }
 
 /* ─── la page des références (au bas de la bible) : la recherche, les tables par harness, par dessin, par repère ─── */

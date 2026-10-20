@@ -61,10 +61,11 @@ commune ; chaque domaine la décline dans son propre fichier de style.
   bloc. Au téléphone, c'est le tiroir.
 - **Ce qu'on lit d'autre est une FEUILLE** (le récapitulatif, les documents) : posée sur la table, détachée des bords
   par le même **jeu de 10 px** (`--jeu`), arrondie (16 px), une ombre longue — blanche le jour ; le soir, elle prend la
-  matière des palets (`#18233a`, plus clair que la table), un anneau de lumière et un filet clair en haut : on voit où elle
+  matière des palets (`#1a2640`, plus clair que la table), un anneau de lumière et un filet clair en haut : on voit où elle
   commence. Elle entre en glissant d'un rien et se pose (`--lent`). Un document **large** (les normes, la bible) laisse
-  40 % de l'écran au plan (la barre des folios devient « ‹ › 3 / 6 ») ; la **base SEE** prend la page (la barre attend
-  dessous, le toast se pose au milieu de la feuille). Une table de feuille (le récapitulatif) a la largeur de sa feuille :
+  40 % de l'écran au plan (la barre des folios devient « ‹ › 3 / 6 ») — les normes et la bible sont les deux **onglets**
+  d'un même document, sous son titre ; la **base SEE** prend la page (la barre attend dessous, le toast se pose au milieu
+  de la feuille ; au téléphone, en bas). Une table de feuille (le récapitulatif) a la largeur de sa feuille :
   trop étroite, elle défile de côté juste de ce qui dépasse, jamais dans le vide.
 - **L'ouverture est la bibliothèque**, posée sur la table bleu nuit (le lecteur : « on choisit notre install et on a
   directement ses plans » ; plus de page d'exemple qui explique). Une **install** (une installation : telle antenne,
@@ -158,19 +159,22 @@ feuilles (et les modules à venir, le lecteur de PDF compris) les lisent ; on ch
 | famille | jetons (clair → sombre) |
 |---|---|
 | la table (la même dans les deux thèmes) | `--s-app` #0e1626 (sa couleur moyenne) · ses couches : `--table-fond` (l'encre dégradée, la lumière du coin haut-droit), `--table-souffle` (la lumière qui respire), `--table-lueur` (ce qui suit la souris) · `--s-grille` (les points, un bleu à 22 %) · `--points` (le motif, 24 px) · `--t-table` #e9eef9 / `--t-table-2` #a9b8d4 / `--t-table-warn` (ce qui s'écrit à même la table : l'attente d'un folio, la bibliothèque) · `--l-table` / `--l-table-2` (ses filets) · `--s-table-champ` / `--s-table-survol` (un champ, un survol posés sur elle) · `--glace` #9fc2ff (l'accent froid, rare) |
-| les surfaces | `--s-surface` #fff → #18233a · `--s-sunken` · `--s-hover` · `--s-line` · `--s-line-2` · `--s-flottant` (menus, listes, bulles de graphique) |
+| les surfaces | `--s-surface` #fff → #1a2640 · `--s-sunken` · `--s-hover` · `--s-line` · `--s-line-2` · `--s-flottant` (menus, listes, bulles de graphique) |
 | le papier (les deux thèmes) | `--s-papier` #fff · `--s-papier-grille` · `--t-papier` #1d1d1f · `--t-papier-2` ; `.ilot-clair` rend tous les jetons clairs à un îlot |
 | l'encre | `--t-1` #1b1f27 → #eef3fd · `--t-2` #454b57 → #b6c4de · `--t-3` #5f6672 → #91a2c2 · `--t-inverse` |
 | l'action (à l'encre) | `--accent` #1b1f27 → #eef3fd (le bouton principal, le focus) · `--accent-2` (survol) · `--accent-soft` (fond de ce qui est choisi ou pressé) · `--accent-line` · `--on-accent` |
 | les états | `--ok` / `--ok-soft` · `--warn` / `--warn-soft` · `--ko` / `--ko-soft` · `--info` / `--info-soft` (neutre) |
-| les palets (les mêmes dans les deux thèmes) | `--palet` (un verre bleu presque opaque, 97 % : la feuille blanche passe dessous quand on zoome) · `--palet-2` (survol) · `--palet-flou` (le flou du verre) · `--sh-palet` (le filet de lumière, l'ombre) · les voiles de glace posés dessus `--voile-1` 6 % · `--voile-2` 11 % · `--voile-3` 17 % · `--voile-4` 25 % ; les anciens `--p-*` en sont les alias. Dans l'îlot de verre, les jetons ordinaires (`--t-1` #eef3fd, `--t-2` #cdd8eb, `--t-3` #b8c6e0, `--s-hover`, `--accent`…) sont ceux de la nuit |
+| les palets (les mêmes dans les deux thèmes) | `--palet` (un verre bleu presque opaque, 97 % : la feuille blanche passe dessous quand on zoome) · `--palet-2` (survol) · `--palet-flou` (`none` : à 97 % le flou ne se voyait pas et se recalculait à chaque image d'un déplacement du plan) · `--sh-palet` (le filet de lumière, l'ombre) · les voiles de glace posés dessus `--voile-1` 6 % · `--voile-2` 11 % · `--voile-3` 17 % · `--voile-4` 25 % ; les anciens `--p-*` en sont les alias. Dans l'îlot de verre, les jetons ordinaires (`--t-1` #eef3fd, `--t-2` #cdd8eb, `--t-3` #b8c6e0, `--s-hover`, `--accent`…) sont ceux de la nuit |
 | la carte | `--sh-carte` / `--sh-carte-tenue` (posée, tenue : un filet de glace, une lueur froide) · `--r-carte` 18 px · `--lien` (son fil) ; sa place, posée par 08-carte sur `#inspecteur` : `--carte-x`, `--carte-y`, `--carte-l`, `--carte-hmax` |
 | les courbes | `--courbe-chaud` · `--courbe-tiede` · `--courbe-froid` · `--charge` (la charge d'un disjoncteur sur son cadran) |
 | le reste | `--bulle` #eef3fd / `--bulle-t` / `--sh-bulle` (claires sur la nuit, un filet qui les détache aussi du papier) · `--voile` / `--voile-fort` · `--route-a` / `--route-b` (la vignette d'un plan : violet et sarcelle) · `--route-voile` · `--anneau` (l'anneau d'un champ qui a le clavier) |
 
 Espacements sur une grille de 4 px : `--sp-1` 4 … `--sp-6` 32. Coins : `--r-1` 6 px (puces), `--r-btn` 10 px
 (boutons, champs, segments, recherche), `--r-2` 12 px (groupes, lignes cliquables), `--r-3` 16 px (feuilles,
-fenêtres), `--r-palet` 14 px (palets, menus). Ombres : `--sh-1`, `--sh-2` (ce qui flotte au-dessus d'une feuille),
+fenêtres), `--r-palet` 14 px (palets, et tout menu qui tombe d'un bouton), `--r-bulle` 8 px (les bulles). Les mesures des
+composants : `--h-btn` 34 / `--h-btn-dense` 30, `--h-onglet` 40, `--h-champ` 34 / `--h-champ-cellule` 28, `--h-puce` 28,
+`--h-badge` 20, `--h-ligne-dense` 32 / `--h-ligne` 44 / `--h-ligne-riche` 56, `--h-tete-table` 32, `--h-menu-ligne` 34 ;
+`--bulle-delai` 400 ms, `--menu-flou`. Le filet `--s-line` se voit (en clair `#dfe3ea`, 1,3:1 sur le blanc). Ombres : `--sh-1`, `--sh-2` (ce qui flotte au-dessus d'une feuille),
 `--sh-feuille` (le folio sur la table : profonde, la même dans les deux thèmes), `--sh-panneau` (une feuille posée sur
 la table : son bord net, une ombre longue), `--sh-palet`. Mouvement : `--courbe`, `--rapide` 140 ms, `--moyen` 220 ms,
 `--lent` 340 ms. Les anciens noms (`--cuivre`, `--papier`, `--encre`…) sont des alias des jetons.
@@ -183,6 +187,27 @@ et des feuilles aux bords et entre eux), `--entete` 52 px, `--rail` 64 px (le pa
 `--base-h` la hauteur du récapitulatif en moitié. Une feuille à droite : `top: --entete`, `right` et `bottom: --jeu` ;
 ce qui doit lui laisser la place s'arrête à `largeur + 2 × --jeu` du bord (`body.insp-epingle`, `body.fiche-ouverte`) ;
 la carte flottante (`body.insp-flotte`) ne prend aucune place.
+
+### Les composants communs : UNE règle chacun (v72, l'audit des pages)
+
+L'audit a compté ~20 formes de bouton, 2 styles d'onglets, 3 matières de menu, 2 systèmes de bulles et 3 façons de
+confirmer. La règle ci-dessous est posée dans `src/style.css` (« LES COMPOSANTS COMMUNS ») : un domaine **emploie ces
+classes** (ou, pour une forme qui lui est propre, leurs jetons `--h-*`, `--r-*`) ; il ne redessine pas un bouton, un
+onglet ou une bulle. **Une même action a la même forme partout** (« Exporter CSV » est au trait sur toutes les pages).
+
+| composant | la règle | les classes (style.css) |
+|---|---|---|
+| **Bouton** | Trois rôles : **plein** à l'encre (l'action principale, une par écran), **au trait** (le secondaire), **lien** (le tertiaire, sans soulignement au repos ; il se souligne au survol — dans une phrase, il garde un trait discret). Deux hauteurs : 34 (une feuille, la table) et 30 (une barre d'outils dense). Toujours 13 px / 500, icône 16, coin 10. **Danger** : au trait rouge ; plein rouge seulement dans la confirmation de ce qui ne se rattrape pas. Éteint : à plat, gris, lisible (4,5:1), jamais un fantôme à 45 %. | `.btn` + `.cuivre` (plein) · `.papier` (au trait) · `.lien` ; `.dense` ; `.danger`, `.cuivre.danger` ; `.rond`, `.rd` (icône seule) |
+| **Onglet** | **Souligné**, 40 px, 13 px / 500 (600 choisi), son compte à l'encre seconde sans pastille. Une rangée trop longue défile et s'estompe au bord qui cache un onglet. Ce qui change de page est un onglet (Normes · Bible des barrettes, les feuilles de la base SEE, les onglets du récapitulatif). | `.onglets` > `button.onglet[role=tab][aria-selected]`, `.onglet-n` |
+| **Segment** | Seulement pour **2–3 modes exclusifs d'une même vue** (une taille, une portée, un tri). | `.segment` > `button[aria-pressed]` |
+| **Puce** | Pour **filtrer** : 28 px, coin 6, au trait au repos ; pressée, le fond doux de l'action et son filet (`--accent-soft`, `--accent-line`), jamais noir plein ; son compte à l'encre seconde. | `.puce[aria-pressed]`, `.puce-n` |
+| **Badge** | Un **état** (à confirmer, modifiée, ajoutée) : une pilule de 20 px, le fond doux de l'état, pas cliquable. | `.badge` + `.ok` / `.att` / `.ko` |
+| **Champ** | 34 px, coin 10, filet `--s-line-2`, `--anneau` au clavier ; dans une ligne de tableau, 28 px, coin 6. Une recherche a toujours sa loupe à gauche et × pour la vider. | `.filtre` (+ `.vider`), `.champ` |
+| **Tableau** | Trois densités : **dense 32** (les normes, SEE, les aperçus), **normale 44** (le récapitulatif, les plans, la nomenclature), **riche 56** (une ligne qui porte un dessin : la bible). En-tête 32 px, collé, 12 px / 500 à l'encre seconde. Identifiants en chasse fixe à gauche, nombres à droite en chiffres tabulaires à décimales fixes, texte en Inter. Un filet `--s-line` entre les lignes. Une colonne que les lignes montrées ne remplissent pas ne s'écrit pas. | `table.tableau` (+ `.normal`, `.riche`) ; `td.id`, `.d`, `td.texte` |
+| **Bulle** | **Une seule** : claire (`--bulle`, `--bulle-t`), 12 px / 400, coin 8, un anneau d'encre et une ombre (`--sh-bulle` : elle se détache aussi du papier blanc), après 400 ms de survol (tout de suite au clavier), 160 signes au plus. **Plus de `title=`** sur un contrôle visible : `data-bulle` et `lierBulles(boîte)` (08-fiche) ; `title=` seulement sur ce qui est tronqué, pour le nom entier. | `.bulle` (le nom d'un outil), `.bulle-texte` (le pourquoi : `data-bulle`), `.menu-bulle` (une ligne du menu ⋮) |
+| **Menu** | Tout ce qui tombe d'un bouton est **le même menu** : le verre dense de la nuit (l'encre claire de l'îlot), coin 14, lignes de 34 px, une icône de 16 au trait, le raccourci à droite ; qu'il tombe sur la table ou sur une feuille blanche. | `.menu-verre` (et `.menu`, `.q-liste`, `.doc-menu-l`, qui la portent déjà) |
+| **Mot qui passe** | L'**info** : du verre, une ligne, elle s'efface d'elle-même (2,8 s). L'**erreur** : le verre teinté de rouge et un filet rouge (pas seulement un point), elle reste jusqu'au clic et offre le geste qui répare. Une suppression offre « Rétablir » (8 s). Au téléphone, il se pose en bas, sous le pouce. | `#toast`, `#toast.erreur`, `.toast-voir` |
+| **Confirmation** | **Faire, puis « Rétablir »** (le mot qui passe et son geste) pour tout ce qui se défait ; une confirmation **écrite dans la carte** seulement pour ce qui ne se rattrape pas (supprimer une installation, oublier la base), son bouton en plein rouge. **Jamais** `confirm()` ni `alert()` du navigateur. | `.btn.cuivre.danger` dans la carte |
 
 ## 5. Les composants communs (noms de classes, à réutiliser tels quels)
 
@@ -320,15 +345,22 @@ la carte flottante (`body.insp-flotte`) ne prend aucune place.
   `retourAuto(cle, valeurAuto)` → `button.fs-auto[data-auto]` (« ↺ » et la valeur rendue).
 - **État** `.fi-etat.ok|.att|.ko` : un point de sa couleur et un mot (l'index, la comparaison).
   La **route** d'un fil est un trait de sa couleur (`.fi-puce`, `.fi-route`).
-- **Puce** `.fi-chip` (un choix ; pressée : filet d'encre, fond blanc) ; **segment** `.segment` (le pressé en relief).
+- **Puce** `.puce` (un filtre ; pressée : le fond doux de l'action, § 4) — `.fi-chip` dans une fiche (un choix ; pressée :
+  filet d'encre, fond blanc) ; **segment** `.segment` (le pressé en relief) ; **onglet** `.onglets` > `.onglet` ; **badge**
+  `.badge` (un état, en pilule).
 - **Carte** `.fi-cadre` ; **tuile** `.fi-tuile` (une étiquette, une valeur forte ; le câble seulement) ; **étiquette** `.fc-k`, `.fi-tuile-k`
   (Inter 500, `--t-2`, avec sa majuscule) ; `.sur`, `th` ailleurs.
 - **Ligne de câble** `.fi-fil` (un contact, une ligne de la comparaison, un câble d'une masse) ou `.fi-ia` (un câble et ses mesures) dans une liste
   `.fi-liste` (colonnes portées par la liste, `subgrid` ; en-têtes `.fi-entetes` collés sous la barre).
-- **Boutons** : `.btn.cuivre` (plein, à l'encre : l'action principale, une par écran), `.btn.papier` (secondaire),
-  `.btn.lien`, `.fi-bouton` (pied de fiche), `.fi-lien`, `.rd` (icône seule, carré gris quand il est pressé).
+- **Boutons** : `.btn.cuivre` (plein, à l'encre : l'action principale, une par écran), `.btn.papier` (au trait :
+  secondaire), `.btn.lien` (tertiaire, sans soulignement au repos), `.dense` (30 px), `.danger` ; `.fi-bouton` (pied de
+  fiche), `.rd` (icône seule, carré gris quand il est pressé). Un lien de document est un `.btn.lien` (plus de `.fi-lien`
+  hors d'une fiche).
 - **Bulles** : `.bulle` (le nom d'un outil) ; `data-aide` sur une ligne du menu (ce qu'elle fait, en une ou deux
-  phrases, 160 signes au plus).
+  phrases, 160 signes au plus) ; `data-bulle` partout ailleurs (le pourquoi d'un geste ou d'une valeur — la page des
+  normes, la bible, la nomenclature : `lierBullesDoc()`, 08-normes). Jamais `title=` sur un contrôle visible.
+- **Le menu « ··· » d'un document** (`menuDoc`, `lierMenusDoc`, 08-normes) : le verre dense des menus ; ouvert, la bulle
+  de son bouton se tait.
 - **Icônes** : SVG 24 × 24 en traits de 1,5 px, `stroke: currentColor`, dans `ICONES` (08-fiche) ou en ligne.
 
 ## 6. Les règles de fabrication
