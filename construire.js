@@ -38,6 +38,9 @@ const xlsx = fs.readFileSync(path.join(ICI, 'lib', 'xlsx.min.js'), 'utf8');
 const VENDOR = path.join(ICI, 'vendor');
 const vendor = f => fs.existsSync(path.join(VENDOR, f)) ? fs.readFileSync(path.join(VENDOR, f), 'utf8').replace(/<\/script/gi, '<\\/script') : '';
 const pdfjs = vendor('pdf.min.js'), pdfjsWorker = vendor('pdf.worker.min.js');
+/* fflate (MIT, vendor/LICENCE-fflate.txt — 0.8.2, build UMD) ouvre et écrit les fichiers Visio (.vsdx : un zip d'XML ;
+   08-visio, 09-visio), en synchrone : 33 Ko, aucun Worker. */
+const fflate = vendor('fflate.min.js');
 // les normes embarquées : tous les CSV de normes/, à la suite — la norme livrée est un exemple (normes/LISEZMOI.md)
 const NORMES = path.join(ICI, 'normes');
 const normes = fs.existsSync(NORMES) ? fs.readdirSync(NORMES).filter(f => /\.csv$/i.test(f)).sort().map(f => fs.readFileSync(path.join(NORMES, f), 'utf8')).join('\n\n') : '';
@@ -89,6 +92,10 @@ ${pdfjs}
 </script>
 <script type="text/plain" id="pdfjs-worker">
 ${pdfjsWorker}
+</script>
+<!-- Le zip des fichiers Visio (fflate, MIT : vendor/LICENCE-fflate.txt) : 08-visio ouvre un .vsdx et en écrit un. -->
+<script>
+${fflate}
 </script>
 </body>
 </html>

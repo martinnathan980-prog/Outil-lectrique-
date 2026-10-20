@@ -175,6 +175,7 @@ async function rangerAilleurs(L, nom, fichier) { const b = lireBible(L.texte);
    retest attend « Charger » ; le reste est une erreur dite dans la carte du retest. */
 async function ouvrirFichier(fichier) { if (!fichier) return; const nom = fichier.name || 'le fichier';
   if (estPdf(fichier)) { ouvrirPdf(fichier); return; }   // un PDF de schéma : la visionneuse, puis le retest qu'on en lit (08-pdf)
+  if (estVisio(fichier) || estVisioAncien(fichier)) { ouvrirVisio(fichier); return; }   // un schéma Visio (.vsdx) : sa relecture (08-visio)
   if (await routerBaseSEE(fichier)) return;   // l'Excel des vues de SEE (EED_View…) : il se résume, il ne s'ouvre pas comme un retest (08-see)
   dire('Lecture de ' + guillemets(nom) + '…');
   const L = await lireLeFichier(fichier);
