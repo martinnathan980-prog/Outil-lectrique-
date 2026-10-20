@@ -642,8 +642,9 @@ function couleursDesRoutes() { const choisies = app.contrat.couleursRoutes || {}
 function legendeDesRoutes(fils, routeDe, routes) { const n = new Map(); fils.forEach(w => { const r = routeDe(w); n.set(r, (n.get(r) || 0) + 1); });
   if (![...n.keys()].some(Boolean)) return [];
   return [...n].sort((a, b) => (!a[0]) - (!b[0]) || triNaturel(a[0], b[0])).map(([route, k]) => ({ route, n: k, couleur: routes.get(route) || null })); }
-function folioCourant() { const P = plans();
-  return (app.plan !== '*' && P.length > 1) ? (app.plan + ' / ' + P.length) : '1 / 1'; }
+// le folio du cartouche : son rang, le compte, son nom (un dessin FWD s'écrit sous le titre, 06 `cartoucheSvg`)
+function folioCourant() { const P = plans(), i = P.indexOf(app.plan);
+  return (app.plan !== '*' && P.length > 1 && i >= 0) ? { rang: i + 1, total: P.length, nom: app.plan } : { rang: 1, total: 1, nom: '' }; }
 /* Ce qui s'écrit sous le repère : la désignation si on en a donné une ;
    sinon, pour une barrette, la référence choisie dans la bible, et pour une
    prise de coupure, le part number que le fichier porte ; sinon, la DESCRIPTION
@@ -656,21 +657,45 @@ function designationDe(n) { const d = app.contrat.designations.get(n);
   if (estCoupure(n)) return coupureEnModules(n) ? planDeCoupure(n).plan.reference || coupureInfos(n, verite(), app.bible).reference : coupureInfos(n, verite(), app.bible).reference;
   return descriptionDuRetest(n); }
 /* La bible, la norme et les hypothèses de simulation (leur persistance, leur adoption) vivent dans 08-normes.js : relireBible, adopterBible, relireNorme, adopterNorme, relireSimu, memoriserSimu. */
+/* PEINDRE : la feuille et le dessin, en SVG. Le CHOIX (les crochets du bloc choisi) n'en fait plus partie : il se pose à
+   part, dans son bloc (`peindreChoix`). Et la scène ne se refait que si ce qu'elle montre a changé — le dessin, le folio,
+   le cartouche, ce qui s'écrit sous les repères (désignations, calibres, autres folios) : sa SIGNATURE. Choisir un bloc
+   (`app.choisi = …; peindre()`, partout dans l'outil) ne réécrit plus tout le folio pour quatre crochets (l'audit de
+   fluidité v72 : 290 ms par clic, dont la moitié à refaire le SVG). */
+let peint = { dessin: null, sig: '' };
 function peindre() {
   const svg = $('svg');
   $('vide').hidden = app.contrat.liaisons.length > 0 || !app.planId;   // un plan de la bibliothèque, vide : il le dit
   // pas de dessin : la table vide — ou, si le folio se place au loin, l'attente à sa place
-  if (!app.dessin) { svg.innerHTML = ''; appliquerVue(); montrerAttente(); return; }
+  if (!app.dessin) { svg.innerHTML = ''; peint = { dessin: null, sig: '' }; appliquerVue(); montrerAttente(); return; }
+  const D = app.dessin, folio = folioCourant(), des = new Map(), cal = new Map(), ail = ailleursDesReperes();
+  const designation = n => { if (!des.has(n)) des.set(n, designationDe(n)); return des.get(n); };
+  const disjoncteur = n => { if (!cal.has(n)) cal.set(n, { calibre: calibreAuFolio(n) }); return cal.get(n); };
+  const sig = JSON.stringify([folio, app.contrat.cartouche, D.comps.map(c => [designation(c.name), c.kind === 'equip' && estDisjoncteur(c.name) ? disjoncteur(c.name).calibre : null, c.kind === 'equip' ? ail(c.name) : null])]);
+  if (peint.dessin === D && peint.sig === sig && $('scene')) { peindreChoix(); appliquerVue(); montrerAttente(); return; }
   svg.innerHTML = styleDessin() + `<g id="scene" transform="translate(${app.vue.tx},${app.vue.ty}) scale(${app.vue.s})">`
-    + sceneSvg(app.dessin, app.contrat.cartouche, folioCourant(), designationDe, app.choisi, n => ({ calibre: calibreAuFolio(n) })) + '</g>';
-  appliquerVue(); montrerAttente();
+    + sceneSvg(D, app.contrat.cartouche, folio, designation, null, disjoncteur, ail) + '</g>';
+  peint = { dessin: D, sig }; peindreChoix(); appliquerVue(); montrerAttente();
 }
+/* Les autres folios où paraît chaque repère, par leur rang (« ↔ f. 2 · 4 » sous le repère, 06) : une passe sur le contrat. */
+function ailleursDesReperes() { const P = plans(), ou = new Map(); if (P.length < 2 || app.plan === '*') return () => null;
+  app.contrat.liaisons.forEach(l => { if (!l.plan || l.plan === app.plan) return; [l.de, l.vers].forEach(n => { if (n) (ou.get(n) || ou.set(n, new Set()).get(n)).add(l.plan); }); });
+  return n => { const s = ou.get(n); return s ? [...s].map(p => P.indexOf(p) + 1).filter(r => r > 0).sort((a, b) => a - b) : null; }; }
+/* LE CHOIX, posé à la main dans le folio déjà peint : les crochets autour du symbole de chaque bloc qui porte le repère
+   choisi (06 `crochetsDe` : une réglette, autour de sa réglette), ceux d'une barrette à poser autour de sa ligne. */
+function peindreChoix() { const sc = $('scene'); if (!sc || !app.dessin) return; const D = app.dessin, nom = app.choisi;
+  sc.querySelectorAll('.selbox').forEach(e => e.remove()); sc.querySelectorAll('.vt.sel').forEach(g => g.classList.remove('sel'));
+  if (nom == null || nom === '') return; const n = xmlSur(nom);
+  sc.querySelectorAll('.comp').forEach(g => { if (g.dataset.name !== n) return; const c = D.comps[+g.dataset.k]; if (c) g.insertAdjacentHTML('afterbegin', crochetsDe(c)); });
+  sc.querySelectorAll('.vt').forEach(g => { if (g.dataset.vt !== n) return; const b = (D.barrettes || []).find(x => x.nomVT === nom); if (!b) return; g.classList.add('sel'); g.insertAdjacentHTML('beforeend', crochetsDeBarrette(b)); }); }
 function redessiner() { calculer(); peindre(); synchroniser(); rallumer(); }
 
 /* ---- la vue : zoom, cadrage, l'ombre sous la feuille ------------------- */
 const cadre = () => $('planche').getBoundingClientRect();
 function appliquerVue() {
-  const sc = $('scene'); if (sc) sc.setAttribute('transform', `translate(${app.vue.tx},${app.vue.ty}) scale(${app.vue.s})`);
+  const sc = $('scene'); if (sc) { sc.setAttribute('transform', `translate(${app.vue.tx},${app.vue.ty}) scale(${app.vue.s})`);
+    // LOIN : un trait de câble ferait moins d'un pixel d'écran — les traits s'épaississent (06), les routes gardent leur couleur
+    const loin = app.vue.s * 0.95 < 0.9; if (sc.classList.contains('loin') !== loin) sc.classList.toggle('loin', loin); }
   // la table glisse d'un rien sous la feuille (08-table), le fil de la carte suit son bloc (08-carte)
   parallaxeTable(); dessinerLien();
   // le zoom se lit par rapport à la feuille : la même feuille, cadrée, affiche le même pourcentage sur tous les folios
@@ -694,39 +719,110 @@ function marges() { const tel = telephone(), folios = !$('folios').hidden, vu = 
   if (tel) { const d = vu('fiche') || vu('inspecteur') || bas; return { haut: 16 + entete, bas: (d ? d.offsetHeight + 8 : 8) + 56 + (folios ? 52 : 0), gauche: 12, droite: 12 }; }
   return { haut: 24 + entete, bas: (bas ? bas.offsetHeight + 16 : 0) + (folios ? pied + 24 : 24), gauche: rail + 24, droite: 24 + (droite ? droite.offsetWidth + 8 : 0) }; }
 let anim = null, vueVisee = null;   // l'animation de la vue en cours, et la vue où elle va (la carte s'y place d'avance : 08-carte)
+/* LA VUE GLISSE vers sa cible (260 ms). L'échelle va d'un pas égal en proportion (son logarithme) et le point du dessin au
+   centre de la planche glisse droit vers le sien : l'interpolation de tx, ty et s chacun pour soi faisait d'abord fuir ce
+   qu'on allait voir, puis le ramenait (un zoom fort « en S »). La première image ne revient jamais en arrière (l'instant
+   d'une image peut précéder celui de l'appel). */
 function animerVue(cible, doux) {
-  if (anim) { cancelAnimationFrame(anim); anim = null; } vueVisee = cible;
+  if (anim) { cancelAnimationFrame(anim); anim = null; } vueVisee = cible; VUE.main = false;   // une vue que l'outil pose (08, `garderVue`)
   if (!doux || mouvementReduit()) { app.vue = cible; appliquerVue(); planifierEcart(false); return; }
-  const de = { ...app.vue }, t0 = performance.now(), D = 260;
-  const pas = t => { const k = Math.min(1, (t - t0) / D), e = 1 - Math.pow(1 - k, 3);
-    app.vue = { s: de.s + (cible.s - de.s) * e, tx: de.tx + (cible.tx - de.tx) * e, ty: de.ty + (cible.ty - de.ty) * e };
+  const de = { ...app.vue }, t0 = performance.now(), D = 260, r = cadre(), X = r.width / 2, Y = r.height / 2;
+  const cA = { x: (X - de.tx) / de.s, y: (Y - de.ty) / de.s }, cB = { x: (X - cible.tx) / cible.s, y: (Y - cible.ty) / cible.s }, lA = Math.log(de.s), lB = Math.log(cible.s);
+  const pas = t => { const k = Math.max(0, Math.min(1, (t - t0) / D)), e = 1 - Math.pow(1 - k, 3);
+    if (k >= 1) app.vue = { ...cible };
+    else { const s = Math.exp(lA + (lB - lA) * e), cx = cA.x + (cB.x - cA.x) * e, cy = cA.y + (cB.y - cA.y) * e; app.vue = { s, tx: X - cx * s, ty: Y - cy * s }; }
     appliquerVue(); anim = k < 1 ? requestAnimationFrame(pas) : null; };
   anim = requestAnimationFrame(pas);
   planifierEcart(doux);
 }
+// la main reprend la vue (un glisser, la molette, les doigts, un pas de zoom) : l'animation en cours s'arrête où elle est —
+// elle ramenait sinon la vue sous la main, image après image, jusqu'à sa cible
+function arreterVue() { if (anim) { cancelAnimationFrame(anim); anim = null; } vueVisee = null; }
+/* La place libre du plan (la planche moins ses marges) : sa boîte, sa largeur, sa hauteur, son centre. */
+function placeDuPlan() { const r = cadre(), m = marges(), W = Math.max(80, r.width - m.gauche - m.droite), H = Math.max(80, r.height - m.haut - m.bas);
+  return { r, m, W, H, X: m.gauche + W / 2, Y: m.haut + H / 2 }; }
+/* AJUSTER : la FEUILLE entière (le cartouche compris), ou le DESSIN seul — ses blocs, ses câbles, ses repères, au plus
+   près : un petit folio se lit d'emblée (le folio 1 de l'exemple passe de 59 à 112 %, l'audit v72 ; il nageait dans deux
+   tiers de papier vide). Le bouton, le pourcentage et la touche 0 ALTERNENT (`VUE.geste`, posé par la main qui le demande,
+   `lierPlanche`) : déjà cadré, on passe à l'autre cadrage ; ailleurs, on revient au cadrage choisi. Le cadrage choisi vaut
+   pour tous les folios, et un recadrage de l'outil (un panneau qui s'ouvre, un folio jamais vu) le suit. */
+const VUE = { cadrage: 'feuille', geste: false, parFolio: null, retours: [], main: false };
+function boiteDuDessin(d) { let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; const v = (x, y) => { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); };
+  d.comps.forEach(c => { v(c.x, c.y - 16); v(c.x + c.w, c.y + c.h + 14); });   // la lettre d'un connecteur au-dessus, le repère dessous
+  d.fils.forEach(w => (w.pts || []).forEach(q => v(q.x, q.y)));
+  (d.barrettes || []).forEach(b => { v(b.x - 12, b.y1 - 6); v(b.x + 12, b.y2 + 16); });
+  return isFinite(x0) ? { x: x0, y: y0, w: Math.max(40, x1 - x0), h: Math.max(40, y1 - y0) } : d.bbox; }
+// le zoom va de la moitié de la feuille entière à 600 % (de 4 à 493 % hier : un timbre-poste, ou un pixel)
+function bornesZoom(P) { const d = app.dessin; if (!d) return { min: ZMIN, max: ZMAX }; P = P || placeDuPlan();
+  const bb = d.bbox, k = bb.k || 1, feuille = Math.min(P.W / bb.w, P.H / bb.h);
+  return { min: Math.max(ZMIN, feuille / 2), max: Math.max(feuille, Math.min(ZMAX, 6 / k)) }; }
+function cadrageDe(quoi) { const d = app.dessin, P = placeDuPlan(), Z = bornesZoom(P), dessin = quoi === 'dessin';
+  const b = dessin ? boiteDuDessin(d) : d.bbox, marge = dessin ? 24 : 0;
+  const s = Math.max(Z.min, Math.min(dessin ? Math.min(Z.max, 3.2) : Z.max, Math.min(P.W / (b.w + 2 * marge), P.H / (b.h + 2 * marge))));
+  return { s, tx: P.X - (b.x + b.w / 2) * s, ty: P.Y - (b.y + b.h / 2) * s }; }
+const memeVue = (a, b) => Math.abs(a.s - b.s) <= 0.015 * b.s && Math.abs(a.tx - b.tx) < 6 && Math.abs(a.ty - b.ty) < 6;
 function ajuster(doux) {
-  if (!app.dessin) { app.vue = { s: 1, tx: 40, ty: 40 }; appliquerVue(); return; }
-  const bb = app.dessin.bbox, r = cadre(), m = marges();
-  const W = Math.max(80, r.width - m.gauche - m.droite), H = Math.max(80, r.height - m.haut - m.bas);
-  const s = Math.max(ZMIN, Math.min(ZMAX, Math.min(W / bb.w, H / bb.h)));
-  animerVue({ s, tx: m.gauche + (W - bb.w * s) / 2 - bb.x * s, ty: m.haut + (H - bb.h * s) / 2 - bb.y * s }, doux);
-}
-function zoomer(k, mx, my) { const r = cadre(); if (mx == null) { mx = r.width / 2; my = r.height / 2; }
-  const wx = (mx - app.vue.tx) / app.vue.s, wy = (my - app.vue.ty) / app.vue.s;
-  const ns = Math.max(ZMIN, Math.min(ZMAX, app.vue.s * k));
-  app.vue = { s: ns, tx: mx - wx * ns, ty: my - wy * ns }; appliquerVue(); }
+  if (!app.dessin) { VUE.geste = false; app.vue = { s: 1, tx: 40, ty: 40 }; appliquerVue(); return; }
+  if (VUE.geste) { VUE.geste = false; const ici = anim && vueVisee ? vueVisee : app.vue; if (memeVue(ici, cadrageDe(VUE.cadrage))) VUE.cadrage = VUE.cadrage === 'feuille' ? 'dessin' : 'feuille'; }
+  animerVue(cadrageDe(VUE.cadrage), doux); }
+// ce que fera « Ajuster » : la bulle du bouton et son nom le disent (lus quand on s'en approche)
+function direAjuster() { const b = $('zfit'); if (!b || !app.dessin) return; const ici = anim && vueVisee ? vueVisee : app.vue;
+  const vers = memeVue(ici, cadrageDe(VUE.cadrage)) ? (VUE.cadrage === 'feuille' ? 'dessin' : 'feuille') : VUE.cadrage, mot = vers === 'dessin' ? 'Le dessin, au plus près' : 'La feuille entière';
+  const bulle = b.querySelector('.bulle'); if (bulle) bulle.innerHTML = esc(mot) + '<kbd>0</kbd>'; b.setAttribute('aria-label', mot + ' (0)'); }
+/* Les PAS du zoom (les boutons, + et −) tombent sur des CRANS — … 50, 75, 100, 150, 200, 300 % de la feuille — au lieu de
+   59 → 73 → 92 → 115 % ; la molette et les doigts restent continus. */
+const CRANS = [0.1, 0.15, 0.2, 0.25, 0.35, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6];
+function zoomer(k, mx, my) { arreterVue(); const P = placeDuPlan(); if (mx == null) { mx = P.X; my = P.Y; }
+  const wx = (mx - app.vue.tx) / app.vue.s, wy = (my - app.vue.ty) / app.vue.s, kf = (app.dessin && app.dessin.bbox.k) || 1, Z = bornesZoom(P);
+  let ns = app.vue.s * k;
+  if (Math.abs(k - 1.25) < 1e-9 || Math.abs(k - 0.8) < 1e-9) { const p = app.vue.s * kf, c = k > 1 ? CRANS.find(x => x > p * 1.02) : [...CRANS].reverse().find(x => x < p * 0.98); if (c != null) ns = c / kf; }
+  ns = Math.max(Z.min, Math.min(Z.max, ns));
+  app.vue = { s: ns, tx: mx - wx * ns, ty: my - wy * ns }; VUE.main = true; appliquerVue(); }
+// un zoom donné (1 : 100 %, 2 : 200 % de la feuille), autour d'un point de la planche (la souris), sinon du centre de la place
+function zoomerA(pct, mx, my) { if (!app.dessin) return; const kf = app.dessin.bbox.k || 1; zoomer(pct / (app.vue.s * kf), mx, my); }
+/* LA VUE DE CHAQUE FOLIO : on retrouve un folio comme on l'a laissé (l'audit v72 : à 200 % sur un coin du folio 3, aller
+   au 4 et revenir rendait la page entière). Elle se garde par plan et par folio — le point du dessin au centre de la
+   place, et l'échelle : une fenêtre d'une autre taille la retrouve au même endroit —, dans ce navigateur, d'une session à
+   l'autre (`retrouverVue`). */
+const CLE_VUES = 'atelier.vues.v1', VUES_GARDEES = 120;
+const cleDeVue = () => (app.planId || app.nom || '') + '\u0001' + app.plan;
+function vuesGardees() { if (VUE.parFolio) return VUE.parFolio; VUE.parFolio = new Map();
+  try { const o = JSON.parse(localStorage.getItem(CLE_VUES) || '[]'); if (Array.isArray(o)) o.forEach(e => { if (Array.isArray(e) && e[1] && e[1].s > 0) VUE.parFolio.set(e[0], e[1]); }); } catch (_) { }
+  return VUE.parFolio; }
+function garderVue() { if (!app.dessin || !app.plan) return;
+  const v = anim && vueVisee ? vueVisee : app.vue, P = placeDuPlan(), M = vuesGardees(), k = cleDeVue();
+  /* une vue que la MAIN a posée (un glisser, la molette, un pas de zoom, les doigts : `VUE.main`) se garde telle quelle ;
+     une vue cadrée, ou posée par l'outil (aller voir un repère, une recherche), se garde comme un CADRAGE — elle se refera
+     dans la place du moment (un tableau ouvert depuis, une autre fenêtre) : on revient au folio, pas à la recherche d'hier */
+  const cadree = ['feuille', 'dessin'].find(q => memeVue(v, cadrageDe(q))) || (VUE.main ? null : VUE.cadrage);
+  M.delete(k); M.set(k, cadree ? { cadre: cadree, s: +v.s.toFixed(4) } : { cx: +((P.X - v.tx) / v.s).toFixed(1), cy: +((P.Y - v.ty) / v.s).toFixed(1), s: +v.s.toFixed(4) });
+  while (M.size > VUES_GARDEES) M.delete(M.keys().next().value);
+  try { localStorage.setItem(CLE_VUES, JSON.stringify([...M])); } catch (_) { } }
+/* Elle se garde quand on QUITTE le folio (`allerAuPlan`) ou la page (`pagehide`) — jamais pendant qu'elle bouge : au
+   lancement, le cadrage d'office écraserait la vue de la veille avant qu'on ait pu la retrouver. */
+/* Retrouver la vue gardée du folio affiché (le folio où l'on revient, le plan qu'on rouvre le lendemain) ; sinon le cadrer.
+   Rend vrai si une vue gardée est revenue. */
+function retrouverVue() { const v = app.dessin && vuesGardees().get(cleDeVue());
+  if (!v) { ajuster(); return false; }
+  if (v.cadre) { animerVue(cadrageDe(v.cadre), false); return true; }
+  const P = placeDuPlan(), Z = bornesZoom(P), s = Math.max(Z.min, Math.min(Z.max, v.s));
+  animerVue({ s, tx: P.X - v.cx * s, ty: P.Y - v.cy * s }, false); VUE.main = true; return true; }
 const versMonde = (cx, cy) => { const r = cadre(); return { x: (cx - r.left - app.vue.tx) / app.vue.s, y: (cy - r.top - app.vue.ty) / app.vue.s }; };
 function filSous(w) { if (!app.dessin) return null; const tol = Math.max(4, 7 / app.vue.s); let best = null, bd = tol;
   const d = (px, py, a, b) => { const dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy; let t = L2 ? ((px - a.x) * dx + (py - a.y) * dy) / L2 : 0; t = Math.max(0, Math.min(1, t)); return Math.hypot(px - (a.x + t * dx), py - (a.y + t * dy)); };
   for (const f of app.dessin.fils) for (let i = 0; i < f.pts.length - 1; i++) { const dd = d(w.x, w.y, f.pts[i], f.pts[i + 1]); if (dd < bd) { bd = dd; best = f; } }
   return best; }
-/* Aller voir quelque chose : on le met au centre du vide, lisible. Au téléphone la place est petite : un bloc haut (un
-   calculateur) y tiendrait en vignette illisible. On le cadre alors sur sa largeur, assez grand pour que son repère se
-   lise (LISIBLE : cent pixels de large), et l'on en montre le haut — le reste se fait défiler au doigt. */
-const LISIBLE = 100;
+/* Aller voir quelque chose (la recherche, l'index, un renvoi) : on le met au centre du vide, LISIBLE — au bureau, jamais
+   sous un numéro de câble de 10 px d'écran (LISIBLE_BUREAU ; 412VC3B arrivait à 78 %, ses numéros à 5 px, l'audit v72),
+   sans qu'un bloc qui tenait dans la place en déborde (300XC1, cinq cents unités de haut, se montre alors entier, au plus
+   près). Au téléphone la place est petite : un bloc haut (un calculateur) y tiendrait en vignette illisible. On le cadre
+   alors sur sa largeur, assez grand pour que son repère se lise (LISIBLE : cent pixels de large), et l'on en montre le
+   haut — le reste se fait défiler au doigt. */
+const LISIBLE = 100, LISIBLE_BUREAU = 10 / FS_FIL;
 function centrerSur(x, y, w, h) { const r = cadre(), m = marges(), W = r.width - m.gauche - m.droite, H = r.height - m.haut - m.bas;
-  let s = Math.max(app.vue.s, Math.min(1.1, Math.min(W / (w + 80), H / (h + 80))));
+  let s = Math.max(app.vue.s, Math.min(LISIBLE_BUREAU, Math.min(W / (w + 80), H / (h + 80))));
   if (telephone()) s = Math.max(s, Math.min(2.5, W / (w + 24), LISIBLE / Math.max(w, 40)));
+  s = Math.min(s, bornesZoom().max);
   const cx = m.gauche + W / 2, cy = m.haut + H / 2, entier = h * s <= H - 16;
   animerVue({ s, tx: cx - (x + w / 2) * s, ty: entier ? cy - (y + h / 2) * s : m.haut + 12 - y * s }, true); }
 function viser(nom) { const c = app.dessin && app.dessin.compDe.get(nom);
@@ -736,22 +832,44 @@ function viserFil(f) { const xs = f.pts.map(p => p.x), ys = f.pts.map(p => p.y);
   const x0 = Math.min(...xs), y0 = Math.min(...ys); centrerSur(x0, y0, Math.max(...xs) - x0, Math.max(...ys) - y0); }
 
 /* ---- la surbrillance : des classes sur le rendu, jamais un recalcul ---- */
-function eteindre() { const sc = $('scene'); if (!sc) return;
+/* Un fil s'allume EN ENTIER : son trait, son numéro et son fond, le bout de fil dessiné dans chaque bloc où il arrive
+   (06 : `data-i` sur chacun) ; s'il part d'une barrette à poser, la barrette et son raccord — le câble à créer — avec lui
+   (W-012 paraissait coupé à VT1). Les blocs s'allument par leur PLACE (`data-k`) : ceux où arrive un bout d'un fil
+   allumé — les trois masses 906G d'un folio ne s'allument plus pour un seul de leurs fils. */
+function eteindre() { const sc = $('scene'); if (!sc) return; effacerSurvolLeger(sc);
   if (sc.classList.contains('focus')) { sc.classList.remove('focus'); sc.querySelectorAll('.hl').forEach(el => el.classList.remove('hl')); } }
-function allumerBloc(nom) { const sc = $('scene'); if (!sc) return; eteindre(); sc.classList.add('focus'); nom = xmlSur(nom);
-  const autres = new Set();
-  sc.querySelectorAll('.cab').forEach(p => { const a = p.dataset.a, b = p.dataset.b; if (a === nom || b === nom) { p.classList.add('hl'); autres.add(a); autres.add(b); } });
-  sc.querySelectorAll('.comp').forEach(g => { if (g.dataset.name === nom || autres.has(g.dataset.name)) g.classList.add('hl'); }); }
-/* Plusieurs fils à la fois : ceux d'un module de barrette qu'on survole. */
-function allumerFils(ws) { const sc = $('scene'); if (!sc) return; eteindre(); if (!ws.length) return; sc.classList.add('focus');
-  const idx = new Set(ws.map(w => w.i)), noms = new Set(); ws.forEach(w => { noms.add(xmlSur(w.de)); noms.add(xmlSur(w.vers)); });
-  sc.querySelectorAll('.cab').forEach(p => { if (idx.has(+p.dataset.i)) p.classList.add('hl'); });
-  sc.querySelectorAll('.comp').forEach(g => { if (noms.has(g.dataset.name)) g.classList.add('hl'); });
-  sc.querySelectorAll('.vt').forEach(g => { if (noms.has(g.dataset.vt)) g.classList.add('hl'); }); }
+// les blocs (leur place dans le dessin) où arrive un bout du fil
+function blocsDuFil(w) { const D = app.dessin, out = []; if (!D) return out; const bouts = [w.epA, w.epB, w.pts[0], w.pts[w.pts.length - 1]].filter(Boolean);
+  D.comps.forEach((c, k) => { if ((c.name === w.de || c.name === w.vers) && bouts.some(q => q.x >= c.x - 0.6 && q.x <= c.x + c.w + 0.6 && q.y >= c.y - 0.6 && q.y <= c.y + c.h + 0.6)) out.push(k); });
+  return out; }
+// les barrettes à poser d'où part un fil (le contrat du folio les nomme)
+function barrettesDuFil(w, L) { const l = L[w.i]; return l ? [l.de, l.vers].filter(n => n && VT_A_POSER.test(n)) : []; }
+// ce que des fils allument : leurs indices, les blocs où ils arrivent, les barrettes à poser d'où ils partent
+function ceQuAllument(ws, blocs) { const L = liaisonsDuPlan(), idx = new Set(), vts = new Set(); blocs = blocs || new Set();
+  ws.forEach(w => { idx.add(w.i); blocsDuFil(w).forEach(k => blocs.add(k)); barrettesDuFil(w, L).forEach(n => vts.add(n)); });
+  return { idx, blocs, vts }; }
+const porteUnDe = (e, idx) => e.dataset.i.split(' ').some(i => idx.has(+i));
+function allumerSur(sc, A) { sc.classList.add('focus');
+  sc.querySelectorAll('[data-i]').forEach(e => { if (porteUnDe(e, A.idx)) e.classList.add('hl'); });
+  sc.querySelectorAll('.comp').forEach(g => { if (A.blocs.has(+g.dataset.k)) g.classList.add('hl'); });
+  if (A.vts.size) sc.querySelectorAll('[data-vt]').forEach(g => { if (A.vts.has(g.dataset.vt)) g.classList.add('hl'); }); }
+function allumerBloc(nom) { const sc = $('scene'); if (!sc || !app.dessin) return; eteindre(); const D = app.dessin, blocs = new Set();
+  D.comps.forEach((c, k) => { if (c.name === nom) blocs.add(k); });
+  allumerSur(sc, ceQuAllument(D.fils.filter(w => !w.shunt && (w.de === nom || w.vers === nom)), blocs)); }
+/* Plusieurs fils à la fois : ceux d'une borne, d'un module de barrette qu'on survole. */
+function allumerFils(ws) { const sc = $('scene'); if (!sc) return; eteindre(); if (!ws.length) return; allumerSur(sc, ceQuAllument(ws)); }
 const allumerFil = f => allumerFils([f]);
 // une barrette à poser s'allume avec ses fils ; par sa clé de fil (08 bis), un fil ou, à défaut, la barrette de son raccord
 function allumerBarretteAPoser(nom) { const sc = $('scene'); if (!sc) return; const ws = filsDeBarretteAPoser(nom); allumerFils(ws);
-  if (!ws.length) { eteindre(); sc.classList.add('focus'); } sc.querySelectorAll('.vt').forEach(g => { if (g.dataset.vt === xmlSur(nom)) g.classList.add('hl'); }); }
+  if (!ws.length) { eteindre(); sc.classList.add('focus'); } sc.querySelectorAll('[data-vt]').forEach(g => { if (g.dataset.vt === xmlSur(nom)) g.classList.add('hl'); }); }
+/* LE SURVOL NE VOLE PLUS LE CHOIX : quand un objet est choisi (sa fiche ouverte), ce qu'on survole se marque à peine
+   (`.sv` : 62 % pour un bloc, 55 % pour ses fils) ; le choix, ses crochets et ses fils restent pleins (l'audit v72 : la
+   fiche disait 352PM2, le plan allumait 351PM1, les crochets du choisi tombaient à 28 %). */
+function survolLeger(ws, blocs) { const sc = $('scene'); if (!sc) return; effacerSurvolLeger(sc); if (!sc.classList.contains('focus')) return;
+  const A = ceQuAllument(ws, blocs);
+  sc.querySelectorAll('[data-i]').forEach(e => { if (!e.classList.contains('hl') && porteUnDe(e, A.idx)) e.classList.add('sv'); });
+  sc.querySelectorAll('.comp').forEach(g => { if (A.blocs.has(+g.dataset.k) && !g.classList.contains('hl')) g.classList.add('sv'); }); }
+function effacerSurvolLeger(sc) { sc = sc || $('scene'); if (sc) sc.querySelectorAll('.sv').forEach(e => e.classList.remove('sv')); }
 function allumerCle(k) { const w = filDeCle(k); if (w) { allumerFil(w); return true; }
   const l = k && k[0] === 'p' ? liaisonsDuPlan()[+k.slice(1)] : null; if (l && l.aPoser) { allumerBarretteAPoser(l.aPoser); return true; } return false; }
 /* Ce qui est choisi reste allumé après un survol ou un redessin ; la ligne
@@ -825,19 +943,19 @@ function dessinSurvol(p, u) { if (!p) return { h: '', rendre: null };
   if (!estRetouche(p)) return { h, rendre: null };
   const r = 10 * u, k = 0.6 * u;
   h += `<g class="rt-rendre" role="button" aria-label="Rendre au moteur"><circle cx="${f1(rx)}" cy="${f1(ry)}" r="${n3(r)}" stroke-width="${n3(u)}"/>`
-    + `<path transform="translate(${n3(rx - 12 * k)} ${n3(ry - 12 * k)}) scale(${n3(k)})" d="M4 12a8 8 0 1 0 2.3-5.7M4 4v4h4" stroke-width="2"/><title>Rendre au moteur</title></g>`;
+    + `<path transform="translate(${n3(rx - 12 * k)} ${n3(ry - 12 * k)}) scale(${n3(k)})" d="M4 12a8 8 0 1 0 2.3-5.7M4 4v4h4" stroke-width="2"/></g>`;
   return { h, rendre: { x: rx, y: ry } }; }
 
 function lierPlanche() {
   const stage = $('planche'); const pointeurs = new Map(); let mode = null, pan = null, pinch = null, bouge = false, origine = null;
   const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
-  const debutPinch = () => { mode = 'pinch'; pan = null; const r = cadre(); const p = [...pointeurs.values()];
+  const debutPinch = () => { mode = 'pinch'; pan = null; arreterVue(); const r = cadre(); const p = [...pointeurs.values()];
     const mx = (p[0].x + p[1].x) / 2 - r.left, my = (p[0].y + p[1].y) / 2 - r.top;
-    pinch = { d: dist(p[0], p[1]), wx: (mx - app.vue.tx) / app.vue.s, wy: (my - app.vue.ty) / app.vue.s, s0: app.vue.s }; };
+    pinch = { d: dist(p[0], p[1]), wx: (mx - app.vue.tx) / app.vue.s, wy: (my - app.vue.ty) / app.vue.s, s0: app.vue.s, Z: bornesZoom() }; };
   const suitPinch = () => { const r = cadre(); const p = [...pointeurs.values()]; if (p.length < 2) return;
-    const ns = Math.max(ZMIN, Math.min(ZMAX, pinch.s0 * dist(p[0], p[1]) / pinch.d));
+    const ns = Math.max(pinch.Z.min, Math.min(pinch.Z.max, pinch.s0 * dist(p[0], p[1]) / pinch.d));
     const mx = (p[0].x + p[1].x) / 2 - r.left, my = (p[0].y + p[1].y) / 2 - r.top;
-    app.vue = { s: ns, tx: mx - pinch.wx * ns, ty: my - pinch.wy * ns }; appliquerVue(); };
+    app.vue = { s: ns, tx: mx - pinch.wx * ns, ty: my - pinch.wy * ns }; VUE.main = true; appliquerVue(); };
   /* la PRISE (la retouche) : à la souris, appuyer sur ce qui se prend et glisser le déplace ; au doigt, un appui long le
      prend, un glissé simple déplace la vue. `prise` : ce qu'on a pris (priseSous) et le point de départ ; le geste
      commencé, sa préparation (GESTES[genre].preparer), le dessin d'avant (`avant`), la visée (`vise`), la place où il
@@ -909,7 +1027,7 @@ function lierPlanche() {
         return lignesDeGuides(guides, u) + (pris ? cadre('rt-pose', y, false) : '') + cadre('rt-fantome' + (pris ? ' pris' : ''), pr.vise.y, true); },
       mot(pr) { const { c, place: p } = pr, nom = 'la borne ' + pr.etiq + ' de ' + c.name;
         if (!pr.posee) { if (!pr.vise || Math.abs(pr.vise.y - pr.y0) < 0.5) return '';
-          const r = p.refus || {}; return 'Pas de place ici pour ' + nom + (r.refus === 'serre' && r.avec ? ' : la borne ' + r.avec.etiq + (r.deux ? ', d’un autre connecteur, est à moins de deux pas' : ' est à moins d’un pas') : r.refus === 'bloc' && r.avec ? ' : ' + c.name + ' grandirait sur ' + r.avec.name : pr.refuse ? ' : un fil y romprait une règle' : '') + ' — elle reste où elle était.'; }
+          const r = p.refus || {}; return 'Pas de place ici pour ' + nom + (r.refus === 'serre' && r.avec ? ' : la borne ' + r.avec.etiq + (r.deux ? ', d’un autre connecteur, est à moins de deux pas' : ' est à moins d’un pas') : r.refus === 'bloc' && r.avec ? ' : ' + c.name + ' grandirait sur ' + r.avec.name : pr.refuse ? ' : un câble y romprait une règle' : '') + ' — elle reste où elle était.'; }
         const q = p.echange != null ? Object.values(c.rangs).flat().find(x => Math.abs(x.y - p.y) < 0.5) : null;
         return (q ? c.name + ' : les bornes ' + pr.etiq + ' et ' + q.etiq + ' échangent leurs places' : (nom.charAt(0).toUpperCase() + nom.slice(1)) + ' glisse' + (p.pourquoi === 'prise' ? ' au plus près : la place visée était prise' : ''))
           + ' · double-clic pour la rendre au moteur · Ctrl+Z pour défaire.'; } },
@@ -941,7 +1059,7 @@ function lierPlanche() {
           // à la hauteur d'une de ses bornes, le fil en part droit : un guide le dit, de la borne au bout du tronçon
           const borne = e => () => ({ x1: Math.min(e.x, xa), y1: e.y, x2: Math.max(e.x, xb), y2: e.y });
           pr.aimants = [{ d: g.y, fort: true, guide: borne(g) }, { d: d.y, fort: true, guide: borne(d) }, { d: pr.y0, fort: true }]; }
-        return 'déplacer ' + (l.cable || 'le fil'); },
+        return 'déplacer ' + (l.cable || 'le câble'); },
       viser(pr, rx, ry, libre) {
         if (pr.sens === 'V') { const x = pr.x0 + rx; if (libre) return { x: Math.round(x * 2) / 2 };
           const tol = Math.max(PISTE / 2, tolAimant()), g = pr.grille.filter(v => Math.abs(v - x) <= tol).reduce((m, v) => m == null || Math.abs(v - x) < Math.abs(m - x) ? v : m, null);
@@ -972,14 +1090,14 @@ function lierPlanche() {
         const x0 = Math.min(a.x, b.x), x1 = Math.max(a.x, b.x);
         const yp = q ? q.y : pr.y0, guides = pr.aimants.filter(m => m.guide && Math.abs(m.d - yp) < 0.26).map(m => m.guide());
         return lignesDeGuides(guides, u) + (pris ? ligne('rt-pose', x0, yp, x1, yp, u) : '') + ligne('rt-fantome' + (pris ? ' pris' : ''), x0, pr.vise.y, x1, pr.vise.y, u, true); },
-      mot(pr) { const nom = String(pr.l.cable || 'Le fil'), p = pr.place;
-        if (!pr.posee) return pr.vise && !GESTES.fil.immobile(pr.vise, pr) ? 'Pas de passage ici pour ' + nom + ' : il y croiserait un bloc, une borne ou un autre fil — il reste où il était.' : '';
+      mot(pr) { const nom = String(pr.l.cable || 'Le câble'), p = pr.place;
+        if (!pr.posee) return pr.vise && !GESTES.fil.immobile(pr.vise, pr) ? 'Pas de passage ici pour ' + nom + ' : il y croiserait un bloc, une borne ou un autre câble — il reste où il était.' : '';
         let quoi;
         if (pr.sens === 'V') { const x = p.reel != null ? p.reel : p.x, n = Math.round((x - pr.x0) / PISTE);
           quoi = pr.G.chDe(p.x) !== pr.ch0 ? nom + ' passe par une autre goulotte' : n ? nom + ' glisse de ' + Math.abs(n) + ' piste' + (Math.abs(n) > 1 ? 's' : '') + ' à ' + (n > 0 ? 'droite' : 'gauche') : nom + ' glisse dans sa goulotte'; }
         else { const px = Math.round(Math.abs(p.y - pr.y0) * app.vue.s); quoi = nom + ' : son couloir ' + (p.y < pr.y0 ? 'monte' : 'descend') + ' de ' + px + ' px'; }
-        const pres = p.pourquoi === 'colonne' ? ' — dans la goulotte la plus proche : un fil ne passe pas dans une colonne' : p.pourquoi ? ' — au plus près : la place visée croisait un bloc, une borne ou un autre fil' : '';
-        return quoi + pres + ' · double-clic sur le fil pour le rendre au moteur · Ctrl+Z pour défaire.'; } } };
+        const pres = p.pourquoi === 'colonne' ? ' — dans la goulotte la plus proche : un câble ne passe pas dans une colonne' : p.pourquoi ? ' — au plus près : la place visée croisait un bloc, une borne ou un autre câble' : '';
+        return quoi + pres + ' · double-clic sur le câble pour le rendre au moteur · Ctrl+Z pour défaire.'; } } };
   const commencerPrise = () => { const L = liaisonsDuPlan(), cle = L.length ? clePlacement(L) : null; if (!cle) return false;
     const P = placementDe(L), G = prise && GESTES[prise.genre]; if (!P || !G) return false;
     Object.assign(prise, { cle, P, avant: app.retouches.get(cle) || null, vise: null, place: null, posee: false, refuse: false, P2: null });
@@ -1059,27 +1177,64 @@ function lierPlanche() {
     if (!sc) return; if (!g) { g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); g.id = 'rt-survol'; g.setAttribute('class', 'rt-survol'); sc.appendChild(g); }
     const u = 1 / app.vue.s, d = dessinSurvol(p, u); g.innerHTML = d.h; g.dataset.genre = sensDePrise(p);
     const r = cadre(); survolRendre = d.rendre ? { x: r.left + app.vue.tx + d.rendre.x * app.vue.s, y: r.top + app.vue.ty + d.rendre.y * app.vue.s } : null; };
+  /* Rien de choisi : ce qu'on survole s'allume. Un objet CHOISI : il reste allumé, ce qu'on survole se marque à peine
+     (`survolLeger`) — le plan montre toujours ce que dit la fiche. */
+  const allumerSurvol = p => { const choix = !!app.cible;
+    if (!choix) { if (p.genre === 'bloc') allumerBloc(p.c.name); else if (p.genre === 'borne') allumerFils(filsDeLaBorne(p.c, p.y));
+      else if (p.genre === 'vt') allumerBarretteAPoser(p.b.nomVT); else allumerFil(p.f); return; }
+    const D = app.dessin, k = p.c ? D.comps.indexOf(p.c) : -1, blocs = new Set(k >= 0 ? [k] : []);
+    const ws = p.genre === 'bloc' ? D.fils.filter(w => !w.shunt && (w.de === p.c.name || w.vers === p.c.name) && blocsDuFil(w).includes(k)) : p.genre === 'borne' ? filsDeLaBorne(p.c, p.y) : p.genre === 'vt' ? filsDeBarretteAPoser(p.b.nomVT) : [p.f];
+    survolLeger(ws, blocs); };
   const survoler = e => { if (mode || pointeurs.size || !app.dessin) return;
+    souris = { x: e.clientX, y: e.clientY }; armerBulle(e);
     if (e.target && e.target.closest && e.target.closest('.rt-rendre')) { stage.dataset.prise = 'rendre'; return; }
     if (survolRendre && survol && Math.hypot(e.clientX - survolRendre.x, e.clientY - survolRendre.y) < 22 && document.getElementById('rt-survol')) return;   // en chemin vers le ↺
     const p = priseSous(versMonde(e.clientX, e.clientY)), k = cleDePrise(p);
     if (k === survolCle && (!p || document.getElementById('rt-survol'))) { stage.dataset.prise = sensDePrise(p); return; }
     survolCle = k; survol = p; stage.dataset.prise = sensDePrise(p);
-    if (!p) { const g = document.getElementById('rt-survol'); if (g) g.remove(); survolRendre = null; rallumer(); return; }
-    if (p.genre === 'bloc') allumerBloc(p.c.name); else if (p.genre === 'borne') allumerFils(filsDeLaBorne(p.c, p.y));
-    else if (p.genre === 'vt') allumerBarretteAPoser(p.b.nomVT); else allumerFil(p.f);
-    peindreSurvol(p); };
+    if (!p) { const g = document.getElementById('rt-survol'); if (g) g.remove(); survolRendre = null; if (app.cible) effacerSurvolLeger(); else rallumer(); return; }
+    allumerSurvol(p); peindreSurvol(p); };
+  /* LA BULLE DU PLAN : la souris posée un instant (350 ms) sur un câble dit ce qu'il est — son numéro, de → vers, sa route,
+     son type, sa longueur quand le retest la porte — ; sur un bloc, sa désignation, ses câbles sur ce folio, les autres
+     folios où il paraît ; sur un renvoi, où il mène. On lit le folio sans zoomer (DESIGN : « le pourquoi se lit dans la
+     bulle du survol »). La bulle de l'outil (claire sur la nuit), jamais pendant un geste. */
+  let souris = null, bulleT = 0, bulleCle = ''; const bulle = document.createElement('div'); bulle.id = 'pl-bulle'; bulle.className = 'pl-bulle'; bulle.setAttribute('role', 'tooltip'); bulle.hidden = true; document.body.appendChild(bulle);
+  const cacherBulle = () => { clearTimeout(bulleT); bulleT = 0; bulle.hidden = true; bulleCle = ''; };
+  const armerBulle = e => { if (e.buttons || mode) { cacherBulle(); return; }
+    const x = e.clientX, y = e.clientY, t = e.target, q = t && t.closest && t.closest('.rt-rendre') ? { cle: 'rendre', genre: 'rendre' } : objetDeBulle(versMonde(x, y));
+    if (!q) { cacherBulle(); return; }
+    if (q.cle === bulleCle) return;   // le même objet : la bulle reste, ou attend encore
+    cacherBulle(); bulleCle = q.cle;
+    bulleT = setTimeout(() => { bulleT = 0; if (mode || pointeurs.size || !app.dessin) return; const h = texteDeBulle(q); if (!h) return;
+      bulle.innerHTML = h; bulle.hidden = false; const w = bulle.offsetWidth, hh = bulle.offsetHeight;
+      bulle.style.left = Math.max(8, Math.min(x + 16, window.innerWidth - w - 8)) + 'px'; bulle.style.top = (y + 20 + hh <= window.innerHeight - 8 ? y + 20 : Math.max(8, y - 14 - hh)) + 'px'; }, 350); };
   // LE PLAN VIDE (#vide) vit sur la planche : un appui qui en part est un clic sur ses boutons, pas une prise de la vue — ni
   // capture du pointeur (elle volerait le « click » au bouton), ni pan
   const surLAccueil = e => !!(e.target && e.target.closest && e.target.closest('#vide'));
-  stage.addEventListener('pointerdown', e => { if (e.button && e.button !== 0) return; fermerMenu(); fermerRecherche(); if (surLAccueil(e)) return;
+  /* SE DÉPLACER sans rien retoucher (la convention des logiciels de dessin) : le bouton du MILIEU, ou ESPACE tenu, et l'on
+     glisse — la vue bouge, où qu'on appuie, jamais un bloc (l'audit v72 : à 200 %, la moitié du folio « prend », un glisser
+     pour aller voir plus bas déplaçait 372CP2 et reroutait ses voisins). Le glisser simple garde son sens : on prend. */
+  let espace = false, surLePlan = false;
+  const champActif = t => !!(t && t.closest && t.closest('input,textarea,select,[contenteditable],[role="menu"],[role="listbox"]'));
+  // un bouton qui a gardé le clavier (+, Ajuster…) : Espace le presserait ; la souris sur le plan, c'est la vue qu'on veut
+  const boutonActif = t => !!(t && t.closest && t.closest('button,a,[role="button"]'));
+  const planVisible = () => !!app.dessin && !document.body.classList.contains('biblio') && $('relief').hidden;
+  stage.addEventListener('mouseenter', () => { surLePlan = true; }); stage.addEventListener('mouseleave', () => { surLePlan = false; });
+  window.addEventListener('keydown', e => { if (e.code !== 'Space' || e.ctrlKey || e.metaKey || e.altKey || champActif(e.target) || (boutonActif(e.target) && !surLePlan) || !planVisible()) return;
+    e.preventDefault(); if (boutonActif(e.target) && e.target.blur) e.target.blur(); if (!espace) { espace = true; stage.classList.add('espace'); cacherBulle(); } }, true);
+  const lacherEspace = () => { if (!espace) return; espace = false; stage.classList.remove('espace'); };
+  window.addEventListener('keyup', e => { if (e.code === 'Space') lacherEspace(); }); window.addEventListener('blur', lacherEspace);
+  stage.addEventListener('auxclick', e => { if (e.button === 1) e.preventDefault(); });
+  stage.addEventListener('pointerdown', e => { const milieu = e.button === 1; if (e.button && !milieu) return; cacherBulle(); fermerMenu(); fermerRecherche(); if (surLAccueil(e)) return;
+    if (milieu) e.preventDefault();   // pas de défilement automatique du navigateur
     // le ↺ d'un objet retouché : il est rendu au moteur, rien d'autre
-    if (e.target && e.target.closest && e.target.closest('.rt-rendre') && survol) { e.preventDefault(); const o = objetDe(survol); effacerSurvol(); rendreAuMoteur(o); return; }
+    if (!milieu && !espace && e.target && e.target.closest && e.target.closest('.rt-rendre') && survol) { e.preventDefault(); const o = objetDe(survol); effacerSurvol(); rendreAuMoteur(o); return; }
     try { stage.setPointerCapture(e.pointerId); } catch (_) { }
     stage.classList.add('appui');   // pendant l'appui, le texte du folio ne se sélectionne pas
     pointeurs.set(e.pointerId, { x: e.clientX, y: e.clientY }); clearTimeout(long);
     if (pointeurs.size >= 2) { annulerPrise(); prise = null; debutPinch(); return; }
     bouge = false; origine = [e.clientX, e.clientY]; mode = 'pan'; pan = { tx: app.vue.tx, ty: app.vue.ty, x: e.clientX, y: e.clientY };
+    if (milieu || espace) { pan.vue = true; prise = null; stage.classList.add('tient'); return; }   // la vue, et rien d'autre
     const w = versMonde(e.clientX, e.clientY), p = app.dessin ? priseSous(w) : null, c = p && p.c, vt = p && p.genre === 'vt' ? p.b : null;
     prise = prenable(p) ? { ...p, wx: w.x, wy: w.y } : null;
     if (!dernierBloc || Date.now() - dernierBloc.t > 800) dernierBloc = c ? { nom: c.name, t: Date.now() } : vt ? { nom: vt.nomVT, t: Date.now() } : null;   // le premier appui d'un double-clic fait foi
@@ -1089,12 +1244,14 @@ function lierPlanche() {
     if (mode === 'pinch') { suitPinch(); return; } if (!mode) return;
     if (origine && (Math.abs(e.clientX - origine[0]) > 3 || Math.abs(e.clientY - origine[1]) > 3)) { if (!bouge && mode === 'prise' && !commencerPrise()) mode = 'pan'; bouge = true; clearTimeout(long); if (mode === 'pan') stage.classList.add('tient'); }
     if (mode === 'retouche') { suitPrise(e); return; }
-    if (mode === 'pan') { app.vue.tx = pan.tx + (e.clientX - pan.x); app.vue.ty = pan.ty + (e.clientY - pan.y); appliquerVue(); } });
+    if (mode === 'pan') { if (anim) { arreterVue(); pan.tx = app.vue.tx - (e.clientX - pan.x); pan.ty = app.vue.ty - (e.clientY - pan.y); }   // la vue glissait encore : on la prend où elle est
+      app.vue.tx = pan.tx + (e.clientX - pan.x); app.vue.ty = pan.ty + (e.clientY - pan.y); VUE.main = true; appliquerVue(); } });
   const fin = e => { try { stage.releasePointerCapture(e.pointerId); } catch (_) { } stage.classList.remove('tient'); clearTimeout(long);
     const etaitPinch = mode === 'pinch'; pointeurs.delete(e.pointerId); if (!pointeurs.size) stage.classList.remove('appui');
     if (prise && prise.genre === 'bloc' && !bouge) dernierPris = { nom: prise.c.name, x: prise.c.x, y: prise.c.y };   // le morceau cliqué (une barrette en a plusieurs) : les flèches le poussent
     if (etaitPinch) { if (pointeurs.size < 2) { mode = null; pinch = null; } return; }
     if (mode === 'retouche') { finPrise(); mode = null; pan = null; survolCle = ''; return; }
+    if (pan && pan.vue) { mode = null; pan = null; prise = null; return; }   // le bouton du milieu, Espace : la vue seule, jamais un clic
     if ((mode === 'pan' || mode === 'prise') && !bouge) {
       /* le DOUBLE appui se reconnaît ici : le premier clic choisit le bloc et redessine la page, et le navigateur
          n'émet alors ni « click » ni « dblclick » — deux appuis à moins de 400 ms, au même endroit */
@@ -1119,18 +1276,91 @@ function lierPlanche() {
     avale = Date.now(); e.preventDefault(); e.stopPropagation(); ouvrirRelief(d.nom); }, true);
   insp.addEventListener('click', e => { if (Date.now() - avale < 400) { e.preventDefault(); e.stopPropagation(); } }, true);
   stage.addEventListener('mousemove', survoler);
-  stage.addEventListener('mouseleave', () => { if (!mode) { effacerSurvol(); rallumer(); } });
+  stage.addEventListener('mouseleave', () => { cacherBulle(); souris = null; if (!mode) { effacerSurvol(); rallumer(); } });
   stage.addEventListener('wheel', e => { if (surLAccueil(e)) return;   // le plan vide ne zoome pas
-    e.preventDefault(); const r = cadre(); zoomer(Math.exp(-e.deltaY * 0.0014), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
-
+    e.preventDefault(); cacherBulle(); const r = cadre(); zoomer(Math.exp(-e.deltaY * 0.0014), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+  /* « AJUSTER » ALTERNE la feuille et le dessin (`ajuster`) quand c'est la main qui le demande : le bouton, le pourcentage, la
+     touche 0 (ou f). Ces écouteurs, posés avant ceux du panneau (phase de capture), le notent ; un recadrage de l'outil
+     (un panneau qui s'ouvre…) ne bascule rien. Survolé, le bouton dit ce qu'il fera. */
+  const geste = () => { VUE.geste = true; setTimeout(() => { VUE.geste = false; }, 0); };
+  window.addEventListener('click', e => { if (e.target && e.target.closest && e.target.closest('#zfit,#zlbl')) geste(); }, true);
+  ['pointerenter', 'focus'].forEach(t => { const b = $('zfit'); if (b) b.addEventListener(t, direAjuster); });
+  /* LES TOUCHES DU LECTEUR : 1 = 100 %, 2 = 200 % (autour de la souris si elle est sur le plan), 0 = la feuille ou le dessin ;
+     Alt+← revient d'un renvoi suivi (le folio et la vue d'avant). Dans un champ, le clavier est au champ. */
+  window.addEventListener('keydown', e => { if (!planVisible() || champActif(e.target)) return;
+    if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.key === 'ArrowLeft' && revenirDuRenvoi()) { e.preventDefault(); e.stopImmediatePropagation(); return; }
+    if (e.ctrlKey || e.metaKey || e.altKey || boutonActif(e.target)) return;
+    if (e.key === '0' || e.key === 'f') { geste(); return; }   // le panneau ajuste (lierPanneau)
+    if ((e.key === '1' || e.key === '2') && !e.repeat && !(rechercheOuverte && rechercheOuverte())) { e.preventDefault(); const r = cadre();
+      zoomerA(+e.key, souris ? souris.x - r.left : null, souris ? souris.y - r.top : null); } }, true);
+  // la vue se garde quand on quitte la page (le lendemain, `retrouverVue`)
+  window.addEventListener('pagehide', () => garderVue()); document.addEventListener('visibilitychange', () => { if (document.hidden) garderVue(); });
 }
+/* Ce que la bulle du plan montrerait sous un point du dessin : un câble, un bloc, une borne, une barrette à poser, un renvoi
+   (et une clé, pour qu'elle reste tant qu'on reste dessus). */
+function objetDeBulle(w) { const D = app.dessin; if (!D) return null; const p = priseSous(w);
+  if (p && (p.genre === 'bloc' || p.genre === 'borne')) { const k = D.comps.indexOf(p.c);
+    if (estRenvoi(p.c.name)) { const f = filDuRenvoi(p.c, w.y, w.x); return { cle: 'r' + k + ':' + (f ? f.i : ''), genre: 'renvoi', c: p.c, f }; }
+    return p.genre === 'borne' ? { cle: 'p' + k + ':' + p.y, genre: 'borne', c: p.c, y: p.y, etiq: p.etiq } : { cle: 'b' + k, genre: 'bloc', c: p.c }; }
+  if (p && p.genre === 'vt') return { cle: 'v' + p.b.nomVT, genre: 'vt', b: p.b };
+  const f = p && p.genre === 'fil' ? p.f : filSous(w); return f ? { cle: 'f' + f.i, genre: 'fil', f } : null; }
+const bornePlusRepere = (n, b) => String(n || '') + (b != null && String(b) !== '' ? ':' + b : '');
+// un bout de liaison tel qu'on le lit : un renvoi dit l'équipement d'en face (« ▷F2 » + « 101LP2 2 » → 101LP2:2)
+const boutLisible = (n, b) => { const [r, x] = boutSource(n, b); return bornePlusRepere(r, x); };
+const rangsDesFolios = ps => { const P = plans(); return ps.map(p => P.indexOf(p) + 1).filter(r => r > 0).sort((a, b) => a - b); };
+function texteDeBulle(q) { const D = app.dessin, L = liaisonsDuPlan(), T = t => `<b class="pl-b-t">${esc(t)}</b>`, l_ = t => `<span class="pl-b-l">${t}</span>`, id = t => `<span class="pl-b-id">${esc(t)}</span>`;
+  if (q.genre === 'rendre') return T('Rendre au moteur') + l_('ce qu’on a changé ici revient au dessin automatique');
+  const lignesDeFil = f => { const l = L[f.i] || {}, s = sourceDe(l) || l; return id(s.cable || 'sans numéro') + ' · ' + id(boutLisible(s.de, s.borneDe)) + ' → ' + id(boutLisible(s.vers, s.borneVers)); };
+  if (q.genre === 'fil') { const l = L[q.f.i] || {}, s = sourceDe(l) || l, c = D.couleurDe && D.couleurDe(q.f), lg = parseFloat(String(s.longueur || '').replace(',', '.'));
+    return T(s.cable || 'Câble sans numéro') + l_(id(boutLisible(s.de, s.borneDe)) + ' → ' + id(boutLisible(s.vers, s.borneVers)))
+      + l_((c ? `<i class="pl-b-route" style="background:${c}"></i>` : '') + esc(s.route || 'sans route') + ' · ' + esc(s.type || 'type inconnu') + (lg > 0 ? ' · ' + String(Math.round(lg * 100) / 100).replace('.', ',') + ' m' : '')); }
+  if (q.genre === 'renvoi') { const t = q.c.name.replace(RENVOI, ''), l = q.f && L[q.f.i], bout = l ? (l.de === q.c.name ? l.borneDe : l.borneVers) : '';
+    return T('Vers le folio ' + t) + (l ? l_(id(autreBoutDuRenvoi(bout)) + (l.cable ? ' · ' + id(l.cable) : '')) : '') + l_('Clic : y aller, l’autre moitié allumée'); }
+  if (q.genre === 'vt') { const ws = filsDeBarretteAPoser(q.b.nomVT), r = liaisonsDuPlan().find(l => l.vers === q.b.nomVT && l.borneVers === '1' && !VT_A_POSER.test(l.de));
+    return T(q.b.nomVT) + l_('barrette à poser' + (r ? ' sur ' + id(bornePlusRepere(r.de, r.borneDe)) : '')) + l_(pluriel(ws.length, 'câble')); }
+  const c = q.c, nom = c.name;
+  if (q.genre === 'borne') { const ws = filsDeLaBorne(c, q.y);
+    return T(bornePlusRepere(nom, q.etiq)) + ws.slice(0, 3).map(f => l_(lignesDeFil(f))).join('') + (ws.length > 3 ? l_('et ' + (ws.length - 3) + (ws.length > 4 ? ' autres câbles' : ' autre câble')) : '') + l_('Glisser : la déplacer le long du bloc'); }
+  const n = D.fils.filter(w => !w.shunt && (w.de === nom || w.vers === nom)).length, ail = rangsDesFolios(plansDuRepere(nom).filter(p => p !== app.plan));
+  const genre = estMasse(nom) ? 'masse' : c.kind === 'tag' && estBarrette(nom) ? 'morceau de barrette' : estCoupure(nom) ? 'prise de coupure' : estBarrette(nom) ? 'barrette' : estDisjoncteur(nom) ? 'disjoncteur' : '';
+  const d = c.kind === 'tag' ? '' : designationDe(nom), cal = estDisjoncteur(nom) && c.kind === 'equip' ? calibreAuFolio(nom) : null;
+  return T(nom) + ((genre || d || cal) ? l_(esc([genre, cal ? amperesCb(cal) : '', d].filter(Boolean).join(' · '))) : '')
+    + l_(pluriel(n, 'câble') + ' sur ce folio' + (ail.length ? ' · aussi sur f. ' + ail.join(' · ') : '')); }
 let appuiDuPlan = null;   // le dernier appui simple sur la planche (l'instant, l'endroit, le bloc) : un double-clic peut finir ailleurs
 /* Un clic sur la planche : un bloc, un renvoi, un fil, ou le vide. */
 function cliquer(w) { const c = blocSous(w);
-  if (c) { if (estRenvoi(c.name)) { const t = c.name.replace(RENVOI, ''); if (plans().includes(t)) allerAuPlan(t); return; }
+  if (c) { if (estRenvoi(c.name)) { suivreRenvoi(c, w); return; }
     if (c.rail) return; choisirBloc(c); return; }
   const vt = barretteAPoserSous(w); if (vt) { choisirBarretteAPoser(vt); return; }
   const f = filSous(w); if (f) choisirFil(f); else deselectionner(); }
+/* SUIVRE UN RENVOI : le câble continue sur un autre folio. On y va : l'AUTRE MOITIÉ du câble y est choisie, allumée et
+   centrée, lisible (l'audit v72 : le clic menait au folio à la page entière, rien de choisi, et il fallait chercher la
+   demi-liaison d'en face parmi d'autres boîtes) ; Alt+← revient d'où l'on vient, à la même vue. */
+function suivreRenvoi(c, w) { const t = c.name.replace(RENVOI, ''); if (!plans().includes(t)) return;
+  const f = filDuRenvoi(c, w.y, w.x), l = f && liaisonsDuPlan()[f.i], de = app.plan, vue = { ...(anim && vueVisee ? vueVisee : app.vue) }, main = VUE.main;
+  allerAuPlan(t); if (app.plan !== t) return;
+  const g = l ? autreMoitie(l, de) : null, cable = (g && g.cable) || (l && l.cable) || '';
+  VUE.retours.push({ plan: de, vue, main, vers: t, cable }); if (VUE.retours.length > 20) VUE.retours.shift();
+  const retour = ' · Alt+← revient au folio ' + de + '.';
+  if (g) { choisirFil(g); viserFil(g); dire('Folio ' + t + ' : ' + (cable ? cable + ', ' : '') + 'l’autre moitié du câble' + retour); return; }
+  if (!app.dessin && cable) { aller({ type: 'fil', nom: cable }); dire('Folio ' + t + retour); return; }   // le folio se dessine encore : le câble attend
+  dire('Folio ' + t + retour); }
+// le fil d'un renvoi au plus près d'un point : son bout est sur le flanc du renvoi, à la hauteur d'un port
+function filDuRenvoi(c, y, x) { const D = app.dessin; let best = null, bd = Infinity; if (!D) return null;
+  D.fils.forEach(f => { if (f.shunt) return; [[f.de, f.epA], [f.vers, f.epB]].forEach(([n, e]) => { if (n !== c.name || !e) return;
+    const d = Math.abs(e.y - y) + (x != null ? 0.2 * Math.abs(e.x - x) : 0); if (d < bd) { bd = d; best = f; } }); });
+  return best; }
+/* L'autre moitié d'une liaison coupée par un renvoi (07 : de ce côté-ci « 101LP2:2 → ▷F1 » et la borne d'en face écrite
+   « 300RL1 X1 » ; de l'autre, « ▷F2 » et « 101LP2 2 » → 300RL1:X1), sur le folio affiché ; à défaut, le même câble. */
+function autreMoitie(l, de) { const D = app.dessin, L = liaisonsDuPlan(); if (!D) return null; const r = '▷F' + de;
+  const ici = estRenvoi(l.vers) ? [l.de, l.borneDe] : [l.vers, l.borneVers], etiq = String(ici[0] || '') + (ici[1] ? ' ' + ici[1] : '');
+  return D.fils.find(f => { const m = L[f.i]; return !!m && ((m.de === r && String(m.borneDe) === etiq) || (m.vers === r && String(m.borneVers) === etiq)); })
+    || (l.cable ? D.fils.find(f => f.cable === l.cable) : null) || null; }
+// Alt+← après un renvoi suivi : tant qu'on est sur le folio où il a mené (rien d'autre de choisi que son câble), on revient
+function revenirDuRenvoi() { const r = VUE.retours[VUE.retours.length - 1]; if (!r || app.plan !== r.vers || !plans().includes(r.plan)) return false;
+  const c = app.cible; if (c && !(c.type === 'fil' && r.cable && c.l && c.l.cable === r.cable)) return false;
+  VUE.retours.pop(); if (c) deselectionner(); allerAuPlan(r.plan); if (app.plan !== r.plan) return true;
+  animerVue(r.vue, false); VUE.main = r.main; dire('Retour au folio ' + r.plan + '.'); return true; }
 // une barrette à poser sous le pointeur : sur sa ligne, de sa première à sa dernière borne
 function barretteAPoserSous(w) { const tol = 5 / Math.max(0.4, app.vue.s) + 3;
   return ((app.dessin && app.dessin.barrettes) || []).find(b => { if (!b.nomVT) return false; const bs = bornesDePiquage(b); return Math.abs(w.x - b.x) <= tol && w.y >= bs[0].y - tol && w.y <= bs[bs.length - 1].y + tol; }) || null; }
@@ -1304,7 +1534,10 @@ function montrerSiCache(b) { if (!b || !app.dessin) return; const r = cadre(), m
   animerVue({ s, tx: (L + R) / 2 - (b.x + b.w / 2) * s, ty: (T + B) / 2 - (b.y + b.h / 2) * s }, true); }
 
 /* ---- les folios : y aller, les montrer --------------------------------- */
-function allerAuPlan(plan) { if (plan === app.plan) return; app.plan = plan; app.choisi = null; fermerFiche(); redessiner(); ajuster(); }
+/* ALLER À UN FOLIO : la vue du folio qu'on quitte se garde, celle du folio où l'on arrive revient — on le retrouve comme
+   on l'a laissé ; un folio jamais vu se cadre (la feuille, ou le dessin : le cadrage choisi). Le folio se garde avec le
+   contrat (`sauver`) : le lendemain, on rouvre au folio 3, pas au folio 1 (l'audit du parcours v72). */
+function allerAuPlan(plan) { if (plan === app.plan) return; garderVue(); app.plan = plan; app.choisi = null; fermerFiche(); redessiner(); retrouverVue(); sauver(); }
 function allerAuFolio(pas) { const P = plans(); let i = P.indexOf(app.plan);
   if (i < 0) i = pas > 0 ? -1 : P.length; i += pas; if (i < 0 || i >= P.length) return; allerAuPlan(P[i]); }
 function plansDuRepere(nom) { return [...new Set(app.contrat.liaisons.filter(l => l.de === nom || l.vers === nom).map(l => l.plan).filter(Boolean))]; }

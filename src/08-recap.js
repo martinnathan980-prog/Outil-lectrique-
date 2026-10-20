@@ -968,7 +968,8 @@ function appliquerTailleBase() { if (app.base.hauteur) document.documentElement.
    monte d'un rien (le haut de la feuille, s'il était plus bas, vient sous la barre) ; ce qu'on a choisi reste dans la place
    libre, à la même échelle (`montrerSiCache`). Le tiroir se ferme : la vue d'avant revient, si on n'y a pas touché.
    « 0 » cadre toujours la feuille entière dans la place qui reste. `deja` : le tiroir était déjà là (sa taille change). */
-const memeVue = (a, b) => !!a && !!b && Math.abs(a.s - b.s) < 1e-6 && Math.abs(a.tx - b.tx) < .5 && Math.abs(a.ty - b.ty) < .5;
+// la même vue, à la demi-unité près (celle de 08-interface, `memeVue`, tolère 1,5 % : elle juge un cadrage, pas un geste)
+const vueIntacte = (a, b) => !!a && !!b && Math.abs(a.s - b.s) < 1e-6 && Math.abs(a.tx - b.tx) < .5 && Math.abs(a.ty - b.ty) < .5;
 function laisserLePlan(deja) { const d = app.dessin; if (!deja || !RECAP.vueAvant) RECAP.vueAvant = { ...(anim && vueVisee ? vueVisee : app.vue) };
   if (!d || app.base.taille !== 'moitie') { RECAP.vuePosee = { ...app.vue }; return; }
   const c = app.cible, k = c && c.type === 'bloc' && d.compDe.get(c.nom), w = c && c.type === 'fil' && filDe(c.l);
@@ -978,7 +979,7 @@ function laisserLePlan(deja) { const d = app.dessin; if (!deja || !RECAP.vueAvan
     if (dy > 1) animerVue({ s, tx: app.vue.tx, ty: app.vue.ty - dy }, true); }
   RECAP.vuePosee = { ...(anim && vueVisee ? vueVisee : app.vue) }; }
 function rendreLePlan() { const A = RECAP.vueAvant, P = RECAP.vuePosee; RECAP.vueAvant = RECAP.vuePosee = null;
-  if (A && memeVue(app.vue, P) && !memeVue(A, P)) animerVue(A, true); }
+  if (A && vueIntacte(app.vue, P) && !vueIntacte(A, P)) animerVue(A, true); }
 /* Ouvrir en moitié (par défaut) ou en page. Le filtre suit le bloc choisi ; sans bloc, celui qu'un bloc avait posé s'efface. */
 function ouvrirBase(taille) { const b = app.base, t = taille === 'page' ? 'page' : 'moitie', etait = b.ouvert;
   if (etait && b.taille === t) return; b.taille = t;
