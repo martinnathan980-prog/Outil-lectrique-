@@ -904,10 +904,22 @@ function cellulesDeNorme(ligne, sep) { const s = String(ligne == null ? '' : lig
 /* Le séparateur d'une ligne, celui que `cellulesDeNorme` prendrait. */
 const separateurDe = ligne => { const hors = String(ligne || '').replace(/"(?:[^"]|"")*"/g, ''); return hors.includes('\t') ? '\t' : hors.includes(';') ? ';' : ','; };
 /* Le champ qu'une cellule d'en-tête nomme : son alias, sinon le même sans l'unité entre parenthèses (« Intensité (A) »,
-   « Jauge [AWG] ») ; `pris` : les champs déjà attribués par une cellule d'avant. */
-function champDeCellule(cles, cell, pris) { const brut = NORMA(cell); if (!brut) return null;
-  const essais = [brut, NORMA(String(cell).replace(/\s*[(\[][^)\]]*[)\]]\s*$/, ''))].filter((t, i, a) => t && a.indexOf(t) === i);
-  for (const t of essais) for (const [champ, alias] of cles) if (!(pris && pris[champ] != null) && alias.includes(t)) return champ; return null; }
+   « Jauge [AWG] ») ; `pris` : les champs déjà attribués par une cellule d'avant. Les deux formes d'une cellule (NFD, sans
+   accents ni signes : deux expressions régulières) se GARDENT : la norme embarquée, relue à chaque ouverture, essayait
+   chaque cellule contre trente-deux tables et la renormalisait trente-deux fois (2,6 s d'écran figé, l'audit de fluidité).
+   Et chaque liste de colonnes a son INDEX (un alias → les champs qui le portent, dans l'ordre de la liste) : le premier
+   champ libre qui porte l'alias, comme la double boucle d'avant, sans la parcourir. */
+function champDeCellule(cles, cell, pris) { const formes = champDeCellule.formes || (champDeCellule.formes = new Map()), cle = String(cell == null ? '' : cell);
+  let essais = formes.get(cle);
+  if (essais === undefined) { const brut = NORMA(cell);
+    essais = !brut ? null : [brut, NORMA(String(cell).replace(/\s*[(\[][^)\]]*[)\]]\s*$/, ''))].filter((t, i, a) => t && a.indexOf(t) === i);
+    if (formes.size >= 60000) formes.clear(); formes.set(cle, essais); }
+  if (!essais) return null;
+  const index = champDeCellule.index || (champDeCellule.index = new WeakMap());
+  let parAlias = index.get(cles);
+  if (!parAlias) { parAlias = new Map(); cles.forEach(([champ, alias]) => alias.forEach(a => { const l = parAlias.get(a) || parAlias.set(a, []).get(a); if (!l.includes(champ)) l.push(champ); })); index.set(cles, parAlias); }
+  for (const t of essais) { const champs = parAlias.get(t); if (champs) for (const champ of champs) if (!(pris && pris[champ] != null)) return champ; }
+  return null; }
 /* Les colonnes d'une ligne d'en-tête pour une table : { col: { champ: indice }, inconnues: [indices non reconnus] }. */
 function colonnesDEntete(nom, row) { const cles = COLONNES_NORME[nom], col = {}, inconnues = [];
   row.forEach((cell, i) => { if (!String(cell || '').trim()) return; const champ = champDeCellule(cles, cell, col); if (champ) col[champ] = i; else inconnues.push(i); });
@@ -923,10 +935,18 @@ function reconnaitreEntete(row) { const cands = [];
   return cands; }
 const enteteHesite = cands => cands.length > 1 && cands[1].n >= cands[0].n;
 /* Découper un texte en blocs : [{ ligne, titre, entete, separateur, candidats, hesite, table, col, inconnues, lignes }]. Le
-   titre est la dernière ligne libre lue avant l'en-tête (« Fils — par jauge AWG… », le nom d'une feuille Excel). */
+   titre est la dernière ligne libre lue avant l'en-tête (« Fils — par jauge AWG… », le nom d'une feuille Excel).
+   Une ligne n'est essayée comme en-tête contre les trente-deux tables que si assez de ses cellules nomment une colonne
+   (d'une table quelconque) : une table ne se reconnaît qu'à des colonnes nommées — deux au moins, si aucune table ne se
+   contente d'une seule (on le demande à chacune) —, et une ligne de données en nomme rarement autant. Le découpage est
+   le même, ligne pour ligne (tests/vitesse.js le vérifie contre la lecture d'avant), en une fraction du temps. */
 function decouperTables(texte) { const blocs = []; let b = null, titre = '';
+  const toutes = [['*', new Set(Object.values(COLONNES_NORME).flatMap(cs => cs.flatMap(([, alias]) => alias)))]];
+  const tables = Object.entries(COLONNES_NORME).filter(([nom]) => TABLE_NORME[nom]);
+  const min = tables.some(([nom]) => TABLE_NORME[nom]({})) ? 0 : tables.some(([nom, cs]) => cs.some(([champ]) => TABLE_NORME[nom]({ [champ]: 0 }))) ? 1 : 2;
+  const assez = row => { if (!min) return true; let n = 0; for (const c of row) if (champDeCellule(toutes, c) && ++n >= min) return true; return false; };
   String(texte || '').split(/\r?\n/).forEach((ligne, k) => { if (!ligne.trim()) { b = null; return; }
-    const sep = separateurDe(ligne), row = cellulesDeNorme(ligne, sep), cands = reconnaitreEntete(row);
+    const sep = separateurDe(ligne), row = cellulesDeNorme(ligne, sep), cands = assez(row) ? reconnaitreEntete(row) : [];
     if (cands.length) { const c = cands[0]; b = { ligne: k, titre, entete: row, separateur: sep, candidats: cands, hesite: enteteHesite(cands), table: c.nom, col: c.col, inconnues: c.inconnues, lignes: [] }; blocs.push(b); titre = ''; return; }
     if (!b) { if (row.length === 1) titre = ligne.trim(); return; }
     const cells = sep === b.separateur ? row : cellulesDeNorme(ligne, b.separateur);

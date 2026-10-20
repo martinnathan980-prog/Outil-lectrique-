@@ -1,0 +1,41 @@
+/* ───────── LA TABLE SOBRE, ET CE QUI S'Y ÉCRIT PENDANT QU'UN FOLIO SE DESSINE (08-table, 08-interface) ─────────
+   La table « Nuit bleue » telle que style.css la pose (ses jetons : le fond, le souffle, les points, la lueur), conduite
+   sobrement : au repos, rien ne tourne (l'audit de fluidité : un cœur entier brûlé à ne rien faire, 1 % maintenant), et
+   à l'œil, la même. Puis l'attente d'un folio (la barre, ce qu'on peut faire pendant), le fondu d'un dessin qui en
+   remplace un autre, la petite bande qui dit ce qui travaille. */
+
+/* le souffle : une respiration d'opacité seule (le calque plein écran ne s'agrandit plus : il se rééchantillonnait à chaque
+   image), figée au milieu de son cycle — sa lumière reste —, vivante seulement quand on est là (08-table, `.respire`), et
+   jamais pendant un geste ni sous une feuille qui prend la page */
+#table .ta-souffle{animation:ta-souffle 16s ease-in-out -8s infinite alternate;animation-play-state:paused;will-change:opacity;transform:none}
+@keyframes ta-souffle{from{opacity:.45}to{opacity:1}}
+#table.respire:not(.geste) .ta-souffle{animation-play-state:running}
+body:has(#base.page:not([hidden])) #table .ta-souffle,body:has(#fiche[data-mode="see"]:not([hidden])) #table .ta-souffle{animation-play-state:paused}
+/* les points : un calque d'un pas plus grand que l'écran, que la parallaxe glisse (un transform, rien à repeindre) */
+#table .ta-points{inset:-24px;will-change:transform}
+/* la lueur : un peu plus petite, elle se pose vite (moins d'images à composer) ; cachée sous une feuille qui prend la page */
+#table .ta-lueur{width:640px;height:640px;margin:-320px 0 0 -320px;transition:opacity .6s ease}
+body:has(#base.page:not([hidden])) #table .ta-lueur,body:has(#fiche[data-mode="see"]:not([hidden])) #table .ta-lueur{display:none}
+
+/* ─── L'ATTENTE D'UN FOLIO (08-interface, `montrerAttente`) : le folio, ses câbles, la durée, une barre, et deux gestes ─── */
+.attente .at-barre{display:block;width:min(240px,60%);height:3px;margin-top:8px;border-radius:2px;background:var(--l-table-2);overflow:hidden}
+.attente .at-barre span{display:block;height:100%;background:var(--glace);transform-origin:0 50%;transform:scaleX(0);transition:transform .25s linear}
+.attente .at-gestes{pointer-events:auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin-top:18px;font-size:var(--f-12);font-weight:400;color:var(--t-table-2)}
+.attente .at-gestes button{height:30px;padding:0 12px;border:none;border-radius:9px;background:var(--palet);color:var(--t-table);box-shadow:var(--sh-palet);font:500 var(--f-12) var(--sans);cursor:pointer;transition:background var(--rapide)}
+.attente .at-gestes button:hover{background:var(--palet-2)}
+.attente .at-gestes button:focus-visible{outline:2px solid var(--glace);outline-offset:2px}
+
+/* ─── LE FONDU : le dessin d'avant (une copie) s'efface au-dessus du nouveau (08-interface, `remplacerDessin`) ─── */
+.dessin-fondu{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;opacity:1;transition:opacity .55s var(--courbe)}
+.dessin-fondu.part{opacity:0}
+
+/* ─── LA PETITE BANDE du milieu (#affinage) : une barre fine après ses mots ; les folios pas encore prêts, pâles ─── */
+.affinage .af-barre{flex:none;width:44px;height:3px;border-radius:2px;background:var(--voile-3);overflow:hidden}
+.affinage .af-barre span{display:block;height:100%;background:var(--glace);transform-origin:0 50%;transition:transform .25s linear}
+.chip.a-venir:not(.on){opacity:.5}
+
+@media (prefers-reduced-motion:reduce){
+  #table .ta-souffle{animation:none;opacity:.75}
+  #table .ta-points{transform:none!important}
+  .dessin-fondu{display:none}
+}

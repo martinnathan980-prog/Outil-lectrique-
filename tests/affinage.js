@@ -41,6 +41,16 @@ const FICHIER = P.fichierDemande();
   await page.evaluate(() => { app.plan = '1'; app.choisi = null; redessiner(); atelier.affinage(true); });
   const garde = await page.waitForFunction(() => atelier.etatAffinage().finis >= 1, null, { timeout: 20000 }).then(() => true, () => false);
   ok(garde, 'le folio affiné se garde d\'une session à l\'autre');
+  /* l'affinage ne part qu'une fois les folios placés : il refaisait le folio que le Worker du placement calculait encore,
+     deux cœurs sur le même travail (l'audit de fluidité, le parcours) */
+  await page.reload(); await page.waitForFunction(() => typeof atelier !== 'undefined');
+  const pendant = await page.evaluate(() => { placementAilleurs(true); app.plan = '3'; app.choisi = null; redessiner(); atelier.affinage(true);
+    const p = etatPlacement(), a = atelier.etatAffinage(); return { attentes: p.attentes, encours: p.encours, affine: a.encours, bande: $('affinage').hidden ? '' : $('af-txt').textContent }; });
+  ok(pendant.attentes.includes('3') && !pendant.affine, 'pendant que le folio 3 se place au loin, l’affinage attend', JSON.stringify(pendant));
+  const ensuite = await page.waitForFunction(() => { const p = etatPlacement(), a = atelier.etatAffinage(); return !p.encours && !p.attentes.length && a.encours ? { prets: p.prets, affine: a.encours } : null; }, null, { timeout: 600000 }).then(h => h.jsonValue(), () => null);
+  ok(!!ensuite, 'les folios placés, l’affinage part', JSON.stringify(ensuite));
+  const mot = await page.evaluate(() => $('af-txt').textContent);
+  ok(/s’affine/.test(mot) && !/affinage|moteur/.test(mot), 'la bande le dit en mots : « Le dessin s’affine… »', mot);
   ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
   console.log('\n  ' + (ko ? ko + ' échec(s)' : 'tout tient'));
   await nav.close(); process.exit(ko ? 1 : 0);

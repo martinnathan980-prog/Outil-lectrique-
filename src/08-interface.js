@@ -85,40 +85,65 @@ function liaisonsDe(plan) { const L0 = app.contrat.liaisons.filter(liaisonComple
   const sortie = avecBarrettesAPoser(L, depart, app.contrat.provisoires); folios.set(plan, { L, sig, sortie }); return sortie; }
 const liaisonsDuPlan = () => liaisonsDe(app.plan);
 /* Le placement d'un folio se garde tant que ses liaisons ne changent pas : le
-   concours du folio chargé prend quelques secondes, revenir sur un folio déjà
-   vu est instantané. La clé : ce que le placement lit de chaque liaison. */
+   concours d'un folio chargé prend des secondes, revenir sur un folio déjà
+   vu est instantané. La CLÉ : ce que le placement lit de chaque liaison — ses
+   deux bouts, son numéro (le dessin l'écrit ; le juge compte les numéros qui
+   ne s'écrivent pas). Pas le part number : le dessin n'en dépend pas, et
+   retenir un autre calibre (MS3320-10 → MS3320-20, 08-disjoncteurs) refaisait
+   le concours entier — un folio de 115 câbles disparaissait 42 s (l'audit de
+   fluidité). Sauf celui d'un RAIL, qui nomme ses points de raccordement (03,
+   `construireGraphe`). */
 const placements = new Map(), PLACEMENTS_GARDES = 24;
-const clePlacement = L => JSON.stringify(L.map(l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable, l.pnDe, l.pnVers]));
+const clePlacement = L => JSON.stringify(L.map(l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable, estRail(l.de) ? l.pnDe : '', estRail(l.vers) ? l.pnVers : '']));
+// la clé d'avant (les part numbers dedans) : une retouche gardée dans ce navigateur sous elle se reprend sous la nouvelle
+const cleDAvant = L => JSON.stringify(L.map(l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable, l.pnDe, l.pnVers]));
+function reprendreRetouche(cle, L) { if (app.retouches.has(cle)) return; const k = cleDAvant(L); if (k === cle || !app.retouches.has(k)) return;
+  app.retouches.set(cle, app.retouches.get(k)); app.retouches.delete(k); garderRetouche(cle); garderRetouche(k); }
 // un placement entre en mémoire ; au-delà de la réserve, le moins récent s'en va — jamais celui du folio affiché (la retouche le relit)
-function garderPlacement(cle, P) { placements.delete(cle); placements.set(cle, P); const ici = cleCourante();
+function garderPlacement(cle, P) { placements.delete(cle); placements.set(cle, P); placement.prets.add(cle); const ici = cleCourante();
   for (const k of [...placements.keys()]) { if (placements.size <= PLACEMENTS_GARDES) break; if (k !== ici) placements.delete(k); } }
 function placementDe(L) {
-  const cle = clePlacement(L);
+  const cle = clePlacement(L); reprendreRetouche(cle, L);
   // un folio retouché à la souris : la retouche, toujours (elle se défait par « automatique » ou Ctrl+Z)
   if (app.retouches.has(cle)) return app.retouches.get(cle);
   // un folio déjà affiné (dans cette session, ou gardé d'une autre) : son meilleur dessin
   if (affinage.profonds.has(cle)) return affinage.profonds.get(cle);
   if (placements.has(cle)) { const P = placements.get(cle); placements.delete(cle); placements.set(cle, P); return P; }
-  // un gros folio jamais vu : le moteur le place AU LOIN (un Worker), le dessin viendra — l'attente se voit ; un petit, ici même
-  if (placement.attentes.has(cle)) { const a = placement.attentes.get(cle); if (!a.vue || a.plan !== app.plan) { a.vue = true; a.plan = app.plan; a.cibleAvant = app.cible; } return null; }
-  if (auLoin(L) && demanderPlacement(cle, L, app.plan)) return null;
+  /* un gros folio jamais vu : le moteur le place AU LOIN (un Worker), le dessin viendra ; un petit, ici même. En
+     attendant, le folio ne reste jamais vide quand on a de quoi le montrer : son dessin d'avant (une liaison renumérotée,
+     une borne corrigée), ou l'ESQUISSE que le Worker envoie au bout d'une seconde (`provisoire`) */
+  if (placement.attentes.has(cle)) { const a = placement.attentes.get(cle); if (!a.vue || a.plan !== app.plan) { a.vue = true; a.plan = app.plan; a.cibleAvant = app.cible; } return provisoire(a, L); }
+  if (auLoin(L) && demanderPlacement(cle, L, app.plan)) return provisoire(placement.attentes.get(cle), L);
   const P = meilleurPlacement(L); garderPlacement(cle, P); if (placement.ailleurs && L.length > SEUIL_ICI) garderConcours(cle, P);
   return P;
 }
+/* Le DESSIN PROVISOIRE d'un folio qui se place au loin. D'abord son dessin d'avant, s'il a les mêmes bouts dans le même
+   ordre (le fil n° i reste la liaison n° i) : le folio ne s'efface pas pour un numéro changé, ses étiquettes suivent ;
+   sinon l'esquisse, si elle est arrivée ; sinon rien (l'attente se dit). Il porte `provisoire` : 'avant' ou 'esquisse'. */
+const boutsDe = L => L.map(l => [l.de, l.borneDe, l.vers, l.borneVers].join('\u0001'));
+function provisoire(a, L) { if (!a) return null; const d = placement.derniers.get(a.plan);
+  if (d && d.bouts.length === L.length && boutsDe(L).every((b, i) => b === d.bouts[i])) {
+    const maj = o => o && L[o.i] ? { ...o, cable: L[o.i].cable, type: L[o.i].type, route: L[o.i].route, pnDe: L[o.i].pnDe, pnVers: L[o.i].pnVers } : o;
+    return { ...d.P, links: d.P.links.map(maj), routage: { ...d.P.routage, fils: d.P.routage.fils.map(maj) }, provisoire: 'avant' }; }
+  return a.esquisse || null; }
 
 /* ---- l'AFFINAGE : la recherche profonde, en arrière-plan ---------------- */
-/* Le dessin qu'on voit d'abord est celui du concours (quelques secondes).
-   Puis la recherche profonde (04, `placementProfond`) tourne dans un Worker
-   — le moteur, refait depuis son <script id="moteur"> —, folio par folio, le
-   folio affiché d'abord : chaque fois qu'elle trouve mieux, le dessin se
-   remplace sous les yeux, la vue ne bouge pas. Le temps n'est pas un souci
-   (le lecteur : « une heure de calcul pour une vie d'études bien faite, on
-   s'en fiche ») : ce qu'elle trouve se GARDE dans ce navigateur (IndexedDB),
-   par folio et par version du moteur — un folio affiné l'est pour toujours.
-   Sous pilote automatique (navigator.webdriver), elle dort : les bancs
-   mesurent le concours, déterministe ; `atelier.affinage(true)` la réveille.
-   Sans Worker ni IndexedDB (un navigateur qui les refuse), rien ne change :
-   le dessin du concours reste. */
+/* Le dessin qu'on voit d'abord est celui du concours. Puis la recherche
+   profonde (04, `placementProfond`) tourne dans un Worker — le moteur, refait
+   depuis son <script id="moteur"> —, folio par folio, le folio affiché
+   d'abord : chaque fois qu'elle trouve mieux, le dessin se remplace sous les
+   yeux, en fondu, la feuille à sa place (jamais au milieu d'un geste). Le
+   temps n'est pas un souci (le lecteur : « une heure de calcul pour une vie
+   d'études bien faite, on s'en fiche ») : ce qu'elle trouve se GARDE dans ce
+   navigateur (IndexedDB), par folio et par version du moteur — un folio
+   affiné l'est pour toujours. Elle ne part qu'une fois TOUS les folios placés
+   (`placementEnCours`) : elle refaisait le folio que le Worker du placement
+   calculait encore, deux cœurs sur le même travail (l'audit de fluidité, le
+   parcours) ; un folio à placer (une liaison corrigée) la suspend, elle
+   reprend ensuite. Sous pilote automatique (navigator.webdriver), elle dort :
+   les bancs mesurent le concours, déterministe ; `atelier.affinage(true)` la
+   réveille. Sans Worker ni IndexedDB, rien ne change : le dessin du concours
+   reste. */
 const TOURS_PROFONDS = 48;
 const affinage = { actif: !(typeof navigator !== 'undefined' && navigator.webdriver), worker: null, file: [], encours: null,
   profonds: new Map(), finis: new Set(), etat: null, vu: 0 };
@@ -128,11 +153,17 @@ function affinerTout() { if (!affinage.actif) return;
   const P = plans(), parPlan = app.plan === '*' || !P.length ? [liaisonsDe('*')] : [liaisonsDuPlan(), ...P.filter(p => p !== app.plan).map(liaisonsDe)];
   const travaux = parPlan.filter(L => L.length).map(L => ({ cle: clePlacement(L), L: L.map(({ origine, ...l }) => l) })).filter(t => !affinage.finis.has(t.cle) && !(affinage.encours && affinage.encours.cle === t.cle));
   affinage.file = travaux.filter((t, i) => travaux.findIndex(u => u.cle === t.cle) === i); pomper(); }
+// le placement au loin a-t-il encore du travail ? (un folio attendu, en cours, ou un folio du contrat pas encore placé)
+const placementEnCours = () => placement.ailleurs && placement.worker !== false && (placement.attentes.size > 0 || !!placement.encours || !!prochainAuLoin());
 function pomper() { while (affinage.file.length && affinage.finis.has(affinage.file[0].cle)) affinage.file.shift();
-  if (affinage.encours || !affinage.file.length) { montrerAffinage(); return; }
+  if (affinage.encours || !affinage.file.length || placementEnCours()) { montrerBande(); return; }
   const w = travailleur(); if (!w) return;
   affinage.encours = affinage.file.shift(); affinage.etat = { k: 0, n: TOURS_PROFONDS };
-  w.postMessage({ cle: affinage.encours.cle, liaisons: affinage.encours.L, tours: TOURS_PROFONDS }); montrerAffinage(); }
+  w.postMessage({ cle: affinage.encours.cle, liaisons: affinage.encours.L, tours: TOURS_PROFONDS }); montrerBande(); }
+// un folio à placer passe avant : l'affinage en cours s'arrête (son folio retourne en tête de la file), il reprendra
+function suspendreAffinage() { if (!affinage.encours || !affinage.worker) return; const j = affinage.encours;
+  try { affinage.worker.terminate(); } catch (_) { } affinage.worker = null; affinage.encours = null; affinage.etat = null;
+  if (!affinage.finis.has(j.cle) && !affinage.file.some(t => t.cle === j.cle)) affinage.file.unshift(j); montrerBande(); }
 function travailleur() { if (affinage.worker) return affinage.worker; if (affinage.worker === false) return null;
   try { const src = document.getElementById('moteur').textContent;
     // le moteur rapporte à chaque tour ; un dessin meilleur part avec, la fin aussi
@@ -141,24 +172,35 @@ function travailleur() { if (affinage.worker) return affinage.worker; if (affina
         postMessage({ cle, fini: true, P }); }
       catch (err) { postMessage({ cle, erreur: String(err && err.message || err) }); } };`;
     const w = new Worker(URL.createObjectURL(new Blob([src + glue], { type: 'text/javascript' })));
-    w.onmessage = recevoirAffinage; w.onerror = () => { affinage.worker = false; affinage.encours = null; affinage.file = []; montrerAffinage(); };
+    w.onmessage = recevoirAffinage; w.onerror = () => { affinage.worker = false; affinage.encours = null; affinage.file = []; montrerBande(); };
     return (affinage.worker = w); }
   catch (_) { affinage.worker = false; return null; } }
 function recevoirAffinage(e) { const d = e.data, j = affinage.encours; if (!j || d.cle !== j.cle) return;
   if (d.n) affinage.etat = { k: d.k, n: d.n };
-  if (d.P && !d.fini) { affinage.profonds.set(d.cle, d.P); if (cleCourante() === d.cle) { affinage.vu = Date.now(); rafraichirDessin(); } }
+  if (d.P && !d.fini) { affinage.profonds.set(d.cle, d.P); if (cleCourante() === d.cle) { affinage.vu = Date.now(); remplacerDessin(); } }
   if (d.erreur) affinage.erreur = d.erreur;
   if (d.fini || d.erreur) { affinage.finis.add(d.cle); if (d.P) { affinage.profonds.set(d.cle, d.P); garderAffine(d.cle, d.P); }
     affinage.encours = null; pomper(); }
-  montrerAffinage(); }
+  montrerBande(); }
 // le dessin se remplace, la vue reste où elle est
 function rafraichirDessin() { calculer(); peindre(); synchroniser(); rallumer(); }
-function montrerAffinage() { const el = $('affinage'); if (!el) return; const j = affinage.encours, e = affinage.etat;
-  if (!affinage.actif || !j) { el.hidden = true; return; }
-  const ici = j.cle === cleCourante(), reste = affinage.file.length;
-  el.hidden = false; el.classList.toggle('ailleurs', !ici);
-  $('af-txt').textContent = (ici ? 'affinage ' : 'affine un autre folio ') + (e ? e.k + ' / ' + e.n : '') + (reste ? ' · ' + reste + ' en attente' : '');
-  el.title = 'La recherche profonde améliore le dessin en arrière-plan ; chaque mieux trouvé le remplace, et le résultat se garde dans ce navigateur.'; }
+/* REMPLACER le dessin affiché par celui qui arrive (le concours après l'esquisse, un mieux de l'affinage) : en FONDU —
+   l'ancien s'efface au-dessus du nouveau —, la feuille exactement à sa place à l'écran (même coin, même taille : les deux
+   dessins n'ont pas la même échelle de feuille), rien ne saute. Jamais au milieu d'un geste (on tient le plan, un bloc) :
+   il attend qu'on lâche. */
+function remplacerDessin() { const pl = $('planche'); clearTimeout(remplacerDessin.t);
+  if (pl && (pl.classList.contains('tient') || pl.classList.contains('deplace'))) { remplacerDessin.t = setTimeout(remplacerDessin, 400); return; }
+  const bb0 = app.dessin && app.dessin.bbox, v0 = { ...app.vue }, svg = $('svg'); let fantome = null;
+  if (bb0 && svg && !mouvementReduit()) { fantome = svg.cloneNode(true); fantome.removeAttribute('id'); fantome.setAttribute('class', 'dessin-fondu'); fantome.setAttribute('aria-hidden', 'true'); svg.after(fantome); }
+  calculer();
+  const bb1 = app.dessin && app.dessin.bbox;
+  if (bb0 && bb1 && Math.abs(bb0.w - bb1.w) + Math.abs(bb0.x - bb1.x) + Math.abs(bb0.y - bb1.y) > 0.01) { const s = v0.s * bb0.w / bb1.w;
+    if (anim) { cancelAnimationFrame(anim); anim = null; }
+    app.vue = { s, tx: v0.tx + bb0.x * v0.s - bb1.x * s, ty: v0.ty + bb0.y * v0.s - bb1.y * s }; }
+  peindre(); synchroniser(); rallumer();
+  // le bloc de la carte a pu changer de place sur le nouveau dessin : passé dessous, elle s'écarte (08-carte)
+  if (typeof planifierEcart === 'function') planifierEcart(true);
+  if (fantome) requestAnimationFrame(() => requestAnimationFrame(() => { fantome.classList.add('part'); setTimeout(() => fantome.remove(), 650); })); }
 // IndexedDB : un magasin, une entrée par version du moteur et folio ; les versions passées s'effacent
 const IDB_NOM = 'atelier-schema', IDB_MAGASIN = 'placements', IDB_RETOUCHES = 'retouches', IDB_CONCOURS = 'concours';
 function ouvrirIDB() { return new Promise((ok, ko) => { try { const r = indexedDB.open(IDB_NOM, 4);   // 4 : le magasin des concours (le placement d'un folio, relu à l'ouverture suivante)
@@ -175,83 +217,126 @@ function relireAffines() { if (!affinage.actif) return; const avant = cleCourant
       c.continue(); }; }).catch(() => { }); }
 
 /* ---- le PLACEMENT AU LOIN : un folio jamais vu se place dans un Worker --- */
-/* Le concours d'un folio chargé prend des secondes (75 fils : onze) : dans la
-   page, l'écran se figeait sans un mot. Un gros folio jamais vu se place donc
-   AU LOIN — dans un Worker refait du moteur, comme l'affinage et le FWD —
-   pendant que l'écran reste libre : un mot au milieu de la place libre (« Le
-   moteur place le folio 3… »), la puce du folio qui respire, et l'on change
-   de folio, on ouvre une fiche ou le menu. Le dessin qui arrive est
-   EXACTEMENT celui que la page aurait calculé (le concours est déterministe :
-   même entrée, même sortie) ; il se garde dans ce navigateur (IndexedDB,
-   magasin `concours`, par version du moteur) et revient à l'ouverture
-   suivante en quelques dizaines de millisecondes. Le folio affiché passe
-   toujours devant (un autre en cours lui cède la place et reprend après) ;
-   puis les folios demandés ; puis les autres folios du contrat, dans l'ordre,
-   pour être prêts quand on y va. Restent dans la page, comme avant : un petit
-   folio (SEUIL_ICI liaisons au plus — bien moins d'une seconde, on ne verrait
-   que l'attente), un contrat sans folios ou découpé par l'outil
-   (`ajusterFolios` lit le dessin aussitôt), et tout quand le navigateur
-   refuse le Worker. Sous pilote automatique (navigator.webdriver) le
-   placement reste dans la page, synchrone, pour que les bancs lisent le
-   dessin dès `redessiner()` ; `placementAilleurs(true)` l'envoie au loin
-   (tests/placement.js). */
+/* Le concours d'un folio chargé prend des secondes : dans la page, l'écran se
+   figeait sans un mot. Un gros folio jamais vu se place donc AU LOIN — dans
+   un Worker refait du moteur, comme l'affinage et le FWD — pendant que
+   l'écran reste à nous. Au bout d'une seconde environ, le Worker envoie une
+   ESQUISSE (04, `rapporter` : le meilleur des candidats de départ, un dessin
+   complet) : le folio se montre, se lit, ses blocs se choisissent ; quand le
+   concours a fini, son dessin la remplace en fondu, la feuille à sa place
+   (`remplacerDessin`). Avant l'esquisse, l'attente se dit vraiment : le
+   folio, ses câbles, une durée estimée sur ce que cet ordinateur a déjà mis
+   (`ETALON`), une barre, et ce qu'on peut faire pendant (les problèmes du
+   contrat, le récapitulatif). Le dessin qui arrive est EXACTEMENT celui que
+   la page aurait calculé (le concours est déterministe : même entrée, même
+   sortie) ; il se garde dans ce navigateur (IndexedDB, magasin `concours`,
+   par version du moteur) et revient à l'ouverture suivante en quelques
+   dizaines de millisecondes. Le folio affiché passe toujours devant (un
+   autre en cours lui cède la place et reprend après) ; puis les folios
+   demandés ; puis les autres folios du contrat, l'un après l'autre, pour
+   être prêts quand on y va — la bande le dit (« 7 / 20 folios prêts »).
+   Restent dans la page : un petit folio (SEUIL_ICI liaisons au plus), un
+   contrat sans folios ou découpé par l'outil (`ajusterFolios` lit le dessin
+   aussitôt), et tout quand le navigateur refuse le Worker. Sous pilote
+   automatique (navigator.webdriver) le placement reste dans la page,
+   synchrone, pour que les bancs lisent le dessin dès `redessiner()` ;
+   `placementAilleurs(true)` l'envoie au loin (tests/placement.js). */
 const SEUIL_ICI = 12;
-const placement = { ailleurs: !(typeof navigator !== 'undefined' && navigator.webdriver), worker: null, url: null, encours: null, file: [], attentes: new Map(), faits: 0, relus: 0, erreur: null, nettoye: false };
+const placement = { ailleurs: !(typeof navigator !== 'undefined' && navigator.webdriver), worker: null, url: null, encours: null, file: [], attentes: new Map(), faits: 0, relus: 0, erreur: null, nettoye: false,
+  aides: [],             // les Workers qui partagent le concours du chef (`travailleurPlacement`)
+  prets: new Set(),      // les clés des folios placés dans cette session (gardés ou non en mémoire) : on ne les redemande pas
+  derniers: new Map(),   // folio -> son dernier dessin montré (ses bouts, son placement) : le dessin d'avant, s'il convient encore
+  horloge: 0 };
 // ce folio part-il au loin ? gros, venu du fichier (ni le dessin entier, ni un découpage de l'outil), le Worker possible
 const auLoin = L => placement.ailleurs && placement.worker !== false && app.plan !== '*' && !app.nFolios && L.length > SEUIL_ICI;
 const attenteCourante = () => { const cle = cleCourante(); return cle && placement.attentes.has(cle) ? placement.attentes.get(cle) : null; };
 /* Demander un folio : d'abord ce navigateur (le concours gardé d'une session passée), sinon la file du Worker. L'attente
-   retient la cible du moment : si une autre est choisie pendant le calcul (l'index, la recherche), c'est elle qu'on cadrera. */
-function demanderPlacement(cle, L, plan) { if (!travailleurPlacement()) return false;
-  placement.attentes.set(cle, { L: L.map(({ origine, ...l }) => l), plan, t: performance.now(), vue: plan === app.plan, cibleAvant: app.cible });
+   retient la cible du moment : si une autre est choisie pendant le calcul (l'index, la recherche), c'est elle qu'on cadrera.
+   Un folio à placer passe avant l'affinage, qui se suspend. */
+function demanderPlacement(cle, L, plan) { if (!travailleurPlacement()) return false; suspendreAffinage();
+  placement.attentes.set(cle, { cle, L: L.map(({ origine, ...l }) => l), plan, t: performance.now(), debut: 0, p: 0, esquisse: null, vue: plan === app.plan, cibleAvant: app.cible });
   lireConcours(cle).then(P => { if (!placement.attentes.has(cle)) return;
     if (P) { placement.relus++; recevoirPlacement(cle, P, false); } else { placement.file.push(cle); pomperPlacement(); } });
   return true; }
+/* Le Worker : le moteur, et sa glu. Il est le CHEF d'un concours partagé (04, `menerAuLoin`) : ses AIDES — d'autres
+   Workers du même moteur, un par cœur libre, trois au plus — font les recherches indépendantes de chaque lot (les deux
+   chemins de chaque finaliste, la passe finale de chacun) ; le dessin est le même qu'à la suite, plus tôt. Le chef
+   rapporte l'esquisse (une fois), où il en est (une fraction), puis le dessin. La page les relie (un MessageChannel par
+   aide) ; sans aide possible, le chef fait tout, à la suite. */
+const AIDES_PLACEMENT = Math.max(0, Math.min(3, ((typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 2) - 1));
+const GLU_PLACEMENT = `
+(() => { let AIDES = [], NUMERO = 0; const ATTENTES = new Map();   // dans sa portée : le moteur a ses propres noms
+const faireAilleurs = (cle, liaisons) => t => { const port = AIDES.reduce((m, p) => p.charge < m.charge ? p : m, AIDES[0]), id = ++NUMERO; port.charge++;
+  port.postMessage({ id, cle, liaisons, t: tacheEnDonnees(t) });
+  return new Promise((ok, ko) => ATTENTES.set(id, { port, ok: r => ok(desDonnees(t.M, r)), ko })); };
+self.onmessage = e => { const d = e.data;
+  if (d.role === 'aide') { d.port.onmessage = m => { const { id, cle, liaisons, t } = m.data;
+      try { d.port.postMessage({ id, r: faireTacheEnDonnees(cle, liaisons, t) }); } catch (err) { d.port.postMessage({ id, erreur: String(err && err.message || err) }); } }; return; }
+  if (d.role === 'chef') { AIDES = d.aides || []; AIDES.forEach(p => { p.charge = 0; p.onmessage = m => { const x = ATTENTES.get(m.data.id); if (!x) return; ATTENTES.delete(m.data.id); x.port.charge--;
+      if (m.data.erreur) x.ko(new Error(m.data.erreur)); else x.ok(m.data.r); }; }); return; }
+  const { cle, liaisons } = d, rapport = { dire: (quoi, x) => postMessage({ cle, [quoi]: typeof x === 'function' ? x() : x }) };
+  let fait; try { fait = AIDES.length ? meilleurPlacementAuLoin(liaisons, rapport, faireAilleurs(cle, liaisons)) : Promise.resolve(meilleurPlacement(liaisons, rapport)); } catch (err) { fait = Promise.reject(err); }
+  fait.then(P => postMessage({ cle, P }), err => postMessage({ cle, erreur: String(err && err.message || err) })); }; })();`;
 function travailleurPlacement() { if (placement.worker) return placement.worker; if (placement.worker === false) return null;
-  try { if (!placement.url) { const src = document.getElementById('moteur').textContent;   // le moteur, une fois : un Worker relancé le relit
-      const glue = `\nself.onmessage = e => { const { cle, liaisons } = e.data; try { postMessage({ cle, P: meilleurPlacement(liaisons) }); } catch (err) { postMessage({ cle, erreur: String(err && err.message || err) }); } };`;
-      placement.url = URL.createObjectURL(new Blob([src + glue], { type: 'text/javascript' })); }
-    const w = new Worker(placement.url);
-    w.onmessage = recevoirDuLoin; w.onerror = e => { placement.erreur = String((e && e.message) || 'Worker refusé'); placement.worker = false; placement.encours = null; placerIci(); };
+  try { if (!placement.url) placement.url = URL.createObjectURL(new Blob([document.getElementById('moteur').textContent + GLU_PLACEMENT], { type: 'text/javascript' }));   // le moteur, une fois : un Worker relancé le relit
+    const w = new Worker(placement.url), ports = []; placement.aides = [];
+    for (let i = 0; i < AIDES_PLACEMENT; i++) { try { const a = new Worker(placement.url), ch = new MessageChannel(); a.postMessage({ role: 'aide', port: ch.port1 }, [ch.port1]); ports.push(ch.port2); placement.aides.push(a); } catch (_) { break; } }
+    w.postMessage({ role: 'chef', aides: ports }, ports);
+    w.onmessage = recevoirDuLoin; w.onerror = e => { placement.erreur = String((e && e.message) || 'Worker refusé'); arreterPlacement(); placement.worker = false; placement.encours = null; placerIci(); };
     return (placement.worker = w); }
   catch (_) { placement.worker = false; return null; } }
+// arrêter le chef et ses aides (un folio qui passe devant, une erreur) ; le prochain folio en refera
+function arreterPlacement() { const w = placement.worker; placement.worker = null; try { if (w) w.terminate(); } catch (_) { }
+  (placement.aides || []).forEach(a => { try { a.terminate(); } catch (_) { } }); placement.aides = []; }
 /* La file : le folio affiché d'abord — s'il attend pendant qu'un autre se calcule, l'autre cède (il reprendra) — ; puis
-   les folios demandés ; puis, d'avance, les autres folios du contrat. Ce qui ne correspond plus à un folio du contrat
-   (une liaison corrigée, un autre fichier) sort de la file. */
+   les folios demandés ; puis, d'avance, les autres folios du contrat, un à la fois. Ce qui ne correspond plus à un folio
+   du contrat (une liaison corrigée, un autre fichier) sort de la file. Quand il n'y a plus rien, l'affinage peut partir. */
 function pomperPlacement() { if (!placement.ailleurs || placement.worker === false) return;
   const vivant = cle => { const a = placement.attentes.get(cle); return !!a && plans().includes(a.plan) && clePlacement(liaisonsDe(a.plan)) === cle; };
   placement.file = placement.file.filter(vivant);
   [...placement.attentes.keys()].forEach(cle => { if (!vivant(cle) && !(placement.encours && placement.encours.cle === cle)) placement.attentes.delete(cle); });
   const ici = cleCourante();
   if (placement.encours) { if (placement.encours.cle === ici || !placement.file.includes(ici)) { montrerAttente(); return; }
-    const w = placement.worker, cede = placement.encours.cle; placement.worker = null; placement.encours = null; try { w.terminate(); } catch (_) { }
-    if (vivant(cede)) placement.file.push(cede); }
+    const cede = placement.encours.cle, a = placement.attentes.get(cede); arreterPlacement(); placement.encours = null;
+    if (a) { a.debut = 0; a.p = 0; } if (vivant(cede)) placement.file.push(cede); }
   const cle = placement.file.includes(ici) ? ici : placement.file.shift(); placement.file = placement.file.filter(k => k !== cle);
-  if (!cle) { const p = prochainAuLoin(); if (p) demanderPlacement(p.cle, p.L, p.plan); montrerAttente(); return; }
+  if (!cle) { const p = prochainAuLoin(); if (p) demanderPlacement(p.cle, p.L, p.plan); else pomper(); montrerAttente(); return; }
   const w = travailleurPlacement(); if (!w) { placerIci(); return; }
-  placement.encours = { cle, t: performance.now() }; w.postMessage({ cle, liaisons: placement.attentes.get(cle).L }); montrerAttente(); }
+  const a = placement.attentes.get(cle); a.debut = performance.now(); a.p = 0;
+  placement.encours = { cle, t: a.debut }; w.postMessage({ cle, liaisons: a.L }); montrerAttente(); }
 // le prochain folio du contrat à placer d'avance : après le folio affiché, dans l'ordre, un folio gros et jamais vu
 function prochainAuLoin() { if (app.plan === '*' || app.nFolios) return null; const P = plans(), i = Math.max(0, P.indexOf(app.plan));
-  for (let k = 1; k < P.length; k++) { const p = P[(i + k) % P.length], L = liaisonsDe(p); if (L.length <= SEUIL_ICI) continue; const cle = clePlacement(L);
-    if (app.retouches.has(cle) || affinage.profonds.has(cle) || placements.has(cle) || placement.attentes.has(cle)) continue; return { cle, L, plan: p }; }
+  for (let k = 1; k < P.length; k++) { const p = P[(i + k) % P.length], L = liaisonsDe(p); if (L.length <= SEUIL_ICI) continue; const cle = cleDuPlan(p);
+    if (placement.prets.has(cle) || app.retouches.has(cle) || affinage.profonds.has(cle) || placements.has(cle) || placement.attentes.has(cle)) continue; return { cle, L, plan: p }; }
   return null; }
+// la clé d'un folio, gardée tant que ses liaisons sont les mêmes (le même tableau : `liaisonsDe`)
+const clesDesPlans = new Map();
+function cleDuPlan(p) { const L = liaisonsDe(p), m = clesDesPlans.get(p); if (m && m.L === L) return m.cle; const cle = L.length ? clePlacement(L) : ''; clesDesPlans.set(p, { L, cle }); return cle; }
 function recevoirDuLoin(e) { const d = e.data || {}; if (!placement.encours || d.cle !== placement.encours.cle) return;   // un calcul qu'on avait abandonné
-  placement.encours = null;
+  const a = placement.attentes.get(d.cle);
+  if (d.etape != null) { if (a) a.p = Math.max(a.p, +d.etape || 0); return; }
+  // l'esquisse : montrée tout de suite si le folio est affiché et n'a rien d'autre à montrer (ni son dessin d'avant)
+  if (d.esquisse) { if (a && !a.esquisse) { a.esquisse = { ...d.esquisse, provisoire: 'esquisse' };
+      if (cleCourante() === d.cle && !app.dessin) { rafraichirDessin(); finirAttente(a); } }
+    montrerAttente(); return; }
+  const duree = performance.now() - placement.encours.t; placement.encours = null;
   if (d.erreur) { placement.erreur = d.erreur; placerIci(d.cle); return; }
-  placement.faits++; recevoirPlacement(d.cle, d.P, true); }
+  placement.faits++; if (a && d.P) etalonner(a.L.length, duree); recevoirPlacement(d.cle, d.P, true); }
 /* Sans Worker (refusé, ou en erreur) : le chemin d'avant, dans la page — juste après que l'attente s'est affichée, pour
    qu'on sache ce qui se passe ; le folio affiché d'abord. */
 function placerIci(cle) { const ici = cleCourante(), cles = (cle ? [cle] : [...placement.attentes.keys()]).sort((a, b) => (b === ici) - (a === ici));
   setTimeout(() => cles.forEach(k => { const a = placement.attentes.get(k); if (!a) return; let P = null;
     try { P = meilleurPlacement(a.L); } catch (err) { placement.erreur = String((err && err.message) || err); }
     recevoirPlacement(k, P, true); }), 30); }
+/* Le dessin arrive : il se garde ; sur le folio affiché, il remplace l'esquisse (ou le dessin d'avant) en fondu, sinon il
+   s'ouvre comme un folio qu'on ouvre. */
 function recevoirPlacement(cle, P, neuf) { const a = placement.attentes.get(cle); placement.attentes.delete(cle); placement.file = placement.file.filter(k => k !== cle);
   if (P) { garderPlacement(cle, P); if (neuf) garderConcours(cle, P); }
   else if (a && cleCourante() === cle) dire('Le folio ' + a.plan + ' n’a pas pu se dessiner' + (placement.erreur ? ' : ' + placement.erreur : '') + '.', true);
-  if (P && cleCourante() === cle) { rafraichirDessin(); finirAttente(a); }
+  if (P && cleCourante() === cle) { if (app.dessin && app.dessin.provisoire) { remplacerDessin(); const c = app.cible, k = c && c.type === 'bloc' && app.dessin && app.dessin.compDe.get(c.nom); if (k) montrerSiCache(k); } else { rafraichirDessin(); finirAttente(a); } }
   pomperPlacement(); montrerAttente(); }
-/* Le dessin attendu est là : la vue se cadre comme si le folio venait de s'ouvrir ; ce qu'on a choisi pendant l'attente
-   (depuis l'index, la recherche, le tableau) est choisi et cadré, comme si le dessin avait été là. */
+/* Le dessin attendu est là (l'esquisse, ou le concours) : la vue se cadre comme si le folio venait de s'ouvrir ; ce qu'on a
+   choisi pendant l'attente (depuis l'index, la recherche, le tableau) est choisi et cadré, comme si le dessin avait été là. */
 function finirAttente(a) { const c = app.cible, d = app.dessin; if (!d) return; ajuster(); if (!c) return;
   if (c.type === 'fil') { const w = filDe(c.l); if (w) { allumerFil(w); viserFil(w); } return; }
   if (c.type !== 'bloc' || !a || c === a.cibleAvant) return;
@@ -260,15 +345,80 @@ function finirAttente(a) { const c = app.cible, d = app.dessin; if (!d) return; 
 // la cible d'une recherche pendant que son folio se place au loin : sa fiche tout de suite, choisie et cadrée quand le dessin arrive
 function reporterCible(cible) { if (cible.type === 'fil') { const l = verite().find(x => x.cable === cible.nom); if (!l) return; app.cible = { type: 'fil', l }; } else app.cible = { type: 'bloc', nom: cible.nom };
   ouvrirInspecteur(); }
-/* L'attente, visible : au milieu de la place libre du plan, le mot et le point qui respire ; dans la barre du bas, la puce du
-   folio qui se calcule respire aussi. L'élément se crée à la première attente, dans la planche (#attente). */
+
+/* ---- l'ATTENTE, honnête ------------------------------------------------- */
+/* Combien de temps ? Le concours croît comme n^2,2 (n : les liaisons du folio, l'audit) ; la constante est celle de CET
+   ordinateur, apprise sur chaque folio placé (une moyenne glissante) et gardée dans ce navigateur. La première fois, celle
+   d'un ordinateur de bureau ordinaire. */
+const ETALON = (() => { const e = { c: 0.5, n: 0 }; try { const x = JSON.parse(localStorage.getItem('volta.placement.etalon') || 'null'); if (x && x.c > 0 && isFinite(x.c)) Object.assign(e, x); } catch (_) { } return e; })();
+const dureeEstimee = n => ETALON.c * Math.pow(Math.max(1, n), 2.2);
+function etalonner(n, ms) { if (!(n > SEUIL_ICI) || !(ms > 0)) return; const c = ms / Math.pow(n, 2.2);
+  ETALON.c = ETALON.n ? 0.6 * ETALON.c + 0.4 * c : c; ETALON.n++;
+  try { localStorage.setItem('volta.placement.etalon', JSON.stringify(ETALON)); } catch (_) { } }
+// une durée, en mots : « 8 s », « 25 s », « 2 min »
+const enSecondes = ms => { const s = ms / 1000; return s < 15 ? Math.max(1, Math.round(s)) + ' s' : s < 60 ? Math.round(s / 5) * 5 + ' s' : s < 100 ? '1 min' + (s >= 80 ? ' 30' : '') : Math.round(s / 60) + ' min'; };
+/* Où en est le folio `a` : une fraction (le temps écoulé sur le temps estimé, ce que le Worker rapporte), et ce qu'il
+   reste, en mots. En file derrière un autre folio : il attend son tour. */
+function avancement(a) { const est = dureeEstimee(a.L.length);
+  if (!a.debut) return { p: 0, mot: 'environ ' + enSecondes(est), file: !!placement.encours && placement.encours.cle !== a.cle };
+  const ecoule = performance.now() - a.debut, p = Math.min(0.97, Math.max(a.p || 0, ecoule / est)), reste = est - ecoule;
+  return { p, mot: ecoule < 1500 ? 'environ ' + enSecondes(est) : reste > 1500 ? 'encore environ ' + enSecondes(reste) : 'presque fini' }; }
+// le nom du folio et sa place : « 3 / 20 », ou « MEE…003A (3 / 20) »
+function folioEtRang(plan) { const P = plans(), i = P.indexOf(plan) + 1; if (!i) return String(plan); return String(plan) === String(i) ? i + ' / ' + P.length : plan + ' (' + i + ' / ' + P.length + ')'; }
+// ce qu'on peut faire pendant ce temps : les problèmes du contrat (l'index « à reprendre »), le récapitulatif
+function libelleProblemes() { const xs = (typeof CONTROLE !== 'undefined' && CONTROLE.items) || [], nko = xs.filter(x => x.niveau === 'ko').length;
+  return nko ? 'Les ' + pluriel(nko, 'problème') : xs.length ? 'Les ' + xs.length + ' points à voir' : 'Les repères'; }
+const gestesDeLAttente = () => `<span class="at-gestes">Pendant ce temps : <button type="button" data-at="problemes">${libelleProblemes()}</button><button type="button" data-at="recap">Le récapitulatif</button></span>`;
+/* L'attente, visible : au milieu de la place libre du plan, le folio, ses câbles, la durée, une barre ; et ce qu'on peut
+   faire pendant. Dans la barre du bas, la puce du folio qui se calcule respire ; les folios pas encore prêts sont pâles.
+   L'élément se crée à la première attente, dans la planche (#attente). Une horloge le tient à jour tant qu'on attend. */
 function montrerAttente() { const a = app.contrat.liaisons.length && !app.dessin ? attenteCourante() : null; let el = $('attente');
-  if (!el && !a && !placement.encours) return;
-  if (!el && a) { el = document.createElement('div'); el.id = 'attente'; el.className = 'attente'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite'); $('planche').appendChild(el); }
-  if (el) { if (!a) el.hidden = true; else { const m = marges(); Object.assign(el.style, { left: m.gauche + 'px', right: m.droite + 'px', top: m.haut + 'px', bottom: m.bas + 'px' });
-    el.innerHTML = `<i aria-hidden="true"></i><b>Le moteur place le folio ${esc(app.plan)}…</b><small>${pluriel(a.L.length, 'fil')} · quelques secondes — l’écran reste libre</small>`; el.hidden = false; } }
+  if (!el && a) { el = document.createElement('div'); el.id = 'attente'; el.className = 'attente'; $('planche').appendChild(el);
+    el.addEventListener('click', e => { const b = e.target.closest('[data-at]'); if (!b) return; if (b.dataset.at === 'problemes') basculerIndex(); else ouvrirBase(); }); }
+  if (el) { if (!a) { el.hidden = true; el.dataset.cle = ''; }
+    else { const m = marges(), v = avancement(a); Object.assign(el.style, { left: m.gauche + 'px', right: m.droite + 'px', top: m.haut + 'px', bottom: m.bas + 'px' });
+      const detail = pluriel(a.L.length, 'câble') + ' · ' + (v.file ? 'son tour vient · ' : '') + v.mot;
+      if (el.dataset.cle !== a.cle) { el.dataset.cle = a.cle;
+        el.innerHTML = `<i aria-hidden="true"></i><b role="status">Dessin du folio ${esc(folioEtRang(a.plan))}</b><small class="at-detail">${esc(detail)}</small>`
+          + `<span class="at-barre" aria-hidden="true"><span></span></span>${gestesDeLAttente()}`; }
+      else { const s = el.querySelector('.at-detail'); if (s && s.textContent !== detail) s.textContent = detail;
+        // le contrôle du contrat arrive après la lecture : le geste des problèmes en dit le compte dès qu'il est là
+        const b = el.querySelector('[data-at="problemes"]'), mot = libelleProblemes(); if (b && b.textContent !== mot) b.textContent = mot; }
+      const barre = el.querySelector('.at-barre span'); if (barre) barre.style.transform = `scaleX(${v.p.toFixed(3)})`; el.hidden = false; } }
   const vifs = new Set(); if (a) vifs.add(app.plan); if (placement.encours && placement.attentes.has(placement.encours.cle)) vifs.add(placement.attentes.get(placement.encours.cle).plan);
-  $('fo-strip').querySelectorAll('.chip').forEach(c => c.classList.toggle('attend', vifs.has(c.dataset.plan))); }
+  const prets = foliosPrets(), pas = prets && prets.n < prets.N ? prets.pas : null;
+  $('fo-strip').querySelectorAll('.chip').forEach(c => { c.classList.toggle('attend', vifs.has(c.dataset.plan)); c.classList.toggle('a-venir', !!pas && pas.has(c.dataset.plan) && !vifs.has(c.dataset.plan)); });
+  montrerBande(); remonterHorloge(); }
+// l'horloge de l'attente : quatre fois par seconde tant qu'un folio se calcule ou s'esquisse, rien sinon
+function remonterHorloge() { const utile = placement.ailleurs && (!!placement.encours || placement.attentes.size > 0);
+  if (utile && !placement.horloge) placement.horloge = setInterval(() => { montrerAttente(); }, 250);
+  else if (!utile && placement.horloge) { clearInterval(placement.horloge); placement.horloge = 0; } }
+/* Les folios prêts : placés (dans cette session, ou relus de ce navigateur), affinés, retouchés, ou assez petits pour
+   se placer à l'instant. Rend { n, N, pas: les folios pas encore prêts } ; compté au plus deux fois par seconde. */
+function foliosPrets() { const t = performance.now(), m = foliosPrets.m; if (m && t - m.t < 500) return m.r;
+  const P = plans(); let r = null;
+  if (P.length > 1 && app.plan !== '*' && !app.nFolios && placement.ailleurs) { const pas = new Set();
+    P.forEach(p => { const L = liaisonsDe(p); if (L.length <= SEUIL_ICI) return; const k = cleDuPlan(p);
+      if (!(placement.prets.has(k) || placements.has(k) || affinage.profonds.has(k) || app.retouches.has(k))) pas.add(p); });
+    r = { n: P.length - pas.size, N: P.length, pas }; }
+  foliosPrets.m = { t, r }; return r; }
+/* LA PETITE BANDE du milieu, en bas (#affinage) : ce qui travaille pour nous, une chose à la fois — le dessin définitif du
+   folio affiché (l'esquisse est là), les folios qui se préparent (« 7 / 20 folios prêts »), puis le dessin qui s'affine. */
+function montrerBande() { const el = $('affinage'); if (!el) return; const txt = $('af-txt'); let barre = el.querySelector('.af-barre');
+  const poser = (mot, p, ailleurs, bulle) => { el.hidden = false; el.classList.toggle('ailleurs', !!ailleurs); el.setAttribute('aria-live', p == null ? 'polite' : 'off'); if (txt.textContent !== mot) txt.textContent = mot;
+    if (p == null) { if (barre) barre.hidden = true; } else { if (!barre) { barre = document.createElement('span'); barre.className = 'af-barre'; barre.setAttribute('aria-hidden', 'true'); barre.appendChild(document.createElement('span')); el.appendChild(barre); }
+      barre.hidden = false; barre.firstChild.style.transform = `scaleX(${Math.max(0.02, p).toFixed(3)})`; }
+    el.setAttribute('aria-label', bulle ? mot + ' — ' + bulle : mot); el.removeAttribute('title'); };
+  const a = attenteCourante();
+  if (a && app.dessin && app.dessin.provisoire) { const v = avancement(a);
+    poser((app.dessin.provisoire === 'esquisse' ? 'Esquisse · le dessin définitif ' : 'Dessin d’avant · le nouveau ') + (v.mot === 'presque fini' ? 'arrive' : 'dans ' + v.mot.replace(/^encore /, '')), v.p, false, 'le folio se lit déjà ; son dessin définitif le remplacera sans bouger la feuille'); return; }
+  const prets = foliosPrets();
+  if (prets && prets.n < prets.N && (placement.encours || placement.attentes.size)) { poser(prets.n + ' / ' + prets.N + ' folios prêts', prets.n / prets.N, true, 'les autres folios se dessinent en arrière-plan, l’un après l’autre'); return; }
+  const j = affinage.encours, e = affinage.etat;
+  if (affinage.actif && j) { const ici = j.cle === cleCourante(), reste = affinage.file.length;
+    poser((ici ? 'Le dessin s’affine' : 'Un autre folio s’affine') + (e ? ' · ' + e.k + ' / ' + e.n : '') + (reste ? ' · ' + reste + ' en attente' : ''), e && e.n ? e.k / e.n : null, !ici, 'chaque mieux trouvé remplace le dessin, et se garde dans ce navigateur'); return; }
+  el.hidden = true; }
+const montrerAffinage = montrerBande;
 // le concours gardé : une entrée par version du moteur et folio ; les concours d'un moteur passé s'effacent, une fois par session
 function garderConcours(cle, P) { ouvrirIDB().then(db => { db.transaction(IDB_CONCOURS, 'readwrite').objectStore(IDB_CONCOURS).put({ P, t: Date.now() }, VERSION_MOTEUR + '|' + cle); }).catch(() => { }); }
 function lireConcours(cle) { return ouvrirIDB().then(db => new Promise(ok => { if (!placement.nettoye) { placement.nettoye = true; nettoyerConcours(db); }
@@ -277,9 +427,10 @@ function nettoyerConcours(db) { try { const st = db.transaction(IDB_CONCOURS, 'r
   req.onsuccess = () => { const c = req.result; if (c) { if (!String(c.key).startsWith(VERSION_MOTEUR + '|')) vieux.push(c.key); c.continue(); } else vieux.forEach(k => st.delete(k)); }; } catch (_) { } }
 /* Pour les bancs : envoyer le placement au loin sous pilote (il y dort), et lire où il en est. */
 function placementAilleurs(on) { placement.ailleurs = !!on; if (on && app.contrat.liaisons.length && !app.dessin) redessiner(); return etatPlacement(); }
-function etatPlacement() { const plan = cle => { const a = placement.attentes.get(cle); return a ? a.plan : null; };
+function etatPlacement() { const plan = cle => { const a = placement.attentes.get(cle); return a ? a.plan : null; }, a = attenteCourante(), prets = foliosPrets();
   return { ailleurs: placement.ailleurs, worker: placement.worker === false ? 'refusé' : placement.worker ? 'oui' : 'pas encore', encours: placement.encours ? plan(placement.encours.cle) : null,
-    file: placement.file.map(plan), attentes: [...placement.attentes.values()].map(a => a.plan), faits: placement.faits, relus: placement.relus, gardes: placements.size, erreur: placement.erreur }; }
+    file: placement.file.map(plan), attentes: [...placement.attentes.values()].map(a => a.plan), faits: placement.faits, relus: placement.relus, gardes: placements.size, erreur: placement.erreur,
+    provisoire: (app.dessin && app.dessin.provisoire) || null, esquisse: !!(a && a.esquisse), prets: prets ? prets.n + ' / ' + prets.N : null, etalon: Math.round(ETALON.c * 1000) / 1000, aides: (placement.aides || []).length }; }
 /* ---- la RETOUCHE : tout se prend à la souris, tout suit ----------------- */
 /* Le dessin automatique est le point de départ ; on en a la MAÎTRISE TOTALE (le lecteur : « tout doit bouger — bornier,
    fil, borne, tout »). Ce qui se prend, et comment :
@@ -455,10 +606,13 @@ function synchroniserRetouche() { const b = $('btnAuto'); if (!b) return; const 
   if (b.getAttribute('aria-label') !== MOT_RETOUCHE) b.setAttribute('aria-label', MOT_RETOUCHE); }
 function calculer() {
   const L = liaisonsDuPlan(); if (!L.length) { app.dessin = null; return null; }
+  // l'affinage se met en file ici, mais ne part qu'une fois tous les folios placés (`pomper`)
   const P = placementDe(L); affinerTout();
-  // la feuille : la même pour tous les folios (A3 paysage), le dessin calé dedans
+  // le dernier vrai dessin du folio : s'il change (un numéro, une borne), on le montre en attendant le nouveau (`provisoire`)
+  if (P && !P.provisoire && app.plan !== '*') placement.derniers.set(app.plan, { bouts: boutsDe(L), P });
+  // la feuille : la même pour tous les folios (A3 paysage), le dessin calé dedans ; `provisoire` : l'esquisse ou le dessin d'avant
   app.dessin = P ? { comps: P.comps, links: P.links, bbox: pageDe(P.comps, P.routage.fils), geom: P.geom, compDe: P.compDe,
-                     fils: P.routage.fils, points: P.routage.points, barrettes: P.routage.barrettes, piquages: P.routage.piquages } : null;
+                     fils: P.routage.fils, points: P.routage.points, barrettes: P.routage.barrettes, piquages: P.routage.piquages, provisoire: P.provisoire || null } : null;
   if (app.dessin) { const routes = couleursDesRoutes(), routeDe = w => (L[w.i] && L[w.i].route) || '';
     app.dessin.couleurDe = w => routes.get(routeDe(w)) || null; app.dessin.legende = legendeDesRoutes(app.dessin.fils.filter(w => !w.shunt && String(w.de) !== String(w.vers)), routeDe, routes);
     nommerBarrettesAPoser(app.dessin.barrettes, L); }
