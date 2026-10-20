@@ -1,0 +1,64 @@
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+   style-carte.css — ce que l'interface pose sur la table, à côté de la carte (08-carte, 08-controle, 08-interface) :
+   · « À REPRENDRE » PAR GENRE, dans la carte de l'index (R) : chaque genre une ligne — son compte à la couleur de son
+     état, son mot, ses repères et ses folios en petit, « Voir le premier » et le geste qui le traite ; déplié, ses
+     lignes (`.co-item`, la fiche les dessine déjà : style-fiche.css) ;
+   · LA FEUILLE DES RACCOURCIS (« ? ») : une carte au milieu de la table, la matière de la carte flottante ;
+   · le GESTE du mot qui passe (« Rétablir ») : le bouton `.toast-voir` (style-fichiers.css), rien de plus.
+   Les jetons de style.css seulement (DESIGN § 4) : rien qui ne vaille que dans un thème.
+   ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* le compte rouge du bouton des repères se clique : il ouvre l'index SUR les problèmes (08-interface, `ouvrirProblemes`) */
+#btnIndex .rd-point{pointer-events:auto;cursor:pointer}
+
+/* ─── « À REPRENDRE », PAR GENRE ─── */
+.co-genres{display:flex;flex-direction:column;padding:0 4px 2px}
+.co-genre{padding:4px 0 6px}
+.co-genre+.co-genre{border-top:1px solid var(--s-line)}
+/* la tête : le chevron (plié ›, déplié ⌄), le compte à la couleur de l'état, le mot — sur toute la largeur */
+.co-genre-bascule{display:flex;align-items:baseline;gap:8px;width:100%;padding:7px 8px 2px 6px;border:none;background:none;border-radius:var(--r-btn);color:var(--t-1);text-align:left;cursor:pointer;transition:background var(--rapide)}
+.co-genre-bascule:hover{background:var(--s-hover)}
+.co-genre-bascule:focus-visible{outline-offset:-2px}
+.co-chevron{width:14px;height:14px;flex:none;align-self:center;color:var(--t-2);transform:rotate(-90deg);transition:transform var(--moyen)}
+.co-genre[data-ouvert] .co-chevron{transform:none}
+.co-n{flex:none;min-width:18px;font:600 var(--f-14)/1.3 var(--sans);font-variant-numeric:tabular-nums;color:var(--t-1)}
+.co-genre.ko .co-n{color:var(--ko)}
+.co-genre.att .co-n{color:var(--warn)}
+.co-genre-l{min-width:0;font:600 var(--f-13)/1.35 var(--sans);color:var(--t-1)}
+/* le pied : ses repères et ses folios à gauche (sous le mot), ses gestes au trait de lien à droite */
+.co-genre-pied{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 6px 0 58px;min-height:26px}
+.co-genre-pied>small{min-width:0;font:400 var(--f-12)/1.35 var(--sans);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.co-gestes{flex:none;display:flex;align-items:center;gap:4px}
+.co-voir,.co-geste{height:24px;padding:0 6px;border:none;background:none;border-radius:var(--r-1);color:var(--t-1);font:500 var(--f-12)/1 var(--sans);white-space:nowrap;cursor:pointer;
+  text-decoration:underline;text-decoration-color:var(--s-line-2);text-underline-offset:3px;transition:background var(--rapide),text-decoration-color var(--rapide)}
+.co-voir:hover,.co-geste:hover{background:var(--s-hover);text-decoration-color:currentColor}
+.co-geste{font-weight:600}
+.co-voir:active,.co-geste:active{transform:scale(.98)}
+/* déplié : ses lignes, en retrait sous le mot ; chaque point en clair (plus de « … » à lire au survol) */
+.co-genre .co-liste{margin-top:2px;padding:0 0 0 22px}
+.co-genre .ix-item.co-item small+small{margin-top:3px}
+.ix-item.co-item small.co-plus{color:var(--t-2);font-style:italic}
+.co-astuce{margin:2px 14px 10px;font:400 var(--f-11)/1.5 var(--sans);color:var(--t-2)}
+.co-astuce kbd,.rk-ligne kbd{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;border-radius:5px;background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line-2),0 1px 0 var(--s-line-2);
+  font:500 var(--f-11)/1 var(--mono);color:var(--t-1)}
+.co-astuce kbd{margin:0 1px}
+
+/* ─── LA FEUILLE DES RACCOURCIS (« ? ») ─── */
+.raccourcis{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:24px;background:var(--voile)}
+.raccourcis[hidden]{display:none}
+.rk-feuille{width:min(780px,100%);max-height:calc(100vh - 48px);overflow:auto;padding:20px 26px 18px;border-radius:var(--r-carte);background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-carte)}
+.rk-feuille:focus{outline:none}
+.raccourcis.entre .rk-feuille{animation:rk-entre var(--lent) var(--courbe)}
+@keyframes rk-entre{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
+.rk-tete{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 -8px 4px 0}
+.rk-tete h2{margin:0;font:600 var(--f-20)/1.25 var(--sans);letter-spacing:-.015em}
+.rk-groupes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 32px}
+.rk-groupe h3{margin:16px 0 4px;font:600 var(--f-13)/1.3 var(--sans);color:var(--t-2)}
+.rk-groupe dl{margin:0}
+.rk-ligne{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:34px;padding:3px 0;border-bottom:1px solid var(--s-line)}
+.rk-ligne dt{font:400 var(--f-13)/1.35 var(--sans);color:var(--t-1)}
+.rk-ligne dd{margin:0;display:flex;align-items:center;gap:3px;flex:none}
+.rk-ou{margin:0 4px;font:400 var(--f-11)/1 var(--sans);color:var(--t-2)}
+.rk-pied{margin:14px 0 0;font:400 var(--f-12)/1.5 var(--sans);color:var(--t-2)}
+@media (max-width:700px){ .rk-groupes{grid-template-columns:1fr} }
+@media (prefers-reduced-motion:reduce){ .raccourcis.entre .rk-feuille{animation:none} }

@@ -30,7 +30,7 @@
    =========================================================================== */
 'use strict';
 
-const CONTROLE = { cle: null, items: [], ouvert: false };
+const CONTROLE = { cle: null, items: [], ouvert: false, genres: new Map(), pas: null, lignes: null };   // genres : ceux qu'on a pliés ou dépliés ; pas : où P en est
 const genreDe = nom => VT_A_POSER.test(nom) ? 'aposer' : estCoupure(nom) ? 'coupure' : estBarrette(nom) ? 'barrette' : 'eqpt';
 /* La SECTION de la fiche qui démontre un point (08-sections) : la ligne de l'index y mène, ouverte. Un disjoncteur dit
    la sienne (`sectionDj`, 08 bis : son calibre, ou ses câbles) ; un câble qu'un repère nourrit se voit dans « Câbles » ;
@@ -74,9 +74,13 @@ function controleDuContrat() { const V = verite(), N = app.norme, H = app.simu |
 /* LE GENRE D'UN POINT (audit v72 : sur un grand retest, 192 lignes une par repère, quand huit genres disent tout) :
    chaque point se range dans un genre, que l'index et le récapitulatif montrent groupé, avec son compte et le geste qui
    le traite. L'ordre de GENRES_CONTROLE est celui de la lecture : ce qui casse d'abord. */
-const GENRES_CONTROLE = [['arrangement', 'connecteurs qu’aucun arrangement ne loge'], ['contact', 'contacts qui refusent leur câble'], ['calibre', 'calibres à revoir'],
-  ['protection', 'câbles mal protégés par leur disjoncteur'], ['chute', 'chutes de tension trop fortes'], ['profil', 'disjoncteurs sans profil de charge'],
-  ['aposer', 'barrettes à poser'], ['cca', 'conducteurs CCA à qualifier'], ['retest', 'points du retest'], ['autre', 'autres points']];
+const GENRES_CONTROLE = [['arrangement', 'connecteurs qu’aucun arrangement ne loge', 'connecteur qu’aucun arrangement ne loge'], ['contact', 'contacts à revoir', 'contact à revoir'],
+  ['calibre', 'calibres à revoir', 'calibre à revoir'], ['protection', 'câbles mal protégés par leur disjoncteur', 'câble mal protégé par son disjoncteur'],
+  ['chute', 'chutes de tension trop fortes', 'chute de tension trop forte'], ['profil', 'disjoncteurs sans profil de charge', 'disjoncteur sans profil de charge'],
+  ['aposer', 'barrettes à poser', 'barrette à poser'], ['cca', 'conducteurs CCA à qualifier', 'conducteur CCA à qualifier'], ['retest', 'points du retest', 'point du retest'], ['autre', 'autres points', 'autre point']];
+// le genre en mots, au nombre qu'il compte : « 2 chutes de tension trop fortes », « 1 barrette à poser »
+const motDuGenre = (g, n) => { const G = GENRES_CONTROLE.find(x => x[0] === g) || GENRES_CONTROLE[GENRES_CONTROLE.length - 1]; return n > 1 ? G[1] : G[2]; };
+const rangDuGenre = g => { const i = GENRES_CONTROLE.findIndex(x => x[0] === g); return i < 0 ? GENRES_CONTROLE.length : i; };
 function genreDuPoint(x) { const t = x.texte || '';
   if (x.tableau != null) return 'retest';
   if (/^à poser sur/.test(t)) return 'aposer';
@@ -129,16 +133,91 @@ function rendreControle() { const V = verite();
   p.hidden = !xs.length; p.className = 'rd-point ' + (nko ? 'ko' : 'att'); p.textContent = String(nko || natt);
   b.setAttribute('aria-label', 'Repères du contrat (R)' + (nko ? ' — ' + pluriel(nko, 'problème') : natt ? ' — ' + natt + ' à voir' : ''));
   if (app.insp.index && !$('inspecteur').hidden && !app.cible) rendreIndex($('ba-equip')); }
-/* La liste « à reprendre », en tête de l'index : les problèmes, puis les points à voir ; une ligne y mène. */
+/* ---- « À REPRENDRE », PAR GENRE (l'audit v72, P1-5 : « à l'échelle, la liste noie » — 192 lignes une par repère sur un
+   grand retest, quand huit genres disent tout) ------------------------------------------------------------------------
+   Les points se rangent par niveau (les problèmes, puis ce qui est à voir), puis par genre, dans l'ordre de la lecture ;
+   chaque genre dit son compte et ses repères, « Voir le premier » y mène, et le GESTE qui le traite d'un coup quand il
+   existe (« Toutes les poser », « Écrire les profils », « Écrire les longueurs », « Voir les disjoncteurs »). Déplié, un
+   genre montre ses LIGNES (`.co-item`, une par repère : chacun de ses points, en clair) ; un genre se déplie d'office
+   quand toute la liste est courte. P mène au point suivant (Maj+P au précédent), d'un bout à l'autre de la liste : le
+   mot dit où l'on en est (« 3 / 10 »). Le récapitulatif (l'onglet Problèmes) range ses lignes de même. */
+const COURTE = 12;   // au-delà de tant de lignes, les genres restent pliés (on les déplie, ou on suit P)
+/* Les lignes, dans l'ordre de la lecture : [{ cle, niveau, genre, nom, xs, plan, k }] — une par niveau, genre et repère
+   (le tableau : une par point) ; `k` : le rang de son premier point dans CONTROLE.items. */
+function lignesDuControle() { const xs = CONTROLE.items || []; if (CONTROLE.lignes && CONTROLE.lignes.items === xs) return CONTROLE.lignes.L;
+  const par = new Map(); xs.forEach(x => { const cle = x.niveau + '|' + (x.genre || 'autre') + '|' + (x.nom || '\u0001' + x.texte); const g = par.get(cle) || par.set(cle, { cle, niveau: x.niveau, genre: x.genre || 'autre', nom: x.nom || '', xs: [] }).get(cle); g.xs.push(x); });
+  const L = [...par.values()].sort((a, b) => (a.niveau === 'ko' ? 0 : 1) - (b.niveau === 'ko' ? 0 : 1) || rangDuGenre(a.genre) - rangDuGenre(b.genre) || triNaturel(a.nom || '~', b.nom || '~'));
+  L.forEach(l => { l.plan = l.xs[0].plan || ''; l.k = xs.indexOf(l.xs[0]); });
+  CONTROLE.lignes = { items: xs, L }; return L; }
+// les genres : [{ cle: 'ko|chute', niveau, genre, lignes, n (points), noms (repères) }]
+function genresDuControle() { const G = new Map();
+  lignesDuControle().forEach(l => { const k = l.niveau + '|' + l.genre, g = G.get(k) || G.set(k, { cle: k, niveau: l.niveau, genre: l.genre, lignes: [], n: 0, noms: new Set() }).get(k); g.lignes.push(l); g.n += l.xs.length; if (l.nom) g.noms.add(l.nom); });
+  return [...G.values()]; }
+/* LE GESTE QUI TRAITE UN GENRE, quand il existe : { mot, aide, faire }. Les barrettes à poser se posent toutes d'un coup
+   (chacune sous le repère que l'outil propose, un seul Ctrl+Z) ; les autres mènent au tableau qui les corrige, filtré. */
+function gesteDuGenre(g) { const xs = g.lignes.flatMap(l => l.xs);
+  if (g.genre === 'aposer') return { mot: g.lignes.length > 1 ? 'Toutes les poser' : 'La poser', aide: 'Chacune entre au contrat sous le repère que l’outil propose (la suite de la barrette la plus proche) ; « Rétablir » ou Ctrl+Z les rend à poser', faire: () => poserLesBarrettes(g.lignes.map(l => l.nom)) };
+  if (g.genre === 'profil') return { mot: 'Écrire les profils', aide: 'L’onglet Disjoncteurs du récapitulatif : ceux sans profil de charge, la colonne Permanent à écrire', faire: () => ouvrirOngletFiltre('disjoncteurs', ['sansprofil'], ['profil']) };
+  if (g.genre === 'calibre' || g.genre === 'protection') return { mot: 'Voir les disjoncteurs', aide: 'L’onglet Disjoncteurs du récapitulatif : ceux qui ont quelque chose à reprendre', faire: () => ouvrirOngletFiltre('disjoncteurs', ['probleme']) };
+  if (g.genre === 'chute') return xs.every(x => /hypothèse/.test(x.texte)) ? { mot: 'Écrire les longueurs', aide: 'Ces chutes se calculent sur des longueurs supposées : l’onglet Liaisons, les câbles sans longueur au retest', faire: () => ouvrirOngletFiltre('liaisons', ['hyp'], null, 'tout') }
+    : { mot: 'Voir les câbles', aide: 'L’onglet Liaisons du récapitulatif : les liaisons à reprendre', faire: () => ouvrirOngletFiltre('liaisons', ['probleme'], null, 'tout') };
+  return null; }
+// un onglet du récapitulatif, ses puces pressées (et rien d'autre), des colonnes en plus, la portée
+function ouvrirOngletFiltre(onglet, puces, colonnes, portee) { const b = app.base; b.filtreAuto = false; b.filtre = ''; changerOnglet(onglet, true);
+  b.puces[onglet] = puces || []; if (colonnes) { const ch = b.colonnes[onglet] || (b.colonnes[onglet] = {}); colonnes.forEach(c => { ch[c] = true; }); }
+  if (portee) b.portee = portee; b.filtre = ''; b.tri = null; memoriserBase(); if (b.ouvert) rendreBase(true); else ouvrirBase(); }
+/* Toutes les barrettes à poser d'un coup : chacune sous le repère proposé (celui du récapitulatif, `prochainRepereVT`,
+   relu après chaque pose : les noms se suivent) ; une seule entrée d'historique. */
+function poserLesBarrettes(noms) { const vus = new Set(); let n = 0;
+  const vts = noms.filter(v => VT_A_POSER.test(v) && !vus.has(v) && vus.add(v)); if (!vts.length) return 0;
+  histPush('pose de ' + pluriel(vts.length, 'barrette'));
+  vts.forEach(vt => { assurerModele(); const r = reperes().find(x => x.aPoser && x.nom === vt), nom = r ? prochainRepereVT(r) : '';
+    if (nom && poserBarrette(vt, nom, { plan: r.plan || '*' })) n++; });
+  if (!n) { app.hist.pop(); synchroniserHistorique(); } else { if (app.hist.length) app.hist[app.hist.length - 1].quoi = 'pose de ' + pluriel(n, 'barrette'); apresEdition(); }
+  if (n) direRetablir(n > 1 ? n + ' barrettes posées au contrat, chacune sous le repère proposé.' : 'La barrette est posée au contrat sous le repère proposé.');
+  else dire('Aucune barrette n’a pu être posée.', true); return n; }
+
+/* La liste « à reprendre », en tête de l'index : les problèmes, puis les points à voir, par genre. */
 function listeControleHtml() { const xs = CONTROLE.items; if (!xs.length) return '';
-  // une ligne par repère : son premier point, et combien d'autres
-  return [['ko', 'Problèmes'], ['att', 'À voir']].map(([n, t]) => { const ys = xs.filter(x => x.niveau === n); if (!ys.length) return '';
-    const par = new Map(); ys.forEach(x => { const k = x.nom || '\u0001' + x.texte; (par.get(k) || par.set(k, []).get(k)).push(x); });
-    return `<div class="ix-groupe ${n}"><span>${t}</span><b>${ys.length}</b></div><ul class="ix-liste co-liste">` + [...par.values()].map(g => { const x = g[0];
-      return `<li><button class="ix-item co-item" data-k="${xs.indexOf(x)}" title="${escA(g.map(y => y.texte).join('\n'))}">`
+  const G = genresDuControle(), lignes = lignesDuControle().length, I = typeof insecable === 'function' ? insecable : t => t;
+  const ouvert = g => CONTROLE.genres.has(g.cle) ? CONTROLE.genres.get(g.cle) : lignes <= COURTE;
+  const ligne = l => { const x = l.xs[0], tous = l.xs.map(y => y.texte), vus = tous.slice(0, 3);
+    return `<li><button class="ix-item co-item" data-k="${l.k}" data-ligne="${escA(l.cle)}"${tous.length > 3 ? ` data-bulle="${escA(tous.map(majuscule).join('\n'))}"` : ''}>`
       + `<span class="co-code ${x.nom ? genreDe(x.nom) : 'tab'}" aria-hidden="true">${x.nom ? esc(codeDe(x.nom)) : ico('tableau')}</span>`
-      + `<span class="min0"><b>${esc(x.nom || 'Tableau')}${g.length > 1 ? ` <em>${g.length} ${n === 'ko' ? 'problèmes' : 'points'}</em>` : ''}</b><small>${(typeof insecable === 'function' ? insecable : t => t)(esc(x.texte))}${g.length > 1 ? ' …' : ''}</small></span>`
-      + (x.plan && x.plan !== '*' ? `<span class="ix-folio">f. ${esc(x.plan)}</span>` : '') + '</button></li>'; }).join('') + '</ul>'; }).join(''); }
+      + `<span class="min0"><b>${esc(x.nom || 'Tableau')}${tous.length > 1 ? ` <em>${tous.length} ${l.niveau === 'ko' ? 'problèmes' : 'points'}</em>` : ''}</b>${vus.map(t => `<small>${I(esc(majuscule(t)))}</small>`).join('')}${tous.length > 3 ? `<small class="co-plus">et ${tous.length - 3} de plus</small>` : ''}</span>`
+      + (l.plan && l.plan !== '*' ? `<span class="ix-folio">f. ${esc(l.plan)}</span>` : '') + '</button></li>'; };
+  const genre = g => { const G2 = gesteDuGenre(g), noms = [...g.noms], dit = noms.length === 1 ? noms[0] : noms.length ? plurielLie(noms.length, 'repère') : 'le tableau', o = ouvert(g);
+    const folios = [...new Set(g.lignes.map(l => l.plan).filter(p => p && p !== '*'))];
+    // la tête : le chevron, le compte, le mot sur toute la largeur ; dessous, ses repères et ses folios, et ses gestes
+    return `<div class="co-genre ${g.niveau}" data-genre="${escA(g.cle)}"${o ? ' data-ouvert="1"' : ''}>`
+      + `<button type="button" class="co-genre-bascule" aria-expanded="${o}" data-genre-bascule="${escA(g.cle)}">${ico('bas', 'co-chevron')}<b class="co-n">${g.n}</b><span class="co-genre-l">${esc(motDuGenre(g.genre, g.n))}</span></button>`
+      + `<div class="co-genre-pied"><small>${esc(dit)}${folios.length ? ' · ' + esc(folios.length > 3 ? folios.length + ' folios' : 'f. ' + folios.join(' · ')) : ''}</small>`
+      + `<span class="co-gestes"><button type="button" class="co-voir" data-premier="${escA(g.cle)}" data-bulle="Sa fiche, sur son folio ; P passe au point suivant">${g.lignes.length > 1 ? 'Voir le premier' : 'Voir'}</button>${G2 ? `<button type="button" class="co-geste" data-geste="${escA(g.cle)}" data-bulle="${escA(G2.aide)}">${esc(G2.mot)}</button>` : ''}</span></div>`
+      + (o ? `<ul class="ix-liste co-liste">${g.lignes.map(ligne).join('')}</ul>` : '') + '</div>'; };
+  return [['ko', 'Problèmes'], ['att', 'À voir']].map(([n, t]) => { const gs = G.filter(g => g.niveau === n); if (!gs.length) return '';
+    return `<div class="ix-groupe ${n}"><span>${t}</span><b>${gs.reduce((s, g) => s + g.n, 0)}</b></div><div class="co-genres">${gs.map(genre).join('')}</div>`; }).join('')
+    + `<p class="co-astuce"><kbd>P</kbd> le point suivant · <kbd>Maj</kbd> <kbd>P</kbd> le précédent</p>`; }
+/* Les gestes de la liste (l'index ; l'onglet Problèmes a les siens) : déplier un genre, « Voir le premier », son geste.
+   `rendre` : refaire la liste. */
+function lierListeControle(box, rendre) {
+  box.querySelectorAll('[data-genre-bascule]').forEach(b => b.onclick = () => { const k = b.dataset.genreBascule, d = b.closest('.co-genre'); CONTROLE.genres.set(k, !d.dataset.ouvert); rendre(); });
+  box.querySelectorAll('[data-premier]').forEach(b => b.onclick = e => { e.stopPropagation(); allerAuGenre(b.dataset.premier); });
+  box.querySelectorAll('[data-geste]').forEach(b => b.onclick = e => { e.stopPropagation(); faireLeGeste(b.dataset.geste); }); }
+const faireLeGeste = cle => { const g = genresDuControle().find(x => x.cle === cle), G = g && gesteDuGenre(g); if (G) G.faire(); };
+// le premier point d'un genre ; P continuera de là
+function allerAuGenre(cle) { const L = lignesDuControle(), i = L.findIndex(l => l.niveau + '|' + l.genre === cle); if (i >= 0) allerALaLigne(i, L); }
+/* P : le point suivant (Maj+P : le précédent), d'un bout à l'autre de la liste ; la place se garde par la clé de la ligne
+   (corriger un point le fait disparaître : on repart de la ligne qui a pris sa place). */
+function problemeSuivant(pas) { const L = lignesDuControle(); if (!L.length) { dire('Rien à reprendre : le contrôle ne relève rien.'); return; }
+  const P = CONTROLE.pas; let i = P ? L.findIndex(l => l.cle === P.cle) : -1;
+  if (i < 0) i = P ? Math.min(P.rang, L.length) - (pas > 0 ? 1 : 0) : (pas > 0 ? -1 : L.length);
+  const j = i + pas; allerALaLigne((j % L.length + L.length) % L.length, L, j >= L.length || j < 0); }
+function allerALaLigne(i, L, tour) { const l = L[i]; if (!l) return; CONTROLE.pas = { cle: l.cle, rang: i };
+  allerAuControle(l.xs[0]);
+  dire(`${tour ? 'De nouveau au début · ' : ''}${l.niveau === 'ko' ? 'Problème' : 'À voir'} ${i + 1} / ${L.length} · ${majuscule(motDuGenre(l.genre, 1))}${l.nom ? ' · ' + l.nom : ''} — P : le suivant`); }
+// le bouton des repères, son compte : l'index ouvert sur les problèmes (« à reprendre » déplié)
+function ouvrirProblemes() { CONTROLE.ouvert = true; const ix = !$('inspecteur').hidden && app.insp.index;
+  if (ix && !app.cible) rendreIndex($('ba-equip')); else if (ix) retourIndex(); else basculerIndex(); }
 // une ligne : son folio, son bloc et sa fiche — ou l'onglet Liaisons du récapitulatif, trié sur ce qu'il faut reprendre
 function allerAuControle(x) {
   if (x.tableau != null) { app.base.filtreAuto = false; changerOnglet('liaisons', true); app.base.filtre = x.tableau; app.base.portee = 'tout';
