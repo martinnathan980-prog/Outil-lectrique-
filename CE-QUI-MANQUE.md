@@ -75,11 +75,55 @@ Volta (la source gagne, à corriger dans SEE) ; partout ailleurs, SEE gagne.
 E0546/E0547, E0824/E0825, E0848, ECS…, ABS1496, NSA938171/172), les familles de câbles AM, LE, WC, WG, WK, WP, XD, KQ,
 KR, ADE, BN, DH ; les faces propres aux EN (EN 3645 09-01, 11-12, 13-26, 17-20, 19-12, 21-12 ; EN 3646 10-02, 16-21,
 20-34, 22-36 ; EN 2997 08-06, 10-12, 12-21, 22-30) ; les paliers 2 s / 10 s / 1 min de l'EN 2853 ; la famille de
-connecteurs des EN 3660-009 à -023 ; les NSA935401.
+connecteurs des EN 3660-009 à -023 ; les NSA935401 (sauf le -10, vérifié en deuxième passe).
+
+**La deuxième passe (20 octobre 2026, version 72).** Tu as demandé : « Tout est correct ? Les contacts, tyrap… ? Tout ? »
+Chaque ligne qui n'avait pas de statut en a un maintenant, et il dit lequel des trois cas : **vérifié (deux sources : …)**,
+**à confirmer (une source : …)** ou **à confirmer (non public : …)**. La note ou la colonne Source de la ligne nomme le
+document. Aucune recherche n'a porté sur ta base, ton programme ou ton appareil.
+- **Les contacts de tes tables (309 lignes sans statut)** : les 309 passent le contrôle (le sexe de la partie EN 3155, la
+  taille, le fût contre la jauge du fil ou de sa famille de câble, l'alliage d'un thermocouple contre son fil).
+  - **238 sont vérifiées** : la référence est citée par deux à quatre catalogues (Souriau 2014, TE, Tri-Star, Amphenol).
+  - **67 n'ont qu'une source** : les coaxiaux et triaxiaux soudés (le titre EN dit la nature, la référence complète et
+    son câble ne sont publiés nulle part), -018M1218 / -019F1218 (Souriau seul), -009F2022 (Amphenol seul), -065M0810**A**
+    (le « A » final n'est dans aucun catalogue), les thermocouples M39029/89-495 et -496.
+  - **4 sont non publiques** : les douilles thermocouples M39029/89-499 et -500, introuvables.
+  - **Une erreur de catalogue, pas de Volta** : la table Amphenol p.13 inverse alumel et chromel sur les douilles
+    M39029/88. Souriau 8D, Glenair 850-024 et WireMasters disent -483 et -487 alumel, -484 et -488 chromel, comme tes tables.
+  - Les 59 références Airbus disent maintenant « (non public : …) ». Le manchon E0718, une pièce Airbus, n'est jamais
+    public : la ligne le dit.
+- **Les tyraps** : l'équivalent public de la NSA935401 est la **MS3367** (SAE AS33681). Ses plages sont écrites dans le
+  titre de la table Colliers, par deux sources. Aucune source ne dit quelle NSA935401 répond à quelle MS3367 ; la note de
+  chaque tyrap donne la classe la plus proche. **Le NSA935401-10 est vérifié** : 7,6 × 365 mm (Aviatec, RS), Ø max
+  100 mm, 670 N (la HellermannTyton T150R). Volta le prend désormais pour un toron de 50 à 100 mm, avant le -08.
+- **Les câbles** : les MLA, MLB et MLD (25 lignes) sont vérifiés, identiques chez Prysmian (FT 403) et dans le
+  catalogue Nexans 2013 p. 42-43. Les familles Lynxeo / Nexans gardent une source : Prysmian n'en publie que la composition
+  et la gamme. Les 34 câbles sans statut sont des familles non publiques.
+- **Les faces** :
+  - EN 2997 08-98, 10-05, 12-03, 14-07 sont vérifiées (MIL-STD-1554A et Souriau 853).
+  - Les modules NSA937901 (22, 20, 16, 12, masse) sont identiques au dessin Air LB p. 38-39, qui est une seule source
+    publique.
+  - E0599 : les modules 1750 Air LB de taille 16 et 12 ont les mêmes groupes, la même masse et la même hauteur. **En
+    taille 20, Air LB dit 8,5 g et 19 mm, ta table 17,0 g et 22,5 mm** : à relire dans l'ASNE 0599.
+- **Deux corrections** :
+  - La taille 12 de l'EN 2997 et de l'EN 3646 reçoit **16 à 12 AWG**, pas 14 à 12 : le contact standard
+    EN3155-018M1212 / -019F1212, chez Souriau 853 et chez TE.
+  - La taille 20 de l'EN 3545 reçoit **26 à 18 AWG**, car son fût 22 existe (Souriau, Tri-Star).
+  - Tes tables de contacts n'ont pas de ligne 16 AWG sur un EN 2997 ou un EN 3646 de taille 12 : Volta le refuse
+    encore. Ajoute la ligne si l'atelier le pose.
+- **Vérifiés aussi** :
+  - Les joints arrière EN 2997 16 et 12 (TE, guide lu en entier, et Souriau 853).
+  - Onze courants de contact (Amphenol et TE).
+  - L'EN 4165-014 (titres BSI et SIS).
+  - Le rail NSA937901RB2000 (Souriau 8559 et Air LB).
+- **Ce que le moteur ne lit pas** : les tables de disjoncteurs (courbes, calibrations, familles, chutes), les
+  protections, les familles de câbles, les fils EN 2853, les déclassements et le réseau citent leurs sources, mais leur
+  colonne Statut n'est pas lue (COLONNES_NORME). Elles n'en ont pas reçu.
 
 **Ce que toi seul peux trancher** : la famille LE (fibre, pas coaxial à 2,84 g/m) ; si tes retests écrivent C et c
-différemment. (Le sens de la cavité « −1 » : l'onglet Import le montre maintenant ; une ligne vérifiée contre SEE : la
-source gagne, tu l'as dit le 20 octobre.)
+différemment ; la masse et la hauteur des modules E0599 de taille 20 ; s'il faut une ligne de contact 16 AWG en taille 12
+pour l'EN 2997 et l'EN 3646. (Le sens de la cavité « −1 » : l'onglet Import le montre maintenant ; une ligne vérifiée
+contre SEE : la source gagne, tu l'as dit le 20 octobre.)
 
 ---
 

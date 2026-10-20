@@ -9,21 +9,21 @@ EN 3708;EN3708;jonction;26;8;1;libre;libres;systèmes de jonction modulaires (= 
 ABS1569;ABS1569;jonction;;;1;libre;libres;modules 1200 micro-intensité Air LB, même rail que les 1100
 EN 3373;EN3373;splice;;;;;;cosses (-010, -011) et splices (-012 150 °C, -013 260 °C, -014 200 °C) — Airbus NSA936809 (splice), NSA9365xx (cosses)
 Tailles — plages de jauge usuelles, par famille nouvelle (contacts EN 3155 / AS39029 — à confirmer par famille)
-Famille;Taille;Jauge min;Jauge max;Note
-EN3545;22;26;22;contact EN3155-003F2222 / -008M2222
-EN3545;20;24;18;fûts 2022, 2020, 2018
-EN3545;16;20;14;fûts 1616, 1614
-EN3545;8;10;8;puissance — 1900SIM : 46 A (80 A version puissance)
-EN4644;22;26;22;Radiall : 22 AWG 5 A, 24 AWG 3 A, 26 AWG 2 A
-EN4644;20;24;20;7,5 / 5 / 3 A
-EN4644;16;20;16;13 / 10 / 7,5 A
-EN4644;12;16;12;23 / 17 / 13 A
-EN4644;8;8;8;46 A
-EN4644;5;16;8;46 A en 8 AWG, 23 A en 12, 13 A en 16 (lecture du catalogue approchée)
-NSX;22;26;22;signal, 5 A (TE)
-NSX;20;24;20;7,5 A
-NSX;16;20;16;13 A
-NSX;12;14;12;23 A
-NSX;10;;;contact taille 10 ajouté par Radiall (2010)
-NSX;8;;;puissance
-NSX;5;;;puissance, ancienne taille
+Famille;Taille;Jauge min;Jauge max;Note;Source;Statut
+EN3545;22;26;22;contact EN3155-003F2222 / -008M2222;Souriau, EN3155 Qualified Contacts 2014 (https://atta.szlcsc.com/upload/public/pdf/source/20250627/562BD244F3F842A1AA6B9F72BD86CDD2.pdf) p.3-4 + Amphenol, Signal Contacts EN3155 / SAE39029 p.9 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf);vérifié (deux sources : Souriau 2014 p.3-4 — EN3155-003F2222 / -008M2222 pour l’EN 3545 — et Amphenol p.9, fût 22 : 26 à 22 AWG)
+EN3545;20;26;18;fûts 2022, 2020, 2018 (EN3155-014M / -015F) : 26 à 18 AWG — la ligne disait 24-18, mais le fût 22 prend le 26;Souriau, EN3155 Qualified Contacts 2014 (https://atta.szlcsc.com/upload/public/pdf/source/20250627/562BD244F3F842A1AA6B9F72BD86CDD2.pdf) p.4 + Carlisle / Tri-Star, EN3155 Contact Selection Guide (https://amphenol.co.jp/military/catalog/EN3155_Contacts.pdf) p.2;vérifié (deux sources : Souriau 2014 p.4 — EN3155-014M2022 / -2018, -015F2022 / -2018 — et Tri-Star p.2 — -014M2020 — corrigé : 26 à 18 AWG)
+EN3545;16;20;14;fûts 1616, 1614;Souriau, EN3155 Qualified Contacts 2014 (https://atta.szlcsc.com/upload/public/pdf/source/20250627/562BD244F3F842A1AA6B9F72BD86CDD2.pdf) p.4 + Amphenol, Signal Contacts EN3155 / SAE39029 p.9 (https://docs.rs-online.com/224b/0900766b814b6b9f.pdf);vérifié (deux sources : Souriau 2014 p.4 — EN3155-008M1614 / -003F1614 pour l’EN 3545 — et Amphenol p.9, fût 14 : 20 à 14 AWG)
+EN3545;8;10;8;puissance — 1900SIM : 46 A (80 A version puissance);;à confirmer (une source : la note de la ligne, Radiall 1900SIM — aucun contact taille 8 de l’EN 3545 au catalogue Souriau lu)
+EN4644;22;26;22;Radiall : 22 AWG 5 A, 24 AWG 3 A, 26 AWG 2 A;Radiall (familles-a-venir.csv, recherche R3);à confirmer (une source : Radiall)
+EN4644;20;24;20;7,5 / 5 / 3 A;Radiall (familles-a-venir.csv, recherche R3);à confirmer (une source : Radiall)
+EN4644;16;20;16;13 / 10 / 7,5 A;Radiall (familles-a-venir.csv, recherche R3);à confirmer (une source : Radiall)
+EN4644;12;16;12;23 / 17 / 13 A;Radiall (familles-a-venir.csv, recherche R3);à confirmer (une source : Radiall)
+EN4644;8;8;8;46 A;Radiall (familles-a-venir.csv, recherche R3);à confirmer (une source : Radiall)
+EN4644;5;16;8;46 A en 8 AWG, 23 A en 12, 13 A en 16 (lecture du catalogue approchée);Radiall (familles-a-venir.csv, recherche R3);à confirmer (une source : Radiall)
+NSX;22;26;22;signal, 5 A (TE);TE (familles-a-venir.csv, recherche R3);à confirmer (une source : TE)
+NSX;20;24;20;7,5 A;TE (familles-a-venir.csv, recherche R3);à confirmer (une source : TE)
+NSX;16;20;16;13 A;TE (familles-a-venir.csv, recherche R3);à confirmer (une source : TE)
+NSX;12;14;12;23 A;TE (familles-a-venir.csv, recherche R3);à confirmer (une source : TE)
+NSX;10;;;contact taille 10 ajouté par Radiall (2010);TE (familles-a-venir.csv, recherche R3);à confirmer (une source : TE)
+NSX;8;;;puissance;TE (familles-a-venir.csv, recherche R3);à confirmer (une source : TE)
+NSX;5;;;puissance, ancienne taille;TE (familles-a-venir.csv, recherche R3);à confirmer (une source : TE)
