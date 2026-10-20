@@ -174,6 +174,7 @@ async function rangerAilleurs(L, nom, fichier) { const b = lireBible(L.texte);
    installations), et l'on demande lequel ouvrir ; une bible ou une norme vont à leur place ; un tableau sans les en-têtes du
    retest attend « Charger » ; le reste est une erreur dite dans la carte du retest. */
 async function ouvrirFichier(fichier) { if (!fichier) return; const nom = fichier.name || 'le fichier';
+  if (estPdf(fichier)) { ouvrirPdf(fichier); return; }   // un PDF de schéma : la visionneuse, puis le retest qu'on en lit (08-pdf)
   if (await routerBaseSEE(fichier)) return;   // l'Excel des vues de SEE (EED_View…) : il se résume, il ne s'ouvre pas comme un retest (08-see)
   dire('Lecture de ' + guillemets(nom) + '…');
   const L = await lireLeFichier(fichier);
@@ -405,7 +406,7 @@ function cartesFichiers(focus) { const E = etatsDesFichiers(), V = verite();
       une: `<p><b>Un plan par retest</b>. Ceux qu’on glisse ici vont dans ${esc(guillemets(nomInstallCible()))}.</p>` },
     { cle: 'retest', titre: 'Votre retest', depot: 'retest', grande: true, action: ['ouvrir', 'Ouvrir un retest…'], zone: ['ouvrir', 'le retest'],
       une: `<p>Un Excel ou un CSV, <b>une ligne par fil</b>, avec au moins ${MODELE_RETEST.requises.map(id).join(POINT)}. Il devient un plan de l’installation ouverte.</p>`,
-      liens: V.length ? [] : [['exemple', 'Pas de fichier sous la main ? Ouvrir l’exemple']],
+      liens: [['pdf', 'Un schéma en PDF ? Le lire…'], ...(V.length ? [] : [['exemple', 'Pas de fichier sous la main ? Ouvrir l’exemple']])],
       boites: attenteHtml() + erreurHtml('retest') + avisHtml('retest'),
       attend: { format: 'Les en-têtes sont reconnus par leur nom ; les autres colonnes du retest (Harness, PN, Route, FWD, longueur…) sont lues si elles sont là.',
         apercu: apercuHtml(MODELE_RETEST, { label: 'Trois lignes d’exemple du retest', colonnes: colonnes(MODELE_RETEST, ['Device1', 'Pin1', 'Cable TG', 'Cable Tag', 'Device2', 'Pin2', 'FWD']) }),
@@ -450,7 +451,7 @@ function lierFichiers() { if (FICHIERS.lie) return; FICHIERS.lie = true; const c
     ROLES.forEach(([k]) => { if (A.map[k] !== '' && A.map[k] != null && +A.map[k] === i) A.map[k] = ''; }); if (s.value) A.map[s.value] = i; A.devine = true; rendreFichiers(); });
   c.addEventListener('click', e => { if (!(app.fiche && app.fiche.mode === 'fichiers')) return; const b = e.target.closest && e.target.closest('[data-vf]'); if (!b) return; const k = b.dataset.vf;
     const faire = {
-      ouvrir: () => $('fichier').click(), coller: ficheColler, exemple: () => ouvrirExemple(), base: choisirBase, bible: () => $('fichier-bible').click(), normes: () => $('fichier-normes').click(), see: () => $('fichier-see').click(), 'see-gardee': () => ficheBaseSEE(), hypotheses: ficheHypotheses,
+      ouvrir: () => $('fichier').click(), pdf: () => choisirPdf(), coller: ficheColler, exemple: () => ouvrirExemple(), base: choisirBase, bible: () => $('fichier-bible').click(), normes: () => $('fichier-normes').click(), see: () => $('fichier-see').click(), 'see-gardee': () => ficheBaseSEE(), hypotheses: ficheHypotheses,
       'modele-retest': () => telechargerModele('retest'), 'modele-base': () => telechargerModele('base'), 'modele-bible': () => telechargerModele('bible'),
       'gabarit-reseau': () => telechargerGabaritNorme('reseau'), gabarits: () => { NORMES.guide = true; ficheNormes(); },
       'voir-bible': () => ficheBible(''), 'voir-normes': () => ficheNormes(), 'chercher-base': () => { ficheBible(''); const t = [...$('fiche-corps').querySelectorAll('h3.sous-titre')].find(h => /contrats déjà faits/i.test(h.textContent)); if (t) t.scrollIntoView({ block: 'start' }); },

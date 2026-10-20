@@ -78,6 +78,8 @@
             <div class="menu-bloc" role="group" aria-label="Sans fichier">
               <button role="menuitem" data-act="coller" data-aide="Sans fichier : quelques lignes copiées d’Excel, une par fil. Un aperçu, puis ajouter au plan ou le remplacer."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5.5" y="4.5" width="13" height="16.5" rx="2"/><path d="M9 4.5V3h6v1.5M9 10h6M9 14h6"/></svg><span class="menu-l">Coller des lignes…</span></button>
               <button role="menuitem" data-act="exemple" data-aide="Le plan de démonstration, 201 fils sur 6 folios, tel qu’il est livré. Le vôtre reste dans la bibliothèque : Ctrl+Z le rend."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 7 12 17.5 18.5 7"/><circle cx="5.5" cy="5.6" r="1.9"/><circle cx="18.5" cy="5.6" r="1.9"/></svg><span class="menu-l">Ouvrir l’exemple</span></button>
+              <!-- un PDF de schéma : la visionneuse, puis le retest que Volta en lit (08-pdf, qui pose le geste de cette ligne) -->
+              <button role="menuitem" data-act="pdf" data-aide="Un schéma en PDF, exporté ou scanné : Volta le montre, lit ses liaisons (bornes, repères, cartouche) et en fait un retest à relire."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5"/><circle cx="8.8" cy="15.5" r="1.3"/><circle cx="15.2" cy="12" r="1.3"/><path d="M10 15.5h2.5v-3.5h1.5"/></svg><span class="menu-l">Lire un PDF de schéma…</span></button>
             </div>
             <div class="menu-bloc" role="group" aria-label="Ce qui juge">
               <button role="menuitem" data-act="bible" data-aide="Les références que l’outil choisit pour chaque barrette, prise et connecteur. On peut importer la vôtre."><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v16H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v4H6.5A2.5 2.5 0 0 1 4 20.5"/></svg><span class="menu-l">Bible des barrettes</span></button>
@@ -258,7 +260,7 @@
   <!-- Le dépôt d'un fichier : toute la fenêtre devient la cible (hors de la planche, qui est un contexte d'empilement). -->
   <div id="depot" class="depot" aria-hidden="true"><div>Déposer le fichier</div></div>
   <div id="toast" role="status" aria-live="polite"></div>
-  <input type="file" id="fichier" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
+  <input type="file" id="fichier" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls,.pdf" hidden>
   <input type="file" id="fichier-bible" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>
   <!-- la base des contrats déjà faits et une norme, depuis la bibliothèque et « Vos fichiers » (08-fichiers) ; des retests,
        plusieurs à la fois, qui deviennent des plans (08-bibliotheque) -->
