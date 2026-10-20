@@ -115,8 +115,9 @@ const motHypothese = '<button type="button" class="fi-hyp" data-hyp="1" data-bul
    déduit · à confirmer · vide pour la donnée du lecteur), `statut` (la phrase), `origine` (la source), `note`. */
 const sansLiens = t => String(t == null ? '' : t).replace(/\s*\((?:https?:|www\.)[^)]*\)/g, '').replace(/https?:\/\/\S+/g, '').replace(/\s{2,}/g, ' ').replace(/\s+([,;.)])/g, '$1').trim();
 function confianceDe(x, lecteur) { if (!x) return null; const c = x.confiance || '', st = sansLiens(x.statut), or = sansLiens(x.origine);
-  if (c === 'vérifié') { const deux = /\(\s*deux sources\s*:\s*([^)]*)\)/i.exec(st), reste = st.replace(/\(\s*deux sources\s*:[^)]*\)/i, '').replace(/^v[ée]rifi[ée]e?s?\b\s*/i, '').replace(/^[\s:—–-]+/, '').trim();
-    return { niveau: 'v', mot: 'vérifié', bulle: (deux ? 'Vérifié par deux sources : ' + deux[1].trim() : 'Vérifié' + (or ? ' — ' + or : '')) + (reste ? '\n' + majuscule(reste) : '') }; }
+  // « vérifié (deux sources : A, B) », « (trois sources : …) », « (quatre sources : …) » : la bulle les nomme
+  if (c === 'vérifié') { const SOURCES = /\(\s*(deux|trois|quatre|cinq|six|\d+) sources\s*:\s*([^)]*)\)/i, n = SOURCES.exec(st), reste = st.replace(SOURCES, '').replace(/^v[ée]rifi[ée]e?s?(?![a-zà-ÿ])\s*/i, '').replace(/^[\s:—–-]+/, '').trim();
+    return { niveau: 'v', mot: 'vérifié', bulle: (n ? 'Vérifié par ' + n[1].toLowerCase() + ' sources : ' + n[2].trim() : 'Vérifié' + (or ? ' — ' + or : '')) + (reste ? '\n' + majuscule(reste) : '') }; }
   if (!c) return { niveau: 'l', mot: 'vos tables', bulle: (lecteur || 'Vos tables') + (or ? ' — ' + or : '') };
   const pourquoi = st.replace(/^(?:à confirmer|structure|déduit)\s*[:—–(-]*\s*/i, '').replace(/\)\s*$/, '').trim() || (SENS_STATUT_RACCORD[c] || '').replace(/^./, m => m.toLowerCase());
   return { niveau: 'c', mot: 'à confirmer', bulle: 'À confirmer' + (pourquoi ? ' : ' + pourquoi : '') + (or && !pourquoi.includes(or) ? '\nSource : ' + or : '') }; }

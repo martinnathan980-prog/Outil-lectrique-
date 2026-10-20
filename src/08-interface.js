@@ -2156,7 +2156,7 @@ function lierPanneau() {
   // plan le remet sur la table quand la bibliothèque le cache (08-bibliotheque, `surLePlan`).
   lierMenu({ bibliotheque: () => montrerBibliotheque(), ouvrir: choisirFichier, fichiers: () => ficheFichiers(),
     recapitulatif: surLePlan(basculerBase), nomenclature: surLePlan(ficheNomenclature),
-    svg: surLePlan(exporterSVG), png: surLePlan(exporterPNG), imprimer: surLePlan(imprimer), retestcorrige: surLePlan(exporterRetestCorrige), suivi: surLePlan(exporterSuivi),
+    svg: surLePlan(exporterSVG), png: surLePlan(exporterPNG), imprimer: surLePlan(imprimer), dossierpdf: surLePlan(exporterDossierPdf), retestcorrige: surLePlan(exporterRetestCorrige), suivi: surLePlan(exporterSuivi),
     nomenclaturecsv: surLePlan(() => { if (!verite().length) { dire('Aucun plan ouvert : rien à compter.'); return; } exporterNomenclature(); }),
     coller: ficheColler, exemple, bible: ficheBible, normes: () => ficheNormes(), hypotheses: ficheHypotheses, cartouche: surLePlan(ficheCartouche), raccourcis: montrerRaccourcis });
   o('btnUndo', defaire);

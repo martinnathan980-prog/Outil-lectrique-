@@ -157,7 +157,9 @@ node tests/pdf.js              LIRE UN PDF DE SCHÉMA (08-pdf, 09-pdf), hors lig
                                et la main, la recherche qui surligne, une ligne qui surligne sa liaison, une case corrigée, le retest
                                Excel relu par Volta, « Ouvrir comme plan », trois folios et leurs renvois, un PDF glissé sur la
                                bibliothèque, cinquante pages (les vignettes à la demande), un PDF scanné relié à la main au clavier ;
-                               aucune requête réseau, aucune erreur. --images=dossier : les captures
+                               aucune requête réseau, aucune erreur ; EXCEL → PDF (08-pdf-dossier) : le dossier de tous les folios
+                               écrit puis relu par Volta (201 / 201 liaisons, chacune sur son folio), l'API `pdfDuPlan`, la barre
+                               de progression, le téléphone. --images=dossier : les captures
 ```
 
 L'outil s'ouvre sur la BIBLIOTHÈQUE (ni l'exemple, ni une page qui explique) : une batterie qui lit

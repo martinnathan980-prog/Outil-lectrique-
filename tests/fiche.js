@@ -124,7 +124,7 @@ const FICHIER = P.fichierDemande();
   // d'où vient chaque valeur des tables : un repère discret, sa bulle nomme les sources (ou pourquoi c'est à confirmer) ; la légende une fois
   ok(await page.evaluate(() => { const p = document.querySelector('#ba-equip [data-panneau="A"]'), m = p.querySelector('.fi-contacts .ct-sertir .fi-conf'), L = p.querySelector('.fi-conf-legende'), n = m && [...m.classList].find(c => c.length === 1);
     const tous = [...document.querySelectorAll('#ba-equip details[data-section="connecteur"] .fi-conf:not(.fi-conf-legende .fi-conf)')];
-    return !!m && /^[vlc]$/.test(n) && m.dataset.bulle.length > 12 && (n !== 'v' || /^Vérifié par deux sources : \S/.test(m.dataset.bulle)) && (n !== 'c' || /^À confirmer/.test(m.dataset.bulle)) && m.getAttribute('role') === 'img' && !!m.getAttribute('aria-label')
+    return !!m && /^[vlc]$/.test(n) && m.dataset.bulle.length > 12 && (n !== 'v' || /^Vérifié par (deux|trois|quatre|\d+) sources : \S/.test(m.dataset.bulle)) && (n !== 'c' || /^À confirmer/.test(m.dataset.bulle)) && m.getAttribute('role') === 'img' && !!m.getAttribute('aria-label')
       && !!L && ['vérifié par deux sources', 'vos tables', 'à confirmer'].every(w => L.textContent.includes(w)) && tous.length >= 3 && tous.every(x => x.dataset.bulle); }),
     'chaque valeur des tables dit d’où elle vient (le lecteur : « tout est correct ? les contacts, tyrap… ? tout ? ») : un repère de 7 px — vérifié par deux sources (la bulle les nomme), vos tables, à confirmer (et pourquoi) — la légende sous la table');
 

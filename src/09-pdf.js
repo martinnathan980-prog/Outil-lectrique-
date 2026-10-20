@@ -153,17 +153,20 @@ const SCHEMA_PDF = (() => {
   const RE_BORNE = /^(?:[A-Z]{1,2}[-.]?)?\d{1,3}[A-Z]?$|^[A-Z]{1,2}$|^[A-Z]{1,2}\d{1,2}[A-Z]$/;
   const RE_TYPE = /^(?:DR|DW|ML[A-D]?|BN|AD[B-E]?|DG|GPB|KC|KD|KL|YV|X[EFKYD]|W[SHLMNFWCGKP]|HE|AM|LE|KQ|KR|DH|VN[B-D]?|CF|SPA|PB)\d{1,2}[A-Z]?$/;
   const RE_PN = /^(?:EN|MS|NSA|ABS|ASNE|E\d{3,}|M\d{3,}|D38999|MIL|AS\d|SAE|NAS|NSA|DMC|M8\d{3})[\w\-/.,*]{3,}$|^\*?\d{3}[A-Z]\d{4,}/;
-  const RE_RENVOI = /^(?:→|->|>|▷|►|⇨|⇒|←|<-|◁|◄|⇦|⇐)?\s*(?:F(?:OLIO|°|\.)?\s*)?(\d{1,3})\s*(?:[\/.]\s*([A-Z]?\d{0,2}[A-Z]?))?$/i;
+  // les flèches d'un renvoi (« ›F3 » : le renvoi « ▷F3 » de Volta, écrit dans un PDF en WinAnsi — 08-pdf-dossier)
+  const FLECHES = '→|->|>|▷|►|⇨|⇒|›|»|←|<-|◁|◄|⇦|⇐|‹|«', RE_FLECHE = new RegExp('^\\s*(' + FLECHES + ')'), RE_RETOUR = /^\s*(←|<-|◁|◄|⇦|⇐|‹|«)/;
+  const RE_RENVOI = new RegExp('^(?:' + FLECHES + ')?\\s*(?:F(?:OLIO|°|\\.)?\\s*)?(\\d{1,3})\\s*(?:[\\/.]\\s*([A-Z]?\\d{0,2}[A-Z]?))?$', 'i');
   const RE_FIL = /^W[-_]?\d{1,5}[A-Z]?$/i;
-  function estRepere(s) { if (!s || s.length < 3 || s.length > 14) return false; if (VT_A_POSER.test(s)) return true;
+  // un repère n'a pas d'espace (« 10 A », le calibre écrit près d'un disjoncteur, n'en est pas un)
+  function estRepere(s) { if (!s || s.length < 3 || s.length > 14 || /\s/.test(s)) return false; if (VT_A_POSER.test(s)) return true;
     const q = lireRepere(s); if (!q || !q.num) return false; if (q.code.length > 4) return false;
     return q.num.length >= 2 || !!CODES[q.code]; }
   const estBorne = s => !!s && s.length <= 4 && RE_BORNE.test(s.toUpperCase()) && !estRepere(s);
   const estType = s => RE_TYPE.test(s);
   const estPN = s => !estRepere(s) && !estType(s) && (RE_PN.test(s) || (/^[A-Z0-9][A-Z0-9\-/.]{7,}$/.test(s) && /\d{3}/.test(s) && /[A-Z]/.test(s) && !/^\d{1,2}[\/.]\d/.test(s)));
-  function renvoiDe(s) { const m = RE_RENVOI.exec(String(s).trim()); if (!m) return null; const fleche = /^(→|->|>|▷|►|⇨|⇒|←|<-|◁|◄|⇦|⇐)/.test(s), f = /^\s*(?:→|->|>|▷|►|⇨|⇒|←|<-|◁|◄|⇦|⇐)?\s*F/i.test(s);
+  function renvoiDe(s) { const m = RE_RENVOI.exec(String(s).trim()); if (!m) return null; const fleche = RE_FLECHE.test(s), f = /^\s*F/i.test(String(s).replace(RE_FLECHE, ''));
     if (!fleche && !f && !m[2]) return null;   // un nombre seul n'est pas un renvoi
-    return { folio: m[1], zone: m[2] || '', sens: /^(←|<-|◁|◄|⇦|⇐)/.test(s) ? 'de' : 'vers' }; }
+    return { folio: m[1], zone: m[2] || '', sens: RE_RETOUR.test(s) ? 'de' : 'vers' }; }
 
   /* ---- 3. LE TRI DES FORMES ---------------------------------------------------------------------------------------- */
   const lum = c => c ? 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2] : 0;
