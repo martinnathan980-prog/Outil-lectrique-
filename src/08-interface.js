@@ -448,8 +448,8 @@ function etatPlacement() { const plan = cle => { const a = placement.attentes.ge
    est prise ; l'objet, lui, est déjà à la place libre la plus proche, où il tombera, et le mot le dit quand on lâche. Le
    routeur garde ses règles : pas d'oblique, pas de fil dans un bloc, pas de fil partagé — une pose qui en romprait une est
    refusée. Lâché, le folio est RETOUCHÉ : l'automatique ne repasse plus dessus ; son dessin se garde dans ce navigateur
-   (IndexedDB), Ctrl+Z défait le geste, ↺ (ou un double-clic) rend au moteur ce qu'on a changé — un fil, une borne, un
-   bloc —, « Dessin retouché · rendre au moteur » le folio entier. Un bloc choisi se pousse aux flèches, d'un carreau
+   (IndexedDB), Ctrl+Z défait le geste, ↺ (ou un double-clic) rend au dessin automatique ce qu'on a changé — un fil, une borne, un
+   bloc —, « Dessin retouché · revenir au dessin automatique » le folio entier. Un bloc choisi se pousse aux flèches, d'un carreau
    (Maj : cinq). Au doigt, un appui long prend ce qui est dessous (un glissé simple déplace la vue). */
 const PAS_PAPIER = 25;   // le carreau du papier (06, le motif `gfine`), en unités de la feuille : × k en unités du dessin
 const PAS_BORNE = PRH / 2;   // une borne glisse au demi-pas des bornes ; un couloir aussi
@@ -578,7 +578,7 @@ function revenirAutomatique() { const cle = cleCourante(); if (!cle || !app.reto
    redevient celui du moteur. */
 function rendreAuMoteur(objet) { const L = liaisonsDuPlan(), cle = L.length ? clePlacement(L) : null, P = cle && app.retouches.get(cle); if (!P) return false;
   let P2 = null, nom = '', refus = '';
-  if (objet.genre === 'fil') { const l = P.links[objet.li], C = consignesDe(P); C.fils = C.fils.filter(k => k.li !== objet.li); P2 = avecConsignes(P, C); nom = String((l && l.cable) || 'le fil'); }
+  if (objet.genre === 'fil') { const l = P.links[objet.li], C = consignesDe(P); C.fils = C.fils.filter(k => k.li !== objet.li); P2 = avecConsignes(P, C); nom = String((l && l.cable) || 'le câble'); }
   else if (objet.genre === 'vt') { const C = consignesDe(P); C.barrettes = C.barrettes.filter(k => k.cle !== objet.cle); P2 = avecConsignes(P, C); nom = objet.nom; }
   else if (objet.genre === 'borne') { const c = P.comps.find(k => k === objet.c), p = c && Object.values(c.rangs).flat().find(q => Math.abs(q.y - objet.y) < 0.5);
     if (c && p && p.ya != null) { const pb = preparerBorne(P, c, p.y), r = pb && pb.examiner(p.ya); P2 = r && !r.refus ? deplacerBorne(P, pb, p.ya) : null;
@@ -587,18 +587,18 @@ function rendreAuMoteur(objet) { const L = liaisonsDuPlan(), cle = L.length ? cl
   else if (objet.genre === 'bloc') { const c = P.comps.find(k => k === objet.c), auto = placementAuto(L), a = auto && c && auto.comps.find(k => k.id === c.id);
     if (a) { const pose = preparerPose(P, c), r = pose.examiner(a.x - c.x, a.y - c.y);
       P2 = r.refus ? null : deplacerBloc(P, c, a.x - c.x, a.y - c.y, pose);
-      if (!P2) refus = 'la place que le moteur lui donnait est prise' + (r.avec ? ' (' + r.avec.name + ')' : '');
+      if (!P2) refus = 'la place que le dessin automatique lui donnait est prise' + (r.avec ? ' (' + r.avec.name + ')' : '');
       else { const i = P2.comps.findIndex(k => k.id === c.id); if (i >= 0) { const { main, ...sans } = P2.comps[i], comps = P2.comps.slice(); comps[i] = sans; P2 = dessinRetouche(P, { ...P2, comps }); } } }
     nom = c ? c.name : ''; }
-  if (!P2) { dire(refus ? 'Impossible de rendre ' + nom + ' au moteur : ' + refus + '.' : 'Rien à rendre au moteur ici.', !!refus); return false; }
-  histPush('rendre ' + nom + ' au moteur', true);
+  if (!P2) { dire(refus ? 'Impossible de rendre ' + nom + ' au dessin automatique : ' + refus + '.' : 'Rien à rendre au dessin automatique ici.', !!refus); return false; }
+  histPush('rendre ' + nom + ' au dessin automatique', true);
   if (retoucheVide(P2, placementAuto(L, true))) app.retouches.delete(cle); else app.retouches.set(cle, P2);
   garderRetouche(cle); rafraichirDessin();
-  direRetablir((nom.charAt(0).toUpperCase() + nom.slice(1)) + ' rendu' + (objet.genre === 'borne' || objet.genre === 'vt' ? 'e' : '') + ' au moteur.');
+  direRetablir((nom.charAt(0).toUpperCase() + nom.slice(1)) + ' revient au dessin automatique.');
   return true; }
 /* Le bouton du bas, sur un folio retouché : il dit ce qu'il fait — rendre le dessin au moteur — et sa bulle, que les
    retouches de ce folio se gardent dans ce navigateur. */
-const MOT_RETOUCHE = 'Dessin retouché · rendre au moteur', BULLE_RETOUCHE = 'Les retouches de ce folio se gardent dans ce navigateur · revenir au dessin du moteur';
+const MOT_RETOUCHE = 'Dessin retouché · revenir au dessin automatique', BULLE_RETOUCHE = 'Les retouches de ce folio se gardent dans ce navigateur ; ce bouton rend tout le folio au dessin automatique';
 function synchroniserRetouche() { const b = $('btnAuto'); if (!b) return; const cle = cleCourante(); b.hidden = !(cle && app.retouches.has(cle));
   const mot = b.querySelector('span:not(.bulle)'), bulle = b.querySelector('.bulle');
   if (mot && mot.textContent !== MOT_RETOUCHE) mot.textContent = MOT_RETOUCHE;
@@ -634,7 +634,7 @@ const filsDeBarretteAPoser = nom => { const L = liaisonsDuPlan(); return ((app.d
 // les couleurs des routes, dans l'ordre où elles se donnent (les routes par leur nom) : ni le rouge ni le vert des ÉTATS
 // en tête (l'audit v72 : « une prise saine montre quatre contacts rouges ») — le bleu, le violet, la sarcelle, le brun,
 // l'ardoise, l'olive, le magenta ; l'orange, le rouge et le vert en dernier, pour un contrat à huit routes et plus
-const PALETTE_ROUTES = ['#1f5fbf', '#7d3c98', '#117a8b', '#9a6324', '#34495e', '#5d6d1e', '#c2185b', '#d35400', '#c0392b', '#1e8449'];
+const PALETTE_ROUTES = ['#1f5fbf', '#7d3c98', '#117a8b', '#9a6324', '#9c7a00', '#5d6d1e', '#c2185b', '#d35400', '#c0392b', '#1e8449'];
 function couleursDesRoutes() { const choisies = app.contrat.couleursRoutes || {}, m = new Map();
   [...new Set(app.contrat.liaisons.map(l => l.route).filter(Boolean))].sort(triNaturel).forEach((r, i) => m.set(r, choisies[r] || PALETTE_ROUTES[i % PALETTE_ROUTES.length]));
   return m; }
@@ -1647,7 +1647,7 @@ function foliosParSource() { const m = new Map(); if (!app.nFolios) return m;
   app.contrat.liaisons.forEach(d => { const k = cleSource(d); const t = m.get(k) || m.set(k, []).get(k); if (!t.includes(d.plan)) t.push(d.plan); });
   return m; }
 const natureDe = nom => { const q = lireRepere(nom); return (q && q.num && CODES[q.code]) ? CODES[q.code].nom : 'équipement'; };
-const triNaturel = (a, b) => String(a).localeCompare(String(b), 'fr', { numeric: true });
+const triNaturel = (a, b) => COLLATEUR_FR.compare(String(a), String(b));
 const pluriel = (n, mot) => n + ' ' + mot + (n > 1 && !/[sxz]$/.test(mot) ? 's' : '');   // « 2 harness », pas « harnesss »
 /* Le même, le nombre lié à son mot par une espace insécable : dans un texte qui coule (un bilan, l'état d'un document),
    jamais le chiffre en bout de ligne et son mot dessous. `pluriel` garde l'espace simple : la fiche en retire le nombre
@@ -1794,7 +1794,8 @@ function ficheHypotheses() { const H = app.simu || (app.simu = { ...HYPOTHESES }
     app.simu[k] = Array.isArray(v) ? [...v] : v; apresHypotheses(); ficheHypotheses(); dire('La valeur de l’outil est rendue (' + b.textContent.replace('↺', '').trim() + ').'); });
   $('hy-defaut').onclick = () => { app.simu = { ...HYPOTHESES, conditions: [...HYPOTHESES.conditions], calibresPreferes: [...HYPOTHESES.calibresPreferes] }; apresHypotheses(); ficheHypotheses(); dire('Les hypothèses de l’outil sont rétablies.'); }; }
 /* Une hypothèse a changé : gardée, le contrôle se refait (sa clé l'oublie), la fiche ouverte dans l'inspecteur aussi. */
-function apresHypotheses() { memoriserSimu(); if (typeof CONTROLE !== 'undefined') CONTROLE.cle = null; rendreControle(); rafraichirCarte(); }
+// le calibre du folio suit les hypothèses (`peindre` ne repeint que si un calibre a changé)
+function apresHypotheses() { memoriserSimu(); if (typeof CONTROLE !== 'undefined') CONTROLE.cle = null; rendreControle(); peindre(); rafraichirCarte(); }
 function carteSimulation(nom, P, S) { const H = S.hyp, V = verite(), N = app.norme || normeVide();
   let s = `<div class="simu"><div class="simu-tete"><span class="sur">Simulation</span><span class="simu-note">hypothèses, pas des mesures : le retest ne porte ni longueur ni courant</span></div>
     <div class="hyp">${hypothesesDe(N, H, { fils: S.fils }).map(c => champHypotheseHtml(c, H)).join('')}</div>`;
@@ -2195,7 +2196,7 @@ function poserEtat(o) { app.contrat = contratNeuf(); app.planId = o.planId || ''
 // le plan qui était sur la table à la fermeture revient (derrière la bibliothèque, qui s'ouvre au lancement)
 function relire() { try { const j = localStorage.getItem(CLE_CONTRAT); if (!j) return false; const o = JSON.parse(j);
     if (!o || !o.liaisons || !o.liaisons.length) return false;
-    poserEtat(o); redessiner(); ajuster(); heureSauve(o.t || Date.now()); return true; } catch (_) { return false; } }
+    poserEtat(o); redessiner(); retrouverVue(); heureSauve(o.t || Date.now()); return true; } catch (_) { return false; } }
 
 /* ---- charger un contrat ----------------------------------------------- */
 /* Un contrat NEUF : rien du contrat d'avant ne survit — ni désignations, ni sexes des contacts, ni profils de charge,
@@ -2351,7 +2352,8 @@ function entreeDuMenu(o) { if (!MENU) MENU = { actions: {} }; const D = id => do
    groupes ; « ? » l'ouvre (et Plus › Raccourcis clavier), Échap, « ? » ou un clic dehors la referment. */
 const RACCOURCIS = [
   ['Se repérer', [['Chercher un repère, un câble, un part number, une borne', ['/']], ['Les repères et les problèmes', ['R']], ['Le problème suivant, le précédent', ['P'], ['Maj', 'P']],
-    ['Folio précédent, suivant', ['←'], ['→']], ['Ajuster le folio à l’écran', ['0']], ['Zoomer, dézoomer', ['+'], ['−']], ['Fiche d’avant, d’après', ['Alt', '←'], ['Alt', '→']]]],
+    ['Folio précédent, suivant', ['←'], ['→']], ['La feuille entière, puis le dessin au plus près', ['0']], ['Zoomer, dézoomer', ['+'], ['−']], ['À 100 %, à 200 %', ['1'], ['2']],
+    ['Déplacer la vue (en glissant ; le bouton du milieu aussi)', ['Espace']], ['Fiche d’avant, d’après ; revenir d’un renvoi', ['Alt', '←'], ['Alt', '→']]]],
   ['Lire en tableaux', [['Le récapitulatif, en moitié', ['B']], ['Le récapitulatif, en page', ['Maj', 'B']], ['La nomenclature', ['N']], ['Corriger une case', ['Entrée'], ['F2']], ['La case suivante', ['Tab']]]],
   ['Corriger', [['Défaire le dernier geste', ['Ctrl', 'Z']], ['Pousser le bloc choisi d’un carreau (cinq avec Maj)', ['↑'], ['↓']], ['Renommer le repère de la fiche', ['F2']], ['Fermer, revenir', ['Échap']]]],
   ['Ouvrir, sortir', [['Ouvrir un retest', ['Ctrl', 'O']], ['Imprimer le folio', ['Ctrl', 'P']], ['Cette feuille', ['?']]]]];

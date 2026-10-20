@@ -410,7 +410,9 @@ const FICHIER = P.fichierDemande();
   await page.keyboard.press('Escape'); await page.waitForTimeout(200);
   ok(m3 === 'mp-principal' && await page.evaluate(() => $('menu').hidden && document.activeElement === $('btnMenu')), 'Échap dans un sous-menu y revient ; Échap encore ferme le menu, le clavier sur ⋮');
   // à la souris : « Plus » s'ouvre d'un clic, ses bulles au survol ; « ‹ Plus » ramène ; « Vos fichiers… »
-  await page.click('#btnMenu'); await page.click('#menu [data-sous="plus"]'); await page.hover('#menu [data-act="exemple"]'); await page.waitForTimeout(450);
+  await page.click('#btnMenu'); await page.click('#menu [data-sous="plus"]'); await page.hover('#menu [data-act="exemple"]');
+  // la bulle vient après son délai : on l'attend (sous charge, elle arrive vers 700 ms ; 450 ms fixes échouaient)
+  await page.waitForFunction(() => $('menu-bulle').classList.contains('on') && /reste dans la bibliothèque/.test($('menu-bulle').textContent), null, { timeout: 5000 }).catch(() => {});
   ok(await page.evaluate(() => !$('mp-plus').hidden && $('mp-principal').hidden && $('menu-bulle').classList.contains('on') && /reste dans la bibliothèque/.test($('menu-bulle').textContent) && /Ctrl\+Z le rend/.test($('menu-bulle').textContent)), 'à la souris, « Plus » s’ouvre d’un clic à la place du menu ; au survol, la bulle de « Ouvrir l’exemple » (votre plan reste dans la bibliothèque, Ctrl+Z le rend)');
   await page.click('#mp-plus [data-retour]'); await page.waitForTimeout(200); await page.click('#menu [data-act="fichiers"]'); await page.waitForTimeout(500);
   const VF = await page.evaluate(() => ({ mode: app.fiche && app.fiche.mode, cartes: [...document.querySelectorAll('#fiche-corps .vf-carte')].map(c => c.dataset.entree + ':' + (c.className.match(/e-(\w+)/) || [])[1]).join(' '), apercus: [...document.querySelectorAll('#fiche-corps .vf-carte')].filter(c => c.querySelectorAll('.vf-apercu tbody tr').length === 3).length, ouverts: [...document.querySelectorAll('#fiche-corps details.vf-attend[open]')].map(d => d.dataset.volet).join(' '),

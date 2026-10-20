@@ -7,10 +7,10 @@
      · un bloc pris et glissé descend, ses fils se reroutent, le dessin reste
        sain (aucun fil dans un bloc, aucun chevauchement, aucun fil rompu) ;
      · il ne vient jamais à moins de huit unités d'un voisin de sa colonne ;
-     · le folio est marqué retouché (« Dessin retouché · rendre au moteur ») ;
+     · le folio est marqué retouché (« Dessin retouché · revenir au dessin automatique ») ;
      · Ctrl+Z défait le geste ;
      · refait, il SE GARDE : après rechargement, le bloc est où on l'a mis ;
-     · « rendre au moteur » rend le dessin du moteur ;
+     · « revenir au dessin automatique » rend le dessin du moteur ;
      · un clic sans glisser choisit toujours le bloc, et ne dit rien.
    Sur le folio 1, en LARGEUR comme en hauteur :
      · un bloc tiré loin à droite, hors de toute colonne, y va (au carreau près) et
@@ -39,7 +39,7 @@
      · un FIL (folio 3) : sa verticale glisse d'une piste (un double-clic la rend),
        passe dans la goulotte voisine (Ctrl+Z l'en sort) ; son couloir descend ;
        visé à travers un bloc, le fantôme est rouge et le couloir se pose au plus
-       près, hors du bloc, et le mot le dit ; ça se garde, « rendre au moteur »
+       près, hors du bloc, et le mot le dit ; ça se garde, « revenir au dessin automatique »
        rend les fils ;
      · un MORCEAU DE BARRETTE (folio 2) se prend ; un RENVOI (un contrat découpé en
        folios) aussi — et un clic sans glisser mène toujours à son folio.
@@ -82,7 +82,7 @@ const FICHIER = P.fichierDemande();
   const mot = () => page.evaluate(() => $('toast').classList.contains('on') ? $('toast').textContent : '');
   const pas = () => page.evaluate(() => PAS_PAPIER * app.dessin.bbox.k);
 
-  /* ---- FOLIO 3 : en hauteur, Ctrl+Z, la garde, « rendre au moteur » ---- */
+  /* ---- FOLIO 3 : en hauteur, Ctrl+Z, la garde, « revenir au dessin automatique » ---- */
   await ouvrir('3');
   // un bloc qui a de la place sous lui : le plus bas de sa colonne
   const nom = await page.evaluate(() => { const cs = app.dessin.comps.filter(c => c.kind === 'equip' && !c.hub);
@@ -94,7 +94,7 @@ const FICHIER = P.fichierDemande();
   ok(await sain(), 'le dessin retouché reste sain');
   ok(!(await colles()).length, 'aucun bloc collé à un autre');
   ok(await auto(), 'le folio est marqué retouché');
-  ok(await page.evaluate(() => /Dessin retouché · rendre au moteur/.test($('btnAuto').textContent)), 'le bouton dit « Dessin retouché · rendre au moteur »', await page.evaluate(() => $('btnAuto').textContent.trim().replace(/\s+/g, ' ')));
+  ok(await page.evaluate(() => /Dessin retouché · revenir au dessin automatique/.test($('btnAuto').textContent)), 'le bouton dit « Dessin retouché · revenir au dessin automatique »', await page.evaluate(() => $('btnAuto').textContent.trim().replace(/\s+/g, ' ')));
   await page.keyboard.press('Control+z'); await page.waitForTimeout(300);
   ok(Math.abs((await bloc(nom)).cy - avant.cy) < 0.5, 'Ctrl+Z défait le geste');
   ok(!(await auto()), 'plus marqué retouché après Ctrl+Z');
@@ -108,7 +108,7 @@ const FICHIER = P.fichierDemande();
   await ouvrir('3'); await page.waitForTimeout(800);
   ok(Math.abs((await bloc(nom)).cy - garde.cy) < 0.5, 'la retouche se garde d\'une session à l\'autre', Math.round(garde.cy) + ' après rechargement : ' + Math.round((await bloc(nom)).cy));
   await page.click('#btnAuto'); await page.waitForTimeout(400);
-  ok(Math.abs((await bloc(nom)).cy - avant.cy) < 0.5 && !(await auto()), '« rendre au moteur » rend le dessin du moteur');
+  ok(Math.abs((await bloc(nom)).cy - avant.cy) < 0.5 && !(await auto()), '« revenir au dessin automatique » rend le dessin du moteur');
   await page.evaluate(() => $('toast').classList.remove('on'));
   const b = await bloc(nom); await page.mouse.click(b.x, b.y); await page.waitForTimeout(200);
   ok(await page.evaluate(n => app.choisi === n, nom), 'un clic sans glisser choisit le bloc');
@@ -218,7 +218,7 @@ const FICHIER = P.fichierDemande();
   ok(k1.cy > k0.cy + 5 && sk.rendre, 'au survol d’un bloc posé à la main, le ↺ est là', JSON.stringify(sk));
   const rk = await page.evaluate(() => { const r = document.querySelector('#rt-survol .rt-rendre circle').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
   await page.mouse.move(rk.x, rk.y, { steps: 4 }); await page.mouse.click(rk.x, rk.y); await page.waitForTimeout(400);
-  ok(Math.abs((await bloc('104LP1')).cy - k0.cy) < 0.5 && /104LP1 rendu au moteur/.test(await mot()) && !(await auto()), 'un clic sur ↺ le rend au moteur, et le folio redevient celui du moteur', await mot());
+  ok(Math.abs((await bloc('104LP1')).cy - k0.cy) < 0.5 && /104LP1 revient au dessin automatique/.test(await mot()) && !(await auto()), 'un clic sur ↺ le rend au moteur, et le folio redevient celui du moteur', await mot());
   // une BORNE de 101BT1 : elle glisse le long du bloc ; posée sur la suivante, elles échangent leurs places, les fils suivent
   const b0 = await page.evaluate(() => { const c = app.dessin.comps.find(k => k.name === '101BT1'), z = bornesPrenables(c).filter(z => z.x0 <= c.x + 1).sort((u, v) => u.y - v.y);
     return { x: (z[0].x0 + z[0].x1) / 2, y: z[0].y, y2: z[1].y, e1: z[0].etiq, e2: z[1].etiq }; });
@@ -236,7 +236,7 @@ const FICHIER = P.fichierDemande();
   const pb2 = await ecran(b0.x, b0.y2), sb2 = await survoler(pb2);
   ok(sb2.rendre, 'au survol d’une borne retouchée, le ↺ est là');
   await page.mouse.dblclick(pb2.x, pb2.y); await page.waitForTimeout(400);
-  ok(Math.abs(await hauteurDe(b0.e1) - b0.y) < 0.5 && Math.abs(await hauteurDe(b0.e2) - b0.y2) < 0.5 && /rendue au moteur/.test(await mot()), 'un double-clic la rend au moteur (l’autre aussi revient)', await mot());
+  ok(Math.abs(await hauteurDe(b0.e1) - b0.y) < 0.5 && Math.abs(await hauteurDe(b0.e2) - b0.y2) < 0.5 && /revient au dessin automatique/.test(await mot()), 'un double-clic la rend au moteur (l’autre aussi revient)', await mot());
   ok(!(await auto()), 'plus rien de retouché : le folio redevient celui du moteur');
   await annuler();
   ok(Math.abs(await hauteurDe(b0.e1) - b0.y2) < 0.5, 'Ctrl+Z rend l’échange');
@@ -257,7 +257,7 @@ const FICHIER = P.fichierDemande();
   ok(sv2.rendre, 'au survol de la barrette retouchée, le ↺ est là');
   const rv = await page.evaluate(() => { const r = document.querySelector('#rt-survol .rt-rendre circle').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
   await page.mouse.move(rv.x, rv.y, { steps: 3 }); await page.mouse.click(rv.x, rv.y); await page.waitForTimeout(400);
-  ok(Math.abs((await page.evaluate(() => app.dessin.barrettes.find(b => b.nomVT === 'VT1').x)) - v0.x) < 0.5 && /VT1 rendue au moteur/.test(await mot()), 'un clic sur ↺ la rend au moteur', await mot());
+  ok(Math.abs((await page.evaluate(() => app.dessin.barrettes.find(b => b.nomVT === 'VT1').x)) - v0.x) < 0.5 && /VT1 revient au dessin automatique/.test(await mot()), 'un clic sur ↺ la rend au moteur', await mot());
   // FOLIO 3 : un FIL — sa verticale glisse d'une piste, puis passe dans une autre goulotte ; son couloir monte ou descend
   await ouvrir('3', false);
   const w0 = await page.evaluate(() => { const d = app.dessin, G = goulottes({ comps: d.comps, geom: d.geom });
@@ -273,7 +273,7 @@ const FICHIER = P.fichierDemande();
   const pfo = await propre(); ok(pfo.ok, 'le routage reste propre', JSON.stringify(pfo));
   const pf2 = await ecran(w0.x + PISTE_, w0.y); await survoler(pf2);
   await page.mouse.dblclick(pf2.x, pf2.y); await page.waitForTimeout(400);
-  ok((await verticales(w0.li)).some(x => Math.abs(x - w0.x) < 0.6) && !(await consignes()).fils.length && /rendu au moteur/.test(await mot()), 'un double-clic sur le fil le rend au moteur', await mot());
+  ok((await verticales(w0.li)).some(x => Math.abs(x - w0.x) < 0.6) && !(await consignes()).fils.length && /revient au dessin automatique/.test(await mot()), 'un double-clic sur le fil le rend au moteur', await mot());
   const pf3 = await ecran(w0.x, w0.y);
   await glisserDe(pf3, (w0.voisine - w0.x) * pf3.s, 0);
   const vs = await verticales(w0.li);
@@ -308,7 +308,7 @@ const FICHIER = P.fichierDemande();
   await ouvrir('3'); await page.waitForTimeout(800);
   ok(gardee && (await horizontales(h0.li)).some(y => Math.abs(y - gardee.y) < 0.6) && JSON.stringify((await consignes()).fils.find(k => k.li === h0.li)) === JSON.stringify(gardee), 'la retouche d’un fil se garde d’une session à l’autre', JSON.stringify(gardee));
   await page.click('#btnAuto'); await page.waitForTimeout(400);
-  ok(!(await auto()) && (await horizontales(h0.li)).some(y => Math.abs(y - h0.y) < 0.6), '« rendre au moteur » rend aussi les fils');
+  ok(!(await auto()) && (await horizontales(h0.li)).some(y => Math.abs(y - h0.y) < 0.6), '« revenir au dessin automatique » rend aussi les fils');
   // FOLIO 2 : un MORCEAU DE BARRETTE collé à sa borne se prend aussi
   await ouvrir('2', false);
   const mb0 = await page.evaluate(() => { const i = app.dessin.comps.findIndex(k => k.kind === 'tag' && estBarrette(k.name)), t = app.dessin.comps[i]; return t ? { i, x: t.x + t.w / 2, y: t.y + t.h / 2, nom: t.name } : null; });

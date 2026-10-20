@@ -41,7 +41,8 @@ function demarrer() {
   // gardé par une version d'avant la bibliothèque y est rangé dès qu'elle est lue (`chargerBibliotheque`).
   const relu = relire(); if (!relu) redessiner(); BIB.aAdopter = relu;
   montrerBibliotheque('racine'); chargerBibliotheque();
-  requestAnimationFrame(() => ajuster());
+  // la vue que la main avait donnée à ce folio revient (08-interface, `retrouverVue`) ; sinon il se cadre
+  requestAnimationFrame(() => retrouverVue());
   // les folios déjà affinés dans ce navigateur reviennent ; les autres s'affinent en arrière-plan ; les retouches aussi
   relireAffines(); relireRetouches(); relireReferences();
   // la base SEE gardée sur ce PC (08 nonies) : elle revient et passe devant les tables de Volta
