@@ -2,7 +2,7 @@
    LA BASE SEE (08 nonies) : ce que Volta prend d'un Excel des vues de SEE, et le classeur feuille par feuille
    Les jetons et la coquille du document (la tête, le pied) sont dans style.css. Une page sobre, qui se photographie :
    sous la tête, une ligne qui dit ce qu'on regarde, puis la barre des ONGLETS — elle colle sous la tête quand on
-   descend : Import, Liens, Codes, puis une feuille par onglet (son nom court, ses lignes en chasse fixe) ; l'onglet
+   descend : Import, Cohérence, Liens, Codes, puis une feuille par onglet (son nom court, ses lignes) ; l'onglet
    choisi souligné à l'encre. Le contenu se pose à même la feuille (pas de carte dans la feuille) : un titre de section
    et son compte, des colonnes de journal (le nom en chasse fixe, net, jamais coupé ; le taux en petit ; l'exemple en
    gris, coupé s'il est long). L'IMPORT : l'état et le geste (garder), quatre chiffres côte à côte séparés d'un filet,
@@ -50,7 +50,7 @@
 .see-tete{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;padding-bottom:12px;margin-bottom:14px;border-bottom:1px solid var(--s-line)}
 .see-nom{font:600 var(--f-16)/1.3 var(--mono);letter-spacing:-.01em;color:var(--t-1);overflow-wrap:anywhere}
 /* le nom d'une feuille est un identifiant (chasse fixe) ; Import, Liens, Codes sont des titres (linéale) */
-:is(.see-import,.see-liens,.see-codes) .see-nom{font-family:var(--titre);letter-spacing:-.015em}
+:is(.see-import,.see-liens,.see-codes,.see-coherence) .see-nom{font-family:var(--titre);letter-spacing:-.015em}
 .see-compte{font-size:var(--f-13);color:var(--t-2);font-variant-numeric:tabular-nums}
 .see-compte b{color:var(--t-1);font-weight:600}
 .see-pos{margin-left:auto;font-size:var(--f-12);color:var(--t-2);font-variant-numeric:tabular-nums}
@@ -193,6 +193,97 @@
 .see-garde{font-style:normal;font:600 var(--f-11)/1.6 var(--sans);color:var(--ok);background:var(--ok-soft);border-radius:var(--r-1);padding:0 7px;margin-left:4px;white-space:nowrap}
 @media (max-width:720px){ .see-suspect,.see-garde{white-space:normal} }
 .see-t-garde{color:var(--ok);font-weight:600}
+/* ── LA COHÉRENCE (octobre 2026) : la base vérifiée ligne par ligne ──
+   Le verdict en quatre chiffres côte à côte (en erreur, à voir, pour information, sans défaut) — le chiffre prend la
+   couleur de son état quand il compte quelque chose ; puis les contrôles par domaine, sur deux colonnes : une ligne au
+   filet chacun — un point d'état, le titre et ce que Volta en fait, le compte en chasse fixe, le mot de la gravité ; un
+   clic déplie les dix premiers exemples (la référence, ce qui cloche, la ligne Excel), en retrait sous le titre. Un
+   contrôle sans cas tient sur une ligne, son point vert. Enfin ce que la base apporte : les quatre tables des photos face
+   à la base, et ce que Volta n'avait pas. */
+.see-coh-l{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin:-4px 0 0;font-size:var(--f-13);line-height:1.5;color:var(--t-2)}
+.see-coh-l .btn{height:28px}
+.see-t-ko{color:var(--ko);font-weight:600}
+.see-coherence{display:flex;flex-direction:column;gap:20px}
+.see-coherence .see-tete{margin-bottom:0;align-items:center}
+.see-coherence .see-deplier{margin-left:auto;height:30px}
+.see-verdict{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));padding:4px 0 20px;border-bottom:1px solid var(--s-line)}
+.see-v{display:flex;flex-direction:column;gap:4px;min-width:0;padding:0 20px;border-left:1px solid var(--s-line)}
+.see-v:first-child{padding-left:0;border-left:none}
+.see-v b{font:600 var(--f-28)/1.1 var(--sans);letter-spacing:-.025em;color:var(--t-1);font-variant-numeric:tabular-nums}
+.see-v.ko b{color:var(--ko)}
+.see-v.att b{color:var(--warn)}
+.see-v.ok b{color:var(--ok)}
+.see-v.zero b{color:var(--t-3)}
+.see-v span{display:inline-flex;align-items:center;gap:8px;font-size:var(--f-13);font-weight:500;color:var(--t-1)}
+.see-v small{font-size:var(--f-12);line-height:1.45;color:var(--t-2)}
+/* le point d'état : plein pour une erreur, un « à voir », un sans défaut ; cerclé pour l'information ; en pointillé sans objet */
+.see-pt{flex:none;width:8px;height:8px;border-radius:50%;background:var(--t-3)}
+.ko>.see-pt,.ko .see-pt{background:var(--ko)}
+.att>.see-pt,.att .see-pt{background:var(--warn)}
+.ok>.see-pt,.ok .see-pt{background:var(--ok)}
+.info .see-pt{background:transparent;box-shadow:inset 0 0 0 1.5px var(--t-2)}
+.na .see-pt{background:transparent;box-shadow:none;border:1px dashed var(--t-3)}
+.see-v.zero .see-pt{background:var(--t-3);box-shadow:none}
+/* deux colonnes de domaines ; une seule quand la feuille est étroite */
+.see-cols-c{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:44px;align-items:start}
+.see-col-c{display:flex;flex-direction:column;min-width:0}
+.see-col-c>.see-bloc{gap:6px}
+.see-col-c>.see-bloc+.see-bloc{margin-top:22px}
+.see-ctls{list-style:none;margin:0;padding:0}
+.see-ctl{border-top:1px solid var(--s-line)}
+.see-ctl:first-child{border-top:none}
+/* une ligne : le point, le titre et ce que Volta en fait, le compte, la gravité (et le chevron quand elle se déplie) */
+.see-ctl-l{display:grid;grid-template-columns:8px minmax(0,1fr) minmax(44px,auto) 104px;column-gap:12px;align-items:baseline;padding:8px 10px;margin:0 -10px;border-radius:var(--r-2);list-style:none}
+.see-ctl-l>.see-pt{align-self:start;margin-top:6px}
+summary.see-ctl-l{cursor:pointer;transition:background var(--rapide)}
+summary.see-ctl-l::-webkit-details-marker{display:none}
+summary.see-ctl-l::marker{content:""}
+summary.see-ctl-l:hover{background:var(--s-hover)}
+summary.see-ctl-l:focus-visible{outline:none;box-shadow:var(--anneau)}
+.see-ctl-t{display:flex;flex-direction:column;gap:1px;min-width:0}
+.see-ctl-t b{font:600 var(--f-13)/1.45 var(--sans);color:var(--t-1);text-wrap:pretty}
+.see-ctl-t small{font-size:var(--f-12);line-height:1.45;color:var(--t-2);text-wrap:pretty}
+.see-plus{color:var(--t-2);font-family:var(--mono);font-size:var(--f-11)}
+.see-ctl-n{font:600 var(--f-14)/1.45 var(--mono);color:var(--t-1);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.see-ctl.ok .see-ctl-n,.see-ctl.na .see-ctl-n{color:var(--t-3);font-weight:500}
+.see-ctl-g{display:inline-flex;align-items:baseline;justify-content:flex-end;gap:8px;font:500 var(--f-12)/1.45 var(--sans);color:var(--t-2);white-space:nowrap}
+.see-ctl.ko .see-ctl-g{color:var(--ko);font-weight:600}
+.see-ctl.att .see-ctl-g{color:var(--warn);font-weight:600}
+summary .see-ctl-g::after{content:"";width:6px;height:6px;border-right:1.5px solid var(--t-2);border-bottom:1.5px solid var(--t-2);transform:translateY(-2px) rotate(45deg);transition:transform var(--rapide)}
+details[open]>summary .see-ctl-g::after{transform:translateY(1px) rotate(-135deg)}
+/* les exemples, en retrait sous le titre : la référence (chasse fixe), ce qui cloche, la ligne de la feuille */
+.see-exs{list-style:none;margin:0 0 10px;padding:0 0 0 20px;display:grid;grid-template-columns:minmax(120px,.9fr) minmax(0,2fr) auto;column-gap:16px;animation:see-entre var(--moyen)}
+.see-exs li{display:contents}
+.see-exs li>*{padding:5px 0;border-top:1px solid var(--s-line)}
+.see-ex-r{font:600 var(--f-12)/1.45 var(--mono);color:var(--t-1);overflow-wrap:anywhere}
+.see-ex-d{font-size:var(--f-12);line-height:1.45;color:var(--t-2);overflow-wrap:anywhere}
+.see-ex-l{font:500 var(--f-11)/1.6 var(--mono);font-style:normal;color:var(--t-2);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.see-ex-plus{margin:-4px 0 10px 20px;font-size:var(--f-12);color:var(--t-2)}
+.see-ex-f{margin:0 0 2px 20px;font-size:var(--f-11);color:var(--t-2)}
+.see-ex-f .mono{font-family:var(--mono);font-weight:500;color:var(--t-1)}
+/* ce que la base apporte : la table des photos à gauche, ce que Volta n'avait pas à droite */
+.see-apporte{padding-top:20px;border-top:1px solid var(--s-line)}
+.see-ap{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:20px 44px;align-items:start}
+.see-ap h4{margin:0 0 6px;font:600 var(--f-13)/1.4 var(--sans);color:var(--t-1)}
+.see-ap-t{min-width:0;overflow-x:auto}
+.see-ap-t .see-table{width:100%}
+.see-ap-t .see-table td:first-child{white-space:nowrap}
+.see-ap-t .see-table :is(th,td){padding-right:14px}
+.see-ap-l ul{list-style:none;margin:0;padding:0}
+.see-ap-l li{display:grid;grid-template-columns:76px minmax(0,1fr);column-gap:14px;align-items:baseline;padding:7px 0;border-top:1px solid var(--s-line)}
+.see-ap-l li:first-child{border-top:none}
+.see-ap-l li b{font:600 var(--f-16)/1.3 var(--sans);letter-spacing:-.01em;color:var(--t-1);font-variant-numeric:tabular-nums;text-align:right}
+.see-ap-l li span{font-size:var(--f-13);line-height:1.45;color:var(--t-1);min-width:0;overflow-wrap:anywhere}
+.see-ap-l li i{font-style:normal;font-size:var(--f-12);color:var(--t-2)}
+@media (max-width:1100px){ .see-cols-c,.see-ap{grid-template-columns:minmax(0,1fr)} .see-col-c+.see-col-c{margin-top:22px} }
+@media (max-width:720px){
+  .see-verdict{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 0}
+  .see-v:nth-child(3){padding-left:0;border-left:none}
+  .see-ctl-l{grid-template-columns:8px minmax(0,1fr) auto;row-gap:2px}
+  .see-ctl-g{grid-column:2 / -1;justify-content:flex-start}
+  .see-exs{grid-template-columns:minmax(0,1fr);padding-left:20px}
+  .see-ex-l{text-align:left}
+}
 /* la cavité −1 : ce que portent ces lignes, quatre colonnes de comptes (la valeur à gauche, le nombre à droite) */
 .see-m1-l{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px 32px}
 .see-m1-c{min-width:0}
