@@ -757,7 +757,7 @@ function resistanceContactNorme(o) { const taille = tailleCle(o.taille), jauge =
 /* D'OÙ VIENT UNE LIGNE et ce qu'elle vaut (les recherches d'octobre 2026 : R1, R3) : la source bibliographique (`origine`
    — pas `source`, qui dit d'où vient un apport du navigateur) et le statut, ramené à un mot (`confiance` : vérifié,
    structure, déduit, à confirmer ; vide pour une ligne sans statut, comme celles des tables SEE du lecteur). */
-const STATUT_LIGNE = s => { const u = MOT(s); return !u ? '' : /^verif|^confirm/.test(u) ? 'vérifié' : /struct/.test(u) ? 'structure' : /^dedui/.test(u) ? 'déduit' : 'à confirmer'; };
+const STATUT_LIGNE = s => { const u = MOT(s); return !u ? '' : /^verif|^confirm/.test(u) ? 'vérifié' : /^struct/.test(u) ? 'structure' : /^dedui/.test(u) ? 'déduit' : 'à confirmer'; };
 const origineStatut = o => { const statut = String(o.statut || '').trim(); return { origine: String(o.origine || '').trim(), statut, confiance: STATUT_LIGNE(statut) }; };
 /* L'EMPLOI d'une ligne de résistance : « jonction » (les modules de jonction des barrettes : NSA937901, E0599 — les valeurs
    Amphenol Air LB) ou « connecteur » (une prise, un connecteur : les limites AS39029). Vide = vaut pour les deux. */
