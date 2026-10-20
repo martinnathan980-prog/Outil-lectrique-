@@ -227,8 +227,8 @@ function baseEssaiDansLaPage() {
     frottement(A0.biblio && !e.n, 'à la première ouverture, c’est l’exemple qui s’affiche, pas l’accueil', 'le technicien qui ouvre l’outil pour un contrat neuf arrive sur un contrat qui n’est pas le sien ; il doit « Tout effacer » pour voir la page d’entrée',
       'détail', '10-demarrage.js `demarrer` : sans contrat gardé, montrer l’accueil (#vide) avec « Voir l’exemple » plutôt que charger l’exemple d’office — ou garder l’exemple mais dire dans l’en-tête qu’il s’agit de l’exemple');
     await capture(page, 'A-0-premier-lancement');
-    // l'exemple, à la demande : sa carte, son plan ; le fil de la barre du haut le dit ; la marque ramène à la bibliothèque
-    await page.click('#bibliotheque .bi-carte.bi-demo .bi-carte-corps'); await page.click('#bibliotheque .bi-plan[data-plan="exemple"] .bi-plan-ouvrir');
+    // l'exemple, à la demande : d'un seul clic sur sa carte (audit v72, P2-2) ; le fil de la barre du haut le dit ; la marque ramène à la bibliothèque
+    await page.click('#bibliotheque .bi-carte.bi-demo .bi-carte-corps');
     await page.waitForFunction(() => app.nom === 'Contrat d’exemple' && !!app.dessin); await page.waitForTimeout(300);
     ok(await page.evaluate(() => $('vide').hidden && $('bibliotheque').hidden && $('en-install').textContent === 'Exemple' && $('en-plan').textContent === 'Contrat d’exemple'), 'l’exemple ouvert de sa carte : le fil de la barre du haut dit « Exemple / Contrat d’exemple »');
     await page.click('#en-biblio'); await page.waitForTimeout(300);

@@ -19,7 +19,7 @@
   --bi-ombre:0 16px 34px -12px rgba(0,6,18,.75),0 3px 8px rgba(0,6,18,.4);--bi-ombre-haute:0 26px 48px -14px rgba(0,6,18,.85),0 6px 14px rgba(0,6,18,.45)}
 /* le papier de la bibliothèque : les jetons du jour sur chaque pièce qu'on choisit, dans les deux thèmes (le « ⋯ » ouvert,
    `.ilot-sombre`, reprend les siens) */
-.biblio :is(.bi-carte:not(.bi-demo),.bi-feuille,.bi-reprendre,.bi-bandeau){
+.biblio :is(.bi-carte:not(.bi-demo),.bi-feuille,.bi-reprendre,.bi-bandeau,.bi-lot),.lecture-base{
   --s-surface:#ffffff; --s-sunken:#f4f5f8; --s-hover:#eff1f6; --s-line:#e3e6ee; --s-line-2:#cfd4df; --s-flottant:#ffffff;
   --t-1:#141c2c; --t-2:#465068; --t-3:#5d6780; --t-inverse:#ffffff;
   --accent:#141c2c; --accent-2:#000000; --accent-soft:#e9edf6; --accent-line:#c3c9d4; --on-accent:#ffffff;
@@ -51,12 +51,13 @@ body.biblio #recherche{visibility:hidden}
 /* ─── la tête : le titre, les comptes ; la recherche et le geste qui compte ─── */
 .bi-tete{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:28px}
 .bi-titres{min-width:0}
-.bi-titre{margin:0;font:600 34px/1.1 var(--titre);letter-spacing:-.028em;color:var(--t-table);overflow-wrap:anywhere;text-wrap:balance}
+.bi-titre{margin:0;font:600 var(--f-28)/1.1 var(--titre);letter-spacing:-.028em;color:var(--t-table);overflow-wrap:anywhere;text-wrap:balance}
 .bi-compte{margin:8px 0 0;font-size:var(--f-14);color:var(--t-table-2);font-variant-numeric:tabular-nums}
 .bi-pas-garde{color:var(--t-table-warn)}
 .bi-outils{display:flex;align-items:center;gap:8px;flex:none}
 /* la recherche : un champ en creux sur la table */
 .bi-cherche{display:flex;align-items:center;gap:8px;width:320px;height:34px;padding:0 6px 0 11px;border:1px solid var(--l-table);border-radius:var(--r-btn);background:var(--s-table-champ);color:var(--t-table-2);cursor:text;transition:border-color var(--rapide),box-shadow var(--rapide)}
+.bi-cherche.bi-cherche-large{width:min(420px,38vw)}
 .bi-cherche:hover{border-color:var(--l-table-2)}
 .bi-cherche:focus-within{border-color:var(--t-table-2);box-shadow:0 0 0 3px var(--voile-1)}
 .bi-cherche .ico{width:16px;height:16px}
@@ -66,7 +67,7 @@ body.biblio #recherche{visibility:hidden}
 .bi-cherche kbd{font:500 var(--f-11)/1 var(--mono);color:var(--t-table-2);background:var(--voile-2);border-radius:5px;padding:3px 6px}
 .bi-cherche:focus-within kbd{display:none}
 /* le geste clair sur la table (la même dans les deux thèmes) ; le second, au trait */
-.bi-btn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 14px 0 11px;border:1px solid var(--t-table);border-radius:var(--r-btn);background:var(--t-table);color:var(--s-app);font:600 var(--f-13)/1 var(--sans);letter-spacing:-.005em;white-space:nowrap;
+.bi-btn{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 14px 0 11px;border:1px solid var(--t-table);border-radius:var(--r-btn);background:var(--t-table);color:var(--s-app);font:500 var(--f-13)/1 var(--sans);letter-spacing:-.005em;white-space:nowrap;
   box-shadow:0 1px 2px rgba(0,0,0,.5),inset 0 -1px 0 rgba(0,0,0,.08);transition:background var(--rapide),border-color var(--rapide),transform var(--rapide)}
 .bi-btn:hover{background:var(--s-papier);border-color:var(--s-papier)}
 .bi-btn:active{transform:scale(.98)}
@@ -241,7 +242,8 @@ button.bi-carte-corps{cursor:pointer}
 .bf-noeud{fill:var(--t-papier)}
 
 /* ─── le « ⋯ » ouvert : une petite liste sombre, comme le menu ⋮ (l'îlot sombre) ─── */
-.bi-pop{position:absolute;top:42px;right:8px;z-index:6;min-width:212px;padding:5px;background:var(--s-flottant);color:var(--t-1);border-radius:var(--r-palet);box-shadow:var(--sh-2);text-align:left;animation:tombe var(--moyen)}
+/* la matière : celle de tout menu (`.menu-verre`, style.css) — le verre dense de la nuit, coin 14, des lignes de 34 px */
+.bi-pop{position:absolute;top:42px;right:8px;z-index:6;min-width:212px;text-align:left;animation:tombe var(--moyen)}
 .bi-pop button{display:flex;align-items:center;gap:10px;width:100%;height:32px;padding:0 10px;border:none;border-radius:8px;background:none;color:var(--t-1);font-size:var(--f-13);text-align:left;white-space:nowrap;transition:background var(--rapide)}
 .bi-pop button span{overflow:hidden;text-overflow:ellipsis}
 .bi-pop .bi-pop-ecp{margin-right:8px;font:500 var(--f-12)/1 var(--mono);color:var(--t-2);font-variant-numeric:tabular-nums}
@@ -278,11 +280,11 @@ button.bi-carte-corps{cursor:pointer}
 
 /* ─── LA FEUILLE DES PLANS : posée sur la table, une ligne par plan ─── */
 .bi-feuille{position:relative;padding:6px;border-radius:var(--r-3);background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-panneau)}
-.bi-ligne{display:grid;grid-template-columns:32px minmax(0,1fr) 52px 64px 92px 150px 150px;align-items:center;column-gap:16px;width:100%;min-height:58px;padding:0 48px 0 12px;border:none;border-radius:var(--r-2);background:none;color:inherit;text-align:left;font-size:var(--f-13)}
+.bi-ligne{display:grid;grid-template-columns:32px minmax(0,1fr) 52px 64px 132px 150px 150px;align-items:center;column-gap:16px;width:100%;min-height:58px;padding:0 48px 0 12px;border:none;border-radius:var(--r-2);background:none;color:inherit;text-align:left;font-size:var(--f-13)}
 .bi-ligne .d{text-align:right;font-variant-numeric:tabular-nums;color:var(--t-1)}
 .bi-ligne .bi-plan-n{color:var(--t-2)}
 /* la recherche de la racine : l'installation de chaque plan prend la place de « créé » */
-.bi-ligne.avec-install{grid-template-columns:32px minmax(0,1fr) minmax(0,.7fr) 52px 64px 150px 150px}
+.bi-ligne.avec-install{grid-template-columns:32px minmax(0,1fr) minmax(0,.7fr) 52px 64px 132px 150px}
 .bi-entetes{min-height:38px;border-radius:0;font:500 var(--f-12)/1 var(--sans);color:var(--t-2);box-shadow:inset 0 -1px 0 var(--s-line);margin-bottom:4px}
 .bi-entetes .d{color:var(--t-2)}
 .bi-plans{list-style:none;margin:0;padding:0}
@@ -303,6 +305,18 @@ button.bi-plan-ouvrir:hover .bi-plan-ico{background:var(--s-surface);color:var(-
 .bi-plan-date{font-size:var(--f-12);color:var(--t-2);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bi-plan-ecp{margin-right:7px;font:500 var(--f-12)/1 var(--mono);color:var(--t-1);font-variant-numeric:tabular-nums}
 .bi-plan-sous,.bi-plan-vu{font-size:var(--f-12);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bi-plan-vu{display:flex;flex-direction:column;gap:2px;justify-content:center}
+.bi-plan-vu>*{overflow:hidden;text-overflow:ellipsis}
+.bi-plan-vu small{font-size:var(--f-11);color:var(--t-3)}
+/* ce qu'il reste à faire : une pastille, un point et un mot (le rouge ne dit que les problèmes) */
+.bi-pb{justify-self:start;display:inline-flex;align-items:center;gap:6px;max-width:100%;height:22px;padding:0 9px 0 8px;border-radius:999px;font:500 var(--f-12)/1 var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bi-pb::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:currentColor}
+.bi-pb.ko{color:var(--ko);background:var(--ko-soft)}
+.bi-pb.att{color:var(--warn);background:var(--warn-soft)}
+.bi-pb.ok{color:var(--ok);background:var(--ok-soft)}
+.bi-pb.bi-pb-rien{padding:0 0 0 1px;height:auto;line-height:1.4;color:var(--t-3);background:none;font-weight:400}
+.bi-pb.bi-pb-rien::before{display:none}
+.bi-carte-pb{display:block;margin-top:2px;color:var(--ko);font-weight:500}
 .bi-jamais{color:var(--t-3)}
 /* « sur la table », « nouveau » : une pastille, un point et un mot */
 .bi-table,.bi-neuf{flex:none;display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 8px 0 7px;border-radius:999px;font:500 var(--f-11)/1 var(--sans);font-style:normal;white-space:nowrap}
@@ -316,12 +330,12 @@ button.bi-plan-ouvrir:hover .bi-plan-ico{background:var(--s-surface);color:var(-
 .bi-plan .bi-ligne .bi-nommer input{height:34px;font:600 var(--f-14)/1 var(--sans)}
 .bi-plan.nouveau button.bi-plan-ouvrir{animation:bi-neuf 1.4s var(--courbe)}
 @keyframes bi-neuf{from{background:var(--ok-soft)}to{background:transparent}}
-/* la feuille se resserre (un document ouvert à côté) : « créé » et les liaisons d'abord, puis « modifié » */
+/* la feuille se resserre (un document ouvert à côté) : les liaisons et « modifié » d'abord ; ce qu'il reste à faire reste */
 @container (max-width:860px){
-  .bi-ligne{grid-template-columns:32px minmax(0,1fr) 52px 140px 140px}
-  .bi-ligne>:nth-child(4),.bi-ligne>:nth-child(5){display:none}
-  .bi-ligne.avec-install{grid-template-columns:32px minmax(0,1fr) minmax(0,.7fr) 52px 140px}
-  .bi-ligne.avec-install>:nth-child(4){display:block}.bi-ligne.avec-install>:nth-child(5),.bi-ligne.avec-install>:nth-child(6){display:none}
+  .bi-ligne{grid-template-columns:32px minmax(0,1fr) 52px 132px 140px}
+  .bi-ligne>:nth-child(4),.bi-ligne>:nth-child(6){display:none}
+  .bi-ligne.avec-install{grid-template-columns:32px minmax(0,1fr) minmax(0,.7fr) 132px 140px}
+  .bi-ligne.avec-install>:nth-child(6){display:block}.bi-ligne.avec-install>:nth-child(4),.bi-ligne.avec-install>:nth-child(5){display:none}
 }
 /* un fichier qui se lit, ou qui ne passe pas : sa ligne, en tête */
 .bi-ajouts{margin-bottom:4px}
@@ -420,6 +434,135 @@ body.fiche-ouverte .biblio.survol-depot .bi-page::before{left:calc((100vw - var(
 .bi-entre .bi-carte:nth-child(5){animation-delay:.12s}.bi-entre .bi-carte:nth-child(n+6){animation-delay:.15s}
 .bi-entre .bi-essai{animation-delay:.12s}
 @keyframes bi-pose{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ─── L'ACCUEIL (« Ouvrez votre retest ») : le geste n°1 clair sur la nuit, son raccourci ; le dépôt dit, au pointillé ;
+   la base des contrats déjà faits en lien ─── */
+.bi-btn.bi-btn-ouvrir{height:42px;padding:0 10px 0 14px;gap:9px;font-size:var(--f-14)}
+.bi-btn-ouvrir kbd{margin-left:4px;font:500 var(--f-11)/1 var(--mono);color:var(--t-table-2);background:rgba(15,26,46,.08);box-shadow:inset 0 0 0 1px rgba(15,26,46,.12);border-radius:5px;padding:4px 6px}
+.bi-vide-gestes .bi-btn-2{height:42px}
+.bi-vide>p.bi-vide-depot{display:flex;flex-direction:column;gap:3px;width:min(520px,100%);max-width:none;margin:22px 0 0;padding:14px 20px;border:1px dashed var(--l-table-2);border-radius:var(--r-2);font-size:var(--f-13);line-height:1.5}
+.bi-vide-depot b{color:var(--t-table);font-weight:600}
+.bi-vide>p.bi-vide-base{max-width:64ch;margin-top:18px;font-size:var(--f-13)}
+.bi-vide-base span{display:block}
+.bi-lien-vide{padding:0 2px;border:none;background:none;color:var(--t-table);font:600 var(--f-13)/1.5 var(--sans);text-decoration:underline;text-decoration-color:var(--l-table-2);text-underline-offset:3px;cursor:pointer}
+.bi-lien-vide:hover{text-decoration-color:var(--t-table)}
+.biblio.survol-depot .bi-vide-depot{border-style:solid;border-color:var(--t-table)}
+.bi-compte-base{color:var(--t-table-2)}
+
+/* ─── CHERCHER DANS TOUT : les contrats que la base porte, une carte chacun sur la feuille, leurs lignes dessous ─── */
+.bi-trouve{margin-top:44px}
+.bi-trouve.en-cours .bi-trouves{opacity:.55;transition:opacity var(--rapide)}
+.bi-trouve-tete{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 14px;margin:0 0 14px}
+.bi-trouve-tete .bi-sous{margin:0}
+.bi-trouve-sous{flex:1;min-width:0;margin:0;font-size:var(--f-12);color:var(--t-table-2)}
+.bi-trouve-lot{align-self:center;height:30px}
+.bi-trouves{display:flex;flex-direction:column;gap:0;padding:6px}
+.bi-tc+.bi-tc{border-top:1px solid var(--s-line)}
+.bi-tc-tete{display:grid;grid-template-columns:32px minmax(0,1fr) auto auto;align-items:center;column-gap:14px;width:100%;min-height:54px;padding:6px 12px;border:none;border-radius:var(--r-2);background:none;color:var(--t-1);text-align:left;cursor:pointer;transition:background var(--rapide)}
+.bi-tc-tete:hover{background:var(--s-hover)}
+.bi-tc-tete:focus-visible{outline-offset:-2px}
+.bi-plan-ico.sur-table{background:var(--accent);color:var(--on-accent);box-shadow:none}
+.bi-tc-nom{display:flex;flex-direction:column;gap:2px;min-width:0}
+.bi-tc-nom b{font:600 var(--f-14)/1.3 var(--mono);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bi-tc-nom span{font-size:var(--f-12);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bi-tc-n{font-size:var(--f-12);color:var(--t-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.bi-tc-ouvrir{display:inline-flex;align-items:center;gap:4px;font:600 var(--f-12)/1 var(--sans);color:var(--t-2);opacity:0;transition:opacity var(--rapide)}
+.bi-tc-ouvrir .ico{width:15px;height:15px}
+.bi-tc-tete:hover .bi-tc-ouvrir,.bi-tc-tete:focus-visible .bi-tc-ouvrir{opacity:1}
+.bi-tc-lignes{list-style:none;margin:0 0 8px;padding:0 12px 0 58px}
+.bi-tl{display:flex;align-items:baseline;gap:8px;width:100%;min-height:28px;padding:4px 8px;border:none;border-radius:var(--r-1);background:none;color:var(--t-2);font-size:var(--f-12);text-align:left;cursor:pointer;transition:background var(--rapide)}
+.bi-tl:hover{background:var(--s-hover);color:var(--t-1)}
+.bi-tl .id{font-family:var(--mono);color:var(--t-1)}
+.bi-tl-fl{color:var(--t-3)}
+.bi-tl-reste{display:inline-flex;flex-wrap:wrap;gap:0 6px;min-width:0;margin-left:6px;color:var(--t-2)}
+.bi-tl-reste i{font-style:normal;color:var(--t-3)}
+.bi-tc-plus{padding:2px 8px 4px;font-size:var(--f-12);color:var(--t-3)}
+.bi-trouves mark{background:color-mix(in srgb,var(--warn) 22%,transparent);color:inherit;border-radius:3px;padding:0 2px;box-shadow:inset 0 -1px 0 var(--warn)}
+
+/* ─── CONVERTIR EN LOT : la case de chaque plan, la barre du lot posée en bas de la table ─── */
+.bi-coche{display:grid;place-items:center;width:20px;height:20px;margin:0 6px;border-radius:6px;border:1.5px solid var(--s-line-2);background:var(--s-surface);transition:background var(--rapide),border-color var(--rapide)}
+.bi-coche::after{content:"";width:9px;height:5px;margin-top:-2px;border-left:2px solid var(--on-accent);border-bottom:2px solid var(--on-accent);transform:rotate(-45deg);opacity:0}
+.bi-plan.choisi .bi-coche,.bi-coche-tous[aria-pressed="true"] .bi-coche{background:var(--accent);border-color:var(--accent)}
+.bi-plan.choisi .bi-coche::after,.bi-coche-tous[aria-pressed="true"] .bi-coche::after{opacity:1}
+.bi-plan.choisi button.bi-plan-ouvrir{background:var(--accent-soft)}
+.bi-coche-tous{padding:0;border:none;background:none;cursor:pointer;justify-self:start}
+.bi-en-lot .bi-plan-ouvrir:hover .bi-coche{border-color:var(--t-2)}
+.bi-lot-place{position:sticky;bottom:16px;z-index:8;margin-top:24px}
+.bi-lot{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:8px 10px 8px 18px;border-radius:var(--r-3);background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-panneau);font-size:var(--f-13);animation:bi-pose var(--moyen) both}
+.bi-lot-n{white-space:nowrap}
+.bi-lot-n b{font-variant-numeric:tabular-nums}
+.bi-lot-o{display:inline-flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap}
+.bi-lot-o input{accent-color:var(--accent);width:15px;height:15px;margin:0}
+.bi-lot-o small{color:var(--t-3);font-size:var(--f-12)}
+.bi-lot-o.eteint{color:var(--t-3);cursor:default}
+.bi-lot-seg{display:inline-flex;gap:2px;padding:3px;border-radius:var(--r-btn);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line)}
+.bi-lot-seg button{height:26px;padding:0 10px;border:none;border-radius:7px;background:none;color:var(--t-2);font:500 var(--f-12)/1 var(--sans);white-space:nowrap}
+.bi-lot-seg button[aria-pressed="true"]{background:var(--s-surface);color:var(--t-1);box-shadow:0 0 0 1px var(--s-line-2),0 1px 2px rgba(0,0,0,.08)}
+.bi-lot .espace{flex:1}
+.bi-lien-lot{height:30px;padding:0 10px;border:none;border-radius:var(--r-btn);background:none;color:var(--t-2);font:500 var(--f-13)/1 var(--sans)}
+.bi-lien-lot:hover{background:var(--s-hover);color:var(--t-1)}
+.bi-lot .bi-btn{background:var(--accent);border-color:var(--accent);color:var(--on-accent);box-shadow:none}
+.bi-lot .bi-btn:hover{background:var(--accent-2);border-color:var(--accent-2)}
+.bi-lot .bi-btn:disabled{opacity:.4;cursor:default}
+.bi-lot.en-cours{position:relative;overflow:hidden;padding-top:13px;flex-wrap:nowrap}
+.bi-lot-barre{position:absolute;left:0;right:0;top:0;height:3px;background:var(--s-sunken)}
+.bi-lot-barre i{display:block;height:100%;background:var(--accent);transition:width var(--moyen)}
+/* ce que fait le dossier PDF du contrat en cours (« Placement des folios : 2 sur 6 prêts ») */
+.bi-lot-mot{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--f-12);color:var(--t-2)}
+.bi-lot-nom{font:500 var(--f-12)/1 var(--mono);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40ch}
+
+/* ─── LA CARTE DE LECTURE d'une grande base : du papier, en bas à droite, au-dessus de tout ; la barre dit le travail fait ─── */
+.lecture-base{position:fixed;right:16px;bottom:16px;z-index:60;width:min(380px,calc(100vw - 32px));padding:14px 16px 12px;border-radius:var(--r-3);background:var(--s-surface);color:var(--t-1);box-shadow:var(--sh-panneau);font-size:var(--f-13);animation:bi-pose var(--moyen) both}
+.lb-tete{display:flex;align-items:center;gap:8px;min-width:0}
+.lb-tete .ico{flex:none;width:16px;height:16px;color:var(--t-2)}
+.lb-tete b{min-width:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lb-barre{position:relative;height:6px;margin:12px 0 8px;border-radius:3px;background:var(--s-sunken);overflow:hidden;box-shadow:inset 0 0 0 1px var(--s-line)}
+.lb-barre i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--accent);transition:width var(--rapide)}
+.lb-barre.indefinie i{animation:lb-va 1.1s var(--courbe) infinite alternate}
+@keyframes lb-va{from{left:-30%}to{left:100%}}
+.lb-detail{margin:0;font-size:var(--f-12);color:var(--t-2);font-variant-numeric:tabular-nums}
+.lb-suite{margin:4px 0 0;font-size:var(--f-12);color:var(--t-3);font-variant-numeric:tabular-nums}
+.lecture-base.fini .lb-detail{margin-top:6px}
+.lb-gestes{display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:10px}
+.lb-gestes .btn{height:30px;font-size:var(--f-12)}
+.lb-x{position:absolute;top:8px;right:8px;width:28px;height:28px;padding:0;border:none;border-radius:var(--r-1);background:none;color:var(--t-2);display:grid;place-items:center}
+.lb-x:hover{background:var(--s-hover);color:var(--t-1)}
+.lb-x .ico{width:16px;height:16px}
+.lecture-base.fini .lb-tete{padding-right:28px}
+
+/* ─── « DÉJÀ FAIT » À L'ÉCHELLE DU CONTRAT (le document) : les plus proches, le choisi, ses dessins ligne à ligne ─── */
+.cc-lead{margin:0 0 12px;font-size:var(--f-13);line-height:1.5;color:var(--t-2)}
+.cc-lead b{color:var(--t-1);font-weight:600}
+.cc-cands{display:flex;flex-direction:column;gap:6px;margin-bottom:18px}
+.cc-cand{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;padding:6px 12px;border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-surface);color:var(--t-1);text-align:left;cursor:pointer;transition:border-color var(--rapide),background var(--rapide)}
+.cc-cand:hover{border-color:var(--s-line-2);background:var(--s-hover)}
+.cc-cand[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.cc-taux{flex:none;width:52px;font:600 var(--f-16)/1 var(--sans);font-variant-numeric:tabular-nums}
+.cc-taux.ok{color:var(--ok)}.cc-taux.att{color:var(--warn)}.cc-taux.ko{color:var(--t-2)}
+.cc-cand-t{display:flex;flex-direction:column;gap:2px;min-width:0}
+.cc-cand-t .id{font:600 var(--f-13)/1.3 var(--mono)}
+.cc-cand-t small{font-size:var(--f-12);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cc-detail{margin-bottom:14px}
+.cc-resume{margin:10px 0 0;font-size:var(--f-12);line-height:1.5;color:var(--t-2)}
+.cc-resume b{color:var(--t-1)}
+.cc-dessin{margin-top:10px;padding:10px 0 4px;border-top:1px solid var(--s-line)}
+.cc-d-tete{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px}
+.cc-d-tete b{font-size:var(--f-13);font-weight:600}
+.cc-d-tete b.id{font-family:var(--mono)}
+.cc-d-tete span{flex:1;min-width:0;font-size:var(--f-12);color:var(--t-2)}
+.cc-d-tete .btn{height:26px}
+.cc-pareil .cc-d-tete b{color:var(--t-2)}
+.cc-lignes{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:2px}
+.cc-l{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 6px;padding:4px 6px;border-radius:var(--r-1);font-size:var(--f-12);color:var(--t-2)}
+.cc-l .cc-e{flex:none;width:62px;font-weight:600}
+.cc-manque .cc-e{color:var(--ok)}.cc-differe .cc-e{color:var(--warn)}.cc-enplus .cc-e{color:var(--t-3)}
+.cc-manque{background:color-mix(in srgb,var(--ok) 7%,transparent)}.cc-differe{background:color-mix(in srgb,var(--warn) 8%,transparent)}
+.cc-bout{padding:0 2px;border:none;border-radius:4px;background:none;font:500 var(--f-12)/1.5 var(--mono);color:var(--t-1);cursor:pointer}
+.cc-bout:hover{background:var(--s-hover);text-decoration:underline}
+.cc-x{color:var(--t-2)}
+.cc-nous{flex-basis:100%;padding-left:68px;color:var(--t-1)}
+.cc-pareilles{margin:4px 0 0;padding-left:6px;font-size:var(--f-12);color:var(--t-3)}
+.cc-pied-note{font-size:var(--f-12);color:var(--t-3)}
 
 /* ─── une fenêtre étroite (la tablette, le téléphone : le code reste, on ne le soigne plus) ─── */
 @media (max-width:900px){

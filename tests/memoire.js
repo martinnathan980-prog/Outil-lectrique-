@@ -29,6 +29,8 @@ const FICHIER = fichierDemande();
     redessiner(); ouvrirBase(); sauver(); return app.contrat.liaisons.length; });
   await p.waitForTimeout(700);
   ok('la correction est faite', a > 0, a + ' liaisons');
+  // la base des contrats déjà faits se garde aussi sur le PC (IndexedDB « volta-base », par morceaux)
+  await p.evaluate(() => adopterReferences(contratExemple().map(l => liaison({ ...l, harness: 'H-MEMOIRE', appareil: 'H160', retest: '20/10/2026' })), 'base-memoire.xlsx')); await p.waitForTimeout(900);
 
   const p2 = await ctx.newPage(); p2.setDefaultTimeout(120000); p2.on('pageerror', x => e.push(x.message));
   await p2.goto(FICHIER); await p2.waitForTimeout(1800);
@@ -40,6 +42,9 @@ const FICHIER = fichierDemande();
   ok('elle survit à la réouverture', r.survit, r.n + ' liaisons · «' + r.heure + '»');
   ok('le choix aussi (une désignation)', r.designation === 'calculateur d’essai', '«' + r.designation + '»');
   ok('repris sur le plan seul, tableau fermé', !r.base && !r.biblio);
+  await p2.waitForFunction(() => app.references && app.references.pret, null, { timeout: 60000 }).catch(() => { });
+  const bm = await p2.evaluate(() => app.references ? { nom: app.references.nom, n: app.references.n, h: app.references.base.meta.contrats.map(c => c.h).join(), deja: !!indexReferences() } : null);
+  ok('la base des contrats déjà faits revient aussi', !!bm && bm.nom === 'base-memoire.xlsx' && bm.n === 201 && bm.h === 'H-MEMOIRE' && bm.deja, JSON.stringify(bm));
 
   const u = await p2.evaluate(() => { const n0 = app.contrat.liaisons.length; histPush('suppression d’essai'); app.contrat.liaisons.splice(0, 3); redessiner();
     const n1 = app.contrat.liaisons.length; const q = annuler(); return { n0, n1, n2: app.contrat.liaisons.length, q }; });

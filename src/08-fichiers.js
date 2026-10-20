@@ -49,6 +49,9 @@
 
    UN FICHIER OUVERT (Ctrl+O, le menu, glissé sur la table) devient un PLAN
    NEUF de l'installation ouverte, sur la table ; Ctrl+Z revient au plan d'avant.
+   Un très gros fichier (une base entière) se lit dans un Worker, la page libre
+   (08-references) ; un retest ouvert alors qu'une base est là propose le
+   contrat déjà fait le plus proche (« Comparer »).
 
    Tout reste dans ce navigateur. Les modèles téléchargeables sont écrits ici
    (une seule source) et dans modeles/ (les mêmes lignes).
@@ -72,7 +75,7 @@ const MODELE_BASE = {
     ['332A601150-023-D', '303RL1', 'A1', 'E0836IS35-22SA', 'DR20', 'W-212', '302CB1', '2', 'MS3320-10', 'MEE256A7815001A', 'H160', '08/07/2024']] };
 // le collage, sans en-têtes : l'ordre que le rattrapage prend quand rien ne se devine (02, `lireTexte`)
 const MODELE_COLLAGE = {
-  entetes: ['Équip.1', 'Borne', 'PN', 'Équip.2', 'Borne', 'PN', 'Fil', 'Type', 'Route', 'Folio'],
+  entetes: ['Équip.1', 'Borne', 'PN', 'Équip.2', 'Borne', 'PN', 'Câble', 'Type', 'Route', 'Folio'],
   requises: ['Équip.1', 'Équip.2'],
   lignes: [
     ['102CB1', '2', 'MS3320-10', '103RL1', 'A1', 'E0836IS35-22SA', 'W-012', 'DR20', 'PUISSANCE', '1'],
@@ -118,11 +121,9 @@ function effacerErreur(entree) { delete FICHIERS.erreurs[entree]; delete FICHIER
 const texteBrut = h => { const d = document.createElement('div'); d.innerHTML = h; return d.textContent; };
 /* Une erreur d'import : écrite dans sa carte, signalée par le mot qui passe (le texte court s'il y en a un). */
 function echecImport(entree, err, court) { court = court || texteBrut(err.texte); noterErreur(entree, { ...err, court }); signaler(court, entree, true); }
-/* Le mot qui passe SIGNALE ; la carte DIT. « Voir » ouvre la carte. Il reste le temps de le lire, et tant qu'on le survole. */
-function signaler(msg, entree, erreur) { dire(msg, erreur); const t = $('toast'); if (!entree) return;
-  const b = document.createElement('button'); b.type = 'button'; b.className = 'toast-voir'; b.textContent = 'Voir';
-  b.addEventListener('click', () => { t.classList.remove('on', 'action'); ficheFichiers(entree); });
-  t.appendChild(b); t.classList.add('action'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on', 'action'), 9000); }
+/* Le mot qui passe SIGNALE ; la carte DIT. « Voir » (le bouton du mot qui passe, `dire`) ouvre la carte. Il reste le
+   temps de le lire, et tant qu'on le survole ; une erreur reste jusqu'au clic suivant. */
+function signaler(msg, entree, erreur) { dire(msg, erreur, entree ? { geste: 'Voir', faire: () => ficheFichiers(entree) } : null); }
 
 /* ---- les mots ---------------------------------------------------------------------------------------------------- */
 const deux = n => String(n).padStart(2, '0');
@@ -177,6 +178,9 @@ async function ouvrirFichier(fichier) { if (!fichier) return; const nom = fichie
   if (estPdf(fichier)) { ouvrirPdf(fichier); return; }   // un PDF de schéma : la visionneuse, puis le retest qu'on en lit (08-pdf)
   if (estVisio(fichier) || estVisioAncien(fichier)) { ouvrirVisio(fichier); return; }   // un schéma Visio (.vsdx) : sa relecture (08-visio)
   if (await routerBaseSEE(fichier)) return;   // l'Excel des vues de SEE (EED_View…) : il se résume, il ne s'ouvre pas comme un retest (08-see)
+  // un très gros fichier (une base entière, 100 000 lignes et plus) se lit AILLEURS, la page libre : un seul contrat devient un
+  // plan, plusieurs la base des contrats déjà faits (08-references, `lireLaBaseAilleurs`)
+  if ((fichier.size || 0) > SEUIL_AILLEURS && typeof Worker !== 'undefined' && lireLaBaseAilleurs(fichier, 'ouvrir')) return;
   dire('Lecture de ' + guillemets(nom) + '…');
   const L = await lireLeFichier(fichier);
   if (L.erreur) { echecImport('retest', L.erreur); return; }
@@ -185,11 +189,12 @@ async function ouvrirFichier(fichier) { if (!fichier) return; const nom = fichie
     const r = lireTexte(L.texte), ig = feuillesHtml(L.lu), avis = ig.length ? { texte: 'Feuilles ignorées (pas les en-têtes du retest) :', liste: ig } : null;
     if (!r.liaisons.length) { echecImport('retest', { texte: `${guillemets(esc(nom))} : les en-têtes du retest sont là (ligne ${r.entete}), mais aucune liaison dessous. Chaque ligne doit nommer au moins <span class="id">Device1</span> et <span class="id">Device2</span>.`, liste: avis ? [avis.texte + ' ' + ig.join(', ')] : [] },
       guillemets(nom) + ' : les en-têtes sont là, mais aucune liaison dessous.'); return; }
-    if (r.harnais && r.harnais.length > 1) { adopterReferences(r.liaisons, nom); baseRecue(nom, avis, rangerLaBase(r.liaisons, nom));
+    if (r.harnais && r.harnais.length > 1) { adopterReferences(r.liaisons, nom); baseRecue(nom, avis, rangerLesContrats(app.references.base, nom));
       ficheHarnais(r, nom); signaler(pluriel(r.harnais.length, 'harness') + ' dans ' + guillemets(nom) + ' : gardés comme contrats déjà faits — lequel ouvrir sur la table ?', 'base'); return; }
     chargerContrat(r.liaisons, 'ouverture de ' + nom, nom, { nouveau: true }); contratRecu(nom, 'retest', avis);
-    const msg = pluriel(r.liaisons.length, 'liaison') + ' — format retest, en-têtes ligne ' + r.entete + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + (ig.length ? ' · ' + pluriel(ig.length, 'feuille') + ' ignorée' + (ig.length > 1 ? 's' : '') : '') + '.';
+    const msg = pluriel(r.liaisons.length, 'liaison') + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + (ig.length ? ' · ' + pluriel(ig.length, 'feuille') + ' ignorée' + (ig.length > 1 ? 's' : '') : '') + '.';
     if (ig.length) signaler(msg, 'retest'); else dire(msg);
+    proposerDejaFait();
   } catch (e) { echecImport('retest', { texte: `${guillemets(esc(nom))} n’a pas pu être lu : ${esc(String(e && e.message || e))}.` }); } }
 /* Une base reçue (un dépôt sur sa carte, ou un fichier de plusieurs harness) : la carte le dira, avec ses comptes et ce
    qu'elle a rangé dans la bibliothèque (`rangee`). */
@@ -197,7 +202,7 @@ function baseRecue(nom, avis, rangee) { FICHIERS.base = null; effacerErreur('bas
 
 /* ---- le rattrapage : ce qui est compris, puis « Charger » --------------------------------------------------------- */
 /* Les rôles d'une colonne, dans l'ordre du collage sans en-têtes (02, `lireTexte`). */
-const ROLES = [['eq1', 'De', 'Device1'], ['b1', 'Borne', 'Pin1'], ['pn1', 'PN', 'PN1'], ['eq2', 'Vers', 'Device2'], ['b2', 'Borne', 'Pin2'], ['pn2', 'PN', 'PN2'], ['cable', 'Fil', 'Cable Tag'], ['type', 'Type', 'Cable TG'], ['route', 'Route', 'Route'], ['plan', 'Folio', 'FWD']];
+const ROLES = [['eq1', 'De', 'Device1'], ['b1', 'Borne', 'Pin1'], ['pn1', 'PN', 'PN1'], ['eq2', 'Vers', 'Device2'], ['b2', 'Borne', 'Pin2'], ['pn2', 'PN', 'PN2'], ['cable', 'Câble', 'Cable Tag'], ['type', 'Type', 'Cable TG'], ['route', 'Route', 'Route'], ['plan', 'Folio', 'FWD']];
 const ORDRE_LIBRE = { eq1: 0, b1: 1, pn1: 2, eq2: 3, b2: 4, pn2: 5, cable: 6, type: 7, route: 8, plan: 9 };
 /* Deviner un tableau comme le rattrapage le fait (02) : la première ligne, si elle ressemble à des en-têtes, nomme les
    colonnes ; sinon l'ordre du collage. */
@@ -223,7 +228,7 @@ function chargerRattrapage() { const A = FICHIERS.attente; if (!A) return; const
   chargerContrat(lu.liaisons, 'ouverture de ' + A.nom, A.nom, { nouveau: true }); contratRecu(A.nom, 'colonnes devinées');
   dire(pluriel(lu.liaisons.length, 'liaison') + ' chargée' + (lu.liaisons.length > 1 ? 's' : '') + ' de ' + guillemets(A.nom) + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + '.'); }
 // l'aperçu de ce qui est compris : les premières liaisons, chaque champ à sa place
-function apercuLiaisonsHtml(L, max) { const cols = [['de', 'De'], ['borneDe', 'Borne'], ['vers', 'Vers'], ['borneVers', 'Borne'], ['cable', 'Fil'], ['type', 'Type'], ['route', 'Route'], ['plan', 'Folio']].filter(([k], j) => j < 4 || L.some(l => l[k]));
+function apercuLiaisonsHtml(L, max) { const cols = [['de', 'De'], ['borneDe', 'Borne'], ['vers', 'Vers'], ['borneVers', 'Borne'], ['cable', 'Câble'], ['type', 'Type'], ['route', 'Route'], ['plan', 'Folio']].filter(([k], j) => j < 4 || L.some(l => l[k]));
   return `<div class="vf-apercu"><table><thead><tr>${cols.map(([k, t]) => `<th${k === 'de' || k === 'vers' ? ' class="req"' : ''}>${t}</th>`).join('')}</tr></thead><tbody>${L.slice(0, max || 3).map(l => `<tr>${cols.map(([k]) => `<td${k === 'de' || k === 'vers' ? ' class="req"' : ''}>${esc(l[k] == null ? '' : l[k])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`
     + (L.length > (max || 3) ? `<p class="vf-note">… et ${pluriel(L.length - (max || 3), 'autre liaison')}.</p>` : ''); }
 function attenteHtml() { const A = FICHIERS.attente; if (!A) return ''; const lu = lireAvecCarte(A.pleines, A.map, A.debut);
@@ -344,10 +349,11 @@ function etatsDesFichiers() { const E = {}, V = verite(), err = k => FICHIERS.er
     : !n ? { niveau: 'vide', dit: 'aucun plan ouvert : la bibliothèque, ou votre retest' }
     : exemple ? { niveau: 'vide', dit: 'l’exemple embarqué est ouvert — pas votre contrat' }
     : { niveau: 'ok', dit: lies([app.nom === 'Collage' ? 'des lignes collées' : app.nom || 'sans nom', R ? 'ouvert ' + quand(R.t) : '', pluriel(n, 'liaison'), P > 1 ? pluriel(P, 'folio') : '']) };
-  const I = indexReferences(), B = app.references;
-  E.base = err('base') ? { niveau: 'ko', dit: 'le dernier dépôt n’a pas pu être lu' + (B ? ' — la base d’avant reste' : '') }
-    : !B ? { niveau: 'vide', dit: 'aucune base dans ce navigateur' }
-    : { niveau: 'ok', dit: lies([B.nom || 'base', B.t ? 'déposée ' + quand(B.t) : '', plurielLie(I.harnais.size, 'harness'), plurielLie(I.dessins.size, 'dessin'), plurielLie(B.liaisons.length, 'liaison')]) };
+  const B = app.references, M = B && B.base ? B.base.meta : null, K = typeof BASE !== 'undefined' ? BASE : {};
+  E.base = K.lecture ? { niveau: 'att', dit: 'lecture de ' + K.lecture.nom + ' en cours' }
+    : err('base') ? { niveau: 'ko', dit: 'le dernier dépôt n’a pas pu être lu' + (B ? ' — la base d’avant reste' : '') }
+    : !B || !M ? { niveau: 'vide', dit: 'aucune base dans ce navigateur' }
+    : { niveau: 'ok', dit: lies([B.nom || 'base', B.t ? 'déposée ' + quand(B.t) : '', plurielLie(M.harnais, 'harness'), plurielLie(M.dessins, 'dessin'), plurielLie(M.n, 'liaison'), B.pret ? '' : '« Déjà fait » s’indexe']) };
   const nb = (app.bible || []).length; let tb = 0; try { const o = JSON.parse(localStorage.getItem(CLE_BIBLE) || 'null'); tb = o && o.t || 0; } catch (_) { }
   E.bible = err('bible') ? { niveau: 'ko', dit: 'le dernier fichier n’est pas une bible — ' + (app.bibleNom ? app.bibleNom : 'l’embarquée') + ' reste' }
     : { niveau: 'ok', dit: app.bibleNom ? lies([app.bibleNom, tb ? 'importée ' + quand(tb) : '', pluriel(nb, 'référence')]) : lies(['embarquée', pluriel(nb, 'référence')]) };
@@ -356,7 +362,7 @@ function etatsDesFichiers() { const E = {}, V = verite(), err = k => FICHIERS.er
     : { niveau: 'ok', dit: lies([mod ? lies([pluriel(mod, 'table') + ' modifiée' + (mod > 1 ? 's' : '') + ' dans ce navigateur', app.normeNom, pluriel(lignes, 'ligne')]) : lies(['embarquées', pluriel(TABLES_NORME.length, 'table'), 'rien de modifié']),
         typeof BASE_SEE !== 'undefined' && BASE_SEE.base ? 'base SEE gardée ' + quand(BASE_SEE.base.quand) : ''].filter(Boolean)) };
   const H = app.simu || HYPOTHESES, d = ['longueur', 'courant', 'tension', 'ambiante'].some(k => H[k] !== HYPOTHESES[k]);
-  E.hypotheses = { niveau: 'ok', dit: lies([nombre(H.longueur) + ' m par fil sans longueur', nombre(H.courant) + ' A sans disjoncteur', nombre(H.tension) + ' V', nombre(H.ambiante) + ' °C', d ? 'réglées ici' : 'les valeurs de l’outil']) };
+  E.hypotheses = { niveau: 'ok', dit: lies([nombre(H.longueur) + ' m par câble sans longueur', nombre(H.courant) + ' A sans disjoncteur', nombre(H.tension) + ' V', nombre(H.ambiante) + ' °C', d ? 'réglées ici' : 'les valeurs de l’outil']) };
   return E; }
 /* Une carte. `o` : { cle, titre, une (html : ce qu'elle attend, en une ligne), action: [vf, libelle], zone: [vf, mot] (la zone
    de dépôt, tant que l'entrée est vide), liens: [[vf, libelle]], boites (html), attend: { sous, format, apercu, ensuite,
@@ -382,8 +388,8 @@ function erreurHtml(k) { const e = FICHIERS.erreurs[k]; if (!e) return '';
 function avisHtml(k) { const a = FICHIERS.avis[k]; return a ? `<div class="vf-boite vf-avis"><p>${a.texte}</p><ul>${a.liste.map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''; }
 /* Le succès d'un dépôt de base : les comptes, ce qui se passe maintenant (et ce qui est rangé dans la bibliothèque), et la
    main qu'on tend. */
-function succesBaseHtml() { if (FICHIERS.succes !== 'base' || !app.references) return ''; const I = indexReferences(), R = app.references, V = verite(), p = V.length ? premierDejaFait() : null, G = FICHIERS.rangee;
-  return `<div class="vf-boite vf-succes"><p><b>${esc(R.nom || 'La base')}</b> est rangée : ${lies([plurielLie(I.harnais.size, 'harness'), plurielLie(I.dessins.size, 'dessin'), plurielLie(R.liaisons.length, 'liaison')])}. Chaque fiche dit maintenant ce qui a déjà été fait.${G ? ` La bibliothèque compte ${esc(lies([plurielLie(G.installs, 'installation'), plurielLie(G.plans, 'plan')]))} venus d’elle.` : ''}</p>`
+function succesBaseHtml() { if (FICHIERS.succes !== 'base' || !app.references || !app.references.base) return ''; const R = app.references, M = R.base.meta, V = verite(), p = V.length && R.pret ? premierDejaFait() : null, G = FICHIERS.rangee;
+  return `<div class="vf-boite vf-succes"><p><b>${esc(R.nom || 'La base')}</b> est rangée : ${lies([plurielLie(M.harnais, 'harness'), plurielLie(M.dessins, 'dessin'), plurielLie(M.n, 'liaison')])}. ${R.pret ? 'Chaque fiche dit maintenant ce qui a déjà été fait.' : '« Déjà fait » s’indexe : les fiches le diront dans un instant.'}${G ? ` La bibliothèque compte ${esc(lies([plurielLie(G.installs, 'installation'), plurielLie(G.plans, 'plan')]))} venus d’elle.` : ''}</p>`
     + (p ? `<div class="vf-gestes"><button class="btn cuivre" data-vf="deja-fait">Voir un équipement déjà fait</button><span class="vf-note">${esc(p.nom)} : ${Math.round(p.c.taux * 100)}\u00a0% pareil sur ${esc(p.c.harness)}</span></div>`
       : V.length ? '<p class="vf-note">Aucun équipement du plan ouvert n’a de correspondance dans cette base (ni même part number, ni même code).</p>'
       : '<div class="vf-gestes"><button class="btn cuivre" data-vf="bibliotheque">Voir la bibliothèque</button><span class="vf-note">chaque fiche dira ce qui a déjà été fait</span></div>') + '</div>'; }
@@ -406,16 +412,16 @@ function cartesFichiers(focus) { const E = etatsDesFichiers(), V = verite();
     { cle: 'bibliotheque', titre: 'Bibliothèque', depot: 'plans', grande: true, action: ['bibliotheque', 'Ouvrir la bibliothèque'], zone: ['ajouter-plans', 'vos retests'],
       une: `<p><b>Un plan par retest</b>. Ceux qu’on glisse ici vont dans ${esc(guillemets(nomInstallCible()))}.</p>` },
     { cle: 'retest', titre: 'Votre retest', depot: 'retest', grande: true, action: ['ouvrir', 'Ouvrir un retest…'], zone: ['ouvrir', 'le retest'],
-      une: `<p>Un Excel ou un CSV, <b>une ligne par fil</b>, avec au moins ${MODELE_RETEST.requises.map(id).join(POINT)}. Il devient un plan de l’installation ouverte.</p>`,
+      une: `<p>Un Excel ou un CSV, <b>une ligne par câble</b>, avec au moins ${MODELE_RETEST.requises.map(id).join(POINT)}. Il devient un plan de l’installation ouverte.</p>`,
       liens: [['pdf', 'Un schéma en PDF ? Le lire…'], ...(V.length ? [] : [['exemple', 'Pas de fichier sous la main ? Ouvrir l’exemple']])],
       boites: attenteHtml() + erreurHtml('retest') + avisHtml('retest'),
       attend: { format: 'Les en-têtes sont reconnus par leur nom ; les autres colonnes du retest (Harness, PN, Route, FWD, longueur…) sont lues si elles sont là.',
         apercu: apercuHtml(MODELE_RETEST, { label: 'Trois lignes d’exemple du retest', colonnes: colonnes(MODELE_RETEST, ['Device1', 'Pin1', 'Cable TG', 'Cable Tag', 'Device2', 'Pin2', 'FWD']) }),
-        ensuite: 'Ensuite, les folios se dessinent et chaque fil est jugé. Plusieurs harness : on vous demande lequel ouvrir.',
+        ensuite: 'Ensuite, les folios se dessinent et chaque câble est jugé. Plusieurs harness : on vous demande lequel ouvrir.',
         gestes: [['modele-retest', 'Modèle (CSV)'], ['coller', 'Coller des lignes…']] } },
     { cle: 'base', titre: 'Contrats déjà faits', depot: 'base', grande: true, action: ['base', app.references ? 'Remplacer…' : 'Déposer la base…'], zone: ['base', 'la base'],
       une: `<p>Le retest de tous vos contrats : un seul Excel, <b>une ligne par liaison</b>, et :</p>${clesBaseHtml()}`,
-      liens: app.references ? [...(V.length && FICHIERS.succes !== 'base' ? [['deja-fait', 'Voir un équipement déjà fait']] : []), ...(nonRanges ? [['ranger', 'Ranger ses ' + pluriel(nonRanges, 'harness') + ' dans la bibliothèque']] : []), ['chercher-base', 'Chercher dans la base'], ['oublier-base', 'Oublier la base']] : [],
+      liens: app.references ? [...(V.length && FICHIERS.succes !== 'base' ? [['deja-fait', 'Voir un équipement déjà fait']] : []), ...(V.length ? [['comparer-contrat', 'Comparer le plan ouvert au déjà-fait']] : []), ...(nonRanges ? [['ranger', 'Ranger ses ' + pluriel(nonRanges, 'harness') + ' dans la bibliothèque']] : []), ['chercher-base', 'Chercher dans la base'], ['oublier-base', 'Oublier la base']] : [],
       boites: oubliBaseHtml() + succesBaseHtml() + erreurHtml('base') + baseSansHarnessHtml() + avisHtml('base'),
       attend: { apercu: apercuHtml(MODELE_BASE, { label: 'Trois lignes d’exemple de la base', colonnes: colonnes(MODELE_BASE, ['Harness', 'FWD', 'Appareil', 'Device1', 'Pin1', 'Device2', 'Pin2']) }),
         ensuite: 'Ensuite, chaque fiche dit « déjà fait sur H175, 92 % pareil » et reprend ce que vous cochez. Une colonne Installation (et ECP) range aussi chaque installation et ses plans dans la bibliothèque. Gardée dans ce navigateur.',
@@ -455,7 +461,10 @@ function lierFichiers() { if (FICHIERS.lie) return; FICHIERS.lie = true; const c
       ouvrir: () => $('fichier').click(), pdf: () => choisirPdf(), coller: ficheColler, exemple: () => ouvrirExemple(), base: choisirBase, bible: () => $('fichier-bible').click(), normes: () => $('fichier-normes').click(), see: () => $('fichier-see').click(), 'see-gardee': () => ficheBaseSEE(), hypotheses: ficheHypotheses,
       'modele-retest': () => telechargerModele('retest'), 'modele-base': () => telechargerModele('base'), 'modele-bible': () => telechargerModele('bible'),
       'gabarit-reseau': () => telechargerGabaritNorme('reseau'), gabarits: () => { NORMES.guide = true; ficheNormes(); },
-      'voir-bible': () => ficheBible(''), 'voir-normes': () => ficheNormes(), 'chercher-base': () => { ficheBible(''); const t = [...$('fiche-corps').querySelectorAll('h3.sous-titre')].find(h => /contrats déjà faits/i.test(h.textContent)); if (t) t.scrollIntoView({ block: 'start' }); },
+      'voir-bible': () => ficheBible(''), 'voir-normes': () => ficheNormes(),
+      // chercher dans la base : la recherche de la bibliothèque, qui cherche partout (08-bibliotheque)
+      'chercher-base': () => { fermerFiche(); montrerBibliotheque('racine'); setTimeout(() => { const q = $('bi-q'); if (q) q.focus(); }, 30); },
+      'comparer-contrat': () => ficheDejaFaitContrat(),
       'bible-outil': () => { adopterBible(bibleExemple(), ''); rendreFichiers(); dire('La bible de l’outil est rétablie.'); },
       'normes-outil': () => { adopterApports(apportsVides(), 'retour à la norme embarquée'); rendreFichiers(); dire('Norme embarquée rétablie.'); },
       'oublier-base': () => { FICHIERS.oubli = true; rendreFichiers(); }, 'oublier-base-non': () => { FICHIERS.oubli = false; rendreFichiers(); },
@@ -472,4 +481,4 @@ function lierFichiers() { if (FICHIERS.lie) return; FICHIERS.lie = true; const c
 // les entrées cachées de « Vos fichiers » (et de la bibliothèque) : la base, une norme ; la bible a la sienne (page.html), les plans aussi (08-bibliotheque)
 function lierEntreesFichiers() { const f = (id, fn) => { const el = $(id); if (el && !el.dataset.lie) { el.dataset.lie = '1'; el.addEventListener('change', e => { const x = e.target.files && e.target.files[0]; if (x) fn(x); e.target.value = ''; }); } };
   f('fichier-base', importerReferences); f('fichier-normes', importerNorme); f('fichier-see', lireBaseSEE);
-  const t = $('toast'); if (t && !t.dataset.lie) { t.dataset.lie = '1'; t.addEventListener('mouseenter', () => clearTimeout(toastT)); t.addEventListener('mouseleave', () => { if (t.classList.contains('on')) toastT = setTimeout(() => t.classList.remove('on', 'action'), 2500); }); } }
+  const t = $('toast'); if (t && !t.dataset.lie) { t.dataset.lie = '1'; t.addEventListener('mouseenter', () => clearTimeout(toastT)); t.addEventListener('mouseleave', () => { if (t.classList.contains('on') && !TOAST.erreur) toastT = setTimeout(() => t.classList.remove('on', 'action'), 2500); }); } }

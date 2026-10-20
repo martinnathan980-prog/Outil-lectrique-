@@ -52,11 +52,20 @@ const CAPTURES = (process.argv.find(a => a.startsWith('--captures=')) || '').sli
   ok(L0.titre === 'Volta' && L0.marque === 'Volta' && L0.volta, 'le nom est « Volta » : le titre de la page, la marque de la barre du haut ; l’API répond aussi à `volta`', JSON.stringify({ titre: L0.titre, marque: L0.marque }));
   ok(L0.vue === 'racine' && L0.visible && L0.vide && L0.demo && !L0.n && !L0.accueil, 'au lancement, la bibliothèque sur la table, vide (deux gestes pour commencer, sans discours), l’Exemple discret en dernier — plus de page d’exemple qui explique', JSON.stringify(L0));
   ok(L0.recherche === 'hidden', 'sur la bibliothèque, la recherche des repères attend le plan');
+  // l'accueil (audit v72, parcours P1-1) : « Ouvrez votre retest », le geste n°1 en premier (Ctrl+O), une installation ensuite, la base en lien
+  const AC = await page.evaluate(() => ({ titre: document.querySelector('#bibliotheque .bi-vide h1').textContent, gestes: [...document.querySelectorAll('#bibliotheque .bi-vide [data-bi]')].map(b => b.dataset.bi).join(), kbd: (document.querySelector('#bibliotheque .bi-vide [data-bi="ouvrir"] kbd') || {}).textContent, depot: !!document.querySelector('#bibliotheque .bi-vide-depot') }));
+  ok(AC.titre === 'Ouvrez votre retest' && AC.gestes === 'ouvrir,nouvelle,base' && AC.kbd === 'Ctrl+O' && AC.depot, 'l’accueil : « Ouvrez votre retest » — « Ouvrir un retest… Ctrl+O » d’abord, « Nouvelle installation » ensuite, la base en lien ; le dépôt dit', JSON.stringify(AC));
+  let choix = null; try { [choix] = await Promise.all([page.waitForEvent('filechooser', { timeout: 3000 }), page.click('#bibliotheque .bi-vide [data-bi="ouvrir"]')]); } catch (_) { }
+  ok(!!choix && !(await page.evaluate(() => installsVraies().length)), '« Ouvrir un retest… » ouvre le choix du fichier, sans créer d’installation');
+  // un PDF déposé sur l'accueil va au lecteur de PDF : plus d'installation vide « À ranger » (audit v72, parcours P2-10)
+  await page.evaluate(() => ajouterPlans([new File(['%PDF-1.4\n%%EOF\n'], 'schema.pdf', { type: 'application/pdf' })])); await page.waitForTimeout(600);
+  ok(await page.evaluate(() => !BIB.installs.has(ID_A_RANGER) && !installsVraies().length), 'un PDF déposé sur la bibliothèque ne crée plus d’installation vide « À ranger »');
+  await page.evaluate(() => { if (typeof fermerPdf === 'function') fermerPdf(); fermerFiche(); if (BIB.vue !== 'racine') montrerBibliotheque('racine'); }); await page.waitForTimeout(200);
   await capture('bibliotheque-vide');
 
   /* ---- une installation, au clavier ------------------------------------------------------------------------------- */
   console.log('\ncréer une installation (son ECP, son nom), y ajouter des plans par des fichiers');
-  ok(await page.evaluate(() => !/install\b/i.test(document.querySelector('#bibliotheque').textContent.replace(/installations?/gi, '')) && /Nouvelle installation/.test($('bibliotheque').textContent)), 'on dit « installation », jamais « installation »');
+  ok(await page.evaluate(() => !/install\b/i.test(document.querySelector('#bibliotheque').textContent.replace(/installations?/gi, '')) && /Nouvelle installation/.test($('bibliotheque').textContent)), 'on dit « installation », jamais « install »');
   await page.click('#bibliotheque .bi-vide [data-bi="nouvelle"]'); await page.waitForTimeout(150);
   ok(await page.evaluate(() => document.activeElement && document.activeElement.id === 'bi-ecp-nouvelle'), '« Nouvelle installation » : une carte neuve, le curseur dans son ECP');
   await page.keyboard.type('40217'); await page.waitForTimeout(50);
@@ -172,10 +181,11 @@ const CAPTURES = (process.argv.find(a => a.startsWith('--captures=')) || '').sli
     'chercher « h-ant-2 » : l’installation qui le porte, et le plan lui-même dessous ; le champ garde le clavier');
   await page.keyboard.press('Escape'); await page.waitForTimeout(150);
   ok(await page.evaluate(() => !BIB.q && document.querySelectorAll('#bibliotheque .bi-grille:not(.bi-grille-demo) .bi-carte').length === 1), 'Échap efface la recherche');
-  await page.click('#bibliotheque .bi-carte.bi-demo .bi-carte-corps'); await page.waitForTimeout(200);
-  ok(await page.evaluate(() => BIB.vue === 'install' && BIB.install === 'exemple' && !document.querySelector('#bi-ajouter') && document.querySelectorAll('#bibliotheque .bi-plan[data-plan="exemple"]').length === 1), 'l’Exemple : une installation de démonstration, un plan, rien à y ajouter');
-  await page.click('#bibliotheque .bi-plan[data-plan="exemple"] .bi-plan-ouvrir'); await page.waitForFunction(() => app.planId === 'exemple' && !!app.dessin); await page.waitForTimeout(200);
-  ok(await page.evaluate(() => app.nom === NOM_EXEMPLE && verite().length === 201 && app.contrat.charges.has('102CB1') && BIB.vue === 'plan' && $('en-install').textContent === 'Exemple'), 'un clic l’ouvre : l’exemple tel qu’il est livré, 201 liaisons, son profil de charge ; le fil dit « Exemple »');
+  await page.evaluate(() => montrerBibliotheque('install', 'exemple')); await page.waitForTimeout(200);
+  ok(await page.evaluate(() => BIB.vue === 'install' && BIB.install === 'exemple' && !document.querySelector('#bi-ajouter') && !document.querySelector('#bi-convertir') && document.querySelectorAll('#bibliotheque .bi-plan[data-plan="exemple"]').length === 1), 'l’Exemple : une installation de démonstration, un plan, rien à y ajouter ni à convertir');
+  // sa carte, à la racine, ouvre son plan d'un seul clic (audit v72, parcours P2-2 : la page d'une ligne entre les deux est partie)
+  await page.click('#en-biblio'); await page.waitForTimeout(150); await page.click('#bibliotheque .bi-carte.bi-demo .bi-carte-corps'); await page.waitForFunction(() => app.planId === 'exemple' && !!app.dessin); await page.waitForTimeout(200);
+  ok(await page.evaluate(() => app.nom === NOM_EXEMPLE && verite().length === 201 && app.contrat.charges.has('102CB1') && BIB.vue === 'plan' && $('en-install').textContent === 'Exemple'), 'un seul clic sur la carte de l’Exemple l’ouvre : l’exemple tel qu’il est livré, 201 liaisons, son profil de charge ; le fil dit « Exemple »');
   await page.evaluate(() => montrerBibliotheque()); await page.evaluate(() => atelier.exemple()); await page.waitForTimeout(200);
   ok(await page.evaluate(() => BIB.vue === 'plan' && app.planId === 'exemple' && !app.hist.length && verite().length === 201), '`atelier.exemple()` ouvre l’exemple directement, sans historique — même depuis la bibliothèque');
 
@@ -215,6 +225,72 @@ const CAPTURES = (process.argv.find(a => a.startsWith('--captures=')) || '').sli
   await page.evaluate(id => montrerBibliotheque('install', BIB.plans.get(id).install), idVhf); await page.click(`#bibliotheque .bi-plan[data-plan="${idVhf}"] .bi-plan-ouvrir`); await page.waitForFunction(() => app.nom === 'VHF bord' && !!app.dessin);
   ok(await page.evaluate(() => app.contrat.designations.get('101BT1') === 'batterie principale' && app.contrat.designations.get('103RL1') === 'relais de la radio' && !app.hist.length), 'le plan rouvert a gardé ce qu’on y a fait (ses deux désignations), son historique repart de zéro');
   await capture('apres-rechargement');
+
+  /* ---- le dépôt devine ; chaque plan dit ce qu'il reste à faire, et quand il a été exporté ------------------------- */
+  console.log('\nle dépôt devine les en-têtes français ; un plan dit ce qu’il reste à faire, et « exporté le … »');
+  await page.waitForTimeout(800);
+  const [dlX] = await Promise.all([page.waitForEvent('download', { timeout: 20000 }), page.evaluate(() => exporterRetestCorrige())]);
+  await page.evaluate(id => montrerBibliotheque('install', BIB.plans.get(id).install), idVhf); await page.waitForTimeout(250);
+  const R7 = await page.evaluate(id => { const li = document.querySelector(`#bibliotheque .bi-plan[data-plan="${id}"]`), p = BIB.plans.get(id); return { pb: (li.querySelector('.bi-pb') || {}).className || '', texte: li.textContent, exporte: !!p.exporte, problemes: p.problemes }; }, idVhf);
+  ok(/bi-pb (ko|att|ok)/.test(R7.pb) && R7.problemes && /exporté le/.test(R7.texte) && R7.exporte && /retest-corrige\.xlsx$/.test(dlX.suggestedFilename()), 'un plan ouvert garde ce qu’il reste à faire (le compte du contrôle) ; exporté, sa ligne dit « exporté le … » (pages, idée 7)', JSON.stringify(R7.problemes) + ' · ' + R7.pb);
+  await page.evaluate(id => ajouterPlans([new File(['Équipement;Broche;Vers;Broche;Câble;Type\n102CB1;2;103RL1;A1;W-012;DR20\n103RL1;A2;104LP1;1;W-013;DR22\n'], 'export-francais.csv', { type: 'text/csv' })], id), await page.evaluate(() => BIB.install));
+  await page.waitForFunction(() => plansDeInstall(BIB.install).some(p => p.nom === 'export-francais.csv'), null, { timeout: 15000 }).catch(() => { });
+  const FR = await page.evaluate(() => { const p = plansDeInstall(BIB.install).find(x => x.nom === 'export-francais.csv'); return { n: p ? p.n : 0, ko: !!document.querySelector('#bibliotheque .bi-ajout.ko'), toast: $('toast').textContent }; });
+  ok(FR.n === 2 && !FR.ko && /Colonnes devinées/.test(FR.toast), 'un CSV aux en-têtes français, déposé, est deviné comme Ctrl+O le devine : un plan de deux liaisons, le mot qui passe dit ce qui a été compris (parcours P2-10)', FR.toast.slice(0, 120));
+
+  /* ---- LA GRANDE BASE : la lire ailleurs, la garder, un contrat d'un clic, chercher dans tout, convertir, comparer -------- */
+  console.log('\nla grande base : lue dans un Worker, gardée sur le PC, un contrat d’un clic, la recherche dans tout, la conversion en lot, la comparaison');
+  const FB = require('./fabrique-base'), GB = FB.classeur(30000, 7);   // ≈ 2 Mo : au-delà du seuil, le Worker la lit
+  // le gel : la plus longue tâche du fil de la page (PerformanceObserver « longtask ») pendant la lecture et l'index
+  await page.evaluate(() => { fermerFiche(); montrerBibliotheque('racine'); window.__gel = { max: 0 }; window.__gelO = new PerformanceObserver(l => l.getEntries().forEach(e => { window.__gel.max = Math.max(window.__gel.max, e.duration); })); window.__gelO.observe({ type: 'longtask' }); });
+  const tG = Date.now(); await page.setInputFiles('#fichier-base', { name: 'grande-base.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: GB.buffer });
+  await page.waitForFunction(() => !!BASE.lecture, null, { timeout: 10000 }).catch(() => { });
+  const CL = await page.evaluate(() => ({ carte: !!$('lecture-base') && !$('lecture-base').hidden, barre: !!document.querySelector('#lecture-base [role="progressbar"]'), arreter: !!document.querySelector('#lecture-base [data-lb="arreter"]') }));
+  await page.waitForFunction(() => app.references && app.references.nom === 'grande-base.xlsx', null, { timeout: 300000, polling: 100 });
+  const tLu = Date.now() - tG; await capture('grande-base-lue');
+  await page.waitForFunction(() => app.references.pret, null, { timeout: 300000, polling: 200 });
+  const GL = await page.evaluate(async () => { const B = app.references.base, p = [...BIB.plans.values()].find(x => x.source === 'base' && x.base === 'grande-base.xlsx'); const brut = p ? await lireBiblio('contrats', p.id) : 'pas de plan';
+    window.__gelO.disconnect(); return { n: B.meta.n, contrats: B.meta.contrats.length, installs: B.meta.installs.length, plans: [...BIB.plans.values()].filter(x => x.base === 'grande-base.xlsx').length, recopie: brut, gel: Math.round(window.__gel.max), fini: ($('lecture-base') || {}).textContent || '', index: !!indexReferences() }; });
+  ok(CL.carte && CL.barre && CL.arreter, 'déposée, la grande base se lit AILLEURS : la carte de lecture paraît, sa barre, « Arrêter »', JSON.stringify(CL));
+  ok(GL.n === GB.n && GL.contrats === GB.contrats && GL.installs === GB.installations && GL.plans === GB.contrats && GL.recopie === null && GL.index, `${GB.n} lignes lues (${tLu} ms au mur), ${GB.contrats} contrats rangés dans ${GB.installations} installations — un plan par contrat, qui ne recopie rien ; « Déjà fait » indexé`, JSON.stringify({ ...GL, fini: undefined }));
+  // la machine des essais est partagée (ses temps varient du simple au décuple) : on compare la plus longue tâche à la lecture entière — avant v72, c'était elle (16 s d'un bloc pour 100 000 lignes)
+  ok(GL.gel < Math.max(1000, tLu / 3), 'la page n’a pas gelé pendant la lecture et l’index : sa plus longue tâche est une fraction de la lecture (avant : toute la lecture, d’un bloc)', GL.gel + ' ms sur ' + tLu + ' ms de lecture');
+  ok(/est lue/.test(GL.fini) && /contrats/.test(GL.fini), 'la carte dit ce qui a été lu, et en combien de temps', GL.fini.slice(0, 120));
+  // une installation, ses contrats : un clic = un plan
+  const idAnt = await page.evaluate(() => installsVraies().find(i => i.nom === 'Antenne VHF').id);
+  await page.evaluate(id => montrerBibliotheque('install', id), idAnt); await page.waitForTimeout(250);
+  const premier = await page.evaluate(() => { const p = plansDeInstall(BIB.install).find(x => x.source === 'base'); return { id: p.id, n: p.n, l2: document.querySelector(`#bibliotheque .bi-plan[data-plan="${p.id}"] .bi-plan-l2`).textContent }; });
+  await capture('grande-base-installation');
+  let tO = Date.now(); await page.click(`#bibliotheque .bi-plan[data-plan="${premier.id}"] .bi-plan-ouvrir`); await page.waitForFunction(id => BIB.vue === 'plan' && app.planId === id && verite().length > 0, premier.id); tO = Date.now() - tO;
+  ok(await page.evaluate(n => verite().length === n, premier.n) && /retest du \d\d\/\d\d\/\d{4}/.test(premier.l2), 'un clic sur un contrat de l’installation : son plan sur la table, ses liaisons lues dans la base (sa ligne disait son appareil et la date du retest)', tO + ' ms · ' + premier.l2);
+  // chercher dans tout
+  await page.click('#en-biblio'); await page.waitForTimeout(200); await page.fill('#bi-q', 'MS3320-15');
+  await page.waitForFunction(() => BIB.trouve && BIB.trouve.q === 'MS3320-15' && !BIB.trouve.enCours, null, { timeout: 20000 }); await page.waitForTimeout(200);
+  const TR = await page.evaluate(() => ({ n: BIB.trouve.R.n, c: BIB.trouve.R.contrats.length, ms: BIB.trouve.ms, genres: BIB.trouve.genres, cartes: document.querySelectorAll('#bibliotheque .bi-tc').length, marques: document.querySelectorAll('#bibliotheque .bi-tc mark').length }));
+  ok(TR.n > 0 && TR.cartes === Math.min(40, TR.c) && TR.marques > 0 && TR.genres[0] === 'part number' && TR.ms < 300, 'chercher « MS3320-15 » dans tout : les contrats qui le portent, leurs lignes, le part number marqué — en moins de 300 ms', JSON.stringify(TR));
+  await capture('grande-base-recherche');
+  await page.click('#bibliotheque .bi-tl'); await page.waitForFunction(() => BIB.vue === 'plan' && verite().length > 0, null, { timeout: 20000 }); await page.waitForTimeout(600);
+  ok(await page.evaluate(() => verite().some(l => l.pnDe === 'MS3320-15' || l.pnVers === 'MS3320-15')), 'un clic sur une ligne trouvée ouvre son contrat');
+  // convertir en lot : les contrats trouvés → un zip de retests corrigés
+  await page.click('#en-biblio'); await page.waitForTimeout(200); await page.fill('#bi-q', 'MS3320-15'); await page.waitForFunction(() => BIB.trouve && !BIB.trouve.enCours && BIB.trouve.q === 'MS3320-15');
+  await page.click('#bibliotheque [data-bi="lot-trouves"]'); await page.waitForTimeout(250);
+  const LO = await page.evaluate(() => ({ n: BIB.lot.ids.size, barre: !!document.querySelector('#bi-lot .bi-lot'), avecPdf: typeof pdfDuPlan === 'function', pdf: !!document.querySelector('#bi-lot [data-lot-o="pdf"]:disabled') === (typeof pdfDuPlan !== 'function') }));
+  const [dlZ] = await Promise.all([page.waitForEvent('download', { timeout: 120000 }), page.click('#bibliotheque [data-bi="lot-convertir"]')]);
+  const zip = fs.readFileSync(await dlZ.path()), noms = []; for (let p = 0; p + 30 < zip.length && zip.readUInt32LE(p) === 0x04034b50;) { const ln = zip.readUInt16LE(p + 26), taille = zip.readUInt32LE(p + 18); noms.push([zip.toString('utf8', p + 30, p + 30 + ln), zip.subarray(p + 30 + ln, p + 30 + ln + taille)]); p += 30 + ln + taille; }
+  const XLSX = require('../lib/xlsx.min.js'), xl = noms.filter(([n]) => /-retest-corrige\.xlsx$/.test(n)), pdfs = noms.filter(([n]) => /-dossier\.pdf$/.test(n));
+  const lu = xl.length ? XLSX.utils.sheet_to_json(XLSX.read(xl[0][1]).Sheets.Retest, { header: 1 }) : [];
+  ok(LO.barre && LO.pdf && xl.length === LO.n && pdfs.length === (LO.avecPdf ? LO.n : 0) && noms.length === xl.length + pdfs.length && pdfs.every(([, d]) => d.subarray(0, 5).toString() === '%PDF-') && lu.length > 4 && lu[3][1] === 'Device1' && !(await page.evaluate(() => BIB.lot)),
+    `« Convertir ces ${LO.n} contrats » : un zip, un retest corrigé (Excel, relu) et ${LO.avecPdf ? 'un dossier PDF (tous les folios)' : 'pas de dossier PDF (la case le dit)'} par contrat`, dlZ.suggestedFilename() + ' · ' + noms.length + ' fichiers');
+  // comparer un retest entier au déjà-fait
+  await page.evaluate(id => ouvrirPlan(id), premier.id); await page.waitForFunction(id => app.planId === id && BIB.vue === 'plan', premier.id); await page.waitForTimeout(400);
+  await page.evaluate(() => ficheDejaFaitContrat()); await page.waitForSelector('#fiche-corps .cc-cand', { timeout: 20000 });
+  const CC = await page.evaluate(() => ({ cands: document.querySelectorAll('#fiche-corps .cc-cand').length, taux: (document.querySelector('#fiche-corps .cc-cand .cc-taux') || {}).textContent || '', dessins: document.querySelectorAll('#fiche-corps .cc-dessin').length, barre: !!document.querySelector('#fiche-corps .cp-barre'), moi: [...document.querySelectorAll('#fiche-corps .cc-cand')].some(b => b.dataset.h === harnessDuPlan(verite())) }));
+  ok(CC.cands >= 1 && /\d+\s%/.test(CC.taux) && CC.dessins >= 1 && CC.barre && !CC.moi, 'comparer le plan ouvert au déjà-fait : les contrats les plus proches (pas lui-même), ce qui est pareil et ce qui diffère, dessin par dessin', JSON.stringify(CC));
+  await capture('grande-base-comparer');
+  // rechargée : la base revient du PC, par morceaux, et s'indexe
+  await page.evaluate(() => fermerFiche()); await page.reload(); await pret();
+  await page.waitForFunction(() => app.references && app.references.base && app.references.pret, null, { timeout: 300000, polling: 200 });
+  ok(await page.evaluate(n => app.references.n === n && app.references.nom === 'grande-base.xlsx' && !!indexReferences(), GB.n), 'rechargée, la grande base revient du PC (IndexedDB, par morceaux) et s’indexe');
   ok(!dialogues.length, 'aucune boîte du navigateur de toute la batterie', dialogues.join(' | '));
   ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
   console.log('\n  ' + (ko ? ko + ' échec(s)' : 'tout tient'));

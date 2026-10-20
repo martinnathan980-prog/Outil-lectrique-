@@ -22,10 +22,11 @@ const fs = require('fs'), path = require('path'), vm = require('vm');
 const SRC = path.join(__dirname, '..', 'src'), NORMES = path.join(__dirname, '..', 'normes');
 const code = ['01-modele.js', '02-lecture.js', '09-barrettes.js', '09-disjoncteurs.js', '09-raccords.js', '09-chute.js', '09-references.js'].map(f => fs.readFileSync(path.join(SRC, f), 'utf8')).join('\n');
 const normes = fs.readdirSync(NORMES).filter(f => /\.csv$/i.test(f)).sort().map(f => fs.readFileSync(path.join(NORMES, f), 'utf8')).join('\n\n');
-const bac = { console }; vm.createContext(bac);
+// ce que la lecture au fil de l'eau demande au monde (le Worker de la page l'a) : décoder, décompresser
+const bac = { console, TextDecoder, Blob, DecompressionStream, Intl }; vm.createContext(bac);
 vm.runInContext('const NORME_EMBARQUEE = ' + JSON.stringify(normes) + ';\n' + code + '\nthis.X = { liaison, lireTexte, contratExemple, CODES, decoderRepere, direRepere, lireBorne, direBorne, fwdDe, indexerReferences, dessinDe, dessinPrincipal, resumeDessin, chercherReferences, candidatsDeReference, flotteDe,'
   + ' correspondre, correspondanceDesReperes, voisinsDe, voisinageDe, differentiel, comparerEnsemble, comparerDessin, comparerVoisinage, liaisonsAReprendre, liaisonsDEnsembleAReprendre, lignesDeRepere, cleRef, ecartDeReperes, fixesDe,'
-  + ' avecBarrettesAPoser, dedoublements, nouveauContrat };', bac);
+  + ' avecBarrettesAPoser, dedoublements, nouveauContrat, lireLaBase, baseDesLiaisons, chercherDansLaBase, genreTrouve, liaisonsDuContratDeLaBase, indexeurDeReferences, contratsProches, comparerAuContrat };', bac);
 const X = bac.X;
 let total = 0, echecs = 0;
 const ok = (nom, cond, mesure) => { total++; if (!cond) echecs++; console.log('  ' + (cond ? 'OK    ' : 'ÉCHEC ') + nom + (mesure ? '   — ' + mesure : '')); };
@@ -156,5 +157,42 @@ const F1b = [...folio('1'), X.liaison({ de: '104LP1', borneDe: '1', vers: '901G'
 ok('une borne dédoublée nouvelle au folio 1 (104LP1:1) prend le premier numéro libre au-delà de tous, VT4 — jamais le VT1 de 102CB1:2, même posée ; sans mémoire elle serait VT1', nomsVT(X.avecBarrettesAPoser(F1b.filter(l => l.cable !== 'W-015'), 0, M)) === 'VT4' && M.get('104LP1\u00011') === 4 && nomsVT(X.avecBarrettesAPoser(F1b.filter(l => l.cable !== 'W-015'), 0)) === 'VT1' && M.get('102CB1\u00012') === 1, JSON.stringify([...M]));
 ok('Ctrl+Z de la pose : 102CB1:2 redevient VT1, 104LP1:1 reste VT4 (deux barrettes, deux noms)', nomsVT(X.avecBarrettesAPoser(F1b, 0, M)) === 'VT1,VT4' && M.size === 4);
 
-console.log('\n  ' + (total - echecs) + ' / ' + total + ' contrôles passés' + (echecs ? '  —  ' + echecs + ' ÉCHEC(S)' : '  —  tout est vert'));
-process.exit(echecs ? 1 : 0);
+/* ---- 9. LA GRANDE BASE (v72) : lue au fil de l'eau, rangée par contrat, cherchée dans tout, comparée en entier ---------- */
+(async () => {
+  console.log('\n9. LA GRANDE BASE : LIRE AU FIL DE L’EAU, RANGER PAR CONTRAT, CHERCHER DANS TOUT, COMPARER UN RETEST ENTIER');
+  const FB = require('./fabrique-base'), XLSX = require('../lib/xlsx.min.js');
+  const PETITE = FB.classeur(3000, 11), fichier = (buf, nom) => new File([buf], nom);
+  let t0 = Date.now(); const LU = await X.lireLaBase(fichier(PETITE.buffer, 'base.xlsx')), tLu = Date.now() - t0;
+  // la même base lue par SheetJS puis par la lecture du retest de 02 : les mêmes liaisons, dans le même ordre de contrat
+  const ref = X.lireTexte(XLSX.utils.sheet_to_json(XLSX.read(PETITE.buffer).Sheets.Retest, { header: 1, defval: '', raw: false }).map(r => r.join('\t')).join('\n'));
+  const B0 = LU.base, deux = X.liaisonsDuContratDeLaBase(B0, B0.meta.contrats[1]), refDeux = ref.liaisons.filter(l => l.harness === B0.meta.contrats[1].h);
+  const meme = (a, b) => ['de', 'borneDe', 'pnDe', 'vers', 'borneVers', 'pnVers', 'cable', 'type', 'route', 'fwd', 'harness', 'appareil', 'longueur', 'descriptionDe', 'descriptionVers'].every(k => String(a[k] == null ? '' : a[k]) === String(b[k] == null ? '' : b[k]));
+  ok(`un classeur Excel (mots partagés, nombres, dates au style date) lu au fil de l’eau : ${PETITE.n} liaisons, ${PETITE.contrats} contrats, ${PETITE.installations} installations, en-têtes ligne 4`, LU.lecture.n === PETITE.n && B0.meta.contrats.length === PETITE.contrats && B0.meta.installs.length === PETITE.installations && LU.lecture.entete === 4 && LU.lecture.moteur === 'flux' && LU.lecture.harness && LU.lecture.install, tLu + ' ms');
+  ok('chaque ligne lue comme la lecture du retest (02) la lit : un contrat entier, champ par champ ; la date Excel en jj/mm/aaaa ; l’ECP et l’installation gardés', deux.length === refDeux.length && deux.every((l, i) => meme(l, refDeux[i])) && /^\d\d\/\d\d\/\d{4}$/.test(deux[0].retest) && /^\d{5}$/.test(B0.meta.contrats[1].ecp) && !!B0.meta.contrats[1].install, deux.length + ' liaisons · ' + deux[0].retest);
+  ok('un contrat est un intervalle de lignes : ses lignes se suivent, ses dessins comptés', B0.meta.contrats.every((c, i) => c.fin - c.debut === c.n && (!i || c.debut === B0.meta.contrats[i - 1].fin)) && B0.meta.contrats[1].fwds.length === B0.meta.contrats[1].fwdsN.length && B0.meta.contrats[1].fwdsN.reduce((s, x) => s + x, 0) === B0.meta.contrats[1].n);
+  const CSV = FB.csv(3000, 11), LC = await X.lireLaBase(fichier(Buffer.from(CSV.texte, 'latin1'), 'base.csv'));
+  ok('le même en CSV de l’Excel français (Windows-1252, « ; ») : les mêmes liaisons, les accents gardés', LC.lecture.n === PETITE.n && LC.base.meta.contrats.length === PETITE.contrats && LC.base.meta.installs.some(i => i.nom === 'Dégivrage des pales'), LC.lecture.n + ' liaisons');
+  const SANS = await X.lireLaBase(fichier(Buffer.from('Mémo\nDe;Vers\nA;B\n', 'utf8'), 'pas-un-retest.csv'));
+  ok('un tableau sans les en-têtes du retest : rien de lu, et ce qui a été vu est rendu pour le dire', SANS.lecture.n === 0 && !SANS.lecture.entete && SANS.lecture.brutes.length >= 2);
+  // 300 000 lignes : la recherche dans tout, l'ouverture d'un contrat
+  const L3 = FB.lignes(300000, 5), E3 = L3.lignes[3], col = n => E3.indexOf(n), G3 = [];
+  for (let i = 4; i < L3.lignes.length; i++) { const r = L3.lignes[i]; G3.push(X.liaison({ de: r[col('Device1')], borneDe: r[col('Pin1')], pnDe: r[col('PN1')], descriptionDe: r[col('Description1')], type: r[col('Cable T/G')], cable: r[col('Cable Tag')], route: r[col('Route')], vers: r[col('Device2')], borneVers: r[col('Pin2')], pnVers: r[col('PN2')], descriptionVers: r[col('Description2')], fwd: r[col('FWD')], plan: r[col('FWD')], longueur: r[col('Cable length (mm)')] + ' mm', harness: r[col('Harness')], appareil: r[col('Appareil')], retest: r[col('Date retest')] })); G3[G3.length - 1].install = r[0]; G3[G3.length - 1].ecp = String(r[1]); }
+  t0 = Date.now(); const B3 = X.baseDesLiaisons(G3, 'grande'), tRange = Date.now() - t0;
+  // le temps d'une recherche : le meilleur de trois (la machine des essais est partagée ; la première ne paie rien de plus)
+const temps = q => { let R, m = Infinity; for (let k = 0; k < 3; k++) { const t = Date.now(); R = X.chercherDansLaBase(B3, q); m = Math.min(m, Date.now() - t); } return [R, m]; };
+  const [Q1, m1] = temps('MS3320-15'), [Q2, m2] = temps('DR12'), [Q3, m3] = temps(G3[100].de + ':' + G3[100].borneDe), [Q4, m4] = temps('"' + G3[1234].cable + '"'), [Q5, m5] = temps('generateur');
+  ok(`${B3.meta.n} lignes, ${B3.meta.contrats.length} contrats rangés en ${tRange} ms`, B3.meta.n === G3.length && B3.morceaux.length === Math.ceil(G3.length / 16384), B3.morceaux.length + ' morceaux');
+  ok('chercher dans 300 000 lignes en moins de 300 ms : un part number, un type de câble, un repère et sa borne, un numéro de câble entier, une désignation sans accent', [m1, m2, m3, m4, m5].every(m => m < 300) && Q1.n > 0 && Q2.n > Q1.n && Q3.borne && Q3.n > 0 && Q4.exact && Q4.n === 1 && Q5.n > 0, [m1, m2, m3, m4, m5].join(' / ') + ' ms');
+  ok('ce qui est trouvé se dit : « part number », « type de câble », « repère », « n° de câble » ; chaque ligne sous son contrat', X.genreTrouve(B3, Q1)[0] === 'part number' && X.genreTrouve(B3, Q2)[0] === 'type de câble' && X.genreTrouve(B3, Q3).includes('repère') && X.genreTrouve(B3, Q4)[0] === 'n° de câble' && Q1.contrats.every(x => x.lignes.every(g => g >= B3.meta.contrats[x.k].debut && g < B3.meta.contrats[x.k].fin)));
+  t0 = Date.now(); const c3 = B3.meta.contrats[1500], V3 = X.liaisonsDuContratDeLaBase(B3, c3.h), tOuvre = Date.now() - t0;
+  ok('ouvrir un contrat dans 300 000 lignes : son intervalle, sans parcourir la base', V3.length === c3.n && V3.every(l => l.harness === c3.h) && tOuvre < 50, tOuvre + ' ms · ' + V3.length + ' liaisons');
+  // comparer un retest entier au déjà-fait : la même installation passe devant ; ce qui diffère se dit, dessin par dessin
+  const IX = X.indexeurDeReferences(); for (let i = 0; i < G3.length; i += 50000) IX.ajouter(G3.slice(i, i + 50000)); const I3 = IX.finir();
+  t0 = Date.now(); const P3 = X.contratsProches(I3, V3, 3, h => h.harness === c3.h), tProche = Date.now() - t0;
+  const meme3 = P3.filter(p => (B3.meta.contrats.find(c => c.h === p.harness) || {}).install === c3.install).length;
+  const C3 = X.comparerAuContrat(V3, I3.harnais.get(P3[0].harness));
+  ok('comparer un retest entier au déjà-fait : les trois plus proches viennent de son installation (ses repères), sans lui-même', P3.length === 3 && meme3 === 3 && P3.every(p => p.harness !== c3.h && p.taux > 0.5) && tProche < 1500, tProche + ' ms · ' + P3.map(p => Math.round(p.taux * 100) + ' %').join(', '));
+  ok('le contrat le plus proche, ligne à ligne : pareilles, différentes, manquantes, en plus — chacune sous son dessin', C3.compte.identique > 0 && C3.lignes.length === C3.dessins.reduce((s, d) => s + d.lignes.length, 0) && C3.dessins.every(d => d.compte), JSON.stringify(C3.compte));
+  console.log('\n  ' + (total - echecs) + ' / ' + total + ' contrôles passés' + (echecs ? '  —  ' + echecs + ' ÉCHEC(S)' : '  —  tout est vert'));
+  process.exit(echecs ? 1 : 0);
+})().catch(e => { console.log('  ÉCHEC ' + (e && e.stack || e)); process.exit(1); });

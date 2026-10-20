@@ -344,9 +344,9 @@ const FICHIER = P.fichierDemande();
   // chaque geste de la bibliothèque répond à un clic de souris
   let fc = null; try { [fc] = await Promise.all([page.waitForEvent('filechooser', { timeout: 3000 }), page.click('#bibliotheque .bi-vide [data-bi="base"]')]); } catch (_) { }
   ok(!!fc, 'un clic de souris sur « Déposer la base des contrats déjà faits » ouvre le choix de fichier');
-  await page.click('#bibliotheque .bi-carte.bi-demo .bi-carte-corps'); await page.waitForTimeout(300);
-  await page.click('#bibliotheque .bi-plan[data-plan="exemple"] .bi-plan-ouvrir'); await page.waitForTimeout(700);
-  ok(await page.evaluate(() => app.contrat.liaisons.length === 201 && app.contrat.charges.has('102CB1') && $('bibliotheque').hidden && $('vide').hidden), 'l’Exemple, d’un clic (sa carte, son plan) : l’exemple sur la table, avec son profil de charge');
+  // l'Exemple : sa carte ouvre son plan, d'un seul clic (audit v72, parcours P2-2 : la page d'une ligne entre les deux est partie)
+  await page.click('#bibliotheque .bi-carte.bi-demo .bi-carte-corps'); await page.waitForTimeout(700);
+  ok(await page.evaluate(() => app.contrat.liaisons.length === 201 && app.contrat.charges.has('102CB1') && $('bibliotheque').hidden && $('vide').hidden), 'l’Exemple, d’un seul clic sur sa carte : l’exemple sur la table, avec son profil de charge');
   ok(await page.evaluate(() => app.nom === 'Contrat d’exemple' && $('ctx-nom').textContent === 'Contrat d’exemple' && /^l’exemple embarqué · 201\sliaisons · \d+\srepères · 6\sfolios$/.test($('ctx-txt').textContent) && $('en-install').textContent === 'Exemple'), 'le menu dit que c’est l’exemple embarqué ; le fil de la barre du haut, « Exemple »', await page.evaluate(() => $('ctx-txt').textContent));
   // un autre fichier : rien du contrat d'avant ne survit ; le menu dit son nom ; Ctrl+Z rend l'exemple et ses choix
   await page.evaluate(() => chargerContrat(contratExemple().filter(l => l.plan === '1'), 'ouverture de neuf.xlsx', 'neuf.xlsx')); await page.waitForTimeout(500);
@@ -433,7 +433,7 @@ const FICHIER = P.fichierDemande();
   ok(await page.evaluate(n => /photo\.txt n’est pas un tableau \(Excel ou CSV\)/.test($('vf-retest').querySelector('.vf-erreur').textContent) && verite().length === n, nEx), 'une image : « photo.txt n’est pas un tableau (Excel ou CSV). »');
   await depot('#fichier', 'presque-retest.csv', 'Equipement;Broche;Cable;Equipement;Broche\n102CB1;2;W-012;103RL1;A1\n103RL1;A2;W-013;104LP1;1\n101BT1;1;W-011;102CB1;1\n');
   const R1 = await page.evaluate(() => ({ n: verite().length, nom: app.nom, att: !!FICHIERS.attente, erreur: !!FICHIERS.erreurs.retest, dit: ($('vf-retest').querySelector('.vf-attente') || {}).textContent || '', lignes: $('vf-retest').querySelectorAll('.vf-attente .vf-apercu tbody tr').length }));
-  ok(R1.n === nEx && R1.nom === 'Contrat d’exemple' && R1.att && !R1.erreur && /J’ai compris/.test(R1.dit) && /Equipement\s→\sDe/.test(R1.dit) && /Cable\s→\sFil/.test(R1.dit) && R1.lignes === 3, 'des colonnes devinées : rien n’est remplacé ; la carte dit ce qu’elle a compris (Equipement → De, Cable → Fil…), avec l’aperçu, et attend « Charger »', R1.dit.slice(0, 150));
+  ok(R1.n === nEx && R1.nom === 'Contrat d’exemple' && R1.att && !R1.erreur && /J’ai compris/.test(R1.dit) && /Equipement\s→\sDe/.test(R1.dit) && /Cable\s→\sCâble/.test(R1.dit) && R1.lignes === 3, 'des colonnes devinées : rien n’est remplacé ; la carte dit ce qu’elle a compris (Equipement → De, Cable → Câble…), avec l’aperçu, et attend « Charger »', R1.dit.slice(0, 150));
   await page.click('#fiche-corps [data-vf="corriger"]'); await page.waitForTimeout(300);
   await page.selectOption('#fiche-corps .vf-carte-cols select[data-colonne="2"]', ''); await page.waitForTimeout(300);
   ok(await page.evaluate(() => FICHIERS.attente.map.cable === '' && !/W-012/.test($('vf-retest').querySelector('.vf-attente .vf-apercu').textContent)), '« Corriger » : la colonne Cable ignorée, l’aperçu se refait sans le numéro de fil');
