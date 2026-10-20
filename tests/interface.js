@@ -399,7 +399,7 @@ const FICHIER = P.fichierDemande();
     'au clavier (↓ ↓), la bulle de « Vos fichiers… » se lit tout de suite, à gauche du menu, entière à l’écran : on y dépose aussi les contrats déjà faits');
   await page.waitForFunction(() => !$('menu').getAnimations({ subtree: true }).length, null, { timeout: 10000 }).catch(() => {});   // (sous charge, son entrée dure)
   const large0 = await page.evaluate(() => Math.round($('menu').getBoundingClientRect().width));
-  await page.keyboard.press('ArrowRight'); for (let k = 0; k < 3; k++) await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowRight'); for (let k = 0; k < 4; k++) await page.keyboard.press('ArrowDown');   // jusqu'à « Exporter » (après « Comparer au déjà-fait »)
   await page.keyboard.press('ArrowRight'); await page.waitForTimeout(250); await page.waitForFunction(() => !$('menu').getAnimations({ subtree: true }).length, null, { timeout: 10000 }).catch(() => {});
   const S1 = await page.evaluate(() => ({ act: document.activeElement.dataset.act, large: Math.round($('menu').getBoundingClientRect().width), ouvert: $('menu').querySelector('[data-sous="exporter"]').getAttribute('aria-expanded') }));
   const m1 = await montre(); await page.keyboard.press('ArrowLeft'); await page.waitForTimeout(250);
