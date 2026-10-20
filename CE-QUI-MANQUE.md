@@ -12,6 +12,27 @@ Rien de ce qui suit n'est inventé dans Volta : ce qu'il ne sait pas, il le dit 
 
 ---
 
+## Tes réponses du 20 octobre 2026 (version 72)
+
+- **Quand SEE contredit une ligne que les sources ont vérifiée, la source gagne.** Une ligne de Volta « vérifié » (deux
+  sources indépendantes, sa colonne Statut et sa note les citent) reste, même base SEE gardée ; la valeur de SEE est
+  barrée dans l'onglet Import, avec une pastille verte « la source vérifiée garde Volta · à corriger dans SEE » (sa
+  bulle dit d'où vient la valeur de Volta), et la fiche le dit (« SEE dit autre chose… »). Un chiffre de SEE
+  **impossible pour sa jauge** ne passe jamais (DR6 à 2,08 g/m). Partout ailleurs, SEE gagne comme avant.
+- **La classe Z de l'EN 3645 : zinc-nickel noir**, raccord Z (MIL-DTL-38999 série III et EN 3660-001, deux sources).
+- **Tes disjoncteurs sont tous des E-T-A 4120** : un part number inconnu prend la chute de la 4120 (1,1 V à 1 A) ; ses
+  courbes sont celles de ton Excel (ETA483) à ±2 %.
+- **La règle du programme, c'est 2 V, rien d'autre** : Volta l'applique partout, pointes comprises (voir le point 4).
+- **Les profils de charge et les longueurs, c'est toi** : 5 m par défaut tant qu'une longueur manque.
+- **La cavité « −1 »** : l'onglet Import la raconte maintenant (ses règles, ses contacts, ses types et gauges de fil,
+  comptés). Une photo de ce bloc me suffit pour savoir ce qu'elle veut dire chez vous — rien de ton plan n'y figure.
+- **La taille 22 de l'EN 2997** (haute densité) entre dans les contacts : EN3155-078M2222 / -079F2222, 26 à 22 AWG.
+- **Le retest pour un premier essai** : colonnes B, C, I, J (Device1, Pin1, Device2, Pin2) suffisent ; avec F (le
+  câble), D et K (les références), M (le folio) et N (la longueur en mm), Volta juge tout. En-têtes en ligne 4 comme
+  dans tes retests, dans n'importe quel ordre. Le modèle « Modele-retest-Volta.xlsx » montre les seize colonnes A à P.
+
+---
+
 ## La passe de corroboration (19 octobre 2026, version 71)
 
 Tu m'as demandé : « regarde sur Internet, avec d'autres sources, et prends la vraie — SEE peut se tromper, Volta aussi ».
@@ -46,20 +67,19 @@ sur ta base, ton programme ou ton appareil.
 - **111 lignes** perdaient la fin de leur note (un « ; » la coupait) : recollées, et un contrôle l'empêche désormais.
 
 **Ce que Volta fait de plus à l'import SEE** : un écart **impossible pour la jauge** (sous le métal seul, sous un cuivre
-pur) se signale même sur un câble que Volta ne connaît pas ; un contact que **Volta a vérifié** et que SEE remplace aussi
-(« Volta l'a vérifié · à revoir dans SEE », la source dans la bulle) ; une face qui change la **taille d'un contact** le
-dit contact par contact. SEE gagne toujours — ces signaux disent seulement où regarder.
+pur) se signale même sur un câble que Volta ne connaît pas, et ne passe jamais ; une face qui change la **taille d'un
+contact** le dit contact par contact. Depuis la version 72, une ligne que **deux sources ont vérifiée** reste celle de
+Volta (la source gagne, à corriger dans SEE) ; partout ailleurs, SEE gagne.
 
 **Ce qui reste ouvert (aucune source publique)** : les références Airbus et Airbus Helicopters (ASNE 0613 KB/LB/KC/LC,
 E0546/E0547, E0824/E0825, E0848, ECS…, ABS1496, NSA938171/172), les familles de câbles AM, LE, WC, WG, WK, WP, XD, KQ,
 KR, ADE, BN, DH ; les faces propres aux EN (EN 3645 09-01, 11-12, 13-26, 17-20, 19-12, 21-12 ; EN 3646 10-02, 16-21,
 20-34, 22-36 ; EN 2997 08-06, 10-12, 12-21, 22-30) ; les paliers 2 s / 10 s / 1 min de l'EN 2853 ; la famille de
-connecteurs des EN 3660-009 à -023 ; les NSA935401 ; ta classe Z de l'EN 3645 (ta codification dit « nickelé », Amphenol
-et l'EN 3660-001 disent zinc-nickel noir 175 °C : à trancher).
+connecteurs des EN 3660-009 à -023 ; les NSA935401.
 
-**Ce que toi seul peux trancher** : le sens de la cavité « −1 » de SEE ; la famille LE (fibre, pas coaxial à 2,84 g/m) ;
-si tes retests écrivent C et c différemment ; et, quand SEE et Volta divergent sur une ligne vérifiée, laquelle ton
-programme achète vraiment.
+**Ce que toi seul peux trancher** : la famille LE (fibre, pas coaxial à 2,84 g/m) ; si tes retests écrivent C et c
+différemment. (Le sens de la cavité « −1 » : l'onglet Import le montre maintenant ; une ligne vérifiée contre SEE : la
+source gagne, tu l'as dit le 20 octobre.)
 
 ---
 
@@ -234,9 +254,10 @@ accessoire pour quel connecteur et quel câble).
 - **Réglé en octobre 2026 (version 71).** La fiche E-T-A 4120 a été trouvée en PDF vectoriel (Issue C) : ses courbes
   sont celles de ton Excel (ETA483) à ±2 %. Les éditions récentes de la 4120 et de la 483 mettent l'asymptote à 125 °C
   à 1,00 In au lieu de 0,93 : Volta garde 0,93, plus prudent pour le déclenchement intempestif.
-- **Ce qui reste.** L'onglet **Programme** de ton Excel « 01 - Calibre disjoncteur », en photo : sur quelle courbe
-  choisissez-vous le calibre ? Volta prend la plus rapide (125 °C). Et tes disjoncteurs sont-ils tous des 4120 ? Si oui,
-  la 4120 devient la famille par défaut (à 1 A : 1,1 V de chute au lieu des 0,75 V de la 483).
+- **Réglé le 20 octobre 2026 (version 72).** Tes disjoncteurs sont tous des 4120 : la 4120 est la famille par défaut
+  (à 1 A : 1,1 V de chute au lieu des 0,75 V de la 483). Volta choisit le calibre sur la courbe la plus rapide (125 °C),
+  la plus prudente pour le déclenchement intempestif — si ton Excel « 01 - Calibre disjoncteur » en prend une autre
+  (onglet Programme), une photo suffit.
 
 ### 2. La nomenclature des disjoncteurs
 
@@ -244,8 +265,9 @@ accessoire pour quel connecteur et quel câble).
   famille et les calibres que vous achetez.
 - **Pourquoi.** La famille donne la gamme, la courbe, ce que le disjoncteur garantit à chaud et sa chute propre. Le
   meilleur calibre se cherche dans cette gamme.
-- **En attendant.** Volta reconnaît une vingtaine de familles (table Familles de disjoncteurs) et ta liste « 1, 3, 5,
-  7,5, 10, 15, 20, 25 A ». Un part number inconnu prend les courbes E-T-A 483 et la fiche le signale.
+- **Réglé le 20 octobre 2026 : tous des E-T-A 4120.** Volta reconnaît une vingtaine de familles (table Familles de
+  disjoncteurs) et ta liste « 1, 3, 5, 7,5, 10, 15, 20, 25 A » ; un part number inconnu est une 4120 (sa chute, ses
+  courbes). Le tableau ci-dessous ne sert que si un jour vous en posez d'autres.
 - **Comment me la donner.**
 
   ```
@@ -278,8 +300,10 @@ accessoire pour quel connecteur et quel câble).
   table des chutes (disjoncteurs « Du max », contacteur, diode, relais) et ta table des contacts par gauge. Volta les
   applique : la chute du disjoncteur est celle de ta table, comptée entière ; chaque contact traversé, celle de sa
   gauge ; la génération est négligée (elle garantit 28 V en sortie des panneaux).
-- **Ce qui reste.**
-  - Une **pointe brève** (60 A pendant 3 s) a-t-elle droit à plus que 2 V ? Aujourd'hui, non : 207CB7 dépasse en pointe.
+- **Tranché le 20 octobre 2026 : « c'est 2 volts, c'est tout ce que je sais ».** Volta garde 2 V partout (4 V en
+  triphasé), pointes comprises, et ses choix prudents ci-dessous ; ce qui suit n'est plus une question, seulement ce
+  qu'il faut savoir si un jour quelqu'un vous le demande.
+  - Une **pointe brève** (60 A pendant 3 s) n'a pas droit à plus que 2 V : 207CB7 dépasse en pointe.
   - Les **composants traversés** (relais, contacteur, diode) : Volta a leur chute, mais ne sait pas quand le courant
     les traverse. Il lui faut, pour chaque équipement de puissance, les bornes du contact (A1 → A2 ?).
   - Ta table **« Du max »** est plus basse que la chute *typique* de la fiche E-T-A 4120, et plus encore que la chute
@@ -321,7 +345,7 @@ accessoire pour quel connecteur et quel câble).
 - **Ce que c'est.** La colonne « Cable length » de tes retests, en mètres ou en mm.
 - **Pourquoi.** La chute en ligne se calcule sur la longueur. Sans elle, une chute trop forte reste « à voir » et
   ne devient pas un problème.
-- **En attendant.** 5 m par câble (une hypothèse, dite partout « hyp. »). Tu peux écrire une longueur sur la fiche du
+- **En attendant.** 5 m par câble (une hypothèse, dite partout « hyp. » — tu l'as validée le 20 octobre 2026). Tu peux écrire une longueur sur la fiche du
   câble.
 - **Comment me la donner.** Une colonne de plus dans le retest, que Volta lit déjà :
 
@@ -367,8 +391,8 @@ accessoire pour quel connecteur et quel câble).
 
 ### 9. Les 11 points de tes tables de contacts à relire
 
-- **Tranchés par les sources (version 71)**, chacun avec sa source dans sa note — SEE gagne quand même si tu gardes ta
-  base : 1 (YYBKW : un contact taille 20 n'entre pas dans une cavité 22 → EN3155-008M2222), 2 (le manchon du WW 20 des
+- **Tranchés par les sources (version 71)**, chacun avec sa source dans sa note — et depuis la version 72, la source
+  gagne aussi contre ta base SEE gardée : 1 (YYBKW : un contact taille 20 n'entre pas dans une cavité 22 → EN3155-008M2222), 2 (le manchon du WW 20 des
   deux côtés), 3 (KC : la douille de la broche /28-409 est la /27-402), 4 et 5 (l'EN 3155-066 est retirée → EN3155-083F0810),
   7 (la douille d'un YY 22 vient de la ligne F 20 * 22), 10 (EN 2997 classe S : juste pour un 200 °C ; un 260 °C prend
   les -004/-005).

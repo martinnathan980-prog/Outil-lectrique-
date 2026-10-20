@@ -167,3 +167,17 @@
 .see-diff-e.complet s,.see-diff-e.complet b,.see-diff-e.complet i{color:var(--t-3);font-weight:500}
 .see-suspect{font-style:normal;font:600 var(--f-11)/1.6 var(--sans);color:var(--warn);background:var(--warn-soft);border-radius:var(--r-1);padding:0 7px;margin-left:4px;white-space:nowrap}
 .see-t-att{color:var(--warn);font-weight:600}
+/* la source vérifiée garde Volta (octobre 2026) : la valeur de SEE barrée, celle de Volta en gras, une pastille verte */
+.see-diff.garde{box-shadow:inset 2px 0 0 var(--ok);padding-left:10px}
+.see-gardees{margin:0 0 6px;padding:0;list-style:none}
+.see-garde{font-style:normal;font:600 var(--f-11)/1.6 var(--sans);color:var(--ok);background:var(--ok-soft);border-radius:var(--r-1);padding:0 7px;margin-left:4px;white-space:nowrap}
+@media (max-width:720px){ .see-suspect,.see-garde{white-space:normal} }
+.see-t-garde{color:var(--ok);font-weight:600}
+/* la cavité −1 : ce que portent ces lignes, quatre colonnes de comptes (la valeur à gauche, le nombre à droite) */
+.see-m1-l{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px 32px}
+.see-m1-c{min-width:0}
+.see-m1-c h4{margin:0 0 4px;font:600 var(--f-12)/1.4 var(--sans);color:var(--t-2)}
+.see-m1-c ol{list-style:none;margin:0;padding:0}
+.see-m1-c li{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:3px 0;border-bottom:1px solid var(--s-line);font-size:var(--f-12)}
+.see-m1-c li span{min-width:0;overflow-wrap:anywhere;color:var(--t-1)}
+.see-m1-c li b{font:600 var(--f-12)/1.5 var(--mono);color:var(--t-2);font-variant-numeric:tabular-nums}

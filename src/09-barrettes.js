@@ -557,7 +557,8 @@ const COLONNES_NORME = {
     ['resistance',  ['resistance', 'rmm', 'rmohmm', 'rmohm', 'r', 'resistancelineique', 'ohmkm']],
     ['diametre',    ['diametre', 'dext', 'dextmm', 'diametreexterieur', 'd']],
     ['section',     ['section', 'smm', 'smm2', 's', 'sectionmm2']],
-    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]],
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']],
+    ['statut',      ['statut', 'status', 'confiance']]],
   disjoncteurs: [
     ['famille',     ['famille', 'disjoncteur', 'norme', 'family']],
     ['courbe',      ['courbe', 'nom', 'serie', 'curve']],
@@ -669,7 +670,8 @@ const COLONNES_NORME = {
     ['usage',       ['usage', 'utilisation']],
     ['corps',       ['corps', 'forme', 'boitier']],
     ['emploi',      ['emploi', 'pour', 'application']],
-    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']]]
+    ['note',        ['note', 'notes', 'observation', 'remarque', 'commentaire']],
+    ['statut',      ['statut', 'status', 'confiance']]]
 };
 const TABLE_NORME = {
   familles: c => c.famille != null && c.reference == null && (c.pas != null || c.intensite != null || c.filsParCote != null || c.ordre != null || c.jaugeMin != null),
@@ -783,7 +785,7 @@ function disjonctionNorme(o) { const multiple = NUMERO(o.multiple), temps = NUME
    porte, sa résistance (mΩ/m, soit des Ω/km), son diamètre extérieur (mm) et sa section (mm²). */
 function cableNorme(o) { const cable = cleNorme(o.cable); if (!cable) return null; const brins = NUMERO(o.brins);
   return { cable, famille: cleNorme(o.famille) || typeDuFil(cable), jauge: NUMERO(o.jauge), brins: brins == null ? 1 : Math.max(1, Math.round(brins)), blindage: /^(1|oui|x|vrai|true)$/i.test(String(o.blindage || '').trim()) || NUMERO(o.blindage) > 0,
-           nature: String(o.nature || '').trim(), masse: NUMERO(o.masse), liaisons: NUMERO(o.liaisons), resistance: NUMERO(o.resistance), diametre: NUMERO(o.diametre), section: NUMERO(o.section), note: String(o.note || '').trim() }; }
+           nature: String(o.nature || '').trim(), masse: NUMERO(o.masse), liaisons: NUMERO(o.liaisons), resistance: NUMERO(o.resistance), diametre: NUMERO(o.diametre), section: NUMERO(o.section), note: String(o.note || '').trim(), ...origineStatut(o) }; }
 /* Une GAINE (HFA, Nomex) et un COLLIER band-it (normes/raccords.csv). */
 /* Une gaine : un surblindage (tresse cuivre : Dint / Dext, le toron passe dans Dint) ou une protection (une tresse
    expansible : la plage de toron Dmin / Dmax qu'elle habille). */
@@ -1034,10 +1036,10 @@ const LIBELLES_NORME = {
   disjoncteursFamilles: { famille: 'Famille', norme: 'Norme', poles: 'Pôles', calibres: 'Calibres', tension: 'Tension', compense: 'Compensé', tmin: 'Tmin', tmax: 'Tmax', masse: 'Masse', courbe: 'Courbe', motifs: 'Motifs', note: 'Note' },
   protections: { jauge: 'Jauge', disjoncteurMax: 'Disjoncteur max', fusibleMax: 'Fusible max', tailleContact: 'Taille contact', iContact: 'I contact', note: 'Note' },
   dommages: { conducteur: 'Conducteur', jauge: 'Fil AWG', section: 'Toron mm2', resistance20: 'R20 ohm par km', t0: 'T avant défaut', tmax: 'T tenue', i2t: 'I2t admis', i2s: 'Dommage 2 s', i10s: 'Dommage 10 s', facteur: 'Facteur continu dommage', note: 'Note', source: 'Source', statut: 'Statut' },
-  cables: { cable: 'Câble', famille: 'Famille', jauge: 'Jauge', brins: 'Brins', blindage: 'Blindage', nature: 'Nature', masse: 'Masse', liaisons: 'Liaisons', resistance: 'Résistance', diametre: 'Diamètre', section: 'Section', note: 'Note' },
+  cables: { cable: 'Câble', famille: 'Famille', jauge: 'Jauge', brins: 'Brins', blindage: 'Blindage', nature: 'Nature', masse: 'Masse', liaisons: 'Liaisons', resistance: 'Résistance', diametre: 'Diamètre', section: 'Section', note: 'Note', statut: 'Statut' },
   disjoncteurs: { famille: 'Famille', courbe: 'Courbe', temperature: 'Température', multiple: 'Multiple', temps: 'Temps', note: 'Note' },
   contacts: { famille: 'Norme', sexe: 'Sexe', taille: 'Taille', typeFil: 'Type de fil', jauge: 'Jauge', reference: 'Contact', accessoire: 'Accessoire', note: 'Note', origine: 'Source', statut: 'Statut' },
-  modules: { famille: 'Famille', variante: 'Variante', reference: 'Désignation', type: 'Type', taille: 'Taille', disposition: 'Disposition', groupes: 'Groupes', poids: 'Masse', hauteur: 'Hauteur', diodes: 'Diodes', usage: 'Usage', corps: 'Corps', emploi: 'Emploi', note: 'Note' },
+  modules: { famille: 'Famille', variante: 'Variante', reference: 'Désignation', type: 'Type', taille: 'Taille', disposition: 'Disposition', groupes: 'Groupes', poids: 'Masse', hauteur: 'Hauteur', diodes: 'Diodes', usage: 'Usage', corps: 'Corps', emploi: 'Emploi', note: 'Note', statut: 'Statut' },
   torons: { methode: 'Méthode', fils: 'Nombre de fils', facteur: 'Facteur', k: 'k équivalent', formule: 'Formule', ajout: 'Ajout', note: 'Note', origine: 'Source', statut: 'Statut' },
   chambres: { norme: 'Norme', code: 'Code', hmax: 'H max', j: 'J', derriere: 'Longueur derrière la face', note: 'Note', origine: 'Source', statut: 'Statut' },
   massesRaccords: { norme: 'Norme', taille: 'Taille', longueur: 'Longueur', code: 'Code', classes: 'Classes', masse: 'Masse', note: 'Note', origine: 'Source', statut: 'Statut' },
@@ -1624,7 +1626,7 @@ function moduleNorme(o) { const variante = String(o.variante || '').trim().toUpp
   return { famille, variante, reference, type, taille, rangs, colonnes, libre, contacts, groupes, poids: NUMERO(o.poids), hauteur: NUMERO(o.hauteur),
            diodes, aDiodes: type === 'diodes' || diodes.length > 0, usage, auto: !/diodes|A350|confirmer|shuntés|spécial|ancien|masse/.test(usage) && contacts.length > 0, corps: corpsDe(o.corps),
            // l'EMPLOI : une barrette (modules de jonction), ou un connecteur — d'équipement ou de prise de coupure (EN 4165)
-           emploi: /connect|coupure|prise/.test(MOT(o.emploi)) ? 'connecteur' : 'barrette', note: String(o.note || '').trim() }; }
+           emploi: /connect|coupure|prise/.test(MOT(o.emploi)) ? 'connecteur' : 'barrette', note: String(o.note || '').trim(), ...origineStatut(o) }; }
 // la norme embarquée, lue une fois : ses modules servent quand la norme de l'atelier n'en porte pas
 let normeDesModulesLue = null;
 const normeDesModules = norme => (norme && norme.modules && norme.modules.length) ? norme : (normeDesModulesLue || (normeDesModulesLue = normeEmbarquee()));
