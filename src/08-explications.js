@@ -64,35 +64,39 @@ const EXPLICATIONS = {
     const perm = c && exPositif(c.permanent) ? c.permanent : exPositif(mg.permanent) ? mg.permanent : null, garanti = c && exPositif(c.garanti) ? c.garanti : exPositif(mg.garanti) ? mg.garanti : null;
     const marge = c && c.marge != null && isFinite(+c.marge) ? +c.marge : mg.courant != null ? mg.courant : +H.marge, T = c && c.temperature != null && isFinite(+c.temperature) ? +c.temperature : isFinite(mg.temperature) ? mg.temperature : +H.tableauMax;
     const fam = (c && typeof c.famille === 'string' ? c.famille : '') || (m && m.famille) || '', gamme = exGamme(H), autre = best && cal && Math.abs(best - cal) > 1e-9;
-    const phrase = !cal ? `Le plus petit calibre de ta gamme qui passe ton profil, avec ${exN(marge)} % de marge.`
+    const phrase = !cal ? `Le plus petit calibre de votre gamme qui passe votre profil, avec ${exN(marge)} % de marge.`
       : origine === 'main' ? `${exA(cal)}, choisi à la main${autre ? ` — « Automatique » prend ${exA(best)}` : ''}.`
-      : autre ? `Le meilleur est ${exA(best)} : le plus petit de ta gamme${fam ? ' ' + fam : ''} qui passe ; le ${exA(cal)} ${cal < best ? 'ne passe pas' : 'est plus gros que nécessaire'}.`
-      : best ? `${exA(cal)} : le plus petit de ta gamme${fam ? ' ' + fam : ''} qui passe ton profil.` : origine === 'pn' ? `${exA(cal)} : lu dans la référence du disjoncteur.` : `${exA(cal)}.`;
+      : autre ? `Le meilleur est ${exA(best)} : le plus petit de votre gamme${fam ? ' ' + fam : ''} qui passe ; le ${exA(cal)} ${cal < best ? 'ne passe pas' : 'est plus gros que nécessaire'}.`
+      : best ? `${exA(cal)} : le plus petit de votre gamme${fam ? ' ' + fam : ''} qui passe votre profil.` : origine === 'pn' ? `${exA(cal)} : lu dans la référence du disjoncteur.` : `${exA(cal)}.`;
     return exE('Le calibre', phrase, [['Permanent', perm ? exA(perm) : null, ''], ['Marge', exN(marge) + ' %', ''], ['Juge à', exN(T) + ' °C', ''], ['Garanti', garanti ? exA(garanti) : null, 'ok']],
-      [`Essaie chaque calibre de ta gamme${gamme ? ' (' + gamme + ')' : ''}, du plus petit au plus grand`, `Garde le premier qui ne déclenche pas à ${exN(+H.tableauMax)} °C, avec ${exN(+H.marge)} % de marge : il passe`, 'Un câble trop fin, il le grossit — il ne monte jamais le calibre pour lui', 'Il reste à 2:1 de ses voisins'],
-      'Les courbes de ton Excel (un E-T-A 483 / 4120) et des constructeurs, la garantie MS3320N, la méthode NASA TM-102179, la FAA AC 43.13-1B.'); },
+      [`Essaie chaque calibre de votre gamme${gamme ? ' (' + gamme + ')' : ''}, du plus petit au plus grand`, `Garde le premier qui ne déclenche pas à ${exN(+H.tableauMax)} °C, avec ${exN(+H.marge)} % de marge : il passe`, 'Un câble trop fin, il le grossit — il ne monte jamais le calibre pour lui', 'Il reste à 2:1 de ses voisins'],
+      'Les courbes de votre Excel (un E-T-A 483 / 4120) et des constructeurs, la garantie MS3320N, la méthode NASA TM-102179, la FAA AC 43.13-1B.'); },
 
   courbe: c => { const H = exHypotheses(c), tmin = c && c.tableauMin != null ? +c.tableauMin : +H.tableauMin, tmax = c && c.tableauMax != null ? +c.tableauMax : +H.tableauMax;
     const f = c && c.famille, fam = typeof f === 'string' ? f : f && typeof f === 'object' ? String(f.courbe || f.famille || '') : '';
     return exE('La courbe de déclenchement', 'Pour chaque multiple du calibre (In), le temps avant que le disjoncteur s’ouvre.', [['Courbes', fam || null, ''], ['Juge', exN(tmax) + ' °C', 'ko'], ['Câble', String(exN(tmin)).replace('-', '−') + ' °C', '']],
-      ['À gauche des courbes, il ne déclenche pas (vert) ; à droite, il déclenche (rouge)', 'Entre les deux, ça dépend de la température', `La plus rapide (${exN(tmax)} °C) juge ton profil`, `La plus lente (${String(exN(tmin)).replace('-', '−')} °C) dit ce qui passe dans le câble`],
-      'Les quatre courbes de ton Excel « Calibre disjoncteur » (E-T-A 483 / 4120), lissées pour le dessin ; le jugement se fait sur les points lus.'); },
+      ['À gauche des courbes, il ne déclenche pas (vert) ; à droite, il déclenche (rouge)', 'Entre les deux, ça dépend de la température', `La plus rapide (${exN(tmax)} °C) juge votre profil`, `La plus lente (${String(exN(tmin)).replace('-', '−')} °C) dit ce qui passe dans le câble`],
+      'Les quatre courbes de votre Excel « Calibre disjoncteur » (E-T-A 483 / 4120), lissées pour le dessin ; le jugement se fait sur les points lus.'); },
 
   profil: c => { const H = exHypotheses(c), perm = c && exPositif(c.permanent) ? c.permanent : null, p = c && c.pointe && exPositif(c.pointe.i) ? c.pointe : null, so = c && c.somme != null && isFinite(c.somme) ? c.somme : null;
-    const phrase = perm || p ? `Ton profil : ${[perm ? exA(perm) + ' permanents' : '', p ? 'une pointe de ' + exA(p.i) + (exPositif(p.t) && isFinite(p.t) ? ' pendant ' + exS(p.t) : '') : ''].filter(Boolean).join(' et ')}.` : 'Ce que tire l’équipement protégé, état par état.';
+    const phrase = perm || p ? `Votre profil : ${[perm ? exA(perm) + ' permanents' : '', p ? 'une pointe de ' + exA(p.i) + (exPositif(p.t) && isFinite(p.t) ? ' pendant ' + exS(p.t) : '') : ''].filter(Boolean).join(' et ')}.` : 'Ce que tire l’équipement protégé, état par état.';
     return exE('Le profil de charge', phrase, [['Permanent', perm ? exA(perm) : null, ''], ['Pointe', p ? exA(p.i) + (exPositif(p.t) && isFinite(p.t) ? ' · ' + exS(p.t) : '') : null, ''], ['Temps consommé', so != null ? exPct(so) : null, so == null ? '' : so > 1 ? 'ko' : so > +H.margeTemps / 100 ? 'att' : 'ok']],
-      ['Chaque état : un courant (A) pendant une durée (s) — le permanent dure toujours', 'Chaque état devient un point de la courbe : glisse-le pour l’ajuster', `Leurs parts du temps de déclenchement s’additionnent : ${exN(+H.margeTemps)} % au plus`, 'Le retest ne le porte pas : tu l’écris, Volta n’invente rien'],
+      ['Chaque état : un courant (A) pendant une durée (s) — le permanent dure toujours', 'Chaque état devient un point de la courbe : glissez-le pour l’ajuster', `Leurs parts du temps de déclenchement s’additionnent : ${exN(+H.margeTemps)} % au plus`, 'Le retest ne le porte pas : vous l’écrivez, Volta n’invente rien'],
       `La méthode NASA TM-102179 ; un état après le permanent trouve le disjoncteur chaud (son temps ÷ ${exN(+H.prechauffage)}, feuille MS3320N).`); },
 
   module: c => { const P = c && c.plan ? c.plan : null, libres = P && P.contacts != null && P.utilises != null ? P.contacts - P.utilises : null;
-    const phrase = P && P.reference ? `${P.reference} : ${P.main ? 'retenu à la main' : 'le plus petit module qui loge tous tes câbles'}.` : 'Le plus petit module de jonction qui loge tous les câbles de la barrette.';
+    const phrase = P && P.reference ? `${P.reference} : ${P.main ? 'retenu à la main' : 'le plus petit module qui loge tous vos câbles'}.` : 'Le plus petit module de jonction qui loge tous les câbles de la barrette.';
     return exE('Le module de barrette', phrase, [['Contacts pris', P && P.utilises != null ? exN(P.utilises) : null, ''], ['Libres', libres != null ? exN(libres) : null, 'ok'], ['Modules', P && P.modules && P.modules.length > 1 ? exN(P.modules.length) : null, 'att']],
       ['Les bornes reliées prennent des contacts reliés du module', 'Chaque câble prend un contact dont la taille admet sa gauge', 'Entre ceux qui logent tout : le moins de contacts perdus, puis le plus léger', 'Un clic sur le module montre tous les assemblages de la norme'],
       'ASNE 0599 et NSA937901 (les faces et les groupes) ; les gauges par taille : catalogue Air LB (recherche R1).'); },
 
-  arrangement: c => { const P = c && c.plan ? c.plan : null;
-    const phrase = P && P.reference ? `${P.reference} : ${P.main ? 'retenu à la main' : P.nomme ? 'celui que la référence nomme' : 'le plus petit de la norme qui loge tes bornes et leurs gauges'}.` : 'L’insert : la place et la taille de chaque contact du connecteur.';
-    return exE('L’arrangement', phrase, [['Contacts', P && P.contacts != null ? exN(P.contacts) : null, ''], ['Pris', P && P.utilises != null ? exN(P.utilises) : null, '']],
+  arrangement: c => { const P = c && c.plan ? c.plan : null, F = (c && c.fautifs) || [], aucun = !!P && !P.reference;
+    // aucun arrangement ne loge : la borne fautive et ce qui cloche, plus de « Contacts 0 · Pris 0 » (l'audit v72)
+    const phrase = P && P.reference ? `${P.reference} : ${P.main ? 'retenu à la main' : P.nomme ? 'celui que la référence nomme' : 'le plus petit de la norme qui loge vos bornes et leurs gauges'}.`
+      : aucun && F.length ? `Aucun arrangement ${c.famille ? 'de l’' + c.famille + ' ' : ''}ne loge ${F[0].borne} : ${F[0].l && F[0].l.cable ? F[0].l.cable : 'son câble'}${F[0].f && F[0].f.type ? ' (' + F[0].f.type + ')' : ''}, ${F[0].mot}${F[0].module && /^trop|^refus/.test(F[0].mot) ? ' pour le plus proche, le ' + F[0].module.variante : ''}.`
+      : aucun ? 'Aucun arrangement de la norme ne loge ces bornes avec ces gauges.' : 'L’insert : la place et la taille de chaque contact du connecteur.';
+    return exE('L’arrangement', phrase, aucun ? [['Borne', F[0] ? F[0].borne : null, 'ko'], ['Gauge', F[0] && F[0].f && F[0].f.type ? String(jaugeDuType(F[0].f.type)) + ' AWG' : null, 'ko'], ['Proposé', F[0] && F[0].propose ? F[0].propose.type : null, 'ok']]
+      : [['Contacts', P && P.contacts != null ? exN(P.contacts) : null, ''], ['Pris', P && P.utilises != null ? exN(P.utilises) : null, '']],
       ['La référence nomme l’arrangement : Volta le prend', 'Sinon, chaque borne cherche le contact de même rang, d’une taille qui admet sa gauge', 'Entre ceux qui logent tout : le moins d’accommodements, puis le moins de contacts'],
       'Les faces des normes EN 2997-002, EN 3645-002, EN 3646, EN 4165-002, ASNE 0059.'); },
 
@@ -100,14 +104,14 @@ const EXPLICATIONS = {
     const phrase = P && P.reference ? `${P.reference}${P.main ? ', retenue à la main' : ''} : ${exN(P.utilises)} contact${P.utilises > 1 ? 's' : ''} pris sur ${exN(P.contacts)}.` : 'Deux moitiés : la fiche (mobile) et l’embase (fixe).';
     return exE('La prise de coupure', phrase, [['Pris', P && P.utilises != null ? exN(P.utilises) : null, ''], ['Libres', P && P.contacts != null && P.utilises != null ? exN(P.contacts - P.utilises) : null, 'ok']],
       ['La fiche reçoit ce qui arrive, l’embase ce qui repart', 'Un câble par contact, de chaque côté', 'L’arrangement se choisit comme pour un connecteur', 'Fiche femelle par défaut : le bouton l’inverse'],
-      'Les normes EN 4165, EN 2997, EN 3646 ; ta codification (A/B, P/S) pour le sexe.'); },
+      'Les normes EN 4165, EN 2997, EN 3646 ; votre codification (A/B, P/S) pour le sexe.'); },
 
   contact: c => { const s = c && c.sertir ? c.sertir : c || {}, ref = s.reference || '', sexe = (c && c.sexe) || s.sexe || '', taille = (c && c.taille) || '', type = (c && c.type) || '', statut = (c && c.statut) || s.statut || '';
     const mot = sexe === 'F' ? 'la douille (femelle)' : sexe === 'M' ? 'la broche (mâle)' : 'le contact';
     const phrase = ref ? `${ref} : ${mot}${taille ? ' taille ' + taille : ''}${type ? ' pour un ' + type : ''}.` : 'Le contact à sertir au bout de chaque câble.';
     return exE('Le contact à sertir', phrase, [['Sexe', sexe === 'F' ? 'femelle' : sexe === 'M' ? 'mâle' : null, ''], ['Taille', taille || null, ''], ['Avec', s.accessoire || null, ''], ['Statut', /confirm/i.test(statut) ? 'à confirmer' : null, 'att']],
       ['La table Contacts : la norme, la taille, le sexe, le type et la gauge du câble', 'La ligne la plus précise gagne', 'Le sexe se lit dans la référence (A mâle, B femelle ; P, S pour l’E0053)', 'Un câble plus fin que le joint arrière prend un manchon E0718'],
-      'Tes tables SEE, relues par la recherche R1 ; 59 références non publiques restent « à confirmer ».'); },
+      'Vos tables SEE, relues par la recherche R1 ; 59 références non publiques restent « à confirmer ».'); },
 
   gauge: c => { const j = c && c.jauge != null ? c.jauge : c && c.type ? jaugeDuType(c.type) : null, taille = c && c.taille ? c.taille : '';
     const phrase = j != null ? `${c.type ? c.type + ' : ' : ''}gauge ${exN(j)}${taille ? `, ${c.ok === false ? 'refusée' : 'admise'} par un contact taille ${taille}` : ''}.` : 'La gauge (AWG) du câble, contre la taille du contact.';
@@ -119,27 +123,27 @@ const EXPLICATIONS = {
     const e = h.entree, mt = h.classe && h.classe.matiere;
     const phrase = h.sansRaccord ? 'Aucun raccord : ' + (h.pourquoi || 'cette famille s’utilise sans raccord') + '.'
       : h.cheminee ? 'Une cheminée, pas un raccord : c’est le « raccord » d’un EN 4165.'
-      : h.designation ? `${h.designation} : ${types[h.raccord] || 'le raccord'}${h.atelier ? ', de ta table CHOIX' : ''}.`
+      : h.designation ? `${h.designation} : ${types[h.raccord] || 'le raccord'}${h.atelier ? ', de votre table CHOIX' : ''}.`
       : types[h.raccord] ? `${majusculeEx(types[h.raccord])}.` : 'Ce qui tient le toron à l’arrière du connecteur.';
     return exE('Le raccord', phrase, [['Toron', exPositif(h.toron) ? exMm(h.toron) : null, ''], ['Code d’entrée', e && e.code && h.designation ? e.code + (e.dmin != null && e.dmax != null ? ' (' + nombreFr(e.dmin) + '–' + nombreFr(e.dmax) + ' mm)' : '') : null, ''], ['Matière', mt && mt.matiere ? mt.matiere : null, mt && mt.repli ? 'att' : ''], ['Manque', h.manquants && h.manquants[0] ? h.manquants[0] : null, 'ko']],
-      ['Tresse reprise sur le corps ou surblindage : raccord durci + band-it', 'Étanche : raccord pour manchon (droit) ou durci (coudé) + manchon', 'Sinon : raccord à collier (tyrap) ; dans une boîte : un raccord simple', 'La pièce vient de ta table CHOIX ; le code d’entrée, du Ø du toron'],
-      'Ton tutoriel et ton guide des raccords ; EN 3660-062 à -065:2022 ; ta table de compatibilité des matériaux.'); },
+      ['Tresse reprise sur le corps ou surblindage : raccord durci + band-it', 'Étanche : raccord pour manchon (droit) ou durci (coudé) + manchon', 'Sinon : raccord à collier (tyrap) ; dans une boîte : un raccord simple', 'La pièce vient de votre table CHOIX ; le code d’entrée, du Ø du toron'],
+      'Votre tutoriel et votre guide des raccords ; EN 3660-062 à -065:2022 ; votre table de compatibilité des matériaux.'); },
 
   bande: c => { const h = exHabillage(c), B = h.collier || null;
-    const phrase = B && B.reference ? (/^E0805/.test(B.reference) ? `${B.reference} : ton toron${exPositif(h.toron) ? ' de ' + exMm(h.toron) : ''} est ${/-01$/.test(B.reference) ? 'sous' : 'au-dessus de'} 15 mm.` : `${B.reference} : elle serre ${exPositif(h.serre) ? 'la plateforme de ' + exMm(h.serre) : 'ton toron'}.`)
+    const phrase = B && B.reference ? (/^E0805/.test(B.reference) ? `${B.reference} : votre toron${exPositif(h.toron) ? ' de ' + exMm(h.toron) : ''} est ${/-01$/.test(B.reference) ? 'sous' : 'au-dessus de'} 15 mm.` : `${B.reference} : elle serre ${exPositif(h.serre) ? 'la plateforme de ' + exMm(h.serre) : 'votre toron'}.`)
       : h.raccord && !h.bandit ? 'Pas de band-it ici : ni tresse reprise sur le corps, ni surblindage.' : 'Le band-it serre la tresse de blindage sur le raccord.';
     return exE('Le band-it', phrase, [['Toron', exPositif(h.toron) ? exMm(h.toron) : null, ''], ['Équivalent', B && B.equivalent && B.equivalent.reference ? B.equivalent.reference : null, '']],
       ['Seulement si la tresse est reprise sur le corps, ou en surblindage', 'Toron de moins de 15 mm : E0805-01 ; au-delà : E0805-02', 'La bande normalisée EN3660-033 est donnée en équivalent'],
-      'Ton guide des raccords ; EN 3660-033 (outil EN 3660-038).'); },
+      'Votre guide des raccords ; EN 3660-033 (outil EN 3660-038).'); },
 
   manchon: c => { const h = exHabillage(c), M = h.manchonRef || null;
     const phrase = M && M.designation ? `${M.designation}, ${M.precolle ? 'précollé' : 'à coller'}${h.formeManchon === 'coudé' ? ', coudé' : ''} : il passe l’épaulement et serre derrière la lèvre.` : 'Le manchon thermorétractable coiffe l’arrière du raccord et le câble qui en sort.';
     return exE('Le manchon', phrase, [['Épaulement', exPositif(h.cote) ? exMm(h.cote) : null, ''], ['Sortie', exPositif(h.sortie) ? exMm(h.sortie) : null, '']],
-      ['Gros bout : plus grand que l’épaulement, avant rétreint', 'Rétreint, il serre derrière la lèvre : D(AP) < D(C) − 2 × D(D)', 'Petit bout : il serre le toron, ou la gaine', 'Ta gamme T18 d’abord, droit d’abord, précollé d’abord'],
-      'La table VG 95343 (guide HellermannTyton 2024) ; ton guide des raccords.'); },
+      ['Gros bout : plus grand que l’épaulement, avant rétreint', 'Rétreint, il serre derrière la lèvre : D(AP) < D(C) − 2 × D(D)', 'Petit bout : il serre le toron, ou la gaine', 'Votre gamme T18 d’abord, droit d’abord, précollé d’abord'],
+      'La table VG 95343 (guide HellermannTyton 2024) ; votre guide des raccords.'); },
 
   tyrap: c => { const h = exHabillage(c), T = h.tyrap || null;
-    const phrase = T && T.reference ? `${T.reference} : le plus serré qui passe ${exPositif(h.toron) ? 'ton toron de ' + exMm(h.toron) : 'ton toron'}.` : 'Le tyrap tient le toron sur le bras du raccord.';
+    const phrase = T && T.reference ? `${T.reference} : le plus serré qui passe ${exPositif(h.toron) ? 'votre toron de ' + exMm(h.toron) : 'votre toron'}.` : 'Le tyrap tient le toron sur le bras du raccord.';
     return exE('Le tyrap', phrase, [['Toron', exPositif(h.toron) ? exMm(h.toron) : null, ''], ['Jusqu’à', T && T.dmax != null ? exMm(T.dmax) : null, ''], ['Cotes', T && /confirm/i.test(T.confiance || T.statut || '') ? 'à confirmer' : null, 'att']],
       ['Sur le bras d’un raccord à collier, ou sur une cheminée EN 4165', 'Le NSA935401 dont le Ø max passe le toron au plus juste, puis le plus court'],
       'La table Colliers ; seuls le -06 et le -13 sont vérifiés, les autres cotes restent à confirmer.'); },
@@ -160,15 +164,15 @@ const EXPLICATIONS = {
   chute: c => { const H = exHypotheses(c), x = c && c.chemin && typeof c.chemin === 'object' ? c.chemin : c || {}, mono = exPositif(+H.chuteMono) ? +H.chuteMono : null, tri = exPositif(+H.chuteTri) ? +H.chuteTri : null;
     const ok = x.dU != null && isFinite(x.dU), trop = ok && exPositif(x.admis) && x.dU > x.admis;
     const phrase = ok ? `${exV(Math.round(x.dU * 100) / 100)}${exPositif(x.admis) ? ` pour ${exV(x.admis)} admis` : ''}${x.reel === false ? ', sur des longueurs supposées' : ''}.` : 'La tension perdue du disjoncteur jusqu’à l’équipement.';
-    const regle = mono || tri ? `${mono ? exV(mono) : 'la table Réseau'} au plus en continu et en monophasé, ${tri ? exV(tri) : 'la table Réseau'} en triphasé (ta règle)` : 'Sous la table Réseau (AC 43.13-1B : 1 V sous 28 V, le double en intermittent)';
+    const regle = mono || tri ? `${mono ? exV(mono) : 'la table Réseau'} au plus en continu et en monophasé, ${tri ? exV(tri) : 'la table Réseau'} en triphasé (votre règle)` : 'Sous la table Réseau (AC 43.13-1B : 1 V sous 28 V, le double en intermittent)';
     return exE('La chute de tension', phrase, [['Chute', ok ? exV(Math.round(x.dU * 100) / 100) : null, trop ? 'ko' : ok ? 'ok' : ''], ['Admis', exPositif(x.admis) ? exV(x.admis) : null, ''], ['Longueurs', x.reel === false ? 'supposées' : null, 'att']],
-      ['Chaque câble : sa résistance × sa longueur × le courant', 'Chaque prise traversée : une paire de contacts ; chaque barrette : deux', 'Plus la chute du disjoncteur (ta table « Du max »)', regle],
-      `Ta règle et ta table des contacts par gauge ; la longueur du retest, sinon ${exN(+H.longueur)} m supposés ; la génération est négligée (28 V en sortie des panneaux).`); },
+      ['Chaque câble : sa résistance × sa longueur × le courant', 'Chaque prise traversée : une paire de contacts ; chaque barrette : deux', 'Plus la chute du disjoncteur (votre table « Du max »)', regle],
+      `Votre règle et votre table des contacts par gauge ; la longueur du retest, sinon ${exN(+H.longueur)} m supposés ; la génération est négligée (28 V en sortie des panneaux).`); },
 
   toron: c => { const h = exHabillage(c), F = h.foisonnement || null, n = F && F.n != null ? F.n : h.faisceau && h.faisceau.n != null ? h.faisceau.n : null, deq = h.deq != null ? h.deq : h.faisceau ? h.faisceau.deq : null;
-    const phrase = exPositif(h.toron) && n ? `${exN(n)} câble${n > 1 ? 's' : ''} : un toron de ${exMm(h.toron)}${F && F.methode === 'Excel' ? ' (+ 10 %, comme ton tutoriel)' : F && F.methode === 'Guide' ? ' (+ 20 %, comme ton guide)' : ''}.` : 'Le paquet de câbles qui sort du connecteur.';
+    const phrase = exPositif(h.toron) && n ? `${exN(n)} câble${n > 1 ? 's' : ''} : un toron de ${exMm(h.toron)}${F && F.methode === 'Excel' ? ' (+ 10 %, comme votre tutoriel)' : F && F.methode === 'Guide' ? ' (+ 20 %, comme votre guide)' : ''}.` : 'Le paquet de câbles qui sort du connecteur.';
     return exE('Le toron', phrase, [['Câbles', n ? exN(n) : null, ''], ['√Σ Ø²', exPositif(deq) ? exMm(deq) : null, ''], ['Facteur', F && exPositif(F.facteur) ? '× ' + exN(F.facteur) : null, '']],
-      ['Le Ø de chaque câble vient de la base des câbles', 'Ø du toron = un facteur × √(somme des Ø²)', 'Le facteur TE : 1,415 pour deux câbles… 1,15 dès sept', 'Les hypothèses : + 10 % (ton tutoriel) ou + 20 % (ton guide)'],
+      ['Le Ø de chaque câble vient de la base des câbles', 'Ø du toron = un facteur × √(somme des Ø²)', 'Le facteur TE : 1,415 pour deux câbles… 1,15 dès sept', 'Les hypothèses : + 10 % (votre tutoriel) ou + 20 % (votre guide)'],
       'Le catalogue TE/Polamco « Circular Backshells » (vérifié).'); },
 
   masse: c => { const n = c && c.cables != null && isFinite(+c.cables) ? +c.cables : null;

@@ -11,13 +11,21 @@
    une pastille d'état, le chevron —, dans un ordre fixe (ORDRE_SECTIONS) :
      Calibre (un disjoncteur) · Connecteur (ou Module) · Raccord ·
      De → vers (un câble) · Câbles (intensité et chute ensemble) · Déjà fait.
+   v72 (l'audit des fiches, « la fiche technique ») : pliées, les sections se
+   lisent comme une FICHE TECHNIQUE — une grille à deux colonnes, l'étiquette
+   à gauche (la même colonne que les champs ouverts), ce qu'elle dit à droite
+   (« Connecteur · EN4165-2M · A B C », « Calibre · 15 A · retest 10 A ») ;
+   plus d'icônes en carré. La barre des problèmes en est la première ligne.
    Fermée, une section se lit encore ; ouverte, ses groupes sont séparés d'un
-   filet et espacés. Toutes sont PLIÉES d'office (le lecteur, version 62 : « toutes les
-   sections doivent être pliées : c'est beaucoup plus propre ») ; ce que
-   l'ingénieur ouvre ou ferme se garde, par type d'objet.
-   Une section dont la donnée manque reste à sa place, en pointillé, et dit ce
-   qui manque. Un lien qui y mène (une ligne des problèmes) l'ouvre, la fait
-   venir sous les yeux et l'allume un instant.
+   filet et espacés. Dans la carte flottante, toutes sont PLIÉES d'office (le
+   lecteur, version 62 : « toutes les sections doivent être pliées : c'est
+   beaucoup plus propre ») ; dans le volet épinglé, où la place est, celle qui
+   définit l'objet (son connecteur, son calibre, son module) s'ouvre d'office.
+   Ce que l'ingénieur ouvre ou ferme se garde, par type d'objet.
+   Une section dont la donnée manque reste à sa place et dit ce qui manque ;
+   « Déjà fait » se tait tant qu'aucune base n'est chargée. Un lien qui y mène
+   (une ligne des problèmes) l'ouvre, la fait venir sous les yeux et l'allume
+   un instant.
 
    Une valeur se change sur place, d'un champ qui se voit. Plus de « ↺ » ni de
    pastille « main » (le lecteur : « le bouton revenir en arrière, ça ne sert
@@ -40,26 +48,18 @@
 
 const SECTIONS = { disjoncteur: 'Calibre', connecteur: 'Connecteur', raccord: 'Raccord', trajet: 'De → vers', fils: 'Câbles', dejafait: 'Déjà fait' };
 const ORDRE_SECTIONS = Object.keys(SECTIONS);
-// ouvertes d'office : aucune — une fiche s'ouvre pliée, chaque carte dit l'essentiel dans son résumé
+// ouvertes d'office : dans la carte flottante, aucune — une fiche s'ouvre pliée, chaque ligne dit l'essentiel ; dans le volet
+// épinglé (la place y est), celle qui définit l'objet
 const OUVERTES_D_OFFICE = {};
-/* L'icône de chaque section : SVG 24 × 24 au trait de 1,5 px (comme ICONES, 08-fiche). */
-const ICONES_SECTIONS = {
-  disjoncteur: '<path d="M3 16h3.5M17.5 16H21"/><circle cx="8" cy="16" r="1.5"/><circle cx="16" cy="16" r="1.5"/><path d="M9 15.2 15.4 10.2"/><path d="M12.2 4.5v6M9.6 4.5h5.2"/>',
-  connecteur: '<rect x="3.5" y="6.5" width="12" height="11" rx="2"/><path d="M15.5 9.5h3.5M15.5 14.5h3.5"/><circle cx="7.5" cy="10.5" r=".9" fill="currentColor"/><circle cx="11.5" cy="10.5" r=".9" fill="currentColor"/><circle cx="7.5" cy="13.5" r=".9" fill="currentColor"/><circle cx="11.5" cy="13.5" r=".9" fill="currentColor"/>',
-  // le raccord : un écrou à collier sur le toron
-  raccord: '<path d="M3 12h4M17 12h4"/><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M10 7v10M14 7v10"/>',
-  trajet: '<circle cx="5" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/><path d="M7.2 12h9.6M13.8 9l3 3-3 3"/>',
-  fils: '<path d="M3 7.5h7c3 0 4 9 7 9h4M3 16.5h4c3 0 4-9 7-9h7"/>',
-  dejafait: '<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4.5v3.7h3.7"/><path d="M12 8.2V12l2.6 1.8"/>'
-};
-const icoSection = cle => ICONES_SECTIONS[cle] ? `<span class="fs-ico" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24">${ICONES_SECTIONS[cle]}</svg></span>` : '';
+const OUVERTES_DANS_LE_VOLET = { equipement: ['connecteur'], disjoncteur: ['disjoncteur'], barrette: ['connecteur'], prise: ['connecteur'], fil: ['trajet'] };
+const voletEpingle = () => typeof CARTE === 'object' && !!CARTE && !!CARTE.epingle;
 
 /* La mémoire des sections, par type : ce que l'ingénieur a ouvert ou fermé (dans ce navigateur ; une mémoire
    indisponible — navigation privée — n'empêche rien : on garde les valeurs d'office). La clé change avec la v5 :
    tout se plie d'office, ce qu'on avait ouvert avant ne compte plus. */
 const CLE_SECTIONS = 'atelier.fiche.sections.v5';
 const MEMOIRE_SECTIONS = (() => { try { return JSON.parse(localStorage.getItem(CLE_SECTIONS) || '{}') || {}; } catch (_) { return {}; } })();
-function sectionOuverte(type, cle) { const m = MEMOIRE_SECTIONS[type]; return m && cle in m ? !!m[cle] : (OUVERTES_D_OFFICE[type] || []).includes(cle); }
+function sectionOuverte(type, cle) { const m = MEMOIRE_SECTIONS[type]; return m && cle in m ? !!m[cle] : ((voletEpingle() ? OUVERTES_DANS_LE_VOLET : OUVERTES_D_OFFICE)[type] || []).includes(cle); }
 function retenirSection(type, cle, ouvert) { (MEMOIRE_SECTIONS[type] = MEMOIRE_SECTIONS[type] || {})[cle] = !!ouvert;
   try { localStorage.setItem(CLE_SECTIONS, JSON.stringify(MEMOIRE_SECTIONS)); } catch (_) { } }
 
@@ -71,8 +71,9 @@ function ficheSection(type, s) { const titre = s.titre || SECTIONS[s.cle] || s.c
   const ouvert = ouvrable && (s.ouvert != null ? s.ouvert : !s.vide && sectionOuverte(type, s.cle));
   const badge = s.badge && s.badge.t != null && s.badge.t !== '' ? `<span class="fs-badge${s.badge.etat ? ' ' + s.badge.etat : ''}">${s.badge.t}</span>` : '';
   const resume = (s.vide ? esc(s.vide) : s.resume || '') + (s.action ? ' ' + s.action : '');
+  // la ligne de la fiche technique : l'étiquette, ce qu'elle dit, la pastille, le chevron
   return `<details class="fs${s.vide ? ' fs-vide' : ''}${ouvrable ? '' : ' fs-clos'}" data-section="${escA(s.cle)}" data-type="${escA(type)}"${ouvert ? ' open' : ''}>`
-    + `<summary class="fs-tete">${icoSection(s.cle)}<span class="fs-titres"><span class="fs-titre">${esc(titre)}</span>${resume ? `<span class="fs-resume">${resume}</span>` : ''}</span>`
+    + `<summary class="fs-tete"><span class="fs-titre">${esc(titre)}</span><span class="fs-resume">${resume}</span>`
     + `${badge}${ico('bas', 'fs-chevron')}</summary><div class="fs-corps">${s.contenu || ''}</div></details>`; }
 /* Les sections d'une fiche, dans l'ordre fixe ; une clé hors de l'ordre se met à la fin. */
 function ficheSections(type, liste) { const xs = liste.filter(Boolean), rang = s => { const k = ORDRE_SECTIONS.indexOf(s.cle); return k < 0 ? 99 : k; };
@@ -105,9 +106,11 @@ function badgeProblemes(probs, cle) { const xs = (probs || []).filter(p => p.sec
   const ko = xs.filter(p => p.niveau === 'ko').length; return { t: String(ko || xs.length), etat: ko ? 'ko' : 'att' }; }
 
 /* L'ORIGINE d'une valeur, en petit à côté d'elle : la fiche ne la pose que quand elle compte — « main » (changée ici),
-   « hyp. » (une hypothèse de la simulation) ; ce que le retest ou le calcul donnent se lit sans pastille. */
-const ORIGINES = { auto: 'auto', retest: 'retest', main: 'main', hyp: 'hyp.', norme: 'norme' };
-const origine = (o, titre) => `<i class="orig orig-${escA(o)}"${titre ? ` title="${escA(titre)}"` : ''}>${esc(ORIGINES[o] || o)}</i>`;
+   « supposé » (une hypothèse de la simulation : un clic mène aux hypothèses) ; ce que le retest ou le calcul donnent se
+   lit sans pastille. `bulle` : le pourquoi, au survol. */
+const ORIGINES = { auto: 'auto', retest: 'retest', main: 'main', hyp: 'supposé', norme: 'norme' };
+const origine = (o, bulle, mot) => o === 'hyp' ? `<button type="button" class="orig orig-hyp fi-hyp" data-hyp="1"${bulle ? ` data-bulle="${escA(bulle)}"` : ''} aria-label="${escA((bulle || 'Une hypothèse de la simulation') + ' — régler les hypothèses')}">${esc(mot || ORIGINES.hyp)}</button>`
+  : `<i class="orig orig-${escA(o)}"${bulle ? ` data-bulle="${escA(bulle)}"` : ''}>${esc(mot || ORIGINES[o] || o)}</i>`;
 
 /* CHANGER UNE LIAISON, d'où qu'on la change (sa fiche, le récapitulatif) : une entrée d'historique (Ctrl+Z), la vérité
    change, le plan et le contrôle suivent. Ce que la liaison portait avant la première retouche de ce champ (le retest,

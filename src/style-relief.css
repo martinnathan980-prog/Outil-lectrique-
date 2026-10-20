@@ -62,7 +62,7 @@
 .re-trait{fill:none;stroke-width:.8;stroke-opacity:.55}
 .re-etiq.on .re-trait{stroke-width:1.6;stroke-opacity:1}
 .re-emboite{stroke:#7a8796;stroke-width:1.4;stroke-dasharray:5 4;fill:none}
-svg .re-note{fill:#5b6875;font-size:calc(10px / var(--k,1))}
+svg .re-note{fill:#5b6875;font-size:calc(11px / var(--k,1))}
 /* ── le tableau trou par trou : comme une table de document ; trop large (téléphone), il défile de côté. Les cellules se
    centrent en hauteur : le contact et le fil (une puce) d'une ligne sont sur la même ligne de lecture ── */
 .re-tableau{overflow-x:auto;overscroll-behavior-x:contain}

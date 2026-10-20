@@ -52,8 +52,8 @@
 .fi-x svg.ico{width:18px;height:18px}
 .fi-x[aria-expanded="true"]{background:var(--accent-soft);color:var(--t-1)}
 
-/* ─── L'EN-TÊTE : le symbole (son état en un point), le repère en grand et son crayon, le nom ; les tuiles d'un câble ─── */
-.fi-entete{display:grid;grid-template-columns:44px minmax(0,1fr);column-gap:14px;row-gap:18px;align-items:center;padding:10px 0 22px}
+/* ─── L'EN-TÊTE : le symbole (son état en un point), le repère en grand et son crayon, la ligne d'identité ─── */
+.fi-entete{display:grid;grid-template-columns:44px minmax(0,1fr);column-gap:14px;row-gap:18px;align-items:center;padding:10px 0 18px}
 .fi-symbole{position:relative;width:44px;height:44px;display:grid;place-items:center;border-radius:var(--r-2);color:var(--t-1);background:var(--fi-voile)}
 .fi-symbole svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .fi-symbole .fi-sym-route{stroke:var(--c,currentColor);stroke-width:2.6}
@@ -62,16 +62,21 @@
 .fi-symbole[data-etat="att"]::after{background:var(--warn)}
 .fi-symbole[data-etat="ko"]::after{background:var(--ko)}
 .fi-ident{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px}
-/* sous le repère : un mot de contexte (« À poser · sur 102CB1:2 »), puis le nom, un texte libre qu'on tape */
-.fi-genre{display:flex;align-items:center;gap:6px;max-width:100%;min-height:24px;font:500 var(--f-13)/1.3 var(--sans);color:var(--t-2);white-space:nowrap;overflow:hidden}
-.fi-genre-mot{display:inline-flex;align-items:center;flex:none;color:var(--t-2);overflow:hidden;text-overflow:ellipsis}
+/* sous le repère : un mot de contexte (« À poser · sur 102CB1:2 »), LA LIGNE D'IDENTITÉ (« Connecteur · EN4165-2M · folio 3 »),
+   la désignation qu'on tape — vide, elle ne se montre qu'au survol de l'en-tête (ou au clavier) */
+.fi-genre{display:flex;align-items:center;flex-wrap:wrap;gap:2px 6px;max-width:100%;min-height:24px;font:500 var(--f-13)/1.35 var(--sans);color:var(--t-2)}
+.fi-genre-mot{display:inline-flex;align-items:center;flex:none;color:var(--t-2)}
 .fi-genre .fi-q{margin-left:6px}
-/* le nom : un champ discret qui se lit comme une ligne de texte ; vide, il dit qu'on peut l'écrire ; au survol, un champ */
-.fi-des{flex:1 1 auto;min-width:16ch;max-width:100%;field-sizing:content;height:24px;margin:0 0 0 -7px;padding:0 6px;border:1px solid transparent;border-radius:var(--r-1);background:none;color:var(--t-1);font:500 var(--f-13)/1 var(--sans);text-overflow:ellipsis;transition:background var(--rapide),border-color var(--rapide),box-shadow var(--rapide)}
-.fi-genre-mot+.fi-des{margin-left:0}
+.fi-identite{min-width:0;color:var(--t-2)}
+.fi-identite .id{font:600 var(--f-13) var(--mono);color:var(--t-1);letter-spacing:-.01em}
+.fi-sep{color:var(--t-3)}
+.fi-des{flex:0 1 auto;min-width:12ch;max-width:100%;field-sizing:content;height:24px;margin:0 0 0 -7px;padding:0 6px;border:1px solid transparent;border-radius:var(--r-1);background:none;color:var(--t-1);font:500 var(--f-13)/1 var(--sans);text-overflow:ellipsis;transition:background var(--rapide),border-color var(--rapide),box-shadow var(--rapide),opacity var(--rapide)}
+.fi-identite+.fi-des{margin-left:-1px}
 .fi-des::placeholder{color:var(--t-3);font-weight:400}
+.fi-des:not(.plein):not(:focus){opacity:0}
+.fi-entete:hover .fi-des:not(.plein){opacity:1}
 .fi-des:hover{background:var(--fi-voile)}
-.fi-des:focus{outline:none;background:var(--s-surface);border-color:var(--accent);box-shadow:var(--anneau);color:var(--t-1)}
+.fi-des:focus{outline:none;opacity:1;background:var(--s-surface);border-color:var(--accent);box-shadow:var(--anneau);color:var(--t-1)}
 .fi-nom-ligne{display:flex;align-items:center;gap:2px;max-width:100%;min-width:0}
 .fi-nom{display:block;min-width:0;max-width:100%;border:none;background:none;margin:0 0 0 -6px;padding:1px 6px;font:600 var(--f-24)/1.2 var(--mono);letter-spacing:-.025em;color:var(--t-1);border-radius:var(--r-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 input.fi-nom{field-sizing:content;min-width:5ch;cursor:text;transition:box-shadow var(--rapide),background var(--rapide)}
@@ -81,26 +86,26 @@ input.fi-nom:focus{outline:none;background:var(--s-surface);box-shadow:inset 0 0
 .fi-crayon svg.ico{width:15px;height:15px}
 .fi-entete:hover .fi-crayon,.fi-crayon:focus-visible{opacity:1}
 .fi-crayon:hover{background:var(--s-hover);color:var(--t-1)}
-/* LES TUILES d'un câble : une seule bande au filet, quatre cases de même largeur séparées d'un filet — une étiquette, une
-   valeur forte (ou le champ qui l'écrit), une ligne dessous ; la case qui pose problème se teinte de son état */
-.fi-entete .fi-tuiles{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--s-line);border-radius:var(--r-2);overflow:hidden}
-.fi-tuile{min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:5px;padding:10px 9px 11px;color:var(--t-1);font:inherit;text-align:left}
+/* LES TUILES d'un câble (sous les problèmes) : une seule bande au filet, quatre cases de même largeur séparées d'un filet —
+   une étiquette, une valeur forte (ou le champ qui l'écrit), une ligne dessous ; la case qui pose problème se teinte de son
+   état ; ce qui est supposé s'écrit en italique */
+.fi-tuiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:6px 0 18px;border:1px solid var(--s-line);border-radius:var(--r-2);overflow:hidden}
+.fi-tuile{min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:5px;padding:10px 8px 11px;color:var(--t-1);font:inherit;text-align:left}
 .fi-tuile+.fi-tuile{border-left:1px solid var(--s-line)}
 .fi-tuile-k{font:500 var(--f-12)/1.2 var(--sans);color:var(--t-2);white-space:nowrap}
-.fi-tuile-v{display:flex;align-items:center;gap:2px;max-width:100%;min-height:28px;font:600 15px/1.25 var(--sans);letter-spacing:-.01em;color:var(--t-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.fi-tuile-v{display:flex;align-items:center;gap:2px;max-width:100%;min-height:28px;font:600 var(--f-16)/1.25 var(--sans);letter-spacing:-.01em;color:var(--t-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 .fi-tuile.mono .fi-tuile-v{font:600 var(--f-14)/1.3 var(--mono);letter-spacing:-.01em}
 .fi-tuile-v i{font:500 var(--f-12) var(--sans);color:var(--t-2);margin-left:4px}
-.fi-tuile-s{max-width:100%;min-height:14px;font:500 10.5px/1.25 var(--sans);letter-spacing:-.005em;color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-tuile-s{display:flex;align-items:center;gap:4px;max-width:100%;min-height:16px;font:500 var(--f-11)/1.25 var(--sans);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-tuile-s .orig-hyp{margin:0;padding:1px 6px}
 /* ce qui s'écrit dans une tuile (le type, la gauge, la longueur) : le champ commun, à la largeur de la case — l'unité à
    côté (la bande des tuiles l'emporte sur les règles générales des champs, plus bas) */
 .fi-tuiles .fi-tuile .fc-in{flex:1 1 auto;height:28px;margin:0;padding:0 7px;font:600 var(--f-14)/1 var(--mono);min-width:0;width:100%;max-width:none;field-sizing:fixed}
 .fi-tuiles .fi-tuile .fc-in.court{text-align:left;font-family:var(--sans)}
 .fi-tuiles .fi-tuile .fc-in::placeholder{color:var(--t-1);font:inherit}
+.fi-tuile.supp .fi-tuile-v,.fi-tuile.supp .fc-in::placeholder{font-style:italic;font-weight:500}
 .fi-tuile .cb-sel{flex:1 1 auto;min-width:0}
 .fi-tuile .cb-sel select{width:100%;height:28px;font:600 var(--f-14)/1 var(--mono);color:var(--t-1)}
-.fi-tuile .orig{display:none}
-.fi-tuile .orig-hyp{display:inline-block;margin-left:4px;padding:2px 6px}
-.fi-tuile .fi-hyp{height:auto;margin:0;padding:0;border:none;background:none;font:italic 500 var(--f-11) var(--sans);color:var(--t-2);text-decoration:underline dotted;text-underline-offset:2px;cursor:pointer}
 .fi-tuile.att{background:color-mix(in srgb,var(--warn-soft) 70%,transparent)}
 .fi-tuile.att .fi-tuile-v{color:var(--warn)}
 .fi-tuile.ko{background:color-mix(in srgb,var(--ko-soft) 70%,transparent)}
@@ -109,27 +114,50 @@ input.fi-nom:focus{outline:none;background:var(--s-surface);box-shadow:inset 0 0
 /* la route d'un fil : un trait, comme la légende du plan (sans route : l'encre du thème) */
 .fi-route,.fi-puce{display:inline-block;width:14px;height:3px;border-radius:2px;background:linear-gradient(var(--route-voile),var(--route-voile)),var(--c,var(--t-1));vertical-align:2px;flex:none}
 
-/* ─── LES PROBLÈMES : un bandeau teinté sous l'en-tête, qui se déplie en place — dessous, sur la feuille, une ligne par
-   point (un point de sa couleur, la phrase, la section en petit) ─── */
-.fi-alerte{margin:0 0 20px;border-radius:var(--r-2);background:var(--ko-soft);color:var(--ko);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ko) 14%,transparent)}
-.fi-alerte.att{background:var(--warn-soft);color:var(--warn);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--warn) 16%,transparent)}
-.fi-pb{display:flex;align-items:center;gap:10px;min-height:42px;padding:0 12px 0 14px;cursor:pointer;list-style:none;border-radius:var(--r-2);font:500 var(--f-13)/1.3 var(--sans);transition:background var(--rapide)}
-.fi-pb::-webkit-details-marker{display:none}
-.fi-pb:hover{background:color-mix(in srgb,currentColor 7%,transparent)}
-.fi-pb:focus-visible{outline-offset:-2px}
-.fi-pb b{font-weight:600}
-.fi-alerte-ico svg.ico{width:17px;height:17px;display:block}
-.fi-pb-mots{flex:1;min-width:0}
-.fi-pb .fi-chevron{width:16px;height:16px;opacity:.8;transition:transform var(--moyen)}
-.fi-alerte[open] .fi-pb .fi-chevron{transform:rotate(180deg)}
-.fi-pbs{list-style:none;margin:0 4px 4px;padding:4px;background:var(--s-surface);border-radius:9px;box-shadow:0 1px 2px rgba(0,0,0,.06)}
-.fi-pb-l{width:100%;display:grid;grid-template-columns:7px minmax(0,1fr) auto;column-gap:12px;align-items:start;padding:8px 10px;border:none;background:none;border-radius:var(--r-1);text-align:left;color:var(--t-1);font:inherit;cursor:pointer;transition:background var(--rapide)}
+/* ─── LES PROBLÈMES, puis « Retest » : les premières lignes de la fiche technique (l'audit v72, chemin B) — l'étiquette dans
+   la colonne des sections, le compte en couleur, le premier point en clair ; dépliée, dessous, sur la feuille, une ligne
+   par point (un point de sa couleur, la phrase, la section en petit, la glose quand il en faut une) ─── */
+.fi-alerte,.fi-ecarts{margin:0;border-top:1px solid var(--s-line)}
+.fi-pb,.fi-ec{display:grid;grid-template-columns:96px minmax(0,1fr) 16px;align-items:center;column-gap:12px;min-height:46px;margin:0 -10px;padding:8px 10px;cursor:pointer;list-style:none;border-radius:var(--r-2);font:500 var(--f-13)/1.35 var(--sans);transition:background var(--rapide)}
+.fi-pb::-webkit-details-marker,.fi-ec::-webkit-details-marker{display:none}
+.fi-pb:hover,.fi-ec:hover{background:var(--s-hover)}
+.fi-pb:focus-visible,.fi-ec:focus-visible{outline-offset:-2px}
+.fi-pb-k{color:var(--t-2)}
+.fi-alerte[open] .fi-pb-k,.fi-ecarts[open] .fi-pb-k{color:var(--t-1);font-weight:600}
+.fi-pb-mots{min-width:0;display:flex;align-items:baseline;gap:6px;white-space:nowrap;overflow:hidden}
+.fi-pb-n{flex:none;color:var(--warn)}
+.fi-alerte.ko .fi-pb-n{color:var(--ko)}
+.fi-pb-n b{font-weight:600}
+.fi-pb-1{min-width:0;overflow:hidden;text-overflow:ellipsis;color:var(--t-1);font-weight:400}
+.fi-alerte[open] .fi-pb-1{visibility:hidden}
+.fi-pb .fi-chevron,.fi-ec .fi-chevron{width:16px;height:16px;color:var(--t-3);transition:transform var(--moyen)}
+.fi-alerte[open] .fi-pb .fi-chevron,.fi-ecarts[open] .fi-ec .fi-chevron{transform:rotate(180deg)}
+.fi-pbs{list-style:none;margin:2px 0 14px;padding:0;display:flex;flex-direction:column}
+.fi-pb-l{width:100%;display:grid;grid-template-columns:7px minmax(0,1fr) auto;column-gap:12px;align-items:start;padding:8px 10px;margin:0 -10px;width:calc(100% + 20px);border:none;background:none;border-radius:var(--r-1);text-align:left;color:var(--t-1);font:inherit;cursor:pointer;transition:background var(--rapide)}
 .fi-pb-l:hover{background:var(--s-hover)}
 .fi-pb-l>i{width:7px;height:7px;border-radius:50%;margin-top:.5em;background:var(--ko)}
 .fi-pb-l.att>i{background:var(--warn)}
 .fi-pb-t{font-size:var(--f-12);line-height:1.5;color:var(--t-1);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .fi-pb-s{font:500 var(--f-11)/1.8 var(--sans);color:var(--t-2);white-space:nowrap}
-
+.fi-pb-g{grid-column:2/-1;font:400 var(--f-12)/1.45 var(--sans);color:var(--t-2);margin-top:2px}
+/* « Retest » : ce qui change par rapport au retest, à reporter — une ligne par changement (ce qu'il portait, barré ; ce qu'il
+   porte), « ↺ » le rend ; ce que Volta propose d'autre, marqué « Volta » */
+.fi-ec-mots{min-width:0;color:var(--t-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-ec-note{margin:0 0 6px;font:400 var(--f-12)/1.45 var(--sans);color:var(--t-2)}
+.fi-ec-liste{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column}
+.fi-ec-l{display:grid;grid-template-columns:minmax(0,1fr) auto 34px;align-items:center;column-gap:10px;min-height:34px;font:500 var(--f-12)/1.3 var(--sans);color:var(--t-2)}
+.fi-ec-l+.fi-ec-l{border-top:1px solid var(--s-line)}
+.fi-ec-q{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fi-ec-q .id{font:600 var(--f-12) var(--mono);color:var(--t-1)}
+.fi-ec-v{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.fi-ec-v s{font:500 var(--f-12) var(--mono);color:var(--t-3);text-decoration-color:var(--t-3)}
+.fi-ec-v b{font:600 var(--f-12) var(--mono);color:var(--t-1)}
+.fi-ec-v svg.ico{width:12px;height:12px;color:var(--t-3)}
+.fi-ec-o{justify-self:end;font:500 var(--f-11) var(--sans);color:var(--t-2)}
+button.fi-ec-o{min-height:26px;padding:0 8px;font:600 var(--f-13) var(--sans);color:var(--t-2)}
+button.fi-ec-o:hover{color:var(--t-1)}
+/* sous les problèmes ou le retest, la première section garde son filet */
+.fi-alerte+details.fs,.fi-ecarts+details.fs,.fi-tuiles+details.fs{border-top:1px solid var(--s-line)}
 /* ─── LES CHAMPS : l'étiquette (sa majuscule, l'encre seconde), la valeur ou son champ, « main » ─── */
 .fs-champs{display:grid;grid-template-columns:minmax(96px,max-content) minmax(0,1fr);column-gap:20px;row-gap:2px;align-items:start}
 .fc{display:contents}
@@ -307,7 +335,7 @@ input.fi-nom:focus{outline:none;background:var(--s-surface);box-shadow:inset 0 0
 /* une barrette de plusieurs modules : chacun sa référence, numérotée ; le rail */
 .fi-modules{display:flex;flex-wrap:wrap;gap:6px}
 .fi-mod{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 9px 0 4px;border:1px solid var(--s-line-2);border-radius:var(--r-btn);background:var(--s-surface);font:600 var(--f-12) var(--mono)}
-.fi-mod i{display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--fi-voile-2);font:600 10px var(--sans);font-style:normal;color:var(--t-2)}
+.fi-mod i{display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--fi-voile-2);font:600 var(--f-11) var(--sans);font-style:normal;color:var(--t-2)}
 .fi-rail{display:inline-flex;align-items:center;font:600 var(--f-13) var(--mono);color:var(--t-1)}
 /* poser une barrette au contrat : le repère proposé, un bouton — provisoire, donc au pointillé */
 .fi-poser{display:flex;align-items:center;gap:10px;margin:0 0 20px;padding:10px 10px 10px 14px;border:1px dashed color-mix(in srgb,var(--warn) 45%,transparent);border-radius:var(--r-2);background:var(--warn-soft);font:500 var(--f-12) var(--sans);color:var(--t-1)}
@@ -348,37 +376,57 @@ input.fi-nom:focus{outline:none;background:var(--s-surface);box-shadow:inset 0 0
   font:600 var(--f-11)/1.2 var(--sans);color:var(--t-2);background:linear-gradient(var(--s-line),var(--s-line)) 8px 100%/calc(100% - 16px) 1px no-repeat,var(--s-surface)}
 .fi-entetes>span{display:inline-flex;align-items:center;white-space:nowrap}
 .fi-entetes em{font-style:normal;font-weight:500;margin-left:4px;color:var(--t-2)}
-.fi-entetes .fi-q{width:15px;height:15px;font-size:9.5px;margin-left:5px;vertical-align:0}
+.fi-entetes .fi-q{width:15px;height:15px;font-size:var(--f-11);margin-left:5px;vertical-align:0}
 
-/* LES CONTACTS : Broche · Contact à sertir · Gauge · Câble — une table au cordeau : chaque colonne centrée sous son titre
-   (le lecteur : « centre par rapport à la colonne, pour faire plus joli »), un filet entre deux lignes ; la ligne d'un
-   câble refusé se teinte */
-.ct-liste{list-style:none;margin:0 -8px;padding:0;display:flex;flex-direction:column}
-.ct-legende,.ct-ligne{display:grid;grid-template-columns:48px minmax(0,1.5fr) minmax(70px,.8fr) minmax(76px,.9fr);align-items:center;column-gap:8px}
+/* LES CONTACTS : Borne · Contact à sertir · Gauge · Câble — une table au cordeau, tout aligné à gauche (l'audit v72 : « des
+   pastilles lourdes, des colonnes centrées sous des étiquettes centrées »), la borne à l'encre sans rond, une ligne de
+   34 px, un filet entre deux ; la ligne d'un câble refusé — ou de la borne fautive — se teinte, un trait dans la marge */
+.ct-liste{--ct-pin:52px;list-style:none;margin:0 -8px;padding:0;display:flex;flex-direction:column}
+/* (chaque ligne est sa propre grille : la première colonne a une largeur FIXE, sinon « borne 10 » décale sa ligne) */
+.ct-liste.ct-bornes{--ct-pin:76px}
+.ct-legende,.ct-ligne{display:grid;grid-template-columns:var(--ct-pin) minmax(0,1.6fr) minmax(64px,.7fr) minmax(70px,.8fr);align-items:center;column-gap:12px}
+.ct-sans .ct-legende,.ct-sans .ct-ligne{grid-template-columns:var(--ct-pin) minmax(110px,.9fr) minmax(0,1fr)}
 /* (la légende se pose dans la boîte des lignes — sa marge à la place de leur rembourrage — : son filet tombe juste sur les leurs) */
-.ct-legende{min-height:28px;margin:0 8px 2px;padding:0;font:600 var(--f-11)/1.2 var(--sans);color:var(--t-2);border-bottom:1px solid var(--s-line)}
-.ct-legende span{display:inline-flex;align-items:center;justify-self:center}
-.ct-legende span:first-child{justify-self:stretch}
-.ct-legende .fi-q{width:15px;height:15px;font-size:9.5px;margin-left:5px}
-.ct-ligne.fi-fil{min-height:42px;padding:4px 8px}
-.ct-pin.fi-ct{height:auto;min-width:0;padding:0;border:none;background:none;gap:6px;justify-content:center;justify-self:stretch}
-/* la broche : un rond au filet, la borne (ou la lettre du contact) dedans */
-.ct-pin b{display:grid;place-items:center;min-width:28px;height:28px;padding:0 6px;border-radius:999px;background:var(--s-surface);box-shadow:inset 0 0 0 1px var(--s-line-2);font:600 var(--f-12) var(--mono);color:var(--t-1)}
-.ct-ligne.ko .ct-pin b{box-shadow:inset 0 0 0 1px var(--ko);color:var(--ko)}
-.ct-pin:has(small){flex-direction:column;align-items:center;gap:2px}
-.ct-pin small{font:500 10px/1.1 var(--sans);color:var(--t-2);white-space:nowrap}
-.ct-ref{justify-self:center;font-size:var(--f-12);text-align:center}
+.ct-legende{min-height:30px;margin:0 8px 2px;padding:0;font:600 var(--f-11)/1.2 var(--sans);color:var(--t-2);border-bottom:1px solid var(--s-line)}
+.ct-legende span{display:inline-flex;align-items:center;justify-self:start}
+.ct-legende .fi-q{width:15px;height:15px;font-size:var(--f-11);margin-left:5px}
+.ct-ligne.fi-fil{min-height:34px;padding:3px 8px}
+.ct-ligne.fi-fil.coupable{box-shadow:inset 3px 0 0 var(--ko)}
+.ct-pin.fi-ct{height:auto;min-width:0;padding:0;border:none;background:none;gap:8px;justify-content:flex-start;justify-self:stretch;flex-direction:row;align-items:baseline}
+/* la borne (ou la lettre du contact d'un module, la borne du retest en petit à côté) : à l'encre, sans rond */
+.ct-pin b{font:600 var(--f-13) var(--mono);color:var(--t-1)}
+.ct-ligne.ko .ct-pin b{color:var(--ko)}
+.ct-pin small{font:500 var(--f-11)/1.2 var(--sans);color:var(--t-2);white-space:nowrap}
+.ct-sertir{display:inline-flex;align-items:center;gap:6px;min-width:0}
+.ct-ref{justify-self:start;font-size:var(--f-12);text-align:left}
 .ct-ligne .ct-ref.meme,.ct-paire .ct-ref.meme{color:var(--t-3)}
 .ct-ref i{font-style:normal;color:var(--t-3)}
-/* la gauge : un chiffre, son unité, ✓ ou ✕ de la couleur d'état — sans pastille */
-.ct-jg{justify-self:center;gap:3px}
-.ct-jg small{font:500 9.5px var(--sans);color:var(--t-2);margin-left:1px}
+/* la gauge : un chiffre, son unité, ✓ ou ✕ de la couleur d'état — sans pastille ; « trop gros » à côté d'une borne fautive */
+.ct-jg{justify-self:start;gap:3px}
+.ct-jg small{font:500 var(--f-11) var(--sans);color:var(--t-2);margin-left:1px}
 .ct-jg svg.ico{width:13px;height:13px;stroke-width:2.4;margin-left:2px}
 .ct-jg.ok svg.ico{color:var(--ok)}
 .ct-jg.ko,.ct-jg.ko small,.ct-jg.ko svg.ico{color:var(--ko)}
-.ct-cab{justify-self:center;display:inline-flex;align-items:center;gap:6px;min-width:0}
+.ct-pourquoi{margin-left:6px;font:600 var(--f-11) var(--sans);color:var(--ko)}
+.ct-cab{justify-self:start;display:inline-flex;align-items:center;gap:6px;min-width:0}
 .ct-cab .fi-cab-n{font:600 var(--f-12) var(--mono);color:var(--t-1)}
 .ct-groupe{padding:10px 8px 2px;font:600 var(--f-11) var(--sans);color:var(--t-2)}
+.ct-note{margin:-2px 0 4px}
+/* la borne fautive d'un connecteur qu'aucun arrangement ne loge, sous « Arrangement » : ce qui cloche, et le geste qui répare */
+.fi-fautifs{display:flex;flex-direction:column;gap:2px;flex-basis:100%;color:var(--t-1)}
+.fi-fautif .id{font-weight:600}
+.fi-reparer{height:28px;padding:0 12px;font-size:var(--f-12)}
+.fi-reparer-l{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;margin:10px 0 0;padding:8px 10px 8px 12px;border-radius:var(--r-2);background:var(--fi-voile);font:500 var(--f-12)/1.45 var(--sans);color:var(--t-1)}
+.fi-reparer-l>span{flex:1 1 220px;min-width:0}
+.fi-reparer-l .id{font:600 var(--f-12) var(--mono)}
+/* D'OÙ VIENT UNE VALEUR DES TABLES : un repère de 7 px — plein (vérifié par deux sources), à moitié (vos tables), un anneau
+   ambre (à confirmer) ; la bulle dit les sources, ou pourquoi */
+.fi-conf{flex:none;display:inline-block;width:7px;height:7px;border-radius:50%;vertical-align:1px;cursor:help;background:var(--ok);box-shadow:0 0 0 2px var(--s-surface)}
+.fi-conf.l{background:linear-gradient(90deg,var(--t-3) 50%,transparent 50%);box-shadow:inset 0 0 0 1.25px var(--t-3)}
+.fi-conf.c{background:none;box-shadow:inset 0 0 0 1.5px var(--warn)}
+.fi-conf-legende{display:flex;flex-wrap:wrap;gap:4px 14px;margin:6px 0 0;font:400 var(--f-11)/1.4 var(--sans);color:var(--t-2)}
+.fi-conf-legende span{display:inline-flex;align-items:center;gap:6px}
+.fi-conf-legende .fi-conf{cursor:default}
 /* le raccord, dans la section du connecteur : un groupe de plus, sous les contacts */
 .fi-groupe-raccord .fi-hab{margin-top:2px}
 .fi-cab-n{font:500 var(--f-11) var(--mono);color:var(--t-2);white-space:nowrap}
@@ -397,99 +445,101 @@ button.fi-sertir:hover{background:var(--fi-voile-2)}
 .fi-num b{font:600 var(--f-12) var(--mono);color:var(--t-1);overflow:hidden;text-overflow:ellipsis}
 .fi-num b.neuf{color:var(--t-2);font-family:var(--sans);font-weight:500}
 
-/* ─── LES CÂBLES : une LIGNE par câble, séparées d'un filet (plus de cartes) — en tête la route, le numéro, le type et la
-   gauge (trois champs à la même hauteur), « › » ; au milieu deux jauges fines (l'intensité, la chute), chacune dans sa
-   moitié ; en bas ce qu'on écrit (la longueur, le contact au bout). Toute la ligne réagit au survol ; un câble en défaut
-   porte un trait de son état dans la marge ─── */
+/* ─── LES CÂBLES : UN TABLEAU dense (l'audit v72 : « un mur — sept hauteurs de carte ») — une ligne de 34 px par câble :
+   la route, le numéro, le type et la gauge (des champs qui ont l'air de valeurs : leur fond paraît au survol de la ligne),
+   l'intensité (la valeur sur l'admis, une barre fine dessous), la chute, la longueur, « › » ; l'en-tête collé sous la barre
+   porte les mots une fois. Une valeur garde la couleur de sa mesure ; ce qui est supposé s'écrit en italique ; un câble à
+   voir porte un trait de son état dans la marge et, sous sa ligne, pourquoi ─── */
 .fi-ia{position:relative;font-size:var(--f-12);transition:background var(--rapide),box-shadow var(--rapide)}
 .cb-liste{list-style:none;margin:0 -10px;padding:0;display:flex;flex-direction:column}
-.cb-carte{display:flex;flex-direction:column;gap:10px;padding:12px 10px 12px;border-radius:var(--r-2)}
+.cb-entete,.cb-carte{display:grid;grid-template-columns:8px 58px 100px minmax(0,1fr) 50px 30px 18px;align-items:center;column-gap:8px}
+.cb-entete{position:sticky;top:44px;z-index:3;min-height:30px;padding:0 10px;background:linear-gradient(var(--s-line),var(--s-line)) 10px 100%/calc(100% - 20px) 1px no-repeat,var(--s-surface);font:600 var(--f-11)/1.2 var(--sans);color:var(--t-2)}
+.cb-entete>span{display:inline-flex;align-items:center;min-width:0;white-space:nowrap}
+.cb-entete .fi-q{width:15px;height:15px;font-size:var(--f-11);margin-left:4px}
+.cb-entete .dr{justify-content:flex-end}
+.cb-carte{row-gap:0;min-height:34px;padding:2px 10px;border-radius:var(--r-1)}
 /* les lignes entrent l'une après l'autre — à l'entrée de la fiche, ou quand on ouvre la section ; jamais à un rendu en place */
-.fi.fondu .cb-carte,details.fs.fs-entre .cb-carte{animation:cb-entre var(--moyen) both;animation-delay:calc(min(var(--n,0),8) * 25ms)}
+.fi.fondu .cb-carte,details.fs.fs-entre .cb-carte{animation:cb-entre var(--moyen) both;animation-delay:calc(min(var(--n,0),8) * 20ms)}
 .cb-carte+.cb-carte::before{left:10px;right:10px}
 .cb-carte[data-i]:hover,.cb-carte.vise{background:var(--s-hover)}
 .cb-carte.choisi{box-shadow:inset 0 0 0 1.5px var(--accent)}
-/* un câble en défaut : un trait de son état dans la marge, à la hauteur de sa tête */
-.cb-carte.ko::after,.cb-carte.att::after{content:"";position:absolute;left:0;top:16px;height:20px;width:3px;border-radius:0 2px 2px 0;background:var(--ko)}
+/* un câble en défaut : un trait de son état dans la marge, de toute sa hauteur */
+.cb-carte.ko::after,.cb-carte.att::after{content:"";position:absolute;left:0;top:6px;bottom:6px;width:3px;border-radius:0 2px 2px 0;background:var(--ko)}
 .cb-carte.att::after{background:var(--warn)}
-@keyframes cb-entre{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes cb-entre{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.fi.fondu .cb-carte,details.fs.fs-entre .cb-carte{animation:none}}
-.cb-tete{display:flex;align-items:center;gap:6px;min-width:0}
-.cb-tete .espace{flex:1}
-.cb-puce{display:inline-flex;align-items:center;width:14px;flex:none;margin-right:2px}
-.cb-puce:empty{display:none}
-.cb-num{font:600 var(--f-13) var(--mono);color:var(--t-1)}
+.cb-puce{display:inline-flex;align-items:center;width:8px;flex:none}
+.cb-puce .fi-puce{width:8px;height:8px;border-radius:50%}
+.cb-num{font:600 var(--f-12) var(--mono);color:var(--t-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cb-num.neuf{color:var(--t-2);font-family:var(--sans);font-weight:500}
-.cb-num-ed .fc-in,.cb-type-ed .fc-in,.cb-sel select{height:28px;font:600 var(--f-12)/1 var(--mono);color:var(--t-1)}
-.cb-num-ed .fc-in{min-width:6.5ch;padding:0 8px;font-size:var(--f-13)}
+.cb-num-ed,.cb-type-ed,.cb-lg{min-width:0}
+/* les champs d'une ligne : nus au repos, le voile au survol de la ligne, le filet au survol du champ, l'anneau à l'écriture */
+.cb-carte .fc-in,.cb-carte .cb-sel select{height:26px;margin:0;border-color:transparent;background:none;font:600 var(--f-12)/1 var(--mono);color:var(--t-1)}
+.cb-carte:hover .fc-in,.cb-carte:hover .cb-sel select,.cb-carte.vise .fc-in{background:var(--fi-voile)}
+.cb-carte .fc-in:hover,.cb-carte .cb-sel select:hover{border-color:var(--s-line-2);background:var(--s-surface)}
+.cb-carte .fc-in:focus,.cb-carte .cb-sel select:focus{outline:none;border-color:var(--accent);box-shadow:var(--anneau);background:var(--s-surface)}
+.cb-num-ed .fc-in{width:100%;min-width:0;max-width:none;field-sizing:fixed;padding:0 5px}
 .cb-num-ed.manque .fc-in{border-color:color-mix(in srgb,var(--warn) 55%,transparent);background:var(--warn-soft)}
 .cb-num-ed.manque .fc-in::placeholder{color:var(--warn);font:600 var(--f-11) var(--sans)}
-.cb-ouvrir{flex:none;width:28px;height:28px;display:grid;place-items:center;padding:0;border:none;border-radius:var(--r-1);background:none;color:var(--t-3);transition:background var(--rapide),color var(--rapide),transform var(--rapide)}
-.cb-ouvrir svg.ico{width:16px;height:16px}
+.cb-type{display:inline-flex;align-items:center;height:22px;font:600 var(--f-12) var(--mono);color:var(--t-1)}
+/* le type (la famille) et la gauge, collés : deux champs qui n'en font qu'un à l'œil — et d'où vient sa ligne de la base */
+.cb-type-ed{display:inline-flex;align-items:center;gap:0}
+.cb-type-ed .fc-in.cb-fam{min-width:4.6ch;width:4.6ch;field-sizing:fixed;padding:0 3px 0 5px;border-top-right-radius:0;border-bottom-right-radius:0}
+.cb-type-ed .cb-sel select,.cb-type-ed .fc-in.cb-jg{margin-left:1px;border-top-left-radius:0;border-bottom-left-radius:0}
+.cb-type-ed .fi-conf{margin-left:5px}
+.cb-sel{position:relative;display:inline-flex;align-items:center}
+.cb-sel select{appearance:none;-webkit-appearance:none;min-width:4.4ch;padding:0 16px 0 5px;border:1px solid transparent;border-radius:var(--r-1);cursor:pointer;transition:border-color var(--rapide),background var(--rapide),box-shadow var(--rapide)}
+.cb-sel svg.ico{position:absolute;right:4px;width:11px;height:11px;color:var(--t-3);pointer-events:none}
+.cb-type-ed .fc-in.cb-jg{min-width:3ch;text-align:left}
+/* l'intensité : la valeur sur l'admis, une barre fine dessous ; la valeur de la couleur de sa mesure */
+.cb-i{display:flex;flex-direction:column;justify-content:center;gap:3px;min-width:0}
+.cb-i .fi-barre{height:3px;min-width:0;width:100%}
+.cb-i-v{font:500 var(--f-12)/1.1 var(--sans);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.cb-i-v b{font-weight:600;color:var(--t-1)}
+.cb-i.att .cb-i-v b{color:var(--warn)} .cb-i.ko .cb-i-v b{color:var(--ko)}
+.cb-i.supp .cb-i-v{font-style:italic}
+.cb-carte .fi-u{justify-self:start;font:600 var(--f-12) var(--sans)}
+.fi-u.supp{font-style:italic}
+/* la longueur : supposée, en italique (la valeur des hypothèses en filigrane) */
+.cb-lg .fc-in{width:100%;min-width:0;max-width:none;field-sizing:fixed;padding:0 4px;text-align:right;font-family:var(--sans)}
+.cb-lg.supp .fc-in::placeholder{color:var(--t-2);font-style:italic;font-weight:500}
+.cb-ouvrir{flex:none;width:18px;height:26px;display:grid;place-items:center;padding:0;border:none;border-radius:var(--r-1);background:none;color:var(--t-3);transition:background var(--rapide),color var(--rapide),transform var(--rapide)}
+.cb-ouvrir svg.ico{width:15px;height:15px}
 .cb-carte:hover .cb-ouvrir{color:var(--t-2)}
 .cb-ouvrir:hover{background:var(--fi-voile-2);color:var(--t-1)}
 .cb-ouvrir:active{transform:scale(.94)}
-.cb-type{display:inline-flex;align-items:center;height:22px;padding:0 7px;border-radius:var(--r-1);background:var(--fi-voile);font:600 var(--f-12) var(--mono);color:var(--t-1)}
-/* le type (la famille) et la gauge, collés : deux champs qui n'en font qu'un à l'œil */
-.cb-type-ed{display:inline-flex;align-items:center;gap:0}
-.cb-type-ed .fc-in.cb-fam{min-width:4ch;padding:0 7px;border-top-right-radius:0;border-bottom-right-radius:0}
-.cb-type-ed .cb-sel select,.cb-type-ed .fc-in.cb-jg{margin-left:1px;border-top-left-radius:0;border-bottom-left-radius:0}
-.cb-sel{position:relative;display:inline-flex;align-items:center}
-.cb-sel select{appearance:none;-webkit-appearance:none;min-width:5.2ch;padding:0 22px 0 8px;border:1px solid transparent;border-radius:var(--r-1);background:var(--fi-voile);cursor:pointer;transition:border-color var(--rapide),background var(--rapide),box-shadow var(--rapide)}
-.cb-sel select:hover{border-color:var(--s-line-2);background:var(--s-surface)}
-.cb-sel select:focus{outline:none;border-color:var(--accent);box-shadow:var(--anneau);background:var(--s-surface)}
-.cb-sel svg.ico{position:absolute;right:6px;width:12px;height:12px;color:var(--t-3);pointer-events:none}
-.cb-type-ed .fc-in.cb-jg{min-width:4ch;text-align:left}
-/* les deux jauges : deux moitiés égales, alignées d'une ligne à l'autre */
-.cb-jauges{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding-left:20px}
-.cb-j{display:flex;align-items:center;justify-content:flex-start;gap:10px;min-width:0}
-/* l'anneau, fin (le lecteur : « pas trop gros, pas too much : propre et classe ») : un filet de fond, l'arc de l'état */
-.cb-anneau{position:relative;flex:none;width:36px;height:36px;display:grid;place-items:center}
-.cb-anneau svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-.cb-a-fond{fill:none;stroke:var(--s-line);stroke-width:3}
-.cb-a-arc{fill:none;stroke:var(--t-3);stroke-width:3;stroke-linecap:round;transition:stroke-dasharray var(--lent)}
-.cb-a-arc.ok{stroke:var(--ok)} .cb-a-arc.att{stroke:var(--warn)} .cb-a-arc.ko{stroke:var(--ko)}
-.cb-anneau b{position:relative;font:600 9px/1 var(--sans);color:var(--t-2);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-.cb-anneau b small{font-size:7px;font-weight:500;margin-left:.5px}
-.cb-j.ko .cb-anneau b{color:var(--ko)} .cb-j.att .cb-anneau b{color:var(--warn)}
-.fi.fondu .cb-a-arc,details.fs.fs-entre .cb-a-arc{animation:cb-remplit 640ms var(--courbe) both;animation-delay:100ms}
-@keyframes cb-remplit{from{stroke-dasharray:0 100}}
-@media (prefers-reduced-motion:reduce){.fi.fondu .cb-a-arc,details.fs.fs-entre .cb-a-arc{animation:none}}
-/* son texte : le nom de la mesure (et son « ? »), puis la valeur forte et ce qui est admis, sur la même ligne */
-.cb-j-t{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:6px;row-gap:1px;min-width:0}
-.cb-j-k{flex:1 0 100%;display:inline-flex;align-items:center;font:500 var(--f-12)/1.3 var(--sans);color:var(--t-2)}
-.cb-j-k .fi-q{width:15px;height:15px;font-size:9.5px;margin-left:5px}
-.cb-j-v{font:600 var(--f-14)/1.2 var(--sans);letter-spacing:-.01em;color:var(--t-1);white-space:nowrap;font-variant-numeric:tabular-nums}
-.cb-j-v small{font-size:var(--f-12);font-weight:500;color:var(--t-2)}
-.cb-j-v .fi-u{font:inherit;color:inherit}
-.cb-j.ko .cb-j-v,.cb-j.ko .cb-j-v .fi-u{color:var(--ko)} .cb-j.att .cb-j-v,.cb-j.att .cb-j-v .fi-u{color:var(--warn)}
-.cb-j-s{font:500 var(--f-11) var(--sans);color:var(--t-2);white-space:nowrap;font-variant-numeric:tabular-nums}
-.cb-champ{display:inline-flex;align-items:center;gap:6px;min-width:0}
-.cb-champ-k{font:500 var(--f-12) var(--sans);color:var(--t-2)}
-.fi-u{font:600 var(--f-12) var(--sans);color:var(--t-2);white-space:nowrap;font-variant-numeric:tabular-nums}
+/* pourquoi le câble est à voir, en une ligne sous la sienne (le détail dans la bulle) */
+.cb-pourquoi{grid-column:2/-1;margin:-2px 0 4px;font:500 var(--f-11)/1.35 var(--sans);color:var(--warn);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cb-carte.ko .cb-pourquoi{color:var(--ko)}
+.cb-note{margin:0 0 8px}
+/* LA BANDE DES MARGES (au-delà de douze câbles) : deux pistes — l'intensité, la chute — chaque câble un trait à sa part de
+   l'admis (0 à 120 %), les zones 80–100 % ambre et au-delà rouge ; le plus chargé à droite */
+.cb-bande{display:flex;flex-direction:column;gap:8px;margin:0 0 12px}
+.cb-bande-l{display:grid;grid-template-columns:62px minmax(0,1fr) 72px;align-items:center;column-gap:10px}
+.cb-bande-k{font:500 var(--f-12) var(--sans);color:var(--t-2)}
+.cb-piste{position:relative;height:20px;border-radius:var(--r-1);background:linear-gradient(90deg,var(--fi-voile) 0 66.67%,var(--warn-soft) 66.67% 83.33%,var(--ko-soft) 83.33%)}
+.cb-piste::after{content:"";position:absolute;left:83.33%;top:-2px;bottom:-2px;border-left:1px dashed color-mix(in srgb,var(--ko) 60%,transparent)}
+.cb-piste i{position:absolute;top:4px;bottom:4px;width:2px;margin-left:-1px;border-radius:1px;background:color-mix(in srgb,var(--t-2) 60%,transparent)}
+.cb-piste i.att{background:var(--warn);width:3px} .cb-piste i.ko{background:var(--ko);width:3px}
+.cb-bande-max{display:flex;flex-direction:column;align-items:flex-end;font:600 var(--f-12)/1.2 var(--sans);color:var(--t-1);font-variant-numeric:tabular-nums;white-space:nowrap}
+.cb-bande-max.att b{color:var(--warn)} .cb-bande-max.ko b{color:var(--ko)}
+.cb-bande-max small{font:500 var(--f-11) var(--mono);color:var(--t-2)}
+.fi-u{font:600 var(--f-12) var(--sans);color:var(--t-1);white-space:nowrap;font-variant-numeric:tabular-nums}
 .fi-u i{font-weight:500;color:var(--t-2)}
-.fi-u.ok{color:var(--t-1)}
 .fi-u.att{color:var(--warn)}
 .fi-u.ko{color:var(--ko)}
-/* le rang du bas : ce qu'on écrit, là où on le voit — un clic sur la valeur l'écrit */
-.fi-cab-ed{display:flex;flex-wrap:wrap;align-items:center;gap:4px 20px;min-width:0;padding-left:20px;cursor:default}
+.fi-cab-ed{display:flex;flex-wrap:wrap;align-items:center;gap:4px 20px;min-width:0;cursor:default}
 .fi-cab-ed:empty{display:none}
 .fi-ed{display:inline-flex;align-items:center;gap:2px;min-width:0}
-.fi-cab-ed .fc-in{height:26px;margin:0;padding:0 7px;font:600 var(--f-12) var(--sans);color:var(--t-1);min-width:4ch}
-.fi-cab-ed .fc-in.mono{font:500 var(--f-12) var(--mono);min-width:6ch}
 /* une liste de la base (le type d'un câble) : sans la flèche du navigateur, qui mange la valeur ; elle s'ouvre en écrivant */
 .fi .fc-in[list]::-webkit-calendar-picker-indicator{display:none!important}
 .fi-ed.main .fc-in{color:var(--warn);font-weight:600}
-.fi-ed-u{font:500 var(--f-12) var(--sans);color:var(--t-2);margin-left:2px}
-.fi-ed-hyp{font:italic 500 var(--f-11) var(--sans);color:var(--t-2);margin-left:6px}
-.fi-ed-bout{display:inline-flex;align-items:center;gap:6px;min-width:0}
 /* le contact d'un bout, en puce : un clic ouvre les contacts que la table accepte */
 .fi-sertir.fi-ct-puce{display:inline-flex;align-items:center;gap:4px;height:24px;margin:0;padding:0 8px;border:1px solid var(--s-line-2);border-radius:var(--r-1);background:var(--s-surface);font:500 var(--f-11) var(--mono);color:var(--t-1);max-width:100%;transition:border-color var(--rapide),background var(--rapide)}
 .fi-sertir.fi-ct-puce:hover{border-color:var(--t-3);background:var(--s-surface)}
 .fi-sertir.fi-ct-puce.main{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,var(--s-line))}
 .fi-sertir.fi-ct-puce.ko{color:var(--ko);border-color:color-mix(in srgb,var(--ko) 40%,var(--s-line));background:var(--ko-soft)}
 .fi-sertir.fi-ct-puce i{font:700 var(--f-11) var(--sans);color:var(--ko)}
-.fi-pied-liste{padding-top:2px}
 /* une barre d'état, fine : elle se remplit de sa couleur contre ce qui est admis */
 .fi-barre{display:block;height:4px;border-radius:2px;background:var(--s-line);overflow:hidden;min-width:40px}
 .fi-barre i{display:block;height:100%;border-radius:2px;background:var(--t-3);transform-origin:left center;transition:width var(--moyen)}
@@ -522,6 +572,8 @@ button.fi-sertir:hover{background:var(--fi-voile-2)}
 .fi-mes.ko .fi-mes-v b{color:var(--ko)}
 .fi-mes.att .fi-mes-v b{color:var(--warn)}
 .fi-mes-v em{font-style:normal;font-size:var(--f-11);margin-left:4px}
+/* une valeur calculée sur des longueurs (ou un courant) supposés : en italique, comme dans le tableau des câbles */
+.fi-mes-v .supp,.fi-mes-v em.supp{font-style:italic}
 
 /* ─── LE RACCORD : une nomenclature nette par connecteur (ou par côté d'une prise) — une pièce par ligne, un filet entre ─── */
 .fi-hab{display:flex;flex-direction:column;gap:6px}
@@ -537,6 +589,13 @@ button.fi-sertir:hover{background:var(--fi-voile-2)}
 .fi-piece-ref{grid-area:ref;min-width:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font:600 var(--f-13) var(--mono);color:var(--t-1)}
 .fi-piece-ref .id{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fi-piece-ref .fc-in{font-weight:600;height:30px}
+/* la valeur qu'on change a l'allure de celle qu'on lit (l'audit : « une boîte grise pour l'une, nue pour l'autre ») : le
+   champ ne paraît qu'au survol de sa ligne, et à l'écriture */
+.fi-piece-ref .fc-in.nu{flex:0 1 auto;field-sizing:content;min-width:5ch;margin-left:-8px;background:none;border-color:transparent;font:600 var(--f-13) var(--mono)}
+.fi-piece:hover .fc-in.nu{background:var(--fi-voile)}
+.fi-piece .fc-in.nu:hover{background:var(--s-surface);border-color:var(--s-line-2)}
+.fi-piece .fc-in.nu:focus{background:var(--s-surface);border-color:var(--accent);box-shadow:var(--anneau)}
+.fi-piece-ref .fi-conf{margin-left:-2px}
 .fi-qte{font:500 var(--f-12) var(--sans);font-style:normal;color:var(--t-2);white-space:nowrap}
 .fi-piece-st{grid-area:st;font:600 var(--f-11)/1 var(--sans);padding:4px 8px;border-radius:999px;white-space:nowrap;color:var(--t-2);background:var(--fi-voile)}
 .fi-piece-st:empty{display:none}
@@ -561,28 +620,30 @@ button.fi-sertir:hover{background:var(--fi-voile-2)}
 .fi-opt-b:hover{color:var(--t-1)}
 .fi-opt-b[aria-pressed="true"]{background:var(--s-surface);color:var(--t-1);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.12),inset 0 0 0 1px var(--s-line)}
 
-/* ─── UN CÂBLE : de → vers, deux cartes qu'on prend en main (un clic ouvre l'équipement ; le contact du bout se change
-   d'un clic), la flèche à la couleur de la route entre elles ─── */
-.fi-trajet{display:grid;grid-template-columns:minmax(0,1fr) 26px minmax(0,1fr);align-items:stretch;gap:6px}
-.fi-trajet .fi-fleche{align-self:center}
-.fi-trajet+.fs-champs,.fi-trajet~.fs-champs{margin-top:2px}
-.fi-bout{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:0 0 12px;border:1px solid var(--s-line);border-radius:var(--r-2);background:var(--s-surface);min-width:0;transition:border-color var(--rapide),box-shadow var(--rapide)}
-.fi-bout:hover{border-color:var(--s-line-2);box-shadow:var(--sh-1)}
-.fi-bout.ko{border-color:color-mix(in srgb,var(--ko) 40%,var(--s-line))}
-.fi-bout-va{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:11px 28px 0 12px;border:none;background:none;border-radius:var(--r-2) var(--r-2) 0 0;cursor:pointer;text-align:left;min-width:0;color:inherit;font:inherit}
-.fi-bout-va:hover .fi-bout-rep b{text-decoration:underline;text-decoration-color:var(--t-3);text-underline-offset:3px}
+/* ─── UN CÂBLE : d'où à où, son CHEMIN — une étape par ligne (un bout, la barrette par laquelle il passe, l'autre bout) sur
+   un trait fin à la couleur de sa route, plus de deux cartes dans la carte (l'audit v72) ; un bout se prend en main (un
+   clic ouvre l'équipement, le contact allumé), le contact du bout en puce à sa droite ─── */
+.fi-chemin{list-style:none;margin:0;padding:0;position:relative;display:flex;flex-direction:column}
+.fi-chemin::before{content:"";position:absolute;left:5px;top:20px;bottom:20px;width:2px;border-radius:1px;background:linear-gradient(var(--route-voile),var(--route-voile)),var(--c,var(--t-3))}
+.fi-etape{position:relative;display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;min-height:40px;padding:4px 0 4px 22px}
+.fi-etape::before{content:"";position:absolute;left:1px;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:50%;background:var(--s-surface);box-shadow:inset 0 0 0 2px var(--c,var(--t-2))}
+.fi-etape.via{min-height:30px;font:500 var(--f-12)/1.35 var(--sans);color:var(--t-2)}
+.fi-etape.via::before{width:6px;height:6px;margin-top:-3px;left:3px;box-shadow:none;background:var(--c,var(--t-2))}
+.fi-etape.via span:not(.fi-bout-k){font-family:var(--mono);color:var(--t-1)}
+.fi-etape.via small{font:400 var(--f-11) var(--sans);color:var(--t-2)}
+.fi-etape.ko::before{box-shadow:inset 0 0 0 2px var(--ko)}
+.fi-bout-va{position:relative;flex:1 1 auto;display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px;min-width:0;margin:0 0 0 -8px;padding:5px 26px 5px 8px;border:none;background:none;border-radius:var(--r-1);cursor:pointer;text-align:left;color:inherit;font:inherit;transition:background var(--rapide)}
+.fi-bout-va:hover{background:var(--s-hover)}
 .fi-bout-va:hover .fi-bout-fl{color:var(--t-1);transform:translateX(2px)}
-.fi-bout-k{font:500 var(--f-11)/1.25 var(--sans);color:var(--t-2)}
-.fi-bout-rep{display:flex;align-items:baseline;gap:2px;max-width:100%;min-width:0}
-.fi-bout-rep b{font:600 17px var(--mono);letter-spacing:-.015em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fi-bout-k{flex:none;width:34px;font:500 var(--f-12)/1.25 var(--sans);color:var(--t-2)}
+.fi-bout-rep{display:flex;align-items:baseline;gap:1px;min-width:0}
+.fi-bout-rep b{font:600 var(--f-16) var(--mono);letter-spacing:-.015em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fi-bout-rep span{font:500 var(--f-13) var(--mono);color:var(--t-2)}
-.fi-bout small{font:500 var(--f-11)/1.45 var(--sans);color:var(--t-2);overflow:hidden;text-overflow:ellipsis;max-width:100%;white-space:nowrap}
-.fi-bout-fl{position:absolute;right:9px;top:12px;width:14px;height:14px;color:var(--t-3);transition:color var(--rapide),transform var(--rapide)}
-.fi-bout .fi-ct-puce{align-self:flex-start;margin:0 0 0 12px}
-.fi-bout-ko{margin:0 12px;color:var(--ko)!important;font-weight:600!important}
-.fi-fleche{height:2px;border-radius:1px;position:relative;background:linear-gradient(var(--route-voile),var(--route-voile)),var(--c,var(--t-1));color:var(--c,var(--t-1))}
-.fi-fleche::after{content:"";position:absolute;right:-1px;top:-4px;border:5px solid transparent;border-left:7px solid currentColor;border-right:0}
-
+.fi-bout-va small{font:500 var(--f-12)/1.35 var(--sans);color:var(--t-2);white-space:nowrap}
+.fi-bout-fl{position:absolute;right:6px;top:50%;width:14px;height:14px;margin-top:-7px;color:var(--t-3);transition:color var(--rapide),transform var(--rapide)}
+.fi-bout-ct{display:inline-flex;align-items:center;gap:6px;flex:none}
+.fi-bout-ko{color:var(--ko);font:600 var(--f-12) var(--sans)}
+.fi-chemin+.fs-champs,.fi-chemin~.fs-champs{margin-top:6px}
 /* ─── UNE PRISE : chaque contact, la fiche à gauche, l'embase à droite ─── */
 .ct-legende-paire,.ct-paire{grid-template-columns:48px minmax(0,1fr) minmax(0,1fr)}
 .ct-legende-paire span:nth-child(n+2){justify-self:center}
@@ -704,7 +765,7 @@ details.fs:last-of-type{margin-bottom:var(--sp-5)}
 .ix-item.co-item{grid-template-columns:30px minmax(0,1fr) auto;align-items:start}
 .ix-item.co-item small{white-space:normal;line-height:1.45}
 .ix-item.co-item b em{font:500 var(--f-11) var(--sans);color:var(--t-2);margin-left:8px}
-.co-code{display:grid;place-items:center;height:22px;margin-top:1px;border-radius:var(--r-1);background:var(--fi-voile);font:500 10px var(--mono);letter-spacing:.02em;color:var(--t-2)}
+.co-code{display:grid;place-items:center;height:22px;margin-top:1px;border-radius:var(--r-1);background:var(--fi-voile);font:500 var(--f-11) var(--mono);letter-spacing:.02em;color:var(--t-2)}
 .co-code svg.ico{width:13px;height:13px}
 .ix-folio{font:500 var(--f-11) var(--mono);color:var(--t-3);background:none;padding:2px 0 2px 8px;white-space:nowrap}
 .ix-item:hover .ix-folio{color:var(--t-2)}
@@ -723,7 +784,6 @@ details.fs:last-of-type{margin-bottom:var(--sp-5)}
   .fi-nom{font-size:var(--f-20)}
   .fi-faces.deux{grid-template-columns:1fr}
   .fi-x{width:40px;height:40px}
-  .cb-jauges,.fi-cab-ed{padding-left:0}
 }
 @media (pointer:coarse){
   .fi-bouton{height:40px}
