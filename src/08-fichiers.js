@@ -299,6 +299,8 @@ function ajouterAuContrat(L, quoi) { histPush(quoi); const V = verite(), plan = 
    (08-bibliotheque), à la demande (le menu Plus, la bibliothèque), jamais d'office. `neuf` : sans historique (l'API de
    contrôle, `atelier.exemple()`, le pose comme si on venait de l'ouvrir). */
 function ouvrirExemple(neuf) { chargerContrat(contratExemple(), 'contrat d’exemple', NOM_EXEMPLE, { planId: ID_EXEMPLE }); app.contrat.charges = chargesExemple(); rendreControle();
+  // les profils changent le calibre retenu : le folio le repeint (sinon il dit le 10 A du retest, la fiche le 15 A — audit v72)
+  if (typeof peindre === 'function') peindre();
   if (neuf) app.hist = []; synchroniser(); sauver(); }
 
 /* ---- les contrats déjà faits : déposer, puis prendre la main ------------------------------------------------------ */

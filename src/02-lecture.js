@@ -79,9 +79,11 @@ function categorie(cell) {
   if (/route|cheminement|chemin|tray|parcours|trajet|passage/.test(n)) return 'route';
   if (/^t\s*\/?\s*g$|gauge|((type|section)(?!.*equip))/.test(n) && !/equip/.test(n)) return 'type';
   if (/cable/.test(n)) return 'cable';
+  // « Fil », « N° de fil », « Wire » : le numéro du câble (pas un part number — audit v72 : il partait dans le PN)
+  if (/^(n[o°]?\s*(de\s*)?)?fils?\b|^wire\b/.test(n)) return 'cable';
   if (/equip|device|^dev\d?$|^de$|from|depart|source|origine|vers|^to$|arrivee|destination|^rep$|repere/.test(n) && !/cable/.test(n)) return 'eq';
   if (/borne|term|broche|pin(?!\d*$)|^pin\d?$/.test(n) && !/^pn/.test(n)) return 'borne';
-  if (/^pn\d?$|potentiel|^pot$|^fil|wire/.test(n)) return 'pn';
+  if (/^pn\d?$|potentiel|^pot$/.test(n)) return 'pn';
   return null;
 }
 function ressembleAUnEntete(cells) {
