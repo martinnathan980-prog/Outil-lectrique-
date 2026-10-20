@@ -33,6 +33,15 @@ node tests/retouche.js         un bloc se déplace à la vraie souris dans tous 
                                à poser glisse dans sa goulotte ; un fil : sa verticale de piste en piste, jusque dans une autre
                                goulotte, son couloir de haut en bas (à travers un bloc : rouge, puis au plus près) — chaque prise
                                annoncée au survol (curseur, ce qui s'allume), ↺ ou double-clic la rend au moteur, Ctrl+Z la défait
+node tests/dessin.js           LE FOLIO ET LE GESTE SUR LE PLAN (l'audit du dessin v72), à la vraie souris : un bloc choisi garde ses
+                               crochets et sa pleine encre quand on en survole un autre (qui se marque à peine) ; les numéros des câbles
+                               éteints reculent, le trait allumé garde 2,4 px d'écran à tout zoom et va jusqu'aux bornes, une barrette à
+                               poser s'allume avec son câble, une masse par sa place ; « Ajuster » (bouton, 0) alterne la feuille et le
+                               dessin, les crans du zoom, 1 = 100 %, 2 = 200 %, le plancher et le plafond, chaque folio garde sa vue (même
+                               rechargé), le folio se garde, la recherche arrive lisible, les traits « loin » ; le bouton du milieu et
+                               Espace déplacent la vue, jamais un bloc, le curseur le dit ; le cartouche d'un folio FWD ; les renvois en
+                               drapeaux, leur clic (l'autre moitié choisie, lisible) et Alt+← ; la bulle d'un câble, d'un bloc, la
+                               référence croisée ; choisir un bloc ne réécrit plus le folio ; l'export sans quadrillage
 node tests/relief.js           la vue en relief de chaque barrette (modules E0599) et prise de l'exemple : un fil par contact pris, aucune étiquette
                                sur une autre, tourner, survoler, Échap, double-clic
 node tests/interface.js        à la vraie souris (grand écran, téléphone) : la fiche épurée dans l'inspecteur, le tableau en

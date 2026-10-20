@@ -36,6 +36,14 @@ const FS_FIL = 6.4;                 // le numéro d'un fil
 const CAR = 0.60;                   // la chasse d'un caractère, en part du corps
 const largeurTexte = (n, fs, ls) => n * (CAR * fs + (ls || 0));
 
+/* LE STYLE DU FOLIO. Les encres secondes (les zones, les intitulés du cartouche, les désignations) sont assez sombres pour
+   des textes de 4 à 8 px (l'audit v72 : 2,5:1 à 3,7:1 sur le blanc, elles passent à 4,5:1 et plus) ; le cadre de la
+   feuille est un trait net. Le FOCUS (un bloc, un câble allumé) : tout le reste RECULE d'un pas — les câbles, leurs
+   numéros et leurs fonds, les blocs, les barrettes à poser — et ce qui est allumé s'allume EN ENTIER : son trait, son
+   numéro (en gras), le bout de câble dessiné dans chaque bloc (`data-i`) ; le trait allumé garde 2,4 px d'écran à tout
+   zoom (un feutre de 6 px à 200 % masquait le dessin). Ce qu'on SURVOLE pendant qu'un objet est choisi se marque à peine
+   (`.sv`) : le choix reste plein. LOIN (un trait de câble sous le pixel d'écran) : les traits s'épaississent, les routes
+   gardent leur couleur. */
 function styleDessin() {
   return `<defs>
    <pattern id="gfine" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M25 0H0V25" fill="none" stroke="#eef1f5" stroke-width=".8"/></pattern>
@@ -43,17 +51,18 @@ function styleDessin() {
      text{font-family:ui-monospace,Menlo,Consolas,monospace}
      .sym{fill:none;stroke:#1b2430;stroke-width:1;stroke-linecap:round;stroke-linejoin:round}
      .dot-fix{fill:#1b2430;stroke:none}
-     .cab{fill:none;stroke:#26323f;stroke-width:.95;stroke-linecap:round;stroke-linejoin:round;transition:opacity .12s,stroke-width .12s}
+     .cab{fill:none;stroke:#26323f;stroke-width:.95;stroke-linecap:round;stroke-linejoin:round;transition:opacity .12s}
      .jn{fill:#1b2430;stroke:none}
      .earth{fill:none;stroke:#1b2430;stroke-width:1.1;stroke-linecap:butt}
      .rep{fill:#111b25;font-weight:500;font-size:10px;letter-spacing:1.15px}
      .rep-big{fill:#111b25;font-weight:500;font-size:10.5px;letter-spacing:1.15px}
      .rep-strip{fill:#111b25;font-weight:500;font-size:9px;letter-spacing:1px}
-     .des{fill:#6b7885;font-size:6.8px;font-weight:400;letter-spacing:.4px}
+     .des{fill:#4d5965;font-size:6.8px;font-weight:400;letter-spacing:.4px}
+     .xref{fill:#4d5965;font-size:6.2px;font-weight:600;letter-spacing:.3px}
      .body{fill:#ffffff;stroke:#1b2430;stroke-width:1}
      .bstrip{fill:#ffffff;stroke:#1b2430;stroke-width:.7}
      .bcell{fill:#ffffff;stroke:#1b2430;stroke-width:.55}
-     .bsname{fill:#7a8794;font-size:6.5px;font-weight:600;letter-spacing:.9px}
+     .bsname{fill:#5f6b77;font-size:6.5px;font-weight:600;letter-spacing:.9px}
      .pinlbl{fill:#2b3743;font-size:7.5px;font-weight:500;letter-spacing:.2px}
      .filnum{fill:#0b0f14;font-size:${FS_FIL}px;font-weight:500;letter-spacing:.1px}
      .halo{fill:#ffffff;stroke:none}
@@ -75,19 +84,24 @@ function styleDessin() {
      .rep-petit{fill:#111b25;font-size:5.6px;font-weight:600;letter-spacing:.35px}
      .rpill{fill:#ffffff;stroke:#8f9ba6;stroke-width:.8}
      .rname{fill:#2b3743;font-weight:600;font-size:7.5px;letter-spacing:.6px}
-     .frame{fill:none;stroke:#c2ccd5;stroke-width:.8}
-     .zline{stroke:#d8dee4;stroke-width:.7}
-     .zone{fill:#9aa5b1;font-size:8px;font-weight:600;letter-spacing:.5px}
+     .frame{fill:none;stroke:#8f9ba6;stroke-width:1.2}
+     .zline{stroke:#c2ccd5;stroke-width:.7}
+     .zone{fill:#6f7b87;font-size:8px;font-weight:600;letter-spacing:.5px}
      .cbord{fill:none;stroke:#1b2430;stroke-width:1.2}
      .cfond{fill:#f2f4f6;stroke:none}
      .cdiv{stroke:#aab4be;stroke-width:.7}
-     .carth{fill:#7d8893;font-size:6px;font-weight:700;letter-spacing:.9px}
+     .carth{fill:#5f6b77;font-size:6px;font-weight:700;letter-spacing:.9px}
      .cartx{fill:#111b25;font-size:8.5px;font-weight:600}
      .cartT{fill:#0b1118;font-size:13px;font-weight:700;letter-spacing:.4px}
      .cartF{fill:#0b1118;font-size:18px;font-weight:700;letter-spacing:.6px}
-     .cartA{fill:#7d8893;font-size:6.5px;font-weight:700;letter-spacing:1.6px}
+     .cartD{fill:#0b1118;font-size:9.5px;font-weight:700;letter-spacing:.3px}
+     .cartA{fill:#5f6b77;font-size:6.5px;font-weight:700;letter-spacing:1.6px}
      .legnom{fill:#111b25;font-size:8px;font-weight:700;letter-spacing:.3px}
-     .legn{fill:#7d8893;font-size:7px;font-weight:600}
+     .legn{fill:#5f6b77;font-size:7px;font-weight:600}
+     .drapeau{fill:#ffffff;stroke:#1b2430;stroke-width:.9;stroke-linejoin:round}
+     .dr-f{fill:#1b2430;font-size:7.5px;font-weight:700;letter-spacing:.3px}
+     .dr-ou{fill:#2b3743;font-size:7px;font-weight:500}
+     .renvoi:hover .drapeau{fill:#1b2430}
      .cb-arc,.cb-bouton{fill:none;stroke:#1d1d1f;stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round}
      .cb-borne{fill:#ffffff;stroke:#1d1d1f;stroke-width:1}
      .cb-lien{fill:none;stroke:#1d1d1f;stroke-width:.8;stroke-dasharray:2.4 1.8;stroke-linecap:butt}
@@ -95,12 +109,18 @@ function styleDessin() {
      .cb-zone{fill:#ffffff;fill-opacity:0;stroke:none}
      .selbox{fill:none;stroke:#1d1d1f;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
      .comp{cursor:pointer;transition:opacity .12s}
+     .loin .cab,.loin .lead,.loin .earth{stroke-width:1.6}
+     .loin .body,.loin .conn,.loin .cb-arc,.loin .cb-bouton,.loin .embase,.loin .fiche{stroke-width:1.5}
      .focus .cab,.focus .jn{opacity:.10}
-     .focus .comp{opacity:.28}
-     .focus .cab.hl{opacity:1;stroke-width:2.9}
-     .focus .comp.hl{opacity:1}
-     .focus .vt{opacity:.28}
-     .focus .vt.hl{opacity:1}
+     .focus .comp,.focus .vt{opacity:.28}
+     .focus .filnum,.focus .halo{opacity:.2}
+     .focus .cab.hl{opacity:1;stroke-width:2.4px;vector-effect:non-scaling-stroke}
+     .focus .comp.hl,.focus .vt.hl,.focus .filnum.hl,.focus .halo.hl{opacity:1}
+     .focus .filnum.hl{font-weight:700}
+     .focus .comp .lead.hl,.focus .comp .earth.hl{stroke-width:2.4px;vector-effect:non-scaling-stroke}
+     .focus .comp.hl .lead[data-i]:not(.hl),.focus .comp.hl .earth[data-i]:not(.hl){opacity:.22}
+     .focus .comp.sv{opacity:.62}
+     .focus .cab.sv,.focus .filnum.sv,.focus .halo.sv{opacity:.55}
    </style></defs>`;
 }
 
@@ -154,25 +174,44 @@ function feuilleDeReference(cartouche, folio, legende) {
    épais de la couleur de chaque route, son nom, combien de fils elle porte
    sur ce folio (quatre routes par colonne, les colonnes s'ajoutent vers la
    gauche). Un fil sans route reste à l'encre (« sans route ») ; pas de
-   légende quand aucun fil n'a de route. */
+   légende quand aucun fil n'a de route.
+   LE FOLIO : `folio` est { rang, total, nom } (l'interface) ou une chaîne « 3 / 6 ». La case dit le RANG (« 3 / 6 ») ;
+   un folio qui porte un nom à lui — les folios du lecteur sont des DESSINS FWD (« PL0042A78150003A ») — l'écrit sur une
+   ligne sous le titre (« DESSIN … ») : écrit dans la case, il passait sur VOLTA et sortait de la feuille (audit v72).
+   Tout texte du cartouche se réduit pour tenir dans sa case ; la géométrie (CART_H, les largeurs) ne bouge pas. */
 const CART_H = 84, CART_HAUT = 48, CART_FOLIO = 96, CART_TITRE = 264, LEG_COLONNE = 164, LEG_PAR_COLONNE = 4, LEG_LIGNE = 14.5;
+// le corps qui fait tenir `t` dans W (moins une marge de 12), jamais plus de fs ; en dessous de `min`, le texte se coupe
+const corpsQuiTient = (t, fs, W, ls) => Math.min(fs, ((W - 12) / Math.max(1, String(t).length) - (ls || 0)) / CAR);
+function texteQuiTient(cls, x, y, t, fs, W, ls, a) { const k = corpsQuiTient(t, fs, W, ls), min = Math.min(fs, 5);
+  const v = k >= min ? String(t) : clip(t, Math.max(3, Math.floor((W - 12) / (CAR * min + (ls || 0)))));
+  return `<text class="${cls}"${k < fs ? ` style="font-size:${f1(Math.max(k, min))}px"` : ''} x="${f1(x)}" y="${f1(y)}"${a ? ` text-anchor="${a}"` : ''}>${esc(v)}</text>`; }
+function folioDuCartouche(folio) {
+  if (folio && typeof folio === 'object') return { rang: String(folio.rang || 1), total: String(folio.total || 1), nom: folio.nom != null ? String(folio.nom) : '' };
+  const m = /^\s*(.*?)\s*\/\s*(\d+)\s*$/.exec(String(folio || '1 / 1'));
+  return m ? { rang: m[1], total: m[2], nom: '' } : { rang: String(folio), total: '', nom: '' }; }
 function cartoucheSvg(rx, by, c, folio, legende) {
   const routes = legende && legende.length ? legende : [], nCol = Math.ceil(routes.length / LEG_PAR_COLONNE);
   const W = CART_FOLIO + CART_TITRE + nCol * LEG_COLONNE, x = rx - W, y = by - CART_H, xT = rx - CART_FOLIO - CART_TITRE, xF = rx - CART_FOLIO, yB = y + CART_HAUT;
   const trait = (a, b, c2, d) => `<line class="cdiv" x1="${f1(a)}" y1="${f1(b)}" x2="${f1(c2)}" y2="${f1(d)}"/>`;
+  const F = folioDuCartouche(folio), dessin = F.nom && F.nom !== F.rang ? F.nom : '';
   let s = `<rect class="cfond" x="${f1(xF)}" y="${f1(y)}" width="${CART_FOLIO}" height="${CART_HAUT}"/>`;
   // les cases : titre et folio en haut ; dessiné, date, échelle, indice en bas ; chaque colonne de la légende
   s += trait(xT, yB, rx, yB) + trait(xF, y, xF, by) + trait(xT + 88, yB, xT + 88, by) + trait(xT + 176, yB, xT + 176, by);
   for (let k = 0; k < nCol; k++) s += trait(xT - k * LEG_COLONNE, y, xT - k * LEG_COLONNE, by);
-  const champ = (cx, cy, h, v, n) => `<text class="carth" x="${f1(cx)}" y="${f1(cy)}">${h}</text><text class="cartx" x="${f1(cx)}" y="${f1(cy + 15)}">${esc(clip(v || '—', n))}</text>`;
-  s += champ(xT + 10, yB + 12, 'DESSINÉ', c.auteur, 12) + champ(xT + 98, yB + 12, 'DATE', c.date, 12) + champ(xT + 186, yB + 12, 'ÉCHELLE', c.echelle, 11) + champ(xF + 10, yB + 12, 'INDICE', c.indice, 11);
+  const champ = (cx, cy, h, v, w) => `<text class="carth" x="${f1(cx)}" y="${f1(cy)}">${h}</text>` + texteQuiTient('cartx', cx, cy + 15, v || '—', 8.5, w);
+  // l'échelle : la feuille n'est pas à l'échelle — « sans », plutôt qu'un tiret qui ne dit rien
+  const echelle = !c.echelle || /^[—–-]$/.test(String(c.echelle).trim()) ? 'sans' : c.echelle;
+  s += champ(xT + 10, yB + 12, 'DESSINÉ', c.auteur, 88) + champ(xT + 98, yB + 12, 'DATE', c.date, 88) + champ(xT + 186, yB + 12, 'ÉCHELLE', echelle, 78) + champ(xF + 10, yB + 12, 'INDICE', c.indice, 86);
   s += `<text class="carth" x="${f1(xT + 10)}" y="${f1(y + 13)}">TITRE</text><text class="cartA" x="${f1(xF - 10)}" y="${f1(y + 13)}" text-anchor="end">VOLTA</text>`;
-  s += `<text class="cartT" x="${f1(xT + 10)}" y="${f1(y + 36)}">${esc(clip(c.titre || '—', 30))}</text>`;
-  s += `<text class="carth" x="${f1(xF + 10)}" y="${f1(y + 13)}">FOLIO</text><text class="cartF" x="${f1(xF + CART_FOLIO / 2)}" y="${f1(y + 39)}" text-anchor="middle">${esc(folio || '1 / 1')}</text>`;
-  // la légende des routes, colonne après colonne vers la gauche
+  if (dessin) { s += texteQuiTient('cartT', xT + 10, y + 27.5, c.titre || '—', 11, CART_TITRE, 0.4);
+    s += `<text class="carth" x="${f1(xT + 10)}" y="${f1(y + 41.5)}">DESSIN</text>` + texteQuiTient('cartD', xT + 50, y + 42, dessin, 9.5, CART_TITRE - 44, 0.3); }
+  else s += texteQuiTient('cartT', xT + 10, y + 36, c.titre || '—', 13, CART_TITRE, 0.4);
+  s += `<text class="carth" x="${f1(xF + 10)}" y="${f1(y + 13)}">FOLIO</text>` + texteQuiTient('cartF', xF + CART_FOLIO / 2, y + 39, F.total ? F.rang + ' / ' + F.total : F.rang, 18, CART_FOLIO, 0.6, 'middle');
+  // la légende des routes, colonne après colonne vers la gauche ; le nom de la route s'arrête avant son compte
   routes.forEach((r, i) => { const k = Math.floor(i / LEG_PAR_COLONNE), cx = xT - (nCol - k) * LEG_COLONNE + 10, cy = y + 30 + (i % LEG_PAR_COLONNE) * LEG_LIGNE;
+    const n = r.n + ' câble' + (r.n > 1 ? 's' : ''), place = LEG_COLONNE - 20 - 32 - largeurTexte(n.length, 7, 0) - 4;
     s += `<line x1="${f1(cx)}" y1="${f1(cy - 3)}" x2="${f1(cx + 24)}" y2="${f1(cy - 3)}" style="stroke:${r.couleur || '#26323f'};stroke-width:3.2;stroke-linecap:round"/>`;
-    s += `<text class="legnom" x="${f1(cx + 32)}" y="${f1(cy)}">${esc(clip(r.route || 'sans route', 15))}</text><text class="legn" x="${f1(cx + LEG_COLONNE - 20)}" y="${f1(cy)}" text-anchor="end">${r.n} fil${r.n > 1 ? 's' : ''}</text>`; });
+    s += `<text class="legnom" x="${f1(cx + 32)}" y="${f1(cy)}">${esc(clip(r.route || 'sans route', Math.max(4, Math.floor(place / (CAR * 8 + 0.3)))))}</text><text class="legn" x="${f1(cx + LEG_COLONNE - 20)}" y="${f1(cy)}" text-anchor="end">${n}</text>`; });
   if (nCol) s += `<text class="carth" x="${f1(x + 10)}" y="${f1(y + 13)}">ROUTES</text>`;
   return s + `<rect class="cbord" x="${f1(x)}" y="${f1(y)}" width="${f1(W)}" height="${CART_H}"/>`;
 }
@@ -222,8 +261,11 @@ const bornesDePiquage = b => (b.bornes || [{ y: b.py }, ...(b.gardes || [])]).fi
   .sort((u, v) => u.y - v.y).map((p, i) => ({ ...p, n: p.n != null ? p.n : i + 1 }));
 function piquagesSvg(barrettes, piquages, verticaux, couleurBout, choisi) {
   let s = '';
-  (barrettes.raccords || []).forEach(r => { const c = couleurBout && (couleurBout(r.x0, r.y) || couleurBout(r.x1, r.y));
-    s += `<path class="cab"${styleTrait(c)} d="${cheminAvecPonts([{ x: r.x0, y: r.y }, { x: r.x1, y: r.y }], verticaux)}"/>`; });
+  /* le raccord d'une borne à sa barrette à poser (le câble à créer) : du câble, à la couleur de la route ; il porte le
+     repère de sa barrette (`data-vt`) pour s'allumer avec les câbles qui en partent */
+  (barrettes.raccords || []).forEach(r => { const c = couleurBout && (couleurDuBout(couleurBout(r.x0, r.y)) || couleurDuBout(couleurBout(r.x1, r.y)));
+    const b = barrettes.find(b => b.nomVT && Math.abs(b.py - r.y) < 0.6 && (Math.abs(b.x - r.x1) < 0.6 || Math.abs(b.x - r.x0) < 0.6));
+    s += `<path class="cab"${b ? ` data-vt="${escA(b.nomVT)}"` : ''}${styleTrait(c)} d="${cheminAvecPonts([{ x: r.x0, y: r.y }, { x: r.x1, y: r.y }], verticaux)}"/>`; });
   barrettes.forEach(b => {
     /* Une BARRETTE À POSER (05) se dessine comme toute barrette : la ligne pointillée, une pastille numérotée par borne —
        une par fil, le raccord compris, jamais deux au même niveau — et son repère provisoire dessous (VT1, VT2…). */
@@ -231,10 +273,13 @@ function piquagesSvg(barrettes, piquages, verticaux, couleurBout, choisi) {
     s += `<g class="vt${sel ? ' sel' : ''}"${b.nomVT ? ` data-vt="${escA(b.nomVT)}"` : ''}><line class="barre" x1="${f1(b.x)}" y1="${f1(y0)}" x2="${f1(b.x)}" y2="${f1(y1)}"/>`;
     bs.forEach(p => { s += pastilleSvg(b.x, p.y, String(p.n)); });
     if (b.nomVT) { const r = b.repere || { x: b.x, y: y1 + 11, a: 'middle' }; s += `<text class="rep-petit" x="${f1(r.x)}" y="${f1(r.y)}" text-anchor="${r.a}">${esc(b.nomVT)}</text>`; }
-    if (sel) s += coins('selbox', 5, 12, y1 - y0 + 8).replace('<path ', `<path transform="translate(${f1(b.x - 6)} ${f1(y0 - 4)})" `);
+    if (sel) s += crochetsDeBarrette(b);
     s += '</g>'; });
   return s;
 }
+// les crochets d'une barrette à poser choisie, autour de sa ligne
+function crochetsDeBarrette(b) { const bs = bornesDePiquage(b), y0 = bs[0].y, y1 = bs[bs.length - 1].y;
+  return coins('selbox', 5, 12, y1 - y0 + 8).replace('<path ', `<path transform="translate(${f1(b.x - 6)} ${f1(y0 - 4)})" `); }
 /* Une borne de barrette : un point noir sur la ligne, comme d'habitude, son
    numéro dedans en blanc. Le point grandit avec le numéro ; sur une même
    réglette, tous les points ont la taille du plus grand. */
@@ -247,6 +292,18 @@ function couleursDesBouts(fils, couleurDe) { const m = new Map(), cle = (x, y) =
   if (couleurDe) fils.forEach(w => { if (w.shunt) return; const c = couleurDe(w); if (!c) return;
     [w.epA, w.epB, w.pts[0], w.pts[w.pts.length - 1]].forEach(ep => { if (ep && !m.has(cle(ep.x, ep.y))) m.set(cle(ep.x, ep.y), c); }); });
   return (x, y) => m.get(cle(x, y)) || null; }
+/* LES BOUTS, avec leurs fils : à chaque bout (une borne, un port), la couleur de sa route et le ou les fils qui y arrivent
+   (`i` : les indices ; un piquage en porte plusieurs). Le bout de fil dessiné dans un bloc les porte (`data-i`) : il
+   s'allume avec son fil, jusqu'à la borne — l'audit v72 : « la surbrillance s'arrête au bord du bloc ». */
+function boutsDesFils(fils, couleurDe) { const m = new Map(), cle = (x, y) => Math.round(x * 2) + ',' + Math.round(y * 2);
+  fils.forEach(w => { if (w.shunt) return; const c = couleurDe ? couleurDe(w) : null;
+    [w.epA, w.epB, w.pts[0], w.pts[w.pts.length - 1]].forEach(ep => { if (!ep) return; const k = cle(ep.x, ep.y), b = m.get(k) || m.set(k, { c: null, i: [] }).get(k);
+      if (c && !b.c) b.c = c; if (!b.i.includes(w.i)) b.i.push(w.i); }); });
+  return (x, y) => m.get(cle(x, y)) || null; }
+// un bout : une couleur (une chaîne, `couleursDesBouts`) ou { c, i } (`boutsDesFils`) ; sa couleur, ses attributs
+const couleurDuBout = b => !b ? null : typeof b === 'string' ? b : b.c || null;
+const indicesDuBout = b => b && typeof b === 'object' && b.i && b.i.length ? ` data-i="${b.i.join(' ')}"` : '';
+const traitDe = b => indicesDuBout(b) + styleTrait(couleurDuBout(b));
 function pastilleSvg(x, y, etiq, r) {
   return `<circle class="bpast" cx="${f1(x)}" cy="${f1(y)}" r="${r || R_PASTILLE(etiq)}"/><text class="bpnum" x="${f1(x)}" y="${f1(y + 1.45)}" text-anchor="middle">${esc(etiq)}</text>`;
 }
@@ -378,13 +435,13 @@ function reperesDeFil(fils, verticaux, barrettes, occ) {
     // un fil qui n'est qu'un raccord vers un piquage a, sur la verticale du piquage, un tronçon à lui seul
     if (!vs.length && w.pts.length) { const t = tronconDePiquage(w, barrettes || []); if (t) vs.push({ L: t.vL, x: t.vx, y0: t.vy0, y1: t.vy1, piquage: true }); }
     hs.sort((u, v) => v.L - u.L); vs.sort((u, v) => v.L - u.L);
-    cands.push({ nom, L: hs.length ? hs[0].L : 0, hs, vs }); });
+    cands.push({ nom, L: hs.length ? hs[0].L : 0, hs, vs, i: w.i }); });
   cands.sort((a, b) => b.L - a.L);
   let out = '';
   /* un fil court (une masse collée à sa borne) garde son numéro : il peut
      déborder de quelques unités, mais pas sur le symbole — l'occupation le
      repousse vers l'équipement, où le flanc est vide */
-  cands.forEach(c => { const larg = largeurTexte(c.nom.length, fs, 0.1);
+  cands.forEach(c => { const larg = largeurTexte(c.nom.length, fs, 0.1), di = c.i != null ? ` data-i="${c.i}"` : '';   // le numéro et son fond sont à leur fil
     let pose = null;
     /* le numéro s'écrit DANS le fil, centré sur son axe (un fond de papier l'isole) : c'est ainsi qu'on sait que c'est le
        bon fil ; s'il n'y a pas la place à cette hauteur, au-dessus. `ecart` : où va le bas de la boîte du texte par rapport
@@ -401,8 +458,8 @@ function reperesDeFil(fils, verticaux, barrettes, occ) {
             if (occ.libre({ x0, y0, x1, y1 }, R_PONT + 1, null, sien)) { pose = { cx, x0, y0, x1, y1, dedans: sien != null }; break; } } } } }
     if (pose) { occ.poser(pose); const ym = (pose.y0 + pose.y1) / 2;   // le milieu de la boîte : l'axe du fil quand il est dedans
       // dans le fil : un fond de papier coupe le trait sous le numéro, le fil repart de part et d'autre
-      if (pose.dedans) out += `<rect class="halo" x="${f1(pose.x0 - 1.2)}" y="${f1(ym - HALO)}" width="${f1(pose.x1 - pose.x0 + 2.4)}" height="${f1(2 * HALO)}"/>`;
-      out += `<text class="filnum" x="${f1(pose.cx)}" y="${f1(ym + AXE)}" text-anchor="middle">${esc(c.nom)}</text>`; return; }
+      if (pose.dedans) out += `<rect class="halo"${di} x="${f1(pose.x0 - 1.2)}" y="${f1(ym - HALO)}" width="${f1(pose.x1 - pose.x0 + 2.4)}" height="${f1(2 * HALO)}"/>`;
+      out += `<text class="filnum"${di} x="${f1(pose.cx)}" y="${f1(ym + AXE)}" text-anchor="middle">${esc(c.nom)}</text>`; return; }
     /* pas de place à l'horizontale : le numéro se lit debout, sur un vertical — centré sur son axe, le trait coupé derrière
        lui de même (tourné d'un quart de tour, sa ligne de base est à droite du trait, à AXE). Le pointillé d'une barrette
        n'est pas le fil : sur le tronçon d'un piquage, le numéro se lit à côté, à gauche du pointillé */
@@ -411,8 +468,8 @@ function reperesDeFil(fils, verticaux, barrettes, occ) {
       for (let d = 0; d <= dmax + 0.01; d += 3) for (const cy of (d === 0 ? [mid] : [mid - d, mid + d])) {
         const y0 = cy - larg / 2, y1 = cy + larg / 2; if (!occ.libre({ x0, y0, x1, y1 }, 0.5, null, null, sur ? v.x : null)) continue;
         occ.poser({ x0, y0, x1, y1 });
-        if (sur) out += `<rect class="halo" x="${f1(v.x - HALO)}" y="${f1(y0 - 1.2)}" width="${f1(2 * HALO)}" height="${f1(larg + 2.4)}"/>`;
-        out += `<text class="filnum" transform="rotate(-90 ${f1(xb)} ${f1(cy)})" x="${f1(xb)}" y="${f1(cy)}" text-anchor="middle">${esc(c.nom)}</text>`; return; } } });
+        if (sur) out += `<rect class="halo"${di} x="${f1(v.x - HALO)}" y="${f1(y0 - 1.2)}" width="${f1(2 * HALO)}" height="${f1(larg + 2.4)}"/>`;
+        out += `<text class="filnum"${di} transform="rotate(-90 ${f1(xb)} ${f1(cy)})" x="${f1(xb)}" y="${f1(cy)}" text-anchor="middle">${esc(c.nom)}</text>`; return; } } });
   return out;
 }
 /* Sur la verticale d'un piquage, le tronçon entre la borne d'un fil et le
@@ -438,7 +495,7 @@ function bornesSvg(xCorps, dir, prof, rangs, baseY, connecteurDe, couleurA) {
   rangs.forEach(p => { const y = p.y - baseY, xo = xCorps + dir * prof, c = connecteurDe ? connecteurDe(p.etiq) : null;
     // dans un connecteur, le fil s'arrête sur le connecteur ; sinon il va jusqu'au corps — à la couleur de son fil
     const xb = c ? xCorps + dir * CONN_W : xCorps;
-    out += `<line class="lead"${styleTrait(couleurA && couleurA(p.y))} x1="${f1(xo)}" y1="${f1(y)}" x2="${f1(xb)}" y2="${f1(y)}"/>`;
+    out += `<line class="lead"${traitDe(couleurA && couleurA(p.y))} x1="${f1(xo)}" y1="${f1(y)}" x2="${f1(xb)}" y2="${f1(y)}"/>`;
     if (!p.etiq) return;
     if (c) out += `<text class="connpin" x="${f1(xCorps + dir * CONN_W / 2)}" y="${f1(y + 2)}" text-anchor="middle">${esc(clip(etiquetteDansConnecteur(p.etiq, c.nom), 4))}</text>`;
     else out += `<text class="pinlbl" x="${f1(xCorps - dir * 4)}" y="${f1(y + 2.6)}" text-anchor="${dir > 0 ? 'end' : 'start'}">${esc(clip(String(p.etiq), 5))}</text>`; });
@@ -487,8 +544,20 @@ function pieceCollee(x, y, w, h, dir, r) {
 function repereSvg(cls, x, y, nom, bw, marge) {
   const fs = Math.max(7, Math.min(10.5, (bw - 2 * marge) / (0.66 * nom.length)));
   return `<text class="${cls}" style="font-size:${f1(fs)}px" x="${f1(x)}" y="${f1(y)}" text-anchor="middle">${esc(nom)}</text>`; }
-function coins(cls, m, w, h) { const X = -m, Y = -m, W = w + 2 * m, H = h + 2 * m, k = Math.max(6, Math.min(16, h / 4));
+function coins(cls, m, w, h) { const X = -m, Y = -m, W = w + 2 * m, H = h + 2 * m, k = Math.min(Math.max(6, Math.min(16, h / 4)), W / 2 - 2, H / 2 - 2);
   return `<path class="${cls}" d="M${f1(X)} ${f1(Y + k)} L${f1(X)} ${f1(Y)} L${f1(X + k)} ${f1(Y)} M${f1(X + W - k)} ${f1(Y)} L${f1(X + W)} ${f1(Y)} L${f1(X + W)} ${f1(Y + k)} M${f1(X + W)} ${f1(Y + H - k)} L${f1(X + W)} ${f1(Y + H)} L${f1(X + W - k)} ${f1(Y + H)} M${f1(X + k)} ${f1(Y + H)} L${f1(X)} ${f1(Y + H)} L${f1(X)} ${f1(Y + H - k)}"/>`; }
+
+/* LES CROCHETS du bloc choisi, en coordonnées du bloc : autour de son SYMBOLE. Pour une réglette (une barrette, une prise
+   de coupure), autour de la réglette seule — les amenées ne sont pas le symbole, et les coins tombaient sur les fils, loin
+   de lui (audit v72) ; pour tout autre bloc, sa boîte. */
+function boiteDuSymbole(c) {
+  const bw = c.w - c.lw - c.rw, mid = c.lw + bw / 2;
+  if (c.kind === 'strip' && estCoupure(c.name)) return { x: mid - 7.5, y: 0, w: 15, h: c.h };
+  if (c.kind === 'strip') { const ys = (c.rangs.S || []).map(p => p.y - c.y), yh = (ys.length ? Math.min(...ys) : c.h / 2) - 9, yb = (ys.length ? Math.max(...ys) : c.h / 2) + 9;
+    return { x: mid - 6, y: yh, w: 12, h: yb - yh + 2 }; }
+  return { x: 0, y: 0, w: c.w, h: c.h }; }
+function crochetsDe(c) { const b = boiteDuSymbole(c), s = coins('selbox', 5, b.w, b.h);
+  return b.x || b.y ? s.replace('<path ', `<path transform="translate(${f1(b.x)} ${f1(b.y)})" `) : s; }
 
 /* Des shunts qui partagent une borne font un seul pont : [1,2] et [2,3] → [1,3]. */
 function paquetsDePonts(shunts) {
@@ -567,7 +636,7 @@ function disjoncteurSvg(c, designation, info, aGauche, aDroite) {
   const borne = (x, y) => { bornes += `<circle class="cb-borne" cx="${f1(x)}" cy="${f1(y)}" r="${CB_R}"/>`; symboles.push({ x0: x - CB_R, x1: x + CB_R, y0: y - CB_R, y1: y + CB_R }); };
   /* l'amenée d'une borne, à la couleur de son fil : du port (xF, à la hauteur du fil) jusqu'à la borne (xB, yB) ; droite,
      ou par un coude en xc quand la borne n'est pas à la hauteur du fil. Rend vrai s'il y a un coude. */
-  const amenee = (b, f, xF, xB, yB, xc) => { const st = styleTrait(couleur(b, f));
+  const amenee = (b, f, xF, xB, yB, xc) => { const st = traitDe(couleur(b, f));
     if (Math.abs(yB - b.y) < 0.6) { fils += `<line class="lead"${st} x1="${f1(xF)}" y1="${f1(b.y)}" x2="${f1(xB)}" y2="${f1(b.y)}"/>`; H(xF, xB, b.y); return false; }
     fils += `<path class="lead"${st} fill="none" d="M${f1(xF)} ${f1(b.y)} H${f1(xc)} V${f1(yB)} H${f1(xB)}"/>`; H(xF, xc, b.y); V(xc, b.y, yB); H(xc, xB, yB); return true; };
   /* le numéro d'une borne : contre elle (ou contre son coude), sur son amenée — au-dessus si le symbole est debout,
@@ -668,22 +737,50 @@ function disjoncteurSvg(c, designation, info, aGauche, aDroite) {
   return s;
 }
 
-function blocSvg(c, designation, choisi, couleurBout, info) {
-  let s = `<g class="comp" data-name="${escA(c.name)}" transform="translate(${f1(c.x)},${f1(c.y)})">`;
-  // la couleur du fil qui arrive à une hauteur (absolue) sur le flanc gauche, ou droit, du bloc
+/* ---- le renvoi -------------------------------------------------------- */
+/* LE RENVOI entre folios (07 : un câble qui continue sur un autre folio, quand l'outil découpe lui-même) : le moteur le
+   place comme un équipement — une boîte, des ports —, mais ce n'est pas un appareil (l'audit v72 : « un faux équipement
+   aux bornes tronquées, 130X… »). La boîte s'efface ; à chaque port, un DRAPEAU, comme sur un plan de bureau d'études :
+   le bout du câble, une flèche creuse (« ça continue »), le folio où il continue (« F5 ») et l'autre bout EN ENTIER
+   (« 130XC1:B14 »). La géométrie ne bouge pas : la boîte reste une zone invisible où l'on clique (l'autre folio) et
+   où l'on prend (la retouche). Deux flancs portés se partagent la largeur ; l'autre bout se réduit pour tenir. */
+const estDrapeau = c => /^▷F/.test(String(c.name || ''));
+const autreBoutDuRenvoi = etiq => { const t = String(etiq == null ? '' : etiq).trim(), k = t.indexOf(' '); return k < 0 ? t : t.slice(0, k) + ':' + t.slice(k + 1).trim(); };
+function drapeauxSvg(c, aGauche, aDroite) {
+  const folio = String(c.name).replace(/^▷F/, ''), fF = 'F' + folio, wF = largeurTexte(fF.length, 7.5, 0.3);
+  // d : le sens de lecture du drapeau — +1, le câble arrive par la gauche et le drapeau se lit vers la droite
+  const ports = [...(c.rangs.L || []).map(p => ({ p, d: 1 })), ...(c.rangs.R || []).map(p => ({ p, d: -1 })), ...(c.rangs.S || []).map(p => ({ p, d: (p.dir || -1) < 0 ? 1 : -1 }))];
+  const deux = ports.some(o => o.d > 0) && ports.some(o => o.d < 0);
+  let s = `<rect class="cb-zone" x="0" y="0" width="${f1(c.w)}" height="${f1(c.h)}"/>`;
+  ports.forEach(({ p, d }) => { const y = p.y - c.y, x0 = d > 0 ? 0 : c.w, xa = d > 0 ? Math.min(c.lw - 2, 18) : Math.max(c.w - c.rw + 2, c.w - 18);
+    s += `<line class="lead"${traitDe(d > 0 ? aGauche(p.y) : aDroite(p.y))} x1="${f1(x0)}" y1="${f1(y)}" x2="${f1(xa)}" y2="${f1(y)}"/>`;
+    s += `<path class="drapeau" d="M${f1(xa)} ${f1(y - 4.5)} l${d * 7} 4.5 l${-d * 7} 4.5 z"/>`;
+    const xf = xa + d * 10, a = d > 0 ? 'start' : 'end', ou = autreBoutDuRenvoi(p.etiq), xo = xf + d * (wF + 3.5);
+    s += `<text class="dr-f" x="${f1(xf)}" y="${f1(y + 2.6)}" text-anchor="${a}">${esc(fF)}</text>`;
+    if (!ou) return;
+    // jusqu'où l'autre bout peut aller : le flanc d'en face, ou le milieu quand les deux flancs portent des drapeaux
+    const lim = deux ? c.w / 2 - d * 2 : (d > 0 ? c.w - 2 : 2), W = Math.max(8, d * (lim - xo)), fs = Math.max(4.5, Math.min(7, W / (ou.length * CAR)));
+    s += `<text class="dr-ou"${fs < 7 ? ` style="font-size:${f1(fs)}px"` : ''} x="${f1(xo)}" y="${f1(y + 2.4)}" text-anchor="${a}">${esc(clip(ou, Math.max(4, Math.floor(W / (CAR * fs)))))}</text>`; });
+  return s; }
+
+function blocSvg(c, designation, choisi, couleurBout, info, k, ailleurs) {
+  const renvoi = estDrapeau(c);
+  let s = `<g class="comp${renvoi ? ' renvoi' : ''}" data-name="${escA(c.name)}"${k != null ? ` data-k="${k}"` : ''} transform="translate(${f1(c.x)},${f1(c.y)})">`;
+  // le bout du fil qui arrive à une hauteur (absolue) sur le flanc gauche, ou droit, du bloc : sa couleur (et ses fils)
   const aGauche = y => couleurBout ? couleurBout(c.x, y) : null, aDroite = y => couleurBout ? couleurBout(c.x + c.w, y) : null;
-  if (choisi) s += coins('selbox', 5, c.w, c.h);
+  if (choisi) s += crochetsDe(c);
   const bx = c.lw, bw = c.w - c.lw - c.rw, mid = bx + bw / 2;
   const rl = c.rangs.L || [], rr = c.rangs.R || [], rs = c.rangs.S || [];
   const yRep = c.h > 90 ? 21 : c.h / 2 - 1.5;
   let dj;
-  if (c.kind === 'tag' && estMasse(c.name)) {
+  if (renvoi) s += drapeauxSvg(c, aGauche, aDroite);
+  else if (c.kind === 'tag' && estMasse(c.name)) {
     /* MASSE collée à sa borne : le symbole CEI 60617-02 est dans l'AXE du fil,
        perpendiculaire à l'équipement — trois barres verticales décroissantes
        vers l'extérieur — et le repère se lit dessous. */
     // p.dir dit par quel flanc le fil ARRIVE (-1 : par la gauche) ; le symbole grandit vers l'autre flanc.
     const M = symboleDePastille(c), ly = M.y - c.y, d = M.d, xs = M.xs - c.x, x0 = d > 0 ? 0 : c.w;   // le fil entre par un flanc, le symbole est tout de suite là
-    s += `<line class="earth"${styleTrait(d > 0 ? aGauche(M.y) : aDroite(M.y))} x1="${f1(x0)}" y1="${f1(ly)}" x2="${f1(xs)}" y2="${f1(ly)}"/>`;
+    s += `<line class="earth"${traitDe(d > 0 ? aGauche(M.y) : aDroite(M.y))} x1="${f1(x0)}" y1="${f1(ly)}" x2="${f1(xs)}" y2="${f1(ly)}"/>`;
     [[6, 0], [4, 3.2], [2, 6.4]].forEach(([l, dx]) => { const x = xs + d * dx; s += `<line class="earth" x1="${f1(x)}" y1="${f1(ly - l)}" x2="${f1(x)}" y2="${f1(ly + l)}"/>`; });
     // le repère, petit, sous les barres — ou là où la place est libre
     s += repereDe(c);
@@ -691,10 +788,11 @@ function blocSvg(c, designation, choisi, couleurBout, info) {
     /* MORCEAU DE BARRETTE collé à sa borne — une borne, un fil, rien après :
        il se dessine comme une masse, dans l'AXE du fil, en petit : le fil
        arrive sur un court pointillé vertical, la borne est le point noir
-       numéroté dessus, le point de départ dessous, le repère en petit. */
+       numéroté dessus, le point de départ dessous, le repère en petit. Le point remonte et rapetisse : il touchait le
+       repère écrit juste dessous (« 126VT1 », audit v72) — le dessin seul, l'occupation ne bouge pas. */
     const M = symboleDePastille(c), ly = M.y - c.y, xs = M.xs - c.x, x0 = M.d > 0 ? 0 : c.w;
-    s += `<line class="lead"${styleTrait(M.d > 0 ? aGauche(M.y) : aDroite(M.y))} x1="${f1(x0)}" y1="${f1(ly)}" x2="${f1(xs)}" y2="${f1(ly)}"/>`;
-    s += `<line class="barre" x1="${f1(xs)}" y1="${f1(ly - 6)}" x2="${f1(xs)}" y2="${f1(ly + 6)}"/><circle class="bardot" cx="${f1(xs)}" cy="${f1(ly + 6)}" r="1.5"/>`;
+    s += `<line class="lead"${traitDe(M.d > 0 ? aGauche(M.y) : aDroite(M.y))} x1="${f1(x0)}" y1="${f1(ly)}" x2="${f1(xs)}" y2="${f1(ly)}"/>`;
+    s += `<line class="barre" x1="${f1(xs)}" y1="${f1(ly - 6)}" x2="${f1(xs)}" y2="${f1(ly + 5.6)}"/><circle class="bardot" cx="${f1(xs)}" cy="${f1(ly + 5.6)}" r="1.2"/>`;
     s += pastilleSvg(xs, ly, M.etiq ? clip(String(M.etiq), 3) : '');
     s += repereDe(c);
   } else if (c.kind === 'tag') {
@@ -715,8 +813,8 @@ function blocSvg(c, designation, choisi, couleurBout, info) {
     rs.forEach(p => { const ly = p.y - c.y, n = p.etiq ? clip(String(p.etiq), 2) : '';
       // le numéro du contact se lit dans la PARTIE MOBILE (la fiche) : c'est là que l'atelier l'écrit
       if (n) s += `<text class="prnum"${n.length > 1 ? ' style="font-size:4.4px"' : ''} x="${f1(xm0 + WM / 2)}" y="${f1(ly + 1.7)}" text-anchor="middle">${esc(n)}</text>`;
-      if ((p.dir || 0) <= 0) s += `<line class="lead"${styleTrait(aGauche(p.y))} x1="0" y1="${f1(ly)}" x2="${f1(xm0)}" y2="${f1(ly)}"/>`;
-      if ((p.dir || 0) >= 0) s += `<line class="lead"${styleTrait(aDroite(p.y))} x1="${f1(xe1)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
+      if ((p.dir || 0) <= 0) s += `<line class="lead"${traitDe(aGauche(p.y))} x1="0" y1="${f1(ly)}" x2="${f1(xm0)}" y2="${f1(ly)}"/>`;
+      if ((p.dir || 0) >= 0) s += `<line class="lead"${traitDe(aDroite(p.y))} x1="${f1(xe1)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
     s += repereDe(c);
   } else if (c.kind === 'strip' || estBarrette(c.name)) {
     /* BARRETTE (et tout bornier, tout potentiel) : une fine ligne pointillée
@@ -729,8 +827,8 @@ function blocSvg(c, designation, choisi, couleurBout, info) {
     s += `<line class="barre" x1="${f1(mid)}" y1="${f1(yh)}" x2="${f1(mid)}" y2="${f1(yb)}"/><circle class="bardot" cx="${f1(mid)}" cy="${f1(yb)}" r="2.1"/>`;
     // un morceau de barrette est un paquet : ses bornes sont pontées par construction, la ligne reste pointillée
     rangs.forEach(p => { const ly = p.y - c.y, d = p.dir || 0;
-      if (d <= 0) s += `<line class="lead"${styleTrait(aGauche(p.y))} x1="0" y1="${f1(ly)}" x2="${f1(mid)}" y2="${f1(ly)}"/>`;
-      if (d >= 0) s += `<line class="lead"${styleTrait(aDroite(p.y))} x1="${f1(mid)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
+      if (d <= 0) s += `<line class="lead"${traitDe(aGauche(p.y))} x1="0" y1="${f1(ly)}" x2="${f1(mid)}" y2="${f1(ly)}"/>`;
+      if (d >= 0) s += `<line class="lead"${traitDe(aDroite(p.y))} x1="${f1(mid)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
     // chaque borne est une pastille sur la ligne, son numéro dedans
     const etiqs = rangs.map(p => p.etiq ? clip(String(p.etiq), 3) : ''), r = Math.max(...etiqs.map(R_PASTILLE));
     rangs.forEach((p, i) => { s += pastilleSvg(mid, p.y - c.y, etiqs[i], r); });
@@ -742,8 +840,8 @@ function blocSvg(c, designation, choisi, couleurBout, info) {
     const cx = c.w / 2, ys = [...rl, ...rr].map(p => p.y - c.y);
     const yh = ys.length ? Math.min(...ys) : c.h / 2, yb = ys.length ? Math.max(...ys) : c.h / 2, y0 = yb + 7;
     s += `<line class="earth" x1="${f1(cx)}" y1="${f1(yh)}" x2="${f1(cx)}" y2="${f1(y0)}"/>`;
-    rl.forEach(p => { const ly = p.y - c.y; s += `<line class="earth" x1="0" y1="${f1(ly)}" x2="${f1(cx)}" y2="${f1(ly)}"/>`; });
-    rr.forEach(p => { const ly = p.y - c.y; s += `<line class="earth" x1="${f1(cx)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
+    rl.forEach(p => { const ly = p.y - c.y; s += `<line class="earth"${indicesDuBout(aGauche(p.y))} x1="0" y1="${f1(ly)}" x2="${f1(cx)}" y2="${f1(ly)}"/>`; });
+    rr.forEach(p => { const ly = p.y - c.y; s += `<line class="earth"${indicesDuBout(aDroite(p.y))} x1="${f1(cx)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
     if (ys.length > 1) ys.forEach(ly => { s += `<circle class="jn" cx="${f1(cx)}" cy="${f1(ly)}" r="1.5"/>`; });
     [[7, 0], [4.5, 3.2], [2, 6.4]].forEach(([l, dy]) => { s += `<line class="earth" x1="${f1(cx - l)}" y1="${f1(y0 + dy)}" x2="${f1(cx + l)}" y2="${f1(y0 + dy)}"/>`; });
     s += `<text class="rep" x="${f1(cx)}" y="${f1(y0 + 17)}" text-anchor="middle">${esc(clip(c.name, 10))}</text>`;
@@ -759,6 +857,12 @@ function blocSvg(c, designation, choisi, couleurBout, info) {
     s += repereSvg('rep-big', mid, yRep, clip(c.name, 14), bw, 14);
     if (c.h > 380) s += `<text class="bsname" x="${f1(mid)}" y="${f1(c.h - 9)}" text-anchor="middle">${esc(clip(c.name, 12))}</text>`;
     if (designation) s += `<text class="des" x="${f1(mid)}" y="${f1(yRep + 10)}" text-anchor="middle">${esc(clip(designation, 18))}</text>`;
+    /* la RÉFÉRENCE CROISÉE : le même repère paraît sur d'autres folios (« ↔ f. 2 · 4 ») — sous le repère, dans le corps,
+       entre les numéros de borne ; un corps trop court n'en a pas la place (la bulle du survol le dit) */
+    const yX = yRep + (designation ? 19 : 10), place = Math.floor((bw - 2 * 30) / (CAR * 6.2 + 0.3));
+    let xr = ailleurs && ailleurs.length ? '↔ f. ' + ailleurs.join(' · ') : '';
+    if (xr.length > place) xr = place >= 8 ? xr.slice(0, place - 1).replace(/[\s·]+$/, '') + '…' : '';
+    if (xr && yX + 2.5 <= c.h) s += `<text class="xref" x="${f1(mid)}" y="${f1(yX)}" text-anchor="middle">${esc(xr)}</text>`;
     if (rl.length) s += bornesSvg(bx, -1, c.lw, rl, c.y, connDe, aGauche);
     if (rr.length) s += bornesSvg(bx + bw, +1, c.rw, rr, c.y, connDe, aDroite);
     // un shunt entre bornes d'un connecteur : un pontage fin, juste devant la pièce, un point sur chaque borne pontée
@@ -772,8 +876,11 @@ function blocSvg(c, designation, choisi, couleurBout, info) {
 
 /* ---- la scène entière ------------------------------------------------- */
 /* `disjoncteurDe(nom)` : ce que l'interface sait d'un disjoncteur — { calibre, tableau } — pour l'écrire à côté de son
-   symbole (le moteur ne connaît ni la fiche ni le part number retenu) ; sans elle, le symbole n'a que son repère. */
-function sceneSvg(dessin, cartouche, folio, designationDe, choisi, disjoncteurDe) {
+   symbole (le moteur ne connaît ni la fiche ni le part number retenu) ; sans elle, le symbole n'a que son repère.
+   `ailleursDe(nom)` : les autres folios où paraît un repère (leurs rangs), pour la référence croisée sous lui. Chaque
+   bloc porte sa place dans `dessin.comps` (`data-k`) : l'interface allume un bloc par sa place, pas par son nom (trois
+   masses 906G sur le folio, un seul câble en touche une). */
+function sceneSvg(dessin, cartouche, folio, designationDe, choisi, disjoncteurDe, ailleursDe) {
   let s = feuilleSvg(dessin.bbox, cartouche, folio, dessin.legende);
   const fils = dessin.fils.filter(w => !w.shunt), couleurDe = dessin.couleurDe || null;
   const verticaux = verticauxDe([...fils.map(w => w.pts), ...tracesDePiquage(dessin.barrettes)]);
@@ -787,22 +894,26 @@ function sceneSvg(dessin, cartouche, folio, designationDe, choisi, disjoncteurDe
   const occ = occupationDe(fils, dessin.barrettes, dessin.comps);
   poserReperes(dessin.comps, occ); poserReperesVT(dessin.barrettes, occ);
   s += reperesDeFil(dessin.fils, verticaux, dessin.barrettes, occ);
-  const couleurBout = couleursDesBouts(fils, couleurDe);
-  s += piquagesSvg(dessin.barrettes, dessin.piquages, verticaux, couleurBout, choisi);
+  const bouts = boutsDesFils(fils, couleurDe);
+  s += piquagesSvg(dessin.barrettes, dessin.piquages, verticaux, bouts, choisi);
   dessin.points.forEach(d => s += `<circle class="jn" cx="${f1(d.x)}" cy="${f1(d.y)}" r="1.9"/>`);
-  dessin.comps.forEach(c => { s += blocSvg(c, designationDe ? designationDe(c.name) : '', choisi === c.name, couleurBout, disjoncteurDe && c.kind === 'equip' && estDisjoncteur(c.name) ? disjoncteurDe(c.name) : null); });
+  dessin.comps.forEach((c, k) => { s += blocSvg(c, designationDe ? designationDe(c.name) : '', choisi != null && choisi === c.name, bouts, disjoncteurDe && c.kind === 'equip' && estDisjoncteur(c.name) ? disjoncteurDe(c.name) : null, k,
+    ailleursDe && c.kind === 'equip' && !estDrapeau(c) ? ailleursDe(c.name) : null); });
   return s;
 }
 /* Le même dessin, en document SVG autonome : pour enregistrer, imprimer,
    coller. `fond` : ce qui entoure la feuille — papier crème à l'écran, blanc
-   pour l'imprimante ; `disjoncteurDe` : comme pour `sceneSvg`. */
-function svgAutonome(dessin, cartouche, folio, designationDe, fond, disjoncteurDe) {
+   pour l'imprimante ; `disjoncteurDe`, `ailleursDe` : comme pour `sceneSvg`.
+   Sans le quadrillage fin du papier (un guide pour l'écran et la retouche, du
+   bruit sur papier). */
+function svgAutonome(dessin, cartouche, folio, designationDe, fond, disjoncteurDe, ailleursDe) {
   // le document a les dimensions de la feuille de référence, quel que soit le folio : tous s'enregistrent pareil
   const bb = dessin.bbox, k = bb.k || bb.w / PAGE_W, M = 24 * k, vw = bb.w + 2 * M, vh = bb.h + 2 * M, W = Math.ceil(vw / k), H = Math.ceil(vh / k);
   const x0 = f1(bb.x - M), y0 = f1(bb.y - M);
+  const scene = sceneSvg(dessin, cartouche, folio, designationDe, null, disjoncteurDe, ailleursDe).replace(/<rect [^>]*fill="url\(#gfine\)"\/>/, '');
   const txt = '<?xml version="1.0" encoding="UTF-8"?>\n'
     + `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="${x0} ${y0} ${f1(vw)} ${f1(vh)}">`
-    + `<rect x="${x0}" y="${y0}" width="${f1(vw)}" height="${f1(vh)}" fill="${fond || '#fbfbf7'}"/>` + styleDessin() + sceneSvg(dessin, cartouche, folio, designationDe, null, disjoncteurDe) + '</svg>';
+    + `<rect x="${x0}" y="${y0}" width="${f1(vw)}" height="${f1(vh)}" fill="${fond || '#fbfbf7'}"/>` + styleDessin() + scene + '</svg>';
   return { w: W, h: H, txt };
 }
 

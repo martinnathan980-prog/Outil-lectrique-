@@ -1,0 +1,24 @@
+/* ===========================================================================
+   LE DESSIN, À LA MAIN — la bulle du plan, ce que dit le curseur, Espace tenu.
+   Le folio lui-même a son style dans le SVG (06 `styleDessin`) : il part avec
+   l'export et l'impression. Ici, ce qui n'existe qu'à l'écran.
+   =========================================================================== */
+
+/* LA BULLE DU PLAN (08 `lierPlanche`) : posée un instant sur un câble, un bloc, un renvoi, la souris lit ce qu'il est sans
+   zoomer. La bulle de l'outil — claire sur la nuit, dans les deux thèmes (--bulle) —, à côté du pointeur, jamais dessous. */
+.pl-bulle{position:fixed;z-index:60;max-width:340px;padding:8px 12px 9px;border-radius:10px;background:var(--bulle);color:var(--bulle-t);
+  box-shadow:var(--sh-bulle);font:500 var(--f-12)/1.45 var(--sans);letter-spacing:0;pointer-events:none;animation:pl-bulle var(--rapide)}
+.pl-bulle[hidden]{display:none}
+@keyframes pl-bulle{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.pl-bulle{animation:none}}
+.pl-bulle .pl-b-t{display:block;font:600 var(--f-13)/1.35 var(--mono);letter-spacing:-.01em}
+.pl-bulle .pl-b-l{display:block;margin-top:2px;color:#3d4b66}
+.pl-bulle .pl-b-id{font-family:var(--mono);font-weight:500;color:var(--bulle-t)}
+.pl-bulle .pl-b-route{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin:-2px 6px 0 0}
+
+/* LE CURSEUR DIT D'AVANCE ce qui se prendra : la croix de déplacement sur un bloc (une pièce qu'on bouge), la main ouverte
+   sur le papier (la vue qu'on glisse) — hier la même main sur les deux. Les bornes et les câbles gardent leurs flèches. */
+#planche[data-prise="bloc"] #svg *{cursor:move}
+/* ESPACE tenu : la vue, partout — la main, fermée pendant qu'on glisse */
+#planche.espace,#planche.espace *{cursor:grab!important}
+#planche.espace.tient,#planche.espace.tient *,#planche.tient,#planche.tient *{cursor:grabbing!important}
