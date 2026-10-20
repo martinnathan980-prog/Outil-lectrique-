@@ -1,0 +1,105 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   DIRECTION C — « ARDOISE » (prototype v72, index.html?direction=ardoise)
+   L'idée : LA TABLE TECHNIQUE. Un gris ardoise moyen — ni noir, ni blanc —, plus clair en haut à gauche comme sous une
+   lampe, tramé comme un tapis de coupe (un trait fin tous les 24 px, un plus marqué tous les 120 px). Dessus, des
+   palets CLAIRS, couleur papier, aux arêtes nettes ; la barre du haut est une règle claire. Pas d'accent : l'encre,
+   comme sur le folio. La fiche est une feuille de papier, ses coins plus vifs ; son fil, un trait de renvoi en tirets ;
+   le calibre, un CARTOUCHE — la même pièce que celle du folio.
+   Ce qui bouge : une lumière de lampe suit la souris de loin ; l'ombre du coin bas-droit respire (16 s) ; la trame
+   glisse d'un dixième quand on déplace le plan.
+   ═══════════════════════════════════════════════════════════════════════ */
+html[data-direction="ardoise"]{
+  --s-app:#555d68;
+  --pr-fond:radial-gradient(1400px 940px at 10% -12%,rgba(255,255,255,.16),rgba(255,255,255,0) 60%),linear-gradient(180deg,#67707c 0%,#5a626d 45%,#4c535d 100%);
+  --pr-souffle:radial-gradient(1100px 820px at 104% 106%,rgba(24,28,36,.34),rgba(24,28,36,0) 68%);
+  --pr-points:linear-gradient(rgba(255,255,255,.075) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.075) 1px,transparent 1px),linear-gradient(rgba(255,255,255,.032) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.032) 1px,transparent 1px);
+  --pr-points-t:120px 120px,120px 120px,24px 24px,24px 24px;
+  --pr-lueur:radial-gradient(closest-side,rgba(255,250,240,.15),rgba(255,250,240,.05) 52%,rgba(255,250,240,0));
+  --pr-accent:#1f2329; --pr-encre:rgba(31,35,41,.82);
+  --pr-r:12px;
+  --pr-carte-sh:0 0 0 1px rgba(16,20,26,.22),0 26px 56px -16px rgba(12,16,22,.62),0 8px 16px -8px rgba(12,16,22,.36);
+  --pr-carte-sh-tenu:0 0 0 1px rgba(16,20,26,.26),0 40px 80px -18px rgba(12,16,22,.7),0 14px 26px -10px rgba(12,16,22,.4);
+  --pr-lien:#1f2329; --pr-lien-l:1.2px; --pr-lien-dash:5 4; --pr-charge:#1f2329;
+  --sh-feuille:0 0 0 1px rgba(16,20,26,.28),0 26px 60px -16px rgba(12,16,22,.6),0 8px 18px -6px rgba(12,16,22,.3);
+  --t-table:#f6f7f9; --t-table-2:#dde1e7; --l-table:rgba(255,255,255,.14); --l-table-2:rgba(255,255,255,.3); --s-table-champ:rgba(30,34,40,.28); --s-table-survol:rgba(255,255,255,.07); --t-table-warn:#ffd08a;
+  /* les palets : du papier, des arêtes nettes */
+  --palet:#f4f3ef; --palet-2:#ebeae5;
+  --voile-1:rgba(20,24,30,.04); --voile-2:rgba(20,24,30,.07); --voile-3:rgba(20,24,30,.1); --voile-4:rgba(20,24,30,.15);
+  --sh-palet:0 0 0 1px rgba(16,20,26,.16),inset 0 1px 0 rgba(255,255,255,.8),0 12px 26px -10px rgba(12,16,22,.6),0 2px 4px rgba(12,16,22,.18);
+  --bulle:#22262d; --bulle-t:#f4f3ef; --sh-bulle:0 10px 26px -6px rgba(12,16,22,.55),0 0 0 1px rgba(255,255,255,.08);
+  --bi-bord:rgba(16,20,26,.2); --bi-pile-1:#e9e8e3; --bi-pile-2:#dcdbd5; --bi-pile-bord:rgba(16,20,26,.22);
+  --bi-ombre:0 16px 32px -14px rgba(12,16,22,.6),0 3px 8px rgba(12,16,22,.2); --bi-ombre-haute:0 26px 46px -16px rgba(12,16,22,.7),0 6px 14px rgba(12,16,22,.22);
+}
+html[data-direction="ardoise"] :is(#entete,#rail,#folios,#toast,.ilot-sombre){
+  --s-surface:#fbfaf7; --s-sunken:#f2f1ec; --s-hover:rgba(20,24,30,.06); --s-line:#e5e3dc; --s-line-2:#d3d1c9; --s-flottant:#fbfaf7;
+  --t-1:#1f2329; --t-2:#464b53; --t-3:#676c74; --t-inverse:#ffffff;
+  --accent:#1f2329; --accent-2:#000000; --accent-soft:#ecebe5; --accent-line:#c8c6be; --on-accent:#ffffff;
+  --ok:#1d7a3c; --ok-soft:#e8f5ec; --warn:#965800; --warn-soft:#fdf2df; --ko:#c3271f; --ko-soft:#fdeceb; --info:#464b53; --info-soft:#efeee9;
+  --bulle:#22262d; --bulle-t:#f4f3ef; --voile:rgba(15,15,17,.2);
+  --sh-2:0 0 0 1px rgba(16,20,26,.14),0 22px 48px -14px rgba(12,16,22,.5),0 4px 10px -4px rgba(12,16,22,.2);
+  --anneau:0 0 0 3px rgba(31,35,41,.12);
+  color-scheme:light }
+/* la fiche suit le thème : du papier le jour ; le soir, une ardoise sombre */
+@media (prefers-color-scheme: dark){ html[data-direction="ardoise"]:not([data-theme="light"]){
+  --s-surface:#262b32; --s-sunken:#20242a; --s-hover:#30353d; --s-line:#363c45; --s-line-2:#474e58; --s-flottant:#2c3138;
+  --t-1:#f3f4f6; --t-2:#c2c7cf; --t-3:#9aa0a9; --accent:#f3f4f6; --accent-soft:#353b44; --accent-line:#4e5560; --on-accent:#1f2329;
+  --info:#c2c7cf; --info-soft:#30353d; --pr-encre:rgba(243,244,246,.55); --pr-charge:#f3f4f6 } }
+
+/* la barre du haut : une RÈGLE claire, d'un bord à l'autre, son arête nette — la feuille passe dessous */
+html[data-direction="ardoise"] #entete{background:#f4f3ef;box-shadow:0 1px 0 rgba(16,20,26,.18),0 10px 24px -16px rgba(12,16,22,.6)}
+html[data-direction="ardoise"] .en-marque{background:#1f2329;color:#f4f3ef;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+html[data-direction="ardoise"] .en-fil>*::before{color:#a9a7a0}
+html[data-direction="ardoise"] .recherche{background:#ffffff;border-color:rgba(16,20,26,.14);box-shadow:inset 0 1px 2px rgba(16,20,26,.06)}
+html[data-direction="ardoise"] .recherche:hover{border-color:rgba(16,20,26,.24)}
+html[data-direction="ardoise"] body.cherche .recherche{background:#ffffff;border-color:#1f2329;box-shadow:0 0 0 3px rgba(31,35,41,.1)}
+html[data-direction="ardoise"] .recherche .raccourci{background:#eeede8}
+/* les palets : papier, l'outil pressé en creux */
+html[data-direction="ardoise"] #rail,html[data-direction="ardoise"] .fo-part,html[data-direction="ardoise"] .fo-zoom{border-radius:10px}
+html[data-direction="ardoise"] #rail .bascule[aria-pressed="true"]{background:#e4e2db;color:#1f2329;box-shadow:inset 0 1px 2px rgba(16,20,26,.14)}
+html[data-direction="ardoise"] .rd-point{box-shadow:0 0 0 2px #f4f3ef}
+html[data-direction="ardoise"] .chip.on{background:#1f2329;color:#ffffff;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+html[data-direction="ardoise"] .chip{border-radius:6px}
+html[data-direction="ardoise"] .affinage i{background:#1f2329}
+/* le menu ⋮ et la liste de la recherche : une feuille de papier aux arêtes nettes */
+html[data-direction="ardoise"] .menu,html[data-direction="ardoise"] .q-liste{border-radius:10px}
+html[data-direction="ardoise"] .menu button{border-radius:6px}
+html[data-direction="ardoise"] .menu button:hover,html[data-direction="ardoise"] .menu button:focus-visible{background:#efeee8}
+html[data-direction="ardoise"] .menu button>svg.ico{color:#6d727a}
+
+/* la bibliothèque : ses palets (Reprendre, l'Exemple, le bandeau, le tri) sont du papier — l'encre y revient */
+html[data-direction="ardoise"] :is(.bi-reprendre,.bi-bandeau,.bi-carte.bi-demo,.bi-tri button[aria-pressed="true"]){--t-table:#1f2329;--t-table-2:#50555d;--l-table:rgba(16,20,26,.12);--l-table-2:rgba(16,20,26,.24);--voile-1:rgba(20,24,30,.04);--voile-2:rgba(20,24,30,.07);--voile-3:rgba(20,24,30,.1);color:#1f2329}
+
+/* la carte : du papier, ses coins plus vifs ; sa barre est la tête d'une feuille de dessin — un filet dessous */
+html[data-direction="ardoise"] body.insp-flotte #inspecteur .fi-nav{height:46px;padding-top:4px;box-shadow:0 1px 0 var(--s-line)}
+html[data-direction="ardoise"] #inspecteur .fi-nav::before{height:3px;width:28px;margin-left:-14px;border-radius:1px}
+
+/* ─── LE CALIBRE : le cartouche ──────────────────────────────────────────── */
+.pr-cal-c{border:1px solid var(--pr-encre);border-radius:3px;overflow:hidden;background:var(--s-surface)}
+.pr-c-haut{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}
+.pr-c-case{min-width:0;padding:9px 12px 12px;display:flex;flex-direction:column;gap:6px}
+.pr-c-case+.pr-c-case{border-left:1px solid var(--pr-encre)}
+.pr-c-k{display:flex;align-items:center;gap:6px;font:500 var(--f-11)/1.2 var(--sans);color:var(--t-2)}
+.pr-c-k .fi-q{margin:0}
+.pr-cal-c .dj-h-cal{display:inline-flex;align-items:baseline;gap:8px;font:600 46px/1 var(--mono);letter-spacing:-.04em;color:var(--t-1)}
+.pr-cal-c .dj-h-u{font:400 46px/1 var(--mono);letter-spacing:0;color:var(--t-2)}
+/* l'état, sans pastille : une arête de sa couleur sur le bord du cartouche — vert, il passe ; rouge, il ne passe pas */
+.pr-cal-c{border-left-width:5px;border-left-color:var(--t-3)}
+.pr-cal-c.ok{border-left-color:var(--ok)} .pr-cal-c.ko{border-left-color:var(--ko)}
+.pr-c-charge{justify-content:flex-start}
+.pr-cal-c .pr-stats{margin-top:6px;gap:18px}
+.pr-cal-c .pr-stat{align-items:flex-start}
+.pr-cal-c .pr-stat b{font:600 20px/1 var(--mono);letter-spacing:-.02em}
+.pr-cal-c .pr-stat b small{font:500 14px/1 var(--mono)}
+.pr-cal-c .dj-h-ko{margin-top:6px;font-size:var(--f-12)}
+/* la gamme en cases : hachuré ce qui ne passe pas, l'ambre le serré, le retenu plein d'encre ; un trait vert sous ce qui passe */
+.pr-c-gamme{display:grid;border-top:1px solid var(--pr-encre)}
+.pr-c-g{position:relative;height:36px;display:grid;place-items:center;font:500 var(--f-13)/1 var(--mono);color:var(--t-1);font-variant-numeric:tabular-nums}
+.pr-c-g+.pr-c-g{border-left:1px solid var(--s-line-2)}
+.pr-c-g.non{color:var(--t-3);background:repeating-linear-gradient(135deg,transparent 0 5px,color-mix(in srgb,var(--t-1) 10%,transparent) 5px 6px)}
+.pr-c-g.serre{color:var(--warn);background:color-mix(in srgb,var(--warn-soft) 70%,transparent)}
+.pr-c-g.passe::after{content:"";position:absolute;left:30%;right:30%;bottom:5px;height:2px;border-radius:1px;background:var(--ok)}
+.pr-c-g.retenu{background:var(--t-1);color:var(--t-inverse);font-weight:700}
+.pr-c-g.retenu::after{background:var(--t-inverse);opacity:.6}
+button.pr-c-g{cursor:pointer;transition:background var(--rapide)}
+button.pr-c-g:hover{background:var(--s-hover)}
+.pr-c-pied{padding:6px 12px;border-top:1px solid var(--pr-encre);background:var(--s-sunken);font:500 var(--f-11)/1.35 var(--sans);color:var(--t-2)}

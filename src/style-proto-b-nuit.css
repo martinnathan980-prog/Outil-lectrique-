@@ -1,0 +1,99 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   DIRECTION B — « NUIT BLEUE » (prototype v72, index.html?direction=nuit)
+   L'idée : la nuit gardée (le lecteur a aimé la table sombre et ses points), mais une ENCRE BLEU NUIT, profonde et
+   dégradée — une lumière froide tombe du coin haut-droit —, et des palets de VERRE CLAIR : un bleu plus pâle, flouté,
+   un filet de lumière en haut, si bien que rien n'est plus noir sur noir. L'accent est un bleu de glace, discret : le
+   fil de la fiche, l'index du cadran. Le calibre devient un CADRAN, comme un instrument de bord.
+   Ce qui bouge : une lueur froide suit la souris de loin ; une seconde lumière respire au coin bas-gauche (16 s) ; les
+   points glissent d'un dixième quand on déplace le plan.
+   ═══════════════════════════════════════════════════════════════════════ */
+html[data-direction="nuit"]{
+  --s-app:#0e1626;
+  --pr-fond:radial-gradient(1150px 780px at 96% -14%,rgba(96,140,220,.36),rgba(96,140,220,0) 62%),linear-gradient(158deg,#1b2843 0%,#121c30 42%,#0a111e 100%);
+  --pr-souffle:radial-gradient(950px 720px at -8% 110%,rgba(48,100,176,.34),rgba(48,100,176,0) 64%),radial-gradient(640px 440px at 58% 44%,rgba(120,150,220,.07),rgba(120,150,220,0) 70%);
+  --pr-points:radial-gradient(circle at 1px 1px,rgba(160,188,240,.22) 1px,transparent 1.5px);
+  --pr-lueur:radial-gradient(closest-side,rgba(132,172,255,.17),rgba(132,172,255,.05) 52%,rgba(132,172,255,0));
+  --pr-accent:#9fc2ff; --pr-glace:#9fc2ff;
+  --pr-r:18px;
+  --pr-carte-sh:0 0 0 1px rgba(160,192,255,.22),0 32px 80px -14px rgba(0,6,20,.78),0 10px 26px -8px rgba(0,6,20,.5),0 0 60px -20px rgba(110,160,255,.35);
+  --pr-carte-sh-tenu:0 0 0 1px rgba(160,192,255,.3),0 48px 110px -16px rgba(0,6,20,.85),0 16px 34px -10px rgba(0,6,20,.55),0 0 80px -20px rgba(110,160,255,.45);
+  --pr-lien:#a9c8ff; --pr-lien-l:1.25px; --pr-charge:#3d6fd6;
+  --sh-feuille:0 0 0 1px rgba(0,0,0,.45),0 0 0 1px rgba(160,190,255,.06),0 32px 80px -12px rgba(0,5,16,.75),0 10px 24px rgba(0,5,16,.45);
+  --t-table:#e9eef9; --t-table-2:#a9b8d4; --l-table:rgba(160,190,255,.13); --l-table-2:rgba(160,190,255,.26); --s-table-champ:rgba(14,22,40,.6); --s-table-survol:rgba(160,190,255,.07); --t-table-warn:#f2b55c;
+  /* les palets : un verre bleu plus clair que la nuit, flouté, un filet de lumière dessus — assez dense pour se lire aussi
+     posé sur le papier blanc du folio */
+  --palet:rgba(52,72,110,.84); --palet-2:rgba(64,88,132,.88);
+  --voile-1:rgba(170,200,255,.06); --voile-2:rgba(170,200,255,.11); --voile-3:rgba(170,200,255,.17); --voile-4:rgba(170,200,255,.25);
+  --sh-palet:inset 0 1px 0 rgba(255,255,255,.16),0 0 0 1px rgba(186,212,255,.26),0 16px 36px -10px rgba(0,6,18,.7),0 2px 6px rgba(0,6,18,.35);
+  --bulle:#eef3fd; --bulle-t:#0f1a2e; --sh-bulle:0 12px 30px -6px rgba(0,6,18,.6),0 0 0 1px rgba(255,255,255,.5);
+  --bi-bord:rgba(160,190,255,.14); --bi-pile-1:#18233a; --bi-pile-2:#141d31; --bi-pile-bord:rgba(160,190,255,.16);
+  --bi-ombre:0 16px 34px -12px rgba(0,6,18,.75),0 3px 8px rgba(0,6,18,.4); --bi-ombre-haute:0 26px 48px -14px rgba(0,6,18,.85),0 6px 14px rgba(0,6,18,.45);
+}
+html[data-direction="nuit"] :is(#entete,#rail,#folios,#toast,.ilot-sombre){
+  --s-surface:#16213a; --s-sunken:#111a2e; --s-hover:rgba(170,200,255,.09); --s-line:rgba(170,200,255,.13); --s-line-2:rgba(170,200,255,.24); --s-flottant:rgba(26,38,64,.9);
+  --t-1:#eef3fd; --t-2:#b8c6e0; --t-3:#93a4c4; --t-inverse:#0f1a2e;
+  --accent:#eef3fd; --accent-2:#ffffff; --accent-soft:rgba(170,200,255,.17); --accent-line:rgba(170,200,255,.3); --on-accent:#0f1a2e;
+  --ok:#4fd67d; --warn:#f2b55c; --ko:#ff7a6e; --ok-soft:rgba(79,214,125,.14); --warn-soft:rgba(242,181,92,.14); --ko-soft:rgba(255,122,110,.14);
+  --bulle:#eef3fd; --bulle-t:#0f1a2e; --sh-bulle:0 12px 30px -6px rgba(0,6,18,.6),0 0 0 1px rgba(255,255,255,.5);
+  --sh-2:inset 0 1px 0 rgba(255,255,255,.08),0 0 0 1px rgba(160,192,255,.2),0 28px 64px -14px rgba(0,6,18,.75),0 6px 16px -6px rgba(0,6,18,.4);
+  --anneau:0 0 0 3px rgba(159,194,255,.2) }
+html[data-direction="nuit"] :focus-visible{outline-color:var(--pr-glace)}
+/* dans la nuit, la fiche suit le thème : blanche le jour, d'un bleu d'encre le soir */
+@media (prefers-color-scheme: dark){ html[data-direction="nuit"]:not([data-theme="light"]){
+  --s-surface:#141e31; --s-sunken:#0f1828; --s-hover:#1c2942; --s-line:#223252; --s-line-2:#30436a; --s-flottant:#1a2640;
+  --t-1:#eef3fd; --t-2:#b6c4de; --t-3:#91a2c2; --accent:#eef3fd; --accent-2:#ffffff; --accent-soft:#22324f; --accent-line:#3a4e75; --on-accent:#0f1a2e;
+  --info:#b6c4de; --info-soft:#1c2942; --pr-charge:#8fb6ff } }
+html[data-direction="nuit"] .bulle kbd{background:rgba(15,26,46,.08);color:#0f1a2e}
+
+/* la barre du haut : un voile de nuit sur la table — sa lumière passe au travers ; un filet de lumière la borde */
+html[data-direction="nuit"] #entete{background:rgba(12,19,34,.5);box-shadow:0 1px 0 rgba(160,192,255,.12),0 12px 30px -20px rgba(0,4,14,.8)}
+html[data-direction="nuit"] .en-marque{background:linear-gradient(150deg,#f4f7ff 0%,#bdd0f4 100%);color:#13203a;box-shadow:0 0 0 1px rgba(255,255,255,.35),0 6px 18px -4px rgba(120,165,255,.55)}
+html[data-direction="nuit"] .en-fil>*::before{color:rgba(170,200,255,.35)}
+html[data-direction="nuit"] .recherche{background:rgba(170,200,255,.08);border-color:rgba(170,200,255,.17);box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+html[data-direction="nuit"] .recherche:hover{background:rgba(170,200,255,.11);border-color:rgba(170,200,255,.26)}
+html[data-direction="nuit"] body.cherche .recherche{background:rgba(26,38,64,.9);border-color:rgba(159,194,255,.55);box-shadow:0 0 0 3px rgba(159,194,255,.14)}
+html[data-direction="nuit"] .recherche .raccourci{background:rgba(170,200,255,.12)}
+/* les palets de verre : rail, folios, vue, l'affinage, le mot qui passe */
+html[data-direction="nuit"] :is(#rail,.fo-part,.fo-zoom,.affinage,#folios .rd.auto,#toast){-webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6)}
+html[data-direction="nuit"] #rail .bascule[aria-pressed="true"]{background:rgba(190,212,255,.2);color:#ffffff;box-shadow:inset 0 0 0 1px rgba(190,212,255,.22)}
+html[data-direction="nuit"] .rd-point{box-shadow:0 0 0 2px #24365a}
+/* le folio courant : une pièce de verre dépoli presque blanche, une lueur dessous */
+html[data-direction="nuit"] .chip.on{background:#e9f0fd;color:#10192c;box-shadow:0 0 0 1px rgba(255,255,255,.55),0 4px 14px -4px rgba(140,180,255,.6)}
+html[data-direction="nuit"] .chip.on .chip-pre{color:rgba(16,25,44,.6)}
+html[data-direction="nuit"] .affinage i{background:var(--pr-glace);box-shadow:0 0 8px rgba(159,194,255,.8)}
+/* le menu ⋮ et la liste de la recherche : un verre plus dense, un filet de lumière ; le survol, un voile de glace */
+html[data-direction="nuit"] .menu,html[data-direction="nuit"] .q-liste{border-radius:16px;background:rgba(32,47,78,.95);-webkit-backdrop-filter:blur(26px) saturate(1.5);backdrop-filter:blur(26px) saturate(1.5)}
+html[data-direction="nuit"] .menu button:hover,html[data-direction="nuit"] .menu button:focus-visible{background:rgba(170,200,255,.11)}
+html[data-direction="nuit"] .menu button>svg.ico{color:#9fb3d8}
+html[data-direction="nuit"] .menu button:hover>svg.ico{color:#d6e4ff}
+html[data-direction="nuit"] .menu-bloc+.menu-bloc,html[data-direction="nuit"] .menu .ctx+.menu-bloc,html[data-direction="nuit"] .menu-retour+.menu-bloc{border-top-color:rgba(170,200,255,.12)}
+/* la bulle du menu, claire sur la nuit */
+html[data-direction="nuit"] .menu-bulle{background:#eef3fd;color:#0f1a2e;box-shadow:0 12px 30px -6px rgba(0,6,18,.6)}
+
+/* la carte : du papier (ou de l'encre bleue le soir), son filet de glace et sa lueur */
+html[data-direction="nuit"] body.insp-flotte #inspecteur .fi-nav{height:46px;padding-top:4px}
+
+/* ─── LE CALIBRE : le cadran ─────────────────────────────────────────────── */
+.pr-cal-b{display:grid;grid-template-columns:168px minmax(0,1fr);align-items:center;gap:4px 18px;padding:2px 0 0}
+.pr-b-cadran{position:relative;width:168px;height:152px;margin:-4px 0 -10px -4px}
+.pr-cadran{display:block;width:100%;height:100%;overflow:visible}
+.pr-d-piste{fill:none;stroke:var(--s-line-2);stroke-width:3;stroke-linecap:round}
+.pr-d-passe{fill:none;stroke:var(--ok);stroke-width:5;stroke-linecap:round}
+.pr-d-serre{fill:none;stroke:var(--warn);stroke-width:5;stroke-linecap:round}
+.pr-d-piste2{fill:none;stroke:var(--s-sunken);stroke-width:7;stroke-linecap:round}
+.pr-d-pointe{fill:none;stroke:color-mix(in srgb,var(--pr-charge) 35%,transparent);stroke-width:7;stroke-linecap:round}
+.pr-d-perm{fill:none;stroke:var(--pr-charge);stroke-width:7;stroke-linecap:round}
+.pr-d-cran{stroke:var(--t-3);stroke-width:1.3;stroke-linecap:round}
+.pr-d-cran.passe{stroke:var(--ok)} .pr-d-cran.serre{stroke:var(--warn)}
+.pr-d-n{font:500 10px var(--sans);fill:var(--t-3);text-anchor:middle;dominant-baseline:central;font-variant-numeric:tabular-nums}
+.pr-d-n.passe{fill:var(--t-2)} .pr-d-n.serre{fill:var(--warn)}
+.pr-d-n.retenu{fill:var(--t-1);font-weight:700;font-size:11px}
+.pr-d-index{fill:var(--s-surface);stroke:var(--t-1);stroke-width:2.5;filter:drop-shadow(0 1px 3px rgba(0,10,30,.35))}
+.pr-b-centre{position:absolute;left:0;right:0;top:67px;display:flex;justify-content:center;pointer-events:none}
+.pr-cal-b .dj-h-cal{display:inline-flex;align-items:baseline;gap:3px;font:600 32px/1 var(--sans);letter-spacing:-.045em;color:var(--t-1)}
+.pr-cal-b .dj-h-u{font:400 32px/1 var(--sans);letter-spacing:-.02em;color:var(--t-2)}
+.pr-b-droite{display:flex;flex-direction:column;align-items:flex-start;gap:16px;min-width:0}
+.pr-cal-b .pr-stats{gap:22px}
+.pr-cal-b .pr-stat{align-items:flex-start}
+.pr-b-pied{display:flex;align-items:center;gap:8px;font:500 var(--f-12)/1.35 var(--sans);color:var(--t-2)}
+.pr-cal-b.ko .pr-d-index{stroke:var(--ko)}

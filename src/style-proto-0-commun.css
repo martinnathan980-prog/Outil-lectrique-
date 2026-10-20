@@ -1,0 +1,109 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   LE PROTOTYPE v72 — ce que les trois directions partagent (10-prototype.js) : la table en couches, la carte flottante
+   (sa place, sa barre qu'on tient, son épingle, son fil, son double qui se résorbe), la charpente du calibre redessiné,
+   le choix de la direction dans ⋮ › Plus. Rien ne vaut sans `html[data-direction]` : sans direction, Graphite 2027.
+   Chaque direction (style-proto-a-aube, -b-nuit, -c-ardoise) pose ses jetons :
+     --pr-fond, --pr-souffle (les couches de la table), --pr-points (le motif) et --pr-points-t (son pas), --pr-lueur (ce
+     qui suit la souris), --pr-carte-sh / --pr-carte-sh-tenu (l'ombre de la carte, posée et tenue), --pr-lien (le fil),
+     --pr-accent (le curseur, le focus, le quai).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── LA TABLE : sous tout, fixée à l'écran ; la planche, la bibliothèque et le corps deviennent transparents ─── */
+#pr-table{display:none}
+html[data-direction] #pr-table{display:block;position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;contain:strict}
+#pr-table>div{position:absolute;inset:0}
+#pr-table .pr-fond{background:var(--pr-fond)}
+#pr-table .pr-souffle{background:var(--pr-souffle);opacity:.55;animation:pr-respire 16s ease-in-out infinite alternate;will-change:opacity,transform}
+@keyframes pr-respire{from{opacity:.45;transform:scale(1)}to{opacity:1;transform:scale(1.06) translate(-1%,1%)}}
+#pr-table .pr-points{background-image:var(--pr-points);background-size:var(--pr-points-t,24px 24px)}
+/* la lueur : un grand disque doux, centré sur la souris (translate), qui ne se montre qu'une fois la souris vue */
+#pr-table .pr-lueur{inset:auto;left:0;top:0;width:960px;height:960px;margin:-480px 0 0 -480px;border-radius:50%;background:var(--pr-lueur);opacity:0;transition:opacity 1.2s ease;will-change:transform}
+#pr-table.vue .pr-lueur{opacity:1}
+html[data-direction] body{background:var(--s-app)}
+html[data-direction] #planche,html[data-direction] .biblio{background:transparent}
+html[data-direction] #planche::after{display:none}
+html[data-direction] #ombre{box-shadow:var(--sh-feuille)}
+
+/* ─── LA CARTE FLOTTANTE : l'inspecteur, posé où la fiche est née (--pr-x, --pr-y : 10-prototype), de sa hauteur — au
+   plus --pr-hmax, elle défile au-delà ; au-dessus des palets, sous la barre du haut et ses menus ─── */
+html[data-direction] body.insp-flotte #inspecteur{top:var(--pr-y,62px);left:var(--pr-x,auto);right:auto;bottom:auto;width:var(--pr-l,420px);height:auto;max-height:var(--pr-hmax,680px);
+  z-index:30;border-radius:var(--pr-r,18px);box-shadow:var(--pr-carte-sh,var(--sh-panneau));transform-origin:0 0;transition:box-shadow var(--moyen)}
+/* le plan garde toute la table : les palets du bas, le récapitulatif et le mot qui passe ne s'écartent plus */
+html[data-direction] body.insp-flotte #folios{right:calc(var(--jeu) + var(--sur-d))}
+html[data-direction] body.insp-flotte #base{right:calc(var(--jeu) + var(--sur-d))}
+html[data-direction] body.insp-flotte #toast{left:calc(var(--rail) + (100vw - var(--rail)) / 2)}
+/* tenue : elle se soulève d'un rien, son ombre s'allonge ; tout le reste prend le curseur de la main fermée */
+html[data-direction] body.pr-tient #inspecteur{box-shadow:var(--pr-carte-sh-tenu,var(--pr-carte-sh));transition:none}
+html[data-direction] body.pr-tient,html[data-direction] body.pr-tient *{cursor:grabbing!important;user-select:none}
+/* la barre se tient : une poignée au milieu, en haut — la main ouverte au survol */
+html[data-direction] body.insp-flotte #inspecteur .fi-nav,html[data-direction] body.insp-flotte #inspecteur .ix-tete{cursor:grab}
+html[data-direction] #inspecteur .fi-nav::before,html[data-direction] #inspecteur .ix-tete::before{content:"";position:absolute;left:50%;top:6px;width:36px;height:4px;margin-left:-18px;border-radius:2px;background:var(--s-line-2);opacity:.9;transition:background var(--rapide),width var(--rapide)}
+html[data-direction] #inspecteur .fi-nav:hover::before,html[data-direction] #inspecteur .ix-tete:hover::before{background:var(--t-3)}
+html[data-direction] body.insp-epingle #inspecteur .fi-nav::before,html[data-direction] body.insp-epingle #inspecteur .ix-tete::before{width:24px;margin-left:-12px}
+html[data-direction] #inspecteur .ix-tete{position:relative}
+.pr-epingle svg.ico{width:17px;height:17px}
+.pr-epingle[aria-pressed="true"]{color:var(--t-1)}
+/* le symbole se tient aussi */
+html[data-direction] body.insp-flotte #inspecteur .fi-symbole{cursor:grab}
+/* pendant la naissance, la carte est au-dessus de tout ce qui est posé (le fil attend qu'elle soit là) */
+#inspecteur.pr-nait{z-index:31}
+
+/* le double de la carte qui rentre dans son bloc (la vraie est déjà fermée) */
+.pr-fantome{position:fixed;z-index:31;margin:0;display:flex;flex-direction:column;overflow:hidden;pointer-events:none;transform-origin:0 0;
+  background:var(--s-surface);color:var(--t-1);border-radius:var(--pr-r,18px);box-shadow:var(--pr-carte-sh,var(--sh-panneau))}
+.pr-fantome .fi{flex:1 1 auto;min-height:0;overflow:hidden}
+
+/* ─── LE FIL : du bloc à la carte, une courbe fine — sa couleur et son trait sont ceux de la direction ─── */
+#pr-lien{position:fixed;inset:0;width:100vw;height:100vh;z-index:29;pointer-events:none;overflow:visible;opacity:0;transition:opacity var(--rapide)}
+#pr-lien.on{opacity:1}
+#pr-lien .pr-l-trait{fill:none;stroke:var(--pr-lien,var(--t-2));stroke-width:var(--pr-lien-l,1.25px);stroke-linecap:round;stroke-dasharray:var(--pr-lien-dash,none)}
+#pr-lien .pr-l-bloc{fill:var(--pr-lien,var(--t-2))}
+#pr-lien .pr-l-carte{fill:var(--s-surface);stroke:var(--pr-lien,var(--t-2));stroke-width:1.25px}
+html:not([data-direction]) #pr-lien,html:not([data-direction]) #pr-quai{display:none}
+
+/* ─── LE QUAI : portée au bord droit, la carte montre où elle s'épinglera (le volet d'hier) ─── */
+#pr-quai{position:fixed;top:calc(var(--entete) + var(--sur-h));right:calc(var(--jeu) + var(--sur-d));bottom:calc(var(--jeu) + var(--sur-b));width:var(--insp-l);z-index:28;pointer-events:none;
+  border-radius:var(--r-3);border:1.5px dashed color-mix(in srgb,var(--pr-accent,var(--t-1)) 55%,transparent);background:color-mix(in srgb,var(--pr-accent,var(--t-1)) 9%,transparent);
+  display:grid;align-content:center;justify-items:start;padding-left:18px;opacity:0;transform:translateX(12px);transition:opacity var(--moyen),transform var(--moyen)}
+#pr-quai span{font:600 var(--f-13)/1 var(--sans);color:var(--pr-accent,var(--t-1));padding:8px 12px;border-radius:var(--r-btn);background:var(--s-surface);box-shadow:var(--sh-2)}
+body.pr-quai-on #pr-quai{opacity:1;transform:none}
+
+/* ─── LE CALIBRE : la charpente commune (chaque direction l'habille) ─── */
+.pr-cal{display:block;min-height:0;padding:0;border-radius:0;background:none}
+.pr-cal.ok,.pr-cal.ko{background:none}
+.pr-cal .dj-h-cal{font-variant-numeric:tabular-nums lining-nums}
+/* pas de mot quand il passe (le lecteur, v62) : il passe parce que le retenu est posé dans la part verte de la gamme ;
+   quand il ne passe pas, le nombre se teinte et la phrase d'avant le dit (`.dj-h-ko`) */
+.pr-cal.ko .dj-h-cal{color:var(--ko)}
+.pr-cal .dj-h-ko{display:block;max-width:none;font:500 var(--f-13)/1.35 var(--sans);color:var(--ko);text-align:left;text-wrap:pretty}
+.pr-cal .dj-h-ko::first-letter{text-transform:uppercase}
+/* la charge : deux valeurs, leur mot dessous, la pastille de couleur qui les relie à leur trait */
+.pr-stats{display:flex;gap:20px;min-width:0}
+.pr-stat{display:flex;flex-direction:column;align-items:flex-end;gap:4px;min-width:0}
+.pr-stat b{font:600 20px/1 var(--sans);letter-spacing:-.02em;color:var(--t-1);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pr-stat b small{font:500 14px/1 var(--sans);letter-spacing:0;color:var(--t-2);margin-left:3px}
+.pr-stat>span{display:inline-flex;align-items:center;gap:6px;font:500 var(--f-12)/1.2 var(--sans);color:var(--t-2);white-space:nowrap}
+.pr-stat i{display:inline-block;width:10px;height:3px;border-radius:2px;background:var(--pr-charge,var(--t-1))}
+.pr-stat.pointe i{background:color-mix(in srgb,var(--pr-charge,var(--t-1)) 40%,transparent)}
+/* la section ouverte ne répète pas en petit le calibre qu'elle montre en grand (pliée, son résumé le dit) */
+html[data-direction] details.fs[data-section="disjoncteur"][open] .fs-resume{display:none}
+/* un cran qui passe se retient d'un clic */
+.pr-cal button[data-dj-geste]{font:inherit;color:inherit;border:none;background:none;padding:0;margin:0;cursor:pointer}
+
+/* ─── LE CHOIX DE LA DIRECTION, dans ⋮ › Plus ─── */
+.menu .pr-choix-t{padding:6px 10px 4px;font:500 var(--f-11)/1.3 var(--sans);color:var(--t-3)}
+.menu .pr-choix button{min-height:40px}
+.pr-choix-pastille{flex:none;width:16px;height:16px;border-radius:5px;box-shadow:inset 0 0 0 1px rgba(127,127,127,.35)}
+.pr-choix-pastille[data-d="graphite"]{background:#141416}
+.pr-choix-pastille[data-d="aube"]{background:linear-gradient(135deg,#fbfaf7,#e6e8ec 60%,#d9a37c)}
+.pr-choix-pastille[data-d="nuit"]{background:linear-gradient(135deg,#2a3f66,#0d1424)}
+.pr-choix-pastille[data-d="ardoise"]{background:linear-gradient(135deg,#6c7581,#4a515b)}
+.menu .pr-choix button[aria-current="true"] .menu-l{font-weight:600}
+.menu .pr-choix button[aria-current="true"]::after{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;margin-left:auto;flex:none}
+
+/* ─── MOUVEMENT RÉDUIT : la table immobile, la carte sans élan ─── */
+@media (prefers-reduced-motion:reduce){
+  #pr-table .pr-lueur{display:none}
+  #pr-table .pr-souffle{animation:none;opacity:.75}
+  #pr-lien,#pr-quai{transition:none}
+}
