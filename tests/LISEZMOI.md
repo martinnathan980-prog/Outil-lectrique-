@@ -143,6 +143,16 @@ node tests/parcours.js         LES PARCOURS DU LECTEUR, de bout en bout, à la v
                                son seuil (une fiche 200 ms, un folio 3 s, un geste 1 s) est un frottement. --captures=dossier : une
                                capture par pas et parcours-mesures.json ; --sans-gros saute le gros retest ; --parcours=C,E ne rejoue
                                que ceux-là
+node tests/pdf.js              LIRE UN PDF DE SCHÉMA (08-pdf, 09-pdf), hors ligne : LE BANC — les six folios de l'exemple imprimés
+                               en PDF par Chromium (la vérité : contratExemple, aux étiquettes que le folio dessine) et quatre autres
+                               mains générées par tests/pdf/schemas.js (numéros dans le cadre ; textes tournés et cadres en quatre
+                               traits ; renvois entre folios et T sans point ; d'autres repères, J149, CB-131), rappel et précision
+                               borne à borne (≥ 98 % et ≥ 95 %),
+                               le cartouche, les orphelins ; puis à la vraie souris : la visionneuse par le menu (Plus ›), la molette
+                               et la main, la recherche qui surligne, une ligne qui surligne sa liaison, une case corrigée, le retest
+                               Excel relu par Volta, « Ouvrir comme plan », trois folios et leurs renvois, un PDF glissé sur la
+                               bibliothèque, cinquante pages (les vignettes à la demande), un PDF scanné relié à la main au clavier ;
+                               aucune requête réseau, aucune erreur. --images=dossier : les captures
 ```
 
 L'outil s'ouvre sur la BIBLIOTHÈQUE (ni l'exemple, ni une page qui explique) : une batterie qui lit
