@@ -85,6 +85,21 @@ const B64_LIBRE = classeur([['Libre', [['De', 'Borne', 'Vers', 'Borne'], ['A', '
     return out;
   }, [B64, B64_LIBRE]);
   R.push(...R2);
+  // le retest corrigé (audit v72 : « rien ne rend le livrable ») : les seize colonnes, les cases changées commentées, la
+  // feuille Modifications, et Volta le relit à l'identique
+  const R3 = await p.evaluate(async () => {
+    const out = []; const ok = (n, c, d) => out.push((c ? '  ok   ' : '  KO   ') + n.padEnd(52) + (d || ''));
+    atelier.exemple(); await new Promise(r => setTimeout(r, 500));
+    changerLiaison(verite().find(x => x.cable === 'W-012'), 'type', 'DR16', 'essai'); changerLiaison(verite().find(x => x.cable === 'W-013'), 'longueur', 3.25, 'essai');
+    const R = classeurRetestCorrige(verite(), app.nom), ws = R.wb.Sheets.Retest, rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }), i = rows.findIndex(x => x[6] === 'W-012');
+    const com = (ws[XLSX.utils.encode_cell({ r: i, c: 5 })].c || [])[0], M = XLSX.utils.sheet_to_json(R.wb.Sheets.Modifications, { header: 1 }).slice(1).map(x => x.join('|'));
+    ok('le retest corrigé : les seize colonnes (en-têtes en ligne 4), la case changée commentée de ce qu’elle disait', rows[3].slice(0, 16).join('|') === 'Harness|Device1|Pin1|PN1|Description1|Cable T/G|Cable Tag|Route|Device2|Pin2|PN2|Description2|FWD|Cable length (mm)|Appareil|Date retest' && rows[i][5] === 'DR16' && com && com.t === 'Avant : DR20' && rows[i][16] === 'Cable T/G', rows[i].join('|'));
+    ok('la feuille Modifications : une ligne par case changée (le type, la longueur en mm)', M.join(' / ') === '|W-012|102CB1|2|103RL1|A1|Cable T/G|DR20|DR16 / |W-013|103RL1|A2|104LP1|1|Cable length (mm)|vide|3250 mm' && R.modifiees === 2, M.join(' / '));
+    const lu = lireTexte(XLSX.utils.sheet_to_csv(XLSX.read(XLSX.write(R.wb, { type: 'array', bookType: 'xlsx' })).Sheets.Retest, { FS: ';' }));
+    ok('Volta le relit : le format retest, les 201 liaisons, les valeurs corrigées', lu.format === 'retest' && lu.liaisons.length === 201 && lu.liaisons.find(x => x.cable === 'W-012').type === 'DR16' && lu.liaisons.find(x => x.cable === 'W-013').longueur === 3.25, lu.format + ' · ' + lu.liaisons.length);
+    return out;
+  });
+  R.push(...R3);
   R.forEach(x => console.log(x));
   const ko = R.filter(x => x.startsWith('  KO')).length;
   console.log('\n  ' + (R.length - ko) + ' / ' + R.length + (ko ? '  — ' + ko + ' PROBLÈME(S)' : '  — tout tient'));
