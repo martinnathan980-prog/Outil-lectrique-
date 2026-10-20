@@ -285,8 +285,11 @@ function normesPiedHtml() { if (!NORMES.hist.length && !app.normeNom) return '';
 /* Un domaine : son titre, à quoi il sert, ses tables — une liste de lignes qu'on déplie. */
 function domaineHtml(d) { const corps = d.id === 'contrats' ? contratsHtml() : d.vues.map(tableHtml).join('');
   return `<section class="nm-dom" id="nm-dom-${d.id}"><h3 class="nm-dom-t">${esc(d.titre)}</h3><p class="nm-dom-sens">${esc(d.sens)}</p><div class="nm-liste">${corps}</div></section>`; }
-function contratsHtml() { const R = app.references, I = typeof indexReferences === 'function' ? indexReferences() : null;
-  return `<article class="nm-table nm-contrats"><div class="nm-t-tete nm-t-fixe"><div class="nm-t-titre"><b>Base déposée</b><span class="nm-t-source">${R ? esc(R.nom || 'base') + '\u00a0· ' + plurielLie(I.harnais.size, 'harness') + '\u00a0· ' + plurielLie(I.dessins.size, 'dessin') + '\u00a0· ' + plurielLie(R.liaisons.length, 'liaison') : 'aucune base déposée'}</span></div>`
+// les comptes de la base viennent de ses métadonnées, toujours là — l'index, lui, se construit encore quelques secondes
+// après le dépôt d'une grande base (`indexReferences` rend alors null)
+function contratsHtml() { const R = app.references, M = (R && R.base && R.base.meta) || {}, I = typeof indexReferences === 'function' ? indexReferences() : null;
+  const nH = M.harnais != null ? M.harnais : I ? I.harnais.size : 0, nD = M.dessins != null ? M.dessins : I ? I.dessins.size : 0, nL = M.n != null ? M.n : R ? (R.liaisons || []).length : 0;
+  return `<article class="nm-table nm-contrats"><div class="nm-t-tete nm-t-fixe"><div class="nm-t-titre"><b>Base déposée</b><span class="nm-t-source">${R ? esc(R.nom || 'base') + '\u00a0· ' + plurielLie(nH, 'harness') + '\u00a0· ' + plurielLie(nD, 'dessin') + '\u00a0· ' + plurielLie(nL, 'liaison') : 'aucune base déposée'}</span></div>`
     + `<div class="nm-t-badges">${R ? badge('import', 'gardée dans ce navigateur') : badge('rien', 'vide')}</div><button class="btn lien dense" data-nm-vue="bible">Voir dans la bible</button></div></article>`; }
 /* Une table : sa tête (titre, source, compte, badges), et dépliée, sa fiche, ses gestes, la table elle-même. L'état
    par défaut (l'embarquée telle quelle) ne se dit pas table par table — l'état du haut le dit une fois : les badges ne

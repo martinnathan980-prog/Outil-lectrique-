@@ -119,6 +119,12 @@ node tests/normes.js           les normes : importer, classer, modifier (08 octi
                                tables, en-têtes avec unités), prévisualisés puis adoptés ; l'export d'une table, d'un gabarit, de
                                toutes les modifications ; la recherche dans toutes les tables et « Voir dans la table » ; le retour
                                à l'embarquée, table par table puis partout ; la bible depuis la page et retour ; le téléphone
+node tests/see.js              LA BASE SEE (08-see, 08-see-import), lue dans la page, rien n'en sort : trois classeurs fabriqués (les
+                               vues EED, l'import, la cohérence) ; l'onglet Import (SEE gagne, sauf contre une ligne vérifiée par
+                               deux sources et un contact de SEE réellement faux ; ce que SEE laisse vide, Volta le garde ; la
+                               cavité « −1 ») ; l'onglet COHÉRENCE — un défaut planté par contrôle (36), chacun trouvé et compté
+                               juste, aucune ligne saine en exemple, les lignes impossibles écartées à l'import, « Ce que la base
+                               apporte », le rapport à copier sans le plan ni le nom du classeur, l'onglet gardé après rechargement
 node tests/couverture.js       CE QUE L'OUTIL VÉRIFIE, ET S'IL VÉRIFIE TOUT : sur l'exemple embarqué et sur un contrat inventé plus riche
                                (huit disjoncteurs dont un sans profil, un sans part number, un tripolaire ; EN 2997, EN 3645, EN 3646,
                                EN 4165, ASNE0059 ; E0599 et NSA937901 ; deux prises en chaîne ; AD16, AM6, un fil sans type, un type

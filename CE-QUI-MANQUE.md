@@ -12,6 +12,75 @@ Rien de ce qui suit n'est inventé dans Volta : ce qu'il ne sait pas, il le dit 
 
 ---
 
+## Ce que la version 72 attend de toi (20 octobre 2026, le soir)
+
+Tu m'as demandé : « Tu as pu vérifier si toute notre base SEE est correcte et cohérente ? Elle apporte quoi de plus que
+les photos ? Tout est correct ? Les contacts, tyrap… ? Tout ? »
+
+- **Ta base SEE, je ne la vois pas, et c'est voulu : elle reste sur ton PC.** Volta la vérifie donc chez toi. Dépose
+  l'Excel de SEE : l'onglet **Cohérence** passe chaque ligne au crible de 36 contrôles (sexe contre la référence,
+  taille contre la cavité, câble contre le fût, référence EN 3155 qui existe, faces qui se chevauchent, nombre de
+  contacts contre la désignation, câbles plus fins que leur conducteur…). Les lignes impossibles sont écartées, les
+  douteuses prises et signalées. **« Copier le rapport de cohérence »** donne un texte qui ne contient que des
+  références de catalogue et des comptes : ni ton plan, ni le nom du classeur, les programmes deviennent
+  « programme A ». **Envoie-le-moi** : c'est ce qui me permettra de te répondre « tout est correct » ou « voici ce qui
+  cloche ».
+- **Ce que la base apporte de plus que les photos** : l'onglet le dit, sous « Ce que la base apporte ». Les quatre
+  tables de tes photos (EN 2997, 3645, 3646, 4165) y sont comparées ligne par ligne à la base, avec la version de la
+  règle dans SEE. Suivent les familles de contacts, les câbles, les faces, les références de connecteurs et
+  d'équipements, les paires fiche ↔ embase et les programmes que Volta n'avait pas. Les tyraps sont comptés et
+  comparés à la table Colliers ; Volta ne sait pas encore les juger.
+- **Les tables de Volta passées aux mêmes contrôles** (les 442 lignes de contacts de tes photos, les 226 câbles) : aucune
+  ligne écartée. Seules remarques : 10 noms de contacts courts (KB1600…) que SEE écrit en entier, et 8 clés d'un seul
+  sexe.
+- **Chaque valeur des tables dit d'où elle vient**, sur la fiche, par un repère de 7 px et sa bulle. Le repère plein
+  signale une valeur vérifiée par deux sources ou plus (la bulle les nomme). Le demi-repère signale tes tables. Un anneau
+  ambre signale une valeur à confirmer, et la bulle dit pourquoi.
+
+| table | vérifié | déduit | à confirmer | tes tables (sans statut) |
+|---|---|---|---|---|
+| contacts | 329 | 7 | 130 | 0 |
+| câbles | 108 | 0 | 118 | 0 |
+| faces des modules | 162 | 0 | 140 | 0 |
+| colliers (tyraps) | 16 | 0 | 5 | 0 |
+| familles de câbles | 25 | 0 | 16 | 0 |
+| familles de disjoncteurs | 9 | 0 | 17 | 0 |
+| calibrations | 8 | 3 | 31 | 0 |
+| chutes des disjoncteurs | 25 | 0 | 54 | 13 (ton atelier) |
+| points de courbe | 0 | 8 | 298 | 189 (tes ETA483) |
+| déclassements | 6 | 0 | 49 | 0 |
+| fils EN 2853 | 0 | 0 | 14 | 0 |
+| protections | 11 | 0 | 0 | 0 |
+
+  Une valeur était fausse et a été corrigée : **6TC et MS14154 vont de 1 à 20 A** (MS14154D, Sensata), pas jusqu'à 35 A.
+  Où les sources ne s'accordent pas, le statut le dit. À 2 In, la courbe 2TC −54 °C donne 66 s, alors que sa propre
+  table de calibration dit 35 s au plus.
+
+- **Visio, dans les deux sens** :
+  - « Lire un schéma Visio » (⋮ › Plus) lit les liaisons borne à borne, avec une relecture comme pour le PDF.
+  - « Les folios en Visio » (⋮ › Exporter) écrit un .vsdx, une page par folio. Volta le relit à 100 %, et il respecte
+    le schéma MS-VSDX.
+  - **Ce que je n'ai pas pu faire : l'ouvrir dans le vrai Visio.** Ouvre un .vsdx exporté et dis-moi ce qui ne va pas.
+  - Si tu peux, donne-moi un .vsdx de chez vous **sans données réelles** (un folio d'essai), pour voir comment vos
+    formes sont faites.
+- **PDF ↔ Excel** :
+  - PDF → Excel : un PDF de schéma se lit en retest (⋮ › Plus › Lire un PDF de schéma).
+  - Excel → PDF : « Le dossier en PDF » (⋮ › Exporter) écrit tous les folios en A3 avec leur cartouche, une page de
+    garde et la nomenclature. Volta relit ce PDF à 100 %.
+- **Le grand retest de tous les contrats** (mesuré sur 100 068 lignes) :
+  - la base est prête en 2,2 s au lieu de 11,6 s, et la page ne se fige plus que 0,13 s au plus ;
+  - chercher dans toute la base prend 8 à 15 ms ;
+  - un contrat s'ouvre d'un clic en moins d'une seconde ;
+  - « Comparer au déjà-fait » (⋮) compare le plan ouvert à toute la base en 0,14 s ;
+  - convertir 17 contrats en retests corrigés prend 0,5 s. En dossiers PDF, c'est encore lent : 9 à 11 s par contrat
+    de 4 folios.
+  - **À essayer sur ta vraie base** : dis-moi les temps que tu vois.
+
+Toujours ouvertes : la masse et la hauteur des modules E0599 de taille 20 (ta table : 17,0 g et 22,5 mm ; Air LB :
+8,5 g et 19 mm), et s'il faut une ligne 16 AWG en taille 12 de l'EN 2997 et de l'EN 3646.
+
+---
+
 ## Tes réponses du 20 octobre 2026 (version 72)
 
 - **Quand SEE contredit une ligne que les sources ont vérifiée, la source gagne.** Une ligne de Volta « vérifié » (deux

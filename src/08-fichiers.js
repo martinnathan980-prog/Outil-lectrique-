@@ -85,7 +85,7 @@ const MODELE_BIBLE = {
   entetes: ['Référence', 'Famille', 'Nature', 'Bornes', 'Jauge min', 'Jauge max', 'Intensité', 'Blindage', 'Note', 'Mobile'],
   requises: ['Référence', 'Bornes'],
   lignes: [
-    ['ASNE0500-02', 'ASNE0500', 'jonction', '2', '26', '20', '7,5', 'non', 'exemple — remplace par ta bible', ''],
+    ['ASNE0500-02', 'ASNE0500', 'jonction', '2', '26', '20', '7,5', 'non', 'exemple — remplacez par votre bible', ''],
     ['ASNE0500-04', 'ASNE0500', 'jonction', '4', '26', '20', '7,5', 'non', 'exemple', ''],
     ['EN3646A6083AAN', 'EN3646', 'coupure', '3', '26', '20', '7,5', 'non', 'prise de coupure 3 contacts', 'fiche']] };
 // une norme : une ligne de titre libre, la ligne d'en-têtes de la table, puis une ligne par entrée (la table Réseau)

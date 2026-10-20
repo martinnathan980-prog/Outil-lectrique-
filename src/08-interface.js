@@ -2390,7 +2390,7 @@ function lierPanneau() {
   // imprimer, le suivi) ; Plus (coller, l'exemple, la bible, les normes, les hypothèses, le cartouche). Ce qui porte sur le
   // plan le remet sur la table quand la bibliothèque le cache (08-bibliotheque, `surLePlan`).
   lierMenu({ bibliotheque: () => montrerBibliotheque(), ouvrir: choisirFichier, fichiers: () => ficheFichiers(),
-    recapitulatif: surLePlan(basculerBase), nomenclature: surLePlan(ficheNomenclature),
+    recapitulatif: surLePlan(basculerBase), nomenclature: surLePlan(ficheNomenclature), dejafait: surLePlan(ficheDejaFaitContrat),
     svg: surLePlan(exporterSVG), png: surLePlan(exporterPNG), imprimer: surLePlan(imprimer), dossierpdf: surLePlan(exporterDossierPdf), retestcorrige: surLePlan(exporterRetestCorrige), suivi: surLePlan(exporterSuivi),
     nomenclaturecsv: surLePlan(() => { if (!verite().length) { dire('Aucun plan ouvert : rien à compter.'); return; } exporterNomenclature(); }),
     coller: ficheColler, exemple, bible: ficheBible, normes: () => ficheNormes(), hypotheses: ficheHypotheses, cartouche: surLePlan(ficheCartouche), raccourcis: montrerRaccourcis });

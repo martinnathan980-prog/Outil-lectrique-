@@ -82,7 +82,7 @@ ${interfaceJs}
 <!-- Le lecteur de fichiers Excel (SheetJS) est tout en bas : 624 Ko de
      bibliothèque minifiée, qui n'a rien à faire au milieu du code qu'on relit.
      Embarqué pour que l'outil tienne dans un seul fichier, sans réseau. -->
-<script>
+<script id="xlsx">
 ${xlsx}
 </script>
 <!-- Le lecteur de PDF (pdf.js, Mozilla, Apache-2.0 : vendor/LICENCE-pdfjs.txt), en bas lui aussi ; son worker est du

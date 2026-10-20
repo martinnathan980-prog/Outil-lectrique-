@@ -103,6 +103,9 @@ function liaison(o) {
   if (s(o.fwd)) l.fwd = s(o.fwd); if (s(o.descriptionDe)) l.descriptionDe = s(o.descriptionDe); if (s(o.descriptionVers)) l.descriptionVers = s(o.descriptionVers);
   // le contact à sertir écrit à la main à un bout (le récapitulatif) : il passe devant celui que le plan donne
   if (s(o.contactDe)) l.contactDe = s(o.contactDe); if (s(o.contactVers)) l.contactVers = s(o.contactVers);
+  // ce que le fichier portait là où on l'a corrigé (`changerLiaison`, `poserChamp`) : un plan rouvert le garde, et le
+  // retest corrigé (08-export) commente encore ses cases changées
+  if (o.avant && typeof o.avant === 'object') l.avant = { ...o.avant };
   return l;
 }
 /* Une liaison sans équipement à un bout n'en est pas une : c'est une ligne
