@@ -4199,6 +4199,49 @@ button.orig:hover{color:var(--t-1);box-shadow:inset 0 0 0 1px var(--t-3)}
 .see-m1-c li span{min-width:0;overflow-wrap:anywhere;color:var(--t-1)}
 .see-m1-c li b{font:600 var(--f-12)/1.5 var(--mono);color:var(--t-2);font-variant-numeric:tabular-nums}
 
+/* ───────── style-table.css ───────── */
+/* ───────── LA TABLE SOBRE, ET CE QUI S'Y ÉCRIT PENDANT QU'UN FOLIO SE DESSINE (08-table, 08-interface) ─────────
+   La table « Nuit bleue » telle que style.css la pose (ses jetons : le fond, le souffle, les points, la lueur), conduite
+   sobrement : au repos, rien ne tourne (l'audit de fluidité : un cœur entier brûlé à ne rien faire, 1 % maintenant), et
+   à l'œil, la même. Puis l'attente d'un folio (la barre, ce qu'on peut faire pendant), le fondu d'un dessin qui en
+   remplace un autre, la petite bande qui dit ce qui travaille. */
+
+/* le souffle : une respiration d'opacité seule (le calque plein écran ne s'agrandit plus : il se rééchantillonnait à chaque
+   image), figée au milieu de son cycle — sa lumière reste —, vivante seulement quand on est là (08-table, `.respire`), et
+   jamais pendant un geste ni sous une feuille qui prend la page */
+#table .ta-souffle{animation:ta-souffle 16s ease-in-out -8s infinite alternate;animation-play-state:paused;will-change:opacity;transform:none}
+@keyframes ta-souffle{from{opacity:.45}to{opacity:1}}
+#table.respire:not(.geste) .ta-souffle{animation-play-state:running}
+body:has(#base.page:not([hidden])) #table .ta-souffle,body:has(#fiche[data-mode="see"]:not([hidden])) #table .ta-souffle{animation-play-state:paused}
+/* les points : un calque d'un pas plus grand que l'écran, que la parallaxe glisse (un transform, rien à repeindre) */
+#table .ta-points{inset:-24px;will-change:transform}
+/* la lueur : un peu plus petite, elle se pose vite (moins d'images à composer) ; cachée sous une feuille qui prend la page */
+#table .ta-lueur{width:640px;height:640px;margin:-320px 0 0 -320px;transition:opacity .6s ease}
+body:has(#base.page:not([hidden])) #table .ta-lueur,body:has(#fiche[data-mode="see"]:not([hidden])) #table .ta-lueur{display:none}
+
+/* ─── L'ATTENTE D'UN FOLIO (08-interface, `montrerAttente`) : le folio, ses câbles, la durée, une barre, et deux gestes ─── */
+.attente .at-barre{display:block;width:min(240px,60%);height:3px;margin-top:8px;border-radius:2px;background:var(--l-table-2);overflow:hidden}
+.attente .at-barre span{display:block;height:100%;background:var(--glace);transform-origin:0 50%;transform:scaleX(0);transition:transform .25s linear}
+.attente .at-gestes{pointer-events:auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin-top:18px;font-size:var(--f-12);font-weight:400;color:var(--t-table-2)}
+.attente .at-gestes button{height:30px;padding:0 12px;border:none;border-radius:9px;background:var(--palet);color:var(--t-table);box-shadow:var(--sh-palet);font:500 var(--f-12) var(--sans);cursor:pointer;transition:background var(--rapide)}
+.attente .at-gestes button:hover{background:var(--palet-2)}
+.attente .at-gestes button:focus-visible{outline:2px solid var(--glace);outline-offset:2px}
+
+/* ─── LE FONDU : le dessin d'avant (une copie) s'efface au-dessus du nouveau (08-interface, `remplacerDessin`) ─── */
+.dessin-fondu{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;opacity:1;transition:opacity .55s var(--courbe)}
+.dessin-fondu.part{opacity:0}
+
+/* ─── LA PETITE BANDE du milieu (#affinage) : une barre fine après ses mots ; les folios pas encore prêts, pâles ─── */
+.affinage .af-barre{flex:none;width:44px;height:3px;border-radius:2px;background:var(--voile-3);overflow:hidden}
+.affinage .af-barre span{display:block;height:100%;background:var(--glace);transform-origin:0 50%;transition:transform .25s linear}
+.chip.a-venir:not(.on){opacity:.5}
+
+@media (prefers-reduced-motion:reduce){
+  #table .ta-souffle{animation:none;opacity:.75}
+  #table .ta-points{transform:none!important}
+  .dessin-fondu{display:none}
+}
+
 </style>
 </head>
 <body>
@@ -4485,7 +4528,7 @@ button.orig:hover{color:var(--t-1);box-shadow:inset 0 0 0 1px var(--t-3)}
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = '49b33ecaea7b';
+const VERSION_MOTEUR = '22b467f0b069';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -5324,8 +5367,24 @@ const tientALEchelle = (w, h) => typeof PAGE_W !== 'undefined' && w <= PAGE_W - 
 const LARGEUR = { equip: STRIPW + BODYW + STRIPW, barrette: STRIPW + 24 + STRIPW, coupure: STRIPW + 30 + STRIPW, tag: BORNW };
 const A3 = 1.414;
 /* L'ordre naturel des bornes : numérique quand la borne est un nombre, sinon
-   alphanumérique (1, 2, 10 ; A1, A2, B1). C'est l'ordre du matériel. */
-const ordreNaturel = (a, b) => String(a ?? '').localeCompare(String(b ?? ''), undefined, { numeric: true, sensitivity: 'base' });
+   alphanumérique (1, 2, 10 ; A1, A2, B1). C'est l'ordre du matériel. Un seul
+   collateur pour toutes les comparaisons : `localeCompare` avec des options en
+   refaisait un à chaque appel (le dixième du temps du concours, l'audit de
+   fluidité) ; l'ordre est le même. */
+const COLLATEUR_NATUREL = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+const ordreNaturel = (a, b) => COLLATEUR_NATUREL.compare(String(a ?? ''), String(b ?? ''));
+/* Le RANG naturel des bornes d'un bloc (deux bornes égales à l'ordre naturel ont le même rang) : trier par rang, c'est
+   trier par l'ordre naturel — le tri est stable —, sans comparer de chaînes. Calculé une fois par bloc. */
+function rangsNaturels(b) { if (b.rangNat) return b.rangNat;
+  const tries = b.bornes.slice().sort((u, v) => ordreNaturel(u.etiq, v.etiq)), rangs = new Map(); let r = 0;
+  tries.forEach((p, i) => { if (i && ordreNaturel(tries[i - 1].etiq, p.etiq) !== 0) r = i; rangs.set(p.cle, r); });
+  return (b.rangNat = rangs); }
+/* LES FORMES des repères (barrette, prise de coupure, masse : 01, `formeDe`), lues une fois chacune : le juge les
+   demandait des milliers de fois par concours, une expression régulière à chaque fois. La forme ne dépend que du
+   repère (la nature dite par l'ingénieur ne change pas la forme du dessin). */
+const FORMES_LUES = new Map();
+const formeLue = r => { let f = FORMES_LUES.get(r); if (f === undefined) { f = formeDe(r); if (FORMES_LUES.size > 20000) FORMES_LUES.clear(); FORMES_LUES.set(r, f); } return f; };
+const coupureLue = r => formeLue(r) === 'coupure', masseLue = r => formeLue(r) === 'masse', barretteLue = r => formeLue(r) === 'barrette';
 const K = (id, cle) => id + SEP + cle;
 const mediane = a => { const s = a.slice().sort((x, y) => x - y); return s[s.length >> 1]; };
 
@@ -5785,7 +5844,7 @@ function flancs(M, place) {
   // 1. ce que les partenaires d'un côté imposent ; null reste à décider
   for (const id of M.ids) { const b = M.blocs.get(id);
     if (b.genre === 'tag') { listes.set(id, { S: b.bornes.slice() }); continue; }
-    if (b.genre !== 'equip') { listes.set(id, { S: b.bornes.slice().sort((u, v) => ordreNaturel(u.etiq, v.etiq)) });
+    if (b.genre !== 'equip') { const R = rangsNaturels(b); listes.set(id, { S: b.bornes.slice().sort((u, v) => R.get(u.cle) - R.get(v.cle)) });
       b.bornes.forEach(p => { const cs = M.partenairesBlocs(K(id, p.cle)).map(q => cote(id, q)); const meme = cs.includes(0); const sides = new Set(cs.filter(s => s));
         let d; if (b.genre === 'coupure') d = 0; else if (sides.size === 2) d = 0; else if (sides.size === 1) d = meme ? 0 : [...sides][0];
         else d = (meme || !M.partenairesDe(K(id, p.cle)).length) ? null : (penchant.get(id) < 0 ? -1 : 1);
@@ -5824,8 +5883,8 @@ const groupe = (b, cle) => b.connecteur.get(cle) ?? ('~' + cle);
 /* Les bornes d'un flanc : celles d'un connecteur se suivent dans l'ordre
    naturel, les connecteurs dans l'ordre de leur première borne. */
 function listeDuFlanc(b, flancDe, lid) {
-  const groupes = new Map();
-  b.bornes.slice().sort((u, v) => ordreNaturel(u.etiq, v.etiq)).forEach(p => { const f = flancDe.get(K(b.id, p.cle)); if (f !== lid && f !== 'LR') return;
+  const groupes = new Map(), R = rangsNaturels(b);
+  b.bornes.slice().sort((u, v) => R.get(u.cle) - R.get(v.cle)).forEach(p => { const f = flancDe.get(K(b.id, p.cle)); if (f !== lid && f !== 'LR') return;
     const g = b.connecteur.get(p.cle) ?? ('~' + p.cle); (groupes.get(g) || groupes.set(g, []).get(g)).push(p); });
   return [...groupes.values()].flat();
 }
@@ -6095,7 +6154,7 @@ function barycentre(M, E, y, moyenne, parite) {
       const groupes = new Map();
       unites.forEach(u => { const g = u.run ? u.run.nom : ('~' + u.cles[0]); (groupes.get(g) || groupes.set(g, []).get(g)).push(u); });
       // à égalité, l'ordre naturel : une borne dédoublée garde le même rang sur ses deux flancs
-      const nat = (u, v) => ordreNaturel(etiqDe.get(u.cles[0]), etiqDe.get(v.cles[0])), etiqDe = new Map(b.bornes.map(p => [p.cle, p.etiq]));
+      const R = rangsNaturels(b), nat = (u, v) => R.get(u.cles[0]) - R.get(v.cles[0]);
       const ordre = [...groupes.values()].map(us => { us.sort((p, q) => (p.k - q.k) || nat(p, q)); return { us, k: centre(us.map(u => u.k)) }; }).sort((p, q) => (p.k - q.k) || nat(p.us[0], q.us[0]));
       const nouv = ordre.flatMap(g => g.us.flatMap(u => u.cles)); const parCle = new Map(L.map(p => [p.cle, p]));
       E.listes.get(id)[lid] = nouv.map(c => parCle.get(c));
@@ -6106,8 +6165,9 @@ function barycentre(M, E, y, moyenne, parite) {
 function paquetsDe(M, id, cles) {
   const chef = new Map(cles.map(c => [c, c])); const trouver = c => { while (chef.get(c) !== c) c = chef.get(c); return c; };
   (M.pontes.get(id) || []).forEach(([a, b]) => { if (!chef.has(a) || !chef.has(b)) return; const ra = trouver(a), rb = trouver(b); if (ra !== rb) chef.set(rb, ra); });
-  const etiq = new Map(M.blocs.get(id).bornes.map(p => [p.cle, p.etiq])); const groupes = new Map();
-  cles.slice().sort((a, b) => ordreNaturel(etiq.get(a), etiq.get(b))).forEach(c => { const r = trouver(c); (groupes.get(r) || groupes.set(r, []).get(r)).push(c); });
+  const b = M.blocs.get(id), R = rangsNaturels(b), groupes = new Map();
+  const tri = cles.every(c => R.has(c)) ? (x, y) => R.get(x) - R.get(y) : (() => { const etiq = new Map(b.bornes.map(p => [p.cle, p.etiq])); return (x, y) => ordreNaturel(etiq.get(x), etiq.get(y)); })();
+  cles.slice().sort(tri).forEach(c => { const r = trouver(c); (groupes.get(r) || groupes.set(r, []).get(r)).push(c); });
   return [...groupes.values()];
 }
 /* Ordonner un état : le barycentre et le solveur en alternance ; l'ordre
@@ -6272,7 +6332,7 @@ function compterTours(L) { let n = 0; const coupures = new Map();
   L.links.forEach(l => { if (l.boucle || l.shunt) return; const A = l.epA, B = l.epB, ca = colonneDuBout(A), cb = colonneDuBout(B);
     if ((A.stub === 'L' && cb < ca) || (A.stub === 'R' && cb > ca)) n++;
     if ((B.stub === 'L' && ca < cb) || (B.stub === 'R' && ca > cb)) n++;
-    [[l.de, l.borneDe, A], [l.vers, l.borneVers, B]].forEach(([nom, borne, ep]) => { if (!estCoupure(nom)) return;
+    [[l.de, l.borneDe, A], [l.vers, l.borneVers, B]].forEach(([nom, borne, ep]) => { if (!coupureLue(nom)) return;
       const k = nom + ':' + borne, c = coupures.get(k) || coupures.set(k, { fils: 0, cotes: new Set() }).get(k); c.fils++; c.cotes.add(ep.stub); }); });
   coupures.forEach(c => { if (c.fils >= 2 && c.cotes.size < 2) n += 4; });
   return n; }
@@ -6284,7 +6344,7 @@ function compterTours(L) { let n = 0; const coupures = new Map();
    compte celles qui restent. */
 const PEND_MASSE = 30;
 function compterPastillesGenees(L, fils) { let n = 0;
-  L.comps.forEach(c => { if (c.kind !== 'tag' || !(estMasse(c.name) || estBarrette(c.name))) return; const y0 = c.y + c.h / 2 + 1, y1 = y0 + PEND_MASSE;
+  L.comps.forEach(c => { if (c.kind !== 'tag' || !(masseLue(c.name) || barretteLue(c.name))) return; const y0 = c.y + c.h / 2 + 1, y1 = y0 + PEND_MASSE;
     if (fils.some(w => { for (let i = 0; i < w.pts.length - 1; i++) { const a = w.pts[i], b = w.pts[i + 1];
       if (Math.abs(a.y - b.y) < 0.01 && a.y > y0 && a.y < y1 && Math.max(a.x, b.x) > c.x && Math.min(a.x, b.x) < c.x + c.w) return true; } return false; })) n++; });
   return n; }
@@ -6314,7 +6374,7 @@ function compterContours(fils) { let s = 0; fils.forEach(w => s += Math.max(0, d
    trois fils devient un mur que les autres fils contournent. */
 const ETIREMENT_MAX = 1.5;
 const bornesParFlanc = c => Math.max(1, (c.rangs.L || []).length, (c.rangs.R || []).length, (c.rangs.S || []).length);
-function hauteurNaturelle(c) { const n = bornesParFlanc(c); return (n - 1) * PRH + 2 * (c.kind !== 'equip' ? (estCoupure(c.name) ? PRH / 2 + 5 : MARGE_BARRETTE) : n === 1 ? 23 : 18); }
+function hauteurNaturelle(c) { const n = bornesParFlanc(c); return (n - 1) * PRH + 2 * (c.kind !== 'equip' ? (coupureLue(c.name) ? PRH / 2 + 5 : MARGE_BARRETTE) : n === 1 ? 23 : 18); }
 // un gros équipement (HUB_MIN bornes ou plus sur un flanc) s'étire à la hauteur de ses partenaires sans être compté étiré
 const corpsEtire = c => c.kind !== 'tag' && bornesParFlanc(c) < HUB_MIN && c.h > ETIREMENT_MAX * hauteurNaturelle(c) + (bornesParFlanc(c) <= 2 ? 2 : 1) * PRH;
 /* La HAUTEUR EN TROP d'un équipement (le hub excepté : il s'allonge en face de ses partenaires) : ce que son corps a de
@@ -6585,7 +6645,8 @@ function estimer(L) {
    chargé : 1,6 ms le routage rapide, 2,8 le complet, 3,5 le solveur). */
 let evaluations = 0;
 const routerVite = L => typeof routerUneFois === 'function' ? routerUneFois(L, new Set()).resultat : router(L);
-function evaluer(M, E, pos, vite) { evaluations += vite ? 1 : 2; const L = assembler(M, E, pos); const R = vite ? routerVite(L) : router(L); return { E, pos, L, R, j: juger(L, R) }; }
+// `L0` : le contrat de ce même état à cette même position, déjà assemblé (l'estimation l'avait fait) — rien ne l'a touché
+function evaluer(M, E, pos, vite, L0) { evaluations += vite ? 1 : 2; const L = L0 || assembler(M, E, pos); const R = vite ? routerVite(L) : router(L); return { E, pos, L, R, j: juger(L, R) }; }
 /* Un dessin un peu trop large pour la feuille s'ÉTIRE : de l'espace
    s'insère dans les bandes vides (aucun bloc ne les traverse, dans aucune
    colonne), ce qui garde tous les alignements et tous les tracés. Gardé
@@ -6655,15 +6716,15 @@ function rechercheLocale(M, meilleur, budget, finale, interne, variante) {
   if (!meilleur.jv) meilleur.jv = evaluer(M, meilleur.E, meilleur.pos, true).j;
   // trier : les deux premiers tamis, contre le meilleur ; rend le candidat au routage rapide, ou rien
   const exacte = finale === 'exacte';
-  const trier = (E, pos, tamis = TAMIS, large) => { const est = estimer(assembler(M, E, pos)); if (!exacte && meilleur.j.sain && est.lisibilite < meilleur.est.lisibilite - tamis) return null;   // un dessin faux se répare à n'importe quel prix
-    const vite = evaluer(M, E, pos, true); if (exacte) { vite.est = est; return vite; }      // la passe exacte : tout va au routage complet
+  const trier = (E, pos, tamis = TAMIS, large) => { const L0 = assembler(M, E, pos), est = estimer(L0); if (!exacte && meilleur.j.sain && est.lisibilite < meilleur.est.lisibilite - tamis) return null;   // un dessin faux se répare à n'importe quel prix
+    const vite = evaluer(M, E, pos, true, L0); if (exacte) { vite.est = est; return vite; }      // la passe exacte : tout va au routage complet
     /* large : le routage rapide ne voit pas les croisements que les détours du routage complet ôtent (deux au moins, quand il en ôte) — un candidat qui semble pire de deux croisements va quand même au routage complet */
     if (large) { const marge = Math.max(2, meilleur.jv.croisements - meilleur.j.croisements), seuil = { ...meilleur.jv, croisements: meilleur.jv.croisements + marge, lisibilite: meilleur.jv.lisibilite - marge / CROISEMENTS_PAR_DROIT };
       if (bat(seuil, vite.j)) return null; }
     else if (!bat(vite.j, meilleur.jv)) return null;
     vite.est = est; return vite; };
   // confirmer : le routage complet, contre le meilleur ; gardé s'il gagne
-  const confirmer = vite => { const plein = evaluer(M, vite.E, vite.pos); if (!bat(plein.j, meilleur.j)) return false;
+  const confirmer = vite => { const plein = evaluer(M, vite.E, vite.pos, false, vite.L); if (!bat(plein.j, meilleur.j)) return false;
     plein.est = vite.est; plein.jv = vite.j; plein.journal = journal; journal.push({ geste, droits: plein.j.droits, croisements: plein.j.croisements }); meilleur = plein; return true; };
   const garder = (E, pos, tamis, large) => { const v = trier(E, pos, tamis, large); return !!v && confirmer(v); };
   const fin = evaluations + budget; let temps = () => evaluations < fin;
@@ -6729,7 +6790,7 @@ function rechercheLocale(M, meilleur, budget, finale, interne, variante) {
   const essayerPoli = pos => { if (essayerGeometrie(pos)) return true; if (!temps()) return false;
     const vite = evaluer(M, meilleur.E, pos, true); if (vite.j.droits < meilleur.jv.droits + 3) return false;
     const E = meilleur.E, E2 = etatDepuisColonnes(M, E.col, E.options); E2.sorties = new Map(E.sorties); ordonnerParY(E2, pos);
-    const v = evaluer(M, E2, pos); v.est = estimer(v.L); v.jv = evaluer(M, E2, pos, true).j;
+    const v = evaluer(M, E2, pos); v.est = estimer(v.L); v.jv = evaluer(M, E2, pos, true, v.L).j;
     const poli = rechercheLocale(M, v, POLISSAGE, false, true); if (!bat(poli.j, meilleur.j)) return false;
     poli.journal = journal; journal.push({ geste, droits: poli.j.droits, croisements: poli.j.croisements }); meilleur = poli; return true; };
   const gestes = [
@@ -6777,7 +6838,7 @@ function rechercheLocale(M, meilleur, budget, finale, interne, variante) {
   const essayerBorneAuComplet = (k, y) => { const E = meilleur.E, pos = borneA(k, y);
     if (!exacte && meilleur.j.sain && estimerBorneA(k, y) < meilleur.est.lisibilite - 2 * TAMIS_FINAL) return false;
     const plein = evaluer(M, E, pos); if (!bat(plein.j, meilleur.j)) return false;
-    plein.est = estimer(plein.L); plein.jv = evaluer(M, E, pos, true).j; plein.journal = journal; journal.push({ geste, droits: plein.j.droits, croisements: plein.j.croisements });
+    plein.est = estimer(plein.L); plein.jv = evaluer(M, E, pos, true, plein.L).j; plein.journal = journal; journal.push({ geste, droits: plein.j.droits, croisements: plein.j.croisements });
     meilleur = plein; ordonnerParY(E, pos); return true; };
   const finaux = [
     ['borne', () => flancsDeBornes(M, meilleur.E, () => meilleur, essayerEtatTout, temps, essayerBorneAuComplet, true, estimerBorneA)],
@@ -7395,9 +7456,21 @@ function placer(G, opt) {
    au juge (tolérant sur le format : la recherche locale rend souvent un
    dessin plus haut) passent la recherche locale, et la meilleure au juge
    strict gagne ; le serpentin en secours si elle ne tient pas sur la
-   feuille. */
-function concours(M, opt, budget) {
-  const { meilleur: m0, resultats } = aNiveau(0, () => finalistesDuConcours(M, opt, budget));
+   feuille.
+   LE CONCOURS EN PAS : il s'écrit une fois, en générateur, et rend la main à
+   chaque LOT de recherches indépendantes — les deux recherches de chaque
+   finaliste, puis la passe finale de chacun — ; qui le mène les fait à la
+   suite (`mener`, ici même) ou chacune dans un Worker (`menerAuLoin`, le
+   placement de l'interface : quatre cœurs, un folio de soixante câbles
+   trois fois plus vite). Une recherche ne lit que la disposition qu'on lui
+   donne, et le budget se compte de l'une à l'autre : le dessin est LE MÊME,
+   à la suite ou en parallèle, dans n'importe quel ordre. `graphe` dit à un
+   Worker de quel graphe il s'agit (les barrettes coupées, par leur rang dans
+   les liaisons). */
+function* concoursEnPas(M, opt, budget, graphe) {
+  const niveau = NIVEAU_JUGE; let F;
+  NIVEAU_JUGE = 0; try { F = yield* finalistesEnPas(M, opt, budget, graphe); } finally { NIVEAU_JUGE = niveau; }
+  const { meilleur: m0, resultats } = F;
   /* chaque finaliste rejugé au niveau du CHOIX (la forme, les frôlements), puis la passe finale à TOUS, son budget
      partagé : celui qui gagne avant elle n'est pas celui qui gagne après (le folio chargé : le troisième, 36 fils
      droits et 17 croisements, en sort à 38 et 4 ; le premier, à 38 et 8) */
@@ -7408,7 +7481,7 @@ function concours(M, opt, budget) {
      partagé ne lui laissait plus (folio 4 : 22 puis 24, ou 22 et rien) ; les autres se partagent le reste */
   const tous = [meilleur, ...(tete !== meilleur ? [tete] : []), ...finis.filter(r => r !== meilleur && r !== tete && (r.j.tient || !meilleur.j.tient))], nTetes = tete !== meilleur ? 2 : 1;
   const finale = Math.min(1200, Math.max(150, budget)), part = Math.max(100, Math.round(finale / Math.max(1, tous.length - nTetes)));
-  const polis = tous.map((r, i) => finir(M, r, i < nTetes ? finale : part));
+  const polis = yield { phase: [0.56, 0.94], taches: tous.map((r, i) => ({ genre: 'finir', M, graphe, r, budget: i < nTetes ? finale : part, niveau: NIVEAU_JUGE })) };
   let fini = polis[0]; polis.forEach(f => { if (bat(f.j, fini.j)) fini = f; });
   // les autres finalistes, finis : la recherche profonde en repart aussi
   fini.autres = polis.filter(f => f !== fini).sort((a, b) => bat(a.j, b.j) ? -1 : 1); return fini;
@@ -7419,15 +7492,20 @@ const finir = (M, r, budget, mode) => rejuger(M, aNiveau(1, () => tasserLesEtire
 // un état, rejugé au niveau courant du juge (la recherche le jugeait à un autre)
 const rejuger = (M, r) => { const v = evaluer(M, r.E, r.pos); v.journal = r.journal; return v; };
 /* Les finalistes du concours, chacun cherché (au juge de STRUCTURE) : le meilleur, et tous les résultats. */
-function finalistesDuConcours(M, opt, budget) {
+function* finalistesEnPas(M, opt, budget, graphe) {
   // deux finalistes jusqu'à quarante blocs : le budget se partage, le temps ne double pas, et le folio chargé gagne sept croisements
   const nB = M.ids.length, combien = nB <= 40 ? 8 : nB <= 120 ? 4 : 2, finalistes = nB <= 20 ? 5 : nB <= 40 ? 2 : 1;
   const vues = new Set(), candidats = [];
   const essayer = (col, o, centre) => { const E = etatDepuisColonnes(M, col, o);
     const signature = [...E.place].map(([id, p]) => id + ':' + p.r + ',' + p.c).sort().join(';');
     if (vues.has(signature)) return null; vues.add(signature);
-    const r = evaluer(M, E, ordonnerLesBlocs(M, E)); r.centre = !!centre; candidats.push(r); return r; };
+    const r = evaluer(M, E, ordonnerLesBlocs(M, E)); r.centre = !!centre; candidats.push(r);
+    // l'esquisse, pour qui attend : le premier candidat sain, un dessin complet (rien ne change pour le concours)
+    if (RAPPORT && !RAPPORT.esquisse && r.j.sain) rapporter('esquisse', () => sortieDuPlacement(r));
+    return r; };
   candidatsDeNiveaux(M, combien).forEach(c => essayer(c.col, opt, c.centre));
+  // sinon le meilleur des candidats de départ
+  if (RAPPORT && !RAPPORT.esquisse) { const e = candidats.reduce((m, c) => !m || bat(c.j, m.j) ? c : m, null); if (e) rapporter('esquisse', () => sortieDuPlacement(e)); rapporter('etape', 0.06); }
   const classer = tolerant => candidats.sort((a, b) => bat(a.j, b.j, tolerant) ? -1 : (bat(b.j, a.j, tolerant) ? 1 : 0));
   /* un candidat trop large pour la feuille se REPLIE en serpentin, et ses replis concourent comme les autres : sinon
      un escalier qui tient l'emporte sur une chaîne repliée qu'on n'a jamais regardée (les deux meilleurs trop larges) —
@@ -7437,7 +7515,6 @@ function finalistesDuConcours(M, opt, budget) {
     .forEach(c => largeursDeRepli(c.L.geom.nCols).forEach(W => essayer(c.E.col, { ...opt, serpentin: W })));
   /* chaque finaliste a sa recherche locale (le budget se partage), puis la passe finale, sur la géométrie resserrée */
   const principal = Math.floor(budget / finalistes);
-  const affiner = c => rechercheLocale(M, c, principal);
   let meilleur = null; const classes = classer(true), tetes = [];
   /* AUTOUR D'UN HUB, le hub est au centre (« le gros équipement au centre, ses partenaires des deux côtés ») : ses mises
      en niveaux sont les SEULES finalistes, toutes. Jugées au départ, elles perdaient sur un format que leurs goulottes
@@ -7449,22 +7526,27 @@ function finalistesDuConcours(M, opt, budget) {
   // (étroit) bat un dessin en paysage qui ne « tient » pas encore parce que ses goulottes sont taillées large
   /* chaque finaliste est cherché DEUX FOIS, les gestes dans deux ordres : la recherche locale tombe dans un creux ou un
      autre selon l'ordre où les gestes passent, et le moindre réglage du juge changeait le dessin du tout au tout (le
-     folio 4 gagnait ou perdait six croisements pour une marge) ; deux chemins, le juge garde le meilleur */
+     folio 4 gagnait ou perdait six croisements pour une marge) ; deux chemins, le juge garde le meilleur. Les deux
+     recherches de chaque finaliste forment un lot : `a` part du finaliste, `b` de sa copie, faite avant qu'il bouge */
   const cloner = c => { const E2 = etatDepuisColonnes(M, c.E.col, c.E.options); E2.sorties = new Map(c.E.sorties); const ph = photoOrdres(c.E);
     ph.piles.forEach((v, k) => E2.piles.set(k, v.slice()));
     ph.listes.forEach((o, id) => { const ls = E2.listes.get(id); if (!ls) return; if (o.L) ls.L = o.L.slice(); if (o.R) ls.R = o.R.slice(); if (o.S) ls.S = o.S.slice(); });
     construireRuns(M, E2); return { E: E2, pos: c.pos, L: c.L, R: c.R, j: c.j, centre: c.centre }; };
   const resultats = [];
-  const finaliste = c => { const c2 = cloner(c), a = etirerAuFormat(M, resserrer(M, affiner(c)));
-    const b = etirerAuFormat(M, resserrer(M, rechercheLocale(M, c2, principal, false, false, 1))); resultats.push(a, b); return bat(b.j, a.j) ? b : a; };
-  tetes.forEach(c => { const r = finaliste(c); if (!meilleur || bat(r.j, meilleur.j)) meilleur = r; });
+  const finalistesDe = function* (cs, phase) { const lot = []; cs.forEach(c => { const c2 = cloner(c); lot.push({ genre: 'a', M, graphe, c, principal, niveau: 0 }, { genre: 'b', M, graphe, c: c2, principal, niveau: 0 }); });
+    const R = yield { phase, taches: lot }; NIVEAU_JUGE = 0;
+    return cs.map((c, i) => { const a = R[2 * i], b = R[2 * i + 1]; resultats.push(a, b); return bat(b.j, a.j) ? b : a; }); };
+  (yield* finalistesDe(tetes, [0.06, 0.48])).forEach(r => { if (!meilleur || bat(r.j, meilleur.j)) meilleur = r; });
   const nc = meilleur.L.geom.nCols;
   if (!meilleur.j.tient && nc >= 4) { const col = meilleur.E.col, avant = candidats.length;
     largeursDeRepli(nc).forEach(W => essayer(col, { ...opt, serpentin: W }));
     const replies = candidats.slice(avant).sort((a, b) => bat(a.j, b.j) ? -1 : 1).slice(0, 1);
-    replies.forEach(c => { const r = finaliste(c); if (bat(r.j, meilleur.j)) meilleur = r; }); }
+    (yield* finalistesDe(replies, [0.48, 0.56])).forEach(r => { if (bat(r.j, meilleur.j)) meilleur = r; }); }
   return { meilleur, resultats };
 }
+/* Une recherche du concours, faite ici : les deux chemins d'un finaliste (`a`, `b`), ou la passe finale (`finir`). */
+function faireTache(t) { return aNiveau(t.niveau, () => t.genre === 'finir' ? finir(t.M, t.r, t.budget)
+  : etirerAuFormat(t.M, resserrer(t.M, rechercheLocale(t.M, t.c, t.principal, false, false, t.genre === 'b' ? 1 : undefined)))); }
 /* Le dernier mot : un corps resté étiré que sa version tassée bat au juge se tasse. La passe finale, à court de budget,
    ne le regardait plus après son dernier geste (folio 3 : un morceau de 668VT31 tiré entre deux vannes pour un fil
    droit, une fois et demie de trop au barème) — c'est ce que le banc vérifie. */
@@ -7481,19 +7563,70 @@ function tasserLesEtires(M, m) {
    mauvais (folio 3 : de 45 à 48 fils droits, un croisement ; le folio
    chargé d'un calculateur, 3 à 7 s ; le plus gros du corpus, 14 s). */
 const budgetDe = M => { const nB = M.ids.length; return nB <= 20 ? 2400 : nB <= 40 ? 1200 : nB <= 80 ? 800 : 600; };
-function placementInterne(liaisons) {
+function* placementEnPas(liaisons) {
   const G = construireGraphe(liaisons); if (!G.ids.length) return null;
-  const placerSur = (G, part) => { const M = modele(G), m = concours(M, {}, Math.round(budgetDe(M) * (part || 1))); m.M = M; return m; };
-  let meilleur = placerSur(G);
+  const placerSur = function* (G, part, graphe) { const M = modele(G), m = yield* concoursEnPas(M, {}, Math.round(budgetDe(M) * (part || 1)), graphe); m.M = M; return m; };
+  let meilleur = yield* placerSur(G, 1, { coupes: null });
   // une barrette dont les bornes partent des deux côtés se COUPE, et le dessin coupé concourt contre l'entier
   const coupes = coupesParCote(meilleur.M, meilleur.E, meilleur.pos);
   // le dessin coupé concourt à demi-budget : c'est une variante du premier, pas un second folio
-  if (coupes.size) { const coupe = placerSur(construireGraphe(liaisons, coupes), 0.5); if (bat(coupe.j, meilleur.j)) { meilleur = coupe; meilleur.coupes = coupes; } }
+  if (coupes.size) { if (RAPPORT) RAPPORT.second = true;
+    const coupe = yield* placerSur(construireGraphe(liaisons, coupes), 0.5, { coupes: [...coupes].map(l => liaisons.indexOf(l)) });
+    if (bat(coupe.j, meilleur.j)) { meilleur = coupe; meilleur.coupes = coupes; } }
   return meilleur;
 }
+// mener le concours ici, chaque recherche à la suite
+function mener(gen) { let r = gen.next(); while (!r.done) { const lot = r.value; r = gen.next(lot.taches.map(t => faireTache(t))); } return r.value; }
+const placementInterne = liaisons => mener(placementEnPas(liaisons));
+/* LE CONCOURS AU LOIN (le Worker du placement, 08) : chaque lot partagé entre ce Worker et ses AIDES (d'autres Workers,
+   `faire(t)` : une promesse) — la première recherche du lot ici même, les autres là-bas ; où il en est, après chaque lot. */
+async function menerAuLoin(liaisons, faire) { const gen = placementEnPas(liaisons); let r = gen.next();
+  while (!r.done) { const { taches, phase } = r.value, loin = taches.slice(1).map(t => faire(t));
+    const ici = faireTache(taches[0]), res = [ici, ...await Promise.all(loin)];
+    if (RAPPORT && !RAPPORT.second && phase) rapporter('etape', phase[1]);
+    r = gen.next(res); }
+  return r.value; }
+/* Une disposition EN DONNÉES, pour un autre Worker (une copie structurée garde les Map, les Set, les nombres au bit près,
+   et les objets partagés — un même run sous plusieurs clés) : sa structure (colonnes, rangs, listes de bornes par leur
+   clé, flancs, sorties, piles, runs…), sa position, son journal ; et, quand on les a, son contrat, son routage, son
+   jugement (le jugement tel qu'il a été rendu : la recherche le compare tel quel). */
+function enDonnees(r, complet) { const E = r.E;
+  const listes = [...E.listes].map(([id, o]) => { const d = {}; Object.keys(o).forEach(k => { d[k] = o[k].map(p => p.cle); }); return [id, d]; });
+  return { col: E.col, options: E.options, listes, flancDe: E.flancDe, dirs: E.dirs, scindes: E.scindes, sorties: E.sorties, prioritaires: E.prioritaires, refuses: E.refuses,
+    goulottes: E.goulottes, piles: E.piles, runs: E.runs, pos: r.pos, journal: r.journal, centre: r.centre,
+    ...(complet ? { L: r.L, R: r.R, j: { ...r.j } } : {}) }; }
+function desDonnees(M, d) { const E = etatDepuisColonnes(M, d.col, d.options);
+  E.listes = new Map(d.listes.map(([id, o]) => { const par = new Map(M.blocs.get(id).bornes.map(p => [p.cle, p])), x = {}; Object.keys(o).forEach(k => { x[k] = o[k].map(c => par.get(c)); }); return [id, x]; }));
+  Object.assign(E, { flancDe: d.flancDe, dirs: d.dirs, scindes: d.scindes, sorties: d.sorties, prioritaires: d.prioritaires, refuses: d.refuses, goulottes: d.goulottes, piles: d.piles, runs: d.runs });
+  const r = { E, pos: d.pos }; if (d.journal) r.journal = d.journal; if (d.centre !== undefined) r.centre = d.centre;
+  if (d.L) { r.L = d.L; r.R = d.R; r.j = d.j; } return r; }
+/* Une recherche du concours en données (pour un aide), et son résultat en données : ce que fait l'AIDE. Le graphe se
+   rebâtit des liaisons (gardé : un aide sert tout le concours d'un folio). */
+const tacheEnDonnees = t => ({ genre: t.genre, graphe: t.graphe, principal: t.principal, budget: t.budget, niveau: t.niveau, etat: enDonnees(t.genre === 'finir' ? t.r : t.c, t.genre !== 'finir') });
+let MODELES_DES_AIDES = { cle: null, M: new Map() };
+function faireTacheEnDonnees(cle, liaisons, d) {
+  if (MODELES_DES_AIDES.cle !== cle) MODELES_DES_AIDES = { cle, M: new Map() };
+  const k = d.graphe.coupes ? d.graphe.coupes.join(',') : '';
+  let M = MODELES_DES_AIDES.M.get(k);
+  if (!M) { M = modele(construireGraphe(liaisons, d.graphe.coupes ? new Set(d.graphe.coupes.map(i => liaisons[i])) : undefined)); MODELES_DES_AIDES.M.set(k, M); }
+  const etat = desDonnees(M, d.etat), t = { genre: d.genre, M, graphe: d.graphe, principal: d.principal, budget: d.budget, niveau: d.niveau };
+  if (d.genre === 'finir') t.r = etat; else t.c = etat;
+  return enDonnees(faireTache(t), true); }
 // ce que l'interface et le dessin reçoivent : la géométrie, le routage, le jugement
 const sortieDuPlacement = m => ({ ...m.L, routage: m.R, jugement: { ...m.j, muets: m.j.muets, scindes: m.E.scindes || [], barrettesCoupees: m.coupes ? [...m.coupes].map(l => l.cable || '') : [] } });
-function meilleurPlacement(liaisons) { const m = placementInterne(liaisons); return m ? sortieDuPlacement(m) : null; }
+/* `rapport` (facultatif) : { dire(quoi, x) } — pour qui attend le dessin (le Worker du placement, 08) : l'ESQUISSE, une
+   fois, puis où en est le concours (`etape`, une fraction). Le rapport lit, il ne change rien : le dessin est le même. */
+function meilleurPlacement(liaisons, rapport) { const avant = RAPPORT; RAPPORT = rapport ? { dire: rapport.dire, esquisse: false } : null;
+  try { const m = placementInterne(liaisons); return m ? sortieDuPlacement(m) : null; } finally { RAPPORT = avant; } }
+// le même, ses recherches partagées avec des aides (`faire(t)` : la promesse du résultat d'une recherche, faite ailleurs)
+async function meilleurPlacementAuLoin(liaisons, rapport, faire) { RAPPORT = rapport ? { dire: rapport.dire, esquisse: false } : null;
+  try { const m = await menerAuLoin(liaisons, faire); return m ? sortieDuPlacement(m) : null; } finally { RAPPORT = null; } }
+/* LE RAPPORT du concours. L'ESQUISSE : le meilleur des candidats de départ (chacun est déjà un dessin complet, rangé et
+   routé), prêt au bout d'une seconde environ sur un folio de cent câbles quand le concours en prend bien plus — le
+   folio se lit pendant qu'il se cherche (l'audit de fluidité : 0,5 à 1 s pour le premier dessin complet). */
+let RAPPORT = null;
+function rapporter(quoi, x) { if (!RAPPORT) return; if (quoi === 'esquisse') { if (RAPPORT.esquisse) return; RAPPORT.esquisse = true; }
+  try { RAPPORT.dire(quoi, x); } catch (_) { } }
 
 /* ===== 11. LA RECHERCHE PROFONDE ======================================== */
 /* Le temps de calcul n'est pas un souci (le lecteur : « une heure de calcul
@@ -10368,10 +10501,22 @@ function cellulesDeNorme(ligne, sep) { const s = String(ligne == null ? '' : lig
 /* Le séparateur d'une ligne, celui que `cellulesDeNorme` prendrait. */
 const separateurDe = ligne => { const hors = String(ligne || '').replace(/"(?:[^"]|"")*"/g, ''); return hors.includes('\t') ? '\t' : hors.includes(';') ? ';' : ','; };
 /* Le champ qu'une cellule d'en-tête nomme : son alias, sinon le même sans l'unité entre parenthèses (« Intensité (A) »,
-   « Jauge [AWG] ») ; `pris` : les champs déjà attribués par une cellule d'avant. */
-function champDeCellule(cles, cell, pris) { const brut = NORMA(cell); if (!brut) return null;
-  const essais = [brut, NORMA(String(cell).replace(/\s*[(\[][^)\]]*[)\]]\s*$/, ''))].filter((t, i, a) => t && a.indexOf(t) === i);
-  for (const t of essais) for (const [champ, alias] of cles) if (!(pris && pris[champ] != null) && alias.includes(t)) return champ; return null; }
+   « Jauge [AWG] ») ; `pris` : les champs déjà attribués par une cellule d'avant. Les deux formes d'une cellule (NFD, sans
+   accents ni signes : deux expressions régulières) se GARDENT : la norme embarquée, relue à chaque ouverture, essayait
+   chaque cellule contre trente-deux tables et la renormalisait trente-deux fois (2,6 s d'écran figé, l'audit de fluidité).
+   Et chaque liste de colonnes a son INDEX (un alias → les champs qui le portent, dans l'ordre de la liste) : le premier
+   champ libre qui porte l'alias, comme la double boucle d'avant, sans la parcourir. */
+function champDeCellule(cles, cell, pris) { const formes = champDeCellule.formes || (champDeCellule.formes = new Map()), cle = String(cell == null ? '' : cell);
+  let essais = formes.get(cle);
+  if (essais === undefined) { const brut = NORMA(cell);
+    essais = !brut ? null : [brut, NORMA(String(cell).replace(/\s*[(\[][^)\]]*[)\]]\s*$/, ''))].filter((t, i, a) => t && a.indexOf(t) === i);
+    if (formes.size >= 60000) formes.clear(); formes.set(cle, essais); }
+  if (!essais) return null;
+  const index = champDeCellule.index || (champDeCellule.index = new WeakMap());
+  let parAlias = index.get(cles);
+  if (!parAlias) { parAlias = new Map(); cles.forEach(([champ, alias]) => alias.forEach(a => { const l = parAlias.get(a) || parAlias.set(a, []).get(a); if (!l.includes(champ)) l.push(champ); })); index.set(cles, parAlias); }
+  for (const t of essais) { const champs = parAlias.get(t); if (champs) for (const champ of champs) if (!(pris && pris[champ] != null)) return champ; }
+  return null; }
 /* Les colonnes d'une ligne d'en-tête pour une table : { col: { champ: indice }, inconnues: [indices non reconnus] }. */
 function colonnesDEntete(nom, row) { const cles = COLONNES_NORME[nom], col = {}, inconnues = [];
   row.forEach((cell, i) => { if (!String(cell || '').trim()) return; const champ = champDeCellule(cles, cell, col); if (champ) col[champ] = i; else inconnues.push(i); });
@@ -10387,10 +10532,18 @@ function reconnaitreEntete(row) { const cands = [];
   return cands; }
 const enteteHesite = cands => cands.length > 1 && cands[1].n >= cands[0].n;
 /* Découper un texte en blocs : [{ ligne, titre, entete, separateur, candidats, hesite, table, col, inconnues, lignes }]. Le
-   titre est la dernière ligne libre lue avant l'en-tête (« Fils — par jauge AWG… », le nom d'une feuille Excel). */
+   titre est la dernière ligne libre lue avant l'en-tête (« Fils — par jauge AWG… », le nom d'une feuille Excel).
+   Une ligne n'est essayée comme en-tête contre les trente-deux tables que si assez de ses cellules nomment une colonne
+   (d'une table quelconque) : une table ne se reconnaît qu'à des colonnes nommées — deux au moins, si aucune table ne se
+   contente d'une seule (on le demande à chacune) —, et une ligne de données en nomme rarement autant. Le découpage est
+   le même, ligne pour ligne (tests/vitesse.js le vérifie contre la lecture d'avant), en une fraction du temps. */
 function decouperTables(texte) { const blocs = []; let b = null, titre = '';
+  const toutes = [['*', new Set(Object.values(COLONNES_NORME).flatMap(cs => cs.flatMap(([, alias]) => alias)))]];
+  const tables = Object.entries(COLONNES_NORME).filter(([nom]) => TABLE_NORME[nom]);
+  const min = tables.some(([nom]) => TABLE_NORME[nom]({})) ? 0 : tables.some(([nom, cs]) => cs.some(([champ]) => TABLE_NORME[nom]({ [champ]: 0 }))) ? 1 : 2;
+  const assez = row => { if (!min) return true; let n = 0; for (const c of row) if (champDeCellule(toutes, c) && ++n >= min) return true; return false; };
   String(texte || '').split(/\r?\n/).forEach((ligne, k) => { if (!ligne.trim()) { b = null; return; }
-    const sep = separateurDe(ligne), row = cellulesDeNorme(ligne, sep), cands = reconnaitreEntete(row);
+    const sep = separateurDe(ligne), row = cellulesDeNorme(ligne, sep), cands = assez(row) ? reconnaitreEntete(row) : [];
     if (cands.length) { const c = cands[0]; b = { ligne: k, titre, entete: row, separateur: sep, candidats: cands, hesite: enteteHesite(cands), table: c.nom, col: c.col, inconnues: c.inconnues, lignes: [] }; blocs.push(b); titre = ''; return; }
     if (!b) { if (row.length === 1) titre = ligne.trim(); return; }
     const cells = sep === b.separateur ? row : cellulesDeNorme(ligne, b.separateur);
@@ -17325,40 +17478,65 @@ function liaisonsDe(plan) { const L0 = app.contrat.liaisons.filter(liaisonComple
   const sortie = avecBarrettesAPoser(L, depart, app.contrat.provisoires); folios.set(plan, { L, sig, sortie }); return sortie; }
 const liaisonsDuPlan = () => liaisonsDe(app.plan);
 /* Le placement d'un folio se garde tant que ses liaisons ne changent pas : le
-   concours du folio chargé prend quelques secondes, revenir sur un folio déjà
-   vu est instantané. La clé : ce que le placement lit de chaque liaison. */
+   concours d'un folio chargé prend des secondes, revenir sur un folio déjà
+   vu est instantané. La CLÉ : ce que le placement lit de chaque liaison — ses
+   deux bouts, son numéro (le dessin l'écrit ; le juge compte les numéros qui
+   ne s'écrivent pas). Pas le part number : le dessin n'en dépend pas, et
+   retenir un autre calibre (MS3320-10 → MS3320-20, 08-disjoncteurs) refaisait
+   le concours entier — un folio de 115 câbles disparaissait 42 s (l'audit de
+   fluidité). Sauf celui d'un RAIL, qui nomme ses points de raccordement (03,
+   `construireGraphe`). */
 const placements = new Map(), PLACEMENTS_GARDES = 24;
-const clePlacement = L => JSON.stringify(L.map(l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable, l.pnDe, l.pnVers]));
+const clePlacement = L => JSON.stringify(L.map(l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable, estRail(l.de) ? l.pnDe : '', estRail(l.vers) ? l.pnVers : '']));
+// la clé d'avant (les part numbers dedans) : une retouche gardée dans ce navigateur sous elle se reprend sous la nouvelle
+const cleDAvant = L => JSON.stringify(L.map(l => [l.de, l.borneDe, l.vers, l.borneVers, l.cable, l.pnDe, l.pnVers]));
+function reprendreRetouche(cle, L) { if (app.retouches.has(cle)) return; const k = cleDAvant(L); if (k === cle || !app.retouches.has(k)) return;
+  app.retouches.set(cle, app.retouches.get(k)); app.retouches.delete(k); garderRetouche(cle); garderRetouche(k); }
 // un placement entre en mémoire ; au-delà de la réserve, le moins récent s'en va — jamais celui du folio affiché (la retouche le relit)
-function garderPlacement(cle, P) { placements.delete(cle); placements.set(cle, P); const ici = cleCourante();
+function garderPlacement(cle, P) { placements.delete(cle); placements.set(cle, P); placement.prets.add(cle); const ici = cleCourante();
   for (const k of [...placements.keys()]) { if (placements.size <= PLACEMENTS_GARDES) break; if (k !== ici) placements.delete(k); } }
 function placementDe(L) {
-  const cle = clePlacement(L);
+  const cle = clePlacement(L); reprendreRetouche(cle, L);
   // un folio retouché à la souris : la retouche, toujours (elle se défait par « automatique » ou Ctrl+Z)
   if (app.retouches.has(cle)) return app.retouches.get(cle);
   // un folio déjà affiné (dans cette session, ou gardé d'une autre) : son meilleur dessin
   if (affinage.profonds.has(cle)) return affinage.profonds.get(cle);
   if (placements.has(cle)) { const P = placements.get(cle); placements.delete(cle); placements.set(cle, P); return P; }
-  // un gros folio jamais vu : le moteur le place AU LOIN (un Worker), le dessin viendra — l'attente se voit ; un petit, ici même
-  if (placement.attentes.has(cle)) { const a = placement.attentes.get(cle); if (!a.vue || a.plan !== app.plan) { a.vue = true; a.plan = app.plan; a.cibleAvant = app.cible; } return null; }
-  if (auLoin(L) && demanderPlacement(cle, L, app.plan)) return null;
+  /* un gros folio jamais vu : le moteur le place AU LOIN (un Worker), le dessin viendra ; un petit, ici même. En
+     attendant, le folio ne reste jamais vide quand on a de quoi le montrer : son dessin d'avant (une liaison renumérotée,
+     une borne corrigée), ou l'ESQUISSE que le Worker envoie au bout d'une seconde (`provisoire`) */
+  if (placement.attentes.has(cle)) { const a = placement.attentes.get(cle); if (!a.vue || a.plan !== app.plan) { a.vue = true; a.plan = app.plan; a.cibleAvant = app.cible; } return provisoire(a, L); }
+  if (auLoin(L) && demanderPlacement(cle, L, app.plan)) return provisoire(placement.attentes.get(cle), L);
   const P = meilleurPlacement(L); garderPlacement(cle, P); if (placement.ailleurs && L.length > SEUIL_ICI) garderConcours(cle, P);
   return P;
 }
+/* Le DESSIN PROVISOIRE d'un folio qui se place au loin. D'abord son dessin d'avant, s'il a les mêmes bouts dans le même
+   ordre (le fil n° i reste la liaison n° i) : le folio ne s'efface pas pour un numéro changé, ses étiquettes suivent ;
+   sinon l'esquisse, si elle est arrivée ; sinon rien (l'attente se dit). Il porte `provisoire` : 'avant' ou 'esquisse'. */
+const boutsDe = L => L.map(l => [l.de, l.borneDe, l.vers, l.borneVers].join('\u0001'));
+function provisoire(a, L) { if (!a) return null; const d = placement.derniers.get(a.plan);
+  if (d && d.bouts.length === L.length && boutsDe(L).every((b, i) => b === d.bouts[i])) {
+    const maj = o => o && L[o.i] ? { ...o, cable: L[o.i].cable, type: L[o.i].type, route: L[o.i].route, pnDe: L[o.i].pnDe, pnVers: L[o.i].pnVers } : o;
+    return { ...d.P, links: d.P.links.map(maj), routage: { ...d.P.routage, fils: d.P.routage.fils.map(maj) }, provisoire: 'avant' }; }
+  return a.esquisse || null; }
 
 /* ---- l'AFFINAGE : la recherche profonde, en arrière-plan ---------------- */
-/* Le dessin qu'on voit d'abord est celui du concours (quelques secondes).
-   Puis la recherche profonde (04, `placementProfond`) tourne dans un Worker
-   — le moteur, refait depuis son <script id="moteur"> —, folio par folio, le
-   folio affiché d'abord : chaque fois qu'elle trouve mieux, le dessin se
-   remplace sous les yeux, la vue ne bouge pas. Le temps n'est pas un souci
-   (le lecteur : « une heure de calcul pour une vie d'études bien faite, on
-   s'en fiche ») : ce qu'elle trouve se GARDE dans ce navigateur (IndexedDB),
-   par folio et par version du moteur — un folio affiné l'est pour toujours.
-   Sous pilote automatique (navigator.webdriver), elle dort : les bancs
-   mesurent le concours, déterministe ; `atelier.affinage(true)` la réveille.
-   Sans Worker ni IndexedDB (un navigateur qui les refuse), rien ne change :
-   le dessin du concours reste. */
+/* Le dessin qu'on voit d'abord est celui du concours. Puis la recherche
+   profonde (04, `placementProfond`) tourne dans un Worker — le moteur, refait
+   depuis son <script id="moteur"> —, folio par folio, le folio affiché
+   d'abord : chaque fois qu'elle trouve mieux, le dessin se remplace sous les
+   yeux, en fondu, la feuille à sa place (jamais au milieu d'un geste). Le
+   temps n'est pas un souci (le lecteur : « une heure de calcul pour une vie
+   d'études bien faite, on s'en fiche ») : ce qu'elle trouve se GARDE dans ce
+   navigateur (IndexedDB), par folio et par version du moteur — un folio
+   affiné l'est pour toujours. Elle ne part qu'une fois TOUS les folios placés
+   (`placementEnCours`) : elle refaisait le folio que le Worker du placement
+   calculait encore, deux cœurs sur le même travail (l'audit de fluidité, le
+   parcours) ; un folio à placer (une liaison corrigée) la suspend, elle
+   reprend ensuite. Sous pilote automatique (navigator.webdriver), elle dort :
+   les bancs mesurent le concours, déterministe ; `atelier.affinage(true)` la
+   réveille. Sans Worker ni IndexedDB, rien ne change : le dessin du concours
+   reste. */
 const TOURS_PROFONDS = 48;
 const affinage = { actif: !(typeof navigator !== 'undefined' && navigator.webdriver), worker: null, file: [], encours: null,
   profonds: new Map(), finis: new Set(), etat: null, vu: 0 };
@@ -17368,11 +17546,17 @@ function affinerTout() { if (!affinage.actif) return;
   const P = plans(), parPlan = app.plan === '*' || !P.length ? [liaisonsDe('*')] : [liaisonsDuPlan(), ...P.filter(p => p !== app.plan).map(liaisonsDe)];
   const travaux = parPlan.filter(L => L.length).map(L => ({ cle: clePlacement(L), L: L.map(({ origine, ...l }) => l) })).filter(t => !affinage.finis.has(t.cle) && !(affinage.encours && affinage.encours.cle === t.cle));
   affinage.file = travaux.filter((t, i) => travaux.findIndex(u => u.cle === t.cle) === i); pomper(); }
+// le placement au loin a-t-il encore du travail ? (un folio attendu, en cours, ou un folio du contrat pas encore placé)
+const placementEnCours = () => placement.ailleurs && placement.worker !== false && (placement.attentes.size > 0 || !!placement.encours || !!prochainAuLoin());
 function pomper() { while (affinage.file.length && affinage.finis.has(affinage.file[0].cle)) affinage.file.shift();
-  if (affinage.encours || !affinage.file.length) { montrerAffinage(); return; }
+  if (affinage.encours || !affinage.file.length || placementEnCours()) { montrerBande(); return; }
   const w = travailleur(); if (!w) return;
   affinage.encours = affinage.file.shift(); affinage.etat = { k: 0, n: TOURS_PROFONDS };
-  w.postMessage({ cle: affinage.encours.cle, liaisons: affinage.encours.L, tours: TOURS_PROFONDS }); montrerAffinage(); }
+  w.postMessage({ cle: affinage.encours.cle, liaisons: affinage.encours.L, tours: TOURS_PROFONDS }); montrerBande(); }
+// un folio à placer passe avant : l'affinage en cours s'arrête (son folio retourne en tête de la file), il reprendra
+function suspendreAffinage() { if (!affinage.encours || !affinage.worker) return; const j = affinage.encours;
+  try { affinage.worker.terminate(); } catch (_) { } affinage.worker = null; affinage.encours = null; affinage.etat = null;
+  if (!affinage.finis.has(j.cle) && !affinage.file.some(t => t.cle === j.cle)) affinage.file.unshift(j); montrerBande(); }
 function travailleur() { if (affinage.worker) return affinage.worker; if (affinage.worker === false) return null;
   try { const src = document.getElementById('moteur').textContent;
     // le moteur rapporte à chaque tour ; un dessin meilleur part avec, la fin aussi
@@ -17381,24 +17565,35 @@ function travailleur() { if (affinage.worker) return affinage.worker; if (affina
         postMessage({ cle, fini: true, P }); }
       catch (err) { postMessage({ cle, erreur: String(err && err.message || err) }); } };`;
     const w = new Worker(URL.createObjectURL(new Blob([src + glue], { type: 'text/javascript' })));
-    w.onmessage = recevoirAffinage; w.onerror = () => { affinage.worker = false; affinage.encours = null; affinage.file = []; montrerAffinage(); };
+    w.onmessage = recevoirAffinage; w.onerror = () => { affinage.worker = false; affinage.encours = null; affinage.file = []; montrerBande(); };
     return (affinage.worker = w); }
   catch (_) { affinage.worker = false; return null; } }
 function recevoirAffinage(e) { const d = e.data, j = affinage.encours; if (!j || d.cle !== j.cle) return;
   if (d.n) affinage.etat = { k: d.k, n: d.n };
-  if (d.P && !d.fini) { affinage.profonds.set(d.cle, d.P); if (cleCourante() === d.cle) { affinage.vu = Date.now(); rafraichirDessin(); } }
+  if (d.P && !d.fini) { affinage.profonds.set(d.cle, d.P); if (cleCourante() === d.cle) { affinage.vu = Date.now(); remplacerDessin(); } }
   if (d.erreur) affinage.erreur = d.erreur;
   if (d.fini || d.erreur) { affinage.finis.add(d.cle); if (d.P) { affinage.profonds.set(d.cle, d.P); garderAffine(d.cle, d.P); }
     affinage.encours = null; pomper(); }
-  montrerAffinage(); }
+  montrerBande(); }
 // le dessin se remplace, la vue reste où elle est
 function rafraichirDessin() { calculer(); peindre(); synchroniser(); rallumer(); }
-function montrerAffinage() { const el = $('affinage'); if (!el) return; const j = affinage.encours, e = affinage.etat;
-  if (!affinage.actif || !j) { el.hidden = true; return; }
-  const ici = j.cle === cleCourante(), reste = affinage.file.length;
-  el.hidden = false; el.classList.toggle('ailleurs', !ici);
-  $('af-txt').textContent = (ici ? 'affinage ' : 'affine un autre folio ') + (e ? e.k + ' / ' + e.n : '') + (reste ? ' · ' + reste + ' en attente' : '');
-  el.title = 'La recherche profonde améliore le dessin en arrière-plan ; chaque mieux trouvé le remplace, et le résultat se garde dans ce navigateur.'; }
+/* REMPLACER le dessin affiché par celui qui arrive (le concours après l'esquisse, un mieux de l'affinage) : en FONDU —
+   l'ancien s'efface au-dessus du nouveau —, la feuille exactement à sa place à l'écran (même coin, même taille : les deux
+   dessins n'ont pas la même échelle de feuille), rien ne saute. Jamais au milieu d'un geste (on tient le plan, un bloc) :
+   il attend qu'on lâche. */
+function remplacerDessin() { const pl = $('planche'); clearTimeout(remplacerDessin.t);
+  if (pl && (pl.classList.contains('tient') || pl.classList.contains('deplace'))) { remplacerDessin.t = setTimeout(remplacerDessin, 400); return; }
+  const bb0 = app.dessin && app.dessin.bbox, v0 = { ...app.vue }, svg = $('svg'); let fantome = null;
+  if (bb0 && svg && !mouvementReduit()) { fantome = svg.cloneNode(true); fantome.removeAttribute('id'); fantome.setAttribute('class', 'dessin-fondu'); fantome.setAttribute('aria-hidden', 'true'); svg.after(fantome); }
+  calculer();
+  const bb1 = app.dessin && app.dessin.bbox;
+  if (bb0 && bb1 && Math.abs(bb0.w - bb1.w) + Math.abs(bb0.x - bb1.x) + Math.abs(bb0.y - bb1.y) > 0.01) { const s = v0.s * bb0.w / bb1.w;
+    if (anim) { cancelAnimationFrame(anim); anim = null; }
+    app.vue = { s, tx: v0.tx + bb0.x * v0.s - bb1.x * s, ty: v0.ty + bb0.y * v0.s - bb1.y * s }; }
+  peindre(); synchroniser(); rallumer();
+  // le bloc de la carte a pu changer de place sur le nouveau dessin : passé dessous, elle s'écarte (08-carte)
+  if (typeof planifierEcart === 'function') planifierEcart(true);
+  if (fantome) requestAnimationFrame(() => requestAnimationFrame(() => { fantome.classList.add('part'); setTimeout(() => fantome.remove(), 650); })); }
 // IndexedDB : un magasin, une entrée par version du moteur et folio ; les versions passées s'effacent
 const IDB_NOM = 'atelier-schema', IDB_MAGASIN = 'placements', IDB_RETOUCHES = 'retouches', IDB_CONCOURS = 'concours';
 function ouvrirIDB() { return new Promise((ok, ko) => { try { const r = indexedDB.open(IDB_NOM, 4);   // 4 : le magasin des concours (le placement d'un folio, relu à l'ouverture suivante)
@@ -17415,83 +17610,126 @@ function relireAffines() { if (!affinage.actif) return; const avant = cleCourant
       c.continue(); }; }).catch(() => { }); }
 
 /* ---- le PLACEMENT AU LOIN : un folio jamais vu se place dans un Worker --- */
-/* Le concours d'un folio chargé prend des secondes (75 fils : onze) : dans la
-   page, l'écran se figeait sans un mot. Un gros folio jamais vu se place donc
-   AU LOIN — dans un Worker refait du moteur, comme l'affinage et le FWD —
-   pendant que l'écran reste libre : un mot au milieu de la place libre (« Le
-   moteur place le folio 3… »), la puce du folio qui respire, et l'on change
-   de folio, on ouvre une fiche ou le menu. Le dessin qui arrive est
-   EXACTEMENT celui que la page aurait calculé (le concours est déterministe :
-   même entrée, même sortie) ; il se garde dans ce navigateur (IndexedDB,
-   magasin `concours`, par version du moteur) et revient à l'ouverture
-   suivante en quelques dizaines de millisecondes. Le folio affiché passe
-   toujours devant (un autre en cours lui cède la place et reprend après) ;
-   puis les folios demandés ; puis les autres folios du contrat, dans l'ordre,
-   pour être prêts quand on y va. Restent dans la page, comme avant : un petit
-   folio (SEUIL_ICI liaisons au plus — bien moins d'une seconde, on ne verrait
-   que l'attente), un contrat sans folios ou découpé par l'outil
-   (`ajusterFolios` lit le dessin aussitôt), et tout quand le navigateur
-   refuse le Worker. Sous pilote automatique (navigator.webdriver) le
-   placement reste dans la page, synchrone, pour que les bancs lisent le
-   dessin dès `redessiner()` ; `placementAilleurs(true)` l'envoie au loin
-   (tests/placement.js). */
+/* Le concours d'un folio chargé prend des secondes : dans la page, l'écran se
+   figeait sans un mot. Un gros folio jamais vu se place donc AU LOIN — dans
+   un Worker refait du moteur, comme l'affinage et le FWD — pendant que
+   l'écran reste à nous. Au bout d'une seconde environ, le Worker envoie une
+   ESQUISSE (04, `rapporter` : le meilleur des candidats de départ, un dessin
+   complet) : le folio se montre, se lit, ses blocs se choisissent ; quand le
+   concours a fini, son dessin la remplace en fondu, la feuille à sa place
+   (`remplacerDessin`). Avant l'esquisse, l'attente se dit vraiment : le
+   folio, ses câbles, une durée estimée sur ce que cet ordinateur a déjà mis
+   (`ETALON`), une barre, et ce qu'on peut faire pendant (les problèmes du
+   contrat, le récapitulatif). Le dessin qui arrive est EXACTEMENT celui que
+   la page aurait calculé (le concours est déterministe : même entrée, même
+   sortie) ; il se garde dans ce navigateur (IndexedDB, magasin `concours`,
+   par version du moteur) et revient à l'ouverture suivante en quelques
+   dizaines de millisecondes. Le folio affiché passe toujours devant (un
+   autre en cours lui cède la place et reprend après) ; puis les folios
+   demandés ; puis les autres folios du contrat, l'un après l'autre, pour
+   être prêts quand on y va — la bande le dit (« 7 / 20 folios prêts »).
+   Restent dans la page : un petit folio (SEUIL_ICI liaisons au plus), un
+   contrat sans folios ou découpé par l'outil (`ajusterFolios` lit le dessin
+   aussitôt), et tout quand le navigateur refuse le Worker. Sous pilote
+   automatique (navigator.webdriver) le placement reste dans la page,
+   synchrone, pour que les bancs lisent le dessin dès `redessiner()` ;
+   `placementAilleurs(true)` l'envoie au loin (tests/placement.js). */
 const SEUIL_ICI = 12;
-const placement = { ailleurs: !(typeof navigator !== 'undefined' && navigator.webdriver), worker: null, url: null, encours: null, file: [], attentes: new Map(), faits: 0, relus: 0, erreur: null, nettoye: false };
+const placement = { ailleurs: !(typeof navigator !== 'undefined' && navigator.webdriver), worker: null, url: null, encours: null, file: [], attentes: new Map(), faits: 0, relus: 0, erreur: null, nettoye: false,
+  aides: [],             // les Workers qui partagent le concours du chef (`travailleurPlacement`)
+  prets: new Set(),      // les clés des folios placés dans cette session (gardés ou non en mémoire) : on ne les redemande pas
+  derniers: new Map(),   // folio -> son dernier dessin montré (ses bouts, son placement) : le dessin d'avant, s'il convient encore
+  horloge: 0 };
 // ce folio part-il au loin ? gros, venu du fichier (ni le dessin entier, ni un découpage de l'outil), le Worker possible
 const auLoin = L => placement.ailleurs && placement.worker !== false && app.plan !== '*' && !app.nFolios && L.length > SEUIL_ICI;
 const attenteCourante = () => { const cle = cleCourante(); return cle && placement.attentes.has(cle) ? placement.attentes.get(cle) : null; };
 /* Demander un folio : d'abord ce navigateur (le concours gardé d'une session passée), sinon la file du Worker. L'attente
-   retient la cible du moment : si une autre est choisie pendant le calcul (l'index, la recherche), c'est elle qu'on cadrera. */
-function demanderPlacement(cle, L, plan) { if (!travailleurPlacement()) return false;
-  placement.attentes.set(cle, { L: L.map(({ origine, ...l }) => l), plan, t: performance.now(), vue: plan === app.plan, cibleAvant: app.cible });
+   retient la cible du moment : si une autre est choisie pendant le calcul (l'index, la recherche), c'est elle qu'on cadrera.
+   Un folio à placer passe avant l'affinage, qui se suspend. */
+function demanderPlacement(cle, L, plan) { if (!travailleurPlacement()) return false; suspendreAffinage();
+  placement.attentes.set(cle, { cle, L: L.map(({ origine, ...l }) => l), plan, t: performance.now(), debut: 0, p: 0, esquisse: null, vue: plan === app.plan, cibleAvant: app.cible });
   lireConcours(cle).then(P => { if (!placement.attentes.has(cle)) return;
     if (P) { placement.relus++; recevoirPlacement(cle, P, false); } else { placement.file.push(cle); pomperPlacement(); } });
   return true; }
+/* Le Worker : le moteur, et sa glu. Il est le CHEF d'un concours partagé (04, `menerAuLoin`) : ses AIDES — d'autres
+   Workers du même moteur, un par cœur libre, trois au plus — font les recherches indépendantes de chaque lot (les deux
+   chemins de chaque finaliste, la passe finale de chacun) ; le dessin est le même qu'à la suite, plus tôt. Le chef
+   rapporte l'esquisse (une fois), où il en est (une fraction), puis le dessin. La page les relie (un MessageChannel par
+   aide) ; sans aide possible, le chef fait tout, à la suite. */
+const AIDES_PLACEMENT = Math.max(0, Math.min(3, ((typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 2) - 1));
+const GLU_PLACEMENT = `
+(() => { let AIDES = [], NUMERO = 0; const ATTENTES = new Map();   // dans sa portée : le moteur a ses propres noms
+const faireAilleurs = (cle, liaisons) => t => { const port = AIDES.reduce((m, p) => p.charge < m.charge ? p : m, AIDES[0]), id = ++NUMERO; port.charge++;
+  port.postMessage({ id, cle, liaisons, t: tacheEnDonnees(t) });
+  return new Promise((ok, ko) => ATTENTES.set(id, { port, ok: r => ok(desDonnees(t.M, r)), ko })); };
+self.onmessage = e => { const d = e.data;
+  if (d.role === 'aide') { d.port.onmessage = m => { const { id, cle, liaisons, t } = m.data;
+      try { d.port.postMessage({ id, r: faireTacheEnDonnees(cle, liaisons, t) }); } catch (err) { d.port.postMessage({ id, erreur: String(err && err.message || err) }); } }; return; }
+  if (d.role === 'chef') { AIDES = d.aides || []; AIDES.forEach(p => { p.charge = 0; p.onmessage = m => { const x = ATTENTES.get(m.data.id); if (!x) return; ATTENTES.delete(m.data.id); x.port.charge--;
+      if (m.data.erreur) x.ko(new Error(m.data.erreur)); else x.ok(m.data.r); }; }); return; }
+  const { cle, liaisons } = d, rapport = { dire: (quoi, x) => postMessage({ cle, [quoi]: typeof x === 'function' ? x() : x }) };
+  let fait; try { fait = AIDES.length ? meilleurPlacementAuLoin(liaisons, rapport, faireAilleurs(cle, liaisons)) : Promise.resolve(meilleurPlacement(liaisons, rapport)); } catch (err) { fait = Promise.reject(err); }
+  fait.then(P => postMessage({ cle, P }), err => postMessage({ cle, erreur: String(err && err.message || err) })); }; })();`;
 function travailleurPlacement() { if (placement.worker) return placement.worker; if (placement.worker === false) return null;
-  try { if (!placement.url) { const src = document.getElementById('moteur').textContent;   // le moteur, une fois : un Worker relancé le relit
-      const glue = `\nself.onmessage = e => { const { cle, liaisons } = e.data; try { postMessage({ cle, P: meilleurPlacement(liaisons) }); } catch (err) { postMessage({ cle, erreur: String(err && err.message || err) }); } };`;
-      placement.url = URL.createObjectURL(new Blob([src + glue], { type: 'text/javascript' })); }
-    const w = new Worker(placement.url);
-    w.onmessage = recevoirDuLoin; w.onerror = e => { placement.erreur = String((e && e.message) || 'Worker refusé'); placement.worker = false; placement.encours = null; placerIci(); };
+  try { if (!placement.url) placement.url = URL.createObjectURL(new Blob([document.getElementById('moteur').textContent + GLU_PLACEMENT], { type: 'text/javascript' }));   // le moteur, une fois : un Worker relancé le relit
+    const w = new Worker(placement.url), ports = []; placement.aides = [];
+    for (let i = 0; i < AIDES_PLACEMENT; i++) { try { const a = new Worker(placement.url), ch = new MessageChannel(); a.postMessage({ role: 'aide', port: ch.port1 }, [ch.port1]); ports.push(ch.port2); placement.aides.push(a); } catch (_) { break; } }
+    w.postMessage({ role: 'chef', aides: ports }, ports);
+    w.onmessage = recevoirDuLoin; w.onerror = e => { placement.erreur = String((e && e.message) || 'Worker refusé'); arreterPlacement(); placement.worker = false; placement.encours = null; placerIci(); };
     return (placement.worker = w); }
   catch (_) { placement.worker = false; return null; } }
+// arrêter le chef et ses aides (un folio qui passe devant, une erreur) ; le prochain folio en refera
+function arreterPlacement() { const w = placement.worker; placement.worker = null; try { if (w) w.terminate(); } catch (_) { }
+  (placement.aides || []).forEach(a => { try { a.terminate(); } catch (_) { } }); placement.aides = []; }
 /* La file : le folio affiché d'abord — s'il attend pendant qu'un autre se calcule, l'autre cède (il reprendra) — ; puis
-   les folios demandés ; puis, d'avance, les autres folios du contrat. Ce qui ne correspond plus à un folio du contrat
-   (une liaison corrigée, un autre fichier) sort de la file. */
+   les folios demandés ; puis, d'avance, les autres folios du contrat, un à la fois. Ce qui ne correspond plus à un folio
+   du contrat (une liaison corrigée, un autre fichier) sort de la file. Quand il n'y a plus rien, l'affinage peut partir. */
 function pomperPlacement() { if (!placement.ailleurs || placement.worker === false) return;
   const vivant = cle => { const a = placement.attentes.get(cle); return !!a && plans().includes(a.plan) && clePlacement(liaisonsDe(a.plan)) === cle; };
   placement.file = placement.file.filter(vivant);
   [...placement.attentes.keys()].forEach(cle => { if (!vivant(cle) && !(placement.encours && placement.encours.cle === cle)) placement.attentes.delete(cle); });
   const ici = cleCourante();
   if (placement.encours) { if (placement.encours.cle === ici || !placement.file.includes(ici)) { montrerAttente(); return; }
-    const w = placement.worker, cede = placement.encours.cle; placement.worker = null; placement.encours = null; try { w.terminate(); } catch (_) { }
-    if (vivant(cede)) placement.file.push(cede); }
+    const cede = placement.encours.cle, a = placement.attentes.get(cede); arreterPlacement(); placement.encours = null;
+    if (a) { a.debut = 0; a.p = 0; } if (vivant(cede)) placement.file.push(cede); }
   const cle = placement.file.includes(ici) ? ici : placement.file.shift(); placement.file = placement.file.filter(k => k !== cle);
-  if (!cle) { const p = prochainAuLoin(); if (p) demanderPlacement(p.cle, p.L, p.plan); montrerAttente(); return; }
+  if (!cle) { const p = prochainAuLoin(); if (p) demanderPlacement(p.cle, p.L, p.plan); else pomper(); montrerAttente(); return; }
   const w = travailleurPlacement(); if (!w) { placerIci(); return; }
-  placement.encours = { cle, t: performance.now() }; w.postMessage({ cle, liaisons: placement.attentes.get(cle).L }); montrerAttente(); }
+  const a = placement.attentes.get(cle); a.debut = performance.now(); a.p = 0;
+  placement.encours = { cle, t: a.debut }; w.postMessage({ cle, liaisons: a.L }); montrerAttente(); }
 // le prochain folio du contrat à placer d'avance : après le folio affiché, dans l'ordre, un folio gros et jamais vu
 function prochainAuLoin() { if (app.plan === '*' || app.nFolios) return null; const P = plans(), i = Math.max(0, P.indexOf(app.plan));
-  for (let k = 1; k < P.length; k++) { const p = P[(i + k) % P.length], L = liaisonsDe(p); if (L.length <= SEUIL_ICI) continue; const cle = clePlacement(L);
-    if (app.retouches.has(cle) || affinage.profonds.has(cle) || placements.has(cle) || placement.attentes.has(cle)) continue; return { cle, L, plan: p }; }
+  for (let k = 1; k < P.length; k++) { const p = P[(i + k) % P.length], L = liaisonsDe(p); if (L.length <= SEUIL_ICI) continue; const cle = cleDuPlan(p);
+    if (placement.prets.has(cle) || app.retouches.has(cle) || affinage.profonds.has(cle) || placements.has(cle) || placement.attentes.has(cle)) continue; return { cle, L, plan: p }; }
   return null; }
+// la clé d'un folio, gardée tant que ses liaisons sont les mêmes (le même tableau : `liaisonsDe`)
+const clesDesPlans = new Map();
+function cleDuPlan(p) { const L = liaisonsDe(p), m = clesDesPlans.get(p); if (m && m.L === L) return m.cle; const cle = L.length ? clePlacement(L) : ''; clesDesPlans.set(p, { L, cle }); return cle; }
 function recevoirDuLoin(e) { const d = e.data || {}; if (!placement.encours || d.cle !== placement.encours.cle) return;   // un calcul qu'on avait abandonné
-  placement.encours = null;
+  const a = placement.attentes.get(d.cle);
+  if (d.etape != null) { if (a) a.p = Math.max(a.p, +d.etape || 0); return; }
+  // l'esquisse : montrée tout de suite si le folio est affiché et n'a rien d'autre à montrer (ni son dessin d'avant)
+  if (d.esquisse) { if (a && !a.esquisse) { a.esquisse = { ...d.esquisse, provisoire: 'esquisse' };
+      if (cleCourante() === d.cle && !app.dessin) { rafraichirDessin(); finirAttente(a); } }
+    montrerAttente(); return; }
+  const duree = performance.now() - placement.encours.t; placement.encours = null;
   if (d.erreur) { placement.erreur = d.erreur; placerIci(d.cle); return; }
-  placement.faits++; recevoirPlacement(d.cle, d.P, true); }
+  placement.faits++; if (a && d.P) etalonner(a.L.length, duree); recevoirPlacement(d.cle, d.P, true); }
 /* Sans Worker (refusé, ou en erreur) : le chemin d'avant, dans la page — juste après que l'attente s'est affichée, pour
    qu'on sache ce qui se passe ; le folio affiché d'abord. */
 function placerIci(cle) { const ici = cleCourante(), cles = (cle ? [cle] : [...placement.attentes.keys()]).sort((a, b) => (b === ici) - (a === ici));
   setTimeout(() => cles.forEach(k => { const a = placement.attentes.get(k); if (!a) return; let P = null;
     try { P = meilleurPlacement(a.L); } catch (err) { placement.erreur = String((err && err.message) || err); }
     recevoirPlacement(k, P, true); }), 30); }
+/* Le dessin arrive : il se garde ; sur le folio affiché, il remplace l'esquisse (ou le dessin d'avant) en fondu, sinon il
+   s'ouvre comme un folio qu'on ouvre. */
 function recevoirPlacement(cle, P, neuf) { const a = placement.attentes.get(cle); placement.attentes.delete(cle); placement.file = placement.file.filter(k => k !== cle);
   if (P) { garderPlacement(cle, P); if (neuf) garderConcours(cle, P); }
   else if (a && cleCourante() === cle) dire('Le folio ' + a.plan + ' n’a pas pu se dessiner' + (placement.erreur ? ' : ' + placement.erreur : '') + '.', true);
-  if (P && cleCourante() === cle) { rafraichirDessin(); finirAttente(a); }
+  if (P && cleCourante() === cle) { if (app.dessin && app.dessin.provisoire) { remplacerDessin(); const c = app.cible, k = c && c.type === 'bloc' && app.dessin && app.dessin.compDe.get(c.nom); if (k) montrerSiCache(k); } else { rafraichirDessin(); finirAttente(a); } }
   pomperPlacement(); montrerAttente(); }
-/* Le dessin attendu est là : la vue se cadre comme si le folio venait de s'ouvrir ; ce qu'on a choisi pendant l'attente
-   (depuis l'index, la recherche, le tableau) est choisi et cadré, comme si le dessin avait été là. */
+/* Le dessin attendu est là (l'esquisse, ou le concours) : la vue se cadre comme si le folio venait de s'ouvrir ; ce qu'on a
+   choisi pendant l'attente (depuis l'index, la recherche, le tableau) est choisi et cadré, comme si le dessin avait été là. */
 function finirAttente(a) { const c = app.cible, d = app.dessin; if (!d) return; ajuster(); if (!c) return;
   if (c.type === 'fil') { const w = filDe(c.l); if (w) { allumerFil(w); viserFil(w); } return; }
   if (c.type !== 'bloc' || !a || c === a.cibleAvant) return;
@@ -17500,15 +17738,80 @@ function finirAttente(a) { const c = app.cible, d = app.dessin; if (!d) return; 
 // la cible d'une recherche pendant que son folio se place au loin : sa fiche tout de suite, choisie et cadrée quand le dessin arrive
 function reporterCible(cible) { if (cible.type === 'fil') { const l = verite().find(x => x.cable === cible.nom); if (!l) return; app.cible = { type: 'fil', l }; } else app.cible = { type: 'bloc', nom: cible.nom };
   ouvrirInspecteur(); }
-/* L'attente, visible : au milieu de la place libre du plan, le mot et le point qui respire ; dans la barre du bas, la puce du
-   folio qui se calcule respire aussi. L'élément se crée à la première attente, dans la planche (#attente). */
+
+/* ---- l'ATTENTE, honnête ------------------------------------------------- */
+/* Combien de temps ? Le concours croît comme n^2,2 (n : les liaisons du folio, l'audit) ; la constante est celle de CET
+   ordinateur, apprise sur chaque folio placé (une moyenne glissante) et gardée dans ce navigateur. La première fois, celle
+   d'un ordinateur de bureau ordinaire. */
+const ETALON = (() => { const e = { c: 0.5, n: 0 }; try { const x = JSON.parse(localStorage.getItem('volta.placement.etalon') || 'null'); if (x && x.c > 0 && isFinite(x.c)) Object.assign(e, x); } catch (_) { } return e; })();
+const dureeEstimee = n => ETALON.c * Math.pow(Math.max(1, n), 2.2);
+function etalonner(n, ms) { if (!(n > SEUIL_ICI) || !(ms > 0)) return; const c = ms / Math.pow(n, 2.2);
+  ETALON.c = ETALON.n ? 0.6 * ETALON.c + 0.4 * c : c; ETALON.n++;
+  try { localStorage.setItem('volta.placement.etalon', JSON.stringify(ETALON)); } catch (_) { } }
+// une durée, en mots : « 8 s », « 25 s », « 2 min »
+const enSecondes = ms => { const s = ms / 1000; return s < 15 ? Math.max(1, Math.round(s)) + ' s' : s < 60 ? Math.round(s / 5) * 5 + ' s' : s < 100 ? '1 min' + (s >= 80 ? ' 30' : '') : Math.round(s / 60) + ' min'; };
+/* Où en est le folio `a` : une fraction (le temps écoulé sur le temps estimé, ce que le Worker rapporte), et ce qu'il
+   reste, en mots. En file derrière un autre folio : il attend son tour. */
+function avancement(a) { const est = dureeEstimee(a.L.length);
+  if (!a.debut) return { p: 0, mot: 'environ ' + enSecondes(est), file: !!placement.encours && placement.encours.cle !== a.cle };
+  const ecoule = performance.now() - a.debut, p = Math.min(0.97, Math.max(a.p || 0, ecoule / est)), reste = est - ecoule;
+  return { p, mot: ecoule < 1500 ? 'environ ' + enSecondes(est) : reste > 1500 ? 'encore environ ' + enSecondes(reste) : 'presque fini' }; }
+// le nom du folio et sa place : « 3 / 20 », ou « MEE…003A (3 / 20) »
+function folioEtRang(plan) { const P = plans(), i = P.indexOf(plan) + 1; if (!i) return String(plan); return String(plan) === String(i) ? i + ' / ' + P.length : plan + ' (' + i + ' / ' + P.length + ')'; }
+// ce qu'on peut faire pendant ce temps : les problèmes du contrat (l'index « à reprendre »), le récapitulatif
+function libelleProblemes() { const xs = (typeof CONTROLE !== 'undefined' && CONTROLE.items) || [], nko = xs.filter(x => x.niveau === 'ko').length;
+  return nko ? 'Les ' + pluriel(nko, 'problème') : xs.length ? 'Les ' + xs.length + ' points à voir' : 'Les repères'; }
+const gestesDeLAttente = () => `<span class="at-gestes">Pendant ce temps : <button type="button" data-at="problemes">${libelleProblemes()}</button><button type="button" data-at="recap">Le récapitulatif</button></span>`;
+/* L'attente, visible : au milieu de la place libre du plan, le folio, ses câbles, la durée, une barre ; et ce qu'on peut
+   faire pendant. Dans la barre du bas, la puce du folio qui se calcule respire ; les folios pas encore prêts sont pâles.
+   L'élément se crée à la première attente, dans la planche (#attente). Une horloge le tient à jour tant qu'on attend. */
 function montrerAttente() { const a = app.contrat.liaisons.length && !app.dessin ? attenteCourante() : null; let el = $('attente');
-  if (!el && !a && !placement.encours) return;
-  if (!el && a) { el = document.createElement('div'); el.id = 'attente'; el.className = 'attente'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite'); $('planche').appendChild(el); }
-  if (el) { if (!a) el.hidden = true; else { const m = marges(); Object.assign(el.style, { left: m.gauche + 'px', right: m.droite + 'px', top: m.haut + 'px', bottom: m.bas + 'px' });
-    el.innerHTML = `<i aria-hidden="true"></i><b>Le moteur place le folio ${esc(app.plan)}…</b><small>${pluriel(a.L.length, 'fil')} · quelques secondes — l’écran reste libre</small>`; el.hidden = false; } }
+  if (!el && a) { el = document.createElement('div'); el.id = 'attente'; el.className = 'attente'; $('planche').appendChild(el);
+    el.addEventListener('click', e => { const b = e.target.closest('[data-at]'); if (!b) return; if (b.dataset.at === 'problemes') basculerIndex(); else ouvrirBase(); }); }
+  if (el) { if (!a) { el.hidden = true; el.dataset.cle = ''; }
+    else { const m = marges(), v = avancement(a); Object.assign(el.style, { left: m.gauche + 'px', right: m.droite + 'px', top: m.haut + 'px', bottom: m.bas + 'px' });
+      const detail = pluriel(a.L.length, 'câble') + ' · ' + (v.file ? 'son tour vient · ' : '') + v.mot;
+      if (el.dataset.cle !== a.cle) { el.dataset.cle = a.cle;
+        el.innerHTML = `<i aria-hidden="true"></i><b role="status">Dessin du folio ${esc(folioEtRang(a.plan))}</b><small class="at-detail">${esc(detail)}</small>`
+          + `<span class="at-barre" aria-hidden="true"><span></span></span>${gestesDeLAttente()}`; }
+      else { const s = el.querySelector('.at-detail'); if (s && s.textContent !== detail) s.textContent = detail;
+        // le contrôle du contrat arrive après la lecture : le geste des problèmes en dit le compte dès qu'il est là
+        const b = el.querySelector('[data-at="problemes"]'), mot = libelleProblemes(); if (b && b.textContent !== mot) b.textContent = mot; }
+      const barre = el.querySelector('.at-barre span'); if (barre) barre.style.transform = `scaleX(${v.p.toFixed(3)})`; el.hidden = false; } }
   const vifs = new Set(); if (a) vifs.add(app.plan); if (placement.encours && placement.attentes.has(placement.encours.cle)) vifs.add(placement.attentes.get(placement.encours.cle).plan);
-  $('fo-strip').querySelectorAll('.chip').forEach(c => c.classList.toggle('attend', vifs.has(c.dataset.plan))); }
+  const prets = foliosPrets(), pas = prets && prets.n < prets.N ? prets.pas : null;
+  $('fo-strip').querySelectorAll('.chip').forEach(c => { c.classList.toggle('attend', vifs.has(c.dataset.plan)); c.classList.toggle('a-venir', !!pas && pas.has(c.dataset.plan) && !vifs.has(c.dataset.plan)); });
+  montrerBande(); remonterHorloge(); }
+// l'horloge de l'attente : quatre fois par seconde tant qu'un folio se calcule ou s'esquisse, rien sinon
+function remonterHorloge() { const utile = placement.ailleurs && (!!placement.encours || placement.attentes.size > 0);
+  if (utile && !placement.horloge) placement.horloge = setInterval(() => { montrerAttente(); }, 250);
+  else if (!utile && placement.horloge) { clearInterval(placement.horloge); placement.horloge = 0; } }
+/* Les folios prêts : placés (dans cette session, ou relus de ce navigateur), affinés, retouchés, ou assez petits pour
+   se placer à l'instant. Rend { n, N, pas: les folios pas encore prêts } ; compté au plus deux fois par seconde. */
+function foliosPrets() { const t = performance.now(), m = foliosPrets.m; if (m && t - m.t < 500) return m.r;
+  const P = plans(); let r = null;
+  if (P.length > 1 && app.plan !== '*' && !app.nFolios && placement.ailleurs) { const pas = new Set();
+    P.forEach(p => { const L = liaisonsDe(p); if (L.length <= SEUIL_ICI) return; const k = cleDuPlan(p);
+      if (!(placement.prets.has(k) || placements.has(k) || affinage.profonds.has(k) || app.retouches.has(k))) pas.add(p); });
+    r = { n: P.length - pas.size, N: P.length, pas }; }
+  foliosPrets.m = { t, r }; return r; }
+/* LA PETITE BANDE du milieu, en bas (#affinage) : ce qui travaille pour nous, une chose à la fois — le dessin définitif du
+   folio affiché (l'esquisse est là), les folios qui se préparent (« 7 / 20 folios prêts »), puis le dessin qui s'affine. */
+function montrerBande() { const el = $('affinage'); if (!el) return; const txt = $('af-txt'); let barre = el.querySelector('.af-barre');
+  const poser = (mot, p, ailleurs, bulle) => { el.hidden = false; el.classList.toggle('ailleurs', !!ailleurs); el.setAttribute('aria-live', p == null ? 'polite' : 'off'); if (txt.textContent !== mot) txt.textContent = mot;
+    if (p == null) { if (barre) barre.hidden = true; } else { if (!barre) { barre = document.createElement('span'); barre.className = 'af-barre'; barre.setAttribute('aria-hidden', 'true'); barre.appendChild(document.createElement('span')); el.appendChild(barre); }
+      barre.hidden = false; barre.firstChild.style.transform = `scaleX(${Math.max(0.02, p).toFixed(3)})`; }
+    el.setAttribute('aria-label', bulle ? mot + ' — ' + bulle : mot); el.removeAttribute('title'); };
+  const a = attenteCourante();
+  if (a && app.dessin && app.dessin.provisoire) { const v = avancement(a);
+    poser((app.dessin.provisoire === 'esquisse' ? 'Esquisse · le dessin définitif ' : 'Dessin d’avant · le nouveau ') + (v.mot === 'presque fini' ? 'arrive' : 'dans ' + v.mot.replace(/^encore /, '')), v.p, false, 'le folio se lit déjà ; son dessin définitif le remplacera sans bouger la feuille'); return; }
+  const prets = foliosPrets();
+  if (prets && prets.n < prets.N && (placement.encours || placement.attentes.size)) { poser(prets.n + ' / ' + prets.N + ' folios prêts', prets.n / prets.N, true, 'les autres folios se dessinent en arrière-plan, l’un après l’autre'); return; }
+  const j = affinage.encours, e = affinage.etat;
+  if (affinage.actif && j) { const ici = j.cle === cleCourante(), reste = affinage.file.length;
+    poser((ici ? 'Le dessin s’affine' : 'Un autre folio s’affine') + (e ? ' · ' + e.k + ' / ' + e.n : '') + (reste ? ' · ' + reste + ' en attente' : ''), e && e.n ? e.k / e.n : null, !ici, 'chaque mieux trouvé remplace le dessin, et se garde dans ce navigateur'); return; }
+  el.hidden = true; }
+const montrerAffinage = montrerBande;
 // le concours gardé : une entrée par version du moteur et folio ; les concours d'un moteur passé s'effacent, une fois par session
 function garderConcours(cle, P) { ouvrirIDB().then(db => { db.transaction(IDB_CONCOURS, 'readwrite').objectStore(IDB_CONCOURS).put({ P, t: Date.now() }, VERSION_MOTEUR + '|' + cle); }).catch(() => { }); }
 function lireConcours(cle) { return ouvrirIDB().then(db => new Promise(ok => { if (!placement.nettoye) { placement.nettoye = true; nettoyerConcours(db); }
@@ -17517,9 +17820,10 @@ function nettoyerConcours(db) { try { const st = db.transaction(IDB_CONCOURS, 'r
   req.onsuccess = () => { const c = req.result; if (c) { if (!String(c.key).startsWith(VERSION_MOTEUR + '|')) vieux.push(c.key); c.continue(); } else vieux.forEach(k => st.delete(k)); }; } catch (_) { } }
 /* Pour les bancs : envoyer le placement au loin sous pilote (il y dort), et lire où il en est. */
 function placementAilleurs(on) { placement.ailleurs = !!on; if (on && app.contrat.liaisons.length && !app.dessin) redessiner(); return etatPlacement(); }
-function etatPlacement() { const plan = cle => { const a = placement.attentes.get(cle); return a ? a.plan : null; };
+function etatPlacement() { const plan = cle => { const a = placement.attentes.get(cle); return a ? a.plan : null; }, a = attenteCourante(), prets = foliosPrets();
   return { ailleurs: placement.ailleurs, worker: placement.worker === false ? 'refusé' : placement.worker ? 'oui' : 'pas encore', encours: placement.encours ? plan(placement.encours.cle) : null,
-    file: placement.file.map(plan), attentes: [...placement.attentes.values()].map(a => a.plan), faits: placement.faits, relus: placement.relus, gardes: placements.size, erreur: placement.erreur }; }
+    file: placement.file.map(plan), attentes: [...placement.attentes.values()].map(a => a.plan), faits: placement.faits, relus: placement.relus, gardes: placements.size, erreur: placement.erreur,
+    provisoire: (app.dessin && app.dessin.provisoire) || null, esquisse: !!(a && a.esquisse), prets: prets ? prets.n + ' / ' + prets.N : null, etalon: Math.round(ETALON.c * 1000) / 1000, aides: (placement.aides || []).length }; }
 /* ---- la RETOUCHE : tout se prend à la souris, tout suit ----------------- */
 /* Le dessin automatique est le point de départ ; on en a la MAÎTRISE TOTALE (le lecteur : « tout doit bouger — bornier,
    fil, borne, tout »). Ce qui se prend, et comment :
@@ -17695,10 +17999,13 @@ function synchroniserRetouche() { const b = $('btnAuto'); if (!b) return; const 
   if (b.getAttribute('aria-label') !== MOT_RETOUCHE) b.setAttribute('aria-label', MOT_RETOUCHE); }
 function calculer() {
   const L = liaisonsDuPlan(); if (!L.length) { app.dessin = null; return null; }
+  // l'affinage se met en file ici, mais ne part qu'une fois tous les folios placés (`pomper`)
   const P = placementDe(L); affinerTout();
-  // la feuille : la même pour tous les folios (A3 paysage), le dessin calé dedans
+  // le dernier vrai dessin du folio : s'il change (un numéro, une borne), on le montre en attendant le nouveau (`provisoire`)
+  if (P && !P.provisoire && app.plan !== '*') placement.derniers.set(app.plan, { bouts: boutsDe(L), P });
+  // la feuille : la même pour tous les folios (A3 paysage), le dessin calé dedans ; `provisoire` : l'esquisse ou le dessin d'avant
   app.dessin = P ? { comps: P.comps, links: P.links, bbox: pageDe(P.comps, P.routage.fils), geom: P.geom, compDe: P.compDe,
-                     fils: P.routage.fils, points: P.routage.points, barrettes: P.routage.barrettes, piquages: P.routage.piquages } : null;
+                     fils: P.routage.fils, points: P.routage.points, barrettes: P.routage.barrettes, piquages: P.routage.piquages, provisoire: P.provisoire || null } : null;
   if (app.dessin) { const routes = couleursDesRoutes(), routeDe = w => (L[w.i] && L[w.i].route) || '';
     app.dessin.couleurDe = w => routes.get(routeDe(w)) || null; app.dessin.legende = legendeDesRoutes(app.dessin.fils.filter(w => !w.shunt && String(w.de) !== String(w.vers)), routeDe, routes);
     nommerBarrettesAPoser(app.dessin.barrettes, L); }
@@ -23075,28 +23382,46 @@ function copierResumeSEE() { const t = resumeSEE(), ok = () => dire('Résumé co
    08 — LA TABLE : le fond qui vit, à peine (v72, « Nuit bleue »)
    Le lecteur : « un fond pas que noir, un peu dégradé, un petit peu interactif, qui bouge comme une application un peu
    futuriste — mais pas trop, pas m'as-tu-vu ». La table est en quatre couches, sous tout (page.html, `#table` ; leurs
-   dessins sont des jetons de style.css) : l'encre bleu nuit dégradée, une lumière qui respire très lentement (16 s, en
-   CSS), les points, et une LUEUR froide qui suit la souris de loin. Ce module fait les deux mouvements que le CSS ne sait
-   pas faire : la lueur qui rattrape la souris en douceur (puis s'arrête : rien ne tourne quand la main ne bouge pas), et
-   la PARALLAXE — les points glissent d'un dixième de ce que glisse la feuille, qui paraît posée au-dessus de la table.
-   Le mouvement réduit coupe tout ; au doigt, pas de lueur.
+   dessins sont des jetons de style.css, leur conduite dans style-table.css) : l'encre bleu nuit dégradée, une lumière
+   qui RESPIRE très lentement, les points, et une LUEUR froide qui suit la souris de loin.
+   SOBRE (l'audit de fluidité : telle quelle, la table brûlait un cœur entier quand on ne faisait rien — 100 % contre 1 %
+   —, et doublait le coût de chaque image d'un geste, en rendu logiciel) :
+   · le souffle ne respire que quand on est là — la souris ou le clavier, et six secondes après — et que la table se
+     voit ; il se fige au repos, pendant un geste (glisser le plan, la molette, tenir un bloc), sous une feuille qui prend
+     la page. Il respire en opacité seule (un calque plein écran agrandi se rééchantillonnait à chaque image) ;
+   · la lueur rattrape la souris en un tiers de seconde et s'arrête avec elle ; pendant un geste, elle attend ;
+   · la parallaxe des points glisse le calque (un `transform`, que le compositeur déplace), elle ne repeint plus l'écran ;
+   · le mouvement réduit coupe tout ; au doigt, pas de lueur.
    =========================================================================== */
 
-const TABLE = { x: 0, y: 0, vx: 0, vy: 0, anim: 0, vue: false };
-const TABLE_PARALLAXE = .1;
+const TABLE = { x: 0, y: 0, vx: 0, vy: 0, anim: 0, vue: false, eveil: 0, geste: 0 };
+const TABLE_PARALLAXE = .1, TABLE_PAS = 24;   // les points, un tous les 24 px : leur parallaxe glisse modulo un pas
+const TABLE_EVEIL = 6000;                     // le souffle respire tant qu'on est là, et six secondes après
 function lierTable() { const t = $('table'), el = t && t.querySelector('.ta-lueur'); if (!el) return;
   TABLE.x = TABLE.vx = window.innerWidth * .7; TABLE.y = TABLE.vy = window.innerHeight * .3;
   const poser = () => { el.style.transform = `translate3d(${TABLE.vx.toFixed(1)}px,${TABLE.vy.toFixed(1)}px,0)`; };
-  // elle rattrape la souris d'un quinzième du chemin par image, puis s'arrête
-  const pas = () => { TABLE.vx += (TABLE.x - TABLE.vx) * .065; TABLE.vy += (TABLE.y - TABLE.vy) * .065; poser();
-    TABLE.anim = Math.abs(TABLE.x - TABLE.vx) + Math.abs(TABLE.y - TABLE.vy) > .6 ? requestAnimationFrame(pas) : 0; };
-  window.addEventListener('pointermove', e => { if (mouvementReduit() || e.pointerType === 'touch') return; TABLE.x = e.clientX; TABLE.y = e.clientY;
+  // elle rattrape la souris d'un cinquième du chemin par image (un tiers de seconde), puis s'arrête
+  const pas = () => { TABLE.vx += (TABLE.x - TABLE.vx) * .2; TABLE.vy += (TABLE.y - TABLE.vy) * .2; poser();
+    TABLE.anim = Math.abs(TABLE.x - TABLE.vx) + Math.abs(TABLE.y - TABLE.vy) > .8 ? requestAnimationFrame(pas) : 0; };
+  // on est là : le souffle respire ; six secondes sans rien, il se fige où il en est
+  const reveiller = () => { if (mouvementReduit() || document.hidden) return; if (!t.classList.contains('respire')) t.classList.add('respire');   // (ajouter une classe déjà là réécrit l'attribut : un restyle à chaque mouvement)
+    clearTimeout(TABLE.eveil); TABLE.eveil = setTimeout(() => t.classList.remove('respire'), TABLE_EVEIL); };
+  // un geste (un appui, la molette, un glisser) : le souffle et la lueur attendent qu'il finisse
+  const geste = () => { if (!t.classList.contains('geste')) t.classList.add('geste'); clearTimeout(TABLE.geste); TABLE.geste = setTimeout(() => t.classList.remove('geste'), 350); };
+  window.addEventListener('pointermove', e => { reveiller(); if (e.buttons) { geste(); return; }
+    if (mouvementReduit() || e.pointerType === 'touch') return; TABLE.x = e.clientX; TABLE.y = e.clientY;
     if (!TABLE.vue) { TABLE.vue = true; t.classList.add('vue'); } if (!TABLE.anim) TABLE.anim = requestAnimationFrame(pas); }, { passive: true });
+  window.addEventListener('pointerdown', geste, { passive: true, capture: true });
+  window.addEventListener('wheel', () => { reveiller(); geste(); }, { passive: true, capture: true });
+  window.addEventListener('keydown', reveiller, { passive: true, capture: true });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { t.classList.remove('respire'); if (TABLE.anim) { cancelAnimationFrame(TABLE.anim); TABLE.anim = 0; } } });
   document.addEventListener('pointerleave', () => { TABLE.vue = false; t.classList.remove('vue'); });
   poser(); }
-// appelée à chaque vue posée (08-interface, `appliquerVue`)
+// appelée à chaque vue posée (08-interface, `appliquerVue`) : les points glissent d'un dixième, modulo leur pas
 function parallaxeTable() { const p = document.querySelector('#table .ta-points'); if (!p) return;
-  p.style.backgroundPosition = mouvementReduit() ? '' : `${(app.vue.tx * TABLE_PARALLAXE).toFixed(1)}px ${(app.vue.ty * TABLE_PARALLAXE).toFixed(1)}px`; }
+  if (mouvementReduit()) { if (p.style.transform) p.style.transform = ''; return; }
+  const m = v => (((v * TABLE_PARALLAXE) % TABLE_PAS) + TABLE_PAS) % TABLE_PAS;
+  p.style.transform = `translate3d(${m(app.vue.tx).toFixed(1)}px,${m(app.vue.ty).toFixed(1)}px,0)`; }
 
 /* ───────── 10-demarrage.js ───────── */
 /* ===========================================================================
