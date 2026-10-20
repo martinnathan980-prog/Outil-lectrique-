@@ -88,7 +88,7 @@ function genreDuPoint(x) { const t = x.texte || '';
   if (/profil de charge est à renseigner/.test(t)) return 'profil';
   if (/^chute en ligne/.test(t)) return 'chute';
   if (/aucun arrangement|n['’]a pas de contact|ne loge /.test(t)) return 'arrangement';
-  if (/refusé|aucun contact|dépasse le contact|contact taille \S+ \(|joint arrière|contact \S+ : \d+ câbles/.test(t)) return 'contact';
+  if (/refusé|aucun contact|dépasse le contact|contact taille \S+ (supposé )?\(|joint arrière|contact \S+ : \d+ câbles/.test(t)) return 'contact';
   if (/pas protégé|admis en continu|> [\d,]+ A admis|table 11-3|sans résistance dans la base/.test(t)) return 'protection';
   if (x.nom && estDisjoncteur(x.nom)) return 'calibre';
   return 'autre'; }
@@ -103,6 +103,9 @@ function genreDuPoint(x) { const t = x.texte || '';
    Rend [{ niveau, texte }]. */
 // ce qu'un câble supporte, en mots : avant de s'abîmer (sa courbe de dommage), sinon en service
 const limiteDuCable = (f, x) => f.jugeSur === 'dommage' ? `il s’abîme au-delà de ${amperes(x.admise)}` : `le câble admet ${amperes(x.admise)} en service`;
+// le contact d'un câble en mots : celui du plan (« taille 20 (7,5 A, 103J1) »), sinon celui que Volta suppose — le plus petit
+// qui admet la gauge, par prudence (« taille 23 supposé (3 A) » ; la fiche dit pourquoi sous le problème)
+const motContact = f => `taille ${f.contact.taille} ${f.contact.parLePlan ? '(' + amperes(f.contact.intensite) + ', ' + f.contactRepere + ')' : 'supposé (' + amperes(f.contact.intensite) + ')'}`;
 function controleProtection(nom, contacts, V, N, H) { const d = disjonctionDe(nom), out = [], cal = d.calibre, pn = pnDuRepere(nom);
   if (pn && !d.famille && !d.ecrit) out.push({ niveau: 'att', texte: `part number ${pn} : famille de disjoncteur inconnue, le calibre ne s’y lit pas${cal ? ' — ' + amperes(cal) + ' (l’idéal) retenu' : ''}` });
   // le courant de chaque contact du câble, borné par la gauge du câble serti (R1) ; le plus faible des deux bouts juge
@@ -115,8 +118,8 @@ function controleProtection(nom, contacts, V, N, H) { const d = disjonctionDe(no
       else if (f.protege === false) { const x = f.pireLaisse; out.push({ niveau: 'att', texte: `${nomF} : pas protégé en surcharge brève — le ${amperes(cal)} laisse passer ${amperes(x.courant)} ${pourPalier(x.palier)} à ${f.courbeLente}, ${limiteDuCable(f, x)}` }); } }
     if (f.refuse) out.push({ niveau: 'att', texte: `${nomF} : conducteur ${f.conducteur} sans résistance dans la base, son intensité admissible est inconnue` });
     if (f.horsTable) out.push({ niveau: 'att', texte: `${nomF} : calibre ${amperes(cal)} > ${amperes(f.calibreMax)}, le maximum de l’AC 43.13-1B (table 11-3) pour du ${f.jauge} AWG` });
-    if (f.contactDepasse) out.push({ niveau: 'ko', texte: `${nomF} : le permanent (${amperes(f.permanent)}) dépasse le contact taille ${f.contact.taille} (${amperes(f.contact.intensite)}${f.contact.parLePlan ? ', ' + f.contactRepere : ', par la gauge'})` });
-    else if (f.contactSurcharge) out.push({ niveau: 'att', texte: `${nomF} : contact taille ${f.contact.taille} (${amperes(f.contact.intensite)}${f.contact.parLePlan ? ', ' + f.contactRepere : ', par la gauge'}) < calibre ${amperes(cal)} — pas protégé en surcharge` }); });
+    if (f.contactDepasse) out.push({ niveau: 'ko', texte: `${nomF} : le permanent (${amperes(f.permanent)}) dépasse le contact ${motContact(f)}` });
+    else if (f.contactSurcharge) out.push({ niveau: 'att', texte: `${nomF} : contact ${motContact(f)} < calibre ${amperes(cal)} — pas protégé en surcharge` }); });
   // la chute en ligne : au permanent du profil (sinon le calibre, sinon l'hypothèse), et à chaque état court
   const I = d.profil && d.profil.perm && d.profil.perm.i > 0 ? d.profil.perm.i : cal > 0 ? cal : H.courant, courts = d.points.filter(p => p.t !== Infinity && p.i > 0);
   chutesDepuis(N, V, nom, I, H, courts).forEach(c => { const ou = c.bout[0] + (c.bout[1] ? ':' + c.bout[1] : ''), hyp = c.reel ? '' : ' (longueurs d’hypothèse)', niveau = c.reel ? 'ko' : 'att';

@@ -648,8 +648,7 @@ function folioCourant() { const P = plans();
    sinon, pour une barrette, la référence choisie dans la bible, et pour une
    prise de coupure, le part number que le fichier porte ; sinon, la DESCRIPTION
    du retest (l'audit v72 : « Description1/2 disent RELAIS, POMPE, CB 10A » et
-   l'outil écrivait « Nom — à taper ») — la première non vide de ses liaisons. */
-const descriptionDuRetest = n => { if (!n) return ''; const l = verite().find(l => (l.de === n && l.descriptionDe) || (l.vers === n && l.descriptionVers)); return l ? String(l.de === n && l.descriptionDe ? l.descriptionDe : l.descriptionVers).trim() : ''; };
+   l'outil écrivait « Nom — à taper ») — la première non vide de ses liaisons (`descriptionDuRetest`, 08-fiche). */
 function designationDe(n) { const d = app.contrat.designations.get(n);
   // une barrette en modules : la désignation retenue (une variante, une norme) dit seulement ce que le remplissage vise
   if (estBarrette(n)) { const I = barretteInfos(n, verite(), app.bible, app.norme, d || ''); return I.plan ? I.reference : d || I.reference; }
@@ -2062,8 +2061,6 @@ function dire(msg, erreur, o) { const t = $('toast'); t.textContent = msg; t.cla
     document.addEventListener('pointerdown', e => { if (!TOAST.erreur || Date.now() - TOAST.t < 400 || (e.target.closest && e.target.closest('#toast button'))) return; cacherToast(); }, true); } }
 // Ctrl+Z, le bouton du rail : le dernier geste défait, dit ; rien à défaire, dit aussi (on ne se demande pas si ça a marché)
 function defaire() { const q = annuler(); dire(q ? 'Annulé : ' + q + '.' : 'Rien à défaire.'); return q; }
-// un geste qui se défait : il se fait, le mot le dit, « Rétablir » (ou Ctrl+Z) le défait — l'historique est la vérité
-const direRetablir = msg => dire(msg, false, { geste: 'Rétablir', faire: () => { const q = annuler(); if (q) dire('Rétabli : ' + q + '.'); } });
 /* ---- le menu ⋮ : peu de lignes ; Exporter et Plus s'ouvrent EN PLACE (page.html) -----------------------------------
    `montrerPanneau(nom)` : '' le menu, sinon un sous-menu, qui prend sa place (le menu garde sa largeur). Le clavier va à la
    première ligne du panneau montré — au retour, à la ligne qui avait ouvert le sous-menu. */

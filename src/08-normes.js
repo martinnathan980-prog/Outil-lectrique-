@@ -244,18 +244,14 @@ function lierMenusDoc(box) { if (!box) return;
         bs[i < 0 ? (bas ? 0 : bs.length - 1) : (i + (bas ? 1 : bs.length - 1)) % bs.length].focus(); } });
     d.querySelector('.doc-menu-l').addEventListener('click', e => { if (e.target.closest('button')) fermer(); }); }); }
 const badge = (cls, t) => `<span class="nm-badge ${cls}">${esc(t)}</span>`;
-/* La largeur des deux onglets (Normes, Bible) : les tables ont jusqu'à seize colonnes ; le plan se recadre à côté.
-   `ouvrirFiche` pose sa largeur à lui et recadre quand le document change : on reprend la nôtre aussitôt (dans la même
-   tâche, rien ne se peint entre les deux) et on recadre à nouveau — d'un onglet à l'autre, le cadre ne bouge pas. */
-// le plan garde 40 % de l'écran à côté (l'audit v72 : à 320 px, il n'était plus qu'un timbre) ; la table qui déborde défile
-const LARGEUR_NORMES = 'min(1040px, calc(60vw - var(--rail)))';
-function elargirNormes(memeDocument) { document.documentElement.style.setProperty('--fiche-l', LARGEUR_NORMES); if (!memeDocument) ajuster(true); }
+/* La largeur des deux onglets (Normes, Bible) : « ample », réglée par `ouvrirFiche` (LARGEURS_DOC, 08-interface) — le plan
+   garde 40 % de l'écran à côté, la table qui déborde défile ; il se recadre quand on passe de l'un à l'autre. */
 /* La page : l'état, la recherche et les gestes, l'import en cours, les résultats de la recherche, les domaines. */
 function ficheNormes(opts) { opts = opts || {};
   if (opts.table) { NORMES.ouverts.add(opts.table); if (opts.filtre != null) NORMES.filtres[opts.table] = opts.filtre; }
   if (opts.q != null) NORMES.q = opts.q;
-  const deja = app.fiche && app.fiche.mode === 'normes', pied = normesPiedHtml();
-  ouvrirFiche({ mode: 'normes', large: true }, normesHtml(), pied); elargirNormes(deja);
+  const pied = normesPiedHtml();
+  ouvrirFiche({ mode: 'normes', large: true }, normesHtml(), pied);
   app.base.normeOuverte = true; lierNormes(); lierBullesDoc();
   if (opts.table) { const el = $('fiche-corps').querySelector(`.nm-table[data-vue="${opts.table}"]`); if (el && el.scrollIntoView) { try { el.scrollIntoView({ block: 'start' }); } catch (_) { } } } }
 /* La page se refait sur place (la position de lecture reste). */
@@ -324,7 +320,7 @@ function corpsTableHtml(v, L, opts) { opts = opts || {}; const T = L.table, cols
   const classe = c => COLONNE_TEXTE.test(c.champ) ? 'nm-texte' : droite.has(c.champ) ? 'd' : '';
   if (filtre) rows = rows.filter(r => contient(Object.values(r.b).join(' '), filtre));
   if (tri && !opts.lecture) { const num = rows.every(r => !r.b[tri.champ] || NUMERO(r.b[tri.champ]) != null);
-    rows.sort((a, b) => { const u = a.b[tri.champ] || '', w = b.b[tri.champ] || ''; return tri.sens * (num ? (NUMERO(u) == null ? 1e9 : NUMERO(u)) - (NUMERO(w) == null ? 1e9 : NUMERO(w)) : u.localeCompare(w, 'fr', { numeric: true })); }); }
+    rows.sort((a, b) => { const u = a.b[tri.champ] || '', w = b.b[tri.champ] || ''; return tri.sens * (num ? (NUMERO(u) == null ? 1e9 : NUMERO(u)) - (NUMERO(w) == null ? 1e9 : NUMERO(w)) : COLLATEUR_FR.compare(u, w)); }); }
   const max = opts.max || (NORMES.entier.has(v) ? Infinity : MAX_LIGNES_NORME), vus = rows.slice(0, max), E = NORMES.edition, enEdition = r => E && E.vue === v && E.cle != null && E.cle === cleDeLigne(T, r.x);
   const th = cols.map(c => `<th${droite.has(c.champ) ? ' class="d"' : ''}${opts.lecture ? '' : ` data-tri="${escA(c.champ)}" role="button" tabindex="0" aria-sort="${tri && tri.champ === c.champ ? (tri.sens > 0 ? 'ascending' : 'descending') : 'none'}"`} data-bulle="${escA(c.sens)}">${esc(c.libelle)}${tri && tri.champ === c.champ && !opts.lecture ? (tri.sens > 0 ? ' ↑' : ' ↓') : ''}</th>`).join('');
   const ligne = r => enEdition(r) ? ligneEditionHtml(v, T, cols) : `<tr class="nm-l nm-${r.etat === 'modifiée' ? 'mod' : r.etat === 'ajoutée' ? 'ajo' : 'emb'}" data-cle="${escA(cleDeLigne(T, r.x))}"${opts.lecture ? '' : ' tabindex="0"'}>`
@@ -540,7 +536,7 @@ function ficheBible(ref, ancre) { const B = app.bible || [], nom = app.bibleNom,
       null, nom ? ['bi-exemple', 'Revenir à la bible d’exemple', 'celle de l’outil, à la place de ' + nom] : false, app.normeNom ? ['no-embarquee', 'Revenir à la norme embarquée', 'oublier ce qui a été importé ou modifié'] : false])
     + '<input type="file" id="fichier-norme" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden><input type="file" id="fichier-references" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>'
     + `<span class="espace"></span><span class="bi-compte">${filtre ? esc(milliers(B.filter(garde).length)) + ' sur ' : ''}${esc(pluriel(n, 'référence'))}</span>`;
-  ouvrirFiche({ mode: 'bible', large: true, ref: zoom ? ref : '' }, corps, pied); elargirNormes(deja); lierNormes(); lierMenusDoc($('fiche-pied')); lierBullesDoc();
+  ouvrirFiche({ mode: 'bible', large: true, ref: zoom ? ref : '' }, corps, pied); lierNormes(); lierMenusDoc($('fiche-pied')); lierBullesDoc();
   // la position : la ligne cliquée reste en place ; sinon la lecture reprend où elle était ; une autre référence demandée
   // d'ailleurs (la carte d'une barrette) vient sous l'en-tête de la table
   const c = $('fiche-corps'), ligneDe = r => { const b = r && c.querySelector(`.ref-btn[data-ref="${CSS.escape(r)}"]`); return b ? b.closest('tr') : null; };

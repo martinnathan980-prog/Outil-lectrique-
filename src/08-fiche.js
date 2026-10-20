@@ -128,14 +128,15 @@ const ligneDuContact = (famille, taille, sexe, type) => { try { return contactDu
 const legendeConfiance = () => `<p class="fi-conf-legende"><span><i class="fi-conf v" aria-hidden="true"></i>vérifié par deux sources</span><span><i class="fi-conf l" aria-hidden="true"></i>vos tables</span><span><i class="fi-conf c" aria-hidden="true"></i>à confirmer</span></p>`;
 
 /* ---- CE QU'UN PROBLÈME NE DIT PAS DE LUI-MÊME ------------------------------------------------------------------------
-   « contact taille 23 (3 A, par la gauge) » (le lecteur : pourquoi ?) : le plan ne dit pas quel contact est serti au
+   « contact taille 23 supposé (3 A) » (le lecteur : pourquoi ?) : le plan ne dit pas quel contact est serti au
    bout de ce câble — un interrupteur, un relais à cosses —, Volta prend alors le plus petit contact qui admet sa gauge,
    par prudence (09 bis, `protegerFil` : la règle reste). La fiche le dit sous la ligne du problème. */
-function gloseDuProbleme(t) { const m = /^(\S+) \((\w+?(\d{1,2}))\)[^:]*:.*?contact taille (\S+) \(([\d,]+\s?A), par la gauge\)/.exec(t);
-  if (m) return `Le plan ne dit pas quel contact est serti au bout de ${m[1]} : Volta prend le plus petit qui admet un ${m[3]} AWG — la taille ${m[4]}, ${m[5]} —, par prudence.`;
-  if (/par la gauge\)/.test(t)) return 'Le plan ne dit pas quel contact est serti : Volta prend le plus petit qui admet la gauge du câble, par prudence.';
+function gloseDuProbleme(t) { const m = /^(\S+) \((\w+?(\d{1,2}))\)[^:]*:.*?contact taille (\S+) (?:supposé \(([\d,]+\s?A)\)|\(([\d,]+\s?A), par la gauge\))/.exec(t);
+  if (m) return `Le plan ne dit pas quel contact est serti au bout de ${m[1]} : Volta prend le plus petit qui admet un ${m[3]} AWG — la taille ${m[4]}, ${m[5] || m[6]} —, par prudence.`;
+  if (/ supposé \(|par la gauge\)/.test(t)) return 'Le plan ne dit pas quel contact est serti : Volta prend le plus petit qui admet la gauge du câble, par prudence.';
   return ''; }
-// la phrase d'un problème telle que la fiche l'écrit : « par la gauge » devient « supposé » (la glose dit pourquoi)
+// la phrase d'un problème telle que la fiche l'écrit : « supposé » (le contrôle l'écrit ainsi ; l'ancienne forme « par la gauge »
+// d'un plan enregistré se lit encore), la glose dit pourquoi
 const motDuProbleme = t => String(t).replace(/contact taille (\S+) \(([\d,]+\s?A), par la gauge\)/, 'contact taille $1 supposé ($2)');
 
 /* ---- LA LIGNE D'IDENTITÉ, sous le repère (l'audit v72 : « le premier coup d'œil ne dit pas ce qu'est l'objet ; la
@@ -1061,10 +1062,10 @@ function ficheBloc(nom) {
 const ficheDe = c => c.type === 'fil' ? ficheFil(c.l) : c.type === 'ref' ? ficheComparaison(c) : ficheBloc(c.nom);
 const nomDeCible = c => c.type === 'fil' ? (c.l.cable || (c.l.origine === null ? 'câble à créer' : 'câble')) : c.type === 'ref' ? 'Déjà fait · ' + c.harness : c.nom;
 // ce qu'un rendu garde le temps de se faire : les intensités, les plans, les raccords
-/* Une suppression faite tout de suite (plus de confirm()) : le message, et « Rétablir » dedans — le geste du toast
-   (08-bibliotheque, `direAvecGeste`) ; Ctrl+Z aussi. `puis` : rouvrir ce qui revient. */
-const direRetablir = (msg, puis) => { const faire = () => { annuler(); if (puis) puis(); };
-  if (typeof direAvecGeste === 'function') direAvecGeste(msg, 'Rétablir', faire); else dire(msg); };
+/* UN GESTE QUI SE DÉFAIT (plus de confirm()) : il se fait, le mot le dit, et « Rétablir » dedans le défait — le geste du
+   toast (`dire`, troisième argument, 08-interface) ; Ctrl+Z aussi, l'historique est la vérité. `puis` : rouvrir ce qui
+   revient. Pour tout l'outil : la fiche, le récapitulatif, le contrôle, les retouches. */
+const direRetablir = (msg, puis) => dire(msg, false, { geste: 'Rétablir', faire: () => { const q = annuler(); if (q) dire('Rétabli : ' + q + '.'); if (puis) puis(); } });
 const viderCalculs = () => { CALCULS.clear(); PLANS.clear(); HABILLAGES.clear(); CHUTES.cle = null; remettreAides(); };
 /* LA FICHE dans l'inspecteur : la barre, puis l'objet. La même fiche refaite (un choix cliqué) garde son défilement, ses
    sections ouvertes, et le bouton pressé garde le focus ; une autre fiche entre en fondu — ou, si l'on y revient (‹ ›),

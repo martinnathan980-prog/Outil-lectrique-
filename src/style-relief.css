@@ -119,15 +119,14 @@ svg .re-note{fill:#5b6875;font-size:calc(11px / var(--k,1))}
 .mj .mj-cable{fill:#111827;font-size:8px;font-weight:600;paint-order:stroke;stroke:#fbfcfd;stroke-width:2.5px;stroke-linejoin:round}
 .mj .mj-diode{fill:#2b3440;stroke:#2b3440;stroke-width:1.2}
 .mj-faces{display:flex;justify-content:center;padding:8px 0 4px}
-/* la bible : le filtre par norme — des puces de choix, celles de tout l'outil (.fi-chip) : 28 px, au filet ; pressée, à
-   l'encre ; leur compte en chasse fixe, un ton plus bas */
+/* la bible : le filtre par norme — la puce de tout l'outil (.puce, style.css) : 28 px, au filet ; pressée, le fond doux de
+   l'action et son filet, jamais noir plein ; leur compte en chasse fixe, un ton plus bas */
 .mj-norme{height:28px;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--s-line-2);background:var(--s-surface);color:var(--t-1);border-radius:var(--r-1);padding:0 11px;font:500 var(--f-12) var(--sans);cursor:pointer;
   transition:background var(--rapide),border-color var(--rapide),color var(--rapide),transform var(--rapide)}
 .mj-norme:hover{background:var(--s-hover);border-color:color-mix(in srgb,var(--t-1) 25%,var(--s-line-2))}
 .mj-norme:active{transform:scale(.98)}
-.mj-norme[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
+.mj-norme[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent-line);color:var(--t-1);font-weight:600}
 .mj-norme .mj-n{font:500 var(--f-11) var(--mono);color:var(--t-2);font-variant-numeric:tabular-nums}
-.mj-norme[aria-pressed="true"] .mj-n{color:inherit;opacity:.7}
 .cand svg.picto{flex-shrink:0}
 /* chaque variante en picto, sur sa vignette de papier (style.css, « le papier ») : dessinée avec les jetons du papier */
 .picto.mj-picto .p-corps{fill:var(--s-surface);stroke:var(--t-1);stroke-width:.9}

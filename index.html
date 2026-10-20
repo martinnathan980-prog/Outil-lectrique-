@@ -4102,15 +4102,14 @@ svg .re-note{fill:#5b6875;font-size:calc(11px / var(--k,1))}
 .mj .mj-cable{fill:#111827;font-size:8px;font-weight:600;paint-order:stroke;stroke:#fbfcfd;stroke-width:2.5px;stroke-linejoin:round}
 .mj .mj-diode{fill:#2b3440;stroke:#2b3440;stroke-width:1.2}
 .mj-faces{display:flex;justify-content:center;padding:8px 0 4px}
-/* la bible : le filtre par norme — des puces de choix, celles de tout l'outil (.fi-chip) : 28 px, au filet ; pressée, à
-   l'encre ; leur compte en chasse fixe, un ton plus bas */
+/* la bible : le filtre par norme — la puce de tout l'outil (.puce, style.css) : 28 px, au filet ; pressée, le fond doux de
+   l'action et son filet, jamais noir plein ; leur compte en chasse fixe, un ton plus bas */
 .mj-norme{height:28px;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--s-line-2);background:var(--s-surface);color:var(--t-1);border-radius:var(--r-1);padding:0 11px;font:500 var(--f-12) var(--sans);cursor:pointer;
   transition:background var(--rapide),border-color var(--rapide),color var(--rapide),transform var(--rapide)}
 .mj-norme:hover{background:var(--s-hover);border-color:color-mix(in srgb,var(--t-1) 25%,var(--s-line-2))}
 .mj-norme:active{transform:scale(.98)}
-.mj-norme[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
+.mj-norme[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent-line);color:var(--t-1);font-weight:600}
 .mj-norme .mj-n{font:500 var(--f-11) var(--mono);color:var(--t-2);font-variant-numeric:tabular-nums}
-.mj-norme[aria-pressed="true"] .mj-n{color:inherit;opacity:.7}
 .cand svg.picto{flex-shrink:0}
 /* chaque variante en picto, sur sa vignette de papier (style.css, « le papier ») : dessinée avec les jetons du papier */
 .picto.mj-picto .p-corps{fill:var(--s-surface);stroke:var(--t-1);stroke-width:.9}
@@ -4783,7 +4782,7 @@ body:has(#base.page:not([hidden])) #table .ta-lueur,body:has(#fiche[data-mode="s
 
 <script id="moteur">
 "use strict";
-const VERSION_MOTEUR = '22b467f0b069';
+const VERSION_MOTEUR = '4be59640328b';
 /* ───────── 01-modele.js ───────── */
 /* ===========================================================================
    01 — LE MODÈLE
@@ -4805,6 +4804,9 @@ const VERSION_MOTEUR = '22b467f0b069';
              appareil, retest
    =========================================================================== */
 
+/* L'ordre naturel du français (1, 2, 10 ; A1, A2, B1), UN collateur pour tout l'outil : `localeCompare` avec options en
+   refait un à chaque comparaison — sur un retest de 100 000 lignes, c'est l'essentiel du temps d'un tri. */
+const COLLATEUR_FR = new Intl.Collator('fr', { numeric: true });
 const RAIL_RE = /^(L1|L2|L3|L|N|PE|PEN|GND|0V|\+|-|VCC|VDD|\+?\d{1,3}V)$/i;
 
 /* Le repère aéronautique porte son code AU MILIEU : <numéro><CODE><suffixe>
@@ -10135,7 +10137,7 @@ function suiviDuContrat(liaisons, bible, contrat, retenue) {
 /* L'ordre naturel des bornes : 1, 2, 10 ; A1, A2, B1. */
 function triBornes(a, b) { const na = parseFloat(a), nb = parseFloat(b);
   if (!isNaN(na) && !isNaN(nb) && String(na) === String(a) && String(nb) === String(b)) return na - nb;
-  return String(a).localeCompare(String(b), 'fr', { numeric: true }); }
+  return COLLATEUR_FR.compare(String(a), String(b)); }
 
 /* ---- la norme : quatre tables, lues par le nom des colonnes -------------- */
 /* Chaque table se reconnaît à ses colonnes ; une bible (Référence + Bornes)
@@ -14682,7 +14684,7 @@ function genreDuPoint(x) { const t = x.texte || '';
   if (/profil de charge est à renseigner/.test(t)) return 'profil';
   if (/^chute en ligne/.test(t)) return 'chute';
   if (/aucun arrangement|n['’]a pas de contact|ne loge /.test(t)) return 'arrangement';
-  if (/refusé|aucun contact|dépasse le contact|contact taille \S+ \(|joint arrière|contact \S+ : \d+ câbles/.test(t)) return 'contact';
+  if (/refusé|aucun contact|dépasse le contact|contact taille \S+ (supposé )?\(|joint arrière|contact \S+ : \d+ câbles/.test(t)) return 'contact';
   if (/pas protégé|admis en continu|> [\d,]+ A admis|table 11-3|sans résistance dans la base/.test(t)) return 'protection';
   if (x.nom && estDisjoncteur(x.nom)) return 'calibre';
   return 'autre'; }
@@ -14697,6 +14699,9 @@ function genreDuPoint(x) { const t = x.texte || '';
    Rend [{ niveau, texte }]. */
 // ce qu'un câble supporte, en mots : avant de s'abîmer (sa courbe de dommage), sinon en service
 const limiteDuCable = (f, x) => f.jugeSur === 'dommage' ? `il s’abîme au-delà de ${amperes(x.admise)}` : `le câble admet ${amperes(x.admise)} en service`;
+// le contact d'un câble en mots : celui du plan (« taille 20 (7,5 A, 103J1) »), sinon celui que Volta suppose — le plus petit
+// qui admet la gauge, par prudence (« taille 23 supposé (3 A) » ; la fiche dit pourquoi sous le problème)
+const motContact = f => `taille ${f.contact.taille} ${f.contact.parLePlan ? '(' + amperes(f.contact.intensite) + ', ' + f.contactRepere + ')' : 'supposé (' + amperes(f.contact.intensite) + ')'}`;
 function controleProtection(nom, contacts, V, N, H) { const d = disjonctionDe(nom), out = [], cal = d.calibre, pn = pnDuRepere(nom);
   if (pn && !d.famille && !d.ecrit) out.push({ niveau: 'att', texte: `part number ${pn} : famille de disjoncteur inconnue, le calibre ne s’y lit pas${cal ? ' — ' + amperes(cal) + ' (l’idéal) retenu' : ''}` });
   // le courant de chaque contact du câble, borné par la gauge du câble serti (R1) ; le plus faible des deux bouts juge
@@ -14709,8 +14714,8 @@ function controleProtection(nom, contacts, V, N, H) { const d = disjonctionDe(no
       else if (f.protege === false) { const x = f.pireLaisse; out.push({ niveau: 'att', texte: `${nomF} : pas protégé en surcharge brève — le ${amperes(cal)} laisse passer ${amperes(x.courant)} ${pourPalier(x.palier)} à ${f.courbeLente}, ${limiteDuCable(f, x)}` }); } }
     if (f.refuse) out.push({ niveau: 'att', texte: `${nomF} : conducteur ${f.conducteur} sans résistance dans la base, son intensité admissible est inconnue` });
     if (f.horsTable) out.push({ niveau: 'att', texte: `${nomF} : calibre ${amperes(cal)} > ${amperes(f.calibreMax)}, le maximum de l’AC 43.13-1B (table 11-3) pour du ${f.jauge} AWG` });
-    if (f.contactDepasse) out.push({ niveau: 'ko', texte: `${nomF} : le permanent (${amperes(f.permanent)}) dépasse le contact taille ${f.contact.taille} (${amperes(f.contact.intensite)}${f.contact.parLePlan ? ', ' + f.contactRepere : ', par la gauge'})` });
-    else if (f.contactSurcharge) out.push({ niveau: 'att', texte: `${nomF} : contact taille ${f.contact.taille} (${amperes(f.contact.intensite)}${f.contact.parLePlan ? ', ' + f.contactRepere : ', par la gauge'}) < calibre ${amperes(cal)} — pas protégé en surcharge` }); });
+    if (f.contactDepasse) out.push({ niveau: 'ko', texte: `${nomF} : le permanent (${amperes(f.permanent)}) dépasse le contact ${motContact(f)}` });
+    else if (f.contactSurcharge) out.push({ niveau: 'att', texte: `${nomF} : contact ${motContact(f)} < calibre ${amperes(cal)} — pas protégé en surcharge` }); });
   // la chute en ligne : au permanent du profil (sinon le calibre, sinon l'hypothèse), et à chaque état court
   const I = d.profil && d.profil.perm && d.profil.perm.i > 0 ? d.profil.perm.i : cal > 0 ? cal : H.courant, courts = d.points.filter(p => p.t !== Infinity && p.i > 0);
   chutesDepuis(N, V, nom, I, H, courts).forEach(c => { const ou = c.bout[0] + (c.bout[1] ? ':' + c.bout[1] : ''), hyp = c.reel ? '' : ' (longueurs d’hypothèse)', niveau = c.reel ? 'ko' : 'att';
@@ -16050,14 +16055,15 @@ const ligneDuContact = (famille, taille, sexe, type) => { try { return contactDu
 const legendeConfiance = () => `<p class="fi-conf-legende"><span><i class="fi-conf v" aria-hidden="true"></i>vérifié par deux sources</span><span><i class="fi-conf l" aria-hidden="true"></i>vos tables</span><span><i class="fi-conf c" aria-hidden="true"></i>à confirmer</span></p>`;
 
 /* ---- CE QU'UN PROBLÈME NE DIT PAS DE LUI-MÊME ------------------------------------------------------------------------
-   « contact taille 23 (3 A, par la gauge) » (le lecteur : pourquoi ?) : le plan ne dit pas quel contact est serti au
+   « contact taille 23 supposé (3 A) » (le lecteur : pourquoi ?) : le plan ne dit pas quel contact est serti au
    bout de ce câble — un interrupteur, un relais à cosses —, Volta prend alors le plus petit contact qui admet sa gauge,
    par prudence (09 bis, `protegerFil` : la règle reste). La fiche le dit sous la ligne du problème. */
-function gloseDuProbleme(t) { const m = /^(\S+) \((\w+?(\d{1,2}))\)[^:]*:.*?contact taille (\S+) \(([\d,]+\s?A), par la gauge\)/.exec(t);
-  if (m) return `Le plan ne dit pas quel contact est serti au bout de ${m[1]} : Volta prend le plus petit qui admet un ${m[3]} AWG — la taille ${m[4]}, ${m[5]} —, par prudence.`;
-  if (/par la gauge\)/.test(t)) return 'Le plan ne dit pas quel contact est serti : Volta prend le plus petit qui admet la gauge du câble, par prudence.';
+function gloseDuProbleme(t) { const m = /^(\S+) \((\w+?(\d{1,2}))\)[^:]*:.*?contact taille (\S+) (?:supposé \(([\d,]+\s?A)\)|\(([\d,]+\s?A), par la gauge\))/.exec(t);
+  if (m) return `Le plan ne dit pas quel contact est serti au bout de ${m[1]} : Volta prend le plus petit qui admet un ${m[3]} AWG — la taille ${m[4]}, ${m[5] || m[6]} —, par prudence.`;
+  if (/ supposé \(|par la gauge\)/.test(t)) return 'Le plan ne dit pas quel contact est serti : Volta prend le plus petit qui admet la gauge du câble, par prudence.';
   return ''; }
-// la phrase d'un problème telle que la fiche l'écrit : « par la gauge » devient « supposé » (la glose dit pourquoi)
+// la phrase d'un problème telle que la fiche l'écrit : « supposé » (le contrôle l'écrit ainsi ; l'ancienne forme « par la gauge »
+// d'un plan enregistré se lit encore), la glose dit pourquoi
 const motDuProbleme = t => String(t).replace(/contact taille (\S+) \(([\d,]+\s?A), par la gauge\)/, 'contact taille $1 supposé ($2)');
 
 /* ---- LA LIGNE D'IDENTITÉ, sous le repère (l'audit v72 : « le premier coup d'œil ne dit pas ce qu'est l'objet ; la
@@ -16983,10 +16989,10 @@ function ficheBloc(nom) {
 const ficheDe = c => c.type === 'fil' ? ficheFil(c.l) : c.type === 'ref' ? ficheComparaison(c) : ficheBloc(c.nom);
 const nomDeCible = c => c.type === 'fil' ? (c.l.cable || (c.l.origine === null ? 'câble à créer' : 'câble')) : c.type === 'ref' ? 'Déjà fait · ' + c.harness : c.nom;
 // ce qu'un rendu garde le temps de se faire : les intensités, les plans, les raccords
-/* Une suppression faite tout de suite (plus de confirm()) : le message, et « Rétablir » dedans — le geste du toast
-   (08-bibliotheque, `direAvecGeste`) ; Ctrl+Z aussi. `puis` : rouvrir ce qui revient. */
-const direRetablir = (msg, puis) => { const faire = () => { annuler(); if (puis) puis(); };
-  if (typeof direAvecGeste === 'function') direAvecGeste(msg, 'Rétablir', faire); else dire(msg); };
+/* UN GESTE QUI SE DÉFAIT (plus de confirm()) : il se fait, le mot le dit, et « Rétablir » dedans le défait — le geste du
+   toast (`dire`, troisième argument, 08-interface) ; Ctrl+Z aussi, l'historique est la vérité. `puis` : rouvrir ce qui
+   revient. Pour tout l'outil : la fiche, le récapitulatif, le contrôle, les retouches. */
+const direRetablir = (msg, puis) => dire(msg, false, { geste: 'Rétablir', faire: () => { const q = annuler(); if (q) dire('Rétabli : ' + q + '.'); if (puis) puis(); } });
 const viderCalculs = () => { CALCULS.clear(); PLANS.clear(); HABILLAGES.clear(); CHUTES.cle = null; remettreAides(); };
 /* LA FICHE dans l'inspecteur : la barre, puis l'objet. La même fiche refaite (un choix cliqué) garde son défilement, ses
    sections ouvertes, et le bouton pressé garde le focus ; une autre fiche entre en fondu — ou, si l'on y revient (‹ ›),
@@ -18402,8 +18408,7 @@ function folioCourant() { const P = plans();
    sinon, pour une barrette, la référence choisie dans la bible, et pour une
    prise de coupure, le part number que le fichier porte ; sinon, la DESCRIPTION
    du retest (l'audit v72 : « Description1/2 disent RELAIS, POMPE, CB 10A » et
-   l'outil écrivait « Nom — à taper ») — la première non vide de ses liaisons. */
-const descriptionDuRetest = n => { if (!n) return ''; const l = verite().find(l => (l.de === n && l.descriptionDe) || (l.vers === n && l.descriptionVers)); return l ? String(l.de === n && l.descriptionDe ? l.descriptionDe : l.descriptionVers).trim() : ''; };
+   l'outil écrivait « Nom — à taper ») — la première non vide de ses liaisons (`descriptionDuRetest`, 08-fiche). */
 function designationDe(n) { const d = app.contrat.designations.get(n);
   // une barrette en modules : la désignation retenue (une variante, une norme) dit seulement ce que le remplissage vise
   if (estBarrette(n)) { const I = barretteInfos(n, verite(), app.bible, app.norme, d || ''); return I.plan ? I.reference : d || I.reference; }
@@ -19816,8 +19821,6 @@ function dire(msg, erreur, o) { const t = $('toast'); t.textContent = msg; t.cla
     document.addEventListener('pointerdown', e => { if (!TOAST.erreur || Date.now() - TOAST.t < 400 || (e.target.closest && e.target.closest('#toast button'))) return; cacherToast(); }, true); } }
 // Ctrl+Z, le bouton du rail : le dernier geste défait, dit ; rien à défaire, dit aussi (on ne se demande pas si ça a marché)
 function defaire() { const q = annuler(); dire(q ? 'Annulé : ' + q + '.' : 'Rien à défaire.'); return q; }
-// un geste qui se défait : il se fait, le mot le dit, « Rétablir » (ou Ctrl+Z) le défait — l'historique est la vérité
-const direRetablir = msg => dire(msg, false, { geste: 'Rétablir', faire: () => { const q = annuler(); if (q) dire('Rétabli : ' + q + '.'); } });
 /* ---- le menu ⋮ : peu de lignes ; Exporter et Plus s'ouvrent EN PLACE (page.html) -----------------------------------
    `montrerPanneau(nom)` : '' le menu, sinon un sous-menu, qui prend sa place (le menu garde sa largeur). Le clavier va à la
    première ligne du panneau montré — au retour, à la ligne qui avait ouvert le sous-menu. */
@@ -20600,18 +20603,14 @@ function lierMenusDoc(box) { if (!box) return;
         bs[i < 0 ? (bas ? 0 : bs.length - 1) : (i + (bas ? 1 : bs.length - 1)) % bs.length].focus(); } });
     d.querySelector('.doc-menu-l').addEventListener('click', e => { if (e.target.closest('button')) fermer(); }); }); }
 const badge = (cls, t) => `<span class="nm-badge ${cls}">${esc(t)}</span>`;
-/* La largeur des deux onglets (Normes, Bible) : les tables ont jusqu'à seize colonnes ; le plan se recadre à côté.
-   `ouvrirFiche` pose sa largeur à lui et recadre quand le document change : on reprend la nôtre aussitôt (dans la même
-   tâche, rien ne se peint entre les deux) et on recadre à nouveau — d'un onglet à l'autre, le cadre ne bouge pas. */
-// le plan garde 40 % de l'écran à côté (l'audit v72 : à 320 px, il n'était plus qu'un timbre) ; la table qui déborde défile
-const LARGEUR_NORMES = 'min(1040px, calc(60vw - var(--rail)))';
-function elargirNormes(memeDocument) { document.documentElement.style.setProperty('--fiche-l', LARGEUR_NORMES); if (!memeDocument) ajuster(true); }
+/* La largeur des deux onglets (Normes, Bible) : « ample », réglée par `ouvrirFiche` (LARGEURS_DOC, 08-interface) — le plan
+   garde 40 % de l'écran à côté, la table qui déborde défile ; il se recadre quand on passe de l'un à l'autre. */
 /* La page : l'état, la recherche et les gestes, l'import en cours, les résultats de la recherche, les domaines. */
 function ficheNormes(opts) { opts = opts || {};
   if (opts.table) { NORMES.ouverts.add(opts.table); if (opts.filtre != null) NORMES.filtres[opts.table] = opts.filtre; }
   if (opts.q != null) NORMES.q = opts.q;
-  const deja = app.fiche && app.fiche.mode === 'normes', pied = normesPiedHtml();
-  ouvrirFiche({ mode: 'normes', large: true }, normesHtml(), pied); elargirNormes(deja);
+  const pied = normesPiedHtml();
+  ouvrirFiche({ mode: 'normes', large: true }, normesHtml(), pied);
   app.base.normeOuverte = true; lierNormes(); lierBullesDoc();
   if (opts.table) { const el = $('fiche-corps').querySelector(`.nm-table[data-vue="${opts.table}"]`); if (el && el.scrollIntoView) { try { el.scrollIntoView({ block: 'start' }); } catch (_) { } } } }
 /* La page se refait sur place (la position de lecture reste). */
@@ -20680,7 +20679,7 @@ function corpsTableHtml(v, L, opts) { opts = opts || {}; const T = L.table, cols
   const classe = c => COLONNE_TEXTE.test(c.champ) ? 'nm-texte' : droite.has(c.champ) ? 'd' : '';
   if (filtre) rows = rows.filter(r => contient(Object.values(r.b).join(' '), filtre));
   if (tri && !opts.lecture) { const num = rows.every(r => !r.b[tri.champ] || NUMERO(r.b[tri.champ]) != null);
-    rows.sort((a, b) => { const u = a.b[tri.champ] || '', w = b.b[tri.champ] || ''; return tri.sens * (num ? (NUMERO(u) == null ? 1e9 : NUMERO(u)) - (NUMERO(w) == null ? 1e9 : NUMERO(w)) : u.localeCompare(w, 'fr', { numeric: true })); }); }
+    rows.sort((a, b) => { const u = a.b[tri.champ] || '', w = b.b[tri.champ] || ''; return tri.sens * (num ? (NUMERO(u) == null ? 1e9 : NUMERO(u)) - (NUMERO(w) == null ? 1e9 : NUMERO(w)) : COLLATEUR_FR.compare(u, w)); }); }
   const max = opts.max || (NORMES.entier.has(v) ? Infinity : MAX_LIGNES_NORME), vus = rows.slice(0, max), E = NORMES.edition, enEdition = r => E && E.vue === v && E.cle != null && E.cle === cleDeLigne(T, r.x);
   const th = cols.map(c => `<th${droite.has(c.champ) ? ' class="d"' : ''}${opts.lecture ? '' : ` data-tri="${escA(c.champ)}" role="button" tabindex="0" aria-sort="${tri && tri.champ === c.champ ? (tri.sens > 0 ? 'ascending' : 'descending') : 'none'}"`} data-bulle="${escA(c.sens)}">${esc(c.libelle)}${tri && tri.champ === c.champ && !opts.lecture ? (tri.sens > 0 ? ' ↑' : ' ↓') : ''}</th>`).join('');
   const ligne = r => enEdition(r) ? ligneEditionHtml(v, T, cols) : `<tr class="nm-l nm-${r.etat === 'modifiée' ? 'mod' : r.etat === 'ajoutée' ? 'ajo' : 'emb'}" data-cle="${escA(cleDeLigne(T, r.x))}"${opts.lecture ? '' : ' tabindex="0"'}>`
@@ -20896,7 +20895,7 @@ function ficheBible(ref, ancre) { const B = app.bible || [], nom = app.bibleNom,
       null, nom ? ['bi-exemple', 'Revenir à la bible d’exemple', 'celle de l’outil, à la place de ' + nom] : false, app.normeNom ? ['no-embarquee', 'Revenir à la norme embarquée', 'oublier ce qui a été importé ou modifié'] : false])
     + '<input type="file" id="fichier-norme" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden><input type="file" id="fichier-references" accept=".csv,.tsv,.txt,.xlsx,.xlsm,.xls" hidden>'
     + `<span class="espace"></span><span class="bi-compte">${filtre ? esc(milliers(B.filter(garde).length)) + ' sur ' : ''}${esc(pluriel(n, 'référence'))}</span>`;
-  ouvrirFiche({ mode: 'bible', large: true, ref: zoom ? ref : '' }, corps, pied); elargirNormes(deja); lierNormes(); lierMenusDoc($('fiche-pied')); lierBullesDoc();
+  ouvrirFiche({ mode: 'bible', large: true, ref: zoom ? ref : '' }, corps, pied); lierNormes(); lierMenusDoc($('fiche-pied')); lierBullesDoc();
   // la position : la ligne cliquée reste en place ; sinon la lecture reprend où elle était ; une autre référence demandée
   // d'ailleurs (la carte d'une barrette) vient sous l'en-tête de la table
   const c = $('fiche-corps'), ligneDe = r => { const b = r && c.querySelector(`.ref-btn[data-ref="${CSS.escape(r)}"]`); return b ? b.closest('tr') : null; };

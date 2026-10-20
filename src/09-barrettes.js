@@ -283,7 +283,7 @@ function suiviDuContrat(liaisons, bible, contrat, retenue) {
 /* L'ordre naturel des bornes : 1, 2, 10 ; A1, A2, B1. */
 function triBornes(a, b) { const na = parseFloat(a), nb = parseFloat(b);
   if (!isNaN(na) && !isNaN(nb) && String(na) === String(a) && String(nb) === String(b)) return na - nb;
-  return String(a).localeCompare(String(b), 'fr', { numeric: true }); }
+  return COLLATEUR_FR.compare(String(a), String(b)); }
 
 /* ---- la norme : quatre tables, lues par le nom des colonnes -------------- */
 /* Chaque table se reconnaît à ses colonnes ; une bible (Référence + Bornes)
