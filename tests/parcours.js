@@ -245,7 +245,7 @@ function baseEssaiDansLaPage() {
     ok(await page.evaluate(() => $('en-install').textContent === 'Antenne VHF' && $('en-plan').textContent === 'neuf'), 'le fil de la barre du haut : « Antenne VHF / neuf »');
     // le menu compte les repères comme l'index (sans renvois, masses ni rails ; avec les barrettes à poser) : un seul nombre pour un même mot
     const enTete = await page.evaluate(() => ({ sous: $('ctx-txt').textContent, reperes: reperesDuContrat().length }));
-    ok(new RegExp('^' + X.neufL.length + ' liaisons · ' + enTete.reperes + ' repères · 3 folios$').test(enTete.sous) && enTete.reperes > 0 && enTete.reperes <= X.neufReperes.length, 'le menu compte juste : liaisons, repères (ceux de l’index), folios', enTete.sous + ' (l’index : ' + enTete.reperes + ' repères)');
+    ok(new RegExp('^' + X.neufL.length + '\\sliaisons · ' + enTete.reperes + '\\srepères · 3\\sfolios$').test(enTete.sous) && enTete.reperes > 0 && enTete.reperes <= X.neufReperes.length, 'le menu compte juste : liaisons, repères (ceux de l’index), folios', enTete.sous + ' (l’index : ' + enTete.reperes + ' repères)');
     ok(/neuf/.test(e.enNom), 'le menu dit quel fichier est ouvert', e.enNom);
     const blocs = await page.evaluate(() => app.dessin.comps.filter(c => c.kind !== 'tag').map(c => c.name).sort());
     ok(X.neufFolio1.every(r => blocs.includes(r)) && blocs.every(b => X.neufFolio1.includes(b)), 'les repères du plan sont ceux du fichier (folio 1)', blocs.join(' '));
@@ -386,7 +386,8 @@ function baseEssaiDansLaPage() {
     let e = await etat(page); const enEtat0 = e.enEtat; ok(e.nom === 'Contrat d’exemple' && /^5 problèmes · \d+ à voir$/.test(e.enEtat), 'l’exemple : « 5 problèmes · n à voir » (W-012 et W-015 dépassés par la charge, le contact 23 du DR24 W-015 sous son permanent, le 10 A de 102CB1 qui touche la courbe — il ne passe pas —, 300XC1 B sans arrangement ; le compte des « à voir » suit les règles du contrôle)', e.enEtat);
     let t0 = Date.now(); await page.click('#btnIndex'); await page.waitForFunction(() => app.insp.index && document.querySelector('#ba-equip .co-item')); mesure('le bouton des repères → l’index « à reprendre »', Date.now() - t0, SEUIL_GESTE);
     const items = await page.evaluate(() => [...document.querySelectorAll('#ba-equip .co-item')].map(b => { const x = CONTROLE.items[+b.dataset.k]; return { k: +b.dataset.k, nom: x.nom, plan: x.plan, tableau: x.tableau != null, texte: x.texte }; }));
-    ok(items.length === 6 && await page.evaluate(() => !document.querySelector('#ba-equip .ix-controle').open), 'l’index s’ouvre, « à reprendre » replié en tête (le lecteur : on clique si on veut) : six lignes derrière (102CB1 deux fois, 300XC1, VT1, VT2, VT3)', items.map(x => x.nom).join(' '));
+    // (v72, l'audit du parcours P1-5 : les points se rangent par genre — une ligne par niveau, genre et repère)
+    ok(items.length === await page.evaluate(() => lignesDuControle().length) && items.length >= 8 && items[0].nom === '300XC1' && await page.evaluate(() => !document.querySelector('#ba-equip .ix-controle').open), 'l’index s’ouvre, « à reprendre » replié en tête (le lecteur : on clique si on veut) : derrière, les points par genre — l’arrangement de 300XC1 d’abord, puis 102CB1 dans chacun de ses genres, VT1, VT2, VT3', items.map(x => x.nom).join(' '));
     await page.click('#ba-equip .ix-controle > summary'); await page.waitForTimeout(200);
     ok(await page.evaluate(() => document.querySelector('#ba-equip .ix-controle').open), 'un clic sur « à reprendre » le déplie');
     await capture(page, 'C-1-index-a-reprendre');
@@ -513,7 +514,7 @@ function baseEssaiDansLaPage() {
     // C au téléphone : l'exemple, l'index, une ligne → folio et fiche, le 15 A d'un doigt
     await ligneDuMenu(page, 'exemple'); await page.waitForFunction(() => app.nom === 'Contrat d’exemple'); await page.waitForTimeout(400);
     await page.click('#btnIndex'); await page.waitForFunction(() => app.insp.index && document.querySelector('#ba-equip .co-item'));
-    ok(await page.evaluate(() => document.querySelectorAll('#ba-equip .co-item').length === 6 && document.activeElement !== $('ix-q')), 'le bouton des repères ouvre l’index : six lignes à reprendre, sans voler le clavier');
+    ok(await page.evaluate(() => document.querySelectorAll('#ba-equip .co-item').length === lignesDuControle().length && document.activeElement !== $('ix-q')), 'le bouton des repères ouvre l’index : les lignes à reprendre, par genre, sans voler le clavier');
     await page.click('#ba-equip .ix-controle > summary'); await page.waitForTimeout(200);   // « à reprendre » se déplie d'un toucher
     await tous(['#ba-equip .co-item', '#ix-plus', '#ix-q'], 'dans l’index : une ligne, « + », le filtre'); await capture(page, 'D-7-index');
     await page.locator('#ba-equip .co-item', { hasText: '300XC1' }).click(); await page.waitForFunction(() => app.cible && app.cible.nom === '300XC1'); await page.waitForTimeout(500);
@@ -543,7 +544,7 @@ function baseEssaiDansLaPage() {
     ok(T.erreur && /aucune liaison/.test(T.texte) && e.n === n0 && e.nom === 'Contrat d’exemple', 'un retest vide : le message le dit, le contrat ouvert reste', T.texte);
     // une seule ligne
     await deposerParEntree(page, X.uneLigne); await page.waitForFunction(() => app.nom === 'une-ligne.csv'); e = await etat(page);
-    ok(e.n === 1 && e.folios <= 1 && await page.evaluate(() => !!app.dessin && app.dessin.fils.length === 1 && $('fo-part').hidden && /^1 liaison · 2 repères$/.test($('ctx-txt').textContent)), 'une seule ligne : un fil dessiné, pas de barre de folios, « 1 liaison · 2 repères »', e.enSous);
+    ok(e.n === 1 && e.folios <= 1 && await page.evaluate(() => !!app.dessin && app.dessin.fils.length === 1 && $('fo-part').hidden && /^1\sliaison · 2\srepères$/.test($('ctx-txt').textContent)), 'une seule ligne : un fil dessiné, pas de barre de folios, « 1 liaison · 2 repères »', e.enSous);
     await capture(page, 'E-1-une-ligne');
     // sans part numbers
     await deposerParEntree(page, X.sansPN); await page.waitForFunction(() => app.nom === 'sans-pn.csv'); await cliquerBloc(page, '102CB1');

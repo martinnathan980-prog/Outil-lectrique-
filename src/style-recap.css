@@ -36,6 +36,10 @@ body.insp-epingle #base{right:calc(var(--insp-l) + 2 * var(--jeu) + var(--sur-d)
 .rc-tete .segment button{height:26px;min-width:58px;justify-content:center}
 .rc-tete .btn{height:32px;padding:0 12px;font-size:var(--f-12)}
 .rc-tete .btn svg.ico{width:15px;height:15px;color:var(--t-2)}
+/* l'export : ce qu'il sort (« Exporter 8 liaisons · folio 1 »), « Tout » au trait de lien à côté quand il y a plus */
+.rc-export{display:inline-flex;align-items:center;gap:4px;flex:none}
+.rc-export .btn.lien{height:32px;padding:0 8px;font-size:var(--f-12)}
+.rc-csv-mot{font-variant-numeric:tabular-nums}
 
 /* ─── les onglets : un mot, son compte à l'encre seconde, le point d'état s'il y a lieu ; le choisi souligné ─── */
 .rc-onglets{display:flex;gap:0;padding:4px 10px 0;border-bottom:1px solid var(--s-line);flex:none;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain;container-type:inline-size}
@@ -279,6 +283,17 @@ b.rc-n{font-weight:500}
 .rc-groupe .rc-etat{font-size:var(--f-12);gap:6px}
 .rc-groupe .rc-etat i{width:6px;height:6px}
 .rc-groupe-n{font-variant-numeric:tabular-nums}
+/* l'intercalaire d'un GENRE (l'onglet Problèmes, 08-controle) : son compte à la couleur de son état, son mot, ses
+   repères ; « Voir le premier » et le geste qui le traite, au trait de lien */
+.rc-tab tr.rc-genre td{height:48px;padding-top:14px}
+.rc-genre .rc-groupe-l{gap:14px}
+.rc-genre .rc-etat{font:600 var(--f-13) var(--sans);font-variant-numeric:tabular-nums}
+.rc-genre .rc-genre-mot{font:600 var(--f-13) var(--sans);letter-spacing:-.006em;color:var(--t-1)}
+.rc-genre .rc-lien{font-size:var(--f-12);margin-left:0}
+.rc-genre .rc-lien+.rc-lien{margin-left:6px}
+.rc-lien.rc-fort{font-weight:600}
+/* la table virtuelle (au-delà de 300 lignes) : deux espaces tiennent la hauteur des lignes qui ne sont pas posées */
+.rc-tab tr.rc-espace td{background:none;border:0}
 
 /* ─── la suite, et les vides : une icône au trait dans un carré doux, une phrase, une action ─── */
 .rc-tab tr.rc-reste td{height:auto;padding:16px var(--rc-g);white-space:normal;color:var(--t-2);font-size:var(--f-13);border-bottom:none}
