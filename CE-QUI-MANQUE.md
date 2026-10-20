@@ -231,26 +231,12 @@ accessoire pour quel connecteur et quel câble).
 
 ### 1. La courbe de la norme des disjoncteurs
 
-- **Ce que tu m'as envoyé.** La fiche E-T-A 4120 (homologuée MS 3320, EN 2495, EN 2995, EN 3773), en photo d'écran :
-  trois courbes (125 °C, 23 °C en bande, −55 °C), la même forme que les quatre courbes de ton Excel. Posées l'une sur
-  l'autre, elles se suivent ; sur une photo d'écran, je ne peux pas relire la fiche au point près (±15 %).
-- **Ce que Volta en fait.** La famille ETA4120 existe (sa gamme 1-25 A, −55/+125 °C, ses chutes typiques) ; ses
-  courbes sont celles de ton Excel en attendant.
-- **Ton Excel « 01 - Calibre disjoncteur »** (feuille Base_de_données), relu sur tes photos : ses 189 points sont ceux
-  de Volta, au chiffre près. C'est un relevé à la main d'une courbe E-T-A : trois points où le multiple recule (lignes
-  4 et 8 de la 125 °C, ligne 5 de la −55 °C), sans effet. Dans la partie verticale, un pixel de relevé vaut 2 % de
-  multiple : la bande 23 °C y déclenche dès 1,05 In, là où une MS 3320 tient 1,15 In une heure. Sans effet non plus :
-  Volta juge sur la 125 °C, plus rapide.
-- **Ce qui reste.** L'onglet **Programme** du même Excel, en photo : sur quelle courbe choisissez-vous le calibre ?
-  Volta prend la plus rapide (125 °C). Et tes disjoncteurs sont-ils tous des 4120 ? Si oui, la 4120 devient la famille
-  par défaut (à 1 A : 1,1 V au lieu des 0,75 V de la 483).
-- **Comment me la donner.** Le PDF de la fiche 4120 (la courbe est vectorielle : je la relis au point près), ou une
-  ligne par point lu :
-
-  ```
-  Famille;Courbe;Température;Multiple;Temps
-  ETA4120;125 °C;125;1,15;3600
-  ```
+- **Réglé en octobre 2026 (version 71).** La fiche E-T-A 4120 a été trouvée en PDF vectoriel (Issue C) : ses courbes
+  sont celles de ton Excel (ETA483) à ±2 %. Les éditions récentes de la 4120 et de la 483 mettent l'asymptote à 125 °C
+  à 1,00 In au lieu de 0,93 : Volta garde 0,93, plus prudent pour le déclenchement intempestif.
+- **Ce qui reste.** L'onglet **Programme** de ton Excel « 01 - Calibre disjoncteur », en photo : sur quelle courbe
+  choisissez-vous le calibre ? Volta prend la plus rapide (125 °C). Et tes disjoncteurs sont-ils tous des 4120 ? Si oui,
+  la 4120 devient la famille par défaut (à 1 A : 1,1 V de chute au lieu des 0,75 V de la 483).
 
 ### 2. La nomenclature des disjoncteurs
 
@@ -381,18 +367,15 @@ accessoire pour quel connecteur et quel câble).
 
 ### 9. Les 11 points de tes tables de contacts à relire
 
-- **Ce que c'est.** Onze lignes de tes tables SEE qui ne se répondent pas (une paire broche / douille qui ne
-  s'accouple pas, un manchon d'un seul côté, des colonnes peut-être inversées…). Le détail est dans « Tes questions :
-  les réponses » (octobre 2026).
-- **Pourquoi.** Volta les applique telles quelles, marquées « à confirmer ».
-- **En attendant.** Aucune n'est corrigée sans toi.
-- **Comment me les donner.** Une ligne par point :
-
-  ```
-  Point;Réponse
-  1;EN 4165, broche 22, YYBKW : EN3155-008M2222
-  4;douille taille 8 jauge 10 : EN3155-083F0810
-  ```
+- **Tranchés par les sources (version 71)**, chacun avec sa source dans sa note — SEE gagne quand même si tu gardes ta
+  base : 1 (YYBKW : un contact taille 20 n'entre pas dans une cavité 22 → EN3155-008M2222), 2 (le manchon du WW 20 des
+  deux côtés), 3 (KC : la douille de la broche /28-409 est la /27-402), 4 et 5 (l'EN 3155-066 est retirée → EN3155-083F0810),
+  7 (la douille d'un YY 22 vient de la ligne F 20 * 22), 10 (EN 2997 classe S : juste pour un 200 °C ; un 260 °C prend
+  les -004/-005).
+- **Ce qui reste, à toi** : 6 (les quadrax ECS0754 : un choix du programme — l'équivalent EN public est l'EN3155-074 /
+  -075), 8 (EN 3646, une douille taille 12 en 10 AWG, ECS0746F1210, sans broche en face), 9 (E0848 : le contact à
+  sertir est-il l'EN 3155 de la colonne Accessoire ?), 11 (quel contact pour le câble aluminium ?).
+- **Comment me les donner.** Une ligne par point : `Point;Réponse`.
 
 ### 10. Les contacts des barrettes (NSA937901, ASNE 0599) et de l'ASNE 0059
 
@@ -469,17 +452,9 @@ accessoire pour quel connecteur et quel câble).
 
 ### 15. Les cotes des cheminées EN 4165
 
-- **Ce que c'est.** Le Ø intérieur des cheminées EN 4165-015 (ronde) et -016 (double ovale).
-- **Pourquoi.** Pour savoir si le toron d'un module passe dans sa cheminée.
-- **En attendant.** Une cheminée par module câblé ; le passage du toron est « à confirmer » sur chaque fiche (les
-  normes EN 4165-014 à -016 sont payantes).
-- **Comment me les donner.**
-
-  ```
-  Famille;Type;Orientation;Norme;Amax;Référence;Note
-  EN4165;cheminée;droit;EN4165-015;…;EN4165-015…;Ø intérieur (catalogue …)
-  EN4165;cheminée;droit;EN4165-016;…;EN4165-016…;double ovale, deux modules
-  ```
+- **Réglé en octobre 2026 (version 71)** par le catalogue TE DMC-M (la norme reste payante) : la ronde EN 4165-015
+  (EN4165F15 / W15) a un passage de Ø 9,45 mm au moins — Volta juge le toron de chaque module. La double ovale -016
+  (largeur intérieure 8,87 mm) et l'obturateur -017 sont dans la note de la ligne ; Volta pose une ronde par module.
 
 ### 16. Les tyraps NSA935401
 
@@ -530,8 +505,9 @@ raccord ». Les tresses HFA et les gaines Nomex étaient déjà celles de ton Ex
 - **Un manchon pour un petit toron** : sous 6 mm, aucun manchon de ta gamme T18 ne serre (leur petit bout rétreint
   fait 6 mm ou plus) ; Volta prend alors un manchon du guide, et sur l'épaulement du code A (12,2 mm) aucun ne va.
   *En attendant : « manque » sur la fiche.*
-- **Les obturateurs de cavité de l'EN 2997, de l'EN 3646 et de l'EN 4165.** *En attendant : « manque » dans la liste des
-  pièces.*
+- **Les obturateurs de cavité de l'EN 2997, de l'EN 3646 et de l'EN 4165** : réglé en version 71 avec les références
+  TE (006-0893-20 rouge, -16 bleu, 006-0892-12 jaune ; 028-0102-22 pour l'EN 4165). Reste à savoir si ton atelier pose
+  ceux-là ou une référence EN 4529.
 - **La marge du toron** : ton tutoriel dit 10 %, ton guide 20 %, et Volta prend le facteur TE (1,15 dès sept câbles,
   plus pour deux à six). Lequel retient-on ? *En attendant : TE ; « comme le tutoriel » et « comme le guide » sont
   dans les hypothèses.*
@@ -567,35 +543,20 @@ raccord ». Les tresses HFA et les gaines Nomex étaient déjà celles de ton Ex
 
 ### 21. Deux pages de ton EN 2853
 
-- **Ce que c'est.** La page 14 : le 12 AWG fait-il bien 35 A, et le 8 AWG 68 A ?
-- **Pourquoi.** Le 12 AWG est 7 % au-dessus de la FAA ; le 8 AWG sort de la tendance des autres jauges.
-- **En attendant.** Tes valeurs, telles quelles.
-- **Comment me la donner.** Une photo de la page, ou :
-
-  ```
-  Type;Jauge;Intensité;Intensité 2 s;Intensité 10 s;Intensité 1 min
-  *;12;35;…;…;…
-  *;8;68;…;…;…
-  ```
+- **Recoupé en octobre 2026 (version 71).** Tes intensités continues tiennent face à la FAA (AC 43.13-1B fig. 11-4, à
+  ±10 %) et aux exemples chiffrés du MIL-W-5088L (±8 %) ; le 12 AWG à 35 A et le 8 AWG à 68 A sont dans la tolérance.
+- **Ce qui reste.** Les paliers **2 s, 10 s et 1 min** (table 1) n'ont aucune source publique : une photo des pages 14 et
+  16 de ton EN 2853 suffit.
 
 ### 22. Les lignes douteuses de la base des câbles
 
-- **Ce que c'est.** Relues sur tes photos de l'Excel : elles y sont bien telles quelles, ce sont des copies dans
-  l'Excel. DW24 (masse et résistance du DW22), GPB24 (du GPB22), MLA12 (même Ø que le MLA14), AM et YV (mêmes
-  résistances et masses), LE (fibre ou coaxial ?). S'y ajoutent les deux lignes qui manquaient à Volta et qu'il a
-  maintenant : **KQ24** (un twinax noté sans blindage, sans nombre de liaisons — est-ce juste ?) et **KR24** (un octax :
-  quelle norme ?). Et le **DH4** de SEE, sans résistance.
-- **Pourquoi.** Leur résistance et leur Ø entrent dans la chute et dans le toron.
-- **En attendant.** Tes valeurs, telles quelles. Les familles **DK, DL et DM** que SEE connaît ne sont pas dans ton
-  Excel : un retest qui en porte un est signalé « type de câble inconnu ».
-- **Comment me les donner.** L'export Cables and Wires de SEE (voir « Le raccourci »), ou :
-
-  ```
-  Câble;Brins;Blindage;Résistance;Diamètre;Masse
-  DW24;1;0;…;…;…
-  KQ24;2;…;145;3,56;21
-  DH4;1;0;…;8,8;270
-  ```
+- **Corrigé en octobre 2026 (version 71)**, la source dans chaque note : DW24 et DW22, GPB24 et GPB22, MLA12, AD6, DG6,
+  DG00, YV3, les ADB à ADD et VNB à VND, les coaxiaux blindés, XY (un coaxial). YV est confirmé ligne à ligne.
+- **Ce qui reste, sans source publique** : AM (une norme ?), LE (une fibre, pas un coaxial à 2,84 g/m — laquelle ?),
+  KQ24 (sa résistance de 145 mΩ/m est trop haute pour un 24 AWG cuivre : jauge ou matière ?), KR24 (un octax : quelle
+  norme ?), WC, WG, WK, WP, XD, ADE (absent de l'ABS 1354), BN (Ø et résistance), DH (la fiche ECS 0844). Et les
+  familles **DK, DL et DM** que SEE connaît et pas ton Excel.
+- **Comment me les donner.** L'export Cables and Wires de SEE (Volta le juge à l'import), ou la fiche du câble.
 
 ### 23. Ce qui manque pour l'aluminium et le réseau
 
