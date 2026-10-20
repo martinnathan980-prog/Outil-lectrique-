@@ -136,8 +136,9 @@ function familleDuPn(pn, norme) { pn = String(pn || '').trim(); if (!pn) return 
 function chuteDuDisjoncteur(norme, famille, calibre) { if (!(calibre > 0)) return null; const T = normeDesModules(norme).chutesDisjoncteurs || []; if (!T.length) return null;
   const at = T.find(x => x.famille === 'ATELIER' && x.calibres.some(c => Math.abs(c - calibre) < 1e-9)); if (at) return { chute: at.chuteMax, nom: at.nom, note: at.note, atelier: true };
   const F = famille && typeof famille === 'object' ? famille : (famille ? familleDuPn(String(famille), norme) || { famille: cleNorme(famille), courbe: '' } : null);
-  const cles = F ? [cleNorme(F.famille), cleNorme(F.nom || ''), cleNorme(F.courbe || '')].filter(Boolean) : [FAMILLE_COURBES_DEFAUT];
-  for (const k of cles) { const r = T.find(x => x.famille === k && x.calibres.some(c => Math.abs(c - calibre) < 1e-9)); if (r) return { chute: r.chuteMax, nom: r.nom, note: r.note }; }
+  // un part number inconnu (ou absent) : la famille que le lecteur pose (FAMILLE_DISJONCTEUR_DEFAUT), puis celle de ses courbes
+  const cles = F ? [cleNorme(F.famille), cleNorme(F.nom || ''), cleNorme(F.courbe || '')].filter(Boolean) : [FAMILLE_DISJONCTEUR_DEFAUT, FAMILLE_COURBES_DEFAUT];
+  for (const k of cles) { const r = T.find(x => x.famille === k && x.calibres.some(c => Math.abs(c - calibre) < 1e-9)); if (r) return { chute: r.chuteMax, nom: r.nom, note: r.note, defaut: !F }; }
   return null; }
 /* LE CATALOGUE d'une famille : ses calibres (une plage « 1 à 25 » prend la série d'aéronef qu'elle couvre), filtrés par la
    liste préférée du lecteur (`calibresPreferes` : 1, 3, 5, 7,5, 10, 15, 20, 25 A par défaut) — jusqu'au plus grand calibre
@@ -191,6 +192,9 @@ const estDisjoncteur = r => { const q = lireRepere(r); return !!(q && q.num && q
    au-delà de la table, la courbe du bord. Par défaut −55 à 125 °C : les courbes lues, toutes. Une courbe sans
    température reste toujours. */
 const FAMILLE_COURBES_DEFAUT = 'ETA483';   // la feuille du lecteur : ce que prend un part number inconnu
+// les disjoncteurs que le lecteur pose (20 octobre 2026 : « tous des 4120 ») : la chute propre d'un part number inconnu
+// (ses courbes sont celles de l'ETA483 à ±2 %, fiche 4120 vectorielle)
+const FAMILLE_DISJONCTEUR_DEFAUT = 'ETA4120';
 const COURBES_LUES = new WeakMap();        // par table de courbes : les courbes déjà faites, par famille et fenêtre
 function courbesDeDisjonction(norme, famille, hyp) { const src = norme && norme.disjoncteurs && norme.disjoncteurs.length ? norme : normeDesModules(norme), tous = src.disjoncteurs || [];
   // la famille demandée (le nom d'une famille de courbes, ou une famille de disjoncteurs qui dit sa courbe) ; sans famille, ETA483, sinon la première de la table

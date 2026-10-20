@@ -752,6 +752,9 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   [st.de, st.vers].forEach((s, k) => { if (s && s.ko) probs.push({ niveau: 'ko', texte: 'aucun contact n’accepte ce câble côté ' + (k ? l.vers : l.de), section: 'trajet' }); });
   if (x.rd.refuse) probs.push({ niveau: 'att', texte: 'conducteur ' + x.rd.conducteur + ' sans résistance dans la base : la chute n’est pas calculée', section: 'fils' });
   x.trop.forEach(pt => probs.push({ niveau: 'ko', texte: `${pt.nom} ${amperes(pt.i)}${pt.t === Infinity ? '' : ' pendant ' + secondes(pt.t)} : plus que ce que le câble admet (${amperes(intensiteAdmise(x.fn, pt.t) * x.fac)})`, section: 'fils' }));
+  // une masse ou une résistance impossible pour sa jauge (sous le métal seul, sous un cuivre pur) : la ligne de la base se trompe
+  const phy = cab && typeof physiqueDuCable === 'function' ? physiqueDuCable(N, cab) : [];
+  phy.forEach(q => probs.push({ niveau: 'att', texte: `${cab.cable} dans la base des câbles : ${q.texte} — impossible, à corriger dans sa table`, section: '' }));
   if (ch.trop) probs.push({ niveau: ch.reel ? 'ko' : 'att', texte: `la chute en ligne depuis ${x.al.nom} atteint ${volts(ch.total.dU)} : plus que les ${volts(ch.max)} admis${ch.reel ? '' : ' (longueurs d’hypothèse)'}`, section: 'fils' });
   /* LES TUILES, quatre de même taille (le lecteur : « le type est bien plus grand que la gauge ; la longueur, pas propre ;
      l'intensité, pas bien proportionnée ») : le type (sa famille) et la gauge s'y écrivent chacun à part, la longueur
@@ -765,7 +768,7 @@ function ficheFil(l) { const coul = coulDeFil({ l }), neuf = l.origine === null,
   // le câble que la base SEE a mis à la place de celui de Volta (08 nonies) : la différence dans la bulle du type
   const dCab = cab && typeof differenceSEEMots === 'function' ? differenceSEEMots('cables', cab) : '';
   const tuiles = neuf ? [tuile('Type', l.type ? esc(T.p.famille) : '—', { mono: true }), tuile('Gauge', jauge != null ? jauge + '<i>AWG</i>' : '—')] : [
-    tuile('Type', T.fam, { mono: true, edit: true, etat: l.type ? (cab ? '' : 'att') : 'att', titre: [brins || (l.type ? 'Inconnu de la base des câbles' : 'Sans type'), dCab].filter(Boolean).join('\n'), sous: [cab && cab.nature ? esc(cab.nature) : l.type ? (cab ? '' : 'hors de la base') : 'à écrire', dCab ? '<i class="ct-see">SEE</i>' : ''].filter(Boolean).join(' ') }),
+    tuile('Type', T.fam, { mono: true, edit: true, etat: l.type ? (cab && !phy.length ? '' : 'att') : 'att', titre: [brins || (l.type ? 'Inconnu de la base des câbles' : 'Sans type'), dCab, ...phy.map(q => majuscule(q.texte) + ' : impossible')].filter(Boolean).join('\n'), sous: [cab && cab.nature ? esc(cab.nature) : l.type ? (cab ? '' : 'hors de la base') : 'à écrire', dCab ? '<i class="ct-see">SEE</i>' : ''].filter(Boolean).join(' ') }),
     tuile('Gauge', T.jauge, { edit: true, sous: 'AWG' + (cuivre && cuivre.section != null ? ' · ' + esc(nombre(arrondi(cuivre.section, 2))) + ' mm²' : '') }),
     tuile('Longueur', `${saisie('data-edit="longueur"', L != null ? nombre(arrondi(L, 3)) : '', { ph: nombre(H.longueur), label: 'Longueur en mètres', mode: 'decimal', court: true })}<i>m</i>`, { edit: true, sous: hyp }),
     tuile('Intensité', iV != null ? `${esc(nombreA(iV))}<i>A</i>` : '—', { etat: x.trop.length ? 'ko' : '', titre: pointeI ? 'Au pire : la pointe' : '', sous: iA != null ? 'sur ' + esc(nombreA(iA)) + ' A' : '' })];
