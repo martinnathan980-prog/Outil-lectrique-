@@ -31,6 +31,13 @@ const polices = fs.existsSync(POLICES) ? fs.readdirSync(POLICES).filter(f => /\.
   return `@font-face{font-family:"${FAMILLES[m[1]]}";font-style:${m[4]};font-weight:${m[3]};font-display:swap;src:url(data:font/woff2;base64,${fs.readFileSync(path.join(POLICES, f)).toString('base64')}) format("woff2")${PLAGES[m[2]] ? ';unicode-range:' + PLAGES[m[2]] : ''}}`;
 }).filter(Boolean).join('\n') : '';
 const xlsx = fs.readFileSync(path.join(ICI, 'lib', 'xlsx.min.js'), 'utf8');
+/* LES BIBLIOTHÈQUES DE vendor/, embarquées avec leur licence (vendor/LICENCE-*.txt) : pdf.js (Mozilla, Apache-2.0 —
+   pdfjs-dist 3.11.174, build UMD) lit les PDF de schéma (08-pdf, 09-pdf). Son « worker » est rangé en TEXTE, dans un
+   <script type="text/plain"> que rien n'exécute : la page en fait une Blob URL au premier PDF ouvert — aucun fichier à
+   côté, aucune requête. Un « </script » dans une bibliothèque fermerait sa balise : il s'échappe. */
+const VENDOR = path.join(ICI, 'vendor');
+const vendor = f => fs.existsSync(path.join(VENDOR, f)) ? fs.readFileSync(path.join(VENDOR, f), 'utf8').replace(/<\/script/gi, '<\\/script') : '';
+const pdfjs = vendor('pdf.min.js'), pdfjsWorker = vendor('pdf.worker.min.js');
 // les normes embarquées : tous les CSV de normes/, à la suite — la norme livrée est un exemple (normes/LISEZMOI.md)
 const NORMES = path.join(ICI, 'normes');
 const normes = fs.existsSync(NORMES) ? fs.readdirSync(NORMES).filter(f => /\.csv$/i.test(f)).sort().map(f => fs.readFileSync(path.join(NORMES, f), 'utf8')).join('\n\n') : '';
@@ -74,6 +81,14 @@ ${interfaceJs}
      Embarqué pour que l'outil tienne dans un seul fichier, sans réseau. -->
 <script>
 ${xlsx}
+</script>
+<!-- Le lecteur de PDF (pdf.js, Mozilla, Apache-2.0 : vendor/LICENCE-pdfjs.txt), en bas lui aussi ; son worker est du
+     texte, que 08-pdf lance d'une Blob URL quand un PDF s'ouvre. -->
+<script>
+${pdfjs}
+</script>
+<script type="text/plain" id="pdfjs-worker">
+${pdfjsWorker}
 </script>
 </body>
 </html>

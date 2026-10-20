@@ -1,0 +1,130 @@
+/* ─── LIRE UN PDF DE SCHÉMA (08-pdf) ──────────────────────────────────────────────────────────────────────────────
+   La pièce se pose sur la table comme un plan : la page est une feuille blanche (les deux thèmes), les vignettes et les
+   outils des palets sombres (l'îlot sombre), la relecture une feuille à droite, comme l'inspecteur. Tout est écrit avec
+   les jetons de style.css ; les seules couleurs littérales sont celles du calque, posé sur le papier. */
+.pdf{position:fixed;top:calc(var(--entete) + var(--sur-h));left:0;right:0;bottom:0;z-index:30;color:var(--t-table);
+  background-color:var(--s-app);background-image:var(--points);background-size:24px 24px;background-attachment:fixed;
+  --pdf-vig:132px;--pdf-rel:clamp(460px,34vw,600px)}
+.pdf.entre{animation:pdf-entre var(--lent)}
+@keyframes pdf-entre{from{opacity:0}to{opacity:1}}
+body.pdf-ouvert #rail,body.pdf-ouvert #folios{visibility:hidden}
+/* le message se pose au-dessus de la page, entre les vignettes et la relecture, pas sur la tête de la fiche */
+html body.pdf-ouvert #toast{left:calc((100vw + 132px - clamp(460px,34vw,600px)) / 2);max-width:min(560px,calc(100vw - 132px - clamp(460px,34vw,600px) - 6 * var(--jeu)))}
+
+/* la scène : la table où la page se déplace ; la page, sa toile, son calque */
+.pdf-scene{position:absolute;inset:0;z-index:0;overflow:hidden;cursor:grab;touch-action:none}
+.pdf-vignettes,.pdf-outils,.pdf-relecture{z-index:2}
+.pdf-scene.tient{cursor:grabbing}
+.pdf.assiste .pdf-scene{cursor:crosshair}
+.pdf-feuille{position:absolute;left:0;top:0;transform-origin:0 0;background:var(--s-papier);box-shadow:var(--sh-feuille)}
+.pdf-canvas{display:block;width:100%;height:100%}
+.pdf-calque{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.pdf-calque *{vector-effect:non-scaling-stroke}
+.pdf-hit{fill:rgba(240,165,58,.3);stroke:#c27800;stroke-width:1}
+.pdf-hit.on{fill:rgba(240,165,58,.55);stroke-width:2}
+.pdf-sel{--e:#1d7a3c}
+.pdf-sel.e-att{--e:#c27800}
+.pdf-sel.e-ko{--e:#c3271f}
+.pdf-halo{stroke:var(--e);stroke-opacity:.22;stroke-width:10px;stroke-linecap:round}
+.pdf-trait{stroke:var(--e);stroke-width:2.4px;stroke-linecap:round}
+.pdf-trait.tirets{stroke-dasharray:6 4}
+.pdf-mot{fill:var(--e);fill-opacity:.1;stroke:var(--e);stroke-width:1.2px}
+.pdf-bout{fill:#fff;stroke:var(--e);stroke-width:2.2px}
+.pdf-bout.attente{--e:#1d1d1f;fill:#1d1d1f;fill-opacity:.15;stroke-dasharray:3 2}
+.pdf-orph circle{fill:rgba(195,39,31,.12);stroke:#c3271f;stroke-width:1.6px}
+.pdf-orph path{stroke:#c3271f;stroke-width:2px;stroke-linecap:round}
+
+/* les vignettes : un palet à gauche, comme le rail ; une page, une petite feuille */
+.pdf-vignettes{position:absolute;left:var(--jeu);top:var(--jeu);bottom:var(--jeu);width:var(--pdf-vig);overflow-y:auto;overscroll-behavior:contain;
+  padding:10px;display:flex;flex-direction:column;gap:12px;background:var(--palet);border-radius:var(--r-palet);box-shadow:var(--sh-palet);scrollbar-width:thin}
+.pdf-vig{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;padding:6px;border:none;border-radius:var(--r-btn);background:none;color:var(--t-2);
+  font:500 var(--f-12)/1 var(--sans);transition:background var(--rapide),color var(--rapide)}
+.pdf-vig:hover{background:var(--voile-2);color:var(--t-1)}
+.pdf-vig-p{display:block;width:100%;background:var(--s-papier);border-radius:2px;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,.06),0 4px 10px rgba(0,0,0,.4)}
+.pdf-vig-p canvas{display:block;width:100%;height:100%}
+.pdf-vig.on{background:var(--voile-2);color:var(--t-1)}
+.pdf-vig.on .pdf-vig-p{box-shadow:0 0 0 2px var(--t-1),0 4px 10px rgba(0,0,0,.4)}
+
+/* les outils : au bas de la table, entre les vignettes et la relecture, des palets */
+.pdf-outils{position:absolute;left:calc(var(--pdf-vig) + 2 * var(--jeu));right:calc(var(--pdf-rel) + 2 * var(--jeu));bottom:var(--jeu);height:40px;
+  display:flex;align-items:center;justify-content:center;gap:8px;pointer-events:none;color:var(--t-2)}
+.pdf-palet{pointer-events:auto;display:flex;align-items:center;gap:2px;height:40px;padding:0 4px;background:var(--palet);border-radius:12px;box-shadow:var(--sh-palet)}
+.pdf-palet .rd{width:32px;height:32px;border-radius:8px}
+.pdf-palet .rd svg.ico{width:18px;height:18px}
+.pdf-palet .rd.zl{width:auto;min-width:54px;padding:0 6px;font:500 var(--f-12) var(--sans);color:var(--t-2)}
+.pdf-palet .bulle{left:50%;top:auto;bottom:calc(100% + 12px);transform:translate(-50%,3px)}
+.pdf-palet .rd:hover .bulle,.pdf-palet .rd:focus-visible .bulle{transform:translate(-50%,0)}
+.pdf-palet .bulle::before{right:auto;top:100%;left:50%;margin:0 0 0 -4px;border-color:transparent;border-top-color:var(--bulle)}
+.pdf-num{min-width:58px;text-align:center;font:500 var(--f-12) var(--sans);color:var(--t-1)}
+.pdf-cherche{padding:0 10px;gap:8px}
+.pdf-cherche svg.ico{width:16px;height:16px;color:var(--t-3)}
+.pdf-cherche input{width:200px;height:30px;border:none;background:none;outline:none;color:var(--t-1);font:400 var(--f-13) var(--mono)}
+.pdf-cherche input::placeholder{color:var(--t-3);font-family:var(--sans)}
+.pdf-cherche:focus-within{box-shadow:var(--sh-palet),0 0 0 2px var(--voile-4)}
+.pdf-q-n{min-width:40px;text-align:right;font:500 var(--f-12) var(--sans);color:var(--t-2)}
+.pdf-q-n.rien{color:var(--p-warn)}
+
+/* la relecture : une feuille à droite, comme l'inspecteur — la tête et les filtres en haut, la liste qui défile, le pied */
+.pdf-relecture{position:absolute;top:0;right:var(--jeu);bottom:var(--jeu);width:var(--pdf-rel);max-width:calc(100vw - var(--pdf-vig) - 4 * var(--jeu) - 240px);
+  display:flex;flex-direction:column;background:var(--s-surface);color:var(--t-1);border-radius:var(--r-3);box-shadow:var(--sh-panneau);overflow:hidden}
+.pdf-haut{flex:none;padding:0 20px 4px}
+.pdf-haut .fiche-tete{position:static;margin:0 -20px;padding:18px 14px 6px 20px}
+.pdf-liste{flex:1;overflow:auto;padding:0 20px 20px;overscroll-behavior:contain;scrollbar-width:thin}
+.pdf-etat{margin:2px 0 0;font-size:var(--f-13);color:var(--t-2);display:flex;align-items:center;gap:8px;min-height:20px}
+.pdf-respire{width:8px;height:8px;border-radius:50%;background:var(--t-2);animation:respire 1.4s ease-in-out infinite;flex:none}
+.pdf-e{display:inline-flex;align-items:center;gap:8px;color:var(--ko)}
+.pdf-e i{width:8px;height:8px;border-radius:50%;background:currentColor}
+.pdf-cart{margin:6px 0 0;font-size:var(--f-12);color:var(--t-2)}
+.pdf-cart .id{font-family:var(--mono);color:var(--t-1)}
+.pdf-scan{margin:16px 0 0;padding:14px 16px;border-radius:var(--r-2);background:var(--s-sunken)}
+.pdf-scan p{margin:0 0 12px;font-size:var(--f-13);line-height:1.5;color:var(--t-2)}
+.pdf-scan p b{color:var(--t-1);font-weight:600}
+.pdf-filtres{margin:16px 0 8px}
+.pdf-filtres i{font-style:normal;font-variant-numeric:tabular-nums;color:var(--t-3);margin-left:2px}
+.pdf-tab{width:100%;border-collapse:collapse;font-size:var(--f-12);table-layout:fixed}
+/* les colonnes courtes à leur mesure (l'en-tête entier même à 1440) ; les deux repères se partagent le reste */
+.pdf-tab th:nth-child(2),.pdf-tab th:nth-child(4){width:48px}
+.pdf-tab th:nth-child(5){width:80px}
+.pdf-tab th:nth-child(6){width:44px}
+.pdf-tab th:nth-child(7){width:80px}
+.pdf-tab th{position:sticky;top:0;z-index:2;background:var(--s-surface);text-align:left;font:500 var(--f-12) var(--sans);color:var(--t-2);padding:8px 6px;border-bottom:1px solid var(--s-line-2);white-space:nowrap}
+.pdf-tab tbody tr{scroll-margin-top:36px}
+.pdf-tab td{padding:6px;border-bottom:1px solid var(--s-line);vertical-align:top;cursor:pointer}
+.pdf-tab td.pdf-c{font-family:var(--mono);color:var(--t-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pdf-tab td.pdf-c.b{color:var(--t-2)}
+.pdf-tab td.pdf-c small{display:block;font-size:var(--f-11);color:var(--t-2);overflow:hidden;text-overflow:ellipsis}
+.pdf-tab td.main{color:var(--t-1);font-weight:600}
+.pdf-tab td.main::after{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--t-2);margin-left:4px;vertical-align:2px}
+.pdf-tab tr[data-i]:hover td{background:var(--s-hover)}
+.pdf-tab tr.choisie td{background:var(--accent-soft)}
+.pdf-tab tr.choisie td:first-child{box-shadow:inset 3px 0 0 var(--t-1)}
+.pdf-th-c{text-align:right!important}
+.pdf-conf{white-space:nowrap;text-align:right;color:var(--t-2);font-variant-numeric:tabular-nums}
+.pdf-conf i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px;background:var(--ok)}
+.pdf-conf.e-att i{background:var(--warn)}
+.pdf-conf.e-ko i{background:var(--ko)}
+.pdf-raisons td{background:var(--accent-soft);cursor:default;padding:2px 10px 10px}
+.pdf-raisons ul{margin:0;padding:0 0 0 14px;font-size:var(--f-12);line-height:1.5;color:var(--t-2)}
+.pdf-geste{margin-top:6px}
+.pdf-geste .btn{height:28px;font-size:var(--f-12)}
+.pdf-in{width:100%;min-width:56px;height:26px;margin:-4px 0;border:1px solid var(--t-1);border-radius:6px;padding:0 6px;background:var(--s-surface);color:var(--t-1);font:400 var(--f-12) var(--mono);box-shadow:var(--anneau);outline:none}
+.pdf-vide{margin:16px 0;font-size:var(--f-13);color:var(--t-2)}
+.pdf-orphelins{margin:20px 0 0;padding-top:16px;border-top:1px solid var(--s-line)}
+.pdf-orphelins summary{cursor:pointer;font:600 var(--f-14)/1.3 var(--titre);color:var(--t-1);list-style:none;display:flex;align-items:center;gap:8px}
+.pdf-orphelins summary::-webkit-details-marker{display:none}
+.pdf-orphelins summary i{font:500 var(--f-12) var(--sans);color:var(--t-2);font-style:normal}
+.pdf-orphelins ul{list-style:none;margin:8px 0 0;padding:0}
+.pdf-orphelins li button{width:100%;text-align:left;border:none;background:none;padding:6px 8px;border-radius:var(--r-1);font-size:var(--f-12);color:var(--t-2);display:flex;gap:8px;align-items:baseline}
+.pdf-orphelins li button:hover{background:var(--s-hover);color:var(--t-1)}
+.pdf-orphelins .id{font-family:var(--mono);color:var(--t-1)}
+.pdf-o-p{flex:none;min-width:34px;color:var(--t-3);font-variant-numeric:tabular-nums}
+
+/* relier à la main : la petite fiche qui se pose près du clic */
+.pdf-saisie{position:absolute;z-index:5;width:224px;padding:12px;border-radius:var(--r-2);background:var(--s-flottant);color:var(--t-1);box-shadow:var(--sh-2);display:grid;gap:8px;animation:tombe var(--moyen)}
+.pdf-s-t{font:600 var(--f-13)/1.3 var(--titre);display:flex;flex-direction:column;gap:2px}
+.pdf-s-t small{font:400 var(--f-12) var(--sans);color:var(--t-2)}
+.pdf-saisie label{display:grid;grid-template-columns:52px 1fr;align-items:center;gap:8px;font:500 var(--f-12) var(--sans);color:var(--t-2)}
+.pdf-saisie input{height:30px;border:1px solid var(--s-line-2);border-radius:var(--r-btn);padding:0 8px;background:var(--s-surface);color:var(--t-1);font:400 var(--f-13) var(--mono);outline:none}
+.pdf-saisie input:focus{border-color:var(--t-1);box-shadow:var(--anneau)}
+.pdf-saisie .btn{justify-self:end;height:30px}
+@media (prefers-reduced-motion:reduce){.pdf.entre,.pdf-saisie{animation:none}.pdf-respire{animation:none}}
