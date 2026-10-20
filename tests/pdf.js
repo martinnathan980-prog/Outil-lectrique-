@@ -22,8 +22,14 @@
    surligne, une ligne de la relecture surligne sa liaison, une case se
    corrige, « Ouvrir comme plan » donne autant de liaisons, le retest Excel
    relu par Volta redonne les mêmes ; un PDF SCANNÉ (une image, du bruit, un
-   léger angle) se dit scanné et se relie à la main, au clavier. Aucune
-   requête réseau, aucune erreur dans la console.
+   léger angle) se dit scanné et se relie à la main, au clavier.
+   EXCEL → PDF (08-pdf-dossier) : ⋮ › Exporter › « Le dossier en PDF » écrit un
+   vrai PDF (la garde, un A3 par folio, la nomenclature ; Helvetica et Courier
+   en vrai texte) ; RELU par la visionneuse, il redonne 100 % des liaisons de
+   l'exemple, chacune sur son folio ; l'API `pdfDuPlan` place au loin un folio
+   jamais dessiné, la barre dit honnêtement où l'on en est. Au téléphone
+   (390 px), la relecture est un tiroir du bas. Aucune requête réseau, aucune
+   erreur dans la console.
    ========================================================================= */
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path'), os = require('os');
@@ -39,7 +45,8 @@ const pct = x => (100 * x).toFixed(1).replace('.', ',') + ' %';
   // ---- 1. les PDF du banc, imprimés par Chromium (un contexte à part, lui aussi sans réseau)
   const imp = await (await b.newContext({ offline: true })).newPage();
   const ctx = await b.newContext({ offline: true, viewport: { width: 1440, height: 900 }, acceptDownloads: true });
-  const p = await ctx.newPage(); p.setDefaultTimeout(120000);
+  // (sous pilote, un folio se place dans la page même : sur une machine partagée et chargée, le plus gros prend une minute)
+  const p = await ctx.newPage(); p.setDefaultTimeout(300000);
   const erreurs = [], reseau = [];
   p.on('pageerror', e => erreurs.push(e.message)); p.on('console', m => { if (m.type() === 'error') erreurs.push(m.text()); });
   p.on('request', r => { if (!/^(file|blob|data):/.test(r.url())) reseau.push(r.url()); });
@@ -60,7 +67,7 @@ const pct = x => (100 * x).toFixed(1).replace('.', ',') + ' %';
   const lire = async f => p.evaluate(async b64 => { const lib = pdfjsPret(), doc = await lib.getDocument({ data: Uint8Array.from(atob(b64), c => c.charCodeAt(0)), isEvalSupported: false }).promise, pages = [];
     for (let i = 1; i <= doc.numPages; i++) pages.push(await pagePourLeMoteur(doc, i));
     const t0 = performance.now(), L = lireSchemaPdf(pages);
-    return { ms: performance.now() - t0, n: doc.numPages, liaisons: L.liaisons.map(l => [l.de, l.borneDe, l.vers, l.borneVers, l.conf]), orphelins: L.pages.reduce((k, r) => k + r.orphelins.length, 0), champs: L.pages.map(r => r.champs), scannees: L.scannees }; }, fs.readFileSync(f).toString('base64'));
+    return { ms: performance.now() - t0, n: doc.numPages, liaisons: L.liaisons.map(l => [l.de, l.borneDe, l.vers, l.borneVers, l.conf, l.folio]), orphelins: L.pages.reduce((k, r) => k + r.orphelins.length, 0), champs: L.pages.map(r => r.champs), scannees: L.scannees }; }, fs.readFileSync(f).toString('base64'));
   const cle = (a, ba, c, bc) => { const x = a + ':' + String(ba || '').toUpperCase(), y = c + ':' + String(bc || '').toUpperCase(); return x < y ? x + ' | ' + y : y + ' | ' + x; };
   const totaux = { volta: { v: 0, t: 0, j: 0 }, styles: { v: 0, t: 0, j: 0 } }, lignes = [];
   for (const B of banc) { const R = await lire(B.fichier), et = (r, x) => (B.etiq && B.etiq[r] && B.etiq[r][x]) || x;
@@ -81,6 +88,39 @@ const pct = x => (100 * x).toFixed(1).replace('.', ',') + ' %';
   // un PDF dont le texte est dessiné en traits (aucun texte, aucune image) : il se relie à la main, comme un scan
   const vecto = await lire(await imprimer(`<!doctype html><html><body style="margin:0"><svg xmlns="http://www.w3.org/2000/svg" width="420mm" height="297mm" viewBox="0 0 420 297"><rect x="40" y="40" width="60" height="40" fill="none" stroke="#000"/><path d="M45 50h8M49 46v8M100 60h80" stroke="#000" fill="none"/><rect x="180" y="40" width="60" height="40" fill="none" stroke="#000"/></svg></body></html>`, 'vectorise.pdf'));
   ok('un PDF sans texte ni image (des lettres dessinées en traits) se dit tel : on le relie à la main', vecto.scannees === 1 && vecto.liaisons.length === 0, JSON.stringify({ scannees: vecto.scannees, n: vecto.liaisons.length }));
+
+  // ---- 2 bis. EXCEL → PDF : le dossier que Volta écrit (⋮ › Exporter › « Le dossier en PDF »), relu par Volta. Les six
+  // folios sont déjà dessinés (le banc vient de les parcourir) : le dossier part du cache, au clic
+  await p.evaluate(() => atelier.exemple()); await p.click('#btnMenu'); await p.click('#menu [data-sous="exporter"]');
+  const [telD] = await Promise.all([p.waitForEvent('download'), p.click('#menu [data-act="dossierpdf"]')]);
+  const fDos = path.join(TMP, 'dossier.pdf'); await telD.saveAs(fDos); const brut = fs.readFileSync(fDos), latin = brut.toString('latin1'), Rd = await lire(fDos);
+  const Dd = await p.evaluate(async b64 => { const doc = await pdfjsPret().getDocument({ data: Uint8Array.from(atob(b64), c => c.charCodeAt(0)), isEvalSupported: false }).promise;
+    const txt = async i => (await (await doc.getPage(i)).getTextContent()).items.map(x => x.str).join(' '), vp = (await doc.getPage(2)).getViewport({ scale: 1 });
+    const net = s => s.replace(/\s+/g, ' ');   // pdf.js glisse des morceaux vides entre les textes
+    return { n: doc.numPages, w: Math.round(vp.width), h: Math.round(vp.height), garde: net(await txt(1)), folio: net(await txt(4)), fin: net(await txt(doc.numPages)), toast: net($('toast').textContent) }; }, brut.toString('base64'));
+  const polices = [...new Set((latin.match(/\/BaseFont \/[\w-]+/g) || []).map(x => x.slice(11)))].sort().join(',');
+  ok('Excel → PDF : ⋮ › Exporter › « Le dossier en PDF » écrit un vrai PDF — la page de garde, un A3 paysage par folio avec son cartouche, la nomenclature à la fin',
+    /-dossier\.pdf$/.test(telD.suggestedFilename()) && latin.startsWith('%PDF-') && Dd.n >= 8 && Dd.w === 1191 && Dd.h === 842 && /FOLIO/.test(Dd.folio) && /3 \/ 6/.test(Dd.folio) && /Nomenclature/.test(Dd.fin) && /dossier est enregistré/.test(Dd.toast),
+    `${telD.suggestedFilename()} · ${Dd.n} pages · ${Dd.w}×${Dd.h} pt · ${Math.round(brut.length / 1024)} Ko · folio : ${Dd.folio.replace(/\s+/g, ' ').match(/FOLIO.{0,12}/) || '?'} · fin : ${Dd.fin.slice(0, 40)} · ${Dd.toast.slice(0, 70)}`);
+  ok('le texte est du vrai texte, en Helvetica et Courier (aucune police embarquée), accents compris : la garde dit le plan, ses liaisons, ce qui reste à reprendre',
+    polices === 'Courier,Courier-Bold,Helvetica,Helvetica-Bold' && !/FontFile/.test(latin) && /WinAnsiEncoding/.test(latin) && /Contrat d’exemple/.test(Dd.garde) && /DOSSIER DE CÂBLAGE/.test(Dd.garde) && /\b201\b/.test(Dd.garde) && /Ce qui reste à reprendre/.test(Dd.garde) && /300XC1/.test(Dd.folio),
+    polices + ' · garde : ' + Dd.garde.replace(/\s+/g, ' ').slice(0, 90));
+  // l'aller-retour : chaque liaison de l'exemple, sur son folio (la borne comme le folio la dessine, A1 pour un connecteur déduit)
+  { const VV = new Map(), TT = new Map(); V.forEach(v => v.verite.forEach(l => { const k = v.f + '§' + cle(l.de, (v.etiq[l.de] || {})[l.borneDe] || l.borneDe, l.vers, (v.etiq[l.vers] || {})[l.borneVers] || l.borneVers); VV.set(k, (VV.get(k) || 0) + 1); }));
+    Rd.liaisons.forEach(([a, ba, c, bc, , f]) => { const k = f + '§' + cle(a, ba, c, bc); TT.set(k, (TT.get(k) || 0) + 1); });
+    let j = 0, nv = 0; VV.forEach((n, k) => { nv += n; j += Math.min(n, TT.get(k) || 0); });
+    ok('l’aller-retour : le dossier relu par la visionneuse redonne 100 % des liaisons de l’exemple, chacune sur son folio — et rien de plus (la garde et la nomenclature ne se lisent pas comme un schéma)',
+      j === nv && Rd.liaisons.length === nv && Rd.orphelins === 0, `rappel ${pct(j / nv)} · précision ${pct(j / Math.max(1, Rd.liaisons.length))} (${j}/${nv}, ${Rd.liaisons.length} lues, ${Rd.orphelins} orphelin)`); }
+  // l'API de la conversion en lot, sur un folio jamais dessiné (ses câbles renommés : une autre clé) : il se place au loin, la barre avance
+  const API = await p.evaluate(async () => { const L = contratExemple().filter(l => l.plan === '1').map(l => ({ ...l, cable: l.cable ? l.cable + 'B' : '' })), etats = [], t0 = performance.now();
+    const o = await pdfDuPlan(L, 'Essai en lot', { avancement: e => etats.push([e.part, e.prets, e.total]) }); let s = ''; for (let i = 0; i < o.length; i += 8192) s += String.fromCharCode(...o.subarray(i, i + 8192));
+    return { b64: btoa(s), etats, ms: Math.round(performance.now() - t0), type: Object.prototype.toString.call(o), garde: placements.has(clePlacement(avecBarrettesAPoser(L.map(liaison)))) }; });
+  const fApi = path.join(TMP, 'lot.pdf'); fs.writeFileSync(fApi, Buffer.from(API.b64, 'base64')); const Ra = await lire(fApi);
+  { const v1 = V[0], VV = new Set(v1.verite.map(l => cle(l.de, (v1.etiq[l.de] || {})[l.borneDe] || l.borneDe, l.vers, (v1.etiq[l.vers] || {})[l.borneVers] || l.borneVers))), lus = Ra.liaisons.filter(([a, ba, c, bc]) => VV.has(cle(a, ba, c, bc))).length;
+    const monte = API.etats.every((e, i) => !i || e[0] >= API.etats[i - 1][0]), fin = API.etats[API.etats.length - 1] || [];
+    ok('l’API pdfDuPlan(liaisons, nom) → Uint8Array : un folio jamais dessiné se place au loin, la barre avance sans reculer jusqu’à « 1 sur 1 prêt », le placement se garde, et le PDF relu redonne ses liaisons',
+      API.type === '[object Uint8Array]' && monte && API.etats[0][1] === 0 && fin[0] === 1 && fin[1] === 1 && fin[2] === 1 && API.garde && lus === v1.verite.length && Ra.liaisons.length === v1.verite.length,
+      `${API.ms} ms · ${API.etats.length} pas · ${lus}/${v1.verite.length} liaisons relues`); }
 
   // ---- 3. la visionneuse, à la vraie souris
   const ouvrir = async (f, nom) => { await p.evaluate(async ([b64, nom]) => { await ouvrirPdf(new File([Uint8Array.from(atob(b64), c => c.charCodeAt(0))], nom, { type: 'application/pdf' })); }, [fs.readFileSync(f).toString('base64'), nom || path.basename(f)]);
@@ -197,6 +237,36 @@ const pct = x => (100 * x).toFixed(1).replace('.', ',') + ' %';
   ok('un PDF ouvert comme un fichier (Ctrl+O, « Vos fichiers ») va à la visionneuse', await p.evaluate(() => !$('pdf').hidden && PDF.L.length === 20));
   await p.keyboard.press('Escape'); await p.evaluate(() => ficheFichiers('retest')); await p.waitForTimeout(300);
   ok('« Vos fichiers » : la carte du retest propose de lire un schéma en PDF', await p.evaluate(() => !!document.querySelector('#vf-retest [data-vf="pdf"]')));
+
+  // ---- 8. le dossier d'un plan dont un folio n'est pas encore dessiné : la barre paraît, dit les folios prêts, se range
+  await p.evaluate(() => { fermerFiche(); const L1 = contratExemple().filter(l => l.plan === '1');
+    chargerContrat([...L1, ...L1.map(l => ({ ...l, plan: '2', cable: l.cable ? l.cable + 'C' : '' }))], 'essai du dossier', 'essai-dossier', { nouveau: true });
+    window.__vu = []; window.__t = setInterval(() => { const el = $('pdf-dossier'); if (el && !el.hidden) window.__vu.push([$('pdf-dossier-mot').textContent, +$('pdf-dossier-barre').getAttribute('aria-valuenow')]); }, 40); });
+  await p.click('#btnMenu'); await p.click('#menu [data-sous="exporter"]');
+  const [telB] = await Promise.all([p.waitForEvent('download', { timeout: 180000 }), p.click('#menu [data-act="dossierpdf"]')]);
+  const fB = path.join(TMP, 'essai-dossier.pdf'); await telB.saveAs(fB); const RB = await lire(fB);
+  const BD = await p.evaluate(() => { clearInterval(window.__t); const el = $('pdf-dossier'); return { vu: window.__vu, cache: !el || el.hidden, h: DOSSIER.historique.map(e => e.prets + '/' + e.total) }; });
+  ok('un folio pas encore dessiné : la barre du dossier paraît et dit « Placement des folios : 1 sur 2 prêts — folio 2 en calcul », puis se range quand le PDF part',
+    BD.vu.length > 0 && BD.vu.some(([m]) => /Placement des folios : 1 sur 2 prêts — folio 2 en calcul/.test(m.replace(/\s+/g, ' '))) && BD.cache && BD.h[BD.h.length - 1] === '2/2' && RB.n >= 3 && RB.liaisons.length === 2 * V[0].verite.length,
+    `${BD.vu.length} vues · ${[...new Set(BD.vu.map(x => x[0]))].slice(0, 3).join(' | ')} · ${RB.n} pages, ${RB.liaisons.length} liaisons relues`);
+  await p.evaluate(() => atelier.exemple());
+
+  // ---- 9. au téléphone (390 × 844) : la page en haut, la relecture en tiroir du bas, la poignée la replie
+  const tctx = await b.newContext({ offline: true, viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }), tp = await tctx.newPage(); tp.setDefaultTimeout(300000);
+  tp.on('pageerror', e => erreurs.push('téléphone : ' + e.message)); tp.on('request', r => { if (!/^(file|blob|data):/.test(r.url())) reseau.push(r.url()); });
+  await tp.goto(FICHIER); await tp.waitForFunction(() => typeof atelier !== 'undefined'); await tp.evaluate(() => atelier.exemple());
+  const ouvrirTel = async f => { await tp.evaluate(async ([b64, nom]) => { await ouvrirPdf(new File([Uint8Array.from(atob(b64), c => c.charCodeAt(0))], nom, { type: 'application/pdf' })); }, [fs.readFileSync(f).toString('base64'), path.basename(f)]);
+    await tp.waitForFunction(() => PDF.lecture || PDF.erreur); await tp.waitForTimeout(500); };
+  const geo = () => tp.evaluate(() => { const r = id => { const e = $(id); if (!e) return null; const b = e.getBoundingClientRect(); return { l: Math.round(b.left), t: Math.round(b.top), r: Math.round(b.right), b: Math.round(b.bottom), w: Math.round(b.width), h: Math.round(b.height) }; };
+    const sc = $('pdf-relecture').querySelector('.pdf-scan'); return { rel: r('pdf-relecture'), out: r('pdf-outils'), f: r('pdf-feuille'), scan: sc ? Math.round(sc.getBoundingClientRect().width) : 0, w: innerWidth, h: innerHeight, deborde: document.documentElement.scrollWidth > innerWidth + 1 }; });
+  await ouvrirTel(banc[2].fichier); const T1 = await geo();
+  if (IMG) await tp.screenshot({ path: path.join(IMG, 'pdf-telephone.png') });
+  await tp.tap('#pdf-relecture .pdf-poignee'); await tp.waitForTimeout(500); const T2 = await geo();
+  await tp.tap('#pdf-relecture .pdf-poignee'); await tp.waitForTimeout(300); await ouvrirTel(fscan); const T3 = await geo();
+  ok('au téléphone : la page toute la largeur au-dessus, la relecture en tiroir du bas (rien hors de l’écran), les outils entre les deux ; la poignée replie le tiroir et la page grandit ; le mot d’un scan tient sur la largeur',
+    T1.rel.l >= 0 && T1.rel.r <= T1.w && T1.rel.t > T1.h * 0.4 && T1.rel.b <= T1.h && T1.out.r <= T1.w + 1 && T1.out.b <= T1.rel.t + 1 && T1.f.w > 300 && T1.f.b <= T1.out.t + 1 && !T1.deborde
+      && T2.rel.h < 140 && T2.f.w >= T1.f.w && T3.scan > 300, JSON.stringify({ rel: T1.rel, out: T1.out, f: T1.f, replie: T2.rel.h, scan: T3.scan }));
+  await tctx.close();
   ok('aucune requête réseau (le contexte est hors ligne : pdf.js, son worker, les polices, tout est dans le fichier)', reseau.length === 0, reseau.slice(0, 3).join(' '));
   ok('aucune erreur dans la console', erreurs.length === 0, erreurs.slice(0, 3).join(' | '));
 

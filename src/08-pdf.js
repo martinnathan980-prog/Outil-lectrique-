@@ -32,7 +32,7 @@
 
 const PDF = { ouvert: false, doc: null, nom: '', n: 0, page: 1, tailles: [], vue: { s: 1, tx: 0, ty: 0, cadre: true }, rendu: { tache: null, s: 0, t: 0, page: 0 },
   textes: new Map(), lecture: null, analyse: null, L: [], choisie: -1, filtre: 'tout', q: '', hits: [], hit: -1, assiste: false, saisie: null, vignettes: new Map(),
-  faits: [], vu: null, erreur: '' };
+  faits: [], vu: null, erreur: '', replie: false };
 const estPdf = f => !!f && (/\.pdf$/i.test(f.name || '') || f.type === 'application/pdf');
 
 /* ---- pdf.js : son worker, une fois, d'une Blob URL (le texte embarqué par construire.js) ------------------------ */
@@ -80,8 +80,12 @@ function majProgression() { const el = $('pdf-etat'); if (el && PDF.analyse) el.
 /* ---- la page : sa place sur la table, son rendu ----------------------------------------------------------------- */
 const taillePage = n => PDF.tailles[(n || PDF.page) - 1] || PDF.tailles[0] || [595, 842];
 function zonePdf() { const sc = $('pdf-scene'); return sc ? sc.getBoundingClientRect() : { width: 800, height: 600, left: 0, top: 0 }; }
-/* La table visible : entre le palet des vignettes et la feuille de relecture, au-dessus des outils (en px de la scène). */
-function visiblePdf() { const r = zonePdf(), g = $('pdf-vignettes'), d = $('pdf-relecture'), x0 = g ? g.getBoundingClientRect().right - r.left : 0, x1 = d ? d.getBoundingClientRect().left - r.left : r.width;
+/* La table visible : entre le palet des vignettes et la feuille de relecture, au-dessus des outils (en px de la scène) ;
+   au téléphone, au-dessus du tiroir de la relecture et de la barre des outils, toute la largeur. */
+function visiblePdf() { const r = zonePdf(), g = $('pdf-vignettes'), d = $('pdf-relecture'), o = $('pdf-outils');
+  const G = g && g.offsetParent ? g.getBoundingClientRect() : null, D = d ? d.getBoundingClientRect() : null;
+  if (D && D.width && D.left - r.left < r.width / 3) { const haut = Math.min(D.top, o ? o.getBoundingClientRect().top : D.top) - r.top; return { x0: 0, x1: r.width, y0: 0, y1: Math.max(120, haut) }; }
+  const x0 = G ? G.right - r.left : 0, x1 = D ? D.left - r.left : r.width;
   return { x0, x1: Math.max(x0 + 100, x1), y0: 0, y1: r.height - 50 }; }
 function cadrerPdf() { const v = visiblePdf(), [w, h] = taillePage(), m = 24, s = Math.max(0.05, Math.min((v.x1 - v.x0 - 2 * m) / w, (v.y1 - v.y0 - 2 * m) / h));
   PDF.vue = { s, tx: (v.x0 + v.x1 - w * s) / 2, ty: Math.max(m, (v.y1 - h * s) / 2), cadre: true }; poserFeuille(); }
@@ -186,9 +190,11 @@ function rendreRelecture() { const box = $('pdf-relecture'); if (!box) return; c
     const V = lignesVues();
     corps += `<table class="pdf-tab" id="pdf-tab"><thead><tr>${COLS_PDF.map(([k, t]) => `<th data-k="${k}">${t}</th>`).join('')}<th class="pdf-th-c">Confiance</th></tr></thead><tbody>`
       + V.map(([l, i]) => { const c = l.main.size ? 1 : l.conf, e = etatConf(c), sel = i === PDF.choisie;
-        return `<tr data-i="${i}" class="${sel ? 'choisie' : ''}"${sel ? ' aria-selected="true"' : ''}>${COLS_PDF.map(([k]) => `<td class="pdf-c${l.main.has(k) ? ' main' : ''}${/^borne/.test(k) ? ' b' : ''}" data-k="${k}" title="${escA(k === 'folio' ? (l.plan || '') + ' · double-clic pour corriger' : 'Double-clic pour corriger')}">${esc(l[k] || '')}${k === 'de' && l.pnDe ? `<small>${esc(l.pnDe)}</small>` : k === 'vers' && l.pnVers ? `<small>${esc(l.pnVers)}</small>` : ''}</td>`).join('')}`
+        // la case tronquée garde son texte entier au survol (le folio : le dessin, FWD) ; « double-clic pour corriger » se dit dans la ligne dépliée
+        return `<tr data-i="${i}" class="${sel ? 'choisie' : ''}"${sel ? ' aria-selected="true"' : ''}>${COLS_PDF.map(([k]) => { const plein = [k === 'folio' ? l.plan || l[k] : l[k], k === 'de' ? l.pnDe : k === 'vers' ? l.pnVers : ''].filter(Boolean).join(' · ');
+            return `<td class="pdf-c${l.main.has(k) ? ' main' : ''}${/^borne/.test(k) ? ' b' : ''}" data-k="${k}"${plein ? ` title="${escA(plein)}"` : ''}>${esc(l[k] || '')}${k === 'de' && l.pnDe ? `<small>${esc(l.pnDe)}</small>` : k === 'vers' && l.pnVers ? `<small>${esc(l.pnVers)}</small>` : ''}</td>`; }).join('')}`
           + `<td class="pdf-conf e-${e}"><i aria-hidden="true"></i>${l.main.size ? "main" : pourcentPdf(c)}</td></tr>`
-          + (sel ? `<tr class="pdf-raisons"><td colspan="${COLS_PDF.length + 1}"><ul>${(l.raisons || []).map(r => `<li>${esc(r)}</li>`).join('')}</ul><div class="pdf-geste"><button class="btn lien" data-pdf="suppr" data-i="${i}">Supprimer cette liaison</button></div></td></tr>` : ''); }).join('')
+          + (sel ? `<tr class="pdf-raisons"><td colspan="${COLS_PDF.length + 1}"><p class="pdf-detail">${esc(lies([l.type ? 'référence ' + l.type : 'sans référence', 'folio ' + (l.folio || '—')]))}</p><ul>${(l.raisons || []).map(r => `<li>${esc(r)}</li>`).join('')}</ul><div class="pdf-geste"><span class="pdf-astuce">Double-clic sur une case pour la corriger.</span><button class="btn lien" data-pdf="suppr" data-i="${i}">Supprimer cette liaison</button></div></td></tr>` : ''); }).join('')
       + `</tbody></table>` + (V.length ? '' : `<p class="pdf-vide">${PDF.filtre === 'revoir' ? 'Rien à revoir : chaque liaison est lue avec assurance.' : PDF.filtre === 'page' ? 'Aucune liaison lue sur cette page.' : 'Aucune liaison lue.'}</p>`);
     // les bouts orphelins, les bornes sans trait : à part
     const O = L ? L.pages.flatMap((P, k) => P.orphelins.map(o => ({ ...o, page: k }))) : [], S = L ? L.pages.flatMap((P, k) => P.bornesSeules.map(o => ({ ...o, page: k }))) : [];
@@ -198,7 +204,9 @@ function rendreRelecture() { const box = $('pdf-relecture'); if (!box) return; c
   }
   const pied = `<button class="btn cuivre" data-pdf="plan"${n ? '' : ' disabled'}>Ouvrir comme plan</button><button class="btn papier" data-pdf="excel"${n ? '' : ' disabled'}>Enregistrer en retest Excel</button>`;
   const y = $('pdf-corps') ? $('pdf-corps').scrollTop : 0;
-  box.innerHTML = `<div class="pdf-haut">${tete}${haut}</div><div class="pdf-liste" id="pdf-corps">${corps}</div><div class="fiche-pied">${pied}</div>`;
+  // au téléphone, la relecture est le tiroir du bas : sa poignée le replie, le déplie (le CSS ne la montre que là)
+  const poignee = `<button class="pdf-poignee" data-pdf="replier" type="button" aria-expanded="${!PDF.replie}" aria-label="${PDF.replie ? 'Déplier' : 'Replier'} la relecture"><i aria-hidden="true"></i></button>`;
+  box.innerHTML = `<div class="pdf-haut">${poignee}${tete}${haut}</div><div class="pdf-liste" id="pdf-corps">${corps}</div><div class="fiche-pied">${pied}</div>`;
   $('pdf-corps').scrollTop = y; if (typeof typographier === 'function') typographier(box); }
 // une liaison choisie : sa ligne, son trajet sur sa page, centré
 function choisirLiaisonPdf(i, centrer) { if (i === PDF.choisie && centrer !== true) return; PDF.choisie = i; const l = PDF.L[i]; rendreRelecture();
@@ -321,6 +329,7 @@ function lierPdf() { const sc = $('pdf-scene'), o = (id, fn) => { $(id).onclick 
     // un autre filtre : une autre liste, lue d'en haut — ou là où est la liaison choisie, si elle y est
     const f = t.closest('[data-filtre]'); if (f) { PDF.filtre = f.dataset.filtre; rendreRelecture(); $('pdf-corps').scrollTop = 0; ligneEnVue(PDF.choisie); return; }
     const g = t.closest('[data-pdf]'); if (g) { const k = g.dataset.pdf; if (k === 'plan') ouvrirPdfCommePlan(); else if (k === 'excel') enregistrerPdfEnExcel(); else if (k === 'assiste') basculerAssiste(true);
+      else if (k === 'replier') { PDF.replie = !PDF.replie; $('pdf').classList.toggle('replie', PDF.replie); rendreRelecture(); setTimeout(() => { if (PDF.vue.cadre) cadrerPdf(); }, 260); }
       else if (k === 'suppr') { PDF.L.splice(+g.dataset.i, 1); PDF.choisie = -1; rendreRelecture(); peindreCalque(); } return; }
     const ob = t.closest('[data-orph]'); if (ob) { const L = PDF.lecture, k = ob.dataset.orph, liste = k[0] === 'o' ? L.pages.flatMap((P, j) => P.orphelins.map(o => ({ ...o, page: j }))) : L.pages.flatMap((P, j) => P.bornesSeules.map(o => ({ ...o, page: j }))), o = liste[+k.slice(1)];
       if (o) { PDF.vu = { page: o.page, p: o.p }; PDF.choisie = -1; if (o.page !== PDF.page - 1) allerPagePdf(o.page + 1, true); centrerPdf(o.p, true); peindreCalque(); rendreRelecture(); } return; }

@@ -105,7 +105,9 @@ html body.pdf-ouvert #toast{left:calc((100vw + 132px - clamp(460px,34vw,600px)) 
 .pdf-conf.e-ko i{background:var(--ko)}
 .pdf-raisons td{background:var(--accent-soft);cursor:default;padding:2px 10px 10px}
 .pdf-raisons ul{margin:0;padding:0 0 0 14px;font-size:var(--f-12);line-height:1.5;color:var(--t-2)}
-.pdf-geste{margin-top:6px}
+.pdf-geste{margin-top:6px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.pdf-astuce{font-size:var(--f-12);color:var(--t-3)}
+.pdf-detail{display:none;margin:2px 0 4px;font:500 var(--f-12)/1.4 var(--mono);color:var(--t-1)}
 .pdf-geste .btn{height:28px;font-size:var(--f-12)}
 .pdf-in{width:100%;min-width:56px;height:26px;margin:-4px 0;border:1px solid var(--t-1);border-radius:6px;padding:0 6px;background:var(--s-surface);color:var(--t-1);font:400 var(--f-12) var(--mono);box-shadow:var(--anneau);outline:none}
 .pdf-vide{margin:16px 0;font-size:var(--f-13);color:var(--t-2)}
@@ -127,29 +129,48 @@ html body.pdf-ouvert #toast{left:calc((100vw + 132px - clamp(460px,34vw,600px)) 
 .pdf-saisie input{height:30px;border:1px solid var(--s-line-2);border-radius:var(--r-btn);padding:0 8px;background:var(--s-surface);color:var(--t-1);font:400 var(--f-13) var(--mono);outline:none}
 .pdf-saisie input:focus{border-color:var(--t-1);box-shadow:var(--anneau)}
 .pdf-saisie .btn{justify-self:end;height:30px}
-@media (prefers-reduced-motion:reduce){.pdf.entre,.pdf-saisie{animation:none}.pdf-respire{animation:none}}
+/* le dossier en PDF (08-pdf-dossier) : la barre qui dit où l'on en est, un palet au bas de la table — les folios prêts sur
+   le total, ceux qui se calculent ; « Annuler » à côté du titre */
+.pdf-dossier{position:fixed;left:50%;bottom:calc(var(--jeu) + 64px);transform:translateX(-50%);z-index:45;width:min(440px,calc(100vw - 32px));padding:14px 16px 12px;
+  background:var(--palet);border-radius:var(--r-palet);box-shadow:var(--sh-palet);color:var(--t-1)}
+.pdf-dossier[hidden]{display:none}
+.pdf-dossier-t{display:flex;align-items:center;justify-content:space-between;gap:12px;font:600 var(--f-14)/1.3 var(--titre)}
+.pdf-dossier-t .btn{height:28px;font-size:var(--f-12)}
+.pdf-barre{height:6px;margin:10px 0 8px;border-radius:3px;background:var(--voile-2);overflow:hidden}
+.pdf-barre i{display:block;height:100%;width:0;border-radius:inherit;background:var(--t-1);transition:width .3s ease}
+.pdf-dossier small{display:block;font-size:var(--f-12);line-height:1.4;color:var(--t-2);font-variant-numeric:tabular-nums}
 
-/* ─── AU TÉLÉPHONE (390 px) : la page en haut, la relecture en tiroir dessous (elle était hors de l'écran, à droite), les
-   outils posés sur le bord du tiroir ; les vignettes se rangent (une page à la fois : ‹ › dans les outils) ; le mot qui
-   passe au milieu, sur une ligne (il se tassait dans la colonne des vignettes) ─── */
+/* ─── AU TÉLÉPHONE (≤ 700 px) : la page en haut, toute la largeur ; la relecture devient le tiroir du bas, qu'on replie
+   d'un geste (la poignée) ; les outils, une barre pleine entre les deux, réduite à l'essentiel (le pincement zoome) ;
+   les vignettes se taisent (page précédente, suivante). Les conventions du téléphone de style.css : ni arrondi ni ombre
+   sous une barre, un filet. La scène s'arrête au-dessus des outils : la page se cadre dans ce qui reste. Le tableau garde De, Borne, Vers, Borne, Confiance (la référence et le folio partent en
+   Excel, et se lisent en dépliant la ligne). */
+.pdf-poignee{display:none}
 @media (max-width:700px){
-  .pdf{--pdf-rel:0px;--pdf-tiroir:46vh}
+  .pdf{--pdf-bas:min(46vh,400px)}
+  .pdf.replie{--pdf-bas:112px}
   .pdf-vignettes{display:none}
-  .pdf-scene{bottom:var(--pdf-tiroir)}
-  .pdf-relecture{top:auto;left:0;right:0;bottom:0;width:auto;max-width:none;height:var(--pdf-tiroir);border-radius:0;box-shadow:0 -1px 0 var(--s-line-2),0 -12px 30px -18px rgba(0,6,18,.6)}
-  .pdf-haut{padding:0 16px 2px}
-  .pdf-haut .fiche-tete{margin:0 -16px;padding:12px 8px 4px 16px;position:static;border-bottom:none}
-  .pdf-liste{padding:0 16px 12px}
-  .pdf-filtres{margin:10px 0 6px}
-  .pdf-outils{left:8px;right:8px;bottom:calc(var(--pdf-tiroir) + 8px);height:auto;flex-wrap:wrap-reverse;justify-content:center;gap:6px}
-  .pdf-palet{flex:none}
-  .pdf-cherche input{width:96px}
-  .pdf-q-n{min-width:0}
-  .pdf-palet .bulle{display:none}
-  /* les colonnes de la relecture se resserrent : les repères, leurs bornes et la confiance gardent la place ; la référence
-     et le folio se rangent (un clic sur la ligne la surligne sur la page) */
-  .pdf-tab th:nth-child(2),.pdf-tab th:nth-child(4){width:40px}
-  .pdf-tab :is(th,td):is(:nth-child(5),:nth-child(6)){display:none}
+  .pdf-scene{bottom:calc(var(--pdf-bas) + 48px)}
+  .pdf-relecture{top:auto;left:0;right:0;bottom:0;width:auto;max-width:none;height:var(--pdf-bas);border-radius:0;box-shadow:none;border-top:1px solid var(--p-ligne);transition:height var(--moyen)}
+  .pdf-poignee{display:flex;justify-content:center;align-items:center;flex:none;width:100%;height:22px;margin:0;padding:0;border:none;background:none;cursor:pointer}
+  .pdf-poignee i{width:36px;height:4px;border-radius:2px;background:var(--s-line-2)}
+  .pdf-outils{left:0;right:0;bottom:var(--pdf-bas);height:48px;padding:0 max(6px,var(--sur-d)) 0 max(6px,var(--sur-g));gap:2px;justify-content:flex-start;
+    pointer-events:auto;background:var(--palet);box-shadow:0 -1px 0 var(--p-ligne);transition:bottom var(--moyen)}
+  .pdf-palet{background:none;box-shadow:none;padding:0;height:auto}
+  .pdf-cherche{flex:1 1 auto;min-width:0;padding:0 6px}
+  .pdf-cherche input{width:100%;min-width:0}
+  .pdf-num{min-width:44px}
+  #pdf-moins,#pdf-plus,#pdf-zoom{display:none}
+  .pdf-haut{padding:0 16px 4px}
+  .pdf-haut .fiche-tete{margin:0 -16px;padding:4px 8px 4px 16px;border-bottom:none}
+  .pdf-liste{padding:0 16px 16px}
+  .pdf-relecture .fiche-pied{flex-wrap:wrap;gap:8px}
+  .pdf-tab th:nth-child(5),.pdf-tab td:nth-child(5),.pdf-tab th:nth-child(6),.pdf-tab td:nth-child(6){display:none}
+  .pdf-detail{display:block}
   .pdf-tab th:nth-child(7){width:64px}
-  html body.pdf-ouvert #toast{left:50%;top:auto;bottom:calc(var(--pdf-tiroir, 46vh) + 110px);max-width:calc(100vw - 16px)}
+  .pdf-tab th:nth-child(2),.pdf-tab th:nth-child(4){width:44px}
+  .pdf.replie .pdf-liste,.pdf.replie .fiche-pied,.pdf.replie .pdf-filtres,.pdf.replie .pdf-cart,.pdf.replie .pdf-scan{display:none}
+  html body.pdf-ouvert #toast{left:50%;top:auto;bottom:calc(min(46vh,400px) + 60px);width:max-content;max-width:calc(100vw - 16px)}
+  .pdf-dossier{bottom:calc(var(--rail-tel, 48px) + 56px)}
 }
+@media (prefers-reduced-motion:reduce){.pdf.entre,.pdf-saisie{animation:none}.pdf-respire{animation:none}.pdf-barre i,.pdf-relecture,.pdf-outils{transition:none}}
