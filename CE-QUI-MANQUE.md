@@ -116,9 +116,24 @@ document. Aucune recherche n'a porté sur ta base, ton programme ou ton appareil
   - Onze courants de contact (Amphenol et TE).
   - L'EN 4165-014 (titres BSI et SIS).
   - Le rail NSA937901RB2000 (Souriau 8559 et Air LB).
-- **Ce que le moteur ne lit pas** : les tables de disjoncteurs (courbes, calibrations, familles, chutes), les
-  protections, les familles de câbles, les fils EN 2853, les déclassements et le réseau citent leurs sources, mais leur
-  colonne Statut n'est pas lue (COLONNES_NORME). Elles n'en ont pas reçu.
+- **La troisième passe (20 octobre 2026)** : les tables de disjoncteurs (courbes, calibrations, familles, chutes), les
+  familles de câbles, les fils EN 2853 et les déclassements ont maintenant leur Source et leur Statut, que Volta lit.
+  - **Restent « vos tables », sans statut** : les quatre courbes ETA483 (ta feuille Base_de_données, recoupée sur les
+    fiches E-T-A 4120 et 483 à ±2 %) et les chutes de ton Excel (ATELIER, contacteur, diode, relais).
+  - **Vérifiés par deux sources** :
+    - 25 chutes de disjoncteur (MS3320N et Sensata 2TC, MS22073M et Sensata 7274) ;
+    - 8 calibrations (Sensata 6TC et 7274 contre leurs feuilles MS) ;
+    - 9 familles de disjoncteurs, dont l'AS33201 (½ à 25 A depuis la révision B) ;
+    - 25 familles de câbles ;
+    - 6 points de déclassement (les exemples écrits à la fois dans l'AC 43.13-1B et dans la MIL-W-5088L).
+  - **Une seule source** : les autres points de courbe sont des tracés Sensata ou Crouzet, et les autres déclassements
+    sont lus sur une figure de l'AC. Les paliers 2 s, 10 s et 1 min de l'EN 2853 n'ont aucune source publique.
+  - **Corrigé** : les familles 6TC et MS14154 vont de 1 à 20 A (MS14154D, Sensata), pas jusqu'à 35 A, qui est la gamme
+    du 9TC.
+  - **Trois écarts entre sources, à garder en tête** :
+    - à 2 A, 2,5 A et 3 A, la MS3320N et Sensata 2TC ne donnent pas la même chute ; Volta garde la valeur de la norme ;
+    - à 2 In, la courbe 2TC −54 °C est plus lente que sa propre table de calibration ;
+    - la table Sensata 6TC donne à 71 °C les valeurs que la ligne attribue à 90 °C et 121 °C.
 
 **Ce que toi seul peux trancher** : la famille LE (fibre, pas coaxial à 2,84 g/m) ; si tes retests écrivent C et c
 différemment ; la masse et la hauteur des modules E0599 de taille 20 ; s'il faut une ligne de contact 16 AWG en taille 12
