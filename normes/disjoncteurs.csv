@@ -2,577 +2,577 @@ Disjoncteurs — les courbes de disjonction à tension nominale d'un disjoncteur
 Un profil de charge (le démarrage, la transition, le permanent : un courant pendant une durée) doit rester À GAUCHE de ces courbes : le disjoncteur ne déclenche pas avant la fin de chaque phase. L'outil juge sur la courbe la plus rapide (125 °C) et dit la marge sur les autres ; sous le premier multiple d'une courbe, le disjoncteur ne déclenche jamais. En dessous de deux points, l'outil interpole en log-log.
 La famille ETA483 est celle des quatre courbes de la feuille du lecteur : la recherche R5 les a identifiées à la caractéristique temps-courant typique du disjoncteur E-T-A 483 (monopolaire compensé −55/+125 °C, 1-35 A, approuvé MS 3320 / prEN 2995) — identité à 1-4 % sur toute la plage 1 → 80 In. Les autres familles (2TC, 6TC, 5TC, 7274, EN2495) viennent des tracés vectoriels des fiches constructeur (Sensata, Crouzet), ±3 % sur le multiple, ±5 % sur le temps — le premier point de chaque courbe est le seuil lu au bout du graphique. La table Familles de disjoncteurs dit quelle famille de courbes prend chaque part number — un part number inconnu prend ETA483 (la feuille du lecteur).
 
-Famille;Courbe;Température;Multiple;Temps
-ETA483;125 °C;125;0,92361;4746,23649
-ETA483;125 °C;125;0,93618;3001,41218
-ETA483;125 °C;125;0,93197;1968,90110
-ETA483;125 °C;125;0,94466;1303,47467
-ETA483;125 °C;125;0,94466;895,16485
-ETA483;125 °C;125;0,94893;587,22024
-ETA483;125 °C;125;0,94466;395,95057
-ETA483;125 °C;125;0,94893;264,54530
-ETA483;125 °C;125;0,96185;180,01976
-ETA483;125 °C;125;0,96619;118,09137
-ETA483;125 °C;125;0,97056;78,90010
-ETA483;125 °C;125;0,98821;50,35405
-ETA483;125 °C;125;1,01531;34,58079
-ETA483;125 °C;125;1,04785;22,89357
-ETA483;125 °C;125;1,11611;15,86699
-ETA483;125 °C;125;1,18346;10,99704
-ETA483;125 °C;125;1,29608;7,44060
-ETA483;125 °C;125;1,43227;5,22829
-ETA483;125 °C;125;1,59951;3,75318
-ETA483;125 °C;125;1,78627;2,69426
-ETA483;125 °C;125;2,01593;1,93410
-ETA483;125 °C;125;2,26489;1,41140
-ETA483;125 °C;125;2,56956;1,02408
-ETA483;125 °C;125;2,87606;0,76376
-ETA483;125 °C;125;3,32231;0,55417
-ETA483;125 °C;125;3,83781;0,42095
-ETA483;125 °C;125;4,37374;0,30543
-ETA483;125 °C;125;4,98451;0,22989
-ETA483;125 °C;125;5,73202;0,17623
-ETA483;125 °C;125;6,68136;0,13143
-ETA483;125 °C;125;7,75292;0,09984
-ETA483;125 °C;125;8,99633;0,07584
-ETA483;125 °C;125;10,39221;0,05814
-ETA483;125 °C;125;12,05891;0,04498
-ETA483;125 °C;125;14,05613;0,03416
-ETA483;125 °C;125;16,38413;0,02692
-ETA483;125 °C;125;19,09771;0,02083
-ETA483;125 °C;125;22,46228;0,01641
-ETA483;125 °C;125;26,30081;0,01270
-ETA483;125 °C;125;30,93442;0,01038
-ETA483;125 °C;125;36,38438;0,00825
-ETA483;125 °C;125;42,79449;0,00644
-ETA483;125 °C;125;50,33392;0,00499
-ETA483;125 °C;125;59,20159;0,00411
-ETA483;125 °C;125;70,26216;0,00333
-ETA483;125 °C;125;81,53077;0,00277
-ETA483;23 °C min;23;1,04471;4697,54825
-ETA483;23 °C min;23;1,05022;3482,11012
-ETA483;23 °C min;23;1,05022;2270,32017
-ETA483;23 °C min;23;1,05575;1544,92443
-ETA483;23 °C min;23;1,06132;1040,11995
-ETA483;23 °C min;23;1,06692;700,26047
-ETA483;23 °C min;23;1,06692;502,68881
-ETA483;23 °C min;23;1,07820;345,75078
-ETA483;23 °C min;23;1,08388;227,85127
-ETA483;23 °C min;23;1,08960;150,15507
-ETA483;23 °C min;23;1,09534;103,27709
-ETA483;23 °C min;23;1,11276;71,79792
-ETA483;23 °C min;23;1,13045;50,45028
-ETA483;23 °C min;23;1,17284;34,69986
-ETA483;23 °C min;23;1,22969;24,12323
-ETA483;23 °C min;23;1,27580;17,69142
-ETA483;23 °C min;23;1,35177;13,11396
-ETA483;23 °C min;23;1,43982;9,72087
-ETA483;23 °C min;23;1,57447;6,75792
-ETA483;23 °C min;23;1,71268;5,11767
-ETA483;23 °C min;23;1,90262;3,79353
-ETA483;23 °C min;23;2,09152;2,84222
-ETA483;23 °C min;23;2,37287;2,12948
-ETA483;23 °C min;23;2,67795;1,56171
-ETA483;23 °C min;23;3,02225;1,19537
-ETA483;23 °C min;23;3,39293;0,90524
-ETA483;23 °C min;23;3,95191;0,66388
-ETA483;23 °C min;23;4,50716;0,50815
-ETA483;23 °C min;23;5,03343;0,38895
-ETA483;23 °C min;23;5,68057;0,30415
-ETA483;23 °C min;23;6,47871;0,23280
-ETA483;23 °C min;23;7,38897;0,17819
-ETA483;23 °C min;23;8,42714;0,13786
-ETA483;23 °C min;23;9,81548;0,10219
-ETA483;23 °C min;23;11,19458;0,07822
-ETA483;23 °C min;23;12,70048;0,06384
-ETA483;23 °C min;23;14,03502;0,05210
-ETA483;23 °C min;23;15,83949;0,04162
-ETA483;23 °C min;23;18,35223;0,03186
-ETA483;23 °C min;23;20,71178;0,02518
-ETA483;23 °C min;23;23,13013;0,02077
-ETA483;23 °C min;23;25,83087;0,01677
-ETA483;23 °C min;23;29,30562;0,01369
-ETA483;23 °C min;23;34,85921;0,01059
-ETA483;23 °C min;23;39,75702;0,00855
-ETA483;23 °C min;23;46,55101;0,00676
-ETA483;23 °C min;23;53,65287;0,00546
-ETA483;23 °C min;23;60,55096;0,00445
-ETA483;23 °C min;23;69,05852;0,00371
-ETA483;23 °C min;23;79,59415;0,00310
-ETA483;23 °C min;23;88,88769;0,00264
-ETA483;23 °C max;23;1,24924;4902,83083
-ETA483;23 °C max;23;1,26245;3752,75090
-ETA483;23 °C max;23;1,26245;2344,32968
-ETA483;23 °C max;23;1,26910;1480,23857
-ETA483;23 °C max;23;1,26910;1062,60337
-ETA483;23 °C max;23;1,28252;692,81263
-ETA483;23 °C max;23;1,30979;397,31384
-ETA483;23 °C max;23;1,32363;248,20057
-ETA483;23 °C max;23;1,36606;160,10441
-ETA483;23 °C max;23;1,43982;102,17865
-ETA483;23 °C max;23;1,54170;68,06005
-ETA483;23 °C max;23;1,61642;50,45028
-ETA483;23 °C max;23;1,71268;33,96564
-ETA483;23 °C max;23;1,82424;25,72165
-ETA483;23 °C max;23;1,96361;17,50326
-ETA483;23 °C max;23;2,11363;12,56488
-ETA483;23 °C max;23;2,37287;8,64216
-ETA483;23 °C max;23;2,70627;5,94410
-ETA483;23 °C max;23;3,07031;4,26703
-ETA483;23 °C max;23;3,42881;3,19699
-ETA483;23 °C max;23;3,93118;2,34460
-ETA483;23 °C max;23;4,50716;1,61262
-ETA483;23 °C max;23;5,16753;1,20822
-ETA483;23 °C max;23;5,86267;0,90524
-ETA483;23 °C max;23;6,58172;0,71548
-ETA483;23 °C max;23;7,46710;0,57158
-ETA483;23 °C max;23;8,29524;0,46649
-ETA483;23 °C max;23;9,21522;0,37667
-ETA483;23 °C max;23;10,62109;0,29141
-ETA483;23 °C max;23;11,79903;0,24298
-ETA483;23 °C max;23;13,38623;0,19830
-ETA483;23 °C max;23;15,10730;0,15842
-ETA483;23 °C max;23;17,22992;0,12929
-ETA483;23 °C max;23;20,06846;0,10110
-ETA483;23 °C max;23;22,76809;0,07991
-ETA483;23 °C max;23;26,37997;0,06384
-ETA483;23 °C max;23;29,92858;0,05266
-ETA483;23 °C max;23;33,24783;0,04391
-ETA483;23 °C max;23;39,75702;0,03397
-ETA483;23 °C max;23;45,10516;0,02772
-ETA483;23 °C max;23;53,09154;0,02168
-ETA483;23 °C max;23;60,23338;0,01887
-ETA483;23 °C max;23;71,27219;0,01573
-ETA483;23 °C max;23;81,28611;0,01354
-ETA483;23 °C max;23;90,77732;0,01179
-ETA483;−55 °C;-55;1,46850;4821,59437
-ETA483;−55 °C;-55;1,47430;3442,77332
-ETA483;−55 °C;-55;1,49185;2214,86939
-ETA483;−55 °C;-55;1,48598;1483,20913
-ETA483;−55 °C;-55;1,50366;1001,24244
-ETA483;−55 °C;-55;1,52156;633,88920
-ETA483;−55 °C;-55;1,56415;427,90821
-ETA483;−55 °C;-55;1,62067;275,28988
-ETA483;−55 °C;-55;1,68587;185,83497
-ETA483;−55 °C;-55;1,76758;106,85781
-ETA483;−55 °C;-55;1,83145;79,42158
-ETA483;−55 °C;-55;1,93542;54,48055
-ETA483;−55 °C;-55;2,02922;39,21407
-ETA483;−55 °C;-55;2,15290;28,22554
-ETA483;−55 °C;-55;2,33880;20,15394
-ETA483;−55 °C;-55;2,50100;15,97186
-ETA483;−55 °C;-55;2,74930;11,40442
-ETA483;−55 °C;-55;2,99851;8,75260
-ETA483;−55 °C;-55;3,27031;6,77148
-ETA483;−55 °C;-55;3,65216;5,11425
-ETA483;−55 °C;-55;4,11089;3,74066
-ETA483;−55 °C;-55;4,53689;2,91728
-ETA483;−55 °C;-55;5,00703;2,25696
-ETA483;−55 °C;-55;5,56965;1,80303
-ETA483;−55 °C;-55;6,24455;1,37273
-ETA483;−55 °C;-55;6,89165;1,07057
-ETA483;−55 °C;-55;7,63587;0,84842
-ETA483;−55 °C;-55;8,56115;0,65114
-ETA483;−55 °C;-55;9,52313;0,52018
-ETA483;−55 °C;-55;10,76166;0,39287
-ETA483;−55 °C;-55;12,25757;0,30395
-ETA483;−55 °C;-55;13,58123;0,24873
-ETA483;−55 °C;-55;15,28712;0,19711
-ETA483;−55 °C;-55;17,48090;0,15496
-ETA483;−55 °C;-55;19,83243;0,12281
-ETA483;−55 °C;-55;22,41171;0,09350
-ETA483;−55 °C;-55;26,03542;0,07410
-ETA483;−55 °C;-55;29,30563;0,05919
-ETA483;−55 °C;-55;32,72743;0,05042
-ETA483;−55 °C;-55;36,98378;0,03996
-ETA483;−55 °C;-55;41,62917;0,03404
-ETA483;−55 °C;-55;47,60314;0,02697
-ETA483;−55 °C;-55;54,86552;0,02190
-ETA483;−55 °C;-55;63,48572;0,01836
-ETA483;−55 °C;-55;73,17111;0,01539
-ETA483;−55 °C;-55;82,03768;0,01364
-ETA483;−55 °C;-55;93,07339;0,01181
-2TC;121 °C min;121;0,87;1000
-2TC;121 °C min;121;1,05;57,7
-2TC;121 °C min;121;1,10;37,5
-2TC;121 °C min;121;1,15;26,4
-2TC;121 °C min;121;1,20;19,3
-2TC;121 °C min;121;1,25;14,6
-2TC;121 °C min;121;1,30;11,3
-2TC;121 °C min;121;1,38;7,91
-2TC;121 °C min;121;1,45;6,03
-2TC;121 °C min;121;1,50;5,10
-2TC;121 °C min;121;1,65;3,52
-2TC;121 °C min;121;1,80;2,68
-2TC;121 °C min;121;2,00;1,97
-2TC;121 °C min;121;2,50;1,06
-2TC;121 °C min;121;3,00;0,664
-2TC;121 °C min;121;4,00;0,362
-2TC;121 °C min;121;5,00;0,233
-2TC;121 °C min;121;6,00;0,162
-2TC;121 °C min;121;8,00;0,0919
-2TC;25 °C min;25;1,13;1000
-2TC;25 °C min;25;1,15;589
-2TC;25 °C min;25;1,20;226
-2TC;25 °C min;25;1,25;104
-2TC;25 °C min;25;1,30;57,7
-2TC;25 °C min;25;1,38;32,6
-2TC;25 °C min;25;1,45;21,8
-2TC;25 °C min;25;1,50;17,1
-2TC;25 °C min;25;1,65;9,74
-2TC;25 °C min;25;1,80;6,51
-2TC;25 °C min;25;2,00;4,33
-2TC;25 °C min;25;2,50;2,17
-2TC;25 °C min;25;3,00;1,33
-2TC;25 °C min;25;4,00;0,656
-2TC;25 °C min;25;5,00;0,398
-2TC;25 °C min;25;6,00;0,27
-2TC;25 °C min;25;8,00;0,149
-2TC;25 °C max;25;1,32;1000
-2TC;25 °C max;25;1,38;307
-2TC;25 °C max;25;1,45;138
-2TC;25 °C max;25;1,50;92,8
-2TC;25 °C max;25;1,65;44,9
-2TC;25 °C max;25;1,80;28,6
-2TC;25 °C max;25;2,00;17,9
-2TC;25 °C max;25;2,50;7,83
-2TC;25 °C max;25;3,00;4,62
-2TC;25 °C max;25;4,00;2,43
-2TC;25 °C max;25;5,00;1,48
-2TC;25 °C max;25;6,00;1,01
-2TC;25 °C max;25;8,00;0,602
-2TC;25 °C max;25;10,0;0,411
-2TC;−54 °C max;-54;1,57;1000
-2TC;−54 °C max;-54;1,65;381
-2TC;−54 °C max;-54;1,80;141
-2TC;−54 °C max;-54;2,00;66,4
-2TC;−54 °C max;-54;2,50;23,4
-2TC;−54 °C max;-54;3,00;10,8
-2TC;−54 °C max;-54;4,00;4,72
-2TC;−54 °C max;-54;5,00;2,78
-2TC;−54 °C max;-54;6,00;1,87
-2TC;−54 °C max;-54;8,00;1,06
-6TC;90 °C min;90;1,02;988
-6TC;90 °C min;90;1,05;205
-6TC;90 °C min;90;1,10;61,0
-6TC;90 °C min;90;1,15;41,1
-6TC;90 °C min;90;1,20;28,9
-6TC;90 °C min;90;1,25;21,0
-6TC;90 °C min;90;1,30;15,8
-6TC;90 °C min;90;1,38;10,7
-6TC;90 °C min;90;1,45;8,07
-6TC;90 °C min;90;1,50;6,84
-6TC;90 °C min;90;1,65;4,95
-6TC;90 °C min;90;1,80;3,59
-6TC;90 °C min;90;2,00;2,52
-6TC;90 °C min;90;2,50;1,34
-6TC;90 °C min;90;3,00;0,844
-6TC;90 °C min;90;4,00;0,437
-6TC;90 °C min;90;5,00;0,273
-6TC;90 °C min;90;6,00;0,189
-6TC;90 °C min;90;8,00;0,109
-6TC;25 °C min;25;1,18;1000
-6TC;25 °C min;25;1,20;577
-6TC;25 °C min;25;1,25;147
-6TC;25 °C min;25;1,30;70,9
-6TC;25 °C min;25;1,38;38,3
-6TC;25 °C min;25;1,45;25,9
-6TC;25 °C min;25;1,50;20,5
-6TC;25 °C min;25;1,65;11,6
-6TC;25 °C min;25;1,80;7,68
-6TC;25 °C min;25;2,00;5,03
-6TC;25 °C min;25;2,50;2,40
-6TC;25 °C min;25;3,00;1,45
-6TC;25 °C min;25;4,00;0,725
-6TC;25 °C min;25;5,00;0,451
-6TC;25 °C min;25;6,00;0,316
-6TC;25 °C min;25;8,00;0,189
-6TC;25 °C min;25;10,0;0,132
-6TC;25 °C max;25;1,45;1000
-6TC;25 °C max;25;1,50;184
-6TC;25 °C max;25;1,65;55,6
-6TC;25 °C max;25;1,80;32,0
-6TC;25 °C max;25;2,00;19,0
-6TC;25 °C max;25;2,50;7,82
-6TC;25 °C max;25;3,00;4,44
-6TC;25 °C max;25;4,00;2,15
-6TC;25 °C max;25;5,00;1,34
-6TC;25 °C max;25;6,00;0,949
-6TC;25 °C max;25;8,00;0,591
-6TC;25 °C max;25;10,0;0,433
-6TC;−54 °C max;-54;1,78;988
-6TC;−54 °C max;-54;1,80;350
-6TC;−54 °C max;-54;2,00;48,2
-6TC;−54 °C max;-54;2,50;14,4
-6TC;−54 °C max;-54;3,00;8,12
-6TC;−54 °C max;-54;4,00;3,89
-6TC;−54 °C max;-54;5,00;2,36
-6TC;−54 °C max;-54;6,00;1,62
-6TC;−54 °C max;-54;8,00;0,944
-6TC;−54 °C max;-54;10,0;0,647
-5TC;125 °C min;125;1,00;1002
-5TC;125 °C min;125;1,05;18,7
-5TC;125 °C min;125;1,10;12,7
-5TC;125 °C min;125;1,15;9,46
-5TC;125 °C min;125;1,20;7,44
-5TC;125 °C min;125;1,25;6,05
-5TC;125 °C min;125;1,30;5,03
-5TC;125 °C min;125;1,38;3,88
-5TC;125 °C min;125;1,45;3,19
-5TC;125 °C min;125;1,50;2,81
-5TC;125 °C min;125;1,65;2,01
-5TC;125 °C min;125;1,80;1,54
-5TC;125 °C min;125;2,00;1,17
-5TC;125 °C min;125;2,50;0,703
-5TC;125 °C min;125;3,00;0,479
-5TC;125 °C min;125;4,00;0,268
-5TC;125 °C min;125;5,00;0,173
-5TC;125 °C min;125;6,00;0,122
-5TC;125 °C min;125;8,00;0,0709
-5TC;125 °C min;125;10,0;0,0468
-5TC;125 °C min;125;15,0;0,0222
-5TC;23 °C min;23;1,01;1002
-5TC;23 °C min;23;1,05;47,3
-5TC;23 °C min;23;1,10;34,2
-5TC;23 °C min;23;1,15;26,7
-5TC;23 °C min;23;1,20;21,8
-5TC;23 °C min;23;1,25;18,2
-5TC;23 °C min;23;1,30;15,4
-5TC;23 °C min;23;1,38;12,2
-5TC;23 °C min;23;1,45;10,2
-5TC;23 °C min;23;1,50;9,08
-5TC;23 °C min;23;1,65;6,62
-5TC;23 °C min;23;1,80;5,05
-5TC;23 °C min;23;2,00;3,70
-5TC;23 °C min;23;2,50;2,03
-5TC;23 °C min;23;3,00;1,29
-5TC;23 °C min;23;4,00;0,676
-5TC;23 °C min;23;5,00;0,423
-5TC;23 °C min;23;6,00;0,292
-5TC;23 °C min;23;8,00;0,167
-5TC;23 °C min;23;10,0;0,11
-5TC;23 °C min;23;15,0;0,0528
-5TC;23 °C max;23;1,35;1002
-5TC;23 °C max;23;1,38;323
-5TC;23 °C max;23;1,45;190
-5TC;23 °C max;23;1,50;138
-5TC;23 °C max;23;1,65;61,2
-5TC;23 °C max;23;1,80;36,6
-5TC;23 °C max;23;2,00;22,8
-5TC;23 °C max;23;2,50;10,2
-5TC;23 °C max;23;3,00;5,89
-5TC;23 °C max;23;4,00;2,63
-5TC;23 °C max;23;5,00;1,50
-5TC;23 °C max;23;6,00;1,01
-5TC;23 °C max;23;8,00;0,565
-5TC;23 °C max;23;10,0;0,373
-5TC;23 °C max;23;15,0;0,185
-5TC;−54 °C max;-54;1,59;1002
-5TC;−54 °C max;-54;1,65;290
-5TC;−54 °C max;-54;1,80;126
-5TC;−54 °C max;-54;2,00;66,1
-5TC;−54 °C max;-54;2,50;22,6
-5TC;−54 °C max;-54;3,00;12,0
-5TC;−54 °C max;-54;4,00;5,23
-5TC;−54 °C max;-54;5,00;2,87
-5TC;−54 °C max;-54;6,00;1,86
-5TC;−54 °C max;-54;8,00;1,02
-5TC;−54 °C max;-54;10,0;0,664
-5TC;−54 °C max;-54;15,0;0,325
-7274;71 °C min (partielle);71;0,874;999
-7274;71 °C min (partielle);71;1,05;11,2
-7274;71 °C min (partielle);71;1,10;7,88
-7274;71 °C min (partielle);71;1,15;5,91
-7274;71 °C min (partielle);71;1,20;4,66
-7274;71 °C min (partielle);71;1,292;3,28
-7274;71 °C min (partielle);71;1,409;2,17
-7274;71 °C min (partielle);71;1,566;1,45
-7274;71 °C min (partielle);71;1,958;0,697
-7274;71 °C min (partielle);71;2,349;0,422
-7274;71 °C min (partielle);71;3,132;0,221
-7274;71 °C min (partielle);71;3,915;0,138
-7274;71 °C min (partielle);71;4,698;0,0985
-7274;71 °C min (partielle);71;6,264;0,0615
-7274;25 °C min;25;1,11;999
-7274;25 °C min;25;1,15;88,9
-7274;25 °C min;25;1,20;45,3
-7274;25 °C min;25;1,25;25,0
-7274;25 °C min;25;1,30;15,9
-7274;25 °C min;25;1,38;9,68
-7274;25 °C min;25;1,45;6,87
-7274;25 °C min;25;1,50;5,55
-7274;25 °C min;25;1,65;3,28
-7274;25 °C min;25;1,80;2,17
-7274;25 °C min;25;2,00;1,45
-7274;25 °C min;25;2,50;0,697
-7274;25 °C min;25;3,00;0,422
-7274;25 °C min;25;4,00;0,221
-7274;25 °C min;25;5,00;0,138
-7274;25 °C min;25;6,00;0,0985
-7274;25 °C min;25;8,00;0,0615
-7274;25 °C max;25;1,41;999
-7274;25 °C max;25;1,45;201
-7274;25 °C max;25;1,50;124
-7274;25 °C max;25;1,65;48,3
-7274;25 °C max;25;1,80;22,5
-7274;25 °C max;25;2,00;11,9
-7274;25 °C max;25;2,50;5,36
-7274;25 °C max;25;3,00;3,25
-7274;25 °C max;25;4,00;1,69
-7274;25 °C max;25;5,00;1,11
-7274;25 °C max;25;6,00;0,828
-7274;25 °C max;25;8,00;0,572
-7274;−55 °C max (partielle);-55;1,75;1007
-7274;−55 °C max (partielle);-55;1,80;334
-7274;−55 °C max (partielle);-55;2,00;82,1
-7274;−55 °C max (partielle);-55;2,50;27,1
-7274;−55 °C max (partielle);-55;3,00;14,4
-MS25244;25 °C min (partielle);25;1,15;3600
-MS25244;25 °C min (partielle);25;2,00;15
-MS25244;25 °C min (partielle);25;4,00;2
-MS25244;25 °C min (partielle);25;6,00;1,0
-MS25244;25 °C max (partielle);25;1,38;3600
-MS25244;25 °C max (partielle);25;2,00;55
-MS25244;25 °C max (partielle);25;4,00;7
-MS25244;25 °C max (partielle);25;6,00;3,5
-EN2495;125 °C min;125;1,01;983
-EN2495;125 °C min;125;1,05;79,3
-EN2495;125 °C min;125;1,10;36,3
-EN2495;125 °C min;125;1,15;22,3
-EN2495;125 °C min;125;1,20;16,1
-EN2495;125 °C min;125;1,25;11,7
-EN2495;125 °C min;125;1,30;9,30
-EN2495;125 °C min;125;1,38;6,59
-EN2495;125 °C min;125;1,45;5,16
-EN2495;125 °C min;125;1,50;4,46
-EN2495;125 °C min;125;1,65;2,97
-EN2495;125 °C min;125;1,80;2,09
-EN2495;125 °C min;125;2,00;1,47
-EN2495;125 °C min;125;2,50;0,784
-EN2495;125 °C min;125;3,00;0,517
-EN2495;125 °C min;125;4,00;0,23
-EN2495;125 °C min;125;5,00;0,149
-EN2495;125 °C min;125;6,00;0,105
-EN2495;125 °C min;125;8,00;0,062
-EN2495;25 °C min;25;1,08;1000
-EN2495;25 °C min;25;1,10;803
-EN2495;25 °C min;25;1,15;208
-EN2495;25 °C min;25;1,20;53,4
-EN2495;25 °C min;25;1,25;34,3
-EN2495;25 °C min;25;1,30;26,2
-EN2495;25 °C min;25;1,38;17,6
-EN2495;25 °C min;25;1,45;13,7
-EN2495;25 °C min;25;1,50;11,6
-EN2495;25 °C min;25;1,65;7,45
-EN2495;25 °C min;25;1,80;5,52
-EN2495;25 °C min;25;2,00;3,87
-EN2495;25 °C min;25;2,50;2,10
-EN2495;25 °C min;25;3,00;1,26
-EN2495;25 °C min;25;4,00;0,62
-EN2495;25 °C min;25;5,00;0,385
-EN2495;25 °C min;25;6,00;0,264
-EN2495;25 °C min;25;8,00;0,158
-EN2495;25 °C min;25;10,0;0,106
-EN2495;25 °C max;25;1,30;983
-EN2495;25 °C max;25;1,38;93,9
-EN2495;25 °C max;25;1,45;62,8
-EN2495;25 °C max;25;1,50;51,7
-EN2495;25 °C max;25;1,65;29,9
-EN2495;25 °C max;25;1,80;19,2
-EN2495;25 °C max;25;2,00;12,6
-EN2495;25 °C max;25;2,50;6,48
-EN2495;25 °C max;25;3,00;3,89
-EN2495;25 °C max;25;4,00;2,03
-EN2495;25 °C max;25;5,00;1,34
-EN2495;25 °C max;25;6,00;0,949
-EN2495;25 °C max;25;8,00;0,586
-EN2495;25 °C max;25;10,0;0,431
-EN2495;−55 °C max;-55;1,51;966
-EN2495;−55 °C max;-55;1,65;65,0
-EN2495;−55 °C max;-55;1,80;34,0
-EN2495;−55 °C max;-55;2,00;23,1
-EN2495;−55 °C max;-55;2,50;10,5
-EN2495;−55 °C max;-55;3,00;6,67
-EN2495;−55 °C max;-55;4,00;3,50
-EN2495;−55 °C max;-55;5,00;2,15
-EN2495;−55 °C max;-55;6,00;1,50
-EN2495;−55 °C max;-55;8,00;0,975
-EN2495;−55 °C max;-55;10,0;0,695
+Famille;Courbe;Température;Multiple;Temps;Source;Statut
+ETA483;125 °C;125;0,92361;4746,23649;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;0,93618;3001,41218;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;0,93197;1968,90110;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;0,94466;1303,47467;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;0,94466;895,16485;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;0,94893;587,22024;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;0,94466;395,95057;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;0,94893;264,54530;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;0,96185;180,01976;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;0,96619;118,09137;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;0,97056;78,90010;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;0,98821;50,35405;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;1,01531;34,58079;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;1,04785;22,89357;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;1,11611;15,86699;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;1,18346;10,99704;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;1,29608;7,44060;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;1,43227;5,22829;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;1,59951;3,75318;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;1,78627;2,69426;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;2,01593;1,93410;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;2,26489;1,41140;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;2,56956;1,02408;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;2,87606;0,76376;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;3,32231;0,55417;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;3,83781;0,42095;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;4,37374;0,30543;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;4,98451;0,22989;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;5,73202;0,17623;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;6,68136;0,13143;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;7,75292;0,09984;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;8,99633;0,07584;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;10,39221;0,05814;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;12,05891;0,04498;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;14,05613;0,03416;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;16,38413;0,02692;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;19,09771;0,02083;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;22,46228;0,01641;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;26,30081;0,01270;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;30,93442;0,01038;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;36,38438;0,00825;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;42,79449;0,00644;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;50,33392;0,00499;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;59,20159;0,00411;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;70,26216;0,00333;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;125 °C;125;81,53077;0,00277;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;1,04471;4697,54825;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;1,05022;3482,11012;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;1,05022;2270,32017;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;1,05575;1544,92443;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;1,06132;1040,11995;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;1,06692;700,26047;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;1,06692;502,68881;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;1,07820;345,75078;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;1,08388;227,85127;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;1,08960;150,15507;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;1,09534;103,27709;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;1,11276;71,79792;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;1,13045;50,45028;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;1,17284;34,69986;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;1,22969;24,12323;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;1,27580;17,69142;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;1,35177;13,11396;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;1,43982;9,72087;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;1,57447;6,75792;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;1,71268;5,11767;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;1,90262;3,79353;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;2,09152;2,84222;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;2,37287;2,12948;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;2,67795;1,56171;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;3,02225;1,19537;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;3,39293;0,90524;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;3,95191;0,66388;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;4,50716;0,50815;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;5,03343;0,38895;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;5,68057;0,30415;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;6,47871;0,23280;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;7,38897;0,17819;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;8,42714;0,13786;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;9,81548;0,10219;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;11,19458;0,07822;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;12,70048;0,06384;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;14,03502;0,05210;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;15,83949;0,04162;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;18,35223;0,03186;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;20,71178;0,02518;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;23,13013;0,02077;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;25,83087;0,01677;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;29,30562;0,01369;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;34,85921;0,01059;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;39,75702;0,00855;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;46,55101;0,00676;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;53,65287;0,00546;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;60,55096;0,00445;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;69,05852;0,00371;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;79,59415;0,00310;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C min;23;88,88769;0,00264;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;1,24924;4902,83083;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;1,26245;3752,75090;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;1,26245;2344,32968;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;1,26910;1480,23857;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;1,26910;1062,60337;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;1,28252;692,81263;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;1,30979;397,31384;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;1,32363;248,20057;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;1,36606;160,10441;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;1,43982;102,17865;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;1,54170;68,06005;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;1,61642;50,45028;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;1,71268;33,96564;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;1,82424;25,72165;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;1,96361;17,50326;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;2,11363;12,56488;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;2,37287;8,64216;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;2,70627;5,94410;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;3,07031;4,26703;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;3,42881;3,19699;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;3,93118;2,34460;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;4,50716;1,61262;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;5,16753;1,20822;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;5,86267;0,90524;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;6,58172;0,71548;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;7,46710;0,57158;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;8,29524;0,46649;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;9,21522;0,37667;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;10,62109;0,29141;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;11,79903;0,24298;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;13,38623;0,19830;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;15,10730;0,15842;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;17,22992;0,12929;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;20,06846;0,10110;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;22,76809;0,07991;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;26,37997;0,06384;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;29,92858;0,05266;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;33,24783;0,04391;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;39,75702;0,03397;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;45,10516;0,02772;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;53,09154;0,02168;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;60,23338;0,01887;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;71,27219;0,01573;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;81,28611;0,01354;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;23 °C max;23;90,77732;0,01179;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;1,46850;4821,59437;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;1,47430;3442,77332;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;1,49185;2214,86939;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;1,48598;1483,20913;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;1,50366;1001,24244;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;1,52156;633,88920;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;1,56415;427,90821;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;1,62067;275,28988;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;1,68587;185,83497;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;1,76758;106,85781;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;1,83145;79,42158;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;1,93542;54,48055;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;2,02922;39,21407;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;2,15290;28,22554;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;2,33880;20,15394;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;2,50100;15,97186;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;2,74930;11,40442;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;2,99851;8,75260;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;3,27031;6,77148;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;3,65216;5,11425;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;4,11089;3,74066;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;4,53689;2,91728;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;5,00703;2,25696;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;5,56965;1,80303;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;6,24455;1,37273;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;6,89165;1,07057;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;7,63587;0,84842;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;8,56115;0,65114;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;9,52313;0,52018;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;10,76166;0,39287;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;12,25757;0,30395;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;13,58123;0,24873;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;15,28712;0,19711;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;17,48090;0,15496;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;19,83243;0,12281;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;22,41171;0,09350;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;26,03542;0,07410;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;29,30563;0,05919;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;32,72743;0,05042;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;36,98378;0,03996;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;41,62917;0,03404;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;47,60314;0,02697;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;54,86552;0,02190;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;63,48572;0,01836;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;73,17111;0,01539;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;82,03768;0,01364;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+ETA483;−55 °C;-55;93,07339;0,01181;l’Excel du lecteur, feuille Base_de_données — recoupée sur les fiches E-T-A 4120 Issue C et 483 à ±2 % (passe de corroboration, octobre 2026)
+2TC;121 °C min;121;0,87;1000;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;121 °C min;121;1,05;57,7;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;121 °C min;121;1,10;37,5;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;121 °C min;121;1,15;26,4;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;121 °C min;121;1,20;19,3;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;121 °C min;121;1,25;14,6;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;121 °C min;121;1,30;11,3;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;121 °C min;121;1,38;7,91;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;121 °C min;121;1,45;6,03;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;121 °C min;121;1,50;5,10;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;121 °C min;121;1,65;3,52;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;121 °C min;121;1,80;2,68;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;121 °C min;121;2,00;1,97;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;121 °C min;121;2,50;1,06;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;121 °C min;121;3,00;0,664;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;121 °C min;121;4,00;0,362;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;121 °C min;121;5,00;0,233;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;121 °C min;121;6,00;0,162;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;121 °C min;121;8,00;0,0919;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C min;25;1,13;1000;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C min;25;1,15;589;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C min;25;1,20;226;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C min;25;1,25;104;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C min;25;1,30;57,7;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C min;25;1,38;32,6;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C min;25;1,45;21,8;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C min;25;1,50;17,1;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C min;25;1,65;9,74;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C min;25;1,80;6,51;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C min;25;2,00;4,33;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C min;25;2,50;2,17;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C min;25;3,00;1,33;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C min;25;4,00;0,656;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C min;25;5,00;0,398;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C min;25;6,00;0,27;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C min;25;8,00;0,149;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C max;25;1,32;1000;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C max;25;1,38;307;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C max;25;1,45;138;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C max;25;1,50;92,8;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C max;25;1,65;44,9;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C max;25;1,80;28,6;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C max;25;2,00;17,9;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C max;25;2,50;7,83;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C max;25;3,00;4,62;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C max;25;4,00;2,43;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C max;25;5,00;1,48;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C max;25;6,00;1,01;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C max;25;8,00;0,602;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;25 °C max;25;10,0;0,411;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps
+2TC;−54 °C max;-54;1,57;1000;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps — à 2 In le tracé donne 66 s, la table de calibration Sensata 35 s au plus et la MS3320N 40 s : la protection se juge sur la table
+2TC;−54 °C max;-54;1,65;381;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps — à 2 In le tracé donne 66 s, la table de calibration Sensata 35 s au plus et la MS3320N 40 s : la protection se juge sur la table
+2TC;−54 °C max;-54;1,80;141;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps — à 2 In le tracé donne 66 s, la table de calibration Sensata 35 s au plus et la MS3320N 40 s : la protection se juge sur la table
+2TC;−54 °C max;-54;2,00;66,4;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps — à 2 In le tracé donne 66 s, la table de calibration Sensata 35 s au plus et la MS3320N 40 s : la protection se juge sur la table
+2TC;−54 °C max;-54;2,50;23,4;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps — à 2 In le tracé donne 66 s, la table de calibration Sensata 35 s au plus et la MS3320N 40 s : la protection se juge sur la table
+2TC;−54 °C max;-54;3,00;10,8;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps — à 2 In le tracé donne 66 s, la table de calibration Sensata 35 s au plus et la MS3320N 40 s : la protection se juge sur la table
+2TC;−54 °C max;-54;4,00;4,72;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps — à 2 In le tracé donne 66 s, la table de calibration Sensata 35 s au plus et la MS3320N 40 s : la protection se juge sur la table
+2TC;−54 °C max;-54;5,00;2,78;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps — à 2 In le tracé donne 66 s, la table de calibration Sensata 35 s au plus et la MS3320N 40 s : la protection se juge sur la table
+2TC;−54 °C max;-54;6,00;1,87;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps — à 2 In le tracé donne 66 s, la table de calibration Sensata 35 s au plus et la MS3320N 40 s : la protection se juge sur la table
+2TC;−54 °C max;-54;8,00;1,06;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 2TC (2018), relevé au vecteur, ±3 % sur le multiple, ±5 % sur le temps — à 2 In le tracé donne 66 s, la table de calibration Sensata 35 s au plus et la MS3320N 40 s : la protection se juge sur la table
+6TC;90 °C min;90;1,02;988;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps — la fiche de 2018 donne cette bande à 71 °C, pas à 90 °C
+6TC;90 °C min;90;1,05;205;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps — la fiche de 2018 donne cette bande à 71 °C, pas à 90 °C
+6TC;90 °C min;90;1,10;61,0;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps — la fiche de 2018 donne cette bande à 71 °C, pas à 90 °C
+6TC;90 °C min;90;1,15;41,1;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps — la fiche de 2018 donne cette bande à 71 °C, pas à 90 °C
+6TC;90 °C min;90;1,20;28,9;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps — la fiche de 2018 donne cette bande à 71 °C, pas à 90 °C
+6TC;90 °C min;90;1,25;21,0;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps — la fiche de 2018 donne cette bande à 71 °C, pas à 90 °C
+6TC;90 °C min;90;1,30;15,8;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps — la fiche de 2018 donne cette bande à 71 °C, pas à 90 °C
+6TC;90 °C min;90;1,38;10,7;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps — la fiche de 2018 donne cette bande à 71 °C, pas à 90 °C
+6TC;90 °C min;90;1,45;8,07;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps — la fiche de 2018 donne cette bande à 71 °C, pas à 90 °C
+6TC;90 °C min;90;1,50;6,84;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps — la fiche de 2018 donne cette bande à 71 °C, pas à 90 °C
+6TC;90 °C min;90;1,65;4,95;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps — la fiche de 2018 donne cette bande à 71 °C, pas à 90 °C
+6TC;90 °C min;90;1,80;3,59;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps — la fiche de 2018 donne cette bande à 71 °C, pas à 90 °C
+6TC;90 °C min;90;2,00;2,52;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps — la fiche de 2018 donne cette bande à 71 °C, pas à 90 °C
+6TC;90 °C min;90;2,50;1,34;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps — la fiche de 2018 donne cette bande à 71 °C, pas à 90 °C
+6TC;90 °C min;90;3,00;0,844;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps — la fiche de 2018 donne cette bande à 71 °C, pas à 90 °C
+6TC;90 °C min;90;4,00;0,437;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps — la fiche de 2018 donne cette bande à 71 °C, pas à 90 °C
+6TC;90 °C min;90;5,00;0,273;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps — la fiche de 2018 donne cette bande à 71 °C, pas à 90 °C
+6TC;90 °C min;90;6,00;0,189;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps — la fiche de 2018 donne cette bande à 71 °C, pas à 90 °C
+6TC;90 °C min;90;8,00;0,109;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps — la fiche de 2018 donne cette bande à 71 °C, pas à 90 °C
+6TC;25 °C min;25;1,18;1000;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C min;25;1,20;577;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C min;25;1,25;147;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C min;25;1,30;70,9;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C min;25;1,38;38,3;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C min;25;1,45;25,9;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C min;25;1,50;20,5;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C min;25;1,65;11,6;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C min;25;1,80;7,68;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C min;25;2,00;5,03;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C min;25;2,50;2,40;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C min;25;3,00;1,45;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C min;25;4,00;0,725;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C min;25;5,00;0,451;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C min;25;6,00;0,316;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C min;25;8,00;0,189;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C min;25;10,0;0,132;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C max;25;1,45;1000;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C max;25;1,50;184;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C max;25;1,65;55,6;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C max;25;1,80;32,0;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C max;25;2,00;19,0;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C max;25;2,50;7,82;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C max;25;3,00;4,44;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C max;25;4,00;2,15;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C max;25;5,00;1,34;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C max;25;6,00;0,949;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C max;25;8,00;0,591;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;25 °C max;25;10,0;0,433;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;−54 °C max;-54;1,78;988;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;−54 °C max;-54;1,80;350;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;−54 °C max;-54;2,00;48,2;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;−54 °C max;-54;2,50;14,4;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;−54 °C max;-54;3,00;8,12;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;−54 °C max;-54;4,00;3,89;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;−54 °C max;-54;5,00;2,36;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;−54 °C max;-54;6,00;1,62;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;−54 °C max;-54;8,00;0,944;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+6TC;−54 °C max;-54;10,0;0,647;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 6TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;125 °C min;125;1,00;1002;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;125 °C min;125;1,05;18,7;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;125 °C min;125;1,10;12,7;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;125 °C min;125;1,15;9,46;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;125 °C min;125;1,20;7,44;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;125 °C min;125;1,25;6,05;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;125 °C min;125;1,30;5,03;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;125 °C min;125;1,38;3,88;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;125 °C min;125;1,45;3,19;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;125 °C min;125;1,50;2,81;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;125 °C min;125;1,65;2,01;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;125 °C min;125;1,80;1,54;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;125 °C min;125;2,00;1,17;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;125 °C min;125;2,50;0,703;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;125 °C min;125;3,00;0,479;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;125 °C min;125;4,00;0,268;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;125 °C min;125;5,00;0,173;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;125 °C min;125;6,00;0,122;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;125 °C min;125;8,00;0,0709;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;125 °C min;125;10,0;0,0468;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;125 °C min;125;15,0;0,0222;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C min;23;1,01;1002;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C min;23;1,05;47,3;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C min;23;1,10;34,2;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C min;23;1,15;26,7;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C min;23;1,20;21,8;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C min;23;1,25;18,2;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C min;23;1,30;15,4;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C min;23;1,38;12,2;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C min;23;1,45;10,2;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C min;23;1,50;9,08;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C min;23;1,65;6,62;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C min;23;1,80;5,05;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C min;23;2,00;3,70;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C min;23;2,50;2,03;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C min;23;3,00;1,29;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C min;23;4,00;0,676;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C min;23;5,00;0,423;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C min;23;6,00;0,292;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C min;23;8,00;0,167;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C min;23;10,0;0,11;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C min;23;15,0;0,0528;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C max;23;1,35;1002;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C max;23;1,38;323;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C max;23;1,45;190;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C max;23;1,50;138;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C max;23;1,65;61,2;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C max;23;1,80;36,6;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C max;23;2,00;22,8;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C max;23;2,50;10,2;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C max;23;3,00;5,89;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C max;23;4,00;2,63;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C max;23;5,00;1,50;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C max;23;6,00;1,01;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C max;23;8,00;0,565;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C max;23;10,0;0,373;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;23 °C max;23;15,0;0,185;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;−54 °C max;-54;1,59;1002;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;−54 °C max;-54;1,65;290;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;−54 °C max;-54;1,80;126;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;−54 °C max;-54;2,00;66,1;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;−54 °C max;-54;2,50;22,6;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;−54 °C max;-54;3,00;12,0;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;−54 °C max;-54;4,00;5,23;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;−54 °C max;-54;5,00;2,87;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;−54 °C max;-54;6,00;1,86;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;−54 °C max;-54;8,00;1,02;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;−54 °C max;-54;10,0;0,664;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+5TC;−54 °C max;-54;15,0;0,325;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : le tracé de la fiche Sensata 5TC (2018), ±3 % sur le multiple, ±5 % sur le temps
+7274;71 °C min (partielle);71;0,874;999;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 % — courbe partielle : Volta ne la prolonge pas au-delà de son dernier point
+7274;71 °C min (partielle);71;1,05;11,2;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 % — courbe partielle : Volta ne la prolonge pas au-delà de son dernier point
+7274;71 °C min (partielle);71;1,10;7,88;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 % — courbe partielle : Volta ne la prolonge pas au-delà de son dernier point
+7274;71 °C min (partielle);71;1,15;5,91;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 % — courbe partielle : Volta ne la prolonge pas au-delà de son dernier point
+7274;71 °C min (partielle);71;1,20;4,66;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 % — courbe partielle : Volta ne la prolonge pas au-delà de son dernier point
+7274;71 °C min (partielle);71;1,292;3,28;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 % — courbe partielle : Volta ne la prolonge pas au-delà de son dernier point
+7274;71 °C min (partielle);71;1,409;2,17;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 % — courbe partielle : Volta ne la prolonge pas au-delà de son dernier point
+7274;71 °C min (partielle);71;1,566;1,45;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 % — courbe partielle : Volta ne la prolonge pas au-delà de son dernier point
+7274;71 °C min (partielle);71;1,958;0,697;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 % — courbe partielle : Volta ne la prolonge pas au-delà de son dernier point
+7274;71 °C min (partielle);71;2,349;0,422;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 % — courbe partielle : Volta ne la prolonge pas au-delà de son dernier point
+7274;71 °C min (partielle);71;3,132;0,221;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 % — courbe partielle : Volta ne la prolonge pas au-delà de son dernier point
+7274;71 °C min (partielle);71;3,915;0,138;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 % — courbe partielle : Volta ne la prolonge pas au-delà de son dernier point
+7274;71 °C min (partielle);71;4,698;0,0985;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 % — courbe partielle : Volta ne la prolonge pas au-delà de son dernier point
+7274;71 °C min (partielle);71;6,264;0,0615;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 % — courbe partielle : Volta ne la prolonge pas au-delà de son dernier point
+7274;25 °C min;25;1,11;999;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C min;25;1,15;88,9;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C min;25;1,20;45,3;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C min;25;1,25;25,0;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C min;25;1,30;15,9;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C min;25;1,38;9,68;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C min;25;1,45;6,87;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C min;25;1,50;5,55;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C min;25;1,65;3,28;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C min;25;1,80;2,17;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C min;25;2,00;1,45;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C min;25;2,50;0,697;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C min;25;3,00;0,422;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C min;25;4,00;0,221;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C min;25;5,00;0,138;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C min;25;6,00;0,0985;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C min;25;8,00;0,0615;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C max;25;1,41;999;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C max;25;1,45;201;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C max;25;1,50;124;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C max;25;1,65;48,3;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C max;25;1,80;22,5;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C max;25;2,00;11,9;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C max;25;2,50;5,36;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C max;25;3,00;3,25;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C max;25;4,00;1,69;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C max;25;5,00;1,11;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C max;25;6,00;0,828;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;25 °C max;25;8,00;0,572;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 %
+7274;−55 °C max (partielle);-55;1,75;1007;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 % — courbe partielle : Volta ne la prolonge pas au-delà de son dernier point
+7274;−55 °C max (partielle);-55;1,80;334;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 % — courbe partielle : Volta ne la prolonge pas au-delà de son dernier point
+7274;−55 °C max (partielle);-55;2,00;82,1;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 % — courbe partielle : Volta ne la prolonge pas au-delà de son dernier point
+7274;−55 °C max (partielle);-55;2,50;27,1;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 % — courbe partielle : Volta ne la prolonge pas au-delà de son dernier point
+7274;−55 °C max (partielle);-55;3,00;14,4;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la figure de la fiche Sensata 7274 (2018), lue au pixel à ±3,5 % — courbe partielle : Volta ne la prolonge pas au-delà de son dernier point
+MS25244;25 °C min (partielle);25;1,15;3600;MS25244R (https://everyspec.com/MS-Specs/MS2/MS25000-MS25999/MS25244R_42403/);déduit — construite des points de la feuille MS25244R table II à 25 °C : tenue 1,15 et déclenchement 1,38 In en une heure, 200 % 15 à 55 s, 400 % 2 à 7 s, 600 % 1,0 à 3,5 s
+MS25244;25 °C min (partielle);25;2,00;15;MS25244R (https://everyspec.com/MS-Specs/MS2/MS25000-MS25999/MS25244R_42403/);déduit — construite des points de la feuille MS25244R table II à 25 °C : tenue 1,15 et déclenchement 1,38 In en une heure, 200 % 15 à 55 s, 400 % 2 à 7 s, 600 % 1,0 à 3,5 s
+MS25244;25 °C min (partielle);25;4,00;2;MS25244R (https://everyspec.com/MS-Specs/MS2/MS25000-MS25999/MS25244R_42403/);déduit — construite des points de la feuille MS25244R table II à 25 °C : tenue 1,15 et déclenchement 1,38 In en une heure, 200 % 15 à 55 s, 400 % 2 à 7 s, 600 % 1,0 à 3,5 s
+MS25244;25 °C min (partielle);25;6,00;1,0;MS25244R (https://everyspec.com/MS-Specs/MS2/MS25000-MS25999/MS25244R_42403/);déduit — construite des points de la feuille MS25244R table II à 25 °C : tenue 1,15 et déclenchement 1,38 In en une heure, 200 % 15 à 55 s, 400 % 2 à 7 s, 600 % 1,0 à 3,5 s
+MS25244;25 °C max (partielle);25;1,38;3600;MS25244R (https://everyspec.com/MS-Specs/MS2/MS25000-MS25999/MS25244R_42403/);déduit — construite des points de la feuille MS25244R table II à 25 °C : tenue 1,15 et déclenchement 1,38 In en une heure, 200 % 15 à 55 s, 400 % 2 à 7 s, 600 % 1,0 à 3,5 s
+MS25244;25 °C max (partielle);25;2,00;55;MS25244R (https://everyspec.com/MS-Specs/MS2/MS25000-MS25999/MS25244R_42403/);déduit — construite des points de la feuille MS25244R table II à 25 °C : tenue 1,15 et déclenchement 1,38 In en une heure, 200 % 15 à 55 s, 400 % 2 à 7 s, 600 % 1,0 à 3,5 s
+MS25244;25 °C max (partielle);25;4,00;7;MS25244R (https://everyspec.com/MS-Specs/MS2/MS25000-MS25999/MS25244R_42403/);déduit — construite des points de la feuille MS25244R table II à 25 °C : tenue 1,15 et déclenchement 1,38 In en une heure, 200 % 15 à 55 s, 400 % 2 à 7 s, 600 % 1,0 à 3,5 s
+MS25244;25 °C max (partielle);25;6,00;3,5;MS25244R (https://everyspec.com/MS-Specs/MS2/MS25000-MS25999/MS25244R_42403/);déduit — construite des points de la feuille MS25244R table II à 25 °C : tenue 1,15 et déclenchement 1,38 In en une heure, 200 % 15 à 55 s, 400 % 2 à 7 s, 600 % 1,0 à 3,5 s
+EN2495;125 °C min;125;1,01;983;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;125 °C min;125;1,05;79,3;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;125 °C min;125;1,10;36,3;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;125 °C min;125;1,15;22,3;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;125 °C min;125;1,20;16,1;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;125 °C min;125;1,25;11,7;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;125 °C min;125;1,30;9,30;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;125 °C min;125;1,38;6,59;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;125 °C min;125;1,45;5,16;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;125 °C min;125;1,50;4,46;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;125 °C min;125;1,65;2,97;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;125 °C min;125;1,80;2,09;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;125 °C min;125;2,00;1,47;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;125 °C min;125;2,50;0,784;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;125 °C min;125;3,00;0,517;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;125 °C min;125;4,00;0,23;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;125 °C min;125;5,00;0,149;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;125 °C min;125;6,00;0,105;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;125 °C min;125;8,00;0,062;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C min;25;1,08;1000;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C min;25;1,10;803;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C min;25;1,15;208;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C min;25;1,20;53,4;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C min;25;1,25;34,3;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C min;25;1,30;26,2;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C min;25;1,38;17,6;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C min;25;1,45;13,7;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C min;25;1,50;11,6;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C min;25;1,65;7,45;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C min;25;1,80;5,52;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C min;25;2,00;3,87;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C min;25;2,50;2,10;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C min;25;3,00;1,26;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C min;25;4,00;0,62;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C min;25;5,00;0,385;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C min;25;6,00;0,264;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C min;25;8,00;0,158;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C min;25;10,0;0,106;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C max;25;1,30;983;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C max;25;1,38;93,9;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C max;25;1,45;62,8;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C max;25;1,50;51,7;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C max;25;1,65;29,9;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C max;25;1,80;19,2;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C max;25;2,00;12,6;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C max;25;2,50;6,48;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C max;25;3,00;3,89;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C max;25;4,00;2,03;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C max;25;5,00;1,34;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C max;25;6,00;0,949;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C max;25;8,00;0,586;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;25 °C max;25;10,0;0,431;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;−55 °C max;-55;1,51;966;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;−55 °C max;-55;1,65;65,0;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;−55 °C max;-55;1,80;34,0;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;−55 °C max;-55;2,00;23,1;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;−55 °C max;-55;2,50;10,5;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;−55 °C max;-55;3,00;6,67;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;−55 °C max;-55;4,00;3,50;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;−55 °C max;-55;5,00;2,15;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;−55 °C max;-55;6,00;1,50;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;−55 °C max;-55;8,00;0,975;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
+EN2495;−55 °C max;-55;10,0;0,695;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le tracé du catalogue Crouzet 84 406 (EN 2495), ±3 % sur le multiple, ±5 % sur le temps
 
 Calibration — les points normalisés des disjoncteurs thermiques d'aéronef, par famille et par température ambiante : les fiches Sensata 2TC/3TC/7274/6TC/9TC/5TC, Safran 170, les FEUILLES MILITAIRES (MS3320N 1991, MS22073M 1997, MS14153C / MS14154D 1990 — les valeurs contractuelles), Crouzet, E-T-A (octobre 2026). Tient = multiple de In tenu 1 h — Déclenche = multiple déclenchant en moins d'une heure — t200 / t500 / t1000 = temps min et max à 200 / 500 / 1000 % de In, en s. La ligne « préchargé à 60 % de In » (MS3320N) dit ce que le préchauffage fait : le temps divisé par 1,6 à 3,7.
-Famille;Norme;Température;Tient;Déclenche;t200 min;t200 max;t500 min;t500 max;t1000 min;t1000 max;Source
-2TC;MS3320 / AS33201 / AS58091;25;1,15;1,38;4;16;0,40;1,60;0,10;0,40;Sensata 2TC
-2TC;MS3320 / AS33201 / AS58091;-54;1,15;1,65;7;35;0,60;3,00;0,15;0,70;Sensata 2TC
-2TC;MS3320 / AS33201 / AS58091;121;0,85;1,45;2;13;0,25;1,00;0,06;0,25;Sensata 2TC
-3TC;MS14105;25;1,15;1,38;4;20;0,40;1,70;0,10;0,40;Sensata 3TC
-3TC;MS14105;-54;1,15;1,65;6;35;0,55;3,00;0,15;0,70;Sensata 3TC
-3TC;MS14105;121;0,85;1,45;2;15;0,25;1,00;0,06;0,25;Sensata 3TC
-7274;MIL-C-5809 / MS22073 / MS26574;25;1,15;1,50;2;20;0,16;1,20;0,046;0,80;Sensata 7274
-7274;MIL-C-5809 / MS22073 / MS26574;-55;1,35;1,80;;;;;;;Sensata 7274
-7274;MIL-C-5809 / MS22073 / MS26574;71;0,90;1,30;;;;;;;Sensata 7274
-Safran 170;MS25017;25;1,00;1,25;15;70;;;;;Safran 170 (400 % : 2-12 s, 600 % : 1-5 s)
-Safran 170;MS25017;71;0,70;1,25;;;;;;;Safran 170
-Safran 170;MS25017;-40;1,10;1,60;;;;;;;Safran 170
-MS3320 (2TC);MS3320N table VII, +25 °C, niveau de la mer, à froid;25;1,15;1,38;5;20;0,5;2,0;0,12;0,53;MS3320N (everyspec)
-MS3320 (2TC);MS3320N table VII, −55 °C;-55;1,15;1,60;7;40;0,5;3,0;0,16;0,80;MS3320N
-MS3320 (2TC);MS3320N table VII, +121 °C et 70 000 ft, à froid;121;0,80;1,38;1,5;13,0;0,15;1,1;0,035;0,30;MS3320N
-MS3320 (2TC);MS3320N table VII, +121 °C et 70 000 ft, PRÉCHARGÉ à 60 % de In;121;;;0,4;8,0;0,06;0,8;0,014;0,21;MS3320N — le préchauffage divise les temps par 1,6 à 3,7
-MS3320 (2TC);MS3320N table II, enveloppe −55 à +121 °C (tous calibres ½-20 A);;1,15 (25 °C) / 1,00 (121 °C);1,38 (25 et 121 °C) / 1,60 (−55 °C);1,5;40;0,15;3,0;0,035;0,8;MS3320N — tolérance d'ambiante ±2 °C — essais ultimate trip : montée de 2 % de In par 5 min depuis le minimum tenu 1 h
-MS22073 (7274-11);MS22073M table II;25;1,15;1,50;2;20;0,16;2,0;0,046;0,8;MS22073M — Sensata dit 0,16-1,20 à 500 %
-MS22073 (7274-11);MS22073M table II;-55;1,35;1,80;;;;;;;MS22073M
-MS22073 (7274-11);MS22073M table II;71;0,90;1,30;;;;;;;MS22073M
-6TC / 9TC;Sensata 6TC14 / 9TC14 (MS14154 / MS14153), 2-20 A et 1, 15-35 A;25;1,10;1,45;4;20;0,40;2,0;0,10;0,53;Sensata catalogue p. 9
-6TC / 9TC;Sensata;-54;1,10;1,65;6;40;0,55;3,5;0,15;0,80;Sensata
-6TC / 9TC;Sensata;90;1,00;1,45;3;20;0,33;1,7;0,08;0,40;Sensata
-6TC / 9TC;Sensata;121;0,90;1,45;3;20;0,33;1,7;0,08;0,40;Sensata
-MS14153 / MS14154 (9TC / 6TC);MS14153C table II / MS14154D table III — tient/déclenche en charge triphasée équilibrée — temps en charge monophasée — déclenchement ultime max d'une phase avec les deux autres à 100 %;25;1,10;1,45;4;20;0,4;2,0;0,10;0,53;MS14153C, MS14154D (everyspec)
-MS14153 / MS14154;idem;-55;1,10;1,65;6;40;0,55;3,5;0,15;0,80;MS14154D (MS14153C lit 0,15-0,60, scan flou)
-MS14153 / MS14154;idem;71;1,00;1,45;3;20;0,33;1,7;0,06;0,40;MS14153C (MS14154D : 0,08-0,40)
-5TC;Klixon 5TC 20-50 A (±5 °C) ;23;1,10;1,45;2;18;0,15;2,5;0,045;0,6;Sensata catalogue p. 13
-5TC;idem;-54;1,10;1,65;;70;0,15;2,5;0,045;0,6;Sensata — 70 s max à 200 %
-5TC;idem;70;1,05;1,45;1,5;;0,15;2,5;0,045;0,6;Sensata — 1,5 s min à 200 %
-5TC;idem;125;0,90;1,45;1,5;;0,15;2,5;0,045;0,6;Sensata
-ETA483;E-T-A 483, caractéristique M1 — les temps viennent de la courbe typique (table Courbes ETA483), pas d'une table de calibration publiée;23;1,15;1,38;3,2;15,8;0,40;1,29;0,10;0,33;E-T-A fiche 483 + courbe extraite (bande +23 °C)
-ETA483;courbe typique ;125;0,93 (asymptote lue);;1,98;;0,24;;0,064;;courbe extraite +125 °C (minimum)
-ETA483;courbe typique ;-55;;1,47 (asymptote lue);;42,9;;2,29;;0,46;courbe extraite −55 °C (maximum)
-Crouzet 84406 (EN 2495 / EN 2995), 1,5-5 A;tableau Crouzet + courbe extraite;25;1,15;1,40;2 (table) / 3,9 (courbe);15 (table) / 12,6 (courbe);0,39;1,34;0,11;0,43;Crouzet catalogue FrogLeg p. 27
-Crouzet 84406, 7,5-25 A;tableau Crouzet;25;1,15;1,40;4;20;;;;;Crouzet
-Crouzet 84406;tableau + courbe;125;1,00;;1,47 (courbe);;0,15;;0,062 (8 In);;Crouzet — « non tripping point at 125 °C : 1 × RC »
-Crouzet 84406;courbe;-55;;1,51 (asymptote lue) / 1,60 (étiquette du graphique tripolaire);;23,1;;2,15;;0,70;Crouzet
-Crouzet 84417 (EN 2592 / EN 2996), 3 pôles;tableau Crouzet (identique au monopolaire);25;1,15;1,40;2 / 4;15 / 20;;;;;Crouzet — étiquettes 1,10 / 1,40 / 1,60 sur le graphique
-MS25244;MS25244R table II (10-50 A), non compensé;25;1,15;1,38;15;55;;;;;MS25244R (everyspec) — 400 % : 2-7 s, 600 % : 1,0-3,5 s
-MS25244;MS25244R table II (10-50 A);-40;1,48;1,78;;;;;;;MS25244R — 5 et 7,5 A : tient 1,56
-MS25244;MS25244R table II (10-50 A);71;0,70;1,14;;;;;;;MS25244R — 5 et 7,5 A : tient 0,60, déclenche 1,08
-7277;Klixon 7277 (commercial, 7274-2 aux limites élargies);25;1,10;1,50;2;35;0,15;1,7;0,028;0,55;Sensata 7277 (fiche 2018)
+Famille;Norme;Température;Tient;Déclenche;t200 min;t200 max;t500 min;t500 max;t1000 min;t1000 max;Source;Statut
+2TC;MS3320 / AS33201 / AS58091;25;1,15;1,38;4;16;0,40;1,60;0,10;0,40;Sensata 2TC;à confirmer — une source : la fiche Sensata 2TC (2018) — ses temps sont les siens, plus serrés que ceux de la MS3320N
+2TC;MS3320 / AS33201 / AS58091;-54;1,15;1,65;7;35;0,60;3,00;0,15;0,70;Sensata 2TC;à confirmer — une source : la fiche Sensata 2TC (2018) — ses temps sont les siens, plus serrés que ceux de la MS3320N
+2TC;MS3320 / AS33201 / AS58091;121;0,85;1,45;2;13;0,25;1,00;0,06;0,25;Sensata 2TC;à confirmer — une source : la fiche Sensata 2TC (2018) — ses temps sont les siens, plus serrés que ceux de la MS3320N
+3TC;MS14105;25;1,15;1,38;4;20;0,40;1,70;0,10;0,40;Sensata 3TC;à confirmer — une source : la fiche Sensata 3TC (2018) — la feuille MS14105 n’est pas lue
+3TC;MS14105;-54;1,15;1,65;6;35;0,55;3,00;0,15;0,70;Sensata 3TC;à confirmer — une source : la fiche Sensata 3TC (2018) — la feuille MS14105 n’est pas lue
+3TC;MS14105;121;0,85;1,45;2;15;0,25;1,00;0,06;0,25;Sensata 3TC;à confirmer — une source : la fiche Sensata 3TC (2018) — la feuille MS14105 n’est pas lue
+7274;MIL-C-5809 / MS22073 / MS26574;25;1,15;1,50;2;20;0,16;1,20;0,046;0,80;Sensata 7274;à confirmer — t500 max 1,20 s de la seule fiche Sensata 7274 (la MS22073M table II dit 2,0 s) — la tenue, le déclenchement, t200 et t1000 concordent avec la MS22073M
+7274;MIL-C-5809 / MS22073 / MS26574;-55;1,35;1,80;;;;;;;Sensata 7274;vérifié (deux sources : fiche Sensata 7274 et MS22073M table II — même tenue, même déclenchement à -55 °C)
+7274;MIL-C-5809 / MS22073 / MS26574;71;0,90;1,30;;;;;;;Sensata 7274;vérifié (deux sources : fiche Sensata 7274 et MS22073M table II — même tenue, même déclenchement à 71 °C)
+Safran 170;MS25017;25;1,00;1,25;15;70;;;;;Safran 170 (400 % : 2-12 s, 600 % : 1-5 s);à confirmer — une source : la fiche Safran 170
+Safran 170;MS25017;71;0,70;1,25;;;;;;;Safran 170;à confirmer — une source : la fiche Safran 170
+Safran 170;MS25017;-40;1,10;1,60;;;;;;;Safran 170;à confirmer — une source : la fiche Safran 170
+MS3320 (2TC);MS3320N table VII, +25 °C, niveau de la mer, à froid;25;1,15;1,38;5;20;0,5;2,0;0,12;0,53;MS3320N (everyspec);à confirmer — les temps de la seule MS3320N table VII (everyspec) — la tenue 1,15 et le déclenchement 1,38 concordent avec Sensata 2TC et E-T-A 483
+MS3320 (2TC);MS3320N table VII, −55 °C;-55;1,15;1,60;7;40;0,5;3,0;0,16;0,80;MS3320N;à confirmer — une source : la feuille MS3320N (everyspec), relue deux fois sans écart — aucun autre document ne la reproduit
+MS3320 (2TC);MS3320N table VII, +121 °C et 70 000 ft, à froid;121;0,80;1,38;1,5;13,0;0,15;1,1;0,035;0,30;MS3320N;à confirmer — une source : la feuille MS3320N (everyspec), relue deux fois sans écart — aucun autre document ne la reproduit
+MS3320 (2TC);MS3320N table VII, +121 °C et 70 000 ft, PRÉCHARGÉ à 60 % de In;121;;;0,4;8,0;0,06;0,8;0,014;0,21;MS3320N — le préchauffage divise les temps par 1,6 à 3,7;à confirmer — une source : la feuille MS3320N (everyspec), relue deux fois sans écart — aucun autre document ne la reproduit
+MS3320 (2TC);MS3320N table II, enveloppe −55 à +121 °C (tous calibres ½-20 A);;1,15 (25 °C) / 1,00 (121 °C);1,38 (25 et 121 °C) / 1,60 (−55 °C);1,5;40;0,15;3,0;0,035;0,8;MS3320N — tolérance d'ambiante ±2 °C — essais ultimate trip : montée de 2 % de In par 5 min depuis le minimum tenu 1 h;à confirmer — une source : la feuille MS3320N (everyspec), relue deux fois sans écart — aucun autre document ne la reproduit
+MS22073 (7274-11);MS22073M table II;25;1,15;1,50;2;20;0,16;2,0;0,046;0,8;MS22073M — Sensata dit 0,16-1,20 à 500 %;à confirmer — t500 max 2,0 s de la seule MS22073M table II (Sensata 7274 : 1,20 s) — la tenue, le déclenchement, t200 et t1000 concordent avec la fiche Sensata 7274
+MS22073 (7274-11);MS22073M table II;-55;1,35;1,80;;;;;;;MS22073M;vérifié (deux sources : fiche Sensata 7274 et MS22073M table II — même tenue, même déclenchement à -55 °C)
+MS22073 (7274-11);MS22073M table II;71;0,90;1,30;;;;;;;MS22073M;vérifié (deux sources : fiche Sensata 7274 et MS22073M table II — même tenue, même déclenchement à 71 °C)
+6TC / 9TC;Sensata 6TC14 / 9TC14 (MS14154 / MS14153), 2-20 A et 1, 15-35 A;25;1,10;1,45;4;20;0,40;2,0;0,10;0,53;Sensata catalogue p. 9;vérifié (deux sources : fiche Sensata 6TC (2018) et MS14153C / MS14154D — mêmes valeurs à 25 °C)
+6TC / 9TC;Sensata;-54;1,10;1,65;6;40;0,55;3,5;0,15;0,80;Sensata;vérifié (deux sources : fiche Sensata 6TC (2018) et MS14154D — mêmes valeurs à −55 °C, la MS14153C se lit mal)
+6TC / 9TC;Sensata;90;1,00;1,45;3;20;0,33;1,7;0,08;0,40;Sensata;à confirmer — la fiche Sensata 6TC (2018) donne ces valeurs à 71 °C, pas à 90 °C — le « catalogue p. 9 » cité n’est pas retrouvé
+6TC / 9TC;Sensata;121;0,90;1,45;3;20;0,33;1,7;0,08;0,40;Sensata;à confirmer — la fiche Sensata 6TC (2018) donne ces valeurs à 71 °C, pas à 121 °C — le « catalogue p. 9 » cité n’est pas retrouvé
+MS14153 / MS14154 (9TC / 6TC);MS14153C table II / MS14154D table III — tient/déclenche en charge triphasée équilibrée — temps en charge monophasée — déclenchement ultime max d'une phase avec les deux autres à 100 %;25;1,10;1,45;4;20;0,4;2,0;0,10;0,53;MS14153C, MS14154D (everyspec);vérifié (deux sources : fiche Sensata 6TC (2018) et MS14153C / MS14154D — mêmes valeurs à 25 °C)
+MS14153 / MS14154;idem;-55;1,10;1,65;6;40;0,55;3,5;0,15;0,80;MS14154D (MS14153C lit 0,15-0,60, scan flou);vérifié (deux sources : fiche Sensata 6TC (2018) et MS14154D — mêmes valeurs à −55 °C, la MS14153C se lit mal)
+MS14153 / MS14154;idem;71;1,00;1,45;3;20;0,33;1,7;0,06;0,40;MS14153C (MS14154D : 0,08-0,40);à confirmer — t1000 min 0,06 s (MS14153C) ou 0,08 s (MS14154D, Sensata 6TC à 71 °C) — le reste concorde
+5TC;Klixon 5TC 20-50 A (±5 °C) ;23;1,10;1,45;2;18;0,15;2,5;0,045;0,6;Sensata catalogue p. 13;à confirmer — une source : la fiche Sensata 5TC (2018)
+5TC;idem;-54;1,10;1,65;;70;0,15;2,5;0,045;0,6;Sensata — 70 s max à 200 %;à confirmer — une source : la fiche Sensata 5TC (2018)
+5TC;idem;70;1,05;1,45;1,5;;0,15;2,5;0,045;0,6;Sensata — 1,5 s min à 200 %;à confirmer — une source : la fiche Sensata 5TC (2018)
+5TC;idem;125;0,90;1,45;1,5;;0,15;2,5;0,045;0,6;Sensata;à confirmer — une source : la fiche Sensata 5TC (2018)
+ETA483;E-T-A 483, caractéristique M1 — les temps viennent de la courbe typique (table Courbes ETA483), pas d'une table de calibration publiée;23;1,15;1,38;3,2;15,8;0,40;1,29;0,10;0,33;E-T-A fiche 483 + courbe extraite (bande +23 °C);déduit — les temps sont lus sur la courbe ETA483 (celle du lecteur, recoupée sur les fiches E-T-A 4120 et 483), la tenue et le déclenchement viennent de la fiche E-T-A 483
+ETA483;courbe typique ;125;0,93 (asymptote lue);;1,98;;0,24;;0,064;;courbe extraite +125 °C (minimum);déduit — les temps sont lus sur la courbe ETA483 (celle du lecteur, recoupée sur les fiches E-T-A 4120 et 483), la tenue et le déclenchement viennent de la fiche E-T-A 483
+ETA483;courbe typique ;-55;;1,47 (asymptote lue);;42,9;;2,29;;0,46;courbe extraite −55 °C (maximum);déduit — les temps sont lus sur la courbe ETA483 (celle du lecteur, recoupée sur les fiches E-T-A 4120 et 483), la tenue et le déclenchement viennent de la fiche E-T-A 483
+Crouzet 84406 (EN 2495 / EN 2995), 1,5-5 A;tableau Crouzet + courbe extraite;25;1,15;1,40;2 (table) / 3,9 (courbe);15 (table) / 12,6 (courbe);0,39;1,34;0,11;0,43;Crouzet catalogue FrogLeg p. 27;à confirmer — une source : le catalogue Crouzet (tableau et courbe des 84 406 et 84 417)
+Crouzet 84406, 7,5-25 A;tableau Crouzet;25;1,15;1,40;4;20;;;;;Crouzet;à confirmer — une source : le catalogue Crouzet (tableau et courbe des 84 406 et 84 417)
+Crouzet 84406;tableau + courbe;125;1,00;;1,47 (courbe);;0,15;;0,062 (8 In);;Crouzet — « non tripping point at 125 °C : 1 × RC »;à confirmer — une source : le catalogue Crouzet (tableau et courbe des 84 406 et 84 417)
+Crouzet 84406;courbe;-55;;1,51 (asymptote lue) / 1,60 (étiquette du graphique tripolaire);;23,1;;2,15;;0,70;Crouzet;à confirmer — une source : le catalogue Crouzet (tableau et courbe des 84 406 et 84 417)
+Crouzet 84417 (EN 2592 / EN 2996), 3 pôles;tableau Crouzet (identique au monopolaire);25;1,15;1,40;2 / 4;15 / 20;;;;;Crouzet — étiquettes 1,10 / 1,40 / 1,60 sur le graphique;à confirmer — une source : le catalogue Crouzet (tableau et courbe des 84 406 et 84 417)
+MS25244;MS25244R table II (10-50 A), non compensé;25;1,15;1,38;15;55;;;;;MS25244R (everyspec) — 400 % : 2-7 s, 600 % : 1,0-3,5 s;à confirmer — une source : la feuille MS25244R table II (everyspec)
+MS25244;MS25244R table II (10-50 A);-40;1,48;1,78;;;;;;;MS25244R — 5 et 7,5 A : tient 1,56;à confirmer — une source : la feuille MS25244R table II (everyspec)
+MS25244;MS25244R table II (10-50 A);71;0,70;1,14;;;;;;;MS25244R — 5 et 7,5 A : tient 0,60, déclenche 1,08;à confirmer — une source : la feuille MS25244R table II (everyspec)
+7277;Klixon 7277 (commercial, 7274-2 aux limites élargies);25;1,10;1,50;2;35;0,15;1,7;0,028;0,55;Sensata 7277 (fiche 2018);à confirmer — une source : la fiche Sensata 7277 (2018)
 
 Familles de disjoncteurs — ce qu'une famille est : la norme, les pôles, la gamme de calibres, la tension, la compensation en température, l'ambiante admise, la masse (g), la COURBE à prendre (une famille de la table Courbes : ETA483 = la feuille du lecteur — 2TC, 6TC, 5TC, 7274, EN2495 = les fiches constructeur), les MOTIFS (les débuts de part number qui nomment la famille : « MS3320 » reconnaît MS3320-10 et MS3320L-5, « 2TC » reconnaît 2TC2-10 et 2TC27-5 — le calibre se lit en queue, s'il est de la gamme). Sources : Sensata (2TC, 3TC, 6TC, 9TC, 5TC, 7274), feuilles MS (MS3320N, MS22073M, MS14153C, MS14154D), Crouzet (84 406, 84 417), E-T-A (483), titres DIN/BSI pour les EN (R2, R5 — octobre 2026). Les MS3320 / AS33201 prennent les courbes ETA483 parce que la feuille du lecteur les trace ainsi — un Klixon 2TC2 prendrait 2TC (plus lent à −54 °C) : à confirmer par le lecteur.
-Famille;Norme;Pôles;Calibres;Tension;Compensé;Tmin;Tmax;Masse;Courbe;Motifs;Note
-MS3320;MS3320N / AS33201 / AS58091 — monopolaire compensé ½-20 A (Klixon 2TC2 — E-T-A 483-G533 approuvé MS 3320);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;oui;-55;121;25;ETA483;MS3320;courbes ETA483 (E-T-A 483 et 4120 qualifiés MS 3320 1-20 A — dans l’enveloppe MS3320N table II sauf −55 °C à 2 In : 43 s pour 40 s max) — la courbe 2TC −54 °C (66 s à 2 In) sort de la même enveloppe — MS3320N titre et table I (everyspec MS3320N_45287) : ½ à 20 A
-2TC;Klixon 2TC (2TC2 = MS3320, 2TC27 = MS3320L, 2TC63 = MS3320V) — monopolaire compensé;1;1 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 120 V AC 400 Hz;oui;-54;121;24;2TC;2TC;coordonné 2:1 jusqu’à 6000 A (déclaration Sensata) — la −54 °C max dessinée (66 s à 2 In) est plus lente que la calibration (35-40 s) : la protection du fil se juge sur la table — masse : Sensata 2TC « 24 gram maximum (2TC14) »
-AS33201;AS33201 (SAE, ex-MS3320);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 120 V AC 400 Hz;oui;-55;121;25;ETA483;AS33201;comme MS3320
-3TC;Klixon 3TC (MS14105 / AS14105) — monopolaire compensé 15-35 A;1;15 20 25 30 35;28 V DC / 120 V AC 400 Hz;oui;-54;121;36;2TC;3TC;la fiche Sensata trace 2TC et 3TC ensemble
-MS14105;MS14105 / AS14105 (Klixon 3TC);1;15 20 25 30 35;28 V DC / 120 V AC 400 Hz;oui;-54;121;36;2TC;MS14105 AS14105;
-6TC;Klixon 6TC (MS14154 / AS14154) — tripolaire compensé;3;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115/200 V AC 400 Hz;oui;-55;71;65;6TC;6TC;une phase déclenche les trois — 2000 A monophasé, 1200 A triphasé — la feuille MS14154D ne qualifie que −55/+71 °C (Sensata publie +90 et +121) — masse : Sensata 6TC « 65 gram maximum (6TC14) »
-MS14154;MS14154D / AS14154 (Klixon 6TC);3;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115/200 V AC 400 Hz;oui;-55;71;65;6TC;MS14154 AS14154;tripolaire — masse : Sensata 6TC « 65 gram maximum (6TC14) »
-9TC;Klixon 9TC (MS14153 / AS14153) — tripolaire compensé;3;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115/200 V AC 400 Hz;oui;-55;71;113;6TC;9TC;tripolaire — les courbes 6TC (même fiche)
-MS14153;MS14153C / AS14153 (Klixon 9TC);3;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115/200 V AC 400 Hz;oui;-55;71;113;6TC;MS14153 AS14153;tripolaire
-5TC;Klixon 5TC — monopolaire compensé 20-50 A (pas de MS);1;20 25 35 50;115 V AC 400 Hz / 28 V DC;oui;-54;125;55;5TC;5TC;coupure 4000 A à 28 V DC, 2000 A à 115 V AC — chute 0,150 V (20-35 A), 0,120 V (50 A) — coordonné 2:1 jusqu’à 600 A seulement
-7274;MIL-C-5809 · MS22073 (7274-11) · MS26574 (7274-2) — monopolaire NON compensé;1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;non;-55;71;33;7274;7274;non compensé : 90-130 % à 71 °C, 135-180 % à −55 °C — 80 000 ft — la fiche ne trace en entier que la bande +25 °C — masse : Sensata 7274 : 7274-11 (MS22073) 33 g max, 7274-2 (MS26574) 28 g max
-MS22073;MS22073M (Klixon 7274-11);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;non;-55;71;33;7274;MS22073;masse : Sensata 7274-11 33 g max
-MS26574;MS26574 (Klixon 7274-2 — E-T-A 483-G533-J3M1 approuvé);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;non;-55;71;28;7274;MS26574;masse : Sensata 7274-2 28 g max
-ETA483;E-T-A 483 — approuvé MS 3320 (483-G533-J1M1-B2S0ZN), MS 3320-V (483-V533), MS26574 (483-G533-J3M1-C4S0Z), prEN 2995 (483-G814), VG 95345 T6, LN 29886 — EN 60934 type M;1;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115 V AC 400 Hz / 28 V DC;oui;-55;125;25;ETA483;483 ETA483;caractéristique M1 1,15-1,38 In — coupure 6000 A à 28 V DC (1-25 A), 4000 A (30-35 A), 1000 A (≤ 4 A) / 2000 A (5 A) / 2500 A (7,5-35 A) à 115 V AC — diélectrique 1500 V AC — altitude 25 000 m — 10 000 manœuvres à In (≤ 25 A) — chute à In 750 mV (1 A) à 150 mV (35 A) — LES QUATRE COURBES DE LA FEUILLE DU LECTEUR
-ETA4120;E-T-A 4120 — disjoncteur thermique monopolaire compensé en température, homologué UL 1077, VG 95345 partie 6, EN 2495, LN 29887 (5-25 A), EN 3773-004, MS 3320 (1-20 A), EN 2995-004;1;1 2 2,5 3 4 5 7,5 10 15 20 25;115 V AC 400 Hz / 28 V DC;oui;-55;125;;ETA483;4120;coupure 6000 A à 28 V DC (1-25 A), 1000 A (1-4 A) ou 2000 A (5-25 A) à 115 V AC — courbes relues sur la fiche vectorielle E-T-A 4120 Issue C (octobre 2026) : celles de l’ETA483 à ±2 % — les éditions récentes (4120 « 2034 », 483 « 1948 ») placent l’asymptote 125 °C à 1,00 In au lieu de 0,93 : Volta garde 0,93, plus prudent pour l’intempestif
-EN2495;EN 2495:1990 (0,5-25 A) / EN 2995-001:2023 (1-25 A) — Crouzet 84 406 (cosses 45°, MS26574) / 84 437 (60°);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 115 V AC 400 Hz;oui;-60;125;19;EN2495;EN2495 EN2995 84406 84437;Crouzet : coupure 6000 A à 28 V DC, 2500 A à 115 V AC — tient 1,15 × RC, déclenche 1,40 × RC à 25 °C, tient 1,0 × RC à 125 °C — 2 × RC : 2-15 s (1,5-5 A), 4-20 s (7,5-25 A) — 30 A : Tmax 90 °C
-MS33201;MS33201 (Crouzet, modèle EN 2495);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 115 V AC 400 Hz;oui;-55;125;20;EN2495;MS33201;
-EN3773;EN 3773-001:2024 / -004 (cosses UNC) / -006 (cosses plates 6,3 mm) — monopolaires compensés 1-25 A;1;1 à 25;28 V DC / 115 V AC 400 Hz;oui;-55;125;;EN2495;EN3773;titres DIN — courbes EN2495 à défaut (Crouzet)
-EN3661;EN 3661-001:2024 — monopolaire compensé 20-50 A;1;20 25 30 35 40 50;28 V DC / 115 V AC 400 Hz;oui;-55;125;;5TC;EN3661;aucune courbe publique : les courbes 5TC (Klixon 20-50 A) à défaut, en le disant
-EN2794;EN 2794-001:2024 / -004:2014 (cosses UNC, 20-25 A, 15 000 m) — monopolaires compensés 20-50 A;1;20 25 30 35 40 50;28 V DC / 115 V AC 400 Hz (EN 2282);oui;-55;125;;5TC;EN2794;titres DIN — une famille 20-50 A parallèle à l’EN 3661 — courbes 5TC à défaut
-EN2592;EN 2592:1990 / EN 2996-001:2023 — tripolaires compensés 1-25 A (Crouzet 84 417);3;1 2 2,5 3 4 5 7,5 10 15 20 25;115/200 V AC 400 Hz;oui;-60;125;55;EN2495;EN2592 EN2996 84417;tripolaire — Crouzet : coupure 2000 A à 115/200 V AC, mêmes limites de déclenchement que le monopolaire
-EN3774;EN 3774-001 / -004 / -006:2023 (6,3 mm) — tripolaires compensés 1-25 A;3;1 à 25;115/200 V AC 400 Hz;oui;-55;125;;EN2495;EN3774;titres DIN — Tmax 90 °C au-delà de 15 A — courbes EN2495 à défaut
-EN3662;EN 3662-001:2024 — tripolaire compensé 20-50 A;3;20 25 30 35 40 50;115/200 V AC 400 Hz;oui;-55;125;;5TC;EN3662;tripolaire — courbes 5TC à défaut
-MS25244;MS25244R / AS25244 (Klixon 3TC7 5-35 A, 5TC7 40-50 A) — monopolaire NON compensé 5-50 A;1;5 7,5 10 15 20 25 30 35 50;28 V DC / 120 V AC 400 Hz;non;-40;71;;MS25244;MS25244 AS25244;aucune courbe publique : Volta juge sur l’enveloppe de la feuille MS25244R table II à 25 °C (200 % : 15-55 s, 400 % : 2-7 s, 600 % : 1,0-3,5 s), pas sur les courbes ETA483, plus rapides — la protection d’un fil derrière lui serait jugée trop favorablement
-7277;Klixon 7277 — monopolaire NON compensé ½-20 A, version commerciale du 7274-2 (« physically and electrically identical », limites plus larges);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;non;-55;71;28;7274;7277;les courbes 7274 à défaut — calibration 25 °C plus large : 2-35 s à 200 %, 0,028-0,55 s à 1000 % — −55 / +71 °C repris du 7274, à confirmer
-Safran 170;Safran 170 (MS25017 encombrement · MIL-C-5809) — fort calibre, non compensé;1;125 140 150 160 180 200;28 V DC / 115 V AC;non;-40;71;130;;170;3000 A à 28 V DC — aucune courbe
+Famille;Norme;Pôles;Calibres;Tension;Compensé;Tmin;Tmax;Masse;Courbe;Motifs;Note;Source;Statut
+MS3320;MS3320N / AS33201 / AS58091 — monopolaire compensé ½-20 A (Klixon 2TC2 — E-T-A 483-G533 approuvé MS 3320);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;oui;-55;121;25;ETA483;MS3320;courbes ETA483 (E-T-A 483 et 4120 qualifiés MS 3320 1-20 A — dans l’enveloppe MS3320N table II sauf −55 °C à 2 In : 43 s pour 40 s max) — la courbe 2TC −54 °C (66 s à 2 In) sort de la même enveloppe — MS3320N titre et table I (everyspec MS3320N_45287) : ½ à 20 A;MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/) + E-T-A 4120 Issue C (https://www.peter2000.co.uk/aviation/sn3500/D_4120_e_C.pdf) + E-T-A 483 éd. 1948 (https://static.chipdip.ru/lib/343/DOC012343949.pdf);vérifié (deux sources : la MS3320N, titre et table I — ½ à 20 A, −55/+121 °C — et les fiches E-T-A 483 et 4120 — « MS 3320 1-20 A ») — la masse 25 g n’est pas relue
+2TC;Klixon 2TC (2TC2 = MS3320, 2TC27 = MS3320L, 2TC63 = MS3320V) — monopolaire compensé;1;1 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 120 V AC 400 Hz;oui;-54;121;24;2TC;2TC;coordonné 2:1 jusqu’à 6000 A (déclaration Sensata) — la −54 °C max dessinée (66 s à 2 In) est plus lente que la calibration (35-40 s) : la protection du fil se juge sur la table — masse : Sensata 2TC « 24 gram maximum (2TC14) »;Sensata, fiche Klixon 2TC (2018, https://flamecorp.com/PDF/Sensata/2021/2TC_Series_Catalog_Sheets.pdf);à confirmer — une source : la fiche Sensata 2TC (2018)
+AS33201;AS33201 (SAE, ex-MS3320);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 120 V AC 400 Hz;oui;-55;121;25;ETA483;AS33201;comme MS3320;SAE AS33201_A1 et AS33201C, titres (https://saemobilus.sae.org/content/AS33201_A1 — https://dinmedia.de/en/standard/sae-as-33201c/362579713);vérifié (deux sources : SAE et DIN Media — AS33201_A1 « ½ thru 20 amps », AS33201C « ½ thru 25 amps » depuis la révision B, −55/+121 °C, remplace la MS3320) — la courbe ETA483 est celle de la MS3320, déduite
+3TC;Klixon 3TC (MS14105 / AS14105) — monopolaire compensé 15-35 A;1;15 20 25 30 35;28 V DC / 120 V AC 400 Hz;oui;-54;121;36;2TC;3TC;la fiche Sensata trace 2TC et 3TC ensemble;Sensata, fiche Klixon 3TC (2018, https://flamecorp.com/PDF/Sensata/2021/3TC_Series_Catalog_Sheets.pdf);à confirmer — une source : la fiche Sensata 3TC (2018)
+MS14105;MS14105 / AS14105 (Klixon 3TC);1;15 20 25 30 35;28 V DC / 120 V AC 400 Hz;oui;-54;121;36;2TC;MS14105 AS14105;;Sensata, fiche Klixon 3TC (2018, https://flamecorp.com/PDF/Sensata/2021/3TC_Series_Catalog_Sheets.pdf);à confirmer — une source : la fiche Sensata 3TC (MS14105) — la feuille MS14105 n’est pas lue
+6TC;Klixon 6TC (MS14154 / AS14154) — tripolaire compensé;3;1 2 2,5 3 4 5 7,5 10 15 20;115/200 V AC 400 Hz;oui;-55;71;65;6TC;6TC;une phase déclenche les trois — 2000 A monophasé, 1200 A triphasé — la feuille MS14154D ne qualifie que −55/+71 °C (Sensata publie +90 et +121) — masse : Sensata 6TC « 65 gram maximum (6TC14) » — corrigé : 1 à 20 A (MS14154D, « 1 thru 20 amp » — Sensata 6TC14 jusqu’à 20 A), la liste allait jusqu’à 35 A, celle du 9TC;Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf) + MS14154D (everyspec);vérifié (deux sources : la fiche Sensata 6TC — 6TC14 jusqu’à 20 A, le 25 A en qualification — et la MS14154D, « 3 phase, 1 thru 20 amp » — tripolaire compensé, −55/+71 °C)
+MS14154;MS14154D / AS14154 (Klixon 6TC);3;1 2 2,5 3 4 5 7,5 10 15 20;115/200 V AC 400 Hz;oui;-55;71;65;6TC;MS14154 AS14154;tripolaire — masse : Sensata 6TC « 65 gram maximum (6TC14) » — corrigé : 1 à 20 A (MS14154D, « 1 thru 20 amp » — Sensata 6TC14 jusqu’à 20 A), la liste allait jusqu’à 35 A, celle du 9TC;MS14154D (everyspec) + Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);vérifié (deux sources : la MS14154D, « 3 phase, 1 thru 20 amp », et la fiche Sensata 6TC)
+9TC;Klixon 9TC (MS14153 / AS14153) — tripolaire compensé;3;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115/200 V AC 400 Hz;oui;-55;71;113;6TC;9TC;tripolaire — les courbes 6TC (même fiche);Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf) + MS14153C (everyspec);à confirmer — la MS14153C dit « 1 thru 35 amp », Sensata ne fait le 9TC14 qu’en 1 et 15 à 35 A : les calibres 2 à 10 A ne sont pas confirmés
+MS14153;MS14153C / AS14153 (Klixon 9TC);3;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115/200 V AC 400 Hz;oui;-55;71;113;6TC;MS14153 AS14153;tripolaire;MS14153C (everyspec) + Sensata, fiche Klixon 6TC (2018, https://flamecorp.com/PDF/Sensata/2021/6TC_Series_Catalog_Sheets.pdf);à confirmer — la MS14153C dit « 1 thru 35 amp », Sensata ne fait le 9TC14 qu’en 1 et 15 à 35 A : les calibres 2 à 10 A ne sont pas confirmés
+5TC;Klixon 5TC — monopolaire compensé 20-50 A (pas de MS);1;20 25 35 50;115 V AC 400 Hz / 28 V DC;oui;-54;125;55;5TC;5TC;coupure 4000 A à 28 V DC, 2000 A à 115 V AC — chute 0,150 V (20-35 A), 0,120 V (50 A) — coordonné 2:1 jusqu’à 600 A seulement;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : la fiche Sensata 5TC (2018)
+7274;MIL-C-5809 · MS22073 (7274-11) · MS26574 (7274-2) — monopolaire NON compensé;1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;non;-55;71;33;7274;7274;non compensé : 90-130 % à 71 °C, 135-180 % à −55 °C — 80 000 ft — la fiche ne trace en entier que la bande +25 °C — masse : Sensata 7274 : 7274-11 (MS22073) 33 g max, 7274-2 (MS26574) 28 g max;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf) + MS22073M (everyspec);vérifié (deux sources : fiche Sensata 7274 et MS22073M table II — non compensé, tenue 0,90 à 71 °C et 1,35 à −55 °C)
+MS22073;MS22073M (Klixon 7274-11);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;non;-55;71;33;7274;MS22073;masse : Sensata 7274-11 33 g max;MS22073M (everyspec) + Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);vérifié (deux sources : MS22073M table II et fiche Sensata 7274-11 — non compensé, −55/+71 °C)
+MS26574;MS26574 (Klixon 7274-2 — E-T-A 483-G533-J3M1 approuvé);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;non;-55;71;28;7274;MS26574;masse : Sensata 7274-2 28 g max;Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — une source : la fiche Sensata 7274 (7274-2 = MS26574, 28 g) — la feuille MS26574 n’est pas lue
+ETA483;E-T-A 483 — approuvé MS 3320 (483-G533-J1M1-B2S0ZN), MS 3320-V (483-V533), MS26574 (483-G533-J3M1-C4S0Z), prEN 2995 (483-G814), VG 95345 T6, LN 29886 — EN 60934 type M;1;1 2 2,5 3 4 5 7,5 10 15 20 25 30 35;115 V AC 400 Hz / 28 V DC;oui;-55;125;25;ETA483;483 ETA483;caractéristique M1 1,15-1,38 In — coupure 6000 A à 28 V DC (1-25 A), 4000 A (30-35 A), 1000 A (≤ 4 A) / 2000 A (5 A) / 2500 A (7,5-35 A) à 115 V AC — diélectrique 1500 V AC — altitude 25 000 m — 10 000 manœuvres à In (≤ 25 A) — chute à In 750 mV (1 A) à 150 mV (35 A) — LES QUATRE COURBES DE LA FEUILLE DU LECTEUR;E-T-A 483 éd. 1948 (https://static.chipdip.ru/lib/343/DOC012343949.pdf) + E-T-A 4120 Issue C (https://www.peter2000.co.uk/aviation/sn3500/D_4120_e_C.pdf);à confirmer — une source : le fabricant E-T-A (fiches 483 et 4120) — l’homologation MS 3320 n’est pas lue dans une liste militaire
+ETA4120;E-T-A 4120 — disjoncteur thermique monopolaire compensé en température, homologué UL 1077, VG 95345 partie 6, EN 2495, LN 29887 (5-25 A), EN 3773-004, MS 3320 (1-20 A), EN 2995-004;1;1 2 2,5 3 4 5 7,5 10 15 20 25;115 V AC 400 Hz / 28 V DC;oui;-55;125;;ETA483;4120;coupure 6000 A à 28 V DC (1-25 A), 1000 A (1-4 A) ou 2000 A (5-25 A) à 115 V AC — courbes relues sur la fiche vectorielle E-T-A 4120 Issue C (octobre 2026) : celles de l’ETA483 à ±2 % — les éditions récentes (4120 « 2034 », 483 « 1948 ») placent l’asymptote 125 °C à 1,00 In au lieu de 0,93 : Volta garde 0,93, plus prudent pour l’intempestif;E-T-A 4120 Issue C (https://www.peter2000.co.uk/aviation/sn3500/D_4120_e_C.pdf) + E-T-A 4120 éd. 2034 (https://static.chipdip.ru/lib/649/DOC011649286.pdf);à confirmer — une source : le fabricant E-T-A (fiches 4120 Issue C et « 2034 »)
+EN2495;EN 2495:1990 (0,5-25 A) / EN 2995-001:2023 (1-25 A) — Crouzet 84 406 (cosses 45°, MS26574) / 84 437 (60°);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 115 V AC 400 Hz;oui;-60;125;19;EN2495;EN2495 EN2995 84406 84437;Crouzet : coupure 6000 A à 28 V DC, 2500 A à 115 V AC — tient 1,15 × RC, déclenche 1,40 × RC à 25 °C, tient 1,0 × RC à 125 °C — 2 × RC : 2-15 s (1,5-5 A), 4-20 s (7,5-25 A) — 30 A : Tmax 90 °C;titres EN 2495 / EN 2995-001 (DIN, BSI) + Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;vérifié (deux sources : les titres EN 2495 et EN 2995-001 — DIN, BSI — et le catalogue Crouzet 84 406 — monopolaire compensé, 0,5 à 25 A)
+MS33201;MS33201 (Crouzet, modèle EN 2495);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20 25;28 V DC / 115 V AC 400 Hz;oui;-55;125;20;EN2495;MS33201;;Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;à confirmer — une source : le catalogue Crouzet (MS33201, modèle EN 2495) — la feuille MS33201 n’est pas lue
+EN3773;EN 3773-001:2024 / -004 (cosses UNC) / -006 (cosses plates 6,3 mm) — monopolaires compensés 1-25 A;1;1 à 25;28 V DC / 115 V AC 400 Hz;oui;-55;125;;EN2495;EN3773;titres DIN — courbes EN2495 à défaut (Crouzet);titres DIN de l’EN 3773;à confirmer — une source : les titres DIN de l’EN 3773 — les courbes EN2495 sont prises à défaut
+EN3661;EN 3661-001:2024 — monopolaire compensé 20-50 A;1;20 25 30 35 40 50;28 V DC / 115 V AC 400 Hz;oui;-55;125;;5TC;EN3661;aucune courbe publique : les courbes 5TC (Klixon 20-50 A) à défaut, en le disant;titre DIN de l’EN 3661-001;à confirmer — une source : le titre DIN de l’EN 3661-001 — les courbes 5TC sont prises à défaut
+EN2794;EN 2794-001:2024 / -004:2014 (cosses UNC, 20-25 A, 15 000 m) — monopolaires compensés 20-50 A;1;20 25 30 35 40 50;28 V DC / 115 V AC 400 Hz (EN 2282);oui;-55;125;;5TC;EN2794;titres DIN — une famille 20-50 A parallèle à l’EN 3661 — courbes 5TC à défaut;titres DIN de l’EN 2794;à confirmer — une source : les titres DIN de l’EN 2794 — les courbes 5TC sont prises à défaut
+EN2592;EN 2592:1990 / EN 2996-001:2023 — tripolaires compensés 1-25 A (Crouzet 84 417);3;1 2 2,5 3 4 5 7,5 10 15 20 25;115/200 V AC 400 Hz;oui;-60;125;55;EN2495;EN2592 EN2996 84417;tripolaire — Crouzet : coupure 2000 A à 115/200 V AC, mêmes limites de déclenchement que le monopolaire;titres EN 2592 / EN 2996-001 (DIN) + Crouzet, catalogue FrogLeg / Aerospace circuit breakers p. 27;vérifié (deux sources : les titres EN 2592 et EN 2996-001 et le catalogue Crouzet 84 417 — tripolaire compensé, 1 à 25 A)
+EN3774;EN 3774-001 / -004 / -006:2023 (6,3 mm) — tripolaires compensés 1-25 A;3;1 à 25;115/200 V AC 400 Hz;oui;-55;125;;EN2495;EN3774;titres DIN — Tmax 90 °C au-delà de 15 A — courbes EN2495 à défaut;titres DIN de l’EN 3774;à confirmer — une source : les titres DIN de l’EN 3774 — les courbes EN2495 sont prises à défaut
+EN3662;EN 3662-001:2024 — tripolaire compensé 20-50 A;3;20 25 30 35 40 50;115/200 V AC 400 Hz;oui;-55;125;;5TC;EN3662;tripolaire — courbes 5TC à défaut;titre DIN de l’EN 3662-001;à confirmer — une source : le titre DIN de l’EN 3662-001 — les courbes 5TC sont prises à défaut
+MS25244;MS25244R / AS25244 (Klixon 3TC7 5-35 A, 5TC7 40-50 A) — monopolaire NON compensé 5-50 A;1;5 7,5 10 15 20 25 30 35 50;28 V DC / 120 V AC 400 Hz;non;-40;71;;MS25244;MS25244 AS25244;aucune courbe publique : Volta juge sur l’enveloppe de la feuille MS25244R table II à 25 °C (200 % : 15-55 s, 400 % : 2-7 s, 600 % : 1,0-3,5 s), pas sur les courbes ETA483, plus rapides — la protection d’un fil derrière lui serait jugée trop favorablement;MS25244R (https://everyspec.com/MS-Specs/MS2/MS25000-MS25999/MS25244R_42403/) + Flame Enterprises, Klixon 3TC7 conforme MS25244 (https://flamecorp.com/single-product/FE-MS25244-25);vérifié (deux sources : la MS25244R table II et Flame / Sensata — non compensé, 5 à 50 A)
+7277;Klixon 7277 — monopolaire NON compensé ½-20 A, version commerciale du 7274-2 (« physically and electrically identical », limites plus larges);1;0,5 0,75 1 1,5 2 2,5 3 4 5 7,5 10 15 20;28 V DC / 120 V AC 400 Hz;non;-55;71;28;7274;7277;les courbes 7274 à défaut — calibration 25 °C plus large : 2-35 s à 200 %, 0,028-0,55 s à 1000 % — −55 / +71 °C repris du 7274, à confirmer;Sensata, fiche Klixon 7277 (2018, https://flamecorp.com/PDF/Sensata/2021/7277_Series_Catalog_Sheets.pdf);à confirmer — une source : la fiche Sensata 7277 (2018)
+Safran 170;Safran 170 (MS25017 encombrement · MIL-C-5809) — fort calibre, non compensé;1;125 140 150 160 180 200;28 V DC / 115 V AC;non;-40;71;130;;170;3000 A à 28 V DC — aucune courbe;Safran, fiche 170;à confirmer — une source : la fiche Safran 170
 
 Protection — relue par R2 (octobre 2026) sur l'AC 43.13-1B chg 1, table 11-3 page 11-15 : le calibre maximal du disjoncteur et du fusible par jauge de fil cuivre, pour des faisceaux à 57 °C (135 °F) jusqu'à 30 000 ft, de 15 fils ou plus chargés à 20 % au plus de leur capacité, des disjoncteurs à 24-29 °C (75-85 °F) au MIL-C-5809, « un fil seul à l'air libre peut être protégé par le calibre immédiatement supérieur » (§ 11-49), « le disjoncteur protège le fil, pas l'équipement » (§ 11-51). Le courant du contact : AS39029 pour les tailles 22D à 12 (Glenair 2011), taille 8 : 46 A (EN 3155-065, Amphenol, rapport R1), tailles 4 et 0 : NON TROUVÉ — l'ancienne valeur (80 A, 150 A) était de mémoire, la case est laissée vide (l'outil prendra la taille connue la plus proche, 8 : 46 A, ce qui est prudent).
 Jauge;Disjoncteur max;Fusible max;Taille contact;I contact;Note;Source;Statut
@@ -591,96 +591,96 @@ Jauge;Disjoncteur max;Fusible max;Taille contact;I contact;Note;Source;Statut
 0;;150;0;;"la table 11-3 ne donne pas de disjoncteur pour le 0 AWG (case vide), fusible 150 A ; courant du contact taille 0 non trouvé";AC 43.13-1B chg 1, table 11-3, page 11-15 (faa.gov);vérifié (calibres) / à confirmer (contact)
 
 Chute disjoncteur — la chute maximale aux bornes du disjoncteur à son courant nominal, en V (feuilles MS3320N / MS22073M / MS14154D / MS14153C table I, Sensata, E-T-A — Crouzet non publié). Une liste de calibres (« 15 20 25 30 35 ») vaut pour chacun. À 1 A un disjoncteur fait 1,1 V : du même ordre que la chute admise d'un réseau 28 V — l'outil la COMPTE dans la chute en ligne, à I / In de sa chute à In (prudent : sous In le bilame est plus froid), parce que l'AC 43.13-1B (table 11-6) mesure la chute « entre le bus et la masse de l'équipement » et que le disjoncteur est entre les deux (recherche R2, règle 7), l'hypothèse `chuteDisjoncteur` l'ôte si la règle du programme part du bus aval (ABD0100 : à confirmer). — Octobre 2026, LA TABLE DE L'ATELIER (l'Excel du lecteur, « Breaker / Du max (V) ») : la famille ATELIER, de 3 à 35 A, passe devant les autres et compte ENTIÈRE, quel que soit le courant (c'est une chute max) ; sa note : la génération est à négliger, elle garantit un 28 V stabilisé en sortie des panneaux de disjoncteurs — la chute se compte donc depuis le disjoncteur. Les mêmes lignes donnent la chute des COMPOSANTS (contacteur 0,12 V, diode 0,7 V, relais 0,2 V, « simple » 0), sans calibre. La famille ETA4120 : la fiche E-T-A 4120 (chutes typiques).
-Famille;Calibre;Chute max;Note
-MS3320;0,5;1,90;MS3320N (Sensata 2TC14-1 : 1,10 V pour 1 A)
-2TC;0,5;1,90;MS3320N (Sensata 2TC14-1 : 1,10 V pour 1 A)
-MS3320;0,75;1,20;MS3320N
-2TC;0,75;1,20;MS3320N
-MS3320;1;1,10;MS3320N
-2TC;1;1,10;MS3320N
-MS3320;1,5;0,80;MS3320N
-2TC;1,5;0,80;MS3320N
-MS3320;2;0,75;MS3320N (Sensata 2TC14-2 : 0,70)
-2TC;2;0,75;MS3320N (Sensata 2TC14-2 : 0,70)
-MS3320;2,5;0,70;MS3320N (Sensata : 0,50)
-2TC;2,5;0,70;MS3320N (Sensata : 0,50)
-MS3320;3;0,55;MS3320N (Sensata : 0,40)
-2TC;3;0,55;MS3320N (Sensata : 0,40)
-MS3320;4;0,45;MS3320N
-2TC;4;0,45;MS3320N
-MS3320;5;0,35;MS3320N
-2TC;5;0,35;MS3320N
-MS3320;7,5;0,30;MS3320N
-2TC;7,5;0,30;MS3320N
-MS3320;10;0,28;MS3320N
-2TC;10;0,28;MS3320N
-MS3320;15;0,25;MS3320N
-2TC;15;0,25;MS3320N
-MS3320;20;0,25;MS3320N
-2TC;20;0,25;MS3320N
-2TC;25;0,20;Sensata catalogue p. 7
-3TC;15 20 25 30 35;0,25;Sensata catalogue p. 7
-7274;0,5;2,00;MS22073M (Sensata idem)
-7274;0,75;1,45;MS22073M
-7274;1;1,10;MS22073M
-7274;1,5;0,75;MS22073M
-7274;2;0,75;MS22073M (Sensata : 0,70)
-7274;2,5;0,70;MS22073M
-7274;3;0,55;MS22073M
-7274;4;0,45;MS22073M
-7274;5;0,35;MS22073M
-7274;7,5;0,30;MS22073M
-7274;10;0,28;MS22073M
-7274;15;0,25;MS22073M
-7274;20;0,25;MS22073M
-6TC;1;1,10;MS14154D
-6TC;2;0,75;MS14154D
-6TC;2,5;0,70;MS14154D
-6TC;3;0,55;MS14154D
-6TC;4;0,45;MS14154D
-6TC;5;0,35;MS14154D
-6TC;7,5;0,30;MS14154D
-6TC;10;0,28;MS14154D
-6TC;15;0,28;MS14154D
-6TC;20;0,25;MS14154D
-9TC;1;1,10;MS14153C
-9TC;15 20 25 30 35;0,250;MS14153C
-5TC;20 25 35;0,150;Sensata
-5TC;50;0,120;Sensata
-ETA483;1;0,750;E-T-A (mV typiques)
-ETA483;2;0,520;E-T-A (mV typiques)
-ETA483;2,5;0,400;E-T-A (mV typiques)
-ETA483;3;0,360;E-T-A (mV typiques)
-ETA483;4;0,350;E-T-A (mV typiques)
-ETA483;5;0,260;E-T-A (mV typiques)
-ETA483;7,5;0,230;E-T-A (mV typiques)
-ETA483;10;0,190;E-T-A (mV typiques)
-ETA483;15;0,190;E-T-A (mV typiques)
-ETA483;20;0,200;E-T-A (mV typiques)
-ETA483;25;0,170;E-T-A (mV typiques)
-ETA483;30;0,160;E-T-A (mV typiques)
-ETA483;35;0,150;E-T-A (mV typiques)
-ATELIER;3;0,35;l’Excel du lecteur (12 octobre 2026) — Du max
-ATELIER;5;0,25;l’Excel du lecteur (12 octobre 2026) — Du max
-ATELIER;7,5;0,2;l’Excel du lecteur (12 octobre 2026) — Du max
-ATELIER;10;0,2;l’Excel du lecteur (12 octobre 2026) — Du max
-ATELIER;15;0,15;l’Excel du lecteur (12 octobre 2026) — Du max
-ATELIER;20;0,15;l’Excel du lecteur (12 octobre 2026) — Du max
-ATELIER;25;0,15;l’Excel du lecteur (12 octobre 2026) — Du max
-ATELIER;30;0,25;l’Excel du lecteur (12 octobre 2026) — Du max
-ATELIER;35;0,25;l’Excel du lecteur (12 octobre 2026) — Du max
-CONTACTEUR;;0,12;l’Excel du lecteur (12 octobre 2026) — chute d'un composant traversé (un contacteur)
-DIODE;;0,7;l’Excel du lecteur (12 octobre 2026) — chute d'un composant traversé (une diode)
-SIMPLE;;0;l’Excel du lecteur (12 octobre 2026) — chute d'un composant traversé (« simple »)
-RELAIS;;0,2;l’Excel du lecteur (12 octobre 2026) — chute d'un composant traversé (un relais)
-ETA4120;1;1,100;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (1 100 mV)
-ETA4120;2;0,550;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (550 mV)
-ETA4120;2,5;0,460;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (460 mV)
-ETA4120;3;0,440;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (440 mV)
-ETA4120;4;0,380;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (380 mV)
-ETA4120;5;0,260;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (260 mV)
-ETA4120;7,5;0,250;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (250 mV)
-ETA4120;10;0,230;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (230 mV)
-ETA4120;15;0,200;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (200 mV)
-ETA4120;20;0,190;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (190 mV)
-ETA4120;25;0,190;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (190 mV)
+Famille;Calibre;Chute max;Note;Source;Statut
+MS3320;0,5;1,90;MS3320N (Sensata 2TC14-1 : 1,10 V pour 1 A);MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/);à confirmer — une source : la MS3320N table I (everyspec) — le 2TC commence à 1 A chez Sensata
+2TC;0,5;1,90;MS3320N (Sensata 2TC14-1 : 1,10 V pour 1 A);MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/);à confirmer — une source : la MS3320N table I (everyspec) — le 2TC commence à 1 A chez Sensata
+MS3320;0,75;1,20;MS3320N;MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/);à confirmer — une source : la MS3320N table I (everyspec) — le 2TC commence à 1 A chez Sensata
+2TC;0,75;1,20;MS3320N;MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/);à confirmer — une source : la MS3320N table I (everyspec) — le 2TC commence à 1 A chez Sensata
+MS3320;1;1,10;MS3320N;MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/) + Sensata, Aircraft Circuit Breakers (catalogue), 2TC14;vérifié (deux sources : MS3320N table I et catalogue Sensata 2TC14 — 1,10 V)
+2TC;1;1,10;MS3320N;MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/) + Sensata, Aircraft Circuit Breakers (catalogue), 2TC14;vérifié (deux sources : MS3320N table I et catalogue Sensata 2TC14 — 1,10 V)
+MS3320;1,5;0,80;MS3320N;MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/);à confirmer — une source : la MS3320N table I (everyspec) — le 2TC commence à 1 A chez Sensata
+2TC;1,5;0,80;MS3320N;MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/);à confirmer — une source : la MS3320N table I (everyspec) — le 2TC commence à 1 A chez Sensata
+MS3320;2;0,75;MS3320N (Sensata 2TC14-2 : 0,70);MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/) + Sensata, Aircraft Circuit Breakers (catalogue), 2TC14;à confirmer — deux sources en désaccord : MS3320N 0,75 V, Sensata 2TC14 0,70 V — Volta garde la valeur de la norme, la plus haute
+2TC;2;0,75;MS3320N (Sensata 2TC14-2 : 0,70);MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/) + Sensata, Aircraft Circuit Breakers (catalogue), 2TC14;à confirmer — deux sources en désaccord : MS3320N 0,75 V, Sensata 2TC14 0,70 V — Volta garde la valeur de la norme, la plus haute
+MS3320;2,5;0,70;MS3320N (Sensata : 0,50);MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/) + Sensata, Aircraft Circuit Breakers (catalogue), 2TC14;à confirmer — deux sources en désaccord : MS3320N 0,70 V, Sensata 2TC14 0,50 V — Volta garde la valeur de la norme, la plus haute
+2TC;2,5;0,70;MS3320N (Sensata : 0,50);MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/) + Sensata, Aircraft Circuit Breakers (catalogue), 2TC14;à confirmer — deux sources en désaccord : MS3320N 0,70 V, Sensata 2TC14 0,50 V — Volta garde la valeur de la norme, la plus haute
+MS3320;3;0,55;MS3320N (Sensata : 0,40);MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/) + Sensata, Aircraft Circuit Breakers (catalogue), 2TC14;à confirmer — deux sources en désaccord : MS3320N 0,55 V, Sensata 2TC14 0,40 V — Volta garde la valeur de la norme, la plus haute
+2TC;3;0,55;MS3320N (Sensata : 0,40);MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/) + Sensata, Aircraft Circuit Breakers (catalogue), 2TC14;à confirmer — deux sources en désaccord : MS3320N 0,55 V, Sensata 2TC14 0,40 V — Volta garde la valeur de la norme, la plus haute
+MS3320;4;0,45;MS3320N;MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/) + Sensata, Aircraft Circuit Breakers (catalogue), 2TC14;vérifié (deux sources : MS3320N table I et catalogue Sensata 2TC14 — 0,45 V)
+2TC;4;0,45;MS3320N;MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/) + Sensata, Aircraft Circuit Breakers (catalogue), 2TC14;vérifié (deux sources : MS3320N table I et catalogue Sensata 2TC14 — 0,45 V)
+MS3320;5;0,35;MS3320N;MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/) + Sensata, Aircraft Circuit Breakers (catalogue), 2TC14;vérifié (deux sources : MS3320N table I et catalogue Sensata 2TC14 — 0,35 V)
+2TC;5;0,35;MS3320N;MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/) + Sensata, Aircraft Circuit Breakers (catalogue), 2TC14;vérifié (deux sources : MS3320N table I et catalogue Sensata 2TC14 — 0,35 V)
+MS3320;7,5;0,30;MS3320N;MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/) + Sensata, Aircraft Circuit Breakers (catalogue), 2TC14;vérifié (deux sources : MS3320N table I et catalogue Sensata 2TC14 — 0,30 V)
+2TC;7,5;0,30;MS3320N;MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/) + Sensata, Aircraft Circuit Breakers (catalogue), 2TC14;vérifié (deux sources : MS3320N table I et catalogue Sensata 2TC14 — 0,30 V)
+MS3320;10;0,28;MS3320N;MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/) + Sensata, Aircraft Circuit Breakers (catalogue), 2TC14;vérifié (deux sources : MS3320N table I et catalogue Sensata 2TC14 — 0,28 V)
+2TC;10;0,28;MS3320N;MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/) + Sensata, Aircraft Circuit Breakers (catalogue), 2TC14;vérifié (deux sources : MS3320N table I et catalogue Sensata 2TC14 — 0,28 V)
+MS3320;15;0,25;MS3320N;MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/) + Sensata, Aircraft Circuit Breakers (catalogue), 2TC14;vérifié (deux sources : MS3320N table I et catalogue Sensata 2TC14 — 0,25 V)
+2TC;15;0,25;MS3320N;MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/) + Sensata, Aircraft Circuit Breakers (catalogue), 2TC14;vérifié (deux sources : MS3320N table I et catalogue Sensata 2TC14 — 0,25 V)
+MS3320;20;0,25;MS3320N;MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/) + Sensata, Aircraft Circuit Breakers (catalogue), 2TC14;vérifié (deux sources : MS3320N table I et catalogue Sensata 2TC14 — 0,25 V)
+2TC;20;0,25;MS3320N;MS3320N (https://everyspec.com/MS-Specs/MS3/MS3000-MS3999/MS3320N_45287/) + Sensata, Aircraft Circuit Breakers (catalogue), 2TC14;vérifié (deux sources : MS3320N table I et catalogue Sensata 2TC14 — 0,25 V)
+2TC;25;0,20;Sensata catalogue p. 7;Sensata, Aircraft Circuit Breakers (catalogue), 2TC14-25;à confirmer — une source : le catalogue Sensata (2TC14-25 : 0,20 V) — la MS3320N s’arrête à 20 A
+3TC;15 20 25 30 35;0,25;Sensata catalogue p. 7;Sensata, Aircraft Circuit Breakers (catalogue), 3TC14;à confirmer — une source : le catalogue Sensata 3TC14 — la MS14105 n’est pas lue
+7274;0,5;2,00;MS22073M (Sensata idem);MS22073M (everyspec) + Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);vérifié (deux sources : MS22073M table I et fiche Sensata 7274 — 2,00 V)
+7274;0,75;1,45;MS22073M;MS22073M (everyspec) + Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);vérifié (deux sources : MS22073M table I et fiche Sensata 7274 — 1,45 V)
+7274;1;1,10;MS22073M;MS22073M (everyspec) + Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);vérifié (deux sources : MS22073M table I et fiche Sensata 7274 — 1,10 V)
+7274;1,5;0,75;MS22073M;MS22073M (everyspec);à confirmer — une source : la MS22073M table I — Sensata ne donne pas le 1,5 A
+7274;2;0,75;MS22073M (Sensata : 0,70);MS22073M (everyspec) + Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);à confirmer — deux sources en désaccord : MS22073M 0,75 V, Sensata 7274 0,70 V — Volta garde la valeur de la norme, la plus haute
+7274;2,5;0,70;MS22073M;MS22073M (everyspec) + Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);vérifié (deux sources : MS22073M table I et fiche Sensata 7274 — 0,70 V)
+7274;3;0,55;MS22073M;MS22073M (everyspec) + Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);vérifié (deux sources : MS22073M table I et fiche Sensata 7274 — 0,55 V)
+7274;4;0,45;MS22073M;MS22073M (everyspec) + Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);vérifié (deux sources : MS22073M table I et fiche Sensata 7274 — 0,45 V)
+7274;5;0,35;MS22073M;MS22073M (everyspec) + Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);vérifié (deux sources : MS22073M table I et fiche Sensata 7274 — 0,35 V)
+7274;7,5;0,30;MS22073M;MS22073M (everyspec) + Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);vérifié (deux sources : MS22073M table I et fiche Sensata 7274 — 0,30 V)
+7274;10;0,28;MS22073M;MS22073M (everyspec) + Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);vérifié (deux sources : MS22073M table I et fiche Sensata 7274 — 0,28 V)
+7274;15;0,25;MS22073M;MS22073M (everyspec) + Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);vérifié (deux sources : MS22073M table I et fiche Sensata 7274 — 0,25 V)
+7274;20;0,25;MS22073M;MS22073M (everyspec) + Sensata, fiche Klixon 7274 (2018, https://flamecorp.com/PDF/Sensata/2021/7274_Series_Catalog_Sheets.pdf);vérifié (deux sources : MS22073M table I et fiche Sensata 7274 — 0,25 V)
+6TC;1;1,10;MS14154D;MS14154D (everyspec);à confirmer — une source : la MS14154D table I (everyspec)
+6TC;2;0,75;MS14154D;MS14154D (everyspec);à confirmer — une source : la MS14154D table I (everyspec)
+6TC;2,5;0,70;MS14154D;MS14154D (everyspec);à confirmer — une source : la MS14154D table I (everyspec)
+6TC;3;0,55;MS14154D;MS14154D (everyspec);à confirmer — une source : la MS14154D table I (everyspec)
+6TC;4;0,45;MS14154D;MS14154D (everyspec);à confirmer — une source : la MS14154D table I (everyspec)
+6TC;5;0,35;MS14154D;MS14154D (everyspec);à confirmer — une source : la MS14154D table I (everyspec)
+6TC;7,5;0,30;MS14154D;MS14154D (everyspec);à confirmer — une source : la MS14154D table I (everyspec)
+6TC;10;0,28;MS14154D;MS14154D (everyspec);à confirmer — une source : la MS14154D table I (everyspec)
+6TC;15;0,28;MS14154D;MS14154D (everyspec);à confirmer — une source : la MS14154D table I (everyspec)
+6TC;20;0,25;MS14154D;MS14154D (everyspec);à confirmer — une source : la MS14154D table I (everyspec)
+9TC;1;1,10;MS14153C;MS14153C (everyspec);à confirmer — une source : la MS14153C table I (everyspec)
+9TC;15 20 25 30 35;0,250;MS14153C;MS14153C (everyspec);à confirmer — une source : la MS14153C table I (everyspec)
+5TC;20 25 35;0,150;Sensata;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : la fiche Sensata 5TC (2018)
+5TC;50;0,120;Sensata;Sensata, fiche Klixon 5TC (2018, https://flamecorp.com/PDF/Sensata/2021/5TC_Series_Catalog_Sheets.pdf);à confirmer — une source : la fiche Sensata 5TC (2018)
+ETA483;1;0,750;E-T-A (mV typiques);E-T-A 483 éd. 1948 (https://static.chipdip.ru/lib/343/DOC012343949.pdf);à confirmer — une source : la fiche E-T-A 483 (chute typique, pas un maximum)
+ETA483;2;0,520;E-T-A (mV typiques);E-T-A 483 éd. 1948 (https://static.chipdip.ru/lib/343/DOC012343949.pdf);à confirmer — une source : la fiche E-T-A 483 (chute typique, pas un maximum)
+ETA483;2,5;0,400;E-T-A (mV typiques);E-T-A 483 éd. 1948 (https://static.chipdip.ru/lib/343/DOC012343949.pdf);à confirmer — une source : la fiche E-T-A 483 (chute typique, pas un maximum)
+ETA483;3;0,360;E-T-A (mV typiques);E-T-A 483 éd. 1948 (https://static.chipdip.ru/lib/343/DOC012343949.pdf);à confirmer — une source : la fiche E-T-A 483 (chute typique, pas un maximum)
+ETA483;4;0,350;E-T-A (mV typiques);E-T-A 483 éd. 1948 (https://static.chipdip.ru/lib/343/DOC012343949.pdf);à confirmer — une source : la fiche E-T-A 483 (chute typique, pas un maximum)
+ETA483;5;0,260;E-T-A (mV typiques);E-T-A 483 éd. 1948 (https://static.chipdip.ru/lib/343/DOC012343949.pdf);à confirmer — une source : la fiche E-T-A 483 (chute typique, pas un maximum)
+ETA483;7,5;0,230;E-T-A (mV typiques);E-T-A 483 éd. 1948 (https://static.chipdip.ru/lib/343/DOC012343949.pdf);à confirmer — une source : la fiche E-T-A 483 (chute typique, pas un maximum)
+ETA483;10;0,190;E-T-A (mV typiques);E-T-A 483 éd. 1948 (https://static.chipdip.ru/lib/343/DOC012343949.pdf);à confirmer — une source : la fiche E-T-A 483 (chute typique, pas un maximum)
+ETA483;15;0,190;E-T-A (mV typiques);E-T-A 483 éd. 1948 (https://static.chipdip.ru/lib/343/DOC012343949.pdf);à confirmer — une source : la fiche E-T-A 483 (chute typique, pas un maximum)
+ETA483;20;0,200;E-T-A (mV typiques);E-T-A 483 éd. 1948 (https://static.chipdip.ru/lib/343/DOC012343949.pdf);à confirmer — une source : la fiche E-T-A 483 (chute typique, pas un maximum)
+ETA483;25;0,170;E-T-A (mV typiques);E-T-A 483 éd. 1948 (https://static.chipdip.ru/lib/343/DOC012343949.pdf);à confirmer — une source : la fiche E-T-A 483 (chute typique, pas un maximum)
+ETA483;30;0,160;E-T-A (mV typiques);E-T-A 483 éd. 1948 (https://static.chipdip.ru/lib/343/DOC012343949.pdf);à confirmer — une source : la fiche E-T-A 483 (chute typique, pas un maximum)
+ETA483;35;0,150;E-T-A (mV typiques);E-T-A 483 éd. 1948 (https://static.chipdip.ru/lib/343/DOC012343949.pdf);à confirmer — une source : la fiche E-T-A 483 (chute typique, pas un maximum)
+ATELIER;3;0,35;l’Excel du lecteur (12 octobre 2026) — Du max;l’Excel du lecteur (12 octobre 2026)
+ATELIER;5;0,25;l’Excel du lecteur (12 octobre 2026) — Du max;l’Excel du lecteur (12 octobre 2026)
+ATELIER;7,5;0,2;l’Excel du lecteur (12 octobre 2026) — Du max;l’Excel du lecteur (12 octobre 2026)
+ATELIER;10;0,2;l’Excel du lecteur (12 octobre 2026) — Du max;l’Excel du lecteur (12 octobre 2026)
+ATELIER;15;0,15;l’Excel du lecteur (12 octobre 2026) — Du max;l’Excel du lecteur (12 octobre 2026)
+ATELIER;20;0,15;l’Excel du lecteur (12 octobre 2026) — Du max;l’Excel du lecteur (12 octobre 2026)
+ATELIER;25;0,15;l’Excel du lecteur (12 octobre 2026) — Du max;l’Excel du lecteur (12 octobre 2026)
+ATELIER;30;0,25;l’Excel du lecteur (12 octobre 2026) — Du max;l’Excel du lecteur (12 octobre 2026)
+ATELIER;35;0,25;l’Excel du lecteur (12 octobre 2026) — Du max;l’Excel du lecteur (12 octobre 2026)
+CONTACTEUR;;0,12;l’Excel du lecteur (12 octobre 2026) — chute d'un composant traversé (un contacteur);l’Excel du lecteur (12 octobre 2026)
+DIODE;;0,7;l’Excel du lecteur (12 octobre 2026) — chute d'un composant traversé (une diode);l’Excel du lecteur (12 octobre 2026)
+SIMPLE;;0;l’Excel du lecteur (12 octobre 2026) — chute d'un composant traversé (« simple »);l’Excel du lecteur (12 octobre 2026)
+RELAIS;;0,2;l’Excel du lecteur (12 octobre 2026) — chute d'un composant traversé (un relais);l’Excel du lecteur (12 octobre 2026)
+ETA4120;1;1,100;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (1 100 mV);E-T-A 4120 Issue C (https://www.peter2000.co.uk/aviation/sn3500/D_4120_e_C.pdf);à confirmer — une source : la fiche E-T-A 4120 (chute typique, pas un maximum)
+ETA4120;2;0,550;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (550 mV);E-T-A 4120 Issue C (https://www.peter2000.co.uk/aviation/sn3500/D_4120_e_C.pdf);à confirmer — une source : la fiche E-T-A 4120 (chute typique, pas un maximum)
+ETA4120;2,5;0,460;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (460 mV);E-T-A 4120 Issue C (https://www.peter2000.co.uk/aviation/sn3500/D_4120_e_C.pdf);à confirmer — une source : la fiche E-T-A 4120 (chute typique, pas un maximum)
+ETA4120;3;0,440;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (440 mV);E-T-A 4120 Issue C (https://www.peter2000.co.uk/aviation/sn3500/D_4120_e_C.pdf);à confirmer — une source : la fiche E-T-A 4120 (chute typique, pas un maximum)
+ETA4120;4;0,380;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (380 mV);E-T-A 4120 Issue C (https://www.peter2000.co.uk/aviation/sn3500/D_4120_e_C.pdf);à confirmer — une source : la fiche E-T-A 4120 (chute typique, pas un maximum)
+ETA4120;5;0,260;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (260 mV);E-T-A 4120 Issue C (https://www.peter2000.co.uk/aviation/sn3500/D_4120_e_C.pdf);à confirmer — une source : la fiche E-T-A 4120 (chute typique, pas un maximum)
+ETA4120;7,5;0,250;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (250 mV);E-T-A 4120 Issue C (https://www.peter2000.co.uk/aviation/sn3500/D_4120_e_C.pdf);à confirmer — une source : la fiche E-T-A 4120 (chute typique, pas un maximum)
+ETA4120;10;0,230;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (230 mV);E-T-A 4120 Issue C (https://www.peter2000.co.uk/aviation/sn3500/D_4120_e_C.pdf);à confirmer — une source : la fiche E-T-A 4120 (chute typique, pas un maximum)
+ETA4120;15;0,200;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (200 mV);E-T-A 4120 Issue C (https://www.peter2000.co.uk/aviation/sn3500/D_4120_e_C.pdf);à confirmer — une source : la fiche E-T-A 4120 (chute typique, pas un maximum)
+ETA4120;20;0,190;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (190 mV);E-T-A 4120 Issue C (https://www.peter2000.co.uk/aviation/sn3500/D_4120_e_C.pdf);à confirmer — une source : la fiche E-T-A 4120 (chute typique, pas un maximum)
+ETA4120;25;0,190;E-T-A 4120, fiche « Disjoncteur thermique de puissance type 4120 » : chute de tension typique (190 mV);E-T-A 4120 Issue C (https://www.peter2000.co.uk/aviation/sn3500/D_4120_e_C.pdf);à confirmer — une source : la fiche E-T-A 4120 (chute typique, pas un maximum)
