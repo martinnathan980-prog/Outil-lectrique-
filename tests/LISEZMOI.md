@@ -21,10 +21,15 @@ node tests/banc-corpus.js      soixante-douze câblages qu'aucun réglage n'a vu
                                --images=dossier pour une capture de chacun, --profond=12 après la recherche profonde (lent)
 node tests/affinage.js         la recherche profonde tourne en arrière-plan (Worker), sans erreur, et son dessin se garde
 node tests/placement.js        un gros folio jamais vu se place au loin (Worker) : la main rendue tout de suite, l'attente visible
-                               (« Le moteur place le folio 3… », la puce qui respire), l'écran qui répond, LE MÊME DESSIN point
-                               par point que dans la page, un petit folio toujours synchrone, le concours gardé (IndexedDB) et relu
-                               au rechargement, une cible choisie pendant l'attente (la recherche) choisie et cadrée à l'arrivée ;
-                               sous pilote sans réveil (`placementAilleurs(true)`), tout reste synchrone pour les autres batteries
+                               (« Dessin du folio 3 / 6 · 66 câbles · environ 8 s », une barre, les problèmes et le récapitulatif à
+                               portée, la puce qui respire), l'écran qui répond, l'ESQUISSE d'abord, puis le dessin du concours (partagé
+                               avec des aides) en fondu, la feuille à sa place, LE MÊME DESSIN point par point que dans la page ; un
+                               autre calibre ne change pas la clé, un numéro changé garde le dessin d'avant ; un petit folio toujours
+                               synchrone, le concours gardé (IndexedDB) et relu au rechargement, une cible choisie pendant l'attente
+                               choisie et cadrée à l'arrivée ; sous pilote sans réveil (`placementAilleurs(true)`), tout reste synchrone
+node tests/vitesse.js          sur le vrai chemin (webdriver caché) : la bibliothèque en moins de 2 s, la norme embarquée lue comme
+                               avant (la lecture d'avant refaite et comparée, table par table) en une fraction de seconde, l'esquisse
+                               puis le dessin d'un folio de 66 câbles, avec ses aides ; la table au repos ne brûle plus un cœur
 node tests/retouche.js         un bloc se déplace à la vraie souris dans tous les sens (hors de toute colonne : une colonne à lui,
                                un petit pas de côté : les voisines s'écartent), au carreau, Alt libre, aux flèches ; le routage
                                reste propre ; la place prise se voit (fantôme rouge) et se dit ; Ctrl+Z, « rendre au moteur »,

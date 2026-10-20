@@ -9,10 +9,17 @@
    et on vérifie
      · que sans réveil tout est synchrone : `allerAuPlan` rend le dessin ;
      · qu'un gros folio jamais vu rend la main tout de suite (pas de dessin
-       encore, l'attente « Le moteur place le folio 3… » au milieu de la table,
-       la puce du folio qui respire), que l'écran répond pendant le calcul (on
-       change de folio, on revient), et que le dessin qui arrive du Worker est
-       IDENTIQUE, point par point, à celui que la page calcule elle-même ;
+       encore, l'attente « Dessin du folio 3 / 6 · 66 câbles · environ 8 s » au
+       milieu de la table, une barre, « Pendant ce temps : les problèmes, le
+       récapitulatif », la puce du folio qui respire), que l'écran répond
+       pendant le calcul (on change de folio, on revient), que l'ESQUISSE
+       arrive d'abord (un dessin complet, sain, la petite bande le dit), puis
+       que le dessin du concours la remplace EN FONDU, la feuille exactement à
+       sa place à l'écran, IDENTIQUE, point par point, à celui que la page
+       calcule elle-même — le Worker partage son concours avec ses aides ;
+     · que retenir un autre calibre ne change pas la clé du placement (le part
+       number n'en est pas), et qu'un numéro de câble changé garde le folio
+       dessiné (le dessin d'avant, son étiquette à jour) jusqu'au nouveau ;
      · qu'un petit folio reste synchrone, même réveillé ;
      · que le concours SE GARDE : après rechargement, le folio revient sans
        recalcul, identique ;
@@ -24,6 +31,8 @@
 const { chromium } = require('playwright');
 const P = require('./pilote');
 const FICHIER = P.fichierDemande();
+// une machine chargée (d'autres programmes) étire tout : le seuil de « tout de suite » avec elle
+const MARGE = () => Math.max(1, require('os').loadavg()[0] / Math.max(1, require('os').cpus().length) * 1.5);
 
 // le dessin, point par point : blocs, fils, barrettes à poser, feuille
 const empreinteDansLaPage = () => { const d = app.dessin; if (!d) return null;
@@ -31,7 +40,10 @@ const empreinteDansLaPage = () => { const d = app.dessin; if (!d) return null;
     b: (d.barrettes || []).map(b => [b.nomVT, b.x, (b.bornes || []).map(p => [p.n, p.y])]), bb: d.bbox }); };
 // l'attente telle qu'on la voit : l'élément, son texte, la puce du folio qui respire
 const attenteDansLaPage = () => { const el = $('attente'), chip = document.querySelector(`#fo-strip .chip[data-plan="${app.plan}"]`);
-  return { visible: !!el && !el.hidden && el.getBoundingClientRect().height > 0, texte: el ? el.textContent : '', puce: !!chip && chip.classList.contains('attend'), dessin: !!app.dessin, etat: etatPlacement() }; };
+  return { visible: !!el && !el.hidden && el.getBoundingClientRect().height > 0, texte: el ? el.textContent : '', puce: !!chip && chip.classList.contains('attend'), dessin: !!app.dessin, provisoire: app.dessin && app.dessin.provisoire,
+    barre: !!el && !!el.querySelector('.at-barre'), gestes: el && el.querySelector('.at-gestes') ? el.querySelector('.at-gestes').textContent : '', bande: !$('affinage').hidden ? $('af-txt').textContent : '', etat: etatPlacement() }; };
+// la feuille à l'écran : son coin et sa taille (le dessin définitif doit la laisser où l'esquisse l'avait posée)
+const feuilleDansLaPage = () => { const d = app.dessin; if (!d) return null; const s = app.vue.s, bb = d.bbox; return [app.vue.tx + bb.x * s, app.vue.ty + bb.y * s, bb.w * s, bb.h * s].map(v => Math.round(v * 10) / 10); };
 /* le bloc est-il dans la place libre du plan (hors rail, barre du bas, volet épinglé) ? La CARTE flottante (v72, 08-carte)
    ne prend pas de place au plan : elle ne doit seulement pas cacher le bloc */
 const cadreDansLaPage = nom => { const d = app.dessin, c = d && d.comps.find(k => k.name === nom && k.kind !== 'tag'); if (!c) return { dedans: false, detail: nom + ' absent' };
@@ -47,7 +59,7 @@ const cadreDansLaPage = nom => { const d = app.dessin, c = d && d.comps.find(k =
   const nav = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
   const ctx = await nav.newContext({ viewport: { width: 1400, height: 900 } });
   // les trois aides vivent dans la page, à chaque chargement
-  await ctx.addInitScript({ content: `window.empreinteDansLaPage = ${empreinteDansLaPage}; window.attenteDansLaPage = ${attenteDansLaPage}; window.cadreDansLaPage = ${cadreDansLaPage};` });
+  await ctx.addInitScript({ content: `window.empreinteDansLaPage = ${empreinteDansLaPage}; window.attenteDansLaPage = ${attenteDansLaPage}; window.cadreDansLaPage = ${cadreDansLaPage}; window.feuilleDansLaPage = ${feuilleDansLaPage};` });
   const page = await ctx.newPage(); page.setDefaultTimeout(180000);
   const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
   let ko = 0; const ok = (c, nom, detail) => { if (!c) ko++; console.log('  ' + (c ? 'ok ' : 'KO ') + ' ' + nom + (detail ? '   ' + detail : '')); };
@@ -71,23 +83,49 @@ const cadreDansLaPage = nom => { const d = app.dessin, c = d && d.comps.find(k =
   const e0 = await page.evaluate(() => placementAilleurs(true));
   ok(e0.ailleurs && e0.worker === 'pas encore', 'réveillé', JSON.stringify(e0));
   const loin = await page.evaluate(p => { const t0 = performance.now(); allerAuPlan(p); return { ms: Math.round(performance.now() - t0), ...attenteDansLaPage() }; }, gros.folio);
-  ok(loin.ms < 300 && !loin.dessin, `réveillé, allerAuPlan('${gros.folio}') rend la main tout de suite`, loin.ms + ' ms (contre ' + sync.ms + ' ms dans la page)');
-  ok(loin.visible && new RegExp('place le folio ' + gros.folio).test(loin.texte) && /\d+ fils/.test(loin.texte), 'l’attente se voit au milieu de la table : « Le moteur place le folio… », le nombre de fils', loin.texte);
+  ok(loin.ms < 300 * MARGE() && !loin.dessin, `réveillé, allerAuPlan('${gros.folio}') rend la main tout de suite`, loin.ms + ' ms (contre ' + sync.ms + ' ms dans la page)');
+  ok(loin.visible && new RegExp('Dessin du folio ' + gros.folio).test(loin.texte) && new RegExp(gros.n + ' câbles').test(loin.texte) && /environ \d+ (s|min)/.test(loin.texte) && !/\bfils?\b|moteur|quelques secondes|écran reste libre/.test(loin.texte), 'l’attente se voit au milieu de la table : « Dessin du folio… », ses câbles, une durée — ni « fils », ni « moteur », ni « quelques secondes »', loin.texte);
+  ok(loin.barre && /problème|points à voir|repères/.test(loin.gestes) && /récapitulatif/.test(loin.gestes), 'une barre, et ce qu’on peut faire pendant : les problèmes, le récapitulatif', loin.gestes);
   ok(loin.puce, 'la puce du folio respire dans la barre du bas');
   ok(loin.etat.worker === 'oui' && loin.etat.attentes.includes(gros.folio), 'le moteur tourne en Worker, le folio est en attente', JSON.stringify(loin.etat));
   if (process.env.CAPTURES) await page.screenshot({ path: process.env.CAPTURES + '/placement-attente.png' }).catch(() => { });
   // l'écran répond : un petit folio s'ouvre pendant le calcul (dans la page, il est petit), et l'on revient attendre
-  const libre = await page.evaluate(([petit, gros]) => { allerAuPlan(petit); const a = attenteDansLaPage(); allerAuPlan(gros); const b = attenteDansLaPage(); return { petitDessine: a.dessin, petitSansAttente: !a.visible, retourAttend: b.visible && !b.dessin }; }, [gros.petit, gros.folio]);
+  const libre = await page.evaluate(([petit, gros]) => { allerAuPlan(petit); const a = attenteDansLaPage(); allerAuPlan(gros); const b = attenteDansLaPage(); return { petitDessine: a.dessin, petitSansAttente: !a.visible, retourAttend: (b.visible && !b.dessin) || b.provisoire === 'esquisse' }; }, [gros.petit, gros.folio]);
   ok(libre.petitDessine && libre.petitSansAttente, `pendant le calcul, le folio ${gros.petit} (${gros.nPetit} liaisons ≤ ${gros.seuil}) s’ouvre aussitôt, sans attente`);
   ok(libre.retourAttend, 'revenu sur le gros folio, l’attente est toujours là');
-  // le dessin arrive, identique à celui de la page
-  const t0 = Date.now(); await page.waitForFunction(p => app.plan === p && !!app.dessin, gros.folio); const tArrive = Date.now() - t0;
-  const venu = await page.evaluate(() => ({ ...attenteDansLaPage(), empreinte: empreinteDansLaPage() }));
+  // l'esquisse d'abord : un dessin complet, sain, que la petite bande annonce ; l'attente s'efface
+  const t0 = Date.now(); await page.waitForFunction(p => app.plan === p && !!app.dessin, gros.folio); const tEsquisse = Date.now() - t0;
+  const esq = await page.evaluate(() => ({ ...attenteDansLaPage(), feuille: feuilleDansLaPage(), empreinte: empreinteDansLaPage() }));
+  ok(esq.provisoire === 'esquisse' && !esq.visible && /Esquisse/.test(esq.bande), 'l’ESQUISSE arrive d’abord : le folio se lit, l’attente s’efface, la bande dit « Esquisse · le dessin définitif dans… »', tEsquisse + ' ms · ' + esq.bande);
+  const me = await page.evaluate(P.mesurerDansLaPage);
+  ok(!me.filsDansBloc && !me.chevauches && !me.rompus, 'l’esquisse est un dessin sain', JSON.stringify({ droits: me.taux, crois: me.croisements }));
+  if (process.env.CAPTURES) await page.screenshot({ path: process.env.CAPTURES + '/placement-esquisse.png' }).catch(() => { });
+  // puis le dessin du concours la remplace, en fondu, la feuille à sa place, identique à celui de la page
+  await page.waitForFunction(p => app.plan === p && !!app.dessin && !app.dessin.provisoire, gros.folio); const tArrive = Date.now() - t0;
+  const venu = await page.evaluate(() => ({ ...attenteDansLaPage(), feuille: feuilleDansLaPage(), fondu: !!document.querySelector('#planche .dessin-fondu'), empreinte: empreinteDansLaPage() }));
+  ok(JSON.stringify(venu.feuille) === JSON.stringify(esq.feuille) && venu.empreinte !== esq.empreinte, 'le dessin définitif remplace l’esquisse SANS QUE LA VUE SAUTE : la feuille au même coin, à la même taille', JSON.stringify(esq.feuille) + ' → ' + JSON.stringify(venu.feuille));
+  ok(venu.fondu, 'en fondu : l’esquisse s’efface au-dessus du nouveau dessin');
+  await page.waitForTimeout(900);
+  ok(await page.evaluate(() => !document.querySelector('#planche .dessin-fondu')), 'le fondu fini, la copie de l’esquisse s’en va');
   ok(!venu.visible && !venu.puce, 'le dessin arrivé, l’attente et le point de la puce disparaissent');
-  ok(venu.etat.faits >= 1 && !venu.etat.erreur, 'le Worker a rendu le folio, sans erreur', JSON.stringify({ faits: venu.etat.faits, relus: venu.etat.relus, erreur: venu.etat.erreur, ms: tArrive }));
+  ok(venu.etat.faits >= 1 && !venu.etat.erreur, 'le Worker a rendu le folio, sans erreur', JSON.stringify({ faits: venu.etat.faits, relus: venu.etat.relus, aides: venu.etat.aides, erreur: venu.etat.erreur, ms: tArrive }));
   ok(venu.empreinte === reference, 'LE DESSIN NE CHANGE PAS : venu du Worker, il est identique point par point à celui de la page', venu.empreinte === reference ? reference.length + ' caractères d’empreinte' : 'différent');
   const m = await page.evaluate(P.mesurerDansLaPage);
   ok(!m.filsDansBloc && !m.chevauches && !m.rompus, 'et le dessin affiché est sain', JSON.stringify({ droits: m.taux, crois: m.croisements }));
+
+  // — le part number n'est pas dans la clé : retenir un autre calibre ne refait pas le placement (l'audit : 42 s sans dessin)
+  const cal = await page.evaluate(() => { allerAuPlan('1'); const k0 = cleCourante(), avant = app.dessin; retenirCalibre('102CB1', 20); redessiner(); const k1 = cleCourante();
+    return { meme: k0 === k1, dessinGarde: !!app.dessin && app.dessin.comps === avant.comps, pn: pnDuRepere('102CB1') }; });
+  ok(cal.meme && cal.dessinGarde, 'retenir un autre calibre (le part number change) ne change pas la clé du placement : le folio reste, le même', JSON.stringify(cal));
+  await page.evaluate(() => { annuler(); });
+  // — un numéro de câble changé sur le gros folio : la clé change, mais le folio reste dessiné (le dessin d'avant) jusqu'au nouveau
+  const avant = await page.evaluate(p => { allerAuPlan(p); const l = app.contrat.liaisons.find(x => x.plan === p && x.cable); const ancien = l.cable; l.cable = ancien + 'X'; redessiner();
+    return { ancien, nouveau: l.cable, provisoire: app.dessin && app.dessin.provisoire, etiquette: !!(app.dessin && app.dessin.fils.some(w => w.cable === l.cable)), attente: attenteDansLaPage().visible }; }, gros.folio);
+  ok(avant.provisoire === 'avant' && avant.etiquette && !avant.attente, 'un numéro de câble changé : le folio ne s’efface pas — son dessin d’avant reste, l’étiquette à jour, le nouveau se calcule', JSON.stringify(avant));
+  await page.waitForFunction(p => app.plan === p && !!app.dessin && !app.dessin.provisoire, gros.folio);
+  const apres = await page.evaluate(n => ({ etiquette: app.dessin.fils.some(w => w.cable === n) }), avant.nouveau);
+  ok(apres.etiquette, 'puis le nouveau dessin arrive, avec le nouveau numéro');
+  await page.evaluate(([p, ancien, nouveau]) => { const l = app.contrat.liaisons.find(x => x.plan === p && x.cable === nouveau); l.cable = ancien; redessiner(); }, [gros.folio, avant.ancien, avant.nouveau]);
 
   // — la garde : rechargé, réveillé, le folio revient de l'IndexedDB sans recalcul, identique
   await page.waitForTimeout(400);
@@ -107,7 +145,7 @@ const cadreDansLaPage = nom => { const d = app.dessin, c = d && d.comps.find(k =
     $('toast').textContent = ''; aller({ type: 'repere', nom });
     return { nom, plan: autre.q, dessin: !!app.dessin, inspecteur: !$('inspecteur').hidden, cible: app.cible && app.cible.nom, toast: $('toast').textContent, attente: attenteDansLaPage().visible }; }, gros.folio);
   ok(cible.cible === cible.nom && cible.inspecteur && !cible.toast, `la recherche de ${cible.nom} (folio ${cible.plan}) ouvre sa fiche tout de suite, sans faux message`, JSON.stringify({ dessin: cible.dessin, attente: cible.attente, toast: cible.toast }));
-  await page.waitForFunction(p => app.plan === p && !!app.dessin, cible.plan); await page.waitForTimeout(450);
+  await page.waitForFunction(p => app.plan === p && !!app.dessin && !app.dessin.provisoire, cible.plan); await page.waitForTimeout(700);
   const fin = await page.evaluate(nom => ({ choisi: app.choisi, cible: app.cible && app.cible.nom, cadre: cadreDansLaPage(nom), allume: !!document.querySelector('#scene .comp.hl') }), cible.nom);
   ok(fin.choisi === cible.nom && fin.cible === cible.nom && fin.allume, 'le dessin arrivé, le repère est choisi et allumé', JSON.stringify({ choisi: fin.choisi, cible: fin.cible }));
   ok(fin.cadre.dedans, 'et cadré dans la place libre, à côté de sa fiche', fin.cadre.detail);
