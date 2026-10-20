@@ -1,0 +1,19 @@
+/* ─── LIRE UN SCHÉMA VISIO (08-visio) ───────────────────────────────────────────────────────────────────────────────
+   La pièce est celle du lecteur de PDF (style-pdf.css : la table, les vignettes et les outils en palets, la relecture
+   en feuille à droite) ; ici, seulement ce qui la distingue : le dessin est un SVG (09-visio) posé sur le papier, net à
+   tout zoom, et la page qui l'ouvre range le reste de l'écran comme le fait le PDF. */
+body.visio-ouvert #rail,body.visio-ouvert #folios{visibility:hidden}
+@media (min-width:701px){html body.visio-ouvert #toast{left:calc((100vw + 132px - clamp(460px,34vw,600px)) / 2);max-width:min(560px,calc(100vw - 132px - clamp(460px,34vw,600px) - 6 * var(--jeu)))}}
+/* au téléphone : le tiroir du PDF (style-pdf.css) ; ici, ce qu'il nomme par ses identifiants — le zoom se pince, le mot
+   qui passe au-dessus du tiroir */
+@media (max-width:700px){
+  #visio-moins,#visio-plus,#visio-zoom{display:none}
+  html body.visio-ouvert #toast{left:50%;top:auto;bottom:calc(min(46vh,400px) + 60px);width:max-content;max-width:calc(100vw - 16px)}
+}
+.visio-dessin{position:absolute;inset:0;overflow:hidden;background:var(--s-papier)}
+.visio-dessin>svg{display:block;width:100%;height:100%}
+/* les vignettes : le même dessin, en image ; le nom de la page dessous (un folio de Visio a un nom, pas qu'un numéro) */
+.visio .pdf-vig-p img{display:block;width:100%;height:100%}
+.visio .pdf-vig-n{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* la relecture : le type et le numéro du câble se lisent ensemble (l'astuce de la correction : `.pdf-astuce`) */
+.visio .pdf-tab td.pdf-c small{font-family:var(--mono)}

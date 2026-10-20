@@ -160,6 +160,20 @@ node tests/pdf.js              LIRE UN PDF DE SCHÉMA (08-pdf, 09-pdf), hors lig
                                aucune requête réseau, aucune erreur ; EXCEL → PDF (08-pdf-dossier) : le dossier de tous les folios
                                écrit puis relu par Volta (201 / 201 liaisons, chacune sur son folio), l'API `pdfDuPlan`, la barre
                                de progression, le téléphone. --images=dossier : les captures
+node tests/visio.js            LES SCHÉMAS VISIO, DANS LES DEUX SENS (08-visio, 09-visio), hors ligne : L'ALLER-RETOUR — les six
+                               folios de l'exemple écrits en .vsdx par le menu (Exporter ›), le paquet contrôlé (parties, types,
+                               relations ; chaque partie Visio contre le schéma de MS-VSDX par xmllint, tests/visio/schema/ ; lu par
+                               libvisio si vsd2text est là), puis relu : les mêmes 201 liaisons, câble, type et folio compris ;
+                               QUATRE AUTRES MAINS fabriquées « comme Visio les écrit » par tests/visio/fabrique.js (maîtres et
+                               groupes hérités, colles indexées, posées sans colle, colle dynamique, lignes, polyligne, T et point de
+                               jonction, textes séparés, repères dans les données, points nommés, arrière-plan, groupes tournés et
+                               retournés, connecteurs courbes, renvois par données OPC, lien ou texte) : rappel et précision ≥ 98 %,
+                               le cartouche (le FWD de chaque page), les renvois, l'orphelin ; puis à la vraie souris : Plus › « Lire
+                               un schéma Visio… », la molette et la main, la recherche, une ligne qui surligne sa liaison, une case
+                               corrigée, un clic sur un câble, « Supprimer » puis « Rétablir », le retest Excel relu, « Ouvrir comme
+                               plan », un .vsdx glissé sur la bibliothèque, un .vsd d'avant 2013 et un faux .vsdx ; aucune requête
+                               réseau, aucune erreur. --images=dossier : les captures. L'écriture place d'abord les folios que
+                               l'exemple n'a pas encore dessinés : la batterie dure environ une minute
 ```
 
 L'outil s'ouvre sur la BIBLIOTHÈQUE (ni l'exemple, ni une page qui explique) : une batterie qui lit
