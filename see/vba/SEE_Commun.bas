@@ -831,9 +831,20 @@ Public Sub DeterminerVersion()
     ElseIf s = "V5" Or s = "5" Then
         gVersionAPI = 5
     Else
+        ' « 4.83/A », « V4R3 », « SEE Electrical Expert V4R3 SP3 » : V4 ; sans
+        ' version lisible (ni ApplicationVersion ni ProductVersion), V4 aussi,
+        ' la version du poste du bureau (V4R3, 4.8), et le journal le dit.
         t = UCase$(Trim$(gVersionLue))
+        If Len(t) = 0 Then t = UCase$(Trim$(LireProp(gApp, "ProductVersion")))
         If Left$(t, 1) = "V" Then t = Mid$(t, 2)
-        If Left$(t, 1) = "4" Then gVersionAPI = 4 Else gVersionAPI = 5
+        If Len(t) = 0 Then
+            gVersionAPI = 4
+            Journal "Connexion", "SEE", "ApplicationVersion", "version illisible : API V4 par défaut (le poste du bureau est en V4R3)"
+        ElseIf Left$(t, 1) = "4" Or InStr(t, "V4") > 0 Or InStr(t, " 4.") > 0 Then
+            gVersionAPI = 4
+        Else
+            gVersionAPI = 5
+        End If
     End If
     Journal "Connexion", "SEE", "ApplicationVersion", "« " & gVersionLue & " » ; réglage VersionAPI = " & s & _
         " ; API retenue : V" & gVersionAPI

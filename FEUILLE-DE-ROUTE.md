@@ -281,15 +281,14 @@ page de norme suffit toujours : je la transcris.
 
 ### E bis. SEE Electrical Expert (voir `see/LISEZMOI.md`)
 
-Le pont est construit (paquet SEE, classeur pilote, diagnostic, DXF de repli),
-mais rien n'a encore touché SEE. Il me faut, du bureau, sans rien de
-confidentiel :
-- le rapport `diagnostic-see.txt` (double-clic sur `see/diagnostic.cmd`) ;
-- les feuilles `Sonde_…` du classeur pilote, lancées sur un **projet d'essai**
-  où tu as dessiné à la main un petit folio comme le bureau les dessine
-  (deux équipements, deux broches, un fil, une masse, une barrette) ;
-- la version de SEE (*Aide > À propos*) et le bundle (Launch, Grow, Scale) ;
-- si l'informatique permet à Excel de commander SEE (macros, COM).
+Le pont est construit (paquet SEE, classeur pilote `Pilote-SEE.xlsm` avec
+son bouton TESTER SEE, le device associé à chaque forme, DXF de repli), mais
+rien n'a encore touché SEE. Le poste est en **SEE Electrical Expert V4R3**.
+Il me faut, du bureau, sans rien de confidentiel :
+- `Pilote-SEE.xlsm` après un clic sur TESTER SEE, SEE ouvert sur un **petit
+  plan bidon** dessiné à la main (deux formes avec leur device, deux ou trois
+  traits, une masse) ;
+- si ça bloque : une photo de l'écran.
 Avec ça, je règle le pilote (unité, origine, symboles du bureau, type de
 connexion, repères) et on dessine un premier folio, puis les 800 par lots.
 
