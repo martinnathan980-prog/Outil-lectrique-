@@ -17,7 +17,7 @@ rien.
 |---|---|---|
 | **SPM** (SEE Project Manager) | le coffre-fort des projets (check-out, check-in, révisions) | aucun dessin : on sort le projet, le pilote dessine dedans, on le rentre |
 | **SEE Electrical Definition** | très probablement **SEE Electrical Equipment Definition** : la base des connecteurs, broches, contacts | les symboles et références que le pilote pose viennent de là ; rien à automatiser dedans |
-| l'outil où l'on dessine | **SEE Electrical Expert** (version courante V5R2) | c'est lui que le pilote commande, par son API COM |
+| l'outil où l'on dessine | **SEE Electrical Expert** : **V4R3 (4.8) au bureau** (la version courante de l'éditeur est la V5R2) | c'est lui que le pilote commande, par son API COM |
 
 Le détail, sources à l'appui, est dans `RECHERCHE.md`.
 
@@ -30,7 +30,7 @@ retest (Excel)
 paquet SEE (.xlsx)  ← menu « Exporter pour SEE… » : chaque folio en millimètres
    │                   (blocs, connecteurs, bornes, fils et leur tracé)
    ▼
-classeur pilote (Excel + 3 modules VBA)
+Pilote-SEE.xlsm (le classeur pilote, ses trois modules VBA déjà dedans)
    │  lit le paquet et commande SEE par COM, folio par folio
    ▼
 SEE Electrical Expert (projet sorti de SPM)  →  check-in dans SPM
@@ -43,50 +43,45 @@ folio**, que SEE importe d'un coup (voir plus bas).
 
 | Fichier | À quoi il sert |
 |---|---|
-| `diagnostic.cmd`, `diagnostic.ps1` | le relevé du poste, en lecture seule (double-clic sur le `.cmd`) |
-| `vba/SEE_Commun.bas`, `vba/SEE_Sonde.bas`, `vba/SEE_Pilote.bas` | les trois modules du classeur pilote, à importer dans Excel |
+| `kit.js` | `node see/kit.js` écrit **Kit-SEE.zip**, le seul fichier à emporter au bureau : `Pilote-SEE.xlsm` en tête, `LIS-MOI-D-ABORD.txt`, l'Atelier « pour plus tard », le diagnostic et les `.bas` « seulement si je te le demande ». Il **refuse** (code 1, pas de zip) tant que la macro du bouton, `TesterSEE`, manque |
+| `kit/LIS-MOI-D-ABORD.txt` | les étapes du bureau, une action par ligne (UTF-8 avec BOM, CRLF : le Bloc-notes l'ouvre tel quel) |
+| `classeur.js` | `node see/classeur.js` écrit **Pilote-SEE.xlsm** : le classeur pilote, les trois modules déjà dedans, une feuille « Accueil » et un gros bouton « TESTER SEE » (voir « Le classeur pilote tout prêt ») |
+| `vba/SEE_Commun.bas`, `vba/SEE_Sonde.bas`, `vba/SEE_Pilote.bas` | les trois modules du classeur pilote : `classeur.js` les met dans `Pilote-SEE.xlsm` ; en repli, ils s'importent à la main dans Excel |
+| `diagnostic.cmd`, `diagnostic.ps1` | le relevé du poste, en lecture seule (double-clic sur le `.cmd`) ; seulement si le test ne passe pas |
 | `FORMAT-PAQUET.md` | ce que contient le paquet SEE, colonne par colonne, et la liste des réglages du pilote |
 | `FORMAT-DXF.md` | le DXF de repli : calques, noms de blocs, attributs |
 | `RECHERCHE.md` | ce que la recherche a établi sur SEE, avec ses sources et son niveau de certitude |
 | `exporter.js` | l'export en lot sans navigateur (`node see/exporter.js retest.xlsx`), pour qui a Node |
 | `diagnostic-exemple.txt` | la forme du rapport de diagnostic (produit ici, hors Windows) |
 
-## Jour 1 au bureau : apprendre le poste (une heure, rien n'est modifié)
+## Jour 1 au bureau : un fichier, un bouton (vingt minutes)
 
-1. **Le diagnostic.** Copie le dossier `see` sur le poste, double-clique sur
-   `diagnostic.cmd`. Une à deux minutes plus tard, le Bloc-notes s'ouvre sur
-   `diagnostic-see.txt`. Il est anonymisé (ni ton nom, ni la machine, ni les
-   projets). Relis-le, puis renvoie-le-moi. Il dit : la version de SEE, si SEE
-   s'est inscrit comme serveur COM (la clé de tout), si Excel est en 32 ou
-   64 bits et ce qu'il permet pour les macros, si Python existe.
-   Si Windows refuse le script : ne force rien, montre le message au service
-   informatique.
-2. **Dans SEE** : note ce que dit *Aide > À propos* (version et service pack),
-   et la licence (bundle Launch, Grow ou Scale) si tu sais où la lire.
-3. **Un projet d'essai, jamais un vrai.** Dans SEE, crée un projet bidon (ou
-   une copie hors SPM) et dessine **à la main**, comme le bureau le fait, un
-   petit folio : deux équipements avec un connecteur chacun, deux broches, un
-   fil numéroté entre elles, une masse, et une barrette si tu peux. Donne à
-   **un équipement et à un connecteur leur référence du catalogue** (le
-   « device », le part number), comme tu le fais d'habitude. C'est sur ce
-   folio que la sonde apprend comment le bureau dessine.
-4. **Le classeur pilote.** Dans Excel : un classeur neuf, `Alt+F11`,
-   *Fichier > Importer un fichier* les trois `.bas` du dossier `vba`, puis
-   enregistre-le sous « Pilote SEE.xlsm » (classeur prenant en charge les
-   macros). Si Excel bloque les macros, le diagnostic dit pourquoi
-   (emplacement approuvé, stratégie) ; c'est une question pour
-   l'informatique.
-5. **UN bouton : TesterSEE (lecture seule : il n'écrit jamais dans SEE).**
-   SEE ouvert sur le projet d'essai, ton folio d'essai affiché (et, si tu
-   veux, une broche et un fil sélectionnés) : dans Excel, `Alt+F8`,
-   **TesterSEE**, Exécuter. Rien à régler, aucune question : il crée les
-   feuilles `Reglages` et `Journal` si elles manquent, puis enchaîne toutes
-   les sondes, sans boîte intermédiaire. À la fin, la feuille
-   **`Resultat_Test`**, en tête du classeur, dit en clair si Excel a joint
-   SEE (et comment), la version, l'unité, le projet, combien de symboles et
-   d'objets du folio ont été lus, le matériel trouvé et ses classes, ce qui a
-   échoué. Une seule boîte s'ouvre, et elle dit quoi faire **d'après ce qui a
-   été lu** (la même consigne finit `Resultat_Test`, ligne « Et maintenant ») :
+Avant de partir : `node see/kit.js` écrit **Kit-SEE.zip** (le classeur pilote y
+est fabriqué à la volée depuis `vba/`). C'est le seul fichier à emporter. Au
+bureau, tout est dans son `LIS-MOI-D-ABORD.txt`, une action par ligne :
+
+1. **Débloquer le zip, puis l'extraire.** Clic droit sur `Kit-SEE.zip`,
+   *Propriétés*, cocher *Débloquer*, OK ; puis *Extraire tout*. Un fichier
+   venu d'Internet ou d'un courriel porte la « marque du Web » : Office bloque
+   alors ses macros, et les fichiers extraits d'un zip bloqué la reçoivent
+   aussi. Débloquer le zip avant d'extraire l'évite.
+2. **Dans SEE, un petit plan bidon, dessiné à la main**, sur un projet
+   d'essai (jamais un vrai) : deux formes, deux ou trois traits entre elles,
+   une masse. Donne à une forme et à un connecteur leur device (la ligne
+   *Equipment* de *CAD Properties*), comme d'habitude. SEE
+   reste ouvert sur ce folio : c'est sur lui que le test apprend comment le
+   bureau dessine.
+3. **Ouvrir `Pilote-SEE.xlsm`**. Si la barre jaune dit *MODE PROTÉGÉ* (le
+   fichier porte la marque du Web, le plus souvent parce que le zip n'a pas
+   été débloqué avant d'être extrait), cliquer *Activer la modification* :
+   en mode protégé, Excel ne charge pas les macros, le bouton ne fait rien
+   et `Alt+F8` n'est pas offert. Puis cliquer *Activer le contenu* (la barre
+   jaune suivante), et le gros bouton vert **TESTER SEE**. Rien à régler,
+   aucune question : TesterSEE crée les feuilles `Reglages` et `Journal`,
+   enchaîne toutes les sondes en **lecture seule** (il n'écrit jamais dans
+   SEE), puis écrit la feuille **`Resultat_Test`**, en tête du classeur. Une
+   seule boîte s'ouvre, et elle dit quoi faire **d'après ce qui a été lu**
+   (la même consigne finit `Resultat_Test`, ligne « Et maintenant ») :
    - tout est lu : « C'est fini », enregistre et envoie ;
    - SEE n'est pas trouvé : s'il était fermé, ouvre-le sur ton folio d'essai
      et relance TesterSEE ; s'il était ouvert, enregistre et envoie ;
@@ -96,23 +91,43 @@ folio**, que SEE importe d'un coup (voir plus bas).
      main et relance ; sinon, enregistre et envoie ;
    - Excel a dû démarrer SEE lui-même, ou SEE a cessé de répondre en cours de
      test : la boîte le dit et donne les deux suites possibles.
+   Puis `Ctrl+S`, et me renvoyer le fichier (zippé si la messagerie refuse un
+   `.xlsm`) : tout y est (les feuilles `Sonde_…`, le `Journal`, les XML de
+   SEE dans `Sonde_XML`). Vérifie sur `Resultat_Test` que le projet lu est
+   bien ton projet d'essai.
+4. **Si ça bloque** (barre rouge « Microsoft a bloqué l'exécution des
+   macros », un refus, une erreur) : une photo de l'écran, et me l'envoyer.
+   Ne rien forcer : selon le message, c'est le déblocage du fichier, une
+   stratégie de l'informatique (macros interdites, ou permises seulement si
+   elles sont signées, ou seulement depuis un emplacement approuvé), ou le
+   repli DXF.
 
-   Pour enregistrer : si le classeur n'a jamais été enregistré (ou pas en
-   `.xlsm`), la boîte dit *Fichier > Enregistrer sous*, type « Classeur Excel
-   (prenant en charge les macros) (*.xlsm) », sinon les macros seraient
-   perdues à la fermeture ; sinon `Ctrl+S`, en nommant le classeur.
-6. **Renvoie-moi** le diagnostic et **ce seul classeur** : tout y est (les
-   feuilles `Sonde_…`, le `Journal`, et les XML de SEE dans la feuille
-   `Sonde_XML`). Il contient ce qu'Excel a lu dans SEE : vérifie sur
-   `Resultat_Test` que le projet lu est bien ton projet d'essai. J'en tire
-   les réglages : l'unité, l'origine et le sens des axes, les symboles du
-   bureau, la chaîne de type de connexion, la façon d'écrire un repère, la
-   classe du matériel.
+Le bouton lance la macro **`TesterSEE`** (module `SEE_Sonde`) ; si le bouton
+ne fait rien, `Alt+F8`, `TesterSEE`, *Exécuter*. Les autres macros sont dans
+le même classeur et se lancent par `Alt+F8`, seulement si je le demande :
 
-Si SEE n'est pas joint alors qu'il était ouvert, `Resultat_Test` le dit et
-le `Journal` donne chaque manière essayée et la réponse de Windows : renvoie
-le classeur quand même. Selon la réponse : un ProgID à mettre dans les
-réglages, une question à l'informatique ou à ETAP, ou le repli DXF.
+- **InitialiserClasseur** crée les feuilles `Reglages` (chaque réglage a sa
+  ligne d'aide) et `Journal` ; les sondes sont détaillées plus bas.
+
+**Seulement si je le demande :**
+
+- **le diagnostic du poste** (`Seulement-si-je-te-le-demande/diagnostic.cmd`,
+  double-clic) : en lecture seule, anonymisé, il dit la version de SEE, si SEE
+  s'est inscrit comme serveur COM, si Excel est en 32 ou 64 bits et ce qu'il
+  permet pour les macros. Si Windows refuse le script : ne rien forcer ;
+- **le repli à la main**, si Excel refusait le classeur tout prêt mais
+  permettait les macros : un classeur neuf, `Alt+F11`, *Fichier > Importer un
+  fichier* les trois `.bas` de `Seulement-si-je-te-le-demande/modules-VBA`,
+  enregistrer en « Classeur Excel (prenant en charge les macros) ».
+
+Ce qui revient du bureau (le classeur enregistré après le test) ne contient
+que ce que les macros y ont écrit : ce qu'elles ont lu dans SEE et sur le
+poste, avec le projet d'essai pour seul dessin. J'en tire les
+réglages : l'unité, l'origine et le sens des axes, les symboles du bureau, la
+chaîne de type de connexion, la façon d'écrire un repère. Si SEE n'a pas pu
+être joint, le `Journal` dit chaque essai et son erreur ; selon la réponse :
+un ProgID à mettre dans les réglages, une question à l'informatique ou à
+ETAP, ou le repli DXF.
 
 Ce que TesterSEE enchaîne, et que l'on peut aussi lancer une à une
 (`Alt+F8`) :
@@ -145,7 +160,7 @@ démarré en cours de test.
 1. Dans l'Atelier, sur l'exemple embarqué (ou un retest non confidentiel) :
    menu, **Exporter pour SEE…**, « Ce folio », Exporter : tu obtiens
    `paquet-see-….xlsx`.
-2. Dans le classeur pilote, laisse `Simulation = O` (le défaut) et lance
+2. Dans `Pilote-SEE.xlsm`, laisse `Simulation = O` (le défaut) et lance
    **DessinerPaquet** : il lit le paquet et écrit dans le `Journal` tout ce
    qu'il ferait, sans rien écrire dans SEE.
 3. `Simulation = N`, **sur le projet d'essai** : **EssaiDessin** pose un
@@ -248,6 +263,103 @@ qu'il donne au folio reste à voir). Les bornes, masses et pastilles sont des bl
 les fils sont des lignes. Essaie d'abord **un seul** fichier : le réglage de
 l'import est décrit dans `FORMAT-DXF.md`, § « L'essai au bureau ».
 
+## Le classeur pilote tout prêt (`Pilote-SEE.xlsm`)
+
+Importer trois `.bas` dans l'éditeur VBA est trop demander au bureau. `node
+see/classeur.js [--sortie=Pilote-SEE.xlsm]` écrit donc le classeur avec ses
+macros déjà dedans, sans Excel et sans dépendance, à partir des `.bas` tels
+qu'ils sont au moment où on le lance (`VBA_DOSSIER=…` pour d'autres). Il
+contient :
+
+- **une feuille « Accueil »** : un titre, quatre consignes numérotées (ouvrir
+  le petit plan d'essai dans SEE, cliquer, attendre « C'est fini », `Ctrl+S`
+  et renvoyer), un gros bouton vert **TESTER SEE**, et en petit : *Activer le
+  contenu*, précédé d'*Activer la modification* si la barre dit *MODE
+  PROTÉGÉ* (la feuille se lit en mode protégé, les macros ne sont pas
+  chargées), *Débloquer* si la barre rouge apparaît, et `Alt+F8` si le bouton
+  ne fait rien alors qu'il n'y a plus de barre. Le mode protégé est le
+  comportement par défaut documenté d'Office pour un fichier venu d'Internet
+  ou d'un courriel ; il n'a pas été observé ici, faute d'Excel. Le bouton est une forme dessinée dont l'attribut
+  `macro="[0]!TesterSEE"` est ce qu'Excel écrit pour une forme affectée à
+  une macro du classeur ;
+- **le projet VBA** (`xl/vbaProject.bin`), construit selon la spécification
+  de Microsoft [MS-OVBA] dans un fichier composé [MS-CFB] : `ThisWorkbook` et
+  `Feuil1` (modules de document, vides, comme Excel les écrit), puis
+  `SEE_Commun`, `SEE_Sonde`, `SEE_Pilote`, leur texte **exact**, octet pour
+  octet. Le projet ne porte **aucun code compilé** : son en-tête
+  (`_VBA_PROJECT`, version `0xFFFF`) dit à Office de tout recompiler depuis
+  le texte, ce que la spécification demande à qui écrit un projet. Non
+  protégé, sans mot de passe, visible ;
+- **rien qui se lance à l'ouverture** (ni `Workbook_Open`, ni `Auto_Open` :
+  le générateur refuse un module qui en aurait).
+
+La macro `TesterSEE` est écrite à part (module `SEE_Sonde`). Tant qu'elle
+manque, `classeur.js` et `kit.js` **refusent** : une erreur, le code de
+sortie 1, et rien n'est écrit (un kit dont le bouton ne lance rien ferait
+perdre le jour 1). Ils refusent aussi un `.bas` du dossier qu'ils ne liraient
+pas (il manquerait au classeur et au kit). `--sans-bouton` écrit quand même
+le classeur ou le kit, pour un essai ici seulement, avec un « AVERTISSEMENT ».
+`kit.js` prend ses modules dans `see/vba` et ignore `VBA_DOSSIER` (une copie
+d'essai ne doit pas partir au bureau) ; `--vba=DOSSIER` en prend d'autres, et
+la commande le dit. Le contrôle du bouton reste en échec dans
+`tests/classeur.js` tant que `TesterSEE` n'est pas dans `see/vba`.
+
+**Comment on sait qu'il est juste, sans Excel.** Excel ne tourne pas ici :
+c'est la limite. À sa place :
+
+- `node tests/classeur.js` relit tout avec des lecteurs écrits pour le test
+  (zip, OOXML, fichier composé, décompresseur) : 75 contrôles, dont les 63
+  enregistrements de `VBA/dir` un par un, le texte de chaque module comparé
+  octet pour octet aux `.bas`, les exemples de compression et de chiffrement
+  de la spécification au bit près, le refus sans `TesterSEE` (par la
+  fonction et par la commande : code 1, rien d'écrit), et dix-sept fautes
+  injectées qu'il doit
+  attraper ;
+- **oletools** (`olevba`, un outil courant d'analyse des macros Office)
+  lit le projet sans erreur, liste les cinq modules et rend le texte
+  des trois modules identique aux `.bas` ;
+- **LibreOffice** (24.2) ouvre le classeur, montre la feuille « Accueil » et
+  le bouton, range les cinq modules dans sa bibliothèque `VBAProject`
+  (`ThisWorkbook` et `Feuil1` en modules de document, liés au classeur et à
+  la feuille), exécute une macro par UNO, et relie le clic du bouton à
+  `VBAProject.SEE_Sonde.TesterSEE` (essayé avec une `TesterSEE` factice,
+  hors du dépôt : le clic l'exécute) ;
+- **la comparaison avec Excel** : des `vbaProject.bin` écrits par Excel 2007
+  et Excel 2010 (les fichiers de test du projet XlsxWriter, sur GitHub) ont
+  été relus enregistrement par enregistrement à côté du nôtre. Mêmes
+  enregistrements, dans le même ordre, mêmes valeurs (plateforme, langue
+  0x409, page de code 1252, nom, références stdole et Office au caractère
+  près, chaque champ de chaque module), même texte pour les modules de
+  document. Les seuls écarts, chacun voulu par la spécification :
+
+  | Écart | Excel | Ici | Pourquoi |
+  |---|---|---|---|
+  | en-tête `_VBA_PROJECT` | sa version (0x85, 0x97) suivie de son code compilé | `0xFFFF`, sept octets | [MS-OVBA] § 2.3.4.1 : *Version MUST be 0xFFFF on write*, *PerformanceCache MUST NOT be present on write* : Office recompile depuis le texte |
+  | flux `__SRP_…` | présents | absents | § 2.2.2 : facultatifs ; § 2.3.4 : *MUST be ignored* |
+  | `MODULEOFFSET` | après le code compilé | 0 : le texte commence le flux | § 2.3.4.3 : il vaut la taille du code compilé, absent ici |
+  | `PROJECTCOOKIE`, `MODULECOOKIE` | valeurs quelconques | `0xFFFF` | § 2.3.4.2.3.1 et .2.7 : *MUST be 0xFFFF on write* |
+  | `PROJECTVERSION` | une date | celle de l'exemple de la spécification | aucune contrainte (§ 2.3.4.2.1.11) |
+  | `ID`, `CMG`, `DPB`, `GC` | tirés au hasard | tirés de l'empreinte des modules (sortie déterministe) | § 2.4.3 : graine et octets ignorés libres ; déchiffrés, ils disent la même chose : non protégé, sans mot de passe, visible |
+  | `[Workspace]` | position de la fenêtre d'un module ouvert | toutes les fenêtres fermées | § 2.3.1.19 : facultatif |
+  | arbre du répertoire | nœuds rouges et noirs | tous noirs | [MS-CFB] § 2.6.4 : *the simplest implementation … mark every node as black* |
+
+  Le `LCID` vaut 0x409 (et non 0x40C, le français) : § 2.3.4.2.1.3 l'exige,
+  et Excel l'écrit ainsi ;
+- **LibreOffice sait aussi écrire un projet VBA** (son filtre « Calc MS Excel
+  2007 VBA XML », à condition de nommer la bibliothèque `VBAProject`). Essayé :
+  ses flux de modules sont identiques **octet pour octet** aux nôtres (la même
+  compression, celle de la spécification), mais il écrit une page de code
+  `0` (elle dépend de la langue du système, hors de la spécification), un
+  en-tête `_VBA_PROJECT` à `0x0000` là où Excel et la spécification mettent
+  `0x0001`, et pas de modules de document. Il demanderait aussi LibreOffice
+  pour fabriquer le classeur. Une seule voie est gardée : `classeur.js`.
+
+Ce qui reste à voir au bureau : qu'Excel ouvre le classeur sans le
+« réparer », recompile les modules sans erreur, et laisse le poste exécuter
+des macros non signées venues d'ailleurs. Si l'informatique n'accepte que des
+macros signées ou un emplacement approuvé, le classeur ne suffit pas : la
+photo de l'écran le dira.
+
 ## Ce qui est établi, et ce qui ne l'est pas
 
 Établi par la recherche (détail et sources dans `RECHERCHE.md`) :
@@ -259,17 +371,19 @@ l'import est décrit dans `FORMAT-DXF.md`, § « L'essai au bureau ».
   connecteur, d'une broche, d'un câble). Leurs noms
   exacts viennent d'un relevé publié sur GitHub par un tiers (dépôt
   NSO73/see-electrical-expert-references), sans documentation officielle ;
-- en V4, le VBA tournait dans SEE ; en V5, il semble retiré de SEE : le pilote
-  tourne donc dans Excel, hors de SEE ;
+- en V4, le VBA tourne dans SEE ; en V5, il semble retiré de SEE. Au bureau
+  (V4R3), *Tools > Macro > Macros…* montre des macros de l'environnement que
+  SEE exécute, mais l'éditeur VBA y paraît grisé : on ne peut pas y ajouter
+  les nôtres. Le pilote tourne donc dans Excel, hors de SEE ;
 - les modules de l'éditeur (Automatic Diagram Generation, liste de câbles
   XML, Open Data, Generative View) existent. Aucun n'est prouvé pour
   transformer seul un retest en folios dessinés.
 
-Pas encore établi (le jour 1 le dira) : qu'Excel puisse joindre SEE sur ton
-poste ; l'unité, l'origine et le sens des coordonnées ; la chaîne qui donne le
-type d'une connexion ; la façon d'écrire un repère ; la classe du matériel et
-la façon dont SEE accepte une référence du catalogue ; ce que ta licence
-permet.
+Pas encore établi (le jour 1 le dira) : qu'Excel ouvre `Pilote-SEE.xlsm` et
+en exécute les macros sur ton poste ; qu'Excel puisse y joindre SEE ; l'unité,
+l'origine et le sens des coordonnées ; la chaîne qui donne le type d'une
+connexion ; la façon d'écrire un repère ; la classe du matériel et la façon
+dont SEE accepte une référence du catalogue ; ce que ta licence permet.
 
 Vérifié ici :
 - le paquet (`tests/see.js`, 112 contrôles avec le navigateur) : sur les six
@@ -297,7 +411,11 @@ Vérifié ici :
   TesterSEE va au bout avec et sans SEE sans rien écrire, et sa boîte dit de
   relancer quand aucun folio n'est affiché ou quand SEE cesse de répondre. Il
   s'arrête et reprend proprement, et la simulation n'écrit rien. Ce banc
-  prouve la cohérence du code, **pas** le comportement du vrai SEE.
+  prouve la cohérence du code, **pas** le comportement du vrai SEE ;
+- le classeur pilote tout prêt : 75 contrôles (`tests/classeur.js`), relu
+  par oletools et par LibreOffice, comparé enregistrement par enregistrement
+  aux projets écrits par Excel 2007 et 2010 (voir plus haut). **Pas** par
+  Excel lui-même.
 
 ## Ce qu'il faut demander
 
@@ -307,7 +425,7 @@ Vérifié ici :
   (Launch, Grow, Scale), le type de projet (« Wire Connectivity » ou standard),
   les symboles et le cartouche de l'environnement.
 - **À ETAP** (le support de SEE, via le portail client) : la documentation de
-  l'API et du VBA de la V5R2 ; la XSD de la liste de câbles XML (« WD ») ;
+  l'API et du VBA de la V4R3 (celle du bureau) et de la V5R2 ; la XSD de la liste de câbles XML (« WD ») ;
   SEE Generative View existe-t-il encore et pour quelle version ? La liste
   complète est dans `RECHERCHE.md`, sections 4 et 5.
 
