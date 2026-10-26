@@ -235,9 +235,9 @@ Private Function ReglagesParDefaut() As Variant
         r.Add Array(nom & ".ModeleRepere", modeleRepere, _
             "Repère du connecteur (BROCHE) ou du bornier (BORNIER) : {Repere}, {Lettre}.")
         r.Add Array(nom & ".ClasseMateriel", "", _
-            "Classe SEE du matériel associé au corps d'un bloc " & nom & " posé en symbole, avec le PN de la feuille Blocs (voir la colonne Class de Sonde_Folio, section Matériel) ; VIDE = aucun matériel associé.")
+            "Classe SEE du matériel associé au corps d'un bloc " & nom & " posé en symbole, avec le PN de la feuille Blocs (TesterSEE la lit : colonne Class de Sonde_Folio, section Matériel associé) ; VIDE = aucun matériel associé.")
         r.Add Array(nom & ".ClasseConnecteur", "", _
-            "Mode BROCHE : classe SEE du matériel associé à chaque connecteur d'un bloc " & nom & ", avec le PN de la feuille Connecteurs ; VIDE = aucun.")
+            "Mode BROCHE : classe SEE du matériel associé à chaque connecteur d'un bloc " & nom & ", avec le PN de la feuille Connecteurs (même section de Sonde_Folio, porteur connecteur) ; VIDE = aucun.")
     Next nat
     ' --- Matériel (le « device » associé : CreateObject(matériel), Class, Code, Quantity, SetEquipmentCollection)
     r.Add Array("MaterielQuantite", "1", "Quantité (Quantity) écrite dans chaque matériel associé à un corps ou à un connecteur.")

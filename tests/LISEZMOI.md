@@ -110,7 +110,7 @@ tests/banc-vba/lancer.sh       LES MÊMES MACROS EXÉCUTÉES, dans LibreOffice (
                                l'API COM et trace chaque appel : trente-deux scénarios (V5 et V4, folios complets, reprise après
                                panne, Remplacer, sauvegardes, simulation sans aucune écriture, variantes de paquet, le matériel
                                associé confronté au paquet, TesterSEE avec et sans SEE) ; hors de
-                               tests/toutes.js (il demande LibreOffice et python3-uno, environ sept minutes) ; voir son LISEZMOI :
+                               tests/toutes.js (il demande LibreOffice et python3-uno, environ dix minutes) ; voir son LISEZMOI :
                                il prouve la cohérence du code, pas le comportement du vrai SEE ni d'Excel
 node tests/couverture.js       CE QUE L'OUTIL VÉRIFIE, ET S'IL VÉRIFIE TOUT : sur l'exemple embarqué et sur un contrat inventé plus riche
                                (huit disjoncteurs dont un sans profil, un sans part number, un tripolaire ; EN 2997, EN 3645, EN 3646,

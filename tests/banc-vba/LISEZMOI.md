@@ -56,7 +56,7 @@ Il faut `soffice` (LibreOffice avec Calc, essayé avec la 24.2), `python3` avec 
 (`apt install python3-uno`) et `node`. `lancer.sh` vérifie ces trois outils et dit ce qui manque.
 
 ```
-tests/banc-vba/lancer.sh                          tous les scénarios (sept minutes environ)
+tests/banc-vba/lancer.sh                          tous les scénarios (dix minutes environ)
 tests/banc-vba/lancer.sh "complet V5" liste       seulement ceux-là
 python3 tests/banc-vba/attendus.py --liste        les noms des scénarios
 ```

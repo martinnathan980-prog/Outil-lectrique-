@@ -268,7 +268,7 @@ End Sub
 
 ' La feuille Resultat_Test, en tête du classeur : ce que le test a lu, en clair.
 Private Sub EcrireResultatTest(ByVal imprevu As String)
-    Dim ws As Object, l As Long, s As String, k As Variant, e As Variant, etapes As Variant, erreurs As Collection
+    Dim ws As Object, l As Long, s As String, k As Variant, e As Variant, etapes As Variant, erreurs As Collection, nb As Long
     Set ws = FeuilleEnTete(FEUILLE_RESULTAT)
     l = 0
     LigneResultat ws, l, "Test de SEE", "fait le " & Format$(Now, "yyyy-mm-dd hh:mm") & " par la macro TesterSEE, en lecture seule : " & _
@@ -327,19 +327,23 @@ Private Sub EcrireResultatTest(ByVal imprevu As String)
         End If
     Next e
     If Len(imprevu) > 0 Then LigneResultat ws, l, "Arrêt imprévu", imprevu
-    Set erreurs = ErreursDuJournal(8)
-    LigneResultat ws, l, "Ce qui a échoué", gNbErreurs & " appel(s) en erreur. C'est normal pour un test : chacun dit ce que SEE " & _
-        "n'a pas ou refuse. Les plus fréquents :"
-    For Each e In erreurs
-        LigneResultat ws, l, "", CStr(e)
-    Next e
-    If erreurs.Count = 0 Then LigneResultat ws, l, "", "aucun"
+    Set erreurs = ErreursDuJournal(8, nb)
+    If nb = 0 Then
+        LigneResultat ws, l, "Ce qui a échoué", "rien : le journal ne note aucune réponse en erreur"
+    Else
+        LigneResultat ws, l, "Ce qui a échoué", "le journal note " & nb & " réponse(s) en erreur. C'est normal pour un test : " & _
+            "chacune dit ce que SEE (ou Windows) n'a pas ou refuse. Les plus fréquentes :"
+        For Each e In erreurs
+            LigneResultat ws, l, "", CStr(e)
+        Next e
+    End If
     LigneResultat ws, l, "À vérifier", "Ce classeur contient ce qu'Excel a lu dans SEE (le projet ouvert, son folio actif, les " & _
         "symboles et les réglages de l'environnement). Si ce n'était pas ton projet d'essai, dis-le-moi avant de l'envoyer."
     LigneResultat ws, l, "Et maintenant", "Enregistre ce fichier (Ctrl+S), ferme-le et envoie-le-moi."
     ws.Cells(1, 1).Font.Bold = True
     ws.Columns(1).ColumnWidth = 20
     ws.Columns(2).ColumnWidth = 130
+    ws.Columns(2).WrapText = True
     ws.Activate
 End Sub
 
@@ -371,12 +375,14 @@ Echec:
     Journal "TesterSEE", ws.Name, "Worksheet.Move", "la feuille n'a pas pu être mise en tête du classeur", Err.Number, Err.Description
 End Sub
 
-' Les erreurs du journal, regroupées par appel et message : « 3 x appel :
-' message », les plus fréquentes d'abord (à égalité, la première apparue) ;
-' au plus maxi lignes, puis une ligne pour le reste.
-Private Function ErreursDuJournal(ByVal maxi As Long) As Collection
+' Les erreurs du journal (les lignes qui ont un Err.Number), regroupées par
+' appel et message : « 3 x appel : message », les plus fréquentes d'abord (à
+' égalité, la première apparue) ; au plus maxi lignes, puis une ligne pour le
+' reste. total reçoit le nombre de lignes en erreur.
+Private Function ErreursDuJournal(ByVal maxi As Long, ByRef total As Long) As Collection
     Dim ws As Object, n As Long, v As Variant, i As Long, cle As String, d As Object, res As Collection
-    Dim k As Variant, nb As Long, reste As Long, pris As Object, meilleure As String, plus As Long, total As Long
+    Dim k As Variant, nb As Long, reste As Long, pris As Object, meilleure As String, plus As Long
+    total = 0
     Set res = New Collection
     Set ErreursDuJournal = res
     Set ws = FeuilleExistante(FEUILLE_JOURNAL)
@@ -417,7 +423,7 @@ Private Function ErreursDuJournal(ByVal maxi As Long) As Collection
         total = total + EnLong(d.Item(k), 0)
         If Not pris.Exists(CStr(k)) Then reste = reste + EnLong(d.Item(k), 0)
     Next k
-    If reste > 0 Then res.Add "et " & reste & " autre(s) (" & total & " en tout) : voir la feuille Journal (colonnes Err.Number et Err.Description)"
+    If reste > 0 Then res.Add "et " & reste & " autre(s) : voir la feuille Journal (colonnes Err.Number et Err.Description)"
 End Function
 
 ' ============================================================================

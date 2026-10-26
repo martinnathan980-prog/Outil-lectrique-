@@ -1293,7 +1293,7 @@ Private Sub PoserBrochesDuBloc(ByVal nature As String, ByVal bloc As String, ByV
             Journal gEtape, gObjet, "", "borne sans point d'accroche (X, Y) dans le paquet", -1, "borne incomplète"
         End If
     Next l
-    If Not bornier Then MaterielsDesConnecteurs nature, bloc, rep, code, lettres
+    If Not bornier Then MaterielsDesConnecteurs nature, bloc, rep, lettres
 End Sub
 
 ' ============================================================================
@@ -1327,8 +1327,7 @@ End Sub
 ' la classe <NATURE>.ClasseConnecteur. Un connecteur SEE sert à tous les
 ' folios où son repère paraît : il reçoit son matériel une fois par exécution.
 ' Les connecteurs sans PN sont dits au journal en une ligne pour le bloc.
-Private Sub MaterielsDesConnecteurs(ByVal nature As String, ByVal bloc As String, ByVal rep As String, ByVal code As String, _
-        ByVal lettres As Object)
+Private Sub MaterielsDesConnecteurs(ByVal nature As String, ByVal bloc As String, ByVal rep As String, ByVal lettres As Object)
     Dim classe As String, k As Variant, pn As String, tagCon As String, sansPN As String, deja As String, con As Object
     classe = Reglage(nature & ".ClasseConnecteur", "")
     If Len(classe) = 0 Then Exit Sub
@@ -1347,7 +1346,10 @@ Private Sub MaterielsDesConnecteurs(ByVal nature As String, ByVal bloc As String
             End If
         Else
             mMaterielsCon.Add tagCon, pn
-            Set con = ConnecteurPour(nature, rep, CStr(k), code)
+            ' le connecteur que les broches ont reçu (le cache de l'exécution) : rien n'est créé ici ;
+            ' absent ou Nothing (création refusée par SEE ; simulation) : AssocierMateriel le dit
+            Set con = Nothing
+            If mConnecteurs.Exists(tagCon) Then Set con = mConnecteurs.Item(tagCon)
             If AssocierMateriel(con, "Connector", classe, pn, "connecteur « " & tagCon & " »") Then mNbMateriels = mNbMateriels + 1
         End If
     Next k
