@@ -87,14 +87,14 @@ if ! ( cd "$TRAVAIL" && node "$RACINE/see/exporter.js" --exemple "--sortie=$PAQU
     exit 2
 fi
 tail -1 "$TRAVAIL/fabrication.txt" | tee -a "$BILAN"
-for v in variante:variante casse:v_casse noms:v_noms long:v_long; do
+for v in variante:variante casse:v_casse noms:v_noms long:v_long pn:v_pn; do
     nom="${v%%:*}"; js="${v##*:}"
     if ! node "$ICI/$js.js" "$PAQUET" "$TRAVAIL/paquet-$nom.xlsx" </dev/null >>"$TRAVAIL/fabrication.txt" 2>&1; then
         echo "La variante « $nom » ne se fabrique pas : voir $TRAVAIL/fabrication.txt" | tee -a "$BILAN" >&2
         exit 2
     fi
 done
-echo "variantes : paquet-variante.xlsx (tout), paquet-casse.xlsx, paquet-noms.xlsx, paquet-long.xlsx" | tee -a "$BILAN"
+echo "variantes : paquet-variante.xlsx (tout), paquet-casse.xlsx, paquet-noms.xlsx, paquet-long.xlsx, paquet-pn.xlsx (matériel)" | tee -a "$BILAN"
 echo | tee -a "$BILAN"
 
 # ---------------------------------------------------------------- les scénarios

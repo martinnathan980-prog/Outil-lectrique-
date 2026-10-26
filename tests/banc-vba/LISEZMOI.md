@@ -21,7 +21,13 @@ Il prouve **la cohérence du code VBA** :
   Les erreurs y sont rattrapées et dites au journal, et le bilan donne le bon état pour chaque folio ;
 - **avec le paquet** (`see/exporter.js`) : chaque fil du paquet est tracé, ses deux bouts tombent au
   centième de millimètre sur le point de pose de sa borne, et ses segments sont droits. Chaque broche
-  recalée tombe sur une accroche, et les masses sont tournées selon leur `Sens` ;
+  recalée tombe sur une accroche, et les masses sont tournées selon leur `Sens`. Chaque **matériel**
+  (le « device », la référence du catalogue) attendu est associé, avec sa classe et son code, et
+  aucun autre : `verifier.py --materiel` calcule depuis le paquet ce que le pilote doit associer (corps
+  posés en symbole, connecteurs servis, une fois chacun), refuser, taire et dire ;
+- **avec lui-même, pour TesterSEE** (le bouton du bureau) : sur un classeur neuf, sans SEE puis avec le
+  faux SEE, il crée ses feuilles, enchaîne les sondes sans rien écrire dans SEE, et finit par la feuille
+  `Resultat_Test` en tête du classeur ;
 - **avec les signatures de l'API telles que le faux SEE les imite** : les noms des méthodes, le nombre
   d'arguments et les codes des objets créés (`CreateObject`). Le faux vérifie aussi le style d'appel :
   en V4, un paramètre de sortie (le faux lève une erreur si l'objet est rendu) ; en V5, une valeur rendue
@@ -33,8 +39,13 @@ Il **ne prouve pas** :
 - **le comportement réel de SEE**. Le faux SEE dit ce qu'on croit de l'API (`see/RECHERCHE.md`), pas ce
   que fait SEE : ni l'unité, ni le sens de l'axe Y, ni le vrai décalage d'un point de connexion (celui
   du faux, 2,5 / −1 mm, est choisi pour le banc), ni le rendu d'un cartouche, ni la façon dont SEE
-  compare les noms, ni ce qui se passe vraiment quand SEE refuse quelque chose. Seul un essai dans SEE
-  (`EssaiDessin`, `EssaiSymboles`, les sondes) le dit ;
+  compare les noms, ni ce qui se passe vraiment quand SEE refuse quelque chose. Ni le catalogue du
+  matériel : ses classes (`CL_EQUIPEMENT`… sont celles du banc), le moment où SEE accepte une
+  association, ni son refus d'un code (le faux refuse les codes qui commencent par « * », pour éprouver
+  le journal), ni ce que fait `SetEquipmentCollection` d'une liste déjà portée (le faux la REMPLACE par
+  celle qu'il reçoit), ni ce que `GetEquipmentCollection` rend pour un objet sans matériel (le faux rend une
+  collection vide, ou Nothing dans un passage de « tester »). Seul un essai dans SEE (`TesterSEE`,
+  `EssaiDessin`, `EssaiSymboles`) le dit ;
 - **Excel**. L'émulation VBA de LibreOffice n'est pas Excel. Elle ne fournit ni `Scripting.Dictionary`
   (remplacé), ni `ThisWorkbook.ReadOnly`, ni `ADODB.Stream`, ni les boîtes de dialogue (`gSansDialogue`).
   Le code de connexion (`GetObject` / `CreateObject` de SEE) n'est pas joué : le banc pose `gApp` sur
@@ -48,16 +59,17 @@ Il faut `soffice` (LibreOffice avec Calc, essayé avec la 24.2), `python3` avec 
 (`apt install python3-uno`) et `node`. `lancer.sh` vérifie ces trois outils et dit ce qui manque.
 
 ```
-tests/banc-vba/lancer.sh                          tous les scénarios (sept minutes environ)
+tests/banc-vba/lancer.sh                          tous les scénarios (dix minutes environ)
 tests/banc-vba/lancer.sh "complet V5" liste       seulement ceux-là
 python3 tests/banc-vba/attendus.py --liste        les noms des scénarios
 ```
 
 `lancer.sh` :
 
-1. fabrique le paquet d'exemple (`node see/exporter.js --exemple`, une demi-minute) et ses quatre
+1. fabrique le paquet d'exemple (`node see/exporter.js --exemple`, une demi-minute) et ses cinq
    variantes (`variante.js` : les trois modifications ensemble ; `v_casse.js`, `v_noms.js` et `v_long.js`
-   n'en appliquent qu'une chacun) ;
+   n'en appliquent qu'une chacun ; `v_pn.js`, pour le matériel : des PN vides et un connecteur à deux PN,
+   la géométrie inchangée) ;
 2. pour **chaque** scénario, démarre un soffice neuf, lance le scénario (par `relecture.py` ou
    `regression.py`), puis arrête soffice. Si LibreOffice est tombé pendant le passage, il refait ce
    scénario une fois et le note au bilan ;
@@ -134,6 +146,9 @@ C12 et VBA-1 à VBA-9 renvoient aux constats de relecture que cite `BancR.bas`.
 | essai existant | `FolioEssai` nomme un vrai folio (C10) | **relevé** : DeleteSheet 0 |
 | apostrophe | une valeur de réglage précédée d'une apostrophe (VBA-1) | **intention** : écrit par `InitialiserClasseur` sans apostrophe ([O]) ; une cellule « 'N » est lue N |
 | unite | une unité rendue en texte (VBA-7) | va au bout (le texte rendu est à lire) |
+| materiel V5, materiel V4 | le paquet variante `pn` entier avec du matériel : `EQUIPEMENT.ClasseMateriel` et `.ClasseConnecteur`, `PRISE.ClasseConnecteur`, `MASSE.ClasseMateriel` (les masses n'ont pas de PN), `BARRETTE.ClasseMateriel` (en `BORNIER`, corps dessiné) ; le faux catalogue refuse les codes qui commencent par « * » ; puis la sonde du folio 1, puis une simulation (`Remplacer = O`) | **intention**, nombres **calculés** par `verifier.py --materiel` depuis le paquet : 6 folios SAUVE ; la géométrie de « complet » (210 fils, 0 bout faux, 0 segment oblique, 309 broches) ; associations lues = attendues (118), classe ou code faux 0, manquantes 0, en trop 0 ; refus (2), corps sans PN (44), corps dessinés (20), connecteur sans PN (1), connecteur à deux PN (1) dits au journal comme attendu ; « matériel non relu » 0, « relecture différente » 0 ; colonne `Materiels` du bilan = associés ; la sonde relit le matériel du folio 1 comme attendu (9) sans rien écrire ; la simulation n'écrit rien : elle lit les connecteurs que le passage réel a associés (« déjà associé », 66 = connecteurs associés) et dit chaque autre tentative, 54 + 66 = 120 tentatives |
+| materiel existant | un connecteur repris du projet qui porte DÉJÀ un matériel (constats C1, R2) : le folio 1 dessiné une fois, puis trois de ses connecteurs reçoivent « à la main » c1 un autre matériel, c2 le sien et un accessoire, c3 un accessoire ; puis une simulation, `MaterielExistant` = `GARDER`, `AJOUTER`, une relance en `AJOUTER`, `REMPLACER` sur c1 remis à la main, et une lecture du matériel qui échoue | **intention** : simulation : 0 écriture, c1 et c3 « gardés » dits ; `GARDER` : 0 association, les trois inchangés ; `AJOUTER` : 2 associations, c1 et c3 = ce qu'ils portaient + leur PN, c2 inchangé, rien de perdu ni de non relu ; relance : 0 association, aucun doublon (2, 2, 2) ; `REMPLACER` : c1 ne garde que son PN, le retrait est dit ; lecture ratée : 0 association, « matériel existant illisible » dit, le folio va au bout |
+| tester | `TesterSEE` : sur le classeur neuf sans SEE, puis avec le faux SEE en V5 et en V4 après un lot de deux folios avec matériel ; puis SEE joint sans aucun folio affiché ; SEE qui cesse de répondre quand la sélection est lue ; `GetEquipmentCollection` qui rend Nothing pour un objet sans matériel | **intention** : sans SEE : `Reglages` créée (138 clés), « SEE joint ? = NON », aucune trace, la boîte dit « Excel n'a pas trouvé SEE » et de relancer s'il était fermé ; avec le faux : aucune écriture pendant le test, « OUI », version, unité, symboles et matériel du folio lus (classes `CL_EQUIPEMENT` et `CL_CONNECTEUR`), autant de matériel par la sélection que par le folio, 6 XML dans `Sonde_XML`, les cinq sondes faites, la boîte dit « C'est fini » et, le classeur jamais enregistré, « Enregistrer sous » en `.xlsm` ; les erreurs des étapes = celles de « Ce qui a échoué » ; sans folio : « Folio lu = aucun », l'étape dit « rien lu », la boîte dit « Il manque ton folio » et de relancer ; SEE muet : aucune reconnexion, « OUI » et ce qui a été lu avant restent dits, ligne « SEE perdu » (SondeSelection), XML « non lues », la boîte le dit ; Nothing : aucune cellule « #ERR » dans les colonnes du matériel de `Sonde_Folio`, « (aucun : Nothing) » à la place ; dans chaque passage, `Resultat_Test` est la première feuille, la seule boîte est celle de la fin et « Et maintenant » en reprend la consigne |
 
 Les scénarios ci-dessous viennent de `regression.py`, les scénarios d'origine du banc. Ce sont les macros
 `BancFaux.*`, écrites dans `faux.py`.
@@ -230,6 +245,6 @@ comportement est le bon (en le disant).
 | `DicoTest.bas` | le substitut de `Scripting.Dictionary` |
 | `Banc.bas`, `BancR.bas` | les macros des scénarios (`FixerReglage`, `BancSimulation` ; les scénarios de la relecture) |
 | `relecture.py`, `regression.py` | ils lancent les scénarios (`SCEN`), un nom de scénario en argument |
-| `verifier.py` | il relit la trace d'un passage complet contre le paquet (bouts de fil, segments, numéros, broches) |
+| `verifier.py` | il relit la trace d'un passage complet contre le paquet (bouts de fil, segments, numéros, broches) ; avec `--materiel=…`, le matériel associé (voir son en-tête) |
 | `journal.py` | il lance une macro et montre les erreurs de son journal, son bilan, et les lignes filtrées |
-| `variante.js`, `v_casse.js`, `v_noms.js`, `v_long.js` | ils fabriquent les paquets variantes |
+| `variante.js`, `v_casse.js`, `v_noms.js`, `v_long.js`, `v_pn.js` | ils fabriquent les paquets variantes (`v_pn.js` : celle du matériel) |

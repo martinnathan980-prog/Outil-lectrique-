@@ -66,35 +66,79 @@ folio**, que SEE importe d'un coup (voir plus bas).
 3. **Un projet d'essai, jamais un vrai.** Dans SEE, crée un projet bidon (ou
    une copie hors SPM) et dessine **à la main**, comme le bureau le fait, un
    petit folio : deux équipements avec un connecteur chacun, deux broches, un
-   fil numéroté entre elles, une masse, et une barrette si tu peux. C'est sur
-   lui que la sonde apprend comment le bureau dessine.
+   fil numéroté entre elles, une masse, et une barrette si tu peux. Donne à
+   **un équipement et à un connecteur leur référence du catalogue** (le
+   « device », le part number), comme tu le fais d'habitude. C'est sur ce
+   folio que la sonde apprend comment le bureau dessine.
 4. **Le classeur pilote.** Dans Excel : un classeur neuf, `Alt+F11`,
    *Fichier > Importer un fichier* les trois `.bas` du dossier `vba`, puis
    enregistre-le sous « Pilote SEE.xlsm » (classeur prenant en charge les
-   macros). `Alt+F8`, lance **InitialiserClasseur** : il crée les feuilles
-   `Reglages` (chaque réglage a sa ligne d'aide) et `Journal`. Si Excel bloque
-   les macros, le diagnostic dit pourquoi (emplacement approuvé, stratégie) ;
-   c'est une question pour l'informatique.
-5. **Les sondes (lecture seule : elles n'écrivent jamais dans SEE).** SEE
-   ouvert sur le projet d'essai :
-   - **SondeApplication** : comment Excel a pu joindre SEE, la version, l'unité
-     des coordonnées, les cartouches ;
-   - **SondeSymboles** : toutes les familles et tous les symboles de ton
-     environnement (c'est là qu'on choisira la boîte, la broche, la masse…) ;
-   - **SondeFolio** : ton folio dessiné à la main, objet par objet (positions,
-     repères, points de connexion, type des connexions) ;
-   - **SondeSelection** : la même chose pour ce que tu as sélectionné dans SEE
-     (sélectionne une broche et un fil, puis lance-la) ;
-   - **SondeMethodes** : les réglages de méthode de SEE, écrits en XML à côté
-     du classeur.
-6. **Renvoie-moi** le diagnostic et les feuilles `Sonde_…` (elles ne
-   contiennent que ton projet d'essai). J'en tire les réglages : l'unité,
-   l'origine et le sens des axes, les symboles du bureau, la chaîne de type de
-   connexion, la façon d'écrire un repère.
+   macros). Si Excel bloque les macros, le diagnostic dit pourquoi
+   (emplacement approuvé, stratégie) ; c'est une question pour
+   l'informatique.
+5. **UN bouton : TesterSEE (lecture seule : il n'écrit jamais dans SEE).**
+   SEE ouvert sur le projet d'essai, ton folio d'essai affiché (et, si tu
+   veux, une broche et un fil sélectionnés) : dans Excel, `Alt+F8`,
+   **TesterSEE**, Exécuter. Rien à régler, aucune question : il crée les
+   feuilles `Reglages` et `Journal` si elles manquent, puis enchaîne toutes
+   les sondes, sans boîte intermédiaire. À la fin, la feuille
+   **`Resultat_Test`**, en tête du classeur, dit en clair si Excel a joint
+   SEE (et comment), la version, l'unité, le projet, combien de symboles et
+   d'objets du folio ont été lus, le matériel trouvé et ses classes, ce qui a
+   échoué. Une seule boîte s'ouvre, et elle dit quoi faire **d'après ce qui a
+   été lu** (la même consigne finit `Resultat_Test`, ligne « Et maintenant ») :
+   - tout est lu : « C'est fini », enregistre et envoie ;
+   - SEE n'est pas trouvé : s'il était fermé, ouvre-le sur ton folio d'essai
+     et relance TesterSEE ; s'il était ouvert, enregistre et envoie ;
+   - SEE est joint mais aucun projet ou aucun folio n'est affiché : affiche
+     ton folio d'essai et relance TesterSEE **avant** d'envoyer ;
+   - aucun objet du folio n'a de matériel : si tu peux, associes-en un à la
+     main et relance ; sinon, enregistre et envoie ;
+   - Excel a dû démarrer SEE lui-même, ou SEE a cessé de répondre en cours de
+     test : la boîte le dit et donne les deux suites possibles.
 
-Si **SondeApplication** ne joint pas SEE, le journal dit chaque essai et son
-erreur : renvoie-le aussi. Selon la réponse : un ProgID à mettre dans les
+   Pour enregistrer : si le classeur n'a jamais été enregistré (ou pas en
+   `.xlsm`), la boîte dit *Fichier > Enregistrer sous*, type « Classeur Excel
+   (prenant en charge les macros) (*.xlsm) », sinon les macros seraient
+   perdues à la fermeture ; sinon `Ctrl+S`, en nommant le classeur.
+6. **Renvoie-moi** le diagnostic et **ce seul classeur** : tout y est (les
+   feuilles `Sonde_…`, le `Journal`, et les XML de SEE dans la feuille
+   `Sonde_XML`). Il contient ce qu'Excel a lu dans SEE : vérifie sur
+   `Resultat_Test` que le projet lu est bien ton projet d'essai. J'en tire
+   les réglages : l'unité, l'origine et le sens des axes, les symboles du
+   bureau, la chaîne de type de connexion, la façon d'écrire un repère, la
+   classe du matériel.
+
+Si SEE n'est pas joint alors qu'il était ouvert, `Resultat_Test` le dit et
+le `Journal` donne chaque manière essayée et la réponse de Windows : renvoie
+le classeur quand même. Selon la réponse : un ProgID à mettre dans les
 réglages, une question à l'informatique ou à ETAP, ou le repli DXF.
+
+Ce que TesterSEE enchaîne, et que l'on peut aussi lancer une à une
+(`Alt+F8`) :
+- **SondeApplication** : comment Excel a pu joindre SEE, la version, l'unité
+  des coordonnées, les cartouches ;
+- **SondeSymboles** : toutes les familles et tous les symboles de ton
+  environnement (c'est là qu'on choisira la boîte, la broche, la masse…) ;
+- **SondeFolio** : ton folio dessiné à la main, objet par objet (positions,
+  repères, points de connexion, type des connexions, et le **matériel**
+  associé à chaque symbole et à son connecteur : `Class`, `Code`,
+  `Quantity`, dans la section « Matériel associé ») ; TesterSEE lit le folio
+  affiché, SondeFolio seule celui du réglage `SondeFolio` s'il est rempli ;
+- **SondeSelection** : la même chose pour ce que tu as sélectionné dans SEE
+  (TesterSEE la saute s'il n'y a pas de sélection) ;
+- **SondeMethodes** : les réglages de méthode de SEE, en XML, à côté du
+  classeur et dans la feuille `Sonde_XML` (en morceaux de 30 000 caractères).
+
+Lancée seule, chaque sonde vide le `Journal` et finit par sa propre boîte ;
+enchaînées par TesterSEE, elles partagent un seul journal et se taisent.
+TesterSEE essaie de joindre SEE comme `SondeApplication` : avec le réglage
+`LancerSEE = O` (le défaut), si aucun SEE ouvert ne répond, il essaie aussi
+d'en démarrer un ; si une seconde fenêtre de SEE s'ouvre, ferme-la. Il ne
+joint SEE qu'une fois : si SEE cesse de répondre en cours de test (fermé,
+planté), les sondes suivantes sont sautées, `Resultat_Test` le dit (ligne
+« SEE perdu ») et garde ce qui a été lu avant ; aucun autre SEE n'est
+démarré en cours de test.
 
 ## Jour 2 : un folio d'essai
 
@@ -118,6 +162,65 @@ réglages, une question à l'informatique ou à ETAP, ou le repli DXF.
 
 Tant qu'un symbole n'est pas réglé, sa nature reste en `DESSIN` : traits,
 rectangles et textes. Le folio est lisible, mais pas « intelligent » dans SEE.
+
+## Le matériel (le « device » associé)
+
+À la main, le plus long est souvent de donner à chaque boîte sa référence du
+catalogue. Le pilote le fait : le **corps** d'un bloc posé en symbole (mode
+`BOITE`, `SYMBOLE`, ou `BROCHE` / `BORNIER` avec `Famille` et `Symbole`
+réglés) reçoit le `PN` de la feuille `Blocs` du paquet ; en mode `BROCHE`,
+chaque **connecteur** reçoit le `PN` de sa pièce (feuille `Connecteurs`).
+
+1. Sur ton folio d'essai, associe à la main un matériel à un équipement et à
+   un connecteur, puis lance **TesterSEE** : `Sonde_Folio`, section
+   « Matériel associé », donne la `Class` que SEE a mise (le `Code` est le
+   PN, la `Quantity` la quantité).
+2. Mets cette classe dans les réglages de chaque nature :
+   `EQUIPEMENT.ClasseMateriel` (le corps), `EQUIPEMENT.ClasseConnecteur` (ses
+   connecteurs), de même pour `PRISE.…`, etc. **Vide = aucun matériel**
+   (c'est le défaut : rien ne change tant que tu ne remplis pas ces
+   réglages). `MaterielQuantite` (1) est la quantité écrite.
+3. **DessinerPaquet** avec `Folios = 1`, d'abord en simulation : le journal
+   dit chaque matériel qui serait associé (`SetEquipmentCollection`), et ce
+   que portent déjà les connecteurs qui existent dans le projet. Puis, sur le
+   projet d'essai, `Simulation = N` : regarde dans SEE que la boîte et son
+   connecteur ont bien leur référence.
+
+**Ce qui est déjà saisi n'est pas écrasé.** Un connecteur qui existe déjà
+dans le projet sous ce repère (dessiné à la main sur un autre folio, ou par
+une exécution précédente) est repris, et il peut déjà porter son matériel,
+voire plusieurs (la fiche et son accessoire). Avant d'écrire, le pilote lit
+ce qu'il porte et l'écrit au journal, en simulation aussi :
+- il porte déjà ce PN (même classe) : rien n'est écrit (« déjà associé ») ;
+- il porte autre chose : le réglage `MaterielExistant` décide. `GARDER` (le
+  défaut) n'écrit rien et le journal dit ce qu'il porte (« matériel existant
+  gardé ») ; `AJOUTER` ajoute le PN du paquet à ce qui est là ; `REMPLACER`
+  ne lui laisse que le PN du paquet, et le journal nomme ce qui est retiré ;
+- ce qu'il porte ne peut pas être lu : rien n'est écrit à l'aveugle
+  (« matériel existant illisible »), sauf en `REMPLACER`.
+
+Ce que fait le pilote, et ce qu'il dit : il crée le matériel
+(`CreateObject`), écrit `Class`, `Code` et `Quantity`, le passe à SEE dans une
+collection (`SetEquipmentCollection`), puis relit ce que SEE a gardé
+(`GetEquipmentCollection`) : le matériel n'est compté que si un élément de
+même classe et de même code y est relu ; sinon le journal le dit
+(« matériel non relu ») et il n'est pas compté. Si SEE rend un autre nombre
+de matériels que ce qu'il a reçu, le journal le dit aussi (« relecture
+différente » : c'est ainsi qu'on saura si SEE remplace ou ajoute). Un PN
+vide : rien n'est associé, le journal le dit
+une fois pour le bloc. Un corps dessiné (pas en symbole) : son PN n'est pas
+associé, le journal le dit. Un refus de SEE (classe ou code absents du
+catalogue) : l'erreur est au journal et le folio continue. Un connecteur qui
+paraît sur plusieurs folios reçoit son matériel une fois (le premier PN vu ;
+un PN différent ailleurs est signalé). La colonne `Materiels` du `Bilan`
+compte les matériels associés et relus par folio.
+
+Pas encore établi : les classes du catalogue du bureau, si SEE accepte
+l'association à ce moment-là (le pilote l'essaie une fois le symbole ou le
+connecteur posé), ce qu'il fait d'un code inconnu, si `SetEquipmentCollection`
+remplace la liste ou s'y ajoute, et si les matériels relus peuvent être remis
+tels quels dans une collection (`AJOUTER` le fait). Le premier essai sur le
+projet d'essai le dira.
 
 ## Ensuite : les 800
 
@@ -150,7 +253,10 @@ l'import est décrit dans `FORMAT-DXF.md`, § « L'essai au bureau ».
 Établi par la recherche (détail et sources dans `RECHERCHE.md`) :
 - SEE Electrical Expert a une API COM ; ses objets (Application, Project,
   Group, Sheet, Symbol, Connector, Pin, Cable…) et leurs méthodes (créer un
-  folio, poser un symbole, une broche, un fil) sont connus. Leurs noms
+  folio, poser un symbole, une broche, un fil) sont connus, comme ceux du
+  matériel (`ISEEEquipment` : `Class`, `Code`, `Quantity` ;
+  `GetEquipmentCollection` / `SetEquipmentCollection` d'un symbole, d'un
+  connecteur, d'une broche, d'un câble). Leurs noms
   exacts viennent d'un relevé publié sur GitHub par un tiers (dépôt
   NSO73/see-electrical-expert-references), sans documentation officielle ;
 - en V4, le VBA tournait dans SEE ; en V5, il semble retiré de SEE : le pilote
@@ -161,7 +267,9 @@ l'import est décrit dans `FORMAT-DXF.md`, § « L'essai au bureau ».
 
 Pas encore établi (le jour 1 le dira) : qu'Excel puisse joindre SEE sur ton
 poste ; l'unité, l'origine et le sens des coordonnées ; la chaîne qui donne le
-type d'une connexion ; la façon d'écrire un repère ; ce que ta licence permet.
+type d'une connexion ; la façon d'écrire un repère ; la classe du matériel et
+la façon dont SEE accepte une référence du catalogue ; ce que ta licence
+permet.
 
 Vérifié ici :
 - le paquet (`tests/see.js`, 112 contrôles avec le navigateur) : sur les six
@@ -171,12 +279,25 @@ Vérifié ici :
   de l'Atelier n'a pas changé d'un caractère ;
 - le DXF : relu par une lecture maison et par une bibliothèque indépendante
   (ezdxf : aucune erreur d'audit) ;
-- le pilote : 91 contrôles statiques (`tests/vba.js`). Il a aussi été exécuté
-  dans LibreOffice contre un **faux SEE** qui imite l'API (banc :
-  `tests/banc-vba/`) : 210 fils posés sur 210 et 309 broches recalées sur leur
-  contact, sans bout faux ni segment de travers. Il s'arrête et reprend
-  proprement, et la simulation n'écrit rien. Ce banc prouve la cohérence du
-  code, **pas** le comportement du vrai SEE.
+- le pilote : 99 contrôles statiques (`tests/vba.js`, dont : chaque procédure
+  qui écrit dans SEE teste la simulation ; la sonde et TesterSEE, de proche en
+  proche, ne font que des **lectures** : chaque objet est suivi depuis sa
+  provenance, et sur un objet SEE seuls les membres d'une liste blanche de
+  lectures sont permis, sans propriété affectée ni écriture par le nom ;
+  chaque réglage est décrit dans `FORMAT-PAQUET.md` ; 38 fautes injectées,
+  toutes attrapées, et une écriture dans le classeur n'est pas prise pour une
+  écriture dans SEE). Il a aussi été exécuté dans LibreOffice contre un
+  **faux SEE** qui imite l'API (banc : `tests/banc-vba/`, 33 scénarios) :
+  210 fils posés sur 210 et 309 broches recalées sur leur contact, sans bout
+  faux ni segment de travers ; en V5 et en V4, chaque matériel attendu
+  associé avec sa classe et son code (118 sur la variante d'essai) et relu,
+  les PN vides, les corps dessinés et les refus du catalogue dits au journal
+  sans arrêter le folio ; un connecteur qui porte déjà un matériel n'est ni
+  écrasé ni doublé (`GARDER`, `AJOUTER`, `REMPLACER`, lecture ratée) ;
+  TesterSEE va au bout avec et sans SEE sans rien écrire, et sa boîte dit de
+  relancer quand aucun folio n'est affiché ou quand SEE cesse de répondre. Il
+  s'arrête et reprend proprement, et la simulation n'écrit rien. Ce banc
+  prouve la cohérence du code, **pas** le comportement du vrai SEE.
 
 ## Ce qu'il faut demander
 

@@ -1,10 +1,17 @@
 # python3 verifier.py <paquet.xlsx> <trace.txt> [DX DY] : les fils tracés et les broches recalées, relus contre le paquet
+# python3 verifier.py <paquet.xlsx> <trace.txt> --materiel=<réglages> : le MATÉRIEL associé, relu contre le paquet
+#   <réglages> : corps=NATURE:CLASSE,…;connecteurs=NATURE:CLASSE,…;symboles=NATURE,…;broche=NATURE,…;refuse=<préfixe>;folio=<n>
+#   corps / connecteurs : les classes réglées (<NATURE>.ClasseMateriel / .ClasseConnecteur) ; symboles : les natures dont le
+#   corps est posé en symbole ; broche : les natures en mode BROCHE ; refuse : le préfixe des codes que le faux catalogue
+#   refuse ; folio : le folio relu par SondeFolio.
 import sys, json, os
 sys.dont_write_bytecode = True   # pas de __pycache__ dans le dépôt
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from chemins import XLSX
 import subprocess
-PAQUET=sys.argv[1]; TRACE=sys.argv[2]; DX=float(sys.argv[3]) if len(sys.argv)>3 else 2.5; DY=float(sys.argv[4]) if len(sys.argv)>4 else -1
+OPTIONS=[a for a in sys.argv[1:] if a.startswith('--')]; ARGS=[a for a in sys.argv[1:] if not a.startswith('--')]
+PAQUET=ARGS[0]; TRACE=ARGS[1]; DX=float(ARGS[2]) if len(ARGS)>2 else 2.5; DY=float(ARGS[3]) if len(ARGS)>3 else -1
+MATERIEL=next((o.split('=',1)[1] for o in OPTIONS if o.startswith('--materiel=')), None)
 # lire le paquet par node + SheetJS
 js='''const XLSX=require('''+json.dumps(XLSX)+'''),fs=require('fs');const wb=XLSX.read(fs.readFileSync(process.argv[1]),{type:'buffer'});
 const o={};for(const n of wb.SheetNames)o[n]=XLSX.utils.sheet_to_json(wb.Sheets[n],{defval:null});console.log(JSON.stringify(o));'''
@@ -29,8 +36,85 @@ def paire(k1,k2):
             d=(a['X']-b['X'])**2+(a['Y']-b['Y'])**2
             if best is None or d<best[0]: best=(d,a,b)
     return (cx(best[1]['_pose'][0]),cy(best[1]['_pose'][1])),(cx(best[2]['_pose'][0]),cy(best[2]['_pose'][1]))
-doubles=sum(1 for v in lignes.values() if len(v)>1); print('clés de borne en double',doubles)
+doubles=sum(1 for v in lignes.values() if len(v)>1)
+
+# ---------------------------------------------------------------- le matériel (le « device » associé)
+def verifier_materiel(spec, T):
+    """Ce que le pilote doit associer, calculé depuis le paquet comme le pilote le fait (FORMAT-PAQUET.md, SEE_Pilote) :
+    un corps posé en symbole d'une nature dont ClasseMateriel est réglée reçoit son PN (Blocs) ; un connecteur servi
+    (une borne du bloc le cite) d'un bloc en BROCHE dont ClasseConnecteur est réglée reçoit le PN de sa pièce
+    (Connecteurs), une fois par exécution (le premier PN vu gagne). PN vide : rien. Code refusé : rien (journalisé)."""
+    o = dict(kv.split('=', 1) for kv in spec.split(';') if kv)
+    paires = lambda s: dict(x.split(':', 1) for x in s.split(',') if x) if s else {}
+    corps, classes_con = paires(o.get('corps', '')), paires(o.get('connecteurs', ''))
+    symboles, broche = set(filter(None, o.get('symboles', '').split(','))), set(filter(None, o.get('broche', '').split(',')))
+    refuse = o.get('refuse', ''); folio_sonde = int(o['folio']) if o.get('folio') else None
+    refuse_t = lambda pn: bool(refuse) and pn.startswith(refuse)
+    noms = {t(f['Nom']): f['Folio'] for f in P['Folios']}
+    folios = sorted({f['Folio'] for f in P['Folios']})
+    attendus_corps, attendus_con = [], []          # (folio, (x1, y1, x2, y2) | repère, classe, pn)
+    corps_sans_pn = corps_dessines = con_sans_pn = pn_differents = 0
+    vus = {}                                        # repère du connecteur -> premier PN associé
+    servis = {}                                     # folio -> repères des connecteurs servis
+    for f in folios:
+        for b in [b for b in P['Blocs'] if b['Folio'] == f]:
+            nat, pn = t(b['Nature']), t(b['PN'])
+            if nat in corps:
+                if not pn: corps_sans_pn += 1
+                elif nat not in symboles: corps_dessines += 1
+                else: attendus_corps.append((f, (cx(b['X']), cy(b['Y']), cx(b['X'] + b['L']), cy(b['Y'] + b['H'])), corps[nat], pn))
+            if nat in broche and nat in classes_con:
+                lettres = []
+                for r in P['Bornes']:
+                    if r['Folio'] == f and t(r['Bloc']) == t(b['Bloc']) and t(r['Connecteur']) not in lettres: lettres.append(t(r['Connecteur']))
+                sans = 0
+                for le in lettres:
+                    tag = t(b['Repere']) + ('-' + le if le else '')
+                    servis.setdefault(f, set()).add(tag)
+                    pieces = [c for c in P['Connecteurs'] if c['Folio'] == f and t(c['Bloc']) == t(b['Bloc']) and t(c['Lettre']) == le and t(c['PN'])]
+                    pc = t(pieces[0]['PN']) if pieces else ''
+                    if not pc: sans += 1
+                    elif tag in vus:
+                        if vus[tag] != pc: pn_differents += 1
+                    else:
+                        vus[tag] = pc; attendus_con.append((f, tag, classes_con[nat], pc))
+                if sans: con_sans_pn += 1
+    tentatives = len(attendus_corps) + len(attendus_con)
+    refus = sum(1 for a in attendus_corps + attendus_con if refuse_t(a[3]))
+    # la trace : SetEquipmentCollection|Symbol|<folio>|<forme>|<x1;y1-x2;y2>|<Class;Code;Quantity> ou …|Connector|<repère>|<…>
+    lus = [l.split('|') for l in T if l.startswith('SetEquipmentCollection|')]
+    lus_corps, lus_con = [l for l in lus if l[1] == 'Symbol'], [l for l in lus if l[1] == 'Connector']
+    restants = [a for a in attendus_corps if not refuse_t(a[3])]
+    faux = en_trop = 0
+    for l in lus_corps:
+        f = noms.get(l[2].lstrip('~'))
+        a, b = l[4].split('-', 1) if '-' in l[4] else (l[4], '')
+        p = tuple(map(float, a.split(';'))) + (tuple(map(float, b.split(';'))) if b else ())
+        cible = next((x for x in restants if x[0] == f and len(p) == 4 and all(abs(p[i] - x[1][i]) < 2e-3 for i in range(4))), None)
+        if cible is None: en_trop += 1; continue
+        restants.remove(cible)
+        if l[5] != f'{cible[2]};{cible[3]};1': faux += 1
+    con_attendus = {a[1]: a for a in attendus_con if not refuse_t(a[3])}
+    for l in lus_con:
+        a = con_attendus.pop(l[2], None)
+        if a is None: en_trop += 1
+        elif l[3] != f'{a[2]};{a[3]};1': faux += 1
+    manquants = len(restants) + len(con_attendus)
+    print(f'matériels : tentatives attendues {tentatives} (corps {len(attendus_corps)}, connecteurs {len(attendus_con)}) ; '
+          f'refus attendus {refus} ; associés attendus {tentatives - refus} ; associés lus {len(lus)} '
+          f'(corps {len(lus_corps)}, connecteurs {len(lus_con)}) ; classe ou code faux {faux} ; manquants {manquants} ; en trop {en_trop} ; '
+          f'corps sans PN attendus {corps_sans_pn} ; corps dessinés attendus {corps_dessines} ; '
+          f'connecteurs sans PN attendus {con_sans_pn} ; PN différents attendus {pn_differents}')
+    if folio_sonde is not None:
+        rc = sum(1 for a in attendus_corps if a[0] == folio_sonde and not refuse_t(a[3]))
+        rk = sum(1 for tag in servis.get(folio_sonde, ()) if tag in vus and not refuse_t(vus[tag]))
+        print(f'relus attendus sur le folio {folio_sonde} : {rc + rk} (corps {rc}, connecteurs {rk})')
+
 T=[l for l in open(TRACE,encoding='utf-8',errors='replace').read().split('\n') if l]
+if MATERIEL is not None:
+    verifier_materiel(MATERIEL, T)
+    sys.exit(0)
+print('clés de borne en double',doubles)
 fils=[l.split('|') for l in T if l.startswith('AddWireConnection|')]
 attendus=[f for f in P['Fils']]
 print('fils tracés',len(fils),'attendus',len(attendus))
