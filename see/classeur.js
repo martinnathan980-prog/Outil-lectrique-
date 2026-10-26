@@ -1,13 +1,16 @@
 /* ===========================================================================
    LE CLASSEUR PILOTE TOUT PRÊT — Pilote-SEE.xlsm, les macros déjà dedans
    ---------------------------------------------------------------------------
-       node see/classeur.js [--sortie=Pilote-SEE.xlsm]
+       node see/classeur.js [--sortie=Pilote-SEE.xlsm] [--sans-bouton]
 
    Au bureau, le technicien n'a qu'UN fichier à ouvrir : « Activer le
    contenu », puis UN gros bouton « TESTER SEE ». Ni éditeur VBA ni import de
    .bas. Ce fichier écrit ce classeur à partir des modules see/vba/*.bas tels
    qu'ils sont au moment où on le lance (VBA_DOSSIER=… pour en prendre
-   d'autres).
+   d'autres). Il REFUSE (code de sortie 1, rien d'écrit) si la macro du
+   bouton, TesterSEE, n'est dans aucun module, ou si le dossier a un .bas
+   qu'il ne lit pas ; --sans-bouton écrit quand même un classeur dont le
+   bouton ne lance rien, pour un essai ici, jamais pour le bureau.
 
    LE PROJET VBA (xl/vbaProject.bin), construit selon [MS-OVBA] (Office VBA File
    Format Structure) dans un fichier composé [MS-CFB] version 3 (secteurs de
@@ -291,11 +294,14 @@ function fichierCompose(racine) {
 /* ---- 5. le projet VBA ---------------------------------------------------- */
 /* Les modules, lus dans `dossier` : [{ nom, document, texte (octets) }], dans l'ordre du projet. Contrôles : le fichier
    existe, commence par son Attribute VB_Name, n'a que des CRLF, que des octets de Windows-1252 ; aucune macro ne se
-   lance seule à l'ouverture. Rend aussi les avertissements (la macro du bouton absente). */
+   lance seule à l'ouverture ; aucun autre .bas dans le dossier (il manquerait au classeur et au kit sans que rien ne
+   le dise). Rend aussi `macroDuBouton` : vrai si un module standard a la macro du bouton, publique et sans argument. */
 function lireModules(dossier) {
   const modules = [{ nom: CLASSEUR, document: true, texte: texteDocument(CLASSEUR, BASE_CLASSEUR) },
     { nom: FEUILLE.codeName, document: true, texte: texteDocument(FEUILLE.codeName, BASE_FEUILLE) }];
-  const avertissements = [];
+  const enTrop = fs.existsSync(dossier) ? fs.readdirSync(dossier).filter(f => /\.bas$/i.test(f) && !MODULES_STANDARD.includes(f.slice(0, -4))) : [];
+  if (enTrop.length) throw new Error(`${enTrop.join(', ')} : dans ${dossier}, mais le classeur ne lit que ${MODULES_STANDARD.map(m => m + '.bas').join(', ')}`
+    + ' (MODULES_STANDARD, see/classeur.js) : l\'y ajouter, sinon ce module manquerait au classeur et au kit');
   MODULES_STANDARD.forEach(nom => { const chemin = path.join(dossier, nom + '.bas');
     if (!fs.existsSync(chemin)) throw new Error('module absent : ' + chemin);
     const texte = new Uint8Array(fs.readFileSync(chemin)), t = Buffer.from(texte).toString('latin1');
@@ -305,9 +311,7 @@ function lireModules(dossier) {
     if (/^\s*(Public\s+|Private\s+)?Sub\s+(Auto_Open|Workbook_Open|Auto_Exec)\b/im.test(t)) throw new Error(nom + '.bas : une macro se lancerait à l\'ouverture');
     modules.push({ nom, document: false, texte }); });
   const macro = new RegExp('^\\s*(Public\\s+)?Sub\\s+' + MACRO_DU_BOUTON + '\\s*\\(\\s*\\)', 'im');
-  if (!modules.some(m => !m.document && macro.test(Buffer.from(m.texte).toString('latin1'))))
-    avertissements.push(`la macro ${MACRO_DU_BOUTON} (Public Sub ${MACRO_DU_BOUTON}(), sans argument) n'est dans aucun module : le bouton « TESTER SEE » n'aurait rien à lancer`);
-  return { modules, avertissements };
+  return { modules, macroDuBouton: modules.some(m => !m.document && macro.test(Buffer.from(m.texte).toString('latin1'))) };
 }
 /* xl/vbaProject.bin. L'ID du projet et les graines du chiffrement viennent de l'empreinte SHA-1 des modules : la sortie
    ne dépend que d'eux. Rend aussi les flux, pour les contrôles. */
@@ -325,7 +329,12 @@ const xml = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(
 const ENTETE_XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n';
 const NS = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main', NS_R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
-/* La feuille Accueil : [ligne, style, texte, hauteur en points]. Styles : 1 titre, 2 sous-titre, 3 consigne, 4 petit. */
+/* La feuille Accueil : [ligne, style, texte, hauteur en points]. Styles : 1 titre, 2 sous-titre, 3 consigne, 4 petit.
+   Les recours, en petit, dans l'ordre où les barres d'Office se présentent. Un fichier venu d'Internet ou d'un
+   courriel (la « marque du Web ») s'ouvre d'abord en MODE PROTÉGÉ : lecture seule, macros non chargées, le bouton ne
+   fait rien et Alt+F8 n'est pas offert, mais cette feuille se lit ; son bouton est « Activer la modification ». Après
+   lui vient, selon le poste, la barre jaune « Activer le contenu » ou la barre rouge des macros bloquées. (Le
+   comportement par défaut documenté d'Office ; pas observé ici, faute d'Excel.) */
 const LIGNES = [
   [2, 1, 'Pilote SEE : le test du poste', 36],
   [3, 2, 'Fais ce test sur ton petit plan d\'essai, jamais sur un vrai projet.', 21],
@@ -334,10 +343,11 @@ const LIGNES = [
   [7, 3, '3.  Attends le message « C\'est fini ». Ne touche à rien pendant ce temps.', 27],
   [8, 3, '4.  Enregistre ce fichier (Ctrl+S), puis renvoie-le-moi.', 27],
   [10, 0, '', 33], [11, 0, '', 33], [12, 0, '', 33],
-  [14, 4, 'Si une barre jaune « Activer le contenu » est en haut de l\'écran : clique d\'abord dessus.', 18],
-  [15, 4, 'Si le bouton ne fait rien : appuie sur Alt+F8, choisis TesterSEE, puis clique sur Exécuter.', 18],
+  [14, 4, 'Si une barre jaune dit « MODE PROTÉGÉ » : clique d\'abord sur « Activer la modification », puis lis la barre qui suit.', 18],
+  [15, 4, 'Si une barre jaune « Activer le contenu » est en haut de l\'écran : clique d\'abord dessus.', 18],
   [16, 4, 'Si une barre rouge « Microsoft a bloqué l\'exécution des macros » apparaît : ferme Excel, fais un clic droit sur ce fichier,', 18],
   [17, 4, 'Propriétés, coche « Débloquer » en bas, OK, puis rouvre le fichier.', 18],
+  [18, 4, 'Si le bouton ne fait rien et qu\'il n\'y a plus de barre : appuie sur Alt+F8, choisis TesterSEE, puis clique sur Exécuter.', 18],
 ];
 /* Le bouton : colonne B, lignes 10 à 12 (trois lignes de 33 points = 132 pixels), 400 pixels de large. Sa position
    absolue (a:xfrm, en EMU : 9 525 par pixel, 12 700 par point) redit l'ancre : la colonne A fait 26 pixels, les lignes
@@ -382,7 +392,8 @@ function partiesClasseur(vbaProject) {
   const partage = ENTETE_XML + `<sst xmlns="${NS}" count="${textes.length}" uniqueCount="${textes.length}">`
     + textes.map(t => `<si><t>${xml(t)}</t></si>`).join('') + '</sst>';
   const feuille = ENTETE_XML + `<worksheet xmlns="${NS}" xmlns:r="${NS_R}">`
-    + `<sheetPr codeName="${FEUILLE.codeName}"><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="B2:B17"/>`
+    + `<sheetPr codeName="${FEUILLE.codeName}"><pageSetUpPr fitToPage="1"/></sheetPr>`
+    + `<dimension ref="B${Math.min(...LIGNES.filter(l => l[2]).map(l => l[0]))}:B${Math.max(...LIGNES.filter(l => l[2]).map(l => l[0]))}"/>`
     + '<sheetViews><sheetView showGridLines="0" showRowColHeaders="0" tabSelected="1" workbookViewId="0"><selection activeCell="A1" sqref="A1"/></sheetView></sheetViews>'
     + '<sheetFormatPr defaultRowHeight="15"/><cols><col min="1" max="1" width="3.7109375" customWidth="1"/><col min="2" max="2" width="120.7109375" customWidth="1"/></cols>'
     + '<sheetData>' + LIGNES.map(([r, s, t, h]) => `<row r="${r}" ht="${h}" customHeight="1">`
@@ -411,25 +422,39 @@ function partiesClasseur(vbaProject) {
 }
 
 /* ---- 7. tout ensemble --------------------------------------------------- */
-/* Rend { octets (le .xlsm), vba (xl/vbaProject.bin), flux, modules, idProjet, avertissements }. `o.dossierVba` : le
-   dossier des .bas (défaut : VBA_DOSSIER, sinon see/vba). */
+/* Rend { octets (le .xlsm), vba (xl/vbaProject.bin), flux, modules, idProjet, dossier, avertissements }. `o.dossierVba` :
+   le dossier des .bas (défaut : VBA_DOSSIER, sinon see/vba).
+   Sans la macro du bouton, REFUSE (exception, rien n'est écrit) : le classeur n'existe que pour ce bouton, et un bouton
+   qui ne lance rien ferait perdre le jour 1 au bureau (« Impossible d'exécuter la macro », Alt+F8 vide, une photo).
+   `o.sansBouton` (--sans-bouton) l'écrit quand même, pour un essai ici seulement : le constat est alors dans
+   `avertissements`. */
 function classeurPilote(o = {}) {
   const dossier = o.dossierVba || process.env.VBA_DOSSIER || path.join(RACINE, 'see', 'vba');
-  const { modules, avertissements } = lireModules(dossier), p = projetVBA(modules);
-  const zipDe = require('./exporter.js').chargerAtelier()('zipDe');
-  return { octets: zipDe(partiesClasseur(p.octets), new Date(1980, 0, 1)), vba: p.octets, flux: p.flux, modules, idProjet: p.idProjet, avertissements };
+  const { modules, macroDuBouton } = lireModules(dossier), avertissements = [];
+  if (!macroDuBouton) {
+    const constat = `la macro ${MACRO_DU_BOUTON} (Public Sub ${MACRO_DU_BOUTON}(), sans argument) n'est dans aucun des modules lus`
+      + ` (${MODULES_STANDARD.join(', ')}, dans ${dossier}) : le bouton « TESTER SEE » ne lancerait rien`;
+    if (!o.sansBouton) throw new Error(constat + '. Rien n\'est écrit. (Pour un essai ici seulement, jamais pour le bureau : --sans-bouton.)');
+    avertissements.push(constat);
+  }
+  const p = projetVBA(modules), zipDe = require('./exporter.js').chargerAtelier()('zipDe');
+  return { octets: zipDe(partiesClasseur(p.octets), new Date(1980, 0, 1)), vba: p.octets, flux: p.flux, modules, idProjet: p.idProjet, dossier, avertissements };
 }
 
 if (require.main === module) {
-  const arg = process.argv.slice(2).find(a => a.startsWith('--sortie='));
+  const args = process.argv.slice(2), arg = args.find(a => a.startsWith('--sortie='));
   const sortie = arg ? arg.slice(9) : 'Pilote-SEE.xlsm';
   try {
-    const c = classeurPilote();
+    const c = classeurPilote({ sansBouton: args.includes('--sans-bouton') });
     fs.writeFileSync(sortie, c.octets);
     c.modules.forEach(m => console.log(`  ${(m.document ? 'document ' : 'standard ') + m.nom.padEnd(14)} ${String(m.texte.length).padStart(7)} octets de texte → ${String(c.flux.VBA[m.nom].length).padStart(6)} compressés`));
     console.log(`${sortie} : ${c.octets.length} octets (vbaProject.bin : ${c.vba.length}), projet ${c.idProjet}`);
-    c.avertissements.forEach(a => console.warn('AVERTISSEMENT : ' + a));
-  } catch (e) { console.error('Erreur : ' + ((e && e.message) || e)); process.exit(1); }
+    c.avertissements.forEach(a => console.warn('AVERTISSEMENT : ' + a + ' — CE CLASSEUR NE DOIT PAS PARTIR AU BUREAU'));
+  } catch (e) {
+    console.error('Erreur : ' + ((e && e.message) || e));
+    if (fs.existsSync(sortie)) console.error(`(${sortie} n'est pas réécrit : celui qui est là est un ancien, pas à jour.)`);
+    process.exit(1);
+  }
 }
 module.exports = { classeurPilote, projetVBA, lireModules, compresser, decompresser, chiffrer, fichierCompose, fluxDir, fluxProject, fluxProjectWm, texteDocument, partiesClasseur, avantCfb, octetsCp1252,
   MODULES_STANDARD, MACRO_DU_BOUTON, FEUILLE, CLASSEUR, BASE_CLASSEUR, BASE_FEUILLE, REFERENCES, VERSION_PROJET, NOM_PROJET };

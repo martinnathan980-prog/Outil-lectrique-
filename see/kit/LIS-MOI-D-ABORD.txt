@@ -36,13 +36,16 @@ Fais tout sur un projet d'essai, jamais sur un vrai projet.
 ÉTAPE 3 : LE TEST (5 minutes)
 -----------------------------
 1. Dans le dossier « Kit-SEE », double-clique sur « Pilote-SEE.xlsm ».
-2. Une barre jaune apparaît en haut : clique sur « Activer le contenu ».
-3. Clique sur le gros bouton vert « TESTER SEE ».
-4. Attends le message « C'est fini ». Ne touche à rien pendant ce temps.
-5. Clique sur OK.
-6. Appuie sur Ctrl+S pour enregistrer.
-7. Ferme Excel.
-8. Envoie-moi le fichier « Pilote-SEE.xlsm ».
+2. Si une barre jaune dit « MODE PROTÉGÉ » :
+   clique sur son bouton « Activer la modification ».
+3. Si une barre jaune a un bouton « Activer le contenu » : clique dessus.
+   Si c'est une barre ROUGE : va plus bas, à « SI ÇA BLOQUE ».
+4. Clique sur le gros bouton vert « TESTER SEE ».
+5. Attends le message « C'est fini ». Ne touche à rien pendant ce temps.
+6. Clique sur OK.
+7. Appuie sur Ctrl+S pour enregistrer.
+8. Ferme Excel.
+9. Envoie-moi le fichier « Pilote-SEE.xlsm ».
    Si la messagerie le refuse : clic droit sur le fichier,
    « Envoyer vers », « Dossier compressé », et envoie-moi ce zip.
 
@@ -58,9 +61,12 @@ Une barre ROUGE « Microsoft a bloqué l'exécution des macros » :
 6. Rouvre le fichier et reprends l'étape 3.
 
 Le bouton ne fait rien :
-1. Appuie sur Alt+F8.
-2. Choisis « TesterSEE ».
-3. Clique sur « Exécuter ».
+1. Regarde en haut : s'il reste une barre jaune, clique sur son bouton
+   (« Activer la modification » ou « Activer le contenu »),
+   puis reclique sur « TESTER SEE ».
+2. S'il n'y a plus de barre : appuie sur Alt+F8.
+3. Choisis « TesterSEE ».
+4. Clique sur « Exécuter ».
 
 Toujours la barre rouge, un refus, ou un message d'erreur :
 1. Ne force rien.

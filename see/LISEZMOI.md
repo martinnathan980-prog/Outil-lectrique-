@@ -43,7 +43,7 @@ folio**, que SEE importe d'un coup (voir plus bas).
 
 | Fichier | À quoi il sert |
 |---|---|
-| `kit.js` | `node see/kit.js` écrit **Kit-SEE.zip**, le seul fichier à emporter au bureau : `Pilote-SEE.xlsm` en tête, `LIS-MOI-D-ABORD.txt`, l'Atelier « pour plus tard », le diagnostic et les `.bas` « seulement si je te le demande » |
+| `kit.js` | `node see/kit.js` écrit **Kit-SEE.zip**, le seul fichier à emporter au bureau : `Pilote-SEE.xlsm` en tête, `LIS-MOI-D-ABORD.txt`, l'Atelier « pour plus tard », le diagnostic et les `.bas` « seulement si je te le demande ». Il **refuse** (code 1, pas de zip) tant que la macro du bouton, `TesterSEE`, manque |
 | `kit/LIS-MOI-D-ABORD.txt` | les étapes du bureau, une action par ligne (UTF-8 avec BOM, CRLF : le Bloc-notes l'ouvre tel quel) |
 | `classeur.js` | `node see/classeur.js` écrit **Pilote-SEE.xlsm** : le classeur pilote, les trois modules déjà dedans, une feuille « Accueil » et un gros bouton « TESTER SEE » (voir « Le classeur pilote tout prêt ») |
 | `vba/SEE_Commun.bas`, `vba/SEE_Sonde.bas`, `vba/SEE_Pilote.bas` | les trois modules du classeur pilote : `classeur.js` les met dans `Pilote-SEE.xlsm` ; en repli, ils s'importent à la main dans Excel |
@@ -69,8 +69,12 @@ bureau, tout est dans son `LIS-MOI-D-ABORD.txt`, une action par ligne :
    d'essai (jamais un vrai) : deux formes avec leur device, deux ou trois
    traits entre elles, une masse. SEE reste ouvert sur ce folio : c'est sur
    lui que le test apprend comment le bureau dessine.
-3. **Ouvrir `Pilote-SEE.xlsm`**, cliquer *Activer le contenu* (la barre
-   jaune), puis le gros bouton vert **TESTER SEE**. Attendre le message
+3. **Ouvrir `Pilote-SEE.xlsm`**. Si la barre jaune dit *MODE PROTÉGÉ* (le
+   fichier porte la marque du Web, le plus souvent parce que le zip n'a pas
+   été débloqué avant d'être extrait), cliquer *Activer la modification* :
+   en mode protégé, Excel ne charge pas les macros, le bouton ne fait rien
+   et `Alt+F8` n'est pas offert. Puis cliquer *Activer le contenu* (la barre
+   jaune suivante), et le gros bouton vert **TESTER SEE**. Attendre le message
    « C'est fini ». `Ctrl+S`, et me renvoyer le fichier (zippé si la
    messagerie refuse un `.xlsm`).
 4. **Si ça bloque** (barre rouge « Microsoft a bloqué l'exécution des
@@ -175,8 +179,12 @@ contient :
 - **une feuille « Accueil »** : un titre, quatre consignes numérotées (ouvrir
   le petit plan d'essai dans SEE, cliquer, attendre « C'est fini », `Ctrl+S`
   et renvoyer), un gros bouton vert **TESTER SEE**, et en petit : *Activer le
-  contenu*, `Alt+F8` si le bouton ne fait rien, *Débloquer* si la barre rouge
-  apparaît. Le bouton est une forme dessinée dont l'attribut
+  contenu*, précédé d'*Activer la modification* si la barre dit *MODE
+  PROTÉGÉ* (la feuille se lit en mode protégé, les macros ne sont pas
+  chargées), *Débloquer* si la barre rouge apparaît, et `Alt+F8` si le bouton
+  ne fait rien alors qu'il n'y a plus de barre. Le mode protégé est le
+  comportement par défaut documenté d'Office pour un fichier venu d'Internet
+  ou d'un courriel ; il n'a pas été observé ici, faute d'Excel. Le bouton est une forme dessinée dont l'attribut
   `macro="[0]!TesterSEE"` est ce qu'Excel écrit pour une forme affectée à
   une macro du classeur ;
 - **le projet VBA** (`xl/vbaProject.bin`), construit selon la spécification
@@ -191,17 +199,26 @@ contient :
   le générateur refuse un module qui en aurait).
 
 La macro `TesterSEE` est écrite à part (module `SEE_Sonde`). Tant qu'elle
-manque, `classeur.js` et `kit.js` l'annoncent (« AVERTISSEMENT ») et le
-contrôle du bouton reste en échec dans `tests/classeur.js`.
+manque, `classeur.js` et `kit.js` **refusent** : une erreur, le code de
+sortie 1, et rien n'est écrit (un kit dont le bouton ne lance rien ferait
+perdre le jour 1). Ils refusent aussi un `.bas` du dossier qu'ils ne liraient
+pas (il manquerait au classeur et au kit). `--sans-bouton` écrit quand même
+le classeur ou le kit, pour un essai ici seulement, avec un « AVERTISSEMENT ».
+`kit.js` prend ses modules dans `see/vba` et ignore `VBA_DOSSIER` (une copie
+d'essai ne doit pas partir au bureau) ; `--vba=DOSSIER` en prend d'autres, et
+la commande le dit. Le contrôle du bouton reste en échec dans
+`tests/classeur.js` tant que `TesterSEE` n'est pas dans `see/vba`.
 
 **Comment on sait qu'il est juste, sans Excel.** Excel ne tourne pas ici :
 c'est la limite. À sa place :
 
 - `node tests/classeur.js` relit tout avec des lecteurs écrits pour le test
-  (zip, OOXML, fichier composé, décompresseur) : 65 contrôles, dont les 63
+  (zip, OOXML, fichier composé, décompresseur) : 75 contrôles, dont les 63
   enregistrements de `VBA/dir` un par un, le texte de chaque module comparé
   octet pour octet aux `.bas`, les exemples de compression et de chiffrement
-  de la spécification au bit près, et seize fautes injectées qu'il doit
+  de la spécification au bit près, le refus sans `TesterSEE` (par la
+  fonction et par la commande : code 1, rien d'écrit), et dix-sept fautes
+  injectées qu'il doit
   attraper ;
 - **oletools** (`olevba`, un outil courant d'analyse des macros Office)
   lit le projet sans erreur, liste les cinq modules et rend le texte
@@ -280,7 +297,7 @@ Vérifié ici :
   contact, sans bout faux ni segment de travers. Il s'arrête et reprend
   proprement, et la simulation n'écrit rien. Ce banc prouve la cohérence du
   code, **pas** le comportement du vrai SEE ;
-- le classeur pilote tout prêt : 65 contrôles (`tests/classeur.js`), relu
+- le classeur pilote tout prêt : 75 contrôles (`tests/classeur.js`), relu
   par oletools et par LibreOffice, comparé enregistrement par enregistrement
   aux projets écrits par Excel 2007 et 2010 (voir plus haut). **Pas** par
   Excel lui-même.

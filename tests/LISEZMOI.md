@@ -120,7 +120,11 @@ node tests/classeur.js         LE CLASSEUR PILOTE TOUT PRÊT (see/classeur.js : 
                                PROJECTwm, et le texte de chaque module décompressé par un décompresseur écrit à part, comparé
                                octet pour octet aux .bas ; la compression (les trois exemples de la spécification au bit près,
                                des allers-retours), le chiffrement (l'exemple de la spécification et un projet d'Excel), la sortie
-                               déterministe, le kit (le classeur en tête) ; le contrôleur éprouvé par seize fautes injectées.
+                               déterministe, le kit (le classeur en tête, les .bas mêmes du classeur en repli) ; le REFUS sans
+                               TesterSEE ou avec un .bas non lu (exception, code de sortie 1, rien d'écrit ; --sans-bouton
+                               l'écrit avec un avertissement), sur des copies des .bas dans un dossier temporaire ; les recours
+                               de la feuille (mode protégé, Activer le contenu, barre rouge, Alt+F8) ; le contrôleur éprouvé
+                               par dix-sept fautes injectées.
                                VBA_DOSSIER=… pour d'autres .bas. Il ne prouve pas qu'Excel ouvre le classeur (voir see/LISEZMOI.md)
 node tests/couverture.js       CE QUE L'OUTIL VÉRIFIE, ET S'IL VÉRIFIE TOUT : sur l'exemple embarqué et sur un contrat inventé plus riche
                                (huit disjoncteurs dont un sans profil, un sans part number, un tripolaire ; EN 2997, EN 3645, EN 3646,

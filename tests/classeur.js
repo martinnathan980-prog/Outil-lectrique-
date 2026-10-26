@@ -26,7 +26,13 @@
        allers-retours (vide, 1 octet, 4 096, 4 097, répétitif, aléatoire) ;
      · le chiffrement : les exemples de § 3.1.6 et d'un projet écrit par Excel ;
      · la sortie est déterministe ; le kit (see/kit.js) porte ce classeur en
-       tête, son LIS-MOI est en UTF-8 avec BOM et CRLF.
+       tête, son LIS-MOI est en UTF-8 avec BOM et CRLF ;
+     · le REFUS : sans la macro du bouton (ou avec un .bas que le classeur ne
+       lit pas), classeur.js et kit.js lèvent une exception, sortent avec le
+       code 1 et n'écrivent rien, sauf --sans-bouton ; essayé sur des copies
+       des .bas (dans le dossier temporaire du système, effacées à la fin) :
+       une sans TesterSEE, une avec (une TesterSEE vide y est ajoutée si les
+       .bas n'en ont pas encore).
    Puis le contrôleur s'éprouve : des fautes sont injectées une à une dans une
    copie du classeur, chacune doit être attrapée par le contrôle attendu.
    CE QUE CE TEST NE PROUVE PAS : qu'Excel ouvre le classeur. Il prouve qu'il
@@ -34,7 +40,7 @@
    qu'Excel écrit (voir see/LISEZMOI.md pour la comparaison faite à la main).
    ========================================================================= */
 'use strict';
-const fs = require('fs'), path = require('path'), zlib = require('zlib');
+const fs = require('fs'), path = require('path'), zlib = require('zlib'), os = require('os'), { spawnSync } = require('child_process');
 const RACINE = path.join(__dirname, '..');
 const C = require(path.join(RACINE, 'see', 'classeur.js'));
 const XLSX = require(path.join(RACINE, 'lib', 'xlsx.min.js'));
@@ -290,7 +296,8 @@ function controler(parties) {
   verif('la feuille Accueil : un titre, puis quatre consignes numérotées (SEE ouvert, le bouton, « C\'est fini », Ctrl+S)',
     /^Pilote SEE/.test(cellule(2)) && consignes.every((c, i) => c.startsWith(i + 1 + '.')) && /SEE/.test(consignes[0]) && /TESTER SEE/.test(consignes[1]) && /C'est fini/.test(consignes[2]) && /Ctrl\+S/.test(consignes[3]),
     consignes.map(c => c.slice(0, 24)).join(' | '));
-  verif('en petit : Alt+F8 (TesterSEE, Exécuter) et la barre rouge (Propriétés, Débloquer)', [14, 15, 16, 17].map(cellule).join(' ').match(/Alt\+F8.*TesterSEE.*Exécuter.*bloqué l'exécution des macros.*Propriétés.*Débloquer/) !== null);
+  verif('en petit, dans l\'ordre des barres d\'Office : MODE PROTÉGÉ (Activer la modification), Activer le contenu, la barre rouge (Propriétés, Débloquer), Alt+F8 (TesterSEE, Exécuter)',
+    [14, 15, 16, 17, 18].map(cellule).join(' ').match(/MODE PROTÉGÉ.*Activer la modification.*Activer le contenu.*bloqué l'exécution des macros.*Propriétés.*Débloquer.*Alt\+F8.*TesterSEE.*Exécuter/) !== null);
   // --- le fichier composé
   if (!parties.has('xl/vbaProject.bin')) return res;
   let cfb = null, erreurCfb = ''; try { cfb = lireCfb(parties.get('xl/vbaProject.bin')); } catch (e) { erreurCfb = e.message; }
@@ -380,7 +387,9 @@ function controler(parties) {
    LES CONTRÔLES
    ============================================================================= */
 titre('Le classeur écrit (see/classeur.js, modules de ' + path.relative(RACINE, DOSSIER) + ')');
-const c1 = C.classeurPilote({ dossierVba: DOSSIER }), c2 = C.classeurPilote({ dossierVba: DOSSIER });
+// sansBouton : le classeur s'écrit même si TesterSEE manque encore, pour que tout le reste soit relu ; son absence fait
+// alors échouer « le bouton lance une macro qui existe », et le refus par défaut est contrôlé plus bas
+const c1 = C.classeurPilote({ dossierVba: DOSSIER, sansBouton: true }), c2 = C.classeurPilote({ dossierVba: DOSSIER, sansBouton: true });
 ok('la sortie est déterministe : deux écritures, les mêmes octets', egaux([...c1.octets], [...c2.octets]), c1.octets.length + ' octets');
 let parties;
 try { const z = lireZip(c1.octets); parties = new Map(z.map(p => [p.nom, p.octets]));
@@ -388,8 +397,11 @@ try { const z = lireZip(c1.octets); parties = new Map(z.map(p => [p.nom, p.octet
 catch (e) { ok('le zip se relit', false, e.message); parties = new Map(); }
 const resultats = controler(parties);
 resultats.forEach(r => ok(r.nom, r.ok, r.mesure));
-ok('le générateur dit son avertissement si la macro du bouton manque, et seulement alors',
-  (c1.avertissements.length > 0) === !resultats.find(r => r.nom.startsWith('le bouton lance une macro qui existe')).ok, c1.avertissements.join(' ; '));
+const macroLue = resultats.find(r => r.nom.startsWith('le bouton lance une macro qui existe')).ok;
+let refus = ''; try { C.classeurPilote({ dossierVba: DOSSIER }); } catch (e) { refus = e.message; }
+ok('sans --sans-bouton, le générateur REFUSE ces modules si la macro du bouton manque, et seulement alors',
+  !!refus === !macroLue && (!refus || refus.includes('TesterSEE')), refus.slice(0, 90));
+ok('avec --sans-bouton, il le dit en avertissement, et seulement alors', (c1.avertissements.length > 0) === !macroLue, c1.avertissements.join(' ; ').slice(0, 90));
 
 titre('Un second lecteur du fichier composé : SheetJS (XLSX.CFB)');
 try { const cfb = lireCfb(parties.get('xl/vbaProject.bin')), s = XLSX.CFB.read(Buffer.from(parties.get('xl/vbaProject.bin')), { type: 'buffer' });
@@ -429,15 +441,59 @@ VECTEURS.forEach(([nom, id, cmg, dpb, gc]) => { const [c, p, g] = [cmg, dpb, gc]
   ok(`${nom} : non protégé, sans mot de passe, visible ; rechiffré au caractère près`, [c, p, g].every(x => x.version === 2 && x.cle === cleDeLId(id))
     && egaux(c.donnees, [0, 0, 0, 0]) && egaux(p.donnees, [0]) && egaux(g.donnees, [0xFF]) && rechiffre, `clé ${cleDeLId(id).toString(16).toUpperCase()}`); });
 
-titre('Le kit (see/kit.js)');
-try { const K = require(path.join(RACINE, 'see', 'kit.js')), k = K.kit(), z = lireZip(k.zip), ref = C.classeurPilote({ dossierVba: path.join(RACINE, 'see', 'vba') });
+titre('Le refus : pas de classeur ni de kit sans la macro du bouton');
+/* Deux copies des .bas, dans le dossier temporaire du système : SANS (toute « Sub TesterSEE » renommée) et AVEC (une
+   TesterSEE vide ajoutée à SEE_Sonde si aucun module n'en a encore). Elles ne servent qu'au générateur : rien n'y est
+   compilé ni exécuté. */
+const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'classeur-'));
+const macroDans = t => /^[ \t]*(Public[ \t]+)?Sub[ \t]+TesterSEE[ \t]*\([ \t]*\)/mi.test(t);
+const copieVba = (nom, retouche) => { const d = path.join(TMP, nom); fs.mkdirSync(d);
+  const textes = C.MODULES_STANDARD.map(m => [m, fs.readFileSync(path.join(DOSSIER, m + '.bas')).toString('latin1')]);
+  retouche(textes).forEach(([m, t]) => fs.writeFileSync(path.join(d, m + '.bas'), Buffer.from(t, 'latin1'))); return d; };
+const SANS = copieVba('sans', ts => ts.map(([m, t]) => [m, t.replace(/^([ \t]*(?:Public[ \t]+)?Sub[ \t]+)TesterSEE\b/gmi, '$1TesterSEE_Retiree')]));
+const AVEC = copieVba('avec', ts => ts.some(([, t]) => macroDans(t)) ? ts
+  : ts.map(([m, t]) => [m, m === 'SEE_Sonde' ? t + '\r\nPublic Sub TesterSEE()\r\nEnd Sub\r\n' : t]));
+const leve = f => { try { f(); return ''; } catch (e) { return (e && e.message) || String(e); } };
+const lance = (script, args, env) => spawnSync(process.execPath, [path.join(RACINE, 'see', script), ...args], { encoding: 'utf8', cwd: TMP, env: { ...process.env, ...env } });
+const K = require(path.join(RACINE, 'see', 'kit.js'));
+try {
+  const e1 = leve(() => C.classeurPilote({ dossierVba: SANS }));
+  ok('classeurPilote, sans TesterSEE : exception qui nomme la macro et le recours --sans-bouton', /TesterSEE/.test(e1) && /--sans-bouton/.test(e1), e1.slice(0, 80));
+  const s1 = C.classeurPilote({ dossierVba: SANS, sansBouton: true }), a1 = C.classeurPilote({ dossierVba: AVEC });
+  ok('… avec sansBouton il s\'écrit et le dit ; avec TesterSEE il s\'écrit sans rien dire', s1.octets.length > 0 && s1.avertissements.length === 1 && a1.avertissements.length === 0);
+  const e2 = leve(() => K.kit({ dossierVba: SANS }));
+  ok('kit(), sans TesterSEE : exception, pas de zip', /TesterSEE/.test(e2), e2.slice(0, 80));
+  const r1 = lance('kit.js', ['--vba=' + SANS, '--sortie=k1.zip']), r2 = lance('classeur.js', ['--sortie=c1.xlsm'], { VBA_DOSSIER: SANS });
+  ok('node see/kit.js, sans TesterSEE : code de sortie 1, l\'erreur sur la sortie d\'erreur, AUCUN zip écrit',
+    r1.status === 1 && /Erreur : .*TesterSEE/.test(r1.stderr) && !fs.existsSync(path.join(TMP, 'k1.zip')), `code ${r1.status}`);
+  ok('node see/classeur.js, sans TesterSEE : code de sortie 1, AUCUN classeur écrit',
+    r2.status === 1 && /Erreur : .*TesterSEE/.test(r2.stderr) && !fs.existsSync(path.join(TMP, 'c1.xlsm')), `code ${r2.status}`);
+  const r3 = lance('kit.js', ['--vba=' + SANS, '--sans-bouton', '--sortie=k3.zip']), r4 = lance('kit.js', ['--vba=' + AVEC, '--sortie=k4.zip']);
+  ok('node see/kit.js --sans-bouton : le zip s\'écrit, code 0, AVERTISSEMENT « ne doit pas partir au bureau »',
+    r3.status === 0 && fs.existsSync(path.join(TMP, 'k3.zip')) && /AVERTISSEMENT.*NE DOIT PAS PARTIR AU BUREAU/.test(r3.stderr), `code ${r3.status}`);
+  ok('node see/kit.js, avec TesterSEE : le zip s\'écrit, code 0, aucun avertissement',
+    r4.status === 0 && fs.existsSync(path.join(TMP, 'k4.zip')) && !/AVERTISSEMENT/.test(r4.stderr), `code ${r4.status}${r4.stderr ? ' ; ' + r4.stderr.trim().slice(0, 80) : ''}`);
+  fs.writeFileSync(path.join(AVEC, 'SEE_Autre.bas'), 'Attribute VB_Name = "SEE_Autre"\r\nPublic Sub TesterSEE()\r\nEnd Sub\r\n');
+  const e3 = leve(() => C.classeurPilote({ dossierVba: AVEC }));
+  fs.unlinkSync(path.join(AVEC, 'SEE_Autre.bas'));
+  ok('un .bas de plus dans le dossier (SEE_Autre.bas, que le classeur ne lit pas) : refusé, et nommé', /SEE_Autre\.bas/.test(e3) && /MODULES_STANDARD/.test(e3), e3.slice(0, 80));
+} catch (e) { ok('le refus s\'éprouve', false, e.message); }
+
+titre('Le kit (see/kit.js), écrit avec les .bas qui ont TesterSEE');
+try { const k = K.kit({ dossierVba: AVEC }), z = lireZip(k.zip), ref = C.classeurPilote({ dossierVba: AVEC });
   ok('Pilote-SEE.xlsm en tête du zip, identique au classeur écrit par see/classeur.js', z[0].nom === 'Kit-SEE/Pilote-SEE.xlsm' && egaux([...z[0].octets], [...ref.octets]), z.map(p => p.nom.replace('Kit-SEE/', '')).slice(0, 3).join(', ') + '…');
-  ok('les autres fichiers du kit, octet pour octet (les .bas en repli, le diagnostic, l\'Atelier, le LIS-MOI)',
-    K.CONTENU.every(([nom, src]) => { const p = z.find(x => x.nom === 'Kit-SEE/' + nom); return p && egaux([...p.octets], [...fs.readFileSync(path.join(RACINE, src))]); }) && z.length === K.CONTENU.length + 1, z.length + ' fichiers');
+  const repli = C.MODULES_STANDARD.map(m => [K.REPLI_VBA + m + '.bas', path.join(AVEC, m + '.bas')]);
+  ok('les autres fichiers du kit, octet pour octet (le diagnostic, l\'Atelier, le LIS-MOI, et en repli les .bas mêmes du classeur)',
+    K.CONTENU.every(([nom, src]) => { const p = z.find(x => x.nom === 'Kit-SEE/' + nom); return p && egaux([...p.octets], [...fs.readFileSync(path.join(RACINE, src))]); })
+    && repli.every(([nom, src]) => { const p = z.find(x => x.nom === 'Kit-SEE/' + nom); return p && egaux([...p.octets], [...fs.readFileSync(src)]); })
+    && z.length === 1 + K.CONTENU.length + repli.length, z.length + ' fichiers');
   const lis = fs.readFileSync(path.join(RACINE, 'see', 'kit', 'LIS-MOI-D-ABORD.txt')), t = lis.subarray(3).toString('utf8');
   ok('LIS-MOI-D-ABORD.txt : UTF-8 avec BOM, fins de ligne CRLF seulement', lis[0] === 0xEF && lis[1] === 0xBB && lis[2] === 0xBF && !/\r(?!\n)|(?<!\r)\n/.test(t) && !t.includes('�'));
-  ok('LIS-MOI-D-ABORD.txt : débloquer le zip, le plan bidon, Activer le contenu, TESTER SEE, « C\'est fini », Ctrl+S, la photo de l\'écran',
-    /Débloquer[\s\S]*Extraire tout[\s\S]*plan bidon[\s\S]*device[\s\S]*masse[\s\S]*Pilote-SEE\.xlsm[\s\S]*Activer le contenu[\s\S]*TESTER SEE[\s\S]*C'est fini[\s\S]*Ctrl\+S[\s\S]*photo/i.test(t)); }
+  ok('LIS-MOI-D-ABORD.txt : débloquer le zip, le plan bidon, MODE PROTÉGÉ (Activer la modification), Activer le contenu, TESTER SEE, « C\'est fini », Ctrl+S, la photo de l\'écran',
+    /Débloquer[\s\S]*Extraire tout[\s\S]*plan bidon[\s\S]*device[\s\S]*masse[\s\S]*Pilote-SEE\.xlsm[\s\S]*MODE PROTÉGÉ[\s\S]*Activer la modification[\s\S]*Activer le contenu[\s\S]*TESTER SEE[\s\S]*C'est fini[\s\S]*Ctrl\+S[\s\S]*photo/i.test(t));
+  const bloque = t.slice(t.indexOf('SI ÇA BLOQUE'));
+  ok('LIS-MOI-D-ABORD.txt, « Le bouton ne fait rien » : d\'abord la barre jaune qui reste (Activer la modification ou le contenu), puis Alt+F8',
+    /Le bouton ne fait rien[\s\S]*barre jaune[\s\S]*Activer la modification[\s\S]*Activer le contenu[\s\S]*Alt\+F8/.test(bloque)); }
 catch (e) { ok('le kit s\'écrit', false, e.message); }
 
 titre('Le contrôleur éprouvé : des fautes injectées une à une');
@@ -466,6 +522,7 @@ const MUTATIONS = [
   ['la relation vers vbaProject.bin perdue', 'xl/_rels/workbook.xml.rels : la relation vbaProject', avecTexte('xl/_rels/workbook.xml.rels', 'office/2006/relationships/vbaProject', 'office/2006/relationships/autre')],
   ['le codeName de la feuille qui ne répond à aucun module', 'sheet1.xml : codeName', avecTexte('xl/worksheets/sheet1.xml', 'codeName="Feuil1"', 'codeName="Feuil2"')],
   ['le bouton affecté à une autre macro', 'la forme est affectée', avecTexte('xl/drawings/drawing1.xml', 'macro="[0]!TesterSEE"', 'macro="[0]!Autre"')],
+  ['le recours du mode protégé effacé de la feuille', 'en petit, dans l\'ordre des barres', avecTexte('xl/sharedStrings.xml', '« MODE PROTÉGÉ »', '« MODE NORMAL »')],
   ['une balise mal fermée', 'chaque partie XML est bien formée', avecTexte('xl/styles.xml', '</fonts>', '</font>')],
   ['les éléments de la feuille dans le désordre', 'sheet1.xml : ses éléments', (() => { const p = new Map(parties), t = Buffer.from(p.get('xl/worksheets/sheet1.xml')).toString('utf8'), m = /<pageMargins[^>]*\/>/.exec(t);
     p.set('xl/worksheets/sheet1.xml', new Uint8Array(Buffer.from(t.replace(m[0], '').replace('<sheetData>', m[0] + '<sheetData>'), 'utf8'))); return p; })()],
@@ -480,5 +537,6 @@ for (const [nom, attendu, mut] of MUTATIONS) {
 }
 ok(`le contrôleur attrape les ${MUTATIONS.length} fautes injectées une à une`, attrapees === MUTATIONS.length, `${attrapees} / ${MUTATIONS.length}`);
 
+fs.rmSync(TMP, { recursive: true, force: true });
 console.log('\n  ' + (total - echecs) + ' / ' + total + ' contrôles passés' + (echecs ? '  —  ' + echecs + ' ÉCHEC(S)' : '  —  tout est vert'));
 process.exit(echecs ? 1 : 0);
