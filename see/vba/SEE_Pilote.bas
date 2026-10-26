@@ -21,9 +21,20 @@ Attribute VB_Name = "SEE_Pilote"
 '                    bilan ni du classeur. Une ligne de bilan par folio
 '                    (feuille Bilan).
 '
+'  LE MATERIEL (le « device » associé) : le corps d'un bloc posé en symbole
+'  reçoit le PN de la feuille Blocs (classe <NATURE>.ClasseMateriel), chaque
+'  connecteur d'un bloc en mode BROCHE le PN de la feuille Connecteurs (classe
+'  <NATURE>.ClasseConnecteur) : CreateObject(matériel), Class, Code, Quantity,
+'  une collection qui le contient, SetEquipmentCollection (même signature en
+'  V5 et en V4), puis relecture par GetEquipmentCollection. Classe vide :
+'  rien. PN vide : rien, et le journal le dit. Refus de SEE : journalisé, le
+'  folio continue.
+'
 '  Ce qui n'est PAS établi sur SEE (et se règle, se journalise) : l'ordre des
 '  appels pour créer un folio et un symbole, la sémantique de SetManual, la
-'  chaîne de AddWireConnection, l'ancre de position d'un texte.
+'  chaîne de AddWireConnection, l'ancre de position d'un texte, les classes
+'  de matériel du catalogue et le moment où SEE accepte l'association (le
+'  pilote l'essaie une fois le symbole ou le connecteur posé).
 ' ============================================================================
 Option Explicit
 
@@ -53,6 +64,7 @@ Private mDitTitre As Boolean    ' « titre du cartouche non écrit » est au journa
 Private mCoordProvisoires As Boolean ' les coordonnées SEE ne viennent pas du cartouche du folio
 Private mMessageFin As String   ' ce que la boîte de fin doit dire en plus
 Private mEchecsDeSuite As Long  ' folios de suite qui n'ont pas pu être créés
+Private mMaterielsCon As Object ' repère du connecteur -> PN déjà associé dans cette exécution (une fois par connecteur)
 
 ' trois folios de suite non créés : l'échec est systématique, le lot s'arrête
 Private Const ECHECS_MAX As Long = 3
@@ -65,6 +77,7 @@ Private mNbFilsSEE As Long
 Private mNbFilsDessin As Long
 Private mNbFilsSautes As Long
 Private mNbGraphiques As Long
+Private mNbMateriels As Long    ' matériels associés (ou qui le seraient, en simulation)
 
 ' ============================================================================
 '  LES MACROS
@@ -105,12 +118,12 @@ End Sub
 ' selon les réglages EQUIPEMENT.* et TypeConnexion.
 Public Sub EssaiSymboles()
     Dim con1 As Object, con2 As Object, x1 As Double, y1 As Double, x2 As Double, y2 As Double
-    Dim ok1 As Boolean, ok2 As Boolean, px(0 To 1) As Double, py(0 To 1) As Double
+    Dim ok1 As Boolean, ok2 As Boolean, px(0 To 1) As Double, py(0 To 1) As Double, corps As Object
     On Error GoTo Plantage
     If Not Preparer("EssaiSymboles") Then GoTo Fin
     If Not OuvrirFolioEssai() Then GoTo Fin
     Contexte "EssaiSymboles", "boîte ESSAI"
-    If Not PoserCorpsSymbole("EQUIPEMENT", 110, 90, 30, 40, "ESSAI", "", "EQ") Then
+    If Not PoserCorpsSymbole("EQUIPEMENT", 110, 90, 30, 40, "ESSAI", "", "EQ", corps) Then
         Journal gEtape, gObjet, "", "boîte non posée en symbole (EQUIPEMENT.Famille / Symbole) : dessinée"
         DessinerRectangle 110, 90, 140, 130, "boîte ESSAI (dessin)"
         DessinerTexte "ESSAI", 125, 88, 0, "repère de la boîte"
@@ -282,6 +295,7 @@ Private Function PreparerSEE() As Boolean
     Set mConnecteurs = NouveauDicoExact()
     Set mBorniers = NouveauDicoExact()
     Set mFormes = NouveauDicoExact()
+    Set mMaterielsCon = NouveauDicoExact()
     Set mListeFolios = Nothing
     mDitTitre = False
     mCoordProvisoires = False
@@ -490,6 +504,7 @@ Private Function DessinerFolio(ByVal folio As Long, ByVal ligne As Long, ByVal n
     mNbFilsDessin = 0
     mNbFilsSautes = 0
     mNbGraphiques = 0
+    mNbMateriels = 0
     Set mPointsX = NouveauDicoExact()
     Set mPointsY = NouveauDicoExact()
     Set mSh = Nothing
@@ -1028,8 +1043,13 @@ Private Function FeuilleBilan() As Object
     Set ws = FeuilleCreee(FEUILLE_BILAN, False)
     If CStr(ws.Cells(1, 1).Value) <> "Folio" Then
         EcrireLigne ws, 1, Array("Folio", "Nom", "Etat", "Blocs", "Broches/bornes", "Fils SEE", "Fils en dessin", _
-            "Fils non dessinés", "Graphiques", "Erreurs", "Duree (s)", "Fin", "Remarque")
+            "Fils non dessinés", "Graphiques", "Erreurs", "Duree (s)", "Fin", "Remarque", "Materiels")
         ws.Rows(1).Font.Bold = True
+    End If
+    ' la colonne Materiels, ajoutée à la fin : un bilan d'une version précédente la reçoit aussi
+    If Len(CStr(ws.Cells(1, 14).Value)) = 0 Then
+        ws.Cells(1, 14).Value = "Materiels"
+        ws.Cells(1, 14).Font.Bold = True
     End If
     Set FeuilleBilan = ws
 End Function
@@ -1055,10 +1075,11 @@ Private Sub EcrireBilan(ByVal lb As Long, ByVal folio As Long, ByVal nom As Stri
     On Error GoTo Fin
     Set ws = FeuilleBilan()
     EcrireLigne ws, lb, Array(folio, nom, etat, mNbBlocs, mNbBornes, mNbFilsSEE, mNbFilsDessin, mNbFilsSautes, _
-        mNbGraphiques, erreurs, Round(Duree(t0), 1), Format$(Now, "yyyy-mm-dd hh:mm:ss"), remarque)
+        mNbGraphiques, erreurs, Round(Duree(t0), 1), Format$(Now, "yyyy-mm-dd hh:mm:ss"), remarque, mNbMateriels)
     If etat = "EN COURS" Then Exit Sub
     Journal gEtape, gObjet, "", "bilan : " & etat & " ; " & mNbBlocs & " bloc(s), " & mNbBornes & " broche(s)/borne(s), " & _
-        mNbFilsSEE & " fil(s) SEE, " & mNbFilsDessin & " en dessin, " & mNbFilsSautes & " non dessiné(s), " & erreurs & _
+        mNbFilsSEE & " fil(s) SEE, " & mNbFilsDessin & " en dessin, " & mNbFilsSautes & " non dessiné(s), " & _
+        mNbMateriels & " matériel(s) associé(s)" & IIf(gSimulation, " (simulés)", "") & ", " & erreurs & _
         " erreur(s), " & Format$(Duree(t0), "0.0") & " s"
 Fin:
 End Sub
@@ -1100,7 +1121,7 @@ End Sub
 Private Sub PoserBloc(ByVal l As Long)
     Dim bloc As String, rep As String, nature As String, code As String, mode As String
     Dim x As Double, y As Double, w As Double, h As Double, rx As Double, ry As Double
-    Dim bornes As Collection
+    Dim bornes As Collection, corps As Object, enSymbole As Boolean
     bloc = PaquetTexte("Blocs", l, "Bloc")
     rep = PaquetTexte("Blocs", l, "Repere")
     nature = UCase$(PaquetTexte("Blocs", l, "Nature"))
@@ -1120,43 +1141,56 @@ Private Sub PoserBloc(ByVal l As Long)
             Journal gEtape, gObjet, "", "ignoré (" & nature & ".Mode = IGNORER) ; ses fils seront en DESSIN"
             Exit Sub
         Case "BOITE"
-            If Not PoserCorpsSymbole(nature, x, y, w, h, rep, "", code) Then
+            enSymbole = PoserCorpsSymbole(nature, x, y, w, h, rep, "", code, corps)
+            If Not enSymbole Then
                 Journal gEtape, gObjet, "", "boîte non posée : repli en DESSIN"
                 DessinerCorps x, y, w, h, rep, rx, ry
             End If
             DessinerPieces bloc
             DessinerNumeros bornes
         Case "BROCHE"
-            PoserCorpsOuDessin nature, x, y, w, h, rep, code, rx, ry
+            enSymbole = PoserCorpsOuDessin(nature, x, y, w, h, rep, code, rx, ry, corps)
             PoserBrochesDuBloc nature, bloc, rep, code, bornes, False
         Case "BORNIER"
-            PoserCorpsOuDessin nature, x, y, w, h, rep, code, rx, ry
+            enSymbole = PoserCorpsOuDessin(nature, x, y, w, h, rep, code, rx, ry, corps)
             PoserBrochesDuBloc nature, bloc, rep, code, bornes, True
         Case "SYMBOLE"
-            PoserSymboleSimple nature, bloc, rep, code, x, y, w, h, rx, ry, bornes, UCase$(PaquetTexte("Blocs", l, "Sens"))
+            enSymbole = PoserSymboleSimple(nature, bloc, rep, code, x, y, w, h, rx, ry, bornes, _
+                UCase$(PaquetTexte("Blocs", l, "Sens")), corps)
         Case Else
             If mode <> "DESSIN" Then Journal gEtape, gObjet, "", "mode « " & mode & " » inconnu : DESSIN", -1, "réglage " & nature & ".Mode"
             DessinerCorps x, y, w, h, rep, rx, ry
             DessinerPieces bloc
             DessinerNumeros bornes
     End Select
+    ' le journal du matériel parle du bloc (les broches ont changé l'objet courant)
+    Contexte "Bloc " & bloc, rep & " (" & nature & ", " & mode & ")"
+    MaterielDuCorps nature, l, enSymbole, corps
     mNbBlocs = mNbBlocs + 1
 End Sub
 
-' Le corps en symbole si Famille / Symbole sont réglés, sinon dessiné.
-Private Sub PoserCorpsOuDessin(ByVal nature As String, ByVal x As Double, ByVal y As Double, ByVal w As Double, _
-        ByVal h As Double, ByVal rep As String, ByVal code As String, ByVal rx As Double, ByVal ry As Double)
+' Le corps en symbole si Famille / Symbole sont réglés, sinon dessiné. Vrai si
+' le corps est un symbole SEE (sym : le symbole posé ; Nothing en simulation).
+Private Function PoserCorpsOuDessin(ByVal nature As String, ByVal x As Double, ByVal y As Double, ByVal w As Double, _
+        ByVal h As Double, ByVal rep As String, ByVal code As String, ByVal rx As Double, ByVal ry As Double, _
+        ByRef sym As Object) As Boolean
+    PoserCorpsOuDessin = False
+    Set sym = Nothing
     If Len(Reglage(nature & ".Famille", "")) > 0 And Len(Reglage(nature & ".Symbole", "")) > 0 Then
-        If PoserCorpsSymbole(nature, x, y, w, h, rep, "", code) Then Exit Sub
+        If PoserCorpsSymbole(nature, x, y, w, h, rep, "", code, sym) Then
+            PoserCorpsOuDessin = True
+            Exit Function
+        End If
         Journal gEtape, gObjet, "", "corps non posé en symbole : repli en DESSIN"
     End If
     DessinerCorps x, y, w, h, rep, rx, ry
-End Sub
+End Function
 
-' Le corps d'un bloc en symbole à deux points (la boîte = le rectangle du corps).
+' Le corps d'un bloc en symbole à deux points (la boîte = le rectangle du
+' corps) ; sym : le symbole posé (Nothing en simulation).
 Private Function PoserCorpsSymbole(ByVal nature As String, ByVal x As Double, ByVal y As Double, ByVal w As Double, _
-        ByVal h As Double, ByVal rep As String, ByVal lettre As String, ByVal code As String) As Boolean
-    Dim label As String, racine As String, ordre As Long, sym As Object
+        ByVal h As Double, ByVal rep As String, ByVal lettre As String, ByVal code As String, ByRef sym As Object) As Boolean
+    Dim label As String, racine As String, ordre As Long
     ArgumentsRepere rep, lettre, code, label, racine, ordre
     PoserCorpsSymbole = PoserSymbole(Reglage(nature & ".Famille", ""), Reglage(nature & ".Symbole", ""), True, _
         VersSEEX(x), VersSEEY(y), VersSEEX(x + w), VersSEEY(y + h), 0, label, racine, ordre, sym)
@@ -1166,12 +1200,15 @@ End Function
 ' borne s'il n'en a qu'une (PointDePose, et recalé), sinon au centre du corps ; chaque
 ' borne prend le point de connexion le plus proche. Son angle suit le côté
 ' d'où arrive son fil (colonne Sens du paquet : G, D, H, B) : réglages
-' <NATURE>.AngleG / AngleD / AngleH / AngleB.
-Private Sub PoserSymboleSimple(ByVal nature As String, ByVal bloc As String, ByVal rep As String, ByVal code As String, _
+' <NATURE>.AngleG / AngleD / AngleH / AngleB. Vrai si le symbole est posé
+' (sym : le symbole ; Nothing en simulation), Faux s'il est dessiné.
+Private Function PoserSymboleSimple(ByVal nature As String, ByVal bloc As String, ByVal rep As String, ByVal code As String, _
         ByVal x As Double, ByVal y As Double, ByVal w As Double, ByVal h As Double, ByVal rx As Double, ByVal ry As Double, _
-        ByVal bornes As Collection, ByVal sens As String)
-    Dim px As Double, py As Double, label As String, racine As String, ordre As Long, sym As Object
+        ByVal bornes As Collection, ByVal sens As String, ByRef sym As Object) As Boolean
+    Dim px As Double, py As Double, label As String, racine As String, ordre As Long
     Dim l As Variant, xr As Double, yr As Double, xb As Double, yb As Double, unique As Boolean, angle As Double
+    PoserSymboleSimple = False
+    Set sym = Nothing
     unique = (bornes.Count = 1)
     angle = AngleDuSens(nature, sens)
     px = x + w / 2
@@ -1188,8 +1225,9 @@ Private Sub PoserSymboleSimple(ByVal nature As String, ByVal bloc As String, ByV
         Journal gEtape, gObjet, "", "symbole non posé : repli en DESSIN"
         DessinerCorps x, y, w, h, rep, rx, ry
         DessinerNumeros bornes
-        Exit Sub
+        Exit Function
     End If
+    PoserSymboleSimple = True
     For Each l In bornes
         If Not PointDePose(CLng(l), xb, yb) Then
             xb = px
@@ -1206,7 +1244,7 @@ Private Sub PoserSymboleSimple(ByVal nature As String, ByVal bloc As String, ByV
             NoterPoint CLng(l), xr, yr
         End If
     Next l
-End Sub
+End Function
 
 ' L'angle d'un symbole simple selon le côté d'où arrive son fil (Sens). Un
 ' Sens vide ou inconnu pour une masse ou un rail : AngleG, et le journal le dit.
@@ -1229,11 +1267,12 @@ End Function
 
 ' Les broches (BROCHE) ou les bornes (BORNIER) d'un bloc, chacune recalée sur
 ' son point de pose (PointDePose : le contact, sinon l'accroche) et notée pour
-' les fils.
+' les fils ; puis, en BROCHE, le matériel de chaque connecteur servi.
 Private Sub PoserBrochesDuBloc(ByVal nature As String, ByVal bloc As String, ByVal rep As String, ByVal code As String, _
         ByVal bornes As Collection, ByVal bornier As Boolean)
     Dim l As Variant, borne As String, cn As String, num As String, cote As String, x As Double, y As Double
-    Dim con As Object, tagCon As String, xr As Double, yr As Double
+    Dim con As Object, tagCon As String, xr As Double, yr As Double, lettres As Object
+    Set lettres = NouveauDicoExact()
     For Each l In bornes
         borne = PaquetTexte("Bornes", CLng(l), "Borne")
         cn = PaquetTexte("Bornes", CLng(l), "Connecteur")
@@ -1247,13 +1286,147 @@ Private Sub PoserBrochesDuBloc(ByVal nature As String, ByVal bloc As String, ByV
                 Set con = BornierPour(nature, rep, cn, code)
             Else
                 Set con = ConnecteurPour(nature, rep, cn, code)
+                If Not lettres.Exists(cn) Then lettres.Add cn, tagCon
             End If
             If PoserBroche(nature, con, bornier, tagCon, num, x, y, cote, xr, yr) Then NoterPoint CLng(l), xr, yr
         Else
             Journal gEtape, gObjet, "", "borne sans point d'accroche (X, Y) dans le paquet", -1, "borne incomplète"
         End If
     Next l
+    If Not bornier Then MaterielsDesConnecteurs nature, bloc, rep, code, lettres
 End Sub
+
+' ============================================================================
+'  LE MATERIEL (le « device » : la référence du catalogue de SEE)
+' ============================================================================
+
+' Le matériel du corps d'un bloc : le PN de la feuille Blocs, de la classe
+' <NATURE>.ClasseMateriel. Rien si la classe est vide. Si le PN est vide, ou
+' si le corps n'est pas un symbole SEE (dessiné), le journal le dit, une fois
+' pour ce bloc. enSymbole : le corps est posé en symbole (sym : ce symbole,
+' Nothing en simulation).
+Private Sub MaterielDuCorps(ByVal nature As String, ByVal l As Long, ByVal enSymbole As Boolean, ByVal sym As Object)
+    Dim classe As String, pn As String
+    classe = Reglage(nature & ".ClasseMateriel", "")
+    If Len(classe) = 0 Then Exit Sub
+    pn = PaquetTexte("Blocs", l, "PN")
+    If Len(pn) = 0 Then
+        Journal gEtape, gObjet, "", "pas de PN dans la feuille Blocs : aucun matériel associé au corps"
+        Exit Sub
+    End If
+    If Not enSymbole Then
+        Journal gEtape, gObjet, "", "PN « " & pn & " » non associé : le corps n'est pas un symbole SEE (dessiné ; voir " & _
+            nature & ".Mode, .Famille, .Symbole)", -1, "matériel sans symbole"
+        Exit Sub
+    End If
+    If AssocierMateriel(sym, "Symbol", classe, pn, "corps") Then mNbMateriels = mNbMateriels + 1
+End Sub
+
+' Le matériel des connecteurs servis d'un bloc en mode BROCHE (lettres : lettre
+' -> repère du connecteur) : le PN de sa pièce dans la feuille Connecteurs, de
+' la classe <NATURE>.ClasseConnecteur. Un connecteur SEE sert à tous les
+' folios où son repère paraît : il reçoit son matériel une fois par exécution.
+' Les connecteurs sans PN sont dits au journal en une ligne pour le bloc.
+Private Sub MaterielsDesConnecteurs(ByVal nature As String, ByVal bloc As String, ByVal rep As String, ByVal code As String, _
+        ByVal lettres As Object)
+    Dim classe As String, k As Variant, pn As String, tagCon As String, sansPN As String, deja As String, con As Object
+    classe = Reglage(nature & ".ClasseConnecteur", "")
+    If Len(classe) = 0 Then Exit Sub
+    For Each k In lettres.Keys
+        tagCon = CStr(lettres.Item(k))
+        pn = PNDuConnecteur(bloc, CStr(k))
+        Contexte gEtape, "connecteur " & tagCon
+        If Len(pn) = 0 Then
+            If Len(sansPN) > 0 Then sansPN = sansPN & ", "
+            sansPN = sansPN & tagCon
+        ElseIf mMaterielsCon.Exists(tagCon) Then
+            deja = CStr(mMaterielsCon.Item(tagCon))
+            If StrComp(deja, pn, vbBinaryCompare) <> 0 Then
+                Journal gEtape, gObjet, "", "a déjà reçu le PN « " & deja & " » plus tôt dans cette exécution : « " & pn & _
+                    " » n'est pas associé", -1, "PN différent pour un même connecteur"
+            End If
+        Else
+            mMaterielsCon.Add tagCon, pn
+            Set con = ConnecteurPour(nature, rep, CStr(k), code)
+            If AssocierMateriel(con, "Connector", classe, pn, "connecteur « " & tagCon & " »") Then mNbMateriels = mNbMateriels + 1
+        End If
+    Next k
+    If Len(sansPN) > 0 Then
+        Contexte gEtape, rep
+        Journal gEtape, gObjet, "", "pas de PN dans la feuille Connecteurs pour " & sansPN & " : aucun matériel associé"
+    End If
+End Sub
+
+' Le PN d'un connecteur d'un bloc du folio en cours : celui de la première de
+' ses pièces (feuille Connecteurs, même Bloc, même Lettre) qui en a un.
+Private Function PNDuConnecteur(ByVal bloc As String, ByVal lettre As String) As String
+    Dim l As Variant, pn As String
+    PNDuConnecteur = ""
+    For Each l In LignesDe(mPiecesDuBloc, bloc)
+        If StrComp(PaquetTexte("Connecteurs", CLng(l), "Lettre"), lettre, vbBinaryCompare) = 0 Then
+            pn = PaquetTexte("Connecteurs", CLng(l), "PN")
+            If Len(pn) > 0 Then
+                PNDuConnecteur = pn
+                Exit Function
+            End If
+        End If
+    Next l
+End Function
+
+' Associe un matériel à un porteur (un symbole, un connecteur) : CreateObject
+' (matériel) ; Class, Code, Quantity (réglage MaterielQuantite) ; une
+' collection qui le contient ; porteur.SetEquipmentCollection (même signature
+' en V5 et en V4) ; puis relecture (GetEquipmentCollection). Vrai si c'est
+' fait (ou si ce le serait, en simulation). Un refus de SEE (classe ou code
+' absents du catalogue...) est journalisé et compté : le folio continue.
+Private Function AssocierMateriel(ByVal porteur As Object, ByVal quoi As String, ByVal classe As String, _
+        ByVal pn As String, ByVal libelle As String) As Boolean
+    Dim eq As Object, coll As Object, qte As Double, detail As String, relu As String, n As Long, appel As String
+    AssocierMateriel = False
+    qte = ReglageNombre("MaterielQuantite", 1)
+    detail = libelle & " : Class « " & classe & " », Code « " & pn & " », Quantity " & NombreTexte(qte)
+    appel = quoi & ".SetEquipmentCollection"
+    If gSimulation Or gApp Is Nothing Then
+        JournalSimulation appel, detail
+        AssocierMateriel = True
+        Exit Function
+    End If
+    If porteur Is Nothing Then
+        Journal gEtape, gObjet, appel, "pas de " & IIf(quoi = "Connector", "connecteur", "symbole") & " SEE : matériel non associé (" & _
+            detail & ")", -1, "matériel non associé"
+        gNbErreurs = gNbErreurs + 1
+        Exit Function
+    End If
+    Set eq = NouvelObjet(OBJ_MATERIEL)
+    If eq Is Nothing Then Exit Function
+    Set coll = NouvelObjet(OBJ_COLLECTION)
+    If coll Is Nothing Then Exit Function
+    If Not EcrireProp(eq, "Class", classe) Then Exit Function
+    If Not EcrireProp(eq, "Code", pn) Then Exit Function
+    If qte = Int(qte) And Abs(qte) < 2147483647 Then
+        EcrireProp eq, "Quantity", CLng(qte)
+    Else
+        EcrireProp eq, "Quantity", qte
+    End If
+    On Error Resume Next
+    Err.Clear
+    coll.Add eq
+    If AppelRate("Collection.Add(matériel)") Then Exit Function
+    Err.Clear
+    porteur.SetEquipmentCollection coll
+    If AppelRate(appel & " " & detail) Then Exit Function
+    On Error GoTo 0
+    ' relecture : ce que SEE garde vraiment
+    relu = MaterielsTexte(SEE_MaterielsDe(porteur), n)
+    If InStr(1, relu, pn, vbBinaryCompare) = 0 Then
+        gNbErreurs = gNbErreurs + 1
+        Journal gEtape, gObjet, quoi & ".GetEquipmentCollection (relecture)", "le code « " & pn & " » n'est pas relu (" & n & _
+            " matériel(s) : " & relu & ")", -1, "matériel non relu"
+    Else
+        JournalCOM quoi & ".GetEquipmentCollection (relecture)", n & " matériel(s) : " & relu
+    End If
+    AssocierMateriel = True
+End Function
 
 ' Le corps dessiné : rectangle et repère.
 Private Sub DessinerCorps(ByVal x As Double, ByVal y As Double, ByVal w As Double, ByVal h As Double, _

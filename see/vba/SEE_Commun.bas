@@ -28,6 +28,7 @@ Option Explicit
 '     ceux-ci : les deux versions ne diffèrent qu'à partir de 45)
 Public Const OBJ_SYMBOLE As Long = 0
 Public Const OBJ_COLLECTION As Long = 1
+Public Const OBJ_MATERIEL As Long = 2      ' eSEEObjectEquipment : un matériel (référence du catalogue)
 Public Const OBJ_REPERE As Long = 4
 Public Const OBJ_TEXTE As Long = 7
 Public Const OBJ_FOLIO As Long = 9
@@ -233,7 +234,13 @@ Private Function ReglagesParDefaut() As Variant
         r.Add Array(nom & ".AngleB", "0", "Mode SYMBOLE : angle (degrés) d'un symbole dont le fil arrive par le bas (Sens = B).")
         r.Add Array(nom & ".ModeleRepere", modeleRepere, _
             "Repère du connecteur (BROCHE) ou du bornier (BORNIER) : {Repere}, {Lettre}.")
+        r.Add Array(nom & ".ClasseMateriel", "", _
+            "Classe SEE du matériel associé au corps d'un bloc " & nom & " posé en symbole, avec le PN de la feuille Blocs (voir la colonne Class de Sonde_Folio, section Matériel) ; VIDE = aucun matériel associé.")
+        r.Add Array(nom & ".ClasseConnecteur", "", _
+            "Mode BROCHE : classe SEE du matériel associé à chaque connecteur d'un bloc " & nom & ", avec le PN de la feuille Connecteurs ; VIDE = aucun.")
     Next nat
+    ' --- Matériel (le « device » associé : CreateObject(matériel), Class, Code, Quantity, SetEquipmentCollection)
+    r.Add Array("MaterielQuantite", "1", "Quantité (Quantity) écrite dans chaque matériel associé à un corps ou à un connecteur.")
     ' --- Fils
     r.Add Array("TypeConnexion", "", _
         "La chaîne passée à AddWireConnection (inconnue : voir SignalType dans Sonde_Folio). VIDE = les fils sont tracés en DESSIN (traits).")
@@ -1670,6 +1677,43 @@ Public Function SEE_ParRepere(ByVal prj As Object, ByVal quoi As String, ByVal r
 Echec:
     JournalErreur appel, Err.Number, Err.Description
     Set SEE_ParRepere = Nothing
+End Function
+
+' Les matériels (ISEEEquipment : la référence du catalogue, le « device »)
+' associés à un symbole, un connecteur, une broche, un bornier ou un câble :
+' GetEquipmentCollection (V5 : rendue ; V4 : paramètre de sortie). Lecture
+' seule. Nothing si l'objet n'en a pas ou si l'appel échoue (journalisé).
+Public Function SEE_MaterielsDe(ByVal obj As Object) As Object
+    Dim o As Object
+    Set SEE_MaterielsDe = Nothing
+    If obj Is Nothing Then Exit Function
+    On Error GoTo Echec
+    If EstV4() Then
+        obj.GetEquipmentCollection o
+    Else
+        Set o = obj.GetEquipmentCollection()
+    End If
+    Set SEE_MaterielsDe = o
+    NoterAppel "GetEquipmentCollection()", o
+    Exit Function
+Echec:
+    JournalErreur "GetEquipmentCollection()", Err.Number, Err.Description
+    Set SEE_MaterielsDe = Nothing
+End Function
+
+' Une collection de matériels en texte : « Class / Code / Quantity » de chaque
+' élément, séparés par « ; » ; n reçoit le nombre d'éléments lus.
+Public Function MaterielsTexte(ByVal coll As Object, ByRef n As Long) As String
+    Dim e As Variant, s As String
+    n = 0
+    MaterielsTexte = ""
+    If coll Is Nothing Then Exit Function
+    For Each e In ElementsDe(coll)
+        n = n + 1
+        If Len(s) > 0 Then s = s & " ; "
+        s = s & LireProp(e, "Class") & " / " & LireProp(e, "Code") & " / " & LireProp(e, "Quantity")
+    Next e
+    MaterielsTexte = s
 End Function
 
 ' ============================================================================

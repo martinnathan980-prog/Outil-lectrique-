@@ -349,6 +349,164 @@ E:
     BancBilan3 = " ERREUR VBA " & Err.Number & " " & Err.Description
 End Function
 
+' ---------------------------------------------------------------------------- le matériel (le « device »)
+' La somme d'une colonne du bilan (14 : Materiels).
+Public Function SommeBilan(ByVal col As Long) As Long
+    Dim ws As Object, i As Long, s As Long
+    Set ws = ThisWorkbook.Worksheets("Bilan")
+    For i = 2 To 40
+        If Len(CStr(ws.Cells(i, 2).Value)) > 0 Then s = s + Val(CStr(ws.Cells(i, col).Value))
+    Next i
+    SommeBilan = s
+End Function
+
+' Les lignes de la section « Matériel associé » d'une feuille de sonde : « n (corps a, connecteurs b) ».
+Public Function LignesMateriel(ByVal feuille As String) As String
+    Dim ws As Object, i As Long, debut As Long, nSym As Long, nCon As Long
+    Set ws = ThisWorkbook.Worksheets(feuille)
+    For i = 1 To 5000
+        If Left(CStr(ws.Cells(i, 1).Value), 16) = "Matériel associé" Then
+            debut = i + 2
+            Exit For
+        End If
+    Next i
+    If debut = 0 Then
+        LignesMateriel = "section absente"
+        Exit Function
+    End If
+    For i = debut To debut + 5000
+        If CStr(ws.Cells(i, 2).Value) = "symbole" Then
+            nSym = nSym + 1
+        ElseIf CStr(ws.Cells(i, 2).Value) = "connecteur" Then
+            nCon = nCon + 1
+        Else
+            Exit For
+        End If
+    Next i
+    LignesMateriel = (nSym + nCon) & " (corps " & nSym & ", connecteurs " & nCon & ")"
+End Function
+
+' Le matériel : le corps des équipements (BROCHE, boîte FAM/BOITE) et des masses (sans PN), les barrettes
+' (BORNIER, corps dessiné : PN non associé), les connecteurs des équipements et des prises. Le faux
+' catalogue refuse les codes qui commencent par « * ». Puis la sonde du folio 1 relit le matériel, puis
+' une simulation (Remplacer = O) : aucune écriture dans SEE, chaque association dite au journal.
+' verifier.py --materiel calcule ce qui est attendu, depuis le paquet.
+Public Function BancMateriel(ByVal chemin As String, ByVal v4 As Boolean) As String
+    Dim r As String, n0 As Long
+    On Error GoTo E
+    ReglerFaux "*", v4
+    FixerReglage "EQUIPEMENT.ClasseMateriel", "CL_EQUIPEMENT"
+    FixerReglage "EQUIPEMENT.ClasseConnecteur", "CL_CONNECTEUR"
+    FixerReglage "PRISE.ClasseConnecteur", "CL_CONNECTEUR"
+    FixerReglage "MASSE.ClasseMateriel", "CL_MASSE"
+    FixerReglage "BARRETTE.ClasseMateriel", "CL_BARRETTE"
+    FixerReglage "MaterielQuantite", "1"
+    gMaterielRefuse = "*"
+    DessinerPaquetFichier chemin, True
+    EcrireTrace
+    r = "V" & gVersionAPI & " ; erreurs " & gNbErreurs & " ; folios SEE " & NomsDesFoliosSEE() & " ; bilan " & EtatsBilan() & _
+        " ; associations " & Compter("SetEquipmentCollection|") & " (corps " & Compter("SetEquipmentCollection|Symbol|") & _
+        ", connecteurs " & Compter("SetEquipmentCollection|Connector|") & ")" & _
+        " ; refus dits " & JournalContient("code absent du catalogue") & _
+        " ; corps sans PN dits " & JournalContient("pas de PN dans la feuille Blocs") & _
+        " ; connecteurs sans PN dits " & JournalContient("pas de PN dans la feuille Connecteurs") & _
+        " ; corps dessinés dits " & JournalContient("matériel sans symbole") & _
+        " ; PN différents dits " & JournalContient("PN différent pour un même connecteur") & _
+        " ; non relus " & JournalContient("matériel non relu") & _
+        " ; matériels au bilan " & SommeBilan(14)
+    ' la sonde du folio 1 relit le matériel des corps et des connecteurs (lecture seule)
+    FixerReglage "SondeFolio", "1"
+    n0 = gTrace.Count
+    SondeFolio
+    r = r & " | sonde : matériels relus " & LignesMateriel("Sonde_Folio") & " ; écritures pendant la sonde " & (gTrace.Count - n0)
+    ' simulation : aucune écriture, chaque association dite
+    FixerReglage "Simulation", "O"
+    FixerReglage "Remplacer", "O"
+    n0 = gTrace.Count
+    DessinerPaquetFichier chemin, True
+    r = r & " | simulation : écritures " & (gTrace.Count - n0) & " ; associations simulées " & JournalContient(".SetEquipmentCollection") & _
+        " ; bilan " & EtatsBilan()
+    BancMateriel = r
+    Exit Function
+E:
+    BancMateriel = r & " ERREUR VBA " & Err.Number & " " & Err.Description & " (étape " & gEtape & " / " & gObjet & ")"
+End Function
+
+' ---------------------------------------------------------------------------- TesterSEE, le bouton du bureau
+Public Function FeuilleExiste(ByVal nom As String) As Boolean
+    Dim ws As Object
+    For Each ws In ThisWorkbook.Worksheets
+        If ws.Name = nom Then FeuilleExiste = True
+    Next ws
+End Function
+
+Public Function NbReglages() As Long
+    Dim ws As Object, i As Long, n As Long
+    If Not FeuilleExiste("Reglages") Then Exit Function
+    Set ws = ThisWorkbook.Worksheets("Reglages")
+    For i = 2 To 1000
+        If Len(CStr(ws.Cells(i, 1).Value)) > 0 Then n = n + 1
+    Next i
+    NbReglages = n
+End Function
+
+' Ce que dit la feuille Resultat_Test : « feuille 1 = … ; <rubrique> = <texte> ; <texte d'une ligne sans
+' rubrique> ; … ; boîte de fin dite n ».
+Public Function ResultatTest() As String
+    Dim ws As Object, i As Long, s As String, rub As String, txt As String
+    s = "feuille 1 = " & ThisWorkbook.Worksheets(1).Name
+    If Not FeuilleExiste("Resultat_Test") Then
+        ResultatTest = s & " ; Resultat_Test absente"
+        Exit Function
+    End If
+    Set ws = ThisWorkbook.Worksheets("Resultat_Test")
+    For i = 1 To 80
+        rub = CStr(ws.Cells(i, 1).Value)
+        txt = Replace(Replace(CStr(ws.Cells(i, 2).Value), " | ", " / "), " ; ", ", ")
+        If Len(rub) > 0 Then
+            s = s & " ; " & rub & " = " & txt
+        ElseIf Len(txt) > 0 Then
+            s = s & " ; " & txt
+        End If
+    Next i
+    ResultatTest = s & " ; boîte de fin dite " & JournalContient("C'est fini") & " ; Sonde_XML " & _
+        IIf(FeuilleExiste("Sonde_XML"), "présente", "absente")
+End Function
+
+Private Function TesterAvecFaux(ByVal chemin As String, ByVal v4 As Boolean) As String
+    Dim n0 As Long
+    ReglerFaux "1-2", v4
+    FixerReglage "EQUIPEMENT.ClasseMateriel", "CL_EQUIPEMENT"
+    FixerReglage "EQUIPEMENT.ClasseConnecteur", "CL_CONNECTEUR"
+    DessinerPaquetFichier chemin, True
+    gSansDialogue = True
+    n0 = gTrace.Count
+    TesterSEE
+    TesterAvecFaux = "écritures pendant le test " & (gTrace.Count - n0) & " ; " & ResultatTest()
+End Function
+
+' TesterSEE : d'abord sans SEE, sur le classeur neuf (il crée Reglages et Journal), puis avec le faux SEE,
+' en V5 et en V4, après un lot de deux folios dessinés avec leur matériel : il n'écrit rien dans SEE, il
+' produit Resultat_Test en tête du classeur, et sa seule boîte (celle de la fin) est dite au journal.
+Public Function BancTester(ByVal chemin As String) As String
+    Dim r As String
+    On Error GoTo E
+    r = "sans SEE : Reglages avant " & IIf(FeuilleExiste("Reglages"), "oui", "non")
+    InitFaux False
+    Set gApp = Nothing
+    gEstAutomation = False
+    gVersionAPI = 0
+    gSansDialogue = True
+    TesterSEE
+    r = r & " ; réglages créés " & NbReglages() & " ; traces " & gTrace.Count & " ; " & ResultatTest()
+    r = r & " | V5 : " & TesterAvecFaux(chemin, False)
+    r = r & " | V4 : " & TesterAvecFaux(chemin, True)
+    BancTester = r
+    Exit Function
+E:
+    BancTester = r & " ERREUR VBA " & Err.Number & " " & Err.Description & " (étape " & gEtape & " / " & gObjet & ")"
+End Function
+
 ' VBA-7 : une unité rendue en texte
 Public Function BancUnite() As String
     Dim ws As Object, i As Long, r As String

@@ -37,6 +37,13 @@
      · chaque On Error GoTo vise une étiquette de la procédure, précédée d'un
        Exit / Resume / GoTo (pas de chute dans le gestionnaire) ; chaque GoTo
        vise une étiquette qui existe.
+   Et le contrat du pilote : les clés de réglage (dont le matériel :
+   <NATURE>.ClasseMateriel, <NATURE>.ClasseConnecteur, MaterielQuantite),
+   chacune citée dans see/FORMAT-PAQUET.md ; la sonde n'écrit rien dans SEE
+   (ni Save, Add*, Delete*, Set*, Rename, Update…) ; chaque procédure du
+   pilote qui écrit (SetEquipmentCollection compris) teste la simulation ;
+   TesterSEE, le bouton du bureau, n'appelle, de proche en proche, que des
+   procédures qui n'écrivent pas dans SEE, et aucune du pilote.
    Puis le contrôleur s'éprouve lui-même : des fautes sont injectées une à
    une dans une copie des modules (mutations), chacune doit être attrapée
    par le contrôle attendu.
@@ -47,6 +54,11 @@
 const fs = require('fs'), path = require('path');
 const DOSSIER = process.env.VBA_DOSSIER || path.resolve(__dirname, '..', 'see', 'vba');
 const MODULES = ['SEE_Commun', 'SEE_Sonde', 'SEE_Pilote'];
+// la liste des réglages qui fait foi pour l'Atelier : la section « Le pilote : ses réglages » du contrat
+const CONTRAT = fs.readFileSync(path.resolve(__dirname, '..', 'see', 'FORMAT-PAQUET.md'), 'utf8');
+const REGLAGES_DOC = CONTRAT.slice(CONTRAT.indexOf('## Le pilote : ses réglages'));
+// un appel qui écrit dans SEE (ou qui sauve) : ce que ni la sonde ni TesterSEE ne font jamais
+const ECRIT_SEE = /\.(Save|Add[A-Z]\w*|Delete\w*|Set[A-Z]\w*|Rename|Update|ChangeTag|ChangeName|CreateSubGroup|Attach\w*|Detach\w*|LinkWithEquipment)\b/;
 
 // --- Windows-1252 : les 32 caractères de 0x80 à 0x9F (undefined = octet interdit)
 const CP1252_80 = [0x20AC, undefined, 0x201A, 0x0192, 0x201E, 0x2026, 0x2020, 0x2021, 0x02C6, 0x2030, 0x0160, 0x2039, 0x0152, undefined, 0x017D, undefined,
@@ -497,25 +509,74 @@ function controler(entrees) {
     ok('SEE_Commun : format « paquet-see/1 » contrôlé', /FORMAT_PAQUET As String = "paquet-see\/1"/.test(sources.SEE_Commun));
     const natures = ['EQUIPEMENT', 'BARRETTE', 'BARRETTE_A_POSER', 'PRISE', 'MASSE', 'RAIL', 'COLLECTEUR', 'RENVOI'];
     ok('SEE_Commun : les huit natures de blocs', natures.every(n => new RegExp(`NATURES As String = ".*\\b${n}\\b`).test(sources.SEE_Commun)));
+    // le matériel : une classe par nature pour le corps et pour les connecteurs, la quantité
+    const parNature = [...sources.SEE_Commun.matchAll(/r\.Add Array\(nom & "\.([A-Za-z]+)"/g)].map(m => m[1]);
+    const manquantes = ['ClasseMateriel', 'ClasseConnecteur'].filter(s => !parNature.includes(s))
+      .concat(sources.SEE_Commun.includes('r.Add Array("MaterielQuantite"') ? [] : ['MaterielQuantite']);
+    ok('SEE_Commun : les réglages du matériel (<NATURE>.ClasseMateriel, .ClasseConnecteur, MaterielQuantite)', manquantes.length === 0, manquantes.join(', '));
+    ok('SEE_Commun : le type d\'objet matériel (eSEEObjectEquipment = 2)', /Public Const OBJ_MATERIEL As Long = 2\b/.test(sources.SEE_Commun));
+    // chaque clé créée par InitialiserClasseur est citée (`clé`) dans la section des réglages de FORMAT-PAQUET.md
+    const litterales = [...sources.SEE_Commun.matchAll(/r\.Add Array\("([^"]+)"/g)].map(m => m[1]);
+    const nonDocumentees = litterales.concat(parNature).filter(k => !REGLAGES_DOC.includes('`' + k + '`'));
+    ok('SEE_Commun : chaque clé de réglage est citée dans FORMAT-PAQUET.md', litterales.length > 0 && nonDocumentees.length === 0, [...new Set(nonDocumentees)].join(', '));
   }
   // --- la sonde ne doit rien écrire dans SEE
   if (sources.SEE_Sonde) {
     const ecritures = sources.SEE_Sonde.split('\r\n').map((l, i) => [sansCommentaire(l), i + 1])
-      .filter(([l]) => /\.(Save|Add[A-Z]\w*|Delete\w*|Set(Shape|Position|TitleBlock|Manual)|Rename|Update|ChangeTag|CreateSubGroup)\b/.test(sansChaines(l)));
+      .filter(([l]) => ECRIT_SEE.test(sansChaines(l)));
     ok('SEE_Sonde : aucun appel qui écrit (Save, Add*, Delete*, Set*, Rename, Update)', ecritures.length === 0, ecritures.slice(0, 3).map(x => x[1] + ': ' + x[0].trim()).join(' ; '));
   }
   // --- le pilote : chaque procédure qui fait un appel qui écrit (ou qui touche un
   //     objet SEE en mémoire pour l'écrire) teste elle-même gSimulation
   if (sources.SEE_Pilote && analyses.SEE_Pilote) {
     const A = analyses.SEE_Pilote, nonGardes = [];
-    const ECRIT = /\.(AddSheet|DeleteSheet|AddSymbol|AddPinSymbol|AddTerminalSymbol|AddGraphicObject|AddWireConnection|AddConnector|AddTerminalStrip|AddPin|AddTerminal|Save|CreateSubGroup|Rename|SetTitleBlock|Update|ChangeTag|SetPosition|SetShape|SetManual|SetFirstPoint|SetSecondPoint|SetStartPoint|SetEndPoint)\b|CallByName\s+obj,\s*methode,\s*VbMethod/;
+    const ECRIT = /\.(AddSheet|DeleteSheet|AddSymbol|AddPinSymbol|AddTerminalSymbol|AddGraphicObject|AddWireConnection|AddConnector|AddTerminalStrip|AddPin|AddTerminal|Save|CreateSubGroup|Rename|SetTitleBlock|Update|ChangeTag|SetPosition|SetShape|SetManual|SetFirstPoint|SetSecondPoint|SetStartPoint|SetEndPoint|SetEquipmentCollection)\b|CallByName\s+obj,\s*methode,\s*VbMethod/;
     for (const p of A.procs) {
       const texte = p.lignes.map(l => sansChaines(sansCommentaire(l.code))).join('\n');
       if (ECRIT.test(texte) && !/\bgSimulation\b/.test(texte)) nonGardes.push(p.nom);
     }
     ok('SEE_Pilote : chaque procédure qui écrit teste gSimulation', nonGardes.length === 0, nonGardes.join(', '));
-    const ecritCommun = (analyses.SEE_Commun ? analyses.SEE_Commun.procs : []).filter(p => /\.(Add[A-Z]\w*|Delete\w*|Save|Rename|Set(Shape|Position|TitleBlock))\b/.test(p.lignes.map(l => sansChaines(sansCommentaire(l.code))).join('\n')));
+    const ecritCommun = (analyses.SEE_Commun ? analyses.SEE_Commun.procs : []).filter(p => /\.(Add[A-Z]\w*|Delete\w*|Save|Rename|Set(Shape|Position|TitleBlock|EquipmentCollection))\b/.test(p.lignes.map(l => sansChaines(sansCommentaire(l.code))).join('\n')));
     ok('SEE_Commun : la couche d\'adaptation n\'écrit pas dans SEE', ecritCommun.length === 0, ecritCommun.map(p => p.nom).join(', '));
+    const associe = A.procs.filter(p => /\.SetEquipmentCollection\b/.test(p.lignes.map(l => sansChaines(sansCommentaire(l.code))).join('\n')));
+    ok('SEE_Pilote : le matériel est associé (SetEquipmentCollection), par une procédure qui teste gSimulation', associe.length > 0 &&
+      associe.every(p => /\bgSimulation\b/.test(p.lignes.map(l => sansChaines(sansCommentaire(l.code))).join('\n'))), associe.map(p => p.nom).join(', ') || 'aucun appel');
+  }
+  // --- TesterSEE, le bouton du bureau : une macro publique sans argument qui
+  //     n'appelle, de proche en proche, que des procédures qui n'écrivent pas
+  //     dans SEE (ni Save, ni Add*, ni Set*...), et aucune du pilote
+  if (analyses.SEE_Sonde) {
+    const t = analyses.SEE_Sonde.procs.find(p => p.nom.toLowerCase() === 'testersee');
+    ok('SEE_Sonde : TesterSEE existe (Public Sub, sans argument)', t && t.public && t.genre === 'sub' && t.params.length === 0, t ? `${t.genre} ${t.public ? 'Public' : 'Private'}, ${t.params.length} paramètre(s)` : 'absente');
+    if (t) {
+      const parNom = new Map();
+      for (const m of Object.keys(analyses)) for (const p of analyses[m].procs) {
+        const k = p.nom.toLowerCase();
+        if (!parNom.has(k)) parNom.set(k, []);
+        parNom.get(k).push(p);
+      }
+      const vue = (k, m) => { const l = parNom.get(k); return l && (l.find(p => p.module === m) || l.find(p => p.public)); };
+      const texteDe = p => p.lignes.map(l => sansChaines(sansCommentaire(l.code))).join('\n');
+      const atteintes = new Set([t]), file = [t];
+      while (file.length) {
+        const p = file.shift();
+        for (const L of p.lignes) {
+          const js = jetons(sansChaines(sansCommentaire(L.code)));
+          js.forEach((j, i) => {
+            if (j.t !== 'id' || (i > 0 && js[i - 1].v === '.')) return;   // un membre d'objet n'est pas une procédure des modules
+            const q = vue(j.k, p.module);
+            if (q && !atteintes.has(q)) { atteintes.add(q); file.push(q); }
+          });
+        }
+      }
+      const duPilote = [...atteintes].filter(p => p.module === 'SEE_Pilote').map(p => p.nom);
+      const ecrivent = [...atteintes].filter(p => ECRIT_SEE.test(texteDe(p))).map(p => `${p.module}.${p.nom}`);
+      ok('SEE_Sonde : TesterSEE n\'appelle que des lectures (de proche en proche)', duPilote.length === 0 && ecrivent.length === 0,
+        `${atteintes.size} procédures atteintes ; ` + (duPilote.length ? 'du pilote : ' + duPilote.join(', ') + ' ; ' : '') +
+        (ecrivent.length ? 'qui écrivent : ' + ecrivent.join(', ') : ''));
+      ok('SEE_Sonde : TesterSEE enchaîne sans boîte (gSansDialogue) et appelle les cinq sondes', /gSansDialogue\s*=\s*True/i.test(texteDe(t)) &&
+        ['sondeapplication', 'sondesymboles', 'sondefoliode', 'sondeselection', 'sondemethodes', 'initialiserclasseur'].every(k => [...atteintes].some(p => p.nom.toLowerCase() === k)));
+    }
   }
   return { res, analyses };
 }
@@ -582,6 +643,15 @@ if (Object.keys(entrees).length === MODULES.length && Object.keys(analyses).leng
     ['écriture non gardée par la simulation', 'SEE_Pilote : chaque procédure qui écrit teste gSimulation', ajout('SEE_Pilote', ['Dim zzO As Object', 'zzO.AddSymbol Nothing, Nothing'])],
     ['fichier resté en UTF-8', 'aucune séquence UTF-8 (pas de « Ã© »)', { SEE_Sonde: textes.SEE_Sonde, utf8: 'SEE_Sonde' }],
     ['fins de ligne LF', 'fins de ligne CRLF partout', remplacer('SEE_Commun', /\r\n/g, '\n')],
+    // --- le matériel et le bouton du bureau
+    ['matériel associé sans test de la simulation', 'SEE_Pilote : chaque procédure qui écrit teste gSimulation', ajout('SEE_Pilote', ['Dim zzO As Object', 'zzO.SetEquipmentCollection Nothing'])],
+    ['la sonde qui associe un matériel', 'SEE_Sonde : aucun appel qui écrit (Save, Add*, Delete*, Set*, Rename, Update)', ajout('SEE_Sonde', ['Dim zzO As Object', 'zzO.SetEquipmentCollection Nothing'])],
+    ['TesterSEE qui dessine (une macro du pilote)', 'SEE_Sonde : TesterSEE n\'appelle que des lectures (de proche en proche)', remplacer('SEE_Sonde', /(Public Sub TesterSEE\(\)\r\n)/, '$1    EssaiDessin\r\n')],
+    ['TesterSEE qui écrit par une procédure du socle', 'SEE_Sonde : TesterSEE n\'appelle que des lectures (de proche en proche)', /Public Sub TesterSEE\(\)\r\n/.test(textes.SEE_Sonde) && {
+      SEE_Commun: textes.SEE_Commun + ['Public Sub ZzEcrit()', '    Dim zzO As Object', '    zzO.SetPosition Nothing', 'End Sub', ''].join('\r\n'),
+      SEE_Sonde: textes.SEE_Sonde.replace(/(Public Sub TesterSEE\(\)\r\n)/, '$1    ZzEcrit\r\n') }],
+    ['clé de réglage absente de FORMAT-PAQUET.md', 'SEE_Commun : chaque clé de réglage est citée dans FORMAT-PAQUET.md', remplacer('SEE_Commun', /(    r\.Add Array\("MaterielQuantite")/, '    r.Add Array("ZzCleNonDocumentee", "", "Une clé de trop.")\r\n$1')],
+    ['réglage du matériel des connecteurs retiré', 'SEE_Commun : les réglages du matériel (<NATURE>.ClasseMateriel, .ClasseConnecteur, MaterielQuantite)', remplacer('SEE_Commun', /nom & "\.ClasseConnecteur"/, 'nom & ".ClasseDesConnecteurs"')],
   ];
   let attrapees = 0;
   for (const [nom, attendu, mut] of mutations) {

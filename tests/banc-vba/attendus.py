@@ -23,6 +23,8 @@ import ast, os, re, sys
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 VARIANTES = [('tout', 'paquet-variante.xlsx'), ('casse', 'paquet-casse.xlsx'), ('noms', 'paquet-noms.xlsx'), ('long', 'paquet-long.xlsx')]
+# les scénarios qui jouent un autre paquet que celui de l'exemple (v_pn.js : des PN vides, un connecteur à deux PN)
+VARIANTE_DE = {'materiel V5': 'paquet-pn.xlsx', 'materiel V4': 'paquet-pn.xlsx'}
 
 
 # ---------------------------------------------------------------- lecture d'une sortie
@@ -147,6 +149,92 @@ def variante(quoi):
         c.append(au_moins('« ordre hors limite » dit au journal', nombres(r'ordre hors limite (\d+)', None), 1))
     return c
 
+def dans(ou, motif):
+    """Le texte capturé par « motif » dans un morceau du résultat (None s'il n'y est pas)."""
+    def f(t):
+        m = re.search(motif, partie(t, ou))
+        return m.group(1) if m else None
+    return f
+
+# la ligne de verifier.py --materiel : ce que le pilote DOIT faire, calculé depuis le paquet
+MOTIF_MATERIEL = (r'matériels : tentatives attendues (\d+) \(corps (\d+), connecteurs (\d+)\) ; refus attendus (\d+) ; '
+                  r'associés attendus (\d+) ; associés lus (\d+) \(corps (\d+), connecteurs (\d+)\) ; classe ou code faux (\d+) ; '
+                  r'manquants (\d+) ; en trop (\d+) ; corps sans PN attendus (\d+) ; corps dessinés attendus (\d+) ; '
+                  r'connecteurs sans PN attendus (\d+) ; PN différents attendus (\d+)')
+def calcule(i):
+    """Le i-ème nombre de la ligne de verifier.py --materiel (0 : tentatives, 3 : refus, 4 : associés…)."""
+    def f(t):
+        v = nombres(MOTIF_MATERIEL)(t)
+        return v[i] if isinstance(v, tuple) else None
+    return f
+
+def egal_au_calcul(libelle, lu, i, non_nul=True):
+    """Un nombre lu (dans le résultat de la macro) égal à celui que verifier.py calcule depuis le paquet (et non nul :
+    le chemin est bien joué)."""
+    return (libelle, lambda t: (lu(t), calcule(i)(t)),
+            lambda v: v[0] is not None and v[0] == v[1] and (not non_nul or v[1] > 0))
+
+def materiel(v):
+    """INTENTION (SEE_Pilote, le matériel) sur la variante « pn » (v_pn.js) ; les nombres attendus sont CALCULÉS par
+    verifier.py --materiel depuis le paquet : ce que le pilote doit associer (corps posés en symbole, connecteurs servis
+    une fois), ce que le faux catalogue refuse (codes « * »), ce qu'il doit taire et dire (PN vides, corps dessinés,
+    un connecteur à deux PN). La géométrie ne doit pas bouger."""
+    return [version(v),
+            tous('6 folios, tous SAUVE (un refus du catalogue n\'arrête pas le folio)', bilan('V'), 'SAUVE', 6),
+            egal('fils tracés 210 sur 210', nombres(r'fils tracés (\d+) attendus (\d+)'), (210, 210)),
+            egal('bouts faux 0', nombres(r'bouts faux (\d+)'), 0),
+            egal('segments obliques 0', nombres(r'segments obliques (\d+)'), 0),
+            egal('broches recalées sur leur point de pose 309, hors 0', nombres(r'broches recalées sur leur point de pose \(contact\) (\d+) hors (\d+)'), (309, 0)),
+            ('associations lues dans la trace = associations attendues (non nul)', lambda t: (calcule(5)(t), calcule(4)(t)),
+             lambda w: w[0] is not None and w[0] == w[1] and w[1] > 0),
+            egal('associations : classe ou code faux 0, manquantes 0, en trop 0', lambda t: (calcule(8)(t), calcule(9)(t), calcule(10)(t)), (0, 0, 0)),
+            egal_au_calcul('refus du catalogue dits au journal = refus attendus', nombres(r'refus dits (\d+)', 'V'), 3),
+            egal_au_calcul('corps sans PN dits = attendus', nombres(r'corps sans PN dits (\d+)', 'V'), 11),
+            egal_au_calcul('corps dessinés (PN non associé) dits = attendus', nombres(r'corps dessinés dits (\d+)', 'V'), 12),
+            egal_au_calcul('connecteurs sans PN : une ligne par bloc, comme attendu', nombres(r'connecteurs sans PN dits (\d+)', 'V'), 13),
+            egal_au_calcul('un connecteur à deux PN : dit, le premier gardé', nombres(r'PN différents dits (\d+)', 'V'), 14),
+            egal('matériel relu après chaque association : « non relu » 0', nombres(r'non relus (\d+)', 'V'), 0),
+            egal_au_calcul('matériels au bilan (colonne Materiels) = associés attendus', nombres(r'matériels au bilan (\d+)', 'V'), 4),
+            ('SondeFolio relit le matériel du folio 1 (corps et connecteurs) comme attendu',
+             lambda t: (nombres(r'sonde : matériels relus (\d+) \(corps (\d+), connecteurs (\d+)\)', 'sonde')(t),
+                        nombres(r'relus attendus sur le folio 1 : (\d+) \(corps (\d+), connecteurs (\d+)\)')(t)),
+             lambda w: w[0] is not None and w[0] == w[1] and w[1][0] > 0),
+            egal('la sonde n\'écrit rien : écritures 0', nombres(r'écritures pendant la sonde (\d+)', 'sonde'), 0),
+            egal('simulation : écritures 0', nombres(r'écritures (\d+)', 'simulation'), 0),
+            egal_au_calcul('simulation : chaque tentative dite (associations simulées = tentatives attendues)',
+                           nombres(r'associations simulées (\d+)', 'simulation'), 0),
+            tous('simulation : bilan tous SIMULE', bilan('simulation'), 'SIMULE', 6)]
+
+def tester():
+    """INTENTION (SEE_Sonde, TesterSEE) : sur un classeur neuf et sans SEE, il crée Reglages et Journal et dit « NON » ;
+    avec le faux SEE (V5, V4), il lit sans rien écrire ; dans les trois cas, Resultat_Test est la première feuille et la
+    seule boîte est celle de la fin (dite au journal ici)."""
+    c = [egal('sans SEE : pas de feuille Reglages avant le test', dans('sans SEE', r'Reglages avant (\w+)'), 'non'),
+         au_moins('sans SEE : Reglages créée (au moins 100 clés)', nombres(r'réglages créés (\d+)', 'sans SEE'), 100),
+         egal('sans SEE : Resultat_Test en tête du classeur', dans('sans SEE', r'feuille 1 = (\w+)'), 'Resultat_Test'),
+         egal('sans SEE : « SEE joint ? = NON »', dans('sans SEE', r'SEE joint \? = (\w+)'), 'NON'),
+         egal('sans SEE : aucune trace', nombres(r'traces (\d+)', 'sans SEE'), 0),
+         egal('sans SEE : une seule boîte, celle de la fin', nombres(r'boîte de fin dite (\d+)', 'sans SEE'), 1)]
+    for v, version_lue in (('V5', '5.20'), ('V4', '4.8')):
+        c += [egal(f'{v} : écritures dans SEE pendant le test 0', nombres(r'écritures pendant le test (\d+)', v), 0),
+              egal(f'{v} : Resultat_Test en tête du classeur', dans(v, r'feuille 1 = (\w+)'), 'Resultat_Test'),
+              egal(f'{v} : « SEE joint ? = OUI »', dans(v, r'SEE joint \? = (\w+)'), 'OUI'),
+              egal(f'{v} : version lue {version_lue}', dans(v, r'Version = [^;]*?(\d+\.\d+)'), version_lue),
+              egal(f'{v} : unité lue (0 = millimètres)', dans(v, r'Unité = ([^;]+?) ;'), '0 = millimètres'),
+              au_moins(f'{v} : symboles du folio lus', nombres(r'Folio lu = « [^»]* » : (\d+) symbole', v), 1),
+              au_moins(f'{v} : matériels lus', nombres(r'Matériel = (\d+) matériel', v), 1),
+              # la sélection du faux SEE est le folio 1 entier : le même matériel, compté une fois de chaque côté
+              (f'{v} : matériels de la sélection = matériels du folio (pas de double compte)',
+               lambda t, w=v: (nombres(r'Matériel = (\d+) matériel', w)(t), nombres(r'Sélection = \d+ objet\(s\) sélectionné\(s\) lus, (\d+) matériel', w)(t)),
+               lambda p: p[0] is not None and p[0] == p[1]),
+              (f'{v} : classes vues CL_EQUIPEMENT et CL_CONNECTEUR', dans(v, r'(classes vues :[^;]*)'),
+               lambda s: bool(s) and '« CL_EQUIPEMENT »' in s and '« CL_CONNECTEUR »' in s),
+              egal(f'{v} : XML 6 sur 6, dans Sonde_XML', (lambda w: lambda t: (nombres(r'Méthodes \(XML\) = (\d+) sur 6', w)(t), dans(w, r'Sonde_XML (\w+)')(t)))(v), (6, 'présente')),
+              (f'{v} : les cinq sondes faites', dans(v, r'(Étapes = .*)'),
+               lambda s: bool(s) and all(f'{n} : faite' in s for n in ('SondeApplication', 'SondeSymboles', 'SondeFolio', 'SondeSelection', 'SondeMethodes'))),
+              egal(f'{v} : une seule boîte, celle de la fin', nombres(r'boîte de fin dite (\d+)', v), 1)]
+    return c
+
 ATTENDUS = {
     # ---- relecture.py (BancR.bas) ----
     'complet V5': complet(5, relecture_impossible=0),     # RELEVÉ (« relecture impossible » 0 : relecture ratée en diffère)
@@ -190,6 +278,9 @@ ATTENDUS = {
     'apostrophe': [                                         # INTENTION (VBA-1 ; SEE_Commun : réglages écrits sans apostrophe, une apostrophe de tête n'est pas une valeur)
         egal('écrit par InitialiserClasseur sans apostrophe : [O]', texte(r'écrit par InitialiserClasseur : \[([^\]]*)\]'), 'O'),
         egal("cellule « 'N » lue N", texte(r'Simulation lue : (\S+)'), 'N')],
+    'materiel V5': materiel(5),                             # INTENTION, nombres CALCULÉS depuis le paquet (verifier.py --materiel)
+    'materiel V4': materiel(4),                             # idem, API V4 (GetEquipmentCollection en paramètre de sortie)
+    'tester': tester(),                                     # INTENTION (TesterSEE)
     # ---- regression.py (BancFaux, dans faux.py) ----
     'simulation sans SEE': [                                # INTENTION : une simulation ne dessine rien
         tous('bilan tout SIMULE', bilan_regression, 'SIMULE')],
@@ -223,7 +314,7 @@ def passages():
             if programme == 'relecture' and s == 'variante V5':
                 p += [(f'{s} ({quoi})', programme, s, fichier) for quoi, fichier in VARIANTES]
             else:
-                p.append((s, programme, s, '-'))
+                p.append((s, programme, s, VARIANTE_DE.get(s, '-')))
     return p
 
 def juger(nom, t):

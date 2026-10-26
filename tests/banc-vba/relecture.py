@@ -9,11 +9,16 @@ PAQUET, VARIANTE = (sys.argv[1], sys.argv[2]) if __name__ == '__main__' else (''
 choisis = sys.argv[3:]
 def doc_neuf():
     return charger([('Banc', open(f'{ICI}/Banc.bas', encoding='utf-8').read()), ('BancR', open(os.environ.get('BANCR', f'{ICI}/BancR.bas'), encoding='utf-8').read())] + faux2.modules())
-def verifier(paquet):
-    r = subprocess.run(['python3', f'{ICI}/verifier.py', paquet, TRACE], capture_output=True, text=True)
+def verifier(paquet, *options):
+    r = subprocess.run(['python3', f'{ICI}/verifier.py', paquet, TRACE, *options], capture_output=True, text=True)
     s = r.stdout.strip().replace('\n', ' | ')
     if r.returncode: s += ' | verifier en échec : ' + r.stderr.strip().split('\n')[-1]
     return s
+# les réglages du matériel de BancR.BancMateriel, pour verifier.py --materiel (voir l'en-tête de verifier.py)
+MATERIEL = ('corps=EQUIPEMENT:CL_EQUIPEMENT,MASSE:CL_MASSE,BARRETTE:CL_BARRETTE;connecteurs=EQUIPEMENT:CL_CONNECTEUR,PRISE:CL_CONNECTEUR;'
+            'symboles=EQUIPEMENT,MASSE;broche=EQUIPEMENT,PRISE;refuse=*;folio=1')
+def materiel(paquet):
+    return verifier(paquet, '--materiel=' + MATERIEL)
 def angles(paquet):
     js = '''const XLSX=require('''+json.dumps(XLSX)+'''),fs=require('fs');const wb=XLSX.read(fs.readFileSync(process.argv[1]),{type:'buffer'});
 console.log(JSON.stringify(XLSX.utils.sheet_to_json(wb.Sheets.Blocs,{defval:null}).filter(b=>b.Nature==='MASSE').map(b=>b.Sens)));'''
@@ -38,6 +43,11 @@ SCEN = [
     ('essai existant', lambda d: lancer(d, 'BancR.BancEssaiExistant', (PAQUET,)), None),
     ('apostrophe', lambda d: lancer(d, 'BancR.BancApostrophe', ()), None),
     ('unite', lambda d: lancer(d, 'BancR.BancUnite', ()), None),
+    # le matériel (le « device ») : sur la variante « pn » (des PN vides, un connecteur à deux PN), V5 et V4
+    ('materiel V5', lambda d: lancer(d, 'BancR.BancMateriel', (VARIANTE, False)), lambda: verifier(VARIANTE) + ' || ' + materiel(VARIANTE)),
+    ('materiel V4', lambda d: lancer(d, 'BancR.BancMateriel', (VARIANTE, True)), lambda: verifier(VARIANTE) + ' || ' + materiel(VARIANTE)),
+    # TesterSEE, le bouton du bureau : sans SEE, puis avec le faux SEE en V5 et en V4
+    ('tester', lambda d: lancer(d, 'BancR.BancTester', (PAQUET,)), None),
 ]
 if __name__ == "__main__":
  inconnus = [c for c in choisis if c not in [n for n, _, _ in SCEN]]

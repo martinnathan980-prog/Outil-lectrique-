@@ -8,36 +8,84 @@ Attribute VB_Name = "SEE_Sonde"
 '  erreur : l'erreur est notée dans la cellule (« #ERR n : ... ») et la sonde
 '  continue.
 '
+'    TesterSEE         LE BOUTON DU PREMIER ESSAI : un clic, sans rien régler.
+'                      Il crée les feuilles Reglages et Journal si elles
+'                      manquent, enchaîne les sondes ci-dessous sans aucune
+'                      boîte, écrit la feuille Resultat_Test en tête du
+'                      classeur (ce qui a marché, en clair), puis UNE boîte :
+'                      enregistrer le classeur et me l'envoyer.
 '    SondeApplication  versions, chemins, environnement (Unit !), projet,
 '                      cartouches (zone de travail), stratégie de connexion
 '    SondeSymboles     familles et symboles de l'environnement
 '    SondeFolio        un folio dessiné à la main : symboles (repères,
-'                      position, points de connexion), segments de connexion
-'                      (SignalType = la chaîne de type de connexion ?), textes
+'                      position, points de connexion, MATÉRIEL associé au
+'                      symbole et à son connecteur : Class, Code, Quantity),
+'                      segments de connexion (SignalType = la chaîne de type
+'                      de connexion ?), textes
 '    SondeSelection    la même chose pour les objets sélectionnés dans SEE
 '    SondeMethodes     les XML des méthodes (points de connexion, câblage,
-'                      types de câbles, connecteurs, symboles par défaut)
+'                      types de câbles, connecteurs, symboles par défaut),
+'                      dans des fichiers à côté du classeur ET dans la feuille
+'                      Sonde_XML (le classeur seul suffit à tout renvoyer)
 '
 '  But : connaître l'unité, l'origine et le sens de y, les formes que le
-'  bureau utilise, la chaîne de type de connexion, la sémantique des repères.
+'  bureau utilise, la chaîne de type de connexion, la sémantique des repères,
+'  la classe du matériel (réglages <NATURE>.ClasseMateriel / ClasseConnecteur).
 '  Conseil : dessine à la main un petit folio (un symbole en haut à gauche,
-'  un autre en bas à droite, un fil entre eux, un texte), puis SondeFolio.
+'  un autre en bas à droite, un fil entre eux, un texte, un équipement avec
+'  sa référence du catalogue), puis TesterSEE.
 ' ============================================================================
 Option Explicit
 
 Private mFeuille As Object
 Private mLigne As Long
 
+' --- ce que les sondes ont lu (la feuille Resultat_Test de TesterSEE)
+Private mEnchaine As Boolean          ' Vrai : sondes enchaînées par TesterSEE (un seul journal, aucune boîte)
+Private mConnecte As Boolean          ' la dernière sonde a joint SEE
+Private mVersion As String            ' ApplicationName ApplicationVersion
+Private mUnite As String              ' Environment.Unit, avec son sens
+Private mProjetLu As String           ' le nom du projet ouvert, ou ce qui l'a empêché
+Private mNbFamilles As Long
+Private mNbFormes As Long
+Private mFolioLu As String            ' le folio lu par SondeFolio ("" : aucun)
+Private mFolioRaison As String        ' pourquoi aucun folio n'a été lu
+Private mNbSymboles As Long           ' symboles du folio lus
+Private mNbSegments As Long           ' segments de connexion du folio lus
+Private mNbGraphiques As Long         ' objets graphiques du folio lus
+Private mNbSelection As Long          ' objets de la sélection lus
+Private mNbMaterielsSelection As Long ' matériels lus sur la sélection
+Private mNbXML As Long                ' XML de méthodes lus
+Private mNbMateriels As Long          ' matériels lus sur le folio (un connecteur compté une fois)
+Private mClasses As Object            ' Class -> nombre de matériels du folio lus de cette classe
+Private mLignesMateriel As Collection ' les lignes de la section « Matériel associé » de la sonde en cours
+Private mPorteursVus As Object        ' les connecteurs déjà dans cette section
+Private mEtapesTest As String         ' les étapes de TesterSEE, une par ligne
+
+Private Const FEUILLE_RESULTAT As String = "Resultat_Test"
+Private Const FEUILLE_XML As String = "Sonde_XML"
+Private Const TAILLE_MORCEAU As Long = 30000   ' caractères de XML par cellule (Excel en tient 32 767)
+
 ' ----------------------------------------------------------------------------
 '  Début et fin communs
 ' ----------------------------------------------------------------------------
+' Enchaînée par TesterSEE (mEnchaine), une sonde garde le journal ouvert par
+' lui (elle ne le vide pas) et ne montre aucune boîte.
 Private Function DebutSonde(ByVal titre As String, ByVal nomFeuille As String) As Boolean
-    OuvrirJournal titre
+    If mEnchaine Then
+        Journal "Début", titre, "", "sonde enchaînée par TesterSEE (lecture seule)"
+    Else
+        OuvrirJournal titre
+    End If
     Set mFeuille = FeuilleCreee(nomFeuille, True)
     mLigne = 0
+    Set mLignesMateriel = New Collection
+    Set mPorteursVus = NouveauDicoExact()
+    If mClasses Is Nothing Then Set mClasses = NouveauDicoExact()
     Application.ScreenUpdating = False
     Dim connecte As Boolean
     connecte = ConnecterSEE()
+    mConnecte = connecte
     DebutSonde = connecte
     If Not connecte Then
         Ecrire Array("Connexion", "ÉCHEC", "aucune stratégie n'a marché : voir la feuille Journal et diagnostic.ps1")
@@ -47,7 +95,9 @@ End Function
 Private Sub FinSonde(ByVal titre As String)
     Application.ScreenUpdating = True
     mFeuille.Columns.AutoFit
-    Journal "Fin", titre, "", "terminé ; " & gNbErreurs & " erreur(s) d'appel (normales en sonde : elles disent ce qui n'existe pas)"
+    Journal "Fin", titre, "", "terminé ; " & gNbErreurs & " erreur(s) d'appel" & IIf(mEnchaine, " depuis le début du test", "") & _
+        " (normales en sonde : elles disent ce qui n'existe pas)"
+    If mEnchaine Then Exit Sub
     mFeuille.Activate
     Dialogue titre & " terminée." & vbCrLf & gNbErreurs & " appel(s) en erreur, notés dans la feuille Journal.", _
         vbInformation, "Sonde SEE"
@@ -86,6 +136,291 @@ Echec:
 End Function
 
 ' ============================================================================
+'  TesterSEE : LE bouton du premier essai au bureau. Un clic, rien à régler,
+'  rien à savoir. Il crée les feuilles Reglages et Journal si elles manquent
+'  (sans boîte), puis enchaîne, sans aucune boîte et dans un seul journal :
+'  SondeApplication ; si SEE est joint : SondeSymboles, SondeFolio (le folio
+'  de la vue active), SondeSelection (s'il y a une sélection), SondeMethodes
+'  (ses XML vont aussi dans la feuille Sonde_XML). Il finit par la feuille
+'  Resultat_Test, en tête du classeur, qui dit en clair ce qui a marché, puis
+'  UNE boîte : enregistrer le classeur et me l'envoyer.
+'  LECTURE SEULE : il n'appelle que les sondes ; rien n'est écrit dans SEE.
+' ============================================================================
+Public Sub TesterSEE()
+    Dim ancien As Boolean, imprevu As String
+    On Error GoTo Plantage
+    ancien = gSansDialogue
+    gSansDialogue = True
+    mEnchaine = True
+    RemettreLesLectures
+    OuvrirJournal "TesterSEE"
+    Journal "TesterSEE", "", "", "le test enchaîne les sondes, en LECTURE SEULE : rien n'est écrit dans SEE"
+    ' les feuilles Reglages et Journal, si elles manquent (sa boîte va au journal)
+    InitialiserClasseur
+    ChargerReglages
+    EtapeDuTest "SondeApplication"
+    If mConnecte Then
+        EtapeDuTest "SondeSymboles"
+        EtapeDuTest "SondeFolio"
+        If NbObjetsSelectionnes() > 0 Then
+            EtapeDuTest "SondeSelection"
+        Else
+            NoterEtape "SondeSelection : sautée (aucun objet sélectionné dans SEE)"
+        End If
+        EtapeDuTest "SondeMethodes"
+    Else
+        NoterEtape "les autres sondes : sautées (SEE n'est pas joint)"
+    End If
+Fin:
+    FinirTest ancien, imprevu
+    Exit Sub
+Plantage:
+    imprevu = Err.Number & " " & Err.Description
+    Journal "TesterSEE", "", "(macro)", "ARRÊT IMPRÉVU du test", Err.Number, Err.Description
+    Resume Fin
+End Sub
+
+' La fin du test, quoi qu'il arrive : la feuille Resultat_Test, puis UNE boîte.
+Private Sub FinirTest(ByVal ancienSansDialogue As Boolean, ByVal imprevu As String)
+    On Error Resume Next
+    mEnchaine = False
+    Application.ScreenUpdating = True
+    Application.StatusBar = False
+    EcrireResultatTest imprevu
+    Journal "Fin", "TesterSEE", "", "terminé ; " & gNbErreurs & " appel(s) en erreur ; voir la feuille " & FEUILLE_RESULTAT
+    gSansDialogue = ancienSansDialogue
+    If mConnecte Then
+        Dialogue "C'est fini. Enregistre ce fichier (Ctrl+S), ferme-le et envoie-le-moi." & vbCrLf & vbCrLf & _
+            "(Il contient ce qu'Excel a lu dans SEE : si le projet ouvert n'était pas ton projet d'essai, " & _
+            "regarde d'abord la feuille " & FEUILLE_RESULTAT & ".)", vbInformation, "Test de SEE"
+    Else
+        Dialogue "C'est fini. Excel n'a pas pu joindre SEE : c'est normal à ce stade, et le fichier contient " & _
+            "l'explication (feuilles " & FEUILLE_RESULTAT & " et Journal)." & vbCrLf & vbCrLf & _
+            "Enregistre ce fichier (Ctrl+S), ferme-le et envoie-le-moi.", vbInformation, "Test de SEE"
+    End If
+End Sub
+
+' Une sonde du test : une erreur imprévue l'arrête, pas le test.
+Private Sub EtapeDuTest(ByVal nom As String)
+    Dim e0 As Long, numErr As Long, descErr As String
+    e0 = gNbErreurs
+    On Error GoTo Echec
+    Application.StatusBar = "Test de SEE (lecture seule) : " & nom
+    If nom = "SondeApplication" Then
+        SondeApplication
+    ElseIf nom = "SondeSymboles" Then
+        SondeSymboles
+    ElseIf nom = "SondeFolio" Then
+        SondeFolioDe True
+    ElseIf nom = "SondeSelection" Then
+        SondeSelection
+    Else
+        SondeMethodes
+    End If
+    NoterEtape nom & " : faite, " & (gNbErreurs - e0) & " appel(s) en erreur"
+    Exit Sub
+Echec:
+    numErr = Err.Number
+    descErr = Err.Description
+    gNbErreurs = gNbErreurs + 1
+    Application.ScreenUpdating = True
+    Journal "TesterSEE", nom, "(sonde)", "ARRÊT IMPRÉVU de la sonde : le test passe à la suite", numErr, descErr
+    NoterEtape nom & " : ARRÊTÉE par une erreur imprévue (" & numErr & " " & descErr & ") ; le test a continué"
+End Sub
+
+Private Sub NoterEtape(ByVal texte As String)
+    mEtapesTest = mEtapesTest & texte & vbLf
+End Sub
+
+' Le nombre d'objets sélectionnés dans la vue active de SEE (0 s'il n'y a ni
+' vue ni sélection, ou si elle est illisible).
+Private Function NbObjetsSelectionnes() As Long
+    Dim vue As Object, sel As Object
+    NbObjetsSelectionnes = 0
+    Contexte "TesterSEE", "sélection"
+    Set vue = SEE_VueActive()
+    If vue Is Nothing Then Exit Function
+    Set sel = SEE_SelectionVue(vue)
+    If sel Is Nothing Then Exit Function
+    NbObjetsSelectionnes = ElementsDe(sel).Count
+End Function
+
+' Avant un test : rien n'a encore été lu.
+Private Sub RemettreLesLectures()
+    mConnecte = False
+    mVersion = ""
+    mUnite = ""
+    mProjetLu = ""
+    mNbFamilles = 0
+    mNbFormes = 0
+    mFolioLu = ""
+    mFolioRaison = "non lu"
+    mNbSymboles = 0
+    mNbSegments = 0
+    mNbGraphiques = 0
+    mNbSelection = 0
+    mNbMaterielsSelection = 0
+    mNbXML = 0
+    mNbMateriels = 0
+    mEtapesTest = ""
+    Set mClasses = NouveauDicoExact()
+End Sub
+
+' La feuille Resultat_Test, en tête du classeur : ce que le test a lu, en clair.
+Private Sub EcrireResultatTest(ByVal imprevu As String)
+    Dim ws As Object, l As Long, s As String, k As Variant, e As Variant, etapes As Variant, erreurs As Collection
+    Set ws = FeuilleEnTete(FEUILLE_RESULTAT)
+    l = 0
+    LigneResultat ws, l, "Test de SEE", "fait le " & Format$(Now, "yyyy-mm-dd hh:mm") & " par la macro TesterSEE, en lecture seule : " & _
+        "rien n'a été écrit dans SEE"
+    If mConnecte Then
+        If Len(gStrategie) > 0 Then
+            s = "OUI, joint par " & gStrategie
+        Else
+            s = "OUI, par la connexion gardée d'une macro précédente"
+        End If
+        If gEstAutomation Then s = s & " (coclasse SeeAutomation : la lecture du projet est limitée)"
+    Else
+        s = "NON : Excel n'a pas pu joindre SEE. C'est normal à ce stade : la feuille Journal dit chaque manière essayée " & _
+            "et la réponse de Windows, c'est ce qu'il me faut. (Si SEE n'était pas ouvert : ouvre-le sur ton projet d'essai, " & _
+            "puis relance TesterSEE.)"
+    End If
+    LigneResultat ws, l, "SEE joint ?", s
+    If mConnecte Then
+        LigneResultat ws, l, "Version", mVersion & " ; l'API est lue en V" & gVersionAPI & " (réglage VersionAPI = " & _
+            Reglage("VersionAPI", "auto") & ")"
+        LigneResultat ws, l, "Unité", mUnite
+        LigneResultat ws, l, "Projet ouvert", mProjetLu
+        LigneResultat ws, l, "Symboles de SEE", mNbFamilles & " famille(s), " & mNbFormes & " symbole(s) lus (feuille Sonde_Symboles)"
+        If Len(mFolioLu) > 0 Then
+            s = "« " & mFolioLu & " » : " & mNbSymboles & " symbole(s), " & mNbSegments & " segment(s) de connexion, " & _
+                mNbGraphiques & " objet(s) graphique(s) lus (feuille Sonde_Folio)"
+        Else
+            s = "aucun : " & mFolioRaison & " (ouvre ton folio d'essai dans SEE, puis relance TesterSEE)"
+        End If
+        LigneResultat ws, l, "Folio lu", s
+        If mNbMateriels > 0 Then
+            s = mNbMateriels & " matériel(s) lu(s) sur le folio (symboles et connecteurs) ; classes vues :"
+            For Each k In mClasses.Keys
+                s = s & " « " & CStr(k) & " » (" & EnLong(mClasses.Item(k), 0) & ")"
+            Next k
+        ElseIf Len(mFolioLu) > 0 Then
+            s = "aucun matériel (référence du catalogue) associé aux objets du folio : associe-en un à la main sur ton folio d'essai, puis relance"
+        Else
+            s = "non lu (aucun folio lu)"
+        End If
+        LigneResultat ws, l, "Matériel", s
+        If mNbSelection > 0 Then
+            s = mNbSelection & " objet(s) sélectionné(s) lus, " & mNbMaterielsSelection & " matériel(s) (feuille Sonde_Selection)"
+        Else
+            s = "aucun objet sélectionné dans SEE : sautée"
+        End If
+        LigneResultat ws, l, "Sélection", s
+        LigneResultat ws, l, "Méthodes (XML)", mNbXML & " sur 6 lus (feuille Sonde_XML)"
+    End If
+    etapes = Split(mEtapesTest, vbLf)
+    s = "Étapes"
+    For Each e In etapes
+        If Len(CStr(e)) > 0 Then
+            LigneResultat ws, l, s, CStr(e)
+            s = ""
+        End If
+    Next e
+    If Len(imprevu) > 0 Then LigneResultat ws, l, "Arrêt imprévu", imprevu
+    Set erreurs = ErreursDuJournal(8)
+    LigneResultat ws, l, "Ce qui a échoué", gNbErreurs & " appel(s) en erreur. C'est normal pour un test : chacun dit ce que SEE " & _
+        "n'a pas ou refuse. Les plus fréquents :"
+    For Each e In erreurs
+        LigneResultat ws, l, "", CStr(e)
+    Next e
+    If erreurs.Count = 0 Then LigneResultat ws, l, "", "aucun"
+    LigneResultat ws, l, "À vérifier", "Ce classeur contient ce qu'Excel a lu dans SEE (le projet ouvert, son folio actif, les " & _
+        "symboles et les réglages de l'environnement). Si ce n'était pas ton projet d'essai, dis-le-moi avant de l'envoyer."
+    LigneResultat ws, l, "Et maintenant", "Enregistre ce fichier (Ctrl+S), ferme-le et envoie-le-moi."
+    ws.Cells(1, 1).Font.Bold = True
+    ws.Columns(1).ColumnWidth = 20
+    ws.Columns(2).ColumnWidth = 130
+    ws.Activate
+End Sub
+
+Private Sub LigneResultat(ByVal ws As Object, ByRef l As Long, ByVal rubrique As String, ByVal texte As String)
+    l = l + 1
+    EcrireLigne ws, l, Array(rubrique, texte)
+    If Len(rubrique) > 0 Then ws.Cells(l, 1).Font.Bold = True
+End Sub
+
+' La feuille nommée, vidée, placée en tête du classeur (créée si besoin).
+Private Function FeuilleEnTete(ByVal nom As String) As Object
+    Dim ws As Object
+    Set ws = FeuilleExistante(nom)
+    If ws Is Nothing Then
+        Set ws = ThisWorkbook.Worksheets.Add(Before:=ThisWorkbook.Worksheets(1))
+        ws.Name = nom
+    Else
+        ws.Cells.Clear
+        If ws.Index <> 1 Then MettreEnTete ws
+    End If
+    Set FeuilleEnTete = ws
+End Function
+
+Private Sub MettreEnTete(ByVal ws As Object)
+    On Error GoTo Echec
+    ws.Move Before:=ThisWorkbook.Worksheets(1)
+    Exit Sub
+Echec:
+    Journal "TesterSEE", ws.Name, "Worksheet.Move", "la feuille n'a pas pu être mise en tête du classeur", Err.Number, Err.Description
+End Sub
+
+' Les erreurs du journal, regroupées par appel et message : « 3 x appel :
+' message », les plus fréquentes d'abord (à égalité, la première apparue) ;
+' au plus maxi lignes, puis une ligne pour le reste.
+Private Function ErreursDuJournal(ByVal maxi As Long) As Collection
+    Dim ws As Object, n As Long, v As Variant, i As Long, cle As String, d As Object, res As Collection
+    Dim k As Variant, nb As Long, reste As Long, pris As Object, meilleure As String, plus As Long, total As Long
+    Set res = New Collection
+    Set ErreursDuJournal = res
+    Set ws = FeuilleExistante(FEUILLE_JOURNAL)
+    If ws Is Nothing Then Exit Function
+    n = DerniereLigne(ws, 1)
+    If n < 2 Then Exit Function
+    v = ws.Range(ws.Cells(2, 1), ws.Cells(n, 7)).Value
+    Set d = NouveauDicoExact()
+    For i = 1 To n - 1
+        If Len(EnTexte(v(i, 6))) > 0 Then
+            cle = Left$(EnTexte(v(i, 4)), 100)
+            If Len(cle) = 0 Then cle = Left$(EnTexte(v(i, 3)), 100)
+            cle = cle & " : " & Left$(EnTexte(v(i, 7)), 160)
+            nb = 0
+            If d.Exists(cle) Then nb = EnLong(d.Item(cle), 0)
+            d.Item(cle) = nb + 1
+        End If
+    Next i
+    ' les maxi plus fréquentes (une sélection simple : maxi passes sur les groupes)
+    Set pris = NouveauDicoExact()
+    Do While res.Count < maxi
+        meilleure = ""
+        plus = 0
+        For Each k In d.Keys
+            If Not pris.Exists(CStr(k)) Then
+                nb = EnLong(d.Item(k), 0)
+                If nb > plus Then
+                    plus = nb
+                    meilleure = CStr(k)
+                End If
+            End If
+        Next k
+        If plus = 0 Then Exit Do
+        pris.Add meilleure, plus
+        res.Add plus & " x " & meilleure
+    Loop
+    For Each k In d.Keys
+        total = total + EnLong(d.Item(k), 0)
+        If Not pris.Exists(CStr(k)) Then reste = reste + EnLong(d.Item(k), 0)
+    Next k
+    If reste > 0 Then res.Add "et " & reste & " autre(s) (" & total & " en tout) : voir la feuille Journal (colonnes Err.Number et Err.Description)"
+End Function
+
+' ============================================================================
 '  SondeApplication
 ' ============================================================================
 Public Sub SondeApplication()
@@ -102,12 +437,15 @@ Public Sub SondeApplication()
             "ApplicationLanguage", "ProjectRootPath", "EnvironmentRootPath", "ApplicationMode", "VBAVersion", "IsEProjectMode")
         Ecrire Array("Application", CStr(nom), LireProp(gApp, CStr(nom)))
     Next nom
+    mVersion = LireProp(gApp, "ApplicationName") & " " & LireProp(gApp, "ApplicationVersion")
     ' --- environnement
     Contexte "SondeApplication", "Environnement"
     Set env = SEE_Environnement()
     If env Is Nothing Then
         Ecrire Array("Environnement", "GetEnvironment", "#ERR " & gDerniereErreur)
+        mUnite = "illisible (environnement non lu : " & gDerniereErreur & ")"
     Else
+        mUnite = "illisible : " & LireProp(env, "Unit")
         For Each nom In Array("Name", "Path", "Version", "Unit", "Standard", "CreationDate", "BlockPath", _
                 "TitleBlockPath", "ParameterSheetPath")
             Ecrire Array("Environnement", CStr(nom), LireProp(env, CStr(nom)))
@@ -132,6 +470,7 @@ Public Sub SondeApplication()
                 u = "« " & u & " » (" & TypeName(uv) & ") : non numérique, à lire tel quel (ligne Unit)"
             End If
             Ecrire Array("Environnement", "Unit (sens)", u)
+            mUnite = u
         End If
     End If
     ' --- projet
@@ -139,7 +478,9 @@ Public Sub SondeApplication()
     Set prj = SEE_Projet(True)
     If prj Is Nothing Then
         Ecrire Array("Projet", "GetProject", "aucun projet ouvert (ou erreur : " & gDerniereErreur & ")")
+        mProjetLu = "aucun projet ouvert dans le SEE joint" & IIf(Len(gDerniereErreur) > 0, " (dernière erreur : " & gDerniereErreur & ")", "")
     Else
+        mProjetLu = "« " & LireProp(prj, "Name") & " »"
         For Each nom In Array("Name", "EnvironmentName", "IsReadOnly", "IsProjectReadOnly", "IsModified", "Level", "Step")
             Ecrire Array("Projet", CStr(nom), LirePropOuMethode(prj, CStr(nom)))
         Next nom
@@ -254,6 +595,8 @@ Public Sub SondeSymboles()
     Next t
     Journal "SondeSymboles", "", "", nbFam & " famille(s), " & nbSym & " symbole(s)"
 Fin:
+    mNbFamilles = nbFam
+    mNbFormes = nbSym
     Application.StatusBar = False
     FinSonde TITRE_SONDE
 End Sub
@@ -280,10 +623,18 @@ End Sub
 '  vue active.
 ' ============================================================================
 Public Sub SondeFolio()
+    SondeFolioDe False
+End Sub
+
+' parLaVue : le folio de la vue active, quel que soit le réglage SondeFolio
+' (TesterSEE) ; sinon le folio du réglage, ou celui de la vue s'il est vide.
+Private Sub SondeFolioDe(ByVal parLaVue As Boolean)
     Dim prj As Object, sh As Object, nom As String
     Const TITRE_SONDE As String = "SondeFolio"
+    mFolioLu = ""
+    mFolioRaison = "SEE non joint"
     If Not DebutSonde(TITRE_SONDE, "Sonde_Folio") Then GoTo Fin
-    nom = Reglage("SondeFolio", "")
+    If Not parLaVue Then nom = Reglage("SondeFolio", "")
     Contexte "SondeFolio", nom
     Set prj = SEE_Projet(True)
     If Len(nom) > 0 Then
@@ -292,8 +643,8 @@ Public Sub SondeFolio()
         Set sh = FolioDeLaVueActive()
     End If
     If sh Is Nothing Then
-        Ecrire Array("Folio", "introuvable", IIf(Len(nom) > 0, "« " & nom & " » n'est pas dans le projet", _
-            "pas de vue active montrant un folio") & " ; " & gDerniereErreur)
+        mFolioRaison = IIf(Len(nom) > 0, "« " & nom & " » n'est pas dans le projet", "pas de vue active montrant un folio")
+        Ecrire Array("Folio", "introuvable", mFolioRaison & " ; " & gDerniereErreur)
         GoTo Fin
     End If
     DecrireFolio sh
@@ -325,6 +676,10 @@ End Function
 Private Sub DecrireFolio(ByVal sh As Object)
     Dim o As Variant, n As Long, t As Variant, tb As Object, nomFolio As String
     nomFolio = LireProp(sh, "Name")
+    mFolioLu = nomFolio
+    mNbSymboles = 0
+    mNbSegments = 0
+    mNbGraphiques = 0
     Contexte "SondeFolio", nomFolio
     TitreSection "Folio « " & nomFolio & " »"
     Entetes Array("Cle", "Valeur")
@@ -350,6 +705,10 @@ Private Sub DecrireFolio(ByVal sh As Object)
         n = n + 1
         DecrireSymbole n, o
     Next o
+    mNbSymboles = n
+    ' --- le matériel associé (symboles et connecteurs), un élément par ligne
+    EcrireSectionMateriel
+    CompterMaterielsDuFolio
     ' --- points de connexion, un par ligne
     TitreSection ""
     TitreSection "Points de connexion des symboles"
@@ -368,6 +727,7 @@ Private Sub DecrireFolio(ByVal sh As Object)
         n = n + 1
         DecrireSegment n, o
     Next o
+    mNbSegments = n
     ' --- objets graphiques
     TitreSection ""
     TitreSection "Objets graphiques (textes, lignes, rectangles)"
@@ -379,6 +739,24 @@ Private Sub DecrireFolio(ByVal sh As Object)
             DecrireGraphique n, CLng(t), o
         Next o
     Next t
+    mNbGraphiques = n
+End Sub
+
+' La section « Matériel associé » : les éléments notés par DecrireSymbole
+' (un par ligne ; un connecteur une seule fois, même s'il a plusieurs broches).
+Private Sub EcrireSectionMateriel()
+    Dim r As Variant
+    TitreSection ""
+    TitreSection "Matériel associé (GetEquipmentCollection) : la colonne Class est la valeur à mettre dans " & _
+        "<NATURE>.ClasseMateriel (porteur symbole) ou <NATURE>.ClasseConnecteur (porteur connecteur)"
+    Entetes Array("Symbole", "Porteur", "Repere", "Class", "Code", "Quantity")
+    If mLignesMateriel.Count = 0 Then
+        Ecrire Array("", "aucun matériel associé aux objets lus")
+        Exit Sub
+    End If
+    For Each r In mLignesMateriel
+        Ecrire r
+    Next r
 End Sub
 
 ' ============================================================================
@@ -427,7 +805,13 @@ Public Sub SondeSelection()
             DecrireSymbole n, o
         End If
     Next o
-    If n = 0 Then Ecrire Array("Sélection", "aucun objet sélectionné dans la vue active")
+    mNbSelection = n
+    If n = 0 Then
+        Ecrire Array("Sélection", "aucun objet sélectionné dans la vue active")
+    Else
+        EcrireSectionMateriel
+        mNbMaterielsSelection = mLignesMateriel.Count
+    End If
 Fin:
     FinSonde TITRE_SONDE
 End Sub
@@ -438,14 +822,14 @@ End Sub
 Private Sub EntetesSymboles()
     Entetes Array("N", "Tag", "Label", "Root", "Order", "Manual", "DisplayTag", "Famille", "Forme", "SymbolType", _
         "SymbolBehavior", "Angle", "SymbolScale", "X1", "Y1", "X2", "Y2", "NbPointsConnexion", "dx 1er point", "dy 1er point", _
-        "Connecteur", "Broche", "Borne", "Erreurs")
+        "Connecteur", "Broche", "Borne", "Materiel (Class / Code / Quantity)", "Materiel du connecteur", "Erreurs")
 End Sub
 
 Private Sub DecrireSymbole(ByVal n As Long, ByVal sym As Object)
     Dim tg As Object, forme As Object, fam As Object, x1 As Double, y1 As Double, x2 As Double, y2 As Double
     Dim aSecond As Boolean, pos As Variant, cps As Collection, cx As Double, cy As Double, dx As String, dy As String
     Dim lien As Object, connecteur As String, broche As String, borne As String, erreurs As String
-    Dim t(0 To 5) As String, i As Long, nomFam As String, nomForme As String
+    Dim t(0 To 5) As String, i As Long, nomFam As String, nomForme As String, matSym As String, matCon As String
     On Error GoTo Echec
     Set tg = SEE_RepereDe(sym)
     If tg Is Nothing Then
@@ -484,18 +868,69 @@ Private Sub DecrireSymbole(ByVal n As Long, ByVal sym As Object)
             dy = NombreTexte(cy - y1)
         End If
     End If
+    ' le matériel du symbole, puis celui de son connecteur s'il en a un (lecture seule)
+    matSym = MaterielsDuPorteur(n, "symbole", t(0), sym)
     Set lien = SEE_LienDuSymbole(sym, "C")
-    If Not lien Is Nothing Then connecteur = RepereTexte(lien)
+    If Not lien Is Nothing Then
+        connecteur = RepereTexte(lien)
+        matCon = MaterielsDuPorteur(n, "connecteur", connecteur, lien)
+    End If
     Set lien = SEE_LienDuSymbole(sym, "P")
     If Not lien Is Nothing Then broche = SEE_NomDe(lien)
     Set lien = SEE_LienDuSymbole(sym, "T")
     If Not lien Is Nothing Then borne = SEE_NomDe(lien)
     Ecrire Array(n, t(0), t(1), t(2), t(3), t(4), t(5), nomFam, nomForme, LireProp(sym, "SymbolType"), _
         LireProp(sym, "SymbolBehavior"), LireProp(sym, "Angle"), LireProp(sym, "SymbolScale"), pos(0), pos(1), pos(2), pos(3), _
-        cps.Count, dx, dy, connecteur, broche, borne, erreurs)
+        cps.Count, dx, dy, connecteur, broche, borne, matSym, matCon, erreurs)
     Exit Sub
 Echec:
     Ecrire Array(n, "#ERR " & Err.Number & " : " & Err.Description)
+End Sub
+
+' Le matériel d'un porteur (un symbole, un connecteur) en texte, « Class /
+' Code / Quantity » de chaque élément ; chaque élément est aussi noté pour la
+' section « Matériel associé » (un connecteur une seule fois, même s'il a
+' plusieurs broches). LECTURE SEULE.
+Private Function MaterielsDuPorteur(ByVal n As Long, ByVal porteur As String, ByVal repere As String, ByVal obj As Object) As String
+    Dim coll As Object, e As Variant, s As String, classe As String, code As String, qte As String
+    Dim nouveau As Boolean, cle As String
+    MaterielsDuPorteur = ""
+    Set coll = SEE_MaterielsDe(obj)
+    If coll Is Nothing Then
+        MaterielsDuPorteur = "#ERR " & gDerniereErreur
+        Exit Function
+    End If
+    nouveau = True
+    If porteur = "connecteur" Then
+        ' un repère illisible ne réunit pas deux connecteurs : chacun garde sa ligne
+        cle = repere
+        If Left$(repere, 4) = "#ERR" Or Len(repere) = 0 Then cle = repere & "|" & n
+        nouveau = Not mPorteursVus.Exists(cle)
+        If nouveau Then mPorteursVus.Add cle, n
+    End If
+    For Each e In ElementsDe(coll)
+        classe = LireProp(e, "Class")
+        code = LireProp(e, "Code")
+        qte = LireProp(e, "Quantity")
+        If Len(s) > 0 Then s = s & " ; "
+        s = s & classe & " / " & code & " / " & qte
+        If nouveau Then mLignesMateriel.Add Array(n, porteur, repere, classe, code, qte)
+    Next e
+    MaterielsDuPorteur = s
+End Function
+
+' Pour TesterSEE : le matériel lu sur le folio (la section qui vient d'être
+' écrite), compté par classe.
+Private Sub CompterMaterielsDuFolio()
+    Dim r As Variant, classe As String, k As Long
+    Set mClasses = NouveauDicoExact()
+    mNbMateriels = mLignesMateriel.Count
+    For Each r In mLignesMateriel
+        classe = CStr(r(3))
+        k = 0
+        If mClasses.Exists(classe) Then k = EnLong(mClasses.Item(classe), 0)
+        mClasses.Item(classe) = k + 1
+    Next r
 End Sub
 
 ' Le texte du repère d'un objet (connecteur, câble...) : Tag, sinon DisplayTag.
@@ -637,12 +1072,15 @@ End Function
 ' ============================================================================
 '  SondeMethodes : GetMethodsXML pour 22 ConnectionPoints, 29 Cabling,
 '  30 CablesTypeDefinition, 36 Connector, 37 ConnectorSymbols, 21 DefaultSymbols.
-'  Chaque XML est écrit dans un fichier à côté du classeur.
+'  Chaque XML est écrit dans un fichier à côté du classeur, et AUSSI dans la
+'  feuille Sonde_XML, en morceaux de 30 000 caractères (une cellule chacun,
+'  dans l'ordre) : le classeur seul suffit à tout me renvoyer.
 ' ============================================================================
 Public Sub SondeMethodes()
     Dim env As Object, types As Variant, noms As Variant, i As Long, v As Variant, texte As String
-    Dim fichier As String, ok As Boolean, dossier As String
+    Dim fichier As String, ok As Boolean, dossier As String, wsX As Object, ligneX As Long, avant As Long, ouX As String
     Const TITRE_SONDE As String = "SondeMethodes"
+    mNbXML = 0
     If Not DebutSonde(TITRE_SONDE, "Sonde_Methodes") Then GoTo Fin
     Contexte "SondeMethodes", "Environnement"
     Set env = SEE_Environnement()
@@ -653,27 +1091,52 @@ Public Sub SondeMethodes()
     types = Array(22, 29, 30, 36, 37, 21)
     noms = Array("ConnectionPoints", "Cabling", "CablesTypeDefinition", "Connector", "ConnectorSymbols", "DefaultSymbols")
     dossier = DossierDesFichiers()
+    Set wsX = FeuilleCreee(FEUILLE_XML, True)
+    EcrireLigne wsX, 1, Array("Type", "Nom", "Morceau", "Morceaux", "XML (" & TAILLE_MORCEAU & " caractères au plus par cellule : " & _
+        "recoller les morceaux dans l'ordre)")
+    wsX.Rows(1).Font.Bold = True
+    ligneX = 1
     Ecrire Array("Dossier", "", "", dossier)
-    Entetes Array("Type", "Nom", "Rendu", "Fichier", "Taille (caractères)", "Début du XML")
+    Entetes Array("Type", "Nom", "Rendu", "Fichier", "Taille (caractères)", "Feuille Sonde_XML", "Début du XML")
     For i = LBound(types) To UBound(types)
         Contexte "SondeMethodes", CStr(noms(i))
         texte = ""
         fichier = ""
+        ouX = ""
         If SEE_MethodesXML(env, CLng(types(i)), v) Then
             texte = TexteXML(v)
             If Len(texte) > 0 Then
                 fichier = dossier & "\SEE_Methodes_" & types(i) & "_" & noms(i) & ".xml"
                 ok = EcrireFichierTexte(fichier, texte)
                 If Not ok Then fichier = "#ERR écriture : " & fichier
+                avant = ligneX
+                ligneX = EcrireMorceaux(wsX, ligneX, CLng(types(i)), CStr(noms(i)), texte)
+                ouX = "lignes " & (avant + 1) & " à " & ligneX
+                mNbXML = mNbXML + 1
             End If
-            Ecrire Array(types(i), noms(i), TypeName(v), fichier, Len(texte), Left$(Replace(Replace(texte, vbCr, " "), vbLf, " "), 300))
+            Ecrire Array(types(i), noms(i), TypeName(v), fichier, Len(texte), ouX, _
+                Left$(Replace(Replace(texte, vbCr, " "), vbLf, " "), 300))
         Else
             Ecrire Array(types(i), noms(i), "#ERR " & gDerniereErreur)
         End If
     Next i
+    wsX.Columns(5).ColumnWidth = 100
 Fin:
     FinSonde TITRE_SONDE
 End Sub
+
+' Un texte en morceaux de TAILLE_MORCEAU caractères, une ligne par morceau,
+' à partir de la ligne qui suit « ligne » ; rend la dernière ligne écrite.
+Private Function EcrireMorceaux(ByVal ws As Object, ByVal ligne As Long, ByVal typeMethode As Long, ByVal nom As String, _
+        ByVal texte As String) As Long
+    Dim nb As Long, k As Long
+    nb = (Len(texte) + TAILLE_MORCEAU - 1) \ TAILLE_MORCEAU
+    For k = 1 To nb
+        ligne = ligne + 1
+        EcrireLigne ws, ligne, Array(typeMethode, nom, k, nb, Mid$(texte, (k - 1) * TAILLE_MORCEAU + 1, TAILLE_MORCEAU))
+    Next k
+    EcrireMorceaux = ligne
+End Function
 
 ' Le texte d'un XML rendu par SEE : une chaîne, ou un objet DOM (propriété xml).
 Private Function TexteXML(ByVal v As Variant) As String

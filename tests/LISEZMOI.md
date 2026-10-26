@@ -101,12 +101,15 @@ node tests/see.js              LE PAQUET SEE (see/FORMAT-PAQUET.md) ET SON REPLI
 node tests/vba.js              LES MACROS DU PILOTE SEE (see/vba/*.bas), sans Excel ni SEE : contrôle statique comme l'éditeur VBA
                                les importera — Windows-1252 sans séquence UTF-8, CRLF, VB_Name, Option Explicit, lignes et
                                continuations, blocs équilibrés, identifiants déclarés, Private appelée de son module, nombre
-                               d'arguments, ByRef du bon type, Set juste ; les clés de réglage et les huit natures de
-                               FORMAT-PAQUET ; la sonde n'écrit rien dans SEE, chaque procédure du pilote qui écrit teste la
-                               simulation ; et le contrôleur lui-même, éprouvé par vingt-six fautes injectées une à une
+                               d'arguments, ByRef du bon type, Set juste ; les clés de réglage (dont celles du matériel,
+                               <NATURE>.ClasseMateriel / .ClasseConnecteur, MaterielQuantite), chacune citée dans
+                               FORMAT-PAQUET, et les huit natures ; la sonde n'écrit rien dans SEE, chaque procédure du pilote
+                               qui écrit (SetEquipmentCollection compris) teste la simulation, TesterSEE n'appelle de proche en
+                               proche que des lectures ; et le contrôleur lui-même, éprouvé par trente-deux fautes injectées
 tests/banc-vba/lancer.sh       LES MÊMES MACROS EXÉCUTÉES, dans LibreOffice (Basic en mode VBASupport) face à un FAUX SEE qui imite
-                               l'API COM et trace chaque appel : vingt-neuf scénarios (V5 et V4, folios complets, reprise après
-                               panne, Remplacer, sauvegardes, simulation sans aucune écriture, variantes de paquet) ; hors de
+                               l'API COM et trace chaque appel : trente-deux scénarios (V5 et V4, folios complets, reprise après
+                               panne, Remplacer, sauvegardes, simulation sans aucune écriture, variantes de paquet, le matériel
+                               associé confronté au paquet, TesterSEE avec et sans SEE) ; hors de
                                tests/toutes.js (il demande LibreOffice et python3-uno, environ sept minutes) ; voir son LISEZMOI :
                                il prouve la cohérence du code, pas le comportement du vrai SEE ni d'Excel
 node tests/couverture.js       CE QUE L'OUTIL VÉRIFIE, ET S'IL VÉRIFIE TOUT : sur l'exemple embarqué et sur un contrat inventé plus riche

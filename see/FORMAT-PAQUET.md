@@ -217,7 +217,21 @@ après la sonde. La liste qui fait foi est dans la feuille ; en résumé :
   `Mode` (`BOITE`, `BROCHE`, `BORNIER`, `SYMBOLE`, `DESSIN`, `IGNORER`),
   `Famille` et `Symbole` (le corps), `BrocheFamille` et `BrocheSymbole` (la
   broche ou la borne), `AngleG`, `AngleD`, `AngleH`, `AngleB` (selon le flanc
-  ou le `Sens`), `ModeleRepere` (le repère d'un connecteur, `{Repere}-{Lettre}`).
+  ou le `Sens`), `ModeleRepere` (le repère d'un connecteur, `{Repere}-{Lettre}`),
+  `ClasseMateriel` (la classe SEE du matériel associé au corps posé en
+  symbole, avec le `PN` de la feuille `Blocs` ; vide = aucun) et
+  `ClasseConnecteur` (en `BROCHE` : la classe du matériel associé à chaque
+  connecteur, avec le `PN` de la feuille `Connecteurs` ; vide = aucun).
+- **Matériel** (le « device » associé, la référence du catalogue de SEE) :
+  `MaterielQuantite` (la quantité écrite dans chaque matériel, 1 par défaut).
+  Le pilote crée le matériel (`CreateObject`), écrit `Class`, `Code` (le PN)
+  et `Quantity`, le met dans une collection et la passe à
+  `SetEquipmentCollection` (même signature en V5 et en V4), puis relit
+  `GetEquipmentCollection`. Un PN vide n'associe rien (le journal le dit) ;
+  un refus de SEE (classe ou code absents du catalogue) est journalisé et le
+  folio continue. Un connecteur reçoit son matériel une fois par exécution.
+  La classe à mettre se lit dans `Sonde_Folio`, section « Matériel associé »,
+  sur un folio où un matériel a été associé à la main.
 - **Fils** : `TypeConnexion` (la chaîne attendue par `AddWireConnection` ; vide
   = les fils sont tracés en traits), `Cable` et `Jauge` (`O` / `N`),
   `Pontages` (`TRACER` ou `IGNORER` les pontages de barrette), `Recaler`
