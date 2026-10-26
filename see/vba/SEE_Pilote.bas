@@ -24,9 +24,13 @@ Attribute VB_Name = "SEE_Pilote"
 '  LE MATERIEL (le « device » associé) : le corps d'un bloc posé en symbole
 '  reçoit le PN de la feuille Blocs (classe <NATURE>.ClasseMateriel), chaque
 '  connecteur d'un bloc en mode BROCHE le PN de la feuille Connecteurs (classe
-'  <NATURE>.ClasseConnecteur) : CreateObject(matériel), Class, Code, Quantity,
-'  une collection qui le contient, SetEquipmentCollection (même signature en
-'  V5 et en V4), puis relecture par GetEquipmentCollection. Classe vide :
+'  <NATURE>.ClasseConnecteur). D'abord, ce que le porteur porte DÉJÀ est lu
+'  (GetEquipmentCollection) et journalisé, en simulation aussi : déjà ce
+'  matériel, rien n'est écrit ; d'autres matériels, le réglage
+'  MaterielExistant décide (GARDER par défaut : rien n'est écrit). Puis
+'  CreateObject(matériel), Class, Code, Quantity, une collection,
+'  SetEquipmentCollection (même signature en V5 et en V4), puis relecture :
+'  compté seulement s'il est relu (même Class, même Code). Classe vide :
 '  rien. PN vide : rien, et le journal le dit. Refus de SEE : journalisé, le
 '  folio continue.
 '
@@ -65,6 +69,8 @@ Private mCoordProvisoires As Boolean ' les coordonnées SEE ne viennent pas du ca
 Private mMessageFin As String   ' ce que la boîte de fin doit dire en plus
 Private mEchecsDeSuite As Long  ' folios de suite qui n'ont pas pu être créés
 Private mMaterielsCon As Object ' repère du connecteur -> PN déjà associé dans cette exécution (une fois par connecteur)
+Private mConnecteursRepris As Object ' repère -> Vrai : connecteur trouvé dans le projet (pas créé par cette exécution)
+Private mPolitiqueMateriel As String ' le réglage MaterielExistant lu (GARDER, AJOUTER, REMPLACER) ; "" : pas encore lu
 
 ' trois folios de suite non créés : l'échec est systématique, le lot s'arrête
 Private Const ECHECS_MAX As Long = 3
@@ -77,7 +83,7 @@ Private mNbFilsSEE As Long
 Private mNbFilsDessin As Long
 Private mNbFilsSautes As Long
 Private mNbGraphiques As Long
-Private mNbMateriels As Long    ' matériels associés (ou qui le seraient, en simulation)
+Private mNbMateriels As Long    ' matériels associés et relus, ou déjà là (en simulation : qui le seraient)
 
 ' ============================================================================
 '  LES MACROS
@@ -296,6 +302,8 @@ Private Function PreparerSEE() As Boolean
     Set mBorniers = NouveauDicoExact()
     Set mFormes = NouveauDicoExact()
     Set mMaterielsCon = NouveauDicoExact()
+    Set mConnecteursRepris = NouveauDicoExact()
+    mPolitiqueMateriel = ""
     Set mListeFolios = Nothing
     mDitTitre = False
     mCoordProvisoires = False
@@ -1319,7 +1327,7 @@ Private Sub MaterielDuCorps(ByVal nature As String, ByVal l As Long, ByVal enSym
             nature & ".Mode, .Famille, .Symbole)", -1, "matériel sans symbole"
         Exit Sub
     End If
-    If AssocierMateriel(sym, "Symbol", classe, pn, "corps") Then mNbMateriels = mNbMateriels + 1
+    If AssocierMateriel(sym, "Symbol", classe, pn, "corps", True) Then mNbMateriels = mNbMateriels + 1
 End Sub
 
 ' Le matériel des connecteurs servis d'un bloc en mode BROCHE (lettres : lettre
@@ -1350,7 +1358,8 @@ Private Sub MaterielsDesConnecteurs(ByVal nature As String, ByVal bloc As String
             ' absent ou Nothing (création refusée par SEE ; simulation) : AssocierMateriel le dit
             Set con = Nothing
             If mConnecteurs.Exists(tagCon) Then Set con = mConnecteurs.Item(tagCon)
-            If AssocierMateriel(con, "Connector", classe, pn, "connecteur « " & tagCon & " »") Then mNbMateriels = mNbMateriels + 1
+            If AssocierMateriel(con, "Connector", classe, pn, "connecteur « " & tagCon & " »", _
+                    Not mConnecteursRepris.Exists(tagCon)) Then mNbMateriels = mNbMateriels + 1
         End If
     Next k
     If Len(sansPN) > 0 Then
@@ -1375,30 +1384,84 @@ Private Function PNDuConnecteur(ByVal bloc As String, ByVal lettre As String) As
     Next l
 End Function
 
-' Associe un matériel à un porteur (un symbole, un connecteur) : CreateObject
-' (matériel) ; Class, Code, Quantity (réglage MaterielQuantite) ; une
-' collection qui le contient ; porteur.SetEquipmentCollection (même signature
-' en V5 et en V4) ; puis relecture (GetEquipmentCollection). Vrai si c'est
-' fait (ou si ce le serait, en simulation). Un refus de SEE (classe ou code
-' absents du catalogue...) est journalisé et compté : le folio continue.
+' Associe un matériel à un porteur (un symbole, un connecteur). neuf : le
+' porteur vient d'être posé ou créé par cette exécution (un connecteur repris
+' du projet ne l'est pas).
+'   1. Ce qu'il porte DÉJÀ est lu (GetEquipmentCollection) et journalisé, en
+'      simulation aussi quand SEE est joint. Déjà ce matériel (même Class,
+'      même Code) : rien n'est écrit. D'autres matériels : le réglage
+'      MaterielExistant décide (GARDER : rien n'est écrit ; AJOUTER : le
+'      matériel s'ajoute à eux ; REMPLACER : il ne garde que celui-ci). Une
+'      lecture qui échoue sur un porteur repris : rien n'est écrit à
+'      l'aveugle (sauf REMPLACER).
+'   2. En simulation : le journal dit ce qui serait écrit, rien de plus.
+'   3. CreateObject (matériel) ; Class, Code, Quantity (MaterielQuantite) ;
+'      une collection ; porteur.SetEquipmentCollection (même signature en V5
+'      et en V4).
+'   4. Relecture : il faut y retrouver un élément de même Class et de même
+'      Code (et, en AJOUTER, ceux d'avant).
+' Vrai si le matériel est associé et relu, ou déjà là (en simulation : s'il le
+' serait). Un refus de SEE est journalisé et compté : le folio continue.
 Private Function AssocierMateriel(ByVal porteur As Object, ByVal quoi As String, ByVal classe As String, _
-        ByVal pn As String, ByVal libelle As String) As Boolean
-    Dim eq As Object, coll As Object, qte As Double, detail As String, relu As String, n As Long, appel As String
+        ByVal pn As String, ByVal libelle As String, ByVal neuf As Boolean) As Boolean
+    Dim eq As Object, coll As Object, avant As Object, apres As Object, e As Variant, paires As Collection
+    Dim qte As Double, detail As String, appel As String, lecture As String, politique As String, nom As String
+    Dim texteAvant As String, texteApres As String, nAvant As Long, nApres As Long, nEcrits As Long, perdus As String
     AssocierMateriel = False
     qte = ReglageNombre("MaterielQuantite", 1)
     detail = libelle & " : Class « " & classe & " », Code « " & pn & " », Quantity " & NombreTexte(qte)
     appel = quoi & ".SetEquipmentCollection"
-    If gSimulation Or gApp Is Nothing Then
-        JournalSimulation appel, detail
+    lecture = quoi & ".GetEquipmentCollection"
+    nom = IIf(quoi = "Connector", "connecteur", "symbole")
+    If porteur Is Nothing Or gApp Is Nothing Then
+        If gSimulation Or gApp Is Nothing Then
+            ' rien à lire : un symbole non posé, un connecteur qui serait créé, ou pas de SEE
+            JournalSimulation appel, detail
+            AssocierMateriel = True
+        Else
+            Journal gEtape, gObjet, appel, "pas de " & nom & " SEE : matériel non associé (" & detail & ")", -1, "matériel non associé"
+            gNbErreurs = gNbErreurs + 1
+        End If
+        Exit Function
+    End If
+    politique = PolitiqueMateriel()
+    ' 1. ce que le porteur porte déjà
+    If SEE_LireMateriels(porteur, avant) Then
+        texteAvant = MaterielsTexte(avant, nAvant)
+        If MaterielDans(avant, classe, pn) Then
+            Journal gEtape, gObjet, lecture, "déjà associé (" & detail & ") : rien n'est écrit ; il porte " & nAvant & _
+                " matériel(s) : " & texteAvant
+            AssocierMateriel = True
+            Exit Function
+        End If
+        If nAvant > 0 Then
+            If politique = "GARDER" Then
+                Journal gEtape, gObjet, lecture, "porte déjà " & nAvant & " matériel(s) : " & texteAvant & " ; " & detail & _
+                    " n'est PAS associé (MaterielExistant = GARDER)", -1, "matériel existant gardé"
+                Exit Function
+            End If
+            Journal gEtape, gObjet, lecture, "porte déjà " & nAvant & " matériel(s) : " & texteAvant & " ; MaterielExistant = " & _
+                politique & IIf(politique = "AJOUTER", " : le PN du paquet s'y ajoute", " : ils sont retirés, il ne garde que le PN du paquet")
+        Else
+            JournalCOM lecture & " (avant)", "aucun matériel"
+        End If
+    ElseIf Not neuf And politique <> "REMPLACER" Then
+        Journal gEtape, gObjet, lecture, "ce que porte ce " & nom & " repris du projet n'a pas pu être lu : " & detail & _
+            " n'est PAS associé (rien n'est écrit à l'aveugle ; MaterielExistant = REMPLACER l'écrirait)", -1, "matériel existant illisible"
+        Exit Function
+    End If
+    ' 2. simulation : ce qui serait écrit
+    If gSimulation Then
+        If nAvant > 0 Then
+            JournalSimulation appel, detail & IIf(politique = "AJOUTER", " ajouté à : ", " à la place de : ") & texteAvant
+        Else
+            JournalSimulation appel, detail
+        End If
         AssocierMateriel = True
         Exit Function
     End If
-    If porteur Is Nothing Then
-        Journal gEtape, gObjet, appel, "pas de " & IIf(quoi = "Connector", "connecteur", "symbole") & " SEE : matériel non associé (" & _
-            detail & ")", -1, "matériel non associé"
-        gNbErreurs = gNbErreurs + 1
-        Exit Function
-    End If
+    ' 3. écrire : le matériel, avec ceux d'avant en AJOUTER
+    Set paires = PairesDeMateriels(avant)
     Set eq = NouvelObjet(OBJ_MATERIEL)
     If eq Is Nothing Then Exit Function
     Set coll = NouvelObjet(OBJ_COLLECTION)
@@ -1411,23 +1474,97 @@ Private Function AssocierMateriel(ByVal porteur As Object, ByVal quoi As String,
         EcrireProp eq, "Quantity", qte
     End If
     On Error Resume Next
+    If politique = "AJOUTER" And nAvant > 0 Then
+        For Each e In ElementsDe(avant)
+            Err.Clear
+            coll.Add e
+            If AppelRate("Collection.Add(matériel déjà porté)") Then Exit Function
+            nEcrits = nEcrits + 1
+        Next e
+    End If
     Err.Clear
     coll.Add eq
     If AppelRate("Collection.Add(matériel)") Then Exit Function
+    nEcrits = nEcrits + 1
     Err.Clear
     porteur.SetEquipmentCollection coll
     If AppelRate(appel & " " & detail) Then Exit Function
     On Error GoTo 0
-    ' relecture : ce que SEE garde vraiment
-    relu = MaterielsTexte(SEE_MaterielsDe(porteur), n)
-    If InStr(1, relu, pn, vbBinaryCompare) = 0 Then
+    ' 4. relecture : ce que SEE garde vraiment
+    If Not SEE_LireMateriels(porteur, apres) Then
+        Journal gEtape, gObjet, lecture & " (relecture)", "relecture impossible (" & gDerniereErreur & ") : " & detail & _
+            " n'est pas compté", -1, "matériel non relu"
+        Exit Function
+    End If
+    texteApres = MaterielsTexte(apres, nApres)
+    If Not MaterielDans(apres, classe, pn) Then
         gNbErreurs = gNbErreurs + 1
-        Journal gEtape, gObjet, quoi & ".GetEquipmentCollection (relecture)", "le code « " & pn & " » n'est pas relu (" & n & _
-            " matériel(s) : " & relu & ")", -1, "matériel non relu"
+        Journal gEtape, gObjet, lecture & " (relecture)", "aucun élément de Class « " & classe & " » et de Code « " & pn & _
+            " » n'est relu (" & nApres & " matériel(s) : " & texteApres & ") : non compté", -1, "matériel non relu"
+        Exit Function
+    End If
+    If politique = "AJOUTER" Then
+        For Each e In paires
+            If Not MaterielDans(apres, CStr(e(0)), CStr(e(1))) Then perdus = perdus & " « " & e(0) & " / " & e(1) & " »"
+        Next e
+        If Len(perdus) > 0 Then
+            gNbErreurs = gNbErreurs + 1
+            Journal gEtape, gObjet, lecture & " (relecture)", "matériel(s) déjà porté(s) non relu(s) après l'ajout :" & perdus, _
+                -1, "matériel existant perdu"
+        End If
+    End If
+    If nApres <> nEcrits Then
+        ' ce que SEE fait d'une collection (remplace ? ajoute ?) n'est pas établi : on le dit
+        Journal gEtape, gObjet, lecture & " (relecture)", "SEE rend " & nApres & " matériel(s) après en avoir reçu " & nEcrits & _
+            " : " & texteApres, -1, "relecture différente"
     Else
-        JournalCOM quoi & ".GetEquipmentCollection (relecture)", n & " matériel(s) : " & relu
+        JournalCOM lecture & " (relecture)", nApres & " matériel(s) : " & texteApres
     End If
     AssocierMateriel = True
+End Function
+
+' Le réglage MaterielExistant (GARDER, AJOUTER, REMPLACER), lu une fois par
+' exécution ; une valeur inconnue vaut GARDER, et le journal le dit.
+Private Function PolitiqueMateriel() As String
+    Dim s As String
+    If Len(mPolitiqueMateriel) = 0 Then
+        s = UCase$(Trim$(Reglage("MaterielExistant", "GARDER")))
+        If s <> "GARDER" And s <> "AJOUTER" And s <> "REMPLACER" Then
+            Journal gEtape, gObjet, "", "réglage MaterielExistant « " & s & " » inconnu : GARDER (rien n'est écrit sur un porteur " & _
+                "qui a déjà un matériel)", -1, "réglage MaterielExistant"
+            s = "GARDER"
+        End If
+        mPolitiqueMateriel = s
+    End If
+    PolitiqueMateriel = mPolitiqueMateriel
+End Function
+
+' Vrai si la collection de matériels contient un élément de cette Class et de
+' ce Code (comparaison exacte, espaces de bord retirés).
+Private Function MaterielDans(ByVal coll As Object, ByVal classe As String, ByVal code As String) As Boolean
+    Dim e As Variant
+    MaterielDans = False
+    If coll Is Nothing Then Exit Function
+    For Each e In ElementsDe(coll)
+        If StrComp(Trim$(LireProp(e, "Class")), Trim$(classe), vbBinaryCompare) = 0 And _
+                StrComp(Trim$(LireProp(e, "Code")), Trim$(code), vbBinaryCompare) = 0 Then
+            MaterielDans = True
+            Exit Function
+        End If
+    Next e
+End Function
+
+' Les (Class, Code) d'une collection de matériels, notés AVANT d'écrire (une
+' collection rendue par SEE pourrait suivre le porteur).
+Private Function PairesDeMateriels(ByVal coll As Object) As Collection
+    Dim e As Variant, res As Collection
+    Set res = New Collection
+    If Not coll Is Nothing Then
+        For Each e In ElementsDe(coll)
+            res.Add Array(LireProp(e, "Class"), LireProp(e, "Code"))
+        Next e
+    End If
+    Set PairesDeMateriels = res
 End Function
 
 ' Le corps dessiné : rectangle et repère.
@@ -1561,6 +1698,8 @@ Private Function ObjetDuProjet(ByVal nature As String, ByVal rep As String, ByVa
         Set o = trouves(1)
         Journal gEtape, gObjet, "", quoi & " « " & tagObj & " » déjà dans le projet : repris" & _
             IIf(trouves.Count > 1, " (" & trouves.Count & " portent ce repère : le premier)", "")
+        ' un connecteur repris peut porter déjà son matériel (folio fait à la main...) : AssocierMateriel le lit avant d'écrire
+        If Not bornier And Not mConnecteursRepris.Exists(tagObj) Then mConnecteursRepris.Add tagObj, True
     ElseIf gSimulation Then
         JournalSimulation IIf(bornier, "Project.AddTerminalStrip", "Project.AddConnector"), quoi & " « " & tagObj & " » serait créé"
         cache.Add tagObj, Nothing

@@ -413,6 +413,7 @@ Public Function BancMateriel(ByVal chemin As String, ByVal v4 As Boolean) As Str
         " ; corps dessinés dits " & JournalContient("matériel sans symbole") & _
         " ; PN différents dits " & JournalContient("PN différent pour un même connecteur") & _
         " ; non relus " & JournalContient("matériel non relu") & _
+        " ; relectures différentes " & JournalContient("relecture différente") & _
         " ; matériels au bilan " & SommeBilan(14)
     ' la sonde du folio 1 relit le matériel des corps et des connecteurs (lecture seule)
     FixerReglage "SondeFolio", "1"
@@ -425,11 +426,148 @@ Public Function BancMateriel(ByVal chemin As String, ByVal v4 As Boolean) As Str
     n0 = gTrace.Count
     DessinerPaquetFichier chemin, True
     r = r & " | simulation : écritures " & (gTrace.Count - n0) & " ; associations simulées " & JournalContient(".SetEquipmentCollection") & _
-        " ; bilan " & EtatsBilan()
+        " ; déjà associés " & JournalContient("déjà associé") & " ; bilan " & EtatsBilan()
     BancMateriel = r
     Exit Function
 E:
     BancMateriel = r & " ERREUR VBA " & Err.Number & " " & Err.Description & " (étape " & gEtape & " / " & gObjet & ")"
+End Function
+
+' ---------------------------------------------------------------------------- le matériel DÉJÀ porté (MaterielExistant)
+' Les traces du faux SEE depuis la n0-ième qui commencent par prefixe.
+Public Function CompterDepuis(ByVal prefixe As String, ByVal n0 As Long) As Long
+    Dim i As Long, n As Long
+    For i = n0 + 1 To gTrace.Count
+        If Left(gTrace.Item(i), Len(prefixe)) = prefixe Then n = n + 1
+    Next i
+    CompterDepuis = n
+End Function
+
+' Le matériel d'un faux connecteur : « Class;Code;Quantity » séparés par « , » (lu comme SEE le rend, en V5).
+Public Function Mats(ByVal c As Object) As String
+    Dim m As Object, i As Long, s As String
+    Set m = c.GetEquipmentCollection()
+    If m Is Nothing Then
+        Mats = "Nothing"
+        Exit Function
+    End If
+    For i = 1 To m.Count
+        If i > 1 Then s = s & ","
+        s = s & m.Item(i).Texte
+    Next i
+    Mats = s
+End Function
+
+Public Function PremierCode(ByVal c As Object) As String
+    Dim m As Object, e As Object
+    Set m = c.GetEquipmentCollection()
+    Set e = m.Item(1)
+    PremierCode = e.Code
+End Function
+
+Public Function NbMats(ByVal c As Object) As Long
+    Dim m As Object
+    Set m = c.GetEquipmentCollection()
+    If Not m Is Nothing Then NbMats = m.Count
+End Function
+
+' Pose « à la main » des matériels sur un faux connecteur : paires = Array(classe, code, classe, code…).
+Public Sub PoserMateriels(ByVal c As Object, ByVal paires As Variant)
+    Dim coll As Object, e As Object, i As Long
+    Set coll = NouveauFaux(1)
+    For i = LBound(paires) To UBound(paires) Step 2
+        Set e = NouveauFaux(2)
+        e.Class = paires(i)
+        e.Code = paires(i + 1)
+        e.Quantity = 1
+        coll.Add e
+    Next i
+    c.SetEquipmentCollection coll
+End Sub
+
+' Un connecteur repris du projet qui porte DÉJÀ un matériel (un folio fait à la main, une exécution d'avant) :
+' rien n'est écrasé ni doublé. Le folio 1 est dessiné une fois (ses connecteurs reçoivent leur PN), puis trois de
+' ses connecteurs reçoivent « à la main » : c1 un autre matériel, c2 le sien et un accessoire, c3 un accessoire.
+' Puis : une simulation (GARDER) ; GARDER (rien n'est écrit sur eux) ; AJOUTER (c1 et c3 reçoivent leur PN EN
+' PLUS, c2 ne bouge pas) ; une relance en AJOUTER (aucun doublon) ; REMPLACER sur c1 remis à la main ; une
+' lecture du matériel qui échoue (GARDER : rien n'est écrit à l'aveugle). Remplacer = O : le folio est redessiné
+' à chaque passage, ses connecteurs sont repris du projet.
+Public Function BancMaterielExistant(ByVal chemin As String) As String
+    Dim r As String, n0 As Long, o As Variant, c1 As Object, c2 As Object, c3 As Object, n As Long
+    Dim pn1 As String, pn2 As String, pn3 As String, avant As String, a2 As String
+    On Error GoTo E
+    ReglerFaux "1", False
+    FixerReglage "EQUIPEMENT.ClasseConnecteur", "CL_CONNECTEUR"
+    FixerReglage "PRISE.ClasseConnecteur", "CL_CONNECTEUR"
+    DessinerPaquetFichier chemin, True
+    For Each o In gConnecteurs
+        If NbMats(o) > 0 Then
+            n = n + 1
+            If n = 1 Then Set c1 = o
+            If n = 2 Then Set c2 = o
+            If n = 3 Then Set c3 = o
+        End If
+    Next o
+    r = "connecteurs avec matériel " & n & " ; " & c1.Repere & ", " & c2.Repere & ", " & c3.Repere
+    pn1 = PremierCode(c1)
+    pn2 = PremierCode(c2)
+    pn3 = PremierCode(c3)
+    PoserMateriels c1, Array("CL_AUTRE", "MAIN-1")
+    PoserMateriels c2, Array("CL_CONNECTEUR", pn2, "CL_ACCESSOIRE", "ACC-2")
+    PoserMateriels c3, Array("CL_ACCESSOIRE", "ACC-3")
+    avant = Mats(c1) & " / " & Mats(c2) & " / " & Mats(c3)
+    a2 = Mats(c2)
+    FixerReglage "Remplacer", "O"
+    ' 1. simulation (GARDER, le défaut) : rien n'est écrit ; ce qu'ils portent est lu et dit
+    FixerReglage "Simulation", "O"
+    n0 = gTrace.Count
+    DessinerPaquetFichier chemin, True
+    r = r & " | simulation GARDER : écritures " & (gTrace.Count - n0) & " ; gardés " & JournalContient("matériel existant gardé") & _
+        " ; déjà associés " & JournalContient("déjà associé") & " ; associations simulées " & JournalContient("Connector.SetEquipmentCollection")
+    ' 2. GARDER : rien n'est écrit sur les connecteurs qui portent déjà un matériel
+    FixerReglage "Simulation", "N"
+    n0 = gTrace.Count
+    DessinerPaquetFichier chemin, True
+    r = r & " | GARDER : associations " & CompterDepuis("SetEquipmentCollection|Connector|", n0) & " ; gardés " & _
+        JournalContient("matériel existant gardé") & " ; déjà associés " & JournalContient("déjà associé") & _
+        " ; inchangés " & IIf(Mats(c1) & " / " & Mats(c2) & " / " & Mats(c3) = avant, "oui", "non : " & Mats(c1) & " / " & Mats(c3))
+    ' 3. AJOUTER : c1 et c3 reçoivent leur PN en plus de ce qu'ils portent ; c2 l'a déjà
+    FixerReglage "MaterielExistant", "AJOUTER"
+    n0 = gTrace.Count
+    DessinerPaquetFichier chemin, True
+    r = r & " | AJOUTER : associations " & CompterDepuis("SetEquipmentCollection|Connector|", n0) & _
+        " ; c1 ajouté " & IIf(Mats(c1) = "CL_AUTRE;MAIN-1;1,CL_CONNECTEUR;" & pn1 & ";1", "oui", "non : " & Mats(c1)) & _
+        " ; c2 inchangé " & IIf(Mats(c2) = a2, "oui", "non : " & Mats(c2)) & _
+        " ; c3 ajouté " & IIf(Mats(c3) = "CL_ACCESSOIRE;ACC-3;1,CL_CONNECTEUR;" & pn3 & ";1", "oui", "non : " & Mats(c3)) & _
+        " ; perdus " & JournalContient("matériel existant perdu") & " ; relectures différentes " & JournalContient("relecture différente") & _
+        " ; non relus " & JournalContient("matériel non relu")
+    ' 4. une relance en AJOUTER : tout y est déjà, rien n'est écrit, aucun doublon
+    n0 = gTrace.Count
+    DessinerPaquetFichier chemin, True
+    r = r & " | relance AJOUTER : associations " & CompterDepuis("SetEquipmentCollection|Connector|", n0) & _
+        " ; matériels " & NbMats(c1) & " " & NbMats(c2) & " " & NbMats(c3)
+    ' 5. REMPLACER : c1, remis à la main, ne garde que le PN du paquet
+    PoserMateriels c1, Array("CL_AUTRE", "MAIN-1")
+    FixerReglage "MaterielExistant", "REMPLACER"
+    n0 = gTrace.Count
+    DessinerPaquetFichier chemin, True
+    r = r & " | REMPLACER : associations " & CompterDepuis("SetEquipmentCollection|Connector|", n0) & _
+        " ; c1 seul PN " & IIf(Mats(c1) = "CL_CONNECTEUR;" & pn1 & ";1", "oui", "non : " & Mats(c1)) & _
+        " ; retirés dits " & JournalContient("ils sont retirés")
+    ' 6. la lecture de ce qu'ils portent échoue : GARDER n'écrit pas à l'aveugle
+    PoserMateriels c1, Array("CL_AUTRE", "MAIN-1")
+    FixerReglage "MaterielExistant", "GARDER"
+    gMaterielsIllisibles = True
+    n0 = gTrace.Count
+    DessinerPaquetFichier chemin, True
+    gMaterielsIllisibles = False
+    r = r & " | illisible : associations " & CompterDepuis("SetEquipmentCollection|Connector|", n0) & _
+        " ; illisibles dits " & JournalContient("matériel existant illisible") & _
+        " ; c1 inchangé " & IIf(Mats(c1) = "CL_AUTRE;MAIN-1;1", "oui", "non : " & Mats(c1)) & " ; bilan " & EtatsBilan()
+    BancMaterielExistant = r
+    Exit Function
+E:
+    BancMaterielExistant = r & " ERREUR VBA " & Err.Number & " " & Err.Description & " (étape " & gEtape & " / " & gObjet & ")"
 End Function
 
 ' ---------------------------------------------------------------------------- TesterSEE, le bouton du bureau
@@ -469,8 +607,53 @@ Public Function ResultatTest() As String
             s = s & " ; " & txt
         End If
     Next i
-    ResultatTest = s & " ; boîte de fin dite " & JournalContient("C'est fini") & " ; Sonde_XML " & _
+    ResultatTest = s & " ; boîte de fin dite " & BoitesDeFin() & " ; boîte = " & DerniereBoite() & " ; Sonde_XML " & _
         IIf(FeuilleExiste("Sonde_XML"), "présente", "absente")
+End Function
+
+' Les boîtes du test (Dialogue « Test de SEE », dites au journal sous gSansDialogue).
+Public Function BoitesDeFin() As Long
+    Dim ws As Object, i As Long, n As Long
+    Set ws = ThisWorkbook.Worksheets("Journal")
+    For i = 2 To 30000
+        If Len(CStr(ws.Cells(i, 1).Value)) = 0 Then Exit For
+        If CStr(ws.Cells(i, 2).Value) = "Dialogue" And CStr(ws.Cells(i, 3).Value) = "Test de SEE" Then n = n + 1
+    Next i
+    BoitesDeFin = n
+End Function
+
+' Le texte de la dernière boîte du test (sans « ; » ni « | », qui séparent les morceaux du résultat).
+Public Function DerniereBoite() As String
+    Dim ws As Object, i As Long, s As String
+    Set ws = ThisWorkbook.Worksheets("Journal")
+    For i = 2 To 30000
+        If Len(CStr(ws.Cells(i, 1).Value)) = 0 Then Exit For
+        If CStr(ws.Cells(i, 2).Value) = "Dialogue" And CStr(ws.Cells(i, 3).Value) = "Test de SEE" Then s = CStr(ws.Cells(i, 5).Value)
+    Next i
+    DerniereBoite = Replace(Replace(Replace(s, " | ", " / "), " ; ", ", "), ";", ",")
+End Function
+
+' Les cellules des colonnes « Materiel (Class / Code / Quantity) » et « Materiel du connecteur » des symboles de
+' Sonde_Folio : « #ERR n, Nothing m ».
+Public Function ColonneMateriel() As String
+    Dim ws As Object, i As Long, j As Long, c1 As Long, c2 As Long, nErr As Long, nRien As Long, v As String, k As Long
+    Set ws = ThisWorkbook.Worksheets("Sonde_Folio")
+    For i = 1 To 400
+        If Left(CStr(ws.Cells(i, 1).Value), 19) = "Points de connexion" Then Exit For
+        For j = 1 To 30
+            If CStr(ws.Cells(i, j).Value) = "Materiel (Class / Code / Quantity)" Then c1 = j
+            If CStr(ws.Cells(i, j).Value) = "Materiel du connecteur" Then c2 = j
+        Next j
+        For k = 1 To 2
+            j = IIf(k = 1, c1, c2)
+            If j > 0 Then
+                v = CStr(ws.Cells(i, j).Value)
+                If Left(v, 4) = "#ERR" Then nErr = nErr + 1
+                If v = "(aucun : Nothing)" Then nRien = nRien + 1
+            End If
+        Next k
+    Next i
+    ColonneMateriel = "#ERR " & nErr & ", Nothing " & nRien
 End Function
 
 Private Function TesterAvecFaux(ByVal chemin As String, ByVal v4 As Boolean) As String
@@ -501,6 +684,27 @@ Public Function BancTester(ByVal chemin As String) As String
     r = r & " ; réglages créés " & NbReglages() & " ; traces " & gTrace.Count & " ; " & ResultatTest()
     r = r & " | V5 : " & TesterAvecFaux(chemin, False)
     r = r & " | V4 : " & TesterAvecFaux(chemin, True)
+    ' SEE joint, mais aucun folio affiché (aucun folio dans le faux projet) : la boîte dit de relancer
+    ReglerFaux "1-2", False
+    gSansDialogue = True
+    TesterSEE
+    r = r & " | sans folio : " & ResultatTest()
+    ' SEE cesse de répondre quand la sélection est lue : les sondes suivantes sont sautées, aucune reconnexion
+    ReglerFaux "1-2", False
+    FixerReglage "EQUIPEMENT.ClasseMateriel", "CL_EQUIPEMENT"
+    DessinerPaquetFichier chemin, True
+    gSansDialogue = True
+    gMuetALaSelection = True
+    TesterSEE
+    r = r & " | muet : reconnexions " & (JournalContient("GetObject(") + JournalContient("ne répond plus : nouvelle connexion")) & " ; " & ResultatTest()
+    ' GetEquipmentCollection rend Nothing pour un objet sans matériel : ni « #ERR » ni vieille erreur dans la colonne
+    ReglerFaux "1-2", False
+    FixerReglage "EQUIPEMENT.ClasseMateriel", "CL_EQUIPEMENT"
+    DessinerPaquetFichier chemin, True
+    gSansDialogue = True
+    gMaterielsNothing = True
+    TesterSEE
+    r = r & " | Nothing : colonne Materiel " & ColonneMateriel() & " ; " & ResultatTest()
     BancTester = r
     Exit Function
 E:

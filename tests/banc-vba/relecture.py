@@ -46,7 +46,10 @@ SCEN = [
     # le matériel (le « device ») : sur la variante « pn » (des PN vides, un connecteur à deux PN), V5 et V4
     ('materiel V5', lambda d: lancer(d, 'BancR.BancMateriel', (VARIANTE, False)), lambda: verifier(VARIANTE) + ' || ' + materiel(VARIANTE)),
     ('materiel V4', lambda d: lancer(d, 'BancR.BancMateriel', (VARIANTE, True)), lambda: verifier(VARIANTE) + ' || ' + materiel(VARIANTE)),
-    # TesterSEE, le bouton du bureau : sans SEE, puis avec le faux SEE en V5 et en V4
+    # un connecteur repris qui porte DÉJÀ un matériel : GARDER, AJOUTER, REMPLACER, lecture ratée (MaterielExistant)
+    ('materiel existant', lambda d: lancer(d, 'BancR.BancMaterielExistant', (PAQUET,)), None),
+    # TesterSEE, le bouton du bureau : sans SEE, avec le faux SEE en V5 et en V4, sans folio affiché, SEE qui cesse
+    # de répondre, matériel rendu Nothing
     ('tester', lambda d: lancer(d, 'BancR.BancTester', (PAQUET,)), None),
 ]
 if __name__ == "__main__":

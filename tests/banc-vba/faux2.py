@@ -215,3 +215,42 @@ Public Function GetTag(Optional ByRef p As Variant) As Object
     If IsMissing(p) Then Set GetTag = t Else Set p = t
 End Function
 Public Sub AddTerminal(ByVal a As Object, ByVal b As Object)''')
+
+# --- LA REPRISE DES CONSTATS DU MATÉRIEL ET DE TesterSEE
+# Ce que GetEquipmentCollection peut rendre : Nothing pour un objet sans matériel (gMaterielsNothing : la V4 peut
+# laisser vide son paramètre de sortie), ou une erreur (gMaterielsIllisibles, pour un connecteur : la lecture échoue).
+# Un SEE qui cesse de répondre en plein test (gMuetALaSelection : dès que la sélection est lue, tout appel à
+# ApplicationName lève une erreur, comme un SEE fermé ou planté).
+rep('FauxSEE', 'Public gMaterielRefuse As String\n', '''Public gMaterielRefuse As String
+Public gMaterielsNothing As Boolean
+Public gMaterielsIllisibles As Boolean
+Public gMuetALaSelection As Boolean
+Public gMuet As Boolean
+''')
+rep('FauxSEE', '''    gMaterielRefuse = ""
+End Sub''', '''    gMaterielRefuse = ""
+    gMaterielsNothing = False
+    gMaterielsIllisibles = False
+    gMuetALaSelection = False
+    gMuet = False
+End Sub''')
+for module, nom in (('FauxSymbole', 'Symbol'), ('FauxConnecteur', 'Connector')):
+    rep(module, f'''    Style "{nom}.GetEquipmentCollection", Not IsMissing(p)
+    If mMats Is Nothing Then Set c = New FauxColl Else Set c = mMats''', f'''    Style "{nom}.GetEquipmentCollection", Not IsMissing(p)
+    {'If gMaterielsIllisibles Then Err.Raise 1104, , "GetEquipmentCollection illisible (panne simulée)"' if nom == 'Connector' else "' (pas de panne de lecture pour un symbole)"}
+    If mMats Is Nothing Then
+        If gMaterielsNothing Then Set c = Nothing Else Set c = New FauxColl
+    Else
+        Set c = mMats
+    End If''')
+rep('FauxApp', '''Public Property Get ApplicationName() As String
+    ApplicationName = "SEE Electrical Expert (faux)"''', '''Public Property Get ApplicationName() As String
+    If gMuet Then Err.Raise 1111, , "SEE ne répond plus (panne simulée)"
+    ApplicationName = "SEE Electrical Expert (faux)"''')
+rep('FauxVue', '''    Style "GetObjectsFromSelection", Not IsMissing(p)
+    Set f = gFolios.Item(1)''', '''    Style "GetObjectsFromSelection", Not IsMissing(p)
+    If gMuetALaSelection Then
+        gMuet = True
+        Err.Raise 1110, , "SEE ne répond plus (panne simulée)"
+    End If
+    Set f = gFolios.Item(1)''')

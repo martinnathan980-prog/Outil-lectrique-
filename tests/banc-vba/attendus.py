@@ -194,6 +194,7 @@ def materiel(v):
             egal_au_calcul('connecteurs sans PN : une ligne par bloc, comme attendu', nombres(r'connecteurs sans PN dits (\d+)', 'V'), 13),
             egal_au_calcul('un connecteur à deux PN : dit, le premier gardé', nombres(r'PN différents dits (\d+)', 'V'), 14),
             egal('matériel relu après chaque association : « non relu » 0', nombres(r'non relus (\d+)', 'V'), 0),
+            egal('relecture : SEE rend ce qu\'il a reçu (« relecture différente » 0)', nombres(r'relectures différentes (\d+)', 'V'), 0),
             egal_au_calcul('matériels au bilan (colonne Materiels) = associés attendus', nombres(r'matériels au bilan (\d+)', 'V'), 4),
             ('SondeFolio relit le matériel du folio 1 (corps et connecteurs) comme attendu',
              lambda t: (nombres(r'sonde : matériels relus (\d+) \(corps (\d+), connecteurs (\d+)\)', 'sonde')(t),
@@ -201,9 +202,61 @@ def materiel(v):
              lambda w: w[0] is not None and w[0] == w[1] and w[1][0] > 0),
             egal('la sonde n\'écrit rien : écritures 0', nombres(r'écritures pendant la sonde (\d+)', 'sonde'), 0),
             egal('simulation : écritures 0', nombres(r'écritures (\d+)', 'simulation'), 0),
-            egal_au_calcul('simulation : chaque tentative dite (associations simulées = tentatives attendues)',
-                           nombres(r'associations simulées (\d+)', 'simulation'), 0),
+            # la simulation suit le passage réel : les connecteurs qu'il a associés sont repris du projet, lus, et
+            # « déjà associés » (rien à écrire) ; le reste (corps non posés, codes refusés) est dit « SIMULATION »
+            ('simulation : chaque tentative dite ou lue déjà faite (simulées + déjà associés = tentatives attendues)',
+             lambda t: (somme(nombres(r'associations simulées (\d+)', 'simulation')(t), nombres(r'déjà associés (\d+)', 'simulation')(t)), calcule(0)(t)),
+             lambda w: w[0] is not None and w[0] == w[1] and w[1] > 0),
+            egal_au_calcul('simulation : les connecteurs associés au passage réel sont lus, pas réécrits (déjà associés = connecteurs associés)',
+                           nombres(r'déjà associés (\d+)', 'simulation'), 7),
             tous('simulation : bilan tous SIMULE', bilan('simulation'), 'SIMULE', 6)]
+
+def somme(*v):
+    return None if any(x is None for x in v) else sum(v)
+
+def materiel_existant():
+    """INTENTION (SEE_Pilote, MaterielExistant ; constats C1, R2) : un connecteur repris du projet qui porte DÉJÀ un
+    matériel n'est ni écrasé ni doublé. c1 porte un autre matériel, c2 le sien et un accessoire, c3 un accessoire."""
+    return [au_moins('trois connecteurs du folio 1 ont reçu leur matériel au premier passage', nombres(r'connecteurs avec matériel (\d+)'), 3),
+            egal('simulation GARDER : écritures 0', nombres(r'écritures (\d+)', 'simulation GARDER'), 0),
+            egal('simulation GARDER : c1 et c3 « matériel existant gardé » dits (lus en simulation)', nombres(r'gardés (\d+)', 'simulation GARDER'), 2),
+            egal('simulation GARDER : aucune association simulée sur eux', nombres(r'associations simulées (\d+)', 'simulation GARDER'), 0),
+            au_moins('simulation GARDER : c2 et les autres « déjà associés »', nombres(r'déjà associés (\d+)', 'simulation GARDER'), 1),
+            egal('GARDER : aucune association écrite', nombres(r'associations (\d+)', 'GARDER'), 0),
+            egal('GARDER : c1 et c3 gardés, dits au journal', nombres(r'gardés (\d+)', 'GARDER'), 2),
+            egal('GARDER : les trois inchangés', dans('GARDER', r'inchangés (\w+)'), 'oui'),
+            egal('AJOUTER : deux associations (c1, c3)', nombres(r'associations (\d+)', 'AJOUTER'), 2),
+            egal('AJOUTER : c1 = l\'autre matériel + son PN', dans('AJOUTER', r'c1 ajouté (\w+)'), 'oui'),
+            egal('AJOUTER : c2 inchangé (il avait déjà son PN)', dans('AJOUTER', r'c2 inchangé (\w+)'), 'oui'),
+            egal('AJOUTER : c3 = l\'accessoire + son PN', dans('AJOUTER', r'c3 ajouté (\w+)'), 'oui'),
+            egal('AJOUTER : rien de perdu, relu comme reçu, tout relu', lambda t: (nombres(r'perdus (\d+)', 'AJOUTER')(t),
+                 nombres(r'relectures différentes (\d+)', 'AJOUTER')(t), nombres(r'non relus (\d+)', 'AJOUTER')(t)), (0, 0, 0)),
+            egal('relance AJOUTER : aucune association (tout est déjà là)', nombres(r'associations (\d+)', 'relance AJOUTER'), 0),
+            egal('relance AJOUTER : aucun doublon (2, 2, 2 matériels)', nombres(r'matériels (\d+) (\d+) (\d+)', 'relance AJOUTER'), (2, 2, 2)),
+            egal('REMPLACER : une association (c1 remis à la main)', nombres(r'associations (\d+)', 'REMPLACER'), 1),
+            egal('REMPLACER : c1 ne garde que le PN du paquet', dans('REMPLACER', r'c1 seul PN (\w+)'), 'oui'),
+            egal('REMPLACER : ce qui est retiré est dit', nombres(r'retirés dits (\d+)', 'REMPLACER'), 1),
+            egal('lecture ratée : rien n\'est écrit à l\'aveugle', nombres(r'associations (\d+)', 'illisible'), 0),
+            au_moins('lecture ratée : « matériel existant illisible » dit pour c1, c2, c3', nombres(r'illisibles dits (\d+)', 'illisible'), 3),
+            egal('lecture ratée : c1 inchangé', dans('illisible', r'c1 inchangé (\w+)'), 'oui'),
+            tous('lecture ratée : le folio va au bout (SAUVE)', bilan('illisible'), 'SAUVE', 1)]
+
+def etapes_et_echecs(ou):
+    """(somme des « (n réponse(s) en erreur au journal) » des Étapes, total de « Ce qui a échoué ») d'un passage."""
+    def f(t):
+        s = partie(t, ou)
+        m = re.search(r'Étapes = (.*?) ; Ce qui a échoué = (?:le journal note (\d+)|rien)', s, re.S)
+        if not m: return None
+        return (sum(int(x) for x in re.findall(r'\((\d+) réponse\(s\) en erreur au journal\)', m.group(1))), int(m.group(2) or 0))
+    return f
+
+def boite_et_suite(ou):
+    """(1re phrase de la boîte de fin, 1re ligne de « Et maintenant ») : la même consigne."""
+    def f(t):
+        s = partie(t, ou)
+        a, b = re.search(r'boîte = (.*?)(?: / |$| ; Sonde_XML)', s), re.search(r'Et maintenant = ([^\n]*?)(?:\n| ; boîte de fin)', s)
+        return (a.group(1).strip() if a else None, b.group(1).strip() if b else None)
+    return f
 
 def tester():
     """INTENTION (SEE_Sonde, TesterSEE) : sur un classeur neuf et sans SEE, il crée Reglages et Journal et dit « NON » ;
@@ -214,7 +267,12 @@ def tester():
          egal('sans SEE : Resultat_Test en tête du classeur', dans('sans SEE', r'feuille 1 = (\w+)'), 'Resultat_Test'),
          egal('sans SEE : « SEE joint ? = NON »', dans('sans SEE', r'SEE joint \? = (\w+)'), 'NON'),
          egal('sans SEE : aucune trace', nombres(r'traces (\d+)', 'sans SEE'), 0),
-         egal('sans SEE : une seule boîte, celle de la fin', nombres(r'boîte de fin dite (\d+)', 'sans SEE'), 1)]
+         egal('sans SEE : une seule boîte, celle de la fin', nombres(r'boîte de fin dite (\d+)', 'sans SEE'), 1),
+         # R1, R6 : la boîte dit quoi faire d'après ce qui a été lu ; les étapes comptent ce que compte « Ce qui a échoué »
+         ('sans SEE : la boîte dit que SEE n\'est pas trouvé et de relancer TesterSEE s\'il était fermé', dans('sans SEE', r'boîte = (.*?) ; Sonde_XML'),
+          lambda s: bool(s) and "Excel n'a pas trouvé SEE" in s and 'relance TesterSEE' in s and "normal à ce stade" not in s),
+         ('sans SEE : « Et maintenant » = la boîte', boite_et_suite('sans SEE'), lambda p: p[0] is not None and p[0] == p[1]),
+         ('sans SEE : erreurs des étapes = erreurs du journal', etapes_et_echecs('sans SEE'), lambda p: p is not None and p[0] == p[1] and p[1] > 0)]
     for v, version_lue in (('V5', '5.20'), ('V4', '4.8')):
         c += [egal(f'{v} : écritures dans SEE pendant le test 0', nombres(r'écritures pendant le test (\d+)', v), 0),
               egal(f'{v} : Resultat_Test en tête du classeur', dans(v, r'feuille 1 = (\w+)'), 'Resultat_Test'),
@@ -232,7 +290,33 @@ def tester():
               egal(f'{v} : XML 6 sur 6, dans Sonde_XML', (lambda w: lambda t: (nombres(r'Méthodes \(XML\) = (\d+) sur 6', w)(t), dans(w, r'Sonde_XML (\w+)')(t)))(v), (6, 'présente')),
               (f'{v} : les cinq sondes faites', dans(v, r'(Étapes = .*)'),
                lambda s: bool(s) and all(f'{n} : faite' in s for n in ('SondeApplication', 'SondeSymboles', 'SondeFolio', 'SondeSelection', 'SondeMethodes'))),
-              egal(f'{v} : une seule boîte, celle de la fin', nombres(r'boîte de fin dite (\d+)', v), 1)]
+              egal(f'{v} : une seule boîte, celle de la fin', nombres(r'boîte de fin dite (\d+)', v), 1),
+              (f'{v} : la boîte dit « C\'est fini » et, le classeur jamais enregistré, « Enregistrer sous » .xlsm', dans(v, r'boîte = (.*?) ; Sonde_XML'),
+               lambda s: bool(s) and s.startswith("C'est fini") and 'Enregistrer sous' in s and '*.xlsm' in s),
+              (f'{v} : « Et maintenant » = la boîte', boite_et_suite(v), lambda p: p[0] is not None and p[0] == p[1]),
+              (f'{v} : erreurs des étapes = erreurs du journal', etapes_et_echecs(v), lambda p: p is not None and p[0] == p[1] and p[1] > 0)]
+    # R1 : SEE joint, aucun folio affiché : la boîte dit de relancer AVANT d'envoyer
+    c += [egal('sans folio : « SEE joint ? = OUI »', dans('sans folio', r'SEE joint \? = (\w+)'), 'OUI'),
+          egal('sans folio : « Folio lu = aucun »', dans('sans folio', r'Folio lu = (\w+)'), 'aucun'),
+          ('sans folio : l\'étape SondeFolio dit « rien lu » (pas « faite »)', dans('sans folio', r'(Étapes = .*?) ; Ce qui a échoué'),
+           lambda s: bool(s) and 'SondeFolio : rien lu' in s and 'SondeFolio : faite' not in s),
+          ('sans folio : la boîte dit « Il manque ton folio » et de relancer TesterSEE', dans('sans folio', r'boîte = (.*?) ; Sonde_XML'),
+           lambda s: bool(s) and 'Il manque ton folio' in s and 'relance TesterSEE' in s and "C'est fini" not in s),
+          ('sans folio : « Et maintenant » = la boîte', boite_et_suite('sans folio'), lambda p: p[0] is not None and p[0] == p[1]),
+          egal('sans folio : une seule boîte', nombres(r'boîte de fin dite (\d+)', 'sans folio'), 1)]
+    # R3 : SEE cesse de répondre quand la sélection est lue : pas de reconnexion, ce qui a été lu reste dit
+    c += [egal('muet : aucune reconnexion pendant le test (ni GetObject ni « nouvelle connexion »)', nombres(r'reconnexions (\d+)', 'muet'), 0),
+          egal('muet : « SEE joint ? = OUI » (joint par SondeApplication)', dans('muet', r'SEE joint \? = (\w+)'), 'OUI'),
+          egal('muet : la version lue reste dite', dans('muet', r'Version = [^;]*?(\d+\.\d+)'), '5.20'),
+          ('muet : « SEE perdu » nomme la sonde (SondeSelection)', dans('muet', r'SEE perdu = ([^;]*)'), lambda s: bool(s) and 'SondeSelection' in s),
+          au_moins('muet : le folio lu avant la panne reste dit', nombres(r'Folio lu = « [^»]* » : (\d+) symbole', 'muet'), 1),
+          egal('muet : SondeMethodes sautée (« non lues »)', dans('muet', r'Méthodes \(XML\) = (non lues)'), 'non lues'),
+          ('muet : la boîte dit que SEE a cessé de répondre', dans('muet', r'boîte = (.*?) ; Sonde_XML'), lambda s: bool(s) and 'cessé de répondre' in s),
+          egal('muet : une seule boîte', nombres(r'boîte de fin dite (\d+)', 'muet'), 1)]
+    # C4, R4 : GetEquipmentCollection rend Nothing (rien d'associé) : « (aucun : Nothing) », jamais « #ERR » d'un autre appel
+    c += [egal('Nothing : aucune cellule « #ERR » dans les colonnes Materiel de Sonde_Folio', nombres(r'colonne Materiel #ERR (\d+)', 'Nothing'), 0),
+          au_moins('Nothing : « (aucun : Nothing) » dit', nombres(r'colonne Materiel #ERR \d+, Nothing (\d+)', 'Nothing'), 1),
+          au_moins('Nothing : le matériel associé reste lu', nombres(r'Matériel = (\d+) matériel', 'Nothing'), 1)]
     return c
 
 ATTENDUS = {
@@ -280,6 +364,7 @@ ATTENDUS = {
         egal("cellule « 'N » lue N", texte(r'Simulation lue : (\S+)'), 'N')],
     'materiel V5': materiel(5),                             # INTENTION, nombres CALCULÉS depuis le paquet (verifier.py --materiel)
     'materiel V4': materiel(4),                             # idem, API V4 (GetEquipmentCollection en paramètre de sortie)
+    'materiel existant': materiel_existant(),               # INTENTION (MaterielExistant : GARDER, AJOUTER, REMPLACER, lecture ratée)
     'tester': tester(),                                     # INTENTION (TesterSEE)
     # ---- regression.py (BancFaux, dans faux.py) ----
     'simulation sans SEE': [                                # INTENTION : une simulation ne dessine rien

@@ -102,14 +102,18 @@ node tests/vba.js              LES MACROS DU PILOTE SEE (see/vba/*.bas), sans Ex
                                les importera — Windows-1252 sans séquence UTF-8, CRLF, VB_Name, Option Explicit, lignes et
                                continuations, blocs équilibrés, identifiants déclarés, Private appelée de son module, nombre
                                d'arguments, ByRef du bon type, Set juste ; les clés de réglage (dont celles du matériel,
-                               <NATURE>.ClasseMateriel / .ClasseConnecteur, MaterielQuantite), chacune citée dans
-                               FORMAT-PAQUET, et les huit natures ; la sonde n'écrit rien dans SEE, chaque procédure du pilote
-                               qui écrit (SetEquipmentCollection compris) teste la simulation, TesterSEE n'appelle de proche en
-                               proche que des lectures ; et le contrôleur lui-même, éprouvé par trente-deux fautes injectées
+                               <NATURE>.ClasseMateriel / .ClasseConnecteur, MaterielQuantite, MaterielExistant), chacune
+                               citée dans FORMAT-PAQUET, et les huit natures ; chaque procédure du pilote qui écrit
+                               (SetEquipmentCollection compris) teste la simulation ; la sonde et TesterSEE, de proche en
+                               proche, ne font que des lectures (chaque objet suivi depuis sa provenance : Excel, collection,
+                               dictionnaire ou SEE ; sur un objet SEE, une liste blanche de lectures, aucune propriété
+                               affectée, aucune écriture par le nom) ; et le contrôleur lui-même, éprouvé par trente-huit
+                               fautes injectées, sans crier au loup sur une écriture dans le classeur
 tests/banc-vba/lancer.sh       LES MÊMES MACROS EXÉCUTÉES, dans LibreOffice (Basic en mode VBASupport) face à un FAUX SEE qui imite
-                               l'API COM et trace chaque appel : trente-deux scénarios (V5 et V4, folios complets, reprise après
+                               l'API COM et trace chaque appel : trente-trois scénarios (V5 et V4, folios complets, reprise après
                                panne, Remplacer, sauvegardes, simulation sans aucune écriture, variantes de paquet, le matériel
-                               associé confronté au paquet, TesterSEE avec et sans SEE) ; hors de
+                               associé confronté au paquet, le matériel déjà porté ni écrasé ni doublé, TesterSEE avec et sans
+                               SEE, sans folio affiché, SEE qui cesse de répondre) ; hors de
                                tests/toutes.js (il demande LibreOffice et python3-uno, environ dix minutes) ; voir son LISEZMOI :
                                il prouve la cohérence du code, pas le comportement du vrai SEE ni d'Excel
 node tests/couverture.js       CE QUE L'OUTIL VÉRIFIE, ET S'IL VÉRIFIE TOUT : sur l'exemple embarqué et sur un contrat inventé plus riche

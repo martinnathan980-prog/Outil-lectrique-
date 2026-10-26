@@ -38,15 +38,21 @@
        Exit / Resume / GoTo (pas de chute dans le gestionnaire) ; chaque GoTo
        vise une étiquette qui existe.
    Et le contrat du pilote : les clés de réglage (dont le matériel :
-   <NATURE>.ClasseMateriel, <NATURE>.ClasseConnecteur, MaterielQuantite),
-   chacune citée dans see/FORMAT-PAQUET.md ; la sonde n'écrit rien dans SEE
-   (ni Save, Add*, Delete*, Set*, Rename, Update…) ; chaque procédure du
-   pilote qui écrit (SetEquipmentCollection compris) teste la simulation ;
-   TesterSEE, le bouton du bureau, n'appelle, de proche en proche, que des
-   procédures qui n'écrivent pas dans SEE, et aucune du pilote.
+   <NATURE>.ClasseMateriel, <NATURE>.ClasseConnecteur, MaterielQuantite,
+   MaterielExistant), chacune citée dans see/FORMAT-PAQUET.md ; chaque
+   procédure du pilote qui écrit (SetEquipmentCollection compris) teste la
+   simulation ; la sonde n'écrit rien dans SEE, et TesterSEE, le bouton du
+   bureau, n'appelle, de proche en proche, aucune procédure du pilote et que
+   des LECTURES : chaque objet est suivi depuis sa provenance (objet d'Excel,
+   collection VBA, dictionnaire, ou objet SEE : voir analyseEcritures) ; sur
+   un objet SEE, seuls les membres de la liste LECTURES_SEE sont permis,
+   aucune propriété n'est affectée, aucun CallByName … VbLet, aucun nom de
+   méthode qui écrit passé en chaîne. Une liste blanche : un membre nouveau
+   fait échouer le contrôle tant qu'il n'est pas reconnu comme une lecture.
    Puis le contrôleur s'éprouve lui-même : des fautes sont injectées une à
    une dans une copie des modules (mutations), chacune doit être attrapée
-   par le contrôle attendu.
+   par le contrôle attendu ; et une écriture dans le classeur (feuille,
+   dictionnaire, collection) ne doit pas être prise pour une écriture dans SEE.
    Ce sont des heuristiques honnêtes, pas un compilateur : elles attrapent les
    fautes courantes, pas toutes. Le seul vrai compilateur est celui d'Excel :
    au bureau, avant toute macro, Débogage > Compiler VBAProject.
@@ -57,8 +63,6 @@ const MODULES = ['SEE_Commun', 'SEE_Sonde', 'SEE_Pilote'];
 // la liste des réglages qui fait foi pour l'Atelier : la section « Le pilote : ses réglages » du contrat
 const CONTRAT = fs.readFileSync(path.resolve(__dirname, '..', 'see', 'FORMAT-PAQUET.md'), 'utf8');
 const REGLAGES_DOC = CONTRAT.slice(CONTRAT.indexOf('## Le pilote : ses réglages'));
-// un appel qui écrit dans SEE (ou qui sauve) : ce que ni la sonde ni TesterSEE ne font jamais
-const ECRIT_SEE = /\.(Save|Add[A-Z]\w*|Delete\w*|Set[A-Z]\w*|Rename|Update|ChangeTag|ChangeName|CreateSubGroup|Attach\w*|Detach\w*|LinkWithEquipment)\b/;
 
 // --- Windows-1252 : les 32 caractères de 0x80 à 0x9F (undefined = octet interdit)
 const CP1252_80 = [0x20AC, undefined, 0x201A, 0x0192, 0x201E, 0x2026, 0x2020, 0x2021, 0x02C6, 0x2030, 0x0160, 0x2039, 0x0152, undefined, 0x017D, undefined,
@@ -292,6 +296,258 @@ function analyser(nom, texte) {
 }
 
 // ===========================================================================
+//  CE QUI ÉCRIT DANS SEE : la provenance des objets
+//  Un membre d'objet (« x.Membre », « x.Membre = v ») est jugé selon ce qu'est x :
+//    · 'excel'     un objet d'Excel ou de VBA (classeur, feuille, plage, Application, Err, flux ADODB) :
+//                  tout membre est permis (écrire dans le classeur n'écrit pas dans SEE) ;
+//    · 'conteneur' une Collection VBA ou un dictionnaire : Add, Count, Item, Exists, Keys, Items, Remove,
+//                  CompareMode ; ses éléments (Item, x(i), For Each) sont des objets SEE ;
+//    · 'see'       tout le reste : un objet rendu par SEE, ou dont la provenance n'est pas prouvée. Seuls
+//                  les membres de LECTURES_SEE y sont permis, et aucune affectation (« obj.Prop = v »).
+//  La provenance d'une variable est celle de TOUTES ses affectations dans sa portée (Set v = …, For Each v
+//  In …) ; celle d'un paramètre, celle des arguments à tous ses appels ; celle d'une fonction, celle de ses
+//  « Set Fonction = … ». Rien de prouvé : 'see' (le doute va du côté de SEE). S'y ajoutent les écritures
+//  par leur nom : CallByName … VbLet / VbSet, et une chaîne qui nomme une méthode qui écrit (« Save »,
+//  « SetPosition »…), que LirePropOuMethode ou AppelLecture appelleraient par CallByName … VbMethod.
+// ===========================================================================
+// les membres d'un objet SEE qu'une lecture peut nommer : des Get…, des propriétés lues, les collections
+const LECTURES_SEE = new Set(`count item _newenum x y name applicationname applicationversion
+  getproject getenvironment getmaingroup getsubgroupcollection getsheetcollection getallsheets getsheetbyname
+  gettitleblockcollection gettitleblockbyname gettitleblock getprimarycoordinates getshapefamilycollection getshapescollection
+  getshape getfamily getrect getsymbolcollection getgraphicobjectcollection getconnectionsegmentcollection gettag getposition
+  getconnectionpointcollection getconnector getpin getterminal getname getstrandcollection getcable getfirstpoint
+  getsecondpoint getstartpoint getendpoint getconnectorsbytag getterminalstripsbytag getequipmentcollection getmethodsxml
+  getactiveview getcontent getobjectsfromselection workspace
+  openproject`.split(/\s+/).filter(Boolean));   // OpenProject : SEE_Projet(True) ouvre le projet du réglage Projet EN LECTURE SEULE
+const MEMBRES_CONTENEUR = new Set(['add', 'count', 'item', 'exists', 'keys', 'items', 'remove', 'removeall', 'comparemode']);
+const RACINES_EXCEL = new Set(['application', 'thisworkbook', 'err', 'debug', 'worksheets', 'workbooks', 'activeworkbook', 'activesheet']);
+// un nom de méthode qui écrit, passé en chaîne (CallByName … VbMethod l'appellerait)
+// (un verbe, seul ou suivi d'un mot en majuscule : « SaveCopyAs », « UpdateMethodsXML » ; pas « Locked », une propriété)
+const NOM_QUI_ECRIT = /^(Save|Add|Delete|Set|Update|Change|Create|Insert|Import|Export|Purge|Move|Rotate|Lock|Unlock|Mark|Remove|Load|Execute|Merge|Generate|Synchronize|Deselect|Select|OpenView|CloseView|Rename|Attach|Detach|Link|Migrate|Restore|Launch|Start|Show|Apply|Clear|Copy|Paste|Explode|Replace|Renumber|Reset|Write|Put|Close|Open|Login|Logout)([A-Z0-9_][A-Za-z0-9_]*)?$/;
+
+// les instructions d'une ligne logique (celles d'un If d'une ligne comprises) ; la condition d'un If /
+// ElseIf / While / Do / Select en pseudo-instruction ({ expr: true }) : [{ n: neutre, b: brut, expr }]
+function enonces(code) {
+  const b = code.trim(), n = sansChaines(b), res = [];
+  const mIf = n.match(/^((?:else)?if\b)(.*?)\bthen\b/i);
+  if (mIf) {
+    const a0 = mIf[1].length, a1 = a0 + mIf[2].length;
+    res.push({ n: n.slice(a0, a1), b: b.slice(a0, a1), expr: true });
+    const dep = mIf[0].length;
+    if (!n.slice(dep).trim()) return res;
+    const coupes = [dep], re = /\belse\b/gi;
+    re.lastIndex = dep;
+    let m;
+    while ((m = re.exec(n))) coupes.push(m.index, m.index + m[0].length);
+    coupes.push(n.length);
+    for (let i = 0; i < coupes.length; i += 2) instructions(b.slice(coupes[i], coupes[i + 1])).forEach(x => res.push({ n: x.neutre, b: x.code }));
+    return res;
+  }
+  const mc = n.match(/^((?:do\s+)?(?:while|until)\b|loop\s+(?:while|until)\b|select\s+case\b)(.*)$/i);
+  if (mc) return [{ n: mc[2], b: b.slice(mc[1].length), expr: true }];
+  return instructions(b).map(x => ({ n: x.neutre, b: x.code }));
+}
+// une chaîne d'appels à partir du jeton i (un identifiant) : racine, puis « (…) » et « .Membre »
+function lireChaine(js, i) {
+  const etapes = [];
+  let k = i + 1;
+  while (k < js.length) {
+    if (js[k].v === '(') { const r = argumentsEntre(js, k); etapes.push({ genre: 'appel', args: r.args }); k = r.fin + 1; continue; }
+    if (js[k].v === '.' && js[k + 1] && js[k + 1].t === 'id') { etapes.push({ genre: 'membre', nom: js[k + 1].v, k: js[k + 1].k }); k += 2; continue; }
+    break;
+  }
+  return { racine: js[i], etapes, fin: k };
+}
+function analyseEcritures(analyses) {
+  const toutes = new Map();
+  for (const m of Object.keys(analyses)) for (const p of analyses[m].procs) {
+    const k = p.nom.toLowerCase();
+    if (!toutes.has(k)) toutes.set(k, []);
+    toutes.get(k).push(p);
+  }
+  const procVue = (k, m) => { const l = toutes.get(k); return l ? (l.find(p => p.module === m) || l.find(p => p.public) || null) : null; };
+  const publicDe = k => { for (const m of Object.keys(analyses)) if (analyses[m].publics.has(k)) return m; return null; };
+  // la portée d'un nom vu depuis la procédure p : { quoi: 'locale'|'param'|'module'|'public'|'fonction'|'retour', … }
+  const portee = (p, k) => {
+    const pi = p.params.findIndex(q => q.nom === k);
+    if (pi >= 0) return { quoi: 'param', p, i: pi, nom: k, d: p.params[pi] };
+    if (p.locales.has(k)) return { quoi: 'locale', p, nom: k, d: p.locales.get(k) };
+    if (k === p.nom.toLowerCase()) return { quoi: 'retour', p, nom: k };
+    if (analyses[p.module].moduleDecl.has(k)) return { quoi: 'module', m: p.module, nom: k, d: analyses[p.module].moduleDecl.get(k) };
+    const mp = publicDe(k);
+    if (mp) return { quoi: 'public', m: mp, nom: k, d: analyses[mp].publics.get(k) };
+    const pr = procVue(k, p.module);
+    if (pr && pr.genre === 'function') return { quoi: 'fonction', p: pr };
+    return null;
+  };
+  // les instructions de chaque procédure, lues une fois
+  const ins = new Map();
+  const instructionsDe = p => {
+    if (!ins.has(p)) ins.set(p, p.lignes.flatMap(L => enonces(sansCommentaire(L.code)).map(x => Object.assign({ L }, x))));
+    return ins.get(p);
+  };
+  const memo = new Map(), EN_COURS = Symbol('en cours');
+  const memoiser = (cle, f) => {
+    if (memo.has(cle)) { const v = memo.get(cle); return v === EN_COURS ? 'see' : v; }
+    memo.set(cle, EN_COURS);
+    const v = f();
+    memo.set(cle, v);
+    return v;
+  };
+  const joindre = genres => {
+    const g = genres.filter(x => x !== 'rien' && x !== 'valeur');
+    if (!g.length) return 'see';
+    return g.every(x => x === g[0]) ? g[0] : 'see';
+  };
+  const element = g => g === 'excel' ? 'excel' : g === 'valeur' ? 'valeur' : 'see';
+  // le genre d'une expression (jetons) vue depuis p ; brut : son texte (pour CreateObject("…"))
+  const genreExpr = (p, js, brut) => {
+    if (!js.length) return 'valeur';
+    if (js[0].t === 'id' && js[0].k === 'nothing' && js.length === 1) return 'rien';
+    if (js[0].t === 'id' && js[0].k === 'new') return js[1] && js[1].k === 'collection' ? 'conteneur' : 'see';
+    if (js[0].t !== 'id') return 'valeur';
+    const ch = lireChaine(js, 0);
+    if (ch.fin !== js.length) return 'valeur';                    // une opération : pas un objet
+    return genreChaine(p, ch, brut, null);
+  };
+  // le genre d'une chaîne ; si acces : chaque membre est noté avec le genre de son objet
+  const genreChaine = (p, ch, brut, acces) => {
+    const k = ch.racine.k;
+    let g, fonction = false;
+    if (RACINES_EXCEL.has(k)) g = 'excel';
+    else if (k === 'createobject') {
+      g = /CreateObject\(\s*"Scripting\.Dictionary"\s*\)/i.test(brut || '') ? 'conteneur' :
+        /CreateObject\(\s*"ADODB\.Stream"\s*\)/i.test(brut || '') ? 'excel' : 'see';
+      fonction = true;
+    }
+    else if (k === 'getobject' || k === 'callbyname') { g = 'see'; fonction = true; }
+    else if (BUILTINS.has(k) || MOTS_CLES.has(k)) { g = 'valeur'; fonction = true; }
+    else {
+      const s = portee(p, k);
+      if (!s) g = 'see';
+      else if (s.quoi === 'fonction') { g = genreFonction(s.p); fonction = true; }
+      else g = genreVariable(s);
+    }
+    let premier = true;
+    for (const e of ch.etapes) {
+      if (e.genre === 'appel') {
+        if (premier && fonction) { premier = false; continue; }    // l'appel de la fonction elle-même
+        premier = false;
+        if (g === 'conteneur') g = 'see';                        // x(i) : un élément
+        continue;
+      }
+      premier = false;
+      if (acces) acces.push({ g, e });
+      if (g === 'excel') g = 'excel';
+      else if (g === 'conteneur') g = (e.k === 'item' || e.k === 'items') ? 'see' : 'valeur';
+      else g = 'see';
+    }
+    return g;
+  };
+  // une variable : ses affectations dans sa portée ; un paramètre : les arguments de ses appels
+  const genreVariable = s => {
+    const d = s.d || {};
+    if (d.type === 'collection') return 'conteneur';
+    if (TYPES_SIMPLES.has(d.type)) return 'valeur';
+    if (s.quoi === 'param') return genreParam(s.p, s.i);
+    if (s.quoi === 'retour') return genreFonction(s.p);
+    const procs = s.quoi === 'locale' ? [s.p] : s.quoi === 'module' ? analyses[s.m].procs : Object.keys(analyses).flatMap(m => analyses[m].procs);
+    return memoiser(`${s.quoi}:${s.m || s.p.module}:${s.p ? s.p.nom : ''}:${s.nom}`, () => joindre(sources(procs, s.nom, s.quoi !== 'locale')));
+  };
+  // les genres de ce qu'un nom reçoit dans des procédures (sauf là où une locale le masque) : Set, For Each,
+  // et 'see' s'il est passé seul à un paramètre ByRef d'une procédure des modules (qui pourrait l'affecter)
+  const sources = (procs, k, masquable) => {
+    const genres = [];
+    for (const p of procs) {
+      if (masquable && (p.locales.has(k) || p.params.some(q => q.nom === k))) continue;
+      for (const x of instructionsDe(p)) {
+        if (!x.expr) {
+          const ms = x.n.match(/^set\s+([a-z_][a-z0-9_]*)\s*=(.*)$/i);
+          if (ms && ms[1].toLowerCase() === k) { genres.push(genreExpr(p, jetons(ms[2]), x.b.slice(x.b.indexOf('=') + 1))); continue; }
+          const mf = x.n.match(/^for\s+each\s+([a-z_][a-z0-9_]*)\s+in\s+(.*)$/i);
+          if (mf && mf[1].toLowerCase() === k) { genres.push(element(genreExpr(p, jetons(mf[2]), mf[2]))); continue; }
+        }
+        const js = jetons(x.n);
+        js.forEach((j, q) => {
+          if (j.t !== 'id' || (q > 0 && js[q - 1].v === '.')) return;
+          const f = procVue(j.k, p.module);
+          if (!f || !f.params.length) return;
+          let args = null;
+          if (js[q + 1] && js[q + 1].v === '(') args = argumentsEntre(js, q + 1).args;
+          else if (!x.expr && (q === 0 || (q === 1 && js[0].k === 'call'))) args = couperVirgules(js.slice(q + 1));
+          (args || []).forEach((a, i) => {
+            if (a.length === 1 && a[0].k === k && f.params[i] && !f.params[i].byval && !f.params[i].paramarray) genres.push('see');
+          });
+        });
+      }
+    }
+    return genres;
+  };
+  const genreFonction = f => {
+    if (f.type === 'collection') return 'conteneur';
+    if (TYPES_SIMPLES.has(f.type)) return 'valeur';
+    return memoiser(`fonction:${f.module}:${f.nom}`, () => joindre(sources([f], f.nom.toLowerCase(), false)));
+  };
+  // un paramètre : les arguments à la position i de tous les appels (dans tous les modules), et ce qu'il
+  // reçoit dans la procédure elle-même
+  const genreParam = (f, i) => memoiser(`param:${f.module}:${f.nom}:${i}`, () => {
+    const q0 = f.params[i];
+    if (q0.type === 'collection') return 'conteneur';
+    if (TYPES_SIMPLES.has(q0.type)) return 'valeur';
+    const genres = sources([f], q0.nom, false), kf = f.nom.toLowerCase();
+    for (const m of Object.keys(analyses)) for (const p of analyses[m].procs) {
+      if (procVue(kf, m) !== f) continue;
+      for (const x of instructionsDe(p)) {
+        const js = jetons(x.n);
+        js.forEach((j, q) => {
+          if (j.t !== 'id' || j.k !== kf || (q > 0 && js[q - 1].v === '.')) return;
+          let args = null;
+          if (js[q + 1] && js[q + 1].v === '(') args = argumentsEntre(js, q + 1).args;
+          else if (!x.expr && (q === 0 || (q === 1 && js[0].k === 'call'))) args = couperVirgules(js.slice(q + 1));
+          if (args && args[i]) genres.push(genreExpr(p, args[i], ''));
+        });
+      }
+    }
+    return joindre(genres);
+  });
+  // les fautes d'un jeu de procédures : membres d'objets SEE non listés comme lectures, propriétés SEE
+  // affectées, membres inconnus d'une collection, écritures par leur nom
+  const fautesDe = procs => {
+    const fautes = [], membres = new Map();
+    for (const p of procs) for (const x of instructionsDe(p)) {
+      const ou = `${p.module}.${p.nom}:${x.L.n}`, js = jetons(x.n);
+      js.forEach((j, q) => {
+        if (j.t !== 'id' || (q > 0 && js[q - 1].v === '.')) return;
+        const acces = [];
+        genreChaine(p, lireChaine(js, q), x.b, acces);
+        for (const { g, e } of acces) {
+          if (g === 'see') {
+            membres.set(e.k, (membres.get(e.k) || 0) + 1);
+            if (!LECTURES_SEE.has(e.k)) fautes.push(`${ou} .${e.nom} (objet SEE : pas une lecture listée)`);
+          } else if (g === 'conteneur' && !MEMBRES_CONTENEUR.has(e.k)) fautes.push(`${ou} .${e.nom} (pas un membre de collection)`);
+        }
+      });
+      // « obj.Prop = v » : l'objet de la dernière propriété
+      if (!x.expr) {
+        const s = x.n.replace(/^(set|let)\s+/i, ''), jsa = jetons(s);
+        if (jsa.length && jsa[0].t === 'id' && !MOTS_CLES.has(jsa[0].k)) {
+          const ch = lireChaine(jsa, 0), acces = [];
+          if (jsa[ch.fin] && jsa[ch.fin].v === '=' && ch.etapes.some(e => e.genre === 'membre')) {
+            genreChaine(p, ch, x.b, acces);
+            const dernier = acces[acces.length - 1];
+            if (dernier && dernier.g === 'see') fautes.push(`${ou} .${dernier.e.nom} = … (propriété d'un objet SEE affectée)`);
+          }
+        }
+        if (/\bcallbyname\b/i.test(x.n) && /\bvb(let|set)\b/i.test(x.n)) fautes.push(`${ou} CallByName … ${x.n.match(/\bvb(let|set)\b/i)[0]} (écrit une propriété par son nom)`);
+      }
+      for (const m of x.b.matchAll(/"([A-Za-z_][A-Za-z0-9_]*)"/g)) if (NOM_QUI_ECRIT.test(m[1])) fautes.push(`${ou} « ${m[1]} » (nom d'une méthode qui écrit, en chaîne)`);
+    }
+    return { fautes, membres };
+  };
+  return { fautesDe, procVue };
+}
+
+// ===========================================================================
 //  LES CONTRÔLES : rend [{ nom, ok, detail }] pour un jeu de modules
 //  (entrees : { Module: Buffer })
 // ===========================================================================
@@ -512,19 +768,41 @@ function controler(entrees) {
     // le matériel : une classe par nature pour le corps et pour les connecteurs, la quantité
     const parNature = [...sources.SEE_Commun.matchAll(/r\.Add Array\(nom & "\.([A-Za-z]+)"/g)].map(m => m[1]);
     const manquantes = ['ClasseMateriel', 'ClasseConnecteur'].filter(s => !parNature.includes(s))
-      .concat(sources.SEE_Commun.includes('r.Add Array("MaterielQuantite"') ? [] : ['MaterielQuantite']);
-    ok('SEE_Commun : les réglages du matériel (<NATURE>.ClasseMateriel, .ClasseConnecteur, MaterielQuantite)', manquantes.length === 0, manquantes.join(', '));
+      .concat(['MaterielQuantite', 'MaterielExistant'].filter(c => !sources.SEE_Commun.includes(`r.Add Array("${c}"`)));
+    ok('SEE_Commun : les réglages du matériel (<NATURE>.ClasseMateriel, .ClasseConnecteur, MaterielQuantite, MaterielExistant)', manquantes.length === 0, manquantes.join(', '));
     ok('SEE_Commun : le type d\'objet matériel (eSEEObjectEquipment = 2)', /Public Const OBJ_MATERIEL As Long = 2\b/.test(sources.SEE_Commun));
     // chaque clé créée par InitialiserClasseur est citée (`clé`) dans la section des réglages de FORMAT-PAQUET.md
     const litterales = [...sources.SEE_Commun.matchAll(/r\.Add Array\("([^"]+)"/g)].map(m => m[1]);
     const nonDocumentees = litterales.concat(parNature).filter(k => !REGLAGES_DOC.includes('`' + k + '`'));
     ok('SEE_Commun : chaque clé de réglage est citée dans FORMAT-PAQUET.md', litterales.length > 0 && nonDocumentees.length === 0, [...new Set(nonDocumentees)].join(', '));
   }
-  // --- la sonde ne doit rien écrire dans SEE
-  if (sources.SEE_Sonde) {
-    const ecritures = sources.SEE_Sonde.split('\r\n').map((l, i) => [sansCommentaire(l), i + 1])
-      .filter(([l]) => ECRIT_SEE.test(sansChaines(l)));
-    ok('SEE_Sonde : aucun appel qui écrit (Save, Add*, Delete*, Set*, Rename, Update)', ecritures.length === 0, ecritures.slice(0, 3).map(x => x[1] + ': ' + x[0].trim()).join(' ; '));
+  // --- la sonde ne doit rien écrire dans SEE : sur un objet SEE, seulement des lectures listées (LECTURES_SEE),
+  //     aucune propriété affectée, aucune écriture par le nom (voir analyseEcritures)
+  //     — dans ses procédures et dans celles qu'elles appellent, de proche en proche
+  const ecritures = Object.keys(analyses).length === MODULES.length ? analyseEcritures(analyses) : null;
+  // les procédures atteintes depuis un jeu de procédures (un membre d'objet n'est pas une procédure des modules)
+  const atteintesDepuis = depart => {
+    const atteintes = new Set(depart), file = [...depart];
+    while (file.length) {
+      const p = file.shift();
+      for (const L of p.lignes) {
+        const js = jetons(sansChaines(sansCommentaire(L.code)));
+        js.forEach((j, i) => {
+          if (j.t !== 'id' || (i > 0 && js[i - 1].v === '.')) return;
+          const q = ecritures.procVue(j.k, p.module);
+          if (q && !atteintes.has(q)) { atteintes.add(q); file.push(q); }
+        });
+      }
+    }
+    return atteintes;
+  };
+  if (ecritures && analyses.SEE_Sonde) {
+    const atteintes = atteintesDepuis(analyses.SEE_Sonde.procs);
+    const { fautes } = ecritures.fautesDe([...atteintes]);
+    const duPilote = [...atteintes].filter(p => p.module === 'SEE_Pilote').map(p => p.nom);
+    ok('SEE_Sonde : sur un objet SEE, rien que des lectures (ni Save, Add*, Set*, Update*, propriété affectée…)', fautes.length === 0 && duPilote.length === 0,
+      `${atteintes.size} procédures atteintes ; ` + (duPilote.length ? 'du pilote : ' + duPilote.join(', ') + ' ; ' : '') +
+      (fautes.length ? fautes.length + ' écriture(s) : ' + fautes.slice(0, 4).join(' ; ') : ''));
   }
   // --- le pilote : chaque procédure qui fait un appel qui écrit (ou qui touche un
   //     objet SEE en mémoire pour l'écrire) teste elle-même gSimulation
@@ -548,32 +826,14 @@ function controler(entrees) {
   if (analyses.SEE_Sonde) {
     const t = analyses.SEE_Sonde.procs.find(p => p.nom.toLowerCase() === 'testersee');
     ok('SEE_Sonde : TesterSEE existe (Public Sub, sans argument)', t && t.public && t.genre === 'sub' && t.params.length === 0, t ? `${t.genre} ${t.public ? 'Public' : 'Private'}, ${t.params.length} paramètre(s)` : 'absente');
-    if (t) {
-      const parNom = new Map();
-      for (const m of Object.keys(analyses)) for (const p of analyses[m].procs) {
-        const k = p.nom.toLowerCase();
-        if (!parNom.has(k)) parNom.set(k, []);
-        parNom.get(k).push(p);
-      }
-      const vue = (k, m) => { const l = parNom.get(k); return l && (l.find(p => p.module === m) || l.find(p => p.public)); };
+    if (t && ecritures) {
       const texteDe = p => p.lignes.map(l => sansChaines(sansCommentaire(l.code))).join('\n');
-      const atteintes = new Set([t]), file = [t];
-      while (file.length) {
-        const p = file.shift();
-        for (const L of p.lignes) {
-          const js = jetons(sansChaines(sansCommentaire(L.code)));
-          js.forEach((j, i) => {
-            if (j.t !== 'id' || (i > 0 && js[i - 1].v === '.')) return;   // un membre d'objet n'est pas une procédure des modules
-            const q = vue(j.k, p.module);
-            if (q && !atteintes.has(q)) { atteintes.add(q); file.push(q); }
-          });
-        }
-      }
+      const atteintes = atteintesDepuis([t]);
       const duPilote = [...atteintes].filter(p => p.module === 'SEE_Pilote').map(p => p.nom);
-      const ecrivent = [...atteintes].filter(p => ECRIT_SEE.test(texteDe(p))).map(p => `${p.module}.${p.nom}`);
-      ok('SEE_Sonde : TesterSEE n\'appelle que des lectures (de proche en proche)', duPilote.length === 0 && ecrivent.length === 0,
+      const { fautes } = ecritures.fautesDe([...atteintes]);
+      ok('SEE_Sonde : TesterSEE n\'appelle que des lectures (de proche en proche)', duPilote.length === 0 && fautes.length === 0,
         `${atteintes.size} procédures atteintes ; ` + (duPilote.length ? 'du pilote : ' + duPilote.join(', ') + ' ; ' : '') +
-        (ecrivent.length ? 'qui écrivent : ' + ecrivent.join(', ') : ''));
+        (fautes.length ? fautes.length + ' écriture(s) : ' + fautes.slice(0, 4).join(' ; ') : ''));
       ok('SEE_Sonde : TesterSEE enchaîne sans boîte (gSansDialogue) et appelle les cinq sondes', /gSansDialogue\s*=\s*True/i.test(texteDe(t)) &&
         ['sondeapplication', 'sondesymboles', 'sondefoliode', 'sondeselection', 'sondemethodes', 'initialiserclasseur'].every(k => [...atteintes].some(p => p.nom.toLowerCase() === k)));
     }
@@ -639,19 +899,29 @@ if (Object.keys(entrees).length === MODULES.length && Object.keys(analyses).leng
     ['gestionnaire d\'erreur sans Exit avant', 'GoTo et gestionnaires d\'erreur bien placés', ajout('SEE_Pilote', ['On Error GoTo Zz', 'Beep', 'Zz:', 'Beep'])],
     ['« obj.Methode (x) » en instruction', 'pas de « obj.Methode (x) » en instruction', ajout('SEE_Pilote', ['Dim zzO As Object', 'zzO.Methode (1)'])],
     ['déclaration de module après une procédure', 'blocs équilibrés (et Next de la bonne variable)', { SEE_Pilote: textes.SEE_Pilote + 'Private zzTard As Long\r\n' }],
-    ['la sonde qui sauve', 'SEE_Sonde : aucun appel qui écrit (Save, Add*, Delete*, Set*, Rename, Update)', ajout('SEE_Sonde', ['Dim zzO As Object', 'zzO.Save'])],
+    ['la sonde qui sauve', 'SEE_Sonde : sur un objet SEE, rien que des lectures (ni Save, Add*, Set*, Update*, propriété affectée…)', ajout('SEE_Sonde', ['Dim zzO As Object', 'zzO.Save'])],
     ['écriture non gardée par la simulation', 'SEE_Pilote : chaque procédure qui écrit teste gSimulation', ajout('SEE_Pilote', ['Dim zzO As Object', 'zzO.AddSymbol Nothing, Nothing'])],
     ['fichier resté en UTF-8', 'aucune séquence UTF-8 (pas de « Ã© »)', { SEE_Sonde: textes.SEE_Sonde, utf8: 'SEE_Sonde' }],
     ['fins de ligne LF', 'fins de ligne CRLF partout', remplacer('SEE_Commun', /\r\n/g, '\n')],
     // --- le matériel et le bouton du bureau
     ['matériel associé sans test de la simulation', 'SEE_Pilote : chaque procédure qui écrit teste gSimulation', ajout('SEE_Pilote', ['Dim zzO As Object', 'zzO.SetEquipmentCollection Nothing'])],
-    ['la sonde qui associe un matériel', 'SEE_Sonde : aucun appel qui écrit (Save, Add*, Delete*, Set*, Rename, Update)', ajout('SEE_Sonde', ['Dim zzO As Object', 'zzO.SetEquipmentCollection Nothing'])],
+    ['la sonde qui associe un matériel', 'SEE_Sonde : sur un objet SEE, rien que des lectures (ni Save, Add*, Set*, Update*, propriété affectée…)', ajout('SEE_Sonde', ['Dim zzO As Object', 'zzO.SetEquipmentCollection Nothing'])],
     ['TesterSEE qui dessine (une macro du pilote)', 'SEE_Sonde : TesterSEE n\'appelle que des lectures (de proche en proche)', remplacer('SEE_Sonde', /(Public Sub TesterSEE\(\)\r\n)/, '$1    EssaiDessin\r\n')],
     ['TesterSEE qui écrit par une procédure du socle', 'SEE_Sonde : TesterSEE n\'appelle que des lectures (de proche en proche)', /Public Sub TesterSEE\(\)\r\n/.test(textes.SEE_Sonde) && {
       SEE_Commun: textes.SEE_Commun + ['Public Sub ZzEcrit()', '    Dim zzO As Object', '    zzO.SetPosition Nothing', 'End Sub', ''].join('\r\n'),
       SEE_Sonde: textes.SEE_Sonde.replace(/(Public Sub TesterSEE\(\)\r\n)/, '$1    ZzEcrit\r\n') }],
     ['clé de réglage absente de FORMAT-PAQUET.md', 'SEE_Commun : chaque clé de réglage est citée dans FORMAT-PAQUET.md', remplacer('SEE_Commun', /(    r\.Add Array\("MaterielQuantite")/, '    r.Add Array("ZzCleNonDocumentee", "", "Une clé de trop.")\r\n$1')],
-    ['réglage du matériel des connecteurs retiré', 'SEE_Commun : les réglages du matériel (<NATURE>.ClasseMateriel, .ClasseConnecteur, MaterielQuantite)', remplacer('SEE_Commun', /nom & "\.ClasseConnecteur"/, 'nom & ".ClasseDesConnecteurs"')],
+    ['réglage du matériel des connecteurs retiré', 'SEE_Commun : les réglages du matériel (<NATURE>.ClasseMateriel, .ClasseConnecteur, MaterielQuantite, MaterielExistant)', remplacer('SEE_Commun', /nom & "\.ClasseConnecteur"/, 'nom & ".ClasseDesConnecteurs"')],
+    ['réglage MaterielExistant retiré', 'SEE_Commun : les réglages du matériel (<NATURE>.ClasseMateriel, .ClasseConnecteur, MaterielQuantite, MaterielExistant)', remplacer('SEE_Commun', /r\.Add Array\("MaterielExistant"/, 'r.Add Array("ZzMaterielExistant"')],
+    // --- ce qu'une liste noire ne voyait pas (TesterSEE, de proche en proche) : une propriété écrite par EcrireProp
+    //     (CallByName VbLet), une méthode qui écrit hors de la liste (UpdateMethodsXML, SaveCopyAs)
+    ['TesterSEE qui écrit une propriété par EcrireProp', 'SEE_Sonde : TesterSEE n\'appelle que des lectures (de proche en proche)', remplacer('SEE_Sonde', /(Public Sub TesterSEE\(\)\r\n)/, '$1    EcrireProp gApp, "Angle", 0\r\n')],
+    ['TesterSEE qui réécrit les méthodes (UpdateMethodsXML)', 'SEE_Sonde : TesterSEE n\'appelle que des lectures (de proche en proche)', remplacer('SEE_Sonde', /(Public Sub TesterSEE\(\)\r\n)/, '$1    SEE_Environnement().UpdateMethodsXML 22, Nothing\r\n')],
+    ['TesterSEE qui sauve une copie du projet (SaveCopyAs)', 'SEE_Sonde : TesterSEE n\'appelle que des lectures (de proche en proche)', remplacer('SEE_Sonde', /(Public Sub TesterSEE\(\)\r\n)/, '$1    SEE_Projet(True).SaveCopyAs "x"\r\n')],
+    ['la sonde qui affecte une propriété d\'un objet SEE', 'SEE_Sonde : sur un objet SEE, rien que des lectures (ni Save, Add*, Set*, Update*, propriété affectée…)',
+      ajout('SEE_Sonde', ['Dim zzO As Object', 'Set zzO = SEE_Projet(True)', 'zzO.Name = "x"'])],
+    ['la sonde qui appelle une méthode qui écrit par son nom', 'SEE_Sonde : sur un objet SEE, rien que des lectures (ni Save, Add*, Set*, Update*, propriété affectée…)',
+      ajout('SEE_Sonde', ['Dim zzS As String', 'zzS = LirePropOuMethode(SEE_Projet(True), "Save")'])],
   ];
   let attrapees = 0;
   for (const [nom, attendu, mut] of mutations) {
@@ -663,6 +933,15 @@ if (Object.keys(entrees).length === MODULES.length && Object.keys(analyses).leng
     else afficher(`mutation « ${nom} » attrapée par « ${attendu} »`, false, cible.length ? 'non vue' : 'contrôle introuvable');
   }
   afficher(`le contrôleur attrape les ${mutations.length} fautes injectées une à une`, attrapees === mutations.length, `${attrapees} / ${mutations.length}`);
+  // et il ne crie pas au loup : écrire dans le classeur (feuilles, dictionnaires, collections) n'est pas écrire dans SEE
+  {
+    const sain = ajout('SEE_Sonde', ['Dim zzW As Object, zzD As Object, zzC As Collection', 'Set zzW = FeuilleCreee("Zz", True)',
+      'zzW.Cells(1, 1).Value = "x"', 'zzW.Move Before:=ThisWorkbook.Worksheets(1)', 'Set zzD = NouveauDico()', 'zzD.Item("a") = 1',
+      'Set zzC = ElementsDe(SEE_TousLesFolios(SEE_Projet(True)))', 'zzC.Add "a"', 'ThisWorkbook.Worksheets(1).Name = "Zz"']);
+    const copie = Object.assign({}, entrees, { SEE_Sonde: encoder1252(sain.SEE_Sonde) });
+    const r = controler(copie).res.filter(x => x.nom.startsWith('SEE_Sonde : sur un objet SEE'));
+    afficher('le contrôleur laisse passer les écritures dans le classeur (feuille, dictionnaire, collection)', r.length === 1 && r[0].ok, r.length ? r[0].detail : 'contrôle introuvable');
+  }
 }
 
 console.log(`\n  ${controles - echecs} / ${controles} contrôles passés${echecs ? ' — ' + echecs + ' échec(s)' : ''}`);

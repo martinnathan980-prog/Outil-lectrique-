@@ -76,6 +76,7 @@ Public gEtape As String
 Public gObjet As String
 Public gNbErreurs As Long
 Public gDerniereErreur As String
+Public gNbLignesErreur As Long        ' lignes du journal qui ont un Err.Number (ce que « Ce qui a échoué » compte)
 
 ' --- Paquet chargé
 Public gPaquet As Object              ' nom de feuille -> nombre de lignes lues
@@ -241,6 +242,10 @@ Private Function ReglagesParDefaut() As Variant
     Next nat
     ' --- Matériel (le « device » associé : CreateObject(matériel), Class, Code, Quantity, SetEquipmentCollection)
     r.Add Array("MaterielQuantite", "1", "Quantité (Quantity) écrite dans chaque matériel associé à un corps ou à un connecteur.")
+    r.Add Array("MaterielExistant", "GARDER", _
+        "Un symbole ou un connecteur qui porte DÉJÀ un matériel (connecteur repris d'un folio fait à la main ou d'une exécution précédente) : " & _
+        "GARDER (rien n'est écrit, le journal dit ce qu'il porte), AJOUTER (le PN du paquet est ajouté à ceux qui sont là) ou " & _
+        "REMPLACER (il ne garde que le PN du paquet ; le journal nomme ce qui est retiré). S'il porte déjà ce PN (même classe), rien n'est écrit.")
     ' --- Fils
     r.Add Array("TypeConnexion", "", _
         "La chaîne passée à AddWireConnection (inconnue : voir SignalType dans Sonde_Folio). VIDE = les fils sont tracés en DESSIN (traits).")
@@ -365,6 +370,7 @@ Public Sub OuvrirJournal(ByVal titre As String)
     mLigneJournal = 1
     gNbErreurs = 0
     gDerniereErreur = ""
+    gNbLignesErreur = 0
     ' le journal est vidé : ce qui se note « une fois » se notera à nouveau
     mModeCollectionDit = False
     Set mFormesDites = Nothing
@@ -407,6 +413,7 @@ Public Sub Journal(ByVal etape As String, ByVal objet As String, ByVal appel As 
     If numErr <> 0 Then
         ws.Cells(mLigneJournal, 6).Value = numErr
         ws.Cells(mLigneJournal, 7).Value = "'" & Left$(descErr, 1000)
+        gNbLignesErreur = gNbLignesErreur + 1
     End If
 Fin:
 End Sub
@@ -1682,10 +1689,14 @@ End Function
 ' Les matériels (ISEEEquipment : la référence du catalogue, le « device »)
 ' associés à un symbole, un connecteur, une broche, un bornier ou un câble :
 ' GetEquipmentCollection (V5 : rendue ; V4 : paramètre de sortie). Lecture
-' seule. Nothing si l'objet n'en a pas ou si l'appel échoue (journalisé).
-Public Function SEE_MaterielsDe(ByVal obj As Object) As Object
+' seule. Rend Vrai si l'appel a marché : coll reçoit ce que SEE rend, qui
+' peut être Nothing (rien d'associé, ou un paramètre de sortie laissé vide) ;
+' Faux si l'appel a échoué (coll = Nothing ; l'erreur est au journal et dans
+' gDerniereErreur). Les deux cas ne se confondent pas.
+Public Function SEE_LireMateriels(ByVal obj As Object, ByRef coll As Object) As Boolean
     Dim o As Object
-    Set SEE_MaterielsDe = Nothing
+    SEE_LireMateriels = False
+    Set coll = Nothing
     If obj Is Nothing Then Exit Function
     On Error GoTo Echec
     If EstV4() Then
@@ -1693,12 +1704,14 @@ Public Function SEE_MaterielsDe(ByVal obj As Object) As Object
     Else
         Set o = obj.GetEquipmentCollection()
     End If
-    Set SEE_MaterielsDe = o
+    Set coll = o
     NoterAppel "GetEquipmentCollection()", o
+    SEE_LireMateriels = True
     Exit Function
 Echec:
     JournalErreur "GetEquipmentCollection()", Err.Number, Err.Description
-    Set SEE_MaterielsDe = Nothing
+    Set coll = Nothing
+    SEE_LireMateriels = False
 End Function
 
 ' Une collection de matériels en texte : « Class / Code / Quantity » de chaque

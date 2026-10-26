@@ -223,15 +223,24 @@ après la sonde. La liste qui fait foi est dans la feuille ; en résumé :
   `ClasseConnecteur` (en `BROCHE` : la classe du matériel associé à chaque
   connecteur, avec le `PN` de la feuille `Connecteurs` ; vide = aucun).
 - **Matériel** (le « device » associé, la référence du catalogue de SEE) :
-  `MaterielQuantite` (la quantité écrite dans chaque matériel, 1 par défaut).
-  Le pilote crée le matériel (`CreateObject`), écrit `Class`, `Code` (le PN)
-  et `Quantity`, le met dans une collection et la passe à
-  `SetEquipmentCollection` (même signature en V5 et en V4), puis relit
-  `GetEquipmentCollection`. Un PN vide n'associe rien (le journal le dit) ;
-  un refus de SEE (classe ou code absents du catalogue) est journalisé et le
-  folio continue. Un connecteur reçoit son matériel une fois par exécution.
-  La classe à mettre se lit dans `Sonde_Folio`, section « Matériel associé »,
-  sur un folio où un matériel a été associé à la main.
+  `MaterielQuantite` (la quantité écrite dans chaque matériel, 1 par défaut)
+  et `MaterielExistant` (ce que devient un symbole ou un connecteur qui porte
+  DÉJÀ un matériel, par exemple un connecteur repris d'un folio fait à la
+  main : `GARDER`, le défaut, n'écrit rien et le journal dit ce qu'il porte ;
+  `AJOUTER` ajoute le PN du paquet à ceux qui sont là ; `REMPLACER` ne lui
+  laisse que le PN du paquet, et le journal nomme ce qui est retiré ; s'il
+  porte déjà ce PN avec la même classe, rien n'est écrit, quel que soit le
+  réglage). Le pilote lit d'abord ce que le porteur porte
+  (`GetEquipmentCollection`), en simulation aussi ; puis il crée le matériel
+  (`CreateObject`), écrit `Class`, `Code` (le PN) et `Quantity`, le met dans
+  une collection et la passe à `SetEquipmentCollection` (même signature en V5
+  et en V4), puis relit `GetEquipmentCollection` : le matériel n'est compté
+  que si un élément de même `Class` et de même `Code` y est relu. Un PN vide
+  n'associe rien (le journal le dit) ; un refus de SEE (classe ou code
+  absents du catalogue) est journalisé et le folio continue. Un connecteur
+  reçoit son matériel une fois par exécution. La classe à mettre se lit dans
+  `Sonde_Folio`, section « Matériel associé », sur un folio où un matériel a
+  été associé à la main.
 - **Fils** : `TypeConnexion` (la chaîne attendue par `AddWireConnection` ; vide
   = les fils sont tracés en traits), `Cable` et `Jauge` (`O` / `N`),
   `Pontages` (`TRACER` ou `IGNORER` les pontages de barrette), `Recaler`

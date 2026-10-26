@@ -12,8 +12,10 @@ Attribute VB_Name = "SEE_Sonde"
 '                      Il crée les feuilles Reglages et Journal si elles
 '                      manquent, enchaîne les sondes ci-dessous sans aucune
 '                      boîte, écrit la feuille Resultat_Test en tête du
-'                      classeur (ce qui a marché, en clair), puis UNE boîte :
-'                      enregistrer le classeur et me l'envoyer.
+'                      classeur (ce qui a marché, en clair), puis UNE boîte
+'                      qui dit quoi faire D'APRÈS CE QUI A ÉTÉ LU : relancer
+'                      (SEE fermé, pas de folio affiché...) ou enregistrer
+'                      le classeur et me l'envoyer.
 '    SondeApplication  versions, chemins, environnement (Unit !), projet,
 '                      cartouches (zone de travail), stratégie de connexion
 '    SondeSymboles     familles et symboles de l'environnement
@@ -43,6 +45,11 @@ Private mLigne As Long
 ' --- ce que les sondes ont lu (la feuille Resultat_Test de TesterSEE)
 Private mEnchaine As Boolean          ' Vrai : sondes enchaînées par TesterSEE (un seul journal, aucune boîte)
 Private mConnecte As Boolean          ' la dernière sonde a joint SEE
+Private mConnexionEssayee As Boolean  ' TesterSEE : la connexion a été essayée (par SondeApplication)
+Private mJoint As Boolean             ' TesterSEE : SondeApplication a joint SEE (les sondes suivantes ne se reconnectent pas)
+Private mPerdu As String              ' TesterSEE : la sonde avant laquelle SEE ne répondait plus ("" : il a répondu jusqu'au bout)
+Private mProjetOuvert As Boolean      ' SondeApplication a lu un projet ouvert
+Private mSondesFaites As String       ' TesterSEE : les sondes lancées, « |SondeApplication|SondeFolio| » (et « |SondeSelection:sautée| »)
 Private mVersion As String            ' ApplicationName ApplicationVersion
 Private mUnite As String              ' Environment.Unit, avec son sens
 Private mProjetLu As String           ' le nom du projet ouvert, ou ce qui l'a empêché
@@ -84,12 +91,28 @@ Private Function DebutSonde(ByVal titre As String, ByVal nomFeuille As String) A
     If mClasses Is Nothing Then Set mClasses = NouveauDicoExact()
     Application.ScreenUpdating = False
     Dim connecte As Boolean
-    connecte = ConnecterSEE()
+    If mEnchaine And mJoint Then
+        ' TesterSEE : SEE a été joint par SondeApplication ; on vérifie qu'il répond, sans jamais se
+        ' reconnecter (ConnecterSEE pourrait démarrer un autre SEE au milieu d'un test en lecture seule)
+        connecte = SEERepond()
+        If Not connecte Then
+            Journal "TesterSEE", titre, "ApplicationName", "SEE ne répond plus : sonde sautée", -1, "SEE ne répond plus"
+            Ecrire Array("Connexion", "ÉCHEC", "SEE ne répond plus (il a répondu plus tôt dans le test) : voir la feuille Journal")
+        End If
+    Else
+        If mEnchaine Then mConnexionEssayee = True
+        connecte = ConnecterSEE()
+        If Not connecte Then
+            Ecrire Array("Connexion", "ÉCHEC", "aucune stratégie n'a marché : voir la feuille Journal et diagnostic.ps1")
+        End If
+    End If
     mConnecte = connecte
     DebutSonde = connecte
-    If Not connecte Then
-        Ecrire Array("Connexion", "ÉCHEC", "aucune stratégie n'a marché : voir la feuille Journal et diagnostic.ps1")
-    End If
+End Function
+
+' Vrai si l'objet SEE gardé répond encore (le test que fait ConnecterSEE).
+Private Function SEERepond() As Boolean
+    SEERepond = (Left$(LireProp(gApp, "ApplicationName"), 4) <> "#ERR")
 End Function
 
 Private Sub FinSonde(ByVal titre As String)
@@ -141,13 +164,17 @@ End Function
 '  (sans boîte), puis enchaîne, sans aucune boîte et dans un seul journal :
 '  SondeApplication ; si SEE est joint : SondeSymboles, SondeFolio (le folio
 '  de la vue active), SondeSelection (s'il y a une sélection), SondeMethodes
-'  (ses XML vont aussi dans la feuille Sonde_XML). Il finit par la feuille
-'  Resultat_Test, en tête du classeur, qui dit en clair ce qui a marché, puis
-'  UNE boîte : enregistrer le classeur et me l'envoyer.
+'  (ses XML vont aussi dans la feuille Sonde_XML). SEE n'est joint qu'une
+'  fois, par SondeApplication : s'il cesse de répondre ensuite, les sondes
+'  suivantes sont sautées (aucun autre SEE n'est démarré en cours de test).
+'  Il finit par la feuille Resultat_Test, en tête du classeur, qui dit en
+'  clair ce qui a été lu, puis UNE boîte, choisie d'après ce qui a été lu :
+'  relancer (SEE fermé, pas de projet ni de folio affiché...) ou enregistrer
+'  le classeur et me l'envoyer. La même consigne finit Resultat_Test.
 '  LECTURE SEULE : il n'appelle que les sondes ; rien n'est écrit dans SEE.
 ' ============================================================================
 Public Sub TesterSEE()
-    Dim ancien As Boolean, imprevu As String
+    Dim ancien As Boolean, imprevu As String, nom As Variant
     On Error GoTo Plantage
     ancien = gSansDialogue
     gSansDialogue = True
@@ -159,16 +186,26 @@ Public Sub TesterSEE()
     InitialiserClasseur
     ChargerReglages
     EtapeDuTest "SondeApplication"
-    If mConnecte Then
-        EtapeDuTest "SondeSymboles"
-        EtapeDuTest "SondeFolio"
-        If NbObjetsSelectionnes() > 0 Then
-            EtapeDuTest "SondeSelection"
-        Else
-            NoterEtape "SondeSelection : sautée (aucun objet sélectionné dans SEE)"
-        End If
-        EtapeDuTest "SondeMethodes"
-    Else
+    mJoint = mConnecte
+    If mJoint Then
+        For Each nom In Array("SondeSymboles", "SondeFolio", "SondeSelection", "SondeMethodes")
+            If Not SEERepond() Then
+                PerduAvant CStr(nom)
+                Exit For
+            End If
+            If CStr(nom) <> "SondeSelection" Then
+                EtapeDuTest CStr(nom)
+            ElseIf NbObjetsSelectionnes() > 0 Then
+                EtapeDuTest CStr(nom)
+            ElseIf SEERepond() Then
+                mSondesFaites = mSondesFaites & "|SondeSelection:sautée|"
+                NoterEtape "SondeSelection : sautée (aucun objet sélectionné dans SEE)"
+            Else
+                PerduAvant CStr(nom)
+                Exit For
+            End If
+        Next nom
+    ElseIf mConnexionEssayee Then
         NoterEtape "les autres sondes : sautées (SEE n'est pas joint)"
     End If
 Fin:
@@ -180,30 +217,118 @@ Plantage:
     Resume Fin
 End Sub
 
-' La fin du test, quoi qu'il arrive : la feuille Resultat_Test, puis UNE boîte.
+' SEE ne répond plus avant cette sonde : elle et les suivantes sont sautées.
+Private Sub PerduAvant(ByVal nom As String)
+    mPerdu = nom
+    Journal "TesterSEE", nom, "ApplicationName", "SEE ne répond plus : " & nom & " et les sondes suivantes sont sautées " & _
+        "(aucune nouvelle connexion en cours de test)", -1, "SEE ne répond plus"
+    NoterEtape "SEE ne répondait plus avant " & nom & " : " & nom & " et les sondes suivantes sautées"
+End Sub
+
+' La fin du test, quoi qu'il arrive : la feuille Resultat_Test, puis UNE boîte,
+' qui dit la même chose que sa dernière ligne (« Et maintenant »).
 Private Sub FinirTest(ByVal ancienSansDialogue As Boolean, ByVal imprevu As String)
+    Dim consigne As String
     On Error Resume Next
     mEnchaine = False
     Application.ScreenUpdating = True
     Application.StatusBar = False
-    EcrireResultatTest imprevu
-    Journal "Fin", "TesterSEE", "", "terminé ; " & gNbErreurs & " appel(s) en erreur ; voir la feuille " & FEUILLE_RESULTAT
+    consigne = ConsigneFinale(imprevu)
+    EcrireResultatTest imprevu, consigne
+    Journal "Fin", "TesterSEE", "", "terminé ; " & gNbLignesErreur & " réponse(s) en erreur au journal ; voir la feuille " & FEUILLE_RESULTAT
     gSansDialogue = ancienSansDialogue
-    If mConnecte Then
-        Dialogue "C'est fini. Enregistre ce fichier (Ctrl+S), ferme-le et envoie-le-moi." & vbCrLf & vbCrLf & _
-            "(Il contient ce qu'Excel a lu dans SEE : si le projet ouvert n'était pas ton projet d'essai, " & _
-            "regarde d'abord la feuille " & FEUILLE_RESULTAT & ".)", vbInformation, "Test de SEE"
-    Else
-        Dialogue "C'est fini. Excel n'a pas pu joindre SEE : c'est normal à ce stade, et le fichier contient " & _
-            "l'explication (feuilles " & FEUILLE_RESULTAT & " et Journal)." & vbCrLf & vbCrLf & _
-            "Enregistre ce fichier (Ctrl+S), ferme-le et envoie-le-moi.", vbInformation, "Test de SEE"
+    If mJoint Then
+        consigne = consigne & vbCrLf & vbCrLf & "(Le classeur contient ce qu'Excel a lu dans SEE : vérifie sur la feuille " & _
+            FEUILLE_RESULTAT & " que le projet lu est bien ton projet d'essai.)"
     End If
+    Dialogue consigne, vbInformation, "Test de SEE"
 End Sub
 
-' Une sonde du test : une erreur imprévue l'arrête, pas le test.
+' Ce que le technicien doit faire maintenant, d'après ce que le test a lu (la
+' boîte de fin et la dernière ligne de Resultat_Test).
+Private Function ConsigneFinale(ByVal imprevu As String) As String
+    Dim enregistrer As String
+    enregistrer = ConsigneEnregistrer()
+    If Len(imprevu) > 0 Then
+        ConsigneFinale = "Le test s'est arrêté sur une erreur imprévue (" & imprevu & "). " & enregistrer & _
+            ", ferme-le et envoie-le-moi tel quel : la feuille Journal dit où il s'est arrêté."
+    ElseIf Not mJoint Then
+        ConsigneFinale = "Excel n'a pas trouvé SEE." & vbCrLf & _
+            "- Si SEE était fermé : ouvre-le sur ton projet d'essai, affiche ton folio d'essai, puis relance TesterSEE " & _
+            "(Alt+F8, TesterSEE, Exécuter)." & vbCrLf & _
+            "- S'il était ouvert : " & LCase$(Left$(enregistrer, 1)) & Mid$(enregistrer, 2) & ", ferme-le et envoie-le-moi : " & _
+            "la feuille Journal dit chaque manière essayée et la réponse de Windows, c'est ce qu'il me faut."
+    ElseIf SEELanceParLaMacro() Then
+        ConsigneFinale = "Excel n'a pas trouvé de SEE ouvert : il en a démarré un lui-même, sans ton projet." & vbCrLf & _
+            "- Si ton SEE était fermé : ferme ce SEE-là, ouvre SEE sur ton projet d'essai, affiche ton folio d'essai, " & _
+            "puis relance TesterSEE (Alt+F8)." & vbCrLf & _
+            "- S'il était déjà ouvert : ferme la seconde fenêtre de SEE, puis " & LCase$(Left$(enregistrer, 1)) & _
+            Mid$(enregistrer, 2) & ", ferme-le et envoie-le-moi."
+    ElseIf Len(mPerdu) > 0 Then
+        ConsigneFinale = "SEE a cessé de répondre pendant le test (avant " & mPerdu & ") ; ce qui a été lu avant est gardé." & vbCrLf & _
+            "- Si tu as fermé SEE : rouvre-le sur ton projet d'essai, affiche ton folio d'essai, puis relance TesterSEE (Alt+F8)." & vbCrLf & _
+            "- Sinon : " & LCase$(Left$(enregistrer, 1)) & Mid$(enregistrer, 2) & ", ferme-le et envoie-le-moi tel quel."
+    ElseIf Not mProjetOuvert Or Len(mFolioLu) = 0 Then
+        ConsigneFinale = "Il manque ton folio : SEE est joint, mais " & _
+            IIf(mProjetOuvert, "aucun folio n'y est affiché", "aucun projet n'y est ouvert") & "." & vbCrLf & _
+            "Dans SEE, ouvre ton projet d'essai et affiche ton folio d'essai, puis relance TesterSEE (Alt+F8) AVANT " & _
+            "d'envoyer le classeur."
+    ElseIf mNbMateriels = 0 Then
+        ConsigneFinale = "Ton folio « " & mFolioLu & " » est lu, mais aucun de ses objets n'a de matériel (référence du catalogue)." & _
+            vbCrLf & "- Si tu peux : dans SEE, associe à la main un matériel à un équipement et à un connecteur de ce folio, " & _
+            "puis relance TesterSEE (Alt+F8)." & vbCrLf & _
+            "- Sinon : " & LCase$(Left$(enregistrer, 1)) & Mid$(enregistrer, 2) & ", ferme-le et envoie-le-moi."
+    Else
+        ConsigneFinale = "C'est fini : SEE est joint et ton folio « " & mFolioLu & " » est lu (" & mNbMateriels & _
+            " matériel(s) trouvé(s)). " & enregistrer & ", ferme-le et envoie-le-moi."
+    End If
+End Function
+
+' Comment enregistrer ce classeur : jamais enregistré, ou enregistré dans un
+' format sans macros (les modules seraient perdus à la fermeture) : « Enregistrer
+' sous » au format .xlsm ; sinon Ctrl+S, en le nommant.
+Private Function ConsigneEnregistrer() As String
+    Dim chemin As String, nom As String
+    On Error Resume Next
+    chemin = ThisWorkbook.Path
+    nom = ThisWorkbook.Name
+    On Error GoTo 0
+    If Len(chemin) = 0 Or Not ClasseurAvecMacros(nom) Then
+        ConsigneEnregistrer = "Enregistre ce classeur par Fichier > Enregistrer sous, type « Classeur Excel (prenant en " & _
+            "charge les macros) (*.xlsm) », nom « Pilote SEE »"
+    Else
+        ConsigneEnregistrer = "Enregistre le classeur « " & nom & " » (Ctrl+S)"
+    End If
+End Function
+
+' Vrai si le classeur est d'un format qui garde les macros : FileFormat 52
+' (.xlsm), 50 (.xlsb) ou 56 (.xls) ; si FileFormat est illisible, d'après
+' l'extension de son nom.
+Private Function ClasseurAvecMacros(ByVal nom As String) As Boolean
+    Dim ff As Long, ext As String
+    On Error GoTo ParLeNom
+    ff = ThisWorkbook.FileFormat
+    ClasseurAvecMacros = (ff = 52 Or ff = 50 Or ff = 56)
+    Exit Function
+ParLeNom:
+    Resume LireLeNom
+LireLeNom:
+    ext = LCase$(Mid$(nom, InStrRev(nom, ".") + 1))
+    ClasseurAvecMacros = (ext = "xlsm" Or ext = "xlsb" Or ext = "xls")
+End Function
+
+' Vrai si c'est la macro qui a démarré SEE (stratégies « new: » et CreateObject).
+Private Function SEELanceParLaMacro() As Boolean
+    SEELanceParLaMacro = (InStr(1, gStrategie, "new:", vbTextCompare) > 0 Or Left$(gStrategie, 13) = "CreateObject(")
+End Function
+
+' Une sonde du test : une erreur imprévue l'arrête, pas le test. L'étape dit
+' ce que la sonde a lu, puis les réponses en erreur notées au journal pendant
+' elle (les mêmes lignes que « Ce qui a échoué »).
 Private Sub EtapeDuTest(ByVal nom As String)
     Dim e0 As Long, numErr As Long, descErr As String
-    e0 = gNbErreurs
+    e0 = gNbLignesErreur
+    mSondesFaites = mSondesFaites & "|" & nom & "|"
     On Error GoTo Echec
     Application.StatusBar = "Test de SEE (lecture seule) : " & nom
     If nom = "SondeApplication" Then
@@ -217,7 +342,7 @@ Private Sub EtapeDuTest(ByVal nom As String)
     Else
         SondeMethodes
     End If
-    NoterEtape nom & " : faite, " & (gNbErreurs - e0) & " appel(s) en erreur"
+    NoterEtape nom & " : " & CeQuiAEteLu(nom) & ErreursDeLEtape(e0)
     Exit Sub
 Echec:
     numErr = Err.Number
@@ -225,8 +350,60 @@ Echec:
     gNbErreurs = gNbErreurs + 1
     Application.ScreenUpdating = True
     Journal "TesterSEE", nom, "(sonde)", "ARRÊT IMPRÉVU de la sonde : le test passe à la suite", numErr, descErr
-    NoterEtape nom & " : ARRÊTÉE par une erreur imprévue (" & numErr & " " & descErr & ") ; le test a continué"
+    NoterEtape nom & " : ARRÊTÉE par une erreur imprévue (" & numErr & " " & descErr & ") ; le test a continué" & ErreursDeLEtape(e0)
 End Sub
+
+' Ce qu'une sonde a lu : « faite : ... » si elle a lu quelque chose, sinon « rien lu : ... ».
+Private Function CeQuiAEteLu(ByVal nom As String) As String
+    Select Case nom
+        Case "SondeApplication"
+            If Not mConnecte Then
+                CeQuiAEteLu = "rien lu : SEE n'est pas joint"
+            ElseIf mProjetOuvert Then
+                CeQuiAEteLu = "faite : SEE joint (" & mVersion & "), projet " & mProjetLu
+            Else
+                CeQuiAEteLu = "faite : SEE joint (" & mVersion & "), mais aucun projet ouvert"
+            End If
+        Case "SondeSymboles"
+            If mNbFormes > 0 Then
+                CeQuiAEteLu = "faite : " & mNbFamilles & " famille(s), " & mNbFormes & " symbole(s) lus"
+            Else
+                CeQuiAEteLu = "rien lu : aucun symbole (" & mNbFamilles & " famille(s))"
+            End If
+        Case "SondeFolio"
+            If Len(mFolioLu) > 0 Then
+                CeQuiAEteLu = "faite : « " & mFolioLu & " », " & mNbSymboles & " symbole(s), " & mNbMateriels & " matériel(s) lus"
+            Else
+                CeQuiAEteLu = "rien lu : " & mFolioRaison
+            End If
+        Case "SondeSelection"
+            If mNbSelection > 0 Then
+                CeQuiAEteLu = "faite : " & mNbSelection & " objet(s) sélectionné(s), " & mNbMaterielsSelection & " matériel(s) lus"
+            Else
+                CeQuiAEteLu = "rien lu : aucun objet sélectionné lisible"
+            End If
+        Case Else
+            If mNbXML > 0 Then
+                CeQuiAEteLu = "faite : " & mNbXML & " XML sur 6 lus"
+            Else
+                CeQuiAEteLu = "rien lu : aucun XML rendu"
+            End If
+    End Select
+End Function
+
+' Vrai si TesterSEE a lancé cette sonde (elle peut être sautée : pas de sélection, SEE perdu).
+Private Function SondeLancee(ByVal nom As String) As Boolean
+    SondeLancee = (InStr(1, mSondesFaites, "|" & nom & "|", vbBinaryCompare) > 0)
+End Function
+
+' « (n réponse(s) en erreur au journal) » depuis e0, ou rien.
+Private Function ErreursDeLEtape(ByVal e0 As Long) As String
+    If gNbLignesErreur > e0 Then
+        ErreursDeLEtape = " (" & (gNbLignesErreur - e0) & " réponse(s) en erreur au journal)"
+    Else
+        ErreursDeLEtape = ""
+    End If
+End Function
 
 Private Sub NoterEtape(ByVal texte As String)
     mEtapesTest = mEtapesTest & texte & vbLf
@@ -248,6 +425,11 @@ End Function
 ' Avant un test : rien n'a encore été lu.
 Private Sub RemettreLesLectures()
     mConnecte = False
+    mConnexionEssayee = False
+    mJoint = False
+    mPerdu = ""
+    mProjetOuvert = False
+    mSondesFaites = ""
     mVersion = ""
     mUnite = ""
     mProjetLu = ""
@@ -266,33 +448,47 @@ Private Sub RemettreLesLectures()
     Set mClasses = NouveauDicoExact()
 End Sub
 
-' La feuille Resultat_Test, en tête du classeur : ce que le test a lu, en clair.
-Private Sub EcrireResultatTest(ByVal imprevu As String)
+' La feuille Resultat_Test, en tête du classeur : ce que le test a lu, en
+' clair ; sa dernière ligne (« Et maintenant ») est la consigne de la boîte de fin.
+Private Sub EcrireResultatTest(ByVal imprevu As String, ByVal consigne As String)
     Dim ws As Object, l As Long, s As String, k As Variant, e As Variant, etapes As Variant, erreurs As Collection, nb As Long
     Set ws = FeuilleEnTete(FEUILLE_RESULTAT)
     l = 0
     LigneResultat ws, l, "Test de SEE", "fait le " & Format$(Now, "yyyy-mm-dd hh:mm") & " par la macro TesterSEE, en lecture seule : " & _
         "rien n'a été écrit dans SEE"
-    If mConnecte Then
-        If Len(gStrategie) > 0 Then
+    If mJoint Then
+        If SEELanceParLaMacro() Then
+            s = "OUI, mais c'est Excel qui l'a démarré (" & gStrategie & ") : ce SEE-là est neuf, sans ton projet"
+        ElseIf Len(gStrategie) > 0 Then
             s = "OUI, joint par " & gStrategie
         Else
             s = "OUI, par la connexion gardée d'une macro précédente"
         End If
         If gEstAutomation Then s = s & " (coclasse SeeAutomation : la lecture du projet est limitée)"
+    ElseIf mConnexionEssayee Then
+        s = "NON : Excel n'a pas pu joindre SEE. La feuille Journal dit chaque manière essayée et la réponse de Windows."
     Else
-        s = "NON : Excel n'a pas pu joindre SEE. C'est normal à ce stade : la feuille Journal dit chaque manière essayée " & _
-            "et la réponse de Windows, c'est ce qu'il me faut. (Si SEE n'était pas ouvert : ouvre-le sur ton projet d'essai, " & _
-            "puis relance TesterSEE.)"
+        s = "pas essayé : le test s'est arrêté avant (voir « Arrêt imprévu »)"
     End If
     LigneResultat ws, l, "SEE joint ?", s
-    If mConnecte Then
+    If Len(mPerdu) > 0 Then
+        LigneResultat ws, l, "SEE perdu", "SEE ne répondait plus avant " & mPerdu & " : " & mPerdu & " et les sondes suivantes sont " & _
+            "sautées (aucune nouvelle connexion en cours de test) ; ce qui a été lu avant est ci-dessous"
+    End If
+    If mJoint Then
         LigneResultat ws, l, "Version", mVersion & " ; l'API est lue en V" & gVersionAPI & " (réglage VersionAPI = " & _
             Reglage("VersionAPI", "auto") & ")"
         LigneResultat ws, l, "Unité", mUnite
         LigneResultat ws, l, "Projet ouvert", mProjetLu
-        LigneResultat ws, l, "Symboles de SEE", mNbFamilles & " famille(s), " & mNbFormes & " symbole(s) lus (feuille Sonde_Symboles)"
-        If Len(mFolioLu) > 0 Then
+        If SondeLancee("SondeSymboles") Then
+            s = mNbFamilles & " famille(s), " & mNbFormes & " symbole(s) lus (feuille Sonde_Symboles)"
+        Else
+            s = "non lus (SEE ne répondait plus)"
+        End If
+        LigneResultat ws, l, "Symboles de SEE", s
+        If Not SondeLancee("SondeFolio") Then
+            s = "non lu (SEE ne répondait plus)"
+        ElseIf Len(mFolioLu) > 0 Then
             s = "« " & mFolioLu & " » : " & mNbSymboles & " symbole(s), " & mNbSegments & " segment(s) de connexion, " & _
                 mNbGraphiques & " objet(s) graphique(s) lus (feuille Sonde_Folio)"
         Else
@@ -312,11 +508,20 @@ Private Sub EcrireResultatTest(ByVal imprevu As String)
         LigneResultat ws, l, "Matériel", s
         If mNbSelection > 0 Then
             s = mNbSelection & " objet(s) sélectionné(s) lus, " & mNbMaterielsSelection & " matériel(s) (feuille Sonde_Selection)"
-        Else
+        ElseIf SondeLancee("SondeSelection") Then
+            s = "aucun objet sélectionné lisible dans SEE (feuille Sonde_Selection)"
+        ElseIf SondeLancee("SondeSelection:sautée") Then
             s = "aucun objet sélectionné dans SEE : sautée"
+        Else
+            s = "non lue (SEE ne répondait plus)"
         End If
         LigneResultat ws, l, "Sélection", s
-        LigneResultat ws, l, "Méthodes (XML)", mNbXML & " sur 6 lus (feuille Sonde_XML)"
+        If SondeLancee("SondeMethodes") Then
+            s = mNbXML & " sur 6 lus (feuille Sonde_XML)"
+        Else
+            s = "non lues (SEE ne répondait plus)"
+        End If
+        LigneResultat ws, l, "Méthodes (XML)", s
     End If
     etapes = Split(mEtapesTest, vbLf)
     s = "Étapes"
@@ -339,11 +544,18 @@ Private Sub EcrireResultatTest(ByVal imprevu As String)
     End If
     LigneResultat ws, l, "À vérifier", "Ce classeur contient ce qu'Excel a lu dans SEE (le projet ouvert, son folio actif, les " & _
         "symboles et les réglages de l'environnement). Si ce n'était pas ton projet d'essai, dis-le-moi avant de l'envoyer."
-    LigneResultat ws, l, "Et maintenant", "Enregistre ce fichier (Ctrl+S), ferme-le et envoie-le-moi."
+    LigneResultat ws, l, "Et maintenant", Replace(consigne, vbCrLf, vbLf)
     ws.Cells(1, 1).Font.Bold = True
     ws.Columns(1).ColumnWidth = 20
     ws.Columns(2).ColumnWidth = 130
     ws.Columns(2).WrapText = True
+    Montrer ws
+End Sub
+
+' Montre une feuille : son classeur d'abord (Excel peut avoir un autre classeur actif).
+Private Sub Montrer(ByVal ws As Object)
+    On Error Resume Next
+    ThisWorkbook.Activate
     ws.Activate
 End Sub
 
@@ -486,6 +698,7 @@ Public Sub SondeApplication()
         Ecrire Array("Projet", "GetProject", "aucun projet ouvert (ou erreur : " & gDerniereErreur & ")")
         mProjetLu = "aucun projet ouvert dans le SEE joint" & IIf(Len(gDerniereErreur) > 0, " (dernière erreur : " & gDerniereErreur & ")", "")
     Else
+        mProjetOuvert = True
         mProjetLu = "« " & LireProp(prj, "Name") & " »"
         For Each nom In Array("Name", "EnvironmentName", "IsReadOnly", "IsProjectReadOnly", "IsModified", "Level", "Step")
             Ecrire Array("Projet", CStr(nom), LirePropOuMethode(prj, CStr(nom)))
@@ -901,9 +1114,14 @@ Private Function MaterielsDuPorteur(ByVal n As Long, ByVal porteur As String, By
     Dim coll As Object, e As Variant, s As String, classe As String, code As String, qte As String
     Dim nouveau As Boolean, cle As String
     MaterielsDuPorteur = ""
-    Set coll = SEE_MaterielsDe(obj)
-    If coll Is Nothing Then
+    If Not SEE_LireMateriels(obj, coll) Then
+        ' l'erreur de CET appel (SEE_LireMateriels vient de la noter dans gDerniereErreur)
         MaterielsDuPorteur = "#ERR " & gDerniereErreur
+        Exit Function
+    End If
+    If coll Is Nothing Then
+        ' l'appel a marché mais SEE n'a rien rendu (rien d'associé ?) : ce n'est pas une erreur
+        MaterielsDuPorteur = "(aucun : Nothing)"
         Exit Function
     End If
     nouveau = True
@@ -1178,7 +1396,8 @@ Public Function DossierDesFichiers() As String
     p = Environ$("TEMP")
     If Len(p) = 0 Then p = CurDir$
     DossierDesFichiers = p
-    Journal gEtape, "fichiers", "", raison & " : les fichiers sont écrits dans " & p, -1, "dossier TEMP"
+    ' pas une panne (pas d'Err.Number : « Ce qui a échoué » ne le compte pas) : les XML sont aussi dans la feuille Sonde_XML
+    Journal gEtape, "fichiers", "", raison & " : les fichiers sont écrits dans " & p & " (et les XML dans la feuille Sonde_XML)"
 End Function
 
 ' Écrit un texte en UTF-8 (ADODB.Stream), sinon en ANSI ; rend Vrai si c'est fait.
