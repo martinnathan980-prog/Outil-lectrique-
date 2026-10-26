@@ -109,6 +109,19 @@ tests/banc-vba/lancer.sh       LES MÊMES MACROS EXÉCUTÉES, dans LibreOffice (
                                panne, Remplacer, sauvegardes, simulation sans aucune écriture, variantes de paquet) ; hors de
                                tests/toutes.js (il demande LibreOffice et python3-uno, environ sept minutes) ; voir son LISEZMOI :
                                il prouve la cohérence du code, pas le comportement du vrai SEE ni d'Excel
+node tests/classeur.js         LE CLASSEUR PILOTE TOUT PRÊT (see/classeur.js : Pilote-SEE.xlsm, les macros déjà dedans), sans Excel
+                               ni dépendance, relu par des lecteurs écrits pour le test : le zip (CRC), le classeur OOXML (XML bien
+                               formé, types « macroEnabled » et vbaProject, relations, codeName du classeur et de la feuille
+                               accordés aux modules de document, ordre des éléments, le bouton : une forme dont la macro est
+                               [0]!TesterSEE, une macro publique sans argument d'un module standard ; rien ne se lance à
+                               l'ouverture) ; le fichier composé [MS-CFB] (en-tête, FAT, chaînes, arbre du répertoire rangé,
+                               mini-flux ; relu aussi par SheetJS) ; le projet [MS-OVBA] : _VBA_PROJECT, les 63 enregistrements de
+                               VBA/dir un par un, PROJECT (CMG, DPB, GC déchiffrés : non protégé, sans mot de passe, visible),
+                               PROJECTwm, et le texte de chaque module décompressé par un décompresseur écrit à part, comparé
+                               octet pour octet aux .bas ; la compression (les trois exemples de la spécification au bit près,
+                               des allers-retours), le chiffrement (l'exemple de la spécification et un projet d'Excel), la sortie
+                               déterministe, le kit (le classeur en tête) ; le contrôleur éprouvé par seize fautes injectées.
+                               VBA_DOSSIER=… pour d'autres .bas. Il ne prouve pas qu'Excel ouvre le classeur (voir see/LISEZMOI.md)
 node tests/couverture.js       CE QUE L'OUTIL VÉRIFIE, ET S'IL VÉRIFIE TOUT : sur l'exemple embarqué et sur un contrat inventé plus riche
                                (huit disjoncteurs dont un sans profil, un sans part number, un tripolaire ; EN 2997, EN 3645, EN 3646,
                                EN 4165, ASNE0059 ; E0599 et NSA937901 ; deux prises en chaîne ; AD16, AM6, un fil sans type, un type

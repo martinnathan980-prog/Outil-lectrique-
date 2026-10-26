@@ -1,52 +1,79 @@
 ﻿KIT SEE - A LIRE D'ABORD
 ========================
 
-Ce kit sert à automatiser la saisie des plans dans SEE Electrical Expert.
-On avance étape par étape. Pour l'instant, fais SEULEMENT l'étape 1.
-Elle prend environ 15 minutes et ne modifie rien sur le PC ni dans SEE.
+Ce kit sert à préparer l'automatisation de tes plans dans SEE.
+Aujourd'hui, il n'y a qu'UN fichier à ouvrir : Pilote-SEE.xlsm.
+Compte environ 20 minutes.
+Fais tout sur un projet d'essai, jamais sur un vrai projet.
 
 
-CE QU'IL Y A DANS LE KIT
-------------------------
-  1-Diagnostic     -> l'étape 1 (à faire maintenant)
-  2-Pilote-Excel   -> l'étape 2 (plus tard, je te dirai quoi faire)
-  3-Atelier        -> ton Atelier Schéma, avec le nouveau bouton
-                      « Exporter pour SEE » (étape 3, plus tard)
+ÉTAPE 1 : SORTIR LE KIT DU ZIP (2 minutes)
+------------------------------------------
+1. Fais un clic droit sur « Kit-SEE.zip ».
+2. Clique sur « Propriétés ».
+3. En bas de l'onglet « Général », s'il y a une case « Débloquer » : coche-la.
+4. Clique sur OK.
+5. Fais de nouveau un clic droit sur « Kit-SEE.zip ».
+6. Clique sur « Extraire tout... ».
+7. Clique sur « Extraire ».
+8. Un dossier « Kit-SEE » s'ouvre. Travaille dans ce dossier.
+   N'ouvre rien directement depuis le zip : ça ne marcherait pas.
 
 
-ÉTAPE 1 : LE DIAGNOSTIC DU PC (15 minutes, ne modifie rien)
------------------------------------------------------------
-But : savoir si ton PC permet de commander SEE automatiquement.
+ÉTAPE 2 : DESSINER UN PETIT PLAN BIDON DANS SEE (10 minutes)
+------------------------------------------------------------
+1. Ouvre SEE Electrical Expert, comme d'habitude.
+2. Crée un projet d'essai. Pas un vrai projet.
+3. Dans un folio vide, dessine à la main, comme tu le fais d'habitude :
+4. Une première forme, avec son device.
+5. Une deuxième forme, avec son device.
+6. Deux ou trois traits entre ces deux formes.
+7. Une masse.
+8. Enregistre.
+9. Laisse SEE ouvert, sur ce folio.
 
-1. Si ce n'est pas déjà fait : clic droit sur « Kit-SEE.zip » > Propriétés.
-   En bas de l'onglet Général, s'il y a une case « Débloquer », coche-la,
-   puis OK. Ensuite : clic droit sur « Kit-SEE.zip » > « Extraire tout... »
-   > « Extraire ». (Ne lance rien depuis l'intérieur du zip sans l'avoir
-   extrait : ça ne marcherait pas.)
 
-2. Ouvre le dossier « 1-Diagnostic » et double-clique sur « diagnostic »
-   (diagnostic.cmd).
-   - Si une fenêtre bleue « Windows a protégé votre ordinateur » apparaît :
-     clique sur « Informations complémentaires », puis « Exécuter quand même ».
-   - Si Windows refuse complètement : ne force rien, et dis-le-moi.
+ÉTAPE 3 : LE TEST (5 minutes)
+-----------------------------
+1. Dans le dossier « Kit-SEE », double-clique sur « Pilote-SEE.xlsm ».
+2. Une barre jaune apparaît en haut : clique sur « Activer le contenu ».
+3. Clique sur le gros bouton vert « TESTER SEE ».
+4. Attends le message « C'est fini ». Ne touche à rien pendant ce temps.
+5. Clique sur OK.
+6. Appuie sur Ctrl+S pour enregistrer.
+7. Ferme Excel.
+8. Envoie-moi le fichier « Pilote-SEE.xlsm ».
+   Si la messagerie le refuse : clic droit sur le fichier,
+   « Envoyer vers », « Dossier compressé », et envoie-moi ce zip.
 
-3. Une fenêtre noire s'ouvre. Attends sans la fermer : une à deux minutes en
-   général, six au plus.
 
-4. Le Bloc-notes s'ouvre tout seul sur « diagnostic-see.txt ». C'est le
-   rapport. Il ne contient ni ton nom, ni celui du PC, ni tes projets
-   (ils sont remplacés par <UTILISATEUR>, <POSTE>...).
-   Dans la fenêtre noire, appuie sur Entrée pour la fermer.
+SI ÇA BLOQUE
+------------
+Une barre ROUGE « Microsoft a bloqué l'exécution des macros » :
+1. Ferme Excel.
+2. Fais un clic droit sur « Pilote-SEE.xlsm ».
+3. Clique sur « Propriétés ».
+4. En bas, coche « Débloquer ».
+5. Clique sur OK.
+6. Rouvre le fichier et reprends l'étape 3.
 
-5. Ouvre SEE Electrical Expert comme d'habitude, puis le menu d'aide
-   (« ? » ou « Aide ») > « À propos ». Note la version exacte
-   (par exemple « V5R2 SP5 ») ou prends la fenêtre en photo.
-   Ferme SEE.
+Le bouton ne fait rien :
+1. Appuie sur Alt+F8.
+2. Choisis « TesterSEE ».
+3. Clique sur « Exécuter ».
 
-6. Envoie-moi le rapport « diagnostic-see.txt » (le fichier, ou tout son
-   texte copié-collé : Ctrl+A puis Ctrl+C dans le Bloc-notes) et la version
-   de SEE. Si tu as un doute sur ce qu'on a le droit de faire sortir du
-   bureau, montre d'abord le rapport à ton responsable : il ne contient que
-   des noms de logiciels et des réglages de Windows.
+Toujours la barre rouge, un refus, ou un message d'erreur :
+1. Ne force rien.
+2. Prends l'écran en photo (avec ton téléphone, c'est très bien).
+3. Envoie-moi la photo.
 
-C'est tout pour l'étape 1. N'ouvre pas encore les autres dossiers.
+Un doute sur ce qu'on a le droit de faire sortir du bureau :
+montre d'abord le fichier à ton responsable.
+
+
+LE RESTE DU KIT : N'Y TOUCHE PAS AUJOURD'HUI
+--------------------------------------------
+  Pour-plus-tard                  ton Atelier Schéma, avec le bouton
+                                  « Exporter pour SEE ».
+  Seulement-si-je-te-le-demande   le diagnostic du PC, et les macros
+                                  en secours. Seulement si je te le demande.
