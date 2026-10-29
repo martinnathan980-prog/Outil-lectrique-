@@ -8,7 +8,7 @@
    ========================================================================= */
 const { spawnSync } = require('child_process'), path = require('path');
 const MOTEUR = ['barrettes', 'references', 'format-retest'];
-const NAVIGATEUR = ['disjoncteur', 'interface', 'bibliotheque', 'controle', 'fiche', 'fwd', 'memoire', 'relief', 'retouche', 'dessin', 'affinage', 'couverture', 'normes', 'see', 'placement', 'vitesse', 'parcours', 'pdf', 'visio'];
+const NAVIGATEUR = ['disjoncteur', 'interface', 'bibliotheque', 'controle', 'fiche', 'fwd', 'memoire', 'relief', 'retouche', 'dessin', 'affinage', 'couverture', 'normes', 'see', 'placement', 'vitesse', 'parcours', 'pdf', 'visio', 'ux'];
 const args = process.argv.slice(2), fs = require('fs');
 const voulues = !args.length ? [...MOTEUR, ...NAVIGATEUR] : args.flatMap(a => a === 'moteur' ? MOTEUR : a === 'navigateur' ? NAVIGATEUR : [a]);
 const existe = n => fs.existsSync(path.join(__dirname, n + '.js'));

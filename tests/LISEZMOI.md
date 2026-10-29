@@ -189,6 +189,7 @@ node tests/visio.js            LES SCHÉMAS VISIO, DANS LES DEUX SENS (08-visio,
                                plan », un .vsdx glissé sur la bibliothèque, un .vsd d'avant 2013 et un faux .vsdx ; aucune requête
                                réseau, aucune erreur. --images=dossier : les captures. L'écriture place d'abord les folios que
                                l'exemple n'a pas encore dessinés : la batterie dure environ une minute
+node tests/ux.js               L'ERGONOME, chiffré, en 1440 et 1920, clair et sombre, sur les écrans principaux (accueil, bibliothèque, plan, chaque fiche, la bulle d'un « ? », le récapitulatif et ses onglets, l'index, la recherche, le menu et ses sous-menus, les raccourcis, Vos fichiers, Normes, Bible, Hypothèses) : contrastes LUS À L'ÉCRAN (texte 4,5:1, gros texte, icône, bord de champ 3:1), cibles ≥ 24 px au clic, un nom et une bulle (qui paraît à la souris ET au clavier) pour chaque icône seule, aucun texte coupé sans bulle, rien de caché au point de clic, le focus visible (contour ou ombre ≥ 3:1), Tab jamais sur l'invisible, Échap qui ferme et rend le clavier, le folio lisible à 100 % (9 px), chaque calibre du cadran qui se choisit, rien qui bouge sous prefers-reduced-motion, aucune erreur ; chaque défaut avec son écran et son sélecteur. Elle ÉCHOUE tant qu'un défaut reste : c'est le juge des corrections. --ecrans=, --passes=1440-clair,…, --captures=dossier, --court
 ```
 
 L'outil s'ouvre sur la BIBLIOTHÈQUE (ni l'exemple, ni une page qui explique) : une batterie qui lit
