@@ -10,6 +10,10 @@ Attribute VB_Name = "SEE_Pilote"
 '    EssaiDessin     un folio d'essai (FolioEssai) : un rectangle aux coins de
 '                    la zone, une ligne, des textes, en objets graphiques, pour
 '                    valider l'origine, le sens de y et l'échelle
+'    EssaiDessinReel LE BOUTON 2 DU CLASSEUR (« 2. SEE DESSINE ») : le même
+'                    essai POUR DE VRAI, quel que soit le réglage Simulation,
+'                    après UNE question qui nomme le projet ouvert dans SEE ;
+'                    puis le folio dessiné est relu (RelireFolio, Sonde_Folio)
 '    EssaiSymboles   sur ce folio : une boîte, deux broches recalées, un fil
 '    DessinerPaquet  demande le paquet, dessine les folios choisis (réglage
 '                    Folios), avec reprise : un folio est créé sous un nom
@@ -91,27 +95,10 @@ Private mNbMateriels As Long    ' matériels associés et relus, ou déjà là (en si
 
 ' Un folio d'essai en objets graphiques seulement.
 Public Sub EssaiDessin()
-    Dim fl As Double, fh As Double
     On Error GoTo Plantage
     If Not Preparer("EssaiDessin") Then GoTo Fin
     If Not OuvrirFolioEssai() Then GoTo Fin
-    fl = 420
-    fh = 297
-    Contexte "EssaiDessin", Reglage("FolioEssai", FOLIO_ESSAI_DEFAUT)
-    Journal gEtape, gObjet, "", "attendu : le cadre de la feuille de l'Atelier (0,0)-(420,297) sur la zone ; une diagonale " & _
-        "partant du coin HAUT GAUCHE ; un rectangle de 100 x 50 mm à (100, 50) ; des textes qui disent où ils sont"
-    DessinerRectangle 0, 0, fl, fh, "cadre de la feuille (420 x 297)"
-    If Not Pause("Le cadre (0,0)-(420,297) est posé. Il doit couvrir la zone de travail du cartouche.") Then GoTo Fin
-    DessinerLigne 0, 0, 100, 50, "diagonale depuis le coin haut gauche"
-    If Not Pause("La diagonale part du coin HAUT GAUCHE vers le bas à droite. Si elle part d'en bas : SensY = -1 (ou OrigineY).") Then GoTo Fin
-    DessinerTexte "HAUT GAUCHE (10 ; 10)", 10, 10, 0, "texte en haut à gauche"
-    DessinerTexte "BAS DROITE (380 ; 287)", 380, 287, 0, "texte en bas à droite"
-    If Not Pause("Deux textes : HAUT GAUCHE et BAS DROITE. Sont-ils à leur place ?") Then GoTo Fin
-    DessinerRectangle 100, 50, 200, 100, "rectangle 100 x 50 mm"
-    DessinerTexte "x=100 y=50 : rectangle 100 x 50", 150, 45, 0, "légende du rectangle"
-    DessinerTexte "vertical (angle 90)", 60, 150, 90, "texte vertical"
-    MettreAJourFolio
-    Pause "Le rectangle de 100 x 50 mm est posé : mesure-le dans SEE pour vérifier l'échelle."
+    DessinerMotifEssai
 Fin:
     Terminer "EssaiDessin"
     Exit Sub
@@ -119,6 +106,92 @@ Plantage:
     Journal gEtape, gObjet, "(macro)", "ARRÊT IMPRÉVU", Err.Number, Err.Description
     Resume Fin
 End Sub
+
+' LE BOUTON 2 DU CLASSEUR (« 2. SEE DESSINE ») : l'essai de dessin POUR DE
+' VRAI, quel que soit le réglage Simulation (pour cet essai seulement : la
+' feuille Reglages n'est pas changée), après UNE question qui nomme le projet
+' ouvert dans SEE et le folio qui sera créé (OK : dessiner ; Annuler, le
+' bouton par défaut : rien n'est écrit). Puis le folio dessiné est relu
+' (RelireFolio, feuille Sonde_Folio) : les positions que SEE a gardées disent
+' l'origine, le sens de y et l'échelle, sans rien mesurer à la main.
+Public Sub EssaiDessinReel()
+    Dim nomProjet As String, nomFolio As String, ancien As Boolean
+    On Error GoTo Plantage
+    mMessageFin = ""
+    mCoordProvisoires = False
+    ' les feuilles Reglages et Journal, si le bouton 1 n'a pas encore tourné (sans sa boîte : elle va au journal)
+    ancien = gSansDialogue
+    gSansDialogue = True
+    InitialiserClasseur
+    gSansDialogue = ancien
+    OuvrirJournal "EssaiDessinReel"
+    gSimulation = False
+    Journal "EssaiDessinReel", "", "", "bouton 2 : dessin POUR DE VRAI (Simulation = N pour cet essai seulement ; " & _
+        "la feuille Reglages n'est pas changée)"
+    Set gPaquet = Nothing
+    Set gEntete = Nothing
+    If Not PreparerSEE() Then
+        AjouterMessageFin "Rien n'a été dessiné (voir la feuille Journal)."
+        GoTo Fin
+    End If
+    nomProjet = LireProp(mPrj, "Name")
+    nomFolio = Reglage("FolioEssai", FOLIO_ESSAI_DEFAUT)
+    Contexte "EssaiDessinReel", nomProjet
+    If Dialogue("Excel va DESSINER dans le projet ouvert dans SEE : « " & nomProjet & " »." & vbCrLf & _
+            "Il va créer le folio « " & nomFolio & " » et y tracer un cadre, un trait en biais, un rectangle et des textes." & _
+            vbCrLf & vbCrLf & "Est-ce bien ton projet d'essai, et pas un vrai projet ?" & vbCrLf & _
+            "OK : dessiner ; Annuler : ne rien faire.", vbOKCancel + vbQuestion + vbDefaultButton2, "Pilote SEE") <> vbOK Then
+        Journal gEtape, gObjet, "", "arrêté avant tout dessin (réponse Annuler) : rien n'est écrit dans SEE"
+        AjouterMessageFin "Rien n'a été dessiné. Ouvre ton projet d'essai dans SEE, puis reclique sur le bouton 2."
+        GoTo Fin
+    End If
+    If Not OuvrirFolioEssai() Then
+        AjouterMessageFin "Le folio « " & nomFolio & " » n'a pas pu être ouvert ni créé (voir la feuille Journal) : " & _
+            "enregistre ce fichier (Ctrl+S), ferme Excel et envoie-le-moi tel quel."
+        GoTo Fin
+    End If
+    If Not DessinerMotifEssai() Then GoTo Fin
+    If Not mSh Is Nothing Then RelireFolio mSh
+    AjouterMessageFin "Regarde dans SEE le folio « " & nomFolio & " » (double-clic sur son nom dans l'arbre du projet) : " & _
+        "un grand cadre, un trait en biais parti du coin en haut à gauche, un rectangle et des textes. Prends l'écran en " & _
+        "photo si tu peux." & vbCrLf & "Puis enregistre ce fichier (Ctrl+S), ferme Excel et envoie-le-moi (en zip), même " & _
+        "si le dessin n'est pas à sa place : le journal dit tout."
+Fin:
+    Terminer "L'essai de dessin"
+    ' le réglage Simulation reprend sa valeur pour les macros suivantes
+    ChargerReglages
+    Exit Sub
+Plantage:
+    Journal gEtape, gObjet, "(macro)", "ARRÊT IMPRÉVU", Err.Number, Err.Description
+    Resume Fin
+End Sub
+
+' Le motif de l'essai, sur le folio ouvert par OuvrirFolioEssai, en objets
+' graphiques seulement : le cadre de la feuille aux coins de la zone, une
+' diagonale, des textes, un rectangle de 100 x 50 mm. Faux si le pas à pas a
+' été arrêté.
+Private Function DessinerMotifEssai() As Boolean
+    Dim fl As Double, fh As Double
+    DessinerMotifEssai = False
+    fl = 420
+    fh = 297
+    Contexte "EssaiDessin", Reglage("FolioEssai", FOLIO_ESSAI_DEFAUT)
+    Journal gEtape, gObjet, "", "attendu : le cadre de la feuille de l'Atelier (0,0)-(420,297) sur la zone ; une diagonale " & _
+        "partant du coin HAUT GAUCHE ; un rectangle de 100 x 50 mm à (100, 50) ; des textes qui disent où ils sont"
+    DessinerRectangle 0, 0, fl, fh, "cadre de la feuille (420 x 297)"
+    If Not Pause("Le cadre (0,0)-(420,297) est posé. Il doit couvrir la zone de travail du cartouche.") Then Exit Function
+    DessinerLigne 0, 0, 100, 50, "diagonale depuis le coin haut gauche"
+    If Not Pause("La diagonale part du coin HAUT GAUCHE vers le bas à droite. Si elle part d'en bas : SensY = -1 (ou OrigineY).") Then Exit Function
+    DessinerTexte "HAUT GAUCHE (10 ; 10)", 10, 10, 0, "texte en haut à gauche"
+    DessinerTexte "BAS DROITE (380 ; 287)", 380, 287, 0, "texte en bas à droite"
+    If Not Pause("Deux textes : HAUT GAUCHE et BAS DROITE. Sont-ils à leur place ?") Then Exit Function
+    DessinerRectangle 100, 50, 200, 100, "rectangle 100 x 50 mm"
+    DessinerTexte "x=100 y=50 : rectangle 100 x 50", 150, 45, 0, "légende du rectangle"
+    DessinerTexte "vertical (angle 90)", 60, 150, 90, "texte vertical"
+    MettreAJourFolio
+    Pause "Le rectangle de 100 x 50 mm est posé : mesure-le dans SEE pour vérifier l'échelle."
+    DessinerMotifEssai = True
+End Function
 
 ' Sur le folio d'essai : une boîte, deux broches recalées, un fil entre elles,
 ' selon les réglages EQUIPEMENT.* et TypeConnexion.

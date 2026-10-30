@@ -727,3 +727,52 @@ Public Function BancUnite() As String
 E:
     BancUnite = r & " ERREUR VBA " & Err.Number & " " & Err.Description
 End Function
+' ---------------------------------------------------------------------------- le bouton 2 du classeur
+' Une cellule de Sonde_Folio (20 premières lignes, 6 colonnes) qui contient ce texte : « oui » ou « non ».
+Public Function SondeFolioNomme(ByVal texte As String) As String
+    Dim ws As Object, i As Long, j As Long
+    SondeFolioNomme = "absente"
+    If Not FeuilleExiste("Sonde_Folio") Then Exit Function
+    SondeFolioNomme = "non"
+    Set ws = ThisWorkbook.Worksheets("Sonde_Folio")
+    For i = 1 To 20
+        For j = 1 To 6
+            If InStr(1, CStr(ws.Cells(i, j).Value), texte) > 0 Then SondeFolioNomme = "oui"
+        Next j
+    Next i
+End Function
+
+' EssaiDessinReel (le bouton 2) : POUR DE VRAI malgré Simulation = O (le réglage reste O après), UNE question qui
+' nomme le projet et le folio (dite au journal sous gSansDialogue, réponse OK), le folio d'essai créé et dessiné,
+' puis relu dans Sonde_Folio sans que la relecture vide le journal. Puis sans SEE : rien d'écrit, et il le dit.
+Public Function BancBouton2(ByVal v4 As Boolean) As String
+    Dim n0 As Long, r As String
+    On Error GoTo E
+    ReglerFaux "1", v4
+    FixerReglage "Simulation", "O"
+    gSansDialogue = True
+    n0 = gTrace.Count
+    EssaiDessinReel
+    r = "AddSheet " & CompterDepuis("AddSheet", n0) & " ; graphiques " & CompterDepuis("AddGraphicObject|", n0) & _
+        " ; questions " & JournalContient("Est-ce bien ton projet d'essai") & _
+        " ; projet nommé " & JournalContient("Excel va DESSINER dans le projet ouvert dans SEE : « ") & _
+        " ; début du journal gardé " & JournalContient("bouton 2 : dessin POUR DE VRAI") & _
+        " ; relecture " & JournalContient("Relecture du folio") & _
+        " ; Sonde_Folio ESSAI_PILOTE " & SondeFolioNomme("ESSAI_PILOTE") & _
+        " ; fin dite " & JournalContient("Regarde dans SEE le folio") & _
+        " ; Simulation après " & IIf(gSimulation, "O", "N") & " ; folios " & NomsDesFoliosSEE()
+    ' sans SEE (aucun SEE ouvert, aucun à lancer) : rien n'est écrit, la fin le dit
+    InitFaux v4
+    Set gApp = Nothing
+    gEstAutomation = False
+    gVersionAPI = 0
+    FixerReglage "LancerSEE", "N"
+    n0 = gTrace.Count
+    EssaiDessinReel
+    r = r & " | sans SEE : traces " & (gTrace.Count - n0) & " ; rien dessiné dit " & JournalContient("Rien n'a été dessiné") & _
+        " ; question posée " & JournalContient("Est-ce bien ton projet d'essai")
+    BancBouton2 = r
+    Exit Function
+E:
+    BancBouton2 = r & " ERREUR VBA " & Err.Number & " " & Err.Description & " (étape " & gEtape & " / " & gObjet & ")"
+End Function

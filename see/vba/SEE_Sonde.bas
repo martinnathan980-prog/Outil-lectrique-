@@ -14,8 +14,8 @@ Attribute VB_Name = "SEE_Sonde"
 '                      boîte, écrit la feuille Resultat_Test en tête du
 '                      classeur (ce qui a marché, en clair), puis UNE boîte
 '                      qui dit quoi faire D'APRÈS CE QUI A ÉTÉ LU : relancer
-'                      (SEE fermé, pas de folio affiché...) ou enregistrer
-'                      le classeur et me l'envoyer.
+'                      (SEE fermé, pas de projet ouvert...) ou, « BRAVO »,
+'                      passer au bouton 2 (ou enregistrer et me l'envoyer).
 '    SondeApplication  versions, chemins, environnement (Unit !), projet,
 '                      cartouches (zone de travail), stratégie de connexion
 '    SondeSymboles     familles et symboles de l'environnement
@@ -29,6 +29,9 @@ Attribute VB_Name = "SEE_Sonde"
 '                      types de câbles, connecteurs, symboles par défaut),
 '                      dans des fichiers à côté du classeur ET dans la feuille
 '                      Sonde_XML (le classeur seul suffit à tout renvoyer)
+'    RelireFolio       (appelée par le bouton 2, EssaiDessinReel) relit le
+'                      folio que le pilote vient de dessiner, dans Sonde_Folio,
+'                      sans boîte et sans vider le journal
 '
 '  But : connaître l'unité, l'origine et le sens de y, les formes que le
 '  bureau utilise, la chaîne de type de connexion, la sémantique des repères,
@@ -169,8 +172,10 @@ End Function
 '  suivantes sont sautées (aucun autre SEE n'est démarré en cours de test).
 '  Il finit par la feuille Resultat_Test, en tête du classeur, qui dit en
 '  clair ce qui a été lu, puis UNE boîte, choisie d'après ce qui a été lu :
-'  relancer (SEE fermé, pas de projet ni de folio affiché...) ou enregistrer
-'  le classeur et me l'envoyer. La même consigne finit Resultat_Test.
+'  relancer (SEE fermé, pas de projet ouvert...) ou, « BRAVO » (SEE joint, un
+'  projet ouvert, même vide), passer au bouton 2 du classeur (EssaiDessinReel),
+'  ou enregistrer le classeur et me l'envoyer. La même consigne finit
+'  Resultat_Test.
 '  LECTURE SEULE : il n'appelle que les sondes ; rien n'est écrit dans SEE.
 ' ============================================================================
 Public Sub TesterSEE()
@@ -254,33 +259,29 @@ Private Function ConsigneFinale(ByVal imprevu As String) As String
             ", ferme-le et envoie-le-moi tel quel : la feuille Journal dit où il s'est arrêté."
     ElseIf Not mJoint Then
         ConsigneFinale = "Excel n'a pas trouvé SEE." & vbCrLf & _
-            "- Si SEE était fermé : ouvre-le sur ton projet d'essai, affiche ton folio d'essai, puis relance TesterSEE " & _
-            "(Alt+F8, TesterSEE, Exécuter)." & vbCrLf & _
+            "- Si SEE était fermé : ouvre-le sur ton projet d'essai, puis relance TesterSEE (le bouton 1, ou " & _
+            "Alt+F8, TesterSEE, Exécuter)." & vbCrLf & _
             "- S'il était ouvert : " & LCase$(Left$(enregistrer, 1)) & Mid$(enregistrer, 2) & ", ferme-le et envoie-le-moi : " & _
             "la feuille Journal dit chaque manière essayée et la réponse de Windows, c'est ce qu'il me faut."
     ElseIf SEELanceParLaMacro() Then
         ConsigneFinale = "Excel n'a pas trouvé de SEE ouvert : il en a démarré un lui-même, sans ton projet." & vbCrLf & _
-            "- Si ton SEE était fermé : ferme ce SEE-là, ouvre SEE sur ton projet d'essai, affiche ton folio d'essai, " & _
-            "puis relance TesterSEE (Alt+F8)." & vbCrLf & _
+            "- Si ton SEE était fermé : ferme ce SEE-là, ouvre SEE sur ton projet d'essai, " & _
+            "puis relance TesterSEE (le bouton 1)." & vbCrLf & _
             "- S'il était déjà ouvert : ferme la seconde fenêtre de SEE, puis " & LCase$(Left$(enregistrer, 1)) & _
             Mid$(enregistrer, 2) & ", ferme-le et envoie-le-moi."
     ElseIf Len(mPerdu) > 0 Then
         ConsigneFinale = "SEE a cessé de répondre pendant le test (avant " & mPerdu & ") ; ce qui a été lu avant est gardé." & vbCrLf & _
-            "- Si tu as fermé SEE : rouvre-le sur ton projet d'essai, affiche ton folio d'essai, puis relance TesterSEE (Alt+F8)." & vbCrLf & _
+            "- Si tu as fermé SEE : rouvre-le sur ton projet d'essai, puis relance TesterSEE (le bouton 1)." & vbCrLf & _
             "- Sinon : " & LCase$(Left$(enregistrer, 1)) & Mid$(enregistrer, 2) & ", ferme-le et envoie-le-moi tel quel."
-    ElseIf Not mProjetOuvert Or Len(mFolioLu) = 0 Then
-        ConsigneFinale = "Il manque ton folio : SEE est joint, mais " & _
-            IIf(mProjetOuvert, "aucun folio n'y est affiché", "aucun projet n'y est ouvert") & "." & vbCrLf & _
-            "Dans SEE, ouvre ton projet d'essai et affiche ton folio d'essai, puis relance TesterSEE (Alt+F8) AVANT " & _
-            "d'envoyer le classeur."
-    ElseIf mNbMateriels = 0 Then
-        ConsigneFinale = "Ton folio « " & mFolioLu & " » est lu, mais aucun de ses objets n'a de matériel (référence du catalogue)." & _
-            vbCrLf & "- Si tu peux : dans SEE, associe à la main un matériel à un équipement et à un connecteur de ce folio, " & _
-            "puis relance TesterSEE (Alt+F8)." & vbCrLf & _
-            "- Sinon : " & LCase$(Left$(enregistrer, 1)) & Mid$(enregistrer, 2) & ", ferme-le et envoie-le-moi."
+    ElseIf Not mProjetOuvert Then
+        ConsigneFinale = "Presque : Excel parle bien à SEE, mais aucun projet n'y est ouvert." & vbCrLf & _
+            "Dans SEE, ouvre ton projet d'essai (même vide), puis relance TesterSEE (le bouton 1)."
     Else
-        ConsigneFinale = "C'est fini : SEE est joint et ton folio « " & mFolioLu & " » est lu (" & mNbMateriels & _
-            " matériel(s) trouvé(s)). " & enregistrer & ", ferme-le et envoie-le-moi."
+        ' l'étape 1 est faite : SEE est joint et un projet est ouvert (un projet vide suffit ; un folio lu est un plus)
+        ConsigneFinale = "BRAVO : l'étape 1 est réussie, Excel parle à SEE (projet " & mProjetLu & _
+            IIf(Len(mFolioLu) > 0, ", folio « " & mFolioLu & " » lu", "") & ")." & vbCrLf & _
+            "Étape 2 : si c'est bien ton projet d'essai, clique maintenant sur le bouton bleu « 2. SEE DESSINE »." & vbCrLf & _
+            "(Pour t'arrêter là : " & LCase$(Left$(enregistrer, 1)) & Mid$(enregistrer, 2) & ", ferme-le et envoie-le-moi.)"
     End If
 End Function
 
@@ -492,7 +493,7 @@ Private Sub EcrireResultatTest(ByVal imprevu As String, ByVal consigne As String
             s = "« " & mFolioLu & " » : " & mNbSymboles & " symbole(s), " & mNbSegments & " segment(s) de connexion, " & _
                 mNbGraphiques & " objet(s) graphique(s) lus (feuille Sonde_Folio)"
         Else
-            s = "aucun : " & mFolioRaison & " (ouvre ton folio d'essai dans SEE, puis relance TesterSEE)"
+            s = "aucun : " & mFolioRaison & " (pas grave : un projet ouvert suffit à l'étape 1 ; le bouton 2 dessine un folio)"
         End If
         LigneResultat ws, l, "Folio lu", s
         If mNbMateriels > 0 Then
@@ -501,7 +502,7 @@ Private Sub EcrireResultatTest(ByVal imprevu As String, ByVal consigne As String
                 s = s & " « " & CStr(k) & " » (" & EnLong(mClasses.Item(k), 0) & ")"
             Next k
         ElseIf Len(mFolioLu) > 0 Then
-            s = "aucun matériel (référence du catalogue) associé aux objets du folio : associe-en un à la main sur ton folio d'essai, puis relance"
+            s = "aucun matériel (référence du catalogue) associé aux objets du folio (pas grave pour les étapes 1 et 2)"
         Else
             s = "non lu (aucun folio lu)"
         End If
@@ -869,6 +870,38 @@ Private Sub SondeFolioDe(ByVal parLaVue As Boolean)
     DecrireFolio sh
 Fin:
     FinSonde TITRE_SONDE
+End Sub
+
+' ============================================================================
+'  RelireFolio : relit UN folio donné dans la feuille Sonde_Folio, sans boîte
+'  et sans vider le journal (comme une sonde enchaînée). Le bouton 2
+'  (EssaiDessinReel, SEE_Pilote) l'appelle sur le folio qu'il vient de
+'  dessiner : les positions que SEE a gardées disent l'origine, le sens de y
+'  et l'échelle. LECTURE SEULE.
+' ============================================================================
+Public Sub RelireFolio(ByVal sh As Object)
+    Dim ancien As Boolean
+    Const TITRE_RELECTURE As String = "Relecture du folio"
+    ancien = mEnchaine
+    On Error GoTo Echec
+    mEnchaine = True
+    mJoint = False
+    mFolioLu = ""
+    mFolioRaison = "non lu"
+    If DebutSonde(TITRE_RELECTURE, "Sonde_Folio") Then
+        If sh Is Nothing Then
+            Ecrire Array("Folio", "introuvable", "aucun folio à relire")
+        Else
+            DecrireFolio sh
+        End If
+    End If
+    FinSonde TITRE_RELECTURE
+    mEnchaine = ancien
+    Exit Sub
+Echec:
+    Journal "Relecture", "", "(sonde)", "ARRÊT IMPRÉVU de la relecture (rien n'est écrit dans SEE)", Err.Number, Err.Description
+    Application.ScreenUpdating = True
+    mEnchaine = ancien
 End Sub
 
 ' Le folio de la vue active (Nothing s'il n'y en a pas).

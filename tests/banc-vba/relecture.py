@@ -51,6 +51,9 @@ SCEN = [
     # TesterSEE, le bouton du bureau : sans SEE, avec le faux SEE en V5 et en V4, sans folio affiché, SEE qui cesse
     # de répondre, matériel rendu Nothing
     ('tester', lambda d: lancer(d, 'BancR.BancTester', (PAQUET,)), None),
+    # le bouton 2 du classeur (EssaiDessinReel) : pour de vrai malgré Simulation = O, une question, le folio relu ; puis sans SEE
+    ('bouton 2 V5', lambda d: lancer(d, 'BancR.BancBouton2', (False,)), None),
+    ('bouton 2 V4', lambda d: lancer(d, 'BancR.BancBouton2', (True,)), None),
 ]
 if __name__ == "__main__":
  inconnus = [c for c in choisis if c not in [n for n, _, _ in SCEN]]

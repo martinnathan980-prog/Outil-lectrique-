@@ -1,53 +1,77 @@
 ﻿KIT SEE - A LIRE D'ABORD
 ========================
 
-Ce kit sert à préparer l'automatisation de tes plans dans SEE.
-Aujourd'hui, il n'y a qu'UN fichier à ouvrir : Pilote-SEE.xlsm.
-Compte environ 20 minutes.
-Fais tout sur un projet d'essai, jamais sur un vrai projet.
+Ce kit sert à automatiser tes plans dans SEE, une marche après l'autre.
+Aujourd'hui : la marche 1 (Excel parle à SEE) et la marche 2 (SEE dessine
+tout seul). Un seul fichier à ouvrir : Pilote-SEE.xlsm. Compte 15 minutes.
+Tout se fait dans un projet d'essai VIDE, jamais dans un vrai projet.
 
 
-ÉTAPE 1 : SORTIR LE KIT DU ZIP (2 minutes)
+ÉTAPE A : SORTIR LE KIT DU ZIP (2 minutes)
 ------------------------------------------
-1. Fais un clic droit sur « Kit-SEE.zip ».
-2. Clique sur « Propriétés ».
-3. En bas de l'onglet « Général », s'il y a une case « Débloquer » : coche-la.
-4. Clique sur OK.
-5. Fais de nouveau un clic droit sur « Kit-SEE.zip ».
-6. Clique sur « Extraire tout... ».
-7. Clique sur « Extraire ».
-8. Un dossier « Kit-SEE » s'ouvre. Travaille dans ce dossier.
+1. Enregistre « Kit-SEE.zip » sur ton Bureau.
+2. Fais un clic droit dessus, puis « Propriétés ».
+3. En bas de l'onglet « Général », s'il y a une case « Débloquer » :
+   coche-la, puis clique sur OK.
+4. Fais de nouveau un clic droit sur « Kit-SEE.zip »,
+   puis « Extraire tout... », puis « Extraire ».
+5. Un dossier « Kit-SEE » s'ouvre. Travaille dans ce dossier.
    N'ouvre rien directement depuis le zip : ça ne marcherait pas.
 
 
-ÉTAPE 2 : DESSINER UN PETIT PLAN BIDON DANS SEE (10 minutes)
-------------------------------------------------------------
+ÉTAPE B : CRÉER UN PROJET D'ESSAI VIDE DANS SEE (3 minutes)
+-----------------------------------------------------------
 1. Ouvre SEE Electrical Expert, comme d'habitude.
-2. Crée un projet d'essai. Pas un vrai projet.
-3. Dans un folio vide, dessine à la main, comme tu le fais d'habitude :
-4. Une première forme, avec son device.
-5. Une deuxième forme, avec son device.
-6. Deux ou trois traits entre ces deux formes.
-7. Une masse.
-8. Enregistre.
-9. Laisse SEE ouvert, sur ce folio.
+2. Menu File, puis New Project.
+3. Name : un nom SANS espace ni accent, par exemple TEST_SEE.
+4. Location : NE LA CHANGE PAS. Laisse le dossier que SEE propose : c'est
+   celui où sont déjà vos projets. Ne mets pas le Bureau : SEE le refuse
+   (« Project cannot be created in given location »).
+   Si la case est vide : clique sur le bouton « ... » à côté, et va dans
+   le dossier où sont déjà vos projets (il commence par
+   C:\Users\Public\Documents\IGE+XAO\SEE Electrical Expert V4R3\4.8\Projects).
+5. Le reste : laisse ce que SEE propose. Clique sur OK.
+6. Le projet vide s'ouvre : c'est tout. Pas besoin de dessiner quoi que
+   ce soit. Laisse SEE ouvert sur ce projet.
+   Si SEE refuse encore : prends son message en photo et envoie-la-moi.
 
 
-ÉTAPE 3 : LE TEST (5 minutes)
------------------------------
+ÉTAPE C : LE BOUTON 1, « EXCEL PARLE À SEE » (2 minutes)
+--------------------------------------------------------
 1. Dans le dossier « Kit-SEE », double-clique sur « Pilote-SEE.xlsm ».
 2. Si une barre jaune dit « MODE PROTÉGÉ » :
    clique sur son bouton « Activer la modification ».
 3. Si une barre jaune a un bouton « Activer le contenu » : clique dessus.
    Si c'est une barre ROUGE : va plus bas, à « SI ÇA BLOQUE ».
-4. Clique sur le gros bouton vert « TESTER SEE ».
-5. Attends le message « C'est fini ». Ne touche à rien pendant ce temps.
-6. Clique sur OK.
-7. Appuie sur Ctrl+S pour enregistrer.
-8. Ferme Excel.
-9. Envoie-moi le fichier « Pilote-SEE.xlsm ».
-   Si la messagerie le refuse : clic droit sur le fichier,
-   « Envoyer vers », « Dossier compressé », et envoie-moi ce zip.
+4. Clique sur le gros bouton vert « 1. TESTER SEE ».
+5. Attends le message. Ne touche à rien pendant ce temps.
+   - Il commence par « BRAVO » : clique sur OK et passe à l'étape D.
+   - Sinon : fais ce qu'il dit (le plus souvent : ouvrir le projet
+     d'essai dans SEE, puis recliquer sur le bouton 1). Si ça ne passe
+     toujours pas : clique sur OK et va directement à l'étape E.
+
+
+ÉTAPE D : LE BOUTON 2, « SEE DESSINE TOUT SEUL » (3 minutes)
+------------------------------------------------------------
+1. Clique sur le gros bouton bleu « 2. SEE DESSINE ».
+2. Une question te montre le nom du projet ouvert dans SEE.
+   C'est bien ton projet d'essai : clique sur OK.
+   (Si c'est un vrai projet : clique sur Annuler. Rien ne sera dessiné.)
+3. Attends le message de fin, puis clique sur OK.
+4. Dans SEE, ouvre le folio « ESSAI_PILOTE » : double-clic sur son nom
+   dans l'arbre du projet, à gauche. Tu dois y voir un grand cadre, un
+   trait en biais, un rectangle et des textes, dessinés par Excel.
+5. Prends l'écran de SEE en photo (ton téléphone, c'est très bien),
+   même si le dessin est de travers ou vide : c'est justement ce que je
+   veux voir.
+
+
+ÉTAPE E : ME RENVOYER LE FICHIER (2 minutes)
+--------------------------------------------
+1. Dans Excel, appuie sur Ctrl+S pour enregistrer, puis ferme Excel.
+2. Fais un clic droit sur « Pilote-SEE.xlsm », puis « Envoyer vers »,
+   puis « Dossier compressé » : un « Pilote-SEE.zip » apparaît à côté.
+3. Envoie-moi ce zip, et la photo de l'écran de SEE.
 
 
 SI ÇA BLOQUE
@@ -58,14 +82,14 @@ Une barre ROUGE « Microsoft a bloqué l'exécution des macros » :
 3. Clique sur « Propriétés ».
 4. En bas, coche « Débloquer ».
 5. Clique sur OK.
-6. Rouvre le fichier et reprends l'étape 3.
+6. Rouvre le fichier et reprends l'étape C.
 
 Le bouton ne fait rien :
 1. Regarde en haut : s'il reste une barre jaune, clique sur son bouton
    (« Activer la modification » ou « Activer le contenu »),
-   puis reclique sur « TESTER SEE ».
+   puis reclique sur le bouton.
 2. S'il n'y a plus de barre : appuie sur Alt+F8.
-3. Choisis « TesterSEE ».
+3. Choisis « TesterSEE » (le bouton 1) ou « EssaiDessinReel » (le bouton 2).
 4. Clique sur « Exécuter ».
 
 Toujours la barre rouge, un refus, ou un message d'erreur :
@@ -75,11 +99,3 @@ Toujours la barre rouge, un refus, ou un message d'erreur :
 
 Un doute sur ce qu'on a le droit de faire sortir du bureau :
 montre d'abord le fichier à ton responsable.
-
-
-LE RESTE DU KIT : N'Y TOUCHE PAS AUJOURD'HUI
---------------------------------------------
-  Pour-plus-tard                  ton Atelier Schéma, avec le bouton
-                                  « Exporter pour SEE ».
-  Seulement-si-je-te-le-demande   le diagnostic du PC, et les macros
-                                  en secours. Seulement si je te le demande.

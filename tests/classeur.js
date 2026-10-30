@@ -288,16 +288,23 @@ function controler(parties) {
   const rd = rel('xl/worksheets/_rels/sheet1.xml.rels', R + 'drawing');
   verif('la feuille porte un dessin (drawing1.xml)', rd && rd.cible === '../drawings/drawing1.xml' && premier(ws, 'drawing')['r:id'] === rd.id && parties.has('xl/drawings/drawing1.xml'));
   const dessin = texte('xl/drawings/drawing1.xml'), formes = elements(dessin, 'xdr:sp'), macros = [...dessin.matchAll(/\smacro="([^"]*)"/g)].map(m => m[1]);
-  verif('le dessin : une seule forme, ancrée, qui dit « TESTER SEE »', formes.length === 1 && /<xdr:twoCellAnchor>/.test(dessin) && /<a:t>TESTER SEE<\/a:t>/.test(dessin), formes.length + ' forme(s)');
-  verif('la forme est affectée à la macro [0]!TesterSEE, comme Excel l\'écrit (une seule macro dans le dessin)', egaux(macros, ['[0]!TesterSEE']), macros.join(' '));
+  const textesFormes = [...dessin.matchAll(/<a:t>([^<]*)<\/a:t>/g)].map(m => m[1]), ancres = [...dessin.matchAll(/<xdr:from><xdr:col>\d+<\/xdr:col><xdr:colOff>\d+<\/xdr:colOff><xdr:row>(\d+)<\/xdr:row>[\s\S]*?<xdr:to><xdr:col>\d+<\/xdr:col><xdr:colOff>\d+<\/xdr:colOff><xdr:row>(\d+)<\/xdr:row>/g)].map(m => [+m[1], +m[2]]);
+  verif('le dessin : deux formes ancrées, « 1. TESTER SEE » puis « 2. SEE DESSINE »', formes.length === 2 && (dessin.match(/<xdr:twoCellAnchor>/g) || []).length === 2 && egaux(textesFormes, ['1. TESTER SEE', '2. SEE DESSINE']), formes.length + ' forme(s) : ' + textesFormes.join(', '));
+  verif('les formes sont affectées aux macros [0]!TesterSEE puis [0]!EssaiDessinReel, comme Excel l\'écrit', egaux(macros, ['[0]!TesterSEE', '[0]!EssaiDessinReel']), macros.join(' '));
   const partage = [...texte('xl/sharedStrings.xml').matchAll(/<t>([^<]*)<\/t>/g)].map(m => m[1].replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"'));
   const cellule = r => { const m = new RegExp('<c r="B' + r + '"[^>]*t="s"><v>(\\d+)</v></c>').exec(ws); return m ? partage[+m[1]] : ''; };
-  const consignes = [5, 6, 7, 8].map(cellule);
-  verif('la feuille Accueil : un titre, puis quatre consignes numérotées (SEE ouvert, le bouton, « C\'est fini », Ctrl+S)',
-    /^Pilote SEE/.test(cellule(2)) && consignes.every((c, i) => c.startsWith(i + 1 + '.')) && /SEE/.test(consignes[0]) && /TESTER SEE/.test(consignes[1]) && /C'est fini/.test(consignes[2]) && /Ctrl\+S/.test(consignes[3]),
-    consignes.map(c => c.slice(0, 24)).join(' | '));
-  verif('en petit, dans l\'ordre des barres d\'Office : MODE PROTÉGÉ (Activer la modification), Activer le contenu, la barre rouge (Propriétés, Débloquer), Alt+F8 (TesterSEE, Exécuter)',
-    [14, 15, 16, 17, 18].map(cellule).join(' ').match(/MODE PROTÉGÉ.*Activer la modification.*Activer le contenu.*bloqué l'exécution des macros.*Propriétés.*Débloquer.*Alt\+F8.*TesterSEE.*Exécuter/) !== null);
+  const etapes = [5, 12, 18].map(cellule);
+  verif('la feuille Accueil : un titre, puis trois étapes (projet d\'essai ouvert et bouton vert 1 ; « BRAVO » et bouton bleu 2 ; Ctrl+S)',
+    /^Pilote SEE/.test(cellule(2)) && etapes.every((c, i) => c.startsWith('ÉTAPE ' + (i + 1) + '.')) && /SEE.*projet d'essai/.test(etapes[0]) && /bouton vert 1/.test(cellule(6))
+      && /BRAVO.*bouton bleu 2.*OK/.test(etapes[1]) && /Ctrl\+S/.test(etapes[2]),
+    etapes.map(c => c.slice(0, 24)).join(' | '));
+  // chaque bouton couvre des lignes vides de la feuille, sous la consigne de son étape et au-dessus de la suivante
+  const sousEtape = [[5, 12], [12, 18]], lignesTexte = new Set([...ws.matchAll(/<c r="B(\d+)"/g)].map(m => +m[1]));
+  verif('chaque bouton sur des lignes vides, entre la consigne de son étape et la suivante (ancres de ligne 0 : la ligne r est r-1)',
+    ancres.length === 2 && ancres.every(([de, a], k) => de + 1 > sousEtape[k][0] && a < sousEtape[k][1] && a > de
+      && Array.from({ length: a - de }, (_, i) => de + 1 + i).every(r => !lignesTexte.has(r))), ancres.map(x => x.join('-')).join(' '));
+  verif('en petit, dans l\'ordre des barres d\'Office : MODE PROTÉGÉ (Activer la modification), Activer le contenu, la barre rouge (Propriétés, Débloquer), Alt+F8 (TesterSEE, EssaiDessinReel, Exécuter)',
+    [20, 21, 22, 23, 24].map(cellule).join(' ').match(/MODE PROTÉGÉ.*Activer la modification.*Activer le contenu.*bloqué l'exécution des macros.*Propriétés.*Débloquer.*Alt\+F8.*TesterSEE.*EssaiDessinReel.*Exécuter/) !== null);
   // --- le fichier composé
   if (!parties.has('xl/vbaProject.bin')) return res;
   let cfb = null, erreurCfb = ''; try { cfb = lireCfb(parties.get('xl/vbaProject.bin')); } catch (e) { erreurCfb = e.message; }
@@ -373,10 +380,10 @@ function controler(parties) {
   verif('PROJECTwm : les noms en Windows-1252 et en UTF-16, dans l\'ordre de PROJECTMODULES, puis 0x0000 (§ 2.3.3)', egaux(noms, MODULES.map(m => m.nom)) && q === wm.length - 2 && wm[q] === 0 && wm[q + 1] === 0, noms.join(' '));
   // --- la macro du bouton, et rien qui se lance seul
   // (le texte relu DANS le projet, pas celui des .bas)
-  const macro = (macros[0] || '').replace(/^\[0\]!/, ''), sources = MODULES.filter(m => !m.document).map(m => textesLus[m.nom] || '');
-  verif(`le bouton lance une macro qui existe : « Public Sub ${macro}() », sans argument, dans un module standard`,
-    macro && sources.some(s => new RegExp('^[ \\t]*(Public[ \\t]+)?Sub[ \\t]+' + macro + '[ \\t]*\\([ \\t]*\\)', 'mi').test(s)),
-    macro && !sources.some(s => new RegExp('Sub[ \\t]+' + macro + '\\b', 'i').test(s)) ? macro + ' n\'est dans aucun module de see/vba (écrite à part : relancer après la fusion)' : '');
+  const lancees = macros.map(m => m.replace(/^\[0\]!/, '')), sources = MODULES.filter(m => !m.document).map(m => textesLus[m.nom] || '');
+  const absentes = lancees.filter(macro => !sources.some(s => new RegExp('^[ \\t]*(Public[ \\t]+)?Sub[ \\t]+' + macro + '[ \\t]*\\([ \\t]*\\)', 'mi').test(s)));
+  verif(`le bouton lance une macro qui existe, chaque bouton : « Public Sub ${lancees.join('() », « Public Sub ')}() », sans argument, dans un module standard`,
+    lancees.length > 0 && !absentes.length, absentes.length ? absentes.join(', ') + ' : dans aucun module de see/vba' : '');
   const sansCode = ['ThisWorkbook', 'Feuil1'].every(n => textesLus[n] !== undefined && textesLus[n].split('\r\n').every(l => l === '' || l.startsWith('Attribute ')));
   verif('rien ne se lance à l\'ouverture : ThisWorkbook et Feuil1 sans code, aucun Auto_Open ni Workbook_Open', sansCode
     && !Object.values(textesLus).some(s => /^[ \t]*(Public[ \t]+|Private[ \t]+)?Sub[ \t]+(Auto_Open|Workbook_Open|Auto_Exec)\b/mi.test(s)));
@@ -399,7 +406,7 @@ const resultats = controler(parties);
 resultats.forEach(r => ok(r.nom, r.ok, r.mesure));
 const macroLue = resultats.find(r => r.nom.startsWith('le bouton lance une macro qui existe')).ok;
 let refus = ''; try { C.classeurPilote({ dossierVba: DOSSIER }); } catch (e) { refus = e.message; }
-ok('sans --sans-bouton, le générateur REFUSE ces modules si la macro du bouton manque, et seulement alors',
+ok('sans --sans-bouton, le générateur REFUSE ces modules si la macro d\'un bouton manque, et seulement alors',
   !!refus === !macroLue && (!refus || refus.includes('TesterSEE')), refus.slice(0, 90));
 ok('avec --sans-bouton, il le dit en avertissement, et seulement alors', (c1.avertissements.length > 0) === !macroLue, c1.avertissements.join(' ; ').slice(0, 90));
 
@@ -482,18 +489,19 @@ try {
 titre('Le kit (see/kit.js), écrit avec les .bas qui ont TesterSEE');
 try { const k = K.kit({ dossierVba: AVEC }), z = lireZip(k.zip), ref = C.classeurPilote({ dossierVba: AVEC });
   ok('Pilote-SEE.xlsm en tête du zip, identique au classeur écrit par see/classeur.js', z[0].nom === 'Kit-SEE/Pilote-SEE.xlsm' && egaux([...z[0].octets], [...ref.octets]), z.map(p => p.nom.replace('Kit-SEE/', '')).slice(0, 3).join(', ') + '…');
-  const repli = C.MODULES_STANDARD.map(m => [K.REPLI_VBA + m + '.bas', path.join(AVEC, m + '.bas')]);
-  ok('les autres fichiers du kit, octet pour octet (le diagnostic, l\'Atelier, le LIS-MOI, et en repli les .bas mêmes du classeur)',
+  ok('le kit : DEUX fichiers, le classeur puis le LIS-MOI, octet pour octet (ce qui sert ce jour-là, rien de plus)',
     K.CONTENU.every(([nom, src]) => { const p = z.find(x => x.nom === 'Kit-SEE/' + nom); return p && egaux([...p.octets], [...fs.readFileSync(path.join(RACINE, src))]); })
-    && repli.every(([nom, src]) => { const p = z.find(x => x.nom === 'Kit-SEE/' + nom); return p && egaux([...p.octets], [...fs.readFileSync(src)]); })
-    && z.length === 1 + K.CONTENU.length + repli.length, z.length + ' fichiers');
+    && z.length === 2 && z[1].nom === 'Kit-SEE/LIS-MOI-D-ABORD.txt', z.map(p => p.nom).join(', '));
   const lis = fs.readFileSync(path.join(RACINE, 'see', 'kit', 'LIS-MOI-D-ABORD.txt')), t = lis.subarray(3).toString('utf8');
   ok('LIS-MOI-D-ABORD.txt : UTF-8 avec BOM, fins de ligne CRLF seulement', lis[0] === 0xEF && lis[1] === 0xBB && lis[2] === 0xBF && !/\r(?!\n)|(?<!\r)\n/.test(t) && !t.includes('�'));
-  ok('LIS-MOI-D-ABORD.txt : débloquer le zip, le plan bidon, MODE PROTÉGÉ (Activer la modification), Activer le contenu, TESTER SEE, « C\'est fini », Ctrl+S, la photo de l\'écran',
-    /Débloquer[\s\S]*Extraire tout[\s\S]*plan bidon[\s\S]*device[\s\S]*masse[\s\S]*Pilote-SEE\.xlsm[\s\S]*MODE PROTÉGÉ[\s\S]*Activer la modification[\s\S]*Activer le contenu[\s\S]*TESTER SEE[\s\S]*C'est fini[\s\S]*Ctrl\+S[\s\S]*photo/i.test(t));
+  ok('LIS-MOI-D-ABORD.txt : débloquer le zip, le projet d\'essai vide (Location : ne pas la changer), MODE PROTÉGÉ (Activer la modification), Activer le contenu, « 1. TESTER SEE », « BRAVO », « 2. SEE DESSINE », OK, la photo, Ctrl+S',
+    /Débloquer[\s\S]*Extraire tout[\s\S]*projet d'essai VIDE[\s\S]*Location : NE LA CHANGE PAS[\s\S]*Pilote-SEE\.xlsm[\s\S]*MODE PROTÉGÉ[\s\S]*Activer la modification[\s\S]*Activer le contenu[\s\S]*1\. TESTER SEE[\s\S]*BRAVO[\s\S]*2\. SEE DESSINE[\s\S]*clique sur OK[\s\S]*photo[\s\S]*Ctrl\+S/i.test(t));
+  ok('LIS-MOI-D-ABORD.txt : les textes des boutons sont ceux du classeur', C.BOUTONS.every(b => t.includes('« ' + b.texte + ' »')));
+  ok('le kit passe par courriel : aucun fichier d\'un type que la messagerie refuse, même zippé (.cmd, .ps1, .js...)',
+    z.every(p => !K.REFUSES_PAR_COURRIEL.test(p.nom)) && K.REFUSES_PAR_COURRIEL.test('a/diagnostic.ps1') && K.REFUSES_PAR_COURRIEL.test('x.CMD'), z.filter(p => K.REFUSES_PAR_COURRIEL.test(p.nom)).map(p => p.nom).join(', '));
   const bloque = t.slice(t.indexOf('SI ÇA BLOQUE'));
   ok('LIS-MOI-D-ABORD.txt, « Le bouton ne fait rien » : d\'abord la barre jaune qui reste (Activer la modification ou le contenu), puis Alt+F8',
-    /Le bouton ne fait rien[\s\S]*barre jaune[\s\S]*Activer la modification[\s\S]*Activer le contenu[\s\S]*Alt\+F8/.test(bloque)); }
+    /Le bouton ne fait rien[\s\S]*barre jaune[\s\S]*Activer la modification[\s\S]*Activer le contenu[\s\S]*Alt\+F8[\s\S]*TesterSEE[\s\S]*EssaiDessinReel/.test(bloque)); }
 catch (e) { ok('le kit s\'écrit', false, e.message); }
 
 titre('Le contrôleur éprouvé : des fautes injectées une à une');
@@ -521,7 +529,9 @@ const MUTATIONS = [
   ['le classeur déclaré sans macros', '[Content_Types] : le classeur est un classeur À MACROS', avecTexte('[Content_Types].xml', 'application/vnd.ms-excel.sheet.macroEnabled.main+xml', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml')],
   ['la relation vers vbaProject.bin perdue', 'xl/_rels/workbook.xml.rels : la relation vbaProject', avecTexte('xl/_rels/workbook.xml.rels', 'office/2006/relationships/vbaProject', 'office/2006/relationships/autre')],
   ['le codeName de la feuille qui ne répond à aucun module', 'sheet1.xml : codeName', avecTexte('xl/worksheets/sheet1.xml', 'codeName="Feuil1"', 'codeName="Feuil2"')],
-  ['le bouton affecté à une autre macro', 'la forme est affectée', avecTexte('xl/drawings/drawing1.xml', 'macro="[0]!TesterSEE"', 'macro="[0]!Autre"')],
+  ['le bouton 1 affecté à une autre macro', 'les formes sont affectées', avecTexte('xl/drawings/drawing1.xml', 'macro="[0]!TesterSEE"', 'macro="[0]!Autre"')],
+  ['le bouton 2 affecté à une macro qui n\'existe pas', 'le bouton lance une macro qui existe', avecTexte('xl/drawings/drawing1.xml', 'macro="[0]!EssaiDessinReel"', 'macro="[0]!EssaiDessinFantome"')],
+  ['le bouton 2 posé sur la consigne de l\'étape 2', 'chaque bouton sur des lignes vides', avecTexte('xl/drawings/drawing1.xml', '<xdr:row>13</xdr:row>', '<xdr:row>11</xdr:row>')],
   ['le recours du mode protégé effacé de la feuille', 'en petit, dans l\'ordre des barres', avecTexte('xl/sharedStrings.xml', '« MODE PROTÉGÉ »', '« MODE NORMAL »')],
   ['une balise mal fermée', 'chaque partie XML est bien formée', avecTexte('xl/styles.xml', '</fonts>', '</font>')],
   ['les éléments de la feuille dans le désordre', 'sheet1.xml : ses éléments', (() => { const p = new Map(parties), t = Buffer.from(p.get('xl/worksheets/sheet1.xml')).toString('utf8'), m = /<pageMargins[^>]*\/>/.exec(t);

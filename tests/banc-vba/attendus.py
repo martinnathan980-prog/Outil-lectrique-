@@ -291,17 +291,18 @@ def tester():
               (f'{v} : les cinq sondes faites', dans(v, r'(Étapes = .*)'),
                lambda s: bool(s) and all(f'{n} : faite' in s for n in ('SondeApplication', 'SondeSymboles', 'SondeFolio', 'SondeSelection', 'SondeMethodes'))),
               egal(f'{v} : une seule boîte, celle de la fin', nombres(r'boîte de fin dite (\d+)', v), 1),
-              (f'{v} : la boîte dit « C\'est fini » et, le classeur jamais enregistré, « Enregistrer sous » .xlsm', dans(v, r'boîte = (.*?) ; Sonde_XML'),
-               lambda s: bool(s) and s.startswith("C'est fini") and 'Enregistrer sous' in s and '*.xlsm' in s),
+              (f'{v} : la boîte dit « BRAVO », le bouton 2, et, le classeur jamais enregistré, « Enregistrer sous » .xlsm', dans(v, r'boîte = (.*?) ; Sonde_XML'),
+               lambda s: bool(s) and s.startswith('BRAVO') and '2. SEE DESSINE' in s and 'Enregistrer sous' in s and '*.xlsm' in s),
               (f'{v} : « Et maintenant » = la boîte', boite_et_suite(v), lambda p: p[0] is not None and p[0] == p[1]),
               (f'{v} : erreurs des étapes = erreurs du journal', etapes_et_echecs(v), lambda p: p is not None and p[0] == p[1] and p[1] > 0)]
-    # R1 : SEE joint, aucun folio affiché : la boîte dit de relancer AVANT d'envoyer
+    # SEE joint, un projet ouvert sans aucun folio affiché : c'est assez pour l'étape 1 (un projet vide suffit), la boîte dit
+    # « BRAVO » et envoie au bouton 2
     c += [egal('sans folio : « SEE joint ? = OUI »', dans('sans folio', r'SEE joint \? = (\w+)'), 'OUI'),
           egal('sans folio : « Folio lu = aucun »', dans('sans folio', r'Folio lu = (\w+)'), 'aucun'),
           ('sans folio : l\'étape SondeFolio dit « rien lu » (pas « faite »)', dans('sans folio', r'(Étapes = .*?) ; Ce qui a échoué'),
            lambda s: bool(s) and 'SondeFolio : rien lu' in s and 'SondeFolio : faite' not in s),
-          ('sans folio : la boîte dit « Il manque ton folio » et de relancer TesterSEE', dans('sans folio', r'boîte = (.*?) ; Sonde_XML'),
-           lambda s: bool(s) and 'Il manque ton folio' in s and 'relance TesterSEE' in s and "C'est fini" not in s),
+          ('sans folio : la boîte dit « BRAVO » et le bouton 2, sans demander de relancer', dans('sans folio', r'boîte = (.*?) ; Sonde_XML'),
+           lambda s: bool(s) and s.startswith('BRAVO') and '2. SEE DESSINE' in s and 'relance' not in s and 'folio «' not in s),
           ('sans folio : « Et maintenant » = la boîte', boite_et_suite('sans folio'), lambda p: p[0] is not None and p[0] == p[1]),
           egal('sans folio : une seule boîte', nombres(r'boîte de fin dite (\d+)', 'sans folio'), 1)]
     # R3 : SEE cesse de répondre quand la sélection est lue : pas de reconnexion, ce qui a été lu reste dit
@@ -318,6 +319,23 @@ def tester():
           au_moins('Nothing : « (aucun : Nothing) » dit', nombres(r'colonne Materiel #ERR \d+, Nothing (\d+)', 'Nothing'), 1),
           au_moins('Nothing : le matériel associé reste lu', nombres(r'Matériel = (\d+) matériel', 'Nothing'), 1)]
     return c
+
+def bouton2():
+    """INTENTION (SEE_Pilote, EssaiDessinReel) : pour de vrai malgré Simulation = O, une seule question qui nomme le projet,
+    le folio d'essai créé et dessiné puis relu (Sonde_Folio) sans vider le journal ; Simulation reprend sa valeur ; sans SEE,
+    rien n'est écrit, aucune question, et la fin le dit."""
+    return [egal('un folio créé (AddSheet 1)', nombres(r'-> AddSheet (\d+) ;'), 1),
+            au_moins('le motif dessiné (au moins 5 objets graphiques)', nombres(r'graphiques (\d+)'), 5),
+            egal('une seule question', nombres(r'questions (\d+)'), 1),
+            egal('la question nomme le projet ouvert', nombres(r'projet nommé (\d+)'), 1),
+            egal('le journal du dessin n\'est pas vidé par la relecture', nombres(r'début du journal gardé (\d+)'), 1),
+            au_moins('la relecture est faite', nombres(r'relecture (\d+)'), 1),
+            egal('Sonde_Folio décrit le folio ESSAI_PILOTE', texte(r'Sonde_Folio ESSAI_PILOTE (\w+)'), 'oui'),
+            au_moins('la fin dit de regarder le folio dans SEE (journal et boîte)', nombres(r'fin dite (\d+)'), 1),
+            egal('Simulation reprend sa valeur (O) après', texte(r'Simulation après (\w)'), 'O'),
+            egal('sans SEE : rien d\'écrit', nombres(r'sans SEE : traces (\d+)'), 0),
+            egal('sans SEE : aucune question', nombres(r'question posée (\d+)'), 0),
+            au_moins('sans SEE : « Rien n\'a été dessiné » dit', nombres(r'rien dessiné dit (\d+)'), 1)]
 
 ATTENDUS = {
     # ---- relecture.py (BancR.bas) ----
@@ -366,6 +384,8 @@ ATTENDUS = {
     'materiel V4': materiel(4),                             # idem, API V4 (GetEquipmentCollection en paramètre de sortie)
     'materiel existant': materiel_existant(),               # INTENTION (MaterielExistant : GARDER, AJOUTER, REMPLACER, lecture ratée)
     'tester': tester(),                                     # INTENTION (TesterSEE)
+    'bouton 2 V5': bouton2(),                               # INTENTION (EssaiDessinReel, le bouton 2 du classeur)
+    'bouton 2 V4': bouton2(),                               # idem, API V4
     # ---- regression.py (BancFaux, dans faux.py) ----
     'simulation sans SEE': [                                # INTENTION : une simulation ne dessine rien
         tous('bilan tout SIMULE', bilan_regression, 'SIMULE')],
