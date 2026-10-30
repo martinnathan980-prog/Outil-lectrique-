@@ -220,10 +220,13 @@
 .bi-vign{--s-surface:#ffffff;--s-line:#e6e6ea;--s-line-2:#d2d2d7;--t-1:#1d1d1f;--t-2:#47474c;--t-3:#636369;display:grid;place-items:center;width:42px;height:42px;margin:0 auto;border-radius:7px;
   background-color:var(--s-papier);background-image:linear-gradient(var(--s-papier-grille) 1px,transparent 1px),linear-gradient(90deg,var(--s-papier-grille) 1px,transparent 1px);background-size:6px 6px;background-position:-1px -1px;box-shadow:inset 0 0 0 1px #d2d2d7}
 .bi-vign>.picto{padding:0;background:none;box-shadow:none;max-width:32px;max-height:32px;width:auto;height:auto}
-/* la face d'un module en picto (ses règles vivaient dans la feuille du relief, retirée en v74 : sans elles, un aplat noir) */
-.bible .picto.mj-picto .p-corps{fill:var(--s-surface);stroke:var(--t-1);stroke-width:.9}
-.bible .picto.mj-picto .p-groupe{fill:none;stroke:var(--s-line-2);stroke-linecap:round;stroke-linejoin:round}
-.bible .picto.mj-picto .p-contact{fill:var(--t-2)}
+/* la face d'un module en picto (ses règles vivaient dans la feuille du relief, retirée en v74 : sans elles, un aplat noir) —
+   partout où elle paraît : la Bible, et les candidats de « Changer » d'une fiche (08-fiche, `candidat`) */
+.picto.mj-picto .p-corps{fill:var(--s-surface);stroke:var(--t-1);stroke-width:.9}
+.picto.mj-picto .p-groupe{fill:none;stroke:var(--s-line-2);stroke-linecap:round;stroke-linejoin:round}
+.picto.mj-picto .p-contact{fill:var(--t-2)}
+.cand svg.picto{flex-shrink:0}
+.cand[aria-pressed="true"] .picto.mj-picto .p-corps{stroke:var(--accent)}
 /* L'ORIGINE en une puce (vérifiée · à confirmer · vos tables · exemple), la source dans sa bulle : le point dit le statut —
    plein et vert, vérifiée ; un anneau ambre, à confirmer ; à moitié, vos tables ; gris, un exemple */
 .bi-or{display:inline-flex;align-items:center;gap:6px;height:24px;max-width:100%;padding:0 10px 0 8px;border-radius:999px;font:500 var(--f-12)/1 var(--sans);white-space:nowrap;color:var(--t-1);background:var(--s-sunken);box-shadow:inset 0 0 0 1px var(--s-line);cursor:help;vertical-align:middle}
