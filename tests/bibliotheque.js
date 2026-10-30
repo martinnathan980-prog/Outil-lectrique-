@@ -126,6 +126,12 @@ const CAPTURES = (process.argv.find(a => a.startsWith('--captures=')) || '').sli
   await capture('plan-ouvert');
   // ce qu'on y fait se garde dans le plan
   await page.evaluate(() => { histPush('essai'); app.contrat.designations.set('101BT1', 'batterie principale'); redessiner(); sauver(); }); await page.waitForTimeout(700);
+  // l'installation du fil porte une bulle (la règle du chrome, plus de `title=`), écrite quand elle paraît, jamais coupée
+  await page.hover('#en-install'); await page.waitForTimeout(800);
+  const BF = await page.evaluate(() => { const b = $('en-install'), u = b.querySelector(':scope > .bulle'), cs = u && getComputedStyle(u), r = u && u.getBoundingClientRect();
+    return { title: b.hasAttribute('title'), on: b.classList.contains('bulle-on'), vue: !!cs && cs.visibility === 'visible', texte: u ? u.textContent : '', entiere: !!r && r.width > 120 && r.left >= 0 && r.top > b.getBoundingClientRect().bottom }; });
+  ok(!BF.title && BF.on && BF.vue && BF.entiere && /^ECP\s40217\s·\sAntenne VHF\s:\sses plans$/.test(BF.texte), 'l’installation du fil a sa bulle (« ECP 40217 · Antenne VHF : ses plans »), entière, sous la barre ; plus de title=', JSON.stringify(BF));
+  await page.mouse.move(700, 500);
   await page.click('#en-install'); await page.waitForTimeout(250);
   v = await vue();
   ok(v.vue === 'install' && v.install === idAntenne && await page.evaluate(id => { const li = document.querySelector(`#bibliotheque .bi-plan[data-plan="${id}"]`); return !!li && li.classList.contains('sur-table') && /sur la table/.test(li.textContent); }, idA),

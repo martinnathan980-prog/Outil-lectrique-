@@ -220,8 +220,7 @@ button.bi-carte-corps{cursor:pointer}
 /* sa bulle : dessous, alignée à droite (la règle commune `.bulle` : au survol après un instant, tout de suite au clavier) */
 .bi-plus .bulle,.bi-plus-tete .bulle{left:auto;right:0;top:calc(100% + 8px);transform:translateY(-3px)}
 .bi-plus .bulle::before,.bi-plus-tete .bulle::before{right:10px;top:auto;bottom:100%;margin:0;border-color:transparent;border-bottom-color:var(--bulle)}
-.bi-plus:hover .bulle{opacity:1;transform:none;transition-delay:var(--bulle-delai)}
-.bi-plus:focus-visible .bulle{opacity:1;transform:none}
+.bi-plus.bulle-on>.bulle{transform:none}
 .bi-plus[aria-expanded="true"] .bulle{display:none}
 /* l'installation qu'on nomme (une neuve, ou renommée) : la carte cerclée de l'encre de la table, les champs à l'encre */
 .bi-carte.bi-carte-neuve .bi-carte-corps{box-shadow:0 0 0 2px var(--t-table),var(--bi-ombre)}
@@ -488,12 +487,14 @@ body.fiche-ouverte .biblio.survol-depot .bi-page::before{left:calc((100vw - var(
 /* la bulle d'une tuile : au-dessus (la phrase de la base des contrats) */
 .bulle.bi-bulle-haut{display:block;left:50%;top:auto;bottom:calc(100% + 14px);width:max-content;max-width:300px;transform:translate(-50%,3px);white-space:normal;text-align:left}
 .bulle.bi-bulle-haut::before{right:auto;top:100%;left:50%;margin:0 0 0 -4px;border-color:transparent;border-top-color:var(--bulle)}
-.bi-tuile:hover .bi-bulle-haut{opacity:1;transform:translate(-50%,0);transition-delay:var(--bulle-delai)}
-.bi-tuile:focus-visible .bi-bulle-haut{opacity:1;transform:translate(-50%,0)}
-.bi-tuile:active .bi-bulle-haut{opacity:0}
+.bi-tuile.bulle-on>.bi-bulle-haut{transform:translate(-50%,0)}
 /* sur l'accueil, la barre du haut s'efface : la marque et le menu flottent sur la table ; elle revient ailleurs */
 body.biblio #entete{transition:background var(--d-moyen) var(--courbe),box-shadow var(--d-moyen) var(--courbe)}
 body.biblio-accueil #entete{background:transparent;box-shadow:none}
+/* le fil de la barre du haut : l'installation porte sa bulle (la règle des bulles du chrome) — le nom seul s'élide, la
+   bulle déborde du bouton */
+#en-install{position:relative;overflow:visible;display:inline-flex;align-items:center}
+#en-install .en-install-nom{min-width:0;overflow:hidden;text-overflow:ellipsis}
 
 /* ─── LE RAIL : toutes les installations, à gauche d'une installation — un clic passe de l'une à l'autre ─── */
 .bi-page.bi-avec-rail{display:grid;grid-template-columns:224px minmax(0,1fr);column-gap:40px;align-items:start;width:min(1400px,100%)}
@@ -527,6 +528,8 @@ body.biblio-accueil #entete{background:transparent;box-shadow:none}
 body.biblio #toast{top:auto;left:50%;bottom:calc(var(--jeu) + 22px)}
 body.biblio.fiche-ouverte #toast{left:calc((100vw - var(--fiche-l) - var(--jeu)) / 2)}
 body.biblio-accueil #toast{bottom:calc(var(--jeu) + 112px)}
+/* posé en bas, il monte en paraissant (en haut, il descend) */
+body.biblio #toast:not(.on){transform:translateX(-50%) translateY(8px) scale(.98)}
 
 /* ─── CHERCHER DANS TOUT : les contrats que la base porte, une carte chacun sur la feuille, leurs lignes dessous ─── */
 .bi-trouve{margin-top:44px}

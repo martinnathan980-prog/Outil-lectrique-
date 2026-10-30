@@ -826,8 +826,10 @@ function synchroniserFil() { const fil = $('en-fil'); if (!fil) return; const su
   const p = BIB.plans.get(app.planId), i = BIB.vue === 'install' ? BIB.installs.get(BIB.install) : surTable && p ? BIB.installs.get(p.install) : null;
   const plan = surTable && (app.nom || p) ? nomAffiche(app.nom || p.nom) : '';
   fil.hidden = !i && !plan; const bi = $('en-install'), bp = $('en-plan');
-  bi.hidden = !i; bi.innerHTML = i ? (i.ecp ? `<span class="en-ecp">${esc(i.ecp)}</span>` : '') + `<span class="en-install-nom">${esc(i.nom)}</span>` : '';
-  bi.title = i ? lies([i.ecp ? 'ECP ' + i.ecp : '', i.nom]) + ' : ses plans' : ''; bi.disabled = BIB.vue === 'install'; bi.dataset.id = i ? i.id : '';
+  // sa bulle suit la règle des bulles du chrome (08-menu) : elle s'écrit quand elle paraît (l'événement `bulle`, lié une
+  // fois dans `lierBibliotheque`) — le fil ne se lit pas deux fois
+  bi.hidden = !i; bi.innerHTML = i ? (i.ecp ? `<span class="en-ecp">${esc(i.ecp)}</span>` : '') + `<span class="en-install-nom">${esc(i.nom)}</span><span class="bulle" aria-hidden="true"></span>` : '';
+  bi.removeAttribute('title'); bi.disabled = BIB.vue === 'install'; bi.dataset.id = i ? i.id : '';
   bp.hidden = !plan; bp.textContent = plan; bp.title = plan; }
 function synchroniserBibliotheque() { synchroniserFil();
   const m = $('mn-biblio'); if (m) { const V = installsVraies(); m.textContent = V.length ? pluriel(V.length, 'installation') + ' · ' + pluriel(plansVrais().length, 'plan') : 'installations · plans'; }
@@ -933,6 +935,8 @@ function lierBibliotheque() { if (BIB.lie) return; BIB.lie = true; const el = $(
   // la barre du haut : la marque mène à la bibliothèque, l'installation du fil à ses plans
   $('en-biblio').addEventListener('click', () => montrerBibliotheque('racine'));
   $('en-install').addEventListener('click', e => { const id = e.currentTarget.dataset.id; if (id) montrerBibliotheque('install', id); });
+  $('en-install').addEventListener('bulle', e => { const b = e.currentTarget, s = b.querySelector(':scope > .bulle'), i = BIB.installs.get(b.dataset.id);
+    if (s && i) s.textContent = lies([i.ecp ? 'ECP ' + i.ecp : '', i.nom]) + ' : ses plans'; });
   // plusieurs retests à la fois, choisis : des plans
   $('fichier-plans').addEventListener('change', e => { const xs = [...(e.target.files || [])]; e.target.value = ''; if (xs.length) ajouterPlans(xs); });
   // le plan vide : un retest, des lignes collées, la bibliothèque ; « Reprendre » défait ce qui l'a vidé
