@@ -996,3 +996,5 @@ button.fi-jg:focus-visible,.fi-cote button.fi-sertir:focus-visible{outline:2px s
 /* les cibles d'au moins 24 px (le juge) : le contact d'une ligne, devenu bouton (il ouvre le contact) ; le titre de la chaîne */
 button.fi-sertir.ct-ref{min-height:24px}
 .fi-trace>summary{display:flex;align-items:center;min-height:28px;border-radius:var(--r-1)}
+/* plus d'italique dans la fiche (v74, lot F — le lecteur : « l'italique, c'est compliqué ») : ni un <em> ni un <i> ne penchent */
+.fi :is(em,i){font-style:normal}
