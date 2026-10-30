@@ -543,6 +543,61 @@ function apporteSEE(I) { const C = comparaisonSEE(I), N0 = normeVoltaSEE(), K = 
     faces: { n: I.modules.length, nouvelles: C.modules.nouvelles.length, famillesNouvelles: [...new Set(I.modules.map(m => m.famille).filter(f => !mV.has(f)))].sort(triNaturel), parFamille: [...nouvellesFaces].sort((a, b) => b[1] - a[1]) },
     equipements: { n: (I.equipements || []).length, connecteurs: ((I.bilan || {}).equipements || {}).connecteurs || 0, equipements: ((I.bilan || {}).equipements || {}).equipements || 0, paires: (K.sur && K.sur.paires != null) ? K.sur.paires : ((I.bilan || {}).equipements || {}).accouplements || 0, programmes: (I.programmes || []).length },
     formes: K.formes || {}, accessoires: K.accessoires || null }; }
+/* CE QUE SEUL VOLTA A, LIGNE PAR LIGNE (v74, le lecteur : « un seul fichier propre : la base SEE comme seule source des
+   pièces, si elle couvre tout ») : chaque ligne de contact des quatre familles des photos que la base n'a pas (la même clé :
+   famille, sexe, taille, type et gauge du câble), avec sa RAISON, pour que le lecteur décide —
+     · d'où vient la ligne de Volta : de vos photos (la base ne l'a plus : sa règle a changé de version) ; ajoutée par Volta
+       de ses sources (une taille que les photos n'avaient pas — normes/contacts.csv les range EN FIN DE TABLE, après les
+       barrettes : l'ordre de la table le dit) ; ou ajoutée dans ce navigateur (un import, une ligne écrite à la main) ;
+     · ce que la base dit autour : aucune cavité de cette taille dans la famille, pas ce sexe, pas ce câble, pas cette gauge ;
+     · si une ligne de la base la COUVRE quand même (une ligne « tout câble », « toute gauge » ou « toute taille » du même
+       sexe qui donne un contact) : ne prendre que la base n'y perd rien ; sinon, ce câble n'aurait plus de contact.
+   Rend [{ famille, nom, x (la ligne de Volta), origine: { genre: 'photo'|'ajoutee'|'ici', mot, source }, base: { genre, mot },
+   couverte (la ligne de la base, ou null) }], famille par famille. */
+const FAMILLES_PHOTOS_SEE = PHOTOS_SEE.map(([f]) => f);
+function rangsPhotosSEE() { const E = normeEmbarqueeLue().contacts || [], fin = E.findIndex(x => !FAMILLES_PHOTOS_SEE.includes(x.famille)), R = new Map();
+  E.forEach((x, i) => R.set(cleDeLigne('contacts', x), { photo: fin < 0 || i < fin })); return R; }
+// la source d'une ligne de Volta, en quelques mots : son premier document, sans adresse
+const sourceCourteSEE = x => { const s = String(x.origine || x.statut || '').replace(/\s*\((?:https?:|www\.)[^)]*\)/g, '').replace(/https?:\/\/\S+/g, '').split(/\s+\+\s+|;|\s\(/)[0].replace(/\s+/g, ' ').trim();
+  return s.length > 64 ? s.slice(0, 62).replace(/\s+\S*$/, '') + '…' : s; };
+// gardée par base, tant que la couche des normes ne change pas (la Cohérence la lit trois fois par rendu)
+const SEUL_VOLTA_SEE = new WeakMap();
+function seulVoltaSEE(I, famille) { if (!I || !I.contacts) return []; const t = (typeof NORMES !== 'undefined' && NORMES.apports && NORMES.apports.t) || 0, m = SEUL_VOLTA_SEE.get(I);
+  const tous = m && m.t === t ? m.L : (L => (SEUL_VOLTA_SEE.set(I, { t, L }), L))(calculSeulVoltaSEE(I));
+  return famille ? tous.filter(y => y.famille === famille) : tous; }
+function calculSeulVoltaSEE(I) { const N0 = normeVoltaSEE(), S = lignesSEE('contacts', I.contacts), cle = x => cleDeLigne('contacts', x), R = rangsPhotosSEE(), out = [];
+  PHOTOS_SEE.forEach(([f, v]) => { const SF = S.filter(x => x.famille === f), ks = new Set(SF.map(cle)), nomF = nomDeFamille(N0, f) || f;
+    N0.contacts.filter(x => x.famille === f && !ks.has(cle(x))).forEach(x => { const r = R.get(cle(x)), t = x.taille;
+      const origine = x.source != null && x.source !== 'SEE' ? { genre: 'ici', mot: 'ajoutée ici', source: x.source === 'main' ? 'écrite à la main sur la page Normes' : 'importée de ' + x.source }
+        : r && !r.photo ? { genre: 'ajoutee', mot: 'ajoutée par Volta', source: sourceCourteSEE(x) } : { genre: 'photo', mot: 'de vos photos', source: 'la table ' + nomF + ' de SEE, photographiée en v' + v };
+      const memeT = SF.filter(s => s.taille === t || s.taille === '*'), memeS = memeT.filter(s => s.sexe === x.sexe), memeTy = memeS.filter(s => s.typeFil === x.typeFil || s.typeFil === '*');
+      const base = !memeT.length ? { genre: 'taille', mot: `aucun contact de taille ${t} pour cette famille` }
+        : !memeS.length ? { genre: 'sexe', mot: `en taille ${t}, seulement des ${x.sexe === 'M' ? 'douilles' : 'broches'}` }
+        : !memeTy.length ? { genre: 'type', mot: `pas de ligne pour le câble ${x.typeFil} en taille ${t}` }
+        : { genre: 'jauge', mot: x.jauge == null ? `taille ${t} écrite gauge par gauge, sans ligne « toute gauge »` : `pas le ${x.jauge} AWG${x.typeFil === '*' ? '' : ' pour le câble ' + x.typeFil} en taille ${t}` };
+      const couverte = SF.find(s => s.sexe === x.sexe && (s.taille === t || s.taille === '*') && (s.typeFil === x.typeFil || s.typeFil === '*') && (s.jauge == null || s.jauge === x.jauge)) || null;
+      out.push({ famille: f, nom: nomF, x, origine, base, couverte }); }); });
+  return out; }
+
+/* ---- la base SEE, SEULE source des pièces : l'option (v74), préparée, décochée --------------------------------------
+   Cochée, les lignes de contacts, de câbles et de faces que la base n'a pas s'en vont, pour chaque famille qu'elle connaît
+   (`avecBaseSEE`) ; une famille qu'elle ignore garde celles de Volta (sinon plus rien ne se sertit) ; la source vérifiée
+   qui la contredit reste (la règle du lecteur, 20 octobre 2026) ; ce que vous corrigez à la main passe toujours devant.
+   Gardée sur ce PC, comme la base ; Ctrl+Z ne la défait pas (ce n'est pas un geste sur le plan) : le mot qui passe offre
+   « Rétablir ». */
+const CLE_SEULE_SEE = 'atelier.see.seule';
+const seuleBaseSEE = () => { try { return localStorage.getItem(CLE_SEULE_SEE) === '1'; } catch (_) { return false; } };
+function choisirSeuleBaseSEE(oui) { oui = !!oui; if (oui === seuleBaseSEE()) return;
+  try { if (oui) localStorage.setItem(CLE_SEULE_SEE, '1'); else localStorage.removeItem(CLE_SEULE_SEE); } catch (_) { }
+  if (typeof NORMES !== 'undefined' && NORMES.embarquee) { app.norme = normeComposee(NORMES.embarquee, NORMES.apports); if (typeof rafraichirApresNorme === 'function') rafraichirApresNorme(); }
+  if (app.fiche && app.fiche.mode === 'see') { SEE.garderDefilement = true; rendreBaseSEE(); }
+  else if (app.fiche && app.fiche.mode === 'comprendre' && typeof ficheComprendre === 'function') { const y = $('fiche-corps').scrollTop; ficheComprendre(); $('fiche-corps').scrollTop = y; }
+  const n = BASE_SEE.base ? seulVoltaSEE(BASE_SEE.base).length : 0;
+  dire(oui ? `Les pièces ne viennent plus que de la base SEE gardée${n ? ' : ' + plurielLie(n, 'ligne') + ' de contact que seul Volta avait ne servent plus' : ''}.` : 'Volta reprend ses tables en secours, derrière la base SEE.', false, { geste: 'Rétablir', faire: () => choisirSeuleBaseSEE(!oui) }); }
+// la case, telle qu'on la pose partout (la Cohérence, la page Normes) : éteinte tant qu'aucune base n'est gardée sur ce PC
+function caseSeuleBaseSEE(id) { const gardee = !!(typeof BASE_SEE !== 'undefined' && BASE_SEE.base), oui = gardee && seuleBaseSEE();
+  return `<label class="see-seule${gardee ? '' : ' eteinte'}" data-bulle="${escA(gardee ? 'Cochée : les contacts, câbles et faces ne viennent que de la base, pour chaque famille qu’elle connaît ; une famille qu’elle ignore garde les lignes de Volta. Décochée : Volta garde ses lignes en secours.' : 'Gardez d’abord une base SEE sur ce PC (onglet Import, « Garder dans Volta »).')}">`
+    + `<input type="checkbox" id="${id}" data-seule-see${oui ? ' checked' : ''}${gardee ? '' : ' disabled'}><span>Ne prendre les pièces que dans la base SEE gardée</span></label>`; }
 
 /* ---- garder la base sur ce PC (IndexedDB) ----------------------------------------------------------------------- */
 function idbSEE() { return new Promise((ok, ko) => { try { const r = indexedDB.open(IDB_SEE, 1); r.onupgradeneeded = () => r.result.createObjectStore('base'); r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error); } catch (e) { ko(e); } }); }
@@ -604,7 +659,13 @@ function avecBaseSEE(N0, A) { const S = normeSEE(N0); if (!S) return N0;
     // un câble que SEE est seul à connaître : un chiffre impossible pour sa jauge est écarté (vide), la note le dit
     if (t === 'cables') N[t] = N[t].map(x => { if (par.get(cleDeLigne(t, x))) return x; const P = physiqueSEE(N0, x); if (!P.length) return x;
       const y = { ...x, note: [x.note, 'SEE : ' + P.map(q => q.texte).join(' · ') + ' — écarté'].filter(Boolean).join(' · ') }; P.forEach(q => { y[q.champ] = null; }); return y; }); });
-  let R = fusionnerNormes(N0, N);
+  // LA BASE SEULE (l'option, décochée d'office) : pour chaque famille que la base connaît, les lignes de Volta qu'elle n'a
+  // pas s'en vont ; une famille qu'elle ignore garde les siennes ; la source vérifiée qui la contredit reste (sa clé est
+  // dans la base : elle n'est pas « seulement dans Volta »)
+  let Nv = N0;
+  if (seuleBaseSEE()) { Nv = { ...N0 }; ['contacts', 'cables', 'modules'].forEach(t => { const ks = new Set((S[t] || []).map(x => cleDeLigne(t, x))), fams = new Set((S[t] || []).map(x => x.famille));
+    Nv[t] = (N0[t] || []).filter(x => !fams.has(x.famille) || ks.has(cleDeLigne(t, x))); }); }
+  let R = fusionnerNormes(Nv, N);
   const M = { tables: {} }; TABLES_NORME.forEach(t => { const T = apportsDeTable(A, t), ls = (T.lignes || []).filter(l => (l.source || 'main') === 'main'); if (ls.length) M.tables[t] = { lignes: ls, supprimees: [] }; });
   if (Object.keys(M.tables).length) R = fusionnerNormes(R, normeDesApports(M));
   return R; }
@@ -754,7 +815,7 @@ function importSEEHtml() { const I = baseMontreeSEE(); if (!I) return '<p class=
     + P.familles.map(([f, x]) => `<tr><td class="mono">${esc(f)}</td><td>${x.n}</td><td class="${x.dans < x.n ? 'att' : ''}">${x.dans}</td><td class="${x.obsoletes ? 'att' : ''}">${x.obsoletes}</td>${P.programme ? `<td class="${x.hors ? 'att' : ''}">${x.hors}</td>` : ''}</tr>`).join('')
     + `</tbody></table><p class="see-note">${esc(plurielLie(P.typesDans, 'type'))} de câble sur ${P.types} retrouvé${P.typesDans > 1 ? 's' : ''} dans les câbles de SEE.</p></div>` : '<p class="see-note">Ouvrez une installation pour le voir face à la base.</p>';
   return `<section class="see-feuille see-import" aria-label="Import"><div class="see-tete"><b class="see-nom">Ce que Volta prend de ${esc(I.nom)}</b><span class="see-compte">qui a fait quoi et les dates ne sont jamais pris</span></div>`
-    + `<div class="see-gestes">${etat}${prog}</div>${tuiles}${lienCoherenceSEEHtml(I)}${diffs}`
+    + `<div class="see-gestes">${etat}${prog}</div>${tuiles}${diffs}`
     + (dehors.length ? `<div class="see-bloc"><h3>Ce qui n’est pas pris</h3><ul class="see-dehors">${dehors.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : '') + moinsUn + plan + '</section>'; }
 /* Le bilan en texte, pour le résumé. */
 function resumeImportSEE() { const I = baseMontreeSEE(); if (!I) return ''; const C = comparaisonSEE(I), B = I.bilan || {}, bc = B.contacts || {};

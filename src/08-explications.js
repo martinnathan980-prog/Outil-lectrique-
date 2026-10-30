@@ -188,6 +188,15 @@ const EXPLICATIONS = {
 };
 const majusculeEx = t => t ? t[0].toUpperCase() + t.slice(1) : t;
 
-/* L'EXPLICATION d'une valeur choisie : { titre, phrase, chiffres, etapes, sources, texte }, ou null pour une clé inconnue. */
-function explication(cle, contexte) { const f = EXPLICATIONS[cle]; if (!f) return null;
-  try { return f(contexte || null); } catch (_) { return f(null); } }
+/* LE CHAPITRE de « Comment Volta réfléchit » (08-comprendre, v74) qui dit EN GÉNÉRAL ce qu'un « ? » dit d'une valeur : le
+   pied de sa bulle y mène. Le calibre, la courbe, le profil, l'intensité et la chute : la chaîne d'un disjoncteur ; le module,
+   l'arrangement, le contact, la gauge : celle d'un connecteur ; ce qui habille un connecteur (raccord, bande, manchon…) : ce
+   que veut dire « manque » (une table, une ligne, sinon rien d'inventé) ; la masse : les routes et le retour au corps. */
+const CHAPITRE_EXPLICATION = { calibre: 'disjoncteur', courbe: 'disjoncteur', profil: 'disjoncteur', intensite: 'disjoncteur', chute: 'disjoncteur',
+  module: 'connecteur', arrangement: 'connecteur', prise: 'connecteur', contact: 'connecteur', gauge: 'connecteur', rail: 'connecteur',
+  raccord: 'manque', bande: 'manque', manchon: 'manque', tyrap: 'manque', cheminee: 'manque', toron: 'manque', masse: 'routes' };
+const chapitreDeLExplication = cle => CHAPITRE_EXPLICATION[cle] || 'cuisinier';
+/* L'EXPLICATION d'une valeur choisie : { titre, phrase, chiffres, etapes, sources, texte, chapitre }, ou null pour une clé
+   inconnue (`chapitre` : celui de la page « Comment Volta réfléchit »). */
+function explication(cle, contexte) { const f = EXPLICATIONS[cle]; if (!f) return null; let e;
+  try { e = f(contexte || null); } catch (_) { e = f(null); } return e ? { ...e, chapitre: chapitreDeLExplication(cle) } : e; }
