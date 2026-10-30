@@ -58,7 +58,7 @@
   /* les bulles : claires sur la nuit, un filet qui les détache aussi du papier */
   --bulle:#eef3fd; --bulle-t:#0f1a2e; --sh-bulle:0 0 0 1px rgba(15,26,46,.16),0 14px 34px -8px rgba(0,6,18,.55);
   --voile:rgba(6,12,24,.32);                             /* derrière un calque plein écran */
-  --voile-fort:rgba(6,12,24,.6);                         /* derrière une fenêtre (le relief, le dessin d'un contrat fait) */
+  --voile-fort:rgba(6,12,24,.6);                         /* derrière une fenêtre (le dessin d'un contrat fait) */
   --route-a:#7d3c98; --route-b:#117a8b;                  /* deux routes du dessin (la vignette d'un plan) : ni le rouge ni le vert des états */
   --route-voile:transparent;                             /* posé sur une couleur de route hors du papier : l'éclaircit en sombre */
   /* les anciens jetons des barres : les palets, les mêmes dans les deux thèmes */
@@ -708,7 +708,7 @@ body.fiche-ouverte:has(#fiche[data-mode="see"]) #folios{visibility:hidden}
 body.insp-flotte #inspecteur{top:var(--carte-y,62px);left:var(--carte-x,auto);right:auto;bottom:auto;width:var(--carte-l,420px);height:auto;max-height:var(--carte-hmax,620px);
   z-index:30;border-radius:var(--r-carte);box-shadow:var(--sh-carte);transform-origin:0 0;transition:box-shadow var(--moyen)}
 /* pendant qu'elle naît, elle part de la boîte même du bloc : le second appui d'un double-clic doit tomber sur le plan (rendre
-   au moteur, la vue en relief), pas sur elle */
+   au moteur), pas sur elle */
 #inspecteur.carte-nait{z-index:31;pointer-events:none}
 /* tenue : son ombre s'allonge ; tout prend la main fermée, rien ne se sélectionne */
 body.carte-tenue #inspecteur{box-shadow:var(--sh-carte-tenue);transition:none}
@@ -721,7 +721,10 @@ body:is(.insp-flotte,.insp-epingle) #inspecteur :is(.fi-nav,.ix-tete)::before{co
 body.insp-epingle #inspecteur :is(.fi-nav,.ix-tete)::before{width:24px;margin-left:-12px}
 #inspecteur .ix-tete{position:relative}
 #inspecteur :is(.fi-nav,.ix-tete):hover::before{background:var(--t-3)}
-.fi-epingle svg.ico{width:17px;height:17px}
+.fi-epingle svg.ico,.fi-taille svg.ico{width:17px;height:17px}
+.fi-taille[aria-pressed="true"]{color:var(--t-1)}
+/* la fiche AGRANDIE, épinglée : le volet prend la place (08-carte, `agrandirCarte`) */
+:root.insp-grande{--insp-l:min(60vw,900px)}
 /* le récapitulatif ouvert, la fiche est le volet : l'épingle n'a rien à dire */
 body.base-ouverte .fi-epingle{display:none}
 .fi-epingle[aria-pressed="true"]{color:var(--t-1)}
@@ -757,7 +760,7 @@ body.carte-quai #carte-quai{opacity:1;transform:none}
 .fiche-tete .sur{font:500 var(--f-12)/1.4 var(--sans);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fiche-tete>.segment{align-self:center;margin-top:6px}
 .fiche-tete>.fermer{margin:-2px 0 0}
-/* le titre d'un document (le relief et le dessin d'un contrat fait le prennent aussi) : Inter demi-gras, serré */
+/* le titre d'un document (le dessin d'un contrat fait le prend aussi) : Inter demi-gras, serré */
 .titre{font:600 var(--f-20)/1.25 var(--titre);margin:2px 0 0;color:var(--t-1);letter-spacing:-.02em;text-wrap:balance;overflow-wrap:anywhere}
 /* le pied : l'action pleine d'abord, les autres au filet ou en lien, ce qui s'efface à droite */
 .fiche-pied{display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-height:60px;padding:12px 20px;border-top:1px solid var(--s-line);background:var(--s-surface);flex:none}

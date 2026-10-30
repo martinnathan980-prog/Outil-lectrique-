@@ -311,7 +311,7 @@ const reperes = () => memo('reperes', () => { const V = verite(), par = new Map(
   app.contrat.liaisons.forEach(l => [l.de, l.vers].forEach(r => { if (!r) return; const s = par.get(r) || par.set(r, new Set()).get(r); if (l.plan) s.add(l.plan); }));
   const out = reperesDe(V).filter(r => !estRenvoi(r) && !estMasse(r) && !estRail(r)).map(nom => ({ nom, k: nom, genre: genreDuRepere(nom), plans: [...(par.get(nom) || [])].sort(triNaturel) }));
   (plans().length ? plans() : ['*']).forEach(p => liaisonsDe(p).forEach(l => { if (l.origine === null && l.vers === l.aPoser && l.borneVers === '1')
-    out.push({ nom: l.aPoser, k: l.aPoser + '@' + p, genre: 'barrette', plan: p === '*' ? '' : p, plans: p === '*' ? [] : [p], aPoser: true, sous: 'à poser sur ' + l.de + ':' + l.borneDe }); }));
+    out.push({ nom: l.aPoser, k: l.aPoser + '@' + p, genre: 'barrette', plan: p === '*' ? '' : p, plans: p === '*' ? [] : [p], aPoser: true, sous: 'ajoutée par Volta sur ' + l.de + ':' + l.borneDe }); }));
   return out.sort((a, b) => triNaturel(a.nom, b.nom) || triNaturel(a.plan || '', b.plan || '')); });
 /* Ce qu'un repère porte sans plan : ses connecteurs (lettre, part number, bornes), ses câbles, ses besoins. */
 const baseRepere = nom => memo('base|' + nom, () => { const L = liaisonsDuRepere(nom), b = besoinsDeBarrette(nom, L), cs = estBornier(nom) ? [] : connecteursDe(nom, L).filter(c => c.nom);
@@ -342,9 +342,9 @@ const etatRepere = nom => { const e = etatDuNom(nom);
   return { niveau: e.niveau || 'ok', mot: e.ko.length ? pluriel(e.ko.length, 'problème') : e.att.length ? e.att.length + INSECABLE + 'à voir' : 'ok', bulle: [...e.ko, ...e.att].map(majuscule).join('\n') }; };
 /* Les colonnes que les onglets de repères partagent : le repère (en tête), ses problèmes (au bout), son folio (en plus). */
 const COL_REPERE = { k: 'rep', t: 'Repère', cls: 'rc-c-rep', html: r => r.aPoser
-    ? `<span class="rc-aposer">${valT('rep', r.nom, { cls: 'rc-r aposer', titre: 'Barrette à poser : double-clic pour écrire son vrai repère, elle entre au contrat' })}<small>${esc(r.sous)}</small><button type="button" class="rc-poser" data-poser="1" data-bulle="${escA('Lui donner son vrai repère (' + prochainRepereVT(r) + ' proposé) : elle entre au contrat')}">Poser</button></span>`
+    ? `<span class="rc-aposer">${valT('rep', r.nom, { cls: 'rc-r aposer', titre: 'Barrette ajoutée par Volta (plusieurs câbles sur une borne), repère provisoire : double-clic pour écrire son vrai repère' })}<small>${esc(r.sous)}</small><button type="button" class="rc-poser" data-poser="1" data-bulle="${escA('Lui donner son vrai repère (' + prochainRepereVT(r) + ' proposé) : elle entre au contrat')}">Poser</button></span>`
     : valT('rep', r.nom, { cls: 'rc-r', titre: 'Double-clic pour renommer : chaque câble suit' }),
-  tri: r => r.nom, texte: r => r.nom + (r.aPoser ? ' (à poser)' : '') };
+  tri: r => r.nom, texte: r => r.nom + (r.aPoser ? ' (repère provisoire)' : '') };
 const COL_PROBLEMES = { k: 'etat', t: 'Problèmes', cls: 'rc-c-etat', html: r => { const e = etatRepere(r.nom); return etatHtml(e.niveau, e.mot, e.bulle); },
   tri: r => { const e = etatDuNom(r.nom); return e.ko.length ? -100 * e.ko.length - e.att.length : -e.att.length; }, texte: r => etatRepere(r.nom).mot };
 const COL_FOLIO = { k: 'folio', t: 'Folio', cls: 'rc-c-folio', option: true, html: r => r.plans.length ? `<span class="rc-folios">${esc(listeFolios(r.plans))}</span>` : rien, tri: r => r.plans[0] || '', texte: r => r.plans.join(' ') };
@@ -488,7 +488,7 @@ function infoBarrette(r) { return memo('bar|' + r.k, () => { if (r.aPoser) { con
   const P = planDuRepere(r.nom); return { Q: P.barrette ? P.barrette.plan : null, main: P.barrette ? P.barrette.main : '', cables: infoRepere(r).cables }; }); }
 /* Le prochain repère libre d'une barrette à poser : la suite de la barrette du contrat la plus proche de l'équipement
    qu'elle dédouble (102CB1 → 667VT21 → 667VT22), sinon le numéro de cet équipement (102VT1). */
-function prochainRepereVT(r) { const pris = new Set(reperesDe(verite())), sur = /^à poser sur (\S+?):/.exec(r.sous || ''), q0 = sur ? lireRepere(sur[1]) : null, n0 = q0 && q0.num ? +q0.num : 0;
+function prochainRepereVT(r) { const pris = new Set(reperesDe(verite())), sur = /^ajoutée par Volta sur (\S+?):/.exec(r.sous || ''), q0 = sur ? lireRepere(sur[1]) : null, n0 = q0 && q0.num ? +q0.num : 0;
   const vts = [...pris].filter(x => estBarrette(x) && !VT_A_POSER.test(x)).map(lireRepere).filter(q => q && q.num && /^\d+$/.test(q.suffixe));
   const num = vts.length ? vts.slice().sort((a, b) => Math.abs(+a.num - n0) - Math.abs(+b.num - n0))[0].num : q0 && q0.num ? q0.num : '1';
   let k = Math.max(0, ...vts.filter(q => q.num === num).map(q => +q.suffixe)) + 1; while (pris.has(num + 'VT' + k)) k++; return num + 'VT' + k; }
@@ -506,9 +506,9 @@ const COLONNES_BARRETTES = [COL_REPERE,
   { k: 'cables', t: 'Câbles', cls: 'rc-c-n', option: true, html: r => `<b class="rc-n">${infoBarrette(r).cables}</b>`, tri: r => infoBarrette(r).cables, texte: r => String(infoBarrette(r).cables) },
   COL_FOLIO];
 const BARRETTES = { ...ONGLET_REPERES, colonnes: COLONNES_BARRETTES, lignes: barrettes, cherche: 'Chercher : repère, module, norme…',
-  puces: () => [PUCE_A_REPRENDRE, ['aposer', 'À poser', r => r.aPoser, '', '', 'Les barrettes que l’outil propose, pas encore au contrat']],
+  puces: () => [PUCE_A_REPRENDRE, ['aposer', 'Repère provisoire', r => r.aPoser, '', '', 'Les barrettes que Volta a ajoutées (plusieurs câbles sur une borne), au repère provisoire']],
   editeur: (r, f) => { const B = infoBarrette(r);
-    if (f === 'rep') return { valeur: r.aPoser ? prochainRepereVT(r) : r.nom, toujours: r.aPoser, aide: r.aPoser ? 'le vrai repère : la barrette entre au contrat (Ctrl+Z la rend à poser)' : '' };
+    if (f === 'rep') return { valeur: r.aPoser ? prochainRepereVT(r) : r.nom, toujours: r.aPoser, aide: r.aPoser ? 'le vrai repère de la barrette (Ctrl+Z rend le repère provisoire)' : '' };
     if (r.aPoser || !B.Q) return null;
     if (f === 'module') { const b = planDuRepere(r.nom).barrette.besoins, vs = (B.Q.famille ? [B.Q.famille] : famillesDeModules(app.norme)).flatMap(fa => variantesQuiLogent(b, app.norme, fa).slice(0, 12));
       return { valeur: B.main ? B.Q.reference : '', options: [['', 'Automatique'], ...vs.map(m => [m.reference, m.variante + ' · ' + m.reference])] }; }
@@ -628,7 +628,7 @@ const RACCORDS = { colonnes: COLONNES_RACCORDS, portee: true, lignes: raccords, 
 /* Ce qu'il faut faire, et où la fiche le montre : lu dans la phrase du verdict (le contrôle ne le dit pas encore). Les
    phrases du contrôle disent « câble » et « gauge » (elles disaient « fil » et « jauge ») : on lit les deux. */
 function remede(x) { const t = x.texte, ideal = /l’idéal est un ([\d,.]+ A)/.exec(t) || /un ([\d,.]+ A) suffirait/.exec(t);
-  if (/^à poser sur/.test(t)) return ['Poser la barrette au contrat : lui donner son vrai repère (onglet Barrettes, « Poser »)', 'connecteur'];
+  if (/^ajoutée par Volta sur/.test(t)) return ['Donner son vrai repère à la barrette que Volta a ajoutée (onglet Barrettes)', 'connecteur'];
   if (/profil de charge est à renseigner/.test(t)) return ['Renseigner le profil de charge du disjoncteur : l’outil trouve le calibre', 'profil'];
   if (/déclenche|aucun calibre/.test(t)) return [ideal ? 'Retenir ' + ideal[1] + ' (onglet Disjoncteurs, « Retenir »)' : 'Alléger le profil ou changer de famille de disjoncteur', 'calibre'];
   if (/suffirait|touche la courbe|l’idéal est/.test(t)) return [ideal ? 'Retenir ' + ideal[1] : 'Retenir le meilleur calibre', 'calibre'];
@@ -727,7 +727,7 @@ function compteOnglet(k) { const items = CONTROLE.items || [];
     case 'liaisons': { const V = verite(), C = itemsParCable(); return { n: String(V.length), etat: V.some(l => (C.get(l.cable) || []).some(x => x.niveau === 'ko')) ? 'ko' : items.some(x => x.tableau != null) || V.some(l => C.has(l.cable)) ? 'att' : '' }; }
     case 'equipements': { const R = equipements(); return { n: String(R.length), etat: etatNoms(R) }; }
     case 'disjoncteurs': { const R = disjoncteurs(); return { n: String(R.length), etat: etatNoms(R) }; }
-    case 'barrettes': { const R = barrettes(), a = R.filter(r => r.aPoser).length; return { n: a ? (R.length - a) + ' + ' + a : String(R.length), etat: etatNoms(R), titre: a ? pluriel(R.length - a, 'posée') + ', ' + a + ' à poser' : '' }; }
+    case 'barrettes': { const R = barrettes(), a = R.filter(r => r.aPoser).length; return { n: a ? (R.length - a) + ' + ' + a : String(R.length), etat: etatNoms(R), titre: a ? pluriel(R.length - a, 'barrette') + ' du contrat, ' + a + ' ajoutée' + (a > 1 ? 's' : '') + ' par Volta' : '' }; }
     case 'prises': { const R = prises(); return { n: String(R.length), etat: etatNoms(R) }; }
     case 'cables': { const C = cables(); return { n: String(C.length), etat: C.some(etatCable) ? 'att' : '' }; }
     case 'raccords': return { n: String(raccords().length), etat: '' };
@@ -1042,6 +1042,7 @@ function fermerMenuColonnes() { const m = $('ba-colonnes-menu'); if (!m || m.hid
 /* ---- TOUT RELIER --------------------------------------------------------------- */
 function lierBase() { const b = app.base, t = $('ba-tab'), corps = $('ba-tbody'), fi = $('ba-filtre'); let fT;
   $('ba-taille').addEventListener('click', e => { const x = e.target.closest('[data-taille]'); if (!x) return; if (x.dataset.taille === 'plan') fermerBase(); else ouvrirBase(x.dataset.taille); });
+  $('ba-x').onclick = fermerBase;
   $('ba-csv').onclick = () => exporterRecap(false); $('ba-csv-tout').onclick = () => exporterRecap(true);
   // l'export porte son icône et dit ce qu'il sort (`rendreExport`) ; le mot « Colonnes » se range quand la barre se resserre (la flèche reste)
   $('ba-csv').innerHTML = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span class="rc-csv-mot">Exporter CSV</span>';
@@ -1127,7 +1128,7 @@ function lierBase() { const b = app.base, t = $('ba-tab'), corps = $('ba-tbody')
   // le focus sur une case de liaison : son câble s'allume (le clavier comme la souris)
   corps.addEventListener('focusin', e => { if (b.edition) return; const tr = e.target.closest('tr[data-k]'), r = tr && RECAP.vues.get(tr.dataset.k); if (r && r.l) { const w = filDe(r.l); if (w) allumerFil(w); } });
   // Maj+B : la page (B, lui, est pris par le clavier de l'outil, 08 `lierPanneau`)
-  window.addEventListener('keydown', e => { if (e.key !== 'B' || !e.shiftKey || e.ctrlKey || e.metaKey || e.altKey || !$('relief').hidden) return;
+  window.addEventListener('keydown', e => { if (e.key !== 'B' || !e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
     if (/^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '')) return; e.preventDefault(); basculerBase('page'); });
   lierPoignee(); }
 /* La poignée : la moitié se règle en hauteur (la page prend toute la place, elle n'en a pas). */

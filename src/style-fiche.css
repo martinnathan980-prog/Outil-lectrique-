@@ -744,7 +744,7 @@ button.fi-sertir:hover{background:var(--fi-voile-2)}
 .fi-etat.ko{background:var(--ko-soft);color:var(--ko)}.fi-etat.ko i{background:var(--ko)}
 
 /* ─── LE PIED : collé au bas de la fiche, sobre — UN geste principal au filet (le récapitulatif de l'objet), les autres
-   en clair (+ Câble, Relief), « ··· » pour ce qu'on fait rarement ─── */
+   en clair (+ Câble), « ··· » pour ce qu'on fait rarement ─── */
 .fi-pied{position:sticky;bottom:0;z-index:4;display:flex;align-items:center;gap:4px;margin:auto calc(-1 * var(--fi-g)) 0;padding:10px var(--fi-g) 12px;background:var(--s-surface);border-top:1px solid var(--s-line)}
 .fs+.fi-pied,.fs-corps+.fi-pied{margin-top:auto}
 details.fs:last-of-type{margin-bottom:var(--sp-5)}

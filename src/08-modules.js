@@ -25,9 +25,7 @@
    ni épaisseur, ni ombre : ce qui distingue une famille, c'est sa forme.
    La fiche (08 bis) montre la face, vivante : survoler un contact allume son
    fil sur le plan et sa ligne dans la fiche, un clic le choisit ; la bible dessine chaque
-   variante en petit (`pictoModule`) et en grand (`zoomModule`) ; la vue en
-   relief (08-relief) pose les modules sur leur rail (`sceneModules`) et liste
-   leurs contacts (`tableauModules`).
+   variante en petit (`pictoModule`) et en grand (`zoomModule`).
    =========================================================================== */
 'use strict';
 
@@ -40,7 +38,7 @@ const classeFamille = f => 'f-' + String(f || '').toLowerCase();
 /* ---- la face d'un module, à plat --------------------------------------- */
 /* Mesures en pixels, par calibre de contact : le pas suit la taille (un module de 36 contacts est serré, un module de
    6 gros contacts aéré) ; un contact #12 est plus gros qu'un #20. Une face irrégulière (contacts mêlés, chacun à sa
-   place) se mesure au pas de son plus petit contact. La vue en relief (`sceneModules`) lit `pas` et `rayon`. */
+   place) se mesure au pas de son plus petit contact. */
 const MJ = { pas: { 23: 32, 22: 36, 20: 42, 16: 50, 12: 58, 8: 74 }, rayon: { 23: 7.5, 22: 8.5, 20: 10, 16: 13, 12: 16, 8: 22 }, marge: 16 };
 const calibresDe = m => [...new Set(m.contacts.map(c => c.calibre))];
 const pasDuModule = m => m.libre ? MJ.pas[Math.max(...calibresDe(m))] || 40 : Math.max(...calibresDe(m).map(t => MJ.pas[t] || 34), MJ.pas[NUMERO(m.taille)] || 34);
@@ -140,58 +138,6 @@ function zoomModule(e) { const m = moduleDeReference(app.norme, e.reference); if
     <div class="bar-faits">${carac.map(([k, v]) => `<span>${esc(k)}</span><span>${esc(v)}</span>`).join('')}</div>
     <p class="note">${E ? 'Borne de jonction : E0599B01. Shunt : E0599S01A (2 trous), B (3), C (4), D (5).' : C ? 'Désignation provisoire : la règle de désignation de la norme n’est pas sur les pages lues. Les jauges par taille de contact sont celles, usuelles, des contacts EN 3155 (EN 3155-002 non fournie) : à confirmer.' : 'La règle de désignation de la NSA937901 n’est pas sur les pages lues : la désignation est provisoire, la face et les groupes viennent des figures 13 à 15.'}</p></div>`; }
 
-/* ---- le relief : les modules sur leur rail, les fils montant des contacts -- */
-// un cylindre debout (axe Y), de y0 à y1
-function cylindreDebout(cx, cz, y0, y1, r, coul, extra, n) { n = n || 14; const fs = [], pt = (k, y) => ({ x: cx + r * Math.cos(2 * Math.PI * k / n), y, z: cz + r * Math.sin(2 * Math.PI * k / n) });
-  for (let k = 0; k < n; k++) { const a = 2 * Math.PI * (k + 0.5) / n; fs.push(face([pt(k + 1, y0), pt(k, y0), pt(k, y1), pt(k + 1, y1)], { x: Math.cos(a), y: 0, z: Math.sin(a) }, coul, extra)); }
-  fs.push(face(Array.from({ length: n }, (_, k) => pt(k, y1)), { x: 0, y: 1, z: 0 }, coul, extra));
-  return fs; }
-const RM = { pas: { 23: 24, 22: 26, 20: 30, 16: 36, 12: 42, 8: 52 }, marge: 14, ecart: 34 };
-function sceneModules(Q) { const faces = [], fils = [], textes = [], trous = [];
-  // un contact peut porter deux fils (une prise de coupure : la fiche et l'embase)
-  const parContact = new Map(); Q.fils.forEach(x => { const k = x.module + '|' + x.contact.lettre; (parContact.get(k) || parContact.set(k, []).get(k)).push(x); });
-  let x0 = 0;
-  Q.modules.forEach((M, k) => { const m = M.module, pas = (m.libre ? RM.pas[Math.max(...calibresDe(m))] : Math.max(...calibresDe(m).map(t => RM.pas[t] || 26))) || 26;
-    const w = m.colonnes * pas + 2 * RM.marge, d = m.rangs * pas + 2 * RM.marge, h = (m.hauteur || 22) * 2.2, E = m.famille === 'E0599';
-    const coul = E ? '#3f4b5a' : m.corps === 'étanche' ? '#3b4048' : m.corps === 'module' ? '#4a6656' : m.corps === 'circulaire' ? '#6d5a7a' : '#34506c';
-    /* une PRISE DE COUPURE : ses deux parties, l'une derrière l'autre — la FICHE (mobile) au fond, qui reçoit ce qui
-       arrive, l'EMBASE (fixe) devant, d'où repart le reste ; entre elles, l'interface, les contacts face à face */
-    const deux = !!Q.prise, ecart = deux ? 22 : 0, parts = deux ? [{ z0: 0, amont: true, nom: 'fiche' }, { z0: d + ecart, amont: false, nom: 'embase' }] : [{ z0: 0, amont: null, nom: '' }];
-    faces.push(...boite(x0 - 3, -6, -4, x0 + w + 3, 0, (deux ? 2 * d + ecart : d) + 4, '#9aa4ae'));                 // le rail
-    parts.forEach(part => { const z0 = part.z0, pos = c => ({ x: x0 + RM.marge + (c.c + 0.5) * pas, z: z0 + RM.marge + (c.r + 0.5) * pas });
-      if (m.corps === 'circulaire') faces.push(...cylindreDebout(x0 + w / 2, z0 + d / 2, 0, h, Math.min(w, d) / 2, part.nom === 'embase' ? '#5a4a66' : coul, '', 36));
-      else faces.push(...boite(x0, 0, z0, x0 + w, h, z0 + d, part.nom === 'embase' ? '#2f3a46' : coul));
-      if (m.corps === 'étanche' && !deux) faces.push(...boite(x0 + w, 0, -2, x0 + w + 7, h + 3, d + 2, '#8a939d'));
-      m.groupes.forEach(g => { const pts = g.contacts.map(pos), pris = g.contacts.some(c => parContact.has(k + '|' + c.lettre)); if (!E && pts.length < 2) return;
-        arbreDuGroupe(pts.map(p => ({ x: p.x, y: p.z }))).forEach(([a, b]) => { const e = pas * 0.28;
-          faces.push(...boite(Math.min(a.x, b.x) - e, h, Math.min(a.y, b.y) - e, Math.max(a.x, b.x) + e, h + 1.6, Math.max(a.y, b.y) + e, pris ? '#c8954a' : '#a8916b')); });
-        if (pts.length === 1) faces.push(...boite(pts[0].x - pas * 0.28, h, pts[0].z - pas * 0.28, pts[0].x + pas * 0.28, h + 1.6, pts[0].z + pas * 0.28, pris ? '#c8954a' : '#a8916b')); });
-      m.contacts.forEach(c => { const p = pos(c), xs = (parContact.get(k + '|' + c.lettre) || []).filter(y => part.amont == null || !!y.f.amont === part.amont), x = xs[0];
-        const r = (MJ.rayon[c.calibre] || 8) / (MJ.pas[c.calibre] || 36) * (RM.pas[c.calibre] || pas);
-        faces.push(...cylindreDebout(p.x, p.z, h + 1.6, h + 6, r, x ? '#d9b36a' : m.corps === 'étanche' ? '#3a3f46' : '#b7bec6'));
-        const f = x ? { i: cleFil(x.f.l), f: x.f, cable: x.f.cable, vers: x.f.vers, borne: x.f.borne, type: x.f.type } : null;
-        trous.push({ p: { x: p.x, y: h + 6.1, z: p.z }, f, mauvais: xs.some(y => y.jaugeOk === false) });
-        textes.push({ p: { x: p.x - r - 2.5, y: h + 6.1, z: p.z - r - 1 }, t: c.lettre, cls: 're-num petit', face: { x: 0, y: 1, z: 0 } });
-        xs.forEach(y => { const g = { i: cleFil(y.f.l), f: y.f, cable: y.f.cable, vers: y.f.vers, borne: y.f.borne, type: y.f.type };
-          const amont = !!y.f.amont, monte = 26 + 8 * (Math.round(c.r) % 4), loin = amont ? -RM.ecart : (deux ? 2 * d + ecart : d) + RM.ecart;
-          fils.push({ pts: [{ x: p.x, y: h + 6, z: p.z }, { x: p.x, y: h + monte, z: p.z }, { x: p.x, y: h + monte, z: loin }], f: g, sens: amont ? 'amont' : 'aval' }); }); });
-      textes.push({ p: { x: x0 + w / 2, y: h * 0.45, z: z0 + d }, t: deux ? (part.nom === 'fiche' ? 'fiche' : 'embase') : (M.titre || m.variante), cls: 're-num', face: { x: 0, y: 0, z: 1 } }); });
-    x0 += w + RM.ecart; });
-  return { faces, fils, textes, trous }; }
-function tableauModules(Q) { const routes = couleursDesRoutes();
-  // une prise : une ligne par contact, le fil de la fiche et celui de l'embase côte à côte
-  if (Q.prise && Q.modules[0]) { const fil = x => { if (!x) return '<span class="re-libre">—</span>'; const l = x.f.l, coul = routes.get((l && l.route) || '') || '#26323f';
-      return `<span class="re-f" data-i="${cleFil(l)}"><i style="background:${coul}"></i><b>${esc(nomDuFil(x.f))}</b> ${esc(destination(x.f))}${x.f.type ? ' <em>' + esc(x.f.type) + '</em>' : ''}${x.jaugeOk === false ? ' <span class="ko">refusé par le contact</span>' : ''}</span>`; };
-    const lignes = Q.modules[0].module.contacts.map(c => { const am = Q.fils.find(x => x.contact === c && x.f.amont), av = Q.fils.find(x => x.contact === c && !x.f.amont);
-      return am || av ? `<tr><td class="n">${esc(c.lettre)}</td><td>${fil(am)}</td><td>${fil(av)}</td></tr>` : ''; }).join('');
-    return `<table class="re-tab"><thead><tr><th>Contact</th><th>Fiche · ce qui arrive</th><th>Embase · ce qui repart</th></tr></thead><tbody>${lignes}</tbody></table>`; }
-  const lignes = Q.fils.slice().sort((a, b) => a.module - b.module || a.groupe.k - b.groupe.k || a.groupe.contacts.indexOf(a.contact) - b.groupe.contacts.indexOf(b.contact)).map(x => {
-    const l = x.f.l, i = cleFil(l), coul = routes.get((l && l.route) || '') || '#26323f';
-    const M = Q.modules[x.module], pre = Q.modules.length > 1 ? (M.titre ? M.titre.split(' · ')[0] : x.module + 1) + '·' : '';
-    return `<tr><td class="n">${esc(pre)}${esc(x.contact.lettre)}</td><td>${esc(x.groupe.nom)} · borne ${esc(x.potentiel.bornes.join('-'))}</td>`
-      + `<td><span class="re-f" data-i="${i}"><i style="background:${coul}"></i><b>${esc(nomDuFil(x.f))}</b> ${esc(destination(x.f))}${x.f.type ? ' <em>' + esc(x.f.type) + '</em>' : ''}${x.jaugeOk === false ? ' <span class="ko">refusé par le contact</span>' : ''}</span></td></tr>`; }).join('');
-  return `<table class="re-tab"><thead><tr><th>Contact</th><th>Groupe · potentiel</th><th>Fil</th></tr></thead><tbody>${lignes}</tbody></table>`; }
-
 /* ---- les connecteurs et les prises de coupure en modules EN 4165 -------------
    Un connecteur d'équipement EN 4165 : une carte par cavité (A, B…), la face
    de son module, chaque borne sur le contact de même numéro, sa jauge jugée
@@ -218,14 +164,3 @@ function sertirDuFil(l) { const bout = (rep, borne) => { if (!rep || VT_A_POSER.
    récapitulatif, la fiche, la nomenclature et le contrôle lisent celui-ci. */
 function contactMain(l, rep, borne) { if (!l || !rep) return ''; const k = rep === l.de && l.contactDe ? l.contactDe : rep === l.vers && l.contactVers ? l.contactVers : '';
   return k || (app.contrat.designations && app.contrat.designations.get('sertir|' + rep + '|' + (borne != null ? borne : rep === l.de ? l.borneDe : l.borneVers))) || ''; }
-/* Ce que la vue en relief dessine pour un repère : les modules d'une barrette, d'une prise de coupure, ou les cavités
-   d'un équipement ; rien sinon. */
-function modulesEnRelief(nom) {
-  if (barretteEnModules(nom)) { const Q = planDeBarrette(nom).plan;
-    return { Q, sur: 'Barrette · ' + (Q.reference || 'aucun module ne convient'), note: 'Modules de jonction ' + [...new Set(Q.modules.map(M => nomDeFamille(app.norme, M.module.famille)))].join(' et ') + ' : chaque contact lettré ; le laiton relie les contacts d’un même groupe (shunt). En arrière, ce qui arrive ; en avant, ce qui repart.' }; }
-  if (coupureEnModules(nom)) { const Q = { ...planDeCoupure(nom).plan, prise: true };
-    return { Q, sur: 'Prise de coupure · ' + (Q.reference || 'aucun arrangement ne convient'), note: 'Module ' + (nomDeFamille(app.norme, Q.famille) || 'de connecteur') + ' : au fond la fiche (partie mobile), qui reçoit ce qui arrive ; devant l’embase (partie fixe), d’où repart le reste ; les contacts face à face.' }; }
-  const C = cavitesDe(nom); if (!C.length) return null;
-  const Q = planDesCavites(C.map(c => ({ nom: c.nom, plan: c.plan })));
-  return { Q, sur: 'Connecteur · ' + [...new Set(C.map(c => c.pn))].join(', '), note: 'Modules ' + [...new Set(C.map(c => nomDeFamille(app.norme, c.plan.famille)))].join(', ') + ', une cavité (un insert) chacun : chaque borne sur le contact de même numéro, sa jauge admise par la taille du contact.' }; }
-const reliefPossible = nom => estBornier(nom) || cavitesDe(nom).length > 0;

@@ -47,7 +47,6 @@ node tests/dessin.js           LE FOLIO ET LE GESTE SUR LE PLAN (l'audit du dess
                                Espace déplacent la vue, jamais un bloc, le curseur le dit ; le cartouche d'un folio FWD ; les renvois en
                                drapeaux, leur clic (l'autre moitié choisie, lisible) et Alt+← ; la bulle d'un câble, d'un bloc, la
                                référence croisée ; choisir un bloc ne réécrit plus le folio ; l'export sans quadrillage
-node tests/relief.js           la vue en relief de chaque barrette (modules E0599) et prise de l'exemple : un fil par contact pris, aucune étiquette
                                sur une autre, tourner, survoler, Échap, double-clic
 node tests/chrome.js           LE CHROME ET LES GESTES COMMUNS (v73), à la vraie souris et au clavier : défaire et refaire (Ctrl+Z ;
                                Ctrl+Y et Ctrl+Maj+Z refont, jamais ne défont ; ↶ ↷ du rail ; le mot dit l'état d'arrivée et offre le
@@ -159,7 +158,7 @@ node tests/parcours.js         LES PARCOURS DU LECTEUR, de bout en bout, à la v
                                A. un contrat neuf (le premier lancement sur la bibliothèque, l'exemple d'un clic et le fil de la barre du
                                haut, une install neuve, un retest Excel au vrai format ajouté comme plan et ouvert d'un clic, les folios au clavier et à la
                                barre du bas, la recherche, une correction dans le tableau que le plan suit, Ctrl+Z, fermer et rouvrir, les
-                               exports SVG / PNG / CSV, la nomenclature, le relief) ; B. je pars d'un contrat déjà fait (une base de quatre
+                               exports SVG / PNG / CSV, la nomenclature) ; B. je pars d'un contrat déjà fait (une base de quatre
                                machines, « Déjà fait » sur chaque fiche, le FWD à trois échelles, cocher et reprendre, le contrôle refait,
                                Ctrl+Z, les repères proposés en « ? », renommer un repris — repart-on de zéro ? copie-t-on à l'aveugle ?) ;
                                C. le contrôle (l'en-tête, l'index « à reprendre » qui mène à chaque point, trois corrections, une hypothèse,

@@ -1036,7 +1036,7 @@ function lierPlanche() {
       preparer(pr, P) { const b = pr.b, G = goulottesDe(P), ch = G.chDe(b.x); if (ch < 0 || !(P.routage.barrettes || []).includes(b)) return null;
         const a = G.x0(ch) + RETRAIT, z = G.x1(ch) - RETRAIT, grille = [];
         for (let x = a; x <= z + 0.01; x += PISTE) grille.push(x); for (let x = z; x >= a - 0.01; x -= PISTE) grille.push(x);
-        Object.assign(pr, { x0: b.x, lim: [a, Math.max(a, z)], grille, cleVT: cleDeBarrette(b) }); return 'déplacer ' + (b.nomVT || 'la barrette à poser'); },
+        Object.assign(pr, { x0: b.x, lim: [a, Math.max(a, z)], grille, cleVT: cleDeBarrette(b) }); return 'déplacer ' + (b.nomVT || 'la barrette ajoutée'); },
       viser(pr, rx, ry, libre) { const x = pr.x0 + rx; if (libre) return { x: Math.round(x * 2) / 2, ry };
         const g = pr.grille.reduce((m, v) => Math.abs(v - x) < Math.abs(m - x) ? v : m, pr.grille[0]); return { x: g != null ? g : x, ry }; },
       placer(pr, v) { const x = Math.max(pr.lim[0], Math.min(pr.lim[1], v.x)); return { x, pourquoi: Math.abs(x - v.x) > 0.01 ? 'goulotte' : null }; },
@@ -1047,7 +1047,7 @@ function lierPlanche() {
       voisines: (pr, p) => pr.grille.filter((x, i, a) => a.indexOf(x) === i && Math.abs(x - p.x) > 0.01).sort((u, v) => Math.abs(u - p.x) - Math.abs(v - p.x)).map(x => ({ x })),
       calque(pr, u) { const bs = bornesDePiquage(pr.b), y0 = bs[0].y - 4, y1 = bs[bs.length - 1].y + 4, pris = GESTES.vt.pris(pr), x = (ici(pr) || { x: pr.x0 }).x;
         return (pris ? ligne('rt-pose', x, y0, x, y1, u) : '') + ligne('rt-fantome' + (pris ? ' pris' : ''), pr.vise.x, y0, pr.vise.x, y1, u, true); },
-      mot(pr) { const nom = pr.b.nomVT || 'La barrette à poser', haut = pr.vise && Math.abs(pr.vise.ry || 0) > 3 * PRH;
+      mot(pr) { const nom = pr.b.nomVT || 'La barrette ajoutée', haut = pr.vise && Math.abs(pr.vise.ry || 0) > 3 * PRH;
         if (!pr.posee) return haut ? nom + ' reste au ras de sa borne : elle glisse dans sa goulotte, à gauche ou à droite.' : pr.refuse ? 'Pas de place ici pour ' + nom + ' : elle reste où elle était.' : '';
         const pres = pr.place.pourquoi === 'goulotte' ? ' jusqu’à sa paroi' : pr.place.pourquoi ? ' — au plus près : la place visée était prise' : '';
         return nom + ' glisse dans sa goulotte' + pres + (haut ? ' (elle reste à la hauteur de sa borne)' : '') + ' · double-clic pour la rendre au moteur · Ctrl+Z pour défaire.'; } },
@@ -1165,7 +1165,7 @@ function lierPlanche() {
     calculer(); peindre(); synchroniser(); rallumer();
     if (!suite) dire(c.name + ' poussé d’un carreau · Maj : cinq carreaux · Ctrl+Z pour défaire.'); };
   window.addEventListener('keydown', e => { const sens = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
-    if (!sens || e.ctrlKey || e.metaKey || e.altKey || mode || pointeurs.size || !$('relief').hidden) return;
+    if (!sens || e.ctrlKey || e.metaKey || e.altKey || mode || pointeurs.size) return;
     const t = e.target; if (t && t.closest && t.closest('input,textarea,select,[contenteditable],[role="listbox"],[role="menu"],#menu')) return;
     const c = blocChoisi(); if (!c) return;
     e.preventDefault(); e.stopPropagation(); const k = e.shiftKey ? 5 : 1; pousser(c, sens[0] * k, sens[1] * k); }, true);
@@ -1219,7 +1219,7 @@ function lierPlanche() {
   const champActif = t => !!(t && t.closest && t.closest('input,textarea,select,[contenteditable],[role="menu"],[role="listbox"]'));
   // un bouton qui a gardé le clavier (+, Ajuster…) : Espace le presserait ; la souris sur le plan, c'est la vue qu'on veut
   const boutonActif = t => !!(t && t.closest && t.closest('button,a,[role="button"]'));
-  const planVisible = () => !!app.dessin && !document.body.classList.contains('biblio') && $('relief').hidden;
+  const planVisible = () => !!app.dessin && !document.body.classList.contains('biblio');
   stage.addEventListener('mouseenter', () => { surLePlan = true; }); stage.addEventListener('mouseleave', () => { surLePlan = false; });
   window.addEventListener('keydown', e => { if (e.code !== 'Space' || e.ctrlKey || e.metaKey || e.altKey || champActif(e.target) || (boutonActif(e.target) && !surLePlan) || !planVisible()) return;
     e.preventDefault(); if (boutonActif(e.target) && e.target.blur) e.target.blur(); if (!espace) { espace = true; stage.classList.add('espace'); cacherBulle(); } }, true);
@@ -1260,22 +1260,12 @@ function lierPlanche() {
       if (d && t - d.t < 400 && Math.abs(e.clientX - d.x) < 8 && Math.abs(e.clientY - d.y) < 8) { dernierAppui = null; doubleAppui(e); }
       else cliquer(versMonde(e.clientX, e.clientY)); survolCle = ''; }
     mode = null; pan = null; prise = null; };
-  /* double appui : sur une borne, un fil, une barrette à poser que la main a retouchés, ils sont rendus au moteur ; sur une
-     barrette ou une prise, sa vue en relief ; ailleurs, on zoome */
+  /* double appui : sur une borne, un fil, une barrette à poser que la main a retouchés, ils sont rendus au moteur ;
+     ailleurs, on zoome */
   const doubleAppui = e => { const w = versMonde(e.clientX, e.clientY), p = app.dessin ? priseSous(w) : null;
     if (p && p.genre !== 'bloc' && estRetouche(p)) { rendreAuMoteur(objetDe(p)); return; }
-    const c = blocSous(w), vt = c ? null : barretteAPoserSous(w);
-    const nom = dernierBloc && Date.now() - dernierBloc.t < 800 ? dernierBloc.nom : (c && c.name) || (vt && vt.nomVT);
-    if (nom && reliefPossible(nom)) { ouvrirRelief(nom); return; }
     const r = cadre(); zoomer(1.6, e.clientX - r.left, e.clientY - r.top); };
   stage.addEventListener('pointerup', fin); stage.addEventListener('pointercancel', fin);
-  /* Le premier appui sur un bloc près du bord droit ouvre l'inspecteur SOUS le pointeur : le second appui du double-clic
-     tombe sur la fiche. Il compte quand même — la vue en relief du bloc — et la fiche ne le reçoit pas. */
-  const insp = $('inspecteur'); let avale = 0;
-  insp.addEventListener('pointerup', e => { const d = appuiDuPlan; appuiDuPlan = null;
-    if (!d || Date.now() - d.t > 400 || Math.abs(e.clientX - d.x) > 8 || Math.abs(e.clientY - d.y) > 8 || !d.nom || !reliefPossible(d.nom)) return;
-    avale = Date.now(); e.preventDefault(); e.stopPropagation(); ouvrirRelief(d.nom); }, true);
-  insp.addEventListener('click', e => { if (Date.now() - avale < 400) { e.preventDefault(); e.stopPropagation(); } }, true);
   stage.addEventListener('mousemove', survoler);
   stage.addEventListener('mouseleave', () => { cacherBulle(); souris = null; if (!mode) { effacerSurvol(); rallumer(); } });
   stage.addEventListener('wheel', e => { if (surLAccueil(e)) return;   // le plan vide ne zoome pas
@@ -1318,7 +1308,7 @@ function texteDeBulle(q) { const D = app.dessin, L = liaisonsDuPlan(), T = t => 
   if (q.genre === 'renvoi') { const t = q.c.name.replace(RENVOI, ''), l = q.f && L[q.f.i], bout = l ? (l.de === q.c.name ? l.borneDe : l.borneVers) : '';
     return T('Vers le folio ' + t) + (l ? l_(id(autreBoutDuRenvoi(bout)) + (l.cable ? ' · ' + id(l.cable) : '')) : '') + l_('Clic : y aller, l’autre moitié allumée'); }
   if (q.genre === 'vt') { const ws = filsDeBarretteAPoser(q.b.nomVT), r = liaisonsDuPlan().find(l => l.vers === q.b.nomVT && l.borneVers === '1' && !VT_A_POSER.test(l.de));
-    return T(q.b.nomVT) + l_('barrette à poser' + (r ? ' sur ' + id(bornePlusRepere(r.de, r.borneDe)) : '')) + l_(pluriel(ws.length, 'câble')); }
+    return T(q.b.nomVT) + l_('barrette ajoutée par Volta' + (r ? ' sur ' + id(bornePlusRepere(r.de, r.borneDe)) : '')) + l_(pluriel(ws.length, 'câble')); }
   const c = q.c, nom = c.name;
   if (q.genre === 'borne') { const ws = filsDeLaBorne(c, q.y);
     return T(bornePlusRepere(nom, q.etiq)) + ws.slice(0, 3).map(f => l_(lignesDeFil(f))).join('') + (ws.length > 3 ? l_('et ' + (ws.length - 3) + (ws.length > 4 ? ' autres câbles' : ' autre câble')) : '') + l_('Glisser : la déplacer le long du bloc'); }
@@ -1438,7 +1428,7 @@ const reperesDuContrat = () => memoContrat('reperes', () => { const V = verite()
     if (!sous) sous = pluriel(V.filter(l => l.de === nom || l.vers === nom).length, 'câble');
     out.push({ nom, genre, plans: plansDuRepere(nom).sort(triNaturel), sous }); });
   (plans().length ? plans() : ['*']).forEach(p => liaisonsDe(p).forEach(l => { if (l.origine === null && l.vers === l.aPoser && l.borneVers === '1')
-    out.push({ nom: l.aPoser, genre: 'barrette', plan: p, plans: p === '*' ? [] : [p], sous: 'à poser sur ' + l.de + ':' + l.borneDe }); }));
+    out.push({ nom: l.aPoser, genre: 'barrette', plan: p, plans: p === '*' ? [] : [p], sous: 'ajoutée par Volta sur ' + l.de + ':' + l.borneDe }); }));
   return out.sort((a, b) => triNaturel(a.nom, b.nom) || triNaturel(a.plan || '', b.plan || '')); });
 /* L'index : d'abord ce qu'il y a à reprendre (08 quater, par genre), puis les repères par genre — les disjoncteurs à part.
    Le filtre cherche dans les repères et ce qu'on écrit dessous (la désignation, la description du retest, le calibre, le
@@ -1463,7 +1453,7 @@ function rendreIndex(box) { const etats = new Map();
   box.className = 'fi ix'; box.dataset.cle = 'index';
   // la fiche qu'on y a laissée : ‹ la rouvre (Alt+←), à la même place
   const I = typeof pileInsp === 'function' ? pileInsp() : null, laissee = I && I.pile[I.pos];
-  box.innerHTML = `<header class="ix-tete">${laissee ? `<button class="fi-pas" id="fi-prec" aria-label="${escA('Revenir à ' + nomDEntree(laissee) + ' (Alt+←)')}" data-bulle="${escA('Revenir à ' + nomDEntree(laissee) + ' (Alt+←)')}">${ico('gauche')}</button>` : ''}<h2>Repères<b class="ix-n" data-bulle="${escA(pluriel(items.length, 'repère') + ' — hors renvois, masses et rails')}">${items.length}</b></h2><span class="espace"></span><button class="fi-x plus" id="ix-plus" data-bulle="Ajouter un équipement : son repère, puis ses câbles dans le tableau" aria-label="Ajouter un équipement" aria-expanded="${!!app.insp.ajout}">${ico('plus')}</button>${boutonEpingle()}<button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)">${ico('fermer')}</button></header>`
+  box.innerHTML = `<header class="ix-tete">${laissee ? `<button class="fi-pas" id="fi-prec" aria-label="${escA('Revenir à ' + nomDEntree(laissee) + ' (Alt+←)')}" data-bulle="${escA('Revenir à ' + nomDEntree(laissee) + ' (Alt+←)')}">${ico('gauche')}</button>` : ''}<h2>Repères<b class="ix-n" data-bulle="${escA(pluriel(items.length, 'repère') + ' — hors renvois, masses et rails')}">${items.length}</b></h2><span class="espace"></span><button class="fi-x plus" id="ix-plus" data-bulle="Ajouter un équipement : son repère, puis ses câbles dans le tableau" aria-label="Ajouter un équipement" aria-expanded="${!!app.insp.ajout}">${ico('plus')}</button>${boutonTaille()}${boutonEpingle()}<button class="fi-x" id="in-fermer" aria-label="Fermer (Échap)">${ico('fermer')}</button></header>`
     // ajouter un équipement : un champ en ligne, sous le titre (pas une boîte du navigateur)
     + (app.insp.ajout ? `<form class="ix-ajout" id="ix-ajout"><div class="filtre">${ico('plus')}<input id="ix-nouveau" placeholder="Repère du nouvel équipement, par exemple 105RL2" aria-label="Repère du nouvel équipement" autocomplete="off" spellcheck="false"></div><button class="btn cuivre" type="submit">Ajouter</button><button class="btn lien" type="button" id="ix-annuler">Annuler</button></form>` : '')
     + `<div class="filtre ix-filtre">${ico('loupe')}<input id="ix-q" value="${escA(app.insp.filtre)}" placeholder="Chercher un repère, une désignation, un câble" aria-label="Chercher un repère ou un câble" autocomplete="off" spellcheck="false"><button class="vider" id="ix-vider"${f ? '' : ' hidden'} aria-label="Effacer la recherche">×</button></div>`
@@ -1472,7 +1462,7 @@ function rendreIndex(box) { const etats = new Map();
   // la même liste refaite (un filtre tapé) garde sa place ; l'index qu'on ouvre commence en haut, titre et recherche en vue
   box.scrollTop = meme ? haut : 0; survolQuiSuit(box); if (typeof lierBulles === 'function') lierBulles(box);
   $('in-fermer').onclick = () => fermerInspecteur();
-  const ep = $('fi-epingle'); if (ep) ep.onclick = e => { e.stopPropagation(); epinglerCarte(!CARTE.epingle); };
+  const ep = $('fi-epingle'); if (ep) ep.onclick = e => { e.stopPropagation(); epinglerCarte(!CARTE.epingle); }; lierTaille();
   if ($('fi-prec')) $('fi-prec').onclick = () => naviguer(-1);
   const q = $('ix-q'); q.addEventListener('input', () => { app.insp.filtre = q.value; const pos = q.selectionStart; rendreIndex(box); const q2 = $('ix-q'); q2.focus(); q2.setSelectionRange(pos, pos); });
   q.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); if (q.value) { q.value = ''; q.dispatchEvent(new Event('input')); } else fermerInspecteur(); }
@@ -2127,7 +2117,7 @@ function refaireFolios() { const src = app.source, plan = app.plan; app.contrat.
   if (R.applique) { app.source = src; app.contrat.liaisons = R.liaisons; app.nFolios = R.nFolios; app.plan = plansDe(R.liaisons).includes(plan) ? plan : '1'; }
   else app.plan = '*'; }
 /* Après chaque correction : les folios, le plan, la base, l'enregistrement. */
-function apresEdition() { if (app.nFolios) refaireFolios(); redessiner(); sauver(); }
+function apresEdition() { try { appliquerCalibresVolta(); } catch (_) { } if (app.nFolios) refaireFolios(); redessiner(); sauver(); }
 
 /* ---- les folios automatiques : découper, dérouler, ajuster tout seul --- */
 function decouper(budget) { const src = verite(); const R = decouperEnFolios(src, budget);
@@ -2276,7 +2266,8 @@ function poserEtat(o) { app.contrat = contratNeuf(); app.planId = o.planId || ''
   app.contrat.liaisons = o.liaisons.map(liaison); app.source = o.source ? o.source.map(liaison) : null; app.nFolios = o.nFolios || 0; app.budget = o.budget || 16; app.plan = o.plan || '*'; app.nom = o.nom || '';
   app.contrat.designations = new Map(o.designations || []); app.contrat.sexes = new Map(o.sexes || []); app.contrat.charges = new Map(o.charges || []); app.contrat.raccords = new Map(o.raccords || []); app.contrat.provisoires = new Map(o.provisoires || []); if (o.cartouche) Object.assign(app.contrat.cartouche, o.cartouche);
   const P = plans(); if (app.plan === '*' && P.length > 1) app.plan = P[0];
-  app.choisi = null; app.cible = null; app.actif = null; }
+  app.choisi = null; app.cible = null; app.actif = null;
+  calibresVoltaALOuverture(); }   // un plan gardé avant la règle du calibre (v74) la reçoit en s'ouvrant
 // le plan qui était sur la table à la fermeture revient (derrière la bibliothèque, qui s'ouvre au lancement)
 function relire() { try { const j = localStorage.getItem(CLE_CONTRAT); if (!j) return false; const o = JSON.parse(j);
     if (!o || !o.liaisons || !o.liaisons.length) return false;
@@ -2586,8 +2577,6 @@ function lierPanneau() {
   o('zin', () => zoomer(1.25)); o('zout', () => zoomer(1 / 1.25)); o('zfit', () => ajuster(true)); o('zlbl', () => ajuster(true));
   lierRecherche(); lierDepot(); lierBase(); lierControle();
   window.addEventListener('keydown', e => {
-    // la vue en relief ouverte : Échap la ferme, le reste lui appartient
-    if (!$('relief').hidden) { if (e.key === 'Escape') fermerRelief(); return; }
     const dansChamp = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '');
     // la bibliothèque ouverte : ses touches (Échap remonte, « / » cherche) ; celles du plan, caché dessous, se taisent
     if (toucheBibliotheque(e, dansChamp)) return;

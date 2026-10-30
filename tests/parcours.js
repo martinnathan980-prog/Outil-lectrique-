@@ -13,7 +13,7 @@
         en-têtes ligne 4), le plan qui se dessine d'un clic, les folios
         au clavier et à la barre du bas, la recherche (/), une correction dans
         le tableau que le plan suit, Ctrl+Z, fermer et rouvrir (la mémoire),
-        les exports (SVG, PNG, CSV), la nomenclature, le relief ;
+        les exports (SVG, PNG, CSV), la nomenclature ;
      B. JE PARS D'UN CONTRAT DÉJÀ FAIT : une base de trois machines, un retest
         proche, « Déjà fait » sur chaque fiche, le dessin FWD et ses trois
         échelles, cocher et reprendre (recâblé, sans numéro), le contrôle qui
@@ -126,14 +126,13 @@ const capture = async (page, nom) => { if (!CAPTURES) return; try { await page.s
 const ecranDe = (page, nom) => page.evaluate(nom => { const r = $('planche').getBoundingClientRect(), E = (x, y) => ({ x: r.left + app.vue.tx + x * app.vue.s, y: r.top + app.vue.ty + y * app.vue.s });
   const c = app.dessin.comps.find(k => k.name === nom && k.kind !== 'tag'); if (c) return E(c.x + c.w / 2, c.y + Math.min(c.h / 2, 12));
   const b = (app.dessin.barrettes || []).find(b => b.nomVT === nom); if (!b) return null; const bs = bornesDePiquage(b); return E(b.x, (bs[0].y + bs[1].y) / 2); }, nom);
-/* Un clic de souris sur un bloc du plan. Si le clic n'a pas choisi ce bloc (un fil voisin, un double appui pris pour un
-   relief…), on le dit et on le choisit par l'API pour que le parcours continue. */
+/* Un clic de souris sur un bloc du plan. Si le clic n'a pas choisi ce bloc (un fil voisin…), on le dit et on le choisit par l'API pour que le parcours continue. */
 const cliquerBloc = async (page, nom) => { await page.waitForTimeout(320);   // un recadrage en cours (animerVue, 260 ms) déplacerait la cible sous le clic
   const e = await ecranDe(page, nom); if (!e) throw new Error(nom + ' absent du dessin'); await page.mouse.click(e.x, e.y); await page.waitForTimeout(450);
-  const touche = await page.evaluate(nom => ({ bon: !!(app.cible && app.cible.nom === nom && !$('inspecteur').hidden), quoi: app.cible ? app.cible.type + ':' + (app.cible.nom || (app.cible.l && app.cible.l.cable) || '') : 'rien', relief: !$('relief').hidden }), nom);
+  const touche = await page.evaluate(nom => ({ bon: !!(app.cible && app.cible.nom === nom && !$('inspecteur').hidden), quoi: app.cible ? app.cible.type + ':' + (app.cible.nom || (app.cible.l && app.cible.l.cable) || '') : 'rien' }), nom);
   if (touche.bon) return;
-  note('le clic sur ' + nom + ' (' + Math.round(e.x) + ', ' + Math.round(e.y) + ') a touché ' + touche.quoi + (touche.relief ? ' et ouvert le relief' : '') + ' : on le choisit par l’API');
-  await page.evaluate(nom => { if (!$('relief').hidden) fermerRelief(); const c = app.dessin.comps.find(k => k.name === nom && k.kind !== 'tag'); if (c) choisirBloc(c); else choisirBarretteAPoser(barretteAPoser(nom)); }, nom); await page.waitForTimeout(300); };
+  note('le clic sur ' + nom + ' (' + Math.round(e.x) + ', ' + Math.round(e.y) + ') a touché ' + touche.quoi + ' : on le choisit par l’API');
+  await page.evaluate(nom => { const c = app.dessin.comps.find(k => k.name === nom && k.kind !== 'tag'); if (c) choisirBloc(c); else choisirBarretteAPoser(barretteAPoser(nom)); }, nom); await page.waitForTimeout(300); };
 /* Le bloc est-il CADRÉ : entier dans la place libre du plan (hors volet épinglé ou tiroir, tableau, rail, barre du bas) ?
    La CARTE flottante (v72, 08-carte) ne prend pas de place au plan : elle ne doit seulement pas cacher le bloc. */
 const cadrage = (page, nom) => page.evaluate(nom => { const d = app.dessin; if (!d) return { dedans: false, detail: 'pas de dessin' };
@@ -305,10 +304,6 @@ function baseEssaiDansLaPage() {
     // (le nom « neuf — nomenclature.csv » porte un tiret cadratin : Chromium sous pilote le rapporte « download », on juge le contenu)
     const csv = fs.readFileSync(d.chemin, 'utf8'); ok(/^﻿?Section;Référence;Détail;Quantité;Unité;Où/.test(csv) && csv.split('\n').length > 5, 'la nomenclature s’enregistre en CSV (Section ; Référence ; …)', d.nom + ' · ' + csv.split('\n').length + ' lignes');
     await page.keyboard.press('Escape'); await page.waitForTimeout(300);
-    // le relief, d'un double-clic sur une barrette (folio 2)
-    await page.click('#fo-strip .chip:nth-child(2)'); await page.waitForTimeout(400); const eb = await ecranDe(page, '667VT21');
-    if (eb) { await page.mouse.dblclick(eb.x, eb.y); await page.waitForTimeout(700); ok(await page.evaluate(() => !$('relief').hidden && /667VT21/.test($('re-titre').textContent)), 'un double-clic sur 667VT21 ouvre sa vue en relief'); await capture(page, 'A-7-relief'); await page.keyboard.press('Escape'); await page.waitForTimeout(200); }
-    else ok(false, '667VT21 est sur le folio 2');
     ok(!page.erreurs.length, 'aucune erreur console', page.erreurs.slice(0, 3).join(' | '));
     await ctx.close(); });
 

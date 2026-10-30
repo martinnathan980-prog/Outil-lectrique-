@@ -259,6 +259,8 @@
       </div>
       <!-- l'export dit ce qu'il sort (« Exporter 8 liaisons · folio 1 ») ; « Tout » sort tout l'onglet (08-recap, `rendreExport`) -->
       <span class="rc-export"><button class="btn papier" id="ba-csv">Exporter CSV</button><button class="btn lien" id="ba-csv-tout" hidden>Tout</button></span>
+      <!-- la croix : le lecteur cherchait comment fermer — « Plan » le faisait, mais ne se lisait pas comme une sortie -->
+      <button class="rond fermer" id="ba-x" aria-label="Fermer le récapitulatif (B ou Échap)" data-bulle="Fermer le récapitulatif (B)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     </header>
     <div class="rc-onglets" id="ba-onglets" role="tablist" aria-label="Ce que le récapitulatif montre"></div>
     <div class="rc-outils">
@@ -287,22 +289,6 @@
     <div class="fiche-pied" id="fiche-pied" hidden></div>
   </aside>
 
-  <!-- La VUE EN RELIEF d'une barrette ou d'une prise de coupure (08-relief) : la pièce en perspective, qu'on fait
-       tourner à la main, chaque fil dans son trou, à la couleur de sa route ; dessous, le tableau trou par trou. -->
-  <div id="relief" class="relief" hidden role="dialog" aria-modal="true" aria-labelledby="re-titre">
-    <div class="re-boite">
-      <div class="re-tete">
-        <div class="min0"><div class="sur" id="re-sur"></div><h2 class="titre" id="re-titre"></h2><div class="re-compte" id="re-compte"></div></div>
-        <div class="segment re-vues" id="re-vues" role="group" aria-label="Vue">
-          <button data-vue="3/4" title="Vue de trois quarts" aria-pressed="true">3/4</button><button data-vue="face" title="Vue de face" aria-pressed="false">Face</button><button data-vue="dessus" title="Vue de dessus" aria-pressed="false">Dessus</button>
-        </div>
-        <button class="rond fermer" id="re-fermer" aria-label="Fermer la vue en relief (Échap)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
-      </div>
-      <div class="re-scene" id="re-scene" title="Glisser pour tourner la pièce"></div>
-      <div class="re-note" id="re-note"></div>
-      <div class="re-tableau" id="re-tableau"></div>
-    </div>
-  </div>
   <!-- Le dépôt d'un fichier : toute la fenêtre devient la cible (hors de la planche, qui est un contexte d'empilement). -->
   <div id="depot" class="depot" aria-hidden="true"><div>Déposer le fichier</div></div>
   <div id="toast" role="status" aria-live="polite"></div>

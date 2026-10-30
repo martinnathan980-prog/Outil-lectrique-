@@ -124,7 +124,7 @@ const DOMAINES_NORMES = [
 /* Pour chaque table : d'où elle vient, à quoi elle sert dans l'outil, qui la lit, comment une ligne se choisit. */
 const FICHES_TABLES = {
   modules: { source: 'ASNE 0599 (p. 8-11), NSA937901 (fig. 13-15), EN 4165-002, EN 2997-002, EN 3645-002, EN 3646-002, ASNE 0059', sert: 'C’est elle qui dit quels modules et quels arrangements existent : chaque barrette se remplit avec, chaque connecteur ou prise de coupure reçoit un arrangement.',
-    lue: 'la fiche d’une barrette (variante, face, groupes), d’une prise de coupure et d’un connecteur (arrangement, face), le relief, la nomenclature, la bible',
+    lue: 'la fiche d’une barrette (variante, face, groupes), d’une prise de coupure et d’un connecteur (arrangement, face), la nomenclature, la bible',
     choix: 'automatique : la variante que le part number nomme, sinon celle qui loge le plus de potentiels en perdant le moins de contacts (usage « normal » préféré) ; pour un connecteur, le plus petit arrangement qui loge toutes les bornes avec leurs gauges — manuelle : « Changer » sur la fiche (une variante, une norme)' },
   tailles: { source: 'plages usuelles des contacts EN 3155 ; les titres des figures NSA937901 — à confirmer ; EN 4165 23 et E0599 20 corrigées par R1 (TE DMC-M, Air LB)', sert: 'Les gauges AWG qu’un contact de cette taille reçoit, quand la table Contacts ne connaît pas la taille (EN 3645 8T, NSA937901 22 aluminium).',
     lue: 'le remplissage des modules (un câble refusé par son contact), la taille de contact d’une gauge pour la résistance de contact (chute en ligne)', choix: 'automatique : la famille et la taille exactes, sinon la taille sans famille' },

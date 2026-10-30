@@ -90,8 +90,12 @@ function disjonctionDe(nom) { const profil = chargeDe(nom), ecrit0 = profil && p
   const m0 = d.meilleur || {}, passe = !d.sansProfil && m0.calibre && !m0.serre ? m0.calibre : null;
   // à la main : le calibre écrit, ou celui du part number changé ici — sauf quand ce part number porte le meilleur : le retest
   // a été corrigé par le choix de l'outil (la carte de décision, « Passer en 15 A »), le calibre reste l'automatique
-  const ecrit = ecrit0 || (pn && pnChangeIci(nom) && pn !== passe ? pn : null);
-  const calibre = ecrit || passe || pn || d.calibreIdeal || null; if (calibre && calibre !== d.calibre) d = verdictDisjonction(app.norme, courbe, calibre, profil, contexte);
+  // (un part number que VOLTA a réécrit — la règle du lecteur, plus bas — n'est pas un choix à la main)
+  const ecrit = ecrit0 || (pn && pnChangeIci(nom) && !pnDeVolta(nom) && pn !== passe ? pn : null);
+  // LA RÈGLE DU LECTEUR (v74) : « dès que ça touche la courbe, on ne prend pas ; on prend que quand ça ne touche pas » —
+  // le calibre du fichier est gardé s'il PASSE (avec la marge) ; sinon, le plus petit qui passe
+  const gPn0 = pn && !d.sansProfil ? (d.gamme || []).find(g => g.calibre === pn) : null, pnPasse = gPn0 && cleDuVerdict(gPn0) === 'passe' ? pn : null;
+  const calibre = ecrit || pnPasse || passe || pn || d.calibreIdeal || null; if (calibre && calibre !== d.calibre) d = verdictDisjonction(app.norme, courbe, calibre, profil, contexte);
   const chutePropre = chuteDuDisjoncteur(app.norme, famille, calibre);
   // le part number du retest jugé à son tour (passe-t-il ?) quand l'outil en retient un autre
   const gPn = pn && pn !== calibre ? (d.gamme || []).find(g => g.calibre === pn) || null : null;
@@ -101,6 +105,27 @@ const calibreDe = nom => disjonctionDe(nom).calibre;
    marge, filsAChanger: [{ cable, actuel, propose, raison, … }], contactsTouches: [{ cable, actuel, propose, raison, … }],
    filsInconnus, selectif, serre, reserve }. */
 const meilleurCalibre = nom => disjonctionDe(nom).meilleur;
+/* LE CALIBRE QUE VOLTA ÉCRIT LUI-MÊME (le lecteur, v74 : « si le calibre touche la courbe, tu ne l'expliques pas : tu mets
+   directement le calibre automatique qui marche ; on garde automatique / manuel et la possibilité de revenir ») : un
+   disjoncteur dont le calibre du fichier touche la courbe ou déclenche prend, sans carte ni question, le plus petit qui
+   passe — son part number réécrit sur chaque liaison, les câbles que ce calibre demande grossis —, le fichier gardé dans
+   `avant` et la case marquée « Volta » (08-export, `avecOrigineVolta`). Un calibre retenu à la main ne bouge pas ;
+   « Automatique » (`rendreCalibre`) revient ici. Sans famille de part number (rien à réécrire) : le calibre de l'outil est
+   déjà celui du folio et des exports. Appelé après chaque geste (`apresEdition`) et à l'ouverture d'un plan. Rend le
+   nombre de disjoncteurs réécrits. */
+const pnDeVolta = nom => verite().some(l => [['de', 'pnDe'], ['vers', 'pnVers']].some(([b, ch]) => { const v = l[b] === nom && l.avant ? l.avant[ORIGINE_VOLTA + ch] : undefined; return v !== undefined && v === (l[ch] == null ? null : l[ch]); }));
+function appliquerCalibresVolta() { if (!app.norme || !verite().length) return 0; let n = 0;
+  const noms = [...new Set(verite().flatMap(l => [l.de, l.vers]).filter(r => r && estDisjoncteur(r)))];
+  noms.forEach(nom => { let d; try { d = disjonctionDe(nom); } catch (_) { return; }
+    if (d.origine === 'main' || d.sansProfil || d.sansCourbe || !d.famille || !(d.pn > 0) || !(d.passe > 0) || d.calibre !== d.passe || d.pn === d.passe) return;
+    const pn = pnDuRepere(nom), nouveau = pnAvecCalibre(pn, d.famille, d.passe); if (!nouveau || nouveau === pn) return;
+    const xs = d.passe === (d.meilleur || {}).calibre ? filsDuMeilleur(d).filter(p => p.f && p.x.propose) : [];
+    avecOrigineVolta(() => { verite().forEach(l => [['de', 'pnDe'], ['vers', 'pnVers']].forEach(([b, ch]) => { if (l[b] === nom && l[ch]) poserChamp(l, ch, nouveau); }));
+      xs.forEach(p => poserChamp(p.f.l, 'type', p.x.propose)); });
+    n++; });
+  return n; }
+// à l'ouverture d'un plan (l'exemple, un plan de la bibliothèque) : réécrire, puis refaire les folios si quelque chose a changé
+function calibresVoltaALOuverture() { let n = 0; try { n = appliquerCalibresVolta(); } catch (_) { n = 0; } if (n && app.nFolios) refaireFolios(); return n; }
 /* D'OÙ VIENT LE CALIBRE RETENU, dans les mots des origines (08-sections) : « main » s'il a été écrit ici ou si le part
    number du disjoncteur a été changé ici (`avant` garde celui du retest), « retest » s'il se lit dans le part number du
    fichier, « auto » si c'est le meilleur que l'outil trouve. Rend aussi le part number du retest et son calibre. */
@@ -201,6 +226,7 @@ function retenirCalibre(nom, cal) { const d = disjonctionDe(nom); if (!(cal > 0)
 function rendreCalibre(nom) { histPush('calibre de ' + nom + ' : automatique');
   verite().forEach(l => [['de', 'pnDe'], ['vers', 'pnVers']].forEach(([b, ch]) => { if (l[b] === nom && l.avant && ch in l.avant) poserChamp(l, ch, l.avant[ch]); }));
   const c = chargeDe(nom); if (c && c.calibre != null) poserCharge(nom, { ...c, calibre: null });
+  // (apresEdition réécrit le calibre qui passe, si celui du fichier touche la courbe : la règle du lecteur, v74)
   apresEdition(); const d = disjonctionDe(nom); dire(nom + ' : automatique' + (d.calibre ? ', ' + amperes(d.calibre) : '') + '.'); }
 /* CHANGER LES FILS que le meilleur calibre demande : chacun passe au câble proposé (la jauge qui le suit), le fichier gardé
    dans `avant` ; une seule entrée d'historique pour le lot. */
@@ -280,7 +306,7 @@ function sectionDisjoncteur(nom, d, o, probs) { d = d || disjonctionDe(nom); o =
   const profil = part('profil', 'Profil de charge', tableauProfil(d) + ajouts, plus, 'profil');
   // pliée, la ligne dit le calibre en grand, son mot quand il ne passe pas, sa gamme ; et, tant que la proposition de
   // l'outil n'est pas écrite (l'ergonome v73 : « est-il à 10 ou à 15 ? »), le calibre du RETEST en grand et « → 15 A proposé »
-  const fam = (d.famille && (d.famille.famille || d.famille.nom)) || '', propose = propositionNonEcrite(d), retest = !propose && o.calRetest && o.calRetest !== cal ? o.calRetest : null;
+  const fam = (d.famille && (d.famille.famille || d.famille.nom)) || '', propose = propositionNonEcrite(d), retest = !propose && o.calRetest && o.calRetest !== cal && !pnDeVolta(nom) ? o.calRetest : null;
   const kR = propose ? cleDuVerdict(d.gPn) : v.cle, mot = k => k && k !== 'passe' ? `<span class="dj-resume-mot ${etatDuVerdict(k)}">${esc(motDuVerdict(k))}</span>` : '';
   const resume = !cal ? '' : propose
     ? `<b class="dj-resume">${nombreCourt(d.pn)}<small>A</small></b>${mot(kR)}<span class="dj-resume-sous">retest ${ico('fleche')} <b>${esc(amperes(cal))}</b> proposé${fam ? ' · ' + esc(fam) : ''}</span>`
@@ -338,7 +364,7 @@ function raisonDuCalibre(d, g) { const k = cleDuVerdict(g), c = g.calibre, ch = 
   return 'rien ne se juge sans profil de charge'; }
 /* LES CALIBRES DU CADRAN (et de « À la main ») : chaque calibre de la gamme — `tout` : de toute la famille —, jugé, avec
    ce qui le distingue (l'automatique, le retenu, celui du retest, hors des calibres préférés) et sa bulle. */
-function calibresDuCadran(d, tout, nom) { const best = d.passe, cal = d.calibre, oR = nom ? origineDuCalibre(nom, d) : null, pn = oR && oR.calRetest ? oR.calRetest : d.pn, prefs = new Set((d.catalogue || []).map(Number)), propose = propositionNonEcrite(d);
+function calibresDuCadran(d, tout, nom) { const best = d.passe, cal = d.calibre, oR = nom ? origineDuCalibre(nom, d) : null, pn = nom && pnDeVolta(nom) ? null : oR && oR.calRetest ? oR.calRetest : d.pn, prefs = new Set((d.catalogue || []).map(Number)), propose = propositionNonEcrite(d);
   const base = tout ? [...gammeComplete(d, nom || '')] : [...(d.gamme || [])]; if (cal > 0 && !base.some(g => g.calibre === cal)) { const g = (d.gamme || []).find(x => x.calibre === cal); if (g) base.push(g); }
   return base.sort((a, b) => a.calibre - b.calibre).map(g => { const cle = cleDuVerdict(g), M = motsVerdict()[cle] || {}, retenu = g.calibre === cal, auto = !!best && g.calibre === best, retest = !!pn && g.calibre === pn, hors = !prefs.has(g.calibre);
     const raison = raisonDuCalibre(d, g), A = amperes(g.calibre);
