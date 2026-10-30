@@ -162,13 +162,22 @@ python tests/sonde-pdf.py      LA SONDE PDF (see/pdf/sonde_pdf.py), en PYTHON (3
                                propriétaire ; sept PDF d'attaque (boîte de 10^9 mm, boucles, éventail de formulaires, xref
                                /W [0 0 0], prédicteur, contenu répété 5 000 fois) en moins de 60 s chacun ; délai ; textes
                                tournés sur un fil ; données non dessinées ; CropBox qui déborde ; re dégénéré ; découpe,
-                               couleur du fond, police de secours ; image dans un motif. LE DOUBLE-CLIC, sur une copie de la
+                               couleur du fond, police de secours ; image dans un motif. Puis la contre-relecture : un
+                               cartouche en traits hors de la CropBox ou de la MediaBox tient en amas ; « KESTREL 350A41-1234 »
+                               en traits de 7, 12 et 20 mm et en contours de 14 mm : un amas par mot, aucun trait de lettre,
+                               ni composition ni taille ni bloc sur une ligne amas, la colonne n qui numérote les lignes ; une
+                               diode de 15 mm raccordée à un fil reste en traits ; des lettres posées comme formulaires (ni
+                               bloc, ni tableau FORMULAIRES) ; les CMap prédéfinies de la norme, pas Identity-NOM-H ; le code
+                               brut de PyMuPDF (!"#$%"&) non repris ; le braille et les capitales tournées ; un texte espacé
+                               de 7 pt reste un texte ; MuPDF muet à l'écran sans pymupdf4llm (police abîmée, mots inconnus,
+                               page « infinie ») ; --pages=² sans traceback. LE DOUBLE-CLIC, sur une copie de la
                                sonde (SONDE_SANS_FENETRE=1, entrée vide ou fermée) : sans chemin, PDF-A-LIRE créé quand rien n'est
                                à lire, puis ses PDF lus (sous-dossiers compris) ; sans écran, tkinter présent ou absent, on retombe
                                sur le dossier sans bloquer ; l'avertissement de la fin ; des PDF glissés en argument ; quand
                                attendre Entrée (python seul, py.exe, venv : oui ; cmd.exe, le .bat, PowerShell : non) ; une
-                               exception forcée, un avertissement, une exception dans un fil : leur classe seulement, aucun
-                               traceback ni chemin (il montrerait l'identifiant Windows). Rien de propre à Windows n'y tourne.
+                               exception forcée, un avertissement, une exception dans un fil : leur classe (et la ligne du
+                               script) seulement, aucun traceback ni chemin (il montrerait l'identifiant Windows). Rien de
+                               propre à Windows n'y tourne.
                                --corpus=DOSSIER : le corpus d'essai (verite.json) ; si PyMuPDF est installé, le lecteur standard
                                et PyMuPDF donnent les mêmes éléments à 0,1 mm. Hors de tests/toutes.js (Node). Le corpus se
                                fabrique HORS du dépôt, dans un venv à part (reportlab, pymupdf, pikepdf, pillow) :

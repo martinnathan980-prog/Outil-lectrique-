@@ -1135,6 +1135,257 @@ def controles_constats(tmp):
        'une image dans un motif qui couvre la page : verdict %s (pas « mixte »)' % v)
 
 
+# ---------------------------------------------------------------------------
+#  La contre-relecture : ce qui passait encore (CH, GE, SO)
+# ---------------------------------------------------------------------------
+
+DETAILS_AMAS = ('moins de 10 traits', '10 a 50 traits', 'plus de 50 traits',
+                '10 a 50 traits, peut-etre du texte dessine en traits', 'plus de 50 traits, peut-etre du texte dessine en traits')
+
+
+def longueur_mm(l):
+    return ((float(l['x2']) - float(l['x1'])) ** 2 + (float(l['y2']) - float(l['y1'])) ** 2) ** 0.5
+
+
+def tiret(l):
+    """Un tiret isole : un segment horizontal, ou un rectangle plat (le meme en contour plein)."""
+    return (l['type'] == 'segment' and l['angle'] in ('0.0', '180.0')) or \
+        (l['type'] == 'rectangle' and float(l['y2']) - float(l['y1']) < 2 < float(l['x2']) - float(l['x1']))
+
+
+def traits_de_lettres(lignes, zone):
+    """Les traits ecrits un par un dans la zone (mm), hors tiret isole."""
+    return [l for l in lignes if l['type'] in ('segment', 'courbe', 'rectangle', 'cercle') and dans_zone(l, zone)
+            and not tiret(l)]
+
+
+def rangs_suivis(lignes):
+    """La colonne n du TSV anonymise numerote les lignes de chaque page : 1, 2, 3..."""
+    pages = {}
+    for l in lignes:
+        pages.setdefault(l['page'], []).append(int(l['n']))
+    return all(v == list(range(1, len(v) + 1)) for v in pages.values())
+
+
+def controles_contre_relecture(tmp):
+    fitz = S.importer_pymupdf()
+    lecteurs = ('standard',) + (('auto',) if fitz else ())
+
+    print('\n== CH1, GE1 : un cartouche en traits hors de la page vue (CropBox, MediaBox) tient en amas ==')
+    # un A3 paysage recadre sur sa moitie gauche (CropBox), le cartouche en traits de 3,5 et 5 mm a droite ; puis un
+    # A4 sans CropBox dont le cartouche deborde de la MediaBox (de 225 a 335 mm)
+    def cartouche(x):
+        return (['0 0 0 RG 0.25 w'] + texte_en_traits(x, 60 * MM, 'KESTREL 7', h=5 * MM)
+                + texte_en_traits(x, 40 * MM, '350A41-1234', h=3.5 * MM) + ['0.5 w 20 20 m 550 20 l S'])
+    src = os.path.join(tmp, 'ch1')
+    os.makedirs(src)
+    open(os.path.join(src, 'a.pdf'), 'wb').write(pdf_page('\n'.join(cartouche(300 * MM)), media=b'0 0 1190.55 841.89',
+                                                           page_extra=b'/CropBox [0 0 595.28 841.89]'))
+    open(os.path.join(src, 'b.pdf'), 'wb').write(pdf_page('\n'.join(cartouche(225 * MM))))
+    for lecteur in lecteurs:
+        sortie = os.path.join(tmp, 'ch1-' + lecteur)
+        code, _ = lancer_sonde([src], sortie, '--lecteur=' + lecteur)
+        for nom, l in sorted(lignes_tsv(sortie).items()):
+            hors = [x for x in l if 'horspage' in x['raison']]
+            lettres = traits_de_lettres(hors, (-1e9, -1e9, 1e9, 1e9))
+            tirets = [x for x in hors if tiret(x) and longueur_mm(x) < 10]
+            amas = [x for x in hors if x['type'] == 'amas']
+            ok(code == 0 and not lettres and len(tirets) <= 1 and len(amas) >= 3,
+               '%s, %s : hors de la page vue, %d amas, %d trait(s) de lettre, %d tiret isole' % (
+                   lecteur, nom, len(amas), len(lettres), len(tirets)))
+
+    print('\n== CH2, GE2, GE3, SO4 : un texte en traits de 7 a 20 mm ne se relit ni trait par trait ni lettre par lettre ==')
+    lignes_texte = [(7, False, 250), (12, False, 210), (20, False, 160), (14, True, 100)]
+    c = ['0 0 0 RG 0.3 w 0 g']
+    zones = []
+    for h_mm, contour, y_mm in lignes_texte:
+        c += texte_en_traits(20 * MM, y_mm * MM, 'KESTREL 350A41-1234', h=h_mm * MM, contour=contour)
+        zones.append((h_mm, contour, (19, 297 - y_mm - h_mm - 2, 20 + 19 * h_mm + 1, 297 - y_mm + 2)))
+    # « 305 » en 12 mm, le 0 en rectangle barre (comme une police baton de DAO) : un rectangle et une diagonale de 13 mm
+    u = 2 * MM
+    c += texte_en_traits(250 * MM, 250 * MM, '3', h=12 * MM) + texte_en_traits(266 * MM, 250 * MM, '5', h=12 * MM)
+    c.append('%.2f %.2f %.2f %.2f re S %.2f %.2f m %.2f %.2f l S' % (258 * MM, 250 * MM, 4 * u, 6 * u, 258 * MM, 250 * MM,
+                                                                      258 * MM + 4 * u, 250 * MM + 6 * u))
+    zones.append((12, False, (249, 297 - 263, 276, 297 - 249)))
+    # une diode (un triangle de 15 mm) au bout d'un fil : ses traits restent de la geometrie (ils touchent le fil)
+    c.append('0.5 w %.2f %.2f m %.2f %.2f l S' % (20 * MM, 40 * MM, 120 * MM, 40 * MM))
+    c.append('%.2f %.2f m %.2f %.2f l %.2f %.2f l %.2f %.2f l S' % (
+        120 * MM, 32.5 * MM, 120 * MM, 47.5 * MM, 133 * MM, 40 * MM, 120 * MM, 32.5 * MM))
+    src = os.path.join(tmp, 'ch2')
+    os.makedirs(src)
+    open(os.path.join(src, 'grand.pdf'), 'wb').write(pdf_page('\n'.join(c), media=b'0 0 1190.55 841.89'))
+    for lecteur in lecteurs:
+        sortie = os.path.join(tmp, 'ch2-' + lecteur)
+        code, _ = lancer_sonde([src], sortie, '--lecteur=' + lecteur)
+        l = list(lignes_tsv(sortie).values())[0]
+        for h_mm, contour, zone in zones:
+            lettres = traits_de_lettres(l, zone)
+            amas = [x for x in l if x['type'] == 'amas' and dans_zone(x, zone)]
+            ok(code == 0 and not lettres and 1 <= len(amas) <= 4,
+               '%s, %d mm%s : %d amas pour %s, %d trait(s) de lettre ecrit(s) un par un' % (
+                   lecteur, h_mm, ' en contours pleins' if contour else '', len(amas),
+                   '« 305 », le 0 en rectangle barre' if zone[0] == 249 else '3 mots et 17 lettres', len(lettres)))
+        amas = [x for x in l if x['type'] == 'amas']
+        ok(all(x['details'] in DETAILS_AMAS for x in amas) and not any(x['bloc'] for x in amas),
+           '%s : une ligne amas ne dit ni ses traits par sorte, ni leur taille, ni son formulaire (%s)' % (
+               lecteur, sorted(set(x['details'] for x in amas))))
+        ok(rangs_suivis(l), '%s : la colonne n numerote les lignes (1, 2, 3...) : l\'ecart entre deux amas ne dit '
+           'plus combien de traits a chacun' % lecteur)
+        diode = [x for x in l if x['type'] == 'segment' and dans_zone(x, (119, 297 - 48, 134, 297 - 32))]
+        ok(len(diode) == 3, '%s : une diode de 15 mm raccordee a un fil reste en traits (%d segments)' % (lecteur, len(diode)))
+
+    print('\n== GE3 : des lettres posees comme formulaires ne donnent pas l\'alphabet ==')
+    mot = 'KESTREL'
+    lettres = sorted(set(mot))
+    objs = {}
+    for k, ch in enumerate(lettres):
+        f = '\n'.join(['0 0 0 RG 0.3 w'] + texte_en_traits(0, 0, ch, h=7 * MM)).encode('latin-1')
+        objs[10 + k] = Objet(b'<< /Type /XObject /Subtype /Form /BBox [-5 -5 60 60] /Length %d >>' % len(f), f)
+    res = b'/XObject << ' + b' '.join(b'/L%s %d 0 R' % (ch.encode(), 10 + k) for k, ch in enumerate(lettres)) + b' >>'
+    c = ' '.join('q 1 0 0 1 %.2f %.2f cm /L%s Do Q' % ((20 + 7 * k) * MM, 200 * MM, ch) for k, ch in enumerate(mot))
+    src = os.path.join(tmp, 'ge3')
+    os.makedirs(src)
+    open(os.path.join(src, 'formes.pdf'), 'wb').write(pdf_page(c, res, objets=objs))
+    sortie = os.path.join(tmp, 'ge3-r')
+    code, _ = lancer_sonde([src], sortie, '--lecteur=standard')
+    l = list(lignes_tsv(sortie).values())[0]
+    rap = rapport_de(sortie)
+    ok(code == 0 and [x['type'] for x in l] == ['amas'] and not l[0]['bloc'],
+       'KESTREL, une lettre par formulaire : une seule ligne amas, sans bloc (%s)' % [(x['type'], x['bloc']) for x in l])
+    ok(u'6 formulaire(s) faits seulement de petits traits' in rap and not re.search(r'\nX\d+\t\d+\t', rap),
+       'le tableau FORMULAIRES ne les detaille pas (ni leur ordre, ni leur frequence, ni leur contenu)')
+    sortie = os.path.join(tmp, 'ge3-clair')
+    lancer_sonde([src], sortie, '--lecteur=standard', '--clair')
+    ok(re.search(r'\nX2\t2\t4\t', rapport_de(sortie)) is not None, 'avec --clair, chaque formulaire est detaille (X2 = E, deux poses)')
+
+    print('\n== CH3 : une CMap au nom invente ne sort pas en clair ==')
+    predefinies = ('GB-EUC-H GBpc-EUC-V GBK-EUC-H GBKp-EUC-V GBK2K-H UniGB-UCS2-H UniGB-UTF16-V B5pc-H HKscs-B5-V ETen-B5-H '
+                   'ETenms-B5-V CNS-EUC-H UniCNS-UCS2-V UniCNS-UTF16-H 83pv-RKSJ-H 90ms-RKSJ-V 90msp-RKSJ-H 90pv-RKSJ-H '
+                   'Add-RKSJ-V EUC-H Ext-RKSJ-V UniJIS-UCS2-HW-H UniJIS-UTF16-V UniJIS2004-UTF16-H UniJISX0213-UTF32-V '
+                   'KSC-EUC-H KSCms-UHC-HW-V KSCpc-EUC-H UniKS-UCS2-H UniKS-UTF16-V Identity-H Identity-V '
+                   'Adobe-Japan1-UCS2 Adobe-Korea1-UCS2 Adobe-Identity-UCS Hankaku WP-Symbol').split()
+    inventees = ['Identity-HELIDYNE-350A41', 'Adobe-KESTREL-1234', 'UniKS-KESTREL', 'Identity-HELIDYNE-H', 'UniGB-PROJET42-H']
+    ok(all(S.nom_standard(n, None) == n for n in predefinies) and all(S.nom_standard(n, None) is None for n in inventees),
+       'les %d CMap predefinies essayees sont de la norme ; Identity-HELIDYNE-H, Adobe-KESTREL-1234... non' % len(predefinies))
+    objs = {6: Objet(b'<< /Type /Font /Subtype /Type0 /BaseFont /ArialMT /Encoding /Identity-HELIDYNE-350A41 '
+                     b'/DescendantFonts [7 0 R] >>'),
+            7: Objet(b'<< /Type /Font /Subtype /CIDFontType2 /BaseFont /ArialMT /CIDSystemInfo << /Registry (Adobe) '
+                     b'/Ordering (Identity) /Supplement 0 >> /DW 600 >>'),
+            8: Objet(b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /Adobe-KESTREL-1234 >>')}
+    src = os.path.join(tmp, 'ch3')
+    os.makedirs(src)
+    open(os.path.join(src, 'cmap.pdf'), 'wb').write(pdf_page(
+        b'BT /F6 10 Tf 50 700 Td <00410042> Tj ET BT /F8 10 Tf 50 650 Td (AB) Tj ET', b'/Font << /F6 6 0 R /F8 8 0 R >>',
+        objets=objs))
+    for lecteur in lecteurs:
+        sortie = os.path.join(tmp, 'ch3-' + lecteur)
+        code, ecran = lancer_sonde([src], sortie, '--lecteur=' + lecteur)
+        f = fuites(sortie, ['HELIDYNE', 'KESTREL', '350A41'])
+        ok(code == 0 and not f and 'HELIDYNE' not in ecran.upper(),
+           '%s : l\'encodage des polices et la note « CMap non geree » ne recopient pas le nom%s' % (
+               lecteur, (' : %r' % f[:3]) if f else ''))
+
+    print('\n== GE4 : le code brut d\'une police sans ToUnicode n\'est pas repris de PyMuPDF ==')
+    e1 = {'type': 'texte', 'texte': u'\xa4' * 7, 'x1': 50.0, 'y1': 50.0, 'ux': 1.0, 'uy': 0.0}
+    e2 = dict(e1, texte=u'\xa4' * 5, y1=80.0)
+    e3 = dict(e1, texte=u'\xa4\xa4\xa4\xa4\xa4\xa4\xa4', y1=110.0)
+    e4 = dict(e1, texte=u'A\xa4 \xa4', y1=140.0)
+    n = S.completer_textes([e1, e2, e3, e4], [dict(e1, texte=u'!"#$%"&'), dict(e2, texte=u'W-320'), dict(e3, texte=u'!" !""#'),
+                                              dict(e4, texte=u'XB-C')])
+    ok(n == 4 and e1['texte'] == u'\xa4' * 7 and e2['texte'] == u'W\xa4320' and e3['texte'] == u'\xa4' * 7
+       and e4['texte'] == u'AB C', 'PyMuPDF rend « !"#$%%"& » (KESTREL en codes 33...) : %r ; « W-320 » : %r ; une espace '
+       '(/g3) : %r ; seuls les ¤ sont completes : %r' % (e1['texte'], e2['texte'], e3['texte'], e4['texte']))
+    if fitz:
+        ordre = 'KESTRLHIDYN'
+        noms = ' '.join('/glyph%d' % (k + 1) for k in range(len(ordre)))
+        procs = ' '.join('/glyph%d 6 0 R' % (k + 1) for k in range(len(ordre)))
+        objs = {5: Objet(('<< /Type /Font /Subtype /Type3 /FontBBox [0 0 600 700] /FontMatrix [0.001 0 0 0.001 0 0] '
+                          '/CharProcs << %s >> /Encoding << /Type /Encoding /Differences [33 %s] >> /FirstChar 33 '
+                          '/LastChar %d /Widths [%s] /Resources << >> >>' % (procs, noms, 32 + len(ordre),
+                                                                             ' '.join(['600'] * len(ordre)))).encode()),
+                6: Objet(b'<< /Length 43 >>', b'600 0 0 0 500 700 d1 0 0 500 700 re f')}
+        code = lambda t: ''.join('%02X' % (33 + ordre.index(ch)) for ch in t)     # noqa: E731
+        d = pdf_page('BT /T 12 Tf 50 400 Td <%s> Tj ET BT /T 12 Tf 50 380 Td <%s> Tj ET' % (code('KESTREL'), code('HELIDYNE')),
+                     b'/Font << /T 5 0 R >>', objets=objs)
+        r = releve(d, 'auto')
+        motifs = sorted(S.motif(e['texte']) for e in textes_de(r))
+        ok(motifs == [u'\xa4' * 7, u'\xa4' * 8], 'une Type3 sans ToUnicode, glyphes /glyph1... : motifs %r '
+           '(pas « !"#$%%"& »)' % motifs)
+
+    print('\n== GE6 : le braille et les capitales tournees sont des lettres pour motif() ==')
+    for chaine, attendu in ((u'⠅⠑⠎⠞⠗⠑⠇', u'AAAAAAA'), (u'⅃⅄℺⅁℘', u'AAAAA'),
+                            (u'⠀', u'A'), (u'⁁', u'⁁')):
+        ok(S.motif(chaine) == attendu, 'motif(%r) = %r' % (chaine, S.motif(chaine)))
+
+    print('\n== GE7 : un texte espace lettre a lettre reste un texte ==')
+    src = os.path.join(tmp, 'ge7')
+    os.makedirs(src)
+    open(os.path.join(src, 'tc.pdf'), 'wb').write(pdf_page(b'BT /F1 12 Tf 7 Tc 50 700 Td (KESTREL) Tj ET', HELV))
+    sortie = os.path.join(tmp, 'ge7-r')
+    lancer_sonde([src], sortie, '--lecteur=standard')
+    l = [x for x in list(lignes_tsv(sortie).values())[0] if x['type'] == 'texte']
+    ok([x['motif'] for x in l] == ['AAAAAAA'],
+       'KESTREL en Helvetica 12 pt avec 7 pt entre les lettres : un seul texte (%s), la place de chaque lettre ne sort pas'
+       % [x['motif'] for x in l])
+
+    print('\n== SO1, SO2 : MuPDF n\'ecrit rien a l\'ecran (meme sans pymupdf4llm) ==')
+    if not fitz:
+        print('  (PyMuPDF absent : saute)')
+    else:
+        ok(fitz.TOOLS.mupdf_display_errors() is False, 'apres importer_pymupdf(), l\'affichage des erreurs de MuPDF est coupe')
+        police = b'NOT A TRUETYPE FONT KESTREL'
+        fd = b'/Flags 32 /FontBBox [0 0 1000 1000] /ItalicAngle 0 /Ascent 800 /Descent -200 /CapHeight 700 /StemV 80'
+        src = os.path.join(tmp, 'so1')
+        os.makedirs(src)
+        open(os.path.join(src, 'a-police.pdf'), 'wb').write(pdf_page(
+            b'BT /F1 12 Tf 100 700 Td (abc) Tj ET 0 G 0 0 m 50 50 l S\nKESTREL HELIDYNE 350A41\n/ALBATROSGLYPHE Do\n',
+            b'/Font << /F1 5 0 R >>', objets={
+                5: Objet(b'<< /Type /Font /Subtype /TrueType /BaseFont /ABCDEF+HelidyneISO-Kestrel /FirstChar 32 /LastChar 126 '
+                         b'/FontDescriptor 6 0 R >>'),
+                6: Objet(b'<< /Type /FontDescriptor /FontName /ABCDEF+HelidyneISO-Kestrel ' + fd + b' /FontFile2 7 0 R >>'),
+                7: Objet(b'<< /Length %d >>' % len(police), police)}))
+        open(os.path.join(src, 'b-cmap.pdf'), 'wb').write(pdf_page(
+            b'BT /F2 12 Tf 100 600 Td <0001> Tj ET 0 G 0 0 m 50 50 l S', b'/Font << /F2 5 0 R >>', objets={
+                5: Objet(b'<< /Type /Font /Subtype /Type0 /BaseFont /KestrelGothic /Encoding /HELIDYNE-350A41-H '
+                         b'/DescendantFonts [6 0 R] >>'),
+                6: Objet(b'<< /Type /Font /Subtype /CIDFontType2 /BaseFont /KestrelGothic /CIDSystemInfo << /Registry (Adobe) '
+                         b'/Ordering (Identity) /Supplement 0 >> /FontDescriptor 7 0 R >>'),
+                7: Objet(b'<< /Type /FontDescriptor /FontName /KestrelGothic ' + fd + b' >>')}))
+        open(os.path.join(src, 'c-infinie.pdf'), 'wb').write(pdf_page(
+            b'0 G 0 0 m 100 100 l S', media=b'-2147483648 -2147483648 2147483520 2147483520'))
+        # comme un PyMuPDF installe seul : ni pymupdf.layout ni pymupdf4llm (dont l'import coupe l'affichage)
+        lanceur = ('import sys, runpy, importlib.abc\n'
+                   'class Absent(importlib.abc.MetaPathFinder):\n'
+                   '    def find_spec(self, nom, chemin, cible=None):\n'
+                   '        if nom.startswith("pymupdf.layout") or nom.startswith("pymupdf4llm") or nom.startswith("onnxruntime"):\n'
+                   '            raise ImportError(nom)\n'
+                   '        return None\n'
+                   'sys.meta_path.insert(0, Absent())\n'
+                   'sys.argv = sys.argv[1:]\n'
+                   'runpy.run_path(sys.argv[0], run_name="__main__")\n')
+        for lecteur in ('auto', 'pymupdf'):
+            p = subprocess.run([sys.executable, '-c', lanceur, SONDE, src, '--sortie=' + os.path.join(tmp, 'so1-' + lecteur),
+                                '--lecteur=' + lecteur], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                               env=dict(os.environ, SONDE_SANS_FENETRE='1'), timeout=120)
+            ecran = (p.stdout + p.stderr).decode('utf-8', 'replace')
+            vus = [m for m in ('kestrel', 'helidyne', 'albatros', '350a41') if m in ecran.lower()]
+            ok(p.returncode == 0 and not vus, '%s : police abimee, mots inconnus, ressource et CMap au nom maison, page '
+               '« infinie » apres eux : rien de lu dans le PDF a l\'ecran (stdout et stderr)%s' % (
+                   lecteur, (' : ' + ', '.join(vus)) if vus else ''))
+
+    print('\n== SO3 : --pages mal tape, erreur imprevue : ni traceback ni chemin ==')
+    ok(S.lire_plages(u'\xb2') == set() and S.lire_plages(u'١,3') == set([1, 3]) and S.lire_plages('2-3') == set([2, 3]),
+       'lire_plages : « ² » ignore (int() le refuse), « ١ » (un chiffre arabe-indien) compris')
+    src = os.path.join(tmp, 'so3')
+    os.makedirs(src)
+    open(os.path.join(src, 'a.pdf'), 'wb').write(pdf_page(b'0 G 0 0 m 50 50 l S'))
+    p = subprocess.run([sys.executable, SONDE, src, '--sortie=' + os.path.join(tmp, 'so3-r'), u'--pages=\xb2'],
+                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=dict(os.environ, SONDE_SANS_FENETRE='1'))
+    e = p.stdout.decode('ascii', 'replace')
+    ok(p.returncode == 0 and 'Traceback' not in e and tmp not in e and 'aucun numero de page compris' in e,
+       '--pages=² : la sonde le dit et lit tout le PDF (code %d), sans traceback' % p.returncode)
+
+
 def controles_pymupdf(pdfs):
     fitz = S.importer_pymupdf()
     print('\n== Les deux lecteurs (standard et PyMuPDF) ==')
@@ -1378,9 +1629,10 @@ def controles_double_clic(tmp):
         p = subprocess.run([sys.executable, '-c', prog % (kit, genre)], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                            stderr=subprocess.STDOUT, env=dict(os.environ, SONDE_SANS_FENETRE='1'), timeout=60)
         e = p.stdout.decode('ascii', 'replace')
-        dit = ('Interrompu' in e) if genre == 'KeyboardInterrupt' else (genre in e and 'erreur imprevue' in e and 'photo' in e)
+        dit = ('Interrompu' in e) if genre == 'KeyboardInterrupt' else (genre in e and 'erreur imprevue' in e and 'photo' in e
+                                                                       and re.search(r'%s, ligne \d+\)' % genre, e))
         ok(p.returncode == code_attendu and dit and propre(e) and 'UserWarning' in e,
-           '%s forcee dans principal() : code %s, seulement sa classe et un message en francais ; l\'avertissement '
+           '%s forcee dans principal() : code %s, seulement sa classe, la ligne du script et un message en francais ; l\'avertissement '
            '(UserWarning) sans fichier ni ligne' % (genre, p.returncode))
     prog2 = ('import sys, threading\n'
              'sys.path.insert(0, %r)\n'
@@ -1413,6 +1665,7 @@ def principal():
     try:
         pdf, fichiers, inc = controles_fabriques(tmp, garder)
         controles_constats(tmp)
+        controles_contre_relecture(tmp)
         controles_double_clic(tmp)
         a_comparer = [('schema', pdf), ('schema incremental', inc), ('page tournee', page_tournee()),
                       ('page scannee', page_scannee())] + sorted(fichiers.items())
