@@ -4,6 +4,7 @@ SONDE PDF -- Atelier Schema, le releve ANONYMISE d'un schema electrique en PDF
 =============================================================================
 
     python sonde_pdf.py <fichier.pdf | dossier> [...] [options]
+    python sonde_pdf.py                (ou un double-clic sur ce fichier)
 
 Lit chaque PDF et ecrit, a cote de ce script dans le dossier « rapports »,
 deux fichiers par PDF, nommes d'apres un numero d'ordre et une empreinte
@@ -16,10 +17,26 @@ PAR DEFAUT RIEN DE REEL NE SORT : chaque texte est reduit a sa forme (lettre
 majuscule -> A, minuscule -> a, chiffre -> 9, les autres signes gardes), aucun
 nom de fichier, aucun nom propre (calque, police maison, cle ou etiquette d'un
 logiciel : un code et sa forme), aucune metadonnee de personne ou de projet ;
-les petits traits groupes comme des caracteres (un texte dessine en traits)
-tiennent en une ligne par groupe, sans la place de chaque trait. Le TSV garde
-la geometrie du dessin (traits, rectangles, place des textes). Le format du
-TSV est decrit dans LISEZMOI.md (meme dossier).
+les traits groupes comme des caracteres (un texte dessine en traits, jusqu'a
+3 cm de haut, meme hors de la page vue) tiennent en une ligne par mot, sans la
+place, le nombre ni la taille de chaque trait. Le TSV garde la geometrie du
+dessin (traits, rectangles, place des textes). Ce qui reste approche : un
+texte en traits de plus de 3 cm, ou qui touche un trait plus long, reste
+ecrit trait par trait ; ce qui epouse un texte (cadre, soulignement, masque,
+rectangle d'un lien ou d'un surlignage) garde sa vraie largeur, que la
+longueur conventionnelle des textes cache. Le format du TSV et ces limites
+sont decrits dans LISEZMOI.md (meme dossier).
+
+SANS AUCUN CHEMIN (un double-clic dans l'Explorateur) : les PDF du dossier
+« PDF-A-LIRE », a cote de ce script ; s'il est vide, une fenetre pour les
+choisir (si tkinter est la) ; sinon, ou si l'on annule, le dossier est cree,
+ouvert, et l'ecran dit quoi faire. Glisser des PDF sur ce fichier les lit
+aussi. A la fin, sous Windows, le dossier des rapports s'ouvre ; la fenetre
+attend Entree seulement si elle a ete ouverte pour ce script (pas sous une
+invite de commandes ni sous sonde-pdf.bat). SONDE_SANS_FENETRE=1 (variable
+d'environnement) : ni fenetre de choix, ni Explorateur, ni attente. Une
+erreur imprevue ne montre que sa classe, jamais un traceback (il montrerait
+le chemin du script, donc l'identifiant Windows).
 
 Options :
     --clair             ecrit AUSSI les textes reels et toute la geometrie (pour
@@ -3443,9 +3460,10 @@ LIGATURES = {0xFB00: u'ff', 0xFB01: u'fi', 0xFB02: u'fl', 0xFB03: u'ffi', 0xFB04
 def elements_des_glyphes(glyphes):
     """Regroupe les glyphes en textes : meme police, meme corps, meme sens,
     meme couleur, meme calque, sur la meme ligne de base et a moins d'un
-    demi-corps l'un de l'autre. Un ecart de plus de 0,12 corps (au-dela de
-    l'ecart ordinaire du texte, pour un texte espace lettre a lettre) sans
-    glyphe d'espace devient une espace."""
+    corps l'un de l'autre (un texte espace lettre a lettre reste un texte :
+    coupe en morceaux, le debut de chacun dirait la largeur des lettres). Un
+    ecart de plus de 0,12 corps (au-dela de l'ecart ordinaire du texte, pour
+    un texte espace lettre a lettre) sans glyphe d'espace devient une espace."""
     textes = []
     cour = None
     for g in glyphes:
@@ -3462,7 +3480,7 @@ def elements_des_glyphes(glyphes):
                 vx, vy = ox - fx, oy - fy
                 le_long = vx * cour['ux'] + vy * cour['uy']
                 travers = abs(vx * cour['uy'] - vy * cour['ux'])
-                if travers <= 0.05 * taille and -0.3 * taille <= le_long <= 0.5 * taille:
+                if travers <= 0.05 * taille and -0.3 * taille <= le_long <= 1.0 * taille:
                     cour['glyphes'].append((u, ox, oy, avance, le_long / taille if taille > 0 else 0.0))
                     cour['fin'] = (ox + avance * ux, oy + avance * uy)
                     # la decoupe d'un texte : l'union de celles de ses glyphes (une decoupe qui change au milieu d'une
@@ -3752,9 +3770,9 @@ def _classe_caractere(c):
 
 def _symbole_lettre(c):
     """Un symbole qui porte une lettre ou un chiffre sans en etre un pour
-    Unicode (lettre cerclee, encadree, indicateur regional...) : sa classe
-    par sa decomposition de compatibilite (Ⓚ -> K, ™ -> TM) ou par son nom ;
-    None si le symbole n'en porte pas."""
+    Unicode (lettre cerclee, encadree, indicateur regional, capitale
+    tournee, braille...) : sa classe par sa decomposition de compatibilite
+    (Ⓚ -> K, ™ -> TM) ou par son nom ; None si le symbole n'en porte pas."""
     d = unicodedata.normalize('NFKD', c)
     if d != c:
         classes = [_classe_caractere(x) for x in d]
@@ -3766,7 +3784,9 @@ def _symbole_lettre(c):
         return None
     if re.search(r'\b(?:DIGIT|NUMBER|NUMERAL)\b', nom):
         return '9'
-    if re.search(r'\bLETTER\b', nom):
+    if re.search(r'\b(?:LETTER|CAPITAL|BRAILLE)\b', nom):
+        # une lettre (LETTER), une capitale tournee ou de ronde (TURNED SANS-SERIF CAPITAL L, SCRIPT CAPITAL
+        # P) ou une cellule de braille (BRAILLE PATTERN DOTS-13) : une lettre
         return 'a' if 'SMALL' in nom else 'A'
     return None
 
@@ -3867,7 +3887,8 @@ Differences
 _RE_CMAP_STANDARD = re.compile(
     r'^(?:Uni(?:GB|CNS|JIS|JISPro|JIS2004|JISX0213|JISX02132004|KS|Code)|GBK?(?:p|2K)?|GBpc|GBT|B5pc|B5|HKscs|ETen|'
     r'ETenms|ETHK|HKdla|HKdlb|HKgccs|HKm314|HKm471|CNS(?:1|2)?|83pv|90ms|90msp|90pv|78|78ms|Add|EUC|Ext|NWP|KSC|KSCms|'
-    r'KSCpc|Hankaku|Hiragana|Katakana|Roman|WP-Symbol|Identity|Adobe)(?:-[A-Za-z0-9]+)*$')
+    r'KSCpc|Hankaku|Hiragana|Katakana|Roman|WP-Symbol|Identity|Adobe)'
+    r'(?:-(?:UCS2|UCS|UTF8|UTF16|UTF32|HW|RKSJ|EUC|B5|UHC|GB1|CNS1|Japan1|Korea1|Identity))*(?:-[HV])?$')
 
 
 def _mots_du_nom(nom):
@@ -4637,16 +4658,57 @@ class DocumentStandard(object):
 def importer_pymupdf():
     try:
         import pymupdf as fitz           # PyMuPDF 1.24 et plus
-        return fitz
+        return faire_taire(fitz)
     except Exception:
         pass
     try:
         import fitz                      # anciennes versions
         if hasattr(fitz, 'open') and hasattr(fitz, 'Document'):
-            return fitz
+            return faire_taire(fitz)
     except Exception:
         pass
     return None
+
+
+class _Muet(object):
+    """Un flux ou rien ne s'ecrit."""
+
+    def write(self, _texte):
+        return 0
+
+    def flush(self):
+        pass
+
+
+def faire_taire(fitz):
+    """MuPDF et PyMuPDF n'ecrivent plus rien a l'ecran : leurs messages
+    recopient des noms et des mots lus dans le PDF (« FT_New_Memory_Face(
+    ABCDEF+NomDeLaPolice) », « unknown keyword: 'MOT' », le nom d'une
+    ressource, d'une CMap, d'un espace de couleur). PyMuPDF les affiche par
+    defaut ; un paquet voisin (pymupdf4llm) les coupe a son import, mais on
+    ne compte pas sur lui. Rend le module."""
+    for f in ('mupdf_display_errors', 'mupdf_display_warnings'):
+        try:
+            getattr(fitz.TOOLS, f)(False)
+        except Exception:
+            pass
+    for f in ('set_messages', 'set_log'):           # PyMuPDF 1.24 et plus
+        try:
+            getattr(fitz, f)(stream=_Muet())
+        except Exception:
+            pass
+    return fitz
+
+
+def oublier_messages(fitz):
+    """Vide la reserve des messages de MuPDF avant chaque PDF et chaque page :
+    Page.bound() de PyMuPDF en recopie le dernier a l'ecran (sur stderr en
+    1.23, meme affichage coupe) quand la page est « infinie » ; il viendrait
+    d'une page ou d'un PDF lus avant."""
+    try:
+        fitz.TOOLS.reset_mupdf_warnings()
+    except Exception:
+        pass
 
 
 def version_tuple(v):
@@ -4783,6 +4845,7 @@ class DocumentPyMuPDF(object):
         que le lecteur standard a vues ; PyMuPDF leur donne xref 0, comme aux
         rendus de degrades et de masques doux, qu'elles permettent d'ecarter."""
         page = self.doc[i]
+        oublier_messages(self.fitz)       # page.rect recopierait le dernier message d'une page « infinie »
         m, W, H, rot = self.geometrie(page)
 
         def T(p):
@@ -5000,6 +5063,8 @@ def analyser_page(col, W, H):
 
 PETIT_TRAIT = 10 / MM      # pt : un trait plus court peut etre un morceau de caractere (texte dessine en traits)
 ECART_AMAS = 2.0 / MM      # pt : deux petits traits plus eloignes ne sont pas du meme amas
+GRAND_TRAIT = 30 / MM      # pt : un trait plus court peut etre le jambage d'une grande lettre (titre, logo, cartouche)
+CONTACT = 0.3 / MM         # pt : deux traits plus proches se touchent
 
 
 def _longueurs_alignees(segs):
@@ -5058,30 +5123,174 @@ def _longueurs_alignees(segs):
     return longueur
 
 
+def _morceaux(e):
+    """Les morceaux droits d'un trait, pour mesurer un contact : le segment,
+    les quatre cotes d'un rectangle (pas sa surface), un cercle en polygone,
+    une courbe en ligne brisee (un morceau tous les 2 mm environ)."""
+    t = e['type']
+    if t == 'segment':
+        return [(e['x1'], e['y1'], e['x2'], e['y2'])]
+    if t == 'rectangle':
+        x0, y0, x1, y1 = e['x1'], e['y1'], e['x2'], e['y2']
+        return [(x0, y0, x1, y0), (x1, y0, x1, y1), (x1, y1, x0, y1), (x0, y1, x0, y0)]
+    if t == 'cercle':
+        cx, cy = (e['x1'] + e['x2']) / 2, (e['y1'] + e['y2']) / 2
+        r = (e['x2'] - e['x1'] + e['y2'] - e['y1']) / 4
+        nb = int(min(360, max(24, 2 * math.pi * r / (2 / MM))))
+        pts = [(cx + r * math.cos(2 * math.pi * k / nb), cy + r * math.sin(2 * math.pi * k / nb)) for k in range(nb + 1)]
+    else:
+        p0, p3 = (e['x1'], e['y1']), (e['x2'], e['y2'])
+        p1, p2 = e['ctrl']
+        approche = math.hypot(p1[0] - p0[0], p1[1] - p0[1]) + math.hypot(p2[0] - p1[0], p2[1] - p1[1]) + \
+            math.hypot(p3[0] - p2[0], p3[1] - p2[1])
+        nb = int(min(128, max(8, approche / (2 / MM))))
+        pts = [_bezier(p0, p1, p2, p3, k / float(nb)) for k in range(nb + 1)]
+    return [(pts[k][0], pts[k][1], pts[k + 1][0], pts[k + 1][1]) for k in range(len(pts) - 1)]
+
+
+def _distance_point(px, py, m):
+    ax, ay, bx, by = m
+    dx, dy = bx - ax, by - ay
+    l2 = dx * dx + dy * dy
+    t = 0.0 if l2 <= 0 else max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / l2))
+    return math.hypot(px - ax - t * dx, py - ay - t * dy)
+
+
+def _distance_morceaux(a, b):
+    """La plus courte distance entre deux morceaux droits (0 s'ils se croisent)."""
+    def cote(m, px, py):
+        return (m[2] - m[0]) * (py - m[1]) - (m[3] - m[1]) * (px - m[0])
+    if cote(b, a[0], a[1]) * cote(b, a[2], a[3]) < 0 and cote(a, b[0], b[1]) * cote(a, b[2], b[3]) < 0:
+        return 0.0
+    return min(_distance_point(a[0], a[1], b), _distance_point(a[2], a[3], b),
+               _distance_point(b[0], b[1], a), _distance_point(b[2], b[3], a))
+
+
+def _touchent_un_long(groupes, els, longs):
+    """Les rangs des groupes (listes de rangs d'elements) dont un trait touche
+    (a CONTACT pres, par la vraie distance entre les traits et non par leurs
+    boites : la boite du cadre de la page contient tout) un des traits longs."""
+    g = Grille(case=5.0 / MM)
+    zone = None
+    for r, idx in enumerate(groupes):
+        for k in idx:
+            for m in _morceaux(els[k]):
+                b = (min(m[0], m[2]) - CONTACT, min(m[1], m[3]) - CONTACT, max(m[0], m[2]) + CONTACT, max(m[1], m[3]) + CONTACT)
+                g.ajouter(b, (r, m))
+                zone = b if zone is None else (min(zone[0], b[0]), min(zone[1], b[1]), max(zone[2], b[2]), max(zone[3], b[3]))
+    touches = set()
+    if zone is None:
+        return touches
+    for k in longs:
+        for m in _morceaux(els[k]):
+            b = intersection((min(m[0], m[2]), min(m[1], m[3]), max(m[0], m[2]), max(m[1], m[3])), zone)
+            if b[0] > b[2] or b[1] > b[3]:
+                continue
+            i0, j0, i1, j1 = g.plage(b)
+            if (i1 - i0 + 1) * (j1 - j0 + 1) <= len(g.cases):
+                cles = [(i, j) for i in range(i0, i1 + 1) for j in range(j0, j1 + 1)]
+            else:
+                # un trait long en biais : sa boite couvre plus de cases qu'il n'y en a de remplies
+                cles = [c for c in g.cases if i0 <= c[0] <= i1 and j0 <= c[1] <= j1]
+            for cle in cles:
+                for (r, m2) in g.cases.get(cle, ()):
+                    if r not in touches and _distance_morceaux(m, m2) <= CONTACT:
+                        touches.add(r)
+            if len(touches) == len(groupes):
+                return touches
+    return touches
+
+
+def _comme_un_trait(e, b):
+    """Un trait d'ecriture : un segment, une courbe, ou un rectangle mince (un
+    trait de lettre rempli, quatre fois plus long que large au moins). Un
+    rectangle plus trapu ou un cercle est plutot un dessin (une boite, une
+    borne), sauf dans un texte en traits (un 0 en rectangle barre)."""
+    if e['type'] in ('segment', 'courbe'):
+        return True
+    return e['type'] == 'rectangle' and min(b[2] - b[0], b[3] - b[1]) <= 0.25 * max(b[2] - b[0], b[3] - b[1])
+
+
+def _mots(groupes, cands):
+    """La troisieme passe : les lettres d'un meme mot (des amas de meme
+    hauteur, a 20 % pres, alignes en haut et en bas a 10 % de la hauteur
+    pres, separes de moins de 0,6 fois leur hauteur) sont reunies. Une police
+    SHX espace ses lettres d'un tiers de leur hauteur : au-dela de 6 mm de
+    haut, chaque lettre ferait sinon son propre amas. Rend les groupes."""
+    boites = []
+    for membres in groupes:
+        bs = [cands[c][1] for c in membres]
+        boites.append((min(b[0] for b in bs), min(b[1] for b in bs), max(b[2] for b in bs), max(b[3] for b in bs)))
+    parent = list(range(len(groupes)))
+
+    def racine(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+    g = Grille(case=10.0 / MM)
+    for r, b in enumerate(boites):
+        if 0 < b[3] - b[1] <= GRAND_TRAIT:
+            g.ajouter(b, r)
+    for r, b in enumerate(boites):
+        h = b[3] - b[1]
+        if not 0 < h <= GRAND_TRAIT:
+            continue
+        for q in g.dans(b, 0.75 * h):
+            if q <= r:
+                continue
+            bq = boites[q]
+            hq = bq[3] - bq[1]
+            hm = max(h, hq)
+            if abs(h - hq) > 0.2 * hm or abs(b[1] - bq[1]) > 0.1 * hm or abs(b[3] - bq[3]) > 0.1 * hm:
+                continue
+            if max(0.0, bq[0] - b[2], b[0] - bq[2]) <= 0.6 * hm:
+                ra, rb = racine(r), racine(q)
+                if ra != rb:
+                    parent[ra] = rb
+    unis = {}
+    for r, membres in enumerate(groupes):
+        unis.setdefault(racine(r), []).extend(membres)
+    return list(unis.values())
+
+
 def amas_de_petits_traits(els, W, H):
     """Les amas de petits traits : segments, courbes, rectangles et cercles de
     moins de 10 mm (un segment prolonge bout a bout dans le meme sens compte
     pour sa longueur totale), a moins de 0,6 fois la taille du plus grand des
     deux l'un de l'autre (2 mm au plus). Un texte dessine en traits (police
     SHX d'AutoCAD, police « baton » de CATIA, texte vectorise en contours) en
-    est fait, des symboles aussi. Le TSV anonymise n'ecrit pas ces traits un
-    par un (on y relirait le texte) : un amas y est une seule ligne. Rend la
-    liste des amas (au moins deux elements) ; chaque element d'un amas porte
-    e['amas'] = son rang (1...)."""
+    est fait, des symboles aussi. Une seconde passe reprend de meme les traits
+    de 30 mm au plus : un groupe qui en contient un de plus de 10 mm devient
+    un amas (a la place des amas de la premiere passe qu'il contient) s'il
+    n'a pas plus de 30 mm de haut ou de large, s'il ne touche aucun trait
+    plus long, et s'il n'est pas un symbole qui porte son repere (un dessin
+    de rectangles ou de cercles, plus d'un sur cinq hors _comme_un_trait,
+    avec un texte reel a moins de 2 mm) : une grande lettre de cartouche, un
+    logo, un titre ; un symbole raccorde a un fil, ou qui porte son repere,
+    reste de la geometrie. Une troisieme passe reunit les lettres d'un mot
+    (_mots). Le TSV anonymise n'ecrit pas ces traits un par un (on y relirait
+    le texte) : un amas y est une seule ligne. Rend la liste des amas (au
+    moins deux elements) ; chaque element d'un amas porte e['amas'] = son
+    rang (1...). Les grilles n'ont pas de bornes : un cartouche hors de la
+    page vue (une page recadree) se regroupe aussi."""
     segs = [e for e in els if e['type'] == 'segment']
     longueurs = _longueurs_alignees(segs)
     taille = {}
     for e, L in zip(segs, longueurs):
         taille[id(e)] = L
     cands = []
+    longs = []
     for k, e in enumerate(els):
         t = e['type']
         if t not in ('segment', 'courbe', 'rectangle', 'cercle'):
             continue
         b = e.get('boite') or boite(e)
         s = taille[id(e)] if t == 'segment' else max(b[2] - b[0], b[3] - b[1])
-        if s <= PETIT_TRAIT:
+        if s <= GRAND_TRAIT:
             cands.append((k, b, s))
+        else:
+            longs.append(k)
     n = len(cands)
     if n < 2:
         return []
@@ -5092,52 +5301,99 @@ def amas_de_petits_traits(els, W, H):
             parent[a] = parent[parent[a]]
             a = parent[a]
         return a
-    grille = Grille(W, H, case=2.0 / MM)
+    # deux grilles : fine pour les petits traits, plus large pour les grands (moins de cases par trait)
+    fine, large = Grille(case=2.0 / MM), Grille(case=10.0 / MM)
     premiers = {}
     uniques = []
     for c in range(n):
         k, b, s = cands[c]
         cle = (els[k]['type'],) + tuple(round(v, 2) for v in b)
         if cle in premiers:
-            # le meme petit trait empile a l'identique : du meme amas que le premier, sans passer par la grille
+            # le meme trait empile a l'identique : du meme amas que le premier, sans passer par la grille
             parent[c] = premiers[cle]
             continue
         premiers[cle] = c
         uniques.append(c)
-        grille.ajouter(b, c)
+        (fine if s <= PETIT_TRAIT else large).ajouter(b, c)
     tol = 0.05
-    cases = grille.cases
-    for c in uniques:
+
+    def relier(c):
         k, b, s = cands[c]
         # l'ecart admis entre deux traits depend du plus grand des deux : chaque paire est trouvee depuis
         # le plus grand, qui cherche dans son voisinage (0,6 fois sa taille) ; un petit trait cherche donc pres
-        m = min(0.6 * s, ECART_AMAS) + tol
-        i0, j0, i1, j1 = grille.plage(b, m)
+        ecart = min(0.6 * s, ECART_AMAS) + tol
         rc = racine(c)
-        for i in range(i0, i1 + 1):
-            for j in range(j0, j1 + 1):
-                for d in cases.get((i, j), ()):
-                    if d == c:
-                        continue
-                    k2, b2, s2 = cands[d]
-                    if s2 > s:
-                        continue                 # le plus grand des deux la trouvera
-                    ecart = min(0.6 * s, ECART_AMAS) + tol
-                    dx = max(0.0, b2[0] - b[2], b[0] - b2[2])
-                    if dx > ecart:
-                        continue
-                    dy = max(0.0, b2[1] - b[3], b[1] - b2[3])
-                    if dy <= ecart and dx * dx + dy * dy <= ecart * ecart:
-                        rd = racine(d)
-                        if rd != rc:
-                            parent[rd] = rc
+        for grille in ((fine,) if s <= PETIT_TRAIT else (fine, large)):
+            cases = grille.cases
+            i0, j0, i1, j1 = grille.plage(b, ecart)
+            for i in range(i0, i1 + 1):
+                for j in range(j0, j1 + 1):
+                    for d in cases.get((i, j), ()):
+                        if d == c:
+                            continue
+                        k2, b2, s2 = cands[d]
+                        if s2 > s:
+                            continue                 # le plus grand des deux la trouvera
+                        dx = max(0.0, b2[0] - b[2], b[0] - b2[2])
+                        if dx > ecart:
+                            continue
+                        dy = max(0.0, b2[1] - b[3], b[1] - b2[3])
+                        if dy <= ecart and dx * dx + dy * dy <= ecart * ecart:
+                            rd = racine(d)
+                            if rd != rc:
+                                parent[rd] = rc
+    # premiere passe : les petits traits seuls ; on garde ses groupes avant la seconde
+    for c in uniques:
+        if cands[c][2] <= PETIT_TRAIT:
+            relier(c)
+    premiere = [racine(c) for c in range(n)]
+    for c in uniques:
+        if cands[c][2] > PETIT_TRAIT:
+            relier(c)
     groupes = {}
     for c in range(n):
         groupes.setdefault(racine(c), []).append(c)
-    amas = []
-    for membres in sorted(groupes.values(), key=lambda m: cands[m[0]][0]):
-        if len(membres) < 2:
+    retenus = []
+    grands = []
+    grille_textes = []
+
+    def porte_un_texte(bx):
+        """Un texte (reel) a moins de 2 mm de la boite : le repere d'un symbole."""
+        if not grille_textes:
+            g = Grille(W, H)
+            for e in els:
+                if e['type'] == 'texte':
+                    bt = boite(e)
+                    g.ajouter(bt, bt)
+            grille_textes.append(g)
+        return any(touche(bt, bx, ECART_AMAS) for bt in grille_textes[0].dans(bx, ECART_AMAS))
+
+    def premiere_passe(membres):
+        sous = {}
+        for c in membres:
+            if cands[c][2] <= PETIT_TRAIT:
+                sous.setdefault(premiere[c], []).append(c)
+        retenus.extend(m for m in sous.values() if len(m) >= 2)
+    for membres in groupes.values():
+        if all(cands[c][2] <= PETIT_TRAIT for c in membres):
+            if len(membres) >= 2:
+                retenus.append(membres)
             continue
+        bs = [cands[c][1] for c in membres]
+        bx = (min(b[0] for b in bs), min(b[1] for b in bs), max(b[2] for b in bs), max(b[3] for b in bs))
+        dessin = sum(1 for c in membres if _comme_un_trait(els[cands[c][0]], cands[c][1])) < 0.8 * len(membres)
+        if len(membres) >= 2 and min(bx[2] - bx[0], bx[3] - bx[1]) <= GRAND_TRAIT and not (dessin and porte_un_texte(bx)):
+            grands.append(membres)
+        else:
+            premiere_passe(membres)
+    touches = _touchent_un_long([[cands[c][0] for c in m] for m in grands], els, longs) if grands else set()
+    for r, membres in enumerate(grands):
+        if r in touches:
+            premiere_passe(membres)
+        else:
+            retenus.append(membres)
+    amas = []
+    for membres in sorted(_mots(retenus, cands), key=lambda m: min(cands[c][0] for c in m)):
         idx = sorted(cands[c][0] for c in membres)
         bs = [cands[c][1] for c in membres]
         x0, y0 = min(b[0] for b in bs), min(b[1] for b in bs)
@@ -5145,14 +5401,13 @@ def amas_de_petits_traits(els, W, H):
         types = {}
         for k in idx:
             types[els[k]['type']] = types.get(els[k]['type'], 0) + 1
-        tailles = sorted(cands[c][2] for c in membres)
+        plus_grand = max(cands[c][2] for c in membres)
         larg, haut = x1 - x0, y1 - y0
         petit, grand = min(larg, haut), max(larg, haut)
         traits = types.get('segment', 0) + types.get('courbe', 0)
         a = {'rang': len(amas) + 1, 'membres': idx, 'n': len(idx), 'boite': (x0, y0, x1, y1), 'types': types,
-             'taille': tailles[len(tailles) // 2],
-             'texte_probable': len(idx) >= 4 and traits >= 0.8 * len(idx) and 1 / MM <= petit <= 12 / MM
-             and grand >= 1.5 * petit}
+             'texte_probable': len(idx) >= 4 and traits >= 0.8 * len(idx)
+             and 1 / MM <= petit <= max(12 / MM, 1.2 * plus_grand) and grand >= 1.5 * petit}
         for k in idx:
             els[k]['amas'] = a['rang']
         amas.append(a)
@@ -5160,8 +5415,12 @@ def amas_de_petits_traits(els, W, H):
 
 
 def ligne_amas(num_page, n, a, els, index_calques):
-    """La ligne du TSV d'un amas (releve anonymise) : sa boite, son contenu,
-    l'epaisseur et la couleur les plus frequentes ; pas la place des traits."""
+    """La ligne du TSV d'un amas (releve anonymise) : sa boite, l'ordre de
+    grandeur de son nombre de traits, l'epaisseur et la couleur les plus
+    frequentes. Ni la place des traits, ni leur nombre par sorte, ni leur
+    taille, ni le formulaire d'ou ils viennent : pour un amas d'une lettre,
+    ce serait sa signature (on relirait le texte avec l'alphabet de la
+    police, ou par la frequence des formulaires)."""
     membres = [els[k] for k in a['membres']]
 
     def plus_frequent(valeurs):
@@ -5175,23 +5434,21 @@ def ligne_amas(num_page, n, a, els, index_calques):
     vis = [e for e in membres if e['visible']]
     raisons = sorted(set(r_ for e in membres for r_ in e['raisons'])) if not vis else []
     cal = set(nom_calque(e.get('calque'), index_calques) for e in membres)
-    blocs = set(e.get('bloc') or '' for e in membres)
     x0, y0, x1, y1 = a['boite']
     w_, h_ = x1 - x0, y1 - y0
-    if max(w_, h_) <= 2 * a['taille']:
-        # un amas de la taille d'un caractere : sa boite elargie a 0,6 fois sa plus grande dimension
-        # (un 1 ou un I, etroits, ne se distinguent pas d'une autre lettre)
-        m_ = 0.6 * max(w_, h_)
-        if w_ < m_:
-            x0, x1 = (x0 + x1 - m_) / 2, (x0 + x1 + m_) / 2
-        if h_ < m_:
-            y0, y1 = (y0 + y1 - m_) / 2, (y0 + y1 + m_) / 2
-    contenu = ', '.join('%d %s%s' % (v, k, 's' if v > 1 else '') for k, v in sorted(a['types'].items()))
-    details = '%d traits (%s), taille typique %s mm%s' % (a['n'], contenu, fmt(a['taille'] * MM, 1),
-                                                         ', peut-etre du texte dessine en traits' if a['texte_probable'] else '')
+    if a['n'] < 10:
+        # un petit amas (une lettre, un chiffre, un petit symbole) plus haut que large : sa largeur portee a
+        # 0,6 fois sa hauteur (un 1 ou un I, etroits, ne se distinguent pas d'une autre lettre) ; ni drapeau
+        # « texte ». Seulement debout : elargir aussi les amas couches deformerait trois fois plus de symboles
+        if w_ < 0.6 * h_:
+            x0, x1 = (x0 + x1 - 0.6 * h_) / 2, (x0 + x1 + 0.6 * h_) / 2
+        details = 'moins de 10 traits'
+    else:
+        details = ('10 a 50 traits' if a['n'] <= 50 else 'plus de 50 traits') + (
+            ', peut-etre du texte dessine en traits' if a['texte_probable'] else '')
     champs = [str(num_page), str(n), 'amas', fmt(x0 * MM), fmt(y0 * MM), fmt(x1 * MM), fmt(y1 * MM), '', ep, '',
               coul, fond, 'O' if vis else 'N', ','.join(raisons), cal.pop() if len(cal) == 1 else '', '',
-              blocs.pop() if len(blocs) == 1 else '', '', '', details]
+              '', '', '', details]
     return champs
 
 
@@ -5326,7 +5583,12 @@ def completer_textes(els, autres, tol=0.1 / MM):
     """Les caracteres que le lecteur standard ne connait pas (¤ : une police
     composite sans ToUnicode, dont seul le programme de la police dit les
     caracteres) pris chez PyMuPDF, qui lit ce programme : meme place (0,1 mm),
-    meme sens, meme nombre de caracteres. Rend le nombre de textes completes."""
+    meme sens, meme nombre de caracteres. Seul un ¤ est complete, et
+    seulement par une lettre ou un chiffre ; tout autre signe (une espace
+    comprise) le laisse ¤ : faute de nom de glyphe connu, PyMuPDF rend le
+    code brut (33, 34... dans l'ordre d'apparition des glyphes ; /g3 donne
+    une espace), dont motif() garderait les signes, et KESTREL deviendrait
+    !"#$%"& (un chiffre par substitution). Rend le nombre de textes completes."""
     index = {}
     for f in autres:
         if f['type'] == 'texte' and INCONNU not in f['texte']:
@@ -5341,7 +5603,7 @@ def completer_textes(els, autres, tol=0.1 / MM):
                 for f in index.get((gx + dx, gy + dy), ()):
                     if abs(f['x1'] - e['x1']) <= tol and abs(f['y1'] - e['y1']) <= tol and \
                             len(f['texte']) == len(e['texte']) and abs(f['ux'] - e['ux']) < 0.01 and abs(f['uy'] - e['uy']) < 0.01:
-                        e['texte'] = f['texte']
+                        e['texte'] = u''.join(b if (a == INCONNU and b.isalnum()) else a for a, b in zip(e['texte'], f['texte']))
                         n += 1
                         break
                 else:
@@ -5376,6 +5638,7 @@ def relever(data, options, fitz):
     choix = options.get('lecteur', 'auto')
     mu = None
     if fitz is not None and choix in ('auto', 'pymupdf'):
+        oublier_messages(fitz)
         try:
             mu = DocumentPyMuPDF(fitz, data, rel.notes, mdp, std.calques.visible if std is not None else None)
         except Exception as e:
@@ -5757,21 +6020,26 @@ def ligne_tsv(num_page, n, e, index_calques, clair, masques=None):
 def ecrire_tsv(chemin, rel, index_calques, clair):
     """Le TSV : une ligne par element. Releve anonymise : les petits traits
     groupes en amas (de quoi relire un texte dessine en traits) sont ecrits
-    en une ligne par amas, a la place du premier ; avec --clair, tout."""
+    en une ligne par amas, a la place du premier, et la colonne n numerote
+    les lignes (le rang des elements dirait, d'un amas au suivant, combien de
+    traits a chacun) ; avec --clair, tout, au rang de chaque element."""
     entete = list(COLONNES_TSV) + (['texte_EN_CLAIR'] if clair else [])
     with open(chemin_long(chemin), 'w', encoding='utf-8-sig', newline='') as f:
         f.write('\t'.join(entete) + '\r\n')
         for p in rel.pages:
             amas = dict((a['membres'][0], a) for a in (p.get('amas') or []))
             els = p['elements']
+            rang = 0
             for k, e in enumerate(els):
                 if not clair and e.get('amas'):
                     a = amas.get(k)
                     if a is None:
                         continue
-                    champs = ligne_amas(p['num'], k + 1, a, els, index_calques)
+                    rang += 1
+                    champs = ligne_amas(p['num'], rang, a, els, index_calques)
                 else:
-                    champs = ligne_tsv(p['num'], k + 1, e, index_calques, clair, rel.masques)
+                    rang += 1
+                    champs = ligne_tsv(p['num'], rang, e, index_calques, clair, rel.masques)
                 f.write('\t'.join(c.replace('\t', ' ').replace('\r', ' ').replace('\n', ' ') for c in champs) + '\r\n')
 
 
@@ -5908,8 +6176,8 @@ def ecrire_rapport(chemin, rel, entete, options, index_calques):
                   c['rect'], c['courbe'], c['cercle'], p['stats'].get('points', 0), p['stats'].get('doublons', 0)))
             am = p.get('amas') or []
             if am:
-                w(u'  Groupes de petits traits (moins de 10 mm, serrés) : %d, %d traits ; dont %d qui ressemblent à du '
-                  u'texte dessiné en traits (%d traits)' % (len(am), sum(a['n'] for a in am), c.get('amas_texte', 0),
+                w(u'  Groupes de traits (amas : petits traits serrés, grandes lettres, mots) : %d, %d traits ; dont %d qui '
+                  u'ressemblent à du texte dessiné en traits (%d traits)' % (len(am), sum(a['n'] for a in am), c.get('amas_texte', 0),
                                                            c.get('traits_amas_texte', 0)))
             if p.get('incomplete'):
                 w(u'  INCOMPLÈTE : la lecture de la page s\'est arrêtée en route (%s)' % p['incomplete'])
@@ -5934,7 +6202,7 @@ def ecrire_rapport(chemin, rel, entete, options, index_calques):
         ecrire_communs(w, rel)
         ecrire_motifs(w, rel, clair)
         try:
-            ecrire_structure(w, rel)
+            ecrire_structure(w, rel, clair)
         except Exception as e:                        # une analyse en plus ne doit jamais coûter le rapport
             w(u'(analyse de la structure impossible : %s)' % raison(e))
             w(u'')
@@ -6049,10 +6317,13 @@ def mediane(xs):
     return xs[len(xs) // 2] if xs else 0
 
 
-def ecrire_structure(w, rel):
+def ecrire_structure(w, rel, clair=False):
     """Ce qui aidera a lire les liaisons : les symboles poses comme formulaires,
     comment les traits se touchent, ou les textes se posent par rapport aux
-    traits et aux rectangles."""
+    traits et aux rectangles. Releve anonymise : un formulaire fait seulement
+    de traits groupes en amas (une lettre posee comme un formulaire) n'est pas
+    detaille : leur liste, numerotee dans l'ordre des premieres poses, avec
+    le contenu et la frequence de chacun, donnerait l'alphabet du texte."""
     # -- les formulaires poses (des symboles, probablement)
     poses = {}
     for p in rel.pages:
@@ -6074,6 +6345,14 @@ def ecrire_structure(w, rel):
         w(u'%d formulaire(s) utilisé(s) (imbriqués compris), %d posé(s) au premier niveau, %d pose(s) de premier niveau '
           u'(colonne « bloc » du TSV : X3.12 = formulaire X3, 12e pose dans la page).'
           % (len(usages), len(poses), sum(len(v) for v in poses.values())))
+        en_amas = [] if clair else [nom for nom, inst in poses.items()
+                                    if all(e.get('amas') for els in inst.values() for e in els)]
+        if en_amas:
+            w(u'%d formulaire(s) faits seulement de petits traits groupés en amas (du texte dessiné en traits, lettre '
+              u'par lettre ?), %d pose(s) : non détaillés (leur liste donnerait l\'alphabet du texte).'
+              % (len(en_amas), sum(len(poses[nom]) for nom in en_amas)))
+            for nom in en_amas:
+                del poses[nom]
         w(u'formulaire\tposes\téléments par pose\tcontenu d\'une pose\ttaille (mm)\tmotifs des textes dedans')
         tri = sorted(poses.items(), key=lambda kv: (-len(kv[1]), int(kv[0][1:]) if kv[0][1:].isdigit() else 0))
         for nom, inst in tri[:30]:
@@ -6548,7 +6827,7 @@ def lire_plages(texte):
         m = re.match(r'^(\d+)\s*-\s*(\d+)$', morceau)
         if m:
             s.update(range(int(m.group(1)), min(int(m.group(2)), int(m.group(1)) + 100000) + 1))
-        elif morceau.isdigit():
+        elif morceau.isdecimal():            # pas isdigit() : « ² » en est un, et int() le refuse
             s.add(int(morceau))
     return s
 
@@ -6601,6 +6880,263 @@ def prochain_numero(dossier):
     return n + 1
 
 
+# ---------------------------------------------------------------------------
+#  Le double-clic : sans chemin, la fenetre de choix, l'Explorateur, l'attente
+# ---------------------------------------------------------------------------
+
+DOSSIER_A_LIRE = 'PDF-A-LIRE'
+
+
+def dossier_de_la_sonde():
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+def sans_fenetre():
+    """SONDE_SANS_FENETRE=1 : ni fenetre de choix, ni Explorateur, ni attente
+    (les tests, un lancement par un autre programme)."""
+    return os.environ.get('SONDE_SANS_FENETRE', '').strip() not in ('', '0')
+
+
+def ouvrir_dans_l_explorateur(dossier):
+    """Ouvre le dossier dans l'Explorateur de Windows ; rend True si c'est
+    fait. Ailleurs que sous Windows, ou avec SONDE_SANS_FENETRE : rien."""
+    if os.name != 'nt' or sans_fenetre():
+        return False
+    try:
+        os.startfile(os.path.abspath(dossier))
+        return True
+    except Exception:
+        return False
+
+
+def choisir_dans_une_fenetre():
+    """La fenetre « Ouvrir » de Windows (tkinter), pour choisir un ou plusieurs
+    PDF ; rend la liste des fichiers choisis, vide si l'on annule, si tkinter
+    manque, s'il n'y a pas d'ecran ou avec SONDE_SANS_FENETRE."""
+    if sans_fenetre():
+        return []
+    try:
+        import tkinter
+        from tkinter import filedialog
+    except Exception:
+        return []
+    racine = None
+    try:
+        racine = tkinter.Tk()
+        racine.withdraw()
+        try:
+            racine.attributes('-topmost', True)   # devant la fenetre noire
+        except Exception:
+            pass
+        dire('Une fenetre s\'ouvre pour choisir les plans PDF (elle est peut-etre derriere celle-ci).')
+        noms = filedialog.askopenfilenames(
+            parent=racine, title=u'Sonde PDF : choisis 2 ou 3 plans PDF (Ctrl enfoncé pour en prendre plusieurs)',
+            filetypes=[('Plans PDF', '*.pdf *.PDF')])
+        return [n for n in racine.tk.splitlist(noms) if n] if noms else []
+    except Exception:
+        return []
+    finally:
+        if racine is not None:
+            try:
+                racine.destroy()
+            except Exception:
+                pass
+
+
+def pdf_sans_chemin():
+    """Les PDF a lire quand aucun chemin n'est donne (un double-clic) : ceux du
+    dossier PDF-A-LIRE, a cote de la sonde ; s'il n'y en a pas, ceux choisis
+    dans une fenetre ; sinon, aucun : le dossier est cree et ouvert, et l'ecran
+    dit quoi faire. L'ecran ne montre jamais un chemin, ni un nom de PDF."""
+    a_lire = os.path.join(dossier_de_la_sonde(), DOSSIER_A_LIRE)
+    if os.path.isdir(chemin_long(a_lire)):
+        fichiers = lister_pdf([a_lire])
+        if fichiers:
+            dire('Les PDF du dossier "%s", a cote de la sonde (ils y restent : pour en lire d\'autres, '
+                 'remplace-les).' % DOSSIER_A_LIRE)
+            return fichiers
+    choisis = choisir_dans_une_fenetre()
+    if choisis:
+        fichiers = lister_pdf(choisis)
+        dire('%d PDF choisi(s) dans la fenetre.' % len(fichiers))
+        if fichiers:
+            return fichiers
+    try:
+        os.makedirs(chemin_long(a_lire), exist_ok=True)
+    except Exception:
+        dire('')
+        dire('Aucun PDF a lire, et le dossier "%s" n\'a pas pu etre cree a cote de la sonde' % DOSSIER_A_LIRE)
+        dire('(dossier protege ?). Sors le kit du zip (clic droit, "Extraire tout"), puis recommence.')
+        return []
+    ouvert = ouvrir_dans_l_explorateur(a_lire)
+    dire('')
+    dire('Aucun PDF a lire. Le dossier "%s" est pret, a cote de la sonde%s.' % (
+        DOSSIER_A_LIRE, ' (il vient de s\'ouvrir)' if ouvert else ''))
+    dire('  1. Copie dedans 2 ou 3 plans PDF : un simple, un charge, un avec des connecteurs.')
+    dire('  2. Puis lance de nouveau la sonde : double-clic sur sonde_pdf.py.')
+    dire('Rien n\'est envoye nulle part, rien n\'est modifie dans les PDF.')
+    return []
+
+
+def fin_du_releve(dossier, montre, clair, ecrits):
+    """Ce que l'ecran dit a la fin (celui de sonde-pdf.bat avant), et, sous
+    Windows, le dossier des rapports qui s'ouvre."""
+    if not ecrits:
+        return
+    if not clair:
+        dire('Ils ne contiennent aucun texte reel des plans, ni le nom des fichiers, ni de nom propre.')
+        dire('Le .elements.tsv contient la GEOMETRIE du dessin (les traits, sans les textes) :')
+        dire('a toi de voir si tu peux l\'envoyer ; le .rapport.txt seul suffit pour commencer.')
+        try:
+            vieux = [n for n in os.listdir(chemin_long(dossier)) if 'EN-CLAIR' in n]
+        except Exception:
+            vieux = []
+        if vieux:
+            dire('ATTENTION : ce dossier contient aussi des fichiers EN-CLAIR (vrais textes des plans) :')
+            dire('ne les envoyer que pour un plan que l\'on a le droit de montrer.')
+        if os.path.isdir(chemin_long(os.path.join(dossier_de_la_sonde(), 'rapports-EN-CLAIR'))):
+            dire('ATTENTION : le dossier "rapports-EN-CLAIR", a cote de la sonde, contient des releves EN CLAIR')
+            dire('(vrais textes) : ne pas les envoyer sans accord.')
+    ouvrir_dans_l_explorateur(dossier)
+
+
+def processus_de_la_console():
+    """Sous Windows, le nom (en minuscules) des AUTRES processus attaches a la
+    console de la sonde (None pour un nom illisible) ; None si l'on ne sait
+    pas (pas de console, pas Windows)."""
+    if os.name != 'nt':
+        return None
+    try:
+        import ctypes
+        from ctypes import wintypes
+        k = ctypes.WinDLL('kernel32', use_last_error=True)
+        k.GetConsoleProcessList.argtypes = [ctypes.POINTER(wintypes.DWORD), wintypes.DWORD]
+        k.GetConsoleProcessList.restype = wintypes.DWORD
+        k.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+        k.OpenProcess.restype = wintypes.HANDLE
+        k.QueryFullProcessImageNameW.argtypes = [wintypes.HANDLE, wintypes.DWORD, wintypes.LPWSTR,
+                                                 ctypes.POINTER(wintypes.DWORD)]
+        k.QueryFullProcessImageNameW.restype = wintypes.BOOL
+        k.CloseHandle.argtypes = [wintypes.HANDLE]
+        pids = (wintypes.DWORD * 64)()
+        n = k.GetConsoleProcessList(pids, 64)
+        if n < 1 or n > 64:
+            return None
+        noms = []
+        for i in range(n):
+            if pids[i] == os.getpid():
+                continue
+            h = k.OpenProcess(0x1000, False, pids[i])     # PROCESS_QUERY_LIMITED_INFORMATION
+            if not h:
+                noms.append(None)
+                continue
+            try:
+                tampon = ctypes.create_unicode_buffer(1024)
+                taille = wintypes.DWORD(1024)
+                ok_ = k.QueryFullProcessImageNameW(h, 0, tampon, ctypes.byref(taille))
+                noms.append(re.split(r'[\\/]', tampon.value)[-1].lower() if ok_ else None)
+            finally:
+                k.CloseHandle(h)
+        return noms
+    except Exception:
+        return None
+
+
+def console_a_soi(autres):
+    """Vrai si la console a ete creee pour la sonde : aucun autre processus n'y
+    est attache, sauf Python lui-meme (py.exe, le lanceur d'un double-clic ;
+    python.exe, celui d'un venv). Une invite de commandes (cmd.exe, donc aussi
+    sonde-pdf.bat), PowerShell ou un nom illisible : non, elle n'est pas a soi."""
+    if autres is None:
+        return False
+    return all(n and re.match(r'^py[a-z0-9._-]*\.exe$', n) for n in autres)
+
+
+def attendre_entree():
+    """« Appuie sur Entree » : ne bloque ni ne plante jamais si l'entree est
+    fermee (fin de fichier) ou absente."""
+    try:
+        dire('')
+        sys.stdout.write('Appuie sur Entree pour fermer cette fenetre.')
+        sys.stdout.flush()
+    except Exception:
+        pass
+    try:
+        if sys.stdin is not None:
+            sys.stdin.readline()
+    except (Exception, KeyboardInterrupt):
+        pass
+
+
+def doit_attendre():
+    """Garder la fenetre ouverte a la fin : seulement sous Windows, sans
+    SONDE_SANS_FENETRE, quand la console a ete creee pour la sonde (double-clic,
+    PDF glisses sur le .py)."""
+    if os.name != 'nt' or sans_fenetre():
+        return False
+    return console_a_soi(processus_de_la_console())
+
+
+def ecran_sans_chemin():
+    """Rien de Python ne s'ecrit plus avec un chemin : ni traceback (meme d'un
+    fil ou d'un objet detruit), ni avertissement (qui donne le fichier et la
+    ligne). Seulement la classe."""
+    def accroche(genre, valeur, pile):
+        dire('Erreur imprevue de la sonde (%s).' % getattr(genre, '__name__', 'Exception'))
+    sys.excepthook = accroche
+    if hasattr(sys, 'unraisablehook'):
+        sys.unraisablehook = lambda u: None
+    try:
+        import threading
+        threading.excepthook = lambda a: accroche(a.exc_type, None, None)
+    except Exception:
+        pass
+    try:
+        import warnings
+
+        def avertissement(message, categorie, *_a, **_k):
+            dire('  (avertissement de Python : %s)' % getattr(categorie, '__name__', 'Warning'))
+        warnings.showwarning = avertissement
+    except Exception:
+        pass
+
+
+def ligne_de_l_erreur(e):
+    """« , ligne 1234 » : la derniere ligne de ce script par ou l'exception
+    est passee (de quoi la retrouver), jamais un chemin ; vide si inconnue."""
+    try:
+        import traceback
+        nom = os.path.basename(__file__)
+        lignes = [f.lineno for f in traceback.extract_tb(e.__traceback__) if os.path.basename(f.filename) == nom]
+        return ', ligne %d' % lignes[-1] if lignes else ''
+    except Exception:
+        return ''
+
+
+def lancer(argv):
+    """Le point d'entree de la ligne de commande et du double-clic : aucune
+    exception ne sort (seulement sa classe et un message en francais), puis
+    l'attente d'Entree si la fenetre a ete ouverte pour la sonde."""
+    ecran_sans_chemin()
+    try:
+        code = principal(argv)
+    except KeyboardInterrupt:
+        dire('Interrompu.')
+        code = 130
+    except Exception as e:
+        dire('')
+        dire('La sonde s\'est arretee sur une erreur imprevue (%s%s). Rien n\'a ete envoye.' % (
+            e.__class__.__name__, ligne_de_l_erreur(e)))
+        dire('Prends cet ecran en photo et envoie-la-moi.')
+        code = 3
+    try:
+        if doit_attendre():
+            attendre_entree()
+    except (Exception, KeyboardInterrupt):
+        pass
+    return code
+
+
 def principal(argv):
     options = {'clair': False, 'lecteur': 'auto', 'pages': None, 'sortie': None, 'mot_de_passe': '', 'delai': DELAI_PDF}
     chemins = []
@@ -6611,6 +7147,8 @@ def principal(argv):
             options['lecteur'] = a.split('=', 1)[1].strip().lower()
         elif a.startswith('--pages='):
             options['pages'] = lire_plages(a.split('=', 1)[1])
+            if not options['pages']:
+                dire('--pages : aucun numero de page compris (par exemple --pages=1-3,7) ; toutes les pages sont lues.')
         elif a.startswith('--sortie='):
             options['sortie'] = a.split('=', 1)[1]
         elif a.startswith('--mot-de-passe='):
@@ -6636,11 +7174,16 @@ def principal(argv):
     dire('Sonde PDF %s -- Python %s' % (VERSION_SONDE, sys.version.split()[0]))
     if sys.version_info < (3, 8):
         dire('Attention : Python %s est plus ancien que 3.8 ; la sonde peut echouer.' % sys.version.split()[0])
-    fichiers = lister_pdf(chemins)
-    if not fichiers:
-        dire('Aucun PDF a lire. Glisser un ou plusieurs PDF (ou un dossier) sur sonde-pdf.bat,')
-        dire('ou : python sonde_pdf.py fichier.pdf [dossier] [--clair]')
-        return 1
+    if not chemins:
+        fichiers = pdf_sans_chemin()
+        if not fichiers:
+            return 1
+    else:
+        fichiers = lister_pdf(chemins)
+        if not fichiers:
+            dire('Aucun PDF a lire. Donner un ou plusieurs PDF (ou un dossier) : python sonde_pdf.py fichier.pdf [dossier]')
+            dire('ou les mettre dans le dossier "%s", a cote de la sonde, et la lancer sans rien.' % DOSSIER_A_LIRE)
+            return 1
     libs, fitz = bibliotheques()
     if options['lecteur'] == 'standard':
         fitz_util = None
@@ -6705,13 +7248,9 @@ def principal(argv):
     dire('%d rapport(s) ecrit(s) dans le dossier %s' % (ecrits, montre))
     if clair:
         dire('ATTENTION : ces rapports sont EN CLAIR (vrais textes, noms des fichiers).')
+    fin_du_releve(dossier, montre, clair, ecrits)
     return 0 if ecrits else 1
 
 
 if __name__ == '__main__':
-    try:
-        code = principal(sys.argv[1:])
-    except KeyboardInterrupt:
-        dire('Interrompu.')
-        code = 130
-    sys.exit(code)
+    sys.exit(lancer(sys.argv[1:]))

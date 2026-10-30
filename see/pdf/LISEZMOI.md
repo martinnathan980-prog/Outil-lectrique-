@@ -15,48 +15,123 @@ texte réel** de tes plans, ni le nom des fichiers, ni de nom propre.
 **Ce qu'il faut savoir avant d'envoyer** : le tableau (`.elements.tsv`)
 contient la **géométrie du dessin** — la place des traits, des rectangles,
 des cercles et des textes (réduits à leur forme). Si un texte est dessiné en
-traits (une police de DAO), ses petits traits ne sont **pas** écrits un par
-un : le tableau n'en garde qu'une boîte par groupe, on ne peut pas le relire.
+traits (une police de DAO, un logo), ses traits ne sont **pas** écrits un par
+un : le tableau n'en garde qu'une boîte par mot, on ne peut pas le relire
+(jusqu'à 3 cm de haut ; au-delà, ou s'il touche un fil ou un cadre, il reste
+écrit trait par trait).
 Le rapport (`.rapport.txt`) ne contient que des comptes et des formes. Si tu
 hésites, commence par m'envoyer seulement le `.rapport.txt`.
 
 ## Pour toi : comment t'en servir
 
-1. Copie le dossier `pdf` (les deux fichiers `sonde-pdf.bat` et
-   `sonde_pdf.py`, ensemble) où tu veux sur ton PC, par exemple sur le Bureau.
-2. **Glisse** un PDF, plusieurs PDF ou un dossier de PDF **sur
-   `sonde-pdf.bat`** et lâche. Pour beaucoup de PDF, glisse le **dossier**
-   (Windows refuse au-delà de quelques dizaines de fichiers glissés d'un coup).
-3. Une fenêtre noire s'ouvre, lit les PDF (de quelques secondes à quelques
-   minutes pour un gros dossier ; deux minutes au plus par PDF), puis ouvre le
-   dossier **`rapports`** à côté de la sonde. Appuie sur une touche pour
-   fermer la fenêtre.
-4. Renvoie-moi les fichiers du dossier `rapports` (ou colle-moi le contenu
-   d'un `.rapport.txt`).
+Tout arrive dans **`Kit-PDF.zip`**, par courriel : deux fichiers,
+`sonde_pdf.py` et `LIS-MOI-D-ABORD.txt`, et un dossier vide, `PDF-A-LIRE`.
+Le `LIS-MOI-D-ABORD.txt` dit tout, une action par ligne ; en bref :
 
-Il faut Python 3.8 ou plus récent (tu l'as). **Rien à installer** : pas de
-`pip`, pas d'Internet. Si PyMuPDF est installé, la sonde s'en sert pour se
-vérifier (elle compare ses deux façons de lire) ; sinon elle lit les PDF
-toute seule.
+1. **Débloquer le zip** (clic droit, *Propriétés*, *Débloquer*), puis
+   *Extraire tout*.
+2. **Vérifier Python** : touche Windows, `cmd`, puis `py --version` (ou
+   `python --version`) : il faut Python 3.8 ou plus récent.
+3. **Mettre 2 ou 3 plans** représentatifs dans `PDF-A-LIRE` : un simple, un
+   chargé, un avec des connecteurs (ou le laisser vide : une fenêtre les
+   demandera).
+4. **Double-cliquer sur `sonde_pdf.py`.** Une fenêtre noire lit les plans
+   (de quelques secondes à deux minutes par plan), puis ouvre le dossier
+   **`rapports`** ; elle attend Entrée avant de se fermer. S'il s'ouvre dans
+   un éditeur : clic droit, *Ouvrir avec*, *Python* ; sinon, dans la barre
+   d'adresse du dossier, `cmd`, puis `py sonde_pdf.py`.
+5. **Relire chaque `.rapport.txt`** dans le Bloc-notes : aucun vrai texte de
+   plan ne doit y être. Au moindre doute, le montrer d'abord à ton
+   responsable.
+6. **M'envoyer les `.rapport.txt` seuls**, zippés (clic droit, *Envoyer
+   vers*, *Dossier compressé*). Les `.elements.tsv` seulement si ton
+   responsable est d'accord ; jamais un fichier `EN-CLAIR`.
 
-Sans le `.bat`, dans une invite de commandes :
+Il faut Python 3.8 ou plus récent. **Rien à installer** : pas de `pip`, pas
+d'Internet. Si PyMuPDF est installé, la sonde s'en sert pour se vérifier
+(elle compare ses deux façons de lire) ; sinon elle lit les PDF toute seule.
+
+Commence par **deux ou trois plans représentatifs**, pas par les centaines :
+c'est pour comprendre leur forme, pas pour les saisir.
+
+### Le double-clic, en détail
+
+Lancée **sans aucun chemin** (un double-clic dans l'Explorateur, ou
+`py sonde_pdf.py` tout court), la sonde :
+
+1. lit les PDF du dossier **`PDF-A-LIRE`**, à côté d'elle (sous-dossiers
+   compris ; ils y restent : pour en lire d'autres, les remplacer) ;
+2. s'il n'y en a pas, et si `tkinter` est là (il vient avec le Python de
+   python.org), ouvre une fenêtre **« Ouvrir »** pour choisir un ou plusieurs
+   PDF (Ctrl enfoncé) ; elle peut s'ouvrir derrière la fenêtre noire, l'écran
+   le dit ;
+3. sinon, ou si l'on annule : crée `PDF-A-LIRE`, l'ouvre dans l'Explorateur et
+   dit quoi faire (y copier 2 ou 3 plans, relancer) ; code de sortie 1.
+
+**Glisser** des PDF (ou un dossier) sur `sonde_pdf.py` marche aussi : le
+lanceur `py` de Windows les passe en arguments. À la fin, sous Windows, le
+dossier des rapports s'ouvre et l'écran redit l'avertissement : rapports
+anonymisés, le `.elements.tsv` porte la géométrie, le `.rapport.txt` seul
+suffit pour commencer (et un `ATTENTION` s'il traîne un fichier `EN-CLAIR`).
+
+La fenêtre **attend Entrée** seulement quand elle a été ouverte pour la
+sonde : `GetConsoleProcessList` (kernel32, par `ctypes`) donne les processus
+attachés à la console ; la sonde attend si aucun autre n'y est que Python
+lui-même (`py.exe`, le lanceur du double-clic ; `python.exe`, celui d'un
+venv). Une invite de commandes (`cmd.exe`, donc aussi `sonde-pdf.bat`),
+PowerShell ou un nom illisible : pas d'attente (la fenêtre reste ouverte
+d'elle-même, ou le `.bat` fait sa pause). Le seul compte des processus ne
+suffit pas : `cmd.exe` + `python.exe` font deux, comme `py.exe` +
+`python.exe`. Jamais d'attente hors de Windows ; une entrée fermée ou en fin
+de fichier ne bloque pas.
+
+**Aucun traceback** : une exception imprévue (même `MemoryError`) ne montre
+que sa classe et un message en français (code de sortie 3) ; un
+avertissement de Python, une exception dans un fil ou hors du programme non
+plus. Un traceback ou un avertissement montrent le chemin du script, donc
+l'identifiant Windows (`C:\Users\…`).
+
+`SONDE_SANS_FENETRE=1` (variable d'environnement) : ni fenêtre de choix, ni
+Explorateur, ni attente — pour les tests, ou un lancement par un autre
+programme.
+
+### Le Kit-PDF, et le `.bat` qui n'y est pas
+
+`node see/kit.js --pdf` écrit **`Kit-PDF.zip`** (`--sortie=…` pour un autre
+nom) : `Kit-PDF/sonde_pdf.py` (copié octet pour octet), puis
+`Kit-PDF/LIS-MOI-D-ABORD.txt` (`see/pdf/kit/`, UTF-8 avec BOM, CRLF : le
+Bloc-notes l'ouvre tel quel), et le dossier vide `Kit-PDF/PDF-A-LIRE/`.
+Gmail refuse `.bat`, `.cmd`, `.ps1`, `.js`, `.vbs`… **même dans un zip** ;
+le `.py` n'est pas sur sa liste. `kit.js` vérifie chaque fichier contre cette
+liste (`REFUSES_PAR_COURRIEL`, complétée : `.appx`, `.iso`, `.msix`, `.vhd`,
+`.xll`…) et refuse d'écrire un kit qui en porterait un. Le zip produit ne va
+pas dans le dépôt (`.gitignore`). Si la messagerie de l'entreprise retenait
+quand même le `.py` : le renommer en `.txt` avant de zipper, et lui rendre
+son nom au bureau (une étape de plus, à guider à part).
+
+**`sonde-pdf.bat`** reste dans le dépôt, hors du kit : pour une sonde qui
+arrive autrement (clé USB, partage réseau), posé à côté de `sonde_pdf.py`.
+On glisse des PDF (ou un dossier) dessus, ou on le double-clique (la sonde lit
+alors `PDF-A-LIRE`) ; il trouve Python (`py -3`, puis `python`, puis
+`python3`), lance la sonde et fait sa pause ; l'avertissement final et
+l'Explorateur, c'est la sonde qui les fait (une seule fois). Si Windows le
+bloque (« Windows a protégé votre ordinateur ») : clic droit >
+Propriétés > coche **Débloquer** > OK.
+
+Dans une invite de commandes, avec des chemins :
 
 ```
-python sonde_pdf.py "C:\chemin\vers\plan.pdf"
-python sonde_pdf.py "C:\chemin\vers\un\dossier"
+py sonde_pdf.py "C:\chemin\vers\plan.pdf"
+py sonde_pdf.py "C:\chemin\vers\un\dossier"
 ```
-
-Commence par **deux ou trois plans représentatifs** (un simple, un chargé), pas
-par les centaines : c'est pour comprendre leur forme, pas pour les saisir.
 
 ### Si ça coince sous Windows
 
 - Un nom de fichier ou de dossier avec **`&`** ou **`^`** sans espace
-  (`R&D`, `E&S`) casse la ligne de commande **avant** que la sonde démarre :
-  renomme-le, ou passe par l'invite de commandes avec des guillemets
-  (`python sonde_pdf.py "C:\R&D\plan.pdf"`).
-- Si Windows bloque le `.bat` (« Windows a protégé votre ordinateur ») :
-  clic droit sur `sonde-pdf.bat` > Propriétés > coche **Débloquer** > OK.
+  (`R&D`, `E&S`) casse la ligne de commande du `.bat` **avant** que la sonde
+  démarre : renomme-le, mets le plan dans `PDF-A-LIRE`, ou passe par
+  l'invite de commandes avec des guillemets
+  (`py sonde_pdf.py "C:\R&D\plan.pdf"`).
 - Les dossiers très profonds (plus de 260 caractères, fréquent sur un partage
   réseau) sont lus quand même ; un dossier que tu n'as pas le droit de lire
   est compté et dit à l'écran.
@@ -80,9 +155,12 @@ L'écran ne montre ni le nom des fichiers ni le chemin des dossiers.
   majuscule → `A`, minuscule → `a`, chiffre → `9`, les autres signes gardés.
   `601RC1` devient `999AA9`, `W-1234-22` devient `A-9999-99` ; la longueur
   d'un texte dans le tableau est conventionnelle (elle ne suit pas la largeur
-  des lettres, qui laisserait deviner le mot) ;
-- aucun texte dessiné en traits : ses petits traits sont groupés, une boîte
-  par groupe ;
+  des lettres, qui laisserait deviner le mot) ; mais ce qui épouse un texte
+  et qui est dessiné (un cadre, un soulignement, un masque) ou le rectangle
+  d'un lien ou d'un surlignage garde sa vraie largeur, comme toute la
+  géométrie ;
+- aucun texte dessiné en traits : ses traits sont groupés, une boîte par mot
+  (jusqu'à 3 cm de haut) ;
 - aucun nom de fichier, aucun nom de dossier ;
 - aucun nom propre : un calque, une police maison, une étiquette ou une clé
   ajoutée par un logiciel est donné par un **code et sa forme** (`P1
@@ -154,13 +232,24 @@ calques, les découpes, la colonne `bloc`. Si PyMuPDF est importable
 (section « LES DEUX LECTEURS »), complète les caractères que le lecteur
 standard ne connaît pas (`¤` : police composite sans `ToUnicode`, dont seul le
 programme de la police dit les caractères ; même place à 0,1 mm, même
-longueur), et prend une page à son compte si le lecteur standard échoue
+longueur ; un `¤` n'est complété que par une lettre ou un chiffre, tout autre
+signe, une espace comprise, le laisse `¤` : faute de nom de glyphe connu,
+PyMuPDF rend le code brut, 33, 34… dans l'ordre d'apparition, et `KESTREL`
+deviendrait `!"#$%"&`, un chiffre par substitution), et prend une
+page à son compte si le lecteur standard échoue
 dessus (ou le fichier entier s'il ne l'ouvre pas). `--lecteur=pymupdf` le met
 devant (essais) ; `--lecteur=standard` s'en passe. Avant PyMuPDF 1.23, ses
 tracés diffèrent sur des cas connus (fermeture des chemins, couleurs) : le
 rapport le dit. Ses coordonnées sont recalculées sur CropBox ∩ MediaBox (la
 page vue de la norme : MuPDF avant 1.24 et la `rotation_matrix` de PyMuPDF
-partent de la CropBox brute, fausse quand elle déborde).
+partent de la CropBox brute, fausse quand elle déborde). MuPDF et PyMuPDF
+n'écrivent rien à l'écran (`faire_taire()` : `mupdf_display_errors`,
+`mupdf_display_warnings`, `set_messages` et `set_log` vers un flux muet) :
+leurs messages recopient le nom d'une police maison, d'une ressource, d'une
+CMap, les mots d'un flux abîmé ; un paquet voisin (`pymupdf4llm`) les coupe à
+son import, on ne compte pas sur lui. La réserve de leurs messages est vidée
+avant chaque PDF et chaque page (`Page.bound()` en recopie le dernier à
+l'écran pour une page « infinie », même affichage coupé).
 
 Les limites qui protègent le poste (mesurées sur des PDF fabriqués) :
 
@@ -177,7 +266,8 @@ Les limites qui protègent le poste (mesurées sur des PDF fabriqués) :
 - PyMuPDF ne relit pas une page de plus de 150 000 tracés, ni une page qui a
   arrêté le lecteur standard (MuPDF peut y passer des minutes, ou s'y planter) ;
 - une boîte démesurée (un texte de 10^9 mm, un aplat géant) ne compte que pour
-  la page (et 10 mm autour) dans les recherches de voisins ; des milliers
+  la page (et 10 mm autour) dans les recherches de voisins (les amas, eux, se
+  cherchent partout : leurs traits font 30 mm au plus) ; des milliers
   d'éléments empilés à l'identique ne rendent pas les analyses quadratiques ;
   un arbre de noms ou une expression de calques qui se contient elle-même, un
   flux xref aux largeurs nulles ou au `/Size` de deux milliards, un
@@ -185,9 +275,17 @@ Les limites qui protègent le poste (mesurées sur des PDF fabriqués) :
   mémoire.
 
 Options : `--clair`, `--sortie=DOSSIER`, `--pages=1-3,7`,
-`--mot-de-passe=XXX`, `--lecteur=…`, `--delai=120`, `--aide`. Code de sortie
-0 si au moins un rapport est écrit, 1 sinon, 2 pour une option inconnue (seul
-son nom est répété à l'écran : la valeur peut être un mot de passe mal tapé).
+`--mot-de-passe=XXX`, `--lecteur=…`, `--delai=120`, `--aide`. Sans aucun
+chemin (seulement des options, ou rien : le double-clic), la sonde lit
+`PDF-A-LIRE`, à côté d'elle (voir « Le double-clic, en détail »). Code de
+sortie 0 si au moins un rapport est écrit, 1 sinon, 2 pour une option
+inconnue (seul son nom est répété à l'écran : la valeur peut être un mot de
+passe mal tapé), 3 pour une erreur imprévue (sa classe et la dernière ligne
+du script par où elle est passée, jamais un chemin), 130 si l'on
+interrompt (Ctrl+C). Le point d'entrée est `lancer()` : il installe les
+crochets qui gardent l'écran sans chemin (`sys.excepthook`,
+`threading.excepthook`, `sys.unraisablehook`, `warnings.showwarning`),
+appelle `principal()`, puis attend Entrée si `doit_attendre()`.
 L'écran ne reçoit que de l'ASCII (console Windows cp850/cp1252), jamais le nom
 d'un PDF ni le chemin d'un dossier (seulement « rapports, à côté de la
 sonde »). Le dossier `rapports` (`rapports-EN-CLAIR` avec `--clair`) est à
@@ -203,7 +301,9 @@ valeur cachée, un nom de calque → son **motif** (`motif()` : toute lettre →
 encadrées, chiffres romains, nombres cerclés, fractions, accents décomposés ;
 les autres signes gardés) ; un **nom** lu dans le PDF (police, étiquette ou
 clé du contenu marqué, sorte d'annotation, clé hors norme, propriété XMP,
-rôle de structure, encodage) → en clair s'il est de la norme PDF, une famille
+rôle de structure, encodage) → en clair s'il est de la norme PDF (pour une
+CMap prédéfinie, seulement un nom de la norme : `Identity-H`,
+`UniJIS-UCS2-H`… ; `Identity-NOM-H` n'en est pas un), une famille
 de polices du commerce, ou fait de mots ordinaires (anglais et français
 techniques, `nom_ordinaire()`), sinon un **code stable et sa forme** (`P1
 (Aaaaaaa-Aaaa)`, `K2 (AaaaAaaaa)`, `E1`, `S1`, `R1`, `N1`) ; un filtre, un
@@ -248,7 +348,7 @@ rotation de la page (`/Rotate`) et le recadrage (`CropBox`).
 | Colonne | Contenu |
 |---|---|
 | `page` | rang de la page (1…) |
-| `n` | rang de l'élément dans la page (ordre de peinture) ; un amas prend le rang de son premier trait, et les rangs de ses autres traits manquent |
+| `n` | rang de la ligne dans la page, dans l'ordre de peinture ; relevé anonymisé : les lignes se suivent (1, 2, 3…), un amas compte pour une, à la place de son premier trait (le rang des éléments dirait, d'un amas au suivant, combien de traits a chacun) ; avec `--clair`, le rang de chaque élément |
 | `type` | `texte`, `segment`, `rectangle`, `courbe`, `cercle`, `image`, `annotation`, `amas` (relevé anonymisé : un groupe de petits traits, voir plus bas) |
 | `x1`, `y1`, `x2`, `y2` | mm, au centième. **segment** et **courbe** : les deux extrémités, dans le sens du tracé. **texte** : la ligne de base, du début du premier caractère ; la fin (`x2`, `y2`) est **conventionnelle** dans le relevé anonymisé (nombre de caractères × 0,6 corps : la vraie longueur suit la largeur des lettres et laisserait deviner le texte), réelle avec `--clair`. **rectangle**, **cercle**, **image**, **annotation**, **amas** : la boîte (coin haut gauche, coin bas droit) |
 | `angle` | degrés, sens trigonométrique tel qu'on le voit (0 = vers la droite, 90 = vers le haut), dans [0 ; 360) ; vide pour un rectangle, un cercle, une annotation. Texte : le sens de lecture (90 = se lit de bas en haut) |
@@ -260,32 +360,70 @@ rotation de la page (`/Rotate`) et le recadrage (`CropBox`).
 | `raison` | si `N` : `mode3` (texte rendu invisible, Tr 3), `mode7` (texte qui ne sert qu'à découper, Tr 7), `horspage`, `decoupe` (entièrement hors de sa découpe rectangulaire), `blanc` (blanc sur la page ou sur un aplat blanc), `fond` (texte de la couleur de l'aplat sur lequel il est peint), `calque` (calque masqué par défaut), `transparent` (opacité nulle), `minuscule` (corps < 1 pt), `recouvert` (entièrement sous un rectangle plein et opaque peint après lui), et pour une annotation `cachee`, `sansapparence` ; plusieurs raisons séparées par des virgules |
 | `calque` | `C1`, `C2`… (dans l'ordre des numéros d'objet des calques ; le rapport donne pour chacun la forme de son nom et son état par défaut) ; vide hors calque |
 | `chemin` | numéro du chemin dans la page : les segments d'une même polyligne ou d'un même chemin le partagent |
-| `bloc` | l'élément vient d'un formulaire (XObject) posé dans la page : `X3.12` = le formulaire `X3` (numérotés dans l'ordre de leur première pose dans le document), sa 12e pose de premier niveau dans la page ; un symbole posé plusieurs fois se reconnaît là ; vide sinon |
+| `bloc` | l'élément vient d'un formulaire (XObject) posé dans la page : `X3.12` = le formulaire `X3` (numérotés dans l'ordre de leur première pose dans le document), sa 12e pose de premier niveau dans la page ; un symbole posé plusieurs fois se reconnaît là ; vide sinon, et toujours vide sur une ligne `amas` (des lettres posées chacune comme un formulaire donneraient sinon un chiffre par substitution : `X1.1 X2.1 X3.1 X4.1 X5.1 X2.2 X6.1` = KESTREL) |
 | `motif` | texte ou annotation : le texte réduit à sa forme (`A`, `a`, `9`, signes gardés, espaces gardés ; `¤` = glyphe sans caractère connu) |
 | `police` | texte : une famille du commerce (Arial, Helvetica, ISOCPEUR…) par son nom, sans le préfixe de sous-ensemble (`ABCDEF+`) ; une police maison par un code et sa forme (`P1 (Aaaaaaa-Aaaa)`) ; `Type3` |
-| `details` | courbe : les deux points de contrôle (`x y x y`, mm) ; image : `LxH px, filtre, espace, bits`, `dans un motif` (filtre et espace : leur famille de la norme, sinon `autre`) ; texte : nombre de caractères, `(texte en contour)` ; annotation : sa sorte (norme, sinon code et forme) et la source de son texte (`Contents`, `V`, `TU`, `T`, `URI`) ; amas : nombre de traits par sorte, taille typique, `peut-etre du texte dessine en traits` ; `tirets` pour un trait pointillé ; `amas N` (avec `--clair`) pour un trait d'un amas |
+| `details` | courbe : les deux points de contrôle (`x y x y`, mm) ; image : `LxH px, filtre, espace, bits`, `dans un motif` (filtre et espace : leur famille de la norme, sinon `autre`) ; texte : nombre de caractères, `(texte en contour)` ; annotation : sa sorte (norme, sinon code et forme) et la source de son texte (`Contents`, `V`, `TU`, `T`, `URI`) ; amas : l'ordre de grandeur de son nombre de traits (`moins de 10 traits`, `10 a 50 traits`, `plus de 50 traits`), et `peut-etre du texte dessine en traits` (à partir de 10 traits) ; `tirets` pour un trait pointillé ; `amas N` (avec `--clair`) pour un trait d'un amas |
 | `texte_EN_CLAIR` | **seulement avec `--clair`** : le texte réel |
 
 **Les amas** (relevé anonymisé). Un texte dessiné en traits (police SHX
-d'AutoCAD, police « bâton » de CATIA, texte vectorisé en contours pleins) se
-relirait en retraçant les segments du TSV. Les **petits traits** (segments,
-courbes, rectangles, cercles de moins de 10 mm ; un segment prolongé bout à
-bout dans le même sens compte pour sa longueur totale, si bien qu'un fil coupé
-à chaque piquage n'est pas un petit trait) **proches** les uns des autres (à
-moins de 0,6 fois la taille du plus grand des deux, 2 mm au plus) forment un
-**amas** ; un amas d'au moins deux traits est écrit en **une ligne** (`amas`) :
-sa boîte, son contenu, la taille typique de ses traits, l'épaisseur et la
-couleur les plus fréquentes, sans la place des traits ; la boîte d'un amas de
-la taille d'un caractère est élargie à 0,6 fois sa plus grande dimension (un
-`1` étroit ne se distingue pas d'une autre lettre). Des symboles (masse,
-blindage, flèches, broche et son amorce) deviennent aussi des amas. Ce qui
-reste écrit trait par trait : les traits longs (fils, cadres, boîtes) et les
-petits traits isolés (un tiret seul, une amorce loin de tout). Avec `--clair`,
-tout est écrit, et chaque trait d'un amas porte `amas N` dans `details`.
-Mesuré : un schéma au texte en traits (« KESTREL 350A41-1234-00 », 111
-traits) et un schéma au texte vectorisé en contours (DejaVu, 1 359 traits et
-courbes) ne laissent dans le TSV que leurs fils, leur boîte et deux tirets
-isolés.
+d'AutoCAD, police « bâton » de CATIA, texte vectorisé en contours pleins, logo)
+se relirait en retraçant les segments du TSV. Trois passes le regroupent
+(`amas_de_petits_traits()`) :
+
+1. les **petits traits** (segments, courbes, rectangles, cercles de moins de
+   10 mm ; un segment prolongé bout à bout dans le même sens compte pour sa
+   longueur totale, si bien qu'un fil coupé à chaque piquage n'est pas un
+   petit trait) **proches** les uns des autres (à moins de 0,6 fois la taille
+   du plus grand des deux, 2 mm au plus) forment un amas ;
+2. de même avec les traits de **30 mm au plus** : un groupe qui contient un
+   trait de plus de 10 mm devient un amas (à la place des amas de la
+   première passe qu'il contient) s'il n'a pas plus de 30 mm de haut ou de
+   large, s'il ne **touche aucun trait plus long** (à 0,3 mm près, par la
+   vraie distance entre les traits, pas par leurs boîtes ; un rectangle
+   compte pour ses quatre côtés), et s'il n'est pas un **symbole qui porte
+   son repère** (un dessin où les rectangles trapus et les cercles font plus
+   d'un élément sur cinq, avec un texte réel à moins de 2 mm) : les grandes
+   lettres d'un cartouche, un titre, un logo, un `0` en rectangle barré. Un
+   symbole raccordé à un fil, ou qui porte son repère, reste de la
+   géométrie ;
+3. les **lettres d'un mot** : deux amas de même hauteur (à 20 % près),
+   alignés en haut et en bas (à 10 % de la hauteur près) et séparés de moins
+   de 0,6 fois leur hauteur s'unissent. Une police SHX espace ses lettres
+   d'un tiers de leur hauteur : au-delà de 6 mm, chaque lettre ferait sinon
+   son propre amas.
+
+Les grilles de ces recherches n'ont pas de bornes : un cartouche hors de la
+page vue (page recadrée par une CropBox, plan imprimé « taille réelle » sur
+un format plus petit) se regroupe aussi. Un amas d'au moins deux traits est
+écrit en **une ligne** (`amas`) : sa boîte, l'ordre de grandeur de son nombre
+de traits, l'épaisseur et la couleur les plus fréquentes. Ni la place des
+traits, ni leur nombre par sorte, ni leur taille, ni le formulaire d'où ils
+viennent : pour un amas d'une lettre, ce serait sa signature, et l'alphabet
+de la police relirait le texte. Un amas de moins de 10 traits plus haut que
+large est élargi à 0,6 fois sa hauteur (un `1` étroit ne se distingue pas
+d'une autre lettre ; les amas couchés ne sont pas élargis, ce qui déformerait
+trois fois plus de symboles). Des symboles (masse, blindage, flèches, broche
+et son amorce) deviennent aussi des amas, comme un petit dessin isolé
+(moins de 30 mm de haut ou de large, sans contact avec un trait plus long ni
+repère à côté : un bout de fil seul, un symbole posé seul). Ce qui reste
+écrit trait par trait : les traits longs (fils, cadres, boîtes), ce qui les
+touche, les petits traits isolés (un tiret seul, une amorce loin de tout).
+Dans le rapport, un
+formulaire fait seulement de traits d'amas (une lettre posée comme un
+formulaire) n'est pas détaillé (section FORMULAIRES) : la liste, numérotée
+dans l'ordre des premières poses, avec la fréquence et le contenu de chacun,
+donnerait l'alphabet du texte. Avec `--clair`, tout est écrit, et chaque
+trait d'un amas porte `amas N` dans `details`. Mesuré : un schéma au texte en
+traits (« KESTREL 350A41-1234-00 », 111 traits) et un schéma au texte
+vectorisé en contours (DejaVu, 1 359 traits et courbes) ne laissent dans le
+TSV que leurs fils, leur boîte et deux tirets isolés ; « KESTREL
+350A41-1234 » en traits de 7, 12 et 20 mm, ou en contours pleins de 14 mm :
+3 ou 4 amas par ligne, aucun trait de lettre, de même hors de la CropBox ou
+de la MediaBox ; sur les six folios de l'Atelier, les trois passes ne
+changent aucun trait (cinq boîtes d'amas au plus par folio, élargies
+autrement) ; sur le schéma du corpus, une polyligne seule et deux petits
+symboles sans fil ni repère passent en amas.
 
 Règles de construction (les mêmes pour les deux lecteurs) :
 
@@ -305,7 +443,9 @@ Règles de construction (les mêmes pour les deux lecteurs) :
   par page ;
 - les glyphes se regroupent en **textes** : même police, même corps, même
   sens, même couleur, même calque, sur la même ligne de base (à 0,05 corps),
-  à moins d'un demi-corps l'un de l'autre ; un écart de plus de 0,12 corps
+  à moins d'un corps l'un de l'autre (un texte espacé lettre à lettre reste
+  un texte : en morceaux, le début de chacun dirait la largeur des lettres) ;
+  un écart de plus de 0,12 corps
   au-delà de l'écart ordinaire du texte (pour un texte espacé lettre à
   lettre) devient une espace ; les espaces de bout sont retirées ; les
   ligatures (ﬀ, ﬁ, ﬂ, ﬃ, ﬄ, ﬅ, ﬆ) sont écrites en lettres ;
@@ -373,11 +513,21 @@ relu), `CE QUI N'EST PAS GÉRÉ`.
   d'ouverture inconnu donne un rapport « illisible » (`--mot-de-passe=`) ;
 - `/AS` des calques (états automatiques) ignoré : l'état par défaut fait foi ;
 - ce qui reste approché dans l'anonymisation : un caractère isolé d'un seul
-  trait (un tiret, un `I`) reste un segment ; un texte écrit lettre à lettre
-  très espacé (chaque lettre un élément) laisse l'écart entre deux lettres,
-  donc à peu près leur largeur ; la liste des logiciels connus et celle des
-  mots ordinaires sont des listes blanches (un nom absent est masqué, jamais
-  montré).
+  trait (un tiret, un `I`) reste un segment ; un texte dessiné en traits de
+  plus de 3 cm de haut (titre, logo), ou qui touche un trait plus long (un
+  fil, un cadre), reste écrit trait par trait ; un texte en traits tourné
+  (qui se lit de bas en haut) de plus de 6 mm garde une boîte par lettre (les
+  lettres d'un mot ne sont réunies qu'à l'horizontale), étroite pour un `1` ;
+  un texte écrit lettre à lettre espacé de plus d'un corps (chaque
+  lettre un élément) laisse l'écart entre deux lettres, donc à peu près leur
+  largeur ; ce qui épouse un texte et qui est dessiné (un cadre, un
+  soulignement, un masque) ou le rectangle d'une annotation (un lien, un
+  surlignage) garde la vraie largeur du texte, que la longueur
+  conventionnelle cache ; un `ToUnicode` fabriqué qui envoie des lettres
+  vers des signes (`▲`, `✓`) les laisse tels quels (`motif()` réduit les
+  lettres, les chiffres, le braille, pas les autres signes) ; la liste des
+  logiciels connus et celle des mots ordinaires sont des listes blanches (un
+  nom absent est masqué, jamais montré).
 
 ### Les deux lecteurs, mesurés
 
@@ -407,7 +557,27 @@ dégénérés) ni les textes de découpe (Tr 7, que PyMuPDF ne rend pas).
 ```
 python tests/sonde-pdf.py                       des PDF fabriqués à la main par le test
 python tests/sonde-pdf.py --corpus=DOSSIER      et le corpus d'essai (hors du dépôt)
+node tests/kit-pdf.js                           le Kit-PDF (see/kit.js --pdf), sans Python
 ```
+
+`tests/sonde-pdf.py` lance aussi la sonde comme d'un double-clic, sur une
+copie (`SONDE_SANS_FENETRE=1`, entrée vide ou fermée) : `PDF-A-LIRE` créé
+quand il n'y a rien à lire, ses PDF lus (sous-dossiers compris), sans
+fenêtre possible (sans écran, `tkinter` présent ou absent) on retombe sur
+le dossier sans bloquer, l'avertissement de la fin, des PDF glissés en
+argument ; la décision d'attendre (`console_a_soi`) sur les cas de Windows
+(python seul, `py.exe`, venv, `cmd.exe`, le `.bat`, PowerShell, un nom
+illisible) ; `attendre_entree()` sur une entrée vide, absente ou fermée ;
+une exception forcée (`ValueError`, `MemoryError`, `KeyboardInterrupt`),
+un avertissement, une exception dans un fil : ni traceback ni chemin.
+`tests/kit-pdf.js` relit le zip (lecteur écrit pour le test) : deux
+fichiers et le dossier vide, la sonde octet pour octet, le LIS-MOI (BOM,
+CRLF, étapes A à F, `PDF-A-LIRE`, `.rapport.txt`, le responsable, jamais
+`--clair`), aucun type refusé par Gmail, le refus d'un `.bat`, la ligne de
+commande, et le contrôleur éprouvé par des fautes injectées. Ce qui reste
+propre à Windows (`GetConsoleProcessList`, `os.startfile`, la fenêtre
+« Ouvrir », l'association des `.py`, l'extraction du zip) n'a **pas** été
+essayé sous Windows.
 
 Le corpus se fabrique hors du dépôt (`tests/sonde-pdf-corpus.py` demande
 reportlab, PyMuPDF, pikepdf, Pillow ; `tests/sonde-pdf-folios.js` imprime les
