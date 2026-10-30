@@ -32,7 +32,9 @@ const FICHIER = P.fichierDemande();
     const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
     // (v74 : ces écrans se jugent sur l'exemple tel que la v73 l'ouvrait — le 10 A proposé, pas écrit ; la règle du calibre a son bloc dans disjoncteur.js)
   await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined'); await page.evaluate(() => ['equipement', 'disjoncteur', 'barrette', 'prise', 'masse', 'fil'].forEach(t => ['disjoncteur', 'connecteur', 'raccord', 'trajet', 'fils', 'dejafait'].forEach(k => retenirSection(t, k, true)))); await page.evaluate(() => atelier.exempleSansCalibreAuto());   // l’outil s’ouvre sur la bibliothèque : la batterie, qui lit l’exemple, le demande ; les fiches s'ouvrent pliées : la batterie ouvre leurs sections
-    await page.evaluate(() => { app.plan = '1'; if (app.base.ouvert) fermerBase(); redessiner(); ajuster(); }); await page.waitForTimeout(400);
+    // (v73 : le plan s'ouvre cadré sur le dessin ; ces contrôles de la carte et des panneaux sont écrits sur la feuille entière, qu'ils
+    // mesurent : ils la gardent — MIS À JOUR. Le recadrage à côté d'un panneau, cadré sur le dessin : tests/dessin.js)
+    await page.evaluate(() => { app.plan = '1'; if (app.base.ouvert) fermerBase(); redessiner(); VUE.cadrage = 'feuille'; ajuster(); }); await page.waitForTimeout(400);
     /* la feuille à l'écran, et ce qui la recouvre : le tableau, le volet épinglé, le tiroir du téléphone. La CARTE (v72,
        08-carte) flotte sur le plan sans lui prendre de place : elle ne doit cacher que du plan, jamais son bloc */
     const recouvre = ids => page.evaluate(ids => { const bb = app.dessin.bbox, r = $('planche').getBoundingClientRect(), s = app.vue.s;
@@ -481,7 +483,9 @@ const FICHIER = P.fichierDemande();
   await page.close();
   { const page = await nav.newPage({ viewport: { width: 1440, height: 900 } }); page.setDefaultTimeout(300000); const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
     await page.goto(FICHIER); await page.waitForFunction(() => typeof atelier !== 'undefined' && BIB.pret); await page.evaluate(() => atelier.exempleSansCalibreAuto());
-    await page.evaluate(() => { app.plan = '1'; redessiner(); ajuster(); }); await page.waitForTimeout(300);
+    // la feuille entière (v73 : le folio s'ouvre cadré sur son dessin, plus grand — la carte de 102CB1 couvrait alors 104LP1,
+    // que le survol plus bas doit trouver libre : MIS À JOUR)
+    await page.evaluate(() => { app.plan = '1'; redessiner(); VUE.cadrage = 'feuille'; ajuster(); }); await page.waitForTimeout(300);
     // les genres : l'index (R) les range, chacun son compte, « Voir le premier », le geste qui le traite
     await page.click('#btnIndex .rd-point'); await page.waitForTimeout(400);
     const G = await page.evaluate(() => ({ ouvert: document.querySelector('#ba-equip .ix-controle').open, genres: [...document.querySelectorAll('#ba-equip .co-genre')].map(g => g.dataset.genre + ':' + g.querySelector('.co-n').textContent + ':' + !!g.querySelector('[data-premier]') + ':' + ((g.querySelector('[data-geste]') || {}).textContent || '')) }));

@@ -1,0 +1,55 @@
+/* ===========================================================================
+   LA RECHERCHE ET LA PALETTE (08-interface, « la recherche ») — ce qui cherche, et ce qui trouve.
+   La recherche de la barre du haut (`#q`, sa liste `.q-liste` : le menu de verre, style.css) pardonne ; quand rien ne
+   s'écrit comme ce qu'on tape, elle propose le plus proche (« Vouliez-vous dire W-012 ? »). La PALETTE (Ctrl+K) cherche
+   les actions ET les objets : un verre de nuit au centre de la table, qui tombe en 200 ms, les touches à droite.
+   =========================================================================== */
+
+/* la liste a la largeur de son champ (elle le dépassait de 40 px à droite : deux bords, le designer v73) */
+.recherche .q-liste{left:0;right:0;width:auto}
+
+/* le genre d'une ligne (« câble », « repère ») est une étiquette : l'encre seconde (--t-3 tombait à 4,4:1 sur la ligne
+   choisie, la feuille blanche sous le verre quand le plan s'ouvre cadré sur le dessin) */
+.q-liste .q-item .genre{color:var(--t-2)}
+
+/* « Vouliez-vous dire… » : la ligne qui propose, et ce qui l'a amenée, au-dessus */
+.q-liste .q-rien-tete{padding:8px 12px 2px}
+.q-item.q-propose .genre{width:auto;color:var(--t-2)}
+.q-item.q-propose .nom{text-decoration:underline;text-decoration-color:var(--accent-line);text-underline-offset:3px}
+
+/* L'index (R) au clavier : la ligne que ↑ ↓ ont choisie depuis sa recherche porte l'anneau commun (la teinte qui suit
+   s'y pose aussi) */
+.fi.ix .ix-item.actif{outline:2px solid var(--anneau-c);outline-offset:-2px}
+
+/* ─── LA PALETTE ─────────────────────────────────────────────────────────────────────────────────────────────────────── */
+.palette{position:fixed;inset:0;z-index:80;display:flex;justify-content:center;align-items:flex-start;padding:min(15vh,132px) 16px 16px;
+  background:rgba(4,9,20,.34);animation:pa-voile var(--d-rapide) var(--courbe) both}
+@keyframes pa-voile{from{opacity:0}}
+.pa-boite{width:min(600px,100%);max-height:min(68vh,560px);display:flex;flex-direction:column;padding:0;overflow:hidden;transform-origin:50% 0}
+.pa-tete{flex:none;display:flex;align-items:center;gap:12px;height:54px;padding:0 14px 0 18px;border-bottom:1px solid var(--s-line)}
+.pa-tete .ico{width:18px;height:18px;flex:none;color:var(--t-2);fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
+.pa-tete input{flex:1;min-width:0;height:100%;background:none;border:none;outline:none;color:var(--t-1);font:400 var(--f-15)/1 var(--sans);letter-spacing:-.005em}
+.pa-tete input::placeholder{color:var(--t-3)}
+.pa-tete kbd,.pa-pied kbd,.pa-touche kbd{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;border-radius:5px;
+  background:rgba(170,200,255,.12);box-shadow:inset 0 0 0 1px rgba(170,200,255,.16);color:var(--t-2);font:500 var(--f-11)/1 var(--mono)}
+.pa-liste{flex:1;min-height:0;overflow:auto;padding:6px;scrollbar-width:thin}
+.pa-groupe{padding:10px 12px 4px;font:600 var(--f-12)/1.3 var(--sans);color:var(--t-2)}
+.pa-l{display:flex;align-items:center;gap:12px;min-height:44px;padding:5px 12px;border-radius:10px;cursor:pointer;color:var(--t-1)}
+.pa-l .ico{width:16px;height:16px;flex:none;color:var(--t-2);fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.pa-l.on{background:var(--voile-3);box-shadow:inset 0 0 0 1px rgba(159,194,255,.32)}
+.pa-l.on .ico{color:var(--t-1)}
+.pa-l.eteint{cursor:default;color:var(--t-2)}
+.pa-mot{flex:1;min-width:0;font:500 var(--f-14)/1.3 var(--sans);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pa-mot small{display:block;font:400 var(--f-12)/1.35 var(--sans);color:var(--t-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pa-mot .pa-ou{font-style:normal;color:var(--t-2)}
+.pa-mot .pa-id{font:600 var(--f-13)/1.3 var(--mono);letter-spacing:-.01em}
+.pa-touche{flex:none;display:inline-flex;gap:3px}
+.pa-cpt{flex:none;font:400 var(--f-12) var(--sans);color:var(--t-2)}
+.pa-geste.ko .ico{color:var(--ko)}
+.pa-geste.att .ico{color:var(--warn)}
+.pa-rien{padding:18px 14px;color:var(--t-2);font-size:var(--f-13)}
+.pa-pied{flex:none;display:flex;gap:18px;justify-content:flex-end;padding:9px 16px;border-top:1px solid var(--s-line);font:400 var(--f-12)/1 var(--sans);color:var(--t-2)}
+.pa-pied span{display:inline-flex;align-items:center;gap:4px}
+
+@media (prefers-reduced-motion:reduce){ .palette{animation:none} }
+@media (max-width:700px){ .palette{padding-top:12px} .pa-pied{display:none} }

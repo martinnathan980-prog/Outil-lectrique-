@@ -476,8 +476,10 @@ function baseEssaiDansLaPage() {
     await tous(['#en-biblio', '#bibliotheque .bi-vide [data-bi="nouvelle"]', '#bibliotheque .bi-vide [data-bi="base"]', '#bi-reprendre'], 'la bibliothèque : la marque, « Nouvelle installation », « Déposer la base », « Reprendre »'); await capture(page, 'D-2-bibliotheque');
     const tOuvrir = (await ouvrirDepuisBibliotheque(page, X.neuf, 'Antenne VHF')).t; mesure('ajouter neuf.xlsx à une installation et l’ouvrir, au téléphone', tOuvrir, SEUIL_FOLIO);
     let e = await etat(page); ok(e.folios === 3 && e.n === X.neufL.length, 'le plan se dessine, trois folios', e.enSous);
-    const vue = await page.evaluate(() => { const bb = app.dessin.bbox, r = $('planche').getBoundingClientRect(), s = app.vue.s; return { x0: r.left + app.vue.tx + bb.x * s, y0: r.top + app.vue.ty + bb.y * s, x1: r.left + app.vue.tx + (bb.x + bb.w) * s, y1: r.top + app.vue.ty + (bb.y + bb.h) * s, haut: $('entete').getBoundingClientRect().bottom, bas: $('folios').getBoundingClientRect().top }; });
-    ok(vue.x0 >= 0 && vue.x1 <= 390 && vue.y0 >= vue.haut - 1 && vue.y1 <= vue.bas + 1, 'la feuille entière tient entre la barre du haut et celle du bas', JSON.stringify(vue));
+    // v73 (le technicien : « à l'ouverture, le folio n'est qu'une poussière de traits ») : le folio s'ouvre cadré sur son
+    // DESSIN — c'est lui qui tient entier entre les barres, la marge de papier autour peut en sortir (MIS À JOUR)
+    const vue = await page.evaluate(() => { const bb = VUE.cadrage === 'dessin' ? boiteDuDessin(app.dessin) : app.dessin.bbox, r = $('planche').getBoundingClientRect(), s = app.vue.s; return { cadrage: VUE.cadrage, x0: r.left + app.vue.tx + bb.x * s, y0: r.top + app.vue.ty + bb.y * s, x1: r.left + app.vue.tx + (bb.x + bb.w) * s, y1: r.top + app.vue.ty + (bb.y + bb.h) * s, haut: $('entete').getBoundingClientRect().bottom, bas: $('folios').getBoundingClientRect().top }; });
+    ok(vue.x0 >= 0 && vue.x1 <= 390 && vue.y0 >= vue.haut - 1 && vue.y1 <= vue.bas + 1, 'le dessin entier (la feuille, cadrée sur elle) tient entre la barre du haut et celle du bas', JSON.stringify(vue));
     await capture(page, 'D-3-plan');
     let t0 = Date.now(); await page.click('#fo-strip .chip:nth-child(2)'); await page.waitForFunction(p => app.plan === p, FWD(2)); mesure('toucher la puce du folio 2', Date.now() - t0, SEUIL_FOLIO);
     ok(await page.evaluate(() => $('fo-lbl').textContent === '2 / 3' && getComputedStyle($('fo-next')).display === 'none'), 'folio 2 ; les flèches sont rangées (on touche les puces)');

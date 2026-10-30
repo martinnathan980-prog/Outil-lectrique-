@@ -43,7 +43,9 @@ const largeurTexte = (n, fs, ls) => n * (CAR * fs + (ls || 0));
    numéro (en gras), le bout de câble dessiné dans chaque bloc (`data-i`) ; le trait allumé garde 2,4 px d'écran à tout
    zoom (un feutre de 6 px à 200 % masquait le dessin). Ce qu'on SURVOLE pendant qu'un objet est choisi se marque à peine
    (`.sv`) : le choix reste plein. LOIN (un trait de câble sous le pixel d'écran) : les traits s'épaississent, les routes
-   gardent leur couleur. */
+   gardent leur couleur. LISIBLE À 100 % (v73, l'ergonome : 4 à 6 px hier) : à « 100 % », un numéro de câble fait 11 px
+   d'écran (08-interface, `S100`) et la plus petite écriture — le numéro dans une pastille de barrette, 5,4 — en fait 9 ;
+   en deçà, à l'écran seulement, les petites écritures se taisent (style-dessin.css, le zoom sémantique). */
 function styleDessin() {
   return `<defs>
    <pattern id="gfine" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M25 0H0V25" fill="none" stroke="#eef1f5" stroke-width=".8"/></pattern>
@@ -80,7 +82,7 @@ function styleDessin() {
      .embase{fill:#ffffff;stroke:#1b2430;stroke-width:1.1}
      .pont{stroke:#1b2430;stroke-width:1;stroke-linecap:butt}
      .bpast{fill:#1b2430;stroke:none}
-     .bpnum{fill:#ffffff;font-size:4px;font-weight:700}
+     .bpnum{fill:#ffffff;font-size:5.4px;font-weight:700}
      .rep-petit{fill:#111b25;font-size:5.6px;font-weight:600;letter-spacing:.35px}
      .rpill{fill:#ffffff;stroke:#8f9ba6;stroke-width:.8}
      .rname{fill:#2b3743;font-weight:600;font-size:7.5px;letter-spacing:.6px}
@@ -106,6 +108,7 @@ function styleDessin() {
      .cb-borne{fill:#ffffff;stroke:#1d1d1f;stroke-width:1}
      .cb-lien{fill:none;stroke:#1d1d1f;stroke-width:.8;stroke-dasharray:2.4 1.8;stroke-linecap:butt}
      .cb-cal{fill:#1d1d1f;font-size:8px;font-weight:700;letter-spacing:.5px}
+     .cb-ret{fill:#4d5965;font-size:6px;font-weight:500;letter-spacing:.3px}
      .cb-zone{fill:#ffffff;fill-opacity:0;stroke:none}
      .selbox{fill:none;stroke:#1d1d1f;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
      .comp{cursor:pointer;transition:opacity .12s}
@@ -146,9 +149,10 @@ function pageDe(comps, fils) {
   const ux = (x0 + x1) / 2 - uw * k / 2, uy = (y0 + y1) / 2 - uh * k / 2;
   return { x: ux - (PAGE_CADRE + PAGE_MARGE) * k, y: uy - (PAGE_CADRE + PAGE_MARGE) * k, w: PAGE_W * k, h: PAGE_H * k, k };
 }
+// la feuille porte sa classe : l'interface la tient immobile quand le folio change (seul le dessin glisse, 08 `glisserFolio`)
 function feuilleSvg(bb, cartouche, folio, legende) {
   const k = bb.k || bb.w / PAGE_W;
-  return `<g transform="translate(${f1(bb.x)},${f1(bb.y)}) scale(${k.toFixed(5)})">` + feuilleDeReference(cartouche, folio, legende) + '</g>';
+  return `<g class="feuille" transform="translate(${f1(bb.x)},${f1(bb.y)}) scale(${k.toFixed(5)})">` + feuilleDeReference(cartouche, folio, legende) + '</g>';
 }
 function feuilleDeReference(cartouche, folio, legende) {
   const x = 0, y = 0, w = PAGE_W, h = PAGE_H, ix = x + PAGE_CADRE, iy = y + PAGE_CADRE, iw = w - 2 * PAGE_CADRE, ih = h - 2 * PAGE_CADRE;
@@ -304,8 +308,10 @@ function boutsDesFils(fils, couleurDe) { const m = new Map(), cle = (x, y) => Ma
 const couleurDuBout = b => !b ? null : typeof b === 'string' ? b : b.c || null;
 const indicesDuBout = b => b && typeof b === 'object' && b.i && b.i.length ? ` data-i="${b.i.join(' ')}"` : '';
 const traitDe = b => indicesDuBout(b) + styleTrait(couleurDuBout(b));
-function pastilleSvg(x, y, etiq, r) {
-  return `<circle class="bpast" cx="${f1(x)}" cy="${f1(y)}" r="${r || R_PASTILLE(etiq)}"/><text class="bpnum" x="${f1(x)}" y="${f1(y + 1.45)}" text-anchor="middle">${esc(etiq)}</text>`;
+/* Le numéro dans la pastille : 5,4 (9 px d'écran à 100 %, l'ergonome v73 : il faisait 4,1 px) — un numéro de trois
+   signes, rare, garde 4,4 pour rester dans son point ; son milieu sur le centre du point. */
+function pastilleSvg(x, y, etiq, r) { const fs = String(etiq).length > 2 ? 4.4 : 5.4;
+  return `<circle class="bpast" cx="${f1(x)}" cy="${f1(y)}" r="${r || R_PASTILLE(etiq)}"/><text class="bpnum"${fs < 5.4 ? ` style="font-size:${fs}px"` : ''} x="${f1(x)}" y="${f1(y + 0.365 * fs)}" text-anchor="middle">${esc(etiq)}</text>`;
 }
 
 /* ---- l'occupation : ce qui est déjà posé, pour ne rien écrire dessus ------
@@ -620,10 +626,13 @@ function polesDuDisjoncteur(bs) {
   return G.map(g => { const s = g.slice().sort((u, v) => u.y - v.y); return { p: s[0], q: s[1] || null }; }).sort((a, b) => a.p.y - b.p.y);
 }
 /* LE DISJONCTEUR, en coordonnées du bloc ; null s'il ne tient pas (le bloc garde alors la boîte). `info` : ce que
-   l'interface en sait — { calibre (en A), tableau (« 121VU B05 », quand la nomenclature du lecteur viendra) } ;
+   l'interface en sait — { calibre (en A, le retenu), retest (en A : celui du part number écrit, quand il en diffère —
+   « (retest 10 A) » s'écrit sous « 15 A », 08-export `calibresAuFolio`), tableau (« 121VU B05 », quand la nomenclature du
+   lecteur viendra) } ;
    `aGauche(y)`, `aDroite(y)` : la couleur du fil qui arrive à cette hauteur (absolue), comme pour un équipement. */
 function disjoncteurSvg(c, designation, info, aGauche, aDroite) {
   const calibre = info && info.calibre > 0 ? info.calibre : null, tableau = info && info.tableau ? String(info.tableau) : '';
+  const retest = info && info.retest > 0 && calibre && Math.abs(info.retest - calibre) > 1e-9 ? info.retest : null;
   const bs = bornesDuDisjoncteur(c); if (!bs.length || bs.some(b => b.n > 1)) return null;        // une borne sur les deux flancs, ou deux fois : la boîte
   const poles = polesDuDisjoncteur(bs), mid = c.lw + (c.w - c.lw - c.rw) / 2;
   const debouts = poles.filter(P => !P.q || P.p.L === P.q.L), couches = poles.filter(P => P.q && P.p.L !== P.q.L);
@@ -702,38 +711,52 @@ function disjoncteurSvg(c, designation, info, aGauche, aDroite) {
      (couché) ; sinon tout au-dessus, tout au-dessous. Aucune place libre : la boîte. */
   const nom = clip(c.name, 14), X0 = c.lw - CONN_W + 1, X1 = c.w - c.rw + CONN_W - 1;
   const tient = (t, fs, ls, W, n) => clip(t, Math.max(4, Math.min(n, Math.floor(W / (CAR * fs + ls)))));
+  /* une désignation se resserre (jusqu'à 5,6 : 9,6 px d'écran à 100 %) avant de se couper — « Disjoncte… » faisait
+     inachevé (le technicien v73) */
+  const ligneDes = (t, W, n) => { t = String(t); const fs = Math.max(5.6, Math.min(6.8, W / Math.max(1, Math.min(n, t.length)) / (CAR + 0.4 / 6.8)));
+    return { cls: 'des', t: tient(t, fs, 0.4 * fs / 6.8, W, n), fs, ls: 0.4 * fs / 6.8 }; };
+  /* le calibre du retest, quand le part number écrit en dit un autre (l'ingénieur v73, n° 6 : « 15 A » et « (retest 10 A) »
+     dessous) : il se resserre jusqu'à 5,4 (9 px d'écran à 100 %), puis perd ses parenthèses ; sans place, il se tait — le
+     symbole du disjoncteur passe avant (`avecRetest`) */
+  const ligneRet = W => { for (const t of ['(retest ' + amperesCb(retest) + ')', 'retest ' + amperesCb(retest)]) { const fs = Math.min(6, (W / t.length - 0.3) / CAR);
+      if (fs >= 5.4) return { cls: 'cb-ret', t, fs: Math.floor(fs * 10) / 10, ls: 0.3 }; } return null; };
+  let avecRetest = !!(calibre && retest);
   const lignes = W => { const L = [{ cls: 'rep-big', t: nom, fs: Math.max(7, Math.min(10.5, (W / nom.length - 1.15) / CAR)), ls: 1.15 }];
     if (calibre) L.push({ cls: 'cb-cal', t: amperesCb(calibre), fs: 8, ls: 0.5 });
-    if (tableau) L.push({ cls: 'des', t: tient(tableau, 6.8, 0.4, W, 14), fs: 6.8, ls: 0.4 });
-    if (designation) L.push({ cls: 'des', t: tient(String(designation), 6.8, 0.4, W, 18), fs: 6.8, ls: 0.4 });
+    const r = avecRetest ? ligneRet(W) : null; if (r) L.push(r);
+    if (tableau) L.push(ligneDes(tableau, W, 14));
+    if (designation) L.push(ligneDes(designation, W, 18));
     return L; };
   // des lignes empilées depuis yHaut, ancrées en x ; la hauteur d'une pile
   const empiler = (L, x, a, yHaut) => { let y = yHaut; return L.map(l => { y += 0.78 * l.fs; const o = { ...l, x, y, a, b: boiteDeTexte(x, y, a, l.t.length, l.fs, l.ls) }; y += 0.16 * l.fs + 2.2; return o; }); };
   const hauteur = L => L.reduce((h, l) => h + 0.94 * l.fs, 0) + 2.2 * (L.length - 1);
-  const yHaut = Math.min(...symboles.map(s => s.y0)), yBas = Math.max(...symboles.map(s => s.y1)), cands = [];
+  const yHaut = Math.min(...symboles.map(s => s.y0)), yBas = Math.max(...symboles.map(s => s.y1));
+  const dedans = b => b.x0 >= X0 - 0.01 && b.x1 <= X1 + 0.01 && b.y0 >= 0.5 && b.y1 <= c.h - 0.5;
+  const touche = (b, o, m) => b.x1 > o.x0 - m && b.x0 < o.x1 + m && b.y1 > o.y0 - m && b.y0 < o.y1 + m;
+  let choix = null;
+  for (;;) { const cands = [];
   if (cote) {   // debout : du côté vide, centré sur le symbole
     const x = cote < 0 ? Math.min(...symboles.map(s => s.x0)) - 4 : Math.max(...symboles.map(s => s.x1)) + 4, L = lignes(cote < 0 ? x - X0 : X1 - x);
     cands.push(empiler(L, x, cote < 0 ? 'end' : 'start', (yHaut + yBas) / 2 - hauteur(L) / 2)); }
   else {        // couché : le repère à gauche du bouton, le calibre à droite, au-dessus des amenées, le reste dessous ; ou le repère au-dessus du bouton
     const ys = couches[0].p.y, xg = mid - CB_E - CB_R - 2.5, xd = mid + CB_E + CB_R + 2.5, base = ys - 5;
     const bas = Math.max(yBas, ...traits.map(t => t.y1), ...nums.map(n => n.b.y1)) + 2.2;
-    const L = lignes(xg - X0), rep = { ...L[0], x: xg, y: base, a: 'end' }, cal = L.find(l => l.cls === 'cb-cal'), des = L.filter(l => l.cls === 'des');
+    const L = lignes(xg - X0), rep = { ...L[0], x: xg, y: base, a: 'end' }, cal = L.find(l => l.cls === 'cb-cal'), des = L.filter(l => l.cls === 'des' || l.cls === 'cb-ret');
     const cote1 = [{ ...rep, b: boiteDeTexte(xg, base, 'end', rep.t.length, rep.fs, rep.ls) }];
     if (cal) cote1.push({ ...cal, x: xd, y: base, a: 'start', b: boiteDeTexte(xd, base, 'start', cal.t.length, cal.fs, cal.ls) });
     cands.push([...cote1, ...empiler(des, mid, 'middle', bas)]);
     const L2 = lignes(X1 - X0); cands.push([...empiler(L2.slice(0, 1), mid, 'middle', yHaut - 2.5 - hauteur(L2.slice(0, 1))), ...empiler(L2.slice(1), mid, 'middle', bas)]); }
   const Lc = lignes(X1 - X0);
   cands.push(empiler(Lc, mid, 'middle', yHaut - 3 - hauteur(Lc)), empiler(Lc, mid, 'middle', yBas + 3));
-  const dedans = b => b.x0 >= X0 - 0.01 && b.x1 <= X1 + 0.01 && b.y0 >= 0.5 && b.y1 <= c.h - 0.5;
-  const touche = (b, o, m) => b.x1 > o.x0 - m && b.x0 < o.x1 + m && b.y1 > o.y0 - m && b.y0 < o.y1 + m;
-  const choix = cands.find(L => L.every(l => dedans(l.b) && !traits.some(t => touche(l.b, t, 1)) && !symboles.some(s => touche(l.b, s, 1.2)) && !nums.some(n => touche(l.b, n.b, 1))));
+  choix = cands.find(L => L.every(l => dedans(l.b) && !traits.some(t => touche(l.b, t, 1)) && !symboles.some(s => touche(l.b, s, 1.2)) && !nums.some(n => touche(l.b, n.b, 1))));
+  if (choix || !avecRetest) break; avecRetest = false; }   // le retest ne tient nulle part : le symbole sans lui, plutôt que la boîte
   if (!choix) return null;
 
   /* la ZONE : le corps, invisible sur le folio (mais on peut y cliquer, comme dans le corps d'un équipement) ; le calque
      des dessins déjà faits (style-ref.css) la teinte pour dire « manque », « proposé », comme le corps d'un équipement */
   let s = `<rect class="cb-zone" x="${f1(c.lw)}" y="0" width="${f1(c.w - c.lw - c.rw)}" height="${f1(c.h)}"/>` + fils + arcs + lien + `<path class="cb-bouton" d="${bouton}"/>` + bornes;
   nums.forEach(n => { s += `<text class="pinlbl" x="${f1(n.x)}" y="${f1(n.y)}" text-anchor="${n.a}">${esc(n.t)}</text>`; });
-  choix.forEach(l => { s += `<text class="${l.cls}"${l.cls === 'rep-big' ? ` style="font-size:${f1(l.fs)}px"` : ''} x="${f1(l.x)}" y="${f1(l.y)}" text-anchor="${l.a}">${esc(l.t)}</text>`; });
+  choix.forEach(l => { s += `<text class="${l.cls}"${l.cls === 'rep-big' || (l.cls === 'des' && l.fs < 6.8) || (l.cls === 'cb-ret' && l.fs < 6) ? ` style="font-size:${f1(l.fs)}px"` : ''} x="${f1(l.x)}" y="${f1(l.y)}" text-anchor="${l.a}">${esc(l.t)}</text>`; });
   return s;
 }
 
@@ -812,7 +835,7 @@ function blocSvg(c, designation, choisi, couleurBout, info, k, ailleurs) {
     s += `<rect class="fiche" x="${f1(xm0)}" y="${f1(ym0)}" width="${WM}" height="${f1(ym1 - ym0)}"/>`;
     rs.forEach(p => { const ly = p.y - c.y, n = p.etiq ? clip(String(p.etiq), 2) : '';
       // le numéro du contact se lit dans la PARTIE MOBILE (la fiche) : c'est là que l'atelier l'écrit
-      if (n) s += `<text class="prnum"${n.length > 1 ? ' style="font-size:4.4px"' : ''} x="${f1(xm0 + WM / 2)}" y="${f1(ly + 1.7)}" text-anchor="middle">${esc(n)}</text>`;
+      if (n) s += `<text class="prnum"${n.length > 1 ? ' style="font-size:5px"' : ''} x="${f1(xm0 + WM / 2)}" y="${f1(ly + (n.length > 1 ? 1.8 : 1.95))}" text-anchor="middle">${esc(n)}</text>`;
       if ((p.dir || 0) <= 0) s += `<line class="lead"${traitDe(aGauche(p.y))} x1="0" y1="${f1(ly)}" x2="${f1(xm0)}" y2="${f1(ly)}"/>`;
       if ((p.dir || 0) >= 0) s += `<line class="lead"${traitDe(aDroite(p.y))} x1="${f1(xe1)}" y1="${f1(ly)}" x2="${f1(c.w)}" y2="${f1(ly)}"/>`; });
     s += repereDe(c);
