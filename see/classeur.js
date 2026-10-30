@@ -4,13 +4,16 @@
        node see/classeur.js [--sortie=Pilote-SEE.xlsm] [--sans-bouton]
 
    Au bureau, le technicien n'a qu'UN fichier à ouvrir : « Activer le
-   contenu », puis deux gros boutons numérotés : « 1. TESTER SEE » (lecture
-   seule) et « 2. SEE DESSINE » (l'essai de dessin pour de vrai, après une
-   question). Ni éditeur VBA ni import de .bas. Ce fichier écrit ce classeur à
+   contenu », puis trois gros boutons numérotés : « 1. TESTER SEE » (lecture
+   seule : Excel rejoint la fenêtre SEE ouverte), « 2. SEE DESSINE » (l'essai
+   de dessin pour de vrai dans cette fenêtre, après une question) et « 3. SEE
+   FERMÉ » (SEE fermé, Excel ouvre lui-même le projet d'essai, y dessine et le
+   referme). Ni éditeur VBA ni import de .bas. Ce fichier écrit ce classeur à
    partir des modules see/vba/*.bas tels qu'ils sont au moment où on le lance
    (VBA_DOSSIER=… pour en prendre d'autres). Il REFUSE (code de sortie 1, rien
-   d'écrit) si la macro d'un bouton (TesterSEE, EssaiDessinReel) n'est dans
-   aucun module, ou si le dossier a un .bas qu'il ne lit pas ; --sans-bouton
+   d'écrit) si la macro d'un bouton (TesterSEE, EssaiDessinReel,
+   EssaiSansFenetre) n'est dans aucun module, ou si le dossier a un .bas qu'il
+   ne lit pas ; --sans-bouton
    écrit quand même un classeur dont un bouton ne lancerait rien, pour un
    essai ici, jamais pour le bureau.
 
@@ -36,7 +39,7 @@
      VBA/<module>       le texte du module, compressé, sans cache (§ 2.3.4.3)
    Les modules : ThisWorkbook et Feuil1, modules de DOCUMENT (VB_Base des
    classes Workbook et Worksheet d'Excel, le texte qu'Excel écrit pour un
-   module vide), puis SEE_Commun, SEE_Sonde, SEE_Pilote, modules STANDARD :
+   module vide), puis SEE_Commun, SEE_Sonde, SEE_Pilote, SEE_Windows, modules STANDARD :
    leur texte EXACT, octet pour octet (Windows-1252, CRLF, lignes Attribute
    comprises). Les choix (références, ordre, valeurs) sont ceux des
    vbaProject.bin écrits par Excel 2007 et 2010, comparés enregistrement par
@@ -44,9 +47,10 @@
 
    LE CLASSEUR (OOXML « macroEnabled ») : une feuille « Accueil » (codeName
    Feuil1, celui du module de document) avec les consignes en trois étapes, et
-   deux gros boutons, vert puis bleu : des formes DrawingML dont l'attribut
-   macro="[0]!TesterSEE" (puis "[0]!EssaiDessinReel") est ce qu'Excel écrit
-   pour une forme affectée à une macro du classeur. RIEN ne s'exécute à
+   trois gros boutons, vert, bleu, orange : des formes DrawingML dont
+   l'attribut macro="[0]!TesterSEE" (puis "[0]!EssaiDessinReel",
+   "[0]!EssaiSansFenetre") est ce qu'Excel écrit pour une forme affectée à une
+   macro du classeur. RIEN ne s'exécute à
    l'ouverture (ni Workbook_Open, ni Auto_Open : le générateur le refuse).
 
    Le zip est « stocké » (zipDe, src/08-dxf.js), daté du 1er janvier 1980
@@ -60,15 +64,21 @@
 const fs = require('fs'), path = require('path'), crypto = require('crypto');
 const RACINE = path.join(__dirname, '..');
 
-const MODULES_STANDARD = ['SEE_Commun', 'SEE_Sonde', 'SEE_Pilote'];
+const MODULES_STANDARD = ['SEE_Commun', 'SEE_Sonde', 'SEE_Pilote', 'SEE_Windows'];
 const MACRO_DU_BOUTON = 'TesterSEE';
-/* Les boutons de la feuille Accueil, dans l'ordre des étapes : la macro, le texte (le message de fin de TesterSEE cite
-   celui du bouton 2), le fond et le bord, et les lignes qu'il couvre (trois lignes de 33 points). */
+/* Les boutons de la feuille Accueil, dans l'ordre des étapes : la macro, le texte (les messages de TesterSEE citent
+   ceux des boutons 2 et 3), le fond et le bord, et les lignes qu'il couvre (trois lignes de HAUTEUR_BOUTON points,
+   vides, entre deux consignes). Le bouton 3 dit ce qu'il demande : SEE fermé. */
 const BOUTONS = [
   { macro: MACRO_DU_BOUTON, texte: '1. TESTER SEE', fond: '1E7B45', bord: '145A32', lignes: [8, 9, 10] },
   { macro: 'EssaiDessinReel', texte: '2. SEE DESSINE', fond: '1F5F99', bord: '174A78', lignes: [14, 15, 16] },
+  { macro: 'EssaiSansFenetre', texte: '3. SEE FERMÉ', fond: 'B85C1E', bord: '8A4416', lignes: [20, 21, 22] },
 ];
 const FEUILLE = { nom: 'Accueil', codeName: 'Feuil1' };
+/* L'Accueil tient sur un écran de portable : des lignes de bouton de 24 points (trois : 96 pixels à 100 %) et un zoom
+   de 80 %. Le bas du bouton 3 tombe alors vers 520 pixels sous le haut de la feuille (le haut d'un écran de 768 pixels,
+   ruban compris) ; le reste se lit en faisant descendre la feuille (le mode d'emploi le dit). */
+const HAUTEUR_BOUTON = 24, ZOOM = 80;
 const CLASSEUR = 'ThisWorkbook';
 const NOM_PROJET = 'VBAProject';
 /* VB_Base des modules de document : les classes Workbook et Worksheet d'Excel ([MS-OVBA] § 3.1.3 et 3.1.4). */
@@ -349,18 +359,25 @@ const LIGNES = [
   [2, 1, 'Pilote SEE', 36],
   [3, 2, 'Avec ton projet d\'essai (même vide), jamais avec un vrai projet.', 21],
   [5, 3, 'ÉTAPE 1.  Dans SEE Electrical Expert, ouvre ton projet d\'essai (même vide).', 27],
-  [6, 3, 'Puis clique sur le bouton vert 1 et attends le message. Ne touche à rien pendant ce temps.', 27],
-  ...BOUTONS[0].lignes.map(r => [r, 0, '', 33]),
-  [12, 3, 'ÉTAPE 2.  Seulement si le message de l\'étape 1 commence par BRAVO : clique sur le bouton bleu 2, puis sur OK.', 27],
-  ...BOUTONS[1].lignes.map(r => [r, 0, '', 33]),
-  [18, 3, 'ÉTAPE 3.  Regarde SEE (une photo de l\'écran si tu peux), puis enregistre ce fichier (Ctrl+S) et renvoie-le-moi.', 27],
-  [20, 4, 'Si une barre jaune dit « MODE PROTÉGÉ » : clique d\'abord sur « Activer la modification », puis lis la barre qui suit.', 18],
-  [21, 4, 'Si une barre jaune « Activer le contenu » est en haut de l\'écran : clique d\'abord dessus.', 18],
-  [22, 4, 'Si une barre rouge « Microsoft a bloqué l\'exécution des macros » apparaît : ferme Excel, fais un clic droit sur ce fichier,', 18],
-  [23, 4, 'Propriétés, coche « Débloquer » en bas, OK, puis rouvre le fichier.', 18],
-  [24, 4, 'Si un bouton ne fait rien et qu\'il n\'y a plus de barre : appuie sur Alt+F8, choisis TesterSEE (bouton 1) ou EssaiDessinReel (bouton 2), puis Exécuter.', 18],
+  [6, 3, 'Puis clique sur le bouton vert 1, attends le message, clique sur OK et prends la photo de la partie jaune.', 27],
+  ...BOUTONS[0].lignes.map(r => [r, 0, '', HAUTEUR_BOUTON]),
+  [12, 3, 'ÉTAPE 2.  Si le message de l\'étape 1 commence par BRAVO : clique sur le bouton bleu 2, puis sur OK.', 27],
+  ...BOUTONS[1].lignes.map(r => [r, 0, '', HAUTEUR_BOUTON]),
+  [18, 3, 'Sinon : fais ce que dit le message. Souvent : ferme SEE (File > Exit), puis clique sur le bouton orange 3.', 27],
+  [19, 4, 'Ne rouvre pas SEE toi-même pendant le bouton 3 : Excel s\'en charge. Les boutons sont toujours sur cet onglet « Accueil ».', 18],
+  ...BOUTONS[2].lignes.map(r => [r, 0, '', HAUTEUR_BOUTON]),
+  [24, 3, 'ÉTAPE 3.  Après le bouton 2 ou 3 : prends les photos que demande le message de fin (Resultat_Test, Sonde_Folio, SEE).', 27],
+  [25, 3, 'Envoie-moi les photos (ton téléphone, c\'est très bien). Pas besoin de renvoyer ce fichier.', 27],
+  [27, 4, 'Si une barre jaune dit « MODE PROTÉGÉ » : clique d\'abord sur « Activer la modification », puis lis la barre qui suit.', 18],
+  [28, 4, 'Si une barre jaune « Activer le contenu » est en haut de l\'écran : clique d\'abord dessus.', 18],
+  [29, 4, 'Si une barre rouge « Microsoft a bloqué l\'exécution des macros » apparaît : ferme Excel, fais un clic droit sur ce fichier,', 18],
+  [30, 4, 'Propriétés, coche « Débloquer » en bas, OK, puis rouvre le fichier.', 18],
+  [31, 4, 'Si un bouton ne fait rien et qu\'il n\'y a plus de barre : appuie sur Alt+F8, choisis TesterSEE (1), EssaiDessinReel (2) ou EssaiSansFenetre (3), puis Exécuter.', 18],
+  [32, 4, 'Si Excel reste bloqué (« Microsoft Excel attend qu\'une autre application termine une action OLE ») : attends 2 minutes,', 18],
+  [33, 4, 'puis Ctrl+Maj+Échap ; si la fenêtre est petite, « Plus de détails » ; SEE est sous « Processus en arrière-plan » : clique dessus, puis « Fin de tâche ».', 18],
+  [34, 4, 'Ne termine pas Excel : il reprend tout seul. Si Windows dit avoir bloqué une action : prends son message en photo.', 18],
 ];
-/* Un bouton : colonne B, sur ses trois lignes de 33 points (132 pixels), 400 pixels de large. Sa position absolue
+/* Un bouton : colonne B, sur ses trois lignes de HAUTEUR_BOUTON points, 400 pixels de large. Sa position absolue
    (a:xfrm, en EMU : 9 525 par pixel, 12 700 par point) redit l'ancre : la colonne A fait 26 pixels, les lignes au-dessus
    la somme de leurs hauteurs (15 points celles qui n'en ont pas). L'ancre compte les lignes à partir de 0. */
 const hauteurLigne = r => { const l = LIGNES.find(x => x[0] === r); return l ? l[3] : 15; };
@@ -407,7 +424,7 @@ function partiesClasseur(vbaProject) {
   const feuille = ENTETE_XML + `<worksheet xmlns="${NS}" xmlns:r="${NS_R}">`
     + `<sheetPr codeName="${FEUILLE.codeName}"><pageSetUpPr fitToPage="1"/></sheetPr>`
     + `<dimension ref="B${Math.min(...LIGNES.filter(l => l[2]).map(l => l[0]))}:B${Math.max(...LIGNES.filter(l => l[2]).map(l => l[0]))}"/>`
-    + '<sheetViews><sheetView showGridLines="0" showRowColHeaders="0" tabSelected="1" workbookViewId="0"><selection activeCell="A1" sqref="A1"/></sheetView></sheetViews>'
+    + `<sheetViews><sheetView showGridLines="0" showRowColHeaders="0" tabSelected="1" zoomScale="${ZOOM}" zoomScaleNormal="${ZOOM}" workbookViewId="0"><selection activeCell="A1" sqref="A1"/></sheetView></sheetViews>`
     + '<sheetFormatPr defaultRowHeight="15"/><cols><col min="1" max="1" width="3.7109375" customWidth="1"/><col min="2" max="2" width="120.7109375" customWidth="1"/></cols>'
     + '<sheetData>' + LIGNES.map(([r, s, t, h]) => `<row r="${r}" ht="${h}" customHeight="1">`
       + (t ? `<c r="B${r}" s="${s}" t="s"><v>${textes.indexOf(t)}</v></c>` : '') + '</row>').join('') + '</sheetData>'

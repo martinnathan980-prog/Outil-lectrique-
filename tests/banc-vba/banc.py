@@ -7,6 +7,12 @@ def module(nom):
     t=open(f'{VBA}/{nom}.bas','rb').read().decode('cp1252').replace('\r\n','\n')
     t=re.sub(r'^Attribute VB_Name = .*\n','',t)
     t=t.replace('Set d = CreateObject("Scripting.Dictionary")','Set d = New DicoTest')
+    # une panne du classeur à la demande (gPanneClasseur, FauxWindows.bas) : sous Excel, InitialiserClasseur lève 1004 sur
+    # une feuille Reglages protégée ; LibreOffice, lui, ne lève rien
+    if nom=='SEE_Commun':
+        assert t.count('Public Sub InitialiserClasseur()\n')==1, 'InitialiserClasseur introuvable : adapter banc.py'
+        t=t.replace('Public Sub InitialiserClasseur()\n','Public Sub InitialiserClasseur()\n    If gPanneClasseur Then\n        gPanneClasseur = False\n'
+                    '        Err.Raise 1004, , "feuille protégée (panne simulée)"\n    End If\n')
     # LibreOffice ne sait pas « obj.Item(k) = v » sur une classe Basic : le banc écrit obj.Assigner k, v
     t=re.sub(r'(\b[\w]+(?:\([\w]+\))?)\.Item\(((?:[^()]|\((?:[^()]|\([^()]*\))*\))*)\) = (.+)$', r'\1.Assigner \2, \3', t, flags=re.M)
     return 'Option VBASupport 1\n'+t
@@ -17,7 +23,8 @@ def charger(extra):
     libs=doc.BasicLibraries
     libs.VBACompatibilityMode=True
     lib=libs.getByName("Standard")
-    mods=[('DicoTest',open(f'{ICI}/DicoTest.bas', encoding='utf-8').read())]+[(m,module(m)) for m in ['SEE_Commun','SEE_Sonde','SEE_Pilote']]+extra
+    # SEE_Windows (PtrSafe, StrPtr, WMI) ne se charge pas dans LibreOffice : son faux, aux mêmes fonctions publiques, le remplace
+    mods=[('DicoTest',open(f'{ICI}/DicoTest.bas', encoding='utf-8').read()),('FauxWindows',open(f'{ICI}/FauxWindows.bas', encoding='utf-8').read())]+[(m,module(m)) for m in ['SEE_Commun','SEE_Sonde','SEE_Pilote']]+extra
     for n,c in mods: lib.insertByName(n,c)
     return doc
 def lancer(doc, macro, args=()):

@@ -281,18 +281,29 @@ page de norme suffit toujours : je la transcris.
 
 ### E bis. SEE Electrical Expert (voir `see/LISEZMOI.md`)
 
-Le pont est construit (paquet SEE, classeur pilote `Pilote-SEE.xlsm` avec
-ses deux boutons, 1. TESTER SEE et 2. SEE DESSINE, le device associé à chaque
-forme, DXF de repli), mais rien n'a encore touché SEE. Le poste est en **SEE
-Electrical Expert V4R3**. Il me faut, du bureau, sans rien de confidentiel :
-- `Pilote-SEE.xlsm` après le bouton 1 (« BRAVO » : Excel parle à SEE) puis
-  le bouton 2 (SEE dessine le folio `ESSAI_PILOTE` tout seul), dans un
-  **projet d'essai vide** (créé dans le dossier de projets que SEE propose :
-  il refuse le Bureau) ;
-- une photo de l'écran de SEE sur `ESSAI_PILOTE` ; si ça bloque : une photo
-  du message.
+Le pont est construit (paquet SEE, classeur pilote `Pilote-SEE.xlsm`, le
+device associé à chaque forme, DXF de repli). Le poste est en **SEE
+Electrical Expert V4R3** (4.89.99.5). Ce que le bureau a montré (photos) :
+Excel exécute les macros ; la fenêtre SEE ouverte ne se laisse pas rejoindre
+(les six `GetObject(, x)` : 429) ; l'éditeur VBA de SEE est grisé (pas de
+macro collée dans SEE) ; la coclasse `SeeAutomation` V4R3 se crée et répond
+sa version. D'où la **v3** du classeur, trois boutons : 1. TESTER SEE
+(rejoindre la fenêtre, lire le registre, lecture seule), 2. SEE DESSINE (dans
+la fenêtre rejointe), 3. SEE FERMÉ (SEE fermé, Excel ouvre lui-même le
+projet d'essai, y dessine, enregistre et referme ; une copie de sécurité
+d'abord). Aucun bouton ne démarre SEE par surprise. Il me faut, du bureau,
+rien que des **photos**, sans rien de confidentiel :
+- la partie jaune de `Resultat_Test` après le bouton 1 (chaque essai de
+  connexion avec son code, ce que le registre dit de SEE) ;
+- après le bouton 2 (si « BRAVO ») ou le bouton 3 : la partie jaune de
+  `Resultat_Test` (bouton 3 : chaque étape), puis l'écran de SEE sur le folio
+  `ESSAI_PILOTE` du **projet d'essai vide** (créé dans un dossier « Robot »
+  du Bureau, un nom sans espace : c'est ce qui a marché) ;
+- si ça bloque : une photo du message.
 Avec ça, je règle le pilote (unité, origine, symboles du bureau, type de
-connexion, repères) et on dessine un premier folio, puis les 800 par lots.
+connexion, repères, la forme du `CreateObject`) et on dessine un premier
+folio, puis les 800 par lots, par la voie du bouton 3 (Excel ouvre, dessine,
+enregistre, referme).
 
 ### F. Les contrats déjà faits (voir § 2)
 

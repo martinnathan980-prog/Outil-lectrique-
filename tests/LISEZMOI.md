@@ -107,31 +107,54 @@ node tests/vba.js              LES MACROS DU PILOTE SEE (see/vba/*.bas), sans Ex
                                (SetEquipmentCollection compris) teste la simulation ; la sonde et TesterSEE, de proche en
                                proche, ne font que des lectures (chaque objet suivi depuis sa provenance : Excel, collection,
                                dictionnaire ou SEE ; sur un objet SEE, une liste blanche de lectures, aucune propriété
-                               affectée, aucune écriture par le nom) ; et le contrôleur lui-même, éprouvé par trente-huit
-                               fautes injectées, sans crier au loup sur une écriture dans le classeur
+                               affectée, aucune écriture par le nom) ; SEE_Windows seul à déclarer des fonctions de Windows
+                               (Private, PtrSafe, ole32 / oleaut32, CLSIDFromString et GetActiveObject seulement), le registre
+                               en lecture seule, son faux du banc aux mêmes fonctions publiques ; jamais GetObject d'un
+                               fichier ; LancerSEE à N ; les boutons 1 et 2 ne créent jamais SEE (ConnecterSEE(False),
+                               PreparerSEE(False)) et lâchent d'abord une connexion créée ; créer un objet SEE : seulement
+                               l'essai volontaire et le bouton 3, après ses vérifications (SEE fermé, projet, copie) ; Quit,
+                               CloseProject, Close : seulement le SEE créé par le bouton 3 ; jamais Login ; GetObject et
+                               CreateObject seulement dans SEE_Windows ; le registre écrit par aucun module ; le bouton 3
+                               lâche toute connexion gardée et revoit Windows avant de créer ; gSansDialogue remis sur une
+                               erreur ; les boutons 1 et 2 n'ouvrent aucun projet ; Annuler par défaut ; GetActiveObject en
+                               dernier, après un bloc provisoire ; le paramètre de sortie de SeeAutomation en Variant puis
+                               en Object ; aucun chemin entier au bloc ni au journal ; et le contrôleur lui-même, éprouvé
+                               par soixante-dix-neuf fautes injectées, sans crier au loup sur une écriture dans le classeur
 tests/banc-vba/lancer.sh       LES MÊMES MACROS EXÉCUTÉES, dans LibreOffice (Basic en mode VBASupport) face à un FAUX SEE qui imite
-                               l'API COM et trace chaque appel : trente-trois scénarios (V5 et V4, folios complets, reprise après
-                               panne, Remplacer, sauvegardes, simulation sans aucune écriture, variantes de paquet, le matériel
-                               associé confronté au paquet, le matériel déjà porté ni écrasé ni doublé, TesterSEE avec et sans
-                               SEE, sans folio affiché, SEE qui cesse de répondre) ; hors de
+                               l'API COM et trace chaque appel, et un FAUX SEE_Windows (ce que Windows répond : la table des
+                               objets actifs, le registre, les programmes en marche, les fenêtres du bouton 3) :
+                               quarante et un scénarios (V5 et V4, folios complets, reprise après panne, Remplacer, sauvegardes,
+                               simulation sans aucune écriture, variantes de paquet, le matériel associé confronté au paquet, le
+                               matériel déjà porté ni écrasé ni doublé, TesterSEE avec et sans SEE, sans folio affiché, SEE qui
+                               cesse de répondre ; les boutons 1 et 2 qui rejoignent SEE par un ProgID du registre ou par son
+                               CLSID et n'en créent jamais, même à LancerSEE = O, une connexion créée lâchée sans Quit ; le
+                               bouton 3 : SEE ouvert, Windows muet, copie ratée, Annuler, le parcours complet, CreateObject
+                               refusé, un SEE qui reste après Quit, SEE rouvert pendant le choix du projet, un paramètre de
+                               sortie qui n'accepte qu'un Variant ou qu'un Object, la connexion du bouton 1 lâchée, aucun
+                               projet ouvert ensuite par les boutons 1 et 2 ; Windows qui arrête la macro sur GetActiveObject ;
+                               une erreur dans InitialiserClasseur) ; hors de
                                tests/toutes.js (il demande LibreOffice et python3-uno, environ dix minutes) ; voir son LISEZMOI :
                                il prouve la cohérence du code, pas le comportement du vrai SEE ni d'Excel
 node tests/classeur.js         LE CLASSEUR PILOTE TOUT PRÊT (see/classeur.js : Pilote-SEE.xlsm, les macros déjà dedans), sans Excel
                                ni dépendance, relu par des lecteurs écrits pour le test : le zip (CRC), le classeur OOXML (XML bien
                                formé, types « macroEnabled » et vbaProject, relations, codeName du classeur et de la feuille
-                               accordés aux modules de document, ordre des éléments, le bouton : une forme dont la macro est
-                               [0]!TesterSEE, une macro publique sans argument d'un module standard ; rien ne se lance à
-                               l'ouverture) ; le fichier composé [MS-CFB] (en-tête, FAT, chaînes, arbre du répertoire rangé,
-                               mini-flux ; relu aussi par SheetJS) ; le projet [MS-OVBA] : _VBA_PROJECT, les 63 enregistrements de
+                               accordés aux modules de document, ordre des éléments, les trois boutons : des formes dont les
+                               macros sont [0]!TesterSEE, [0]!EssaiDessinReel, [0]!EssaiSansFenetre, chacune une macro publique
+                               sans argument d'un module standard, sur des lignes vides entre deux consignes ; rien ne se
+                               lance à l'ouverture) ; le fichier composé [MS-CFB] (en-tête, FAT, chaînes, arbre du répertoire
+                               rangé, mini-flux ; relu aussi par SheetJS) ; le projet [MS-OVBA] : _VBA_PROJECT, les 72 enregistrements de
                                VBA/dir un par un, PROJECT (CMG, DPB, GC déchiffrés : non protégé, sans mot de passe, visible),
                                PROJECTwm, et le texte de chaque module décompressé par un décompresseur écrit à part, comparé
                                octet pour octet aux .bas ; la compression (les trois exemples de la spécification au bit près,
                                des allers-retours), le chiffrement (l'exemple de la spécification et un projet d'Excel), la sortie
-                               déterministe, le kit (le classeur en tête, les .bas mêmes du classeur en repli) ; le REFUS sans
-                               TesterSEE ou avec un .bas non lu (exception, code de sortie 1, rien d'écrit ; --sans-bouton
-                               l'écrit avec un avertissement), sur des copies des .bas dans un dossier temporaire ; les recours
-                               de la feuille (mode protégé, Activer le contenu, barre rouge, Alt+F8) ; le contrôleur éprouvé
-                               par dix-sept fautes injectées.
+                               déterministe, le kit (le classeur en tête, ses quatre modules standard, SEE_Windows compris ; le
+                               LIS-MOI : le dossier « Robot », le bouton 3 pas à pas, rien que des photos, « Excel bloqué »,
+                               les onglets à cliquer, OK avant la photo, SEE caché, la copie à ne pas toucher) ;
+                               le REFUS sans TesterSEE, sans EssaiSansFenetre ou avec un .bas non lu (exception, code de sortie
+                               1, rien d'écrit ; --sans-bouton l'écrit avec un avertissement), sur des copies des .bas dans un
+                               dossier temporaire ; les recours de la feuille (mode protégé, Activer le contenu, barre rouge,
+                               Alt+F8, Excel bloqué) ; l'Accueil à la mesure d'un écran de portable (zoom 80 %) et d'accord
+                               avec le mode d'emploi ; le contrôleur éprouvé par vingt-cinq fautes injectées.
                                VBA_DOSSIER=… pour d'autres .bas. Il ne prouve pas qu'Excel ouvre le classeur (voir see/LISEZMOI.md)
 node tests/kit-pdf.js          LE KIT PDF (node see/kit.js --pdf : Kit-PDF.zip, la sonde par courriel), sans Python : le zip relu par
                                un lecteur écrit pour le test (répertoire central et en-têtes locaux d'accord, « stocké », CRC) ;

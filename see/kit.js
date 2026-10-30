@@ -4,9 +4,9 @@
        node see/kit.js --pdf [--sortie=Kit-PDF.zip]
    KIT SEE. Le zip contient, dans un dossier Kit-SEE/, DEUX fichiers :
      Pilote-SEE.xlsm              LE fichier à ouvrir : le classeur pilote, macros
-                                  déjà dedans, boutons « 1. TESTER SEE » et
-                                  « 2. SEE DESSINE » (écrit à la volée par
-                                  see/classeur.js, en tête du zip)
+                                  déjà dedans, boutons « 1. TESTER SEE »,
+                                  « 2. SEE DESSINE » et « 3. SEE FERMÉ » (écrit
+                                  à la volée par see/classeur.js, en tête du zip)
      LIS-MOI-D-ABORD.txt          les étapes, en clair (see/kit/)
    KIT PDF (--pdf). Le zip contient, dans un dossier Kit-PDF/, DEUX fichiers et
    un dossier vide :

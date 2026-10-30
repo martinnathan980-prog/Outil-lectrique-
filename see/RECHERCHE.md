@@ -1,8 +1,9 @@
 # SEE Electrical Expert : ce que la recherche a établi
 
 Dossier de sources pour le technicien et pour les prochains agents. Octobre 2026.
-Tout vient d'une recherche documentaire faite de l'extérieur. **Rien n'a encore été
-essayé sur le poste du bureau.**
+Tout vient d'une recherche documentaire faite de l'extérieur, sauf les premiers
+essais au poste du bureau (photos de l'écran, fin octobre 2026), notés à part en
+§ 3.1 et § 3.2 (« Vu au bureau »).
 
 **Comment lire.** Dans les sections 2 et 3, chaque affirmation porte une étiquette entre
 crochets, par exemple `[rn-4.80]`, qui renvoie à une URL de la section 6 ; la section 1
@@ -132,6 +133,32 @@ serveur hors processus : un client d'une autre architecture (32 / 64 bits) peut 
 principe le piloter ; les DLL chargées dans le processus (SeeWDExchange.dll) imposent
 la même architecture `[nso-inv]` *(déduction technique)*.
 
+**Vu au bureau** *(photos de l'écran, fin octobre 2026 ; un seul poste, V4R3)* :
+- SEE Electrical Expert **4.89.99.5** (V4R3), ouvert sur un projet d'essai rangé dans un dossier du
+  Bureau (`<Bureau>\Robot\<nom>.seeprj`, un nom sans espace) ; le Bureau lui-même avait été refusé ;
+- le classeur pilote tourne dans Excel (« Produit sans licence » affiché, sans effet sur les macros) ;
+- **rejoindre la fenêtre ouverte** : les six `GetObject(, x)` (les deux ProgID déduits,
+  `SEEExpert.Application` et `SEEExpert.SeeAutomation`, et `"{CLSID}"` des quatre coclasses) répondent
+  **429** « Un composant ActiveX ne peut pas créer d'objet ». Le 429 ne distingue pas un nom inconnu du
+  registre d'un programme absent de la table des objets actifs : la v3 du pilote lit donc le registre
+  (ProgID réels, `LocalServer32`) et essaie aussi `GetActiveObject` par CLSID, qui rend le HRESULT ;
+- **créer** : `GetObject("new:{B0B9DD73-EE81-473F-9C3C-D8910C7E2D59}")`, la coclasse `SeeAutomation`
+  V4R3, a répondu `ApplicationName` et `ApplicationVersion` (4.89.99.5) ; sur cet objet,
+  `GetEnvironment()` et `Workspace` donnent **438**, et il n'a pas de `GetProject`. Les trois CLSID
+  essayés avant en `new:` ont échoué, dont l'`Application` V4R3 {A55015A3-…} : elle n'est sans doute pas
+  créable. Que cet objet vive dans un SEE caché ou dans le SEE ouvert (serveur « multi-use ») n'est pas
+  établi : le bouton 3 ne crée donc rien tant qu'un programme SEE tourne ;
+- reste à voir : `OpenProject` sur cet objet, la signature de son `CreateObject`, et s'il se referme ; et
+  le TYPE de leurs paramètres de sortie en V4. L'interop du SDK des plugins V4R3 déclare les « out object »
+  d'`ISEEView.GetContent` et d'`IPluginRoot.CreateObject` `[MarshalAs(UnmanagedType.IDispatch)]`, donc des
+  `IDispatch**`, et les objets typés (`GetMainGroup`) en `SEEGroup**` `[nso-v4r3-cn]` ; pour `ISeeAutomation`,
+  seuls les noms des paramètres sont connus (`OpenProject(A_Path, A_Password, A_Object)`,
+  `CreateObject(A_ObjectType, A_Object, A_ppiObject)`). Un argument passé par référence n'est pas converti
+  par Automation : le pilote passe un `Variant`, puis une variable `Object` si SEE refuse le type
+  *(déduction technique)* ;
+- reste à voir aussi : si le poste applique la règle de Defender « Bloquer les appels d'API Win32 à partir
+  de macros Office » (elle arrêterait le bouton 1 sur `GetActiveObject`, essayé en dernier).
+
 **Les objets et méthodes clés (V5R2)** `[nso-index]` `[nso-comnet]` `[nso-enums]` :
 
 | Objet | Membres utiles |
@@ -177,6 +204,10 @@ prototype d'un seul folio avant les 800. *(probable)*
 
 ### 3.2 VBA — dans SEE en V4, hors de SEE en V5
 
+- **Vu au bureau (V4R3)** : menu *Tools* : *Collaborative Reload*, *Control…*, *Lists*, *Status*,
+  *Toolbox*, *My Macros*, *Macro* (*Macros…* actif, ***Visual Basic Editor* grisé**), et deux menus
+  maison (« CableTagsDisplay », « MAJ pour CGMv4 »). On ne peut donc pas coller de macro dans SEE : le
+  pilote reste dans Excel.
 - **V4 (dans SEE)** *(établi ; le manuel : lecture unique ; les commandes V4R3 : NSO73, probable)*. Le manuel V4R2 a un chapitre VBA « SEE z modułem VBA Developer » (un module de licence) : objet global « SEEExpert », menu Outils > Macro > Macros / Visual Basic Editor, fichier auto_mac.ini (macros au démarrage), module SEE_Events, aide SEEapp.chm dans \Doc\VBAHelp\ `[manuel-v4r2-pl]`. Il faut VBA 7.1 **32 bits** `[rn-v4r2-sp9]` `[rn-4.83]`. Commandes V4R3 : Open VBA Editor, Run Macro, Macros Explorer, Execute VBA Events `[nso-v4r3-cmd]`. Des environnements clients livrent des macros (« SplitLabel_V4 » de l'environnement « ATA_PD ») `[rn-4.87b]`.
 - **V5 (hors de SEE)**. V5 est en 64 bits (une version 32 bits spécifique existe aussi `[rn-v5r1-sp7]`) et ses notes n'exigent plus VBA `[rn-v5r1-sp7]` `[rn-v5r2-sp7]`. `VBE`, `VBAVersion` et les commandes VBA manquent dans l'extraction V5R2 `[nso-index]` `[nso-cmd]` ; mais SeeMacrosManager.exe et le message « To be able to use VBA environment… » y restent `[nso-inv]` `[nso-cmd]`. On ne peut pas conclure : *à vérifier au bureau* (menu Outils > Macro). IronPython est livré dans SEE_Soft\Exe en V5R2, sans usage documenté `[nso-inv]`.
 - **Donc** : en V5, la macro tourne dans Excel et pilote SEE par COM. Office 64 bits est recommandé avec V5 `[rn-v5r1-sp7]`. La bibliothèque de SEE peut se parcourir depuis l'éditeur VBA d'Excel (Références > SEE.exe, puis F2) *(à essayer)*.
@@ -273,7 +304,7 @@ Classé par ce que la réponse débloque. Une partie se relève par `see/diagnos
 | # | Question | Où regarder | Débloque |
 |---|---|---|---|
 | 6 | Le registre connaît-il `HKCR\CLSID\{829E4B3B-B128-4999-A66A-6E76F0B4B22F}`, `{29E25405-2755-42DA-A17D-C07EC1A16CCB}`, `HKCR\TypeLib\{9956A56F-B14C-4007-B6CF-B89B4A7CD08D}` (V5R2 ; CLSID V4R3 en 3.1) ? ProgID ? LocalServer32 ? | `reg query … /s`, diagnostic.ps1 | réglages ProgID, CLSID_* |
-| 7 | Un SEE ouvert est-il trouvé par GetObject ? | sonde du pilote | s'attacher à SEE |
+| 7 | Un SEE ouvert est-il trouvé par GetObject ? **Vu : non** (429 pour les six `GetObject(, x)`) ; `GetActiveObject` par CLSID, les ProgID du registre ? `SeeAutomation` créée SEE fermé (bouton 3) ouvre-t-elle le projet et crée-t-elle des objets ? | TesterSEE (bouton 1, `Sonde_Registre`), bouton 3 | s'attacher à SEE |
 | 8 | L'Explorateur d'objets confirme-t-il les signatures (valeurs de retour, énumérations) ? | Excel > VBE > Références > SEE.exe, F2 | confiance dans NSO73 |
 | 9 | Une aide API est-elle installée (en V4R2 : \Doc\VBAHelp\SEEapp.chm), des .tlb, un dossier Plugins ? (En attendant : le chapitre VBA du manuel V4R2, en accès libre, voir 2.1.) | dossier d'installation | doc officielle |
 | 10 | Unité et origine des coordonnées : poser un symbole à la main à un endroit connu, relire sa position | sonde | Mode, Echelle, OrigineX/Y, SensY |

@@ -771,8 +771,388 @@ Public Function BancBouton2(ByVal v4 As Boolean) As String
     EssaiDessinReel
     r = r & " | sans SEE : traces " & (gTrace.Count - n0) & " ; rien dessiné dit " & JournalContient("Rien n'a été dessiné") & _
         " ; question posée " & JournalContient("Est-ce bien ton projet d'essai")
+    ' un sous-groupe à créer (réglage Groupe) : il ne l'est qu'APRÈS la question (SU7)
+    ReglerFaux "1", v4
+    FixerReglage "Groupe", "ESSAIS_BANC"
+    EssaiDessinReel
+    r = r & " | groupe : question ligne " & LigneJournal("Est-ce bien ton projet d'essai") & " ; CreateSubGroup ligne " & LigneJournal("CreateSubGroup") & _
+        " ; AddSheet " & Compter("AddSheet")
     BancBouton2 = r
     Exit Function
 E:
     BancBouton2 = r & " ERREUR VBA " & Err.Number & " " & Err.Description & " (étape " & gEtape & " / " & gObjet & ")"
+End Function
+
+' La première ligne du journal qui contient ce texte (0 : aucune).
+Public Function LigneJournal(ByVal texte As String) As Long
+    Dim ws As Object, i As Long, j As Long
+    Set ws = ThisWorkbook.Worksheets("Journal")
+    For i = 2 To 30000
+        If Len(CStr(ws.Cells(i, 1).Value)) = 0 Then Exit For
+        For j = 2 To 7
+            If InStr(1, CStr(ws.Cells(i, j).Value), texte) > 0 Then
+                LigneJournal = i
+                Exit Function
+            End If
+        Next j
+    Next i
+End Function
+
+' ---------------------------------------------------------------------------- la v3 : rejoindre SEE, jamais le créer
+' par surprise, et le bouton 3 (SEE fermé). Le faux SEE_Windows (FauxWindows.bas) dit ce que Windows « répond » ; ses
+' appels sont dans gWinTrace, à part de la trace du faux SEE.
+Private Const APP_V4 As String = "{A55015A3-0E82-4694-87D9-DB82B6620532}"
+Private Const AUTO_V4 As String = "{B0B9DD73-EE81-473F-9C3C-D8910C7E2D59}"
+Private Const AUTO_V5 As String = "{29E25405-2755-42DA-A17D-C07EC1A16CCB}"
+
+' Les objets SEE créés (« new: » et CreateObject) demandés au faux Windows.
+Public Function CreationsWin() As Long
+    CreationsWin = CompterWin("Windows|new:") + CompterWin("Windows|CreateObject")
+End Function
+
+' La valeur d'un réglage, lue dans la feuille Reglages (pas dans le cache des réglages).
+Public Function ValeurReglage(ByVal cle As String) As String
+    Dim ws As Object, i As Long
+    Set ws = ThisWorkbook.Worksheets("Reglages")
+    For i = 2 To 400
+        If CStr(ws.Cells(i, 1).Value) = cle Then ValeurReglage = CStr(ws.Cells(i, 2).Value)
+    Next i
+End Function
+
+' « oui » si une cellule des 200 premières lignes (12 colonnes) de la feuille contient ce texte.
+Public Function FeuilleContient(ByVal nom As String, ByVal texte As String) As String
+    Dim ws As Object, i As Long, j As Long
+    FeuilleContient = "non"
+    If Not FeuilleExiste(nom) Then Exit Function
+    Set ws = ThisWorkbook.Worksheets(nom)
+    For i = 1 To 200
+        For j = 1 To 12
+            If InStr(1, CStr(ws.Cells(i, j).Value), texte) > 0 Then FeuilleContient = "oui"
+        Next j
+    Next i
+End Function
+
+' Les essais de connexion du bloc à photographier (rubrique « Essais » et les lignes qui la suivent sans rubrique) :
+' « essais n, avec code et phrase m ».
+Public Function EssaisPhoto() As String
+    Dim ws As Object, i As Long, n As Long, m As Long, dans As Boolean, rub As String, txt As String
+    If Not FeuilleExiste("Resultat_Test") Then Exit Function
+    Set ws = ThisWorkbook.Worksheets("Resultat_Test")
+    For i = 1 To 80
+        rub = CStr(ws.Cells(i, 1).Value)
+        txt = CStr(ws.Cells(i, 2).Value)
+        If Len(rub) > 0 Then dans = (rub = "Essais")
+        If dans And Len(txt) > 0 Then
+            n = n + 1
+            If InStr(1, txt, " = ") > 0 Or InStr(1, txt, "(voir plus haut)") > 0 Then m = m + 1
+        End If
+    Next i
+    EssaisPhoto = "essais " & n & ", avec code et phrase " & m
+End Function
+
+' Un poste où SEE V4R3 est inscrit : ses deux coclasses (vue 32 bits), un ProgID versionné, l'extension .seeprj ;
+' exe : le nom du programme (LocalServer32).
+Private Sub RegistreSEE(ByVal exe As String)
+    RegistreFaux "HKCR\WOW6432Node\CLSID\" & APP_V4, "", "SEE Electrical Expert Application"
+    RegistreFaux "HKCR\WOW6432Node\CLSID\" & APP_V4 & "\ProgID", "", "SEEExpert.Application.48"
+    RegistreFaux "HKCR\WOW6432Node\CLSID\" & APP_V4 & "\LocalServer32", "", """C:\Programmes\IGE+XAO\SEE_Soft\Exe\" & exe & """ /Automation"
+    RegistreFaux "HKCR\WOW6432Node\CLSID\" & AUTO_V4 & "\LocalServer32", "", "C:\Programmes\IGE+XAO\SEE_Soft\Exe\" & exe & " /Automation"
+    RegistreFaux "HKLM\SOFTWARE\Classes\SEEExpert.Application.48", "", "SEE Electrical Expert"
+    RegistreFaux "HKLM\SOFTWARE\Classes\SEEExpert.Application.48\CLSID", "", APP_V4
+    RegistreFaux "HKLM\SOFTWARE\Classes\Excel.Application\CLSID", "", "{00024500-0000-0000-C000-000000000046}"
+    RegistreFaux "HKLM\SOFTWARE\Classes\Privilege.Test\CLSID", "", "{11111111-1111-1111-1111-111111111111}"
+    RegistreFaux "HKCR\.seeprj", "", "SEEExpert.Project"
+    RegistreFaux "HKCR\SEEExpert.Project\shell\open\command", "", """C:\Programmes\IGE+XAO\SEE_Soft\Exe\" & exe & """ ""%1"""
+End Sub
+
+' Un classeur et un faux SEE neufs, rien d'ouvert ; créer un objet SEE MARCHERAIT (un « new: » se verrait).
+Private Sub PreparerConnexion(ByVal v4 As Boolean)
+    InitFaux v4
+    Set gApp = Nothing
+    gStrategie = ""
+    gEstAutomation = False
+    gVersionAPI = 0
+    Set gProgIDsRegistre = Nothing
+    gSansDialogue = True
+    InitialiserClasseur
+    FixerReglage "PasAPas", "N"
+    FixerReglage "Simulation", "O"
+    CreableFaux AUTO_V4
+    CreableFaux AUTO_V5
+    CreableFaux APP_V4
+    CreableFaux "SEEExpert.Application"
+    CreableFaux "SEEExpert.SeeAutomation"
+End Sub
+
+' Les boutons 1 et 2 REJOIGNENT la fenêtre SEE ouverte, et n'en créent jamais :
+'   a. rien d'ouvert, LancerSEE = N (le défaut d'un classeur neuf) : aucun « new: » ; le bloc à photographier liste
+'      chaque essai avec son code et sa phrase, et propose le bouton 3 ;
+'   b. LancerSEE = O : toujours aucun « new: » pour les boutons 1 et 2 ;
+'   c. SEE ouvert, rejoint par un ProgID lu au registre (SEEExpert.Application.48) ;
+'   d. rejoint par son CLSID (GetActiveObject) ;
+'   e. une connexion CRÉÉE par une macro lancée par Alt+F8 (EssaiDessin, LancerSEE = O) est lâchée au début du
+'      bouton 1, sans Quit, et la fenêtre ouverte est rejointe ; de même au début du bouton 2.
+Public Function BancConnexion(ByVal v4 As Boolean) As String
+    Dim r As String, n0 As Long
+    On Error GoTo E
+    PreparerConnexion v4
+    r = "a : LancerSEE par défaut " & ValeurReglage("LancerSEE")
+    TesterSEE
+    r = r & " ; bouton 1 : créations " & CreationsWin() & " ; " & EssaisPhoto() & " ; " & ResultatTest()
+    n0 = gTrace.Count
+    EssaiDessinReel
+    r = r & " ; bouton 2 : créations " & CreationsWin() & " ; écritures " & (gTrace.Count - n0) & " ; bouton 3 proposé " & _
+        JournalContient("Essaie le bouton 3")
+    PreparerConnexion v4
+    FixerReglage "LancerSEE", "O"
+    TesterSEE
+    r = r & " | b : LancerSEE O ; bouton 1 : créations " & CreationsWin()
+    EssaiDessinReel
+    r = r & " ; bouton 2 : créations " & CreationsWin() & " ; AddSheet " & Compter("AddSheet")
+    PreparerConnexion v4
+    RegistreSEE "SEE.exe"
+    ActifFaux "SEEExpert.Application.48"
+    Set gWinObjetActif = New FauxApp
+    TesterSEE
+    r = r & " | c : Sonde_Registre nomme le ProgID " & FeuilleContient("Sonde_Registre", "SEEExpert.Application.48") & _
+        " ; créations " & CreationsWin() & " ; " & ResultatTest()
+    PreparerConnexion v4
+    ActifCLSIDFaux APP_V4
+    Set gWinObjetActif = New FauxApp
+    TesterSEE
+    r = r & " | d : créations " & CreationsWin() & " ; " & ResultatTest()
+    PreparerConnexion v4
+    FixerReglage "LancerSEE", "O"
+    EssaiDessin
+    r = r & " | e : EssaiDessin (Alt+F8, LancerSEE = O) : créations " & CreationsWin() & " ; créée par Excel " & _
+        IIf(ConnexionCreeeParExcel(), "oui", "non")
+    ActifFaux "SEEExpert.Application"
+    Set gWinObjetActif = New FauxApp
+    n0 = CreationsWin()
+    TesterSEE
+    r = r & " ; bouton 1 : lâchée " & JournalContient("il est lâché") & " ; Quit " & Compter("Quit") & " ; créations de plus " & _
+        (CreationsWin() - n0) & " ; " & ResultatTest()
+    ' le bouton 2 : une connexion créée qui traîne (une macro d'avant) est lâchée, la fenêtre ouverte est rejointe
+    Set gApp = New FauxAuto
+    gStrategie = "GetObject(""new:" & AUTO_V4 & """)"
+    gEstAutomation = True
+    n0 = gTrace.Count
+    EssaiDessinReel
+    r = r & " | e2 : bouton 2 : lâchée " & JournalContient("il est lâché") & " ; Quit " & Compter("Quit") & " ; AddSheet " & _
+        CompterDepuis("AddSheet", n0) & " ; stratégie " & gStrategie
+    ' f. rejoint par la coclasse SeeAutomation (GetActiveObject) : le bouton 1 envoie au bouton 3 et LÂCHE la connexion
+    '    (sinon File > Exit ne ferait que cacher SEE) ; GetActiveObject est essayé APRÈS les GetObject (une fonction de Windows)
+    PreparerConnexion v4
+    ActifCLSIDFaux AUTO_V4
+    Set gWinObjetActif = New FauxAuto
+    TesterSEE
+    r = r & " | f : gApp lâché " & IIf(gApp Is Nothing, "oui", "non") & " ; lâchée dite " & JournalContient("connexion gardée lâchée") & _
+        " ; GetActiveObject après les GetObject " & IIf(OrdreWin("Windows|GetObject(,|{", "Windows|GetActiveObject|"), "oui", "non") & " ; " & ResultatTest()
+    BancConnexion = r
+    Exit Function
+E:
+    BancConnexion = r & " ERREUR VBA " & Err.Number & " " & Err.Description & " (étape " & gEtape & " / " & gObjet & ")"
+End Function
+
+' Vrai si chaque appel à Windows qui commence par « avant » vient avant le premier qui commence par « apres ».
+Public Function OrdreWin(ByVal avant As String, ByVal apres As String) As Boolean
+    Dim i As Long, dernierAvant As Long, premierApres As Long
+    For i = 1 To gWinTrace.Count
+        If Left(gWinTrace.Item(i), Len(avant)) = avant Then dernierAvant = i
+        If Left(gWinTrace.Item(i), Len(apres)) = apres And premierApres = 0 Then premierApres = i
+    Next i
+    OrdreWin = (dernierAvant > 0 And premierApres > dernierAvant)
+End Function
+
+' EX3 : Windows arrête la macro au premier appel d'une fonction déclarée (GetActiveObject ; la règle de Defender « appels
+' d'API Win32 depuis les macros Office »), sans On Error : le faux SEE_Windows fait End. TesterSEE ne finit pas ; ce qui
+' reste devant le technicien est relu ensuite par ApresArret.
+Public Function BancArret() As String
+    PreparerConnexion False
+    RegistreSEE "SEE.exe"
+    gWinBloqueDeclare = True
+    BancArret = "arrêté par Windows pendant le test"
+    TesterSEE
+    BancArret = "PAS ARRÊTÉ"
+End Function
+
+Public Function ApresArret() As String
+    ApresArret = "après l'arrêt : GetObject au journal " & JournalContient("GetObject(, ") & " ; GetActiveObject au journal " & _
+        JournalContient("GetActiveObject(") & " ; feuille active " & ThisWorkbook.ActiveSheet.Name & " ; " & ResultatTest()
+End Function
+
+' SU4 : InitialiserClasseur lève une erreur (sous Excel : feuille Reglages protégée) : gSansDialogue reprend sa valeur, et
+' l'erreur va à l'appelant (le bouton 2 ou 3 la dit « ARRÊT IMPRÉVU »).
+Public Function BancPanneClasseur() As String
+    Dim n As Long
+    gSansDialogue = False
+    gPanneClasseur = True
+    On Error Resume Next
+    InitialiserSansBoite
+    n = Err.Number
+    On Error GoTo 0
+    BancPanneClasseur = "après une panne : erreur relevée " & n & " ; gSansDialogue " & IIf(gSansDialogue, "Vrai", "Faux")
+    gSansDialogue = True
+    InitFaux False
+    gPanneClasseur = True
+    EssaiSansFenetre
+    BancPanneClasseur = BancPanneClasseur & " | bouton 3 : arrêt imprévu dit " & JournalContient("ARRÊT IMPRÉVU") & " ; gSansDialogue " & _
+        IIf(gSansDialogue, "Vrai", "Faux") & " ; new: " & CompterWin("Windows|new:")
+End Function
+
+' Les copies de sécurité du projet (« <nom>.avant-pilote-*.seeprj », à côté de lui) : effacées, ou comptées.
+Private Function CopiesDe(ByVal projet As String, ByVal effacer As Boolean) As Long
+    Dim dossier As String, nomBase As String, f As String, n As Long
+    dossier = Left(projet, InStrRev(projet, "/"))
+    nomBase = Mid(projet, Len(dossier) + 1)
+    nomBase = Left(nomBase, Len(nomBase) - Len(".seeprj"))
+    Dim noms As New Collection, v As Variant
+    f = Dir(dossier & nomBase & ".avant-pilote-*.seeprj")
+    Do While Len(f) > 0
+        noms.Add f
+        f = Dir()
+    Loop
+    For Each v In noms
+        n = n + 1
+        If effacer Then Kill dossier & CStr(v)
+    Next v
+    CopiesDe = n
+End Function
+
+' Un faux SEE FERMÉ : un SEE V4R3 inscrit (programme SEE_Faux.exe, pour voir que son nom vient du registre), sa
+' coclasse SeeAutomation V4R3 créable (V5R2 ne l'est pas : « classe non inscrite » d'abord), la forme du
+' CreateObject à découvrir, le réglage Projet = projet, aucune copie de sécurité.
+Private Sub PreparerBouton3(ByVal v4 As Boolean, ByVal forme As Long, ByVal projet As String)
+    InitFaux v4
+    Set gApp = Nothing
+    gStrategie = ""
+    gEstAutomation = False
+    gVersionAPI = 0
+    gSansDialogue = True
+    InitialiserClasseur
+    FixerReglage "Projet", projet
+    FixerReglage "Simulation", "O"
+    FixerReglage "PasAPas", "O"
+    RegistreSEE "SEE_Faux.exe"
+    gWinNomExe = "SEE_Faux.exe"
+    CreableFaux AUTO_V4
+    gAutoForme = forme
+    CopiesDe projet, True
+End Sub
+
+' « oui » si le dossier qui contient celui du projet (le chemin qui nommerait l'utilisateur de Windows, sous Windows)
+' paraît dans Resultat_Test ou dans le journal ; sinon « non » (MasquerChemins).
+Public Function CheminMontre(ByVal projet As String) As String
+    Dim dossier As String, ws As Object, nom As Variant, i As Long, j As Long
+    dossier = Left(projet, InStrRev(projet, "/") - 1)
+    dossier = Left(dossier, InStrRev(dossier, "/"))
+    CheminMontre = "non"
+    For Each nom In Array("Resultat_Test", "Journal")
+        If FeuilleExiste(CStr(nom)) Then
+            Set ws = ThisWorkbook.Worksheets(CStr(nom))
+            For i = 1 To 3000
+                If Len(CStr(ws.Cells(i, 1).Value)) = 0 And Len(CStr(ws.Cells(i, 2).Value)) = 0 Then Exit For
+                For j = 1 To 7
+                    If InStr(1, CStr(ws.Cells(i, j).Value), dossier) > 0 Then CheminMontre = "oui (" & CStr(nom) & ")"
+                Next j
+            Next i
+        End If
+    Next nom
+End Function
+
+' Ce que le bouton 3 a fait : les appels à Windows et au faux SEE, la copie, puis Resultat_Test.
+Private Function BilanBouton3(ByVal projet As String) As String
+    BilanBouton3 = "chemin entier montré " & CheminMontre(projet) & " ; " & _
+        "new: " & CompterWin("Windows|new:") & " ; programme compté " & IIf(CompterWin("Windows|Processus|SEE_Faux.exe") > 0, "SEE_Faux.exe", "autre") & _
+        " ; OpenProject " & Compter("OpenProject") & " ; AddSheet " & Compter("AddSheet") & " ; graphiques " & Compter("AddGraphicObject|") & _
+        " ; Save " & Compter("Save") & " ; Quit " & Compter("Quit") & " ; copies " & CopiesDe(projet, False) & _
+        " ; gApp lâché " & IIf(gApp Is Nothing, "oui", "non") & " ; Simulation après " & IIf(gSimulation, "O", "N") & _
+        " ; Sonde_Folio ESSAI_PILOTE " & SondeFolioNomme("ESSAI_PILOTE") & " ; " & ResultatTest()
+End Function
+
+' Le bouton 3 (EssaiSansFenetre) : SEE FERMÉ, Excel ouvre lui-même le projet d'essai, y dessine, enregistre et
+' referme. projet : un fichier .seeprj que relecture.py a posé dans le dossier de travail ; forme : la signature du
+' CreateObject du faux SeeAutomation (1 : celle d'Application ; 2 : un paramètre de plus). Dans l'ordre : SEE ouvert ;
+' Windows muet ; la copie ratée ; Annuler (la fenêtre « Ouvrir », puis la question) : rien n'est fait. Puis le parcours
+' complet ; CreateObject refusé ; un SEE qui reste après Quit.
+Public Function BancBouton3(ByVal v4 As Boolean, ByVal forme As Long, ByVal projet As String) As String
+    Dim r As String, absent As String, n0 As Long
+    On Error GoTo E
+    absent = Left(projet, Len(projet) - Len(".seeprj")) & "_ABSENT.seeprj"
+    PreparerBouton3 v4, forme, projet
+    gWinProcessus = 1
+    EssaiSansFenetre
+    r = "SEE ouvert : Patienter " & CompterWin("Windows|Patienter") & " ; " & BilanBouton3(projet)
+    PreparerBouton3 v4, forme, projet
+    gWinWMIMuet = True
+    EssaiSansFenetre
+    r = r & " | Windows muet : " & BilanBouton3(projet)
+    PreparerBouton3 v4, forme, projet
+    gWinFichier = absent
+    EssaiSansFenetre
+    r = r & " | copie ratée : " & BilanBouton3(projet)
+    PreparerBouton3 v4, forme, projet
+    gWinFichier = ""
+    EssaiSansFenetre
+    r = r & " | Annuler fichier : " & BilanBouton3(projet)
+    PreparerBouton3 v4, forme, projet
+    gWinConfirme = False
+    EssaiSansFenetre
+    r = r & " | Annuler question : questions " & CompterWin("Windows|Question|") & " ; " & BilanBouton3(projet)
+    ' le parcours complet : le projet choisi dans la fenêtre « Ouvrir » (le réglage Projet était vide) est noté
+    PreparerBouton3 v4, forme, projet
+    FixerReglage "Projet", ""
+    gWinFichier = projet
+    EssaiSansFenetre
+    r = r & " | complet : Projet noté " & IIf(ValeurReglage("Projet") = projet, "oui", "non") & " ; Patienter " & CompterWin("Windows|Patienter") & _
+        " ; " & BilanBouton3(projet)
+    PreparerBouton3 v4, 0, projet
+    EssaiSansFenetre
+    r = r & " | refusé : " & BilanBouton3(projet)
+    PreparerBouton3 v4, forme, projet
+    gWinProcessusApresQuit = 1
+    EssaiSansFenetre
+    r = r & " | reste : Patienter " & CompterWin("Windows|Patienter") & " ; " & BilanBouton3(projet)
+    ' SEE ouvert par le technicien PENDANT la fenêtre « Ouvrir » : Windows est revu avant la création, rien n'est créé
+    PreparerBouton3 v4, forme, projet
+    gWinProcessusAuChoix = 1
+    EssaiSansFenetre
+    r = r & " | rouvert : " & BilanBouton3(projet)
+    ' le paramètre de sortie (V4) : SEE n'accepte qu'une variable Object (IDispatch**), puis qu'un Variant (VARIANT*)
+    PreparerBouton3 v4, forme, projet
+    gAutoSortie = 2
+    EssaiSansFenetre
+    r = r & " | Object seulement : " & BilanBouton3(projet)
+    PreparerBouton3 v4, forme, projet
+    gAutoSortie = 1
+    EssaiSansFenetre
+    r = r & " | Variant seulement : " & BilanBouton3(projet)
+    ' le bouton 1 a REJOINT SEE (connexion gardée), puis le technicien a fermé SEE (File > Exit) : SEE.exe tourne tant
+    ' qu'Excel tient l'objet ; le bouton 3 le lâche d'abord, et SEE s'arrête
+    PreparerBouton3 v4, forme, projet
+    ActifFaux "SEEExpert.Application"
+    Set gWinObjetActif = New FauxApp
+    gWinProcessus = 1
+    TesterSEE
+    r = r & " | joint : bouton 1 garde la connexion " & IIf(gApp Is Nothing, "non", "oui")
+    gWinProcessus = 0
+    gWinTenuParExcel = True
+    EssaiSansFenetre
+    r = r & " ; lâchée dite " & JournalContient("connexion gardée lâchée") & " ; " & BilanBouton3(projet)
+    ' le réglage Projet noté par le bouton 3, puis un SEE ouvert sur un AUTRE projet, rejoint : les boutons 1 et 2 n'y
+    ' ouvrent jamais le projet d'essai ; la question du bouton 2 nomme le projet ouvert
+    PreparerBouton3 v4, forme, projet
+    ActifFaux "SEEExpert.Application"
+    Set gWinObjetActif = New FauxApp
+    gWinProcessus = 1
+    TesterSEE
+    n0 = Compter("OpenProject")
+    r = r & " | ensuite : bouton 1 : OpenProject " & n0 & " ; chemin entier montré " & CheminMontre(projet)
+    EssaiDessinReel
+    r = r & " ; bouton 2 : OpenProject " & (Compter("OpenProject") - n0) & " ; question nomme PROJET_FAUX " & _
+        JournalContient("projet ouvert dans SEE : « PROJET_FAUX »") & " ; AddSheet " & Compter("AddSheet")
+    BancBouton3 = r
+    Exit Function
+E:
+    BancBouton3 = r & " ERREUR VBA " & Err.Number & " " & Err.Description & " (étape " & gEtape & " / " & gObjet & ")"
 End Function
