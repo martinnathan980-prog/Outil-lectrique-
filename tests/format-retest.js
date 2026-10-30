@@ -79,9 +79,9 @@ const B64_LIBRE = classeur([['Libre', [['De', 'Borne', 'Vers', 'Borne'], ['A', '
     const c = r.liaisons[2] || {};
     ok('3 liaisons de 2 harness ; H-B relue dans son ordre à elle ; 1200 mm → 1,2 m', r.liaisons.length === 3 && r.harnais.join() === 'H-A,H-B' && r.entetes === 2 && c.de === '103RL1' && c.vers === '104LP1' && c.harness === 'H-B' && c.plan === 'D2' && r.liaisons[0].longueur === 1.2, r.liaisons.length + ' liaisons · ' + c.de + '→' + c.vers + ' (' + c.harness + ')');
     const t = await texteDuFichier(fichier(b64, 'deux-feuilles.xlsx'));
-    ok('texteDuFichier rend un texte (les feuilles de installation), sans les notes', typeof t === 'string' && lireTexte(t).liaisons.length === 3 && !/rien à lire ici/.test(t));
+    ok('texteDuFichier rend un texte (les feuilles d’installation), sans les notes', typeof t === 'string' && lireTexte(t).liaisons.length === 3 && !/rien à lire ici/.test(t));
     const l = await lireFichier(fichier(b64Libre, 'libre.xlsx'));
-    ok('sans feuille de installation : la première seule, comme avant (libre)', l.format === 'libre' && l.liaisons.length === 1 && l.lues.join() === 'Libre' && l.ignorees.join() === 'Autre', l.format + ' · lues ' + l.lues.join() + ' · ignorées ' + l.ignorees.join());
+    ok('sans feuille d’installation : la première seule, comme avant (libre)', l.format === 'libre' && l.liaisons.length === 1 && l.lues.join() === 'Libre' && l.ignorees.join() === 'Autre', l.format + ' · lues ' + l.lues.join() + ' · ignorées ' + l.ignorees.join());
     return out;
   }, [B64, B64_LIBRE]);
   R.push(...R2);

@@ -192,7 +192,9 @@ async function ouvrirFichier(fichier) { if (!fichier) return; const nom = fichie
     if (r.harnais && r.harnais.length > 1) { adopterReferences(r.liaisons, nom); baseRecue(nom, avis, rangerLesContrats(app.references.base, nom));
       ficheHarnais(r, nom); signaler(pluriel(r.harnais.length, 'harness') + ' dans ' + guillemets(nom) + ' : gardés comme contrats déjà faits — lequel ouvrir sur la table ?', 'base'); return; }
     chargerContrat(r.liaisons, 'ouverture de ' + nom, nom, { nouveau: true }); contratRecu(nom, 'retest', avis);
-    const msg = pluriel(r.liaisons.length, 'liaison') + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + (ig.length ? ' · ' + pluriel(ig.length, 'feuille') + ' ignorée' + (ig.length > 1 ? 's' : '') : '') + '.';
+    // la feuille laissée de côté dite par son nom, et pourquoi (le technicien v73 : « 1 feuille ignorée — laquelle ? »)
+    const noms = ((L.lu && L.lu.ignorees) || []).map(n => '« ' + n + ' »').join(', ');
+    const msg = pluriel(r.liaisons.length, 'liaison') + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + (ig.length ? ' · ' + (ig.length > 1 ? 'les feuilles ' + noms + ' sont laissées' : 'la feuille ' + noms + ' est laissée') + ' de côté (pas les en-têtes de l’installation)' : '') + '.';
     if (ig.length) signaler(msg, 'retest'); else dire(msg);
     proposerDejaFait();
   } catch (e) { echecImport('retest', { texte: `${guillemets(esc(nom))} n’a pas pu être lu : ${esc(String(e && e.message || e))}.` }); } }

@@ -275,7 +275,8 @@ function versMots(e) { return e.sur === 'cible' ? `= <b>${esc(e.vers)}</b> · ${
 
 /* ---- « Déjà fait » sur la fiche d'un équipement ------------------------- */
 function dejaFaitHtml(nom) { const I = indexReferences(); if (!I) return '';
-  const cs = candidatsDeReference(I, verite(), nom, 3); if (!cs.length) return '';
+  // le contrat ouvert lui-même n'est pas un « déjà fait » (l'ingénieur v73 : « le plus proche à 100 %, c'est lui ») — comme `ficheDejaFaitContrat`
+  const V = verite(), moi = harnessDuPlan(V), cs = candidatsDeReference(I, V, nom, moi ? 6 : 3).filter(c => !moi || c.harness !== moi).slice(0, 3); if (!cs.length) return '';
   const ligne = c => { const D = c.fwd ? dessinDe(I, c.harness, c.fwd) : null, C = D ? comparaisonDe(c.harness, c.fwd, c.repere, nom, 'dessin') : null;
     const manque = C ? C.manquent.slice(0, 3).map(e => `<b>${esc(e.repere)}</b>${e.nature ? ' <i>' + esc(e.nature) + '</i>' : ''}`).join(', ') + (C.manquent.length > 3 ? ' …' : '') : '';
     const dessin = D ? `<span class="cd-ligne cd-dessin"><span class="cd-fwd" data-bulle="Le dessin (FWD) où ${escA(c.repere)} apparaît">${esc(c.fwd)}</span>${SEP_POINT}${plurielLie(D.equipements.size, 'équipement')}${C ? `${SEP_POINT}<b>${C.chezNous}</b>${INSECABLE}chez${INSECABLE}nous${C.manquent.length ? SEP_POINT + 'il manque ' + manque : ''}${C.compte.differe ? `${SEP_POINT}${C.compte.differe}${INSECABLE}câble${C.compte.differe > 1 ? 's' : ''} diffère${C.compte.differe > 1 ? 'nt' : ''}` : ''}` : ''}${c.fwds.length > 1 ? `${SEP_POINT}sur ${plurielLie(c.fwds.length, 'dessin')}` : ''}</span>` : '';

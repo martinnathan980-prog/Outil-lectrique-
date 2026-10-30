@@ -131,7 +131,7 @@ const attendre = ms => new Promise(r => setTimeout(r, ms));
     const p0 = await page.evaluate(() => $('btnRetest').hidden);
     await changer(page); await page.waitForTimeout(200);
     const p1 = await page.evaluate(() => ({ vu: !$('btnRetest').hidden, t: $('btnRetest').innerText.replace(/\s+/g, ' ').trim(), ent: $('btnRetest').classList.contains('entre-v') }));
-    ok('la pilule du installation corrigée paraît au premier changement (« 1 changement · Installation corrigée »), absente avant', p0 && p1.vu && /1\schangement/.test(p1.t) && /Installation corrigée/.test(p1.t) && p1.ent, JSON.stringify({ p0, ...p1 }));
+    ok('la pilule de l’installation corrigée paraît au premier changement (« 1 changement · Installation corrigée »), absente avant', p0 && p1.vu && /1\schangement/.test(p1.t) && /Installation corrigée/.test(p1.t) && p1.ent, JSON.stringify({ p0, ...p1 }));
     await page.click('#btnMenu'); await page.click('#menu [data-sous="exporter"]'); await page.waitForTimeout(300);
     const M = await page.evaluate(() => { const p = $('mp-exporter'), b = [...p.querySelectorAll('button[role="menuitem"]:not([data-retour])')], g = b[0].closest('.menu-bloc');
       return { premier: b[0].dataset.act, compte: $('mn-retest').textContent, seul: g.querySelectorAll('button').length === 1, filet: getComputedStyle(g.nextElementSibling).borderTopStyle, focus: document.activeElement.dataset.act, sous: $('mn-exporter').textContent }; });

@@ -15,7 +15,7 @@ function titre(t) { console.log('\n' + t); }
   const page = await nav.newPage({ viewport: { width: 1500, height: 980 } }); page.setDefaultTimeout(180000);
   const erreurs = []; page.on('pageerror', e => erreurs.push(e.message));
   await page.goto(FICHIER); await page.waitForTimeout(1200);
-  if (!(await page.evaluate(() => typeof chargerBase === 'function'))) { console.log('  la base de installation n’est pas dans la page (a-venir/) : rien à contrôler'); await nav.close(); process.exit(0); }
+  if (!(await page.evaluate(() => typeof chargerBase === 'function'))) { console.log('  la base d’installations n’est pas dans la page (a-venir/) : rien à contrôler'); await nav.close(); process.exit(0); }
   titre('5. IDENTIFICATION ET CHOIX DU CONTRAT');
   const gros = await page.evaluate(async () => {
     const EN = ['Harness', 'Device1', 'Pin1', 'PN1', 'Description1', 'Cable T/G', 'Cable Tag', 'Route', 'Device2', 'Pin2', 'PN2', 'Description2', 'FWD', 'Cable Length (mm)', 'Appareil', 'Date retest'];
@@ -67,7 +67,7 @@ function titre(t) { console.log('\n' + t); }
   ok('« Annuler » rend l’état EXACT d’avant', ecr.identique, ecr.nApresAnnul + ' liaisons, empreinte ' + (ecr.identique ? 'identique' : 'DIFFÉRENTE'));
 
 
-  titre('7. LES PIÈGES DÉJÀ TOMBÉS (base de installation)');
+  titre('7. LES PIÈGES DÉJÀ TOMBÉS (base d’installations)');
   const pieges = await page.evaluate(async () => { const r = {}; const L = (de, bDe, vers, bVers) => liaison({ de, borneDe: bDe, vers, borneVers: bVers });
     // (d) « Annuler » emportait les corrections faites à la main
     await chargerBase(baseExemple()); atelier.essai();
