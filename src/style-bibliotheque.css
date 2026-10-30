@@ -494,8 +494,9 @@ body.fiche-ouverte .biblio.survol-depot .bi-page::before{left:calc((100vw - var(
 body.biblio #entete{transition:background var(--d-moyen) var(--courbe),box-shadow var(--d-moyen) var(--courbe)}
 body.biblio-accueil #entete{background:transparent;box-shadow:none}
 /* le fil de la barre du haut : l'installation porte sa bulle (la règle des bulles du chrome) — le nom seul s'élide, la
-   bulle déborde du bouton */
-#en-install{position:relative;overflow:visible;display:inline-flex;align-items:center}
+   bulle déborde du bouton ; le bouton lui-même ne coupe rien (v74 : il gardait les points de suspension du chrome, et sa
+   bulle, qui déborde, le faisait lire comme un texte rogné — tests/ux.js, « ExempleExemple : ses plans ») */
+#en-install{position:relative;overflow:visible;text-overflow:clip;display:inline-flex;align-items:center}
 #en-install .en-install-nom{min-width:0;overflow:hidden;text-overflow:ellipsis}
 
 /* ─── LE RAIL : toutes les installations, à gauche d'une installation — un clic passe de l'une à l'autre ─── */
