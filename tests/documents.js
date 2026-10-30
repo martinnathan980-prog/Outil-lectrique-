@@ -152,6 +152,11 @@ const attendre = ms => new Promise(r => setTimeout(r, ms));
   const Z = await ev(() => ({ t: verite().find(x => x.cable === 'W-013').type, toast: $('toast').textContent }));
   ok('Ctrl+Maj+Z dans un champ du récapitulatif REFAIT (il ne défait pas)', avant === 'DR22' && Z.t === 'DR20' && /^Refait/.test(Z.toast), JSON.stringify({ avant, ...Z }));
   await page.keyboard.press('Control+z'); await attendre(300);
+  // (v74) une touche de l'outil ne s'écrit pas dans la case qui a le clavier : « b » ferme le récapitulatif
+  await ev(s => { const v = document.querySelector(s + ' [data-f="type"]'); v.focus(); }, sel); await page.keyboard.press('b'); await attendre(400);
+  const TB = await ev(() => ({ ferme: $('base').hidden, type: verite().find(x => x.cable === 'W-013').type, champ: !!document.querySelector('#ba-tbody input') }));
+  await page.keyboard.press('b'); await attendre(500);
+  ok('« b » sur une case qui a le clavier ferme le récapitulatif (il ne s’écrit pas dans la case) ; « b » le rouvre', TB.ferme && TB.type === 'DR22' && !TB.champ && await ev(() => !$('base').hidden), JSON.stringify(TB));
 
   /* ---- 4. ce qu'il faut faire ---- */
   // (v74 : la règle du calibre écrit déjà le 15 A dans l'exemple — le geste « Tout régler » se juge sur l'exemple de la v73,

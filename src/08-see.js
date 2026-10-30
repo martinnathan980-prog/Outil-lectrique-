@@ -23,7 +23,9 @@ const SEE = { lu: null, vue: 'import', exemples: true, import: null };
 const estExcel = f => /\.xls[xmb]?$/i.test((f && f.name) || '') || /sheet|excel/i.test((f && f.type) || '');
 // une feuille de la base SEE : nommée d'après sa vue ou sa table (EED_ViewCablesAndWires, EED_OBJ_Wires…) ou une fonction d'export
 const estFeuilleSEE = n => /^(EED_|Export_)/i.test(String(n || ''));
-const nomCourtSEE = n => String(n).replace(/^EED_(e?Cat_)?View_?/i, '').replace(/^EED_/i, '').replace(/^(OBJ|LNK|SET)_/i, '') || String(n);
+// (v74, fusion du lot E) la v73 en pause ôtait ici OBJ_, LNK_, SET_ : `nomCourtSEE` reconnaît aussi les feuilles à l'import
+// et dans la cohérence (« OBJ_END_Fitting_Rules… ») — la cohérence perdait ses exemples. Rendu tel que la v74 l'avait.
+const nomCourtSEE = n => String(n).replace(/^EED_(e?Cat_)?View_?/i, '').replace(/^EED_/i, '') || String(n);
 const GUID_SEE = /^\{?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\}?$/i, OUI_NON_SEE = /^(true|false|vrai|faux|yes|no|oui|non)$/i;
 const cleGuidSEE = s => String(s).replace(/[{}]/g, '').toUpperCase();
 const cleTexteSEE = s => String(s).toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -183,7 +185,7 @@ function baseSEEHtml() { const L = SEE.lu, v = SEE.vue, I = baseMontreeSEE();
     + lire('Volta se sert de cette base à la place de ses tables. Pour la mettre à jour, déposez le nouvel Excel de SEE (Données → Actualiser tout, puis enregistrer).')
     + `<div class="see-barre"><div class="see-onglets" role="tablist" aria-label="La base">${imp}${coh}</div></div>${corpsBase}</div>`;
   const nl = L.liens.filter(x => x.cibles.length).length;
-  // les feuilles du classeur, après un filet et leur nom de groupe ; chacune sous un nom court (sans EED_, OBJ_, LNK_), le nom entier dans sa bulle
+  // les feuilles du classeur, après un filet et leur nom de groupe ; chacune sous un nom court (sans EED_), le nom entier dans sa bulle
   const onglets = `<div class="see-onglets" role="tablist" aria-label="Le classeur">${imp}${coh}${onglet('liens', 'Liens', String(nl), 'Ce qui se relie à quoi, d’une feuille à l’autre')}${onglet('codes', 'Codes', null, 'Les valeurs des colonnes de codes, et le plan ouvert face à SEE')}<span class="see-sep" aria-hidden="true"></span><span class="see-groupe-t" aria-hidden="true">Feuilles du classeur</span>`
     + L.feuilles.map((f, i) => onglet(i, nomCourtSEE(f.nom), milliers(f.lignes), '', f.nom)).join('') + '</div>';
   const corps = v === 'import' || v === 'coherence' ? corpsBase : v === 'liens' ? liensSEEHtml() : v === 'codes' ? codesSEEHtml() : feuilleSEEHtml(L.feuilles[v] || L.feuilles[0]);

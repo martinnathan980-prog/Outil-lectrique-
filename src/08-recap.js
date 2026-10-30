@@ -1066,6 +1066,8 @@ function marquerLignes() { if ($('base').hidden) return; const O = onglet(), blo
     tr.querySelectorAll('.rc-bout').forEach(s => { const v = s.querySelector('[data-f="de"],[data-f="vers"]'); s.classList.toggle('ici', on && !!bloc && !!v && v.textContent === bloc); }); }); }
 
 /* ---- ÉDITER UNE CASE : double-clic, Entrée ou F2 ; Tab la suivante, Échap annule ---- */
+// les touches seules de l'outil (08-interface, le clavier du plan) : sur une case, elles ne s'écrivent pas, elles agissent
+const TOUCHES_DE_L_OUTIL = new Set(['b', 'p', 'P', 'r', 'n', 'f', '/', '?']);
 const caseDe = el => { const v = el && el.closest && el.closest('[data-f]'), tr = v && v.closest('tr[data-k]'); return v && tr ? { k: tr.dataset.k, f: v.dataset.f } : null; };
 const elementDe = c => c && $('ba-tbody').querySelector(`tr[data-k="${CSS.escape(c.k)}"] [data-f="${CSS.escape(c.f)}"]`);
 function editerCase(k, f) { if (!elementDe({ k, f })) amenerLigne(k); const el = elementDe({ k, f }); if (el) editer(el); }
@@ -1326,8 +1328,10 @@ function lierBase() { const b = app.base, t = $('ba-tab'), corps = $('ba-tbody')
       return; }
     const v = e.target.closest && e.target.closest('[data-f]'); if (!v || !corps.contains(v)) return;
     if (e.key === 'Enter' || e.key === 'F2') { e.preventDefault(); e.stopPropagation(); editer(v); return; }
-    // une touche qu'on écrit, sur une valeur qui a le clavier : son champ s'ouvre et la reçoit (comme un tableur)
-    if (e.key.length === 1 && e.key !== ' ' && !e.ctrlKey && !e.metaKey && !e.altKey && !v.classList.contains('rc-calc')) { const k = e.key;
+    // une touche qu'on écrit, sur une valeur qui a le clavier : son champ s'ouvre et la reçoit (comme un tableur) — sauf les
+    // touches de l'outil (v74, fusion : après Entrée, la case du dessous a le clavier, et « b » écrivait un « b » dans le
+    // câble suivant au lieu de fermer le récapitulatif) : b, p, P, r, n, f, « / », « ? » gardent leur sens ; Entrée ou F2 éditent
+    if (e.key.length === 1 && e.key !== ' ' && !TOUCHES_DE_L_OUTIL.has(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey && !v.classList.contains('rc-calc')) { const k = e.key;
       if (editer(v)) { e.preventDefault(); e.stopPropagation(); const ed = b.edition; if (ed && ed.inp.tagName === 'INPUT') { ed.inp.value = k; ed.inp.dispatchEvent(new Event('input')); } } return; }
     const pas = { ArrowRight: 'suivante', ArrowLeft: 'precedente', ArrowDown: 'dessous', ArrowUp: 'dessus' }[e.key]; if (!pas || e.ctrlKey || e.metaKey || e.altKey) return;
     e.preventDefault(); e.stopPropagation(); const c = caseDe(v), n = elementDe(voisine({ k: c.k, f: c.f, el: v }, pas)); if (n) { n.focus(); n.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } });
