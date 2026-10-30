@@ -48,11 +48,10 @@
    ═══════════════════════════════════════════════════════════════════════ */
 :root{
   /* ── LA TABLE : la même dans les deux thèmes (le lecteur, v72 : « un fond pas que noir, un peu dégradé, un petit peu
-     interactif »). Ses couches (#table) : le fond, le souffle, les points, la lueur. Ce qui s'écrit à même la table prend
+     interactif »). Ses couches (#table) : le fond, les points, la lueur. Ce qui s'écrit à même la table prend
      son encre (--t-table) ── */
   --s-app:#0e1626;                                       /* la couleur moyenne de la table (ce qui la remplace d'un aplat) */
   --table-fond:radial-gradient(1150px 780px at 96% -14%,rgba(96,140,220,.36),rgba(96,140,220,0) 62%),linear-gradient(158deg,#1b2843 0%,#121c30 42%,#0a111e 100%);
-  --table-souffle:radial-gradient(950px 720px at -8% 110%,rgba(48,100,176,.34),rgba(48,100,176,0) 64%),radial-gradient(640px 440px at 58% 44%,rgba(120,150,220,.07),rgba(120,150,220,0) 70%);
   --table-lueur:radial-gradient(closest-side,rgba(132,172,255,.17),rgba(132,172,255,.05) 52%,rgba(132,172,255,0));
   --s-grille:rgba(160,188,240,.22); --s-grille-2:rgba(160,188,240,.22);
   --points:radial-gradient(circle at 1px 1px,var(--s-grille) 1px,transparent 1.5px);   /* un point tous les 24 px */
@@ -406,8 +405,6 @@ table.tableau{border-collapse:separate;border-spacing:0;font-size:var(--f-12);mi
 #table{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;contain:strict}
 #table>div{position:absolute;inset:0}
 #table .ta-fond{background:var(--table-fond)}
-#table .ta-souffle{background:var(--table-souffle);opacity:.55;animation:ta-respire 16s ease-in-out infinite alternate;will-change:opacity,transform}
-@keyframes ta-respire{from{opacity:.45;transform:scale(1)}to{opacity:1;transform:scale(1.06) translate(-1%,1%)}}
 #table .ta-points{background-image:var(--points);background-size:24px 24px}
 #table .ta-lueur{inset:auto;left:0;top:0;width:960px;height:960px;margin:-480px 0 0 -480px;border-radius:50%;background:var(--table-lueur);opacity:0;transition:opacity 1.2s ease;will-change:transform}
 #table.vue .ta-lueur{opacity:1}
@@ -1318,9 +1315,8 @@ body.fiche-ouverte #toast{left:calc(var(--rail) + (100vw - var(--rail) - var(--f
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{transition:none!important;animation:none!important}
   .phy,.fo-strip{scroll-behavior:auto}
-  /* la table immobile : ni lueur, ni souffle */
+  /* la table immobile : pas de lueur */
   #table .ta-lueur{display:none}
-  #table .ta-souffle{opacity:.75}
 }
 
 
@@ -5339,10 +5335,6 @@ body:has(#base.page:not([hidden])) #table :is(.ta-lueur,.ta-revele,.ta-courant),
 .attente .at-gestes button:hover{background:var(--palet-2)}
 .attente .at-gestes button:focus-visible{outline:2px solid var(--glace);outline-offset:2px}
 
-/* ─── LE FONDU : le dessin d'avant (une copie) s'efface au-dessus du nouveau (08-interface, `remplacerDessin`) ─── */
-.dessin-fondu{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;opacity:1;transition:opacity .55s var(--courbe)}
-.dessin-fondu.part{opacity:0}
-
 /* ─── LA PETITE BANDE du milieu (#affinage) : une barre fine après ses mots ; les folios pas encore prêts, pâles ─── */
 .affinage .af-barre{flex:none;width:44px;height:3px;border-radius:2px;background:var(--voile-3);overflow:hidden}
 .affinage .af-barre span{display:block;height:100%;background:var(--glace);transform-origin:0 50%;transition:transform .25s linear}
@@ -5352,7 +5344,6 @@ body:has(#base.page:not([hidden])) #table :is(.ta-lueur,.ta-revele,.ta-courant),
   /* la même lumière, immobile : les nappes posées au temps zéro (08-table), ni lueur, ni révélation, ni courant */
   #table :is(.ta-lueur,.ta-revele,.ta-courant){display:none}
   #table .ta-points{transform:none!important}
-  .dessin-fondu{display:none}
 }
 
 /* ───────── style-visio.css ───────── */
@@ -18245,8 +18236,10 @@ function filsDuMeilleur(d) { const fs = d.contexte.fils, memes = (a, b) => JSON.
   return (d.meilleur.filsAChanger || []).map(x => ({ x, f: fs.find(f => f.l && (f.cable || '') === x.cable && f.type === x.actuel && memes([f.l.de, f.l.vers].filter(r => r && !estMasse(r) && !estDisjoncteur(r)), x.bouts)) })); }
 function changerFilsDuMeilleur(nom) { const d = disjonctionDe(nom), xs = filsAGrossir(d).filter(p => p.f && p.x.propose); if (!xs.length) return false;
   histPush(xs.length > 1 ? xs.length + ' câbles de ' + nom + ' grossis' : 'un câble de ' + nom + ' grossi');
-  xs.forEach(p => poserChamp(p.f.l, 'type', p.x.propose)); apresEdition();
+  xs.forEach(p => poserChamp(p.f.l, 'type', p.x.propose)); apresEdition(); pulserGrossis(xs);
   dire(xs.map(p => (p.x.cable || 'un câble') + ' en ' + p.x.propose).join(', ') + '. Ctrl+Z les rend.'); return true; }
+// les câbles grossis s'éclairent deux fois sur le plan (08-interface, `pulser`) : l'œil voit ce que le geste a changé
+const pulserGrossis = xs => { if (xs.length && typeof pulser === 'function') pulser({ type: 'liaisons', ls: xs.map(p => p.f.l) }); };
 /* DÉCIDER (la carte de décision : « Passer en 15 A et grossir les 3 câbles ») : le retest est corrigé par le choix de
    l'outil — le part number du calibre retenu sur chaque liaison du disjoncteur (sans famille qui le construise, le calibre
    s'écrit au profil), les câbles que ce calibre demande à leur type proposé —, le fichier gardé dans `avant` (« Par
@@ -18256,7 +18249,7 @@ function deciderCalibre(nom) { const d = disjonctionDe(nom), cal = d.calibre; if
   histPush(nom + ' : ' + amperes(cal) + (xs.length ? ' et ' + pluriel2(xs.length, 'câble') + ' grossi' + (xs.length > 1 ? 's' : '') : ''));
   if (nouveau && nouveau !== pn) verite().forEach(l => [['de', 'pnDe'], ['vers', 'pnVers']].forEach(([b, ch]) => { if (l[b] === nom && l[ch]) poserChamp(l, ch, nouveau); }));
   else if (!nouveau) poserCharge(nom, { ...(chargeEcrite(nom) || {}), calibre: cal });
-  xs.forEach(p => poserChamp(p.f.l, 'type', p.x.propose)); apresEdition();
+  xs.forEach(p => poserChamp(p.f.l, 'type', p.x.propose)); apresEdition(); pulserGrossis(xs);
   dire(nom + ' : ' + amperes(cal) + (nouveau ? ' (' + nouveau + ')' : '') + (xs.length ? ', ' + xs.map(p => (p.x.cable || 'un câble') + ' en ' + p.x.propose).join(', ') : '') + '. Ctrl+Z défait le tout.'); return true; }
 /* LA CARTE DE DÉCISION (le parcours v72 : « 102CB1 coche 15 A en vert sous 4 problèmes rouges ; la vraie histoire est la
    première des onze lignes de la barre, repliée ») : en tête de la fiche, quand le calibre que l'outil retient n'est pas
@@ -21185,7 +21178,9 @@ async function ouvrirFichier(fichier) { if (!fichier) return; const nom = fichie
     if (r.harnais && r.harnais.length > 1) { adopterReferences(r.liaisons, nom); baseRecue(nom, avis, rangerLesContrats(app.references.base, nom));
       ficheHarnais(r, nom); signaler(pluriel(r.harnais.length, 'harness') + ' dans ' + guillemets(nom) + ' : gardés comme contrats déjà faits — lequel ouvrir sur la table ?', 'base'); return; }
     chargerContrat(r.liaisons, 'ouverture de ' + nom, nom, { nouveau: true }); contratRecu(nom, 'retest', avis);
-    const msg = pluriel(r.liaisons.length, 'liaison') + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + (ig.length ? ' · ' + pluriel(ig.length, 'feuille') + ' ignorée' + (ig.length > 1 ? 's' : '') : '') + '.';
+    // la feuille laissée de côté dite par son nom, et pourquoi (le technicien v73 : « 1 feuille ignorée — laquelle ? »)
+    const noms = ((L.lu && L.lu.ignorees) || []).map(n => '« ' + n + ' »').join(', ');
+    const msg = pluriel(r.liaisons.length, 'liaison') + (plans().length > 1 ? ' · ' + plans().length + ' folios' : '') + (ig.length ? ' · ' + (ig.length > 1 ? 'les feuilles ' + noms + ' sont laissées' : 'la feuille ' + noms + ' est laissée') + ' de côté (pas les en-têtes de l’installation)' : '') + '.';
     if (ig.length) signaler(msg, 'retest'); else dire(msg);
     proposerDejaFait();
   } catch (e) { echecImport('retest', { texte: `${guillemets(esc(nom))} n’a pas pu être lu : ${esc(String(e && e.message || e))}.` }); } }
@@ -22443,6 +22438,11 @@ function pulser(cible) { if (mouvementReduit() || !app.dessin) return; clearTime
     let el = null; const u = 1 / app.vue.s;
     if (cible.type === 'fil') { const w = cible.f, p = w && sc.querySelector(`path.cab[data-i="${w.i}"]`); if (!p) return;
       el = document.createElementNS(NS_SVG, 'path'); el.setAttribute('d', p.getAttribute('d')); el.setAttribute('class', 'pulse pulse-fil'); }
+    // plusieurs liaisons à la fois (les câbles que Volta vient de grossir : 08-disjoncteurs) — leurs câbles dessinés, ensemble
+    else if (cible.type === 'liaisons') { const ps = D.fils.filter(w => !w.shunt && cible.ls.some(l => l.cable ? w.cable === l.cable : !w.cable && ((w.de === l.de && w.vers === l.vers) || (w.de === l.vers && w.vers === l.de))))
+        .map(w => sc.querySelector(`path.cab[data-i="${w.i}"]`)).filter(Boolean); if (!ps.length) return;
+      el = document.createElementNS(NS_SVG, 'g'); el.setAttribute('class', 'pulse');
+      ps.forEach(p => { const q = document.createElementNS(NS_SVG, 'path'); q.setAttribute('d', p.getAttribute('d')); q.setAttribute('class', 'pulse-fil'); el.appendChild(q); }); }
     else { const c = D.compDe.get(cible.nom) || D.comps.find(k => k.name === cible.nom), vt = c ? null : barretteAPoser(cible.nom); let b = null;
       if (c) { const q = boiteDuSymbole(c); b = { x: c.x + q.x, y: c.y + q.y, w: q.w, h: q.h }; }
       else if (vt) { const bs = bornesDePiquage(vt); b = { x: vt.x - 6, y: bs[0].y - 6, w: 12, h: bs[bs.length - 1].y - bs[0].y + 12 }; }
@@ -22450,8 +22450,9 @@ function pulser(cible) { if (mouvementReduit() || !app.dessin) return; clearTime
       el = document.createElementNS(NS_SVG, 'rect'); el.setAttribute('class', 'pulse pulse-bloc');
       [['x', b.x - m], ['y', b.y - m], ['width', b.w + 2 * m], ['height', b.h + 2 * m], ['rx', 6 * u]].forEach(([k, v]) => el.setAttribute(k, n3(v))); }
     el.setAttribute('aria-hidden', 'true'); sc.appendChild(el);
-    const kf = cible.type === 'fil' ? [{ opacity: 0 }, { opacity: 0.75, offset: 0.35 }, { opacity: 0 }] : [{ opacity: 0.95, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(1.16)' }];
-    const a = el.animate(kf, { duration: 300, iterations: 2, easing: cible.type === 'fil' ? 'ease-in-out' : 'cubic-bezier(.32,.72,0,1)' });
+    const fil = cible.type === 'fil' || cible.type === 'liaisons';
+    const kf = fil ? [{ opacity: 0 }, { opacity: 0.75, offset: 0.35 }, { opacity: 0 }] : [{ opacity: 0.95, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(1.16)' }];
+    const a = el.animate(kf, { duration: 300, iterations: 2, easing: fil ? 'ease-in-out' : 'cubic-bezier(.32,.72,0,1)' });
     a.onfinish = () => el.remove(); }, anim ? 300 : 30); }
 function allumerBloc(nom) { const sc = $('scene'); if (!sc || !app.dessin) return; eteindre(); const D = app.dessin, blocs = new Set();
   D.comps.forEach((c, k) => { if (c.name === nom) blocs.add(k); });
@@ -27758,7 +27759,9 @@ async function importerReferences(fichier) { if (!fichier) return; const nom = f
         nom + ' : aucune colonne Harness — sans elle, je ne sais pas séparer les machines.');
       FICHIERS.base = { nom, liaisons: r.liaisons }; rendreFichiers(); return; }
     adopterReferences(r.liaisons, nom); const B = app.references.base, G = rangerLesContrats(B, nom);
-    baseRecue(nom, ig.length ? { texte: 'Feuilles ignorées (pas les en-têtes de l’installation) :', liste: ig } : null, G); ficheFichiers('base');
+    baseRecue(nom, ig.length ? { texte: 'Feuilles ignorées (pas les en-têtes de l’installation) :', liste: ig } : null, G);
+    // déposée depuis la bibliothèque, qui montre déjà les installations créées : « Vos fichiers » ne s'ouvre pas par-dessus
+    if (!(typeof bibliothequeOuverte === 'function' && bibliothequeOuverte())) ficheFichiers('base');
     dire(lies([plurielLie(B.meta.harnais, 'harness'), plurielLie(B.meta.dessins, 'dessin'), plurielLie(B.meta.n, 'liaison')]) + ' gardés dans ce navigateur : les fiches disent ce qui a déjà été fait' + (G ? ', et la bibliothèque range ' + plurielLie(G.installs, 'installation') + '.' : '.'));
   } catch (e) { echecImport('base', { texte: `${esc(nom)} n’a pas pu être lu : ${esc(String(e && e.message || e))}.` }); } }
 /* Une empreinte courte du contrat (ce que la comparaison lit) : les comparaisons gardées se périment quand il change. */
@@ -27787,7 +27790,8 @@ function versMots(e) { return e.sur === 'cible' ? `= <b>${esc(e.vers)}</b> · ${
 
 /* ---- « Déjà fait » sur la fiche d'un équipement ------------------------- */
 function dejaFaitHtml(nom) { const I = indexReferences(); if (!I) return '';
-  const cs = candidatsDeReference(I, verite(), nom, 3); if (!cs.length) return '';
+  // le contrat ouvert lui-même n'est pas un « déjà fait » (l'ingénieur v73 : « le plus proche à 100 %, c'est lui ») — comme `ficheDejaFaitContrat`
+  const V = verite(), moi = harnessDuPlan(V), cs = candidatsDeReference(I, V, nom, moi ? 6 : 3).filter(c => !moi || c.harness !== moi).slice(0, 3); if (!cs.length) return '';
   const ligne = c => { const D = c.fwd ? dessinDe(I, c.harness, c.fwd) : null, C = D ? comparaisonDe(c.harness, c.fwd, c.repere, nom, 'dessin') : null;
     const manque = C ? C.manquent.slice(0, 3).map(e => `<b>${esc(e.repere)}</b>${e.nature ? ' <i>' + esc(e.nature) + '</i>' : ''}`).join(', ') + (C.manquent.length > 3 ? ' …' : '') : '';
     const dessin = D ? `<span class="cd-ligne cd-dessin"><span class="cd-fwd" data-bulle="Le dessin (FWD) où ${escA(c.repere)} apparaît">${esc(c.fwd)}</span>${SEP_POINT}${plurielLie(D.equipements.size, 'équipement')}${C ? `${SEP_POINT}<b>${C.chezNous}</b>${INSECABLE}chez${INSECABLE}nous${C.manquent.length ? SEP_POINT + 'il manque ' + manque : ''}${C.compte.differe ? `${SEP_POINT}${C.compte.differe}${INSECABLE}câble${C.compte.differe > 1 ? 's' : ''} diffère${C.compte.differe > 1 ? 'nt' : ''}` : ''}` : ''}${c.fwds.length > 1 ? `${SEP_POINT}sur ${plurielLie(c.fwds.length, 'dessin')}` : ''}</span>` : '';
