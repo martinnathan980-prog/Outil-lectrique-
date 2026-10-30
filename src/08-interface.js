@@ -2938,7 +2938,8 @@ const RACCOURCIS = [
   ['Dans une fiche', [['La fiche d’avant, d’après ; revenir d’un renvoi', ['Alt', '←'], ['Alt', '→']], ['Renommer le repère', ['F2']],
     ['Le calibre : le cran d’avant, d’après|sur le cadran d’un disjoncteur', ['←'], ['→']], ['Retenir ce calibre ; rendre l’automatique|sur le cadran', ['Entrée'], ['Échap']], ['Fermer la fiche, revenir au plan', ['Échap']]]],
   ['Corriger', [['Défaire le dernier geste', ['Ctrl', 'Z']], ['Refaire ce qu’on vient de défaire', ['Ctrl', 'Y'], ['Ctrl', 'Maj', 'Z']], ['Pousser le bloc choisi d’un carreau (cinq avec Maj)', ['↑'], ['↓']]]],
-  ['Ouvrir, sortir', [['Ouvrir une installation', ['Ctrl', 'O']], ['Imprimer le folio', ['Ctrl', 'P']], ['Fermer ce qui est ouvert, revenir', ['Échap']], ['Cette feuille', ['?']]]]];
+  ['Ouvrir, sortir', [['Ouvrir une installation', ['Ctrl', 'O']], ['Imprimer le folio', ['Ctrl', 'P']], ['Fermer ce qui est ouvert, revenir', ['Échap']], ['Cette feuille', ['?']]]],
+  ['Améliorer Volta', [['Noter une hésitation dans le carnet de séance|l’écran où vous êtes s’écrit avec elle', ['C']]]]];
 const raccourcisOuverts = () => { const el = $('raccourcis'); return !!el && !el.hidden; };
 function montrerRaccourcis() { fermerMenu(); let el = $('raccourcis');
   if (!el) { el = document.createElement('div'); el.id = 'raccourcis'; el.className = 'raccourcis'; el.hidden = true; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-labelledby', 'rk-titre');
@@ -3008,6 +3009,8 @@ function lierPanneau() {
   lierRecherche(); lierDepot(); lierBase(); lierControle();
   window.addEventListener('keydown', e => {
     const dansChamp = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '');
+    // C : le carnet de séance, sur tous les écrans (08-bilan) — jamais dans un champ, ni sous la feuille des raccourcis
+    if (!dansChamp && !e.ctrlKey && !e.metaKey && !e.altKey && e.key.toLowerCase() === 'c' && typeof ouvrirCarnet === 'function' && !raccourcisOuverts()) { e.preventDefault(); ouvrirCarnet(); return; }
     // la bibliothèque ouverte : ses touches (Échap remonte, « / » cherche) ; celles du plan, caché dessous, se taisent
     if (toucheBibliotheque(e, dansChamp)) return;
     // Échap ferme d'abord ce qui est ouvert par-dessus : la feuille des raccourcis, le menu ⋮, la recherche, le « ⋯ »

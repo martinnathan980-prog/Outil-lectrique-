@@ -369,6 +369,13 @@ onglet ou une bulle. **Une même action a la même forme partout** (« Exporter 
 - **Le menu « ··· » d'un document** (`menuDoc`, `lierMenusDoc`, 08-normes) : le verre dense des menus ; ouvert, la bulle
   de son bouton se tait.
 - **Icônes** : SVG 24 × 24 en traits de 1,5 px, `stroke: currentColor`, dans `ICONES` (08-fiche) ou en ligne.
+- **Le bilan anonyme et le carnet de séance** (`08-bilan.js`, `style-bilan.css`, v76) : `ficheBilan()` est un document
+  (le texte tel qu'il partira, `.bl-texte`, puis le carnet) ; `texteDuBilan()` ne dit que des chiffres, et passe tout ce
+  qu'il recopie (une erreur de page, un en-tête de colonne, une note) dans `masqueDuPlan()` — un nom du plan devient
+  ‹repère›, ‹référence›, ‹câble› ou ‹nom›. Le carnet (`ouvrirCarnet`, touche C) est une barre posée en bas au milieu ;
+  une note garde l'écran où l'on était (`ecranAnonyme()` : le genre de l'objet, l'onglet, le folio par son rang, jamais
+  un nom), dans `localStorage` (`volta.carnet`). Une ouverture de fichier appelle `noterLecture(L, r)` (08-fichiers).
+  Toute nouvelle donnée ajoutée au bilan passe par le masque, et `tests/bilan.js` vérifie qu'aucun nom ne fuit.
 
 ## 6. Les règles de fabrication
 

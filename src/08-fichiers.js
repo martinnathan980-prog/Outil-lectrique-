@@ -192,6 +192,7 @@ async function ouvrirFichier(fichier) { if (!fichier) return; const nom = fichie
     if (r.harnais && r.harnais.length > 1) { adopterReferences(r.liaisons, nom); baseRecue(nom, avis, rangerLesContrats(app.references.base, nom));
       ficheHarnais(r, nom); signaler(pluriel(r.harnais.length, 'harness') + ' dans ' + guillemets(nom) + ' : gardés comme contrats déjà faits — lequel ouvrir sur la table ?', 'base'); return; }
     chargerContrat(r.liaisons, 'ouverture de ' + nom, nom, { nouveau: true }); contratRecu(nom, 'retest', avis);
+    if (typeof noterLecture === 'function') noterLecture(L, r);   // le bilan anonyme dit comment ce fichier a été lu (08-bilan)
     // les feuilles laissées de côté se NOMMENT (le technicien v73 : « 1 feuille ignorée » m'inquiète : laquelle ?) ; le journal
     // d'un retest corrigé (« Modifications ») n'en est plus une : la lecture le reconnaît et le dit (02, domaine C)
     const noms = (L.lu && L.lu.ignorees) || [], n = r.liaisons.length;

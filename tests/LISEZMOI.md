@@ -6,6 +6,10 @@
 node tests/controle.js         les invariants, le contrat d'essai, la base de retest, les pièges déjà tombés
 node tests/memoire.js          le travail survit-il à la fermeture de l'onglet (les liaisons et les choix : une désignation) ; rouvert
                                sur la bibliothèque, « Reprendre » rend le plan seul, le tableau fermé
+node tests/bilan.js            LE BILAN ANONYME ET LE CARNET (v76) : un vrai fichier lu (format, colonnes reconnues et inconnues) ; AUCUN
+                               nom du plan dans le texte copié (repères, part numbers, câbles, harness, dessins, le nom du fichier), ni
+                               dans une erreur de page ni dans une note ; C ouvre le carnet, Entrée garde, Échap ferme sans rien fermer
+                               d'autre ; la note survit au rechargement, s'efface ; stockage refusé : le carnet le dit
 node tests/bibliotheque.js     L'OUVERTURE, LA BIBLIOTHÈQUE, à la vraie souris : le lancement (vide, l'Exemple discret, « Volta » partout),
                                une install neuve au clavier, des plans par des fichiers (plusieurs à la fois ; un fichier à deux harness :
                                un plan chacun ; une compta le dit dans sa ligne), un plan ouvert d'un clic (le fil de la barre du haut),
