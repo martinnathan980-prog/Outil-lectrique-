@@ -194,7 +194,9 @@ function socle() {
       // la taille : la boîte, ou ce que le clic touche à ±11,5 px du centre (une zone agrandie compte) ; un lien dans une phrase est exempté
       const dansPhrase = /^inline/.test(s.display) && e.parentElement && [...e.parentElement.childNodes].some(n => n !== e && n.nodeType === 3 && n.data.trim().length > 2);
       if (!dansPhrase && touche) { const w = r.width, h = r.height;
-        if ((w < 24 || h < 24) && !(ici(cx - 11.5, cy) && ici(cx + 11.5, cy) && ici(cx, cy - 11.5) && ici(cx, cy + 11.5))) D.cibles.push({ sel, detail: Math.round(w) + ' × ' + Math.round(h) + ' px', txt: extrait(e) });
+        // (ce qui couvre PAR DESSEIN — la bulle qu'on vient d'ouvrir, une modale — ne rapetisse pas la cible : la même règle que plus haut)
+        const dedans = (x, y) => ici(x, y) || !!couvreur(e, document.elementFromPoint(x, y));
+        if ((w < 24 || h < 24) && !(dedans(cx - 11.5, cy) && dedans(cx + 11.5, cy) && dedans(cx, cy - 11.5) && dedans(cx, cy + 11.5))) D.cibles.push({ sel, detail: Math.round(w) + ' × ' + Math.round(h) + ' px', txt: extrait(e) });
         else if (w < 32 || h < 32) info.petites32.push(sel); }
       // le nom, et la bulle d'un bouton qui n'a qu'une icône
       const n = nomAccessible(e); if (!n) D.noms.push({ sel, detail: 'sans nom accessible (ni texte, ni aria-label, ni title, ni data-bulle)', txt: e.outerHTML.slice(0, 60) });

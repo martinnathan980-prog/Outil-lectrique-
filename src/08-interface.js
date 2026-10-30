@@ -2808,7 +2808,7 @@ function synchroniserRetest() { const n = app.contrat.liaisons.length ? nombreDe
     // elle paraît : elle tombe d'un rien, une fois
     if (avant) { b.classList.remove('entre-v'); void b.offsetWidth; b.classList.add('entre-v'); } }
   const m = $('mn-retest'); if (m) m.textContent = n ? mod : 'aucune modification pour l’instant';
-  const e = $('mn-exporter'); if (e) { e.hidden = !n; e.textContent = n ? 'l’installation corrigée · ' + motChangements(n) : ''; e.closest('button').classList.toggle('menu-2l', !!n); } }
+  const e = $('mn-exporter'); if (e) { e.hidden = !n; e.textContent = n ? 'installation corrigée · ' + motChangements(n) : ''; e.closest('button').classList.toggle('menu-2l', !!n); } }
 function synchroniser() { synchroniserContexte(); synchroniserFolios(); synchroniserHistorique(); synchroniserRetouche(); rendreControle(); bulleDesReperes(); synchroniserRetest(); rafraichirBase(); rafraichirCarte(); montrerAttente(); }
 /* LE RAIL SE DÉPLIE (le technicien : « la liste à puces avec une pastille, je la prends pour des notifications ; le ⊸+ pour un
    curseur de réglage ») : au survol prolongé — 250 ms, une main qui passe ne l'ouvre pas —, il montre le mot et la touche

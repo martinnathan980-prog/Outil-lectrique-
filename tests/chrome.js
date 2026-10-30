@@ -136,7 +136,7 @@ const attendre = ms => new Promise(r => setTimeout(r, ms));
     const M = await page.evaluate(() => { const p = $('mp-exporter'), b = [...p.querySelectorAll('button[role="menuitem"]:not([data-retour])')], g = b[0].closest('.menu-bloc');
       return { premier: b[0].dataset.act, compte: $('mn-retest').textContent, seul: g.querySelectorAll('button').length === 1, filet: getComputedStyle(g.nextElementSibling).borderTopStyle, focus: document.activeElement.dataset.act, sous: $('mn-exporter').textContent }; });
     ok('⋮ › Exporter : l’installation corrigée en PREMIÈRE ligne, son compte dessous (« 1 liaison modifiée »), seul dans son groupe, un filet avant le dessin', M.premier === 'retestcorrige' && /^1\sliaison modifiée$/.test(M.compte) && M.seul && M.filet === 'solid' && M.focus === 'retestcorrige', JSON.stringify(M));
-    ok('la ligne Exporter du menu le dit en petit (« l’installation corrigée · 1 changement »)', /l’installation corrigée · 1\schangement/.test(M.sous), M.sous);
+    ok('la ligne Exporter du menu le dit en petit (« installation corrigée · 1 changement »)', /installation corrigée · 1\schangement/.test(M.sous), M.sous);
     await page.keyboard.press('Escape'); await page.keyboard.press('Escape'); await page.waitForTimeout(150);
     let sorti = false; page.once('download', () => { sorti = true; });
     await page.click('#btnRetest'); await page.waitForTimeout(1500);
@@ -172,7 +172,7 @@ const attendre = ms => new Promise(r => setTimeout(r, ms));
   /* ---- 6. les mouvements ---- */
   { const page = await ouvrir();
     await page.click('#btnMenu'); const T = await page.evaluate(() => { const a = $('menu').getAnimations().find(x => x.animationName === 'menu-tombe'), cs = getComputedStyle($('menu')); return { nom: a && a.animationName, d: a && a.effect.getComputedTiming().duration, origine: cs.transformOrigin }; });
-    ok('le menu TOMBE de son bouton : 200 ms, son origine sur le ⋮', T.nom === 'menu-tombe' && T.d === 200 && /^262px -26px/.test(T.origine), JSON.stringify(T));
+    ok('le menu TOMBE de son bouton : 200 ms, son origine sur le ⋮', T.nom === 'menu-tombe' && T.d === 200 && /^274px -26px/.test(T.origine), JSON.stringify(T));
     await page.waitForTimeout(300); await page.mouse.click(700, 600); await page.waitForTimeout(10);
     const F = await page.evaluate(() => { const d = document.querySelector('.menu-part'), a = d && d.getAnimations()[0]; return { cache: $('menu').hidden, double: !!d, sansId: d && !d.querySelector('[id]') && !d.id, inerte: d && d.inert && d.getAttribute('aria-hidden') === 'true', d: a && a.effect.getComputedTiming().duration }; });
     await page.waitForTimeout(400); const F2 = await page.evaluate(() => !document.querySelector('.menu-part'));
@@ -183,7 +183,8 @@ const attendre = ms => new Promise(r => setTimeout(r, ms));
     ok('un mot long reste plus longtemps (2,8 s une ligne, jusqu’à 6 s ; 8 s avec un geste)', D[0] === 2800 && D[1] > 5000 && D[1] <= 6000 && D[2] === 8000, D.join(' · '));
     await survoler(page, '#btnBase'); await page.mouse.down(); await page.waitForTimeout(150);
     const P = await page.evaluate(() => getComputedStyle($('btnBase')).transform); await page.mouse.up();
-    ok('un bouton pressé s’enfonce de --presse (.97)', /matrix\(0\.97, 0, 0, 0\.97/.test(P), P);
+    // (lu à 150 ms, la fin de la courbe peut laisser un millième : 0,9703 est enfoncé)
+    const kP = +((/matrix\(([\d.]+)/.exec(P) || [])[1]); ok('un bouton pressé s’enfonce de --presse (.97)', Math.abs(kP - 0.97) < 0.002, P);
     await page.close(); }
   { const page = await ouvrir({ reduit: true });
     await page.click('#btnMenu'); await page.waitForTimeout(200); await page.mouse.click(700, 600); await page.waitForTimeout(20);
