@@ -140,7 +140,8 @@ python tests/sonde-pdf.py      LA SONDE PDF (see/pdf/sonde_pdf.py), en PYTHON (3
                                structures (flux xref à prédicteur PNG, flux d'objets, ASCIIHex, ASCII85, LZW, RunLength, sans
                                filtre, deux filtres, RC4 128 bits écrit à part, RC4 + flux xref) qui doivent donner les mêmes
                                éléments au centième de mm ; mise à jour incrémentale, xref fausse, fichier tronqué, page tournée,
-                               page scannée, non-PDF ; la ligne de commande sur un dossier : AUCUNE chaîne réelle (textes,
+                               page scannée, trois pages héritées, --pages, la limite de mémoire, non-PDF ; la ligne de commande
+                               sur un dossier : AUCUNE chaîne réelle (textes,
                                métadonnées, nom du fichier) dans les rapports ni les TSV, l'écran en ASCII, BOM et CRLF, les
                                colonnes du TSV, les motifs, --clair qui écrit les textes, la numérotation qui continue.
                                --corpus=DOSSIER : le corpus d'essai (verite.json) ; si PyMuPDF est installé, le lecteur standard

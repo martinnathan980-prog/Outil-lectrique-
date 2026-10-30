@@ -114,6 +114,10 @@ par défaut des calques, la colonne `bloc` et le tri des images sans objet
 (une image en ligne, ou le rendu d'un dégradé ou d'un masque doux que MuPDF
 présente comme une image) viennent du lecteur standard.
 
+Au-delà de 1 500 000 éléments relevés dans un même PDF, la lecture s'arrête
+à la fin de la page en cours (la mémoire d'un PC de bureau) et le rapport le
+dit : pour comprendre la forme des plans, quelques pages suffisent.
+
 Options : `--clair`, `--sortie=DOSSIER`, `--pages=1-3,7`,
 `--mot-de-passe=XXX`, `--lecteur=…`, `--aide`. Code de sortie 0 si au moins
 un rapport est écrit, 1 sinon. L'écran ne reçoit que de l'ASCII (console

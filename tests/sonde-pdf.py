@@ -473,6 +473,20 @@ def page_tournee():
     return ecrire_pdf(o)
 
 
+def trois_pages():
+    """Trois pages qui partagent un contenu (un trait, un texte) ; Resources et MediaBox heritees."""
+    contenu = b'100 100 m 300 100 l S BT /F1 10 Tf 100 200 Td (PAGE-X) Tj ET'
+    o = {1: Objet(b'<< /Type /Catalog /Pages 2 0 R >>'),
+         2: Objet(b'<< /Type /Pages /Kids [3 0 R 4 0 R 5 0 R] /Count 3 /MediaBox [0 0 595.28 841.89] '
+                  b'/Resources << /Font << /F1 7 0 R >> >> >>'),
+         3: Objet(b'<< /Type /Page /Parent 2 0 R /Contents 6 0 R >>'),
+         4: Objet(b'<< /Type /Page /Parent 2 0 R /Contents 6 0 R >>'),
+         5: Objet(b'<< /Type /Page /Parent 2 0 R /Contents 6 0 R >>'),
+         6: Objet(b'<< /Length %d >>' % len(contenu), contenu),
+         7: Objet(b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>')}
+    return ecrire_pdf(o)
+
+
 def page_scannee():
     l, h = 124, 175
     pixels = bytes([240]) * (l * h)
@@ -639,6 +653,18 @@ def controles_fabriques(tmp, garder):
     r = releve(page_scannee())
     v_doc = S.verdict_document([p['verdict'] for p in r.pages])[0]
     ok(v_doc == 'scanne (image seule)', 'une image seule : %s' % v_doc)
+    r = releve(trois_pages())
+    ok(len(r.pages) == 3 and all(len(p['elements']) == 2 for p in r.pages), 'trois pages, Resources et MediaBox heritees de /Pages')
+    r = releve(trois_pages(), pages=set([2, 3]))
+    ok([p['num'] for p in r.pages] == [2, 3], '--pages=2-3 : seulement les pages 2 et 3')
+    garde = S.LIMITE_ELEMENTS
+    S.LIMITE_ELEMENTS = 1
+    try:
+        r = releve(trois_pages())
+    finally:
+        S.LIMITE_ELEMENTS = garde
+    ok(len(r.pages) == 1 and any('memoire' in m for m, _ in r.notes.liste()),
+       'au-dela de la limite d\'elements, la lecture s\'arrete et le rapport le dit')
 
     print('\n== La ligne de commande : rien de reel ne sort ==')
     src = os.path.join(tmp, 'entree')

@@ -4151,6 +4151,9 @@ def verdict_document(verdicts):
     return 'mixte', 'les pages different : ' + ', '.join('%s : %d' % (k, n) for k, n in sorted(genres.items(), key=lambda x: -x[1]))
 
 
+LIMITE_ELEMENTS = 1500000     # au-dela, on arrete de lire les pages suivantes (la memoire d'un PC de bureau)
+
+
 def lire_pages(choix, nb, pages_voulues):
     if not pages_voulues:
         return list(range(nb))
@@ -4209,7 +4212,14 @@ def relever(data, options, fitz):
     double = isinstance(doc, DocumentPyMuPDF) and std is not None
     if double:
         rel.comparaison = []
-    for i in lire_pages(choix, nb, options.get('pages')):
+    total = 0
+    a_lire = lire_pages(choix, nb, options.get('pages'))
+    for rang, i in enumerate(a_lire):
+        if total > LIMITE_ELEMENTS:
+            rel.notes.ajouter('releve arrete apres %d page(s) et %d elements, pour menager la memoire du poste : '
+                              '%d page(s) non lues (--pages=... pour en choisir d\'autres)' % (rang, total, len(a_lire) - rang))
+            rel.arrete = len(a_lire) - rang
+            break
         col2 = None
         if double:
             # le lecteur standard aussi : le contenu marque (que PyMuPDF ne dit pas), les images en ligne
@@ -4266,6 +4276,7 @@ def relever(data, options, fitz):
                           'comptes': c, 'verdict': verdict_page(c), 'marques': getattr(col_marques, 'marques', {}),
                           'cles_marques': getattr(col_marques, 'cles_marques', {}),
                           'textes_marques': getattr(col_marques, 'textes_marques', [])})
+        total += len(els)
         if not options.get('silencieux'):
             dire('    page %d/%d : %d elements' % (i + 1, nb, len(els)))
     if std is not None:
