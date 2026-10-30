@@ -1,0 +1,139 @@
+﻿KIT PDF - A LIRE D'ABORD
+========================
+
+Ce kit sert à me montrer COMMENT tes plans PDF sont faits, sans jamais
+me montrer CE QU'ILS DISENT. Un programme, « sonde_pdf.py », lit 2 ou 3
+plans sur ton PC et écrit un petit rapport par plan. Le rapport ne
+contient aucun vrai texte de tes plans : à la place de « 601RC1 », il
+écrit « 999AA9 ». Rien n'est envoyé nulle part, rien n'est modifié dans
+tes PDF. Compte 15 minutes.
+
+Selon ton Windows, la fin des noms de fichiers est cachée : tu verras
+peut-être « sonde_pdf » au lieu de « sonde_pdf.py ». C'est le même.
+
+
+ÉTAPE A : SORTIR LE KIT DU ZIP (2 minutes)
+------------------------------------------
+1. Enregistre « Kit-PDF.zip » sur ton Bureau.
+2. Fais un clic droit dessus, puis « Propriétés ».
+3. En bas de l'onglet « Général », s'il y a une case « Débloquer » :
+   coche-la, puis clique sur OK.
+4. Fais de nouveau un clic droit sur « Kit-PDF.zip »,
+   puis « Extraire tout... », puis « Extraire ».
+5. Un dossier « Kit-PDF » s'ouvre. S'il ne contient qu'un autre
+   dossier « Kit-PDF », double-clique dessus. Travaille dans ce dossier.
+   Il contient « sonde_pdf.py », ce fichier-ci, et un dossier vide,
+   « PDF-A-LIRE ».
+   N'ouvre rien directement depuis le zip : ça ne marcherait pas.
+
+
+ÉTAPE B : VÉRIFIER QUE PYTHON EST LÀ (2 minutes)
+------------------------------------------------
+1. Appuie sur la touche Windows du clavier (celle avec le logo).
+2. Tape : cmd
+3. Appuie sur Entrée. Une fenêtre noire s'ouvre.
+4. Tape : py --version
+   puis appuie sur Entrée.
+5. Tu dois lire une ligne comme « Python 3.11.4 ».
+   C'est bon si le nombre après « 3. » vaut 8 ou plus
+   (3.8, 3.9, 3.10, 3.11, 3.12, 3.13...).
+6. Si tu lis « n'est pas reconnu » : tape python --version
+   puis appuie sur Entrée.
+7. Toujours rien, un message d'erreur, ou le Microsoft Store qui
+   s'ouvre : Python n'est pas installé. Prends l'écran en photo,
+   envoie-la-moi, et arrête-toi là.
+8. Ferme la fenêtre noire.
+
+
+ÉTAPE C : METTRE 2 OU 3 PLANS DANS « PDF-A-LIRE » (3 minutes)
+-------------------------------------------------------------
+1. Choisis 2 ou 3 plans PDF qui ressemblent aux autres :
+   - un plan simple ;
+   - un plan chargé (beaucoup de fils) ;
+   - un plan avec des connecteurs.
+   Pas plus : c'est pour voir comment ils sont faits, pas pour tout lire.
+2. Fais un clic droit sur un de ces plans, puis « Copier ».
+3. Ouvre le dossier « PDF-A-LIRE », dans « Kit-PDF ».
+4. Fais un clic droit dans le blanc du dossier, puis « Coller ».
+5. Recommence pour chaque plan.
+   Copie, ne déplace pas : tes plans restent où ils étaient.
+
+Autre façon : laisse « PDF-A-LIRE » vide. À l'étape D, une fenêtre
+« Ouvrir » te demandera de choisir les plans. Tiens la touche Ctrl
+enfoncée pour en prendre plusieurs, puis clique sur « Ouvrir ».
+Elle est peut-être cachée derrière la fenêtre noire.
+
+
+ÉTAPE D : LANCER LA SONDE (de 1 à 5 minutes)
+--------------------------------------------
+1. Dans le dossier « Kit-PDF », double-clique sur « sonde_pdf.py ».
+2. Une fenêtre noire s'ouvre et lit les plans. Attends.
+   Ne la ferme pas tant qu'elle travaille.
+3. À la fin, le dossier « rapports » s'ouvre tout seul, et la fenêtre
+   noire te demande d'appuyer sur Entrée : appuie sur Entrée.
+
+Si le double-clic ouvre le fichier dans un éditeur de texte (le
+Bloc-notes, Notepad++...) au lieu de la fenêtre noire :
+1. Ferme l'éditeur sans rien enregistrer.
+2. Fais un clic droit sur « sonde_pdf.py », puis « Ouvrir avec ».
+   (Windows 11 : si tu ne le vois pas, clique d'abord sur
+   « Afficher d'autres options ».)
+3. Choisis « Python » (le logo bleu et jaune).
+   Puis reprends au point 2 de l'étape D.
+
+Si « Python » n'est pas dans la liste, passe par la fenêtre noire :
+1. Dans le dossier « Kit-PDF », clique dans la barre d'adresse, tout en
+   haut de la fenêtre (là où est écrit le nom du dossier).
+2. Tape : cmd
+   puis appuie sur Entrée. Une fenêtre noire s'ouvre, déjà dans le
+   bon dossier.
+   (Si ça ne marche pas : touche Windows, tape cmd, Entrée ; puis tape
+   cd /d et un espace, fais glisser le dossier « Kit-PDF » dans la
+   fenêtre noire, et appuie sur Entrée.)
+3. Tape : py sonde_pdf.py
+   puis appuie sur Entrée.
+   (Si c'est « python » qui a marché à l'étape B : python sonde_pdf.py)
+4. Attends la fin. Le dossier « rapports » s'ouvre tout seul.
+
+
+ÉTAPE E : RELIRE LES RAPPORTS AVANT DE LES ENVOYER (5 minutes)
+--------------------------------------------------------------
+1. Dans le dossier « rapports » (dans « Kit-PDF »), il y a deux fichiers
+   par plan, avec des noms comme « 01-4f1c9a2e.rapport.txt »
+   et « 01-4f1c9a2e.elements.tsv ».
+2. Double-clique sur chaque fichier « .rapport.txt » : il s'ouvre dans
+   le Bloc-notes. (Sinon : clic droit, « Ouvrir avec », « Bloc-notes ».)
+3. Lis-le jusqu'en bas. Tu ne dois y voir AUCUN vrai texte de tes
+   plans : ni repère, ni numéro de fil, ni nom de projet, de client
+   ou de personne. À leur place, il y a des formes : « 999AA9 »,
+   « A-9999-99 », « Aaaa ».
+4. En cas de doute, même petit : montre d'abord le rapport à ton
+   responsable, et n'envoie rien sans son accord.
+
+
+ÉTAPE F : M'ENVOYER LES RAPPORTS (2 minutes)
+--------------------------------------------
+1. Dans le dossier « rapports », sélectionne SEULEMENT les fichiers
+   « .rapport.txt » : clique sur le premier, puis tiens Ctrl enfoncé
+   et clique sur les autres.
+2. Fais un clic droit sur l'un d'eux, puis « Envoyer vers », puis
+   « Dossier compressé ». (Windows 11 : « Compresser en fichier ZIP ».)
+3. Un zip apparaît à côté : envoie-moi ce zip.
+4. Les fichiers « .elements.tsv » contiennent le DESSIN de tes plans
+   (la place des traits, sans les textes). Ne les envoie que si ton
+   responsable est d'accord.
+5. Un fichier qui porte « EN-CLAIR » dans son nom : ne l'envoie JAMAIS.
+
+
+SI ÇA BLOQUE
+------------
+Un message d'erreur, une fenêtre noire qui se ferme trop vite pour
+la lire, ou rien ne se passe :
+1. Ne force rien.
+2. Refais l'étape D par la fenêtre noire (« Si Python n'est pas dans
+   la liste ») : elle reste ouverte et garde les messages.
+3. Prends l'écran en photo (avec ton téléphone, c'est très bien).
+4. Envoie-moi la photo.
+
+Un doute sur ce qu'on a le droit de faire sortir du bureau :
+montre d'abord le fichier à ton responsable.

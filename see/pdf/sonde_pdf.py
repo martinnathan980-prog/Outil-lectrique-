@@ -4,6 +4,7 @@ SONDE PDF -- Atelier Schema, le releve ANONYMISE d'un schema electrique en PDF
 =============================================================================
 
     python sonde_pdf.py <fichier.pdf | dossier> [...] [options]
+    python sonde_pdf.py                (ou un double-clic sur ce fichier)
 
 Lit chaque PDF et ecrit, a cote de ce script dans le dossier « rapports »,
 deux fichiers par PDF, nommes d'apres un numero d'ordre et une empreinte
@@ -20,6 +21,17 @@ les petits traits groupes comme des caracteres (un texte dessine en traits)
 tiennent en une ligne par groupe, sans la place de chaque trait. Le TSV garde
 la geometrie du dessin (traits, rectangles, place des textes). Le format du
 TSV est decrit dans LISEZMOI.md (meme dossier).
+
+SANS AUCUN CHEMIN (un double-clic dans l'Explorateur) : les PDF du dossier
+« PDF-A-LIRE », a cote de ce script ; s'il est vide, une fenetre pour les
+choisir (si tkinter est la) ; sinon, ou si l'on annule, le dossier est cree,
+ouvert, et l'ecran dit quoi faire. Glisser des PDF sur ce fichier les lit
+aussi. A la fin, sous Windows, le dossier des rapports s'ouvre ; la fenetre
+attend Entree seulement si elle a ete ouverte pour ce script (pas sous une
+invite de commandes ni sous sonde-pdf.bat). SONDE_SANS_FENETRE=1 (variable
+d'environnement) : ni fenetre de choix, ni Explorateur, ni attente. Une
+erreur imprevue ne montre que sa classe, jamais un traceback (il montrerait
+le chemin du script, donc l'identifiant Windows).
 
 Options :
     --clair             ecrit AUSSI les textes reels et toute la geometrie (pour
@@ -6601,6 +6613,250 @@ def prochain_numero(dossier):
     return n + 1
 
 
+# ---------------------------------------------------------------------------
+#  Le double-clic : sans chemin, la fenetre de choix, l'Explorateur, l'attente
+# ---------------------------------------------------------------------------
+
+DOSSIER_A_LIRE = 'PDF-A-LIRE'
+
+
+def dossier_de_la_sonde():
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+def sans_fenetre():
+    """SONDE_SANS_FENETRE=1 : ni fenetre de choix, ni Explorateur, ni attente
+    (les tests, un lancement par un autre programme)."""
+    return os.environ.get('SONDE_SANS_FENETRE', '').strip() not in ('', '0')
+
+
+def ouvrir_dans_l_explorateur(dossier):
+    """Ouvre le dossier dans l'Explorateur de Windows ; rend True si c'est
+    fait. Ailleurs que sous Windows, ou avec SONDE_SANS_FENETRE : rien."""
+    if os.name != 'nt' or sans_fenetre():
+        return False
+    try:
+        os.startfile(os.path.abspath(dossier))
+        return True
+    except Exception:
+        return False
+
+
+def choisir_dans_une_fenetre():
+    """La fenetre « Ouvrir » de Windows (tkinter), pour choisir un ou plusieurs
+    PDF ; rend la liste des fichiers choisis, vide si l'on annule, si tkinter
+    manque, s'il n'y a pas d'ecran ou avec SONDE_SANS_FENETRE."""
+    if sans_fenetre():
+        return []
+    try:
+        import tkinter
+        from tkinter import filedialog
+    except Exception:
+        return []
+    racine = None
+    try:
+        racine = tkinter.Tk()
+        racine.withdraw()
+        try:
+            racine.attributes('-topmost', True)   # devant la fenetre noire
+        except Exception:
+            pass
+        dire('Une fenetre s\'ouvre pour choisir les plans PDF (elle est peut-etre derriere celle-ci).')
+        noms = filedialog.askopenfilenames(
+            parent=racine, title=u'Sonde PDF : choisis 2 ou 3 plans PDF (Ctrl enfoncé pour en prendre plusieurs)',
+            filetypes=[('Plans PDF', '*.pdf *.PDF')])
+        return [n for n in racine.tk.splitlist(noms) if n] if noms else []
+    except Exception:
+        return []
+    finally:
+        if racine is not None:
+            try:
+                racine.destroy()
+            except Exception:
+                pass
+
+
+def pdf_sans_chemin():
+    """Les PDF a lire quand aucun chemin n'est donne (un double-clic) : ceux du
+    dossier PDF-A-LIRE, a cote de la sonde ; s'il n'y en a pas, ceux choisis
+    dans une fenetre ; sinon, aucun : le dossier est cree et ouvert, et l'ecran
+    dit quoi faire. L'ecran ne montre jamais un chemin, ni un nom de PDF."""
+    a_lire = os.path.join(dossier_de_la_sonde(), DOSSIER_A_LIRE)
+    if os.path.isdir(chemin_long(a_lire)):
+        fichiers = lister_pdf([a_lire])
+        if fichiers:
+            dire('Les PDF du dossier "%s", a cote de la sonde (ils y restent : pour en lire d\'autres, '
+                 'remplace-les).' % DOSSIER_A_LIRE)
+            return fichiers
+    choisis = choisir_dans_une_fenetre()
+    if choisis:
+        fichiers = lister_pdf(choisis)
+        dire('%d PDF choisi(s) dans la fenetre.' % len(fichiers))
+        if fichiers:
+            return fichiers
+    try:
+        os.makedirs(chemin_long(a_lire), exist_ok=True)
+    except Exception:
+        dire('')
+        dire('Aucun PDF a lire, et le dossier "%s" n\'a pas pu etre cree a cote de la sonde' % DOSSIER_A_LIRE)
+        dire('(dossier protege ?). Sors le kit du zip (clic droit, "Extraire tout"), puis recommence.')
+        return []
+    ouvert = ouvrir_dans_l_explorateur(a_lire)
+    dire('')
+    dire('Aucun PDF a lire. Le dossier "%s" est pret, a cote de la sonde%s.' % (
+        DOSSIER_A_LIRE, ' (il vient de s\'ouvrir)' if ouvert else ''))
+    dire('  1. Copie dedans 2 ou 3 plans PDF : un simple, un charge, un avec des connecteurs.')
+    dire('  2. Puis lance de nouveau la sonde : double-clic sur sonde_pdf.py.')
+    dire('Rien n\'est envoye nulle part, rien n\'est modifie dans les PDF.')
+    return []
+
+
+def fin_du_releve(dossier, montre, clair, ecrits):
+    """Ce que l'ecran dit a la fin (celui de sonde-pdf.bat avant), et, sous
+    Windows, le dossier des rapports qui s'ouvre."""
+    if not ecrits:
+        return
+    if not clair:
+        dire('Ils ne contiennent aucun texte reel des plans, ni le nom des fichiers, ni de nom propre.')
+        dire('Le .elements.tsv contient la GEOMETRIE du dessin (les traits, sans les textes) :')
+        dire('a toi de voir si tu peux l\'envoyer ; le .rapport.txt seul suffit pour commencer.')
+        try:
+            vieux = [n for n in os.listdir(chemin_long(dossier)) if 'EN-CLAIR' in n]
+        except Exception:
+            vieux = []
+        if vieux:
+            dire('ATTENTION : ce dossier contient aussi des fichiers EN-CLAIR (vrais textes des plans) :')
+            dire('ne les envoyer que pour un plan que l\'on a le droit de montrer.')
+        if os.path.isdir(chemin_long(os.path.join(dossier_de_la_sonde(), 'rapports-EN-CLAIR'))):
+            dire('ATTENTION : le dossier "rapports-EN-CLAIR", a cote de la sonde, contient des releves EN CLAIR')
+            dire('(vrais textes) : ne pas les envoyer sans accord.')
+    ouvrir_dans_l_explorateur(dossier)
+
+
+def processus_de_la_console():
+    """Sous Windows, le nom (en minuscules) des AUTRES processus attaches a la
+    console de la sonde (None pour un nom illisible) ; None si l'on ne sait
+    pas (pas de console, pas Windows)."""
+    if os.name != 'nt':
+        return None
+    try:
+        import ctypes
+        from ctypes import wintypes
+        k = ctypes.WinDLL('kernel32', use_last_error=True)
+        k.GetConsoleProcessList.argtypes = [ctypes.POINTER(wintypes.DWORD), wintypes.DWORD]
+        k.GetConsoleProcessList.restype = wintypes.DWORD
+        k.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+        k.OpenProcess.restype = wintypes.HANDLE
+        k.QueryFullProcessImageNameW.argtypes = [wintypes.HANDLE, wintypes.DWORD, wintypes.LPWSTR,
+                                                 ctypes.POINTER(wintypes.DWORD)]
+        k.QueryFullProcessImageNameW.restype = wintypes.BOOL
+        k.CloseHandle.argtypes = [wintypes.HANDLE]
+        pids = (wintypes.DWORD * 64)()
+        n = k.GetConsoleProcessList(pids, 64)
+        if n < 1 or n > 64:
+            return None
+        noms = []
+        for i in range(n):
+            if pids[i] == os.getpid():
+                continue
+            h = k.OpenProcess(0x1000, False, pids[i])     # PROCESS_QUERY_LIMITED_INFORMATION
+            if not h:
+                noms.append(None)
+                continue
+            try:
+                tampon = ctypes.create_unicode_buffer(1024)
+                taille = wintypes.DWORD(1024)
+                ok_ = k.QueryFullProcessImageNameW(h, 0, tampon, ctypes.byref(taille))
+                noms.append(re.split(r'[\\/]', tampon.value)[-1].lower() if ok_ else None)
+            finally:
+                k.CloseHandle(h)
+        return noms
+    except Exception:
+        return None
+
+
+def console_a_soi(autres):
+    """Vrai si la console a ete creee pour la sonde : aucun autre processus n'y
+    est attache, sauf Python lui-meme (py.exe, le lanceur d'un double-clic ;
+    python.exe, celui d'un venv). Une invite de commandes (cmd.exe, donc aussi
+    sonde-pdf.bat), PowerShell ou un nom illisible : non, elle n'est pas a soi."""
+    if autres is None:
+        return False
+    return all(n and re.match(r'^py[a-z0-9._-]*\.exe$', n) for n in autres)
+
+
+def attendre_entree():
+    """« Appuie sur Entree » : ne bloque ni ne plante jamais si l'entree est
+    fermee (fin de fichier) ou absente."""
+    try:
+        dire('')
+        sys.stdout.write('Appuie sur Entree pour fermer cette fenetre.')
+        sys.stdout.flush()
+    except Exception:
+        pass
+    try:
+        if sys.stdin is not None:
+            sys.stdin.readline()
+    except (Exception, KeyboardInterrupt):
+        pass
+
+
+def doit_attendre():
+    """Garder la fenetre ouverte a la fin : seulement sous Windows, sans
+    SONDE_SANS_FENETRE, quand la console a ete creee pour la sonde (double-clic,
+    PDF glisses sur le .py)."""
+    if os.name != 'nt' or sans_fenetre():
+        return False
+    return console_a_soi(processus_de_la_console())
+
+
+def ecran_sans_chemin():
+    """Rien de Python ne s'ecrit plus avec un chemin : ni traceback (meme d'un
+    fil ou d'un objet detruit), ni avertissement (qui donne le fichier et la
+    ligne). Seulement la classe."""
+    def accroche(genre, valeur, pile):
+        dire('Erreur imprevue de la sonde (%s).' % getattr(genre, '__name__', 'Exception'))
+    sys.excepthook = accroche
+    if hasattr(sys, 'unraisablehook'):
+        sys.unraisablehook = lambda u: None
+    try:
+        import threading
+        threading.excepthook = lambda a: accroche(a.exc_type, None, None)
+    except Exception:
+        pass
+    try:
+        import warnings
+
+        def avertissement(message, categorie, *_a, **_k):
+            dire('  (avertissement de Python : %s)' % getattr(categorie, '__name__', 'Warning'))
+        warnings.showwarning = avertissement
+    except Exception:
+        pass
+
+
+def lancer(argv):
+    """Le point d'entree de la ligne de commande et du double-clic : aucune
+    exception ne sort (seulement sa classe et un message en francais), puis
+    l'attente d'Entree si la fenetre a ete ouverte pour la sonde."""
+    ecran_sans_chemin()
+    try:
+        code = principal(argv)
+    except KeyboardInterrupt:
+        dire('Interrompu.')
+        code = 130
+    except Exception as e:
+        dire('')
+        dire('La sonde s\'est arretee sur une erreur imprevue (%s). Rien n\'a ete envoye.' % e.__class__.__name__)
+        dire('Prends cet ecran en photo et envoie-la-moi.')
+        code = 3
+    try:
+        if doit_attendre():
+            attendre_entree()
+    except (Exception, KeyboardInterrupt):
+        pass
+    return code
+
+
 def principal(argv):
     options = {'clair': False, 'lecteur': 'auto', 'pages': None, 'sortie': None, 'mot_de_passe': '', 'delai': DELAI_PDF}
     chemins = []
@@ -6636,11 +6892,16 @@ def principal(argv):
     dire('Sonde PDF %s -- Python %s' % (VERSION_SONDE, sys.version.split()[0]))
     if sys.version_info < (3, 8):
         dire('Attention : Python %s est plus ancien que 3.8 ; la sonde peut echouer.' % sys.version.split()[0])
-    fichiers = lister_pdf(chemins)
-    if not fichiers:
-        dire('Aucun PDF a lire. Glisser un ou plusieurs PDF (ou un dossier) sur sonde-pdf.bat,')
-        dire('ou : python sonde_pdf.py fichier.pdf [dossier] [--clair]')
-        return 1
+    if not chemins:
+        fichiers = pdf_sans_chemin()
+        if not fichiers:
+            return 1
+    else:
+        fichiers = lister_pdf(chemins)
+        if not fichiers:
+            dire('Aucun PDF a lire. Donner un ou plusieurs PDF (ou un dossier) : python sonde_pdf.py fichier.pdf [dossier]')
+            dire('ou les mettre dans le dossier "%s", a cote de la sonde, et la lancer sans rien.' % DOSSIER_A_LIRE)
+            return 1
     libs, fitz = bibliotheques()
     if options['lecteur'] == 'standard':
         fitz_util = None
@@ -6705,13 +6966,9 @@ def principal(argv):
     dire('%d rapport(s) ecrit(s) dans le dossier %s' % (ecrits, montre))
     if clair:
         dire('ATTENTION : ces rapports sont EN CLAIR (vrais textes, noms des fichiers).')
+    fin_du_releve(dossier, montre, clair, ecrits)
     return 0 if ecrits else 1
 
 
 if __name__ == '__main__':
-    try:
-        code = principal(sys.argv[1:])
-    except KeyboardInterrupt:
-        dire('Interrompu.')
-        code = 130
-    sys.exit(code)
+    sys.exit(lancer(sys.argv[1:]))

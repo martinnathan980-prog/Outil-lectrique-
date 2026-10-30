@@ -1238,6 +1238,166 @@ def controles_corpus(dossier):
     return pdfs
 
 
+def lancer_double_clic(script, args=(), env=None, stdin=subprocess.DEVNULL, fermer_entree=False, timeout=120):
+    """La sonde lancee comme d'un double-clic (aucun chemin), sur une copie :
+    SONDE_SANS_FENETRE=1 sauf si `env` dit autre chose (une valeur None retire
+    la variable). L'entree est vide (fin de fichier) ; fermer_entree : le
+    descripteur 0 est ferme (POSIX). Rend (code, ecran, a_bloque)."""
+    e = dict(os.environ)
+    e['SONDE_SANS_FENETRE'] = '1'
+    for k, v in (env or {}).items():
+        if v is None:
+            e.pop(k, None)
+        else:
+            e[k] = v
+    preexec = (lambda: os.close(0)) if fermer_entree and os.name == 'posix' else None
+    try:
+        p = subprocess.run([sys.executable, script] + list(args), stdin=None if preexec else stdin, stdout=subprocess.PIPE,
+                           stderr=subprocess.STDOUT, env=e, cwd=os.path.dirname(script), timeout=timeout, preexec_fn=preexec)
+        return p.returncode, p.stdout.decode('ascii', 'replace'), False
+    except subprocess.TimeoutExpired:
+        return None, '', True
+
+
+def controles_double_clic(tmp):
+    print('\n== Le double-clic : sans chemin, le dossier PDF-A-LIRE, la fenetre, l\'attente, aucun traceback ==')
+    kit = os.path.join(tmp, 'Projet Kestrel', 'Kit-PDF')
+    os.makedirs(kit)
+    shutil.copy(SONDE, kit)
+    p_ = os.path.join(kit, 'sonde_pdf.py')
+    a_lire = os.path.join(kit, 'PDF-A-LIRE')
+    prives = ('Kestrel', tmp, 'Plan_', 'jdupont')
+    propre = lambda ecran: not any(x in ecran for x in prives) and 'Traceback' not in ecran and 'File "' not in ecran  # noqa: E731
+
+    code, ecran, bloque = lancer_double_clic(p_)
+    ok(not bloque and code == 1 and os.path.isdir(a_lire) and not os.listdir(a_lire) and '"PDF-A-LIRE"' in ecran
+       and '2 ou 3 plans' in ecran and 'double-clic sur sonde_pdf.py' in ecran and not os.path.exists(os.path.join(kit, 'rapports')),
+       'sans chemin, rien a lire : PDF-A-LIRE est cree a cote de la sonde, l\'ecran dit quoi faire, code 1, aucun rapport')
+    ok(propre(ecran) and 'Appuie sur Entree' not in ecran, '... ni chemin, ni traceback, ni attente d\'Entree a l\'ecran')
+    code, ecran2, bloque = lancer_double_clic(p_, fermer_entree=True)
+    ok(not bloque and code == 1 and '"PDF-A-LIRE"' in ecran2 and propre(ecran2),
+       'relance, PDF-A-LIRE vide, entree FERMEE : le meme message, code 1, rien ne bloque')
+    if sys.platform.startswith('linux'):
+        try:
+            import tkinter  # noqa: F401
+            tk = 'present, sans ecran'
+        except Exception:
+            tk = 'absent'
+        code, ecran3, bloque = lancer_double_clic(p_, env={'SONDE_SANS_FENETRE': None, 'DISPLAY': None, 'WAYLAND_DISPLAY': None}, timeout=60)
+        ok(not bloque and code == 1 and '"PDF-A-LIRE"' in ecran3 and propre(ecran3),
+           'sans SONDE_SANS_FENETRE et sans ecran (tkinter %s) : pas de fenetre possible, on retombe sur PDF-A-LIRE, sans bloquer' % tk)
+
+    pdf, _ = schema()
+    os.makedirs(os.path.join(a_lire, 'Lot Kestrel'))
+    open(os.path.join(a_lire, 'Plan_Kestrel_A.pdf'), 'wb').write(pdf)
+    open(os.path.join(a_lire, 'Lot Kestrel', 'Plan_Kestrel_B.pdf'), 'wb').write(page_tournee())
+    open(os.path.join(a_lire, 'notes.txt'), 'wb').write(b'pas un PDF')
+    code, ecran, bloque = lancer_double_clic(p_, fermer_entree=True)
+    rap = os.path.join(kit, 'rapports')
+    noms = sorted(os.listdir(rap)) if os.path.isdir(rap) else []
+    ok(not bloque and code == 0 and len(noms) == 4 and sum(n.endswith('.rapport.txt') for n in noms) == 2 and '2 PDF a lire' in ecran,
+       'des PDF dans PDF-A-LIRE (un dans un sous-dossier, un .txt a cote) : sans chemin, les 2 PDF sont lus, 2 rapports dans '
+       '« rapports », a cote de la sonde (%s)' % ', '.join(noms))
+    ok(u'aucun texte reel des plans' in ecran and 'GEOMETRIE du dessin' in ecran and 'le .rapport.txt seul suffit pour commencer' in ecran,
+       'a la fin, l\'avertissement de sonde-pdf.bat : anonymise, le TSV porte la geometrie, le .rapport.txt seul suffit')
+    f = fuites(rap, ['Kestrel', 'Plan_', 'Lot Kestrel', '601RC1', 'W-1234-22', NOM_FICHIER]) if noms else ['pas de rapport']
+    ok(propre(ecran) and 'Appuie sur Entree' not in ecran and not f,
+       'ni chemin ni nom de PDF a l\'ecran ou dans les rapports, pas d\'attente (hors de Windows), entree fermee%s' % (
+           (' : ' + repr(f[:3])) if f else ''))
+
+    kit2 = os.path.join(tmp, 'Projet Kestrel', 'Kit-PDF-2')
+    os.makedirs(kit2)
+    shutil.copy(SONDE, kit2)
+    p2 = os.path.join(kit2, 'sonde_pdf.py')
+    plan = os.path.join(tmp, 'Projet Kestrel', 'Plan_Kestrel_C.pdf')
+    open(plan, 'wb').write(pdf)
+    code, ecran, bloque = lancer_double_clic(p2, [plan])
+    ok(not bloque and code == 0 and not os.path.exists(os.path.join(kit2, 'PDF-A-LIRE')) and 'seul suffit' in ecran and propre(ecran),
+       'des PDF glisses sur le .py (des chemins en argument) : lus, sans creer PDF-A-LIRE, le meme avertissement')
+    os.makedirs(os.path.join(kit2, 'rapports-EN-CLAIR'))
+    open(os.path.join(kit2, 'rapports', '07-0123abcd.EN-CLAIR.rapport.txt'), 'wb').write(b'x')
+    code, ecran, bloque = lancer_double_clic(p2, [plan])
+    ok(code == 0 and ecran.count('ATTENTION') == 2 and 'rapports-EN-CLAIR' in ecran and 'fichiers EN-CLAIR' in ecran,
+       'un fichier EN-CLAIR dans « rapports », un dossier « rapports-EN-CLAIR » : l\'ecran previent (comme le .bat)')
+
+    print('\n== Le double-clic : l\'attente d\'Entree, seulement dans une fenetre ouverte pour la sonde ==')
+    cas = [([], True, 'python.exe seul (associe aux .py)'), (['py.exe'], True, 'py.exe (le lanceur du double-clic)'),
+           (['py.exe', 'python.exe'], True, 'py.exe puis le python.exe d\'un venv'),
+           (['cmd.exe'], False, 'cmd.exe (une invite de commandes, ou sonde-pdf.bat avec python)'),
+           (['cmd.exe', 'py.exe'], False, 'cmd.exe et py.exe (sonde-pdf.bat avec py -3)'),
+           (['powershell.exe', 'py.exe'], False, 'PowerShell'), (['pwsh.exe'], False, 'PowerShell 7'),
+           (['py.exe', None], False, 'un nom illisible'), (None, False, 'pas de console')]
+    for autres, attendu, quoi in cas:
+        ok(S.console_a_soi(autres) is attendu, 'console_a_soi(%r) = %s : %s' % (autres, attendu, quoi))
+    if os.name != 'nt':
+        ok(S.doit_attendre() is False and S.processus_de_la_console() is None and S.ouvrir_dans_l_explorateur(tmp) is False,
+           'hors de Windows : jamais d\'attente, pas de console a lire, pas d\'Explorateur')
+    sauve = os.environ.get('SONDE_SANS_FENETRE')
+    try:
+        valeurs = []
+        for v in ('1', 'oui', '0', '', None):
+            if v is None:
+                os.environ.pop('SONDE_SANS_FENETRE', None)
+            else:
+                os.environ['SONDE_SANS_FENETRE'] = v
+            valeurs.append(S.sans_fenetre())
+        os.environ['SONDE_SANS_FENETRE'] = '1'
+        ok(valeurs == [True, True, False, False, False] and S.choisir_dans_une_fenetre() == [],
+           'SONDE_SANS_FENETRE=1 (ou toute valeur sauf 0 et vide) : aucune fenetre de choix, meme avec tkinter')
+    finally:
+        if sauve is None:
+            os.environ.pop('SONDE_SANS_FENETRE', None)
+        else:
+            os.environ['SONDE_SANS_FENETRE'] = sauve
+    ferme = io.StringIO('')
+    ferme.close()
+    sauve = sys.stdin, sys.stdout
+    rendus = []
+    try:
+        for entree in (io.StringIO(''), None, ferme, io.StringIO('\n')):
+            sys.stdin, sys.stdout = entree, io.StringIO()
+            S.attendre_entree()
+            rendus.append(sys.stdout.getvalue())
+    except BaseException as e:
+        rendus.append('EXCEPTION ' + e.__class__.__name__)
+    finally:
+        sys.stdin, sys.stdout = sauve
+    ok(len(rendus) == 4 and all('Appuie sur Entree' in r for r in rendus),
+       'attendre_entree() : entree en fin de fichier, absente, fermee, ou Entree : rend la main sans exception')
+
+    print('\n== Aucun traceback : une exception forcee ne montre que sa classe ==')
+    prog = ('import sys, warnings, threading\n'
+            'sys.path.insert(0, %r)\n'
+            'import sonde_pdf as S\n'
+            'def panne(argv):\n'
+            '    warnings.warn("C:\\\\Users\\\\jdupont\\\\Projet Kestrel", stacklevel=2)\n'
+            '    raise %s("C:\\\\Users\\\\jdupont\\\\Projet Kestrel\\\\Plan_Kestrel.pdf")\n'
+            'S.principal = panne\n'
+            'sys.exit(S.lancer([]))\n')
+    for genre, code_attendu in (('ValueError', 3), ('MemoryError', 3), ('KeyboardInterrupt', 130)):
+        p = subprocess.run([sys.executable, '-c', prog % (kit, genre)], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                           stderr=subprocess.STDOUT, env=dict(os.environ, SONDE_SANS_FENETRE='1'), timeout=60)
+        e = p.stdout.decode('ascii', 'replace')
+        dit = ('Interrompu' in e) if genre == 'KeyboardInterrupt' else (genre in e and 'erreur imprevue' in e and 'photo' in e)
+        ok(p.returncode == code_attendu and dit and propre(e) and 'UserWarning' in e,
+           '%s forcee dans principal() : code %s, seulement sa classe et un message en francais ; l\'avertissement '
+           '(UserWarning) sans fichier ni ligne' % (genre, p.returncode))
+    prog2 = ('import sys, threading\n'
+             'sys.path.insert(0, %r)\n'
+             'import sonde_pdf as S\n'
+             'S.ecran_sans_chemin()\n'
+             'def fil():\n'
+             '    raise OSError("C:\\\\Users\\\\jdupont\\\\Projet Kestrel")\n'
+             't = threading.Thread(target=fil)\n'
+             't.start()\n'
+             't.join()\n'
+             'raise RuntimeError("C:\\\\Users\\\\jdupont\\\\Projet Kestrel")\n') % kit
+    p = subprocess.run([sys.executable, '-c', prog2], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=60)
+    e = p.stdout.decode('ascii', 'replace')
+    ok(p.returncode != 0 and 'OSError' in e and 'RuntimeError' in e and propre(e),
+       'une exception hors de principal(), et une dans un fil : leur classe seulement, aucun traceback')
+
+
 def principal():
     corpus = None
     garder = None
@@ -1253,6 +1413,7 @@ def principal():
     try:
         pdf, fichiers, inc = controles_fabriques(tmp, garder)
         controles_constats(tmp)
+        controles_double_clic(tmp)
         a_comparer = [('schema', pdf), ('schema incremental', inc), ('page tournee', page_tournee()),
                       ('page scannee', page_scannee())] + sorted(fichiers.items())
         if corpus:

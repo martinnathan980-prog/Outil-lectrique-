@@ -133,6 +133,15 @@ node tests/classeur.js         LE CLASSEUR PILOTE TOUT PRÊT (see/classeur.js : 
                                de la feuille (mode protégé, Activer le contenu, barre rouge, Alt+F8) ; le contrôleur éprouvé
                                par dix-sept fautes injectées.
                                VBA_DOSSIER=… pour d'autres .bas. Il ne prouve pas qu'Excel ouvre le classeur (voir see/LISEZMOI.md)
+node tests/kit-pdf.js          LE KIT PDF (node see/kit.js --pdf : Kit-PDF.zip, la sonde par courriel), sans Python : le zip relu par
+                               un lecteur écrit pour le test (répertoire central et en-têtes locaux d'accord, « stocké », CRC) ;
+                               DEUX fichiers, sonde_pdf.py octet pour octet see/pdf/sonde_pdf.py puis LIS-MOI-D-ABORD.txt, et le
+                               dossier vide PDF-A-LIRE (le nom que la sonde lit) ; le LIS-MOI en UTF-8 avec BOM et CRLF, 76
+                               colonnes, les étapes A à F (débloquer, py --version, 2 ou 3 plans dans PDF-A-LIRE, double-clic,
+                               relire chaque .rapport.txt, n'envoyer qu'eux), le responsable, jamais --clair ; aucun type de la
+                               liste de Gmail (recopiée dans le test), le refus d'un .bat glissé dans le kit ; --pdf, --sortie=,
+                               --pdf avec une option du kit SEE refusé ; sonde-pdf.bat resté hors du kit ; le contrôleur éprouvé
+                               par treize fautes injectées. Il ne prouve pas que Windows extrait le zip ni lance le .py
 python tests/sonde-pdf.py      LA SONDE PDF (see/pdf/sonde_pdf.py), en PYTHON (3.8 et plus), sans dépendance : le test fabrique
                                à la main un schéma inventé (textes connus, un rectangle à un endroit connu, traits, cercle, courbe,
                                six textes cachés de six façons, police Identity-H avec ToUnicode et W, police Type3, formulaire
@@ -153,7 +162,13 @@ python tests/sonde-pdf.py      LA SONDE PDF (see/pdf/sonde_pdf.py), en PYTHON (3
                                propriétaire ; sept PDF d'attaque (boîte de 10^9 mm, boucles, éventail de formulaires, xref
                                /W [0 0 0], prédicteur, contenu répété 5 000 fois) en moins de 60 s chacun ; délai ; textes
                                tournés sur un fil ; données non dessinées ; CropBox qui déborde ; re dégénéré ; découpe,
-                               couleur du fond, police de secours ; image dans un motif.
+                               couleur du fond, police de secours ; image dans un motif. LE DOUBLE-CLIC, sur une copie de la
+                               sonde (SONDE_SANS_FENETRE=1, entrée vide ou fermée) : sans chemin, PDF-A-LIRE créé quand rien n'est
+                               à lire, puis ses PDF lus (sous-dossiers compris) ; sans écran, tkinter présent ou absent, on retombe
+                               sur le dossier sans bloquer ; l'avertissement de la fin ; des PDF glissés en argument ; quand
+                               attendre Entrée (python seul, py.exe, venv : oui ; cmd.exe, le .bat, PowerShell : non) ; une
+                               exception forcée, un avertissement, une exception dans un fil : leur classe seulement, aucun
+                               traceback ni chemin (il montrerait l'identifiant Windows). Rien de propre à Windows n'y tourne.
                                --corpus=DOSSIER : le corpus d'essai (verite.json) ; si PyMuPDF est installé, le lecteur standard
                                et PyMuPDF donnent les mêmes éléments à 0,1 mm. Hors de tests/toutes.js (Node). Le corpus se
                                fabrique HORS du dépôt, dans un venv à part (reportlab, pymupdf, pikepdf, pillow) :

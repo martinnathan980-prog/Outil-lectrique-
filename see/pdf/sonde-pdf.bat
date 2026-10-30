@@ -1,8 +1,15 @@
 @echo off
 rem Atelier Schema - SONDE PDF : le releve ANONYMISE de schemas en PDF.
-rem On GLISSE un ou plusieurs PDF (ou un dossier) sur ce fichier.
-rem Il trouve Python (py -3, puis python, puis python3), lance sonde_pdf.py
-rem (pose a cote de ce fichier), puis ouvre le dossier "rapports".
+rem On GLISSE un ou plusieurs PDF (ou un dossier) sur ce fichier, ou on le lance
+rem d'un double-clic : la sonde lit alors le dossier "PDF-A-LIRE" (a cote d'elle),
+rem ou demande les PDF dans une fenetre.
+rem Il trouve Python (py -3, puis python, puis python3) et lance sonde_pdf.py
+rem (pose a cote de ce fichier). La sonde dit elle-meme ce qu'elle a ecrit et
+rem ouvre le dossier "rapports" ; ce fichier attend une touche a la fin (lancee
+rem d'ici, la sonde voit cmd.exe et n'attend pas : pas de double pause).
+rem HORS DU KIT-PDF : une messagerie refuse les .bat, meme zippes. Le kit
+rem (node see/kit.js --pdf) n'a que sonde_pdf.py, qui se lance d'un double-clic ;
+rem ce fichier sert quand la sonde arrive autrement (cle USB, partage reseau).
 rem Rien n'est envoye nulle part, rien n'est modifie dans les PDF.
 rem Pas de bloc entre parentheses : un chemin comme "Program Files (x86)" les casserait.
 rem Un nom de fichier ou de dossier avec & ou ^ (R&D) casse la ligne AVANT ce fichier :
@@ -23,47 +30,15 @@ goto sanspython
 
 :trouve
 if not exist "%ICI%sonde_pdf.py" goto sanssonde
-if "%~1"=="" goto aide
 echo Sonde PDF : lecture des PDF (rien n'est modifie, rien n'est envoye)...
 echo.
 %PY% "%ICI%sonde_pdf.py" %*
 set "CODE=%ERRORLEVEL%"
 echo.
-if exist "%ICI%rapports-EN-CLAIR\" echo ATTENTION : le dossier "rapports-EN-CLAIR" contient des releves EN CLAIR (vrais textes) : ne pas les envoyer sans accord.
-if not exist "%ICI%rapports\" goto ailleurs
-dir /b "%ICI%rapports\*EN-CLAIR*" >nul 2>&1
-if not errorlevel 1 goto clair
-echo Les rapports sont dans le dossier "rapports", a cote de ce fichier.
-echo Ils ne contiennent aucun texte reel des plans, ni le nom des fichiers, ni de nom propre.
-echo Le .elements.tsv contient la GEOMETRIE du dessin (les traits, sans les textes) :
-echo a toi de voir si tu peux l'envoyer ; le .rapport.txt seul suffit pour commencer.
-start "" explorer "%ICI%rapports"
-goto fin
-
-:clair
-echo ATTENTION : le dossier "rapports" contient des fichiers EN-CLAIR (vrais textes des plans).
-echo Ne les envoyer que pour un plan que l'on a le droit de montrer.
-start "" explorer "%ICI%rapports"
-goto fin
-
-:ailleurs
-echo Voir plus haut le dossier ou les rapports ont ete ecrits.
-
-:fin
 if not "%CODE%"=="0" echo La sonde a rendu le code %CODE% : voir les messages plus haut.
 echo.
 pause
 exit /b %CODE%
-
-:aide
-echo Sonde PDF : il faut GLISSER un ou plusieurs PDF (ou un dossier de PDF)
-echo sur ce fichier sonde-pdf.bat, puis lacher. Pour des centaines de PDF,
-echo glisser le DOSSIER plutot que les fichiers un par un.
-echo.
-echo Les rapports seront ecrits dans le dossier "rapports", a cote de ce fichier.
-echo.
-pause
-exit /b 1
 
 :sanssonde
 echo Le fichier sonde_pdf.py doit etre dans le meme dossier que sonde-pdf.bat.

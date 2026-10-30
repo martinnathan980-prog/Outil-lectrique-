@@ -22,41 +22,114 @@ hésites, commence par m'envoyer seulement le `.rapport.txt`.
 
 ## Pour toi : comment t'en servir
 
-1. Copie le dossier `pdf` (les deux fichiers `sonde-pdf.bat` et
-   `sonde_pdf.py`, ensemble) où tu veux sur ton PC, par exemple sur le Bureau.
-2. **Glisse** un PDF, plusieurs PDF ou un dossier de PDF **sur
-   `sonde-pdf.bat`** et lâche. Pour beaucoup de PDF, glisse le **dossier**
-   (Windows refuse au-delà de quelques dizaines de fichiers glissés d'un coup).
-3. Une fenêtre noire s'ouvre, lit les PDF (de quelques secondes à quelques
-   minutes pour un gros dossier ; deux minutes au plus par PDF), puis ouvre le
-   dossier **`rapports`** à côté de la sonde. Appuie sur une touche pour
-   fermer la fenêtre.
-4. Renvoie-moi les fichiers du dossier `rapports` (ou colle-moi le contenu
-   d'un `.rapport.txt`).
+Tout arrive dans **`Kit-PDF.zip`**, par courriel : deux fichiers,
+`sonde_pdf.py` et `LIS-MOI-D-ABORD.txt`, et un dossier vide, `PDF-A-LIRE`.
+Le `LIS-MOI-D-ABORD.txt` dit tout, une action par ligne ; en bref :
 
-Il faut Python 3.8 ou plus récent (tu l'as). **Rien à installer** : pas de
-`pip`, pas d'Internet. Si PyMuPDF est installé, la sonde s'en sert pour se
-vérifier (elle compare ses deux façons de lire) ; sinon elle lit les PDF
-toute seule.
+1. **Débloquer le zip** (clic droit, *Propriétés*, *Débloquer*), puis
+   *Extraire tout*.
+2. **Vérifier Python** : touche Windows, `cmd`, puis `py --version` (ou
+   `python --version`) : il faut Python 3.8 ou plus récent.
+3. **Mettre 2 ou 3 plans** représentatifs dans `PDF-A-LIRE` : un simple, un
+   chargé, un avec des connecteurs (ou le laisser vide : une fenêtre les
+   demandera).
+4. **Double-cliquer sur `sonde_pdf.py`.** Une fenêtre noire lit les plans
+   (de quelques secondes à deux minutes par plan), puis ouvre le dossier
+   **`rapports`** ; elle attend Entrée avant de se fermer. S'il s'ouvre dans
+   un éditeur : clic droit, *Ouvrir avec*, *Python* ; sinon, dans la barre
+   d'adresse du dossier, `cmd`, puis `py sonde_pdf.py`.
+5. **Relire chaque `.rapport.txt`** dans le Bloc-notes : aucun vrai texte de
+   plan ne doit y être. Au moindre doute, le montrer d'abord à ton
+   responsable.
+6. **M'envoyer les `.rapport.txt` seuls**, zippés (clic droit, *Envoyer
+   vers*, *Dossier compressé*). Les `.elements.tsv` seulement si ton
+   responsable est d'accord ; jamais un fichier `EN-CLAIR`.
 
-Sans le `.bat`, dans une invite de commandes :
+Il faut Python 3.8 ou plus récent. **Rien à installer** : pas de `pip`, pas
+d'Internet. Si PyMuPDF est installé, la sonde s'en sert pour se vérifier
+(elle compare ses deux façons de lire) ; sinon elle lit les PDF toute seule.
+
+Commence par **deux ou trois plans représentatifs**, pas par les centaines :
+c'est pour comprendre leur forme, pas pour les saisir.
+
+### Le double-clic, en détail
+
+Lancée **sans aucun chemin** (un double-clic dans l'Explorateur, ou
+`py sonde_pdf.py` tout court), la sonde :
+
+1. lit les PDF du dossier **`PDF-A-LIRE`**, à côté d'elle (sous-dossiers
+   compris ; ils y restent : pour en lire d'autres, les remplacer) ;
+2. s'il n'y en a pas, et si `tkinter` est là (il vient avec le Python de
+   python.org), ouvre une fenêtre **« Ouvrir »** pour choisir un ou plusieurs
+   PDF (Ctrl enfoncé) ; elle peut s'ouvrir derrière la fenêtre noire, l'écran
+   le dit ;
+3. sinon, ou si l'on annule : crée `PDF-A-LIRE`, l'ouvre dans l'Explorateur et
+   dit quoi faire (y copier 2 ou 3 plans, relancer) ; code de sortie 1.
+
+**Glisser** des PDF (ou un dossier) sur `sonde_pdf.py` marche aussi : le
+lanceur `py` de Windows les passe en arguments. À la fin, sous Windows, le
+dossier des rapports s'ouvre et l'écran redit l'avertissement : rapports
+anonymisés, le `.elements.tsv` porte la géométrie, le `.rapport.txt` seul
+suffit pour commencer (et un `ATTENTION` s'il traîne un fichier `EN-CLAIR`).
+
+La fenêtre **attend Entrée** seulement quand elle a été ouverte pour la
+sonde : `GetConsoleProcessList` (kernel32, par `ctypes`) donne les processus
+attachés à la console ; la sonde attend si aucun autre n'y est que Python
+lui-même (`py.exe`, le lanceur du double-clic ; `python.exe`, celui d'un
+venv). Une invite de commandes (`cmd.exe`, donc aussi `sonde-pdf.bat`),
+PowerShell ou un nom illisible : pas d'attente (la fenêtre reste ouverte
+d'elle-même, ou le `.bat` fait sa pause). Le seul compte des processus ne
+suffit pas : `cmd.exe` + `python.exe` font deux, comme `py.exe` +
+`python.exe`. Jamais d'attente hors de Windows ; une entrée fermée ou en fin
+de fichier ne bloque pas.
+
+**Aucun traceback** : une exception imprévue (même `MemoryError`) ne montre
+que sa classe et un message en français (code de sortie 3) ; un
+avertissement de Python, une exception dans un fil ou hors du programme non
+plus. Un traceback ou un avertissement montrent le chemin du script, donc
+l'identifiant Windows (`C:\Users\…`).
+
+`SONDE_SANS_FENETRE=1` (variable d'environnement) : ni fenêtre de choix, ni
+Explorateur, ni attente — pour les tests, ou un lancement par un autre
+programme.
+
+### Le Kit-PDF, et le `.bat` qui n'y est pas
+
+`node see/kit.js --pdf` écrit **`Kit-PDF.zip`** (`--sortie=…` pour un autre
+nom) : `Kit-PDF/sonde_pdf.py` (copié octet pour octet), puis
+`Kit-PDF/LIS-MOI-D-ABORD.txt` (`see/pdf/kit/`, UTF-8 avec BOM, CRLF : le
+Bloc-notes l'ouvre tel quel), et le dossier vide `Kit-PDF/PDF-A-LIRE/`.
+Gmail refuse `.bat`, `.cmd`, `.ps1`, `.js`, `.vbs`… **même dans un zip** ;
+le `.py` n'est pas sur sa liste. `kit.js` vérifie chaque fichier contre cette
+liste (`REFUSES_PAR_COURRIEL`, complétée : `.appx`, `.iso`, `.msix`, `.vhd`,
+`.xll`…) et refuse d'écrire un kit qui en porterait un. Le zip produit ne va
+pas dans le dépôt (`.gitignore`). Si la messagerie de l'entreprise retenait
+quand même le `.py` : le renommer en `.txt` avant de zipper, et lui rendre
+son nom au bureau (une étape de plus, à guider à part).
+
+**`sonde-pdf.bat`** reste dans le dépôt, hors du kit : pour une sonde qui
+arrive autrement (clé USB, partage réseau), posé à côté de `sonde_pdf.py`.
+On glisse des PDF (ou un dossier) dessus, ou on le double-clique (la sonde lit
+alors `PDF-A-LIRE`) ; il trouve Python (`py -3`, puis `python`, puis
+`python3`), lance la sonde et fait sa pause ; l'avertissement final et
+l'Explorateur, c'est la sonde qui les fait (une seule fois). Si Windows le
+bloque (« Windows a protégé votre ordinateur ») : clic droit >
+Propriétés > coche **Débloquer** > OK.
+
+Dans une invite de commandes, avec des chemins :
 
 ```
-python sonde_pdf.py "C:\chemin\vers\plan.pdf"
-python sonde_pdf.py "C:\chemin\vers\un\dossier"
+py sonde_pdf.py "C:\chemin\vers\plan.pdf"
+py sonde_pdf.py "C:\chemin\vers\un\dossier"
 ```
-
-Commence par **deux ou trois plans représentatifs** (un simple, un chargé), pas
-par les centaines : c'est pour comprendre leur forme, pas pour les saisir.
 
 ### Si ça coince sous Windows
 
 - Un nom de fichier ou de dossier avec **`&`** ou **`^`** sans espace
-  (`R&D`, `E&S`) casse la ligne de commande **avant** que la sonde démarre :
-  renomme-le, ou passe par l'invite de commandes avec des guillemets
-  (`python sonde_pdf.py "C:\R&D\plan.pdf"`).
-- Si Windows bloque le `.bat` (« Windows a protégé votre ordinateur ») :
-  clic droit sur `sonde-pdf.bat` > Propriétés > coche **Débloquer** > OK.
+  (`R&D`, `E&S`) casse la ligne de commande du `.bat` **avant** que la sonde
+  démarre : renomme-le, mets le plan dans `PDF-A-LIRE`, ou passe par
+  l'invite de commandes avec des guillemets
+  (`py sonde_pdf.py "C:\R&D\plan.pdf"`).
 - Les dossiers très profonds (plus de 260 caractères, fréquent sur un partage
   réseau) sont lus quand même ; un dossier que tu n'as pas le droit de lire
   est compté et dit à l'écran.
@@ -185,9 +258,16 @@ Les limites qui protègent le poste (mesurées sur des PDF fabriqués) :
   mémoire.
 
 Options : `--clair`, `--sortie=DOSSIER`, `--pages=1-3,7`,
-`--mot-de-passe=XXX`, `--lecteur=…`, `--delai=120`, `--aide`. Code de sortie
-0 si au moins un rapport est écrit, 1 sinon, 2 pour une option inconnue (seul
-son nom est répété à l'écran : la valeur peut être un mot de passe mal tapé).
+`--mot-de-passe=XXX`, `--lecteur=…`, `--delai=120`, `--aide`. Sans aucun
+chemin (seulement des options, ou rien : le double-clic), la sonde lit
+`PDF-A-LIRE`, à côté d'elle (voir « Le double-clic, en détail »). Code de
+sortie 0 si au moins un rapport est écrit, 1 sinon, 2 pour une option
+inconnue (seul son nom est répété à l'écran : la valeur peut être un mot de
+passe mal tapé), 3 pour une erreur imprévue (sa classe seule), 130 si l'on
+interrompt (Ctrl+C). Le point d'entrée est `lancer()` : il installe les
+crochets qui gardent l'écran sans chemin (`sys.excepthook`,
+`threading.excepthook`, `sys.unraisablehook`, `warnings.showwarning`),
+appelle `principal()`, puis attend Entrée si `doit_attendre()`.
 L'écran ne reçoit que de l'ASCII (console Windows cp850/cp1252), jamais le nom
 d'un PDF ni le chemin d'un dossier (seulement « rapports, à côté de la
 sonde »). Le dossier `rapports` (`rapports-EN-CLAIR` avec `--clair`) est à
@@ -407,7 +487,27 @@ dégénérés) ni les textes de découpe (Tr 7, que PyMuPDF ne rend pas).
 ```
 python tests/sonde-pdf.py                       des PDF fabriqués à la main par le test
 python tests/sonde-pdf.py --corpus=DOSSIER      et le corpus d'essai (hors du dépôt)
+node tests/kit-pdf.js                           le Kit-PDF (see/kit.js --pdf), sans Python
 ```
+
+`tests/sonde-pdf.py` lance aussi la sonde comme d'un double-clic, sur une
+copie (`SONDE_SANS_FENETRE=1`, entrée vide ou fermée) : `PDF-A-LIRE` créé
+quand il n'y a rien à lire, ses PDF lus (sous-dossiers compris), sans
+fenêtre possible (sans écran, `tkinter` présent ou absent) on retombe sur
+le dossier sans bloquer, l'avertissement de la fin, des PDF glissés en
+argument ; la décision d'attendre (`console_a_soi`) sur les cas de Windows
+(python seul, `py.exe`, venv, `cmd.exe`, le `.bat`, PowerShell, un nom
+illisible) ; `attendre_entree()` sur une entrée vide, absente ou fermée ;
+une exception forcée (`ValueError`, `MemoryError`, `KeyboardInterrupt`),
+un avertissement, une exception dans un fil : ni traceback ni chemin.
+`tests/kit-pdf.js` relit le zip (lecteur écrit pour le test) : deux
+fichiers et le dossier vide, la sonde octet pour octet, le LIS-MOI (BOM,
+CRLF, étapes A à F, `PDF-A-LIRE`, `.rapport.txt`, le responsable, jamais
+`--clair`), aucun type refusé par Gmail, le refus d'un `.bat`, la ligne de
+commande, et le contrôleur éprouvé par des fautes injectées. Ce qui reste
+propre à Windows (`GetConsoleProcessList`, `os.startfile`, la fenêtre
+« Ouvrir », l'association des `.py`, l'extraction du zip) n'a **pas** été
+essayé sous Windows.
 
 Le corpus se fabrique hors du dépôt (`tests/sonde-pdf-corpus.py` demande
 reportlab, PyMuPDF, pikepdf, Pillow ; `tests/sonde-pdf-folios.js` imprime les
