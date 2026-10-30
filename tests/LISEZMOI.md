@@ -133,6 +133,21 @@ node tests/classeur.js         LE CLASSEUR PILOTE TOUT PRÊT (see/classeur.js : 
                                de la feuille (mode protégé, Activer le contenu, barre rouge, Alt+F8) ; le contrôleur éprouvé
                                par dix-sept fautes injectées.
                                VBA_DOSSIER=… pour d'autres .bas. Il ne prouve pas qu'Excel ouvre le classeur (voir see/LISEZMOI.md)
+python tests/sonde-pdf.py      LA SONDE PDF (see/pdf/sonde_pdf.py), en PYTHON (3.8 et plus), sans dépendance : le test fabrique
+                               à la main un schéma inventé (textes connus, un rectangle à un endroit connu, traits, cercle, courbe,
+                               six textes cachés de six façons, police Identity-H avec ToUnicode et W, police Type3, formulaire
+                               imbriqué, image en ligne, calques, annotations, contenu marqué), puis le même sous dix autres
+                               structures (flux xref à prédicteur PNG, flux d'objets, ASCIIHex, ASCII85, LZW, RunLength, sans
+                               filtre, deux filtres, RC4 128 bits écrit à part, RC4 + flux xref) qui doivent donner les mêmes
+                               éléments au centième de mm ; mise à jour incrémentale, xref fausse, fichier tronqué, page tournée,
+                               page scannée, non-PDF ; la ligne de commande sur un dossier : AUCUNE chaîne réelle (textes,
+                               métadonnées, nom du fichier) dans les rapports ni les TSV, l'écran en ASCII, BOM et CRLF, les
+                               colonnes du TSV, les motifs, --clair qui écrit les textes, la numérotation qui continue.
+                               --corpus=DOSSIER : le corpus d'essai (verite.json) ; si PyMuPDF est installé, le lecteur standard
+                               et PyMuPDF donnent les mêmes éléments à 0,1 mm. Hors de tests/toutes.js (Node). Le corpus se
+                               fabrique HORS du dépôt, dans un venv à part (reportlab, pymupdf, pikepdf, pillow) :
+                                 python tests/sonde-pdf-corpus.py DOSSIER
+                                 NODE_PATH=/opt/node22/lib/node_modules node tests/sonde-pdf-folios.js . DOSSIER
 node tests/couverture.js       CE QUE L'OUTIL VÉRIFIE, ET S'IL VÉRIFIE TOUT : sur l'exemple embarqué et sur un contrat inventé plus riche
                                (huit disjoncteurs dont un sans profil, un sans part number, un tripolaire ; EN 2997, EN 3645, EN 3646,
                                EN 4165, ASNE0059 ; E0599 et NSA937901 ; deux prises en chaîne ; AD16, AM6, un fil sans type, un type
