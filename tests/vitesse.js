@@ -13,9 +13,9 @@
      · LE PREMIER DESSIN d'un folio chargé (le folio 3 de l'exemple, 66 câbles)
        placé au loin : l'esquisse d'abord (trois secondes au plus), le dessin
        définitif ensuite (quinze au plus), le concours partagé avec des aides ;
-     · LA TABLE AU REPOS : la table « Nuit bleue » ne brûle plus un cœur quand on
-       ne fait rien (le processeur de tout le navigateur, quelques secondes sans
-       geste) — et le souffle se fige au repos.
+     · LA TABLE VIVANTE, SOBRE : quand on est là, ses nappes dérivent sans
+       brûler un cœur (le processeur de tout le navigateur) ; sans la main, elle
+       s'endort (90 s, avancées ici) et ne brûle plus rien.
    Rend 1 au premier échec.
    =========================================================================== */
 const { chromium } = require('playwright');
@@ -78,12 +78,16 @@ function lectureDAvantDansLaPage() {
   // — la table au repos : quelques secondes sans geste, le navigateur presque à l'arrêt (les autres folios placés, l'affinage arrêté)
   await page.waitForFunction(() => { const e = etatPlacement(); return !e.encours && !e.attentes.length; }, null, { timeout: 300000 }).catch(() => { });
   await page.evaluate(() => { affinage.actif = false; if (affinage.worker) { affinage.worker.terminate(); affinage.worker = null; } affinage.encours = null; affinage.file = []; arreterPlacement(); montrerAttente(); });
-  await page.mouse.move(900, 400); await page.mouse.move(1000, 450, { steps: 10 });
-  const respire = await page.evaluate(() => $('table').classList.contains('respire'));
-  await page.waitForTimeout(7500);   // le souffle se fige six secondes après le dernier geste
-  const fige = await page.evaluate(() => !$('table').classList.contains('respire') && getComputedStyle(document.querySelector('#table .ta-souffle')).animationPlayState === 'paused');
+  // la table VIVANTE (v73) : quand on est là, ses deux nappes dérivent (10 Hz, translation seule) — sobrement : le navigateur
+  // entier, la table éveillée ; puis la veille (90 s sans la main, avancée ici à 1,5 s) l'endort : plus rien ne tourne
+  await page.mouse.move(900, 400); await page.mouse.move(1000, 450, { steps: 10 }); await page.waitForTimeout(1500);
+  const vit = await page.evaluate(() => new Promise(r => { const t0 = TABLE.temps; setTimeout(() => r({ avance: TABLE.temps > t0, minuterie: !!TABLE.minuterie }), 800); }));
+  const e0 = cpuDuNavigateur(), v0 = Date.now(); await page.waitForTimeout(4000); const cpuEveillee = (cpuDuNavigateur() - e0) / (Date.now() - v0) * 100;
+  await page.evaluate(() => { TABLE.veilleApres = 1500; }); await page.waitForTimeout(5000);
+  const dort = await page.evaluate(() => !TABLE.minuterie && TABLE.vitesse === 0 && $('table').classList.contains('dort'));
   const c0 = cpuDuNavigateur(), w0 = Date.now(); await page.waitForTimeout(4000); const cpu = (cpuDuNavigateur() - c0) / (Date.now() - w0) * 100;
-  ok(respire && fige, 'le souffle respire quand on est là, et se fige au repos');
+  ok(vit.avance && vit.minuterie && dort, 'la table dérive quand on est là, et s’endort au repos (plus rien ne tourne)', JSON.stringify(vit));
+  ok(cpuEveillee < 25 * marge(), 'éveillée, la table dérive sans brûler un cœur (le navigateur entier)', Math.round(cpuEveillee) + ' % d’un cœur');
   ok(cpu < 15 * marge(), 'au repos, la table ne brûle plus un cœur (le navigateur entier)', Math.round(cpu) + ' % d’un cœur (100 % avant)');
   ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
   console.log('\n  ' + (ko ? ko + ' échec(s)' : 'tout tient'));
