@@ -62,3 +62,7 @@
 .rk-pied{margin:14px 0 0;font:400 var(--f-12)/1.5 var(--sans);color:var(--t-2)}
 @media (max-width:700px){ .rk-groupes{grid-template-columns:1fr} }
 @media (prefers-reduced-motion:reduce){ .raccourcis.entre .rk-feuille{animation:none} }
+
+/* ─── LA CARTE QUI PREND LE CLAVIER (08-carte, `prendreLeClavier`) : elle-même n'est qu'un point d'arrivée — Tab part de
+   là, vers sa barre — : pas d'anneau sur toute la carte ─── */
+#inspecteur:focus{outline:none}

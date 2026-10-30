@@ -48,9 +48,11 @@
 
 const SECTIONS = { disjoncteur: 'Calibre', connecteur: 'Connecteur', raccord: 'Raccord', trajet: 'De → vers', fils: 'Câbles', dejafait: 'Déjà fait' };
 const ORDRE_SECTIONS = Object.keys(SECTIONS);
-// ouvertes d'office : dans la carte flottante, aucune — une fiche s'ouvre pliée, chaque ligne dit l'essentiel ; dans le volet
-// épinglé (la place y est), celle qui définit l'objet
-const OUVERTES_D_OFFICE = {};
+// ouvertes d'office : dans la carte flottante, presque aucune — une fiche s'ouvre pliée, chaque ligne dit l'essentiel —, sauf
+// le CALIBRE d'un disjoncteur (v73 : le cadran est le moment de l'outil, l'ingénieur et le designer le veulent en vue dès
+// l'ouverture) et les câbles d'une masse (une masse n'a que ça à montrer) ; dans le volet épinglé (la place y est), celle qui
+// définit l'objet
+const OUVERTES_D_OFFICE = { disjoncteur: ['disjoncteur'], masse: ['fils'] };
 const OUVERTES_DANS_LE_VOLET = { equipement: ['connecteur'], disjoncteur: ['disjoncteur'], barrette: ['connecteur'], prise: ['connecteur'], fil: ['trajet'] };
 const voletEpingle = () => typeof CARTE === 'object' && !!CARTE && !!CARTE.epingle;
 
@@ -85,8 +87,9 @@ const groupeSection = (titre, contenu, o) => { o = o || {}; if (!contenu) return
   return `<div class="fs-groupe${o.cls ? ' ' + o.cls : ''}"${o.attrs ? ' ' + o.attrs : ''}>${titre || o.droite ? `<div class="fs-st"><span>${titre ? esc(titre) : ''}${o.compte != null ? ` <i>${o.compte}</i>` : ''}${q}</span>${o.droite || ''}</div>` : ''}${contenu}</div>`; };
 /* Ouvrir une section par programme (une ligne des problèmes, un lien « voir ») : elle s'ouvre, vient sous les yeux et
    s'allume un instant ; ce n'est pas un choix de l'ingénieur, on ne le retient pas. */
-function ouvrirSection(box, cle, allumer) { const d = box && box.querySelector(`details.fs[data-section="${CSS.escape(cle)}"]`); if (!d) return null;
-  d.open = true; try { d.scrollIntoView({ block: 'start', behavior: mouvementReduit() ? 'auto' : 'smooth' }); } catch (_) { d.scrollIntoView(); }
+// (`sur place` : ouverte là où elle est, sans défiler — le geste vient de sa tête, sous la main)
+function ouvrirSection(box, cle, allumer, surPlace) { const d = box && box.querySelector(`details.fs[data-section="${CSS.escape(cle)}"]`); if (!d) return null;
+  d.open = true; if (!surPlace) try { d.scrollIntoView({ block: 'start', behavior: mouvementReduit() ? 'auto' : 'smooth' }); } catch (_) { d.scrollIntoView(); }
   if (allumer !== false) { d.classList.remove('fs-allume'); void d.offsetWidth; d.classList.add('fs-allume'); setTimeout(() => d.classList.remove('fs-allume'), 1400); }
   return d; }
 // ce que l'ingénieur ouvre ou ferme à la main (un clic, ou Entrée / Espace sur le titre), on le retient pour ce type ; une
@@ -214,5 +217,7 @@ document.addEventListener('click', e => { const b = e.target && e.target.closest
 // « click » — la bulle resterait ouverte au-dessus de la table
 document.addEventListener('pointerdown', e => { if (AIDE.bouton && !(e.target && e.target.closest && e.target.closest('.fi-q-bulle, .fi-q'))) fermerAide(); }, true);
 window.addEventListener('keydown', e => { if (e.key === 'Escape' && AIDE.bouton) { e.preventDefault(); e.stopPropagation(); fermerAide(true); } }, true);
+// le clavier qui s'en va ailleurs (Tab au-delà du « ? » et de sa bulle) la ferme aussi : elle ne flotte pas sur la suite
+document.addEventListener('focusin', e => { const t = e.target; if (AIDE.bouton && t && t !== AIDE.bouton && !(AIDE.el && AIDE.el.contains(t))) fermerAide(); }, true);
 window.addEventListener('scroll', () => { if (AIDE.bouton) placerAide(); }, true);
 window.addEventListener('resize', () => { if (AIDE.bouton) placerAide(); });
