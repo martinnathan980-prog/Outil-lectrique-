@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Volta, moments signature</title>
+<!-- MAQUETTE AUTONOME du designer (panel v73) : deux moments signature, en vrai mouvement.
+     1. LA CARTE SE DÉPLIE DU BLOC — clip-path (inset … round) de la boîte du bloc jusqu'à la carte posée : le contenu est à sa
+        taille dès la première image (rien d'écrasé, pas de dalle vide), les coins restent ronds, le bloc n'est jamais couvert.
+     2. LE CADRAN QU'ON TOURNE — un clic sur un cran (1, 3, 5, 7,5…) y conduit l'index le long de l'arc ; le chiffre du centre
+        roule ; ce qui ne passe pas se dit en rouge, sous le cadran, en une ligne.
+     ?moment=carte | cadran ; ?ouvrir=1 lance la carte au chargement ; ?cran=5 tourne le cadran au chargement. -->
+<style>
+@font-face{font-family:"Inter";font-weight:400;src:url(file:///home/user/Outil-lectrique-/polices/inter-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:500;src:url(file:///home/user/Outil-lectrique-/polices/inter-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:600;src:url(file:///home/user/Outil-lectrique-/polices/inter-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-weight:600;src:url(file:///home/user/Outil-lectrique-/polices/jetbrains-mono-latin-600-normal.woff2) format("woff2")}
+:root{--courbe:cubic-bezier(.2,.8,.2,1);--courbe-entree:cubic-bezier(.32,.72,0,1);--courbe-sortie:cubic-bezier(.4,0,1,1);--courbe-glisse:cubic-bezier(.65,0,.35,1);
+  --ok:#1d7a3c;--warn:#965800;--ko:#c3271f;--ko-soft:#fdeceb;--charge:#3d6fd6;--t-1:#1b1f27;--t-2:#454b57;--t-3:#5f6672;--s-line:#dfe3ea;--s-line-2:#d2d6df;--s-sunken:#f5f6f8;--glace:#9fc2ff;
+  --sans:"Inter",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{font:13px/1.45 var(--sans);color:var(--t-1);-webkit-font-smoothing:antialiased;
+  background:radial-gradient(1150px 780px at 96% -14%,rgba(96,140,220,.30),rgba(96,140,220,0) 62%),linear-gradient(158deg,#1b2843 0%,#121c30 42%,#0a111e 100%)}
+/* ─── 1. la carte qui se déplie ─── */
+.papier{position:absolute;left:120px;top:80px;width:900px;height:620px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.45),0 32px 80px -12px rgba(0,5,16,.75)}
+.bloc{position:absolute;border:1.3px solid #1d1d1f;background:#fff;font:600 12px var(--mono);letter-spacing:.06em;display:grid;place-items:center;cursor:pointer}
+.bloc.cible{outline:none}
+.vise{position:absolute;pointer-events:none;border:2px solid #1d1d1f;opacity:0;
+  -webkit-mask:linear-gradient(#000 0 0) top left/10px 10px no-repeat,linear-gradient(#000 0 0) top right/10px 10px no-repeat,linear-gradient(#000 0 0) bottom left/10px 10px no-repeat,linear-gradient(#000 0 0) bottom right/10px 10px no-repeat;
+  mask:linear-gradient(#000 0 0) top left/10px 10px no-repeat,linear-gradient(#000 0 0) top right/10px 10px no-repeat,linear-gradient(#000 0 0) bottom left/10px 10px no-repeat,linear-gradient(#000 0 0) bottom right/10px 10px no-repeat}
+.fil{position:absolute;height:1.5px;background:#7d3c98}
+.fil.b{background:#117a8b}
+.carte{position:absolute;left:1060px;top:96px;width:340px;height:430px;border-radius:18px;background:#fff;color:var(--t-1);visibility:hidden;
+  box-shadow:0 0 0 1px rgba(160,192,255,.22),0 32px 80px -14px rgba(0,6,20,.78),0 10px 26px -8px rgba(0,6,20,.5),0 0 60px -20px rgba(110,160,255,.35)}
+.carte .in{padding:14px 18px}
+.c-barre{display:flex;justify-content:center;height:16px}.c-barre i{width:36px;height:4px;border-radius:2px;background:var(--s-line-2)}
+.c-tete{display:flex;gap:12px;align-items:center;margin-top:6px}
+.c-sym{width:42px;height:42px;border-radius:12px;background:var(--s-sunken);display:grid;place-items:center}
+.c-sym svg{width:22px;height:22px;fill:none;stroke:#1b1f27;stroke-width:1.5;stroke-linecap:round}
+.c-nom{font:600 22px/1.1 var(--mono);letter-spacing:-.02em}
+.c-sous{font:500 12px/1.4 var(--sans);color:var(--t-2);margin-top:3px}
+.c-l{display:grid;grid-template-columns:90px 1fr;gap:10px;align-items:center;min-height:44px;border-top:1px solid var(--s-line);margin-top:14px;padding-top:2px}
+.c-l b{font:500 13px var(--sans);color:var(--t-2)}
+.c-l span{font:500 13px var(--sans)}
+.c-l span.ko{color:var(--ko)}
+.c-gros{font:600 22px/1 var(--sans);letter-spacing:-.03em}
+.lien{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.lien path{fill:none;stroke:var(--glace);stroke-width:1.25;stroke-linecap:round;filter:drop-shadow(0 0 3px rgba(140,180,255,.55))}
+.lien circle{fill:var(--glace)}
+/* ─── 2. le cadran ─── */
+.feuille{position:absolute;left:50%;top:50%;width:420px;margin:-240px 0 0 -210px;padding:20px 22px 22px;border-radius:18px;background:#fff;box-shadow:0 32px 80px -14px rgba(0,6,20,.78)}
+.feuille h3{margin:0 0 6px;font:600 13px var(--sans);color:var(--t-1)}
+.dj{display:grid;grid-template-columns:184px 1fr;gap:18px;align-items:center}
+.cadran{position:relative;width:184px;height:168px}
+.cadran svg{width:100%;height:100%;overflow:visible}
+.piste{fill:none;stroke:var(--s-line-2);stroke-width:3;stroke-linecap:round}
+.passe{fill:none;stroke:var(--ok);stroke-width:5;stroke-linecap:round}
+.serre{fill:none;stroke:var(--warn);stroke-width:5;stroke-linecap:round}
+.charge{fill:none;stroke:var(--charge);stroke-width:7;stroke-linecap:round}
+.pointe{fill:none;stroke:color-mix(in srgb,var(--charge) 45%,transparent);stroke-width:7;stroke-linecap:round}
+.cran{cursor:pointer}
+.cran line{stroke:var(--t-3);stroke-width:1.3;stroke-linecap:round}
+.cran text{font:500 11px var(--sans);fill:var(--t-3);text-anchor:middle;dominant-baseline:central}
+.cran circle{fill:transparent}
+.cran:hover text{fill:var(--t-1);font-weight:600}
+.cran:hover circle{fill:rgba(27,31,39,.06)}
+.cran.passe-c text{fill:var(--t-2)}.cran.ko-c text{fill:var(--ko)}
+.cran.retenu text{fill:var(--t-1);font-weight:700;font-size:12px}
+.index{fill:#fff;stroke:var(--t-1);stroke-width:2.5;filter:drop-shadow(0 1px 3px rgba(0,10,30,.35));transition:stroke .2s var(--courbe)}
+.ko .index{stroke:var(--ko)}
+.centre{position:absolute;left:0;right:0;top:72px;display:flex;justify-content:center;align-items:baseline;gap:3px;font:600 30px/1 var(--sans);letter-spacing:-.045em;font-variant-numeric:tabular-nums}
+.centre .u{font-weight:400;color:var(--t-2)}
+.ko .centre .v{color:var(--ko)}
+.rouleau{display:inline-block;height:30px;overflow:hidden;vertical-align:bottom}
+.rouleau span{display:block;height:30px;line-height:30px}
+.stats{display:flex;flex-direction:column;gap:12px}
+.stat b{display:block;font:600 20px/1 var(--sans);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stat b small{font:500 14px var(--sans);color:var(--t-2);margin-left:3px}
+.stat span{font:500 12px var(--sans);color:var(--t-2)}
+.verdict{margin-top:14px;min-height:40px;padding:10px 12px;border-radius:10px;font:500 13px/1.4 var(--sans);background:var(--s-sunken);color:var(--t-2);transition:background .22s var(--courbe),color .22s var(--courbe)}
+.ko-v{background:var(--ko-soft);color:var(--ko)}
+.ok-v{background:#e8f5ec;color:var(--ok)}
+.aide{margin-top:10px;font:400 12px var(--sans);color:var(--t-3)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<section id="m-carte" hidden>
+  <div class="papier">
+    <div class="bloc cible" id="bloc" style="left:150px;top:230px;width:110px;height:64px">102CB1</div>
+    <div class="vise" id="vise" style="left:140px;top:220px;width:130px;height:84px"></div>
+    <div class="fil" style="left:260px;top:248px;width:220px"></div><div class="fil b" style="left:260px;top:276px;width:220px"></div>
+    <div class="bloc" style="left:480px;top:226px;width:120px;height:44px">101BT1</div>
+    <div class="bloc" style="left:480px;top:300px;width:120px;height:70px">103RL1</div>
+  </div>
+  <svg class="lien" id="lien"><path id="lien-p" d=""/><circle id="lien-a" r="2.5" cx="-10" cy="-10"/></svg>
+  <div class="carte" id="carte"><div class="in" id="carte-in">
+    <div class="c-barre"><i></i></div>
+    <div class="c-tete"><span class="c-sym"><svg viewBox="0 0 24 24"><path d="M4 16h4l7-6M15 16h5M12 6v4"/></svg></span><span><div class="c-nom">102CB1</div><div class="c-sous">Disjoncteur · MS3320 · folio 1</div></span></div>
+    <div class="c-l"><b>Calibre</b><span><span class="c-gros">15 A</span> &nbsp;<span style="color:var(--t-2)">retest 10 A</span></span></div>
+    <div class="c-l"><b>Problèmes</b><span class="ko">4 problèmes · 7 à voir</span></div>
+    <div class="c-l"><b>Câbles</b><span>3 câbles · 3 à grossir</span></div>
+    <div class="c-l"><b>Déjà fait</b><span style="color:var(--t-2)">2 contrats proches</span></div>
+  </div></div>
+</section>
+<section id="m-cadran" hidden>
+  <div class="feuille">
+    <h3>Calibre</h3>
+    <div class="dj" id="dj">
+      <div class="cadran"><svg viewBox="0 0 184 168" id="arc"></svg><div class="centre"><span class="v" id="v"><span class="rouleau"><span id="chiffre">15</span></span></span><span class="u">A</span></div></div>
+      <div class="stats"><div class="stat"><b>5<small>A</small></b><span>permanent</span></div><div class="stat"><b>9,31<small>A</small></b><span>en pointe, 2,1 min</span></div></div>
+    </div>
+    <div class="verdict" id="verdict">15 A passe : le plus petit de la gamme MS3320 qui tient la pointe.</div>
+    <p class="aide">Chaque cran se clique : l’index y va, le verdict suit.</p>
+  </div>
+</section>
+<script>
+'use strict';
+const Q = new URLSearchParams(location.search), moment = Q.get('moment') || 'carte';
+document.getElementById('m-' + moment).hidden = false;
+const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ═══ 1. LA CARTE SE DÉPLIE DU BLOC ═══
+   naissance 340 ms --courbe-entree, l'ÉCRAN D'ACCUEIL D'iPHONE : la carte entière part du CENTRE du bloc à une échelle
+   UNIFORME (s = la plus grande des deux proportions bloc/carte, bornée à [.16, .5]) — jamais sx ≠ sy : ni texte écrasé ni coins
+   ovales —, son contenu déjà lisible en vignette ; l'opacité monte en 25 % du temps (pas de fantôme gris) ; l'ombre grandit avec
+   elle (rien n'est rogné : pas de clip-path) ; le viseur du bloc se serre (160 ms) ; le fil se trace à 200 ms (220 ms).
+   Résorption : l'inverse, 240 ms --courbe-sortie, l'opacité à 0 dès 70 % : jamais de dalle blanche posée sur le bloc. */
+function ouvrirCarte() { const c = document.getElementById('carte'), b = document.getElementById('bloc').getBoundingClientRect(), r = c.getBoundingClientRect();
+  c.style.visibility = 'visible'; if (reduit) return;
+  const s = Math.min(.5, Math.max(.16, b.width / r.width, b.height / r.height));
+  const dx = b.left + b.width / 2 - (r.left + r.width / 2), dy = b.top + b.height / 2 - (r.top + r.height / 2);
+  c.animate([{ transform: `translate(${dx}px,${dy}px) scale(${s})`, opacity: 0 }, { opacity: 1, offset: .25 },
+    { transform: 'none', opacity: 1 }], { duration: 340, easing: 'cubic-bezier(.32,.72,0,1)' });
+  document.getElementById('vise').animate([{ opacity: 0, transform: 'scale(1.12)' }, { opacity: 1, transform: 'none' }], { duration: 160, easing: 'cubic-bezier(.32,.72,0,1)', fill: 'forwards' });
+  const p = document.getElementById('lien-p'), a = document.getElementById('lien-a'), x0 = b.right + 10, y0 = b.top + b.height / 2, x1 = r.left, y1 = r.top + 70;
+  p.setAttribute('d', `M${x0},${y0} C${x0 + (x1 - x0) * .55},${y0} ${x1 - (x1 - x0) * .35},${y1} ${x1},${y1}`); a.setAttribute('cx', x0); a.setAttribute('cy', y0);
+  const n = p.getTotalLength(); p.animate([{ strokeDasharray: `${n} ${n}`, strokeDashoffset: n }, { strokeDasharray: `${n} ${n}`, strokeDashoffset: 0 }], { duration: 220, delay: 200, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' }); }
+document.getElementById('bloc').onclick = ouvrirCarte;
+if (moment === 'carte' && Q.get('ouvrir')) requestAnimationFrame(() => requestAnimationFrame(ouvrirCarte));
+
+/* ═══ 2. LE CADRAN QU'ON TOURNE ═══
+   la gamme 1 · 3 · 5 · 7,5 · 10 · 15 · 20 A sur 240° ; la charge (permanent, pointe) dedans ; chaque cran se clique.
+   L'index glisse le long de l'ARC (pas en ligne droite) : 120 ms par cran franchi, au plus 420 ms, --courbe-glisse ; le chiffre du
+   centre roule (chaque valeur intermédiaire passe, 60 ms) ; à l'arrivée, l'index se pose (scale 1.18 → 1, 160 ms) ; ce qui ne
+   passe pas met l'index et le chiffre en rouge et le dit en une ligne. */
+const G = [1, 3, 5, 7.5, 10, 15, 20], PERM = 5, POINTE = 9.31, PASSE = c => c > POINTE * 1.1 ? 'ok' : c > POINTE ? 'serre' : 'ko';
+const CX = 92, CY = 92, R = 66, A0 = 150, A1 = 390, ang = k => A0 + (A1 - A0) * k / (G.length - 1), angV = v => { let k = G.findIndex(g => g >= v); if (k <= 0) return ang(0); const f = (v - G[k - 1]) / (G[k] - G[k - 1]); return ang(k - 1 + f); };
+const pt = (a, r = R) => [CX + r * Math.cos(a * Math.PI / 180), CY + r * Math.sin(a * Math.PI / 180)];
+const arc = (a, b, r = R) => { const [x0, y0] = pt(a, r), [x1, y1] = pt(b, r); return `M${x0.toFixed(1)},${y0.toFixed(1)} A${r},${r} 0 ${b - a > 180 ? 1 : 0} 1 ${x1.toFixed(1)},${y1.toFixed(1)}`; };
+let retenu = 5;
+function dessiner() { const s = document.getElementById('arc'), kp = G.findIndex(g => PASSE(g) !== 'ko');
+  let h = `<path class="piste" d="${arc(A0, A1)}"/><path class="passe" d="${arc(ang(kp), A1)}"/>`;
+  h += `<path class="pointe" d="${arc(A0, angV(POINTE), R - 9)}"/><path class="charge" d="${arc(A0, angV(PERM), R - 9)}"/>`;
+  G.forEach((g, k) => { const a = ang(k), [x0, y0] = pt(a, R + 4), [x1, y1] = pt(a, R + 9), [tx, ty] = pt(a, R + 20), cl = PASSE(g) === 'ko' ? 'ko-c' : 'passe-c';
+    h += `<g class="cran ${cl}${k === retenu ? ' retenu' : ''}" data-k="${k}"><circle cx="${tx}" cy="${ty}" r="11"/><line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}"/><text x="${tx}" y="${ty}">${String(g).replace('.', ',')}</text></g>`; });
+  const [ix, iy] = pt(ang(retenu)); h += `<circle class="index" id="index" r="6.5" cx="${ix}" cy="${iy}"/>`; s.innerHTML = h;
+  s.querySelectorAll('.cran').forEach(c => c.onclick = () => tourner(+c.dataset.k)); }
+function tourner(k) { if (k === retenu) return; const de = retenu, idx = document.getElementById('index'); retenu = k;
+  const n = Math.abs(k - de), duree = reduit ? 0 : Math.min(420, 120 * n + 60) * +(Q.get('lent') || 1), t0 = performance.now(), eas = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  const vals = G.slice(Math.min(de, k), Math.max(de, k) + 1); if (k < de) vals.reverse();
+  const pas = n2 => { const f = duree ? Math.min(1, (n2 - t0) / duree) : 1, e = eas(f), a = ang(de) + (ang(k) - ang(de)) * e, [x, y] = pt(a); idx.setAttribute('cx', x); idx.setAttribute('cy', y);
+    document.getElementById('chiffre').textContent = String(vals[Math.min(vals.length - 1, Math.round(e * (vals.length - 1)))]).replace('.', ',');
+    if (f < 1) requestAnimationFrame(pas); else fin(); };
+  requestAnimationFrame(pas);
+  const fin = () => { dessiner(); const i2 = document.getElementById('index'); if (!reduit) i2.animate([{ transform: 'scale(1.18)' }, { transform: 'none' }], { duration: 160, easing: 'cubic-bezier(.32,.72,0,1)' }); i2.style.transformBox = 'fill-box'; i2.style.transformOrigin = 'center';
+    const g = G[k], p = PASSE(g), dj = document.getElementById('dj'), v = document.getElementById('verdict'); dj.classList.toggle('ko', p === 'ko');
+    v.className = 'verdict ' + (p === 'ko' ? 'ko-v' : p === 'serre' ? '' : 'ok-v');
+    v.textContent = p === 'ko' ? `${String(g).replace('.', ',')} A ne passe pas : la pointe de 9,31 A pendant 2,1 min touche sa courbe.` : p === 'serre' ? `${g} A passe, sans la marge de 10 %.` : `${g} A passe${g === 15 ? ' : le plus petit de la gamme qui tient la pointe' : ', avec de la marge'}.`; }; }
+retenu = 5; dessiner(); if (moment === 'cadran' && Q.get('cran')) setTimeout(() => tourner(G.findIndex(g => String(g) === Q.get('cran'))), 300);
+</script>
+</body>
+</html>

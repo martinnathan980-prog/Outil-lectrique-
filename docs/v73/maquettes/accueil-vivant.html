@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Volta, accueil vivant</title>
+<!-- MAQUETTE AUTONOME du designer (panel v73) : l'accueil « Nuit bleue » sublimé et la table qui vit.
+     ?etat=vide (rien encore) · ?etat=pleine (des installations) · ?fige=1 (comme sous prefers-reduced-motion) · ?t=12 (pose le temps de la table, en s, pour une capture)
+     Tout est local (les polices du dépôt en file://), aucune ressource réseau. -->
+<style>
+@font-face{font-family:"Inter";font-weight:400;src:url(file:///home/user/Outil-lectrique-/polices/inter-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:500;src:url(file:///home/user/Outil-lectrique-/polices/inter-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"Inter";font-weight:600;src:url(file:///home/user/Outil-lectrique-/polices/inter-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-weight:500;src:url(file:///home/user/Outil-lectrique-/polices/jetbrains-mono-latin-500-normal.woff2) format("woff2")}
+:root{
+  /* la table, telle qu'aujourd'hui */
+  --s-app:#0e1626;
+  --table-fond:radial-gradient(1150px 780px at 96% -14%,rgba(96,140,220,.30),rgba(96,140,220,0) 62%),linear-gradient(158deg,#1b2843 0%,#121c30 42%,#0a111e 100%);
+  --t-table:#e9eef9; --t-table-2:#a9b8d4; --l-table:rgba(160,190,255,.13); --l-table-2:rgba(160,190,255,.26); --glace:#9fc2ff;
+  /* PROPOSÉ — les nappes de lumière (deux calques qui dérivent), les points en vignette, la lueur qui révèle */
+  --nappe-a:radial-gradient(closest-side,rgba(92,138,226,.34),rgba(92,138,226,.12) 45%,rgba(92,138,226,0));
+  --nappe-b:radial-gradient(closest-side,rgba(40,112,170,.30),rgba(40,112,170,.10) 50%,rgba(40,112,170,0));
+  --nappe-c:radial-gradient(closest-side,rgba(130,120,220,.14),rgba(130,120,220,0));
+  --points-a:.16;                       /* les points au repos (aujourd'hui .22, partout) */
+  --points-revele:.55;                  /* les points sous la lueur */
+  --points-vignette:radial-gradient(ellipse 72% 68% at 50% 46%,#000 35%,rgba(0,0,0,.35) 75%,transparent 100%);
+  /* PROPOSÉ — le mouvement */
+  --courbe:cubic-bezier(.2,.8,.2,1);          /* garder : la sortie, le survol */
+  --courbe-entree:cubic-bezier(.32,.72,0,1);  /* ce qui paraît : vif, très freiné (la feuille, la carte, une rangée) */
+  --courbe-sortie:cubic-bezier(.4,0,1,1);     /* ce qui part : accélère, sans traîner */
+  --courbe-glisse:cubic-bezier(.65,0,.35,1);  /* ce qui va de A à B sous les yeux (la pastille du folio, l'index du cadran) */
+  --d-instant:90ms; --d-rapide:140ms; --d-moyen:220ms; --d-lent:340ms; --d-pose:420ms; --d-trace:640ms;
+  --sans:"Inter",ui-sans-serif,system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden}
+body{font:13px/1.45 var(--sans);color:var(--t-table);background:var(--s-app);-webkit-font-smoothing:antialiased;letter-spacing:-.003em;font-feature-settings:"cv05" 1}
+
+/* ─── LA TABLE VIVANTE ─── */
+#table{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;contain:strict}
+#table>div{position:absolute}
+.ta-fond{inset:0;background:var(--table-fond)}
+.ta-nappe{left:50%;top:50%;border-radius:50%;will-change:transform,opacity}
+.ta-nappe.a{width:120vmax;height:90vmax;margin:-45vmax 0 0 -60vmax;background:var(--nappe-a)}
+.ta-nappe.b{width:110vmax;height:80vmax;margin:-40vmax 0 0 -55vmax;background:var(--nappe-b)}
+.ta-nappe.c{width:70vmax;height:50vmax;margin:-25vmax 0 0 -35vmax;background:var(--nappe-c)}
+.ta-points{inset:-24px;background-image:radial-gradient(circle at 1px 1px,rgba(160,188,240,var(--points-a)) 1px,transparent 1.5px);background-size:24px 24px;
+  -webkit-mask-image:var(--points-vignette);mask-image:var(--points-vignette)}
+/* la lueur et ce qu'elle révèle : un disque qui suit la souris ; dedans, les mêmes points, plus vifs, recalés sur la grille */
+.ta-lueur{left:0;top:0;width:760px;height:760px;margin:-380px 0 0 -380px;border-radius:50%;opacity:0;transition:opacity .8s ease;will-change:transform;
+  background:radial-gradient(closest-side,rgba(132,172,255,.15),rgba(132,172,255,.05) 55%,rgba(132,172,255,0))}
+.ta-revele{left:0;top:0;width:420px;height:420px;margin:-210px 0 0 -210px;overflow:hidden;border-radius:50%;opacity:0;transition:opacity .8s ease;will-change:transform;
+  -webkit-mask-image:radial-gradient(closest-side,#000,rgba(0,0,0,.45) 55%,transparent);mask-image:radial-gradient(closest-side,#000,rgba(0,0,0,.45) 55%,transparent)}
+.ta-revele i{position:absolute;left:-24px;top:-24px;width:468px;height:468px;background-image:radial-gradient(circle at 1px 1px,rgba(190,212,255,var(--points-revele)) 1.1px,transparent 1.6px);background-size:24px 24px;will-change:transform}
+#table.vue .ta-lueur,#table.vue .ta-revele{opacity:1}
+/* le courant : un éclat de glace qui court le long d'une rangée de points, de temps en temps */
+.ta-courant{left:0;top:0;width:150px;height:1.5px;border-radius:1px;opacity:0;will-change:transform,opacity;
+  background:linear-gradient(90deg,rgba(159,194,255,0),rgba(190,214,255,.85) 70%,rgba(235,243,255,1));box-shadow:0 0 6px 1px rgba(140,180,255,.35)}
+.ta-courant::after{content:"";position:absolute;right:-2px;top:-1.5px;width:4.5px;height:4.5px;border-radius:50%;background:#eef4ff;box-shadow:0 0 8px 2px rgba(150,190,255,.6)}
+
+/* ─── LA BARRE DU HAUT : sur l'accueil, pas de bande — la marque flotte sur la table ─── */
+#entete{position:fixed;top:0;left:0;right:0;height:52px;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:0 10px;transition:background var(--d-moyen) var(--courbe),box-shadow var(--d-moyen) var(--courbe)}
+#entete.bande{background:rgba(12,19,34,.5);box-shadow:0 1px 0 rgba(160,192,255,.12)}
+.marque{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px 0 4px;border-radius:10px}
+.marque i{width:30px;height:30px;border-radius:9px;background:linear-gradient(150deg,#f4f7ff,#bdd0f4);display:grid;place-items:center;color:#13203a;box-shadow:0 0 0 1px rgba(255,255,255,.35),0 6px 18px -4px rgba(120,165,255,.55)}
+.marque svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.marque b{font:600 16px/1.2 var(--sans);letter-spacing:-.02em}
+.menu-b{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:#b8c6e0}
+.menu-b svg{width:18px;height:18px;fill:currentColor}
+
+/* ─── L'ACCUEIL VIDE : une composition, un objet, un titre, un geste ─── */
+#page{position:fixed;inset:52px 0 0;z-index:2;overflow:auto}
+.vide{position:absolute;left:0;right:0;top:0;bottom:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding-bottom:2vh}
+.pile{position:relative;width:236px;height:167px;margin-bottom:44px}
+.pile::before{content:"";position:absolute;left:50%;bottom:-38px;width:440px;height:110px;margin-left:-220px;border-radius:50%;background:radial-gradient(closest-side,rgba(120,162,255,.20),rgba(120,162,255,0))}
+.feuille{position:absolute;inset:0;border-radius:4px;background:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.6),0 30px 60px -22px rgba(0,6,18,.85),0 8px 20px rgba(0,6,18,.45)}
+.feuille.f3{background:#c9d3e6;transform:translate(-8px,12px) rotate(-3.4deg);box-shadow:0 0 0 1px rgba(15,26,46,.22),0 18px 40px -16px rgba(0,6,18,.7)}
+.feuille.f2{background:#dfe6f3;transform:translate(7px,7px) rotate(2.2deg);box-shadow:0 0 0 1px rgba(15,26,46,.2),0 18px 40px -16px rgba(0,6,18,.6)}
+.feuille svg{position:absolute;inset:0;width:100%;height:100%}
+.feuille .cadre{fill:none;stroke:#d2d6df;stroke-width:1}
+.feuille .bloc{fill:#fff;stroke:#1d1d1f;stroke-width:1.3}
+.feuille .fil{fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.feuille .fa{stroke:#7d3c98}.feuille .fb{stroke:#117a8b}
+.feuille .noeud{fill:#1d1d1f}
+.feuille .cart{fill:#f2f4f6;stroke:#aab4be;stroke-width:.7}
+.titre{margin:0;font:600 40px/1.1 var(--sans);letter-spacing:-.032em;color:#f2f6ff;text-wrap:balance}
+.chapeau{margin:14px 0 0;max-width:44ch;font:400 15px/1.6 var(--sans);color:var(--t-table-2);text-wrap:balance}
+.gestes{display:flex;gap:12px;margin-top:34px}
+.b1,.b2{height:44px;display:inline-flex;align-items:center;gap:10px;border-radius:12px;font:500 14px/1 var(--sans);letter-spacing:-.006em;cursor:pointer;border:1px solid transparent;
+  transition:transform var(--d-rapide) var(--courbe),background var(--d-rapide) var(--courbe),box-shadow var(--d-moyen) var(--courbe),border-color var(--d-rapide) var(--courbe)}
+.b1{padding:0 10px 0 16px;background:#eef3fd;color:#0f1a2e;box-shadow:inset 0 -1px 0 rgba(15,26,46,.1),0 1px 2px rgba(0,0,0,.45),0 10px 28px -12px rgba(120,165,255,.45)}
+.b1:hover{background:#fff;transform:translateY(-1px);box-shadow:inset 0 -1px 0 rgba(15,26,46,.1),0 2px 4px rgba(0,0,0,.4),0 16px 36px -12px rgba(130,175,255,.7)}
+.b1:active,.b2:active{transform:scale(.97);transition-duration:var(--d-instant)}
+.b1 kbd{display:inline-flex;gap:3px;margin-left:6px}
+.b1 kbd span{font:500 11px/1 var(--mono);color:#3f4a62;background:rgba(15,26,46,.07);box-shadow:inset 0 0 0 1px rgba(15,26,46,.1);border-radius:5px;padding:4px 5px}
+.b2{padding:0 16px 0 13px;background:rgba(170,200,255,.08);border-color:rgba(170,200,255,.22);color:var(--t-table);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.b2:hover{background:rgba(170,200,255,.13);border-color:rgba(170,200,255,.34)}
+.b1 svg,.b2 svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.b2 svg{color:#b8c6e0}
+.glisser{display:flex;align-items:center;gap:8px;margin-top:18px;font:400 13px/1.4 var(--sans);color:var(--t-table-2)}
+.glisser svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;opacity:.8}
+
+/* le DOCK : le verre des palets, en bas au milieu — l'Exemple et la base des contrats, comme deux applications */
+.dock{position:absolute;left:50%;bottom:28px;transform:translateX(-50%);display:flex;align-items:center;gap:4px;padding:8px;border-radius:20px;
+  background:rgba(38,54,86,.72);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 0 0 1px rgba(186,212,255,.22),0 24px 48px -16px rgba(0,6,18,.8)}
+.tuile{display:flex;align-items:center;gap:12px;height:56px;padding:0 18px 0 8px;border-radius:13px;color:var(--t-table);text-align:left;cursor:pointer;transition:background var(--d-rapide) var(--courbe),transform var(--d-rapide) var(--courbe)}
+.tuile:hover{background:rgba(170,200,255,.1)}
+.tuile:active{transform:scale(.97)}
+.tuile .vi{width:56px;height:40px;border-radius:4px;background:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.5),0 6px 14px -6px rgba(0,0,0,.6);display:block}
+.tuile .ic{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;background:rgba(170,200,255,.12);box-shadow:inset 0 0 0 1px rgba(170,200,255,.18)}
+.tuile .ic svg{width:20px;height:20px;fill:none;stroke:#cdd8eb;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.tuile b{display:block;font:600 13px/1.3 var(--sans);letter-spacing:-.006em}
+.tuile small{display:block;font:400 12px/1.35 var(--sans);color:var(--t-table-2)}
+.dock hr{width:1px;height:32px;border:none;background:rgba(170,200,255,.18);margin:0 4px}
+
+/* ─── LA BIBLIOTHÈQUE PLEINE ─── */
+.biblio{width:min(1180px,calc(100% - 80px));margin:0 auto;padding:56px 0 120px}
+.tete{display:flex;align-items:flex-end;justify-content:space-between;gap:24px}
+.tete h1{margin:0;font:600 34px/1.1 var(--sans);letter-spacing:-.028em;color:#f2f6ff}
+.tete p{margin:8px 0 0;font:400 14px/1.4 var(--sans);color:var(--t-table-2)}
+.outils{display:flex;gap:10px;align-items:center}
+.cherche{display:flex;align-items:center;gap:8px;width:300px;height:38px;padding:0 8px 0 12px;border-radius:12px;background:rgba(14,22,40,.55);box-shadow:inset 0 0 0 1px var(--l-table);color:var(--t-table-2);font-size:13px}
+.cherche svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6}
+.cherche kbd{margin-left:auto;font:500 11px/1 var(--mono);background:rgba(170,200,255,.1);border-radius:5px;padding:4px 6px}
+.outils .b1{height:38px;border-radius:11px;font-size:13px;padding:0 14px 0 12px}
+/* « Reprendre » : un widget de verre (pas une bande blanche) — le papier est réservé à ce qu'on choisit */
+.widget{display:flex;align-items:center;gap:16px;margin:32px 0 40px;padding:12px 18px 12px 12px;border-radius:18px;background:rgba(38,54,86,.62);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 0 0 1px rgba(186,212,255,.2),0 20px 44px -18px rgba(0,6,18,.8);cursor:pointer;transition:background var(--d-rapide) var(--courbe)}
+.widget:hover{background:rgba(50,70,108,.7)}
+.widget .vi{width:72px;height:51px;border-radius:4px;background:#fff;flex:none;box-shadow:0 8px 18px -8px rgba(0,0,0,.7)}
+.widget .t{flex:1;min-width:0}
+.widget small{display:block;font:500 12px/1.3 var(--sans);color:var(--t-table-2)}
+.widget b{display:block;margin-top:3px;font:600 16px/1.3 var(--sans);letter-spacing:-.012em}
+.widget b span{font-weight:400;color:var(--t-table-2)}
+.widget .fo{display:flex;gap:4px;margin-right:12px}
+.widget .fo i{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font:500 11px/1 var(--sans);font-style:normal;color:#cdd8eb;background:rgba(170,200,255,.08)}
+.widget .fo i.on{background:#e9f0fd;color:#10192c;font-weight:600}
+.widget kbd{font:500 11px/1 var(--mono);color:var(--t-table);background:rgba(170,200,255,.12);border-radius:5px;padding:5px 7px}
+.sous{display:flex;align-items:center;gap:12px;margin:0 0 18px;font:500 13px/1 var(--sans);color:var(--t-table-2)}
+.sous::after{content:"";flex:1;height:1px;background:var(--l-table)}
+.grille{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:36px 28px}
+.carte{position:relative;height:200px;cursor:pointer}
+.carte .p2,.carte .p3,.carte .p1{position:absolute;inset:0;border-radius:14px;transition:transform var(--d-pose) var(--courbe-entree),box-shadow var(--d-pose) var(--courbe-entree)}
+.carte .p3{background:#c9d3e6;transform:translate(0,12px) scale(.94);box-shadow:0 0 0 1px rgba(15,26,46,.25)}
+.carte .p2{background:#dfe6f3;transform:translate(0,6px) scale(.97);box-shadow:0 0 0 1px rgba(15,26,46,.22)}
+.carte .p1{background:#fff;color:#141c2c;padding:18px 18px 16px 20px;box-shadow:0 0 0 1px rgba(255,255,255,.55),0 18px 36px -14px rgba(0,6,18,.8),0 3px 8px rgba(0,6,18,.4)}
+.carte:hover .p1{transform:translateY(-4px);box-shadow:0 0 0 1px rgba(255,255,255,.6),0 30px 54px -16px rgba(0,6,18,.9),0 8px 16px rgba(0,6,18,.45)}
+.carte:hover .p2{transform:translate(7px,7px) rotate(2deg) scale(.97)}
+.carte:hover .p3{transform:translate(-8px,13px) rotate(-3deg) scale(.94)}
+.ecp{display:flex;gap:6px;align-items:baseline;font:500 11px/1 var(--sans);color:#5d6780;letter-spacing:.02em}
+.ecp b{font:500 13px/1 var(--mono);color:#465068;letter-spacing:.05em}
+.ecp b.att{font:500 12px/1 var(--sans);color:#965800;letter-spacing:0}
+.carte h3{margin:12px 0 0;font:600 17px/1.25 var(--sans);letter-spacing:-.016em}
+.meta{margin-top:4px;font:400 12px/1.4 var(--sans);color:#465068}
+.plans{margin-top:16px;padding-top:12px;border-top:1px solid #e3e6ee;display:flex;flex-direction:column;gap:6px}
+.plans span{display:flex;align-items:center;gap:8px;font:500 12px/1.2 var(--sans);color:#2b3447}
+.plans span::before{content:"";width:12px;height:9px;border-radius:2px;box-shadow:inset 0 0 0 1.2px #8a94aa}
+.plans em{font-style:normal;color:#5d6780;padding-left:20px;font-size:12px}
+.etat{position:absolute;right:16px;top:16px;display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px 0 8px;border-radius:999px;font:500 11px/1 var(--sans)}
+.etat::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.etat.ko{color:#c3271f;background:#fdeceb}.etat.ok{color:#1d7a3c;background:#e8f5ec}
+.essai{margin-top:56px}
+.demo{display:flex;align-items:center;gap:14px;width:360px;padding:10px 18px 10px 10px;border-radius:16px;box-shadow:0 0 0 1px rgba(186,212,255,.3);cursor:pointer}
+.demo .vi{width:60px;height:42px;border-radius:4px;background:#fff}
+.demo b{display:block;font:600 14px/1.3 var(--sans)}
+.demo small{display:block;font:400 12px/1.4 var(--sans);color:var(--t-table-2)}
+.demo small i{font-style:normal;color:#ff9d93}
+
+/* ─── L'ARRIVÉE (une fois) : la composition se pose, de bas en haut, en 420 ms, 40 ms d'écart ─── */
+.entre .pose{animation:pose var(--d-pose) var(--courbe-entree) both;animation-delay:calc(var(--k,0) * 40ms)}
+@keyframes pose{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.entre .pile .f1 .fil{stroke-dasharray:1;stroke-dashoffset:1;animation:trace var(--d-trace) var(--courbe-entree) both;animation-delay:calc(260ms + var(--j,0) * 120ms)}
+@keyframes trace{to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){ .entre .pose,.entre .pile .f1 .fil{animation:none} .ta-lueur,.ta-revele,.ta-courant{display:none} }
+</style>
+</head>
+<body>
+<div id="table" aria-hidden="true">
+  <div class="ta-fond"></div>
+  <div class="ta-nappe a"></div><div class="ta-nappe b"></div><div class="ta-nappe c"></div>
+  <div class="ta-points"></div>
+  <div class="ta-lueur"></div>
+  <div class="ta-revele"><i></i></div>
+  <div class="ta-courant"></div>
+</div>
+<header id="entete">
+  <span class="marque"><i><svg viewBox="0 0 24 24"><path d="M5 5l7 14 7-14"/><circle cx="5" cy="5" r="1.4"/><circle cx="19" cy="5" r="1.4"/></svg></i><b>Volta</b></span>
+  <span class="menu-b"><svg viewBox="0 0 24 24"><circle cx="12" cy="5.5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="18.5" r="1.6"/></svg></span>
+</header>
+<main id="page"></main>
+<template id="t-vide">
+  <section class="vide entre">
+    <div class="pile pose" style="--k:0">
+      <div class="feuille f3"></div><div class="feuille f2"></div>
+      <div class="feuille f1"><svg viewBox="0 0 236 167">
+        <rect class="cadre" x="9" y="9" width="218" height="149" rx="1"/>
+        <rect class="cart" x="140" y="132" width="87" height="26"/>
+        <rect class="bloc" x="28" y="44" width="36" height="46" rx="1.5"/>
+        <rect class="bloc" x="160" y="30" width="44" height="30" rx="1.5"/>
+        <rect class="bloc" x="160" y="76" width="44" height="30" rx="1.5"/>
+        <path class="fil fa" pathLength="1" style="--j:0" d="M64 56H112V45H160"/>
+        <path class="fil fb" pathLength="1" style="--j:1" d="M64 78H120V91H160"/>
+        <circle class="noeud" cx="112" cy="56" r="2.2"/>
+      </svg></div>
+    </div>
+    <h1 class="titre pose" style="--k:1">Ouvrez votre retest</h1>
+    <p class="chapeau pose" style="--k:2">Une ligne par câble, en Excel ou en CSV. Volta dessine les folios et vérifie chaque calibre, chaque contact, chaque câble.</p>
+    <div class="gestes pose" style="--k:3">
+      <span class="b1"><svg viewBox="0 0 24 24"><path d="M12 15V4M7 9l5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>Ouvrir un retest…<kbd><span>Ctrl</span><span>O</span></kbd></span>
+      <span class="b2"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Nouvelle installation</span>
+    </div>
+    <p class="glisser pose" style="--k:4"><svg viewBox="0 0 24 24"><path d="M12 3v10M8 9l4 4 4-4"/><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>ou glissez-le n’importe où dans la fenêtre</p>
+  </section>
+  <nav class="dock entre" aria-label="Pour commencer autrement"><div class="pose" style="--k:5;display:flex;align-items:center;gap:4px">
+    <span class="tuile"><svg class="vi" viewBox="0 0 56 40"><rect x="3" y="3" width="50" height="34" fill="none" stroke="#d2d6df" stroke-width=".8"/><rect x="8" y="12" width="9" height="12" fill="#fff" stroke="#1d1d1f" stroke-width=".9"/><rect x="38" y="9" width="11" height="8" fill="#fff" stroke="#1d1d1f" stroke-width=".9"/><rect x="38" y="21" width="11" height="8" fill="#fff" stroke="#1d1d1f" stroke-width=".9"/><path d="M17 15h12v-2h9" fill="none" stroke="#7d3c98" stroke-width="1.1"/><path d="M17 21h14v4h7" fill="none" stroke="#117a8b" stroke-width="1.1"/></svg><span><b>Exemple</b><small>démonstration · 6 folios</small></span></span>
+    <hr>
+    <span class="tuile"><span class="ic"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v6.5c0 1.6 3.4 2.8 7.5 2.8s7.5-1.2 7.5-2.8V5.5"/><path d="M4.5 12v6.5c0 1.6 3.4 2.8 7.5 2.8s7.5-1.2 7.5-2.8V12"/></svg></span><span><b>Base des contrats</b><small>déposer les contrats déjà faits</small></span></span>
+  </div></nav>
+</template>
+<template id="t-pleine">
+  <div class="biblio entre">
+    <div class="tete pose" style="--k:0"><div><h1>Bibliothèque</h1><p>4 installations · 10 plans</p></div>
+      <div class="outils"><span class="cherche"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Chercher un ECP, une installation…<kbd>/</kbd></span><span class="b1"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Nouvelle installation</span></div></div>
+    <div class="widget pose" style="--k:1"><svg class="vi" viewBox="0 0 72 51"><rect x="4" y="4" width="64" height="43" fill="none" stroke="#d2d6df" stroke-width=".8"/><rect x="10" y="15" width="11" height="15" fill="#fff" stroke="#1d1d1f" stroke-width=".9"/><rect x="48" y="11" width="14" height="10" fill="#fff" stroke="#1d1d1f" stroke-width=".9"/><rect x="48" y="26" width="14" height="10" fill="#fff" stroke="#1d1d1f" stroke-width=".9"/><path d="M21 19h15v-3h12" fill="none" stroke="#7d3c98" stroke-width="1.2"/><path d="M21 26h17v5h10" fill="none" stroke="#117a8b" stroke-width="1.2"/></svg>
+      <span class="t"><small>Reprendre où vous en étiez</small><b>Contrat d’exemple <span>· Exemple</span></b></span>
+      <span class="fo"><i>1</i><i>2</i><i class="on">3</i><i>4</i><i>5</i><i>6</i></span><kbd>Échap</kbd></div>
+    <div class="sous pose" style="--k:2">Installations, par n° ECP</div>
+    <div class="grille">
+      <div class="carte pose" style="--k:3"><div class="p3"></div><div class="p2"></div><div class="p1"><span class="ecp">ECP <b>40912</b></span><h3>Radar météo</h3><div class="meta">3 plans · ouverte hier</div><div class="plans"><span>H-1 Alimentation</span><span>H-2 Commande</span><span>H-3 Signal</span></div></div></div>
+      <div class="carte pose" style="--k:4"><div class="p1"><span class="ecp">ECP <b>41207</b></span><h3>Antenne VHF 2</h3><div class="meta">1 plan · créée le 29/10</div><div class="plans"><span>H-1 Alimentation</span></div></div></div>
+      <div class="carte pose" style="--k:5"><div class="p2"></div><div class="p1"><span class="ecp">ECP <b>41388</b></span><span class="etat ko">2 problèmes</span><h3>Cockpit, tableau central</h3><div class="meta">2 plans · ouverte à 20:43</div><div class="plans"><span>H-1 Alimentation</span><span>H-2 Commande</span></div></div></div>
+      <div class="carte pose" style="--k:6"><div class="p3"></div><div class="p2"></div><div class="p1"><span class="ecp">ECP <b class="att">à saisir</b></span><h3>Feux de navigation</h3><div class="meta">4 plans · créée le 29/10</div><div class="plans"><span>H-1 Alimentation</span><span>H-2 Commande</span><span>H-3 Signal</span><em>+ 1 autre</em></div></div></div>
+    </div>
+    <div class="essai pose" style="--k:7"><div class="sous">Pour essayer</div><div class="demo"><svg class="vi" viewBox="0 0 60 42"><rect x="3" y="3" width="54" height="36" fill="none" stroke="#d2d6df" stroke-width=".8"/><rect x="8" y="13" width="9" height="12" fill="#fff" stroke="#1d1d1f" stroke-width=".9"/><rect x="40" y="9" width="12" height="9" fill="#fff" stroke="#1d1d1f" stroke-width=".9"/><rect x="40" y="23" width="12" height="9" fill="#fff" stroke="#1d1d1f" stroke-width=".9"/><path d="M17 16h13v-3h10" fill="none" stroke="#7d3c98" stroke-width="1.1"/><path d="M17 22h15v5h8" fill="none" stroke="#117a8b" stroke-width="1.1"/></svg><span><b>Exemple</b><small>démonstration · 1 plan · <i>5 problèmes</i></small></span></div></div>
+  </div>
+</template>
+<script>
+'use strict';
+const Q = new URLSearchParams(location.search), FIGE = Q.get('fige') === '1' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+// bancs de coût : ?sansflou=1 (le dock sans backdrop-filter) · ?sansmasque=1 (les points sans vignette en masque) · ?sansrot=1 · ?sansnappes=1
+if (Q.get('sansflou')) document.querySelectorAll('.dock').forEach(d => { d.style.backdropFilter = 'none'; d.style.webkitBackdropFilter = 'none'; d.style.background = 'rgba(38,54,86,.94)'; });
+if (Q.get('sansmasque')) { const pt = document.querySelector('.ta-points'); pt.style.maskImage = 'none'; pt.style.webkitMaskImage = 'none'; }
+if (Q.get('sansnappes')) document.querySelectorAll('.ta-nappe').forEach(n => n.style.display = 'none');
+if (!Q.get('c')) document.querySelector('.ta-nappe.c').style.display = 'none';   // SPÉC : deux nappes ; la troisième (?c=1) pour comparer
+const page = document.getElementById('page'); page.appendChild(document.getElementById(Q.get('etat') === 'pleine' ? 't-pleine' : 't-vide').content.cloneNode(true));
+document.getElementById('entete').classList.toggle('bande', Q.get('etat') === 'pleine');
+
+/* ═══ LA TABLE VIVANTE — la spécification, en code ═══
+   · DÉRIVE des nappes : trois calques pré-dessinés (des dégradés, rastérisés une fois), déplacés et tournés par `transform`
+     seulement (le compositeur, rien à repeindre), sur des Lissajous de périodes premières entre elles (47, 61, 83, 71 s) :
+     ça ne se répète jamais à l'œil. Amplitudes : 4 vw, 3 vh, 5°. On l'écrit À 20 Hz, pas à 60 : à 2 px/s, l'œil ne voit
+     pas la différence, et le coût est divisé par trois.
+   · SOUFFLE : l'opacité de la nappe B respire (24 s, .55 ↔ 1), dans la même écriture.
+   · LUEUR : un ressort amorti critique (ω = 9 rad/s : posée en ~0,5 s, sans dépassement), elle s'arrête avec la main ;
+     dedans, les points se RÉVÈLENT (un disque de points plus vifs, recalé sur la grille).
+   · COURANT : toutes les 14 à 22 s, un éclat de glace court 1,8 s le long d'une rangée de points (aligné à 24 px).
+   · VEILLE : 90 s sans la main, la dérive ralentit jusqu'à l'arrêt (2 s) ; un geste la relance (1,2 s). Page cachée :
+     tout s'arrête. Pendant un geste sur le plan : la dérive attend. Mouvement réduit : rien ne bouge. */
+const T = document.getElementById('table'), $ = s => T.querySelector(s);
+const nA = $('.nappe.a') || $('.ta-nappe.a'), nB = $('.ta-nappe.b'), nC = $('.ta-nappe.c'), lueur = $('.ta-lueur'), revele = $('.ta-revele'), reveleI = revele.querySelector('i'), courant = $('.ta-courant');
+const DERIVE = { t: +(Q.get('t') || 0), vitesse: 1, cible: 1, derniere: performance.now(), geste: false, veilleT: 0 };
+const sin = Math.sin, PI2 = Math.PI * 2;
+const ROT = Q.get('rot') ? 1 : 0;   // SPÉC : pas de rotation (le banc : la rotation de calques plein écran fait tomber la cadence à 30 i/s en rendu logiciel)
+function poserNappes(t) { const vw = innerWidth / 100, vh = innerHeight / 100;
+  nA.style.transform = `translate3d(${(18 * vw + 4 * vw * sin(PI2 * t / 47)).toFixed(1)}px,${(-22 * vh + 3 * vh * sin(PI2 * t / 61 + 1.1)).toFixed(1)}px,0) rotate(${(ROT * 5 * sin(PI2 * t / 83)).toFixed(2)}deg)`;
+  nB.style.transform = `translate3d(${(-30 * vw - 4 * vw * sin(PI2 * t / 61 + .4)).toFixed(1)}px,${(30 * vh - 3 * vh * sin(PI2 * t / 47 + 2)).toFixed(1)}px,0) rotate(${(ROT * -4 * sin(PI2 * t / 71)).toFixed(2)}deg)`;
+  nB.style.opacity = (.775 + .225 * sin(PI2 * t / 24)).toFixed(3);
+  nC.style.transform = `translate3d(${(6 * vw * sin(PI2 * t / 71 + 2.2)).toFixed(1)}px,${(4 * vh * sin(PI2 * t / 83 + .7)).toFixed(1)}px,0)`; }
+poserNappes(DERIVE.t);
+if (!FIGE) {
+  setInterval(() => { if (document.hidden) return; const n = performance.now(), dt = Math.min(.25, (n - DERIVE.derniere) / 1000); DERIVE.derniere = n;
+    DERIVE.vitesse += (DERIVE.cible - DERIVE.vitesse) * Math.min(1, dt * 2.2);            // la vitesse rejoint sa cible (veille, réveil)
+    if (DERIVE.geste || DERIVE.vitesse < .002) return; DERIVE.t += dt * DERIVE.vitesse; poserNappes(DERIVE.t); }, Math.round(1000 / (+(Q.get('hz') || 15))));
+  const eveil = () => { DERIVE.cible = 1; clearTimeout(DERIVE.veilleT); DERIVE.veilleT = setTimeout(() => DERIVE.cible = 0, 90000); };
+  ['pointermove', 'keydown', 'wheel', 'pointerdown'].forEach(e => addEventListener(e, eveil, { passive: true })); eveil();
+  // la lueur : un ressort amorti critique ; les points révélés restent sur la grille (contre-translation modulo 24)
+  const L = { x: innerWidth * .7, y: innerHeight * .3, px: innerWidth * .7, py: innerHeight * .3, vx: 0, vy: 0, a: 0, t: 0 };
+  const poserLueur = () => { const tr = `translate3d(${L.px.toFixed(1)}px,${L.py.toFixed(1)}px,0)`; lueur.style.transform = tr; revele.style.transform = tr;
+    const m = v => ((v - 210) % 24 + 24) % 24; reveleI.style.transform = `translate3d(${(-m(L.px)).toFixed(1)}px,${(-m(L.py)).toFixed(1)}px,0)`; };
+  const W0 = 9; const pas = n => { const dt = Math.min(.05, (n - (L.t || n)) / 1000) || .016; L.t = n;
+    const ax = W0 * W0 * (L.x - L.px) - 2 * W0 * L.vx, ay = W0 * W0 * (L.y - L.py) - 2 * W0 * L.vy; L.vx += ax * dt; L.vy += ay * dt; L.px += L.vx * dt; L.py += L.vy * dt; poserLueur();
+    L.a = (Math.abs(L.x - L.px) + Math.abs(L.y - L.py) > .4 || Math.abs(L.vx) + Math.abs(L.vy) > 2) ? requestAnimationFrame(pas) : 0; if (!L.a) L.t = 0; };
+  addEventListener('pointermove', e => { if (e.pointerType === 'touch') return; L.x = e.clientX; L.y = e.clientY; T.classList.add('vue'); if (!L.a) L.a = requestAnimationFrame(pas); }, { passive: true });
+  document.addEventListener('pointerleave', () => T.classList.remove('vue')); poserLueur();
+  // le courant : un éclat, de temps en temps, sur une rangée de points ; jamais deux à la fois
+  const courir = () => { if (!document.hidden && DERIVE.vitesse > .5) { const H = innerHeight, Wd = innerWidth; const bande = Math.random() < .5 ? 80 + Math.random() * H * .14 : H * .8 + Math.random() * H * .12, y = Math.round(bande / 24) * 24 + 1 - 24;   /* SPÉC : jamais sous la composition — une rangée du haut ou du bas */
+      const x0 = Math.round((Math.random() * (Wd - 700) + 40) / 24) * 24 - 24, long = 360 + Math.random() * 220, sens = Math.random() < .5 ? 1 : -1;
+      courant.style.transform = `translate3d(${x0}px,${y}px,0)` + (sens < 0 ? ' scaleX(-1)' : '');
+      courant.animate([{ transform: `translate3d(${sens > 0 ? x0 : x0 + long}px,${y}px,0) scaleX(${sens})`, opacity: 0 }, { opacity: .9, offset: .15 }, { opacity: .7, offset: .7 },
+        { transform: `translate3d(${sens > 0 ? x0 + long : x0}px,${y}px,0) scaleX(${sens})`, opacity: 0 }], { duration: 1800, easing: 'cubic-bezier(.45,0,.25,1)' }); }
+    setTimeout(courir, 14000 + Math.random() * 8000); };
+  setTimeout(courir, Q.get('courant') ? +Q.get('courant') : 2600);
+}
+</script>
+</body>
+</html>
