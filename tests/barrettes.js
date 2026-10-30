@@ -589,5 +589,26 @@ const DB = X.differentiel(L.map(l => l.cable === 'W-012' ? X.liaison({ ...l, typ
 ok('un type de fil changé chez nous (W-012 en DR16) : la ligne diffère, et on voit les deux', DB.compte.differe === 1 && DB.lignes.find(x => x.etat === 'differe').notre.typeBrut === 'DR16' && DB.lignes.find(x => x.etat === 'differe').ref.typeBrut === 'DR20');
 ok('la flotte d’un équipement : toutes les machines où son part number apparaît (102CB1 : deux)', X.flotteDe(IR, L, '102CB1').length === 2);
 
+/* v74, lot F (les fiches) — LES ARRANGEMENTS RECOMMANDÉS d'une prise de coupure (09, `arrangementsRecommandes`) : le
+   lecteur, « je veux des RECOMMANDATIONS, les mêmes types, les contacts admissibles ; le POURQUOI ». Dans la norme de la
+   référence, ceux qui logent tout, le retenu d'abord, puis le même boîtier, les mêmes contacts, le moins de libres ;
+   chacun ses contacts admissibles par côté et sa raison. */
+console.log('\n18. v74 — LES ARRANGEMENTS RECOMMANDÉS D’UNE PRISE (412VC3B, EN3646A61208FN)');
+vm.runInContext('this.Y = { arrangementsRecommandes, contactsAdmissibles, boitierDe };', bac);
+const Y = bac.Y, P412 = X.coupureEnModule('412VC3B', L, NE), Q412 = P412.plan;
+const R412 = Y.arrangementsRecommandes(P412.points, NE, 'EN3646', { sexe: Q412.sexe, prise: true, actuel: Q412.modules[0].module, nomme: Q412.nomme });
+ok('ils sont tous de l’EN 3646-002 et logent les 7 contacts ; le retenu (12-08, que la référence nomme) d’abord, puis le 12-10 — même boîtier, mêmes contacts — avant les boîtiers 14',
+  R412.length >= 4 && R412.every(x => x.m.famille === 'EN3646') && R412[0].retenu && R412[0].m.variante === '12-08' && R412[1].m.variante === '12-10' && R412[1].memeBoitier && R412[1].memesContacts && R412[2].boitier === '14' && !R412[2].memeBoitier,
+  R412.slice(0, 4).map(x => x.m.variante + (x.memeBoitier ? '=b' : '') + (x.memesContacts ? '=c' : '')).join(' '));
+ok('chacun ses contacts admissibles, par côté : la fiche en douilles EN3155-019F2020 × 7, l’embase en broches EN3155-018M2020 × 7',
+  R412[0].contacts.length === 2 && R412[0].contacts[0].cote === 'fiche' && R412[0].contacts[0].sexe === 'F' && R412[0].contacts[0].reference === 'EN3155-019F2020' && R412[0].contacts[0].n === 7 && R412[0].contacts[1].cote === 'embase' && R412[0].contacts[1].reference === 'EN3155-018M2020',
+  JSON.stringify(R412[0].contacts.map(y => y.cote + ':' + y.reference + '×' + y.n)));
+ok('chacun sa raison, en mots : « celui de l’installation : sa référence le nomme », « même boîtier (taille 12) : le même raccord », « boîtier 14 au lieu de 12 : un autre raccord », et les contacts libres comptés',
+  /sa référence le nomme/.test(R412[0].raisons[0]) && /1 contact libre \(un obturateur\)/.test(R412[0].raisons.join()) && /même boîtier \(taille 12\)/.test(R412[1].raisons[0]) && /3 contacts libres/.test(R412[1].raisons.join()) && /boîtier 14 au lieu de 12/.test(R412[2].raisons[0]),
+  R412.slice(0, 3).map(x => x.raisons.join(' ; ')).join(' | '));
+ok('le boîtier se lit dans l’arrangement d’un insert circulaire (12-08 → 12) et pas dans celui d’un module EN 4165', Y.boitierDe(NE.modules.find(m => m.reference === 'EN3646-002-12-08')) === '12' && Y.boitierDe(NE.modules.find(m => m.famille === 'EN4165' && m.variante === '12-20')) === '');
+const C300A = X.connecteursEnModules("300XC1", L, NE).find(c => c.nom === "A"), RA = Y.arrangementsRecommandes(C300A.points, NE, "EN4165", { sexe: C300A.plan.sexe, actuel: C300A.plan.modules[0].module });
+ok('un connecteur (300XC1 A, EN 4165) : un seul côté, ses contacts sans côté ; le retenu (12-20) d’abord', RA[0].retenu && RA[0].m.variante === '12-20' && RA[0].contacts.every(y => y.cote === '') && RA[0].contacts.some(y => y.reference === 'EN3155-003F2020'), RA.slice(0, 3).map(x => x.m.variante).join(' '));
+
 console.log('\n  ' + (total - echecs) + ' / ' + total + ' contrôles passés' + (echecs ? '  —  ' + echecs + ' ÉCHEC(S)' : '  —  tout est vert'));
 process.exit(echecs ? 1 : 0);
