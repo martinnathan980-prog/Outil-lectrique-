@@ -119,6 +119,23 @@
   /* le mouvement : vif au départ, il freine en arrivant ; on ne le remarque pas, on le sent */
   --courbe:cubic-bezier(.2,.8,.2,1);
   --rapide:.14s var(--courbe); --moyen:.22s var(--courbe); --lent:.34s var(--courbe);
+  /* v73, le panel : TROIS courbes nommées par ce que fait la chose. Ce qui PARAÎT est vif et très freiné, ce qui PART
+     accélère sans traîner, ce qui VA de A à B sous les yeux glisse. Les durées vont de l'instant à la pose. */
+  --courbe-entree:cubic-bezier(.32,.72,0,1); --courbe-sortie:cubic-bezier(.4,0,1,1); --courbe-glisse:cubic-bezier(.65,0,.35,1);
+  --d-instant:90ms; --d-rapide:140ms; --d-moyen:220ms; --d-lent:340ms; --d-pose:420ms; --d-trace:640ms;
+  --decale:40ms;             /* l'écart entre deux éléments d'une même arrivée (six au plus)                    */
+  --monte:8px;               /* l'amplitude UNIQUE d'une entrée verticale                                       */
+  --glisse:24px;             /* l'amplitude UNIQUE d'une feuille qui entre de côté                              */
+  --presse:.97;              /* l'enfoncement d'un bouton                                                       */
+  --bulle-chaude:1200ms;     /* après une bulle, la suivante paraît tout de suite pendant ce temps              */
+  --f-15:15px; --f-34:34px; --f-44:clamp(36px,2.9vw,56px);
+  /* les encres posées À MÊME LA TABLE bleu nuit (mesurées) : le --ko des feuilles n'y fait que 2,9:1 */
+  --t-table-ko:#ff7a6e;      /* 6,7:1 sur la table                                                              */
+  --pastille-ko:#ff6b5e; --pastille-ko-t:#2a0806;   /* une pastille rouge sur un palet : 4,3:1, son chiffre 6,6:1 */
+  --kbd-clair-t:#3f4a62; --kbd-clair-fond:rgba(15,26,46,.07);   /* une touche écrite sur un bouton clair : 8:1   */
+  --halo-geste:0 16px 36px -12px rgba(130,175,255,.7);         /* le geste clair survolé, sur la table          */
+  /* l'anneau du focus clavier : l'encre sur le papier et les surfaces claires, la glace sur la nuit (ci-dessous) */
+  --anneau-c:#1b1f27;
   color-scheme:light;
   /* ── la géométrie de la page : le plan se recadre dans ce que les palets et le volet épinglé laissent ── */
   --jeu:10px;                /* l'écart des palets et des feuilles aux bords de l'écran, et entre eux           */
@@ -198,12 +215,20 @@
 html,body{height:100%;margin:0;overflow:hidden}
 /* le corps a la couleur moyenne de la table ; la table elle-même est dessous tout, en couches (#table) */
 body{font:var(--f-13)/1.45 var(--sans);color:var(--t-1);letter-spacing:-.003em;background-color:var(--s-app);
-  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;-webkit-text-size-adjust:100%;overscroll-behavior:none;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1,"cv05" 1}
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;-webkit-text-size-adjust:100%;overscroll-behavior:none;font-variant-numeric:normal;font-feature-settings:"cv05" 1}
+/* les chiffres tabulaires seulement là où des chiffres s'alignent en colonne : sur tout le texte, ils élargissaient
+   chaque trait d'union (« glissez - le », « EN 2997 - 002 ») et serraient la ponctuation (le panel v73) */
+:is(td,th,.d,.chip,.fo-lbl,.zl,kbd,.badge,.puce-n,.onglet-n,.fs-badge,.dj-stat b,.dj-h-cal,.dj-chip,.bi-ecp b,.co-n,.cc-taux,.q-c b,.bi-plan-date){font-variant-numeric:tabular-nums}
 [hidden]{display:none!important}
 button,input,textarea,select{font:inherit;color:inherit;margin:0}
 button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 kbd{font-family:var(--mono)}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+:focus-visible{outline:2px solid var(--anneau-c);outline-offset:2px}
+/* UN anneau, partout, qui se voit sur les deux matières (l'ergonome v73 : sur le folio courant, « Reprendre », les
+   lignes du menu, il tombait à 1,02:1) : l'encre sur le clair, la glace sur la nuit et en sombre */
+#entete,#rail,#folios,.ilot-sombre,#bibliotheque,:root[data-theme="dark"]{--anneau-c:var(--glace)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--anneau-c:var(--glace)}}
+.menu button:focus-visible,.doc-menu-l button:focus-visible{box-shadow:inset 0 0 0 2px var(--glace)}
 ::selection{background:color-mix(in srgb,var(--accent) 18%,transparent)}
 /* ce qui défile : une barre fine et arrondie, de l'encre de son fond, qui s'affirme au survol */
 *{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--t-1) 22%,transparent) transparent}
