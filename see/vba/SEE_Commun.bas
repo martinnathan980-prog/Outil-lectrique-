@@ -231,6 +231,8 @@ Private Function ReglagesParDefaut() As Variant
         "CLSID de la coclasse SeeAutomation : V5R2 puis V4R3.")
     r.Add Array("LancerSEE", "N", _
         "N (le défaut) : Excel ne fait que REJOINDRE la fenêtre SEE ouverte, il n'en démarre jamais. O : essai volontaire, pour les macros lancées par Alt+F8 (DessinerPaquet, EssaiDessin...) : si aucune fenêtre n'est trouvée, GetObject(""new:{CLSID}"") puis CreateObject(ProgID), qui CRÉENT un objet SEE. Les boutons 1 et 2 n'en créent jamais ; le bouton 3 crée le sien, SEE fermé.")
+    r.Add Array("EssaiCLSID", "N", _
+        "N (le défaut) : pour rejoindre la fenêtre SEE, Excel n'essaie PAS GetActiveObject, une fonction de Windows appelée par Declare : sur un poste d'entreprise, la règle de Defender « Bloquer les appels d'API Win32 à partir de macros Office » arrêterait la macro et le signalerait à l'informatique. O : l'essayer, en dernier, seulement avec l'accord de l'informatique.")
     r.Add Array("VersionAPI", "auto", _
         "auto (ApplicationVersion 4.x = V4, sinon V5), V5 ou V4 : comment l'API rend les objets (valeur de retour en V5, paramètre de sortie en V4).")
     r.Add Array("Projet", "", _
@@ -836,11 +838,13 @@ End Function
 '                                SondeRegistre a trouvés (gProgIDsRegistre)
 '   b. GetObject(, "{CLSID}")
 '   c. GetActiveObject(CLSID)    par le CLSID, sans aucun ProgID (SEE_Windows) :
+'                                SEULEMENT si EssaiCLSID = O (N par défaut), et
 '                                EN DERNIER, parce que c'est une fonction de
 '                                Windows déclarée (Declare) ; sur un poste où la
 '                                règle de Defender « bloquer les appels d'API
 '                                Win32 depuis les macros » est active, Windows
-'                                arrête la macro là, sans On Error possible
+'                                arrête la macro là, sans On Error possible, et
+'                                le signale à l'informatique de l'entreprise
 ' Application d'abord, puis SeeAutomation (V5R2 puis V4R3). Aucun ne démarre
 ' SEE. Puis, SEULEMENT si lancerPermis (une macro lancée par Alt+F8, jamais
 ' les boutons 1 et 2) ET l'essai volontaire LancerSEE = O :
@@ -912,17 +916,23 @@ Public Function ConnecterSEE(ByVal lancerPermis As Boolean) As Boolean
             GoTo Connecte
         End If
     Next p
-    ' c. la fenêtre ouverte, par CLSID, sans ProgID (GetActiveObject, une fonction de Windows : en dernier)
-    i = 0
-    For Each p In clsids
-        i = i + 1
-        If EssayerParCLSID(CStr(p), o) Then
-            Set gApp = o
-            gStrategie = "GetActiveObject(" & CStr(p) & ")"
-            gEstAutomation = (i > nbApp)
-            GoTo Connecte
-        End If
-    Next p
+    ' c. la fenêtre ouverte, par CLSID, sans ProgID (GetActiveObject, une fonction de Windows : en dernier,
+    '    et seulement sur demande, EssaiCLSID = O)
+    If ReglageOui("EssaiCLSID", "N") Then
+        i = 0
+        For Each p In clsids
+            i = i + 1
+            If EssayerParCLSID(CStr(p), o) Then
+                Set gApp = o
+                gStrategie = "GetActiveObject(" & CStr(p) & ")"
+                gEstAutomation = (i > nbApp)
+                GoTo Connecte
+            End If
+        Next p
+    Else
+        Journal gEtape, gObjet, "", "GetActiveObject pas essayé : EssaiCLSID = N (le défaut ; une fonction de Windows " & _
+            "qu'un poste d'entreprise peut bloquer et signaler)"
+    End If
     If Not lancerPermis Then
         Journal gEtape, gObjet, "", "aucune fenêtre SEE ouverte trouvée ; cette macro ne démarre jamais SEE"
         GoTo Rate

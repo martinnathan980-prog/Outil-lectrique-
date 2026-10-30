@@ -87,10 +87,12 @@ feuille `Resultat_Test`.
    cherche à **rejoindre** la fenêtre ouverte, chaque essai noté avec la
    réponse de Windows (code et phrase) : `GetObject(, ProgID)` (ceux des
    réglages, puis ceux du registre, versions comprises), `GetObject(,
-   "{CLSID}")`, puis, en dernier, `GetActiveObject` par CLSID, la seule
-   fonction de Windows déclarée (`Declare`) : sur un poste où la règle de
-   Defender « Bloquer les appels d'API Win32 à partir de macros Office » est
-   active, Windows arrête la macro là, sans `On Error` possible. Avant le
+   "{CLSID}")`, puis, en dernier et **seulement si `EssaiCLSID = O`** (`N`
+   par défaut), `GetActiveObject` par CLSID, la seule fonction de Windows
+   déclarée (`Declare`) : sur un poste où la règle de Defender « Bloquer les
+   appels d'API Win32 à partir de macros Office » est active, Windows arrête
+   la macro là, sans `On Error` possible, et le signale à l'informatique ;
+   on ne l'essaie donc qu'avec son accord. Avant le
    registre et avant la recherche de SEE, un bloc **provisoire** « EN COURS »
    est mis devant le technicien : s'il reste, il dit où la macro s'est
    arrêtée et de photographier aussi le message de Windows. Il **ne démarre

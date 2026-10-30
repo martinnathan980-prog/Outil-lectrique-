@@ -352,15 +352,17 @@ def bouton2():
 def connexion():
     """INTENTION (SEE_Commun, ConnecterSEE ; la v3) : les boutons 1 et 2 REJOIGNENT la fenêtre SEE ouverte et n'en créent
     jamais, que LancerSEE vaille N (le défaut) ou O ; le bloc à photographier dit chaque essai avec son code et sa phrase ;
-    un ProgID lu au registre, ou le CLSID (GetActiveObject), rejoint la fenêtre ; une connexion CRÉÉE par une macro
+    un ProgID lu au registre, ou le CLSID (GetActiveObject, seulement si EssaiCLSID = O), rejoint la fenêtre ; une connexion CRÉÉE par une macro
     d'avant est lâchée au début des boutons 1 et 2, sans Quit."""
     return [egal('a : LancerSEE vaut N dans un classeur neuf', dans('a :', r'LancerSEE par défaut (\w+)'), 'N'),
             egal('a : bouton 1 : aucun objet SEE créé (ni new:, ni CreateObject)', nombres(r'bouton 1 : créations (\d+)', 'a :'), 0),
-            egal('a : bloc à photographier : 10 essais, chacun avec son code (et sa phrase, ou « voir plus haut »)',
-                 nombres(r'essais (\d+), avec code et phrase (\d+)', 'a :'), (10, 10)),
+            egal('a : GetActiveObject (une fonction de Windows déclarée) pas essayé par défaut (EssaiCLSID = N)',
+                 nombres(r'GetActiveObject au journal (\d+)', 'a :'), 0),
+            egal('a : bloc à photographier : 6 essais (2 ProgID, 4 CLSID), chacun avec son code (et sa phrase, ou « voir plus haut »)',
+                 nombres(r'essais (\d+), avec code et phrase (\d+)', 'a :'), (6, 6)),
             egal('a : « SEE rejoint ? = NON »', dans('a :', r'SEE rejoint \? = (\w+)'), 'NON'),
-            ('a : les codes de Windows en clair : 429 (800A01AD) et 800401E3 (MK_E_UNAVAILABLE)', dans('a :', r'(Essais = .*?) ; Registre ='),
-             lambda s: bool(s) and '429 (800A01AD) = ' in s and '800401E3 = MK_E_UNAVAILABLE' in s),
+            ('a : les codes de Windows en clair : 429 (800A01AD)', dans('a :', r'(Essais = .*?) ; Registre ='),
+             lambda s: bool(s) and '429 (800A01AD) = ' in s),
             ('a : « Et maintenant » : OK puis la photo, puis le bouton 3 et où il est (onglet « Accueil »)',
              dans('a :', r'(?s)Et maintenant = (.*?) ; Détail'), lambda s: bool(s) and PHOTO in s and BOUTON3 in s),
             egal('a : bouton 2 : aucun objet SEE créé', nombres(r'bouton 2 : créations (\d+)', 'a :'), 0),

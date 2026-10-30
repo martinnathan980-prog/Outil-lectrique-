@@ -123,8 +123,8 @@ Private Function DebutSonde(ByVal titre As String, ByVal nomFeuille As String) A
     Else
         If mEnchaine Then mConnexionEssayee = True
         ' (la feuille de la sonde vient d'être créée : le bloc provisoire repasse devant)
-        If mBlocEnCours Then EcrireBlocEnCours "SondeApplication : Excel cherche ta fenêtre SEE (en dernier par GetActiveObject, " & _
-            "une fonction de Windows)"
+        If mBlocEnCours Then EcrireBlocEnCours "SondeApplication : Excel cherche ta fenêtre SEE" & _
+            IIf(ReglageOui("EssaiCLSID", "N"), " (en dernier par GetActiveObject, une fonction de Windows)", "")
         ' une sonde ne crée jamais de SEE : elle REJOINT la fenêtre ouverte, ou rien
         connecte = ConnecterSEE(False)
         If Not connecte Then

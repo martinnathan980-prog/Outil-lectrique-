@@ -889,7 +889,7 @@ End Sub
 '      chaque essai avec son code et sa phrase, et propose le bouton 3 ;
 '   b. LancerSEE = O : toujours aucun « new: » pour les boutons 1 et 2 ;
 '   c. SEE ouvert, rejoint par un ProgID lu au registre (SEEExpert.Application.48) ;
-'   d. rejoint par son CLSID (GetActiveObject) ;
+'   d. rejoint par son CLSID (GetActiveObject, sur demande : EssaiCLSID = O ; par défaut il n'est pas essayé) ;
 '   e. une connexion CRÉÉE par une macro lancée par Alt+F8 (EssaiDessin, LancerSEE = O) est lâchée au début du
 '      bouton 1, sans Quit, et la fenêtre ouverte est rejointe ; de même au début du bouton 2.
 Public Function BancConnexion(ByVal v4 As Boolean) As String
@@ -898,7 +898,8 @@ Public Function BancConnexion(ByVal v4 As Boolean) As String
     PreparerConnexion v4
     r = "a : LancerSEE par défaut " & ValeurReglage("LancerSEE")
     TesterSEE
-    r = r & " ; bouton 1 : créations " & CreationsWin() & " ; " & EssaisPhoto() & " ; " & ResultatTest()
+    r = r & " ; bouton 1 : créations " & CreationsWin() & " ; GetActiveObject au journal " & JournalContient("GetActiveObject(") & _
+        " ; " & EssaisPhoto() & " ; " & ResultatTest()
     n0 = gTrace.Count
     EssaiDessinReel
     r = r & " ; bouton 2 : créations " & CreationsWin() & " ; écritures " & (gTrace.Count - n0) & " ; bouton 3 proposé " & _
@@ -917,6 +918,7 @@ Public Function BancConnexion(ByVal v4 As Boolean) As String
     r = r & " | c : Sonde_Registre nomme le ProgID " & FeuilleContient("Sonde_Registre", "SEEExpert.Application.48") & _
         " ; créations " & CreationsWin() & " ; " & ResultatTest()
     PreparerConnexion v4
+    FixerReglage "EssaiCLSID", "O"
     ActifCLSIDFaux APP_V4
     Set gWinObjetActif = New FauxApp
     TesterSEE
@@ -943,6 +945,7 @@ Public Function BancConnexion(ByVal v4 As Boolean) As String
     ' f. rejoint par la coclasse SeeAutomation (GetActiveObject) : le bouton 1 envoie au bouton 3 et LÂCHE la connexion
     '    (sinon File > Exit ne ferait que cacher SEE) ; GetActiveObject est essayé APRÈS les GetObject (une fonction de Windows)
     PreparerConnexion v4
+    FixerReglage "EssaiCLSID", "O"
     ActifCLSIDFaux AUTO_V4
     Set gWinObjetActif = New FauxAuto
     TesterSEE
@@ -969,6 +972,7 @@ End Function
 ' reste devant le technicien est relu ensuite par ApresArret.
 Public Function BancArret() As String
     PreparerConnexion False
+    FixerReglage "EssaiCLSID", "O"
     RegistreSEE "SEE.exe"
     gWinBloqueDeclare = True
     BancArret = "arrêté par Windows pendant le test"
