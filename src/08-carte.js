@@ -288,7 +288,7 @@ function prendreLeClavier(el) { const a = document.activeElement;
   CARTE.ouvreur = a && a !== document.body && !el.contains(a) ? a : null;
   if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1');
   try { el.focus({ preventScroll: true }); } catch (_) { el.focus(); } }
-function rendreLeClavier() { const o = CARTE.ouvreur; CARTE.ouvreur = null; const a = document.activeElement;
+function rendreLeClavierDeLaCarte() { const o = CARTE.ouvreur; CARTE.ouvreur = null; const a = document.activeElement;
   // le clavier est ailleurs (on a cliqué dehors, ou il est déjà parti) : on ne le reprend pas
   if (a && a !== document.body && !$('inspecteur').contains(a)) return;
   const cible = o && o.isConnected && o.offsetParent !== null && !o.closest('[hidden], [inert]') ? (o.matches('input, textarea') ? ($('btnCherche') || null) : o) : null;
@@ -299,7 +299,7 @@ function lierCarte() { const el = $('inspecteur');
   try { CARTE.epingle = localStorage.getItem('volta.fiche.epinglee') === '1'; CARTE.grande = localStorage.getItem('volta.fiche.grande') === '1'; } catch (_) { }
   document.documentElement.classList.toggle('insp-grande', !!CARTE.grande);
   // fermée, d'où qu'on la ferme (08-interface, `fermerInspecteur`), elle rend le clavier
-  if (typeof MutationObserver === 'function') new MutationObserver(() => { if (el.hidden) rendreLeClavier(); }).observe(el, { attributes: true, attributeFilter: ['hidden'] });
+  if (typeof MutationObserver === 'function') new MutationObserver(() => { if (el.hidden) rendreLeClavierDeLaCarte(); }).observe(el, { attributes: true, attributeFilter: ['hidden'] });
   // l'endroit du dernier appui sur la planche : la fiche d'un câble naît de là, un clic sur le plan fait glisser la carte
   $('planche').addEventListener('pointerdown', e => { CARTE.appui = { x: e.clientX, y: e.clientY, t: Date.now() }; }, true);
   // où est la souris (la carte qui se pose dessous fait oublier au plan son survol : `lacherLeSurvol`)
