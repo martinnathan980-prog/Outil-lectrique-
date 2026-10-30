@@ -2045,15 +2045,31 @@ function voirFilDeCarte(i) { const l = verite()[i]; if (!l) return;
 const LARGEURS_DOC = { normes: 'ample', bible: 'ample', see: 'page' };
 const largeurDuDoc = mode => { const k = mode.largeur || LARGEURS_DOC[mode.mode] || (mode.large ? 'large' : 'document');
   return k === 'page' ? 'calc(100vw - var(--rail) - var(--jeu))' : k === 'ample' ? 'min(1040px, calc(60vw - var(--rail)))' : k === 'large' ? '560px' : '400px'; };
-function ouvrirFiche(mode, corps, pied) { const f = $('fiche'); fermerBase(); if (!$('inspecteur').hidden) { $('inspecteur').hidden = true; document.body.classList.remove('insp-ouvert'); modeCarte(); dessinerLien(); }
+/* LE CLAVIER D'UN DOCUMENT (le panel v73, l'ergonome P1 : « ouverts par le menu, ils ne prennent pas le clavier ; Échap le
+   rend à la page ») : un document qui s'ouvre prend le clavier — son titre, ou l'onglet choisi d'un document à onglets
+   (`[data-clavier]`) ; ce qui l'a ouvert est retenu (une ligne du menu ⋮ : le ⋮ lui-même) ; fermé pour lui-même (×, Échap),
+   il rend le clavier à cet ouvreur, sans faire paraître sa bulle (`rendreLeClavier`, 08-menu). Un document qui se refait sur
+   place (les hypothèses après un réglage, Vos fichiers après un dépôt) ne déplace pas le clavier. */
+const DOC = { ouvreur: null };
+function ouvreurDuDoc() { const a = document.activeElement, f = $('fiche');
+  if (!a || a === document.body || (f && f.contains(a))) return DOC.ouvreur && DOC.ouvreur.isConnected ? DOC.ouvreur : $('btnMenu');
+  return a.closest('#menu') ? $('btnMenu') : a; }
+function prendreLeClavierDuDoc() { const c = $('fiche-corps'), cible = c.querySelector('[data-clavier]') || c.querySelector('.fiche-tete .titre');
+  if (!cible) return; if (!cible.hasAttribute('tabindex') && !/^(BUTTON|A|INPUT|SELECT|TEXTAREA)$/.test(cible.tagName)) cible.setAttribute('tabindex', '-1');
+  try { cible.focus({ preventScroll: true }); } catch (_) { cible.focus(); } }
+function ouvrirFiche(mode, corps, pied) { const f = $('fiche'), nouveau = f.hidden || !app.fiche || app.fiche.mode !== mode.mode;
+  if (nouveau && f.hidden) DOC.ouvreur = ouvreurDuDoc();
+  fermerBase(); if (!$('inspecteur').hidden) { $('inspecteur').hidden = true; document.body.classList.remove('insp-ouvert'); modeCarte(); dessinerLien(); }
   $('fiche-corps').innerHTML = corps; const p = $('fiche-pied'); p.innerHTML = pied || ''; p.hidden = !pied;
-  const nouveau = f.hidden || !app.fiche || app.fiche.mode !== mode.mode;
   document.documentElement.style.setProperty('--fiche-l', largeurDuDoc(mode));
   f.hidden = false; f.dataset.mode = mode.mode || ''; if (nouveau) { f.classList.remove('entre'); void f.offsetWidth; f.classList.add('entre'); }
   app.fiche = mode; $('fiche-corps').scrollTop = 0; f.classList.remove('defile');
   // sur téléphone un document est une page, de la barre du haut au rail : la bande des folios se range (style.css)
   document.body.classList.add('fiche-ouverte');
-  $('fi-fermer').onclick = () => fermerFiche(true); lierCoquille(); mesurerTeteFiche(); synchroniserRail(); if (nouveau) ajuster(true); }
+  $('fi-fermer').onclick = () => fermerFiche(true); lierCoquille(); mesurerTeteFiche(); synchroniserRail(); if (nouveau) ajuster(true);
+  // ce qui porte `data-bulle` dans un document dit son pourquoi au survol (08-fiche) ; le clavier entre dans le document
+  if (typeof lierBulles === 'function') { lierBulles($('fiche-corps')); lierBulles(p); }
+  if (nouveau) prendreLeClavierDuDoc(); }
 /* LA COQUILLE d'un document (style.css, « les documents ») : sa tête reste en haut quand on descend ; un filet paraît
    sous elle dès qu'on a défilé (`#fiche.defile`), et ce qui colle sous elle (l'en-tête d'une table, les onglets de SEE)
    lit sa hauteur, `--fi-tete`, remesurée quand la feuille change de taille. Posé une fois. */
@@ -2064,11 +2080,16 @@ function lierCoquille() { if (coquilleLiee) return; coquilleLiee = true; const f
   if (window.ResizeObserver) new ResizeObserver(() => { if (!f.hidden) mesurerTeteFiche(); }).observe(c); }
 /* `recadrer` : quand on ferme la fiche pour elle-même, ce qu'on avait choisi revient dans l'inspecteur (le document
    l'avait remplacé), sinon le plan reprend la place. */
-function fermerFiche(recadrer) { const f = $('fiche'); if (f.hidden && !app.fiche) return; f.hidden = true; app.fiche = null;
+function fermerFiche(recadrer) { const f = $('fiche'); if (f.hidden && !app.fiche) return; const avait = f.contains(document.activeElement) || document.activeElement === document.body;
+  f.hidden = true; app.fiche = null; const o = DOC.ouvreur && DOC.ouvreur.isConnected && DOC.ouvreur.getClientRects().length ? DOC.ouvreur : $('btnMenu'); DOC.ouvreur = null;
   document.body.classList.remove('fiche-ouverte'); synchroniserRail(); if (!recadrer) return;
-  if (app.cible && $('inspecteur').hidden) ouvrirInspecteur(); else ajuster(true); }
-const tete = (sur, titre, sans) => `<div class="fiche-tete"><div class="min0"><div class="sur">${esc(sur)}</div><h2 class="titre${sans ? ' sans' : ''}">${esc(titre)}</h2></div>
-  <button class="rond fermer" id="fi-fermer" aria-label="Fermer la fiche"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`;
+  if (app.cible && $('inspecteur').hidden) ouvrirInspecteur(); else ajuster(true);
+  // fermé pour lui-même : le clavier revient à ce qui l'avait ouvert (le ⋮ pour un document du menu), sans sa bulle
+  if (avait && (document.activeElement === document.body || !document.activeElement) && o) { if (typeof rendreLeClavier === 'function') rendreLeClavier(o); else o.focus(); } }
+/* La croix d'un document : sa bulle dit le geste et sa touche, comme celle de la feuille des raccourcis (une bulle du chrome,
+   `.bulle` : au survol après 400 ms, tout de suite au clavier) — le même geste, le même mot partout. */
+const CROIX_DOC = `<button class="rond fermer" id="fi-fermer" aria-label="Fermer (Échap)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg><span class="bulle" aria-hidden="true">Fermer<kbd>Échap</kbd></span></button>`;
+const tete = (sur, titre, sans) => `<div class="fiche-tete"><div class="min0"><div class="sur">${esc(sur)}</div><h2 class="titre${sans ? ' sans' : ''}" tabindex="-1">${esc(titre)}</h2></div>${CROIX_DOC}</div>`;
 const champ = (id, lib, val, opt) => `<label class="champ${opt && opt.sans ? ' sans' : ''}"><span>${lib}</span><input id="${id}" value="${escA(val || '')}"${opt && opt.ph ? ` placeholder="${escA(opt.ph)}"` : ''} spellcheck="false"></label>`;
 const CHAMPS_CARTOUCHE = [['ca-titre', 'titre', 'Titre'], ['ca-auteur', 'auteur', 'Dessiné par'], ['ca-indice', 'indice', 'Indice'], ['ca-date', 'date', 'Date'], ['ca-echelle', 'echelle', 'Échelle']];
 /* LE CARTOUCHE : d'abord ce qu'il donne — son aperçu sur papier, le dessin même du folio (`cartoucheSvg`, 06), le folio
