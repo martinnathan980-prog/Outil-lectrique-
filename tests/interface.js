@@ -135,7 +135,8 @@ const FICHIER = P.fichierDemande();
     await page.evaluate(() => { app.plan = '1'; redessiner(); ajuster(); }); await page.keyboard.press('b'); await page.waitForTimeout(500);
     const entetes = () => page.evaluate(() => [...document.querySelectorAll('#ba-thead th')].map(t => t.textContent.replace(/[▲▼]/g, '').trim()).filter(Boolean).join(' · '));
     const onglets = await page.evaluate(() => [...document.querySelectorAll('#ba-onglets .rc-onglet span')].map(s => s.textContent).join(' · '));
-    ok(onglets === 'Liaisons · Équipements · Disjoncteurs · Barrettes · Prises · Câbles · Raccords · Problèmes · Normes', 'neuf onglets, chaque objet dans un seul (plus de « Contacts » : la nomenclature les compte)', onglets);
+    // (v74 : le rail en trois groupes — Câblage, Matériel, Contrôle —, les Câbles avec les Liaisons — MIS À JOUR)
+    ok(onglets === 'Liaisons · Câbles · Équipements · Disjoncteurs · Barrettes · Prises · Raccords · Problèmes · Normes', 'neuf onglets, chaque objet dans un seul (plus de « Contacts » : la nomenclature les compte), rangés en trois groupes', onglets);
     ok(await entetes() === 'De · Câble · Vers · Longueur · État', 'Liaisons, d’office : de, le câble, vers, la longueur, l’état', await entetes());
     // les mots du lecteur : partout où le récapitulatif parle (les phrases du contrôle et les titres des normes viennent d'ailleurs)
     const mots = await page.evaluate(() => { const vus = []; for (const [k] of ONGLETS) { changerOnglet(k); ouvrirMenuColonnes();

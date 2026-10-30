@@ -91,9 +91,11 @@ function nomenclatureDuContrat() { const V = verite(), H = app.simu || HYPOTHESE
    référence ; la table coule avec le document (pas de boîte qui défile dans la boîte). */
 const NOMEN_SECTIONS = [['contacts', 'Contacts à sertir'], ['modules', 'Modules de jonction'], ['connecteurs', 'Connecteurs et prises'], ['habits', 'Autour des connecteurs'], ['cables', 'Câbles']];
 function ficheNomenclature() { const N = nomenclatureDuContrat(), somme = xs => xs.reduce((s, x) => s + x.n, 0);
-  // où va une pièce : les quatre premiers repères, puis « +11 » (la liste entière au survol) ; un repère et la lettre de
-  // son connecteur ne se séparent pas en fin de ligne, ni « +11 » du dernier
-  const ou = xs => `<span class="no-ou"${xs.length > 4 ? ` data-bulle="${escA(xs.join(', '))}"` : ''}>${esc(xs.slice(0, 4).map(x => x.replace(/ /g, INSECABLE)).join(', '))}${xs.length > 4 ? `${INSECABLE}<i class="no-plus">+${xs.length - 4}</i>` : ''}</span>`;
+  // où va une pièce : les quatre premiers repères, puis « +11 » ; un repère et la lettre de son connecteur ne se séparent
+  // pas en fin de ligne, ni « +11 » du dernier. « +11 » est un bouton (v74, l'ingénieur v73 : « impossible de voir la liste
+  // complète sans exporter ») : un clic déplie la ligne EN PLACE, « moins » la replie
+  const brin = xs => xs.map(x => x.replace(/ /g, INSECABLE)).join(', ');
+  const ou = xs => `<span class="no-ou">${esc(brin(xs.slice(0, 4)))}${xs.length > 4 ? `<span class="no-reste" hidden>, ${esc(brin(xs.slice(4)))}</span>${INSECABLE}<button type="button" class="no-plus" aria-expanded="false" data-n="${xs.length - 4}" aria-label="${escA('Les ' + (xs.length - 4) + ' autres repères')}" data-bulle="${escA('Déplier : ' + xs.slice(4).join(', '))}">+${xs.length - 4}</button>` : ''}</span>`;
   const note = t => `<i class="no-note-l">${esc(t)}</i>`, rien = '<span class="no-rien">—</span>';
   const tuile = (v, u, t) => `<div class="no-tuile"><b>${v}${u ? `<small>${INSECABLE}${u}</small>` : ''}</b><span>${t}</span></div>`;
   const resume = `<div class="no-resume">${tuile(somme(N.contacts), '', 'contacts à sertir')}${tuile(somme(N.modules), '', 'modules de jonction')}${tuile(somme(N.connecteurs), '', 'connecteurs et prises')}`
@@ -121,10 +123,15 @@ function ficheNomenclature() { const N = nomenclatureDuContrat(), somme = xs => 
     + table('Câbles', plurielLie(N.cables.length, 'type') + ' · ' + nombre(Math.round(N.longueur)) + ' m', ['Type', 'Qté', 'Longueur', 'Masse', 'Base'], N.cables.map(x => [td('ref', esc(x.reference)), td('d', x.n),
       td('d', `${x.reelles < x.n ? `<i class="no-hyp" data-bulle="${escA(pluriel(x.n - x.reelles, 'câble') + ' sans longueur dans l’installation : l’hypothèse de la simulation')}">≈</i>` : ''}${esc((Math.round(x.longueur * 10) / 10).toFixed(1).replace('.', ','))} m`),
       td('d', x.masse != null ? esc(nombre(Math.round(x.masse))) + ' g' : rien, x.masse == null), td('sans', x.cable ? esc([x.cable.nature, x.cable.diametre != null ? 'Ø ' + nombre(x.cable.diametre) : '', x.cable.section != null ? nombre(x.cable.section) + ' mm²' : ''].filter(Boolean).join(' · ')) : '<span class="no-ko">inconnu de la base</span>')]));
-  // le pied : le classeur Excel, plein (on commande avec) ; le CSV au trait, comme partout ; le suivi en lien
-  const pied = '<button class="btn cuivre" id="no-xlsx" data-bulle="Un classeur : une ligne par article, sa section, sa quantité, où il va">Exporter Excel</button><button class="btn papier" id="no-csv">Exporter CSV</button><span class="espace"></span><button class="btn lien" id="no-suivi">Le suivi (barrettes, prises)</button>';
+  // le pied : le classeur Excel, plein (on commande avec) ; le CSV et le suivi au trait, côte à côte (v74, l'ergonome v73 :
+  // « le suivi, en lien à droite du pied, se perd »)
+  const pied = '<button class="btn cuivre" id="no-xlsx" data-bulle="Un classeur : une ligne par article, sa section, sa quantité, où il va">Exporter Excel</button><button class="btn papier" id="no-csv">Exporter CSV</button><button class="btn papier" id="no-suivi" data-bulle="Le tableau de suivi des barrettes et des prises, en Excel">Le suivi (barrettes, prises)</button>';
   ouvrirFiche({ mode: 'nomenclature', large: true }, corps, pied);
   $('no-xlsx').onclick = () => exporterNomenclatureExcel(N); $('no-csv').onclick = () => exporterNomenclature(N); $('no-suivi').onclick = exporterSuivi;
+  // « +11 » déplie ses repères en place ; « moins » les replie (le clavier reste sur le bouton)
+  const fc = $('fiche-corps'); if (fc && !fc.dataset.noPlus) { fc.dataset.noPlus = '1'; fc.addEventListener('click', e => { const b = e.target.closest('.no-plus'); if (!b) return;
+    const r = b.parentElement.querySelector('.no-reste'), ouvre = r.hidden; r.hidden = !ouvre; b.setAttribute('aria-expanded', String(ouvre)); b.textContent = ouvre ? 'moins' : '+' + b.dataset.n;
+    if (typeof cacherBulle === 'function') cacherBulle(); }); }
   if (typeof lierBullesDoc === 'function') lierBullesDoc();
   // le document prend le clavier : son action pleine (Tab mène au reste, Échap le ferme)
   const b = $('no-xlsx'); if (b) setTimeout(() => { if (b.isConnected && !b.closest('[hidden]')) b.focus({ preventScroll: true }); }, 30); }

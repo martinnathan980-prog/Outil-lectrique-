@@ -13,7 +13,14 @@
 
 /* ─── le panneau : Moitié (en bas, le plan au-dessus), Page (toute la place du plan) ─── */
 #base{position:fixed;left:var(--rail);right:calc(var(--jeu) + var(--sur-d));bottom:calc(var(--pied) + var(--jeu) + var(--sur-b));height:var(--base-h);min-height:160px;max-height:calc(100% - var(--entete) - var(--pied) - 96px);
-  background:var(--s-surface);color:var(--t-1);border-radius:var(--r-3);box-shadow:var(--sh-panneau);z-index:24;display:flex;flex-direction:column;overflow:hidden}
+  background:var(--s-surface);color:var(--t-1);border-radius:var(--r-3);box-shadow:var(--sh-panneau);z-index:24;overflow:hidden;
+  /* (v74) UNE place, quatre zones qui se lisent d'un regard : la tête en haut ; à gauche le rail des onglets, rangés en trois
+     groupes ; à droite la barre des filtres, puis la table. La feuille étroite remet le rail en bande (`.etroit`, plus bas) */
+  display:grid;grid-template-columns:var(--rc-rail) minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr);grid-template-areas:"tete tete" "rail outils" "rail corps"}
+.rc-tete{grid-area:tete}
+.rc-onglets{grid-area:rail}
+.rc-outils{grid-area:outils}
+.ba-corps{grid-area:corps}
 body.insp-epingle #base{right:calc(var(--insp-l) + 2 * var(--jeu) + var(--sur-d))}
 /* en page, à un jeu sous la barre du haut, comme le volet et les documents (le chrome v73) */
 #base.page{top:calc(var(--entete) + var(--jeu) + var(--sur-h));height:auto;max-height:none}
@@ -23,7 +30,7 @@ body.insp-epingle #base{right:calc(var(--insp-l) + 2 * var(--jeu) + var(--sur-d)
 /* les teintes propres au récapitulatif, tirées des jetons (les mêmes recettes dans les deux thèmes) : le survol d'une
    ligne, à peine ; la ligne d'un bloc choisi sur le plan ; la marge de gauche, celle du titre ; le filet d'un champ — il se
    voit (l'ergonome v73 : `--s-line-2` faisait 1,46:1 sur le blanc, 1,81:1 le soir ; celui-ci passe 3:1 dans les deux) */
-.recap{--rc-survol:color-mix(in srgb,var(--t-1) 3.5%,var(--s-surface));--rc-lie:color-mix(in srgb,var(--t-1) 2%,var(--s-surface));--rc-g:20px}
+.recap{--rc-survol:color-mix(in srgb,var(--t-1) 3.5%,var(--s-surface));--rc-lie:color-mix(in srgb,var(--t-1) 2%,var(--s-surface));--rc-g:20px;--rc-rail:184px}
 /* (`--filet-champ` : style-documents.css, le même pour la feuille et le récapitulatif) */
 .recap .filtre{border-color:var(--filet-champ)}
 .recap .filtre:hover{border-color:color-mix(in srgb,var(--t-1) 60%,var(--s-surface))}
@@ -34,11 +41,13 @@ body.insp-epingle #base{right:calc(var(--insp-l) + 2 * var(--jeu) + var(--sur-d)
 #base.redim{user-select:none}
 #base.page .poignee{display:none}
 
-/* ─── la tête : le titre, le contrat, la taille, l'export — tout sur 32 px ─── */
-.rc-tete{display:flex;align-items:center;gap:12px;padding:14px 16px 0 var(--rc-g);flex:none;min-width:0}
+/* ─── la tête : le titre, le nom du plan, la taille, l'export, la croix — tout sur 32 px, un filet dessous ─── */
+.rc-tete{display:flex;align-items:center;gap:12px;padding:12px 14px 11px var(--rc-g);flex:none;min-width:0;border-bottom:1px solid var(--s-line)}
 .rc-titre{margin:0;font:600 var(--f-16)/1.2 var(--titre);letter-spacing:-.018em;color:var(--t-1);white-space:nowrap}
-.rc-contexte{font-size:var(--f-12);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;font-variant-numeric:tabular-nums}
+.rc-contexte{font-size:var(--f-13);color:var(--t-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .rc-tete .segment button{height:28px;min-width:58px;justify-content:center}
+/* « Plan » fermait aussi : la croix le dit mieux (v74) — le segment ne garde que Moitié · Page ; au téléphone, « Plan » reste */
+@media (min-width:701px){ .rc-taille #ba-fermer{display:none} }
 .rc-tete .btn{height:32px;padding:0 12px;font-size:var(--f-12)}
 .rc-tete .btn svg.ico{width:15px;height:15px;color:var(--t-2)}
 /* le tableau en CSV : un bouton au trait, son icône de tableau, sa flèche — il ouvre le menu qui dit ce qu'il sort */
@@ -47,28 +56,47 @@ body.insp-epingle #base{right:calc(var(--insp-l) + 2 * var(--jeu) + var(--sur-d)
 .rc-export[open]>summary svg.rc-csv-v{transform:rotate(180deg)}
 .rc-export .doc-menu-l{min-width:280px}
 
-/* ─── les onglets : un mot, son compte à l'encre seconde, le point d'état s'il y a lieu ; le choisi souligné ─── */
-.rc-onglets{display:flex;gap:0;padding:4px 10px 0;border-bottom:1px solid var(--s-line);flex:none;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain;container-type:inline-size}
-.rc-onglets::-webkit-scrollbar{display:none}
-.rc-onglets.deborde{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 40px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 40px),transparent)}
-.rc-onglets.deborde-g{-webkit-mask-image:linear-gradient(90deg,transparent 4px,#000 36px);mask-image:linear-gradient(90deg,transparent 4px,#000 36px)}
-.rc-onglets.deborde.deborde-g{-webkit-mask-image:linear-gradient(90deg,transparent 4px,#000 36px,#000 calc(100% - 40px),transparent);mask-image:linear-gradient(90deg,transparent 4px,#000 36px,#000 calc(100% - 40px),transparent)}
-.rc-onglet{position:relative;display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 10px;border:none;background:none;border-radius:var(--r-1) var(--r-1) 0 0;
-  font:500 var(--f-13) var(--sans);letter-spacing:-.006em;color:var(--t-2);white-space:nowrap;flex:none;transition:color var(--rapide)}
-.rc-onglet:hover{color:var(--t-1)}
-.rc-onglet small{font:500 var(--f-12) var(--sans);color:var(--t-2);font-variant-numeric:tabular-nums;opacity:.85}
-.rc-onglet::after{content:"";position:absolute;left:10px;right:10px;bottom:-1px;height:2px;border-radius:2px 2px 0 0;background:var(--accent);transform:scaleX(0);transition:transform var(--moyen)}
-.rc-onglet:hover::after{transform:scaleX(1);background:var(--s-line-2)}
-.rc-onglet[aria-selected="true"]{color:var(--t-1);font-weight:600}
-.rc-onglet[aria-selected="true"]::after{transform:scaleX(1);background:var(--accent)}
-.rc-onglet[aria-selected="true"] small{color:var(--t-2);opacity:1}
-.rc-onglet:focus-visible{outline-offset:-4px;border-radius:var(--r-1)}
-/* la feuille étroite (l'inspecteur ouvert) : les onglets se serrent avant de défiler */
-@container (max-width:900px){ .rc-onglet{padding:0 7px;gap:5px} .rc-onglet::after{left:7px;right:7px} }
-/* le point d'état, après le compte : petit, il dit « il y a quelque chose ici » sans prendre le mot */
-.rc-carre{width:6px;height:6px;border-radius:50%;flex:none;margin-left:-1px}
+/* ─── LE RAIL DES ONGLETS (v74) : à gauche, comme le rail de l'outil — trois groupes (Câblage · Matériel · Contrôle), leur
+   titre à l'encre troisième ; un onglet par ligne de 32 px, son mot, son compte aligné à droite en chiffres tabulaires, le
+   point rouge d'un problème après le mot. Le choisi est une pièce douce, à l'encre, en gras — rien ne souligne, rien ne
+   bouge. Une moitié basse : le rail défile, seul. ─── */
+.rc-onglets{position:relative;display:flex;flex-direction:column;gap:10px;padding:10px 10px 10px 12px;border-right:1px solid var(--s-line);min-height:0;overflow:hidden auto;overscroll-behavior:contain;scrollbar-width:thin}
+.rc-onglets-g{display:flex;flex-direction:column;gap:1px}
+.rc-onglets-t{padding:0 10px 4px;font:600 var(--f-12)/1.2 var(--sans);letter-spacing:.005em;color:var(--t-3);white-space:nowrap}
+.rc-onglet{position:relative;display:flex;align-items:center;gap:7px;width:100%;height:32px;padding:0 10px;border:none;background:none;border-radius:8px;
+  font:500 var(--f-13) var(--sans);letter-spacing:-.006em;color:var(--t-2);white-space:nowrap;text-align:left;flex:none;transition:color var(--rapide),background var(--rapide)}
+.rc-onglet:hover{color:var(--t-1);background:var(--s-hover)}
+.rc-onglet>span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.rc-onglet small{margin-left:auto;padding-left:8px;font:500 var(--f-12) var(--sans);color:var(--t-3);font-variant-numeric:tabular-nums}
+.rc-onglet[aria-selected="true"]{color:var(--t-1);font-weight:600;background:var(--accent-soft)}
+.rc-onglet[aria-selected="true"] small{color:var(--t-2)}
+.rc-onglet:focus-visible{outline-offset:-2px}
+/* le point d'un problème, après le mot : petit, il dit « il y a quelque chose ici » sans prendre le mot */
+.rc-carre{width:6px;height:6px;border-radius:50%;flex:none}
 .rc-carre.ko{background:var(--ko)}
 .rc-carre.att{background:var(--warn)}
+/* la feuille qui se serre (08-recap, `serre` : sous 1000 px, la fiche épinglée à côté) : le rail s'amincit, sans changer de forme */
+#base.serre{--rc-rail:164px}
+#base.serre .rc-onglets{padding-left:8px;padding-right:8px}
+#base.serre .rc-onglet{padding:0 8px}
+#base.serre .rc-onglets-t{padding-left:8px}
+/* LA FEUILLE ÉTROITE (08-recap, `etroit` : sous 820 px — l'inspecteur épinglé, un petit écran) : le rail redevient une bande
+   d'onglets au-dessus de la barre, soulignés, qui défile et s'efface au bord ; un filet sépare les groupes */
+#base.etroit{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto minmax(0,1fr);grid-template-areas:"tete" "rail" "outils" "corps"}
+#base.etroit .rc-tete{border-bottom:none}
+#base.etroit .rc-onglets{flex-direction:row;gap:0;padding:4px 10px 0;border-right:none;border-bottom:1px solid var(--s-line);overflow:auto hidden;scrollbar-width:none;overscroll-behavior-x:contain}
+#base.etroit .rc-onglets::-webkit-scrollbar{display:none}
+#base.etroit .rc-onglets-g{flex-direction:row;gap:0;flex:none}
+#base.etroit .rc-onglets-g+.rc-onglets-g{margin-left:6px;padding-left:6px;box-shadow:inset 1px 0 0 var(--s-line);background-clip:content-box}
+#base.etroit .rc-onglets-t{display:none}
+#base.etroit .rc-onglet{width:auto;height:38px;padding:0 8px;gap:5px;border-radius:var(--r-1) var(--r-1) 0 0;background:none}
+#base.etroit .rc-onglet small{margin-left:0;padding-left:0}
+#base.etroit .rc-onglet::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;border-radius:2px 2px 0 0;background:var(--accent);transform:scaleX(0);transition:transform var(--moyen)}
+#base.etroit .rc-onglet[aria-selected="true"]::after{transform:scaleX(1)}
+#base.etroit .rc-onglet:focus-visible{outline-offset:-4px}
+#base.etroit .rc-onglets.deborde{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 40px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 40px),transparent)}
+#base.etroit .rc-onglets.deborde-g{-webkit-mask-image:linear-gradient(90deg,transparent 4px,#000 36px);mask-image:linear-gradient(90deg,transparent 4px,#000 36px)}
+#base.etroit .rc-onglets.deborde.deborde-g{-webkit-mask-image:linear-gradient(90deg,transparent 4px,#000 36px,#000 calc(100% - 40px),transparent);mask-image:linear-gradient(90deg,transparent 4px,#000 36px,#000 calc(100% - 40px),transparent)}
 
 /* ─── la barre d'outils : la portée, la recherche, les puces ; à droite les colonnes et l'ajout. Une seule hauteur ─── */
 .rc-outils{display:flex;align-items:center;gap:8px;padding:10px 16px 10px var(--rc-g);border-bottom:1px solid var(--s-line);flex:none;container-type:inline-size;min-width:0}
@@ -86,7 +114,31 @@ body.insp-epingle #base{right:calc(var(--insp-l) + 2 * var(--jeu) + var(--sur-d)
 .rc-filtre .vider{width:28px;height:28px;font-size:var(--f-14)}
 /* les puces prennent la place qui reste, sur une ligne, après un filet : quand elles débordent, elles défilent (la
    molette aussi) et s'effacent au bord qui cache quelque chose */
-.rc-puces{display:flex;flex-wrap:nowrap;align-items:center;gap:6px;min-width:0;flex:1 1 0;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain;padding:1px 0 1px 10px;margin-left:2px;border-left:1px solid var(--s-line)}
+.rc-puces{display:flex;flex-wrap:nowrap;align-items:center;gap:6px;min-width:0;flex:0 1 auto;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain;padding:1px 0 1px 10px;margin-left:2px;border-left:1px solid var(--s-line)}
+/* (v74) après les puces, « Filtrer » ; puis la place libre pousse les colonnes et l'ajout à droite */
+.rc-colonnes{margin-left:auto}
+.rc-filtrer{flex:none}
+.rc-filtrer[hidden]{display:none}
+.rc-filtrer>summary.btn{width:auto;height:30px;gap:6px;padding:0 9px 0 10px;font-size:var(--f-12)}
+.rc-filtrer>summary svg.ico{width:14px;height:14px;color:var(--t-2)}
+.rc-filtrer>summary svg.rc-chevron{width:13px;height:13px;transition:transform var(--d-rapide) var(--courbe)}
+.rc-filtrer[open]>summary svg.rc-chevron{transform:rotate(180deg)}
+.rc-filtrer>summary small{font:600 var(--f-11)/1 var(--sans);font-variant-numeric:tabular-nums}
+.rc-filtrer>summary small:empty{display:none}
+.rc-filtrer>summary small:not(:empty){display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--t-1);color:var(--s-surface)}
+/* la liste tombe à gauche du bouton (il est au milieu de la barre) ; une rubrique, puis ses lignes : la coche, le trait, le
+   mot, le compte à droite */
+.rc-filtrer .doc-menu-l{left:0;right:auto;min-width:260px;overflow:auto;overscroll-behavior:contain}
+.rc-f-t{padding:8px 10px 4px;font:600 var(--f-12)/1.2 var(--sans);color:var(--t-2)}
+.rc-f-t~.rc-f-t{margin-top:4px;border-top:1px solid var(--voile-2);padding-top:10px}
+.doc-menu-l button.rc-f-l{flex-direction:row;align-items:center;gap:9px;min-height:34px;padding:0 10px}
+.rc-f-l .rc-f-mot{flex:1;min-width:0}
+.rc-f-l small{margin-left:12px;font:500 var(--f-12) var(--sans);color:var(--t-2);font-variant-numeric:tabular-nums}
+.rc-f-l.zero .rc-f-mot{color:var(--t-2)}
+.rc-f-coche{display:inline-grid;place-items:center;width:16px;height:16px;flex:none;border-radius:4px;box-shadow:inset 0 0 0 1.5px var(--voile-4);color:transparent}
+.rc-f-coche svg.ico{width:12px;height:12px;stroke-width:2.6}
+.rc-f-l[aria-checked="true"] .rc-f-coche{background:var(--t-1);box-shadow:none;color:var(--s-flottant)}
+.rc-f-l .rc-trait{width:14px}
 .rc-puces:empty{border-left:none}
 .rc-puces::-webkit-scrollbar{display:none}
 .rc-puces.deborde{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 44px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 44px),transparent)}
@@ -115,13 +167,21 @@ body.insp-epingle #base{right:calc(var(--insp-l) + 2 * var(--jeu) + var(--sur-d)
 .rc-colonnes{position:relative;flex:none}
 .rc-colonnes .btn svg.ico{transition:transform var(--rapide);color:var(--t-2)}
 .rc-colonnes .btn[aria-expanded="true"]{background:var(--s-sunken)}
-.rc-colonnes .btn[aria-expanded="true"] svg.ico{transform:rotate(180deg)}
+.rc-colonnes .btn[aria-expanded="true"] svg.ico:not(.rc-col-ico){transform:rotate(180deg)}
+.rc-colonnes .btn svg.rc-col-ico{width:14px;height:14px}
 /* la barre se resserre (l'inspecteur ouvert, un petit écran) : la recherche d'abord, puis le mot « Colonnes » */
-@container (max-width:880px){ .rc-filtre{width:168px} .rc-filtre:focus-within{width:220px} }
-@container (max-width:720px){ .rc-colonnes .rc-col-mot{display:none} .rc-colonnes .btn{padding:0 8px} .ba-portee button{padding:0 8px} }
-/* le menu des colonnes : une feuille qui flotte, qui tombe d'un rien */
-.rc-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;min-width:240px;max-height:min(60vh,460px);overflow:auto;padding:6px;background:var(--s-flottant);border-radius:var(--r-2);box-shadow:var(--sh-2);
+/* (v74) les mots des boutons se rangent (la bulle et le lecteur d'écran les gardent), les icônes restent — Filtrer, Colonnes,
+   l'ajout ; la portée se serre en dernier */
+@container (max-width:900px){ .rc-filtre{width:160px;flex:0 40 160px;min-width:120px} .rc-filtre:focus-within{width:220px;flex-basis:220px}
+  :is(.rc-filtrer-mot,.rc-col-mot,#ba-ajouter-t){position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .rc-colonnes .btn,.rc-outils #ba-ajouter{padding:0 8px} .rc-filtrer>summary.btn{padding:0 7px 0 8px} }
+@container (max-width:720px){ .ba-portee button{padding:0 8px} }
+/* le menu des colonnes : une feuille qui flotte, qui tombe d'un rien ; ses rubriques (v74), sur deux colonnes quand il est
+   long (`.large`) ; il se tient dans la feuille (08-recap lui donne sa hauteur) */
+.rc-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;min-width:240px;max-height:min(60vh,460px);overflow:auto;overscroll-behavior:contain;padding:6px;background:var(--s-flottant);border-radius:var(--r-2);box-shadow:var(--sh-2);
   animation:entre var(--d-moyen) var(--courbe-entree) both;--entre-y:-4px}
+.rc-menu.large{width:440px;max-height:none}
+.rc-menu.large .rc-menu-g{display:grid;grid-template-columns:1fr 1fr;column-gap:4px}
 .rc-menu-t{font:600 var(--f-12) var(--sans);color:var(--t-2);padding:8px 8px 4px}
 .rc-menu-t~.rc-menu-t{margin-top:6px;border-top:1px solid var(--s-line);padding-top:10px}
 .rc-coche{display:flex;align-items:center;gap:10px;height:30px;padding:0 8px;border-radius:var(--r-1);font-size:var(--f-13);color:var(--t-1);cursor:pointer;transition:background var(--rapide)}
@@ -142,6 +202,8 @@ table.rc-tab{width:100%;border-collapse:separate;border-spacing:0;font:400 var(-
 .rc-tab th[role="button"]:hover{color:var(--t-1)}
 .rc-tab th:focus-visible{outline:2px solid var(--accent);outline-offset:-3px;border-radius:var(--r-1)}
 .rc-tab th.tri{color:var(--t-1)}
+/* la note d'un en-tête (v74 : « supposée » dite une fois, pour toute la colonne, plutôt que sur chaque ligne) */
+.rc-tab th[data-note]::after{content:attr(data-note);margin-left:6px;font-weight:400;color:var(--t-3)}
 /* le sens du tri : une petite flèche à l'encre ; sur un en-tête qu'on survole, son fantôme dit qu'il se trie */
 .rc-th-l{position:relative;display:inline-flex;align-items:center;gap:4px}
 .rc-sens{width:12px;height:12px;flex:none;stroke-width:2;opacity:0;transition:opacity var(--rapide),transform var(--rapide)}
@@ -194,7 +256,7 @@ table.rc-tab{width:100%;border-collapse:separate;border-spacing:0;font:400 var(-
 .rc-tab tbody tr:hover .rc-chiffre:has(> .rc-gamme-v:hover){background:var(--s-surface);box-shadow:inset 0 0 0 1px var(--filet-champ),var(--sh-1)}
 .rc-tab tbody tr .rc-chiffre:has(> .rc-gamme-v:is(:focus,[aria-expanded="true"])){background:var(--s-surface);box-shadow:0 0 0 2px var(--anneau-c)}
 .rc-v.rc-vide{min-width:24px;min-height:1.3em;vertical-align:middle;text-decoration:none}
-.rc-v.rc-vide::before{content:attr(data-ph);color:var(--t-3);font:italic 400 var(--f-12) var(--sans);opacity:0;transition:opacity var(--rapide)}
+.rc-v.rc-vide::before{content:attr(data-ph);color:var(--t-3);font:400 var(--f-12) var(--sans);opacity:0;transition:opacity var(--rapide)}
 .rc-tab tr:hover .rc-v.rc-vide::before,.rc-tab tr.on .rc-v.rc-vide::before,.rc-tab tr.neuve .rc-v.rc-vide::before,.rc-v.rc-vide:focus::before{opacity:1}
 .rc-ct.rc-vide::before{opacity:1;font-style:normal}
 /* en édition, la valeur reste dessous (invisible : elle tient la largeur de la colonne) et le champ flotte à sa place,
@@ -209,15 +271,15 @@ select.rc-saisie{font-family:var(--sans);padding:0 4px;max-width:300px}
 .rc-rien{color:var(--t-3)}
 /* l'origine, seulement quand ce n'est pas le calcul : « main » (ambre doux), « hyp. » (en italique) ; ↺ rend l'automatique */
 .rc-o{font:600 var(--f-11)/1 var(--sans);font-style:normal;color:var(--t-2);padding:3px 7px;border-radius:999px;background:var(--s-sunken);margin-left:8px;white-space:nowrap}
-.rc-o.rc-hyp{font-style:italic;font-weight:500;background:none;padding:0;color:var(--t-2)}
+.rc-o.rc-hyp{font-style:normal;font-weight:500;background:none;padding:0;color:var(--t-2)}
 .rc-o.main{color:var(--warn);background:var(--warn-soft)}
-.rc-auto{position:relative;display:inline-grid;place-items:center;border:none;background:var(--s-sunken);width:22px;height:22px;padding:0;margin-left:4px;border-radius:50%;color:var(--t-1);
+.rc-auto{position:relative;display:inline-grid;place-items:center;border:none;background:none;width:22px;height:22px;padding:0;margin-left:2px;border-radius:50%;color:var(--t-2);
   font:500 var(--f-12)/1 var(--sans);align-self:center;cursor:pointer;transition:background var(--rapide),transform var(--rapide)}
 /* sa cible fait 28 px (le rond reste petit : il est discret) */
 .rc-auto::before{content:"";position:absolute;inset:-3px;border-radius:50%}
 /* « proposé » : le calibre que Volta retient, pas encore écrit au retest (la fiche le dit de même) */
 .rc-o.rc-propose{color:var(--warn);background:var(--warn-soft)}
-.rc-auto:hover{background:var(--accent-soft)}
+.rc-auto:hover{background:var(--accent-soft);color:var(--t-1)}
 .rc-auto:active{transform:scale(.94)}
 
 /* ─── l'état : un point de sa couleur et un mot ─── */
@@ -227,38 +289,39 @@ select.rc-saisie{font-family:var(--sans);padding:0 4px;max-width:300px}
 .rc-etat.att i{background:var(--warn)}
 .rc-etat.ko{color:var(--ko)}
 .rc-etat.ko i{background:var(--ko)}
+.rc-etat.seul{gap:0;padding:4px 0}
+.rc-etat.seul i{width:6px;height:6px}
 .rc-tab td.rc-c-etat{min-width:120px}
+/* rangé par genre (Problèmes), le niveau n’est qu’un point : sa colonne se resserre */
+.rc-tab[data-onglet="problemes"] :is(th,td).rc-c-etat{min-width:0;width:56px}
 
 /* ─── une liaison, comme une phrase : de → le câble → vers ─── */
-.rc-bout{display:inline-flex;align-items:baseline;white-space:nowrap;font:600 var(--f-13) var(--mono);color:var(--t-1);letter-spacing:-.01em}
+.rc-bout{display:inline-flex;align-items:baseline;white-space:nowrap;font:500 var(--f-13) var(--mono);color:var(--t-1);letter-spacing:-.01em}
 .rc-sep{font-style:normal;font-weight:400;color:var(--t-3);padding:0 1px}
 .rc-sep.rc-vide{visibility:hidden}
-.rc-b{font-weight:400}
+.rc-b{font-weight:400;color:var(--t-2)}
 .rc-nat{font:400 var(--f-12) var(--sans);color:var(--t-2);margin-left:10px;letter-spacing:0}
 .rc-tab td.rc-c-bout{min-width:112px}
 /* le câble : le numéro, le type (à l'encre seconde), la gauge, puis la flèche vers « vers », de la couleur de sa route,
    épaisse selon la gauge (--e) — pointillée quand la gauge est inconnue */
-.rc-tab td.rc-c-cable{min-width:288px;padding-right:20px}
-.rc-cable{--c:var(--t-2);display:flex;align-items:center;gap:12px;min-width:276px}
+.rc-tab td.rc-c-cable{min-width:236px;padding-right:20px}
+.rc-cable{--c:var(--t-2);display:flex;align-items:center;gap:10px;min-width:224px}
 .rc-cable-id,.rc-cable-type{display:inline-flex;align-items:center;flex:none}
 .rc-cable-id{min-width:7ch}
 .rc-cable-type{min-width:5.5ch}
 .rc-no{font:600 var(--f-13) var(--mono);color:var(--t-1)}
 .rc-type{font:400 var(--f-13) var(--mono);color:var(--t-2)}
-.rc-fleche{position:relative;flex:1 1 48px;min-width:40px;height:var(--e,2px);margin:0 10px 0 2px;border-radius:var(--e,2px);background:linear-gradient(var(--route-voile),var(--route-voile)),var(--c)}
+.rc-fleche{position:relative;flex:1 1 48px;min-width:40px;max-width:120px;height:var(--e,2px);margin:0 10px 0 2px;border-radius:var(--e,2px);background:linear-gradient(var(--route-voile),var(--route-voile)),var(--c)}
 .rc-fleche::after{content:"";position:absolute;right:-8px;top:50%;width:9px;height:calc(var(--e,2px) * 1.6 + 6px);transform:translateY(-50%);
   background:linear-gradient(var(--route-voile),var(--route-voile)),var(--c);clip-path:polygon(0 0,100% 50%,0 100%)}
 /* une bande invisible autour de la flèche : la bulle (la route, la gauge) se trouve sans viser un trait de 2 px */
 .rc-fleche::before{content:"";position:absolute;left:0;right:0;top:-9px;bottom:-9px}
 .sans-jauge .rc-fleche{background:repeating-linear-gradient(90deg,var(--c) 0 6px,transparent 6px 10px)}
 .rc-cable.sans-route{--c:var(--t-3)}
-/* la gauge en pastille : pleine à l'encre pour 16 AWG et moins (la puissance qu'on remarque), un filet épais pour 18 et
-   20, un filet pour 22 et au-delà */
-.rc-jauge{display:inline-grid;place-items:center;min-width:26px;height:20px;padding:0 6px;border-radius:10px;font:600 var(--f-11)/1 var(--sans);font-variant-numeric:tabular-nums;flex:none;box-sizing:border-box}
-.rc-jauge.forte{background:var(--t-1);color:var(--t-inverse)}
-.rc-jauge.moyenne{box-shadow:inset 0 0 0 1.5px var(--t-1);color:var(--t-1)}
-.rc-jauge.fine{box-shadow:inset 0 0 0 1px var(--s-line-2);color:var(--t-2)}
-.rc-jauge.inconnue{border:1px dashed var(--t-3);color:var(--t-2)}
+/* la gauge (v74) : un nombre à l'encre seconde, en chiffres tabulaires — plus de disque plein, cerclé ou pâle (le designer
+   v73 : « trois styles sans légende ») ; inconnue, un « ? » à l'encre troisième ; sa bulle dit « Gauge 12 AWG » */
+.rc-jauge{display:inline-block;min-width:2ch;font:500 var(--f-12)/1 var(--sans);font-variant-numeric:tabular-nums;color:var(--t-2);flex:none;text-align:right}
+.rc-jauge.inconnue{color:var(--t-3)}
 /* les nombres : alignés à droite dans leur place (la largeur de leur en-tête, `--w`), en chiffres tabulaires ; l'unité
    à l'encre seconde ; l'origine derrière. L'en-tête d'une colonne de mesures se range au-dessus de ses chiffres */
 .rc-mesure{display:inline-flex;align-items:baseline;white-space:nowrap}
@@ -371,6 +434,8 @@ b.rc-n{font-weight:500}
 .rc-pointe{font-size:var(--f-12);color:var(--t-2);margin-left:10px}
 .rc-choix{display:inline-flex;align-items:baseline;font-size:var(--f-13)}
 .rc-choix .rc-pt{margin:0 5px}
+/* (v74) un choix laissé par défaut : à l'encre seconde ; celui qu'on a fait : à l'encre */
+.rc-choix .rc-defaut{color:var(--t-2)}
 .rc-table{display:inline-flex;flex-direction:column;gap:1px;line-height:1.3}
 .rc-table b{font-weight:600;letter-spacing:-.006em}
 .rc-table small{font-size:var(--f-12);color:var(--t-2)}
@@ -392,7 +457,9 @@ b.rc-n{font-weight:500}
 .rc-gestes .btn{font-size:var(--f-12);white-space:normal;text-align:left;line-height:1.25;padding-top:3px;padding-bottom:3px;min-height:30px;height:auto}
 .rc-gestes .btn.lien{padding-left:6px;padding-right:6px}
 .rc-tab td.rc-c-que{min-width:260px}
-/* le calibre du RETEST, à côté du retenu : barré quand Volta en retient un autre */
+/* (v74) le même geste qu'à la ligne du dessus : « ″ », à l'encre seconde ; sa bulle le redit */
+.rc-pareil{display:inline-block;padding:2px 14px;font:500 var(--f-16)/1 var(--sans);color:var(--t-2);cursor:help}
+/* le calibre de l'INSTALLATION, à côté du retenu : barré quand Volta en retient un autre */
 .rc-retest s.rc-n{color:var(--t-2);text-decoration-thickness:1.5px;text-decoration-color:color-mix(in srgb,var(--t-2) 70%,transparent)}
 .rc-retest.autre .rc-u{color:var(--t-2);margin-left:3px}
 
@@ -451,6 +518,7 @@ b.rc-n{font-weight:500}
   .rc-contexte,#ba-csv{display:none}
   .rc-outils{padding:8px 8px 8px 12px;flex-wrap:wrap}
   .rc-puces{flex:1 1 100%;order:5;border-left:none;padding-left:0;margin-left:0}
+  .rc-filtrer{order:6}
   .rc-filtre,.rc-filtre:focus-within{width:auto;flex:1 1 160px}
   .rc-colonnes{display:none}
 }

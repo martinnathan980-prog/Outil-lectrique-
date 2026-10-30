@@ -4,6 +4,10 @@
      1. LE RÉCAPITULATIF : « Tableau en CSV » est un menu qui dit ce qu'il sort (ce qui est montré, tout l'onglet) et met le
         retest corrigé au bas ; la portée dit « Ce folio · Tout le plan » ; « À reprendre » compte le plan, le folio en second ;
         en moitié, le dessin vient dans la place libre au-dessus du tiroir ; les liens de la table ont 28 px ;
+     1 bis. L'ŒIL (v74) : le rail des onglets à gauche, en trois groupes, ↑ ↓ ; « ok » se tait, « supposée » se dit une fois,
+        la gauge que le type dit ne se répète pas ; « Filtrer » range les puces de plus (la barre garde « À reprendre ») ;
+        « Colonnes » par rubriques, sur deux colonnes ; la fiche épinglée serre la feuille sans faire sauter le rail ; une
+        feuille étroite remet le rail en bande ;
      2. LE CHOIX DU CALIBRE : l'onglet Disjoncteurs dit le retest et le verdict en trois mots ; la case Calibre ouvre TOUTE
         la gamme, le composant de la fiche (`choixDuCalibre`) — les mêmes calibres, les mêmes mots ; ↑ ↓ et Entrée retiennent
         un calibre qui déclenche (rouge, « déclenche ») ; Ctrl+Z le rend ; « Tout le catalogue » ; Échap rend la case ;
@@ -14,7 +18,9 @@
      5. LES DOCUMENTS : ouverts par le menu, ils prennent le clavier ; Échap les ferme et rend le clavier au ⋮ ; la croix a sa
         bulle ; Normes et Bible : les onglets font le titre, ← → passent de l'un à l'autre, « / » met le clavier dans la
         recherche de la bible, qui trouve « 12-8 » ; Vos fichiers : une seule zone de dépôt ; les Hypothèses disent que leurs
-        réglages sont écrits dans chaque export, une phrase et son « ? » par réglage ;
+        réglages sont écrits dans chaque export, une phrase et son « ? » par réglage ; la nomenclature déplie « +11 » en
+        place, « Le suivi » au trait à côté du CSV (v74) ; dans l'onglet Problèmes rangé par genre, le niveau est un point et
+        un geste répété s'écrit une fois, puis « ″ » (v74) ;
      6. LE SCHÉMA VISIO prend le clavier et, fermé, le rend au ⋮.
    ========================================================================= */
 const { chromium } = require('playwright');
@@ -52,6 +58,49 @@ const attendre = ms => new Promise(r => setTimeout(r, ms));
     delete document.documentElement.dataset.theme; return { c, r: Math.round(r * 100) / 100 }; }, theme);
   const FC = [await filet('light'), await filet('dark')];
   ok('le filet de la recherche se lit comme un champ : une couleur écrite, à 3:1 au moins, le jour et le soir', FC.every(x => x.r >= 3), JSON.stringify(FC));
+
+  /* ---- 1 bis. le récapitulatif pour l'œil (v74 : « trop de données, l'œil se perd ; le rail de gauche, c'est bien ») ---- */
+  const RL = await ev(() => { const o = $('ba-onglets'), ro = o.getBoundingClientRect(), rc = $('ba-corps').getBoundingClientRect();
+    return { groupes: [...o.querySelectorAll('.rc-onglets-g')].map(g => g.querySelector('.rc-onglets-t').textContent + ':' + [...g.querySelectorAll('[data-onglet]')].map(b => b.dataset.onglet).join(',')).join(' | '),
+      gauche: ro.right <= rc.left + 1 && ro.bottom > rc.top, sens: o.getAttribute('aria-orientation'), ambre: o.querySelectorAll('.rc-carre.att').length,
+      tete: $('ba-contexte').textContent === app.nom, plan: getComputedStyle($('ba-fermer')).display, croix: $('ba-x').getBoundingClientRect().width > 0 }; });
+  ok('le rail : à gauche de la table, trois groupes (Câblage : liaisons, câbles · Matériel : équipements, disjoncteurs, barrettes, prises, raccords · Contrôle : problèmes, normes), un point rouge seulement ; la tête dit le nom du plan, la croix ferme (« Plan » ne double plus)',
+    RL.groupes === 'Câblage:liaisons,cables | Matériel:equipements,disjoncteurs,barrettes,prises,raccords | Contrôle:problemes,normes' && RL.gauche && RL.sens === 'vertical' && !RL.ambre && RL.tete && RL.plan === 'none' && RL.croix, JSON.stringify(RL));
+  await page.focus('#ba-onglets [aria-selected="true"]'); await page.keyboard.press('ArrowDown'); await attendre(300);
+  const RD = await ev(() => ({ onglet: app.base.onglet, focus: document.activeElement && document.activeElement.dataset.onglet })); await page.keyboard.press('ArrowUp'); await attendre(300);
+  ok('↓ dans le rail passe à l’onglet suivant (les Câbles), ↑ revient', RD.onglet === 'cables' && RD.focus === 'cables' && await ev(() => app.base.onglet === 'liaisons'), JSON.stringify(RD));
+  const LT = await ev(() => { const trs = [...document.querySelectorAll('#ba-tbody tr[data-i]')];
+    return { ok: [...document.querySelectorAll('#ba-tbody .rc-etat.ok')].every(e => e.textContent === 'ok' && e.getBoundingClientRect().width < 16), nOk: document.querySelectorAll('#ba-tbody .rc-etat.ok').length,
+      note: ($('ba-thead').querySelector('th[data-k="longueur"]') || {}).dataset.note || '', supposees: document.querySelectorAll('#ba-tbody .rc-hyp').length,
+      jauges: trs.filter(t => { const l = verite()[+t.dataset.i], g = jaugeDuType(l.type); return g != null && String(l.type).endsWith(String(g)) && t.querySelector('.rc-cable .rc-jauge'); }).length, n: trs.length }; });
+  ok('ce qui va bien se tait : « ok » n’est plus écrit (son point, le mot pour le lecteur d’écran) ; « supposée » une fois, dans l’en-tête ; la gauge que le type dit déjà (DR12) ne se répète pas',
+    LT.nOk > 0 && LT.ok && LT.note === 'supposée' && !LT.supposees && !LT.jauges, JSON.stringify(LT));
+  const PF = await ev(() => ({ barre: [...document.querySelectorAll('#ba-puces [data-puce]')].map(x => x.dataset.puce).join(), visible: !$('ba-filtrer').hidden }));
+  await page.click('#ba-filtrer-b'); await attendre(300);
+  const PM = await ev(() => ({ open: $('ba-filtrer').open, lignes: [...document.querySelectorAll('#ba-filtrer-l [data-puce]')].map(x => x.dataset.puce), rubriques: [...document.querySelectorAll('#ba-filtrer-l .rc-f-t')].map(x => x.textContent).join(' · '), focus: document.activeElement && document.activeElement.dataset.puce }));
+  const route = PM.lignes.find(k => /^route:/.test(k));
+  if (route) { await page.click(`#ba-filtrer-l [data-puce="${route}"]`); await attendre(400); }
+  const PC = await ev(r => ({ open: $('ba-filtrer').open, coche: ($('ba-filtrer-l').querySelector(`[data-puce="${r}"]`) || {}).getAttribute ? $('ba-filtrer-l').querySelector(`[data-puce="${r}"]`).getAttribute('aria-checked') : '', barre: !!document.querySelector(`#ba-puces [data-puce="${r}"][aria-pressed="true"]`), n: $('ba-filtrer-n').textContent, lignes: lignesDe(LIAISONS).every(x => x.l.route === r.slice(6)) }), route);
+  await page.keyboard.press('Escape'); await attendre(250);
+  const PE = await ev(() => ({ ferme: !$('ba-filtrer').open, focus: document.activeElement === $('ba-filtrer-b') }));
+  if (route) { await page.click(`#ba-puces [data-puce="${route}"]`); await attendre(400); }
+  ok('« Filtrer » : la barre garde « À reprendre » ; les routes et ce qui manque attendent dans le menu, rangés par rubrique ; cocher une route filtre, sa puce paraît pressée dans la barre, le menu reste ouvert ; Échap le ferme et rend le clavier ; un clic sur la puce l’ôte',
+    PF.barre === 'probleme' && PF.visible && PM.open && /^route:/.test(PM.lignes[0] || '') && PM.lignes.includes('hyp') && PM.lignes.includes('sanscontact') && PM.rubriques === 'Route · Ce qui manque' && PM.focus === PM.lignes[0]
+      && PC.open && PC.coche === 'true' && PC.barre && PC.n === '1' && PC.lignes && PE.ferme && PE.focus && await ev(() => !(app.base.puces.liaisons || []).length), JSON.stringify({ PF, PM, PC, PE }));
+  await page.click('#ba-colonnes'); await attendre(300);
+  const CM = await ev(() => { const m = $('ba-colonnes-menu'), r = m.getBoundingClientRect(); return { large: m.classList.contains('large'), rubriques: [...m.querySelectorAll('.rc-menu-t')].map(x => x.textContent).join(' · '), dedans: r.bottom <= $('base').getBoundingClientRect().bottom + 1, deux: getComputedStyle(m.querySelector('.rc-menu-g')).gridTemplateColumns.split(' ').length }; });
+  await page.keyboard.press('Escape'); await attendre(200);
+  ok('« Colonnes » : d’office, puis les colonnes en plus rangées par rubrique (le câble, les deux bouts, le dossier), sur deux colonnes ; le menu se tient dans la feuille', CM.large && CM.rubriques === 'D’office · Le câble · Les deux bouts · Le dossier' && CM.dedans && CM.deux === 2, JSON.stringify(CM));
+  // une ligne choisie : la fiche s'épingle à droite, la feuille se serre — le rail s'amincit sans changer de forme, la barre tient sur une ligne
+  await page.click('#ba-tbody tr[data-i] td.rc-c-bout'); await attendre(900);
+  const SR = await ev(() => { const o = $('ba-outils') || document.querySelector('.rc-outils'), aj = $('ba-ajouter').getBoundingClientRect(), ro = o.getBoundingClientRect();
+    return { serre: $('base').classList.contains('serre'), etroit: $('base').classList.contains('etroit'), fiche: !$('inspecteur').hidden, deborde: o.scrollWidth > o.clientWidth + 1, ajout: aj.right <= ro.right + 1 && aj.width > 0, puces: $('ba-puces').scrollWidth <= $('ba-puces').clientWidth + 1 }; });
+  ok('une ligne choisie (la fiche épinglée) : le rail s’amincit sans sauter, toute la barre tient sur sa ligne', SR.fiche && SR.serre && !SR.etroit && !SR.deborde && SR.ajout && SR.puces, JSON.stringify(SR));
+  await ev(() => fermerInspecteur()); await attendre(300);
+  await page.setViewportSize({ width: 860, height: 900 }); await attendre(600);
+  const ET = await ev(() => { const o = $('ba-onglets'); return { etroit: $('base').classList.contains('etroit'), sens: o.getAttribute('aria-orientation'), dessus: o.getBoundingClientRect().bottom <= document.querySelector('.rc-outils').getBoundingClientRect().top + 1 }; });
+  await page.setViewportSize({ width: 1440, height: 900 }); await attendre(600);
+  ok('une feuille étroite (860 px) : le rail redevient une bande d’onglets au-dessus de la barre ; la fenêtre rendue, il revient', ET.etroit && ET.sens === 'horizontal' && ET.dessus && await ev(() => !$('base').classList.contains('etroit') && $('ba-onglets').getAttribute('aria-orientation') === 'vertical'), JSON.stringify(ET));
 
   /* ---- 2. le choix du calibre ---- */
   await ev(() => { app.base.portee = 'tout'; changerOnglet('disjoncteurs'); }); await attendre(400);
@@ -112,6 +161,10 @@ const attendre = ms => new Promise(r => setTimeout(r, ms));
   const Q = await ev(() => ({ gestes: [...document.querySelectorAll('#ba-tbody [data-geste-pb]')].map(b => b.textContent), texte: $('ba-tbody').textContent, liens: [...document.querySelectorAll('#ba-tbody .rc-lien')].map(b => b.getBoundingClientRect().height) }));
   ok('« Ce qu’il faut faire » : le geste concret en bouton (« Tout régler : 102CB1 en 15 A… ») ; « ou un calibre plus petit » a disparu', Q.gestes.some(g => /^Tout régler\s:\s102CB1 en 15\sA/.test(g)) && !/ou un calibre plus petit/.test(Q.texte), JSON.stringify(Q.gestes.slice(0, 4)));
   ok('les liens de la table (Voir, Voir le premier…) font 28 px de haut', Q.liens.length > 0 && Q.liens.every(h => h >= 27.5), JSON.stringify(Q.liens));
+  // (v74) rangé par genre : le niveau, un point ; le même geste d'une ligne à la suivante, « ″ »
+  const PR = await ev(() => { const p = document.querySelector('#ba-tbody .rc-pareil'); return { pareils: document.querySelectorAll('#ba-tbody .rc-pareil').length, premiers: [...document.querySelectorAll('#ba-tbody tr[data-k]')].filter(t => t.querySelector('[data-geste-pb]')).length,
+    points: [...document.querySelectorAll('#ba-tbody tr[data-k] td.rc-c-etat .rc-etat')].every(e => e.classList.contains('seul') && /^(problème|à voir)$/.test(e.textContent)), bulle: p ? p.dataset.bulle : '' }; });
+  ok('rangé par genre, chaque ligne ne garde du niveau que son point (le mot pour le lecteur d’écran) ; un geste qui se répète d’une ligne à la suivante s’écrit une fois, puis « ″ » (sa bulle le redit)', PR.pareils > 0 && PR.premiers > 0 && PR.points && /^Le même geste/.test(PR.bulle), JSON.stringify(PR));
   await page.keyboard.press('b'); await attendre(400);
 
   /* ---- 5. les documents ---- */
@@ -143,6 +196,14 @@ const attendre = ms => new Promise(r => setTimeout(r, ms));
   await ev(() => ficheHypotheses()); await attendre(400);
   const H = await ev(() => ({ chapeau: document.querySelector('#fiche .fiche-tete + .note').textContent, lignes: document.querySelectorAll('#fiche .hy-ligne').length, q: [...document.querySelectorAll('#fiche .hy-ligne')].every(l => { const q = l.querySelector('.hy-q'); return q && q.dataset.bulle && q.dataset.bulle.length > 20; }), courtes: [...document.querySelectorAll('#fiche .hy-sert')].every(p => p.textContent.length < 90) }));
   ok('les Hypothèses disent que leurs réglages sont écrits dans chaque export ; chaque réglage, une phrase et son « ? » (le paragraphe entier)', /Ces réglages sont écrits dans chaque export/.test(H.chapeau) && H.lignes > 10 && H.q && H.courtes, JSON.stringify({ ...H, chapeau: H.chapeau.slice(0, 80) }));
+  // la nomenclature (v74) : « +11 » déplie ses repères en place, « moins » les replie ; le suivi au trait, à côté du CSV
+  await ev(() => ficheNomenclature()); await attendre(500);
+  const NO0 = await ev(() => { const b = document.querySelector('#fiche .no-plus'); return b ? { n: b.textContent, cache: b.parentElement.querySelector('.no-reste').hidden, suivi: $('no-suivi').previousElementSibling && $('no-suivi').previousElementSibling.id, papier: $('no-suivi').classList.contains('papier') } : null; });
+  if (NO0) { await page.click('#fiche .no-plus'); await attendre(250); }
+  const NO1 = NO0 ? await ev(() => { const b = document.querySelector('#fiche .no-plus'); return { n: b.textContent, vu: !b.parentElement.querySelector('.no-reste').hidden, ouvert: b.getAttribute('aria-expanded') }; }) : null;
+  if (NO0) { await page.click('#fiche .no-plus'); await attendre(250); }
+  const NO2 = NO0 ? await ev(() => { const b = document.querySelector('#fiche .no-plus'); return { n: b.textContent, cache: b.parentElement.querySelector('.no-reste').hidden }; }) : null;
+  ok('la nomenclature : « +N » déplie ses repères en place (« moins » les replie) ; « Le suivi » au trait, à côté d’« Exporter CSV »', !!NO0 && NO0.cache && /^\+\d+$/.test(NO0.n) && NO0.suivi === 'no-csv' && NO0.papier && NO1.vu && NO1.n === 'moins' && NO1.ouvert === 'true' && NO2.cache && NO2.n === NO0.n, JSON.stringify({ NO0, NO1, NO2 }));
   await ev(() => fermerFiche(true)); await attendre(300);
 
   /* ---- 6. le schéma Visio ---- */

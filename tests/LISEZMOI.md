@@ -63,7 +63,11 @@ node tests/documents.js        LES DOCUMENTS ET LE RÉCAPITULATIF (v73), à la v
                                catalogue, Échap) ; écrire d'un clic sur la ligne choisie, d'une touche ; Ctrl+Maj+Z refait ; « Ce qu'il
                                faut faire » en gestes ; les documents prennent le clavier, Échap le rend au ⋮, la croix a sa bulle ;
                                Normes et Bible (les onglets font le titre, ← →, « / », la recherche de la bible) ; une seule zone dans
-                               Vos fichiers ; les Hypothèses écrites dans chaque export ; le schéma Visio prend et rend le clavier
+                               Vos fichiers ; les Hypothèses écrites dans chaque export ; le schéma Visio prend et rend le clavier.
+                               v74, le récapitulatif pour l'œil : le rail des onglets à gauche en trois groupes (↑ ↓), « ok » qui se
+                               tait, « supposée » dite une fois, « Filtrer » (les puces de plus), « Colonnes » par rubriques sur deux
+                               colonnes, le rail qui s'amincit sous la fiche épinglée et redevient bande sur une feuille étroite ;
+                               l'onglet Problèmes (le niveau en point, « ″ » sous un geste répété) ; la nomenclature (« +11 » se déplie)
 node tests/interface.js        à la vraie souris (grand écran, téléphone) : la fiche épurée dans l'inspecteur, le tableau en
                                tiroir (« Ce folio »), la feuille jamais recouverte ; chaque dédoublement est une barrette à poser
                                au ras de sa borne, une borne par fil, chacune à sa hauteur, son repère écrit ; un clic l'ouvre,
