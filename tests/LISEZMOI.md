@@ -144,6 +144,16 @@ python tests/sonde-pdf.py      LA SONDE PDF (see/pdf/sonde_pdf.py), en PYTHON (3
                                sur un dossier : AUCUNE chaîne réelle (textes,
                                métadonnées, nom du fichier) dans les rapports ni les TSV, l'écran en ASCII, BOM et CRLF, les
                                colonnes du TSV, les motifs, --clair qui écrit les textes, la numérotation qui continue.
+                               Puis un contrôle par constat des relectures : un texte dessiné en traits ou vectorisé en
+                               contours ne se relit pas dans le TSV (amas) quand un fil coupé en morceaux reste des segments ;
+                               Producer/Creator (350A41, X350, numéros de projet masqués) ; polices maison, étiquettes et clés
+                               du contenu marqué, sorte d'annotation, encre, filtre, gestionnaire, messages d'erreur : aucun
+                               nom propre ; --clair à part (EN-CLAIR, rapports-EN-CLAIR) ; rien de personnel à l'écran ;
+                               longueur conventionnelle des textes ; motifs Unicode ; mot de passe vide, utilisateur,
+                               propriétaire ; sept PDF d'attaque (boîte de 10^9 mm, boucles, éventail de formulaires, xref
+                               /W [0 0 0], prédicteur, contenu répété 5 000 fois) en moins de 60 s chacun ; délai ; textes
+                               tournés sur un fil ; données non dessinées ; CropBox qui déborde ; re dégénéré ; découpe,
+                               couleur du fond, police de secours ; image dans un motif.
                                --corpus=DOSSIER : le corpus d'essai (verite.json) ; si PyMuPDF est installé, le lecteur standard
                                et PyMuPDF donnent les mêmes éléments à 0,1 mm. Hors de tests/toutes.js (Node). Le corpus se
                                fabrique HORS du dépôt, dans un venv à part (reportlab, pymupdf, pikepdf, pillow) :

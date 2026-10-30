@@ -14,20 +14,27 @@ courte du CONTENU (jamais d'apres le nom du PDF, qui peut etre confidentiel) :
 
 PAR DEFAUT RIEN DE REEL NE SORT : chaque texte est reduit a sa forme (lettre
 majuscule -> A, minuscule -> a, chiffre -> 9, les autres signes gardes), aucun
-nom de fichier, aucun nom de calque, aucune metadonnee de personne ou de
-projet. Le format du TSV est decrit dans LISEZMOI.md (meme dossier).
+nom de fichier, aucun nom propre (calque, police maison, cle ou etiquette d'un
+logiciel : un code et sa forme), aucune metadonnee de personne ou de projet ;
+les petits traits groupes comme des caracteres (un texte dessine en traits)
+tiennent en une ligne par groupe, sans la place de chaque trait. Le TSV garde
+la geometrie du dessin (traits, rectangles, place des textes). Le format du
+TSV est decrit dans LISEZMOI.md (meme dossier).
 
 Options :
-    --clair             ecrit AUSSI les textes reels (pour un PDF que l'on a
-                        le droit de montrer) ; le rapport le dit en tete
+    --clair             ecrit AUSSI les textes reels et toute la geometrie (pour
+                        un PDF que l'on a le droit de montrer) : fichiers
+                        NN-xxxxxxxx.EN-CLAIR.*, dans « rapports-EN-CLAIR »
     --sortie=DOSSIER    ailleurs que « rapports » a cote du script
     --lecteur=auto|standard|pymupdf
-                        auto (defaut) : PyMuPDF s'il est installe, sinon le
-                        lecteur ecrit ici en bibliotheque standard seule
-    --deux              lit avec les deux lecteurs (si PyMuPDF est la) et dit
-                        dans le rapport s'ils sont d'accord
+                        auto (defaut) : le lecteur ecrit ici (bibliotheque
+                        standard seule) ; PyMuPDF, s'il est installe, relit
+                        chaque page pour comparer ; pymupdf : PyMuPDF d'abord
     --pages=1-3,7       seulement ces pages
-    --mot-de-passe=XXX  le mot de passe d'ouverture d'un PDF protege
+    --mot-de-passe=XXX  le mot de passe d'un PDF protege (utilisateur ou
+                        proprietaire ; le mot de passe vide est essaye avant)
+    --delai=120         secondes au plus par PDF (au-dela : le rapport le dit,
+                        et l'on passe au PDF suivant)
 
 Le coeur n'utilise que la bibliotheque standard de Python (3.8 et plus).
 Ce qui n'est pas gere se DIT dans le rapport ; un PDF illisible donne un
@@ -36,9 +43,9 @@ rapport qui le dit, jamais un plantage du releve.
 from __future__ import division
 
 import binascii
-import codecs
 import datetime
 import hashlib
+import itertools
 import math
 import os
 import re
@@ -57,7 +64,24 @@ MM = 25.4 / 72.0          # un point PDF en millimetres
 # ===========================================================================
 
 class ErreurPDF(Exception):
-    """Une erreur de lecture du PDF (structure, objet, filtre...)."""
+    """Une erreur de lecture du PDF (structure, objet, filtre...). Son message
+    est ecrit ici et ne porte jamais de contenu du PDF (les noms y passent
+    par nom_montrable)."""
+
+
+class ArretLecture(Exception):
+    """La lecture d'une page s'arrete en cours de route (delai, nombre
+    d'elements, nombre d'operations) : ce qui est deja releve est garde."""
+
+
+def raison(e):
+    """Ce qu'on peut ecrire d'une erreur : le message d'une ErreurPDF (ecrit
+    ici), sinon seulement la classe de l'exception (un message de Python peut
+    recopier un morceau du PDF : « could not convert string to float: b'...' »)."""
+    if isinstance(e, (ErreurPDF, ArretLecture)):
+        m = str(e)
+        return m if m else e.__class__.__name__
+    return e.__class__.__name__
 
 
 def ascii_seul(texte):
@@ -377,6 +401,9 @@ def predicteur(data, params):
     bits = entier(params.get('BitsPerComponent'), 8)
     bpp = max(1, (couleurs * bits + 7) // 8)
     ligne = (colonnes * couleurs * bits + 7) // 8
+    if ligne <= 0 or ligne > len(data) + 1 or couleurs > 64 or bits > 32:
+        # une ligne plus longue que tout le flux (Columns de deux milliards) : rien a reconstruire
+        raise ErreurPDF('predicteur aux dimensions impossibles')
     if pred == 2:
         if bits != 8:
             raise ErreurPDF('predicteur TIFF a %d bits non gere' % bits)
@@ -749,20 +776,25 @@ BOURRAGE = (b'\x28\xBF\x4E\x5E\x4E\x75\x8A\x41\x64\x00\x4E\x56\xFF\xFA\x01\x08'
 
 class Chiffrement(object):
     """Le gestionnaire de securite standard : RC4 40 et 128 bits, AES-128,
-    AES-256 (R5 et R6), avec le mot de passe utilisateur (vide par defaut)."""
+    AES-256 (R5 et R6). On essaie le mot de passe vide, puis celui qui est
+    donne, comme mot de passe utilisateur puis proprietaire ; ouvert_par dit
+    lequel a ouvert le fichier."""
 
-    def __init__(self, enc, id0, mot_de_passe=b''):
+    def __init__(self, enc, id0, mot_de_passe=''):
         self.enc = enc
         self.v = entier(enc.get('V'), 0)
         self.r = entier(enc.get('R'), 0)
         self.methode = ''
         self.cle = None
+        self.ouvert_par = None
         self.stmf = 'RC4'
         self.strf = 'RC4'
+        self.id0 = id0
         self.encrypt_meta = enc.get('EncryptMetadata', True) is not False
         filtre = enc.get('Filter')
         if filtre != 'Standard':
-            raise ErreurPDF('chiffrement par le gestionnaire %s (pas le standard) : non gere' % (filtre,))
+            raise ErreurPDF('chiffrement par le gestionnaire %s (pas le standard) : non gere'
+                            % nom_standard(filtre, 'maison'))
         longueur = entier(enc.get('Length'), 40)
         if self.v in (4, 5):
             cf = enc.get('CF') if isinstance(enc.get('CF'), dict) else {}
@@ -791,59 +823,106 @@ class Chiffrement(object):
                         longueur = l * 8 if l <= 32 else l
                 if longueur < 40:
                     longueur = 128
+        self.o = octets(enc.get('O'))
+        self.u = octets(enc.get('U'))
         if self.r <= 4:
-            if self.r == 2:
-                n = 5
-            else:
-                n = max(5, min(16, longueur // 8))
-            self.n = n
-            o = octets(enc.get('O'))[:32]
-            u = octets(enc.get('U'))
-            p = entier(enc.get('P'), 0)
-            mdp = (mot_de_passe + BOURRAGE)[:32]
-            h = hashlib.md5(mdp + o + struct.pack('<i', p if p < 2 ** 31 else p - 2 ** 32) + id0)
-            if self.r >= 4 and not self.encrypt_meta:
-                h.update(b'\xff\xff\xff\xff')
-            cle = h.digest()
-            if self.r >= 3:
-                for _ in range(50):
-                    cle = hashlib.md5(cle[:n]).digest()
-            cle = cle[:n]
-            # verification du mot de passe utilisateur
-            if self.r == 2:
-                ok = rc4(cle, BOURRAGE) == u[:32]
-            else:
-                x = rc4(cle, hashlib.md5(BOURRAGE + id0).digest())
-                for i in range(1, 20):
-                    x = rc4(bytes(c ^ i for c in cle), x)
-                ok = x[:16] == u[:16]
-            if not ok:
-                raise ErreurPDF('protege par un mot de passe a l\'ouverture')
-            self.cle = cle
-            if self.v == 4:
-                m = self.stmf if self.stmf != 'aucun' else self.strf
-                self.methode = 'AES-128' if m == 'AES128' else ('RC4 %d bits' % (n * 8))
-            else:
-                self.methode = 'RC4 %d bits' % (n * 8)
+            self.n = 5 if self.r == 2 else max(5, min(16, longueur // 8))
+            self.p = entier(enc.get('P'), 0)
         elif self.r in (5, 6):
-            mdp = mot_de_passe[:127]
-            u = octets(enc.get('U'))
-            ue = octets(enc.get('UE'))
-            if len(u) < 48 or len(ue) < 32:
+            if len(self.u) < 48 or len(octets(enc.get('UE'))) < 32:
                 raise ErreurPDF('dictionnaire de chiffrement AES-256 incomplet')
-            if self.r == 5:
-                ok = hashlib.sha256(mdp + u[32:40]).digest() == u[:32]
-                cle_inter = hashlib.sha256(mdp + u[40:48]).digest()
-            else:
-                ok = hash_r6(mdp, u[32:40], b'') == u[:32]
-                cle_inter = hash_r6(mdp, u[40:48], b'')
-            if not ok:
-                raise ErreurPDF('protege par un mot de passe a l\'ouverture')
-            self.cle = AES(cle_inter).dechiffrer_cbc(b'\x00' * 16, ue[:32])
-            self.methode = 'AES-256 (R%d)' % self.r
-            self.stmf = self.stmf if self.v == 5 else 'AES256'
         else:
             raise ErreurPDF('revision de chiffrement R%d non geree' % self.r)
+        candidats = [u'']
+        if mot_de_passe:
+            candidats.append(mot_de_passe if isinstance(mot_de_passe, str) else mot_de_passe.decode('latin-1'))
+        for mdp in candidats:
+            for role in ('utilisateur', 'proprietaire'):
+                cle = self._essayer(mdp, role)
+                if cle is not None:
+                    self.cle = cle
+                    self.ouvert_par = role if mdp else 'vide'
+                    break
+            if self.cle is not None:
+                break
+        if self.cle is None:
+            raise ErreurPDF('protege par un mot de passe a l\'ouverture')
+        if self.r <= 4:
+            if self.v == 4:
+                m = self.stmf if self.stmf != 'aucun' else self.strf
+                self.methode = 'AES-128' if m == 'AES128' else ('RC4 %d bits' % (self.n * 8))
+            else:
+                self.methode = 'RC4 %d bits' % (self.n * 8)
+        else:
+            self.methode = 'AES-256 (R%d)' % self.r
+            self.stmf = self.stmf if self.v == 5 else 'AES256'
+
+    # -- R2 a R4 -------------------------------------------------------------
+    def _cle_r4(self, mdp32):
+        """Algorithme 2 : la cle du fichier depuis un mot de passe utilisateur (32 octets, bourre)."""
+        n = self.n
+        h = hashlib.md5(mdp32 + self.o[:32] + struct.pack('<i', self.p if self.p < 2 ** 31 else self.p - 2 ** 32)
+                        + self.id0)
+        if self.r >= 4 and not self.encrypt_meta:
+            h.update(b'\xff\xff\xff\xff')
+        cle = h.digest()
+        if self.r >= 3:
+            for _ in range(50):
+                cle = hashlib.md5(cle[:n]).digest()
+        return cle[:n]
+
+    def _utilisateur_r4(self, cle):
+        """Algorithmes 4 et 5 : la cle ouvre-t-elle le fichier (contre /U) ?"""
+        u = self.u
+        if self.r == 2:
+            return rc4(cle, BOURRAGE) == u[:32]
+        x = rc4(cle, hashlib.md5(BOURRAGE + self.id0).digest())
+        for i in range(1, 20):
+            x = rc4(bytes(c ^ i for c in cle), x)
+        return x[:16] == u[:16]
+
+    def _essayer(self, mdp, role):
+        """La cle du fichier si mdp est le bon mot de passe (role : utilisateur
+        ou proprietaire), sinon None."""
+        if self.r <= 4:
+            b = mdp.encode('latin-1', 'replace')
+            pad = (b + BOURRAGE)[:32]
+            if role == 'utilisateur':
+                cle = self._cle_r4(pad)
+                return cle if self._utilisateur_r4(cle) else None
+            # algorithme 7 : le mot de passe proprietaire dechiffre /O, qui rend le mot de passe utilisateur
+            k = hashlib.md5(pad).digest()
+            if self.r >= 3:
+                for _ in range(50):
+                    k = hashlib.md5(k).digest()
+            k = k[:self.n]
+            if self.r == 2:
+                mdp_u = rc4(k, self.o[:32])
+            else:
+                mdp_u = self.o[:32]
+                for i in range(19, -1, -1):
+                    mdp_u = rc4(bytes(c ^ i for c in k), mdp_u)
+            cle = self._cle_r4(mdp_u[:32])
+            return cle if self._utilisateur_r4(cle) else None
+        b = mdp.encode('utf-8')[:127]
+        u, o = self.u, self.o
+        if role == 'utilisateur':
+            sel_v, sel_c, extra, chiffree = u[32:40], u[40:48], b'', octets(self.enc.get('UE'))
+            cible = u[:32]
+        else:
+            if len(o) < 48 or len(octets(self.enc.get('OE'))) < 32:
+                return None
+            sel_v, sel_c, extra, chiffree = o[32:40], o[40:48], u[:48], octets(self.enc.get('OE'))
+            cible = o[:32]
+        if self.r == 5:
+            if hashlib.sha256(b + sel_v + extra).digest() != cible:
+                return None
+            inter = hashlib.sha256(b + sel_c + extra).digest()
+        else:
+            if hash_r6(b, sel_v, extra) != cible:
+                return None
+            inter = hash_r6(b, sel_c, extra)
+        return AES(inter).dechiffrer_cbc(b'\x00' * 16, chiffree[:32])
 
     def cle_objet(self, num, gen, aes):
         if self.r >= 5:
@@ -902,7 +981,7 @@ class LecteurPDF(object):
     flux d'objets, mises a jour incrementales, et en dernier recours la
     reconstruction en parcourant le fichier."""
 
-    def __init__(self, data, notes, mot_de_passe=b''):
+    def __init__(self, data, notes, mot_de_passe=''):
         self.data = data
         self.notes = notes            # NotesNonGere : ce qui n'est pas gere
         self.xref = {}                # num -> ('n', offset, gen) | ('o', flux, index) | ('f',)
@@ -929,7 +1008,7 @@ class LecteurPDF(object):
             if not isinstance(racine, dict):
                 raise ErreurPDF('/Root illisible')
         except Exception as e:
-            self.raisons_reconstruction.append(str(e))
+            self.raisons_reconstruction.append(raison(e))
             self._reconstruire()
         enc = self.trailer.get('Encrypt')
         if enc is not None:
@@ -942,8 +1021,8 @@ class LecteurPDF(object):
                 self.enc_dico = enc_d
                 try:
                     self.chiffre = Chiffrement(enc_d, id0, mot_de_passe)
-                except ErreurPDF as e:
-                    self.erreur_chiffrement = str(e)
+                except Exception as e:
+                    self.erreur_chiffrement = raison(e)
                 # les objets deja lus (avant de connaitre la cle) sont a relire
                 gardes = {}
                 if num_enc is not None and num_enc in self.cache:
@@ -1054,9 +1133,13 @@ class LecteurPDF(object):
         index = d.get('Index') or [0, taille]
         brut = self.decoder_flux(obj, dechiffrer=False)
         ligne = sum(w)
+        if ligne <= 0 or any(x < 0 or x > 8 for x in w):
+            raise ErreurPDF('flux xref aux largeurs (/W) impossibles')
         p = 0
         for k in range(0, len(index) - 1, 2):
             premier, nombre = entier(index[k]), entier(index[k + 1])
+            # jamais plus d'entrees que le flux n'en contient (un /Size de deux milliards ne coute rien)
+            nombre = max(0, min(nombre, (len(brut) - p) // ligne))
             for i in range(nombre):
                 if p + ligne > len(brut):
                     break
@@ -1325,8 +1408,8 @@ class LecteurPDF(object):
             elif f in FILTRES_IMAGE:
                 break
             else:
-                self.notes.ajouter('filtre %s non gere (flux ignore)' % f)
-                raise ErreurPDF('filtre %s non gere' % f)
+                self.notes.ajouter('filtre %s non gere (flux ignore)' % nom_standard(f, 'maison'))
+                raise ErreurPDF('filtre %s non gere' % nom_standard(f, 'maison'))
         if garder:
             flux.cache = data
         return data
@@ -1748,6 +1831,7 @@ class Police(object):
         self.notes = notes
         r = lecteur.resoudre
         self.dico = dico
+        self.de_secours = False
         self.sous_type = str(r(dico.get('Subtype')) or '')
         base = r(dico.get('BaseFont'))
         nom = str(base) if base is not None else ''
@@ -1834,7 +1918,7 @@ class Police(object):
             if self.largeurs is None:
                 self.largeurs = []
         if self.largeurs is None and std is None:
-            self.notes.ajouter('police sans /Widths ni metrique standard : largeurs estimees (%s)' % nettoyer_nom_police(self.nom))
+            self.notes.ajouter('police sans /Widths ni metrique standard : largeurs estimees')
         self.table_std = largeurs_standard(std) if std and std != 'Courier' else None
 
     def _largeur_simple(self, code):
@@ -1902,7 +1986,7 @@ class Police(object):
                 if re.search(r'UCS2|UTF16', n):
                     self.cmap_unicode_direct = True
                 else:
-                    self.notes.ajouter('CMap predefinie %s non geree : codes lus sur deux octets' % n)
+                    self.notes.ajouter('CMap predefinie %s non geree : codes lus sur deux octets' % nom_standard(n, '(nom masque)'))
                 self.vertical = n.endswith('-V')
         elif isinstance(enc, Flux):
             try:
@@ -1949,7 +2033,7 @@ class Police(object):
                 else:
                     break
         if self.unicode_cmap is None and not self.cmap_unicode_direct:
-            self.notes.ajouter('police composite sans ToUnicode : caracteres inconnus (%s)' % nettoyer_nom_police(self.nom))
+            self.notes.ajouter('police composite sans ToUnicode : caracteres inconnus (sauf si PyMuPDF les lit)')
 
     def glyphes(self, s):
         """[(caractere, largeur en unites de texte (1 = le corps), mot (code 32 d'un octet))]."""
@@ -1980,16 +2064,6 @@ class Police(object):
         if len(self.cache) < 5000:
             self.cache[s] = sortie
         return sortie
-
-
-def nettoyer_nom_police(nom):
-    """Le nom d'une police tel qu'on peut le montrer : sans prefixe de
-    sous-ensemble, en caracteres simples, 60 au plus."""
-    nom = nom or ''
-    if '+' in nom[:8]:
-        nom = nom.split('+', 1)[1]
-    nom = re.sub(r'[^A-Za-z0-9 ,._+-]', '', nom)[:60]
-    return nom or '?'
 
 
 # ===========================================================================
@@ -2115,13 +2189,19 @@ class Collecteur(object):
         self.textes_marques = [] # (cle, texte) : ActualText, Alt, E et autres chaines cachees dans le contenu marque
         self.bloc = None         # le formulaire (XObject) en cours : « X3.12 » = le formulaire X3, sa 12e pose
         self.usages = {}         # formulaire -> nombre de poses dans la page (imbriquees comprises)
+        self.clip = None         # la decoupe rectangulaire en cours (x0, y0, x1, y1), ou None
+        self.nb_items = 0        # traits, glyphes et images recus (la limite de la page)
+        self.glyphes_secours = 0 # glyphes lus avec la police de secours (police absente ou illisible)
+        self.arret = None        # pourquoi la lecture de la page s'est arretee en route
 
     def chemin(self, items, trait, fond, ep, at, af, calque, tirets, ordre=None):
         if not items:
             return
         self.ordre += 1
+        self.nb_items += len(items)
         c = {'items': items, 'trait': trait, 'fond': fond, 'ep': ep, 'at': at, 'af': af,
-             'calque': calque, 'tirets': tirets, 'ordre': self.ordre if ordre is None else ordre, 'bloc': self.bloc}
+             'calque': calque, 'tirets': tirets, 'ordre': self.ordre if ordre is None else ordre, 'bloc': self.bloc,
+             'clip': self.clip}
         # un remplissage suivi du trait du meme chemin : un seul element (comme PyMuPDF)
         if self.chemins and trait is not None and fond is None:
             p = self.chemins[-1]
@@ -2135,12 +2215,14 @@ class Collecteur(object):
 
     def glyphe(self, g, ordre=None):
         self.ordre += 1
-        self.glyphes.append(g + (self.ordre if ordre is None else ordre, self.bloc))
+        self.nb_items += 1
+        self.glyphes.append(g + (self.ordre if ordre is None else ordre, self.bloc, self.clip))
 
     def image(self, coins, l, h, info, calque, ordre=None):
         self.ordre += 1
+        self.nb_items += 1
         self.images.append({'coins': coins, 'l': l, 'h': h, 'info': info, 'calque': calque,
-                            'ordre': self.ordre if ordre is None else ordre, 'bloc': self.bloc})
+                            'ordre': self.ordre if ordre is None else ordre, 'bloc': self.bloc, 'clip': self.clip})
 
 
 # ===========================================================================
@@ -2149,7 +2231,7 @@ class Collecteur(object):
 
 class Etat(object):
     __slots__ = ('ctm', 'cs_t', 'cs_f', 'col_t', 'col_f', 'ep', 'at', 'af', 'police', 'corps',
-                 'tc', 'tw', 'th', 'tl', 'rise', 'tr', 'tirets', 'motif_f')
+                 'tc', 'tw', 'th', 'tl', 'rise', 'tr', 'tirets', 'motif_f', 'clip')
 
     def __init__(self):
         self.ctm = IDENTITE
@@ -2170,12 +2252,27 @@ class Etat(object):
         self.tr = 0
         self.tirets = False
         self.motif_f = None
+        self.clip = None          # decoupe rectangulaire (page vue), ou None
 
     def copie(self):
         e = Etat.__new__(Etat)
         for k in Etat.__slots__:
             setattr(e, k, getattr(self, k))
         return e
+
+
+_FAMILLES_ESPACES = {'DeviceGray': 'Gray', 'G': 'Gray', 'Gray': 'Gray', 'CalGray': 'CalGray', 'DeviceRGB': 'RGB',
+                     'RGB': 'RGB', 'CalRGB': 'CalRGB', 'DeviceCMYK': 'CMYK', 'CMYK': 'CMYK', 'Lab': 'Lab',
+                     'ICCBased': 'ICCBased', 'Indexed': 'Indexed', 'I': 'Indexed', 'Pattern': 'Pattern',
+                     'Separation': 'Separation', 'DeviceN': 'DeviceN'}
+
+
+def famille_espace(nom):
+    """La famille d'un espace de couleur (RGB, ICCBased, Separation...) ;
+    « autre » pour un nom qui n'est pas de la norme (le nom d'une ressource
+    ou d'une encre peut etre celui de la societe)."""
+    n = u'%s' % (nom,) if nom is not None else u''
+    return _FAMILLES_ESPACES.get(n, 'autre' if n else '')
 
 
 ABREV_IMAGE = {'W': 'Width', 'H': 'Height', 'BPC': 'BitsPerComponent', 'CS': 'ColorSpace',
@@ -2236,7 +2333,7 @@ class Calques(object):
                 groupes = [groupes]
             refs = [g for g in (groupes or []) if isinstance(g, Ref)]
             if isinstance(ve, list):
-                vis = self._expression(ve)
+                vis = self._expression(ve, 0)
             else:
                 etats = [self.visible.get(g.num, True) for g in refs]
                 p = r(d.get('P')) or 'AnyOn'
@@ -2256,16 +2353,18 @@ class Calques(object):
             return (None, True)
         return (num, self.visible.get(num, True))
 
-    def _expression(self, ve):
+    def _expression(self, ve, profondeur):
+        """Une expression de visibilite (/VE). Au-dela de 16 niveaux (une
+        expression qui se contient elle-meme), le calque est suppose visible."""
         r = self.lecteur.resoudre
-        if not ve:
+        if not ve or profondeur > 16:
             return True
         op = r(ve[0])
         args = []
         for x in ve[1:]:
             x2 = r(x)
             if isinstance(x2, list):
-                args.append(self._expression(x2))
+                args.append(self._expression(x2, profondeur + 1))
             elif isinstance(x, Ref):
                 args.append(self.visible.get(x.num, True))
         if op == 'Not':
@@ -2297,12 +2396,18 @@ class Machine(object):
     collecteur."""
 
     PROFONDEUR_MAX = 24
+    LIMITE_OPERATIONS = 5000000    # operateurs executes dans une page (formulaires compris) : au-dela, on s'arrete
+    LIMITE_POSES = 100000          # formulaires (XObject) poses dans une page, imbriques compris : au-dela, on s'arrete
 
     def __init__(self, lecteur, notes, calques):
         self.lecteur = lecteur
         self.notes = notes
         self.calques = calques
+        self.echeance = None      # heure au-dela de laquelle la lecture s'arrete (le delai par PDF)
+        self.limite_items = None  # traits, glyphes et images au-dela desquels la page s'arrete
+        self.nb_ops = 0
         self.polices = {}        # cle -> Police
+        self.secours = None      # la police de secours (Helvetica) d'un texte dont la police manque
         self.espaces = {}
         self.noms_formes = {}    # numero d'objet d'un formulaire -> « X1 », « X2 »... (dans l'ordre de premiere pose)
         self.poses = {}          # « X1 » -> nombre de poses de premier niveau dans la page
@@ -2324,13 +2429,34 @@ class Machine(object):
                 try:
                     morceaux.append(self.lecteur.decoder_flux(c))
                 except ErreurPDF as e:
-                    self.notes.ajouter('un flux de contenu illisible : %s' % e)
+                    self.notes.ajouter('un flux de contenu illisible : %s' % raison(e))
         data = b'\n'.join(morceaux)
         etat = Etat()
         etat.ctm = ctm_page
         self.pile_formes = []
         self.poses = {}
-        self.executer(data, ressources, etat, 0, [])
+        self.nb_ops = 0
+        self.nb_poses = 0
+        try:
+            self.executer(data, ressources, etat, 0, [])
+        except ArretLecture as e:
+            # ce qui est deja releve est garde ; la page est dite incomplete
+            collecteur.arret = str(e)
+            collecteur.bloc = None
+        except RecursionError:
+            collecteur.arret = 'imbrication trop profonde'
+            collecteur.bloc = None
+
+    def _budget(self):
+        """Toutes les 4096 operations : le delai, le nombre d'elements, le
+        nombre d'operations (des formulaires poses en eventail peuvent en
+        demander des millions sans boucler)."""
+        if self.echeance is not None and time.time() > self.echeance:
+            raise ArretLecture('delai depasse')
+        if self.limite_items is not None and self.col.nb_items > self.limite_items:
+            raise ArretLecture('trop d\'elements (limite de la memoire du poste)')
+        if self.nb_ops > self.LIMITE_OPERATIONS:
+            raise ArretLecture('plus de %d operations dans la page' % self.LIMITE_OPERATIONS)
 
     # -- les ressources --------------------------------------------------------
     def ressource(self, ressources, genre, nom):
@@ -2344,18 +2470,28 @@ class Machine(object):
     def police(self, ressources, nom):
         objet, brut = self.ressource(ressources, 'Font', nom)
         if not isinstance(objet, dict):
-            self.notes.ajouter('police introuvable dans les ressources (texte ignore)')
-            return None
+            self.notes.ajouter('police introuvable dans les ressources : texte lu avec une police de secours '
+                               '(Helvetica, largeurs approchees ; voir le nombre de glyphes plus bas)')
+            return self.police_de_secours()
         cle = brut.num if isinstance(brut, Ref) else id(objet)
         p = self.polices.get(cle)
         if p is None:
             try:
                 p = Police(self.lecteur, objet, self.notes)
             except Exception as e:
-                self.notes.ajouter('police illisible : %s' % e)
-                p = None
+                self.notes.ajouter('police illisible (%s) : texte lu avec une police de secours (Helvetica)' % raison(e))
+                p = self.police_de_secours()
             self.polices[cle] = p
         return p
+
+    def police_de_secours(self):
+        """Comme MuPDF : un texte dont la police manque se lit quand meme,
+        en Helvetica (encodage standard) ; ses glyphes sont comptes."""
+        if self.secours is None:
+            self.secours = Police(self.lecteur, {'Type': Nom('Font'), 'Subtype': Nom('Type1'),
+                                                 'BaseFont': Nom('Helvetica')}, self.notes)
+            self.secours.de_secours = True
+        return self.secours
 
     def espace(self, ressources, nom_ou_objet, profondeur=0):
         r = self.lecteur.resoudre
@@ -2375,7 +2511,7 @@ class Machine(object):
             if objet is None:
                 if n in ('DefaultGray',):
                     return GRIS
-                self.notes.ajouter('espace de couleur %s introuvable (gris suppose)' % nettoyer_nom_police(n))
+                self.notes.ajouter('espace de couleur %s introuvable (gris suppose)' % nom_standard(n, 'nomme'))
                 return GRIS
             cle = brut.num if isinstance(brut, Ref) else None
             if cle is not None and cle in self.espaces:
@@ -2432,7 +2568,7 @@ class Machine(object):
                 return MOTIF
         except (IndexError, AttributeError, TypeError):
             pass
-        self.notes.ajouter('espace de couleur %s non gere (gris suppose)' % nettoyer_nom_police(genre))
+        self.notes.ajouter('espace de couleur %s non gere (gris suppose)' % nom_standard(genre, 'inconnu'))
         return GRIS
 
     # -- l'interpretation --------------------------------------------------------
@@ -2482,6 +2618,9 @@ class Machine(object):
                     v = 0.0
             elif g == 'mot':
                 op = m.group('mot')
+                self.nb_ops += 1
+                if not self.nb_ops & 4095:
+                    self._budget()
                 if conteneurs:
                     if op == b'true':
                         conteneurs[-1].append(True)
@@ -2531,16 +2670,21 @@ class Machine(object):
                         if len(ops) >= 4:
                             x, y, w, h = ops[-4], ops[-3], ops[-2], ops[-1]
                             a = appliquer(ctm, x, y)
-                            b = appliquer(ctm, x + w, y)
                             c = appliquer(ctm, x + w, y + h)
-                            d = appliquer(ctm, x, y + h)
-                            chemin.append(('l', a, b))
-                            chemin.append(('l', b, c))
-                            chemin.append(('l', c, d))
-                            chemin.append(('l', d, a))
+                            if w == 0 or h == 0:
+                                # un rectangle sans largeur ou sans hauteur : un trait (certains exports tracent ainsi)
+                                chemin.append(('l', a, c))
+                            else:
+                                b = appliquer(ctm, x + w, y)
+                                d = appliquer(ctm, x, y + h)
+                                chemin.append(('l', a, b))
+                                chemin.append(('l', b, c))
+                                chemin.append(('l', c, d))
+                                chemin.append(('l', d, a))
                             point = debut_sp = a
                     elif op in _PEINTURES:
                         trait, fond, fermer = _PEINTURES[op]
+                        col.clip = etat.clip
                         if fermer and point is not None and debut_sp is not None and point != debut_sp:
                             chemin.append(('l', point, debut_sp))
                         if chemin and (trait or fond):
@@ -2568,8 +2712,13 @@ class Machine(object):
                                     trait = False
                                 if trait or fond:
                                     ep = etat.ep * math.sqrt(abs(ctm[0] * ctm[3] - ctm[1] * ctm[2]))
+                                    col.clip = etat.clip
                                     col.chemin(chemin, ct if trait else None, cf if fond else None, ep,
                                                etat.at, etat.af, (ident, vis), etat.tirets)
+                        if decoupe:
+                            # W n (ou W S...) : la decoupe s'applique aux traces suivants ; seule une decoupe
+                            # rectangulaire (le cas courant) est suivie, les autres sont notees
+                            etat.clip = self._decoupe(chemin, etat.clip)
                         chemin = []
                         point = debut_sp = None
                         decoupe = False
@@ -2669,13 +2818,16 @@ class Machine(object):
                         tlm = tm = mul((1.0, 0.0, 0.0, 1.0, 0.0, -etat.tl), tlm)
                     elif op == b'Tj':
                         if ops and isinstance(ops[-1], bytes):
+                            col.clip = etat.clip
                             tm = self._montrer(etat, tm, [ops[-1]], calque_courant)
                     elif op == b'TJ':
                         if ops and isinstance(ops[-1], list):
+                            col.clip = etat.clip
                             tm = self._montrer(etat, tm, ops[-1], calque_courant)
                     elif op == b"'":
                         tlm = tm = mul((1.0, 0.0, 0.0, 1.0, 0.0, -etat.tl), tlm)
                         if ops and isinstance(ops[-1], bytes):
+                            col.clip = etat.clip
                             tm = self._montrer(etat, tm, [ops[-1]], calque_courant)
                     elif op == b'"':
                         if len(ops) >= 3:
@@ -2683,12 +2835,15 @@ class Machine(object):
                             etat.tc = ops[-2]
                         tlm = tm = mul((1.0, 0.0, 0.0, 1.0, 0.0, -etat.tl), tlm)
                         if ops and isinstance(ops[-1], bytes):
+                            col.clip = etat.clip
                             tm = self._montrer(etat, tm, [ops[-1]], calque_courant)
                     # -------------------------------------------- objets externes
                     elif op == b'Do':
                         if ops and isinstance(ops[-1], Nom):
+                            col.clip = etat.clip
                             self._do(ressources, ops[-1], etat, profondeur, mc, calque_courant)
                     elif op == b'BI':
+                        col.clip = etat.clip
                         pos = self._image_en_ligne(data, pos, ressources, etat, calque_courant)
                     elif op == b'sh':
                         col.nb_degrades += 1
@@ -2754,6 +2909,18 @@ class Machine(object):
                 ops.append(v)
                 if len(ops) > 64:
                     del ops[:-32]
+
+    def _decoupe(self, chemin, clip):
+        """La decoupe en cours apres un W : la boite du chemin s'il est un
+        rectangle droit (re W n, le cas courant), intersectee avec la decoupe
+        d'avant ; sinon la decoupe d'avant (une decoupe d'une autre forme n'est
+        pas appliquee, et le rapport le dit)."""
+        chs = _chaines(normaliser(chemin, {}))
+        r_ = _est_rectangle(chs[0]) if len(chs) == 1 else None
+        if r_ is None:
+            self.notes.ajouter('decoupe (W) d\'une autre forme qu\'un rectangle droit : non appliquee')
+            return clip
+        return intersection(clip, r_)
 
     def _proprietes(self, dico, col):
         """Les proprietes d'un contenu marque (BDC) : un logiciel peut y
@@ -2871,7 +3038,10 @@ class Machine(object):
         rx, ry = c * rise, d * rise
         for morceau in morceaux:
             if isinstance(morceau, bytes):
-                for (u, w0, mot) in p.glyphes(morceau):
+                gl = p.glyphes(morceau)
+                if p.de_secours:
+                    col.glyphes_secours += len(gl)
+                for (u, w0, mot) in gl:
                     ox = a * xc + rx + e
                     oy = b * xc + ry + f
                     col.glyphe((u, ox, oy, ux, uy, taille, w0 * taille, nom, mode, couleur, alpha, calque))
@@ -2902,7 +3072,7 @@ class Machine(object):
             try:
                 data = self.lecteur.decoder_flux(x, garder=True)
             except ErreurPDF as e:
-                self.notes.ajouter('formulaire illisible : %s' % e)
+                self.notes.ajouter('formulaire illisible : %s' % raison(e))
                 return
             mat = r(x.dico.get('Matrix'))
             e2 = etat.copie()
@@ -2911,6 +3081,14 @@ class Machine(object):
                     e2.ctm = mul(tuple(float(r(v)) for v in mat), etat.ctm)
                 except (TypeError, ValueError):
                     pass
+            bb = boite_pdf(x.dico.get('BBox'), r)
+            if bb is not None:
+                # un formulaire est decoupe par sa BBox (appliquee si elle reste un rectangle droit)
+                c = [appliquer(e2.ctm, bb[0], bb[1]), appliquer(e2.ctm, bb[2], bb[1]),
+                     appliquer(e2.ctm, bb[2], bb[3]), appliquer(e2.ctm, bb[0], bb[3])]
+                r_ = _est_rectangle([('l', c[0], c[1]), ('l', c[1], c[2]), ('l', c[2], c[3]), ('l', c[3], c[0])])
+                if r_ is not None:
+                    e2.clip = intersection(e2.clip, r_)
             res = r(x.dico.get('Resources'))
             if not isinstance(res, dict):
                 res = ressources
@@ -2921,6 +3099,10 @@ class Machine(object):
             if nom_f is None:
                 nom_f = self.noms_formes[cle] = 'X%d' % (len(self.noms_formes) + 1)
             self.col.usages[nom_f] = self.col.usages.get(nom_f, 0) + 1
+            self.nb_poses += 1
+            if self.nb_poses > self.LIMITE_POSES:
+                # des formulaires poses en eventail (2 par niveau sur 24 niveaux : 16 millions de poses)
+                raise ArretLecture('plus de %d formulaires poses dans la page' % self.LIMITE_POSES)
             premier = not self.pile_formes
             if premier:
                 # les elements d'une pose de premier niveau portent son nom : un symbole pose plusieurs fois
@@ -2936,11 +3118,11 @@ class Machine(object):
         elif st == 'PS':
             self.notes.ajouter('XObject PostScript ignore')
 
-    def _image(self, d, ctm, calque, en_ligne=False):
+    def _image(self, d, ctm, calque, en_ligne=False, ressources=None):
         coins = [appliquer(ctm, 0, 0), appliquer(ctm, 1, 0), appliquer(ctm, 1, 1), appliquer(ctm, 0, 1)]
-        self._image_coins(d, coins, calque, en_ligne=en_ligne)
+        self._image_coins(d, coins, calque, en_ligne=en_ligne, ressources=ressources)
 
-    def _image_coins(self, d, coins, calque, motif=False, en_ligne=False):
+    def _image_coins(self, d, coins, calque, motif=False, en_ligne=False, ressources=None):
         r = self.lecteur.resoudre
         l = entier(r(d.get('Width', d.get('W'))), 0)
         h = entier(r(d.get('Height', d.get('H'))), 0)
@@ -2948,13 +3130,18 @@ class Machine(object):
         if isinstance(filtre, list):
             filtre = r(filtre[-1]) if filtre else None
         filtre = ABREV_FILTRES.get(str(filtre), str(filtre)) if filtre is not None else 'brut'
+        if filtre != 'brut':
+            filtre = nom_standard(filtre, 'autre')
         cs = r(d.get('ColorSpace', d.get('CS')))
+        if isinstance(cs, Nom) and ressources is not None and famille_espace(cs) == 'autre':
+            # une image en ligne peut nommer un espace des ressources de la page : sa famille, pas son nom
+            o, _ = self.ressource(ressources, 'ColorSpace', cs)
+            cs = o if o is not None else cs
         if isinstance(cs, list) and cs:
             cs = r(cs[0])
-        cs = ABREV_CS.get(str(cs), str(cs)) if cs is not None else ''
         masque = r(d.get('ImageMask', d.get('IM'))) is True
         bpc = entier(r(d.get('BitsPerComponent', d.get('BPC'))), 0)
-        info = {'filtre': filtre.replace('Decode', ''), 'espace': cs.replace('Device', ''),
+        info = {'filtre': filtre.replace('Decode', ''), 'espace': famille_espace(cs) if cs is not None else '',
                 'bits': bpc, 'masque': masque, 'motif': motif, 'en_ligne': en_ligne}
         self.col.image(coins, l, h, info, calque)
 
@@ -3002,7 +3189,7 @@ class Machine(object):
             mm = re.compile(br'[\x00\t\n\x0c\r ]EI(?=[\x00\t\n\x0c\r ]|$)').search(data, pos)
             fin = mm.end() if mm else len(data)
         ident, vis = calque_courant()
-        self._image(dico, etat.ctm, (ident, vis), en_ligne=True)
+        self._image(dico, etat.ctm, (ident, vis), en_ligne=True, ressources=ressources)
         return fin
 
 
@@ -3156,6 +3343,22 @@ def _proches(p, q, tol=1e-3):
     return abs(p[0] - q[0]) <= tol and abs(p[1] - q[1]) <= tol
 
 
+def intersection(a, b):
+    """L'intersection de deux boites (x0, y0, x1, y1) ; None = pas de
+    limite. Une intersection vide rend une boite retournee (x0 > x1) que rien
+    ne touche."""
+    if a is None:
+        return b
+    if b is None:
+        return a
+    return (max(a[0], b[0]), max(a[1], b[1]), min(a[2], b[2]), min(a[3], b[3]))
+
+
+def touche(b, c, tol=0.01):
+    """Vrai si la boite b touche la boite c (a tol pres)."""
+    return b[2] >= c[0] - tol and b[0] <= c[2] + tol and b[3] >= c[1] - tol and b[1] <= c[3] + tol
+
+
 def normaliser(items, stats):
     """Les items d'un chemin sans leurs cas degeneres, la meme regle pour les
     deux lecteurs (MuPDF garde ou jette ces cas a sa facon) : un trait plus
@@ -3165,6 +3368,10 @@ def normaliser(items, stats):
     ou trois points confondus) devient un trait."""
     sortie = []
     for it in items:
+        if not all(math.isfinite(v) for pt in (it[1:] if it[0] != 're' else (it[1:],)) for v in pt):
+            # une matrice demesuree (1e308) rend des coordonnees infinies : rien a relever
+            stats['infinis'] = stats.get('infinis', 0) + 1
+            continue
         if it[0] == 'c':
             p0, p1, p2, p3 = it[1], it[2], it[3], it[4]
             if _proches(p0, p3) and (_proches(p0, p1) or _proches(p0, p2) or (_proches(p1, p2) and _proches(p0, p1))):
@@ -3178,6 +3385,18 @@ def normaliser(items, stats):
             if math.hypot(xb - xa, yb - ya) < LONGUEUR_NULLE:
                 stats['points'] = stats.get('points', 0) + 1
                 continue
+            # un trait qui revient exactement sur le precedent (aller-retour : un « re » sans hauteur trace
+            # en quatre cotes, une polyligne qui revient sur ses pas) ne se voit qu'une fois
+            if sortie and sortie[-1][0] == 'l' and _proches(sortie[-1][1], it[2], LONGUEUR_NULLE) and \
+                    _proches(sortie[-1][2], it[1], LONGUEUR_NULLE):
+                stats['doublons'] = stats.get('doublons', 0) + 1
+                continue
+        elif it[0] == 're' and (abs(it[3] - it[1]) <= 1e-3 or abs(it[4] - it[2]) <= 1e-3):
+            # un rectangle sans largeur ou sans hauteur (PyMuPDF) : un trait
+            it = ('l', (it[1], it[2]), (it[3], it[4]))
+            if math.hypot(it[2][0] - it[1][0], it[2][1] - it[1][1]) < LONGUEUR_NULLE:
+                stats['points'] = stats.get('points', 0) + 1
+                continue
         sortie.append(it)
     return sortie
 
@@ -3189,7 +3408,7 @@ def elements_des_chemins(col, stats):
         num = k + 1
         base = {'trait': c['trait'], 'fond': c['fond'], 'ep': c['ep'] if c['trait'] is not None else None,
                 'at': c['at'], 'af': c['af'], 'calque': c['calque'], 'chemin': num, 'ordre': c['ordre'],
-                'tirets': c['tirets'], 'bloc': c.get('bloc')}
+                'tirets': c['tirets'], 'bloc': c.get('bloc'), 'clip': c.get('clip')}
         for ch in _chaines(normaliser(c['items'], stats)):
             if ch[0][0] == 're':
                 _, x0, y0, x1, y1 = ch[0]
@@ -3230,7 +3449,9 @@ def elements_des_glyphes(glyphes):
     textes = []
     cour = None
     for g in glyphes:
-        u, ox, oy, ux, uy, taille, avance, police, mode, couleur, alpha, calque, ordre, bloc = g
+        u, ox, oy, ux, uy, taille, avance, police, mode, couleur, alpha, calque, ordre, bloc, clip = g
+        if not (math.isfinite(ox) and math.isfinite(oy) and math.isfinite(taille) and math.isfinite(avance)):
+            continue
         if cour is not None:
             (fx, fy) = cour['fin']
             meme = (police == cour['police'] and abs(taille - cour['taille']) <= 0.01 * max(taille, cour['taille'])
@@ -3244,11 +3465,16 @@ def elements_des_glyphes(glyphes):
                 if travers <= 0.05 * taille and -0.3 * taille <= le_long <= 0.5 * taille:
                     cour['glyphes'].append((u, ox, oy, avance, le_long / taille if taille > 0 else 0.0))
                     cour['fin'] = (ox + avance * ux, oy + avance * uy)
+                    # la decoupe d'un texte : l'union de celles de ses glyphes (une decoupe qui change au milieu d'une
+                    # ligne ne coupe pas le texte en deux : PyMuPDF, qui ne la connait pas, ne le couperait pas)
+                    if cour['clip'] is not None:
+                        cour['clip'] = None if clip is None else (min(cour['clip'][0], clip[0]), min(cour['clip'][1], clip[1]),
+                                                                  max(cour['clip'][2], clip[2]), max(cour['clip'][3], clip[3]))
                     continue
             textes.append(cour)
         cour = {'police': police, 'taille': taille, 'mode': mode, 'couleur': couleur, 'calque': calque,
                 'alpha': alpha, 'ux': ux, 'uy': uy, 'glyphes': [(u, ox, oy, avance, 0.0)],
-                'fin': (ox + avance * ux, oy + avance * uy), 'ordre': ordre, 'bloc': bloc}
+                'fin': (ox + avance * ux, oy + avance * uy), 'ordre': ordre, 'bloc': bloc, 'clip': clip}
     if cour is not None:
         textes.append(cour)
     sortie = []
@@ -3281,7 +3507,7 @@ def elements_des_glyphes(glyphes):
                        'angle': angle_de(t['ux'], t['uy']), 'taille': t['taille'], 'trait': None,
                        'fond': None, 'couleur': t['couleur'], 'mode': t['mode'], 'police': t['police'],
                        'texte': texte, 'calque': t['calque'], 'alpha': t['alpha'], 'chemin': None,
-                       'ordre': t['ordre'], 'ux': t['ux'], 'uy': t['uy'], 'bloc': t['bloc']})
+                       'ordre': t['ordre'], 'ux': t['ux'], 'uy': t['uy'], 'bloc': t['bloc'], 'clip': t['clip']})
     return sortie
 
 
@@ -3290,11 +3516,13 @@ def elements_des_images(col):
     for im in col.images:
         xs = [p[0] for p in im['coins']]
         ys = [p[1] for p in im['coins']]
+        if not all(math.isfinite(v) for v in xs + ys):
+            continue
         (ax, ay), (bx, by) = im['coins'][0], im['coins'][1]
         sortie.append({'type': 'image', 'x1': min(xs), 'y1': min(ys), 'x2': max(xs), 'y2': max(ys),
                        'angle': angle_de(bx - ax, by - ay), 'l': im['l'], 'h': im['h'], 'info': im['info'],
                        'calque': im['calque'], 'ordre': im['ordre'], 'trait': None, 'fond': None,
-                       'chemin': None, 'coins': im['coins'], 'bloc': im.get('bloc')})
+                       'chemin': None, 'coins': im['coins'], 'bloc': im.get('bloc'), 'clip': im.get('clip')})
     return sortie
 
 
@@ -3325,39 +3553,101 @@ def boite(e):
 
 CORPS_MINUSCULE = 1.0      # pt : un texte plus petit ne se lit pas a l'oeil
 CASE_GRILLE = 56.7         # pt (20 mm) : la grille qui range les caches
+MARGE_PAGE = 10 / MM       # pt : au-dela de la page (et de cette marge), une boite ne compte plus pour la grille
 
 
 class Grille(object):
-    """Un index spatial tout simple : des boites rangees par case."""
+    """Un index spatial tout simple : des boites rangees par case. La grille
+    est bornee a la page (et une marge) : une boite demesuree (un texte de
+    10^9 mm, un aplat geant) n'y prend que les cases de la page."""
 
-    def __init__(self):
+    def __init__(self, largeur=None, hauteur=None, case=CASE_GRILLE):
         self.cases = {}
+        self.case = case
+        if largeur is not None and hauteur is not None:
+            self.bornes = (int(-MARGE_PAGE // case), int(-MARGE_PAGE // case),
+                           int((largeur + MARGE_PAGE) // case), int((hauteur + MARGE_PAGE) // case))
+        else:
+            self.bornes = None
+
+    def plage(self, b, marge=0.0):
+        """Les cases (i0, j0, i1, j1) que couvre la boite b (agrandie de marge), bornees."""
+        k = self.case
+        try:
+            i0, j0 = int((b[0] - marge) // k), int((b[1] - marge) // k)
+            i1, j1 = int((b[2] + marge) // k), int((b[3] + marge) // k)
+        except (OverflowError, ValueError):
+            return (0, 0, -1, -1)
+        if self.bornes is not None:
+            bi0, bj0, bi1, bj1 = self.bornes
+            i0, j0, i1, j1 = max(i0, bi0), max(j0, bj0), min(i1, bi1), min(j1, bj1)
+        return (i0, j0, i1, j1)
 
     def ajouter(self, b, objet):
-        for i in range(int(b[0] // CASE_GRILLE), int(b[2] // CASE_GRILLE) + 1):
-            for j in range(int(b[1] // CASE_GRILLE), int(b[3] // CASE_GRILLE) + 1):
+        i0, j0, i1, j1 = self.plage(b)
+        for i in range(i0, i1 + 1):
+            for j in range(j0, j1 + 1):
                 self.cases.setdefault((i, j), []).append(objet)
 
     def autour(self, x, y):
-        return self.cases.get((int(x // CASE_GRILLE), int(y // CASE_GRILLE)), ())
+        try:
+            return self.cases.get((int(x // self.case), int(y // self.case)), ())
+        except (OverflowError, ValueError):
+            return ()
+
+    def dans(self, b, marge=0.0):
+        """Les objets des cases que touche la boite b (agrandie de marge), chacun une fois."""
+        vus = set()
+        i0, j0, i1, j1 = self.plage(b, marge)
+        for i in range(i0, i1 + 1):
+            for j in range(j0, j1 + 1):
+                for o in self.cases.get((i, j), ()):
+                    if id(o) not in vus:
+                        vus.add(id(o))
+                        yield o
+
+
+def meme_couleur(a, b, tol=0.03):
+    return isinstance(a, tuple) and isinstance(b, tuple) and len(a) >= 3 and len(b) >= 3 and \
+        all(abs(float(x) - float(y)) <= tol for x, y in zip(a[:3], b[:3]))
+
+
+VOISINS_MAX = 4000         # surfaces examinees au plus pour un element (des milliers d'aplats empiles a l'identique)
 
 
 def juger_visibilite(elements, largeur, hauteur):
-    """Pour chaque element : visible (O/N) et pourquoi pas (mode3, calque,
-    transparent, horspage, blanc, minuscule, recouvert)."""
-    fonds = []          # (ordre, boite) des surfaces remplies non blanches et des images
-    caches = Grille()   # les rectangles pleins et opaques : ce qu'ils recouvrent ne se voit plus
+    """Pour chaque element : visible (O/N) et pourquoi pas (mode3, mode7,
+    calque, transparent, horspage, decoupe, blanc, fond, minuscule, recouvert).
+    Les elements arrivent dans l'ordre ou la page les peint : dans chaque case
+    de la grille, les surfaces sont rangees par rang croissant, et la
+    recherche part du bon rang (bisect) : un empilement de milliers d'aplats
+    identiques ne rend pas le calcul quadratique."""
+    import bisect
+    fonds = Grille(largeur, hauteur)    # les surfaces remplies opaques : ce qui est dessous (par rang croissant)
+    caches = Grille(largeur, hauteur)   # les rectangles pleins et opaques : ce qu'ils recouvrent ne se voit plus
+    images_sans_rang = []               # images lues par PyMuPDF (sans rang : peintes en premier)
     for e in elements:
-        if e['type'] == 'image' or (e.get('fond') not in (None, 'motif') and not est_blanc(e.get('fond'))
-                                   and (e.get('af') is None or e.get('af') > 0)):
-            b = boite(e)
-            if (b[2] - b[0]) * (b[3] - b[1]) > 0.5:
-                # une image compte toujours comme un fond (PyMuPDF ne dit pas son rang)
-                fonds.append((-1 if e['type'] == 'image' else e['ordre'], b))
+        b = boite(e)
+        e['boite'] = b
+        cal = e.get('calque')
+        masque = isinstance(cal, tuple) and cal[1] is False
+        if e['type'] == 'image' or (e.get('fond') not in (None, 'motif') and (e.get('af') is None or e.get('af') > 0)):
+            if (b[2] - b[0]) * (b[3] - b[1]) > 0.5 and not masque:
+                if e['type'] == 'image' and e['info'].get('sans_rang'):
+                    images_sans_rang.append(e)
+                else:
+                    fonds.ajouter(b, e)
         if e['type'] == 'rectangle' and e.get('fond') not in (None, 'motif') and (e.get('af') is None or e['af'] >= 0.999):
-            cal = e.get('calque')
-            if not (isinstance(cal, tuple) and cal[1] is False):
-                caches.ajouter(boite(e), e)
+            if not masque:
+                caches.ajouter(b, e)
+    rangs_f = dict((k, [f['ordre'] for f in v]) for k, v in fonds.cases.items())
+    rangs_c = dict((k, [f['ordre'] for f in v]) for k, v in caches.cases.items())
+
+    def cellule(g, x, y):
+        try:
+            return (int(x // g.case), int(y // g.case))
+        except (OverflowError, ValueError):
+            return None
     for e in elements:
         raisons = []
         cal = e.get('calque')
@@ -3380,37 +3670,63 @@ def juger_visibilite(elements, largeur, hauteur):
                 visibles.append(af is None or af > 0)
             if visibles and not any(visibles):
                 raisons.append('transparent')
-        b = boite(e)
-        e['boite'] = b
+        b = e['boite']
         if b[2] < -0.01 or b[0] > largeur + 0.01 or b[3] < -0.01 or b[1] > hauteur + 0.01:
             raisons.append('horspage')
-        # blanc sur blanc
+        elif e.get('clip') is not None and not touche(b, e['clip']):
+            raisons.append('decoupe')
+        # sur quoi il se peint : la surface opaque la plus haute peinte avant lui sous son centre (sinon la page, blanche)
+        cx, cy = (b[0] + b[2]) / 2, (b[1] + b[3]) / 2
         if t == 'texte':
-            blanc = est_blanc(e.get('couleur'))
+            couleurs = [e.get('couleur')]
         elif t == 'image':
-            blanc = False
+            couleurs = []
         else:
             couleurs = [c for c in (e.get('trait'), e.get('fond')) if c is not None]
-            blanc = bool(couleurs) and all(est_blanc(c) for c in couleurs)
-        if blanc:
-            cx, cy = (b[0] + b[2]) / 2, (b[1] + b[3]) / 2
-            dessous = False
-            for (o, fb) in fonds:
-                if o < e['ordre'] and fb[0] <= cx <= fb[2] and fb[1] <= cy <= fb[3]:
-                    dessous = True
-                    break
-            if not dessous:
-                raisons.append('blanc')
+        if couleurs and all(isinstance(c, tuple) for c in couleurs):
+            dessous = None
+            k = cellule(fonds, cx, cy)
+            liste = fonds.cases.get(k, ()) if k is not None else ()
+            if liste:
+                j = bisect.bisect_left(rangs_f[k], e['ordre']) - 1
+                vus = 0
+                while j >= 0 and vus < VOISINS_MAX:
+                    f = liste[j]
+                    fb = f['boite']
+                    if fb[0] <= cx <= fb[2] and fb[1] <= cy <= fb[3]:
+                        dessous = f
+                        break
+                    j -= 1
+                    vus += 1
+            if dessous is None:
+                for f in images_sans_rang:
+                    fb = f['boite']
+                    if fb[0] <= cx <= fb[2] and fb[1] <= cy <= fb[3]:
+                        dessous = f
+                        break
+            if dessous is None or (dessous['type'] != 'image' and est_blanc(dessous.get('fond'))):
+                if all(est_blanc(c) for c in couleurs):
+                    raisons.append('blanc')
+            elif t == 'texte' and dessous['type'] != 'image' and meme_couleur(couleurs[0], dessous.get('fond')):
+                # un texte de la couleur de l'aplat sur lequel il est peint (jaune sur jaune...)
+                raisons.append('fond')
         if t == 'texte' and e['taille'] < CORPS_MINUSCULE:
             raisons.append('minuscule')
         # recouvert par un rectangle plein et opaque peint apres lui
         if t in ('texte', 'segment') and not raisons:
-            for c in caches.autour((b[0] + b[2]) / 2, (b[1] + b[3]) / 2):
-                if c['ordre'] > e['ordre']:
-                    cb = c['boite'] if 'boite' in c else boite(c)
+            k = cellule(caches, cx, cy)
+            liste = caches.cases.get(k, ()) if k is not None else ()
+            if liste:
+                j = len(liste) - 1
+                debut = bisect.bisect_right(rangs_c[k], e['ordre'])
+                vus = 0
+                while j >= debut and vus < VOISINS_MAX:
+                    cb = liste[j]['boite']
                     if cb[0] <= b[0] + 0.05 and cb[1] <= b[1] + 0.05 and cb[2] >= b[2] - 0.05 and cb[3] >= b[3] - 0.05:
                         raisons.append('recouvert')
                         break
+                    j -= 1
+                    vus += 1
         e['raisons'] = raisons
         e['visible'] = not raisons
     return elements
@@ -3420,56 +3736,368 @@ def juger_visibilite(elements, largeur, hauteur):
 #  11. Les motifs : chaque texte reduit a sa forme
 # ===========================================================================
 
+def _classe_caractere(c):
+    """'A' (majuscule ou lettre sans casse), 'a' (minuscule), '9' (chiffre ou
+    nombre : 7, Ⅻ, ⑫, ½), '' (marque combinante : un accent decompose suit sa
+    lettre et n'est pas un signe a part), ou None (un autre signe)."""
+    cat = unicodedata.category(c)
+    if cat[0] == 'L':
+        return 'a' if (cat == 'Ll' or c.islower()) else 'A'
+    if cat[0] == 'N':
+        return '9'
+    if cat[0] == 'M':
+        return ''
+    return None
+
+
+def _symbole_lettre(c):
+    """Un symbole qui porte une lettre ou un chiffre sans en etre un pour
+    Unicode (lettre cerclee, encadree, indicateur regional...) : sa classe
+    par sa decomposition de compatibilite (Ⓚ -> K, ™ -> TM) ou par son nom ;
+    None si le symbole n'en porte pas."""
+    d = unicodedata.normalize('NFKD', c)
+    if d != c:
+        classes = [_classe_caractere(x) for x in d]
+        if any(k for k in classes):
+            return u''.join(k if k is not None else x for k, x in zip(classes, d))
+    try:
+        nom = unicodedata.name(c)
+    except ValueError:
+        return None
+    if re.search(r'\b(?:DIGIT|NUMBER|NUMERAL)\b', nom):
+        return '9'
+    if re.search(r'\bLETTER\b', nom):
+        return 'a' if 'SMALL' in nom else 'A'
+    return None
+
+
 def motif(texte):
-    """Majuscule -> A, minuscule -> a, chiffre -> 9 (lettres accentuees
-    comprises), les autres signes et les espaces gardes."""
+    """Le texte reduit a sa forme : une lettre -> A ou a, un chiffre ou un
+    nombre -> 9 (lettres accentuees, autres ecritures, chiffres romains, nombres
+    cercles, lettres cerclees ou encadrees compris), les autres signes et les
+    espaces gardes, un caractere de controle ou prive -> ¤."""
     sortie = []
     for c in texte:
-        if c.isdigit():
-            sortie.append('9')
-        elif c.isalpha():
-            if c.islower():
-                sortie.append('a')
-            else:
-                sortie.append('A')
-        elif c == '\t' or c == '\n' or c == '\r':
+        k = _classe_caractere(c)
+        if k is not None:
+            sortie.append(k)
+            continue
+        if c == '\t' or c == '\n' or c == '\r':
             sortie.append(' ')
-        elif unicodedata.category(c)[0] == 'C':
+            continue
+        cat = unicodedata.category(c)
+        if cat[0] == 'C':
             sortie.append(INCONNU)
-        else:
-            sortie.append(c)
+            continue
+        if cat[0] == 'S' or cat in ('Pd', 'Po'):
+            s = _symbole_lettre(c) if ord(c) > 127 else None
+            if s is not None:
+                sortie.append(s)
+                continue
+        sortie.append(c)
     return u''.join(sortie)
 
 
-_LOGICIELS = set('''
-adobe acrobat distiller pdf pdflib library pdfmaker paper capture microsoft word excel powerpoint visio office
-print printer printing to for windows mac os x macos osx quartz pdfcontext autocad autodesk dwg trueview plot plotter
-pc3 see electrical expert ige+xao ige xao etap trace software ghostscript gpl artifex itext itextsharp pdfsharp
-reportlab skia chromium chrome google headless qt cairo mupdf pymupdf fitz pdftex latex tex luatex xetex dvipdfmx
-libreoffice openoffice writer draw calc impress inkscape illustrator indesign photoshop pscript5 pscript5.dll dll
-pdfcreator bullzip cutepdf primopdf foxit phantompdf reader editor nitro pro novapdf bluebeam revu pdf-xchange
-xchange tracker canon xerox ricoh kyocera konica minolta sharp lexmark brother epson hp scan scanner kodak
-paperport omnipage abbyy finereader kofax power catia dassault systemes zuken e3 e3.series cadstar mentor capital
-vesys eplan siemens teamcenter nx solidworks solid edge ansys microstation bentley creo ptc pdf24 smallpdf ilovepdf
-aspose pdfium apache pdfbox fop ibex prince wkhtmltopdf webkit qtwebkit pdfwriter jaws normal version build
-release edition professional standard server service pack sp dc x64 x86 bit 64-bit 32-bit macro convert converter
-export exporter plugin plug-in add-in with by and the of on inc corp corporation gmbh ltd llc sa sas ag co ecad
-cad harness wiring diagram designer builder studio suite manager viewer generator pdfkit cocoa ios android linux
-unix sun java jdk net framework ms rendering engine image images tiff jpeg png postscript ps eps svg dxf html
-xml xps opc scansoft nuance ocr textbridge itextpdf ironpdf pdftron apryse docotic syncfusion telerik devexpress
-crystal reports ssrs sap business objects tibco jaspersoft birt fastreport stimulsoft activereports
-macintosh cc staroffice star pour for core api sdk lib kit toolkit engine anglais francais français english french
-german deutsch espanol español italiano poppler xpdf cairographics pdfium pdfjs ghostscript gs tcpdf fpdf dompdf
-mpdf prawn wkhtmltopdf weasyprint jasperreports pdfsam scribus quarkxpress quark framemaker distiller elements
-solidedge zw3d draftsight bricscad nanocad progecad intellicad vectorworks archicad revit navisworks smartplant
-aveva wscad elcad ruplan promis e-plan cimatron see-electrical caneco elec calc trace-software ige-xao xelec
+# -- Les noms qu'on peut montrer ------------------------------------------------
+#
+# Un nom lu dans le PDF (police, etiquette ou cle du contenu marque, sorte
+# d'annotation, cle hors norme, propriete XMP, filtre, espace de couleur...)
+# peut etre celui d'une societe, d'un projet, d'une personne. Il ne sort en
+# clair que s'il est CONNU (un nom de la norme PDF, une famille de polices du
+# commerce) ou fait de MOTS ORDINAIRES (PartNumber, SEE_Attributs) ; sinon il
+# devient un code stable et sa forme : « K2 (AaaaaaaAA) ».
+
+_MOTS_ORDINAIRES = set(u'''
+a à about acad ad add additional address adresse after alt alternate am an and annotation annotations app appareil
+application applications apres après article articles as at attr attribut attributs attribute attributes author auteur
+autocad avant b back bas base bbox begin bloc block blocks blindage bloc body bom borne bornes bottom box broche
+broches by c cable cables câble câbles cad calque calques caption catalog catalogue categorie catégorie category ce
+cell cellule center centre champ champs change changes channel char check child cible circuit class classe cle clé
+client code codes color colour column comment commentaire commentaires commande company component components composant
+composants config configuration connecteur connecteurs connector connectors contact contacts content contents
+coordinate cote côté count created creation création creator cross custom customer d data date de debut début default
+del delete dept depth des desc description design designation désignation destination detail details device devices
+diagram diagramme dim dimension direction doc document documents donnee donnée donnees données drawing du e ecad
+echelle échelle edit edition element elements élément éléments end entity entree entrée equipement équipement
+equipements équipements equipment etat état export ext extra f family famille field fields fil file filename fils fin
+fini flag folio font for form format from fonction function g gauche gauge group groupe h harness haut height hidden
+id ident identifier image in index info information informations input instance item items jauge key keys keyword
+keywords kind l label labels largeur last layer layers left length level lib libelle libellé line link list liste
+local localisation location long longueur m main manufacturer interne internal externe external tool create modify rendition
+trapped conformance rights publisher language lang chemin outil fichier marker mass masse master material materiel matériel max
+meta metadata mfg mfr min mod mode model modele modèle modified modification module name names net nets new no nom
+noms norm norme normes not note notes num number numero numéro numbers o object objet objets of old on option options
+order ordre origin origine out output owner p page pages param parameter parameters parametre paramètre parent part
+parts path pb pdf piece pièce pieces pièces pin pins pn point pos position prefix prefixe préfixe print private prive
+privé prod produit product project projet prop properties property propriete propriété proprietes propriétés ps qty
+quantite quantité quantity r ref refs reference référence references références rel relation remark remarque rev
+revision révision right role root rotation route s scale schema schéma section see segment sheet shield side signal
+size source spec splice std standard start state status std style sub subject sujet supplier symbol symbole symboles
+system systeme système t table tag tags target taille terminal terminaux text texte title titre to top total type
+types u unit unite unité user utilisateur v val valeur value values var variant variante version vers view vue w
+width wire wires x xref y z zone
 '''.split())
+
+_NOMS_PDF = set('''
+Type Subtype S P Pg K Kids Parent Names Name Alt ActualText E Lang MCID O A C R T ID Title Author Subject Keywords
+Creator Producer CreationDate ModDate Trapped Metadata PieceInfo LastModified Private Contents BBox Attached
+Document Part Art Sect Div BlockQuote Caption TOC TOCI Index NonStruct H H1 H2 H3 H4 H5 H6 L LI Lbl LBody Table TR TH
+TD THead TBody TFoot Span Quote Note Reference BibEntry Code Link Annot Ruby RB RT RP Warichu WT WP Figure Formula
+Form Artifact OC ReversedChars Tx Layer Aside Title FENote Sub Em Strong DocumentFragment Clip Pagination Layout
+Page Header Footer Watermark Background Placement Role RoleMap ClassMap Placement WritingMode BackgroundColor
+BorderColor BorderStyle BorderThickness Padding Color SpaceBefore SpaceAfter StartIndent EndIndent TextIndent
+TextAlign Width Height BlockAlign InlineAlign TBorderStyle TPadding BaselineShift LineHeight TextDecorationColor
+TextDecorationThickness TextDecorationType RubyAlign RubyPosition GlyphOrientationVertical ColumnCount ColumnGap
+ColumnWidths ListNumbering RowSpan ColSpan Headers Scope Summary Short Checked Desc Version Extensions Pages
+PageLabels Dests ViewerPreferences PageLayout PageMode Outlines Threads OpenAction AA URI AcroForm StructTreeRoot
+MarkInfo SpiderInfo OutputIntents OCProperties Perms Legal Requirements Collection NeedsRendering DSS AF DPartRoot
+Resources MediaBox CropBox BleedBox TrimBox ArtBox BoxColorInfo Rotate Group Thumb B Dur Trans Annots StructParents
+PZ SeparationInfo Tabs TemplateInstantiated PresSteps UserUnit VP DPart
+Text FreeText Line Square Circle Polygon PolyLine Highlight Underline Squiggly StrikeOut Caret Stamp Ink Popup
+FileAttachment Sound Movie Screen Widget PrinterMark TrapNet 3D Redact Projection RichMedia
+ASCIIHexDecode ASCII85Decode LZWDecode FlateDecode RunLengthDecode CCITTFaxDecode JBIG2Decode DCTDecode JPXDecode
+Crypt AHx A85 LZW Fl RL CCF DCT
+DeviceGray DeviceRGB DeviceCMYK CalGray CalRGB Lab ICCBased Indexed Pattern Separation DeviceN G RGB CMYK I Gray
+Standard Adobe.PubSec Adobe.APS Adobe.PPKLite Adobe.PPKMS
+Type0 Type1 MMType1 Type3 TrueType CIDFontType0 CIDFontType2 OpenType
+StandardEncoding MacRomanEncoding WinAnsiEncoding PDFDocEncoding MacExpertEncoding Identity-H Identity-V Identity
+Differences
+'''.split())
+
+_RE_CMAP_STANDARD = re.compile(
+    r'^(?:Uni(?:GB|CNS|JIS|JISPro|JIS2004|JISX0213|JISX02132004|KS|Code)|GBK?(?:p|2K)?|GBpc|GBT|B5pc|B5|HKscs|ETen|'
+    r'ETenms|ETHK|HKdla|HKdlb|HKgccs|HKm314|HKm471|CNS(?:1|2)?|83pv|90ms|90msp|90pv|78|78ms|Add|EUC|Ext|NWP|KSC|KSCms|'
+    r'KSCpc|Hankaku|Hiragana|Katakana|Roman|WP-Symbol|Identity|Adobe)(?:-[A-Za-z0-9]+)*$')
+
+
+def _mots_du_nom(nom):
+    s = ascii_seul(nom)
+    s = re.sub(r'([a-z])([A-Z])', r'\1 \2', s)
+    s = re.sub(r'([A-Z]+)([A-Z][a-z])', r'\1 \2', s)
+    s = re.sub(r'([A-Za-z])([0-9])', r'\1 \2', s)
+    s = re.sub(r'([0-9])([A-Za-z])', r'\1 \2', s)
+    return [m for m in re.split(r'[^A-Za-z0-9]+', s) if m]
+
+
+def nom_ordinaire(nom):
+    """Vrai si le nom n'est fait que de mots ordinaires (anglais ou francais
+    techniques : PartNumber, Ref_Norme, SEE_Attributs) et de petits nombres
+    (deux chiffres au plus) : il ne peut pas porter un nom propre."""
+    mots = _mots_du_nom(nom)
+    if not mots or len(nom) > 60:
+        return False
+    for m in mots:
+        b = m.lower()
+        if b.isdigit():
+            if len(b) > 2:
+                return False
+        elif b not in _MOTS_ORDINAIRES and not (len(b) == 1 and b.isalpha()):
+            return False
+    return True
+
+
+class Masques(object):
+    """Les noms qu'on ne montre pas : un code stable par sorte et par releve
+    (P1, P2... pour les polices, K1... pour les cles), suivi de la forme."""
+
+    def __init__(self):
+        self.codes = {}
+
+    def code(self, prefixe, nom):
+        d = self.codes.setdefault(prefixe, {})
+        if nom not in d:
+            d[nom] = '%s%d' % (prefixe, len(d) + 1)
+        return d[nom]
+
+
+def nom_montrable(nom, prefixe='N', masques=None, connus=_NOMS_PDF, ordinaire=True):
+    """Le nom tel qu'on peut l'ecrire : en clair s'il est connu (connus : un
+    ensemble de noms, ou une fonction) ou fait de mots ordinaires ; sinon un
+    code et sa forme (« K2 (AaaaAaaaaa) »), ou sa forme seule sans masques."""
+    nom = u'' if nom is None else u'%s' % (nom,)
+    if not nom:
+        return u''
+    connu = connus(nom) if callable(connus) else (connus is not None and nom in connus)
+    if connu or (ordinaire and nom_ordinaire(nom)):
+        return re.sub(r'[^A-Za-z0-9 ,._+:/-]', '', ascii_seul(nom))[:60] or u'?'
+    forme = motif(nom)[:40]
+    if masques is None:
+        return u'(nom masqué : %s)' % forme
+    return u'%s (%s)' % (masques.code(prefixe, nom), forme)
+
+
+def nom_standard(nom, defaut='autre'):
+    """Un nom de la norme PDF, sinon « autre » (pour les messages : jamais de
+    nom lu dans le PDF)."""
+    n = u'%s' % (nom,) if nom is not None else u''
+    return n if (n in _NOMS_PDF or _RE_CMAP_STANDARD.match(n)) else defaut
+
+
+# -- Les polices : une famille du commerce sort en clair, une police maison non --
+
+_FAMILLES_POLICES = sorted(set('''
+arial arialmt arialnarrow arialunicode arialunicodems arialuni arialblack arialrounded helvetica helveticaneue times
+timesnewroman timesroman timesnewromanps courier couriernew couriernewps symbol zapfdingbats dingbats calibri cambria
+cambriamath candara consolas constantia corbel segoeui segoe segoeprint segoescript segoeuisymbol segoeuiemoji
+tahoma verdana georgia trebuchet trebuchetms lucida lucidaconsole lucidasans lucidasansunicode lucidagrande
+lucidasanstypewriter mssansserif msserif msgothic msmincho mspgothic mspmincho msuigothic msreferencesansserif
+microsoftsansserif microsoftyahei microsoftjhenghei simsun nsimsun simhei simkai fangsong kaiti mingliu pmingliu gulim
+batang dotum gungsuh malgungothic meiryo yugothic yumincho wingdings webdings marlett bookantiqua centurygothic century
+centuryschoolbook garamond impact comicsansms franklingothic gillsans gillsansmt futura frutiger univers optima palatino
+palatinolinotype bookman bookmanoldstyle newcenturyschlbk avantgarde itcavantgarde isocpeur isocteur isocp isoct
+isocp2 isocp3 isoct2 isoct3 simplex romans romand romanc romant txt monotxt gdt amgdt gothice gothicg gothici italicc
+italict scriptc scripts complex greekc greeks syastro symap symath symeteo symusic swiss dutch monospac821 swis721
+dutch801 bitstreamvera vera dejavusans dejavuserif dejavusansmono dejavusanscondensed liberationsans liberationserif
+liberationmono liberationsansnarrow notosans notoserif notosansmono notosanscjk notosanssymbols notocoloremoji roboto
+robotomono robotocondensed opensans sourcesanspro sourcesans sourcesans3 sourceserifpro sourcecodepro ubuntu
+ubuntumono cantarell freesans freeserif freemono nimbussans nimbussansl nimbusroman nimbusromno9l nimbusmono
+nimbusmonol nimbussanl nimbusmonops urwgothic urwbookman urwpalladio urwchancery myriad myriadpro minion minionpro lato
+montserrat inter aptos bahnschrift sitka sitkatext ebrima gadugi nirmalaui leelawadee leelawadeeui sylfaen mangal
+euclid euclidsymbol euclidextra euclidmathone euclidmathtwo standardsymbolsps ocra ocrb ocraextended cascadiacode
+cascadiamono menlo monaco sfns sfpro sfprotext sfprodisplay sfmono geneva applesdgothicneo hiraginosans hiragino
+hiraginokakugothic hiraginomincho pingfangsc pingfangtc stheiti stsong stkaiti osaka adobesongstd kozminpro kozgopro
+kozminpr6n kozgopr6n adobemingstd adobeheitistd adobefangsongstd adobekaitistd adobemyungjostd adobegothicstd
+adobepistd mtextra mtsymbol javanesetext holomdl2 gisha david miriam frankruehl arialhebrew traditionalarabic
+simplifiedarabic andalus kartika vrinda shruti raavi latha gautami tunga iskoolapota kalinga estrangeloedessa mvboli
+sakkalmajalla calibrilight segoeuilight segoeuisemibold segoeuiblack franklingothicmedium franklingothicbook
+twcen tw centurygothic haettenschweiler agencyfb berlinsansfb eras erasitc rockwell perpetua baskerville
+baskervilleoldface bodoni didot hoefler hoeflertext americantypewriter chalkboard markerfelt noteworthy papyrus
+brushscript brushscriptmt edwardianscript vladimirscript kristen lucidahandwriting lucidacalligraphy lucidafax
+lucidabright mistral jokerman curlz wide latin stencil algerian castellar copperplate copperplategothic engravers
+felixtitling goudy goudyoldstyle bernard bookshelf tempussans viner gigi harrington pristina rage informal
+poorrichard footlight showcard snapitc bauhaus93 cooperblack broadway colonna onyx playbill magneto harlow
+jazz desdemona kino matura maiandra parchment ravie juice blackadder bradleyhand chiller frenchscript freestyle
+gill gillsansultrabold gloucester imprint kunstler modern niagara oldenglish palacescript script snap stencil
+abadi aldhabi aparajita arabictypesetting browallia cordia daunpenh dfkaisb dokchampa estrangelo euphemia gabriola
+irisupc jasmine kodchiang leelawadee lilyupc mongolianbaiti moolboran narkisim plantagenet raavi rod shonar
+simplifiedarabicfixed sylfaen traditionalarabic utsaah vani vijaya
+'''.split()), key=len, reverse=True)
+
+_STYLES_POLICES = sorted(set('''
+bold bd b italic ital it i oblique obl o regular regu reg r roman rom book bk light lt medium med md semibold sb semi
+demibold demi black blk heavy hv thin th extralight extrabold xbold ultralight ultrabold narrow nar condensed cond cn
+compressed extended ext expanded wide mt ps psmt std pro com mono sans serif neue display text caption headline sc osf
+small smallcaps caps normal plain kursiv fett gras italique standard unicode ms ce cyr greek gr tur baltic ui uni
+bt lf tf otf ttf t1 tt sym symbol math w x
+'''.split()), key=len, reverse=True)
+
+
+def _fait_de(reste, morceaux):
+    ok = [False] * (len(reste) + 1)
+    ok[0] = True
+    for i in range(len(reste)):
+        if not ok[i]:
+            continue
+        for m in morceaux:
+            if reste.startswith(m, i):
+                ok[i + len(m)] = True
+    return ok[len(reste)]
+
+
+def police_connue(nom):
+    """Une famille de polices du commerce (Arial, Helvetica, ISOCPEUR...),
+    avec ses suffixes de style (-Bold, MT, PS...) : on peut la nommer."""
+    n = nom or ''
+    if '+' in n[:8]:
+        n = n.split('+', 1)[1]
+    k = re.sub(r'[^a-z0-9]', '', ascii_seul(n).lower())
+    if not k:
+        return False
+    for fam in _FAMILLES_POLICES:
+        if k.startswith(fam) and _fait_de(k[len(fam):], _STYLES_POLICES):
+            return True
+    return False
+
+
+def nom_de_police(nom, masques=None):
+    """Le nom d'une police tel qu'on peut l'ecrire : une famille connue en
+    clair (sans le prefixe de sous-ensemble ABCDEF+), une police Type3 sous ce
+    seul nom, toute autre (une police maison peut porter le nom de la
+    societe, du programme, du client) en code et forme : « P1 (Aaaaaaaa-Aaaa) »."""
+    n = nom or ''
+    if '+' in n[:8]:
+        n = n.split('+', 1)[1]
+    if not n or n in ('Type3', 'Type0', 'TrueType', 'Type1'):
+        return n or '?'
+    return nom_montrable(n, 'P', masques, connus=police_connue, ordinaire=False)
+
+
+# -- Le logiciel qui a fait le PDF (Producer, Creator) --------------------------
+
+# des noms de logiciels et d'editeurs sans ambiguite : toujours gardes
+_LOGICIELS = set(u'''
+adobe acrobat distiller pdflib pdfmaker microsoft excel powerpoint visio autocad autodesk dwg trueview ige+xao ige-xao
+etap see ghostscript ghostpdl artifex itext itextsharp itextpdf pdfsharp reportlab skia chromium mupdf pymupdf fitz
+pdftex latex luatex xetex dvipdfmx libreoffice openoffice staroffice inkscape illustrator indesign photoshop pscript5
+pscript5.dll pdfcreator bullzip cutepdf primopdf foxit phantompdf nitro novapdf bluebeam pdf-xchange paperport
+omnipage abbyy finereader kofax catia zuken e3.series cadstar vesys eplan teamcenter solidworks ansys microstation creo
+pdf24 smallpdf ilovepdf aspose pdfium pdfbox wkhtmltopdf webkit qtwebkit scansoft nuance textbridge ironpdf pdftron
+apryse docotic syncfusion telerik devexpress ssrs tibco jaspersoft birt fastreport stimulsoft activereports poppler
+xpdf cairographics pdfjs tcpdf fpdf dompdf mpdf weasyprint jasperreports pdfsam scribus quarkxpress framemaker
+solidedge zw3d draftsight bricscad nanocad progecad intellicad vectorworks archicad revit navisworks smartplant aveva
+wscad elcad ruplan cimatron caneco xelec see-electrical trace-software quartz pdfcontext macos osx windows linux
+pikepdf qpdf pypdf pypdf2 pdfminer pdfplumber pdfkit amyuni xerox ricoh kyocera konica minolta lexmark epson kodak
+fujitsu fujifilm toshiba olivetti laserjet officejet designjet imagerunner workcentre bizhub taskalfa scansnap
+docuworks
+'''.split())
+
+# des mots ordinaires ou ambigus (un nom propre possible : Sharp, Prince, Power, Star...) : gardes
+# seulement colles a un logiciel garde (« Microsoft Print To PDF », « Acrobat 11 for Word »)
+_LOGICIELS_MOTS = set(u'''
+pdf library paper capture word office print printer printing to for mac os x plot plotter pc3 electrical expert trace
+software gpl google chrome headless qt cairo tex writer draw calc impress reader editor pro tracker sharp brother hp
+canon scan scanner power dassault systemes systèmes e3 mentor graphics capital siemens nx solid edge bentley ptc apache
+fop ibex prince pdfwriter normal version build release edition professional standard server service pack sp dc x64
+x86 bit 64-bit 32-bit macro convert converter export exporter plugin plug-in add-in with by and the of on inc corp
+corporation gmbh ltd llc sa sas ag co ecad cad harness wiring diagram designer builder studio suite manager viewer
+generator cocoa ios android unix sun java jdk net framework ms rendering engine image images tiff jpeg png postscript
+ps eps svg dxf html xml xps opc ocr crystal reports sap business objects macintosh cc star pour core api sdk lib kit
+toolkit anglais francais français english french german deutsch espanol español italiano gs prawn quark elements elec
+save as architect soda series visual basic vba xchange xao ige
+'''.split())
+
+# des suites de mots qui forment un nom de logiciel (chacun garde)
+_LOGICIELS_SUITES = [tuple(x.split()) for x in u'''
+see electrical expert
+see electrical
+solid edge
+mac os x
+mac os
+crystal reports
+sap business objects
+mentor graphics capital
+mentor graphics
+capital harness
+e3 series
+trace software
+star office
+google chrome
+google docs
+ms word
+ms office
+microsoft print to pdf
+print to pdf
+save as pdf
+power pdf
+pdf architect
+soda pdf
+siemens nx
+pdf xchange
+ige xao
+'''.strip().splitlines()]
+
+_RE_VERSION_POINTEE = re.compile(r'^v?\d{1,4}(?:\.\d{1,6}){1,4}(?:[.-]?[a-z]{1,3}\d{0,3})?$', re.I)
+_RE_VERSION_COURTE = re.compile(r'^(?:v\d{1,3}|v\d{1,2}(?:-\d{1,2})?r\d{1,4}(?:sp\d{1,2})?|r\d{1,4}|sp\d{1,2}|m\d{2,3}|'
+                                r'(?:19|20)\d\d|\d{1,3})$', re.I)
 
 
 def masquer_logiciel(s, clair=False):
-    """Le Producer / Creator : garde le nom d'un logiciel connu et les numeros
-    de version ; masque ce qui ressemble a un nom de personne, de societe, de
-    projet, un chemin ou une adresse."""
+    """Le Producer / Creator : garde le nom d'un logiciel connu et sa version,
+    masque tout le reste (nom de personne, de societe, de projet, numero de
+    projet ou d'ordre, chemin, adresse). Un mot ordinaire ou ambigu (Sharp,
+    Power, Star) n'est garde que colle a un logiciel garde ; un numero, que
+    juste apres lui et sous une forme de version (11.0.23, V4R3, V5-6R2019,
+    2018, 11) : 350A41, X350, 1234567 sont masques."""
     if not s:
         return ''
     if clair:
@@ -3477,24 +4105,50 @@ def masquer_logiciel(s, clair=False):
     s = re.sub(r'[A-Za-z]:\\[^;,()]*|\\\\[^;,()]+|(?:/[^/\s;,()]+){2,}/?', '[chemin]', s)
     s = re.sub(r'\S+@\S+', '[courriel]', s)
     s = re.sub(r'(?i)\b(?:https?|ftp|file)://\S+', '[adresse]', s)
-    sortie = []
-    for m in re.finditer(r'\[(?:chemin|courriel|adresse)\]|[^\W_][\w.+#-]*|\s+|.', s, re.U):
-        mot = m.group(0)
-        if mot.startswith('['):
-            sortie.append(mot)
+    jetons = [m.group(0) for m in re.finditer(r'\[(?:chemin|courriel|adresse)\]|[^\W_][\w.+#-]*|\s+|.', s, re.U)]
+    # les mots, et leur voisin immediat (seulement des blancs ou des signes entre eux, pas un masque)
+    mots = []
+    coupe = False
+    prec = {}
+    for i, t in enumerate(jetons):
+        if t.startswith('[') and t.endswith(']') and len(t) > 2:
+            coupe = True
             continue
-        if not mot.strip() or not any(c.isalnum() for c in mot):
-            sortie.append(mot)
-            continue
-        cle = mot.lower().rstrip('.,;:')
-        if cle in _LOGICIELS:
-            sortie.append(mot)
-        elif re.match(r'(?i)^(?:v|r|v\d+r|build|sp|x)?[\d][\d.]*[a-z]?\d*$', cle) or \
-                re.match(r'(?i)^v\d+(?:r\d+)?(?:\.\d+)*$', cle) or re.match(r'^\d+(?:\.\d+)+$', cle):
-            sortie.append(mot)
-        else:
-            sortie.append(motif(mot))
-    return u''.join(sortie)
+        if any(c.isalnum() for c in t):
+            if mots and not coupe:
+                prec[i] = mots[-1]
+            mots.append(i)
+            coupe = False
+    suiv = dict((v, k) for k, v in prec.items())
+    cle = dict((i, jetons[i].lower().rstrip('.,;:')) for i in mots)
+    garde = {}                          # i -> 'mot' | 'version'
+    for i in mots:
+        if cle[i] in _LOGICIELS:
+            garde[i] = 'mot'
+    for k in range(len(mots)):
+        for suite in _LOGICIELS_SUITES:
+            n = len(suite)
+            idx = mots[k:k + n]
+            if len(idx) == n and all(cle[idx[j]] == suite[j] for j in range(n)) and \
+                    all(prec.get(idx[j]) == idx[j - 1] for j in range(1, n)):
+                for i in idx:
+                    garde[i] = 'mot'
+    change = True
+    while change:
+        change = False
+        for i in mots:
+            if i in garde:
+                continue
+            p = prec.get(i)
+            n_ = suiv.get(i)
+            c = cle[i]
+            if c in _LOGICIELS_MOTS and (p in garde or n_ in garde):
+                garde[i] = 'mot'
+                change = True
+            elif p in garde and (_RE_VERSION_POINTEE.match(c) or (garde[p] == 'mot' and _RE_VERSION_COURTE.match(c))):
+                garde[i] = 'version'
+                change = True
+    return u''.join(t if (i in garde or i not in cle) else motif(t) for i, t in enumerate(jetons))
 
 
 # ===========================================================================
@@ -3532,10 +4186,58 @@ def matrice_page(boite, rotation, unite):
     return m, W, H
 
 
+_CLES_INFO = set('Title Author Subject Keywords Creator Producer CreationDate ModDate Trapped'.split())
+_CLES_CATALOGUE = set('''Type Version Extensions Pages PageLabels Names Dests ViewerPreferences PageLayout PageMode
+Outlines Threads OpenAction AA URI AcroForm Metadata StructTreeRoot MarkInfo Lang SpiderInfo OutputIntents PieceInfo
+OCProperties Perms Legal Requirements Collection NeedsRendering DSS AF DPartRoot'''.split())
+_CLES_PAGE = set('''Type Parent LastModified Resources MediaBox CropBox BleedBox TrimBox ArtBox BoxColorInfo Contents
+Rotate Group Thumb B Dur Trans Annots AA Metadata PieceInfo StructParents ID PZ SeparationInfo Tabs TemplateInstantiated
+PresSteps UserUnit VP AF OutputIntents DPart'''.split())
+
+
+_PREFIXES_XMP = set('''dc xmp xmpMM xmpRights xmpTPg xmpG xmpDM xmpBJ xmpidq stEvt stRef stFnt stDim stVer stJob photoshop
+pdf pdfaid pdfx pdfxid pdfuaid pdfaExtension pdfaSchema pdfaProperty pdfaType pdfaField tiff exif exifEX aux crs
+illustrator Iptc4xmpCore Iptc4xmpExt plus prism xmpNote'''.split())
+
+
+def proprietes_xmp(xmp):
+    """Les proprietes d'un paquet XMP : [(prefixe:nom, valeur)], attributs
+    (see:Norme="...") et elements (<dc:title>...<rdf:li>valeur</rdf:li>)."""
+    import html
+    sortie = []
+    pile = []
+    for m in re.finditer(r'<(/?)([A-Za-z_][\w.-]*(?::[A-Za-z_][\w.-]*)?)((?:[^>"\']|"[^"]*"|\'[^\']*\')*?)(/?)>|([^<]+)', xmp):
+        if len(sortie) > 5000:
+            break
+        if m.group(5) is not None:
+            texte = m.group(5).strip()
+            if texte and pile:
+                prop = None
+                for t in reversed(pile):
+                    if ':' in t and t.split(':')[0] not in ('rdf', 'x', 'xml'):
+                        prop = t
+                        break
+                if prop:
+                    sortie.append((prop, html.unescape(texte)))
+            continue
+        ferme, nom, attrs, auto = m.group(1), m.group(2), m.group(3), m.group(4)
+        if ferme:
+            while pile:
+                if pile.pop() == nom:
+                    break
+            continue
+        for a in re.finditer(r'([A-Za-z_][\w.-]*):([A-Za-z_][\w.-]*)\s*=\s*(?:"([^"]*)"|\'([^\']*)\')', attrs):
+            if a.group(1) not in ('xmlns', 'rdf', 'x', 'xml'):
+                sortie.append((a.group(1) + ':' + a.group(2), html.unescape(a.group(3) if a.group(3) is not None else a.group(4))))
+        if not auto:
+            pile.append(nom)
+    return sortie
+
+
 class DocumentStandard(object):
     """Un PDF lu par le lecteur ecrit ici (bibliotheque standard seule)."""
 
-    def __init__(self, data, notes, mot_de_passe=b''):
+    def __init__(self, data, notes, mot_de_passe=''):
         self.notes = notes
         self.lecteur = L = LecteurPDF(data, notes, mot_de_passe)
         r = L.resoudre
@@ -3602,10 +4304,15 @@ class DocumentStandard(object):
         m, W, H = matrice_page(p['crop'], p['rot'], p['unite'])
         return m, W, H, p['rot']
 
-    def lire_page(self, i):
+    def lire_page(self, i, echeance=None, limite=None):
+        """echeance : l'heure au-dela de laquelle la lecture s'arrete ; limite :
+        le nombre de traces au-dela duquel la page s'arrete (ce qui est lu est
+        garde, col.arret dit pourquoi)."""
         p = self.pages[i]
         m, W, H, rot = self.geometrie(i)
         col = Collecteur()
+        self.machine.echeance = echeance
+        self.machine.limite_items = limite
         self.machine.page(p['dico'], p['res'], m, col)
         return col, W, H, rot
 
@@ -3702,7 +4409,7 @@ class DocumentStandard(object):
             if p >= 2 ** 31:
                 p -= 2 ** 32
             d['chiffrement'] = {'methode': L.chiffre.methode, 'impression': bool(p & 4), 'modification': bool(p & 8),
-                                'copie': bool(p & 16), 'annotations': bool(p & 32)}
+                                'copie': bool(p & 16), 'annotations': bool(p & 32), 'ouvert_par': L.chiffre.ouvert_par}
         else:
             d['chiffrement'] = None
         d['structure'] = {'xref': 'flux xref (PDF 1.5)' if L.flux_xref else 'table xref classique',
@@ -3736,8 +4443,148 @@ class DocumentStandard(object):
         d['calques'] = [(num, nom, vis) for (num, nom, vis) in self.calques.liste]
         return d
 
-    def _compter_arbre_noms(self, n, prof):
+    # -- ce qu'un logiciel range dans le PDF sans le dessiner -------------------
+    def donnees_non_dessinees(self, formes=()):
+        """Les cachettes d'un logiciel de CAO pour des references qui ne se
+        dessinent pas : les cles hors norme de /Info, du catalogue et des
+        pages, les /PieceInfo (catalogue, pages, formulaires), les proprietes
+        XMP (document, pages, formulaires), la structure (StructTreeRoot :
+        /Alt, /ActualText, /E, /T, les attributs). Rend des listes BRUTES
+        (noms et textes reels) : le rapport les masque."""
+        L = self.lecteur
+        r = L.resoudre
+        sortie = {'entrees': [], 'xmp': [], 'structure': None}
+        budget = [20000]
+
+        def valeurs(lieu, chemin, v, prof):
+            v = r(v)
+            if budget[0] <= 0 or prof > 5:
+                return
+            budget[0] -= 1
+            if isinstance(v, dict):
+                for k in sorted(v):
+                    if k not in ('Type', 'LastModified'):
+                        valeurs(lieu, chemin + [k], v[k], prof + 1)
+            elif isinstance(v, list):
+                for x in v[:200]:
+                    valeurs(lieu, chemin, x, prof + 1)
+            elif isinstance(v, Flux):
+                sortie['entrees'].append((lieu, chemin, None, 'flux'))
+            elif isinstance(v, bytes):
+                sortie['entrees'].append((lieu, chemin, texte_pdf(v), 'texte'))
+            elif isinstance(v, Nom):
+                sortie['entrees'].append((lieu, chemin, str(v), 'nom'))
+            elif isinstance(v, (int, float)) and not isinstance(v, bool):
+                sortie['entrees'].append((lieu, chemin, ('%g' % v), 'nombre'))
+            elif isinstance(v, bool):
+                sortie['entrees'].append((lieu, chemin, None, 'booleen'))
+
+        def hors_norme(lieu, d, normes):
+            if not isinstance(d, dict):
+                return
+            for k in sorted(d):
+                if k not in normes:
+                    valeurs(lieu, [k], d[k], 0)
+            pi = r(d.get('PieceInfo'))
+            if isinstance(pi, dict):
+                valeurs(lieu, ['PieceInfo'], pi, 0)
+
+        def xmp_de(lieu, objet):
+            meta = r(objet.get('Metadata')) if isinstance(objet, dict) else None
+            if isinstance(meta, Flux):
+                try:
+                    x = L.decoder_flux(meta)[:2000000].decode('utf-8', 'replace')
+                except Exception:
+                    return
+                for prop, val in proprietes_xmp(x):
+                    sortie['xmp'].append((lieu, prop, val))
+
+        info = r(L.trailer.get('Info'))
+        hors_norme('/Info', info, _CLES_INFO)
+        hors_norme('catalogue', self.catalogue, _CLES_CATALOGUE)
+        xmp_de('document', self.catalogue)
+        for p in self.pages:
+            hors_norme('page', p['dico'], _CLES_PAGE)
+            xmp_de('page', p['dico'])
+        for num in list(formes)[:5000]:
+            f = L.obtenir(num)
+            if isinstance(f, Flux):
+                pi = r(f.dico.get('PieceInfo'))
+                if isinstance(pi, dict):
+                    valeurs('formulaire', ['PieceInfo'], pi, 0)
+                xmp_de('formulaire', f.dico)
+        sortie['structure'] = self._structure()
+        return sortie
+
+    def _structure(self):
+        """L'arbre de structure (PDF balise) : ses types, les textes qu'il
+        porte sans les dessiner (/Alt, /ActualText, /E, /T) et ses attributs."""
         r = self.lecteur.resoudre
+        racine = r(self.catalogue.get('StructTreeRoot'))
+        if not isinstance(racine, dict):
+            return None
+        st = {'elements': 0, 'types': {}, 'textes': [], 'attributs': {}, 'roles': set()}
+        rm = r(racine.get('RoleMap'))
+        if isinstance(rm, dict):
+            st['roles'] = set(rm)
+        pile = [racine.get('K')]
+        vus = set()
+        while pile and st['elements'] < 200000:
+            k = pile.pop()
+            if isinstance(k, list):
+                pile.extend(reversed(k[:100000]))
+                continue
+            if isinstance(k, Ref):
+                if k.num in vus:
+                    continue
+                vus.add(k.num)
+            o = r(k)
+            if not isinstance(o, dict) or o.get('Type') in ('MCR', 'OBJR'):
+                continue
+            s_ = r(o.get('S'))
+            if s_ is None:
+                continue
+            st['elements'] += 1
+            st['types'][str(s_)] = st['types'].get(str(s_), 0) + 1
+            for cle in ('Alt', 'ActualText', 'E', 'T'):
+                v = r(o.get(cle))
+                if isinstance(v, bytes) and texte_pdf(v).strip() and len(st['textes']) < 100000:
+                    st['textes'].append((cle, texte_pdf(v)))
+            attrs = r(o.get('A'))
+            for a in (attrs if isinstance(attrs, list) else [attrs]):
+                a = r(a)
+                if not isinstance(a, dict):
+                    continue
+                proprio = str(r(a.get('O')) or '?')
+                for ka in a:
+                    if ka == 'O':
+                        continue
+                    va = r(a[ka])
+                    st['attributs'][(proprio, ka)] = st['attributs'].get((proprio, ka), 0) + 1
+                    if isinstance(va, bytes) and len(st['textes']) < 100000:
+                        st['textes'].append(('A/' + ka, texte_pdf(va)))
+                    elif isinstance(va, list):
+                        # /UserProperties : [<< /N (nom) /V (valeur) >> ...]
+                        for x in va[:1000]:
+                            x = r(x)
+                            if isinstance(x, dict):
+                                for kk in ('N', 'V'):
+                                    vv = r(x.get(kk))
+                                    if isinstance(vv, bytes) and len(st['textes']) < 100000:
+                                        st['textes'].append(('A/%s/%s' % (ka, kk), texte_pdf(vv)))
+            pile.append(o.get('K'))
+        return st
+
+    def _compter_arbre_noms(self, n, prof, vus=None):
+        """Les entrees d'un arbre de noms ; chaque noeud n'est lu qu'une fois
+        (un /Kids qui se contient lui-meme ne fait pas boucler)."""
+        r = self.lecteur.resoudre
+        if vus is None:
+            vus = set()
+        cle = n.num if isinstance(n, Ref) else id(n)
+        if cle in vus or len(vus) > 100000:
+            return 0
+        vus.add(cle)
         n = r(n)
         if not isinstance(n, dict) or prof > 20:
             return 0
@@ -3745,8 +4592,9 @@ class DocumentStandard(object):
         noms = r(n.get('Names'))
         if isinstance(noms, list):
             total += len(noms) // 2
-        for k in r(n.get('Kids')) or []:
-            total += self._compter_arbre_noms(k, prof + 1)
+        kids = r(n.get('Kids'))
+        for k in (kids if isinstance(kids, list) else []):
+            total += self._compter_arbre_noms(k, prof + 1, vus)
         return total
 
     def polices(self):
@@ -3755,6 +4603,9 @@ class DocumentStandard(object):
         sortie = []
         for p in self.machine.polices.values():
             if p is None:
+                continue
+            if p.de_secours:
+                sortie.append(('Helvetica', 'Type1', False, '(police de secours : celle du texte manque ou est illisible)', False))
                 continue
             d = p.dico
             desc = None
@@ -3775,7 +4626,7 @@ class DocumentStandard(object):
                 enc = 'CMap integree'
             else:
                 enc = str(enc) if enc is not None else '(celui de la police)'
-            sortie.append((nettoyer_nom_police(p.nom), st, emb, enc, p.unicode_cmap is not None))
+            sortie.append((p.nom, st, emb, enc, p.unicode_cmap is not None))
         return sortie
 
 
@@ -3796,6 +4647,14 @@ def importer_pymupdf():
     except Exception:
         pass
     return None
+
+
+def version_tuple(v):
+    """« 1.23.26 » -> (1, 23, 26) ; (0,) si illisible."""
+    try:
+        return tuple(int(x) for x in re.findall(r'\d+', str(v))[:3]) or (0,)
+    except ValueError:
+        return (0,)
 
 
 def version_pymupdf(fitz):
@@ -3820,9 +4679,13 @@ class DocumentPyMuPDF(object):
         self.fitz = fitz
         self.notes = notes
         self.doc = doc = fitz.open(stream=data, filetype='pdf')
+        self.ouvert_par = 'vide'
         if getattr(doc, 'needs_pass', False):
-            if not doc.authenticate(mot_de_passe or ''):
+            code = doc.authenticate(mot_de_passe) if mot_de_passe else 0
+            if not code:
                 raise ErreurPDF('protege par un mot de passe a l\'ouverture')
+            # des bits (MuPDF) : 1 = aucun mot de passe n'etait demande, 2 = utilisateur, 4 = proprietaire
+            self.ouvert_par = 'proprietaire' if code & 4 else ('utilisateur' if code & 2 else 'vide')
         self.nb = doc.page_count
         self.calques = {}       # nom -> (xref, visible)
         try:
@@ -3873,25 +4736,57 @@ class DocumentPyMuPDF(object):
             return (None, True)
         return (c[0], c[1])
 
+    def geometrie(self, page):
+        """Le passage des coordonnees de PyMuPDF (page non tournee, y vers le
+        bas, origine en haut a gauche de la boite qu'a prise MuPDF) a la page
+        vue de la sonde. La page vue est CropBox ∩ MediaBox, comme le veut la
+        norme et comme le lecteur standard la prend ; or MuPDF avant 1.24 part
+        de la CropBox brute, et PyMuPDF calcule sa rotation_matrix sur la
+        CropBox brute (faux de 35 a 3 335 mm quand la CropBox deborde). On
+        reconstruit donc les deux boites (page.mediabox est en coordonnees PDF,
+        page.cropbox en coordonnees MuPDF : y compte depuis le haut de la
+        MediaBox), on reconnait celle qu'a prise MuPDF a ses dimensions, et on
+        applique la meme rotation que le lecteur standard."""
+        rot = int(page.rotation or 0) % 360
+        rot = rot - rot % 90
+        try:
+            mb, cb, rect = page.mediabox, page.cropbox, page.rect
+            media = (float(mb.x0), float(mb.y0), float(mb.x1), float(mb.y1))
+            brut = (float(cb.x0), media[3] - float(cb.y1), float(cb.x1), media[3] - float(cb.y0))
+            vue = intersection(media, brut)
+            if vue[2] <= vue[0] or vue[3] <= vue[1]:
+                vue = media
+            rw, rh = float(rect.width), float(rect.height)
+            if rot in (90, 270):
+                rw, rh = rh, rw
+            base, s = None, 1.0
+            for cand in (vue, brut, media):
+                cw, ch = cand[2] - cand[0], cand[3] - cand[1]
+                if cw > 0 and ch > 0 and abs(rh - ch * rw / cw) <= 0.5 + 0.001 * rh:
+                    base, s = cand, rw / cw
+                    break
+            if base is None:
+                raise ValueError('boites')
+            m_vue, W, H = matrice_page(vue, rot, s)
+            return mul((1.0 / s, 0.0, 0.0, -1.0 / s, base[0], base[3]), m_vue), W, H, rot
+        except Exception:
+            # tres vieux PyMuPDF : sa propre matrice de rotation
+            try:
+                rm = page.rotation_matrix
+                m = (rm.a, rm.b, rm.c, rm.d, rm.e, rm.f)
+            except Exception:
+                m = IDENTITE
+            return m, page.rect.width, page.rect.height, rot
+
     def lire_page(self, i, en_ligne=None):
         """en_ligne : les boites (points, page vue) des images en ligne (BI...EI)
         que le lecteur standard a vues ; PyMuPDF leur donne xref 0, comme aux
         rendus de degrades et de masques doux, qu'elles permettent d'ecarter."""
-        fitz = self.fitz
         page = self.doc[i]
-        rot = page.rotation
-        W, H = page.rect.width, page.rect.height
-        try:
-            rm = page.rotation_matrix
-            m = (rm.a, rm.b, rm.c, rm.d, rm.e, rm.f)
-        except Exception:
-            m = IDENTITE
-        tourne = rot % 360 != 0
+        m, W, H, rot = self.geometrie(page)
 
         def T(p):
-            if tourne:
-                return appliquer(m, p[0], p[1])
-            return (p[0], p[1])
+            return appliquer(m, p[0], p[1])
 
         col = Collecteur()
         # les traces
@@ -3899,7 +4794,7 @@ class DocumentPyMuPDF(object):
             dessins = page.get_drawings()
         except Exception as e:
             dessins = []
-            self.notes.ajouter('PyMuPDF : get_drawings a echoue (%s)' % e)
+            self.notes.ajouter('PyMuPDF : get_drawings a echoue (%s)' % raison(e))
         for d in dessins:
             genre = d.get('type')
             if genre not in ('f', 's', 'fs'):
@@ -3940,22 +4835,22 @@ class DocumentPyMuPDF(object):
                 if debut is not None and fermes and fermes[-1][0] != 're' and fermes[-1][-1] != debut:
                     fermes.append(('l', fermes[-1][-1], debut))
                 items = fermes
-            trait = tuple(d.get('color')) if genre in ('s', 'fs') and d.get('color') is not None else None
-            fond = tuple(d.get('fill')) if genre in ('f', 'fs') and d.get('fill') is not None else None
+            trait = couleur_mu(d.get('color')) if genre in ('s', 'fs') else None
+            fond = couleur_mu(d.get('fill')) if genre in ('f', 'fs') else None
             if genre in ('s', 'fs') and trait is None:
                 trait = 'motif'
             if genre in ('f', 'fs') and fond is None:
                 fond = 'motif'
             tir = d.get('dashes')
             tirets = bool(tir) and not re.match(r'^\[\s*\]', str(tir))
-            col.chemin(items, trait, fond, d.get('width') or 0.0, d.get('stroke_opacity', 1.0),
-                       d.get('fill_opacity', 1.0), self._calque(d.get('layer')), tirets, d.get('seqno'))
+            col.chemin(items, trait, fond, nombre_mu(d.get('width'), 0.0), nombre_mu(d.get('stroke_opacity'), 1.0),
+                       nombre_mu(d.get('fill_opacity'), 1.0), self._calque(d.get('layer')), tirets, d.get('seqno'))
         # les glyphes
         try:
             spans = page.get_texttrace()
         except Exception as e:
             spans = []
-            self.notes.ajouter('PyMuPDF : get_texttrace a echoue (%s)' % e)
+            self.notes.ajouter('PyMuPDF : get_texttrace a echoue (%s)' % raison(e))
         prec = None
         for s in spans:
             t = s.get('type', 0)
@@ -3965,23 +4860,23 @@ class DocumentPyMuPDF(object):
             if t == 1 and prec is not None and prec[0] == cle:
                 continue
             prec = (cle, t)
-            dx, dy = s.get('dir', (1, 0))
-            if tourne:
-                dx, dy = m[0] * dx + m[2] * dy, m[1] * dx + m[3] * dy
+            sx, sy = s.get('dir', (1, 0))
+            dx, dy = m[0] * sx + m[2] * sy, m[1] * sx + m[3] * sy
             nd = math.hypot(dx, dy) or 1.0
             ux, uy = dx / nd, dy / nd
-            taille = s.get('size', 0.0)
-            couleur = tuple(s.get('color', (0, 0, 0)))
-            alpha = s.get('opacity', 1.0)
-            police = s.get('font', '')
+            taille = nombre_mu(s.get('size'), 0.0)
+            couleur = couleur_mu(s.get('color'))
+            if couleur is None:
+                couleur = (0.0, 0.0, 0.0)
+            alpha = nombre_mu(s.get('opacity'), 1.0)
+            police = s.get('font', '') or ''
             calque = self._calque(s.get('layer'))
-            sx, sy = s.get('dir', (1, 0))
             attente = None             # le glyphe en cours : un glyphe a plusieurs caracteres (ligature
             for c in s.get('chars', ()):   # « fi ») arrive en plusieurs « chars », les suivants sans glyphe (gid < 0)
                 ucs, gid, origine, bb = c[0], c[1], c[2], c[3]
                 try:
                     u = chr(ucs) if ucs >= 32 and ucs != 0xFFFD else INCONNU
-                except (ValueError, OverflowError):
+                except (ValueError, OverflowError, TypeError):
                     u = INCONNU
                 if gid is not None and gid < 0 and attente is not None:
                     attente = (attente[0] + u,) + attente[1:]
@@ -4004,7 +4899,7 @@ class DocumentPyMuPDF(object):
             imgs = page.get_image_info(xrefs=True)
         except Exception as e:
             imgs = []
-            self.notes.ajouter('PyMuPDF : get_image_info a echoue (%s)' % e)
+            self.notes.ajouter('PyMuPDF : get_image_info a echoue (%s)' % raison(e))
         for im in imgs:
             bb = im.get('bbox')
             # MuPDF rend un degrade (sh, motif de degrade) en « image » sans objet (xref 0), a 72 points par
@@ -4031,11 +4926,44 @@ class DocumentPyMuPDF(object):
             else:
                 bb = im.get('bbox')
                 coins = [T((bb[0], bb[3])), T((bb[2], bb[3])), T((bb[2], bb[1])), T((bb[0], bb[1]))]
-            cs = im.get('cs-name', '') or ''
-            info = {'filtre': '', 'espace': cs.replace('Device', ''), 'bits': im.get('bpc', 0),
-                    'masque': bool(im.get('has-mask')) and False}
-            col.image(coins, im.get('width', 0), im.get('height', 0), info, (None, True))
+            # l'espace de couleur : sa seule famille (« ICCBased(RGB,<description du profil>) » ou
+            # « Separation(RGB,<nom de l'encre>) » porteraient un nom lu dans le PDF)
+            mf = re.match(r'[A-Za-z]+', im.get('cs-name', '') or '')
+            info = {'filtre': '', 'espace': famille_espace(mf.group(0) if mf else ''),
+                    'bits': entier(im.get('bpc'), 0), 'masque': False, 'sans_rang': True}
+            col.image(coins, entier(im.get('width'), 0), entier(im.get('height'), 0), info, (None, True))
         return col, W, H, rot
+
+
+def nombre_mu(v, defaut):
+    """Un nombre rendu par PyMuPDF (selon les versions : None, un nombre, une liste)."""
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        return float(v)
+    return defaut
+
+
+def couleur_mu(c):
+    """Une couleur rendue par PyMuPDF en (r, g, b) : selon les versions, une
+    liste de composantes (gris, RGB, CMYK), un nombre de 0 a 1 (gris) ou un
+    entier sRGB (0xRRGGBB) ; None si absente."""
+    if c is None:
+        return None
+    if isinstance(c, (int, float)) and not isinstance(c, bool):
+        if 0 <= c <= 1:
+            return (float(c),) * 3
+        v = int(c)
+        return (((v >> 16) & 255) / 255.0, ((v >> 8) & 255) / 255.0, (v & 255) / 255.0)
+    try:
+        t = tuple(float(x) for x in c)
+    except (TypeError, ValueError):
+        return None
+    if len(t) == 1:
+        return t * 3
+    if len(t) == 4:
+        return cmyk_rgb(*t)
+    if len(t) >= 3:
+        return t[:3]
+    return None
 
 
 # ===========================================================================
@@ -4070,6 +4998,203 @@ def analyser_page(col, W, H):
     return els, stats
 
 
+PETIT_TRAIT = 10 / MM      # pt : un trait plus court peut etre un morceau de caractere (texte dessine en traits)
+ECART_AMAS = 2.0 / MM      # pt : deux petits traits plus eloignes ne sont pas du meme amas
+
+
+def _longueurs_alignees(segs):
+    """La longueur de chaque segment comptee avec ceux qui le prolongent
+    bout a bout dans le meme sens (un fil coupe a chaque piquage, ou trace
+    en morceaux, garde sa longueur : ce n'est pas un petit trait)."""
+    n = len(segs)
+    parent = list(range(n))
+
+    def racine(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+    q = 0.05                                   # pt : la tolerance d'un bout commun
+    bouts = {}
+    for k, e in enumerate(segs):
+        bouts.setdefault((int(round(e['x1'] / q)), int(round(e['y1'] / q))), []).append((k, 0))
+        bouts.setdefault((int(round(e['x2'] / q)), int(round(e['y2'] / q))), []).append((k, 1))
+    for liste in bouts.values():
+        if len(liste) < 2 or len(liste) > 16:
+            continue
+        for a in range(len(liste)):
+            for b in range(a + 1, len(liste)):
+                (ka, ca), (kb, cb) = liste[a], liste[b]
+                if ka == kb:
+                    continue
+                ea, eb = segs[ka], segs[kb]
+                # les directions vues depuis le bout commun : opposees (l'un prolonge l'autre)
+                va = (ea['x2'] - ea['x1'], ea['y2'] - ea['y1']) if ca == 0 else (ea['x1'] - ea['x2'], ea['y1'] - ea['y2'])
+                vb = (eb['x2'] - eb['x1'], eb['y2'] - eb['y1']) if cb == 0 else (eb['x1'] - eb['x2'], eb['y1'] - eb['y2'])
+                la, lb = math.hypot(*va), math.hypot(*vb)
+                if la <= 0 or lb <= 0:
+                    continue
+                if (va[0] * vb[0] + va[1] * vb[1]) / (la * lb) < -0.99996:      # 0,5 degre
+                    ra, rb = racine(ka), racine(kb)
+                    if ra != rb:
+                        parent[ra] = rb
+    groupes = {}
+    for k in range(n):
+        groupes.setdefault(racine(k), []).append(k)
+    longueur = [0.0] * n
+    for membres in groupes.values():
+        e0 = segs[membres[0]]
+        dx, dy = e0['x2'] - e0['x1'], e0['y2'] - e0['y1']
+        l0 = math.hypot(dx, dy) or 1.0
+        ux, uy = dx / l0, dy / l0
+        ts = []
+        for k in membres:
+            e = segs[k]
+            ts.append(e['x1'] * ux + e['y1'] * uy)
+            ts.append(e['x2'] * ux + e['y2'] * uy)
+        L = max(ts) - min(ts)
+        for k in membres:
+            longueur[k] = L
+    return longueur
+
+
+def amas_de_petits_traits(els, W, H):
+    """Les amas de petits traits : segments, courbes, rectangles et cercles de
+    moins de 10 mm (un segment prolonge bout a bout dans le meme sens compte
+    pour sa longueur totale), a moins de 0,6 fois la taille du plus grand des
+    deux l'un de l'autre (2 mm au plus). Un texte dessine en traits (police
+    SHX d'AutoCAD, police « baton » de CATIA, texte vectorise en contours) en
+    est fait, des symboles aussi. Le TSV anonymise n'ecrit pas ces traits un
+    par un (on y relirait le texte) : un amas y est une seule ligne. Rend la
+    liste des amas (au moins deux elements) ; chaque element d'un amas porte
+    e['amas'] = son rang (1...)."""
+    segs = [e for e in els if e['type'] == 'segment']
+    longueurs = _longueurs_alignees(segs)
+    taille = {}
+    for e, L in zip(segs, longueurs):
+        taille[id(e)] = L
+    cands = []
+    for k, e in enumerate(els):
+        t = e['type']
+        if t not in ('segment', 'courbe', 'rectangle', 'cercle'):
+            continue
+        b = e.get('boite') or boite(e)
+        s = taille[id(e)] if t == 'segment' else max(b[2] - b[0], b[3] - b[1])
+        if s <= PETIT_TRAIT:
+            cands.append((k, b, s))
+    n = len(cands)
+    if n < 2:
+        return []
+    parent = list(range(n))
+
+    def racine(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+    grille = Grille(W, H, case=2.0 / MM)
+    premiers = {}
+    uniques = []
+    for c in range(n):
+        k, b, s = cands[c]
+        cle = (els[k]['type'],) + tuple(round(v, 2) for v in b)
+        if cle in premiers:
+            # le meme petit trait empile a l'identique : du meme amas que le premier, sans passer par la grille
+            parent[c] = premiers[cle]
+            continue
+        premiers[cle] = c
+        uniques.append(c)
+        grille.ajouter(b, c)
+    tol = 0.05
+    cases = grille.cases
+    for c in uniques:
+        k, b, s = cands[c]
+        # l'ecart admis entre deux traits depend du plus grand des deux : chaque paire est trouvee depuis
+        # le plus grand, qui cherche dans son voisinage (0,6 fois sa taille) ; un petit trait cherche donc pres
+        m = min(0.6 * s, ECART_AMAS) + tol
+        i0, j0, i1, j1 = grille.plage(b, m)
+        rc = racine(c)
+        for i in range(i0, i1 + 1):
+            for j in range(j0, j1 + 1):
+                for d in cases.get((i, j), ()):
+                    if d == c:
+                        continue
+                    k2, b2, s2 = cands[d]
+                    if s2 > s:
+                        continue                 # le plus grand des deux la trouvera
+                    ecart = min(0.6 * s, ECART_AMAS) + tol
+                    dx = max(0.0, b2[0] - b[2], b[0] - b2[2])
+                    if dx > ecart:
+                        continue
+                    dy = max(0.0, b2[1] - b[3], b[1] - b2[3])
+                    if dy <= ecart and dx * dx + dy * dy <= ecart * ecart:
+                        rd = racine(d)
+                        if rd != rc:
+                            parent[rd] = rc
+    groupes = {}
+    for c in range(n):
+        groupes.setdefault(racine(c), []).append(c)
+    amas = []
+    for membres in sorted(groupes.values(), key=lambda m: cands[m[0]][0]):
+        if len(membres) < 2:
+            continue
+        idx = sorted(cands[c][0] for c in membres)
+        bs = [cands[c][1] for c in membres]
+        x0, y0 = min(b[0] for b in bs), min(b[1] for b in bs)
+        x1, y1 = max(b[2] for b in bs), max(b[3] for b in bs)
+        types = {}
+        for k in idx:
+            types[els[k]['type']] = types.get(els[k]['type'], 0) + 1
+        tailles = sorted(cands[c][2] for c in membres)
+        larg, haut = x1 - x0, y1 - y0
+        petit, grand = min(larg, haut), max(larg, haut)
+        traits = types.get('segment', 0) + types.get('courbe', 0)
+        a = {'rang': len(amas) + 1, 'membres': idx, 'n': len(idx), 'boite': (x0, y0, x1, y1), 'types': types,
+             'taille': tailles[len(tailles) // 2],
+             'texte_probable': len(idx) >= 4 and traits >= 0.8 * len(idx) and 1 / MM <= petit <= 12 / MM
+             and grand >= 1.5 * petit}
+        for k in idx:
+            els[k]['amas'] = a['rang']
+        amas.append(a)
+    return amas
+
+
+def ligne_amas(num_page, n, a, els, index_calques):
+    """La ligne du TSV d'un amas (releve anonymise) : sa boite, son contenu,
+    l'epaisseur et la couleur les plus frequentes ; pas la place des traits."""
+    membres = [els[k] for k in a['membres']]
+
+    def plus_frequent(valeurs):
+        h = {}
+        for v in valeurs:
+            h[v] = h.get(v, 0) + 1
+        return max(sorted(h.items(), key=lambda x: str(x[0])), key=lambda x: x[1])[0] if h else ''
+    ep = plus_frequent([fmt(e['ep'] * MM, 3) for e in membres if e.get('ep') is not None])
+    coul = plus_frequent([hexa(e.get('trait')) for e in membres if e.get('trait') is not None])
+    fond = plus_frequent([hexa(e.get('fond')) for e in membres if e.get('fond') is not None])
+    vis = [e for e in membres if e['visible']]
+    raisons = sorted(set(r_ for e in membres for r_ in e['raisons'])) if not vis else []
+    cal = set(nom_calque(e.get('calque'), index_calques) for e in membres)
+    blocs = set(e.get('bloc') or '' for e in membres)
+    x0, y0, x1, y1 = a['boite']
+    w_, h_ = x1 - x0, y1 - y0
+    if max(w_, h_) <= 2 * a['taille']:
+        # un amas de la taille d'un caractere : sa boite elargie a 0,6 fois sa plus grande dimension
+        # (un 1 ou un I, etroits, ne se distinguent pas d'une autre lettre)
+        m_ = 0.6 * max(w_, h_)
+        if w_ < m_:
+            x0, x1 = (x0 + x1 - m_) / 2, (x0 + x1 + m_) / 2
+        if h_ < m_:
+            y0, y1 = (y0 + y1 - m_) / 2, (y0 + y1 + m_) / 2
+    contenu = ', '.join('%d %s%s' % (v, k, 's' if v > 1 else '') for k, v in sorted(a['types'].items()))
+    details = '%d traits (%s), taille typique %s mm%s' % (a['n'], contenu, fmt(a['taille'] * MM, 1),
+                                                         ', peut-etre du texte dessine en traits' if a['texte_probable'] else '')
+    champs = [str(num_page), str(n), 'amas', fmt(x0 * MM), fmt(y0 * MM), fmt(x1 * MM), fmt(y1 * MM), '', ep, '',
+              coul, fond, 'O' if vis else 'N', ','.join(raisons), cal.pop() if len(cal) == 1 else '', '',
+              blocs.pop() if len(blocs) == 1 else '', '', '', details]
+    return champs
+
+
 def comptes_page(els, W, H):
     c = {'textes_vis': 0, 'textes_invis': 0, 'raisons': {}, 'seg': 0, 'H': 0, 'V': 0, 'O': 0,
          'rect': 0, 'courbe': 0, 'cercle': 0, 'image': 0, 'couverture': 0.0, 'images': [],
@@ -4102,7 +5227,11 @@ def comptes_page(els, W, H):
             ix = max(0.0, min(b[2], W) - max(b[0], 0.0))
             iy = max(0.0, min(b[3], H) - max(b[1], 0.0))
             part = ix * iy / aire
-            c['couverture'] = max(c['couverture'], part)
+            if not e['info'].get('motif'):
+                # une image dans un motif (un quadrillage, une trame) n'est pas un scan de la page
+                c['couverture'] = max(c['couverture'], part)
+            else:
+                c['images_motif'] = c.get('images_motif', 0) + 1
             c['images'].append((e, part))
         if t in ('segment', 'rectangle', 'courbe', 'cercle') and e['visible']:
             c['vect_vis'] += 1
@@ -4110,6 +5239,18 @@ def comptes_page(els, W, H):
 
 
 def verdict_page(c):
+    v, pq = _verdict_page(c)
+    n = c.get('amas_texte', 0)
+    if n >= 5 and v != 'vectoriel sans texte':
+        pq += u' ; et %d groupe(s) de petits traits (%d traits) qui peuvent etre du texte dessine en traits (ou des symboles)' % (
+            n, c.get('traits_amas_texte', 0))
+    elif n:
+        pq += u' ; %d groupe(s) de petits traits (%d traits) ressemblent a du texte dessine en traits' % (
+            n, c.get('traits_amas_texte', 0))
+    return v, pq
+
+
+def _verdict_page(c):
     grande_image = c['couverture'] >= 0.5
     if grande_image:
         if c['textes_vis'] == 0 and c['vect_vis'] < 20:
@@ -4151,7 +5292,9 @@ def verdict_document(verdicts):
     return 'mixte', 'les pages different : ' + ', '.join('%s : %d' % (k, n) for k, n in sorted(genres.items(), key=lambda x: -x[1]))
 
 
-LIMITE_ELEMENTS = 1500000     # au-dela, on arrete de lire les pages suivantes (la memoire d'un PC de bureau)
+LIMITE_ELEMENTS = 500000      # au-dela (dans un PDF), la lecture s'arrete, meme en cours de page (la memoire du poste)
+LIMITE_COMPARAISON = 150000   # au-dela (dans une page), PyMuPDF ne relit pas la page pour comparer (temps, memoire)
+DELAI_PDF = 120.0             # s : au-dela, la lecture d'un PDF s'arrete (le rapport le dit) et l'on passe au suivant
 
 
 def lire_pages(choix, nb, pages_voulues):
@@ -4167,52 +5310,104 @@ class Releve(object):
         self.erreur = None
         self.lecteur = ''
         self.infos = None
-        self.pages = []          # dict : num, W, H, rot, elements, stats, comptes, verdict
+        self.pages = []          # dict : num, W, H, rot, elements, stats, comptes, verdict, amas
         self.polices = []
         self.notes = NotesNonGere()
         self.duree = 0.0
         self.comparaison = None
+        self.comparaison_sautee = 0
+        self.completes = 0       # textes que PyMuPDF a completes (caracteres inconnus du lecteur standard)
+        self.cachees = None      # les donnees non dessinees (brutes : le rapport les masque)
+        self.masques = Masques()
+        self.arrete = 0
+
+
+def completer_textes(els, autres, tol=0.1 / MM):
+    """Les caracteres que le lecteur standard ne connait pas (¤ : une police
+    composite sans ToUnicode, dont seul le programme de la police dit les
+    caracteres) pris chez PyMuPDF, qui lit ce programme : meme place (0,1 mm),
+    meme sens, meme nombre de caracteres. Rend le nombre de textes completes."""
+    index = {}
+    for f in autres:
+        if f['type'] == 'texte' and INCONNU not in f['texte']:
+            index.setdefault((int(f['x1'] // 2), int(f['y1'] // 2)), []).append(f)
+    n = 0
+    for e in els:
+        if e['type'] != 'texte' or INCONNU not in e['texte']:
+            continue
+        gx, gy = int(e['x1'] // 2), int(e['y1'] // 2)
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                for f in index.get((gx + dx, gy + dy), ()):
+                    if abs(f['x1'] - e['x1']) <= tol and abs(f['y1'] - e['y1']) <= tol and \
+                            len(f['texte']) == len(e['texte']) and abs(f['ux'] - e['ux']) < 0.01 and abs(f['uy'] - e['uy']) < 0.01:
+                        e['texte'] = f['texte']
+                        n += 1
+                        break
+                else:
+                    continue
+                break
+            else:
+                continue
+            break
+    return n
 
 
 def relever(data, options, fitz):
-    """Lit un PDF avec le lecteur choisi. Ne leve jamais : une erreur est
-    notee dans le releve."""
+    """Lit un PDF : le lecteur standard d'abord (il est exact partout ou on
+    l'a mesure, et il dit le contenu marque, les calques, les formulaires) ;
+    PyMuPDF, s'il est installe, relit chaque page pour comparer et complete
+    les caracteres que le lecteur standard ne connait pas ; il prend la page
+    a son compte si le lecteur standard echoue. Ne leve jamais : une erreur
+    est notee dans le releve."""
     rel = Releve()
     t0 = time.time()
-    mdp = options.get('mot_de_passe', '')
+    echeance = t0 + float(options.get('delai') or DELAI_PDF)
+    clair = options.get('clair', False)
+    mdp = options.get('mot_de_passe', '') or ''
     std = None
     try:
-        std = DocumentStandard(data, rel.notes, mdp.encode('latin-1', 'replace'))
-        rel.infos = std.infos(options.get('clair', False))
+        std = DocumentStandard(data, rel.notes, mdp)
+        rel.infos = std.infos(clair)
     except Exception as e:
-        rel.notes.ajouter('lecteur standard : %s' % e)
+        rel.notes.ajouter('lecteur standard : %s' % raison(e))
         std = None
-        rel.erreur_std = str(e)
+        rel.erreur_std = raison(e)
     choix = options.get('lecteur', 'auto')
-    utiliser_pymupdf = fitz is not None and choix in ('auto', 'pymupdf')
-    doc = None
-    if utiliser_pymupdf:
+    mu = None
+    if fitz is not None and choix in ('auto', 'pymupdf'):
         try:
-            doc = DocumentPyMuPDF(fitz, data, rel.notes, mdp, std.calques.visible if std is not None else None)
-            rel.lecteur = 'PyMuPDF ' + version_pymupdf(fitz)
+            mu = DocumentPyMuPDF(fitz, data, rel.notes, mdp, std.calques.visible if std is not None else None)
         except Exception as e:
-            rel.notes.ajouter('PyMuPDF n\'a pas pu ouvrir le fichier (%s) : lecteur standard' % e)
-            doc = None
-    if doc is None:
-        if std is None:
-            rel.erreur = getattr(rel, 'erreur_std', 'illisible')
-            rel.duree = time.time() - t0
-            return rel
-        doc = std
-        rel.lecteur = 'standard (bibliotheque standard de Python seule)'
-    nb = doc.nb if isinstance(doc, DocumentPyMuPDF) else len(doc.pages)
+            rel.notes.ajouter('PyMuPDF n\'a pas pu ouvrir le fichier (%s)' % raison(e))
+            mu = None
+    if choix == 'pymupdf' and mu is not None:
+        principal = mu
+    elif std is not None:
+        principal = std
+    else:
+        principal = mu
+    if principal is None:
+        rel.erreur = getattr(rel, 'erreur_std', 'illisible')
+        rel.duree = time.time() - t0
+        return rel
+    vmu = ('PyMuPDF ' + version_pymupdf(fitz)) if mu is not None else ''
+    if mu is not None and version_tuple(version_pymupdf(fitz)) < (1, 23):
+        rel.notes.ajouter('%s (avant 1.23) : ses traces different des notres sur des cas connus (fermeture des chemins, '
+                          'couleurs) ; il ne sert qu\'a comparer et a completer les caracteres inconnus' % vmu)
+    if principal is std:
+        rel.lecteur = u'standard (bibliothèque standard de Python seule)' + (
+            u' ; %s relit chaque page pour comparer' % vmu if mu is not None else u'')
+    else:
+        rel.lecteur = vmu + (u' (le lecteur standard n\'a pas pu ouvrir le fichier)' if std is None else u'')
+    nb = len(std.pages) if principal is std else mu.nb
     if rel.infos is None:
-        rel.infos = infos_pymupdf(doc, options.get('clair', False))
+        rel.infos = infos_pymupdf(mu, clair)
     rel.infos['pages'] = nb
-    double = isinstance(doc, DocumentPyMuPDF) and std is not None
-    if double:
+    if std is not None and mu is not None:
         rel.comparaison = []
     total = 0
+    secours = 0
     a_lire = lire_pages(choix, nb, options.get('pages'))
     for rang, i in enumerate(a_lire):
         if total > LIMITE_ELEMENTS:
@@ -4220,50 +5415,87 @@ def relever(data, options, fitz):
                               '%d page(s) non lues (--pages=... pour en choisir d\'autres)' % (rang, total, len(a_lire) - rang))
             rel.arrete = len(a_lire) - rang
             break
-        col2 = None
-        if double:
-            # le lecteur standard aussi : le contenu marque (que PyMuPDF ne dit pas), les images en ligne
-            # (pour les distinguer des rendus de degrades) et la comparaison
+        if time.time() > echeance:
+            rel.notes.ajouter('releve arrete apres %d page(s) : le delai de %d s par PDF est depasse ; %d page(s) non lues '
+                              '(--pages=... ou --delai=...)' % (rang, int(echeance - t0), len(a_lire) - rang))
+            rel.arrete = len(a_lire) - rang
+            break
+        col_s = col_m = None
+        if std is not None and i < len(std.pages):
             try:
-                col2, W2, H2, _ = std.lire_page(i)
+                col_s, Ws, Hs, rots = std.lire_page(i, echeance, LIMITE_ELEMENTS - total)
             except Exception as e:
-                col2 = None
-                rel.notes.ajouter('lecteur standard, page %d : %s (comparaison impossible)' % (i + 1, e))
-        try:
-            if double:
-                en_ligne = None
-                if col2 is not None:
-                    en_ligne = []
-                    for im in col2.images:
-                        if im['info'].get('en_ligne'):
-                            xs = [q[0] for q in im['coins']]
-                            ys = [q[1] for q in im['coins']]
-                            en_ligne.append((min(xs), min(ys), max(xs), max(ys)))
-                col, W, H, rot = doc.lire_page(i, en_ligne)
+                col_s = None
+                rel.notes.ajouter('lecteur standard, page %d : %s' % (i + 1, raison(e)))
+        # une page qui a arrete le lecteur standard (delai, eventail de formulaires, trop d'elements) n'est pas
+        # relue par PyMuPDF pour comparer : MuPDF peut y passer des minutes, ou s'y planter (et la sonde avec lui)
+        if mu is not None and i < mu.nb and (principal is mu or col_s is None or
+                                             (col_s.nb_items <= LIMITE_COMPARAISON and not col_s.arret)):
+            en_ligne = None
+            if col_s is not None:
+                en_ligne = []
+                for im in col_s.images:
+                    if im['info'].get('en_ligne'):
+                        xs = [q[0] for q in im['coins']]
+                        ys = [q[1] for q in im['coins']]
+                        en_ligne.append((min(xs), min(ys), max(xs), max(ys)))
+            try:
+                col_m, Wm, Hm, rotm = mu.lire_page(i, en_ligne)
+            except Exception as e:
+                col_m = None
+                rel.notes.ajouter('PyMuPDF, page %d : %s' % (i + 1, raison(e)))
+        elif mu is not None and col_s is not None:
+            if i >= mu.nb:
+                rel.notes.ajouter('PyMuPDF ne voit que %d page(s) : pages suivantes non comparees' % mu.nb)
+            elif col_s.arret:
+                rel.notes.ajouter('page %d : arretee en route, PyMuPDF ne la relit pas pour comparer' % (i + 1))
             else:
-                col, W, H, rot = doc.lire_page(i)
+                rel.comparaison_sautee += 1
+        if col_s is not None and (principal is std or col_m is None):
+            col, W, H, rot, autre = col_s, Ws, Hs, rots, col_m
+        elif col_m is not None:
+            col, W, H, rot, autre = col_m, Wm, Hm, rotm, col_s
+            if principal is std:
+                rel.notes.ajouter('page %d lue par PyMuPDF : le lecteur standard n\'a pas pu la lire' % (i + 1))
+        else:
+            rel.notes.ajouter('page %d illisible' % (i + 1))
+            rel.pages.append({'num': i + 1, 'W': 0, 'H': 0, 'rot': 0, 'elements': [], 'stats': {}, 'amas': [],
+                              'comptes': comptes_page([], 1, 1), 'verdict': ('illisible', u'aucun lecteur n\'a pu la lire'),
+                              'erreur': 'illisible', 'marques': {}, 'cles_marques': {}, 'textes_marques': []})
+            continue
+        try:
             els, stats = analyser_page(col, W, H)
         except Exception as e:
-            rel.notes.ajouter('page %d illisible : %s' % (i + 1, e))
-            rel.pages.append({'num': i + 1, 'W': 0, 'H': 0, 'rot': 0, 'elements': [], 'stats': {},
-                              'comptes': comptes_page([], 1, 1), 'verdict': ('illisible', str(e)), 'erreur': str(e),
+            rel.notes.ajouter('page %d illisible : %s' % (i + 1, raison(e)))
+            rel.pages.append({'num': i + 1, 'W': 0, 'H': 0, 'rot': 0, 'elements': [], 'stats': {}, 'amas': [],
+                              'comptes': comptes_page([], 1, 1), 'verdict': ('illisible', raison(e)), 'erreur': raison(e),
                               'marques': {}, 'cles_marques': {}, 'textes_marques': []})
             continue
-        col_marques = col
-        if col2 is not None:
+        if col.arret:
+            rel.notes.ajouter('page %d : lecture arretee en cours de page (%s) : la page est incomplete' % (i + 1, col.arret))
+        secours += col.glyphes_secours
+        if autre is not None and rel.comparaison is not None:
             try:
-                els2, _ = analyser_page(col2, W2, H2)
-                comp = comparer_elements(els, els2)
-                rel.comparaison.append(comp)
-                col_marques = col2
-                # PyMuPDF ne dit pas de quel formulaire vient un element : le lecteur standard, si
-                for (ea, eb) in comp['paires']:
-                    if eb.get('bloc') and not ea.get('bloc'):
-                        ea['bloc'] = eb['bloc']
-                stats['usages'] = dict(col2.usages)
+                els2, _ = analyser_page(autre, Wm if autre is col_m else Ws, Hm if autre is col_m else Hs)
+                if col is col_s:
+                    comp = comparer_elements(els2, els)
+                    rel.completes += completer_textes(els, els2)
+                else:
+                    comp = comparer_elements(els, els2)
+                    # PyMuPDF ne dit pas de quel formulaire vient un element : le lecteur standard, si
+                    for (ea, eb) in comp['paires']:
+                        if eb.get('bloc') and not ea.get('bloc'):
+                            ea['bloc'] = eb['bloc']
+                    stats['usages'] = dict(col_s.usages)
+                rel.comparaison.append({'types': comp['types']})   # seulement les comptes : la memoire
+                del els2, comp
             except Exception as e:
-                rel.notes.ajouter('lecteur standard, page %d : %s (comparaison impossible)' % (i + 1, e))
+                rel.notes.ajouter('page %d : comparaison des deux lecteurs impossible (%s)' % (i + 1, raison(e)))
+        col_marques = col_s if col_s is not None else col
         c = comptes_page(els, W, H)
+        amas = amas_de_petits_traits(els, W, H)
+        c['amas_texte'] = sum(1 for a in amas if a['texte_probable'])
+        c['traits_amas_texte'] = sum(a['n'] for a in amas if a['texte_probable'])
         if std is not None:
             try:
                 ann = std.annotations(i)
@@ -4271,19 +5503,38 @@ def relever(data, options, fitz):
                     e['boite'] = (e['x1'], e['y1'], e['x2'], e['y2'])
                 els = els + ann
             except Exception as e:
-                rel.notes.ajouter('annotations de la page %d illisibles : %s' % (i + 1, e))
-        rel.pages.append({'num': i + 1, 'W': W, 'H': H, 'rot': rot, 'elements': els, 'stats': stats,
+                rel.notes.ajouter('annotations de la page %d illisibles : %s' % (i + 1, raison(e)))
+        rel.pages.append({'num': i + 1, 'W': W, 'H': H, 'rot': rot, 'elements': els, 'stats': stats, 'amas': amas,
                           'comptes': c, 'verdict': verdict_page(c), 'marques': getattr(col_marques, 'marques', {}),
                           'cles_marques': getattr(col_marques, 'cles_marques', {}),
-                          'textes_marques': getattr(col_marques, 'textes_marques', [])})
+                          'textes_marques': getattr(col_marques, 'textes_marques', []), 'incomplete': col.arret})
         total += len(els)
         if not options.get('silencieux'):
             dire('    page %d/%d : %d elements' % (i + 1, nb, len(els)))
+        if col.arret and (col.arret.startswith('delai') or col.arret.startswith('trop')):
+            reste = len(a_lire) - rang - 1
+            if reste:
+                rel.notes.ajouter('%d page(s) non lues apres la page %d (%s)' % (reste, i + 1, col.arret))
+                rel.arrete = reste
+            break
+    if secours:
+        rel.notes.ajouter('%d glyphe(s) lus avec la police de secours (Helvetica) : leurs largeurs sont approchees' % secours)
+    if rel.completes:
+        rel.notes.ajouter('%d texte(s) aux caracteres inconnus du lecteur standard (police sans ToUnicode) completes '
+                          'par PyMuPDF (meme place, meme longueur)' % rel.completes)
+    if rel.comparaison_sautee:
+        rel.notes.ajouter('%d page(s) trop chargee(s) (plus de %d traces) : PyMuPDF ne les a pas relues pour comparer'
+                          % (rel.comparaison_sautee, LIMITE_COMPARAISON))
     if std is not None:
         try:
             rel.polices = std.polices()
         except Exception:
             rel.polices = []
+        try:
+            formes = [k for k in std.machine.noms_formes if isinstance(k, int) and k in std.lecteur.xref]
+            rel.cachees = std.donnees_non_dessinees(formes)
+        except Exception as e:
+            rel.notes.ajouter('donnees non dessinees illisibles : %s' % raison(e))
     rel.duree = time.time() - t0
     return rel
 
@@ -4291,10 +5542,11 @@ def relever(data, options, fitz):
 def infos_pymupdf(doc, clair):
     d = doc.doc
     meta = d.metadata or {}
-    infos = {'version': (meta.get('format') or '').replace('PDF ', ''), 'pages': doc.nb,
+    infos = {'version': re.sub(r'[^0-9.]', '', meta.get('format') or ''), 'pages': doc.nb,
              'producer': masquer_logiciel(meta.get('producer') or '', clair),
              'creator': masquer_logiciel(meta.get('creator') or '', clair),
-             'CreationDate': (meta.get('creationDate') or '')[2:6], 'ModDate': (meta.get('modDate') or '')[2:6],
+             'CreationDate': re.sub(r'\D', '', (meta.get('creationDate') or '')[2:6]),
+             'ModDate': re.sub(r'\D', '', (meta.get('modDate') or '')[2:6]),
              'personnels': {}, 'xmp': False, 'chiffrement': None,
              'structure': {'xref': '(lu par PyMuPDF)', 'flux_objets': 0, 'mises_a_jour': 0,
                            'reconstruit': bool(getattr(d, 'is_repaired', False)), 'pourquoi': []},
@@ -4305,8 +5557,11 @@ def infos_pymupdf(doc, clair):
         if v:
             infos['personnels'][kk] = v if clair else len(v)
     if meta.get('encryption'):
-        infos['chiffrement'] = {'methode': meta.get('encryption'), 'impression': None, 'modification': None,
-                                'copie': None, 'annotations': None}
+        # « Standard V4 R4 128-bit AES » : seulement les mots connus
+        meth = ' '.join(m for m in str(meta.get('encryption')).split()
+                        if re.match(r'^(?:Standard|V\d|R\d|\d{2,3}-bit|RC4|AES|None|Unknown)$', m)) or 'oui'
+        infos['chiffrement'] = {'methode': meth, 'impression': None, 'modification': None,
+                                'copie': None, 'annotations': None, 'ouvert_par': getattr(doc, 'ouvert_par', None)}
     try:
         infos['jointes'] = d.embfile_count()
     except Exception:
@@ -4357,15 +5612,22 @@ def comparer_elements(a, b, tol=0.1 / MM):
         r_['a'] += 1
         trouve = None
         meilleur = None
+        ou = None
+        me = motif(e['texte']) if t == 'texte' else None
         gx, gy = int(e['x1'] // pas), int(e['y1'] // pas)
         for dx in (-1, 0, 1):
             for dy in (-1, 0, 1):
-                for j in seaux.get((t, gx + dx, gy + dy), ()):
-                    if j in pris:
-                        continue
+                seau = seaux.get((t, gx + dx, gy + dy))
+                if not seau:
+                    continue
+                for pos, j in enumerate(itertools.islice(seau, VOISINS_MAX)):
                     f = b[j]
-                    if t == 'texte' and motif(e['texte']) != motif(f['texte']):
-                        continue
+                    if t == 'texte':
+                        mf = f.get('_motif')
+                        if mf is None:
+                            mf = f['_motif'] = motif(f['texte'])
+                        if me != mf:
+                            continue
                     d = max(abs(e['x1'] - f['x1']), abs(e['y1'] - f['y1']), abs(e['x2'] - f['x2']), abs(e['y2'] - f['y2']))
                     if t == 'segment' and d > tol:
                         d2 = max(abs(e['x1'] - f['x2']), abs(e['y1'] - f['y2']), abs(e['x2'] - f['x1']), abs(e['y2'] - f['y1']))
@@ -4373,7 +5635,18 @@ def comparer_elements(a, b, tol=0.1 / MM):
                     if d <= tol and (meilleur is None or d < meilleur):
                         meilleur = d
                         trouve = j
+                        ou = (seau, pos)
+                        if d <= 1e-3:              # le meme a un millieme de point : inutile de chercher mieux
+                            break
+                if meilleur is not None and meilleur <= 1e-3:
+                    break
+            if meilleur is not None and meilleur <= 1e-3:
+                break
         if trouve is not None:
+            # l'element apparie sort de son seau : un empilement d'elements identiques reste lineaire
+            seau, pos = ou
+            seau[pos] = seau[-1]
+            seau.pop()
             pris.add(trouve)
             paires.append((e, b[trouve]))
             r_['ensemble'] += 1
@@ -4415,7 +5688,21 @@ def nom_calque(cal, index_calques):
     return index_calques.get(cal[0], 'C?')
 
 
-def ligne_tsv(num_page, n, e, index_calques, clair):
+LARGEUR_CONVENTIONNELLE = 0.6   # corps par caractere : la longueur d'un texte dans le TSV anonymise
+
+
+def fin_de_texte(e, clair):
+    """La fin de la ligne de base d'un texte pour le TSV. Releve anonymise :
+    une longueur CONVENTIONNELLE (nombre de caracteres x 0,6 corps), car la
+    vraie longueur suit les largeurs des lettres (M, W larges ; I, l etroits)
+    et laisserait deviner le texte ; avec --clair, la vraie fin."""
+    if clair:
+        return e['x2'], e['y2']
+    L = len(e['texte']) * LARGEUR_CONVENTIONNELLE * e['taille']
+    return e['x1'] + L * e['ux'], e['y1'] + L * e['uy']
+
+
+def ligne_tsv(num_page, n, e, index_calques, clair, masques=None):
     t = e['type']
     mm = MM
     details = ''
@@ -4439,36 +5726,53 @@ def ligne_tsv(num_page, n, e, index_calques, clair):
     elif t == 'texte':
         details = '%d car.' % len(e['texte'])
     elif t == 'annotation':
-        details = e['sorte'] + ((' (%s, %d car.)' % (e['source'], len(e['texte']))) if e['texte'] else '')
+        details = nom_montrable(e['sorte'], 'S', masques) + (
+            (' (%s, %d car.)' % (e['source'], len(e['texte']))) if e['texte'] else '')
     if e.get('tirets'):
         details = (details + ' ' if details else '') + 'tirets'
+    if e.get('amas'):
+        details = (details + ' ' if details else '') + 'amas %d' % e['amas']
     if t == 'texte':
         couleur = hexa(e.get('couleur'))
         if e['mode'] == 'trait':
             details += ' (texte en contour)'
+        x2, y2 = fin_de_texte(e, clair)
     else:
         couleur = hexa(e.get('trait'))
+        x2, y2 = e['x2'], e['y2']
     m = motif(e['texte']) if t in ('texte', 'annotation') else ''
-    champs = [str(num_page), str(n), t, fmt(e['x1'] * mm), fmt(e['y1'] * mm), fmt(e['x2'] * mm), fmt(e['y2'] * mm),
+    champs = [str(num_page), str(n), t, fmt(e['x1'] * mm), fmt(e['y1'] * mm), fmt(x2 * mm), fmt(y2 * mm),
               fmt(e['angle'], 1) if e.get('angle') is not None else '',
               fmt(e['ep'] * mm, 3) if e.get('ep') is not None and t not in ('texte', 'image') else '',
               fmt(e['taille'], 2) if t == 'texte' else '',
               couleur, hexa(e.get('fond')),
               'O' if e['visible'] else 'N', ','.join(e['raisons']), nom_calque(e.get('calque'), index_calques),
               str(e['chemin']) if e.get('chemin') is not None else '', e.get('bloc') or '', m,
-              nettoyer_nom_police(e.get('police')) if t == 'texte' else '', details.strip()]
+              nom_de_police(e.get('police'), masques) if t == 'texte' else '', details.strip()]
     if clair:
         champs.append(e['texte'] if t in ('texte', 'annotation') else '')
-    return '\t'.join(c.replace('\t', ' ').replace('\r', ' ').replace('\n', ' ') for c in champs)
+    return champs
 
 
 def ecrire_tsv(chemin, rel, index_calques, clair):
-    entete = list(COLONNES_TSV) + (['texte'] if clair else [])
+    """Le TSV : une ligne par element. Releve anonymise : les petits traits
+    groupes en amas (de quoi relire un texte dessine en traits) sont ecrits
+    en une ligne par amas, a la place du premier ; avec --clair, tout."""
+    entete = list(COLONNES_TSV) + (['texte_EN_CLAIR'] if clair else [])
     with open(chemin_long(chemin), 'w', encoding='utf-8-sig', newline='') as f:
         f.write('\t'.join(entete) + '\r\n')
         for p in rel.pages:
-            for n, e in enumerate(p['elements'], 1):
-                f.write(ligne_tsv(p['num'], n, e, index_calques, clair) + '\r\n')
+            amas = dict((a['membres'][0], a) for a in (p.get('amas') or []))
+            els = p['elements']
+            for k, e in enumerate(els):
+                if not clair and e.get('amas'):
+                    a = amas.get(k)
+                    if a is None:
+                        continue
+                    champs = ligne_amas(p['num'], k + 1, a, els, index_calques)
+                else:
+                    champs = ligne_tsv(p['num'], k + 1, e, index_calques, clair, rel.masques)
+                f.write('\t'.join(c.replace('\t', ' ').replace('\r', ' ').replace('\n', ' ') for c in champs) + '\r\n')
 
 
 def histogramme(valeurs, n=12):
@@ -4487,10 +5791,15 @@ def ecrire_rapport(chemin, rel, entete, options, index_calques):
     clair = options.get('clair', False)
     w = L.append
     if clair:
-        w(u'SONDE PDF -- relevé EN CLAIR (option --clair : les textes réels sont écrits)')
+        w(u'SONDE PDF -- relevé EN CLAIR (option --clair : les textes réels et toute la géométrie sont écrits)')
     else:
-        w(u'SONDE PDF -- relevé ANONYMISÉ (aucun texte réel, aucun nom de fichier, aucun nom de calque)')
+        w(u'SONDE PDF -- relevé ANONYMISÉ (aucun texte réel, aucun nom de fichier, aucun nom propre)')
     w(u'=' * 78)
+    if not clair:
+        w(u'Le .elements.tsv contient la GÉOMÉTRIE du dessin (traits, rectangles, cercles, place des textes) ;')
+        w(u'les textes y sont réduits à leur forme, et les petits traits groupés comme des caractères (texte')
+        w(u'dessiné en traits) y tiennent en une ligne par groupe, sans la place de chaque trait.')
+        w(u'')
     for k, v in entete:
         w(u'%-22s : %s' % (k, v))
     w(u'%-22s : %s' % (u'Lecteur utilisé', rel.lecteur or u'aucun'))
@@ -4523,7 +5832,9 @@ def ecrire_rapport(chemin, rel, entete, options, index_calques):
             for k in ('impression', 'modification', 'copie', 'annotations'):
                 if ch.get(k) is not None:
                     perms.append(u'%s %s' % (k, u'oui' if ch[k] else u'non'))
-            w(u'Chiffré                : oui, %s, ouvert sans mot de passe%s' % (ch['methode'], (u' ; permissions : ' + ', '.join(perms)) if perms else ''))
+            par = {'vide': u'ouvert sans mot de passe', 'utilisateur': u'ouvert avec le mot de passe donné (utilisateur)',
+                   'proprietaire': u'ouvert avec le mot de passe donné (propriétaire)'}.get(ch.get('ouvert_par'), u'ouvert')
+            w(u'Chiffré                : oui, %s, %s%s' % (ch['methode'], par, (u' ; permissions : ' + ', '.join(perms)) if perms else ''))
         else:
             w(u'Chiffré                : non')
         st = inf.get('structure') or {}
@@ -4534,7 +5845,8 @@ def ecrire_rapport(chemin, rel, entete, options, index_calques):
         w(u'Balisé (structure)     : %s ; formulaire : %s champ(s) ; signets : %s ; métadonnées XMP : %s' % (
             u'oui' if inf.get('balise') else u'non', inf.get('formulaire', 0), inf.get('signets', 0), u'oui' if inf.get('xmp') else u'non'))
         ann = inf.get('annotations') or {}
-        w(u'Annotations            : %s' % (', '.join(u'%s %d' % (k, v) for k, v in sorted(ann.items())) if ann else u'aucune'))
+        w(u'Annotations            : %s' % (', '.join(u'%s %d' % (nom_montrable(k, 'S', rel.masques), v)
+                                                     for k, v in sorted(ann.items())) if ann else u'aucune'))
         w(u'Pièces jointes         : %d' % inf.get('jointes', 0))
         cal = inf.get('calques') or []
         if cal:
@@ -4564,9 +5876,11 @@ def ecrire_rapport(chemin, rel, entete, options, index_calques):
             for k in ('textes_vis', 'textes_invis', 'seg', 'rect', 'courbe', 'cercle', 'image'):
                 tot[k] = tot.get(k, 0) + p['comptes'][k]
         couv = max([p['comptes']['couverture'] for p in rel.pages] or [0])
+        im_motif = sum(p['comptes'].get('images_motif', 0) for p in rel.pages)
         w(u'Ensemble : %d textes visibles, %d invisibles ; %d segments, %d rectangles, %d courbes, %d cercles ; '
-          u'%d image(s)%s' % (tot['textes_vis'], tot['textes_invis'], tot['seg'], tot['rect'], tot['courbe'], tot['cercle'],
-                              tot['image'], (u', la plus grande couvre %d %% d\'une page' % round(couv * 100)) if tot['image'] else u''))
+          u'%d image(s)%s%s' % (tot['textes_vis'], tot['textes_invis'], tot['seg'], tot['rect'], tot['courbe'], tot['cercle'],
+                                tot['image'], (u', la plus grande couvre %d %% d\'une page' % round(couv * 100)) if tot['image'] > im_motif else u'',
+                                (u' (dont %d dans un motif : un quadrillage ou une trame, pas un scan)' % im_motif) if im_motif else u''))
         if v == 'vectoriel avec texte':
             w(u'=> Les liaisons pourront se lire directement dans le PDF (traits et textes).')
         elif v == 'vectoriel sans texte':
@@ -4589,8 +5903,16 @@ def ecrire_rapport(chemin, rel, entete, options, index_calques):
             detail_t = ', '.join(u'%s : %d' % (nom_raison(r_), n) for (t, r_), n in sorted(rs.items()) if t == 'texte')
             w(u'  Textes     : %d visibles, %d invisibles%s' % (c['textes_vis'], c['textes_invis'], (u' (' + detail_t + u')') if detail_t else ''))
             w(u'  Segments   : %d (horizontaux %d, verticaux %d, obliques %d)' % (c['seg'], c['H'], c['V'], c['O']))
-            w(u'  Rectangles : %d ; courbes : %d ; cercles : %d ; points (traits de longueur nulle) : %d' % (
-                c['rect'], c['courbe'], c['cercle'], p['stats'].get('points', 0)))
+            w(u'  Rectangles : %d ; courbes : %d ; cercles : %d ; points (traits de longueur nulle) : %d ; '
+              u'traits doublés (aller-retour) : %d' % (
+                  c['rect'], c['courbe'], c['cercle'], p['stats'].get('points', 0), p['stats'].get('doublons', 0)))
+            am = p.get('amas') or []
+            if am:
+                w(u'  Groupes de petits traits (moins de 10 mm, serrés) : %d, %d traits ; dont %d qui ressemblent à du '
+                  u'texte dessiné en traits (%d traits)' % (len(am), sum(a['n'] for a in am), c.get('amas_texte', 0),
+                                                           c.get('traits_amas_texte', 0)))
+            if p.get('incomplete'):
+                w(u'  INCOMPLÈTE : la lecture de la page s\'est arrêtée en route (%s)' % p['incomplete'])
             autres = ', '.join(u'%s %s : %d' % (t, nom_raison(r_), n) for (t, r_), n in sorted(rs.items()) if t != 'texte')
             if autres:
                 w(u'  Traits invisibles : %s' % autres)
@@ -4614,16 +5936,33 @@ def ecrire_rapport(chemin, rel, entete, options, index_calques):
         try:
             ecrire_structure(w, rel)
         except Exception as e:                        # une analyse en plus ne doit jamais coûter le rapport
-            w(u'(analyse de la structure impossible : %s)' % e)
+            w(u'(analyse de la structure impossible : %s)' % raison(e))
             w(u'')
         ecrire_caches(w, rel, clair)
+    try:
+        ecrire_non_dessinees(w, rel, clair)
+    except Exception as e:
+        w(u'(données non dessinées : analyse impossible : %s)' % raison(e))
+        w(u'')
     if rel.polices:
         w(u'== POLICES (déclarées dans les pages lues) ==')
-        for (nom, st, emb, enc, tu) in sorted(set(rel.polices)):
-            w(u'  %s : %s, %s, encodage %s, ToUnicode %s' % (nom, st, u'embarquée' if emb else u'non embarquée', enc, u'oui' if tu else u'non'))
+        w(u'(une famille du commerce est nommée ; une police maison, qui peut porter le nom de la société ou du')
+        w(u' programme, est donnée par un code et sa forme : P1 (Aaaaaaa-Aaaa))')
+        lignes = set()
+        for (nom, st, emb, enc, tu) in rel.polices:
+            enc_m = enc if (enc.startswith(u'(') or enc == u'CMap integree') else u' + '.join(
+                nom_montrable(x.strip(), 'N', rel.masques, connus=lambda n: nom_standard(n, None) is not None,
+                              ordinaire=False) for x in enc.split('+'))
+            lignes.add(u'  %s : %s, %s, encodage %s, ToUnicode %s' % (
+                nom_de_police(nom, rel.masques), u'/'.join(nom_standard(x, u'autre') for x in st.split('/')),
+                u'embarquée' if emb else u'non embarquée', enc_m, u'oui' if tu else u'non'))
+        for l in sorted(lignes):
+            w(l)
         w(u'')
     if rel.comparaison is not None:
         w(u'== LES DEUX LECTEURS (PyMuPDF contre le lecteur standard) ==')
+        if rel.comparaison_sautee:
+            w(u'  (%d page(s) trop chargée(s) non relues par PyMuPDF)' % rel.comparaison_sautee)
         tot = {}
         for comp in rel.comparaison:
             for t, r_ in comp['types'].items():
@@ -4642,8 +5981,9 @@ def ecrire_rapport(chemin, rel, entete, options, index_calques):
             w(u'  - %s%s' % (m, (u' (%d fois)' % n) if n > 1 else ''))
     else:
         w(u'  rien de signalé pour ce PDF')
-    w(u'  (toujours : les zones de découpe (clip) ne sont pas appliquées ; les apparences des annotations ne sont pas lues ;')
-    w(u'   la boîte d\'un texte est conventionnelle : de la ligne de base, 0,8 corps au-dessus et 0,2 au-dessous)')
+    w(u'  (toujours : seules les découpes rectangulaires (re W n, BBox d\'un formulaire) sont appliquées, et un élément')
+    w(u'   en partie découpé est relevé en entier ; les apparences des annotations ne sont pas lues ; la boîte d\'un')
+    w(u'   texte est conventionnelle : de la ligne de base, 0,8 corps au-dessus et 0,2 au-dessous)')
     w(u'')
     w(u'Fin du rapport.')
     texte = u'\r\n'.join(L) + u'\r\n'
@@ -4654,7 +5994,8 @@ def ecrire_rapport(chemin, rel, entete, options, index_calques):
 def nom_raison(r_):
     return {'mode3': u'mode de rendu invisible', 'horspage': u'hors page', 'blanc': u'blanc sur blanc',
             'calque': u'calque masqué', 'transparent': u'transparent', 'minuscule': u'corps < 1 pt',
-            'mode7': u'texte de découpe (Tr 7)',
+            'mode7': u'texte de découpe (Tr 7)', 'decoupe': u'hors de sa découpe (clip)',
+            'fond': u'de la couleur de l\'aplat dessous',
             'recouvert': u'recouvert par un aplat', 'cachee': u'annotation cachée',
             'sansapparence': u'sans apparence'}.get(r_, r_)
 
@@ -4670,7 +6011,7 @@ def ecrire_communs(w, rel):
         w(u'Corps (mm)      : ' + ', '.join(u'%s : %d' % (fr(k, 2), v) for k, v in h))
         h, n = histogramme([angle_arrondi(e['angle']) for e in textes], 8)
         w(u'Angles (°)      : ' + ', '.join(u'%d : %d' % (k, v) for k, v in h))
-        h, n = histogramme([nettoyer_nom_police(e['police']) for e in textes], 10)
+        h, n = histogramme([nom_de_police(e['police'], rel.masques) for e in textes], 10)
         w(u'Polices         : ' + ', '.join(u'%s : %d' % (k, v) for k, v in h))
         h, n = histogramme([hexa(e['couleur']) for e in textes], 8)
         w(u'Couleurs        : ' + ', '.join(u'%s : %d' % (k, v) for k, v in h))
@@ -4786,10 +6127,14 @@ def ecrire_structure(w, rel):
             ps = [e for e in p['elements'] if e['type'] == 'segment' and e['visible']]
             for e in ps:
                 o = orientation_segment(e['angle'])
+                # un ensemble par ligne : un trait repete a l'identique (empile) ne compte qu'une fois
                 if o == 'H':
-                    hs.setdefault(int(round(e['y1'] / tol)), []).append((min(e['x1'], e['x2']), max(e['x1'], e['x2'])))
+                    hs.setdefault(int(round(e['y1'] / tol)), set()).add(
+                        (round(min(e['x1'], e['x2']), 2), round(max(e['x1'], e['x2']), 2)))
                 elif o == 'V':
-                    vs.setdefault(int(round(e['x1'] / tol)), []).append((min(e['y1'], e['y2']), max(e['y1'], e['y2'])))
+                    vs.setdefault(int(round(e['x1'] / tol)), set()).add(
+                        (round(min(e['y1'], e['y2']), 2), round(max(e['y1'], e['y2']), 2)))
+            ps = list(dict((tuple(round(v, 2) for v in (e['x1'], e['y1'], e['x2'], e['y2'])), e) for e in ps).values())
             for e in ps:
                 for (x, y) in ((e['x1'], e['y1']), (e['x2'], e['y2'])):
                     trouve = False
@@ -4812,98 +6157,194 @@ def ecrire_structure(w, rel):
                         t_jonctions += 1
         points = sum(1 for p in rel.pages for e in p['elements'] if e['type'] == 'cercle' and e['visible']
                      and e.get('fond') not in (None, 'motif') and (e['x2'] - e['x1']) * MM <= 2.0)
+        sur_rect, centre_c, bord_c = bouts_sur_formes(rel)
         w(u'Bouts posés au milieu d\'un trait horizontal ou vertical (piquages en T) : %d' % t_jonctions)
+        w(u'Bouts posés sur le bord d\'un petit rectangle (moins de 10 mm, une broche probable) : %d' % sur_rect)
+        w(u'Bouts posés au centre d\'un petit cercle (moins de 10 mm) : %d ; sur son bord : %d' % (centre_c, bord_c))
         w(u'Petits cercles pleins (diamètre <= 2 mm, points de jonction probables) : %d' % points)
         w(u'')
     # -- ou se posent les textes
     w(u'== OÙ SE POSENT LES TEXTES (textes visibles, par motif) ==')
-    w(u'(dans un rect. = la boîte du texte tient dans un rectangle de moins d\'une demi-page ; sur un trait = un trait horizontal passe sous'
-      u' le texte ou le traverse, à 2 mm au plus de la ligne de base, sous le milieu du texte ; près d\'un bout ='
-      u' une extrémité de segment à 2 mm au plus de la boîte du texte)')
+    w(u'(dans un rect. = la boîte du texte tient dans un rectangle de moins d\'une demi-page ; sur un trait = un segment'
+      u' parallèle au texte (quel que soit son angle) passe sous le texte ou le traverse, à 2 mm au plus de la ligne de'
+      u' base, sous le milieu du texte ; le long d\'un trait = un tel segment à côté du texte, de 2 à 5 mm ; près d\'un'
+      u' bout = une extrémité de segment à 2 mm au plus de la boîte du texte)')
     stats_m = {}
+    stats_t = {}
     case = 5.0 / MM
     for p in rel.pages:
-        rects = Grille()
-        hseg = Grille()
-        bouts = {}
+        W, H = p['W'], p['H']
+        rects = Grille(W, H)
+        segs = Grille(W, H, case=case)
+        bouts = Grille(W, H, case=case)
+        vus_segs = set()
+        vus_bouts = set()
+        vus_rects = set()
         for e in p['elements']:
             if not e['visible']:
                 continue
             if e['type'] == 'rectangle':
                 rb = e.get('boite') or boite(e)
                 # pas le cadre ni le cartouche : un rectangle de moins de la moitie de la page dans chaque sens
-                if rb[2] - rb[0] < 0.5 * p['W'] and rb[3] - rb[1] < 0.5 * p['H']:
+                cle = tuple(round(v, 2) for v in rb)
+                if rb[2] - rb[0] < 0.5 * W and rb[3] - rb[1] < 0.5 * H and cle not in vus_rects:
+                    vus_rects.add(cle)
                     rects.ajouter(rb, e)
             elif e['type'] == 'segment':
-                if orientation_segment(e['angle']) == 'H':
-                    hseg.ajouter(e.get('boite') or boite(e), e)
+                cle = tuple(round(v, 2) for v in (e['x1'], e['y1'], e['x2'], e['y2']))
+                if cle in vus_segs:             # un trait empile a l'identique : une fois
+                    continue
+                vus_segs.add(cle)
+                segs.ajouter(e.get('boite') or boite(e), e)
                 for (x, y) in ((e['x1'], e['y1']), (e['x2'], e['y2'])):
-                    bouts.setdefault((int(x // case), int(y // case)), []).append((x, y))
+                    cle = (round(x, 2), round(y, 2))
+                    if cle not in vus_bouts:
+                        vus_bouts.add(cle)
+                        bouts.ajouter((x, y, x, y), (x, y))
         for e in p['elements']:
             if e['type'] != 'texte' or not e['visible']:
                 continue
             m = motif(e['texte'])
-            x = stats_m.setdefault(m, [0, 0, 0, 0])
-            x[0] += 1
+            tourne = abs(e['uy']) >= 0.01 or e['ux'] < 0
+            for table in ((stats_m, stats_t) if tourne else (stats_m,)):
+                x = table.setdefault(m, [0, 0, 0, 0, 0])
+                x[0] += 1
             b = e.get('boite') or boite(e)
             cx, cy = (b[0] + b[2]) / 2, (b[1] + b[3]) / 2
+            dans_rect = False
             for r_ in rects.autour(cx, cy):
                 rb = r_.get('boite') or boite(r_)
                 if rb[0] <= b[0] + 0.5 and rb[1] <= b[1] + 0.5 and rb[2] >= b[2] - 0.5 and rb[3] >= b[3] - 0.5:
-                    x[1] += 1
+                    dans_rect = True
                     break
-            sur = False
-            if abs(e['uy']) < 0.01:          # texte horizontal
-                yb = e['y1']
-                bas, haut = (yb + 2 / MM, yb - 0.8 * e['taille']) if e['ux'] > 0 else (yb + 0.8 * e['taille'], yb - 2 / MM)
-                vus = set()
-                for py in (yb, bas, haut):
-                    for s_ in hseg.autour(cx, py):
-                        if id(s_) in vus:
-                            continue
-                        vus.add(id(s_))
-                        if min(haut, bas) <= s_['y1'] <= max(haut, bas) and min(s_['x1'], s_['x2']) <= cx <= max(s_['x1'], s_['x2']):
-                            sur = True
-                            break
-                    if sur:
-                        break
-            if sur:
-                x[2] += 1
-            else:
+            place = texte_sur_un_trait(e, b, segs)
+            sur = place == 'sur'
+            le_long = place == 'long'
+            pres = False
+            if not sur:
                 d2 = (2 / MM) ** 2
-                pres = False
-                for i in range(int((b[0] - 2 / MM) // case), int((b[2] + 2 / MM) // case) + 1):
-                    for j in range(int((b[1] - 2 / MM) // case), int((b[3] + 2 / MM) // case) + 1):
-                        for (px, py) in bouts.get((i, j), ()):
-                            dx = max(b[0] - px, 0, px - b[2])
-                            dy = max(b[1] - py, 0, py - b[3])
-                            if dx * dx + dy * dy <= d2:
-                                pres = True
-                                break
-                        if pres:
-                            break
-                    if pres:
+                for (px, py) in bouts.dans(b, 2 / MM):
+                    dx = max(b[0] - px, 0, px - b[2])
+                    dy = max(b[1] - py, 0, py - b[3])
+                    if dx * dx + dy * dy <= d2:
+                        pres = True
                         break
-                if pres:
-                    x[3] += 1
+            for table in ((stats_m, stats_t) if tourne else (stats_m,)):
+                x = table[m]
+                x[1] += dans_rect
+                x[2] += sur
+                x[3] += le_long
+                x[4] += pres
     if not stats_m:
         w(u'Aucun texte visible.')
     else:
-        w(u'motif\ttextes\tdans un rect.\tsur un trait\tprès d\'un bout')
-        for m, (n, dr, st, pb) in sorted(stats_m.items(), key=lambda kv: (-kv[1][0], kv[0]))[:40]:
-            w(u'%s\t%d\t%d %%\t%d %%\t%d %%' % (m.replace('\t', ' '), n, round(100.0 * dr / n), round(100.0 * st / n), round(100.0 * pb / n)))
+        for titre, table in ((None, stats_m), (u'Textes tournés (pas de gauche à droite à l\'horizontale) :', stats_t)):
+            if not table:
+                continue
+            if titre:
+                w(u'')
+                w(titre)
+            w(u'motif\ttextes\tdans un rect.\tsur un trait\tle long d\'un trait\tprès d\'un bout')
+            for m, (n, dr, st, ll, pb) in sorted(table.items(), key=lambda kv: (-kv[1][0], kv[0]))[:40]:
+                w(u'%s\t%d\t%d %%\t%d %%\t%d %%\t%d %%' % (m.replace('\t', ' '), n, round(100.0 * dr / n),
+                                                        round(100.0 * st / n), round(100.0 * ll / n), round(100.0 * pb / n)))
     w(u'')
+
+
+def texte_sur_un_trait(e, b, segs):
+    """'sur' : un segment parallele au texte (a 0,5 degre pres, quel que
+    soit l'angle : un numero de fil vertical sur un fil vertical compte) passe
+    sous lui ou le traverse (a 2 mm au plus sous la ligne de base, au plus a
+    0,8 corps au-dessus), sous le milieu du texte ; 'long' : un tel segment a
+    cote du texte, de 2 a 5 mm (un repere pose a cote d'un fil) ; sinon None."""
+    ux, uy = e['ux'], e['uy']
+    nx, ny = uy, -ux                     # vers le haut du texte (y vers le bas)
+    corps = e['taille']
+    mx = (e['x1'] + e['x2']) / 2
+    my = (e['y1'] + e['y2']) / 2
+    rendu = None
+    for s_ in segs.dans(b, 5 / MM):
+        dx, dy = s_['x2'] - s_['x1'], s_['y2'] - s_['y1']
+        L = math.hypot(dx, dy)
+        if L <= 0:
+            continue
+        if abs(dx * uy - dy * ux) / L > 0.0087:      # sin 0,5 degre : pas parallele
+            continue
+        # hauteur du segment au-dessus de la ligne de base, dans le repere du texte
+        h = (s_['x1'] - e['x1']) * nx + (s_['y1'] - e['y1']) * ny
+        if not (-5 / MM <= h <= 0.8 * corps + 5 / MM):
+            continue
+        # le milieu du texte se projette-t-il dans le segment ?
+        t = ((mx - s_['x1']) * dx + (my - s_['y1']) * dy) / (L * L)
+        if 0.0 <= t <= 1.0:
+            if -2 / MM <= h <= 0.8 * corps:
+                return 'sur'
+            rendu = 'long'
+    return rendu
+
+
+def bouts_sur_formes(rel):
+    """Les bouts de segment poses sur le bord d'un petit rectangle (une broche,
+    une borne), au centre d'un petit cercle (un point de jonction) ou sur son
+    bord (une broche ronde) : a 0,1 mm pres, formes de moins de 10 mm."""
+    tol = 0.1 / MM
+    petit = 10 / MM
+    sur_rect = centre = bord = 0
+    for p in rel.pages:
+        g = Grille(p['W'], p['H'], case=5.0 / MM)
+        vus = set()
+        for e in p['elements']:
+            if e['visible'] and e['type'] in ('rectangle', 'cercle'):
+                b = e.get('boite') or boite(e)
+                cle = (e['type'],) + tuple(round(v, 2) for v in b)
+                if max(b[2] - b[0], b[3] - b[1]) <= petit and cle not in vus:
+                    vus.add(cle)
+                    g.ajouter(b, e)
+        if not g.cases:
+            continue
+        vus = set()
+        for e in p['elements']:
+            if e['type'] != 'segment' or not e['visible']:
+                continue
+            cle = tuple(round(v, 2) for v in (e['x1'], e['y1'], e['x2'], e['y2']))
+            if cle in vus:
+                continue
+            vus.add(cle)
+            for (x, y) in ((e['x1'], e['y1']), (e['x2'], e['y2'])):
+                for f in g.dans((x, y, x, y), tol):
+                    b = f.get('boite') or boite(f)
+                    if f['type'] == 'rectangle':
+                        dedans = b[0] - tol <= x <= b[2] + tol and b[1] - tol <= y <= b[3] + tol
+                        pres_bord = min(abs(x - b[0]), abs(x - b[2]), abs(y - b[1]), abs(y - b[3])) <= tol
+                        if dedans and pres_bord:
+                            sur_rect += 1
+                            break
+                    else:
+                        cx, cy, rr = (b[0] + b[2]) / 2, (b[1] + b[3]) / 2, (b[2] - b[0] + b[3] - b[1]) / 4
+                        d = math.hypot(x - cx, y - cy)
+                        if d <= tol:
+                            centre += 1
+                            break
+                        if abs(d - rr) <= tol:
+                            bord += 1
+                            break
+    return sur_rect, centre, bord
 
 
 def ecrire_caches(w, rel, clair):
     """Ce qui porte du texte sans se dessiner : les annotations et le contenu
-    marque (ActualText, Alt, cles propres d'un logiciel)."""
+    marque (ActualText, Alt, cles propres d'un logiciel). Les etiquettes et
+    les cles de la norme sont nommees ; les autres (un logiciel peut les
+    nommer d'apres le projet, Word d'apres un style de l'utilisateur) ne le
+    sont que si elles sont faites de mots ordinaires, sinon par un code et
+    leur forme (E1, K1)."""
+    M = rel.masques
     ann = [e for p in rel.pages for e in p['elements'] if e['type'] == 'annotation']
     if ann:
         w(u'== ANNOTATIONS ==')
         sortes = {}
         for e in ann:
-            x = sortes.setdefault(e['sorte'], [0, 0, 0])
+            x = sortes.setdefault(nom_montrable(e['sorte'], 'S', M), [0, 0, 0])
             x[0] += 1
             if e['texte']:
                 x[1] += 1
@@ -4924,26 +6365,91 @@ def ecrire_caches(w, rel, clair):
     marques, cles, textes = {}, {}, []
     for p in rel.pages:
         for k, v in (p.get('marques') or {}).items():
+            k = nom_montrable(k, 'E', M)
             marques[k] = marques.get(k, 0) + v
         for k, v in (p.get('cles_marques') or {}).items():
+            k = nom_montrable(k, 'K', M)
             cles[k] = cles.get(k, 0) + v
         textes.extend(p.get('textes_marques') or [])
     if marques or cles or textes:
         w(u'== CONTENU MARQUÉ (BDC / BMC) ==')
-        w(u'  Étiquettes : ' + ', '.join(u'%s : %d' % (nettoyer_nom_police(k), v) for k, v in sorted(marques.items(), key=lambda x: -x[1])[:20]))
+        w(u'  Étiquettes : ' + ', '.join(u'%s : %d' % (k, v) for k, v in sorted(marques.items(), key=lambda x: (-x[1], x[0]))[:20]))
         if cles:
-            w(u'  Clés des propriétés : ' + ', '.join(u'%s : %d' % (nettoyer_nom_police(k), v) for k, v in sorted(cles.items(), key=lambda x: -x[1])[:20]))
+            w(u'  Clés des propriétés : ' + ', '.join(u'%s : %d' % (k, v) for k, v in sorted(cles.items(), key=lambda x: (-x[1], x[0]))[:20]))
         if textes:
             w(u'  %d texte(s) caché(s) dans les propriétés (ils ne se dessinent pas) ; motifs (clé ; motif ; nombre) :' % len(textes))
-            h, n = histogramme([(k, motif(t)) for k, t in textes], 60)
+            h, n = histogramme([(nom_montrable(k, 'K', M), motif(t)) for k, t in textes], 60)
             for (k, m), v in h:
-                w(u'    %s\t%s\t%d' % (nettoyer_nom_police(k), m, v))
+                w(u'    %s\t%s\t%d' % (k, m, v))
             if n > len(h):
                 w(u'    ... et %d motifs de plus' % (n - len(h)))
             if clair:
                 for k, t in textes[:50]:
                     w(u'    en clair : %s = %s' % (k, t))
         w(u'')
+
+
+def ecrire_non_dessinees(w, rel, clair):
+    """Les donnees qu'un logiciel range dans le PDF sans les dessiner (la ou
+    seraient des normes ou des references « dans le PDF mais invisibles ») :
+    noms des cles (ou leur code), motif des valeurs."""
+    c = rel.cachees
+    if not c:
+        return
+    M = rel.masques
+    lignes = {}
+    for (lieu, chemin, valeur, genre) in c['entrees']:
+        nom = u' / '.join(nom_montrable(k, 'K', M) for k in chemin)
+        if valeur is None:
+            v = u'(%s)' % genre
+        elif clair:
+            v = u'« %s »' % valeur
+        else:
+            v = u'« %s »' % motif(valeur)[:80]
+        cle = (lieu, nom, v)
+        lignes[cle] = lignes.get(cle, 0) + 1
+    xmp = {}
+    for (lieu, prop, valeur) in c['xmp']:
+        pre, _, nom = prop.partition(':')
+        nom_m = nom_montrable(pre, 'K', M, connus=_PREFIXES_XMP) + u':' + nom_montrable(nom, 'K', M)
+        v = valeur if clair else motif(valeur)[:80]
+        cle = (lieu, nom_m, u'« %s »' % v)
+        xmp[cle] = xmp.get(cle, 0) + 1
+    st = c.get('structure')
+    if not lignes and not xmp and not st:
+        return
+    w(u'== DONNÉES NON DESSINÉES (métadonnées, propriétés, structure) ==')
+    w(u'(là où un logiciel range des références qui ne se dessinent pas : clés hors norme de /Info, du catalogue,')
+    w(u' des pages, /PieceInfo, propriétés XMP, arbre de structure ; les clés de la norme ou faites de mots ordinaires')
+    w(u' sont nommées, les autres par un code et leur forme ; les valeurs, par leur motif)')
+    if lignes:
+        for (lieu, nom, v), n in sorted(lignes.items(), key=lambda x: (x[0][0], -x[1], x[0][1]))[:300]:
+            w(u'  %s\t%s = %s%s' % (lieu, nom, v, (u'\t(%d fois)' % n) if n > 1 else u''))
+        if len(lignes) > 300:
+            w(u'  ... et %d de plus' % (len(lignes) - 300))
+    if xmp:
+        w(u'  Propriétés XMP :')
+        for (lieu, nom, v), n in sorted(xmp.items(), key=lambda x: (x[0][0], x[0][1]))[:300]:
+            w(u'  %s\t%s = %s%s' % (lieu, nom, v, (u'\t(%d fois)' % n) if n > 1 else u''))
+    if st:
+        types = {}
+        for k, v in st['types'].items():
+            k = k if (k in _NOMS_PDF and k not in st['roles']) else nom_montrable(k, 'R', M)
+            types[k] = types.get(k, 0) + v
+        w(u'  Structure (PDF balisé) : %d élément(s) ; types : %s' % (
+            st['elements'], u', '.join(u'%s %d' % (k, v) for k, v in sorted(types.items(), key=lambda x: (-x[1], x[0]))[:20])))
+        if st['textes']:
+            h, n = histogramme([(nom_montrable(k.split('/')[-1] if k.startswith('A/') else k, 'K', M),
+                                 t if clair else motif(t)[:80]) for k, t in st['textes']], 60)
+            w(u'  Textes de la structure (/Alt, /ActualText, /E, /T, attributs) : %d ; (clé ; motif ; nombre) :' % len(st['textes']))
+            for (k, m), v in h:
+                w(u'    %s\t%s\t%d' % (k, m, v))
+            if n > len(h):
+                w(u'    ... et %d motifs de plus' % (n - len(h)))
+        if st['attributs']:
+            w(u'  Attributs : ' + u', '.join(u'%s/%s %d' % (nom_montrable(o, 'K', M), nom_montrable(k, 'K', M), v)
+                                            for (o, k), v in sorted(st['attributs'].items(), key=lambda x: -x[1])[:30]))
+    w(u'')
 
 
 def ecrire_motifs(w, rel, clair):
@@ -5003,13 +6509,25 @@ def bibliotheques():
 
 
 def lister_pdf(chemins):
+    r"""Les PDF des chemins donnes (fichiers ou dossiers, parcourus en
+    entier). Sous Windows, le parcours d'un dossier passe toujours par le
+    prefixe \\?\ : sinon os.walk saute EN SILENCE un sous-dossier de plus de
+    260 caracteres (frequent sur un partage reseau) ; un dossier illisible
+    est compte et dit a l'ecran."""
     fichiers = []
+    illisibles = [0]
+
+    def erreur(_e):
+        illisibles[0] += 1
     for c in chemins:
         c = c.strip().strip('"')
         if not c:
             continue
         if os.path.isdir(chemin_long(c)):
-            for racine, dossiers, noms in os.walk(chemin_long(c)):
+            racine0 = os.path.abspath(c)
+            if os.name == 'nt' and not racine0.startswith('\\\\?\\'):
+                racine0 = ('\\\\?\\UNC\\' + racine0[2:]) if racine0.startswith('\\\\') else ('\\\\?\\' + racine0)
+            for racine, dossiers, noms in os.walk(racine0, onerror=erreur):
                 dossiers.sort()
                 for n in sorted(noms):
                     if n.lower().endswith('.pdf'):
@@ -5018,6 +6536,8 @@ def lister_pdf(chemins):
             fichiers.append(c)
         else:
             dire('  introuvable : un des chemins donnes (ignore)')
+    if illisibles[0]:
+        dire('  %d dossier(s) n\'ont pas pu etre lus (droits ?) : leurs PDF manquent' % illisibles[0])
     return fichiers
 
 
@@ -5027,41 +6547,53 @@ def lire_plages(texte):
         morceau = morceau.strip()
         m = re.match(r'^(\d+)\s*-\s*(\d+)$', morceau)
         if m:
-            s.update(range(int(m.group(1)), int(m.group(2)) + 1))
+            s.update(range(int(m.group(1)), min(int(m.group(2)), int(m.group(1)) + 100000) + 1))
         elif morceau.isdigit():
             s.add(int(morceau))
     return s
 
 
+SUFFIXE_CLAIR = '.EN-CLAIR'
+
+
 def dossier_rapports(options):
+    """Le dossier des rapports et ce qu'on en dit a l'ecran (jamais le chemin
+    complet : il porte l'identifiant Windows, parfois un nom de projet).
+    Avec --clair, un dossier a part par defaut (« rapports-EN-CLAIR ») : un
+    releve en clair ne se melange pas aux releves anonymises."""
+    nom_defaut = 'rapports-EN-CLAIR' if options.get('clair') else 'rapports'
     if options.get('sortie'):
         d = options['sortie']
+        montre = u'"%s" (donne par --sortie)' % os.path.basename(os.path.normpath(d))
     else:
-        d = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'rapports')
+        d = os.path.join(os.path.dirname(os.path.abspath(__file__)), nom_defaut)
+        montre = u'"%s", a cote de la sonde' % nom_defaut
     try:
         os.makedirs(chemin_long(d), exist_ok=True)
         essai = os.path.join(d, '.essai-ecriture')
         with open(chemin_long(essai), 'w') as f:
             f.write('x')
         os.remove(chemin_long(essai))
-        return d
+        return d, montre
     except Exception:
-        repli = os.path.join(os.path.expanduser('~'), 'Documents', 'sonde-pdf-rapports')
+        repli = os.path.join(os.path.expanduser('~'), 'Documents', 'sonde-pdf-' + nom_defaut)
+        montre = u'"sonde-pdf-%s" dans tes Documents' % nom_defaut
         try:
             os.makedirs(chemin_long(repli), exist_ok=True)
         except Exception:
             import tempfile
-            repli = os.path.join(tempfile.gettempdir(), 'sonde-pdf-rapports')
+            repli = os.path.join(tempfile.gettempdir(), 'sonde-pdf-' + nom_defaut)
+            montre = u'"sonde-pdf-%s" dans le dossier temporaire de Windows (%%TEMP%%)' % nom_defaut
             os.makedirs(repli, exist_ok=True)
-        dire('Le dossier a cote du script n\'est pas modifiable : rapports ecrits dans %s' % repli)
-        return repli
+        dire('Le dossier a cote du script n\'est pas modifiable : rapports ecrits dans le dossier %s' % montre)
+        return repli, montre
 
 
 def prochain_numero(dossier):
     n = 0
     try:
         for nom in os.listdir(chemin_long(dossier)):
-            m = re.match(r'^(\d+)-[0-9a-f]{8}\.', nom)
+            m = re.match(r'^(\d+)-[0-9a-f]{8}[.]', nom)
             if m:
                 n = max(n, int(m.group(1)))
     except Exception:
@@ -5070,13 +6602,11 @@ def prochain_numero(dossier):
 
 
 def principal(argv):
-    options = {'clair': False, 'lecteur': 'auto', 'deux': False, 'pages': None, 'sortie': None, 'mot_de_passe': ''}
+    options = {'clair': False, 'lecteur': 'auto', 'pages': None, 'sortie': None, 'mot_de_passe': '', 'delai': DELAI_PDF}
     chemins = []
     for a in argv:
         if a == '--clair':
             options['clair'] = True
-        elif a == '--deux':
-            options['deux'] = True
         elif a.startswith('--lecteur='):
             options['lecteur'] = a.split('=', 1)[1].strip().lower()
         elif a.startswith('--pages='):
@@ -5085,11 +6615,18 @@ def principal(argv):
             options['sortie'] = a.split('=', 1)[1]
         elif a.startswith('--mot-de-passe='):
             options['mot_de_passe'] = a.split('=', 1)[1]
+        elif a.startswith('--delai='):
+            try:
+                options['delai'] = max(1.0, float(a.split('=', 1)[1].replace(',', '.')))
+            except ValueError:
+                dire('--delai= un nombre de secondes')
+                return 2
         elif a in ('-h', '--help', '/?', '--aide'):
             dire(__doc__.strip())
             return 0
         elif a.startswith('--'):
-            dire('Option inconnue : %s (voir --aide)' % a)
+            # seulement le nom de l'option : la valeur peut etre un mot de passe mal tape
+            dire('Option inconnue : %s (voir --aide)' % a.split('=', 1)[0][:40])
             return 2
         else:
             chemins.append(a)
@@ -5111,11 +6648,19 @@ def principal(argv):
         fitz_util = fitz
         if options['lecteur'] == 'pymupdf' and fitz is None:
             dire('PyMuPDF n\'est pas installe : lecteur standard.')
-    dossier = dossier_rapports(options)
+    clair = options['clair']
+    if clair:
+        dire('')
+        dire('ATTENTION : --clair. Les rapports contiendront les VRAIS TEXTES, le nom des fichiers et toute la')
+        dire('geometrie des plans. Ils sont ecrits a part (fichiers ...EN-CLAIR...) : ne les envoyer que pour')
+        dire('un plan que l\'on a le droit de montrer.')
+        dire('')
+    dossier, montre = dossier_rapports(options)
     numero = prochain_numero(dossier)
     import platform
     systeme = '%s %s' % (platform.system(), platform.release())
-    dire('%d PDF a lire ; rapports dans : %s' % (len(fichiers), ascii_seul(dossier)))
+    dire('%d PDF a lire ; rapports dans le dossier %s' % (len(fichiers), montre))
+    suffixe = SUFFIXE_CLAIR if clair else ''
     ecrits = 0
     for chemin in fichiers:
         try:
@@ -5125,14 +6670,14 @@ def principal(argv):
             dire('  un fichier n\'a pas pu etre ouvert (%s)' % e.__class__.__name__)
             continue
         empreinte = hashlib.sha1(data).hexdigest()[:8]
-        base = '%02d-%s' % (numero, empreinte)
+        base = '%02d-%s%s' % (numero, empreinte, suffixe)
         numero += 1
         dire('  PDF %s (%s Ko)...' % (base, len(data) // 1024))
         try:
             rel = relever(data, options, fitz_util)
         except Exception as e:                   # filet ultime : jamais de plantage
             rel = Releve()
-            rel.erreur = 'erreur inattendue de la sonde : %s: %s' % (e.__class__.__name__, e)
+            rel.erreur = 'erreur inattendue de la sonde : %s' % e.__class__.__name__
         index_calques = index_des_calques(rel)
         entete = [
             (u'Version de la sonde', VERSION_SONDE),
@@ -5141,14 +6686,14 @@ def principal(argv):
             (u'Bibliothèques', ', '.join(u'%s %s' % (n, v) if v else u'%s absente' % n for n, v in libs)),
             (u'Fichier', u'n° %02d, empreinte %s (SHA-1 du contenu), %s Ko' % (numero - 1, empreinte, fr(len(data) / 1024.0, 0))),
         ]
-        if options['clair']:
+        if clair:
             entete.append((u'Nom du fichier', os.path.basename(chemin)))
         try:
             ecrire_rapport(os.path.join(dossier, base + '.rapport.txt'), rel, entete, options, index_calques)
-            ecrire_tsv(os.path.join(dossier, base + '.elements.tsv'), rel, index_calques, options['clair'])
+            ecrire_tsv(os.path.join(dossier, base + '.elements.tsv'), rel, index_calques, clair)
             ecrits += 1
         except Exception as e:
-            dire('  impossible d\'ecrire le rapport : %s' % ascii_seul(str(e)))
+            dire('  impossible d\'ecrire le rapport (%s)' % e.__class__.__name__)
             continue
         if rel.erreur:
             dire('    -> illisible (voir le rapport)')
@@ -5157,7 +6702,9 @@ def principal(argv):
             n = sum(len(p['elements']) for p in rel.pages)
             dire('    -> %d page(s), %d elements, %s (%s s)' % (len(rel.pages), n, v, fr(rel.duree, 1)))
     dire('')
-    dire('%d rapport(s) ecrit(s) dans : %s' % (ecrits, ascii_seul(dossier)))
+    dire('%d rapport(s) ecrit(s) dans le dossier %s' % (ecrits, montre))
+    if clair:
+        dire('ATTENTION : ces rapports sont EN CLAIR (vrais textes, noms des fichiers).')
     return 0 if ecrits else 1
 
 

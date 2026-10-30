@@ -182,21 +182,22 @@ def chaine_pdf(t):
 
 
 def ecrire_pdf(objets, racine=1, info=None, xref_flux=False, flux_objets=False, chiffrer=False,
-               id0=b'0123456789abcdef'):
+               id0=b'0123456789abcdef', mdp_u=b''):
     """objets : {num: Objet}. Rend les octets du PDF."""
     cle = None
     trailer_extra = b''
     if chiffrer:
-        # RC4 128 bits, revision 3, mot de passe utilisateur vide, proprietaire « p »
+        # RC4 128 bits, revision 3, mot de passe utilisateur mdp_u (vide par defaut), proprietaire « p »
         n = 16
+        pad_u = (mdp_u + BOURRAGE)[:32]
         h = hashlib.md5((b'p' + BOURRAGE)[:32]).digest()
         for _ in range(50):
             h = hashlib.md5(h[:n]).digest()
-        o = rc4(h[:n], BOURRAGE)
+        o = rc4(h[:n], pad_u)
         for i in range(1, 20):
             o = rc4(bytes(c ^ i for c in h[:n]), o)
         P = -3904
-        k = hashlib.md5(BOURRAGE + o + struct.pack('<i', P) + id0).digest()
+        k = hashlib.md5(pad_u + o + struct.pack('<i', P) + id0).digest()
         for _ in range(50):
             k = hashlib.md5(k[:n]).digest()
         cle = k[:n]
@@ -724,6 +725,416 @@ def controles_fabriques(tmp, garder):
     return pdf, fichiers, inc
 
 
+# ---------------------------------------------------------------------------
+#  Les constats des relectures : chacun a son controle
+# ---------------------------------------------------------------------------
+
+def pdf_page(contenu, ressources=b'', page_extra=b'', objets=None, catalogue_extra=b'', info=None,
+             media=b'0 0 595 842', **kw):
+    """Un PDF d'une page : contenu (octets), ressources de la page (sans << >>)."""
+    if not isinstance(contenu, bytes):
+        contenu = contenu.encode('latin-1')
+    o = {1: Objet(b'<< /Type /Catalog /Pages 2 0 R ' + catalogue_extra + b' >>'),
+         2: Objet(b'<< /Type /Pages /Kids [3 0 R] /Count 1 >>'),
+         3: Objet(b'<< /Type /Page /Parent 2 0 R /MediaBox [' + media + b'] /Contents 4 0 R /Resources << '
+                  + ressources + b' >> ' + page_extra + b' >>'),
+         4: Objet(b'<< /Length %d >>' % len(contenu), contenu)}
+    if objets:
+        o.update(objets)
+    return ecrire_pdf(o, info=info, **kw)
+
+
+HELV = b'/Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >>'
+
+# une police « baton » (comme une police SHX d'AutoCAD) : chaque lettre en traits, sur une grille 4 x 6
+TRAITS = {
+    'K': [(0, 0, 0, 6), (0, 3, 4, 6), (1, 3.5, 4, 0)], 'E': [(4, 0, 0, 0), (0, 0, 0, 6), (0, 6, 4, 6), (0, 3, 3, 3)],
+    'S': [(4, 6, 0, 6), (0, 6, 0, 3), (0, 3, 4, 3), (4, 3, 4, 0), (4, 0, 0, 0)], 'T': [(0, 6, 4, 6), (2, 6, 2, 0)],
+    'R': [(0, 0, 0, 6), (0, 6, 4, 6), (4, 6, 4, 3), (4, 3, 0, 3), (1, 3, 4, 0)], 'L': [(0, 6, 0, 0), (0, 0, 4, 0)],
+    '3': [(0, 6, 4, 6), (4, 6, 4, 0), (4, 0, 0, 0), (1, 3, 4, 3)], '5': [(4, 6, 0, 6), (0, 6, 0, 3), (0, 3, 4, 3), (4, 3, 4, 0), (4, 0, 0, 0)],
+    '0': [(0, 0, 4, 0), (4, 0, 4, 6), (4, 6, 0, 6), (0, 6, 0, 0), (0, 0, 4, 6)], 'A': [(0, 0, 2, 6), (2, 6, 4, 0), (1, 3, 3, 3)],
+    '4': [(3, 0, 3, 6), (3, 6, 0, 2), (0, 2, 4, 2)], '1': [(1, 5, 2, 6), (2, 6, 2, 0)], '-': [(0, 3, 4, 3)],
+    'W': [(0, 6, 1, 0), (1, 0, 2, 4), (2, 4, 3, 0), (3, 0, 4, 6)], '2': [(0, 6, 4, 6), (4, 6, 4, 3), (4, 3, 0, 3), (0, 3, 0, 0), (0, 0, 4, 0)],
+    '7': [(0, 6, 4, 6), (4, 6, 1, 0)], 'G': [(4, 6, 0, 6), (0, 6, 0, 0), (0, 0, 4, 0), (4, 0, 4, 3), (4, 3, 2, 3)],
+    'I': [(2, 0, 2, 6), (1, 0, 3, 0), (1, 6, 3, 6)],
+}
+
+
+def texte_en_traits(x, y, chaine, h=8.5, contour=False):
+    """Un texte dessine en traits (contour=False) ou vectorise en contours pleins (contour=True : chaque trait
+    devient un quadrilatere plein, et un O un anneau de courbes de Bezier)."""
+    u = h / 6.0
+    out = []
+    for ch in chaine:
+        if contour and ch == 'O':
+            for r_, sens in ((3 * u, 1), (2.4 * u, -1)):
+                cx, cy, k = x + 2 * u, y + 3 * u, 0.5523 * r_
+                out.append('%.2f %.2f m %.2f %.2f %.2f %.2f %.2f %.2f c %.2f %.2f %.2f %.2f %.2f %.2f c '
+                           '%.2f %.2f %.2f %.2f %.2f %.2f c %.2f %.2f %.2f %.2f %.2f %.2f c h' % (
+                               cx + r_, cy, cx + r_, cy + k, cx + k, cy + r_, cx, cy + r_, cx - k, cy + r_, cx - r_, cy + k,
+                               cx - r_, cy, cx - r_, cy - k, cx - k, cy - r_, cx, cy - r_, cx + k, cy - r_, cx + r_, cy - k,
+                               cx + r_, cy))
+            out.append('f*')
+        for (a, b, c, d) in TRAITS.get(ch, []):
+            xa, ya, xb, yb = x + a * u, y + b * u, x + c * u, y + d * u
+            if not contour:
+                out.append('%.2f %.2f m %.2f %.2f l S' % (xa, ya, xb, yb))
+            else:
+                L = ((xb - xa) ** 2 + (yb - ya) ** 2) ** 0.5 or 1.0
+                ex, ey = -(yb - ya) / L * 0.35 * u, (xb - xa) / L * 0.35 * u
+                out.append('%.2f %.2f m %.2f %.2f l %.2f %.2f l %.2f %.2f l h f' % (
+                    xa + ex, ya + ey, xb + ex, yb + ey, xb - ex, yb - ey, xa - ex, ya - ey))
+        x += 6 * u
+    return out
+
+
+def lignes_tsv(dossier):
+    """{nom du TSV: [lignes en dictionnaires]}."""
+    sortie = {}
+    for nom in sorted(os.listdir(dossier)):
+        if nom.endswith('.tsv'):
+            lignes = io.open(os.path.join(dossier, nom), encoding='utf-8-sig', newline='').read().split('\r\n')
+            entete = lignes[0].split('\t')
+            sortie[nom] = [dict(zip(entete, l.split('\t'))) for l in lignes[1:] if l]
+    return sortie
+
+
+def rapport_de(dossier):
+    noms = [n for n in sorted(os.listdir(dossier)) if n.endswith('.rapport.txt')]
+    return io.open(os.path.join(dossier, noms[0]), encoding='utf-8-sig').read() if noms else ''
+
+
+def dans_zone(l, zone):
+    """La ligne du TSV (mm) tient-elle dans la zone (x0, y0, x1, y1, mm) ?"""
+    try:
+        xs = (float(l['x1']), float(l['x2']))
+        ys = (float(l['y1']), float(l['y2']))
+    except (KeyError, ValueError):
+        return False
+    return zone[0] <= min(xs) and max(xs) <= zone[2] and zone[1] <= min(ys) and max(ys) <= zone[3]
+
+
+def controles_constats(tmp):
+    fitz = S.importer_pymupdf()
+
+    print('\n== C1 : un texte dessine en traits ou vectorise ne se relit pas dans le TSV ==')
+    c = ['0 0 0 RG 0.35 w 1 J']
+    c += texte_en_traits(100, 700, 'KESTREL 350A41-1234-00')
+    c += texte_en_traits(100, 660, 'W2017 TIGRE')
+    c += ['0 g'] + texte_en_traits(100, 600, 'KOLTE 37 WIG2', h=12, contour=True)
+    c += ['0.7 w 80 560 m 500 560 l S 80 560 m 80 450 l S 300 470 60 30 re S']
+    # un fil coupe en morceaux de 3 mm (piquages) : il garde sa longueur, ce n'est pas un petit trait
+    pas = 3 * MM
+    c += ['%.2f 430 m %.2f 430 l S' % (100 + k * pas, 100 + (k + 1) * pas) for k in range(30)]
+    d = pdf_page('\n'.join(c))
+    zone_traits = (100 / MM - 1, (842 - 700 - 9) / MM - 1, 100 / MM + 22 * 3 + 1, (842 - 700) / MM + 1)
+    zone_traits2 = (100 / MM - 1, (842 - 660 - 9) / MM - 1, 100 / MM + 11 * 3 + 1, (842 - 660) / MM + 1)
+    zone_contours = (100 / MM - 2, (842 - 600 - 13) / MM - 2, 100 / MM + 13 * 12 / MM + 2, (842 - 600) / MM + 2)
+    sortie = os.path.join(tmp, 'c1')
+    src = os.path.join(tmp, 'c1-src')
+    os.makedirs(src)
+    open(os.path.join(src, 'traits.pdf'), 'wb').write(d)
+    code, _ = lancer_sonde([src], sortie, '--lecteur=standard')
+    l = list(lignes_tsv(sortie).values())[0]
+    seuls = [x for x in l if x['type'] in ('segment', 'courbe', 'rectangle', 'cercle')
+             and (dans_zone(x, zone_traits) or dans_zone(x, zone_traits2))]
+    traits_lettres = [x for x in seuls if not (x['type'] == 'segment' and x['angle'] == '0.0')]
+    ok(code == 0 and len(seuls) <= 2 and not traits_lettres,
+       'texte en traits : %d trait(s) ecrit(s) un par un sur 140 (au plus 2 tirets isoles), aucun trait de lettre' % len(seuls))
+    seuls = [x for x in l if x['type'] in ('segment', 'courbe', 'rectangle', 'cercle') and dans_zone(x, zone_contours)]
+    ok(not seuls, 'texte vectorise en contours pleins (quadrilateres, anneaux de courbes) : aucun trait ecrit un par un (%d)' % len(seuls))
+    amas = [x for x in l if x['type'] == 'amas']
+    ok(len(amas) >= 5 and sum(1 for x in amas if 'texte dessine en traits' in x['details']) >= 3,
+       'ils tiennent en %d lignes « amas » (boite, nombre de traits, taille typique)' % len(amas))
+    fil = [x for x in l if x['type'] == 'segment' and x['y1'] == x['y2'] == '%.2f' % ((842 - 430) / MM)]
+    ok(len(fil) == 30, 'un fil coupe en 30 morceaux de 3 mm reste 30 segments (sa longueur totale compte) : %d' % len(fil))
+    ok(sum(1 for x in l if x['type'] == 'segment' and float(x['x2']) - float(x['x1']) > 100) == 1
+       and sum(1 for x in l if x['type'] == 'rectangle' and x['x1'] == '%.2f' % (300 / MM)) == 1,
+       'les fils longs et la boite restent ecrits')
+    rap = rapport_de(sortie)
+    ok('VECTORIEL SANS TEXTE' in rap and 'ressemblent a du texte dessine en traits' in rap,
+       'le verdict dit « vectoriel sans texte » et compte les groupes de petits traits')
+    sortie2 = os.path.join(tmp, 'c1-clair')
+    code, _ = lancer_sonde([src], sortie2, '--lecteur=standard', '--clair')
+    l2 = list(lignes_tsv(sortie2).values())[0]
+    ok(sum(1 for x in l2 if x['type'] == 'segment') > 140 and not any(x['type'] == 'amas' for x in l2),
+       'avec --clair, tous les traits sont ecrits (%d segments)' % sum(1 for x in l2 if x['type'] == 'segment'))
+
+    print('\n== C2 : Producer / Creator ==')
+    cas = [('SEE Electrical Expert V4R3 - Airbus Helicopters Marignane', ['SEE Electrical Expert V4R3'], ['Airbus', 'Marignane']),
+           ('CATIA V5-6R2019 X4 Racer', ['CATIA V5-6R2019'], ['X4', 'Racer']),
+           ('SEE V4R3 Projet 1234567 OT 98765', ['SEE V4R3'], ['Projet', '1234567', '98765']),
+           ('v12345678', [], ['12345678']),
+           ('Dassault Aviation Rafale', [], ['Dassault', 'Aviation', 'Rafale']),
+           ('Dassault Systemes CATIA V5R21', ['Dassault Systemes CATIA V5R21'], []),
+           ('SEE Electrical Expert V4R3 Albatrosse X350 350B3 build 1234 sp2 12345678', ['V4R3'],
+            ['X350', '350B3', '1234', '12345678', 'Albatrosse']),
+           ('PDFCreator 3.2 - Helidyne Provence 350A41 C:\\Users\\jdupont\\Tigre\\plan.see', ['PDFCreator 3.2'],
+            ['350A41', 'Helidyne', 'jdupont', 'Tigre']),
+           ('Acrobat Distiller 11.0 (Windows) Pontarlier Sharp Prince Power', ['Acrobat Distiller 11.0 (Windows)'],
+            ['Sharp', 'Prince', 'Power', 'Pontarlier']),
+           ('Helidyne CAD 704A47', [], ['704A47', 'Helidyne', 'CAD']),
+           ('Microsoft\u00ae Word pour Microsoft 365', ['Microsoft\u00ae Word pour Microsoft 365'], []),
+           ('macOS Version 10.15.7 (Build 19H2) Quartz PDFContext', ['10.15.7', 'Quartz PDFContext'], ['19H2']),
+           ('Skia/PDF m118', ['Skia/PDF m118'], [])]
+    for chaine, gardes, masques in cas:
+        m = S.masquer_logiciel(chaine)
+        ok(all(g in m for g in gardes) and not any(x in m for x in masques), '%r -> %r' % (chaine, m))
+
+    print('\n== C3, C4, C6 : aucun nom propre (police, etiquette, cle, sorte, encre, filtre, gestionnaire) ==')
+    largeurs = b' '.join([b'600'] * 95)
+    res = (HELV[:-3] + b' /F2 6 0 R /F3 7 0 R /F5 9 0 R >> /ColorSpace << /CSKestrelRes [/Separation /HelidyneBleuCorporate '
+           b'/DeviceRGB << /FunctionType 2 /Domain [0 1] /C0 [1 1 1] /C1 [0 0.3 0.8] /N 1 >>] >> '
+           b'/Properties << /PrHelidyne << /Helidyne_Cle_Prop (ValeurSecreteZ) >> >>')
+    contenu = (b'BT /F2 10 Tf 100 700 Td (Texte) Tj ET BT /F3 10 Tf 100 680 Td (AB) Tj ET '
+               b'BT /F5 10 Tf 100 660 Td <00410042> Tj ET '
+               b'/HelidynePN << /CleSecreteAlbatrosse (ValeurSecreteX) /PartNumber (PN-7788-01) >> BDC BT /F1 10 Tf 100 640 Td (Z) Tj ET EMC '
+               b'/AlbatrosseTag BMC EMC /Span /PrHelidyne BDC EMC '
+               b'/CSKestrelRes cs 1 scn 100 500 50 50 re f '
+               b'q 20 0 0 20 300 300 cm BI /W 2 /H 2 /CS /CSKestrelRes /BPC 8 ID \x00\xff\x00\xff EI Q')
+    objs = {6: Objet(b'<< /Type /Font /Subtype /TrueType /BaseFont /ABCDEF+HelidyneSans-Bold /FirstChar 32 /LastChar 126 '
+                     b'/Widths [' + largeurs + b'] /Encoding /WinAnsiEncoding >>'),
+            7: Objet(b'<< /Type /Font /Subtype /Type3 /Name /KestrelGlyphesT3 /FontBBox [0 0 1000 1000] '
+                     b'/FontMatrix [0.001 0 0 0.001 0 0] /CharProcs << /A 8 0 R /B 8 0 R >> /Encoding << /Type /Encoding '
+                     b'/Differences [65 /A /B] >> /FirstChar 65 /LastChar 66 /Widths [1000 1000] /Resources << >> >>'),
+            8: Objet(b'<< /Length 43 >>', b'1000 0 0 0 1000 1000 d1 0 0 1000 1000 re f'),
+            9: Objet(b'<< /Type /Font /Subtype /Type0 /BaseFont /GHIJKL+QuilesCorporateCID /Encoding /Identity-H '
+                     b'/DescendantFonts [10 0 R] >>'),
+            10: Objet(b'<< /Type /Font /Subtype /CIDFontType2 /BaseFont /GHIJKL+QuilesCorporateCID /CIDSystemInfo '
+                      b'<< /Registry (Adobe) /Ordering (Identity) /Supplement 0 >> /DW 600 >>'),
+            11: Objet(b'<< /Type /Annot /Subtype /HelidyneTamponMaison /Rect [400 400 420 420] /Contents (NoteSecreteY) >>')}
+    d1 = pdf_page(contenu, res, b'/Annots [11 0 R]', objs)
+    d2 = pdf_page(b'BT /F1 10 Tf 100 700 Td (AB) Tj ET', b'/Font << /F1 5 0 R >>',
+                  objets={5: Objet(b'<< /Type /Font /Subtype /Type3 /FontBBox [0 0 1000 1000] /FontMatrix [(MatriceKestrel) 0 0 '
+                                   b'0.001 0 0] /CharProcs << /A 6 0 R >> /Encoding << /Differences [65 /A] >> /FirstChar 65 '
+                                   b'/LastChar 65 /Widths [1000] >>'),
+                          6: Objet(b'<< /Length 43 >>', b'1000 0 0 0 1000 1000 d1 0 0 1000 1000 re f')})
+    d3 = pdf_page(b'xxxxx')
+    d3 = d3.replace(b'4 0 obj\n<< /Length 5 >>', b'4 0 obj\n<< /Length 5 /Filter /FiltreKestrelDecode >>')
+    d4 = pdf_page(b'BT /F1 10 Tf 100 700 Td (Secret) Tj ET', HELV, objets={9: Objet(
+        b'<< /Filter /HelidyneDRMGestion /V 2 /R 3 /Length 128 /P -4 /O <00> /U <00> >>')})
+    d4 = d4.replace(b'/Root 1 0 R', b'/Root 1 0 R /Encrypt 9 0 R')
+    src = os.path.join(tmp, 'noms')
+    os.makedirs(src)
+    for k, d in enumerate((d1, d2, d3, d4)):
+        open(os.path.join(src, 'n%d.pdf' % k), 'wb').write(d)
+    secrets = ['Helidyne', 'Kestrel', 'Albatrosse', 'Quiles', 'Corporate', 'ValeurSecrete', 'NoteSecrete', 'MatriceKestrel',
+               'FiltreKestrel', 'DRMGestion', 'TamponMaison', 'PN-7788-01']
+    for lecteur in ('standard',) + (('auto',) if fitz else ()):
+        sortie = os.path.join(tmp, 'noms-' + lecteur)
+        code, ecran = lancer_sonde([src], sortie, '--lecteur=' + lecteur)
+        f = fuites(sortie, secrets)
+        ok(code == 0 and len(os.listdir(sortie)) == 8 and not f and not any(x in ecran for x in secrets),
+           'lecteur %s : polices maison, etiquettes et cles du contenu marque, sorte d\'annotation, encre, espace '
+           'nomme, filtre, gestionnaire, message d\'erreur : aucun nom ne sort%s' % (lecteur, (' : ' + repr(f[:4])) if f else ''))
+    rap = rapport_de(os.path.join(tmp, 'noms-standard'))
+    ok(re.search(r'P\d \(AaaaaaaaAaaa-Aaaa\)', rap) and 'PartNumber' in rap and re.search(r'E\d \(AaaaaaaaAA\)', rap)
+       and re.search(r'K\d \(AaaAaaaaaaAaaaaaaaaa\)', rap) and re.search(r'S\d \(AaaaaaaaAaaaaaAaaaaa\)', rap),
+       'les noms masques le sont par un code et leur forme (P1, E1, K1, S1) ; PartNumber (mots ordinaires) reste')
+    ok('Helvetica' in rap and 'Type3' in rap, 'les familles du commerce et Type3 restent nommees')
+
+    print('\n== C5, C9 : --clair a part, rien de personnel a l\'ecran ==')
+    copie = os.path.join(tmp, 'Projet Kestrel', 'sonde')
+    os.makedirs(copie)
+    shutil.copy(SONDE, copie)
+    p_ = os.path.join(copie, 'sonde_pdf.py')
+    pdf_, _ = schema()
+    plan = os.path.join(tmp, 'Projet Kestrel', 'Plan_Kestrel.pdf')
+    open(plan, 'wb').write(pdf_)
+    r1 = subprocess.run([sys.executable, p_, plan, '--lecteur=standard'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    r2 = subprocess.run([sys.executable, p_, plan, '--lecteur=standard', '--clair'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    e1, e2 = r1.stdout.decode('ascii', 'replace'), r2.stdout.decode('ascii', 'replace')
+    a = sorted(os.listdir(os.path.join(copie, 'rapports')))
+    b = sorted(os.listdir(os.path.join(copie, 'rapports-EN-CLAIR')))
+    ok(len(a) == 2 and not any('CLAIR' in n for n in a) and len(b) == 2 and all('.EN-CLAIR.' in n for n in b),
+       '--clair ecrit NN-xxxxxxxx.EN-CLAIR.* dans « rapports-EN-CLAIR », a part : %s' % ', '.join(b))
+    t = io.open(os.path.join(copie, 'rapports-EN-CLAIR', [n for n in b if n.endswith('.tsv')][0]), encoding='utf-8-sig').readline()
+    ok(t.rstrip().endswith('texte_EN_CLAIR'), 'la colonne des vrais textes s\'appelle texte_EN_CLAIR')
+    ok('ATTENTION' in e2 and 'EN CLAIR' in e2 and 'ATTENTION' not in e1, 'l\'ecran previent avec --clair, et seulement alors')
+    ok(not any(x in e1 + e2 for x in ('Kestrel', tmp, 'Plan_')), 'l\'ecran ne montre ni le nom du PDF ni le chemin des dossiers')
+    r3 = subprocess.run([sys.executable, p_, '--mot-de-pass=Secret123', plan], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    e3 = r3.stdout.decode('ascii', 'replace')
+    ok(r3.returncode == 2 and 'Secret123' not in e3 and '--mot-de-pass' in e3,
+       'une option mal tapee : seul son nom est repete (pas sa valeur, un mot de passe peut-etre)')
+    r4 = subprocess.run([sys.executable, p_, '--deux', plan], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    ok(r4.returncode == 2, '--deux (qui n\'avait aucun effet) n\'existe plus')
+
+    print('\n== C7 : la longueur d\'un texte ne suit pas la largeur de ses lettres ==')
+    rel = releve(pdf_)
+    t = [e for e in textes_de(rel, True) if e['texte'] == '601RC1'][0]
+    anon = S.ligne_tsv(1, 1, t, {}, False)
+    clair = S.ligne_tsv(1, 1, t, {}, True)
+    ok(anon[5] == '%.2f' % (50 + 6 * 0.6 * 10 / MM) and clair[5] == '%.2f' % ((50 * MM + 36.68) / MM),
+       'releve anonymise : 6 car. x 0,6 corps (x2 = %s mm) ; --clair : la vraie fin (%s mm)' % (anon[5], clair[5]))
+    l1 = S.ligne_tsv(1, 1, dict(t, texte='MMMMMM'), {}, False)
+    l2 = S.ligne_tsv(1, 1, dict(t, texte='IIIIII'), {}, False)
+    ok(l1[5] == l2[5], 'MMMMMM et IIIIII ont la meme longueur dans le TSV')
+
+    print('\n== C8 : motif() reduit toutes les lettres et tous les chiffres ==')
+    for chaine, attendu in ((u'\u24c0\u24d4\u24e2\u24e3', u'Aaaa'), (u'\U0001f13a\U0001f134\U0001f142', u'AAA'),
+                            (u'\u216b', u'9'), (u'\u246b', u'9'), (u'\u00bd', u'9'), (u'e\u0301tienne', u'aaaaaaa'),
+                            (u'\U0001f150', u'A'), (u'601RC1', u'999AA9'), (u'C\u00e2ble', u'Aaaaa')):
+        ok(S.motif(chaine) == attendu, 'motif(%r) = %r' % (chaine, S.motif(chaine)))
+
+    print('\n== C10 : mot de passe vide d\'abord, puis utilisateur ou proprietaire ==')
+    du, _ = schema(chiffrer=True, mdp_u=b'u')
+    dv, _ = schema(chiffrer=True)
+    r = releve(du)
+    ok(r.erreur is not None, 'protege par « u » : illisible sans mot de passe')
+    r = releve(du, mot_de_passe='u')
+    ok(r.erreur is None and r.infos['chiffrement']['ouvert_par'] == 'utilisateur', 'ouvert avec « u » (utilisateur)')
+    r = releve(du, mot_de_passe='p')
+    ok(r.erreur is None and r.infos['chiffrement']['ouvert_par'] == 'proprietaire', 'ouvert avec « p » (proprietaire)')
+    r = releve(dv, mot_de_passe='p')
+    ok(r.erreur is None and r.infos['chiffrement']['ouvert_par'] == 'vide', 'un PDF sans mot de passe d\'ouverture : '
+       'toujours ouvert, meme avec --mot-de-passe')
+    src = os.path.join(tmp, 'mdp')
+    os.makedirs(src)
+    open(os.path.join(src, 'a.pdf'), 'wb').write(du)
+    open(os.path.join(src, 'b.pdf'), 'wb').write(dv)
+    sortie = os.path.join(tmp, 'mdp-r')
+    code, _ = lancer_sonde([src], sortie, '--lecteur=standard', '--mot-de-passe=p')
+    raps = [io.open(os.path.join(sortie, n), encoding='utf-8-sig').read() for n in sorted(os.listdir(sortie)) if n.endswith('.txt')]
+    ok(len(raps) == 2 and u'propriétaire' in raps[0] and u'ouvert sans mot de passe' in raps[1],
+       'un dossier avec --mot-de-passe=p : les deux s\'ouvrent, et le rapport dit lequel a servi')
+
+    print('\n== R1, R7 : rien ne bloque ni ne boucle (chaque PDF en moins de 60 s) ==')
+    attaques = {
+        'texte-1e7': pdf_page(b'BT /F1 10 Tf 10000000 0 0 1 50 50 Tm (W1) Tj ET 0.5 g -1e9 -1e9 3e9 3e9 re f 0 G 0 0 m 50 50 l S', HELV),
+        'noms-boucle': pdf_page(b'0 G 0 0 m 50 50 l S', catalogue_extra=b'/Names << /EmbeddedFiles 6 0 R >>',
+                                objets={6: Objet(b'<< /Kids [6 0 R 6 0 R 6 0 R 6 0 R 6 0 R 6 0 R 6 0 R 6 0 R] >>')}),
+        'ocmd-boucle': pdf_page(b'/OC /M BDC BT /F1 10 Tf 50 50 Td (OK) Tj ET EMC', HELV + b' /Properties << /M 7 0 R >>',
+                                catalogue_extra=b'/OCProperties << /OCGs [6 0 R] /D << >> >>',
+                                objets={6: Objet(b'<< /Type /OCG /Name (C) >>'),
+                                        7: Objet(b'<< /Type /OCMD /OCGs [6 0 R] /VE [/And 8 0 R [/Not 8 0 R]] >>'),
+                                        8: Objet(b'[/Or 8 0 R 6 0 R]')}),
+        'predicteur': pdf_page(b'')
+    }
+    eventail = {5: Objet(b'<< /Length 6 >>', b'/X Do\n')}
+    for k in range(24):
+        eventail[10 + k] = Objet(b'<< /Type /XObject /Subtype /Form /BBox [0 0 10 10] /Resources << /XObject << /X %d 0 R >> >> '
+                                 b'/Length 12 >>' % (11 + k), b'/X Do /X Do\n')
+    eventail[34] = Objet(b'<< /Type /XObject /Subtype /Form /BBox [0 0 10 10] /Length 19 >>', b'0 G 0 0 m 5 5 l S\n')
+    attaques['eventail'] = pdf_page(b'/X Do', b'/XObject << /X 10 0 R >>', objets=eventail)
+    brut = zlib.compress(b'\x02' + b'\x00' * 100)
+    attaques['predicteur'] = attaques['predicteur'].replace(
+        b'4 0 obj\n<< /Length 0 >>\nstream\n\nendstream',
+        b'4 0 obj\n<< /Filter /FlateDecode /DecodeParms << /Predictor 12 /Columns 2000000000 >> /Length %d >>\nstream\n'
+        % len(brut) + brut + b'\nendstream')
+    attaques['xref-w000'] = (b'%PDF-1.5\n1 0 obj\n<< /Type /XRef /Size 2000000000 /W [0 0 0] /Root 2 0 R /Length 0 >>\n'
+                             b'stream\n\nendstream\nendobj\nstartxref\n9\n%%EOF\n')
+    attaques['empile'] = pdf_page(b'q 0 G 10 10 m 100 100 l S BT /F1 12 Tf 50 50 Td (OK) Tj ET Q\n' * 1,
+                                  HELV).replace(b'/Contents 4 0 R', b'/Contents [' + b'4 0 R ' * 5000 + b']')
+    src = os.path.join(tmp, 'attaques')
+    os.makedirs(src)
+    for nom, d in attaques.items():
+        open(os.path.join(src, nom + '.pdf'), 'wb').write(d)
+    for nom in sorted(attaques):
+        sortie = os.path.join(tmp, 'att-' + nom)
+        import time as _t
+        t0 = _t.time()
+        try:
+            p = subprocess.run([sys.executable, SONDE, os.path.join(src, nom + '.pdf'), '--sortie=' + sortie],
+                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=60)
+            ok(p.returncode == 0 and len(os.listdir(sortie)) == 2, '%s : rapport ecrit en %.1f s' % (nom, _t.time() - t0))
+        except subprocess.TimeoutExpired:
+            ok(False, '%s : plus de 60 s' % nom)
+    rap = rapport_de(os.path.join(tmp, 'att-eventail'))
+    ok('INCOMPL' in rap and 'formulaires poses' in rap, 'les formulaires en eventail : la page s\'arrete et le rapport le dit')
+    rel = S.relever(attaques['empile'], {'lecteur': 'standard', 'silencieux': True, 'delai': 1e-9}, None)
+    ok(not rel.pages and any('delai' in m for m, _ in rel.notes.liste()), 'au-dela du delai par PDF, la lecture s\'arrete et le dit')
+
+    print('\n== R2 : le lecteur standard d\'abord ; les couleurs de PyMuPDF tolerees ==')
+    ok(S.couleur_mu(0.5) == (0.5, 0.5, 0.5) and S.couleur_mu(0xFF0000) == (1.0, 0.0, 0.0) and S.couleur_mu([1, 0, 0, 0])
+       == (0.0, 1.0, 1.0) and S.couleur_mu(None) is None, 'couleur de PyMuPDF : un nombre, un entier sRGB, CMYK, rien')
+    if fitz:
+        r = releve(pdf_, 'auto')
+        ok(r.lecteur.startswith('standard') and 'PyMuPDF' in r.lecteur and r.comparaison,
+           'avec PyMuPDF installe : le lecteur standard lit, PyMuPDF compare (%s)' % r.lecteur)
+
+    print('\n== R3 : les textes tournes sur un fil vertical ==')
+    c = ('0 G 0.5 w 200 100 m 200 700 l S 400 100 m 400 700 l S BT /F1 6 Tf 0 1 -1 0 201 300 Tm (W1234) Tj ET '
+         'BT /F1 6 Tf 0 1 -1 0 201 500 Tm (W5678) Tj ET BT /F1 6 Tf 0 1 -1 0 %.2f 300 Tm (G300) Tj ET' % (400 - 3 * MM))
+    sortie = os.path.join(tmp, 'r3')
+    os.makedirs(os.path.join(tmp, 'r3-src'))
+    open(os.path.join(tmp, 'r3-src', 'r3.pdf'), 'wb').write(pdf_page(c, HELV))
+    lancer_sonde([os.path.join(tmp, 'r3-src')], sortie, '--lecteur=standard')
+    rap = rapport_de(sortie)
+    tourne = rap[rap.index(u'Textes tournés'):] if u'Textes tournés' in rap else ''
+    ok(re.search(r'\nA9999\t2\t0 %\t100 %\t0 %', tourne) is not None and re.search(r'\nA999\t1\t0 %\t0 %\t100 %', tourne) is not None,
+       'numeros de fil verticaux : « sur un trait » 100 % ; un repere a 3 mm du fil : « le long d\'un trait » 100 %')
+
+    print('\n== R4 : les donnees non dessinees (cles hors norme, PieceInfo, XMP, structure) ==')
+    xmp = (b'<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">'
+           b'<rdf:Description xmlns:see="http://see/" see:Norme="EN3155-016M2018" see:PartNumber="NSA937901M2"/>'
+           b'</rdf:RDF></x:xmpmeta>')
+    objs = {6: Objet(b'<< /Length %d /Type /Metadata /Subtype /XML >>' % len(xmp), xmp),
+            7: Objet(b'<< /Type /StructTreeRoot /K 8 0 R >>'),
+            8: Objet(b'<< /Type /StructElem /S /Figure /P 7 0 R /K 0 /Alt (Connecteur EN3645-W1 norme NSA937901) '
+                     b'/ActualText (ABS0368-A) >>')}
+    d = pdf_page(b'BT /F1 10 Tf 100 300 Td (W1234-22) Tj ET', HELV,
+                 b'/PieceInfo << /SEE << /Private << /Norme (EN3155) >> >> >> /SEE_Attributs << /PN (ABS1234) >>', objs,
+                 b'/Metadata 6 0 R /StructTreeRoot 7 0 R /PieceInfo << /SEE << /Private << /Ref (NSA937901) >> >> >>',
+                 info=b'<< /Producer (SEE Electrical Expert V4R3) /PartNumber (EN3645-W1) /Norme (ABS0368) '
+                      b'/ProjetKestrel (Albatrosse) >>')
+    sortie = os.path.join(tmp, 'r4')
+    os.makedirs(os.path.join(tmp, 'r4-src'))
+    open(os.path.join(tmp, 'r4-src', 'r4.pdf'), 'wb').write(d)
+    lancer_sonde([os.path.join(tmp, 'r4-src')], sortie, '--lecteur=standard')
+    rap = rapport_de(sortie)
+    attendus = [u'/Info\tPartNumber = « AA9999-A9 »', u'/Info\tNorme = « AAA9999 »',
+                u'catalogue\tPieceInfo / SEE / Private / Ref = « AAA999999 »',
+                u'page\tPieceInfo / SEE / Private / Norme = « AA9999 »', u'page\tSEE_Attributs / PN = « AAA9999 »',
+                u'see:Norme = « AA9999-999A9999 »', u'see:PartNumber = « AAA999999A9 »', u'ActualText\tAAA9999-A',
+                u'Alt\tAaaaaaaaaa AA9999-A9 aaaaa AAA999999']
+    manquent = [a_ for a_ in attendus if a_ not in rap]
+    ok(not manquent, 'cles hors norme de /Info, PieceInfo, cle propre d\'une page, XMP, /Alt et /ActualText de la structure, '
+       'en motifs%s' % ((' ; manquent : ' + repr(manquent[:3])) if manquent else ''))
+    f = fuites(sortie, ['EN3645', 'ABS0368', 'NSA937901', 'EN3155', 'ABS1234', 'Kestrel', 'Albatrosse'])
+    ok(not f, 'aucune de ces valeurs, ni la cle propre « ProjetKestrel », en clair%s' % ((' : ' + repr(f[:3])) if f else ''))
+
+    print('\n== R5 : CropBox qui deborde de la MediaBox, page tournee ==')
+    d = pdf_page(b'0 G 1 w 200 300 100 50 re S', media=b'0 0 842 595',
+                 page_extra=b'/CropBox [-200 60 600 9999] /Rotate 90')
+    for lecteur in ('standard',) + (('pymupdf',) if fitz else ()):
+        r = releve(d, lecteur)
+        rc = [e for e in r.pages[0]['elements'] if e['type'] == 'rectangle']
+        # vue : boite = CropBox inter MediaBox = (0 60 600 595) ; tournee de 90 : X = y - 60, Y = x - 0
+        ok(len(rc) == 1 and abs(rc[0]['x1'] - 240) < 0.01 and abs(rc[0]['y1'] - 200) < 0.01 and abs(rc[0]['x2'] - 290) < 0.01
+           and abs(rc[0]['y2'] - 300) < 0.01, '%s : le rectangle tombe a sa place (CropBox inter MediaBox, puis la rotation)' % lecteur)
+
+    print('\n== R6 : un « re » sans hauteur est un seul segment pour les deux lecteurs ==')
+    d = pdf_page(b'0 G 1 w 100 100 50 0 re S 300 100 m 400 100 l 300 100 l S')
+    for lecteur in ('standard',) + (('pymupdf',) if fitz else ()):
+        r = releve(d, lecteur)
+        ok([e['type'] for e in r.pages[0]['elements']] == ['segment', 'segment'],
+           '%s : re de hauteur nulle et polyligne aller-retour -> un segment chacun' % lecteur)
+
+    print('\n== R9 : decoupe, texte de la couleur du fond, police absente ==')
+    c = (b'q 50 50 300 200 re W n BT /F1 10 Tf 500 100 Td (DECOUPE-1) Tj ET Q '
+         b'q 1 1 0 rg 90 590 200 30 re f Q BT /F1 10 Tf 1 1 0 rg 100 600 Td (JAUNE-2) Tj ET '
+         b'BT /FAbsente 10 Tf 0 g 100 400 Td (SECOURS-3) Tj ET')
+    r = releve(pdf_page(c, HELV))
+    t = dict((e['texte'], e['raisons']) for e in textes_de(r))
+    ok(t.get('DECOUPE-1') == ['decoupe'] and t.get('JAUNE-2') == ['fond'] and t.get('SECOURS-3') == [],
+       'hors de sa decoupe : « decoupe » ; jaune sur jaune : « fond » ; police absente : lu en Helvetica (%s)' % t)
+    ok(any('police de secours' in m for m, _ in r.notes.liste()) and any(m.startswith('9 glyphe') for m, _ in r.notes.liste()),
+       'et le rapport compte les glyphes lus avec la police de secours')
+
+    print('\n== R11 : une image dans un motif n\'est pas un scan ==')
+    im = zlib.compress(bytes([200]) * 400)
+    motif_ = b'/PaintType 1 /PatternType 1 /TilingType 1 /BBox [0 0 20 20] /XStep 20 /YStep 20 /Resources << /XObject << /I 6 0 R >> >>'
+    c = b'/Pattern cs /P1 scn 0 0 595 842 re f 0 G 1 w 100 100 m 300 100 l S BT /F1 10 Tf 100 200 Td (W1) Tj ET'
+    d = pdf_page(c, HELV + b' /Pattern << /P1 5 0 R >>', objets={
+        5: Objet(b'<< ' + motif_ + b' /Length 22 >>', b'20 0 0 20 0 0 cm /I Do'),
+        6: Objet(b'<< /Type /XObject /Subtype /Image /Width 20 /Height 20 /ColorSpace /DeviceGray /BitsPerComponent 8 '
+                 b'/Filter /FlateDecode /Length %d >>' % len(im), im)})
+    r = releve(d)
+    v = S.verdict_document([p['verdict'] for p in r.pages])[0]
+    ok(v == 'vectoriel avec texte' and any(e['type'] == 'image' and e['info'].get('motif') for e in r.pages[0]['elements']),
+       'une image dans un motif qui couvre la page : verdict %s (pas « mixte »)' % v)
+
+
 def controles_pymupdf(pdfs):
     fitz = S.importer_pymupdf()
     print('\n== Les deux lecteurs (standard et PyMuPDF) ==')
@@ -774,8 +1185,9 @@ def controles_corpus(dossier):
         pdfs.append((nom, d))
         v = verite.get(nom)
         if v is None and nom.startswith('atelier-'):
-            # un folio seul n'a qu'une partie des textes : on ne les cherche que dans les fichiers des six folios
-            v = {'verdict': 'mixte' if 'sans-grille' not in nom else 'vectoriel avec texte',
+            # un folio seul n'a qu'une partie des textes : on ne les cherche que dans les fichiers des six folios ;
+            # le quadrillage de fond est une image dans un motif : pas un scan, le verdict reste vectoriel
+            v = {'verdict': 'vectoriel avec texte',
                  'textes': (atelier['textes'] if atelier else []) if nom.startswith('atelier-folios') else []}
         if v is None:
             continue
@@ -840,6 +1252,7 @@ def principal():
     tmp = tempfile.mkdtemp(prefix='sonde-pdf-')
     try:
         pdf, fichiers, inc = controles_fabriques(tmp, garder)
+        controles_constats(tmp)
         a_comparer = [('schema', pdf), ('schema incremental', inc), ('page tournee', page_tournee()),
                       ('page scannee', page_scannee())] + sorted(fichiers.items())
         if corpus:
