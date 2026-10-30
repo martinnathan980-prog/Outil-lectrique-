@@ -5,7 +5,15 @@
    À la vraie souris, sur un grand écran (1440 × 900), dans UN contexte de
    navigateur (le rechargement garde ce que la page a écrit) :
      · le lancement : la bibliothèque sur la table, vide (l'Exemple discret en
-       dernier), le nom « Volta » partout (titre, marque) ;
+       dernier), le nom « Volta » partout (titre, marque) ; l'accueil en vitrine
+       (v73 : le titre en affiche, deux gestes, les touches Ctrl O, la ligne du
+       dépôt, le dock — l'Exemple, la base —, la barre du haut effacée) ;
+     · LA TABLE VIVANTE (v73) : deux nappes qui dérivent, la lueur et la grille
+       révélée, le courant dans les bandes libres ; la veille (plus rien ne
+       tourne), le réveil à un geste, la page cachée ; le mouvement réduit fige
+       tout ;
+     · la bibliothèque pleine : « Reprendre » en verre et ses folios, l'intertitre,
+       la carte en pile de feuilles qui s'évente, le mot qui passe en bas ;
      · créer une installation au clavier, y ajouter des plans par des fichiers
        (plusieurs à la fois : un retest, un fichier à deux harness — un plan
        chacun —, une compta qui le dit dans sa ligne), les ouvrir, revenir
@@ -52,9 +60,28 @@ const CAPTURES = (process.argv.find(a => a.startsWith('--captures=')) || '').sli
   ok(L0.titre === 'Volta' && L0.marque === 'Volta' && L0.volta, 'le nom est « Volta » : le titre de la page, la marque de la barre du haut ; l’API répond aussi à `volta`', JSON.stringify({ titre: L0.titre, marque: L0.marque }));
   ok(L0.vue === 'racine' && L0.visible && L0.vide && L0.demo && !L0.n && !L0.accueil, 'au lancement, la bibliothèque sur la table, vide (deux gestes pour commencer, sans discours), l’Exemple discret en dernier — plus de page d’exemple qui explique', JSON.stringify(L0));
   ok(L0.recherche === 'hidden', 'sur la bibliothèque, la recherche des repères attend le plan');
-  // l'accueil (audit v72, parcours P1-1) : « Ouvrez votre retest », le geste n°1 en premier (Ctrl+O), une installation ensuite, la base en lien
-  const AC = await page.evaluate(() => ({ titre: document.querySelector('#bibliotheque .bi-vide h1').textContent, gestes: [...document.querySelectorAll('#bibliotheque .bi-vide [data-bi]')].map(b => b.dataset.bi).join(), kbd: (document.querySelector('#bibliotheque .bi-vide [data-bi="ouvrir"] kbd') || {}).textContent, depot: !!document.querySelector('#bibliotheque .bi-vide-depot') }));
-  ok(AC.titre === 'Ouvrez votre installation' && AC.gestes === 'ouvrir,nouvelle,base' && AC.kbd === 'Ctrl+O' && AC.depot, 'l’accueil : « Ouvrez votre installation » — « Ouvrir une installation… Ctrl+O » d’abord, « Nouvelle installation » ensuite, la base en lien ; le dépôt dit', JSON.stringify(AC));
+  // l'accueil (audit v72, parcours P1-1 ; le designer v73, § 5.5 : une vitrine) : « Ouvrez votre installation » en affiche (v74), le geste n°1 en
+  // premier (ses deux touches Ctrl O, lisibles), une installation ensuite, la ligne du dépôt ; en bas le dock : l'Exemple, la base
+  const AC = await page.evaluate(() => { const v = document.querySelector('#bibliotheque .bi-vide'), k = v.querySelector('[data-bi="ouvrir"] kbd'), t = v.querySelector('h1');
+    return { titre: t.textContent, taille: parseFloat(getComputedStyle(t).fontSize), gestes: [...v.querySelectorAll('.bi-vide-gestes [data-bi]')].map(b => b.dataset.bi).join(), dock: [...v.querySelectorAll('.bi-dock [data-bi]')].map(b => b.dataset.bi).join(),
+      kbd: (k || {}).textContent, touches: k ? k.querySelectorAll('span').length : 0, depot: !!v.querySelector('.bi-vide-depot'), retires: !!document.querySelector('#bibliotheque .bi-essai, #bibliotheque .bi-vide-base, #bibliotheque .bi-lien-vide'),
+      barre: getComputedStyle($('entete')).backgroundColor, bulle: (v.querySelector('.bi-dock [data-bi="base"] .bulle') || {}).textContent || '' }; });
+  ok(AC.titre === 'Ouvrez votre installation' && AC.taille >= 36 && AC.gestes === 'ouvrir,nouvelle' && AC.kbd === 'Ctrl+O' && AC.touches === 2 && AC.depot && AC.dock === 'exemple,base' && !AC.retires,
+    'l’accueil, une vitrine : « Ouvrez votre installation » en affiche — « Ouvrir une installation… » (deux touches, Ctrl O) d’abord, « Nouvelle installation » ensuite, la ligne du dépôt ; le dock : l’Exemple, la base ; plus de « Pour essayer » ni d’encadré', JSON.stringify(AC));
+  ok(/rgba\(0, 0, 0, 0\)|transparent/.test(AC.barre) && /300 000 lignes/.test(AC.bulle), 'sur l’accueil, la barre du haut s’efface (la marque flotte) ; la phrase de la base est dans la bulle de sa tuile', AC.barre);
+  // LA TABLE VIVANTE (le designer v73, § 6) : deux nappes qui dérivent, la lueur et la grille qu'elle révèle, le courant
+  const TV = await page.evaluate(() => new Promise(r => { const t0 = TABLE.temps, a0 = document.querySelector('#table .ta-nappe-a').style.transform; setTimeout(() => r({ couches: [...$('table').children].map(e => e.className).join(' | '), avance: TABLE.temps > t0, bouge: document.querySelector('#table .ta-nappe-a').style.transform !== a0, minuterie: !!TABLE.minuterie, libres: rangeesLibres().length, sousLaComposition: rangeesLibres().filter(y => { const c = document.querySelector('#bibliotheque .bi-vide-centre > h1').getBoundingClientRect(); return y > c.top - 28 && y < c.bottom + 28; }).length }), 1500); }));
+  ok(/ta-nappe-a/.test(TV.couches) && /ta-nappe-b/.test(TV.couches) && /ta-revele/.test(TV.couches) && /ta-courant/.test(TV.couches) && TV.avance && TV.bouge && TV.minuterie, 'la table vit : deux nappes qui dérivent (translation seule), la lueur, la grille révélée, le courant', TV.couches);
+  ok(TV.libres > 0 && !TV.sousLaComposition, 'le courant ne court que dans les bandes libres, jamais sous la composition', TV.libres + ' rangées libres');
+  // la veille (90 s, avancée ici à 0,6 s) : la dérive ralentit jusqu'à l'arrêt, plus rien ne tourne ; un geste la relance ; page cachée, tout s'arrête
+  await page.evaluate(() => { TABLE.veilleApres = 600; }); await page.waitForTimeout(4200);
+  const VE = await page.evaluate(() => ({ minuterie: !!TABLE.minuterie, vitesse: TABLE.vitesse, dort: $('table').classList.contains('dort') }));
+  await page.evaluate(() => { TABLE.veilleApres = 90000; }); await page.mouse.move(700, 300); await page.mouse.move(760, 340, { steps: 4 }); await page.waitForTimeout(1300);
+  const RE = await page.evaluate(() => ({ minuterie: !!TABLE.minuterie, vitesse: TABLE.vitesse, dort: $('table').classList.contains('dort') }));
+  await page.evaluate(() => { TABLE.veilleApres = 90000; Object.defineProperty(document, 'hidden', { value: true, configurable: true }); document.dispatchEvent(new Event('visibilitychange')); });
+  const CA = await page.evaluate(() => ({ minuterie: !!TABLE.minuterie }));
+  await page.evaluate(() => { delete document.hidden; document.dispatchEvent(new Event('visibilitychange')); });
+  ok(!VE.minuterie && VE.vitesse === 0 && VE.dort && RE.minuterie && RE.vitesse > .85 && !RE.dort && !CA.minuterie, 'la veille : sans la main, la dérive s’arrête et plus rien ne tourne ; un geste la relance en ~1,2 s ; page cachée, elle s’arrête', JSON.stringify({ VE, RE, CA }));
   let choix = null; try { [choix] = await Promise.all([page.waitForEvent('filechooser', { timeout: 3000 }), page.click('#bibliotheque .bi-vide [data-bi="ouvrir"]')]); } catch (_) { }
   ok(!!choix && !(await page.evaluate(() => installsVraies().length)), '« Ouvrir une installation… » ouvre le choix du fichier, sans créer d’installation');
   // un PDF déposé sur l'accueil va au lecteur de PDF : plus d'installation vide « À ranger » (audit v72, parcours P2-10)
@@ -83,6 +110,8 @@ const CAPTURES = (process.argv.find(a => a.startsWith('--captures=')) || '').sli
   ok(A1.plans.length === 3 && A1.plans.some(p => /^antenne-vhf\.csv:\d+$/.test(p)) && A1.plans.some(p => /^H-ANT-2:/.test(p)) && A1.plans.some(p => /^H-ANT-3:/.test(p)) && A1.lignes === 3 && A1.neufs === 3,
     'trois plans : l’installation, et un par harness du fichier qui en a deux — chacun sa ligne, marquée « nouveau »', A1.plans.join(' · '));
   ok(/compta\.csv n’a pas les en-têtes de l’installation/.test(A1.ko) && A1.deviner && /3 plans ajoutés à «\s?Antenne VHF\s?»/.test(A1.toast) && !A1.ouvert, 'la compta le dit dans sa ligne (et propose de deviner ses colonnes) ; le mot qui passe compte les plans ajoutés ; rien ne s’ouvre tout seul', A1.toast);
+  // le mot qui passe, sur la bibliothèque : en bas (l'ergonome v73 : en haut, il se posait sur le titre)
+  ok(await page.evaluate(() => { const t = $('toast').getBoundingClientRect(), h = document.querySelector('#bibliotheque .bi-titre').getBoundingClientRect(); return t.top > innerHeight / 2 && (t.bottom < h.top || t.top > h.bottom); }), 'sur la bibliothèque, le mot qui passe se pose en bas : jamais sur le titre');
   await capture('ajout-de-plans');
   await page.click('#bibliotheque .bi-ajout.ko [data-bi="oublier-ajout"]'); await page.waitForTimeout(150);
   ok(!(await page.evaluate(() => document.querySelector('#bibliotheque .bi-ajout'))), 'la croix efface le message de la compta');
@@ -97,6 +126,12 @@ const CAPTURES = (process.argv.find(a => a.startsWith('--captures=')) || '').sli
   await capture('plan-ouvert');
   // ce qu'on y fait se garde dans le plan
   await page.evaluate(() => { histPush('essai'); app.contrat.designations.set('101BT1', 'batterie principale'); redessiner(); sauver(); }); await page.waitForTimeout(700);
+  // l'installation du fil porte une bulle (la règle du chrome, plus de `title=`), écrite quand elle paraît, jamais coupée
+  await page.hover('#en-install'); await page.waitForTimeout(800);
+  const BF = await page.evaluate(() => { const b = $('en-install'), u = b.querySelector(':scope > .bulle'), cs = u && getComputedStyle(u), r = u && u.getBoundingClientRect();
+    return { title: b.hasAttribute('title'), on: b.classList.contains('bulle-on'), vue: !!cs && cs.visibility === 'visible', texte: u ? u.textContent : '', entiere: !!r && r.width > 120 && r.left >= 0 && r.top > b.getBoundingClientRect().bottom }; });
+  ok(!BF.title && BF.on && BF.vue && BF.entiere && /^ECP\s40217\s·\sAntenne VHF\s:\sses plans$/.test(BF.texte), 'l’installation du fil a sa bulle (« ECP 40217 · Antenne VHF : ses plans »), entière, sous la barre ; plus de title=', JSON.stringify(BF));
+  await page.mouse.move(700, 500);
   await page.click('#en-install'); await page.waitForTimeout(250);
   v = await vue();
   ok(v.vue === 'install' && v.install === idAntenne && await page.evaluate(id => { const li = document.querySelector(`#bibliotheque .bi-plan[data-plan="${id}"]`); return !!li && li.classList.contains('sur-table') && /sur la table/.test(li.textContent); }, idA),
@@ -104,6 +139,17 @@ const CAPTURES = (process.argv.find(a => a.startsWith('--captures=')) || '').sli
   await page.click('#en-biblio'); await page.waitForTimeout(250);
   const R1 = await page.evaluate(() => ({ vue: BIB.vue, reprendre: ($('bi-reprendre') || {}).textContent || '', carte: (document.querySelector('#bibliotheque .bi-carte[data-install] .bi-carte-meta') || {}).textContent || '' }));
   ok(R1.vue === 'racine' && /Reprendre/.test(R1.reprendre) && /antenne-vhf/.test(R1.reprendre) && /3\splans/.test(R1.carte) && /ouverte aujourd’hui/.test(R1.carte), 'la marque ramène à la bibliothèque : « Reprendre » le plan resté sur la table ; la carte dit 3 plans, ouverte aujourd’hui', R1.carte);
+  // la bibliothèque pleine (le designer v73, § 5.6) : « Reprendre » en verre, ses folios en puces ; l'intertitre au filet ; la carte, une vraie pile
+  // de feuilles (trois plans : deux feuilles dessous) qui s'évente au survol ; les plans en mots (pas en chasse fixe)
+  const PL = await page.evaluate(() => { const r = $('bi-reprendre'), c = document.querySelector('#bibliotheque .bi-grille .bi-carte[data-install]'), bg = getComputedStyle(r).backgroundColor;
+    return { verre: /rgba\(.*0\.\d+\)/.test(bg), folios: r.querySelectorAll('.bi-rep-folios i').length, courant: (r.querySelector('.bi-rep-folios i.on') || {}).textContent || '', inter: (document.querySelector('#bibliotheque .bi-intertitre') || {}).textContent || '',
+      feuilles: c.querySelectorAll('.bi-f').length, police: getComputedStyle(c.querySelector('.bi-pn span')).fontFamily, barre: getComputedStyle($('entete')).backgroundColor }; });
+  ok(PL.verre && PL.folios === 2 && PL.courant === '1' && /^Installations/.test(PL.inter) && PL.feuilles === 2 && !/Mono/.test(PL.police) && !/rgba\(0, 0, 0, 0\)/.test(PL.barre),
+    'la bibliothèque pleine : « Reprendre » en verre et ses folios (le courant clair), l’intertitre au filet, la carte une pile de deux feuilles, les plans en mots ; la barre du haut a sa bande', JSON.stringify(PL));
+  await page.hover('#bibliotheque .bi-grille .bi-carte[data-install] .bi-carte-corps'); await page.waitForTimeout(600);
+  ok(await page.evaluate(() => /rotate|matrix\(0\.9[0-9]+, 0\.0[0-9]+/.test(getComputedStyle(document.querySelector('#bibliotheque .bi-grille .bi-carte[data-install] .bi-f2')).transform) && getComputedStyle(document.querySelector('#bibliotheque .bi-grille .bi-carte[data-install] .bi-carte-corps')).transform !== 'none'),
+    'au survol, la carte se soulève et ses feuilles s’éventent');
+  await page.mouse.move(5, 880);
   await page.keyboard.press('Escape'); await page.waitForTimeout(200);
   ok((await vue()).vue === 'plan', 'Échap, sur la bibliothèque, reprend le plan');
   await page.evaluate(() => montrerBibliotheque('install', BIB.plans.get(app.planId).install)); await page.keyboard.press('Escape'); await page.waitForTimeout(150);
@@ -123,7 +169,7 @@ const CAPTURES = (process.argv.find(a => a.startsWith('--captures=')) || '').sli
   // une deuxième installation, par le bouton de la tête — sans ECP sous la main : les lettres tapées vont au nom
   await page.click('#bi-nouvelle'); await page.keyboard.type('Cockpit'); await page.keyboard.press('Enter'); await page.waitForTimeout(250);
   const idCockpit = (await vue()).install;
-  ok(await nomInstall(idCockpit) === 'Cockpit' && await page.evaluate(id => BIB.installs.get(id).ecp === '' && /ECP\s*à saisir/.test(document.querySelector('.bi-ecp-tete').textContent), idCockpit), '« Nouvelle installation » de la tête, sans ECP : Cockpit, « ECP à saisir » au-dessus de son nom');
+  ok(await nomInstall(idCockpit) === 'Cockpit' && await page.evaluate(id => BIB.installs.get(id).ecp === '' && /N° ECP\s*\(facultatif\)/.test(document.querySelector('.bi-ecp-tete').textContent), idCockpit), '« Nouvelle installation » de la tête, sans ECP : Cockpit, « N° ECP (facultatif) » au-dessus de son nom — une invitation, pas une alerte');
   // l'ECP, saisi en tête : trop court, il le dit et reste écrit ; complété, il est gardé
   await page.click('.bi-ecp-tete'); await page.waitForTimeout(100); await page.keyboard.type('388'); await page.keyboard.press('Enter'); await page.waitForTimeout(150);
   ok(await page.evaluate(id => BIB.installs.get(id).ecp === '' && /cinq chiffres/.test($('toast').textContent) && $('bi-ecp').value === '388' && $('bi-ecp').classList.contains('faux'), idCockpit), 'un ECP à trois chiffres : le mot qui passe le dit, le champ le garde, marqué');
@@ -211,7 +257,7 @@ const CAPTURES = (process.argv.find(a => a.startsWith('--captures=')) || '').sli
     const cible = document.querySelector('#bibliotheque .bi-feuille') || $('bibliotheque');
     cible.dispatchEvent(new DragEvent('dragenter', { dataTransfer: dt, bubbles: true, cancelable: true })); cible.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true })); }, c3);
   await page.waitForFunction(() => plansDeInstall(BIB.install).some(p => p.nom === 'glisse.csv'));
-  ok(await page.evaluate(() => [...BIB.installs.values()].find(i => i.id === BIB.install).nom === 'Base 2024' && !document.body.classList.contains('depot-actif')), 'une installation glissé sur la bibliothèque devient un plan de l’installation qu’on regarde');
+  ok(await page.evaluate(() => [...BIB.installs.values()].find(i => i.id === BIB.install).nom === 'Base 2024' && !document.body.classList.contains('depot-actif')), 'une installation glissée sur la bibliothèque devient un plan de l’installation qu’on regarde');
 
   /* ---- la mémoire, après rechargement ------------------------------------------------------------------------- */
   console.log('\nla mémoire, après rechargement');
@@ -278,12 +324,14 @@ const CAPTURES = (process.argv.find(a => a.startsWith('--captures=')) || '').sli
   await page.click('#en-biblio'); await page.waitForTimeout(200); await page.fill('#bi-q', 'MS3320-15'); await page.waitForFunction(() => BIB.trouve && !BIB.trouve.enCours && BIB.trouve.q === 'MS3320-15');
   await page.click('#bibliotheque [data-bi="lot-trouves"]'); await page.waitForTimeout(250);
   const LO = await page.evaluate(() => ({ n: BIB.lot.ids.size, barre: !!document.querySelector('#bi-lot .bi-lot'), avecPdf: typeof pdfDuPlan === 'function', pdf: !!document.querySelector('#bi-lot [data-lot-o="pdf"]:disabled') === (typeof pdfDuPlan !== 'function') }));
-  const [dlZ] = await Promise.all([page.waitForEvent('download', { timeout: 120000 }), page.click('#bibliotheque [data-bi="lot-convertir"]')]);
+  // (v74 : la machine des essais est partagée — à une charge de 28 sur 4 cœurs, la conversion passait les 120 s ; on juge
+  // ce qui sort, pas le temps que met une machine prêtée)
+  const [dlZ] = await Promise.all([page.waitForEvent('download', { timeout: 300000 }), page.click('#bibliotheque [data-bi="lot-convertir"]')]);
   const zip = fs.readFileSync(await dlZ.path()), noms = []; for (let p = 0; p + 30 < zip.length && zip.readUInt32LE(p) === 0x04034b50;) { const ln = zip.readUInt16LE(p + 26), taille = zip.readUInt32LE(p + 18); noms.push([zip.toString('utf8', p + 30, p + 30 + ln), zip.subarray(p + 30 + ln, p + 30 + ln + taille)]); p += 30 + ln + taille; }
   const XLSX = require('../lib/xlsx.min.js'), xl = noms.filter(([n]) => /-retest-corrige\.xlsx$/.test(n)), pdfs = noms.filter(([n]) => /-dossier\.pdf$/.test(n));
   const lu = xl.length ? XLSX.utils.sheet_to_json(XLSX.read(xl[0][1]).Sheets.Installation, { header: 1 }) : [];
   ok(LO.barre && LO.pdf && xl.length === LO.n && pdfs.length === (LO.avecPdf ? LO.n : 0) && noms.length === xl.length + pdfs.length && pdfs.every(([, d]) => d.subarray(0, 5).toString() === '%PDF-') && lu.length > 4 && lu[3][1] === 'Device1' && !(await page.evaluate(() => BIB.lot)),
-    `« Convertir ces ${LO.n} contrats » : un zip, un installation corrigée (Excel, relu) et ${LO.avecPdf ? 'un dossier PDF (tous les folios)' : 'pas de dossier PDF (la case le dit)'} par contrat`, dlZ.suggestedFilename() + ' · ' + noms.length + ' fichiers');
+    `« Convertir ces ${LO.n} contrats » : un zip, une installation corrigée (Excel, relue) et ${LO.avecPdf ? 'un dossier PDF (tous les folios)' : 'pas de dossier PDF (la case le dit)'} par contrat`, dlZ.suggestedFilename() + ' · ' + noms.length + ' fichiers');
   // comparer un retest entier au déjà-fait
   await page.evaluate(id => ouvrirPlan(id), premier.id); await page.waitForFunction(id => app.planId === id && BIB.vue === 'plan', premier.id); await page.waitForTimeout(400);
   await page.evaluate(() => ficheDejaFaitContrat()); await page.waitForSelector('#fiche-corps .cc-cand', { timeout: 20000 });
@@ -294,8 +342,33 @@ const CAPTURES = (process.argv.find(a => a.startsWith('--captures=')) || '').sli
   await page.evaluate(() => fermerFiche()); await page.reload(); await pret();
   await page.waitForFunction(() => app.references && app.references.base && app.references.pret, null, { timeout: 300000, polling: 200 });
   ok(await page.evaluate(n => app.references.n === n && app.references.nom === 'grande-base.xlsx' && !!indexReferences(), GB.n), 'rechargée, la grande base revient du PC (IndexedDB, par morceaux) et s’indexe');
+  /* v73 (la demande du domaine C, A1-1) : un retest corrigé déposé dans la bibliothèque, rouvert un autre jour (après
+     rechargement, la reprise de la session est perdue) — sa feuille cachée « Volta » se reprend à la première ouverture :
+     le profil de charge de 102CB1, le contact choisi à la main ; le mot qui passe le dit, une fois. */
+  console.log('\nun retest corrigé déposé, rouvert un autre jour : sa feuille « Volta » se reprend');
+  const RV = await page.evaluate(async () => { atelier.exemple(); await new Promise(r => setTimeout(r, 500));
+    toutRegler('102CB1'); changerLiaison(verite().find(x => x.cable === 'W-013'), 'contactDe', 'EN3155-016M2018', 'un contact choisi à la main');
+    const profil = JSON.stringify(chargeDe('102CB1'));
+    let blob = null; const tel = telecharger; telecharger = b => { blob = b; }; exporterRetestCorrige(); document.getElementById('rv-enregistrer').click(); telecharger = tel; fermerFiche();
+    const deposer = async nom => { const ins = creerInstall(nom, {}); await ajouterPlans([new File([blob], 'retest-corrige-depose.xlsx', { type: blob.type })], ins.id); const p = plansDeInstall(ins.id)[0]; return p ? p.id : ''; };
+    return { profil, id: await deposer('Retests corrigés'), idSession: await deposer('Retests corrigés, le jour même') }; });
+  const ecouterLeMot = () => page.evaluate(() => { window.__toasts = []; const t = $('toast'); new MutationObserver(() => { const s = t.textContent; if (s && s !== window.__toasts[window.__toasts.length - 1]) window.__toasts.push(s); }).observe(t, { childList: true, subtree: true, characterData: true }); });
+  const ouvrirEtLire = async id => { await page.evaluate(i => ouvrirPlan(i), id); await page.waitForFunction(i => app.planId === i && BIB.vue === 'plan', id); await page.waitForTimeout(600);
+    return page.evaluate(() => ({ profil: JSON.stringify(chargeDe('102CB1')), contact: (verite().find(x => x.cable === 'W-013') || {}).contactDe, dits: window.__toasts.filter(s => /feuille «\s*Volta\s*»/.test(s)).length, toast: $('toast').textContent })); };
+  // le jour même : la reprise de la lecture attend encore (`VOLTA.attente`) ; l'ouverture ne la dit pas deux fois
+  await ecouterLeMot(); const RV1 = await ouvrirEtLire(RV.idSession);
+  await page.waitForTimeout(400); await page.reload(); await pret(); await ecouterLeMot(); const RV2 = await ouvrirEtLire(RV.id);
+  ok(RV.id && RV2.profil === RV.profil && RV.profil !== 'null' && RV2.contact === 'EN3155-016M2018' && RV2.dits === 1 && RV1.profil === RV.profil && RV1.dits === 1,
+    'un retest corrigé déposé, rouvert après rechargement : le profil de charge et le contact choisi à la main reviennent de sa feuille « Volta » ; le jour même aussi, dit une seule fois', RV2.toast.slice(0, 140) + ' · contact ' + RV2.contact + ' · dit ' + RV2.dits + ' fois (le jour même : ' + RV1.dits + ')');
   ok(!dialogues.length, 'aucune boîte du navigateur de toute la batterie', dialogues.join(' | '));
   ok(!erreurs.length, 'aucune erreur console', erreurs.slice(0, 3).join(' | '));
+  // le mouvement réduit : la table immobile (les nappes posées une fois, rien ne tourne, ni lueur ni courant) ; l'accueil paraît à sa place
+  const ctxR = await nav.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' }), pr = await ctxR.newPage();
+  await pr.goto(FICHIER); await pr.waitForFunction(() => typeof BIB !== 'undefined' && BIB.pret); await pr.mouse.move(800, 300, { steps: 5 }); await pr.waitForTimeout(1200);
+  const MR = await pr.evaluate(() => { const a = document.querySelector('#table .ta-nappe-a').style.transform; return new Promise(r => setTimeout(() => r({ fixe: document.querySelector('#table .ta-nappe-a').style.transform === a && !!a, minuterie: !!TABLE.minuterie,
+    eteints: [...document.querySelectorAll('#table .ta-lueur, #table .ta-revele, #table .ta-courant')].every(e => getComputedStyle(e).display === 'none'), opacite: document.querySelector('#table .ta-nappe-b').style.opacity, animations: document.getAnimations().length }), 1200)); });
+  ok(MR.fixe && !MR.minuterie && MR.eteints && parseFloat(MR.opacite) === .75 && !MR.animations, 'le mouvement réduit : la table immobile (la même lumière), ni lueur, ni courant, aucune animation', JSON.stringify(MR));
+  await ctxR.close();
   console.log('\n  ' + (ko ? ko + ' échec(s)' : 'tout tient'));
   await nav.close(); process.exit(ko ? 1 : 0);
 })();
